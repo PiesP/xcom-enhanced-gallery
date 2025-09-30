@@ -29,7 +29,7 @@ const POSITION_CLASS_MAP: Record<SolidToastPosition, string> = {
 
 export const SolidToastHost = (props: SolidToastHostProps) => {
   const solid = getSolidCore();
-  const { createSignal, onCleanup } = solid;
+  const { createSignal, createMemo, onCleanup, For } = solid;
 
   const position = props.position ?? 'top-right';
   const maxToasts = (() => {
@@ -65,17 +65,16 @@ export const SolidToastHost = (props: SolidToastHostProps) => {
     toastManager.remove(id);
   };
 
-  const containerClass = [
-    containerStyles.container,
-    POSITION_CLASS_MAP[position] || containerStyles.topRight,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const containerClass = createMemo(() =>
+    [containerStyles.container, POSITION_CLASS_MAP[position] || containerStyles.topRight]
+      .filter(Boolean)
+      .join(' ')
+  );
 
   return (
     <div
       data-xeg-solid-toast-host=''
-      class={containerClass}
+      class={containerClass()}
       data-position={position}
       data-max-toasts={maxToasts}
       aria-live='polite'
@@ -83,9 +82,7 @@ export const SolidToastHost = (props: SolidToastHostProps) => {
       data-testid={props.testId}
       role='region'
     >
-      {managedToasts().map(toast => (
-        <SolidToast toast={toast} onClose={closeToast} />
-      ))}
+      <For each={managedToasts()}>{toast => <SolidToast toast={toast} onClose={closeToast} />}</For>
     </div>
   );
 };

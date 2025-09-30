@@ -27,7 +27,8 @@ const resolveIcon = (type: ToastItem['type']): string => {
 };
 
 export const SolidToast = (props: SolidToastProps) => {
-  const { createEffect, onCleanup } = getSolidCore();
+  const solid = getSolidCore();
+  const { createEffect, createMemo, onCleanup, Show } = solid;
 
   createEffect(() => {
     const { duration, id } = props.toast;
@@ -62,21 +63,25 @@ export const SolidToast = (props: SolidToastProps) => {
     }
   };
 
-  const toastClass = [toastStyles.toast, toastStyles[props.toast.type] || '']
-    .filter(Boolean)
-    .join(' ');
+  const toastClass = createMemo(() =>
+    [toastStyles.toast, toastStyles[props.toast.type] || ''].filter(Boolean).join(' ')
+  );
+
+  const icon = createMemo(() => resolveIcon(props.toast.type));
+
+  const hasAction = createMemo(() => props.toast.actionText && props.toast.onAction);
 
   return (
     <div
       data-xeg-solid-toast=''
       data-toast-id={props.toast.id}
-      class={toastClass}
+      class={toastClass()}
       role='alert'
       aria-label={`${props.toast.type} 알림: ${props.toast.title}`}
     >
       <div class={toastStyles.content}>
         <div class={toastStyles.header}>
-          <span aria-hidden='true'>{resolveIcon(props.toast.type)}</span>
+          <span aria-hidden='true'>{icon()}</span>
           <h4 class={toastStyles.title}>{props.toast.title}</h4>
           <button
             type='button'
@@ -88,13 +93,13 @@ export const SolidToast = (props: SolidToastProps) => {
           </button>
         </div>
         <p class={toastStyles.message}>{props.toast.message}</p>
-        {props.toast.actionText && props.toast.onAction ? (
+        <Show when={hasAction()}>
           <div class={toastStyles.actions}>
             <button type='button' class={toastStyles.actionButton} onClick={handleAction}>
               {props.toast.actionText}
             </button>
           </div>
-        ) : null}
+        </Show>
       </div>
     </div>
   );
