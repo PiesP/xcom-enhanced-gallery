@@ -22,7 +22,8 @@ export interface ToastContainerProps extends Partial<StandardToastContainerProps
 export const ToastContainer = (props: ToastContainerProps = {}): JSX.Element => {
   const { createMemo } = getSolidCore();
 
-  const toastSignalAccessor = toastManager.signal.accessor;
+  // Native SolidJS pattern: toastManager.getToasts는 Accessor 함수
+  const toastsAccessor = toastManager.getToasts;
 
   const position = createMemo(() => props.position ?? 'top-right');
   const maxToasts = createMemo(() => (typeof props.maxToasts === 'number' ? props.maxToasts : 5));
@@ -57,7 +58,7 @@ export const ToastContainer = (props: ToastContainerProps = {}): JSX.Element => 
   );
 
   const limitedToasts = createMemo<ToastItem[]>(() =>
-    toastSignalAccessor().slice(0, Math.max(0, maxToasts()))
+    toastsAccessor().slice(0, Math.max(0, maxToasts()))
   );
 
   return (
