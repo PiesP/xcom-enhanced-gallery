@@ -571,40 +571,112 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
-#### Phase G-4 — 컴포넌트 반응성 최적화 ⚡ **계획**
+#### Phase G-4 — 컴포넌트 반응성 최적화 ⚡ **진행 중**
 
 **목표**: 컴포넌트 레벨 반응성을 SolidJS 네이티브로 최적화
 
-**작업**:
+**현 상태**: Phase G-4-1 완료 ✅ → Phase G-4-2 준비 중
 
-1. Memo 최적화
-   - 파생 상태를 `createMemo()`로 전환
-   - 불필요한 재계산 제거
-   - 의존성 명시적 관리
+---
 
-2. Effect 정리
-   - 부작용을 `createEffect()`로 통합
-   - `onCleanup` 활용한 리소스 정리
-   - 타이밍 최적화 (렌더링 후 실행)
+##### Phase G-4-1 — 컴포넌트 분석 및 최적화 대상 선정 ✅ **완료** (2025-09-30)
 
-3. Show/For/Switch 최적화
-   - 조건부 렌더링 패턴 개선
-   - 리스트 렌더링 최적화
-   - 불필요한 리렌더링 제거
+**목표**: SolidJS 컴포넌트 파일 스캔 및 최적화 대상 우선순위 설정
+
+**작업 내역**:
+
+1. ✅ 컴포넌트 파일 인벤토리
+   - 총 6개 SolidJS 컴포넌트 파일 스캔
+   - 현재 상태 분석 (createMemo/createEffect/createSignal 사용 현황)
+   - 최적화 기회 식별
+
+2. ✅ 최적화 패턴 카탈로그 작성
+   - createMemo 적용 대상 (파생 상태 계산)
+   - Show 컴포넌트 적용 대상 (조건부 렌더링)
+   - For 컴포넌트 적용 대상 (리스트 렌더링)
+   - Effect 정리 대상 (불필요한 Effect 제거)
+
+3. ✅ 우선순위 매트릭스 수립
+   - **High**: VerticalImageItem (리스트 렌더링, 예상 소요 2-3h)
+   - **Medium**: SolidToastHost/Toast (토스트 렌더링, 2-3h)
+   - **Medium**: SolidGalleryShell (핵심 shell, 3-4h)
+   - **Medium**: ModalShell (focus trap 최적화, 2-3h)
+   - **Medium**: SolidSettingsPanel (설정 UI, 2h)
 
 **산출물**:
 
-- 최적화된 컴포넌트 패턴 가이드
+- ✅ `docs/PHASE_G4_COMPONENT_OPTIMIZATION_ANALYSIS.md` (상세 분석 보고서)
+- ✅ Phase G-4-2 ~ G-4-6 하위 작업 정의
+- ✅ 최적화 패턴 Before/After 예시 가이드
+- ✅ 리스크 평가 및 완화 전략
+
+**Acceptance** (달성):
+
+- [x] 6개 컴포넌트 파일 스캔 및 분석 완료
+- [x] createMemo/Show/For 적용 대상 식별
+- [x] 우선순위 기반 Phase G-4-2~G-4-6 로드맵 수립
+- [x] 예상 메트릭 개선 목표 설정 (Memo 15→25-30개, Show 0→10-15개, For 0→3-5개)
+
+**실제 소요**: 1.5시간 (예상: 2-3시간)
+
+**핵심 결과**:
+
+- 컴포넌트별 최적화 기회 명확히 식별
+- TDD 방식으로 진행 가능한 세부 작업 정의 완료
+- Phase G-4-2부터 즉시 착수 가능한 상태
+
+---
+
+##### Phase G-4-2 — VerticalImageItem 최적화 ⚡ **계획** (High Priority)
+
+**목표**: 리스트 렌더링 성능 개선 (갤러리 아이템 다수 렌더링)
+
+**작업**:
+
+1. RED: 최적화 효과 측정 테스트 작성
+   - 렌더링 시간 측정 벤치마크
+   - memo/Show 적용 전 baseline 확보
+
+2. GREEN: 최적화 패턴 적용
+   - `ariaProps`, `testProps`를 createMemo로 전환
+   - placeholder, video/image, error, download button을 Show 컴포넌트로 전환
+   - 컨테이너 클릭 리스너 Effect → JSX 직접 바인딩
+
+3. REFACTOR: 성능 벤치마크 및 검증
+   - DevTools 프로파일링으로 렌더링 개선 측정
+   - 접근성 회귀 검증
+
+**산출물**:
+
+- 성능 측정 테스트
+- 최적화된 VerticalImageItem 컴포넌트
 - 성능 벤치마크 결과
-- 리팩토링 체크리스트
 
 **Acceptance**:
 
-- [ ] 모든 컴포넌트 네이티브 패턴 전환
-- [ ] 렌더링 성능 개선 측정 (DevTools 프로파일)
-- [ ] 메모리 누수 검증 (대량 데이터 시나리오)
+- [ ] createMemo 2개 추가 (ariaProps, testProps)
+- [ ] Show 컴포넌트 4개 적용 (placeholder, video/image 조건, error, download)
+- [ ] 불필요한 Effect 1개 제거 (click listener)
+- [ ] 렌더링 성능 10-20% 개선 (DevTools 기준)
+- [ ] 품질 게이트 ALL GREEN (typecheck/lint/test/build)
 
-**예상 소요**: 10-15시간
+**예상 소요**: 2-3시간
+
+---
+
+**Phase G-4 전체 Acceptance**:
+
+- [ ] 모든 컴포넌트에 createMemo 최적화 적용 (목표: 25-30개)
+- [ ] Show/For 컴포넌트로 조건부/리스트 렌더링 최적화 (목표: 10-15개 Show, 3-5개
+      For)
+- [ ] 불필요한 Effect 제거 (목표: 0개 불필요 Effect)
+- [ ] 렌더링 성능 10-20% 개선 (DevTools 프로파일링 기준)
+- [ ] 메모리 누수 없음 (대량 데이터 시나리오 검증)
+- [ ] 접근성 회귀 없음 (focus trap, keyboard navigation 검증)
+- [ ] 품질 게이트 ALL GREEN (typecheck/lint/test/build)
+- [ ] 번들 크기 ±5 KB 이내 유지 (440-450 KB)
+
+**예상 소요**: 10-15시간 (Phase G-4-2 ~ G-4-6 합계)
 
 ---
 
