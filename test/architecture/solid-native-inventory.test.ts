@@ -129,9 +129,9 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
 
       // 예상 파일들이 포함되어 있는지 검증
       const importFiles = Array.from(inventory.createGlobalSignalImports.keys());
+      // Note: toolbar.signals.ts는 Phase G-3-1에서 네이티브 패턴으로 변환됨 (2025-01)
       const expectedFiles = [
         '/src/shared/state/signals/gallery.signals.ts',
-        '/src/shared/state/signals/toolbar.signals.ts',
         '/src/shared/state/signals/download.signals.ts',
       ];
 
