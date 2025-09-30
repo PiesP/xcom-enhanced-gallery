@@ -67,6 +67,21 @@ export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JS
     setIsSettingsOpen(false);
   };
 
+  /**
+   * 툴바의 닫기 버튼 핸들러
+   * - 설정 모달이 열려있으면 먼저 설정 모달을 닫음
+   * - 설정 모달이 닫혀있으면 갤러리를 닫음
+   */
+  const handleToolbarClose = () => {
+    if (isSettingsOpen()) {
+      // 설정 모달이 열려있으면 먼저 모달 닫기
+      setIsSettingsOpen(false);
+    } else {
+      // 설정 모달이 닫혀있으면 갤러리 닫기
+      toolbarProps.onClose?.();
+    }
+  };
+
   const attachExternalContainer = (element: HTMLDivElement | null) => {
     setExternalContainer(current => (current === element ? current : element));
   };
@@ -162,7 +177,7 @@ export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JS
 
   return (
     <>
-      <Toolbar {...toolbarProps} onOpenSettings={handleOpenSettings} />
+      <Toolbar {...toolbarProps} onOpenSettings={handleOpenSettings} onClose={handleToolbarClose} />
       {local.settingsRendererFactory ? (
         <div ref={attachExternalContainer} data-xeg-toolbar-settings-host='' />
       ) : isSettingsOpen() ? (
