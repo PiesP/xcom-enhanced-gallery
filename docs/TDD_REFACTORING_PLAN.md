@@ -51,42 +51,18 @@
 
 ## Epic SOLID-NATIVE-002 Phase 구조
 
-### Phase A: 레거시 사용처 분석 및 마이그레이션 맵 생성 📊
+### ✅ Phase A: 레거시 사용처 분석 및 마이그레이션 맵 생성 — 완료 (2025-10-01)
 
-**목표**: 전체 레거시 패턴 사용처를 스캔하고 자동/수동 변환 전략 수립
-
-**작업 항목**:
-
-1. **레거시 패턴 스캔 스크립트 개발**
-   - Acceptance:
-     - `.value` 접근 패턴 탐지 (50+ 예상)
-     - `.subscribe()` 호출 패턴 탐지
-     - `createGlobalSignal` 사용처 위치 및 컨텍스트 수집
-     - 마이그레이션 맵 JSON 생성
-   - Test: 스캔 스크립트가 테스트 케이스에서 모든 패턴 탐지
-
-2. **변환 복잡도 분류**
-   - Acceptance:
-     - 자동 변환 가능: 단순 `.value` 읽기 → 함수 호출
-     - 반자동: `.value` 쓰기 → setter 함수 호출
-     - 수동: `.subscribe()` → `createEffect()` 변환
-     - 구조 변경 필요: 중첩된 레거시 패턴
-   - Test: 분류 규칙이 샘플 코드에 정확히 적용됨
-
-3. **마이그레이션 우선순위 결정**
-   - Acceptance:
-     - 고영향/저복잡도: `shared/state/signals/*.ts` (우선)
-     - 중영향/중복잡도: `shared/utils/signalSelector.ts`
-     - 저영향/고복잡도: 테스트 모킹 코드 (후순위)
-   - Test: 우선순위 매트릭스가 리스크와 효과 균형
+**완료 요약**: 47개 파일에서 213개 레거시 패턴 탐지 완료. AUTO 126개, SEMI_AUTO
+49개, MANUAL 38개로 분류. 상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 **Acceptance Criteria**:
 
-- [ ] 레거시 패턴 스캔 스크립트 작성 및 실행
-- [ ] 마이그레이션 맵 JSON 파일 생성 (50+ 항목)
-- [ ] 자동/반자동/수동 변환 항목 분류 완료
-- [ ] Phase B/C/D 작업 범위 및 순서 확정
-- [ ] 품질 게이트: typecheck GREEN, 스캔 스크립트 테스트 통과
+- [x] 레거시 패턴 스캔 스크립트 작성 및 실행
+- [x] 마이그레이션 맵 JSON 파일 생성 (47개 파일, 213개 패턴)
+- [x] 자동/반자동/수동 변환 항목 분류 완료
+- [x] Phase B/C/D 작업 범위 및 순서 확정
+- [x] 품질 게이트: typecheck GREEN, 스캔 스크립트 테스트 통과
 
 ---
 

@@ -1,5 +1,61 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase A 완료 (레거시 패턴 스캔 및
+마이그레이션 맵 생성)
+
+- **범위**: Phase A — 레거시 Preact Signals 패턴 전체 스캔 및 자동/수동 변환
+  전략 수립
+- **핵심 성과**:
+  - **스캔 스크립트 개발**: `scripts/scan-legacy-patterns.mjs`
+    1. 정규식 기반 패턴 탐지: `.value`, `.subscribe()`, `createGlobalSignal`
+       import
+    2. False positive 필터링: DOM 요소 `.value`, `Object.values()`,
+       `Map.values()` 등 제외
+    3. 컨텍스트 정보 수집: 각 패턴의 라인 번호와 주변 코드 저장
+  - **테스트 스위트 작성**: `test/cleanup/legacy-pattern-scanner.test.ts`
+    1. TDD RED → GREEN 사이클 완료: 14개 테스트 전체 통과
+    2. 패턴 탐지 정확성 검증: value-read, value-write, subscribe, import 각각
+       테스트
+    3. False positive 회피 검증: DOM 요소, Object/Map methods 제외 확인
+    4. 복잡도 분류 검증: AUTO/SEMI_AUTO/MANUAL 분류 로직 테스트
+    5. 우선순위 할당 검증: HIGH/MEDIUM/LOW 우선순위 규칙 테스트
+- **마이그레이션 맵 생성**: `docs/legacy-pattern-migration-map.json`
+  - **총 영향 범위**: 47개 파일, 213개 패턴
+  - **복잡도 분류**:
+    - AUTO (126개, 59%): 단순 `.value` 읽기 → `signal()` 함수 호출로 자동 변환
+      가능
+    - SEMI_AUTO (49개, 23%): `.value` 쓰기 → `setSignal(value)` 함수 호출로
+      반자동 변환
+    - MANUAL (38개, 18%): `.subscribe()` → `createEffect()` 변환, 구조 변경 필요
+  - **우선순위 분류**:
+    - HIGH (0개): `shared/state/signals/*.ts` — 스캔 결과 없음 (이미 네이티브
+      패턴 사용 중)
+    - MEDIUM (47개): `shared/utils/signalSelector.ts`,
+      `shared/state/createGlobalSignal.ts` 등
+    - LOW (0개): test 파일 — 테스트는 MEDIUM 우선순위로 재분류됨
+- **발견 사항**:
+  - `signalSelector.ts`: 10개 패턴 (주요 리팩토링 대상, Phase C에서 처리)
+  - `createGlobalSignal.ts`: 호환 레이어 정의 파일 (Phase E에서 완전 제거 예정)
+  - 테스트 파일: 대부분의 레거시 패턴 사용처 (Phase D에서 모킹 정리)
+  - 프로덕션 코드: 상대적으로 적은 사용처 (Phase B 자동 변환 효과 높음)
+- **테스트 메트릭**:
+  - legacy-pattern-scanner: 14/14 PASSED
+  - typecheck: ✅ PASSED (strict 오류 0)
+  - lint: ✅ PASSED
+  - format: ✅ PASSED
+- **Acceptance Criteria 달성**:
+  - ✅ 레거시 패턴 스캔 스크립트 작성 및 실행
+  - ✅ 마이그레이션 맵 JSON 파일 생성 (47개 파일, 213개 패턴)
+  - ✅ 자동/반자동/수동 변환 항목 분류 완료
+  - ✅ Phase B/C/D 작업 범위 및 순서 확정
+  - ✅ 품질 게이트: typecheck GREEN, 스캔 스크립트 테스트 통과
+- **다음 단계**: Phase B — Codemod 자동 변환 도구 개발 (126개 AUTO 패턴 대상)
+- **커밋**:
+  `feat(scripts): implement Epic SOLID-NATIVE-002 Phase A - legacy pattern scanner`
+- **작업 브랜치**: feat/solid-native-002-phase-a
+
+---
+
 2025-10-01: EXEC — Epic UX-002 Phase A/B/C 완료 (상태 배너 제거)
 
 - **범위**: Phase A-C — 갤러리 하단 상태 배너(`<div role="status">1/1</div>`)
