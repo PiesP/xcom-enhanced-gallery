@@ -50,12 +50,14 @@ describe('renderSolidGalleryShell', () => {
 
     const getShell = () => getSolidShellElement(container);
 
-    expect(getShell()).toBeTruthy();
-    expect(getShell()?.getAttribute('data-open')).toBe('false');
+    // Initial state: gallery closed, shell should not be in DOM
+    expect(getShell()).toBeNull();
 
     openGallery(mediaItems, 1);
 
     await waitFor(() => {
+      // After opening, shell should be mounted with data-open="true"
+      expect(getShell()).toBeTruthy();
       expect(getShell()?.getAttribute('data-open')).toBe('true');
       const counter = getShadowContentHost(container).querySelector(
         '[data-gallery-element="counter"]'
@@ -66,7 +68,8 @@ describe('renderSolidGalleryShell', () => {
     closeGallery();
 
     await waitFor(() => {
-      expect(getShell()?.getAttribute('data-open')).toBe('false');
+      // After closing, shell should be unmounted (not in DOM)
+      expect(getShell()).toBeNull();
     });
 
     instance.dispose();
