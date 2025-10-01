@@ -363,7 +363,11 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   const Show = solid.Show;
 
   return (
-    <GalleryContainer onClose={props.onClose} useShadowDOM={overrides.useShadowDom}>
+    <GalleryContainer
+      onClose={props.onClose}
+      useShadowDOM={overrides.useShadowDom}
+      isOpen={isOpen()}
+    >
       <Show when={isOpen()}>
         <div
           ref={node => {

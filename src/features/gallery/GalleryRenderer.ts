@@ -369,25 +369,39 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 컨테이너 정리
    */
   private cleanupContainer(): void {
+    logger.info('[GalleryRenderer] cleanupContainer() 시작');
     if (this.container) {
+      logger.debug('[GalleryRenderer] 컨테이너 존재, 정리 진행 중...', {
+        containerId: this.container.id,
+        hasParent: !!this.container.parentElement,
+      });
       try {
         if (this.solidShellInstance) {
+          logger.debug('[GalleryRenderer] disposeSolidShell() 호출');
           this.disposeSolidShell();
         }
         if (typeof document !== 'undefined' && document.contains(this.container)) {
+          logger.debug('[GalleryRenderer] container.remove() 호출');
           this.container.remove();
+          logger.info('[GalleryRenderer] ✅ 컨테이너 DOM 제거 완료');
+        } else {
+          logger.warn('[GalleryRenderer] 컨테이너가 DOM에 없음');
         }
       } catch (error) {
         logger.warn('[GalleryRenderer] 컨테이너 정리 실패:', error);
       }
       this.container = null;
       this.pendingSolidRenderToken = null;
+    } else {
+      logger.debug('[GalleryRenderer] 컨테이너 없음, 정리 스킵');
     }
     // 리바인드 워처 중지
     if (this.rebindWatcher) {
+      logger.debug('[GalleryRenderer] rebindWatcher dispose');
       this.rebindWatcher.dispose();
       this.rebindWatcher = null;
     }
+    logger.info('[GalleryRenderer] cleanupContainer() 완료');
   }
 
   /**
@@ -489,7 +503,16 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   close(): void {
-    closeGallery();
+    logger.info('[GalleryRenderer] close() 호출됨');
+
+    // signal은 UI에서 이미 호출되었으므로, 여기서는 DOM만 정리
+    const wasOpen = galleryState().isOpen;
+    if (wasOpen) {
+      logger.debug('[GalleryRenderer] 상태가 아직 열려있음, closeGallery() signal 호출');
+      closeGallery();
+    }
+
+    logger.debug('[GalleryRenderer] cleanupContainer() 호출 시작');
     // DOM 요소 완전 제거
     this.cleanupContainer();
     logger.info('[GalleryRenderer] 갤러리 닫기 및 정리 완료');
