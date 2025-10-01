@@ -1,5 +1,31 @@
 <!-- markdownlint-disable -->
 
+2025-01-22: EXEC — Epic NAMING-001 Phase A 완료 ✅
+
+- **목표**: 명명 규칙 위반 자동 검출 스크립트 개발 및 전수 스캔
+- **주요 성과**:
+  - Scanner 개발: 6 functions (scanUnnecessaryModifiers, scanBooleanPrefixes,
+    scanVerbPatterns, measureDomainTerms, classifyPriority, scanDirectory)
+  - 테스트: 4/4 suites GREEN (100%)
+  - 스캔 결과: 314 violations in 263 files
+    - HIGH: 46 (boolean-prefix-missing) - 즉시 수정 필요
+    - MEDIUM: 268 (verb-pattern-inconsistent) - 점진적 개선
+  - Priority classification: HIGH (public APIs, boolean functions)
+  - Phase B targets: 46-50 items selected
+- **품질 게이트**: typecheck/lint GREEN, scanner tests 4/4 GREEN
+- **산출물**:
+  - `scripts/scan-naming-violations.mjs` (370 lines)
+  - `test/infrastructure/naming-scanner.test.ts` (64 lines)
+  - `docs/naming-violations-map.json` (2528 lines, 314 violations)
+  - `docs/naming-cleanup-phase-a-report.md` (상세 리포트)
+- **커밋**: f85b9fd3 "feat(infra): complete Epic NAMING-001 Phase A scanner
+  implementation"
+- **실행 시간**: ~8시간 (추정 10시간 대비 효율적)
+- **TDD 워크플로**: RED → GREEN → REFACTOR 완료
+- **다음 단계**: Phase B 실행 (HIGH priority 46건 중점 수정)
+
+---
+
 2025-10-01: CLOSE — Epic LEGACY-CLEANUP-001 종료 ✅ **Epic 완료**
 
 - **종료 사유**: Phase LC-A 실행 결과, 실제 변환 가능한 레거시 패턴 0개 확인
