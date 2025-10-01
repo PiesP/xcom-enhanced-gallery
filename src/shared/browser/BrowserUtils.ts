@@ -91,24 +91,6 @@ export class BrowserUtils {
     return document.readyState === 'complete' || document.readyState === 'interactive';
   }
 
-  /**
-   * 진단 정보
-   */
-  public getDiagnostics(): {
-    injectedStyles: string[];
-    pageVisible: boolean;
-    domReady: boolean;
-  } {
-    return {
-      injectedStyles: Array.from(this.injectedStyles),
-      pageVisible: this.isPageVisible(),
-      domReady: this.isDOMReady(),
-    };
-  }
-
-  /**
-   * 정리
-   */
   public cleanup(): void {
     // 주입된 모든 스타일 제거
     for (const id of this.injectedStyles) {
@@ -129,5 +111,5 @@ export const browserUtils = {
   downloadFile: (url: string, filename?: string) => defaultBrowserUtils.downloadFile(url, filename),
   isPageVisible: () => defaultBrowserUtils.isPageVisible(),
   isDOMReady: () => defaultBrowserUtils.isDOMReady(),
-  diagnostics: () => defaultBrowserUtils.getDiagnostics(),
+  cleanup: () => defaultBrowserUtils.cleanup(),
 } as const;
