@@ -180,7 +180,7 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
     <section
       data-xeg-solid-settings=''
       data-position={props.position ?? 'toolbar-below'}
-      data-open={props.isOpen() ? 'true' : 'false'}
+      data-xeg-open={props.isOpen() ? 'true' : 'false'}
       role='dialog'
       aria-modal='true'
       aria-hidden={props.isOpen() ? 'false' : 'true'}

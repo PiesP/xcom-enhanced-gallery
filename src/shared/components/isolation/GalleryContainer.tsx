@@ -151,7 +151,7 @@ export function GalleryContainer({
   return (
     <div
       class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
-      data-open={isOpen ? 'true' : 'false'}
+      data-xeg-open={isOpen ? 'true' : 'false'}
     >
       {children}
     </div>
