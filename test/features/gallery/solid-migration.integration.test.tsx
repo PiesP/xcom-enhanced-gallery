@@ -18,8 +18,8 @@ function createMedia(id: string, overrides: Partial<MediaInfo> = {}): MediaInfo 
 describe('FRAME-ALT-001 Stage B — Solid gallery shell integration', () => {
   let container: HTMLElement;
 
-  const getHost = () =>
-    container.shadowRoot?.querySelector('[data-xeg-shadow-content="true"]') ?? container;
+  // Light DOM 모드: 컨테이너 직접 사용
+  const getHost = () => container;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -51,7 +51,8 @@ describe('FRAME-ALT-001 Stage B — Solid gallery shell integration', () => {
       expect(host.querySelectorAll('[data-xeg-role="gallery-item"]').length).toBe(2);
       const counter = host.querySelector('[data-gallery-element="counter"]');
       expect(counter?.textContent?.replace(/\s+/g, '')).toBe('1/2');
-      expect(container.shadowRoot?.querySelector('[data-xeg-solid-shell]')).not.toBeNull();
+      // Light DOM 모드: 직접 쿼리
+      expect(container.querySelector('[data-xeg-solid-shell]')).not.toBeNull();
     });
 
     const items = Array.from(getHost().querySelectorAll('[data-xeg-role="gallery-item"]'));

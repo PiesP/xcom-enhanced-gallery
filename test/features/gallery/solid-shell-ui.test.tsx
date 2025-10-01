@@ -101,13 +101,8 @@ describe('FRAME-ALT-001 Stage E — Solid shell UI parity', () => {
     expect(galleryRoot.getAttribute('data-renderer')).toBe('gallery');
     expect(galleryRoot.getAttribute('data-renderer-impl')).toBe('solid');
 
-    const shadowRoot = galleryRoot.shadowRoot;
-    expect(shadowRoot).toBeTruthy();
-
-    const shadowContent = shadowRoot?.querySelector('[data-xeg-shadow-content="true"]');
-    expect(shadowContent).toBeTruthy();
-
-    const host = (shadowContent ?? galleryRoot) as HTMLElement;
+    // Light DOM 모드: shadowRoot 확인 불필요
+    const host = galleryRoot as HTMLElement;
 
     const galleryContainer = host.querySelector('.gallery-container');
     expect(galleryContainer).not.toBeNull();

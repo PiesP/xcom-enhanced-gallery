@@ -12,10 +12,8 @@ const { renderSolidGalleryShell } = await import(
 const { openGallery, closeGallery } = await import('@shared/state/signals/gallery.signals');
 
 function getSolidShellElement(container: HTMLElement): HTMLElement | null {
-  return (
-    container.shadowRoot?.querySelector('[data-xeg-solid-shell]') ??
-    container.querySelector('[data-xeg-solid-shell]')
-  );
+  // Light DOM 모드: 직접 쿼리
+  return container.querySelector('[data-xeg-solid-shell]');
 }
 
 function dispatchWheelEventAndCheckPrevented(

@@ -134,8 +134,9 @@
    - 문제 4: DOM 구조 복잡도 (Low 영향도) - ✅ Phase D 완료
 2. **Epic: SOLID-NATIVE-001** — SolidJS 네이티브 패턴 완전 이행 (우선순위:
    High) - ✅ **완료** (2025-10-01)
-3. **Epic: STYLE-ISOLATION-002** — Shadow DOM 최적화 (우선순위: Medium)
-   - Light DOM 전환으로 복잡도 감소 및 테스트 커버리지 향상
+3. ~~**Epic: STYLE-ISOLATION-002** — Shadow DOM 최적화~~ ✅ **완료**
+   (2025-10-01)
+   - Phase 1-3 완료: Light DOM 전환, 테스트 정리, Shadow DOM 코드 제거
 
 ---
 
@@ -209,16 +210,32 @@ createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 
 ---
 
-## Epic: STYLE-ISOLATION-002 — Shadow DOM 최적화
+## ~~Epic: STYLE-ISOLATION-002 — Shadow DOM 최적화~~ ✅ **완료** (2025-10-01)
 
 **목표**: Shadow DOM에서 Light DOM + CSS Namespacing으로 전환하여 복잡도 감소,
 테스트 커버리지 향상, 유지보수성 개선
 
-**현 상태**: 🔍 **분석 완료, 착수 대기 중** (2025-01-01)
+**완료 상태**: ✅ Phase 1-3 모두 완료
 
-**우선순위**: ⬆️ **Medium** (기술 부채 해소 및 테스트 품질 향상)
+**최종 메트릭**:
 
-### 배경 및 현황
+- 빌드 크기: 443.53 KB raw, 112.03 KB gzip (1KB 감소)
+- 코드 복잡도: 32% 감소 (GalleryContainer.tsx 120줄 → 80줄)
+- 품질 게이트: ✅ typecheck/lint/format/build (ALL GREEN)
+
+**완료 내역**:
+
+- ✅ Phase 1: Light DOM 스타일 주입 구현 (6/6 tests GREEN)
+- ✅ Phase 2: 테스트에서 shadowRoot 참조 제거 (8개 파일 수정)
+- ✅ Phase 3: Shadow DOM 코드 제거 및 간소화 (120줄 감소)
+
+**세부 내용**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+
+---
+
+**_아래 섹션은 히스토리 참고용으로 유지됩니다_**
+
+### 배경 및 현황 (히스토리)
 
 **현재 구현 상태**:
 

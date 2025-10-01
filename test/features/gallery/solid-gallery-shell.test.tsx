@@ -14,14 +14,13 @@ function createMediaFixture(id: string): MediaInfo {
 }
 
 function getShadowContentHost(container: HTMLElement): Element {
-  return container.shadowRoot?.querySelector('[data-xeg-shadow-content="true"]') ?? container;
+  // Light DOM 모드: 컨테이너 직접 사용
+  return container;
 }
 
 function getSolidShellElement(container: HTMLElement): Element | null {
-  return (
-    container.shadowRoot?.querySelector('[data-xeg-solid-shell]') ??
-    container.querySelector('[data-xeg-solid-shell]')
-  );
+  // Light DOM 모드: 직접 쿼리
+  return container.querySelector('[data-xeg-solid-shell]');
 }
 
 describe('renderSolidGalleryShell', () => {
