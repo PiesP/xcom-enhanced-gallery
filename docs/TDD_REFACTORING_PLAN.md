@@ -74,13 +74,20 @@
 
 **Acceptance Criteria**:
 
-- [ ] prefersReducedMotion 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
-- [ ] getDebugMode 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
-- [ ] 모든 참조 업데이트 완료 (grep 검색으로 확인)
-- [ ] 품질 게이트: typecheck/lint/test ALL GREEN
-- [ ] 커밋: Phase B-1 완료
+- [x] prefersReducedMotion 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
+- [x] getDebugMode 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
+- [x] 모든 참조 업데이트 완료 (grep 검색으로 확인)
+- [x] 품질 게이트: typecheck/lint/test ALL GREEN
+- [x] 커밋: Phase B-1 완료 (2 commits)
 
-**추정 소요**: 2-3시간
+**실제 소요**: ~2시간 (2025-10-01 완료)
+
+**Phase B-1 완료 요약**:
+
+- 스캐너 개선: void 반환 false positive 필터링 (46건 → 4건)
+- 리네이밍 완료: 2건 (doesUserPreferReducedMotion, isDebugModeEnabled)
+- 테스트 수정: global → globalThis (lint 오류 39건 수정)
+- 커밋: 5a2beac0 (renaming), ac4f66e3 (test fix)
 
 ---
 
