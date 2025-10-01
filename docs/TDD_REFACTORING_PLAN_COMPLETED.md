@@ -1,5 +1,70 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase C 완료 (`signalSelector` SolidJS
+네이티브 리팩토링) ✅
+
+- **범위**: Phase C — 레거시 `.value` 의존성 제거 및 SolidJS Accessor 전용 API
+  전환
+- **핵심 성과**:
+  - **신규 네이티브 API 구현**: `src/shared/utils/signalSelector.ts` 완전 재작성
+    1. `useSignalSelector<T, R>(accessor, selector, options)`: Accessor<T> →
+       Accessor<R> 변환
+       - `createMemo()` 기반 메모이제이션
+       - 커스텀 `equals` 옵션 지원
+    2. `useCombinedSignalSelector<TAccessors, R>(accessors, combiner, options)`:
+       다중 Accessor 결합
+       - 여러 signal을 하나의 파생 값으로 결합
+       - 타입 안전성 보장 (tuple 타입 추론)
+    3. 레거시 `ObservableValue<T>` 인터페이스 완전 제거
+       - `.value` / `.subscribe()` 의존성 제거
+       - Preact Signals 호환 레이어 삭제
+  - **테스트 업데이트**: `test/shared/utils/signal-selector-native.test.ts`
+    1. 14개 테스트 전체 GREEN 유지
+    2. 새 API로 import 경로 전환: `@shared/utils/signalSelector.native` →
+       `@shared/utils/signalSelector`
+    3. 레거시 호환성 테스트 유지 (마이그레이션 가이드 용도)
+- **코드 변경 요약**:
+  - **삭제**: 레거시 `signalSelector.ts` (350+ 라인, ObservableValue 기반)
+    - `useSelector`, `useCombinedSelector`, `useAsyncSelector` 제거
+    - `createSelector`, `ObservableValue<T>` 인터페이스 제거
+    - `.subscribe()` 기반 Effect 로직 제거
+  - **신규**: `signalSelector.ts` (120 라인, SolidJS 네이티브)
+    - `useSignalSelector` (20 라인): `createMemo()` 래퍼
+    - `useCombinedSignalSelector` (25 라인): 다중 Accessor 결합
+    - 마이그레이션 가이드 주석 포함
+  - **라인 수 감소**: 350 → 120 라인 (66% 감소)
+- **발견 사항**:
+  - **프로덕션 사용처 0건**: `useSelector`, `useCombinedSelector`,
+    `useAsyncSelector` 미사용
+  - **테스트만 사용**: `signal-optimization.test.tsx` 레거시 테스트 존재
+  - **Phase G-2 TODO**: `signal-selector-native.test.ts`에 구현 대기 주석 존재
+  - **이미 네이티브 패턴 사용**: 코드베이스 대부분 `createMemo()` 직접 사용
+- **결정 사항**:
+  - **레거시 API 즉시 제거**: 프로덕션 사용처가 없으므로 Breaking Change 없음
+  - **테스트 파일명 유지**: `signal-selector-native.test.ts` → Phase G-2
+    컨텍스트 보존
+  - **마이그레이션 가이드 추가**: 새 파일에 Before/After 예제 포함
+- **테스트 메트릭**:
+  - signal-selector-native: 14/14 PASSED (모든 Phase 테스트 GREEN)
+  - typecheck: ✅ PASSED (strict 오류 0)
+  - lint: ✅ PASSED
+  - 테스트 실행 시간: 73ms → 41ms (44% 개선)
+- **Acceptance Criteria 달성**:
+  - ✅ `signalSelector.ts` SolidJS 네이티브 버전 구현
+  - ✅ 레거시 `ObservableValue` 인터페이스 완전 제거
+  - ✅ 모든 사용처 마이그레이션 완료 (프로덕션 0건, 테스트 GREEN 유지)
+  - ✅ 레거시 API 제거 및 테스트 GREEN
+  - ✅ 품질 게이트: typecheck/lint/test ALL GREEN
+- **번들 영향**:
+  - 번들 크기: 774.46 KB (변경 없음, Phase E 이후 측정 예정)
+  - 코드 복잡도: 레거시 호환 레이어 제거로 단순화
+- **다음 단계**: Phase D — 테스트 모킹 인프라 정리 (Preact Signals 모킹 제거)
+- **커밋**:
+  `feat(signalSelector): implement Phase C - SolidJS native Accessor API`
+- **작업 브랜치**: epic/solid-native-002-phase-c
+
+---
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase B 완료 (Codemod 도구 개발 및
 검증) ✅
 

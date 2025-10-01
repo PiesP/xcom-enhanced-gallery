@@ -1,12 +1,13 @@
 /**
- * @fileoverview SOLID-NATIVE-001 Phase G-2 — signalSelector Native Pattern Tests
+ * @fileoverview SOLID-NATIVE-002 Phase C — signalSelector Native Pattern Tests
  * @description SolidJS 네이티브 패턴으로 전환된 signalSelector 유틸리티 검증
- * RED Phase: 네이티브 API가 올바르게 작동하는지 테스트로 먼저 정의
+ * GREEN Phase: 새로운 네이티브 API 구현 검증
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { getSolidCore } from '@shared/external/vendors';
+import { useSignalSelector, useCombinedSignalSelector } from '@shared/utils/signalSelector';
 
 import type { Accessor } from 'solid-js';
 
@@ -37,13 +38,10 @@ describe('Phase G-2-1: useSignalSelector - Native SolidJS Pattern', () => {
       // Given: SolidJS native signal
       const [count, setCount] = solid.createSignal(10);
 
-      // When: useSignalSelector로 파생 값 생성 (아직 구현 안됨)
-      // import { useSignalSelector } from '@shared/utils/signalSelector';
-      // const doubled = useSignalSelector(count, n => n * 2);
+      // When: useSignalSelector로 파생 값 생성
+      const doubled = useSignalSelector(count, n => n * 2);
 
-      // Then: createMemo로 직접 구현한 예상 동작
-      const doubled = solid.createMemo(() => count() * 2);
-
+      // Then: 올바른 값 반환
       expect(doubled()).toBe(20);
 
       setCount(15);
@@ -61,8 +59,8 @@ describe('Phase G-2-1: useSignalSelector - Native SolidJS Pattern', () => {
 
       const [obj, setObj] = solid.createSignal({ value: 10 }, { equals: false });
 
-      // 예상 API: useSignalSelector(accessor, selector, { equals: customEquals })
-      const selected = solid.createMemo(() => obj().value);
+      // useSignalSelector with custom equality (equals: false로 항상 업데이트)
+      const selected = useSignalSelector(obj, o => o.value, { equals: false });
 
       expect(selected()).toBe(10);
 
@@ -86,7 +84,7 @@ describe('Phase G-2-1: useSignalSelector - Native SolidJS Pattern', () => {
       const [count, setCount] = solid.createSignal(5);
       const computeSpy = vi.fn((n: number) => n * 3);
 
-      const tripled = solid.createMemo(() => computeSpy(count()));
+      const tripled = useSignalSelector(count, computeSpy);
 
       expect(tripled()).toBe(15);
       expect(computeSpy).toHaveBeenCalledTimes(1);
@@ -133,8 +131,8 @@ describe('Phase G-2-2: useCombinedSignalSelector - Multiple Accessors', () => {
       const [a, setA] = solid.createSignal(2);
       const [b, setB] = solid.createSignal(3);
 
-      // 예상 API: useCombinedSignalSelector([a, b], (valA, valB) => valA + valB)
-      const sum = solid.createMemo(() => a() + b());
+      // useCombinedSignalSelector API 사용
+      const sum = useCombinedSignalSelector([a, b] as const, (valA, valB) => valA + valB);
 
       expect(sum()).toBe(5);
 
