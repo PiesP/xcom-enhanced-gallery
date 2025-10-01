@@ -1,5 +1,70 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: PLAN — Epic LEGACY-CLEANUP-001 계획 수립 완료 📋
+
+- **범위**: 프로젝트 레거시 및 비추천 코드 전체 제거 계획 수립
+- **배경**:
+  - Epic SOLID-NATIVE-002 완료 후에도 45개 파일에서 217개의 레거시 패턴 잔존
+  - AUTO (자동 변환 가능): 128개
+  - SEMI_AUTO (반자동 변환): 54개
+  - MANUAL (수동 변환 필요): 35개
+- **주요 레거시 코드 유형**:
+  1. SolidJS 네이티브 패턴 미적용 (`.value`, `.subscribe()`,
+     `createGlobalSignal`)
+  2. Deprecated API (`UnifiedToastManager`, `ServiceManager` 메서드)
+  3. Legacy 유틸리티 및 호환 레이어
+  4. Twitter API Legacy 구조 처리 (외부 API 호환성 - 유지 필요)
+- **Phase 구조** (LC-A ~ LC-F):
+  1. **Phase LC-A**: 레거시 패턴 자동 변환 도구 개발 (Codemod)
+     - TypeScript AST 기반 변환
+     - False Positive 필터링 강화
+     - AUTO 패턴 128개 중 120개 이상 자동 변환 (95%+)
+  2. **Phase LC-B**: 반자동 변환 및 수동 리뷰
+     - `.value` 할당 패턴 변환 (SEMI_AUTO 54개)
+     - `.subscribe()` 메서드 변환 (MANUAL 35개)
+     - `createGlobalSignal` import 제거
+  3. **Phase LC-C**: 레거시 호환 레이어 제거
+     - `createGlobalSignal` 완전 제거
+     - Deprecated API 제거
+     - Legacy 유틸리티 정리
+  4. **Phase LC-D**: Deprecated 마커 및 주석 정리
+     - `@deprecated` 주석 처리
+     - TODO/FIXME 마커 50% 이상 감소
+     - 문서 업데이트
+  5. **Phase LC-E**: TwitterVideoExtractor Legacy API 검토
+     - Legacy API 구조 필요성 검증
+     - 처리 로직 최적화
+     - 문서화 개선
+  6. **Phase LC-F**: 최종 검증 및 문서화
+     - 레거시 패턴 0개 달성
+     - 품질 게이트 ALL GREEN
+     - 번들 크기 5-10% 감소 목표
+- **솔루션 분석 및 선택 근거**:
+  1. **TypeScript AST 기반 Codemod 선택**
+     - 정확한 변환, False positive 필터링
+     - 타입 인식, dry-run 지원
+     - 평가: ✅ 최적 (정확성과 효율성 균형)
+  2. **점진적 제거 전략 선택**
+     - 안전성 우선 (단계별 테스트)
+     - TDD 원칙 준수 (RED → GREEN → REFACTOR)
+     - 롤백 용이
+     - 평가: ✅ 선택 (안전성과 회귀 방지)
+- **목표 메트릭**:
+  - 레거시 패턴: 0개 (완전 제거)
+  - Deprecated API: 0건
+  - 테스트: 2088+ passed 유지
+  - 빌드: typecheck/lint/test ALL GREEN
+  - 번들 크기: 5-10% 감소 예상
+- **작업 산출물**:
+  - `docs/legacy-pattern-migration-map.json` (최신 스캔 결과)
+  - `scripts/scan-legacy-patterns.mjs` (레거시 패턴 스캔 도구)
+  - `docs/TDD_REFACTORING_PLAN.md` (상세 계획 문서)
+- **다음 단계**: Phase LC-A 착수 (Codemod 개발)
+- **커밋**: `docs: epic LEGACY-CLEANUP-001 계획 수립 완료`
+- **작업 브랜치**: master → epic/legacy-cleanup-001-phase-a
+
+---
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase F 완료 (검증 및 최종 문서화) ✅
 
 - **범위**: Phase F — 전체 Epic 품질 검증, 메트릭 측정, 문서화
