@@ -1,5 +1,60 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase B 완료 (Codemod 도구 개발 및
+검증) ✅
+
+- **범위**: Phase B — 자동 변환 도구 개발, AUTO 패턴 변환 준비 완료
+- **핵심 성과**:
+  - **Codemod 스크립트 개발**: `scripts/solid-native-codemod.mjs`
+    1. `.value` 읽기 패턴 자동 변환: `signal.value` → `signal()`
+    2. `.value` 쓰기 패턴 반자동 변환: `signal.value = x` → `setSignal(x)`
+       (setter 이름 자동 추론)
+    3. False positive 필터링: DOM 요소 (input.value), Object/Map 메서드
+       (Object.values()) 제외
+    4. 변환 전/후 diff 리포트 생성: 파일별/라인별 변환 내역 출력
+  - **단위 테스트 작성**: `test/cleanup/solid-native-codemod.test.ts`
+    1. TDD RED → GREEN 사이클 완료: 8개 테스트 전체 통과
+    2. `.value` 읽기/쓰기 변환 로직 검증
+    3. False positive 필터링 검증 (DOM, Object/Map 메서드)
+    4. 변환 리포트 생성 검증
+  - **변환 대상 분석**:
+    - 전체 스캔: 33개 파일
+    - 변환 필요: 25개 파일 식별
+    - 프로덕션 코드: 2개 (레거시 호환 레이어, Phase C 대상)
+    - 테스트 코드: 23개 (레거시 호환성 테스트 포함, 신중한 검토 필요)
+- **발견 사항**:
+  - `UnifiedToastManager.ts`: deprecated 경고 문자열 내 `.value` 참조 (변환
+    불필요)
+  - `signalSelector.ts`: 레거시 호환 레이어 (Phase C에서 전체 리팩토링 예정)
+  - 테스트 파일: 레거시 패턴을 의도적으로 테스트하는 케이스 다수 (변환 시 테스트
+    의도 손상 위험)
+- **결정 사항**:
+  - **프로덕션 코드 변환 보류**: 현재 감지된 패턴은 모두 Phase C/D/E에서 처리할
+    레거시 호환 레이어
+  - **테스트 코드 변환 보류**: 레거시 호환성 테스트의 의도를 보존하기 위해 Phase
+    D에서 모킹 정리와 함께 처리
+  - **Codemod 도구 완성**: Phase C 이후 실제 적용 준비 완료
+- **테스트 메트릭**:
+  - Codemod 테스트: 8/8 PASSED
+  - typecheck: ✅ PASSED (strict 오류 0)
+  - lint: ✅ PASSED
+  - 전체 테스트: 변경 없음 (코드 변경 없으므로 회귀 없음)
+- **Acceptance Criteria 달성**:
+  - ✅ Codemod 스크립트 개발 및 단위 테스트
+  - ✅ 자동 변환 로직 검증 (`.value` 읽기/쓰기)
+  - ✅ False positive 필터링 구현
+  - ✅ 변환 대상 파일 분석 완료
+  - ✅ npm 스크립트 추가: `npm run codemod:solid-native` (미리보기),
+    `npm run codemod:solid-native:apply` (적용)
+  - ⏸️ 실제 코드 변환 보류 (Phase C/D/E 선행 필요)
+  - ✅ 품질 게이트: typecheck/lint ALL GREEN
+- **다음 단계**: Phase C — `signalSelector.ts` SolidJS 네이티브 리팩토링 (레거시
+  호환 레이어 제거)
+- **커밋**: `feat(codemod): implement Phase B - SolidJS native codemod tool`
+- **작업 브랜치**: epic/solid-native-002-phase-b
+
+---
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase A 완료 (레거시 패턴 스캔 및
 마이그레이션 맵 생성)
 
