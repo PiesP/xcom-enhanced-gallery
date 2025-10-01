@@ -7257,35 +7257,8 @@
     {
       "source": "src/shared/state/createGlobalSignal.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/state/gallery-store.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/gallery-store.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./createGlobalSignal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/createGlobalSignal.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
       "dependents": [],
-      "orphan": false,
+      "orphan": true,
       "valid": true
     },
     {
@@ -8356,8 +8329,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 276,
-    "totalDependenciesCruised": 333,
+    "totalCruised": 275,
+    "totalDependenciesCruised": 332,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

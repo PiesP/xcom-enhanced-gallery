@@ -360,90 +360,96 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     }
   });
 
+  const Show = solid.Show;
+
   return (
     <GalleryContainer onClose={props.onClose} useShadowDOM={overrides.useShadowDom}>
-      <div
-        ref={node => {
-          shellRef = node ?? undefined;
-        }}
-        class={styles.shell}
-        {...hostAttributes}
-        data-open={isOpen() ? 'true' : 'false'}
-        aria-hidden={isOpen() ? 'false' : 'true'}
-        hidden={!isOpen()}
-      >
-        {useToolbarWithSettings ? (
-          <ToolbarWithSettings
-            currentIndex={currentIndex()}
-            totalCount={totalCount()}
-            isLoading={isLoading()}
-            disabled={!isOpen()}
-            onPrevious={props.onPrevious}
-            onNext={props.onNext}
-            onDownloadCurrent={props.onDownloadCurrent}
-            onDownloadAll={props.onDownloadAll}
-            onClose={props.onClose}
-            currentFitMode={fitMode()}
-            onFitOriginal={() => handleFitModeChange('original')}
-            onFitWidth={() => handleFitModeChange('fitWidth')}
-            onFitHeight={() => handleFitModeChange('fitHeight')}
-            onFitContainer={() => handleFitModeChange('fitContainer')}
-            settingsRendererFactory={
-              overrides.settingsRendererFactory === undefined
-                ? getToolbarSettingsRendererFactory()
-                : (overrides.settingsRendererFactory ?? undefined)
-            }
-            aria-label='갤러리 도구모음'
-          />
-        ) : (
-          <Toolbar
-            currentIndex={currentIndex()}
-            totalCount={totalCount()}
-            isLoading={isLoading()}
-            disabled={!isOpen()}
-            onPrevious={props.onPrevious}
-            onNext={props.onNext}
-            onDownloadCurrent={props.onDownloadCurrent}
-            onDownloadAll={props.onDownloadAll}
-            onClose={props.onClose}
-            currentFitMode={fitMode()}
-            onFitOriginal={() => handleFitModeChange('original')}
-            onFitWidth={() => handleFitModeChange('fitWidth')}
-            onFitHeight={() => handleFitModeChange('fitHeight')}
-            onFitContainer={() => handleFitModeChange('fitContainer')}
-            onOpenSettings={handleOpenSettings}
-            aria-label='갤러리 도구모음'
-          />
-        )}
-
+      <Show when={isOpen()}>
         <div
           ref={node => {
-            contentAreaRef = node ?? undefined;
+            shellRef = node ?? undefined;
           }}
-          class={styles.contentArea}
-          data-gallery-element='items-area'
+          class={styles.shell}
+          {...hostAttributes}
+          data-open='true'
+          aria-hidden='false'
+          style={{
+            'pointer-events': 'auto',
+          }}
         >
+          {useToolbarWithSettings ? (
+            <ToolbarWithSettings
+              currentIndex={currentIndex()}
+              totalCount={totalCount()}
+              isLoading={isLoading()}
+              disabled={!isOpen()}
+              onPrevious={props.onPrevious}
+              onNext={props.onNext}
+              onDownloadCurrent={props.onDownloadCurrent}
+              onDownloadAll={props.onDownloadAll}
+              onClose={props.onClose}
+              currentFitMode={fitMode()}
+              onFitOriginal={() => handleFitModeChange('original')}
+              onFitWidth={() => handleFitModeChange('fitWidth')}
+              onFitHeight={() => handleFitModeChange('fitHeight')}
+              onFitContainer={() => handleFitModeChange('fitContainer')}
+              settingsRendererFactory={
+                overrides.settingsRendererFactory === undefined
+                  ? getToolbarSettingsRendererFactory()
+                  : (overrides.settingsRendererFactory ?? undefined)
+              }
+              aria-label='갤러리 도구모음'
+            />
+          ) : (
+            <Toolbar
+              currentIndex={currentIndex()}
+              totalCount={totalCount()}
+              isLoading={isLoading()}
+              disabled={!isOpen()}
+              onPrevious={props.onPrevious}
+              onNext={props.onNext}
+              onDownloadCurrent={props.onDownloadCurrent}
+              onDownloadAll={props.onDownloadAll}
+              onClose={props.onClose}
+              currentFitMode={fitMode()}
+              onFitOriginal={() => handleFitModeChange('original')}
+              onFitWidth={() => handleFitModeChange('fitWidth')}
+              onFitHeight={() => handleFitModeChange('fitHeight')}
+              onFitContainer={() => handleFitModeChange('fitContainer')}
+              onOpenSettings={handleOpenSettings}
+              aria-label='갤러리 도구모음'
+            />
+          )}
+
           <div
             ref={node => {
-              itemsContainerRef = node ?? undefined;
+              contentAreaRef = node ?? undefined;
             }}
-            class={styles.itemsContainer}
-            data-xeg-role='items-container'
-            aria-live='polite'
+            class={styles.contentArea}
+            data-gallery-element='items-area'
           >
-            {renderItems()}
+            <div
+              ref={node => {
+                itemsContainerRef = node ?? undefined;
+              }}
+              class={styles.itemsContainer}
+              data-xeg-role='items-container'
+              aria-live='polite'
+            >
+              {renderItems()}
+            </div>
           </div>
-        </div>
 
-        {errorText() ? (
-          <div class={styles.statusBanner} data-variant='error' role='status'>
-            {errorText()}
+          {errorText() ? (
+            <div class={styles.statusBanner} data-variant='error' role='status'>
+              {errorText()}
+            </div>
+          ) : null}
+          <div class={styles.statusBanner} role='status' aria-live='polite'>
+            {currentPositionLabel()}
           </div>
-        ) : null}
-        <div class={styles.statusBanner} role='status' aria-live='polite'>
-          {currentPositionLabel()}
         </div>
-      </div>
+      </Show>
     </GalleryContainer>
   );
 };

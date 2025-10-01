@@ -24,11 +24,12 @@ describe('UnifiedToastManager Solid integration', () => {
       route: 'toast-only',
     });
 
-    expect(toastManager.signal.accessor()).toHaveLength(1);
-    expect(toastManager.signal.accessor()[0]?.id).toBe(toastId);
+    // Native pattern: getToasts()는 Accessor 함수
+    expect(toastManager.getToasts()).toHaveLength(1);
+    expect(toastManager.getToasts()[0]?.id).toBe(toastId);
 
     toastManager.remove(toastId);
-    expect(toastManager.signal.accessor()).toHaveLength(0);
+    expect(toastManager.getToasts()).toHaveLength(0);
   });
 
   it('notifies subscribers about toast list changes', () => {
@@ -70,10 +71,10 @@ describe('UnifiedToastManager Solid integration', () => {
       route: 'toast-only', // 명시적 라우팅 지정
     });
 
-    expect(toastManager.signal.accessor()).toHaveLength(1);
+    expect(toastManager.getToasts()).toHaveLength(1);
 
     removeToast(infoId);
-    expect(toastManager.signal.accessor()).toHaveLength(0);
+    expect(toastManager.getToasts()).toHaveLength(0);
 
     // success도 기본적으로 'live-only' → 명시적 라우팅 필요
     toastManager.show({
@@ -82,8 +83,8 @@ describe('UnifiedToastManager Solid integration', () => {
       type: 'success',
       route: 'toast-only',
     });
-    expect(toastManager.signal.accessor()).toHaveLength(1);
+    expect(toastManager.getToasts()).toHaveLength(1);
     clearAllToasts();
-    expect(toastManager.signal.accessor()).toHaveLength(0);
+    expect(toastManager.getToasts()).toHaveLength(0);
   });
 });

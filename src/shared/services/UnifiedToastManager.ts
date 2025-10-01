@@ -1,11 +1,12 @@
 /**
  * @fileoverview 통합된 Toast 관리자
  * @description ToastController와 Toast 컴포넌트의 중복 상태 관리를 통합한 단일 관리자
- * @version 1.0.0 - TDD 기반 중복 제거 구현
+ * @version 2.0.0 - SolidJS 네이티브 패턴 마이그레이션
  */
 
+import type { Accessor, Setter } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { createGlobalSignal } from '@shared/state/createGlobalSignal';
 import {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
@@ -51,14 +52,21 @@ export interface ToastOptions {
  * 기존 ToastController.ts의 Map 기반 상태 관리와
  * Toast.tsx의 signals 기반 상태 관리를 통합하여
  * 단일 소스의 진실(Single Source of Truth)을 제공합니다.
+ *
+ * SolidJS 네이티브 패턴 사용: createSignal() 기반
  */
 export class ToastManager {
   private static instance: ToastManager | null = null;
-  private readonly toastsSignal = createGlobalSignal<ToastItem[]>([]);
+  private readonly toastsAccessor: Accessor<ToastItem[]>;
+  private readonly setToasts: Setter<ToastItem[]>;
   private toastIdCounter = 0;
 
   private constructor() {
-    logger.debug('[ToastManager] 초기화됨');
+    const { createSignal } = getSolidCore();
+    const [toasts, setToasts] = createSignal<ToastItem[]>([]);
+    this.toastsAccessor = toasts;
+    this.setToasts = setToasts;
+    logger.debug('[ToastManager] 초기화됨 (네이티브 패턴)');
   }
 
   /**
@@ -104,8 +112,7 @@ export class ToastManager {
     }
 
     if (route === 'toast-only' || route === 'both') {
-      const currentToasts = this.toastsSignal.value;
-      this.toastsSignal.value = [...currentToasts, toast];
+      this.setToasts(currentToasts => [...currentToasts, toast]);
 
       logger.debug(`[ToastManager] Toast shown: ${options.title} - ${options.message}`);
     }
@@ -166,67 +173,57 @@ export class ToastManager {
    * 특정 Toast 제거
    */
   public remove(id: string): void {
-    const currentToasts = this.toastsSignal.value;
-    const filteredToasts = currentToasts.filter(toast => toast.id !== id);
-
-    if (filteredToasts.length !== currentToasts.length) {
-      this.toastsSignal.value = filteredToasts;
-      logger.debug(`[ToastManager] Toast 제거: ${id}`);
-    }
+    this.setToasts(currentToasts => {
+      const filteredToasts = currentToasts.filter(toast => toast.id !== id);
+      if (filteredToasts.length !== currentToasts.length) {
+        logger.debug(`[ToastManager] Toast 제거: ${id}`);
+      }
+      return filteredToasts;
+    });
   }
 
   /**
    * 모든 Toast 제거
    */
   public clear(): void {
-    this.toastsSignal.value = [];
+    this.setToasts([]);
     logger.debug('[ToastManager] 모든 Toast 제거');
   }
 
   /**
-   * 현재 Toast 목록 가져오기
+   * 현재 Toast 목록 가져오기 (Accessor 함수 반환)
    */
-  public getToasts(): ToastItem[] {
-    return this.toastsSignal.value;
-  }
+  public getToasts: Accessor<ToastItem[]> = () => {
+    return this.toastsAccessor();
+  };
 
   /**
-   * Toast 상태 변화 구독
+   * Toast 상태 변화 구독 (레거시 호환성 - 제거 예정)
+   * @deprecated createEffect()를 직접 사용하세요
    */
   public subscribe(callback: (toasts: ToastItem[]) => void): () => void {
-    const unsubscribe = this.toastsSignal.subscribe(callback);
-    callback(this.getToasts());
+    logger.warn(
+      '[ToastManager] subscribe() 메서드는 deprecated입니다. createEffect()를 사용하세요.'
+    );
+    const { createEffect } = getSolidCore();
+
+    createEffect(() => {
+      const toasts = this.toastsAccessor();
+      callback(toasts);
+    });
+
     return () => {
-      if (unsubscribe) {
-        try {
-          unsubscribe();
-        } catch {
-          /* noop */
-        }
-      }
+      // createEffect는 createRoot/render 내부에서 자동으로 정리됨
     };
   }
 
   /**
-   * Solid signals와의 통합을 위한 accessor 인터페이스
+   * Solid signals와의 통합을 위한 accessor 인터페이스 (레거시 호환성 - 제거 예정)
+   * @deprecated getToasts() Accessor를 직접 사용하세요
    */
   public get signal() {
-    const globalSignal = this.toastsSignal;
-    return {
-      get value(): ToastItem[] {
-        return globalSignal.value;
-      },
-      set value(_: ToastItem[]) {
-        logger.warn(
-          '[ToastManager] 직접 상태 설정은 허용되지 않습니다. 관리자 메서드를 사용하세요.'
-        );
-      },
-      get accessor() {
-        return globalSignal.accessor;
-      },
-      peek: () => globalSignal.peek(),
-      subscribe: (listener: (value: ToastItem[]) => void) => globalSignal.subscribe(listener),
-    };
+    logger.warn('[ToastManager] signal 속성은 deprecated입니다. getToasts()를 사용하세요.');
+    return undefined;
   }
 
   /**
@@ -330,9 +327,11 @@ export function clearAllToasts(): void {
 
 /**
  * Solid 컴포넌트에서 사용할 수 있는 signals 기반 상태
+ * @deprecated getToasts() Accessor를 직접 사용하세요
  */
 export const toasts = {
   get value(): ToastItem[] {
+    logger.warn('[toasts.value] deprecated입니다. toastManager.getToasts()()를 사용하세요.');
     return toastManager.getToasts();
   },
   set value(_: ToastItem[]) {
@@ -340,12 +339,18 @@ export const toasts = {
     logger.warn('[ToastManager] 직접 상태 설정은 허용되지 않습니다. 관리자 메서드를 사용하세요.');
   },
   subscribe(callback: (value: ToastItem[]) => void) {
+    logger.warn('[toasts.subscribe] deprecated입니다. createEffect()를 사용하세요.');
     return toastManager.subscribe(callback);
   },
 };
 
 /**
- * 마이그레이션 가이드:
+ * 마이그레이션 가이드 (v2.0.0 - 네이티브 패턴):
+ *
+ * 기존 호환 레이어 → SolidJS 네이티브
+ * - toastManager.getToasts() → toastManager.getToasts() (이미 Accessor 함수)
+ * - toasts.value → toastManager.getToasts()() (함수 호출)
+ * - toasts.subscribe() → createEffect(() => { toastManager.getToasts(); })
  *
  * 기존 ToastController.ts 사용 → ToastManager로 교체
  * - toastController.show() → toastManager.show() (또는 기존 toastController 별칭 사용)
@@ -354,8 +359,4 @@ export const toasts = {
  * 기존 Toast.tsx의 addToast/removeToast → 통합된 함수 사용
  * - addToast() → addToast() (동일하지만 내부적으로 통합된 관리자 사용)
  * - removeToast() → removeToast() (동일하지만 내부적으로 통합된 관리자 사용)
- *
- * 기존 Toast 컴포넌트의 signals → 통합된 signals 사용
- * - toasts.value → toastManager.getToasts() 또는 toasts.value
- * - toasts.subscribe() → toastManager.subscribe() 또는 toasts.subscribe()
  */
