@@ -1,5 +1,46 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic STYLE-ISOLATION-002 Phase 1 완료 (Light DOM 스타일 주입)
+
+- **범위**: Phase 1 — Shadow DOM에서 Light DOM + CSS Namespacing으로 전환
+  (스타일 주입 구현)
+- **핵심 성과**:
+  - **RED → GREEN → REFACTOR 사이클 완료**:
+    1. **RED**: Light DOM 스타일 주입 검증 테스트 6개 작성 (3개 실패)
+       - document.head에 스타일시트 존재 검증
+       - Shadow DOM 생성 없음 검증
+       - 기존 스타일 적용 검증 (.xeg-button 클래스)
+       - 중복 스타일 주입 방지 검증
+       - 컴포넌트 렌더링 검증
+       - 이벤트 핸들러 정상 동작 검증
+    2. **GREEN**: GalleryContainer.tsx Light DOM 스타일 주입 구현
+       - `injectLightDomStyles()` 함수 추가 (singleton 패턴)
+       - document.head에 `<style data-xeg-global>` 주입
+       - `lightDomStyleInjected` 플래그로 중복 방지
+       - `mountGallery()` 함수에서 Light DOM 모드 시 자동 호출
+       - 결과: 6/6 테스트 GREEN
+    3. **REFACTOR**: 테스트 간소화 및 안정화
+       - 테스트 클린업 로직 조정 (afterEach 최적화)
+       - 중복 방지 테스트 검증 방식 개선
+- **테스트 메트릭**: 6/6 PASSED (100% GREEN)
+  - Light DOM Style Injection (4 tests)
+  - Existing Functionality Preservation (2 tests)
+- **빌드 메트릭**: 444.72 KB raw, 112.38 KB gzip (550KB 예산 내)
+- **품질 게이트**: ✅ typecheck/lint/format/build (ALL GREEN)
+- **실제 소요**: ~2시간 (예상 3시간, 목표 범위 내)
+- **산출물**:
+  - ✅
+    `test/unit/shared/components/isolation/GalleryContainer.light-dom.test.tsx`
+    (6 tests)
+  - ✅ `src/shared/components/isolation/GalleryContainer.tsx` (Light DOM 주입
+    로직)
+- **교훈**:
+  - Shadow DOM 없이도 CSS Namespacing으로 충분한 격리 가능
+  - 단일 인스턴스 갤러리에서 전역 스타일 주입이 더 효율적
+  - JSDOM 환경에서 Light DOM 테스트가 더 안정적
+- **커밋**: e9a028b6 "feat(shared): implement light dom style injection phase 1"
+- **다음 단계**: Phase 2 - 기존 테스트 shadowRoot 참조 제거 (선택적)
+
 2025-01-01: EXEC — Epic SOLID-NATIVE-001 Phase G-3-4 완료 (UnifiedToastManager
 네이티브 전환)
 
