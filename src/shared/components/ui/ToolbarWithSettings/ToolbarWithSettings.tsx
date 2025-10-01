@@ -48,6 +48,7 @@ export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JS
     'settingsPosition',
     'settingsTestId',
     'settingsRendererFactory',
+    'onClose',
   ]);
 
   const [isSettingsOpen, setIsSettingsOpen] = solid.createSignal(false);
@@ -78,7 +79,7 @@ export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JS
       setIsSettingsOpen(false);
     } else {
       // 설정 모달이 닫혀있으면 갤러리 닫기
-      toolbarProps.onClose?.();
+      local.onClose?.();
     }
   };
 
@@ -175,19 +176,26 @@ export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JS
     }
   });
 
+  const Show = solid.Show;
+
   return (
     <>
       <Toolbar {...toolbarProps} onOpenSettings={handleOpenSettings} onClose={handleToolbarClose} />
-      {local.settingsRendererFactory ? (
+      <Show
+        when={local.settingsRendererFactory}
+        fallback={
+          <Show when={isSettingsOpen()}>
+            <SettingsModal
+              isOpen={true}
+              onClose={handleCloseSettings}
+              position={normalizedSettingsPosition()}
+              data-testid={local.settingsTestId}
+            />
+          </Show>
+        }
+      >
         <div ref={attachExternalContainer} data-xeg-toolbar-settings-host='' />
-      ) : isSettingsOpen() ? (
-        <SettingsModal
-          isOpen={isSettingsOpen()}
-          onClose={handleCloseSettings}
-          position={normalizedSettingsPosition()}
-          data-testid={local.settingsTestId}
-        />
-      ) : null}
+      </Show>
     </>
   );
 };
