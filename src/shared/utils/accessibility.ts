@@ -138,10 +138,9 @@ export function detectActualBackgroundColor(element: Element): string {
 }
 
 /**
- * 요소 뒤의 배경이 밝은지 어두운지 감지합니다.
- * 툴바나 오버레이의 동적 대비 조정에 사용됩니다.
+ * 요소의 밝은 배경 여부 감지
  */
-export function detectLightBackground(element: Element): boolean {
+export function isLightBackground(element: Element): boolean {
   const rect = element.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;

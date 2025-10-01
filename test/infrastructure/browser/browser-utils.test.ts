@@ -15,7 +15,7 @@ import {
   safeClearTimeout,
   getViewportSize,
   getDevicePixelRatio,
-  matchesMediaQuery,
+  doesMediaQueryMatch,
   isDarkMode,
   doesUserPreferReducedMotion,
 } from '@shared/browser/utils/browser-utils';
@@ -343,7 +343,7 @@ describe('Browser Utilities', () => {
 
   describe('Media Query Support', () => {
     it('should match media query', () => {
-      const matches = matchesMediaQuery('(min-width: 768px)');
+      const matches = doesMediaQueryMatch('(min-width: 768px)');
       expect(matches).toBe(true);
       expect(mockWindow.matchMedia).toHaveBeenCalledWith('(min-width: 768px)');
     });
@@ -353,14 +353,14 @@ describe('Browser Utilities', () => {
         throw new Error('Invalid query');
       });
 
-      const matches = matchesMediaQuery('invalid-query');
+      const matches = doesMediaQueryMatch('invalid-query');
       expect(matches).toBe(false);
     });
 
     it('should handle missing matchMedia', () => {
       mockWindow.matchMedia = undefined;
 
-      const matches = matchesMediaQuery('(min-width: 768px)');
+      const matches = doesMediaQueryMatch('(min-width: 768px)');
       expect(matches).toBe(false);
     });
 

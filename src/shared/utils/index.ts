@@ -46,7 +46,7 @@ export {
 export { canTriggerGallery, isGalleryInternalElement, isGalleryContainer } from './utils';
 
 // === 접근성 (2개) ===
-export { detectLightBackground, getRelativeLuminance } from './accessibility';
+export { isLightBackground, getRelativeLuminance } from './accessibility';
 
 // === 에러 처리 (4개) ===
 export {
