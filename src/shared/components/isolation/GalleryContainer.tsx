@@ -51,6 +51,26 @@ const HOST_RULES = `
  */
 const shadowStyleCache = new WeakMap<ShadowRoot, boolean>();
 
+/**
+ * Light DOM 전역 스타일 주입 (단일 인스턴스)
+ */
+let lightDomStyleInjected = false;
+
+function injectLightDomStyles(): void {
+  if (lightDomStyleInjected) {
+    return;
+  }
+
+  const globalCssText = (globalThis as { XEG_CSS_TEXT?: string }).XEG_CSS_TEXT ?? '';
+  const styleElement = document.createElement('style');
+  styleElement.setAttribute('data-xeg-global', 'true');
+  styleElement.textContent = globalCssText;
+  document.head.appendChild(styleElement);
+
+  lightDomStyleInjected = true;
+  logger.debug('Light DOM styles injected to document.head');
+}
+
 function injectShadowStyles(shadowRoot: ShadowRoot): void {
   // 이미 주입된 Shadow DOM은 스킵
   if (shadowStyleCache.has(shadowRoot)) {
@@ -129,6 +149,8 @@ export function mountGallery(
       : { shadowRoot: undefined, renderTarget: container };
 
     if (!shadowRoot) {
+      // Light DOM 모드: 전역 스타일 주입
+      injectLightDomStyles();
       container.replaceChildren();
       logger.debug('Gallery mounted without Shadow DOM (fallback mode)');
     }
