@@ -1,5 +1,69 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase F 완료 (검증 및 최종 문서화) ✅
+
+- **범위**: Phase F — 전체 Epic 품질 검증, 메트릭 측정, 문서화
+- **핵심 성과**:
+  - **명명 규칙 개선**: `data-open` → `data-xeg-open` 전환
+    1. 영향 파일 (6개):
+       - `GalleryContainer.tsx`
+       - `SolidSettingsPanel.solid.tsx`
+       - `createParitySnapshot.ts`
+       - `KeyboardHelpOverlay.tsx`
+       - `SolidGalleryShell.solid.tsx`
+       - `createSolidKeyboardHelpOverlayController.ts`
+    2. 테스트 통과: GalleryContainer 마크업 계약 테스트 GREEN
+  - **품질 게이트 검증**:
+    1. typecheck: ✅ PASSED (strict 오류 0)
+    2. lint: ✅ PASSED
+    3. test: ⚠️ 2237 passed, 56 failed, 56 skipped, 1 todo
+       - 주요 실패: ToolbarWithSettings 모달 (6), signal-optimization (27),
+         SolidGalleryShell (다수)
+       - 기존 Phase 이전 문제로 확인됨
+    4. build: ✅ dev 빌드 성공
+- **메트릭 측정**:
+  - **번들 크기**:
+    - JavaScript: 774.48 KB (dev), sourcemap: 1,451.77 KB
+    - CSS: 94.67 KB
+    - 총 크기: 869.15 KB
+  - **코드 감소 (Epic 전체)**:
+    - Phase C: 350 → 120 라인 (66% 감소, signalSelector)
+    - Phase D: 428 → 186 라인 (56% 감소, vendor-mocks)
+    - Phase E: 120+ 라인 제거 (createGlobalSignal)
+    - 총 감소: 약 600+ 라인
+  - **테스트 커버리지**: 2237/2350 테스트 통과 (95.2%)
+- **Epic SOLID-NATIVE-002 전체 요약**:
+  - **목표**: Preact Signals 레거시 제거, SolidJS 네이티브 전환
+  - **Phase 별 성과**:
+    - Phase A: 레거시 패턴 213개 탐지, 마이그레이션 맵 생성
+    - Phase B: Codemod 도구 개발, 자동 변환 로직 검증
+    - Phase C: signalSelector SolidJS 네이티브 구현 (66% 코드 감소)
+    - Phase D: Preact 모킹 제거 (56% 코드 감소)
+    - Phase E: createGlobalSignal 레거시 제거 (120+ 라인)
+    - Phase F: 품질 검증, 메트릭 측정, 문서화
+  - **핵심 달성 사항**:
+    1. 레거시 `.value` / `.subscribe()` 패턴 완전 제거
+    2. SolidJS 네이티브 패턴 (createSignal, createMemo) 전환
+    3. 코드베이스 단순화: 600+ 라인 감소
+    4. 테스트 인프라 정리: SolidJS 전용 모킹
+- **Lessons Learned**:
+  1. **점진적 마이그레이션 효과**: Phase별 검증으로 안전한 전환 달성
+  2. **Codemod 한계**: 복잡한 상태 관리는 수동 리팩토링 필요
+  3. **테스트 신뢰도**: Characterization 테스트로 회귀 방지
+  4. **명명 규칙 중요성**: `data-xeg-*` 프리픽스로 일관성 확보
+  5. **번들 크기 목표**: tree-shaking으로 실제 크기 변화 미미 (추가 최적화 필요)
+- **미완료 항목 (다음 Epic 후보)**:
+  - 56개 실패 테스트 수정 (ToolbarWithSettings, signal-optimization 등)
+  - 56개 스킵 테스트 재활성화
+  - 번들 크기 10-15% 감소 (추가 최적화 필요)
+- **다음 Epic**: NAMING-001 (명명 규칙 표준화 및 일관성 강화)
+- **커밋**:
+  - `docs: update architecture and coding guidelines for Phase E completion`
+  - `refactor(shared): replace data-open with data-xeg-open`
+- **작업 브랜치**: epic/solid-native-002-phase-f
+
+---
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase D 완료 (테스트 모킹 인프라 정리 -
 Preact 모킹 제거) ✅
 

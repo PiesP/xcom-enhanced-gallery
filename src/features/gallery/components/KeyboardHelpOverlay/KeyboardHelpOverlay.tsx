@@ -183,7 +183,7 @@ export const KeyboardHelpOverlay = (props: KeyboardHelpOverlayProps) => {
             aria-modal='true'
             aria-labelledby={titleId}
             aria-describedby={descId}
-            data-open='true'
+            data-xeg-open='true'
           >
             <IconButton
               ref={(node: HTMLButtonElement | null) => {

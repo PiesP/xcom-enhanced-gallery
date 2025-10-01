@@ -203,7 +203,7 @@ function extractSolidSnapshot(panel: HTMLElement): SettingsSnapshot {
   }
 
   return {
-    isOpen: panel.getAttribute('data-open') === 'true',
+    isOpen: panel.getAttribute('data-xeg-open') === 'true',
     labels: {
       theme: themeLabel,
       language: languageLabel,

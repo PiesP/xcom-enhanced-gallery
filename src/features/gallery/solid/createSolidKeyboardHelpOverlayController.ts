@@ -54,7 +54,7 @@ export function createSolidKeyboardHelpOverlayController(): SolidKeyboardHelpOve
             return;
           }
           const openState = openSignal();
-          container.setAttribute('data-open', openState ? 'true' : 'false');
+          container.setAttribute('data-xeg-open', openState ? 'true' : 'false');
           if (openState) {
             container.removeAttribute('aria-hidden');
           } else {

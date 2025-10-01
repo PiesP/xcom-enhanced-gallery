@@ -361,7 +361,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
           }}
           class={styles.shell}
           {...hostAttributes}
-          data-open='true'
+          data-xeg-open='true'
           aria-hidden='false'
           style={{
             'pointer-events': 'auto',
