@@ -58,7 +58,17 @@ function setupURLPolyfill() {
     // 무시
   }
 
-  // global 레벨에도 설정 (안전하게)
+  // global 레벨에도 설정 (안전하게) - Node.js의 global 네임스페이스
+  try {
+    const nodeGlobal = (globalThis as any).global || (process as any).global;
+    if (nodeGlobal && typeof nodeGlobal === 'object') {
+      nodeGlobal.URL = URLPolyfill;
+    }
+  } catch {
+    // 무시
+  }
+
+  // globalThis.global을 통한 접근도 보장
   try {
     if (typeof (globalThis as any).global !== 'undefined') {
       (globalThis as any).global.URL = URLPolyfill;
