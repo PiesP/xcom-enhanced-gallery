@@ -359,7 +359,7 @@ export async function main() {
 if (import.meta.url.startsWith('file://')) {
   const scriptPath = fileURLToPath(import.meta.url);
   const isMainModule = process.argv[1] && resolve(process.argv[1]) === scriptPath;
-  
+
   if (isMainModule) {
     main().catch(err => {
       console.error('Error:', err);
