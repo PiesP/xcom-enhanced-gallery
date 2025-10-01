@@ -3,7 +3,7 @@
 /**
  * @file scripts/scan-legacy-patterns.mjs
  * @description Epic SOLID-NATIVE-002 Phase A: 레거시 패턴 스캔 스크립트
- * 
+ *
  * 목표: .value, .subscribe(), createGlobalSignal 패턴을 스캔하고
  *       마이그레이션 맵을 생성합니다.
  */
@@ -41,7 +41,7 @@ function scanLegacyPatterns(code) {
     /\bentry\.value\b/,
     /\boption\.value\b/,
     /\bcachedTextarea\.value\b/,
-    /\.keys\(\)\.next\(\)\.value/,  // Iterator.next().value
+    /\.keys\(\)\.next\(\)\.value/, // Iterator.next().value
   ];
 
   lines.forEach((line, index) => {
@@ -116,7 +116,7 @@ function classifyPatterns(patterns) {
 
   patterns.forEach(pattern => {
     const enhanced = { ...pattern, complexity: '' };
-    
+
     switch (pattern.type) {
       case 'value-read':
         enhanced.complexity = 'auto';
@@ -162,7 +162,7 @@ async function main() {
 
   const srcPattern = 'src/**/*.{ts,tsx}';
   const testPattern = 'test/**/*.{ts,tsx}';
-  
+
   const srcFiles = await glob(srcPattern, { ignore: 'node_modules/**' });
   const testFiles = await glob(testPattern, { ignore: 'node_modules/**' });
   const allFiles = [...srcFiles, ...testFiles];
@@ -244,7 +244,9 @@ async function main() {
     console.log('🔥 HIGH 우선순위 파일 (상위 5개):');
     highPriority.slice(0, 5).forEach(file => {
       console.log(`   - ${file.path}`);
-      console.log(`     패턴: ${file.patterns.length}개 (AUTO: ${file.classified.auto.length}, SEMI: ${file.classified.semiAuto.length}, MANUAL: ${file.classified.manual.length})`);
+      console.log(
+        `     패턴: ${file.patterns.length}개 (AUTO: ${file.classified.auto.length}, SEMI: ${file.classified.semiAuto.length}, MANUAL: ${file.classified.manual.length})`
+      );
     });
     console.log();
   }
