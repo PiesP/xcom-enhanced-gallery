@@ -55,8 +55,8 @@ describe('GalleryRenderer implementation marker', () => {
 
     await waitFor(() => {
       expect(container?.getAttribute('data-renderer-impl')).toBe('solid');
-      const shadowRoot = container?.shadowRoot;
-      expect(shadowRoot?.querySelector('[data-xeg-solid-shell]')).toBeTruthy();
+      // Light DOM 모드: 직접 쿼리
+      expect(container?.querySelector('[data-xeg-solid-shell]')).toBeTruthy();
       expect(container?.querySelector('[data-xeg-toolbar-settings-host]')).toBeFalsy();
     });
   });
@@ -76,8 +76,8 @@ describe('GalleryRenderer implementation marker', () => {
     const container = document.querySelector('.xeg-gallery-renderer');
     await waitFor(() => {
       expect(container?.getAttribute('data-renderer-impl')).toBe('preact');
-      const shadowRoot = container?.shadowRoot;
-      expect(shadowRoot?.querySelector('[data-xeg-solid-shell]')).toBeFalsy();
+      // Light DOM 모드: 직접 쿼리
+      expect(container?.querySelector('[data-xeg-solid-shell]')).toBeFalsy();
       expect(container?.querySelector('[data-xeg-toolbar-settings-host]')).toBeTruthy();
     });
   });

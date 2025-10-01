@@ -90,7 +90,7 @@ describe('Gallery Close DOM Cleanup (회귀 방지)', () => {
       // 컨테이너 존재 확인
       container = document.querySelector('#xeg-gallery-root') as HTMLElement;
       expect(container).toBeTruthy();
-      expect(container?.shadowRoot).toBeTruthy();
+      // Light DOM 모드: shadowRoot 확인 불필요
 
       // Act: 갤러리 닫기
       renderer.close();
@@ -137,8 +137,8 @@ describe('Gallery Close DOM Cleanup (회귀 방지)', () => {
       await renderer.render(mockMedia, 0);
 
       container = document.querySelector('#xeg-gallery-root') as HTMLElement;
-      const shadowRoot = container?.shadowRoot;
-      expect(shadowRoot).toBeTruthy();
+      // Light DOM 모드: 컨테이너만 확인
+      expect(container).toBeTruthy();
 
       // Act
       renderer.close();

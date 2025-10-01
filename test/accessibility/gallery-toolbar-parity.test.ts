@@ -40,15 +40,12 @@ function registerMediaServiceStub(): () => void {
   };
 }
 
-function getShadowHost(): HTMLElement {
+function getGalleryHost(): HTMLElement {
   const root = document.querySelector('#xeg-gallery-root') as HTMLElement | null;
   if (!root) {
     throw new Error('Gallery root not found');
   }
-  const shadowContent = root.shadowRoot?.querySelector('[data-xeg-shadow-content="true"]');
-  if (shadowContent instanceof HTMLElement) {
-    return shadowContent;
-  }
+  // Light DOM 모드: shadowRoot 없이 직접 컨테이너 반환
   return root;
 }
 
@@ -100,7 +97,7 @@ describe('FRAME-ALT-001 Stage E — Gallery toolbar parity', () => {
     await renderer.render(MEDIA_ITEMS, { startIndex: 0 });
 
     const host = await waitFor(() => {
-      const node = getShadowHost();
+      const node = getGalleryHost();
       const toolbar = node.querySelector('[data-gallery-element="toolbar"]');
       if (!toolbar) {
         throw new Error('Toolbar element not found yet');
