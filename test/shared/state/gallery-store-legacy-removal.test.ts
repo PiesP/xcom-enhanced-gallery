@@ -76,18 +76,22 @@ describe('Phase G-3-5: gallery-store Legacy Removal', () => {
   });
 
   describe('Test Migration Strategy', () => {
-    it('should document migration plan for gallery-state-centralization.test.ts', () => {
-      // 테스트 파일은 gallery.signals.ts를 사용하도록 업데이트 예정
+    it('should confirm legacy test file has been removed or migrated', () => {
+      // gallery-state-centralization.test.ts는 이미 제거되었거나 마이그레이션 완료
+      // 더 이상 gallery-store.ts에 의존하는 테스트가 없어야 함
+
       const CENTRALIZATION_TEST_PATH = resolve(
         process.cwd(),
         'test/state/gallery-state-centralization.test.ts'
       );
 
       const testExists = existsSync(CENTRALIZATION_TEST_PATH);
-      expect(testExists).toBe(true);
 
-      // TODO: 이 테스트는 gallery.signals.ts를 사용하도록 업데이트 필요
-      // 또는 테스트 자체가 레거시 API 검증용이면 제거 고려
+      // Phase G-3-5 완료: 레거시 테스트 파일도 제거됨
+      expect(testExists).toBe(false);
+
+      // Note: gallery.signals.ts를 사용하는 새로운 테스트는
+      // test/shared/state/gallery-signals-native.test.ts에 존재
     });
   });
 });
