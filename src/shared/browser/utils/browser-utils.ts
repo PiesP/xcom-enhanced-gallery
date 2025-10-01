@@ -186,14 +186,14 @@ export function getDevicePixelRatio(): number {
 /**
  * 미디어 쿼리 매칭
  */
-export function matchesMediaQuery(query: string): boolean {
+export function doesMediaQueryMatch(query: string): boolean {
   const win = safeWindow();
   if (!win?.matchMedia) return false;
 
   try {
     return win.matchMedia(query).matches;
   } catch (error) {
-    logger.warn(`Failed to match media query "${query}":`, error);
+    logger.warn('browser-utils', 'matchMedia failed', error);
     return false;
   }
 }
@@ -202,14 +202,14 @@ export function matchesMediaQuery(query: string): boolean {
  * 다크 모드 감지
  */
 export function isDarkMode(): boolean {
-  return matchesMediaQuery('(prefers-color-scheme: dark)');
+  return doesMediaQueryMatch('(prefers-color-scheme: dark)');
 }
 
 /**
  * 리듀스드 모션 감지
  */
 export function doesUserPreferReducedMotion(): boolean {
-  return matchesMediaQuery('(prefers-reduced-motion: reduce)');
+  return doesMediaQueryMatch('(prefers-reduced-motion: reduce)');
 }
 
 /**

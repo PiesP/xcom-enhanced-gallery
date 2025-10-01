@@ -47,7 +47,7 @@ export {
   meetsWCAGAA,
   meetsWCAGAAA,
   detectActualBackgroundColor,
-  detectLightBackground,
+  isLightBackground,
 } from './accessibility';
 
 // Performance utilities (re-export from performance module)

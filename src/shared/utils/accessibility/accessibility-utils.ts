@@ -190,7 +190,7 @@ export function detectActualBackgroundColor(element: HTMLElement): string {
  * @param element - 검사할 DOM 요소
  * @returns true면 밝은 배경, false면 어두운 배경
  */
-export function detectLightBackground(element: HTMLElement): boolean {
+export function isLightBackground(element: HTMLElement): boolean {
   const bgColor = detectActualBackgroundColor(element);
   const rgb = parseColor(bgColor);
 
