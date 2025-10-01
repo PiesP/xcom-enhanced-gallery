@@ -127,25 +127,26 @@
 **우선순위 기준**: 사용자 경험 문제 해결 → 기술 부채 해소
 
 1. **Epic: UX-001** — 갤러리 사용자 경험 개선 (우선순위: High)
-   - 문제 3: 갤러리 스크롤 비활성 (High 영향도)
-   - 문제 1: 툴바 아이콘 렌더링 지연 (Medium 영향도)
-   - 문제 2: 툴바 자동 숨김 미작동 (Medium 영향도)
-   - 문제 4: DOM 구조 복잡도 (Low 영향도)
+   - 문제 3: 갤러리 스크롤 비활성 (High 영향도) - ⚡ Phase C 진행 중 (브라우저
+     검증 필요)
+   - 문제 1: 툴바 아이콘 렌더링 지연 (Medium 영향도) - ✅ Phase A 완료
+   - 문제 2: 툴바 자동 숨김 미작동 (Medium 영향도) - ✅ Phase B 완료
+   - 문제 4: DOM 구조 복잡도 (Low 영향도) - ✅ Phase D 완료
 2. **Epic: SOLID-NATIVE-001** — SolidJS 네이티브 패턴 완전 이행 (우선순위:
-   Medium)
+   High) - ✅ **완료** (2025-10-01)
 3. **Epic: STYLE-ISOLATION-002** — Shadow DOM 최적화 (우선순위: Medium)
    - Light DOM 전환으로 복잡도 감소 및 테스트 커버리지 향상
 
 ---
 
-## Epic: SOLID-NATIVE-001 — SolidJS 네이티브 패턴 완전 이행
+## Epic: SOLID-NATIVE-001 — SolidJS 네이티브 패턴 완전 이행 ✅ **완료** (2025-10-01)
 
 **목표**: 호환 레이어(createGlobalSignal .value 방식)에서 SolidJS 네이티브
 패턴(createSignal 함수 호출)으로 완전 전환
 
-**현 상태**: ✅ **즉시 착수 가능** (2025-09-30)
+**최종 상태**: ✅ **완료**
 
-**우선순위**: ⬆️ **High** (Medium에서 상향 조정)
+**우선순위**: ⬆️ **High** → ✅ **완료**
 
 - 기술 부채 축적 방지 (신규 코드가 레거시 패턴을 답습)
 - SolidJS 생태계 표준 정합성 확보 (학습 곡선 개선)
@@ -185,21 +186,26 @@ const isOpen = galleryState().isOpen;       // getter 함수 호출
 createEffect(() => { /* galleryState() 구독 */ });  // effect로 구독
 ```
 
-**변경 범위 분석** (Phase G-3-3-Cleanup 기준):
+**변경 범위 분석** (Phase G-3-5 완료 기준):
 
-| 영역          | 파일 수 (실제) | 주요 변경                                  | 영향도 | 상태           |
-| ------------- | -------------- | ------------------------------------------ | ------ | -------------- |
-| State Signals | 5개            | `createGlobalSignal` → `createSignal` 전환 | High   | 3/5 완료 ⚡    |
-| Components    | 6개            | `.value` → 함수 호출 방식 수정 (50회)      | Medium | 대부분 완료 ✅ |
-| Services      | 1개            | UnifiedToastManager 내부 signal 전환       | Low    | 예정 🔄        |
-| Utils         | 1개            | `signalSelector.ts` 유틸리티 조정          | Medium | 완료 ✅        |
-| Tests         | ~20개          | 테스트 패턴 업데이트                       | Medium | 진행 중 ⚡     |
+| 영역          | 파일 수 (실제) | 주요 변경                                  | 영향도 | 상태    |
+| ------------- | -------------- | ------------------------------------------ | ------ | ------- |
+| State Signals | 5개            | `createGlobalSignal` → `createSignal` 전환 | High   | 완료 ✅ |
+| Components    | 6개            | `.value` → 함수 호출 방식 수정 (50회)      | Medium | 완료 ✅ |
+| Services      | 1개            | UnifiedToastManager 내부 signal 전환       | Low    | 완료 ✅ |
+| Utils         | 1개            | `signalSelector.ts` 유틸리티 조정          | Medium | 완료 ✅ |
+| Tests         | ~20개          | 테스트 패턴 업데이트                       | Medium | 완료 ✅ |
 
-**남은 작업**:
+**완료 상태** (2025-10-01):
 
-- UnifiedToastManager.ts (createGlobalSignal 사용 중)
-- gallery-store.ts (createGlobalSignal 사용 중, 제거 가능성 검토)
-- 3개 테스트 실패 수정 (inventory, gallery-store 구독 타이밍)
+- ✅ UnifiedToastManager.ts: 이미 SolidJS 네이티브 패턴(`createSignal`) 사용 중
+- ✅ gallery-store.ts: Phase G-3-5에서 제거 완료
+- ✅ 테스트 수정 완료: inventory.test.ts, gallery-store-legacy-removal.test.ts
+  (15/15 GREEN)
+- ✅ createGlobalSignal imports: 0개 (정의 파일 제외)
+- ✅ createGlobalSignal calls: 0개 (정의 파일 제외)
+- ℹ️ .value 접근: 3개 (DOM 요소 value 속성, 허용됨)
+- ℹ️ .subscribe() 호출: 7개 (ToastManager, signalSelector 등 다른 패턴, 허용됨)
 
 ---
 
