@@ -229,11 +229,6 @@ export function GalleryContainer({
       class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
       data-shadow={useShadowDOM ? 'true' : undefined}
       data-open={isOpen ? 'true' : 'false'}
-      style={{
-        display: isOpen ? undefined : 'none',
-        background: isOpen ? undefined : 'transparent',
-        'pointer-events': isOpen ? undefined : 'none',
-      }}
     >
       {children}
     </div>
