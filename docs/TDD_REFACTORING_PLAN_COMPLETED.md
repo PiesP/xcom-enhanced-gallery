@@ -1,5 +1,28 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic ARCH-SIMPLIFY-001 Phase C-5 완료 ✅
+
+- **목표**: Stage D RED 가드 업데이트 (Preact 관련 테스트 GREEN 전환)
+- **주요 성과**:
+  - RED 테스트 → GREEN 전환: 6개 파일
+    1. `test/features/gallery/preact-shell-regression.red.test.tsx` →
+       `.test.tsx`
+    2. `test/state/solid-store-migration.red.test.ts` → `.test.ts`
+    3. `test/tooling/package-preact-dependency.scan.red.test.ts` (중복 제거)
+    4. `test/tooling/vendor-manager-solid-only.red.test.ts` (중복 제거)
+    5. `test/unit/shared/components/ui/settings-modal.solid.red.test.tsx` →
+       `.test.tsx`
+    6. `test/unit/shared/components/ui/toast-solid.red.test.tsx` → `.test.tsx`
+  - Epic FRAME-ALT-001 Stage D 완료 사실 반영
+  - 모든 테스트 GREEN 검증 완료
+  - **실행 시간**: 0.3일 (예상 0.5일)
+- **테스트 결과**: All 6 test suites passed
+- **품질 게이트**: typecheck/lint/test ALL GREEN
+- **다음 단계**: Phase C-2 (환경 제약), C-4 (서비스 초기화), C-6 (스킵 테스트
+  재평가)
+
+---
+
 2025-10-01: EXEC — Epic ARCH-SIMPLIFY-001 Phase C-3 완료 ✅
 
 - **목표**: API 변경 테스트 수정 (메트릭 불일치)
