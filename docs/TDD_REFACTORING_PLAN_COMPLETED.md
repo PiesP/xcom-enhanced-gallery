@@ -1,5 +1,66 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase D 완료 (테스트 모킹 인프라 정리 -
+Preact 모킹 제거) ✅
+
+- **범위**: Phase D — Preact 관련 모킹 코드 제거 및 SolidJS 전용 테스트 유틸리티
+  정비
+- **핵심 성과**:
+  - **Preact 모킹 함수 완전 제거**: `test/utils/mocks/vendor-mocks.ts`,
+    `vendor-mocks-clean.ts`
+    1. 제거된 함수 (8개):
+       - `createMockPreact` (70+ 라인)
+       - `createMockPreactHooks` (45+ 라인)
+       - `createMockPreactSignals` (40+ 라인)
+       - `createMockPreactCompat` (30+ 라인)
+       - `getPreact`, `getPreactHooks`, `getPreactSignals`, `getPreactCompat`
+         메서드
+    2. SolidJS 전용 API 유지:
+       - `createMockSolidCore`, `createMockSolidStore`, `createMockSolidWeb`
+       - `getSolidCore`, `getSolidStore`, `getSolidWeb`
+       - `createMockFflate`, `createMockMotion` (유지)
+  - **Characterization 테스트 작성**:
+    `test/cleanup/phase-d-preact-mocking-removal.test.ts`
+    1. Preact 함수 제거 검증 (2개 테스트)
+    2. SolidJS 모킹 완전성 검증 (2개 테스트)
+    3. Preact 사용 테스트 파일 식별 (1개 테스트, 24개 파일 발견)
+  - **MockVendorManager 정리**:
+    1. Preact 관련 캐시 키 제거 (`preact`, `preact-hooks`, `preact-signals`,
+       `preact-compat`)
+    2. 타입 안전성 개선: `instance: MockVendorManager | null`,
+       `cache: Map<string, unknown>`
+    3. SolidJS 전용 메서드만 유지
+- **코드 변경 요약**:
+  - **vendor-mocks.ts**: 428 라인 → 186 라인 (56% 감소)
+  - **vendor-mocks-clean.ts**: 403 라인 → 163 라인 (60% 감소)
+  - **헤더 주석 업데이트**: "SolidJS 전용" 명시, Phase D 완료 표시
+- **테스트 메트릭**:
+  - phase-d-preact-mocking-removal: 5/5 PASSED
+  - typecheck: ✅ PASSED (strict 오류 0)
+  - lint: ✅ PASSED
+  - 테스트 실행 시간: 106ms
+- **발견 사항**:
+  - **24개 테스트 파일에서 Preact 사용**: 대부분 레거시 호환성 테스트 또는
+    아키텍처 분석 테스트
+  - **vendor.mock.ts 별도 존재**: `test/__mocks__/vendor.mock.ts`에도 Preact
+    모킹 존재 (향후 정리 대상)
+  - **프로덕션 코드 영향 없음**: 모킹 제거는 테스트 코드에만 영향
+- **Acceptance Criteria 달성**:
+  - ✅ Preact 관련 모킹 코드 완전 제거 (8개 함수, 400+ 라인)
+  - ✅ SolidJS 전용 모킹 유틸리티 유지 및 검증
+  - ✅ Characterization 테스트 작성 (제거 검증)
+  - ✅ 품질 게이트: typecheck/lint/test ALL GREEN
+- **미완료 항목 (Phase D 후속 작업)**:
+  - 24개 레거시 테스트 파일 전환 (Phase E에서 처리)
+  - 스킵된 테스트 50건 재활성화 (Phase E에서 처리)
+  - `test/__mocks__/vendor.mock.ts` Preact 모킹 정리 (Phase E에서 처리)
+- **다음 단계**: Phase E — `createGlobalSignal` 레거시 호환 레이어 제거 (번들
+  크기 10-15% 감소 목표)
+- **커밋**: `refactor(test): Phase D - remove Preact mocking infrastructure`
+- **작업 브랜치**: epic/solid-native-002-phase-d
+
+---
+
 2025-10-01: EXEC — Epic SOLID-NATIVE-002 Phase C 완료 (`signalSelector` SolidJS
 네이티브 리팩토링) ✅
 
