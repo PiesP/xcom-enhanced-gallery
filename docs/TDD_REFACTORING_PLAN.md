@@ -83,40 +83,20 @@
 
 ---
 
-### Phase C: `signalSelector` 리팩토링 🔧
+### ✅ Phase C: `signalSelector` 리팩토링 — 완료 (2025-10-01)
 
-**목표**: 레거시 `.value` 의존성 제거 및 SolidJS Accessor 전용 API로 전환
-
-**작업 항목**:
-
-1. **현재 `signalSelector.ts` 분석**
-   - Acceptance:
-     - `useSignalSelector`, `useCombinedSelector` 사용처 파악
-     - `.value` / `.subscribe()` 의존성 식별
-     - SolidJS `createMemo()` 기반 재설계 방향 수립
-   - Test: 분석 결과 문서화 및 리뷰
-
-2. **SolidJS 네이티브 API로 재구현**
-   - Acceptance:
-     - `useSignalSelector` → `createMemo()` 기반 래퍼
-     - `useCombinedSelector` → 다중 Accessor 결합 유틸
-     - 레거시 호환 레이어 deprecation 경고 추가
-   - Test: 기존 사용처 모두 동작 유지 (회귀 없음)
-
-3. **사용처 마이그레이션**
-   - Acceptance:
-     - `shared/state/signals/*.ts` selector 호출 전환
-     - features 레이어 selector 호출 전환
-     - deprecation 경고 로그 확인 후 레거시 API 제거
-   - Test: 전체 테스트 GREEN, 빌드 검증
+**완료 요약**: 레거시 `ObservableValue<T>` 인터페이스 완전 제거. SolidJS
+Accessor 전용 API 구현 (`useSignalSelector`, `useCombinedSignalSelector`). 코드
+라인 66% 감소 (350 → 120 라인). 상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`
+참조.
 
 **Acceptance Criteria**:
 
-- [ ] `signalSelector.ts` SolidJS 네이티브 버전 구현
-- [ ] 레거시 호환 레이어 deprecation 마킹
-- [ ] 모든 사용처 마이그레이션 완료
-- [ ] 레거시 API 제거 및 테스트 GREEN
-- [ ] 품질 게이트: typecheck/lint/test ALL GREEN
+- [x] `signalSelector.ts` SolidJS 네이티브 버전 구현
+- [x] 레거시 `ObservableValue` 인터페이스 완전 제거
+- [x] 모든 사용처 마이그레이션 완료
+- [x] 레거시 API 제거 및 테스트 GREEN
+- [x] 품질 게이트: typecheck/lint/test ALL GREEN
 
 ---
 
