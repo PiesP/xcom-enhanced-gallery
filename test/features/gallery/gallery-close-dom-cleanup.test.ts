@@ -25,6 +25,7 @@ import type { Root } from 'solid-js';
 import { GalleryRenderer } from '@features/gallery/GalleryRenderer';
 import { closeGallery, galleryState } from '@shared/state/signals/gallery.signals';
 import { initializeVendors } from '@shared/external/vendors';
+import { setupServiceMocks } from '../../setup';
 import type { MediaInfo } from '@shared/types/media.types';
 
 describe('Gallery Close DOM Cleanup (회귀 방지)', () => {
@@ -35,6 +36,9 @@ describe('Gallery Close DOM Cleanup (회귀 방지)', () => {
   beforeEach(async () => {
     // 벤더 초기화
     await initializeVendors();
+
+    // 서비스 모킹 (Phase C-4 수정)
+    await setupServiceMocks();
 
     // 테스트용 루트 생성
     testRoot = createRoot(dispose => {
