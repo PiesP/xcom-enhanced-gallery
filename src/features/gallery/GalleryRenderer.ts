@@ -490,6 +490,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   close(): void {
     closeGallery();
+    // DOM 요소 완전 제거
+    this.cleanupContainer();
+    logger.info('[GalleryRenderer] 갤러리 닫기 및 정리 완료');
   }
 
   isRendering(): boolean {

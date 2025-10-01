@@ -236,6 +236,12 @@ export class GalleryApp {
    */
   public closeGallery(): void {
     try {
+      // 렌더러를 통해 DOM 정리
+      if (this.galleryRenderer) {
+        this.galleryRenderer.close();
+      }
+
+      // 상태만 관리하는 경우를 위한 폴백
       if (galleryState().isOpen) {
         closeGallery();
       }
