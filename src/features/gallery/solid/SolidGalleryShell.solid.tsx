@@ -157,7 +157,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   );
 
   let shellRef: HTMLDivElement | undefined;
-  let contentAreaRef: HTMLDivElement | undefined;
   let itemsContainerRef: HTMLDivElement | undefined;
   let settingsHost: HTMLDivElement | null = null;
 
@@ -314,9 +313,9 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   // useGalleryScroll은 갤러리 외부(Twitter 배경) 스크롤만 차단
   // 갤러리 내부에서는 네이티브 스크롤 허용
   // 네비게이션은 키보드 이벤트로만 처리 (ArrowLeft/Right)
-  // 수정: contentAreaRef를 전달하여 실제 스크롤 가능 영역을 올바르게 인식
+  // 수정: itemsContainerRef를 전달하여 실제 스크롤 가능 영역을 올바르게 인식
   useGalleryScroll({
-    container: () => contentAreaRef,
+    container: () => itemsContainerRef,
     onScroll: () => {
       // 배경 이벤트 감지용 - 실제로는 아무 동작도 하지 않음
       // blockTwitterScroll이 true이므로 배경 스크롤만 preventDefault됨
@@ -425,13 +424,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
             />
           )}
 
-          <div
-            ref={node => {
-              contentAreaRef = node ?? undefined;
-            }}
-            class={styles.contentArea}
-            data-gallery-element='items-area'
-          >
+          <div class={styles.contentArea} data-gallery-element='items-area'>
             <div
               ref={node => {
                 itemsContainerRef = node ?? undefined;
