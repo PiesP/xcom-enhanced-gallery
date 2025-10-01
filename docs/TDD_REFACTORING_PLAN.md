@@ -4,7 +4,8 @@
 내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
 분리합니다.
 
-**최근 업데이트**: 2025-10-01 — Epic ARCH-SIMPLIFY-001 계획 수립
+**최근 업데이트**: 2025-10-01 — Epic ARCH-SIMPLIFY-001 Phase A 완료, Phase B
+준비
 
 ---
 
@@ -20,7 +21,7 @@
 
 ## 활성 Epic 현황
 
-### Epic: ARCH-SIMPLIFY-001 — 아키텍처 복잡도 간소화 📋 **계획 중** (2025-10-01)
+### Epic: ARCH-SIMPLIFY-001 — 아키텍처 복잡도 간소화 📋 **진행 중** (2025-10-01)
 
 **목표**: 필요 이상으로 복잡한 구조를 간결하고 현대적으로 재구축하여 유지보수성
 향상
@@ -34,70 +35,13 @@
 
 **전체 범위 (5개 Phase)**:
 
-1. **Phase A: Deprecated API 정리** — 17개 @deprecated 마커 제거 또는 대체
+1. **Phase A: Deprecated API 정리** — ✅ 완료 (5개 커밋, 240줄 제거)
 2. **Phase B: 순환 의존성 해결** — 2개 순환 고리를 공통 모듈 추출로 해소
 3. **Phase C: 테스트 구조 정비** — 56개 실패 테스트 수정 및 49개 스킵 테스트
    재평가
 4. **Phase D: 벤더 API 단순화** — StaticVendorManager/MockVendorManager 통합
    검토
 5. **Phase E: Epic 후속 정리** — 이전 Epic들의 미완료 항목 마무리
-
----
-
-## Phase A: Deprecated API 정리 (예상 1주)
-
-**목표**: 코드베이스 내 17개 @deprecated 마커를 분석하고 제거 또는 마이그레이션
-경로 제시
-
-**솔루션 비교**:
-
-- **Option A: Codemod 자동 제거**
-  - 장점: 빠른 정리 (1주), Epic LEGACY-CLEANUP-001 인프라 재사용 가능
-  - 단점: False positive 필터링 필요, 수동 검토 여전히 필요
-  - 평가: ✅ **선택** (Epic SOLID-NATIVE-002 Phase B Codemod 도구 검증됨)
-- **Option B: 점진적 수동 제거**
-  - 장점: 높은 정확도, 컨텍스트 이해 유지
-  - 단점: 시간 소요 큼 (2-3주), 사람의 실수 가능성
-  - 평가: ❌ 제외 (비효율적)
-
-**Phase A 작업 항목**:
-
-1. **A-1: UnifiedToastManager Deprecated API 제거**
-   - 타겟: `subscribe()`, `signal` 속성 (Epic SOLID-NATIVE-001 Phase G-3-4에서
-     이미 deprecated 처리)
-   - 전략: 사용처를 `createEffect()` + `getToasts()` Accessor로 전환
-   - 산출물: UnifiedToastManager.ts 정리, 관련 테스트 업데이트
-   - 예상 소요: 2일
-2. **A-2: 이벤트 관리 레거시 API 제거**
-   - 타겟: `shared/utils/events.ts`의 `registerKeyboardListener()`,
-     `registerEvent()` (UnifiedEventManager 사용 권장)
-   - 전략: 사용처를 UnifiedEventManager로 마이그레이션
-   - 산출물: events.ts 정리, 사용처 5-10개 업데이트
-   - 예상 소요: 2일
-3. **A-3: Heroicons Vendor Shim 완전 제거**
-   - 타겟: `shared/external/vendors/heroicons-react.ts` (이미 제거된 shim의 빈
-     파일)
-   - 전략: 파일 삭제 및 import 경로 정리
-   - 산출물: heroicons-react.ts 제거, orphan 테스트 가드 업데이트
-   - 예상 소요: 1일
-4. **A-4: ServiceManager/BrowserService Deprecated Diagnostics 제거**
-   - 타겟: `getServiceStatus()`, `getBrowserDiagnostics()` (v1.1.0에서
-     UnifiedServiceDiagnostics 사용 권장)
-   - 전략: 사용처를 UnifiedServiceDiagnostics로 전환 또는 제거
-   - 산출물: ServiceManager.ts, BrowserService.ts 정리
-   - 예상 소요: 1일
-5. **A-5: 기타 Deprecated 항목 검토**
-   - 타겟: `createParitySnapshot` alias, `app-state.ts` subscribe 메서드
-   - 전략: 개별 영향도 분석 후 제거 또는 유예 결정
-   - 산출물: 정리 리포트
-   - 예상 소요: 1일
-
-**Acceptance Criteria**:
-
-- [ ] @deprecated 마커 17개 → 5개 이하로 감소
-- [ ] 제거된 API의 모든 사용처가 대체 API로 전환됨
-- [ ] 품질 게이트: typecheck/lint/test ALL GREEN
-- [ ] 번들 크기 유지 또는 감소 (450KB 미만 목표)
 
 ---
 

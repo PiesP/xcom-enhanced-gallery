@@ -29,11 +29,11 @@ export type { ToastContainerProps } from './Toast/ToastContainer';
 
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';
-export type { ToolbarProps } from './Toolbar/Toolbar';
+export type { ToolbarProps, GalleryToolbarProps } from './Toolbar/Toolbar.types';
 
 // Settings Modal Components
-export { SettingsModal } from './SettingsModal';
-export type { SettingsModalProps } from './SettingsModal';
+export { SettingsModal } from './SettingsModal/SettingsModal';
+export type { SettingsModalProps } from './SettingsModal/SettingsModal.types';
 export { SolidModalShell } from './ModalShell';
 export type { SolidModalShellProps } from './ModalShell';
 

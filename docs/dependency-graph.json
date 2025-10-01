@@ -3750,13 +3750,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/heroicons-react.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/external/vendors/vendor-api.ts",
       "dependencies": [
         {
@@ -8329,7 +8322,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 275,
+    "totalCruised": 274,
     "totalDependenciesCruised": 332,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

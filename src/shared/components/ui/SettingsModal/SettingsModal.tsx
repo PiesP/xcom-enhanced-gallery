@@ -13,16 +13,9 @@ import { ThemeService } from '@shared/services/ThemeService';
 import { getSetting, setSetting } from '@shared/container/settings-access';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 import styles from './SettingsModal.module.css';
+import type { SettingsModalProps } from './SettingsModal.types';
 
-export interface SettingsModalProps {
-  readonly isOpen: boolean;
-  readonly onClose: () => void;
-  readonly mode?: 'panel' | 'modal';
-  readonly position?: 'toolbar-below' | 'top-right' | 'center' | 'bottom-sheet';
-  readonly children?: JSX.Element;
-  readonly className?: string;
-  readonly 'data-testid'?: string;
-}
+export type { SettingsModalProps };
 
 type ThemeOption = 'auto' | 'light' | 'dark';
 type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';

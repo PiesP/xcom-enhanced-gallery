@@ -14,7 +14,7 @@ import {
 } from '@shared/logging/logger';
 import { getNativeDownload } from '@shared/external/vendors';
 import { getErrorMessage } from '@shared/utils/error-handling';
-import { generateMediaFilename } from '@shared/media';
+import { generateMediaFilename } from '@shared/media/FilenameService';
 import { toastManager } from './UnifiedToastManager';
 import { languageService } from './LanguageService';
 import type { BaseResultStatus } from '@shared/types/result.types';
