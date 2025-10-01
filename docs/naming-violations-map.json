@@ -1,0 +1,2528 @@
+{
+  "violations": [
+    {
+      "file": "src\\bootstrap\\event-wiring.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "wireGlobalEvents",
+      "line": 8,
+      "context": "export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\constants.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractMediaId",
+      "line": 312,
+      "context": "export function extractMediaId(url: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\constants.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "generateOriginalUrl",
+      "line": 329,
+      "context": "export function generateOriginalUrl(url: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\constants.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetId",
+      "line": 417,
+      "context": "export function extractTweetId(url: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\components\\KeyboardHelpOverlay\\KeyboardHelpOverlay.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "KeyboardHelpOverlay",
+      "line": 24,
+      "context": "export const KeyboardHelpOverlay = (props: KeyboardHelpOverlayProps) => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\components\\vertical-gallery-view\\hooks\\useProgressiveImage.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useProgressiveImage",
+      "line": 72,
+      "context": "export function useProgressiveImage({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\components\\vertical-gallery-view\\VerticalGalleryView.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "VerticalGalleryView",
+      "line": 38,
+      "context": "export function VerticalGalleryView(_props: VerticalGalleryViewProps): never {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\createAppContainer.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "installLegacyAdapter",
+      "line": 447,
+      "context": "export function installLegacyAdapter(container: AppContainer): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\hooks\\useGalleryScroll.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useGalleryScroll",
+      "line": 87,
+      "context": "export function useGalleryScroll(options: UseGalleryScrollOptions): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\hooks\\useVisibleIndex.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useGalleryVisibleIndex",
+      "line": 82,
+      "context": "export function useGalleryVisibleIndex(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\solid\\renderSolidGalleryShell.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "renderSolidGalleryShell",
+      "line": 19,
+      "context": "export function renderSolidGalleryShell(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\utils\\visible-navigation.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "nextGalleryIndexByVisible",
+      "line": 23,
+      "context": "export function nextGalleryIndexByVisible(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\gallery\\utils\\visible-navigation.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "previousGalleryIndexByVisible",
+      "line": 34,
+      "context": "export function previousGalleryIndexByVisible(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\notifications\\solid\\renderSolidToastHost.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "renderSolidToastHost",
+      "line": 19,
+      "context": "export function renderSolidToastHost(options: SolidToastHostRenderOptions): SolidToastHostHandle {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\notifications\\solid\\SolidToastHost.solid.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "SolidToastHost",
+      "line": 30,
+      "context": "export const SolidToastHost = (props: SolidToastHostProps) => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\settings\\services\\settings-factory.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "__resetSettingsServiceFactory",
+      "line": 23,
+      "context": "export function __resetSettingsServiceFactory(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\features\\settings\\services\\token-consent.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setTokenExtractionConsent",
+      "line": 7,
+      "context": "export function setTokenExtractionConsent(enabled: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\features\\settings\\solid\\renderSolidSettingsPanel.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "renderSolidSettingsPanel",
+      "line": 24,
+      "context": "export function renderSolidSettingsPanel(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\BrowserService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "browserAPI",
+      "line": 197,
+      "context": "export const browserAPI = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\BrowserUtils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "browserUtils",
+      "line": 126,
+      "context": "export const browserUtils = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "matchesMediaQuery",
+      "line": 189,
+      "context": "export function matchesMediaQuery(query: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "prefersReducedMotion",
+      "line": 211,
+      "context": "export function prefersReducedMotion(): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeWindow",
+      "line": 47,
+      "context": "export function safeWindow(): Window | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeLocation",
+      "line": 58,
+      "context": "export function safeLocation(): Location | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeNavigator",
+      "line": 77,
+      "context": "export function safeNavigator(): Navigator | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeSetTimeout",
+      "line": 146,
+      "context": "export function safeSetTimeout(callback: () => void, delay: number): number | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeClearTimeout",
+      "line": 156,
+      "context": "export function safeClearTimeout(timerId: number | null): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "matchesMediaQuery",
+      "line": 189,
+      "context": "export function matchesMediaQuery(query: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\browser\\utils\\browser-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "prefersReducedMotion",
+      "line": 211,
+      "context": "export function prefersReducedMotion(): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "withGallery",
+      "line": 98,
+      "context": "export function withGallery<P extends GalleryComponentProps>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "withGalleryContainer",
+      "line": 312,
+      "context": "export function withGalleryContainer<P extends GalleryComponentProps>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "withGalleryItem",
+      "line": 325,
+      "context": "export function withGalleryItem<P extends GalleryComponentProps>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "withGalleryControl",
+      "line": 338,
+      "context": "export function withGalleryControl<P extends GalleryComponentProps>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "withGalleryOverlay",
+      "line": 351,
+      "context": "export function withGalleryOverlay<P extends GalleryComponentProps>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\hoc\\GalleryHOC.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "GalleryHOC",
+      "line": 364,
+      "context": "export const GalleryHOC = withGallery;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\isolation\\GalleryContainer.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "mountGallery",
+      "line": 68,
+      "context": "export function mountGallery(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\isolation\\GalleryContainer.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "unmountGallery",
+      "line": 102,
+      "context": "export function unmountGallery(container: Element): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\isolation\\GalleryContainer.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "GalleryContainer",
+      "line": 124,
+      "context": "export function GalleryContainer({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\LazyIcon.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "LazyIcon",
+      "line": 22,
+      "context": "export const LazyIcon = (props: LazyIconProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\LazyIcon.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useIconPreload",
+      "line": 107,
+      "context": "export function useIconPreload(names: readonly IconName[]): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\LazyIcon.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useCommonIconPreload",
+      "line": 115,
+      "context": "export function useCommonIconPreload(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Button\\Button.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Button",
+      "line": 71,
+      "context": "export const Button = (props: ButtonProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Button\\IconButton.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "IconButton",
+      "line": 24,
+      "context": "export const IconButton = (props: IconButtonProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Icon\\Icon.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Icon",
+      "line": 18,
+      "context": "export const Icon = (props: IconProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\MediaCounter\\MediaCounter.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "MediaCounter",
+      "line": 15,
+      "context": "export const MediaCounter = (props: MediaCounterProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\ModalShell\\ModalShell.solid.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ModalShell",
+      "line": 67,
+      "context": "export const ModalShell = (providedProps: SolidModalShellProps): JSX.Element | null => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\primitive\\Button.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Button",
+      "line": 30,
+      "context": "export function Button(props: ButtonProps): JSX.Element {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\primitive\\Panel.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Panel",
+      "line": 16,
+      "context": "export function Panel({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\SettingsModal\\EnhancedSettingsModal.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "EnhancedSettingsModal",
+      "line": 4,
+      "context": "export const EnhancedSettingsModal = {} as const;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\SettingsModal\\HeadlessSettingsModal.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "HeadlessSettingsModal",
+      "line": 9,
+      "context": "export function HeadlessSettingsModal(props: HeadlessSettingsModalProps): VNode | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\SettingsModal\\RefactoredSettingsModal.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "RefactoredSettingsModal",
+      "line": 15,
+      "context": "export const RefactoredSettingsModal = SettingsModal;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\SettingsModal\\UnifiedSettingsModal.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "UnifiedSettingsModal",
+      "line": 8,
+      "context": "export const UnifiedSettingsModal = (props: UnifiedSettingsModalProps): JSX.Element | null => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\StandardProps.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ComponentStandards",
+      "line": 99,
+      "context": "export const ComponentStandards = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toast\\SolidToast.solid.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "SolidToast",
+      "line": 29,
+      "context": "export const SolidToast = (props: SolidToastProps) => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toast\\Toast.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Toast",
+      "line": 23,
+      "context": "export const Toast = (props: ToastProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toast\\ToastContainer.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToastContainer",
+      "line": 22,
+      "context": "export const ToastContainer = (props: ToastContainerProps = {}): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toolbar\\ConfigurableToolbar.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ConfigurableToolbar",
+      "line": 7,
+      "context": "export function ConfigurableToolbar(_props: ConfigurableToolbarProps): VNode | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toolbar\\Toolbar.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Toolbar",
+      "line": 59,
+      "context": "export const Toolbar = (props: ToolbarProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toolbar\\ToolbarHeadless.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToolbarHeadless",
+      "line": 59,
+      "context": "export function ToolbarHeadless(props: ToolbarHeadlessProps): JSX.Element {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\Toolbar\\UnifiedToolbar.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToolbarShell",
+      "line": 33,
+      "context": "export function ToolbarShell(props: ToolbarUnifiedProps): JSX.Element {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\ToolbarButton\\ToolbarButton.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToolbarButton",
+      "line": 33,
+      "context": "export const ToolbarButton = (props: ToolbarButtonProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\ToolbarShell\\ToolbarShell.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToolbarShell",
+      "line": 34,
+      "context": "export const ToolbarShell = ({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\components\\ui\\ToolbarWithSettings\\ToolbarWithSettings.tsx",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToolbarWithSettings",
+      "line": 37,
+      "context": "export const ToolbarWithSettings = (providedProps: ToolbarWithSettingsProps): JSX.Element => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\config\\feature-flags.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setFeatureFlagOverride",
+      "line": 36,
+      "context": "export function setFeatureFlagOverride(name: FeatureFlagName, value: boolean | undefined): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\container\\service-accessors.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerGalleryRenderer",
+      "line": 45,
+      "context": "export function registerGalleryRenderer(renderer: unknown): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-accessors.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerSettingsManager",
+      "line": 49,
+      "context": "export function registerSettingsManager(settings: unknown): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-accessors.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerTwitterTokenExtractor",
+      "line": 53,
+      "context": "export function registerTwitterTokenExtractor(instance: unknown): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-accessors.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "warmupCriticalServices",
+      "line": 58,
+      "context": "export function warmupCriticalServices(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-accessors.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "warmupNonCriticalServices",
+      "line": 72,
+      "context": "export function warmupNonCriticalServices(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "bridgeHasService",
+      "line": 19,
+      "context": "export function bridgeHasService(key: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bridgeGetService",
+      "line": 7,
+      "context": "export function bridgeGetService<T>(key: string): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bridgeTryGet",
+      "line": 11,
+      "context": "export function bridgeTryGet<T>(key: string): T | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bridgeRegister",
+      "line": 15,
+      "context": "export function bridgeRegister<T>(key: string, instance: T): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bridgeHasService",
+      "line": 19,
+      "context": "export function bridgeHasService(key: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\service-bridge.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bridgeResetServices",
+      "line": 23,
+      "context": "export function bridgeResetServices(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\container\\settings-access.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "tryGetSettingsService",
+      "line": 13,
+      "context": "export function tryGetSettingsService(): ISettingsService | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\dom\\DOMCache.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "globalDOMCache",
+      "line": 357,
+      "context": "export const globalDOMCache = new DOMCache({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\dom\\DOMCache.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cachedQuerySelector",
+      "line": 371,
+      "context": "export function cachedQuerySelector(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\dom\\DOMCache.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cachedQuerySelectorAll",
+      "line": 387,
+      "context": "export function cachedQuerySelectorAll(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\dom\\DOMCache.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cachedStableQuery",
+      "line": 404,
+      "context": "export function cachedStableQuery(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\dom\\DOMCache.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "invalidateCacheOnMutation",
+      "line": 431,
+      "context": "export function invalidateCacheOnMutation(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\error\\ErrorHandler.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeSync",
+      "line": 307,
+      "context": "export function safeSync<T>(operation: () => T, context: string, defaultValue?: T): T | undefined {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\error\\ErrorHandler.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "globalErrorHandler",
+      "line": 342,
+      "context": "export const globalErrorHandler = errorHandler;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\external\\vendors\\fflate-deprecated.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "warnFflateDeprecated",
+      "line": 40,
+      "context": "export function warnFflateDeprecated(context?: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\external\\vendors\\vendor-api-safe.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupVendorsSafe",
+      "line": 124,
+      "context": "export const cleanupVendorsSafe = (): void => {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\external\\vendors\\vendor-api-safe.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerVendorCleanupOnUnloadSafe",
+      "line": 204,
+      "context": "export function registerVendorCleanupOnUnloadSafe(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useAccessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useKeyboardNavigation",
+      "line": 17,
+      "context": "export function useKeyboardNavigation(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useFocusScope.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useFocusScope",
+      "line": 50,
+      "context": "export function useFocusScope(options: UseFocusScopeOptions = {}): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useFocusTrap.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useFocusTrap",
+      "line": 25,
+      "context": "export function useFocusTrap(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useSettingsModal.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useSettingsModal",
+      "line": 44,
+      "context": "export function useSettingsModal(): UseSettingsModalReturn {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useToolbarPositionBased.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useToolbarPositionBased",
+      "line": 65,
+      "context": "export function useToolbarPositionBased(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\hooks\\useToolbarState.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useToolbarState",
+      "line": 93,
+      "context": "export function useToolbarState(): [ToolbarState, ToolbarActions] {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\loader\\progressive-loader.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerFeature",
+      "line": 29,
+      "context": "export function registerFeature<T>(key: string, loader: () => Promise<T> | T): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\loader\\progressive-loader.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "__resetFeatureRegistry",
+      "line": 72,
+      "context": "export function __resetFeatureRegistry(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\logging\\logger.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "logger",
+      "line": 285,
+      "context": "export const logger: Logger = createLogger({",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\logging\\logger.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "logError",
+      "line": 401,
+      "context": "export function logError(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\logging\\logger.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "logFields",
+      "line": 431,
+      "context": "export function logFields<T extends Record<string, unknown>>(fields: T): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\FilenameService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "generateMediaFilename",
+      "line": 345,
+      "context": "export function generateMediaFilename(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\FilenameService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "generateZipFilename",
+      "line": 366,
+      "context": "export function generateZipFilename(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\pipeline.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "collectNodes",
+      "line": 17,
+      "context": "export function collectNodes(root: HTMLElement): Element[] {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\pipeline.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractRawData",
+      "line": 45,
+      "context": "export function extractRawData(element: Element): RawMediaCandidate | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\pipeline.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "normalize",
+      "line": 94,
+      "context": "export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[] {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\media\\pipeline.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "dedupe",
+      "line": 183,
+      "context": "export function dedupe(descriptors: MediaDescriptor[]): MediaDescriptor[] {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\memory\\MemoryTracker.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "triggerGarbageCollection",
+      "line": 226,
+      "context": "export function triggerGarbageCollection(): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\memory\\MemoryTracker.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "memoryTracker",
+      "line": 200,
+      "context": "export const memoryTracker = MemoryTracker.getInstance();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\memory\\MemoryTracker.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "triggerGarbageCollection",
+      "line": 226,
+      "context": "export function triggerGarbageCollection(): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\polyfills\\solid-jsx-dev-runtime.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "Fragment",
+      "line": 11,
+      "context": "export const Fragment = (props: { children?: unknown }) => props.children;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\polyfills\\solid-jsx-dev-runtime.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "jsxDEV",
+      "line": 14,
+      "context": "export const jsxDEV = jsx;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\AnimationService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "animateElement",
+      "line": 198,
+      "context": "export function animateElement(element: Element, config?: AnimationConfig): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\AnimationService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "fadeOut",
+      "line": 206,
+      "context": "export function fadeOut(element: Element, config?: AnimationConfig): Promise<void> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\AnimationService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "openGalleryWithAnimation",
+      "line": 214,
+      "context": "export function openGalleryWithAnimation(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\AnimationService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "closeGalleryWithAnimation",
+      "line": 225,
+      "context": "export function closeGalleryWithAnimation(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\BulkDownloadService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "bulkDownloadService",
+      "line": 701,
+      "context": "export const bulkDownloadService = new BulkDownloadService();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\core-services.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "defaultLogger",
+      "line": 72,
+      "context": "export const defaultLogger = new ConsoleLogger();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\EventManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "TwitterEventManager",
+      "line": 204,
+      "context": "export const TwitterEventManager = EventManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\LanguageService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "languageService",
+      "line": 291,
+      "context": "export const languageService = new LanguageService();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\media\\TwitterVideoExtractor.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetId",
+      "line": 492,
+      "context": "export function extractTweetId(url: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\media\\UsernameExtractionService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractUsername",
+      "line": 230,
+      "context": "export function extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\media\\UsernameExtractionService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "parseUsernameFast",
+      "line": 238,
+      "context": "export function parseUsernameFast(element?: HTMLElement | Document): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\MediaService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "mediaService",
+      "line": 1150,
+      "context": "export const mediaService: MediaService = new Proxy({} as MediaService, {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\MediaService.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "__getMediaServiceInstanceForTest",
+      "line": 1187,
+      "context": "// export function __getMediaServiceInstanceForTest(): MediaService { return __getMediaService(); }",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\service-factories.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "__resetServiceFactories",
+      "line": 44,
+      "context": "export function __resetServiceFactories(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\ServiceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "serviceManager",
+      "line": 250,
+      "context": "export const serviceManager = CoreService.getInstance();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\ServiceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerServiceFactory",
+      "line": 263,
+      "context": "export function registerServiceFactory<T>(key: string, factory: () => T): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\ToastController.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toastController",
+      "line": 211,
+      "context": "export const toastController = new ToastController();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toastManager",
+      "line": 287,
+      "context": "export const toastManager = ToastManager.getInstance();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ToastService",
+      "line": 296,
+      "context": "export const ToastService = toastManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toastService",
+      "line": 297,
+      "context": "export const toastService = toastManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toastController",
+      "line": 298,
+      "context": "export const toastController = toastManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "UnifiedToastManager",
+      "line": 303,
+      "context": "export const UnifiedToastManager = ToastManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\services\\UnifiedToastManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toasts",
+      "line": 332,
+      "context": "export const toasts = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\app-state.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "subscribeToAppState",
+      "line": 110,
+      "context": "export function subscribeToAppState(_callback: (state: AppStateSnapshot) => void): () => void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\mediators\\gallery-signal-mediator.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "areGallerySignalsReady",
+      "line": 52,
+      "context": "export function areGallerySignalsReady(): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\state\\mediators\\gallery-signal-mediator.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerGallerySignalAccess",
+      "line": 27,
+      "context": "export function registerGallerySignalAccess(fn: Accessor): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\mediators\\gallery-signal-mediator.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "tryGetGallerySignals",
+      "line": 34,
+      "context": "export function tryGetGallerySignals(): GallerySignalPublicState | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\mediators\\gallery-signal-mediator.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "areGallerySignalsReady",
+      "line": 52,
+      "context": "export function areGallerySignalsReady(): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\download.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "downloadState",
+      "line": 74,
+      "context": "export const downloadState = downloadStateSignal;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\download.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "startDownload",
+      "line": 142,
+      "context": "export function startDownload(taskId: string): Result<void, Error> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\download.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "completeDownload",
+      "line": 218,
+      "context": "export function completeDownload(taskId: string): Result<void, Error> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\download.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "failDownload",
+      "line": 255,
+      "context": "export function failDownload(taskId: string, error: string): Result<void, Error> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setLoading",
+      "line": 161,
+      "context": "export function setLoading(isLoading: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "galleryState",
+      "line": 62,
+      "context": "export const galleryState = galleryStateSignal;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "openGallery",
+      "line": 79,
+      "context": "export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "closeGallery",
+      "line": 103,
+      "context": "export function closeGallery(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "navigateToItem",
+      "line": 123,
+      "context": "export function navigateToItem(index: number): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "navigatePrevious",
+      "line": 143,
+      "context": "export function navigatePrevious(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\gallery.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "navigateNext",
+      "line": 152,
+      "context": "export function navigateNext(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\toolbar.signals.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setHighContrast",
+      "line": 90,
+      "context": "export function setHighContrast(enabled: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\state\\signals\\toolbar.signals.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toolbarState",
+      "line": 50,
+      "context": "export const toolbarState = toolbarStateSignal;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\styles\\namespaced-styles.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupNamespacedStyles",
+      "line": 147,
+      "context": "export function cleanupNamespacedStyles(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "success",
+      "line": 83,
+      "context": "export function success<T>(data: T): Result<T, never> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "failure",
+      "line": 87,
+      "context": "export function failure<E>(error: E): Result<never, E> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "unwrapOr",
+      "line": 99,
+      "context": "export function unwrapOr<T>(result: Result<T, unknown>, defaultValue: T): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "chain",
+      "line": 107,
+      "context": "export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safe",
+      "line": 120,
+      "context": "export function safe<T>(operation: () => T): Result<T, Error> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\app.types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "normalizeViewMode",
+      "line": 185,
+      "context": "export function normalizeViewMode(mode: string | undefined): ViewMode {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\core\\core-types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "success",
+      "line": 490,
+      "context": "export function success<T>(data: T): Result<T, never> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\core\\core-types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "failure",
+      "line": 497,
+      "context": "export function failure<E>(error: E): Result<never, E> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\core\\core-types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safe",
+      "line": 524,
+      "context": "export function safe<T>(fn: () => T, errorTransform?: (error: unknown) => Error): Result<T> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\core\\core-types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "unwrapOr",
+      "line": 541,
+      "context": "export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\types\\core\\core-types.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "chain",
+      "line": 562,
+      "context": "export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "meetsWCAGAA",
+      "line": 142,
+      "context": "export function meetsWCAGAA(foreground: string, background: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "meetsWCAGAAA",
+      "line": 159,
+      "context": "export function meetsWCAGAAA(foreground: string, background: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "detectLightBackground",
+      "line": 193,
+      "context": "export function detectLightBackground(element: HTMLElement): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "testContrastRatio",
+      "line": 470,
+      "context": "export function testContrastRatio(foreground: string, background: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleExpanded",
+      "line": 504,
+      "context": "export function setAccessibleExpanded(element: HTMLElement, expanded: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessiblePressed",
+      "line": 508,
+      "context": "export function setAccessiblePressed(element: HTMLElement, pressed: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleSelected",
+      "line": 512,
+      "context": "export function setAccessibleSelected(element: HTMLElement, selected: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleChecked",
+      "line": 516,
+      "context": "export function setAccessibleChecked(element: HTMLElement, checked: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleHidden",
+      "line": 520,
+      "context": "export function setAccessibleHidden(element: HTMLElement, hidden: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleDisabled",
+      "line": 524,
+      "context": "export function setAccessibleDisabled(element: HTMLElement, disabled: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleRequired",
+      "line": 528,
+      "context": "export function setAccessibleRequired(element: HTMLElement, required: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setAccessibleInvalid",
+      "line": 532,
+      "context": "export function setAccessibleInvalid(element: HTMLElement, invalid: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAExpanded",
+      "line": 649,
+      "context": "export function setARIAExpanded(element: HTMLElement, expanded: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAPressed",
+      "line": 653,
+      "context": "export function setARIAPressed(element: HTMLElement, pressed: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIASelected",
+      "line": 657,
+      "context": "export function setARIASelected(element: HTMLElement, selected: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAChecked",
+      "line": 661,
+      "context": "export function setARIAChecked(element: HTMLElement, checked: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAHidden",
+      "line": 665,
+      "context": "export function setARIAHidden(element: HTMLElement, hidden: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIADisabled",
+      "line": 669,
+      "context": "export function setARIADisabled(element: HTMLElement, disabled: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIARequired",
+      "line": 673,
+      "context": "export function setARIARequired(element: HTMLElement, required: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAInvalid",
+      "line": 677,
+      "context": "export function setARIAInvalid(element: HTMLElement, invalid: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAAtomic",
+      "line": 692,
+      "context": "export function setARIAAtomic(element: HTMLElement, atomic: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIABusy",
+      "line": 696,
+      "context": "export function setARIABusy(element: HTMLElement, busy: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAGrabbed",
+      "line": 716,
+      "context": "export function setARIAGrabbed(element: HTMLElement, grabbed: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAHasPopup",
+      "line": 720,
+      "context": "export function setARIAHasPopup(element: HTMLElement, haspopup: boolean | string): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAMultiline",
+      "line": 728,
+      "context": "export function setARIAMultiline(element: HTMLElement, multiline: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAMultiselectable",
+      "line": 732,
+      "context": "export function setARIAMultiselectable(element: HTMLElement, multiselectable: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setARIAReadonly",
+      "line": 743,
+      "context": "export function setARIAReadonly(element: HTMLElement, readonly: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeParseInt",
+      "line": 9,
+      "context": "export function safeParseInt(value: string | undefined, radix: number): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "parseColor",
+      "line": 52,
+      "context": "export function parseColor(color: string): [number, number, number] | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "calculateContrastRatio",
+      "line": 112,
+      "context": "export function calculateContrastRatio(foreground: string, background: string): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "meetsWCAGAA",
+      "line": 142,
+      "context": "export function meetsWCAGAA(foreground: string, background: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "meetsWCAGAAA",
+      "line": 159,
+      "context": "export function meetsWCAGAAA(foreground: string, background: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "detectActualBackgroundColor",
+      "line": 170,
+      "context": "export function detectActualBackgroundColor(element: HTMLElement): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "detectLightBackground",
+      "line": 193,
+      "context": "export function detectLightBackground(element: HTMLElement): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "enableKeyboardNavigation",
+      "line": 207,
+      "context": "export function enableKeyboardNavigation(container: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "manageFocus",
+      "line": 270,
+      "context": "export function manageFocus(element: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "announceLiveMessage",
+      "line": 330,
+      "context": "export function announceLiveMessage(message: string, politeness = 'polite'): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "analyzeContrast",
+      "line": 383,
+      "context": "export function analyzeContrast(element: HTMLElement): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "calculateLuminance",
+      "line": 395,
+      "context": "export function calculateLuminance(rgb: number[]): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "releaseKeyboardTrap",
+      "line": 421,
+      "context": "export function releaseKeyboardTrap(container: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "notifyScreenReader",
+      "line": 435,
+      "context": "export function notifyScreenReader(message: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "associateLabel",
+      "line": 443,
+      "context": "export function associateLabel(inputElement: HTMLElement, labelElement: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "enhanceFocusVisibility",
+      "line": 453,
+      "context": "export function enhanceFocusVisibility(element: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "testContrastRatio",
+      "line": 470,
+      "context": "export function testContrastRatio(foreground: string, background: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "enableWCAGKeyboardNavigation",
+      "line": 562,
+      "context": "export function enableWCAGKeyboardNavigation(element: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "disableKeyboardNavigation",
+      "line": 575,
+      "context": "export function disableKeyboardNavigation(element: HTMLElement): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "announceToScreenReader",
+      "line": 629,
+      "context": "export function announceToScreenReader(message: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\accessibility-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "announceUrgentToScreenReader",
+      "line": 633,
+      "context": "export function announceUrgentToScreenReader(message: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\focus-restore-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "beginFocusScope",
+      "line": 20,
+      "context": "export function beginFocusScope(): FocusRestoreFn {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\live-region-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ensurePoliteLiveRegion",
+      "line": 55,
+      "context": "export function ensurePoliteLiveRegion(): HTMLElement {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\live-region-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ensureAssertiveLiveRegion",
+      "line": 68,
+      "context": "export function ensureAssertiveLiveRegion(): HTMLElement {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\live-region-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "__resetLiveRegionStateForTests__",
+      "line": 87,
+      "context": "export function __resetLiveRegionStateForTests__(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\live-region-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "announcePolite",
+      "line": 154,
+      "context": "export function announcePolite(message: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility\\live-region-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "announceAssertive",
+      "line": 158,
+      "context": "export function announceAssertive(message: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "meetsWCAGAA",
+      "line": 102,
+      "context": "export function meetsWCAGAA(foreground: string, background: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "meetsWCAGAAA",
+      "line": 109,
+      "context": "export function meetsWCAGAAA(foreground: string, background: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "detectLightBackground",
+      "line": 144,
+      "context": "export function detectLightBackground(element: Element): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "parseColor",
+      "line": 29,
+      "context": "export function parseColor(color: string): [number, number, number] | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "calculateContrastRatio",
+      "line": 82,
+      "context": "export function calculateContrastRatio(foreground: string, background: string): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "meetsWCAGAA",
+      "line": 102,
+      "context": "export function meetsWCAGAA(foreground: string, background: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "meetsWCAGAAA",
+      "line": 109,
+      "context": "export function meetsWCAGAAA(foreground: string, background: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "detectActualBackgroundColor",
+      "line": 117,
+      "context": "export function detectActualBackgroundColor(element: Element): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\accessibility.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "detectLightBackground",
+      "line": 144,
+      "context": "export function detectLightBackground(element: Element): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\animations.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "animateCustom",
+      "line": 41,
+      "context": "export const animateCustom = async (",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\animations.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "animateParallel",
+      "line": 93,
+      "context": "export const animateParallel = async (",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\animations.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "transformValue",
+      "line": 147,
+      "context": "export const transformValue = (",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeQuerySelector",
+      "line": 19,
+      "context": "export function safeQuerySelector<T extends Element = Element>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "combineClasses",
+      "line": 55,
+      "context": "export function combineClasses(...classes: (string | undefined | null)[]): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeGetAttribute",
+      "line": 93,
+      "context": "export function safeGetAttribute(el: Element | null, attr: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeSetAttribute",
+      "line": 104,
+      "context": "export function safeSetAttribute(el: Element | null, attr: string, value: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeAddClass",
+      "line": 115,
+      "context": "export function safeAddClass(element: Element | null, className: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeRemoveClass",
+      "line": 126,
+      "context": "export function safeRemoveClass(element: Element | null, className: string): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeSetStyle",
+      "line": 137,
+      "context": "export function safeSetStyle(el: HTMLElement | null, style: Partial<CSSStyleDeclaration>): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeRemoveElement",
+      "line": 149,
+      "context": "export function safeRemoveElement(el: Element | null): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeSetScrollTop",
+      "line": 247,
+      "context": "export function safeSetScrollTop(element: HTMLElement | Window, top: number): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ensureGalleryScrollAvailable",
+      "line": 275,
+      "context": "export function ensureGalleryScrollAvailable(element: HTMLElement | null): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\core-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetInfoFromUrl",
+      "line": 316,
+      "context": "export function extractTweetInfoFromUrl(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\css-animations.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "injectAnimationStyles",
+      "line": 52,
+      "context": "export function injectAnimationStyles(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\css-animations.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupAnimations",
+      "line": 199,
+      "context": "export function cleanupAnimations(element: Element): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\debug\\gallery-debug.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "galleryDebugUtils",
+      "line": 8,
+      "context": "export const galleryDebugUtils = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\dom\\css-validation.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "calculateSelectorComplexity",
+      "line": 26,
+      "context": "export function calculateSelectorComplexity(selector: string): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\dom\\DOMBatcher.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "globalDOMBatcher",
+      "line": 114,
+      "context": "export const globalDOMBatcher = new DOMBatcher();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\error-handling.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "standardizeError",
+      "line": 58,
+      "context": "export function standardizeError(error: unknown, context: ErrorContext): StandardError {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\error-handling.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "serializeError",
+      "line": 155,
+      "context": "export function serializeError(error: unknown): Record<string, unknown> {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events\\wheel.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "ensureWheelLock",
+      "line": 50,
+      "context": "export function ensureWheelLock(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "removeEventListenerManaged",
+      "line": 107,
+      "context": "export function removeEventListenerManaged(id: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupEventDispatcher",
+      "line": 211,
+      "context": "export function cleanupEventDispatcher(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupGalleryEvents",
+      "line": 774,
+      "context": "export function cleanupGalleryEvents(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanupEventListeners",
+      "line": 943,
+      "context": "export function cleanupEventListeners(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "dispatchManagedEvent",
+      "line": 1011,
+      "context": "export function dispatchManagedEvent<T = unknown>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\events.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "TwitterEventManager",
+      "line": 1037,
+      "context": "export const TwitterEventManager = GalleryEventManager;",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\html\\decode-html-entities.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "decodeHtmlEntitiesSafely",
+      "line": 77,
+      "context": "export function decodeHtmlEntitiesSafely(value: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\media\\image-filter.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "imageFilter",
+      "line": 234,
+      "context": "export function imageFilter(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\media\\media-url.util.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractOriginalImageUrl",
+      "line": 201,
+      "context": "export function extractOriginalImageUrl(url: string): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\media\\media-url.util.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanFilename",
+      "line": 416,
+      "context": "export function cleanFilename(filename: string): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\memory-profiler.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "takeMemorySnapshot",
+      "line": 52,
+      "context": "export function takeMemorySnapshot(): MemorySnapshot | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\object-url-manager.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "revokeManagedObjectURL",
+      "line": 42,
+      "context": "export function revokeManagedObjectURL(url: string, idHint?: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\object-url-manager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "revokeManagedObjectURL",
+      "line": 42,
+      "context": "export function revokeManagedObjectURL(url: string, idHint?: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\ResourceManager.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "releaseResource",
+      "line": 158,
+      "context": "export function releaseResource(id: string): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\ResourceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "globalResourceManager",
+      "line": 146,
+      "context": "export const globalResourceManager = new ResourceManager();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\ResourceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "registerResource",
+      "line": 151,
+      "context": "export function registerResource(id: string, cleanup: () => void): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\ResourceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "releaseResource",
+      "line": 158,
+      "context": "export function releaseResource(id: string): boolean {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\memory\\ResourceManager.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "releaseAllResources",
+      "line": 165,
+      "context": "export function releaseAllResources(): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\optimization\\memo.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "memo",
+      "line": 16,
+      "context": "export function memo<TProps extends Record<string, unknown>>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\patterns\\url-patterns.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "URLPatterns",
+      "line": 30,
+      "context": "export const URLPatterns = {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\patterns\\url-patterns.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetInfoFromUrl",
+      "line": 696,
+      "context": "export function extractTweetInfoFromUrl(url: string): {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\patterns\\url-patterns.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetInfoFromUrls",
+      "line": 754,
+      "context": "export function extractTweetInfoFromUrls(urls: string[]): {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\patterns\\url-patterns.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "extractTweetUrlCandidates",
+      "line": 777,
+      "context": "export function extractTweetUrlCandidates(element: HTMLElement): string[] {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\patterns\\url-patterns.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "cleanUrl",
+      "line": 838,
+      "context": "export function cleanUrl(url: string): string | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\idleScheduler.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "scheduleIdle",
+      "line": 52,
+      "context": "export function scheduleIdle(task: () => void, opts: IdleScheduleOptions = {}): IdleHandle {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\memoization.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "memo",
+      "line": 34,
+      "context": "export function memo<P extends Record<string, unknown>>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\memoization.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useCallback",
+      "line": 59,
+      "context": "export function useCallback<T extends (...args: any[]) => any>(callback: T, _deps: unknown[]): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\memoization.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useMemo",
+      "line": 68,
+      "context": "export function useMemo<T>(factory: () => T, _deps: unknown[]): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\performance-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "rafThrottle",
+      "line": 78,
+      "context": "export function rafThrottle<T extends (...args: unknown[]) => void>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\performance-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "throttleScroll",
+      "line": 119,
+      "context": "export function throttleScroll<T extends (...args: unknown[]) => void>(func: T): T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\performance-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "measurePerformance",
+      "line": 126,
+      "context": "export function measurePerformance<T>(label: string, fn: () => T): { result: T; duration: number } {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\preload.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "computePreloadIndices",
+      "line": 11,
+      "context": "export function computePreloadIndices(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\schedulers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "scheduleRaf",
+      "line": 20,
+      "context": "export function scheduleRaf(task: () => void): SchedulerHandle {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\performance\\schedulers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "scheduleMicrotask",
+      "line": 89,
+      "context": "export function scheduleMicrotask(task: () => void): SchedulerHandle {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\scroll\\scroll-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "preventScrollPropagation",
+      "line": 46,
+      "context": "export function preventScrollPropagation(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\signalSelector.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "setDebugMode",
+      "line": 89,
+      "context": "export function setDebugMode(enabled: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\signalSelector.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "getDebugMode",
+      "line": 96,
+      "context": "export function getDebugMode(): boolean {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\signalSelector.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useSignalSelector",
+      "line": 33,
+      "context": "export function useSignalSelector<T, R>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\signalSelector.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "useCombinedSignalSelector",
+      "line": 62,
+      "context": "export function useCombinedSignalSelector<TAccessors extends readonly Accessor<unknown>[], R>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\css-utilities.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "toggleClass",
+      "line": 16,
+      "context": "export function toggleClass(element: HTMLElement, className: string, condition?: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\css-utilities.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "combineClasses",
+      "line": 9,
+      "context": "export function combineClasses(...classes: (string | undefined | false | null)[]): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\css-utilities.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toggleClass",
+      "line": 16,
+      "context": "export function toggleClass(element: HTMLElement, className: string, condition?: boolean): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\style-utils.ts",
+      "type": "boolean-prefix-missing",
+      "pattern": "toggleClass",
+      "line": 11,
+      "context": "export function toggleClass(element: Element | null, className: string, force?: boolean): void {",
+      "severity": "HIGH"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\style-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "combineClasses",
+      "line": 6,
+      "context": "export function combineClasses(...classes: (string | undefined | false | null)[]): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\style-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "toggleClass",
+      "line": 11,
+      "context": "export function toggleClass(element: Element | null, className: string, force?: boolean): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\styles\\style-utils.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "applyTheme",
+      "line": 38,
+      "context": "export function applyTheme(element: Element | null, theme: string, themePrefix = 'theme'): void {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\timer-management.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "globalTimerManager",
+      "line": 227,
+      "context": "export const globalTimerManager = new TimerManager();",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\timer-management.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safePerformanceNow",
+      "line": 234,
+      "context": "export function safePerformanceNow(): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeParseInt",
+      "line": 21,
+      "context": "export function safeParseInt(value: string | undefined | null, radix: number = 10): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeParseFloat",
+      "line": 32,
+      "context": "export function safeParseFloat(value: string | undefined | null): number {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeArrayGet",
+      "line": 55,
+      "context": "export function safeArrayGet<T>(array: T[] | undefined | null, index: number): T | undefined {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeNodeListAccess",
+      "line": 65,
+      "context": "export function safeNodeListAccess<T extends Node>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeMatchExtract",
+      "line": 80,
+      "context": "export function safeMatchExtract(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeCall",
+      "line": 96,
+      "context": "export function safeCall<T extends unknown[], R>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeEventHandler",
+      "line": 106,
+      "context": "export function safeEventHandler<T extends Event>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "undefinedToNull",
+      "line": 117,
+      "context": "export function undefinedToNull<T>(value: T | undefined): T | null {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "nullToUndefined",
+      "line": 124,
+      "context": "export function nullToUndefined<T>(value: T | null): T | undefined {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "stringWithDefault",
+      "line": 131,
+      "context": "export function stringWithDefault(value: string | undefined, defaultValue: string = ''): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeElementCheck",
+      "line": 140,
+      "context": "export function safeElementCheck<T extends Element>(element: T | undefined | null): element is T {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeProp",
+      "line": 147,
+      "context": "export function safeProp<T, K extends keyof T>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeTweetId",
+      "line": 159,
+      "context": "export function safeTweetId(value: string | undefined): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeUsername",
+      "line": 181,
+      "context": "export function safeUsername(value: string | undefined): string {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "safeClickedIndex",
+      "line": 191,
+      "context": "export function safeClickedIndex(index: number | undefined): number | undefined {",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "buildSafeObject",
+      "line": 200,
+      "context": "export function buildSafeObject<T extends Record<string, unknown>>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "assignOptionalProperty",
+      "line": 227,
+      "context": "export function assignOptionalProperty<T, K extends keyof T>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "conditionalAssign",
+      "line": 240,
+      "context": "export function conditionalAssign<T extends Record<string, unknown>>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\type-safety-helpers.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "mergeWithoutUndefined",
+      "line": 255,
+      "context": "export function mergeWithoutUndefined<T extends Record<string, unknown>>(",
+      "severity": "MEDIUM"
+    },
+    {
+      "file": "src\\shared\\utils\\url-safety.ts",
+      "type": "verb-pattern-inconsistent",
+      "pattern": "parseTrustedUrl",
+      "line": 71,
+      "context": "export function parseTrustedUrl(",
+      "severity": "MEDIUM"
+    }
+  ],
+  "summary": {
+    "totalFiles": 263,
+    "totalViolations": 314,
+    "byType": {
+      "verb-pattern-inconsistent": 268,
+      "boolean-prefix-missing": 46
+    },
+    "bySeverity": {
+      "MEDIUM": 268,
+      "HIGH": 46
+    }
+  }
+}
