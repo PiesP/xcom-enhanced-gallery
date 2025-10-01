@@ -278,8 +278,3 @@ function registerSettingsServiceStub(initialValues: Record<string, unknown>): ()
     bridgeResetServices();
   };
 }
-
-/**
- * @deprecated Stage D retained alias — remove once consumers migrate to createSolidSettingsSnapshot.
- */
-export const createSettingsParitySnapshot = createSolidSettingsSnapshot;
