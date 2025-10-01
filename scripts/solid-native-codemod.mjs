@@ -97,7 +97,7 @@ function transformValueRead(content) {
 
     while ((match = valueReadPattern.exec(line)) !== null) {
       const signalName = match[1];
-      
+
       lineTransformations.push({
         type: 'value-read',
         line: index + 1,
@@ -112,10 +112,10 @@ function transformValueRead(content) {
       let transformedLine = line;
       // 같은 라인에 여러 패턴이 있을 수 있으므로 전체 치환
       transformedLine = transformedLine.replace(/\b(\w+)\.value\b(?!\s*=)/g, '$1()');
-      
+
       const originalLine = lines[index];
       transformedContent = transformedContent.replace(originalLine, transformedLine);
-      
+
       transformations.push(...lineTransformations);
     }
   });
