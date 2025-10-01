@@ -20,7 +20,7 @@
 
 ## 활성 Epic 현황
 
-### Epic: NAMING-001 Phase B — Boolean 함수 명명 규칙 적용 📝 **활성**
+### Epic: NAMING-001 Phase B — Boolean 함수 명명 규칙 적용 ✅ **완료** (2025-10-01)
 
 **목표**: Phase A에서 발견한 boolean 반환 함수들의 명명 규칙 적용 (적절한 접두사
 추가)
@@ -40,7 +40,7 @@
 5. `triggerGarbageCollection` → 검토 후 결정 (성공 여부 반환)
 6. `areGallerySignalsReady` → 유지 (이미 적절한 접두사)
 
-**현재 상태**: Phase B-1 시작 (명확한 개선 대상 2건)
+**현재 상태**: Phase B 완료 ✅ (Phase B-1 + B-2, 총 4건 리네이밍)
 
 **최근 완료**:
 
@@ -91,14 +91,54 @@
 
 ---
 
+## Phase B-2: 추가 함수 리네이밍 (2건)
+
+**목표**: 스캐너가 놓친 2개 함수 리네이밍 (수동 확인)
+
+**작업 항목**:
+
+1. **matchesMediaQuery → doesMediaQueryMatch**
+   - 파일: `src/shared/browser/utils/browser-utils.ts`
+   - 이유: 미디어 쿼리 조회 동작은 `does` 동사가 더 명확
+   - 영향 범위: 내부 호출 2개 (isDarkMode, doesUserPreferReducedMotion), 테스트
+     3개
+   - 추가 작업: Logger 함수명 수정 (`logWarn` → `logger.warn`)
+
+2. **detectLightBackground → isLightBackground**
+   - 파일: `src/shared/utils/accessibility.ts`,
+     `src/shared/utils/accessibility/accessibility-utils.ts`
+   - 이유: 상태 조회 함수는 `is` 접두사가 표준
+   - 특이 사항: 2개 파일에 중복 정의 (Element vs HTMLElement 시그니처)
+   - 영향 범위: export 체인 5개 (index.ts, utils.ts, shared/index.ts)
+
+**Acceptance Criteria**:
+
+- [x] matchesMediaQuery 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
+- [x] detectLightBackground 리네이밍 완료 (중복 정의 모두 처리)
+- [x] 모든 참조 업데이트 완료 (grep 검색으로 확인)
+- [x] 품질 게이트: typecheck/lint/test ALL GREEN (35/35 PASS)
+- [x] 커밋: Phase B-2 완료 (792ce2d4)
+
+**실제 소요**: ~2시간 (2025-10-01 완료)
+
+**Phase B-2 완료 요약**:
+
+- matchesMediaQuery → doesMediaQueryMatch (내부 호출 2개, 테스트 3개)
+- detectLightBackground → isLightBackground (중복 정의 2개, export 5개)
+- Logger 수정: logWarn → logger.warn
+- 커밋: 792ce2d4 (renaming)
+
+---
+
 ## 다음 사이클 준비
 
-- 현재 Epic: **NAMING-001 Phase B** (진행 중)
-- 완료 Epic: NAMING-001 Phase A, LEGACY-CLEANUP-001, SOLID-NATIVE-002, UX-001,
-  UX-002 (`TDD_REFACTORING_PLAN_COMPLETED.md` 참조)
+- **Epic NAMING-001 Phase B 완료** ✅ (2025-10-01)
+- 완료 Epic: NAMING-001 Phase A & B, LEGACY-CLEANUP-001, SOLID-NATIVE-002,
+  UX-001, UX-002 (`TDD_REFACTORING_PLAN_COMPLETED.md` 참조)
 - 다음 후보:
-  - Epic NAMING-001 Phase B: HIGH priority 46건 리네이밍
+  - Epic NAMING-001 Phase C: 린트 룰 추가 및 문서화
   - CSS-OPTIMIZATION: CSS 번들 최적화
+  - E2E 테스트 인프라 구축
   - E2E 테스트 인프라 구축
 
 ---

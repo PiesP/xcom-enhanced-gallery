@@ -1,5 +1,35 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic NAMING-001 Phase B 완료 ✅
+
+- **목표**: Boolean 함수 명명 규칙 적용 (적절한 접두사 추가)
+- **Phase B-1 성과** (2건):
+  - Scanner 개선: void 반환 false positive 필터링 (46건 → 4건 실제 위반)
+  - `prefersReducedMotion` → `doesUserPreferReducedMotion` (browser-utils.ts)
+  - `getDebugMode` → `isDebugModeEnabled` (signalSelector.ts)
+  - 테스트 개선: global → globalThis (lint 오류 39건 수정)
+  - 커밋: 5a2beac0 (renaming), ac4f66e3 (test fix), 8ed35551 (docs)
+- **Phase B-2 성과** (2건):
+  - `matchesMediaQuery` → `doesMediaQueryMatch` (browser-utils.ts)
+    - 내부 호출 2개 (isDarkMode, doesUserPreferReducedMotion)
+    - 테스트 호출 3개
+    - Logger 수정: logWarn → logger.warn
+  - `detectLightBackground` → `isLightBackground` (2파일 중복 정의)
+    - accessibility.ts (Element 시그니처)
+    - accessibility-utils.ts (HTMLElement 시그니처)
+    - Export 체인 5개 업데이트 (index.ts, utils.ts, shared/index.ts)
+  - 커밋: 792ce2d4 (renaming)
+- **총 4건 리네이밍** 완료:
+  - `does` 접두사 2건 (사용자 선호도/미디어 쿼리 조회)
+  - `is` 접두사 2건 (상태/디버그 모드 확인)
+- **품질 게이트**: typecheck/lint/test ALL GREEN (35/35 PASS)
+- **테스트 커버리지**: 2249 tests 유지
+- **실행 시간**: ~4시간 (Phase B-1: ~2h, Phase B-2: ~2h)
+- **TDD 워크플로**: RED → GREEN → REFACTOR 완료
+- **다음 단계**: Phase C 고려 (린트 룰 추가 및 문서화) 또는 Epic 종료
+
+---
+
 2025-01-22: EXEC — Epic NAMING-001 Phase A 완료 ✅
 
 - **목표**: 명명 규칙 위반 자동 검출 스크립트 개발 및 전수 스캔
