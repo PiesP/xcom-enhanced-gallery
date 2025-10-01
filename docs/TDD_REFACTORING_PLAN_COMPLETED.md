@@ -3841,3 +3841,118 @@ MediaProcessor 순수 함수화 (+I18N 키 옵션) 계획 수립 (RED 테스트 
   - polite/assertive 각각 1개만 생성 & 총 2개 초과 금지
 - 후속(Backlog): 다중 스코프 스택, announcement queue/debounce, assertive 우선
   정책 튜닝
+
+---
+
+## 2025-10-01: EXEC — Epic SOLID-NATIVE-001 완료 (SolidJS 네이티브 패턴 완전 이행)
+
+**목표**: 호환 레이어(createGlobalSignal .value 방식)에서 SolidJS 네이티브
+패턴(createSignal 함수 호출)으로 완전 전환
+
+**최종 상태**: ✅ **완료**
+
+**배경**:
+
+- FRAME-ALT-001 (Preact → SolidJS 전환) 완료 시점에 호환 레이어 방식 채택
+- `createGlobalSignal()` 유틸리티가 `.value` / `.update()` / `.subscribe()` API
+  제공
+- 목적: Preact Signals 스타일 유지하여 점진적 마이그레이션 및 기존 코드 변경
+  최소화
+
+**변경 범위**:
+
+- State Signals: 5개 파일 (`createGlobalSignal` → `createSignal` 전환)
+- Components: 6개 파일 (`.value` → 함수 호출 방식 수정, 50회)
+- Services: 1개 (UnifiedToastManager 내부 signal 전환)
+- Utils: 1개 (`signalSelector.ts` 유틸리티 조정)
+- Tests: ~20개 파일 (테스트 패턴 업데이트)
+
+**완료 내역**:
+
+- ✅ UnifiedToastManager.ts: 이미 SolidJS 네이티브 패턴(`createSignal`) 사용 중
+- ✅ gallery-store.ts: Phase G-3-5에서 제거 완료
+- ✅ 테스트 수정 완료: inventory.test.ts, gallery-store-legacy-removal.test.ts
+  (15/15 GREEN)
+- ✅ createGlobalSignal imports: 0개 (정의 파일 제외)
+- ✅ createGlobalSignal calls: 0개 (정의 파일 제외)
+- ℹ️ .value 접근: 3개 (DOM 요소 value 속성, 허용됨)
+- ℹ️ .subscribe() 호출: 7개 (ToastManager, signalSelector 등 다른 패턴, 허용됨)
+
+**패턴 변경**:
+
+```typescript
+// Before: 호환 레이어 방식
+const galleryState = createGlobalSignal<GalleryState>({ ... });
+galleryState.value = newState;
+const isOpen = galleryState.value.isOpen;
+galleryState.subscribe(listener);
+
+// After: SolidJS 네이티브 방식
+const [galleryState, setGalleryState] = createSignal<GalleryState>({ ... });
+setGalleryState(newState);
+const isOpen = galleryState().isOpen;
+createEffect(() => { /* galleryState() 구독 */ });
+```
+
+**성과**:
+
+- 기술 부채 축적 방지 (신규 코드가 레거시 패턴 답습 방지)
+- SolidJS 생태계 표준 정합성 확보 (학습 곡선 개선)
+- 장기 유지보수성 향상 (중간 추상화 레이어 제거)
+- 문서 업데이트 완료: CODING_GUIDELINES, vendors-safe-api, ARCHITECTURE 모두
+  네이티브 패턴 권장으로 갱신
+
+**Ref**: Epic SOLID-NATIVE-001
+
+---
+
+## 2025-10-01: EXEC — Epic SOLID-NATIVE-001 완료 (SolidJS 네이티브 패턴 완전 이행)
+
+**목표**: 호환 레이어(createGlobalSignal .value 방식)에서 SolidJS 네이티브
+패턴(createSignal 함수 호출)으로 완전 전환
+
+**최종 상태**: ✅ **완료**
+
+**배경**:
+
+- FRAME-ALT-001 (Preact → SolidJS 전환) 완료 시점에 호환 레이어 방식 채택
+- \createGlobalSignal()\ 유틸리티가 \.value\ / \.update()\ / \.subscribe()\ API
+  제공
+- 목적: Preact Signals 스타일 유지하여 점진적 마이그레이션 및 기존 코드 변경
+  최소화
+
+**변경 범위**:
+
+- State Signals: 5개 파일 (\createGlobalSignal\ → \createSignal\ 전환)
+- Components: 6개 파일 (\.value\ → 함수 호출 방식 수정, 50회)
+- Services: 1개 (UnifiedToastManager 내부 signal 전환)
+- Utils: 1개 (\signalSelector.ts\ 유틸리티 조정)
+- Tests: ~20개 파일 (테스트 패턴 업데이트)
+
+**완료 내역**:
+
+- ✅ UnifiedToastManager.ts: 이미 SolidJS 네이티브 패턴(\createSignal\) 사용 중
+- ✅ gallery-store.ts: Phase G-3-5에서 제거 완료
+- ✅ 테스트 수정 완료: inventory.test.ts, gallery-store-legacy-removal.test.ts
+  (15/15 GREEN)
+- ✅ createGlobalSignal imports: 0개 (정의 파일 제외)
+- ✅ createGlobalSignal calls: 0개 (정의 파일 제외)
+- ℹ️ .value 접근: 3개 (DOM 요소 value 속성, 허용됨)
+- ℹ️ .subscribe() 호출: 7개 (ToastManager, signalSelector 등 다른 패턴, 허용됨)
+
+**패턴 변경**: \\ ypescript // Before: 호환 레이어 방식 const galleryState =
+createGlobalSignal<GalleryState>({ ... }); galleryState.value = newState; const
+isOpen = galleryState.value.isOpen; galleryState.subscribe(listener);
+
+// After: SolidJS 네이티브 방식 const [galleryState, setGalleryState] =
+createSignal<GalleryState>({ ... }); setGalleryState(newState); const isOpen =
+galleryState().isOpen; createEffect(() => { /_ galleryState() 구독 _/ }); \
+**성과**:
+
+- 기술 부채 축적 방지 (신규 코드가 레거시 패턴 답습 방지)
+- SolidJS 생태계 표준 정합성 확보 (학습 곡선 개선)
+- 장기 유지보수성 향상 (중간 추상화 레이어 제거)
+- 문서 업데이트 완료: CODING_GUIDELINES, vendors-safe-api, ARCHITECTURE 모두
+  네이티브 패턴 권장으로 갱신
+
+**Ref**: Epic SOLID-NATIVE-001
