@@ -159,11 +159,16 @@
    - 전략: 신규 API에 맞춰 테스트 업데이트 (컴포넌트 개수 262 → 263 등)
    - 산출물: 테스트 수정, GREEN 전환
    - 실제 소요: 0.1일 (예상 1일)
-4. **C-4: 서비스 초기화 오류 수정**
-   - 타겟: 서비스 접근자 패턴 변경으로 실패한 테스트 (~10개)
+4. **C-4: 서비스 초기화 오류 수정** - ✅ 완료 (2025-10-02)
+   - 타겟: 서비스 접근자 패턴 변경으로 실패한 테스트 (10개)
    - 전략: 테스트 헬퍼 함수 추가 (setupServiceMocks)
-   - 산출물: 테스트 모킹 코드 업데이트
-   - 예상 소요: 1일
+   - 수정 파일:
+     - `test/setup.ts`: setupServiceMocks 헬퍼 추가 (MediaService, ThemeService,
+       ToastController, BulkDownloadService, FilenameService 모킹)
+     - `test/features/gallery/gallery-close-dom-cleanup.test.ts`:
+       setupServiceMocks 사용
+   - 결과: 10개 테스트 GREEN 전환 (gallery-close-dom-cleanup.test.ts)
+   - 실제 소요: 0.5일 (예상 1일)
 5. **C-5: Stage D RED 가드 업데이트** - ✅ 완료 (2025-10-01)
    - 타겟: Preact 제거 관련 RED 테스트 (~6개)
    - 전략: Epic FRAME-ALT-001 Stage D 완료 사실 반영, GREEN 전환
@@ -179,8 +184,9 @@
 
 - [x] 실패 테스트 원인 분석 완료 (Phase C-1)
 - [x] API 변경 테스트 수정 완료 (Phase C-3)
+- [x] 서비스 초기화 오류 수정 완료 (Phase C-4)
 - [x] Stage D RED 가드 업데이트 완료 (Phase C-5)
-- [ ] 실패 테스트 75개 → 10개 이하로 감소
+- [ ] 실패 테스트 75개 → 10개 이하로 감소 (현재: 65개로 감소)
 - [ ] 스킵 테스트 49개 → 30개 이하로 감소 (재활성화 또는 제거)
 - [ ] 품질 게이트: `npm test` GREEN (2200+ passed)
 - [ ] 실패/스킵 테스트 사유가 문서화됨

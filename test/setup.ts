@@ -560,6 +560,86 @@ afterEach(async () => {
 });
 
 // ================================
+// 서비스 모킹 헬퍼 (Phase C-4)
+// ================================
+
+/**
+ * 테스트에서 필요한 서비스를 모킹하는 헬퍼 함수
+ *
+ * @description
+ * Epic ARCH-SIMPLIFY-001 Phase A/B의 서비스 리팩터링 후,
+ * 테스트에서 서비스 접근 시 "서비스를 찾을 수 없습니다" 오류를 방지하기 위해
+ * 필요한 서비스를 CoreService에 등록합니다.
+ *
+ * @example
+ * ```ts
+ * beforeEach(async () => {
+ *   await initializeVendors();
+ *   setupServiceMocks();
+ * });
+ * ```
+ */
+export async function setupServiceMocks(): Promise<void> {
+  try {
+    const { CoreService } = await import('@shared/services/ServiceManager');
+    const coreService = CoreService.getInstance();
+
+    // MediaService mock
+    if (!coreService.has('media.service')) {
+      const mockMediaService = {
+        extractMedia: () => Promise.resolve([]),
+        getMediaInfo: () => null,
+        downloadMedia: () => Promise.resolve(void 0),
+        prepareForGallery: () => Promise.resolve(void 0),
+        destroy: () => {},
+      };
+      coreService.register('media.service', mockMediaService);
+    }
+
+    // ThemeService mock
+    if (!coreService.has('theme.auto')) {
+      const mockThemeService = {
+        getCurrentTheme: () => 'light' as const,
+        setTheme: () => {},
+        destroy: () => {},
+      };
+      coreService.register('theme.auto', mockThemeService);
+    }
+
+    // ToastController mock
+    if (!coreService.has('toast.controller')) {
+      const mockToastController = {
+        show: () => {},
+        hide: () => {},
+        destroy: () => {},
+      };
+      coreService.register('toast.controller', mockToastController);
+    }
+
+    // BulkDownloadService mock
+    if (!coreService.has('bulk.download')) {
+      const mockBulkDownloadService = {
+        downloadAll: () => Promise.resolve(void 0),
+        destroy: () => {},
+      };
+      coreService.register('bulk.download', mockBulkDownloadService);
+    }
+
+    // FilenameService mock
+    if (!coreService.has('media.filename')) {
+      const mockFilenameService = {
+        generateFilename: () => 'test-file.jpg',
+        destroy: () => {},
+      };
+      coreService.register('media.filename', mockFilenameService);
+    }
+  } catch (error) {
+    // CoreService import 실패 시 무시 (테스트 환경에 따라)
+    console.warn('[test/setup] setupServiceMocks failed:', error);
+  }
+}
+
+// ================================
 // 환경 사용 가이드
 // ================================
 // 이 파일은 vitest.config.ts의 setupFiles에서 자동으로 로드됩니다
@@ -568,3 +648,6 @@ afterEach(async () => {
 // - setupBrowserTestEnvironment() : DOM + 브라우저 확장 환경
 // - setupTestEnvironment() : 모든 환경 + 샘플 데이터
 // - setupMinimalEnvironment() : 기본 환경 (기본값)
+//
+// 서비스가 필요한 테스트:
+// - setupServiceMocks() : CoreService에 기본 서비스 모킹 등록
