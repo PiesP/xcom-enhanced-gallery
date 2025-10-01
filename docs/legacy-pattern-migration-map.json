@@ -1,10 +1,10 @@
 {
   "summary": {
-    "totalFiles": 47,
-    "totalPatterns": 213,
-    "auto": 126,
-    "semiAuto": 49,
-    "manual": 38
+    "totalFiles": 45,
+    "totalPatterns": 217,
+    "auto": 128,
+    "semiAuto": 54,
+    "manual": 35
   },
   "files": [
     {
@@ -65,149 +65,6 @@
             "pattern": "toastManager.subscribe(",
             "line": 343,
             "context": "return toastManager.subscribe(callback);",
-            "complexity": "manual"
-          }
-        ]
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "src\\shared\\utils\\signalSelector.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "store.value",
-          "line": 183,
-          "context": "const [selected, setSelected] = solid.createSignal<R>(memoizedSelector(store.value), {"
-        },
-        {
-          "type": "subscribe",
-          "pattern": "store.subscribe(",
-          "line": 199,
-          "context": "? store.subscribe(value => {"
-        },
-        {
-          "type": "value-read",
-          "pattern": "store.value",
-          "line": 204,
-          "context": "handleUpdate(store.value);"
-        },
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 241,
-          "context": "return signals.map(signal => signal.value) as Values;"
-        },
-        {
-          "type": "subscribe",
-          "pattern": "signal.subscribe(",
-          "line": 247,
-          "context": "? signal.subscribe(() => {"
-        },
-        {
-          "type": "value-read",
-          "pattern": "s.value",
-          "line": 248,
-          "context": "listener(signals.map(s => s.value) as Values);"
-        },
-        {
-          "type": "value-read",
-          "pattern": "prev.value",
-          "line": 315,
-          "context": "value: prev.value,"
-        },
-        {
-          "type": "subscribe",
-          "pattern": "store.subscribe(",
-          "line": 327,
-          "context": "const unsubscribe = typeof store.subscribe === 'function' ? store.subscribe(handler) : undefined;"
-        },
-        {
-          "type": "value-read",
-          "pattern": "store.value",
-          "line": 329,
-          "context": "handler(store.value);"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 344,
-          "context": "return state().value;"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "store.value",
-            "line": 183,
-            "context": "const [selected, setSelected] = solid.createSignal<R>(memoizedSelector(store.value), {",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "store.value",
-            "line": 204,
-            "context": "handleUpdate(store.value);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 241,
-            "context": "return signals.map(signal => signal.value) as Values;",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "s.value",
-            "line": 248,
-            "context": "listener(signals.map(s => s.value) as Values);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "prev.value",
-            "line": 315,
-            "context": "value: prev.value,",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "store.value",
-            "line": 329,
-            "context": "handler(store.value);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 344,
-            "context": "return state().value;",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": [
-          {
-            "type": "subscribe",
-            "pattern": "store.subscribe(",
-            "line": 199,
-            "context": "? store.subscribe(value => {",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": "signal.subscribe(",
-            "line": 247,
-            "context": "? signal.subscribe(() => {",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": "store.subscribe(",
-            "line": 327,
-            "context": "const unsubscribe = typeof store.subscribe === 'function' ? store.subscribe(handler) : undefined;",
             "complexity": "manual"
           }
         ]
@@ -497,6 +354,253 @@
       "priority": "medium"
     },
     {
+      "path": "test\\cleanup\\solid-native-codemod.test.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 31,
+          "context": "describe('1. .value 읽기 패턴 변환 (AUTO)', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 32,
+          "context": "it('should transform simple .value read to function call', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 33,
+          "context": "const input = `const count = signal.value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "state.value",
+          "line": 34,
+          "context": "console.log(state.value);`;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 40,
+          "context": "expect(result.content).not.toContain('signal.value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 44,
+          "context": "it('should transform .value in expressions', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 45,
+          "context": "const input = `const sum = signal.value + 10;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "state.value",
+          "line": 46,
+          "context": "if (state.value > 0) {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "data.value",
+          "line": 47,
+          "context": "return data.value.name;"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 57,
+          "context": "it('should NOT transform DOM element .value', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 79,
+          "context": "describe('2. .value 쓰기 패턴 변환 (SEMI_AUTO)', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 80,
+          "context": "it('should transform .value assignment to setter call', () => {"
+        },
+        {
+          "type": "value-write",
+          "pattern": "signal.value =",
+          "line": 81,
+          "context": "const input = `signal.value = 42;"
+        },
+        {
+          "type": "value-write",
+          "pattern": "state.value =",
+          "line": 82,
+          "context": "state.value = { count: 1 };`;"
+        },
+        {
+          "type": "value-write",
+          "pattern": "mySignal.value =",
+          "line": 92,
+          "context": "const input = `mySignal.value = 100;"
+        },
+        {
+          "type": "value-write",
+          "pattern": "galleryState.value =",
+          "line": 93,
+          "context": "galleryState.value = newState;`;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 111,
+          "context": "original: 'signal.value',"
+        },
+        {
+          "type": "value-write",
+          "pattern": "signal.value =",
+          "line": 117,
+          "context": "original: 'signal.value = 42',"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 31,
+            "context": "describe('1. .value 읽기 패턴 변환 (AUTO)', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 32,
+            "context": "it('should transform simple .value read to function call', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 33,
+            "context": "const input = `const count = signal.value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "state.value",
+            "line": 34,
+            "context": "console.log(state.value);`;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 40,
+            "context": "expect(result.content).not.toContain('signal.value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 44,
+            "context": "it('should transform .value in expressions', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 45,
+            "context": "const input = `const sum = signal.value + 10;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "state.value",
+            "line": 46,
+            "context": "if (state.value > 0) {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "data.value",
+            "line": 47,
+            "context": "return data.value.name;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 57,
+            "context": "it('should NOT transform DOM element .value', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 79,
+            "context": "describe('2. .value 쓰기 패턴 변환 (SEMI_AUTO)', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 80,
+            "context": "it('should transform .value assignment to setter call', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 111,
+            "context": "original: 'signal.value',",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [
+          {
+            "type": "value-write",
+            "pattern": "signal.value =",
+            "line": 81,
+            "context": "const input = `signal.value = 42;",
+            "complexity": "semi-auto"
+          },
+          {
+            "type": "value-write",
+            "pattern": "state.value =",
+            "line": 82,
+            "context": "state.value = { count: 1 };`;",
+            "complexity": "semi-auto"
+          },
+          {
+            "type": "value-write",
+            "pattern": "mySignal.value =",
+            "line": 92,
+            "context": "const input = `mySignal.value = 100;",
+            "complexity": "semi-auto"
+          },
+          {
+            "type": "value-write",
+            "pattern": "galleryState.value =",
+            "line": 93,
+            "context": "galleryState.value = newState;`;",
+            "complexity": "semi-auto"
+          },
+          {
+            "type": "value-write",
+            "pattern": "signal.value =",
+            "line": 117,
+            "context": "original: 'signal.value = 42',",
+            "complexity": "semi-auto"
+          }
+        ],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
       "path": "test\\cleanup\\legacy-pattern-scanner.test.ts",
       "patterns": [
         {
@@ -574,175 +678,175 @@
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 109,
+          "line": 111,
           "context": "it('should classify simple .value read as AUTO', () => {"
         },
         {
           "type": "value-read",
           "pattern": "state.value",
-          "line": 111,
+          "line": 113,
           "context": "const count = state.value;"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 125,
+          "line": 127,
           "context": "it('should classify .value write as SEMI_AUTO', () => {"
         },
         {
           "type": "value-write",
           "pattern": "state.value =",
-          "line": 127,
+          "line": 129,
           "context": "state.value = { count: 1 };"
         },
         {
           "type": "subscribe",
           "pattern": ".subscribe(",
-          "line": 141,
+          "line": 143,
           "context": "it('should classify .subscribe() as MANUAL', () => {"
         },
         {
           "type": "subscribe",
           "pattern": "state.subscribe(",
-          "line": 143,
+          "line": 145,
           "context": "state.subscribe(val => {"
         },
         {
           "type": "value-read",
           "pattern": "state.value",
-          "line": 185,
+          "line": 187,
           "context": "const value = state.value;"
         },
         {
           "type": "value-read",
           "pattern": "state.value",
-          "line": 193,
+          "line": 195,
           "context": "expect(patterns[0].context).toContain('state.value');"
         },
         {
           "type": "value-read",
           "pattern": "state.value",
-          "line": 202,
-          "context": "{ type: 'value-read', pattern: 'state.value', line: 10, context: '' }"
+          "line": 204,
+          "context": "{ type: 'value-read', pattern: 'state.value', line: 10, context: '' },"
         },
         {
           "type": "value-read",
           "pattern": "store.value",
-          "line": 212,
-          "context": "{ type: 'value-read', pattern: 'store.value', line: 183, context: '' }"
+          "line": 214,
+          "context": "{ type: 'value-read', pattern: 'store.value', line: 183, context: '' },"
         },
         {
           "type": "value-read",
           "pattern": "testSignal.value",
-          "line": 222,
-          "context": "{ type: 'value-read', pattern: 'testSignal.value', line: 130, context: '' }"
+          "line": 224,
+          "context": "{ type: 'value-read', pattern: 'testSignal.value', line: 130, context: '' },"
         },
         {
           "type": "import-createGlobalSignal",
           "pattern": "createGlobalSignal",
-          "line": 233,
+          "line": 235,
           "context": "type: 'value-read' | 'value-write' | 'subscribe' | 'import-createGlobalSignal';"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 270,
+          "line": 272,
           "context": "/\\binput\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 271,
+          "line": 273,
           "context": "/\\belement\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 272,
+          "line": 274,
           "context": "/\\bselect\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 273,
+          "line": 275,
           "context": "/\\btarget\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 274,
+          "line": 276,
           "context": "/\\bthemeSelect\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 275,
+          "line": 277,
           "context": "/\\blanguageSelect\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 276,
+          "line": 278,
           "context": "/\\battr\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 277,
+          "line": 279,
           "context": "/\\bentry\\.value\\b/,"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 278,
+          "line": 280,
           "context": "/\\boption\\.value\\b/,"
         },
         {
           "type": "import-createGlobalSignal",
           "pattern": "createGlobalSignal",
-          "line": 297,
+          "line": 299,
           "context": "if (/import.*createGlobalSignal/.test(line)) {"
         },
         {
           "type": "import-createGlobalSignal",
           "pattern": "createGlobalSignal",
-          "line": 299,
+          "line": 301,
           "context": "type: 'import-createGlobalSignal',"
         },
         {
           "type": "subscribe",
           "pattern": ".subscribe(",
-          "line": 310,
+          "line": 312,
           "context": "pattern: line.match(/(\\w+)\\.subscribe\\(/)?.[0] || '.subscribe(',"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 317,
+          "line": 319,
           "context": "if (/\\.value\\s*=/.test(line)) {"
         },
         {
           "type": "value-write",
           "pattern": ".value =",
-          "line": 320,
+          "line": 322,
           "context": "pattern: line.match(/(\\w+)\\.value\\s*=/)?.[0] || '.value =',"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 326,
+          "line": 328,
           "context": "else if (/\\.value\\b/.test(line)) {"
         },
         {
           "type": "value-read",
           "pattern": ".value",
-          "line": 329,
+          "line": 331,
           "context": "pattern: line.match(/(\\w+)\\.value/)?.[0] || '.value',"
         },
         {
           "type": "import-createGlobalSignal",
           "pattern": "createGlobalSignal",
-          "line": 357,
+          "line": 365,
           "context": "case 'import-createGlobalSignal':"
         }
       ],
@@ -786,140 +890,140 @@
           {
             "type": "value-read",
             "pattern": ".value",
-            "line": 109,
+            "line": 111,
             "context": "it('should classify simple .value read as AUTO', () => {",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "state.value",
-            "line": 111,
+            "line": 113,
             "context": "const count = state.value;",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
-            "line": 125,
+            "line": 127,
             "context": "it('should classify .value write as SEMI_AUTO', () => {",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "state.value",
-            "line": 185,
+            "line": 187,
             "context": "const value = state.value;",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "state.value",
-            "line": 193,
+            "line": 195,
             "context": "expect(patterns[0].context).toContain('state.value');",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "state.value",
-            "line": 202,
-            "context": "{ type: 'value-read', pattern: 'state.value', line: 10, context: '' }",
+            "line": 204,
+            "context": "{ type: 'value-read', pattern: 'state.value', line: 10, context: '' },",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "store.value",
-            "line": 212,
-            "context": "{ type: 'value-read', pattern: 'store.value', line: 183, context: '' }",
+            "line": 214,
+            "context": "{ type: 'value-read', pattern: 'store.value', line: 183, context: '' },",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": "testSignal.value",
-            "line": 222,
-            "context": "{ type: 'value-read', pattern: 'testSignal.value', line: 130, context: '' }",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 270,
-            "context": "/\\binput\\.value\\b/,",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 271,
-            "context": "/\\belement\\.value\\b/,",
+            "line": 224,
+            "context": "{ type: 'value-read', pattern: 'testSignal.value', line: 130, context: '' },",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 272,
-            "context": "/\\bselect\\.value\\b/,",
+            "context": "/\\binput\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 273,
-            "context": "/\\btarget\\.value\\b/,",
+            "context": "/\\belement\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 274,
-            "context": "/\\bthemeSelect\\.value\\b/,",
+            "context": "/\\bselect\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 275,
-            "context": "/\\blanguageSelect\\.value\\b/,",
+            "context": "/\\btarget\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 276,
-            "context": "/\\battr\\.value\\b/,",
+            "context": "/\\bthemeSelect\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 277,
-            "context": "/\\bentry\\.value\\b/,",
+            "context": "/\\blanguageSelect\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
             "line": 278,
+            "context": "/\\battr\\.value\\b/,",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 279,
+            "context": "/\\bentry\\.value\\b/,",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 280,
             "context": "/\\boption\\.value\\b/,",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
-            "line": 317,
+            "line": 319,
             "context": "if (/\\.value\\s*=/.test(line)) {",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
-            "line": 326,
+            "line": 328,
             "context": "else if (/\\.value\\b/.test(line)) {",
             "complexity": "auto"
           },
           {
             "type": "value-read",
             "pattern": ".value",
-            "line": 329,
+            "line": 331,
             "context": "pattern: line.match(/(\\w+)\\.value/)?.[0] || '.value',",
             "complexity": "auto"
           }
@@ -942,14 +1046,14 @@
           {
             "type": "value-write",
             "pattern": "state.value =",
-            "line": 127,
+            "line": 129,
             "context": "state.value = { count: 1 };",
             "complexity": "semi-auto"
           },
           {
             "type": "value-write",
             "pattern": ".value =",
-            "line": 320,
+            "line": 322,
             "context": "pattern: line.match(/(\\w+)\\.value\\s*=/)?.[0] || '.value =',",
             "complexity": "semi-auto"
           }
@@ -993,104 +1097,53 @@
           {
             "type": "subscribe",
             "pattern": ".subscribe(",
-            "line": 141,
+            "line": 143,
             "context": "it('should classify .subscribe() as MANUAL', () => {",
             "complexity": "manual"
           },
           {
             "type": "subscribe",
             "pattern": "state.subscribe(",
-            "line": 143,
+            "line": 145,
             "context": "state.subscribe(val => {",
             "complexity": "manual"
           },
           {
             "type": "import-createGlobalSignal",
             "pattern": "createGlobalSignal",
-            "line": 233,
+            "line": 235,
             "context": "type: 'value-read' | 'value-write' | 'subscribe' | 'import-createGlobalSignal';",
             "complexity": "manual"
           },
           {
             "type": "import-createGlobalSignal",
             "pattern": "createGlobalSignal",
-            "line": 297,
+            "line": 299,
             "context": "if (/import.*createGlobalSignal/.test(line)) {",
             "complexity": "manual"
           },
           {
             "type": "import-createGlobalSignal",
             "pattern": "createGlobalSignal",
-            "line": 299,
+            "line": 301,
             "context": "type: 'import-createGlobalSignal',",
             "complexity": "manual"
           },
           {
             "type": "subscribe",
             "pattern": ".subscribe(",
-            "line": 310,
+            "line": 312,
             "context": "pattern: line.match(/(\\w+)\\.subscribe\\(/)?.[0] || '.subscribe(',",
             "complexity": "manual"
           },
           {
             "type": "import-createGlobalSignal",
             "pattern": "createGlobalSignal",
-            "line": 357,
+            "line": 365,
             "context": "case 'import-createGlobalSignal':",
             "complexity": "manual"
           }
         ]
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\behavioral\\performance-optimization.characterization.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 90,
-          "context": "pattern: 'signal.value.someProperty',"
-        },
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 96,
-          "context": "pattern: 'computed(() => signal.value.someProperty)',"
-        },
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 106,
-          "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 90,
-            "context": "pattern: 'signal.value.someProperty',",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 96,
-            "context": "pattern: 'computed(() => signal.value.someProperty)',",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 106,
-            "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
       },
       "priority": "medium"
     },
@@ -1404,6 +1457,82 @@
             "complexity": "manual"
           }
         ]
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\behavioral\\performance-optimization.characterization.test.tsx",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 90,
+          "context": "pattern: 'signal.value.someProperty',"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 96,
+          "context": "pattern: 'computed(() => signal.value.someProperty)',"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 106,
+          "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 90,
+            "context": "pattern: 'signal.value.someProperty',",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 96,
+            "context": "pattern: 'computed(() => signal.value.someProperty)',",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 106,
+            "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\utils\\helpers\\test-assertions.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 432,
+          "context": "expect(signal.value).toEqual(expectedValue);"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 432,
+            "context": "expect(signal.value).toEqual(expectedValue);",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
       },
       "priority": "medium"
     },
@@ -1873,31 +2002,6 @@
       "priority": "medium"
     },
     {
-      "path": "test\\unit\\bootstrap\\progressive-loader.test.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "first.value",
-          "line": 29,
-          "context": "expect(first.value).toBe(42);"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "first.value",
-            "line": 29,
-            "context": "expect(first.value).toBe(42);",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
       "path": "test\\unit\\a11y\\announce-routing.test.ts",
       "patterns": [
         {
@@ -1914,6 +2018,31 @@
             "pattern": "toasts.value",
             "line": 47,
             "context": "const list = toasts.value;",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\unit\\bootstrap\\progressive-loader.test.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "first.value",
+          "line": 29,
+          "context": "expect(first.value).toBe(42);"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "first.value",
+            "line": 29,
+            "context": "expect(first.value).toBe(42);",
             "complexity": "auto"
           }
         ],
@@ -2193,110 +2322,6 @@
       "priority": "medium"
     },
     {
-      "path": "test\\shared\\utils\\signal-selector-native.test.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 65,
-          "context": "const selected = solid.createMemo(() => obj().value);"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 229,
-          "context": "it('should support legacy ObservableValue with .value property', () => {"
-        },
-        {
-          "type": "value-read",
-          "pattern": "legacy.value",
-          "line": 259,
-          "context": "expect(legacy.value).toBe(100);"
-        },
-        {
-          "type": "value-write",
-          "pattern": "legacy.value =",
-          "line": 261,
-          "context": "legacy.value = 200;"
-        },
-        {
-          "type": "value-read",
-          "pattern": "legacy.value",
-          "line": 262,
-          "context": "expect(legacy.value).toBe(200);"
-        },
-        {
-          "type": "value-read",
-          "pattern": "legacyWrapper.value",
-          "line": 292,
-          "context": "expect(legacyWrapper.value).toBe(5);"
-        },
-        {
-          "type": "value-write",
-          "pattern": "legacyWrapper.value =",
-          "line": 295,
-          "context": "legacyWrapper.value = 10;"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 65,
-            "context": "const selected = solid.createMemo(() => obj().value);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 229,
-            "context": "it('should support legacy ObservableValue with .value property', () => {",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "legacy.value",
-            "line": 259,
-            "context": "expect(legacy.value).toBe(100);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "legacy.value",
-            "line": 262,
-            "context": "expect(legacy.value).toBe(200);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "legacyWrapper.value",
-            "line": 292,
-            "context": "expect(legacyWrapper.value).toBe(5);",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [
-          {
-            "type": "value-write",
-            "pattern": "legacy.value =",
-            "line": 261,
-            "context": "legacy.value = 200;",
-            "complexity": "semi-auto"
-          },
-          {
-            "type": "value-write",
-            "pattern": "legacyWrapper.value =",
-            "line": 295,
-            "context": "legacyWrapper.value = 10;",
-            "complexity": "semi-auto"
-          }
-        ],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
       "path": "test\\shared\\services\\unified-toast-manager-native.test.ts",
       "patterns": [
         {
@@ -2348,22 +2373,139 @@
       "priority": "medium"
     },
     {
-      "path": "test\\utils\\helpers\\test-assertions.ts",
+      "path": "test\\shared\\utils\\signal-selector-native.test.ts",
       "patterns": [
         {
           "type": "value-read",
-          "pattern": "signal.value",
-          "line": 432,
-          "context": "expect(signal.value).toEqual(expectedValue);"
+          "pattern": "o.value",
+          "line": 63,
+          "context": "const selected = useSignalSelector(obj, o => o.value, { equals: false });"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 227,
+          "context": "it('should support legacy ObservableValue with .value property', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "legacy.value",
+          "line": 257,
+          "context": "expect(legacy.value).toBe(100);"
+        },
+        {
+          "type": "value-write",
+          "pattern": "legacy.value =",
+          "line": 259,
+          "context": "legacy.value = 200;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "legacy.value",
+          "line": 260,
+          "context": "expect(legacy.value).toBe(200);"
+        },
+        {
+          "type": "value-read",
+          "pattern": "legacyWrapper.value",
+          "line": 290,
+          "context": "expect(legacyWrapper.value).toBe(5);"
+        },
+        {
+          "type": "value-write",
+          "pattern": "legacyWrapper.value =",
+          "line": 293,
+          "context": "legacyWrapper.value = 10;"
         }
       ],
       "classified": {
         "auto": [
           {
             "type": "value-read",
-            "pattern": "signal.value",
-            "line": 432,
-            "context": "expect(signal.value).toEqual(expectedValue);",
+            "pattern": "o.value",
+            "line": 63,
+            "context": "const selected = useSignalSelector(obj, o => o.value, { equals: false });",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 227,
+            "context": "it('should support legacy ObservableValue with .value property', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "legacy.value",
+            "line": 257,
+            "context": "expect(legacy.value).toBe(100);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "legacy.value",
+            "line": 260,
+            "context": "expect(legacy.value).toBe(200);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "legacyWrapper.value",
+            "line": 290,
+            "context": "expect(legacyWrapper.value).toBe(5);",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [
+          {
+            "type": "value-write",
+            "pattern": "legacy.value =",
+            "line": 259,
+            "context": "legacy.value = 200;",
+            "complexity": "semi-auto"
+          },
+          {
+            "type": "value-write",
+            "pattern": "legacyWrapper.value =",
+            "line": 293,
+            "context": "legacyWrapper.value = 10;",
+            "complexity": "semi-auto"
+          }
+        ],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\features\\settings\\solid-settings-panel.integration.test.tsx",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 74,
+          "context": "expect(themeSelect?.value).toBe('dark');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 88,
+          "context": "expect(languageSelect?.value).toBe('ja');"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 74,
+            "context": "expect(themeSelect?.value).toBe('dark');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 88,
+            "context": "expect(languageSelect?.value).toBe('ja');",
             "complexity": "auto"
           }
         ],
@@ -2373,73 +2515,35 @@
       "priority": "medium"
     },
     {
-      "path": "test\\utils\\mocks\\vendor-mocks.ts",
+      "path": "test\\features\\settings\\settings-modal.form-controls.theme.test.tsx",
       "patterns": [
         {
           "type": "value-read",
-          "pattern": "signalObj.value",
-          "line": 212,
-          "context": "peek: () => signalObj.value,"
+          "pattern": ".value",
+          "line": 31,
+          "context": "expect((themeSelect as any).value).toBe('dark');"
         },
         {
           "type": "value-read",
-          "pattern": "computedObj.value",
-          "line": 222,
-          "context": "peek: () => computedObj.value,"
+          "pattern": ".value",
+          "line": 35,
+          "context": "expect((languageSelect as any).value).toBe('ja');"
         }
       ],
       "classified": {
         "auto": [
           {
             "type": "value-read",
-            "pattern": "signalObj.value",
-            "line": 212,
-            "context": "peek: () => signalObj.value,",
+            "pattern": ".value",
+            "line": 31,
+            "context": "expect((themeSelect as any).value).toBe('dark');",
             "complexity": "auto"
           },
           {
             "type": "value-read",
-            "pattern": "computedObj.value",
-            "line": 222,
-            "context": "peek: () => computedObj.value,",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\utils\\mocks\\vendor-mocks-clean.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "signalObj.value",
-          "line": 175,
-          "context": "peek: () => signalObj.value,"
-        },
-        {
-          "type": "value-read",
-          "pattern": "computedObj.value",
-          "line": 185,
-          "context": "peek: () => computedObj.value,"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "signalObj.value",
-            "line": 175,
-            "context": "peek: () => signalObj.value,",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "computedObj.value",
-            "line": 185,
-            "context": "peek: () => computedObj.value,",
+            "pattern": ".value",
+            "line": 35,
+            "context": "expect((languageSelect as any).value).toBe('ja');",
             "complexity": "auto"
           }
         ],
@@ -2530,82 +2634,6 @@
             "pattern": "callCount.value",
             "line": 136,
             "context": "expect(callCount.value).toBe(1);",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\features\\settings\\solid-settings-panel.integration.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 74,
-          "context": "expect(themeSelect?.value).toBe('dark');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 88,
-          "context": "expect(languageSelect?.value).toBe('ja');"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 74,
-            "context": "expect(themeSelect?.value).toBe('dark');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 88,
-            "context": "expect(languageSelect?.value).toBe('ja');",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\features\\settings\\settings-modal.form-controls.theme.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 31,
-          "context": "expect((themeSelect as any).value).toBe('dark');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 35,
-          "context": "expect((languageSelect as any).value).toBe('ja');"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 31,
-            "context": "expect((themeSelect as any).value).toBe('dark');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 35,
-            "context": "expect((languageSelect as any).value).toBe('ja');",
             "complexity": "auto"
           }
         ],
