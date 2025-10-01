@@ -38,6 +38,8 @@
     "deps:all:legacy": "npm run deps:all",
     "codemod:solid-native": "node ./scripts/solid-native-codemod.mjs",
     "codemod:solid-native:apply": "node ./scripts/solid-native-codemod.mjs --apply",
+    "codemod:legacy:dry-run": "npx tsx scripts/legacy-codemod-cli.ts --dry-run",
+    "codemod:legacy:apply": "npx tsx scripts/legacy-codemod-cli.ts",
     "codeql:dry-run": "node ./scripts/run-codeql.mjs --dry-run",
     "codeql:scan": "node ./scripts/run-codeql.mjs",
     "prepare": "husky"
