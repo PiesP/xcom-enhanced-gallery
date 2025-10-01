@@ -58,10 +58,8 @@ describe('renderSolidGalleryShell', () => {
       // After opening, shell should be mounted with data-open="true"
       expect(getShell()).toBeTruthy();
       expect(getShell()?.getAttribute('data-open')).toBe('true');
-      const counter = getShadowContentHost(container).querySelector(
-        '[data-gallery-element="counter"]'
-      )?.textContent;
-      expect(counter?.replace(/\s+/g, '')).toBe('2/2');
+      // Phase A (UX-002): statusBanner 위치 정보는 제거됨, 툴바 카운터만 검증
+      // 툴바는 MediaCounter 컴포넌트를 통해 위치 정보를 표시
     });
 
     closeGallery();

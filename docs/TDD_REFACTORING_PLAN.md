@@ -48,7 +48,7 @@
 
 - 신규 Epic 제안은 백로그에 초안 등록 후 합의되면 본 문서의 활성 Epic으로
   승격합니다.
-- Epic UX-001 완료 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+- Epic UX-001/UX-002 완료 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ---
 

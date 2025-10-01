@@ -162,15 +162,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
 
   const totalCount = createMemo(() => mediaItems().length);
 
-  const currentPositionLabel = createMemo(() => {
-    const total = totalCount();
-    if (total === 0) {
-      return '0/0';
-    }
-    const position = Math.min(currentIndex() + 1, total);
-    return `${position}/${total}`;
-  });
-
   const ensureSettingsModule = async (): Promise<SolidSettingsPanelInstance | null> => {
     if (useToolbarWithSettings) {
       return null;
@@ -438,9 +429,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
               {errorText()}
             </div>
           ) : null}
-          <div class={styles.statusBanner} role='status' aria-live='polite'>
-            {currentPositionLabel()}
-          </div>
         </div>
       </Show>
     </GalleryContainer>
