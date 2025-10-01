@@ -1,8 +1,8 @@
 {
   "summary": {
-    "totalFiles": 45,
-    "totalPatterns": 217,
-    "auto": 128,
+    "totalFiles": 46,
+    "totalPatterns": 239,
+    "auto": 150,
     "semiAuto": 54,
     "manual": 35
   },
@@ -345,6 +345,629 @@
             "pattern": ".value",
             "line": 186,
             "context": "surfaceGlassBg!.value.includes('var(--xeg-glass-bg-') ||",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\infrastructure\\legacy-codemod.test.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 33,
+          "context": "describe('.value 읽기 패턴 변환', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 34,
+          "context": "it('signal.value() → signal() 변환', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "count.value",
+          "line": 39,
+          "context": "const currentValue = count.value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "count.value",
+          "line": 40,
+          "context": "console.log(count.value);"
+        },
+        {
+          "type": "value-read",
+          "pattern": "count.value",
+          "line": 50,
+          "context": "expect(results[0].transformed).not.toContain('count.value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 53,
+          "context": "it('중첩된 .value 읽기 변환', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "outer.value",
+          "line": 58,
+          "context": "const value = outer.value.inner.value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 65,
+          "context": "expect(results[0].transformed).not.toContain('.value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 68,
+          "context": "it('메서드 체이닝 내부 .value 읽기 변환', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "items.value",
+          "line": 73,
+          "context": "const doubled = items.value.map(x => x * 2);"
+        },
+        {
+          "type": "value-read",
+          "pattern": "items.value",
+          "line": 80,
+          "context": "expect(results[0].transformed).not.toContain('items.value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 85,
+          "context": "it('DOM 요소 .value 보존 (HTMLInputElement)', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 101,
+          "context": "it('Iterator .next().value 보존', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 106,
+          "context": "const first = iterator.next().value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 113,
+          "context": "expect(results[0].transformed).toContain('.next().value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 146,
+          "context": "it('레거시 호환성 테스트 코드 보존 (의도적 .value 사용)', async () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 153,
+          "context": "it('should support .value access', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 155,
+          "context": "expect(signal.value).toBe(42); // 의도적 레거시 사용"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 164,
+          "context": "expect(results[0].transformed).toContain('signal.value');"
+        },
+        {
+          "type": "value-read",
+          "pattern": "count.value",
+          "line": 172,
+          "context": "const value = count.value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "count.value",
+          "line": 188,
+          "context": "const value = count.value;"
+        },
+        {
+          "type": "value-read",
+          "pattern": "a.value",
+          "line": 208,
+          "context": "const sum = a.value + b.value + c.value;"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 33,
+            "context": "describe('.value 읽기 패턴 변환', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 34,
+            "context": "it('signal.value() → signal() 변환', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "count.value",
+            "line": 39,
+            "context": "const currentValue = count.value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "count.value",
+            "line": 40,
+            "context": "console.log(count.value);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "count.value",
+            "line": 50,
+            "context": "expect(results[0].transformed).not.toContain('count.value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 53,
+            "context": "it('중첩된 .value 읽기 변환', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "outer.value",
+            "line": 58,
+            "context": "const value = outer.value.inner.value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 65,
+            "context": "expect(results[0].transformed).not.toContain('.value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 68,
+            "context": "it('메서드 체이닝 내부 .value 읽기 변환', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "items.value",
+            "line": 73,
+            "context": "const doubled = items.value.map(x => x * 2);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "items.value",
+            "line": 80,
+            "context": "expect(results[0].transformed).not.toContain('items.value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 85,
+            "context": "it('DOM 요소 .value 보존 (HTMLInputElement)', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 101,
+            "context": "it('Iterator .next().value 보존', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 106,
+            "context": "const first = iterator.next().value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 113,
+            "context": "expect(results[0].transformed).toContain('.next().value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 146,
+            "context": "it('레거시 호환성 테스트 코드 보존 (의도적 .value 사용)', async () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 153,
+            "context": "it('should support .value access', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 155,
+            "context": "expect(signal.value).toBe(42); // 의도적 레거시 사용",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 164,
+            "context": "expect(results[0].transformed).toContain('signal.value');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "count.value",
+            "line": 172,
+            "context": "const value = count.value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "count.value",
+            "line": 188,
+            "context": "const value = count.value;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "a.value",
+            "line": 208,
+            "context": "const sum = a.value + b.value + c.value;",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\architecture\\solid-native-inventory.test.ts",
+      "patterns": [
+        {
+          "type": "import-createGlobalSignal",
+          "pattern": "createGlobalSignal",
+          "line": 83,
+          "context": "import: /import\\s*\\{[^}]*createGlobalSignal[^}]*\\}\\s*from/,"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 87,
+          "context": "valueAccess: /\\.value\\s*[=.]/,"
+        },
+        {
+          "type": "import-createGlobalSignal",
+          "pattern": "createGlobalSignal",
+          "line": 130,
+          "context": "const importFiles = Array.from(inventory.createGlobalSignalImports.keys());"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 187,
+          "context": "describe('3. .value 속성 접근 패턴 식별', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 188,
+          "context": "it('.value 속성에 접근하는 파일 목록을 수집해야 함', () => {"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 192,
+          "context": "console.log('\\n💎 .value 속성 접근 사용처:');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 206,
+          "context": "const setterPattern = /\\.value\\s*=/;"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 207,
+          "context": "const getterPattern = /\\.value\\./;"
+        },
+        {
+          "type": "value-write",
+          "pattern": ".value =",
+          "line": 222,
+          "context": "console.log(`\\n  Setter (.value =): ${setterCount}`);"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 223,
+          "context": "console.log(`  Getter (.value.): ${getterCount}`);"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 229,
+          "context": "describe('4. .subscribe() 메서드 호출 식별', () => {"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 230,
+          "context": "it('.subscribe()를 호출하는 파일 목록을 수집해야 함', () => {"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 234,
+          "context": "console.log('\\n📡 .subscribe() 메서드 호출 사용처:');"
+        },
+        {
+          "type": "import-createGlobalSignal",
+          "pattern": "createGlobalSignal",
+          "line": 276,
+          "context": "const imports = inventory.createGlobalSignalImports.get(file)?.length ?? 0;"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 299,
+          "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 299,
+          "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 378,
+          "context": "console.log(`  .value property access: ${totalValueAccess} occurrences`);"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 379,
+          "context": "console.log(`  .subscribe() method calls: ${totalSubscribes} occurrences`);"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 399,
+          "context": "console.log(`  ℹ️  .value 접근 (DOM 요소 등): ${totalValueAccess} (허용됨)`);"
+        },
+        {
+          "type": "subscribe",
+          "pattern": ".subscribe(",
+          "line": 400,
+          "context": "console.log(`  ℹ️  .subscribe() 호출 (다른 패턴): ${totalSubscribes} (허용됨)`);"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 87,
+            "context": "valueAccess: /\\.value\\s*[=.]/,",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 187,
+            "context": "describe('3. .value 속성 접근 패턴 식별', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 188,
+            "context": "it('.value 속성에 접근하는 파일 목록을 수집해야 함', () => {",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 192,
+            "context": "console.log('\\n💎 .value 속성 접근 사용처:');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 206,
+            "context": "const setterPattern = /\\.value\\s*=/;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 207,
+            "context": "const getterPattern = /\\.value\\./;",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 223,
+            "context": "console.log(`  Getter (.value.): ${getterCount}`);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 299,
+            "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 378,
+            "context": "console.log(`  .value property access: ${totalValueAccess} occurrences`);",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 399,
+            "context": "console.log(`  ℹ️  .value 접근 (DOM 요소 등): ${totalValueAccess} (허용됨)`);",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [
+          {
+            "type": "value-write",
+            "pattern": ".value =",
+            "line": 222,
+            "context": "console.log(`\\n  Setter (.value =): ${setterCount}`);",
+            "complexity": "semi-auto"
+          }
+        ],
+        "manual": [
+          {
+            "type": "import-createGlobalSignal",
+            "pattern": "createGlobalSignal",
+            "line": 83,
+            "context": "import: /import\\s*\\{[^}]*createGlobalSignal[^}]*\\}\\s*from/,",
+            "complexity": "manual"
+          },
+          {
+            "type": "import-createGlobalSignal",
+            "pattern": "createGlobalSignal",
+            "line": 130,
+            "context": "const importFiles = Array.from(inventory.createGlobalSignalImports.keys());",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 229,
+            "context": "describe('4. .subscribe() 메서드 호출 식별', () => {",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 230,
+            "context": "it('.subscribe()를 호출하는 파일 목록을 수집해야 함', () => {",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 234,
+            "context": "console.log('\\n📡 .subscribe() 메서드 호출 사용처:');",
+            "complexity": "manual"
+          },
+          {
+            "type": "import-createGlobalSignal",
+            "pattern": "createGlobalSignal",
+            "line": 276,
+            "context": "const imports = inventory.createGlobalSignalImports.get(file)?.length ?? 0;",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 299,
+            "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 379,
+            "context": "console.log(`  .subscribe() method calls: ${totalSubscribes} occurrences`);",
+            "complexity": "manual"
+          },
+          {
+            "type": "subscribe",
+            "pattern": ".subscribe(",
+            "line": 400,
+            "context": "console.log(`  ℹ️  .subscribe() 호출 (다른 패턴): ${totalSubscribes} (허용됨)`);",
+            "complexity": "manual"
+          }
+        ]
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\behavioral\\performance-optimization.characterization.test.tsx",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 90,
+          "context": "pattern: 'signal.value.someProperty',"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 96,
+          "context": "pattern: 'computed(() => signal.value.someProperty)',"
+        },
+        {
+          "type": "value-read",
+          "pattern": "signal.value",
+          "line": 106,
+          "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 90,
+            "context": "pattern: 'signal.value.someProperty',",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 96,
+            "context": "pattern: 'computed(() => signal.value.someProperty)',",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": "signal.value",
+            "line": 106,
+            "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',",
             "complexity": "auto"
           }
         ],
@@ -1187,381 +1810,6 @@
       "priority": "medium"
     },
     {
-      "path": "test\\architecture\\solid-native-inventory.test.ts",
-      "patterns": [
-        {
-          "type": "import-createGlobalSignal",
-          "pattern": "createGlobalSignal",
-          "line": 83,
-          "context": "import: /import\\s*\\{[^}]*createGlobalSignal[^}]*\\}\\s*from/,"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 87,
-          "context": "valueAccess: /\\.value\\s*[=.]/,"
-        },
-        {
-          "type": "import-createGlobalSignal",
-          "pattern": "createGlobalSignal",
-          "line": 130,
-          "context": "const importFiles = Array.from(inventory.createGlobalSignalImports.keys());"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 187,
-          "context": "describe('3. .value 속성 접근 패턴 식별', () => {"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 188,
-          "context": "it('.value 속성에 접근하는 파일 목록을 수집해야 함', () => {"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 192,
-          "context": "console.log('\\n💎 .value 속성 접근 사용처:');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 206,
-          "context": "const setterPattern = /\\.value\\s*=/;"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 207,
-          "context": "const getterPattern = /\\.value\\./;"
-        },
-        {
-          "type": "value-write",
-          "pattern": ".value =",
-          "line": 222,
-          "context": "console.log(`\\n  Setter (.value =): ${setterCount}`);"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 223,
-          "context": "console.log(`  Getter (.value.): ${getterCount}`);"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 229,
-          "context": "describe('4. .subscribe() 메서드 호출 식별', () => {"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 230,
-          "context": "it('.subscribe()를 호출하는 파일 목록을 수집해야 함', () => {"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 234,
-          "context": "console.log('\\n📡 .subscribe() 메서드 호출 사용처:');"
-        },
-        {
-          "type": "import-createGlobalSignal",
-          "pattern": "createGlobalSignal",
-          "line": 276,
-          "context": "const imports = inventory.createGlobalSignalImports.get(file)?.length ?? 0;"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 299,
-          "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 299,
-          "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 378,
-          "context": "console.log(`  .value property access: ${totalValueAccess} occurrences`);"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 379,
-          "context": "console.log(`  .subscribe() method calls: ${totalSubscribes} occurrences`);"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 399,
-          "context": "console.log(`  ℹ️  .value 접근 (DOM 요소 등): ${totalValueAccess} (허용됨)`);"
-        },
-        {
-          "type": "subscribe",
-          "pattern": ".subscribe(",
-          "line": 400,
-          "context": "console.log(`  ℹ️  .subscribe() 호출 (다른 패턴): ${totalSubscribes} (허용됨)`);"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 87,
-            "context": "valueAccess: /\\.value\\s*[=.]/,",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 187,
-            "context": "describe('3. .value 속성 접근 패턴 식별', () => {",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 188,
-            "context": "it('.value 속성에 접근하는 파일 목록을 수집해야 함', () => {",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 192,
-            "context": "console.log('\\n💎 .value 속성 접근 사용처:');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 206,
-            "context": "const setterPattern = /\\.value\\s*=/;",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 207,
-            "context": "const getterPattern = /\\.value\\./;",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 223,
-            "context": "console.log(`  Getter (.value.): ${getterCount}`);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 299,
-            "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 378,
-            "context": "console.log(`  .value property access: ${totalValueAccess} occurrences`);",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 399,
-            "context": "console.log(`  ℹ️  .value 접근 (DOM 요소 등): ${totalValueAccess} (허용됨)`);",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [
-          {
-            "type": "value-write",
-            "pattern": ".value =",
-            "line": 222,
-            "context": "console.log(`\\n  Setter (.value =): ${setterCount}`);",
-            "complexity": "semi-auto"
-          }
-        ],
-        "manual": [
-          {
-            "type": "import-createGlobalSignal",
-            "pattern": "createGlobalSignal",
-            "line": 83,
-            "context": "import: /import\\s*\\{[^}]*createGlobalSignal[^}]*\\}\\s*from/,",
-            "complexity": "manual"
-          },
-          {
-            "type": "import-createGlobalSignal",
-            "pattern": "createGlobalSignal",
-            "line": 130,
-            "context": "const importFiles = Array.from(inventory.createGlobalSignalImports.keys());",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 229,
-            "context": "describe('4. .subscribe() 메서드 호출 식별', () => {",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 230,
-            "context": "it('.subscribe()를 호출하는 파일 목록을 수집해야 함', () => {",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 234,
-            "context": "console.log('\\n📡 .subscribe() 메서드 호출 사용처:');",
-            "complexity": "manual"
-          },
-          {
-            "type": "import-createGlobalSignal",
-            "pattern": "createGlobalSignal",
-            "line": 276,
-            "context": "const imports = inventory.createGlobalSignalImports.get(file)?.length ?? 0;",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 299,
-            "context": "console.log('\\nFile | Imports | Calls | .value | .subscribe() | Score');",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 379,
-            "context": "console.log(`  .subscribe() method calls: ${totalSubscribes} occurrences`);",
-            "complexity": "manual"
-          },
-          {
-            "type": "subscribe",
-            "pattern": ".subscribe(",
-            "line": 400,
-            "context": "console.log(`  ℹ️  .subscribe() 호출 (다른 패턴): ${totalSubscribes} (허용됨)`);",
-            "complexity": "manual"
-          }
-        ]
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\behavioral\\performance-optimization.characterization.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 90,
-          "context": "pattern: 'signal.value.someProperty',"
-        },
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 96,
-          "context": "pattern: 'computed(() => signal.value.someProperty)',"
-        },
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 106,
-          "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 90,
-            "context": "pattern: 'signal.value.someProperty',",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 96,
-            "context": "pattern: 'computed(() => signal.value.someProperty)',",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 106,
-            "context": "pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\utils\\helpers\\test-assertions.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "signal.value",
-          "line": 432,
-          "context": "expect(signal.value).toEqual(expectedValue);"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "signal.value",
-            "line": 432,
-            "context": "expect(signal.value).toEqual(expectedValue);",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\unit\\shared\\runtime-vendor-initialization.test.ts",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": "props.value",
-          "line": 102,
-          "context": "return props.value;"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": "props.value",
-            "line": 102,
-            "context": "return props.value;",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
       "path": "test\\unit\\performance\\use-gallery-scroll.throttle.test.ts",
       "patterns": [
         {
@@ -1977,6 +2225,31 @@
       "priority": "medium"
     },
     {
+      "path": "test\\unit\\shared\\runtime-vendor-initialization.test.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "props.value",
+          "line": 102,
+          "context": "return props.value;"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "props.value",
+            "line": 102,
+            "context": "return props.value;",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
       "path": "test\\unit\\main\\main-solid-toast-host-default.test.ts",
       "patterns": [
         {
@@ -1993,6 +2266,31 @@
             "pattern": ".value",
             "line": 52,
             "context": "const disposeMock = renderSolidHostSpy.mock.results[0]?.value?.dispose as",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\unit\\bootstrap\\progressive-loader.test.ts",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": "first.value",
+          "line": 29,
+          "context": "expect(first.value).toBe(42);"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": "first.value",
+            "line": 29,
+            "context": "expect(first.value).toBe(42);",
             "complexity": "auto"
           }
         ],
@@ -2027,22 +2325,22 @@
       "priority": "medium"
     },
     {
-      "path": "test\\unit\\bootstrap\\progressive-loader.test.ts",
+      "path": "test\\utils\\helpers\\test-assertions.ts",
       "patterns": [
         {
           "type": "value-read",
-          "pattern": "first.value",
-          "line": 29,
-          "context": "expect(first.value).toBe(42);"
+          "pattern": "signal.value",
+          "line": 432,
+          "context": "expect(signal.value).toEqual(expectedValue);"
         }
       ],
       "classified": {
         "auto": [
           {
             "type": "value-read",
-            "pattern": "first.value",
-            "line": 29,
-            "context": "expect(first.value).toBe(42);",
+            "pattern": "signal.value",
+            "line": 432,
+            "context": "expect(signal.value).toEqual(expectedValue);",
             "complexity": "auto"
           }
         ],
@@ -2477,82 +2775,6 @@
       "priority": "medium"
     },
     {
-      "path": "test\\features\\settings\\solid-settings-panel.integration.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 74,
-          "context": "expect(themeSelect?.value).toBe('dark');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 88,
-          "context": "expect(languageSelect?.value).toBe('ja');"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 74,
-            "context": "expect(themeSelect?.value).toBe('dark');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 88,
-            "context": "expect(languageSelect?.value).toBe('ja');",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
-      "path": "test\\features\\settings\\settings-modal.form-controls.theme.test.tsx",
-      "patterns": [
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 31,
-          "context": "expect((themeSelect as any).value).toBe('dark');"
-        },
-        {
-          "type": "value-read",
-          "pattern": ".value",
-          "line": 35,
-          "context": "expect((languageSelect as any).value).toBe('ja');"
-        }
-      ],
-      "classified": {
-        "auto": [
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 31,
-            "context": "expect((themeSelect as any).value).toBe('dark');",
-            "complexity": "auto"
-          },
-          {
-            "type": "value-read",
-            "pattern": ".value",
-            "line": 35,
-            "context": "expect((languageSelect as any).value).toBe('ja');",
-            "complexity": "auto"
-          }
-        ],
-        "semiAuto": [],
-        "manual": []
-      },
-      "priority": "medium"
-    },
-    {
       "path": "test\\features\\toast\\toast-optimization.test.tsx",
       "patterns": [
         {
@@ -2634,6 +2856,82 @@
             "pattern": "callCount.value",
             "line": 136,
             "context": "expect(callCount.value).toBe(1);",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\features\\settings\\solid-settings-panel.integration.test.tsx",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 74,
+          "context": "expect(themeSelect?.value).toBe('dark');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 88,
+          "context": "expect(languageSelect?.value).toBe('ja');"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 74,
+            "context": "expect(themeSelect?.value).toBe('dark');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 88,
+            "context": "expect(languageSelect?.value).toBe('ja');",
+            "complexity": "auto"
+          }
+        ],
+        "semiAuto": [],
+        "manual": []
+      },
+      "priority": "medium"
+    },
+    {
+      "path": "test\\features\\settings\\settings-modal.form-controls.theme.test.tsx",
+      "patterns": [
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 31,
+          "context": "expect((themeSelect as any).value).toBe('dark');"
+        },
+        {
+          "type": "value-read",
+          "pattern": ".value",
+          "line": 35,
+          "context": "expect((languageSelect as any).value).toBe('ja');"
+        }
+      ],
+      "classified": {
+        "auto": [
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 31,
+            "context": "expect((themeSelect as any).value).toBe('dark');",
+            "complexity": "auto"
+          },
+          {
+            "type": "value-read",
+            "pattern": ".value",
+            "line": 35,
+            "context": "expect((languageSelect as any).value).toBe('ja');",
             "complexity": "auto"
           }
         ],

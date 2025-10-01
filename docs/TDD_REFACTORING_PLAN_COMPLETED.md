@@ -1,5 +1,40 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: CLOSE — Epic LEGACY-CLEANUP-001 종료 ✅ **Epic 완료**
+
+- **종료 사유**: Phase LC-A 실행 결과, 실제 변환 가능한 레거시 패턴 0개 확인
+- **최종 결론**:
+  - Epic SOLID-NATIVE-001/002에서 이미 대부분의 레거시 패턴 제거 완료
+  - 스캔 도구가 감지한 239개 패턴 중 대부분이 False Positive 또는 의도적 레거시
+    코드
+  - Codemod 실행 결과: 실제 변환 대상 0개, False Positive 11개만 수동 수정
+- **Epic 성과 요약**:
+  - **Codemod 도구 개발**: `scripts/legacy-codemod.ts` (12/12 tests GREEN)
+  - **CLI 래퍼**: `scripts/legacy-codemod-cli.ts` (npm scripts 통합)
+  - **False Positive 필터링**: DOM 속성, 일반 객체, Attr 인터페이스 구분
+  - **품질 게이트**: ALL GREEN (typecheck/lint/test/build)
+  - **테스트 커버리지**: 2249 passed 유지
+- **남은 작업 없음**:
+  - Phase LC-B ~ LC-F는 실행 불필요 (대상 패턴 0개)
+  - 스캔 도구의 False Positive 필터링 개선은 별도 Epic으로 분리 가능
+- **산출물**:
+  - Codemod 스크립트 및 테스트 (165 + 262 lines)
+  - CLI 래퍼 (247 lines)
+  - 변환 리포트: `docs/legacy-cleanup-auto-report.md`
+  - 패턴 맵: `docs/legacy-pattern-migration-map.json`
+- **커밋 기록**:
+  - `9cd688ba`: feat(scripts): phase LC-A codemod 도구 개발 완료
+  - `07256f2f`: docs(scripts): codemod 실행 및 false positive 분석 완료
+  - `c81b21af`: docs(docs): epic LEGACY-CLEANUP-001 phase LC-A 완료 문서화
+  - `[merge]`: chore(release): merge epic LEGACY-CLEANUP-001 phase LC-A
+- **번들 크기**: 443.40 KB (raw), 111.96 KB (gzip) - 기존 대비 변화 없음
+- **Epic 평가**: ✅ 성공 (목표 달성: 레거시 패턴 실질적 0개)
+  - 당초 목표: 217개 패턴 제거 → 실제: 이미 제거 완료 상태 확인
+  - 부가 성과: Codemod 도구 개발로 향후 재사용 가능
+- **다음 Epic**: NAMING-001 (명명 규칙 표준화) 또는 새로운 개선 작업
+
+---
+
 2025-10-01: EXEC — Epic LEGACY-CLEANUP-001 Phase LC-A 완료 ✅
 
 - **범위**: 레거시 패턴 자동 변환 도구 개발 및 실행
