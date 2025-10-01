@@ -1,5 +1,41 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic UX-002 Phase A/B/C 완료 (상태 배너 제거)
+
+- **범위**: Phase A-C — 갤러리 하단 상태 배너(`<div role="status">1/1</div>`)
+  제거
+- **핵심 성과**:
+  - **Phase A: RED — 테스트 갱신**:
+    1. **테스트 수정**: `solid-gallery-shell.test.tsx`에서 statusBanner 위치
+       정보 검증 제거
+    2. **결과**: statusBanner 검증 제거, 툴바 카운터만 유지
+  - **Phase B: GREEN — statusBanner JSX 제거**:
+    1. **JSX 제거**: `SolidGalleryShell.solid.tsx` 441-443줄 위치 정보 배너 제거
+    2. **에러 배너 유지**: `data-variant='error'` 배너는 유지
+    3. **결과**: 3줄 코드 제거 (위치 정보 표시 `<div>` 태그)
+  - **Phase C: REFACTOR — 코드 정리**:
+    1. **Memo 제거**: `currentPositionLabel` memo 제거 (165-172줄)
+    2. **스타일 개선**: 에러 배너에 `font-weight: 600` 추가 (가독성 향상)
+    3. **결과**: 11줄 코드 제거, 스타일 1줄 추가
+- **개선 효과**:
+  - UI 복잡성 감소: 중복 위치 정보 표시 제거 (툴바 카운터로 일원화)
+  - 접근성 중복 제거: aria-live가 두 곳에서 발생하던 문제 해결
+  - 코드 단순화: 14줄 코드 제거 (JSX 3줄 + memo 11줄)
+  - 에러 배너 강조: 역할 명확화 (font-weight 추가)
+- **테스트 메트릭**:
+  - typecheck: ✅ PASSED (strict 오류 0)
+  - lint: ✅ PASSED
+  - format: ✅ PASSED
+  - build: 예정 (Phase C 완료 후)
+- **설계 근거**:
+  - Epic UX-001 Phase B에서 툴바 자동 숨김 이미 개선 → 툴바 카운터로 충분
+  - 위치 정보의 단일 소스: 툴바 (중복 제거 원칙 준수)
+  - 에러 배너는 역할이 다르므로 유지 및 강조
+- **솔루션 평가**: Option 1 (완전 제거) 선택 — TDD 영향 최소, 아키텍처 단순,
+  중복 제거
+
+---
+
 2025-10-01: EXEC — Epic STYLE-ISOLATION-002 Phase 2-3 완료 (Shadow DOM 제거 및
 정리)
 

@@ -43,8 +43,10 @@
   box-shadow: var(--xeg-shadow-sm);
 }
 
+/* Phase C (UX-002): 에러 전용 배너 - 가독성 및 역할 강조 */
 .statusBanner[data-variant='error'] {
   background: var(--xeg-color-surface-error-subtle);
   border-color: var(--xeg-color-border-error);
   color: var(--xeg-color-text-error);
+  font-weight: 600;
 }
