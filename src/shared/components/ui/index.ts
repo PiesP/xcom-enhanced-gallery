@@ -22,7 +22,7 @@ export { ToolbarButton } from './ToolbarButton/ToolbarButton';
 export type { ToolbarButtonProps } from './ToolbarButton/ToolbarButton';
 
 // Toast 컴포넌트 (실제 export 확인 후 수정)
-export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';
+export { Toast, addToast, clearAllToasts, removeToast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastItem } from './Toast/Toast';
 export type { ToastContainerProps } from './Toast/ToastContainer';

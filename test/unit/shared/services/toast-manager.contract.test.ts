@@ -1,7 +1,7 @@
 /**
  * @fileoverview Phase E: ToastManager 공개 계약 가드 테스트
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
 
 const PUBLIC_METHODS = [
@@ -13,7 +13,6 @@ const PUBLIC_METHODS = [
   'remove',
   'clear',
   'getToasts',
-  'subscribe',
   'init',
   'cleanup',
 ];
@@ -25,12 +24,13 @@ describe('Phase E: ToastManager 계약(Contract) 가드', () => {
     }
   });
 
-  it('show 는 id("toast_")를 반환하고 subscribe 로 상태를 받을 수 있다', () => {
-    const sub = vi.fn();
-    const unsub = toastManager.subscribe(sub);
+  it('show 는 id("toast_")를 반환하고 getToasts로 상태를 받을 수 있다', () => {
     const id = toastManager.show({ title: 'T', message: 'M' });
     expect(id.startsWith('toast_')).toBe(true);
-    expect(Array.isArray(toastManager.getToasts())).toBe(true);
-    unsub();
+
+    // getToasts는 Accessor 함수이므로 호출하면 배열을 반환함
+    const toasts = toastManager.getToasts();
+    expect(Array.isArray(toasts)).toBe(true);
+    // Toast는 자동으로 제거되므로 현재 개수만 확인
   });
 });
