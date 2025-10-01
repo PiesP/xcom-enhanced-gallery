@@ -104,7 +104,8 @@ export class GalleryApp {
 
     // 갤러리 닫기 콜백 설정
     this.galleryRenderer?.setOnCloseCallback(() => {
-      this.handleGalleryClose();
+      logger.debug('[GalleryApp] onCloseCallback 호출됨 (렌더러에서)');
+      this.closeGallery();
     });
 
     logger.debug('갤러리 렌더러 초기화 완료');
@@ -236,7 +237,18 @@ export class GalleryApp {
    */
   public closeGallery(): void {
     try {
+      logger.debug('[GalleryApp] closeGallery() 호출됨');
+      // 렌더러를 통해 DOM 정리
+      if (this.galleryRenderer) {
+        logger.debug('[GalleryApp] galleryRenderer.close() 호출');
+        this.galleryRenderer.close();
+      } else {
+        logger.warn('[GalleryApp] galleryRenderer가 없음');
+      }
+
+      // 상태만 관리하는 경우를 위한 폴백
       if (galleryState().isOpen) {
+        logger.debug('[GalleryApp] closeGallery() signal 호출 (폴백)');
         closeGallery();
       }
 

@@ -30,6 +30,8 @@ export interface GalleryContainerProps {
   readonly className?: string;
   /** Shadow DOM 사용 여부 */
   readonly useShadowDOM?: boolean;
+  /** 갤러리 열림 상태 */
+  readonly isOpen?: boolean;
 }
 
 const HOST_RULES = `
@@ -189,6 +191,7 @@ export function GalleryContainer({
   onClose,
   className = '',
   useShadowDOM = false,
+  isOpen = true,
 }: GalleryContainerProps) {
   const { createEffect, onCleanup } = getSolidCore();
   let containerRef: HTMLDivElement | undefined;
@@ -225,6 +228,7 @@ export function GalleryContainer({
       }}
       class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
       data-shadow={useShadowDOM ? 'true' : undefined}
+      data-open={isOpen ? 'true' : 'false'}
     >
       {children}
     </div>
