@@ -5,7 +5,6 @@
 
 import containerStyles from '@shared/components/ui/Toast/ToastContainer.module.css';
 import { SolidToast } from '@shared/components/ui/Toast/SolidToast.solid';
-import { logger } from '@shared/logging';
 import { getSolidCore } from '@shared/external/vendors';
 import {
   toastManager,
@@ -29,7 +28,7 @@ const POSITION_CLASS_MAP: Record<SolidToastPosition, string> = {
 
 export const SolidToastHost = (props: SolidToastHostProps) => {
   const solid = getSolidCore();
-  const { createSignal, createMemo, onCleanup, For } = solid;
+  const { createSignal, createEffect, createMemo, For } = solid;
 
   const position = props.position ?? 'top-right';
   const maxToasts = (() => {
@@ -49,16 +48,10 @@ export const SolidToastHost = (props: SolidToastHostProps) => {
 
   const [managedToasts, setManagedToasts] = createSignal(limitToasts(toastManager.getToasts()));
 
-  const unsubscribe = toastManager.subscribe(next => {
-    setManagedToasts(limitToasts(next));
-  });
-
-  onCleanup(() => {
-    try {
-      unsubscribe?.();
-    } catch (error) {
-      logger.warn('[SolidToastHost] 구독 해제 실패:', error);
-    }
+  // SolidJS 네이티브 패턴: createEffect로 UnifiedToastManager 상태 구독
+  createEffect(() => {
+    const toasts = toastManager.getToasts();
+    setManagedToasts(limitToasts(toasts));
   });
 
   const closeToast = (id: string) => {

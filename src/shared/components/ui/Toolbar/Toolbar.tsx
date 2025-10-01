@@ -8,7 +8,6 @@
 
 import type { JSX } from 'solid-js';
 import { getSolidCore } from '@shared/external/vendors';
-import type { ViewMode, ImageFitMode } from '@shared/types';
 import {
   useToolbarState,
   getToolbarDataState,
@@ -22,39 +21,9 @@ import { ComponentStandards } from '../StandardProps';
 import styles from './Toolbar.module.css';
 import { ToolbarButton } from '../ToolbarButton/ToolbarButton';
 import { MediaCounter } from '../MediaCounter/MediaCounter';
+import type { ToolbarProps, GalleryToolbarProps } from './Toolbar.types';
 
-export interface ToolbarProps {
-  currentIndex: number;
-  totalCount: number;
-  isDownloading?: boolean;
-  isLoading?: boolean;
-  disabled?: boolean;
-  currentViewMode?: ViewMode;
-  onViewModeChange?: (mode: ViewMode) => void;
-  onPrevious: () => void;
-  onNext: () => void;
-  onDownloadCurrent: () => void;
-  onDownloadAll: () => void;
-  onClose: () => void;
-  onOpenSettings?: () => void;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  className?: string;
-  'data-testid'?: string;
-  'aria-label'?: string;
-  'aria-describedby'?: string;
-  role?: JSX.AriaRole;
-  tabIndex?: number;
-  currentFitMode?: ImageFitMode;
-  onFitOriginal?: (event?: Event) => void;
-  onFitWidth?: (event?: Event) => void;
-  onFitHeight?: (event?: Event) => void;
-  onFitContainer?: (event?: Event) => void;
-  onFocus?: (event: FocusEvent) => void;
-  onBlur?: (event: FocusEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
-}
-
-export type GalleryToolbarProps = ToolbarProps;
+export type { ToolbarProps, GalleryToolbarProps };
 
 export const Toolbar = (props: ToolbarProps): JSX.Element => {
   const { createEffect, createMemo, onCleanup } = getSolidCore();

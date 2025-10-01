@@ -92,22 +92,6 @@ export class BrowserService {
   }
 
   /**
-   * 진단 정보 조회
-   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getBrowserDiagnostics()를 사용하세요
-   */
-  public getDiagnostics(): {
-    injectedStylesCount: number;
-    isPageVisible: boolean;
-    isDOMReady: boolean;
-  } {
-    return {
-      injectedStylesCount: this.injectedStyles.size,
-      isPageVisible: this.isPageVisible(),
-      isDOMReady: this.isDOMReady(),
-    };
-  }
-
-  /**
    * 모든 관리 중인 리소스 정리
    */
   public cleanup(): void {
@@ -201,7 +185,6 @@ export const browserAPI = {
     defaultBrowserService.downloadFile(url, filename),
   isPageVisible: () => defaultBrowserService.isPageVisible(),
   isDOMReady: () => defaultBrowserService.isDOMReady(),
-  getDiagnostics: () => defaultBrowserService.getDiagnostics(),
   cleanup: () => defaultBrowserService.cleanup(),
 
   // Animation utilities (통합됨)

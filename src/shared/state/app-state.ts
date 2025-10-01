@@ -101,30 +101,3 @@ export async function resetAppState(): Promise<void> {
   // Download state는 자동으로 완료되면 초기화됨
   // Toolbar state는 필요에 따라 초기화
 }
-
-/**
- * 상태 변경 감지를 위한 통합 구독
- * @deprecated Native SolidJS signals에서는 createEffect를 직접 사용하세요
- * @see {@link https://www.solidjs.com/docs/latest/api#createeffect}
- */
-export function subscribeToAppState(_callback: (state: AppStateSnapshot) => void): () => void {
-  // Gallery, Download, Toolbar 모두 native SolidJS signal로 변환 완료
-  // createEffect를 사용하여 구독하는 것을 권장합니다:
-  //
-  // import { createEffect } from 'solid-js';
-  // import { galleryState, downloadState, toolbarState } from '@shared/state/app-state';
-  //
-  // createEffect(() => {
-  //   const state = {
-  //     gallery: galleryState(),
-  //     download: downloadState(),
-  //     toolbar: toolbarState(),
-  //   };
-  //   callback(state);
-  // });
-
-  // Legacy 호환성을 위한 빈 unsubscribe 함수 반환
-  return () => {
-    // No-op: Native signals는 createEffect로 자동 정리됨
-  };
-}

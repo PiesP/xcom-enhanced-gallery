@@ -836,90 +836,6 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
 }
 
 // ================================
-// 통합 이벤트 관리자 클래스
-// ================================
-
-/**
- * 통합 이벤트 관리자 클래스
- * @deprecated UnifiedEventManager를 사용하세요
- */
-export class GalleryEventManager {
-  private static instance: GalleryEventManager | null = null;
-
-  public static getInstance(): GalleryEventManager {
-    if (!GalleryEventManager.instance) {
-      GalleryEventManager.instance = new GalleryEventManager();
-    }
-    return GalleryEventManager.instance;
-  }
-
-  // 기본 이벤트 관리
-  public addListener(
-    element: EventTarget,
-    type: string,
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string {
-    return addListener(element, type, listener, options, context);
-  }
-
-  public addMultipleListeners(
-    element: EventTarget,
-    types: string[],
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string[] {
-    return addMultipleEventListeners(element, types, listener, options, context);
-  }
-
-  public removeListener(id: string): boolean {
-    return removeEventListenerManaged(id);
-  }
-
-  public removeByContext(context: string): number {
-    return removeEventListenersByContext(context);
-  }
-
-  public removeByType(type: string): number {
-    return removeEventListenersByType(type);
-  }
-
-  public removeAll(): void {
-    removeAllEventListeners();
-  }
-
-  public getStatus() {
-    return getEventListenerStatus();
-  }
-
-  public cleanup(): void {
-    cleanupEventDispatcher();
-  }
-
-  // 갤러리 이벤트 관리
-  public async initializeGallery(
-    handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
-  ): Promise<void> {
-    return initializeGalleryEvents(handlers, options);
-  }
-
-  public cleanupGallery(): void {
-    cleanupGalleryEvents();
-  }
-
-  public getGalleryStatus() {
-    return getGalleryEventStatus();
-  }
-
-  public updateGalleryOptions(options: Partial<GalleryEventOptions>): void {
-    updateGalleryEventOptions(options);
-  }
-}
-
-// ================================
 // 백워드 호환성을 위한 추가 유틸리티 함수들
 // ================================
 
@@ -1029,9 +945,3 @@ export function handleTwitterEvent(
 ): string {
   return addListener(element, eventType, handler, undefined, context);
 }
-
-/**
- * TwitterEventManager 클래스 (GalleryEventManager의 별칭)
- * @deprecated UnifiedEventManager를 사용하세요
- */
-export const TwitterEventManager = GalleryEventManager;

@@ -5,7 +5,8 @@
 
 import type { JSX } from 'solid-js';
 import { getSolidCore } from '@shared/external/vendors';
-import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
+import { Toolbar } from '../Toolbar/Toolbar';
+import type { ToolbarProps } from '../Toolbar/Toolbar.types';
 import { SettingsModal } from '../SettingsModal/SettingsModal';
 
 export interface ToolbarSettingsRendererOptions {

@@ -22,18 +22,18 @@ export { ToolbarButton } from './ToolbarButton/ToolbarButton';
 export type { ToolbarButtonProps } from './ToolbarButton/ToolbarButton';
 
 // Toast 컴포넌트 (실제 export 확인 후 수정)
-export { Toast, addToast, clearAllToasts, removeToast, toasts } from './Toast/Toast';
+export { Toast, addToast, clearAllToasts, removeToast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastItem } from './Toast/Toast';
 export type { ToastContainerProps } from './Toast/ToastContainer';
 
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';
-export type { ToolbarProps } from './Toolbar/Toolbar';
+export type { ToolbarProps, GalleryToolbarProps } from './Toolbar/Toolbar.types';
 
 // Settings Modal Components
-export { SettingsModal } from './SettingsModal';
-export type { SettingsModalProps } from './SettingsModal';
+export { SettingsModal } from './SettingsModal/SettingsModal';
+export type { SettingsModalProps } from './SettingsModal/SettingsModal.types';
 export { SolidModalShell } from './ModalShell';
 export type { SolidModalShellProps } from './ModalShell';
 

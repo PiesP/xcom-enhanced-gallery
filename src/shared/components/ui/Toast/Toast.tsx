@@ -1,12 +1,7 @@
 import type { JSX } from 'solid-js';
 import { createComponent } from 'solid-js/web';
 
-import {
-  toasts,
-  addToast,
-  removeToast,
-  clearAllToasts,
-} from '@shared/services/UnifiedToastManager';
+import { addToast, removeToast, clearAllToasts } from '@shared/services/UnifiedToastManager';
 import { SolidToast } from './SolidToast.solid';
 import type { SolidToastProps } from './SolidToast.solid';
 
@@ -31,6 +26,6 @@ export const Toast = (props: ToastProps): JSX.Element => {
   });
 };
 
-export { toasts, addToast, removeToast, clearAllToasts };
+export { addToast, removeToast, clearAllToasts };
 
 export default Toast;

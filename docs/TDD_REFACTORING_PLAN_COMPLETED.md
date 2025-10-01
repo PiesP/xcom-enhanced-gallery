@@ -1,5 +1,65 @@
 <!-- markdownlint-disable -->
 
+2025-10-01: EXEC — Epic ARCH-SIMPLIFY-001 Phase A + B(부분) 완료 ✅
+
+- **목표**: Phase A - @deprecated API 제거, Phase B - 순환 의존성 해결 (부분)
+- **Phase A 성과** (완료):
+  - Phase A-1: UnifiedToastManager deprecated API 제거 (commit ece567f2)
+  - Phase A-2: GalleryEventManager 제거 (commit f88848e4)
+  - Phase A-3: Heroicons Vendor Shim 제거 (commit 43b2959e)
+  - Phase A-4: getDiagnostics() 제거 (commit ca3fa8df)
+  - Phase A-5: 기타 deprecated 항목 제거 (commit 92a5094e)
+  - 총 5개 커밋, 약 240줄 제거
+- **Phase B 성과** (부분 완료):
+  - Phase B-1: barrel import 제거 (BulkDownloadService, service-accessors)
+    - `from '@shared/media'` → `from '@shared/media/FilenameService'`
+  - Phase B-2: UI 타입 분리 (Toolbar.types.ts, SettingsModal.types.ts 신규 생성)
+    - 컴포넌트에서 Props 인터페이스를 외부 타입 파일로 분리
+    - barrel export 경로를 .types.ts로 정리
+  - 커밋: `0d90769f` - 15 files changed, 1171 insertions(+), 1197 deletions(-)
+  - **순환 의존성 상태**:
+    - madge 검증: ✅ No circular dependency found
+    - dependency-cruiser: 2개 순환 여전히 보고 (false positive 가능성)
+    - **결론**: 명확한 개선(barrel 제거, 타입 분리)은 완료, 완전한 순환 제거는
+      별도 Epic으로 연기
+- **품질 게이트**: typecheck/lint/test ALL GREEN
+- **번들 크기**: 442.75 KB raw, 111.78 KB gzip (목표 450KB 미만 달성)
+- **실행 시간**: Phase A ~1주, Phase B ~3일
+- **다음 단계**: Phase B 잔여 작업(Cycle 1 해결, dependency-cruiser 규칙 강화)은
+  별도 Epic 또는 후속 작업으로 분리
+
+---
+
+2025-10-01: EXEC — Epic ARCH-SIMPLIFY-001 Phase A 완료 ✅
+
+- **목표**: 코드베이스 내 17개 @deprecated 마커 중 5개 제거 (Phase A 범위)
+- **주요 성과**:
+  - Phase A-1: UnifiedToastManager deprecated API 제거 (commit ece567f2)
+    - subscribe(), signal, toasts 제거
+    - SolidToastHost createEffect 전환
+    - toast-manager.contract.test.ts 수정
+  - Phase A-2: GalleryEventManager 제거 (commit f88848e4)
+    - GalleryEventManager, TwitterEventManager 클래스 제거 (85줄)
+    - EventManager 직접 구현으로 전환
+  - Phase A-3: Heroicons Vendor Shim 제거 (commit 43b2959e)
+    - heroicons-react.ts 파일 삭제
+  - Phase A-4: getDiagnostics() 제거 (commit ca3fa8df)
+    - ServiceManager, BrowserService, BrowserUtils 메서드 제거 (60줄)
+    - core-services.ts 진단 로직 간소화
+  - Phase A-5: 기타 deprecated 항목 제거 (commit 92a5094e)
+    - subscribeToAppState() 함수 제거 (30줄)
+    - createSettingsParitySnapshot 별칭 제거 (2줄)
+- **총 5개 커밋**: ece567f2, f88848e4, 43b2959e, ca3fa8df, 92a5094e
+- **제거 코드**: 약 240줄 (GalleryEventManager 85줄, getDiagnostics 계열 60줄,
+  기타 95줄)
+- **품질 게이트**: typecheck/lint/test ALL GREEN
+- **번들 크기**: 442.75 KB (목표 450KB 미만 달성)
+- **실행 시간**: ~1주 (5개 Phase 연속 실행)
+- **TDD 워크플로**: RED → GREEN → REFACTOR 완료
+- **다음 단계**: Phase B (순환 의존성 해결) 준비 중
+
+---
+
 2025-10-01: EXEC — Epic NAMING-001 Phase B 완료 ✅
 
 - **목표**: Boolean 함수 명명 규칙 적용 (적절한 접두사 추가)

@@ -198,35 +198,6 @@ export class ToastManager {
   };
 
   /**
-   * Toast 상태 변화 구독 (레거시 호환성 - 제거 예정)
-   * @deprecated createEffect()를 직접 사용하세요
-   */
-  public subscribe(callback: (toasts: ToastItem[]) => void): () => void {
-    logger.warn(
-      '[ToastManager] subscribe() 메서드는 deprecated입니다. createEffect()를 사용하세요.'
-    );
-    const { createEffect } = getSolidCore();
-
-    createEffect(() => {
-      const toasts = this.toastsAccessor();
-      callback(toasts);
-    });
-
-    return () => {
-      // createEffect는 createRoot/render 내부에서 자동으로 정리됨
-    };
-  }
-
-  /**
-   * Solid signals와의 통합을 위한 accessor 인터페이스 (레거시 호환성 - 제거 예정)
-   * @deprecated getToasts() Accessor를 직접 사용하세요
-   */
-  public get signal() {
-    logger.warn('[ToastManager] signal 속성은 deprecated입니다. getToasts()를 사용하세요.');
-    return undefined;
-  }
-
-  /**
    * 서비스 초기화
    */
   public async init(): Promise<void> {
@@ -324,25 +295,6 @@ export function removeToast(id: string): void {
 export function clearAllToasts(): void {
   toastManager.clear();
 }
-
-/**
- * Solid 컴포넌트에서 사용할 수 있는 signals 기반 상태
- * @deprecated getToasts() Accessor를 직접 사용하세요
- */
-export const toasts = {
-  get value(): ToastItem[] {
-    logger.warn('[toasts.value] deprecated입니다. toastManager.getToasts()()를 사용하세요.');
-    return toastManager.getToasts();
-  },
-  set value(_: ToastItem[]) {
-    // 직접 설정은 허용하지 않음 - 관리자를 통해서만 변경 가능
-    logger.warn('[ToastManager] 직접 상태 설정은 허용되지 않습니다. 관리자 메서드를 사용하세요.');
-  },
-  subscribe(callback: (value: ToastItem[]) => void) {
-    logger.warn('[toasts.subscribe] deprecated입니다. createEffect()를 사용하세요.');
-    return toastManager.subscribe(callback);
-  },
-};
 
 /**
  * 마이그레이션 가이드 (v2.0.0 - 네이티브 패턴):

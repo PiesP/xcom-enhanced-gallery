@@ -126,31 +126,6 @@ export class CoreService {
   }
 
   /**
-   * 진단 정보 조회
-   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요
-   */
-  public getDiagnostics(): {
-    registeredServices: number;
-    activeInstances: number;
-    services: string[];
-    instances: Record<string, boolean>;
-  } {
-    const services = Array.from(this.services.keys());
-    const instances: Record<string, boolean> = {};
-
-    for (const key of services) {
-      instances[key] = this.services.get(key) !== null;
-    }
-
-    return {
-      registeredServices: services.length,
-      activeInstances: services.filter(key => instances[key]).length,
-      services,
-      instances,
-    };
-  }
-
-  /**
    * 리소스 정리 및 cleanup
    */
   public cleanup(): void {
@@ -207,16 +182,14 @@ export class CoreService {
       logger.info('🔍 ServiceManager 진단 시작');
 
       // 등록 상태 확인
-      const diagnostics = this.getDiagnostics();
+      const services = this.getRegisteredServices();
       logger.info('📊 진단 결과:', {
-        registeredCount: diagnostics.registeredServices,
-        activeInstances: diagnostics.activeInstances,
-        services: diagnostics.services,
-        instances: diagnostics.instances,
+        registeredCount: services.length,
+        services,
       });
 
       // 등록된 서비스 목록
-      logger.debug('🗂️ 등록된 서비스:', diagnostics.services);
+      logger.debug('🗂️ 등록된 서비스:', services);
 
       logger.info('✅ CoreService 진단 완료');
     } catch (error) {

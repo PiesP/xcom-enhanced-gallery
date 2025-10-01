@@ -3,7 +3,7 @@
  * Use these helpers instead of referring to SERVICE_KEYS directly in features/bootstrap.
  */
 import type { BulkDownloadService } from '@shared/services/BulkDownloadService';
-import type { FilenameService } from '@shared/media';
+import type { FilenameService } from '@shared/media/FilenameService';
 import type { ThemeService } from '@shared/services/ThemeService';
 import type { ToastController } from '@shared/services/ToastController';
 import type { MediaService } from '@shared/services/MediaService';
