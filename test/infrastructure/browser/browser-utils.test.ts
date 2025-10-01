@@ -17,7 +17,7 @@ import {
   getDevicePixelRatio,
   matchesMediaQuery,
   isDarkMode,
-  prefersReducedMotion,
+  doesUserPreferReducedMotion,
 } from '@shared/browser/utils/browser-utils';
 
 describe('Browser Utilities', () => {
@@ -89,25 +89,25 @@ describe('Browser Utilities', () => {
 
     it('should detect non-browser environment', () => {
       // Temporarily mock window as undefined without deleting
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       expect(isBrowserEnvironment()).toBe(false);
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
 
     it('should handle missing document', () => {
-      const originalDocument = global.document;
+      const originalDocument = globalThis.document;
       // @ts-ignore
-      global.document = undefined;
+      globalThis.document = undefined;
 
       expect(isBrowserEnvironment()).toBe(false);
 
       // Restore
-      global.document = originalDocument;
+      globalThis.document = originalDocument;
     });
   });
 
@@ -119,15 +119,15 @@ describe('Browser Utilities', () => {
     });
 
     it('should return null when window is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const win = safeWindow();
       expect(win).toBeNull();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
 
     it('should return location object safely', () => {
@@ -137,15 +137,15 @@ describe('Browser Utilities', () => {
     });
 
     it('should return null when location is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const location = safeLocation();
       expect(location).toBeNull();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
 
     it('should return navigator object safely', () => {
@@ -155,15 +155,15 @@ describe('Browser Utilities', () => {
     });
 
     it('should return null when navigator is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const navigator = safeNavigator();
       expect(navigator).toBeNull();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -192,14 +192,14 @@ describe('Browser Utilities', () => {
     });
 
     it('should handle missing location gracefully', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       expect(isTwitterSite()).toBe(false);
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -216,9 +216,9 @@ describe('Browser Utilities', () => {
     });
 
     it('should return null when location is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const urlInfo = getCurrentUrlInfo();
       expect(urlInfo).toEqual({
@@ -229,7 +229,7 @@ describe('Browser Utilities', () => {
       });
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -240,14 +240,14 @@ describe('Browser Utilities', () => {
     });
 
     it('should handle missing window gracefully', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       expect(() => setScrollPosition(100, 200)).not.toThrow();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -263,9 +263,9 @@ describe('Browser Utilities', () => {
     });
 
     it('should return null when window is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const callback = vi.fn();
       const timerId = safeSetTimeout(callback, 1000);
@@ -273,7 +273,7 @@ describe('Browser Utilities', () => {
       expect(timerId).toBeNull();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
 
     it('should clear timeout safely', () => {
@@ -286,14 +286,14 @@ describe('Browser Utilities', () => {
     });
 
     it('should handle missing window when clearing timeout', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       expect(() => safeClearTimeout(123)).not.toThrow();
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -308,9 +308,9 @@ describe('Browser Utilities', () => {
     });
 
     it('should return zero size when window is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const size = getViewportSize();
 
@@ -320,7 +320,7 @@ describe('Browser Utilities', () => {
       });
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
 
     it('should get device pixel ratio', () => {
@@ -329,15 +329,15 @@ describe('Browser Utilities', () => {
     });
 
     it('should return default pixel ratio when window is unavailable', () => {
-      const originalWindow = global.window;
+      const originalWindow = globalThis.window;
       // @ts-ignore
-      global.window = undefined;
+      globalThis.window = undefined;
 
       const ratio = getDevicePixelRatio();
       expect(ratio).toBe(1);
 
       // Restore
-      global.window = originalWindow;
+      globalThis.window = originalWindow;
     });
   });
 
@@ -371,7 +371,7 @@ describe('Browser Utilities', () => {
     });
 
     it('should detect reduced motion preference', () => {
-      const reducedMotion = prefersReducedMotion();
+      const reducedMotion = doesUserPreferReducedMotion();
       expect(reducedMotion).toBe(true);
       expect(mockWindow.matchMedia).toHaveBeenCalledWith('(prefers-reduced-motion: reduce)');
     });
@@ -380,7 +380,7 @@ describe('Browser Utilities', () => {
   describe('Error Handling', () => {
     it('should handle undefined window properties gracefully', () => {
       const partialWindow = { location: undefined, navigator: undefined };
-      global.window = partialWindow as any;
+      globalThis.window = partialWindow as any;
 
       expect(safeLocation()).toBeNull();
       expect(safeNavigator()).toBeNull();
@@ -401,7 +401,7 @@ describe('Browser Utilities', () => {
 
   describe('Edge Cases', () => {
     it('should handle partial window object', () => {
-      global.window = {
+      globalThis.window = {
         location: { hostname: 'x.com' },
         innerWidth: undefined,
         innerHeight: undefined,
@@ -412,7 +412,7 @@ describe('Browser Utilities', () => {
     });
 
     it('should handle window with missing methods', () => {
-      global.window = {
+      globalThis.window = {
         location: mockWindow.location,
         navigator: mockWindow.navigator,
         scrollTo: undefined,

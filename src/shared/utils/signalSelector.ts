@@ -93,7 +93,7 @@ export function setDebugMode(enabled: boolean): void {
 /**
  * 디버그 모드 상태 가져오기
  */
-export function getDebugMode(): boolean {
+export function isDebugModeEnabled(): boolean {
   return isDebugMode;
 }
 

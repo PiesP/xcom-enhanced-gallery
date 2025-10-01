@@ -20,25 +20,80 @@
 
 ## 활성 Epic 현황
 
-**현재 활성 Epic**: 없음
+### Epic: NAMING-001 Phase B — Boolean 함수 명명 규칙 적용 📝 **활성**
+
+**목표**: Phase A에서 발견한 boolean 반환 함수들의 명명 규칙 적용 (적절한 접두사
+추가)
+
+**Phase A 결과 분석**:
+
+- 초기 검출: 46건 (HIGH priority)
+- False Positive 제거 (void 반환): 32건
+- **실제 리네이밍 대상**: 4-6건
+
+**실제 대상 함수**:
+
+1. `prefersReducedMotion` → `doesUserPreferReducedMotion`
+2. `getDebugMode` → `isDebugModeEnabled`
+3. `matchesMediaQuery` (미검출, 수동 확인) → `doesMediaQueryMatch`
+4. `detectLightBackground` (미검출, 수동 확인) → `isLightBackground`
+5. `triggerGarbageCollection` → 검토 후 결정 (성공 여부 반환)
+6. `areGallerySignalsReady` → 유지 (이미 적절한 접두사)
+
+**현재 상태**: Phase B-1 시작 (명확한 개선 대상 2건)
 
 **최근 완료**:
 
 - Epic NAMING-001 Phase A (2025-01-22) - 명명 규칙 스캐너 개발 및 전수 스캔 완료
+- 스캐너 개선 (false positive 필터링) - void 반환 함수 제외 로직 추가
 - Epic LEGACY-CLEANUP-001 (2025-10-01) - 레거시 패턴 정리 완료
 
 **백로그 후보**:
 
-- Epic NAMING-001 Phase B/C: 명명 규칙 리네이밍 실행
-  (`TDD_REFACTORING_BACKLOG.md` 참조)
+- Epic NAMING-001 Phase C: 린트 룰 추가 및 문서화
 - CSS-OPTIMIZATION: CSS 번들 최적화
 - E2E 테스트 인프라 구축
 
 ---
 
+## Phase B-1: 명확한 개선 대상 리네이밍 (2건)
+
+**목표**: 명확하게 개선이 필요한 2개 함수 리네이밍
+
+**작업 항목**:
+
+1. **prefersReducedMotion → doesUserPreferReducedMotion**
+   - 파일: `src/shared/browser/utils/browser-utils.ts`
+   - 이유: 사용자 선호도 조회 함수는 `does` 동사가 더 적절
+   - 영향 범위: 사용처 모두 업데이트 필요
+
+2. **getDebugMode → isDebugModeEnabled**
+   - 파일: `src/shared/utils/signalSelector.ts`
+   - 이유: boolean 반환 함수는 `is/has/can` 접두사가 표준
+   - 영향 범위: 사용처 모두 업데이트 필요
+
+**Acceptance Criteria**:
+
+- [x] prefersReducedMotion 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
+- [x] getDebugMode 리네이밍 완료 (TDD: RED → GREEN → REFACTOR)
+- [x] 모든 참조 업데이트 완료 (grep 검색으로 확인)
+- [x] 품질 게이트: typecheck/lint/test ALL GREEN
+- [x] 커밋: Phase B-1 완료 (2 commits)
+
+**실제 소요**: ~2시간 (2025-10-01 완료)
+
+**Phase B-1 완료 요약**:
+
+- 스캐너 개선: void 반환 false positive 필터링 (46건 → 4건)
+- 리네이밍 완료: 2건 (doesUserPreferReducedMotion, isDebugModeEnabled)
+- 테스트 수정: global → globalThis (lint 오류 39건 수정)
+- 커밋: 5a2beac0 (renaming), ac4f66e3 (test fix)
+
+---
+
 ## 다음 사이클 준비
 
-- 현재 Epic: **없음** (모든 활성 작업 완료)
+- 현재 Epic: **NAMING-001 Phase B** (진행 중)
 - 완료 Epic: NAMING-001 Phase A, LEGACY-CLEANUP-001, SOLID-NATIVE-002, UX-001,
   UX-002 (`TDD_REFACTORING_PLAN_COMPLETED.md` 참조)
 - 다음 후보:
