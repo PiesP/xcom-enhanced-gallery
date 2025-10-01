@@ -146,11 +146,23 @@ export function scanBooleanPrefixes(code, file) {
   lines.forEach((line, index) => {
     const lineNumber = index + 1;
 
-    // boolean 반환 타입 검출
-    const booleanMatch = line.match(/export\s+(?:function|const)\s+(\w+)[\s\S]*?:\s*boolean/);
+    // void 반환 타입은 제외 (false positive 방지)
+    if (line.match(/:\s*void\s*[{;]/)) {
+      return;
+    }
+
+    // boolean 반환 타입 검출 (파라미터의 boolean 타입은 제외)
+    const booleanMatch = line.match(/export\s+(?:function|const)\s+(\w+)[^:]*:\s*boolean/);
 
     if (booleanMatch) {
       const functionName = booleanMatch[1];
+
+      // boolean 파라미터가 아닌 반환 타입인지 재확인
+      const fullContext = line.trim();
+      const returnTypeMatch = fullContext.match(/\)\s*:\s*boolean/);
+      if (!returnTypeMatch) {
+        return; // 반환 타입이 아님
+      }
 
       const hasValidPrefix = BOOLEAN_PREFIXES.some(prefix =>
         functionName.toLowerCase().startsWith(prefix.toLowerCase())

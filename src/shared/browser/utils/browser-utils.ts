@@ -208,7 +208,7 @@ export function isDarkMode(): boolean {
 /**
  * 리듀스드 모션 감지
  */
-export function prefersReducedMotion(): boolean {
+export function doesUserPreferReducedMotion(): boolean {
   return matchesMediaQuery('(prefers-reduced-motion: reduce)');
 }
 
