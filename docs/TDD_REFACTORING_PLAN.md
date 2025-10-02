@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 1개
+**최근 업데이트**: 2025-10-02 — Epic SERVICE-SIMPLIFY-001 완료, 활성 Epic 0개
 
 ---
 
@@ -20,39 +20,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### LOW 우선순위
+**현재 활성 Epic 없음.** 다음 Epic는 백로그에서 선택하여 진행하세요.
 
-#### **Epic SERVICE-SIMPLIFY-001**: 서비스 아키텍처 간소화
-
-**배경**: 서비스 관리 계층이 과도하게 복잡
-
-- ServiceManager/CoreService: 싱글톤 + 팩토리 + 레지스트리 혼재
-- AppContainer, ServiceDiagnostics, UnifiedServiceDiagnostics 중복
-- Features 계층에서 액세서/브리지 경유 필수
-
-**전략**: 단계적 간소화 (현재 구조 유지 → 단일 Container)
-
-**Phase A: 중복 제거** (1-2 days)
-
-- [ ] CoreService/ServiceManager 통합
-- [ ] 중복 진단 로직 제거 (ServiceDiagnostics 통합)
-- [ ] 서비스 초기화 경로 정리
-
-**Phase B: 액세서 패턴 정리** (2-3 days)
-
-- [ ] AppContainer 간소화
-- [ ] Service accessor 패턴 재설계
-- [ ] 타입 안정성 개선
-
-**Phase C: 개발자 경험 개선** (1-2 days)
-
-- [ ] 진단 도구 통합 (단일 API)
-- [ ] 서비스 등록 가이드 문서화
-- [ ] 테스트 헬퍼 개선
-
-**예상 난이도**: M (Medium) **예상 소요**: 4-7 days
-
----
+### LOW 우선순위 (백로그)
 
 #### **Epic RED-TEST-003~006**: 나머지 RED 테스트 해결
 
@@ -69,6 +39,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 3. 최근 완료 Epic
 
+- **Epic SERVICE-SIMPLIFY-001** (2025-10-02): 서비스 아키텍처 간소화
+  - Phase 1-5 완료 (CoreService 단순화, AppContainer DI, 진단 도구 통합)
+  - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
 - **Epic SOLID-NATIVE-002** (2025-10-02): SolidJS 네이티브 패턴 완전
   마이그레이션
   - Phase G-3-1~3 완료 (toolbar/download/gallery signals)
@@ -132,22 +105,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 - ⚠️ JSDOM 환경 이슈는 근본 원인 파악 필요
 - ✅ 테스트 안정성 확보로 리팩토링 신뢰도 향상
-
----
-
-### 서비스 간소화 (SERVICE-SIMPLIFY-001) - **LOW**
-
-**선택 이유**:
-
-- 현재 구조로도 동작 가능
-- 점진적 개선으로 충분
-- 다른 Epic 완료 후 착수
-
-**트레이드오프**:
-
-- ⚠️ 근본적 해결은 아님
-- ✅ 최소 위험, 기존 테스트 유지
-- ✅ 단계적 전환 가능
 
 ---
 
