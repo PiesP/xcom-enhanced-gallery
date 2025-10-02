@@ -1,0 +1,19 @@
+{
+  "version": 4,
+  "artifact": "xcom-enhanced-gallery.user.js",
+  "generatedAt": "2025-10-02T14:50:00.000Z",
+  "environment": "production",
+  "measurements": {
+    "rawBytes": {
+      "baselineBytes": 463253,
+      "toleranceBytes": 10240,
+      "budgetBytes": 555845
+    },
+    "brotliBytes": {
+      "baselineBytes": 85083,
+      "toleranceBytes": 5120,
+      "budgetBytes": 108345
+    }
+  },
+  "notes": "Stage D readiness calibration - Epic LANG_ICON_SELECTOR Phase 1: Added 4 language icons (+11.7KB raw, +912B brotli)"
+}

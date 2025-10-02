@@ -260,12 +260,13 @@ ssl/
 certs/
 certificates/
 
-# 모니터링 및 로깅
+# Monitoring 및 로깅
 monitoring/
 logs-*/
 crash-reports/
 error-reports/
 metrics/
+!metrics/bundle-metrics.json
 analytics/
 
 # 에디터 임시 파일 추가

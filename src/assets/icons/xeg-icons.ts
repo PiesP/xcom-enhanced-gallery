@@ -146,6 +146,58 @@ const RAW_ICON_DEFINITIONS = {
     ],
     metadata: 'file-zip',
   },
+  'language-auto': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'language-auto',
+  },
+  'language-ko': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+        fill: 'currentColor',
+      },
+      {
+        d: 'M9 9h2v2H9V9zm2 4h2v2h-2v-2z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'language-ko',
+  },
+  'language-en': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+        fill: 'currentColor',
+      },
+      {
+        d: 'M8 9h2v1H8V9zm0 2h2v1H8v-1zm0 2h2v1H8v-1zm4-4h2v1h-2V9zm0 2h2v1h-2v-1z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'language-en',
+  },
+  'language-ja': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+        fill: 'currentColor',
+      },
+      {
+        d: 'M10 9h1v1h-1V9zm2 0h1v1h-1V9zm-2 2h1v1h-1v-1zm2 0h1v1h-1v-1zm-2 2h4v1h-4v-1z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'language-ja',
+  },
 } as const satisfies Record<string, XegIconDefinition>;
 
 export type XegIconSlug = keyof typeof RAW_ICON_DEFINITIONS;
@@ -164,6 +216,10 @@ export const XEG_ICONS = {
   ArrowAutofitHeight: RAW_ICON_DEFINITIONS['arrow-autofit-height'],
   ArrowsMaximize: RAW_ICON_DEFINITIONS['arrows-maximize'],
   FileZip: RAW_ICON_DEFINITIONS['file-zip'],
+  LanguageAuto: RAW_ICON_DEFINITIONS['language-auto'],
+  LanguageKo: RAW_ICON_DEFINITIONS['language-ko'],
+  LanguageEn: RAW_ICON_DEFINITIONS['language-en'],
+  LanguageJa: RAW_ICON_DEFINITIONS['language-ja'],
 } as const satisfies Record<string, XegIconDefinition>;
 
 export type XegIconName = keyof typeof XEG_ICONS;
