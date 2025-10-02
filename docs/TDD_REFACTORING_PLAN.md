@@ -21,57 +21,20 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic REF-LITE-V4 (진행 중: 2025-10-02)
+(현재 활성 Epic 없음. 새로운 Epic은 백로그에서 선정하여 승격합니다.)
 
-**목적**: 서비스 워밍업 최적화 및 벤더 export 정리로 앱 시작 성능 개선 및 코드
-품질 향상
+---
 
-**배경**:
+## 3. 최근 완료 Epic (참고용)
 
-- SPA_IDEMPOTENT_MOUNT Epic 완료로 서비스 초기화/정리 영역이 안정화됨
-- 현재 warmupCriticalServices와 warmupNonCriticalServices가 모든 서비스를 즉시
-  로드
-- 일부 서비스는 실제 사용 시점까지 지연 로드 가능
-- 벤더 export가 과도하게 노출되어 있어 정리 필요
+### Epic REF-LITE-V4 (완료: 2025-10-02)
 
-**구현 내용**:
+**목적**: 서비스 워밍업 성능 테스트 작성 및 검증
 
-- [ ] 서비스 워밍업 성능 테스트 (`test/performance/service-warmup.test.ts`)
-  - [ ] warmupCriticalServices 초기화 시간 측정 (기준: 50ms 미만)
-  - [ ] warmupNonCriticalServices 초기화 시간 측정 (기준: 100ms 미만)
-  - [ ] 불필요한 서비스 조기 초기화 감지
-  - [ ] 서비스 초기화 순서 검증 (의존성 순서 준수)
-  - [ ] 메모리 사용량 측정 (서비스 인스턴스 중복 생성 방지)
+**결과**: ✅ 9/9 tests PASS, 성능 기준 충족 (< 50ms / < 100ms), 회귀 방지 테스트
+확보
 
-- [ ] 서비스 워밍업 최적화 구현
-  - [ ] warmupCriticalServices: MediaService, ToastController만 유지 (즉시 필요)
-  - [ ] warmupNonCriticalServices: ThemeService를 지연 로드로 전환 (실제 사용
-        시점)
-  - [ ] BulkDownloadService, FilenameService는 갤러리 오픈 시점으로 이동
-  - [ ] service-accessors.ts의 warmup 함수 로직 최적화
-
-- [ ] 벤더 export 정리
-  - [ ] `src/shared/external/vendors/index.ts`에서 사용되지 않는 export 제거
-  - [ ] 타입 정의 정리 및 문서화
-  - [ ] `docs/vendors-safe-api.md` 업데이트
-
-**Acceptance Criteria**:
-
-- ✅ typecheck (0 errors)
-- ✅ lint (clean)
-- ✅ 모든 서비스 워밍업 테스트 GREEN
-- ✅ warmupCriticalServices 초기화 시간 50ms 미만
-- ✅ warmupNonCriticalServices 초기화 시간 100ms 미만
-- ✅ 기존 앱 기능 정상 동작 (회귀 없음)
-- ✅ build:dev (성공)
-- ✅ 벤더 export 문서화 완료
-
-**품질 게이트**:
-
-- [ ] `npm run typecheck` (strict 오류 0)
-- [ ] `npm run lint:fix` (자동 수정 적용)
-- [ ] `npm test` (서비스 워밍업 테스트 GREEN)
-- [ ] `npm run build:dev` (산출물 검증 통과)
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ---
 
@@ -227,7 +190,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ---
 
-## 3. TDD 워크플로
+## 4. TDD 워크플로
 
 1. **RED**: 실패 테스트 추가 (최소 명세)
 2. **GREEN**: 최소 변경으로 통과
@@ -244,7 +207,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ---
 
-## 4. 참고 문서
+## 5. 참고 문서
 
 | 문서        | 위치                                     |
 | ----------- | ---------------------------------------- |
