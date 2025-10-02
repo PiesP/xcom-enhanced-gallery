@@ -1,0 +1,72 @@
+/**
+ * RadioGroup Styles
+ * Epic LANG_ICON_SELECTOR Phase 2
+ *
+ * Design tokens only - no hardcoded values
+ */
+
+.radioGroup {
+  display: flex;
+  gap: var(--xeg-spacing-sm, 0.5rem);
+}
+
+.radioGroup.vertical {
+  flex-direction: column;
+}
+
+.radioGroup.horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-xs, 0.375rem);
+  padding: var(--xeg-spacing-sm, 0.5rem) var(--xeg-spacing-md, 0.75rem);
+  border-radius: var(--xeg-radius-md);
+  border: 1px solid var(--color-border-primary, var(--xeg-color-border));
+  background-color: var(--color-bg-secondary, var(--xeg-color-bg-secondary));
+  color: var(--color-text-primary, var(--xeg-color-text-primary));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  outline: none;
+}
+
+.radioOption:hover:not(.disabled) {
+  background-color: var(--color-bg-hover, var(--xeg-color-bg-hover));
+  border-color: var(--color-border-hover, var(--xeg-color-border-hover));
+}
+
+.radioOption.selected {
+  background-color: var(--color-bg-active, var(--xeg-color-bg-active));
+  border-color: var(--color-border-active, var(--xeg-color-accent-primary));
+  font-weight: 600;
+}
+
+.radioOption:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: 2px;
+}
+
+.radioOption.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-bg-disabled, var(--xeg-color-bg-disabled));
+  color: var(--color-text-disabled, var(--xeg-color-text-disabled));
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
+  flex-shrink: 0;
+}
+
+.label {
+  flex: 1;
+  line-height: 1.5;
+}
