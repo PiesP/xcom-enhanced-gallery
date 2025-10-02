@@ -98,19 +98,41 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
     setIsLoaded(false);
   };
 
+  /**
+   * 이벤트 전파 규칙 (Epic DOM-EVENT-CLARITY):
+   * 1. 컨테이너 클릭 → 아이템 선택 (props.onClick)
+   * 2. data-role="download" 요소 클릭 → 이벤트 격리, 아이템 선택 방지
+   * 3. 컨텍스트 메뉴 → 네이티브 브라우저 메뉴 (props.onImageContextMenu)
+   *
+   * stopPropagation()을 사용하여 다운로드 버튼 클릭이 부모 컨테이너로
+   * 버블링되는 것을 방지합니다. 이를 통해 다운로드 동작만 실행되고
+   * 아이템 선택은 트리거되지 않습니다.
+   */
   const handleDownloadClick = (event: MouseEvent) => {
     event.preventDefault();
-    event.stopPropagation();
+    event.stopPropagation(); // 이벤트 버블링 차단 - 아이템 선택 방지
     props.onDownload?.();
   };
 
+  /**
+   * 컨테이너 클릭 핸들러
+   * closest()를 사용하여 클릭 이벤트가 data-role="download" 요소에서
+   * 발생했는지 확인합니다. 다운로드 버튼 클릭은 무시하고, 컨테이너 직접
+   * 클릭만 아이템 선택을 트리거합니다.
+   */
   const handleContainerClick = (event: MouseEvent) => {
+    // data-role="download" 요소 클릭은 무시 (이미 handleDownloadClick에서 처리됨)
     if ((event.target as HTMLElement | null)?.closest('[data-role="download"]')) {
       return;
     }
     props.onClick?.();
   };
 
+  /**
+   * 컨텍스트 메뉴 핸들러
+   * 이미지/비디오 우클릭 시 네이티브 브라우저 컨텍스트 메뉴를 허용하고,
+   * 추가 컨텍스트 정보(미디어 정보)를 부모 컴포넌트로 전달합니다.
+   */
   const handleContextMenu = (event: MouseEvent) => {
     props.onImageContextMenu?.(event, props.media);
   };

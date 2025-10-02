@@ -384,3 +384,102 @@ const blob = await createZipFromItems(items, 'media.zip');
 
 위반 발견 시: 즉시 불필요한 잔존 RED 사본 삭제 + Completed 로그에 정정 주석
 추가.
+
+---
+
+## 🎯 이벤트 처리 규칙 (Epic DOM-EVENT-CLARITY)
+
+### 기본 원칙
+
+갤러리 컴포넌트 내에서 이벤트 전파는 명확하고 예측 가능해야 합니다. 중첩된
+컴포넌트에서 발생하는 이벤트가 의도하지 않은 동작을 트리거하지 않도록 이벤트
+경계를 명시적으로 관리합니다.
+
+### 이벤트 격리 패턴
+
+#### 1. data-role을 통한 이벤트 타겟 식별
+
+인터랙티브 요소에 `data-role` 속성을 부여하여 이벤트 소스를 명확히 식별합니다.
+
+```tsx
+// ✅ 다운로드 버튼에 data-role 부여
+<Button data-role='download' onClick={handleDownload}>
+  Download
+</Button>
+```
+
+#### 2. closest()를 사용한 이벤트 필터링
+
+부모 컨테이너의 클릭 핸들러에서 `closest()`를 사용하여 특정 역할의 요소에서
+발생한 이벤트를 필터링합니다.
+
+```tsx
+// ✅ 컨테이너 클릭 핸들러
+const handleContainerClick = (event: MouseEvent) => {
+  // data-role="download" 요소 클릭은 무시
+  if ((event.target as HTMLElement | null)?.closest('[data-role="download"]')) {
+    return;
+  }
+  // 컨테이너 직접 클릭만 처리
+  props.onClick?.();
+};
+```
+
+#### 3. stopPropagation()을 사용한 이벤트 버블링 차단
+
+인터랙티브 요소의 이벤트가 부모 컨테이너로 버블링되지 않도록 명시적으로
+차단합니다.
+
+```tsx
+// ✅ 다운로드 버튼 핸들러
+const handleDownloadClick = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation(); // 부모로 버블링 차단
+  props.onDownload?.();
+};
+```
+
+### 이벤트 전파 규칙 요약
+
+| 이벤트              | 처리 방식                      | 전파 여부 | 설명                       |
+| ------------------- | ------------------------------ | --------- | -------------------------- |
+| 컨테이너 직접 클릭  | `onClick` 호출                 | ✅        | 아이템 선택 트리거         |
+| 다운로드 버튼 클릭  | `stopPropagation()` + 처리     | ❌        | 다운로드만 실행, 선택 방지 |
+| 이미지 컨텍스트메뉴 | `onImageContextMenu` 호출      | ✅        | 네이티브 메뉴 + 컨텍스트   |
+| 기타 버튼 클릭      | `data-role` + `closest()` 체크 | ❌        | 각 버튼별 독립 동작        |
+
+### 새 인터랙티브 요소 추가 시 체크리스트
+
+1. **data-role 속성 추가**: 요소의 역할을 명확히 식별할 수 있는 값 부여
+2. **이벤트 핸들러 작성**: `stopPropagation()` 사용하여 이벤트 격리
+3. **부모 핸들러 업데이트**: `closest()` 체크에 새 data-role 추가
+4. **테스트 작성**: 이벤트 전파 테스트에 새 시나리오 추가
+   - 요소 클릭이 부모 동작을 트리거하지 않는지 검증
+   - data-role 속성이 올바르게 설정되었는지 검증
+
+### 테스트 요구사항
+
+모든 새 인터랙티브 요소는 다음 테스트를 포함해야 합니다:
+
+```tsx
+// ✅ 이벤트 격리 테스트 예시
+it('새 버튼 클릭이 아이템 선택을 트리거하지 않아야 한다', () => {
+  let itemClickCount = 0;
+  let buttonClickCount = 0;
+
+  // 컴포넌트 렌더링 with handlers
+  // ...
+
+  const button = container.querySelector('[data-role="new-button"]');
+  button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+  expect(buttonClickCount).toBe(1);
+  expect(itemClickCount).toBe(0); // 부모 클릭 핸들러 미호출
+});
+```
+
+### 참고: 관련 테스트 파일
+
+- `test/features/gallery/event-propagation.test.tsx`: 이벤트 전파 체계 검증
+- 구현 파일:
+  `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
