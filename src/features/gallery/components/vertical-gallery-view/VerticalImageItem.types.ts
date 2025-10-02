@@ -8,8 +8,28 @@ import type { MediaInfo } from '@shared/types/media.types';
 export interface VerticalImageItemProps {
   readonly media: MediaInfo;
   readonly index: number;
+
+  /**
+   * 사용자가 명시적으로 선택한 아이템 여부
+   * @remarks
+   * Epic A11Y-FOCUS-ROLES: 사용자가 클릭하거나 키보드 네비게이션
+   * (ArrowUp/Down, Home/End)으로 선택한 아이템. 명시적 사용자 인터랙션의 결과.
+   * CSS: `.active` 클래스 적용 → 강한 시각적 강조 (2px border).
+   * 키보드 네비게이션에 따라 동적으로 변경됨.
+   */
   readonly isActive: boolean;
+
+  /**
+   * 갤러리 열림 시 자동 스크롤 대상 아이템 여부
+   * @remarks
+   * Epic A11Y-FOCUS-ROLES: 갤러리가 열릴 때 startIndex와 일치하는 아이템.
+   * 자동 스크롤 대상을 나타내며, 시각적 주목을 위해 사용.
+   * CSS: `.focused` 클래스 적용 → 가벼운 시각적 표시 (1px border).
+   * 갤러리가 열릴 때 한 번만 설정되고 이후 변경되지 않음 (정적 마커).
+   * isActive와 동시에 true일 수 있음 (startIndex로 열린 경우).
+   */
   readonly isFocused?: boolean;
+
   readonly forceVisible?: boolean;
   readonly fitMode?: ImageFitMode;
   readonly className?: string;

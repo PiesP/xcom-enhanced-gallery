@@ -59,8 +59,8 @@
     "@eslint/js": "^9.36.0",
     "@playwright/test": "^1.55.1",
     "@solidjs/testing-library": "^0.8.10",
-    "@testing-library/jest-dom": "^6.9.0",
-    "@types/node": "^24.6.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@types/node": "^24.6.2",
     "@types/tampermonkey": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
@@ -89,8 +89,8 @@
     "terser": "^5.44.0",
     "ts-morph": "^27.0.0",
     "typescript": "^5.9.3",
-    "vite": "^7.1.7",
-    "vite-plugin-solid": "^2.11.8",
+    "vite": "^7.1.8",
+    "vite-plugin-solid": "^2.11.9",
     "vitest": "^3.2.4"
   },
   "lint-staged": {
