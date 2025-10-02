@@ -129,39 +129,45 @@ describe('SettingsModal', () => {
     it('테마 옵션들이 올바르게 표시되어야 함', () => {
       render(() => <SettingsModal {...mockProps} />);
 
-      const autoOption = screen.getByText('Auto');
-      const lightOption = screen.getByText('Light');
-      const darkOption = screen.getByText('Dark');
+      // 테마 select 요소 내의 옵션들 확인
+      const themeSelect = screen.getByLabelText('Theme') as globalThis.HTMLSelectElement;
+      const options = Array.from(themeSelect.options).map(opt => opt.textContent);
 
-      expect(autoOption).toBeDefined();
-      expect(lightOption).toBeDefined();
-      expect(darkOption).toBeDefined();
+      expect(options).toContain('Auto');
+      expect(options).toContain('Light');
+      expect(options).toContain('Dark');
     });
   });
 
   describe('language settings', () => {
-    it('언어 변경 시 즉시 적용되어야 함', () => {
+    it('언어를 변경할 수 있어야 함', () => {
       render(() => <SettingsModal {...mockProps} />);
 
-      const languageSelect = screen.getByLabelText('Language') as globalThis.HTMLSelectElement;
-      fireEvent.change(languageSelect, { target: { value: 'en' } });
+      // LanguageSelector는 radiogroup으로 렌더링됨
+      const radios = screen.getAllByRole('radio');
+      const enRadio = radios.find(radio => radio.textContent?.includes('English'));
 
-      // 언어 변경이 즉시 적용되는지 확인
-      expect(languageSelect.value).toBe('en');
+      expect(enRadio).toBeDefined();
+      if (enRadio) {
+        fireEvent.click(enRadio);
+        // 언어 변경이 적용되는지 확인 (aria-checked 상태 변경)
+        expect(enRadio.getAttribute('aria-checked')).toBe('true');
+      }
     });
 
     it('언어 옵션들이 올바르게 표시되어야 함', () => {
       render(() => <SettingsModal {...mockProps} />);
 
-      const autoOption = screen.getByText('자동 / Auto / 自動');
-      const koOption = screen.getByText('한국어');
-      const enOption = screen.getByText('English');
-      const jaOption = screen.getByText('日本語');
+      // RadioGroup으로 변경되어 각 언어가 radio 옵션으로 표시됨
+      const radios = screen.getAllByRole('radio');
+      expect(radios.length).toBe(4); // auto, ko, en, ja
 
-      expect(autoOption).toBeDefined();
-      expect(koOption).toBeDefined();
-      expect(enOption).toBeDefined();
-      expect(jaOption).toBeDefined();
+      // 각 언어 라벨이 radio 옵션 내에 존재하는지 확인
+      const radioTexts = radios.map(r => r.textContent || '').join(' ');
+      expect(radioTexts).toContain('Auto');
+      expect(radioTexts).toMatch(/한국어|Korean/);
+      expect(radioTexts).toContain('English');
+      expect(radioTexts).toMatch(/日本語|Japanese/);
     });
   });
 
@@ -191,8 +197,13 @@ describe('SettingsModal', () => {
     it('언어 선택이 올바른 레이블과 연결되어야 함', () => {
       render(() => <SettingsModal {...mockProps} />);
 
-      const languageSelect = screen.getByLabelText('Language');
-      expect(languageSelect.id).toBe('language-select');
+      // LanguageSelector는 radiogroup으로 렌더링됨
+      const radiogroup = screen.getByRole('radiogroup');
+      expect(radiogroup).toBeDefined();
+
+      // aria-labelledby 속성으로 레이블과 연결되어야 함
+      const labelledBy = radiogroup.getAttribute('aria-labelledby');
+      expect(labelledBy).toBe('language-selector-label');
     });
   });
 

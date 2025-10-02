@@ -72,8 +72,9 @@ describe('SettingsModal Solid port (RED)', () => {
     const themeLabel = screen.getByText(/theme/i);
     expect(themeLabel).toBeInTheDocument();
 
-    const languageSelect = screen.getByLabelText(/language/i);
-    expect(languageSelect).toBeInstanceOf(HTMLElement);
-    expect((languageSelect as HTMLElement).tagName).toBe('SELECT');
+    // Language is now a RadioGroup, not a select
+    const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
+    expect(languageRadiogroup).toBeInstanceOf(HTMLElement);
+    expect((languageRadiogroup as HTMLElement).tagName).toBe('DIV');
   });
 });

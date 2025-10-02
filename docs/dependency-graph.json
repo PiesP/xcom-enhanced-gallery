@@ -2232,7 +2232,9 @@
           "valid": true
         }
       ],
-      "dependents": [],
+      "dependents": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+      ],
       "orphan": false,
       "valid": true
     },
@@ -2423,6 +2425,23 @@
             "import"
           ],
           "resolved": "src/shared/components/ui/Button/IconButton.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../LanguageSelector",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/LanguageSelector/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8409,7 +8428,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 268,
-    "totalDependenciesCruised": 338,
+    "totalDependenciesCruised": 339,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
