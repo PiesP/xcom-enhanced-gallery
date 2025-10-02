@@ -1,5 +1,64 @@
 <!-- markdownlint-disable -->
 
+2025-01-23: EXEC — Epic CSS-TOKEN-UNIFY-001 Phase C 완료 ✅
+
+- **목표**: 하드코딩 값 완전 제거 (색상/간격/border-radius/box-shadow)
+- **전략**: TDD 방식 (RED → GREEN → REFACTOR) + 3-layer Token System + 점진적
+  병합
+- **주요 성과**:
+  - **색상 하드코딩 제거** (52개 rgba → alpha variant tokens)
+    - Primitive 토큰 추가: white/black/slate/dark alpha variants
+      (--color-_-alpha-_)
+    - 파일: design-tokens.css, design-tokens.semantic.css
+    - 모든 rgba(r,g,b,a) → var(--color-_-alpha-_) 교체
+  - **Border-radius 하드코딩 제거** (2개)
+    - Button.module.css, Toolbar.module.css: 9999px → var(--radius-full)
+  - **Box-shadow 허용 목록 정의**
+    - 5개 shadow 패턴을 component 토큰으로 명시
+    - 하드코딩 box-shadow 탐지 테스트 추가
+  - **간격 하드코딩 제거** (60+ 값 → --space-\* tokens)
+    - Primitive 토큰 추가: --space-1 (2px) ~ --space-30 (60px), --space-em-0125
+      ~ --space-em-2
+    - 파일 (11개):
+      - Toolbar.module.css: 17개 em/px 값
+      - gallery-global.css: 24개 간격 값
+      - Gallery.module.css: 15개 px 값
+      - SettingsModal.module.css: 11개 em 값 (fallback 하드코딩 제거)
+      - Toast.module.css: 7개 px 값
+      - MediaCounter.module.css: 4개 em 값
+      - design-tokens.component.css: 6개 em 값
+      - ToolbarShell.module.css: 2개 px 값
+      - accessibility.css: 3개 px 값
+      - KeyboardHelpOverlay.module.css: 1개 em 값
+      - modern-features.css: 1개 px 값
+  - **테스트 개선** (hardcoded-values-removal.red.test.ts)
+    - Negative lookbehind 추가로 border-\* 속성 제외
+    - 정규식:
+      `(?<!border-)(?<!border-block-)(?<!border-inline-)(margin|padding|gap|top|bottom|left|right)`
+    - border-width 2px는 간격이 아니므로 위양성 방지
+- **최종 메트릭**:
+  - Primitive 토큰 추가: **68개** (색상 29 + 간격 39)
+  - 제거된 하드코딩: **110+ 값**
+  - 변경 파일: **15개** (CSS 14 + 테스트 1)
+  - 코드 라인: **74 insertions, 87 deletions** (net -13 lines, 중복 제거 효과)
+  - CSS 번들: **94.23 KB → 97.18 KB** (3 KB 증가, 토큰 fallback 추가로 인함)
+  - 테스트: **6/6 통과 (100%)** (Colors, Spacing, Animations, Border-radius,
+    Box-shadow, Validation)
+- **품질 게이트**: typecheck/lint:fix/format/build ALL GREEN
+- **브랜치 전략** (3단계 점진적 병합):
+  1. feature/css-token-unify-001-phase-c → master (색상/radius/shadow)
+  2. feature/css-token-unify-001-phase-c-spacing → master (Toolbar 간격)
+  3. feature/css-token-phase-c-complete → master (전체 간격 완료)
+- **문서 정리**: docs/update-phase-c-completion 브랜치
+- **총 실행 시간**: ~3h (RED 작성 + 15개 파일 체계적 교체 + 테스트 개선 + 3회
+  병합)
+- **남은 작업**:
+  - CSS 번들 최적화 (97.18 KB → 70 KB 목표, 27 KB 초과)
+  - 토큰 위반 방지 ESLint 플러그인 추가 (선택 사항)
+  - 전체 CSS 스캔 자동화 (find-token-violations.js 개선)
+
+---
+
 2025-01-22: EXEC — Epic CSS-TOKEN-UNIFY-001 Phase B 완료 ✅
 
 - **목표**: Semantic 계층 alias 완전 제거 (design-tokens.semantic.css)
