@@ -1,5 +1,145 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic A11Y-FOCUS-ROLES 완료 ✅ (Gallery Item Focus State Roles
+Clarification)
+
+- **목적**: 갤러리 아이템 포커스 상태 역할 명확화 및 접근성 향상
+- **배경**: VerticalImageItem에서 `.active`와 `.focused` 상태의 역할 구분
+  불명확, 두 상태 모두 box-shadow만 다르고 로직적 차이가 명시되지 않음
+- **솔루션**: Option B 선택 (명확한 역할 분리) - active=사용자 선택,
+  focused=자동 스크롤 대상, 위험도 최소화
+- **구현 내용**:
+  - Phase 1: 포커스 상태 역할 테스트 7개 작성
+    (test/features/gallery/focus-state-roles.test.tsx)
+    - isActive: 사용자가 명시적으로 선택한 아이템 검증
+    - isFocused: 갤러리 열림 시 자동 스크롤 대상 검증
+    - 두 상태 동시 true 가능 검증 (startIndex로 열린 경우)
+    - CSS 클래스 적용 검증 (.active 2px, .focused 1px)
+    - 키보드 네비게이션 시 active 상태 이동 검증
+    - isFocused 정적 마커 검증 (갤러리 열림 시 1회만 설정)
+    - 디자인 토큰 의미론적 이름 검증
+  - Phase 2: JSDoc 주석 추가
+    - VerticalImageItem.types.ts Props 인터페이스에 역할 명시 (isActive,
+      isFocused)
+    - VerticalImageItem.module.css에 각 상태 주석 추가
+  - Phase 3: CODING_GUIDELINES.md 문서화
+    - 포커스 상태 관리 섹션 150+ 줄 추가
+    - 핵심 개념 표 (isActive vs isFocused)
+    - 동시 상태 허용, CSS 디자인 토큰 사용, 구현 가이드라인
+    - 테스트 요구사항 5가지
+- **TDD 워크플로**:
+  - RED: 7개 테스트 작성 (실제로는 즉시 GREEN - 현재 구현이 이미 올바름)
+  - REFACTOR: JSDoc 주석 추가로 역할 명확화
+  - DOCUMENT: 포커스 상태 관리 가이드라인 문서화
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors)
+  - ✅ Lint (clean)
+  - ✅ Tests (7/7 GREEN, 전체 2334 passed / 124 skipped)
+  - ✅ Build (dev + prod 성공)
+- **결과**: ✅ 포커스 상태 역할 표준화, 접근성 및 코드 가독성 향상, 향후 기능
+  추가 시 일관된 가이드 확보
+- **변경 파일**:
+  - 추가: test/features/gallery/focus-state-roles.test.tsx (7 tests)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts
+    (JSDoc)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css
+    (CSS 주석)
+  - 수정: docs/CODING_GUIDELINES.md (포커스 상태 관리 섹션 추가)
+- **예상/실제 소요 시간**: 1-2시간 예상 / 약 1.5시간 소요
+- **커밋**: feat(docs): complete A11Y-FOCUS-ROLES epic documentation (86381fc6)
+
+---
+
+2025-10-02: EXEC — Epic DOM-DEPTH-GUARD 완료 ✅ (Gallery DOM Depth Regression
+Guard)
+
+- **목적**: 갤러리 DOM 중첩 깊이 회귀 방지 테스트 추가
+- **배경**: 현재 갤러리 DOM은 6단계 중첩으로 양호, Phase 4 최적화에서 이미
+  불필요한 래퍼 제거 완료 (itemsList, imageWrapper), 향후 기능 추가 시 중첩 깊이
+  증가 방지 필요
+- **솔루션**: 테스트 기반 가드 - 최대 깊이 6단계 검증, 각 레이어 역할 명확화
+- **구현 내용**:
+  - Phase 1: DOM 깊이 측정 테스트 5개 작성
+    (test/architecture/dom-depth-guard.test.ts)
+    - 실제 렌더링된 갤러리 DOM 트리 깊이 측정 (≤ 6단계)
+    - 각 레이어 존재 및 역할 검증 (GalleryRenderer → Container → Shell →
+      Toolbar/ContentArea → ItemsContainer → Item)
+    - 불필요한 중간 래퍼 부재 검증
+    - 레이어 책임 명확성 검증
+    - 향후 변경 시 깊이 증가 방지
+  - Phase 3: ARCHITECTURE.md 문서화
+    - DOM 구조 제약 섹션 추가 (~50 줄)
+    - 최대 깊이 6단계 정책 명시
+    - 6개 핵심 레이어 역할 표
+    - 제거된 레이어 설명 (.itemsList, .imageWrapper)
+    - 새 레이어 추가 시 검토 가이드라인
+- **TDD 워크플로**:
+  - RED: 5개 테스트 작성 (실제로는 즉시 GREEN - 현재 구조가 이미 최적)
+  - DOCUMENT: DOM 구조 제약 문서화
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors)
+  - ✅ Lint (clean)
+  - ✅ Tests (5/5 GREEN, 전체 2327 passed / 124 skipped)
+  - ✅ Build (dev + prod 성공)
+- **결과**: ✅ DOM 구조 회귀 방지 가드 확보, 향후 기능 추가 시 구조 복잡도 증가
+  차단
+- **변경 파일**:
+  - 추가: test/architecture/dom-depth-guard.test.ts (5 tests)
+  - 수정: docs/ARCHITECTURE.md (DOM 구조 제약 섹션 추가)
+- **예상/실제 소요 시간**: 1시간 예상 / 약 1시간 소요
+- **커밋**: feat(docs): complete DOM-DEPTH-GUARD epic with tests (3275598b)
+
+---
+
+2025-10-02: EXEC — Epic DOM-EVENT-CLARITY 완료 ✅ (Gallery DOM Event Propagation
+Documentation)
+
+- **목적**: 갤러리 DOM 이벤트 전파 체계 명확화 및 표준화
+- **배경**: VerticalImageItem 내 이벤트 버블링 경로가 암묵적이고 문서화되지 않아
+  유지보수 어려움
+- **솔루션**: Option C 선택 (현재 패턴 유지 + 문서화) - 위험도 최소화, SolidJS
+  패턴 유지
+- **구현 내용**:
+  - Phase 1: 이벤트 전파 테스트 6개 작성
+    (test/features/gallery/event-propagation.test.tsx)
+    - 다운로드 버튼 클릭 격리 검증
+    - data-role 속성 검증
+    - event.stopPropagation() 동작 확인
+  - Phase 2: JSDoc 주석 추가
+    - VerticalImageItem.solid.tsx 핸들러에 이벤트 전파 규칙 설명
+    - VerticalImageItem.types.ts Props 인터페이스에 역할 명시
+  - Phase 3: CODING_GUIDELINES.md 문서화
+    - 이벤트 처리 규칙 섹션 100+ 줄 추가
+    - 3가지 격리 패턴 문서화 (data-role, closest(), stopPropagation())
+    - 이벤트 전파 규칙 표 (4가지 이벤트 타입)
+    - 체크리스트 및 테스트 요구사항 템플릿
+- **TDD 워크플로**:
+  - RED: 6개 테스트 작성 (실제로는 즉시 GREEN - 현재 구현이 이미 올바름)
+  - REFACTOR: JSDoc 주석 추가로 코드 명확화
+  - DOCUMENT: 이벤트 처리 가이드라인 문서화
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors)
+  - ✅ Lint (clean)
+  - ✅ Tests (6/6 GREEN, 전체 2322 passed / 124 skipped)
+  - ✅ Build (dev + prod 성공)
+- **결과**: ✅ 이벤트 전파 패턴 표준화, 향후 인터랙티브 요소 추가 시 일관된
+  가이드 확보
+- **변경 파일**:
+  - 추가: test/features/gallery/event-propagation.test.tsx (6 tests)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx
+    (JSDoc)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts
+    (JSDoc)
+  - 수정: docs/CODING_GUIDELINES.md (이벤트 처리 규칙 섹션 추가)
+- **예상/실제 소요 시간**: 2-3시간 예상 / 약 2시간 소요
+- **커밋**: feat(docs): complete DOM-EVENT-CLARITY epic documentation (19c50c10)
+
+---
+
 2025-10-02: EXEC — Epic CSS_TOKEN_TEST_FIX 완료 ✅ (CSS Token Policy Test Fixes)
 
 - **목적**: Epic CSS-TOKEN-UNIFY-001의 CSS 토큰 정책 변경에 따른 테스트 실패

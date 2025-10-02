@@ -48,7 +48,12 @@
   border-radius: var(--xeg-radius-lg);
 }
 
-/* 활성 상태 - 더 강한 강조 */
+/**
+ * Epic A11Y-FOCUS-ROLES: 활성 상태 (.active)
+ * @description 사용자가 명시적으로 선택한 아이템 (클릭 또는 키보드 네비게이션)
+ * @visual 강한 시각적 강조 (2px border) - 현재 사용자 조작 대상
+ * @behavior 키보드 네비게이션(ArrowUp/Down, Home/End)에 따라 동적으로 변경됨
+ */
 .container.active {
   box-shadow: var(--xeg-active-shadow);
   border-radius: var(--xeg-radius-lg);
@@ -61,7 +66,13 @@
   box-shadow: var(--xeg-active-shadow);
 }
 
-/* 포커스된 상태 (스크롤 대상) */
+/**
+ * Epic A11Y-FOCUS-ROLES: 포커스된 상태 (.focused)
+ * @description 갤러리 열림 시 자동 스크롤 대상 아이템 (startIndex와 일치)
+ * @visual 가벼운 시각적 표시 (1px border) - 시작점 마커
+ * @behavior 갤러리가 열릴 때 한 번만 설정되고 이후 변경되지 않음 (정적)
+ * @note .active와 .focused는 동시에 적용될 수 있음 (startIndex로 열린 경우)
+ */
 .container.focused {
   box-shadow: var(--xeg-focus-shadow);
   border-radius: var(--xeg-radius-lg);

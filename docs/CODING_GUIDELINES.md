@@ -384,3 +384,241 @@ const blob = await createZipFromItems(items, 'media.zip');
 
 위반 발견 시: 즉시 불필요한 잔존 RED 사본 삭제 + Completed 로그에 정정 주석
 추가.
+
+---
+
+## 🎯 이벤트 처리 규칙 (Epic DOM-EVENT-CLARITY)
+
+### 기본 원칙
+
+갤러리 컴포넌트 내에서 이벤트 전파는 명확하고 예측 가능해야 합니다. 중첩된
+컴포넌트에서 발생하는 이벤트가 의도하지 않은 동작을 트리거하지 않도록 이벤트
+경계를 명시적으로 관리합니다.
+
+### 이벤트 격리 패턴
+
+#### 1. data-role을 통한 이벤트 타겟 식별
+
+인터랙티브 요소에 `data-role` 속성을 부여하여 이벤트 소스를 명확히 식별합니다.
+
+```tsx
+// ✅ 다운로드 버튼에 data-role 부여
+<Button data-role='download' onClick={handleDownload}>
+  Download
+</Button>
+```
+
+#### 2. closest()를 사용한 이벤트 필터링
+
+부모 컨테이너의 클릭 핸들러에서 `closest()`를 사용하여 특정 역할의 요소에서
+발생한 이벤트를 필터링합니다.
+
+```tsx
+// ✅ 컨테이너 클릭 핸들러
+const handleContainerClick = (event: MouseEvent) => {
+  // data-role="download" 요소 클릭은 무시
+  if ((event.target as HTMLElement | null)?.closest('[data-role="download"]')) {
+    return;
+  }
+  // 컨테이너 직접 클릭만 처리
+  props.onClick?.();
+};
+```
+
+#### 3. stopPropagation()을 사용한 이벤트 버블링 차단
+
+인터랙티브 요소의 이벤트가 부모 컨테이너로 버블링되지 않도록 명시적으로
+차단합니다.
+
+```tsx
+// ✅ 다운로드 버튼 핸들러
+const handleDownloadClick = (event: MouseEvent) => {
+  event.preventDefault();
+  event.stopPropagation(); // 부모로 버블링 차단
+  props.onDownload?.();
+};
+```
+
+### 이벤트 전파 규칙 요약
+
+| 이벤트              | 처리 방식                      | 전파 여부 | 설명                       |
+| ------------------- | ------------------------------ | --------- | -------------------------- |
+| 컨테이너 직접 클릭  | `onClick` 호출                 | ✅        | 아이템 선택 트리거         |
+| 다운로드 버튼 클릭  | `stopPropagation()` + 처리     | ❌        | 다운로드만 실행, 선택 방지 |
+| 이미지 컨텍스트메뉴 | `onImageContextMenu` 호출      | ✅        | 네이티브 메뉴 + 컨텍스트   |
+| 기타 버튼 클릭      | `data-role` + `closest()` 체크 | ❌        | 각 버튼별 독립 동작        |
+
+### 새 인터랙티브 요소 추가 시 체크리스트
+
+1. **data-role 속성 추가**: 요소의 역할을 명확히 식별할 수 있는 값 부여
+2. **이벤트 핸들러 작성**: `stopPropagation()` 사용하여 이벤트 격리
+3. **부모 핸들러 업데이트**: `closest()` 체크에 새 data-role 추가
+4. **테스트 작성**: 이벤트 전파 테스트에 새 시나리오 추가
+   - 요소 클릭이 부모 동작을 트리거하지 않는지 검증
+   - data-role 속성이 올바르게 설정되었는지 검증
+
+### 테스트 요구사항
+
+모든 새 인터랙티브 요소는 다음 테스트를 포함해야 합니다:
+
+```tsx
+// ✅ 이벤트 격리 테스트 예시
+it('새 버튼 클릭이 아이템 선택을 트리거하지 않아야 한다', () => {
+  let itemClickCount = 0;
+  let buttonClickCount = 0;
+
+  // 컴포넌트 렌더링 with handlers
+  // ...
+
+  const button = container.querySelector('[data-role="new-button"]');
+  button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+  expect(buttonClickCount).toBe(1);
+  expect(itemClickCount).toBe(0); // 부모 클릭 핸들러 미호출
+});
+```
+
+### 참고: 관련 테스트 파일
+
+- `test/features/gallery/event-propagation.test.tsx`: 이벤트 전파 체계 검증
+- 구현 파일:
+  `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+
+---
+
+## 🎯 포커스 상태 관리 (Epic A11Y-FOCUS-ROLES)
+
+갤러리 아이템의 두 가지 포커스 상태를 명확히 구분하여 접근성과 사용자 경험을
+향상시킵니다.
+
+### 핵심 개념: isActive vs isFocused
+
+| 속성        | 의미                                   | 변경 시점                            | 시각적 표현       |
+| ----------- | -------------------------------------- | ------------------------------------ | ----------------- |
+| `isActive`  | 사용자가 명시적으로 선택한 아이템      | 클릭, 키보드 네비게이션 시 동적 변경 | 강한 강조 (2px)   |
+| `isFocused` | 갤러리 열림 시 자동 스크롤 대상 아이템 | 갤러리 열림 시 1회 설정 (정적 마커)  | 가벼운 표시 (1px) |
+
+### 상태 역할 정의
+
+#### `isActive: boolean` (명시적 사용자 선택)
+
+- **용도**: 사용자가 클릭하거나 키보드 네비게이션(ArrowUp/Down, Home/End)으로
+  선택한 아이템
+- **동작**: 키보드/마우스 인터랙션에 따라 동적으로 변경
+- **시각적 피드백**: `.active` CSS 클래스 → `--xeg-active-shadow` (2px border)
+- **접근성**: 현재 사용자 조작 대상을 명확히 표시
+
+#### `isFocused?: boolean` (자동 스크롤 대상)
+
+- **용도**: 갤러리가 열릴 때 `startIndex`와 일치하는 아이템 (초기 스크롤 위치)
+- **동작**: 갤러리 열림 시 1회만 설정, 이후 변경 없음 (정적 마커)
+- **시각적 피드백**: `.focused` CSS 클래스 → `--xeg-focus-shadow` (1px border)
+- **접근성**: 갤러리 시작점을 시각적으로 표시
+
+### 동시 상태 허용
+
+두 상태는 동시에 `true`일 수 있습니다:
+
+```typescript
+// 예: 갤러리가 startIndex=3으로 열림 (사용자가 3번째 이미지를 클릭)
+<VerticalImageItem
+  isActive={true}    // 초기 활성 아이템
+  isFocused={true}   // 자동 스크롤 대상
+  // ... 두 상태가 동시에 true
+/>
+```
+
+### CSS 디자인 토큰 사용
+
+```css
+/* 활성 상태: 사용자가 명시적으로 선택한 아이템 */
+.container.active {
+  box-shadow: var(--xeg-active-shadow); /* 2px border, 강한 강조 */
+}
+
+/* 포커스 상태: 자동 스크롤 대상 아이템 */
+.container.focused {
+  box-shadow: var(--xeg-focus-shadow); /* 1px border, 가벼운 표시 */
+}
+```
+
+**디자인 토큰 정의** (`src/shared/styles/design-tokens.semantic.css`):
+
+```css
+--xeg-active-shadow: 0 0 0 2px var(--xeg-color-primary);
+--xeg-focus-shadow: 0 0 0 1px var(--xeg-color-focus);
+```
+
+### 구현 가이드라인
+
+#### 1. Props 정의 (TypeScript)
+
+```typescript
+export interface VerticalImageItemProps {
+  /**
+   * 사용자가 명시적으로 선택한 아이템 여부
+   * @remarks 키보드 네비게이션에 따라 동적으로 변경됨
+   */
+  readonly isActive: boolean;
+
+  /**
+   * 갤러리 열림 시 자동 스크롤 대상 아이템 여부
+   * @remarks 갤러리가 열릴 때 한 번만 설정되고 이후 변경되지 않음
+   */
+  readonly isFocused?: boolean;
+}
+```
+
+#### 2. CSS 클래스 적용 (SolidJS)
+
+```typescript
+const { createMemo } = getSolidCore();
+
+const containerClass = createMemo(() => {
+  const classes = [styles.container];
+  if (props.isActive) classes.push(styles.active);
+  if (props.isFocused) classes.push(styles.focused);
+  return classes.join(' ');
+});
+
+<div class={containerClass()}>
+  {/* 컨텐츠 */}
+</div>
+```
+
+#### 3. 키보드 네비게이션 핸들러
+
+```typescript
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (e.key === 'ArrowDown') {
+    // isActive 상태를 다음 아이템으로 이동
+    setActiveIndex(prev => Math.min(prev + 1, maxIndex));
+    e.preventDefault();
+  } else if (e.key === 'ArrowUp') {
+    // isActive 상태를 이전 아이템으로 이동
+    setActiveIndex(prev => Math.max(prev - 1, 0));
+    e.preventDefault();
+  }
+  // isFocused는 변경하지 않음 (정적 마커)
+};
+```
+
+### 테스트 요구사항
+
+모든 포커스 상태 구현은 다음을 검증해야 합니다:
+
+1. **isActive 동적 변경**: 키보드 네비게이션 시 active 상태가 올바르게
+   이동하는지
+2. **isFocused 정적 마커**: 갤러리 열림 후 focused 상태가 변경되지 않는지
+3. **동시 상태 허용**: `isActive`와 `isFocused`가 동시에 true일 수 있는지
+4. **CSS 클래스 적용**: `.active`와 `.focused` 클래스가 정확히 적용되는지
+5. **접근성**: 키보드 전용 사용자가 현재 위치를 식별할 수 있는지
+
+### 참고: 관련 테스트 파일
+
+- `test/features/gallery/focus-state-roles.test.tsx`: 포커스 상태 역할 검증
+- 구현 파일:
+  - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts`
+  - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
+
+---
