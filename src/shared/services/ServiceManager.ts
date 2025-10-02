@@ -175,6 +175,23 @@ export class CoreService {
   // ====================================
 
   /**
+   * 진단 정보 반환
+   * UnifiedServiceDiagnostics 어댑터에서 사용
+   */
+  public getDiagnostics() {
+    const serviceKeys = Array.from(this.services.keys());
+    const factoryKeys = Array.from(this.factories.keys());
+    const cacheKeys = Array.from(this.factoryCache.keys());
+
+    return {
+      registeredServices: serviceKeys.length + factoryKeys.length,
+      activeInstances: serviceKeys.length + cacheKeys.length,
+      services: serviceKeys,
+      instances: [...serviceKeys, ...cacheKeys],
+    };
+  }
+
+  /**
    * ServiceManager 상태 진단
    */
   public async diagnoseServiceManager(): Promise<void> {

@@ -99,6 +99,18 @@ export class BrowserService {
     logger.debug('[BrowserService] Cleanup complete');
   }
 
+  /**
+   * 진단 정보 반환
+   * UnifiedServiceDiagnostics 어댑터에서 사용
+   */
+  public getDiagnostics() {
+    return {
+      injectedStylesCount: this.injectedStyles.size,
+      isPageVisible: this.isPageVisible(),
+      isDOMReady: this.isDOMReady(),
+    };
+  }
+
   // ====================================
   // Animation API (통합됨)
   // ====================================
