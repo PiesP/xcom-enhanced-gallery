@@ -1,5 +1,52 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic DOM-EVENT-CLARITY 완료 ✅ (Gallery DOM Event Propagation
+Documentation)
+
+- **목적**: 갤러리 DOM 이벤트 전파 체계 명확화 및 표준화
+- **배경**: VerticalImageItem 내 이벤트 버블링 경로가 암묵적이고 문서화되지 않아
+  유지보수 어려움
+- **솔루션**: Option C 선택 (현재 패턴 유지 + 문서화) - 위험도 최소화, SolidJS
+  패턴 유지
+- **구현 내용**:
+  - Phase 1: 이벤트 전파 테스트 6개 작성
+    (test/features/gallery/event-propagation.test.tsx)
+    - 다운로드 버튼 클릭 격리 검증
+    - data-role 속성 검증
+    - event.stopPropagation() 동작 확인
+  - Phase 2: JSDoc 주석 추가
+    - VerticalImageItem.solid.tsx 핸들러에 이벤트 전파 규칙 설명
+    - VerticalImageItem.types.ts Props 인터페이스에 역할 명시
+  - Phase 3: CODING_GUIDELINES.md 문서화
+    - 이벤트 처리 규칙 섹션 100+ 줄 추가
+    - 3가지 격리 패턴 문서화 (data-role, closest(), stopPropagation())
+    - 이벤트 전파 규칙 표 (4가지 이벤트 타입)
+    - 체크리스트 및 테스트 요구사항 템플릿
+- **TDD 워크플로**:
+  - RED: 6개 테스트 작성 (실제로는 즉시 GREEN - 현재 구현이 이미 올바름)
+  - REFACTOR: JSDoc 주석 추가로 코드 명확화
+  - DOCUMENT: 이벤트 처리 가이드라인 문서화
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors)
+  - ✅ Lint (clean)
+  - ✅ Tests (6/6 GREEN, 전체 2322 passed / 124 skipped)
+  - ✅ Build (dev + prod 성공)
+- **결과**: ✅ 이벤트 전파 패턴 표준화, 향후 인터랙티브 요소 추가 시 일관된
+  가이드 확보
+- **변경 파일**:
+  - 추가: test/features/gallery/event-propagation.test.tsx (6 tests)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx
+    (JSDoc)
+  - 수정:
+    src/features/gallery/components/vertical-gallery-view/VerticalImageItem.types.ts
+    (JSDoc)
+  - 수정: docs/CODING_GUIDELINES.md (이벤트 처리 규칙 섹션 추가)
+- **예상/실제 소요 시간**: 2-3시간 예상 / 약 2시간 소요
+- **커밋**: feat(docs): complete DOM-EVENT-CLARITY epic documentation (19c50c10)
+
+---
+
 2025-10-02: EXEC — Epic CSS_TOKEN_TEST_FIX 완료 ✅ (CSS Token Policy Test Fixes)
 
 - **목적**: Epic CSS-TOKEN-UNIFY-001의 CSS 토큰 정책 변경에 따른 테스트 실패
