@@ -1,96 +1,279 @@
-# TDD 리팩토링 활성 계획 (경량)
+# TDD 리팩토링 활성 계획
 
-본 문서는 "현재 진행 중이거나 즉시 착수 예정" 작업만 간결하게 유지합니다. 완료된
-내용은 항상 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관하여 히스토리를
-분리합니다.
+본 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
+Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
+이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-02 — Epic ARCH-SIMPLIFY-001 완료, 신규 Epic 대기
-
----
-
-## 1. 운영 원칙(요약/링크)
-
-- 코딩/스타일/입력/벤더 접근/테스트 등의 일반 규칙은
-  `docs/CODING_GUIDELINES.md`와 `docs/vendors-safe-api.md`를 단일 소스로
-  사용합니다.
-- 실행/CI/빌드 파이프라인과 스크립트는 루트 `AGENTS.md`를 참조합니다.
-  - 본 문서는 "활성 Epic/작업"과 해당 Acceptance에만 집중합니다.
+**최근 업데이트**: 2025-10-02 — 신규 Epic 5개 추가
+(보안/레거시/서비스/CSS/테스트)
 
 ---
 
-## 활성 Epic 현황
+## 1. 운영 원칙
 
-**진행 중**:
-
-- **Epic RED-TEST-001** (Gallery JSDOM) - HIGH 우선순위 (진행 중: 2025-10-02)
-  - 상태: JSDOM 인프라 수정 완료 (4/8 테스트 통과)
-  - 주요 변경:
-    1. `test/setup.ts`: Node.js URL 클래스 활용한 폴리필 개선
-    2. `vitest.config.ts`: JSDOM `resources: undefined`로 설정해 외부 리소스
-       로딩 차단
-    3. 8개 테스트 파일 `describe.skip` 제거
-  - 통과 테스트 (4개):
-    - `gallery-toolbar-parity.test.ts`
-    - `gallery-close-dom-cleanup.test.ts`
-    - `gallery-renderer-solid-keyboard-help.test.tsx`
-    - `solid-gallery-shell.test.tsx`
-  - 잔여 실패 (4개): 설정 모달, 휠 이벤트, 스타일 격리 구현 이슈
-  - 커밋: cee209dd "feat(infra): resolve JSDOM URL Constructor issue"
-
-- **Epic RED-TEST-002** (Toast/Signal API) - MEDIUM 우선순위 (진행 중:
-  2025-10-02)
-  - 상태: Toast API 마이그레이션 완료 (6/7 테스트 파일 통과)
-  - 주요 변경:
-    - UnifiedToastManager API 변경: `subscribe()` 메서드 → `createEffect` 패턴
-    - 패턴: `const unsubscribe = manager.subscribe(callback)` →
-      `createRoot(disposer => { createEffect(() => { const toasts = manager.getToasts(); }); })`
-    - 7개 테스트 파일 `describe.skip` 제거 및 마이그레이션
-  - 통과 테스트 (6개 파일):
-    - `unified-toast-manager.solid.test.ts`
-    - `toast-routing.policy.test.ts`
-    - `bulk-download.progress-toast.test.ts`
-    - `announce-routing.test.ts`
-    - `unified-toast-manager-native.test.ts` (1 test skipped)
-  - 부분 실패 (1개 파일): `toast-system-integration.test.ts` (5/11 테스트, 모킹
-    이슈)
-  - 커밋: 95340c0f "feat(infra): migrate Toast/Signal API to native pattern"
-
-**최근 완료 Epic**:
-
-- **Epic ARCH-SIMPLIFY-001** (2025-10-02 완료): 아키텍처 복잡도 간소화
-  - Phase A/B/C/D 모두 완료
-  - 세부 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
-
-**후보 Epic** (백로그):
-
-- **CSS-OPTIMIZATION**: CSS 번들 최적화 (94 KiB → 70 KiB 목표)
-- **E2E-TESTING**: E2E 테스트 인프라 구축 (Playwright)
-- **PERF-OPTIMIZATION**: 갤러리 렌더링 성능 개선 (LCP/FID)
-- **EPIC-CLEANUP**: 이전 Epic 미완료 항목 정리
-  - NAMING-001 Phase C (boolean 함수 린트 룰)
-  - LEGACY-CLEANUP-001 False Positive 개선
-  - 완료 Epic 문서 최종 정리
+- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+  `docs/vendors-safe-api.md`
+- 실행/CI/빌드 파이프라인: `AGENTS.md`
+- 아키텍처 설계: `docs/ARCHITECTURE.md`
+- 본 문서: 활성 Epic/작업과 Acceptance 중심
 
 ---
 
-## TDD 워크플로 (Reminder)
+## 2. 활성 Epic 현황
 
-1. RED: 실패 테스트(또는 TODO) 추가 — 최소 명세만 표현
-2. GREEN: 가장 작은 변경으로 통과 (과도한 범위 확대 금지)
-3. REFACTOR: 중복 제거 / 구조 개선 (동일 테스트 GREEN 유지)
-4. Rename: `.red.` 파일명 제거 → 가드 전환
-5. 이동: 완료 항목 본 문서에서 제거 & Completed 로그에 1줄 요약
+### 🔴 HIGH 우선순위
 
-**품질 게이트 (각 Phase별)**:
+#### **Epic SECURITY-HARDENING-001**: 보안 강화 (CodeQL 이슈 해결)
 
-- 타입: `npm run typecheck` — strict 오류 0
-- 린트/포맷: `npm run lint:fix` / `npm run format` — 자동 수정 적용
-- 테스트: `npm test` — 해당 Phase 테스트 GREEN
-- 빌드: `npm run build:dev` — 산출물 검증 통과
+**배경**: CodeQL 스캔에서 29건의 보안 이슈 발견
+
+- Prototype pollution (3건): SettingsService 재귀 assign
+- URL substring sanitization (25건): 트위터 미디어 호스트 검증 미흡
+- Double escaping (1건): URL 패턴 처리
+
+**목표**:
+
+- [ ] URL 검증 유틸리티 강화 (`@shared/utils/url-safety`)
+- [ ] Settings sanitization 개선 (prototype pollution 방어)
+- [ ] URL escaping 헬퍼 추가 (double-escaping 방지)
+- [ ] 전체 보안 테스트 커버리지 확보
+
+**예상 난이도**: M (Medium) **예상 소요**: 2-3 days
 
 ---
 
-## 참고 문서
+### 🟡 MEDIUM 우선순위
+
+#### **Epic SOLID-NATIVE-002**: SolidJS 네이티브 패턴 완전 마이그레이션
+
+**배경**: `createGlobalSignal` 레거시 패턴이 20+ 파일에서 사용 중
+
+- `.value` 속성 접근
+- `.subscribe()` 메서드 호출
+- Preact Signals 스타일 API
+
+**목표**: SolidJS 네이티브 패턴으로 완전 전환
+
+- `createSignal()` 함수 호출 방식
+- `createEffect()` 구독 패턴
+- `createMemo()` 파생값 계산
+
+**전략**: 점진적 마이그레이션 (파일별)
+
+**Phase A: External 계층** (1-2 days)
+
+- [ ] `vendors` 모듈 내 레거시 패턴 제거
+- [ ] Userscript adapter 마이그레이션
+- [ ] 테스트 유틸리티 업데이트
+
+**Phase B: Shared Services** (2-3 days)
+
+- [ ] MediaService, BulkDownloadService 마이그레이션
+- [ ] ThemeService, AnimationService 마이그레이션
+- [ ] UnifiedToastManager 완전 전환
+
+**Phase C: Shared State** (2-3 days)
+
+- [ ] `gallery.signals` 마이그레이션
+- [ ] `settings.signals` 마이그레이션
+- [ ] Signal selector 유틸리티 추가
+
+**Phase D: Features 계층** (3-4 days)
+
+- [ ] Gallery 컴포넌트 마이그레이션
+- [ ] Settings 컴포넌트 마이그레이션
+- [ ] 레거시 호환 레이어 제거
+
+**예상 난이도**: H (High) **예상 소요**: 8-12 days
+
+---
+
+#### **Epic CSS-TOKEN-UNIFY-001**: CSS 토큰 시스템 정리
+
+**배경**: CSS 토큰 중복 정의 및 하드코딩 값 존재
+
+- 토큰 중복 정의 (`design-tokens.css` vs `design-tokens.component.css`)
+- 하드코딩된 색상/border-radius 값
+- CSS 번들 크기 최적화 여지 (94 KiB → 70 KiB 목표)
+
+**전략**: Layered 토큰 시스템 (base/semantic/component)
+
+**Phase A: 토큰 중복 제거** (1-2 days)
+
+- [ ] Icon 토큰 중복 제거 (`--xeg-icon-size-*`)
+- [ ] Border-radius 토큰 정리 (`--xeg-radius-*`)
+- [ ] 중복 감지 테스트 추가
+
+**Phase B: Semantic 계층 강화** (2-3 days)
+
+- [ ] Semantic 토큰 추가 (surface, text, border)
+- [ ] Alias 토큰 deprecation
+- [ ] 컴포넌트별 토큰 매핑 문서화
+
+**Phase C: 하드코딩 값 제거** (2-3 days)
+
+- [ ] 전체 CSS 스캔 스크립트 실행
+- [ ] 색상/간격/애니메이션 하드코딩 제거
+- [ ] 토큰 위반 방지 린트 룰 추가
+
+**예상 난이도**: M (Medium) **예상 소요**: 5-8 days
+
+---
+
+### 🟢 LOW 우선순위
+
+#### **Epic SERVICE-SIMPLIFY-001**: 서비스 아키텍처 간소화
+
+**배경**: 서비스 관리 계층이 과도하게 복잡
+
+- ServiceManager/CoreService: 싱글톤 + 팩토리 + 레지스트리 혼재
+- AppContainer, ServiceDiagnostics, UnifiedServiceDiagnostics 중복
+- Features 계층에서 액세서/브리지 경유 필수
+
+**전략**: 단계적 간소화 (현재 구조 유지 → 단일 Container)
+
+**Phase A: 중복 제거** (1-2 days)
+
+- [ ] CoreService/ServiceManager 통합
+- [ ] 중복 진단 로직 제거 (ServiceDiagnostics 통합)
+- [ ] 서비스 초기화 경로 정리
+
+**Phase B: 액세서 패턴 정리** (2-3 days)
+
+- [ ] AppContainer 간소화
+- [ ] Service accessor 패턴 재설계
+- [ ] 타입 안정성 개선
+
+**Phase C: 개발자 경험 개선** (1-2 days)
+
+- [ ] 진단 도구 통합 (단일 API)
+- [ ] 서비스 등록 가이드 문서화
+- [ ] 테스트 헬퍼 개선
+
+**예상 난이도**: M (Medium) **예상 소요**: 4-7 days
+
+---
+
+#### **Epic RED-TEST-003~006**: 나머지 RED 테스트 해결
+
+**후보 작업** (백로그에서 승격 예정):
+
+- RED-TEST-003: Service Diagnostics 통합 (3개 파일)
+- RED-TEST-004: Signal Selector 최적화 유틸리티 (1개 파일, 17개 테스트)
+- RED-TEST-005: CSS 통합 및 토큰 정책 (4개 파일)
+- RED-TEST-006: 테스트 인프라 개선 (5개 파일)
+
+**예상 난이도**: S-M (Small to Medium) **예상 소요**: 3-5 days (total)
+
+---
+
+## 3. 최근 완료 Epic
+
+- **Epic ARCH-SIMPLIFY-001** (2025-10-02): 아키텍처 복잡도 간소화
+  - Phase A/B/C/D 완료
+  - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
+
+---
+
+## 4. TDD 워크플로
+
+1. **RED**: 실패 테스트 추가 (최소 명세)
+2. **GREEN**: 최소 변경으로 통과
+3. **REFACTOR**: 중복 제거/구조 개선
+4. **Rename**: `.red.` 파일명 제거 → 가드 전환
+5. **Document**: Completed 로그에 1줄 요약
+
+**품질 게이트**:
+
+- ✅ `npm run typecheck` (strict 오류 0)
+- ✅ `npm run lint:fix` (자동 수정 적용)
+- ✅ `npm test` (해당 Phase GREEN)
+- ✅ `npm run build:dev` (산출물 검증 통과)
+
+---
+
+## 5. 추론 기반 우선순위 산정
+
+### 보안 (SECURITY-HARDENING-001) - **HIGH**
+
+**선택 이유**:
+
+- CodeQL 29건 이슈는 실제 보안 위협
+- Prototype pollution은 사용자 설정 공격 가능
+- URL sanitization 부족은 XSS 가능성
+- 빠른 수정 가능 (2-3 days)
+
+**트레이드오프**:
+
+- ⚠️ 유틸리티 계층 도입으로 기존 코드 수정 필요
+- ✅ 재사용 가능한 가드로 장기적 이득
+
+---
+
+### 테스트 안정화 (RED-TEST-001, 002) - **HIGH**
+
+**선택 이유**:
+
+- 테스트 실패는 CI 차단 및 개발 속도 저하
+- 50-86% 통과 상태로 완료 가능성 높음
+- 다른 Epic 작업의 전제 조건
+
+**트레이드오프**:
+
+- ⚠️ JSDOM 환경 이슈는 근본 원인 파악 필요
+- ✅ 테스트 안정성 확보로 리팩토링 신뢰도 향상
+
+---
+
+### SolidJS 마이그레이션 (SOLID-NATIVE-002) - **MEDIUM**
+
+**선택 이유**:
+
+- 20+ 파일 레거시 패턴은 기술 부채
+- 호환 레이어 유지 비용 증가
+- 점진적 마이그레이션으로 위험 최소화
+
+**트레이드오프**:
+
+- ⚠️ 장기간 소요 (8-12 days)
+- ⚠️ 혼재된 패턴으로 혼란 가능성
+- ✅ 안정성 우선, 단계별 검증
+
+---
+
+### CSS 토큰 정리 (CSS-TOKEN-UNIFY-001) - **MEDIUM**
+
+**선택 이유**:
+
+- 중복 정의는 유지보수 어려움
+- 하드코딩 값은 디자인 시스템 위반
+- 번들 크기 최적화 (24 KiB 절감 목표)
+
+**트레이드오프**:
+
+- ⚠️ Layered 시스템은 복잡도 유지
+- ✅ 명확한 계층으로 확장성 확보
+- ✅ 단일 소스보다 유지보수 용이
+
+---
+
+### 서비스 간소화 (SERVICE-SIMPLIFY-001) - **LOW**
+
+**선택 이유**:
+
+- 현재 구조로도 동작 가능
+- 점진적 개선으로 충분
+- 다른 Epic 완료 후 착수
+
+**트레이드오프**:
+
+- ⚠️ 근본적 해결은 아님
+- ✅ 최소 위험, 기존 테스트 유지
+- ✅ 단계적 전환 가능
+
+---
+
+## 6. 참고 문서
 
 | 문서        | 위치                                     |
 | ----------- | ---------------------------------------- |
@@ -99,3 +282,4 @@
 | 설계        | `docs/ARCHITECTURE.md`                   |
 | 코딩 규칙   | `docs/CODING_GUIDELINES.md`              |
 | 실행 가이드 | `AGENTS.md`                              |
+| 벤더 API    | `docs/vendors-safe-api.md`               |
