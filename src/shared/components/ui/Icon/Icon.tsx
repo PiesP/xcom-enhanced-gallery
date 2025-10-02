@@ -19,7 +19,8 @@ export const Icon = (props: IconProps): JSX.Element => {
   const { createMemo } = getSolidCore();
 
   const sizeValue = createMemo(() => {
-    const value = props.size ?? 'var(--xeg-icon-size)';
+    // NOTE: Epic CSS-TOKEN-UNIFY-001 Phase B - semantic 토큰 직접 사용
+    const value = props.size ?? 'var(--size-icon-md)';
     return typeof value === 'number' ? `${value}px` : value;
   });
 

@@ -76,22 +76,16 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 **전략**: Layered 토큰 시스템 (base/semantic/component)
 
-**Phase B: Semantic 계층 강화** (2-3 days)
-
-- [ ] Semantic 토큰 추가 (surface, text, border)
-- [ ] Alias 토큰 deprecation (design-tokens.semantic.css)
-- [ ] 컴포넌트별 토큰 매핑 문서화
-
 **Phase C: 하드코딩 값 제거** (2-3 days)
 
 - [ ] 전체 CSS 스캔 스크립트 실행
 - [ ] 색상/간격/애니메이션 하드코딩 제거
 - [ ] 토큰 위반 방지 린트 룰 추가
 
-**Phase A 완료** (2025-01-22): Icon/Border-radius alias 제거 →
+**Phase A/B 완료** (2025-01-22): Icon/Radius alias 제거, Semantic 계층 정리 →
 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
-**예상 난이도**: M (Medium) **예상 소요**: 5-8 days (Phase B/C remaining)
+**예상 난이도**: M (Medium) **예상 소요**: 2-3 days (Phase C remaining)
 
 ---
 

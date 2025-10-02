@@ -73,7 +73,8 @@
   --xeg-form-control-accent: var(--color-primary);
   --xeg-form-control-check-color: var(--color-base-white);
   --xeg-form-control-check-weight: 2px;
-  --xeg-form-control-radius: var(--xeg-radius-md);
+  /* NOTE: Epic CSS-TOKEN-UNIFY-001 Phase B - primitive 토큰 직접 사용 */
+  --xeg-form-control-radius: var(--radius-md);
   --xeg-form-control-shadow: none;
   --xeg-form-control-shadow-hover: var(--xeg-shadow-xs);
   --xeg-form-control-shadow-active: var(--xeg-shadow-xs);
@@ -178,15 +179,10 @@
   --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
   --xeg-surface-glass-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
 
-  /* Border Radius - Extended Scale */
-  --xeg-radius-xs: var(--radius-xs);
-  --xeg-radius-sm: var(--radius-sm);
-  --xeg-radius-md: var(--radius-md);
-  --xeg-radius-lg: var(--radius-lg);
-  --xeg-radius-xl: var(--radius-xl);
-  --xeg-radius-2xl: var(--radius-2xl);
-  --xeg-radius-pill: var(--radius-pill);
-  --xeg-radius-full: var(--radius-full);
+  /* NOTE: Border Radius alias 제거 (Epic CSS-TOKEN-UNIFY-001 Phase B)
+   * 컴포넌트는 semantic layer의 --radius-* 토큰을 직접 사용해야 함
+   * 예: var(--radius-md), var(--radius-lg) 등
+   */
 }
 
 /* Theme Support - Dark/Light Mode */
@@ -280,7 +276,8 @@
   --xeg-comp-toolbar-bg: var(--color-bg-surface);
   --xeg-comp-toolbar-border: var(--color-border-default);
   --xeg-comp-toolbar-shadow: var(--shadow-md);
-  --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
+  /* NOTE: Epic CSS-TOKEN-UNIFY-001 Phase B - primitive 토큰 직접 사용 */
+  --xeg-comp-toolbar-radius: var(--radius-lg);
   --xeg-comp-toolbar-z-index: var(--xeg-layer-toolbar);
 
   /* Modal Component Tokens */
@@ -290,7 +287,8 @@
   --xeg-comp-modal-bg: var(--xeg-modal-bg);
   --xeg-comp-modal-border: var(--xeg-modal-border);
   --xeg-comp-modal-shadow: var(--shadow-lg);
-  --xeg-comp-modal-radius: var(--xeg-radius-xl);
+  /* NOTE: Epic CSS-TOKEN-UNIFY-001 Phase B - primitive 토큰 직접 사용 */
+  --xeg-comp-modal-radius: var(--radius-xl);
   --xeg-comp-modal-z-index: var(--xeg-layer-modal);
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
   /* Semantic tokens (authoritative) defined later in file control actual values */
