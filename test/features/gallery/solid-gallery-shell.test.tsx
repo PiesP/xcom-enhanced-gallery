@@ -55,9 +55,9 @@ describe('renderSolidGalleryShell', () => {
     openGallery(mediaItems, 1);
 
     await waitFor(() => {
-      // After opening, shell should be mounted with data-open="true"
+      // After opening, shell should be mounted with data-xeg-open="true"
       expect(getShell()).toBeTruthy();
-      expect(getShell()?.getAttribute('data-open')).toBe('true');
+      expect(getShell()?.getAttribute('data-xeg-open')).toBe('true');
       // Phase A (UX-002): statusBanner 위치 정보는 제거됨, 툴바 카운터만 검증
       // 툴바는 MediaCounter 컴포넌트를 통해 위치 정보를 표시
     });
@@ -100,7 +100,7 @@ describe('renderSolidGalleryShell', () => {
     openGallery(mediaItems, 0);
 
     await waitFor(() => {
-      expect(getSolidShellElement(container)?.getAttribute('data-open')).toBe('true');
+      expect(getSolidShellElement(container)?.getAttribute('data-xeg-open')).toBe('true');
     });
 
     click('[data-gallery-element="nav-next"]');
@@ -197,7 +197,7 @@ describe('renderSolidGalleryShell', () => {
     openGallery(mediaItems, 0);
 
     await waitFor(() => {
-      expect(getSolidShellElement(container)?.getAttribute('data-open')).toBe('true');
+      expect(getSolidShellElement(container)?.getAttribute('data-xeg-open')).toBe('true');
     });
 
     const escapeEvent = new KeyboardEvent('keydown', {
@@ -230,7 +230,7 @@ describe('renderSolidGalleryShell', () => {
     openGallery(mediaItems, 0);
 
     await waitFor(() => {
-      expect(getSolidShellElement(container)?.getAttribute('data-open')).toBe('true');
+      expect(getSolidShellElement(container)?.getAttribute('data-xeg-open')).toBe('true');
     });
 
     const arrowRight = new KeyboardEvent('keydown', {

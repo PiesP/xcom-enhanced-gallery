@@ -16,6 +16,11 @@ function getSolidShellElement(container: HTMLElement): HTMLElement | null {
   return container.querySelector('[data-xeg-solid-shell]');
 }
 
+function getItemsContainerElement(container: HTMLElement): HTMLElement | null {
+  // items-container 요소 찾기 (실제 스크롤 가능 영역)
+  return container.querySelector('[data-xeg-role="items-container"]');
+}
+
 function dispatchWheelEventAndCheckPrevented(
   target: HTMLElement | (typeof document extends never ? never : typeof document),
   deltaY: number
@@ -76,11 +81,11 @@ describe('SolidGalleryShell — wheel event handling (Phase C)', () => {
     // Act: 갤러리 열기
     openGallery(mediaItems, 0);
 
-    const shellElement = getSolidShellElement(container);
-    expect(shellElement).toBeTruthy();
+    const itemsContainer = getItemsContainerElement(container);
+    expect(itemsContainer).toBeTruthy();
 
-    // 갤러리 shell 내부에서 wheel 이벤트 발생
-    const wasPrevented = dispatchWheelEventAndCheckPrevented(shellElement!, 100);
+    // 갤러리 내부(items container)에서 wheel 이벤트 발생
+    const wasPrevented = dispatchWheelEventAndCheckPrevented(itemsContainer!, 100);
 
     // Assert: preventDefault()가 호출되지 않음 (네이티브 스크롤 허용)
     expect(wasPrevented).toBe(false);

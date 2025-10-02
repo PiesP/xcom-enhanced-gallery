@@ -7,66 +7,89 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Vendor mocking (Solid + Preact signals)
-vi.mock('@shared/external/vendors', () => ({
-  getSolidCore: () => ({
-    createSignal: (initialValue: unknown) => {
-      let value = initialValue;
-      const subscribers = new Set<(v: unknown) => void>();
-      const getter = () => value;
-      const setter = (newValue: unknown) => {
-        value = newValue;
-        subscribers.forEach(cb => cb(value));
-      };
-      getter.subscribe = (callback: (v: unknown) => void) => {
-        subscribers.add(callback);
-        return () => subscribers.delete(callback);
-      };
-      return [getter, setter];
-    },
-    createEffect: (fn: () => void) => {
-      fn();
-    },
-    createMemo: (fn: () => unknown) => {
-      const memo = () => fn();
-      return memo;
-    },
-    createRoot: (fn: (dispose: () => void) => unknown) => {
-      const dispose = () => {};
-      return fn(dispose);
-    },
-    onCleanup: () => {},
-    mergeProps: (...args: unknown[]) => Object.assign({}, ...args),
-    splitProps: (props: any, keys: string[]) => {
-      const local: any = {};
-      const rest: any = {};
-      Object.keys(props).forEach(key => {
-        if (keys.includes(key)) {
-          local[key] = props[key];
-        } else {
-          rest[key] = props[key];
-        }
-      });
-      return [local, rest];
-    },
-    batch: (fn: () => void) => fn(),
-    untrack: <T>(fn: () => T) => fn(),
-  }),
-  getPreact: () => ({
-    h: () => null,
-    render: () => {},
-    Component: class {},
-  }),
-  getPreactSignals: () => ({
-    signal: (initialValue: unknown) => ({
-      value: initialValue,
-      subscribe: (callback: (_: unknown) => void) => {
-        // 즉시 초기값으로 호출
-        globalThis.setTimeout(() => callback(initialValue), 0);
-        return () => {}; // unsubscribe function
+vi.mock('@shared/external/vendors', () => {
+  // 현재 추적 중인 effect를 저장하는 전역 스택
+  let currentEffect: (() => void) | null = null;
+
+  return {
+    getSolidCore: () => ({
+      createSignal: (initialValue: unknown) => {
+        let value = initialValue;
+        const subscribers = new Set<(v: unknown) => void>();
+        const getter = () => {
+          // Effect 실행 중이면 해당 effect를 구독자로 등록
+          if (currentEffect) {
+            subscribers.add(currentEffect);
+          }
+          return value;
+        };
+        const setter = (newValue: unknown | ((prev: unknown) => unknown)) => {
+          // setter는 함수 또는 값을 받을 수 있음
+          if (typeof newValue === 'function') {
+            value = (newValue as (prev: unknown) => unknown)(value);
+          } else {
+            value = newValue;
+          }
+          // 모든 구독자(effects)에게 알림
+          subscribers.forEach(cb => cb(value));
+        };
+        getter.subscribe = (callback: (v: unknown) => void) => {
+          subscribers.add(callback);
+          return () => subscribers.delete(callback);
+        };
+        return [getter, setter];
       },
+      createEffect: (fn: () => void) => {
+        // Effect를 실행하고 의존성을 추적
+        const runEffect = () => {
+          currentEffect = runEffect;
+          fn();
+          currentEffect = null;
+        };
+        runEffect(); // 초기 실행
+      },
+      createMemo: (fn: () => unknown) => {
+        const memo = () => fn();
+        return memo;
+      },
+      createRoot: (fn: (dispose: () => void) => unknown) => {
+        const dispose = () => {};
+        return fn(dispose);
+      },
+      onCleanup: () => {},
+      mergeProps: (...args: unknown[]) => Object.assign({}, ...args),
+      splitProps: (props: any, keys: string[]) => {
+        const local: any = {};
+        const rest: any = {};
+        Object.keys(props).forEach(key => {
+          if (keys.includes(key)) {
+            local[key] = props[key];
+          } else {
+            rest[key] = props[key];
+          }
+        });
+        return [local, rest];
+      },
+      batch: (fn: () => void) => fn(),
+      untrack: <T>(fn: () => T) => fn(),
     }),
-  }),
-}));
+    getPreact: () => ({
+      h: () => null,
+      render: () => {},
+      Component: class {},
+    }),
+    getPreactSignals: () => ({
+      signal: (initialValue: unknown) => ({
+        value: initialValue,
+        subscribe: (callback: (_: unknown) => void) => {
+          // 즉시 초기값으로 호출
+          globalThis.setTimeout(() => callback(initialValue), 0);
+          return () => {}; // unsubscribe function
+        },
+      }),
+    }),
+  };
+});
 
 import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
 
@@ -109,6 +132,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
       expect(id.length).toBeGreaterThan(0);
 
       // Toast가 실제로 추가되었는지 확인
+      // getToasts()는 Accessor 함수이므로 직접 호출하면 배열 반환
       const toasts = unifiedToastManager.getToasts();
       expect(toasts).toHaveLength(1);
       expect(toasts[0].id).toBe(id);
@@ -180,7 +204,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
 
       const toasts = unifiedToastManager.getToasts();
       expect(toasts).toHaveLength(0);
-      expect(toasts.find(t => t.id === id)).toBeUndefined();
+      expect(toasts.find((t: any) => t.id === id)).toBeUndefined();
     });
 
     it('should clear all toasts', () => {
@@ -210,10 +234,10 @@ describe('Toast 시스템 통합 (TDD)', () => {
 
       const toasts = unifiedToastManager.getToasts();
       // 기본 라우팅 정책: info/success는 라이브 리전, warning/error는 토스트로 표시
-      expect(toasts.find(t => t.type === 'error')).toBeDefined();
-      expect(toasts.find(t => t.type === 'warning')).toBeDefined();
-      expect(toasts.find(t => t.type === 'success')).toBeUndefined();
-      expect(toasts.find(t => t.type === 'info')).toBeUndefined();
+      expect(toasts.find((t: any) => t.type === 'error')).toBeDefined();
+      expect(toasts.find((t: any) => t.type === 'warning')).toBeDefined();
+      expect(toasts.find((t: any) => t.type === 'success')).toBeUndefined();
+      expect(toasts.find((t: any) => t.type === 'info')).toBeUndefined();
     });
   });
 

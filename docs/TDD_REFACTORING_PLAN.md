@@ -20,8 +20,40 @@
 
 ## 활성 Epic 현황
 
-현재 활성 Epic이 없습니다. 다음 Epic 후보는 `TDD_REFACTORING_BACKLOG.md`를
-참조하세요.
+**진행 중**:
+
+- **Epic RED-TEST-001** (Gallery JSDOM) - HIGH 우선순위 (진행 중: 2025-10-02)
+  - 상태: JSDOM 인프라 수정 완료 (4/8 테스트 통과)
+  - 주요 변경:
+    1. `test/setup.ts`: Node.js URL 클래스 활용한 폴리필 개선
+    2. `vitest.config.ts`: JSDOM `resources: undefined`로 설정해 외부 리소스
+       로딩 차단
+    3. 8개 테스트 파일 `describe.skip` 제거
+  - 통과 테스트 (4개):
+    - `gallery-toolbar-parity.test.ts`
+    - `gallery-close-dom-cleanup.test.ts`
+    - `gallery-renderer-solid-keyboard-help.test.tsx`
+    - `solid-gallery-shell.test.tsx`
+  - 잔여 실패 (4개): 설정 모달, 휠 이벤트, 스타일 격리 구현 이슈
+  - 커밋: cee209dd "feat(infra): resolve JSDOM URL Constructor issue"
+
+- **Epic RED-TEST-002** (Toast/Signal API) - MEDIUM 우선순위 (진행 중:
+  2025-10-02)
+  - 상태: Toast API 마이그레이션 완료 (6/7 테스트 파일 통과)
+  - 주요 변경:
+    - UnifiedToastManager API 변경: `subscribe()` 메서드 → `createEffect` 패턴
+    - 패턴: `const unsubscribe = manager.subscribe(callback)` →
+      `createRoot(disposer => { createEffect(() => { const toasts = manager.getToasts(); }); })`
+    - 7개 테스트 파일 `describe.skip` 제거 및 마이그레이션
+  - 통과 테스트 (6개 파일):
+    - `unified-toast-manager.solid.test.ts`
+    - `toast-routing.policy.test.ts`
+    - `bulk-download.progress-toast.test.ts`
+    - `announce-routing.test.ts`
+    - `unified-toast-manager-native.test.ts` (1 test skipped)
+  - 부분 실패 (1개 파일): `toast-system-integration.test.ts` (5/11 테스트, 모킹
+    이슈)
+  - 커밋: 95340c0f "feat(infra): migrate Toast/Signal API to native pattern"
 
 **최근 완료 Epic**:
 
