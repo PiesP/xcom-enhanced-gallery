@@ -21,12 +21,14 @@
 
 <!-- MEM_PROFILE 승격 및 완료 (2025-09-12): 경량 메모리 프로파일러 유틸 추가, 문서/테스트 포함 -->
 
-READY | RED-TEST-001 | SolidJS Gallery JSDOM URL Constructor Fix | Gallery
-테스트 환경 안정화 | M | 8개 테스트 파일 skip 중 READY | RED-TEST-002 |
-Toast/Signal API Native Pattern Migration | UnifiedToastManager API 통합 완료 |
-M | 7개 테스트 파일 skip 중 READY | RED-TEST-003 | Service Diagnostics
-Unification | CoreService/BrowserService 진단 기능 통합 | S | 3개 테스트 파일
-skip 중 READY | RED-TEST-004 | Signal Selector Performance Utilities |
+READY | THEME-ICON-UNIFY-002 | 아이콘 디자인 개선 및 통합 검증 | Toolbar 아이콘
+시각적 통일 + 전체 접근성/성능 검증 | M | Phase A 완료 후 분리, 2025-01-13 READY
+| RED-TEST-001 | SolidJS Gallery JSDOM URL Constructor Fix | Gallery 테스트 환경
+안정화 | M | 8개 테스트 파일 skip 중 READY | RED-TEST-002 | Toast/Signal API
+Native Pattern Migration | UnifiedToastManager API 통합 완료 | M | 7개 테스트
+파일 skip 중 READY | RED-TEST-003 | Service Diagnostics Unification |
+CoreService/BrowserService 진단 기능 통합 | S | 3개 테스트 파일 skip 중 READY |
+RED-TEST-004 | Signal Selector Performance Utilities |
 createSelector/useSelector 최적화 도구 구현 | M | 1개 테스트 파일 skip 중 READY
 | RED-TEST-005 | Style/CSS Consolidation & Token Compliance | 스타일 통합 및
 디자인 토큰 정책 준수 | M | 4개 테스트 파일 skip 중 READY | RED-TEST-006 | Test

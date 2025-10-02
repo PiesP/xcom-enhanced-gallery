@@ -199,9 +199,37 @@
   --xeg-surface-glass-border-light: var(--color-border-default);
 }
 
+/* Epic THEME-ICON-UNIFY-001 Phase A-2: 라이트 테마 토큰 확장 */
+[data-theme='light'] {
+  --color-bg-primary: var(--color-base-white);
+  --color-bg-secondary: var(--color-gray-50);
+  --color-bg-surface: var(--color-base-white);
+  --color-text-primary: var(--color-base-black);
+  --color-border-primary: var(--color-gray-200);
+  --xeg-bg-toolbar: var(--color-base-white);
+
+  /* Toolbar 전용 토큰 */
+  --xeg-toolbar-bg: var(--color-base-white);
+  --xeg-toolbar-border: var(--color-gray-200);
+  --xeg-toolbar-shadow: var(--shadow-md);
+
+  /* Settings 전용 토큰 */
+  --xeg-settings-bg: var(--color-base-white);
+  --xeg-settings-border: var(--color-gray-200);
+
+  /* Toast 전용 토큰 */
+  --xeg-toast-bg-info: var(--color-blue-50);
+  --xeg-toast-bg-success: var(--color-green-50);
+  --xeg-toast-bg-warning: var(--color-yellow-50);
+  --xeg-toast-bg-error: var(--color-red-50);
+}
+
+/* Epic THEME-ICON-UNIFY-001 Phase A-2: 다크 테마 토큰 확장 */
 [data-theme='dark'] {
   --color-bg-primary: var(--color-gray-900);
+  --color-bg-secondary: var(--color-gray-800);
   --color-text-primary: var(--color-base-white);
+  --color-border-primary: var(--color-gray-700);
   --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
   --xeg-form-control-bg: var(--xeg-color-neutral-800);
@@ -222,6 +250,21 @@
   --xeg-gallery-bg: var(--color-gray-900);
   --xeg-bg-toolbar: var(--color-gray-800);
 
+  /* Toolbar 전용 토큰 (다크) */
+  --xeg-toolbar-bg: var(--color-gray-800);
+  --xeg-toolbar-border: var(--color-gray-700);
+  --xeg-toolbar-shadow: 0 4px 12px var(--color-black-alpha-30);
+
+  /* Settings 전용 토큰 (다크) */
+  --xeg-settings-bg: var(--color-gray-800);
+  --xeg-settings-border: var(--color-gray-700);
+
+  /* Toast 전용 토큰 (다크) */
+  --xeg-toast-bg-info: var(--color-gray-700);
+  --xeg-toast-bg-success: var(--color-gray-700);
+  --xeg-toast-bg-warning: var(--color-gray-700);
+  --xeg-toast-bg-error: var(--color-gray-700);
+
   /* 다크 모드 컴포넌트 토큰 - Epic CSS-TOKEN-UNIFY-001 Phase C */
   --xeg-comp-toolbar-bg: var(--color-dark-alpha-95);
   --xeg-surface-glass-bg-dark: var(--color-dark-alpha-95);
@@ -233,13 +276,30 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     --color-bg-primary: var(--color-gray-900);
+    --color-bg-secondary: var(--color-gray-800);
     --color-text-primary: var(--color-base-white);
+    --color-border-primary: var(--color-gray-700);
     --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
     /* prefers-color-scheme 다크 모드 갤러리 배경 - Epic CSS-TOKEN-UNIFY-001 Phase C */
     --xeg-gallery-bg: var(--color-gray-900);
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-surface-glass-bg: var(--color-dark-alpha-95);
+
+    /* Toolbar 전용 토큰 (prefers-color-scheme dark) */
+    --xeg-toolbar-bg: var(--color-gray-800);
+    --xeg-toolbar-border: var(--color-gray-700);
+    --xeg-toolbar-shadow: 0 4px 12px var(--color-black-alpha-30);
+
+    /* Settings 전용 토큰 (prefers-color-scheme dark) */
+    --xeg-settings-bg: var(--color-gray-800);
+    --xeg-settings-border: var(--color-gray-700);
+
+    /* Toast 전용 토큰 (prefers-color-scheme dark) */
+    --xeg-toast-bg-info: var(--color-gray-700);
+    --xeg-toast-bg-success: var(--color-gray-700);
+    --xeg-toast-bg-warning: var(--color-gray-700);
+    --xeg-toast-bg-error: var(--color-gray-700);
     /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
   }
 }
