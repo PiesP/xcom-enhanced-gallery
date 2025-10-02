@@ -1,0 +1,2776 @@
+# CodeQL 개선 계획
+
+- 생성 시각: 2025-10-02T05:42:01.403Z
+- 데이터베이스: codeql-db
+- SARIF 결과: codeql-results.sarif
+- 사용 쿼리 팩: C:\git\xcom-enhanced-gallery\codeql-custom-queries-javascript
+- 총 결과 수: 902
+
+| 심각도  | 개수 |
+| ------- | ---- |
+| WARNING | 902  |
+
+## 상세 개선 항목
+
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es3.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: .github\workflows\security.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\cpp\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: .dependency-cruiser.cjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\csv\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\html\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\go\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\cpp\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\java\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\java\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\csharp\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\Open-Source-Notices\eclipse-1.0.html
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: .github\workflows\release.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es2016.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: .github\ISSUE_TEMPLATE\config.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: .github\workflows\ci.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\actions\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\go\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es2017.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\Open-Source-Notices\mozilla-2.0.html
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\csharp\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\proxy.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es5.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es6_collections.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\lib\bdd.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\es6.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\es\intl.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\lib\jquery-3.2.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\lib\should.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\lib\vows.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\assert.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\assert_legacy.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\buffer.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\cluster.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\console.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\constants.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\dgram.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\crypto.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\child_process.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\dns.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\domain.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\events.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\http.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\fs.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\globals.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\https.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\module.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\net.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\os.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\path.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\process.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\readline.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\querystring.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\punycode.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\repl.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\stream.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\timers.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\tls.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\string_decoder.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\tty.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\url.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\v8.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\util.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\sys.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\vm.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\nodejs\zlib.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\vm\jsshell.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\vm\rhino.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\vm\spidermonkey.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\vm\v8.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\chrome.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\fetchapi.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\fileapi.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\flash.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\gecko_css.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\gecko_dom.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\gecko_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\gecko_ext.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\gecko_xml.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\ie_css.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\html5.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\ie_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\intl.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\iphone.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\ie_dom.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\ie_vml.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\mediasource.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\page_visibility.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\streamsapi.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_anim_timing.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_batterystatus.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_css3d.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\url.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_dom1.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_css.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\w3c_device_sensor_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_dom2.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_dom3.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_dom4.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\w3c_elementtraversal.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_encoding.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_gamepad.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_geolocation.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_event3.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_indexeddb.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_midi.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\w3c_navigation_timing.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_range.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_permissions.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_pointer_events.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\w3c_requestidlecallback.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_rtc.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_selectors.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\w3c_screen_orientation.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_serviceworker.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_touch_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_xml.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webgl.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\w3c_webcrypto.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webkit_dom.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webkit_css.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webkit_usercontent.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\data\externs\web\webkit_notifications.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webkit_event.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\webstorage.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\whatwg_encoding.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\typescript-parser-wrapper\ast_extractor.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\typescript-parser-wrapper\common.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\typescript-parser-wrapper\package.json
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\data\externs\web\window.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\typescript-parser-wrapper\main.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    codeql\codeql\javascript\tools\typescript-parser-wrapper\virtual_source_root.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\javascript\tools\typescript-parser-wrapper\typescript.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\legacy-upgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\package.json
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\python\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\properties\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\python\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\ruby\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\ruby\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\rust\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\rust\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\swift\downgrades\qlpack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\swift\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\xml\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql-custom-queries-javascript\codeql-pack.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql\codeql\yaml\codeql-extractor.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: codeql-custom-queries-javascript\codeql-pack.lock.yml
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: commitlint.config.cjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: dist\xcom-enhanced-gallery.dev.user.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: package.json
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: eslint.config.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\convert-colors-to-oklch.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\button-wrapper-codemod.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\cleanup-test-file-references.cjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\.eslintrc.cjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: postcss.config.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\build-metrics.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: dist\xcom-enhanced-gallery.user.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: docs\dependency-graph.html
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\css-bundle-metrics.cjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\deps-all.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\find-token-violations.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\deps-cycles-report.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\deps-runner.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\generate-icon-map.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\pretest-hook.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\legacy-codemod-cli.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\legacy-codemod.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\inspect-transform.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\replace-design-tokens.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\run-codeql.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\scan-naming-violations.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\setup-dev.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\scan-legacy-patterns.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\skip-red-tests.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\solid-native-codemod.mjs
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\assets\icons\xeg-icons.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\bootstrap\env-init.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: scripts\validate-build.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\bootstrap\event-wiring.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\bootstrap\solid-bootstrap.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\bootstrap\feature-registration.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\constants.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\KeyboardHelpOverlay\KeyboardHelpOverlay.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\components\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\GalleryApp.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\vertical-gallery-view\VerticalGalleryView.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\GalleryRenderer.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\vertical-gallery-view\VerticalImageItem.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\vertical-gallery-view\VerticalImageItem.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\vertical-gallery-view\VerticalImageItem.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\components\vertical-gallery-view\hooks\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\features\gallery\components\vertical-gallery-view\hooks\useProgressiveImage.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\components\vertical-gallery-view\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\hooks\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\createAppContainer.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\hooks\useVisibleIndex.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\hooks\useGalleryScroll.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\solid\SolidGalleryShell.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\solid\createParitySnapshot.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\solid\createSolidKeyboardHelpOverlayController.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\solid\renderSolidGalleryShell.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\gallery\utils\visible-navigation.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\notifications\solid\SolidToastHost.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\notifications\solid\renderSolidToastHost.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\services\SettingsService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\services\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\services\TwitterTokenExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\services\settings-factory.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\services\token-consent.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\solid\createParitySnapshot.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\types\settings.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\solid\renderSolidSettingsPanel.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\main.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\features\settings\solid\SolidSettingsPanel.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\browser\BrowserService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\browser\BrowserUtils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\browser\utils\browser-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\browser\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\LazyIcon.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\base\BaseComponentProps.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\base\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\hoc\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\hoc\GalleryHOC.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\isolation\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\isolation\GalleryContainer.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Button\Button.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Button\IconButton.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Button\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Icon\SvgIcon.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Icon\Icon.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Icon\icons\registry.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Icon\icons\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Icon\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\MediaCounter\MediaCounter.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ModalShell\ModalShell.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ModalShell\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\RefactoredSettingsModal.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\HeadlessSettingsModal.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\SettingsModal.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\UnifiedSettingsModal.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\SettingsModal.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\StandardProps.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\SettingsModal\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toast\SolidToast.solid.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\ToolbarHeadless.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toast\ToastContainer.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\Toolbar.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\ConfigurableToolbar.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toast\Toast.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\toolbarConfig.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\UnifiedToolbar.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ToolbarShell\ToolbarShell.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ToolbarButton\ToolbarButton.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ToolbarShell\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\Toolbar\Toolbar.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\ToolbarWithSettings\ToolbarWithSettings.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\primitive\Panel.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\primitive\Button.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\config\feature-flags.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\container\AppContainer.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\components\ui\primitive\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\container\service-accessors.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\container\service-bridge.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\container\settings-access.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\dom\DOMCache.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\dom\DOMEventManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\dom\SelectorRegistry.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\error\ErrorHandler.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\dom\utils\dom-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\dom\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\error\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\userscript\adapter.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\vendors\fflate-deprecated.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\vendors\vendor-api.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\zip\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\vendors\vendor-api-safe.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\vendors\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\zip\store-zip-writer.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\vendors\vendor-manager-static.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\external\zip\zip-creator.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useAccessibility.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useFocusTrap.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useFocusScope.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useSettingsModal.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useToolbarPositionBased.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\hooks\useToolbarState.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\loader\progressive-loader.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\interfaces\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\interfaces\gallery.interfaces.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\interfaces\ServiceInterfaces.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\logging\logger.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\logging\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\media\types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\media\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\media\pipeline.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\media\MediaProcessor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\media\FilenameService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\memory\MemoryTracker.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\polyfills\solid-jsx-dev-runtime.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\BaseServiceImpl.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\AnimationService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\memory\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\BulkDownloadService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\EventManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\LanguageService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\MediaService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\ServiceManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\ToastController.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\ThemeService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\core-icons.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\UnifiedToastManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\core-services.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\event-managers.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\icon-types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media\FallbackExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\iconRegistry.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media\TwitterVideoExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\extractors\DOMDirectExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\MediaExtractionService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media\VideoControlService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\extractors\TweetInfoExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\extractors\TwitterAPIExtractor.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media\UsernameExtractionService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\DataAttributeTweetStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\ClickedElementTweetStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\UrlBasedTweetStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\DomStructureTweetStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\ParentTraversalTweetStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    src\shared\services\media-extraction\strategies\fallback\FallbackStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\strategies\fallback\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-extraction\strategies\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-mapping\MediaMappingService.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-mapping\MediaTabUrlDirectStrategy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\media-mapping\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\service-factories.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\services\service-initialization.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\createGlobalSignal.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\app-state.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\signals\download.signals.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\mediators\gallery-signal-mediator.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\styles\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\signals\gallery.signals.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\state\signals\toolbar.signals.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\styles\namespaced-styles.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\styles\theme-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\styles\tokens.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\app.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\styles\tokens\button.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\core\core-types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\core\extraction.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\core\userscript.d.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\core\media.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility\focus-restore-manager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\media.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\result.types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility\barrel.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility\accessibility-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility\live-region-manager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\accessibility.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\core\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\animations.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\debug\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\debug\gallery-debug.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\css-animations.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\core-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\types\core\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\deduplication\deduplication-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\deduplication\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\dom\BatchDOMUpdateManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\dom\css-validation.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\dom\DOMBatcher.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\dom\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\error-handling.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\events\wheel.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\focusTrap.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\events.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\lifecycle\leak-guard.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\lifecycle\rebind-watcher.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\html\decode-html-entities.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\media\MediaClickDetector.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\media\image-filter.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\media\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\media\media-url.util.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\memory\memory-profiler.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\memory\ResourceManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\memory\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\memory\object-url-manager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\patterns\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\optimization\bundle.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\optimization\memo.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\patterns\url-patterns.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\idleScheduler.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\optimization\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\performance-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\preload.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\memoization.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\prefetch-bench.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\scroll\scroll-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\scroll\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\performance\schedulers.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\signalSelector.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\styles\css-utilities.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\timer-management.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\styles\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\styles\style-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\url-safety.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\shared\utils\type-safety-helpers.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\styles\globals.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\types\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\design-tokens-helper-clean.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\browser-environment.mock.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\dom-fixtures\action-buttons.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\twitter-dom-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\design-tokens-helper.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: src\utils\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\userscript-api.mock.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\twitter-dom.mock.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\vendor-mock-clean.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test_adapters\UnifiedEventManager.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\_\_mocks\_\_\vendor.mock.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test_adapters\UnifiedServiceDiagnostics.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\dependency-circular-budget.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\accessibility\gallery-toolbar-parity.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\dependency-rules.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\dependency-vendor-getter-enforcement.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\dependency-orphan-guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\icon-barrel-legacy-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\icon-dynamic-loading-size-guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\icon-legacy-barrel-absence.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\no-shadow-dom-references.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\shared-ui-solid-only.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\preact-usage-inventory.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\architecture\solid-native-inventory.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\legacy-class-cleanup.characterization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\legacy.toolbar-visibility-fix.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\toolbar-a11y.characterization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\settings-modal.characterization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\token-alignment.characterization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\settings-modal.characterization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\performance-optimization.characterization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\token-alignment.characterization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\toolbar-visibility-fix.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\toolbar.characterization.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\toolbar.characterization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\behavioral\user-interactions-fixed.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\legacy-pattern-scanner.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\naming-standardization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\naming-cleanup.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\naming-structure-improvement.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\phase-d-preact-mocking-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\solid-native-codemod.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\unused-code-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\cleanup\test-consolidation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\button-primitive-enhancement.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\button-primitive-enhancement.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\component-cleanup-transitional-comments.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\component-cleanup.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\configurable-toolbar.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\toolbar.separator-contrast.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\media-optimization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\ui-primitive.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\performance-optimization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\media-counter\media-counter-usage.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\components\media-counter\media-counter-aria.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\core\browser-compatibility.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\core\service-keys-validation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\core\viewmode-optimization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\core\constants\STABLE_SELECTORS.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\core\services\ServiceManager.integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\debug\preact-compat-debug.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\gallery-close-dom-cleanup.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\gallery-renderer-solid-keyboard-help.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\debug\heroicons-adapter.smoke.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\early-initialization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\gallery.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\GalleryState.business-logic.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\legacy.prev-next-scroll.integration.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\legacy.image-fit-mode-persistence.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\legacy.VerticalImageItem.context-menu.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\legacy.image-fit-mode-delayed-restore.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\keyboard-help-overlay.accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\preact-shell-regression.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\solid-shell-settings.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\solid-gallery-shell.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\solid-shell-ui.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\toolbar-icon-immediate-render.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\solid-gallery-shell-wheel.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\toolbar-auto-hide.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\toolbar-settings-modal-pause.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\useToolbarPositionBased.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\vertical\legacy.fit-mode-integration.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\vertical-image-item-optimization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\vertical\legacy.windowing.behavior.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\features\gallery\vertical\legacy.vertical-gallery.high-contrast.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\media\media.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\features\gallery\visible-index\legacy.visible-index.navigation.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\glassmorphism\glassmorphism-design.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\gallery\visible-index\visible-index.behavior.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\postcss-oklch\postcss-oklch-colors.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\headless-settings-modal.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\settings-modal.accessibility.smoke.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\settings.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\features\settings\settings-modal.modal-accessibility.smoke.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\solid-settings-panel.integration.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\toolbar\toolbar-hover-consistency-completion.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\infrastructure\browser\browser-utils.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\solid\solid-toast-bridge.parity.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\infinite-loop-analysis.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\toolbar\toolbar-hover-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\toast\toast-optimization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\infrastructure\browser\browser-utils.comprehensive.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\settings-modal.form-controls.theme.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\infrastructure\legacy-codemod.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\infrastructure\naming-scanner.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\features\settings\settings-modal.accessibility.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\final\cleanup-verification.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\design-system-consistency.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\bundle-vendor-tdz.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\color-token-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\design-system-consistency.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\extension.integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\full-workflow.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\gallery-activation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\main\main-solid-bootstrap-only.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\master-test-suite.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\mutation-observer.rebind.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\utils.integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\hooks-lifecycle.leak-guard.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\integration\shared\components\ui\settings-modal.persistence.integration.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\integration\spa-routing-idempotency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\media\media-processor.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\optimization\bundle-budget.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\optimization\css-budget.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\optimization\legacy.memo-optimization.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\optimization\optimization.consolidated.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\patterns\result-pattern.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\performance\performance.consolidated.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-2-component-shells.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-0-inventory.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-3-style-layer-consolidation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-2-component-shells.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-4-accessibility-contrast.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-5-deprecated-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\phase-6-final-metrics.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\background-token-definition.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\animation-presets.duplication.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\border-radius-token-expansion.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\button-animation-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\button-design-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\app-container-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\button-design-consistency-fixed.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\cleanup\cleanup-hard-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\core\container-legacy-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\core\core-migration-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\global\global-singleton-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\feature\feature-lazy-factory.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\legacy\legacy-adapter-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\container\services\service-keys-reduction.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\cross-component-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\css-design-system-consolidation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\css-circular-reference.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\refactoring\css-global-prune.gallery-renderer-global-import.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\css-global-prune.duplication-expanded.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\glass-surface-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\gallery-component-tokenization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\glass-surface-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\fit-button-independence.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\final-glassmorphism-cleanup.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\event-manager-integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\design-tokens.alias-deprecation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\design-token-violations.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\css-global-prune.glass-surface-dup.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-button.size-map.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-bundle-guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-component-optimization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-preload.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-preload-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\icon-static-import.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\legacy.gallery-dom-depth-cap.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\legacy.hardcoded-css-elimination.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\legacy.remove-virtual-scrolling.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\legacy.vertical-image-item-design-consistency.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\modal-token.hardening.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\modal-toolbar-visual-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\phase2-animation-simplification.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\settings-modal-design-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\remove-unused-libraries.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\settings-modal-accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\service-diagnostics-integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\settings-modal-unit-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\refactoring\style-isolation-unify.head-injection-gating.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\styles.layer-architecture.alias-prune.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\surface-glass-unification.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\theme-sync-simple.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toast-animation-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toast-component-tokenization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\theme-synchronization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-button-consistency-v2.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-button-consistency-fixed.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-auto-hide-deduplication.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toast-system-integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-button-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-variants-consolidation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\toolbar-design-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\refactoring\vendor-performance.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\research\solid-foundation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\security\double-escaping.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\security\token-extractor.consent.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\security\prototype-pollution.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\security\url-hostname-validation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\security\userscript-allowlist.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\setup.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\components\ui\Icon.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\components\ui\Toast-Icons.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\external\vendors\vendor-manager-static.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\components\ui\Toolbar-Icons.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\external\zip\store-zip-writer.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\hooks\useToolbarAutoHide.simplified.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\logger-output-channels.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\services\unified-toast-manager-native.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\shared.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\state\create-shared-signal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\state\download-signals-native.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\state\gallery-store-legacy-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\state\gallery-signals-native.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\state\toolbar-signals-native.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\styles\modern-css-features.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\utils\media-url.util.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\utils\signal-selector-native.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\utils\performance\throttle.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\utils\url-safety.trusted-hostname.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\utils\url-patterns.security.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\smoke\memory-thumbnail-load.smoke.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\state\solid-store-migration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\animation-standards.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\design-tokens.form-control-alias.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\design-tokens.neutral-scale.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\shared\styles\legacy.css-integration.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\design-tokens.overlay-accessibility.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\duplicate-icon-token.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\legacy-controls.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\legacy.hardcoded-colors.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\legacy.design-tokens.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\toolbar-size-token.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\toolbar-animation-removal.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\style-consolidation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\legacy.token-standardization.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\legacy.theme-responsiveness.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\styles\twitter-color-mapping.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-groups.a11y.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-keyboard.navigation.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-groups.a11y.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-groups.focus-order.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-minimal.toolbar-render.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-minimal.toolbar-render.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-refine.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\toolbar\toolbar-refine-structure.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\no-preact-testing-library.keyboard-help.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\no-preact-testing-library.gallery-solid.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\no-preact-usage.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\package-preact-dependency.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\vendor-manager-preact-export.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\tooling\vendor-manager-solid-only.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\types\test-types.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\types\vitest-env.d.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\a11y\announce-routing.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\accessibility\live-region-manager.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\a11y\accessibility-index.import.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\accessibility\focus-trap-smoke.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\bootstrap\progressive-loader.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\accessibility\focus-restore-manager.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\components\pc-only-events.scan.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\deps\iconlib.no-external-imports.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\ensureWheelLock.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\gallery-keyboard.navigation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\deps\mediabunny.not-imported.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\gallery-pc-only-events.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\gallery-scroll-keys.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\wheel-listener.policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\gallery-video.keyboard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\external\zip\zip-creator.cancel-timeout.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\events\wheel-policy-smoke.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\external\userscript\userscript-storage.hybrid.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\features\gallery\components\legacy.VerticalGalleryViewSettings.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\features\gallery\components\VerticalImageItem.solid-bridge.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\features\gallery\components\legacy.VerticalGalleryView.inline-style.policy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\features\gallery\components\legacy.VerticalImageItem.inline-style.policy.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\gallery-native-scroll.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\features\gallery\gallery-renderer.prepare-for-gallery.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\gallery-app.prepare-for-gallery.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\legacy.video-item.cls.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\keyboard-help.overlay.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\keyboard-help.aria.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\use-gallery-scroll.rebind.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery-app-activation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\settings\settings-controls.tokens.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lifecycle\lifecycle.cleanup.leak-scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\direct-imports-compat-scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\i18n\i18n.message-keys.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\settings\twitter-token.priority.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\features\gallery\visible-navigation.util.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\i18n\i18n.missing-keys.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\lint-getter-policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\direct-imports-source-scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\features-no-servicemanager.imports.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\no-heroicons-usage.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\userscript-direct-gm.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\no-console-direct-usage.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\lint\twitter-token.adapter-boundary.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\loader\import-side-effect.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\loader\legacy.feature-side-effect.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\main\main-initialization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\main\main-solid-only-bootstrap.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\main\main-solid-bootstrap.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\extraction.retry-timeout.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\extraction.url-normalization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\main\main-solid-toast-host-default.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\main\main-start-idempotency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\media-processor.progress-observer.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\media-processor.gif-detection.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\media-processor.canonical-dedupe.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\media-processor.telemetry.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\media\media-processor.stage-metrics.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\gallery-prefetch.viewport-weight.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\media-prefetch.bench.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\media-prefetch.idle-schedule.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\icon-optimization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\media-prefetch.microtask-schedule.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\scripts\run-codeql-cli-args.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\media-prefetch.raf-schedule.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\use-gallery-scroll.throttle.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\isolation\GalleryContainer.inline-style.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\signal-optimization.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\isolation\GalleryContainer.light-dom.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\Icon.css-variable-size.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\isolation\GalleryContainer.minimal-markup.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\isolation\GalleryContainer.shadow-style.isolation.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\isolation\GalleryContainer.inline-style.tokens.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\Button-icon-variant.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\IconButton.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ModalShell.accessibility.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ModalShell.accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\performance\gallery-preload.util.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ModalShell.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\Toolbar.fit-mode.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ToolbarShell.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\SettingsModal.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\Toolbar.fit-mode.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\ui\ToolbarWithSettings-close-behavior.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ToolbarHeadless.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\aria-attributes-migration.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\aria-contract.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\ToolbarWithSettings.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\icon-only-accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\modal-shell.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\lazy-icon.placeholder.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\icon-registry.local-icons.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\ui\settings-modal-accessibility.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\settings-modal-accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\settings-modal-focus.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\ui\settings-modal.focus-trap.tab-cycle.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\ui\settings-modal.progress-toast-toggle.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\toast-solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\settings-modal.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\components\ui\settings-modal.theme-language.integration.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\token-regression.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\toolbar.preload-icons.red.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\variant-contract.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\dom\selector-registry.dom-matrix.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\dom\selector-diagnostics.logging.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\components\ui\wrapper-compat.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\dom\selector-registry.fallback-invalid-selector.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\dom\selector-registry.secondary-selectors.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\dom\selector-registry.mapping-schema.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\external\libraries-integration.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\external\userscript-adapter.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\external\userscript-adapter.download.fallback.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\external\userscript-adapter.fallback.behavior.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\hooks\useKeyboardNavigation.solid.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\hooks\useFocusTrap.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\fix-vendor-initialization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\external\vendors\vendor-initialization.solid-only.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\logger-import.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\legacy.vendor-initialization-error.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\CoreService.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\runtime-vendor-initialization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\MediaExtractionService.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\LanguageService.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\ServiceManager.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.error-recovery.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.progress-toast.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\ThemeService.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.filename-policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.service.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\http-error-format.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\error-toast.standardization.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\services\bulk-download.result-error-codes.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.retry-action.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\bulk-download.retry-action.sequence.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\media-processor.factory-contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\media-service.download-result.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\media-service.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\dom-direct-extractor.refactor.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\services.contract-interface.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\settings-persistence.image-fit-mode.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\service-initialization.dedupe.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\media-service.optimization.security.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\settings-service.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\toast-manager.contract.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\services\settings-service.hybrid-migration.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\toast-routing.policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\settings-service.security.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\services\unified-toast-manager.solid.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\state\solid-bridge-deprecation.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\state\gallery-store.solid.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\utils\accessibility\focus-trap-standardization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\styles\tokens.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\error-handling.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\accessibility.live-region.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\animations.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치:
+    test\unit\shared\utils\lifecycle\rebind-watcher.timer-context.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\animations.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\media-click-detector.security.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\focusTrap.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\media-url.policy.edge-cases.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\memory.object-url-manager.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\memory-resource.diagnostics.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\performance\debouncer.timer-context.red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\timer-manager.context.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\shared\utils\performance-timer.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\animation-utilities.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\a11y-visual-feedback.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\button-wrapper-removal-red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\animations.reduced-motion.scan.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\button-consolidation-red.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\button-tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\components-animations.tokens.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\animation-tokens-policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\design-token-coverage.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\injected-css.reduced-motion.guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\modal-token.hardening.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\injected-css.no-transition-all.guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\interaction-state-standards.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\legacy.gallery-animations.tokens.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\legacy.skeleton.tokens.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\js-constants.tokenization.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\radius-policy.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\legacy-cleanup.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\theme-color-consistency.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\spacing-scale.guard.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\legacy.toolbar-hover-trigger-guard.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\styles\theme-glass-surface.coverage.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\legacy.toolbar-token-unification.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\toolbar.icon-accessibility.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\utils\memory-profiler.test.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\toolbar.settings-solid-integration.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\contrast-checker.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\vertical-gallery-dom.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\unit\ui\toolbar-fit-group-contract.test.tsx
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\dom-test-utils.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\fixtures\test-data.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\import-main-with-mocks.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\fixtures\test-factories.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\test-assertions.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\test-environment-new.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\mock-action-simulator.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\test-environment.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\index.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\helpers\test-factories.js
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\legacy-preact.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\mocks\vendor-mocks-clean.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\mocks\browser-mocks.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\mocks\dom-mocks.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\mocks\vendor-mocks.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\preact-testing-library.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: tsconfig.json
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: test\utils\test-helpers.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: vite.config.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: types\solid-js-jsx-runtime-augment.d.ts
+  - 우선순위 메모: warning
+- [ ] **javascript/example/hello-world** (WARNING) — Hello, world!
+  - 위치: vitest.config.ts
+  - 우선순위 메모: warning
+
+---
+
+### 후속 절차 제안
+
+- [ ] 상위 심각도(E/W) 항목을 TDD 백로그에 등록하고 담당자를 지정합니다.
+- [ ] `docs/TDD_REFACTORING_PLAN.md`의 "다음 사이클 준비" 섹션을 갱신합니다.
+- [ ] 위험도 기준으로 린트/테스트 강화가 필요한 경우 Vitest 케이스를 추가합니다.

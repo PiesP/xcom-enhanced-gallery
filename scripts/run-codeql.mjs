@@ -87,7 +87,7 @@ function parseArgs(argv) {
     dryRun: false,
     keepDb: false,
     keepResults: false,
-    codeqlPath: 'codeql',
+    codeqlPath: null, // Will be resolved later
     dbPath: resolve(workspaceRoot, DEFAULT_DB_DIR),
     sarifPath: resolve(workspaceRoot, DEFAULT_SARIF),
     summaryPath: resolve(workspaceRoot, DEFAULT_SUMMARY),
@@ -200,6 +200,29 @@ function logDryRunDetails(title, details) {
   } else if (typeof details === 'string') {
     process.stdout.write(`  - ${details}\n`);
   }
+}
+
+async function resolveCodeqlPath(providedPath) {
+  // 1. If user provided a path, use it
+  if (providedPath) {
+    return providedPath;
+  }
+
+  // 2. Try local workspace paths first
+  const localPaths = [
+    resolve(workspaceRoot, 'codeql', 'codeql', isWindows ? 'codeql.exe' : 'codeql'),
+    resolve(workspaceRoot, 'codeql', isWindows ? 'codeql.exe' : 'codeql'),
+  ];
+
+  for (const localPath of localPaths) {
+    if (await pathExists(localPath)) {
+      logStep(`Found local CodeQL CLI at ${relative(workspaceRoot, localPath)}`);
+      return localPath;
+    }
+  }
+
+  // 3. Fallback to system PATH
+  return 'codeql';
 }
 
 async function assertCodeqlAvailable(codeqlPath) {
@@ -673,6 +696,9 @@ async function main() {
     process.exitCode = 1;
     return;
   }
+
+  // Resolve CodeQL path before proceeding
+  config.codeqlPath = await resolveCodeqlPath(config.codeqlPath);
 
   if (config.threads === '0') {
     config.threads = String(Math.max(1, cpus().length - 1));

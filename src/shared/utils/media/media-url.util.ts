@@ -302,21 +302,28 @@ function isValidMediaUrlFallback(url: string): boolean {
     return false;
   }
 
+  // 호스트명 검증: Twitter 미디어 호스트인지 확인
+  // (pbs.twimg.com, video.twimg.com 등을 안전하게 검증)
   if (!isTrustedTwitterMediaHostname(url)) {
     return false;
   }
 
+  // 프로필 이미지는 미디어로 취급하지 않음
+  if (url.includes('profile_images')) {
+    return false;
+  }
+
+  // 호스트명이 이미 검증되었으므로 경로 기반 판단만 수행
   const isMedia = url.includes('/media/');
   const isVideoThumb =
     url.includes('/ext_tw_video_thumb/') ||
     url.includes('/tweet_video_thumb/') ||
     url.includes('/video_thumb/');
+  const isVideoContent = url.includes('/ext_tw_video/') || url.includes('/amplify_video/');
 
-  if (url.includes('profile_images')) {
-    return false;
-  }
-
-  return isMedia || isVideoThumb || url.includes('video.twimg.com');
+  // video.twimg.com과 pbs.twimg.com은 TWITTER_MEDIA_HOSTS에 포함되어
+  // isTrustedTwitterMediaHostname()로 이미 안전하게 검증됨
+  return isMedia || isVideoThumb || isVideoContent;
 }
 
 /**

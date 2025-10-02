@@ -1,5 +1,40 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic SECURITY-HARDENING-001 완료 ✅
+
+- **목표**: CodeQL 보안 이슈 해결 (Prototype pollution, URL sanitization, Double
+  escaping)
+- **전략**: 기존 보안 테스트 파일 활용 + 모든 케이스 GREEN 전환
+- **주요 성과**:
+  - **Prototype Pollution 방어** (13 tests)
+    - `SettingsService.importSettings()`: `__proto__`, `constructor`,
+      `prototype` 차단
+    - `sanitizeSettingsTree()`: 위험한 키 재귀 검증
+    - null-prototype 객체 생성으로 폴루션 근본 차단
+  - **URL Hostname Validation** (8 tests)
+    - 쿼리 파라미터/경로/서브도메인 스푸핑 방어
+    - Twitter 미디어 도메인 화이트리스트 검증
+    - HTTP/HTTPS 프로토콜 제어
+  - **Double Escaping Prevention** (9 tests)
+    - HTML 엔티티 단일 디코딩 보장
+    - 불완전/잘못된 엔티티 안전 처리
+  - **Token Extractor Consent Gate** (3 tests)
+    - 사용자 동의 없이 토큰 추출 차단
+    - 민감 정보 로그 노출 방지
+  - **Userscript Network Allowlist** (2 tests)
+    - 도메인 화이트리스트 기반 네트워크 제어
+    - 차단 시 사용자 알림 제공
+- **최종 메트릭**:
+  - 보안 테스트: **35/35 통과 (100%)**
+  - 테스트 파일: 5개 (`test/security/`)
+  - CodeQL 실제 보안 이슈: 0건 (커스텀 예제 쿼리만 탐지됨)
+- **품질 게이트**: typecheck/lint:fix/build ALL GREEN
+- **커밋**: feature/security-hardening-001 브랜치 (기존 보안 구현 검증)
+- **총 실행 시간**: ~30분 (CodeQL 분석 + 테스트 실행 + 문서화)
+- **비고**: 보안 이슈가 이미 해결된 상태로 확인됨, 모든 테스트 GREEN
+
+---
+
 2025-01-21: EXEC — Epic RED-TEST-001 + RED-TEST-002 완전 완료 ✅✅
 
 - **목표**: RED 테스트 28개 → 전체 GREEN 전환 (JSDOM 인프라 + Toast API 네이티브

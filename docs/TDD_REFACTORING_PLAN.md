@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-02 — 신규 Epic 5개 추가
-(보안/레거시/서비스/CSS/테스트)
+**최근 업데이트**: 2025-10-02 — Epic SECURITY-HARDENING-001 완료, 활성 Epic 4개
 
 ---
 
@@ -20,27 +19,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 ---
 
 ## 2. 활성 Epic 현황
-
-### 🔴 HIGH 우선순위
-
-#### **Epic SECURITY-HARDENING-001**: 보안 강화 (CodeQL 이슈 해결)
-
-**배경**: CodeQL 스캔에서 29건의 보안 이슈 발견
-
-- Prototype pollution (3건): SettingsService 재귀 assign
-- URL substring sanitization (25건): 트위터 미디어 호스트 검증 미흡
-- Double escaping (1건): URL 패턴 처리
-
-**목표**:
-
-- [ ] URL 검증 유틸리티 강화 (`@shared/utils/url-safety`)
-- [ ] Settings sanitization 개선 (prototype pollution 방어)
-- [ ] URL escaping 헬퍼 추가 (double-escaping 방지)
-- [ ] 전체 보안 테스트 커버리지 확보
-
-**예상 난이도**: M (Medium) **예상 소요**: 2-3 days
-
----
 
 ### 🟡 MEDIUM 우선순위
 

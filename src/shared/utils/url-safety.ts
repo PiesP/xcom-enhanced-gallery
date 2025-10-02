@@ -9,8 +9,13 @@ export interface TrustedHostnameGuardOptions {
   allowRelative?: boolean;
 }
 
-const DEFAULT_PROTOCOLS = Object.freeze(['https:', 'http:'] as const);
+/** HTTPS만 허용 (기본값, 보안 권장) */
 const STRICT_PROTOCOLS = Object.freeze(['https:'] as const);
+/**
+ * 참고: 이전에는 DEFAULT_PROTOCOLS = ['https:', 'http:']를 기본값으로 사용했으나,
+ * 보안 강화를 위해 STRICT_PROTOCOLS (HTTPS만)를 기본값으로 변경했습니다.
+ * HTTP를 허용하려면 명시적으로 allowedProtocols 옵션을 전달하세요.
+ */
 type HostnameAllowlistInput = ReadonlyArray<string> | ReadonlySet<string>;
 
 let hasLoggedMissingUrlConstructor = false;
@@ -169,6 +174,7 @@ export function parseTrustedUrl(
 
 /**
  * 허용된 호스트명인지 검사합니다.
+ * 기본적으로 HTTPS만 허용합니다 (보안 강화).
  */
 export function isTrustedHostname(
   url: string,
@@ -177,7 +183,7 @@ export function isTrustedHostname(
 ): boolean {
   const parsed = parseTrustedUrl(url, allowlist, {
     ...options,
-    allowedProtocols: options.allowedProtocols ?? DEFAULT_PROTOCOLS,
+    allowedProtocols: options.allowedProtocols ?? STRICT_PROTOCOLS,
   });
 
   return parsed !== null;
