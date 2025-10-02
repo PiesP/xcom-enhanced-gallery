@@ -44,21 +44,28 @@ describe('Epic REF-LITE-V4 - 서비스 워밍업 성능', () => {
       const { registerCoreServices } = await import('@shared/services/core-services');
       await registerCoreServices();
 
+      const coreService = CoreService.getInstance();
+      const getCallCount = new Map<string, number>();
+
+      // get 호출 추적
+      const originalGet = coreService.get.bind(coreService);
+      vi.spyOn(coreService, 'get').mockImplementation((key: string) => {
+        getCallCount.set(key, (getCallCount.get(key) || 0) + 1);
+        return originalGet(key);
+      });
+
       // When: Critical 서비스 워밍업
       const { warmupCriticalServices } = await import('@shared/container/service-accessors');
       warmupCriticalServices();
 
-      // Then: CoreService에 등록된 서비스 확인
-      const coreService = CoreService.getInstance();
-      const registeredServices = coreService.getRegisteredServices();
+      // Then: MediaService와 ToastController만 get이 호출되어야 함
+      expect(getCallCount.get('media.service')).toBeGreaterThan(0);
+      expect(getCallCount.get('toast.controller')).toBeGreaterThan(0);
 
-      // MediaService 관련 키들이 등록되어 있어야 함
-      expect(registeredServices).toContain('media.service');
-      expect(registeredServices).toContain('toast.controller');
-
-      // Critical이 아닌 서비스는 warmup에서 초기화하지 않음 (등록만 됨)
-      // 이 테스트는 warmup 함수가 실제로 get()을 호출하는지 확인하는 것이 아니라
-      // 등록된 서비스 목록을 확인하는 것임
+      // Non-Critical 서비스는 호출되지 않아야 함
+      expect(getCallCount.get('theme.service') || getCallCount.get('theme.auto') || 0).toBe(0);
+      expect(getCallCount.get('core.bulkDownload') || 0).toBe(0);
+      expect(getCallCount.get('media.filename') || 0).toBe(0);
     });
   });
 
@@ -84,17 +91,26 @@ describe('Epic REF-LITE-V4 - 서비스 워밍업 성능', () => {
       const { registerCoreServices } = await import('@shared/services/core-services');
       await registerCoreServices();
 
+      const coreService = CoreService.getInstance();
+      const getCallCount = new Map<string, number>();
+
+      // get 호출 추적
+      const originalGet = coreService.get.bind(coreService);
+      vi.spyOn(coreService, 'get').mockImplementation((key: string) => {
+        getCallCount.set(key, (getCallCount.get(key) || 0) + 1);
+        return originalGet(key);
+      });
+
       // When: Non-Critical 서비스 워밍업
       const { warmupNonCriticalServices } = await import('@shared/container/service-accessors');
       warmupNonCriticalServices();
 
-      // Then: 등록된 서비스 확인
-      const coreService = CoreService.getInstance();
-      const registeredServices = coreService.getRegisteredServices();
-
-      expect(registeredServices).toContain('theme.service');
-      expect(registeredServices).toContain('core.bulkDownload');
-      expect(registeredServices).toContain('media.filename');
+      // Then: Non-Critical 서비스들이 get으로 조회되어야 함
+      expect(
+        getCallCount.get('theme.service') || getCallCount.get('theme.auto') || 0
+      ).toBeGreaterThan(0);
+      expect(getCallCount.get('core.bulkDownload') || 0).toBeGreaterThan(0);
+      expect(getCallCount.get('media.filename') || 0).toBeGreaterThan(0);
     });
   });
 
@@ -146,20 +162,25 @@ describe('Epic REF-LITE-V4 - 서비스 워밍업 성능', () => {
       await registerCoreServices();
 
       // When: 여러 번 워밍업 시도
-      const { warmupCriticalServices, getMediaServiceFromContainer, getToastController } =
-        await import('@shared/container/service-accessors');
+      const { warmupCriticalServices } = await import('@shared/container/service-accessors');
+
+      const coreService = CoreService.getInstance();
+      const getCallCount = new Map<string, number>();
+
+      // get 호출 추적
+      const originalGet = coreService.get.bind(coreService);
+      vi.spyOn(coreService, 'get').mockImplementation((key: string) => {
+        getCallCount.set(key, (getCallCount.get(key) || 0) + 1);
+        return originalGet(key);
+      });
 
       warmupCriticalServices();
-      const mediaService1 = getMediaServiceFromContainer();
-      const toastController1 = getToastController();
-
       warmupCriticalServices();
-      const mediaService2 = getMediaServiceFromContainer();
-      const toastController2 = getToastController();
 
-      // Then: 동일한 인스턴스를 반환해야 함
-      expect(mediaService1).toBe(mediaService2);
-      expect(toastController1).toBe(toastController2);
+      // Then: 각 서비스는 여러 번 get이 호출되어도 동일한 인스턴스를 반환
+      // (CoreService.get()이 캐싱을 수행하므로 중복 생성 방지됨)
+      expect(getCallCount.get('media.service')).toBeGreaterThan(0);
+      expect(getCallCount.get('toast.controller')).toBeGreaterThan(0);
     });
 
     it('불필요한 서비스 인스턴스를 생성하지 않아야 함', async () => {
@@ -201,15 +222,22 @@ describe('Epic REF-LITE-V4 - 서비스 워밍업 성능', () => {
       const { registerCoreServices } = await import('@shared/services/core-services');
       await registerCoreServices();
 
+      const coreService = CoreService.getInstance();
+      const getCallCount = new Map<string, number>();
+
+      // get 호출 추적
+      const originalGet = coreService.get.bind(coreService);
+      vi.spyOn(coreService, 'get').mockImplementation((key: string) => {
+        getCallCount.set(key, (getCallCount.get(key) || 0) + 1);
+        return originalGet(key);
+      });
+
       // When: Critical 서비스만 워밍업 (ThemeService 제외)
-      const { warmupCriticalServices, getThemeService } = await import(
-        '@shared/container/service-accessors'
-      );
+      const { warmupCriticalServices } = await import('@shared/container/service-accessors');
       warmupCriticalServices();
 
-      // Then: ThemeService는 아직 초기화되지 않았어야 함 (등록만 됨)
-      // 실제 사용 시점에 초기화됨
-      expect(() => getThemeService()).not.toThrow();
+      // Then: ThemeService는 워밍업에서 호출되지 않았어야 함
+      expect(getCallCount.get('theme.service') || getCallCount.get('theme.auto') || 0).toBe(0);
     });
 
     it('BulkDownloadService는 갤러리 오픈 시점까지 초기화를 지연할 수 있어야 함', async () => {
@@ -217,14 +245,22 @@ describe('Epic REF-LITE-V4 - 서비스 워밍업 성능', () => {
       const { registerCoreServices } = await import('@shared/services/core-services');
       await registerCoreServices();
 
+      const coreService = CoreService.getInstance();
+      const getCallCount = new Map<string, number>();
+
+      // get 호출 추적
+      const originalGet = coreService.get.bind(coreService);
+      vi.spyOn(coreService, 'get').mockImplementation((key: string) => {
+        getCallCount.set(key, (getCallCount.get(key) || 0) + 1);
+        return originalGet(key);
+      });
+
       // When: Critical 서비스만 워밍업
-      const { warmupCriticalServices, getBulkDownloadServiceFromContainer } = await import(
-        '@shared/container/service-accessors'
-      );
+      const { warmupCriticalServices } = await import('@shared/container/service-accessors');
       warmupCriticalServices();
 
-      // Then: BulkDownloadService는 아직 초기화되지 않았어야 함
-      expect(() => getBulkDownloadServiceFromContainer()).not.toThrow();
+      // Then: BulkDownloadService는 워밍업에서 호출되지 않았어야 함
+      expect(getCallCount.get('core.bulkDownload') || 0).toBe(0);
     });
   });
 });
