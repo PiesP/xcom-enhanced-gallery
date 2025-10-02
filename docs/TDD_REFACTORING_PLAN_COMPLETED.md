@@ -1,5 +1,36 @@
 <!-- markdownlint-disable -->
 
+2025-01-22: EXEC — Epic CSS-TOKEN-UNIFY-001 Phase B 완료 ✅
+
+- **목표**: Semantic 계층 alias 완전 제거 (design-tokens.semantic.css)
+- **전략**: TDD 방식 (RED → GREEN → REFACTOR) + Primitive 토큰 직접 사용
+- **주요 성과**:
+  - **Semantic Alias 제거** (8 direct definitions + 3 indirect references)
+    - `--xeg-radius-*` alias 8개 제거 (xs/sm/md/lg/xl/2xl/pill/full)
+    - `--xeg-form-control-radius`: var(--xeg-radius-md) → var(--radius-md)
+    - `--xeg-comp-toolbar-radius`: var(--xeg-radius-lg) → var(--radius-lg)
+    - `--xeg-comp-modal-radius`: var(--xeg-radius-xl) → var(--radius-xl)
+  - **Icon.tsx Fallback 수정**
+    - `props.size ?? 'var(--xeg-icon-size)'` → `'var(--size-icon-md)'`
+    - Semantic 토큰 직접 사용으로 alias 의존성 제거
+  - **가드 테스트** (6 tests, 100% pass)
+    - Semantic CSS alias 부재 검증 (radius, icon)
+    - Icon.tsx fallback 토큰 검증
+    - 자동 감지 패턴 (`--xeg-radius-*`, `--xeg-icon-size-*`)
+- **최종 메트릭**:
+  - CSS 번들: **94.51 KB → 94.23 KB** (0.28 KB 추가 절감)
+  - Phase A+B 총 절감: **0.44 KB** (94.67 KB → 94.23 KB)
+  - 테스트: **6/6 통과 (100%)**
+- **품질 게이트**: typecheck/lint:fix/format/build ALL GREEN
+- **브랜치**: feature/css-token-unify-001-phase-b
+- **남은 작업** (Phase C):
+  - 하드코딩 색상/간격/애니메이션 값 제거
+  - 토큰 위반 방지 린트 룰 추가
+  - 전체 CSS 스캔 스크립트 실행
+- **총 실행 시간**: ~1.5h (RED 작성 + GREEN 구현 + 간접 참조 추적 + REFACTOR)
+
+---
+
 2025-01-22: EXEC — Epic CSS-TOKEN-UNIFY-001 Phase A 완료 ✅
 
 - **목표**: CSS 토큰 중복 제거 (Icon/Border-radius alias)
