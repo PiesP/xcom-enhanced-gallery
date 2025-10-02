@@ -64,6 +64,8 @@ export const LazyIcon = (props: LazyIconProps): JSX.Element => {
     if (props.stroke !== undefined) record.stroke = props.stroke;
     if (props.color !== undefined) record.color = props.color;
     if (props.className !== undefined) record.className = props.className;
+    // 테스트/디버그 용도로 data-icon 속성 추가
+    record['data-icon'] = props.name;
     return record;
   });
 

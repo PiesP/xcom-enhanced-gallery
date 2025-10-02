@@ -12,6 +12,7 @@
 
 import type { JSX } from 'solid-js';
 import { getSolidCore } from '@shared/external/vendors';
+import { LazyIcon } from '@shared/components/LazyIcon';
 import styles from './RadioGroup.module.css';
 
 export interface RadioOption {
@@ -219,6 +220,12 @@ export const RadioGroup = (props: RadioGroupProps): JSX.Element => {
             onClick={() => handleOptionClick(option)}
             onKeyDown={handleKeyDown}
           >
+            {option.iconName && (
+              <LazyIcon
+                name={option.iconName}
+                {...(styles.icon ? { className: styles.icon } : {})}
+              />
+            )}
             <span class={styles.label}>{option.label}</span>
           </div>
         );
