@@ -1,5 +1,35 @@
 <!-- markdownlint-disable -->
 
+2025-01-22: EXEC — Epic CSS-TOKEN-UNIFY-001 Phase A 완료 ✅
+
+- **목표**: CSS 토큰 중복 제거 (Icon/Border-radius alias)
+- **전략**: TDD 방식 (RED → GREEN → REFACTOR) + Layered Token System
+- **주요 성과**:
+  - **Icon Alias 제거** (4 tokens)
+    - `--xeg-icon-size-*` 제거 → `--size-icon-*` semantic 직접 사용
+    - 컴포넌트 마이그레이션: Gallery.module.css (2곳), Toast.module.css (2곳)
+  - **Border-radius Alias 제거** (design-tokens.css)
+    - `--xeg-radius-*` 7개 제거 (xs/sm/md/lg/xl/2xl/pill/full)
+    - Toast.module.css radius 사용 semantic 전환 (1곳)
+  - **중복 감지 가드 테스트** (6 tests, 100% pass)
+    - Icon alias 부재 검증
+    - Border-radius alias 부재 검증
+    - Semantic 토큰 존재 확인
+    - 자동 감지 패턴 (`--xeg-*: var(--size-*)`)
+- **최종 메트릭**:
+  - CSS 번들: **94.67 KB → 94.51 KB** (0.16 KB 절감)
+  - 테스트: **6/6 통과 (100%)**
+  - 마이그레이션: 2개 컴포넌트 (Gallery, Toast)
+- **품질 게이트**: typecheck/lint:fix/build ALL GREEN
+- **브랜치**: feature/css-token-unify-001-phase-a
+- **남은 작업**:
+  - design-tokens.semantic.css의 --xeg-radius-\* alias (100+ 사용처)
+  - Icon.tsx fallback `var(--xeg-icon-size)` 처리
+  - 전체 컴포넌트 마이그레이션 (Phase B/C에서 처리)
+- **총 실행 시간**: ~45분 (RED 작성 + GREEN 최소 구현 + REFACTOR 검토)
+
+---
+
 2025-10-02: EXEC — Epic SECURITY-HARDENING-001 완료 ✅
 
 - **목표**: CodeQL 보안 이슈 해결 (Prototype pollution, URL sanitization, Double
