@@ -282,15 +282,18 @@ async function runCodemod(dryRun = true) {
 // CLI
 const isDryRun = !process.argv.includes('--apply');
 
-if (isDryRun) {
-  console.log('🔍 DRY RUN 모드 - 파일 변경 없음');
-  console.log('실제 변환을 적용하려면 --apply 플래그를 사용하세요\n');
-}
+// Only run if directly executed (not imported as module)
+if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+  if (isDryRun) {
+    console.log('🔍 DRY RUN 모드 - 파일 변경 없음');
+    console.log('실제 변환을 적용하려면 --apply 플래그를 사용하세요\n');
+  }
 
-runCodemod(isDryRun).catch(error => {
-  console.error('❌ Codemod 실행 오류:', error);
-  process.exit(1);
-});
+  runCodemod(isDryRun).catch(error => {
+    console.error('❌ Codemod 실행 오류:', error);
+    process.exit(1);
+  });
+}
 
 // Export for testing
 /**
