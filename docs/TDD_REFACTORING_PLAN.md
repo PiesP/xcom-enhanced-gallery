@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-02 — Epic SECURITY-HARDENING-001 완료, 활성 Epic 4개
+**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 3개
 
 ---
 
@@ -66,27 +66,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ---
 
-#### **Epic CSS-TOKEN-UNIFY-001**: CSS 토큰 시스템 정리
-
-**배경**: CSS 토큰 중복 정의 및 하드코딩 값 존재
-
-- 토큰 중복 정의 (`design-tokens.css` vs `design-tokens.component.css`)
-- 하드코딩된 색상/border-radius 값
-- CSS 번들 크기 최적화 여지 (94 KiB → 70 KiB 목표)
-
-**전략**: Layered 토큰 시스템 (base/semantic/component)
-
-**Phase C: 하드코딩 값 제거** (2-3 days)
-
-- [ ] 전체 CSS 스캔 스크립트 실행
-- [ ] 색상/간격/애니메이션 하드코딩 제거
-- [ ] 토큰 위반 방지 린트 룰 추가
-
-**Phase A/B 완료** (2025-01-22): Icon/Radius alias 제거, Semantic 계층 정리 →
-`TDD_REFACTORING_PLAN_COMPLETED.md` 참조
-
-**예상 난이도**: M (Medium) **예상 소요**: 2-3 days (Phase C remaining)
-
 ---
 
 ### 🟢 LOW 우선순위
@@ -138,6 +117,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 3. 최근 완료 Epic
 
+- **Epic CSS-TOKEN-UNIFY-001** (2025-01-23): CSS 토큰 시스템 정리
+  - Phase A/B/C 완료 (하드코딩 값 제거, 3-layer 토큰 시스템)
+  - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
 - **Epic ARCH-SIMPLIFY-001** (2025-10-02): 아키텍처 복잡도 간소화
   - Phase A/B/C/D 완료
   - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
@@ -207,22 +189,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 - ⚠️ 장기간 소요 (8-12 days)
 - ⚠️ 혼재된 패턴으로 혼란 가능성
 - ✅ 안정성 우선, 단계별 검증
-
----
-
-### CSS 토큰 정리 (CSS-TOKEN-UNIFY-001) - **MEDIUM**
-
-**선택 이유**:
-
-- 중복 정의는 유지보수 어려움
-- 하드코딩 값은 디자인 시스템 위반
-- 번들 크기 최적화 (24 KiB 절감 목표)
-
-**트레이드오프**:
-
-- ⚠️ Layered 시스템은 복잡도 유지
-- ✅ 명확한 계층으로 확장성 확보
-- ✅ 단일 소스보다 유지보수 용이
 
 ---
 
