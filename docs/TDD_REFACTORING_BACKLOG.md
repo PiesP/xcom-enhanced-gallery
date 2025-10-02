@@ -2,8 +2,7 @@
 
 > 활성화되지 않은 향후 후보 아이디어 저장소 (선정 전까지 여기서만 유지)
 >
-> **최근 업데이트**: 2025-01-13 — Epic THEME-ICON-UNIFY-001 Phase A 완료 후
-> Phase B/C 분리
+> **최근 업데이트**: 2025-01-13 — RED-TEST-001을 활성 Epic으로 승격
 >
 > 사용 방법:
 >
@@ -24,8 +23,6 @@
 
 ### HIGH Priority
 
-READY | RED-TEST-001 | SolidJS Gallery JSDOM URL Constructor Fix | Gallery
-테스트 환경 안정화, CI 차단 해소 | M | 8개 테스트 파일 skip 중, 최우선 해결 필요
 READY | RED-TEST-002 | Toast/Signal API Native Pattern Migration |
 UnifiedToastManager API 통합 완료 | M | 7개 테스트 파일 skip 중
 

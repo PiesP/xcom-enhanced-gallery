@@ -21,7 +21,39 @@ B/C는 별도 Epic으로 백로그 이동
 
 ## 2. 활성 Epic 현황
 
-(현재 활성 Epic 없음. 백로그(`TDD_REFACTORING_BACKLOG.md`)에서 선정 대기 중)
+### Epic RED-TEST-001: SolidJS Gallery JSDOM URL Constructor Fix
+
+**ID**: RED-TEST-001  
+**상태**: 🟡 진행 중 (Phase 1/3)  
+**우선순위**: HIGH  
+**시작일**: 2025-01-13  
+**예상 완료**: 2025-01-15
+
+**배경**: JSDOM 환경에서 `URL is not a constructor` 오류로 8개 Gallery 테스트
+파일이 skip 처리됨. CI 차단 해소 및 테스트 환경 안정화를 위해 최우선 해결 필요.
+
+**목표**:
+
+- [ ] Phase 1: JSDOM URL 폴리필 추가 또는 URL 사용 회피 방안 분석 (0.5일)
+- [ ] Phase 2: URL Constructor 문제 해결 및 테스트 환경 수정 (1일)
+- [ ] Phase 3: 8개 skip된 테스트 파일 GREEN 전환 검증 (0.5일)
+
+**영향 범위**:
+
+- Gallery/Toolbar 접근성 테스트
+- DOM 정리 테스트
+- Wheel 이벤트 테스트
+- Shadow DOM 격리 테스트
+
+**Acceptance Criteria**:
+
+- ✅ JSDOM 환경에서 URL Constructor 정상 동작
+- ✅ 8개 Gallery 테스트 파일 모두 GREEN 상태
+- ✅ `npm test` 전체 통과 (skip 0개)
+- ✅ `npm run build:dev` 검증 통과
+
+**예상 난이도**: M (Medium)  
+**예상 소요**: 1-2 days
 
 ---
 
