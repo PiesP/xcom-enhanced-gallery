@@ -44,19 +44,14 @@
   --xeg-font-weight-semibold: 600;
   --xeg-font-weight-bold: 700;
 
-  /* Icon Tokens (단일 소스: aggregator 이동 - component layer 제거) */
+  /* Icon Tokens */
   --xeg-icon-stroke-width: 2px;
-  --xeg-icon-size: var(--size-icon-md);
   --xeg-icon-line-height: 1;
-  --xeg-icon-size-sm: var(--size-icon-sm);
-  --xeg-icon-size-md: var(--size-icon-md);
-  --xeg-icon-size-lg: var(--size-icon-lg);
+  /* NOTE: Icon size 토큰은 semantic layer의 --size-icon-* 직접 사용
+     Alias 제거 (Epic CSS-TOKEN-UNIFY-001): --xeg-icon-size-* → --size-icon-*
+     컴포넌트에서 var(--size-icon-sm/md/lg) 직접 참조 */
 
   /* Modal component 토큰은 semantic 파일에서만 정의 (회귀 방지 테스트: modal-token.hardening.test.ts) */
-
-  /* Icon 토큰 - (TBAR-O P2) 단일 소스 이전 완료
-    NOTE: 중복 정의 제거. 모든 아이콘 사이즈/스트로크 토큰은 component layer (`design-tokens.component.css`)에서만 선언.
-    여기서는 추가 alias를 두지 않음 (회귀 테스트에서 중복 방지). */
 
   /* Transition 토큰 - 테스트 요구사항 */
   --xeg-transition-fast: 0.15s ease-out;
@@ -161,14 +156,9 @@
   --xeg-button-height-lg: var(--xeg-size-button-lg);
   --xeg-button-height-touch: var(--xeg-size-button-touch);
 
-  /* Legacy Radius - 호환성 보장 */
-  --xeg-radius-sm: var(--radius-sm);
-  --xeg-radius-md: var(--radius-md);
-  --xeg-radius-lg: var(--radius-lg);
-  --xeg-radius-xl: var(--radius-xl);
-  --xeg-radius-2xl: var(--radius-2xl);
-  --xeg-radius-pill: var(--radius-pill);
-  --xeg-radius-full: var(--radius-full);
+  /* NOTE: Border-radius 토큰은 semantic layer의 --radius-* 직접 사용
+     Alias 제거 (Epic CSS-TOKEN-UNIFY-001): --xeg-radius-* → --radius-*
+     컴포넌트에서 var(--radius-sm/md/lg/xl/2xl/pill/full) 직접 참조 */
 
   /* Legacy Component-specific - 호환성 보장 */
   --xeg-hover-zone-height: var(--hover-zone-height);

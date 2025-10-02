@@ -170,14 +170,14 @@
   font-size: 18px;
   line-height: 1;
   padding: 0;
-  width: var(--xeg-icon-size-md);
-  height: var(--xeg-icon-size-md);
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   /* Interaction element radius policy: use md */
-  border-radius: var(--xeg-radius-md);
+  border-radius: var(--radius-md);
   transition: background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
