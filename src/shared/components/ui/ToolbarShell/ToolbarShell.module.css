@@ -60,7 +60,7 @@
 
 .toolbar-position-sticky {
   position: sticky;
-  top: 16px;
+  top: var(--space-8);
 }
 
 .toolbar-position-relative {
@@ -74,7 +74,7 @@
   }
 
   .toolbar-position-fixed {
-    bottom: 16px;
+    bottom: var(--space-8);
     top: auto;
     transform: translateX(-50%);
   }

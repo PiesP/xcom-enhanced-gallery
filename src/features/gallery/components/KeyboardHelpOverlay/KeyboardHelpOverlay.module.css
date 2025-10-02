@@ -39,7 +39,7 @@
 
 .shortcutList {
   margin: 0;
-  padding-left: 1.25em;
+  padding-left: var(--space-em-125);
 }
 
 .closeButton {

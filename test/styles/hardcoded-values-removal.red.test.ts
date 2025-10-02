@@ -74,8 +74,9 @@ function findHardcodedColors(content: string, filePath: string): string[] {
 // 하드코딩 간격 값 감지 (margin, padding 등의 px/rem 직접 사용)
 function findHardcodedSpacing(content: string): string[] {
   // margin, padding, gap 등에서 px/rem 직접 사용 감지
+  // border-* 속성은 제외 (border-width이므로 간격이 아님)
   const spacingMatches = content.match(
-    /(margin|padding|gap|top|bottom|left|right):\s*(\d+(?:\.\d+)?(?:px|rem|em))/gi
+    /(?<!border-)(?<!border-block-)(?<!border-inline-)(margin|padding|gap|top|bottom|left|right):\s*(\d+(?:\.\d+)?(?:px|rem|em))/gi
   );
 
   if (!spacingMatches) return [];

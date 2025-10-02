@@ -193,7 +193,7 @@
   position-anchor: --tooltip-anchor;
   /* Anchor positioning draft property replaced with a safe fallback */
   inset-block-end: 100%;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-4);
 }
 
 /**
