@@ -1,5 +1,29 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic DEPRECATED-REMOVAL-FINAL 완료 ✅
+
+- **목표**: @deprecated 마커 완전 제거 (17개 → 0개)
+- **전략**: 미사용 파일 삭제 (13개) + 활성 코드 마커 제거 (4개)
+- **주요 성과**:
+  - Heroicons 어댑터 파일 11개 삭제 (hero/\*)
+  - EnhancedSettingsModal.tsx, ModalShell.tsx 삭제 (2개)
+  - DOMEventManager.createEventManager() 마커 제거 (EventManager에서 사용 중)
+  - ServiceDiagnostics.diagnoseServiceManager() 마커 제거 (main.ts에서 사용 중)
+  - UnifiedToastManager export 마커 제거 (14개 import 참조 존재)
+  - Button.iconVariant prop 마커 제거 (하위 호환성 fallback 유지)
+- **메트릭**:
+  - @deprecated 마커: 17개 → 0개 (100% 제거)
+  - 삭제 파일: 13개 (미사용 deprecated 코드)
+  - 수정 파일: 4개 (마커만 제거, 기능 유지)
+  - 변경 라인: +3 insertions, -73 deletions
+- **품질 게이트**: typecheck/lint/format/build ALL GREEN
+- **커밋**: dbabb825 "feat(infra): remove all @deprecated markers (17→0)"
+- **병합**: Merge commit to master (--no-ff)
+- **총 실행 시간**: ~25분
+- **비고**: 모든 활성 코드는 보존됨 (Breaking Change 없음)
+
+---
+
 2025-10-02: EXEC — Epic ARCH-SIMPLIFY-001 완료 ✅
 
 - **목표**: 아키텍처 복잡도 간소화 (Deprecated API, 순환 의존성, 테스트 구조,
