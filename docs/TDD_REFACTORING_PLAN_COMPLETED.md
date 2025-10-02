@@ -1,5 +1,37 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic SOLID-NATIVE-002 완료 ✅ (SolidJS 네이티브 패턴 완전
+마이그레이션)
+
+- **목표**: createGlobalSignal 레거시 패턴 → SolidJS 네이티브 패턴 전환
+- **배경**: 20+ 파일에서 `.value`/`.subscribe()` Preact Signals 스타일 사용
+- **전략**: 점진적 마이그레이션 (Phase G-3-1 ~ G-3-3, 파일별 독립 전환)
+- **주요 성과**:
+  - **Phase G-3-1: toolbar.signals.ts** ✅ (2025-01-01)
+    - Low Risk (독립적, 사용처 적음)
+    - createSignal() 함수 호출 방식 전환
+    - createEffect() 구독 패턴 적용
+  - **Phase G-3-2: download.signals.ts** ✅ (2025-09-30)
+    - Medium Risk (서비스 레이어 연결)
+    - SolidJS 네이티브 primitives로 완전 전환
+  - **Phase G-3-3: gallery.signals.ts** ✅ (2025-09-30)
+    - High Risk (핵심 상태, 의존성 많음)
+    - 모든 레거시 패턴 제거 완료
+- **검증 결과** (solid-native-inventory.test.ts, 11/11 GREEN):
+  - createGlobalSignal imports: **0개** (완전 제거)
+  - createGlobalSignal calls: **0개** (정의 제외)
+  - .value 접근: **3개** (DOM 요소 정당한 사용만 남음)
+  - .subscribe() 호출: **3개** (SettingsService 등 다른 패턴)
+- **최종 메트릭**:
+  - 전환 파일: **3개** signals 파일 (toolbar, download, gallery)
+  - 제거된 패턴: **createGlobalSignal import/call 완전 제거**
+  - 영향받는 파일: **2개** (DOM 관련 .value만 남음)
+  - 테스트: **11/11 GREEN** (인벤토리 전체 검증 통과)
+- **품질 게이트**: typecheck/lint/test ALL GREEN
+- **결과**: SolidJS 네이티브 패턴으로 완전 전환 완료, 레거시 호환 레이어 불필요
+
+---
+
 2025-10-02: EXEC — Epic DESIGN-MODERN-001 완료 ✅ (디자인 시스템 현대화)
 
 - **목표**: 간결하고 현대적인 디자인 시스템 구축

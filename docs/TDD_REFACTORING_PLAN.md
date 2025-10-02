@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 2개
+**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 1개
 
 ---
 
@@ -20,55 +20,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### 🟡 MEDIUM 우선순위
-
-#### **Epic SOLID-NATIVE-002**: SolidJS 네이티브 패턴 완전 마이그레이션
-
-**배경**: `createGlobalSignal` 레거시 패턴이 20+ 파일에서 사용 중
-
-- `.value` 속성 접근
-- `.subscribe()` 메서드 호출
-- Preact Signals 스타일 API
-
-**목표**: SolidJS 네이티브 패턴으로 완전 전환
-
-- `createSignal()` 함수 호출 방식
-- `createEffect()` 구독 패턴
-- `createMemo()` 파생값 계산
-
-**전략**: 점진적 마이그레이션 (파일별)
-
-**Phase A: External 계층** (1-2 days)
-
-- [ ] `vendors` 모듈 내 레거시 패턴 제거
-- [ ] Userscript adapter 마이그레이션
-- [ ] 테스트 유틸리티 업데이트
-
-**Phase B: Shared Services** (2-3 days)
-
-- [ ] MediaService, BulkDownloadService 마이그레이션
-- [ ] ThemeService, AnimationService 마이그레이션
-- [ ] UnifiedToastManager 완전 전환
-
-**Phase C: Shared State** (2-3 days)
-
-- [ ] `gallery.signals` 마이그레이션
-- [ ] `settings.signals` 마이그레이션
-- [ ] Signal selector 유틸리티 추가
-
-**Phase D: Features 계층** (3-4 days)
-
-- [ ] Gallery 컴포넌트 마이그레이션
-- [ ] Settings 컴포넌트 마이그레이션
-- [ ] 레거시 호환 레이어 제거
-
-**예상 난이도**: H (High) **예상 소요**: 8-12 days
-
----
-
----
-
-### 🟢 LOW 우선순위
+### LOW 우선순위
 
 #### **Epic SERVICE-SIMPLIFY-001**: 서비스 아키텍처 간소화
 
@@ -117,6 +69,10 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 3. 최근 완료 Epic
 
+- **Epic SOLID-NATIVE-002** (2025-10-02): SolidJS 네이티브 패턴 완전
+  마이그레이션
+  - Phase G-3-1~3 완료 (toolbar/download/gallery signals)
+  - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
 - **Epic DESIGN-MODERN-001** (2025-10-02): 디자인 시스템 현대화
   - Phase A (Animation 통합), Phases B-D (기구현 확인) 완료
   - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
@@ -176,22 +132,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 - ⚠️ JSDOM 환경 이슈는 근본 원인 파악 필요
 - ✅ 테스트 안정성 확보로 리팩토링 신뢰도 향상
-
----
-
-### SolidJS 마이그레이션 (SOLID-NATIVE-002) - **MEDIUM**
-
-**선택 이유**:
-
-- 20+ 파일 레거시 패턴은 기술 부채
-- 호환 레이어 유지 비용 증가
-- 점진적 마이그레이션으로 위험 최소화
-
-**트레이드오프**:
-
-- ⚠️ 장기간 소요 (8-12 days)
-- ⚠️ 혼재된 패턴으로 혼란 가능성
-- ✅ 안정성 우선, 단계별 검증
 
 ---
 
