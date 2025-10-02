@@ -149,7 +149,7 @@ describe('Epic A11Y-FOCUS-ROLES: 갤러리 아이템 포커스 상태 역할 명
     const tokens = `
       /* 사용자 선택 아이템 강조 */
       --xeg-active-shadow: 0 0 0 2px var(--xeg-color-primary);
-      
+
       /* 자동 스크롤 대상 아이템 표시 */
       --xeg-focus-shadow: 0 0 0 1px var(--xeg-color-focus);
     `;
