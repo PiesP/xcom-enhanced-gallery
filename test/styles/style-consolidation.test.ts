@@ -1,57 +1,88 @@
 /**
- * @fileoverview P6 Style System Consolidation TDD Tests
- * @description 중복된 CSS 제거 및 design token 통합 테스트
+ * @fileoverview Style System Consolidation Tests
+ * @description CSS 중복 제거 및 design token 통합 검증
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@test-utils/testing-library';
-import { initializeVendors } from '@shared/external/vendors';
-import { getPreact } from '@test-utils/legacy-preact';
+/* eslint-disable no-undef */
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('P6 Style System Consolidation TDD', () => {
-  beforeEach(() => {
-    initializeVendors();
-  });
+function readCSSFile(relativePath: string): string {
+  const filePath = join(process.cwd(), 'src', relativePath);
+  return readFileSync(filePath, 'utf-8');
+}
 
-  describe('Red: Toolbar Button Style Duplication', () => {
-    it('should fail: .xeg-toolbar-button과 .toolbar-button 스타일이 중복됨', () => {
-      // 이 테스트는 CSS 분석을 통해 중복을 찾는 테스트입니다
-      // 실제로는 CSS 파일의 중복 스타일을 검사하는 도구가 필요합니다
-      expect(true).toBe(true); // placeholder
+describe('Style System Consolidation', () => {
+  describe('Toolbar Button Style Consistency', () => {
+    it('모든 toolbar 버튼이 디자인 토큰을 사용해야 함', () => {
+      const toolbarCSS = readCSSFile('shared/components/ui/Toolbar/Toolbar.module.css');
+
+      // border-radius는 --xeg-radius-* 또는 --radius-* 토큰 사용
+      const radiusMatches = toolbarCSS.match(/border-radius:\s*[^;]+;/g) || [];
+      const hardcodedRadius = radiusMatches.filter(
+        match =>
+          !match.includes('var(--xeg-radius') &&
+          !match.includes('var(--radius-') &&
+          !match.includes('inherit')
+      );
+
+      expect(hardcodedRadius).toEqual([]);
     });
 
-    it('should fail: design token이 일관되지 않음', () => {
-      // 서로 다른 CSS 변수가 같은 용도로 사용되는지 검사
-      expect(true).toBe(true); // placeholder
+    it('중복된 button 스타일 클래스가 없어야 함', () => {
+      const toolbarCSS = readCSSFile('shared/components/ui/Toolbar/Toolbar.module.css');
+
+      // .xeg-toolbar-button과 같은 레거시 클래스가 없어야 함
+      expect(toolbarCSS).not.toMatch(/\.xeg-toolbar-button/);
     });
   });
 
-  describe('Red: CSS Module vs Global Style 혼재', () => {
-    it('should fail: 일부는 CSS Module, 일부는 global style 사용', () => {
-      // 스타일 적용 방식의 일관성 검사
-      expect(true).toBe(true); // placeholder
+  describe('CSS Module vs Global Style Consistency', () => {
+    it('컴포넌트 스타일은 CSS Module을 사용해야 함', () => {
+      const buttonCSS = readCSSFile('shared/components/ui/Button/Button.module.css');
+      const toolbarCSS = readCSSFile('shared/components/ui/Toolbar/Toolbar.module.css');
+
+      // CSS Module은 .module.css 확장자를 가짐
+      expect(buttonCSS).toBeDefined();
+      expect(toolbarCSS).toBeDefined();
     });
   });
 
-  describe('Red: 중복된 색상 정의', () => {
-    it('should fail: 같은 색상값이 여러 변수로 정의됨', () => {
-      // CSS 변수에서 중복된 색상값 검사
-      expect(true).toBe(true); // placeholder
+  describe('Color Token Consistency', () => {
+    it('같은 용도의 색상은 동일한 토큰을 사용해야 함', () => {
+      const designTokens = readCSSFile('shared/styles/design-tokens.css');
+
+      // primary 색상 토큰이 정의되어 있어야 함
+      expect(designTokens).toMatch(/--xeg-color-primary/);
+      expect(designTokens).toMatch(/--xeg-color-neutral/);
+    });
+
+    it('하드코딩된 색상값이 없어야 함', () => {
+      const toolbarCSS = readCSSFile('shared/components/ui/Toolbar/Toolbar.module.css');
+
+      // #으로 시작하는 hex 색상 코드가 없어야 함 (주석 제외)
+      const lines = toolbarCSS
+        .split('\n')
+        .filter(line => !line.trim().startsWith('/*') && !line.trim().startsWith('*'));
+      const cssWithoutComments = lines.join('\n');
+      const hexColors = cssWithoutComments.match(/#[0-9a-fA-F]{3,6}(?![^{]*\*\/)/g) || [];
+
+      expect(hexColors).toEqual([]);
     });
   });
-});
 
-describe('Style Consolidation Integration', () => {
-  beforeEach(() => {
-    initializeVendors();
-  });
+  describe('Design Token Policy Compliance', () => {
+    it('모든 spacing 값은 토큰을 사용해야 함', () => {
+      const toolbarCSS = readCSSFile('shared/components/ui/Toolbar/Toolbar.module.css');
 
-  describe('Red: Toolbar Button Consistency', () => {
-    it('should fail: 모든 toolbar 버튼이 동일한 스타일을 가지지 않음', () => {
-      // 실제 렌더링된 버튼들의 computed style 검사
-      expect(true).toBe(true); // placeholder
+      // padding, margin은 var(--xeg-* 또는 var(--space-* 토큰 사용
+      const paddingMatches = toolbarCSS.match(/padding[^:]*:\s*[^;]+;/g) || [];
+      const hardcodedPadding = paddingMatches.filter(
+        match => /\d+px/.test(match) && !match.includes('var(')
+      );
+
+      expect(hardcodedPadding.length).toBe(0);
     });
   });
 });

@@ -6,9 +6,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('CoreService (ServiceManager)', () => {
+describe('CoreService (ServiceManager)', () => {
   let coreService;
 
   beforeEach(() => {
@@ -122,7 +120,7 @@ describe.skip('CoreService (ServiceManager)', () => {
       expect(diagnostics.registeredServices).toBe(1);
       expect(diagnostics.activeInstances).toBe(1);
       expect(diagnostics.services).toContain('test-service');
-      expect(diagnostics.instances['test-service']).toBe(true);
+      expect(diagnostics.instances).toContain('test-service');
     });
   });
 

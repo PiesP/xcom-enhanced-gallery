@@ -98,6 +98,34 @@ CI
 - 실행 결과(루트 디렉터리 생성)
   - `codeql-db/`: 최신 데이터베이스 (옵션 `--keep-db`로 유지 가능)
   - `codeql-results.sarif`: SARIF 2.1.0 호환 결과 파일
+
+## @connect 헤더 동기화 (Epic CONNECT_SYNC_AUTOMATION)
+
+코드베이스에서 사용되는 외부 호스트를 추출하여 `vite.config.ts`의 @connect
+헤더와 동기화하는 도구입니다.
+
+```pwsh
+# 분석만 (현재 상태 확인)
+npm run sync:connect
+
+# 자동 수정 (실제 적용)
+npm run sync:connect:fix
+
+# 미리보기 (dry-run)
+npm run sync:connect:dry-run
+```
+
+**스캔 대상:**
+
+- `src/constants.ts`: DOMAINS 배열
+- `src/shared/utils/url-safety.ts`: TWITTER_MEDIA_HOSTS 상수
+- `src/**/*.{ts,tsx}`: URL 리터럴 및 호스트 문자열
+
+**목적:**
+
+- 코드에서 사용하는 호스트가 @connect 헤더에 누락되는 것을 방지
+- 불필요한 @connect 헤더 정리
+- 릴리즈 시 퍼미션 오류 예방
   - `codeql-results-summary.csv`: 규칙·위치·메시지 요약 테이블
   - `codeql-improvement-plan.md`: 심각도별 체크리스트 형태의 후속 계획
 - 추가 팩 / 커스텀 쿼리

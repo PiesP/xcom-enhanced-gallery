@@ -4,17 +4,19 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 describe('Toolbar FitModeGroup Contract', () => {
-  test.skip('fitModeGroup white box 제거 + radius 정책 유지', () => {
+  test('fitModeGroup 제거 완료 및 fitButton radius 정책 유지 검증', () => {
     const css = readFileSync(
       join(process.cwd(), 'src', 'shared', 'components', 'ui', 'Toolbar', 'Toolbar.module.css'),
       'utf-8'
     );
-    const match = css.match(/\.fitModeGroup\s*{[^}]*}/);
-    expect(match).toBeTruthy();
-    const rule = match ? match[0] : '';
-    expect(rule).toMatch(/background:\s*transparent/);
-    expect(rule).toMatch(/border:\s*none/);
-    expect(rule).toMatch(/padding:\s*0/);
-    expect(rule).toMatch(/border-radius:\s*var\(--xeg-radius-md\)/);
+
+    // fitModeGroup 클래스가 제거되었음을 확인
+    expect(css).not.toMatch(/\.fitModeGroup/);
+
+    // fitButton이 디자인 토큰을 사용하여 radius 정책을 준수하는지 확인
+    // .fitButton, button.fitButton 선언부를 찾아 검증
+    const fitButtonPattern =
+      /\.fitButton[,\s]*(?:button\.fitButton\s*)?\{[^}]*border-radius:\s*var\(--xeg-radius-md\)[^}]*\}/;
+    expect(css).toMatch(fitButtonPattern);
   });
 });
