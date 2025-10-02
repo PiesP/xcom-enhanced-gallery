@@ -153,14 +153,20 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
           ? 'xcom-enhanced-gallery.dev.user.js.map'
           : 'xcom-enhanced-gallery.user.js.map';
         fs.writeFileSync(path.join(outDir, mapName), sourcemapContent, 'utf8');
-        // 파일 끝에 sourceMappingURL 주석 추가 (디버깅 편의)
-        try {
-          const suffix = `\n//# sourceMappingURL=${mapName}`;
-          fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
-        } catch (err) {
-          console.warn('[userscript] failed to append sourceMappingURL comment', err);
+
+        // DEV only: 파일 끝에 sourceMappingURL 주석 추가 (디버깅 편의)
+        // PROD: 주석 없음 (404 노이즈 방지, 별도 .map 파일만 유지)
+        if (flags.isDev) {
+          try {
+            const suffix = `\n//# sourceMappingURL=${mapName}`;
+            fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
+          } catch (err) {
+            console.warn('[userscript] failed to append sourceMappingURL comment', err);
+          }
         }
-        console.log(`✅ Sourcemap 생성: ${mapName}`);
+        console.log(
+          `✅ Sourcemap 생성: ${mapName}${flags.isDev ? ' (comment added)' : ' (no comment)'}`
+        );
       }
 
       console.log(`✅ Userscript 생성: ${finalName}`);

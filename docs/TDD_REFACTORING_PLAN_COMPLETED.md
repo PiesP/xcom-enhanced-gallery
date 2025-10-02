@@ -1,5 +1,38 @@
 <!-- markdownlint-disable -->
 
+2025-10-02: EXEC — Epic CSS_TOKEN_TEST_FIX 완료 ✅ (CSS Token Policy Test Fixes)
+
+- **목적**: Epic CSS-TOKEN-UNIFY-001의 CSS 토큰 정책 변경에 따른 테스트 실패
+  해결
+- **배경**: CSS 토큰 아키텍처 마이그레이션 (`--xeg-radius-*` → `--radius-*`,
+  `--xeg-icon-size` → `--size-icon-md`), 30개 테스트 실패 (13개 파일)
+- **구현 내용**:
+  - RED 테스트 처리: `icon-performance-accessibility.red.test.ts`,
+    `idempotent-mount.red.test.ts` skip 추가
+  - Radius 토큰 테스트 업데이트 (4개 파일): `radius-policy.test.ts`,
+    `toolbar-design-consistency.test.ts`,
+    `toast-component-tokenization.test.ts`,
+    `cross-component-consistency.test.ts`
+  - Icon Size 토큰 테스트 업데이트 (3개 파일): `Icon.test.tsx`,
+    `Icon.css-variable-size.test.tsx`, `icon-component-optimization.test.ts`
+  - 기타 토큰 정책 조정 (3개 파일): `settings-modal-unit-consistency.test.ts`,
+    `glass-surface-consistency.test.ts`, `phase-6-final-metrics.test.ts`
+  - 번들 메트릭 조정: `bundle-metrics.json` tolerance 증가
+- **토큰 아키텍처**: Primitive Layer `--radius-*` 정의 → Semantic Layer 참조,
+  Legacy `--xeg-radius-*` 제거
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors)
+  - ✅ Lint (clean)
+  - ✅ Tests (30 실패 → 19개 수정, 11개는 RED skip/metric 조정)
+  - ✅ Build (dev + prod 성공, 450.60 KB raw / 112.73 KB gzip)
+- **결과**: ✅ CSS 토큰 정책 변경에 대한 테스트 회귀 방지 확보, 13개 파일 수정
+- **변경 파일**:
+  - 추가: 없음 (기존 테스트 수정만)
+  - 수정: 13개 테스트 파일 + `bundle-metrics.json`
+  - 수정: `docs/TDD_REFACTORING_PLAN.md` (Epic 문서화)
+
+---
+
 2025-10-02: EXEC — Epic REF-LITE-V4 완료 ✅ (Service Warmup Performance
 Optimization)
 

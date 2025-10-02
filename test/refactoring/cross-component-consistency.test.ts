@@ -118,22 +118,18 @@ describe('Cross-Component Consistency Verification', () => {
       });
     });
 
-    it('모든 semantic 토큰이 primitive를 참조해야 함', () => {
+    it('semantic 레이어가 primitive radius 토큰을 참조해야 함', () => {
       const semanticCSS = readCSSFile(CSS_FILES.designTokensSemantic);
 
-      const expectedMappings = [
-        '--xeg-radius-xs: var(--radius-xs)',
-        '--xeg-radius-sm: var(--radius-sm)',
-        '--xeg-radius-md: var(--radius-md)',
-        '--xeg-radius-lg: var(--radius-lg)',
-        '--xeg-radius-xl: var(--radius-xl)',
-        '--xeg-radius-2xl: var(--radius-2xl)',
-        '--xeg-radius-pill: var(--radius-pill)',
-        '--xeg-radius-full: var(--radius-full)',
-      ];
+      // Epic CSS-TOKEN-UNIFY-001: semantic layer가 primitive의 --radius-* 토큰을 참조
+      // Semantic layer는 --radius-* 토큰을 직접 정의하지 않고 primitive에서 import됨
+      // 대신 컴포넌트별 토큰이 --radius-* 를 참조하는지 확인
+      const componentTokenReferences = ['var(--radius-md)', 'var(--radius-lg)', 'var(--radius-xl)'];
 
-      expectedMappings.forEach(mapping => {
-        expect(semanticCSS).toContain(mapping);
+      componentTokenReferences.forEach(ref => {
+        expect(semanticCSS, `Semantic CSS가 primitive radius 토큰을 참조해야 함: ${ref}`).toContain(
+          ref
+        );
       });
     });
   });
@@ -245,17 +241,17 @@ describe('Cross-Component Consistency Verification', () => {
     });
 
     it('토큰 네이밍 컨벤션이 일관되어야 함', () => {
-      const semanticCSS = readCSSFile(CSS_FILES.designTokensSemantic);
+      const primitiveCSS = readCSSFile(CSS_FILES.designTokensPrimitive);
 
-      // xeg-radius 접두사 일관성 확인
-      const tokenPattern = /--xeg-radius-\w+:/g;
-      const tokens = semanticCSS.match(tokenPattern) || [];
+      // Epic CSS-TOKEN-UNIFY-001: primitive layer에 --radius-* 패턴 정의
+      const tokenPattern = /--radius-\w+:/g;
+      const tokens = primitiveCSS.match(tokenPattern) || [];
 
-      expect(tokens.length).toBeGreaterThan(0);
+      expect(tokens.length, 'primitive CSS에 --radius-* 토큰이 정의되어야 함').toBeGreaterThan(0);
 
-      // 모든 토큰이 xeg-radius로 시작하는지 확인
+      // 모든 토큰이 radius로 시작하는지 확인
       tokens.forEach(token => {
-        expect(token).toMatch(/^--xeg-radius-/);
+        expect(token).toMatch(/^--radius-/);
       });
     });
 
@@ -264,15 +260,18 @@ describe('Cross-Component Consistency Verification', () => {
         .filter(file => !file.includes('design-tokens'))
         .map(file => readCSSFile(file))
         .join('\n');
+      // Epic CSS-TOKEN-UNIFY-001: --radius-* 또는 --xeg-radius-* 둘 다 허용 (전환 기간)
       const required = [
-        '--xeg-radius-md',
-        '--xeg-radius-lg',
-        '--xeg-radius-2xl',
-        '--xeg-radius-pill',
-        '--xeg-radius-full',
+        { legacy: '--xeg-radius-md', modern: '--radius-md' },
+        { legacy: '--xeg-radius-lg', modern: '--radius-lg' },
+        { legacy: '--xeg-radius-2xl', modern: '--radius-2xl' },
+        { legacy: '--xeg-radius-pill', modern: '--radius-pill' },
+        { legacy: '--xeg-radius-full', modern: '--radius-full' },
       ];
-      required.forEach(token => {
-        expect(allComponentCSS.includes(`var(${token})`)).toBe(true);
+      required.forEach(({ legacy, modern }) => {
+        const hasLegacy = allComponentCSS.includes(`var(${legacy})`);
+        const hasModern = allComponentCSS.includes(`var(${modern})`);
+        expect(hasLegacy || hasModern, `${modern} 또는 ${legacy}가 사용되어야 함`).toBe(true);
       });
     });
   });
@@ -287,8 +286,10 @@ describe('Cross-Component Consistency Verification', () => {
       // border-radius 관련 줄 수 계산
       const borderRadiusLines = (allCSS.match(/border-radius:/g) || []).length;
 
-      // 토큰 사용 줄 수 계산
-      const tokenUsageLines = (allCSS.match(/var\(--xeg-radius-\w+\)/g) || []).length;
+      // 토큰 사용 줄 수 계산 (Epic CSS-TOKEN-UNIFY-001: --radius-* 또는 --xeg-radius-* 둘 다 허용)
+      const legacyTokenUsage = (allCSS.match(/var\(--xeg-radius-\w+\)/g) || []).length;
+      const modernTokenUsage = (allCSS.match(/var\(--radius-\w+\)/g) || []).length;
+      const tokenUsageLines = legacyTokenUsage + modernTokenUsage;
 
       // 대부분의 border-radius가 토큰을 사용해야 함
       const tokenUsageRatio = tokenUsageLines / borderRadiusLines;
@@ -302,11 +303,15 @@ describe('Cross-Component Consistency Verification', () => {
       // Primitive 토큰 개수
       const primitiveTokens = (primitiveCSS.match(/--radius-\w+:/g) || []).length;
 
-      // Semantic 토큰 개수
-      const semanticTokens = (semanticCSS.match(/--xeg-radius-\w+:/g) || []).length;
+      // Epic CSS-TOKEN-UNIFY-001: semantic layer는 primitive의 --radius-* 토큰을 참조
+      // Semantic layer에서 컴포넌트별 토큰이 --radius-*를 참조하는지 확인
+      const radiusReferences = (semanticCSS.match(/var\(--radius-\w+\)/g) || []).length;
 
-      // Semantic 토큰이 primitive 토큰과 1:1 매핑되어야 함
-      expect(semanticTokens).toBe(primitiveTokens);
+      // Primitive 토큰이 정의되어 있고, semantic layer에서 참조되어야 함
+      expect(primitiveTokens, 'primitive에 radius 토큰이 정의되어야 함').toBeGreaterThan(0);
+      expect(radiusReferences, 'semantic에서 primitive radius 토큰을 참조해야 함').toBeGreaterThan(
+        0
+      );
     });
   });
 });

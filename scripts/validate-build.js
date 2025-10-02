@@ -73,23 +73,40 @@ function validateOne(scriptPath, { requireNoVitePreload = false } = {}) {
   const expectedMapName = `${scriptFileName}.map`;
   const sourceMapUrlPattern = /#\s*sourceMappingURL\s*=\s*(.+)$/m;
   const match = content.match(sourceMapUrlPattern);
-  if (!match) {
-    console.error('❌ Missing sourceMappingURL comment in userscript');
-    process.exit(1);
-  }
-  const mapFileFromComment = match[1].trim();
-  if (mapFileFromComment !== expectedMapName) {
-    console.error(
-      `❌ sourceMappingURL mismatch. Expected '${expectedMapName}', got '${mapFileFromComment}'`
-    );
-    process.exit(1);
-  }
+  const mapPath = resolve(resolve(scriptPath, '..'), expectedMapName);
 
-  const mapPath = resolve(resolve(scriptPath, '..'), mapFileFromComment);
+  // .map 파일은 항상 존재해야 함 (dev/prod 모두)
   if (!existsSync(mapPath)) {
     console.error('❌ Sourcemap file not found:', mapPath);
     process.exit(1);
   }
+
+  // 주석 정책: dev 빌드는 주석 필수, prod 빌드는 주석 금지
+  const isProd =
+    scriptPath.includes('xcom-enhanced-gallery.user.js') && !scriptPath.includes('.dev.');
+  if (isProd) {
+    if (match) {
+      console.error('❌ Production userscript must NOT contain sourceMappingURL comment');
+      console.error(
+        '   (Prevents 404 errors when browsers try to load .map file from userscript hosting)'
+      );
+      process.exit(1);
+    }
+  } else {
+    // dev 빌드는 주석 필수
+    if (!match) {
+      console.error('❌ Dev userscript missing sourceMappingURL comment');
+      process.exit(1);
+    }
+    const mapFileFromComment = match[1].trim();
+    if (mapFileFromComment !== expectedMapName) {
+      console.error(
+        `❌ sourceMappingURL mismatch. Expected '${expectedMapName}', got '${mapFileFromComment}'`
+      );
+      process.exit(1);
+    }
+  }
+  // .map 파일 JSON 무결성 검사
   let map;
   try {
     map = JSON.parse(readFileSync(mapPath, 'utf8'));

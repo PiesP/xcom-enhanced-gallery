@@ -30,10 +30,11 @@ describe('Icon Component', () => {
       const svg = container.querySelector('svg');
       expect(svg).toBeTruthy();
       // TDD 개선 후 CSS 변수는 style.width/height로 적용
+      // Epic CSS-TOKEN-UNIFY-001: --xeg-icon-size 제거, semantic layer의 --size-icon-md 직접 사용
       expect(svg?.getAttribute('width')).toBeNull();
       expect(svg?.getAttribute('height')).toBeNull();
-      expect(svg?.style.width).toBe('var(--xeg-icon-size)');
-      expect(svg?.style.height).toBe('var(--xeg-icon-size)');
+      expect(svg?.style.width).toBe('var(--size-icon-md)');
+      expect(svg?.style.height).toBe('var(--size-icon-md)');
       expect(svg?.getAttribute('viewBox')).toBe('0 0 24 24');
       expect(svg?.getAttribute('fill')).toBe('none');
       expect(svg?.getAttribute('stroke')).toBe('var(--xeg-icon-color, currentColor)');
@@ -76,10 +77,11 @@ describe('Icon Component', () => {
 
       const svg = container.querySelector('svg');
       // 기본값은 CSS 변수가 style로 적용됨
+      // Epic CSS-TOKEN-UNIFY-001: --xeg-icon-size 제거, semantic layer의 --size-icon-md 직접 사용
       expect(svg?.getAttribute('width')).toBeNull();
       expect(svg?.getAttribute('height')).toBeNull();
-      expect(svg?.style.width).toBe('var(--xeg-icon-size)');
-      expect(svg?.style.height).toBe('var(--xeg-icon-size)');
+      expect(svg?.style.width).toBe('var(--size-icon-md)');
+      expect(svg?.style.height).toBe('var(--size-icon-md)');
     });
 
     it('className이 올바르게 전달되어야 함', () => {

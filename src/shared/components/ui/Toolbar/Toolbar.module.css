@@ -253,7 +253,7 @@ button.fitButton {
 
   /* 이벤트 전파 방지 및 안정성 */
   position: relative;
-  z-index: 10;
+  z-index: var(--xeg-layer-base, 0);
   pointer-events: auto;
 }
 

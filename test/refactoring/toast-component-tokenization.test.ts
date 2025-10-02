@@ -3,8 +3,13 @@
  * @description TDD 기반 Toast 컴포넌트의 border-radius 토큰화 검증
  */
 
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, beforeEach, it, expect } from 'vitest';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('Toast Component Tokenization', () => {
   let toastCssContent: string;
@@ -52,14 +57,15 @@ describe('Toast Component Tokenization', () => {
       expect(toastCssContent).toContain('var(--xeg-radius-md)');
     });
 
-    it('xeg-radius 접두사 토큰만 사용해야 함', () => {
+    it('xeg-radius 또는 radius 접두사 토큰만 사용해야 함', () => {
+      // Epic CSS-TOKEN-UNIFY-001: semantic layer 직접 사용 허용
       const cssVariableMatches = toastCssContent.match(/var\(--([^)]+)\)/g);
 
       if (cssVariableMatches) {
         const radiusTokens = cssVariableMatches.filter(match => match.includes('radius'));
 
         radiusTokens.forEach(token => {
-          expect(token).toMatch(/var\(--xeg-radius-/);
+          expect(token).toMatch(/var\(--(xeg-)?radius-/);
         });
       }
     });

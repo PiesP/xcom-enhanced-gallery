@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-02 — Epic REF-LITE-V4 승격 (서비스 워밍업 최적화 및
-벤더 export 정리)
+**최근 업데이트**: 2025-10-02 — Epic CSS_TOKEN_TEST_FIX 완료 및 이관
 
 ---
 

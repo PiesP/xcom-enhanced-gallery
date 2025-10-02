@@ -28,13 +28,18 @@ describe('Radius Policy', () => {
   });
 
   test('Toolbar: 허용된 토큰만 사용', () => {
-    // 허용 토큰 목록 (필요시 확장)
+    // 허용 토큰 목록 (Epic CSS-TOKEN-UNIFY-001: semantic layer 직접 사용)
     const allowed = [
       '--xeg-radius-sm',
       '--xeg-radius-md',
       '--xeg-radius-lg',
       '--xeg-radius-pill',
       '--xeg-radius-full',
+      '--radius-sm',
+      '--radius-md',
+      '--radius-lg',
+      '--radius-pill',
+      '--radius-full',
     ];
     const tokenUsage = Array.from(
       toolbarCss.matchAll(/border-radius:\s*var\((--[a-z0-9-]+)\)/g)
@@ -47,13 +52,18 @@ describe('Radius Policy', () => {
     const buttonTokenUsage = Array.from(
       buttonCss.matchAll(/border-radius:\s*var\((--[a-z0-9-]+)\)/g)
     ).map(m => m[1]);
-    // 버튼은 sm/md/lg/pill/full 일부 상황 허용
+    // 버튼은 sm/md/lg/pill/full 일부 상황 허용 (Epic CSS-TOKEN-UNIFY-001: semantic layer 직접 사용)
     const allowed = [
       '--xeg-radius-sm',
       '--xeg-radius-md',
       '--xeg-radius-lg',
       '--xeg-radius-pill',
       '--xeg-radius-full',
+      '--radius-sm',
+      '--radius-md',
+      '--radius-lg',
+      '--radius-pill',
+      '--radius-full',
     ];
     const invalid = buttonTokenUsage.filter(t => !allowed.includes(t));
     expect(invalid).toEqual([]);

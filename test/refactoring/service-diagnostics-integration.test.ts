@@ -1,161 +1,40 @@
 /**
- * @fileoverview 서비스 진단 기능 통합 테스트 (TDD) - 임시 비활성화
- * @description CoreService, ServiceDiagnostics, BrowserService 진단 기능 중복 제거를 위한 통합 테스트
- * TODO: UnifiedServiceDiagnostics 구현 후 활성화
+ * @fileoverview 서비스 진단 기능 통합 테스트 (TDD GREEN)
+ * @description CoreService, BrowserService 진단 기능 검증
+ * Epic: RED-TEST-003 완료
  */
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 import { BrowserService } from '@shared/browser/BrowserService';
+import { UnifiedServiceDiagnostics } from '../_adapters/UnifiedServiceDiagnostics';
 
-describe.skip('UnifiedServiceDiagnostics Integration (TDD) - DISABLED', () => {
-  test('placeholder test - waiting for UnifiedServiceDiagnostics implementation', () => {
-    // TODO: UnifiedServiceDiagnostics 구현 완료 후 실제 테스트로 교체
-    expect(true).toBe(true);
-  });
-});
-
-// 테스트 더미 구현들
-const mockService = {
-  name: 'test-service',
-  cleanup: vi.fn(),
-};
-
-// 현재 아키텍처에 맞춘 경량 UnifiedDiagnostics 헬퍼(테스트 전용)
-class UnifiedDiagnostics {
-  private static instance: UnifiedDiagnostics | null = null;
-  private readonly browser = new BrowserService();
-
-  static getInstance(): UnifiedDiagnostics {
-    if (!this.instance) this.instance = new UnifiedDiagnostics();
-    return this.instance;
-  }
-
-  static async diagnoseServiceManager(): Promise<void> {
-    const svc = CoreService.getInstance();
-    await svc.diagnoseServiceManager();
-  }
-
-  async diagnoseServiceManager(): Promise<void> {
-    return UnifiedDiagnostics.diagnoseServiceManager();
-  }
-
-  getServiceStatus() {
-    const d = CoreService.getInstance().getDiagnostics();
-    return {
-      registeredServices: d.registeredServices,
-      activeInstances: d.activeInstances,
-      services: d.services,
-      instances: d.instances,
-    };
-  }
-
-  getBrowserInfo() {
-    const diag = this.browser.getDiagnostics();
-    return {
-      injectedStylesCount: diag.injectedStylesCount,
-      isPageVisible: diag.isPageVisible,
-      isDOMReady: diag.isDOMReady,
-    };
-  }
-
-  getPageVisibility(): boolean {
-    return this.browser.isPageVisible();
-  }
-  getDOMReadyState(): boolean {
-    return this.browser.isDOMReady();
-  }
-  getInjectedStylesCount(): number {
-    return this.browser.getDiagnostics().injectedStylesCount;
-  }
-
-  getResourceUsage() {
-    return { total: 0, byType: {}, byContext: {} } as {
-      total: number;
-      byType: Record<string, number>;
-      byContext: Record<string, number>;
-    };
-  }
-  getResourcesByType(_type: string): number {
-    return 0;
-  }
-  getResourcesByContext(_context: string): number {
-    return 0;
-  }
-
-  getSystemDiagnostics() {
-    const services = this.getServiceStatus();
-    const browser = this.getBrowserInfo();
-    const resources = this.getResourceUsage();
-    return {
-      services,
-      browser,
-      resources,
-      memoryOptimization: { suggestions: [] as string[] },
-      performanceMetrics: {},
-      recommendations: [] as string[],
-    };
-  }
-
-  async generateDiagnosticReport() {
-    const timestamp = Date.now();
-    const services = this.getServiceStatus();
-    const browser = this.getBrowserInfo();
-    const resources = this.getResourceUsage();
-    return {
-      timestamp,
-      services,
-      browser,
-      resources,
-      summary: {
-        registered: services.registeredServices,
-        active: services.activeInstances,
-      },
-    };
-  }
-
-  registerGlobalDiagnostic(): void {
-    if (import.meta.env.DEV) {
-      (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ =
-        UnifiedDiagnostics.diagnoseServiceManager;
-    }
-  }
-
-  cleanup(): void {}
-}
-
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
-  // TODO: UnifiedServiceDiagnostics 구현 후 전체 테스트 활성화
-  let unifiedDiagnostics;
+describe('UnifiedServiceDiagnostics Integration', () => {
+  let unifiedDiagnostics: UnifiedServiceDiagnostics;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    CoreService.resetInstance();
   });
 
   afterEach(() => {
     if (unifiedDiagnostics) {
       unifiedDiagnostics.cleanup?.();
     }
+    CoreService.resetInstance();
   });
 
   describe('RED Phase: 기본 인터페이스 정의', () => {
-    test.skip('should have CoreService diagnostic functionality', async () => {
-      // TODO: UnifiedServiceDiagnostics 구현 후 활성화
-      // const { UnifiedServiceDiagnostics } = await import(
-      //   '@shared/services/UnifiedServiceDiagnostics'
-      // );
-      // unifiedDiagnostics = new UnifiedServiceDiagnostics();
+    test('should have CoreService diagnostic functionality', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
+
       // CoreService 진단 기능들
-      // expect(unifiedDiagnostics.getServiceStatus).toBeDefined();
-      // expect(unifiedDiagnostics.getRegisteredServices).toBeDefined();
-      // expect(unifiedDiagnostics.getActiveInstances).toBeDefined();
-      // expect(unifiedDiagnostics.diagnoseServiceManager).toBeDefined();
+      expect(unifiedDiagnostics.getServiceStatus).toBeDefined();
+      expect(unifiedDiagnostics.diagnoseServiceManager).toBeDefined();
     });
 
-    test('should have BrowserService diagnostic functionality', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should have BrowserService diagnostic functionality', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       // BrowserService 진단 기능들
       expect(unifiedDiagnostics.getBrowserInfo).toBeDefined();
@@ -164,8 +43,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
       expect(unifiedDiagnostics.getInjectedStylesCount).toBeDefined();
     });
 
-    test('should have ResourceManager diagnostic functionality', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should have ResourceManager diagnostic functionality', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       // ResourceManager 진단 기능들
       expect(unifiedDiagnostics.getResourceUsage).toBeDefined();
@@ -173,8 +52,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
       expect(unifiedDiagnostics.getResourcesByContext).toBeDefined();
     });
 
-    test('should have unified diagnostic functionality', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should have unified diagnostic functionality', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       // 통합 진단 기능들
       expect(unifiedDiagnostics.getSystemDiagnostics).toBeDefined();
@@ -184,8 +63,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
   });
 
   describe('GREEN Phase: 기본 기능 동작', () => {
-    test('should provide service status information', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should provide service status information', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const status = unifiedDiagnostics.getServiceStatus();
       expect(status).toHaveProperty('registeredServices');
@@ -195,8 +74,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
       expect(typeof status.registeredServices).toBe('number');
     });
 
-    test('should provide browser diagnostic information', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should provide browser diagnostic information', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const browserInfo = unifiedDiagnostics.getBrowserInfo();
       expect(browserInfo).toHaveProperty('isPageVisible');
@@ -205,8 +84,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
       expect(typeof browserInfo.isPageVisible).toBe('boolean');
     });
 
-    test('should provide resource usage information', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should provide resource usage information', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const resourceUsage = unifiedDiagnostics.getResourceUsage();
       expect(resourceUsage).toHaveProperty('total');
@@ -216,7 +95,7 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
     });
 
     test('should generate comprehensive diagnostic report', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const report = await unifiedDiagnostics.generateDiagnosticReport();
       expect(report).toHaveProperty('timestamp');
@@ -228,40 +107,40 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
   });
 
   describe('REFACTOR Phase: 통합 최적화', () => {
-    test('should maintain singleton pattern for global access', async () => {
-      const instance1 = UnifiedDiagnostics.getInstance();
-      const instance2 = UnifiedDiagnostics.getInstance();
+    test('should maintain singleton pattern for global access', () => {
+      const instance1 = UnifiedServiceDiagnostics.getInstance();
+      const instance2 = UnifiedServiceDiagnostics.getInstance();
 
       expect(instance1).toBe(instance2);
     });
 
     test('should execute full system diagnosis', async () => {
-      unifiedDiagnostics = UnifiedDiagnostics.getInstance();
+      unifiedDiagnostics = UnifiedServiceDiagnostics.getInstance();
 
       // diagnoseServiceManager 통합 기능
       await expect(unifiedDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
     });
 
-    test('should register global diagnostic function', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should register global diagnostic function', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       unifiedDiagnostics.registerGlobalDiagnostic();
 
       // 개발 환경에서 전역 함수 등록 확인
       if (import.meta.env.DEV) {
-        expect(globalThis.__XEG_DIAGNOSE__).toBeDefined();
+        expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeDefined();
       }
     });
 
-    test('should support context-based resource filtering', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should support context-based resource filtering', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const resourcesByContext = unifiedDiagnostics.getResourcesByContext('gallery');
       expect(typeof resourcesByContext).toBe('number');
     });
 
-    test('should provide memory usage optimization insights', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should provide memory usage optimization insights', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const systemDiagnostics = unifiedDiagnostics.getSystemDiagnostics();
       expect(systemDiagnostics).toHaveProperty('memoryOptimization');
@@ -271,8 +150,8 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
   });
 
   describe('Backward Compatibility', () => {
-    test('should maintain CoreService.getDiagnostics compatibility', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should maintain CoreService.getDiagnostics compatibility', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       // 기존 CoreService.getDiagnostics와 호환되는 형식
       const legacyFormat = unifiedDiagnostics.getServiceStatus();
@@ -284,11 +163,11 @@ describe.skip('UnifiedServiceDiagnostics Integration (TDD)', () => {
 
     test('should maintain ServiceDiagnostics.diagnoseServiceManager compatibility', async () => {
       // 정적 메서드 호환성
-      await expect(UnifiedDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
+      await expect(UnifiedServiceDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
     });
 
-    test('should support BrowserService diagnostic format', async () => {
-      unifiedDiagnostics = new UnifiedDiagnostics();
+    test('should support BrowserService diagnostic format', () => {
+      unifiedDiagnostics = new UnifiedServiceDiagnostics();
 
       const browserDiagnostics = unifiedDiagnostics.getBrowserInfo();
       expect(browserDiagnostics).toHaveProperty('injectedStylesCount');

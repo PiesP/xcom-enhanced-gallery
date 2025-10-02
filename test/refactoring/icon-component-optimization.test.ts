@@ -79,8 +79,9 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
       const tokensContent = fs.readFileSync(tokensFilePath, 'utf-8');
 
       // Icon 관련 디자인 토큰들이 존재해야 함
+      // Epic CSS-TOKEN-UNIFY-001: --xeg-icon-size 제거, semantic layer의 --size-icon-* 직접 사용
       expect(tokensContent).toMatch(/--xeg-icon-stroke-width:/);
-      expect(tokensContent).toMatch(/--xeg-icon-size:/);
+      expect(tokensContent).toMatch(/--size-icon-/); // semantic layer에서 정의
       expect(tokensContent).toMatch(/--xeg-icon-line-height:/);
     });
   });

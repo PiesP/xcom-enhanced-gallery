@@ -68,13 +68,14 @@ describe('Toolbar Button Design Consistency', () => {
       // When: border-radius 값 찾기
       const borderRadiusMatches = buttonCssContent.match(/border-radius:\s*([^;]+);/g);
 
-      // Then: 모든 border-radius가 --xeg-radius-* 변수를 사용해야 함
+      // Then: 모든 border-radius가 --xeg-radius-* 또는 --radius-* 변수를 사용해야 함
+      // Epic CSS-TOKEN-UNIFY-001: semantic layer 직접 사용 허용
       expect(borderRadiusMatches).toBeTruthy();
       borderRadiusMatches.forEach(match => {
         const value = match.replace('border-radius:', '').replace(';', '').trim();
         if (value.includes('var(')) {
-          // CSS 변수를 사용하는 경우, --xeg-radius- 형태여야 함
-          expect(value).toMatch(/var\(--xeg-radius-/);
+          // CSS 변수를 사용하는 경우, --xeg-radius- 또는 --radius- 형태여야 함
+          expect(value).toMatch(/var\(--(xeg-)?radius-/);
         }
       });
     });
@@ -98,17 +99,17 @@ describe('Toolbar Button Design Consistency', () => {
       }
     });
 
-    it('모든 컴포넌트가 --xeg-radius-* 형태의 변수를 사용해야 한다', () => {
+    it('모든 컴포넌트가 --xeg-radius-* 또는 --radius-* 형태의 변수를 사용해야 한다', () => {
       // Given: CSS 변수 패턴
       const cssVariablePattern = /border-radius:\s*var\(--([^)]+)\)/g;
 
       // When: 모든 CSS 변수 추출
       const variableMatches = [...toolbarCssContent.matchAll(cssVariablePattern)];
 
-      // Then: 모든 변수가 xeg-radius 형태여야 함
+      // Then: 모든 변수가 xeg-radius 또는 radius 형태여야 함 (Epic CSS-TOKEN-UNIFY-001)
       variableMatches.forEach(match => {
         const variableName = match[1];
-        expect(variableName).toMatch(/^xeg-radius-/);
+        expect(variableName).toMatch(/^(xeg-)?radius-/);
       });
     });
   });
