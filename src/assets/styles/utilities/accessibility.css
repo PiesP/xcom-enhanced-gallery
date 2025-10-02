@@ -71,17 +71,17 @@
 .xeg-skip-link {
   position: absolute;
   top: -40px;
-  left: 6px;
+  left: var(--space-3);
   background: var(--xeg-color-primary);
   color: white;
-  padding: 8px;
+  padding: var(--space-4);
   text-decoration: none;
   border-radius: var(--xeg-radius-sm);
   z-index: var(--xeg-z-toast);
 }
 
 .xeg-skip-link:focus {
-  top: 6px;
+  top: var(--space-3);
 }
 
 /* ARIA 상태 표시 */
