@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 3개
+**최근 업데이트**: 2025-01-23 — Epic CSS-TOKEN-UNIFY-001 완료, 활성 Epic 2개
 
 ---
 
@@ -20,74 +20,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### � HIGH 우선순위
-
-#### **Epic DESIGN-MODERN-001**: 디자인 시스템 현대화 - Animation & Micro-interactions
-
-**배경**: 현재 디자인 요소가 분산되고 중복됨
-
-- 중복된 애니메이션 키프레임 (Button, Toast 등)
-- 일관성 없는 타이밍/이징 함수
-- Micro-interactions 부족 (버튼 피드백 등)
-- 접근성 고려 미흡 (reduced-motion)
-
-**목표**: 간결하고 현대적인 디자인 시스템 구축
-
-- 통합 Animation 라이브러리
-- GPU 가속 최적화
-- 세련된 Micro-interactions
-- 접근성 자동 대응
-
-**전략**: TDD 기반 점진적 개선
-
-**Phase A: Animation System 통합** (3-4 days)
-
-- [ ] 중복 키프레임 제거 (fade-in, slide-in 등)
-- [ ] GPU 가속 최적화 (transform/opacity만 사용)
-- [ ] Custom timing functions 표준화
-- [ ] reduced-motion 자동 fallback
-- [ ] 테스트: `test/refactoring/button-animation-consistency.test.ts` GREEN 전환
-
-**Phase B: Micro-interactions 강화** (2-3 days)
-
-- [ ] Button hover/focus 상태 세련화
-  - scale transform 추가 (1.0 → 1.02)
-  - shadow 변화 애니메이션
-  - spring-based easing
-- [ ] Input/Form 요소 피드백 개선
-- [ ] Icon 애니메이션 (spin, pulse 등)
-- [ ] 테스트: interaction 동작 검증 추가
-
-**Phase C: Spacing System 체계화** (3-4 days)
-
-- [ ] fluid spacing scale 도입 (clamp 함수)
-- [ ] 컴포넌트별 spacing semantic 토큰 추가
-- [ ] Grid/Flexbox gap 표준화
-- [ ] 하드코딩된 spacing 제거
-- [ ] 테스트: spacing 일관성 검증
-
-**Phase D: Shadow & Depth 시스템** (2-3 days)
-
-- [ ] 5단계 elevation system (0-400dp)
-- [ ] 라이트/다크 모드 최적화
-- [ ] OKLCH 기반 colored shadows
-- [ ] Context-aware shadow
-- [ ] 테스트: shadow 대비율 검증
-
-**Acceptance Criteria**:
-
-- ✅ 중복 애니메이션 키프레임 0건
-- ✅ 모든 애니메이션 GPU 가속 속성만 사용
-- ✅ prefers-reduced-motion 자동 대응
-- ✅ Button hover 200ms 이내 피드백
-- ✅ spacing 하드코딩 0건
-- ✅ shadow 대비율 AA 기준 충족
-
-**예상 난이도**: M (Medium) **예상 소요**: 10-14 days
-
----
-
-### �🟡 MEDIUM 우선순위
+### 🟡 MEDIUM 우선순위
 
 #### **Epic SOLID-NATIVE-002**: SolidJS 네이티브 패턴 완전 마이그레이션
 
@@ -184,6 +117,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 3. 최근 완료 Epic
 
+- **Epic DESIGN-MODERN-001** (2025-10-02): 디자인 시스템 현대화
+  - Phase A (Animation 통합), Phases B-D (기구현 확인) 완료
+  - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
 - **Epic CSS-TOKEN-UNIFY-001** (2025-01-23): CSS 토큰 시스템 정리
   - Phase A/B/C 완료 (하드코딩 값 제거, 3-layer 토큰 시스템)
   - 세부 내용: `TDD_REFACTORING_PLAN_COMPLETED.md`
