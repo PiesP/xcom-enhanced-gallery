@@ -21,39 +21,46 @@ B/C는 별도 Epic으로 백로그 이동
 
 ## 2. 활성 Epic 현황
 
-### Epic RED-TEST-001: SolidJS Gallery JSDOM URL Constructor Fix
+### Epic RED-TEST-CONSOLIDATE: Skip된 테스트 검증 및 재활성화
 
-**ID**: RED-TEST-001  
+**ID**: RED-TEST-001 (재정의)  
 **상태**: 🟡 진행 중 (Phase 1/3)  
 **우선순위**: HIGH  
 **시작일**: 2025-01-13  
 **예상 완료**: 2025-01-15
 
-**배경**: JSDOM 환경에서 `URL is not a constructor` 오류로 8개 Gallery 테스트
-파일이 skip 처리됨. CI 차단 해소 및 테스트 환경 안정화를 위해 최우선 해결 필요.
+**배경**: 현재 22개 테스트 파일이 `describe.skip` 상태로 비활성화되어 있음. 실제
+실행 결과 많은 테스트가 GREEN 상태임에도 불구하고 skip 처리되어 테스트 커버리지
+저하. 각 파일을 검증하여 GREEN 테스트는 재활성화하고, 실제 RED 테스트는 별도
+Epic으로 분류 필요.
 
 **목표**:
 
-- [ ] Phase 1: JSDOM URL 폴리필 추가 또는 URL 사용 회피 방안 분석 (0.5일)
-- [ ] Phase 2: URL Constructor 문제 해결 및 테스트 환경 수정 (1일)
-- [ ] Phase 3: 8개 skip된 테스트 파일 GREEN 전환 검증 (0.5일)
+- [ ] Phase 1: Gallery/접근성 테스트 6개 검증 및 활성화 (0.5일)
+  - solid-shell-ui, gallery-renderer-solid-keyboard-help, solid-gallery-shell
+  - solid-gallery-shell-wheel, gallery-close-dom-cleanup, gallery-toolbar-parity
+- [ ] Phase 2: Service/Toast 테스트 7개 검증 및 분류 (1일)
+  - service-diagnostics, bulk-download-progress-toast, test-consolidation
+  - toast-system-integration, unified-toast-manager-native 등
+- [ ] Phase 3: 기타 테스트 9개 검증 및 정리 (0.5일)
+  - Container, Performance, Tooling 관련 테스트
 
-**영향 범위**:
+**검증 방법**:
 
-- Gallery/Toolbar 접근성 테스트
-- DOM 정리 테스트
-- Wheel 이벤트 테스트
-- Shadow DOM 격리 테스트
+- 각 skip 파일을 개별 실행: `npm test -- <파일경로>`
+- GREEN 확인 시: `describe.skip` → `describe` 변경
+- RED 발견 시: BACKLOG로 이동 (새 Epic 정의)
 
 **Acceptance Criteria**:
 
-- ✅ JSDOM 환경에서 URL Constructor 정상 동작
-- ✅ 8개 Gallery 테스트 파일 모두 GREEN 상태
-- ✅ `npm test` 전체 통과 (skip 0개)
+- ✅ GREEN 테스트는 describe.skip 제거하여 활성화
+- ✅ RED 테스트는 BACKLOG로 이동 및 Epic 분류
+- ✅ skip 파일 수: 22개 → 10개 이하로 감소
+- ✅ 전체 테스트 통과율 향상 (375/409 → 380/409 이상)
 - ✅ `npm run build:dev` 검증 통과
 
 **예상 난이도**: M (Medium)  
-**예상 소요**: 1-2 days
+**예상 소요**: 2 days
 
 ---
 
