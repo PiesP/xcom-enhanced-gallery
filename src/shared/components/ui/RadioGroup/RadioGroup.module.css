@@ -29,7 +29,7 @@
   background-color: var(--color-bg-secondary, var(--xeg-color-bg-secondary));
   color: var(--color-text-primary, var(--xeg-color-text-primary));
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: var(--xeg-transition-normal);
   user-select: none;
   outline: none;
 }
@@ -63,6 +63,12 @@
   justify-content: center;
   width: var(--size-icon-md);
   height: var(--size-icon-md);
+  flex-shrink: 0;
+}
+
+.icon {
+  width: var(--size-icon-md, 1.25rem);
+  height: var(--size-icon-md, 1.25rem);
   flex-shrink: 0;
 }
 
