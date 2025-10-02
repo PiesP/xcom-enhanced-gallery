@@ -56,9 +56,12 @@ describe('SettingsModal - 현행 기능 특성화 (Characterization)', () => {
     it('테마 선택과 언어 선택 요소가 존재한다', () => {
       renderModal();
 
-      // 최소 2개의 select 요소 (테마, 언어)
-      const selects = screen.getAllByRole('combobox');
-      expect(selects.length).toBeGreaterThanOrEqual(2);
+      // 테마는 select (combobox), 언어는 RadioGroup
+      const themeSelect = screen.getByRole('combobox', { name: /theme/i });
+      const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
+
+      expect(themeSelect).toBeInTheDocument();
+      expect(languageRadiogroup).toBeInTheDocument();
     });
   });
 

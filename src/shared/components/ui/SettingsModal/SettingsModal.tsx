@@ -8,7 +8,9 @@ import { getSolidCore } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import { ModalShell } from '../ModalShell';
 import { IconButton } from '../Button/IconButton';
+import { LanguageSelector } from '../LanguageSelector';
 import { LanguageService } from '@shared/services/LanguageService';
+import type { SupportedLanguage } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import { getSetting, setSetting } from '@shared/container/settings-access';
 import primitiveStyles from '@shared/styles/primitives.module.css';
@@ -18,7 +20,6 @@ import type { SettingsModalProps } from './SettingsModal.types';
 export type { SettingsModalProps };
 
 type ThemeOption = 'auto' | 'light' | 'dark';
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 const FOCUSABLE_SELECTORS = [
   'a[href]',
@@ -72,7 +73,7 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   ]);
 
   const [currentTheme, setCurrentTheme] = solid.createSignal<ThemeOption>('auto');
-  const [currentLanguage, setCurrentLanguage] = solid.createSignal<LanguageOption>('auto');
+  const [currentLanguage, setCurrentLanguage] = solid.createSignal<SupportedLanguage>('auto');
   const [showProgressToast, setShowProgressToast] = solid.createSignal(false);
 
   const languageService = new LanguageService();
@@ -229,9 +230,7 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
     }
   };
 
-  const handleLanguageChange = (event: SelectChangeEvent) => {
-    const element = event.currentTarget;
-    const newLanguage = element.value as LanguageOption;
+  const handleLanguageChange = (newLanguage: SupportedLanguage) => {
     setCurrentLanguage(newLanguage);
     languageService.setLanguage(newLanguage);
     refreshLocalization();
@@ -389,10 +388,6 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
     .filter(Boolean)
     .join(' ');
 
-  const languageSelectClass = [primitiveStyles.controlSurface, styles.formControl, styles.select]
-    .filter(Boolean)
-    .join(' ');
-
   const defaultBody = () => (
     <div class={styles.body} data-settings-section='body'>
       <div class={styles.setting} data-settings-field='theme'>
@@ -412,21 +407,15 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
         </select>
       </div>
       <div class={styles.setting} data-settings-field='language'>
-        <label for='language-select' class={styles.label}>
+        <label for='language-selector' id='language-selector-label' class={styles.label}>
           {localizedStrings().language}
         </label>
-        <select
-          id='language-select'
-          class={languageSelectClass}
+        <LanguageSelector
           value={currentLanguage()}
           onChange={handleLanguageChange}
-          onInput={handleLanguageChange}
-        >
-          <option value='auto'>자동 / Auto / 自動</option>
-          <option value='ko'>한국어</option>
-          <option value='en'>English</option>
-          <option value='ja'>日本語</option>
-        </select>
+          aria-labelledby='language-selector-label'
+          orientation='vertical'
+        />
       </div>
       <div class={styles.setting} data-settings-field='download-progress-toast'>
         <label for='download-progress-toast' class={styles.label}>

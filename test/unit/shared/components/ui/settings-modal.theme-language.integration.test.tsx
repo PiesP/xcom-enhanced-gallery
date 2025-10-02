@@ -3,7 +3,7 @@
  */
 /** @jsxImportSource solid-js */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@solidjs/testing-library';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@solidjs/testing-library';
 import { SettingsModal } from '@/shared/components/ui/SettingsModal/SettingsModal';
 
 // Force i18n to start in English for deterministic label queries
@@ -70,14 +70,13 @@ describe('SettingsModal – theme/language integration', () => {
     expect(themeLabelEn).toBeDefined();
     expect(languageLabelEn).toBeDefined();
 
-    const languageSelect = document.getElementById('language-select') as any;
-    expect(languageSelect).toBeTruthy();
+    // Language is now a RadioGroup, not a select with id
+    const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
+    expect(languageRadiogroup).toBeTruthy();
 
-    // Change to Korean
-    languageSelect!.selectedIndex = 1; // auto, ko, en, ja
-    languageSelect!.value = 'ko';
-    fireEvent.input(languageSelect!, { bubbles: true });
-    fireEvent.change(languageSelect!, { bubbles: true });
+    // Change to Korean by clicking the Korean radio button
+    const koRadio = within(languageRadiogroup).getByRole('radio', { name: /Korean/i });
+    fireEvent.click(koRadio);
 
     // Labels should update to Korean
     const themeLabelKo = await screen.findByText('테마');

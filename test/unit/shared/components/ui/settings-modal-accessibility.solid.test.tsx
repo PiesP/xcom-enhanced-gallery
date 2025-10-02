@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@solidjs/testing-library';
+import { render, screen, fireEvent, within } from '@solidjs/testing-library';
 import {
   RefactoredSettingsModal,
   type SettingsModalProps,
@@ -62,11 +62,14 @@ describe('SettingsModal Accessibility (Solid)', () => {
     renderModal({ mode: 'panel' });
 
     const themeSelect = await screen.findByLabelText('Theme');
-    const languageSelect = await screen.findByLabelText('Language');
+    const languageRadiogroup = await screen.findByRole('radiogroup', { name: /language/i });
     const progressToggle = await screen.findByLabelText('Show progress toast during bulk download');
 
     expect(themeSelect).toHaveValue('auto');
-    expect(languageSelect).toHaveValue('auto');
+    // Language is now a RadioGroup with radio buttons
+    // Note: Radio name includes icon loading state and text label
+    const autoRadio = within(languageRadiogroup).getByRole('radio', { name: /Auto/i });
+    expect(autoRadio.getAttribute('aria-checked')).toBe('true');
     expect(progressToggle).not.toBeChecked();
   });
 
