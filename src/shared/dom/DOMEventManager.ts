@@ -140,7 +140,6 @@ export class DOMEventManager {
 /**
  * DOM 이벤트 매니저 인스턴스 생성
  *
- * @deprecated UnifiedEventManager를 사용하세요
  * @returns 새로운 DOMEventManager 인스턴스
  */
 export function createEventManager(): DOMEventManager {

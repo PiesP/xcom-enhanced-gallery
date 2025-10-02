@@ -76,14 +76,13 @@ export const defaultLogger = new ConsoleLogger();
 // ================================
 
 /**
- * ServiceManager 진단 도구
+ * 🛠️ ServiceDiagnostics
  *
  * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
  */
 export class ServiceDiagnostics {
   /**
    * ServiceManager 상태 진단
-   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.diagnoseServiceManager()를 사용하세요
    */
   static async diagnoseServiceManager(): Promise<void> {
     try {

@@ -62,8 +62,7 @@ export interface ButtonProps {
   readonly iconOnly?: boolean;
   readonly loading?: boolean;
   readonly ref?: (element: HTMLButtonElement | null) => void;
-  /** @deprecated Use intent instead */
-  readonly iconVariant?: ButtonIntent;
+  readonly iconVariant?: ButtonIntent; // Legacy: fallback for intent
   readonly role?: JSX.AriaRole;
   readonly [key: string]: unknown;
 }
