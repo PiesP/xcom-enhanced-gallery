@@ -47,9 +47,10 @@ describe('Icon CSS variable sizing', () => {
 
     const icon = screen.getByTestId('icon-default');
     // size가 undefined일 때도 CSS 변수를 통해 width/height가 설정됨
+    // Epic CSS-TOKEN-UNIFY-001: --xeg-icon-size 제거, semantic layer의 --size-icon-md 직접 사용
     const style = icon.getAttribute('style') ?? '';
-    expect(style).toMatch(/width:\s*var\(--xeg-icon-size\)/);
-    expect(style).toMatch(/height:\s*var\(--xeg-icon-size\)/);
+    expect(style).toMatch(/width:\s*var\(--size-icon-md\)/);
+    expect(style).toMatch(/height:\s*var\(--size-icon-md\)/);
     expect(icon).toHaveAttribute('stroke', 'var(--xeg-icon-color, currentColor)');
   });
 });

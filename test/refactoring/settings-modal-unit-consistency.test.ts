@@ -47,13 +47,19 @@ describe('SettingsModal Unit Consistency', () => {
       expect(settingsModalCSS).toMatch(animationPattern);
     });
 
-    it('padding과 margin이 em 단위로 정의되어야 함', () => {
-      // em 단위 패턴 존재 확인 - padding만 체크 (margin은 대부분 0 또는 사용하지 않음)
-      const emPatterns = [/padding:\s*[\d.]+em/];
+    it('padding과 margin이 em 단위 또는 em 기반 토큰으로 정의되어야 함', () => {
+      // em 단위 패턴 또는 em 기반 토큰 존재 확인
+      // padding은 직접 em 사용 또는 --space-em-* 토큰 또는 컴포넌트 토큰 사용
+      const paddingPatterns = [
+        /padding:\s*[\d.]+em/, // 직접 em 사용
+        /padding:\s*var\(--space-em-/, // em 기반 토큰 직접
+        /padding:\s*var\(--xeg-comp-settings-modal-padding,\s*var\(--space-em-/, // 컴포넌트 토큰 fallback
+        /padding-block:\s*var\(--xeg-comp-settings-modal/, // logical property + 컴포넌트 토큰
+        /padding-inline:\s*var\(--xeg-comp-settings-modal/, // logical property + 컴포넌트 토큰
+      ];
 
-      emPatterns.forEach(pattern => {
-        expect(settingsModalCSS).toMatch(pattern);
-      });
+      const hasPaddingEm = paddingPatterns.some(pattern => pattern.test(settingsModalCSS));
+      expect(hasPaddingEm, 'padding이 em 단위 또는 em 기반 토큰을 사용해야 함').toBe(true);
 
       // margin: 0은 허용 (em 변환 불필요)
       const marginZeroPattern = /margin:\s*0/;

@@ -72,8 +72,12 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
         expect(glassSurfaceDarkContent.includes(style)).toBe(true);
       });
 
-      // 어두운 배경 색상인지 확인
-      expect(glassSurfaceDarkContent.includes('rgba(0, 0, 0')).toBe(true);
+      // 어두운 배경 색상인지 확인 (토큰 사용 시 직접 rgba 없을 수 있음)
+      const hasDarkBg =
+        glassSurfaceDarkContent.includes('rgba(0, 0, 0') ||
+        glassSurfaceDarkContent.includes('var(--color-black-alpha') ||
+        glassSurfaceDarkContent.includes('var(--glass-bg)');
+      expect(hasDarkBg, 'dark surface는 어두운 배경 또는 배경 토큰을 사용해야 함').toBe(true);
     });
   });
 
