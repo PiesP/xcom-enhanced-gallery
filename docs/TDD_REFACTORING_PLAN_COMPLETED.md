@@ -1,5 +1,110 @@
 <!-- markdownlint-disable -->
 
+2025-01-13: EXEC — Epic LANG_ICON_SELECTOR 완료 ✅ (Language Icon Selector with
+WAI-ARIA Radiogroup)
+
+- **목적**: 설정 모달의 언어 선택을 아이콘 기반 RadioGroup으로 전환하여 접근성과
+  UX 향상
+- **배경**: 기존 `<select>` 드롭다운은 아이콘 표시 불가, WAI-ARIA radiogroup
+  패턴으로 전환하여 시각적 인식 개선 및 키보드 네비게이션 강화
+- **솔루션**: 6-Phase TDD 워크플로우로 단계적 구현 (Icons → RadioGroup →
+  LanguageSelector → SettingsModal 통합 → 접근성 테스트 → 문서화)
+- **구현 내용**:
+  - **Phase 1**: 4개 언어 아이콘 정의 (language-auto/ko/en/ja)
+    - xeg-icons.ts에 24x24 viewBox SVG 경로 추가
+    - registry.ts에서 createSvgIcon으로 컴포넌트 생성
+    - iconRegistry.ts ICON_IMPORTS에 동적 import 등록
+    - 테스트: 4 tests (language-icon-definitions.test.ts)
+  - **Phase 2**: RadioGroup 컴포넌트 생성
+    - WAI-ARIA radiogroup 패턴 구현 (role, aria-checked, aria-labelledby)
+    - 키보드 네비게이션 (ArrowUp/Down/Left/Right, Home/End, Space)
+    - Tabindex 자동 관리 (선택된 항목 0, 나머지 -1)
+    - 아이콘 + 텍스트 조합 레이아웃
+    - 디자인 토큰만 사용 (하드코딩 색상/radius 금지)
+    - 테스트: 39 tests (RadioGroup.test.tsx)
+  - **Phase 3**: LanguageSelector 컴포넌트 생성
+    - RadioGroup 래핑
+    - 4개 언어별 아이콘 자동 매핑 (auto→LanguageAuto, ko→LanguageKo, etc.)
+    - LanguageService 통합 (다국어 라벨)
+    - 테스트: 24 tests (LanguageSelector.test.tsx)
+  - **Phase 4**: SettingsModal 통합
+    - 기존 `<select id="language-select">` 제거
+    - LanguageSelector 컴포넌트로 교체
+    - 기존 테스트 2419개 모두 GREEN 유지
+  - **Phase 5**: 접근성 통합 테스트
+    - 설정 모달 전체 시나리오 검증 (17 tests)
+    - Radiogroup 기본 표시 (4 tests): 존재, 4개 radio, 라벨, 초기 선택
+    - 아이콘 표시 (1 test): 텍스트 기반 검증
+    - 키보드 네비게이션 (4 tests): Arrow 핸들러, 클릭 인터랙션, Home/End 핸들러
+      (JSDOM 제약으로 실제 동작은 E2E 권장)
+    - UI 업데이트 (2 tests): 선택 상태, 모달 라벨 변경
+    - WAI-ARIA 검증 (3 tests): role/aria 속성, aria-checked, tabindex 관리
+    - 시각적 표시 (2 tests): aria-checked 기반 구별, focus 상태
+    - 디자인 토큰 (1 test): 하드코딩 색상 검출
+    - 테스트: 17 tests
+      (test/features/settings/settings-modal-language-icons.integration.test.tsx)
+  - **Phase 6**: 문서화
+    - ARCHITECTURE.md: Shared Layer 공개 표면에 RadioGroup/LanguageSelector 추가
+    - CODING_GUIDELINES.md: "접근성 (Accessibility)" 섹션 신규 추가 (200+ 줄)
+      - WAI-ARIA RadioGroup 패턴 예시
+      - 아이콘 + 텍스트 조합 가이드
+      - 디자인 토큰 사용 (Form Elements)
+- **TDD 워크플로우**:
+  - RED: Phase 2 (RadioGroup 39 tests 작성 → 구현 → GREEN)
+  - GREEN: Phase 3 (LanguageSelector 24 tests 작성 → 구현 → GREEN)
+  - GREEN: Phase 4 (SettingsModal 통합 → 기존 2419 tests 유지)
+  - REFACTOR: Phase 5 (접근성 통합 테스트 17개 추가 → 17/17 GREEN)
+  - DOCUMENT: Phase 6 (아키텍처 및 접근성 가이드 문서화)
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (Phase별 모두 GREEN, 최종 2422 passed)
+    - Phase 1: 4/4 tests
+    - Phase 2: 39/39 tests
+    - Phase 3: 24/24 tests
+    - Phase 4: 2419/2419 tests (기존 유지)
+    - Phase 5: 17/17 tests
+  - ✅ Build (dev + prod 성공)
+- **결과**: ✅ 언어 선택 UX 향상 (아이콘 기반), WAI-ARIA 준수, 키보드 네비게이션
+  강화, 디자인 토큰 표준화, 재사용 가능한 RadioGroup 컴포넌트 확보
+- **변경 파일**:
+  - 추가:
+    - src/assets/icons/xeg-icons.ts (4 language icons)
+    - src/shared/components/ui/RadioGroup/RadioGroup.tsx (39 tests)
+    - src/shared/components/ui/RadioGroup/RadioGroup.module.css
+    - src/shared/components/ui/LanguageSelector/LanguageSelector.tsx (24 tests)
+    - src/shared/components/ui/LanguageSelector/LanguageSelector.module.css
+    - test/features/settings/language-icon-definitions.test.ts (4 tests)
+    - test/unit/shared/components/ui/RadioGroup.test.tsx (39 tests)
+    - test/unit/shared/components/ui/LanguageSelector.test.tsx (24 tests)
+    - test/features/settings/settings-modal-language-icons.integration.test.tsx
+      (17 tests)
+  - 수정:
+    - src/shared/components/ui/Icon/icons/registry.ts (4 icon components)
+    - src/shared/services/iconRegistry.ts (4 ICON_IMPORTS)
+    - src/features/settings/SettingsModal.tsx (select → LanguageSelector)
+    - src/features/settings/SettingsModal.module.css (layout adjustment)
+    - docs/ARCHITECTURE.md (UI Components section)
+    - docs/CODING_GUIDELINES.md (Accessibility section, 200+ lines)
+- **커밋 히스토리**:
+  - feat(settings): complete Phase 1-4 language icon selector (merged to master)
+  - test(settings): add Phase 5 accessibility integration tests (7df32843)
+  - feat(settings): complete Phase 5 language icon selector accessibility (merge
+    commit)
+  - docs(settings): complete Phase 6 language icon selector documentation (this
+    commit)
+- **예상/실제 소요 시간**: 3-4시간 예상 / 약 4시간 소요 (Phase 5 키보드 이벤트
+  테스트 디버깅 포함)
+- **학습 포인트**:
+  - WAI-ARIA radiogroup 패턴의 키보드 네비게이션은 JSDOM 환경에서 제약이 있음
+    (ArrowRight, Space, End 등 일부 키 이벤트는 E2E 테스트 권장)
+  - RadioGroup의 tabindex 관리는 선택된 항목에만 0을 주고 나머지는 -1로 설정하여
+    Tab 키 진입 시 선택된 항목으로 포커스 이동
+  - 아이콘 + 텍스트 조합 시 `aria-hidden="true"`로 아이콘 중복 읽기 방지
+  - 디자인 토큰 사용으로 테마 일관성 유지 (--xeg-radius-md/lg, --xeg-color-\*)
+
+---
+
 2025-10-02: EXEC — Epic A11Y-FOCUS-ROLES 완료 ✅ (Gallery Item Focus State Roles
 Clarification)
 

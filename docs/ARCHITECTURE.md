@@ -90,6 +90,16 @@ Must Not
   - `@shared/utils/url-safety`는 `parseTrustedUrl()` 헬퍼와
     `createTrustedHostnameGuard()`를 통해 HTTPS 고정 및 허용된 호스트 검증을
     제공한다. 트위터 미디어 URL 검사는 이 계층의 가드를 재사용해야 한다.
+- UI Components: `shared/components/ui/**`
+  - **RadioGroup** (`shared/components/ui/RadioGroup/`): WAI-ARIA compliant
+    radiogroup 컴포넌트. 키보드 네비게이션(ArrowUp/Down/Left/Right, Home/End,
+    Space) 지원, 자동 tabindex 관리, 접근성 속성(role, aria-checked,
+    aria-labelledby) 자동 적용. 테스트: 39 tests (RadioGroup.test.tsx)
+  - **LanguageSelector** (`shared/components/ui/LanguageSelector/`): RadioGroup
+    기반 언어 선택 UI. 4개 언어(Auto/Korean/English/Japanese) 아이콘과 텍스트
+    조합. 테스트: 24 tests (LanguageSelector.test.tsx)
+  - 통합 테스트: 17 tests
+    (test/features/settings/settings-modal-language-icons.integration.test.tsx)
 
 ### 2.3 External Layer (`src/shared/external/**`)
 

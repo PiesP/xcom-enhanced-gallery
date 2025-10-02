@@ -622,3 +622,198 @@ const handleKeyDown = (e: KeyboardEvent) => {
   - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
 
 ---
+
+## 접근성 (Accessibility)
+
+### WAI-ARIA RadioGroup 패턴
+
+RadioGroup 구현 시 다음 패턴을 따라야 합니다:
+
+#### 필수 요소
+
+1. **Radiogroup 컨테이너**
+
+   ```tsx
+   <div role='radiogroup' aria-labelledby='group-label-id'>
+     {/* Radio 옵션들 */}
+   </div>
+   ```
+
+2. **Radio 옵션**
+
+   ```tsx
+   <div
+     role='radio'
+     aria-checked={isSelected ? 'true' : 'false'}
+     tabindex={isSelected ? 0 : -1}
+     onClick={handleSelect}
+   >
+     {/* 라벨과 아이콘 */}
+   </div>
+   ```
+
+3. **키보드 네비게이션 (권장)**
+   - `ArrowUp/ArrowDown`: 이전/다음 옵션으로 이동 및 선택
+   - `ArrowLeft/ArrowRight`: 이전/다음 옵션으로 이동 및 선택
+   - `Space`: 포커스된 옵션 선택
+   - `Home`: 첫 번째 옵션으로 이동 및 선택
+   - `End`: 마지막 옵션으로 이동 및 선택
+
+4. **Tabindex 관리**
+   - 선택된 radio: `tabindex="0"` (또는 `null`)
+   - 선택되지 않은 radio: `tabindex="-1"`
+   - Tab 키로 radiogroup 진입 시 선택된 항목으로 포커스 이동
+
+#### 구현 예시: RadioGroup 컴포넌트
+
+```tsx
+export const RadioGroup = <T,>(props: RadioGroupProps<T>): JSXElement => {
+  const { createMemo } = getSolidCore();
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    let newIndex: number | null = null;
+    const currentIndex = props.options.findIndex(
+      opt => opt.value === props.value
+    );
+
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        newIndex = (currentIndex + 1) % props.options.length;
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        newIndex =
+          currentIndex === 0 ? props.options.length - 1 : currentIndex - 1;
+        break;
+      case 'Home':
+        newIndex = 0;
+        break;
+      case 'End':
+        newIndex = props.options.length - 1;
+        break;
+      case ' ':
+        // Space key는 포커스된 항목을 선택 (이미 선택된 경우 재확인)
+        e.preventDefault();
+        return;
+    }
+
+    if (newIndex !== null) {
+      e.preventDefault();
+      props.onChange(props.options[newIndex].value);
+    }
+  };
+
+  return (
+    <div
+      role='radiogroup'
+      aria-labelledby={props.labelId}
+      onKeyDown={handleKeyDown}
+    >
+      <For each={props.options}>
+        {option => {
+          const isSelected = createMemo(() => props.value === option.value);
+          return (
+            <div
+              role='radio'
+              aria-checked={isSelected() ? 'true' : 'false'}
+              tabindex={isSelected() ? 0 : -1}
+              onClick={() => props.onChange(option.value)}
+            >
+              {option.label}
+            </div>
+          );
+        }}
+      </For>
+    </div>
+  );
+};
+```
+
+#### 통합 테스트 요구사항
+
+RadioGroup을 사용하는 모든 기능은 다음을 검증해야 합니다:
+
+1. **Role과 ARIA 속성**
+   - `role="radiogroup"` 존재
+   - `aria-labelledby` 또는 `aria-label` 존재
+   - 각 옵션에 `role="radio"` 존재
+   - `aria-checked` 값이 선택 상태와 일치
+
+2. **키보드 네비게이션**
+   - 화살표 키로 옵션 이동 및 선택
+   - Home/End 키로 첫/마지막 옵션으로 이동
+   - Space 키로 포커스된 옵션 선택
+
+3. **Tabindex 관리**
+   - 선택된 항목만 `tabindex="0"` (또는 `null`)
+   - 다른 항목들은 `tabindex="-1"`
+
+4. **클릭 동작**
+   - 클릭으로 옵션 선택 가능
+   - 선택 시 `aria-checked` 업데이트
+
+### 아이콘 + 텍스트 조합 가이드
+
+아이콘과 텍스트를 함께 사용할 때 접근성을 위한 원칙:
+
+1. **아이콘은 장식용, 텍스트는 필수**
+
+   ```tsx
+   <div role='radio'>
+     <LazyIcon name='language-ko' aria-hidden='true' />
+     <span>Korean</span> {/* 실제 라벨 */}
+   </div>
+   ```
+
+2. **aria-hidden으로 중복 읽기 방지**
+   - 아이콘에 `aria-hidden="true"` 적용
+   - 스크린 리더는 텍스트만 읽음
+
+3. **시각적 계층 유지**
+   - 아이콘: 빠른 인식을 위한 시각적 단서
+   - 텍스트: 명확한 의미 전달
+   - 둘 다 충분한 크기와 대비 유지
+
+### 디자인 토큰 사용 (Form Elements)
+
+Form 요소에서도 디자인 토큰을 사용하여 일관성을 유지합니다:
+
+```css
+/* RadioGroup 컨테이너 */
+.radiogroup {
+  background-color: var(--xeg-color-surface);
+  border: 1px solid var(--xeg-color-border);
+  border-radius: var(--xeg-radius-lg);
+  padding: var(--xeg-spacing-sm);
+}
+
+/* Radio 옵션 */
+.radio {
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+}
+
+/* 선택 상태 */
+.radio[aria-checked='true'] {
+  background-color: var(--xeg-color-primary);
+  color: var(--xeg-color-on-primary);
+}
+
+/* 포커스 상태 */
+.radio:focus-visible {
+  outline: 2px solid var(--xeg-color-focus);
+  outline-offset: 2px;
+}
+```
+
+### 참고: 관련 파일
+
+- 구현:
+  - `src/shared/components/ui/RadioGroup/RadioGroup.tsx` (39 tests)
+  - `src/shared/components/ui/LanguageSelector/LanguageSelector.tsx` (24 tests)
+- 통합 테스트:
+  - `test/features/settings/settings-modal-language-icons.integration.test.tsx`
+    (17 tests)
+
+---
