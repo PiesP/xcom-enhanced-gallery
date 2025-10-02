@@ -269,7 +269,7 @@ export const toastService = toastManager;
 export const toastController = toastManager;
 
 /**
- * @deprecated 이전 이름들 (하위 호환성 유지)
+ * 이전 이름 (하위 호환성 유지)
  */
 export const UnifiedToastManager = ToastManager;
 
