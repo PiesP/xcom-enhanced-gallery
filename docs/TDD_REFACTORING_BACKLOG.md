@@ -2,7 +2,7 @@
 
 > 활성화되지 않은 향후 후보 아이디어 저장소 (선정 전까지 여기서만 유지)
 >
-> **최근 업데이트**: 2025-01-13 — A11Y_LAYER_TOKENS Epic 완료 및 제거
+> **최근 업데이트**: 2025-10-02 — REF-LITE-V4 Epic 활성 계획으로 승격
 >
 > 사용 방법:
 >
@@ -27,29 +27,13 @@
 
 ### MEDIUM Priority
 
-READY | CONNECT_SYNC_AUTOMATION | 실행 시 접근 호스트 수집→@connect 동기화
-스크립트 | 퍼미션 미스 방지/릴리즈 안정성 | M | READY | SPA_IDEMPOTENT_MOUNT |
-라우트/DOM 교체 시 단일 마운트/클린업 가드 테스트 | 중복 마운트/누수 방지 | M |
-READY | REF-LITE-V4 | 서비스 워ーム업 다이어트 및 벤더 export 정리 (Stages B~C)
-| Solid 전환 병행 시 런타임 회귀 방지 | M | Solid Stage C 이후 재승격 후보 READY
-| BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드 호환성
-확보 및 빌드 시간 단축 | M | Solid Stage A에서 충돌 발생 시 즉시 재승격
+(현재 없음)
 
 ### LOW Priority
 
-READY | RED-TEST-006 | Test Infrastructure Improvements | 테스트 구조/통합/도구
-개선 | S | 5개 테스트 파일 skip 중
+(현재 없음)
 
 ---
-
-## 상세 계획 (승격 전 참고용)
-
-### Epic RED-TEST-006: Test Infrastructure Improvements
-
-**RED-TEST-006**: Test Infrastructure Improvements (S, 1-2 days)
-
-- 테스트 구조 정리, Legacy 계약 검증
-- 5개 테스트 파일 영향
 
 ---
 
