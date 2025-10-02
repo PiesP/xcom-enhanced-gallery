@@ -104,16 +104,7 @@
   border-top: 2px solid var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
   /* Skeleton: 토큰화된 duration/easing 사용 */
-  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
 }
 
 .image {

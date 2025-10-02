@@ -463,18 +463,8 @@
   border: 2px solid var(--xeg-color-neutral-400);
   border-radius: var(--xeg-radius-full);
   border-top-color: var(--xeg-color-text-primary);
-  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
+  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
   margin-right: var(--space-5);
-}
-
-/**
- * 스피너 회전 애니메이션
- * 360도 회전하는 키프레임 애니메이션입니다.
- */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /**
