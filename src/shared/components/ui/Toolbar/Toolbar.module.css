@@ -88,7 +88,7 @@
 
   /* 레이아웃 속성 */
   position: fixed;
-  top: 1.25em; /* 20px → 1.25em */
+  top: var(--space-em-125); /* 1.25em */
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
@@ -96,8 +96,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75em; /* 12px → 0.75em */
-  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
+  gap: var(--space-em-075); /* 0.75em */
+  padding: var(--space-em-05) var(--space-em-1); /* 0.5em 1em */
   min-height: 3em; /* 48px → 3em */
 
   /* 배경, 테두리, 그림자 */
@@ -173,14 +173,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5em; /* 8px → 0.5em */
+  gap: var(--space-em-05); /* 0.5em */
   width: 100%;
 }
 
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: 0.25em; /* 4px → 0.25em */
+  gap: var(--space-em-025); /* 0.25em */
   position: relative;
 }
 
@@ -190,7 +190,7 @@
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.125em; /* 2px → 0.125em */
+  gap: var(--space-em-0125); /* 0.125em */
 }
 
 .toolbarLeft {
@@ -223,7 +223,7 @@
 /* NOTE: Toolbar 버튼 상태/크기/포커스/intent 스타일은 ToolbarButton.module.css (Primitive)에서 단일 관리. */
 /* 네비게이션 섹션 */
 .toolbarNavigation {
-  gap: 0.5em; /* 8px → 0.5em */
+  gap: var(--space-em-05); /* 0.5em */
 }
 
 /* 네비게이션 버튼 - 기본 스타일 상속 */
@@ -241,7 +241,7 @@ button.fitButton {
   min-height: var(--xeg-size-toolbar-button) !important;
   max-width: var(--xeg-size-toolbar-button) !important;
   max-height: var(--xeg-size-toolbar-button) !important;
-  padding: 0.5em !important; /* 유지: 내부 아이콘 패딩 토큰화는 후속 */
+  padding: var(--space-em-05) !important; /* 0.5em */
   box-sizing: border-box !important;
 
   /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
@@ -321,15 +321,15 @@ button.fitButton {
 @media (max-width: 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
+    padding: var(--space-em-075) var(--space-em-1); /* 0.75em 1em */
   }
 
   .toolbarContent {
-    gap: 0.75em; /* 12px → 0.75em */
+    gap: var(--space-em-075); /* 0.75em */
   }
 
   .toolbarSection {
-    gap: 6px;
+    gap: var(--space-3);
   }
 
   /* 버튼 크기/패딩 반응형 override 제거: Primitive가 토큰 기반 크기 관리 */
@@ -346,17 +346,17 @@ button.fitButton {
 @media (max-width: 30em) {
   /* 480px → 30em */
   .galleryToolbar {
-    padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
+    padding: var(--space-em-0625) var(--space-em-075); /* 0.625em 0.75em */
   }
 
   .toolbarContent {
-    gap: 0.5em; /* 8px → 0.5em */
+    gap: var(--space-em-05); /* 0.5em */
     flex-wrap: wrap;
     justify-content: center;
   }
 
   .toolbarSection {
-    gap: 0.25em; /* 4px → 0.25em */
+    gap: var(--space-em-025); /* 0.25em */
   }
 
   /* (삭제) 반응형 전용 toolbarButton padding override - Primitive 일원화 */
@@ -365,13 +365,13 @@ button.fitButton {
 
   .progressBar {
     width: var(--xeg-size-toolbar-button); /* tokenized width */
-    height: 0.125em; /* 2px → 0.125em */
+    height: var(--space-em-0125); /* 0.125em */
   }
 
   /* (white box 제거 유지 - 별도 스타일 불필요) */
 
   .fitButton {
-    padding: 0.1875em 0.375em; /* 3px 6px → 0.1875em 0.375em */
+    padding: var(--space-em-01875) var(--space-em-0375); /* 0.1875em 0.375em */
   }
 
   /* 작은 화면에서도 separator 표시 유지 */
@@ -447,7 +447,7 @@ button.fitButton {
     background: var(--xeg-glass-bg); /* 모바일에서 더 불투명 */
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
+    padding: var(--space-em-05) var(--space-em-075); /* 0.5em 0.75em */
     min-height: 3em; /* 48px → 3em */
   }
 
@@ -460,9 +460,9 @@ button.fitButton {
 @media (max-width: 30em) {
   /* 480px → 30em */
   .galleryToolbar {
-    width: calc(100vw - 1.25em); /* 20px → 1.25em */
+    width: calc(100vw - var(--space-em-125)); /* 1.25em */
     max-width: none;
-    left: 0.625em; /* 10px → 0.625em */
+    left: var(--space-em-0625); /* 0.625em */
     transform: none;
     border-radius: var(--xeg-radius-md);
   }
