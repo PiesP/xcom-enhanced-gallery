@@ -40,9 +40,7 @@ function registerMediaServiceStub(): () => void {
   };
 }
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('FRAME-ALT-001 Stage E — Solid shell UI parity', () => {
+describe('FRAME-ALT-001 Stage E — Solid shell UI parity', () => {
   let renderer: GalleryRenderer;
   let restoreServices: () => void;
 

@@ -89,9 +89,10 @@ export default defineConfig({
     // JSDOM 환경 설정
     environmentOptions: {
       jsdom: {
-        resources: 'usable',
+        resources: undefined, // 리소스 로딩 완전 비활성화 (URL Constructor 오류 방지)
         url: 'https://x.com',
         storageQuota: 10000000,
+        pretendToBeVisual: true,
       },
     },
 

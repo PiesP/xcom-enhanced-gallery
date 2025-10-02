@@ -15,9 +15,7 @@ const mediaItems = [
   },
 ];
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('GalleryRenderer keyboard help overlay (Solid path)', () => {
+describe('GalleryRenderer keyboard help overlay (Solid path)', () => {
   let renderer: GalleryRenderer | null = null;
 
   beforeEach(() => {

@@ -11,9 +11,7 @@ import type { ToolbarWithSettingsProps } from '@shared/components/ui/ToolbarWith
 
 const { createRoot } = getSolidCore();
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('ToolbarWithSettings - 설정 모달이 열린 상태에서 닫기 동작', () => {
+describe('ToolbarWithSettings - 설정 모달이 열린 상태에서 닫기 동작', () => {
   let dispose: (() => void) | undefined;
 
   beforeEach(() => {

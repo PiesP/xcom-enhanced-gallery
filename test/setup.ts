@@ -19,24 +19,53 @@ import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
-  // Node 18+ 환경에서는 기본적으로 globalThis.URL 존재
+  // Node.js의 URL 클래스를 직접 사용 (동기적으로 접근 가능)
+  try {
+    // Node.js 환경에서 URL은 이미 global에 존재
+    const g = (globalThis as any).global || globalThis;
+    const NodeURL = (globalThis as any).URL || (g as any).URL;
+    if (typeof NodeURL === 'function') {
+      return NodeURL;
+    }
+  } catch {
+    // Node.js URL import 실패 시 fallback
+  }
+
+  // globalThis.URL이 이미 존재하면 사용
   if (typeof globalThis.URL === 'function') return globalThis.URL as any;
 
   // fallback implementation (단순 파서)
-  function URLConstructor(this: any, url: string) {
+  function URLConstructor(this: any, url: string, base?: string) {
     if (!(this instanceof URLConstructor)) {
-      return new (URLConstructor as any)(url);
+      return new (URLConstructor as any)(url, base);
     }
-    const urlRegex = /^(https?):\/\/([^/]+)(\/[^?]*)?\??(.*)$/;
-    const match = url.match(urlRegex);
-    if (!match) throw new Error('Invalid URL');
-    const [, protocol, hostname, pathname = '/', search = ''] = match;
+
+    // base URL 처리
+    let fullUrl = url;
+    if (base && !/^https?:\/\//i.test(url)) {
+      // 상대 URL 처리 - 간단한 구현
+      const baseMatch = base.match(/^(https?:\/\/[^/]+)(.*)?$/);
+      if (baseMatch) {
+        const [, origin] = baseMatch;
+        fullUrl = url.startsWith('/') ? `${origin}${url}` : `${origin}/${url}`;
+      }
+    }
+
+    const urlRegex = /^(https?):\/\/([^/]+)(\/[^?#]*)?\??([^#]*)#?(.*)$/;
+    const match = fullUrl.match(urlRegex);
+    if (!match) throw new Error(`Invalid URL: ${fullUrl}`);
+
+    const [, protocol, hostname, pathname = '/', search = '', hash = ''] = match;
     this.protocol = `${protocol}:`;
     this.hostname = hostname;
+    this.host = hostname;
     this.pathname = pathname;
     this.search = search ? `?${search}` : '';
-    this.href = url;
+    this.hash = hash ? `#${hash}` : '';
+    this.href = fullUrl;
+    this.origin = `${protocol}://${hostname}`;
     this.toString = () => this.href;
+    this.toJSON = () => this.href;
     return this;
   }
   return URLConstructor as any;
@@ -47,12 +76,16 @@ function setupURLPolyfill() {
   const URLPolyfill = createURLPolyfill();
 
   // globalThis 레벨에 설정
-  globalThis.URL = URLPolyfill;
+  if (!globalThis.URL || typeof globalThis.URL !== 'function') {
+    globalThis.URL = URLPolyfill;
+  }
 
   // window 레벨에도 설정 (안전하게)
   try {
     if (typeof globalThis.window !== 'undefined') {
-      (globalThis as any).window.URL = URLPolyfill;
+      if (!globalThis.window.URL || typeof globalThis.window.URL !== 'function') {
+        (globalThis as any).window.URL = URLPolyfill;
+      }
     }
   } catch {
     // 무시
@@ -62,7 +95,9 @@ function setupURLPolyfill() {
   try {
     const nodeGlobal = (globalThis as any).global || (process as any).global;
     if (nodeGlobal && typeof nodeGlobal === 'object') {
-      nodeGlobal.URL = URLPolyfill;
+      if (!nodeGlobal.URL || typeof nodeGlobal.URL !== 'function') {
+        nodeGlobal.URL = URLPolyfill;
+      }
     }
   } catch {
     // 무시
@@ -71,7 +106,9 @@ function setupURLPolyfill() {
   // globalThis.global을 통한 접근도 보장
   try {
     if (typeof (globalThis as any).global !== 'undefined') {
-      (globalThis as any).global.URL = URLPolyfill;
+      if (!(globalThis as any).global.URL || typeof (globalThis as any).global.URL !== 'function') {
+        (globalThis as any).global.URL = URLPolyfill;
+      }
     }
   } catch {
     // 무시

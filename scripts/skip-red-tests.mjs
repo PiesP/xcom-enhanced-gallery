@@ -60,10 +60,12 @@ for (const testFile of failedTests) {
       // Add comment explaining skip
       const lines = content.split('\n');
       const describeLineIndex = lines.findIndex(line => line.includes('describe.skip('));
-      
+
       if (describeLineIndex > 0) {
         const indent = lines[describeLineIndex].match(/^\s*/)[0];
-        lines.splice(describeLineIndex, 0, 
+        lines.splice(
+          describeLineIndex,
+          0,
           `${indent}// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push`,
           `${indent}// Epic tracking: Move to separate Epic branch for GREEN implementation`
         );

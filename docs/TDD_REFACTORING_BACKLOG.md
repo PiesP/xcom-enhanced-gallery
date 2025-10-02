@@ -24,10 +24,9 @@
 READY | RED-TEST-001 | SolidJS Gallery JSDOM URL Constructor Fix | Gallery
 테스트 환경 안정화 | M | 8개 테스트 파일 skip 중 READY | RED-TEST-002 |
 Toast/Signal API Native Pattern Migration | UnifiedToastManager API 통합 완료 |
-M | 7개 테스트 파일 skip 중  
-READY | RED-TEST-003 | Service Diagnostics Unification |
-CoreService/BrowserService 진단 기능 통합 | S | 3개 테스트 파일 skip 중 READY |
-RED-TEST-004 | Signal Selector Performance Utilities |
+M | 7개 테스트 파일 skip 중 READY | RED-TEST-003 | Service Diagnostics
+Unification | CoreService/BrowserService 진단 기능 통합 | S | 3개 테스트 파일
+skip 중 READY | RED-TEST-004 | Signal Selector Performance Utilities |
 createSelector/useSelector 최적화 도구 구현 | M | 1개 테스트 파일 skip 중 READY
 | RED-TEST-005 | Style/CSS Consolidation & Token Compliance | 스타일 통합 및
 디자인 토큰 정책 준수 | M | 4개 테스트 파일 skip 중 READY | RED-TEST-006 | Test
@@ -55,9 +54,7 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 
 ### Epic RED-TEST-001: SolidJS Gallery JSDOM URL Constructor Fix
 
-**상태**: READY  
-**우선순위**: HIGH  
-**식별자**: RED-TEST-001
+**상태**: READY **우선순위**: HIGH **식별자**: RED-TEST-001
 
 **배경**:
 
@@ -86,16 +83,13 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] Gallery 테스트 환경 안정화
 - [ ] 8개 테스트 파일 GREEN 전환
 
-**예상 난이도**: M (Medium)  
-**예상 소요**: 1-2 days
+**예상 난이도**: M (Medium) **예상 소요**: 1-2 days
 
 ---
 
 ### Epic RED-TEST-002: Toast/Signal API Native Pattern Migration
 
-**상태**: READY  
-**우선순위**: MEDIUM  
-**식별자**: RED-TEST-002
+**상태**: READY **우선순위**: MEDIUM **식별자**: RED-TEST-002
 
 **배경**:
 
@@ -122,16 +116,13 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] Toast API 계약 문서화
 - [ ] 7개 테스트 파일 GREEN 전환
 
-**예상 난이도**: M (Medium)  
-**예상 소요**: 2-3 days
+**예상 난이도**: M (Medium) **예상 소요**: 2-3 days
 
 ---
 
 ### Epic RED-TEST-003: Service Diagnostics Unification
 
-**상태**: READY  
-**우선순위**: LOW  
-**식별자**: RED-TEST-003
+**상태**: READY **우선순위**: LOW **식별자**: RED-TEST-003
 
 **배경**:
 
@@ -151,16 +142,13 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] 기존 서비스에 통합
 - [ ] 3개 테스트 파일 GREEN 전환
 
-**예상 난이도**: S (Small)  
-**예상 소요**: 1 day
+**예상 난이도**: S (Small) **예상 소요**: 1 day
 
 ---
 
 ### Epic RED-TEST-004: Signal Selector Performance Utilities
 
-**상태**: READY  
-**우선순위**: MEDIUM  
-**식별자**: RED-TEST-004
+**상태**: READY **우선순위**: MEDIUM **식별자**: RED-TEST-004
 
 **배경**:
 
@@ -182,16 +170,13 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] Performance metrics 수집
 - [ ] 17개 테스트 GREEN 전환
 
-**예상 난이도**: M (Medium)  
-**예상 소요**: 2-3 days
+**예상 난이도**: M (Medium) **예상 소요**: 2-3 days
 
 ---
 
 ### Epic RED-TEST-005: Style/CSS Consolidation & Token Compliance
 
-**상태**: READY  
-**우선순위**: MEDIUM  
-**식별자**: RED-TEST-005
+**상태**: READY **우선순위**: MEDIUM **식별자**: RED-TEST-005
 
 **배경**:
 
@@ -215,16 +200,13 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] CSS Module vs Global 정책 명확화
 - [ ] 4개 테스트 파일 GREEN 전환
 
-**예상 난이도**: M (Medium)  
-**예상 소요**: 2-3 days
+**예상 난이도**: M (Medium) **예상 소요**: 2-3 days
 
 ---
 
 ### Epic RED-TEST-006: Test Infrastructure Improvements
 
-**상태**: READY  
-**우선순위**: LOW  
-**식별자**: RED-TEST-006
+**상태**: READY **우선순위**: LOW **식별자**: RED-TEST-006
 
 **배경**:
 
@@ -250,8 +232,7 @@ BUILD-ALT-001 | esbuild 기반 userscript 빌드 전환 파일럿 | Solid 빌드
 - [ ] 스캔 도구 개선
 - [ ] 5개 테스트 파일 GREEN 전환
 
-**예상 난이도**: S (Small)  
-**예상 소요**: 1-2 days
+**예상 난이도**: S (Small) **예상 소요**: 1-2 days
 
 ---
 
