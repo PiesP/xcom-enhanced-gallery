@@ -266,6 +266,44 @@ type UserscriptAPI = {
 - Vendors/외부 자원 정리는 `cleanupVendors()` 또는 unload-safe 등록 유틸을
   사용합니다.
 
+DOM 구조 제약(Epic DOM-DEPTH-GUARD)
+
+**배경**: Phase 4 최적화에서 불필요한 래퍼(`itemsList`, `imageWrapper` 등) 제거
+완료. 향후 기능 추가 시 DOM 중첩이 불필요하게 깊어지지 않도록 가드 정책을
+수립합니다.
+
+**최대 허용 깊이**: 6단계 (7단계 이상 금지)
+
+**6단계 레이어 역할**:
+
+1. `#xeg-gallery-root` (GalleryRenderer) - 전역 초기화 진입점
+2. `.xeg-gallery-overlay` (GalleryContainer) - 격리 컨테이너, 스타일 캡슐화
+3. `.shell` (SolidGalleryShell) - SolidJS 루트, Toolbar + ContentArea 조립
+4. `.contentArea` (선택적 `.toolbar`와 병렬) - 스크롤 가능 영역
+5. `.itemsContainer` - 아이템 그리드 컨테이너
+6. `.container` (VerticalImageItem) - 개별 미디어 아이템
+
+**새 레이어 추가 시 검토 기준**:
+
+- 명확한 책임 정의 (격리, 스크롤, 그리드 레이아웃, 개별 아이템 등)
+- 기존 레이어로 대체 불가능한지 확인
+- 깊이 6단계 초과 시 반드시 아키텍처 문서 업데이트 + 테스트 수정
+
+**회귀 방지 테스트**: `test/architecture/dom-depth-guard.test.ts` (5 tests)
+
+- 최대 깊이 6단계 검증
+- 6개 핵심 레이어 존재 검증
+- 불필요한 중간 래퍼(`.itemsList`, `.imageWrapper` 등) 부재 검증
+- 각 레이어 역할 명확성 검증
+- 새 기능 추가 시 깊이 증가 방지
+
+**제거된 불필요 레이어 (참고용)**:
+
+- `.itemsList`: Phase 4에서 제거, `itemsContainer`가 직접 아이템 포함
+- `.imageWrapper`: Phase 4에서 제거, `container`가 직접 이미지/비디오 포함
+
+**관련 문서**: `docs/TDD_REFACTORING_PLAN.md` Epic DOM-DEPTH-GUARD
+
 ## 12. 테스트 전략(TDD) 매핑
 
 - 환경: Vitest + JSDOM, 기본 URL <https://x.com>, `test/setup.ts` 자동 로드
