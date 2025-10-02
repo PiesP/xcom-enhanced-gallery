@@ -25,9 +25,7 @@ function buildMedia(count: number, prefix = 'file'): any[] {
   })) as any[];
 }
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('BulkDownloadService – progress toast', () => {
+describe('BulkDownloadService – progress toast', () => {
   let originalFetch: typeof globalThis.fetch;
 
   beforeEach(() => {
@@ -54,16 +52,27 @@ describe.skip('BulkDownloadService – progress toast', () => {
     const { toastManager, UnifiedToastManager } = await import(
       '@shared/services/UnifiedToastManager'
     );
+    const { getSolidCore } = await import('@shared/external/vendors');
     UnifiedToastManager.resetInstance();
     const tm = toastManager;
 
     const updates: any[] = [];
-    const unsub = tm.subscribe(list => updates.push(list.map(t => t.message)));
+    const { createEffect, createRoot } = getSolidCore();
+    let dispose: (() => void) | undefined;
+
+    createRoot(disposer => {
+      dispose = disposer;
+      createEffect(() => {
+        const list = tm.getToasts();
+        updates.push(list.map(t => t.message));
+      });
+      return disposer;
+    });
 
     const items = buildMedia(3);
     const res = await svc.downloadMultiple(items, { concurrency: 1, showProgressToast: true });
 
-    unsub();
+    dispose?.();
 
     expect(res.success).toBe(true);
     // Expect at least one progress message update occurred during download
@@ -87,17 +96,29 @@ describe.skip('BulkDownloadService – progress toast', () => {
     const { toastManager, UnifiedToastManager } = await import(
       '@shared/services/UnifiedToastManager'
     );
+    const { getSolidCore } = await import('@shared/external/vendors');
     UnifiedToastManager.resetInstance();
     const tm = toastManager;
     const updates: any[] = [];
-    const unsub = tm.subscribe(list => updates.push(list.map(t => t.message)));
+
+    const { createEffect, createRoot } = getSolidCore();
+    let dispose: (() => void) | undefined;
+
+    createRoot(disposer => {
+      dispose = disposer;
+      createEffect(() => {
+        const list = tm.getToasts();
+        updates.push(list.map(t => t.message));
+      });
+      return disposer;
+    });
 
     const res = await svc.downloadMultiple(buildMedia(2), {
       concurrency: 1,
       showProgressToast: false,
     });
 
-    unsub();
+    dispose?.();
 
     expect(res.success).toBe(true);
     // No progress messages should be observed

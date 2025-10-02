@@ -26,7 +26,10 @@ vi.mock('@shared/external/vendors', () => ({
     createEffect: (fn: () => void) => {
       fn();
     },
-    createMemo: (fn: () => unknown) => fn,
+    createMemo: (fn: () => unknown) => {
+      const memo = () => fn();
+      return memo;
+    },
     createRoot: (fn: (dispose: () => void) => unknown) => {
       const dispose = () => {};
       return fn(dispose);
@@ -67,9 +70,7 @@ vi.mock('@shared/external/vendors', () => ({
 
 import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('Toast 시스템 통합 (TDD)', () => {
+describe('Toast 시스템 통합 (TDD)', () => {
   let unifiedToastManager: any;
   let mockCallback;
 
@@ -133,12 +134,22 @@ describe.skip('Toast 시스템 통합 (TDD)', () => {
 
     it('should notify subscribers when toast state changes', async () => {
       // GREEN: 구독 시스템이 작동해야 함
-      const unsubscribe = unifiedToastManager.subscribe(mockCallback);
+      // Native Pattern: createEffect 사용
+      const { createEffect, createRoot } = await import('@shared/external/vendors').then(m =>
+        m.getSolidCore()
+      );
 
-      // 초기 구독 콜백이 비동기적으로 호출되므로 대기
-      await new Promise(resolve => globalThis.setTimeout(resolve, 10));
+      let dispose: (() => void) | undefined;
+      createRoot(disposer => {
+        dispose = disposer;
+        createEffect(() => {
+          const toasts = unifiedToastManager.getToasts();
+          mockCallback(toasts);
+        });
+        return disposer;
+      });
 
-      // Solid signals는 초기 구독 시 1번만 호출 (Preact signals와 다름)
+      // createEffect는 초기 실행으로 1번 호출됨
       expect(mockCallback).toHaveBeenCalledTimes(1);
       expect(mockCallback).toHaveBeenCalledWith([]);
 
@@ -146,15 +157,13 @@ describe.skip('Toast 시스템 통합 (TDD)', () => {
       unifiedToastManager.show({
         title: 'Test',
         message: 'Message',
-        type: 'info',
+        type: 'warning', // 토스트 리스트에 추가되도록 warning 사용
       });
 
-      // SolidJS의 createEffect는 초기 1회만 호출되고, 이후 변경은 자동 추적됨
-      // 구독 시스템이 정상 동작하는지만 확인
-      expect(mockCallback).toHaveBeenCalledWith([]);
-      expect(typeof unsubscribe).toBe('function');
+      // Toast가 추가되면 effect가 재실행됨
+      expect(mockCallback).toHaveBeenCalledTimes(2);
 
-      unsubscribe();
+      dispose?.();
     });
 
     it('should remove specific toast by ID', () => {

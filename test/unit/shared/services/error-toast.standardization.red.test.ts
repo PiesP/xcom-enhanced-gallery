@@ -3,9 +3,7 @@ import { mediaService } from '@/shared/services/MediaService';
 import { bulkDownloadService } from '@/shared/services/BulkDownloadService';
 import { ErrorCode } from '@/shared/types/result.types';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('EPIC-B: Error/Toast standardization (RED)', () => {
+describe('EPIC-B: Error/Toast standardization (RED)', () => {
   const originalFetch = globalThis.fetch;
 
   afterEach(() => {

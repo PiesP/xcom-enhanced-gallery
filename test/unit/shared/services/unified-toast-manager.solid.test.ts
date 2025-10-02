@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getSolidCore } from '@shared/external/vendors';
 
 import {
   toastManager,
@@ -11,9 +12,7 @@ const resetToasts = () => {
   toastManager.clear();
 };
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('UnifiedToastManager Solid integration', () => {
+describe('UnifiedToastManager Solid integration', () => {
   beforeEach(() => {
     resetToasts();
   });
@@ -35,10 +34,22 @@ describe.skip('UnifiedToastManager Solid integration', () => {
   });
 
   it('notifies subscribers about toast list changes', () => {
+    const { createEffect, createRoot } = getSolidCore();
     const listener = vi.fn();
-    const unsubscribe = toastManager.subscribe(listener);
 
-    // subscribe() 호출 시 초기 값(빈 배열)이 즉시 전달되므로 listener가 1번 호출됨
+    let dispose: (() => void) | undefined;
+
+    // Solid의 createEffect를 사용하여 변경 감지
+    createRoot(disposer => {
+      dispose = disposer;
+      createEffect(() => {
+        const toasts = toastManager.getToasts();
+        listener(toasts);
+      });
+      return disposer;
+    });
+
+    // createEffect는 초기 실행으로 1번 호출됨
     expect(listener).toHaveBeenCalledTimes(1);
 
     const toastId = toastManager.show({
@@ -52,7 +63,9 @@ describe.skip('UnifiedToastManager Solid integration', () => {
     toastManager.remove(toastId);
     expect(listener).toHaveBeenCalledTimes(3); // remove 후 +1
 
-    unsubscribe();
+    // dispose를 호출하여 effect 정리
+    dispose?.();
+
     toastManager.show({
       title: 'Ignored',
       message: 'After unsubscribe',

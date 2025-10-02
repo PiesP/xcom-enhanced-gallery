@@ -5,17 +5,18 @@
  * - error -> both (토스트 + assertive 라이브 리전)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getSolidCore } from '@shared/external/vendors';
 import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
 import { logger } from '../../../../src/shared/logging/logger';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('[RED] Toast routing policy', () => {
-  let unsub: () => void;
+describe('[RED] Toast routing policy', () => {
+  let dispose: (() => void) | undefined;
   const observed: string[] = [];
   let debugSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    const { createEffect, createRoot } = getSolidCore();
+
     // reset state
     toastManager.clear();
     observed.length = 0;
@@ -25,11 +26,19 @@ describe.skip('[RED] Toast routing policy', () => {
         observed.push('live');
       }
     });
-    unsub = toastManager.subscribe(() => {});
+
+    // Solid createEffect로 변경 감지
+    createRoot(disposer => {
+      dispose = disposer;
+      createEffect(() => {
+        toastManager.getToasts(); // 변경 추적
+      });
+      return disposer;
+    });
   });
 
   afterEach(() => {
-    unsub?.();
+    dispose?.();
     debugSpy?.mockRestore();
     vi.restoreAllMocks();
     toastManager.clear();

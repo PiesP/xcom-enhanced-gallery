@@ -8,9 +8,7 @@ import { createRoot } from 'solid-js';
 import type { Accessor } from 'solid-js';
 import { ToastManager, toastManager, type ToastItem } from '@shared/services/UnifiedToastManager';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('UnifiedToastManager - Native Pattern Migration', () => {
+describe('UnifiedToastManager - Native Pattern Migration', () => {
   beforeEach(() => {
     ToastManager.resetInstance();
   });
@@ -257,12 +255,12 @@ describe.skip('UnifiedToastManager - Native Pattern Migration', () => {
       });
     });
 
-    it('subscribe() method exists for legacy compatibility but is deprecated', () => {
+    it.skip('subscribe() method exists for legacy compatibility but is deprecated', () => {
       createRoot(dispose => {
         const manager = ToastManager.getInstance();
 
-        // subscribe는 레거시 호환성을 위해 남아있지만 deprecated
-        expect(typeof manager.subscribe).toBe('function');
+        // subscribe는 완전히 제거됨 - createEffect 사용으로 대체
+        // expect(typeof manager.subscribe).toBe('function');
 
         // 호출 시 경고 로그 발생 (테스트에서는 확인하지 않음)
 

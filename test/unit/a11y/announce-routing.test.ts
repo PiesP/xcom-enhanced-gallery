@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// TODO: [RED-TEST-SKIP] This test is in RED state (TDD) - blocking git push
-// Epic tracking: Move to separate Epic branch for GREEN implementation
-describe.skip('Announce routing hardening', () => {
+describe('Announce routing hardening', () => {
   beforeEach(() => {
     vi.useRealTimers();
     vi.resetModules();
@@ -45,8 +43,7 @@ describe.skip('Announce routing hardening', () => {
     await Promise.resolve();
 
     // Expect info/success to go to live region, not to toast list
-    const { toasts } = await import('@/shared/components/ui/Toast/Toast');
-    const list = toasts.value;
+    const list = tm.getToasts();
 
     // At least warning and error should be present as toast items
     expect(list.some(t => t.type === 'warning')).toBe(true);
