@@ -2090,83 +2090,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroChevronRight.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroDownload.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroX.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/hero/createHeroIconAdapter.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/Icon/icons/index.ts",
       "dependencies": [
         {
@@ -2265,52 +2188,8 @@
       "source": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/ModalShell/ModalShell.tsx",
         "src/shared/components/ui/ModalShell/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./ModalShell.solid",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ModalShell.solid",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -2358,13 +2237,6 @@
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/EnhancedSettingsModal.tsx",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
       "valid": true
     },
     {
@@ -8397,8 +8269,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 276,
-    "totalDependenciesCruised": 335,
+    "totalCruised": 263,
+    "totalDependenciesCruised": 333,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
