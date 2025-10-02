@@ -283,7 +283,7 @@
   height: 1em;
   border: 2px solid transparent;
   border-top: 2px solid currentColor;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear, linear) infinite;
   margin-inline-end: var(--xeg-spacing-xs);
 }

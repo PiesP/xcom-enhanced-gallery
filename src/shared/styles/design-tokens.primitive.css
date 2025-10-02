@@ -53,13 +53,42 @@
   --color-twitter-orange: oklch(0.775 0.122 57.5);
   --color-twitter-orange-hover: oklch(0.729 0.14 50.2);
 
-  /* Spacing Scale - 4px base */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
+  /* Spacing Scale - Epic CSS-TOKEN-UNIFY-001 Phase C */
+  /* 기본 px 단위 토큰 */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-7: 14px;
+  --space-8: 16px;
+  --space-9: 18px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-15: 30px;
+  --space-20: 40px;
+  --space-25: 50px;
+  --space-30: 60px;
+
+  /* 레거시 호환 (xs~2xl) */
+  --space-xs: var(--space-2); /* 4px */
+  --space-sm: var(--space-4); /* 8px */
+  --space-md: var(--space-8); /* 16px */
+  --space-lg: var(--space-12); /* 24px */
   --space-xl: 32px;
   --space-2xl: 48px;
+
+  /* em 기반 토큰 (폰트 크기에 상대적) */
+  --space-em-0125: 0.125em;
+  --space-em-01875: 0.1875em;
+  --space-em-025: 0.25em;
+  --space-em-05: 0.5em;
+  --space-em-0625: 0.625em;
+  --space-em-075: 0.75em;
+  --space-em-125: 1.25em;
+  --space-em-15: 1.5em;
+  --space-em-2: 2em;
 
   /* Border Radius */
   --radius-xs: 2px; /* 작은 요소 */
@@ -101,4 +130,44 @@
   --opacity-overlay-strong: 0.8;
   --opacity-overlay-backdrop: 0.85;
   --opacity-glass: 0.85;
+
+  /* NOTE: Epic CSS-TOKEN-UNIFY-001 Phase C - Alpha 변형 색상 토큰 */
+  /* White Alpha Variants - 반투명 흰색 */
+  --color-white-alpha-5: rgba(255, 255, 255, 0.05);
+  --color-white-alpha-6: rgba(255, 255, 255, 0.06);
+  --color-white-alpha-8: rgba(255, 255, 255, 0.08);
+  --color-white-alpha-10: rgba(255, 255, 255, 0.1);
+  --color-white-alpha-15: rgba(255, 255, 255, 0.15);
+  --color-white-alpha-20: rgba(255, 255, 255, 0.2);
+  --color-white-alpha-70: rgba(255, 255, 255, 0.7);
+  --color-white-alpha-85: rgba(255, 255, 255, 0.85);
+  --color-white-alpha-90: rgba(255, 255, 255, 0.9);
+  --color-white-alpha-95: rgba(255, 255, 255, 0.95);
+
+  /* Black Alpha Variants - 반투명 검은색 */
+  --color-black-alpha-5: rgba(0, 0, 0, 0.05);
+  --color-black-alpha-10: rgba(0, 0, 0, 0.1);
+  --color-black-alpha-15: rgba(0, 0, 0, 0.15);
+  --color-black-alpha-20: rgba(0, 0, 0, 0.2);
+  --color-black-alpha-30: rgba(0, 0, 0, 0.3);
+  --color-black-alpha-35: rgba(0, 0, 0, 0.35);
+  --color-black-alpha-60: rgba(0, 0, 0, 0.6);
+  --color-black-alpha-85: rgba(0, 0, 0, 0.85);
+  --color-black-alpha-95: rgba(0, 0, 0, 0.95);
+
+  /* Gray Alpha Variants - 반투명 회색 (slate-900 계열) */
+  --color-slate-alpha-6: rgba(15, 23, 42, 0.06);
+  --color-slate-alpha-8: rgba(15, 23, 42, 0.08);
+  --color-slate-alpha-10: rgba(15, 23, 42, 0.1);
+  --color-slate-alpha-12: rgba(15, 23, 42, 0.12);
+  --color-slate-alpha-15: rgba(15, 23, 42, 0.15);
+
+  /* Dark Surface Alpha - 어두운 배경용 */
+  --color-dark-alpha-95: rgba(30, 30, 30, 0.95);
+  --color-dark-alpha-98: rgba(20, 20, 20, 0.98);
+
+  /* Icon Sizes - Semantic */
+  --size-icon-sm: 18px;
+  --size-icon-md: 20px;
+  --size-icon-lg: 24px;
 }

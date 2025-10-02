@@ -16,9 +16,9 @@
 /* ===== 통합 Glass Surface 클래스 ===== */
 /* base .glass-surface 클래스는 shared/styles/isolated-gallery.css에서 단일 출처로 유지합니다. */
 
-/* 테마별 Surface 변형 */
+/* 테마별 Surface 변형 - Epic CSS-TOKEN-UNIFY-001 Phase C */
 .glass-surface-light {
-  background: var(--xeg-surface-glass-bg-light, rgba(255, 255, 255, 0.85));
+  background: var(--xeg-surface-glass-bg-light, var(--color-white-alpha-85));
   transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
   color: var(--xeg-surface-glass-text-light, var(--color-text-primary));
   border: 1px solid var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
@@ -30,7 +30,7 @@
 }
 
 .glass-surface-dark {
-  background: var(--xeg-surface-glass-bg-dark, rgba(0, 0, 0, 0.85));
+  background: var(--xeg-surface-glass-bg-dark, var(--color-black-alpha-85));
   color: var(--xeg-surface-glass-text-dark, var(--color-text-inverse));
   border: 1px solid var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
   border-radius: var(--xeg-radius-2xl);
@@ -93,7 +93,7 @@
 .xeg-toolbar-section-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-6);
 }
 
 .xeg-toolbar-section-center {
@@ -110,23 +110,23 @@
   font-weight: 600;
   color: var(--xeg-text-counter);
   background: var(--xeg-bg-counter);
-  padding: 6px 12px;
+  padding: var(--space-3) var(--space-6);
   border-radius: var(--xeg-radius-lg);
   border: 1px solid var(--xeg-border-counter);
-  margin-left: 16px;
+  margin-left: var(--space-8);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 2px 8px var(--color-slate-alpha-6);
 }
 
 /* 이미지 맞춤 버튼들 - 통합 색상 시스템 적용 */
 .xeg-fit-buttons {
   display: flex;
-  gap: 4px;
+  gap: var(--space-2);
   background: var(--xeg-neutral-100);
   border: 1px solid var(--xeg-neutral-200);
   border-radius: var(--xeg-radius-lg);
-  padding: 4px;
+  padding: var(--space-2);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
@@ -140,7 +140,7 @@
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--xeg-color-border-primary);
   border-radius: var(--xeg-radius-lg);
-  padding: 12px 16px;
+  padding: var(--space-6) var(--space-8);
   min-width: 200px;
   text-align: center;
   box-shadow: 0 4px 12px var(--xeg-shadow-toolbar);
@@ -154,7 +154,7 @@
   background: var(--xeg-neutral-200);
   border-radius: var(--xeg-radius-xs);
   overflow: hidden;
-  margin-bottom: 8px;
+  margin-bottom: var(--space-4);
 }
 
 .xeg-progress-fill {
@@ -179,7 +179,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px 20px;
+  padding: var(--space-30) var(--space-10) var(--space-10);
   position: relative;
 }
 
@@ -230,16 +230,16 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
-    0 4px 16px rgba(15, 23, 42, 0.1),
-    0 2px 8px rgba(15, 23, 42, 0.06);
+    0 4px 16px var(--color-slate-alpha-10),
+    0 2px 8px var(--color-slate-alpha-6);
 }
 
 .xeg-gallery-nav-left {
-  left: 20px;
+  left: var(--space-10);
 }
 
 .xeg-gallery-nav-right {
-  right: 20px;
+  right: var(--space-10);
 }
 
 .xeg-gallery-nav-left:hover,
@@ -247,8 +247,8 @@
   background: var(--xeg-color-neutral-200);
   transform: translateY(-50%) translateY(-3px) scale(1.05);
   box-shadow:
-    0 8px 24px rgba(15, 23, 42, 0.15),
-    0 4px 12px rgba(15, 23, 42, 0.1);
+    0 8px 24px var(--color-slate-alpha-15),
+    0 4px 12px var(--color-slate-alpha-10);
 }
 
 .xeg-gallery-nav-left:active,
@@ -266,7 +266,7 @@
 /* 썸네일 영역 */
 .xeg-gallery-thumbnails {
   position: absolute;
-  bottom: 20px;
+  bottom: var(--space-10);
   left: 50%;
   transform: translateX(-50%);
   max-width: calc(100vw - 40px);
@@ -275,8 +275,8 @@
 
 .xeg-thumbnails-container {
   display: flex;
-  gap: 8px;
-  padding: 14px;
+  gap: var(--space-4);
+  padding: var(--space-7);
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--xeg-color-border-primary);
   border-radius: var(--xeg-radius-2xl);
@@ -326,8 +326,8 @@
 
 .xeg-thumbnail-indicator {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: var(--space-2);
+  right: var(--space-2);
   width: 8px;
   height: 8px;
   background: var(--xeg-color-primary);
@@ -394,23 +394,23 @@
   .xeg-toolbar-section-left,
   .xeg-toolbar-section-center,
   .xeg-toolbar-section-right {
-    gap: 8px;
+    gap: var(--space-4);
   }
 
   .xeg-toolbar-button {
     min-width: 32px;
     height: 32px;
-    padding: 6px 10px;
+    padding: var(--space-3) var(--space-5);
     font-size: 12px;
   }
 
   .xeg-gallery-counter {
     font-size: 12px;
-    margin-left: 8px;
+    margin-left: var(--space-4);
   }
 
   .xeg-gallery-viewer {
-    padding: 50px 12px 12px;
+    padding: var(--space-25) var(--space-6) var(--space-6);
   }
 
   .xeg-gallery-nav-left,
@@ -421,21 +421,21 @@
   }
 
   .xeg-gallery-nav-left {
-    left: 12px;
+    left: var(--space-6);
   }
 
   .xeg-gallery-nav-right {
-    right: 12px;
+    right: var(--space-6);
   }
 
   .xeg-gallery-thumbnails {
-    bottom: 12px;
+    bottom: var(--space-6);
     max-width: calc(100vw - 24px);
   }
 
   .xeg-thumbnails-container {
-    padding: 8px;
-    gap: 6px;
+    padding: var(--space-4);
+    gap: var(--space-3);
   }
 
   .xeg-thumbnail-image {
