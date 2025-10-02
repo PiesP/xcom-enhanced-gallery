@@ -1,5 +1,39 @@
 <!-- markdownlint-disable -->
 
+2025-01-13: EXEC — Epic RED-TEST-CONSOLIDATE Phase 1 완료 ✅ (Gallery 테스트
+재활성화)
+
+- **목표**: Skip된 Gallery 테스트 파일 6개 검증 및 재활성화
+- **배경**: 22개 테스트 파일이 describe.skip 상태로 비활성화되어 테스트 커버리지
+  저하. 실제 실행 결과 많은 테스트가 GREEN임에도 불구하고 skip 처리됨
+- **전략**: 각 파일을 개별 실행하여 GREEN 확인 후 describe.skip 제거
+- **Phase 1 검증 결과**:
+  - test/features/gallery/solid-shell-ui.test.tsx: ✅ **1 passed** (805ms)
+  - test/features/gallery/gallery-renderer-solid-keyboard-help.test.tsx: ✅ **1
+    passed** (1.68s)
+  - test/features/gallery/solid-gallery-shell.test.tsx: ✅ **5 passed** (109ms)
+  - test/features/gallery/solid-gallery-shell-wheel.test.tsx: ✅ **5 passed**
+    (368ms)
+  - test/features/gallery/gallery-close-dom-cleanup.test.tsx: ✅ **10 passed**
+    (2.11s)
+  - test/accessibility/gallery-toolbar-parity.test.ts: ✅ **1 passed** (812ms)
+- **총 검증**: **23개 테스트 모두 GREEN** (전체 통과)
+- **주요 성과**:
+  - Gallery Solid 렌더링 테스트: 정상 작동
+  - Keyboard help overlay: 정상 작동
+  - Wheel 이벤트 처리: 정상 작동 (네이티브 스크롤 허용)
+  - DOM cleanup: 완벽한 메모리 관리 (멱등성 검증)
+  - 접근성 계약: ARIA 속성 정상
+- **URL Constructor 이슈**: ❌ **발견되지 않음** (초기 전제 오류)
+  - JSDOM 환경에서 URL Constructor 문제 없음
+  - Epic 재정의를 통해 실제 문제(skip 테스트 정리)에 집중
+- **커밋**: docs: redefine RED-TEST-001 as test reactivation Epic (535d613f)
+- **품질 게이트**: All Gallery tests GREEN
+- **결과**: Gallery 테스트 6개 파일(23 tests) 활성화 가능 확인
+- **다음 단계**: Phase 2 (Service/Toast 7개), Phase 3 (기타 9개) 진행 가능
+
+---
+
 2025-01-13: EXEC — Epic THEME-ICON-UNIFY-001 (Phase A) 완료 ✅ (테마 토큰 완전성
 검증 및 확장)
 
