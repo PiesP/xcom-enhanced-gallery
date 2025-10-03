@@ -22,11 +22,14 @@ import styles from './Toolbar.module.css';
 import { ToolbarButton } from '../ToolbarButton/ToolbarButton';
 import { MediaCounter } from '../MediaCounter/MediaCounter';
 import type { ToolbarProps, GalleryToolbarProps } from './Toolbar.types';
+import { LanguageService } from '@shared/services/LanguageService';
 
 export type { ToolbarProps, GalleryToolbarProps };
 
 export const Toolbar = (props: ToolbarProps): JSX.Element => {
   const { createEffect, createMemo, onCleanup } = getSolidCore();
+
+  const languageService = new LanguageService();
 
   const [toolbarState, toolbarActions] = useToolbarState();
 
@@ -448,10 +451,19 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
               <ToolbarButton
                 onClick={event => handleButtonClick(event, props.onToggleProgressToast)}
                 disabled={Boolean(props.disabled)}
-                aria-label={props.showProgressToast ? '진행률 토스트 숨김' : '진행률 토스트 표시'}
+                aria-label={
+                  props.showProgressToast
+                    ? languageService.getString('toolbar.toggleProgressToastHide')
+                    : languageService.getString('toolbar.toggleProgressToastShow')
+                }
                 aria-pressed={props.showProgressToast ? 'true' : 'false'}
-                title={props.showProgressToast ? '진행률 토스트 숨김' : '진행률 토스트 표시'}
+                title={
+                  props.showProgressToast
+                    ? languageService.getString('toolbar.toggleProgressToastHide')
+                    : languageService.getString('toolbar.toggleProgressToastShow')
+                }
                 data-gallery-element='toggle-progress-toast'
+                data-toast-enabled={props.showProgressToast ? 'true' : 'false'}
                 icon={props.showProgressToast ? 'Notifications' : 'NotificationsOff'}
               />
             ) : null}
