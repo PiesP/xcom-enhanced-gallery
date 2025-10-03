@@ -232,7 +232,7 @@ export default defineConfig(({ mode }) => {
     },
     css: {
       modules: {
-        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]',
+        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]', // Epic BUNDLE-OPTIMIZATION: 8 → 6 for smaller CSS
         localsConvention: 'camelCaseOnly',
         hashPrefix: 'xeg',
       },
@@ -265,7 +265,10 @@ export default defineConfig(({ mode }) => {
           compress: {
             drop_console: true,
             drop_debugger: true,
-            passes: 2,
+            passes: 3, // Epic BUNDLE-OPTIMIZATION: 2 → 3 passes for better compression
+            pure_funcs: ['logger.debug', 'logger.trace'], // Remove debug logging calls
+            pure_getters: true, // Assume getters have no side effects
+            unsafe: true, // Aggressive optimizations (requires testing)
           },
           format: { comments: false },
           mangle: { toplevel: true },
