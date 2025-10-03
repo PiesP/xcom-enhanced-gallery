@@ -1,5 +1,72 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 3 완료 ✅ (다운로드 UX 통합)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: 다운로드 UX를 일관되게 통합하고, 컨텍스트 메뉴를 통한 고급 워크플로
+  제공
+- **배경**:
+  - 다운로드 버튼이 툴바와 아이템 오버레이에 중복 배치되어 혼란 발생
+  - 우클릭을 통한 세밀한 제어 기능 부재
+  - 툴바 중심의 일관된 워크플로 확립 필요
+- **구현 내용**:
+  - **TDD RED → GREEN**: Phase 3-1 (컨텍스트 메뉴 기능 테스트)
+    - 테스트: `test/features/gallery/vertical-image-item.context-menu.test.tsx`
+      (11/11 GREEN)
+    - 검증 항목:
+      - 이미지 우클릭 시 onImageContextMenu 호출 (마우스 이벤트 + 미디어 정보
+        전달)
+      - 비디오 우클릭 시 동일하게 동작
+      - 컨테이너 우클릭 시 이벤트 버블링으로 핸들러 호출
+      - 다운로드 액션 트리거 검증 (컨텍스트 메뉴에서 다운로드 시나리오)
+      - PC 전용 인터랙션 정책 준수 (TouchEvent, PointerEvent 금지)
+      - 이벤트 액션 분리 (컨텍스트 메뉴가 아이템 선택을 트리거하지 않음)
+  - **TDD GREEN → REFACTOR**: Phase 3-2 (오버레이 다운로드 버튼 제거 및 컨텍스트
+    메뉴 구현)
+    - 변경:
+      `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+    - 제거: `Button` import, `handleDownloadClick` 함수, 오버레이의 다운로드
+      버튼 섹션
+    - 추가: 컨테이너 레벨 `onContextMenu` 핸들러 (props.onImageContextMenu 호출)
+    - 제거: img/video 개별 핸들러 (중복 이벤트 방지)
+    - 주석 업데이트: Phase 3 변경사항 문서화
+  - **테스트 업데이트 (회귀 방지)**:
+    - `test/features/gallery/event-propagation.test.tsx` (7/7 GREEN):
+      - 다운로드 버튼 관련 테스트 → 컨텍스트 메뉴 테스트로 교체
+      - data-role="download" 검증 → data-xeg-component="vertical-image-item"
+        검증
+      - 이벤트 버블링 경로 테스트 유지 (컨텍스트 메뉴 기반)
+    - `test/unit/features/gallery/components/VerticalImageItem.solid-bridge.test.tsx`
+      (3/3 GREEN):
+      - 다운로드 버튼 클릭 테스트 → 컨텍스트 메뉴 이벤트 테스트로 교체
+  - **품질 검증**:
+    - **Typecheck**: 0 errors ✅
+    - **Lint**: 0 warnings ✅
+    - **Tests**: 전체 1282/1299 passed (Phase 3 관련 실패 0개) ✅
+      - Phase 3 수정 테스트 10/10 GREEN
+      - 기존 3개 실패는 Phase 3와 무관 (toolbar-refine-structure,
+        vertical-image-item-optimization, style-isolation-unify)
+- **Acceptance Criteria (전부 충족)** ✅:
+  - [x] `VerticalImageItem` 오버레이의 다운로드 버튼 제거 완료
+  - [x] 아이템 컨테이너 우클릭 시 onImageContextMenu 호출됨
+  - [x] onImageContextMenu가 마우스 이벤트와 미디어 정보를 정확히 전달함
+  - [x] 컨텍스트 메뉴가 PC 전용 인터랙션 정책 준수 (Touch/Pointer 이벤트 없음)
+  - [x] 컨텍스트 메뉴가 아이템 선택을 트리거하지 않음 (액션 분리)
+  - [x] 회귀 방지: Phase 3 관련 모든 테스트 PASS
+- **향후 작업 (Phase 3-3, 3-4)**:
+  - 컨텍스트 메뉴 UI 커스터마이징 (네이티브 메뉴 대체)
+  - 다운로드/정보 보기 액션 추가
+  - 진행률 토스트 토글 툴바 이동 (설정 패널 연동)
+- **커밋**: (브랜치 feature/ux-gallery-feedback-phase3)
+  - Phase 3-1: vertical-image-item.context-menu.test.tsx 생성 (11 tests)
+  - Phase 3-2: VerticalImageItem.solid.tsx 수정 (다운로드 버튼 제거 + 컨텍스트
+    메뉴 추가)
+  - Phase 3-2: 회귀 테스트 수정 (event-propagation,
+    VerticalImageItem.solid-bridge)
+
+---
+
 2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 2 완료 ✅ (진행 상황 가시성
 개선)
 
