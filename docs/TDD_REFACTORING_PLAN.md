@@ -21,90 +21,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic CONTEXT-MENU-UI-PHASE-3 (활성, 2025-01-03 승격)
+(현재 활성 Epic 없음)
 
-**목적**: Epic CONTEXT-MENU-UI Phase 3 완성 - 접근성 완전성 & 키보드 네비게이션
-
-**우선순위**: HIGH | **난이도**: S
-
-**현재 상태**: Phase 2 완료 (12/18 tests passing), Phase 3 접근성 완전성 남음
-
-**배경**:
-
-- Phase 1 (RED): 18개 계약 테스트 작성 완료
-- Phase 2 (GREEN): 기능적 베이스라인 완료
-  - 기본 렌더링, 위치 계산, 액션 클릭 처리 ✅
-  - PC 전용 입력, 디자인 토큰 사용 ✅
-  - 외부 클릭 감지 (100ms 지연) ✅
-- Phase 3 (남은 작업): 6개 테스트 RED
-  - 접근성: role="menuitem" 개별 항목, aria-label 동적 설정
-  - 키보드: Arrow Up/Down 포커스 관리, Enter 실행, 포커스 순환
-
-#### Phase 3: 접근성 완전성 & 키보드 네비게이션
-
-**목표**: 남은 6개 테스트를 GREEN으로 전환하여 Epic 완전 종료
-
-**테스트 파일**: `test/components/context-menu/context-menu.test.tsx` (이미
-존재)
-
-**구현 범위**:
-
-1. **접근성 속성 완전성** (3 tests)
-   - 각 액션 항목에 `role="menuitem"` 추가
-   - 동적 `aria-label` 설정 (액션별 명확한 레이블)
-   - 컨테이너 `role="menu"` 유지 (이미 존재)
-2. **키보드 네비게이션** (3 tests)
-   - Arrow Down: 다음 항목으로 포커스 이동
-   - Arrow Up: 이전 항목으로 포커스 이동
-   - Enter: 포커스된 항목 실행
-   - 포커스 순환: 마지막 항목에서 Down → 첫 항목, 첫 항목에서 Up → 마지막 항목
-   - Tab 트래핑: 메뉴 내부에서만 포커스 순환
-
-**구현 파일**:
-
-- `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` (수정)
-
-**Acceptance Criteria**:
-
-- ✅ 18/18 tests GREEN (남은 6개 완료)
-- ✅ 타입 체크 0 errors
-- ✅ 린트 clean
-- ✅ 빌드 성공 (dev + prod)
-- ✅ 번들 크기 < +1KB
-- ✅ PC 전용 입력 유지
-- ✅ 디자인 토큰 사용 유지
-- ✅ 기존 12 tests 회귀 없음
-
-#### 전체 Epic 완료 조건
-
-**기능 요구사항**:
-
-- ✅ Phase 1 (RED): 18 tests 작성
-- ✅ Phase 2 (GREEN): 12/18 tests 통과
-- ⏸️ Phase 3 (REFACTOR): 6/18 tests 통과 (현재 목표)
-- ✅ 네이티브 컨텍스트 메뉴 완전 대체
-- ✅ 기본 다운로드 액션 작동
-- ⏸️ WCAG 2.1 Level AA 완전 준수
-- ⏸️ 키보드 전용 사용자 완전 접근
-- ⏸️ 스크린 리더 완전 지원
-
-**품질 요구사항**:
-
-- ⏸️ 18/18 tests GREEN
-- ✅ 타입 체크 0 errors
-- ✅ 린트 clean
-- ✅ PC 전용 입력만 사용
-- ✅ 디자인 토큰 사용
-- ⏸️ ARIA 완전성 (role, aria-label)
-- ⏸️ 키보드 네비게이션 (Arrow, Enter)
-- ✅ 번들 크기 < +3KB (Phase 2: 0 증가, Phase 3: < +1KB 예상)
-- ✅ 빌드 성공
-
-**예상 영향**:
-
-- 변경 파일: 1개 (`ContextMenu.solid.tsx`)
-- 번들 크기: +0.5-1KB (포커스 관리 로직)
-- 회귀 리스크: 매우 낮음
+**다음 작업**: `docs/TDD_REFACTORING_BACKLOG.md`에서 후보 검토 및 승격
 
 ---
 
@@ -136,7 +55,15 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 5. 참고: 이전 완료 Epic 목록
 
-## 3. 최근 완료 Epic (참고용)
+### Epic CONTEXT-MENU-UI-PHASE-3 (완료: 2025-01-03)
+
+**목적**: Epic CONTEXT-MENU-UI Phase 3 완성 - 접근성 완전성 & 키보드 네비게이션
+
+**결과**: ✅ 18/18 tests GREEN, WCAG 2.1 Level AA 완전 준수, Epic 완전 종료
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션) 참조
+
+---
 
 ### Epic CONTEXT-MENU-UI (완료: 2025-01-03)
 
