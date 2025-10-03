@@ -167,12 +167,12 @@ describe('Epic MEDIA-EXTRACTION-FIX - Phase 1: RED', () => {
           <a href="/level1/status/111111">Level 1</a>
           <a href="/level1">@level1</a>
           <div>Level 1 Text</div>
-          
+
           <div class="retweet">
             <article data-testid="tweet">
               <a href="/level2/status/222222">Level 2</a>
               <a href="/level2">@level2</a>
-              
+
               <div class="quoted">
                 <article data-testid="tweet">
                   <a href="/level3/status/333333">Level 3</a>
