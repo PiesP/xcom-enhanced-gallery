@@ -15,6 +15,8 @@ export interface LanguageStrings {
     readonly downloadAll: string;
     readonly settings: string;
     readonly close: string;
+    readonly toggleProgressToastShow: string;
+    readonly toggleProgressToastHide: string;
   };
   readonly settings: {
     readonly title: string;
@@ -71,6 +73,8 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       downloadAll: 'ZIP 다운로드',
       settings: '설정',
       close: '닫기',
+      toggleProgressToastShow: '진행률 토스트 표시',
+      toggleProgressToastHide: '진행률 토스트 숨김',
     },
     settings: {
       title: '설정',
@@ -105,6 +109,8 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       downloadAll: 'Download ZIP',
       settings: 'Settings',
       close: 'Close',
+      toggleProgressToastShow: 'Show progress toast',
+      toggleProgressToastHide: 'Hide progress toast',
     },
     settings: {
       title: 'Settings',
@@ -143,6 +149,8 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       downloadAll: 'ZIPダウンロード',
       settings: '設定',
       close: '閉じる',
+      toggleProgressToastShow: '進行トーストを表示',
+      toggleProgressToastHide: '進行トーストを非表示',
     },
     settings: {
       title: '設定',

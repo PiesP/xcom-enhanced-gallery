@@ -35,6 +35,8 @@ export interface ToolbarProps {
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
+  showProgressToast?: boolean;
+  onToggleProgressToast?: () => void;
 }
 
 export type GalleryToolbarProps = ToolbarProps;

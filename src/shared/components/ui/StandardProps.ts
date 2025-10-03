@@ -91,6 +91,10 @@ export interface StandardToolbarProps extends BaseComponentProps {
   onOpenSettings?: () => void;
   /** 툴바 위치 */
   position?: 'top' | 'bottom' | 'left' | 'right';
+  /** 진행률 토스트 표시 여부 */
+  showProgressToast?: boolean;
+  /** 진행률 토스트 토글 콜백 */
+  onToggleProgressToast?: () => void;
 }
 
 /**

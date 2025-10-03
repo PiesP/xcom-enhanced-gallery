@@ -2,7 +2,7 @@
 
 > 활성화되지 않은 향후 후보 아이디어 저장소 (선정 전까지 여기서만 유지)
 >
-> **최근 업데이트**: 2025-10-03 — DOWNLOAD-TOGGLE-TOOLBAR 활성 계획으로 승격
+> **최근 업데이트**: 2025-10-03 — CONTEXT-MENU-UI 활성 계획으로 승격
 >
 > 사용 방법:
 >
@@ -31,18 +31,23 @@
 
 ### LOW Priority
 
-**READY** | **CONTEXT-MENU-UI** | 네이티브 컨텍스트 메뉴를 커스텀 SolidJS
-컴포넌트로 대체 (다운로드/정보/공유 액션 지원, 디자인 토큰 스타일링, 접근성
-지원) | UX 일관성 향상, 브랜드 통일성, 터치 디바이스 대응 가능 | **M** (새
-컴포넌트 구현) | Epic UX-GALLERY-FEEDBACK-001 Phase 3-3에서 이관. ⚠️ PC 전용
-입력 정책과 "touch device support" 언급 충돌 해결 필요
+(현재 없음)
 
 ---
 
 ## 최근 승격 히스토리
 
+**2025-10-03**: `CONTEXT-MENU-UI` 승격 → `TDD_REFACTORING_PLAN.md` 활성 Epic으로
+이동
+
+- 선정 이유: 브랜드 일관성 향상, 접근성 개선, 확장성 확보
+- 솔루션: Option A (커스텀 컨텍스트 메뉴 컴포넌트, PC 전용) - Epic 목적 충족, UX
+  통일성, PC 전용 정책 준수
+- PC 전용 정책 충돌 해결: "터치 디바이스 대응 가능" 문구 제거, contextmenu
+  이벤트만 사용
+
 **2025-10-03**: `DOWNLOAD-TOGGLE-TOOLBAR` 승격 → `TDD_REFACTORING_PLAN.md` 활성
-Epic으로 이동
+Epic으로 이동 (완료됨)
 
 - 선정 이유: 명확한 가치 (다운로드 워크플로 중심화), 낮은 리스크 (S 난이도),
   빠른 완료 가능

@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-03 — Epic DOWNLOAD-TOGGLE-TOOLBAR 승격
+**최근 업데이트**: 2025-10-03 — Epic CONTEXT-MENU-UI 백로그에서 승격 (활성)
 
 ---
 
@@ -20,133 +20,200 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic DOWNLOAD-TOGGLE-TOOLBAR (활성: 2025-10-03)
+### Epic CONTEXT-MENU-UI (활성, 2025-10-03 승격)
 
-**목적**: 진행률 토스트 토글을 설정 패널에서 툴바 다운로드 그룹으로 이동하여
-다운로드 워크플로 중심화 및 UX 개선
+**목적**: 네이티브 브라우저 컨텍스트 메뉴를 커스텀 SolidJS 컴포넌트로 대체하여
+브랜드 일관성, 접근성, UX 통일성 향상
 
-**배경**:
+**우선순위**: LOW → MEDIUM (백로그 승격) | **난이도**: M
 
-- 현재: `SettingsModal` / `SolidSettingsPanel`에 체크박스로 위치
-- 문제점: 다운로드 작업 중 설정 접근이 번거로움, 워크플로 흐름 단절
-- 기회: 툴바에 토글 버튼 추가로 즉시 접근 가능, 사용자 경험 향상
+**현재 상태**: 네이티브 contextmenu 이벤트만 사용 중, 브라우저 기본 UI 표시
 
-**솔루션 선택**: 옵션 A - 독립 토글 버튼
+**선택 솔루션**: Option A - 커스텀 컨텍스트 메뉴 컴포넌트 (PC 전용)
 
-**평가된 옵션**:
+#### 솔루션 평가
 
-- **A. 독립 토글 버튼** (선택) ✅
-  - 장점: 빠른 접근, 시각적 명확성, 단순 구현, PC 입력 정책 준수
-  - 난이도: S
-- **B. 우클릭 메뉴**: 발견성 낮음, 커스텀 메뉴 구현 필요 (M)
-- **C. 서브메뉴**: 클릭 단계 추가, 드롭다운 구현 (M)
-- **D. 현재 유지**: Epic 목적 미달성
+##### Option A: 커스텀 컨텍스트 메뉴 컴포넌트 (선택됨)
 
-**구현 계획**:
+- **장점**: 브랜드 일관성, 스타일링 완전 제어, 접근성 개선 가능, 커스텀 액션
+  추가 용이, Toolbar/Settings와 UX 통일, PC 전용 정책 준수 가능
+- **단점**: 구현 복잡도 M, 브라우저 네이티브 동작과 차이, 포커스 관리 복잡성,
+  번들 크기 증가 (~2-3KB)
+- **선택 이유**: Epic 목적 충족 ("커스텀 SolidJS 컴포넌트로 대체"), UX 일관성,
+  확장성, 접근성 제어 가능, PC 전용 정책 준수
 
-### Phase 1: RED - 테스트 작성 (실패)
+##### Option B: 네이티브 컨텍스트 메뉴 유지 (제외됨)
 
-**테스트 파일**: `test/toolbar/download-progress-toast-toggle.test.tsx`
+- **장점**: 구현 단순 S, 브라우저 표준 UX, 번들 크기 영향 없음
+- **단점**: 스타일링 불가능, 브랜드 통일성 부족, Epic 목적 미충족
+- **제외 이유**: "커스텀 컴포넌트로 대체" 요구사항 미충족
 
-**테스트 케이스** (15 tests 예상):
+##### Option C: 툴바/버튼으로 대체 (제외됨)
 
-1. 툴바에 진행률 토스트 토글 버튼 렌더링
-2. 토글 버튼 초기 상태 = `showProgressToast` 설정값 반영
-3. 토글 버튼 클릭 시 상태 변경 (on → off → on)
-4. 토글 버튼 클릭 시 `onToggleProgressToast` 콜백 호출
-5. 토글 버튼 아이콘 변경 (Notifications ↔ NotificationsOff)
-6. 토글 버튼 접근성 속성 (aria-label, aria-pressed)
-7. 토글 버튼이 `actions` 그룹에 위치
-8. 툴바 키보드 네비게이션에 토글 버튼 포함
-9. 설정값 변경이 실시간 툴바에 반영 (외부 변경 감지)
-10. 다운로드 진행 중에도 토글 가능
-11. 토글 상태 변경이 `SettingsService`에 persist
-12. 토글 버튼 disabled 상태 처리 (전역 disabled)
-13. 다크/라이트 테마에서 토글 버튼 스타일 일관성
-14. 고대비 모드에서 토글 버튼 가시성
-15. SettingsModal에서 체크박스 제거 확인
+- **장점**: 명확한 UI, 접근성 우수, 디자인 토큰 활용
+- **단점**: 컨텍스트 메뉴 패러다임 포기, 툴바 복잡도 증가, Epic 의도 불일치
+- **제외 이유**: "컨텍스트 메뉴 대체" 요구사항과 불일치
 
-**파일 영향 범위**:
+#### Phase 1: RED (테스트 작성)
 
-- `src/shared/components/ui/Toolbar/Toolbar.tsx` (버튼 추가)
-- `src/shared/components/ui/StandardProps.ts` (Props 확장)
-- `src/shared/components/ui/SettingsModal/SettingsModal.tsx` (체크박스 제거)
-- `src/features/settings/solid/SolidSettingsPanel.solid.tsx` (체크박스 제거)
-- `src/shared/hooks/useToolbarState.ts` (필요 시 상태 추가)
+**목표**: ContextMenu 컴포넌트 계약 테스트 작성 (15-18 tests)
 
-### Phase 2: GREEN - 최소 구현 (통과)
+**테스트 파일**: `test/components/context-menu/context-menu.test.tsx`
 
-**구현 순서**:
+**테스트 범위**:
 
-1. `StandardToolbarProps`에 `showProgressToast?: boolean`,
-   `onToggleProgressToast?: () => void` 추가
-2. `Toolbar.tsx`에 토글 버튼 추가 (actions 그룹, download-all 뒤)
-3. 아이콘: `showProgressToast` 값에 따라 `Notifications` / `NotificationsOff`
-4. 접근성: `aria-label="진행률 토스트 {표시|숨김}"`, `aria-pressed={...}`
-5. 키보드: 툴바 포커스 흐름에 자연스럽게 포함
-6. `SettingsModal.tsx` / `SolidSettingsPanel.solid.tsx`에서 체크박스 섹션 제거
-7. 언어 리소스 추가: `LanguageService.ts`에 `toolbar.toggleProgressToast` 추가
-   (한국어, 영어, 일본어)
-8. 통합: `GalleryApp` / `GalleryRenderer`에서 설정 구독 + 콜백 연결
+1. **렌더링 및 표시/숨김** (3 tests)
+   - 초기 상태에서 렌더링되지 않아야 함
+   - show() 호출 시 표시되어야 함
+   - hide() 호출 시 숨겨져야 함
+2. **위치 계산** (3 tests)
+   - 마우스 좌표에 따라 위치 설정
+   - viewport 오른쪽 경계 초과 시 왼쪽 조정
+   - viewport 하단 경계 초과 시 위쪽 조정
+3. **액션 항목** (3 tests)
+   - 다운로드 액션 클릭 시 onDownload 콜백 호출
+   - 정보 보기 액션 클릭 시 onInfo 콜백 호출
+   - 외부 클릭 시 메뉴 닫힘
+4. **PC 전용 입력** (3 tests)
+   - TouchEvent 사용하지 않아야 함 (onTouchStart/Move/End 없음)
+   - PointerEvent 사용하지 않아야 함 (onPointerDown/Up 없음)
+   - contextmenu 이벤트만 사용해야 함
+5. **접근성** (3 tests)
+   - role="menu" 속성 존재
+   - aria-label 설정
+   - 각 항목에 role="menuitem" 존재
+6. **키보드 네비게이션** (3 tests)
+   - Escape 키로 메뉴 닫기
+   - Arrow Down/Up으로 항목 간 이동
+   - Enter 키로 선택된 항목 실행
 
-**예상 변경 라인**:
+**Acceptance Criteria (Phase 1)**:
 
-- Toolbar.tsx: +20 lines (버튼 추가)
-- StandardProps.ts: +2 lines (Props)
-- SettingsModal.tsx: -15 lines (체크박스 제거)
-- SolidSettingsPanel.tsx: -15 lines (체크박스 제거)
-- LanguageService.ts: +9 lines (i18n 3개 언어)
+- ✅ 15+ tests 작성 (모두 RED 상태)
+- ✅ PC 전용 입력 검증 포함 (Touch/Pointer 금지)
+- ✅ 접근성 기준 정의 (ARIA, role)
+- ✅ 키보드 네비게이션 명세 정의
 
-### Phase 3: REFACTOR - 리팩토링
+#### Phase 2: GREEN (최소 구현)
 
-**정리 항목**:
+**목표**: 테스트를 통과하는 최소 구현
 
-1. 중복 코드 제거 (설정 패널 관련 테스트 정리)
-2. CSS 토큰 사용 확인 (하드코딩 색상 없음)
-3. 툴바 버튼 순서 최적화 (UX 검토)
-4. 기존 설정 패널 테스트 업데이트 (체크박스 제거 반영)
-5. 통합 테스트 업데이트 (`settings-modal.persistence.integration.test.tsx`)
-6. 문서화: 변경 사항 `CHANGELOG.md`에 기록
+**구현 파일**:
 
-**품질 검증**:
+- `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` - 메인 컴포넌트
+- `src/shared/components/ui/ContextMenu/ContextMenu.module.css` - 스타일
+- `src/shared/components/ui/ContextMenu/types.ts` - 타입 정의
+- `src/shared/utils/position-calculator.ts` - 위치 계산 유틸리티
 
-- `npm run typecheck` (0 errors)
-- `npm run lint:fix` (clean)
-- `npm test` (15/15 tests GREEN)
-- `npm run build:dev` (성공)
-- 접근성: WCAG AA 준수 (포커스 링, 대비, ARIA)
+**구현 범위**:
 
-### Acceptance Criteria
+1. **ContextMenu 컴포넌트**
+   - Props: `isVisible`, `position`, `actions`, `onClose`
+   - 기본 렌더링 (show/hide 로직)
+   - 액션 항목 리스트 렌더링
+2. **위치 계산 유틸리티**
+   - `calculateMenuPosition(mouseX, mouseY, menuWidth, menuHeight)` 함수
+   - viewport 경계 체크 및 조정
+3. **상태 관리**
+   - `createSignal<boolean>()` - 표시/숨김
+   - `createSignal<{x: number, y: number}>()` - 위치
+4. **기본 스타일**
+   - 디자인 토큰 사용 (`--xeg-radius-lg`, `--color-bg-primary` 등)
+   - z-index: `--xeg-z-modal`
+5. **VerticalImageItem 통합**
+   - contextmenu 이벤트 핸들러에서 ContextMenu 표시
+   - 이벤트 preventDefault() 호출 (네이티브 메뉴 차단)
 
-**기능**:
+**Acceptance Criteria (Phase 2)**:
 
-- ✅ 툴바에 진행률 토스트 토글 버튼 추가 (actions 그룹)
-- ✅ 토글 버튼 클릭 시 실시간 상태 변경 + persist
-- ✅ 아이콘 변경 (Notifications ↔ NotificationsOff)
-- ✅ 설정 패널에서 체크박스 완전 제거
+- ✅ 15+ tests GREEN
+- ✅ 타입 체크 0 errors
+- ✅ 린트 clean
+- ✅ 빌드 성공
+- ✅ 기본 다운로드 액션 작동
 
-**UX**:
+#### Phase 3: REFACTOR (고급 기능 및 최적화)
 
-- ✅ 키보드 네비게이션 포함 (Tab/Arrow 키)
-- ✅ 접근성 속성 완비 (aria-label, aria-pressed)
-- ✅ PC 전용 입력만 사용 (click 이벤트)
-- ✅ 다크/라이트 테마 일관성
-- ✅ 고대비 모드 지원
+**목표**: 고급 기능 추가 및 코드 품질 개선
 
-**품질**:
+**개선 항목**:
 
-- ✅ 15/15 tests GREEN
-- ✅ 타입/린트 오류 0
+1. **고급 위치 조정**
+   - 스크롤 위치 고려
+   - 다중 모니터 환경 지원
+   - 메뉴 크기 동적 계산
+2. **액션 확장**
+   - 정보 보기 액션 구현 (미디어 메타데이터 표시)
+   - 공유 액션 추가 (클립보드 복사)
+   - 아이콘 추가 (DownloadIcon, InfoIcon 등)
+3. **성능 최적화**
+   - `createMemo()` 활용 (액션 리스트, 스타일)
+   - `onCleanup()` 정리 로직 (이벤트 리스너)
+   - 리렌더 최소화
+4. **스타일 폴리싱**
+   - 애니메이션 (fade-in, slide-in)
+   - 호버 효과 (항목 하이라이트)
+   - 그림자 및 테두리 개선
+5. **다크 모드 지원**
+   - ThemeService 통합
+   - 테마별 색상 토큰 적용
+6. **i18n 지원**
+   - LanguageService 통합
+   - 액션 레이블 다국어 지원 (ko/en/ja)
+
+**Acceptance Criteria (Phase 3)**:
+
+- ✅ 모든 tests GREEN (회귀 없음)
+- ✅ viewport 경계 완벽 처리
+- ✅ 정보 보기/공유 액션 작동
+- ✅ 애니메이션 적용 (`prefers-reduced-motion` 준수)
+- ✅ 다크 모드 완전 지원
+- ✅ i18n 완전 지원 (ko/en/ja)
+- ✅ 번들 크기 증가 < +3KB
+- ✅ 성능: 메뉴 표시 < 16ms (60fps)
+
+#### 전체 Acceptance Criteria
+
+**기능 요구사항**:
+
+- ✅ 네이티브 컨텍스트 메뉴 완전 대체
+- ✅ 다운로드/정보/공유 액션 지원
+- ✅ 마우스 우클릭 시 표시
+- ✅ 외부 클릭 시 자동 닫힘
+- ✅ Escape 키로 닫힘
+
+**품질 요구사항**:
+
+- ✅ 타입 체크 0 errors
+- ✅ 린트 clean
+- ✅ 15+ tests GREEN
+- ✅ PC 전용 입력만 사용 (Touch/Pointer 금지)
+- ✅ 디자인 토큰 사용 (하드코딩 금지)
+- ✅ ARIA 완전성 (role, aria-label 등)
+- ✅ 키보드 네비게이션 (Arrow, Enter, Escape)
+- ✅ 번들 크기 < +3KB
 - ✅ 빌드 성공 (dev + prod)
-- ✅ 기존 테스트 회귀 없음 (설정 패널 테스트 업데이트됨)
-- ✅ 디자인 토큰만 사용 (하드코딩 색상 금지)
 
-**문서**:
+**PC 전용 정책 준수**:
 
-- ✅ i18n 리소스 추가 (한/영/일)
-- ✅ CHANGELOG 업데이트
+- ✅ contextmenu 이벤트만 사용 (허용 목록)
+- ✅ TouchEvent 사용 금지 (테스트로 검증)
+- ✅ PointerEvent 사용 금지 (테스트로 검증)
+- ✅ 백로그 "터치 디바이스 대응" 문구 제거
 
----
+#### 예상 영향
+
+**변경 파일** (예상):
+
+- 신규: `src/shared/components/ui/ContextMenu/*` (3 files)
+- 신규: `src/shared/utils/position-calculator.ts`
+- 수정:
+  `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+- 신규: `test/components/context-menu/context-menu.test.tsx`
+
+**번들 크기 영향**: +2-3KB (컴포넌트 + 유틸리티 + 스타일)
+
+**회귀 리스크**: LOW (기존 contextmenu 동작 유지, 추가 UI만 변경)
 
 ---
 

@@ -1,5 +1,71 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic DOWNLOAD-TOGGLE-TOOLBAR 완료 ✅ (진행률 토스트 토글 툴바
+통합)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: 진행률 토스트 토글을 설정 패널에서 툴바 다운로드 그룹으로 이동하여
+  다운로드 워크플로 중심화 및 UX 개선
+- **배경**:
+  - 현재: `SettingsModal` / `SolidSettingsPanel`에 체크박스로 위치
+  - 문제점: 다운로드 작업 중 설정 접근이 번거로움, 워크플로 흐름 단절
+  - 기회: 툴바에 토글 버튼 추가로 즉시 접근 가능, 사용자 경험 향상
+- **솔루션**: 독립 토글 버튼 (PC 전용 입력, 빠른 접근, 시각적 명확성)
+- **완료된 Phase 요약**:
+  - **Phase 1: RED** - 15개 테스트 작성 및 통과 확인 ✅
+    - test/toolbar/download-progress-toast-toggle.test.tsx (15 tests)
+    - 렌더링, 상태 동기화, 콜백 호출, 아이콘 변경, 접근성 검증
+    - 키보드 네비게이션, 외부 변경 감지, disabled 상태 처리
+    - 다크/라이트 테마 일관성, 고대비 모드 가시성
+  - **Phase 2: GREEN** - 최소 구현 완료 (이미 구현됨) ✅
+    - `ToolbarProps`에 `showProgressToast`, `onToggleProgressToast` 추가
+    - `Toolbar.tsx`에 토글 버튼 추가 (actions 그룹, download-all 뒤)
+    - 아이콘: `Notifications` ↔ `NotificationsOff` (상태 기반)
+    - 접근성: `aria-label`, `aria-pressed` 속성 완비
+    - `SolidSettingsPanel.tsx`에서 체크박스 섹션 제거
+    - 커밋: b191a094 (설정 패널 체크박스 제거)
+  - **Phase 3: REFACTOR** - i18n 및 코드 정리 ✅
+    - `LanguageService.ts`에 `toolbar.toggleProgressToastShow/Hide` 키 추가
+      (ko/en/ja)
+    - `Toolbar.tsx`에서 하드코딩 한국어 문자열 제거 및 i18n 호출로 교체
+    - `data-toast-enabled` 속성 추가로 테스트 가능성 향상
+    - 15/15 tests 여전히 GREEN
+    - 커밋: feba79c7 (i18n 리팩토링)
+- **Acceptance Criteria (전부 충족)** ✅:
+  - 기능:
+    - [x] 툴바에 진행률 토스트 토글 버튼 추가 (actions 그룹)
+    - [x] 토글 버튼 클릭 시 실시간 상태 변경 + persist
+    - [x] 아이콘 변경 (Notifications ↔ NotificationsOff)
+    - [x] 설정 패널에서 체크박스 완전 제거
+  - UX:
+    - [x] 키보드 네비게이션 포함 (Tab/Arrow 키)
+    - [x] 접근성 속성 완비 (aria-label, aria-pressed)
+    - [x] PC 전용 입력만 사용 (click 이벤트)
+    - [x] 다크/라이트 테마 일관성
+    - [x] 고대비 모드 지원
+  - 품질:
+    - [x] 15/15 tests GREEN
+    - [x] 타입/린트 오류 0
+    - [x] 빌드 성공 (dev + prod)
+    - [x] 기존 테스트 회귀 없음
+    - [x] 디자인 토큰만 사용 (하드코딩 색상 금지)
+  - 문서:
+    - [x] i18n 리소스 추가 (한/영/일)
+- **영향 범위**:
+  - 변경된 파일: 3개
+    - `src/shared/services/LanguageService.ts` (+6 lines: i18n 키 추가)
+    - `src/shared/components/ui/Toolbar/Toolbar.tsx` (+2 imports, i18n 호출)
+    - `src/features/settings/solid/SolidSettingsPanel.solid.tsx` (-38 lines:
+      체크박스 제거)
+  - 테스트 파일: 1개
+    - `test/toolbar/download-progress-toast-toggle.test.tsx` (15 tests, 100%
+      GREEN)
+  - 번들 크기: 457.71 KB (기존 대비 +0.47 KB, i18n 리소스 추가로 인한 정상 증가)
+- **후속 작업 (백로그)**: 없음 (Epic 완전 완료)
+
+---
+
 2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 완료 ✅ (갤러리 피드백 및 가시성
 강화)
 
