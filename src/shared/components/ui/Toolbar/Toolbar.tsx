@@ -67,6 +67,7 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
       '[data-gallery-element="fit-container"]',
       '[data-gallery-element="download-current"]',
       '[data-gallery-element="download-all"]',
+      '[data-gallery-element="toggle-progress-toast"]',
       '[data-gallery-element="keyboard-help"]',
       '[data-gallery-element="settings"]',
       '[data-gallery-element="close"]',
@@ -441,6 +442,17 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
                 title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
                 data-gallery-element='download-all'
                 icon='FileZip'
+              />
+            ) : null}
+            {props.onToggleProgressToast ? (
+              <ToolbarButton
+                onClick={event => handleButtonClick(event, props.onToggleProgressToast)}
+                disabled={Boolean(props.disabled)}
+                aria-label={props.showProgressToast ? '진행률 토스트 숨김' : '진행률 토스트 표시'}
+                aria-pressed={props.showProgressToast ? 'true' : 'false'}
+                title={props.showProgressToast ? '진행률 토스트 숨김' : '진행률 토스트 표시'}
+                data-gallery-element='toggle-progress-toast'
+                icon={props.showProgressToast ? 'Notifications' : 'NotificationsOff'}
               />
             ) : null}
             {props.onShowKeyboardHelp ? (

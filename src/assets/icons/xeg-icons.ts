@@ -198,6 +198,30 @@ const RAW_ICON_DEFINITIONS = {
     ],
     metadata: 'language-ja',
   },
+  notifications: {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'notifications',
+  },
+  'notifications-off': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M20 18.69L7.84 6.14 5.27 3.49 4 4.76l2.8 2.8v.01c-.52.99-.8 2.16-.8 3.42v5l-2 2v1h13.73l2 2L21 19.72l-1-1.03zM12 22c1.11 0 2-.89 2-2h-4c0 1.11.89 2 2 2zm6-7.32V11c0-3.08-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68c-.15.03-.29.08-.42.12-.1.03-.2.07-.3.11h-.01c-.01 0-.01 0-.02.01-.23.09-.46.2-.68.31 0 0-.01 0-.01.01z',
+        fill: 'currentColor',
+      },
+      {
+        d: 'M3.41 1.86L2 3.27l3.18 3.18C5.06 7.08 5 7.54 5 8v5l-2 2v1h13.73l2 2 1.41-1.41L3.41 1.86z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'notifications-off',
+  },
 } as const satisfies Record<string, XegIconDefinition>;
 
 export type XegIconSlug = keyof typeof RAW_ICON_DEFINITIONS;
@@ -220,6 +244,8 @@ export const XEG_ICONS = {
   LanguageKo: RAW_ICON_DEFINITIONS['language-ko'],
   LanguageEn: RAW_ICON_DEFINITIONS['language-en'],
   LanguageJa: RAW_ICON_DEFINITIONS['language-ja'],
+  Notifications: RAW_ICON_DEFINITIONS.notifications,
+  NotificationsOff: RAW_ICON_DEFINITIONS['notifications-off'],
 } as const satisfies Record<string, XegIconDefinition>;
 
 export type XegIconName = keyof typeof XEG_ICONS;
