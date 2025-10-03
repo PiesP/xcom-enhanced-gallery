@@ -335,43 +335,60 @@ describe('ContextMenu Component - Phase 1 (RED)', () => {
 
   describe('Accessibility', () => {
     it('role="menu" 속성 존재', () => {
-      // RED: role 속성 미설정
       const [visible] = createSignal(true);
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: vi.fn() },
+      ];
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={vi.fn()}
+        />
+      ));
 
-      // 실제 테스트: 메뉴에 role="menu" 존재
       const menu = document.querySelector('[role="menu"]');
       expect(menu).toBeInTheDocument();
     });
 
     it('aria-label 설정', () => {
-      // RED: aria-label 미설정
       const [visible] = createSignal(true);
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: vi.fn() },
+      ];
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} ariaLabel="Image context menu" />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={vi.fn()}
+          ariaLabel='Image context menu'
+        />
+      ));
 
-      // 실제 테스트: 메뉴에 aria-label 존재
       const menu = document.querySelector('[role="menu"]');
       expect(menu).toHaveAttribute('aria-label', 'Image context menu');
     });
 
     it('각 항목에 role="menuitem" 존재', () => {
-      // RED: 액션 항목 role 미설정
       const [visible] = createSignal(true);
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: vi.fn() },
+        { id: 'info', label: 'Info', onClick: vi.fn() },
+      ];
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={vi.fn()}
+        />
+      ));
 
-      // 실제 테스트: 모든 액션에 role="menuitem" 존재
       const menuItems = document.querySelectorAll('[role="menuitem"]');
       expect(menuItems.length).toBeGreaterThan(0);
 
@@ -390,66 +407,100 @@ describe('ContextMenu Component - Phase 1 (RED)', () => {
 
   describe('Keyboard Navigation', () => {
     it('Escape 키로 메뉴 닫기', () => {
-      // RED: 키보드 이벤트 핸들러 미구현
       const [visible, setVisible] = createSignal(true);
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: vi.fn() },
+        { id: 'info', label: 'Info', onClick: vi.fn() },
+      ];
+      const onClose = vi.fn(() => setVisible(false));
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} onClose={() => setVisible(false)} />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={onClose}
+        />
+      ));
 
-      // 실제 테스트: Escape 키 입력 시 메뉴 닫힘
       const menu = document.querySelector('[role="menu"]') as HTMLElement;
-      menu?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(menu).toBeInTheDocument();
 
-      expect(visible()).toBe(false);
-      expect(menu).not.toBeInTheDocument();
+      // Escape 키 입력
+      menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+      expect(onClose).toHaveBeenCalledOnce();
     });
 
     it('Arrow Down/Up으로 항목 간 이동', () => {
-      // RED: 키보드 네비게이션 미구현
       const [visible] = createSignal(true);
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: vi.fn() },
+        { id: 'info', label: 'Info', onClick: vi.fn() },
+        { id: 'share', label: 'Share', onClick: vi.fn() },
+      ];
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={vi.fn()}
+        />
+      ));
 
       const menu = document.querySelector('[role="menu"]') as HTMLElement;
       const menuItems = Array.from(document.querySelectorAll('[role="menuitem"]')) as HTMLElement[];
 
-      // 첫 항목에 포커스
-      menuItems[0]?.focus();
+      expect(menuItems.length).toBe(3);
+
+      // 첫 번째 항목에 포커스
+      menuItems[0].focus();
       expect(document.activeElement).toBe(menuItems[0]);
 
       // Arrow Down: 다음 항목으로 이동
-      menu?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       expect(document.activeElement).toBe(menuItems[1]);
 
+      // Arrow Down 한 번 더: 세 번째 항목
+      menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      expect(document.activeElement).toBe(menuItems[2]);
+
       // Arrow Up: 이전 항목으로 이동
-      menu?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
-      expect(document.activeElement).toBe(menuItems[0]);
+      menu.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+      expect(document.activeElement).toBe(menuItems[1]);
     });
 
     it('Enter 키로 선택된 항목 실행', () => {
-      // RED: Enter 키 핸들러 미구현
       const [visible] = createSignal(true);
       const onDownload = vi.fn();
+      const onInfo = vi.fn();
+      const actions: ContextMenuAction[] = [
+        { id: 'download', label: 'Download', onClick: onDownload },
+        { id: 'info', label: 'Info', onClick: onInfo },
+      ];
 
-      render(() => {
-        // return <ContextMenu isVisible={visible()} onDownload={onDownload} />;
-        return <div data-testid='placeholder'>Placeholder</div>;
-      });
+      render(() => (
+        <ContextMenu
+          isVisible={visible()}
+          position={{ x: 100, y: 100 }}
+          actions={actions}
+          onClose={vi.fn()}
+        />
+      ));
 
       const downloadItem = document.querySelector(
         '[role="menuitem"][data-action="download"]'
       ) as HTMLElement;
 
+      expect(downloadItem).toBeInTheDocument();
+
       // 다운로드 항목에 포커스
-      downloadItem?.focus();
+      downloadItem.focus();
+      expect(document.activeElement).toBe(downloadItem);
 
       // Enter 키 입력
-      downloadItem?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      downloadItem.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
       expect(onDownload).toHaveBeenCalledOnce();
     });
