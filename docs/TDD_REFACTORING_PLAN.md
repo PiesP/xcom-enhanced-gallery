@@ -21,8 +21,122 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-현재 활성화된 Epic이 없습니다. 새로운 리팩토링이나 기능 구현은 본 섹션에
-추가됩니다.
+### Epic VENDOR-GETTER-MIGRATION (우선순위: 높음)
+
+**생성일**: 2025-10-03 **목적**: Vendor 직접 Import 제거 및 Getter 패턴 전면
+적용
+
+**배경**: 번들 크기 분석 결과 20+ 파일에서 `solid-js`, `fflate` 등 외부
+라이브러리를 직접 import하여 Tree-shaking 최적화 방해 및 중복 번들링 가능성 발견
+
+**영향 범위**:
+
+- `src/shared/hooks/useSettingsModal.ts` - createSignal 직접 import
+- `src/shared/hooks/useFocusScope.ts` - onMount, onCleanup 직접 import
+- `src/shared/components/ui/Toolbar/ToolbarHeadless.tsx` - createEffect,
+  createMemo, createSignal 직접 import
+- 기타 17+ 파일
+
+**Acceptance Criteria**:
+
+1. ✅ 모든 `solid-js` 직접 import를 `getSolidCore()` getter 패턴으로 전환
+2. ✅ 타입만 import하는 경우는 `import type { ... } from 'solid-js'` 형태로 유지
+3. ✅ Lint 규칙으로 직접 import 금지 검증 추가
+4. ✅ 번들 크기 5-10% 감소 목표 달성
+5. ✅ 모든 테스트 GREEN 유지
+
+**예상 효과**: 번들 크기 5-10% 감소, Tree-shaking 최적화, 테스트 모킹 용이성
+향상
+
+---
+
+### Epic CODE-DEDUP-CONSOLIDATION (우선순위: 중간)
+
+**생성일**: 2025-10-03 **목적**: 중복 유틸리티 함수 통합 및 단일 Export 경로
+구축
+
+**배경**: 코드베이스 분석 결과 여러 유틸리티 함수가 중복 구현되어 있어
+유지보수성 저하 및 번들 크기 증가
+
+**중복 패턴**:
+
+1. `removeDuplicates` / `removeDuplicateStrings` / `removeDuplicateMediaItems` -
+   중복 제거 로직 분산
+2. `toDosDate` / `toDosTime` - ZIP 유틸리티 중복
+3. `parseColor` / `calculateContrastRatio` - 접근성 유틸 중복
+4. `rafThrottle` / `Debouncer` - 성능 유틸 중복
+
+**Acceptance Criteria**:
+
+1. ✅ `src/shared/utils/deduplication/` 디렉터리에 중복 제거 로직 통합
+2. ✅ 접근성 유틸은 `src/shared/utils/accessibility/` 단일 경로로 통합
+3. ✅ 성능 유틸은 `src/shared/utils/performance/` 단일 경로로 통합
+4. ✅ 각 유틸의 테스트 케이스 유지
+5. ✅ Barrel export(`index.ts`)를 통한 단일 import 경로 제공
+
+**예상 효과**: 번들 크기 3-5% 감소, 유지보수성 향상, Import 경로 단순화
+
+---
+
+### Epic BUNDLE-OPTIMIZATION (우선순위: 중간)
+
+**생성일**: 2025-10-03 **목적**: Terser 설정 강화 및 CSS 최적화를 통한 번들 크기
+추가 감소
+
+**배경**: 현재 Terser 설정은 기본적이며, 추가 최적화 옵션 적용으로 3-5% 추가
+압축 가능
+
+**최적화 항목**:
+
+1. **Terser 설정 강화**:
+   - `passes: 2 → 3` (추가 최적화 패스)
+   - `pure_funcs: ['logger.debug', 'logger.trace']` (디버그 로그 제거)
+   - `pure_getters: true` (getter 최적화)
+   - `unsafe: true` (공격적 최적화, 테스트 필수)
+
+2. **CSS 최적화**:
+   - 프로덕션 해시 길이 축소: `[hash:base64:8] → [hash:base64:6]`
+   - 사용하지 않는 CSS 규칙 정리
+   - CSS 변수 중복 제거
+
+3. **고아 모듈 제거**:
+   - dependency-cruiser 화이트리스트 재검토
+   - 실제 미사용 파일 10+ 개 제거
+
+**Acceptance Criteria**:
+
+1. ✅ Terser 설정 업데이트 후 모든 테스트 GREEN
+2. ✅ 프로덕션 빌드 크기 458KB → 435KB 이하 달성
+3. ✅ Brotli 압축 크기 85KB → 81KB 이하 달성
+4. ✅ 고아 모듈 10개 → 5개 이하로 감소
+5. ✅ `npm run build` 검증 통과
+
+**예상 효과**: 번들 크기 5-8% 추가 감소, 초기 로딩 속도 개선
+
+---
+
+### Epic SOLID-NATIVE-MIGRATION (우선순위: 낮음, 장기)
+
+**생성일**: 2025-10-03 **목적**: 레거시 `createGlobalSignal` 패턴 제거 및
+SolidJS 네이티브 패턴 완전 전환
+
+**배경**: 현재 호환 레이어로 유지 중인 `createGlobalSignal` (Preact Signals
+스타일)을 SolidJS 네이티브 패턴으로 전면 전환
+
+**마이그레이션 대상**:
+
+- `createGlobalSignal` 사용처 전체
+- `.value` 접근 → `()` 함수 호출로 변경
+- `.subscribe()` → `createEffect()` 변경
+
+**Acceptance Criteria**:
+
+1. ✅ 모든 `createGlobalSignal` 사용을 `createSignal`로 전환
+2. ✅ 호환 레이어 (`src/shared/state/createGlobalSignal.ts`) 제거
+3. ✅ 관련 테스트 모두 SolidJS 네이티브 패턴으로 업데이트
+4. ✅ 번들 크기 추가 감소 (호환 레이어 제거 효과)
+
+**예상 효과**: 코드 일관성 향상, 호환 레이어 제거로 번들 크기 감소
 
 ---
 
