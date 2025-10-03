@@ -4,8 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-03 — Epic CONTEXT-MENU-UI-PHASE-3 백로그에서 승격
-(활성)
+**최근 업데이트**: 2025-01-04 — Epic MEDIA-EXTRACTION-FIX 추가 (최우선, 버그
+수정)
 
 ---
 
@@ -21,9 +21,341 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-(현재 활성 Epic 없음)
+### Epic MEDIA-EXTRACTION-FIX (2025-01-04 활성화) 🔴 최우선
 
-**다음 작업**: `docs/TDD_REFACTORING_BACKLOG.md`에서 후보 검토 및 승격
+**목적**: 미디어 추출 로직 정교화 - 멘션된 트윗 미디어 오추출 버그 수정
+
+**우선순위**: ⭐⭐⭐⭐⭐ (최고 - 버그 수정)
+
+**가치**: 핵심 기능 안정성 + 추출 정확도 향상
+
+**문제 상황**:
+
+- 특정 트윗 페이지에서 멘션된 트윗의 미디어를 클릭 시
+- 클릭한 미디어가 아닌 페이지 주인 트윗의 미디어를 추출하는 버그 발견
+- DOM 구조 분석 시 `closest('article')`이 잘못된 트윗 컨테이너를 매칭
+
+---
+
+#### Phase 1: RED - 테스트 작성 (미디어 추출 정확도)
+
+**목표**: 버그를 재현하는 실패 테스트 작성
+
+**테스트 파일**: `test/features/gallery/media-extraction-accuracy.test.ts`
+
+**테스트 케이스** (12개):
+
+1. **기본 추출 정확도**
+   - 단일 트윗의 미디어를 정확히 추출해야 함
+   - 여러 미디어가 있는 트윗에서 클릭한 미디어의 인덱스를 정확히 계산해야 함
+
+2. **멘션된 트윗 시나리오** (핵심)
+   - 멘션된 트윗의 미디어를 클릭 시 해당 멘션 트윗의 미디어를 추출해야 함
+   - 원본 트윗의 미디어가 아닌 클릭한 트윗의 미디어를 추출해야 함
+   - 중첩된 트윗 구조에서 클릭한 미디어의 소유 트윗을 정확히 찾아야 함
+
+3. **중첩 구조 테스트**
+   - 인용 트윗의 미디어를 정확히 추출해야 함
+   - 리트윗된 트윗의 미디어를 정확히 추출해야 함
+   - 답글 스레드 내 미디어를 정확히 추출해야 함
+
+4. **소유권 검증**
+   - 미디어 요소와 트윗 컨테이너 간 소유 관계를 검증해야 함
+   - 중간에 다른 트윗이 있는 경우 잘못된 매칭으로 판단해야 함
+   - 거리 기반 스코어링으로 가장 가까운 소유자를 찾아야 함
+
+5. **전략 우선순위**
+   - `ClickedElementTweetStrategy`가 최우선으로 성공해야 함
+   - 소유권 검증이 추가된 `DomStructureTweetStrategy`가 정확해야 함
+
+**Acceptance Criteria**:
+
+- ✅ 12개 테스트 모두 RED (실패, 특히 멘션 시나리오)
+- ✅ TypeScript strict 모드 통과
+- ✅ 실제 버그 상황을 정확히 재현
+- ✅ 엣지 케이스 커버리지
+
+---
+
+#### Phase 2: GREEN - 소유권 검증 로직 구현
+
+**목표**: 미디어와 트윗 간 소유 관계를 정확히 판단
+
+**구현 파일**:
+
+- `src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts`
+  (수정)
+- `src/shared/services/media-extraction/utils/MediaOwnershipValidator.ts` (신규)
+- `src/shared/services/media-extraction/strategies/ClickedElementTweetStrategy.ts`
+  (개선)
+
+**핵심 로직**:
+
+```typescript
+/**
+ * 미디어 소유권 검증 유틸리티
+ */
+interface MediaOwnershipResult {
+  isOwned: boolean;
+  confidence: number;
+  distance: number; // DOM 트리 거리
+  intermediateContainers: number; // 중간 컨테이너 수
+}
+
+function validateMediaOwnership(
+  mediaElement: HTMLElement,
+  tweetContainer: HTMLElement
+): MediaOwnershipResult {
+  // 1. 포함 관계 확인
+  if (!tweetContainer.contains(mediaElement)) {
+    return {
+      isOwned: false,
+      confidence: 0,
+      distance: Infinity,
+      intermediateContainers: 0,
+    };
+  }
+
+  // 2. 중간에 다른 트윗이 없는지 확인
+  let current = mediaElement.parentElement;
+  let distance = 0;
+  let intermediateContainers = 0;
+
+  while (current && current !== tweetContainer) {
+    distance++;
+
+    // 중간에 다른 트윗 컨테이너가 있으면 소유권 없음
+    if (current.matches('[data-testid="tweet"], article[role="article"]')) {
+      return {
+        isOwned: false,
+        confidence: 0,
+        distance,
+        intermediateContainers: intermediateContainers + 1,
+      };
+    }
+
+    current = current.parentElement;
+  }
+
+  // 3. 신뢰도 계산 (거리가 가까울수록 높음)
+  const confidence = Math.max(0, 1 - distance / 20);
+
+  return { isOwned: true, confidence, distance, intermediateContainers: 0 };
+}
+```
+
+**전략 개선**:
+
+- `DomStructureTweetStrategy`에 소유권 검증 추가
+- `ClickedElementTweetStrategy`의 정확도 향상
+- 전략 간 신뢰도 비교 로직 추가
+
+**Acceptance Criteria**:
+
+- ✅ 12개 테스트 모두 GREEN (통과)
+- ✅ 멘션 트윗 시나리오 정확도 100%
+- ✅ 성능 영향 < 5ms (추가 DOM 순회)
+- ✅ `npm run typecheck` 통과
+- ✅ `npm run lint:fix` 통과
+
+---
+
+#### Phase 3: REFACTOR - 전략 우선순위 최적화
+
+**목표**: 추출 성능 및 유지보수성 향상
+
+**작업 내용**:
+
+1. **전략 우선순위 재검토**:
+   - 성공률 기반 우선순위 조정
+   - 소유권 검증 결과를 신뢰도 스코어에 반영
+
+2. **성능 최적화**:
+   - DOM 순회 최소화 (캐싱 전략)
+   - 조기 종료 조건 추가
+
+3. **테스트 강화**:
+   - 다양한 트윗 구조 시나리오 추가
+   - 성능 벤치마크 테스트
+
+4. **문서화**:
+   - 소유권 검증 로직 설명 추가
+   - 엣지 케이스 문서화
+
+**Acceptance Criteria**:
+
+- ✅ 모든 테스트 GREEN 유지
+- ✅ 추출 성능 향상 (평균 < 50ms)
+- ✅ 코드 커버리지 > 90%
+- ✅ 문서화 완료
+
+---
+
+#### Epic MEDIA-EXTRACTION-FIX 품질 게이트
+
+**각 Phase 완료 시**:
+
+```pwsh
+npm run typecheck
+npm run lint:fix
+npm test -- -t "MEDIA-EXTRACTION-FIX"
+npm run build:dev
+```
+
+**최종 검증**:
+
+- [ ] 모든 Phase 테스트 GREEN
+- [ ] 타입 체크 0 에러
+- [ ] 멘션 트윗 버그 완전 수정
+- [ ] 성능 영향 최소화 (< 5ms)
+- [ ] 코드 리뷰 통과
+- [ ] 문서화 완료
+
+---
+
+### Epic GALLERY-NAV-ENHANCEMENT (2025-01-04 활성화)
+
+**목적**: 갤러리 네비게이션 UX 개선 - 좌우 네비게이션 버튼 + 키보드 가이드
+
+**우선순위**: ⭐⭐⭐ (높음)
+
+**가치**: 사용성 향상 + 업계 표준 UX 패턴 도입
+
+---
+
+#### Phase 1: RED - 테스트 작성 (좌우 네비게이션 버튼)
+
+**목표**: 실패하는 테스트로 요구사항 명세
+
+**테스트 파일**: `test/features/gallery/side-navigation-buttons.test.tsx`
+
+**테스트 케이스** (15개):
+
+1. **렌더링 & 구조**
+   - 좌측 네비게이션 버튼이 렌더링되어야 함
+   - 우측 네비게이션 버튼이 렌더링되어야 함
+   - 버튼이 화면 좌우 중앙에 위치해야 함 (`position: fixed, top: 50%`)
+   - 버튼이 적절한 z-index를 가져야 함 (`--xeg-z-gallery-nav`)
+
+2. **접근성**
+   - 좌측 버튼에 `aria-label="이전 미디어"`가 있어야 함
+   - 우측 버튼에 `aria-label="다음 미디어"`가 있어야 함
+   - 버튼에 `role="button"`이 있어야 함
+   - 키보드 포커스 가능해야 함 (`tabindex="0"`)
+
+3. **비활성화 상태**
+   - 첫 번째 아이템일 때 좌측 버튼이 비활성화되어야 함
+   - 마지막 아이템일 때 우측 버튼이 비활성화되어야 함
+   - 비활성화 시 `disabled` 속성이 있어야 함
+   - 비활성화 시 `aria-disabled="true"`가 있어야 함
+
+4. **인터랙션**
+   - 좌측 버튼 클릭 시 `onPrevious` 콜백이 호출되어야 함
+   - 우측 버튼 클릭 시 `onNext` 콜백이 호출되어야 함
+   - 로딩 중일 때 버튼이 비활성화되어야 함
+
+5. **스타일 & 디자인 토큰**
+   - 버튼이 디자인 토큰을 사용해야 함 (`--xeg-color-*`, `--xeg-radius-*`)
+   - Glassmorphism 스타일 적용 (`backdrop-filter`)
+
+**Acceptance Criteria**:
+
+- ✅ 15개 테스트 모두 RED (실패)
+- ✅ TypeScript strict 모드 통과
+- ✅ ESLint 규칙 준수 (PC 전용 입력)
+- ✅ 터치/포인터 이벤트 사용 금지
+
+---
+
+#### Phase 2: GREEN - 최소 구현
+
+**목표**: 테스트를 통과시키는 최소 코드 작성
+
+**구현 파일**:
+
+- `src/shared/components/ui/NavigationButton/NavigationButton.tsx`
+- `src/shared/components/ui/NavigationButton/NavigationButton.module.css`
+- `src/shared/components/ui/NavigationButton/index.ts`
+
+**컴포넌트 명세**:
+
+```typescript
+interface NavigationButtonProps {
+  direction: 'left' | 'right';
+  disabled?: boolean;
+  loading?: boolean;
+  onClick: () => void;
+  'aria-label': string;
+  'data-testid'?: string;
+}
+```
+
+**통합 지점**:
+
+- `SolidGalleryShell.solid.tsx`에 좌우 버튼 추가
+- `galleryState.signals.ts`의 `navigatePrevious`, `navigateNext` 연결
+
+**Acceptance Criteria**:
+
+- ✅ 15개 테스트 모두 GREEN (통과)
+- ✅ 번들 크기 증가 < 2KB
+- ✅ `npm run typecheck` 통과
+- ✅ `npm run lint:fix` 통과
+- ✅ `npm run build:dev` 성공
+
+---
+
+#### Phase 3: REFACTOR - 키보드 가이드 오버레이
+
+**목표**: 기존 `KeyboardHelpOverlay` 컴포넌트 활용 및 개선
+
+**작업 내용**:
+
+1. **테스트 추가** (`test/features/gallery/keyboard-help-enhancement.test.tsx`):
+   - '?' 키로 오버레이 토글 (5개 테스트)
+   - Escape 키로 닫기
+   - 오버레이 표시 중 갤러리 네비게이션 정상 동작
+   - 다국어 지원 (LanguageService 연동)
+
+2. **개선 사항**:
+   - 좌우 네비게이션 버튼 단축키 추가 표시
+   - 디자인 토큰 적용 검증
+   - 접근성 개선 (ARIA 속성)
+
+3. **통합**:
+   - `SolidGalleryShell`에 '?' 키 핸들러 추가
+   - `KeyboardHelpOverlay` 트리거 연결
+
+**Acceptance Criteria**:
+
+- ✅ 기존 + 신규 테스트 모두 GREEN
+- ✅ 번들 크기 증가 < 1KB (기존 컴포넌트 재사용)
+- ✅ 다국어 지원 (ko, en, ja)
+- ✅ 접근성 검증 (WCAG 2.1 Level AA)
+
+---
+
+#### 품질 게이트
+
+**각 Phase 완료 시**:
+
+```pwsh
+npm run typecheck
+npm run lint:fix
+npm test -- -t "GALLERY-NAV-ENHANCEMENT"
+npm run build:dev
+```
+
+**최종 검증**:
+
+- [ ] 모든 Phase 테스트 GREEN
+- [ ] 타입 체크 0 에러
+- [ ] 린트 규칙 준수
+- [ ] 번들 크기 증가 < 3KB
+- [ ] 접근성 기준 충족
+- [ ] PC 전용 입력만 사용
+- [ ] 디자인 토큰 100% 적용
+- [ ] 다국어 지원 완료
 
 ---
 
