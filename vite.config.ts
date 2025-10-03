@@ -1,8 +1,8 @@
 /**
- * Vite configuration (TypeScript + strict typing)
- * - Dev: sourcemap + unminified
- * - Prod: terser + drop console
- * - Output: single userscript file
+ * Vite 설정 (Userscript 단일 파일 빌드)
+ * - Dev: 소스맵 주석 포함, 미압축
+ * - Prod: Terser 압축, 소스맵 별도 파일
+ * - 산출물: `dist/xcom-enhanced-gallery[.dev].user.js` + `.map`
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
@@ -10,12 +10,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Types & Utils
+// ─────────────────────────────────────────────────────────────────────────────
 interface BuildFlags {
   mode: string;
   isDev: boolean;
   isProd: boolean;
   sourcemap: boolean;
 }
+
 interface PackageJsonMeta {
   version: string;
   description?: string;
@@ -23,41 +27,29 @@ interface PackageJsonMeta {
 
 function resolveFlags(mode: string): BuildFlags {
   const isDev = mode === 'development';
-  // R5: dev/prod 모두 소스맵 생성 (추적/디버그용). prod는 validate-build에서 무결성 가드.
   return { mode, isDev, isProd: !isDev, sourcemap: true };
 }
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-const solidExtensions: (string | [string, { typescript?: boolean }])[] = [
-  '.solid.tsx',
-  '.solid.ts',
-  '.solid.jsx',
-  '.solid.js',
-];
+
+// SolidJS 컴파일 대상 패턴
 const solidIncludePatterns = [
   '**/*.solid.{ts,tsx,js,jsx}',
-  '**/*.solid.*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/Toolbar/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/ToolbarButton/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/ToolbarWithSettings/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/MediaCounter/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/Button/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/Icon/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/SettingsModal/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/Toast/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/ModalShell/**/*.{ts,tsx,js,jsx}',
-  '**/shared/components/ui/primitive/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/ui/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/isolation/**/*.{ts,tsx,js,jsx}',
   '**/features/gallery/components/KeyboardHelpOverlay/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/LazyIcon.{ts,tsx,js,jsx}',
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Userscript 헤더
+// ─────────────────────────────────────────────────────────────────────────────
 function userscriptHeader(flags: BuildFlags): string {
   const version = flags.isDev ? `${pkg.version}-dev.${Date.now()}` : pkg.version;
   const devSuffix = flags.isDev ? ' (Dev)' : '';
-  // Minimal inlined SVG icon (data URI) to keep single-file guarantee
   const iconDataUri =
     'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%23000%22/%3E%3Cpath d=%22M7 8h4.5l3 4.5L17.5 8H22l-5.5 8L22 24h-4.5l-3-4.5L11.5 24H7l5.5-8L7 8z%22 fill=%22%23fff%22/%3E%3C/svg%3E';
+
   return (
     `// ==UserScript==\n` +
     `// @name         X.com Enhanced Gallery${devSuffix}\n` +
@@ -93,6 +85,9 @@ function userscriptHeader(flags: BuildFlags): string {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Userscript 플러그인 (단일 파일 생성 + CSS 주입)
+// ─────────────────────────────────────────────────────────────────────────────
 function userscriptPlugin(flags: BuildFlags): Plugin {
   return {
     name: 'xeg-userscript-wrapper',
@@ -103,26 +98,20 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       let entryChunk: OutputChunk | undefined;
       let sourcemapContent = '';
 
-      // 모든 번들 항목을 처리
+      // 번들에서 CSS, 소스맵, 엔트리 청크 추출
       for (const fileName of Object.keys(bundle)) {
         const item = bundle[fileName];
         if (!item) continue;
 
         if (fileName.endsWith('.css') && item.type === 'asset') {
           const asset = item as OutputAsset;
-          if (typeof asset.source === 'string') {
-            cssConcat += asset.source;
-          }
+          if (typeof asset.source === 'string') cssConcat += asset.source;
         } else if (fileName.endsWith('.js.map') && item.type === 'asset') {
           const asset = item as OutputAsset;
-          if (typeof asset.source === 'string') {
-            sourcemapContent = asset.source;
-          }
+          if (typeof asset.source === 'string') sourcemapContent = asset.source;
         } else if (item.type === 'chunk' && item.isEntry) {
           entryChunk = item as OutputChunk;
-          if (entryChunk.map && flags.isDev) {
-            sourcemapContent = JSON.stringify(entryChunk.map);
-          }
+          if (entryChunk.map && flags.isDev) sourcemapContent = JSON.stringify(entryChunk.map);
         }
       }
 
@@ -131,15 +120,34 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         return;
       }
 
-      const styleInjector = cssConcat.trim().length
-        ? `// expose bundled css for ShadowRoot consumers\n(function(){try{\n  // 1) 글로벌 변수로 CSS 텍스트 노출 (Shadow DOM 주입용)\n  try{ (globalThis||window).XEG_CSS_TEXT = ${JSON.stringify(cssConcat)}; }catch(_){}\n  // 2) 문서 head 주입 gating: XEG_STYLE_HEAD_MODE ∈ {'auto','off','defer'}\n  var __mode = (globalThis && (globalThis).XEG_STYLE_HEAD_MODE) || 'auto';\n  function __injectHead(){\n    try{\n      var existing=document.getElementById('xeg-styles');\n      if(existing){ return; }\n      var s=document.createElement('style');\n      s.id='xeg-styles';\n      s.textContent=(globalThis&&globalThis.XEG_CSS_TEXT)||${JSON.stringify(cssConcat)};\n      (document.head||document.documentElement).appendChild(s);\n    }catch(err){ console.error('[XEG] style head inject fail', err); }\n  }\n  if(__mode==='auto'){\n    __injectHead();\n  }else if(__mode==='defer'){\n    var raf=(globalThis && globalThis.requestAnimationFrame) ? globalThis.requestAnimationFrame : null;\n    if(raf){ raf(function(){ __injectHead(); }); } else { setTimeout(function(){ __injectHead(); }, 0); }\n  }else if(__mode==='off'){\n    // no-op: ShadowRoot 경로만 사용\n  }\n}catch(e){console.error('[XEG] style inject wrapper fail',e);}})();\n`
+      // CSS 주입 코드 생성 (XEG_CSS_TEXT + head 주입 gating)
+      const styleInjector = cssConcat.trim()
+        ? `(function(){try{
+  (globalThis||window).XEG_CSS_TEXT=${JSON.stringify(cssConcat)};
+  var __mode=(globalThis&&globalThis.XEG_STYLE_HEAD_MODE)||'auto';
+  function __injectHead(){
+    try{
+      if(document.getElementById('xeg-styles'))return;
+      var s=document.createElement('style');
+      s.id='xeg-styles';
+      s.textContent=(globalThis&&globalThis.XEG_CSS_TEXT)||${JSON.stringify(cssConcat)};
+      (document.head||document.documentElement).appendChild(s);
+    }catch(err){console.error('[XEG] style head inject fail',err);}
+  }
+  if(__mode==='auto'){__injectHead();}
+  else if(__mode==='defer'){
+    var raf=globalThis.requestAnimationFrame||null;
+    if(raf){raf(function(){__injectHead();});}else{setTimeout(function(){__injectHead();},0);}
+  }
+}catch(e){console.error('[XEG] style inject wrapper fail',e);}})();\n`
         : '';
 
-      // 내부 엔트리 코드에 남아 있을 수 있는 sourceMappingURL 주석 제거
+      // 엔트리 코드 정리 (기존 sourceMappingURL 제거)
       const cleanedCode = entryChunk.code
         .replace(/\/\/#\s*sourceMappingURL\s*=.*$/gm, '')
         .replace(/\/\*#\s*sourceMappingURL\s*=.*?\*\//gs, '');
 
+      // 최종 Userscript 생성
       const wrapped = `${userscriptHeader(flags)}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
@@ -147,15 +155,14 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
 
       fs.writeFileSync(path.join(outDir, finalName), wrapped, 'utf8');
 
-      // dev/prod 모두 sourcemap 파일 기록 (R5)
+      // 소스맵 파일 생성 (dev/prod 공통)
       if (sourcemapContent) {
         const mapName = flags.isDev
           ? 'xcom-enhanced-gallery.dev.user.js.map'
           : 'xcom-enhanced-gallery.user.js.map';
         fs.writeFileSync(path.join(outDir, mapName), sourcemapContent, 'utf8');
 
-        // DEV only: 파일 끝에 sourceMappingURL 주석 추가 (디버깅 편의)
-        // PROD: 주석 없음 (404 노이즈 방지, 별도 .map 파일만 유지)
+        // Dev only: 파일 끝에 sourceMappingURL 주석 추가
         if (flags.isDev) {
           try {
             const suffix = `\n//# sourceMappingURL=${mapName}`;
@@ -165,34 +172,33 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
           }
         }
         console.log(
-          `✅ Sourcemap 생성: ${mapName}${flags.isDev ? ' (comment added)' : ' (no comment)'}`
+          `✅ Sourcemap: ${mapName}${flags.isDev ? ' (comment added)' : ' (no comment)'}`
         );
       }
 
-      console.log(`✅ Userscript 생성: ${finalName}`);
+      console.log(`✅ Userscript: ${finalName}`);
 
-      // assets 폴더와 그 내용, 기타 불필요한 파일들을 삭제
+      // 불필요한 파일 정리 (assets 폴더 등)
       const assetsDir = path.join(outDir, 'assets');
-      if (fs.existsSync(assetsDir)) {
-        fs.rmSync(assetsDir, { recursive: true, force: true });
-      }
+      if (fs.existsSync(assetsDir)) fs.rmSync(assetsDir, { recursive: true, force: true });
 
-      // 불필요한 파일들 정리
       const unnecessaryFiles = ['_cleanup_marker'];
       for (const file of unnecessaryFiles) {
         const filePath = path.join(outDir, file);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       }
 
-      console.log('🗑️ 불필요한 파일들 정리 완료');
+      console.log('🗑️ 불필요한 파일 정리 완료');
     },
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Vite 설정
+// ─────────────────────────────────────────────────────────────────────────────
 export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
+
   const config: UserConfig = {
     plugins: [
       solidPlugin({
@@ -200,7 +206,7 @@ export default defineConfig(({ mode }) => {
         dev: flags.isDev,
         hot: flags.isDev,
         ssr: false,
-        extensions: solidExtensions,
+        extensions: ['.solid.tsx', '.solid.ts', '.solid.jsx', '.solid.js'],
         solid: {
           generate: 'dom',
           hydratable: false,
@@ -208,6 +214,7 @@ export default defineConfig(({ mode }) => {
       }),
       userscriptPlugin(flags),
     ],
+
     define: {
       __DEV__: flags.isDev,
       __PROD__: flags.isProd,
@@ -216,6 +223,7 @@ export default defineConfig(({ mode }) => {
       'process.env': '{}',
       global: 'globalThis',
     },
+
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), 'src'),
@@ -230,20 +238,21 @@ export default defineConfig(({ mode }) => {
       },
       dedupe: ['solid-js', 'solid-js/web', 'solid-js/store'],
     },
+
     css: {
       modules: {
-        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]', // Epic BUNDLE-OPTIMIZATION: 8 → 6 for smaller CSS
+        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]',
         localsConvention: 'camelCaseOnly',
         hashPrefix: 'xeg',
       },
       postcss: './postcss.config.js',
     },
+
     build: {
       target: 'es2020',
       outDir: 'dist',
-      emptyOutDir: flags.isDev, // dev 빌드 시에만 정리, prod는 추가
+      emptyOutDir: flags.isDev,
       cssCodeSplit: false,
-      // Inline all assets to favor single-file userscript policy
       assetsInlineLimit: Number.MAX_SAFE_INTEGER,
       sourcemap: flags.sourcemap,
       minify: flags.isProd ? 'terser' : false,
@@ -253,10 +262,8 @@ export default defineConfig(({ mode }) => {
         output: {
           format: 'iife',
           name: 'XEG',
-          inlineDynamicImports: true, // 단일 번들 보장
-          // R5: 소스맵에 sourcesContent 포함
+          inlineDynamicImports: true,
           sourcemapExcludeSources: false,
-          // 실제 산출 파일명은 plugin에서 생성
         },
         treeshake: flags.isProd,
       },
@@ -265,23 +272,26 @@ export default defineConfig(({ mode }) => {
           compress: {
             drop_console: true,
             drop_debugger: true,
-            passes: 3, // Epic BUNDLE-OPTIMIZATION: 2 → 3 passes for better compression
-            pure_funcs: ['logger.debug', 'logger.trace'], // Remove debug logging calls
-            pure_getters: true, // Assume getters have no side effects
-            unsafe: true, // Aggressive optimizations (requires testing)
+            passes: 3,
+            pure_funcs: ['logger.debug', 'logger.trace'],
+            pure_getters: true,
+            unsafe: true,
           },
           format: { comments: false },
           mangle: { toplevel: true },
         },
       }),
     },
+
     optimizeDeps: {
       include: ['solid-js', 'solid-js/web'],
       force: flags.isDev,
     },
+
     server: { port: 3000, hmr: flags.isDev },
     logLevel: flags.isDev ? 'info' : 'warn',
     clearScreen: false,
   };
+
   return config;
 });

@@ -1,214 +1,185 @@
 # xcom-enhanced-gallery • AGENTS.md
 
-문서 전반(아키텍처/코딩 가이드/벤더 API/TDD 계획)의 단일 진입점은
-`docs/README.md`입니다. 이 파일은 실행/스크립트/CI/배포 중심으로 역할을
-담당합니다.
+> 개발자를 위한 빠른 온보딩 가이드 — 로컬/CI 동일 워크플로
 
-개발자가 빠르게 온보딩하고, 로컬/CI에서 동일한 워크플로로 작업할 수 있도록
-정리한 프로젝트 실행 가이드입니다.
+문서 참조: 아키텍처 → `docs/ARCHITECTURE.md`, 코딩 규칙 →
+`docs/CODING_GUIDELINES.md`, 벤더 API → `docs/vendors-safe-api.md`
+
+---
 
 ## 개발 환경
 
-- 패키지 매니저: npm (단일 패키지)
-- Node.js: 20 권장 (CI는 20/22에서 검증)
-- 번들러: Vite 7, 프레임워크: Preact 10, 테스트: Vitest 3 + JSDOM
-- 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
-- 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,
-  PC 전용 이벤트, TDD 우선)
-
-설치
+- **스택**: TypeScript(strict) + Vite 7 + SolidJS 1.9 + Vitest 3(JSDOM)
+- **패키지 매니저**: npm (단일 패키지)
+- **Node.js**: 20 권장 (CI는 20/22 검증)
+- **경로 별칭**: `@`, `@features`, `@shared`, `@assets`
 
 ```pwsh
 npm ci
 ```
 
-Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
+---
 
-## 자주 쓰는 스크립트
+## 핵심 스크립트
 
-- 타입 체크: `npm run typecheck`
-- 린트(수정 포함): `npm run lint` / `npm run lint:fix`
-- 포맷: `npm run format`
-- 테스트:
-  - 전체: `npm test` (vitest run)
-- 빌드:
-  - 개발: `npm run build:dev`
-  - 프로덕션: `npm run build:prod`
-  - 전체(클린 포함): `npm run build` → dev와 prod 연속 빌드 후 `postbuild` 검증
-    실행
-- 종합 검증: `npm run validate` → typecheck + lint:fix + format
-
-의존성 그래프/검증 (dependency-cruiser)
-
-- JSON/그래프/검증 일괄: `npm run deps:all`
-- 산출물 위치: `docs/dependency-graph.(json|dot|svg)`
-
-## 테스트 가이드 (Vitest)
-
-- 환경: JSDOM, 기본 URL `https://x.com`, 격리 실행, `test/setup.ts` 자동 로드
-- 실행 타임아웃: 테스트 20s, 훅 25s (장시간 I/O 모킹 시 유의)
-- 테스트 포함 경로: `test/**/*.{test,spec}.{ts,tsx}`
-- 일부 리팩터링 테스트는 임시 제외됨(워크플로 파일 참고)
-
-유용한 실행 패턴
+### 개발
 
 ```pwsh
-# 특정 테스트 이름으로 필터
-npm run test -- -t "<test name>"
-
-# 특정 파일만 실행
-npx vitest run test/path/to/file.test.ts
+npm run typecheck         # 타입 체크
+npm run lint:fix          # 린트 + 자동 수정
+npm run format            # Prettier 포맷
+npm run validate          # 종합 검증 (typecheck + lint + format)
 ```
 
-주의
-
-- 변경 시 반드시 관련 테스트를 추가/수정하세요. 커버리지 리포트는 `coverage/`에
-  생성됩니다.
-- PC 전용 입력/디자인 토큰/벤더 getter 규칙 위반은 테스트로 RED가 됩니다.
-- **SolidJS 네이티브 패턴** 준수: 신규 코드는 `createSignal()` 함수 호출 방식
-  사용, `createGlobalSignal` 레거시 패턴 사용 금지 (Epic SOLID-NATIVE-001 참조)
-
-## 빌드/검증 플로우
-
-로컬
+### 테스트
 
 ```pwsh
-# 타입/린트/포맷 일괄
-npm run validate
-
-# 개발/프로덕션 빌드 및 산출물 검증
-npm run build:dev
-npm run build:prod
-node ./scripts/validate-build.js
+npm test                  # 전체 테스트
+npm run test -- -t "..."  # 특정 테스트 필터
+npx vitest run <file>     # 특정 파일만 실행
 ```
 
-CI
+- 환경: JSDOM, 기본 URL `https://x.com`, `test/setup.ts` 자동 로드
+- 타임아웃: 테스트 20s, 훅 25s
 
-- 워크플로: `.github/workflows/ci.yml`
-- Node 20/22 매트릭스에서 다음을 수행:
-  - typecheck → lint → prettier check → 테스트(20에서는 커버리지)
-  - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
-  - 커버리지/빌드 아티팩트 업로드
-
-## CodeQL 워크플로
-
-- CodeQL 자동화 스크립트: `scripts/run-codeql.mjs`
-  - 미리보기: `npm run codeql:dry-run`
-  - 전체 분석: `npm run codeql:scan`
-- 실행 결과(루트 디렉터리 생성)
-  - `codeql-db/`: 최신 데이터베이스 (옵션 `--keep-db`로 유지 가능)
-  - `codeql-results.sarif`: SARIF 2.1.0 호환 결과 파일
-
-## @connect 헤더 동기화 (Epic CONNECT_SYNC_AUTOMATION)
-
-코드베이스에서 사용되는 외부 호스트를 추출하여 `vite.config.ts`의 @connect
-헤더와 동기화하는 도구입니다.
+### 빌드
 
 ```pwsh
-# 분석만 (현재 상태 확인)
-npm run sync:connect
-
-# 자동 수정 (실제 적용)
-npm run sync:connect:fix
-
-# 미리보기 (dry-run)
-npm run sync:connect:dry-run
+npm run build:dev         # 개발 빌드 (소스맵 주석 포함)
+npm run build:prod        # 프로덕션 빌드 (최적화)
+npm run build             # dev + prod 연속 빌드 + 검증
 ```
 
-**스캔 대상:**
+산출물:
 
-- `src/constants.ts`: DOMAINS 배열
-- `src/shared/utils/url-safety.ts`: TWITTER_MEDIA_HOSTS 상수
-- `src/**/*.{ts,tsx}`: URL 리터럴 및 호스트 문자열
+- dev: `dist/xcom-enhanced-gallery.dev.user.js` + `.map`
+- prod: `dist/xcom-enhanced-gallery.user.js` + `.map`
 
-**목적:**
+---
 
-- 코드에서 사용하는 호스트가 @connect 헤더에 누락되는 것을 방지
-- 불필요한 @connect 헤더 정리
-- 릴리즈 시 퍼미션 오류 예방
-  - `codeql-results-summary.csv`: 규칙·위치·메시지 요약 테이블
-  - `codeql-improvement-plan.md`: 심각도별 체크리스트 형태의 후속 계획
-- 추가 팩 / 커스텀 쿼리
-  - `--packs=<pack1,pack2>`로 CodeQL 공식 팩을 더 실행할 수 있습니다.
-  - `codeql-custom-queries-javascript` 디렉터리가 존재하면 자동으로 포함됩니다.
-- CLI가 설치되어 있지 않으면 친절한 설치 안내 메시지를 제공합니다.
+## CI/CD
 
-보안/라이선스
+### CI (`ci.yml`)
 
-- 워크플로: `.github/workflows/security.yml`
-- `npm audit`와 라이선스 보고서 업로드를 자동화
-- CodeQL CLI를 다운로드해 `npm run codeql:scan`을 실행하고 SARIF/요약/개선
-  계획을 업로드하며 GitHub Code Scanning으로 전송
+Node 20/22 매트릭스:
 
-릴리즈
+1. typecheck → lint → prettier check
+2. 테스트 (Node 20에서 커버리지)
+3. dev/prod 빌드 + 산출물 검증 (`scripts/validate-build.js`)
+4. 커버리지/아티팩트 업로드
 
-- 워크플로: `.github/workflows/release.yml`
-- master로의 버전 변경(또는 수동 트리거) 시 프로덕션 빌드, 산출물 검증, GitHub
-  Release 생성
-- 릴리즈 산출물: `xcom-enhanced-gallery.user.js`, `checksums.txt`,
-  `metadata.json`, CodeQL 리포트(요약/개선 계획/SARIF)
+### 보안 (`security.yml`)
+
+- `npm audit` + 라이선스 보고서
+- CodeQL 스캔 (SARIF + 요약 + 개선 계획 업로드)
+
+```pwsh
+npm run codeql:scan       # 로컬 CodeQL 분석
+npm run codeql:dry-run    # 미리보기
+```
+
+### 릴리즈 (`release.yml`)
+
+master 브랜치 버전 변경 시:
+
+1. 프로덕션 빌드 + 검증
+2. GitHub Release 생성
+3. 산출물: `xcom-enhanced-gallery.user.js`, `checksums.txt`, `metadata.json`,
+   CodeQL 리포트
+
+---
+
+## 도구
+
+### 의존성 그래프
+
+```pwsh
+npm run deps:all          # JSON/DOT/SVG 생성 + 룰 검증
+```
+
+산출물: `docs/dependency-graph.(json|dot|svg|html)`
+
+### @connect 헤더 동기화
+
+코드에서 사용하는 외부 호스트를 `vite.config.ts`의 @connect 헤더와 자동 동기화:
+
+```pwsh
+npm run sync:connect      # 분석만
+npm run sync:connect:fix  # 자동 수정
+```
+
+스캔 대상: `src/constants.ts`, `src/shared/utils/url-safety.ts`,
+`src/**/*.{ts,tsx}`
+
+---
+
+## Git Hooks (Husky)
+
+필수 훅: `.husky/pre-commit`, `.husky/commit-msg`, `.husky/pre-push`
+
+### 빠른 체크 (PowerShell)
+
+```pwsh
+Test-Path .husky\pre-commit
+Test-Path .husky\commit-msg
+Test-Path .husky\pre-push
+```
+
+### 복구
+
+```pwsh
+npm ci
+npm run prepare          # 또는 npx husky
+node ./scripts/setup-dev.js
+```
+
+### 커밋 메시지 규칙
+
+Conventional Commits 형식: `type(scope): description`
+
+```pwsh
+"feat: message" | npx --no-install commitlint --config commitlint.config.cjs
+```
+
+### Pre-push 테스트
+
+`TEST_SKIP_BUILD=true` 플래그로 빌드 생략. 번들/문서 최신화가 필요하면 별도로
+`npm run build` 실행.
+
+---
+
+## Copilot 프롬프트 전처리 정책
+
+자동화 작업은 실행 전에 요청 의도를 분석하고 최적화된 프롬프트를 도출합니다.
+
+**핵심 프로세스**:
+
+1. Intent 분석: 목표/요구사항/Acceptance 추출
+2. 최적화 프롬프트: 목표/성공 지표(GREEN) 정리
+3. 계획/추적: Todo 작성 → in-progress → 완료 즉시 체크
+4. 컨텍스트 수집: 큰 블록 위주, 중복 방지
+5. 실행: TDD(RED→GREEN→REFACTOR), PC 전용 입력, 벤더 getter만
+6. 리포팅: 3~5회 도구 호출마다 요약, 종료 전 품질 게이트 명시
+
+상세: `.github/copilot-instructions.md` "프롬프트 전처리 규칙" 섹션
+
+---
 
 ## PR 규칙
 
 - 제목: `[xcom-enhanced-gallery] <Title>`
 - 머지 전 필수: `npm run typecheck` / `npm run lint` / `npm test`
-- 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
-  따릅니다.
-
-## Copilot 프롬프트 전처리 정책 (요약)
-
-자동화/보조 작업은 실행 전에 요청 의도를 분석하고, 최적화된 프롬프트를 도출한 뒤
-진행합니다. 세부 체크리스트는 `.github/copilot-instructions.md`의 "프롬프트
-전처리 규칙" 섹션이 단일 소스입니다. 아래는 실행 요약입니다.
-
-- Intent 분석: 목표 1-3문장 요약, 요구/제약/Acceptance 추출.
-  - 참고 문서: `docs/CODING_GUIDELINES.md`, `docs/vendors-safe-api.md`,
-    `AGENTS.md`
-- 최적화 프롬프트: 목표/불변 Acceptance/성공 지표(GREEN: 타입·린트·테스트·빌드)
-  정리, 저리스크 가정 1-2개만 선언 후 즉시 검증.
-- 계획/추적: Todo 작성 → 첫 항목 in-progress → 완료 즉시 체크(배치 금지).
-- 컨텍스트 수집: 큰 의미 블록 위주로 읽고 중복 호출 방지. 외부 호출/비밀 유출
-  금지. Userscript API는 어댑터 경유.
-- 실행: TDD(RED→GREEN→REFACTOR), PC 전용 입력만, 벤더 접근은 getter만.
-- 리포팅/게이트: 3~5회 도구 호출마다 요약 보고, 종료 전
-  Build/Lint/Typecheck/Tests TRIAGE 및 요구사항 커버리지 명시.
-
-## 커밋/푸시 전 Husky 훅 검증
-
-로컬에서 커밋 또는 푸시하기 전에 다음을 확인하세요. 코파일럿 자동화도 동일
-정책을 따릅니다.
-
-- 필수 훅 존재 여부
-  - `.husky/pre-commit`, `.husky/commit-msg`, `.husky/pre-push`
-  - PowerShell 빠른 체크:
-    - `Test-Path .husky\pre-commit`
-    - `Test-Path .husky\commit-msg`
-    - `Test-Path .husky\pre-push`
-- 복구/설치
-  - `npm ci` 후 `npm run prepare` (또는 `npx husky`)
-  - 일괄 점검: `node ./scripts/setup-dev.js`
-- 사전 검증(선택 사항)
-  - 커밋 메시지 규칙 확인:
-    `"feat: message" | npx --no-install commitlint --config commitlint.config.cjs`
-  - 푸시 전 타입/테스트: `npm run typecheck` · `npm test`
-- 실패 시 조치
-  - 훅 우회 금지. 훅 오류 메시지를 기준으로 린트/타입/테스트/커밋 메시지를 수정
-  - Git 전역 설정으로 `core.hooksPath`가 다른 경로로 지정되어 있지 않은지 확인
-- Pre-push 테스트는 `TEST_SKIP_BUILD=true` 플래그와 함께 실행되어
-  `scripts/pretest-hook.mjs` 의 빌드가 생략됩니다. 푸시 전에 번들/문서 산출물을
-  최신화해야 한다면 별도로 `npm run build`(또는 `npm run build:dev|prod`)를 수동
-  실행하세요.
-
-## 트러블슈팅 팁
-
-- 훅/테스트 타임아웃: 테스트가 느릴 경우 `-t`로 범위를 좁히거나
-  네트워크/타이머를 모킹하세요.
-- Git hooks 미작동: 최초 설치 후 `npm ci`가 Husky 훅을 준비합니다(로컬 Git이
-  필요).
-- 경로 별칭 오류: TS/Vite/테스트 설정의 alias가 일치하는지
-  확인하세요(`vitest.config.ts`의 `resolve.alias`).
+- 스타일/토큰/접근성: `docs/CODING_GUIDELINES.md` + 테스트 스위트 기준
 
 ---
 
-추가 세부 가이드는 `docs/` 폴더와 각 스크립트(`scripts/`)를 참고하세요. 변경
-시에는 관련 테스트와 문서를 함께 업데이트해 주세요.
+## 트러블슈팅
+
+- **훅/테스트 타임아웃**: `-t`로 범위 좁히기, 네트워크/타이머 모킹
+- **Git hooks 미작동**: `npm ci` 후 훅 자동 설정 (로컬 Git 필요)
+- **경로 별칭 오류**: TS/Vite/테스트 설정의 alias 일치 확인 (`vitest.config.ts`)
+
+---
+
+추가 세부 가이드: `docs/` 폴더 및 `scripts/` 참고. 변경 시 관련 테스트와 문서
+함께 업데이트하세요.
