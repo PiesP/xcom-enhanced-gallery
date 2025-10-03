@@ -134,7 +134,7 @@ describe('Phase B RED: 툴바 자동 숨김 기능', () => {
       expect(result.isVisible).toBe(true);
     });
 
-    it('initialAutoHideDelay가 undefined이면 기본값(2000ms)을 사용해야 한다', () => {
+    it('initialAutoHideDelay가 undefined이면 기본값(5000ms)을 사용해야 한다', () => {
       const result = useToolbarPositionBased({
         toolbarElement: mockToolbar,
         hoverZoneElement: mockHoverZone,
@@ -145,11 +145,11 @@ describe('Phase B RED: 툴바 자동 숨김 기능', () => {
       // 초기 상태: 표시됨
       expect(result.isVisible).toBe(true);
 
-      // 기본값 2초 경과
-      vi.advanceTimersByTime(2000);
+      // 기본값 5초 경과 (Phase 1에서 2s → 5s로 변경)
+      vi.advanceTimersByTime(5000);
 
-      // RED: 아직 구현 안 됨
-      expect(result.isVisible).toBe(false); // 실패할 것임
+      // 자동 숨김 구현됨
+      expect(result.isVisible).toBe(false);
     });
   });
 

@@ -454,7 +454,7 @@ export const DEFAULT_SETTINGS = {
     maxConcurrentDownloads: 3,
     autoZip: false,
     folderStructure: 'flat' as const,
-    showProgressToast: false,
+    showProgressToast: true,
   },
   tokens: {
     autoRefresh: true,
