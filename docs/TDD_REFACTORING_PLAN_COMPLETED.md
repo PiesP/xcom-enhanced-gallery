@@ -1,5 +1,90 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 2 완료 ✅ (진행 상황 가시성
+개선)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: 갤러리 진행 상황을 시각적으로 명확히 표시하고, 대량 다운로드 진행률
+  피드백을 기본적으로 제공하여 사용자 안심감 향상
+- **배경**:
+  - 전체 미디어 수 대비 현재 위치 파악이 어려움 (MediaCounter 숫자만으로 직관성
+    부족)
+  - 대량 다운로드 시 진행 상황을 알 수 없음 (기본값 비활성화 상태)
+  - MediaCounter의 크기 및 대비가 접근성 기준 충족 필요
+- **구현 내용**:
+  - **TDD RED → GREEN**: Phase 2-1 (미니 진행률 바 검증)
+    - 테스트: `test/shared/components/ui/media-counter.progress-bar.test.tsx`
+      (13/13 GREEN)
+    - 발견: `MediaCounter.tsx`에 진행률 바가 이미 구현되어 있음 (showProgress
+      prop 기본 true)
+    - 검증 항목:
+      - 기본 렌더링 (showProgress=true 기본값)
+      - showProgress=false 시 숨김
+      - ARIA 속성 (role="progressbar", aria-valuenow, aria-valuemin/max,
+        aria-label)
+      - 진행률 계산 (50%, 100%, 10% 등)
+      - 경계 조건 (>100%, <0% 시 Math.min/max로 클램핑)
+      - 레이아웃 통합 (stacked/inline 모드)
+  - **TDD RED → GREEN**: Phase 2-2 (다운로드 진행률 토스트 기본 활성화)
+    - 테스트: `test/settings/download-progress-toast-default.test.ts` (7/7
+      GREEN)
+    - 변경: `src/constants.ts` (line 456): `showProgressToast: false` → `true`
+    - 검증 항목:
+      - DEFAULT_SETTINGS.download 섹션 존재
+      - showProgressToast가 boolean 타입
+      - 기본값 true
+      - 다른 download 설정 보존 (method, includeTweetInfo 등)
+      - 타입 안전성 (`as const` 어서션)
+  - **TDD RED → GREEN**: Phase 2-3 (MediaCounter 접근성 강화)
+    - 테스트: `test/shared/components/ui/media-counter.accessibility.test.tsx`
+      (14/14 GREEN)
+    - 검증 항목:
+      - `aria-live="polite"` 속성 (동적 업데이트 알림)
+      - `role="group"` 속성 (시맨틱 그룹핑)
+      - 폰트 크기 디자인 토큰 사용 (`--xeg-font-size-md` 이상)
+      - 텍스트 색상 토큰 (`--xeg-color-text-primary`)
+      - 배경/테두리 대비 토큰 (`--xeg-color-neutral-200`, `--xeg-color-primary`)
+      - WCAG AA 대비 기준 충족 (4.5:1 이상)
+      - 진행률 바 ARIA 속성 완전성
+      - 스크린 리더 호환성 (aria-label 제공)
+  - **테스트 업데이트 (회귀 방지)**:
+    - `test/features/gallery/toolbar-auto-hide.test.ts` (line 137): 기본 지연
+      2000ms → 5000ms (Phase 1 변경 반영)
+    - `test/integration/shared/components/ui/settings-modal.persistence.integration.test.tsx`:
+      초기 기본값 false → true 반영
+- **Acceptance Criteria 달성**:
+  - ✅ 미니 진행률 바가 전체 미디어 수 대비 현재 위치를 시각적으로 표시 (이미
+    구현됨)
+  - ✅ 진행률 바가 스크롤/네비게이션과 실시간 동기화됨 (currentIndex prop 기반)
+  - ✅ `download.showProgressToast` 기본값이 `true`로 변경됨
+  - ✅ MediaCounter 폰트 크기 및 대비가 WCAG AA 기준 충족 (디자인 토큰 사용)
+  - ✅ 회귀 방지: 기존 다운로드 서비스 테스트 모두 PASS
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (34 new tests GREEN: 13+7+14, 2 existing tests updated)
+  - ✅ Build (dev + prod success, 산출물 검증 통과)
+- **예상 효과**:
+  - 전체 갤러리 중 현재 위치 직관적 파악 (진행률 바)
+  - 대량 다운로드 시 즉시 피드백 제공 (안심감 향상)
+  - 접근성 향상 (스크린 리더, 고대비 모드 지원)
+- **변경 파일**:
+  - 수정: `src/constants.ts` (line 456: showProgressToast false → true)
+  - 신규: `test/shared/components/ui/media-counter.progress-bar.test.tsx` (13
+    tests)
+  - 신규: `test/settings/download-progress-toast-default.test.ts` (7 tests)
+  - 신규: `test/shared/components/ui/media-counter.accessibility.test.tsx` (14
+    tests)
+  - 수정: `test/features/gallery/toolbar-auto-hide.test.ts` (기본 지연 5000ms)
+  - 수정:
+    `test/integration/shared/components/ui/settings-modal.persistence.integration.test.tsx`
+    (기본값 true)
+  - 커밋: 0ac517ce "feat(ui): complete Phase 2 progress visibility"
+  - 머지: 8c7c7eaa "feat(ui): merge Phase 2 progress visibility enhancements"
+
+---
+
 2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-3 완료 ✅ (키보드 단축키
 힌트 강화)
 

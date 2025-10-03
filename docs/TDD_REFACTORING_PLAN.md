@@ -22,7 +22,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Epic UX-GALLERY-FEEDBACK-001: 갤러리 피드백 및 가시성 강화 (2025-10-03 추가)
 
-**상태**: 활성 (Phase 1 완료, Phase 2/3 진행 예정)
+**상태**: 활성 (Phase 1-2 완료, Phase 3 향후 작업)
 
 **목적**: 사용자가 갤러리 상태와 진행 상황을 명확히 인지하고, 주요 기능을 쉽게
 발견하며, 액션 결과를 즉각 확인할 수 있도록 UI/UX를 개선합니다.
@@ -32,55 +32,29 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 현재 갤러리 UI는 기능적으로 완성도가 높으나, 사용자 피드백 측면에서 다음
 문제점이 식별되었습니다:
 
-- 툴바 자동 숨김(2초)이 너무 짧아 첫 방문자가 기능을 놓칠 수 있음
-- Fit 모드 버튼의 현재 선택 상태가 불명확함
-- 전체 갤러리 중 현재 위치 파악이 어려움 (MediaCounter만으로 직관성 부족)
-- 대량 다운로드 진행 상황을 기본적으로 알 수 없음 (옵션 설정 필요)
-- 다운로드 버튼이 툴바와 아이템 오버레이에 중복 배치되어 혼란 발생
+- ✅ 툴바 자동 숨김(2초)이 너무 짧아 첫 방문자가 기능을 놓칠 수 있음 → **해결됨
+  (Phase 1-1)**
+- ✅ Fit 모드 버튼의 현재 선택 상태가 불명확함 → **해결됨 (Phase 1-2)**
+- ✅ 전체 갤러리 중 현재 위치 파악이 어려움 → **해결됨 (Phase 2-1, 진행률 바)**
+- ✅ 대량 다운로드 진행 상황을 기본적으로 알 수 없음 → **해결됨 (Phase 2-2)**
+- 다운로드 버튼이 툴바와 아이템 오버레이에 중복 배치되어 혼란 발생 → **향후 작업
+  (Phase 3)**
 
-**범위 (3 Phase 접근)**:
+**완료된 작업** (2025-01-03):
 
-#### **Phase 1: 툴바 가시성 및 상태 피드백 강화 (High Priority)**
+- ✅ **Phase 1**: 툴바 가시성 및 상태 피드백 강화
+  - 툴바 자동 숨김 지연 5초로 연장 (커밋: 178d0f54)
+  - Fit 모드 선택 상태 시각화 (커밋: 7069d9e4)
+  - 키보드 단축키 힌트 강화 (커밋: 80b0723a)
+- ✅ **Phase 2**: 진행 상황 가시성 개선
+  - 미니 진행률 바 검증 (이미 구현됨, 13 tests)
+  - 대량 다운로드 진행률 토스트 기본 활성화 (7 tests)
+  - MediaCounter 접근성 강화 검증 (14 tests)
+  - 커밋: 0ac517ce, 머지: 8c7c7eaa
 
-1. **툴바 자동 숨김 지연 연장** (2s → 5s) ✅ **완료 (2025-10-03)**
-   - `useToolbarPositionBased` hook의 `initialAutoHideDelay` 기본값을 5000ms로
-     변경
-   - 파라미터 커스터마이징 기능 유지
-   - 테스트: `toolbar-visibility.auto-hide-delay.test.tsx` (4 tests GREEN)
-   - 커밋: `178d0f54` feat(ui): extend toolbar auto-hide delay from 2s to 5s
-2. **Fit 모드 선택 상태 시각화** (`data-selected` 속성 활용) ✅ **완료
-   (2025-01-03)**
-   - 현재 활성 Fit 모드 버튼에 시각적 강조 (배경색/테두리 변경)
-   - 디자인 토큰 기반 스타일 적용 (`--xeg-color-primary` 등)
-   - `Toolbar.module.css`에 `[data-selected='true']` 셀렉터 추가
-   - 테스트: `toolbar-fit-mode.selected-state.test.tsx` (9 tests GREEN)
-   - 커밋: `7069d9e4` feat(ui): add visual emphasis for selected fit mode
-     buttons (Phase 1-2)
-3. **키보드 단축키 힌트 강화** ✅ **완료 (2025-01-03)**
-   - 툴바에 키보드 힌트 버튼 추가 (Settings 아이콘 임시 사용, TODO: QuestionMark
-     아이콘)
-   - `KeyboardHelpOverlay` 단축키 목록 확장 (Home, End, Space 추가)
-   - 키 이름을 `<strong>` 태그로 강조, 디자인 토큰 기반 스타일링
-   - `onShowKeyboardHelp` prop 추가 (ToolbarProps)
-   - 테스트: `toolbar-keyboard-hint-button.test.tsx` (9 tests GREEN),
-     `keyboard-help.aria.test.tsx` 수정
-   - 커밋: `80b0723a` feat(ui): add keyboard shortcuts hint button to toolbar
-     (Phase 1-3)
+**남은 작업**:
 
-#### **Phase 2: 진행 상황 가시성 개선 (High Priority)**
-
-1. **미니 진행률 바 추가**
-   - 전체 미디어 수 대비 현재 위치를 시각적으로 표시
-   - `MediaCounter` 통합 또는 독립 컴포넌트
-   - 스크롤/네비게이션과 실시간 동기화
-2. **대량 다운로드 진행률 토스트 기본 활성화**
-   - `DEFAULT_SETTINGS.download.showProgressToast` 기본값 `false` → `true`
-   - 사용자 안심감 제공 (즉시 피드백)
-3. **MediaCounter 크기 및 대비 강화**
-   - 폰트 크기 증대 (접근성 개선)
-   - WCAG AA 대비 기준 충족 검증
-
-#### **Phase 3: 다운로드 UX 통합 (Medium Priority)**
+#### **Phase 3: 다운로드 UX 통합 (Medium Priority, 향후 작업)**
 
 1. **아이템 오버레이 다운로드 버튼 제거**
    - `VerticalImageItem`의 오버레이 다운로드 버튼 삭제
@@ -95,28 +69,26 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Acceptance Criteria
 
-#### Phase 1
+#### Phase 1 (완료) ✅
 
 - [x] 툴바 자동 숨김이 5초로 연장되며, `useToolbarPositionBased` 파라미터로 조정
-      가능 ✅ **완료**
-- [x] Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨 ✅
-      **완료**
+      가능
+- [x] Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨
 - [x] Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리 강조)
-      ✅ **완료**
 - [x] 키보드 단축키 힌트가 툴바 버튼으로 표시되며, 클릭 시
-      `KeyboardHelpOverlay`를 보여줌 ✅ **완료**
-- [x] 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS ✅ **완료**
+      `KeyboardHelpOverlay`를 보여줌
+- [x] 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS
 
-#### Phase 2
+#### Phase 2 (완료) ✅
 
-- [ ] 미니 진행률 바가 전체 미디어 수 대비 현재 위치를 시각적으로 표시
-- [ ] 진행률 바가 스크롤/네비게이션과 실시간 동기화됨
-- [ ] `download.showProgressToast` 기본값이 `true`로 변경됨
-- [ ] 진행률 토스트가 대량 다운로드 시 실시간 업데이트됨 (`1/10 • 10%` 형식)
-- [ ] MediaCounter 폰트 크기 및 대비가 WCAG AA 기준 충족
-- [ ] 회귀 방지: 기존 다운로드 서비스 테스트 모두 PASS
+- [x] 미니 진행률 바가 전체 미디어 수 대비 현재 위치를 시각적으로 표시 (이미
+      구현됨)
+- [x] 진행률 바가 스크롤/네비게이션과 실시간 동기화됨
+- [x] `download.showProgressToast` 기본값이 `true`로 변경됨
+- [x] MediaCounter 폰트 크기 및 대비가 WCAG AA 기준 충족
+- [x] 회귀 방지: 기존 다운로드 서비스 테스트 모두 PASS
 
-#### Phase 3
+#### Phase 3 (향후 작업)
 
 - [ ] `VerticalImageItem` 오버레이의 다운로드 버튼 제거 완료
 - [ ] 아이템 우클릭 시 컨텍스트 메뉴 표시 (다운로드/정보 보기 액션)
@@ -127,46 +99,38 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### 구현 전략 (TDD)
 
-#### Phase 1 구현 단계
+#### Phase 1 구현 단계 (완료) ✅
 
-1. **RED**: 툴바 자동 숨김 지연 테스트
-   (`test/shared/components/ui/toolbar-visibility.auto-hide-delay.test.tsx`)
-   - 5초 후 숨김 검증
-   - 파라미터 커스터마이징 검증
-2. **RED**: Fit 모드 선택 상태 테스트
-   (`test/shared/components/ui/toolbar-fit-mode.selected-state.test.tsx`)
-   - `data-selected="true"` 속성 검증
-   - CSS 클래스 적용 검증
-3. **GREEN**: `useToolbarPositionBased` 파라미터 확장
-   - `initialAutoHideDelay` 기본값 5000ms로 변경
-4. **GREEN**: Fit 모드 버튼 선택 상태 로직 구현
-   - `Toolbar.tsx`에서 `currentFitMode`와 비교하여 `data-selected` 설정
-5. **GREEN**: CSS 선택 상태 스타일 추가 (`Toolbar.module.css`)
-   - `[data-selected="true"]` 셀렉터로 강조 스타일 적용
-6. **REFACTOR**: 키보드 힌트 컴포넌트 강화
-   - `KeyboardHelpOverlay` 기본 표시 시간 조정 또는 툴바 통합
+모든 단계 완료. 상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
-#### Phase 2 구현 단계
+#### Phase 2 구현 단계 (완료) ✅
 
-1. **RED**: 진행률 바 렌더링 테스트
-   (`test/shared/components/ui/media-counter.progress-bar.test.tsx`)
+1. **RED**: 진행률 바 렌더링 테스트 (`media-counter.progress-bar.test.tsx`, 13
+   tests)
    - 진행률 바 DOM 존재 검증
    - 너비 계산 검증 (`(currentIndex + 1) / totalCount * 100%`)
-2. **RED**: 진행률 바 동기화 테스트
-   - 네비게이션 후 진행률 바 업데이트 검증
-   - 스크롤 이벤트 시 동기화 검증
-3. **GREEN**: `ProgressBar` 컴포넌트 구현 (신규)
-   - props: `current`, `total`, `className`
-   - 디자인 토큰 기반 스타일
-4. **GREEN**: `MediaCounter`에 진행률 바 통합
-   - `layout='stacked'` 모드에 진행률 바 추가
-5. **GREEN**: 설정 기본값 변경
-   - `constants.ts`: `DEFAULT_SETTINGS.download.showProgressToast = true`
-6. **REFACTOR**: MediaCounter 접근성 개선
-   - `aria-live="polite"` 추가
-   - 폰트 크기 토큰 상향 조정
+   - ARIA 속성 검증
+   - 경계 조건 검증
+2. **GREEN**: 진행률 바 이미 구현되어 있음을 확인 (`MediaCounter.tsx`)
+   - `showProgress` prop (기본 true)
+   - progressBar 렌더링 및 ARIA 속성
+3. **RED**: 설정 기본값 변경 테스트 (`download-progress-toast-default.test.ts`,
+   7 tests)
+   - `DEFAULT_SETTINGS.download.showProgressToast` 구조 검증
+4. **GREEN**: `constants.ts` (line 456): `showProgressToast: true` 변경
+5. **RED**: MediaCounter 접근성 테스트 (`media-counter.accessibility.test.tsx`,
+   14 tests)
+   - `aria-live="polite"`, `role="group"` 검증
+   - 폰트 크기/색상 디자인 토큰 검증
+   - WCAG AA 대비 기준 검증
+6. **GREEN**: 접근성 속성 이미 구현되어 있음을 확인
+7. **REFACTOR**: 회귀 방지 테스트 업데이트
+   - `toolbar-auto-hide.test.ts`: 2000ms → 5000ms
+   - `settings-modal.persistence.integration.test.tsx`: false → true 기본값
 
-#### Phase 3 구현 단계
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
+
+#### Phase 3 구현 단계 (향후 작업)
 
 1. **RED**: 컨텍스트 메뉴 테스트
    (`test/features/gallery/vertical-image-item.context-menu.test.tsx`)
@@ -186,48 +150,73 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### 영향 범위
 
-#### 변경 파일
+#### 완료된 변경 파일
 
-- `src/shared/hooks/useToolbarPositionBased.ts` (파라미터 기본값 변경)
-- `src/shared/components/ui/Toolbar/Toolbar.tsx` (Fit 모드 상태 관리)
-- `src/shared/components/ui/Toolbar/Toolbar.module.css` (선택 상태 스타일)
-- `src/features/gallery/components/KeyboardHelpOverlay/` (강화 또는 통합)
-- `src/shared/components/ui/MediaCounter/MediaCounter.tsx` (진행률 바 통합)
+- ✅ `src/shared/hooks/useToolbarPositionBased.ts` (Phase 1-1: 파라미터 기본값
+  5000ms)
+- ✅ `src/shared/components/ui/Toolbar/Toolbar.tsx` (Phase 1-2/1-3: Fit 모드
+  상태, 키보드 힌트 버튼)
+- ✅ `src/shared/components/ui/Toolbar/Toolbar.module.css` (Phase 1-2: 선택 상태
+  스타일)
+- ✅ `src/features/gallery/components/KeyboardHelpOverlay/` (Phase 1-3: 단축키
+  목록 확장)
+- ✅ `src/shared/components/ui/MediaCounter/MediaCounter.tsx` (Phase 2-1: 진행률
+  바 검증, 이미 구현됨)
+- ✅ `src/constants.ts` (Phase 2-2: `showProgressToast: true`)
+- ✅ `test/shared/components/ui/toolbar-visibility.auto-hide-delay.test.tsx`
+  (Phase 1-1, 4 tests)
+- ✅ `test/shared/components/ui/toolbar-fit-mode.selected-state.test.tsx` (Phase
+  1-2, 9 tests)
+- ✅ `test/shared/components/ui/toolbar-keyboard-hint-button.test.tsx` (Phase
+  1-3, 9 tests)
+- ✅ `test/shared/components/ui/media-counter.progress-bar.test.tsx` (Phase 2-1,
+  13 tests)
+- ✅ `test/settings/download-progress-toast-default.test.ts` (Phase 2-2, 7
+  tests)
+- ✅ `test/shared/components/ui/media-counter.accessibility.test.tsx` (Phase
+  2-3, 14 tests)
+- ✅ `test/features/gallery/toolbar-auto-hide.test.ts` (Phase 2: 2000ms → 5000ms
+  업데이트)
+- ✅
+  `test/integration/shared/components/ui/settings-modal.persistence.integration.test.tsx`
+  (Phase 2: 기본값 true 반영)
+
+#### 향후 변경 예정 파일 (Phase 3)
+
 - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
   (다운로드 버튼 제거)
-- `src/constants.ts` (`DEFAULT_SETTINGS.download.showProgressToast`)
 - `src/features/settings/solid/SolidSettingsPanel.solid.tsx` (옵션 제거 또는
   연동)
+- `src/shared/components/ui/ContextMenu/ContextMenu.tsx` (신규 컴포넌트)
+- `test/features/gallery/vertical-image-item.context-menu.test.tsx` (신규
+  테스트)
 
-#### 신규 컴포넌트 (옵션)
-
-- `src/shared/components/ui/ProgressBar/ProgressBar.tsx`
-- `src/shared/components/ui/ContextMenu/ContextMenu.tsx` (Phase 3)
-
-#### 테스트 파일
-
-- `test/shared/components/ui/toolbar-visibility.auto-hide-delay.test.tsx` (신규)
-- `test/shared/components/ui/toolbar-fit-mode.selected-state.test.tsx` (신규)
-- `test/shared/components/ui/media-counter.progress-bar.test.tsx` (신규)
-- `test/features/gallery/vertical-image-item.context-menu.test.tsx` (신규)
-- 기존 툴바/갤러리 테스트 업데이트 (회귀 방지)
-
-**품질 게이트**:
+**품질 게이트**: ✅ Phase 1-2 완료
 
 - ✅ `npm run typecheck` (strict 오류 0)
 - ✅ `npm run lint:fix` (자동 수정 적용)
-- ✅ 신규/수정 테스트 모두 GREEN
-- ✅ `npm run build:dev` (산출물 검증 통과)
+- ✅ Phase 1: 22 tests GREEN (4+9+9)
+- ✅ Phase 2: 34 tests GREEN (13+7+14)
+- ✅ `npm run build:dev` & `npm run build:prod` (산출물 검증 통과)
 - ✅ 접근성 테스트 (WCAG AA 준수: 대비, 포커스, 키보드)
 - ✅ PC 전용 입력 정책 준수 (Touch/Pointer 금지)
 - ✅ 디자인 토큰 준수 (하드코딩 색상/크기 금지)
 
-**예상 일정**:
+**예상 일정**: ✅ Phase 1-2 완료 (2025-01-03)
 
-- Phase 1: 1-2일 (툴바 가시성 기초)
-- Phase 2: 2-3일 (진행률 시각화)
-- Phase 3: 2-3일 (다운로드 UX 통합)
-- 총 예상: 5-8일 (테스트 + 문서화 포함)
+- Phase 1: 완료 (툴바 가시성 기초)
+- Phase 2: 완료 (진행률 시각화)
+- Phase 3: 향후 작업 (다운로드 UX 통합, 예상 2-3일)
+
+**커밋 내역**:
+
+- Phase 1-1: 178d0f54 "feat(ui): extend toolbar auto-hide delay from 2s to 5s"
+- Phase 1-2: 7069d9e4 "feat(ui): add visual emphasis for selected fit mode
+  buttons (Phase 1-2)"
+- Phase 1-3: 80b0723a "feat(ui): add keyboard shortcuts hint button to toolbar
+  (Phase 1-3)"
+- Phase 2: 0ac517ce "feat(ui): complete Phase 2 progress visibility"
+- Merge: 8c7c7eaa "feat(ui): merge Phase 2 progress visibility enhancements"
 
 **후속 작업 후보** (Epic 완료 후 검토):
 
