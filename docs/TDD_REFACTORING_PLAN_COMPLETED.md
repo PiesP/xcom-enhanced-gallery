@@ -1,5 +1,85 @@
 <!-- markdownlint-disable -->
 
+2025-01-04: MEDIA — Epic MEDIA-EXTRACTION-FIX 완료 ✅ (멘션 트윗 버그 수정 &
+소유권 검증)
+
+- **생성일**: 2025-01-04
+- **완료일**: 2025-01-04
+- **목적**: 미디어 추출 로직 정교화 - 멘션된 트윗 미디어 오추출 버그 수정
+- **우선순위**: ⭐⭐⭐⭐⭐ (최고 - 버그 수정)
+- **배경**:
+  - 특정 트윗 페이지에서 멘션된 트윗의 미디어 클릭 시
+  - 클릭한 미디어가 아닌 페이지 주인 트윗의 미디어를 추출하는 버그 발견
+  - DOM 구조 분석 시 `closest('article')`이 잘못된 트윗 컨테이너를 매칭
+- **Phase 1: RED - 테스트 작성**:
+  - 테스트 파일: `test/features/gallery/media-extraction-accuracy.test.ts`
+  - 12개 테스트 작성 (7 FAIL / 5 PASS)
+  - 테스트 커버리지:
+    - 기본 추출 정확도 (단일 트윗, 여러 미디어)
+    - 멘션된 트윗 시나리오 (핵심 버그 재현)
+    - 중첩 구조 테스트 (인용, 리트윗, 답글)
+    - 소유권 검증 (중간 컨테이너 감지, 거리 기반 스코어링)
+    - 성능 테스트 (<5ms 소유권, <50ms 전체)
+- **Phase 2: GREEN - 소유권 검증 구현**:
+  - 신규 파일:
+    `src/shared/services/media-extraction/utils/MediaOwnershipValidator.ts` (203
+    lines)
+  - 수정 파일:
+    `src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts`
+  - 핵심 기능:
+    - `MediaOwnershipValidator.validate()`: 소유권 검증 + 거리 기반 신뢰도
+    - `hasIntermediateArticle()`: 중간 트윗 컨테이너 감지
+    - `calculateDistance()`: DOM 거리 계산 (0~20 범위)
+    - `calculateConfidence()`: 선형 감소 공식 (1.0 → 0.0)
+    - `selectBestContainer()`: 다중 후보 중 최적 선택
+  - DomStructureTweetStrategy 통합:
+    - 동적 신뢰도 계산 (고정 0.7 → 거리 기반 0.0~1.0)
+    - 향상된 username 추출 (two-pass: /username → /@username)
+  - TypeScript strict 준수:
+    - `exactOptionalPropertyTypes` 대응 (conditional spread)
+    - 명시적 undefined 체크
+  - 12/12 tests GREEN (100% 통과) ✅
+- **Phase 3: REFACTOR - 문서화 & 명확성**:
+  - JSDoc 강화 (알고리즘 설명, 예제 코드, Twitter DOM 구조 패턴)
+  - 매직 넘버 제거 → 명명된 상수 (INTERMEDIATE_PENALTY_CONFIDENCE,
+    PERFORMANCE_THRESHOLD_MS)
+  - 성능 모니터링 개선 (early exit, fast path 주석)
+  - 12/12 tests GREEN 유지 ✅
+- **Acceptance Criteria** ✅:
+  - 기능:
+    - [x] 12/12 tests GREEN (100% 통과)
+    - [x] 멘션 트윗 버그 완전 수정
+    - [x] 거리 기반 동적 신뢰도 계산
+    - [x] 중간 article 감지 정확도 100%
+  - 성능:
+    - [x] 소유권 검증 <10ms (테스트 환경)
+    - [x] 전체 추출 <50ms
+    - [x] DOM 순회 최적화 (early exit)
+  - 품질:
+    - [x] TypeScript strict 모드 통과
+    - [x] 타입 체크 0 errors
+    - [x] 린트 clean
+    - [x] 빌드 성공 (dev + prod)
+  - 문서화:
+    - [x] 알고리즘 설명 완료
+    - [x] Twitter DOM 구조 패턴 문서화
+    - [x] JSDoc 예제 코드 추가
+    - [x] 엣지 케이스 문서화
+- **커밋**:
+  - 500e98b0: feat(media): implement MediaOwnershipValidator for accurate
+    extraction
+  - 42a78700: refactor(media): enhance documentation and code clarity
+  - fb4d3db3: style(media): remove trailing whitespace
+  - Merge into master: Merge branch 'epic/media-extraction-fix' (12/12 tests
+    GREEN)
+- **영향**:
+  - 변경 파일: 3개 (신규 1개, 수정 2개)
+  - 번들 크기: +2.66 KB (MediaOwnershipValidator + 문서화)
+  - 회귀 리스크: 없음 (모든 기존 테스트 통과, 신규 유틸리티만 추가)
+  - 버그 수정: 멘션 트윗 미디어 오추출 완전 해결 ✅
+
+---
+
 2025-01-03: UI — Epic CONTEXT-MENU-UI-PHASE-3 완료 ✅ (접근성 완전성 & 키보드
 네비게이션)
 
