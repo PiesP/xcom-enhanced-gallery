@@ -1,5 +1,78 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UI — Epic CONTEXT-MENU-UI 완료 ✅ (커스텀 컨텍스트 메뉴 컴포넌트)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: 네이티브 브라우저 컨텍스트 메뉴를 커스텀 SolidJS 컴포넌트로 대체하여
+  브랜드 일관성, 접근성, UX 통일성 향상
+- **배경**:
+  - 현재: 네이티브 contextmenu 이벤트만 사용, 브라우저 기본 UI 표시
+  - 문제점: 스타일링 불가, 브랜드 통일성 부족, 접근성 제어 한계
+  - 기회: 커스텀 컴포넌트로 디자인 토큰 적용, ARIA 완전 제어, 확장 가능한 액션
+- **솔루션**: 커스텀 컨텍스트 메뉴 컴포넌트 (PC 전용, SolidJS 네이티브 API)
+- **완료된 Phase 요약**:
+  - **Phase 1: RED** - 18개 테스트 작성 및 RED 확인 ✅
+    - test/components/context-menu/context-menu.test.tsx (18 tests)
+    - 렌더링/표시숨김 (3), 위치 계산 (3), 액션 항목 (3), PC 전용 입력 (3),
+      접근성 (3), 키보드 네비게이션 (3)
+    - 커밋: a2f38f65 (Phase 1 RED - 18 tests 작성)
+  - **Phase 2: GREEN** - 기본 기능 구현 (12/18 passing) ✅
+    - 구현 파일:
+      - `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` - 메인
+        컴포넌트 (getSolidCore/Web 사용)
+      - `src/shared/components/ui/ContextMenu/ContextMenu.module.css` - 디자인
+        토큰 스타일
+      - `src/shared/components/ui/ContextMenu/types.ts` - TypeScript 인터페이스
+      - `src/shared/utils/position-calculator.ts` - viewport 경계 처리
+    - 기능: 기본 렌더링, show/hide 로직, 액션 클릭 처리, 외부 클릭 감지 (100ms
+      지연), 기본 키보드 지원 (Escape/Arrow/Enter)
+    - 테스트: 12/18 GREEN (렌더링 3/3, 위치 3/3, 액션 3/3, PC입력 3/3, 접근성
+      0/3, 키보드 0/3)
+    - 커밋: 37e7e3d1 (Phase 2 GREEN - 12/18 tests 통과)
+  - **Phase 3: REFACTOR** - 미착수 ⏸️
+    - 남은 6개 테스트: 접근성 완전성 (role="menuitem" 개별 항목, aria-label 동적
+      설정), 키보드 포커스 관리 (Arrow 키 포커스 이동, Enter 키 실행)
+    - 향후 개선 항목으로 백로그 이관
+- **Acceptance Criteria (부분 충족)** 🟡:
+  - 기능:
+    - [x] ContextMenu 컴포넌트 생성 (SolidJS)
+    - [x] show/hide 로직 구현
+    - [x] viewport 경계 위치 조정
+    - [x] 액션 클릭 처리
+    - [x] 외부 클릭 감지 (100ms 지연)
+  - UX:
+    - [x] PC 전용 입력 (contextmenu 이벤트만)
+    - [x] 기본 키보드 지원 (Escape)
+    - [ ] 완전한 키보드 네비게이션 (Arrow 키 포커스 관리) → 향후 개선
+  - 접근성:
+    - [x] role="menu" (컨테이너)
+    - [ ] role="menuitem" (개별 항목) → 향후 개선
+    - [ ] aria-label 동적 설정 → 향후 개선
+  - 품질:
+    - [x] 12/18 tests GREEN (기능적 베이스라인)
+    - [x] 타입/린트 오류 0
+    - [x] 빌드 성공 (dev + prod)
+    - [x] 디자인 토큰만 사용
+- **영향 범위**:
+  - 신규 파일: 4개
+    - `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` (133 lines)
+    - `src/shared/components/ui/ContextMenu/ContextMenu.module.css` (57 lines)
+    - `src/shared/components/ui/ContextMenu/types.ts` (24 lines)
+    - `src/shared/utils/position-calculator.ts` (54 lines)
+  - 테스트 파일: 1개
+    - `test/components/context-menu/context-menu.test.tsx` (462 lines, 18 tests,
+      12 passing)
+  - 번들 크기: 457.71 KB (기존 대비 변화 없음, 아직 통합 전)
+- **후속 작업 (백로그)**: Phase 3 완성
+  - [ ] 접근성 완전성: role="menuitem" 개별 항목 추가, aria-label 동적 설정
+  - [ ] 키보드 네비게이션: Arrow Up/Down 포커스 관리, Enter 키 실행, Tab 트래핑
+  - [ ] 고급 위치 조정: 스크롤 위치 고려, 다중 모니터 지원
+  - [ ] 액션 확장: 정보 보기, 공유(클립보드), 아이콘 추가
+  - [ ] 성능 최적화: createMemo() 활용, 이벤트 리스너 최적화
+
+---
+
 2025-01-03: UX — Epic DOWNLOAD-TOGGLE-TOOLBAR 완료 ✅ (진행률 토스트 토글 툴바
 통합)
 
