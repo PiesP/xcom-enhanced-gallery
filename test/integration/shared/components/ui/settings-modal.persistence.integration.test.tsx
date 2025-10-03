@@ -49,10 +49,12 @@ describe('SettingsModal – persists download.showProgressToast', () => {
 
     const input = document.getElementById('download-progress-toast') as any;
     expect(input).toBeTruthy();
-    expect(input.checked).toBe(false);
-
-    fireEvent.click(input);
+    // Phase 2-2에서 기본값이 true로 변경됨
     expect(input.checked).toBe(true);
+
+    // false로 토글
+    fireEvent.click(input);
+    expect(input.checked).toBe(false);
 
     // ensure persisted in storage (GM first, fallback to localStorage)
     const us = getUserscript();
@@ -60,7 +62,7 @@ describe('SettingsModal – persists download.showProgressToast', () => {
     const raw = gmRaw ?? (globalThis as any).localStorage.getItem('xeg-app-settings');
     expect(raw).toBeTruthy();
     const parsed = JSON.parse(raw);
-    expect(parsed?.download?.showProgressToast).toBe(true);
+    expect(parsed?.download?.showProgressToast).toBe(false);
 
     // re-render fresh component (simulating reopening)
     cleanup();
@@ -70,7 +72,7 @@ describe('SettingsModal – persists download.showProgressToast', () => {
 
     render(<SettingsModal {...baseProps} />);
     const input2 = document.getElementById('download-progress-toast') as any;
-    expect(input2.checked).toBe(true);
+    expect(input2.checked).toBe(false);
 
     view.unmount();
   });
