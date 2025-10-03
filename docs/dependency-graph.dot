@@ -433,7 +433,6 @@ strict digraph "dependency-cruiser output"{
     "src/shared/state/app-state.ts" -> "src/shared/state/signals/download.signals.ts"
     "src/shared/state/app-state.ts" -> "src/shared/state/signals/gallery.signals.ts"
     "src/shared/state/app-state.ts" -> "src/shared/state/signals/toolbar.signals.ts"
-    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/state" {label="state" "src/shared/state/createGlobalSignal.ts" [label=<createGlobalSignal.ts> tooltip="createGlobalSignal.ts" URL="src/shared/state/createGlobalSignal.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/state" {label="state" "src/shared/state/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/shared/state/index.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     "src/shared/state/index.ts" -> "src/shared/state/app-state.ts" [arrowhead="inv"]
     "src/shared/state/index.ts" -> "src/shared/state/signals/download.signals.ts" [arrowhead="inv"]

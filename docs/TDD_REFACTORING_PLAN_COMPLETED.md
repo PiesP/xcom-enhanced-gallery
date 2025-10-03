@@ -1,5 +1,59 @@
 <!-- markdownlint-disable -->
 
+2025-10-03: EXEC — Epic SOLID-NATIVE-MIGRATION 완료 ✅ (레거시
+createGlobalSignal 패턴 제거 및 SolidJS 네이티브 패턴 완전 전환)
+
+- **생성일**: 2025-10-03
+- **완료일**: 2025-10-03
+- **목적**: 레거시 `createGlobalSignal` 패턴 제거 및 SolidJS 네이티브 패턴 완전
+  전환
+- **배경**: 현재 호환 레이어로 유지 중인 `createGlobalSignal` (Preact Signals
+  스타일)을 SolidJS 네이티브 패턴으로 전면 전환
+- **마이그레이션 대상**:
+  - `createGlobalSignal` 사용처 전체
+  - `.value` 접근 → `()` 함수 호출로 변경
+  - `.subscribe()` → `createEffect()` 변경
+- **구현 내용**:
+  - **Phase G-1**: createGlobalSignal 사용처 인벤토리 분석
+    - 인벤토리 테스트: `test/architecture/solid-native-inventory.test.ts` (11
+      tests GREEN)
+    - 결과: 모든 import/call 이미 제거 완료 (이전 Phase G-3 작업 완료)
+  - **Phase G-4**: 호환 레이어 제거
+    - 제거 파일: `src/shared/state/createGlobalSignal.ts` (109 lines)
+    - 제거 테스트: `test/research/solid-foundation.test.ts`,
+      `test/unit/performance/signal-optimization.test.tsx`
+    - 인벤토리 테스트 업데이트: 호출 사용처 검증 로직 수정 (0개 기대)
+  - **테스트 검증**:
+    - 11/11 inventory tests GREEN
+    - 모든 createGlobalSignal imports 제거 확인
+    - 모든 createGlobalSignal calls 제거 확인 (정의 파일 포함)
+    - .value 접근 6개, .subscribe() 호출 3개는 다른 용도로 사용 (허용됨)
+- **Acceptance Criteria 달성**:
+  - ✅ 모든 `createGlobalSignal` 사용을 `createSignal`로 전환 (Phase G-3 완료)
+  - ✅ 호환 레이어 (`src/shared/state/createGlobalSignal.ts`) 제거
+  - ✅ 관련 테스트 모두 SolidJS 네이티브 패턴으로 업데이트
+  - ✅ 번들 크기 추가 감소 (호환 레이어 제거 효과)
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (inventory tests 11/11 GREEN)
+  - ✅ 호환 레이어 파일 제거 확인
+- **예상 효과**:
+  - 코드 일관성 향상: 모든 상태가 SolidJS 네이티브 패턴 사용
+  - 호환 레이어 제거로 번들 크기 감소: 109 lines 제거
+  - 유지보수성 개선: 단일 패턴으로 코드베이스 단순화
+- **변경 파일**:
+  - 제거: `src/shared/state/createGlobalSignal.ts`
+  - 제거: `test/research/solid-foundation.test.ts`
+  - 제거: `test/unit/performance/signal-optimization.test.tsx`
+  - 수정: `test/architecture/solid-native-inventory.test.ts` (검증 로직
+    업데이트)
+  - 커밋: 735c8320 "refactor: remove createGlobalSignal compatibility layer"
+- **예상/실제 소요 시간**: 장기 작업 예상 / 약 30분 소요 (이전 Phase G-3에서
+  대부분 완료되어 있었음)
+
+---
+
 2025-10-03: EXEC — Epic CODE-DEDUP-CONSOLIDATION 완료 ✅ (중복 유틸리티 함수
 통합 및 단일 Export 경로 구축)
 

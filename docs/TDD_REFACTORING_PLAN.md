@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-03 — Epic VENDOR-GETTER-MIGRATION 완료 및 이관
+**최근 업데이트**: 2025-10-03 — Epic SOLID-NATIVE-MIGRATION 완료 및 이관
 
 ---
 
@@ -20,32 +20,26 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic SOLID-NATIVE-MIGRATION (우선순위: 낮음, 장기)
+**현재 활성 Epic 없음** ✅
 
-**생성일**: 2025-10-03 **목적**: 레거시 `createGlobalSignal` 패턴 제거 및
-SolidJS 네이티브 패턴 완전 전환
-
-**배경**: 현재 호환 레이어로 유지 중인 `createGlobalSignal` (Preact Signals
-스타일)을 SolidJS 네이티브 패턴으로 전면 전환
-
-**마이그레이션 대상**:
-
-- `createGlobalSignal` 사용처 전체
-- `.value` 접근 → `()` 함수 호출로 변경
-- `.subscribe()` → `createEffect()` 변경
-
-**Acceptance Criteria**:
-
-1. ✅ 모든 `createGlobalSignal` 사용을 `createSignal`로 전환
-2. ✅ 호환 레이어 (`src/shared/state/createGlobalSignal.ts`) 제거
-3. ✅ 관련 테스트 모두 SolidJS 네이티브 패턴으로 업데이트
-4. ✅ 번들 크기 추가 감소 (호환 레이어 제거 효과)
-
-**예상 효과**: 코드 일관성 향상, 호환 레이어 제거로 번들 크기 감소
+모든 계획된 Epic이 완료되었습니다. 새로운 리팩토링 요구사항이 발생하면 이 섹션에
+추가됩니다.
 
 ---
 
 ## 3. 최근 완료 Epic (참고용)
+
+### Epic SOLID-NATIVE-MIGRATION (완료: 2025-10-03)
+
+**목적**: 레거시 `createGlobalSignal` 패턴 제거 및 SolidJS 네이티브 패턴 완전
+전환
+
+**결과**: ✅ 호환 레이어 제거 완료, 모든 import/call 제거, 11/11 tests PASS,
+번들 크기 감소
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+
+---
 
 ### Epic REF-LITE-V4 (완료: 2025-10-02)
 
