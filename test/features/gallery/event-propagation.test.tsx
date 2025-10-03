@@ -28,12 +28,12 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
   });
 
   describe('다운로드 버튼 이벤트 격리', () => {
-    it('다운로드 버튼 클릭이 아이템 선택을 트리거하지 않아야 한다', () => {
+    it('컨텍스트 메뉴가 아이템 선택을 트리거하지 않아야 한다', () => {
       const solid = getSolidCore();
       const { render } = getSolidWeb();
 
       let itemClickCount = 0;
-      let downloadClickCount = 0;
+      let contextMenuCallCount = 0;
 
       const mediaItem: MediaInfo = {
         url: 'https://pbs.twimg.com/media/test.jpg',
@@ -45,8 +45,8 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
         itemClickCount++;
       };
 
-      const handleDownload = () => {
-        downloadClickCount++;
+      const handleContextMenu = () => {
+        contextMenuCallCount++;
       };
 
       disposer = render(
@@ -58,20 +58,20 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
             isFocused: false,
             fitMode: 'fitContainer',
             onClick: handleItemClick,
-            onDownload: handleDownload,
+            onImageContextMenu: handleContextMenu,
           }),
         container
       );
 
-      // 다운로드 버튼 찾기
-      const downloadButton = container.querySelector('[data-role="download"]');
-      expect(downloadButton).not.toBeNull();
+      // 아이템 컨테이너 찾기
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).not.toBeNull();
 
-      // 다운로드 버튼 클릭
-      downloadButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      // 컨텍스트 메뉴 이벤트 발생
+      itemContainer!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
-      // 다운로드만 호출되고 아이템 클릭은 호출되지 않아야 함
-      expect(downloadClickCount).toBe(1);
+      // 컨텍스트 메뉴만 호출되고 아이템 클릭은 호출되지 않아야 함
+      expect(contextMenuCallCount).toBe(1);
       expect(itemClickCount).toBe(0);
     });
 
@@ -117,7 +117,7 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
   });
 
   describe('data-role을 통한 이벤트 타겟 식별', () => {
-    it('data-role="download" 속성이 다운로드 버튼에 존재해야 한다', () => {
+    it('data-xeg-component 속성이 vertical-image-item 컨테이너에 존재해야 한다', () => {
       const solid = getSolidCore();
       const { render } = getSolidWeb();
 
@@ -135,17 +135,16 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
             isActive: false,
             isFocused: false,
             fitMode: 'fitContainer',
-            onDownload: () => {},
           }),
         container
       );
 
-      const downloadButton = container.querySelector('[data-role="download"]');
-      expect(downloadButton).not.toBeNull();
-      expect(downloadButton!.getAttribute('data-role')).toBe('download');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).not.toBeNull();
+      expect(itemContainer!.getAttribute('data-xeg-component')).toBe('vertical-image-item');
     });
 
-    it('closest 메서드로 다운로드 버튼 여부를 확인할 수 있어야 한다', () => {
+    it('closest 메서드로 아이템 컨테이너 여부를 확인할 수 있어야 한다', () => {
       const solid = getSolidCore();
       const { render } = getSolidWeb();
 
@@ -163,27 +162,55 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
             isActive: false,
             isFocused: false,
             fitMode: 'fitContainer',
-            onDownload: () => {},
           }),
         container
       );
 
-      const downloadButton = container.querySelector('[data-role="download"]') as HTMLElement;
-      expect(downloadButton).not.toBeNull();
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).not.toBeNull();
+      expect(itemContainer!.getAttribute('data-xeg-component')).toBe('vertical-image-item');
+    });
 
-      // closest로 다운로드 버튼을 찾을 수 있어야 함
-      const closestDownload = downloadButton.closest('[data-role="download"]');
-      expect(closestDownload).toBe(downloadButton);
+    it('closest 메서드로 아이템 컨테이너 여부를 확인할 수 있어야 한다', () => {
+      const solid = getSolidCore();
+      const { render } = getSolidWeb();
+
+      const mediaItem: MediaInfo = {
+        url: 'https://pbs.twimg.com/media/test.jpg',
+        type: 'image',
+        filename: 'test.jpg',
+      };
+
+      disposer = render(
+        () =>
+          solid.createComponent(SolidVerticalImageItem, {
+            media: mediaItem,
+            index: 0,
+            isActive: false,
+            isFocused: false,
+            fitMode: 'fitContainer',
+          }),
+        container
+      );
+
+      const itemContainer = container.querySelector(
+        '[data-xeg-component="vertical-image-item"]'
+      ) as HTMLElement;
+      expect(itemContainer).not.toBeNull();
+
+      // closest로 아이템 컨테이너를 찾을 수 있어야 함
+      const closestItem = itemContainer.closest('[data-xeg-component="vertical-image-item"]');
+      expect(closestItem).toBe(itemContainer);
     });
   });
 
   describe('이벤트 버블링 경로', () => {
-    it('다운로드 버튼 클릭 이벤트가 부모 컨테이너로 버블링되지 않아야 한다', () => {
+    it('컨텍스트 메뉴 이벤트가 stopPropagation으로 제어되어야 한다', () => {
       const solid = getSolidCore();
       const { render } = getSolidWeb();
 
       let containerClickCount = 0;
-      let downloadClickCount = 0;
+      let contextMenuCallCount = 0;
 
       const mediaItem: MediaInfo = {
         url: 'https://pbs.twimg.com/media/test.jpg',
@@ -191,8 +218,8 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
         filename: 'test.jpg',
       };
 
-      const handleDownload = () => {
-        downloadClickCount++;
+      const handleContextMenu = () => {
+        contextMenuCallCount++;
       };
 
       disposer = render(
@@ -206,20 +233,20 @@ describe('Epic DOM-EVENT-CLARITY: 이벤트 전파 체계', () => {
             onClick: () => {
               containerClickCount++;
             },
-            onDownload: handleDownload,
+            onImageContextMenu: handleContextMenu,
           }),
         container
       );
 
-      // 다운로드 버튼 찾기
-      const downloadButton = container.querySelector('[data-role="download"]');
-      expect(downloadButton).not.toBeNull();
+      // 아이템 컨테이너 찾기
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).not.toBeNull();
 
-      // 다운로드 버튼 클릭
-      downloadButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      // 컨텍스트 메뉴 이벤트 발생
+      itemContainer!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
-      // 다운로드만 호출되고 컨테이너 클릭은 호출되지 않아야 함
-      expect(downloadClickCount).toBe(1);
+      // 컨텍스트 메뉴만 호출되고 컨테이너 클릭은 호출되지 않아야 함
+      expect(contextMenuCallCount).toBe(1);
       expect(containerClickCount).toBe(0);
     });
   });

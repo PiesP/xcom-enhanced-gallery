@@ -5,7 +5,6 @@
 import type { JSX } from 'solid-js';
 import { getSolidCore } from '@shared/external/vendors';
 import { ComponentStandards } from '@shared/components/ui/StandardProps';
-import { Button } from '@shared/components/ui/Button/Button';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
@@ -99,39 +98,20 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
   };
 
   /**
-   * 이벤트 전파 규칙 (Epic DOM-EVENT-CLARITY):
+   * 이벤트 전파 규칙 (Epic UX-GALLERY-FEEDBACK-001 Phase 3):
    * 1. 컨테이너 클릭 → 아이템 선택 (props.onClick)
-   * 2. data-role="download" 요소 클릭 → 이벤트 격리, 아이템 선택 방지
-   * 3. 컨텍스트 메뉴 → 네이티브 브라우저 메뉴 (props.onImageContextMenu)
-   *
-   * stopPropagation()을 사용하여 다운로드 버튼 클릭이 부모 컨테이너로
-   * 버블링되는 것을 방지합니다. 이를 통해 다운로드 동작만 실행되고
-   * 아이템 선택은 트리거되지 않습니다.
+   * 2. 컨텍스트 메뉴 → 다운로드/정보 보기 액션 제공 (props.onImageContextMenu)
    */
-  const handleDownloadClick = (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation(); // 이벤트 버블링 차단 - 아이템 선택 방지
-    props.onDownload?.();
-  };
-
-  /**
-   * 컨테이너 클릭 핸들러
-   * closest()를 사용하여 클릭 이벤트가 data-role="download" 요소에서
-   * 발생했는지 확인합니다. 다운로드 버튼 클릭은 무시하고, 컨테이너 직접
-   * 클릭만 아이템 선택을 트리거합니다.
-   */
-  const handleContainerClick = (event: MouseEvent) => {
-    // data-role="download" 요소 클릭은 무시 (이미 handleDownloadClick에서 처리됨)
-    if ((event.target as HTMLElement | null)?.closest('[data-role="download"]')) {
-      return;
-    }
+  const handleContainerClick = () => {
     props.onClick?.();
   };
 
   /**
    * 컨텍스트 메뉴 핸들러
-   * 이미지/비디오 우클릭 시 네이티브 브라우저 컨텍스트 메뉴를 허용하고,
-   * 추가 컨텍스트 정보(미디어 정보)를 부모 컴포넌트로 전달합니다.
+   * 컨테이너/이미지/비디오 우클릭 시 컨텍스트 메뉴를 표시하고,
+   * 미디어 정보를 부모 컴포넌트로 전달합니다.
+   *
+   * Phase 3: 다운로드 버튼 제거 후 컨텍스트 메뉴를 통한 다운로드 액션 제공
    */
   const handleContextMenu = (event: MouseEvent) => {
     props.onImageContextMenu?.(event, props.media);
@@ -204,6 +184,7 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
     <div
       class={containerClass()}
       onClick={handleContainerClick}
+      onContextMenu={handleContextMenu}
       data-index={props.index}
       data-xeg-gallery='true'
       data-xeg-gallery-type='item'
@@ -240,7 +221,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
               data-fit-mode={props.fitMode ?? 'unset'}
               onLoad={notifyLoaded}
               onError={handleMediaError}
-              onContextMenu={handleContextMenu}
             />
           }
         >
@@ -254,7 +234,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
             data-fit-mode={props.fitMode ?? 'unset'}
             onLoadedData={notifyLoaded}
             onError={handleMediaError}
-            onContextMenu={handleContextMenu}
           />
         </Show>
 
@@ -270,20 +249,6 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
 
       <div class={styles.overlay} aria-hidden='true'>
         <span class={styles.indexBadge}>{props.index + 1}</span>
-        <Show when={props.onDownload}>
-          <Button
-            variant='icon'
-            size='sm'
-            className={styles.downloadButton ?? ''}
-            data-role='download'
-            aria-label={`Download ${filename()}`}
-            onClick={handleDownloadClick}
-          >
-            <span class={styles.downloadIcon} aria-hidden='true'>
-              ⬇️
-            </span>
-          </Button>
-        </Show>
       </div>
     </div>
   );

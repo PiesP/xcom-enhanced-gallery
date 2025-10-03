@@ -50,8 +50,8 @@ describe('VerticalImageItem Solid bridge', () => {
     expect(onMediaLoad).toHaveBeenCalledWith('https://example.com/media.jpg', 0);
   });
 
-  it('invokes onDownload when download button is clicked', async () => {
-    const onDownload = vi.fn();
+  it('renders media element and forwards context menu events to onImageContextMenu', async () => {
+    const onImageContextMenu = vi.fn();
 
     await act(async () => {
       render(
@@ -64,19 +64,19 @@ describe('VerticalImageItem Solid bridge', () => {
           },
           index: 1,
           isActive: false,
-          onDownload,
+          onImageContextMenu,
         }),
         container
       );
       await Promise.resolve();
     });
 
-    const downloadButton = container.querySelector('[data-role="download"]');
-    expect(downloadButton).not.toBeNull();
+    const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+    expect(itemContainer).not.toBeNull();
 
-    downloadButton!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    itemContainer!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true }));
 
-    expect(onDownload).toHaveBeenCalledTimes(1);
+    expect(onImageContextMenu).toHaveBeenCalledTimes(1);
   });
 
   it('does not render metadata section (data-role="metadata")', async () => {
