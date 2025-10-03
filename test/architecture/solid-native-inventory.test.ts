@@ -162,19 +162,26 @@ describe('SOLID-NATIVE-001 Phase G-1: createGlobalSignal 인벤토리', () => {
 
   describe('2. createGlobalSignal 호출 사용처 식별', () => {
     it('createGlobalSignal()을 호출하는 파일 목록을 수집해야 함', () => {
-      expect(inventory.createGlobalSignalCalls.size).toBeGreaterThan(0);
+      // Phase G-4 완료: 호환 레이어 제거됨, 정의 파일도 제거됨
+      expect(inventory.createGlobalSignalCalls.size).toBe(0);
 
       // 상세 로그 출력
       console.log('\n🔧 createGlobalSignal 호출 사용처:');
-      inventory.createGlobalSignalCalls.forEach((matches, file) => {
-        console.log(`\n  ${file}`);
-        matches.forEach(match => {
-          console.log(`    Line ${match.line}: ${match.content}`);
+      if (inventory.createGlobalSignalCalls.size === 0) {
+        console.log('  ✅ 모든 createGlobalSignal 호출 제거 완료 (정의 파일 포함)');
+      } else {
+        inventory.createGlobalSignalCalls.forEach((matches, file) => {
+          console.log(`\n  ${file}`);
+          matches.forEach(match => {
+            console.log(`    Line ${match.line}: ${match.content}`);
+          });
         });
-      });
+      }
     });
 
     it('각 호출의 타입 파라미터를 기록해야 함', () => {
+      // Phase G-4 완료: 모든 호출이 제거됨
+      expect(inventory.createGlobalSignalCalls.size).toBe(0);
       inventory.createGlobalSignalCalls.forEach((matches, file) => {
         matches.forEach(match => {
           // createGlobalSignal<Type>(...) 형태 검증
