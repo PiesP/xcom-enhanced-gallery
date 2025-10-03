@@ -23,7 +23,37 @@
 
 ### HIGH Priority
 
-(현재 없음)
+READY | CONTEXT-MENU-UI-PHASE-3 | 컨텍스트 메뉴 접근성 & 키보드 네비게이션 완성
+| 접근성 완전 준수, Epic 완전 종료 | S | Phase 2에서 남은 6개 테스트 완료
+
+- **배경**: Epic CONTEXT-MENU-UI Phase 2에서 기능적 베이스라인 달성 (12/18
+  tests), Phase 3 접근성 완전성 남음
+- **목표**:
+  - 각 액션 항목에 `role="menuitem"` 추가
+  - 동적 `aria-label` 설정 (액션별 레이블)
+  - Arrow Up/Down 키로 항목 간 포커스 이동
+  - Enter 키로 포커스된 항목 실행
+  - 포커스 순환 (첫 항목 ↔ 마지막 항목)
+- **가치**:
+  - WCAG 2.1 Level AA 완전 준수
+  - 키보드 전용 사용자 완전 접근 가능
+  - 스크린 리더 완전 지원
+  - Epic CONTEXT-MENU-UI 완전 종료
+- **난이도**: S (구조 완성, 속성/핸들러 추가만)
+- **예상 영향**:
+  - 변경 파일: 1개 (`ContextMenu.solid.tsx`)
+  - 번들 크기: +0.5KB 미만 (포커스 관리 로직)
+  - 회귀 리스크: 매우 낮음 (기존 12 tests 유지)
+- **Acceptance Criteria**:
+  - [x] 18/18 tests GREEN (남은 6개 완료)
+  - [x] ARIA 속성 완전성 (role="menuitem", aria-label)
+  - [x] Arrow Up/Down 키 네비게이션
+  - [x] Enter 키 실행
+  - [x] 포커스 순환 (Tab 트래핑)
+  - [x] 스크린 리더 테스트 통과
+  - [x] 타입/린트 오류 0
+  - [x] 번들 크기 < +1KB
+  - [x] 빌드 성공 (dev + prod)
 
 ### MEDIUM Priority
 
@@ -37,8 +67,15 @@
 
 ## 최근 승격 히스토리
 
+**2025-01-03**: `CONTEXT-MENU-UI-PHASE-3` 승격 → `TDD_REFACTORING_PLAN.md` 활성
+Epic으로 이동
+
+- 선정 이유: 빠른 완료 가능 (S 난이도), Epic 완전 종료, 접근성 완전 준수
+- 남은 작업: 6개 테스트 완료 (role="menuitem", aria-label, Arrow 키 네비게이션)
+- 예상 소요: 1-2일 (구조 완성, 속성/핸들러 추가만)
+
 **2025-10-03**: `CONTEXT-MENU-UI` 승격 → `TDD_REFACTORING_PLAN.md` 활성 Epic으로
-이동
+이동 (Phase 2 완료)
 
 - 선정 이유: 브랜드 일관성 향상, 접근성 개선, 확장성 확보
 - 솔루션: Option A (커스텀 컨텍스트 메뉴 컴포넌트, PC 전용) - Epic 목적 충족, UX
