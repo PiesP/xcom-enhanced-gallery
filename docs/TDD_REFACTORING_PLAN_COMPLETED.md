@@ -1,5 +1,62 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-2 완료 ✅ (Fit 모드 선택
+상태 시각화)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: Fit 모드 버튼 현재 선택 상태를 시각적으로 강조하여 사용자가 현재
+  모드를 명확히 인지할 수 있도록 개선
+- **배경**: Fit 모드 버튼(fitWidth, fitOriginal, fitContainer)의 현재 선택
+  상태가 불명확하여 사용자가 현재 어떤 모드인지 파악하기 어려움
+- **구현 내용**:
+  - 기존 코드 분석 결과: `data-selected` 속성은 이미 `Toolbar.tsx`와
+    `ToolbarButton.tsx`에 구현되어 있음
+    - `Toolbar.tsx` (line 421-424):
+      `selected={effectiveFitMode() === 'original'}` 등
+    - `ToolbarButton.tsx` (line 123):
+      `data-selected={props.selected ? 'true' : undefined}`
+  - CSS 스타일 추가: `Toolbar.module.css`에 `[data-selected='true']` 셀렉터 추가
+    - 배경: `var(--xeg-color-primary-50)` (fallback: `--xeg-color-neutral-100`)
+    - 테두리: `var(--xeg-color-primary)` (2px, fallback:
+      `--xeg-color-neutral-500`)
+    - 색상: `var(--xeg-color-primary)` (fallback: `--xeg-color-text-primary`)
+    - Hover 상태: 배경 `--xeg-color-primary-100`, 테두리
+      `--xeg-color-primary-dark`, 리프트 효과 제거 (`transform: translateY(0)`)
+  - 테스트: `test/shared/components/ui/toolbar-fit-mode.selected-state.test.tsx`
+    (9 tests GREEN)
+    - data-selected 속성 적용 검증 (4 tests)
+    - CSS 타겟팅을 위한 속성 존재 검증 (2 tests)
+    - 회귀 방지 테스트 (3 tests: 키보드 네비게이션, 클릭 핸들러, 네비게이션
+      버튼)
+- **Acceptance Criteria 달성**:
+  - ✅ Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨
+  - ✅ Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리
+    강조)
+  - ✅ 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (9/9 GREEN, toolbar-fit-mode.selected-state.test.tsx)
+  - ✅ Build (dev/prod 검증 통과, pretest-hook 포함)
+- **예상 효과**:
+  - 사용자가 현재 Fit 모드를 즉시 인지 가능 (시각적 강조)
+  - 실수로 같은 모드를 재선택하는 빈도 감소
+  - 디자인 토큰 기반으로 일관된 스타일 유지
+- **변경 파일**:
+  - 수정: `src/shared/components/ui/Toolbar/Toolbar.module.css` (CSS 스타일
+    추가, line ~88-113)
+  - 추가: `test/shared/components/ui/toolbar-fit-mode.selected-state.test.tsx`
+    (신규 테스트)
+  - 커밋: 7069d9e4 "feat(ui): add visual emphasis for selected fit mode buttons
+    (Phase 1-2)"
+- **남은 작업** (Epic UX-GALLERY-FEEDBACK-001 Phase 1-3, Phase 2/3):
+  - Phase 1-3: 키보드 단축키 힌트 강화
+  - Phase 2: 진행 상황 가시성 개선 (진행률 바, MediaCounter 강화)
+  - Phase 3: 다운로드 UX 통합 (컨텍스트 메뉴, 버튼 정리)
+
+---
+
 2025-10-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-1 완료 ✅ (툴바 자동 숨김
 지연 5초 연장)
 

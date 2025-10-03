@@ -48,9 +48,14 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
    - 파라미터 커스터마이징 기능 유지
    - 테스트: `toolbar-visibility.auto-hide-delay.test.tsx` (4 tests GREEN)
    - 커밋: `178d0f54` feat(ui): extend toolbar auto-hide delay from 2s to 5s
-2. **Fit 모드 선택 상태 시각화** (`data-selected` 속성 활용)
+2. **Fit 모드 선택 상태 시각화** (`data-selected` 속성 활용) ✅ **완료
+   (2025-01-03)**
    - 현재 활성 Fit 모드 버튼에 시각적 강조 (배경색/테두리 변경)
    - 디자인 토큰 기반 스타일 적용 (`--xeg-color-primary` 등)
+   - `Toolbar.module.css`에 `[data-selected='true']` 셀렉터 추가
+   - 테스트: `toolbar-fit-mode.selected-state.test.tsx` (9 tests GREEN)
+   - 커밋: `7069d9e4` feat(ui): add visual emphasis for selected fit mode
+     buttons (Phase 1-2)
 3. **키보드 단축키 힌트 추가**
    - 기존 `KeyboardHelpOverlay` 강화 또는 툴바 하단 영구 힌트 추가
    - `?` 키 발견성 개선 (버튼 또는 아이콘 추가)
@@ -87,8 +92,10 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 - [x] 툴바 자동 숨김이 5초로 연장되며, `useToolbarPositionBased` 파라미터로 조정
       가능 ✅ **완료**
-- [ ] Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨
-- [ ] Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리 강조)
+- [x] Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨 ✅
+      **완료**
+- [x] Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리 강조)
+      ✅ **완료**
 - [ ] 키보드 단축키 힌트가 툴바 또는 독립 오버레이로 표시됨
 - [ ] 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS
 
