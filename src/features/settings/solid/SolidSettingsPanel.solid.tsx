@@ -7,7 +7,6 @@ import { getSolidCore } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
-import { getSetting, setSetting } from '@shared/container/settings-access';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 import styles from '@shared/components/ui/SettingsModal/SettingsModal.module.css';
 
@@ -55,21 +54,8 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
     return 'auto';
   };
 
-  const getInitialToastPreference = (): boolean => {
-    try {
-      const value = getSetting<boolean>('download.showProgressToast', false);
-      return Boolean(value);
-    } catch (error) {
-      logger.warn('[SolidSettingsPanel] Failed to read persisted toast preference:', error);
-    }
-    return false;
-  };
-
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(getInitialLanguage());
-  const [showProgressToast, setShowProgressToast] = createSignal<boolean>(
-    getInitialToastPreference()
-  );
 
   const localizedStrings = createMemo(() => {
     currentLanguage();
@@ -79,7 +65,6 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
       closeButton: languageService.getString('settings.close'),
       theme: languageService.getString('settings.theme'),
       language: languageService.getString('settings.language'),
-      downloadToast: languageService.getString('settings.downloadProgressToast'),
       themeOptions: [
         { value: 'auto' as const, label: languageService.getString('settings.themeAuto') },
         { value: 'light' as const, label: languageService.getString('settings.themeLight') },
@@ -149,16 +134,6 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
       logger.warn('[SolidSettingsPanel] Failed to apply language change:', error);
     }
     setCurrentLanguage(value);
-  };
-
-  const handleToastToggle = (event: Event) => {
-    const target = event.target as HTMLInputElement | null;
-    if (!target) return;
-    const checked = Boolean(target.checked);
-    setShowProgressToast(checked);
-    setSetting('download.showProgressToast', checked).catch(error => {
-      logger.warn('[SolidSettingsPanel] Failed to persist toast preference:', error);
-    });
   };
 
   const handleClose = () => {
@@ -240,19 +215,6 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
                 <option value={option.value}>{option.label}</option>
               ))}
             </select>
-          </div>
-          <div class={styles.setting}>
-            <label for='xeg-solid-settings-progress-toast' class={styles.label}>
-              {localizedStrings().downloadToast}
-            </label>
-            <input
-              id='xeg-solid-settings-progress-toast'
-              type='checkbox'
-              class={styles.formControlToggle}
-              checked={showProgressToast()}
-              onChange={handleToastToggle}
-              onInput={handleToastToggle}
-            />
           </div>
         </div>
       </div>
