@@ -203,10 +203,27 @@ export const KeyboardHelpOverlay = (props: KeyboardHelpOverlayProps) => {
             </h2>
             <div id={descId} class={styles.content}>
               <ul class={styles.shortcutList}>
-                <li>ArrowLeft: Previous media</li>
-                <li>ArrowRight: Next media</li>
-                <li>Escape: Close gallery</li>
-                <li>?: Show this help</li>
+                <li>
+                  <strong>←</strong> (ArrowLeft): Previous media
+                </li>
+                <li>
+                  <strong>→</strong> (ArrowRight): Next media
+                </li>
+                <li>
+                  <strong>Home</strong>: First media
+                </li>
+                <li>
+                  <strong>End</strong>: Last media
+                </li>
+                <li>
+                  <strong>Space</strong>: Toggle play/pause (video)
+                </li>
+                <li>
+                  <strong>Esc</strong> (Escape): Close gallery
+                </li>
+                <li>
+                  <strong>?</strong>: Show this help
+                </li>
               </ul>
             </div>
           </div>

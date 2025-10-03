@@ -31,6 +31,7 @@ export interface ToolbarProps {
   onFitWidth?: (event?: Event) => void;
   onFitHeight?: (event?: Event) => void;
   onFitContainer?: (event?: Event) => void;
+  onShowKeyboardHelp?: () => void; // Phase 1-3: Keyboard hint button
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;

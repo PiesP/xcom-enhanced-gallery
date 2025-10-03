@@ -67,6 +67,7 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
       '[data-gallery-element="fit-container"]',
       '[data-gallery-element="download-current"]',
       '[data-gallery-element="download-all"]',
+      '[data-gallery-element="keyboard-help"]',
       '[data-gallery-element="settings"]',
       '[data-gallery-element="close"]',
     ];
@@ -440,6 +441,16 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
                 title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
                 data-gallery-element='download-all'
                 icon='FileZip'
+              />
+            ) : null}
+            {props.onShowKeyboardHelp ? (
+              <ToolbarButton
+                aria-label='Show keyboard shortcuts'
+                title='Show keyboard shortcuts (?)'
+                disabled={Boolean(props.disabled)}
+                onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
+                data-gallery-element='keyboard-help'
+                icon='Settings'
               />
             ) : null}
             {props.onOpenSettings ? (

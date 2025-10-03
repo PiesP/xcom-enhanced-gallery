@@ -13,7 +13,8 @@ describe('KeyboardHelpOverlay a11y', () => {
     const title = getByText('Keyboard shortcuts');
     expect(title.id).toBeTruthy();
 
-    const listItem = getByText('?: Show this help');
+    // Phase 1-3: 키 이름이 <strong> 태그로 래핑됨, 부분 텍스트로 검증
+    const listItem = getByText(': Show this help');
     expect(listItem).toBeTruthy();
   });
 });
