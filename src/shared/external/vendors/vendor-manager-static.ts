@@ -38,6 +38,7 @@ export interface SolidCoreAPI {
   createComponent: typeof solid.createComponent;
   mergeProps: typeof solid.mergeProps;
   splitProps: typeof solid.splitProps;
+  onMount: typeof solid.onMount;
   onCleanup: typeof solid.onCleanup;
   batch: typeof solid.batch;
   untrack: typeof solid.untrack;
@@ -137,6 +138,7 @@ export class StaticVendorManager {
       createComponent: this.vendors.solid.createComponent,
       mergeProps: this.vendors.solid.mergeProps,
       splitProps: this.vendors.solid.splitProps,
+      onMount: this.vendors.solid.onMount,
       onCleanup: this.vendors.solid.onCleanup,
       batch: this.vendors.solid.batch,
       untrack: this.vendors.solid.untrack,

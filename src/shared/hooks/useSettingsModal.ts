@@ -3,8 +3,8 @@
  * Phase E-1: SettingsModal 상태 관리를 Solid Signals로 구현
  */
 
-import { createSignal } from 'solid-js';
 import type { Accessor } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
 
 /**
  * useSettingsModal Hook의 반환 타입
@@ -42,6 +42,8 @@ export interface UseSettingsModalReturn {
  * ```
  */
 export function useSettingsModal(): UseSettingsModalReturn {
+  const solid = getSolidCore();
+  const { createSignal } = solid;
   const [isOpen, setIsOpen] = createSignal(false);
 
   const open = () => setIsOpen(true);

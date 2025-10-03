@@ -3,8 +3,8 @@
  * Phase E-1: Focus trap과 background inert를 Solid로 구현
  */
 
-import { onMount, onCleanup } from 'solid-js';
 import type { Accessor } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
 
 /**
  * useFocusScope Hook의 옵션
@@ -48,6 +48,8 @@ export interface UseFocusScopeOptions {
  * ```
  */
 export function useFocusScope(options: UseFocusScopeOptions = {}): void {
+  const solid = getSolidCore();
+  const { onMount, onCleanup } = solid;
   const { enabled = true, onEscape, initialFocus, containerRef } = options;
 
   // 활성화 상태를 Accessor로 정규화

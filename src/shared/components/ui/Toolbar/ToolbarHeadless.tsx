@@ -1,4 +1,5 @@
-import { createEffect, createMemo, createSignal, type JSX } from 'solid-js';
+import type { JSX } from 'solid-js';
+import { getSolidCore } from '@shared/external/vendors';
 
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -57,6 +58,8 @@ export interface ToolbarHeadlessProps {
 }
 
 export function ToolbarHeadless(props: ToolbarHeadlessProps): JSX.Element {
+  const solid = getSolidCore();
+  const { createSignal, createEffect, createMemo } = solid;
   const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('original');
   const [isDownloading, setDownloading] = createSignal<boolean>(!!props.isDownloading);
   const [highContrast, setHighContrast] = createSignal<boolean>(false);
