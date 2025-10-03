@@ -20,34 +20,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic CODE-DEDUP-CONSOLIDATION (우선순위: 중간)
-
-**생성일**: 2025-10-03 **목적**: 중복 유틸리티 함수 통합 및 단일 Export 경로
-구축
-
-**배경**: 코드베이스 분석 결과 여러 유틸리티 함수가 중복 구현되어 있어
-유지보수성 저하 및 번들 크기 증가
-
-**중복 패턴**:
-
-1. `removeDuplicates` / `removeDuplicateStrings` / `removeDuplicateMediaItems` -
-   중복 제거 로직 분산
-2. `toDosDate` / `toDosTime` - ZIP 유틸리티 중복
-3. `parseColor` / `calculateContrastRatio` - 접근성 유틸 중복
-4. `rafThrottle` / `Debouncer` - 성능 유틸 중복
-
-**Acceptance Criteria**:
-
-1. ⬜ `src/shared/utils/deduplication/` 디렉터리에 중복 제거 로직 통합
-2. ⬜ 접근성 유틸은 `src/shared/utils/accessibility/` 단일 경로로 통합
-3. ⬜ 성능 유틸은 `src/shared/utils/performance/` 단일 경로로 통합
-4. ⬜ 각 유틸의 테스트 케이스 유지
-5. ⬜ Barrel export(`index.ts`)를 통한 단일 import 경로 제공
-
-**예상 효과**: 번들 크기 3-5% 감소, 유지보수성 향상, Import 경로 단순화
-
----
-
 ### Epic SOLID-NATIVE-MIGRATION (우선순위: 낮음, 장기)
 
 **생성일**: 2025-10-03 **목적**: 레거시 `createGlobalSignal` 패턴 제거 및
