@@ -11,6 +11,7 @@ import {
   ToolbarWithSettings,
   type ToolbarSettingsRendererFactory,
 } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import { NavigationButton } from '@shared/components/ui/NavigationButton';
 import { SolidVerticalImageItem } from '@/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
@@ -352,6 +353,10 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
 
   const Show = solid.Show;
 
+  // Navigation button disabled 상태 계산
+  const isLeftDisabled = createMemo(() => currentIndex() === 0 || isLoading());
+  const isRightDisabled = createMemo(() => currentIndex() >= totalCount() - 1 || isLoading());
+
   return (
     <GalleryContainer onClose={props.onClose} isOpen={isOpen()}>
       <Show when={isOpen()}>
@@ -367,6 +372,26 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
             'pointer-events': 'auto',
           }}
         >
+          {/* Left Navigation Button */}
+          <NavigationButton
+            direction='left'
+            disabled={isLeftDisabled()}
+            loading={isLoading()}
+            onClick={props.onPrevious}
+            aria-label='이전 미디어'
+            data-testid='gallery-nav-left'
+          />
+
+          {/* Right Navigation Button */}
+          <NavigationButton
+            direction='right'
+            disabled={isRightDisabled()}
+            loading={isLoading()}
+            onClick={props.onNext}
+            aria-label='다음 미디어'
+            data-testid='gallery-nav-right'
+          />
+
           {useToolbarWithSettings ? (
             <ToolbarWithSettings
               currentIndex={currentIndex()}

@@ -1,0 +1,83 @@
+/**
+ * NavigationButton.module.css
+ * Epic GALLERY-NAV-ENHANCEMENT Phase 2 (GREEN)
+ *
+ * Design tokens used:
+ * - Colors: --xeg-color-surface-glass, --xeg-color-text-primary
+ * - Radius: --xeg-radius-md
+ * - Shadows: --shadow-md
+ * - Z-index: --xeg-z-gallery
+ * - Transitions: --transition-fast
+ */
+
+.navButton {
+  /* Positioning */
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--xeg-z-gallery);
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+
+  /* Glassmorphism */
+  background: var(--xeg-color-surface-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--xeg-color-border-subtle);
+  border-radius: var(--xeg-radius-md);
+  box-shadow: var(--shadow-md);
+
+  /* Typography */
+  color: var(--xeg-color-text-primary);
+  font-size: 32px;
+  line-height: 1;
+
+  /* Interaction */
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+
+  /* Accessibility */
+  outline: none;
+}
+
+/* Direction variants */
+.left {
+  left: 24px;
+}
+
+.right {
+  right: 24px;
+}
+
+/* Hover state */
+.navButton:hover:not(:disabled) {
+  background: var(--xeg-color-surface-glass-hover);
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Focus state */
+.navButton:focus-visible {
+  outline: var(--xeg-focus-outline);
+  outline-offset: var(--xeg-focus-offset);
+}
+
+/* Disabled state */
+.navButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--xeg-color-surface-glass);
+  transform: translateY(-50%);
+}
+
+/* Icon */
+.icon {
+  display: block;
+  font-weight: 300;
+  line-height: 1;
+}
