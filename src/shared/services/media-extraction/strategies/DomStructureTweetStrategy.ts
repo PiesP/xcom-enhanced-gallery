@@ -1,5 +1,15 @@
 /**
  * @fileoverview DOM 구조 기반 트윗 정보 추출 전략
+ * @description closest() 메서드를 사용하여 가장 가까운 트윗 컨테이너 찾기
+ *
+ * Phase 2 개선사항 (Epic MEDIA-EXTRACTION-FIX):
+ * - MediaOwnershipValidator 통합으로 멘션된 트윗 버그 수정
+ * - 동적 신뢰도 계산 (고정값 0.7 → 거리 기반 0.0~1.0)
+ * - 향상된 username 추출 (두 단계: /username → /@username)
+ *
+ * 버그 해결:
+ * - Before: closest()가 부모 트윗을 찾아 잘못된 tweet ID 반환
+ * - After: 소유권 검증으로 실제 미디어 소유 트윗만 추출
  */
 
 import { logger } from '@shared/logging/logger';
@@ -7,17 +17,36 @@ import { parseUsernameFast } from '@shared/services/media/UsernameExtractionServ
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 import { MediaOwnershipValidator } from '../utils/MediaOwnershipValidator';
 
+/**
+ * DOM 구조 기반 트윗 정보 추출 전략
+ *
+ * 우선순위: 3 (중간)
+ * 정확도: 높음 (소유권 검증 후)
+ * 성능: 빠름 (DOM 탐색만)
+ */
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
   readonly name = 'dom-structure';
   readonly priority = 3;
 
+  /**
+   * 미디어 요소에서 트윗 정보 추출
+   *
+   * 추출 단계:
+   * 1. closest()로 가장 가까운 article 찾기
+   * 2. MediaOwnershipValidator로 소유권 검증
+   * 3. 트윗 ID 추출 (status link)
+   * 4. Username 추출 (two-pass algorithm)
+   *
+   * @param element 미디어 요소 (img, video 등)
+   * @returns 트윗 정보 또는 null (추출 실패 시)
+   */
   async extract(element: HTMLElement): Promise<TweetInfo | null> {
     try {
       // 1. closest()로 가능한 모든 article 후보 찾기
       const immediateContainer = element.closest('[data-testid="tweet"], article');
       if (!immediateContainer) return null;
 
-      // 2. 소유권 검증
+      // 2. 소유권 검증 (핵심: 멘션된 트윗 버그 방지)
       const validation = MediaOwnershipValidator.validate(
         element,
         immediateContainer as HTMLElement
@@ -36,7 +65,7 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
       const tweetId = this.findTweetIdInContainer(immediateContainer as HTMLElement);
       if (!tweetId) return null;
 
-      // 4. Username 추출
+      // 4. Username 추출 (fallback chain)
       const username =
         this.findUsernameInContainer(immediateContainer as HTMLElement) ||
         parseUsernameFast() ||
