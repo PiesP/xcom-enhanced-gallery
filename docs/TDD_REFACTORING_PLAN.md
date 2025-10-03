@@ -22,7 +22,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Epic UX-GALLERY-FEEDBACK-001: 갤러리 피드백 및 가시성 강화 (2025-10-03 추가)
 
-**상태**: 활성 (Phase 1 준비 중)
+**상태**: 활성 (Phase 1-1 완료, Phase 1-2/1-3 진행 예정)
 
 **목적**: 사용자가 갤러리 상태와 진행 상황을 명확히 인지하고, 주요 기능을 쉽게
 발견하며, 액션 결과를 즉각 확인할 수 있도록 UI/UX를 개선합니다.
@@ -42,9 +42,12 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 #### **Phase 1: 툴바 가시성 및 상태 피드백 강화 (High Priority)**
 
-1. **툴바 자동 숨김 지연 연장** (2s → 5s)
-   - `useToolbarPositionBased` hook의 `initialAutoHideDelay` 파라미터 확장
-   - 기본값 변경으로 첫 방문자 발견성 개선
+1. **툴바 자동 숨김 지연 연장** (2s → 5s) ✅ **완료 (2025-10-03)**
+   - `useToolbarPositionBased` hook의 `initialAutoHideDelay` 기본값을 5000ms로
+     변경
+   - 파라미터 커스터마이징 기능 유지
+   - 테스트: `toolbar-visibility.auto-hide-delay.test.tsx` (4 tests GREEN)
+   - 커밋: `178d0f54` feat(ui): extend toolbar auto-hide delay from 2s to 5s
 2. **Fit 모드 선택 상태 시각화** (`data-selected` 속성 활용)
    - 현재 활성 Fit 모드 버튼에 시각적 강조 (배경색/테두리 변경)
    - 디자인 토큰 기반 스타일 적용 (`--xeg-color-primary` 등)
@@ -82,8 +85,8 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 #### Phase 1
 
-- [ ] 툴바 자동 숨김이 5초로 연장되며, `useToolbarPositionBased` 파라미터로 조정
-      가능
+- [x] 툴바 자동 숨김이 5초로 연장되며, `useToolbarPositionBased` 파라미터로 조정
+      가능 ✅ **완료**
 - [ ] Fit 모드 버튼에 `data-selected="true"` 속성이 현재 모드에만 적용됨
 - [ ] Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리 강조)
 - [ ] 키보드 단축키 힌트가 툴바 또는 독립 오버레이로 표시됨

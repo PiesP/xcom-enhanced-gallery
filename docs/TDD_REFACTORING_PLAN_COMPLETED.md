@@ -1,5 +1,54 @@
 <!-- markdownlint-disable -->
 
+2025-10-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-1 완료 ✅ (툴바 자동 숨김
+지연 5초 연장)
+
+- **생성일**: 2025-10-03
+- **완료일**: 2025-10-03
+- **목적**: 툴바 가시성 개선으로 첫 방문자 발견성 향상
+- **배경**: 기존 2초 자동 숨김 지연이 너무 짧아 첫 방문자가 툴바 기능을 놓칠
+  위험
+- **구현 내용**:
+  - `useToolbarPositionBased` hook의 `initialAutoHideDelay` 기본값을 2000ms →
+    5000ms로 변경
+  - 파라미터 커스터마이징 기능은 유지 (기존 사용처 호환성 보장)
+  - 테스트:
+    `test/shared/components/ui/toolbar-visibility.auto-hide-delay.test.tsx` (4
+    tests GREEN)
+    - 기본 5초 지연 검증
+    - 파라미터 커스터마이징 검증 (3초 예시)
+    - 0 값으로 자동 숨김 비활성화 검증
+    - `pauseAutoHide` 파라미터 동작 검증
+- **Acceptance Criteria 달성**:
+  - ✅ 툴바 자동 숨김이 5초로 연장되며, `useToolbarPositionBased` 파라미터로
+    조정 가능
+  - ✅ 기존 커스터마이징 기능 유지
+  - ✅ 회귀 방지: 모든 테스트 통과 (4/4 GREEN)
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (4/4 GREEN, toolbar-visibility.auto-hide-delay.test.tsx)
+  - ✅ Build (dev/prod 검증 통과)
+- **예상 효과**:
+  - 첫 방문자가 툴바 기능을 발견할 수 있는 시간 150% 증가 (2s → 5s)
+  - 사용자 피드백 개선 (기능 발견성 향상)
+  - 기존 고급 사용자 워크플로는 변경 없음 (hover 즉시 표시)
+- **변경 파일**:
+  - 수정: `src/shared/hooks/useToolbarPositionBased.ts` (기본값 변경 + 주석
+    업데이트)
+  - 추가:
+    `test/shared/components/ui/toolbar-visibility.auto-hide-delay.test.tsx`
+    (신규 테스트)
+  - 커밋: 178d0f54 "feat(ui): extend toolbar auto-hide delay from 2s to 5s for
+    better discoverability"
+- **남은 작업** (Epic UX-GALLERY-FEEDBACK-001 Phase 1-2/1-3, Phase 2/3):
+  - Phase 1-2: Fit 모드 선택 상태 시각화
+  - Phase 1-3: 키보드 단축키 힌트 강화
+  - Phase 2: 진행 상황 가시성 개선 (진행률 바, MediaCounter 강화)
+  - Phase 3: 다운로드 UX 통합 (컨텍스트 메뉴, 버튼 정리)
+
+---
+
 2025-10-03: EXEC — Epic SOLID-NATIVE-MIGRATION 완료 ✅ (레거시
 createGlobalSignal 패턴 제거 및 SolidJS 네이티브 패턴 완전 전환)
 
