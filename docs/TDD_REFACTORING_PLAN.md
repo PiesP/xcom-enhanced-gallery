@@ -48,43 +48,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ---
 
-### Epic BUNDLE-OPTIMIZATION (우선순위: 중간)
-
-**생성일**: 2025-10-03 **목적**: Terser 설정 강화 및 CSS 최적화를 통한 번들 크기
-추가 감소
-
-**배경**: 현재 Terser 설정은 기본적이며, 추가 최적화 옵션 적용으로 3-5% 추가
-압축 가능
-
-**최적화 항목**:
-
-1. **Terser 설정 강화**:
-   - `passes: 2 → 3` (추가 최적화 패스)
-   - `pure_funcs: ['logger.debug', 'logger.trace']` (디버그 로그 제거)
-   - `pure_getters: true` (getter 최적화)
-   - `unsafe: true` (공격적 최적화, 테스트 필수)
-
-2. **CSS 최적화**:
-   - 프로덕션 해시 길이 축소: `[hash:base64:8] → [hash:base64:6]`
-   - 사용하지 않는 CSS 규칙 정리
-   - CSS 변수 중복 제거
-
-3. **고아 모듈 제거**:
-   - dependency-cruiser 화이트리스트 재검토
-   - 실제 미사용 파일 10+ 개 제거
-
-**Acceptance Criteria**:
-
-1. ⬜ Terser 설정 업데이트 후 모든 테스트 GREEN
-2. ⬜ 프로덕션 빌드 크기 458KB → 435KB 이하 달성
-3. ⬜ Gzip 압축 크기 114.66KB → 108KB 이하 달성
-4. ⬜ 고아 모듈 감소 확인
-5. ⬜ `npm run build` 검증 통과
-
-**예상 효과**: 번들 크기 5-8% 추가 감소, 초기 로딩 속도 개선
-
----
-
 ### Epic SOLID-NATIVE-MIGRATION (우선순위: 낮음, 장기)
 
 **생성일**: 2025-10-03 **목적**: 레거시 `createGlobalSignal` 패턴 제거 및
