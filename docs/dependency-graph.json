@@ -5914,7 +5914,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
+            "export"
           ],
           "resolved": "src/shared/utils/accessibility/accessibility-utils.ts",
           "coreModule": false,
@@ -5934,23 +5934,6 @@
             "export"
           ],
           "resolved": "src/shared/utils/accessibility/live-region-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/type-safety-helpers.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6002,17 +5985,6 @@
         "src/shared/utils/accessibility.ts",
         "src/shared/utils/accessibility/accessibility-utils.ts",
         "src/shared/utils/accessibility/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/type-safety-helpers.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/utils/index.ts",
-        "src/shared/utils/accessibility.ts",
-        "src/shared/utils/core/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6386,6 +6358,16 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/type-safety-helpers.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts",
+        "src/shared/utils/core/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8428,7 +8410,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 268,
-    "totalDependenciesCruised": 339,
+    "totalDependenciesCruised": 338,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
