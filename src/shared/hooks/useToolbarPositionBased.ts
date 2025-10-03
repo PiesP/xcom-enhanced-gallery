@@ -14,7 +14,7 @@ export interface UseToolbarPositionBasedOptions {
   readonly toolbarElement: MaybeAccessor<HTMLElement | null> | null;
   readonly hoverZoneElement: MaybeAccessor<HTMLElement | null> | null;
   readonly enabled?: MaybeAccessor<boolean | undefined>;
-  /** 초기 표시 후 자동으로 숨기기까지의 시간(ms). 0이면 자동 숨김 비활성화. 기본값: 2000ms */
+  /** 초기 표시 후 자동으로 숨기기까지의 시간(ms). 0이면 자동 숨김 비활성화. 기본값: 5000ms */
   readonly initialAutoHideDelay?: number;
   /** 자동 숨김을 일시 중지할지 여부 (예: 설정 모달 열림 시). true이면 자동 숨김 타이머가 시작되지 않음. */
   readonly pauseAutoHide?: MaybeAccessor<boolean | undefined>;
@@ -135,7 +135,7 @@ export function useToolbarPositionBased(
   createEffect(() => {
     const enabled = enabledMemo();
     const toolbar = toolbarMemo(); // toolbar가 준비될 때까지 대기
-    const delay = options.initialAutoHideDelay ?? 2000; // 기본값 2초
+    const delay = options.initialAutoHideDelay ?? 5000; // 기본값 5초
     const paused = pauseAutoHideMemo(); // pauseAutoHide 상태 확인
 
     // 기존 타이머 정리
