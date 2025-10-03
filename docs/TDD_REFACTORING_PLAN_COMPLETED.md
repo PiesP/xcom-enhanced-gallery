@@ -1,5 +1,111 @@
 <!-- markdownlint-disable -->
 
+2025-01-04: UX — Epic GALLERY-NAV-ENHANCEMENT Phase 1-2 완료 ✅ (좌우 네비게이션
+버튼)
+
+- **생성일**: 2025-01-04
+- **완료일**: 2025-01-04
+- **목적**: 갤러리 네비게이션 UX 개선 - 좌우 네비게이션 버튼 구현
+- **우선순위**: ⭐⭐⭐ (높음 - 사용성 향상)
+- **배경**:
+  - 키보드 네비게이션만 제공되던 갤러리에 업계 표준 UX 패턴 도입
+  - 마우스 사용자를 위한 직관적인 좌우 화살표 버튼 추가
+  - Glassmorphism 디자인으로 브랜드 일관성 유지
+- **Phase 1: RED - 테스트 작성**:
+  - 테스트 파일: `test/features/gallery/side-navigation-buttons.test.tsx`
+  - 17개 테스트 작성 (15개 계획 → 17개 구현)
+  - 테스트 커버리지:
+    1. 렌더링 & 구조 (4 tests): 좌/우 버튼, fixed 위치, z-index
+    2. 접근성 (4 tests): aria-label, role, tabindex
+    3. 비활성화 상태 (4 tests): 첫/마지막 아이템, disabled 속성, aria-disabled
+    4. 인터랙션 (3 tests): onClick 콜백, 로딩 상태
+    5. 스타일 & 디자인 토큰 (2 tests): 토큰 사용, glassmorphism
+  - 커밋: 73a68151 (Phase 1 RED, 15/15 tests failing)
+- **Phase 2: GREEN - NavigationButton 컴포넌트 구현**:
+  - 신규 파일:
+    - `src/shared/components/ui/NavigationButton/NavigationButton.tsx` (62
+      lines)
+    - `src/shared/components/ui/NavigationButton/NavigationButton.module.css`
+      (90 lines)
+    - `src/shared/components/ui/NavigationButton/index.ts` (6 lines)
+  - 컴포넌트 명세:
+    ```typescript
+    interface NavigationButtonProps {
+      direction: 'left' | 'right';
+      disabled?: boolean;
+      loading?: boolean;
+      onClick: () => void;
+      'aria-label': string;
+      'data-testid'?: string;
+    }
+    ```
+  - 주요 기능:
+    - SolidJS 컴포넌트 (JSX pragma 사용)
+    - Fixed 위치 (left: 24px, right: 24px, top: 50% + translateY(-50%))
+    - Glassmorphism: backdrop-filter blur(12px), surface-glass 배경
+    - 디자인 토큰: --xeg-z-gallery (9999), --xeg-color-surface-glass,
+      --xeg-radius-md
+    - Unicode 아이콘: '‹' (left), '›' (right)
+    - PC 전용 이벤트: click with preventDefault/stopPropagation
+    - 상태별 스타일: hover (scale 1.05), focus-visible, disabled (opacity 0.4)
+  - Vitest 설정 업데이트: NavigationButton 패턴 추가 (SolidJS 플러그인 처리)
+  - 커밋: f261c3e6 (Phase 2 GREEN, 17/17 tests passing)
+- **Phase 2 Integration: SolidGalleryShell 연결**:
+  - 수정 파일: `src/features/gallery/solid/SolidGalleryShell.solid.tsx`
+  - 통합 내용:
+    - NavigationButton 2개 추가 (left/right)
+    - Props 연결: `props.onPrevious()`, `props.onNext()`
+    - Disabled 상태 계산:
+      ```typescript
+      const isLeftDisabled = createMemo(
+        () => currentIndex() === 0 || isLoading()
+      );
+      const isRightDisabled = createMemo(
+        () => currentIndex() >= totalCount() - 1 || isLoading()
+      );
+      ```
+    - 접근성: aria-label ("이전 미디어", "다음 미디어"), data-testid
+    - 위치: shell div 내부, toolbar 이전
+  - 커밋: c203efd4 (Phase 2 Integration)
+  - Merge commit: Merge epic/gallery-nav-enhancement into master
+- **Acceptance Criteria** ✅:
+  - 기능:
+    - [x] 17/17 tests GREEN (100% 통과)
+    - [x] 좌우 네비게이션 버튼 정상 작동
+    - [x] 첫/마지막 아이템에서 버튼 자동 비활성화
+    - [x] 로딩 중 버튼 비활성화
+  - 접근성:
+    - [x] aria-label 적용
+    - [x] 키보드 포커스 가능 (tabindex="0")
+    - [x] role="button" 명시
+    - [x] aria-disabled 상태 동기화
+  - 디자인:
+    - [x] Glassmorphism 스타일 적용
+    - [x] 디자인 토큰 100% 사용 (하드코딩 없음)
+    - [x] Hover/Focus 인터랙션 구현
+  - 품질:
+    - [x] TypeScript strict 모드 통과
+    - [x] ESLint clean (0 errors)
+    - [x] PC 전용 입력만 사용 (터치/포인터 금지)
+    - [x] 빌드 성공 (dev + prod)
+- **번들 영향**:
+  - Raw size: 459.93 KB → 463.08 KB (+3.15 KB, +0.68%)
+  - Gzip size: 114.53 KB → 115.31 KB (+0.78 KB, +0.68%)
+  - 영향: 매우 작은 증가 (최소 구현 원칙 준수)
+- **남은 작업** (Phase 3 - 선택 사항):
+  - 키보드 도움말 오버레이 개선 (좌우 버튼 단축키 표시)
+  - '?' 키 토글 기능
+  - 다국어 지원 강화 (ko, en, ja)
+- **커밋 히스토리**:
+  - 73a68151: test(gallery): add side navigation buttons tests (Phase 1 RED)
+  - f261c3e6: feat(gallery): implement NavigationButton component (Phase 2
+    GREEN)
+  - c203efd4: feat(gallery): integrate NavigationButton into SolidGalleryShell
+    (Phase 2 Integration)
+  - Merge commit: epic/gallery-nav-enhancement → master (no-ff)
+
+---
+
 2025-01-04: MEDIA — Epic MEDIA-EXTRACTION-FIX 완료 ✅ (멘션 트윗 버그 수정 &
 소유권 검증)
 
