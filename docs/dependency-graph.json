@@ -5280,10 +5280,37 @@
     },
     {
       "source": "src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../utils/MediaOwnershipValidator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/media-extraction/utils/MediaOwnershipValidator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/services/media-extraction/extractors/TweetInfoExtractor.ts",
         "src/shared/services/media-extraction/strategies/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/media-extraction/utils/MediaOwnershipValidator.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/services/media-extraction/strategies/DomStructureTweetStrategy.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8478,8 +8505,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 271,
-    "totalDependenciesCruised": 340,
+    "totalCruised": 272,
+    "totalDependenciesCruised": 341,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

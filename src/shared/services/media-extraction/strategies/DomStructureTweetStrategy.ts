@@ -5,6 +5,7 @@
 import { logger } from '@shared/logging/logger';
 import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
+import { MediaOwnershipValidator } from '../utils/MediaOwnershipValidator';
 
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
   readonly name = 'dom-structure';
@@ -12,14 +13,32 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
 
   async extract(element: HTMLElement): Promise<TweetInfo | null> {
     try {
-      const tweetContainer = element.closest('[data-testid="tweet"], article');
-      if (!tweetContainer) return null;
+      // 1. closest()로 가능한 모든 article 후보 찾기
+      const immediateContainer = element.closest('[data-testid="tweet"], article');
+      if (!immediateContainer) return null;
 
-      const tweetId = this.findTweetIdInContainer(tweetContainer as HTMLElement);
+      // 2. 소유권 검증
+      const validation = MediaOwnershipValidator.validate(
+        element,
+        immediateContainer as HTMLElement
+      );
+
+      if (!validation.isValid) {
+        logger.debug('[DomStructureTweetStrategy] 소유권 검증 실패:', {
+          reason: validation.reason,
+          confidence: validation.confidence,
+          distance: validation.distance,
+        });
+        return null;
+      }
+
+      // 3. 트윗 ID 추출
+      const tweetId = this.findTweetIdInContainer(immediateContainer as HTMLElement);
       if (!tweetId) return null;
 
+      // 4. Username 추출
       const username =
-        this.findUsernameInContainer(tweetContainer as HTMLElement) ||
+        this.findUsernameInContainer(immediateContainer as HTMLElement) ||
         parseUsernameFast() ||
         'fallback';
 
@@ -33,9 +52,11 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
         username,
         tweetUrl: `https://twitter.com/${username}/status/${tweetId}`,
         extractionMethod: 'dom-structure',
-        confidence: 0.7,
+        confidence: validation.confidence, // 거리 기반 동적 신뢰도
         metadata: {
-          containerTag: tweetContainer.tagName.toLowerCase(),
+          containerTag: immediateContainer.tagName.toLowerCase(),
+          ownershipDistance: validation.distance,
+          ownershipValid: validation.isValid,
         },
       };
     } catch (error) {
@@ -58,16 +79,37 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
   }
 
   private findUsernameInContainer(container: HTMLElement): string | null {
-    const usernameLinks = container.querySelectorAll(
-      'a[href^="/"][href*="@"]:not([href*="/status/"])'
-    );
+    // 1. href="/username" 패턴 (@ 없이)
+    const usernameLinks = container.querySelectorAll('a[href^="/"]');
     for (const link of usernameLinks) {
       const href = link.getAttribute('href');
-      if (href) {
-        const match = href.match(/^\/([^/]+)$/);
-        if (match) return match[1] ?? null;
+      if (!href) continue;
+
+      // /status/ 링크는 제외
+      if (href.includes('/status/')) continue;
+
+      // 단순 username 패턴: /username (추가 경로 없음)
+      const match = href.match(/^\/([^/?#]+)$/);
+      if (match?.[1]) {
+        const username = match[1];
+        // @로 시작하면 제거
+        return username.startsWith('@') ? username.slice(1) : username;
       }
     }
+
+    // 2. href 내 @ 포함 패턴
+    const atLinks = container.querySelectorAll('a[href*="@"]');
+    for (const link of atLinks) {
+      const href = link.getAttribute('href');
+      if (!href || href.includes('/status/')) continue;
+
+      const match = href.match(/^\/(@?[^/?#]+)$/);
+      if (match?.[1]) {
+        const username = match[1];
+        return username.startsWith('@') ? username.slice(1) : username;
+      }
+    }
+
     return null;
   }
 }
