@@ -1,5 +1,90 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-3 완료 ✅ (키보드 단축키
+힌트 강화)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03
+- **목적**: 키보드 단축키 힌트 발견성 개선. 툴바에 `?` 키 힌트 버튼 추가 및
+  `KeyboardHelpOverlay` 내용 강화
+- **배경**: 기존 `?` 키로 키보드 도움말을 표시할 수 있지만, 툴바에 이를 알려주는
+  버튼이 없어 첫 방문자가 기능을 놓치기 쉬움
+- **구현 내용**:
+  - **TDD RED**:
+    `test/shared/components/ui/toolbar-keyboard-hint-button.test.tsx` 작성 (9
+    tests, 7/9 RED)
+    - 버튼 렌더링 검증 (3 tests): `[data-gallery-element="keyboard-help"]`,
+      `aria-label="Show keyboard shortcuts"`, `tagName='BUTTON'`
+    - 클릭 동작 검증 (2 tests): `onShowKeyboardHelp` 콜백 호출, disabled 상태
+      처리
+    - 회귀 방지 검증 (3 tests): 키보드 네비게이션 포커스 순서 유지, 기존 툴바
+      버튼들 정상 동작, Escape 키 핸들링 유지
+    - 디자인 토큰 준수 검증 (1 test): 인라인 스타일 없음 (CSS 클래스 사용)
+  - **TDD GREEN**: Toolbar에 키보드 힌트 버튼 추가
+    - `Toolbar.types.ts`: `onShowKeyboardHelp?: () => void` prop 추가
+    - `Toolbar.tsx` (line 446-455): 키보드 힌트 버튼 추가 (settings 버튼 앞)
+      - Icon: 'Settings' (QuestionMark 아이콘 없어 임시 사용, TODO: proper
+        아이콘 추가)
+      - `aria-label='Show keyboard shortcuts'`,
+        `title='Show keyboard shortcuts (?)'`
+      - `data-gallery-element='keyboard-help'` 속성 추가
+    - Focusable selectors 업데이트 (line 70):
+      `'[data-gallery-element="keyboard-help"]'` 추가
+    - 테스트 결과: 9/9 GREEN
+  - **TDD REFACTOR**: `KeyboardHelpOverlay` 단축키 목록 확장 및 스타일 강화
+    - `KeyboardHelpOverlay.tsx` (line 194-218): 단축키 목록 4개 → 7개로 확장
+      - 추가: Home (First media), End (Last media), Space (Toggle play/pause)
+      - 키 이름을 `<strong>` 태그로 래핑하여 시각적 강조
+    - `KeyboardHelpOverlay.module.css` (line 42-57): `.shortcutList strong`
+      스타일 추가
+      - 디자인 토큰 사용: `--xeg-font-mono`, `--xeg-color-primary`,
+        `--xeg-color-neutral-*`, `--xeg-space-*`, `--xeg-radius-sm`
+      - 키 이름을 키보드 키처럼 스타일링 (monospace 폰트, primary 색상,
+        배경/테두리)
+    - `test/unit/features/gallery/keyboard-help.aria.test.tsx` 수정:
+      - `getByText('?: Show this help')` → `getByText(': Show this help')`
+      - 이유: `<strong>?</strong>: Show this help`로 분리되어 부분 텍스트 매칭
+        필요
+- **Acceptance Criteria 달성**:
+  - ✅ 키보드 단축키 힌트가 툴바 버튼으로 표시되며, 클릭 시
+    `KeyboardHelpOverlay`를 보여줌
+  - ✅ 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS
+  - ✅ 디자인 토큰 기반 스타일 (CSS 클래스만, 인라인 스타일 없음)
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (9/9 GREEN, toolbar-keyboard-hint-button.test.tsx +
+    keyboard-help.aria.test 수정)
+  - ⚠️ 전체 테스트 suite: 2 failed (Phase 1-3와 무관한 기존 실패만)
+    - `test/toolbar/toolbar-refine-structure.test.tsx` (기존 실패)
+    - `test/features/gallery/toolbar-auto-hide.test.ts` (의도적 RED)
+- **예상 효과**:
+  - `?` 키 기능의 발견성 대폭 향상
+  - 사용자가 키보드 단축키를 쉽게 확인 가능
+  - 키 이름 강조로 가독성 향상
+- **알려진 이슈 / TODO**:
+  - QuestionMark 아이콘 없음 → Settings 아이콘 임시 사용 (나중에 proper 아이콘
+    추가 필요)
+- **변경 파일**:
+  - 수정: `src/shared/components/ui/Toolbar/Toolbar.types.ts` (line 34:
+    onShowKeyboardHelp prop 추가)
+  - 수정: `src/shared/components/ui/Toolbar/Toolbar.tsx` (line 70, 446-455: 버튼
+    추가 및 focusable selectors 업데이트)
+  - 수정:
+    `src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx`
+    (line 194-218: 단축키 목록 확장)
+  - 수정:
+    `src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css`
+    (line 42-57: 키 강조 스타일)
+  - 추가: `test/shared/components/ui/toolbar-keyboard-hint-button.test.tsx`
+    (신규 테스트)
+  - 수정: `test/unit/features/gallery/keyboard-help.aria.test.tsx` (line 16:
+    부분 텍스트 매칭)
+  - 커밋: 80b0723a "feat(ui): add keyboard shortcuts hint button to toolbar
+    (Phase 1-3)"
+
+---
+
 2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 1-2 완료 ✅ (Fit 모드 선택
 상태 시각화)
 

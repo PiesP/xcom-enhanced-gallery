@@ -22,7 +22,7 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Epic UX-GALLERY-FEEDBACK-001: 갤러리 피드백 및 가시성 강화 (2025-10-03 추가)
 
-**상태**: 활성 (Phase 1-1 완료, Phase 1-2/1-3 진행 예정)
+**상태**: 활성 (Phase 1 완료, Phase 2/3 진행 예정)
 
 **목적**: 사용자가 갤러리 상태와 진행 상황을 명확히 인지하고, 주요 기능을 쉽게
 발견하며, 액션 결과를 즉각 확인할 수 있도록 UI/UX를 개선합니다.
@@ -56,9 +56,16 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
    - 테스트: `toolbar-fit-mode.selected-state.test.tsx` (9 tests GREEN)
    - 커밋: `7069d9e4` feat(ui): add visual emphasis for selected fit mode
      buttons (Phase 1-2)
-3. **키보드 단축키 힌트 추가**
-   - 기존 `KeyboardHelpOverlay` 강화 또는 툴바 하단 영구 힌트 추가
-   - `?` 키 발견성 개선 (버튼 또는 아이콘 추가)
+3. **키보드 단축키 힌트 강화** ✅ **완료 (2025-01-03)**
+   - 툴바에 키보드 힌트 버튼 추가 (Settings 아이콘 임시 사용, TODO: QuestionMark
+     아이콘)
+   - `KeyboardHelpOverlay` 단축키 목록 확장 (Home, End, Space 추가)
+   - 키 이름을 `<strong>` 태그로 강조, 디자인 토큰 기반 스타일링
+   - `onShowKeyboardHelp` prop 추가 (ToolbarProps)
+   - 테스트: `toolbar-keyboard-hint-button.test.tsx` (9 tests GREEN),
+     `keyboard-help.aria.test.tsx` 수정
+   - 커밋: `80b0723a` feat(ui): add keyboard shortcuts hint button to toolbar
+     (Phase 1-3)
 
 #### **Phase 2: 진행 상황 가시성 개선 (High Priority)**
 
@@ -96,8 +103,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
       **완료**
 - [x] Fit 모드 선택 상태가 디자인 토큰 기반 스타일로 시각화됨 (배경/테두리 강조)
       ✅ **완료**
-- [ ] 키보드 단축키 힌트가 툴바 또는 독립 오버레이로 표시됨
-- [ ] 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS
+- [x] 키보드 단축키 힌트가 툴바 버튼으로 표시되며, 클릭 시
+      `KeyboardHelpOverlay`를 보여줌 ✅ **완료**
+- [x] 회귀 방지: 기존 툴바 키보드 네비게이션 테스트 모두 PASS ✅ **완료**
 
 #### Phase 2
 
