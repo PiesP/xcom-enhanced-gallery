@@ -1,5 +1,71 @@
 <!-- markdownlint-disable -->
 
+2025-10-03: EXEC — Epic CODE-DEDUP-CONSOLIDATION 완료 ✅ (중복 유틸리티 함수
+통합 및 단일 Export 경로 구축)
+
+- **목적**: 중복 유틸리티 함수 통합 및 단일 Export 경로 구축으로 유지보수성 향상
+- **배경**: 코드베이스 분석 결과 접근성 유틸리티(accessibility.ts)에서 170+
+  라인의 중복 구현 발견
+- **구현 내용**:
+  - **중복 패턴 분석**:
+    - 초기 계획: removeDuplicates, toDos\*, parseColor, rafThrottle 등 다수 의도
+    - 실제 발견: 대부분 이미 통합되어 있었음 (Epic VENDOR-GETTER-MIGRATION 등
+      이전 작업에서 해결)
+    - 실제 중복: accessibility.ts에만 7개 함수 170+ 라인 중복
+  - **accessibility.ts 리팩토링**:
+    - 구조 변경: 구현 레이어 → 순수 Re-export 레이어
+    - 제거 함수: `parseColor`, `calculateContrastRatio`, `meetsWCAGAA`,
+      `meetsWCAGAAA`, `detectActualBackgroundColor`, `isLightBackground`,
+      `getRelativeLuminance` (7개)
+    - 통합 대상: `src/shared/utils/accessibility/accessibility-utils.ts` (이미
+      존재하는 단일 소스)
+    - 코드 감소: 170 lines → 30 lines (82% 감소, 140 lines 제거)
+  - **테스트 검증** (test/unit/accessibility/\*):
+    - 73 tests passed, 18 skipped
+    - 테스트 파일 18개 실행 (icon accessibility, settings modal, focus trap,
+      live regions, contrast tokens 등)
+    - Re-export 패턴으로 모든 함수 정상 작동 확인
+    - 하위 호환성 유지 확인 (backward compatibility via re-exports)
+- **최종 결과**:
+  - **코드 감소**: 170 lines → 30 lines (82% reduction in accessibility.ts)
+  - **번들 크기**: 454.57 KB raw / 113.33 KB gzip (변화 없음 - Tree-shaking
+    효과)
+  - **유지보수성**: 단일 소스 원칙 강화 (accessibility/accessibility-utils.ts)
+  - **테스트 커버리지**: 73 passed (re-export 패턴 검증 완료)
+- **Acceptance Criteria 달성**:
+  - ✅ 중복 제거 로직 통합 (실제로는 접근성 유틸만 중복, 나머지는 이미 통합됨)
+  - ✅ 접근성 유틸 단일 경로 통합
+    (`src/shared/utils/accessibility/accessibility-utils.ts`)
+  - ✅ 각 유틸의 테스트 케이스 유지 (73 passed, comprehensive suite GREEN)
+  - ✅ Barrel export(`accessibility.ts`) 통한 단일 import 경로 제공 (re-export
+    layer로 전환)
+  - ⚠️ 번들 크기 3-5% 감소 목표는 미달성 (Tree-shaking으로 이미 최적화되어
+    있었음)
+- **품질 게이트**:
+  - ✅ Typecheck (0 errors, strict mode)
+  - ✅ Lint (clean, max-warnings 0)
+  - ✅ Tests (73 accessibility tests passed, 18 skipped)
+  - ✅ Build (dev + prod 성공, 454.57 KB raw / 113.33 KB gzip - 변화 없음)
+- **예상 효과 vs 실제**:
+  - 예상: 번들 크기 3-5% 감소 → 실제: 0% (Terser Tree-shaking 효과로 이미
+    최적화)
+  - 예상: 다수 중복 패턴 통합 → 실제: 접근성 유틸만 중복 (나머지는 이미 통합됨)
+  - 성과: 코드 가독성 82% 향상 (140 lines 제거), 유지보수성 개선 (단일 소스
+    강화)
+- **학습 포인트**:
+  - Tree-shaking은 동일 로직의 중복을 이미 최적화함 (번들 크기 효과 제한적)
+  - Re-export 패턴은 번들 크기보다 유지보수성/가독성에 효과적
+  - 이전 Epic들(VENDOR-GETTER-MIGRATION, BUNDLE-OPTIMIZATION)에서 대부분의
+    중복이 이미 제거됨
+- **변경 파일**:
+  - 수정: `src/shared/utils/accessibility.ts` (구현 제거, re-export로 전환)
+  - 커밋: 16509cf3 "refactor(utils): epic code-dedup - eliminate 140 lines
+    duplicate functions"
+- **예상/실제 소요 시간**: 2-3시간 예상 / 약 1.5시간 소요 (실제 중복이 예상보다
+  적었음)
+
+---
+
 2025-10-03: EXEC — Epic BUNDLE-OPTIMIZATION 부분 완료 ⚠️ (Terser 설정 강화 및
 CSS 최적화로 번들 크기 감소 달성, 목표 95% 도달)
 
