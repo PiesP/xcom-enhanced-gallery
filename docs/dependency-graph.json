@@ -2034,6 +2034,75 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./ContextMenu.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/ContextMenu/ContextMenu.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/ContextMenu/types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ContextMenu/ContextMenu.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/ContextMenu/types.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/Icon/Icon.tsx",
       "dependencies": [],
       "dependents": [
@@ -8229,6 +8298,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/position-calculator.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/signalSelector.ts",
       "dependencies": [],
       "dependents": [],
@@ -8402,8 +8478,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 267,
-    "totalDependenciesCruised": 338,
+    "totalCruised": 271,
+    "totalDependenciesCruised": 340,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

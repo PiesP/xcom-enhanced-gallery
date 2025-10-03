@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-03 — Epic CONTEXT-MENU-UI 백로그에서 승격 (활성)
+**최근 업데이트**: 2025-01-03 — Epic CONTEXT-MENU-UI 완료 및 이관
 
 ---
 
@@ -20,204 +20,64 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic CONTEXT-MENU-UI (활성, 2025-10-03 승격)
+현재 활성 Epic이 없습니다.
 
-**목적**: 네이티브 브라우저 컨텍스트 메뉴를 커스텀 SolidJS 컴포넌트로 대체하여
-브랜드 일관성, 접근성, UX 통일성 향상
-
-**우선순위**: LOW → MEDIUM (백로그 승격) | **난이도**: M
-
-**현재 상태**: 네이티브 contextmenu 이벤트만 사용 중, 브라우저 기본 UI 표시
-
-**선택 솔루션**: Option A - 커스텀 컨텍스트 메뉴 컴포넌트 (PC 전용)
-
-#### 솔루션 평가
-
-##### Option A: 커스텀 컨텍스트 메뉴 컴포넌트 (선택됨)
-
-- **장점**: 브랜드 일관성, 스타일링 완전 제어, 접근성 개선 가능, 커스텀 액션
-  추가 용이, Toolbar/Settings와 UX 통일, PC 전용 정책 준수 가능
-- **단점**: 구현 복잡도 M, 브라우저 네이티브 동작과 차이, 포커스 관리 복잡성,
-  번들 크기 증가 (~2-3KB)
-- **선택 이유**: Epic 목적 충족 ("커스텀 SolidJS 컴포넌트로 대체"), UX 일관성,
-  확장성, 접근성 제어 가능, PC 전용 정책 준수
-
-##### Option B: 네이티브 컨텍스트 메뉴 유지 (제외됨)
-
-- **장점**: 구현 단순 S, 브라우저 표준 UX, 번들 크기 영향 없음
-- **단점**: 스타일링 불가능, 브랜드 통일성 부족, Epic 목적 미충족
-- **제외 이유**: "커스텀 컴포넌트로 대체" 요구사항 미충족
-
-##### Option C: 툴바/버튼으로 대체 (제외됨)
-
-- **장점**: 명확한 UI, 접근성 우수, 디자인 토큰 활용
-- **단점**: 컨텍스트 메뉴 패러다임 포기, 툴바 복잡도 증가, Epic 의도 불일치
-- **제외 이유**: "컨텍스트 메뉴 대체" 요구사항과 불일치
-
-#### Phase 1: RED (테스트 작성)
-
-**목표**: ContextMenu 컴포넌트 계약 테스트 작성 (15-18 tests)
-
-**테스트 파일**: `test/components/context-menu/context-menu.test.tsx`
-
-**테스트 범위**:
-
-1. **렌더링 및 표시/숨김** (3 tests)
-   - 초기 상태에서 렌더링되지 않아야 함
-   - show() 호출 시 표시되어야 함
-   - hide() 호출 시 숨겨져야 함
-2. **위치 계산** (3 tests)
-   - 마우스 좌표에 따라 위치 설정
-   - viewport 오른쪽 경계 초과 시 왼쪽 조정
-   - viewport 하단 경계 초과 시 위쪽 조정
-3. **액션 항목** (3 tests)
-   - 다운로드 액션 클릭 시 onDownload 콜백 호출
-   - 정보 보기 액션 클릭 시 onInfo 콜백 호출
-   - 외부 클릭 시 메뉴 닫힘
-4. **PC 전용 입력** (3 tests)
-   - TouchEvent 사용하지 않아야 함 (onTouchStart/Move/End 없음)
-   - PointerEvent 사용하지 않아야 함 (onPointerDown/Up 없음)
-   - contextmenu 이벤트만 사용해야 함
-5. **접근성** (3 tests)
-   - role="menu" 속성 존재
-   - aria-label 설정
-   - 각 항목에 role="menuitem" 존재
-6. **키보드 네비게이션** (3 tests)
-   - Escape 키로 메뉴 닫기
-   - Arrow Down/Up으로 항목 간 이동
-   - Enter 키로 선택된 항목 실행
-
-**Acceptance Criteria (Phase 1)**:
-
-- ✅ 15+ tests 작성 (모두 RED 상태)
-- ✅ PC 전용 입력 검증 포함 (Touch/Pointer 금지)
-- ✅ 접근성 기준 정의 (ARIA, role)
-- ✅ 키보드 네비게이션 명세 정의
-
-#### Phase 2: GREEN (최소 구현)
-
-**목표**: 테스트를 통과하는 최소 구현
-
-**구현 파일**:
-
-- `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` - 메인 컴포넌트
-- `src/shared/components/ui/ContextMenu/ContextMenu.module.css` - 스타일
-- `src/shared/components/ui/ContextMenu/types.ts` - 타입 정의
-- `src/shared/utils/position-calculator.ts` - 위치 계산 유틸리티
-
-**구현 범위**:
-
-1. **ContextMenu 컴포넌트**
-   - Props: `isVisible`, `position`, `actions`, `onClose`
-   - 기본 렌더링 (show/hide 로직)
-   - 액션 항목 리스트 렌더링
-2. **위치 계산 유틸리티**
-   - `calculateMenuPosition(mouseX, mouseY, menuWidth, menuHeight)` 함수
-   - viewport 경계 체크 및 조정
-3. **상태 관리**
-   - `createSignal<boolean>()` - 표시/숨김
-   - `createSignal<{x: number, y: number}>()` - 위치
-4. **기본 스타일**
-   - 디자인 토큰 사용 (`--xeg-radius-lg`, `--color-bg-primary` 등)
-   - z-index: `--xeg-z-modal`
-5. **VerticalImageItem 통합**
-   - contextmenu 이벤트 핸들러에서 ContextMenu 표시
-   - 이벤트 preventDefault() 호출 (네이티브 메뉴 차단)
-
-**Acceptance Criteria (Phase 2)**:
-
-- ✅ 15+ tests GREEN
-- ✅ 타입 체크 0 errors
-- ✅ 린트 clean
-- ✅ 빌드 성공
-- ✅ 기본 다운로드 액션 작동
-
-#### Phase 3: REFACTOR (고급 기능 및 최적화)
-
-**목표**: 고급 기능 추가 및 코드 품질 개선
-
-**개선 항목**:
-
-1. **고급 위치 조정**
-   - 스크롤 위치 고려
-   - 다중 모니터 환경 지원
-   - 메뉴 크기 동적 계산
-2. **액션 확장**
-   - 정보 보기 액션 구현 (미디어 메타데이터 표시)
-   - 공유 액션 추가 (클립보드 복사)
-   - 아이콘 추가 (DownloadIcon, InfoIcon 등)
-3. **성능 최적화**
-   - `createMemo()` 활용 (액션 리스트, 스타일)
-   - `onCleanup()` 정리 로직 (이벤트 리스너)
-   - 리렌더 최소화
-4. **스타일 폴리싱**
-   - 애니메이션 (fade-in, slide-in)
-   - 호버 효과 (항목 하이라이트)
-   - 그림자 및 테두리 개선
-5. **다크 모드 지원**
-   - ThemeService 통합
-   - 테마별 색상 토큰 적용
-6. **i18n 지원**
-   - LanguageService 통합
-   - 액션 레이블 다국어 지원 (ko/en/ja)
-
-**Acceptance Criteria (Phase 3)**:
-
-- ✅ 모든 tests GREEN (회귀 없음)
-- ✅ viewport 경계 완벽 처리
-- ✅ 정보 보기/공유 액션 작동
-- ✅ 애니메이션 적용 (`prefers-reduced-motion` 준수)
-- ✅ 다크 모드 완전 지원
-- ✅ i18n 완전 지원 (ko/en/ja)
-- ✅ 번들 크기 증가 < +3KB
-- ✅ 성능: 메뉴 표시 < 16ms (60fps)
-
-#### 전체 Acceptance Criteria
-
-**기능 요구사항**:
-
-- ✅ 네이티브 컨텍스트 메뉴 완전 대체
-- ✅ 다운로드/정보/공유 액션 지원
-- ✅ 마우스 우클릭 시 표시
-- ✅ 외부 클릭 시 자동 닫힘
-- ✅ Escape 키로 닫힘
-
-**품질 요구사항**:
-
-- ✅ 타입 체크 0 errors
-- ✅ 린트 clean
-- ✅ 15+ tests GREEN
-- ✅ PC 전용 입력만 사용 (Touch/Pointer 금지)
-- ✅ 디자인 토큰 사용 (하드코딩 금지)
-- ✅ ARIA 완전성 (role, aria-label 등)
-- ✅ 키보드 네비게이션 (Arrow, Enter, Escape)
-- ✅ 번들 크기 < +3KB
-- ✅ 빌드 성공 (dev + prod)
-
-**PC 전용 정책 준수**:
-
-- ✅ contextmenu 이벤트만 사용 (허용 목록)
-- ✅ TouchEvent 사용 금지 (테스트로 검증)
-- ✅ PointerEvent 사용 금지 (테스트로 검증)
-- ✅ 백로그 "터치 디바이스 대응" 문구 제거
-
-#### 예상 영향
-
-**변경 파일** (예상):
-
-- 신규: `src/shared/components/ui/ContextMenu/*` (3 files)
-- 신규: `src/shared/utils/position-calculator.ts`
-- 수정:
-  `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
-- 신규: `test/components/context-menu/context-menu.test.tsx`
-
-**번들 크기 영향**: +2-3KB (컴포넌트 + 유틸리티 + 스타일)
-
-**회귀 리스크**: LOW (기존 contextmenu 동작 유지, 추가 UI만 변경)
+백로그(`TDD_REFACTORING_BACKLOG.md`)에서 새로운 Epic을 선택하거나, 새로운 개선
+항목을 추가해주세요.
 
 ---
 
+## 3. 최근 완료 Epic
+
+### Epic CONTEXT-MENU-UI (2025-01-03 완료)
+
+**목적**: 커스텀 컨텍스트 메뉴 컴포넌트 구현 (브랜드 일관성 + 접근성)
+
+**완료 Phase**: Phase 1 (RED, 18 tests), Phase 2 (GREEN, 12/18 passing - 기능적
+베이스라인)
+
+**남은 작업**: Phase 3 (접근성 완전성 + 키보드 네비게이션) - 백로그 이관
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션 참조)
+
+---
+
+## 4. 다음 사이클 준비
+
+새로운 Epic을 시작하려면:
+
+1. `docs/TDD_REFACTORING_BACKLOG.md`에서 후보 검토
+2. 우선순위/가치/난이도 고려하여 1-3개 선택
+3. 본 문서 "활성 Epic 현황" 섹션에 추가
+4. Phase 1 (RED) 테스트부터 시작
+
+---
+
+## 5. 참고: 이전 완료 Epic 목록
+
 ## 3. 최근 완료 Epic (참고용)
+
+### Epic CONTEXT-MENU-UI (완료: 2025-01-03)
+
+**목적**: 커스텀 컨텍스트 메뉴 컴포넌트 구현 (브랜드 일관성 + 접근성)
+
+**결과**: ✅ Phase 1 (RED, 18 tests), Phase 2 (GREEN, 12/18 passing - 기능적
+베이스라인 완료)
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션) 참조
+
+---
+
+### Epic DOWNLOAD-TOGGLE-TOOLBAR (완료: 2025-01-03)
+
+**목적**: 진행률 토스트 토글을 설정 패널에서 툴바로 이동 (다운로드 워크플로
+중심화)
+
+**결과**: ✅ Phase 1-3 완료, 15/15 tests GREEN, i18n 지원, 번들 크기 +0.47 KB
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션) 참조
+
+---
 
 ### Epic SOLID-NATIVE-MIGRATION (완료: 2025-10-03)
 
