@@ -31,7 +31,15 @@
 
 ### LOW Priority
 
-(현재 없음)
+**READY** | **CONTEXT-MENU-UI** | 네이티브 컨텍스트 메뉴를 커스텀 SolidJS
+컴포넌트로 대체 (다운로드/정보/공유 액션 지원, 디자인 토큰 스타일링, 접근성
+지원) | UX 일관성 향상, 브랜드 통일성, 터치 디바이스 대응 가능 | **M** (새
+컴포넌트 구현) | Epic UX-GALLERY-FEEDBACK-001 Phase 3-3에서 이관
+
+**READY** | **DOWNLOAD-TOGGLE-TOOLBAR** | 진행률 토스트 토글을 설정 패널에서
+툴바 다운로드 그룹으로 이동 (서브메뉴 또는 토글 버튼) | 다운로드 워크플로
+중심화, 설정 패널 단순화 | **S** (UI 이동) | Epic UX-GALLERY-FEEDBACK-001 Phase
+3-4에서 이관, 설정 패널 연동 정책 논의 필요
 
 ---
 

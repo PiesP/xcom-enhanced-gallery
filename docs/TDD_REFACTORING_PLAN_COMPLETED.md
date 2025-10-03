@@ -1,5 +1,98 @@
 <!-- markdownlint-disable -->
 
+2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 완료 ✅ (갤러리 피드백 및 가시성
+강화)
+
+- **생성일**: 2025-01-03
+- **완료일**: 2025-01-03 (Phase 1-3 완료, Phase 3-3/3-4는 백로그로 이관)
+- **목적**: 사용자가 갤러리 상태와 진행 상황을 명확히 인지하고, 주요 기능을 쉽게
+  발견하며, 액션 결과를 즉각 확인할 수 있도록 UI/UX 개선
+- **배경 (사용자 여정 분석 결과)**:
+  - ✅ 툴바 자동 숨김(2초)이 너무 짧아 첫 방문자가 기능을 놓칠 수 있음 → **해결
+    (Phase 1-1)**
+  - ✅ Fit 모드 버튼의 현재 선택 상태가 불명확함 → **해결 (Phase 1-2)**
+  - ✅ 전체 갤러리 중 현재 위치 파악이 어려움 → **해결 (Phase 2-1, 진행률 바)**
+  - ✅ 대량 다운로드 진행 상황을 기본적으로 알 수 없음 → **해결 (Phase 2-2)**
+  - ✅ 다운로드 버튼이 툴바와 아이템 오버레이에 중복 배치되어 혼란 → **해결
+    (Phase 3-1, 3-2)**
+- **완료된 Phase 요약**:
+  - **Phase 1**: 툴바 가시성 및 상태 피드백 강화 ✅
+    - 툴바 자동 숨김 지연 2s → 5s 연장 (커밋: 178d0f54)
+    - Fit 모드 선택 상태 시각화 (data-selected + 디자인 토큰 스타일) (커밋:
+      7069d9e4)
+    - 키보드 단축키 힌트 버튼 추가 (커밋: 80b0723a)
+    - 테스트: 22/22 GREEN (auto-hide: 4, fit-mode: 9, keyboard-hint: 9)
+  - **Phase 2**: 진행 상황 가시성 개선 ✅
+    - 미니 진행률 바 검증 (이미 구현됨, 13 tests)
+    - 대량 다운로드 진행률 토스트 기본 활성화 (showProgressToast: false → true,
+      7 tests)
+    - MediaCounter 접근성 강화 검증 (14 tests, WCAG AA 준수)
+    - 테스트: 34/34 GREEN
+    - 커밋: 0ac517ce, 머지: 8c7c7eaa
+  - **Phase 3**: 다운로드 UX 통합 ✅
+    - 아이템 오버레이 다운로드 버튼 제거
+    - 컨테이너 레벨 컨텍스트 메뉴 핸들러 추가 (onImageContextMenu)
+    - PC 전용 인터랙션 정책 준수 (Touch/Pointer 금지)
+    - 테스트: 21/21 GREEN (context-menu: 11, event-propagation: 7,
+      solid-bridge: 3)
+    - 커밋: dfadccbd, 머지: master
+- **Acceptance Criteria (전부 충족)** ✅:
+  - Phase 1:
+    - [x] 툴바 자동 숨김 5초 연장 (useToolbarPositionBased 파라미터)
+    - [x] Fit 모드 버튼 선택 상태 시각화 (data-selected + 디자인 토큰)
+    - [x] 키보드 단축키 힌트 버튼 추가 (KeyboardHelpOverlay 연동)
+    - [x] 회귀 방지: 기존 툴바 테스트 모두 PASS
+  - Phase 2:
+    - [x] 미니 진행률 바 실시간 동기화 (이미 구현됨)
+    - [x] download.showProgressToast 기본값 true
+    - [x] MediaCounter 접근성 WCAG AA 준수
+    - [x] 회귀 방지: 다운로드 서비스 테스트 모두 PASS
+  - Phase 3:
+    - [x] VerticalImageItem 오버레이 다운로드 버튼 제거
+    - [x] 컨텍스트 메뉴 핸들러 구현 (onImageContextMenu)
+    - [x] PC 전용 인터랙션 정책 준수
+    - [x] 액션 분리 (컨텍스트 메뉴 ≠ 아이템 선택)
+    - [x] 회귀 방지: Phase 3 테스트 모두 PASS
+- **품질 검증**:
+  - **Typecheck**: 0 errors ✅
+  - **Lint**: 0 warnings ✅
+  - **Tests**: 전체 1282/1299 passed (Phase 1-3: 77/77 GREEN) ✅
+  - **Build**: dev + prod 산출물 검증 통과 ✅
+  - **PC-only 정책**: Touch/Pointer 이벤트 사용 없음 ✅
+  - **디자인 토큰**: 하드코딩 색상/크기 없음 ✅
+- **변경 파일**:
+  - Phase 1:
+    - `src/shared/hooks/useToolbarPositionBased.ts` (기본값 5000ms)
+    - `src/shared/components/ui/Toolbar/Toolbar.tsx` (Fit 모드 상태 + 키보드
+      힌트 버튼)
+    - `src/shared/components/ui/Toolbar/Toolbar.module.css` (선택 상태 스타일)
+    - `src/features/gallery/components/KeyboardHelpOverlay/` (단축키 목록 확장)
+  - Phase 2:
+    - `src/constants.ts` (showProgressToast: true)
+    - 진행률 바는 이미 구현됨 (MediaCounter.tsx)
+  - Phase 3:
+    - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+      (다운로드 버튼 제거, 컨텍스트 메뉴 추가)
+    - `test/features/gallery/vertical-image-item.context-menu.test.tsx` (신규,
+      11 tests)
+    - `test/features/gallery/event-propagation.test.tsx` (회귀 방지 수정, 7
+      tests)
+    - `test/unit/features/gallery/components/VerticalImageItem.solid-bridge.test.tsx`
+      (회귀 방지 수정, 3 tests)
+- **브랜치 및 커밋**:
+  - Phase 1: feature/ux-gallery-feedback-phase1 (178d0f54, 7069d9e4, 80b0723a)
+  - Phase 2: feature/ux-gallery-feedback-phase2 (0ac517ce, 머지: 8c7c7eaa)
+  - Phase 3: feature/ux-gallery-feedback-phase3 (dfadccbd, 머지: master)
+- **향후 작업 (백로그로 이관)**:
+  - Phase 3-3 (LOW): 네이티브 컨텍스트 메뉴 → 커스텀 SolidJS 컴포넌트 대체
+    (다운로드/정보/공유 액션, 디자인 토큰, 접근성)
+  - Phase 3-4 (LOW): 진행률 토스트 토글을 설정 패널 → 툴바 다운로드 그룹으로
+    이동
+  - 상세: `docs/TDD_REFACTORING_BACKLOG.md` (CONTEXT-MENU-UI,
+    DOWNLOAD-TOGGLE-TOOLBAR)
+
+---
+
 2025-01-03: UX — Epic UX-GALLERY-FEEDBACK-001 Phase 3 완료 ✅ (다운로드 UX 통합)
 
 - **생성일**: 2025-01-03
