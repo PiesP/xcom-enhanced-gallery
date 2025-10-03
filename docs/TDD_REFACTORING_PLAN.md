@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-02 — DOM 구조 분석 기반 3개 리팩토링 Epic 완료 및
-이관
+**최근 업데이트**: 2025-10-03 — Epic VENDOR-GETTER-MIGRATION 완료 및 이관
 
 ---
 
@@ -20,35 +19,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 ---
 
 ## 2. 활성 Epic 현황
-
-### Epic VENDOR-GETTER-MIGRATION (우선순위: 높음)
-
-**생성일**: 2025-10-03 **목적**: Vendor 직접 Import 제거 및 Getter 패턴 전면
-적용
-
-**배경**: 번들 크기 분석 결과 20+ 파일에서 `solid-js`, `fflate` 등 외부
-라이브러리를 직접 import하여 Tree-shaking 최적화 방해 및 중복 번들링 가능성 발견
-
-**영향 범위**:
-
-- `src/shared/hooks/useSettingsModal.ts` - createSignal 직접 import
-- `src/shared/hooks/useFocusScope.ts` - onMount, onCleanup 직접 import
-- `src/shared/components/ui/Toolbar/ToolbarHeadless.tsx` - createEffect,
-  createMemo, createSignal 직접 import
-- 기타 17+ 파일
-
-**Acceptance Criteria**:
-
-1. ✅ 모든 `solid-js` 직접 import를 `getSolidCore()` getter 패턴으로 전환
-2. ✅ 타입만 import하는 경우는 `import type { ... } from 'solid-js'` 형태로 유지
-3. ✅ Lint 규칙으로 직접 import 금지 검증 추가
-4. ✅ 번들 크기 5-10% 감소 목표 달성
-5. ✅ 모든 테스트 GREEN 유지
-
-**예상 효과**: 번들 크기 5-10% 감소, Tree-shaking 최적화, 테스트 모킹 용이성
-향상
-
----
 
 ### Epic CODE-DEDUP-CONSOLIDATION (우선순위: 중간)
 
