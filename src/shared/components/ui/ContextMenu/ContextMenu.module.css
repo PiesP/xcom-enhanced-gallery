@@ -1,0 +1,56 @@
+/**
+ * ContextMenu 스타일
+ * Epic CONTEXT-MENU-UI Phase 2: GREEN
+ *
+ * 디자인 토큰 사용 (하드코딩 금지)
+ */
+
+.contextMenu {
+  position: fixed;
+  z-index: var(--xeg-z-modal);
+  min-width: 200px;
+
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--xeg-radius-lg);
+
+  box-shadow: var(--xeg-shadow-lg);
+
+  padding: var(--xeg-spacing-xs);
+
+  /* 포커스 아웃라인 제거 (메뉴 항목에 포커스) */
+  outline: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+
+  background-color: transparent;
+  border: none;
+  border-radius: var(--xeg-radius-md);
+
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  text-align: left;
+
+  cursor: pointer;
+
+  transition: background-color var(--xeg-duration-fast) var(--xeg-easing-standard);
+}
+
+.menuItem:hover {
+  background-color: var(--color-bg-hover);
+}
+
+.menuItem:focus {
+  outline: var(--xeg-focus-ring);
+  outline-offset: -2px;
+}
+
+.menuItem:active {
+  background-color: var(--color-bg-active);
+}
