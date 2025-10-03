@@ -81,6 +81,32 @@
   outline-offset: var(--xeg-focus-ring-offset, 2px);
 }
 
+/* ------------------------------------------------------------------ */
+/* Phase 1-2: Selected Fit Mode Visualization (UX-GALLERY-FEEDBACK-001)
+ * - Fit 모드 버튼의 선택 상태를 시각적으로 강조
+ * - 디자인 토큰 기반 스타일 (배경/테두리 강조)
+ * - data-selected="true" 속성으로 제어
+ */
+
+/* Selected fit button emphasis */
+.toolbarButton[data-selected='true'],
+.fitButton[data-selected='true'] {
+  background: var(--xeg-color-primary-50, var(--xeg-color-neutral-100));
+  border-color: var(--xeg-color-primary, var(--xeg-color-neutral-500));
+  border-width: 2px;
+  color: var(--xeg-color-primary, var(--xeg-color-text-primary));
+}
+
+/* Selected fit button hover state */
+.toolbarButton[data-selected='true']:hover:not([data-disabled='true']),
+.fitButton[data-selected='true']:hover:not([data-disabled='true']) {
+  background: var(--xeg-color-primary-100, var(--xeg-color-neutral-200));
+  border-color: var(--xeg-color-primary-dark, var(--xeg-color-primary));
+  transform: translateY(0); /* 리프트 효과 제거 */
+}
+
+/* ------------------------------------------------------------------ */
+
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   --xeg-toolbar-opacity: 1;
