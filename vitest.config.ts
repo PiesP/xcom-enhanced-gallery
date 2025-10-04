@@ -33,6 +33,7 @@ const solidIncludePatterns = [
   '**/shared/components/ui/NavigationButton/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/ui/primitive/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/ui/isolation/**/*.{ts,tsx,js,jsx}',
+  '**/shared/components/isolation/**/*.{ts,tsx,js,jsx}',
   '**/features/gallery/components/KeyboardHelpOverlay/**/*.{ts,tsx,js,jsx}',
   'test/unit/features/gallery/**/*.{ts,tsx,js,jsx}',
   '**/shared/components/LazyIcon.{ts,tsx,js,jsx}',
