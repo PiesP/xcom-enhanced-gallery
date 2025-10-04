@@ -42,6 +42,37 @@ Epic TEST-FAILURE-ALIGNMENT-PHASE2로 이동
 
 ### MEDIUM Priority
 
+#### READY | CODEQL-LOCAL-ENHANCEMENT | 로컬 CodeQL 워크플로 개선 (Fallback 쿼리 팩 활용)
+
+**작업 내용**:
+
+- 로컬 스캔 스크립트 개선 (`scripts/run-codeql.mjs`)
+  - Fallback 쿼리 팩(`codeql/javascript-queries`) 명시적 사용
+  - 스캔 결과 상세 로깅 (쿼리 팩 종류, 규칙 수, SARIF 통계)
+  - 에러 처리 개선 (표준 쿼리 팩 실패 시 graceful fallback)
+- 테스트 조건부 수정
+  - Advanced Security 감지 함수 구현 (`hasAdvancedSecurity()`)
+  - 감지 시 엄격 모드 (400+ js/ 규칙 요구)
+  - 미감지 시 relaxed 모드 (Fallback 쿼리 팩 허용)
+- 문서화 강화
+  - 로컬 CodeQL 활용 가이드 (`docs/CODEQL_LOCAL_GUIDE.md`)
+  - 쿼리 팩 차이 설명 (표준 vs Fallback)
+  - `AGENTS.md`, `ARCHITECTURE.md` 업데이트
+
+**기대 효과**:
+
+- 로컬 개발 경험 개선 (명확한 제약 이해)
+- 기본 보안 규칙 적용 (Fallback 쿼리 팩 50+ 규칙)
+- Advanced Security 없이도 CodeQL 활용 가능
+- 문서화로 팀 전체 활용도 증가
+
+**난이도**: S (외부 의존성 없음, 기존 스크립트 개선)
+
+**비고**: Epic GITHUB-ADVANCED-SECURITY-INTEGRATION (HOLD)과 분리된 독립 작업.
+표준 쿼리 팩 활성화 전까지 로컬 환경 개선에 집중.
+
+---
+
 #### HOLD | GITHUB-ADVANCED-SECURITY-INTEGRATION | GitHub Advanced Security 통합으로 표준 CodeQL 쿼리 팩 활성화
 
 **작업 내용**:
