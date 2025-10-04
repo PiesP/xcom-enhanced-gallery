@@ -111,6 +111,31 @@ npm run sync:connect:fix  # 자동 수정
 스캔 대상: `src/constants.ts`, `src/shared/utils/url-safety.ts`,
 `src/**/*.{ts,tsx}`
 
+### 아이콘 사용 분석 (Icon Usage Audit)
+
+코드베이스 전체에서 아이콘 사용 패턴을 분석하고 리포트를 생성:
+
+```pwsh
+npm run icon:audit              # 콘솔 출력 (Markdown 형식)
+npm run icon:audit:json         # JSON 형식 출력
+npm run icon:audit:save         # docs/icon-usage-report.md 저장
+```
+
+주요 기능:
+
+- 아이콘 사용처 분석 (파일 경로, 줄 번호, 컨텍스트)
+- 중복 사용 감지 (동일 아이콘이 다른 의미로 사용)
+- 미사용 아이콘 감지 (등록되었지만 사용되지 않음)
+- 사용 빈도 분석 (통계 및 백분율)
+
+CLI 옵션:
+
+```pwsh
+node scripts/icon-usage-audit.mjs --format markdown  # Markdown 형식 (default)
+node scripts/icon-usage-audit.mjs --format json      # JSON 형식
+node scripts/icon-usage-audit.mjs --output <path>    # 파일로 저장
+```
+
 ---
 
 ## Git Hooks (Husky)

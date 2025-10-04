@@ -41,19 +41,12 @@
 - **주의**: PC 전용 정책 유지 (터치 이벤트 배제)
 - **의존성**: Epic UI-TEXT-ICON-OPTIMIZATION Phase 3 완료 후
 
-**IDEA | ICON-USAGE-AUDIT-TOOL | 아이콘 사용 분석 자동화** | 중복 사용 자동
-감지 + 회귀 방지 | S | 장기 품질 개선
-
-- **현황**: 수동으로 아이콘 중복 사용 확인
-- **제안**: 프로젝트 전체 아이콘 사용 분석 스크립트
-  (`scripts/icon-usage-audit.mjs`)
-- **기능**: 중복 사용 감지, 미사용 아이콘 감지, 사용 빈도 리포트
-- **출력**: Markdown 테이블 또는 JSON 리포트
-- **예**: "Settings" 아이콘이 3곳에서 다른 의미로 사용됨 → 경고
-
 ---
 
 ## 최근 승격 히스토리
+
+**2025-01-07**: `ICON-USAGE-AUDIT-TOOL` 구현 완료 →
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 이동
 
 **2025-01-04**: `UI-TEXT-ICON-OPTIMIZATION` 승격 → `TDD_REFACTORING_PLAN.md`
 활성 Epic으로 이동
