@@ -1,3 +1,14 @@
+================================================================================
+HISTORICAL ATTRIBUTION
+================================================================================
+This license file is retained for historical attribution purposes.
+The fflate library was previously used in this project but has been removed
+as of Epic REF-LITE-V3 (replaced by custom StoreZipWriter implementation).
+
+We maintain this file to acknowledge the past contribution of the fflate library
+to this project's development.
+================================================================================
+
 MIT License
 
 Copyright (c) 2020 Arjun Barrett
