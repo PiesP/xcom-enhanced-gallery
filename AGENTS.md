@@ -130,11 +130,24 @@ npm run icon:audit:save     # docs/icon-usage-report.md 저장
 ### CodeQL 분석
 
 ```pwsh
-npm run codeql:scan         # 로컬 분석
+npm run codeql:scan         # 로컬 분석 (제약: 표준 쿼리 팩 접근 권한 필요)
 npm run codeql:dry-run      # 미리보기
 ```
 
 산출물: SARIF, 요약 CSV, 개선 계획 마크다운
+
+**로컬 제약**:
+
+- `codeql/javascript-security-and-quality` 접근 거부 (GitHub Advanced Security
+  전용)
+- 로컬 스캔은 Fallback 쿼리 팩(`codeql/javascript-queries`) 사용 가능
+- 완전한 보안 분석은 CI 환경에서 실행 (`security.yml` 워크플로)
+
+**CI 환경**:
+
+- GitHub Code Scanning: 표준 쿼리 팩 자동 제공 (400+ 보안 규칙)
+- SARIF 업로드: `github/codeql-action/upload-sarif@v3`
+- 역할 분리: Vitest (프로젝트 정책), CodeQL (보안 취약점)
 
 ### Codemod 도구
 

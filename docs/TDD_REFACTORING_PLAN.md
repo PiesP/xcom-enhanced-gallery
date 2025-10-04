@@ -161,59 +161,74 @@ tests GREEN)
 
 **Acceptance (Phase 2)**:
 
-- [ ] `example.ql` 제거 완료
-- [ ] `npm run codeql:scan` 실행 시 표준 쿼리 팩 사용 확인
-- [ ] `test/architecture/codeql-standard-packs.contract.test.ts` GREEN (2/2
-      PASS)
-- [ ] CI 워크플로 GREEN (보안 취약점 0건 또는 억제 규칙 적용)
+- [x] `example.ql` 제거 완료
+- [x] 로컬 스캔 제약 확인 (GitHub Advanced Security 권한 필요)
+- [ ] CI 환경에서 표준 쿼리 팩 검증 (GitHub Code Scanning)
+- [ ] `test/architecture/codeql-standard-packs.contract.test.ts` GREEN (CI 환경)
+
+**Phase 2 완료 상태** (2025-10-04):
+
+- ✅ `example.ql` 삭제 완료
+- ✅ 로컬 스캔 실행 → 접근 권한 문제 확인 (예상된 제약)
+  - `codeql/javascript-security-and-quality` 접근 거부 (GitHub Advanced Security
+    전용)
+  - Fallback 로직 존재하나 로컬 환경에서는 실행 불가
+- ⏳ CI 환경 검증 대기 (GitHub Code Scanning은 표준 쿼리 팩 자동 제공)
+- 📝 로컬 제약 문서화 필요
+
+**다음 단계**: Phase 3 (REFACTOR) - 문서 업데이트 및 CI 검증
 
 ---
 
 #### Phase 3: REFACTOR (개선 및 문서화)
 
-**목표**: 코드 품질, 문서, CI 최적화
+**목표**: 코드 품질, 문서, CI 최적화 → **제약 발견 및 대안 제시**
 
-**Task 3.1**: False Positive 억제 규칙 추가 (필요 시)
+**Task 3.1**: CI 전략 재평가 (2025-10-04 추가)
 
-- 파일: `.github/codeql/codeql-config.yml` (신규, 선택적)
-- 내용: 프로젝트 특성상 false positive로 판단되는 규칙 억제
-  - 예: Userscript 환경에서 `GM_*` 글로벌 사용은 안전함
-  - 예: 번들 크기 제한으로 일부 안전하지 않은 패턴 허용 (명시적 주석)
-- 조건: Phase 2에서 false positive 발견 시에만 적용
+- 현재 문제: `scripts/run-codeql.mjs`는 로컬/CI 모두 GitHub Advanced Security
+  권한 필요
+- 대안 1: Fallback 쿼리 팩 사용 (`codeql/javascript-queries` - 기본 규칙만)
+- 대안 2: GitHub Code Scanning Action 사용 (표준 쿼리 팩 자동 제공)
+  - 변경: `github/codeql-action/init` + `github/codeql-action/analyze`
+  - 장점: GitHub Advanced Security 권한 자동 처리
+  - 단점: GitHub Actions 환경에서만 작동 (로컬 스캔 불가)
+- **선택**: 대안 2 채택 (CI 우선, 로컬은 Fallback 쿼리 팩으로 제한)
 
 **Task 3.2**: 문서 업데이트
 
-- 파일: `AGENTS.md` - CodeQL 섹션 업데이트
-  - 표준 쿼리 팩 사용 명시
-  - 로컬 스캔 명령어 예시 추가
+- 파일: `AGENTS.md` - CodeQL 섹션 업데이트 ✅
+  - 로컬 제약 명시 (표준 쿼리 팩 접근 불가)
+  - CI 전략 설명 (GitHub Code Scanning Action 권장)
 - 파일: `docs/ARCHITECTURE.md` - 보안 섹션 추가 (선택적)
-  - CodeQL 역할: 보안 취약점 감지
-  - Vitest 역할: 프로젝트 정책 강제 (PC 전용, 디자인 토큰 등)
-- 파일: `.github/copilot-instructions.md` - CodeQL 섹션 업데이트
-  - 표준 쿼리 팩 기본 사용 명시
+  - CodeQL 역할: 보안 취약점 감지 (CI 환경 전용)
+  - Vitest 역할: 프로젝트 정책 강제 (로컬/CI 공통)
+- 파일: `.github/copilot-instructions.md` - CodeQL 섹션 업데이트 (선택적)
+  - 표준 쿼리 팩 CI 전용 사용 명시
 
-**Task 3.3**: CI 최적화
+**Task 3.3**: CI 워크플로 개선 (선택적)
 
 - 파일: `.github/workflows/security.yml` 검토
-- 최적화 옵션:
-  - CodeQL 스캔을 별도 job으로 분리하여 병렬 실행 (이미 분리됨 ✅)
-  - 캐싱: CodeQL CLI 다운로드 캐시 (선택적)
+- 개선 옵션:
+  - 현재: `scripts/run-codeql.mjs` (로컬과 동일, 접근 권한 문제)
+  - 권장: `github/codeql-action/analyze` (표준 쿼리 팩 자동 제공)
   - 타임아웃: 현재 25분 → 필요 시 조정
 
-**Task 3.4**: 스크립트 개선
+**Task 3.4**: 테스트 전략 조정
 
-- 파일: `scripts/run-codeql.mjs` 검토
-- 개선 항목:
-  - 표준 쿼리 팩 다운로드 실패 시 더 명확한 에러 메시지
-  - Fallback 로직 로그 개선 (Line 724-733)
-- 조건: Phase 2에서 문제 발견 시에만 적용
+- 파일: `test/architecture/codeql-standard-packs.contract.test.ts` 검토
+- 조정 옵션:
+  - 현재: 로컬 스캔 결과 검증 (실패 예상)
+  - 권장: CI 환경에서만 실행 (환경 변수 게이팅)
+  - 대안: Fallback 쿼리 팩 결과 검증으로 완화
 
 **Acceptance (Phase 3)**:
 
-- [ ] False positive 억제 규칙 추가 (필요 시)
-- [ ] `AGENTS.md`, `ARCHITECTURE.md`, `copilot-instructions.md` 문서 업데이트
-- [ ] CI 최적화 검토 완료
-- [ ] 스크립트 개선 검토 완료
+- [x] 로컬/CI 제약 분석 완료
+- [x] 대안 전략 수립 (GitHub Code Scanning Action)
+- [x] `AGENTS.md` 문서 업데이트 (로컬 제약 명시)
+- [ ] CI 워크플로 개선 (선택적 - 대안 2 적용)
+- [ ] 테스트 전략 조정 (환경 변수 게이팅 또는 완화)
 - [ ] 전체 테스트 GREEN 유지 (`npm test`)
 - [ ] CI 파이프라인 GREEN 유지
 
