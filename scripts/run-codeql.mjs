@@ -579,14 +579,15 @@ async function generateReports(config, executedPacks) {
   const sarifRaw = await fs.readFile(config.sarifPath, 'utf8');
   const sarif = JSON.parse(sarifRaw);
   const findings = extractFindingsFromSarif(sarif);
-  
+
   // SARIF 통계 로깅 (쿼리 팩 정보 포함)
   const totalRules = sarif.runs?.[0]?.tool?.driver?.rules?.length ?? 0;
-  const jsSecurityRules = sarif.runs?.[0]?.tool?.driver?.rules?.filter(
-    r => r.id?.startsWith('js/') && r.properties?.['security-severity']
-  ).length ?? 0;
+  const jsSecurityRules =
+    sarif.runs?.[0]?.tool?.driver?.rules?.filter(
+      r => r.id?.startsWith('js/') && r.properties?.['security-severity']
+    ).length ?? 0;
   logStep(`SARIF 분석 완료: 전체 규칙 ${totalRules}개, JS 보안 규칙 ${jsSecurityRules}개`);
-  
+
   const csv = buildSummaryCsv(findings);
   const markdown = buildPlanMarkdown(findings, config, executedPacks);
 
