@@ -2,6 +2,154 @@
 
 ---
 
+## 2025-10-04: Epic CODEQL-SECURITY-HARDENING 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-04
+- **유형**: CodeQL 보안 취약점 수정 (문서 계획만 완료)
+- **목적**: CodeQL 분석에서 발견된 URL Sanitization 및 Prototype Pollution 수정
+- **결과**: ✅ 계획 완료 (실제 구현은 향후 진행)
+- **브랜치**: `test/fix-failing-tests`
+
+### 배경
+
+**발견된 문제점** (CodeQL 스캔 결과):
+
+- URL Substring Sanitization (4건)
+  - `src/shared/utils/media/media-url.util.ts:159, 163`
+  - `test/__mocks__/twitter-dom.mock.ts:304, 414`
+  - `.includes('twimg.com')` 검사만으로는 불충분 (`evil.com/twimg.com` 허용
+    가능)
+- Prototype Pollution (1건)
+  - `src/features/settings/services/SettingsService.ts:232`
+  - `sanitizeSettingsTree()` 재귀 할당 시 가드 미흡 (재귀 깊이 제한 없음)
+
+**영향**:
+
+- 보안 등급: B+ (현재) → A (목표)
+- CodeQL 경고: 5건 (모두 WARNING 수준)
+
+### 솔루션 선택
+
+**검토한 옵션**:
+
+| 솔루션               | 장점                   | 단점               | 난이도 | 번들 영향  | 선택 |
+| -------------------- | ---------------------- | ------------------ | ------ | ---------- | ---- |
+| A. 기존 패턴 강화    | 최소 변경, 테스트 활용 | -                  | S      | +150 bytes | ✅   |
+| B. 정규식 기반 검증  | 명시적 패턴            | 유지보수 부담      | M      | +200 bytes | ❌   |
+| C. URL API 직접 사용 | 표준 API               | 예외 처리 오버헤드 | M      | +300 bytes | ❌   |
+| D. 외부 라이브러리   | 검증된 구현            | 번들 크기 증가     | M      | +5~15 KB   | ❌   |
+
+**선택 근거 (옵션 A)**:
+
+1. 기존 `isTrustedTwitterMediaHostname()`, `sanitizeSettingsTree()` 활용
+2. 번들 효율 (예산 내)
+3. TDD 적합 (RED → GREEN → REFACTOR)
+4. 유지보수성 (일관된 패턴)
+
+### 완료된 Phase
+
+#### 계획 수립 완료 ✅
+
+**작업 내용**:
+
+1. CodeQL 스캔 실행 및 결과 분석
+   - `npm run codeql:scan` 실행
+   - SARIF, CSV, 개선 계획 생성
+   - 5건 경고 분류 (URL 4건, Prototype Pollution 1건)
+
+2. 솔루션 비교 및 선택
+   - 4가지 옵션 도출 (A/B/C/D)
+   - 장단점, 난이도, 번들 영향 분석
+   - 옵션 A 선택 (기존 패턴 강화)
+
+3. TDD 리팩토링 계획 작성
+   - `docs/TDD_REFACTORING_PLAN.md` 업데이트
+   - Epic CODEQL-SECURITY-HARDENING 추가
+   - Phase 1-3 상세 작업 내용 정의
+
+4. 백로그 업데이트
+   - `docs/TDD_REFACTORING_BACKLOG.md` 갱신
+   - 최근 승격 히스토리 추가
+
+**결과**:
+
+- ✅ 계획 문서 완료
+- ✅ 솔루션 선택 완료
+- ✅ 품질 게이트 통과 (타입 체크, 린트)
+- ✅ Git 커밋 완료 (`b3f60b1c`)
+
+### 예상 Phase (미구현)
+
+#### Phase 1: RED — 보안 테스트 작성 (미구현)
+
+**계획된 작업**:
+
+- URL Sanitization 테스트 (7~9개)
+- Prototype Pollution 테스트 (7~9개)
+- 악의적 패턴 검증
+
+#### Phase 2: GREEN — 최소 수정 (미구현)
+
+**계획된 작업**:
+
+- `media-url.util.ts`: `.includes()` 제거
+- `SettingsService.ts`: 재귀 깊이 제한 (MAX_DEPTH=10)
+
+#### Phase 3: REFACTOR — CodeQL 재검증 (미구현)
+
+**계획된 작업**:
+
+- CodeQL 재스캔 (5건 → 0건 목표)
+- 문서 업데이트 (CODING_GUIDELINES, ARCHITECTURE)
+
+### 예상 영향
+
+| 항목        | 변경 전 | 변경 후   | 증감      |
+| ----------- | ------- | --------- | --------- |
+| 번들 크기   | ~120 KB | ~120 KB   | +0.01%    |
+| 테스트 수   | 2646    | 2653~2655 | +7~9      |
+| CodeQL 경고 | 5       | 0         | -5 (100%) |
+| 보안 등급   | B+      | A         | 개선      |
+
+### 산출물
+
+**문서**:
+
+- `docs/TDD_REFACTORING_PLAN.md`: Epic 추가
+- `docs/TDD_REFACTORING_BACKLOG.md`: 승격 히스토리 추가
+- `codeql-results.sarif`: CodeQL 스캔 결과
+- `codeql-results-summary.csv`: 경고 요약
+- `codeql-improvement-plan.md`: 개선 계획
+
+**Git**:
+
+- 커밋: `b3f60b1c` "docs(docs): add Epic CODEQL-SECURITY-HARDENING to
+  refactoring plan"
+- 브랜치: `test/fix-failing-tests` (신규 생성)
+
+### 교훈
+
+**성공 요인**:
+
+1. CodeQL 스캔으로 보안 취약점 조기 발견
+2. 솔루션 비교를 통한 최적 선택
+3. TDD 계획 수립으로 명확한 로드맵 확보
+
+**개선 사항**:
+
+1. 실제 구현은 별도 Epic으로 진행 필요
+2. CodeQL 경고 0건 달성을 위한 후속 작업 필요
+
+### 다음 단계
+
+- [ ] Phase 1-3 실제 구현 (별도 Epic)
+- [ ] CodeQL 재스캔으로 경고 0건 검증
+- [ ] 보안 등급 A 달성 확인
+
+---
+
 ## 2025-10-04: Epic CODEQL-LOCAL-ENHANCEMENT 완료 ✅
 
 ### 개요
