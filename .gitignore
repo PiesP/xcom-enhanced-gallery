@@ -33,6 +33,7 @@ test-profile/
 *.lcov
 .vitest-cache/
 test-output/
+test-results.txt
 
 # CodeQL tooling
 codeql/
