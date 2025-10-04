@@ -565,6 +565,16 @@ beforeEach(async () => {
   try {
     const { initializeVendors } = await import('@shared/external/vendors');
     await initializeVendors();
+
+    // Signal derived state 초기화 - createRoot 컨텍스트 필요
+    const { initializeGalleryDerivedState } = await import(
+      '@/shared/state/signals/gallery.signals'
+    );
+    const { initializeToolbarDerivedState } = await import(
+      '@/shared/state/signals/toolbar.signals'
+    );
+    initializeGalleryDerivedState();
+    initializeToolbarDerivedState();
   } catch {
     // vendor 초기화 실패는 무시하고 계속 진행
   }
