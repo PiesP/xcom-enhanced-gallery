@@ -20,6 +20,11 @@ vi.mock('@shared/services/LanguageService', () => {
       setLanguage: languageSetMock,
       getString: vi.fn((key: string) => `xeg:${key}`),
     })),
+    languageService: {
+      getCurrentLanguage: vi.fn(() => 'ja'),
+      setLanguage: languageSetMock,
+      getString: vi.fn((key: string) => `xeg:${key}`),
+    },
   };
 });
 
