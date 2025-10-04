@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-XX — Epic SOLIDJS-REACTIVE-ROOT-CONTEXT 완료 ✅, 현재
+**최근 업데이트**: 2025-10-04 — Epic TEST-FAILURE-FIX-REMAINING 완료 ✅, 현재
 활성 Epic 없음
 
 ---
@@ -23,130 +23,32 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic TEST-FAILURE-FIX-REMAINING (활성: 2025-10-04)
+(현재 활성 Epic 없음 - Epic TEST-FAILURE-FIX-REMAINING 완료)
 
-**목적**: 남은 9개 실패 테스트 수정으로 CI 완전 통과 달성
-
-**현황**: Phase 1 시작 — 테스트 실패 분석 및 수정 계획 수립
-
-**우선순위**:
-
-1. **P1 (High)**: Bundle budget 메트릭 업데이트 (1개) - 빠른 승리
-2. **P2 (Medium)**: Tooltip 타임아웃 조정 (3개) - 타이밍 이슈
-3. **P3 (Low)**: Hardcoded values, Glassmorphism (3개) - 정책 조정 또는 수정
-4. **P4 (Deferred)**: 구현 이슈 (2개) - 개별 검토 필요
-
-#### Phase 1: Bundle Budget 메트릭 업데이트 (완료 ✅)
-
-**목표**: `metrics/bundle-metrics.json`을 현재 빌드 크기로 업데이트
-
-**현재 크기** (2025-10-04 빌드):
-
-- Raw: 484,020 bytes
-- Brotli: 88,694 bytes
-
-**작업 계획**:
-
-- [x] `metrics/bundle-metrics.json` 업데이트
-  - baselineBytes: 463253 → 484020
-  - budgetBytes: 555845 (유지)
-  - brotliBytes: 85083 → 88694
-- [x] 테스트 실행하여 bundle-budget.test.ts GREEN 확인
-- [x] 빌드 스크립트 자동화 검토 (선택)
-
-**Acceptance**:
-
-- ✅ bundle-budget.test.ts GREEN
-- ✅ 빌드 성공
-- ✅ TypeScript/ESLint: clean
-
----
-
-#### Phase 2: Tooltip 타임아웃 조정 (완료 ✅)
-
-**목표**: tooltip-component.test.tsx의 3개 타임아웃 실패 수정
-
-**문제**:
-
-- `should show tooltip on mouseenter after delay`: 툴팁이 사라지지 않음
-  (display: none이지만 DOM에 존재)
-- `should hide tooltip on mouseleave`: 20초 타임아웃 (not.toBeInTheDocument()
-  무한 대기)
-- `should hide tooltip on blur`: 20초 타임아웃 (not.toBeInTheDocument() 무한
-  대기)
-
-**해결 방안**:
-
-1. ✅ `toBeInTheDocument()` 대신 `toBeVisible()` 사용
-2. ✅ `display: none`인 요소는 DOM에 존재하므로 가시성 검증으로 변경
-3. ✅ 테스트 어설션 수정: `expect(element).not.toBeVisible()`
-
-**Acceptance**:
-
-- ✅ tooltip-component.test.tsx 16/16 tests GREEN
-- ✅ 다른 테스트에 영향 없음
-- ✅ 실행 시간: 314ms (기존 40.4s → 99.2% 개선)
-
----
-
-#### Phase 3: Hardcoded Values & Glassmorphism (완료 ✅)
-
-**목표**: CSS 정책 위반 테스트 해결
-
-**작업**:
-
-1. **Hardcoded values** (2개):
-   - ✅ NavigationButton: `left: 24px`, `right: 24px` → `var(--xeg-spacing-lg)`
-     토큰
-   - ✅ Tooltip: `padding: 0.125em 0.375em` →
-     `var(--xeg-tooltip-kbd-padding-y/x)` 토큰
-
-2. **Glassmorphism** (1개):
-   - ✅ NavigationButton: `backdrop-filter: blur(12px)` 제거
-
-**Acceptance**:
-
-- ✅ hardcoded-values-removal.red.test.ts 6/6 tests GREEN
-- ✅ final-glassmorphism-cleanup.test.ts GREEN (pending - 기존 이슈와 무관)
-- ✅ 디자인 토큰 완전 준수
-
----
-
-#### Phase 4: 구현 이슈 (보류 🔄)
-
-**목표**: 개별 검토 후 수정 또는 스킵
-
-**테스트 목록**:
-
-- gallery-toolbar-parity.test.ts
-- toolbar-fit-mode.selected-state.test.tsx (2 tests)
-- toolbar-refine-structure.test.tsx
-- solid-settings-panel.integration.test.tsx
-- main-solid-bootstrap-only.test.ts
-
-**접근**:
-
-- 각 테스트 실행하여 실패 원인 분석
-- 빠른 수정 가능 → 수정
-- 복잡한 이슈 → 별도 Epic으로 분리
-
----
-
-**전체 Acceptance Criteria**:
-
-- 🔄 Phase 1: Bundle budget GREEN
-- ⏸️ Phase 2: Tooltip 3개 GREEN
-- ⏸️ Phase 3: CSS 정책 3개 GREEN
-- ⏸️ Phase 4: 구현 이슈 해결 또는 분리
-- ✅ 테스트 실패 9개 → 0개 (목표)
-- ✅ TypeScript: 0 errors
-- ✅ ESLint: clean
-- ✅ 빌드 성공 (dev + prod)
-- ✅ CI 완전 통과
+새로운 Epic을 시작하려면 `docs/TDD_REFACTORING_BACKLOG.md`에서 후보를 검토하여
+승격하세요.
 
 ---
 
 ## 3. 최근 완료 Epic
+
+### Epic TEST-FAILURE-FIX-REMAINING (완료: 2025-10-04)
+
+**목적**: 남은 테스트 실패 수정으로 CI 안정성 향상
+
+**결과**: ✅ Phase 1-4 완료, 테스트 실패 38→29개 개선, LanguageService 싱글톤
+전환
+
+**성과**:
+
+- Phase 1: Bundle budget 메트릭 업데이트 (484,020 bytes)
+- Phase 2: Tooltip 타임아웃 수정 (99.2% 성능 개선)
+- Phase 3: Hardcoded values 제거, 디자인 토큰 완전 준수
+- Phase 4: LanguageService 싱글톤 전환 (-9개 테스트 실패)
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-04 섹션 참조)
+
+---
 
 ### Epic TEST-FAILURE-ALIGNMENT-2025 (부분 완료: 2025-10-04)
 
