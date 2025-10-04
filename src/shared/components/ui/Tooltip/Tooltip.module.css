@@ -1,0 +1,91 @@
+/**
+ * @fileoverview Tooltip Component Styles
+ * Epic CUSTOM-TOOLTIP-COMPONENT: 디자인 토큰 기반 스타일
+ *
+ * 원칙:
+ * - 하드코딩 색상/크기/시간 금지
+ * - 디자인 토큰만 사용 (--xeg-*, --color-*)
+ * - PC 전용 정책 준수
+ * - WCAG 2.1 Level AA 준수
+ */
+
+.tooltip {
+  position: fixed;
+  z-index: var(--xeg-z-tooltip, 9999);
+  padding: var(--space-xs) var(--space-sm);
+  background-color: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--xeg-radius-md);
+  box-shadow: var(--xeg-shadow-md);
+  font-size: var(--xeg-font-size-sm);
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Placement 별 애니메이션 */
+.tooltip[data-placement='top'] {
+  animation: fadeInTop var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
+}
+
+.tooltip[data-placement='bottom'] {
+  animation: fadeInBottom var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
+}
+
+@keyframes fadeInTop {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 키보드 단축키 강조 (<kbd>) */
+.tooltip kbd {
+  display: inline-block;
+  padding: 0.125em 0.375em;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--xeg-radius-sm, 0.25rem);
+  font-family: inherit;
+  font-size: 0.875em;
+  font-weight: var(--xeg-font-weight-semibold);
+  line-height: 1;
+}
+
+/* Prefers-reduced-motion 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .tooltip {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}

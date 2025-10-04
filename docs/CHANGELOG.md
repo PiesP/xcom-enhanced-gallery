@@ -10,6 +10,14 @@ and this project adheres to
 
 ### Added
 
+- **Custom Tooltip Component** (Epic CUSTOM-TOOLTIP-COMPONENT Phase 1):
+  - Keyboard shortcut visual emphasis support with `<kbd>` markup
+  - PC-only events (mouseenter/focus, mouseleave/blur) - Touch/Pointer ignored
+  - Design token-based styling (WCAG 2.1 Level AA compliance)
+  - `role="tooltip"` and `aria-describedby` for screen reader accessibility
+  - Placement options (top/bottom) with viewport boundary detection
+  - Configurable delay (default 500ms, test mode 0ms)
+  - 16 comprehensive contract tests covering all specifications
 - QuestionMark icon for keyboard shortcuts help button
 - Icon semantic uniqueness contract tests to prevent icon purpose conflicts
 - Enhanced ARIA attributes for ContextMenu component (WCAG 2.1 Level AA):
