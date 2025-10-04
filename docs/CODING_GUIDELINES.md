@@ -353,6 +353,10 @@ const blob = await createZipFromItems(items, 'media.zip');
 - 번들/접근성/토큰 회귀 측정 없이 구조 수정
 - `signal.value` 접근 (SolidJS는 `signal()` 호출)
 - `createGlobalSignal` 사용 (레거시, 신규 코드 금지)
+- 직접 `solid-js`, `fflate` import (getter 사용 필수)
+- 직접 `GM_*` API 호출 (adapter 사용 필수)
+- 색상/시간/이징 하드코딩 (디자인 토큰 필수)
+- Touch/Pointer 이벤트 사용 (PC 전용 설계)
 
 ---
 

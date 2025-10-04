@@ -4,13 +4,14 @@
 
 **관련 문서**: [코딩 가이드](CODING_GUIDELINES.md) |
 [Vendors API](vendors-safe-api.md) | [실행/CI](../AGENTS.md) |
+[Copilot 지침](../.github/copilot-instructions.md) |
 [의존성 그래프](dependency-graph.svg)
 
 ---
 
 ## 1. 레이어 구조
 
-```
+```text
 Features (UI/도메인)
    ↓
 Shared (services/state/utils)
@@ -83,15 +84,15 @@ External (vendors/userscript/zip)
 
 ## 3. vDOM/Light DOM 전략
 
-**SolidJS vDOM + X.com React SPA 공존**
+### SolidJS vDOM + X.com React SPA 공존
 
-### 마운트
+#### 마운트
 
 - **Light DOM 전용**: `#xeg-gallery-root` 단일 컨테이너
 - Shadow DOM 미사용
 - 호스트 DOM 직접 수정 금지
 
-### 스타일 주입
+#### 스타일 주입
 
 - 네임스페이스: `xeg-*`, `[data-xeg-*]`
 - 글로벌 변수: `window.XEG_CSS_TEXT`
@@ -99,14 +100,14 @@ External (vendors/userscript/zip)
 - 게이팅: `window.XEG_STYLE_HEAD_MODE` (`'auto'` | `'defer'` | `'off'`)
 - 구현: `vite.config.ts` (번들) + `GalleryContainer.tsx` (런타임)
 
-### SPA 재마운트
+#### SPA 재마운트
 
 - `RebindWatcher` (MutationObserver 기반)
 - 컨테이너 분실 감지 → 자동 재생성/재렌더 (≤250ms)
 - Feature flag: `vdomRebind`
 - 정리: 언마운트 시 observer 자동 해제
 
-### 이벤트/수명주기
+#### 이벤트/수명주기
 
 - PC 전용 입력 (상세: 코딩 가이드)
 - Vendor/Userscript: getter/adapter 경유

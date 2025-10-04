@@ -145,6 +145,8 @@ vi.mock('@shared/external/vendors', async orig => {
 
 ## Anti-Patterns
 
+❌ **금지**:
+
 - solid-js, fflate 등을 직접 import (❌ 직접 import, ✅ getter 사용)
 - 코드 상단에서 `GM_*`를 직접 참조(테스트/Node 환경 붕괴)
 - TDZ 이후에만 접근해야 하는 벤더 API를 모듈 최상위에서 즉시 사용
@@ -155,3 +157,26 @@ vi.mock('@shared/external/vendors', async orig => {
     `createEffect(() => cb(signal()))`)
   - `createGlobalSignal()` 신규 사용 (레거시 호환 레이어 - Epic SOLID-NATIVE-001
     완료 후 제거 예정)
+
+---
+
+## 참조 문서
+
+**필독**:
+
+- [아키텍처 설계서](ARCHITECTURE.md) - 레이어 경계/외부 통합 계약
+- [코딩 가이드라인](CODING_GUIDELINES.md) - 벤더 getter/PC 전용 입력 규칙
+- [실행 가이드](../AGENTS.md) - 로컬/CI 워크플로
+- [Copilot 지침](../.github/copilot-instructions.md) - AI 개발 정책
+
+**테스트**:
+
+- `test/integration/vendor-tdz-resolution.test.ts` - TDZ 안전성 검증
+- `test/unit/shared/external/userscript-adapter.contract.test.ts` - 어댑터 계약
+- `test/architecture/icon-semantic-uniqueness.test.ts` - 아이콘 고유성
+- `test/architecture/contextmenu-aria-enhancement.test.ts` - 접근성 검증
+
+---
+
+본 가이드는 외부 의존성 통합의 단일 소스입니다. 새로운 외부 라이브러리 추가 시
+반드시 getter 패턴을 따르고, 테스트에서 모킹 가능하도록 설계하세요.

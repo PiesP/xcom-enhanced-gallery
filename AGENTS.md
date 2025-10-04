@@ -2,14 +2,15 @@
 
 > 개발자를 위한 빠른 온보딩 가이드 — 로컬/CI 동일 워크플로
 
-문서 참조: 아키텍처 → `docs/ARCHITECTURE.md`, 코딩 규칙 →
+**목적**: X.com(구 Twitter) 미디어 뷰어/다운로더 Userscript 프로젝트 **문서
+참조**: 아키텍처 → `docs/ARCHITECTURE.md`, 코딩 규칙 →
 `docs/CODING_GUIDELINES.md`, 벤더 API → `docs/vendors-safe-api.md`
 
 ---
 
 ## 개발 환경
 
-- **스택**: TypeScript(strict) + Vite 7 + SolidJS 1.9 + Vitest 3(JSDOM)
+- **스택**: TypeScript 5.9 (strict) + Vite 7 + SolidJS 1.9 + Vitest 3 (JSDOM)
 - **패키지 매니저**: npm (단일 패키지)
 - **Node.js**: 20 권장 (CI는 20/22 검증)
 - **경로 별칭**: `@`, `@features`, `@shared`, `@assets`
@@ -35,6 +36,8 @@ npm run validate          # 종합 검증 (typecheck + lint + format)
 
 ```pwsh
 npm test                  # 전체 테스트
+npm run test:watch        # watch 모드
+npm run test:coverage     # 커버리지 리포트
 npm run test -- -t "..."  # 특정 테스트 필터
 npx vitest run <file>     # 특정 파일만 실행
 ```
@@ -54,6 +57,7 @@ npm run build             # dev + prod 연속 빌드 + 검증
 
 - dev: `dist/xcom-enhanced-gallery.dev.user.js` + `.map`
 - prod: `dist/xcom-enhanced-gallery.user.js` + `.map`
+- 검증: `scripts/validate-build.js` 자동 실행
 
 ---
 
@@ -104,36 +108,41 @@ npm run deps:all          # JSON/DOT/SVG 생성 + 룰 검증
 코드에서 사용하는 외부 호스트를 `vite.config.ts`의 @connect 헤더와 자동 동기화:
 
 ```pwsh
-npm run sync:connect      # 분석만
-npm run sync:connect:fix  # 자동 수정
+npm run sync:connect        # 분석만
+npm run sync:connect:fix    # 자동 수정
 ```
 
 스캔 대상: `src/constants.ts`, `src/shared/utils/url-safety.ts`,
 `src/**/*.{ts,tsx}`
 
-### 아이콘 사용 분석 (Icon Usage Audit)
+### 아이콘 사용 분석
 
-코드베이스 전체에서 아이콘 사용 패턴을 분석하고 리포트를 생성:
+코드베이스 전체에서 아이콘 사용 패턴을 분석:
 
 ```pwsh
-npm run icon:audit              # 콘솔 출력 (Markdown 형식)
-npm run icon:audit:json         # JSON 형식 출력
-npm run icon:audit:save         # docs/icon-usage-report.md 저장
+npm run icon:audit          # 콘솔 출력 (Markdown)
+npm run icon:audit:json     # JSON 형식
+npm run icon:audit:save     # docs/icon-usage-report.md 저장
 ```
 
-주요 기능:
+분석 항목: 사용처, 중복 사용, 미사용 아이콘, 빈도 통계
 
-- 아이콘 사용처 분석 (파일 경로, 줄 번호, 컨텍스트)
-- 중복 사용 감지 (동일 아이콘이 다른 의미로 사용)
-- 미사용 아이콘 감지 (등록되었지만 사용되지 않음)
-- 사용 빈도 분석 (통계 및 백분율)
-
-CLI 옵션:
+### CodeQL 분석
 
 ```pwsh
-node scripts/icon-usage-audit.mjs --format markdown  # Markdown 형식 (default)
-node scripts/icon-usage-audit.mjs --format json      # JSON 형식
-node scripts/icon-usage-audit.mjs --output <path>    # 파일로 저장
+npm run codeql:scan         # 로컬 분석
+npm run codeql:dry-run      # 미리보기
+```
+
+산출물: SARIF, 요약 CSV, 개선 계획 마크다운
+
+### Codemod 도구
+
+```pwsh
+npm run codemod:solid-native        # SolidJS Native 패턴 미리보기
+npm run codemod:solid-native:apply  # SolidJS Native 패턴 적용
+npm run codemod:legacy:dry-run      # 레거시 패턴 분석
+npm run codemod:legacy:apply        # 레거시 패턴 마이그레이션
 ```
 
 ---
@@ -153,17 +162,30 @@ Test-Path .husky\pre-push
 ### 복구
 
 ```pwsh
-npm ci
-npm run prepare          # 또는 npx husky
-node ./scripts/setup-dev.js
+npm ci                      # 의존성 재설치
+npm run prepare             # Husky 초기화
+node ./scripts/setup-dev.js # 개발 도구 일괄 점검
 ```
 
 ### 커밋 메시지 규칙
 
 Conventional Commits 형식: `type(scope): description`
 
+**type**: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `style`, `perf`
+
+**예시**:
+
+```text
+feat(gallery): add keyboard navigation
+fix(download): handle URL encoding errors
+refactor(state): migrate to SolidJS native signals
+```
+
+**사전 검증**:
+
 ```pwsh
 "feat: message" | npx --no-install commitlint --config commitlint.config.cjs
+npx --no-install commitlint --from HEAD~1
 ```
 
 ### Pre-push 테스트
