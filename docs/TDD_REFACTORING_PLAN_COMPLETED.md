@@ -2,6 +2,176 @@
 
 ---
 
+## 2025-01-07: Sub-Epic 1 — ICON-SEMANTIC-FIX 완료 ✅
+
+- **생성일**: 2025-01-07
+- **완료일**: 2025-01-07
+- **부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
+- **목적**: Settings 아이콘 중복 사용 문제 해결 - 키보드 도움말 버튼에
+  QuestionMark 아이콘 사용
+- **우선순위**: P1 (Medium Impact - 사용자 경험 개선)
+- **난이도**: XS (1-2 files, ~50 lines)
+- **배경**:
+  - Toolbar에서 Settings 아이콘이 두 가지 다른 목적으로 사용됨:
+    1. 키보드 도움말 버튼 (Show keyboard shortcuts) - Line 477
+    2. 설정 버튼 (Settings) - Line 487
+  - 시각적 혼동 및 기능 구분 불명확
+  - 아이콘 사용 분석 도구(icon-usage-audit.mjs)로 중복 감지
+
+### Phase 1: RED (실패 테스트 작성) ✅
+
+**목표**: 아이콘 고유성 계약을 테스트로 정의
+
+**테스트 파일**: `test/architecture/icon-semantic-uniqueness.test.ts`
+
+**테스트 케이스**: 4개
+
+1. **QuestionMark 아이콘 정의 검증**
+   - xeg-icons.ts에서 `QuestionMark: RAW_ICON_DEFINITIONS['question-mark']` 패턴
+     검색
+   - 'question-mark' 정의 존재 검증
+
+2. **QuestionMark 등록 검증**
+   - iconRegistry.ts에서 CORE_ICONS 배열에 'QuestionMark' 포함 확인
+   - ICON_IMPORTS 맵에 QuestionMark 로더 존재 확인
+
+3. **Toolbar 키보드 도움말 버튼 아이콘 변경 검증**
+   - Toolbar.tsx에서 `data-gallery-element='keyboard-help'` 버튼이
+     `icon='QuestionMark'` 사용
+   - Settings 아이콘 사용 카운트가 1개여야 함 (설정 버튼만)
+
+4. **Settings 아이콘 고유성 검증**
+   - Settings 아이콘이 설정 버튼(`data-gallery-element='settings'`)에만 사용됨
+   - 다른 곳에서는 사용되지 않음
+
+**결과**: 4/4 tests RED (Phase 1 완료)
+
+**커밋**: `7a1dc308` -
+`test: add Sub-Epic 1 Phase 1 RED tests for icon semantic uniqueness`
+
+### Phase 2: GREEN (최소 구현) ✅
+
+**목표**: RED 테스트를 통과시키는 최소 변경
+
+**구현 작업**:
+
+1. **QuestionMark 아이콘 추가** (`src/assets/icons/xeg-icons.ts`)
+   - RAW_ICON_DEFINITIONS에 'question-mark' 정의 추가 (Lines 220-234)
+   - Material Design 스타일: 원형 외곽 + 물음표 paths
+   - viewBox: '0 0 24 24', 2개 paths (outer circle + question mark)
+   - XEG_ICONS 객체에 `QuestionMark: RAW_ICON_DEFINITIONS['question-mark']` 추가
+     (Line 257)
+
+2. **IconRegistry에 QuestionMark 등록** (`src/shared/services/iconRegistry.ts`)
+   - CORE_ICONS 배열에 'QuestionMark' 추가 (Line 25)
+   - ICON_IMPORTS 맵에 QuestionMark 로더 추가 (Line 69)
+
+3. **Registry.ts 아키텍처 수정**
+   (`src/shared/components/ui/Icon/icons/registry.ts`)
+   - **중요 발견**: XEG_ICON_DEFINITIONS → XEG_ICONS로 import 변경 필요
+   - XEG_ICON_DEFINITIONS는 kebab-case 키('.download', '.settings')
+   - XEG_ICONS는 PascalCase 키('.Download', '.Settings') - 타입 시스템과 일치
+   - iconComponentMap의 모든 11개 아이콘 참조를 XEG_ICONS로 수정
+   - QuestionMark 엔트리 추가:
+     `createSvgIcon('SvgQuestionMark', XEG_ICONS.QuestionMark)`
+
+4. **Toolbar 키보드 도움말 버튼 아이콘 변경**
+   (`src/shared/components/ui/Toolbar/Toolbar.tsx`)
+   - Line 477: `icon='Settings'` → `icon='QuestionMark'`
+   - Settings 아이콘은 이제 설정 버튼(Line 487)에만 사용됨
+
+5. **테스트 아키텍처 정렬**
+   (`test/architecture/icon-semantic-uniqueness.test.ts`)
+   - 첫 번째 테스트 패턴 수정: `/export\s+const\s+QuestionMark/` →
+     `/QuestionMark:\s*RAW_ICON_DEFINITIONS\['question-mark'\]/`
+   - 실제 아키텍처와 일치: 아이콘은 XEG_ICONS 객체로 export, 개별 export 없음
+
+**결과**: 4/4 tests GREEN
+
+**타입 체크**: 0 errors (XEG_ICONS import 수정으로 해결)
+
+**번들 크기**:
+
+- Raw: 464.05 KB
+- Gzip: 115.57 KB
+- 증가량: <1 KB (정상 범위 내)
+
+**커밋**: `4ce345c5` -
+`feat(ui): implement QuestionMark icon for keyboard help button`
+
+### Phase 3: REFACTOR (문서화) ✅
+
+**목표**: 변경 사항 문서화 및 가이드라인 업데이트
+
+**작업 항목**:
+
+1. **CHANGELOG.md 생성 및 업데이트**
+   - 프로젝트 최초 CHANGELOG.md 생성
+   - Keep a Changelog 형식 준수
+   - [Unreleased] 섹션에 QuestionMark 아이콘 추가 기록
+   - Added/Changed/Fixed 섹션으로 구분
+   - Markdown 린트 규칙 준수 (MD022, MD032)
+
+2. **CODING_GUIDELINES.md에 아이콘 고유성 원칙 추가**
+   - 새 섹션: "UI 컴포넌트 > 아이콘 고유성 원칙"
+   - 각 아이콘의 **단일 목적** 명시 (QuestionMark, Settings, Download, Close)
+   - 테스트 강제: `icon-semantic-uniqueness.test.ts` 언급
+   - 등록 위치 3단계 안내 (xeg-icons.ts, iconRegistry.ts, registry.ts)
+
+3. **TDD_REFACTORING_PLAN_COMPLETED.md로 이관**
+   - Sub-Epic 1 전체 내역 복사
+   - Phase 1/2/3 모든 작업 내용 및 커밋 해시 기록
+   - 아키텍처 발견 사항 (XEG_ICONS vs XEG_ICON_DEFINITIONS) 문서화
+
+4. **TDD_REFACTORING_PLAN.md 업데이트**
+   - Phase 2/3 Acceptance Criteria 체크박스 완료 표시
+   - Sub-Epic 1 완료 체크리스트 추가
+   - Phase 3 상태를 "⏳ 진행 중" → "✅ 완료"로 변경
+
+**결과**: 문서 3개 업데이트, Sub-Epic 1 완전 종료
+
+**최종 테스트**: 4/4 tests GREEN 유지
+
+**최종 빌드**: 성공 (dev + prod)
+
+### 핵심 성과
+
+- ✅ **아이콘 고유성 확보**: Settings 아이콘이 설정 버튼에만 사용됨
+- ✅ **시각적 명확성 향상**: 키보드 도움말 버튼에 전용 QuestionMark 아이콘
+- ✅ **도움말 버튼 발견성 개선**: 물음표 아이콘으로 기능 직관적 이해
+- ✅ **아키텍처 개선**: XEG_ICONS(PascalCase) vs
+  RAW_ICON_DEFINITIONS(kebab-case) 구분 명확화
+- ✅ **테스트 커버리지**: 아이콘 의미론적 고유성 자동 검증 테스트 추가
+- ✅ **문서화**: CHANGELOG.md 생성, CODING_GUIDELINES.md에 아이콘 원칙 추가
+
+### 학습 사항
+
+1. **아이콘 아키텍처**:
+   - `RAW_ICON_DEFINITIONS`: 내부 정의, kebab-case 키 ('question-mark')
+   - `XEG_ICONS`: 공개 API, PascalCase 키 (QuestionMark)
+   - 컴포넌트는 XEG_ICONS를 사용해야 타입 안전성 보장
+
+2. **테스트 전략**:
+   - 파일 기반 assertion(readFileSync + regex)으로 소스 코드 검증
+   - 테스트가 실제 아키텍처와 일치해야 함 (가정 금지)
+
+3. **TDD 워크플로우**:
+   - RED: 실패 테스트로 계약 정의
+   - GREEN: 최소 구현으로 통과
+   - REFACTOR: 문서화 및 가이드라인 강화
+
+### 다음 단계
+
+**백로그**:
+
+- Sub-Epic 2: I18N-TOOLBAR-LABELS (P1, 독립 실행 가능)
+- Sub-Epic 3: ARIA-TITLE-SEPARATION (P2, Sub-Epic 2 의존)
+- Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT (P2, 독립 실행 가능)
+
+**권장**: Sub-Epic 2 또는 Sub-Epic 4를 다음 작업으로 선택 (둘 다 독립 실행 가능)
+
+---
+
 ## 2025-01-07: TOOL — Epic ICON-USAGE-AUDIT-TOOL 완료 ✅
 
 - **생성일**: 2025-01-07

@@ -142,6 +142,29 @@ pbs.twimg.com 등) **배포**: `@downloadURL`, `@updateURL`, `@supportURL`
 
 ---
 
+## UI 컴포넌트
+
+### 아이콘 고유성 원칙
+
+각 아이콘은 **단일 목적**으로만 사용합니다:
+
+- **QuestionMark**: 키보드 단축키 도움말 전용
+- **Settings**: 설정 모달 열기 전용
+- **Download**: 다운로드 액션 전용
+- **Close**: 닫기 액션 전용
+
+**테스트 강제**: `test/architecture/icon-semantic-uniqueness.test.ts`가 아이콘
+중복 사용을 RED로 방지합니다.
+
+**등록 위치**:
+
+1. `src/assets/icons/xeg-icons.ts`: SVG 정의 + XEG_ICONS 객체 export
+2. `src/shared/services/iconRegistry.ts`: CORE_ICONS + ICON_IMPORTS 추가
+3. `src/shared/components/ui/Icon/icons/registry.ts`: iconComponentMap에
+   createSvgIcon 등록
+
+---
+
 ## 서비스
 
 - **접근**: `@shared/container/*` 액세서/브리지
