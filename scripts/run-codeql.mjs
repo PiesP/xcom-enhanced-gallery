@@ -594,9 +594,10 @@ async function generateReports(config, executedPacks) {
 
 async function determineQueryPacks(includeDefault, extraPacks) {
   const packs = composeQueryPackList(includeDefault, extraPacks);
-  if (await pathExists(customQueryPackPath)) {
-    packs.push(customQueryPackPath);
-  }
+  // 커스텀 쿼리 팩은 Fallback으로만 사용 (주 쿼리 팩 목록에서 제외)
+  // if (await pathExists(customQueryPackPath)) {
+  //   packs.push(customQueryPackPath);
+  // }
   return packs;
 }
 

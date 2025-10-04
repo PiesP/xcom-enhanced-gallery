@@ -24,10 +24,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Epic: CODEQL-LOCAL-ENHANCEMENT (MEDIUM Priority - 진행 중)
 
-**식별자**: CODEQL-LOCAL-ENHANCEMENT  
-**목표**: 로컬 CodeQL 워크플로 개선 (Fallback 쿼리 팩 활용)  
-**승격일**: 2025-10-04  
-**예상 난이도**: S (외부 의존성 없음, 기존 스크립트 개선)
+**식별자**: CODEQL-LOCAL-ENHANCEMENT **목표**: 로컬 CodeQL 워크플로 개선
+(Fallback 쿼리 팩 활용) **승격일**: 2025-10-04 **예상 난이도**: S (외부 의존성
+없음, 기존 스크립트 개선)
 
 **배경**:
 
