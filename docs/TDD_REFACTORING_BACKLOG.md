@@ -31,19 +31,24 @@
 
 ### LOW Priority
 
-**IDEA | CUSTOM-TOOLTIP-COMPONENT | 커스텀 툴팁 컴포넌트 구현** | 브랜드
-일관성 + 키보드 단축키 강조 + 스타일 통일 | M | Epic UI-TEXT-ICON-OPTIMIZATION
-완료 후 고려
-
-- **현황**: 네이티브 `title` 속성 사용 (브라우저 기본 툴팁)
-- **제안**: 커스텀 툴팁 컴포넌트로 키보드 단축키 강조 표시 (`<kbd>←</kbd>`)
-- **이점**: 스타일 통일, 다국어 지원 개선, 브랜드 일관성
-- **주의**: PC 전용 정책 유지 (터치 이벤트 배제)
-- **의존성**: Epic UI-TEXT-ICON-OPTIMIZATION Phase 3 완료 후
+(현재 없음 - CUSTOM-TOOLTIP-COMPONENT 승격됨)
 
 ---
 
 ## 최근 승격 히스토리
+
+**2025-01-08**: `CUSTOM-TOOLTIP-COMPONENT` 승격 → `TDD_REFACTORING_PLAN.md` 활성
+Epic으로 이동
+
+- 선정 이유: Epic UI-TEXT-ICON-OPTIMIZATION 완료로 의존성 충족, 사용자 경험
+  개선, 브랜드 일관성 강화
+- 솔루션: Option A (커스텀 Tooltip 컴포넌트) 선택
+  - 키보드 단축키 `<kbd>` 마크업 지원
+  - 디자인 토큰 기반 스타일
+  - PC 전용 이벤트 (`mouseenter`, `focus` / `mouseleave`, `blur`)
+  - WCAG 2.1 Level AA 준수
+- 예상 영향: 번들 +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
+- TDD Phase: Phase 1 (RED, 12-15 tests) → Phase 2 (GREEN) → Phase 3 (REFACTOR)
 
 **2025-01-07**: `ICON-USAGE-AUDIT-TOOL` 구현 완료 →
 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이동

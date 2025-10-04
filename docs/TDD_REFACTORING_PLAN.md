@@ -4,8 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-07 — Epic UI-TEXT-ICON-OPTIMIZATION을 4개
-Sub-Epic으로 분할
+**최근 업데이트**: 2025-01-08 — Epic UI-TEXT-ICON-OPTIMIZATION 완료, 새로운 활성
+Epic 준비 중
 
 ---
 
@@ -23,81 +23,267 @@ Sub-Epic으로 분할
 
 ## 2. 활성 Epic 현황
 
-### Sub-Epic 1: ICON-SEMANTIC-FIX (활성: 2025-01-07)
+### 현재 활성 Epic
 
-**부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
+#### Epic CUSTOM-TOOLTIP-COMPONENT (활성화: 2025-01-08)
 
-**목적**: Settings 아이콘 중복 사용 문제 해결 - 키보드 도움말 버튼에
-QuestionMark 아이콘 사용
+**목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
+브랜드 일관성 + 완전한 다국어 지원
+
+**우선순위**: P2 (Medium Impact) — 사용자 경험 개선, 브랜드 정체성 강화
+**난이도**: M (Medium, 5-6 files, ~300 lines) **의존성**: Epic
+UI-TEXT-ICON-OPTIMIZATION 완료 ✅
 
 **배경**:
 
-- 현재 Toolbar에서 Settings 아이콘이 두 가지 다른 목적으로 사용됨:
-  1. 키보드 도움말 버튼 (Show keyboard shortcuts)
-  2. 설정 버튼 (Settings)
-- 시각적 혼동 및 기능 구분 불명확
+- 현재: 네이티브 `title` 속성 사용 (단순 텍스트, 브라우저 기본 스타일)
+- 문제: 키보드 단축키를 `<kbd>←</kbd>` 형태로 강조 표시 불가능
+- 기회: Epic UI-TEXT-ICON-OPTIMIZATION에서 i18n 인프라 완성 (`*WithShortcut`
+  패턴)
 
-**우선순위**: P1 (Medium Impact - 사용자 경험 개선)
+**전략**:
 
-**난이도**: XS (1-2 files, ~50 lines)
+- **Option A 선택**: 커스텀 Tooltip 컴포넌트 (Controlled)
+  - 키보드 단축키 `<kbd>` 마크업 지원
+  - 디자인 토큰 기반 스타일 (`--radius-md`, `--xeg-shadow-md`)
+  - PC 전용 이벤트 (`mouseenter`, `focus` / `mouseleave`, `blur`)
+  - WCAG 2.1 Level AA 준수 (`role="tooltip"`, `aria-describedby`)
+- **Option B 거부**: 네이티브 title + CSS (HTML 마크업 불가능)
+- **Option C 거부**: Hybrid (일관성 저하)
 
-**예상 영향**:
+**영향 범위**:
 
-- ✅ 아이콘 고유성 확보 (각 아이콘 = 단일 목적)
-- ✅ 시각적 명확성 향상
-- ✅ 도움말 버튼 발견성 개선
+- 새 컴포넌트: `src/shared/components/ui/Tooltip/`
+- 수정: `ToolbarButton.tsx` (Tooltip 래핑)
+- 테스트: `test/shared/components/ui/tooltip-*.test.tsx` (12-15 tests)
+- i18n: LanguageService 기존 `*WithShortcut` 키 활용
 
-**전략**: 최소한의 변경으로 빠른 승리(Quick Win)
+**예상 번들 영향**: +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
 
 ---
 
-#### Phase 1: RED (실패 테스트 작성) ✅ 완료
+#### Phase 1: RED (컴포넌트 계약 테스트)
 
-**목표**: 아이콘 고유성 계약을 테스트로 정의
+**목표**: Tooltip 컴포넌트 계약 테스트 작성 (12-15 tests, 모두 RED)
 
-**테스트 파일**: `test/architecture/icon-semantic-uniqueness.test.ts`
+**테스트 파일**: `test/shared/components/ui/tooltip-component.test.tsx`
 
-**테스트 케이스**:
+**테스트 범위**:
 
-1. Settings 아이콘이 2개 이상의 버튼에 사용되고 있어야 함 (Phase 1 현황)
-2. 키보드 도움말 버튼이 Settings 아이콘을 사용하고 있어야 함 (Phase 1 현황)
-3. QuestionMark 아이콘이 아직 정의되어 있지 않아야 함
-4. IconRegistry에 QuestionMark가 등록되어 있지 않아야 함
-5. 각 아이콘은 단일 목적으로만 사용되어야 함 (Phase 2 목표)
+1. **렌더링 및 기본 동작** (4 tests):
+   - `mouseenter` 시 툴팁 표시
+   - `mouseleave` 시 툴팁 숨김
+   - `focus` 시 툴팁 표시 (키보드 네비게이션)
+   - `blur` 시 툴팁 숨김
 
-**현재 상태**: ✅ Phase 1 완료 (4개 RED 테스트)
+2. **콘텐츠 렌더링** (3 tests):
+   - 단순 텍스트 렌더링
+   - `<kbd>` 마크업 포함 JSX 렌더링
+   - `aria-describedby` 연결 검증
+
+3. **포지셔닝** (2 tests):
+   - `placement='top'` 기본값 적용
+   - `placement='bottom'` 커스텀 적용
+
+4. **지연 시간** (2 tests):
+   - 기본 500ms 딜레이 적용
+   - 커스텀 딜레이 적용 (`delay={300}`)
+
+5. **PC 전용 정책** (2 tests):
+   - Touch 이벤트 무시 (`touchstart` 리스너 없음)
+   - Pointer 이벤트 무시 (`pointerdown` 리스너 없음)
+
+6. **접근성** (2 tests):
+   - `role="tooltip"` 속성
+   - `aria-hidden="true"` (숨김 상태)
+
+7. **디자인 토큰** (1 test):
+   - 하드코딩 스타일 없음 (CSS 클래스만)
 
 **Acceptance Criteria**:
 
-- [x] 테스트 파일 생성
-- [x] 모든 테스트 RED 상태 확인 (4/4 tests failed)
-- [x] TypeScript 0 errors
+- [ ] 12-15 tests 작성 완료
+- [ ] 모두 RED 상태 (컴포넌트 미구현)
+- [ ] TypeScript 0 errors (인터페이스 정의)
+- [ ] PC 전용 이벤트만 테스트 (Touch/Pointer 배제)
 
 ---
 
 #### Phase 2: GREEN (최소 구현)
 
-**목표**: RED 테스트를 통과시키는 최소 변경
+**목표**: Tooltip 컴포넌트 구현 + ToolbarButton 통합 (12-15 tests → GREEN)
 
-**구현 작업**:
+**작업 항목**:
 
-1. **QuestionMark 아이콘 추가** (`src/assets/icons/xeg-icons.ts`)
+1. **Tooltip 컴포넌트 생성** (`src/shared/components/ui/Tooltip/Tooltip.tsx`):
 
    ```typescript
-   export const QuestionMark: Component<IconProps> = (props) => (
-     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-       <circle cx="12" cy="12" r="10" />
-       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-       <line x1="12" y1="17" x2="12.01" y2="17" />
-     </svg>
-   );
+   export interface TooltipProps {
+     readonly content: string | JSX.Element;
+     readonly trigger: JSX.Element;
+     readonly placement?: 'top' | 'bottom' | 'left' | 'right';
+     readonly delay?: number; // 기본 500ms
+     readonly disabled?: boolean;
+   }
    ```
 
-2. **IconRegistry에 QuestionMark 등록** (`src/shared/services/iconRegistry.ts`)
+2. **이벤트 핸들러** (PC 전용):
+   - `mouseenter`: 지연 후 표시
+   - `mouseleave`: 즉시 숨김
+   - `focus`: 지연 후 표시
+   - `blur`: 즉시 숨김
 
-   ```typescript
-   export const CORE_ICONS: readonly IconName[] = [
-     'Download',
+3. **포지셔닝 로직**:
+   - 트리거 요소 기준 위치 계산
+   - 뷰포트 충돌 회피 (간단한 fallback)
+
+4. **스타일** (`Tooltip.module.css`):
+   - 디자인 토큰 사용:
+     - Border Radius: `--radius-md`
+     - Background: `--color-bg-elevated`
+     - Shadow: `--xeg-shadow-md`
+     - Animation: `--xeg-transition-preset-fade`
+
+5. **ToolbarButton 통합**:
+   - `title` prop 제거
+   - `<Tooltip>` 래퍼 추가
+   - `*WithShortcut` 키를 `<kbd>` 마크업으로 변환
+
+**Acceptance Criteria**:
+
+- [ ] 12-15 tests 모두 GREEN
+- [ ] TypeScript 0 errors
+- [ ] PC 전용 이벤트만 사용 (Touch/Pointer 배제)
+- [ ] 하드코딩 색상/시간 없음 (디자인 토큰만)
+- [ ] `role="tooltip"`, `aria-describedby` 적용
+- [ ] ToolbarButton 12개 버튼에 Tooltip 적용
+
+---
+
+#### Phase 3: REFACTOR (최적화 및 문서화)
+
+**목표**: 포지셔닝 개선 + 문서 업데이트 + 회귀 방지
+
+**작업 항목**:
+
+1. **포지셔닝 최적화**:
+   - 뷰포트 경계 감지 강화
+   - 자동 placement 전환 (top → bottom, left → right)
+
+2. **애니메이션 개선**:
+   - Fade-in 부드럽게 (`--xeg-transition-preset-fade`)
+   - Prefers-reduced-motion 지원
+
+3. **문서 업데이트**:
+   - `docs/CHANGELOG.md`: 변경 사항 기록
+   - `docs/CODING_GUIDELINES.md`: Tooltip 사용 가이드 추가
+
+4. **회귀 방지 테스트**:
+   - Toolbar 기존 기능 정상 동작 (4 tests)
+   - 키보드 네비게이션 유지 (2 tests)
+
+**Acceptance Criteria**:
+
+- [ ] 포지셔닝 안정성 개선 (경계 충돌 0건)
+- [ ] 모든 테스트 GREEN 유지 (16-19 tests)
+- [ ] 문서 업데이트 완료
+- [ ] 번들 크기 목표 준수 (+2.5 KB raw 이하)
+- [ ] TypeScript 0 errors, ESLint clean
+
+---
+
+**최근 완료**: Epic UI-TEXT-ICON-OPTIMIZATION (2025-01-08)
+
+- Sub-Epic 1: ICON-SEMANTIC-FIX ✅
+- Sub-Epic 2: I18N-TOOLBAR-LABELS ✅
+- Sub-Epic 3: ARIA-TITLE-SEPARATION ✅ (Sub-Epic 2에서 달성)
+- Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT ✅
+
+---
+
+## 3. 최근 완료 Epic
+
+### Epic UI-TEXT-ICON-OPTIMIZATION (완료: 2025-01-08)
+
+**목적**: Toolbar 및 UI 컴포넌트의 텍스트/아이콘 최적화 — 완전한 다국어 지원 +
+접근성 개선 + 아이콘 의미론적 명확성
+
+**완료 Phase**: 4개 Sub-Epic 완료 (ICON-SEMANTIC-FIX, I18N-TOOLBAR-LABELS,
+ARIA-TITLE-SEPARATION, CONTEXTMENU-ARIA-ENHANCEMENT)
+
+**결과**: ✅ 33 tests GREEN, i18n 커버리지 100%, ARIA 강화 완료, 번들 +0.70%
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-08 섹션 참조)
+
+---
+
+### Epic JSX-PRAGMA-CLEANUP Phase 1-3 (완료: 2025-01-04)
+
+**목적**: esbuild JSX pragma 경고 제거 및 SolidJS 설정 표준화
+
+**완료 Phase**: Phase 1 (RED, 6 tests), Phase 2 (GREEN, 6/6 passing), Phase 3
+(REFACTOR, 문서화 + 커밋)
+
+**결과**: ✅ 6/6 tests GREEN, 빌드 경고 0개, TypeScript 0 errors, 번들 크기 동일
+(781.20 KB)
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-04 섹션 참조)
+
+---
+
+### Epic GALLERY-NAV-ENHANCEMENT Phase 1-2 (완료: 2025-01-04)
+
+**목적**: 갤러리 네비게이션 UX 개선 - 좌우 네비게이션 버튼 구현
+
+**완료 Phase**: Phase 1 (RED, 17 tests), Phase 2 (GREEN + Integration, 17/17
+passing)
+
+**결과**: ✅ 17/17 tests GREEN, 번들 +3.15 KB (+0.68%), NavigationButton
+컴포넌트 구현 완료
+
+**남은 작업**: Phase 3 (키보드 도움말 오버레이 개선) - 선택 사항, 필요 시 백로그
+이관
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-04 섹션 참조)
+
+---
+
+### Epic CONTEXT-MENU-UI (2025-01-03 완료)
+
+**목적**: 커스텀 컨텍스트 메뉴 컴포넌트 구현 (브랜드 일관성 + 접근성)
+
+**완료 Phase**: Phase 1 (RED, 18 tests), Phase 2 (GREEN, 12/18 passing - 기능적
+베이스라인)
+
+**남은 작업**: Phase 3 (접근성 완전성 + 키보드 네비게이션) - 백로그 이관
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션 참조)
+
+---
+
+## 4. 다음 사이클 준비
+
+새로운 Epic을 시작하려면:
+
+1. `docs/TDD_REFACTORING_BACKLOG.md`에서 후보 검토
+2. 우선순위/가치/난이도 고려하여 1-3개 선택
+3. 본 문서 "활성 Epic 현황" 섹션에 추가
+4. Phase 1 (RED) 테스트부터 시작
+
+---
+
+## 5. 참고: 이전 완료 Epic 목록
+
+### Epic CONTEXT-MENU-UI-PHASE-3 (완료: 2025-01-03)
+
+**목적**: Epic CONTEXT-MENU-UI Phase 3 완성 - 접근성 완전성 & 키보드 네비게이션
+
+**결과**: ✅ 18/18 tests GREEN, WCAG 2.1 Level AA 완전 준수, Epic 완전 종료
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-03 섹션) 참조
+
+---
+
      'Settings',
      'Close',
      'ChevronLeft',
@@ -110,25 +296,27 @@ QuestionMark 아이콘 사용
      'QuestionMark', // 추가
      'Notifications',
      'NotificationsOff',
-   ] as const;
 
-   export type IconName = (typeof CORE_ICONS)[number];
-   ```
+] as const;
+
+export type IconName = (typeof CORE_ICONS)[number];
+
+````
 
 3. **Toolbar 키보드 도움말 버튼 아이콘 변경**
-   (`src/shared/components/ui/Toolbar/Toolbar.tsx`)
-   ```typescript
-   {props.onShowKeyboardHelp ? (
-     <ToolbarButton
-       aria-label='Show keyboard shortcuts'
-       title='Show keyboard shortcuts (?)'
-       disabled={Boolean(props.disabled)}
-       onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
-       data-gallery-element='keyboard-help'
-       icon='QuestionMark'  // Settings → QuestionMark
-     />
-   ) : null}
-   ```
+(`src/shared/components/ui/Toolbar/Toolbar.tsx`)
+```typescript
+{props.onShowKeyboardHelp ? (
+  <ToolbarButton
+    aria-label='Show keyboard shortcuts'
+    title='Show keyboard shortcuts (?)'
+    disabled={Boolean(props.disabled)}
+    onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
+    data-gallery-element='keyboard-help'
+    icon='QuestionMark'  // Settings → QuestionMark
+  />
+) : null}
+````
 
 **결과**: ✅ 4/4 tests GREEN
 
