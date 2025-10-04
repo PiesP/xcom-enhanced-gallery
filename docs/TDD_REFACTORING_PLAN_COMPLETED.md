@@ -2,6 +2,134 @@
 
 ---
 
+## 2025-10-04: Epic CODEQL-STANDARD-QUERY-PACKS 부분 완료 ⚠️
+
+### 개요
+
+- **작업일**: 2025-10-04
+- **유형**: 보안 분석 개선 (Security Analysis Enhancement)
+- **목적**: CodeQL 표준 보안 쿼리 팩으로 전환하여 실제 보안 분석 활성화
+- **결과**: ⚠️ 부분 완료 (로컬/CI 제약으로 인한 전략 조정)
+
+### 문제 정의
+
+**현재 상태**:
+
+- ❌ 테스트 쿼리만 실행 중 (`javascript/example/hello-world` - 949건)
+- ❌ 실제 보안/품질 쿼리 누락 (`codeql/javascript-security-and-quality` 미실행)
+- ✅ 프로젝트 정책 가드는 이미 Vitest로 커버
+
+**목표**:
+
+- `codeql/javascript-security-and-quality` 쿼리 팩 실행 (400+ 보안 규칙)
+- SARIF 결과에 XSS/SQL Injection/Path Traversal 등 실제 보안 규칙 포함
+- CI 파이프라인 GREEN 유지
+
+### 완료된 Phase
+
+#### Phase 1: RED (실패하는 테스트 작성) ✅
+
+**작업 내용**:
+
+- `test/architecture/codeql-standard-packs.contract.test.ts` 생성 (7 tests)
+  - SARIF 파일 존재 및 크기 검증 (>100KB)
+  - `javascript/example/hello-world` 제외한 실제 보안 규칙 ID 존재 확인
+  - `js/`로 시작하는 보안 규칙 검증
+  - 개선 계획에 "Hello, world!" 메시지만 있는지 확인
+
+**결과**:
+
+- ✅ 3 FAIL | 4 PASS (RED 확인)
+- FAIL 1: SARIF에 js/ 보안 규칙 0개 (테스트 쿼리만 1개)
+- FAIL 2: 표준 쿼리 팩 미실행 (테스트 쿼리만 존재)
+- FAIL 3: 개선 계획에 "Hello, world!" 949회, js/ 규칙 0회
+- PASS: 파일 존재, 크기 707KB >100KB, 기본 구조 정상
+- 커밋: `33e08ada` "test(security): add Phase 1 (RED) contract tests"
+
+#### Phase 2: GREEN (최소 구현으로 통과) ⚠️
+
+**작업 내용**:
+
+- `codeql-custom-queries-javascript/example.ql` 삭제
+- `npm run codeql:scan` 실행 시도
+
+**결과**:
+
+- ⚠️ 로컬 스캔 접근 권한 문제 발견
+  - `codeql/javascript-security-and-quality` 접근 거부 (GitHub Advanced Security
+    전용)
+  - Fallback 로직 존재하나 로컬 환경에서는 실행 불가
+- ⏳ CI 환경 검증 대기 (현재 CI도 동일한 제약)
+- 커밋: `da67a436` "refactor(security): phase 2-3 codeql standard query packs"
+
+#### Phase 3: REFACTOR (개선 및 문서화) ✅
+
+**작업 내용**:
+
+- 로컬/CI 제약 분석 완료
+  - 현재: `scripts/run-codeql.mjs`는 로컬/CI 모두 GitHub Advanced Security 권한
+    필요
+- 대안 전략 수립:
+  - 대안 1: Fallback 쿼리 팩 (`codeql/javascript-queries` - 기본 규칙만)
+  - 대안 2: GitHub Code Scanning Action (표준 쿼리 팩 자동 제공) ← **권장**
+- 문서 업데이트:
+  - `AGENTS.md`: 로컬 제약 명시, CI 전략 설명
+  - `TDD_REFACTORING_PLAN.md`: Phase 2-3 상태 및 대안 문서화
+
+**결과**:
+
+- ✅ 제약 분석 및 대안 제시 완료
+- ✅ 문서화 완료
+- ⚠️ 실제 표준 쿼리 팩 적용 불가 (권한 제약)
+- 커밋: `da67a436` "refactor(security): phase 2-3 codeql standard query packs"
+
+### 부분 완료 사유
+
+**제약 사항**:
+
+- GitHub Advanced Security 권한 필요 (로컬/CI 공통 제약)
+- 현재 스크립트(`scripts/run-codeql.mjs`)는 표준 쿼리 팩 접근 불가
+- CI 워크플로도 동일한 제약 (CodeQL CLI 직접 사용)
+
+**달성한 목표**:
+
+- ✅ 문제 발견 및 분석 (example.ql 제거, 로컬 제약 확인)
+- ✅ 대안 전략 제시 (Fallback 쿼리 팩, GitHub Code Scanning Action)
+- ✅ 문서화 완료 (AGENTS.md 로컬 제약 명시, CI 전략 설명)
+
+**미달성 목표**:
+
+- ❌ 실제 표준 쿼리 팩 실행 (400+ js/ 보안 규칙)
+- ❌ 테스트 GREEN (7/7 PASS)
+- ❌ CI 파이프라인에서 실제 보안 분석
+
+### 후속 작업 권장
+
+**백로그 등록**: Epic `GITHUB-ADVANCED-SECURITY-INTEGRATION`
+
+**작업 내용**:
+
+- GitHub Advanced Security 활성화
+- GitHub Code Scanning Action으로 CI 워크플로 개선
+  - `github/codeql-action/init` + `github/codeql-action/analyze` 사용
+  - 표준 쿼리 팩 자동 제공 (400+ 보안 규칙)
+- 테스트 GREEN 검증 (7/7 PASS with js/ rules)
+- 로컬 스캔은 Fallback 쿼리 팩으로 제한
+
+**예상 효과**:
+
+- 실제 보안 취약점 감지 (XSS, SQL Injection, Path Traversal 등)
+- GitHub Security Tab에서 보안 이슈 추적
+- 자동 보안 업데이트 제안
+
+### 학습 사항
+
+- TDD RED → GREEN → REFACTOR 프로세스는 제약 발견에도 유효
+- 인프라 권한 문제는 사전 조사 필요 (GitHub Advanced Security 등)
+- 대안 전략 제시 및 문서화로 부분 완료도 가치 있음
+
+---
+
 ## 2025-01-09: Epic TEST-FAILURE-ALIGNMENT-PHASE2 완료 ✅
 
 ### 개요

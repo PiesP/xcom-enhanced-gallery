@@ -42,8 +42,31 @@ Epic TEST-FAILURE-ALIGNMENT-PHASE2로 이동
 
 ### MEDIUM Priority
 
-(현재 없음 - REMAINING-TEST-FAILURES가 Epic TEST-FAILURE-ALIGNMENT-PHASE2로
-승격됨)
+#### HOLD | GITHUB-ADVANCED-SECURITY-INTEGRATION | GitHub Advanced Security 통합으로 표준 CodeQL 쿼리 팩 활성화
+
+**작업 내용**:
+
+- GitHub Advanced Security 활성화 (조직/저장소 설정)
+- CI 워크플로 개선: GitHub Code Scanning Action으로 전환
+  - `github/codeql-action/init` + `github/codeql-action/analyze` 사용
+  - 표준 쿼리 팩(`codeql/javascript-security-and-quality`) 자동 제공
+- 테스트 GREEN 검증: `test/architecture/codeql-standard-packs.contract.test.ts`
+  (7/7 PASS with 400+ js/ rules)
+- 로컬 스캔: Fallback 쿼리 팩(`codeql/javascript-queries`)으로 제한
+
+**기대 효과**:
+
+- 실제 보안 취약점 감지 (XSS, SQL Injection, Path Traversal 등 400+ 규칙)
+- GitHub Security Tab에서 보안 이슈 추적 및 자동 보안 업데이트 제안
+- CI 환경에서 표준 쿼리 팩 실행 (로컬 제약 문서화 완료)
+
+**난이도**: M (외부 의존성 - GitHub Advanced Security 라이선스/활성화)
+
+**비고**: Epic CODEQL-STANDARD-QUERY-PACKS (2025-10-04 부분 완료) 후속 작업.
+Phase 1 (RED) 테스트 이미 작성 완료, Phase 2-3 문서화 완료, GitHub Advanced
+Security 활성화 후 CI 워크플로 개선으로 완료 가능.
+
+**의존성**: GitHub Advanced Security 라이선스 (조직 또는 저장소 레벨)
 
 ---
 
