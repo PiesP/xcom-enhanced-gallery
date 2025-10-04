@@ -228,14 +228,14 @@ async function resolveCodeqlPath(providedPath) {
 async function assertCodeqlAvailable(codeqlPath) {
   try {
     const { stdout } = await execFileAsync(codeqlPath, ['--version']);
-    logStep(`Detected CodeQL CLI: ${stdout.trim()}`);
+    logStep(`✅ CodeQL CLI 감지 완료: ${stdout.trim()}`);
   } catch (error) {
     const hint =
       'CodeQL CLI가 PATH에 없거나 codeql.cmd/codeql.exe가 설치되지 않았습니다. https://codeql.github.com/docs/codeql-cli/installation/ 가이드를 참고해 설치 후 다시 실행하세요.';
     if (error?.code === 'ENOENT') {
-      throw new Error(`CodeQL CLI(${codeqlPath})를 찾을 수 없습니다. ${hint}`);
+      throw new Error(`❌ CodeQL CLI(${codeqlPath})를 찾을 수 없습니다.\n\n트러블슈팅:\n  - CodeQL CLI 설치 확인\n  - PATH 환경 변수 설정 확인\n  - --codeql-path 옵션으로 경로 지정\n\n${hint}`);
     }
-    throw new Error(`CodeQL CLI 확인 중 오류가 발생했습니다: ${error.message ?? error}. ${hint}`);
+    throw new Error(`❌ CodeQL CLI 확인 중 오류가 발생했습니다: ${error.message ?? error}.\n\n${hint}`);
   }
 }
 
@@ -580,13 +580,18 @@ async function generateReports(config, executedPacks) {
   const sarif = JSON.parse(sarifRaw);
   const findings = extractFindingsFromSarif(sarif);
 
-  // SARIF 통계 로깅 (쿼리 팩 정보 포함)
+  // SARIF 통계 로깅 강화 (쿼리 팩 정보 포함)
   const totalRules = sarif.runs?.[0]?.tool?.driver?.rules?.length ?? 0;
   const jsSecurityRules =
     sarif.runs?.[0]?.tool?.driver?.rules?.filter(
       r => r.id?.startsWith('js/') && r.properties?.['security-severity']
     ).length ?? 0;
-  logStep(`SARIF 분석 완료: 전체 규칙 ${totalRules}개, JS 보안 규칙 ${jsSecurityRules}개`);
+  const jsSecurityRatio = totalRules > 0 ? ((jsSecurityRules / totalRules) * 100).toFixed(1) : '0.0';
+  
+  logStep(`📊 SARIF 분석 완료:`);
+  logStep(`   - 전체 규칙 수: ${totalRules}개`);
+  logStep(`   - JS 보안 규칙: ${jsSecurityRules}개 (${jsSecurityRatio}%)`);
+  logStep(`   - 발견된 경고: ${findings.length}개`);
 
   const csv = buildSummaryCsv(findings);
   const markdown = buildPlanMarkdown(findings, config, executedPacks);
@@ -597,8 +602,8 @@ async function generateReports(config, executedPacks) {
   await fs.writeFile(config.summaryPath, `${csv}\n`, 'utf8');
   await fs.writeFile(config.planPath, markdown, 'utf8');
 
-  logStep(`요약 CSV 생성: ${relative(workspaceRoot, config.summaryPath)}`);
-  logStep(`개선 계획 Markdown 생성: ${relative(workspaceRoot, config.planPath)}`);
+  logStep(`✅ 요약 CSV 생성: ${relative(workspaceRoot, config.summaryPath)}`);
+  logStep(`✅ 개선 계획 Markdown 생성: ${relative(workspaceRoot, config.planPath)}`);
 }
 
 async function determineQueryPacks(includeDefault, extraPacks) {
@@ -644,10 +649,11 @@ async function ensureQueryPacksAvailable(codeqlPath, packs) {
     }
 
     try {
-      logStep(`Resolving CodeQL query pack: ${pack}`);
+      logStep(`📦 CodeQL 쿼리 팩 다운로드 시도: ${pack}`);
       await execFileAsync(codeqlPath, ['pack', 'download', pack], {
         env: createCodeqlEnv(),
       });
+      logStep(`✅ 쿼리 팩 다운로드 성공: ${pack}`);
       available.push(pack);
     } catch (error) {
       const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
@@ -659,16 +665,16 @@ async function ensureQueryPacksAvailable(codeqlPath, packs) {
       const normalized = combined.toLowerCase();
       if (normalized.includes('http/1.1 403') || normalized.includes('403 forbidden')) {
         logStep(
-          `Skipping CodeQL pack "${pack}" — access forbidden (GitHub Advanced Security 전용일 수 있습니다).`
+          `⚠️  쿼리 팩 접근 거부: "${pack}"\n    → GitHub Advanced Security 전용 쿼리 팩일 수 있습니다.\n    → Fallback 쿼리 팩 사용을 권장합니다.`
         );
         continue;
       }
       if (normalized.includes('http/1.1 404') || normalized.includes('404 not found')) {
-        logStep(`Skipping CodeQL pack "${pack}" — 레지스트리에서 찾을 수 없습니다.`);
+        logStep(`⚠️  쿼리 팩을 찾을 수 없음: "${pack}"\n    → 레지스트리에서 해당 팩이 존재하지 않습니다.`);
         continue;
       }
       const reason = combined || error?.message || String(error);
-      throw new Error(`Failed to download CodeQL pack "${pack}": ${reason}`);
+      throw new Error(`❌ CodeQL 쿼리 팩 다운로드 실패: "${pack}"\n\n사유: ${reason}\n\n트러블슈팅:\n  - 네트워크 연결 확인\n  - GitHub 인증 토큰 설정 확인\n  - 쿼리 팩 이름 확인`);
     }
   }
 
@@ -745,24 +751,58 @@ async function main() {
       const uniqueFallbacks = [...new Set(fallbackCandidates)];
 
       if (uniqueFallbacks.length > 0) {
-        logStep(
-          `기본 CodeQL 쿼리 팩 접근이 거부되어 fallback 팩을 시도합니다: ${uniqueFallbacks.join(', ')}`
-        );
+        logStep('');
+        logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logStep('⚠️  Fallback 쿼리 팩으로 전환합니다');
+        logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logStep('');
+        logStep('📌 전환 사유:');
+        logStep('   표준 쿼리 팩(codeql/javascript-security-and-quality) 접근이 거부되었습니다.');
+        logStep('   GitHub Advanced Security가 활성화되지 않은 환경으로 추정됩니다.');
+        logStep('');
+        logStep('📦 Fallback 쿼리 팩 정보:');
+        logStep(`   - 사용할 팩: ${uniqueFallbacks.join(', ')}`);
+        logStep('   - 예상 규칙 수: 50+ 개 (표준 팩 대비 제한적)');
+        logStep('   - 커버리지: 기본 보안 규칙 중심 (확장 규칙 미포함)');
+        logStep('');
+        logStep('💡 환경별 가이드:');
+        logStep('   [로컬 환경]');
+        logStep('     - Fallback 쿼리 팩으로 기본 보안 분석 가능');
+        logStep('     - 완전한 분석은 CI 환경(GitHub Actions)에서 자동 실행됨');
+        logStep('   [CI 환경]');
+        logStep('     - GitHub Advanced Security 활성화 시 400+ 규칙 자동 적용');
+        logStep('     - SARIF 업로드로 Code Scanning 대시보드 연동');
+        logStep('');
+        logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        logStep('');
         availablePacks = await ensureQueryPacksAvailable(config.codeqlPath, uniqueFallbacks);
       }
     }
 
     if (availablePacks.length === 0) {
       throw new Error(
-        '사용 가능한 CodeQL 쿼리 팩이 없습니다. access가 허용된 팩을 지정하거나 기본 팩을 복원해 주세요.'
+        '❌ 사용 가능한 CodeQL 쿼리 팩이 없습니다.\n\n트러블슈팅:\n  - GitHub Advanced Security 활성화 확인\n  - 커스텀 쿼리 팩 경로 확인\n  - --packs 옵션으로 로컬 쿼리 팩 지정\n\n문의: https://docs.github.com/en/code-security/code-scanning'
       );
     }
 
-    // 사용할 쿼리 팩 정보 로깅
-    logStep(`사용할 쿼리 팩 (${availablePacks.length}개):`);
+    // 쿼리 팩 종류 감지 및 로깅
+    const isStandardPack = availablePacks.some(p => p.includes('javascript-security-and-quality'));
+    const isFallbackPack = availablePacks.some(p => p.includes('javascript-queries'));
+    const packType = isStandardPack ? '표준 쿼리 팩' : isFallbackPack ? 'Fallback 쿼리 팩' : '커스텀 쿼리 팩';
+    const expectedRules = isStandardPack ? '400+' : isFallbackPack ? '50+' : '알 수 없음';
+
+    logStep('');
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logStep(`📦 쿼리 팩 종류: ${packType}`);
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logStep(`   - 총 ${availablePacks.length}개 팩 사용`);
+    logStep(`   - 예상 규칙 수: ${expectedRules} 개`);
+    logStep('');
     availablePacks.forEach((pack, idx) => {
-      logStep(`  [${idx + 1}] ${pack}`);
+      logStep(`   [${idx + 1}] ${pack}`);
     });
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logStep('');
 
     if (!config.keepDb && (await pathExists(config.dbPath))) {
       logStep(`Removing existing database at ${config.dbPath}`);
@@ -811,9 +851,42 @@ async function main() {
     });
 
     await generateReports(config, availablePacks);
-    logStep('CodeQL 분석이 완료되었습니다.');
+    logStep('');
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logStep('✅ CodeQL 분석 완료');
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logStep('');
+    logStep('📁 생성된 산출물:');
+    logStep(`   - SARIF: ${relative(workspaceRoot, config.sarifPath)}`);
+    logStep(`   - CSV 요약: ${relative(workspaceRoot, config.summaryPath)}`);
+    logStep(`   - 개선 계획: ${relative(workspaceRoot, config.planPath)}`);
+    logStep('');
+    logStep('💡 다음 단계:');
+    logStep('   1. 개선 계획 문서 검토');
+    logStep('   2. 우선순위 높은 경고부터 대응');
+    logStep('   3. TDD 백로그에 등록');
+    logStep('');
+    logStep('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   } catch (error) {
-    process.stderr.write(`CodeQL 실행이 실패했습니다: ${error.message}\n`);
+    process.stderr.write('\n');
+    process.stderr.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.stderr.write('❌ CodeQL 실행 실패\n');
+    process.stderr.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.stderr.write('\n');
+    process.stderr.write(`오류: ${error.message}\n`);
+    process.stderr.write('\n');
+    process.stderr.write('💡 트러블슈팅:\n');
+    process.stderr.write('   - CodeQL CLI 설치 확인: codeql --version\n');
+    process.stderr.write('   - 네트워크 연결 확인\n');
+    process.stderr.write('   - GitHub 인증 토큰 설정 확인\n');
+    process.stderr.write('   - --dry-run 옵션으로 설정 미리보기\n');
+    process.stderr.write('\n');
+    process.stderr.write('📚 참고 문서:\n');
+    process.stderr.write('   - CodeQL CLI 설치: https://codeql.github.com/docs/codeql-cli/installation/\n');
+    process.stderr.write('   - GitHub Advanced Security: https://docs.github.com/en/code-security\n');
+    process.stderr.write('\n');
+    process.stderr.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    process.stderr.write('\n');
     process.exitCode = 1;
   }
 }
