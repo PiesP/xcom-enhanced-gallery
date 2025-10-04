@@ -21,7 +21,50 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-**현재 활성 Epic 없음** - 백로그에서 다음 작업 선정 필요
+### Epic JSX-PRAGMA-CLEANUP (시작: 2025-01-04)
+
+**목적**: esbuild JSX pragma 경고 제거 및 SolidJS 설정 표준화
+
+**배경**: 3개 파일에서 `/** @jsxImportSource solid-js */` 주석이 빌드 경고 발생
+
+- GalleryContainer.tsx, NavigationButton.tsx, Button.tsx
+- 경고 메시지: "The JSX import source cannot be set without also enabling
+  React's 'automatic' JSX transform"
+- 현상: 빌드는 성공하지만 CI/CD 로그 가독성 저하, 개발자 혼란 유발
+
+**솔루션 분석** (4개 옵션 비교):
+
+| 옵션                          | 설명                          | Effort | Value  | Impact                  |
+| ----------------------------- | ----------------------------- | ------ | ------ | ----------------------- |
+| **A. JSX Pragma 제거 (선택)** | pragma 주석 제거 + Vite 설정  | S      | Low    | 개발자 경험 + 코드 품질 |
+| B. CSS 번들 최적화            | 102.95 KB CSS 분석 및 최적화  | H      | Medium | 성능 + 유지보수성       |
+| C. 추가 Code Splitting        | Settings 외 Feature 동적 로딩 | H      | Low    | 성능 (현재 불필요)      |
+| D. 디자인 토큰 강화           | 토큰 일관성 자동 검증         | M      | Medium | 유지보수성 + UX         |
+
+**선정 이유**:
+
+- ✅ 낮은 위험, 빠른 구현 (3개 파일만 수정)
+- ✅ 명확한 성공 지표 (경고 0개)
+- ✅ SolidJS 표준 패턴 준수 (vite.config.ts 중앙 관리)
+- ✅ TDD 적용 용이 (빌드 스크립트 테스트)
+- ❌ B: 번들 크기 여유 있음 (+93KB), ROI 불명확
+- ❌ C: Settings/Icons 이미 최적화됨
+- ❌ D: 기존 토큰 시스템 안정적, 긴급성 낮음
+
+**Scope**:
+
+- Phase 1 (RED): 빌드 경고 감지 테스트 작성
+- Phase 2 (GREEN): pragma 제거 + 빌드 검증
+- Phase 3 (REFACTOR): 문서화 + 린트 룰 검토
+
+**Quality Gates**:
+
+- ✅ 빌드 경고 0개
+- ✅ TypeScript 0 errors
+- ✅ 테스트 GREEN
+- ✅ 번들 크기 동일 (±1KB)
+
+**현재 상태**: Phase 1 (RED) 대기 중
 
 ---
 

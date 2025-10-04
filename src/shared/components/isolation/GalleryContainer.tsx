@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 /**
  * @fileoverview 갤러리 컨테이너
  * @description Solid 기반 갤러리 컨테이너와 Light DOM 마운트 도우미
