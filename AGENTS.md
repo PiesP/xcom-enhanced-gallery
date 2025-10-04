@@ -59,6 +59,26 @@ npm run build             # dev + prod 연속 빌드 + 검증
 - prod: `dist/xcom-enhanced-gallery.user.js` + `.map`
 - 검증: `scripts/validate-build.js` 자동 실행
 
+### 번들 크기 검증
+
+```pwsh
+# 번들 크기 확인
+Get-ChildItem dist -File | Select-Object Name, @{Name="SizeKB";Expression={[math]::Round($_.Length/1KB, 2)}}
+
+# 번들 최적화 테스트 실행
+npx vitest run test/architecture/bundle-size-optimization.contract.test.ts
+
+# 상한선 확인 (회귀 방지)
+# Raw: 471.67 KB ≤ 473 KB ✅
+# Gzip: 117.12 KB ≤ 118 KB ✅
+```
+
+**목표**:
+
+- Raw 크기: ≤473 KB (현재: 471.67 KB)
+- Gzip 크기: ≤118 KB (현재: 117.12 KB)
+- 향후 이상적 목표: Raw 420 KB, Gzip 105 KB
+
 ---
 
 ## CI/CD

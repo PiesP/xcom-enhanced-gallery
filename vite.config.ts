@@ -265,7 +265,13 @@ export default defineConfig(({ mode }) => {
           inlineDynamicImports: true,
           sourcemapExcludeSources: false,
         },
-        treeshake: flags.isProd,
+        treeshake: flags.isProd
+          ? {
+              moduleSideEffects: 'no-external',
+              propertyReadSideEffects: false,
+              tryCatchDeoptimization: false,
+            }
+          : false,
       },
       ...(flags.isProd && {
         terserOptions: {
@@ -273,12 +279,32 @@ export default defineConfig(({ mode }) => {
             drop_console: true,
             drop_debugger: true,
             passes: 3,
-            pure_funcs: ['logger.debug', 'logger.trace'],
+            pure_funcs: [
+              'logger.debug',
+              'logger.trace',
+              'console.log',
+              'console.debug',
+              'console.trace',
+            ],
             pure_getters: true,
             unsafe: true,
+            unsafe_comps: true,
+            unsafe_Function: true,
+            unsafe_math: true,
+            unsafe_symbols: true,
+            unsafe_methods: true,
+            unsafe_proto: true,
+            unsafe_regexp: true,
+            unsafe_undefined: true,
           },
           format: { comments: false },
-          mangle: { toplevel: true },
+          mangle: {
+            toplevel: true,
+            properties: {
+              regex: /^_[a-z]/i,
+            },
+          },
+          module: true,
         },
       }),
     },

@@ -318,6 +318,50 @@ function sanitize(obj) {
 
 **테스트**: `test/architecture/dom-depth-guard.test.ts` (5 tests)
 
+### 번들 최적화 (Epic BUNDLE-SIZE-OPTIMIZATION)
+
+**현재 상태** (2025-10-05):
+
+- Raw 번들: 471.67 KB (목표: 473 KB 이하, 이상적: 420 KB)
+- Gzip 번들: 117.12 KB (목표: 118 KB 이하, 이상적: 105 KB)
+- 테스트 가드: `test/architecture/bundle-size-optimization.contract.test.ts` (15
+  tests)
+
+**최적화 전략**:
+
+1. **Tree-shaking**:
+   - `package.json` sideEffects: CSS 파일만 side-effect로 표시
+   - Rollup treeshake 옵션: `moduleSideEffects: 'no-external'`,
+     `propertyReadSideEffects: false`
+   - 미사용 export 자동 제거 (dead code elimination)
+
+2. **Code Deduplication**:
+   - 중복 함수 제거: `core-utils.ts` 중복 3개 제거 (→ `utils.ts` 통합)
+   - DRY 원칙 준수: 패턴 반복 20회 이하 유지
+
+3. **Terser 압축**:
+   - Pure functions: `logger.debug/trace`, `console.log/debug/trace` 제거
+   - Unsafe optimizations: comps, Function, math, symbols, methods, proto,
+     regexp, undefined
+   - Mangle properties: `^_[a-z]` 패턴 (internal props만)
+   - Module mode: ES6 최적화 활성화
+
+4. **Orphan 파일 관리**:
+   - 32개 orphan 파일 존재 (대부분 의도적 분리 모듈)
+   - 향후 개선: 실제 미사용 파일만 선별 제거
+
+**회귀 방지**:
+
+- 번들 크기 상한선 테스트 (473 KB raw, 118 KB gzip)
+- 빌드 시 자동 검증: `scripts/validate-build.js`
+- CI에서 크기 변화 추적
+
+**향후 개선 방향**:
+
+- Pure annotations 증가: Rollup 플러그인 또는 수동 `/*#__PURE__*/` 추가
+- Deep code audit: 420 KB 목표 달성 (52 KB 추가 감소 필요)
+- Dynamic imports 검토: 코드 분할 가능성 (Userscript 제약 고려)
+
 ---
 
 ## 9. 테스트 전략 (TDD)
