@@ -4,7 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-04 — Epic UI-TEXT-ICON-OPTIMIZATION 활성화
+**최근 업데이트**: 2025-01-07 — Epic UI-TEXT-ICON-OPTIMIZATION을 4개
+Sub-Epic으로 분할
 
 ---
 
@@ -15,79 +16,62 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 - 실행/CI/빌드 파이프라인: `AGENTS.md`
 - 아키텍처 설계: `docs/ARCHITECTURE.md`
 - 본 문서: 활성 Epic/작업과 Acceptance 중심
+- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
+  진행
 
 ---
 
 ## 2. 활성 Epic 현황
 
-### Epic UI-TEXT-ICON-OPTIMIZATION (활성: 2025-01-04)
+### Sub-Epic 1: ICON-SEMANTIC-FIX (활성: 2025-01-07)
 
-**목적**: UI 요소의 텍스트/아이콘 사용 최적화를 통한 사용자 경험 개선
+**부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
+
+**목적**: Settings 아이콘 중복 사용 문제 해결 - 키보드 도움말 버튼에
+QuestionMark 아이콘 사용
 
 **배경**:
 
-- 현황 평가 결과, 전반적으로 우수한 접근성과 일관성을 갖추었으나 4가지 개선 기회
-  발견
-- 하드코딩된 텍스트로 인한 국제화 불일치 (한국어/영어 혼재)
-- aria-label과 title 속성 중복으로 키보드 단축키 가시성 저하
-- Settings 아이콘의 중복 사용으로 기능 구분 혼동
-- ContextMenu 접근성 ARIA 역할 미흡 (Epic CONTEXT-MENU-UI Phase 3 미완료)
+- 현재 Toolbar에서 Settings 아이콘이 두 가지 다른 목적으로 사용됨:
+  1. 키보드 도움말 버튼 (Show keyboard shortcuts)
+  2. 설정 버튼 (Settings)
+- 시각적 혼동 및 기능 구분 불명확
 
-**우선순위**: P0 (High Impact - 모든 언어 사용자에게 영향)
+**우선순위**: P1 (Medium Impact - 사용자 경험 개선)
+
+**난이도**: XS (1-2 files, ~50 lines)
 
 **예상 영향**:
 
-- ✅ 완전한 다국어 지원 (한국어/영어/일본어)
-- ✅ 접근성 WCAG 2.1 Level AA 완전 준수
-- ✅ 키보드 단축키 발견성 향상
-- ✅ 시각적 명확성 개선
+- ✅ 아이콘 고유성 확보 (각 아이콘 = 단일 목적)
+- ✅ 시각적 명확성 향상
+- ✅ 도움말 버튼 발견성 개선
 
-**전략**: 4가지 개선 영역을 단계별로 통합 구현
-
-1. I18N-COMPLETION: 국제화 완전성 확보
-2. TOOLTIP-SEMANTICS: aria-label/title 의미 분리
-3. ICON-SEMANTIC-CLARITY: 아이콘 중복 해소
-4. CONTEXTMENU-A11Y: 접근성 강화
+**전략**: 최소한의 변경으로 빠른 승리(Quick Win)
 
 ---
 
-#### Phase 1: RED (실패 테스트 작성)
+#### Phase 1: RED (실패 테스트 작성) ✅ 완료
 
-**목표**: 각 개선 영역의 계약을 테스트로 정의
+**목표**: 아이콘 고유성 계약을 테스트로 정의
 
-**테스트 파일 생성**:
+**테스트 파일**: `test/architecture/icon-semantic-uniqueness.test.ts`
 
-1. **국제화 커버리지 테스트** (`test/unit/i18n/toolbar-i18n-coverage.test.ts`)
-   - 모든 언어(ko/en/ja)에서 Toolbar 버튼 라벨 렌더링
-   - 하드코딩 텍스트 감지 (undefined, 템플릿 변수 남김)
-   - LanguageService 키 존재 검증
+**테스트 케이스**:
 
-2. **ARIA/Title 의미론적 분리 테스트**
-   (`test/accessibility/button-label-semantics.test.ts`)
-   - aria-label은 간결 (기능 설명만)
-   - title은 상세 (키보드 단축키 포함)
-   - 키보드 단축키가 있는 버튼은 title ≠ aria-label
+1. Settings 아이콘이 2개 이상의 버튼에 사용되고 있어야 함 (Phase 1 현황)
+2. 키보드 도움말 버튼이 Settings 아이콘을 사용하고 있어야 함 (Phase 1 현황)
+3. QuestionMark 아이콘이 아직 정의되어 있지 않아야 함
+4. IconRegistry에 QuestionMark가 등록되어 있지 않아야 함
+5. 각 아이콘은 단일 목적으로만 사용되어야 함 (Phase 2 목표)
 
-3. **아이콘 고유성 테스트**
-   (`test/architecture/icon-semantic-uniqueness.test.ts`)
-   - 동일 아이콘이 서로 다른 기능에 사용되지 않음
-   - 키보드 도움말 버튼은 QuestionMark 아이콘 사용
-
-4. **ContextMenu ARIA 계약 테스트**
-   (`test/accessibility/contextmenu-aria-roles.test.ts`)
-   - 메뉴 컨테이너에 role="menu"
-   - 메뉴 항목에 role="menuitem"
-   - aria-orientation="vertical"
-   - 첫 항목 자동 포커스
-
-**예상 결과**: 4개 테스트 파일, 총 15-20개 테스트 케이스 RED
+**현재 상태**: ✅ Phase 1 완료 (4개 RED 테스트)
 
 **Acceptance Criteria**:
 
-- [ ] 4개 테스트 파일 생성
-- [ ] 모든 테스트 RED 상태 확인
-- [ ] TypeScript 0 errors
-- [ ] 테스트 의도 명확 (describe/it 문구)
+- [x] 테스트 파일 생성
+- [x] 모든 테스트 RED 상태 확인 (4/4 tests failed)
+- [x] TypeScript 0 errors
 
 ---
 
@@ -97,330 +81,124 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 **구현 작업**:
 
-1. **LanguageService 확장** (`src/shared/services/LanguageService.ts`)
+1. **QuestionMark 아이콘 추가** (`src/assets/icons/xeg-icons.ts`)
 
    ```typescript
-   export interface LanguageStrings {
-     readonly toolbar: {
-       // 기존 키 유지
-       readonly previous: string;
-       readonly next: string;
-       // ... 기존 키들 ...
-
-       // 추가 키
-       readonly fitOriginal: string;
-       readonly fitWidth: string;
-       readonly fitHeight: string;
-       readonly fitContainer: string;
-       readonly downloadCurrent: string;
-       readonly keyboardHelp: string;
-
-       // 키보드 단축키 포함 버전 (title 전용)
-       readonly previousWithKey: string; // "이전 미디어 (←)"
-       readonly nextWithKey: string; // "다음 미디어 (→)"
-       readonly fitOriginalWithKey: string; // "원본 크기 (1:1)"
-       readonly downloadCurrentWithKey: string; // "현재 파일 다운로드 (Ctrl+D)"
-       readonly closeWithKey: string; // "갤러리 닫기 (Esc)"
-       readonly keyboardHelpWithKey: string; // "키보드 단축키 도움말 (?)"
-     };
-     // ... 기존 인터페이스 유지 ...
-   }
-   ```
-
-2. **다국어 리소스 추가** (ko/en/ja)
-   - 한국어 리소스: 13개 키 추가
-   - 영어 리소스: 13개 키 추가
-   - 일본어 리소스: 13개 키 추가
-
-3. **Toolbar.tsx 하드코딩 제거**
-   (`src/shared/components/ui/Toolbar/Toolbar.tsx`)
-
-   ```tsx
-   // Before
-   aria-label='이전 미디어'
-   title='이전 미디어 (←)'
-
-   // After
-   aria-label={languageService.getString('toolbar.previous')}
-   title={languageService.getString('toolbar.previousWithKey')}
-   ```
-
-   - 12개 버튼 모두 변경
-
-4. **QuestionMark 아이콘 추가** (`src/assets/icons/xeg-icons.ts`)
-
-   ```typescript
-   export const QuestionMarkIcon: IconComponent = (props) => (
-     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
-       <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none" stroke-width="2"/>
-       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" stroke="currentColor" fill="none" stroke-width="2"/>
-       <circle cx="12" cy="17" r="1" fill="currentColor"/>
+   export const QuestionMark: Component<IconProps> = (props) => (
+     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+       <circle cx="12" cy="12" r="10" />
+       <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+       <line x1="12" y1="17" x2="12.01" y2="17" />
      </svg>
    );
    ```
 
-5. **IconRegistry에 QuestionMark 등록** (`src/shared/services/iconRegistry.ts`)
+2. **IconRegistry에 QuestionMark 등록** (`src/shared/services/iconRegistry.ts`)
 
    ```typescript
-   const ICON_IMPORTS = {
-     // ... 기존 아이콘들 ...
-     QuestionMark: () =>
-       Promise.resolve(resolveXegIconComponent('QuestionMark')),
-   } as const;
+   export const CORE_ICONS: readonly IconName[] = [
+     'Download',
+     'Settings',
+     'Close',
+     'ChevronLeft',
+     'ChevronRight',
+     'ZoomIn',
+     'ArrowAutofitWidth',
+     'ArrowAutofitHeight',
+     'ArrowsMaximize',
+     'FileZip',
+     'QuestionMark', // 추가
+     'Notifications',
+     'NotificationsOff',
+   ] as const;
+
+   export type IconName = (typeof CORE_ICONS)[number];
    ```
 
-6. **Toolbar 키보드 도움말 버튼 아이콘 변경**
-
-   ```tsx
-   <ToolbarButton
-     icon='QuestionMark' // 'Settings'에서 변경
-     aria-label={languageService.getString('toolbar.keyboardHelp')}
-     title={languageService.getString('toolbar.keyboardHelpWithKey')}
-   />
+3. **Toolbar 키보드 도움말 버튼 아이콘 변경**
+   (`src/shared/components/ui/Toolbar/Toolbar.tsx`)
+   ```typescript
+   {props.onShowKeyboardHelp ? (
+     <ToolbarButton
+       aria-label='Show keyboard shortcuts'
+       title='Show keyboard shortcuts (?)'
+       disabled={Boolean(props.disabled)}
+       onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
+       data-gallery-element='keyboard-help'
+       icon='QuestionMark'  // Settings → QuestionMark
+     />
+   ) : null}
    ```
 
-7. **ContextMenu ARIA 역할 추가**
-   (`src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx`)
-   ```tsx
-   <div
-     ref={menuRef}
-     class={styles.contextMenu}
-     role='menu'
-     aria-orientation='vertical'
-     aria-label='Context menu'
-   >
-     <For each={props.actions}>
-       {(action, index) => (
-         <button
-           role='menuitem'
-           tabindex={focusedIndex() === index() ? 0 : -1}
-           // ... 기존 props ...
-         >
-           {action.label}
-         </button>
-       )}
-     </For>
-   </div>
-   ```
-
-**예상 결과**: 15-20/15-20 tests GREEN
+**예상 결과**: 5/5 tests GREEN
 
 **Acceptance Criteria**:
 
+- [ ] QuestionMark 아이콘 추가 및 등록
+- [ ] Toolbar 키보드 도움말 버튼 아이콘 변경
 - [ ] 모든 테스트 GREEN
 - [ ] TypeScript 0 errors
-- [ ] Lint clean
-- [ ] 언어 변경 시 실시간 반영 확인 (수동 테스트)
-- [ ] 번들 크기 변화 측정 (±5 KB 이내 예상)
+- [ ] Settings 아이콘은 설정 버튼에만 사용됨
+- [ ] 번들 크기 증가 < 1 KB
 
 ---
 
-#### Phase 3: REFACTOR (문서화 + 최적화)
+#### Phase 3: REFACTOR (문서화)
 
-**목표**: 코드 정리, 문서 업데이트, 가이드라인 추가
+**목표**: 변경 사항 문서화 및 가이드라인 업데이트
 
 **작업 항목**:
 
-1. **코딩 가이드라인 업데이트** (`docs/CODING_GUIDELINES.md`)
-
-   ```markdown
-   ## 버튼 접근성 속성 가이드
-
-   ### aria-label vs title 사용 원칙
-
-   | 속성         | 용도                                     | 예시                |
-   | ------------ | ---------------------------------------- | ------------------- |
-   | `aria-label` | 스크린 리더용 **간결한 기능 설명**       | `"이전 미디어"`     |
-   | `title`      | 마우스 호버 툴팁, **키보드 단축키 포함** | `"이전 미디어 (←)"` |
-
-   ### 규칙
-
-   - **필수**: 모든 아이콘 버튼은 `aria-label` 필수
-   - **권장**: `title`에 키보드 단축키 명시 (있는 경우)
-   - **금지**: 동일한 텍스트 반복 (`aria-label`과 `title`이 완전히 같은 경우)
-
-   ### 국제화 (i18n)
-
-   - **필수**: UI 텍스트는 반드시 `LanguageService` 경유
-   - **금지**: 하드코딩된 문자열 (한국어, 영어, 일본어 등)
-   - **패턴**: 키보드 단축키가 있는 텍스트는 `xxxWithKey` 키 사용
-   ```
-
-2. **LanguageService 사용 가이드 추가** (`docs/CODING_GUIDELINES.md`)
-
-   ````markdown
-   ## 국제화 (i18n)
-
-   ### LanguageService 사용 패턴
-
-   ```tsx
-   import { LanguageService } from '@shared/services/LanguageService';
-
-   const languageService = new LanguageService();
-
-   // 간단한 문자열
-   const label = languageService.getString('toolbar.previous');
-
-   // 템플릿 변수 포함
-   const message = languageService.getFormattedString(
-     'messages.download.progress.body',
-     {
-       current: 5,
-       total: 10,
-       percentage: 50,
-       filename: 'image.jpg',
-     }
-   );
-   ```
-   ````
-
-   ### 새 키 추가 절차
-   1. `LanguageStrings` 인터페이스에 타입 정의
-   2. 모든 언어(ko/en/ja)에 리소스 추가
-   3. 테스트로 키 존재 검증
-
-   ```
-
-   ```
-
-3. **아이콘 사용 가이드 추가** (`docs/CODING_GUIDELINES.md`)
-
-   ```markdown
-   ## 아이콘 사용 가이드
-
-   ### 의미론적 고유성
-
-   - **원칙**: 하나의 아이콘은 하나의 의미만 표현
-   - **금지**: 동일 아이콘을 서로 다른 기능에 재사용
-
-   ### 주요 아이콘 매핑
-
-   | 아이콘         | 용도                 | 컴포넌트                 |
-   | -------------- | -------------------- | ------------------------ |
-   | `Settings`     | 설정 열기            | Toolbar 설정 버튼        |
-   | `QuestionMark` | 도움말/키보드 단축키 | Toolbar 키보드 도움말    |
-   | `Close`        | 닫기                 | Toolbar 닫기, Modal 닫기 |
-   | `Download`     | 단일 다운로드        | Toolbar 현재 파일        |
-   | `FileZip`      | ZIP 다운로드         | Toolbar 전체 파일        |
-   ```
-
-4. **변경 사항 요약 문서 작성** (`docs/UI-TEXT-ICON-OPTIMIZATION-SUMMARY.md`)
-   - 변경된 파일 목록
-   - 추가된 i18n 키 목록
-   - 테스트 커버리지 리포트
-   - 번들 크기 변화 측정
-   - 마이그레이션 가이드 (다른 컴포넌트 참고용)
-
-5. **회귀 방지 가드 추가**
-   - ESLint 규칙: 하드코딩 텍스트 감지 (한글/영문 리터럴)
-   - Pre-commit hook: i18n 키 동기화 검증
+1. CHANGELOG.md에 변경 사항 기록
+2. 아이콘 고유성 원칙을 CODING_GUIDELINES.md에 추가
+3. 완료 내역을 TDD_REFACTORING_PLAN_COMPLETED.md로 이관
 
 **Acceptance Criteria**:
 
-- [ ] 문서 3개 업데이트/추가
-- [ ] 회귀 방지 가드 2개 추가
-- [ ] 번들 크기 측정 및 기록
-- [ ] `npm run build` 성공
+- [ ] 문서 업데이트 완료
+- [ ] 빌드 성공
 - [ ] 모든 테스트 GREEN 유지
 
 ---
 
-#### 품질 게이트 (Phase 2-3 공통)
+### Sub-Epic 2: I18N-TOOLBAR-LABELS (대기 중)
 
-**필수 체크리스트**:
+**부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
 
-- [ ] `npm run typecheck` — 0 errors
-- [ ] `npm run lint:fix` — clean
-- [ ] `npm test` — 모든 테스트 GREEN
-- [ ] `npm run build:dev` — 성공
-- [ ] `npm run build:prod` — 성공
-- [ ] 번들 크기: ±10 KB 이내 (예상: +2-5 KB)
+**목적**: Toolbar의 하드코딩된 텍스트를 LanguageService로 전환하여 완전한 다국어
+지원
 
-**수동 검증**:
+**우선순위**: P1 (Medium Impact) **난이도**: S (3-4 files, ~150 lines)
+**의존성**: 없음 (독립 실행 가능)
 
-- [ ] 한국어/영어/일본어 전환 시 모든 버튼 라벨 정상 표시
-- [ ] 키보드 단축키 툴팁 정상 표시 (마우스 호버)
-- [ ] 스크린 리더 테스트 (NVDA/JAWS 호환)
-- [ ] 키보드 네비게이션 정상 동작
-- [ ] ContextMenu 키보드 네비게이션 (Arrow/Enter/Escape)
+**전략**: Sub-Epic 1 완료 후 시작
 
 ---
 
-#### 예상 산출물
+### Sub-Epic 3: ARIA-TITLE-SEPARATION (대기 중)
 
-**변경 파일** (총 12개):
+**부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
 
-1. `src/shared/services/LanguageService.ts` — 인터페이스 확장
-2. `src/shared/components/ui/Toolbar/Toolbar.tsx` — 하드코딩 제거
-3. `src/assets/icons/xeg-icons.ts` — QuestionMark 아이콘 추가
-4. `src/shared/services/iconRegistry.ts` — 아이콘 등록
-5. `src/shared/components/ui/ContextMenu/ContextMenu.solid.tsx` — ARIA 역할
-6. `test/unit/i18n/toolbar-i18n-coverage.test.ts` — 신규
-7. `test/accessibility/button-label-semantics.test.ts` — 신규
-8. `test/architecture/icon-semantic-uniqueness.test.ts` — 신규
-9. `test/accessibility/contextmenu-aria-roles.test.ts` — 신규
-10. `docs/CODING_GUIDELINES.md` — 가이드 추가
-11. `docs/UI-TEXT-ICON-OPTIMIZATION-SUMMARY.md` — 신규
-12. `.eslintrc.js` (선택) — 하드코딩 감지 규칙
+**목적**: 키보드 단축키가 있는 버튼의 aria-label과 title 속성을 의미론적으로
+분리
 
-**테스트 커버리지**:
+**우선순위**: P2 (Low Impact - 접근성 개선) **난이도**: S (2-3 files, ~100
+lines) **의존성**: Sub-Epic 2 완료 후 (I18N 키 필요)
 
-- 신규 테스트: 15-20개
-- 기존 테스트: 회귀 방지 (모두 GREEN 유지)
-
-**번들 영향**:
-
-- QuestionMark 아이콘: ~0.5 KB
-- LanguageService 확장: ~1-2 KB (리소스 추가)
-- 총 예상: +2-3 KB
+**전략**: I18N 완료 후 시작
 
 ---
 
-#### 리스크 및 완화 전략
+### Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT (대기 중)
 
-**리스크 1**: 언어 변경 시 리렌더링 성능
+**부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
 
-- **완화**: LanguageService는 이미 최적화됨 (signal 기반), 추가 성능 테스트
+**목적**: ContextMenu의 ARIA 속성 강화
 
-**리스크 2**: 기존 테스트 회귀
+**우선순위**: P2 (Low Impact - 접근성 개선) **난이도**: XS (1 file, ~30 lines)
+**의존성**: 없음 (독립 실행 가능, Epic CONTEXT-MENU-UI Phase 3 기반)
 
-- **완화**: Phase 1에서 계약 테스트로 경계 명확화, Phase 2에서 점진적 변경
-
-**리스크 3**: 번들 크기 증가
-
-- **완화**: 아이콘 1개만 추가, i18n 리소스는 압축 효과 높음
-
-**리스크 4**: ContextMenu 변경으로 인한 부작용
-
-- **완화**: Epic CONTEXT-MENU-UI의 기존 18개 테스트로 회귀 방지
-
----
-
-#### 성공 지표
-
-**정량적**:
-
-- ✅ 하드코딩 텍스트: 12개 → 0개
-- ✅ i18n 키 커버리지: 85% → 100%
-- ✅ 접근성 테스트: +4개 파일, +15-20개 케이스
-- ✅ 아이콘 중복 사용: 1건 → 0건
-
-**정성적**:
-
-- ✅ 모든 언어 사용자에게 완전한 번역 제공
-- ✅ 키보드 단축키 발견성 향상
-- ✅ 스크린 리더 호환성 개선
-- ✅ 시각적 명확성 향상
-
----
-
-#### 다음 단계
-
-Phase 1-3 완료 후:
-
-1. `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관
-2. 백로그 검토: 장기 개선 과제 (커스텀 툴팁 컴포넌트 등)
-3. 다른 컴포넌트에 동일 패턴 적용 (Settings, Toast 등)
+**전략**: 다른 Sub-Epic과 병행 가능
 
 ---
 
