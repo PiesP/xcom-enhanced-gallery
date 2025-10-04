@@ -3850,24 +3850,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./vendor-api-safe",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -3926,36 +3908,8 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/fflate-deprecated.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api-safe.ts",
-        "src/shared/external/vendors/vendor-manager-static.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/external/vendors/vendor-api-safe.ts",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "./vendor-manager-static",
@@ -3983,43 +3937,7 @@
     },
     {
       "source": "src/shared/external/vendors/vendor-manager-static.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./fflate-deprecated",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/fflate-deprecated.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api-safe.ts"
@@ -8686,8 +8604,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 279,
-    "totalDependenciesCruised": 347,
+    "totalCruised": 278,
+    "totalDependenciesCruised": 343,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

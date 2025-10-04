@@ -13,7 +13,6 @@ import {
   type SolidStoreAPI,
   type SolidWebAPI,
 } from './vendor-manager-static';
-import { warnFflateDeprecated, FFLATE_REMOVAL_MESSAGE, type FflateAPI } from './fflate-deprecated';
 
 // ================================
 // 안전한 공개 API
@@ -53,19 +52,6 @@ export async function initializeVendorsSafe(): Promise<void> {
     throw error;
   } finally {
     isInitializing = false;
-  }
-}
-
-/**
- * fflate 라이브러리 안전 접근 (동기)
- */
-export function getFflateSafe(): FflateAPI {
-  warnFflateDeprecated('zip-creator now relies on StoreZipWriter.');
-  try {
-    return staticVendorManager.getFflate();
-  } catch (error) {
-    logger.error('fflate 접근 실패:', error);
-    throw new Error(FFLATE_REMOVAL_MESSAGE);
   }
 }
 
