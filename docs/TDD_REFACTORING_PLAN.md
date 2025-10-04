@@ -22,10 +22,160 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-> **현재 활성 Epic 없음** ✨
->
-> 모든 계획된 리팩토링 작업이 완료되었습니다. 새로운 Epic은 백로그에서
-> 승격되거나, 보안/품질 이슈 발견 시 추가됩니다.
+### Epic CODEQL-LOCAL-ENHANCEMENT: 로컬 CodeQL 워크플로 개선
+
+**승격일**: 2025-10-05 **선정 이유**: CODEQL-SECURITY-HARDENING 완료 후 로컬
+개발 경험 향상 필요, 외부 의존성 없이 즉시 착수 가능 (READY 상태)
+
+**목표**: GitHub Advanced Security 활성화 여부와 무관하게 로컬 환경에서 CodeQL을
+효과적으로 활용할 수 있도록 워크플로 개선
+
+**배경**:
+
+- 현재: `scripts/run-codeql.mjs`가 Fallback 쿼리 팩 자동 전환 지원
+- 문제: 로컬 환경 제약이 명확히 문서화되지 않아 혼란 발생
+- 해결: 환경별 명확한 가이드 제공 + 상세 로깅으로 투명성 확보
+
+**솔루션**: 옵션 A - 스크립트 개선 + 문서화
+
+**장점**:
+
+- Phase 1 테스트 이미 완료 (RED → GREEN 즉시 가능)
+- 외부 의존성 없음 (GitHub Advanced Security 불필요)
+- 기존 기능 유지하면서 점진적 개선
+- 팀 전체 로컬 개발 경험 향상
+
+**단점**:
+
+- 표준 쿼리 팩(400+ 규칙) 활성화는 여전히 Advanced Security 필요
+- Fallback 쿼리 팩은 제한된 규칙 수 (50+ vs 400+)
+
+**Epic 구조**:
+
+---
+
+#### Phase 1: RED (완료 ✅)
+
+**파일**:
+
+- `test/architecture/codeql-local-enhancement.contract.test.ts` (18 tests)
+- `test/utils/codeql-environment.ts` (환경 감지 유틸)
+
+**검증 항목**:
+
+- Task 1: 환경 감지 함수 구현 ✅
+  - `hasAdvancedSecurity()`: 표준 쿼리 팩 실행 여부 감지
+  - `detectQueryPackType()`: 'standard' | 'fallback' | 'unknown' 반환
+  - `getCodeQLEnvironmentInfo()`: 환경 상세 정보 조회
+- Task 2: 조건부 SARIF 검증 ✅
+  - 환경별 임계값 적용 (표준: 400+ 규칙, Fallback: 50+ 규칙)
+  - 테스트 쿼리만 있는 상태 감지
+- Task 3: 환경 정보 로깅 ✅
+  - 콘솔 출력으로 현재 환경 확인
+- Task 4: 개선 계획 조건부 검증 ✅
+  - "Hello, world!" 비율 제한 (50% 미만)
+
+**상태**: ✅ 완료 (테스트 작성 완료, 유틸리티 함수 구현 완료)
+
+---
+
+#### Phase 2: GREEN (구현)
+
+**Task 1**: `scripts/run-codeql.mjs` 개선
+
+- [ ] 상세 로깅 강화
+  - Fallback 전환 시점 명시적 로깅
+  - 쿼리 팩 종류 출력 (표준 vs Fallback)
+  - 예상 규칙 수 가이드 제공
+- [ ] 에러 메시지 명확화
+  - 환경별 가이드 제공 (Advanced Security 필요 여부)
+  - 트러블슈팅 힌트 추가
+- [ ] 쿼리 팩 통계 로깅 개선
+  - SARIF 생성 후 실제 규칙 수 출력
+  - js/ 보안 규칙 비율 출력
+
+**Task 2**: 테스트 GREEN 검증
+
+- [ ] 로컬 테스트 실행
+
+  ```pwsh
+  npm test -- test/architecture/codeql-local-enhancement.contract.test.ts
+  ```
+
+- [ ] 18/18 tests GREEN 확인
+- [ ] 환경 정보 콘솔 출력 검증
+
+**Acceptance**:
+
+- ✅ 18/18 tests GREEN
+- ✅ 스크립트 로깅 개선 완료
+- ✅ 에러 메시지 명확화 완료
+- ✅ `npm run typecheck` 통과
+- ✅ `npm run lint:fix` 통과
+
+---
+
+#### Phase 3: REFACTOR (문서화 + 폴리싱)
+
+**Task 1**: `docs/CODEQL_LOCAL_GUIDE.md` 작성
+
+- [ ] 로컬 CodeQL 활용 가이드
+  - 쿼리 팩 종류 설명 (표준 vs Fallback)
+  - 환경별 제약 명확화
+  - 트러블슈팅 가이드
+- [ ] 실행 예제 제공
+  - `npm run codeql:scan` 워크플로
+  - 환경 정보 확인 방법
+  - SARIF 분석 방법
+
+**Task 2**: `AGENTS.md` 업데이트
+
+- [ ] CodeQL 분석 섹션 강화
+  - 로컬 제약 명확화
+  - CI 환경과 차이점 설명
+  - Fallback 쿼리 팩 설명 추가
+
+**Task 3**: `ARCHITECTURE.md` 업데이트
+
+- [ ] 보안 정책 섹션 강화
+  - CodeQL 통합 전략 추가
+  - 로컬 vs CI 환경 구분
+  - Fallback 쿼리 팩 정책 설명
+
+**Task 4**: 백로그 업데이트
+
+- [ ] `TDD_REFACTORING_BACKLOG.md` 업데이트
+  - CODEQL-LOCAL-ENHANCEMENT → COMPLETED로 이동
+  - GITHUB-ADVANCED-SECURITY-INTEGRATION HOLD 상태 유지
+
+**Task 5**: 최종 품질 게이트
+
+- [ ] `npm run typecheck` ✅
+- [ ] `npm run lint:fix` ✅
+- [ ] `npm test` (전체 테스트 GREEN) ✅
+- [ ] `npm run build:dev` ✅
+
+**Acceptance**:
+
+- ✅ 문서 3개 작성/업데이트 완료
+- ✅ 전체 테스트 GREEN
+- ✅ 품질 게이트 통과
+- ✅ Epic 완료 로그 작성
+
+---
+
+**예상 결과**:
+
+- 로컬 CodeQL 활용도 향상
+- 명확한 제약 이해 (표준 vs Fallback)
+- 팀 전체 보안 인식 제고
+- GitHub Advanced Security 활성화 시 원활한 전환 기반 마련
+
+**번들 영향**: 없음 (개발 도구만 수정, 런타임 코드 변경 없음)
+
+**의존성**: 없음 (READY 상태)
+
+---
 
 **최근 완료**:
 
