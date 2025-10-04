@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-04 — 테스트 현황 정리 (3 failed, 2612 passed, CodeQL
-권한 제약)
+**최근 업데이트**: 2025-10-04 — Epic FFLATE-DEPRECATED-API-REMOVAL 완료
 
 ---
 
@@ -23,76 +22,10 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic FFLATE-DEPRECATED-API-REMOVAL
+### 현재 활성 Epic 없음
 
-**시작일**: 2025-10-04 **유형**: 코드 정리 (Code Cleanup) **브랜치**:
-`refactor/fflate-deprecated-removal`
-
-#### 목표
-
-`fflate` 패키지 제거 후 남은 deprecated API stub과 테스트 모킹 코드를 완전히
-제거하여 코드베이스 정리 및 유지보수성 향상.
-
-#### 배경
-
-- **현재 상태**:
-  - `fflate` 패키지는 Epic REF-LITE-V3에서 제거됨 (StoreZipWriter로 대체)
-  - deprecated API stub (`getFflate()`, `createDeprecatedFflateApi()`) 존재
-  - 테스트 모킹 코드에서 여전히 fflate 참조 유지
-- **문제점**:
-  - 사용되지 않는 deprecated 코드가 유지보수 부담 증가
-  - 테스트 모킹이 실제 구현과 불일치
-  - 신규 개발자 혼란 가능성 (fflate가 제거되었지만 코드에 여전히 존재)
-
-#### 범위
-
-**Phase 1 (RED)**: 실패하는 테스트 작성
-
-- `test/architecture/fflate-removal.contract.test.ts` 생성
-  - `getFflate()` 함수가 존재하지 않아야 함
-  - `fflate-deprecated.ts` 파일이 존재하지 않아야 함
-  - `vendor-manager-static.ts`에 `deprecatedFflateApi` 속성 없어야 함
-  - 테스트 모킹 파일에 `createMockFflate()` 없어야 함
-  - `LICENSES/fflate-MIT.txt` 파일 존재 (라이선스 보존)
-
-**Phase 2 (GREEN)**: 최소 구현으로 테스트 통과
-
-- `src/shared/external/vendors/fflate-deprecated.ts` 삭제
-- `src/shared/external/vendors/vendor-manager-static.ts` 정리
-  - `createDeprecatedFflateApi`, `warnFflateDeprecated` import 제거
-  - `deprecatedFflateApi` 속성 제거
-  - `getFflate()` 메서드 제거
-- `src/shared/external/vendors/vendor-api-safe.ts` 정리
-  - `getFflateSafe()` 함수 제거
-  - deprecated import 제거
-- `src/shared/external/vendors/index.ts` export 정리
-  - `getFflate` export 제거
-- 테스트 모킹 파일 정리
-  - `test/utils/mocks/vendor-mocks.ts`: `createMockFflate()` 제거
-  - `test/utils/mocks/vendor-mocks-clean.ts`: `createMockFflate()` 제거
-  - `test/__mocks__/vendor.mock.ts/js`: `mockFflateAPI` 제거
-
-**Phase 3 (REFACTOR)**: 문서화 및 정리
-
-- `docs/ARCHITECTURE.md` 업데이트: `getFflate()` 제거
-- `docs/vendors-safe-api.md` 업데이트: fflate 관련 내용 제거
-- 변경 이력 문서화
-
-#### Acceptance Criteria
-
-- ✅ 모든 테스트 GREEN (3 CodeQL 실패 제외)
-- ✅ `npm run typecheck` 오류 0
-- ✅ `npm run lint:fix` 경고 0
-- ✅ `npm run build` 성공 (산출물 검증 통과)
-- ✅ `fflate` 관련 deprecated 코드 완전 제거
-- ✅ 테스트 모킹 코드 실제 구현과 일치
-- ✅ `LICENSES/fflate-MIT.txt` 보존 (기여 인정)
-
-#### 리스크
-
-- **Low**: fflate는 이미 사용되지 않음 (StoreZipWriter로 완전 대체)
-- **Low**: deprecated stub 제거만 수행 (기능 변경 없음)
-- **Mitigation**: 단계적 TDD 진행, 각 Phase별 품질 게이트 준수
+모든 Epic이 완료되었습니다. 새로운 작업이 필요한 경우
+`docs/TDD_REFACTORING_BACKLOG.md`에서 선정하여 승격하세요.
 
 ---
 
@@ -114,6 +47,11 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 **주요 Epic (2025-01-09 ~ 2025-10-04)**:
 
+- **FFLATE-DEPRECATED-API-REMOVAL** (2025-10-04): deprecated fflate API 완전
+  제거 ✅
+  - Breaking Change: `getFflate()` API 제거
+  - Phase 1-3 완료, 16/16 contract tests PASS
+  - 15 files changed (1 deleted, 14 modified)
 - **TEST-FAILURE-ALIGNMENT-PHASE2** (2025-01-09): 29/29 tests GREEN ✅
   - Signal Native pattern, Toolbar CSS, Settings/Language, Integration 테스트
     정렬

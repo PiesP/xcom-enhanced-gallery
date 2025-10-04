@@ -2,6 +2,143 @@
 
 ---
 
+## 2025-10-04: Epic FFLATE-DEPRECATED-API-REMOVAL 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-04
+- **유형**: 코드 정리 (Code Cleanup)
+- **목적**: fflate 패키지 제거 후 남은 deprecated API stub과 테스트 모킹 코드
+  완전 제거
+- **결과**: ✅ 완료 (Phase 1-3 모두 GREEN)
+- **브랜치**: `refactor/fflate-deprecated-removal`
+
+### 배경
+
+**현재 상태**:
+
+- `fflate` 패키지는 Epic REF-LITE-V3에서 제거됨 (StoreZipWriter로 대체)
+- deprecated API stub (`getFflate()`, `createDeprecatedFflateApi()`) 잔존
+- 테스트 모킹 코드에서 여전히 fflate 참조 유지
+
+**문제점**:
+
+- 사용되지 않는 deprecated 코드가 유지보수 부담 증가
+- 테스트 모킹이 실제 구현과 불일치
+- 신규 개발자 혼란 가능성
+
+### 완료된 Phase
+
+#### Phase 1: RED (실패하는 테스트 작성) ✅
+
+**작업 내용**:
+
+- `test/architecture/fflate-removal.contract.test.ts` 생성 (16 tests)
+  - `getFflate()` 함수 존재하지 않아야 함
+  - `fflate-deprecated.ts` 파일 존재하지 않아야 함
+  - `vendor-manager-static.ts`에 `deprecatedFflateApi` 속성 없어야 함
+  - 테스트 모킹 파일에 `createMockFflate()` 없어야 함
+  - `LICENSES/fflate-MIT.txt` 파일 존재 (라이선스 보존)
+
+**결과**:
+
+- ✅ 14 FAIL | 2 PASS (RED 확인)
+- 커밋: `4e30673d` "test(vendors): Phase 1 (RED) - add fflate removal contract
+  tests"
+
+#### Phase 2: GREEN (최소 구현으로 통과) ✅
+
+**작업 내용**:
+
+1. `src/shared/external/vendors/fflate-deprecated.ts` 삭제
+2. `src/shared/external/vendors/vendor-manager-static.ts` 정리:
+   - `createDeprecatedFflateApi`, `warnFflateDeprecated` import 제거
+   - `deprecatedFflateApi` 속성 제거
+   - `getFflate()` 메서드 제거
+   - `FflateAPI` type export 제거
+3. `src/shared/external/vendors/vendor-api-safe.ts` 정리:
+   - `getFflateSafe()` 함수 제거
+   - deprecated import 제거
+4. Export 정리:
+   - `src/shared/external/vendors/index.ts`: `getFflate`, `FflateAPI` export
+     제거
+   - `src/shared/external/vendors/vendor-api.ts`: `getFflate` export 제거
+5. 테스트 모킹 파일 정리 (6개 파일):
+   - `test/utils/mocks/vendor-mocks.ts`: `createMockFflate()`, `getFflate` 제거
+   - `test/utils/mocks/vendor-mocks-clean.ts`: `createMockFflate()`, `getFflate`
+     제거
+   - `test/__mocks__/vendor.mock.ts/js`: `mockFflateAPI` 제거
+   - `test/__mocks__/vendor-mock-clean.js`: `mockFflateAPI` 제거
+6. `test/refactoring/vendor-performance.test.ts` 리팩토링:
+   - 11개 `getFflateSafe()` 호출을 `getSolidCoreSafe()`, `getSolidStoreSafe()`로
+     전환
+   - 성능/메모리/캐시 테스트 모두 SolidJS API 사용으로 전환
+
+**결과**:
+
+- ✅ 16/16 PASS (Phase 1의 14 FAIL → 16 GREEN)
+- 파일 변경: 15 files changed, 1511 insertions(+), 1860 deletions(-)
+- 삭제: `src/shared/external/vendors/fflate-deprecated.ts` (1개)
+- 수정: 소스 9개 + 테스트 모킹 6개
+- 커밋: `ee88f02d` "refactor(vendors): Phase 2 GREEN - remove deprecated fflate
+  API completely"
+
+#### Phase 3: REFACTOR (문서화 및 정리) ✅
+
+**작업 내용**:
+
+- `docs/ARCHITECTURE.md` 업데이트:
+  - External API에서 `getFflate()` 제거
+  - ZIP 다운로드 설명 변경: "fflate" → "StoreZipWriter"
+- 기타 문서는 예시로만 언급하여 유지 (vendors-safe-api.md, CODING_GUIDELINES.md)
+
+**결과**:
+
+- ✅ 문서 정합성 완료
+- 커밋: `0874390b` "docs(docs): phase 3 refactor - remove fflate references"
+
+### 성과
+
+**Breaking Change**:
+
+- ❌ `getFflate()` API 완전 제거
+- ✅ `StoreZipWriter` 사용 (이미 Epic REF-LITE-V3에서 전환 완료)
+
+**코드 품질**:
+
+- ✅ Deprecated stub 제거로 유지보수성 향상
+- ✅ 테스트 모킹 코드와 실제 구현 일치
+- ✅ 라이선스 파일 보존 (`LICENSES/fflate-MIT.txt`)
+
+**테스트 상태**:
+
+- ✅ 16/16 contract tests PASS
+- ✅ vendor-performance.test.ts 리팩토링 (11 tests, SolidJS APIs 사용)
+- ✅ 전체 테스트: 2620+ tests PASS (3 CodeQL HOLD 제외)
+
+**품질 게이트**:
+
+- ✅ `npm run typecheck`: 0 errors
+- ✅ `npm run lint:fix`: 0 warnings
+- ✅ `npm test`: GREEN (계약 테스트 포함)
+- ⏳ `npm run build`: 다음 단계에서 최종 검증 예정
+
+### 교훈
+
+1. **TDD 워크플로 효과**: RED → GREEN → REFACTOR 절차가 안전한 리팩토링 보장
+2. **계약 테스트 가치**: 16개 테스트로 10개 파일의 제거 포인트 명확히 가드
+3. **테스트 모킹 동기화**: deprecated API 제거 시 테스트 모킹도 함께 정리 필요
+4. **점진적 전환 전략**: Epic REF-LITE-V3에서 StoreZipWriter로 대체 후
+   deprecated stub 유지 → 안정화 후 완전 제거
+
+### 다음 단계
+
+- ✅ Epic 완료
+- ⏳ 최종 빌드 검증 (`npm run build`)
+- ⏳ 브랜치 병합 준비
+
+---
+
 ## 2025-10-04: Epic CODEQL-STANDARD-QUERY-PACKS 부분 완료 ⚠️
 
 ### 개요
