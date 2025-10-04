@@ -22,7 +22,64 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### 현재 활성 Epic 없음
+### Epic: CODEQL-LOCAL-ENHANCEMENT (MEDIUM Priority - 진행 중)
+
+**식별자**: CODEQL-LOCAL-ENHANCEMENT **목표**: 로컬 CodeQL 워크플로 개선
+(Fallback 쿼리 팩 활용) **승격일**: 2025-10-04 **예상 난이도**: S (외부 의존성
+없음, 기존 스크립트 개선)
+
+**배경**:
+
+- Epic CODEQL-STANDARD-QUERY-PACKS (2025-10-04 부분 완료) 후속 작업
+- GitHub Advanced Security 라이선스 없이도 로컬 CodeQL 활용 가능하도록 개선
+- Fallback 쿼리 팩(`codeql/javascript-queries`)으로 50+ 기본 보안 규칙 적용
+
+**작업 범위**:
+
+#### Task 1: 로컬 스캔 스크립트 개선
+
+- `scripts/run-codeql.mjs` 개선
+  - Fallback 쿼리 팩 명시적 사용
+  - 스캔 결과 상세 로깅 (쿼리 팩 종류, 규칙 수, SARIF 통계)
+  - 에러 처리 개선 (표준 쿼리 팩 실패 시 graceful fallback)
+
+#### Task 2: 테스트 조건부 수정
+
+- Advanced Security 감지 함수 구현 (`hasAdvancedSecurity()`)
+- `test/architecture/codeql-standard-packs.contract.test.ts` 개선
+  - 감지 시: 엄격 모드 (400+ js/ 규칙 요구) - 기존 테스트 유지
+  - 미감지 시: relaxed 모드 (Fallback 쿼리 팩 허용) - 새 테스트 추가
+- 조건부 검증으로 로컬/CI 환경 자동 대응
+
+#### Task 3: 문서화 강화
+
+- 로컬 CodeQL 활용 가이드 작성 (`docs/CODEQL_LOCAL_GUIDE.md`)
+  - 쿼리 팩 차이 설명 (표준 vs Fallback)
+  - 로컬 스캔 명령어 사용법
+  - SARIF 결과 해석 가이드
+- `AGENTS.md` 업데이트: CodeQL 분석 섹션 확장
+- `ARCHITECTURE.md` 업데이트: 보안 테스트 전략 추가
+
+**Acceptance Criteria**:
+
+- ✅ Task 1: `npm run codeql:scan` 실행 시 Fallback 쿼리 팩 명시적 사용, 상세
+  로깅 출력
+- ✅ Task 2: `hasAdvancedSecurity()` 함수 구현, 조건부 테스트 GREEN (로컬/CI
+  자동 대응)
+- ✅ Task 3: `docs/CODEQL_LOCAL_GUIDE.md` 작성, `AGENTS.md`/`ARCHITECTURE.md`
+  업데이트
+- ✅ 품질 게이트: typecheck, lint, test, build 전체 통과
+- ✅ 번들 크기 회귀 없음 (±1 KB 허용 범위)
+
+**Phase 진행 상황**:
+
+- **Phase 1 (RED)**: 준비 중 - 조건부 테스트 작성
+- **Phase 2 (GREEN)**: 대기 중 - 최소 구현
+- **Phase 3 (REFACTOR)**: 대기 중 - 문서화 강화
+
+---
+
+### 현재 활성 Epic 없음 (이전 상태 - 아카이브)
 
 모든 Epic이 완료되었습니다. 새로운 작업이 필요한 경우
 `docs/TDD_REFACTORING_BACKLOG.md`에서 선정하여 승격하세요.
