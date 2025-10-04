@@ -1,11 +1,13 @@
 /**
  * ContextMenu 컴포넌트
  * Epic CONTEXT-MENU-UI Phase 2: GREEN (최소 구현)
+ * Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT Phase 2: GREEN
  *
  * 커스텀 컨텍스트 메뉴 - 네이티브 브라우저 메뉴 대체
  * - PC 전용 입력 (Touch/Pointer 금지)
  * - 접근성 (ARIA, 키보드 네비게이션)
  * - 디자인 토큰 사용
+ * - Enhanced ARIA: aria-orientation, aria-activedescendant
  */
 
 import type { JSX } from 'solid-js';
@@ -19,8 +21,14 @@ const { Show, For, createEffect, onCleanup, onMount } = solid;
 export function ContextMenu(props: ContextMenuProps): JSX.Element {
   let menuRef: HTMLDivElement | undefined;
   let firstItemRef: HTMLButtonElement | undefined;
-  const { createSignal } = solid;
+  const { createSignal, createMemo } = solid;
   const [focusedIndex, setFocusedIndex] = createSignal(0);
+
+  // 현재 포커스된 항목의 ID 계산
+  const activeItemId = createMemo(() => {
+    const action = props.actions[focusedIndex()];
+    return action ? `menu-item-${action.id}` : undefined;
+  });
 
   // 외부 클릭 감지
   createEffect(() => {
@@ -106,6 +114,8 @@ export function ContextMenu(props: ContextMenuProps): JSX.Element {
         class={styles.contextMenu}
         role='menu'
         aria-label={props.ariaLabel || 'Context menu'}
+        aria-orientation='vertical'
+        aria-activedescendant={activeItemId()}
         style={{
           left: `${props.position.x}px`,
           top: `${props.position.y}px`,
@@ -117,9 +127,11 @@ export function ContextMenu(props: ContextMenuProps): JSX.Element {
           {(action, index) => (
             <button
               ref={index() === 0 ? firstItemRef : undefined}
+              id={`menu-item-${action.id}`}
               class={styles.menuItem}
               role='menuitem'
               data-action={action.id}
+              aria-labelledby={action.ariaLabelledBy}
               tabIndex={-1}
               onClick={() => {
                 action.onClick();

@@ -163,6 +163,32 @@ pbs.twimg.com 등) **배포**: `@downloadURL`, `@updateURL`, `@supportURL`
 3. `src/shared/components/ui/Icon/icons/registry.ts`: iconComponentMap에
    createSvgIcon 등록
 
+### ContextMenu ARIA 원칙
+
+ContextMenu는 WCAG 2.1 Level AA를 준수하는 접근성 속성을 제공합니다:
+
+**필수 ARIA 속성**:
+
+- `role="menu"` (컨테이너)
+- `role="menuitem"` (각 항목)
+- `aria-label` (메뉴 전체 레이블)
+- `aria-orientation="vertical"` (수직 방향 명시)
+- `aria-activedescendant` (현재 포커스된 항목 ID 동적 바인딩)
+- 각 menuitem에 고유한 `id` 속성
+
+**선택적 ARIA 속성**:
+
+- `ariaLabelledBy?: string` (ContextMenuAction 타입) - 외부 요소로 레이블링
+
+**키보드 네비게이션**:
+
+- Arrow Up/Down: 포커스 순환 이동
+- Enter: 항목 실행
+- Escape: 메뉴 닫기
+
+**테스트 강제**: `test/architecture/contextmenu-aria-enhancement.test.ts`가 ARIA
+완전성을 검증합니다.
+
 ---
 
 ## 서비스
