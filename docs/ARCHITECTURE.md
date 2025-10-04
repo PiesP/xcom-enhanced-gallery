@@ -76,7 +76,7 @@ External (vendors/userscript/zip)
 **공개 API**:
 
 - Vendors: `initializeVendors()`, `getSolidCore()`, `getSolidStore()`,
-  `getSolidWeb()`, `getFflate()`, `getNativeDownload()`
+  `getSolidWeb()`, `getNativeDownload()`
 - Userscript: `getUserscript().download()`, `.xhr()`, `.info()`
 - ZIP: `createZipFromItems()`
 
@@ -142,7 +142,7 @@ External (vendors/userscript/zip)
 ### 다운로드
 
 - **단일**: `getUserscript().download()` 또는 `getNativeDownload()`
-- **ZIP**: `createZipFromItems()` (병렬 다운로드 + fflate)
+- **ZIP**: `createZipFromItems()` (병렬 다운로드 + StoreZipWriter)
 - 토스트: 성공/실패/취소 피드백
 
 ### 설정
