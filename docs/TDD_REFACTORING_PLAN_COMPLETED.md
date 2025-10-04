@@ -2,6 +2,146 @@
 
 ---
 
+## 2025-01-08: Epic CUSTOM-TOOLTIP-COMPONENT Phase 1-3 완료 ✅ (In Progress)
+
+### 개요
+
+- **생성일**: 2025-01-08
+- **완료일**: 2025-01-08 (Phase 1-3)
+- **Epic 목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조
+  (`<kbd>`) + 브랜드 일관성 + 완전한 다국어 지원
+- **우선순위**: P2 (Medium Impact)
+- **난이도**: M (Medium, 5-6 files, ~300 lines)
+- **의존성**: Epic UI-TEXT-ICON-OPTIMIZATION 완료 ✅
+
+### 전체 영향 분석 (Phase 1-3)
+
+**번들 크기**:
+
+- Phase 1: 변동 없음 (테스트 전용)
+- Phase 3: 변동 없음 (문서화 전용)
+- 예상 최종 (ToolbarButton 통합 후): +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
+
+**접근성**:
+
+- ✅ WCAG 2.1 Level AA 준수: `role="tooltip"`, `aria-describedby`
+- ✅ PC 전용 이벤트: mouseenter/focus, mouseleave/blur (Touch/Pointer 금지)
+- ✅ 키보드 단축키 시각적 강조: `<kbd>` 마크업 지원
+
+**코드 품질**:
+
+- ✅ TypeScript: 0 errors (strict mode)
+- ✅ ESLint: clean (0 warnings)
+- ✅ Tests: 16/16 GREEN (tooltip-component.test.tsx)
+- ✅ 문서화: CHANGELOG.md, CODING_GUIDELINES.md 업데이트
+
+---
+
+## 2025-01-08: Phase 1 — RED (16 tests, 16/16 GREEN)
+
+**목표**: Tooltip 컴포넌트 계약 테스트 작성
+
+**완료 Phase**:
+
+- ✅ Phase 1 RED: 16 tests 작성 (12-15 tests 목표 초과 달성)
+- ✅ Phase 1 → GREEN: 모든 16 tests 통과
+
+**테스트 범위**:
+
+1. 렌더링 및 기본 동작 (4 tests):
+   - `mouseenter` 시 툴팁 표시 (delay 후)
+   - `focus` 시 툴팁 표시
+   - `mouseleave` 시 툴팁 숨김
+   - `blur` 시 툴팁 숨김
+
+2. 콘텐츠 렌더링 (3 tests):
+   - 단순 텍스트 렌더링
+   - HTML 마크업 렌더링 (`<kbd>` 태그)
+   - `aria-describedby` 연결 검증
+
+3. 포지셔닝 (2 tests):
+   - `placement='top'` 기본값 적용
+   - `placement='bottom'` 커스텀 적용
+
+4. 지연 시간 (2 tests):
+   - 기본 500ms 딜레이 적용
+   - 커스텀 딜레이 적용 (`delay={300}`)
+
+5. PC 전용 정책 (2 tests):
+   - Touch 이벤트 무시 (`touchstart` 리스너 없음)
+   - Pointer 이벤트 무시 (`pointerdown` 리스너 없음)
+
+6. 접근성 (2 tests):
+   - `role="tooltip"` 속성
+   - `aria-hidden="true"` (숨김 상태)
+
+7. 디자인 토큰 (1 test):
+   - 하드코딩 스타일 없음 (CSS 클래스만)
+
+**Acceptance Criteria**:
+
+- [x] 16 tests 작성 완료
+- [x] 모두 GREEN 상태 (16/16 passing)
+- [x] TypeScript 0 errors
+- [x] PC 전용 이벤트만 테스트 (Touch/Pointer 배제)
+
+**구현 내용**:
+
+- `src/shared/components/ui/Tooltip/Tooltip.solid.tsx`: Tooltip 컴포넌트
+- `src/shared/components/ui/Tooltip/Tooltip.module.css`: 디자인 토큰 기반 스타일
+- `src/shared/components/ui/Tooltip/index.ts`: Export barrel
+- `test/shared/components/ui/tooltip-component.test.tsx`: 16 contract tests
+
+**기술적 개선**:
+
+- Timer mocking 개선: `waitFor` 대신 즉각적 assertion 사용
+- Fake timer 처리: `vi.runAllTimers()` + real timer flush 패턴
+- ARIA 연결: `firstElementChild` 사용하여 trigger에 `aria-describedby` 설정
+
+**Commits**:
+
+- `c7677567`: feat: complete custom tooltip component phase 1 - all 16 tests
+  GREEN
+
+---
+
+## 2025-01-08: Phase 3 — REFACTOR (문서화)
+
+**목표**: 변경 사항 문서화 및 가이드라인 업데이트
+
+**완료 작업**:
+
+1. ✅ CHANGELOG.md 업데이트:
+   - Custom Tooltip Component 기능 추가 섹션
+   - PC 전용 이벤트 명시
+   - Design token 기반 스타일 명시
+   - Keyboard shortcut visual emphasis 명시
+   - 16 comprehensive contract tests 명시
+
+2. ✅ CODING_GUIDELINES.md 업데이트:
+   - Tooltip 사용 원칙 섹션 추가
+   - 기본 사용 예시
+   - 키보드 단축키 강조 패턴 예시
+   - 필수 원칙 (PC-only, ARIA, design tokens)
+   - Props 문서화
+   - 테스트 강제 참조
+
+**Acceptance Criteria**:
+
+- [x] 문서 업데이트 완료
+- [x] 빌드 성공
+- [x] 모든 테스트 GREEN 유지
+
+**Commits**:
+
+- `58f4aeae`: docs: add custom tooltip component documentation
+
+---
+
+**다음 단계**: Phase 4 (ToolbarButton 통합) — Epic 완전 종료를 위해 필요 시 진행
+
+---
+
 ## 2025-01-08: Epic UI-TEXT-ICON-OPTIMIZATION 완료 ✅
 
 ### 개요
