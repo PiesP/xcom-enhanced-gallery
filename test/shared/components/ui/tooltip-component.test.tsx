@@ -58,8 +58,10 @@ describe('Tooltip Component Contract (Phase 1: RED)', () => {
       render(() => <TestComponent />);
       const trigger = screen.getByTestId('trigger');
 
-      // 초기에는 툴팁이 보이지 않음
-      expect(screen.queryByText('Tooltip content')).not.toBeInTheDocument();
+      // 초기에는 툴팁이 보이지 않음 (display: none)
+      const tooltipContent = screen.queryByText('Tooltip content');
+      expect(tooltipContent).toBeInTheDocument();
+      expect(tooltipContent).not.toBeVisible();
 
       // mouseenter 이벤트 발생
       fireEvent.mouseEnter(trigger);
@@ -131,7 +133,9 @@ describe('Tooltip Component Contract (Phase 1: RED)', () => {
       fireEvent.mouseLeave(trigger);
 
       await waitFor(() => {
-        expect(screen.queryByText('Tooltip content')).not.toBeInTheDocument();
+        const tooltipContent = screen.queryByText('Tooltip content');
+        expect(tooltipContent).toBeInTheDocument();
+        expect(tooltipContent).not.toBeVisible();
       });
     });
 
@@ -166,7 +170,9 @@ describe('Tooltip Component Contract (Phase 1: RED)', () => {
       fireEvent.blur(trigger);
 
       await waitFor(() => {
-        expect(screen.queryByText('Tooltip content')).not.toBeInTheDocument();
+        const tooltipContent = screen.queryByText('Tooltip content');
+        expect(tooltipContent).toBeInTheDocument();
+        expect(tooltipContent).not.toBeVisible();
       });
     });
   });
