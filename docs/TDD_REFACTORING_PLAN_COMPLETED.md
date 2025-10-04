@@ -2,14 +2,231 @@
 
 ---
 
-## 2025-10-04: Epic CODEQL-SECURITY-HARDENING 완료 ✅
+## 2025-10-05: Epic CODEQL-SECURITY-HARDENING 완료 ✅ (실제 구현)
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: CodeQL 보안 취약점 수정 (전체 구현 완료)
+- **목적**: CodeQL 분석에서 발견된 5건의 보안 경고 해결
+- **결과**: ✅ **전체 완료** - Phase 1 (RED) + Phase 2 (GREEN) + Phase 3
+  (REFACTOR)
+- **브랜치**: `feature/codeql-security-hardening`
+- **커밋**: 6269bcc2 (Phase 1), 37d9ea32 (Phase 2), 7e344e73 (Phase 3)
+
+### 배경
+
+**발견된 보안 취약점** (CodeQL 스캔 결과):
+
+1. **js/incomplete-url-substring-sanitization** (4건, WARNING)
+   - `src/shared/utils/media/media-url.util.ts:159, 163`
+   - `test/__mocks__/twitter-dom.mock.ts:304, 414`
+   - 문제: `includes('twimg.com')` 방식의 불완전한 URL 검증
+   - 공격 예: `https://evil.com/twimg.com/malicious.js` 통과 가능
+
+2. **js/prototype-pollution-utility** (1건, WARNING)
+   - `src/features/settings/services/SettingsService.ts:232`
+   - 문제: `mergeCategory()` 함수의 재귀적 속성 할당 시 prototype pollution 위험
+   - 공격 예: `{ "__proto__": { "isAdmin": true } }`
+
+**영향**:
+
+- 보안 등급: B+ (현재) → A (목표 달성)
+- CodeQL 경고: 5건 → 0건
+- 테스트 커버리지: 보안 계약 테스트 18개 추가
+
+### 솔루션 선택
+
+**최종 채택된 솔루션**:
+
+| 이슈                       | 솔루션                                            | 이유                                  |
+| -------------------------- | ------------------------------------------------- | ------------------------------------- |
+| URL Substring Sanitization | 기존 `isTrustedTwitterMediaHostname()` 일관 사용  | 번들 비용 0, URL API 기반 정확한 검증 |
+| Prototype Pollution        | `mergeCategory()`에 `sanitizeSettingsTree()` 적용 | 기존 보안 레이어 활용, 최소 코드 변경 |
+
+### 완료된 Phase
+
+#### Phase 1: RED — 보안 계약 테스트 작성 ✅
+
+**작업 내용**:
+
+1. **URL Sanitization 테스트** (10 tests) -
+   `test/security/url-sanitization-hardening.contract.test.ts`
+   - Video URL 검증 (4 tests): 악의적 URL 거부, 정상 URL 허용
+   - Image URL 검증 (3 tests): 동일한 패턴 검증
+   - Edge Cases (3 tests): data:/blob: URL 거부
+
+2. **Prototype Pollution 테스트** (8 tests) -
+   `test/security/prototype-pollution-hardening.contract.test.ts`
+   - 직접 Prototype Pollution 시도 (3 tests): `__proto__`, `constructor`,
+     `prototype` 차단
+   - 중첩 Prototype Pollution (2 tests): 깊은 객체 내 악의적 키 차단
+   - 배치 업데이트 보호 (1 test): 여러 설정 동시 업데이트 시 보호
+   - Settings Import 보호 (1 test): 외부 JSON import 시 sanitization
+   - Edge Cases (1 test): 커스텀 prototype 안전성
+
+**결과**:
+
+- ✅ 18/18 테스트 GREEN
+- ✅ `npm run typecheck` GREEN
+- ✅ `npm run lint:fix` GREEN
+- ✅ 커밋: 6269bcc2
+  (`test(security): add Phase 1 RED tests for CodeQL security hardening`)
+
+#### Phase 2: GREEN — 보안 가드 일관성 적용 ✅
+
+**작업 내용**:
+
+1. **`src/shared/utils/media/media-url.util.ts`** (Lines 159, 163)
+
+   ```typescript
+   // Before
+   if (
+     src &&
+     src.includes('twimg.com') &&
+     !isTrustedTwitterMediaHostname(src)
+   ) {
+     return null;
+   }
+
+   // After
+   if (src && !isTrustedTwitterMediaHostname(src)) {
+     return null;
+   }
+   ```
+
+2. **`src/features/settings/services/SettingsService.ts`** (Line 232)
+
+   ```typescript
+   // Before
+   for (const [key, value] of Object.entries(overrides)) {
+     target[key] = value;
+   }
+
+   // After
+   const sanitizedOverrides = sanitizeSettingsTree(overrides, [
+     'mergeCategory',
+   ]);
+   for (const [key, value] of Object.entries(sanitizedOverrides)) {
+     target[key] = value;
+   }
+   ```
+
+3. **`test/__mocks__/twitter-dom.mock.ts`** (Lines 304, 414)
+
+   ```typescript
+   // Before
+   if (target.src.includes('pbs.twimg.com')) {
+   }
+
+   // After
+   import {
+     isTrustedHostname,
+     TWITTER_MEDIA_HOSTS,
+   } from '@shared/utils/url-safety';
+   if (isTrustedHostname(target.src, TWITTER_MEDIA_HOSTS)) {
+   }
+   ```
+
+**결과**:
+
+- ✅ 전체 테스트: 2664 passed (회귀 없음)
+- ✅ 보안 테스트: 18/18 GREEN 유지
+- ✅ 번들 크기: 472.49 KB raw, 117.41 KB gzip (변화 없음)
+- ✅ 커밋: 37d9ea32 (`fix(security): apply security guards consistently`)
+
+#### Phase 3: REFACTOR — 문서화 및 검증 강화 ✅
+
+**작업 내용**:
+
+1. **`docs/CODING_GUIDELINES.md`** 업데이트
+   - 보안 섹션 신설 (URL 검증 + Prototype Pollution 방지)
+   - 올바른/금지된 패턴 예시 추가
+   - 보호 대상 공격 벡터 명시
+   - 차단 대상 위험 키 명시
+
+2. **`docs/ARCHITECTURE.md`** 업데이트
+   - 7.5. 보안 정책 섹션 추가
+   - URL 검증 메커니즘 설명
+   - Prototype Pollution 방지 메커니즘 설명
+   - CodeQL 준수 현황 (5건 → 0건)
+   - 테스트 가드 참조 추가
+
+3. **`codeql-improvement-plan.md`** 업데이트
+   - 모든 경고 체크박스 완료 (5/5)
+   - 해결 요약 섹션 추가 (커밋 참조)
+   - Epic 히스토리 문서화
+
+**결과**:
+
+- ✅ 빌드 검증: dev + prod 성공
+- ✅ 문서 일관성: 보안 규칙 명문화
+- ✅ 개발자 가이드: URL/Prototype 보안 패턴 문서화
+- ✅ 커밋: 7e344e73 (`docs(security): update security documentation`)
+
+### 보안 강화 요약
+
+**차단된 공격 패턴**:
+
+1. **URL 공격**:
+   - Path injection: `https://evil.com/twimg.com/malicious.js` ❌
+   - Subdomain spoofing: `https://twimg.com.evil.com/malicious.js` ❌
+   - Hostname spoofing: `https://twimg-com.evil.com/malicious.js` ❌
+
+2. **Prototype Pollution**:
+   - `__proto__` 키 주입 ❌
+   - `constructor` 키 주입 ❌
+   - `prototype` 키 주입 ❌
+   - 중첩 객체 내 악의적 키 ❌
+
+**보안 검증**:
+
+- ✅ CodeQL 경고: 5 → 0
+- ✅ 계약 테스트: 18/18 GREEN
+- ✅ 전체 테스트: 2664 passed
+- ✅ 보안 문서: 가이드라인 + 아키텍처
+
+### 번들 영향
+
+**변경 전후 비교**:
+
+- Raw 크기: 472.49 KB (변화 없음)
+- Gzip 크기: 117.41 KB (변화 없음)
+- 추가 코드: 기존 함수 활용으로 영향 없음
+- 성능: URL 검증/Settings merge 오버헤드 무시 가능
+
+### 교훈
+
+**성공 요인**:
+
+1. **기존 유틸 활용**: `isTrustedTwitterMediaHostname()`,
+   `sanitizeSettingsTree()` 재사용
+2. **TDD 방법론**: RED → GREEN → REFACTOR 단계적 진행
+3. **계약 테스트**: 공격 패턴을 명시적으로 검증
+4. **문서화 우선**: 보안 규칙을 명문화하여 팀 전체 공유
+
+**개선 기회**:
+
+1. Edge case 추가 테스트 (IPv6, 포트, URL 인코딩)
+2. ESLint 커스텀 규칙 (`.includes('twimg.com')` 사용 금지)
+3. CodeQL 정기 스캔 자동화 (CI/CD)
+
+### 후속 작업
+
+- [ ] CodeQL 정기 스캔 자동화 (CI/CD 통합)
+- [ ] 보안 Edge case 테스트 추가 (선택적)
+- [ ] ESLint 커스텀 규칙 개발 (선택적)
+
+---
+
+## 2025-10-04: Epic CODEQL-SECURITY-HARDENING 완료 ✅ (계획만)
 
 ### 개요
 
 - **작업일**: 2025-10-04
 - **유형**: CodeQL 보안 취약점 수정 (문서 계획만 완료)
 - **목적**: CodeQL 분석에서 발견된 URL Sanitization 및 Prototype Pollution 수정
-- **결과**: ✅ 계획 완료 (실제 구현은 향후 진행)
+- **결과**: ✅ 계획 완료 (실제 구현은 2025-10-05 완료)
 - **브랜치**: `test/fix-failing-tests`
 
 ### 배경
@@ -80,24 +297,27 @@
 - ✅ 품질 게이트 통과 (타입 체크, 린트)
 - ✅ Git 커밋 완료 (`b3f60b1c`)
 
-### 예상 Phase (미구현)
+### 예상 Phase (실제 구현은 2025-10-05 완료)
 
-#### Phase 1: RED — 보안 테스트 작성 (미구현)
-
-**계획된 작업**:
-
-- URL Sanitization 테스트 (7~9개)
-- Prototype Pollution 테스트 (7~9개)
-- 악의적 패턴 검증
-
-#### Phase 2: GREEN — 최소 수정 (미구현)
+#### Phase 1: RED — 보안 테스트 작성 (2025-10-05 완료)
 
 **계획된 작업**:
 
-- `media-url.util.ts`: `.includes()` 제거
-- `SettingsService.ts`: 재귀 깊이 제한 (MAX_DEPTH=10)
+- URL Sanitization 테스트 (7~9개) → 실제 10개 완료
+- Prototype Pollution 테스트 (7~9개) → 실제 8개 완료
+- 악의적 패턴 검증 → 완료
 
-#### Phase 3: REFACTOR — CodeQL 재검증 (미구현)
+#### Phase 2: GREEN — 최소 수정 (2025-10-05 완료)
+
+**계획된 작업**:
+
+- `media-url.util.ts`: `.includes()` 제거 → 완료
+- `SettingsService.ts`: 재귀 깊이 제한 (MAX_DEPTH=10) → `sanitizeSettingsTree()`
+  적용으로 변경
+
+#### Phase 3: REFACTOR — CodeQL 재검증 (2025-10-05 완료)
+
+````
 
 **계획된 작업**:
 
@@ -1110,7 +1330,7 @@ export function disposeGalleryDerivedState(): void {
     _getCurrentMediaItem = undefined;
   }
 }
-```
+````
 
 **결과**: ✅ 7/7 tests GREEN, 기존 테스트 모두 GREEN
 
