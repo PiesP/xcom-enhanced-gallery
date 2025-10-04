@@ -1,5 +1,55 @@
 <!-- markdownlint-disable -->
 
+---
+
+## 2025-01-04: BUILD — Epic JSX-PRAGMA-CLEANUP Phase 1-3 완료 ✅
+
+- **생성일**: 2025-01-04
+- **완료일**: 2025-01-04
+- **목적**: esbuild JSX pragma 경고 제거 및 SolidJS 설정 표준화
+- **우선순위**: ⭐ (낮은 위험, 빠른 구현)
+- **배경**:
+  - 3개 파일에서 `/** @jsxImportSource solid-js */` 주석이 빌드 경고 발생
+  - 파일: `GalleryContainer.tsx`, `NavigationButton.tsx`
+  - 경고 메시지: "The JSX import source cannot be set without also enabling
+    React's 'automatic' JSX transform"
+  - 현상: 빌드는 성공하지만 CI/CD 로그 가독성 저하, 개발자 혼란 유발
+- **Phase 1: RED - 빌드 경고 감지 테스트 작성**:
+  - 테스트 파일: `test/build/jsx-pragma-warnings.test.ts`
+  - 6개 테스트 작성:
+    1. GalleryContainer.tsx pragma 검출
+    2. NavigationButton.tsx pragma 검출
+    3. 대상 파일 존재 확인
+    4. vite.config.ts에 solidPlugin 설정 확인
+    5. tsconfig.json에 jsx preserve 설정 확인
+    6. 전체 pragma 카운트 0개 목표
+  - 결과: 4/6 tests RED (pragma 검출 성공)
+- **Phase 2: GREEN - Pragma 제거 및 검증**:
+  - 수정 파일:
+    - `src/shared/components/isolation/GalleryContainer.tsx` (line 1 pragma
+      제거)
+    - `src/shared/components/ui/NavigationButton/NavigationButton.tsx` (line 1
+      pragma 제거)
+  - vite.config.ts의 solidPlugin이 JSX transform 자동 처리 확인
+  - 결과: 6/6 tests GREEN, 빌드 경고 0개
+- **Phase 3: REFACTOR - 문서화 및 품질 검증**:
+  - TypeScript strict 모드: 0 errors
+  - ESLint: clean (0 warnings)
+  - 번들 크기: 781.20 KB (변경 없음, ±1KB 기준 충족)
+  - 커밋: `refactor(build): remove JSX pragma comments for SolidJS files`
+- **품질 게이트**:
+  - ✅ 빌드 경고 0개
+  - ✅ TypeScript 0 errors
+  - ✅ 테스트 6/6 GREEN
+  - ✅ 번들 크기 동일 (±1KB)
+- **교훈**:
+  - Vite + SolidJS 환경에서는 파일별 pragma 불필요
+  - `vite.config.ts`의 `solidPlugin({ include: [...] })`가 JSX transform 담당
+  - esbuild의 React JSX transform 경고는 SolidJS에서 무시 가능하지만 pragma
+    제거로 근본 해결
+
+---
+
 2025-01-04: UX — Epic GALLERY-NAV-ENHANCEMENT Phase 1-2 완료 ✅ (좌우 네비게이션
 버튼)
 
