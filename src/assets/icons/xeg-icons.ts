@@ -222,6 +222,20 @@ const RAW_ICON_DEFINITIONS = {
     ],
     metadata: 'notifications-off',
   },
+  'question-mark': {
+    viewBox: '0 0 24 24',
+    paths: [
+      {
+        d: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z',
+        fill: 'currentColor',
+      },
+      {
+        d: 'M11 16h2v2h-2zm1-8c-1.1 0-2 .9-2 2h2c0-.55.45-1 1-1s1 .45 1 1c0 1-1.5 1.25-1.5 3h1.5c0-1.5 1.5-1.75 1.5-3 0-1.1-.9-2-2-2z',
+        fill: 'currentColor',
+      },
+    ],
+    metadata: 'question-mark',
+  },
 } as const satisfies Record<string, XegIconDefinition>;
 
 export type XegIconSlug = keyof typeof RAW_ICON_DEFINITIONS;
@@ -240,6 +254,7 @@ export const XEG_ICONS = {
   ArrowAutofitHeight: RAW_ICON_DEFINITIONS['arrow-autofit-height'],
   ArrowsMaximize: RAW_ICON_DEFINITIONS['arrows-maximize'],
   FileZip: RAW_ICON_DEFINITIONS['file-zip'],
+  QuestionMark: RAW_ICON_DEFINITIONS['question-mark'],
   LanguageAuto: RAW_ICON_DEFINITIONS['language-auto'],
   LanguageKo: RAW_ICON_DEFINITIONS['language-ko'],
   LanguageEn: RAW_ICON_DEFINITIONS['language-en'],

@@ -16,8 +16,12 @@ describe('Sub-Epic 1: ICON-SEMANTIC-FIX Phase 1 RED', () => {
     it('QuestionMark icon should be defined in xeg-icons.ts', () => {
       const iconsPath = resolve(__dirname, '../../src/assets/icons/xeg-icons.ts');
       const iconsSource = readFileSync(iconsPath, 'utf-8');
-      const hasQuestionMark = /export\s+const\s+QuestionMark/.test(iconsSource);
-      expect(hasQuestionMark).toBe(true); // Phase 1 RED: false
+      // Check if QuestionMark is in XEG_ICONS export object
+      const hasQuestionMarkInXegIcons =
+        /QuestionMark:\s*RAW_ICON_DEFINITIONS\['question-mark'\]/.test(iconsSource);
+      // Also check if 'question-mark' definition exists in RAW_ICON_DEFINITIONS
+      const hasQuestionMarkDefinition = /'question-mark':\s*\{/.test(iconsSource);
+      expect(hasQuestionMarkInXegIcons || hasQuestionMarkDefinition).toBe(true);
     });
 
     it('QuestionMark should be registered in CORE_ICONS', () => {

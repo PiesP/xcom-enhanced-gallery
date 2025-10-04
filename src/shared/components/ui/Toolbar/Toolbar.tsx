@@ -474,7 +474,7 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
                 disabled={Boolean(props.disabled)}
                 onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
                 data-gallery-element='keyboard-help'
-                icon='Settings'
+                icon='QuestionMark'
               />
             ) : null}
             {props.onOpenSettings ? (

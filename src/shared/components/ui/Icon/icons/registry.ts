@@ -1,23 +1,18 @@
 import { createSvgIcon, type SvgIconComponent } from '../SvgIcon';
-import { XEG_ICON_DEFINITIONS } from '@assets/icons/xeg-icons';
+import { XEG_ICONS } from '@assets/icons/xeg-icons';
 
 const iconComponentMap = {
-  Download: createSvgIcon('SvgDownload', XEG_ICON_DEFINITIONS.download),
-  Settings: createSvgIcon('SvgSettings', XEG_ICON_DEFINITIONS.settings),
-  Close: createSvgIcon('SvgClose', XEG_ICON_DEFINITIONS.close),
-  ChevronLeft: createSvgIcon('SvgChevronLeft', XEG_ICON_DEFINITIONS['chevron-left']),
-  ChevronRight: createSvgIcon('SvgChevronRight', XEG_ICON_DEFINITIONS['chevron-right']),
-  ZoomIn: createSvgIcon('SvgZoomIn', XEG_ICON_DEFINITIONS['zoom-in']),
-  ArrowAutofitWidth: createSvgIcon(
-    'SvgArrowAutofitWidth',
-    XEG_ICON_DEFINITIONS['arrow-autofit-width']
-  ),
-  ArrowAutofitHeight: createSvgIcon(
-    'SvgArrowAutofitHeight',
-    XEG_ICON_DEFINITIONS['arrow-autofit-height']
-  ),
-  ArrowsMaximize: createSvgIcon('SvgArrowsMaximize', XEG_ICON_DEFINITIONS['arrows-maximize']),
-  FileZip: createSvgIcon('SvgFileZip', XEG_ICON_DEFINITIONS['file-zip']),
+  Download: createSvgIcon('SvgDownload', XEG_ICONS.Download),
+  Settings: createSvgIcon('SvgSettings', XEG_ICONS.Settings),
+  Close: createSvgIcon('SvgClose', XEG_ICONS.Close),
+  ChevronLeft: createSvgIcon('SvgChevronLeft', XEG_ICONS.ChevronLeft),
+  ChevronRight: createSvgIcon('SvgChevronRight', XEG_ICONS.ChevronRight),
+  ZoomIn: createSvgIcon('SvgZoomIn', XEG_ICONS.ZoomIn),
+  ArrowAutofitWidth: createSvgIcon('SvgArrowAutofitWidth', XEG_ICONS.ArrowAutofitWidth),
+  ArrowAutofitHeight: createSvgIcon('SvgArrowAutofitHeight', XEG_ICONS.ArrowAutofitHeight),
+  ArrowsMaximize: createSvgIcon('SvgArrowsMaximize', XEG_ICONS.ArrowsMaximize),
+  FileZip: createSvgIcon('SvgFileZip', XEG_ICONS.FileZip),
+  QuestionMark: createSvgIcon('SvgQuestionMark', XEG_ICONS.QuestionMark),
 } as const satisfies Record<string, SvgIconComponent>;
 
 export type XegIconComponentName = keyof typeof iconComponentMap;

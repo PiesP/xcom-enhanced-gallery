@@ -22,6 +22,7 @@ export const CORE_ICONS: readonly XegIconComponentName[] = [
   'ArrowAutofitHeight',
   'ArrowsMaximize',
   'FileZip',
+  'QuestionMark',
 ] as const;
 
 export function isCoreIcon(name: string): boolean {
@@ -65,6 +66,7 @@ const ICON_IMPORTS = {
   ArrowAutofitHeight: () => Promise.resolve(resolveXegIconComponent('ArrowAutofitHeight')),
   ArrowsMaximize: () => Promise.resolve(resolveXegIconComponent('ArrowsMaximize')),
   FileZip: () => Promise.resolve(resolveXegIconComponent('FileZip')),
+  QuestionMark: () => Promise.resolve(resolveXegIconComponent('QuestionMark')),
 } as const satisfies Record<XegIconComponentName, () => Promise<IconComponent>>;
 
 function isXegIconComponentName(name: IconName): name is XegIconComponentName {
