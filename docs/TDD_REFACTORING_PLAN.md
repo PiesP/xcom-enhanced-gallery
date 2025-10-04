@@ -185,8 +185,7 @@ QuestionMark 아이콘 사용
 **목적**: Toolbar의 하드코딩된 텍스트를 LanguageService로 전환하여 완전한 다국어
 지원
 
-**우선순위**: P1 (Medium Impact)  
-**난이도**: S (3-4 files, ~150 lines)  
+**우선순위**: P1 (Medium Impact) **난이도**: S (3-4 files, ~150 lines)
 **의존성**: 없음 (독립 실행 가능)
 
 **완료 Phase**:
