@@ -233,9 +233,13 @@ async function assertCodeqlAvailable(codeqlPath) {
     const hint =
       'CodeQL CLI가 PATH에 없거나 codeql.cmd/codeql.exe가 설치되지 않았습니다. https://codeql.github.com/docs/codeql-cli/installation/ 가이드를 참고해 설치 후 다시 실행하세요.';
     if (error?.code === 'ENOENT') {
-      throw new Error(`❌ CodeQL CLI(${codeqlPath})를 찾을 수 없습니다.\n\n트러블슈팅:\n  - CodeQL CLI 설치 확인\n  - PATH 환경 변수 설정 확인\n  - --codeql-path 옵션으로 경로 지정\n\n${hint}`);
+      throw new Error(
+        `❌ CodeQL CLI(${codeqlPath})를 찾을 수 없습니다.\n\n트러블슈팅:\n  - CodeQL CLI 설치 확인\n  - PATH 환경 변수 설정 확인\n  - --codeql-path 옵션으로 경로 지정\n\n${hint}`
+      );
     }
-    throw new Error(`❌ CodeQL CLI 확인 중 오류가 발생했습니다: ${error.message ?? error}.\n\n${hint}`);
+    throw new Error(
+      `❌ CodeQL CLI 확인 중 오류가 발생했습니다: ${error.message ?? error}.\n\n${hint}`
+    );
   }
 }
 
@@ -586,8 +590,9 @@ async function generateReports(config, executedPacks) {
     sarif.runs?.[0]?.tool?.driver?.rules?.filter(
       r => r.id?.startsWith('js/') && r.properties?.['security-severity']
     ).length ?? 0;
-  const jsSecurityRatio = totalRules > 0 ? ((jsSecurityRules / totalRules) * 100).toFixed(1) : '0.0';
-  
+  const jsSecurityRatio =
+    totalRules > 0 ? ((jsSecurityRules / totalRules) * 100).toFixed(1) : '0.0';
+
   logStep(`📊 SARIF 분석 완료:`);
   logStep(`   - 전체 규칙 수: ${totalRules}개`);
   logStep(`   - JS 보안 규칙: ${jsSecurityRules}개 (${jsSecurityRatio}%)`);
@@ -670,11 +675,15 @@ async function ensureQueryPacksAvailable(codeqlPath, packs) {
         continue;
       }
       if (normalized.includes('http/1.1 404') || normalized.includes('404 not found')) {
-        logStep(`⚠️  쿼리 팩을 찾을 수 없음: "${pack}"\n    → 레지스트리에서 해당 팩이 존재하지 않습니다.`);
+        logStep(
+          `⚠️  쿼리 팩을 찾을 수 없음: "${pack}"\n    → 레지스트리에서 해당 팩이 존재하지 않습니다.`
+        );
         continue;
       }
       const reason = combined || error?.message || String(error);
-      throw new Error(`❌ CodeQL 쿼리 팩 다운로드 실패: "${pack}"\n\n사유: ${reason}\n\n트러블슈팅:\n  - 네트워크 연결 확인\n  - GitHub 인증 토큰 설정 확인\n  - 쿼리 팩 이름 확인`);
+      throw new Error(
+        `❌ CodeQL 쿼리 팩 다운로드 실패: "${pack}"\n\n사유: ${reason}\n\n트러블슈팅:\n  - 네트워크 연결 확인\n  - GitHub 인증 토큰 설정 확인\n  - 쿼리 팩 이름 확인`
+      );
     }
   }
 
@@ -788,7 +797,11 @@ async function main() {
     // 쿼리 팩 종류 감지 및 로깅
     const isStandardPack = availablePacks.some(p => p.includes('javascript-security-and-quality'));
     const isFallbackPack = availablePacks.some(p => p.includes('javascript-queries'));
-    const packType = isStandardPack ? '표준 쿼리 팩' : isFallbackPack ? 'Fallback 쿼리 팩' : '커스텀 쿼리 팩';
+    const packType = isStandardPack
+      ? '표준 쿼리 팩'
+      : isFallbackPack
+        ? 'Fallback 쿼리 팩'
+        : '커스텀 쿼리 팩';
     const expectedRules = isStandardPack ? '400+' : isFallbackPack ? '50+' : '알 수 없음';
 
     logStep('');
@@ -882,8 +895,12 @@ async function main() {
     process.stderr.write('   - --dry-run 옵션으로 설정 미리보기\n');
     process.stderr.write('\n');
     process.stderr.write('📚 참고 문서:\n');
-    process.stderr.write('   - CodeQL CLI 설치: https://codeql.github.com/docs/codeql-cli/installation/\n');
-    process.stderr.write('   - GitHub Advanced Security: https://docs.github.com/en/code-security\n');
+    process.stderr.write(
+      '   - CodeQL CLI 설치: https://codeql.github.com/docs/codeql-cli/installation/\n'
+    );
+    process.stderr.write(
+      '   - GitHub Advanced Security: https://docs.github.com/en/code-security\n'
+    );
     process.stderr.write('\n');
     process.stderr.write('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     process.stderr.write('\n');
