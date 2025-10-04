@@ -2,7 +2,7 @@
 
 > 활성화되지 않은 향후 후보 저장소 (선정 전까지 여기서만 유지)
 
-> **최근 업데이트**: 2025-10-04 — TEST-FAILURE-FIX-REMAINING Epic 완료
+> **최근 업데이트**: 2025-10-04 — Epic CODEQL-SECURITY-HARDENING 승격
 >
 > 사용 방법:
 >
@@ -20,6 +20,15 @@
 ---
 
 ## 최근 승격 히스토리
+
+**2025-10-04**: `CODEQL-SECURITY-HARDENING` 승격 → `TDD_REFACTORING_PLAN.md`의
+Epic CODEQL-SECURITY-HARDENING으로 이동
+
+- 선정 이유: CodeQL 분석 5건 경고 (URL Sanitization, Prototype Pollution), 보안
+  등급 향상 필수
+- 접근 방향: 기존 `isTrustedTwitterMediaHostname()` 활용 강화 +
+  `sanitizeSettingsTree()` 가드 강화
+- 예상 영향: CodeQL 경고 0건, 보안 등급 A, 번들 영향 최소 (+150 bytes raw)
 
 **2025-10-04**: `REMAINING-TEST-FAILURES` 승격 → `TDD_REFACTORING_PLAN.md`의
 Epic TEST-FAILURE-ALIGNMENT-PHASE2로 이동
