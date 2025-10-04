@@ -77,7 +77,9 @@ function mergeCategory<T extends Record<string, unknown>>(
   }
 
   if (overrides && typeof overrides === 'object') {
-    for (const [key, value] of Object.entries(overrides)) {
+    // Sanitize overrides to prevent prototype pollution
+    const sanitizedOverrides = sanitizeSettingsTree(overrides, ['mergeCategory']);
+    for (const [key, value] of Object.entries(sanitizedOverrides)) {
       target[key] = value;
     }
   }

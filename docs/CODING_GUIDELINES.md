@@ -92,6 +92,61 @@ Touch/Pointer 계열 (테스트로 RED)
 
 ---
 
+## 보안
+
+### URL 검증
+
+**필수**: 모든 Twitter/X 미디어 URL은 `isTrustedTwitterMediaHostname()` 또는
+`isTrustedHostname()` 사용
+
+```ts
+import { isTrustedTwitterMediaHostname } from '@shared/utils/url-safety';
+
+// ✅ 올바른 방법
+if (src && !isTrustedTwitterMediaHostname(src)) {
+  return null; // 악의적 URL 거부
+}
+
+// ❌ 금지 (불완전한 검증)
+if (src && src.includes('twimg.com')) {
+  // 취약: evil.com/twimg.com 또는 twimg.com.evil.com 통과 가능
+}
+```
+
+**보호 대상**:
+
+- Path injection: `https://evil.com/twimg.com/malicious.js`
+- Subdomain spoofing: `https://twimg.com.evil.com/malicious.js`
+- Hostname spoofing: `https://twimg-com.evil.com/malicious.js`
+
+### Prototype Pollution 방지
+
+**필수**: 외부 데이터 병합 시 `sanitizeSettingsTree()` 사용
+
+```ts
+import { sanitizeSettingsTree } from '@features/settings/services/SettingsService';
+
+// ✅ 올바른 방법
+const sanitized = sanitizeSettingsTree(externalData, ['mergeContext']);
+for (const [key, value] of Object.entries(sanitized)) {
+  target[key] = value;
+}
+
+// ❌ 금지 (prototype pollution 취약)
+for (const [key, value] of Object.entries(externalData)) {
+  target[key] = value; // __proto__, constructor 키 차단 없음
+}
+```
+
+**차단 대상**:
+
+- `__proto__` 키를 통한 프로토타입 변조
+- `constructor` 키를 통한 생성자 변조
+- `prototype` 키를 통한 프로토타입 체인 오염
+- 중첩 객체 내 악의적 키
+
+---
+
 ## 스타일
 
 ### 디자인 토큰

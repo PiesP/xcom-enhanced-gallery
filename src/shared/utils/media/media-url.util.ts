@@ -156,11 +156,11 @@ export function createMediaInfoFromVideo(
       return null;
     }
 
-    if (src && src.includes('twimg.com') && !isTrustedTwitterMediaHostname(src)) {
+    if (src && !isTrustedTwitterMediaHostname(src)) {
       return null;
     }
 
-    if (poster && poster.includes('twimg.com') && !isTrustedTwitterMediaHostname(poster)) {
+    if (poster && !isTrustedTwitterMediaHostname(poster)) {
       return null;
     }
 

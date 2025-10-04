@@ -206,6 +206,91 @@ type UserscriptAPI = {
 
 ---
 
+## 7.5. 보안 정책
+
+### URL 검증 (XSS/Injection 방지)
+
+**필수 가드 함수**:
+
+- `isTrustedTwitterMediaHostname(url)`: Twitter 미디어 URL 검증 (정확한 hostname
+  체크)
+- `isTrustedHostname(url, allowedHosts)`: 커스텀 허용 목록 검증
+
+**보호 메커니즘**:
+
+```ts
+// URL 객체를 통한 정확한 hostname 추출
+const urlObj = new URL(urlString);
+const hostname = urlObj.hostname.toLowerCase();
+
+// 허용된 정확한 hostname만 허용 (startsWith/includes 금지)
+if (!ALLOWED_HOSTS.includes(hostname)) {
+  return null; // 거부
+}
+```
+
+**차단되는 공격 패턴**:
+
+- Path injection: `https://evil.com/twimg.com/malicious.js`
+- Subdomain spoofing: `https://twimg.com.evil.com/malicious.js`
+- Hostname spoofing: `https://twimg-com.evil.com/malicious.js`
+
+**구현 위치**:
+
+- `src/shared/utils/url-safety.ts`: 검증 함수
+- `src/shared/utils/media/media-url.util.ts`: 미디어 URL 검증
+- `src/features/settings/services/SettingsService.ts`: Settings URL 검증
+
+### Prototype Pollution 방지
+
+**필수 가드 함수**:
+
+- `sanitizeSettingsTree(obj, context)`: 외부 데이터 정화 (prototype 키 제거)
+
+**보호 메커니즘**:
+
+```ts
+// 위험한 키 차단
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+// 재귀적으로 객체 정화
+function sanitize(obj) {
+  const clean = Object.create(null);
+  for (const [key, value] of Object.entries(obj)) {
+    if (DANGEROUS_KEYS.includes(key)) continue; // 위험 키 건너뛰기
+    clean[key] = typeof value === 'object' ? sanitize(value) : value;
+  }
+  return clean;
+}
+```
+
+**차단되는 공격 패턴**:
+
+- `{ "__proto__": { "isAdmin": true } }` → prototype chain 변조
+- `{ "constructor": { "prototype": { "isAdmin": true } } }` → 생성자 변조
+- 중첩 객체 내 악의적 키 주입
+
+**구현 위치**:
+
+- `src/features/settings/services/SettingsService.ts`: `sanitizeSettingsTree()`,
+  `mergeCategory()`
+- Settings import/merge 시점에 자동 적용
+
+### CodeQL 준수
+
+**해결된 경고**:
+
+- js/incomplete-url-substring-sanitization: 4건 (media-url.util.ts,
+  twitter-dom.mock.ts)
+- js/prototype-pollution-utility: 1건 (SettingsService.ts)
+
+**테스트 가드**:
+
+- `test/security/url-sanitization-hardening.contract.test.ts`: 10 tests
+- `test/security/prototype-pollution-hardening.contract.test.ts`: 8 tests
+
+---
+
 ## 8. 성능/메모리
 
 ### 성능
