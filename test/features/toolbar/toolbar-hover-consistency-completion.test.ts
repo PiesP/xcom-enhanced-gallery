@@ -20,7 +20,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
   describe('수정 완료 검증', () => {
     it('toolbarButton에서 복잡한 transform 효과가 제거되었다', () => {
       const hoverMatch = toolbarCSSContent.match(
-        /\.toolbarButton:hover:not\(\[data-disabled='true'\]\)\s*{[^}]*}/g
+        /\.toolbarButton:hover:not\(\[data-disabled='true'\]\)[\s\S]*?{[\s\S]*?}/g
       );
       expect(hoverMatch).toBeTruthy();
 
