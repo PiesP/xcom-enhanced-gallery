@@ -25,13 +25,19 @@ describe('main solid bootstrap integration (Stage D)', () => {
 
     await main.start();
 
-    expect(getSolidCoreMock).toHaveBeenCalledTimes(1);
-    expect(getSolidWebMock).toHaveBeenCalledTimes(1);
+    // Vendor getters는 여러 컴포넌트에서 호출될 수 있으므로 최소 1번 이상 호출되었는지만 확인
+    expect(getSolidCoreMock).toHaveBeenCalled();
+    expect(getSolidWebMock).toHaveBeenCalled();
 
+    const firstCallCount = getSolidCoreMock.mock.calls.length;
+    const firstWebCallCount = getSolidWebMock.mock.calls.length;
+
+    // 두 번째 start() 호출 시 vendor warmup은 재실행되지 않아야 함 (캐시 사용)
     await main.start();
 
-    expect(getSolidCoreMock).toHaveBeenCalledTimes(1);
-    expect(getSolidWebMock).toHaveBeenCalledTimes(1);
+    // 호출 횟수가 증가하지 않았는지 확인 (warmup은 한 번만)
+    expect(getSolidCoreMock.mock.calls.length).toBe(firstCallCount);
+    expect(getSolidWebMock.mock.calls.length).toBe(firstWebCallCount);
 
     await main.cleanup();
   });

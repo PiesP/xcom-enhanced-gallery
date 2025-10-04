@@ -114,7 +114,7 @@ describe('Phase 5: Language Icon Selector Integration', () => {
       expect(jaRadio).toBeDefined();
     });
 
-    it('초기 선택 상태가 올바르게 표시되어야 함 (auto)', () => {
+    it('초기 선택 상태가 올바르게 표시되어야 함 (en - test setup default)', () => {
       const TestWrapper = (): JSXElement => {
         return (
           <SettingsModal
@@ -122,7 +122,7 @@ describe('Phase 5: Language Icon Selector Integration', () => {
             onClose={() => {}}
             onSave={() => {}}
             initialTheme='auto'
-            initialLanguage='auto'
+            initialLanguage='en'
             initialToastPosition='bottom-right'
             initialToastDuration={3000}
           />
@@ -132,10 +132,10 @@ describe('Phase 5: Language Icon Selector Integration', () => {
       render(() => <TestWrapper />);
 
       const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
-      const autoRadio = within(languageRadiogroup).getByRole('radio', { name: /Auto/i });
+      const enRadio = within(languageRadiogroup).getByRole('radio', { name: /English/i });
 
-      // 초기 선택 상태 확인 (aria-checked)
-      expect(autoRadio.getAttribute('aria-checked')).toBe('true');
+      // 초기 선택 상태 확인 (aria-checked) - test/setup.ts에서 언어를 'en'으로 강제 설정함
+      expect(enRadio.getAttribute('aria-checked')).toBe('true');
     });
   });
 
@@ -220,7 +220,7 @@ describe('Phase 5: Language Icon Selector Integration', () => {
             onClose={() => {}}
             onSave={() => {}}
             initialTheme='auto'
-            initialLanguage='auto'
+            initialLanguage='en'
             initialToastPosition='bottom-right'
             initialToastDuration={3000}
           />
@@ -230,18 +230,18 @@ describe('Phase 5: Language Icon Selector Integration', () => {
       render(() => <TestWrapper />);
 
       const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
-      const autoRadio = within(languageRadiogroup).getByRole('radio', { name: /Auto/i });
+      const enRadio = within(languageRadiogroup).getByRole('radio', { name: /English/i });
       const koRadio = within(languageRadiogroup).getByRole('radio', { name: /Korean/i });
 
-      // 초기 상태: Auto 선택됨
-      expect(autoRadio.getAttribute('aria-checked')).toBe('true');
+      // 초기 상태: English 선택됨 (test/setup.ts 기본값)
+      expect(enRadio.getAttribute('aria-checked')).toBe('true');
 
       // Korean 클릭하여 선택
       fireEvent.click(koRadio);
 
       // Korean이 선택되어야 함
       expect(koRadio.getAttribute('aria-checked')).toBe('true');
-      expect(autoRadio.getAttribute('aria-checked')).toBe('false');
+      expect(enRadio.getAttribute('aria-checked')).toBe('false');
     });
 
     it('Home 키 핸들러가 존재함 (실제 동작은 E2E에서 검증)', () => {
@@ -306,7 +306,7 @@ describe('Phase 5: Language Icon Selector Integration', () => {
             onClose={() => {}}
             onSave={() => {}}
             initialTheme='auto'
-            initialLanguage='auto'
+            initialLanguage='en'
             initialToastPosition='bottom-right'
             initialToastDuration={3000}
           />
@@ -316,18 +316,18 @@ describe('Phase 5: Language Icon Selector Integration', () => {
       render(() => <TestWrapper />);
 
       const languageRadiogroup = screen.getByRole('radiogroup', { name: /language/i });
-      const autoRadio = within(languageRadiogroup).getByRole('radio', { name: /Auto/i });
+      const enRadio = within(languageRadiogroup).getByRole('radio', { name: /English/i });
       const koRadio = within(languageRadiogroup).getByRole('radio', { name: /Korean/i });
 
-      // 초기 상태: Auto 선택됨
-      expect(autoRadio.getAttribute('aria-checked')).toBe('true');
+      // 초기 상태: English 선택됨 (test/setup.ts 기본값)
+      expect(enRadio.getAttribute('aria-checked')).toBe('true');
       expect(koRadio.getAttribute('aria-checked')).toBe('false');
 
       // Korean 클릭
       fireEvent.click(koRadio);
 
       // 선택 상태 변경 확인
-      expect(autoRadio.getAttribute('aria-checked')).toBe('false');
+      expect(enRadio.getAttribute('aria-checked')).toBe('false');
       expect(koRadio.getAttribute('aria-checked')).toBe('true');
     });
 

@@ -33,9 +33,9 @@ describe('Toolbar Button Hover Consistency', () => {
     });
 
     it('toolbarButton은 복잡한 transform 효과를 제거했다', () => {
-      // toolbarButton hover 효과 확인
+      // toolbarButton hover 효과 확인 (멀티라인 CSS 지원)
       const hoverMatch = toolbarCSSContent.match(
-        /\.toolbarButton:hover:not\(\[data-disabled='true'\]\)\s*{[^}]*}/g
+        /\.toolbarButton:hover:not\(\[data-disabled='true'\]\)[\s\S]*?{[\s\S]*?}/g
       );
       expect(hoverMatch).toBeTruthy('toolbarButton hover 스타일이 있어야 함');
 

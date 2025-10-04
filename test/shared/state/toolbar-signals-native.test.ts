@@ -150,6 +150,11 @@ describe('Phase G-3-1-2: State Updates - Setter Function Pattern', () => {
  * ✓ Memoization으로 불필요한 재계산 방지
  */
 describe('Phase G-3-1-3: Derived State - createMemo Pattern', () => {
+  beforeEach(async () => {
+    const { initializeToolbarDerivedState } = await import('@shared/state/signals/toolbar.signals');
+    initializeToolbarDerivedState();
+  });
+
   test('getCurrentToolbarMode should be a memoized accessor', () => {
     const dispose = createRoot(disposeRoot => {
       // Then: should be a function (Accessor)
@@ -274,6 +279,11 @@ describe('Phase G-3-1-4: Effects - createEffect Pattern', () => {
  * ✓ 파생 상태의 타입은 Accessor<T> (T는 반환 타입)
  */
 describe('Phase G-3-1-5: Type Safety - Accessor and Setter Contracts', () => {
+  beforeEach(async () => {
+    const { initializeToolbarDerivedState } = await import('@shared/state/signals/toolbar.signals');
+    initializeToolbarDerivedState();
+  });
+
   test('toolbarState should have Accessor type characteristics', () => {
     const dispose = createRoot(disposeRoot => {
       // Then: should be callable as function

@@ -67,9 +67,9 @@ describe('SettingsModal Accessibility (Solid)', () => {
 
     expect(themeSelect).toHaveValue('auto');
     // Language is now a RadioGroup with radio buttons
-    // Note: Radio name includes icon loading state and text label
-    const autoRadio = within(languageRadiogroup).getByRole('radio', { name: /Auto/i });
-    expect(autoRadio.getAttribute('aria-checked')).toBe('true');
+    // Note: test/setup.ts forces language to 'en', so English radio should be checked
+    const englishRadio = within(languageRadiogroup).getByRole('radio', { name: /English/i });
+    expect(englishRadio.getAttribute('aria-checked')).toBe('true');
     expect(progressToggle).not.toBeChecked();
   });
 

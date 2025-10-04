@@ -17,9 +17,9 @@ const { createRoot, createEffect } = getSolidCore();
 describe('Phase G-3-3-1: 상태 정의 패턴', () => {
   beforeEach(async () => {
     // 모듈 캐시 클리어하여 신선한 상태 보장
-    await import('@shared/state/signals/gallery.signals').then(m => {
-      // 필요시 초기화 로직
-    });
+    const { initializeGalleryDerivedState } = await import('@shared/state/signals/gallery.signals');
+    // 파생 상태 초기화
+    initializeGalleryDerivedState();
   });
 
   it('galleryState는 Accessor<GalleryState> 함수여야 한다', async () => {
@@ -62,6 +62,11 @@ describe('Phase G-3-3-1: 상태 정의 패턴', () => {
  * setGalleryState 함수를 통한 상태 업데이트
  */
 describe('Phase G-3-3-2: 상태 업데이트 패턴', () => {
+  beforeEach(async () => {
+    const { initializeGalleryDerivedState } = await import('@shared/state/signals/gallery.signals');
+    initializeGalleryDerivedState();
+  });
+
   it('setGalleryState(newValue)는 직접 값 설정을 허용해야 한다', async () => {
     const { galleryState, setGalleryState } = await import('@shared/state/signals/gallery.signals');
 
@@ -116,6 +121,11 @@ describe('Phase G-3-3-2: 상태 업데이트 패턴', () => {
  * Getter 함수들이 createMemo 또는 순수 함수로 최적화되어야 함
  */
 describe('Phase G-3-3-3: 파생 상태 패턴', () => {
+  beforeEach(async () => {
+    const { initializeGalleryDerivedState } = await import('@shared/state/signals/gallery.signals');
+    initializeGalleryDerivedState();
+  });
+
   it('getCurrentMediaItem은 createMemo 또는 함수로 구현되어야 한다', async () => {
     const { galleryState, setGalleryState, getCurrentMediaItem } = await import(
       '@shared/state/signals/gallery.signals'
@@ -185,6 +195,11 @@ describe('Phase G-3-3-3: 파생 상태 패턴', () => {
  * createEffect를 통한 반응형 구독
  */
 describe('Phase G-3-3-4: Effect 패턴', () => {
+  beforeEach(async () => {
+    const { initializeGalleryDerivedState } = await import('@shared/state/signals/gallery.signals');
+    initializeGalleryDerivedState();
+  });
+
   it('openGallery는 직접 setter를 사용해야 한다', async () => {
     const { galleryState, openGallery } = await import('@shared/state/signals/gallery.signals');
 
@@ -250,6 +265,11 @@ describe('Phase G-3-3-4: Effect 패턴', () => {
  * Accessor/Setter 타입 계약
  */
 describe('Phase G-3-3-5: 타입 안전성', () => {
+  beforeEach(async () => {
+    const { initializeGalleryDerivedState } = await import('@shared/state/signals/gallery.signals');
+    initializeGalleryDerivedState();
+  });
+
   it('galleryState는 Accessor 타입 특성을 가져야 한다', async () => {
     const { galleryState } = await import('@shared/state/signals/gallery.signals');
 

@@ -28,6 +28,9 @@ import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.
 // 전역 테스트 환경 설정
 // ================================
 
+// Setup global GM_* mocks early
+setupGlobalMocks();
+
 // Force English locale for consistent i18n testing
 Object.defineProperty(globalThis, 'navigator', {
   writable: true,
