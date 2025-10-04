@@ -145,6 +145,15 @@ export function disposeGalleryDerivedState(): void {
 
 **예상 결과**: 7 tests, 7 passed (GREEN)
 
+**실제 결과 (2025-01-XX)**:
+
+- ✅ Phase 2 GREEN 완료 (Commit: 57e2de28)
+- 구현 파일: `gallery.signals.ts` (11 memos), `toolbar.signals.ts` (2 memos)
+- 초기화: `solid-bootstrap.ts`, `test/setup.ts`에 추가
+- 패턴: private 변수 + init/dispose 함수 + wrapper 함수 + 에러 체크
+- 테스트: reactive-root-context.test.ts 7/7 passed
+- 기존 테스트: React is not defined 오류 해결 (자동 초기화 제거)
+
 ---
 
 #### Phase 3: GREEN (초기화 순서 개선)
