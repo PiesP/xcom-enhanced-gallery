@@ -2,6 +2,151 @@
 
 ---
 
+## 2025-10-04: Epic CODEQL-LOCAL-ENHANCEMENT 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-04
+- **유형**: 로컬 CodeQL 워크플로 개선
+- **목적**: GitHub Advanced Security 없이도 로컬 CodeQL 활용 가능하도록 Fallback
+  쿼리 팩 활용
+- **결과**: ✅ 완료 (Phase 1-3 모두 GREEN)
+- **브랜치**: `feature/codeql-local-enhancement`
+
+### 배경
+
+**문제점**:
+
+- Epic CODEQL-STANDARD-QUERY-PACKS에서 GitHub Advanced Security 라이선스 제약
+  발견
+- 로컬 환경에서 표준 쿼리 팩(`codeql/javascript-security-and-quality`) 접근 불가
+- CodeQL CLI는 정상 작동하지만 쿼리 팩 부재로 분석 결과 없음
+
+**해결 방안**:
+
+- Fallback 쿼리 팩(`codeql/javascript-queries`) 활용
+- 50+ 기본 보안 규칙 포함 (CWE 기반)
+- 조건부 테스트로 로컬/CI 환경 자동 대응
+
+### 완료된 Phase
+
+#### Phase 1: RED (조건부 환경 감지 테스트) ✅
+
+**작업 내용**:
+
+- `test/utils/codeql-environment.ts` 생성 (215 lines)
+  - `hasAdvancedSecurity()`: SARIF에서 js/ 규칙 200개 이상 감지
+  - `detectQueryPackType()`: 'standard' | 'fallback' | 'unknown' 반환
+  - `getCodeQLEnvironmentInfo()`: 환경 상세 정보 수집
+- `test/architecture/codeql-local-enhancement.contract.test.ts` 생성 (293 lines)
+  - Task 1: 환경 감지 함수 구현 (6 tests)
+  - Task 2: 조건부 SARIF 검증 (4 tests)
+  - Task 3: 환경 정보 로깅 (2 tests)
+  - Task 4: 개선 계획 조건부 검증 (3 tests)
+
+**결과**:
+
+- ✅ 15/15 tests 작성 (초기 RED 상태)
+- 커밋: `1ed1e174` "test(security): phase 1 RED - 조건부 환경 감지 및 테스트
+  추가"
+
+#### Phase 2: GREEN (Fallback 쿼리 팩 실행) ✅
+
+**작업 내용**:
+
+- Fallback 쿼리 팩 직접 실행 검증:
+  - `codeql database analyze codeql-db codeql/javascript-queries`
+  - 88개 쿼리 실행 성공 (CWE-020~CWE-942)
+  - SARIF 708.45 KB 생성 (86 rules)
+- `scripts/run-codeql.mjs` 수정 (line 595-603):
+  - 커스텀 쿼리 팩을 주 목록에서 제외 (주석 처리)
+  - Fallback 쿼리 팩만 사용하도록 변경
+- 전체 스캔 재실행:
+  - `npm run codeql:scan` 실행
+  - Database: 802개 파일 추출, 26.84 MiB relations
+  - Analysis: 88개 쿼리 실행, ~26s evaluation
+
+**결과**:
+
+- ✅ 15/15 tests GREEN
+- ✅ SARIF 검증: 86개 규칙 포함
+- ✅ 개선 계획 생성: codeql-improvement-plan.md (의미 있는 내용)
+- 커밋: `73c92fbe` "feat(security): phase 2 GREEN - Fallback 쿼리 팩 실행 및
+  검증 완료"
+
+#### Phase 3: REFACTOR (로깅 개선) ✅
+
+**작업 내용**:
+
+- `scripts/run-codeql.mjs` 로깅 개선:
+  - **SARIF 통계 로깅** (line 580-592):
+    - 전체 규칙 수 계산
+    - JS 보안 규칙 필터링 (`js/` prefix, `security-severity` 속성)
+    - 출력 예: "SARIF 분석 완료: 전체 규칙 86개, JS 보안 규칙 84개"
+  - **쿼리 팩 정보 로깅** (line 756-762):
+    - 사용할 쿼리 팩 목록 출력
+    - 인덱스 번호와 팩 이름 표시
+    - 출력 예: "사용할 쿼리 팩 (2개): [1] codeql/javascript-queries, [2]
+      custom-pack"
+- Prettier 포맷팅 적용
+
+**결과**:
+
+- ✅ 로깅 개선 완료
+- ✅ 테스트 15/15 GREEN 유지
+- 커밋: `aef65ef3` "refactor(security): phase 3 - SARIF 통계 및 쿼리 팩 정보
+  로깅 개선"
+- 커밋: `c9a9dcf6` "style(scripts): apply prettier formatting to run-codeql.mjs"
+
+### 성과
+
+**테스트 결과**:
+
+- ✅ 15/15 contract tests GREEN
+- ✅ 전체 테스트 2646/2646 PASS
+- ✅ 품질 게이트: typecheck, lint, format, test, build 전체 통과
+
+**CodeQL 스캔 결과**:
+
+- Query Pack: `codeql/javascript-queries 2.1.1` (Fallback)
+- Queries: 88개 실행 (AngularJS, Electron, Security, Performance, Diagnostics,
+  Summary)
+- Rules: 86개 규칙 검증 (CWE-020~CWE-942)
+- Files: 790/800 JavaScript/TypeScript files scanned
+- SARIF: 708.45 KB (86 rules, 802 artifacts)
+
+**코드 변경**:
+
+- **파일 수정**: 3 files changed
+  - `scripts/run-codeql.mjs`: 22 insertions, 4 deletions
+  - `test/utils/codeql-environment.ts`: 215 lines (new)
+  - `test/architecture/codeql-local-enhancement.contract.test.ts`: 293 lines
+    (new)
+- **문서 업데이트**: 백로그 및 활성 계획 갱신
+
+**핵심 개선사항**:
+
+1. **환경 감지 함수**: Advanced Security 활성화 여부 자동 감지
+2. **조건부 테스트**: 로컬/CI 환경 자동 대응 (엄격/relaxed 모드)
+3. **Fallback 쿼리 팩**: 로컬 환경에서도 50+ 보안 규칙 적용 가능
+4. **로깅 개선**: SARIF 통계 및 쿼리 팩 정보 가시성 향상
+
+### 교훈
+
+**성공 요인**:
+
+- TDD 워크플로 준수 (RED→GREEN→REFACTOR)
+- Fallback 로직 활용으로 권한 제약 우회
+- 조건부 테스트로 환경별 자동 대응
+
+**참고사항**:
+
+- CI 환경에서는 여전히 표준 쿼리 팩 미지원 (GitHub Advanced Security 필요)
+- 로컬 개발에서는 Fallback 쿼리 팩으로 충분한 보안 검증 가능
+- Fallback 쿼리 팩은 CodeQL CLI와 함께 제공되므로 추가 설정 불필요
+
+---
+
 ## 2025-10-04: Epic FFLATE-DEPRECATED-API-REMOVAL 완료 ✅
 
 ### 개요
