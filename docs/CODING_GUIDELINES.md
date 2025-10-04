@@ -338,6 +338,57 @@ tests)가 PC 전용 정책, 디자인 토큰, ARIA 완전성을 검증합니다.
 
 ---
 
+## 번들 최적화
+
+### 크기 목표 (회귀 방지)
+
+- **Raw**: ≤473 KB (현재: 471.67 KB, 이상적: 420 KB)
+- **Gzip**: ≤118 KB (현재: 117.12 KB, 이상적: 105 KB)
+- **테스트**: `test/architecture/bundle-size-optimization.contract.test.ts` (15
+  tests)
+
+### 최적화 가이드라인
+
+**Tree-shaking 준수**:
+
+- `package.json` sideEffects에 CSS만 명시
+- Dead code (미사용 export) 정기적 정리
+- Re-export 체인 ≤3 depth 유지
+
+**코드 중복 제거 (DRY)**:
+
+- 동일 로직 2회 이상 등장 시 공통 유틸로 추출
+- 타입 정의 중복 금지 (barrel export 활용)
+- 패턴 반복 ≤20회 유지
+
+**Pure 함수 활용**:
+
+- 부작용 없는 함수는 `/*#__PURE__*/` 주석 추가
+- Terser가 안전하게 제거 가능하도록 보장
+- 목표: 50+ pure annotations (현재: 0, 향후 개선)
+
+**Orphan 파일 최소화**:
+
+- 미사용 파일은 주석 처리보다 제거 우선
+- 의도적 분리 모듈은 문서화 (예: visible-navigation.ts)
+- 의존성 그래프 정기적 점검 (`npm run deps:all`)
+
+### 빌드 설정 (vite.config.ts)
+
+**현재 최적화**:
+
+- Terser: pure*funcs (logger, console), unsafe opts, mangleProps (`^*[a-z]`)
+- Treeshake: moduleSideEffects: 'no-external', propertyReadSideEffects: false
+- CSS: modules hashing, PostCSS 최적화
+
+**금지 사항**:
+
+- 번들 크기 증가시키는 라이브러리 추가 전 검토 필수
+- Dead code를 주석 처리로 방치 (제거 권장)
+- Side-effect 있는 모듈을 sideEffects: false로 표시
+
+---
+
 ## 품질 게이트
 
 **커밋/PR 전**:
