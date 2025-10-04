@@ -4,6 +4,11 @@
   "description": "Media viewer and download functionality for X.com",
   "license": "MIT",
   "type": "module",
+  "sideEffects": [
+    "*.css",
+    "*.scss",
+    "*.less"
+  ],
   "scripts": {
     "pretest": "node ./scripts/pretest-hook.mjs",
     "clean": "rimraf dist",

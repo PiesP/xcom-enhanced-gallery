@@ -57,37 +57,6 @@ export function combineClasses(...classes: (string | undefined | null)[]): strin
 }
 
 /**
- * 요소가 갤러리 컨테이너인지 확인
- */
-export function isGalleryContainer(element: HTMLElement | null): boolean {
-  if (!element) return false;
-
-  const gallerySelectors = [
-    '.xeg-gallery-container',
-    '.xeg-gallery',
-    '[data-xeg-gallery]',
-    '.gallery-overlay',
-  ];
-
-  return gallerySelectors.some(sel => element.matches(sel));
-}
-
-/**
- * 이벤트가 갤러리 내부 이벤트인지 확인
- */
-export function isGalleryInternalEvent(event: Event): boolean {
-  const target = event.target as HTMLElement;
-  return isInsideGallery(target);
-}
-
-/**
- * 갤러리 이벤트를 블록해야 하는지 확인
- */
-export function shouldBlockGalleryEvent(event: Event): boolean {
-  return isGalleryInternalEvent(event);
-}
-
-/**
  * 안전한 속성 가져오기
  */
 export function safeGetAttribute(el: Element | null, attr: string): string | null {
