@@ -11,56 +11,6 @@ import { vi } from 'vitest';
 // ================================
 
 /**
- * Mock fflate API 생성
- */
-export function createMockFflate() {
-  return {
-    zip: vi.fn().mockImplementation((files, callback) => {
-      // 간단한 zip 시뮬레이션
-      const result = new Uint8Array([0x50, 0x4b, 0x03, 0x04]); // ZIP 매직 넘버
-      callback(null, result);
-    }),
-
-    unzip: vi.fn().mockImplementation((data, callback) => {
-      // 간단한 unzip 시뮬레이션
-      callback(null, { 'test.txt': new Uint8Array([116, 101, 115, 116]) });
-    }),
-
-    strToU8: vi.fn().mockImplementation(str => {
-      const bytes: number[] = [];
-      for (let i = 0; i < str.length; i++) {
-        bytes.push(str.charCodeAt(i));
-      }
-      return new Uint8Array(bytes);
-    }),
-
-    strFromU8: vi.fn().mockImplementation(data => {
-      return String.fromCharCode.apply(null, Array.from(data));
-    }),
-
-    zipSync: vi.fn().mockImplementation(files => {
-      return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-    }),
-
-    unzipSync: vi.fn().mockImplementation(data => {
-      return { 'test.txt': new Uint8Array([116, 101, 115, 116]) };
-    }),
-
-    deflate: vi.fn().mockImplementation((data, callback) => {
-      // 압축된 데이터 시뮬레이션
-      const compressed = new Uint8Array(Math.floor(data.length * 0.7));
-      callback(null, compressed);
-    }),
-
-    inflate: vi.fn().mockImplementation((data, callback) => {
-      // 압축 해제된 데이터 시뮬레이션
-      const decompressed = new Uint8Array(Math.floor(data.length * 1.3));
-      callback(null, decompressed);
-    }),
-  };
-}
-
-/**
  * Mock Motion API 생성
  */
 export function createMockMotion() {
@@ -111,13 +61,6 @@ export class MockVendorManager {
     MockVendorManager.instance = null;
   }
 
-  getFflate() {
-    if (!this.cache.has('fflate')) {
-      this.cache.set('fflate', createMockFflate());
-    }
-    return this.cache.get('fflate');
-  }
-
   getMotion() {
     if (!this.cache.has('motion')) {
       this.cache.set('motion', createMockMotion());
@@ -144,7 +87,6 @@ export function setupVendorMocks() {
   // @shared/external/vendors 모듈 Mock
   vi.doMock('@shared/external/vendors', () => ({
     __esModule: true,
-    getFflate: () => mockManager.getFflate(),
     getMotion: () => mockManager.getMotion(),
   }));
 

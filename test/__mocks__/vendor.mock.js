@@ -49,18 +49,6 @@ export const mockPreactCompatAPI = {
   forwardRef: vi.fn(Component => Component),
 };
 
-// Mock Fflate API - 빈 함수로 단순화
-export const mockFflateAPI = {
-  zip: vi.fn(),
-  unzip: vi.fn(),
-  strToU8: vi.fn(() => new Uint8Array()),
-  strFromU8: vi.fn(() => ''),
-  zipSync: vi.fn(() => new Uint8Array()),
-  unzipSync: vi.fn(() => ({})),
-  deflate: vi.fn(() => new Uint8Array()),
-  inflate: vi.fn(() => new Uint8Array()),
-};
-
 // Mock Native Download API
 export const mockNativeDownloadAPI = {
   downloadBlob: vi.fn(),
@@ -85,7 +73,6 @@ export function setupVendorMocks() {
 
   vi.doMock('@shared/external/vendors', () => ({
     __esModule: true,
-    getFflate: vi.fn(() => mockFflateAPI),
     legacyPreact: legacyPreactExports,
     getNativeDownload: vi.fn(() => mockNativeDownloadAPI),
     initializeVendors: vi.fn(() => Promise.resolve()),

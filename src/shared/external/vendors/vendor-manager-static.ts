@@ -9,13 +9,6 @@ import * as solid from 'solid-js';
 import * as solidStore from 'solid-js/store';
 import * as solidWeb from 'solid-js/web';
 
-import {
-  createDeprecatedFflateApi,
-  warnFflateDeprecated,
-  type FflateAPI,
-  FFLATE_REMOVAL_MESSAGE,
-} from './fflate-deprecated';
-
 const MEMORY_CONSTANTS = {
   MAX_CACHE_SIZE: 50,
   CLEANUP_INTERVAL: 30000,
@@ -67,8 +60,6 @@ export class StaticVendorManager {
     solidStore,
     solidWeb,
   } as const;
-
-  private readonly deprecatedFflateApi: FflateAPI = createDeprecatedFflateApi();
 
   private readonly apiCache = new Map<string, unknown>();
   private readonly createdUrls = new Set<string>();
@@ -164,12 +155,6 @@ export class StaticVendorManager {
     this.apiCache.set('solid-web', solidWebAPI);
 
     logger.debug('✅ Solid vendor APIs cached');
-  }
-
-  public getFflate(): FflateAPI {
-    warnFflateDeprecated('StoreZipWriter handles ZIP creation.');
-    logger.debug(`[Vendors] ${FFLATE_REMOVAL_MESSAGE}`);
-    return this.deprecatedFflateApi;
   }
 
   private ensureInitialized(): void {
@@ -372,5 +357,3 @@ export class StaticVendorManager {
     }
   }
 }
-
-export type { FflateAPI } from './fflate-deprecated';

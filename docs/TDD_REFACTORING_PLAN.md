@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-04 — 테스트 현황 정리 (3 failed, 2612 passed, CodeQL
-권한 제약)
+**최근 업데이트**: 2025-10-04 — Epic FFLATE-DEPRECATED-API-REMOVAL 완료
 
 ---
 
@@ -23,7 +22,12 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-(현재 활성 Epic 없음)
+### 현재 활성 Epic 없음
+
+모든 Epic이 완료되었습니다. 새로운 작업이 필요한 경우
+`docs/TDD_REFACTORING_BACKLOG.md`에서 선정하여 승격하세요.
+
+---
 
 **현재 테스트 상태** (2025-10-04):
 
@@ -34,9 +38,6 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
   - 원인: GitHub Advanced Security 권한 제약 (로컬/CI 공통)
   - 상태: Epic CODEQL-STANDARD-QUERY-PACKS 부분 완료, Backlog HOLD 상태
 
-**다음 작업**: `docs\TDD_REFACTORING_BACKLOG.md`에서 새로운 Epic을 검토하고
-선정해 주세요.
-
 ---
 
 ## 3. 최근 완료 Epic (요약)
@@ -46,6 +47,11 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 **주요 Epic (2025-01-09 ~ 2025-10-04)**:
 
+- **FFLATE-DEPRECATED-API-REMOVAL** (2025-10-04): deprecated fflate API 완전
+  제거 ✅
+  - Breaking Change: `getFflate()` API 제거
+  - Phase 1-3 완료, 16/16 contract tests PASS
+  - 15 files changed (1 deleted, 14 modified)
 - **TEST-FAILURE-ALIGNMENT-PHASE2** (2025-01-09): 29/29 tests GREEN ✅
   - Signal Native pattern, Toolbar CSS, Settings/Language, Integration 테스트
     정렬

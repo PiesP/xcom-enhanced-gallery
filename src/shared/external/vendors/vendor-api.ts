@@ -4,7 +4,6 @@
 
 export {
   initializeVendorsSafe as initializeVendors,
-  getFflateSafe as getFflate,
   getNativeDownloadSafe as getNativeDownload,
   getSolidCoreSafe as getSolidCore,
   getSolidStoreSafe as getSolidStore,

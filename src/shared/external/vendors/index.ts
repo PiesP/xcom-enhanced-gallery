@@ -10,7 +10,6 @@
 // 💡 Solid 기반 TDZ-safe API (권장)
 export {
   initializeVendorsSafe as initializeVendors,
-  getFflateSafe as getFflate,
   getNativeDownloadSafe as getNativeDownload,
   getSolidCoreSafe as getSolidCore,
   getSolidStoreSafe as getSolidStore,
@@ -36,5 +35,3 @@ export type {
 
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';
-
-export type { FflateAPI } from './fflate-deprecated';

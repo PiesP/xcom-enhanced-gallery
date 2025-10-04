@@ -8,8 +8,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   initializeVendorsSafe,
-  getFflateSafe,
   getSolidCoreSafe,
+  getSolidStoreSafe,
   resetVendorManagerInstance,
   getVendorStatusesSafe,
   cleanupVendorsSafe,
@@ -45,16 +45,16 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // 첫 번째 호출 시간 측정
       const start1 = now();
-      const fflate1 = await getFflateSafe();
+      const solid1 = await getSolidCoreSafe();
       const end1 = now();
 
       // 두 번째 호출 시간 측정 (캐시된 결과)
       const start2 = now();
-      const fflate2 = await getFflateSafe();
+      const solid2 = await getSolidCoreSafe();
       const end2 = now();
 
       // 동일한 인스턴스 반환
-      expect(fflate1).toBe(fflate2);
+      expect(solid1).toBe(solid2);
 
       // 두 번째 호출이 훨씬 빨라야 함 (캐시 효과)
       const firstCallDuration = end1 - start1;
@@ -70,10 +70,10 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // 동시에 여러 vendor API 요청
       const promises = await Promise.all([
-        getFflateSafe(),
         getSolidCoreSafe(),
-        getFflateSafe(), // 중복 요청
+        getSolidStoreSafe(),
         getSolidCoreSafe(), // 중복 요청
+        getSolidStoreSafe(), // 중복 요청
       ]);
 
       const endTime = now();
@@ -97,11 +97,15 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       // 간단한 메모리 측정 (Node.js 환경에서)
       const measureMemory = () => {
         // 가비지 컬렉션이 가능하면 실행
+        // eslint-disable-next-line no-undef
         if (typeof global !== 'undefined' && (global as any).gc) {
+          // eslint-disable-next-line no-undef
           (global as any).gc();
         }
         // process가 사용 가능하면 메모리 정보 반환
+
         if (typeof process !== 'undefined') {
+          // eslint-disable-next-line no-undef
           return process.memoryUsage();
         }
         return { heapUsed: 0 }; // 폴백
@@ -112,8 +116,8 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       // 여러 번 초기화/정리 반복
       for (let i = 0; i < 5; i++) {
         await initializeVendorsSafe();
-        await getFflateSafe();
         await getSolidCoreSafe();
+        await getSolidStoreSafe();
         cleanupVendorsSafe();
         resetVendorManagerInstance();
       }
@@ -135,7 +139,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
     it('should cleanup properly without memory leaks', async () => {
       // 초기화
       await initializeVendorsSafe();
-      const apis = await Promise.all([getFflateSafe(), getSolidCoreSafe()]);
+      const apis = await Promise.all([getSolidCoreSafe(), getSolidStoreSafe()]);
 
       expect(apis.every(api => api !== null)).toBe(true);
 
@@ -155,13 +159,13 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       const startTime = now();
 
       await initializeVendorsSafe();
-      const fflate = await getFflateSafe();
+      const solid = await getSolidCoreSafe();
 
       const endTime = now();
 
-      // fflate 함수 즉시 사용 가능
-      expect(typeof fflate.deflate).toBe('function');
-      expect(typeof fflate.inflate).toBe('function');
+      // solid 함수 즉시 사용 가능
+      expect(typeof solid.createSignal).toBe('function');
+      expect(typeof solid.createEffect).toBe('function');
 
       // 매우 빠른 접근 시간 (관대한 기준)
       expect(endTime - startTime).toBeLessThan(100);
@@ -171,14 +175,15 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       // 정적 import는 번들 크기가 예측 가능
       await initializeVendorsSafe();
 
-      const fflate = await getFflateSafe();
-      const solidCore = await getSolidCoreSafe();
+      const solid = await getSolidCoreSafe();
+      const solidStore = await getSolidStoreSafe();
 
       // 모든 메서드가 사용 가능해야 함
-      expect(fflate).toHaveProperty('deflate');
-      expect(fflate).toHaveProperty('inflate');
-      expect(solidCore).toHaveProperty('createSignal');
-      expect(solidCore).toHaveProperty('createEffect');
+      expect(solid).toHaveProperty('createSignal');
+      expect(solid).toHaveProperty('createEffect');
+      expect(solidStore).toHaveProperty('createStore');
+      expect(solid).toHaveProperty('createEffect');
+      expect(solidStore).toHaveProperty('createStore');
     });
 
     it('should eliminate TDZ risks completely', async () => {
@@ -206,14 +211,14 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
       ]);
 
       // vendor API 실제 접근해서 초기화 확인
-      const fflate = await getFflateSafe();
-      const solidCore = await getSolidCoreSafe();
+      const solid = await getSolidCoreSafe();
+      const solidStore = await getSolidStoreSafe();
 
       // 실제 API가 사용 가능한지 확인
-      expect(fflate).toBeTruthy();
-      expect(solidCore).toBeTruthy();
-      expect(typeof fflate.deflate).toBe('function');
-      expect(typeof solidCore.createSignal).toBe('function');
+      expect(solid).toBeTruthy();
+      expect(solidStore).toBeTruthy();
+      expect(typeof solid.createSignal).toBe('function');
+      expect(typeof solidStore.createStore).toBe('function');
     });
 
     it('should handle rapid successive calls gracefully', async () => {
@@ -221,7 +226,7 @@ describe('TDD REFACTOR - Vendor System Performance', () => {
 
       // 빠른 연속 호출
       for (let i = 0; i < 20; i++) {
-        promises.push(getFflateSafe());
+        promises.push(getSolidCoreSafe());
       }
 
       const startTime = now();

@@ -83,18 +83,6 @@ export const mockPreactCompatAPI = {
   }),
 };
 
-// Mock Fflate API
-export const mockFflateAPI = {
-  zip: vi.fn(),
-  unzip: vi.fn(),
-  strToU8: vi.fn(),
-  strFromU8: vi.fn(),
-  zipSync: vi.fn(),
-  unzipSync: vi.fn(),
-  deflate: vi.fn(),
-  inflate: vi.fn(),
-};
-
 // Mock Native Download API
 export const mockNativeDownloadAPI = {
   downloadBlob: vi.fn(),
@@ -119,7 +107,6 @@ export function setupVendorMocks() {
 
   vi.doMock('@shared/external/vendors', () => ({
     __esModule: true,
-    getFflate: vi.fn(() => mockFflateAPI),
     legacyPreact: legacyPreactExports,
     getNativeDownload: vi.fn(() => mockNativeDownloadAPI),
     initializeVendors: vi.fn(() => Promise.resolve()),
@@ -163,12 +150,6 @@ export function resetVendorMocks() {
   });
 
   Object.values(mockPreactCompatAPI).forEach(mock => {
-    if (vi.isMockFunction(mock)) {
-      mock.mockClear();
-    }
-  });
-
-  Object.values(mockFflateAPI).forEach(mock => {
     if (vi.isMockFunction(mock)) {
       mock.mockClear();
     }
