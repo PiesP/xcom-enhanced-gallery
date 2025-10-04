@@ -23,7 +23,120 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-현재 활성화된 Epic이 없습니다. 백로그에서 다음 Epic을 선정하세요.
+### Epic TEST-FAILURE-FIX-REMAINING (활성: 2025-10-04)
+
+**목적**: 남은 9개 실패 테스트 수정으로 CI 완전 통과 달성
+
+**현황**: Phase 1 시작 — 테스트 실패 분석 및 수정 계획 수립
+
+**우선순위**:
+
+1. **P1 (High)**: Bundle budget 메트릭 업데이트 (1개) - 빠른 승리
+2. **P2 (Medium)**: Tooltip 타임아웃 조정 (3개) - 타이밍 이슈
+3. **P3 (Low)**: Hardcoded values, Glassmorphism (3개) - 정책 조정 또는 수정
+4. **P4 (Deferred)**: 구현 이슈 (2개) - 개별 검토 필요
+
+#### Phase 1: Bundle Budget 메트릭 업데이트 (진행 중 🔄)
+
+**목표**: `metrics/bundle-metrics.json`을 현재 빌드 크기로 업데이트
+
+**현재 크기** (2025-10-04 빌드):
+
+- Raw: 472.68 KB (484,023 bytes)
+- Gzip: 117.61 KB (120,435 bytes estimated)
+
+**작업 계획**:
+
+- [ ] `metrics/bundle-metrics.json` 업데이트
+  - baselineBytes: 463253 → 484023
+  - budgetBytes: 555845 (유지 또는 조정)
+  - brotliBytes: 85083 → ~86000 (측정 필요)
+- [ ] 테스트 실행하여 bundle-budget.test.ts GREEN 확인
+- [ ] 빌드 스크립트 자동화 검토 (선택)
+
+**Acceptance**:
+
+- bundle-budget.test.ts GREEN
+- 빌드 성공
+- TypeScript/ESLint: clean
+
+---
+
+#### Phase 2: Tooltip 타임아웃 조정 (대기 중 ⏸️)
+
+**목표**: tooltip-component.test.tsx의 3개 타임아웃 실패 수정
+
+**문제**:
+
+- `should show tooltip on mouseenter after delay`: 툴팁이 사라지지 않음
+- `should hide tooltip on mouseleave`: 20초 타임아웃
+- `should hide tooltip on blur`: 20초 타임아웃
+
+**해결 방안**:
+
+1. 테스트 타임아웃 증가 (25s → 30s)
+2. 타이머 모킹 개선 (`vi.useFakeTimers()`)
+3. Tooltip 컴포넌트의 타이밍 로직 검토
+
+**Acceptance**:
+
+- tooltip-component.test.tsx 3개 테스트 GREEN
+- 다른 테스트에 영향 없음
+
+---
+
+#### Phase 3: Hardcoded Values & Glassmorphism (대기 중 ⏸️)
+
+**목표**: CSS 정책 위반 테스트 해결
+
+**작업**:
+
+1. **Hardcoded values** (2개):
+   - 실제 CSS 파일에서 하드코딩된 값 찾기
+   - 토큰으로 교체 또는 예외 범위 문서화
+
+2. **Glassmorphism** (1개):
+   - 빌드 산출물에서 backdrop-filter:blur 검색
+   - 제거 또는 허용 범위 정의
+
+**Acceptance**:
+
+- hardcoded-values-removal.red.test.ts GREEN
+- final-glassmorphism-cleanup.test.ts GREEN
+
+---
+
+#### Phase 4: 구현 이슈 (보류 🔄)
+
+**목표**: 개별 검토 후 수정 또는 스킵
+
+**테스트 목록**:
+
+- gallery-toolbar-parity.test.ts
+- toolbar-fit-mode.selected-state.test.tsx (2 tests)
+- toolbar-refine-structure.test.tsx
+- solid-settings-panel.integration.test.tsx
+- main-solid-bootstrap-only.test.ts
+
+**접근**:
+
+- 각 테스트 실행하여 실패 원인 분석
+- 빠른 수정 가능 → 수정
+- 복잡한 이슈 → 별도 Epic으로 분리
+
+---
+
+**전체 Acceptance Criteria**:
+
+- 🔄 Phase 1: Bundle budget GREEN
+- ⏸️ Phase 2: Tooltip 3개 GREEN
+- ⏸️ Phase 3: CSS 정책 3개 GREEN
+- ⏸️ Phase 4: 구현 이슈 해결 또는 분리
+- ✅ 테스트 실패 9개 → 0개 (목표)
+- ✅ TypeScript: 0 errors
+- ✅ ESLint: clean
+- ✅ 빌드 성공 (dev + prod)
+- ✅ CI 완전 통과
 
 ---
 
