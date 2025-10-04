@@ -33,6 +33,10 @@
   --xeg-focus-ring: 0.125em solid var(--xeg-color-primary);
   --xeg-focus-ring-offset: 0.125em;
 
+  /* Tooltip 토큰 - kbd 요소 패딩 */
+  --xeg-tooltip-kbd-padding-y: 0.125em;
+  --xeg-tooltip-kbd-padding-x: 0.375em;
+
   /* Font Size 토큰 - 테스트 요구사항 */
   --xeg-font-size-sm: 0.875rem;
   --xeg-font-size-base: 1rem;

@@ -22,14 +22,12 @@ import styles from './Toolbar.module.css';
 import { ToolbarButton } from '../ToolbarButton/ToolbarButton';
 import { MediaCounter } from '../MediaCounter/MediaCounter';
 import type { ToolbarProps, GalleryToolbarProps } from './Toolbar.types';
-import { LanguageService } from '@shared/services/LanguageService';
+import { languageService } from '@shared/services/LanguageService';
 
 export type { ToolbarProps, GalleryToolbarProps };
 
 export const Toolbar = (props: ToolbarProps): JSX.Element => {
   const { createEffect, createMemo, onCleanup } = getSolidCore();
-
-  const languageService = new LanguageService();
 
   const [toolbarState, toolbarActions] = useToolbarState();
 
@@ -169,7 +167,9 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
     typeof props.tabIndex === 'number' ? props.tabIndex : 0
   );
 
-  const ariaLabel = createMemo(() => props['aria-label'] ?? '갤러리 도구모음');
+  const ariaLabel = createMemo(
+    () => props['aria-label'] ?? languageService.getString('toolbar.galleryToolbar')
+  );
 
   const dataState = createMemo(() => getToolbarDataState(toolbarState));
 

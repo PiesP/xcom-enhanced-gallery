@@ -42,16 +42,8 @@
  * - 테스트: toolbar-hover-consistency(.completion).test.ts, button-animation-consistency.test.ts
  */
 
-/* Hover */
-.toolbarButton:hover:not([data-disabled='true']) {
-  /* 복잡한 transform 효과 제거 */
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-neutral-300);
-  transform: translateY(var(--xeg-button-lift, -1px));
-  box-shadow: var(--xeg-shadow-sm, 0 1px 2px var(--xeg-color-overlay-light));
-}
-
-/* navButton / downloadButton / settingsButton / closeButton 에 공통 호버 효과 적용 */
+/* Hover - 모든 버튼 타입 통합 */
+.toolbarButton:hover:not([data-disabled='true']),
 .navButton:hover:not(:disabled),
 .downloadButton:hover:not([data-disabled='true']),
 .settingsButton:hover:not([data-disabled='true']),
@@ -88,7 +80,7 @@
  * - data-selected="true" 속성으로 제어
  */
 
-/* Selected fit button emphasis */
+/* Selected fit button emphasis - 모든 경우 통합 */
 .toolbarButton[data-selected='true'],
 .fitButton[data-selected='true'] {
   background: var(--xeg-color-primary-50, var(--xeg-color-neutral-100));
@@ -97,7 +89,7 @@
   color: var(--xeg-color-primary, var(--xeg-color-text-primary));
 }
 
-/* Selected fit button hover state */
+/* Selected fit button hover state - 통합 */
 .toolbarButton[data-selected='true']:hover:not([data-disabled='true']),
 .fitButton[data-selected='true']:hover:not([data-disabled='true']) {
   background: var(--xeg-color-primary-100, var(--xeg-color-neutral-200));

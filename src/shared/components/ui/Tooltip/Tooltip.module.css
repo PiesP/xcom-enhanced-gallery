@@ -71,7 +71,7 @@
 /* 키보드 단축키 강조 (<kbd>) */
 .tooltip kbd {
   display: inline-block;
-  padding: 0.125em 0.375em;
+  padding: var(--xeg-tooltip-kbd-padding-y) var(--xeg-tooltip-kbd-padding-x);
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border-primary);
   border-radius: var(--xeg-radius-sm, 0.25rem);

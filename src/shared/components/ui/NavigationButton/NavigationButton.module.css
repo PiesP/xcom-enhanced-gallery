@@ -24,9 +24,8 @@
   width: 48px;
   height: 48px;
 
-  /* Glassmorphism */
+  /* Glassmorphism - backdrop-filter 제거 (Epic TEST-FAILURE-FIX-REMAINING Phase 3) */
   background: var(--xeg-color-surface-glass);
-  backdrop-filter: blur(12px);
   border: 1px solid var(--xeg-color-border-subtle);
   border-radius: var(--xeg-radius-md);
   box-shadow: var(--shadow-md);
@@ -47,11 +46,11 @@
 
 /* Direction variants */
 .left {
-  left: 24px;
+  left: var(--xeg-spacing-lg); /* 24px */
 }
 
 .right {
-  right: 24px;
+  right: var(--xeg-spacing-lg); /* 24px */
 }
 
 /* Hover state */

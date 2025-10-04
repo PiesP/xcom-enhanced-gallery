@@ -4,6 +4,7 @@
  */
 import type { JSX } from 'solid-js';
 import { Toolbar } from './Toolbar';
+import { languageService } from '@shared/services/LanguageService';
 
 export interface ToolbarUnifiedProps {
   readonly children?: unknown;
@@ -26,7 +27,7 @@ function InternalToolbarUnified(_props: ToolbarUnifiedProps): JSX.Element {
     onFitWidth: noop,
     onFitHeight: noop,
     onFitContainer: noop,
-    'aria-label': '갤러리 도구모음',
+    'aria-label': languageService.getString('toolbar.galleryToolbar'),
   });
 }
 

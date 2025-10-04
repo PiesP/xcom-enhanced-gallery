@@ -1,11 +1,19 @@
 /**
- * @fileoverview SolidJS 기반 Settings Panel
+ * @fileoverview Soliconst SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
+  const solid = getSolidCore();
+  const { createSignal, createEffect, onCleanup, createMemo } = solid;
+
+  const themeService = new ThemeService();
+
+  const getInitialTheme = (): ThemeOption => {
+    try {
+      const value = themeService.getCurrentTheme?.();tings Panel
  * @description FRAME-ALT-001 Stage B - Settings UI Solid 마이그레이션 1단계
  */
 
 import { getSolidCore } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { LanguageService } from '@shared/services/LanguageService';
+import { languageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 import styles from '@shared/components/ui/SettingsModal/SettingsModal.module.css';
@@ -27,7 +35,6 @@ const SolidSettingsPanel = (props: SolidSettingsPanelProps) => {
   const solid = getSolidCore();
   const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
-  const languageService = new LanguageService();
   const themeService = new ThemeService();
 
   const getInitialTheme = (): ThemeOption => {

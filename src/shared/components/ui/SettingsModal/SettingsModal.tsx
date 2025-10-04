@@ -9,8 +9,8 @@ import { ComponentStandards } from '../StandardProps';
 import { ModalShell } from '../ModalShell';
 import { IconButton } from '../Button/IconButton';
 import { LanguageSelector } from '../LanguageSelector';
-import { LanguageService } from '@shared/services/LanguageService';
-import type { SupportedLanguage } from '@shared/services/LanguageService';
+import { languageService } from '@shared/services/LanguageService';
+import type { SupportedLanguage, LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import { getSetting, setSetting } from '@shared/container/settings-access';
 import primitiveStyles from '@shared/styles/primitives.module.css';
@@ -76,7 +76,6 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   const [currentLanguage, setCurrentLanguage] = solid.createSignal<SupportedLanguage>('auto');
   const [showProgressToast, setShowProgressToast] = solid.createSignal(false);
 
-  const languageService = new LanguageService();
   const themeService = new ThemeService();
 
   const [localizedStrings, setLocalizedStrings] = solid.createSignal(
