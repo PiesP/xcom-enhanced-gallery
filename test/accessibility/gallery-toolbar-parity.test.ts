@@ -108,7 +108,7 @@ describe('FRAME-ALT-001 Stage E — Gallery toolbar parity', () => {
     const toolbar = host.querySelector('[data-gallery-element="toolbar"]') as HTMLElement | null;
     expect(toolbar).not.toBeNull();
     expect(toolbar?.getAttribute('role')).toBe('toolbar');
-    expect(toolbar?.getAttribute('aria-label')).toBe('갤러리 도구모음');
+    expect(toolbar?.getAttribute('aria-label')).toBe('Gallery toolbar');
 
     const navPrevious = toolbar?.querySelector(
       '[data-gallery-element="nav-previous"]'
@@ -126,11 +126,11 @@ describe('FRAME-ALT-001 Stage E — Gallery toolbar parity', () => {
       '[data-gallery-element="close"]'
     ) as HTMLElement | null;
 
-    expect(navPrevious?.getAttribute('aria-label')).toBe('이전 미디어');
-    expect(navNext?.getAttribute('aria-label')).toBe('다음 미디어');
-    expect(downloadCurrent?.getAttribute('aria-label')).toBe('현재 파일 다운로드');
+    expect(navPrevious?.getAttribute('aria-label')).toBe('Previous media');
+    expect(navNext?.getAttribute('aria-label')).toBe('Next media');
+    expect(downloadCurrent?.getAttribute('aria-label')).toBe('Download current file');
     expect(downloadAll?.getAttribute('data-gallery-element')).toBe('download-all');
-    expect(closeButton?.getAttribute('aria-label')).toBe('갤러리 닫기');
+    expect(closeButton?.getAttribute('aria-label')).toBe('Close gallery');
 
     const counterSection = toolbar?.querySelector('[data-gallery-element="counter-section"]');
     expect(counterSection).not.toBeNull();
