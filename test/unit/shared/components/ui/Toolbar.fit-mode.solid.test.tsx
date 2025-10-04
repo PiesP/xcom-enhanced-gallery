@@ -75,14 +75,14 @@ describe('Toolbar fit-mode selection', () => {
 
   it('defaults to internal fitWidth when no prop provided', () => {
     render(() => <Toolbar {...baseProps} />);
-    const fitWidthBtn = screen.getByLabelText('가로에 맞춤');
+    const fitWidthBtn = screen.getByLabelText('Fit to width');
     expect(fitWidthBtn).toHaveAttribute('data-selected', 'true');
   });
 
   it('honors currentFitMode="fitContainer" prop on initial render', () => {
     render(() => <Toolbar {...baseProps} currentFitMode='fitContainer' />);
-    const fitContainerBtn = screen.getByLabelText('창에 맞춤');
-    const fitWidthBtn = screen.getByLabelText('가로에 맞춤');
+    const fitContainerBtn = screen.getByLabelText('Fit to window');
+    const fitWidthBtn = screen.getByLabelText('Fit to width');
     expect(fitContainerBtn).toHaveAttribute('data-selected', 'true');
     expect(fitWidthBtn).not.toHaveAttribute('data-selected', 'true');
   });
