@@ -2,12 +2,15 @@
  * ToolbarButton Primitive (TBAR-R P2)
  * - 툴바 내 모든 아이콘성 버튼을 위한 단일 추상화
  * - IconButton 대비: toolbar 전용 사이즈/상태 data-* 속성 표준화
+ * - Phase 4: 커스텀 Tooltip 통합 (title prop deprecated)
  */
 
 import type { JSX } from 'solid-js';
 import { getSolidCore } from '@shared/external/vendors';
 import { LazyIcon } from '@shared/components/LazyIcon';
 import type { IconName } from '@shared/services/iconRegistry';
+import { Tooltip } from '@shared/components/ui/Tooltip';
+import { parseShortcutText } from '@shared/utils/shortcut-parser';
 import styles from './ToolbarButton.module.css';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 
@@ -18,7 +21,9 @@ function classnames(...classes: Array<string | null | undefined | false>): strin
 export interface ToolbarButtonProps {
   readonly icon?: IconName;
   readonly 'aria-label': string;
+  /** @deprecated Use tooltipText for custom Tooltip. title prop is no longer supported. */
   readonly title?: string;
+  readonly tooltipText?: string;
   readonly disabled?: boolean;
   readonly loading?: boolean;
   readonly selected?: boolean;
@@ -34,6 +39,7 @@ export const ToolbarButton = (props: ToolbarButtonProps): JSX.Element => {
   const { createMemo, createSignal, createEffect, onCleanup } = getSolidCore();
 
   const [buttonEl, setButtonEl] = createSignal<HTMLButtonElement | undefined>(undefined);
+  const [showTooltip, setShowTooltip] = createSignal(false);
 
   const buttonClass = createMemo(() =>
     classnames(
@@ -101,7 +107,70 @@ export const ToolbarButton = (props: ToolbarButtonProps): JSX.Element => {
     });
   });
 
-  return (
+  // Tooltip content 생성: tooltipText가 있으면 단축키 파싱하여 <kbd> 마크업 포함
+  const tooltipContent = createMemo(() => {
+    const text = props.tooltipText;
+    if (!text) {
+      return null;
+    }
+
+    const parsed = parseShortcutText(text);
+    if (parsed.shortcuts.length === 0) {
+      // 단축키가 없으면 일반 텍스트
+      return parsed.text.trim();
+    }
+
+    // JSX 생성: 텍스트 + <kbd> 요소들
+    const { Show } = getSolidCore();
+    return (
+      <>
+        {parsed.text}
+        <Show when={parsed.shortcuts.length > 0}>
+          {parsed.shortcuts.map((key, index) => (
+            <>
+              {index > 0 ? '+' : ''}
+              <kbd>{key}</kbd>
+            </>
+          ))}
+        </Show>
+      </>
+    );
+  });
+
+  // 툴팁 이벤트 핸들러
+  createEffect(() => {
+    const node = buttonEl();
+    if (!node || !tooltipContent()) {
+      return;
+    }
+
+    const handleMouseEnter = () => {
+      setShowTooltip(true);
+    };
+    const handleMouseLeave = () => {
+      setShowTooltip(false);
+    };
+    const handleFocus = () => {
+      setShowTooltip(true);
+    };
+    const handleBlur = () => {
+      setShowTooltip(false);
+    };
+
+    node.addEventListener('mouseenter', handleMouseEnter);
+    node.addEventListener('mouseleave', handleMouseLeave);
+    node.addEventListener('focus', handleFocus);
+    node.addEventListener('blur', handleBlur);
+
+    onCleanup(() => {
+      node.removeEventListener('mouseenter', handleMouseEnter);
+      node.removeEventListener('mouseleave', handleMouseLeave);
+      node.removeEventListener('focus', handleFocus);
+      node.removeEventListener('blur', handleBlur);
+    });
+  });
+
+  const buttonElement = (
     <button
       type='button'
       {...(restProps() as Record<string, unknown>)}
@@ -110,7 +179,6 @@ export const ToolbarButton = (props: ToolbarButtonProps): JSX.Element => {
       }}
       class={buttonClass()}
       aria-label={props['aria-label']}
-      title={props.title ?? props['aria-label']}
       disabled={isDisabled()}
       aria-disabled={isDisabled() ? 'true' : 'false'}
       data-disabled={isDisabled() ? 'true' : undefined}
@@ -122,6 +190,15 @@ export const ToolbarButton = (props: ToolbarButtonProps): JSX.Element => {
     >
       {props.icon ? <LazyIcon name={props.icon} /> : null}
     </button>
+  );
+
+  // Tooltip이 있으면 래핑, 없으면 버튼만 반환
+  return tooltipContent() ? (
+    <Tooltip content={tooltipContent()!} show={showTooltip()} placement='top' delay={500}>
+      {buttonElement}
+    </Tooltip>
+  ) : (
+    buttonElement
   );
 };
 
