@@ -79,39 +79,44 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ---
 
-#### Phase 2: GREEN (구현)
+#### Phase 2: GREEN (구현) ✅
 
-**Task 1**: `scripts/run-codeql.mjs` 개선
+**완료일**: 2025-10-05
 
-- [ ] 상세 로깅 강화
-  - Fallback 전환 시점 명시적 로깅
-  - 쿼리 팩 종류 출력 (표준 vs Fallback)
-  - 예상 규칙 수 가이드 제공
-- [ ] 에러 메시지 명확화
+**Task 1**: `scripts/run-codeql.mjs` 개선 ✅
+
+- ✅ 상세 로깅 강화
+  - Fallback 전환 시점 명시적 로깅 (구분선 + 전환 사유 + 환경별 가이드)
+  - 쿼리 팩 종류 출력 (표준/Fallback/커스텀 감지)
+  - 예상 규칙 수 가이드 제공 (표준: 400+, Fallback: 50+)
+- ✅ 에러 메시지 명확화
   - 환경별 가이드 제공 (Advanced Security 필요 여부)
-  - 트러블슈팅 힌트 추가
-- [ ] 쿼리 팩 통계 로깅 개선
+  - 트러블슈팅 힌트 추가 (네트워크/인증/CLI 설치)
+  - 참고 문서 링크 제공
+- ✅ 쿼리 팩 통계 로깅 개선
   - SARIF 생성 후 실제 규칙 수 출력
-  - js/ 보안 규칙 비율 출력
+  - js/ 보안 규칙 비율 출력 (백분율 포함)
+  - 발견된 경고 수 출력
 
-**Task 2**: 테스트 GREEN 검증
+**Task 2**: 테스트 GREEN 검증 ✅
 
-- [ ] 로컬 테스트 실행
+- ✅ 로컬 테스트 실행
 
   ```pwsh
   npm test -- test/architecture/codeql-local-enhancement.contract.test.ts
   ```
 
-- [ ] 18/18 tests GREEN 확인
-- [ ] 환경 정보 콘솔 출력 검증
+- ✅ 15/15 tests GREEN 확인
+- ✅ 환경 정보 콘솔 출력 검증
 
-**Acceptance**:
+**Acceptance**: ✅
 
-- ✅ 18/18 tests GREEN
+- ✅ 15/15 tests GREEN
 - ✅ 스크립트 로깅 개선 완료
 - ✅ 에러 메시지 명확화 완료
 - ✅ `npm run typecheck` 통과
 - ✅ `npm run lint:fix` 통과
+- ✅ `npm run build:dev` 통과
 
 ---
 

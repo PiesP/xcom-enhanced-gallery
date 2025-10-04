@@ -78,9 +78,32 @@ Node 20/22 매트릭스:
 - CodeQL 스캔 (SARIF + 요약 + 개선 계획 업로드)
 
 ```pwsh
-npm run codeql:scan       # 로컬 CodeQL 분석
+npm run codeql:scan       # 로컬 CodeQL 분석 (Fallback 쿼리 팩 자동 전환)
 npm run codeql:dry-run    # 미리보기
 ```
+
+**로컬 환경 제약**:
+
+- **표준 쿼리 팩** (`codeql/javascript-security-and-quality`): GitHub Advanced
+  Security 전용 (403 Forbidden)
+- **Fallback 쿼리 팩** (`codeql/javascript-queries`): 로컬 환경에서 사용 가능
+  (50+ 규칙)
+- **자동 전환**: 표준 쿼리 팩 접근 실패 시 Fallback으로 자동 전환
+
+**CI 환경**:
+
+- GitHub Code Scanning: 표준 쿼리 팩 자동 제공 (400+ 보안 규칙)
+- SARIF 업로드: `github/codeql-action/upload-sarif@v3`
+- 역할 분리: Vitest (프로젝트 정책), CodeQL (보안 취약점)
+
+**로깅 개선** (2025-10-05):
+
+- Fallback 전환 시 명확한 가이드 제공
+- 쿼리 팩 종류 자동 감지 (표준/Fallback/커스텀)
+- 예상 규칙 수 표시 (표준: 400+, Fallback: 50+)
+- 환경별 트러블슈팅 힌트 제공
+
+**상세 가이드**: [`docs/CODEQL_LOCAL_GUIDE.md`](docs/CODEQL_LOCAL_GUIDE.md)
 
 ### 릴리즈 (`release.yml`)
 
@@ -130,24 +153,28 @@ npm run icon:audit:save     # docs/icon-usage-report.md 저장
 ### CodeQL 분석
 
 ```pwsh
-npm run codeql:scan         # 로컬 분석 (제약: 표준 쿼리 팩 접근 권한 필요)
+npm run codeql:scan         # 로컬 분석 (Fallback 쿼리 팩 자동 전환)
 npm run codeql:dry-run      # 미리보기
 ```
 
 산출물: SARIF, 요약 CSV, 개선 계획 마크다운
 
-**로컬 제약**:
+**로컬 환경 특징**:
 
-- `codeql/javascript-security-and-quality` 접근 거부 (GitHub Advanced Security
-  전용)
-- 로컬 스캔은 Fallback 쿼리 팩(`codeql/javascript-queries`) 사용 가능
-- 완전한 보안 분석은 CI 환경에서 실행 (`security.yml` 워크플로)
+- **자동 Fallback 전환**: 표준 쿼리 팩 접근 실패 시 자동으로 Fallback 쿼리 팩
+  사용
+- **명확한 로깅**: 전환 사유, 쿼리 팩 종류, 예상 규칙 수 표시
+- **환경 감지**: 표준/Fallback/커스텀 쿼리 팩 자동 감지
+- **트러블슈팅**: 에러 발생 시 환경별 가이드 제공
 
-**CI 환경**:
+**쿼리 팩 정보**:
 
-- GitHub Code Scanning: 표준 쿼리 팩 자동 제공 (400+ 보안 규칙)
-- SARIF 업로드: `github/codeql-action/upload-sarif@v3`
-- 역할 분리: Vitest (프로젝트 정책), CodeQL (보안 취약점)
+| 환경 | 쿼리 팩                                  | 규칙 수 | 접근 권한                     |
+| ---- | ---------------------------------------- | ------- | ----------------------------- |
+| 로컬 | `codeql/javascript-queries`              | 50+     | 무료                          |
+| CI   | `codeql/javascript-security-and-quality` | 400+    | GitHub Advanced Security 필요 |
+
+**상세 가이드**: [`docs/CODEQL_LOCAL_GUIDE.md`](docs/CODEQL_LOCAL_GUIDE.md)
 
 ### Codemod 도구
 
