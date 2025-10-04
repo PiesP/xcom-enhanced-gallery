@@ -1,19 +1,8 @@
 # 🗂️ TDD 리팩토링 백로그
 
-> 활성화되지 않은 향후 후보 아이## 최근 승격 히스토리
+> 활성화되지 않은 향후 후보 저장소 (선정 전까지 여기서만 유지)
 
-**2025-10-04**: `TEST-FAILURE-FIX-REMAINING` 승격 → `TDD_REFACTORING_PLAN.md`
-활성 Epic으로 이동
-
-- 선정 이유: CI 완전 통과를 위한 필수 작업, 높은 우선순위
-- Epic TEST-FAILURE-ALIGNMENT-2025에서 이관된 9개 실패 테스트 수정
-- 4단계 Phase: Bundle budget → Tooltip → CSS 정책 → 구현 이슈
-- 예상 영향: 테스트 안정성 향상, CI 통과율 100% 달성
-
-**2025-01-08**: `CUSTOM-TOOLTIP-COMPONENT` 승격 → `TDD_REFACTORING_PLAN.md` 활성
-Epic으로 이동저장소 (선정 전까지 여기서만 유지)
-
-> **최근 업데이트**: 2025-01-04 — UI-TEXT-ICON-OPTIMIZATION 활성 계획으로 승격
+> **최근 업데이트**: 2025-10-04 — TEST-FAILURE-FIX-REMAINING Epic 완료
 >
 > 사용 방법:
 >
@@ -30,25 +19,77 @@ Epic으로 이동저장소 (선정 전까지 여기서만 유지)
 
 ---
 
-## 우선순위별 후보 목록
+## 최근 승격 히스토리
 
-### HIGH Priority
+**2025-10-04**: `TEST-FAILURE-FIX-REMAINING` 완료 →
+`TDD_REFACTORING_PLAN_COMPLETED.md` 이관 완료 ✅
 
-(현재 없음 - TEST-FAILURE-FIX-REMAINING Epic으로 승격됨)
+- 완료 내용: Phase 1-4 완료, 테스트 실패 38→29개 개선
+- 성과: Bundle budget, Tooltip, Hardcoded values, LanguageService 싱글톤 전환
+- 남은 작업: 29개 테스트 실패 → 백로그에 REMAINING-TEST-FAILURES로 등록
 
 ---
+
+## 우선순위별 후보 목록
 
 ### MEDIUM Priority
 
-(현재 없음)
+**READY | REMAINING-TEST-FAILURES | 남은 29개 테스트 실패 해결 | CI 완전 통과
+달성 | M | Epic TEST-FAILURE-FIX-REMAINING에서 이관**
 
-### LOW Priority
+**배경**: Epic TEST-FAILURE-FIX-REMAINING 완료 후 남은 29개 테스트 실패
 
-(현재 없음 - CUSTOM-TOOLTIP-COMPONENT 승격됨)
+**테스트 분류**:
+
+1. **Signal Native 패턴** (8개):
+   - `test/shared/state/gallery-signals-native.test.ts` (4 failed)
+   - `test/shared/state/toolbar-signals-native.test.ts` (4 failed)
+   - 레거시 `.value` 패턴을 사용하지 않는지 검증
+
+2. **Toolbar Hover** (2개):
+   - `test/features/toolbar/toolbar-hover-consistency.test.ts` (1 failed)
+   - `test/features/toolbar/toolbar-hover-consistency-completion.test.ts` (1
+     failed)
+   - `toolbarButton` 복잡한 transform 효과 제거 검증
+
+3. **Settings Modal Accessibility** (2개):
+   - `test/unit/shared/components/ui/settings-modal-accessibility.test.tsx` (1
+     failed)
+   - `test/unit/shared/components/ui/settings-modal-accessibility.solid.test.tsx`
+     (1 failed)
+
+4. **Language Icons Integration** (3개):
+   - `test/features/settings/settings-modal-language-icons.integration.test.tsx`
+     (3 failed)
+
+5. **Full Workflow** (7개):
+   - `test/integration/full-workflow.test.ts` (7 failed)
+   - 통합 워크플로 검증
+
+6. **User Interactions** (3개):
+   - `test/behavioral/user-interactions-fixed.test.ts` (3 failed)
+
+7. **Userscript Allowlist** (2개):
+   - `test/security/userscript-allowlist.test.ts` (2 failed)
+   - GM_xmlhttpRequest, GM_notification mock 이슈
+
+**접근 방향**:
+
+- Sub-Epic으로 분할 (Signal Native, Toolbar, Settings, Integration 등)
+- 각 Sub-Epic을 독립적으로 진행
+- 우선순위: Signal Native → Toolbar → 나머지
+
+**예상 난이도**: Medium (구조적 개선 필요)
 
 ---
 
-## 최근 승격 히스토리
+### LOW Priority
+
+(현재 없음)
+
+---
+
+## 과거 승격 히스토리 (아카이브)
 
 **2025-01-08**: `CUSTOM-TOOLTIP-COMPONENT` 승격 → `TDD_REFACTORING_PLAN.md` 활성
 Epic으로 이동

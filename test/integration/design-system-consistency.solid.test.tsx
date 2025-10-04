@@ -64,6 +64,15 @@ vi.mock('@shared/services/LanguageService', () => ({
     getCurrentLanguage: vi.fn(() => 'en'),
     setLanguage: vi.fn(),
   })),
+  languageService: {
+    getString: vi.fn((key: string) => key),
+    getFormattedString: vi.fn((key: string, params?: Record<string, string | number>) => {
+      if (!params) return key;
+      return `${key} (${Object.values(params).join(', ')})`;
+    }),
+    getCurrentLanguage: vi.fn(() => 'en'),
+    setLanguage: vi.fn(),
+  },
 }));
 
 vi.mock('@shared/services/ThemeService', () => ({
