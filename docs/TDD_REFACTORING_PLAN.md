@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-04 — Epic GALLERY-NAV-ENHANCEMENT Phase 1-2 완료 및
-이관
+**최근 업데이트**: 2025-01-04 — Epic JSX-PRAGMA-CLEANUP Phase 1-3 완료 및 이관
 
 ---
 
@@ -21,11 +20,25 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-**현재 활성 Epic 없음** - 백로그에서 다음 작업 선정 필요
+(현재 없음 - 백로그에서 다음 Epic 선정 필요)
 
 ---
 
 ## 3. 최근 완료 Epic
+
+### Epic JSX-PRAGMA-CLEANUP Phase 1-3 (완료: 2025-01-04)
+
+**목적**: esbuild JSX pragma 경고 제거 및 SolidJS 설정 표준화
+
+**완료 Phase**: Phase 1 (RED, 6 tests), Phase 2 (GREEN, 6/6 passing), Phase 3
+(REFACTOR, 문서화 + 커밋)
+
+**결과**: ✅ 6/6 tests GREEN, 빌드 경고 0개, TypeScript 0 errors, 번들 크기 동일
+(781.20 KB)
+
+상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-04 섹션 참조)
+
+---
 
 ### Epic GALLERY-NAV-ENHANCEMENT Phase 1-2 (완료: 2025-01-04)
 

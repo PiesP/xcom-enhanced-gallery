@@ -1,4 +1,3 @@
-/** @jsxImportSource solid-js */
 /**
  * @file NavigationButton component
  * @description Gallery navigation button (left/right) with accessibility support
