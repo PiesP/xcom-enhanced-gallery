@@ -1,7 +1,18 @@
 # 🗂️ TDD 리팩토링 백로그
 
-> 활성화되지 않은 향후 후보 아이디어 저장소 (선정 전까지 여기서만 유지)
->
+> 활성화되지 않은 향후 후보 아이## 최근 승격 히스토리
+
+**2025-10-04**: `TEST-FAILURE-FIX-REMAINING` 승격 → `TDD_REFACTORING_PLAN.md`
+활성 Epic으로 이동
+
+- 선정 이유: CI 완전 통과를 위한 필수 작업, 높은 우선순위
+- Epic TEST-FAILURE-ALIGNMENT-2025에서 이관된 9개 실패 테스트 수정
+- 4단계 Phase: Bundle budget → Tooltip → CSS 정책 → 구현 이슈
+- 예상 영향: 테스트 안정성 향상, CI 통과율 100% 달성
+
+**2025-01-08**: `CUSTOM-TOOLTIP-COMPONENT` 승격 → `TDD_REFACTORING_PLAN.md` 활성
+Epic으로 이동저장소 (선정 전까지 여기서만 유지)
+
 > **최근 업데이트**: 2025-01-04 — UI-TEXT-ICON-OPTIMIZATION 활성 계획으로 승격
 >
 > 사용 방법:
@@ -23,47 +34,7 @@
 
 ### HIGH Priority
 
-#### TEST-FAILURE-FIX-REMAINING
-
-- **상태**: READY
-- **요약**: 남은 9개 실패 테스트 수정
-- **기대 효과**: 테스트 안정성 및 CI 통과
-- **난이도**: M (Medium)
-- **비고**: Epic TEST-FAILURE-ALIGNMENT-2025에서 이관
-
-Epic TEST-FAILURE-ALIGNMENT-2025 Phase 3 부분 완료 후 남은 실패 테스트들:
-
-1. **Tooltip 타임아웃** (3개 테스트) - tooltip-component.test.tsx
-   - 타이밍 이슈 조정 필요
-   - PC 전용 이벤트, ARIA, 디자인 토큰 정책은 준수 중
-
-2. **Hardcoded values** (2개 테스트) - hardcoded-values-removal.red.test.ts
-   - CSS에서 하드코딩된 값 감지
-   - 토큰 체계 개선 또는 예외 허용 범위 조정
-
-3. **Glassmorphism cleanup** (1개 테스트) - final-glassmorphism-cleanup.test.ts
-   - 빌드 산출물에 backdrop-filter:blur 감지
-   - 완전 제거 또는 허용 범위 조정
-
-4. **구현 이슈** (여러 개):
-   - gallery-toolbar-parity.test.ts
-   - toolbar-fit-mode.selected-state.test.tsx (2 tests)
-   - toolbar-refine-structure.test.tsx
-   - solid-settings-panel.integration.test.tsx
-   - main-solid-bootstrap-only.test.ts
-   - bundle-budget.test.ts (번들 메트릭 업데이트 필요)
-
-**해결 방안**:
-
-- Tooltip: 테스트 타임아웃 증가 또는 타이머 모킹 개선
-- Hardcoded/Glassmorphism: 실제 위반 수정 또는 예외 범위 문서화
-- Bundle budget: `metrics/bundle-metrics.json` 업데이트 (현재 크기 기준)
-- 구현 이슈: 개별 검토 및 수정
-
-**Acceptance**:
-
-- 테스트 실패 9개 → 0개
-- CI 완전 통과 (타입/린트/테스트/빌드 all GREEN)
+(현재 없음 - TEST-FAILURE-FIX-REMAINING Epic으로 승격됨)
 
 ---
 
