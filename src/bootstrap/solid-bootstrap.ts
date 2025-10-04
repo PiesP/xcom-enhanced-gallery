@@ -5,6 +5,8 @@
 
 import { logger } from '@/shared/logging';
 import { getSolidCore, getSolidWeb } from '@shared/external/vendors';
+import { initializeGalleryDerivedState } from '@/shared/state/signals/gallery.signals';
+import { initializeToolbarDerivedState } from '@/shared/state/signals/toolbar.signals';
 
 export interface SolidBootstrapHandle {
   dispose(): void | Promise<void>;
@@ -29,6 +31,11 @@ export async function startSolidBootstrap(): Promise<SolidBootstrapHandle> {
       // Ensure Solid runtime entry points are ready.
       getSolidCore();
       getSolidWeb();
+
+      // Initialize derived state with createRoot context
+      initializeGalleryDerivedState();
+      initializeToolbarDerivedState();
+      logger.debug('[SolidBootstrap] Signal derived state initialized');
     } catch (error) {
       logger.error('[SolidBootstrap] Solid 벤더 초기화 실패:', error);
       throw error;

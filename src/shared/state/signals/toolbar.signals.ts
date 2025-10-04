@@ -100,21 +100,78 @@ export function setHighContrast(enabled: boolean): void {
 // 간소화된 선택자 함수들 (Native SolidJS createMemo 사용)
 // =============================================================================
 
+// Disposer for derived state cleanup
+let _derivedStateDisposer: (() => void) | undefined;
+
+// Derived state accessors (initialized in createRoot)
+let _getCurrentToolbarMode: (() => ToolbarState['currentMode']) | undefined;
+let _getToolbarInfo: (() => Pick<ToolbarState, 'currentMode' | 'needsHighContrast'>) | undefined;
+
+/**
+ * Initialize toolbar derived state with createRoot wrapper
+ * @description Prevents memory leaks by wrapping createMemo in createRoot
+ */
+export function initializeToolbarDerivedState(): void {
+  if (_derivedStateDisposer) {
+    return; // Already initialized
+  }
+
+  _derivedStateDisposer = getSolidCore().createRoot(dispose => {
+    // Create all memos inside createRoot context
+    _getCurrentToolbarMode = createMemo(() => toolbarState().currentMode);
+
+    _getToolbarInfo = createMemo(() => {
+      const state = toolbarState();
+      return {
+        currentMode: state.currentMode,
+        needsHighContrast: state.needsHighContrast,
+      };
+    });
+
+    return dispose;
+  });
+}
+
+/**
+ * Dispose toolbar derived state
+ * @description Clean up all memos and allow reinitialization
+ */
+export function disposeToolbarDerivedState(): void {
+  if (_derivedStateDisposer) {
+    _derivedStateDisposer();
+    _derivedStateDisposer = undefined;
+
+    // Clear memo references
+    _getCurrentToolbarMode = undefined;
+    _getToolbarInfo = undefined;
+  }
+}
+
 /**
  * 현재 툴바 모드 가져오기 (Memoized Accessor)
+ * @throws {Error} If derived state not initialized
  */
-export const getCurrentToolbarMode = createMemo(() => toolbarState().currentMode);
+export const getCurrentToolbarMode = (): ToolbarState['currentMode'] => {
+  if (!_getCurrentToolbarMode) {
+    throw new Error(
+      'Toolbar derived state not initialized. Call initializeToolbarDerivedState() first.'
+    );
+  }
+  return _getCurrentToolbarMode();
+};
 
 /**
  * 툴바 상태 요약 정보 (CSS 호버 시스템용으로 간소화, Memoized Accessor)
+ * @throws {Error} If derived state not initialized
  */
-export const getToolbarInfo = createMemo(() => {
-  const state = toolbarState();
-  return {
-    currentMode: state.currentMode,
-    needsHighContrast: state.needsHighContrast,
-  };
-});
+export const getToolbarInfo = (): Pick<ToolbarState, 'currentMode' | 'needsHighContrast'> => {
+  if (!_getToolbarInfo) {
+    throw new Error(
+      'Toolbar derived state not initialized. Call initializeToolbarDerivedState() first.'
+    );
+  }
+  return _getToolbarInfo();
+};
 
 /**
  * 이벤트 리스너 등록
