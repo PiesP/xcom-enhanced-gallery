@@ -4,8 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-08 — Epic CUSTOM-TOOLTIP-COMPONENT Phase 1-3 완료,
-Phase 4 (ToolbarButton 통합) 대기 중
+**최근 업데이트**: 2025-10-04 — Epic SOLIDJS-REACTIVE-ROOT-CONTEXT 추가 (메모리
+누수 방지)
 
 ---
 
@@ -25,34 +25,235 @@ Phase 4 (ToolbarButton 통합) 대기 중
 
 ### 현재 활성 Epic
 
-#### Epic CUSTOM-TOOLTIP-COMPONENT (활성화: 2025-01-08, Phase 1-3 완료 ✅)
+**Epic: SOLIDJS-REACTIVE-ROOT-CONTEXT** (P1 - Critical)
 
-**목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
-브랜드 일관성 + 완전한 다국어 지원
+**목적**: SolidJS `createMemo` 메모리 누수 방지 — 전역 상태 파생값을
+`createRoot`로 래핑하여 dispose 가능하도록 개선
 
-**우선순위**: P2 (Medium Impact) — 사용자 경험 개선, 브랜드 정체성 강화
-**난이도**: M (Medium, 5-6 files, ~300 lines) **의존성**: Epic
-UI-TEXT-ICON-OPTIMIZATION 완료 ✅
+**우선순위**: P1 (Critical Impact) — 메모리 누수 방지, 안정성 강화 **난이도**: M
+(Medium, 4-5 files, ~200 lines) **의존성**: 없음
 
-**완료 Phase**:
+**배경**:
 
-- ✅ Phase 1 (RED): 16 tests 작성 (모두 GREEN 전환)
-- ✅ Phase 2 (GREEN): Tooltip 컴포넌트 구현 (PC 전용, 디자인 토큰, ARIA)
-- ✅ Phase 3 (REFACTOR): 문서화 완료 (CHANGELOG, CODING_GUIDELINES)
+- **현재 문제**: 콘솔 로그 분석 결과 "computations created outside a
+  `createRoot` or `render` will never be disposed" 경고 다수 발생 (10회+)
+- **원인**: `gallery.signals.ts`와 `toolbar.signals.ts`에서 모듈 레벨에서
+  `createMemo`를 직접 호출
+- **영향**: 반응형 계산이 dispose되지 않아 메모리 누수(memory leak) 발생 가능
+- **추가 문제**:
+  1. StaticVendorManager lazy init 경고 — 초기화 순서 문제
+  2. CoreService 서비스 덮어쓰기 경고 — toast.controller 중복 등록
 
-**남은 Phase**:
+**전략**:
 
-- ⏸️ Phase 4 (ToolbarButton 통합): 선택적 — 12개 버튼에 Tooltip 적용 (필요 시
-  진행)
+- **Option A 선택**: createRoot로 전역 상태 래핑
+  - SolidJS의 정석적인 방법
+  - 메모리 누수 완전 차단
+  - dispose 가능한 상태 관리
+- **Option B 거부**: lazy initialization만 개선 — 근본적 해결 불가
+- **Option C 거부**: Reactive Context 대규모 분리 — 리소스 과다 소요
 
-**번들 영향**:
+**솔루션 조합**: Option A + 초기화 순서 개선 + 서비스 중복 방지
 
-- Phase 1-3: 변동 없음 (테스트 + 문서화만)
-- 예상 Phase 4: +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
+**영향 범위**:
+
+- 수정: `src/shared/state/signals/gallery.signals.ts`
+- 수정: `src/shared/state/signals/toolbar.signals.ts`
+- 수정: `src/bootstrap/initialization.ts` (초기화 순서)
+- 수정: `src/bootstrap/core-service.ts` (서비스 중복 등록 방지)
+- 테스트: `test/shared/state/signals/*.test.ts` (수정 및 추가)
+
+**예상 번들 영향**: +0.3 KB raw (+0.1%), 0 KB gzip (최적화 후 상쇄)
+
+**Acceptance Criteria**:
+
+- ✅ 콘솔에서 "computations created outside" 경고 0건
+- ✅ StaticVendorManager lazy init 경고 0건
+- ✅ CoreService 서비스 덮어쓰기 경고 0건
+- ✅ 기존 테스트 모두 GREEN 유지
+- ✅ 메모리 누수 테스트 추가 및 통과
+- ✅ 빌드/린트/타입 체크 통과
 
 ---
 
-**최근 완료**: Epic UI-TEXT-ICON-OPTIMIZATION (2025-01-08)
+#### Phase 1: RED (메모리 누수 재현 테스트)
+
+**목표**: 현재 메모리 누수 문제를 재현하는 테스트 작성 (모두 RED)
+
+**테스트 파일**: `test/shared/state/signals/reactive-root-context.test.ts`
+
+**테스트 범위**:
+
+1. **메모리 누수 검증** (3 tests):
+   - `createMemo` 외부 생성 시 콘솔 경고 발생 확인
+   - 반복 생성 시 메모리 증가 확인
+   - dispose 호출 후 정리 실패 확인
+
+2. **초기화 순서** (2 tests):
+   - StaticVendorManager 접근 전 초기화 확인
+   - ToastManager 접근 시 벤더 준비 확인
+
+3. **서비스 중복 등록** (2 tests):
+   - 동일 서비스 ID 재등록 시 경고 발생 확인
+   - 중복 등록 시 이전 서비스 덮어쓰기 확인
+
+**실행**:
+`npx vitest run test/shared/state/signals/reactive-root-context.test.ts`
+
+**예상 결과**: 7 tests, 7 failed (RED)
+
+---
+
+#### Phase 2: GREEN (createRoot 래퍼 구현)
+
+**목표**: 전역 파생 상태를 `createRoot`로 래핑하여 메모리 누수 차단
+
+**파일**: `src/shared/state/signals/gallery.signals.ts`
+
+**변경사항**:
+
+```typescript
+// Before: 모듈 레벨에서 직접 createMemo
+export const getCurrentMediaItem = createMemo((): MediaInfo | null => {
+  const state = galleryState();
+  return state.mediaItems[state.currentIndex] || null;
+});
+
+// After: createRoot로 래핑
+let _disposer: (() => void) | undefined;
+
+export function initializeGalleryDerivedState(): void {
+  if (_disposer) return; // 중복 초기화 방지
+
+  _disposer = getSolidCore().createRoot(dispose => {
+    // 모든 createMemo를 내부로 이동
+    return dispose;
+  });
+}
+
+export function disposeGalleryDerivedState(): void {
+  if (_disposer) {
+    _disposer();
+    _disposer = undefined;
+  }
+}
+```
+
+**파일**: `src/shared/state/signals/toolbar.signals.ts` (동일 패턴 적용)
+
+**실행**: `npm test`
+
+**예상 결과**: 7 tests, 7 passed (GREEN)
+
+---
+
+#### Phase 3: GREEN (초기화 순서 개선)
+
+**목표**: StaticVendorManager lazy init 경고 제거
+
+**파일**: `src/bootstrap/initialization.ts`
+
+**변경사항**:
+
+```typescript
+// Before: ToastManager 생성 시 implicit lazy init
+export async function initializeCriticalSystems(): Promise<void> {
+  // ...
+  const toastManager = ToastManager.getInstance(); // StaticVendorManager 접근
+}
+
+// After: 명시적 벤더 초기화 우선
+export async function initializeCriticalSystems(): Promise<void> {
+  // 1. 벤더 먼저 초기화
+  await initializeVendors();
+
+  // 2. 그 다음 ToastManager
+  const toastManager = ToastManager.getInstance();
+}
+```
+
+**실행**: `npm run build:dev` 후 브라우저에서 콘솔 확인
+
+**예상 결과**: "StaticVendorManager accessed before initialization" 경고 0건
+
+---
+
+#### Phase 4: GREEN (서비스 중복 등록 방지)
+
+**목표**: CoreService 서비스 덮어쓰기 경고 제거
+
+**파일**: `src/bootstrap/core-service.ts`
+
+**변경사항**:
+
+```typescript
+export class CoreService {
+  private services = new Map<string, unknown>();
+
+  register(id: string, instance: unknown): void {
+    if (this.services.has(id)) {
+      // Before: WARN 레벨 로그 + 덮어쓰기
+      logger.warn(`[CoreService] 서비스 덮어쓰기: ${id}`);
+
+      // After: 중복 등록 방지 (에러 발생 또는 무시)
+      logger.debug(`[CoreService] 서비스 이미 등록됨, 스킵: ${id}`);
+      return; // 중복 등록 방지
+    }
+    this.services.set(id, instance);
+    logger.debug(`[CoreService] 서비스 등록: ${id}`);
+  }
+}
+```
+
+**실행**: `npm run build:dev` 후 브라우저에서 콘솔 확인
+
+**예상 결과**: "서비스 덮어쓰기" 경고 0건
+
+---
+
+#### Phase 5: REFACTOR (테스트 보강 및 문서화)
+
+**목표**: 메모리 누수 방지 패턴 테스트 및 가이드 작성
+
+**테스트 추가**:
+
+1. **수명 주기 테스트** (2 tests):
+   - `initializeGalleryDerivedState()` 중복 호출 방지 확인
+   - `disposeGalleryDerivedState()` 후 재초기화 가능 확인
+
+2. **통합 테스트** (1 test):
+   - 애플리케이션 시작/종료 시나리오 전체 흐름 확인
+
+**문서화**:
+
+- `docs/CODING_GUIDELINES.md`에 "Reactive State Management" 섹션 추가
+- 전역 파생 상태 생성 시 반드시 `createRoot` 사용 규칙 명시
+- 예제 코드 추가
+
+**실행**: `npm run validate`
+
+**예상 결과**: 모든 테스트 GREEN, 빌드/린트/타입 체크 통과
+
+---
+
+#### Phase 6: 검증 및 마무리
+
+**체크리스트**:
+
+- [ ] 콘솔 경고 0건 (브라우저 테스트)
+- [ ] 메모리 프로파일링 (Chrome DevTools)
+- [ ] 모든 기존 테스트 GREEN
+- [ ] 새 테스트 10개 추가 및 통과
+- [ ] 빌드 산출물 크기 증가 < 1%
+- [ ] 문서 업데이트 완료
+
+**완료 조건**: 위 체크리스트 모두 ✅
+
+---
+
+## 3. 최근 완료 Epic
+
+### Epic CUSTOM-TOOLTIP-COMPONENT (완료: 2025-01-08)
 
 **목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
 브랜드 일관성 + 완전한 다국어 지원

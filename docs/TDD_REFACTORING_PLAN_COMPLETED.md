@@ -2,29 +2,29 @@
 
 ---
 
-## 2025-01-08: Epic CUSTOM-TOOLTIP-COMPONENT Phase 1-3 완료 ✅ (In Progress)
+## 2025-01-08: Epic CUSTOM-TOOLTIP-COMPONENT Phase 1-4 완료 ✅
 
 ### 개요
 
 - **생성일**: 2025-01-08
-- **완료일**: 2025-01-08 (Phase 1-3)
+- **완료일**: 2025-01-08 (Phase 1-4)
 - **Epic 목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조
   (`<kbd>`) + 브랜드 일관성 + 완전한 다국어 지원
 - **우선순위**: P2 (Medium Impact)
 - **난이도**: M (Medium, 5-6 files, ~300 lines)
 - **의존성**: Epic UI-TEXT-ICON-OPTIMIZATION 완료 ✅
 
-### 전체 영향 분석 (Phase 1-3)
+### 전체 영향 분석 (Phase 1-4)
 
 **번들 크기**:
 
 - Phase 1: 변동 없음 (테스트 전용)
 - Phase 3: 변동 없음 (문서화 전용)
-- 예상 최종 (ToolbarButton 통합 후): +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
+- Phase 4 최종: +4.97 KB raw (+1.06%), +1.23 KB gzip (+1.06%)
 
 **접근성**:
 
-- ✅ WCAG 2.1 Level AA 준수: `role="tooltip"`, `aria-describedby`
+- ✅ WCAG 2.1 Level AA 준수: `role="tooltip"`, `aria-describedby`, `aria-hidden`
 - ✅ PC 전용 이벤트: mouseenter/focus, mouseleave/blur (Touch/Pointer 금지)
 - ✅ 키보드 단축키 시각적 강조: `<kbd>` 마크업 지원
 
@@ -32,7 +32,7 @@
 
 - ✅ TypeScript: 0 errors (strict mode)
 - ✅ ESLint: clean (0 warnings)
-- ✅ Tests: 16/16 GREEN (tooltip-component.test.tsx)
+- ✅ Tests: 24/24 GREEN (16 tooltip + 8 ToolbarButton integration)
 - ✅ 문서화: CHANGELOG.md, CODING_GUIDELINES.md 업데이트
 
 ---
@@ -138,7 +138,78 @@
 
 ---
 
-**다음 단계**: Phase 4 (ToolbarButton 통합) — Epic 완전 종료를 위해 필요 시 진행
+## 2025-01-08: Phase 4 — ToolbarButton Tooltip Integration ✅
+
+**목표**: ToolbarButton에 커스텀 Tooltip 통합 — 12개 버튼에 Tooltip 적용
+
+**완료 Phase**:
+
+- ✅ Phase 4 RED: 8 tests 작성
+- ✅ Phase 4 → GREEN: 모든 8 tests 통과
+- ✅ Tooltip aria-hidden 패턴 개선
+
+**테스트 파일**: `test/shared/components/ui/toolbar-button-tooltip.test.tsx`
+
+**테스트 범위** (8 tests):
+
+1. Tooltip 렌더링 (3 tests):
+   - mouseenter 시 `<kbd>` 마크업 포함 툴팁 표시 (← 단축키)
+   - 다운로드 버튼 Ctrl+D 단축키 표시
+   - 닫기 버튼 Esc 단축키 표시
+
+2. title prop 제거 (1 test):
+   - ToolbarButton이 네이티브 title 속성 렌더링 안함 (Tooltip으로 대체)
+
+3. PC 전용 이벤트 (2 tests):
+   - focus 시 툴팁 표시 (키보드 네비게이션)
+   - blur 시 툴팁 숨김 (aria-hidden="true" 적용)
+
+4. 다국어 지원 (2 tests):
+   - ko 로케일 툴팁 렌더링 (이전 미디어)
+   - en 로케일 툴팁 렌더링 (Previous media)
+
+**구현 내용**:
+
+1. `src/shared/utils/shortcut-parser.ts`: 단축키 파싱 유틸리티 생성
+   - parseShortcutText(fullText) → { text, shortcuts }
+   - 예: '이전 미디어 (←)' → { text: '이전 미디어 ', shortcuts: ['←'] }
+   - 복잡한 단축키 처리: 'Ctrl+D' → ['Ctrl', 'D']
+
+2. `src/shared/components/ui/ToolbarButton/ToolbarButton.tsx`: Tooltip 통합
+   - tooltipText prop 추가 (title prop deprecated with @deprecated JSDoc)
+   - showTooltip signal 상태 관리
+   - tooltipContent memo: parseShortcutText + <kbd> JSX 생성
+   - PC 전용 이벤트 핸들러 (mouseenter/mouseleave/focus/blur)
+   - 조건부 Tooltip 래핑: tooltipText 있으면 Tooltip으로 감싸기
+
+3. `src/shared/components/ui/Tooltip/Tooltip.solid.tsx`: aria-hidden 패턴 개선
+   - Show 컴포넌트 제거 (DOM에서 완전히 사라짐)
+   - display: none + aria-hidden="true" 패턴으로 변경
+   - 툴팁이 숨겨져도 DOM에 유지하여 접근성 향상
+
+**Acceptance Criteria**:
+
+- [x] 8 tests 모두 GREEN (8/8 passing)
+- [x] TypeScript 0 errors
+- [x] ESLint clean
+- [x] title prop deprecated (@deprecated JSDoc)
+- [x] PC 전용 이벤트만 사용 (Touch/Pointer 배제)
+- [x] 디자인 토큰만 사용 (하드코딩 없음)
+- [x] aria-hidden 패턴 개선 (DOM 유지)
+
+**번들 영향**:
+
+- 최종 번들: 472.26 KB raw (+4.97 KB, +1.06%), 117.41 KB gzip (+1.23 KB, +1.06%)
+- 목표 대비: +4.97 KB (예상 +2.5 KB 초과, 하지만 기능 완성도 우선)
+
+**Commits**:
+
+- `838cfc31`: feat(ui): complete Phase 4 ToolbarButton Tooltip integration
+- Merge commit: chore(release): merge Phase 4 ToolbarButton Tooltip integration
+
+---
+
+**Epic CUSTOM-TOOLTIP-COMPONENT 완전 종료**: Phase 1-4 모두 완료 ✅
 
 ---
 
