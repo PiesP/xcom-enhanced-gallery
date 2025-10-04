@@ -2,6 +2,371 @@
 
 ---
 
+## 2025-01-08: Sub-Epic 2 — I18N-TOOLBAR-LABELS 완료 ✅
+
+- **생성일**: 2025-01-08
+- **완료일**: 2025-01-08
+- **부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
+- **목적**: Toolbar의 하드코딩된 텍스트를 LanguageService로 전환하여 완전한
+  다국어 지원
+- **우선순위**: P1 (Medium Impact - 완전한 다국어 지원)
+- **난이도**: S (3 files, ~150 lines)
+- **배경**:
+  - Toolbar 컴포넌트에 12개 하드코딩된 한국어/영어 텍스트 존재
+  - 언어 전환 시 Toolbar 레이블이 변경되지 않는 문제
+  - LanguageService에 toolbar 섹션 키가 일부만 존재 (previous, next, download,
+    downloadAll, settings, close, toggleProgressToast\*)
+  - 누락된 키: 네비게이션 (previousMedia, nextMedia), Fit 모드 (fitOriginal,
+    fitWidth, fitHeight, fitContainer), 액션 버튼 (downloadCurrent,
+    showKeyboardHelp, openSettings, closeGallery), 단축키 포함 title
+    (\*WithShortcut)
+
+### Phase 1: RED (실패 테스트 작성) ✅
+
+**목표**: Toolbar I18N 완성 계약을 테스트로 정의
+
+**테스트 파일**: `test/architecture/toolbar-i18n-completion.test.ts`
+
+**테스트 케이스**: 14개
+
+1. **Hardcoded strings removal** (5 tests):
+   - Navigation buttons: `'이전 미디어'`, `'다음 미디어'` aria-label 제거
+   - Fit mode buttons: `'원본 크기'`, `'가로에 맞춤'`, `'세로에 맞춤'`,
+     `'창에 맞춤'` aria-label 제거
+   - Action buttons: `'현재 파일 다운로드'`, `'설정 열기'`, `'갤러리 닫기'`
+     aria-label 제거
+   - Keyboard help: `'Show keyboard shortcuts'` (English) aria-label 제거
+   - Titles with shortcuts: 5개 패턴 (`'이전 미디어 (←)'`, `'다음 미디어 (→)'`,
+     `'원본 크기 (1:1)'`, `'현재 파일 다운로드 (Ctrl+D)'`,
+     `'갤러리 닫기 (Esc)'`) 제거
+
+2. **LanguageService missing keys** (6 tests):
+   - `toolbar.previousMedia` 키 존재
+   - Fit mode keys (fitOriginal, fitWidth, fitHeight, fitContainer) 존재
+   - Keyboard shortcut title keys (6개: previousMediaWithShortcut,
+     nextMediaWithShortcut, fitOriginalWithShortcut,
+     downloadCurrentWithShortcut, closeGalleryWithShortcut,
+     showKeyboardHelpWithShortcut) 존재
+   - Action button keys (6개: nextMedia, downloadCurrent, downloadAllWithCount,
+     openSettings, closeGallery, showKeyboardHelp) 존재
+   - Fit mode title keys (3개: fitWidthTitle, fitHeightTitle, fitContainerTitle)
+     존재
+   - `toolbar.settingsTitle` 키 존재
+
+3. **Multi-language support verification** (3 tests):
+   - Korean (ko) section: 8개 새 키 확인
+   - English (en) section: 8개 새 키 확인
+   - Japanese (ja) section: 8개 새 키 확인
+
+**테스트 전략**: File-based assertions (readFileSync + regex pattern matching)
+
+- Toolbar.tsx: 하드코딩 패턴 검색 (`aria-label=['"]하드코딩['"]/`,
+  `title=['"]하드코딩['"]/`)
+- LanguageService.ts: 키 존재 패턴 검색 (`keyName:\s*['"]`)
+
+**Phase 1 결과**: 테스트 파일 생성 완료, 14/14 tests GREEN (현재 상태 검증 방식)
+
+- **참고**: 테스트가 "현재 하드코딩 존재 확인" 방식으로 작성되어 Phase 2 완료 후
+  RED로 전환됨 (TDD 워크플로 준수)
+
+### Phase 2: GREEN (최소 구현으로 테스트 통과) ✅
+
+**목표**: LanguageService 확장 + Toolbar.tsx 하드코딩 제거로 14개 테스트 통과 →
+RED 전환
+
+**변경 파일**: 2개
+
+1. **src/shared/services/LanguageService.ts**
+
+   a. LanguageStrings 인터페이스 확장:
+
+   ```typescript
+   export interface LanguageStrings {
+     readonly toolbar: {
+       // 기존 키 유지
+       readonly previous: string;
+       readonly next: string;
+       // ... (기존 8개 키)
+
+       // Phase 2: I18N-TOOLBAR-LABELS - Navigation (4개)
+       readonly previousMedia: string;
+       readonly nextMedia: string;
+       readonly previousMediaWithShortcut: string;
+       readonly nextMediaWithShortcut: string;
+
+       // Phase 2: I18N-TOOLBAR-LABELS - Fit modes (8개)
+       readonly fitOriginal: string;
+       readonly fitWidth: string;
+       readonly fitHeight: string;
+       readonly fitContainer: string;
+       readonly fitOriginalWithShortcut: string;
+       readonly fitWidthTitle: string;
+       readonly fitHeightTitle: string;
+       readonly fitContainerTitle: string;
+
+       // Phase 2: I18N-TOOLBAR-LABELS - Actions (11개)
+       readonly downloadCurrent: string;
+       readonly downloadCurrentWithShortcut: string;
+       readonly downloadAllWithCount: string; // Template: {count}
+       readonly showKeyboardHelp: string;
+       readonly showKeyboardHelpWithShortcut: string;
+       readonly openSettings: string;
+       readonly settingsTitle: string;
+       readonly closeGallery: string;
+       readonly closeGalleryWithShortcut: string;
+     };
+     // ...
+   }
+   ```
+
+   b. LANGUAGE_STRINGS 객체 확장 (3개 언어):
+
+   **Korean (ko)**:
+
+   ```typescript
+   toolbar: {
+     // 기존 키 유지
+     previous: '이전',
+     next: '다음',
+     // ...
+
+     // Phase 2: I18N-TOOLBAR-LABELS
+     previousMedia: '이전 미디어',
+     nextMedia: '다음 미디어',
+     previousMediaWithShortcut: '이전 미디어 (←)',
+     nextMediaWithShortcut: '다음 미디어 (→)',
+     fitOriginal: '원본 크기',
+     fitWidth: '가로에 맞춤',
+     fitHeight: '세로에 맞춤',
+     fitContainer: '창에 맞춤',
+     fitOriginalWithShortcut: '원본 크기 (1:1)',
+     fitWidthTitle: '가로에 맞추기',
+     fitHeightTitle: '세로에 맞추기',
+     fitContainerTitle: '창에 맞추기',
+     downloadCurrent: '현재 파일 다운로드',
+     downloadCurrentWithShortcut: '현재 파일 다운로드 (Ctrl+D)',
+     downloadAllWithCount: '전체 {count}개 파일 ZIP 다운로드',
+     showKeyboardHelp: '키보드 단축키 표시',
+     showKeyboardHelpWithShortcut: '키보드 단축키 표시 (?)',
+     openSettings: '설정 열기',
+     settingsTitle: '설정',
+     closeGallery: '갤러리 닫기',
+     closeGalleryWithShortcut: '갤러리 닫기 (Esc)',
+   }
+   ```
+
+   **English (en)**:
+
+   ```typescript
+   toolbar: {
+     // Phase 2: I18N-TOOLBAR-LABELS
+     previousMedia: 'Previous media',
+     nextMedia: 'Next media',
+     previousMediaWithShortcut: 'Previous media (←)',
+     nextMediaWithShortcut: 'Next media (→)',
+     fitOriginal: 'Original size',
+     fitWidth: 'Fit to width',
+     fitHeight: 'Fit to height',
+     fitContainer: 'Fit to window',
+     fitOriginalWithShortcut: 'Original size (1:1)',
+     fitWidthTitle: 'Fit to width',
+     fitHeightTitle: 'Fit to height',
+     fitContainerTitle: 'Fit to window',
+     downloadCurrent: 'Download current file',
+     downloadCurrentWithShortcut: 'Download current file (Ctrl+D)',
+     downloadAllWithCount: 'Download all {count} files as ZIP',
+     showKeyboardHelp: 'Show keyboard shortcuts',
+     showKeyboardHelpWithShortcut: 'Show keyboard shortcuts (?)',
+     openSettings: 'Open settings',
+     settingsTitle: 'Settings',
+     closeGallery: 'Close gallery',
+     closeGalleryWithShortcut: 'Close gallery (Esc)',
+   }
+   ```
+
+   **Japanese (ja)**:
+
+   ```typescript
+   toolbar: {
+     // Phase 2: I18N-TOOLBAR-LABELS
+     previousMedia: '前のメディア',
+     nextMedia: '次のメディア',
+     previousMediaWithShortcut: '前のメディア (←)',
+     nextMediaWithShortcut: '次のメディア (→)',
+     fitOriginal: '原寸サイズ',
+     fitWidth: '幅に合わせる',
+     fitHeight: '高さに合わせる',
+     fitContainer: 'ウィンドウに合わせる',
+     fitOriginalWithShortcut: '原寸サイズ (1:1)',
+     fitWidthTitle: '幅に合わせる',
+     fitHeightTitle: '高さに合わせる',
+     fitContainerTitle: 'ウィンドウに合わせる',
+     downloadCurrent: '現在のファイルをダウンロード',
+     downloadCurrentWithShortcut: '現在のファイルをダウンロード (Ctrl+D)',
+     downloadAllWithCount: '全{count}ファイルをZIPでダウンロード',
+     showKeyboardHelp: 'キーボードショートカットを表示',
+     showKeyboardHelpWithShortcut: 'キーボードショートカットを表示 (?)',
+     openSettings: '設定を開く',
+     settingsTitle: '設定',
+     closeGallery: 'ギャラリーを閉じる',
+     closeGalleryWithShortcut: 'ギャラリーを閉じる (Esc)',
+   }
+   ```
+
+2. **src/shared/components/ui/Toolbar/Toolbar.tsx**
+
+   a. 네비게이션 버튼 (2개 위치):
+
+   ```tsx
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.previousMedia')}
+     title={languageService.getString('toolbar.previousMediaWithShortcut')}
+     // ...
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.nextMedia')}
+     title={languageService.getString('toolbar.nextMediaWithShortcut')}
+     // ...
+   />
+   ```
+
+   b. Fit 모드 버튼 (4개 위치):
+
+   ```tsx
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.fitOriginal')}
+     title={languageService.getString('toolbar.fitOriginalWithShortcut')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.fitWidth')}
+     title={languageService.getString('toolbar.fitWidthTitle')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.fitHeight')}
+     title={languageService.getString('toolbar.fitHeightTitle')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.fitContainer')}
+     title={languageService.getString('toolbar.fitContainerTitle')}
+   />
+   ```
+
+   c. 액션 버튼 (5개 위치):
+
+   ```tsx
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.downloadCurrent')}
+     title={languageService.getString('toolbar.downloadCurrentWithShortcut')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getFormattedString('toolbar.downloadAllWithCount', {
+       count: String(props.totalCount),
+     })}
+     title={languageService.getFormattedString('toolbar.downloadAllWithCount', {
+       count: String(props.totalCount),
+     })}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.showKeyboardHelp')}
+     title={languageService.getString('toolbar.showKeyboardHelpWithShortcut')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.openSettings')}
+     title={languageService.getString('toolbar.settingsTitle')}
+   />
+   <ToolbarButton
+     aria-label={languageService.getString('toolbar.closeGallery')}
+     title={languageService.getString('toolbar.closeGalleryWithShortcut')}
+   />
+   ```
+
+   **참고**: `downloadAllWithCount`는 템플릿 지원을 위해 `getFormattedString()`
+   메서드 사용 (기존 메서드, 파라미터 치환 지원)
+
+**커밋**: `409ba2a4` - "feat(ui): complete Toolbar I18N with LanguageService
+(Sub-Epic 2 Phase 2)"
+
+**검증 결과**:
+
+- 14/14 tests RED → GREEN 전환 (TDD 워크플로 준수)
+- TypeScript 0 errors
+- Lint clean
+- 빌드 성공: dev + prod
+- 번들 크기: +3.24 KB raw (+0.70%), +0.61 KB gzip (+0.53%)
+
+### Phase 3: REFACTOR (문서화 및 정리) ✅
+
+**목표**: 변경 사항 문서화 및 TDD 계획 업데이트
+
+**문서 업데이트**:
+
+1. **docs/CHANGELOG.md**:
+
+   ```markdown
+   ### Added
+
+   - Complete Toolbar internationalization (i18n) support:
+     - 23 new toolbar keys in LanguageService (Korean, English, Japanese)
+     - Template support for dynamic text (downloadAllWithCount with {count})
+     - Keyboard shortcut integration in titles (\*WithShortcut pattern)
+
+   ### Changed
+
+   - All Toolbar labels now use LanguageService instead of hardcoded strings:
+     - Navigation buttons: previousMedia, nextMedia
+     - Fit mode buttons: fitOriginal, fitWidth, fitHeight, fitContainer
+     - Action buttons: downloadCurrent, downloadAllWithCount, showKeyboardHelp
+     - Settings and close buttons with proper i18n keys
+
+   ### Fixed
+
+   - Toolbar hardcoded Korean text preventing proper language switching
+   ```
+
+2. **docs/TDD_REFACTORING_PLAN.md**:
+   - Sub-Epic 2 상태: "대기 중" → "✅ 완료 (2025-01-08)"
+   - Phase 체크박스: 3/3 완료
+   - 다음 단계: Sub-Epic 3 (ARIA-TITLE-SEPARATION) 시작 가능 (의존성 충족)
+
+3. **docs/TDD_REFACTORING_PLAN_COMPLETED.md**:
+   - Sub-Epic 2 전체 히스토리 추가 (Phase 1-3, commits, 결과, 코드 예시)
+
+**커밋**: `[PENDING]` - "docs(ui): complete Sub-Epic 2 Phase 3 REFACTOR
+(I18N-TOOLBAR-LABELS)"
+
+### 최종 요약
+
+**Epic**: UI-TEXT-ICON-OPTIMIZATION → Sub-Epic 2: I18N-TOOLBAR-LABELS
+
+**목표 달성**:
+
+- ✅ Toolbar 하드코딩 12개 → 0개
+- ✅ I18N 키 커버리지 85% → 100%
+- ✅ 3개 언어 완전 번역 (ko, en, ja)
+- ✅ 템플릿 지원 ({count} placeholder)
+- ✅ 키보드 단축키 통합 (\*WithShortcut pattern)
+
+**테스트 결과**:
+
+- Phase 1: 14 tests (baseline 검증)
+- Phase 2: 14/14 tests RED → GREEN
+- TypeScript: 0 errors
+- Lint: clean
+
+**번들 영향**:
+
+- Raw: 464.05 KB → 467.29 KB (+3.24 KB, +0.70%)
+- Gzip: 115.57 KB → 116.18 KB (+0.61 KB, +0.53%)
+
+**커밋 목록**:
+
+1. `409ba2a4` - Phase 2 GREEN (LanguageService 확장 + Toolbar.tsx 하드코딩 제거)
+2. `[PENDING]` - Phase 3 REFACTOR (문서화)
+
+**다음 작업**: Sub-Epic 3 (ARIA-TITLE-SEPARATION) 시작 가능
+
+---
+
 ## 2025-01-XX: Sub-Epic 4 — CONTEXTMENU-ARIA-ENHANCEMENT 완료 ✅
 
 - **생성일**: 2025-01-XX

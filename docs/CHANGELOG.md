@@ -19,6 +19,10 @@ and this project adheres to
   - Unique `id` for each menuitem (ARIA relationship support)
   - Optional `aria-labelledby` support for external element labeling
 - ContextMenu ARIA principles documentation in CODING_GUIDELINES.md
+- Complete Toolbar internationalization (i18n) support:
+  - 23 new toolbar keys in LanguageService (Korean, English, Japanese)
+  - Template support for dynamic text (downloadAllWithCount with {count})
+  - Keyboard shortcut integration in titles (\*WithShortcut pattern)
 
 ### Changed
 
@@ -26,12 +30,18 @@ and this project adheres to
 - Settings icon is now exclusively used for settings-related actions
 - Icon registry improved to support PascalCase icon names (XEG_ICONS)
 - ContextMenuAction interface extended with optional `ariaLabelledBy` property
+- All Toolbar labels now use LanguageService instead of hardcoded strings:
+  - Navigation buttons: previousMedia, nextMedia
+  - Fit mode buttons: fitOriginal, fitWidth, fitHeight, fitContainer
+  - Action buttons: downloadCurrent, downloadAllWithCount, showKeyboardHelp
+  - Settings and close buttons with proper i18n keys
 
 ### Fixed
 
 - Icon semantic ambiguity: Settings icon was used for multiple purposes
 - Registry.ts now correctly uses XEG_ICONS export (PascalCase) instead of
   XEG_ICON_DEFINITIONS (kebab-case)
+- Toolbar hardcoded Korean text preventing proper language switching
 
 ## [0.2.4] - 2024-01-XX
 

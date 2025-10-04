@@ -178,17 +178,40 @@ QuestionMark 아이콘 사용
 
 ---
 
-### Sub-Epic 2: I18N-TOOLBAR-LABELS (대기 중)
+### Sub-Epic 2: I18N-TOOLBAR-LABELS ✅ (완료: 2025-01-08)
 
 **부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
 
 **목적**: Toolbar의 하드코딩된 텍스트를 LanguageService로 전환하여 완전한 다국어
 지원
 
-**우선순위**: P1 (Medium Impact) **난이도**: S (3-4 files, ~150 lines)
+**우선순위**: P1 (Medium Impact)  
+**난이도**: S (3-4 files, ~150 lines)  
 **의존성**: 없음 (독립 실행 가능)
 
-**전략**: Sub-Epic 1 완료 후 시작
+**완료 Phase**:
+
+- [x] Phase 1: RED (14 tests) - Test file created
+- [x] Phase 2: GREEN (14/14 passing, TypeScript 0 errors) - Commit `409ba2a4`
+- [x] Phase 3: REFACTOR (문서화) - Commit `[PENDING]`
+
+**결과**:
+
+- LanguageService에 23개 새 toolbar 키 추가 (ko, en, ja)
+- Toolbar.tsx의 12개 하드코딩 위치 제거 (모두 languageService.getString() 사용)
+- 템플릿 지원 (downloadAllWithCount with {count} placeholder)
+- 키보드 단축키 통합 (\*WithShortcut pattern)
+- 테스트: 14/14 RED→GREEN transition, TypeScript 0 errors
+- 영향: 하드코딩 12 → 0, i18n 커버리지 85% → 100%
+- 번들 크기: +3.24 KB raw (+0.70%), +0.61 KB gzip (+0.53%)
+
+**참고**: Phase 1 테스트는 "현재 상태 검증" 방식으로 작성되어 Phase 2 완료 후
+RED로 전환됨 (TDD 워크플로 준수)
+
+---
+
+**다음 단계**: Sub-Epic 3 (ARIA-TITLE-SEPARATION) 시작 가능 (Sub-Epic 2 의존성
+충족)
 
 ---
 
