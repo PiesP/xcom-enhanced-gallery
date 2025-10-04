@@ -217,7 +217,10 @@ describe('Toolbar - Fit Mode Selected State (Phase 1-2)', () => {
       });
       render(() => <Toolbar {...props} />);
 
-      const fitWidthButton = screen.getByLabelText('가로에 맞춤');
+      // Use data-gallery-element instead of language-dependent aria-label
+      const fitWidthButton = document.querySelector(
+        '[data-gallery-element="fit-width"]'
+      ) as HTMLElement;
       expect(fitWidthButton).toBeTruthy();
 
       // 클릭 동작 확인
@@ -236,8 +239,11 @@ describe('Toolbar - Fit Mode Selected State (Phase 1-2)', () => {
       });
       render(() => <Toolbar {...props} />);
 
-      const nextButton = screen.getByLabelText('다음 미디어');
-      const previousButton = screen.getByLabelText('이전 미디어');
+      // Use data-gallery-element instead of language-dependent aria-label
+      const nextButton = document.querySelector('[data-gallery-element="nav-next"]') as HTMLElement;
+      const previousButton = document.querySelector(
+        '[data-gallery-element="nav-previous"]'
+      ) as HTMLElement;
 
       expect(nextButton).toBeTruthy();
       expect(previousButton).toBeTruthy();

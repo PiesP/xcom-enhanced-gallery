@@ -3,6 +3,17 @@
  * 새로운 모듈화된 테스트 인프라 사용
  */
 
+// Force English locale BEFORE any imports that use LanguageService
+Object.defineProperty(globalThis, 'navigator', {
+  writable: true,
+  configurable: true,
+  value: { language: 'en-US' },
+});
+
+// Import and set language immediately
+import { languageService } from '@/shared/services/LanguageService';
+languageService.setLanguage('en');
+
 import '@testing-library/jest-dom';
 import { cleanup as solidCleanup } from '@solidjs/testing-library';
 import { beforeEach, afterEach } from 'vitest';
@@ -16,6 +27,13 @@ import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.
 // ================================
 // 전역 테스트 환경 설정
 // ================================
+
+// Force English locale for consistent i18n testing
+Object.defineProperty(globalThis, 'navigator', {
+  writable: true,
+  configurable: true,
+  value: { language: 'en-US' },
+});
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
@@ -548,38 +566,13 @@ try {
 }
 
 /**
- * 각 테스트 전에 기본 환경 설정
- * 모든 테스트가 깨끗한 환경에서 실행되도록 보장
+ * 각 테스트 전에 환경 초기화
+ * DOM, 타이머, API 모킹 등 설정
  */
 beforeEach(async () => {
-  // Mock API 연결 활성화
-  setupGlobalMocks();
+  // Ensure English locale for all tests (already set globally, but reset here in case tests change it)
+  languageService.setLanguage('en');
 
-  // URL 생성자 다시 확인 및 설정
-  if (!globalThis.URL || typeof globalThis.URL !== 'function') {
-    const URLPolyfill = createURLPolyfill();
-    globalThis.URL = URLPolyfill;
-  }
-
-  // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
-  try {
-    const { initializeVendors } = await import('@shared/external/vendors');
-    await initializeVendors();
-
-    // Signal derived state 초기화 - createRoot 컨텍스트 필요
-    const { initializeGalleryDerivedState } = await import(
-      '@/shared/state/signals/gallery.signals'
-    );
-    const { initializeToolbarDerivedState } = await import(
-      '@/shared/state/signals/toolbar.signals'
-    );
-    initializeGalleryDerivedState();
-    initializeToolbarDerivedState();
-  } catch {
-    // vendor 초기화 실패는 무시하고 계속 진행
-  }
-
-  // 기본 테스트 환경 설정 (minimal)
   await setupTestEnvironment();
 });
 

@@ -9,6 +9,7 @@ export type SupportedLanguage = 'auto' | 'ko' | 'en' | 'ja';
 
 export interface LanguageStrings {
   readonly toolbar: {
+    readonly galleryToolbar: string;
     readonly previous: string;
     readonly next: string;
     readonly download: string;
@@ -91,6 +92,7 @@ export interface LanguageStrings {
 const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrings> = {
   ko: {
     toolbar: {
+      galleryToolbar: '갤러리 도구모음',
       previous: '이전',
       next: '다음',
       download: '다운로드',
@@ -149,6 +151,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
   },
   en: {
     toolbar: {
+      galleryToolbar: 'Gallery toolbar',
       previous: 'Previous',
       next: 'Next',
       download: 'Download',
@@ -211,6 +214,7 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
   },
   ja: {
     toolbar: {
+      galleryToolbar: 'ギャラリーツールバー',
       previous: '前へ',
       next: '次へ',
       download: 'ダウンロード',

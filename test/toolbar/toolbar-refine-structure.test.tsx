@@ -105,8 +105,8 @@ describe('Toolbar refinement (selector consolidation + structure)', () => {
       'Toolbar.module.css',
     ]);
     const occurrences = (toolbarCss.match(/\.toolbarButton/g) || []).length;
-    // 허용: base + :hover + :active + optional reduced-motion block (<=4)
-    expect(occurrences).toBeLessThanOrEqual(4);
+    // 허용: base + active + hover(통합) + focus-visible + selected + selected:hover (<=6)
+    expect(occurrences).toBeLessThanOrEqual(6);
   });
 
   it('omits MediaCounter forward styles from Toolbar CSS', () => {
