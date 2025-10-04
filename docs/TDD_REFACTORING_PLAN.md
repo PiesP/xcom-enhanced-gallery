@@ -4,8 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-04 — Epic TEST-FAILURE-FIX-REMAINING 완료 ✅, 현재
-활성 Epic 없음
+**최근 업데이트**: 2025-10-04 — Epic TEST-FAILURE-ALIGNMENT-PHASE2 시작 (29개
+테스트 실패 정리)
 
 ---
 
@@ -23,10 +23,84 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-(현재 활성 Epic 없음 - Epic TEST-FAILURE-FIX-REMAINING 완료)
+### Epic TEST-FAILURE-ALIGNMENT-PHASE2 (진행 중)
 
-새로운 Epic을 시작하려면 `docs/TDD_REFACTORING_BACKLOG.md`에서 후보를 검토하여
-승격하세요.
+**목적**: 프로젝트 최신 개발 방향에 맞춰 남은 29개 실패 테스트 정리 및 개선
+
+**배경**: Epic TEST-FAILURE-FIX-REMAINING (2025-10-04 완료) 이후 29개 테스트
+실패 잔존
+
+**접근 방향**:
+
+1. **Sub-Epic으로 분할**: 각 카테고리를 독립적으로 진행
+2. **우선순위**: Signal Native → Toolbar → Settings → Integration
+3. **기준**: RED 테스트가 실제 기능 구현 필요한지, 테스트 자체가 부적절한지 판단
+
+**테스트 분류** (29개 실패):
+
+1. **Signal Native 패턴** (8개):
+   - `test/shared/state/gallery-signals-native.test.ts` (4 failed)
+   - `test/shared/state/toolbar-signals-native.test.ts` (4 failed)
+   - 이슈: Gallery/Toolbar derived state 초기화 누락
+     (`initializeGalleryDerivedState()`, `initializeToolbarDerivedState()`)
+
+2. **Toolbar Hover** (2개):
+   - `test/features/toolbar/toolbar-hover-consistency.test.ts` (1 failed)
+   - `test/features/toolbar/toolbar-hover-consistency-completion.test.ts` (1
+     failed)
+   - 이슈: `toolbarButton` 복잡한 transform 효과 제거 검증 실패
+
+3. **Settings Modal Accessibility** (2개):
+   - `test/unit/shared/components/ui/settings-modal-accessibility.test.tsx` (1
+     failed)
+   - `test/unit/shared/components/ui/settings-modal-accessibility.solid.test.tsx`
+     (1 failed)
+   - 이슈: 기본 설정 컨트롤 렌더링 검증 실패 (aria-checked='false' vs 'true')
+
+4. **Language Icons Integration** (3개):
+   - `test/features/settings/settings-modal-language-icons.integration.test.tsx`
+     (3 failed)
+   - 이슈: 언어 아이콘 radiogroup 초기 선택 상태, 클릭 인터랙션 실패
+
+5. **Full Workflow** (7개):
+   - `test/integration/full-workflow.test.ts` (7 failed)
+   - 이슈: 통합 워크플로 검증 (갤러리 열기, 다운로드, 설정 적용 등)
+
+6. **User Interactions** (3개):
+   - `test/behavioral/user-interactions-fixed.test.ts` (3 failed)
+   - 이슈: 사용자 상호작용 테스트 (키보드, 다운로드, 에러 처리)
+
+7. **Userscript Allowlist** (2개):
+   - `test/security/userscript-allowlist.test.ts` (2 failed)
+   - 이슈: `GM_xmlhttpRequest`, `GM_notification` mock 누락
+
+8. **Solid Settings Panel** (1개):
+   - `test/features/settings/solid-settings-panel.integration.test.tsx` (1
+     failed)
+   - 이슈: Solid settings panel 통합 테스트 실패
+
+9. **Main Bootstrap** (1개):
+   - `test/integration/main/main-solid-bootstrap-only.test.ts` (1 failed)
+   - 이슈: Solid vendors warmup 호출 횟수 불일치 (expected 1, got 5)
+
+**현재 Phase**: Phase 0 (분석 및 계획)
+
+**다음 작업**:
+
+- Phase 1: Signal Native 패턴 수정 (8개)
+- Phase 2: Toolbar Hover 수정 (2개)
+- Phase 3: Settings/Language 수정 (6개)
+- Phase 4: Integration/User Interactions 수정 (10개)
+- Phase 5: Userscript/Bootstrap 수정 (3개)
+
+**Acceptance Criteria**:
+
+- ✅ 모든 테스트 카테고리 분석 완료
+- ✅ 각 Sub-Epic별 Phase 계획 수립
+- ⬜ TypeScript 0 errors
+- ⬜ ESLint clean
+- ⬜ 전체 테스트 GREEN (2609+ tests)
+- ⬜ 빌드 성공 (dev + prod)
 
 ---
 
@@ -47,6 +121,8 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 - Phase 4: LanguageService 싱글톤 전환 (-9개 테스트 실패)
 
 상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-04 섹션 참조)
+
+**남은 작업**: 29개 테스트 실패 → Epic TEST-FAILURE-ALIGNMENT-PHASE2로 승격
 
 ---
 
@@ -70,56 +146,15 @@ CSS 예산 조정
 
 ---
 
-### Epic SOLIDJS-REACTIVE-ROOT-CONTEXT (완료: 2025-01-XX)
+### 이전 완료 Epic (요약)
 
-**목적**: SolidJS `createMemo` 메모리 누수 방지 — 전역 상태 파생값을
-`createRoot`로 래핑하여 dispose 가능하도록 개선
+전체 히스토리는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조:
 
-**결과**: ✅ 7/7 tests GREEN, 메모리 누수 방지 완료, 빌드/린트/타입 체크 통과
-
-상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-XX 섹션 참조)
-
----
-
-### Epic CUSTOM-TOOLTIP-COMPONENT (완료: 2025-01-08)
-
-**목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
-브랜드 일관성 + 완전한 다국어 지원
-
-**결과**: ✅ Phase 1-4 완료, 24/24 tests GREEN, WCAG 2.1 Level AA 준수, 번들
-+1.06%
-
-상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-08 섹션 참조)
-
----
-
-### Epic UI-TEXT-ICON-OPTIMIZATION (완료: 2025-01-08)
-
-**목적**: Toolbar 및 UI 컴포넌트의 텍스트/아이콘 최적화 — 완전한 다국어 지원 +
-접근성 개선 + 아이콘 의미론적 명확성
-
-**결과**: ✅ 33 tests GREEN, i18n 커버리지 100%, ARIA 강화 완료, 번들 +0.70%
-
-상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-08 섹션 참조)
-
----
-
-### Epic JSX-PRAGMA-CLEANUP (완료: 2025-01-04)
-
-**목적**: esbuild JSX pragma 경고 제거 및 SolidJS 설정 표준화
-
-**결과**: ✅ 6/6 tests GREEN, 빌드 경고 0개, TypeScript 0 errors, 번들 크기 동일
-
-상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-04 섹션 참조)
-
----
-
-### Epic GALLERY-NAV-ENHANCEMENT (완료: 2025-01-04)
-
-**목적**: 갤러리 네비게이션 UX 개선 - 좌우 네비게이션 버튼 구현
-
-**결과**: ✅ 17/17 tests GREEN, 번들 +3.15 KB (+0.68%), NavigationButton
-컴포넌트 구현 완료
+- SOLIDJS-REACTIVE-ROOT-CONTEXT (2025-01-XX): 메모리 누수 방지 ✅
+- CUSTOM-TOOLTIP-COMPONENT (2025-01-08): 키보드 단축키 툴팁 구현 ✅
+- UI-TEXT-ICON-OPTIMIZATION (2025-01-08): 다국어 지원 + 접근성 개선 ✅
+- JSX-PRAGMA-CLEANUP (2025-01-04): esbuild 경고 제거 ✅
+- GALLERY-NAV-ENHANCEMENT (2025-01-04): 네비게이션 버튼 구현 ✅
 
 상세 내용: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` (2025-01-04 섹션 참조)
 
