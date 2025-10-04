@@ -2,6 +2,71 @@
 
 ---
 
+## 2025-01-07: TOOL — Epic ICON-USAGE-AUDIT-TOOL 완료 ✅
+
+- **생성일**: 2025-01-07
+- **완료일**: 2025-01-07
+- **목적**: 아이콘 사용 분석 자동화 도구 구현 (중복 감지, 미사용 감지, 빈도
+  분석)
+- **우선순위**: S (작은 규모, 독립 실행)
+- **배경**:
+  - 수동으로 아이콘 중복 사용 확인 필요
+  - Settings 아이콘이 Toolbar.tsx에서 2회 사용 (line 477, 487) 감지
+  - 프로젝트 전체 아이콘 사용 패턴 파악 필요
+- **Phase 1: RED - 테스트 작성**:
+  - 테스트 파일: `test/tools/icon-usage-audit.test.ts`
+  - 13개 테스트 작성:
+    1. 스크립트 존재 검증
+    2. 아이콘 사용처 분석 (analyzeIconUsage)
+    3. 사용 위치 기록 (filePath, lineNumber, context)
+    4. 중복 사용 감지 (findDuplicateSemantics)
+    5. Settings 아이콘 중복 감지
+    6. 미사용 아이콘 감지 (findUnusedIcons)
+    7. 사용 빈도 계산 (calculateUsageFrequency)
+    8. 가장 많이 사용된 아이콘 식별
+    9. Markdown 리포트 생성 (generateReport)
+    10. 중복 사용 경고 포함
+    11. 미사용 아이콘 목록 포함
+    12. --format 옵션 지원
+    13. --output 옵션 지원
+  - 결과: 13/13 tests RED (스크립트 미존재)
+- **Phase 2: GREEN - 스크립트 구현**:
+  - 생성 파일: `scripts/icon-usage-audit.mjs`
+  - 구현 함수:
+    1. `scanDirectory()` - 재귀적 파일 스캔 (fs.readdir 기반, glob 대신)
+    2. `analyzeIconUsage()` - src/\*_/_.{ts,tsx} 스캔, icon/iconName/name 패턴
+       매칭
+    3. `findDuplicateSemantics()` - 중복 사용 아이콘 그룹화
+    4. `findUnusedIcons()` - 등록되었지만 미사용 아이콘 필터링
+    5. `calculateUsageFrequency()` - 사용 빈도 계산 및 내림차순 정렬
+    6. `generateReport()` - Markdown 테이블 리포트 생성
+  - CLI 옵션: `--format <markdown|json>`, `--output <path>`
+  - ESM 호환: `/* eslint-env node */`, process/console 전역 사용
+  - 결과: 13/13 tests GREEN
+- **Phase 3: REFACTOR - 문서화 및 npm 스크립트**:
+  - AGENTS.md 업데이트:
+    - 도구 섹션에 "아이콘 사용 분석 (Icon Usage Audit)" 추가
+    - 주요 기능 및 CLI 옵션 설명
+  - package.json 스크립트 추가:
+    - `npm run icon:audit` - 콘솔 출력 (Markdown)
+    - `npm run icon:audit:json` - JSON 형식
+    - `npm run icon:audit:save` - docs/icon-usage-report.md 저장
+- **품질 게이트**:
+  - Tests: 13/13 GREEN
+  - TypeScript: `npm run typecheck` clean
+  - ESLint: `npm run lint` clean
+  - 빌드: dev/prod 정상 (번들 크기 변경 없음)
+- **결과**:
+  - 아이콘 사용 패턴 자동 분석 가능
+  - 중복 사용 자동 감지 (예: Settings 아이콘)
+  - 미사용 아이콘 식별 (메모리 최적화 기회)
+  - 사용 빈도 통계 제공
+- **이후 작업**:
+  - 정기적으로 `npm run icon:audit:save` 실행하여 리포트 갱신
+  - CI에 중복 감지 경고 추가 검토
+
+---
+
 ## 2025-01-04: BUILD — Epic JSX-PRAGMA-CLEANUP Phase 1-3 완료 ✅
 
 - **생성일**: 2025-01-04
