@@ -57,6 +57,10 @@ vi.mock('@shared/styles/primitives.module.css', () => ({
 vi.mock('@shared/services/LanguageService', () => ({
   LanguageService: vi.fn().mockImplementation(() => ({
     getString: vi.fn((key: string) => key),
+    getFormattedString: vi.fn((key: string, params?: Record<string, string | number>) => {
+      if (!params) return key;
+      return `${key} (${Object.values(params).join(', ')})`;
+    }),
     getCurrentLanguage: vi.fn(() => 'en'),
     setLanguage: vi.fn(),
   })),
