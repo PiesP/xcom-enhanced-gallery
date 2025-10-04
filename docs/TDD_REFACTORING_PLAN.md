@@ -4,8 +4,8 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-01-08 — Epic UI-TEXT-ICON-OPTIMIZATION 완료, 새로운 활성
-Epic 준비 중
+**최근 업데이트**: 2025-01-08 — Epic CUSTOM-TOOLTIP-COMPONENT Phase 1-3 완료,
+Phase 4 (ToolbarButton 통합) 대기 중
 
 ---
 
@@ -25,7 +25,34 @@ Epic 준비 중
 
 ### 현재 활성 Epic
 
-#### Epic CUSTOM-TOOLTIP-COMPONENT (활성화: 2025-01-08)
+#### Epic CUSTOM-TOOLTIP-COMPONENT (활성화: 2025-01-08, Phase 1-3 완료 ✅)
+
+**목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
+브랜드 일관성 + 완전한 다국어 지원
+
+**우선순위**: P2 (Medium Impact) — 사용자 경험 개선, 브랜드 정체성 강화
+**난이도**: M (Medium, 5-6 files, ~300 lines) **의존성**: Epic
+UI-TEXT-ICON-OPTIMIZATION 완료 ✅
+
+**완료 Phase**:
+
+- ✅ Phase 1 (RED): 16 tests 작성 (모두 GREEN 전환)
+- ✅ Phase 2 (GREEN): Tooltip 컴포넌트 구현 (PC 전용, 디자인 토큰, ARIA)
+- ✅ Phase 3 (REFACTOR): 문서화 완료 (CHANGELOG, CODING_GUIDELINES)
+
+**남은 Phase**:
+
+- ⏸️ Phase 4 (ToolbarButton 통합): 선택적 — 12개 버튼에 Tooltip 적용 (필요 시
+  진행)
+
+**번들 영향**:
+
+- Phase 1-3: 변동 없음 (테스트 + 문서화만)
+- 예상 Phase 4: +2.5 KB raw (+0.5%), +0.8 KB gzip (+0.7%)
+
+---
+
+**최근 완료**: Epic UI-TEXT-ICON-OPTIMIZATION (2025-01-08)
 
 **목적**: 커스텀 툴팁 컴포넌트 구현 — 키보드 단축키 시각적 강조 (`<kbd>`) +
 브랜드 일관성 + 완전한 다국어 지원

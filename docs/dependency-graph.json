@@ -8506,6 +8506,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/shortcut-parser.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/signalSelector.ts",
       "dependencies": [],
       "dependents": [],
@@ -8679,7 +8686,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 278,
+    "totalCruised": 279,
     "totalDependenciesCruised": 347,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

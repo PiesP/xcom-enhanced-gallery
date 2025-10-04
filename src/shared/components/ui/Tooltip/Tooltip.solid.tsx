@@ -37,7 +37,7 @@ export interface TooltipProps {
 
 export const Tooltip: ParentComponent<TooltipProps> = props => {
   const solid = getSolidCore();
-  const { createMemo, createSignal, createEffect, onCleanup, Show } = solid;
+  const { createMemo, createSignal, createEffect, onCleanup } = solid;
 
   const [tooltipEl, setTooltipEl] = createSignal<HTMLDivElement | undefined>(undefined);
   const [triggerEl, setTriggerEl] = createSignal<HTMLElement | undefined>(undefined);
@@ -140,18 +140,19 @@ export const Tooltip: ParentComponent<TooltipProps> = props => {
   return (
     <span ref={el => setTriggerEl(el)}>
       {props.children}
-      <Show when={internalShow()}>
-        <div
-          ref={el => setTooltipEl(el)}
-          role='tooltip'
-          id={tooltipId()}
-          class={styles.tooltip}
-          data-placement={placement()}
-          aria-hidden={!internalShow() ? 'true' : undefined}
-        >
-          {props.content}
-        </div>
-      </Show>
+      <div
+        ref={el => setTooltipEl(el)}
+        role='tooltip'
+        id={tooltipId()}
+        class={styles.tooltip}
+        data-placement={placement()}
+        aria-hidden={!internalShow() ? 'true' : undefined}
+        style={{
+          display: internalShow() ? 'block' : 'none',
+        }}
+      >
+        {props.content}
+      </div>
     </span>
   );
 };
