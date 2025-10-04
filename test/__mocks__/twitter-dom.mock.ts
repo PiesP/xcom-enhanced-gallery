@@ -8,6 +8,9 @@ import { vi } from 'vitest';
 // mock-action-simulator에서 함수들을 import
 import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator.js';
 
+// URL safety utilities for secure hostname validation
+import { isTrustedHostname, TWITTER_MEDIA_HOSTS } from '@shared/utils/url-safety';
+
 // Mock functions for DOM interaction
 export const mockClickHandler = vi.fn();
 export const mockKeyboardHandler = vi.fn();
@@ -301,7 +304,7 @@ export function simulateTweetImageClick() {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
     const target = event.target;
-    if (target && target.tagName === 'IMG' && target.src.includes('pbs.twimg.com')) {
+    if (target && target.tagName === 'IMG' && isTrustedHostname(target.src, TWITTER_MEDIA_HOSTS)) {
       const galleryModal = createGalleryModal(target.src);
       return galleryModal;
     }
@@ -411,7 +414,11 @@ export function setupImageClickHandlers() {
     const target = event.target;
 
     // 트위터 이미지 클릭 처리
-    if (target.tagName === 'IMG' && target.src && target.src.includes('pbs.twimg.com')) {
+    if (
+      target.tagName === 'IMG' &&
+      target.src &&
+      isTrustedHostname(target.src, TWITTER_MEDIA_HOSTS)
+    ) {
       // Ctrl+클릭 시 대량 다운로드 모드
       if (event.ctrlKey) {
         createBulkDownloadMode();
