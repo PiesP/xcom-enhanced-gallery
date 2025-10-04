@@ -2,6 +2,194 @@
 
 ---
 
+## 2025-10-05: Epic CODEQL-LOCAL-ENHANCEMENT 완료 ✅ (Phase 2-3 실제 구현)
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: CodeQL 로컬 워크플로 개선 (Phase 2-3 완료)
+- **목적**: 로컬 개발 환경에서 CodeQL을 효과적으로 활용할 수 있도록 로깅 강화 및
+  문서화
+- **결과**: ✅ **전체 완료** - Phase 1 (RED, 사전 완료) + Phase 2 (GREEN) +
+  Phase 3 (REFACTOR)
+- **브랜치**: `feature/codeql-local-enhancement-phase2`
+- **커밋**: 947bc430 (Phase 2), d00c5539 (Phase 3)
+
+### 배경
+
+**문제점**:
+
+- 로컬 환경에서 CodeQL 표준 쿼리 팩 접근 시 403 Forbidden 발생 (GitHub Advanced
+  Security 전용)
+- Fallback 쿼리 팩 자동 전환 기능은 있으나, 명확한 가이드 부재
+- 환경별 제약(로컬 vs CI) 이해 어려움
+
+**목표**:
+
+- Fallback 전환 시점 명확한 로깅 제공
+- 쿼리 팩 종류 자동 감지 (표준/Fallback/커스텀)
+- 예상 규칙 수 표시 (표준: 400+, Fallback: 50+)
+- 환경별 트러블슈팅 가이드 제공
+- 로컬 CodeQL 활용 가이드 문서 작성
+
+### 완료된 Phase
+
+#### Phase 1: RED — 환경 감지 유틸리티 및 테스트 작성 ✅ (사전 완료)
+
+**작업 내용**:
+
+1. **환경 감지 유틸리티** (`test/utils/codeql-environment.ts`)
+   - `hasAdvancedSecurity()`: 표준 쿼리 팩 실행 여부 감지
+   - `detectQueryPackType()`: 'standard' | 'fallback' | 'unknown' 반환
+   - `getCodeQLEnvironmentInfo()`: 환경 상세 정보 조회
+
+2. **계약 테스트**
+   (`test/architecture/codeql-local-enhancement.contract.test.ts`, 15 tests)
+   - Task 1: 환경 감지 함수 구현 (6 tests)
+   - Task 2: 조건부 SARIF 검증 (4 tests)
+   - Task 3: 환경 정보 로깅 (2 tests)
+   - Task 4: 개선 계획 조건부 검증 (3 tests)
+
+**결과**:
+
+- ✅ 15/15 테스트 GREEN
+- ✅ 환경 감지 유틸리티 구현 완료
+
+#### Phase 2: GREEN — 스크립트 로깅 강화 ✅
+
+**작업 내용**:
+
+1. **`scripts/run-codeql.mjs` 개선**
+   - **상세 로깅 강화**:
+     - Fallback 전환 시점 명시적 로깅 (구분선 + 전환 사유 + 환경별 가이드)
+     - 쿼리 팩 종류 출력 (표준/Fallback/커스텀 자동 감지)
+     - 예상 규칙 수 가이드 제공 (표준: 400+, Fallback: 50+)
+   - **에러 메시지 명확화**:
+     - 환경별 가이드 제공 (Advanced Security 필요 여부)
+     - 트러블슈팅 힌트 추가 (네트워크/인증/CLI 설치)
+     - 참고 문서 링크 제공
+   - **쿼리 팩 통계 로깅 개선**:
+     - SARIF 생성 후 실제 규칙 수 출력
+     - js/ 보안 규칙 비율 출력 (백분율 포함)
+     - 발견된 경고 수 출력
+
+**로깅 예시**:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Fallback 쿼리 팩으로 전환합니다
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 전환 사유:
+   표준 쿼리 팩(codeql/javascript-security-and-quality) 접근이 거부되었습니다.
+   GitHub Advanced Security가 활성화되지 않은 환경으로 추정됩니다.
+
+📦 Fallback 쿼리 팩 정보:
+   - 사용할 팩: codeql/javascript-queries
+   - 예상 규칙 수: 50+ 개 (표준 팩 대비 제한적)
+   - 커버리지: 기본 보안 규칙 중심 (확장 규칙 미포함)
+
+💡 환경별 가이드:
+   [로컬 환경]
+     - Fallback 쿼리 팩으로 기본 보안 분석 가능
+     - 완전한 분석은 CI 환경(GitHub Actions)에서 자동 실행됨
+   [CI 환경]
+     - GitHub Advanced Security 활성화 시 400+ 규칙 자동 적용
+     - SARIF 업로드로 Code Scanning 대시보드 연동
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**결과**:
+
+- ✅ 15/15 테스트 GREEN
+- ✅ 스크립트 로깅 개선 완료
+- ✅ 에러 메시지 명확화 완료
+- ✅ `npm run typecheck` 통과
+- ✅ `npm run lint:fix` 통과
+- ✅ `npm run build:dev` 통과
+- ✅ 커밋: 947bc430
+  (`feat(scripts): enhance CodeQL local workflow logging and error messages`)
+
+#### Phase 3: REFACTOR — 문서화 + 폴리싱 ✅
+
+**작업 내용**:
+
+1. **`docs/CODEQL_LOCAL_GUIDE.md` 작성** (1,010줄)
+   - 개요: 쿼리 팩 종류 (표준 vs Fallback)
+   - 환경별 동작 방식 (로컬 vs CI)
+   - 실행 방법 (기본/고급 옵션)
+   - 산출물 분석 (SARIF/CSV/개선 계획)
+   - 환경 정보 확인 (자동 감지)
+   - 트러블슈팅 가이드
+   - 베스트 프랙티스
+   - FAQ (5개 항목)
+
+2. **`AGENTS.md` 업데이트**
+   - CodeQL 분석 섹션 강화
+   - 로컬 환경 제약 명확화
+   - CI 환경과 차이점 설명
+   - Fallback 쿼리 팩 설명 추가
+   - 쿼리 팩 정보 테이블 추가
+
+3. **`docs/TDD_REFACTORING_PLAN.md` 업데이트**
+   - Phase 2 완료 표시
+   - Phase 3 작업 내용 반영
+
+**결과**:
+
+- ✅ 3개 문서 작성/업데이트 완료
+- ✅ 전체 테스트 GREEN (15/15)
+- ✅ 품질 게이트 통과
+- ✅ 커밋: d00c5539
+  (`docs: add comprehensive CodeQL local workflow guide (Phase 3)`)
+
+### 영향 분석
+
+**번들 영향**:
+
+- ✅ 런타임 코드 변경 없음 (개발 도구만 수정)
+- ✅ 번들 크기 변화 없음 (472.49 KB 유지)
+
+**테스트 영향**:
+
+- ✅ 15/15 tests GREEN
+- ✅ 전체 테스트 스위트 GREEN
+
+**문서 영향**:
+
+- ✅ 3개 문서 추가/업데이트
+- ✅ 로컬 CodeQL 활용 가이드 완비
+
+### 주요 개선 사항
+
+**로깅 강화**:
+
+- Fallback 전환 시 명확한 가이드 (전환 사유, 쿼리 팩 종류, 예상 규칙 수)
+- 쿼리 팩 통계 자동 출력 (실제 규칙 수, js/ 보안 규칙 비율)
+- 환경별 트러블슈팅 힌트 제공
+
+**문서화 개선**:
+
+- 로컬 CodeQL 활용 가이드 문서 (1,010줄, 11개 섹션)
+- AGENTS.md 업데이트 (환경별 제약 명확화)
+- 쿼리 팩 정보 테이블 (로컬 vs CI 비교)
+
+**개발자 경험 향상**:
+
+- 명확한 환경 제약 이해
+- 로컬에서 효과적인 보안 분석 가능
+- CI 환경으로의 원활한 전환 기반 마련
+
+### 후속 작업
+
+- ✅ Epic CODEQL-LOCAL-ENHANCEMENT 완료
+- 📝 `TDD_REFACTORING_BACKLOG.md`에서 GITHUB-ADVANCED-SECURITY-INTEGRATION은
+  HOLD 상태 유지
+- 📝 필요 시 표준 쿼리 팩 통합은 조직 계정 활성화 후 진행
+
+---
+
 ## 2025-10-05: Epic CODEQL-SECURITY-HARDENING 완료 ✅ (실제 구현)
 
 ### 개요
