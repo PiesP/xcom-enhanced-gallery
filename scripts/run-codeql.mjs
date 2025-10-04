@@ -579,6 +579,14 @@ async function generateReports(config, executedPacks) {
   const sarifRaw = await fs.readFile(config.sarifPath, 'utf8');
   const sarif = JSON.parse(sarifRaw);
   const findings = extractFindingsFromSarif(sarif);
+  
+  // SARIF 통계 로깅 (쿼리 팩 정보 포함)
+  const totalRules = sarif.runs?.[0]?.tool?.driver?.rules?.length ?? 0;
+  const jsSecurityRules = sarif.runs?.[0]?.tool?.driver?.rules?.filter(
+    r => r.id?.startsWith('js/') && r.properties?.['security-severity']
+  ).length ?? 0;
+  logStep(`SARIF 분석 완료: 전체 규칙 ${totalRules}개, JS 보안 규칙 ${jsSecurityRules}개`);
+  
   const csv = buildSummaryCsv(findings);
   const markdown = buildPlanMarkdown(findings, config, executedPacks);
 
@@ -748,6 +756,12 @@ async function main() {
         '사용 가능한 CodeQL 쿼리 팩이 없습니다. access가 허용된 팩을 지정하거나 기본 팩을 복원해 주세요.'
       );
     }
+
+    // 사용할 쿼리 팩 정보 로깅
+    logStep(`사용할 쿼리 팩 (${availablePacks.length}개):`);
+    availablePacks.forEach((pack, idx) => {
+      logStep(`  [${idx + 1}] ${pack}`);
+    });
 
     if (!config.keepDb && (await pathExists(config.dbPath))) {
       logStep(`Removing existing database at ${config.dbPath}`);
