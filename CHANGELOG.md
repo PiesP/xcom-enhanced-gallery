@@ -12,12 +12,20 @@ and this project adheres to
 
 - QuestionMark icon for keyboard shortcuts help button
 - Icon semantic uniqueness contract tests to prevent icon purpose conflicts
+- Enhanced ARIA attributes for ContextMenu component (WCAG 2.1 Level AA):
+  - `aria-orientation='vertical'` for screen reader navigation
+  - `aria-activedescendant` with reactive tracking for dynamic focus
+    announcement
+  - Unique `id` for each menuitem (ARIA relationship support)
+  - Optional `aria-labelledby` support for external element labeling
+- ContextMenu ARIA principles documentation in CODING_GUIDELINES.md
 
 ### Changed
 
 - Keyboard help button now uses QuestionMark icon instead of Settings icon
 - Settings icon is now exclusively used for settings-related actions
 - Icon registry improved to support PascalCase icon names (XEG_ICONS)
+- ContextMenuAction interface extended with optional `ariaLabelledBy` property
 
 ### Fixed
 

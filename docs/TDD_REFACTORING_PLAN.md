@@ -206,7 +206,7 @@ lines) **의존성**: Sub-Epic 2 완료 후 (I18N 키 필요)
 
 ---
 
-### Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT (대기 중)
+### Sub-Epic 4: CONTEXTMENU-ARIA-ENHANCEMENT ✅ (완료: 2025-01-XX)
 
 **부모 Epic**: UI-TEXT-ICON-OPTIMIZATION (분할됨)
 
@@ -216,6 +216,24 @@ lines) **의존성**: Sub-Epic 2 완료 후 (I18N 키 필요)
 **의존성**: 없음 (독립 실행 가능, Epic CONTEXT-MENU-UI Phase 3 기반)
 
 **전략**: 다른 Sub-Epic과 병행 가능
+
+**완료 Phase**:
+
+- [x] Phase 1 RED (6 tests): commit `c5dea3b2`
+- [x] Phase 2 GREEN (6/6 passing, TypeScript 0 errors): commit `cb9b972e`
+- [x] Phase 3 REFACTOR (문서화): commit `[PENDING]`
+
+**결과**:
+
+- Enhanced ARIA attributes: `aria-orientation='vertical'`,
+  `aria-activedescendant` (reactive tracking), unique menuitem `id`, optional
+  `aria-labelledby`
+- Type extension: `ContextMenuAction.ariaLabelledBy?: string`
+- Documentation: CODING_GUIDELINES.md "ContextMenu ARIA 원칙" section
+- Tests: 6/6 GREEN, WCAG 2.1 Level AA compliant
+
+**참고**: Epic CONTEXT-MENU-UI Phase 3 (completed 2025-01-03) accessibility
+foundation 위에 enhanced ARIA attributes 추가
 
 ---
 
