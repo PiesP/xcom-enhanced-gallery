@@ -357,16 +357,16 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             data-group-first='true'
           >
             <ToolbarButton
-              aria-label='이전 미디어'
-              title='이전 미디어 (←)'
+              aria-label={languageService.getString('toolbar.previousMedia')}
+              title={languageService.getString('toolbar.previousMediaWithShortcut')}
               disabled={Boolean(props.disabled || !canGoPrevious())}
               onClick={event => handleButtonClick(event, props.onPrevious)}
               data-gallery-element='nav-previous'
               icon='ChevronLeft'
             />
             <ToolbarButton
-              aria-label='다음 미디어'
-              title='다음 미디어 (→)'
+              aria-label={languageService.getString('toolbar.nextMedia')}
+              title={languageService.getString('toolbar.nextMediaWithShortcut')}
               disabled={Boolean(props.disabled || !canGoNext())}
               onClick={event => handleButtonClick(event, props.onNext)}
               data-gallery-element='nav-next'
@@ -395,8 +395,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             <ToolbarButton
               onClick={event => handleFitMode(event, 'original', props.onFitOriginal)}
               disabled={Boolean(props.disabled || !props.onFitOriginal)}
-              aria-label='원본 크기'
-              title='원본 크기 (1:1)'
+              aria-label={languageService.getString('toolbar.fitOriginal')}
+              title={languageService.getString('toolbar.fitOriginalWithShortcut')}
               data-gallery-element='fit-original'
               selected={effectiveFitMode() === 'original'}
               icon='ZoomIn'
@@ -404,8 +404,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             <ToolbarButton
               onClick={event => handleFitMode(event, 'fitWidth', props.onFitWidth)}
               disabled={Boolean(props.disabled || !props.onFitWidth)}
-              aria-label='가로에 맞춤'
-              title='가로에 맞추기'
+              aria-label={languageService.getString('toolbar.fitWidth')}
+              title={languageService.getString('toolbar.fitWidthTitle')}
               data-gallery-element='fit-width'
               selected={effectiveFitMode() === 'fitWidth'}
               icon='ArrowAutofitWidth'
@@ -413,8 +413,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             <ToolbarButton
               onClick={event => handleFitMode(event, 'fitHeight', props.onFitHeight)}
               disabled={Boolean(props.disabled || !props.onFitHeight)}
-              aria-label='세로에 맞춤'
-              title='세로에 맞추기'
+              aria-label={languageService.getString('toolbar.fitHeight')}
+              title={languageService.getString('toolbar.fitHeightTitle')}
               data-gallery-element='fit-height'
               selected={effectiveFitMode() === 'fitHeight'}
               icon='ArrowAutofitHeight'
@@ -422,8 +422,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             <ToolbarButton
               onClick={event => handleFitMode(event, 'fitContainer', props.onFitContainer)}
               disabled={Boolean(props.disabled || !props.onFitContainer)}
-              aria-label='창에 맞춤'
-              title='창에 맞추기'
+              aria-label={languageService.getString('toolbar.fitContainer')}
+              title={languageService.getString('toolbar.fitContainerTitle')}
               data-gallery-element='fit-container'
               selected={effectiveFitMode() === 'fitContainer'}
               icon='ArrowsMaximize'
@@ -432,8 +432,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
               loading={Boolean(props.isDownloading)}
               onClick={event => handleButtonClick(event, props.onDownloadCurrent)}
               disabled={Boolean(props.disabled || props.isDownloading || props.isLoading)}
-              aria-label='현재 파일 다운로드'
-              title='현재 파일 다운로드 (Ctrl+D)'
+              aria-label={languageService.getString('toolbar.downloadCurrent')}
+              title={languageService.getString('toolbar.downloadCurrentWithShortcut')}
               data-gallery-element='download-current'
               icon='Download'
             />
@@ -441,8 +441,12 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
               <ToolbarButton
                 onClick={event => handleButtonClick(event, props.onDownloadAll)}
                 disabled={Boolean(props.disabled || props.isDownloading || props.isLoading)}
-                aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
-                title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+                aria-label={languageService.getFormattedString('toolbar.downloadAllWithCount', {
+                  count: String(props.totalCount),
+                })}
+                title={languageService.getFormattedString('toolbar.downloadAllWithCount', {
+                  count: String(props.totalCount),
+                })}
                 data-gallery-element='download-all'
                 icon='FileZip'
               />
@@ -469,8 +473,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             ) : null}
             {props.onShowKeyboardHelp ? (
               <ToolbarButton
-                aria-label='Show keyboard shortcuts'
-                title='Show keyboard shortcuts (?)'
+                aria-label={languageService.getString('toolbar.showKeyboardHelp')}
+                title={languageService.getString('toolbar.showKeyboardHelpWithShortcut')}
                 disabled={Boolean(props.disabled)}
                 onClick={event => handleButtonClick(event, props.onShowKeyboardHelp)}
                 data-gallery-element='keyboard-help'
@@ -479,8 +483,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             ) : null}
             {props.onOpenSettings ? (
               <ToolbarButton
-                aria-label='설정 열기'
-                title='설정'
+                aria-label={languageService.getString('toolbar.openSettings')}
+                title={languageService.getString('toolbar.settingsTitle')}
                 disabled={Boolean(props.disabled)}
                 onClick={event => handleButtonClick(event, props.onOpenSettings)}
                 data-gallery-element='settings'
@@ -489,8 +493,8 @@ export const Toolbar = (props: ToolbarProps): JSX.Element => {
             ) : null}
             <ToolbarButton
               intent='danger'
-              aria-label='갤러리 닫기'
-              title='갤러리 닫기 (Esc)'
+              aria-label={languageService.getString('toolbar.closeGallery')}
+              title={languageService.getString('toolbar.closeGalleryWithShortcut')}
               disabled={Boolean(props.disabled)}
               onClick={event => handleButtonClick(event, props.onClose)}
               data-gallery-element='close'

@@ -17,6 +17,30 @@ export interface LanguageStrings {
     readonly close: string;
     readonly toggleProgressToastShow: string;
     readonly toggleProgressToastHide: string;
+    // Phase 2: I18N-TOOLBAR-LABELS - Navigation
+    readonly previousMedia: string;
+    readonly nextMedia: string;
+    readonly previousMediaWithShortcut: string;
+    readonly nextMediaWithShortcut: string;
+    // Phase 2: I18N-TOOLBAR-LABELS - Fit modes
+    readonly fitOriginal: string;
+    readonly fitWidth: string;
+    readonly fitHeight: string;
+    readonly fitContainer: string;
+    readonly fitOriginalWithShortcut: string;
+    readonly fitWidthTitle: string;
+    readonly fitHeightTitle: string;
+    readonly fitContainerTitle: string;
+    // Phase 2: I18N-TOOLBAR-LABELS - Actions
+    readonly downloadCurrent: string;
+    readonly downloadCurrentWithShortcut: string;
+    readonly downloadAllWithCount: string; // Template: {count}
+    readonly showKeyboardHelp: string;
+    readonly showKeyboardHelpWithShortcut: string;
+    readonly openSettings: string;
+    readonly settingsTitle: string;
+    readonly closeGallery: string;
+    readonly closeGalleryWithShortcut: string;
   };
   readonly settings: {
     readonly title: string;
@@ -75,6 +99,28 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '닫기',
       toggleProgressToastShow: '진행률 토스트 표시',
       toggleProgressToastHide: '진행률 토스트 숨김',
+      // Phase 2: I18N-TOOLBAR-LABELS
+      previousMedia: '이전 미디어',
+      nextMedia: '다음 미디어',
+      previousMediaWithShortcut: '이전 미디어 (←)',
+      nextMediaWithShortcut: '다음 미디어 (→)',
+      fitOriginal: '원본 크기',
+      fitWidth: '가로에 맞춤',
+      fitHeight: '세로에 맞춤',
+      fitContainer: '창에 맞춤',
+      fitOriginalWithShortcut: '원본 크기 (1:1)',
+      fitWidthTitle: '가로에 맞추기',
+      fitHeightTitle: '세로에 맞추기',
+      fitContainerTitle: '창에 맞추기',
+      downloadCurrent: '현재 파일 다운로드',
+      downloadCurrentWithShortcut: '현재 파일 다운로드 (Ctrl+D)',
+      downloadAllWithCount: '전체 {count}개 파일 ZIP 다운로드',
+      showKeyboardHelp: '키보드 단축키 표시',
+      showKeyboardHelpWithShortcut: '키보드 단축키 표시 (?)',
+      openSettings: '설정 열기',
+      settingsTitle: '설정',
+      closeGallery: '갤러리 닫기',
+      closeGalleryWithShortcut: '갤러리 닫기 (Esc)',
     },
     settings: {
       title: '설정',
@@ -111,6 +157,28 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: 'Close',
       toggleProgressToastShow: 'Show progress toast',
       toggleProgressToastHide: 'Hide progress toast',
+      // Phase 2: I18N-TOOLBAR-LABELS
+      previousMedia: 'Previous media',
+      nextMedia: 'Next media',
+      previousMediaWithShortcut: 'Previous media (←)',
+      nextMediaWithShortcut: 'Next media (→)',
+      fitOriginal: 'Original size',
+      fitWidth: 'Fit to width',
+      fitHeight: 'Fit to height',
+      fitContainer: 'Fit to window',
+      fitOriginalWithShortcut: 'Original size (1:1)',
+      fitWidthTitle: 'Fit to width',
+      fitHeightTitle: 'Fit to height',
+      fitContainerTitle: 'Fit to window',
+      downloadCurrent: 'Download current file',
+      downloadCurrentWithShortcut: 'Download current file (Ctrl+D)',
+      downloadAllWithCount: 'Download all {count} files as ZIP',
+      showKeyboardHelp: 'Show keyboard shortcuts',
+      showKeyboardHelpWithShortcut: 'Show keyboard shortcuts (?)',
+      openSettings: 'Open settings',
+      settingsTitle: 'Settings',
+      closeGallery: 'Close gallery',
+      closeGalleryWithShortcut: 'Close gallery (Esc)',
     },
     settings: {
       title: 'Settings',
@@ -151,6 +219,28 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '閉じる',
       toggleProgressToastShow: '進行トーストを表示',
       toggleProgressToastHide: '進行トーストを非表示',
+      // Phase 2: I18N-TOOLBAR-LABELS
+      previousMedia: '前のメディア',
+      nextMedia: '次のメディア',
+      previousMediaWithShortcut: '前のメディア (←)',
+      nextMediaWithShortcut: '次のメディア (→)',
+      fitOriginal: '原寸サイズ',
+      fitWidth: '幅に合わせる',
+      fitHeight: '高さに合わせる',
+      fitContainer: 'ウィンドウに合わせる',
+      fitOriginalWithShortcut: '原寸サイズ (1:1)',
+      fitWidthTitle: '幅に合わせる',
+      fitHeightTitle: '高さに合わせる',
+      fitContainerTitle: 'ウィンドウに合わせる',
+      downloadCurrent: '現在のファイルをダウンロード',
+      downloadCurrentWithShortcut: '現在のファイルをダウンロード (Ctrl+D)',
+      downloadAllWithCount: '全{count}ファイルをZIPでダウンロード',
+      showKeyboardHelp: 'キーボードショートカットを表示',
+      showKeyboardHelpWithShortcut: 'キーボードショートカットを表示 (?)',
+      openSettings: '設定を開く',
+      settingsTitle: '設定',
+      closeGallery: 'ギャラリーを閉じる',
+      closeGalleryWithShortcut: 'ギャラリーを閉じる (Esc)',
     },
     settings: {
       title: '設定',
