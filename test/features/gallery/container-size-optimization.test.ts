@@ -14,6 +14,7 @@ import {
   updateViewportForToolbar,
   MIN_MEDIA_HEIGHT,
   DEFAULT_TOOLBAR_HEIGHT,
+  calculateHoverZoneHeight,
   type ViewportDimensions,
 } from '@shared/utils/viewport/viewport-calculator';
 
@@ -64,10 +65,11 @@ describe('Container Size Optimization', () => {
   });
 
   describe('Viewport Calculation', () => {
-    it('should calculate available viewport height excluding toolbar', () => {
+    it('should calculate available viewport height excluding toolbar and padding', () => {
       const dimensions = calculateViewportDimensions(true);
 
-      const expectedAvailableHeight = window.innerHeight - DEFAULT_TOOLBAR_HEIGHT;
+      // 1080 - 80(toolbar) - 16(padding) = 984px
+      const expectedAvailableHeight = window.innerHeight - DEFAULT_TOOLBAR_HEIGHT - 16;
 
       expect(dimensions.availableHeight).toBe(expectedAvailableHeight);
       expect(dimensions.toolbarHeight).toBe(DEFAULT_TOOLBAR_HEIGHT);
@@ -75,7 +77,7 @@ describe('Container Size Optimization', () => {
       expect(dimensions.height).toBe(1080);
     });
 
-    it('should respect minimum media height for small screens', () => {
+    it('should respect adaptive minimum height for small screens', () => {
       // 작은 화면 시뮬레이션
       Object.defineProperty(window, 'innerHeight', {
         writable: true,
@@ -85,8 +87,10 @@ describe('Container Size Optimization', () => {
 
       const dimensions = calculateViewportDimensions(true);
 
-      // 툴바가 있어도 최소 400px 미디어 영역 확보
-      expect(dimensions.availableHeight).toBeGreaterThanOrEqual(MIN_MEDIA_HEIGHT);
+      // 600 * 0.6 = 360px (적응형 최소)
+      // 600 - 80(toolbar) - 16(padding) = 504px > 360px
+      // 따라서 504px 반환
+      expect(dimensions.availableHeight).toBe(504);
     });
 
     it('should adjust toolbar height based on visibility', () => {
@@ -96,12 +100,12 @@ describe('Container Size Optimization', () => {
       // 툴바 숨김 상태
       const hiddenDimensions = calculateViewportDimensions(false);
 
-      // 툴바 표시 시 가용 높이 감소
-      expect(visibleDimensions.availableHeight).toBe(1000); // 1080 - 80
+      // 툴바 표시 시 가용 높이 감소: 1080 - 80 - 16 = 984px
+      expect(visibleDimensions.availableHeight).toBe(984);
       expect(visibleDimensions.toolbarHeight).toBe(DEFAULT_TOOLBAR_HEIGHT);
 
-      // 툴바 숨김 시 전체 높이 사용
-      expect(hiddenDimensions.availableHeight).toBe(1080);
+      // 툴바 숨김 시: 1080 - 0 - 16 = 1064px
+      expect(hiddenDimensions.availableHeight).toBe(1064);
       expect(hiddenDimensions.toolbarHeight).toBe(0);
     });
   });
@@ -159,7 +163,8 @@ describe('Container Size Optimization', () => {
 
       expect(dimensions.width).toBe(1920);
       expect(dimensions.height).toBe(1080);
-      expect(dimensions.availableHeight).toBe(1000); // 1080 - 80
+      // 1080 - 80(toolbar) - 16(padding) = 984px
+      expect(dimensions.availableHeight).toBe(984);
     });
 
     it('should handle tablet screens (768x1024)', () => {
@@ -178,7 +183,9 @@ describe('Container Size Optimization', () => {
 
       expect(dimensions.width).toBe(768);
       expect(dimensions.height).toBe(1024);
-      expect(dimensions.availableHeight).toBeGreaterThanOrEqual(MIN_MEDIA_HEIGHT);
+      // 1024 * 0.6 = 614.4px (적응형 최소)
+      // 1024 - 80 - 16 = 928px > 614px
+      expect(dimensions.availableHeight).toBe(928);
     });
 
     it('should handle small mobile screens (375x667)', () => {
@@ -195,8 +202,10 @@ describe('Container Size Optimization', () => {
 
       const dimensions = calculateViewportDimensions(true);
 
-      // 작은 화면에서도 최소 미디어 영역 확보
-      expect(dimensions.availableHeight).toBeGreaterThanOrEqual(MIN_MEDIA_HEIGHT);
+      // 667 * 0.6 = 400.2px (적응형 최소)
+      // 667 - 80 - 16 = 571px > 400px
+      // 따라서 571px 반환
+      expect(dimensions.availableHeight).toBe(571);
     });
   });
 
@@ -206,12 +215,12 @@ describe('Container Size Optimization', () => {
 
       const dimensions = calculateViewportDimensions(true);
 
-      // 0px 툴바는 기본값 사용
-      expect(dimensions.availableHeight).toBe(1080);
+      // 1080 - 0(toolbar) - 16(padding) = 1064px
+      expect(dimensions.availableHeight).toBe(1064);
       expect(dimensions.toolbarHeight).toBe(0);
     });
 
-    it('should clamp available height to positive values', () => {
+    it('should clamp available height to adaptive minimum', () => {
       // 비정상적으로 큰 툴바 높이
       document.documentElement.style.setProperty('--xeg-toolbar-height', '2000px');
 
@@ -223,8 +232,9 @@ describe('Container Size Optimization', () => {
 
       const dimensions = calculateViewportDimensions(true);
 
-      // 음수가 되더라도 최소 높이 보장
-      expect(dimensions.availableHeight).toBeGreaterThanOrEqual(MIN_MEDIA_HEIGHT);
+      // 600 * 0.6 = 360px (적응형 최소)
+      // 600 - 2000 - 16 = -1416px → 360px로 클램핑
+      expect(dimensions.availableHeight).toBe(360);
     });
 
     it('should use default toolbar height if CSS variable is invalid', () => {
@@ -233,6 +243,93 @@ describe('Container Size Optimization', () => {
       const dimensions = calculateViewportDimensions(true);
 
       expect(dimensions.toolbarHeight).toBe(DEFAULT_TOOLBAR_HEIGHT);
+    });
+  });
+
+  describe('Adaptive Minimum Height (Sub-Epic 2)', () => {
+    it('should account for bottom padding (16px) in height calculation', () => {
+      Object.defineProperty(window, 'innerHeight', {
+        writable: true,
+        configurable: true,
+        value: 1080,
+      });
+
+      const dimensions = calculateViewportDimensions(true);
+
+      // 하단 패딩 16px 고려:
+      // 1080 - 80(toolbar) - 16(padding) = 984px 예상
+      // 현재 구현은 1000px를 반환하므로 이 테스트는 실패해야 함
+      expect(dimensions.availableHeight).toBe(984);
+    });
+
+    it('should enforce absolute minimum of 300px for tiny screens', () => {
+      Object.defineProperty(window, 'innerHeight', {
+        writable: true,
+        configurable: true,
+        value: 350,
+      });
+
+      const dimensions = calculateViewportDimensions(true);
+
+      // 350 * 0.6 = 210px < 300px → 300px 절대 최소 적용
+      // 350 - 80(toolbar) - 16(padding) = 254px < 300px
+      // 따라서 300px가 보장되어야 함
+      expect(dimensions.availableHeight).toBe(300);
+    });
+
+    it('should respect 60% adaptive minimum for 800px viewport', () => {
+      Object.defineProperty(window, 'innerHeight', {
+        writable: true,
+        configurable: true,
+        value: 800,
+      });
+
+      const dimensions = calculateViewportDimensions(true);
+
+      // 800 * 0.6 = 480px (적응형 최소값)
+      // 800 - 80(toolbar) - 16(padding) = 704px
+      // 480px < 704px이므로 704px 반환 예상
+      expect(dimensions.availableHeight).toBe(704);
+    });
+  });
+
+  describe('Hover Zone Height (Sub-Epic 3)', () => {
+    it('should calculate 15% of viewport height for 1080p desktop', () => {
+      // 1080 * 0.15 = 162px
+      const hoverHeight = calculateHoverZoneHeight(1080);
+      expect(hoverHeight).toBe(162);
+    });
+
+    it('should enforce minimum of 80px for small screens', () => {
+      // 400 * 0.15 = 60px < 80px → 80px
+      const hoverHeight = calculateHoverZoneHeight(400);
+      expect(hoverHeight).toBe(80);
+    });
+
+    it('should enforce maximum of 200px for large screens', () => {
+      // 2000 * 0.15 = 300px > 200px → 200px
+      const hoverHeight = calculateHoverZoneHeight(2000);
+      expect(hoverHeight).toBe(200);
+    });
+
+    it('should handle tablet viewport (768px)', () => {
+      // 768 * 0.15 = 115.2px → 115px
+      const hoverHeight = calculateHoverZoneHeight(768);
+      expect(hoverHeight).toBe(115);
+    });
+
+    it('should handle mobile viewport (667px)', () => {
+      // 667 * 0.15 = 100.05px → 100px
+      const hoverHeight = calculateHoverZoneHeight(667);
+      expect(hoverHeight).toBe(100);
+    });
+
+    it('should clamp between 80px and 200px range', () => {
+      expect(calculateHoverZoneHeight(500)).toBeGreaterThanOrEqual(80);
+      expect(calculateHoverZoneHeight(500)).toBeLessThanOrEqual(200);
+
+      expect(calculateHoverZoneHeight(1500)).toBeGreaterThanOrEqual(80);
+      expect(calculateHoverZoneHeight(1500)).toBeLessThanOrEqual(200);
     });
   });
 });

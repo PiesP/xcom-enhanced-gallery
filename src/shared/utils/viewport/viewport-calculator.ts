@@ -24,6 +24,7 @@ export interface ViewportDimensions {
 /**
  * 최소 미디어 영역 높이 (px)
  * 작은 화면에서도 이 값 이하로 떨어지지 않음
+ * @deprecated 하위 호환성을 위해 유지, calculateAdaptiveMinHeight 사용 권장
  */
 export const MIN_MEDIA_HEIGHT = 400;
 
@@ -32,6 +33,47 @@ export const MIN_MEDIA_HEIGHT = 400;
  * CSS 변수 --xeg-toolbar-height에서 가져오지 못할 경우 사용
  */
 export const DEFAULT_TOOLBAR_HEIGHT = 80;
+
+/**
+ * 하단 패딩 (px)
+ * 스크롤바 및 여백을 위한 공간
+ */
+export const BOTTOM_PADDING = 16;
+
+/**
+ * 뷰포트 높이 기반 적응형 최소 높이를 계산합니다.
+ *
+ * @param viewportHeight - 뷰포트 높이 (px)
+ * @returns 적응형 최소 높이 (px)
+ */
+export function calculateAdaptiveMinHeight(viewportHeight: number): number {
+  // 뷰포트 높이의 60% 최소 확보
+  const ratio = 0.6;
+  const calculated = Math.floor(viewportHeight * ratio);
+
+  // 절대 최소값: 300px
+  const ABSOLUTE_MIN = 300;
+
+  return Math.max(calculated, ABSOLUTE_MIN);
+}
+
+/**
+ * 툴바 호버 영역 높이를 계산합니다.
+ * Sub-Epic 3: TOOLBAR-HOVER-EXPANSION
+ *
+ * @param viewportHeight - 뷰포트 높이 (px)
+ * @returns 호버 영역 높이 (px)
+ */
+export function calculateHoverZoneHeight(viewportHeight: number): number {
+  // 뷰포트 높이의 15% (최소 80px, 최대 200px)
+  const ratio = 0.15;
+  const calculated = Math.floor(viewportHeight * ratio);
+
+  const MIN_HOVER_ZONE = 80;
+  const MAX_HOVER_ZONE = 200;
+
+  return Math.max(MIN_HOVER_ZONE, Math.min(calculated, MAX_HOVER_ZONE));
+}
 
 /**
  * CSS 변수에서 툴바 높이를 추출합니다.
@@ -78,11 +120,14 @@ export function calculateViewportDimensions(toolbarVisible: boolean = true): Vie
   const height = window.innerHeight;
   const toolbarHeight = toolbarVisible ? getToolbarHeightFromCSS() : 0;
 
-  // 가용 높이 계산: 뷰포트 높이 - 툴바 높이
-  let availableHeight = height - toolbarHeight;
+  // 가용 높이 계산: 뷰포트 높이 - 툴바 높이 - 하단 패딩
+  let availableHeight = height - toolbarHeight - BOTTOM_PADDING;
 
-  // 최소 미디어 높이 보장
-  availableHeight = Math.max(availableHeight, MIN_MEDIA_HEIGHT);
+  // 적응형 최소 높이 계산 (뷰포트 높이의 60%, 최소 300px)
+  const adaptiveMinHeight = calculateAdaptiveMinHeight(height);
+
+  // 적응형 최소 높이 적용
+  availableHeight = Math.max(availableHeight, adaptiveMinHeight);
 
   // 음수 방지 (비정상적인 상황)
   availableHeight = Math.max(availableHeight, 0);

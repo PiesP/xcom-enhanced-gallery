@@ -111,6 +111,12 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       expect(scrollAnchorManager).toBeDefined();
       expect(typeof scrollAnchorManager.restoreToAnchor).toBe('function');
 
+      // JSDOM 기본 뷰포트 명시적 설정 (태블릿 범위)
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 768,
+      });
+
       // Mock 트윗 요소 (offsetTop 시뮬레이션)
       const tweetElement = document.createElement('div');
       Object.defineProperty(tweetElement, 'offsetTop', {
@@ -122,8 +128,8 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       scrollAnchorManager.setAnchor(tweetElement);
       scrollAnchorManager.restoreToAnchor();
 
-      // 앵커 위치 - 상단 여백 100px
-      const expectedScrollTop = 500 - 100;
+      // 앵커 위치 - 상단 여백 80px (태블릿)
+      const expectedScrollTop = 500 - 80;
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
           top: expectedScrollTop,
@@ -192,6 +198,12 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
     it('should handle dynamic content changes between set and restore', () => {
       expect(scrollAnchorManager).toBeDefined();
 
+      // 태블릿 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 768,
+      });
+
       // 초기 트윗 요소
       const tweetElement = document.createElement('div');
       tweetElement.setAttribute('data-testid', 'tweet');
@@ -216,7 +228,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
 
       // 복원 시 현재 offsetTop 사용 (동적 변화 반영)
       scrollAnchorManager.restoreToAnchor();
-      const expectedScrollTop = 700 - 100;
+      const expectedScrollTop = 700 - 80; // 태블릿 여백
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
           top: expectedScrollTop,
@@ -253,6 +265,12 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
     it('should integrate with bodyScrollManager workflow', async () => {
       expect(scrollAnchorManager).toBeDefined();
 
+      // 태블릿 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 768,
+      });
+
       // bodyScrollManager import
       const bodyModule = await import('@shared/utils/scroll/body-scroll-manager');
       const bodyScrollManager = bodyModule.bodyScrollManager;
@@ -276,8 +294,8 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       bodyScrollManager.unlock('gallery');
       scrollAnchorManager.restoreToAnchor();
 
-      // 5. 앵커 위치로 복원 확인 (350 - 100 = 250)
-      const expectedScrollTop = 250;
+      // 5. 앵커 위치로 복원 확인 (350 - 80 = 270, 태블릿)
+      const expectedScrollTop = 270;
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
           top: expectedScrollTop,
@@ -323,6 +341,12 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
     it('should handle very large scroll positions', () => {
       expect(scrollAnchorManager).toBeDefined();
 
+      // 태블릿 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 768,
+      });
+
       const tweetElement = document.createElement('div');
       Object.defineProperty(tweetElement, 'offsetTop', {
         value: 50000, // 매우 긴 타임라인
@@ -332,7 +356,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       scrollAnchorManager.setAnchor(tweetElement);
       scrollAnchorManager.restoreToAnchor();
 
-      const expectedScrollTop = 50000 - 100;
+      const expectedScrollTop = 50000 - 80; // 태블릿 여백
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
           top: expectedScrollTop,
@@ -358,6 +382,126 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
 
       // 복원
       window.scrollTo = originalScrollTo;
+    });
+  });
+
+  describe('Epic GALLERY-UX-REFINEMENT: 뷰포트 반응형 여백 (Viewport-Responsive Margin)', () => {
+    it('[RED] should use 60px margin for mobile viewports (<600px)', () => {
+      expect(scrollAnchorManager).toBeDefined();
+
+      // 모바일 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 500,
+      });
+
+      // Mock 트윗 요소 (offsetTop = 500)
+      const tweetElement = document.createElement('div');
+      tweetElement.style.position = 'absolute';
+      tweetElement.style.top = '500px';
+      document.body.appendChild(tweetElement);
+
+      // offsetTop을 실제로 반영하도록 mock
+      Object.defineProperty(tweetElement, 'offsetTop', {
+        configurable: true,
+        value: 500,
+      });
+
+      scrollAnchorManager.setAnchor(tweetElement);
+      scrollAnchorManager.restoreToAnchor();
+
+      // 기대값: 500 - 60 = 440
+      expect(window.scrollTo).toHaveBeenCalledWith({
+        top: 440,
+        behavior: 'auto',
+      });
+    });
+
+    it('[RED] should use 80px margin for tablet viewports (600px-900px)', () => {
+      expect(scrollAnchorManager).toBeDefined();
+
+      // 태블릿 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 768,
+      });
+
+      const tweetElement = document.createElement('div');
+      tweetElement.style.position = 'absolute';
+      tweetElement.style.top = '500px';
+      document.body.appendChild(tweetElement);
+
+      Object.defineProperty(tweetElement, 'offsetTop', {
+        configurable: true,
+        value: 500,
+      });
+
+      scrollAnchorManager.setAnchor(tweetElement);
+      scrollAnchorManager.restoreToAnchor();
+
+      // 기대값: 500 - 80 = 420
+      expect(window.scrollTo).toHaveBeenCalledWith({
+        top: 420,
+        behavior: 'auto',
+      });
+    });
+
+    it('[RED] should use 100px margin for desktop viewports (≥900px)', () => {
+      expect(scrollAnchorManager).toBeDefined();
+
+      // 데스크톱 뷰포트 설정
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 1080,
+      });
+
+      const tweetElement = document.createElement('div');
+      tweetElement.style.position = 'absolute';
+      tweetElement.style.top = '500px';
+      document.body.appendChild(tweetElement);
+
+      Object.defineProperty(tweetElement, 'offsetTop', {
+        configurable: true,
+        value: 500,
+      });
+
+      scrollAnchorManager.setAnchor(tweetElement);
+      scrollAnchorManager.restoreToAnchor();
+
+      // 기대값: 500 - 100 = 400
+      expect(window.scrollTo).toHaveBeenCalledWith({
+        top: 400,
+        behavior: 'auto',
+      });
+    });
+
+    it('[RED] should handle edge case: extremely small viewport', () => {
+      expect(scrollAnchorManager).toBeDefined();
+
+      // 매우 작은 뷰포트
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: 400,
+      });
+
+      const tweetElement = document.createElement('div');
+      tweetElement.style.position = 'absolute';
+      tweetElement.style.top = '50px';
+      document.body.appendChild(tweetElement);
+
+      Object.defineProperty(tweetElement, 'offsetTop', {
+        configurable: true,
+        value: 50,
+      });
+
+      scrollAnchorManager.setAnchor(tweetElement);
+      scrollAnchorManager.restoreToAnchor();
+
+      // 기대값: max(0, 50 - 60) = 0 (음수 방지)
+      expect(window.scrollTo).toHaveBeenCalledWith({
+        top: 0,
+        behavior: 'auto',
+      });
     });
   });
 });

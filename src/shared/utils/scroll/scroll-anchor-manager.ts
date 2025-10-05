@@ -48,6 +48,31 @@ export class ScrollAnchorManager {
   private fallbackScrollTop: number = 0;
 
   /**
+   * 뷰포트 크기에 따른 상단 여백 계산
+   *
+   * Epic GALLERY-UX-REFINEMENT: 뷰포트 반응형 여백
+   *
+   * @returns 상단 여백 (픽셀)
+   * @private
+   */
+  private calculateTopMargin(): number {
+    if (typeof window === 'undefined') {
+      return 100; // Node/테스트 환경 fallback
+    }
+
+    const viewportHeight = window.innerHeight;
+
+    // 뷰포트 높이 기반 여백 계산
+    if (viewportHeight < 600) {
+      return 60; // 모바일
+    }
+    if (viewportHeight < 900) {
+      return 80; // 태블릿
+    }
+    return 100; // 데스크톱
+  }
+
+  /**
    * 스크롤 앵커 설정
    *
    * @param element - 앵커로 사용할 DOM 요소 (null이면 앵커 제거)
@@ -107,8 +132,8 @@ export class ScrollAnchorManager {
     }
 
     // 앵커 요소를 기준으로 스크롤 위치 계산
-    // 상단 여백 100px을 두어 앵커 요소가 뷰포트 상단에 너무 가깝지 않도록 함
-    const topMargin = 100;
+    // 상단 여백을 뷰포트 크기에 따라 동적으로 계산
+    const topMargin = this.calculateTopMargin();
     const targetY = this.anchor.element.offsetTop - topMargin;
 
     // 음수 방지 (상단 경계)

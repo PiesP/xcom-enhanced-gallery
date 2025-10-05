@@ -199,6 +199,45 @@ export function useToolbarPositionBased(
     });
   });
 
+  // 키보드 네비게이션 (PC 전용 입력 정책)
+  // Sub-Epic 3: TOOLBAR-HOVER-EXPANSION
+  createEffect(() => {
+    const enabled = enabledMemo();
+
+    // Guard: document 또는 addEventListener 미존재 시 early return
+    if (
+      !enabled ||
+      typeof document === 'undefined' ||
+      typeof document.addEventListener !== 'function'
+    ) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Escape 키로 툴바 토글
+      // 갤러리 닫기와 충돌 방지: toolbar가 표시 중일 때만 이벤트 전파 중단
+      if (event.key === 'Escape') {
+        const currentVisibility = resolvedVisibility();
+        if (currentVisibility) {
+          // 툴바가 보이면 숨김
+          hide();
+          event.stopPropagation(); // 갤러리 닫기 이벤트 전파 방지
+        } else {
+          // 툴바가 숨겨져 있으면 표시
+          show();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    onCleanup(() => {
+      if (typeof document.removeEventListener === 'function') {
+        document.removeEventListener('keydown', handleKeyDown);
+      }
+    });
+  });
+
   onCleanup(() => {
     // Solid 컴포넌트 언마운트 시 마지막으로 적용된 CSS 토큰을 정리하여 일관성 유지
     clearAutoHideTimer();

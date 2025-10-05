@@ -29,7 +29,7 @@
 
 ### 테스트 상태
 
-- **전체 테스트**: 2869 passed | 110 skipped | 1 todo (2980)
+- **전체 테스트**: 2873 passed | 110 skipped | 1 todo (2984)
 - **상태**: ✅ GREEN
 
 ### 번들 크기
@@ -49,7 +49,20 @@
 
 ## 3. 활성 Epic 현황
 
-### Epic GALLERY-UX-REFINEMENT
+### 현재 활성 Epic 없음 ✅
+
+모든 활성 Epic이 완료되었습니다. 다음 Epic을 선정하려면 아래 "향후 Epic 후보"를
+참조하세요.
+
+**최근 완료된 Epic** (2025-10-06):
+
+- ✅ **GALLERY-UX-REFINEMENT**: 갤러리 UX 정교화 (4개 Sub-Epic 완료, 6 commits)
+  - 세부 내용:
+    [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
+
+---
+
+## 4. 향후 Epic 후보
 
 **목표**: 갤러리 사용자 경험 정교화 (4가지 개선)
 
