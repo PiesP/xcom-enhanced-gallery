@@ -21,6 +21,7 @@ import { getSetting, setSetting } from '@shared/container/settings-access';
 import { createSolidKeyboardHelpOverlayController } from './createSolidKeyboardHelpOverlayController';
 import type { SolidSettingsPanelInstance } from '@/features/settings/solid/renderSolidSettingsPanel';
 import { useGalleryScroll } from '@/features/gallery/hooks/useGalleryScroll';
+import { useGalleryVisibleIndex } from '@/features/gallery/hooks/useVisibleIndex';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -316,6 +317,14 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     blockTwitterScroll: true,
   });
 
+  // Phase 2-2 (AUTO-FOCUS-UPDATE): visibleIndex 추적
+  // IntersectionObserver로 현재 화면에 가장 많이 보이는 아이템 추적
+  // currentIndex와 독립적으로 동작 (자동 스크롤 미발생)
+  const visibleIndexResult = useGalleryVisibleIndex(() => itemsContainerRef ?? null, totalCount(), {
+    rafCoalesce: true,
+  });
+  const visibleIndex = createMemo(() => visibleIndexResult.visibleIndexAccessor());
+
   const handleItemSelection = (index: number) => {
     if (index === currentIndex()) {
       return;
@@ -330,6 +339,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
         index={index}
         isActive={index === currentIndex()}
         isFocused={index === currentIndex()}
+        isVisible={index === visibleIndex()}
         forceVisible={index === currentIndex()}
         fitMode={fitMode()}
         onClick={() => handleItemSelection(index)}
