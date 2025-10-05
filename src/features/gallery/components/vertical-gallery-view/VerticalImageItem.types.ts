@@ -30,6 +30,18 @@ export interface VerticalImageItemProps {
    */
   readonly isFocused?: boolean;
 
+  /**
+   * 뷰포트 가시 영역에 있는 아이템 여부 (Soft Focus)
+   * @remarks
+   * Epic AUTO-FOCUS-UPDATE (Phase 2-1): IntersectionObserver 기반 가시성 추적.
+   * 자동 스크롤 없이 시각적 힌트만 제공 (border + shadow + background).
+   * CSS: `.visible` 클래스 적용 → 디자인 토큰 기반 시각적 강조.
+   * ARIA: `aria-current="true"` 설정 (스크린 리더 피드백).
+   * isActive와 독립적으로 동작 (둘 다 동시에 true 가능).
+   * @default false
+   */
+  readonly isVisible?: boolean;
+
   readonly forceVisible?: boolean;
   readonly fitMode?: ImageFitMode;
   readonly className?: string;

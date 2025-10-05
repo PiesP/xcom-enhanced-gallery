@@ -79,6 +79,20 @@
   transition: var(--xeg-transition-fast);
 }
 
+/**
+ * Epic AUTO-FOCUS-UPDATE (Phase 2-1): 가시 영역 상태 (.visible)
+ * @description 뷰포트 가시 영역에 있는 아이템 (IntersectionObserver 기반)
+ * @visual 시각적 힌트 (border + shadow + background) - Soft Focus
+ * @behavior 자동 스크롤 없이 시각적 강조만 제공
+ * @a11y aria-current="true" 설정 (스크린 리더 피드백)
+ * @note .active, .focused와 독립적으로 동작 (동시 적용 가능)
+ */
+.container.visible {
+  border: var(--xeg-item-visible-border);
+  box-shadow: var(--xeg-item-visible-shadow);
+  background: var(--xeg-item-visible-bg);
+}
+
 .imageWrapper {
   position: relative;
   background: var(--xeg-color-bg-secondary);

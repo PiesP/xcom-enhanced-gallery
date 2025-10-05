@@ -124,6 +124,7 @@ export const ComponentStandards = {
     if (props['aria-busy']) ariaProps['aria-busy'] = props['aria-busy'];
     if (props['aria-pressed']) ariaProps['aria-pressed'] = props['aria-pressed'];
     if (props['aria-haspopup']) ariaProps['aria-haspopup'] = props['aria-haspopup'];
+    if (props['aria-current']) ariaProps['aria-current'] = props['aria-current'];
     if (props.role) ariaProps.role = props.role;
     if (props.tabIndex !== undefined) ariaProps.tabIndex = props.tabIndex;
 

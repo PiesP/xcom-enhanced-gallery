@@ -127,6 +127,11 @@
   --media-loading-bg: var(--color-bg-secondary);
   --media-placeholder-text: var(--color-text-muted);
 
+  /* Epic AUTO-FOCUS-UPDATE (Phase 2-1): Soft Focus Visual Emphasis */
+  --xeg-item-visible-border: 2px solid var(--color-primary);
+  --xeg-item-visible-shadow: 0 0 12px oklch(from var(--color-primary) l c h / 0.3);
+  --xeg-item-visible-bg: var(--color-bg-elevated);
+
   /* Scrollbar Component */
   --scrollbar-width: 8px;
   --scrollbar-track-bg: var(--color-bg-secondary);
