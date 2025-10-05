@@ -36,14 +36,11 @@ describe('fflate Deprecated API 제거 검증 (Epic: FFLATE-DEPRECATED-API-REMOV
       ).toBe(false);
     });
 
-    it('vendor-api.ts에 getFflate export가 존재하지 않아야 함', () => {
+    it('vendor-api.ts에 getFflate export가 존재하지 않아야 함 (Phase 4B: 파일 제거됨)', () => {
       const vendorApiPath = resolve(projectRoot, 'src/shared/external/vendors/vendor-api.ts');
-      const content = readFileSync(vendorApiPath, 'utf8');
 
-      expect(
-        content.includes('getFflate'),
-        'getFflate export가 아직 존재합니다.\n' + '제거 필요: getFflateSafe as getFflate'
-      ).toBe(false);
+      // Phase 4B에서 vendor-api.ts 파일이 제거되었으므로 존재하지 않아야 함
+      expect(existsSync(vendorApiPath), 'vendor-api.ts 파일이 아직 존재합니다').toBe(false);
     });
 
     it('index.ts에 getFflate export가 존재하지 않아야 함', () => {
