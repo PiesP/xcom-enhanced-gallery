@@ -57,7 +57,7 @@ describe('MediaItemFactory Contract (TDD RED)', () => {
       expect(container.querySelector('[data-testid="video-container"]')).toBeTruthy();
     });
 
-    it('gif 타입은 VerticalImageItem을 폴백한다', () => {
+    it('gif 타입은 VerticalGifItem을 반환한다', () => {
       const media: MediaInfo = {
         url: 'https://pbs.twimg.com/tweet_video/test.gif',
         type: 'gif',
@@ -69,8 +69,8 @@ describe('MediaItemFactory Contract (TDD RED)', () => {
 
       expect(component).toBeDefined();
       const { container } = render(() => component);
-      // GIF는 현재 VerticalImageItem으로 처리
-      expect(container.querySelector('[data-xeg-component="vertical-image-item"]')).toBeTruthy();
+      // GIF는 이제 VerticalGifItem으로 처리
+      expect(container.querySelector('[data-xeg-component="vertical-gif-item"]')).toBeTruthy();
     });
 
     it('알 수 없는 타입은 VerticalImageItem을 폴백한다', () => {
