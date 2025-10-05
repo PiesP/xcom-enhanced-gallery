@@ -81,3 +81,8 @@ export type { StandardError, ErrorContext } from './error-handling';
 // 배럴을 통해 노출하여 내부 의존 그래프에서 orphan이 되지 않도록 연결
 export { LeakGuard } from './lifecycle/leak-guard';
 export type { Unsubscribe } from './lifecycle/leak-guard';
+
+// === Reactive Accessor & Singleton Listener ===
+export { resolve, resolveWithDefault, combineAccessors } from './reactive-accessor';
+export type { ReactiveValue } from './reactive-accessor';
+export { SingletonListenerManager, globalListenerManager } from './singleton-listener';

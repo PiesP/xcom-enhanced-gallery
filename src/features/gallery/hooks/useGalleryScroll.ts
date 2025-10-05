@@ -9,10 +9,8 @@
 import { getSolidCore } from '@shared/external/vendors';
 import { ensureWheelLock } from '@shared/utils/events/wheel';
 import { galleryState } from '@shared/state/signals/gallery.signals';
-
-let activeCleanup: (() => void) | null = null;
-
-type MaybeAccessor<T> = T | (() => T);
+import { resolve, resolveWithDefault, type ReactiveValue } from '@shared/utils/reactive-accessor';
+import { globalListenerManager } from '@shared/utils/singleton-listener';
 
 const BODY_ELEMENTS = new Set<EventTarget | null>([
   typeof document !== 'undefined' ? document.body : null,
@@ -29,22 +27,11 @@ export interface GalleryScrollMeta {
 }
 
 export interface UseGalleryScrollOptions {
-  container: MaybeAccessor<HTMLElement | null | undefined>;
+  container: ReactiveValue<HTMLElement | null | undefined>;
   onScroll: (delta: number, meta?: GalleryScrollMeta) => void;
-  enabled?: MaybeAccessor<boolean>;
-  blockTwitterScroll?: MaybeAccessor<boolean>;
-  enableScrollDirection?: MaybeAccessor<boolean>;
-}
-
-function resolve<T>(value: MaybeAccessor<T>): T {
-  return typeof value === 'function' ? (value as () => T)() : value;
-}
-
-function resolveWithDefault<T>(value: MaybeAccessor<T> | undefined, fallback: T): T {
-  if (value === undefined) {
-    return fallback;
-  }
-  return resolve(value);
+  enabled?: ReactiveValue<boolean>;
+  blockTwitterScroll?: ReactiveValue<boolean>;
+  enableScrollDirection?: ReactiveValue<boolean>;
 }
 
 function isBodyLike(container: HTMLElement | null): boolean {
@@ -84,6 +71,8 @@ function isTargetWithinContainer(event: WheelEvent, container: HTMLElement): boo
   return target === container;
 }
 
+const LISTENER_KEY = 'gallery-wheel';
+
 export function useGalleryScroll(options: UseGalleryScrollOptions): void {
   if (typeof document === 'undefined') {
     return;
@@ -91,10 +80,6 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
 
   const { onCleanup } = getSolidCore();
   const getGalleryState = galleryState; // Native SolidJS Accessor
-
-  if (activeCleanup) {
-    activeCleanup();
-  }
 
   const containerAccessor = () => resolve(options.container) ?? null;
   const getEnabled = () => resolveWithDefault(options.enabled, true);
@@ -125,17 +110,10 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
 
   const cleanupWheel = ensureWheelLock(document, handleWheel);
 
-  const removeListener = () => {
-    cleanupWheel();
-    if (activeCleanup === removeListener) {
-      activeCleanup = null;
-    }
-  };
-
-  activeCleanup = removeListener;
+  globalListenerManager.register(LISTENER_KEY, cleanupWheel);
 
   onCleanup(() => {
-    removeListener();
+    globalListenerManager.unregister(LISTENER_KEY);
   });
 }
 
