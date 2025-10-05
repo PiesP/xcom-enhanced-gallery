@@ -479,9 +479,468 @@ function sanitize(obj) {
 
 ---
 
+## 11. Extension Points (확장 지점)
+
+### 새로운 Feature 추가
+
+**체크리스트**:
+
+1. **컴포넌트 생성** (`src/features/<feature-name>/`)
+   - 서비스 접근: `@shared/container/service-accessors` 사용
+   - 스타일: CSS Modules + 디자인 토큰만
+   - 이벤트: PC 전용 (click, keydown/keyup, wheel, contextmenu, mouse)
+
+2. **상태 관리** (필요시)
+   - SolidJS Native: `getSolidCore().createSignal()`
+   - 글로벌 상태: `shared/state/` 디렉터리에 생성
+   - 파생값: `createMemo()` 또는 `signalSelector` 활용
+
+3. **서비스 통합** (필요시)
+   - 서비스 생성: `src/shared/services/<service-name>.ts`
+   - 컨테이너 등록: `src/shared/container/service-container.ts`
+   - 타입 추가: `src/shared/container/service-types.ts`
+   - 액세서 생성: `src/shared/container/service-accessors.ts`
+
+4. **테스트 작성** (TDD)
+   - 계약 테스트: `test/features/<feature-name>/*.test.tsx`
+   - 통합 테스트: `test/integration/<feature-name>-integration.test.ts`
+   - RED → GREEN → REFACTOR 순서 준수
+
+**예제**: 새로운 필터 기능 추가
+
+```typescript
+// src/features/filter/FilterPanel.tsx
+import { getSolidCore } from '@shared/external/vendors';
+import { getMediaService } from '@shared/container/service-accessors';
+import styles from './FilterPanel.module.css';
+
+export const FilterPanel = () => {
+  const solid = getSolidCore();
+  const [filterType, setFilterType] = solid.createSignal<'all' | 'image' | 'video'>('all');
+
+  const mediaService = getMediaService();
+  const filteredItems = solid.createMemo(() => {
+    const items = mediaService.getAllItems();
+    return filterType() === 'all'
+      ? items
+      : items.filter(item => item.type === filterType());
+  });
+
+  return (
+    <div class={styles.container}>
+      <button onClick={() => setFilterType('all')}>All</button>
+      <button onClick={() => setFilterType('image')}>Images</button>
+      <button onClick={() => setFilterType('video')}>Videos</button>
+    </div>
+  );
+};
+```
+
+### 새로운 Service 추가
+
+**체크리스트**:
+
+1. **서비스 인터페이스 정의** (`src/shared/services/`)
+   - 타입 안전성 보장
+   - 외부 의존성은 getter/adapter 경유만
+
+2. **계약 테스트 작성** (RED)
+
+   ```typescript
+   // test/unit/services/my-service.contract.test.ts
+   describe('MyService Contract', () => {
+     it('should implement required interface', () => {
+       const service = new MyService();
+       expect(service.doSomething).toBeDefined();
+     });
+   });
+   ```
+
+3. **서비스 구현** (GREEN)
+   - Vendor getter 사용: `getSolidCore()`, `getSolidStore()`
+   - Userscript adapter: `getUserscript()`
+   - 로깅: `@shared/logging` 사용
+
+4. **컨테이너 등록**
+
+   ```typescript
+   // src/shared/container/service-container.ts
+   export function configureServiceContainer(): ServiceContainer {
+     const myService = new MyService();
+     return {
+       // ... 기존 서비스
+       myService,
+     };
+   }
+   ```
+
+5. **액세서 추가**
+   ```typescript
+   // src/shared/container/service-accessors.ts
+   export function getMyService(): MyService {
+     return getServiceContainer().myService;
+   }
+   ```
+
+**예제**: 캐싱 서비스 추가
+
+```typescript
+// src/shared/services/CacheService.ts
+import { logInfo, logWarn } from '@shared/logging';
+
+export class CacheService {
+  private cache = new Map<string, { data: unknown; timestamp: number }>();
+  private readonly ttl = 5 * 60 * 1000; // 5분
+
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    const isExpired = Date.now() - entry.timestamp > this.ttl;
+    if (isExpired) {
+      logWarn('Cache expired', { key });
+      this.cache.delete(key);
+      return null;
+    }
+
+    logInfo('Cache hit', { key });
+    return entry.data as T;
+  }
+
+  set<T>(key: string, data: T): void {
+    this.cache.set(key, { data, timestamp: Date.now() });
+    logInfo('Cache set', { key });
+  }
+
+  clear(): void {
+    this.cache.clear();
+    logInfo('Cache cleared');
+  }
+}
+```
+
+### 새로운 External Integration 추가
+
+**예제**: 새로운 외부 라이브러리 통합
+
+```typescript
+// src/shared/external/my-library/adapter.ts
+import type { MyLibrary } from 'my-library';
+
+let myLibraryInstance: MyLibrary | null = null;
+
+export async function initializeMyLibrary(): Promise<void> {
+  if (typeof window === 'undefined') {
+    // Node/테스트 환경
+    return;
+  }
+
+  // TDZ-safe 초기화
+  const { default: MyLibrary } = await import('my-library');
+  myLibraryInstance = new MyLibrary();
+}
+
+export function getMyLibrary(): MyLibrary {
+  if (!myLibraryInstance) {
+    throw new Error(
+      'MyLibrary not initialized. Call initializeMyLibrary() first.'
+    );
+  }
+  return myLibraryInstance;
+}
+
+// 테스트 모킹
+export function __resetMyLibraryForTest(): void {
+  myLibraryInstance = null;
+}
+```
+
+**테스트 모킹**:
+
+```typescript
+// test/unit/external/my-library-adapter.test.ts
+import { vi } from 'vitest';
+import * as adapter from '@shared/external/my-library/adapter';
+
+describe('MyLibrary Adapter', () => {
+  it('should provide mocked instance', () => {
+    const mockLib = { doSomething: vi.fn() };
+    vi.spyOn(adapter, 'getMyLibrary').mockReturnValue(mockLib);
+
+    const lib = adapter.getMyLibrary();
+    lib.doSomething();
+
+    expect(mockLib.doSomething).toHaveBeenCalled();
+  });
+});
+```
+
+---
+
+## 12. Migration Patterns (패턴 전환 가이드)
+
+### 레거시 → SolidJS Native 마이그레이션
+
+**문제**: `createGlobalSignal` (Preact Signals 스타일)
+
+**솔루션**: SolidJS Native Signals
+
+**Before**:
+
+```typescript
+import { createGlobalSignal } from '@shared/state/createGlobalSignal';
+
+const countSignal = createGlobalSignal(0);
+
+// Preact 스타일 접근
+countSignal.value = 42;
+const current = countSignal.value;
+countSignal.subscribe(value => console.log(value));
+```
+
+**After**:
+
+```typescript
+import { getSolidCore } from '@shared/external/vendors';
+
+const solid = getSolidCore();
+const [count, setCount] = solid.createSignal(0);
+
+// SolidJS Native 패턴
+setCount(42);
+const current = count();
+solid.createEffect(() => console.log(count()));
+```
+
+**체크리스트**:
+
+- [ ] `.value` getter/setter → `signal()` / `setSignal()` 함수 호출
+- [ ] `.subscribe()` → `createEffect()` 사용
+- [ ] 파생값은 `createMemo()` 사용
+- [ ] 테스트에서 모킹 패턴 변경 (`vi.spyOn(vendors, 'getSolidCore')`)
+
+### ServiceManager 직접 import → 액세서 패턴
+
+**문제**: Features에서 ServiceManager 직접 import
+
+**Before**:
+
+```typescript
+// ❌ 금지
+import { ServiceManager } from '@shared/container/service-manager';
+
+const mediaService = ServiceManager.getInstance().getMediaService();
+```
+
+**After**:
+
+```typescript
+// ✅ 권장
+import { getMediaService } from '@shared/container/service-accessors';
+
+const mediaService = getMediaService();
+```
+
+**이유**:
+
+- 레이어 경계 명확화 (Features → Shared)
+- 테스트에서 쉽게 모킹 가능
+- 순환 의존성 방지
+
+---
+
+## 13. Advanced Patterns (고급 패턴)
+
+### Lazy Loading (지연 로딩)
+
+**Userscript 제약**: 코드 분할(Code Splitting) 불가, 단일 번들만 가능
+
+**대안**: 조건부 초기화 + 동적 import
+
+```typescript
+// src/features/advanced-feature/lazy-loader.ts
+import { getSolidCore } from '@shared/external/vendors';
+
+let advancedFeatureModule: typeof import('./advanced-feature') | null = null;
+
+export async function loadAdvancedFeature(): Promise<void> {
+  if (advancedFeatureModule) return;
+
+  // 동적 import (번들에 포함되지만 초기화 지연)
+  advancedFeatureModule = await import('./advanced-feature');
+  advancedFeatureModule.initialize();
+}
+
+export function getAdvancedFeature() {
+  if (!advancedFeatureModule) {
+    throw new Error(
+      'Advanced feature not loaded. Call loadAdvancedFeature() first.'
+    );
+  }
+  return advancedFeatureModule;
+}
+```
+
+**사용 예**:
+
+```typescript
+// 사용자가 특정 버튼 클릭 시에만 로드
+button.addEventListener('click', async () => {
+  await loadAdvancedFeature();
+  const feature = getAdvancedFeature();
+  feature.doSomething();
+});
+```
+
+### Memoization & Caching
+
+**성능 최적화**: 비용이 큰 연산 결과 캐싱
+
+```typescript
+import { getSolidCore } from '@shared/external/vendors';
+
+const solid = getSolidCore();
+
+// 계산 비용이 큰 파생값
+const expensiveComputation = solid.createMemo(() => {
+  const items = getAllItems();
+  return items
+    .map(item => heavyTransformation(item))
+    .filter(item => complexCondition(item))
+    .sort((a, b) => expensiveSorting(a, b));
+});
+
+// 사용
+const result = expensiveComputation(); // 캐싱된 결과 반환
+```
+
+### Error Boundaries
+
+**목적**: 에러 격리 및 복구
+
+```typescript
+// src/shared/utils/error-boundary.ts
+import { getSolidCore } from '@shared/external/vendors';
+import { logError } from '@shared/logging';
+
+export function createErrorBoundary<T>(
+  component: () => T,
+  fallback: (error: Error) => T
+): () => T {
+  const solid = getSolidCore();
+  const [error, setError] = solid.createSignal<Error | null>(null);
+
+  return () => {
+    try {
+      if (error()) {
+        return fallback(error()!);
+      }
+      return component();
+    } catch (err) {
+      const errorObj = err instanceof Error ? err : new Error(String(err));
+      logError('Component error', { error: errorObj });
+      setError(errorObj);
+      return fallback(errorObj);
+    }
+  };
+}
+```
+
+**사용 예**:
+
+```typescript
+import { createErrorBoundary } from '@shared/utils/error-boundary';
+
+const SafeGallery = createErrorBoundary(
+  () => <GalleryApp />,
+  (error) => <ErrorFallback message={error.message} />
+);
+```
+
+---
+
+## 14. Performance Monitoring (성능 모니터링)
+
+### 번들 크기 회귀 방지
+
+**자동 검증**: `test/architecture/bundle-size-optimization.contract.test.ts`
+
+**상한선**:
+
+- Raw: ≤473 KB (현재: 471.67 KB)
+- Gzip: ≤118 KB (현재: 117.12 KB)
+
+**CI 통합**: `scripts/validate-build.js`에서 빌드 후 자동 검증
+
+### 메모리 누수 감지
+
+**패턴**: 모든 리스너/타이머는 `onCleanup`에서 해제
+
+```typescript
+import { getSolidCore } from '@shared/external/vendors';
+
+const solid = getSolidCore();
+
+solid.createEffect(() => {
+  const handler = (e: Event) => console.log(e);
+  document.addEventListener('click', handler);
+
+  // 정리 함수 필수
+  solid.onCleanup(() => {
+    document.removeEventListener('click', handler);
+  });
+});
+```
+
+**테스트 검증**:
+
+```typescript
+describe('Memory Leak Guard', () => {
+  it('should cleanup all listeners on unmount', () => {
+    const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
+
+    const dispose = render(() => <MyComponent />);
+    dispose(); // 언마운트
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith('click', expect.any(Function));
+  });
+});
+```
+
+### DOM 깊이 가드
+
+**최대 깊이**: 6단계 (Epic DOM-DEPTH-GUARD)
+
+**테스트**: `test/architecture/dom-depth-guard.test.ts`
+
+```typescript
+it('should not exceed max DOM depth', () => {
+  const container = document.createElement('div');
+  render(() => <GalleryApp />, container);
+
+  const deepestElement = container.querySelector('.container'); // VerticalImageItem
+  const depth = getDOMDepth(deepestElement);
+
+  expect(depth).toBeLessThanOrEqual(6);
+});
+```
+
+---
+
 ## 부록
 
 **의존성 그래프**: `docs/dependency-graph.(svg|html)` | 생성: `npm run deps:all`
+
+**관련 문서**:
+
+- 코딩 규칙: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)
+- Vendors API: [`vendors-safe-api.md`](vendors-safe-api.md)
+- 실행/CI: [`../AGENTS.md`](../AGENTS.md)
+- Copilot 지침:
+  [`../.github/copilot-instructions.md`](../.github/copilot-instructions.md)
+- 테스트 가이드: [`TESTING_GUIDE.md`](TESTING_GUIDE.md) (예정)
+- 성능 가이드: [`PERFORMANCE_GUIDE.md`](PERFORMANCE_GUIDE.md) (예정)
+- 보안 가이드: [`SECURITY_GUIDE.md`](SECURITY_GUIDE.md) (예정)
 
 본 설계서는 아키텍처의 단일 소스입니다. 구현/리팩토링 시 이 문서와 코딩 가이드를
 함께 업데이트하고, 테스트로 경계를 지속 가드하세요.

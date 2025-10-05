@@ -5,6 +5,185 @@
 
 ---
 
+## 📑 Quick Reference (빠른 참조)
+
+### 자주 사용하는 패턴
+
+#### 1. SolidJS Signal 생성
+
+```typescript
+import { getSolidCore } from '@shared/external/vendors';
+const solid = getSolidCore();
+const [count, setCount] = solid.createSignal(0);
+const doubled = solid.createMemo(() => count() * 2);
+```
+
+#### 2. 서비스 접근
+
+```typescript
+import { getMediaService } from '@shared/container/service-accessors';
+const mediaService = getMediaService();
+```
+
+#### 3. Userscript 다운로드
+
+```typescript
+import { getUserscript } from '@shared/external/userscript/adapter';
+await getUserscript().download(url, filename);
+```
+
+#### 4. 디자인 토큰 사용
+
+```css
+.container {
+  background: var(--xeg-bg-primary);
+  color: var(--xeg-text-primary);
+  border-radius: var(--xeg-radius-md);
+  transition: var(--xeg-transition-fast);
+}
+```
+
+#### 5. PC 전용 이벤트
+
+```typescript
+// ✅ 허용
+element.addEventListener('click', handler);
+element.addEventListener('keydown', handler);
+element.addEventListener('wheel', handler);
+
+// ❌ 금지
+element.addEventListener('touchstart', handler);
+element.addEventListener('pointerdown', handler);
+```
+
+### Decision Trees (의사결정 트리)
+
+#### "언제 어떤 상태 관리를 사용하나?"
+
+```
+상태가 필요한가?
+├─ YES → 범위는?
+│   ├─ 컴포넌트 로컬 → createSignal()
+│   ├─ 전역 상태 → shared/state/ + createSignal()
+│   └─ 복잡한 객체 → createStore()
+└─ NO → 파생값인가?
+    ├─ YES → createMemo()
+    └─ NO → 일반 상수/함수
+```
+
+#### "어떤 서비스를 사용하나?"
+
+```
+미디어 추출/다운로드?
+├─ 추출 → MediaExtractionService
+├─ 단일 다운로드 → MediaService.downloadSingle()
+└─ 대량 다운로드 → BulkDownloadService
+
+설정 관리?
+└─ SettingsService (기본값/마이그레이션/유효성)
+
+알림 표시?
+└─ UnifiedToastManager (전역, 로컬 토스트 금지)
+
+테마 변경?
+└─ ThemeService
+```
+
+#### "어떤 이벤트 핸들러를 사용하나?"
+
+```
+사용자 입력?
+├─ 클릭 → onClick, click
+├─ 키보드 → onKeyDown, onKeyUp, keydown, keyup
+├─ 마우스 이동 → onMouseEnter, onMouseLeave, mouseenter, mouseleave
+├─ 스크롤 → wheel 이벤트
+└─ 터치/포인터? → ❌ 금지 (PC 전용 설계)
+```
+
+### Common Pitfalls (흔한 함정)
+
+#### ❌ 함정 1: 직접 import
+
+```typescript
+// ❌ 금지
+import { createSignal } from 'solid-js';
+import { zip } from 'fflate';
+
+// ✅ 권장
+import { getSolidCore } from '@shared/external/vendors';
+const solid = getSolidCore();
+const { createSignal } = solid;
+```
+
+**이유**: TDZ-safe 초기화, 테스트 모킹 용이성
+
+#### ❌ 함정 2: Signal을 값처럼 접근
+
+```typescript
+// ❌ 금지 (Preact 스타일)
+const count = createSignal(0);
+count.value = 42;
+console.log(count.value);
+
+// ✅ 권장 (SolidJS Native)
+const [count, setCount] = createSignal(0);
+setCount(42);
+console.log(count());
+```
+
+**이유**: SolidJS Native 패턴, 반응성 추적
+
+#### ❌ 함정 3: 하드코딩 스타일 값
+
+```css
+/* ❌ 금지 */
+.button {
+  background: #1a1a1a;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+/* ✅ 권장 */
+.button {
+  background: var(--xeg-bg-primary);
+  border-radius: var(--xeg-radius-md);
+  transition: var(--xeg-transition-fast);
+}
+```
+
+**이유**: 테마 일관성, 접근성, 유지보수성
+
+#### ❌ 함정 4: ServiceManager 직접 사용
+
+```typescript
+// ❌ 금지 (Features 레이어에서)
+import { ServiceManager } from '@shared/container/service-manager';
+const service = ServiceManager.getInstance().getMediaService();
+
+// ✅ 권장
+import { getMediaService } from '@shared/container/service-accessors';
+const service = getMediaService();
+```
+
+**이유**: 레이어 경계 명확화, 순환 의존성 방지
+
+#### ❌ 함정 5: Body Scroll 직접 조작
+
+```typescript
+// ❌ 금지
+document.body.style.overflow = 'hidden';
+
+// ✅ 권장
+import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
+bodyScrollManager.lock('my-component', 5);
+// cleanup
+bodyScrollManager.unlock('my-component');
+```
+
+**이유**: 우선순위 관리, 원본 상태 복원, 충돌 방지
+
+---
+
 ## 스택 & 경로
 
 - **스택**: TypeScript(strict) + Vite 7 + SolidJS 1.9 + Vitest 3(JSDOM)
