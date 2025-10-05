@@ -22,9 +22,204 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### 현재 활성 Epic 없음
+### Epic CODEQL-FALSE-POSITIVE-SUPPRESSION
 
-다음 작업은 `docs/TDD_REFACTORING_BACKLOG.md`에서 선정하세요.
+**식별자**: `CODEQL-FALSE-POSITIVE-SUPPRESSION` **상태**: READY **목표**: CodeQL
+정적 분석 False Positive 경고 5건 억제 (보안 함수 동작 정상, 테스트 GREEN)
+
+**배경**:
+
+- CodeQL 경고 5건 존재 (URL Sanitization 4건, Prototype Pollution 1건)
+- 실제 코드는 이미 안전하게 구현됨 (Epic CODEQL-SECURITY-HARDENING 완료)
+- 18개 보안 계약 테스트 + 2664개 전체 테스트 GREEN
+- CodeQL이 보안 함수(`isTrustedTwitterMediaHostname`, `sanitizeSettingsTree`)의
+  내부 구현을 정적으로 인식하지 못함
+
+**현재 상황**:
+
+```text
+js/incomplete-url-substring-sanitization (4건):
+- src/shared/utils/media/media-url.util.ts: 159, 163
+- test/__mocks__/twitter-dom.mock.ts: 304, 414
+- 사용: isTrustedTwitterMediaHostname() — URL 객체로 정확한 hostname 추출 후 allowlist 검증
+
+js/prototype-pollution-utility (1건):
+- src/features/settings/services/SettingsService.ts: 232
+- 사용: sanitizeSettingsTree() — 위험 키(__proto__, constructor, prototype) 제거
+```
+
+**솔루션 옵션**:
+
+#### 옵션 A: CodeQL Suppression Comments (추천)
+
+**장점**:
+
+- 빠른 구현 (각 경고 위치에 주석 추가)
+- 코드 변경 최소화
+- 억제 사유를 주석으로 명확히 기록
+- GitHub Code Scanning에서 자동 인식
+
+**단점**:
+
+- Suppression 주석이 코드 가독성 저하 가능
+- CodeQL 버전 업데이트 시 재검증 필요
+
+**구현 방법**:
+
+```typescript
+// lgtm[js/incomplete-url-substring-sanitization]
+// Rationale: isTrustedTwitterMediaHostname() uses URL object to extract exact hostname
+if (src && !isTrustedTwitterMediaHostname(src)) {
+  return null;
+}
+
+// lgtm[js/prototype-pollution-utility]
+// Rationale: sanitizeSettingsTree() filters dangerous keys (__proto__, constructor, prototype)
+target[finalKey] = sanitizedValue;
+```
+
+**난이도**: S (1-2시간)
+
+#### 옵션 B: CodeQL Custom Query 작성
+
+**장점**:
+
+- 프로젝트 전체에 적용 가능
+- 보안 함수 패턴을 CodeQL이 이해하도록 학습
+- 재사용 가능한 쿼리 라이브러리 구축
+
+**단점**:
+
+- CodeQL QL 언어 학습 필요 (높은 진입 장벽)
+- 구현 시간 소요 (5-10시간)
+- 유지보수 비용 증가
+
+**구현 방법**:
+
+- `codeql-custom-queries-javascript/` 디렉터리에 커스텀 쿼리 작성
+- 안전한 패턴 정의 (TrustedHostnameGuard, SanitizeSettingsTree)
+- `codeql database analyze` 시 커스텀 쿼리 적용
+
+**난이도**: H (5-10시간)
+
+#### 옵션 C: 명시적 방어 코드 추가
+
+**장점**:
+
+- CodeQL이 이해할 수 있는 명시적 검증 추가
+- 이중 방어 (defense in depth)
+- Suppression 주석 불필요
+
+**단점**:
+
+- 이미 안전한 코드에 중복 검증 추가 (불필요한 복잡도)
+- 성능 오버헤드 (미미하지만 존재)
+- 유지보수 포인트 증가
+
+**구현 방법**:
+
+```typescript
+// 명시적 키 검증 추가 (이미 sanitizeSettingsTree에서 처리됨)
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+if (finalKey && !DANGEROUS_KEYS.includes(finalKey)) {
+  target[finalKey] = sanitizedValue;
+}
+```
+
+**난이도**: M (2-4시간)
+
+**권장 솔루션**: **옵션 A (CodeQL Suppression Comments)**
+
+- 실용적이고 빠른 구현
+- 이미 보안 테스트로 검증된 코드
+- GitHub Advanced Security 환경에서 표준 방식
+- 억제 사유를 명확히 기록하여 향후 리뷰 용이
+
+---
+
+### Phase 1: RED (테스트 작성) ✅ 완료
+
+**목표**: CodeQL 경고 재현 및 보안 함수 동작 검증 테스트 작성 완료
+
+**Acceptance**:
+
+- [x] URL Sanitization 테스트: 10/10 GREEN
+- [x] Prototype Pollution 테스트: 8/8 GREEN
+- [x] 전체 테스트: 2664/2664 GREEN
+
+**파일**:
+
+- `test/security/url-sanitization-hardening.contract.test.ts` (10 tests)
+- `test/security/prototype-pollution-hardening.contract.test.ts` (8 tests)
+
+**결과**: 보안 함수가 이미 올바르게 동작 중 (False Positive 확인)
+
+---
+
+### Phase 2: GREEN (Suppression 적용) — 시작 전
+
+**목표**: CodeQL Suppression Comments 추가 (5개 경고 위치)
+
+**작업**:
+
+1. `src/shared/utils/media/media-url.util.ts` (2건)
+   - 159번 라인: `isTrustedTwitterMediaHostname(src)`
+   - 163번 라인: `isTrustedTwitterMediaHostname(poster)`
+
+2. `test/__mocks__/twitter-dom.mock.ts` (2건)
+   - 304번 라인: 테스트 픽스처 생성
+   - 414번 라인: 테스트 픽스처 생성
+
+3. `src/features/settings/services/SettingsService.ts` (1건)
+   - 232번 라인: `target[finalKey] = sanitizedValue`
+
+**Suppression 주석 형식**:
+
+```typescript
+// lgtm[js/incomplete-url-substring-sanitization]
+// Rationale: [보안 함수 동작 설명]
+```
+
+**Acceptance**:
+
+- [ ] 5개 위치에 Suppression 주석 추가
+- [ ] 억제 사유(Rationale) 명확히 기록
+- [ ] 타입 체크 GREEN
+- [ ] 린트 GREEN
+- [ ] 전체 테스트 GREEN (2664 tests)
+- [ ] 번들 크기 변화 없음 (471.67 KB ± 0.1 KB)
+
+---
+
+### Phase 3: REFACTOR (문서화 및 검증) — 시작 전
+
+**목표**: 억제 패턴 문서화 및 CI 검증
+
+**작업**:
+
+1. `codeql-improvement-plan.md` 업데이트
+   - Suppression 적용 이력 기록
+   - False Positive 억제 사유 정리
+
+2. `ARCHITECTURE.md` 보안 섹션 업데이트
+   - CodeQL False Positive 억제 패턴 추가
+
+3. CI 검증
+   - CodeQL 스캔 결과 확인 (경고 0건 목표)
+   - SARIF 결과 검토
+
+**Acceptance**:
+
+- [ ] 문서 3개 업데이트 (codeql-improvement-plan.md, ARCHITECTURE.md,
+      TDD_REFACTORING_PLAN.md)
+- [ ] 로컬 CodeQL 스캔 GREEN (경고 0건 또는 억제됨)
+- [ ] CI 통과
+- [ ] 전체 테스트 GREEN
+
+---
+
+**예상 소요 시간**: 1-2시간 (Phase 2-3) **예상 위험도**: LOW (코드 변경 최소,
+주석 추가만) **우선순위**: MEDIUM (기능상 문제 없으나 CodeQL 경고 정리)
 
 ---
 
