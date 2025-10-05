@@ -86,3 +86,7 @@ export type { Unsubscribe } from './lifecycle/leak-guard';
 export { resolve, resolveWithDefault, combineAccessors } from './reactive-accessor';
 export type { ReactiveValue } from './reactive-accessor';
 export { SingletonListenerManager, globalListenerManager } from './singleton-listener';
+
+// === Event Origin Detector ===
+export { isEventWithinContainer, BODY_ELEMENTS } from './events/event-origin';
+export type { EventOriginOptions } from './events/event-origin';

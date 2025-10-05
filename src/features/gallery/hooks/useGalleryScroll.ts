@@ -8,16 +8,10 @@
 
 import { getSolidCore } from '@shared/external/vendors';
 import { ensureWheelLock } from '@shared/utils/events/wheel';
+import { isEventWithinContainer } from '@shared/utils/events/event-origin';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import { resolve, resolveWithDefault, type ReactiveValue } from '@shared/utils/reactive-accessor';
 import { globalListenerManager } from '@shared/utils/singleton-listener';
-
-const BODY_ELEMENTS = new Set<EventTarget | null>([
-  typeof document !== 'undefined' ? document.body : null,
-  typeof document !== 'undefined' ? document.documentElement : null,
-  typeof document !== 'undefined' ? document : null,
-  typeof window !== 'undefined' ? window : null,
-]);
 
 export type GalleryScrollDirection = 'up' | 'down';
 
@@ -32,43 +26,6 @@ export interface UseGalleryScrollOptions {
   enabled?: ReactiveValue<boolean>;
   blockTwitterScroll?: ReactiveValue<boolean>;
   enableScrollDirection?: ReactiveValue<boolean>;
-}
-
-function isBodyLike(container: HTMLElement | null): boolean {
-  if (!container || typeof document === 'undefined') {
-    return false;
-  }
-
-  return container === document.body || container === document.documentElement;
-}
-
-function isTargetWithinContainer(event: WheelEvent, container: HTMLElement): boolean {
-  if (!container) {
-    return false;
-  }
-
-  const target = event.target as Node | null;
-
-  if (target && container.contains(target)) {
-    return true;
-  }
-
-  if (typeof event.composedPath === 'function') {
-    const path = event.composedPath();
-    if (path.includes(container)) {
-      return true;
-    }
-
-    if (isBodyLike(container) && path.some(node => BODY_ELEMENTS.has(node))) {
-      return true;
-    }
-  }
-
-  if (isBodyLike(container)) {
-    return BODY_ELEMENTS.has(target);
-  }
-
-  return target === container;
 }
 
 const LISTENER_KEY = 'gallery-wheel';
@@ -95,7 +52,7 @@ export function useGalleryScroll(options: UseGalleryScrollOptions): void {
       return false;
     }
 
-    if (isTargetWithinContainer(event, container)) {
+    if (isEventWithinContainer(event, container)) {
       // 갤러리 내부 이벤트는 네이티브 스크롤 허용
       return false;
     }

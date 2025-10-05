@@ -5967,6 +5967,41 @@
         },
         {
           "dynamic": false,
+          "module": "./events/event-origin",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/event-origin.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./events/event-origin",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/events/event-origin.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./events/wheel",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6470,6 +6505,15 @@
     },
     {
       "source": "src/shared/utils/events.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/events/event-origin.ts",
       "dependencies": [],
       "dependents": [
         "src/shared/utils/index.ts"
@@ -8674,8 +8718,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 280,
-    "totalDependenciesCruised": 346,
+    "totalCruised": 281,
+    "totalDependenciesCruised": 348,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
