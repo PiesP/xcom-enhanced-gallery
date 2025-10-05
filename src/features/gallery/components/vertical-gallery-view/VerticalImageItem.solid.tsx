@@ -127,6 +127,10 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
       ariaOptions['aria-describedby'] = props['aria-describedby'];
     }
 
+    if (props.isVisible) {
+      ariaOptions['aria-current'] = 'true';
+    }
+
     if (typeof props.tabIndex === 'number') {
       ariaOptions.tabIndex = props.tabIndex;
     } else {
@@ -145,6 +149,7 @@ const SolidVerticalImageItem = (props: VerticalImageItemProps): JSX.Element => {
       styles.container,
       props.isActive ? styles.active : undefined,
       props.isFocused ? styles.focused : undefined,
+      props.isVisible ? styles.visible : undefined,
       getContainerFitClass(props.fitMode),
       isLoaded() ? 'loaded' : 'loading',
       hasError() ? 'error' : undefined,

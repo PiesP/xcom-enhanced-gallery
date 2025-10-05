@@ -27,6 +27,7 @@ export interface BaseComponentProps {
   'aria-busy'?: string;
   'aria-pressed'?: string;
   'aria-haspopup'?: string;
+  'aria-current'?: string;
   /** 접근성 역할 */
   role?: string;
   /** 탭 인덱스 */

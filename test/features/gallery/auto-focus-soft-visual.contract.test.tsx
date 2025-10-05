@@ -7,6 +7,7 @@
  * visibleIndex 기반 시각적 힌트가 올바르게 적용되는지 검증
  * (자동 스크롤 없이 시각적 강조만 제공)
  */
+/* global __dirname */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from '@solidjs/testing-library';
@@ -41,8 +42,11 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
-      expect(itemContainer).toHaveClass('visible');
+      // CSS Modules는 해시된 클래스명을 사용하므로 data 속성으로 요소 찾기
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).toBeTruthy();
+      // 클래스명에 'visible' 문자열이 포함되어 있는지 확인 (해시된 클래스명 대응)
+      expect(itemContainer?.className).toMatch(/visible/);
     });
 
     it('isVisible=false일 때 .visible 클래스가 없다', () => {
@@ -58,8 +62,9 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
-      expect(itemContainer).not.toHaveClass('visible');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).toBeTruthy();
+      expect(itemContainer?.className).not.toMatch(/visible/);
     });
 
     it('isVisible prop이 생략되면 기본값 false로 동작한다', () => {
@@ -74,21 +79,26 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
-      expect(itemContainer).not.toHaveClass('visible');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
+      expect(itemContainer).toBeTruthy();
+      expect(itemContainer?.className).not.toMatch(/visible/);
     });
   });
 
   describe('2. 디자인 토큰 사용 검증', () => {
     it('.visible 클래스는 디자인 토큰만 사용한다', async () => {
-      // CSS 파일 로드
-      const cssModule = await import(
-        '@/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css?raw'
+      const fs = await import('fs');
+      const path = await import('path');
+
+      // CSS Modules는 런타임에 객체로 변환되므로, 원본 CSS 파일 읽기
+      const cssPath = path.resolve(
+        __dirname,
+        '../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css'
       );
-      const cssText = cssModule.default;
+      const cssText = fs.readFileSync(cssPath, 'utf-8');
 
       // .visible 클래스 정의 찾기
-      const visibleClassMatch = cssText.match(/\.visible\s*\{([^}]+)\}/);
+      const visibleClassMatch = cssText.match(/\.container\.visible\s*\{([^}]+)\}/);
       expect(visibleClassMatch).toBeTruthy();
 
       const visibleStyles = visibleClassMatch![1];
@@ -137,7 +147,7 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
       expect(itemContainer).toHaveAttribute('aria-current', 'true');
     });
 
@@ -154,7 +164,7 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
       expect(itemContainer).not.toHaveAttribute('aria-current');
     });
   });
@@ -173,11 +183,11 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
 
       // isActive는 true지만 isVisible은 false
-      expect(itemContainer).toHaveClass('active'); // 기존 동작
-      expect(itemContainer).not.toHaveClass('visible'); // 새 동작
+      expect(itemContainer?.className).toMatch(/active/); // 기존 동작
+      expect(itemContainer?.className).not.toMatch(/visible/); // 새 동작
     });
 
     it('isVisible=true, isActive=false일 때 둘 다 반영된다', () => {
@@ -193,11 +203,11 @@ describe('Auto Focus Soft - Visual Emphasis Contract', () => {
         />
       ));
 
-      const itemContainer = container.querySelector('.container');
+      const itemContainer = container.querySelector('[data-xeg-component="vertical-image-item"]');
 
       // isVisible만 true
-      expect(itemContainer).not.toHaveClass('active');
-      expect(itemContainer).toHaveClass('visible');
+      expect(itemContainer?.className).not.toMatch(/active/);
+      expect(itemContainer?.className).toMatch(/visible/);
     });
   });
 

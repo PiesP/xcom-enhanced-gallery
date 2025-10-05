@@ -126,19 +126,31 @@ export const VerticalVideoItem: Component<VerticalVideoItemProps> = props => {
   };
 
   // 시간 포맷팅 (MM:SS)
-  const formatTime = (seconds: number): string => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // 컨테이너 클래스 생성 (isVisible 상태 반영)
+  const containerClass = solid.createMemo(() => {
+    const classes = [styles.container];
+    if (props.isVisible) {
+      classes.push(styles.visible);
+    }
+    return classes.join(' ');
+  });
+
   return (
     <div
       data-testid='video-container'
-      class={styles.container}
+      data-xeg-component='vertical-video-item'
+      class={containerClass()}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       onClick={props.onClick}
+      aria-label={props.media.alt || '비디오 콘텐츠'}
+      aria-current={props.isVisible ? 'true' : undefined}
     >
       {/* 비디오 요소 */}
       <video
