@@ -6036,6 +6036,58 @@
         },
         {
           "dynamic": false,
+          "module": "./reactive-accessor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/reactive-accessor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./reactive-accessor",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "export"
+          ],
+          "resolved": "src/shared/utils/reactive-accessor.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./singleton-listener",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/singleton-listener.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./timer-management",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6546,6 +6598,24 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/media/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/reactive-accessor.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/singleton-listener.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8604,8 +8674,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 278,
-    "totalDependenciesCruised": 343,
+    "totalCruised": 280,
+    "totalDependenciesCruised": 346,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
