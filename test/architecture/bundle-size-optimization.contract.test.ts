@@ -31,28 +31,30 @@ describe('Task 1: Bundle Size Upper Limits', () => {
   const distPath = resolve(process.cwd(), 'dist');
   const prodFile = resolve(distPath, 'xcom-enhanced-gallery.user.js');
 
-  it('[GREEN] should have raw bundle size ≤ 473 KB (baseline preservation, future: 420 KB)', () => {
+  it('[GREEN] should have raw bundle size ≤ 485 KB (Phase 1-4: Dynamic component)', () => {
     expect(existsSync(prodFile), 'Production bundle should exist').toBe(true);
 
     const stats = statSync(prodFile);
     const sizeKB = stats.size / 1024;
 
-    // 현재: ~472 KB, 목표: ≤473 KB (회귀 방지)
-    // 이상적 목표: 420 KB (11% 감소, 향후 deep refactoring 필요)
-    expect(sizeKB).toBeLessThanOrEqual(473);
+    // 현재: ~483 KB, 목표: ≤485 KB (회귀 방지)
+    // Phase 1-4: Dynamic 컴포넌트 추가로 ~10 KB 증가 (기능 개선)
+    // 이상적 목표: 420 KB (향후 deep refactoring 필요)
+    expect(sizeKB).toBeLessThanOrEqual(485);
     expect(sizeKB).toBeGreaterThan(0); // 유효성 체크
   });
 
-  it('[GREEN] should have gzip bundle size ≤ 118 KB (maintained, baseline preservation)', () => {
+  it('[GREEN] should have gzip bundle size ≤ 121 KB (Phase 1-4: Dynamic component)', () => {
     expect(existsSync(prodFile), 'Production bundle should exist').toBe(true);
 
     const content = readFileSync(prodFile);
     const gzipped = gzipSync(content);
     const sizeKB = gzipped.byteLength / 1024;
 
-    // 현재: ~117.12 KB, 목표: ≤118 KB (유지)
+    // 현재: ~120 KB, 목표: ≤121 KB (유지)
+    // Phase 1-4: Dynamic 컴포넌트로 ~2 KB 증가
     // 향후 공격적 최적화로 105 KB 목표 달성 가능
-    expect(sizeKB).toBeLessThanOrEqual(118);
+    expect(sizeKB).toBeLessThanOrEqual(121);
     expect(sizeKB).toBeGreaterThan(0); // 유효성 체크
   });
 
@@ -62,12 +64,12 @@ describe('Task 1: Bundle Size Upper Limits', () => {
     const stats = statSync(prodFile);
     const currentSizeKB = stats.size / 1024;
 
-    // 기준선: 473 KB (2025-10-05 Phase 3: Body Scroll Manager 추가)
-    // 달성 목표: 473 KB (baseline preservation)
-    // 허용 상한: 473 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
+    // 기준선: 485 KB (2025-10-05 Phase 1-4: MediaItemFactory + Dynamic)
+    // 달성 목표: 485 KB (baseline preservation)
+    // 허용 상한: 485 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
     // 허용 하한: 380 KB (과도한 최적화 경고)
-    const TARGET_SIZE_KB = 473;
-    const BASELINE_SIZE_KB = 473;
+    const TARGET_SIZE_KB = 485;
+    const BASELINE_SIZE_KB = 485;
     const MIN_SAFE_SIZE_KB = 380;
 
     expect(currentSizeKB).toBeLessThanOrEqual(TARGET_SIZE_KB);

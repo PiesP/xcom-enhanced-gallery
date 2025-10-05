@@ -1,11 +1,11 @@
 {
   "version": "0.2.4",
-  "buildDate": "2025-10-05T08:31:16.947Z",
-  "fileSize": 487466,
-  "fileSizeKB": 476,
+  "buildDate": "2025-10-05T09:50:54.485Z",
+  "fileSize": 494970,
+  "fileSizeKB": 483,
   "checksums": {
-    "md5": "d25348edc363243d5412b13eb76edc38",
-    "sha256": "11c4a0ce79e791ae1aac018053a8faa10481b0223f00222ea78d483f4a7862da"
+    "md5": "7d47eaf77d495591bf391cf17b30e0ce",
+    "sha256": "a54dcd40be73873afa9f00290039e787f7a7c29d55ff882f3594b40400aefa00"
   },
   "files": [
     "xcom-enhanced-gallery.user.js",
