@@ -58,6 +58,24 @@ export function calculateAdaptiveMinHeight(viewportHeight: number): number {
 }
 
 /**
+ * 툴바 호버 영역 높이를 계산합니다.
+ * Sub-Epic 3: TOOLBAR-HOVER-EXPANSION
+ *
+ * @param viewportHeight - 뷰포트 높이 (px)
+ * @returns 호버 영역 높이 (px)
+ */
+export function calculateHoverZoneHeight(viewportHeight: number): number {
+  // 뷰포트 높이의 15% (최소 80px, 최대 200px)
+  const ratio = 0.15;
+  const calculated = Math.floor(viewportHeight * ratio);
+
+  const MIN_HOVER_ZONE = 80;
+  const MAX_HOVER_ZONE = 200;
+
+  return Math.max(MIN_HOVER_ZONE, Math.min(calculated, MAX_HOVER_ZONE));
+}
+
+/**
  * CSS 변수에서 툴바 높이를 추출합니다.
  *
  * @returns 툴바 높이 (px), 파싱 실패 시 DEFAULT_TOOLBAR_HEIGHT 반환

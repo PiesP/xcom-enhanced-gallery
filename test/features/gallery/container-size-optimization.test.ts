@@ -14,6 +14,7 @@ import {
   updateViewportForToolbar,
   MIN_MEDIA_HEIGHT,
   DEFAULT_TOOLBAR_HEIGHT,
+  calculateHoverZoneHeight,
   type ViewportDimensions,
 } from '@shared/utils/viewport/viewport-calculator';
 
@@ -289,6 +290,46 @@ describe('Container Size Optimization', () => {
       // 800 - 80(toolbar) - 16(padding) = 704px
       // 480px < 704px이므로 704px 반환 예상
       expect(dimensions.availableHeight).toBe(704);
+    });
+  });
+
+  describe('Hover Zone Height (Sub-Epic 3)', () => {
+    it('should calculate 15% of viewport height for 1080p desktop', () => {
+      // 1080 * 0.15 = 162px
+      const hoverHeight = calculateHoverZoneHeight(1080);
+      expect(hoverHeight).toBe(162);
+    });
+
+    it('should enforce minimum of 80px for small screens', () => {
+      // 400 * 0.15 = 60px < 80px → 80px
+      const hoverHeight = calculateHoverZoneHeight(400);
+      expect(hoverHeight).toBe(80);
+    });
+
+    it('should enforce maximum of 200px for large screens', () => {
+      // 2000 * 0.15 = 300px > 200px → 200px
+      const hoverHeight = calculateHoverZoneHeight(2000);
+      expect(hoverHeight).toBe(200);
+    });
+
+    it('should handle tablet viewport (768px)', () => {
+      // 768 * 0.15 = 115.2px → 115px
+      const hoverHeight = calculateHoverZoneHeight(768);
+      expect(hoverHeight).toBe(115);
+    });
+
+    it('should handle mobile viewport (667px)', () => {
+      // 667 * 0.15 = 100.05px → 100px
+      const hoverHeight = calculateHoverZoneHeight(667);
+      expect(hoverHeight).toBe(100);
+    });
+
+    it('should clamp between 80px and 200px range', () => {
+      expect(calculateHoverZoneHeight(500)).toBeGreaterThanOrEqual(80);
+      expect(calculateHoverZoneHeight(500)).toBeLessThanOrEqual(200);
+
+      expect(calculateHoverZoneHeight(1500)).toBeGreaterThanOrEqual(80);
+      expect(calculateHoverZoneHeight(1500)).toBeLessThanOrEqual(200);
     });
   });
 });
