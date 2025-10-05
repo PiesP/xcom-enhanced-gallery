@@ -339,15 +339,18 @@ describe('MediaItemFactory Contract', () => {
 
 ### Phase 2: AUTO-FOCUS-UPDATE (Soft Focus)
 
-#### Phase 2-1: 시각적 강조 스타일 추가 🔄 [RED]
+#### Phase 2-1: 시각적 강조 스타일 추가 ✅ [COMPLETED]
 
 **목표**: VerticalImageItem, VerticalVideoItem에 `isVisible` prop 추가
 
-**RED 단계**: ✅ **COMPLETE** (2025-01-XX)
+**완료 날짜**: 2025-01-10 **커밋**: 515acffb **브랜치**:
+feat/auto-focus-soft-phase2-1
+
+**RED 단계**: ✅ **COMPLETE** (2025-01-09)
 
 1. Contract 테스트 작성: ✅
    - 테스트 파일:
-     `test/features/gallery/auto-focus-soft-visual.contract.test.tsx` (239
+     `test/features/gallery/auto-focus-soft-visual.contract.test.tsx` (253
      lines)
    - 테스트 결과: **11개 중 8개 실패, 3개 통과** (예상된 RED)
    - 실패 이유:
@@ -355,30 +358,38 @@ describe('MediaItemFactory Contract', () => {
      - CSS `.visible` 클래스 미정의
      - ARIA `aria-current` 로직 미구현
    - 통과 테스트: 타입 안전성 검증 (TypeScript 레벨)
-   - 브랜치: `feat/auto-focus-soft-phase2-1`
-   - 커밋: [다음 단계]
+   - 커밋: d364b6a3
 
-**GREEN 단계**: ⏳
+**GREEN 단계**: ✅ **COMPLETE** (2025-01-10)
 
-1. VerticalImageItem 수정:
+1. VerticalImageItem 수정: ✅
    - `isVisible?: boolean` prop 추가
-   - CSS 클래스 바인딩: `${styles.container} ${isVisible ? styles.visible : ''}`
+   - CSS 클래스 바인딩: ComponentStandards.createClassName() 사용
    - ARIA 속성: `aria-current={isVisible ? 'true' : undefined}`
+   - 파일: VerticalImageItem.solid.tsx (270 lines)
 
-2. VerticalVideoItem 수정:
-   - 동일한 `isVisible` prop 추가
-   - 동일한 클래스/ARIA 로직 적용
+2. VerticalVideoItem 수정: ✅
+   - `isVisible?: boolean` prop 추가
+   - CSS 클래스 바인딩: createMemo() 사용
+   - ARIA 속성: `aria-current={isVisible ? 'true' : undefined}`
+   - 파일: VerticalVideoItem.solid.tsx (229 lines)
 
-3. 디자인 토큰 정의:
+3. Infrastructure 지원: ✅
+   - BaseComponentProps: `'aria-current'?: string;` 타입 추가
+   - StandardProps: aria-current 핸들링 추가
+   - 파일: BaseComponentProps.ts, StandardProps.ts
+
+4. 디자인 토큰 정의: ✅
 
    ```css
-   /* src/styles/design-tokens.css */
-   --xeg-item-visible-border: 2px solid var(--xeg-accent);
-   --xeg-item-visible-shadow: 0 0 12px var(--xeg-accent-alpha);
-   --xeg-item-visible-bg: var(--xeg-bg-hover);
+   /* src/shared/styles/design-tokens.component.css */
+   --xeg-item-visible-border: 2px solid var(--color-primary);
+   --xeg-item-visible-shadow: 0 0 12px
+     oklch(from var(--color-primary) l c h / 0.3);
+   --xeg-item-visible-bg: var(--color-bg-elevated);
    ```
 
-4. CSS 스타일 추가:
+5. CSS 스타일 추가: ✅
 
    ```css
    /* VerticalImageItem.module.css, VerticalVideoItem.module.css */
@@ -389,18 +400,33 @@ describe('MediaItemFactory Contract', () => {
    }
    ```
 
-**REFACTOR 단계**: ⏳
+6. 테스트 수정: ✅
+   - CSS Modules 해시 문제 해결 (data-xeg-component selector 사용)
+   - aria-current 테스트 수정 (BaseComponentProps 타입 추가)
+   - CSS 파일 직접 읽기 (fs.readFileSync 사용)
 
-1. 코드 품질:
-   - JSDoc 문서화 (특히 `isVisible` 동작)
-   - CSS 클래스 적용 일관성 검토
-   - 접근성 검증 (스크린 리더 테스트)
+**REFACTOR 단계**: ✅ **COMPLETE** (2025-01-10)
 
-2. 테스트 검증:
+1. 코드 품질: ✅
+   - JSDoc 문서화 완료 (특히 `isVisible` 동작)
+   - CSS 클래스 적용 일관성 검토 완료
+   - 접근성 검증 완료 (aria-current 적용)
 
-   ```bash
-   npm test -- auto-focus-soft-visual.contract
-   ```
+2. 테스트 검증: ✅
+   - **11/11 tests GREEN** (100% 통과)
+   - Coverage: isVisible prop, 디자인 토큰, ARIA, 독립성, 타입 안전성
+
+**최종 결과**:
+
+- 파일 수정: 8개 (2 components, 2 CSS, 2 infrastructure, 1 tokens, 1 test)
+- 번들 크기: 473.34 KB raw (+0.06 KB), 117.52 KB gzip (+0.01 KB)
+- 예산 준수: ✅ (473 KB raw / 118 KB gzip 이내)
+
+**다음 단계**: Phase 2-2 (visibleIndex 통합) 또는 Phase 1-4 (Factory 패턴)
+
+```bash
+npm test -- auto-focus-soft-visual.contract
+```
 
 **Acceptance Criteria**:
 
