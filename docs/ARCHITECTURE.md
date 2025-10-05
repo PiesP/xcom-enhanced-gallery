@@ -284,10 +284,24 @@ function sanitize(obj) {
   twitter-dom.mock.ts)
 - js/prototype-pollution-utility: 1건 (SettingsService.ts)
 
+**False Positive 억제**:
+
+- CodeQL 정적 분석이 보안 함수(`isTrustedTwitterMediaHostname`,
+  `sanitizeSettingsTree`)의 내부 구현을 추적하지 못해 경고 발생
+- 솔루션: `lgtm[rule-id]` 주석으로 False Positive 억제
+- 억제 사유: 각 위치에 Rationale 주석으로 명확히 기록
+- Epic: CODEQL-FALSE-POSITIVE-SUPPRESSION (2025-10-05 완료)
+
 **테스트 가드**:
 
 - `test/security/url-sanitization-hardening.contract.test.ts`: 10 tests
 - `test/security/prototype-pollution-hardening.contract.test.ts`: 8 tests
+
+**보안 검증 흐름**:
+
+1. Phase 1 (RED): 보안 계약 테스트 작성 (18 tests)
+2. Phase 2 (GREEN): 보안 함수 구현 및 일관성 적용
+3. Phase 3 (REFACTOR): CodeQL False Positive 억제 + 문서화
 
 ---
 

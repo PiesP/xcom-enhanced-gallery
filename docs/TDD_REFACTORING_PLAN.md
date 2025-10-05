@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-05 — Epic THEME-ICON-UNIFY-002 Phase B 완료 ✅
+**최근 업데이트**: 2025-10-05 — Epic CODEQL-FALSE-POSITIVE-SUPPRESSION 완료 ✅
 
 ---
 
@@ -22,12 +22,11 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic CODEQL-FALSE-POSITIVE-SUPPRESSION
+### 현재 활성 Epic 없음
 
-**식별자**: `CODEQL-FALSE-POSITIVE-SUPPRESSION` **상태**: READY **목표**: CodeQL
-정적 분석 False Positive 경고 5건 억제 (보안 함수 동작 정상, 테스트 GREEN)
+다음 작업은 `docs/TDD_REFACTORING_BACKLOG.md`에서 선정하세요.
 
-**배경**:
+---
 
 - CodeQL 경고 5건 존재 (URL Sanitization 4건, Prototype Pollution 1건)
 - 실제 코드는 이미 안전하게 구현됨 (Epic CODEQL-SECURITY-HARDENING 완료)
@@ -218,15 +217,16 @@ if (finalKey && !DANGEROUS_KEYS.includes(finalKey)) {
 
 ---
 
-**예상 소요 시간**: 1-2시간 (Phase 2-3) **예상 위험도**: LOW (코드 변경 최소,
-주석 추가만) **우선순위**: MEDIUM (기능상 문제 없으나 CodeQL 경고 정리)
-
----
-
 ---
 
 **최근 완료**:
 
+- 2025-10-05: **Epic CODEQL-FALSE-POSITIVE-SUPPRESSION** ✅
+  - CodeQL False Positive 경고 5건 억제 (보안 함수 동작 정상)
+  - 5개 위치에 lgtm Suppression 주석 추가 (억제 사유 명확히 기록)
+  - 품질 게이트 GREEN (typecheck, lint, test, build)
+  - 번들 크기 변화 없음 (471.67 KB / 117.12 KB)
+  - 상세: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 - 2025-10-05: **Epic THEME-ICON-UNIFY-002 Phase B** ✅
   - 아이콘 디자인 일관성 검증 (13/13 tests GREEN)
   - Phase C는 JSDOM 제약으로 SKIP (9/9 tests)
