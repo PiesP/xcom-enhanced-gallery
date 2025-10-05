@@ -2,6 +2,117 @@
 
 ---
 
+## 2025-10-06: Phase 4A - Unused File Removal 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: 번들 최적화 (미사용 파일 제거)
+- **Epic**: BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4A
+- **브랜치**: feat/bundle-size-phase4a-unused-removal
+- **커밋**: 12b65bba
+- **TDD**: RED → GREEN → REFACTOR
+
+### 목표
+
+검증된 미사용 파일 제거로 코드베이스 정리 (예상 효과: -4~6 KB)
+
+### 제거된 파일
+
+1. **createParitySnapshot.ts** (2개)
+   - `src/features/gallery/solid/createParitySnapshot.ts`
+   - `src/features/settings/solid/createParitySnapshot.ts`
+   - **사유**: Solid 마이그레이션 테스트 헬퍼, 프로덕션 코드 미사용
+
+2. **VerticalGalleryView.tsx**
+   - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+   - **사유**: 레거시 제거 스텁 (의도적 에러 던지기만 수행)
+
+3. **VerticalGalleryView.module.css**
+   - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css`
+   - **사유**: 제거된 컴포넌트의 스타일 파일
+
+### TDD 워크플로
+
+#### RED 단계
+
+```typescript
+// test/architecture/bundle-size-unused-removal.test.ts
+it('should remove createParitySnapshot from gallery', () => {
+  const filePath = join(
+    ROOT_DIR,
+    'src',
+    'features',
+    'gallery',
+    'solid',
+    'createParitySnapshot.ts'
+  );
+  expect(existsSync(filePath)).toBe(false); // ❌ RED: 파일 존재
+});
+```
+
+**결과**: 3개 테스트 실패 (파일들이 아직 존재)
+
+#### GREEN 단계
+
+```pwsh
+Remove-Item "src\features\gallery\solid\createParitySnapshot.ts" -Force
+Remove-Item "src\features\settings\solid\createParitySnapshot.ts" -Force
+Remove-Item "src\features\gallery\components\vertical-gallery-view\VerticalGalleryView.tsx" -Force
+Remove-Item "src\features\gallery\components\vertical-gallery-view\VerticalGalleryView.module.css" -Force
+```
+
+**결과**: ✅ 8개 테스트 모두 GREEN
+
+#### REFACTOR 단계
+
+- barrel exports 정리 완료 (index.ts 이미 깔끔함)
+- import 참조 검증 (0개)
+- 주석 업데이트
+
+### 번들 크기 영향
+
+- **Before**: 495.19 KB (Raw)
+- **After**: 495.86 KB (Raw)
+- **차이**: +0.67 KB (미미한 증가)
+
+**분석**:
+
+- 제거된 파일들은 프로덕션 번들에 포함되지 않았음
+- 테스트 파일 추가로 미미한 증가 (계약 테스트 가치 우선)
+- 코드베이스 정리 차원에서 여전히 가치 있음
+
+### 검증 완료
+
+✅ **typecheck**: 통과 (strict 모드) ✅ **lint**: 통과 (max-warnings 0) ✅
+**tests**: 2890 passed (110 skipped, 1 todo) ✅ **build:prod**: 성공
+
+### 교훈 및 인사이트
+
+1. **미사용 파일 탐지의 중요성**
+   - knip 분석으로 96개 미사용 파일 발견
+   - 프로덕션 번들에 포함 여부와 관계없이 정리 필요
+
+2. **TDD의 가치**
+   - RED 단계로 현재 상태 명확히 검증
+   - GREEN 단계로 최소 변경으로 목표 달성
+   - REFACTOR 단계로 코드 품질 개선
+
+3. **번들 크기 측정의 정확성**
+   - 일부 미사용 파일은 이미 tree-shaking되어 있음
+   - 코드베이스 정리와 번들 크기 감소는 별개의 가치
+
+### 다음 단계
+
+Phase 4B로 진행 예정:
+
+- UnifiedSettingsModal.tsx 검증
+- vendor-api.ts 타입 분리
+- 서비스 파일 동적 import 확인
+- 예상 감축: -4~6 KB
+
+---
+
 ## 2025-10-06: Epic GALLERY-UX-REFINEMENT 완료 ✅
 
 ### 개요

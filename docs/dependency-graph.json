@@ -113,8 +113,7 @@
       ],
       "dependents": [
         "src/features/gallery/createAppContainer.ts",
-        "src/features/gallery/index.ts",
-        "src/features/gallery/solid/createParitySnapshot.ts"
+        "src/features/gallery/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -262,13 +261,6 @@
     },
     {
       "source": "src/features/gallery/components/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -717,31 +709,6 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/solid/createParitySnapshot.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../GalleryRenderer",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/gallery/GalleryRenderer.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/gallery/utils/visible-navigation.ts",
       "dependencies": [],
       "dependents": [],
@@ -1031,31 +998,6 @@
       "valid": true
     },
     {
-      "source": "src/features/settings/solid/createParitySnapshot.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./renderSolidSettingsPanel",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/features/settings/solid/renderSolidSettingsPanel.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/features/settings/solid/renderSolidSettingsPanel.ts",
       "dependencies": [
         {
@@ -1077,9 +1019,7 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/features/settings/solid/createParitySnapshot.ts"
-      ],
+      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -8849,8 +8789,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 289,
-    "totalDependenciesCruised": 351,
+    "totalCruised": 286,
+    "totalDependenciesCruised": 349,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
