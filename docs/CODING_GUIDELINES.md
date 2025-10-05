@@ -295,6 +295,74 @@ tests)가 PC 전용 정책, 디자인 토큰, ARIA 완전성을 검증합니다.
 
 ---
 
+## 스크롤 & 이벤트
+
+### Body Scroll 제어
+
+**필수**: 모든 body overflow 조작은 `bodyScrollManager` 사용
+
+```typescript
+import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
+
+// ✅ 올바른 방법
+bodyScrollManager.lock('my-component', 5);
+// ... cleanup
+bodyScrollManager.unlock('my-component');
+
+// ❌ 금지 (직접 조작)
+document.body.style.overflow = 'hidden';
+```
+
+**우선순위**:
+
+- 모달/Settings: 10
+- 갤러리: 5
+- 기타: 0 (기본값)
+
+### Reactive Accessor
+
+**권장**: 범용 resolve 함수는 `@shared/utils/reactive-accessor` 사용
+
+```typescript
+import { resolve, resolveWithDefault } from '@shared/utils/reactive-accessor';
+
+// ✅ 올바른 방법
+const value = resolve(maybeAccessor);
+const safeValue = resolveWithDefault(optional, defaultValue);
+
+// ❌ 금지 (각 파일에 중복 구현)
+function resolve<T>(value: MaybeAccessor<T>): T {
+  return typeof value === 'function' ? value() : value;
+}
+```
+
+### Singleton Listener
+
+**패턴**: 여러 훅이 동일 이벤트 타입을 공유할 때 사용
+
+```typescript
+import { globalListenerManager } from '@shared/utils/singleton-listener';
+
+// ✅ 올바른 방법
+export function useMyHook() {
+  const cleanup = ensureWheelLock(document, handler);
+  globalListenerManager.register('my-hook-wheel', cleanup);
+
+  onCleanup(() => globalListenerManager.unregister('my-hook-wheel'));
+}
+
+// ❌ 금지 (훅별 독립 싱글톤)
+let activeCleanup: (() => void) | null = null;
+export function useMyHook() {
+  if (activeCleanup) {
+    activeCleanup();
+  }
+  activeCleanup = cleanup;
+}
+```
+
+---
+
 ## 서비스
 
 - **접근**: `@shared/container/*` 액세서/브리지

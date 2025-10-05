@@ -378,7 +378,75 @@ function sanitize(obj) {
 
 ---
 
-## 9. 테스트 전략 (TDD)
+## 9. 스크롤 격리 전략 (Scroll Isolation)
+
+### 3계층 방어 전략
+
+**아키텍처 원칙**:
+
+1. **이벤트 수준 방어** (`ensureWheelLock`):
+   - passive=false 리스너로 조건부 preventDefault
+   - 갤러리 외부 스크롤 이벤트 차단
+   - 테스트: `test/unit/events/ensureWheelLock.contract.test.ts`
+
+2. **스마트 판별** (`useGalleryScroll`):
+   - 이벤트 출처 정확 판별 (내부/외부 구분)
+   - Shadow DOM 대응 (composedPath 활용)
+   - Reactive accessor 패턴으로 옵션 처리
+
+3. **CSS 격리** (`.xeg-*`):
+   - `overflow-y: auto` (스크롤 가능 영역)
+   - `contain: layout style paint` (레이아웃 격리)
+   - `isolation: isolate` (스택 컨텍스트 격리)
+
+### 통합 컴포넌트
+
+**Body Scroll Manager** (`bodyScrollManager`):
+
+- **목적**: 갤러리/모달 간 body scroll 충돌 해결
+- **우선순위 시스템**:
+  - Settings Modal: 10 (최우선)
+  - Gallery: 5 (중간)
+  - 기타: 0 (기본값)
+- **특징**:
+  - 중복 lock 자동 병합 (같은 id는 우선순위 업데이트)
+  - 마지막 lock 해제 시 원본 overflow 자동 복원
+  - 동시 여러 컨텍스트 안전 관리
+
+**Reactive Accessor Utilities**:
+
+- **목적**: SolidJS MaybeAccessor 패턴 공용 헬퍼
+- **함수**:
+  - `resolve<T>(value)`: Reactive 값 안전 resolve
+  - `resolveWithDefault<T>(value, default)`: 기본값 fallback
+  - `combineAccessors<T>(values)`: Memoized 배열 accessor
+
+**Singleton Listener Manager** (`globalListenerManager`):
+
+- **목적**: 중복 리스너 방지 (훅 간 이벤트 타입 공유)
+- **패턴**: 단일 키당 하나의 리스너만 유지
+- **사용**: 키 기반 register/unregister로 자동 교체
+
+### 구현 위치
+
+- **Body Scroll**: `src/shared/utils/scroll/body-scroll-manager.ts`
+- **Reactive Accessor**: `src/shared/utils/reactive-accessor.ts`
+- **Singleton Listener**: `src/shared/utils/singleton-listener.ts`
+- **갤러리 스크롤**: `src/features/gallery/hooks/useGalleryScroll.ts`
+- **Settings Modal**: `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
+
+### 테스트 가드
+
+- Body Scroll Manager: `test/unit/utils/scroll/body-scroll-manager.test.ts` (13
+  tests)
+- Reactive Accessor: `test/unit/utils/reactive-accessor.test.ts` (13 tests)
+- Singleton Listener: `test/unit/utils/singleton-listener.test.ts` (14 tests)
+- Wheel Lock: `test/unit/events/ensureWheelLock.contract.test.ts`
+- Gallery Scroll: `test/features/gallery/solid-gallery-shell-wheel.test.tsx`
+
+---
+
+## 10. 테스트 전략 (TDD)
 
 - 환경: Vitest + JSDOM (`https://x.com`)
 - RED → GREEN → REFACTOR
@@ -393,7 +461,7 @@ function sanitize(obj) {
 
 ---
 
-## 10. 확장 가이드
+## 11. 확장 가이드
 
 ### 새 Feature
 
