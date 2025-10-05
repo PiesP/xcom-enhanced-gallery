@@ -1,4 +1,4 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
 본 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
@@ -7,105 +7,215 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 
-**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4
-시작이관하여 히스토리를 분리합니다.본 문서는 복잡한 구현/구조를 간결하고
-현대적으로
+**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 분석 완료,
+실행은 별도 추진 권장이관하여 히스토리를 분리합니다.본 문서는 복잡한 구현/구조를
+간결하고 현대적으로
 
-재구축하기 위한 리팩토링본
+재구축하기 위한 리팩토링
+
+---
+
+Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
+
+## 1. 운영 원칙
+
+**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4
+
+- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+  `docs/vendors-safe-api.md`시작이관하여 히스토리를 분리합니다.본 문서는 복잡한
+  구현/구조를 간결하고
+
+- 실행/CI/빌드 파이프라인: `AGENTS.md`현대적으로
+
+- 아키텍처 설계: `docs/ARCHITECTURE.md`
+
+- 본 문서: 활성 Epic/작업과 Acceptance 중심재구축하기 위한 리팩토링본
+
+- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
+  진행
+
+---
 
 ---
 
 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
 
+## 2. 활성 Epic 현황
+
 ## 1. 운영 원칙
+
+### 현재 활성 Epic 없음
 
 **최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 계획 수립
 
+모든 Epic이 완료되었거나 분석 단계에 있습니다.
+
 - 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
-  `docs/vendors-safe-api.md`
 
-- 실행/CI/빌드 파이프라인: `AGENTS.md`Epic들을 관리합니다. 완료된 내용은
-  `TDD_REFACTORING_PLAN_COMPLETED.md`로Epic들을
+**최근 분석 완료**: `docs/vendors-safe-api.md`
 
-- 아키텍처 설계: `docs/ARCHITECTURE.md`
+- ✅ Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06): 분석 및 계획 수립 완료-
+  실행/CI/빌드 파이프라인: `AGENTS.md`Epic들을 관리합니다. 완료된 내용은
+  - 현재 번들: 495.19 KB raw, 123.73 KB gzip
+    `TDD_REFACTORING_PLAN_COMPLETED.md`로Epic들을
 
-- 본 문서: 활성 Epic/작업과 Acceptance 중심---관리합니다. 완료된 내용은
+  - 목표: 450 KB raw (-45 KB), 112 KB gzip (-12 KB)
+
+  - knip 분석: 111 unused exports, 96 unused files- 아키텍처 설계:
+    `docs/ARCHITECTURE.md`
+
+  - Phase 4-7 계획 수립 완료
+
+  - **실행 권장**: 별도 Epic으로 분리하여 6-10일 소요 예상- 본 문서: 활성
+    Epic/작업과 Acceptance 중심---관리합니다. 완료된 내용은
+
   `TDD_REFACTORING_PLAN_COMPLETED.md`로
 
+완료된 Epic들은
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+확인하실 수 있습니다.
+
 - **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
-  진행
 
-## 1. 운영 원칙이관하여 히스토리를 분리합니다.이관하여 히스토리를 분리합니다.
+**최근 완료**: 진행
 
----
+- ✅ Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역 확장
+  및 시각적 힌트 추가## 1. 운영 원칙이관하여 히스토리를 분리합니다.이관하여
+  히스토리를 분리합니다.
 
-- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+- ✅ Epic TIMELINE-VIDEO-CLICK-FIX (2025-10-05): 타임라인 비디오 클릭 감지
+  개선 + body-scroll-manager 통합
 
-## 2. 활성 Epic 현황 `docs/vendors-safe-api.md`**최근 업데이트**: 2025-10-06 — Sub-Epic 3
+- ✅ Epic MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,
+  GIF 컴포넌트)---
 
-TOOLBAR-HOVER-ZONE-EXPANSION
+---- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
 
-### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06) 🔄 **IN PROGRESS**
+## 3. 향후 Epic 후보## 2. 활성 Epic 현황 `docs/vendors-safe-api.md`**최근 업데이트**: 2025-10-06 — Sub-Epic 3
 
-- 실행/CI/빌드 파이프라인: `AGENTS.md`완료**최근 업데이트**: 2025-10-06 —
+### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (Phase 4-7 실행)TOOLBAR-HOVER-ZONE-EXPANSION
 
-**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION` Sub-Epic 3
+**우선순위**: High (번들 크기 목표 초과)### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
+(2025-10-06) 🔄 **IN PROGRESS**
+
+**현재 상태**: 분석 완료, 실행 대기- 실행/CI/빌드 파이프라인:
+`AGENTS.md`완료**최근 업데이트**: 2025-10-06 —
+
+**Phase 구성**:**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION` Sub-Epic 3
+
 TOOLBAR-HOVER-ZONE-EXPANSION 완료
 
-**목표**: 번들 크기 심층 최적화를 통한 로딩 시간 단축 및 사용자 경험 개선-
-아키텍처 설계: `docs/ARCHITECTURE.md`
+- Phase 4: Deep Code Audit (2-3일, -20 KB)
+  - 111개 unused exports 제거**목표**: 번들 크기 심층 최적화를 통한 로딩 시간
+    단축 및 사용자 경험 개선-
 
-#### 현재 상황 분석- 본 문서: 활성 Epic/작업과 Acceptance 중심---
+  - Re-export 체인 단순화 (≤2 depth)아키텍처 설계: `docs/ARCHITECTURE.md`
 
-**번들 크기**:- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로
-분할하여 단계적
+  - Dead code 제거
 
-- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️) 진행
+- Phase 5: Pure Annotations (1-2일, -10 KB)#### 현재 상황 분석- 본 문서: 활성
+  Epic/작업과 Acceptance 중심---
+  - 50+ pure annotations 추가
 
-- Gzip: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+  - Terser 최적화 강화**번들 크기**:- **Epic 분할 원칙**: 복잡한 Epic은
+    독립적이고 작은 Sub-Epic으로
 
-- 이상적 목표: Raw 420 KB (75 KB 감축), Gzip 105 KB (18.73 KB 감축)## 1. 운영
-  원칙## 1. 운영 원칙
+- Phase 6: Advanced Tree-shaking (2-3일, -10 KB)분할하여 단계적
+  - Barrel export 최소화 (≤10 files)
 
-**완료된 최적화** (2025-10-05):---
+  - Side-effect 세분화- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️) 진행
+
+- Phase 7: Orphan 파일 정리 (1-2일, -5 KB)
+  - 37개 orphan 분류/제거- Gzip: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+
+**예상 효과**:- 이상적 목표: Raw 420 KB (75 KB 감축), Gzip 105 KB (18.73 KB
+감축)## 1. 운영
+
+원칙## 1. 운영 원칙
+
+- 번들 크기: 495 KB → 450 KB (-45 KB, -9%)
+
+- Gzip: 124 KB → 112 KB (-12 KB, -10%)**완료된 최적화** (2025-10-05):---
+
+- 목표 달성: ✅ ≤473 KB raw, ✅ ≤118 KB gzip
 
 - ✅ Tree-shaking 개선 (`package.json` sideEffects, Rollup treeshake 옵션)
 
+**시작 조건**:
+
 - ✅ 중복 코드 제거 (`core-utils.ts` 3개 중복 → `utils.ts` 통합)-
-  코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,-
 
-- ✅ Terser 압축 강화 (pure_funcs, unsafe opts, mangleProps)
+- 전체 테스트 스위트 GREEN 확인 코딩/스타일/입력/벤더 접근/테스트 규칙:
+  `docs/CODING_GUIDELINES.md`,-
 
-- ✅ 15개 계약 테스트 GREEN (회귀 방지)## 2. 활성 Epic 현황
-  코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+- 번들 크기 baseline 측정 완료
+
+- Phase별 독립 브랜치 전략 수립- ✅ Terser 압축 강화 (pure_funcs, unsafe opts,
+  mangleProps)
+
+---- ✅ 15개 계약 테스트 GREEN (회귀 방지)## 2. 활성 Epic 현황
+
+코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+
+## 4. TDD 워크플로
 
 **남은 과제**:### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06)
-`docs/vendors-safe-api.md` `docs/vendors-safe-api.md`
 
-1. **Orphan 파일**: 37개 파일 (대부분 의도적 분리 모듈이나 일부 실제 미사용 파일
-   존재)
+1. **RED**: 실패 테스트 추가 (최소 명세)`docs/vendors-safe-api.md`
+   `docs/vendors-safe-api.md`
 
-2. **Pure annotations**: 0개 (목표: 50+ annotations로 Terser 최적화
-   강화)**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION`- 실행/CI/빌드 파이프라인:
+2. **GREEN**: 최소 변경으로 통과
 
-3. **Re-export 체인**: 과도한 barrel exports로 tree-shaking 비효율`AGENTS.md`-
-   실행/CI/빌드 파이프라인: `AGENTS.md`
+3. **REFACTOR**: 중복 제거/구조 개선1. **Orphan 파일**: 37개 파일 (대부분 의도적
+   분리 모듈이나 일부 실제 미사용 파일
+
+4. **Document**: Completed 로그에 이관 존재)
+
+**품질 게이트**:2. **Pure annotations**: 0개 (목표: 50+ annotations로 Terser
+최적화
+
+강화)**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION`- 실행/CI/빌드 파이프라인:
+
+- ✅ `npm run typecheck` (strict 오류 0)
+
+- ✅ `npm run lint:fix` (자동 수정 적용)3. **Re-export 체인**: 과도한 barrel
+  exports로 tree-shaking 비효율`AGENTS.md`-
+
+- ✅ `npm test` (해당 Phase GREEN) 실행/CI/빌드 파이프라인: `AGENTS.md`
+
+- ✅ `npm run build` (산출물 검증 통과)
 
 4. **Dead code**: 미사용 export 및 함수 잔존
 
+---
+
 **목표**: 번들 크기 심층 최적화를 통한 로딩 시간 단축 및 사용자 경험 개선-
+
+## 5. 참조 문서
 
 #### 최적 솔루션: 옵션 A (점진적 최적화 4-Phase 접근)아키텍처 설계: `docs/ARCHITECTURE.md`- 아키텍처 설계: `docs/ARCHITECTURE.md`
 
-**선정 이유**:#### 현재 상황 분석- 본 문서: 활성 Epic/작업과 Acceptance 중심- 본
-문서: 활성 Epic/작업과
+- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
-1. **낮은 리스크**: 각 Phase마다 독립적 검증 가능, 15개 계약 테스트로 회귀 방지
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)**선정
+  이유**:#### 현재 상황 분석- 본 문서: 활성 Epic/작업과 Acceptance 중심- 본
 
-2. **측정 가능한 성과**: 각 Phase마다 번들 크기 변화 추적Acceptance 중심
+- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)문서: 활성
+  Epic/작업과
 
-3. **프로젝트 안정성**: 기존 BUNDLE-SIZE-OPTIMIZATION (2025-10-05) 성공 경험
-   활용
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)
+
+- **완료된 Epic**:
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)1.
+  **낮은 리스크**: 각 Phase마다 독립적 검증 가능, 15개 계약 테스트로 회귀 방지
+
+---2. **측정 가능한 성과**: 각 Phase마다 번들 크기 변화 추적Acceptance 중심
+
+본 문서는 활성 Epic만 관리합니다. 완료된 Epic은
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다.3. **프로젝트 안정성**:
+기존 BUNDLE-SIZE-OPTIMIZATION (2025-10-05) 성공 경험
+
+활용
 
 4. **TDD 친화적**: RED → GREEN → REFACTOR 패턴 적용 용이**번들 크기**:
 
