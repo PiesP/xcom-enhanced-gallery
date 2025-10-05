@@ -1,51 +1,122 @@
-# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-본 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
-Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
-이관하여 히스토리를 분리합니다.
+본 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링본
+문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
 
-**최근 업데이트**: 2025-10-05 — Epic TIMELINE-VIDEO-CLICK-FIX 계획 수립
+Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로Epic들을
+관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 
----
+이관하여 히스토리를 분리합니다.이관하여 히스토리를 분리합니다.
 
-## 1. 운영 원칙
-
-- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
-  `docs/vendors-safe-api.md`
-- 실행/CI/빌드 파이프라인: `AGENTS.md`
-- 아키텍처 설계: `docs/ARCHITECTURE.md`
-- 본 문서: 활성 Epic/작업과 Acceptance 중심
-- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
-  진행
+**최근 업데이트**: 2025-10-05 — 모든 활성 Epic 완료**최근 업데이트**: 2025-10-05
+— 모든 활성 Epic 완료
 
 ---
 
-## 2. 활성 Epic 현황
+## 1. 운영 원칙## 1. 운영 원칙
 
-### Epic: TIMELINE-VIDEO-CLICK-FIX (타임라인 비디오 클릭 감지 개선) 🔄 **IN PROGRESS**
+- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,-
+  코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
 
-**상태**: Phase 1 (진단) **시작일**: 2025-10-05 **Epic ID**:
-TIMELINE-VIDEO-CLICK-FIX
+  `docs/vendors-safe-api.md` `docs/vendors-safe-api.md`
 
-**문제 정의**:
+- 실행/CI/빌드 파이프라인: `AGENTS.md`- 실행/CI/빌드 파이프라인: `AGENTS.md`
 
-- **현상**: 타임라인에서 동영상 클릭 시 갤러리가 열리지 않음
-- **정상 동작**: 특정 트윗 페이지에서는 갤러리가 정상적으로 열림
-- **사용자 영향**: 타임라인 탐색 중 비디오 미디어를 갤러리로 볼 수 없음
-- **로그 분석**: 초기화 성공, 미디어 추출 단계에서 실패 추정
+- 아키텍처 설계: `docs/ARCHITECTURE.md`- 아키텍처 설계: `docs/ARCHITECTURE.md`
 
-**근본 원인 분석**:
+- 본 문서: 활성 Epic/작업과 Acceptance 중심- 본 문서: 활성 Epic/작업과
+  Acceptance 중심
 
-1. **DOM 구조 차이**: 타임라인과 트윗 상세 페이지의 비디오 구조가 다름
-   - 타임라인: `article` 태그 없거나 다른 컨테이너 구조
-   - 트윗 상세: 명확한 `article[data-testid="tweet"]` 구조
-2. **이벤트 차단 로직 과잉**: `MediaClickDetector.shouldBlockGalleryTrigger()`가
-   타임라인 비디오를 차단
-   - 비디오 제어 선택자가 너무 포괄적 (`[data-testid="videoComponent"] button`,
-     `[data-testid="videoPlayer"] button`)
-3. **트윗 정보 추출 실패**: `TweetInfoExtractor` 전략들이 타임라인 구조에서 실패
-4. **미디어 감지 실패**: `isProcessableMedia()`가 타임라인 비디오를 감지하지
-   못함
+- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여
+  단계적- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로
+  분할하여 단계적
+
+  진행 진행
+
+---
+
+## 2. 활성 Epic 현황## 2. 활성 Epic 현황
+
+### 현재 활성 Epic 없음**현재 활성 Epic 없음**
+
+모든 Epic이 완료되었습니다. 완료된 Epic들은모든 Epic이 완료되었습니다. 완료된
+Epic들은
+
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+
+확인하실 수 있습니다.확인하실 수 있습니다.
+
+### 최근 완료**최근 완료**:
+
+- ✅ Epic TIMELINE-VIDEO-CLICK-FIX (2025-10-05, a54c3957): 타임라인 비디오 클릭-
+  ✅ Epic TIMELINE-VIDEO-CLICK-FIX (2025-10-05, a54c3957): 타임라인 비디오 클릭
+
+  감지 개선 + body-scroll-manager 통합 감지 개선 + body-scroll-manager 통합
+
+- ✅ Epic MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,-
+  ✅ Epic MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,
+
+  GIF 컴포넌트) GIF 컴포넌트)
+
+---
+
+## 3. 향후 Epic 후보## 3. 향후 Epic 후보
+
+현재 계획된 Epic이 없습니다._(현재 없음)_
+
+향후 새로운 Epic이 추가될 수 있습니다. 제안이 있으시면 이슈를 생성해주세요.향후
+새로운 Epic이 추가될 수 있습니다. 제안이 있으시면 이슈를 생성해주세요.
+
+---
+
+## 4. TDD 워크플로## 4. TDD 워크플로
+
+1. **RED**: 실패 테스트 추가 (최소 명세)1. **RED**: 실패 테스트 추가 (최소 명세)
+
+2. **GREEN**: 최소 변경으로 통과2. **GREEN**: 최소 변경으로 통과
+
+3. **REFACTOR**: 중복 제거/구조 개선3. **REFACTOR**: 중복 제거/구조 개선
+
+4. **Document**: Completed 로그에 이관4. **Document**: Completed 로그에 이관
+
+### 품질 게이트**품질 게이트**:
+
+- ✅ `npm run typecheck` (strict 오류 0)- ✅ `npm run typecheck` (strict 오류 0)
+
+- ✅ `npm run lint:fix` (자동 수정 적용)- ✅ `npm run lint:fix` (자동 수정 적용)
+
+- ✅ `npm test` (해당 Phase GREEN)- ✅ `npm test` (해당 Phase GREEN)
+
+- ✅ `npm run build` (산출물 검증 통과)- ✅ `npm run build` (산출물 검증 통과)
+
+---
+
+## 5. 참조 문서## 5. 참조 문서
+
+- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)- **아키텍처**:
+  [`ARCHITECTURE.md`](ARCHITECTURE.md)
+
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)- **코딩
+  가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)
+
+- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)- **벤더 API**:
+  [`vendors-safe-api.md`](vendors-safe-api.md)
+
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)- **실행/CI**:
+  [`../AGENTS.md`](../AGENTS.md)
+
+- **완료된 Epic**:- **완료된 Epic**:
+
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
+
+---
+
+본 문서는 활성 Epic만 관리합니다. 완료된 Epic은본 문서는 활성 Epic만 관리합니다.
+완료된 Epic은
+
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동
+이관됩니다.`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다.
 
 **솔루션 비교 분석**:
 
