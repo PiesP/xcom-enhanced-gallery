@@ -390,6 +390,48 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VerticalVideoItem.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/components/vertical-gallery-view/hooks/index.ts",
       "dependencies": [],
       "dependents": [],
@@ -8744,8 +8786,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 282,
-    "totalDependenciesCruised": 349,
+    "totalCruised": 284,
+    "totalDependenciesCruised": 350,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
