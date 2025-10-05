@@ -523,6 +523,13 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/factories/MediaItemFactory.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/hooks/index.ts",
       "dependencies": [
         {
@@ -8786,7 +8793,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 284,
+    "totalCruised": 285,
     "totalDependenciesCruised": 350,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
