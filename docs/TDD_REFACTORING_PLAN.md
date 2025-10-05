@@ -4,8 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-05 — Epic MEDIA-TYPE-ENHANCEMENT & AUTO-FOCUS-UPDATE
-계획 수립
+**최근 업데이트**: 2025-10-05 — Epic TIMELINE-VIDEO-CLICK-FIX 계획 수립
 
 ---
 
@@ -22,6 +21,139 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 ---
 
 ## 2. 활성 Epic 현황
+
+### Epic: TIMELINE-VIDEO-CLICK-FIX (타임라인 비디오 클릭 감지 개선) 🔄 **IN PROGRESS**
+
+**상태**: Phase 1 (진단) **시작일**: 2025-10-05 **Epic ID**:
+TIMELINE-VIDEO-CLICK-FIX
+
+**문제 정의**:
+
+- **현상**: 타임라인에서 동영상 클릭 시 갤러리가 열리지 않음
+- **정상 동작**: 특정 트윗 페이지에서는 갤러리가 정상적으로 열림
+- **사용자 영향**: 타임라인 탐색 중 비디오 미디어를 갤러리로 볼 수 없음
+- **로그 분석**: 초기화 성공, 미디어 추출 단계에서 실패 추정
+
+**근본 원인 분석**:
+
+1. **DOM 구조 차이**: 타임라인과 트윗 상세 페이지의 비디오 구조가 다름
+   - 타임라인: `article` 태그 없거나 다른 컨테이너 구조
+   - 트윗 상세: 명확한 `article[data-testid="tweet"]` 구조
+2. **이벤트 차단 로직 과잉**: `MediaClickDetector.shouldBlockGalleryTrigger()`가
+   타임라인 비디오를 차단
+   - 비디오 제어 선택자가 너무 포괄적 (`[data-testid="videoComponent"] button`,
+     `[data-testid="videoPlayer"] button`)
+3. **트윗 정보 추출 실패**: `TweetInfoExtractor` 전략들이 타임라인 구조에서 실패
+4. **미디어 감지 실패**: `isProcessableMedia()`가 타임라인 비디오를 감지하지
+   못함
+
+**솔루션 비교 분석**:
+
+#### 옵션 A: 타임라인 전용 미디어 감지 전략 추가
+
+**접근**: `TweetInfoExtractor`에 `TimelineSpecificTweetStrategy` 추가
+
+**장점**:
+
+- 기존 코드 변경 최소화
+- 타임라인 특화 로직 명확히 분리
+- 트윗 상세 페이지 동작에 영향 없음
+
+**단점**:
+
+- 코드 복잡도 증가 (새 전략 추가)
+- 유지보수 포인트 추가 (타임라인 DOM 변경 시 별도 업데이트)
+- 근본 원인(이벤트 차단) 해결하지 못함
+
+**난이도**: M **예상 파일 수정**: 5개 (전략 추가, 테스트)
+
+---
+
+#### 옵션 B: 미디어 감지 로직 강화 (이벤트 차단 완화) ⭐ **권장**
+
+**접근**: `shouldBlockGalleryTrigger()`의 비디오 제어 선택자 정밀화 +
+`isProcessableMedia()` 비디오 감지 로직 강화
+
+**장점**:
+
+- 전체적인 감지 정확도 향상 (타임라인 + 트윗 상세 모두 개선)
+- 단순한 구조 (기존 로직 개선)
+- 근본 원인(과도한 차단) 직접 해결
+- TDD 적용 용이
+
+**단점**:
+
+- 기존 동작에 미세한 영향 가능성 (회귀 테스트 필요)
+- 트위터 UI 변경 시 재조정 필요할 수 있음
+
+**난이도**: S **예상 파일 수정**: 3개 (MediaClickDetector, 테스트)
+
+**구체적 개선 사항**:
+
+1. `shouldBlockGalleryTrigger()` 비디오 제어 선택자 정밀화
+   - 현재: `[data-testid="videoComponent"] button` (너무 포괄적)
+   - 개선: 실제 컨트롤 버튼만 선택 (재생/일시정지, 음소거, 볼륨)
+2. `isProcessableMedia()` 타임라인 비디오 감지 추가
+   - `video` 태그 직접 감지
+   - `[data-testid="videoPlayer"]` 컨테이너 우선 순위 상향
+3. 미디어 컨테이너 범위 확대
+   - `div[role="button"]` 등 타임라인 특화 선택자 추가
+
+---
+
+#### 옵션 C: 하이브리드 전략 (URL 기반 + DOM 구조 분석)
+
+**접근**: 페이지 URL 패턴 감지 (`/status/` vs 홈 타임라인) + 각 컨텍스트에 맞는
+DOM 전략 자동 선택
+
+**장점**:
+
+- 가장 정확한 감지 (컨텍스트 인지)
+- 타임라인/상세 페이지 모두 최적화
+
+**단점**:
+
+- 구현 복잡도 높음
+- URL 패턴 의존성 (트위터 URL 구조 변경 시 취약)
+- 유지보수 부담 증가
+
+**난이도**: H **예상 파일 수정**: 8개 (URL 감지, 컨텍스트 관리, 전략 분기)
+
+---
+
+#### 옵션 D: 로깅 강화 후 실제 DOM 구조 분석 (진단 우선)
+
+**접근**: Phase 1에서 타임라인 DOM 구조 로깅 → Phase 2에서 targeted fix
+
+**장점**:
+
+- 정확한 원인 파악 (추측 아닌 데이터 기반)
+- 위험도 낮음 (진단만 먼저 수행)
+- 실제 문제에 맞는 최적 솔루션 선택 가능
+
+**단점**:
+
+- 2단계 작업 필요 (진단 + 수정)
+- 즉시 수정 불가 (사용자 로그 수집 필요)
+
+**난이도**: S (진단) + M (수정) **예상 파일 수정**: Phase 1 (2개), Phase 2 (TBD)
+
+---
+
+**선택된 솔루션**: **옵션 B** (미디어 감지 로직 강화)
+
+**선택 이유**:
+
+1. **직접적 해결**: 근본 원인(과도한 이벤트 차단)을 직접 해결
+2. **낮은 리스크**: 단순한 로직 개선, 회귀 테스트로 안전성 보장
+3. **TDD 친화적**: RED(실패 테스트) → GREEN(구현) → REFACTOR 적용 용이
+4. **유지보수성**: 기존 구조 유지, 복잡도 증가 없음
+5. **범용성**: 타임라인뿐 아니라 전체 미디어 감지 정확도 향상
+
+**백업 계획**: 옵션 B로 개선 후에도 특정 타임라인 케이스에서 실패 시 → 옵션 D
+(로깅) 추가 진단
+
+---
 
 ### Epic: MEDIA-TYPE-ENHANCEMENT (미디어 타입 지원 강화) ✅ **100% COMPLETE**
 
@@ -72,6 +204,110 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 - 8/8 tests passing
 - 번들: 483.37 KB raw, 120.38 KB gzip
+
+---
+
+### Phase 3: TIMELINE-VIDEO-CLICK-FIX 🔄 **IN PROGRESS**
+
+#### Phase 3-1: 미디어 감지 로직 진단 및 강화 (RED)
+
+**목표**: 타임라인 비디오 클릭 시 갤러리 열림 보장
+
+**예상 작업량**: S **예상 기간**: 2-3일
+
+**Acceptance Criteria**:
+
+1. **타임라인 비디오 감지**: ✅ 타임라인에서 비디오 클릭 시
+   `isProcessableMedia()`가 `true` 반환
+2. **트윗 상세 페이지 호환성**: ✅ 기존 트윗 상세 페이지 동작 유지 (회귀 없음)
+3. **이벤트 차단 정밀화**: ✅ 실제 비디오 컨트롤만 차단, 비디오 영역 클릭은 허용
+4. **테스트 커버리지**: ✅ 타임라인/트윗 상세 시나리오 모두 테스트
+
+**RED 단계**: 🔄 **IN PROGRESS**
+
+1. ✅ Contract 테스트 작성
+   - 테스트 파일:
+     `test/shared/utils/media/timeline-video-click.contract.test.ts`
+   - 예상 테스트:
+     - `타임라인 비디오 컨테이너 클릭 시 isProcessableMedia 성공`
+     - `타임라인 비디오 영역 클릭 시 갤러리 트리거`
+     - `트윗 상세 페이지 비디오 클릭 정상 동작 (회귀 없음)`
+     - `비디오 재생 버튼 클릭 시 갤러리 차단`
+     - `shouldBlockGalleryTrigger 정밀 차단 (볼륨, 진행바만)`
+
+2. ⏳ 테스트 실행 및 RED 확인
+   - `npx vitest run test/shared/utils/media/timeline-video-click.contract.test.ts`
+   - 예상: 5개 중 3-4개 실패 (타임라인 감지 미구현)
+
+**GREEN 단계**: ⏳ **PENDING**
+
+1. `MediaClickDetector.shouldBlockGalleryTrigger()` 수정
+   - 비디오 제어 선택자 정밀화
+   - 현재: `[data-testid="videoComponent"] button`,
+     `[data-testid="videoPlayer"] button`
+   - 개선:
+
+     ```typescript
+     const videoControlSelectors = [
+       'button[aria-label*="재생"]',
+       'button[aria-label*="일시정지"]',
+       'button[aria-label*="Play"]',
+       'button[aria-label*="Pause"]',
+       '[role="slider"][aria-label*="진행"]', // 진행바
+       '[role="slider"][aria-label*="볼륨"]', // 볼륨
+       'button[aria-label*="음소거"]',
+       'button[aria-label*="Mute"]',
+     ];
+     ```
+
+2. `MediaClickDetector.isProcessableMedia()` 강화
+   - 타임라인 비디오 선택자 추가
+   - 우선순위 조정: `video` 태그 직접 감지 상향
+   - 코드 예시:
+
+     ```typescript
+     // 타임라인 비디오 직접 감지
+     if (target.tagName === 'VIDEO') {
+       logger.info('✅ MediaClickDetector: 비디오 요소 직접 클릭 (타임라인)');
+       return true;
+     }
+     // 비디오 컨테이너 확장
+     const videoSelectors = [
+       SELECTORS.VIDEO_PLAYER,
+       'video',
+       '[data-testid="videoPlayer"]',
+       '[data-testid="videoComponent"]',
+       'div[aria-label*="동영상"]',
+       'div[role="button"]', // 타임라인 비디오 래퍼
+     ];
+     ```
+
+3. 테스트 실행 및 GREEN 확인
+   - 모든 테스트 통과
+   - 번들 크기 변화 확인 (±0.5 KB 이내 목표)
+
+**REFACTOR 단계**: ⏳ **PENDING**
+
+1. 중복 선택자 통합
+2. 로깅 메시지 정리
+3. 타입 안전성 강화 (필요 시)
+4. 성능 최적화 (선택자 평가 순서)
+
+**검증**:
+
+- `npm run typecheck` ✅
+- `npm run lint:fix` ✅
+- `npm test` (전체) ✅
+- `npm run build` ✅
+- 수동 테스트: 타임라인 비디오 클릭 → 갤러리 열림 ✅
+
+**예상 파일 수정**:
+
+1. `src/shared/utils/media/MediaClickDetector.ts` (수정)
+2. `test/shared/utils/media/timeline-video-click.contract.test.ts` (신규)
+3. `docs/TDD_REFACTORING_PLAN.md` (업데이트)
+
+**예상 번들 영향**: ±0.3 KB raw, ±0.1 KB gzip (미미함)
 
 ---
 
