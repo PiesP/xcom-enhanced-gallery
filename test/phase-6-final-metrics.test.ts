@@ -2,7 +2,10 @@
 /* global process */
 /**
  * @file Phase 6: 최종 정리 & 계측 TDD 테스트
- * @description 번들 사이즈, CSS 토큰 수, 중복 셀렉터 감소 측정
+ * @description 번들 사이즈, CSS    test('컴포넌트 수가 적절한 범위 내에 있어야 함', () => {
+      expect(metricsData.componentFiles).toBeGreaterThan(0);
+      expect(metricsData.componentFiles).toBeLessThanOrEqual(265); // Phase 3: Epic SCROLL-ISOLATION-CONSOLIDATION - body-scroll-manager 추가
+    });수, 중복 셀렉터 감소 측정
  *
  * 목표:
  * - 번들 사이즈 측정 및 최적화 확인
@@ -111,7 +114,7 @@ describe('Phase 6: 최종 정리 & 계측', () => {
 
     test('컴포넌트 수가 적절한 범위 내에 있어야 함', () => {
       expect(metricsData.componentFiles).toBeGreaterThan(0);
-      expect(metricsData.componentFiles).toBeLessThanOrEqual(264); // Phase 2: Epic SCROLL-ISOLATION-CONSOLIDATION - event-origin.ts 추가
+      expect(metricsData.componentFiles).toBeLessThanOrEqual(265); // Phase 3: Epic SCROLL-ISOLATION-CONSOLIDATION - body-scroll-manager.ts 추가
     });
   });
 
