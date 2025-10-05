@@ -2,6 +2,262 @@
 
 ---
 
+## 2025-01-05: Epic MEDIA-TYPE-ENHANCEMENT Phase 1-3 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-01-05
+- **유형**: Epic MEDIA-TYPE-ENHANCEMENT Phase 1-3 (MediaItemFactory 패턴)
+- **목적**: 미디어 타입에 따라 적절한 컴포넌트를 선택하는 Factory 패턴 구현
+- **결과**: ✅ **완료** (7 contract tests GREEN, TDD RED → GREEN → REFACTOR)
+- **브랜치**: `feat/media-type-enhancement-phase1`
+- **커밋**: (pending) - feat(gallery): add MediaItemFactory for type-based
+  component selection
+
+### 배경
+
+**선정 일자**: 2025-01-05 **선정 이유**: Phase 1-1에서 VerticalVideoItem
+컴포넌트를 개발했으나, 이를 갤러리에 통합하려면 타입 기반 라우팅 로직이 필요함.
+Factory 패턴으로 video/image/gif 타입에 따라 적절한 컴포넌트를 선택.
+
+**현재 구현 (Before)**:
+
+- ✅ VerticalVideoItem 컴포넌트 완성 (Phase 1-1)
+- ✅ VerticalImageItem 컴포넌트 존재
+- ❌ 타입 기반 컴포넌트 선택 로직 없음
+- ❌ SolidGalleryShell에서 직접 VerticalImageItem만 사용
+
+**문제점**:
+
+1. SolidGalleryShell에서 타입별 조건 분기 필요
+2. 새로운 미디어 타입 추가 시 여러 곳 수정 필요
+3. 컴포넌트 선택 로직 분산 (유지보수 어려움)
+
+**영향 범위**:
+
+- `src/features/gallery/solid/SolidGalleryShell.solid.tsx` (향후 통합 예정)
+
+### Phase 1-3: MediaItemFactory 패턴
+
+**TDD 워크플로**: RED → GREEN → REFACTOR ✅
+
+#### 1단계: RED (실패하는 테스트 작성)
+
+**생성 파일**:
+
+- `test/features/gallery/media-item-factory.contract.test.tsx` (7 tests, 169
+  lines)
+
+**테스트 항목**:
+
+1. **타입 기반 컴포넌트 선택** (4 tests):
+   - `image` 타입 → VerticalImageItem 반환
+     (`data-xeg-component="vertical-image-item"` 검증)
+   - `video` 타입 → VerticalVideoItem 반환 (`data-testid="video-container"`
+     검증)
+   - `gif` 타입 → VerticalImageItem 폴백 (GIF는 `<img>` 태그로 처리 가능)
+   - 알 수 없는 타입 → VerticalImageItem 폴백 (안전한 기본값)
+
+2. **Props 전달 검증** (2 tests):
+   - 모든 공통 Props 전달 확인 (index, isActive, isFocused, isVisible,
+     forceVisible, fitMode)
+   - MediaInfo 전달 확인 (url, type, originalUrl)
+
+3. **타입 안전성** (1 test):
+   - MediaInfo 인터페이스 준수 확인
+
+**초기 결과**: 전체 7 tests FAIL (예상된 RED 상태 - import 에러)
+
+```
+Failed to resolve import "@features/gallery/factories/MediaItemFactory"
+```
+
+#### 2단계: GREEN (최소 구현)
+
+**생성 파일**:
+
+- `src/features/gallery/factories/MediaItemFactory.ts` (157 lines)
+
+**구현 내용**:
+
+**CommonMediaItemProps 인터페이스** (6 props, TypeScript strict mode 호환):
+
+```typescript
+export interface CommonMediaItemProps {
+  /** 갤러리 내 순서 인덱스 (0부터 시작) */
+  readonly index: number;
+
+  /**
+   * 사용자가 명시적으로 선택한 아이템 여부
+   * Epic A11Y-FOCUS-ROLES: 클릭/키보드 네비게이션으로 선택된 아이템
+   * - true: 현재 포커스된 아이템 (접근성 aria-current="true")
+   * - false: 비활성 아이템
+   */
+  readonly isActive: boolean;
+
+  /**
+   * 갤러리 열림 시 자동 스크롤 대상 아이템 여부 (선택적)
+   * @default false
+   */
+  readonly isFocused?: boolean;
+
+  /**
+   * 뷰포트 내 가시성 여부 (windowing, 선택적)
+   * @default true
+   */
+  readonly isVisible?: boolean;
+
+  /**
+   * 강제 표시 여부 (선택적)
+   * @default false
+   */
+  readonly forceVisible?: boolean;
+
+  /**
+   * 이미지 피팅 모드 (선택적)
+   * @default 'fitContainer'
+   */
+  readonly fitMode?: ImageFitMode;
+}
+```
+
+**createMediaItem() 함수** (타입 기반 라우팅):
+
+```typescript
+export function createMediaItem(
+  media: MediaInfo,
+  props: CommonMediaItemProps
+): JSX.Element {
+  // Props 정규화: 선택적 속성을 기본값으로 변환
+  const normalized = {
+    index: props.index,
+    isActive: props.isActive,
+    isFocused: props.isFocused ?? false,
+    isVisible: props.isVisible ?? true,
+    forceVisible: props.forceVisible ?? false,
+    fitMode: props.fitMode ?? ('fitContainer' as ImageFitMode),
+  };
+
+  switch (media.type) {
+    case 'video':
+      // 비디오: 재생 컨트롤, 진행바, 볼륨 조절 지원
+      return VerticalVideoItem({
+        media,
+        ...normalized,
+      });
+
+    case 'image':
+    case 'gif': // GIF는 <img> 태그로 처리 (자동 재생)
+    default:
+      // 알 수 없는 타입은 안전하게 이미지로 fallback
+      return SolidVerticalImageItem({
+        media,
+        index: normalized.index,
+        isActive: normalized.isActive,
+        isFocused: normalized.isFocused,
+        forceVisible: normalized.forceVisible,
+        fitMode: normalized.fitMode,
+      });
+  }
+}
+```
+
+**핵심 특징**:
+
+1. **TypeScript Strict Mode 호환**: `exactOptionalPropertyTypes: true` 환경에서
+   선택적 Props를 안전하게 기본값으로 변환 (`??` nullish coalescing)
+2. **타입 안전성**: MediaInfo.type에 따라 컴파일 타임에 검증
+3. **Fallback 전략**: 알 수 없는 타입은 VerticalImageItem으로 안전하게 폴백
+4. **단일 책임**: 컴포넌트 선택 로직만 담당 (렌더링은 각 컴포넌트에 위임)
+
+**디버깅 과정**:
+
+1. **Export 이름 불일치**: `VerticalImageItem` → `SolidVerticalImageItem` (✅
+   수정)
+2. **Optional Props 타입 에러**: `exactOptionalPropertyTypes: true`로 인해
+   `boolean | undefined`를 `boolean`에 할당 불가 (✅ `??` 연산자로 기본값 제공)
+3. **ImageFitMode 잘못된 기본값**: `'cover'` → `'fitContainer'` (✅ 올바른
+   ImageFitMode 값 사용)
+4. **data-testid Prop 불일치**: VerticalVideoItem은 data-testid를 prop으로 받지
+   않음 (hardcoded) (✅ Factory에서 제거)
+5. **테스트 셀렉터 불일치**: VerticalImageItem은
+   `data-testid="image-container"`가 아닌
+   `data-xeg-component="vertical-image-item"` 사용 (✅ 3개 테스트 수정)
+
+**최종 결과**: 7/7 tests GREEN ✅ (2.06s, 번들: 472.60 KB raw, 117.34 KB gzip)
+
+#### 3단계: REFACTOR (코드 품질 개선)
+
+**개선 내용**:
+
+1. **JSDoc 강화**:
+   - CommonMediaItemProps의 각 필드에 상세한 설명 및 기본값 추가
+   - createMediaItem() 함수에 타입별 라우팅 규칙 설명
+   - Props 정규화 로직 주석 추가
+   - `@example` 태그로 사용 예시 제공
+
+2. **Props 정규화 로직 명확화**:
+   - inline 정규화로 로직 단순화 (별도 헬퍼 함수 제거)
+   - TypeScript strict mode 호환성 명시
+
+3. **VerticalVideoItem.solid.tsx 개선**:
+   - `console.error` → `logError('@shared/logging')` 사용 (✅ 린트 규칙 준수)
+
+**최종 테스트**: 7/7 tests GREEN ✅ (2.15s)
+
+### 성과
+
+**정량적 지표**:
+
+- **테스트**: 7/7 contract tests GREEN (100% 통과율)
+- **테스트 수행 시간**: 2.15s (효율적)
+- **파일 크기**: MediaItemFactory.ts 157 lines (간결)
+- **번들 영향**: 472.60 KB raw, 117.34 KB gzip (회귀 없음)
+
+**정성적 지표**:
+
+- **타입 안전성**: TypeScript strict mode 완전 준수
+- **확장성**: 새로운 미디어 타입 추가 시 Factory만 수정
+- **유지보수성**: 컴포넌트 선택 로직 중앙화
+- **테스트 격리**: Factory 로직만 독립 테스트 가능
+
+### 향후 작업
+
+**Phase 1-4: SolidGalleryShell 통합** (다음 단계):
+
+1. `SolidGalleryShell.solid.tsx`에서 `createMediaItem()` 사용
+2. 기존 직접 `VerticalImageItem` 호출을 Factory 패턴으로 대체
+3. 통합 테스트 추가 (video/image/gif 혼합 갤러리)
+
+**Phase 1-5: GIF 전용 컴포넌트 (선택적)**:
+
+- 현재 GIF는 `<img>` 태그로 충분히 처리 가능
+- 추가 기능 필요 시 `VerticalGifItem.solid.tsx` 개발
+
+### 교훈 (Lessons Learned)
+
+**TypeScript Strict Mode 도전 과제**:
+
+1. **exactOptionalPropertyTypes**: `boolean | undefined`를 `boolean`에 할당 불가
+   - 해결책: `??` 연산자로 명시적 기본값 제공
+   - 교훈: 선택적 Props는 항상 기본값을 고려하여 설계
+
+2. **Export 이름 일관성**: `VerticalImageItem` vs `SolidVerticalImageItem`
+   - 해결책: import 구문에서 정확한 export 이름 사용
+   - 교훈: 파일명과 export 이름의 불일치 주의
+
+3. **테스트 셀렉터 전략**: `data-testid` vs `data-xeg-component`
+   - 해결책: 각 컴포넌트의 실제 렌더링 결과를 확인 후 테스트 작성
+   - 교훈: 컴포넌트 구현을 먼저 확인하고 테스트 셀렉터 선택
+
+**TDD 워크플로 검증**:
+
+- RED → GREEN → REFACTOR 순서 엄격히 준수 ✅
+- 각 단계별 명확한 목표와 검증 ✅
+- 디버깅 과정을 점진적으로 해결 (5회 반복) ✅
+
+---
+
 ## 2025-01-05: Epic MEDIA-TYPE-ENHANCEMENT Phase 1-1 완료 ✅
 
 ### 개요

@@ -9,6 +9,7 @@ import { getSolidCore } from '@shared/external/vendors';
 import type { Component } from 'solid-js';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types';
+import { logError } from '@shared/logging';
 import styles from './VerticalVideoItem.module.css';
 export interface VerticalVideoItemProps {
   readonly media: MediaInfo;
@@ -62,7 +63,7 @@ export const VerticalVideoItem: Component<VerticalVideoItemProps> = props => {
         setIsPlaying(true);
       }
     } catch (error) {
-      console.error('Video playback error:', error);
+      logError('Video playback error', { error: String(error) });
       setHasError(true);
     }
   };
