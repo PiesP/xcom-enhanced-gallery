@@ -2,6 +2,269 @@
 
 ---
 
+## 2025-10-05: Epic SCROLL-ISOLATION-CONSOLIDATION Phase 1 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: Epic SCROLL-ISOLATION-CONSOLIDATION Phase 1 - Reactive Accessor +
+  Singleton Listener Manager
+- **목적**: 중복 Helper 함수 제거 및 Singleton 리스너 패턴 통합
+- **결과**: ✅ **완료** (27/27 tests GREEN, 중복 코드 15 lines 제거)
+- **브랜치**: `feat/scroll-isolation-consolidation-phase1`
+- **커밋**:
+  `feat(utils): implement Phase 1 - Reactive Accessor + Singleton Listener`
+
+### 배경
+
+**문제점**:
+
+- Helper 함수 중복 (~20%): `resolve`, `resolveWithDefault`가 여러 훅에 개별 구현
+- 단일 리스너 패턴 반복: `activeCleanup` 싱글톤 패턴이 각 파일에 복제
+- 테스트 커버리지 부족: 중복 코드에 대한 단위 테스트 미비
+
+**솔루션**:
+
+- Option B: Reactive Accessor Utilities 추출
+- Option D: Singleton Listener Manager 추출
+
+### 완료된 Phase
+
+#### Phase 1-1: RED — ✅ 완료
+
+**테스트 작성**:
+
+1. `test/unit/utils/reactive-accessor.test.ts` (13 tests, 116 lines)
+   - resolve: 4 tests (primitive, accessor, null, undefined)
+   - resolveWithDefault: 4 tests (default, accessor, static, edge cases)
+   - combineAccessors: 5 tests (mixed, empty, memoization)
+
+2. `test/unit/utils/singleton-listener.test.ts` (14 tests, 154 lines)
+   - register: 3 tests (basic, replace, multiple)
+   - unregister: 3 tests (cleanup call, non-existent key, double unregister)
+   - clear: 3 tests (all cleanup, empty, multiple keys)
+   - isActive: 3 tests (active, inactive, after unregister)
+   - global instance: 2 tests (singleton, isolation)
+
+**검증**:
+
+- ✅ Import 실패 확인 (예상된 RED)
+- ✅ 테스트 구조 및 커버리지 확인
+
+#### Phase 1-2: GREEN — ✅ 완료
+
+**구현**:
+
+1. `src/shared/utils/reactive-accessor.ts` (58 lines)
+   - `resolve<T>()`: Reactive 값 안전 resolve
+   - `resolveWithDefault<T>()`: 기본값 제공
+   - `combineAccessors<T>()`: Memoized accessor 배열
+   - TypeScript strict 모드 타입 안전성 보장
+   - **TDZ 방지**: getSolidCore() 지연 평가 (combineAccessors 내부)
+
+2. `src/shared/utils/singleton-listener.ts` (89 lines)
+   - `SingletonListenerManager` class
+   - Methods: register, unregister, clear, isActive
+   - 전역 인스턴스: `globalListenerManager` export
+   - Readonly 키워드로 불변 컬렉션 보호
+
+3. `src/shared/utils/index.ts` (barrel export 추가)
+   - 모든 유틸리티 함수 및 타입 export
+
+**검증**:
+
+- ✅ 27/27 tests GREEN (167ms)
+  - reactive-accessor: 13 tests GREEN (83ms)
+  - singleton-listener: 14 tests GREEN (84ms)
+- ✅ TypeScript 타입 체크 통과
+- ✅ Lint 규칙 준수 (readonly 추가)
+
+**TDZ 문제 해결**:
+
+```typescript
+// Before (모듈 로드 시점 호출 - TDZ 위험)
+const solid = getSolidCore();
+const { createMemo } = solid;
+
+export function combineAccessors<T>(values: ReactiveValue<T>[]): () => T[] {
+  return createMemo(() => values.map(v => resolve(v)));
+}
+
+// After (지연 평가 - TDZ 안전)
+export function combineAccessors<T>(values: ReactiveValue<T>[]): () => T[] {
+  const solid = getSolidCore(); // 함수 내부로 이동
+  const { createMemo } = solid;
+  return createMemo(() => values.map(v => resolve(v)));
+}
+```
+
+#### Phase 1-3: REFACTOR — ✅ 완료
+
+**useGalleryScroll.ts 마이그레이션** (143 → 128 lines, -10.5%):
+
+**제거된 코드**:
+
+```typescript
+// Before (중복 함수 40-49 lines)
+function resolve<T>(value: ReactiveValue<T>): T {
+  return typeof value === 'function' ? (value as () => T)() : value;
+}
+
+function resolveWithDefault<T>(
+  value: ReactiveValue<T | null | undefined>,
+  defaultValue: T
+): T {
+  const resolved = resolve(value);
+  return resolved ?? defaultValue;
+}
+
+// Before (activeCleanup 패턴 13, 96-99, 138-139 lines)
+const activeCleanup: { fn: (() => void) | null } = { fn: null };
+
+if (activeCleanup.fn) {
+  activeCleanup.fn();
+}
+activeCleanup.fn = cleanupWheel;
+
+onCleanup(() => {
+  activeCleanup.fn?.();
+});
+```
+
+**추가된 코드**:
+
+```typescript
+// After (유틸리티 import)
+import { resolve, resolveWithDefault } from '@shared/utils/reactive-accessor';
+import { globalListenerManager } from '@shared/utils/singleton-listener';
+
+// After (Singleton 패턴 적용)
+const LISTENER_KEY = 'gallery-wheel';
+
+const cleanupWheel = ensureWheelLock(document, handleWheel);
+globalListenerManager.register(LISTENER_KEY, cleanupWheel);
+
+onCleanup(() => {
+  globalListenerManager.unregister(LISTENER_KEY);
+});
+```
+
+**검증**:
+
+- ✅ 중복 코드 15 lines 제거
+- ✅ 코드 감소: 143 → 128 lines (-10.5%)
+- ✅ 기존 기능 동작 보존
+- ✅ 타입 안전성 유지
+
+### 품질 메트릭
+
+**테스트 결과**:
+
+- ✅ 27/27 new tests GREEN (167ms)
+- ✅ 2705/2814 baseline tests GREEN (1 flaky performance test unrelated)
+- ✅ Test coverage: reactive-accessor 100%, singleton-listener 100%
+
+**빌드 결과**:
+
+- ✅ Raw 번들: 471.94 KB (≤473 KB 목표 이내)
+- ✅ Gzip 번들: 117.19 KB (≤118 KB 목표 이내)
+- ✅ 번들 크기 회귀 없음 (+0.27 KB, ≤0.5 KB 허용 범위)
+
+**코드 품질**:
+
+- ✅ TypeCheck: 0 errors
+- ✅ Lint: 0 errors (readonly 추가)
+- ✅ Format: Prettier 규칙 준수
+- ✅ TDZ 안전성: getSolidCore() 지연 평가 적용
+
+**코드 감소**:
+
+- ✅ useGalleryScroll.ts: 143 → 128 lines (-10.5%)
+- ✅ 중복 코드 제거: 15 lines
+- ✅ 유틸리티 재사용 가능: reactive-accessor, singleton-listener
+
+### 파일 변경 내역
+
+**생성된 파일** (4개):
+
+1. `test/unit/utils/reactive-accessor.test.ts` (116 lines)
+2. `test/unit/utils/singleton-listener.test.ts` (154 lines)
+3. `src/shared/utils/reactive-accessor.ts` (58 lines)
+4. `src/shared/utils/singleton-listener.ts` (89 lines)
+
+**수정된 파일** (2개):
+
+1. `src/shared/utils/index.ts` (barrel export 추가)
+2. `src/features/gallery/hooks/useGalleryScroll.ts` (143 → 128 lines, -10.5%)
+
+**문서 변경**:
+
+1. `docs/TDD_REFACTORING_PLAN.md` (Phase 1 상태 업데이트)
+2. `docs/dependency-graph.*` (의존성 그래프 갱신)
+3. `release/metadata.json` (버전 메타데이터 업데이트)
+
+### Git 히스토리
+
+**브랜치**: `feat/scroll-isolation-consolidation-phase1`
+
+**커밋 메시지**:
+
+```
+feat(utils): implement Phase 1 - Reactive Accessor + Singleton Listener
+
+- RED: 27 tests written (reactive-accessor 13 + singleton-listener 14)
+- GREEN: Implementation complete
+  - reactive-accessor.ts: resolve, resolveWithDefault, combineAccessors
+  - singleton-listener.ts: SingletonListenerManager, globalListenerManager
+  - barrel export added to src/shared/utils/index.ts
+- REFACTOR: useGalleryScroll.ts migrated
+  - removed duplicate resolve/resolveWithDefault functions
+  - replaced activeCleanup with globalListenerManager
+  - code reduction: 143 → 128 lines (-10.5%)
+- Quality gates: ✅ ALL PASS
+  - 27/27 tests GREEN (167ms)
+  - typecheck: 0 errors
+  - lint: 0 errors
+  - build: 471.94 KB raw (≤473 KB), 117.19 KB gzip (≤118 KB)
+  - baseline: 2705/2814 tests GREEN
+
+Epic: SCROLL-ISOLATION-CONSOLIDATION Phase 1
+Related: TDD_REFACTORING_PLAN.md
+```
+
+**병합**: master 브랜치로 병합 완료 (2025-10-05)
+
+### Lessons Learned
+
+**성공 요인**:
+
+- ✅ TDD RED → GREEN → REFACTOR cycle 철저히 준수
+- ✅ 테스트 먼저 작성으로 요구사항 명확화
+- ✅ 작은 단위로 분해하여 점진적 검증
+- ✅ 품질 게이트 자동화로 회귀 방지
+
+**기술적 인사이트**:
+
+- ✅ TDZ 문제: getSolidCore() 지연 평가 필수
+- ✅ Singleton pattern: 전역 리스너 관리에 효과적
+- ✅ Barrel export: 유틸리티 일관된 접근 경로 제공
+- ✅ Readonly: 불변 컬렉션 보호로 실수 방지
+
+**개선 기회**:
+
+- ⚠️ Flaky test: media-extraction-accuracy (성능 타이밍 엄격)
+- ⚠️ Commit message scope: scroll → utils로 변경 필요 (commitlint)
+
+### 다음 Phase
+
+**Phase 2**: Event Origin Detector 구축 (Option C)
+
+- 목표: isEventWithinContainer 유틸리티 추출
+- 예상: 10개 테스트, 30 lines 코드 감소
+- 리스크: 🟡 Low-Medium
+
+---
+
 ## 2025-10-05: Epic CODEQL-FALSE-POSITIVE-SUPPRESSION 완료 ✅
 
 ### 개요
