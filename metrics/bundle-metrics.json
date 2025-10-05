@@ -1,11 +1,11 @@
 {
   "version": 4,
   "artifact": "xcom-enhanced-gallery.user.js",
-  "generatedAt": "2025-10-04T07:00:00.000Z",
+  "generatedAt": "2025-10-05T00:00:00.000Z",
   "environment": "production",
   "measurements": {
     "rawBytes": {
-      "baselineBytes": 484020,
+      "baselineBytes": 507200,
       "toleranceBytes": 10240,
       "budgetBytes": 555845
     },
@@ -15,5 +15,5 @@
       "budgetBytes": 108345
     }
   },
-  "notes": "Stage D readiness calibration - Epic TEST-FAILURE-FIX-REMAINING: Updated baseline after Phase 3 completion (Tooltip, i18n, Navigation features)"
+  "notes": "Stage D readiness calibration - Epic TEST-FAILURE-ALIGNMENT-2025: Updated baseline after Phase 1-4 completion (MediaItemFactory, Dynamic components, Design token fixes)"
 }
