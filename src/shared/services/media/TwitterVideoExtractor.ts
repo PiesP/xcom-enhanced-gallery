@@ -172,7 +172,13 @@ export class TwitterAPI {
   private static _guestToken: string | undefined = undefined;
   private static _csrfToken: string | undefined = undefined;
   private static _tokensInitialized = false;
-  private static readonly requestCache = new Map<string, TwitterAPIResponse>();
+
+  // Sub-Epic 4: NATIVE-API-INTEGRATION - TTL 기반 캐싱
+  private static readonly requestCache = new Map<
+    string,
+    { data: TwitterAPIResponse; timestamp: number }
+  >();
+  private static readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5분
 
   /**
    * 토큰 lazy 초기화
@@ -218,13 +224,19 @@ export class TwitterAPI {
    */
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
     const _url = url.toString();
+    const now = Date.now();
 
-    // 캐시 확인
-    if (this.requestCache.has(_url)) {
-      logger.debug('Using cached API request:', _url);
-      const cachedResult = this.requestCache.get(_url);
-      if (cachedResult) {
-        return cachedResult;
+    // 캐시 확인 (TTL 고려)
+    const cached = this.requestCache.get(_url);
+    if (cached) {
+      const age = now - cached.timestamp;
+      if (age < this.CACHE_TTL_MS) {
+        logger.debug('Using cached API request:', _url, `(age: ${Math.floor(age / 1000)}s)`);
+        return cached.data;
+      } else {
+        // 만료된 캐시 제거
+        logger.debug('Cache expired, removing:', _url);
+        this.requestCache.delete(_url);
       }
     }
 
@@ -248,7 +260,11 @@ export class TwitterAPI {
 
       if (response.ok) {
         this.vacuumCache();
-        this.requestCache.set(_url, json);
+        // TTL 기반 캐싱: 타임스탬프와 함께 저장
+        this.requestCache.set(_url, {
+          data: json,
+          timestamp: now,
+        });
       }
 
       return json;
