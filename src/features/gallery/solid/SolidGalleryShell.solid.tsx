@@ -329,11 +329,23 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   });
   const visibleIndex = createMemo(() => visibleIndexResult.visibleIndexAccessor());
 
-  // Phase 2-3 (AUTO-FOCUS-UPDATE): 접근성 강화 - 스크린 리더 안내
-  // Ensure polite live region exists on mount
+  /**
+   * Phase 2-3 (AUTO-FOCUS-UPDATE): Accessibility Enhancement - Screen Reader Announcements
+   *
+   * Automatically announces the currently visible item to screen readers via ARIA live region.
+   *
+   * @remarks
+   * - Uses polite announcement (non-intrusive) to respect user workflow
+   * - Announces format: "현재 화면에 표시된 아이템: X/Y" (1-indexed for user-friendliness)
+   * - Suppresses announcement when gallery is closed or empty
+   * - Handles initial render when visibleIndex is -1 (defaults to index 0)
+   * - Deduplication is handled by live-region-manager (200ms window)
+   *
+   * @see {@link https://www.w3.org/WAI/WCAG21/Understanding/status-messages.html} WCAG 2.1 Status Messages
+   * @see live-region-manager for implementation details
+   */
   ensurePoliteLiveRegion();
 
-  // Announce visibleIndex changes to screen readers
   createEffect(() => {
     const idx = visibleIndex();
     const total = totalCount();
