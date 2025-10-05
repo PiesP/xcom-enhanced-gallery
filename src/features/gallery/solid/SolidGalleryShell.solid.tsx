@@ -450,7 +450,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
             'pointer-events': 'auto',
           }}
         >
-          {/* Left Navigation Button */}
+          {/* Navigation Buttons */}
           <NavigationButton
             direction='left'
             disabled={isLeftDisabled()}
@@ -460,7 +460,6 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
             data-testid='gallery-nav-left'
           />
 
-          {/* Right Navigation Button */}
           <NavigationButton
             direction='right'
             disabled={isRightDisabled()}
@@ -470,6 +469,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
             data-testid='gallery-nav-right'
           />
 
+          {/* Toolbar */}
           {useToolbarWithSettings ? (
             <ToolbarWithSettings
               currentIndex={currentIndex()}
@@ -513,6 +513,14 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
               aria-label='갤러리 도구모음'
             />
           )}
+
+          {/* Toolbar Visual Hint (Sub-Epic 3) */}
+          <div
+            class={styles.toolbarHint}
+            role='status'
+            aria-label='Toolbar hidden. Move mouse to top of screen to show.'
+            data-visible={true}
+          />
 
           <div class={styles.contentArea} data-gallery-element='items-area'>
             <div

@@ -213,6 +213,54 @@
   }
 }
 
+/* 시각적 힌트 - 툴바 숨김 시 표시 (Sub-Epic 3) */
+.toolbarHint {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: var(--xeg-color-primary);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  pointer-events: none;
+  z-index: calc(var(--xeg-comp-toolbar-z-index, var(--xeg-z-toolbar, 10001)) - 2);
+  contain: layout style paint;
+  will-change: opacity;
+}
+
+/* 툴바 숨김 상태에서 힌트 표시 */
+.container:not(.initialToolbarVisible) .toolbarHint {
+  opacity: 0.6;
+  animation: toolbarHintPulse 2s ease-in-out infinite;
+}
+
+/* 툴바 표시 상태에서 힌트 숨김 */
+.container.initialToolbarVisible .toolbarHint,
+.container:has(.toolbarWrapper:hover) .toolbarHint {
+  opacity: 0;
+}
+
+/* 애니메이션: 부드러운 펄스 효과 */
+@keyframes toolbarHintPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Reduced Motion 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .toolbarHint {
+    animation: none;
+  }
+}
+
 /* 툴바 래퍼 - 기본 가시성 보장 및 개선된 트랜지션 */
 .toolbarWrapper {
   position: fixed;

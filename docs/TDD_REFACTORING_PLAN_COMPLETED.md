@@ -2,6 +2,81 @@
 
 ---
 
+## 2025-10-05: Sub-Epic 2-B (REFACTOR) 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: Sub-Epic 2-B - ViewportCalculator 갤러리 통합 (REFACTOR)
+- **목적**: ViewportCalculator를 실제 갤러리 컴포넌트에 통합하여 런타임 적용
+- **결과**: ✅ **REFACTOR 완료** (12/12 기존 테스트 유지 GREEN)
+- **브랜치**: master (직접 작업)
+- **커밋**: 2be5827d
+
+### 배경
+
+**선행 작업**: Sub-Epic 2 GREEN 완료 (커밋: fd20abfc) - ViewportCalculator 구현
+완료 **문제점**: ViewportCalculator가 구현되었으나 실제 갤러리에서 호출되지 않음
+**솔루션**: SolidGalleryShell.solid.tsx에서 갤러리 열림 시 자동으로
+`updateViewportForToolbar()` 호출
+
+### 구현 내용
+
+**수정 파일**: `src/features/gallery/solid/SolidGalleryShell.solid.tsx` (2곳
+수정)
+
+**변경 1**: Import 추가 (line 33)
+
+```typescript
+import { updateViewportForToolbar } from '@shared/utils/viewport/viewport-calculator';
+```
+
+**변경 2**: 갤러리 열림 시 뷰포트 계산 (line 239)
+
+```typescript
+createEffect(() => {
+  const state = galleryState();
+  if (state.isOpen) {
+    bodyScrollManager.lock('gallery', 5);
+    // 갤러리 열림 시 초기 뷰포트 계산 (툴바는 기본적으로 표시 상태)
+    updateViewportForToolbar(true);
+  } else {
+    bodyScrollManager.unlock('gallery');
+    scrollAnchorManager.restoreToAnchor();
+  }
+});
+```
+
+### 테스트 결과
+
+**실행**:
+`npx vitest run test/features/gallery/container-size-optimization.test.ts`
+
+**결과**: ✅ **12/12 GREEN** (1.52초)
+
+- Viewport Calculation: 3/3 통과
+- CSS Variable Integration: 3/3 통과
+- Responsive Behavior: 3/3 통과
+- Performance & Edge Cases: 3/3 통과
+
+**타입 체크**: ✅ 0 에러 (`npm run typecheck`)
+
+### Acceptance Criteria
+
+- ✅ 갤러리 열림 시 뷰포트 자동 업데이트
+- ✅ Body scroll lock 후 즉시 계산 실행
+- ✅ 기존 테스트 모두 유지 (12/12 GREEN)
+- ✅ 타입 안전성 유지 (0 에러)
+
+### 결과
+
+- **통합 위치**: SolidGalleryShell createEffect (갤러리 열림 감지)
+- **타이밍**: Body scroll lock 직후 즉시 실행
+- **효과**: 갤러리 열릴 때마다 자동으로 최적 뷰포트 계산 및 CSS 변수 업데이트
+- **영향**: 툴바 가시성 변화 시 미디어 표시 영역이 자동으로 최적화됨
+
+---
+
 ## 2025-10-05: Sub-Epic 2 (CONTAINER-SIZE-OPTIMIZATION) GREEN 완료 ✅
 
 ### 개요

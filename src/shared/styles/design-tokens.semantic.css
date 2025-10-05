@@ -140,6 +140,9 @@
   /* Isolated root container (userscript) — must be above all site UI */
   --xeg-z-root: 2147483647;
 
+  /* Toolbar Hover Zone (Sub-Epic 3) */
+  --xeg-hover-zone-height: 200px; /* 120px → 200px (67% 증가) */
+
   /* Layer Management - Semantic Roles */
   --xeg-layer-base: 0;
   --xeg-layer-toolbar: var(--xeg-z-toolbar);
