@@ -38,9 +38,10 @@ describe('Task 1: Bundle Size Upper Limits', () => {
     const sizeKB = stats.size / 1024;
 
     // 현재: ~483 KB, 목표: ≤485 KB (회귀 방지)
+    // Phase 1-2: GIF 컴포넌트 추가로 ~8 KB 증가 (기능 개선)
     // Phase 1-4: Dynamic 컴포넌트 추가로 ~10 KB 증가 (기능 개선)
     // 이상적 목표: 420 KB (향후 deep refactoring 필요)
-    expect(sizeKB).toBeLessThanOrEqual(485);
+    expect(sizeKB).toBeLessThanOrEqual(495);
     expect(sizeKB).toBeGreaterThan(0); // 유효성 체크
   });
 
@@ -52,9 +53,10 @@ describe('Task 1: Bundle Size Upper Limits', () => {
     const sizeKB = gzipped.byteLength / 1024;
 
     // 현재: ~120 KB, 목표: ≤121 KB (유지)
+    // Phase 1-2: GIF 컴포넌트로 ~2 KB 증가
     // Phase 1-4: Dynamic 컴포넌트로 ~2 KB 증가
     // 향후 공격적 최적화로 105 KB 목표 달성 가능
-    expect(sizeKB).toBeLessThanOrEqual(121);
+    expect(sizeKB).toBeLessThanOrEqual(125);
     expect(sizeKB).toBeGreaterThan(0); // 유효성 체크
   });
 
@@ -65,11 +67,11 @@ describe('Task 1: Bundle Size Upper Limits', () => {
     const currentSizeKB = stats.size / 1024;
 
     // 기준선: 485 KB (2025-10-05 Phase 1-4: MediaItemFactory + Dynamic)
-    // 달성 목표: 485 KB (baseline preservation)
-    // 허용 상한: 485 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
+    // 달성 목표: 495 KB (Phase 1-2: GIF component, ~8 KB increase)
+    // 허용 상한: 495 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
     // 허용 하한: 380 KB (과도한 최적화 경고)
-    const TARGET_SIZE_KB = 485;
-    const BASELINE_SIZE_KB = 485;
+    const TARGET_SIZE_KB = 495;
+    const BASELINE_SIZE_KB = 495;
     const MIN_SAFE_SIZE_KB = 380;
 
     expect(currentSizeKB).toBeLessThanOrEqual(TARGET_SIZE_KB);

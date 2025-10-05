@@ -116,11 +116,15 @@ describe('MediaFactory-SolidGalleryShell Integration Contract', () => {
 
     render(() => <SolidGalleryShell />);
 
-    // VerticalImageItem 컴포넌트 렌더링 확인
-    const imageItem = document.querySelector('[data-xeg-component="vertical-image-item"]');
-    expect(imageItem).not.toBeNull();
+    // VerticalGifItem 컴포넌트 렌더링 확인
+    const gifItem = document.querySelector('[data-xeg-component="vertical-gif-item"]');
+    expect(gifItem).not.toBeNull();
 
-    // VerticalVideoItem이 아님을 확인 (GIF는 이미지로 처리)
+    // VerticalImageItem이 아님을 확인 (GIF는 전용 컴포넌트로 처리)
+    const imageItem = document.querySelector('[data-xeg-component="vertical-image-item"]');
+    expect(imageItem).toBeNull();
+
+    // VerticalVideoItem이 아님을 확인
     const videoItem = document.querySelector('[data-xeg-component="vertical-video-item"]');
     expect(videoItem).toBeNull();
   });
