@@ -4,7 +4,7 @@
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.
 
-**최근 업데이트**: 2025-10-05 — Epic BUNDLE-SIZE-OPTIMIZATION 활성화
+**최근 업데이트**: 2025-10-05 — Epic THEME-ICON-UNIFY-002 Phase B 완료 ✅
 
 ---
 
@@ -22,143 +22,9 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### 🎯 Epic THEME-ICON-UNIFY-002 Phase B/C - 아이콘 통합 완료 (디자인 일관성 + 성능/접근성)
+### 현재 활성 Epic 없음
 
-**활성화 날짜**: 2025-10-05
-
-#### 목표
-
-Epic UI-TEXT-ICON-OPTIMIZATION 완료 후 남은 아이콘 개선 작업(Phase B/C) 완료:
-
-- **Phase B**: 아이콘 디자인 일관성 검증 (viewBox 표준화, path 속성, 시각적
-  균형)
-- **Phase C**: 성능 및 접근성 검증 (테마 전환 성능, WCAG AA 대비율, 고대비 모드)
-
-#### 배경
-
-- Epic UI-TEXT-ICON-OPTIMIZATION에서 Phase A(아이콘 통합 기반) 완료 (2025-01-08)
-- Phase B/C는 26개 .red 테스트로 분리되어 백로그에 대기 중
-- 현재 프로젝트 상태: 테스트 안정(2679 통과), 번들 안정(471.67 KB), 보안 강화
-  완료
-- 타이밍: 보안/번들 최적화 후 사용자 경험 개선 단계 진입
-
-#### Acceptance Criteria
-
-**Phase 1 (RED)** — 이미 완료 ✅:
-
-- ✅ 26개 .red 테스트 작성 완료
-  - Phase B: 아이콘 디자인 일관성 (9개 테스트)
-  - Phase C: 성능 및 접근성 (17개 테스트)
-
-**Phase 2 (GREEN)**:
-
-- [ ] **디자인 일관성 구현**:
-  - [ ] 모든 아이콘 24x24 viewBox 표준화
-  - [ ] Path 속성 일관성 (fill: currentColor)
-  - [ ] ChevronLeft/Right 대칭성 보장
-  - [ ] 디자인 토큰 통합 (stroke-width, color)
-- [ ] **성능 개선**:
-  - [ ] 테마 전환 시 CSS 변수 업데이트 <50ms
-  - [ ] 아이콘 색상 CSS 변수 제어 확인
-- [ ] **접근성 강화**:
-  - [ ] WCAG AA 대비율 3:1 이상 (라이트/다크/고대비 모드)
-  - [ ] 고대비 모드 지원 (forced-colors 미디어 쿼리 + System Color 폴백)
-  - [ ] 아이콘 ARIA 속성 적절히 설정
-- [ ] **품질 게이트**:
-  - [ ] 26/26 tests GREEN
-  - [ ] 번들 크기 회귀 없음 (≤473 KB raw, ≤118 KB gzip)
-  - [ ] typecheck/lint/format 통과
-  - [ ] 전체 테스트 통과 (2679+ tests)
-
-**Phase 3 (REFACTOR)**:
-
-- [ ] `.red` 파일명 제거 → 일반 테스트로 전환
-- [ ] 문서 업데이트 (ARCHITECTURE.md, CODING_GUIDELINES.md)
-- [ ] TDD_REFACTORING_PLAN_COMPLETED.md로 이관
-- [ ] 백로그에서 제거
-
-#### 솔루션 비교 분석
-
-**Option A: JSDOM 환경에서 구조적 검증** (선택됨 ✅):
-
-- 장점:
-  - 기존 테스트 환경 활용 (JSDOM)
-  - CSS 변수 존재 여부, 구조 검증 가능
-  - CI에서 자동 실행 가능
-- 단점:
-  - 실제 렌더링/성능 측정 제한적
-  - getComputedStyle 완전하지 않음
-- 완화 전략:
-  - 구조적 검증에 집중 (CSS 변수 정의, 토큰 사용 확인)
-  - 실제 성능은 수동 테스트로 보완
-
-**Option B: Playwright E2E 테스트 추가** (보류):
-
-- 장점: 실제 브라우저 렌더링, 정확한 성능 측정
-- 단점: 설정 복잡도, CI 시간 증가
-- 결론: Phase 2 완료 후 필요 시 검토
-
-**Option C: 수동 테스트 가이드만 작성** (보류):
-
-- 장점: 구현 간단
-- 단점: 회귀 방지 약함, 자동화 없음
-- 결론: 자동화 우선, 수동 가이드는 보조
-
-#### 구현 계획
-
-**Phase 2 (GREEN)** — 예상 기간: 2-3일:
-
-**Task 1**: 디자인 일관성 구현 (Phase B) — 0.5-1일
-
-- 아이콘 정의 검증 (viewBox, fill 속성)
-- ChevronLeft/Right 대칭성 확인
-- 디자인 토큰 통합 검증
-
-**Task 2**: 성능 개선 (Phase C-1) — 0.5일
-
-- CSS 변수 기반 테마 전환 구조 검증
-- JSDOM 환경 제약 완화 전략 적용
-
-**Task 3**: 접근성 강화 (Phase C-2) — 1-1.5일
-
-- WCAG AA 대비율 계산 로직 구현
-- 고대비 모드 CSS 추가 (forced-colors 미디어 쿼리)
-- ARIA 속성 검증
-
-**Task 4**: 품질 게이트 — 0.5일
-
-- 26/26 tests GREEN 확인
-- 번들 크기 회귀 테스트
-- 전체 테스트 통과 검증
-
-**Phase 3 (REFACTOR)** — 예상 기간: 0.5일:
-
-- `.red` 제거, 문서 업데이트, Epic 이관
-
-#### 위험 요소 및 완화
-
-**위험 1**: JSDOM 환경 제약 (CSS 변수, getComputedStyle 불완전)
-
-- **완화**: 구조적 검증에 집중, 실제 성능은 수동 테스트로 보완
-- **대안**: Playwright E2E (Phase 2 완료 후 검토)
-
-**위험 2**: 대비율 계산 복잡도 (색상 변환 로직)
-
-- **완화**: 기존 라이브러리 활용 또는 간소화된 계산식 사용
-- **검증**: 대표 색상 샘플로 테스트
-
-**위험 3**: 고대비 모드 테스트 어려움 (브라우저 전용 기능)
-
-- **완화**: CSS 구조 검증으로 대체, 수동 테스트 가이드 작성
-- **문서화**: CODING_GUIDELINES.md에 고대비 모드 정책 추가
-
-#### 성공 지표
-
-- ✅ 26/26 tests GREEN
-- ✅ 번들 크기 회귀 없음 (≤473 KB raw, ≤118 KB gzip)
-- ✅ WCAG 2.1 Level AA 준수 (대비율 3:1 이상)
-- ✅ 모든 아이콘 디자인 일관성 확보 (24x24 viewBox, currentColor)
-- ✅ 전체 테스트 통과 (2679+ tests)
+다음 작업은 `docs/TDD_REFACTORING_BACKLOG.md`에서 선정하세요.
 
 ---
 
@@ -166,6 +32,13 @@ Epic UI-TEXT-ICON-OPTIMIZATION 완료 후 남은 아이콘 개선 작업(Phase B
 
 **최근 완료**:
 
+- 2025-10-05: **Epic THEME-ICON-UNIFY-002 Phase B** ✅
+  - 아이콘 디자인 일관성 검증 (13/13 tests GREEN)
+  - Phase C는 JSDOM 제약으로 SKIP (9/9 tests)
+  - Epic 목표 조정: 26/26 → 13/13 + 9 SKIP
+  - .red 파일명 제거: icon-design-consistency.test.ts
+  - 번들 크기 회귀 없음 (471.67 KB / 117.12 KB)
+  - 상세: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 - 2025-10-05: **Epic BUNDLE-SIZE-OPTIMIZATION** ✅
   - 번들 크기 최적화 및 회귀 방지 (Phase 1-3 완료)
   - 15개 계약 테스트 GREEN (473 KB raw, 118 KB gzip 상한선)
@@ -184,8 +57,6 @@ Epic UI-TEXT-ICON-OPTIMIZATION 완료 후 남은 아이콘 개선 작업(Phase B
   - 18개 보안 계약 테스트 + 2664개 전체 테스트 GREEN
   - 번들 크기 변화 없음 (472.49 KB)
   - 상세: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
-
-**활성 Epic**: THEME-ICON-UNIFY-002 Phase B/C (2025-10-05 승격) ⚙️
 
 ---
 

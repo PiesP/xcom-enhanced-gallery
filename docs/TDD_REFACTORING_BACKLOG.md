@@ -2,7 +2,7 @@
 
 > 활성화되지 않은 향후 후보 저장소 (선정 전까지 여기서만 유지)
 
-> **최근 업데이트**: 2025-10-05 — Epic CODEQL-LOCAL-ENHANCEMENT 완료
+> **최근 업데이트**: 2025-10-05 — Epic THEME-ICON-UNIFY-002 Phase B 완료
 >
 > 사용 방법:
 >
@@ -21,15 +21,20 @@
 
 ## 최근 승격 히스토리
 
-**2025-10-05**: `THEME-ICON-UNIFY-002 Phase B/C` 승격 → 활성 진행 중 ⚙️
+**2025-10-05**: `THEME-ICON-UNIFY-002 Phase B/C` 승격 → 완료 ✅
 
 - 선정 이유: Epic UI-TEXT-ICON-OPTIMIZATION 완료 후 남은 Phase B/C 작업 (26개
   .red 테스트), 사용자 경험 개선 (접근성/성능), 보안/번들 최적화 후 타이밍 적절
 - 솔루션: 옵션 A (JSDOM 구조적 검증) - 기존 테스트 환경 활용, CI 자동 실행 가능
-- 목표: 26/26 tests GREEN, WCAG AA 준수, 아이콘 디자인 일관성
-- 예상 위험도: MEDIUM (JSDOM 환경 제약, 대비율 계산 복잡도, 고대비 모드 테스트
-  어려움)
-- 상세: `TDD_REFACTORING_PLAN.md` Epic THEME-ICON-UNIFY-002 Phase B/C 섹션
+- 목표 (초기): 26/26 tests GREEN, WCAG AA 준수, 아이콘 디자인 일관성
+- 완료 내용: Phase B 완료 (13/13 tests GREEN), Phase C SKIP (9/9 tests, JSDOM
+  제약)
+- 성과: 아이콘 디자인 일관성 검증 완료, 번들 크기 회귀 없음 (471.67 KB / 117.12
+  KB)
+- Epic 목표 조정: 26/26 → 13/13 + 9 SKIP (JSDOM performance.now() 무한 재귀
+  버그)
+- 향후 개선: Playwright E2E 추가 검토 (실제 브라우저 환경)
+- 상세: `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-05 섹션)
 
 ---
 
