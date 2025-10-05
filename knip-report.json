@@ -1,0 +1,1855 @@
+{
+  "files": [
+    "scripts/.eslintrc.cjs",
+    "scripts/build-metrics.js",
+    "scripts/button-wrapper-codemod.ts",
+    "scripts/cleanup-test-file-references.cjs",
+    "scripts/convert-colors-to-oklch.ts",
+    "scripts/css-bundle-metrics.cjs",
+    "scripts/deps-all.mjs",
+    "scripts/deps-cycles-report.mjs",
+    "scripts/find-token-violations.js",
+    "scripts/generate-icon-map.mjs",
+    "scripts/inspect-transform.mjs",
+    "scripts/replace-design-tokens.js",
+    "scripts/scan-legacy-patterns.mjs",
+    "scripts/setup-dev.js",
+    "scripts/skip-red-tests.mjs",
+    "test/behavioral/legacy.toolbar-visibility-fix.ts",
+    "test/optimization/legacy.memo-optimization.ts",
+    "test/refactoring/legacy.gallery-dom-depth-cap.ts",
+    "test/refactoring/legacy.hardcoded-css-elimination.ts",
+    "test/refactoring/legacy.remove-virtual-scrolling.ts",
+    "test/refactoring/legacy.vertical-image-item-design-consistency.ts",
+    "test/styles/legacy.design-tokens.ts",
+    "test/styles/legacy.hardcoded-colors.ts",
+    "test/styles/legacy.theme-responsiveness.ts",
+    "test/styles/legacy.token-standardization.ts",
+    "test/types/vitest-env.d.ts",
+    "test/utils/contrast-checker.js",
+    "test/utils/contrast-checker.ts",
+    "test/utils/dom-test-utils.ts",
+    "test/utils/index.ts",
+    "test/utils/legacy-preact.ts",
+    "test/_adapters/UnifiedEventManager.ts",
+    "src/features/gallery/index.ts",
+    "src/features/gallery/types.ts",
+    "src/features/settings/index.ts",
+    "src/shared/components/index.ts",
+    "src/shared/external/index.ts",
+    "src/shared/hooks/index.ts",
+    "src/shared/interfaces/index.ts",
+    "src/shared/interfaces/ServiceInterfaces.ts",
+    "src/shared/polyfills/solid-jsx-dev-runtime.ts",
+    "src/shared/services/core-icons.ts",
+    "src/shared/services/event-managers.ts",
+    "src/shared/services/icon-types.ts",
+    "src/shared/styles/index.ts",
+    "src/shared/styles/theme-utils.ts",
+    "src/shared/utils/position-calculator.ts",
+    "test/features/gallery/legacy.image-fit-mode-delayed-restore.tsx",
+    "test/features/gallery/legacy.image-fit-mode-persistence.tsx",
+    "test/features/gallery/legacy.prev-next-scroll.integration.ts",
+    "test/features/gallery/legacy.VerticalImageItem.context-menu.ts",
+    "test/shared/styles/legacy.css-integration.ts",
+    "test/unit/loader/legacy.feature-side-effect.ts",
+    "test/unit/shared/legacy.vendor-initialization-error.ts",
+    "test/unit/styles/legacy.gallery-animations.tokens.ts",
+    "test/unit/styles/legacy.skeleton.tokens.ts",
+    "test/unit/ui/legacy.toolbar-hover-trigger-guard.ts",
+    "test/unit/ui/legacy.toolbar-token-unification.ts",
+    "test/utils/mocks/browser-mocks.ts",
+    "test/utils/mocks/dom-mocks.ts",
+    "test/utils/mocks/vendor-mocks-clean.ts",
+    "test/utils/mocks/vendor-mocks.ts",
+    "src/features/gallery/components/index.ts",
+    "src/features/gallery/solid/createParitySnapshot.ts",
+    "src/features/settings/services/index.ts",
+    "src/features/settings/solid/createParitySnapshot.ts",
+    "src/shared/components/base/index.ts",
+    "src/shared/external/vendors/vendor-api.ts",
+    "src/shared/external/zip/index.ts",
+    "src/shared/services/media/index.ts",
+    "src/shared/services/media-extraction/index.ts",
+    "src/shared/services/media-mapping/index.ts",
+    "src/shared/services/media-mapping/MediaMappingService.ts",
+    "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
+    "src/shared/utils/accessibility/barrel.ts",
+    "src/shared/utils/core/index.ts",
+    "src/shared/utils/debug/index.ts",
+    "src/shared/utils/dom/BatchDOMUpdateManager.ts",
+    "src/shared/utils/styles/index.ts",
+    "src/shared/utils/styles/style-utils.ts",
+    "test/features/gallery/vertical/legacy.fit-mode-integration.tsx",
+    "test/features/gallery/vertical/legacy.vertical-gallery.high-contrast.tsx",
+    "test/features/gallery/vertical/legacy.windowing.behavior.tsx",
+    "test/features/gallery/visible-index/legacy.visible-index.navigation.tsx",
+    "test/unit/features/gallery/legacy.video-item.cls.ts",
+    "src/features/gallery/components/vertical-gallery-view/index.ts",
+    "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+    "src/shared/components/ui/Icon/index.ts",
+    "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
+    "src/shared/services/media-extraction/strategies/index.ts",
+    "test/unit/features/gallery/components/legacy.VerticalGalleryView.inline-style.policy.ts",
+    "test/unit/features/gallery/components/legacy.VerticalGalleryViewSettings.tsx",
+    "test/unit/features/gallery/components/legacy.VerticalImageItem.inline-style.policy.ts",
+    "src/features/gallery/components/vertical-gallery-view/hooks/index.ts",
+    "src/shared/components/ui/Icon/icons/index.ts",
+    "src/shared/services/media-extraction/strategies/fallback/index.ts"
+  ],
+  "issues": [
+    {
+      "file": "src/shared/services/LanguageService.ts",
+      "owners": [],
+      "types": [{ "name": "LanguageStrings", "line": 10, "col": 18, "pos": 203 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "scripts/legacy-codemod.ts",
+      "owners": [],
+      "types": [
+        { "name": "TransformOptions", "line": 12, "col": 13, "pos": 278 },
+        { "name": "TransformResult", "line": 17, "col": 13, "pos": 356 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/ToolbarShell/index.ts",
+      "owners": [],
+      "types": [{ "name": "ToolbarShellProps", "line": 6, "col": 14, "pos": 134 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/ModalShell/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "ModalShellProps", "line": 6, "col": 38, "pos": 192 },
+        { "name": "SolidModalShellProps", "line": 9, "col": 14, "pos": 320 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/constants.ts",
+      "owners": [],
+      "types": [
+        { "name": "FileExtension", "line": 499, "col": 13, "pos": 12834 },
+        { "name": "AppServiceKey", "line": 500, "col": 13, "pos": 12920 },
+        { "name": "EventType", "line": 501, "col": 13, "pos": 12998 },
+        { "name": "ViewMode", "line": 502, "col": 13, "pos": 13060 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/config/feature-flags.ts",
+      "owners": [],
+      "types": [{ "name": "FeatureFlagName", "line": 7, "col": 13, "pos": 114 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/signals/gallery.signals.ts",
+      "owners": [],
+      "types": [
+        { "name": "GalleryState", "line": 27, "col": 18, "pos": 853 },
+        { "name": "GalleryEvents", "line": 51, "col": 13, "pos": 1312 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/media.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaType", "line": 18, "col": 13, "pos": 429 },
+        { "name": "MediaQuality", "line": 19, "col": 13, "pos": 468 },
+        { "name": "MediaEntity", "line": 54, "col": 18, "pos": 1097 },
+        { "name": "DownloadMediaItem", "line": 231, "col": 18, "pos": 4576 },
+        { "name": "UrlWithFilename", "line": 239, "col": 18, "pos": 4792 },
+        { "name": "BulkDownloadOptions", "line": 249, "col": 18, "pos": 4923 },
+        { "name": "GalleryRenderOptions", "line": 267, "col": 18, "pos": 5273 },
+        { "name": "MediaMapping", "line": 278, "col": 18, "pos": 5503 },
+        { "name": "MediaPageType", "line": 298, "col": 13, "pos": 5900 },
+        { "name": "MediaMappingStrategy", "line": 303, "col": 18, "pos": 6030 },
+        { "name": "MediaValidationResult", "line": 326, "col": 18, "pos": 6493 },
+        { "name": "MediaMetadata", "line": 335, "col": 18, "pos": 6621 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {
+        "ExtractionErrorCode": [
+          { "name": "ELEMENT_NOT_FOUND", "line": 114, "col": 3, "pos": 2216 },
+          { "name": "INVALID_ELEMENT", "line": 115, "col": 3, "pos": 2259 },
+          { "name": "NETWORK_ERROR", "line": 117, "col": 3, "pos": 2335 },
+          { "name": "TIMEOUT", "line": 118, "col": 3, "pos": 2370 },
+          { "name": "INVALID_URL", "line": 119, "col": 3, "pos": 2393 },
+          { "name": "PERMISSION_DENIED", "line": 120, "col": 3, "pos": 2424 }
+        ]
+      },
+      "duplicates": []
+    },
+    {
+      "file": "test/utils/codeql-environment.ts",
+      "owners": [],
+      "types": [{ "name": "CodeQLEnvironmentInfo", "line": 141, "col": 18, "pos": 3359 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/core/media.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaType", "line": 10, "col": 13, "pos": 267 },
+        { "name": "MediaQuality", "line": 11, "col": 13, "pos": 306 },
+        { "name": "MediaEntity", "line": 36, "col": 18, "pos": 804 },
+        { "name": "MediaId", "line": 49, "col": 13, "pos": 1027 },
+        { "name": "MediaItem", "line": 55, "col": 13, "pos": 1155 },
+        { "name": "DownloadMediaItem", "line": 60, "col": 18, "pos": 1220 },
+        { "name": "UrlWithFilename", "line": 68, "col": 18, "pos": 1436 },
+        { "name": "MediaInfoWithFilename", "line": 79, "col": 18, "pos": 1623 },
+        { "name": "MediaItemForFilename", "line": 92, "col": 18, "pos": 1887 },
+        { "name": "MediaInfoForFilename", "line": 113, "col": 18, "pos": 2335 },
+        { "name": "GalleryOpenEventDetail", "line": 118, "col": 18, "pos": 2434 },
+        { "name": "GalleryOpenEvent", "line": 128, "col": 18, "pos": 2585 },
+        { "name": "GalleryCloseEvent", "line": 135, "col": 18, "pos": 2742 },
+        { "name": "MediaCollection", "line": 142, "col": 18, "pos": 2862 },
+        { "name": "ExtractionStrategy", "line": 161, "col": 13, "pos": 3238 },
+        { "name": "ExtractionConfidence", "line": 171, "col": 18, "pos": 3443 },
+        { "name": "ValidationResult", "line": 203, "col": 18, "pos": 4014 },
+        { "name": "ValidationIssue", "line": 217, "col": 18, "pos": 4227 },
+        { "name": "PageType", "line": 231, "col": 13, "pos": 4484 },
+        { "name": "ExtractionSource", "line": 243, "col": 13, "pos": 4694 },
+        { "name": "TweetUrl", "line": 253, "col": 18, "pos": 4860 },
+        { "name": "ExtractionOptions", "line": 264, "col": 18, "pos": 5060 },
+        { "name": "ExtractionMetadata", "line": 276, "col": 18, "pos": 5328 },
+        { "name": "ExtractionContext", "line": 312, "col": 18, "pos": 6747 },
+        { "name": "ExtractionErrorCode", "line": 323, "col": 13, "pos": 6974 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/Toolbar/Toolbar.tsx",
+      "owners": [],
+      "types": [{ "name": "GalleryToolbarProps", "line": 27, "col": 28, "pos": 1014 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "Toolbar", "line": 29, "col": 13, "pos": 1051 },
+          { "name": "default", "line": 510, "col": 15, "pos": 18776 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toolbar/ToolbarHeadless.tsx",
+      "owners": [],
+      "types": [
+        { "name": "FitMode", "line": 4, "col": 13, "pos": 107 },
+        { "name": "ToolbarItem", "line": 6, "col": 18, "pos": 191 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ToolbarHeadless", "line": 58, "col": 2, "pos": 1765 },
+          { "name": "default", "line": 155, "col": 15, "pos": 4740 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/utils/memory/ResourceManager.ts",
+      "owners": [],
+      "types": [{ "name": "ResourceType", "line": 12, "col": 13, "pos": 196 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "DOMUpdateTask", "line": 77, "col": 27, "pos": 1698 },
+        { "name": "StandardError", "line": 78, "col": 14, "pos": 1748 },
+        { "name": "ErrorContext", "line": 78, "col": 29, "pos": 1763 },
+        { "name": "Unsubscribe", "line": 83, "col": 14, "pos": 1951 },
+        { "name": "ReactiveValue", "line": 87, "col": 14, "pos": 2146 },
+        { "name": "EventOriginOptions", "line": 92, "col": 14, "pos": 2405 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "UsernameExtractionResult", "line": 31, "col": 14, "pos": 900 },
+        { "name": "MediaLoadingState", "line": 32, "col": 28, "pos": 928 },
+        { "name": "MediaLoadingOptions", "line": 33, "col": 21, "pos": 949 },
+        { "name": "PrefetchOptions", "line": 34, "col": 23, "pos": 972 },
+        { "name": "DownloadProgress", "line": 35, "col": 19, "pos": 991 },
+        { "name": "BulkDownloadOptions", "line": 36, "col": 20, "pos": 1011 },
+        { "name": "DownloadResult", "line": 37, "col": 23, "pos": 1034 },
+        { "name": "SingleDownloadResult", "line": 38, "col": 18, "pos": 1052 },
+        { "name": "Theme", "line": 44, "col": 14, "pos": 1176 },
+        { "name": "SupportedLanguage", "line": 48, "col": 14, "pos": 1288 },
+        { "name": "LanguageStrings", "line": 48, "col": 33, "pos": 1307 },
+        { "name": "ToastOptions", "line": 53, "col": 14, "pos": 1519 },
+        { "name": "ILogger", "line": 73, "col": 14, "pos": 2112 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/memory/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "ResourceType", "line": 14, "col": 7, "pos": 311 },
+        { "name": "MemorySnapshot", "line": 43, "col": 7, "pos": 1469 },
+        { "name": "MemoryProfileResult", "line": 44, "col": 7, "pos": 1492 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx",
+      "owners": [],
+      "types": [{ "name": "ConfigurableToolbarProps", "line": 3, "col": 18, "pos": 72 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ConfigurableToolbar", "line": 5, "col": 2, "pos": 131 },
+          { "name": "default", "line": 11, "col": 15, "pos": 251 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
+      "owners": [],
+      "types": [
+        { "name": "ToolbarActionConfig", "line": 1, "col": 18, "pos": 17 },
+        { "name": "ToolbarConfig", "line": 6, "col": 18, "pos": 110 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
+      "owners": [],
+      "types": [
+        { "name": "ProgressiveImageState", "line": 14, "col": 18, "pos": 364 },
+        { "name": "UseProgressiveImageOptions", "line": 45, "col": 18, "pos": 1070 },
+        { "name": "UseProgressiveImageReturn", "line": 54, "col": 18, "pos": 1311 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/LazyIcon.tsx",
+      "owners": [],
+      "types": [{ "name": "LazyIconProps", "line": 12, "col": 18, "pos": 302 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "LazyIcon", "line": 22, "col": 13, "pos": 574 },
+          { "name": "default", "line": 124, "col": 15, "pos": 3324 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/services/MediaService.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaLoadingState", "line": 32, "col": 18, "pos": 1316 },
+        { "name": "MediaLoadingOptions", "line": 42, "col": 18, "pos": 1467 },
+        { "name": "PrefetchOptions", "line": 50, "col": 18, "pos": 1605 },
+        { "name": "DownloadProgress", "line": 63, "col": 18, "pos": 1900 },
+        { "name": "BulkDownloadOptions", "line": 71, "col": 18, "pos": 2069 },
+        { "name": "DownloadResult", "line": 77, "col": 18, "pos": 2212 },
+        { "name": "SingleDownloadResult", "line": 89, "col": 18, "pos": 2504 },
+        { "name": "UsernameExtractionResult", "line": 1133, "col": 14, "pos": 31737 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/media/image-filter.ts",
+      "owners": [],
+      "types": [
+        { "name": "ImageFilterResult", "line": 14, "col": 18, "pos": 323 },
+        { "name": "FilterOptions", "line": 32, "col": 18, "pos": 747 },
+        { "name": "DetailedFilterResults", "line": 54, "col": 18, "pos": 1283 },
+        { "name": "ComprehensiveFilterResult", "line": 74, "col": 18, "pos": 1630 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/primitive/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "ButtonProps", "line": 6, "col": 22, "pos": 121 },
+        { "name": "PanelProps", "line": 7, "col": 21, "pos": 173 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/Button/index.ts",
+      "owners": [],
+      "types": [{ "name": "ButtonProps", "line": 6, "col": 22, "pos": 121 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/primitive/Panel.tsx",
+      "owners": [],
+      "types": [{ "name": "PanelProps", "line": 9, "col": 18, "pos": 188 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/external/vendors/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "NativeDownloadAPI", "line": 29, "col": 14, "pos": 1019 },
+        { "name": "SolidStoreAPI", "line": 31, "col": 16, "pos": 1056 },
+        { "name": "SolidWebAPI", "line": 32, "col": 17, "pos": 1073 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/lifecycle/leak-guard.ts",
+      "owners": [],
+      "types": [{ "name": "Unsubscribe", "line": 6, "col": 13, "pos": 138 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/media/MediaProcessor.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaProcessStageEvent", "line": 13, "col": 18, "pos": 337 },
+        { "name": "MediaProcessOptions", "line": 26, "col": 18, "pos": 701 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "MediaProcessor", "line": 30, "col": 2, "pos": 871 },
+          { "name": "default", "line": 152, "col": 15, "pos": 4714 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/media/types.ts",
+      "owners": [],
+      "types": [{ "name": "MediaType", "line": 14, "col": 13, "pos": 254 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/core-services.ts",
+      "owners": [],
+      "types": [
+        { "name": "ServiceKey", "line": 33, "col": 13, "pos": 928 },
+        { "name": "Logger", "line": 38, "col": 18, "pos": 987 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/Button/IconButton.tsx",
+      "owners": [],
+      "types": [{ "name": "IconButtonProps", "line": 17, "col": 18, "pos": 445 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "IconButton", "line": 24, "col": 13, "pos": 724 },
+          { "name": "default", "line": 44, "col": 15, "pos": 1385 }
+        ]
+      ]
+    },
+    {
+      "file": "src/assets/icons/xeg-icons.ts",
+      "owners": [],
+      "types": [{ "name": "XegIconName", "line": 266, "col": 13, "pos": 9180 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/css-animations.ts",
+      "owners": [],
+      "types": [{ "name": "CSSAnimationOptions", "line": 42, "col": 18, "pos": 1209 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/UnifiedToastManager.ts",
+      "owners": [],
+      "types": [{ "name": "ToastOptions", "line": 30, "col": 18, "pos": 789 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "toastManager", "line": 258, "col": 13, "pos": 6531 },
+          { "name": "ToastService", "line": 267, "col": 28, "pos": 6686 },
+          { "name": "toastService", "line": 268, "col": 28, "pos": 6728 },
+          { "name": "toastController", "line": 269, "col": 31, "pos": 6773 }
+        ],
+        [
+          { "name": "ToastManager", "line": 47, "col": 2, "pos": 1393 },
+          { "name": "UnifiedToastManager", "line": 274, "col": 35, "pos": 6852 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/hooks/useToolbarPositionBased.ts",
+      "owners": [],
+      "types": [
+        { "name": "UseToolbarPositionBasedOptions", "line": 13, "col": 18, "pos": 302 },
+        { "name": "UseToolbarPositionBasedResult", "line": 23, "col": 18, "pos": 793 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "useToolbarPositionBased", "line": 63, "col": 2, "pos": 2087 },
+          { "name": "default", "line": 259, "col": 15, "pos": 7346 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx",
+      "owners": [],
+      "types": [{ "name": "ToolbarUnifiedProps", "line": 9, "col": 18, "pos": 278 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/settings/services/settings-factory.ts",
+      "owners": [],
+      "types": [{ "name": "ISettingsServiceFactoryShape", "line": 7, "col": 18, "pos": 164 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/settings/services/TwitterTokenExtractor.ts",
+      "owners": [],
+      "types": [
+        { "name": "TokenExtractionResult", "line": 14, "col": 18, "pos": 387 },
+        { "name": "TokenValidationResult", "line": 25, "col": 18, "pos": 588 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/url-safety.ts",
+      "owners": [],
+      "types": [
+        { "name": "TrustedHostnameGuardOptions", "line": 3, "col": 18, "pos": 67 },
+        { "name": "ParsedTrustedUrl", "line": 64, "col": 18, "pos": 1750 },
+        { "name": "ParseTrustedUrlOptions", "line": 69, "col": 13, "pos": 1820 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/external/userscript/adapter.ts",
+      "owners": [],
+      "types": [
+        { "name": "UserscriptManager", "line": 12, "col": 13, "pos": 295 },
+        { "name": "UserscriptAPI", "line": 14, "col": 18, "pos": 374 },
+        { "name": "UserscriptNetworkPolicy", "line": 32, "col": 18, "pos": 977 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "getUserscript", "line": 268, "col": 2, "pos": 7641 },
+          { "name": "default", "line": 395, "col": 15, "pos": 11248 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/logging/logger.ts",
+      "owners": [],
+      "types": [
+        { "name": "LogLevel", "line": 15, "col": 13, "pos": 429 },
+        { "name": "LoggableData", "line": 20, "col": 13, "pos": 570 },
+        { "name": "Logger", "line": 34, "col": 18, "pos": 808 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "logger", "line": 285, "col": 13, "pos": 8168 },
+          { "name": "default", "line": 435, "col": 15, "pos": 12517 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/ContextMenu/types.ts",
+      "owners": [],
+      "types": [{ "name": "ContextMenuPosition", "line": 7, "col": 18, "pos": 150 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/MediaCounter/MediaCounter.tsx",
+      "owners": [],
+      "types": [{ "name": "MediaCounterProps", "line": 5, "col": 18, "pos": 160 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "MediaCounter", "line": 15, "col": 13, "pos": 373 },
+          { "name": "default", "line": 85, "col": 15, "pos": 2414 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/utils/dom/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "DOMUpdate", "line": 7, "col": 14, "pos": 175 },
+        { "name": "DOMUpdateTask", "line": 7, "col": 38, "pos": 199 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/hooks/useVisibleIndex.ts",
+      "owners": [],
+      "types": [{ "name": "UseVisibleIndexResult", "line": 20, "col": 18, "pos": 574 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "useGalleryVisibleIndex", "line": 77, "col": 2, "pos": 2394 },
+          { "name": "default", "line": 296, "col": 15, "pos": 8528 }
+        ]
+      ]
+    },
+    {
+      "file": "src/features/gallery/factories/MediaItemFactory.tsx",
+      "owners": [],
+      "types": [{ "name": "MediaItemComponentProps", "line": 24, "col": 18, "pos": 906 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/NavigationButton/index.ts",
+      "owners": [],
+      "types": [{ "name": "NavigationButtonProps", "line": 6, "col": 14, "pos": 117 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/components/vertical-gallery-view/VerticalGifItem.solid.tsx",
+      "owners": [],
+      "types": [{ "name": "VerticalGifItemProps", "line": 43, "col": 18, "pos": 1107 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.solid.tsx",
+      "owners": [],
+      "types": [{ "name": "VerticalVideoItemProps", "line": 14, "col": 18, "pos": 493 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx",
+      "owners": [],
+      "types": [{ "name": "HeadlessSettingsModalProps", "line": 3, "col": 18, "pos": 72 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "HeadlessSettingsModal", "line": 7, "col": 2, "pos": 226 },
+          { "name": "default", "line": 21, "col": 15, "pos": 626 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/hooks/useSettingsModal.ts",
+      "owners": [],
+      "types": [{ "name": "UseSettingsModalReturn", "line": 12, "col": 18, "pos": 264 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/hooks/useFocusScope.ts",
+      "owners": [],
+      "types": [{ "name": "UseFocusScopeOptions", "line": 12, "col": 18, "pos": 256 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/SettingsModal/index.ts",
+      "owners": [],
+      "types": [{ "name": "SettingsModalProps", "line": 7, "col": 14, "pos": 210 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+      "owners": [],
+      "types": [
+        { "name": "ToolbarSettingsRendererOptions", "line": 12, "col": 18, "pos": 403 },
+        { "name": "ToolbarSettingsRendererInstance", "line": 19, "col": 18, "pos": 630 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ToolbarWithSettings", "line": 38, "col": 13, "pos": 1233 },
+          { "name": "default", "line": 204, "col": 15, "pos": 5156 }
+        ]
+      ]
+    },
+    {
+      "file": "src/features/settings/solid/renderSolidSettingsPanel.ts",
+      "owners": [],
+      "types": [{ "name": "SolidSettingsPanelRenderOptions", "line": 12, "col": 18, "pos": 396 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/notifications/solid/renderSolidToastHost.ts",
+      "owners": [],
+      "types": [{ "name": "SolidToastHostRenderOptions", "line": 11, "col": 18, "pos": 356 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/notifications/solid/SolidToastHost.solid.tsx",
+      "owners": [],
+      "types": [{ "name": "SolidToastPosition", "line": 14, "col": 13, "pos": 521 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "SolidToastHost", "line": 29, "col": 13, "pos": 1022 },
+          { "name": "default", "line": 83, "col": 15, "pos": 2539 }
+        ]
+      ]
+    },
+    {
+      "file": "test/utils/helpers/import-main-with-mocks.ts",
+      "owners": [],
+      "types": [
+        { "name": "ImportMainWithMocksOptions", "line": 8, "col": 18, "pos": 195 },
+        { "name": "ImportMainWithMocksResult", "line": 13, "col": 18, "pos": 364 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "Result", "line": 18, "col": 14, "pos": 301 },
+        { "name": "AsyncResult", "line": 18, "col": 22, "pos": 309 },
+        { "name": "Option", "line": 18, "col": 35, "pos": 322 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/signals/download.signals.ts",
+      "owners": [],
+      "types": [
+        { "name": "DownloadStatus", "line": 19, "col": 13, "pos": 574 },
+        { "name": "DownloadTask", "line": 24, "col": 18, "pos": 683 },
+        { "name": "DownloadState", "line": 39, "col": 18, "pos": 1007 },
+        { "name": "DownloadEvents", "line": 59, "col": 13, "pos": 1374 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/signals/toolbar.signals.ts",
+      "owners": [],
+      "types": [{ "name": "ToolbarEvents", "line": 37, "col": 13, "pos": 724 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "getCurrentToolbarMode", "line": 154, "col": 13, "pos": 4166 },
+          { "name": "getCurrentMode", "line": 197, "col": 30, "pos": 5319 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/utils/signalSelector.ts",
+      "owners": [],
+      "types": [{ "name": "SelectorFn", "line": 16, "col": 13, "pos": 393 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/accessibility/focus-restore-manager.ts",
+      "owners": [],
+      "types": [{ "name": "FocusRestoreFn", "line": 15, "col": 13, "pos": 416 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/focusTrap.ts",
+      "owners": [],
+      "types": [{ "name": "FocusTrap", "line": 16, "col": 18, "pos": 318 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/loader/progressive-loader.ts",
+      "owners": [],
+      "types": [
+        { "name": "FeatureLoader", "line": 12, "col": 18, "pos": 300 },
+        { "name": "RegisteredFeature", "line": 76, "col": 14, "pos": 1953 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/events/wheel.ts",
+      "owners": [],
+      "types": [
+        { "name": "WheelHandler", "line": 7, "col": 13, "pos": 189 },
+        { "name": "WheelListenerOptions", "line": 9, "col": 18, "pos": 261 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/GalleryApp.ts",
+      "owners": [],
+      "types": [{ "name": "GalleryConfig", "line": 27, "col": 18, "pos": 820 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/hooks/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "GalleryScrollMeta", "line": 2, "col": 14, "pos": 68 },
+        { "name": "GalleryScrollOptions", "line": 3, "col": 21, "pos": 89 },
+        { "name": "GalleryScrollDirection", "line": 4, "col": 24, "pos": 113 },
+        { "name": "UseGalleryScrollOptions", "line": 5, "col": 26, "pos": 139 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/isolation/GalleryContainer.tsx",
+      "owners": [],
+      "types": [{ "name": "GalleryContainerProps", "line": 23, "col": 18, "pos": 493 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "GalleryContainer", "line": 119, "col": 2, "pos": 2999 },
+          { "name": "default", "line": 161, "col": 15, "pos": 3844 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/styles/tokens/button.ts",
+      "owners": [],
+      "types": [{ "name": "ButtonTokenKey", "line": 54, "col": 13, "pos": 1356 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/AnimationService.ts",
+      "owners": [],
+      "types": [{ "name": "AnimationConfig", "line": 9, "col": 18, "pos": 178 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/LanguageSelector/index.ts",
+      "owners": [],
+      "types": [{ "name": "LanguageSelectorProps", "line": 7, "col": 14, "pos": 170 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/RadioGroup/RadioGroup.tsx",
+      "owners": [],
+      "types": [{ "name": "RadioGroupProps", "line": 25, "col": 18, "pos": 702 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/ToolbarButton/ToolbarButton.tsx",
+      "owners": [],
+      "types": [{ "name": "ToolbarButtonProps", "line": 21, "col": 18, "pos": 788 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ToolbarButton", "line": 38, "col": 13, "pos": 1360 },
+          { "name": "default", "line": 205, "col": 15, "pos": 5749 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/hooks/useToolbarState.ts",
+      "owners": [],
+      "types": [
+        { "name": "ToolbarState", "line": 24, "col": 18, "pos": 377 },
+        { "name": "ToolbarActions", "line": 40, "col": 18, "pos": 655 },
+        { "name": "ToolbarDataState", "line": 58, "col": 13, "pos": 1084 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "useToolbarState", "line": 69, "col": 12, "pos": 1340 },
+          { "name": "default", "line": 231, "col": 15, "pos": 4968 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Tooltip/index.ts",
+      "owners": [],
+      "types": [{ "name": "TooltipProps", "line": 5, "col": 14, "pos": 107 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/media/MediaClickDetector.ts",
+      "owners": [],
+      "types": [{ "name": "MediaDetectionResult", "line": 16, "col": 18, "pos": 481 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/external/zip/zip-creator.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaItemForZip", "line": 10, "col": 18, "pos": 268 },
+        { "name": "ZipProgressCallback", "line": 16, "col": 13, "pos": 361 },
+        { "name": "ZipCreationConfig", "line": 18, "col": 18, "pos": 429 },
+        { "name": "ZipCreatorOptions", "line": 25, "col": 18, "pos": 571 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+      "owners": [],
+      "types": [{ "name": "KeyboardHelpOverlayProps", "line": 7, "col": 18, "pos": 268 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "KeyboardHelpOverlay", "line": 24, "col": 13, "pos": 615 },
+          { "name": "default", "line": 236, "col": 15, "pos": 6431 }
+        ]
+      ]
+    },
+    {
+      "file": "test/utils/preact-testing-library.ts",
+      "owners": [],
+      "types": [
+        { "name": "WrapperComponentProps", "line": 23, "col": 13, "pos": 698 },
+        { "name": "RenderOptions", "line": 27, "col": 18, "pos": 780 },
+        { "name": "RenderResult", "line": 33, "col": 18, "pos": 1000 },
+        { "name": "RenderHookOptions", "line": 90, "col": 18, "pos": 2653 },
+        { "name": "RenderHookResult", "line": 95, "col": 18, "pos": 2794 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/dom/SelectorRegistry.ts",
+      "owners": [],
+      "types": [
+        { "name": "QueryContainer", "line": 10, "col": 13, "pos": 294 },
+        { "name": "ISelectorRegistry", "line": 15, "col": 18, "pos": 380 },
+        { "name": "SelectorRegistryOptions", "line": 33, "col": 18, "pos": 1099 },
+        { "name": "ActionName", "line": 132, "col": 13, "pos": 4131 },
+        { "name": "ActionButtonMapEntry", "line": 133, "col": 18, "pos": 4207 },
+        { "name": "ActionButtonMap", "line": 137, "col": 13, "pos": 4295 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/BulkDownloadService.ts",
+      "owners": [],
+      "types": [
+        { "name": "DownloadProgress", "line": 23, "col": 18, "pos": 828 },
+        { "name": "BulkDownloadOptions", "line": 31, "col": 18, "pos": 997 },
+        { "name": "DownloadResult", "line": 43, "col": 18, "pos": 1353 },
+        { "name": "SingleDownloadResult", "line": 53, "col": 18, "pos": 1619 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "bulkDownloadService", "line": 701, "col": 13, "pos": 23426 },
+          { "name": "default", "line": 702, "col": 15, "pos": 23490 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/types/result.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "BaseResult", "line": 18, "col": 18, "pos": 470 },
+        { "name": "ResultSuccess", "line": 30, "col": 13, "pos": 893 },
+        { "name": "ResultError", "line": 31, "col": 13, "pos": 992 },
+        { "name": "Result", "line": 32, "col": 13, "pos": 1078 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {
+        "ErrorCode": [
+          { "name": "NETWORK", "line": 10, "col": 3, "pos": 286 },
+          { "name": "TIMEOUT", "line": 11, "col": 3, "pos": 309 }
+        ]
+      },
+      "duplicates": []
+    },
+    {
+      "file": "src/features/settings/types/settings.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "GallerySettings", "line": 9, "col": 18, "pos": 113 },
+        { "name": "DownloadSettings", "line": 31, "col": 18, "pos": 613 },
+        { "name": "TokenSettings", "line": 51, "col": 18, "pos": 1105 },
+        { "name": "PerformanceSettings", "line": 65, "col": 18, "pos": 1337 },
+        { "name": "AccessibilitySettings", "line": 81, "col": 18, "pos": 1613 },
+        { "name": "SettingKey", "line": 110, "col": 13, "pos": 2170 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/ThemeService.ts",
+      "owners": [],
+      "types": [
+        { "name": "Theme", "line": 12, "col": 13, "pos": 143 },
+        { "name": "ThemeSetting", "line": 17, "col": 13, "pos": 213 },
+        { "name": "ThemeChangeListener", "line": 22, "col": 13, "pos": 282 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/styles/tokens.ts",
+      "owners": [],
+      "types": [
+        { "name": "SpacingToken", "line": 114, "col": 13, "pos": 2317 },
+        { "name": "RadiusToken", "line": 115, "col": 13, "pos": 2373 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/animations.ts",
+      "owners": [],
+      "types": [{ "name": "CSSAnimationOptions", "line": 19, "col": 7, "pos": 410 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/events/event-origin.ts",
+      "owners": [],
+      "types": [{ "name": "EventOriginOptions", "line": 13, "col": 18, "pos": 401 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+      "owners": [],
+      "types": [{ "name": "VerticalImageItemProps", "line": 8, "col": 14, "pos": 235 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "IconProps", "line": 13, "col": 14, "pos": 241 },
+        { "name": "ButtonProps", "line": 17, "col": 14, "pos": 356 },
+        { "name": "IconButtonProps", "line": 19, "col": 14, "pos": 469 },
+        { "name": "ToolbarButtonProps", "line": 22, "col": 14, "pos": 631 },
+        { "name": "ToastItem", "line": 27, "col": 14, "pos": 874 },
+        { "name": "ToastContainerProps", "line": 28, "col": 14, "pos": 922 },
+        { "name": "ToolbarProps", "line": 32, "col": 14, "pos": 1051 },
+        { "name": "GalleryToolbarProps", "line": 32, "col": 28, "pos": 1065 },
+        { "name": "SettingsModalProps", "line": 36, "col": 14, "pos": 1226 },
+        { "name": "SolidModalShellProps", "line": 38, "col": 14, "pos": 1353 },
+        { "name": "ToolbarWithSettingsProps", "line": 42, "col": 14, "pos": 1521 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/lifecycle/rebind-watcher.ts",
+      "owners": [],
+      "types": [{ "name": "RebindWatcherOptions", "line": 6, "col": 18, "pos": 152 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/bootstrap/event-wiring.ts",
+      "owners": [],
+      "types": [{ "name": "Unregister", "line": 3, "col": 13, "pos": 56 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/isolation/index.ts",
+      "owners": [],
+      "types": [{ "name": "GalleryContainerProps", "line": 12, "col": 7, "pos": 207 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/hoc/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "GalleryType", "line": 16, "col": 7, "pos": 269 },
+        { "name": "GalleryOptions", "line": 17, "col": 7, "pos": 289 },
+        { "name": "GalleryComponentProps", "line": 18, "col": 7, "pos": 312 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "ToolbarState", "line": 16, "col": 14, "pos": 295 },
+        { "name": "ToolbarEvents", "line": 16, "col": 28, "pos": 309 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/memory/index.ts",
+      "owners": [],
+      "types": [{ "name": "MemoryInfo", "line": 14, "col": 7, "pos": 255 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "FocusTrapOptions", "line": 55, "col": 14, "pos": 1097 },
+        { "name": "FocusTrap", "line": 55, "col": 32, "pos": 1115 },
+        { "name": "BaseComponentProps", "line": 60, "col": 14, "pos": 1209 },
+        { "name": "GalleryTheme", "line": 61, "col": 22, "pos": 1231 },
+        { "name": "ImageFitMode", "line": 62, "col": 16, "pos": 1247 },
+        { "name": "MediaInfo", "line": 63, "col": 16, "pos": 1263 },
+        { "name": "Result", "line": 64, "col": 13, "pos": 1276 },
+        { "name": "MediaType", "line": 65, "col": 10, "pos": 1286 },
+        { "name": "ToastType", "line": 66, "col": 13, "pos": 1299 },
+        { "name": "ViewMode", "line": 67, "col": 13, "pos": 1312 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/core/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "TweetInfo", "line": 14, "col": 14, "pos": 268 },
+        { "name": "MediaExtractionOptions", "line": 15, "col": 13, "pos": 281 },
+        { "name": "MediaExtractor", "line": 16, "col": 26, "pos": 307 },
+        { "name": "TweetInfoExtractionStrategy", "line": 17, "col": 18, "pos": 325 },
+        { "name": "APIExtractor", "line": 18, "col": 31, "pos": 356 },
+        { "name": "FallbackExtractionStrategy", "line": 19, "col": 16, "pos": 372 },
+        { "name": "MediaExtractionResult", "line": 24, "col": 14, "pos": 517 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/media/FilenameService.ts",
+      "owners": [],
+      "types": [{ "name": "ZipFilenameOptions", "line": 27, "col": 18, "pos": 746 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/container/AppContainer.ts",
+      "owners": [],
+      "types": [{ "name": "CreateAppContainer", "line": 114, "col": 13, "pos": 2162 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/interfaces/gallery.interfaces.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaExtractionOptions", "line": 15, "col": 14, "pos": 523 },
+        { "name": "MediaExtractionResult", "line": 15, "col": 38, "pos": 547 },
+        { "name": "MediaExtractor", "line": 15, "col": 61, "pos": 570 },
+        { "name": "TweetInfo", "line": 15, "col": 77, "pos": 586 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/services/ToastController.ts",
+      "owners": [],
+      "types": [
+        { "name": "ToastItem", "line": 10, "col": 18, "pos": 240 },
+        { "name": "ToastOptions", "line": 48, "col": 18, "pos": 1042 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/dom/utils/dom-utils.ts",
+      "owners": [],
+      "types": [{ "name": "DOMElementCreationOptions", "line": 12, "col": 18, "pos": 191 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "DOMUtils", "line": 21, "col": 2, "pos": 410 },
+          { "name": "default", "line": 249, "col": 15, "pos": 5526 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/dom/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "DOMElementCreationOptions", "line": 8, "col": 24, "pos": 206 },
+        { "name": "ISelectorRegistry", "line": 24, "col": 7, "pos": 517 },
+        { "name": "QueryContainer", "line": 25, "col": 7, "pos": 543 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/error/ErrorHandler.ts",
+      "owners": [],
+      "types": [
+        { "name": "ErrorCode", "line": 15, "col": 13, "pos": 333 },
+        { "name": "ErrorSeverity", "line": 42, "col": 13, "pos": 933 },
+        { "name": "ErrorHandlerInterface", "line": 83, "col": 18, "pos": 1865 },
+        { "name": "IErrorHandler", "line": 388, "col": 13, "pos": 9898 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/app.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "Cleanupable", "line": 30, "col": 18, "pos": 545 },
+        { "name": "AppConfig", "line": 40, "col": 18, "pos": 665 },
+        { "name": "Result", "line": 60, "col": 13, "pos": 1032 },
+        { "name": "AsyncResult", "line": 75, "col": 13, "pos": 1264 },
+        { "name": "Option", "line": 80, "col": 13, "pos": 1360 },
+        { "name": "ServiceLifecycle", "line": 136, "col": 13, "pos": 2881 },
+        { "name": "ServiceConfig", "line": 141, "col": 18, "pos": 3000 },
+        { "name": "ServiceDependency", "line": 147, "col": 13, "pos": 3117 },
+        { "name": "ServiceFactory", "line": 148, "col": 13, "pos": 3157 },
+        { "name": "BulkDownloadServiceType", "line": 151, "col": 13, "pos": 3225 },
+        { "name": "FilenameServiceType", "line": 152, "col": 13, "pos": 3272 },
+        { "name": "ThemeServiceType", "line": 153, "col": 13, "pos": 3315 },
+        { "name": "VideoControlServiceType", "line": 154, "col": 13, "pos": 3355 },
+        { "name": "ToastControllerType", "line": 155, "col": 13, "pos": 3402 },
+        { "name": "ServiceTypeMapping", "line": 157, "col": 18, "pos": 3451 },
+        { "name": "GalleryViewMode", "line": 173, "col": 13, "pos": 3830 },
+        { "name": "GalleryState", "line": 192, "col": 18, "pos": 4329 },
+        { "name": "GalleryActions", "line": 204, "col": 18, "pos": 4582 },
+        { "name": "GalleryEvents", "line": 214, "col": 13, "pos": 4794 },
+        { "name": "Position", "line": 230, "col": 18, "pos": 5247 },
+        { "name": "Size", "line": 235, "col": 18, "pos": 5304 },
+        { "name": "Rect", "line": 240, "col": 18, "pos": 5366 },
+        { "name": "TimestampedEntity", "line": 245, "col": 18, "pos": 5436 },
+        { "name": "IdentifiableEntity", "line": 249, "col": 18, "pos": 5497 },
+        { "name": "Lifecycle", "line": 256, "col": 18, "pos": 5573 },
+        { "name": "LoadingState", "line": 264, "col": 13, "pos": 5658 },
+        { "name": "AsyncState", "line": 266, "col": 18, "pos": 5733 },
+        { "name": "BaseEvent", "line": 275, "col": 18, "pos": 5852 },
+        { "name": "BaseConfig", "line": 283, "col": 18, "pos": 5941 },
+        { "name": "CSSProperties", "line": 305, "col": 18, "pos": 6369 },
+        { "name": "BaseComponentProps", "line": 309, "col": 18, "pos": 6451 },
+        { "name": "EventHandler", "line": 320, "col": 13, "pos": 6720 },
+        { "name": "MouseEventHandler", "line": 321, "col": 13, "pos": 6778 },
+        { "name": "KeyboardEventHandler", "line": 322, "col": 13, "pos": 6836 },
+        { "name": "AsyncFunction", "line": 323, "col": 13, "pos": 6900 },
+        { "name": "AsyncCallback", "line": 324, "col": 13, "pos": 6956 },
+        { "name": "OptionalCallback", "line": 325, "col": 13, "pos": 7028 },
+        { "name": "ErrorHandler", "line": 326, "col": 13, "pos": 7101 },
+        { "name": "AsyncErrorHandler", "line": 327, "col": 13, "pos": 7163 },
+        { "name": "ProgressCallback", "line": 328, "col": 13, "pos": 7239 },
+        { "name": "ApiResponse", "line": 334, "col": 18, "pos": 7391 },
+        { "name": "ApiError", "line": 341, "col": 18, "pos": 7524 },
+        { "name": "RequestOptions", "line": 347, "col": 18, "pos": 7611 },
+        { "name": "PaginationInfo", "line": 353, "col": 18, "pos": 7724 },
+        { "name": "FileInfo", "line": 361, "col": 18, "pos": 7851 },
+        { "name": "Nullable", "line": 372, "col": 13, "pos": 8034 },
+        { "name": "Optional", "line": 373, "col": 13, "pos": 8070 },
+        { "name": "DeepPartial", "line": 375, "col": 13, "pos": 8112 },
+        { "name": "Brand", "line": 379, "col": 13, "pos": 8214 },
+        { "name": "UserId", "line": 382, "col": 13, "pos": 8309 },
+        { "name": "TweetId", "line": 383, "col": 13, "pos": 8355 },
+        { "name": "ServiceKey", "line": 384, "col": 13, "pos": 8403 },
+        { "name": "ElementId", "line": 385, "col": 13, "pos": 8457 },
+        { "name": "MediaUrl", "line": 386, "col": 13, "pos": 8509 },
+        { "name": "ThumbnailUrl", "line": 387, "col": 13, "pos": 8559 },
+        { "name": "OriginalUrl", "line": 388, "col": 13, "pos": 8617 },
+        { "name": "FileName", "line": 389, "col": 13, "pos": 8673 },
+        { "name": "FileExtension", "line": 390, "col": 13, "pos": 8723 },
+        { "name": "Theme", "line": 396, "col": 13, "pos": 8873 },
+        { "name": "GalleryTheme", "line": 397, "col": 13, "pos": 8920 },
+        { "name": "ToastType", "line": 398, "col": 13, "pos": 8985 },
+        { "name": "ButtonVariant", "line": 399, "col": 13, "pos": 9051 },
+        { "name": "ButtonSize", "line": 400, "col": 13, "pos": 9125 },
+        { "name": "ColorVariant", "line": 401, "col": 13, "pos": 9170 },
+        { "name": "AnimationConfig", "line": 403, "col": 18, "pos": 9271 },
+        { "name": "ImageFitOptions", "line": 411, "col": 18, "pos": 9451 },
+        { "name": "ImageFitCallbacks", "line": 419, "col": 18, "pos": 9607 },
+        { "name": "MediaFileExtension", "line": 428, "col": 13, "pos": 9800 },
+        { "name": "FilenameStrategy", "line": 429, "col": 13, "pos": 9890 },
+        { "name": "FilenameValidationResult", "line": 431, "col": 18, "pos": 9975 },
+        { "name": "GlobalConfig", "line": 441, "col": 18, "pos": 10171 },
+        { "name": "GallerySignals", "line": 451, "col": 18, "pos": 10336 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/media/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "FilenameOptions", "line": 11, "col": 7, "pos": 188 },
+        { "name": "ZipFilenameOptions", "line": 12, "col": 7, "pos": 212 },
+        { "name": "MediaDescriptor", "line": 18, "col": 14, "pos": 458 },
+        { "name": "MediaType", "line": 18, "col": 31, "pos": 475 },
+        { "name": "MediaVariant", "line": 18, "col": 42, "pos": 486 },
+        { "name": "RawMediaCandidate", "line": 18, "col": 56, "pos": 500 },
+        { "name": "Result", "line": 18, "col": 75, "pos": 519 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/memory/MemoryTracker.ts",
+      "owners": [],
+      "types": [{ "name": "MemoryInfo", "line": 14, "col": 18, "pos": 237 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/error-handling.ts",
+      "owners": [],
+      "types": [
+        { "name": "ErrorContext", "line": 10, "col": 18, "pos": 141 },
+        { "name": "StandardError", "line": 26, "col": 18, "pos": 430 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/app-state.ts",
+      "owners": [],
+      "types": [
+        { "name": "GalleryState", "line": 10, "col": 7, "pos": 203 },
+        { "name": "GalleryEvents", "line": 11, "col": 7, "pos": 224 },
+        { "name": "DownloadStatus", "line": 36, "col": 7, "pos": 656 },
+        { "name": "DownloadTask", "line": 37, "col": 7, "pos": 679 },
+        { "name": "DownloadState", "line": 38, "col": 7, "pos": 700 },
+        { "name": "DownloadEvents", "line": 39, "col": 7, "pos": 722 },
+        { "name": "ToolbarState", "line": 55, "col": 7, "pos": 1063 },
+        { "name": "ToolbarEvents", "line": 56, "col": 7, "pos": 1084 },
+        { "name": "AppStateSnapshot", "line": 74, "col": 18, "pos": 1545 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/state/mediators/gallery-signal-mediator.ts",
+      "owners": [],
+      "types": [{ "name": "GallerySignalPublicState", "line": 15, "col": 18, "pos": 565 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/media/index.ts",
+      "owners": [],
+      "types": [
+        { "name": "FilterOptions", "line": 7, "col": 7, "pos": 129 },
+        { "name": "ImageFilterResult", "line": 8, "col": 7, "pos": 151 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/shortcut-parser.ts",
+      "owners": [],
+      "types": [{ "name": "ParsedShortcut", "line": 8, "col": 18, "pos": 181 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/features/gallery/hooks/useGalleryScroll.ts",
+      "owners": [],
+      "types": [
+        { "name": "GalleryScrollDirection", "line": 16, "col": 13, "pos": 625 },
+        { "name": "GalleryScrollMeta", "line": 18, "col": 18, "pos": 683 },
+        { "name": "UseGalleryScrollOptions", "line": 23, "col": 18, "pos": 799 },
+        { "name": "GalleryScrollOptions", "line": 77, "col": 41, "pos": 2316 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/base/BaseComponentProps.ts",
+      "owners": [],
+      "types": [{ "name": "ContainerComponentProps", "line": 94, "col": 18, "pos": 2059 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/hoc/GalleryHOC.tsx",
+      "owners": [],
+      "types": [
+        { "name": "GalleryType", "line": 15, "col": 13, "pos": 419 },
+        { "name": "GalleryOptions", "line": 20, "col": 18, "pos": 530 },
+        { "name": "GalleryComponentProps", "line": 47, "col": 18, "pos": 1101 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "withGallery", "line": 77, "col": 3, "pos": 2149 },
+          { "name": "GalleryHOC", "line": 364, "col": 26, "pos": 8712 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toast/Toast.tsx",
+      "owners": [],
+      "types": [
+        { "name": "ToastItem", "line": 8, "col": 14, "pos": 302 },
+        { "name": "ToastProps", "line": 10, "col": 18, "pos": 378 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "Toast", "line": 18, "col": 13, "pos": 622 },
+          { "name": "default", "line": 31, "col": 15, "pos": 925 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toast/ToastContainer.tsx",
+      "owners": [],
+      "types": [{ "name": "ToastContainerProps", "line": 15, "col": 18, "pos": 616 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ToastContainer", "line": 22, "col": 13, "pos": 847 },
+          { "name": "default", "line": 84, "col": 15, "pos": 2758 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/types/core/core-types.ts",
+      "owners": [],
+      "types": [
+        { "name": "ServiceLifecycle", "line": 29, "col": 13, "pos": 679 },
+        { "name": "ServiceConfig", "line": 34, "col": 18, "pos": 798 },
+        { "name": "ServiceDependency", "line": 44, "col": 13, "pos": 965 },
+        { "name": "ServiceFactory", "line": 45, "col": 13, "pos": 1005 },
+        { "name": "BulkDownloadServiceType", "line": 50, "col": 13, "pos": 1103 },
+        { "name": "FilenameServiceType", "line": 52, "col": 13, "pos": 1209 },
+        { "name": "ThemeServiceType", "line": 53, "col": 13, "pos": 1282 },
+        { "name": "VideoControlServiceType", "line": 54, "col": 13, "pos": 1365 },
+        { "name": "ToastControllerType", "line": 56, "col": 13, "pos": 1477 },
+        { "name": "GalleryRendererType", "line": 61, "col": 18, "pos": 1601 },
+        { "name": "DownloadManagerType", "line": 71, "col": 18, "pos": 1868 },
+        { "name": "MediaExtractionServiceType", "line": 79, "col": 18, "pos": 2042 },
+        { "name": "GalleryAppType", "line": 88, "col": 18, "pos": 2317 },
+        { "name": "GalleryViewMode", "line": 102, "col": 13, "pos": 2628 },
+        { "name": "GalleryState", "line": 107, "col": 18, "pos": 2732 },
+        { "name": "GalleryActions", "line": 120, "col": 18, "pos": 3049 },
+        { "name": "GalleryDomainConfig", "line": 135, "col": 18, "pos": 3430 },
+        { "name": "GalleryEvents", "line": 147, "col": 13, "pos": 3702 },
+        { "name": "GalleryLifecycleState", "line": 159, "col": 13, "pos": 4052 },
+        { "name": "GalleryInitOptions", "line": 172, "col": 18, "pos": 4226 },
+        { "name": "ViewMode", "line": 183, "col": 43, "pos": 4610 },
+        { "name": "MediaItem", "line": 192, "col": 14, "pos": 4842 },
+        { "name": "MediaMappingStrategy", "line": 203, "col": 18, "pos": 5131 },
+        { "name": "StrategyMetrics", "line": 222, "col": 18, "pos": 5507 },
+        { "name": "MappingCacheEntry", "line": 232, "col": 18, "pos": 5658 },
+        { "name": "GalleryConfig", "line": 244, "col": 18, "pos": 5899 },
+        { "name": "ThemeConfig", "line": 262, "col": 18, "pos": 6248 },
+        { "name": "DownloadOptions", "line": 274, "col": 18, "pos": 6469 },
+        { "name": "Point", "line": 286, "col": 18, "pos": 6682 },
+        { "name": "Size", "line": 294, "col": 18, "pos": 6753 },
+        { "name": "EventHandler", "line": 300, "col": 13, "pos": 6833 },
+        { "name": "AsyncEventHandler", "line": 303, "col": 13, "pos": 6914 },
+        { "name": "CancelableFunction", "line": 306, "col": 13, "pos": 7007 },
+        { "name": "LoadingState", "line": 309, "col": 13, "pos": 7066 },
+        { "name": "ErrorInfo", "line": 312, "col": 18, "pos": 7154 },
+        { "name": "AppInstance", "line": 342, "col": 18, "pos": 7718 },
+        { "name": "ApplicationState", "line": 354, "col": 13, "pos": 7896 },
+        { "name": "AppLifecycleState", "line": 359, "col": 13, "pos": 8019 },
+        { "name": "ServiceState", "line": 364, "col": 13, "pos": 8129 },
+        { "name": "ApplicationMetadata", "line": 375, "col": 18, "pos": 8286 },
+        { "name": "PerformanceMetrics", "line": 389, "col": 18, "pos": 8518 },
+        { "name": "LifecycleConfig", "line": 418, "col": 18, "pos": 9053 },
+        { "name": "Cleanupable", "line": 431, "col": 18, "pos": 9312 },
+        { "name": "Disposable", "line": 441, "col": 18, "pos": 9436 },
+        { "name": "Destroyable", "line": 451, "col": 18, "pos": 9564 },
+        { "name": "Lifecycle", "line": 461, "col": 18, "pos": 9678 },
+        { "name": "AsyncResult", "line": 480, "col": 13, "pos": 10084 },
+        { "name": "Option", "line": 485, "col": 13, "pos": 10191 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/types/core/extraction.types.ts",
+      "owners": [],
+      "types": [
+        { "name": "MediaExtractionOptions", "line": 12, "col": 14, "pos": 308 },
+        { "name": "TweetInfo", "line": 17, "col": 18, "pos": 376 },
+        { "name": "MediaExtractor", "line": 35, "col": 18, "pos": 680 },
+        { "name": "TweetInfoExtractionStrategy", "line": 56, "col": 18, "pos": 1072 },
+        { "name": "APIExtractor", "line": 71, "col": 18, "pos": 1335 },
+        { "name": "FallbackExtractionStrategy", "line": 86, "col": 18, "pos": 1597 },
+        { "name": "TweetMediaEntry", "line": 103, "col": 18, "pos": 1891 },
+        { "name": "TwitterAPI", "line": 137, "col": 18, "pos": 2583 },
+        { "name": "ExtractionErrorCode", "line": 147, "col": 13, "pos": 2755 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/dom/DOMBatcher.ts",
+      "owners": [],
+      "types": [{ "name": "DOMUpdate", "line": 12, "col": 18, "pos": 213 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/memory/memory-profiler.ts",
+      "owners": [],
+      "types": [
+        { "name": "MemorySnapshot", "line": 1, "col": 18, "pos": 17 },
+        { "name": "MemoryProfileResult", "line": 66, "col": 18, "pos": 1713 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/optimization/memo.ts",
+      "owners": [],
+      "types": [{ "name": "LegacyMemoComponent", "line": 12, "col": 13, "pos": 423 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/performance/idleScheduler.ts",
+      "owners": [],
+      "types": [
+        { "name": "IdleScheduleOptions", "line": 7, "col": 18, "pos": 180 },
+        { "name": "IdleHandle", "line": 11, "col": 13, "pos": 265 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/performance/schedulers.ts",
+      "owners": [],
+      "types": [{ "name": "SchedulerHandle", "line": 8, "col": 13, "pos": 232 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/utils/performance/prefetch-bench.ts",
+      "owners": [],
+      "types": [
+        { "name": "PrefetchBenchMode", "line": 6, "col": 13, "pos": 180 },
+        { "name": "PrefetchBenchConfig", "line": 8, "col": 18, "pos": 262 },
+        { "name": "PrefetchBenchEntry", "line": 20, "col": 18, "pos": 704 },
+        { "name": "PrefetchBenchReport", "line": 27, "col": 18, "pos": 873 }
+      ],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/Icon/SvgIcon.tsx",
+      "owners": [],
+      "types": [{ "name": "SvgIconProps", "line": 12, "col": 13, "pos": 404 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/LanguageSelector/LanguageSelector.tsx",
+      "owners": [],
+      "types": [{ "name": "LanguageSelectorProps", "line": 22, "col": 18, "pos": 692 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/RadioGroup/index.ts",
+      "owners": [],
+      "types": [{ "name": "RadioGroupProps", "line": 7, "col": 14, "pos": 132 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/NavigationButton/NavigationButton.tsx",
+      "owners": [],
+      "types": [{ "name": "NavigationButtonProps", "line": 15, "col": 18, "pos": 387 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/ToolbarShell/ToolbarShell.tsx",
+      "owners": [],
+      "types": [{ "name": "ToolbarShellProps", "line": 8, "col": 18, "pos": 170 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ToolbarShell", "line": 34, "col": 13, "pos": 647 },
+          { "name": "default", "line": 61, "col": 15, "pos": 1363 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Tooltip/Tooltip.solid.tsx",
+      "owners": [],
+      "types": [{ "name": "TooltipProps", "line": 23, "col": 18, "pos": 561 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "Tooltip", "line": 38, "col": 13, "pos": 963 },
+          { "name": "default", "line": 160, "col": 15, "pos": 4410 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/services/media-extraction/utils/MediaOwnershipValidator.ts",
+      "owners": [],
+      "types": [{ "name": "OwnershipValidationResult", "line": 19, "col": 18, "pos": 405 }],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": []
+    },
+    {
+      "file": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "SettingsModal", "line": 55, "col": 13, "pos": 2044 },
+          { "name": "default", "line": 467, "col": 15, "pos": 13665 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Icon/Icon.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "Icon", "line": 18, "col": 13, "pos": 479 },
+          { "name": "default", "line": 102, "col": 15, "pos": 2837 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/services/EventManager.ts",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "EventManager", "line": 17, "col": 31, "pos": 489 },
+          { "name": "TwitterEventManager", "line": 210, "col": 35, "pos": 4612 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Toast/SolidToast.solid.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "SolidToast", "line": 29, "col": 13, "pos": 733 },
+          { "name": "default", "line": 108, "col": 15, "pos": 2837 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/Button/Button.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "Button", "line": 70, "col": 13, "pos": 2452 },
+          { "name": "default", "line": 249, "col": 15, "pos": 7890 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/ModalShell/ModalShell.solid.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "ModalShell", "line": 67, "col": 13, "pos": 1857 },
+          { "name": "default", "line": 279, "col": 15, "pos": 7056 }
+        ]
+      ]
+    },
+    {
+      "file": "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
+      "owners": [],
+      "types": [],
+      "nsTypes": [],
+      "enumMembers": {},
+      "duplicates": [
+        [
+          { "name": "SettingsModal", "line": 9, "col": 36, "pos": 327 },
+          { "name": "RefactoredSettingsModal", "line": 15, "col": 39, "pos": 493 },
+          { "name": "default", "line": 17, "col": 15, "pos": 524 }
+        ]
+      ]
+    }
+  ]
+}
