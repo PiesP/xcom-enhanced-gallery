@@ -2,8 +2,8 @@
 
 > 개발자를 위한 빠른 온보딩 가이드 — 로컬/CI 동일 워크플로
 
-**목적**: X.com(구 Twitter) 미디어 뷰어/다운로더 Userscript 프로젝트 **문서
-참조**: 아키텍처 → `docs/ARCHITECTURE.md`, 코딩 규칙 →
+**목적**: X.com(구 Twitter) 미디어 뷰어/다운로더 Userscript 프로젝트 **버전**:
+0.2.4 **문서 참조**: 아키텍처 → `docs/ARCHITECTURE.md`, 코딩 규칙 →
 `docs/CODING_GUIDELINES.md`, 벤더 API → `docs/vendors-safe-api.md`
 
 ---
@@ -69,14 +69,14 @@ Get-ChildItem dist -File | Select-Object Name, @{Name="SizeKB";Expression={[math
 npx vitest run test/architecture/bundle-size-optimization.contract.test.ts
 
 # 상한선 확인 (회귀 방지)
-# Raw: 471.67 KB ≤ 473 KB ✅
-# Gzip: 117.12 KB ≤ 118 KB ✅
+# Raw: 495.19 KB ≤ 473 KB (목표 초과 22 KB) ⚠️
+# Gzip: 123.73 KB ≤ 118 KB (목표 초과 5.73 KB) ⚠️
 ```
 
 **목표**:
 
-- Raw 크기: ≤473 KB (현재: 471.67 KB)
-- Gzip 크기: ≤118 KB (현재: 117.12 KB)
+- Raw 크기: ≤473 KB (현재: 495.19 KB, **22 KB 초과** ⚠️)
+- Gzip 크기: ≤118 KB (현재: 123.73 KB, **5.73 KB 초과** ⚠️)
 - 향후 이상적 목표: Raw 420 KB, Gzip 105 KB
 
 ---
