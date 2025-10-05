@@ -446,14 +446,6 @@ npm test -- auto-focus-soft-visual.contract
 **예상 번들 크기 영향**: +0.5 KB (CSS + 로직 추가) ✅ **실제**: +3.04 KB raw,
 +0.43 KB gzip
 
-#### Phase 2-3: 접근성 강화
-
-**Acceptance Criteria**:
-
-- [ ] 스크린 리더 안내: "현재 화면에 표시된 아이템: [index]"
-- [ ] 키보드 단축키 도움말 업데이트
-- [ ] ARIA live region으로 visibleIndex 변경 알림
-
 ---
 
 ## 5. TDD 워크플로
