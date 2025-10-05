@@ -1,117 +1,267 @@
-# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-> 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링 Epic 관리 문서
+> 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링 Epic 관리
+> 문서> 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링 Epic
+> 관리 문서
 
-**최근 업데이트**: 2025-10-06 **현재 상태**: 모든 활성 Epic 완료 ✅
+**최근 업데이트**: 2025-10-06 **현재 상태**: Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
+Phase 4 진행 중**최근 업데이트**: 2025-10-06 **현재 상태**: 모든 활성 Epic 완료
+✅
 
-완료된 내용은
-[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
-확인하실 수 있습니다.
+완료된 내용은완료된 내용은
+
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+
+확인하실 수 있습니다.확인하실 수 있습니다.
 
 ---
 
-## 1. 운영 원칙
+## 1. 운영 원칙## 1. 운영 원칙
 
-**참조 문서**:
+**참조 문서**:**참조 문서**:
 
-- 코딩/스타일/입력/벤더 접근/테스트:
+- 코딩/스타일/입력/벤더 접근/테스트:- 코딩/스타일/입력/벤더 접근/테스트:
+
   [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md),
+  [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md),
+
   [`vendors-safe-api.md`](vendors-safe-api.md)
-- 실행/CI/빌드: [`../AGENTS.md`](../AGENTS.md)
-- 아키텍처: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+  [`vendors-safe-api.md`](vendors-safe-api.md)
 
-**Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
-진행
+- 실행/CI/빌드: [`../AGENTS.md`](../AGENTS.md)- 실행/CI/빌드:
+  [`../AGENTS.md`](../AGENTS.md)
 
----
+- 아키텍처: [`ARCHITECTURE.md`](ARCHITECTURE.md)- 아키텍처:
+  [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
-## 2. 프로젝트 현황
+**Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여
+단계적**Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여
+단계적
 
-### 테스트 상태
-
-- **전체 테스트**: 2873 passed | 110 skipped | 1 todo (2984)
-- **상태**: ✅ GREEN
-
-### 번들 크기
-
-- **Raw**: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)
-- **Gzip**: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
-- **이상적 목표**: Raw 420 KB, Gzip 105 KB
-
-### 완료된 최적화 (2025-10-05)
-
-- ✅ Tree-shaking 개선 (`package.json` sideEffects, Rollup treeshake 옵션)
-- ✅ 중복 코드 제거 (`core-utils.ts` 중복 → `utils.ts` 통합)
-- ✅ Terser 압축 강화 (pure_funcs, unsafe opts, mangleProps)
-- ✅ 15개 계약 테스트 GREEN (회귀 방지)
+진행진행
 
 ---
 
-## 3. 활성 Epic 현황
+## 2. 프로젝트 현황## 2. 프로젝트 현황
 
-### 현재 활성 Epic 없음 ✅
+### 테스트 상태### 테스트 상태
 
-모든 활성 Epic이 완료되었습니다. 다음 Epic을 선정하려면 아래 "향후 Epic 후보"를
-참조하세요.
+- **전체 테스트**: 2873 passed | 110 skipped | 1 todo (2984)- **전체 테스트**:
+  2873 passed | 110 skipped | 1 todo (2984)
 
-**최근 완료된 Epic** (2025-10-06):
+- **상태**: ✅ GREEN- **상태**: ✅ GREEN
 
-- ✅ **GALLERY-UX-REFINEMENT**: 갤러리 UX 정교화 (4개 Sub-Epic 완료, 6 commits)
+### 번들 크기### 번들 크기
+
+- **Raw**: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)- **Raw**: 495.19 KB
+  (목표: ≤473 KB, **22 KB 초과** ⚠️)
+
+- **Gzip**: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)- **Gzip**: 123.73 KB
+  (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+
+- **이상적 목표**: Raw 420 KB, Gzip 105 KB- **이상적 목표**: Raw 420 KB, Gzip
+  105 KB
+
+### 완료된 최적화 (2025-10-05)### 완료된 최적화 (2025-10-05)
+
+- ✅ Tree-shaking 개선 (`package.json` sideEffects, Rollup treeshake 옵션)- ✅
+  Tree-shaking 개선 (`package.json` sideEffects, Rollup treeshake 옵션)
+
+- ✅ 중복 코드 제거 (`core-utils.ts` 중복 → `utils.ts` 통합)- ✅ 중복 코드 제거
+  (`core-utils.ts` 중복 → `utils.ts` 통합)
+
+- ✅ Terser 압축 강화 (pure_funcs, unsafe opts, mangleProps)- ✅ Terser 압축
+  강화 (pure_funcs, unsafe opts, mangleProps)
+
+- ✅ 15개 계약 테스트 GREEN (회귀 방지)- ✅ 15개 계약 테스트 GREEN (회귀 방지)
+
+---
+
+## 3. 활성 Epic 현황## 3. 활성 Epic 현황
+
+### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
+
+**우선순위**: 🔥 High (번들 크기 목표 22 KB 초과) **현재 상태**: Phase 4
+실행**우선순위**: 🔥 High (번들 크기 목표 22 KB 초과) **현재 상태**: Phase 4
+실행
+
+예정 **시작일**: 2025-10-06대기 **시작일**: 2025-10-06
+
+**목표**: 번들 크기를 495 KB → 450 KB (-45 KB, -9%)로 최적화하여 목표(≤473
+KB)**목표**: 번들 크기를 495 KB → 450 KB (-45 KB, -9%)로 최적화하여 목표(≤473
+KB)
+
+달성달성
+
+**Phase 구성**:**Phase 구성**:
+
+- ✅ **Phase 1-3**: 완료 (Tree-shaking, 중복 제거, Terser 최적화)- ✅ **Phase
+  1-3**: 완료 (Tree-shaking, 중복 제거, Terser 최적화)
+
+- ⏳ **Phase 4**: Orphan 파일 정리 (진행 예정, -5 KB 예상)- ⏳ **Phase 4**: Deep
+  Code Audit (진행 예정)
+
+- 📋 **Phase 5**: Pure Annotations (계획됨, -10 KB 예상)- 📋 **Phase 5-7**:
+  계획됨 (Pure Annotations, Advanced Tree-shaking, Orphan
+
+- 📋 **Phase 6**: Advanced Tree-shaking (계획됨, -10 KB 예상) 정리)
+
+- 📋 **Phase 7**: Deep Code Audit (계획됨, -20 KB 예상)
+
+**Phase 4 상세 계획**:
+
+**Phase 4 상세 계획**:
+
+- **목표**: Orphan 파일 정리 (-5 KB 예상)
+
+- **목표**: Orphan 파일 정리 (-5 KB 예상)- **분석 결과**: knip이 96개 미사용
+  파일 감지
+
+- **분석 결과**: knip이 96개 미사용 파일 감지- **작업 범위**: safe-to-delete
+  파일 선별 후 제거
+
+- **작업 범위**: safe-to-delete 파일 선별 후 제거- **예상 기간**: 1-2일
+
+- **예상 기간**: 1-2일
+
+- **테스트 전략**: 파일 제거 전후 전체 테스트 스위트 GREEN 확인**최근 완료된
+  Epic** (2025-10-06):
+
+**Phase 4 실행 계획**:- ✅ **GALLERY-UX-REFINEMENT**: 갤러리 UX 정교화 (4개
+Sub-Epic 완료, 8 commits)
+
+- 세부 내용:
+
+1. **분석 단계**:
+   [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
+   - knip 보고서 상세 검토
+
+   - orphan 파일 분류 (safe-to-delete / needs-investigation)---
+
+   - 의존성 그래프 확인
+
+2. **RED 단계**:## 4. 향후 Epic 후보
+   - 회귀 방지 테스트 작성 (파일 존재 여부 테스트)
+
+3. **GREEN 단계**:### Epic SOLID-NATIVE-MIGRATION
+   - safe-to-delete 파일 제거
+
+   - 전체 테스트 스위트 통과 확인**우선순위**: Medium **난이도**: M **예상
+     기간**: 3-5일
+
+4. **REFACTOR 단계**:
+   - import 경로 정리**목표**: 레거시 `createGlobalSignal`을 SolidJS Native
+     패턴으로 전환
+
+   - 불필요한 의존성 제거
+
+5. **Verification**:**예상 효과**:
+   - 번들 크기 측정 (-5 KB 확인)
+
+   - 품질 게이트 통과- 코드 일관성 향상
+
+- SolidJS 반응성 시스템 완전 활용
+
+**최근 완료된 Epic** (2025-10-06):- 유지보수성 개선
+
+- ✅ **GALLERY-UX-REFINEMENT**: 갤러리 UX 정교화 (4개 Sub-Epic 완료, 8
+  commits)---
   - 세부 내용:
-    [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
----
+    [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)## 5.
+    TDD 워크플로
 
-## 4. 향후 Epic 후보
+---1. **RED**: 실패 테스트 추가 (최소 명세)
 
-**목표**: 갤러리 사용자 경험 정교화 (4가지 개선)
+2. **GREEN**: 최소 변경으로 통과
 
-**선정 이유**:
+## 4. 향후 Epic 후보3. **REFACTOR**: 중복 제거/구조 개선
 
-- **높은 가치**: 모든 사용자에게 즉각적인 UX 개선 제공
-- **명확한 범위**: 4개의 독립적 Sub-Epic으로 분할 가능
-- **낮은 리스크**: 기존 패턴 재사용, 기능 변경 없이 UX 개선만
-- **측정 가능**: 각 Sub-Epic마다 구체적인 성공 지표 보유
+4. **Document**: Completed 로그에 이관
 
-**Sub-Epic 구성**:
+### Epic SOLID-NATIVE-MIGRATION
 
-1. **SCROLL-POSITION-REFINEMENT**: DOM 앵커 기반 스크롤 복원 정교화
-2. **CONTAINER-SIZE-ADAPTIVE**: 뷰포트 반응형 컨테이너 크기 최적화
-3. **TOOLBAR-HOVER-EXPANSION**: 툴바 호버 영역 확장 및 UX 개선
-4. **NATIVE-API-INTEGRATION**: 트위터 네이티브 API 통합 (가능한 경우)
+**품질 게이트**:
 
-**예상 효과**:
+**우선순위**: Medium **난이도**: M **예상 기간**: 3-5일
 
-- 스크롤 복원 정확도 향상 (±50px → ±10px)
-- 미디어 표시 영역 확대 (5-10% 증가)
-- 툴바 접근성 개선 (호버 영역 3배 확장)
-- 미디어 추출 안정성 향상 (API 우선 전략)
+- ✅ `npm run typecheck` (strict 오류 0)
 
-**난이도**: M (중간) **예상 기간**: 2-3일
+**목표**: 레거시 `createGlobalSignal`을 SolidJS Native 패턴으로 전환- ✅
+`npm run lint:fix` (자동 수정 적용)
 
----
+- ✅ `npm test` (해당 Phase GREEN)
 
-### Sub-Epic 1: SCROLL-POSITION-REFINEMENT
+**예상 효과**:- ✅ `npm run build` (산출물 검증 통과)
 
-**목표**: 갤러리 닫을 때 타임라인 스크롤 위치를 더 정교하게 복원
+- 코드 일관성 향상---
 
-**현재 상태 분석**:
+- SolidJS 반응성 시스템 완전 활용
 
-✅ **완료된 구현**:
+- 유지보수성 개선## 6. 참조 문서
 
-- `ScrollAnchorManager`: DOM 앵커 기반 스크롤 위치 저장/복원
-  (`scroll-anchor-manager.ts`)
-- Body Scroll Manager: 우선순위 기반 스크롤 잠금 (`body-scroll-manager.ts`)
-- 테스트: 18개 테스트 GREEN (scroll-position-restoration.test.ts)
-- 통합: `SolidGalleryShell.solid.tsx`에서 `restoreToAnchor()` 호출
+---- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
-**현재 문제점**:
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)
+
+## 5. TDD 워크플로- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)
+
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)
+
+1. **RED**: 실패 테스트 추가 (최소 명세)- **완료된 Epic**:
+
+2. **GREEN**: 최소 변경으로 통과
+   [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
+
+3. **REFACTOR**: 중복 제거/구조 개선
+
+4. **Document**: Completed 로그에 이관---
+
+**품질 게이트**:본 문서는 활성 Epic만 관리합니다. 완료된 Epic은
+
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다.
+
+- ✅ `npm run typecheck` (strict 오류 0)
+
+- ✅ `npm run lint:fix` (자동 수정 적용)**목표**: 갤러리 닫을 때 타임라인 스크롤
+  위치를 더 정교하게 복원
+
+- ✅ `npm test` (해당 Phase GREEN)
+
+- ✅ `npm run build` (산출물 검증 통과)**현재 상태 분석**:
+
+---✅ **완료된 구현**:
+
+## 6. 참조 문서- `ScrollAnchorManager`: DOM 앵커 기반 스크롤 위치 저장/복원
+
+(`scroll-anchor-manager.ts`)
+
+- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)- Body Scroll Manager:
+  우선순위 기반 스크롤 잠금 (`body-scroll-manager.ts`)
+
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)- 테스트: 18개
+  테스트 GREEN (scroll-position-restoration.test.ts)
+
+- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)- 통합:
+  `SolidGalleryShell.solid.tsx`에서 `restoreToAnchor()` 호출
+
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)
+
+- **완료된 Epic**:**현재 문제점**:
+
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
 1. **상단 여백 고정**: `TOP_MARGIN = 100px` 하드코딩
-   - 다양한 화면 크기/뷰포트에 최적화되지 않음
-   - 모바일/태블릿에서 과도한 여백
-2. **동적 콘텐츠 대응 제한**: `offsetTop`만 사용, 레이아웃 변화 추적 부족
-3. **Fallback 단순함**: 픽셀 기반 fallback만 지원, 앵커 재탐색 없음
+
+--- - 다양한 화면 크기/뷰포트에 최적화되지 않음
+
+- 모바일/태블릿에서 과도한 여백
+
+본 문서는 활성 Epic만 관리합니다. 완료된 Epic은2. **동적 콘텐츠 대응 제한**:
+`offsetTop`만 사용, 레이아웃 변화 추적 부족
+
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다.3. **Fallback 단순함**:
+픽셀 기반 fallback만 지원, 앵커 재탐색 없음
 
 **솔루션 옵션**:
 
