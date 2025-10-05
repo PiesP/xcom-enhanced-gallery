@@ -635,6 +635,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/utils.ts" -> "src/shared/utils/performance/performance-utils.ts" [arrowhead="inv"]
     "src/shared/utils/utils.ts" -> "src/shared/utils/scroll/index.ts" [arrowhead="inv"]
     "src/shared/utils/utils.ts" -> "src/shared/utils/styles/css-utilities.ts" [arrowhead="inv"]
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/viewport" {label="viewport" "src/shared/utils/viewport/viewport-calculator.ts" [label=<viewport-calculator.ts> tooltip="viewport-calculator.ts" URL="src/shared/utils/viewport/viewport-calculator.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/styles" {label="styles" "src/styles/globals.ts" [label=<globals.ts> tooltip="globals.ts" URL="src/styles/globals.ts" fillcolor="#ddfeff"] } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/types" {label="types" "src/types/index.ts" [label=<index.ts> tooltip="index.ts" URL="src/types/index.ts" fillcolor="#ddfeff"] } }
     "src/types/index.ts" -> "src/shared/types/core/index.ts" [arrowhead="inv"]

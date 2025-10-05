@@ -30,6 +30,7 @@ import {
 } from '@/shared/utils/accessibility/live-region-manager';
 import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
 import { scrollAnchorManager } from '@shared/utils/scroll/scroll-anchor-manager';
+import { updateViewportForToolbar } from '@shared/utils/viewport/viewport-calculator';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -239,6 +240,8 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     const state = galleryState(); // Native SolidJS Accessor
     if (state.isOpen) {
       bodyScrollManager.lock('gallery', 5);
+      // 갤러리 열림 시 초기 뷰포트 계산 (툴바는 기본적으로 표시 상태)
+      updateViewportForToolbar(true);
     } else {
       bodyScrollManager.unlock('gallery');
       // 스크롤 앵커 기반 위치 복원 (동적 콘텐츠 대응)

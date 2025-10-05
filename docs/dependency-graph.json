@@ -8752,6 +8752,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/viewport/viewport-calculator.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/types/index.ts",
       "dependencies": [
         {
@@ -8842,7 +8849,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 288,
+    "totalCruised": 289,
     "totalDependenciesCruised": 351,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
