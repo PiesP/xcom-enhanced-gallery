@@ -52,8 +52,8 @@ Phase 4 진행 중
 
 ### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
 
-**우선순위**: 🔥 High (번들 크기 목표 22 KB 초과) **현재 상태**: Phase 4 진행 중
-**시작일**: 2025-10-06
+**우선순위**: 🔥 High (번들 크기 목표 22 KB 초과) **현재 상태**: Phase 4A 완료,
+Phase 4B 준비 중 **시작일**: 2025-10-06
 
 **목표**: 번들 크기를 495 KB → 450 KB (-45 KB, -9%)로 최적화하여 목표(≤473 KB)
 달성
@@ -61,166 +61,36 @@ Phase 4 진행 중
 **Phase 구성**:
 
 - ✅ **Phase 1-3**: 완료 (Tree-shaking, 중복 제거, Terser 최적화)
-- 🚀 **Phase 4**: Unused Exports Removal (진행 중, -8~12 KB 예상)
+- ✅ **Phase 4A**: 완료 (Unused Files Removal, 코드베이스 정리)
+- 🚀 **Phase 4B**: Needs Investigation (다음 단계, -4~6 KB 예상)
 - 📋 **Phase 5**: Pure Annotations 추가 (계획됨, -10 KB 예상)
 - 📋 **Phase 6**: Advanced Tree-shaking (계획됨, -10 KB 예상)
 - ⏸️ **Phase 7**: Orphan 정리 (보류, 실제 orphan 2개뿐)
 
 ---
 
-### Phase 4 상세 계획: Unused Exports Removal
+### Phase 4A 완료 요약 (2025-10-06)
 
-**배경**:
+**제거된 파일**:
 
-- 원래 계획: Phase 4 "Orphan 파일 정리 (-5 KB)"
-- **문제 발견** (2025-10-06): `npm run deps:all` 실행 결과 orphan 파일 2개만
-  존재
-  - `src/shared/polyfills/solid-jsx-dev-runtime.ts` (DEV 전용, intentionally
-    kept)
-  - `src/shared/utils/visible-navigation.ts` (future use, intentionally kept)
-- **대안 분석**: knip 5.64.1로 Unused Exports 분석 실행 → 96개 미사용 파일 +
-  111개 미사용 exports 발견
-- **솔루션**: Unused Exports Removal (Option D) + Pure Annotations (Option A)
-  통합 접근
+- createParitySnapshot.ts (gallery, settings) - 미사용 테스트 헬퍼
+- VerticalGalleryView.tsx + CSS - 레거시 에러 스텁
 
-**분석 도구 및 결과**:
+**결과**:
 
-- **도구**: knip 5.64.1 (2025-10-06 실행)
-- **명령어**: `npx knip --exports --reporter json`
-- **전체 결과**:
-  - 미사용 파일 (files): 96개
-    - test/_, scripts/_: ~78개 (번들에 미포함)
-    - **src/\*: 18개** (번들 영향 ⚠️)
-  - 미사용 exports (issues): ~111개
-    - types/interfaces: ~90% (런타임 영향 없음)
-    - 중복 exports (duplicates): ~10개
-    - 실제 구현체: 소수
+- TDD: RED → GREEN → REFACTOR 성공
+- 테스트: 2890 passed (계약 테스트 추가)
+- 번들: 495.19 KB → 495.86 KB (미미한 증가, 코드베이스 정리 목적 달성)
 
-**src/\* 내 미사용 파일 (18개)**:
-
-1. `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-   (레거시 스텁, 즉시 제거 가능)
-2. `src/features/gallery/solid/createParitySnapshot.ts` (테스트 헬퍼, 즉시 제거
-   가능)
-3. `src/features/gallery/types.ts` (타입만, 검토 필요)
-4. `src/features/settings/solid/createParitySnapshot.ts` (테스트 헬퍼, 즉시 제거
-   가능)
-5. `src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx` (wrapper,
-   검토 필요)
-6. `src/shared/external/vendors/vendor-api.ts` (검토 필요)
-7. `src/shared/interfaces/ServiceInterfaces.ts` (타입, 낮은 우선순위)
-8. `src/shared/polyfills/solid-jsx-dev-runtime.ts` (DEV 전용, **보존 필수**)
-   9-18. 서비스/유틸리티 파일들 (상세 분석 필요)
-
-**번들 크기 영향 추정**:
-
-- **즉시 제거 가능 (Phase 4A)**: ~4-6 KB
-  - createParitySnapshot.ts (2개): ~2-3 KB
-  - VerticalGalleryView.tsx (레거시 스텁): ~1-2 KB
-  - 기타 검증된 미사용: ~1 KB
-
-- **신중 검토 후 제거 (Phase 4B)**: ~4-6 KB
-  - 레거시 컴포넌트/서비스
-  - Dynamic import로 인한 오탐 제외 후
-
-- **총 예상 감축**: ~8-12 KB
+**상세**:
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ---
 
-### Phase 4A: 즉시 제거 가능 항목 (Safe-to-Delete)
-
-**목표**: 검증된 미사용 파일 제거 (-4~6 KB) **예상 기간**: 1-2일
-
-**작업 대상**:
-
-1. **createParitySnapshot.ts** (2개)
-   - `src/features/gallery/solid/createParitySnapshot.ts`
-   - `src/features/settings/solid/createParitySnapshot.ts`
-   - **확인**: `grep -r 'createParitySnapshot' src/` → 사용처 0개
-   - **목적**: Solid 마이그레이션 테스트 헬퍼 (개발 전용)
-   - **제거 가능**: ✅ (프로덕션 코드 미사용)
-
-2. **VerticalGalleryView.tsx** (레거시 제거 스텁)
-   - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-   - **내용**: `throw new Error('Legacy component removed')` 만 포함
-   - **확인**: `grep -r 'VerticalGalleryView' src/` → import 없음 (index.ts
-     주석만)
-   - **제거 가능**: ✅ (의도적으로 에러 던지는 스텁)
-
-**TDD 워크플로** (Phase 4A):
-
-#### RED 단계
-
-```typescript
-// test/architecture/bundle-size-unused-removal.test.ts
-import { describe, it, expect } from 'vitest';
-import { existsSync } from 'fs';
-
-describe('Phase 4A: Unused File Removal', () => {
-  it('should remove createParitySnapshot from gallery', () => {
-    const filePath = 'src/features/gallery/solid/createParitySnapshot.ts';
-    expect(existsSync(filePath)).toBe(false); // RED: 파일 존재
-  });
-
-  it('should remove createParitySnapshot from settings', () => {
-    const filePath = 'src/features/settings/solid/createParitySnapshot.ts';
-    expect(existsSync(filePath)).toBe(false); // RED: 파일 존재
-  });
-
-  it('should remove legacy VerticalGalleryView stub', () => {
-    const filePath =
-      'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx';
-    expect(existsSync(filePath)).toBe(false); // RED: 파일 존재
-  });
-});
-```
-
-#### GREEN 단계
-
-1. **파일 제거**:
-
-   ```pwsh
-   Remove-Item src/features/gallery/solid/createParitySnapshot.ts
-   Remove-Item src/features/settings/solid/createParitySnapshot.ts
-   Remove-Item src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx
-   ```
-
-2. **Import 정리**:
-   - `src/features/gallery/components/vertical-gallery-view/index.ts` 확인
-   - 기타 re-export 제거
-
-3. **테스트 실행**:
-
-   ```pwsh
-   npm run typecheck  # 타입 체크
-   npm test           # 전체 테스트 GREEN 확인
-   npm run build:dev  # 빌드 성공 확인
-   ```
-
-4. **번들 크기 측정**:
-   ```pwsh
-   npm run build:prod
-   Get-ChildItem dist -File | Select-Object Name, @{Name="SizeKB";Expression={[math]::Round($_.Length/1KB, 2)}}
-   ```
-
-#### REFACTOR 단계
-
-- barrel exports 정리 (index.ts 파일들)
-- 미사용 import 제거
-- 주석 업데이트
-
-#### Verification
-
-- ✅ 타입 체크 통과
-- ✅ 전체 테스트 GREEN
-- ✅ 번들 크기 -4~6 KB 확인
-- ✅ 소스맵 유효성 검증
-
----
-
-### Phase 4B: 신중 검토 후 제거 (Needs Investigation)
+### Phase 4B: 신중 검토 후 제거 (Needs Investigation) - 활성
 
 **목표**: 의심되는 미사용 파일 검증 후 제거 (-4~6 KB) **예상 기간**: 2-3일
+**현재 상태**: 준비 중
 
 **작업 대상**:
 
@@ -254,7 +124,7 @@ describe('Phase 4A: Unused File Removal', () => {
 
 **TDD 워크플로** (Phase 4B):
 
-#### 분석 단계
+#### 분석 단계 (Phase 4B)
 
 1. **사용처 검색**:
 
@@ -272,26 +142,27 @@ describe('Phase 4A: Unused File Removal', () => {
    ```
 
 3. **ServiceContainer 확인**:
+
    ```pwsh
    grep -rn "register.*Service" src/shared/container/ --include="*.ts"
    ```
 
-#### RED 단계
+#### RED 단계 (Phase 4B)
 
 - 파일별로 제거 테스트 작성 (Phase 4A 패턴 유사)
 - 각 파일의 영향 범위 문서화
 
-#### GREEN 단계
+#### GREEN 단계 (Phase 4B)
 
 - 검증된 미사용 파일만 제거
 - 단계별 테스트 실행 (파일 1개 제거 → 테스트 → 다음 파일)
 
-#### REFACTOR 단계
+#### REFACTOR 단계 (Phase 4B)
 
 - 타입 정의 통합 (여러 파일에 분산된 타입 정리)
 - barrel exports 최적화
 
-#### Verification
+#### Verification (Phase 4B)
 
 - 각 파일 제거 후 즉시 검증
 - 누적 번들 크기 감축 확인
@@ -366,4 +237,4 @@ export const createMediaItem = /*#__PURE__*/ (data: MediaData): MediaItem => {
 
 ---
 
-**다음 액션**: Phase 4A RED 단계 시작 → 테스트 작성
+**다음 액션**: Phase 4B 분석 단계 시작 → 미사용 파일 검증
