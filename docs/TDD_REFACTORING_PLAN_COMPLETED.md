@@ -2,6 +2,142 @@
 
 ---
 
+## 2025-10-05: Epic CODEQL-STATUS-REVIEW 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: CodeQL 보안 점검 현황 평가
+- **목적**: 프로젝트 보안 상태 평가 및 향후 개선 방향 수립
+- **결과**: ✅ **평가 완료** (실질적 보안 문제 없음, 향후 개선 방향 수립)
+- **브랜치**: fix/test-improvements-codeql
+- **커밋**: 3de5596e
+
+### 배경
+
+**선정 이유**: GitHub Security 점검 후속 작업. Epic CODEQL-SECURITY-HARDENING
+(2025-10-05) 완료 후 프로젝트의 전반적인 보안 상태 평가 필요.
+
+**목적**:
+
+1. CodeQL 로컬 스캔 실행 및 결과 분석
+2. 실질적 보안 문제 여부 확인
+3. False Positive 억제 검증
+4. 향후 개선 방향 수립 (GitHub Advanced Security 통합)
+
+### CodeQL 스캔 실행 결과
+
+**실행 명령**: `npm run codeql:scan`
+
+**스캔 통계**:
+
+- 총 규칙: 86개 (Fallback 쿼리 팩: `codeql/javascript-queries`)
+- 스캔 대상: 819/829 JavaScript/TypeScript 파일 (98.8%)
+- 발견된 경고: 1건 (WARNING)
+
+**발견된 문제**:
+
+| Rule ID                        | Severity | 위치                                                  | 상태                        |
+| ------------------------------ | -------- | ----------------------------------------------------- | --------------------------- |
+| js/prototype-pollution-utility | WARNING  | src/features/settings/services/SettingsService.ts:238 | ✅ False Positive 억제 완료 |
+
+**False Positive 억제 근거**:
+
+```typescript
+// codeql[js/prototype-pollution-utility]
+// Rationale: sanitizedValue is already sanitized by sanitizeSettingsTree() which filters
+// dangerous keys (__proto__, constructor, prototype). The key path is derived from
+// user input but the value has been sanitized against prototype pollution attacks.
+target[finalKey] = sanitizedValue;
+```
+
+### 보안 상태 평가
+
+**✅ 실질적 보안 문제: 없음**
+
+1. **CodeQL 경고 해결 완료**:
+   - Epic CODEQL-SECURITY-HARDENING (2025-10-05)에서 5건 경고 해결
+   - 현재 1건 경고는 False Positive로 Rationale 주석 명시
+
+2. **보안 계약 테스트 GREEN**:
+   - URL Sanitization: 10 tests GREEN
+   - Prototype Pollution: 8 tests GREEN
+   - 총 18개 보안 계약 테스트 통과
+
+3. **전체 테스트 통과**:
+   - 443 test files passed
+   - 2,869 tests passed
+   - 18 skipped, 1 todo
+
+**⚠️ 제약 사항**:
+
+- **로컬 환경**: Fallback 쿼리 팩만 사용 (50+ 규칙)
+- **GitHub Advanced Security 미활용**: 표준 쿼리 팩 (400+ 규칙) 접근 불가
+- **CI 환경**: GitHub Actions Code Scanning으로 표준 쿼리 팩 제공 가능
+
+### 솔루션 분석
+
+3가지 옵션 비교:
+
+| 옵션                                    | 장점                                                                                                         | 단점                                                                | 복잡도 | 결론                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- | ------ | -------------------------- |
+| **A. 현상 유지**                        | - 추가 작업 없음<br>- 현재 보안 상태 양호<br>- 실질적 문제 없음                                              | - Fallback 쿼리 팩만 사용 (50+ 규칙)<br>- 향후 확장성 제한          | N/A    | 합리적이지만 확장성 제한   |
+| **B. GitHub Advanced Security 통합** ⭐ | - 표준 쿼리 팩 (400+ 규칙) 접근<br>- Security Tab 통합<br>- 자동 보안 업데이트<br>- CI에서 표준 쿼리 팩 실행 | - 외부 의존성 (라이선스)<br>- 조직/저장소 레벨 활성화 필요          | M      | **장기적으로 가장 효과적** |
+| **C. 커스텀 CodeQL 규칙**               | - 프로젝트별 맞춤 규칙 가능                                                                                  | - 복잡도 높음<br>- 유지보수 부담<br>- 표준 쿼리 팩 대비 효과 제한적 | H      | 과도한 투자                |
+
+### 권장 솔루션: 옵션 B (GitHub Advanced Security 통합) — HOLD
+
+**선택 이유**:
+
+- 표준 쿼리 팩 (400+ 규칙)은 Fallback 대비 8배 많은 보안 규칙 제공
+- GitHub Security Tab 통합으로 보안 이슈 추적 및 자동 업데이트 제안
+- CI 환경에서 표준 쿼리 팩 자동 실행 가능
+- 현재 보안 상태가 양호하므로 즉각적 작업 불필요
+
+**외부 의존성**:
+
+- GitHub Advanced Security 라이선스 (조직 또는 저장소 레벨)
+- 라이선스 획득 후 즉시 활성화 가능
+
+### 향후 조치
+
+**즉시 조치** (완료):
+
+- [x] CodeQL 로컬 스캔 실행 (`npm run codeql:scan`)
+- [x] 결과 분석 및 False Positive 억제 검증
+- [x] TDD_REFACTORING_PLAN.md에 평가 Epic 추가
+- [x] TDD_REFACTORING_PLAN_COMPLETED.md에 완료 Epic 이관
+
+**HOLD 상태 유지**:
+
+- [ ] TDD_REFACTORING_BACKLOG.md에 GITHUB-ADVANCED-SECURITY-INTEGRATION 등록
+      (이미 완료)
+- [ ] GitHub Advanced Security 라이선스 획득 시 즉시 활성화
+- [ ] CI 워크플로 개선: `github/codeql-action/init` + `analyze` 사용
+
+### Acceptance Criteria
+
+- ✅ CodeQL 로컬 스캔 실행 완료
+- ✅ 발견된 경고 (1건) 분석 완료
+- ✅ False Positive 억제 검증 완료
+- ✅ 보안 계약 테스트 GREEN (18/18)
+- ✅ 전체 테스트 통과 (443 files, 2,869 tests)
+- ✅ 향후 개선 방향 수립 (GitHub Advanced Security 통합)
+
+### 결과
+
+- **보안 상태**: 양호 (실질적 문제 없음)
+- **False Positive**: 1건 (Rationale 주석으로 억제)
+- **향후 개선**: GitHub Advanced Security 통합 (HOLD 상태)
+- **참조**:
+  - 백로그: `TDD_REFACTORING_BACKLOG.md` — GITHUB-ADVANCED-SECURITY-INTEGRATION
+    (HOLD)
+  - 선행 Epic: `TDD_REFACTORING_PLAN_COMPLETED.md` — Epic
+    CODEQL-SECURITY-HARDENING (2025-10-05)
+  - 가이드: `docs/CODEQL_LOCAL_GUIDE.md` — 로컬 환경 제약 및 트러블슈팅
+
+---
+
 ## 2025-10-05: Sub-Epic 2-B (REFACTOR) 완료 ✅
 
 ### 개요
