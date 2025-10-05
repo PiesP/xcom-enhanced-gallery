@@ -24,6 +24,10 @@ import { createSolidKeyboardHelpOverlayController } from './createSolidKeyboardH
 import type { SolidSettingsPanelInstance } from '@/features/settings/solid/renderSolidSettingsPanel';
 import { useGalleryScroll } from '@/features/gallery/hooks/useGalleryScroll';
 import { useGalleryVisibleIndex } from '@/features/gallery/hooks/useVisibleIndex';
+import {
+  announcePolite,
+  ensurePoliteLiveRegion,
+} from '@/shared/utils/accessibility/live-region-manager';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -326,6 +330,42 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     rafCoalesce: true,
   });
   const visibleIndex = createMemo(() => visibleIndexResult.visibleIndexAccessor());
+
+  /**
+   * Phase 2-3 (AUTO-FOCUS-UPDATE): Accessibility Enhancement - Screen Reader Announcements
+   *
+   * Automatically announces the currently visible item to screen readers via ARIA live region.
+   *
+   * @remarks
+   * - Uses polite announcement (non-intrusive) to respect user workflow
+   * - Announces format: "현재 화면에 표시된 아이템: X/Y" (1-indexed for user-friendliness)
+   * - Suppresses announcement when gallery is closed or empty
+   * - Handles initial render when visibleIndex is -1 (defaults to index 0)
+   * - Deduplication is handled by live-region-manager (200ms window)
+   *
+   * @see {@link https://www.w3.org/WAI/WCAG21/Understanding/status-messages.html} WCAG 2.1 Status Messages
+   * @see live-region-manager for implementation details
+   */
+  ensurePoliteLiveRegion();
+
+  createEffect(() => {
+    const idx = visibleIndex();
+    const total = totalCount();
+    const open = isOpen();
+
+    // Only announce if gallery is open and has items
+    if (!open || total === 0) {
+      return;
+    }
+
+    // Use default index 0 if visibleIndex is not yet initialized (-1)
+    // This ensures accessibility announcement happens on initial render
+    const effectiveIndex = idx < 0 ? 0 : idx;
+
+    // Format: "현재 화면에 표시된 아이템: 1/3" (1-indexed for user-friendly display)
+    const message = `현재 화면에 표시된 아이템: ${effectiveIndex + 1}/${total}`;
+    announcePolite(message);
+  });
 
   const handleItemSelection = (index: number) => {
     if (index === currentIndex()) {
