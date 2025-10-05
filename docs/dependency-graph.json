@@ -6844,6 +6844,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "./body-scroll-manager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/shared/utils/scroll/body-scroll-manager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "./scroll-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6862,6 +6879,15 @@
       ],
       "dependents": [
         "src/shared/utils/utils.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/scroll/body-scroll-manager.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/utils/scroll/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8718,8 +8744,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 281,
-    "totalDependenciesCruised": 348,
+    "totalCruised": 282,
+    "totalDependenciesCruised": 349,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

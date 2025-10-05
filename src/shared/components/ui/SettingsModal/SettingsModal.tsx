@@ -13,6 +13,7 @@ import { languageService } from '@shared/services/LanguageService';
 import type { SupportedLanguage, LanguageService } from '@shared/services/LanguageService';
 import { ThemeService } from '@shared/services/ThemeService';
 import { getSetting, setSetting } from '@shared/container/settings-access';
+import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
 import primitiveStyles from '@shared/styles/primitives.module.css';
 import styles from './SettingsModal.module.css';
 import type { SettingsModalProps } from './SettingsModal.types';
@@ -85,9 +86,10 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   let panelRef: HTMLDivElement | undefined;
   let closeButtonRef: HTMLButtonElement | undefined;
   let previousFocus: HTMLElement | null = null;
-  let scrollLocked = false;
-  let originalBodyOverflow: string | null = null;
   let inertElements: Array<{ element: HTMLElement; originalTabIndex: string | null }> = [];
+
+  const SETTINGS_LOCK_ID = 'settings-modal';
+  const SETTINGS_LOCK_PRIORITY = 10; // Higher priority than gallery (5)
 
   const focusSafely = (element: HTMLElement | null | undefined) => {
     if (!element) return;
@@ -144,23 +146,10 @@ export const SettingsModal = (providedProps: SettingsModalProps): JSX.Element | 
   };
 
   const lockBodyScroll = (locked: boolean) => {
-    if (typeof document === 'undefined') return;
     if (locked) {
-      if (scrollLocked) return;
-      // 현재 overflow 값을 캡처 (빈 문자열이면 명시적으로 null로 저장)
-      const currentOverflow = document.body.style.overflow;
-      originalBodyOverflow = currentOverflow || null;
-      document.body.style.overflow = 'hidden';
-      scrollLocked = true;
-    } else if (scrollLocked) {
-      // 복원 시 원래 값이 없으면 'overflow' 속성 자체를 제거
-      if (originalBodyOverflow === null || originalBodyOverflow === '') {
-        document.body.style.removeProperty('overflow');
-      } else {
-        document.body.style.overflow = originalBodyOverflow;
-      }
-      originalBodyOverflow = null;
-      scrollLocked = false;
+      bodyScrollManager.lock(SETTINGS_LOCK_ID, SETTINGS_LOCK_PRIORITY);
+    } else {
+      bodyScrollManager.unlock(SETTINGS_LOCK_ID);
     }
   };
 

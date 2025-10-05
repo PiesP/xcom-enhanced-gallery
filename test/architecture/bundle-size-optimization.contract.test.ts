@@ -62,12 +62,12 @@ describe('Task 1: Bundle Size Upper Limits', () => {
     const stats = statSync(prodFile);
     const currentSizeKB = stats.size / 1024;
 
-    // 기준선: 472 KB (2025-10-05 baseline)
-    // 달성 목표: 472 KB (baseline preservation)
-    // 허용 상한: 472 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
+    // 기준선: 473 KB (2025-10-05 Phase 3: Body Scroll Manager 추가)
+    // 달성 목표: 473 KB (baseline preservation)
+    // 허용 상한: 473 KB (현실적 목표, 향후 deep refactoring으로 420 KB 가능)
     // 허용 하한: 380 KB (과도한 최적화 경고)
-    const TARGET_SIZE_KB = 472;
-    const BASELINE_SIZE_KB = 472;
+    const TARGET_SIZE_KB = 473;
+    const BASELINE_SIZE_KB = 473;
     const MIN_SAFE_SIZE_KB = 380;
 
     expect(currentSizeKB).toBeLessThanOrEqual(TARGET_SIZE_KB);
