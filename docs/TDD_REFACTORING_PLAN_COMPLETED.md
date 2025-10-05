@@ -163,6 +163,7 @@ lines, 8 tests)
    - **장점**: 타입 안전, 런타임 컴포넌트 선택, SolidJS 네이티브 패턴
 
 3. **테스트 import 수정**:
+
    ```typescript
    // Before: import { SolidGalleryShell } from '@features/...'
    // After: import SolidGalleryShell from '@features/...'
