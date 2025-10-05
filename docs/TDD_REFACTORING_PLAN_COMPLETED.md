@@ -2,6 +2,77 @@
 
 ---
 
+## 2025-10-06: Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 분석 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-06
+- **유형**: 번들 크기 최적화 (Phase 4-7 계획 수립)
+- **목적**: 번들 크기 495.19 KB → 450 KB 감축 (-45 KB, -9%)
+- **결과**: ✅ **분석 및 계획 완료** (실행은 별도 Epic으로 추진 권장)
+- **Epic**: BUNDLE-SIZE-DEEP-OPTIMIZATION
+- **브랜치**: feature/bundle-size-phase4-deep-audit
+- **커밋**: a16915b6
+
+### 배경
+
+**현재 번들 크기**:
+
+- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)
+- Gzip: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+
+**완료된 최적화** (2025-10-05):
+
+- ✅ Tree-shaking 개선
+- ✅ 중복 코드 제거
+- ✅ Terser 압축 강화
+- ✅ 15개 계약 테스트 GREEN
+
+### 분석 결과 (knip 정적 분석)
+
+**주요 발견사항**:
+
+- Unused files: 96개 (scripts, test legacy, barrel exports)
+- Unused exports: 111개 (components, utilities, services)
+- Re-export chains: 과도한 barrel exports (30+ files)
+- Dead code: 주석 처리된 코드, legacy 파일
+
+**Phase 4-7 계획**:
+
+1. Phase 4: Deep Code Audit (-20 KB) - 미사용 export 제거, re-export 단순화
+2. Phase 5: Pure Annotations (-10 KB) - 50+ annotations 추가
+3. Phase 6: Advanced Tree-shaking (-10 KB) - Barrel export 최소화
+4. Phase 7: Orphan 파일 정리 (-5 KB) - 37개 orphan 분류/제거
+
+**예상 최종 결과**:
+
+- Raw: 450 KB (≤473 KB 달성)
+- Gzip: 112 KB (≤118 KB 달성)
+
+### 권장 사항
+
+**실행 전략**:
+
+- 별도 Epic으로 분리 추진 (예상 기간: 6-10일)
+- Phase별 독립 실행 (위험 최소화)
+- 각 Phase 완료 후 번들 크기 측정
+- 15개 계약 테스트로 회귀 방지
+
+**우선순위**:
+
+1. Phase 4 (가장 높은 효과): -20 KB
+2. Phase 5: -10 KB
+3. Phase 6: -10 KB
+4. Phase 7 (가장 낮은 효과): -5 KB
+
+**참고 문서**:
+
+- 분석 결과: knip 리포트 (111 unused exports, 96 unused files)
+- 계획서: `docs/TDD_REFACTORING_PLAN.md` (Phase 4-7)
+- 테스트: `test/architecture/bundle-size-optimization.contract.test.ts`
+
+---
+
 ## 2025-10-06: Sub-Epic 3 TOOLBAR-HOVER-ZONE-EXPANSION 완료 ✅
 
 ### 개요

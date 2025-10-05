@@ -1,260 +1,637 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
 본 문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
 Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 이관하여 히스토리를 분리합니다.본 문서는 복잡한 구현/구조를 간결하고 현대적으로
-재구축하기 위한 리팩토링본
+재구축하기 위한 리팩토링
 
-문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
+Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
 
-**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 계획 수립
+**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 분석 완료,
+실행은 별도 추진 권장이관하여 히스토리를 분리합니다.본 문서는 복잡한 구현/구조를
+간결하고 현대적으로
 
-Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로Epic들을
+재구축하기 위한 리팩토링
 
----관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
+---
 
-## 1. 운영 원칙이관하여 히스토리를 분리합니다.이관하여 히스토리를 분리합니다.
+Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`로
+
+## 1. 운영 원칙
+
+**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4
 
 - 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
-  `docs/vendors-safe-api.md`**최근 업데이트**: 2025-10-06 — Sub-Epic 3
-  TOOLBAR-HOVER-ZONE-EXPANSION
+  `docs/vendors-safe-api.md`시작이관하여 히스토리를 분리합니다.본 문서는 복잡한
+  구현/구조를 간결하고
 
-- 실행/CI/빌드 파이프라인: `AGENTS.md`완료**최근 업데이트**: 2025-10-06 —
-  Sub-Epic 3 TOOLBAR-HOVER-ZONE-EXPANSION 완료
+- 실행/CI/빌드 파이프라인: `AGENTS.md`현대적으로
 
 - 아키텍처 설계: `docs/ARCHITECTURE.md`
 
-- 본 문서: 활성 Epic/작업과 Acceptance 중심---
+- 본 문서: 활성 Epic/작업과 Acceptance 중심재구축하기 위한 리팩토링본
 
 - **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
   진행
 
-## 1. 운영 원칙## 1. 운영 원칙
+---
 
 ---
 
-- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,-
+문서는 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링
 
-## 2. 활성 Epic 현황 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+## 2. 활성 Epic 현황
 
-### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06) `docs/vendors-safe-api.md` `docs/vendors-safe-api.md`
+## 1. 운영 원칙
 
-**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION`- 실행/CI/빌드 파이프라인:
-`AGENTS.md`- 실행/CI/빌드 파이프라인: `AGENTS.md`
+### 현재 활성 Epic 없음
 
-**목표**: 번들 크기 심층 최적화를 통한 로딩 시간 단축 및 사용자 경험 개선-
-아키텍처 설계: `docs/ARCHITECTURE.md`- 아키텍처 설계: `docs/ARCHITECTURE.md`
+**최근 업데이트**: 2025-10-06 — Epic BUNDLE-SIZE-DEEP-OPTIMIZATION 계획 수립
 
-#### 현재 상황 분석- 본 문서: 활성 Epic/작업과 Acceptance 중심- 본 문서: 활성 Epic/작업과
+모든 Epic이 완료되었거나 분석 단계에 있습니다.
 
-Acceptance 중심
+- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
 
-**번들 크기**:
+**최근 분석 완료**: `docs/vendors-safe-api.md`
 
-- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)- **Epic 분할 원칙**: 복잡한
-  Epic은 독립적이고 작은 Sub-Epic으로 분할하여
+- ✅ Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06): 분석 및 계획 수립 완료-
+  실행/CI/빌드 파이프라인: `AGENTS.md`Epic들을 관리합니다. 완료된 내용은
+  - 현재 번들: 495.19 KB raw, 123.73 KB gzip
+    `TDD_REFACTORING_PLAN_COMPLETED.md`로Epic들을
 
-- Gzip: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️) 단계적- **Epic 분할
-  원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로
+  - 목표: 450 KB raw (-45 KB), 112 KB gzip (-12 KB)
 
-- 이상적 목표: Raw 420 KB (75 KB 감축), Gzip 105 KB (18.73 KB 감축) 분할하여
-  단계적
+  - knip 분석: 111 unused exports, 96 unused files- 아키텍처 설계:
+    `docs/ARCHITECTURE.md`
 
-**완료된 최적화** (2025-10-05): 진행 진행
+  - Phase 4-7 계획 수립 완료
+
+  - **실행 권장**: 별도 Epic으로 분리하여 6-10일 소요 예상- 본 문서: 활성
+    Epic/작업과 Acceptance 중심---관리합니다. 완료된 내용은
+
+  `TDD_REFACTORING_PLAN_COMPLETED.md`로
+
+완료된 Epic들은
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+확인하실 수 있습니다.
+
+- **Epic 분할 원칙**: 복잡한 Epic은 독립적이고 작은 Sub-Epic으로 분할하여 단계적
+
+**최근 완료**: 진행
+
+- ✅ Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역 확장
+  및 시각적 힌트 추가## 1. 운영 원칙이관하여 히스토리를 분리합니다.이관하여
+  히스토리를 분리합니다.
+
+- ✅ Epic TIMELINE-VIDEO-CLICK-FIX (2025-10-05): 타임라인 비디오 클릭 감지
+  개선 + body-scroll-manager 통합
+
+- ✅ Epic MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,
+  GIF 컴포넌트)---
+
+---- 코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
+
+## 3. 향후 Epic 후보## 2. 활성 Epic 현황 `docs/vendors-safe-api.md`**최근 업데이트**: 2025-10-06 — Sub-Epic 3
+
+### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (Phase 4-7 실행)TOOLBAR-HOVER-ZONE-EXPANSION
+
+**우선순위**: High (번들 크기 목표 초과)### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
+(2025-10-06) 🔄 **IN PROGRESS**
+
+**현재 상태**: 분석 완료, 실행 대기- 실행/CI/빌드 파이프라인:
+`AGENTS.md`완료**최근 업데이트**: 2025-10-06 —
+
+**Phase 구성**:**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION` Sub-Epic 3
+
+TOOLBAR-HOVER-ZONE-EXPANSION 완료
+
+- Phase 4: Deep Code Audit (2-3일, -20 KB)
+  - 111개 unused exports 제거**목표**: 번들 크기 심층 최적화를 통한 로딩 시간
+    단축 및 사용자 경험 개선-
+
+  - Re-export 체인 단순화 (≤2 depth)아키텍처 설계: `docs/ARCHITECTURE.md`
+
+  - Dead code 제거
+
+- Phase 5: Pure Annotations (1-2일, -10 KB)#### 현재 상황 분석- 본 문서: 활성
+  Epic/작업과 Acceptance 중심---
+  - 50+ pure annotations 추가
+
+  - Terser 최적화 강화**번들 크기**:- **Epic 분할 원칙**: 복잡한 Epic은
+    독립적이고 작은 Sub-Epic으로
+
+- Phase 6: Advanced Tree-shaking (2-3일, -10 KB)분할하여 단계적
+  - Barrel export 최소화 (≤10 files)
+
+  - Side-effect 세분화- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️) 진행
+
+- Phase 7: Orphan 파일 정리 (1-2일, -5 KB)
+  - 37개 orphan 분류/제거- Gzip: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+
+**예상 효과**:- 이상적 목표: Raw 420 KB (75 KB 감축), Gzip 105 KB (18.73 KB
+감축)## 1. 운영
+
+원칙## 1. 운영 원칙
+
+- 번들 크기: 495 KB → 450 KB (-45 KB, -9%)
+
+- Gzip: 124 KB → 112 KB (-12 KB, -10%)**완료된 최적화** (2025-10-05):---
+
+- 목표 달성: ✅ ≤473 KB raw, ✅ ≤118 KB gzip
 
 - ✅ Tree-shaking 개선 (`package.json` sideEffects, Rollup treeshake 옵션)
 
-- ✅ 중복 코드 제거 (`core-utils.ts` 3개 중복 → `utils.ts` 통합)---
+**시작 조건**:
 
-- ✅ Terser 압축 강화 (pure_funcs, unsafe opts, mangleProps)
+- ✅ 중복 코드 제거 (`core-utils.ts` 3개 중복 → `utils.ts` 통합)-
 
-- ✅ 15개 계약 테스트 GREEN (회귀 방지)## 2. 활성 Epic 현황## 2. 활성 Epic 현황
+- 전체 테스트 스위트 GREEN 확인 코딩/스타일/입력/벤더 접근/테스트 규칙:
+  `docs/CODING_GUIDELINES.md`,-
 
-**남은 과제**:### 현재 활성 Epic 없음**현재 활성 Epic 없음**
+- 번들 크기 baseline 측정 완료
 
-1. **Orphan 파일**: 37개 파일 (대부분 의도적 분리 모듈이나 일부 실제 미사용 파일
-   존재)
+- Phase별 독립 브랜치 전략 수립- ✅ Terser 압축 강화 (pure_funcs, unsafe opts,
+  mangleProps)
 
-2. **Pure annotations**: 0개 (목표: 50+ annotations로 Terser 최적화 강화)모든
-   Epic이 완료되었습니다. 완료된 Epic들은모든 Epic이 완료되었습니다. 완료된
+---- ✅ 15개 계약 테스트 GREEN (회귀 방지)## 2. 활성 Epic 현황
 
-3. **Re-export 체인**: 과도한 barrel exports로 tree-shaking 비효율Epic들은
+코딩/스타일/입력/벤더 접근/테스트 규칙: `docs/CODING_GUIDELINES.md`,
 
-4. **Dead code**: 미사용 export 및 함수 잔존
+## 4. TDD 워크플로
 
-[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+**남은 과제**:### Epic BUNDLE-SIZE-DEEP-OPTIMIZATION (2025-10-06)
 
-#### 솔루션 비교 분석
-
-확인하실 수 있습니다.확인하실 수 있습니다.
-
-##### 옵션 A: 점진적 최적화 (4-Phase 접근)
-
-**최근 완료**:**최근 완료**:
-
-**Phase 4: Deep Code Audit**
-
-- 미사용 export 탐지 (정적 분석 + 런타임 추적)- ✅ Sub-Epic 3:
-  TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역- ✅
-
-- 과도한 re-export 체인 단순화 (≤3 depth) Sub-Epic 3:
-  TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역
-
-- Dead code 제거 (미사용 함수/변수)
-
-  확장 및 시각적 힌트 추가 확장 및 시각적 힌트 추가
-
-**Phase 5: Pure Annotations 추가**
-
-- 부작용 없는 함수에 `/*#__PURE__*/` 주석 추가- ✅ Epic TIMELINE-VIDEO-CLICK-FIX
-  (2025-10-05, a54c3957): 타임라인 비디오 클릭-
-
-- 목표: 50+ annotations (서비스 팩토리, 유틸리티 함수 중심) ✅ Epic
-  TIMELINE-VIDEO-CLICK-FIX (2025-10-05, a54c3957): 타임라인 비디오 클릭
-
-- Terser가 안전하게 제거 가능하도록 표시
-
-  감지 개선 + body-scroll-manager 통합 감지 개선 + body-scroll-manager 통합
-
-**Phase 6: Advanced Tree-shaking**
-
-- Barrel export 최소화 (direct import 권장)- ✅ Epic MEDIA-TYPE-ENHANCEMENT
-  (2025-10-05): 미디어 타입 지원 강화 (비디오,-
-
-- Side-effect 정밀 추적 (세분화된 sideEffects 설정) ✅ Epic
-  MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,
-
-- Dynamic import 검토 (코드 분할 가능성, Userscript 제약 고려)
-
-  GIF 컴포넌트) GIF 컴포넌트)
-
-**Phase 7: Orphan 파일 정리**
-
-- 37개 orphan 파일 분석 (의도적 vs 실제 미사용)---
-
-- 실제 미사용 파일만 선별 제거
-
-- 의도적 분리 모듈은 문서화## 3. 향후 Epic 후보## 3. 향후 Epic 후보
-
-**장점**:### Epic GALLERY-UX-ENHANCEMENT### Epic GALLERY-UX-ENHANCEMENT
-
-- ✅ 낮은 리스크 (단계별 검증 가능)
-
-- ✅ 점진적 개선 (각 Phase마다 측정 가능한 성과)**목표**: 갤러리 사용자 경험
-  개선**목표**: 갤러리 사용자 경험 개선
-
-- ✅ 회귀 방지 (15개 계약 테스트로 자동 검증)
-
-- ✅ 기존 아키텍처 유지 (레이어 경계 변경 없음)**우선순위**: Medium**우선순위**:
-  Medium
-
-**단점**:**완료 현황**:**완료 현황**:
-
-- ⚠️ 시간 소요 (4-Phase, 각 2-3일 예상)
-
-- ⚠️ 점진적 개선 (혁신적 변화 아님)- ✅ Sub-Epic 1: SCROLL-POSITION-RESTORATION
-  (2025-10-05, 커밋: 4743bed2)- ✅
-
-  Sub-Epic 1: SCROLL-POSITION-RESTORATION (2025-10-05, 커밋: 4743bed2)
-
-**예상 효과**:
-
-- Raw: 495 KB → 450 KB (-45 KB, -9%)- ✅ Sub-Epic 2: CONTAINER-SIZE-OPTIMIZATION
-  (2025-10-05, 커밋: fd20abfc)- ✅
-
-- Gzip: 124 KB → 112 KB (-12 KB, -10%) Sub-Epic 2: CONTAINER-SIZE-OPTIMIZATION
-  (2025-10-05, 커밋: fd20abfc)
-
----- ✅ Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 구현 검증 완료-
-✅
-
-Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 구현 검증 완료
-
-##### 옵션 B: 공격적 리팩토링 (1-Phase 통합)
-
-- ⏸️ Sub-Epic 2-B: Gallery Integration (REFACTOR 단계, 별도 작업 권장)- ⏸️
-
-**단일 Phase: All-in-One Optimization** Sub-Epic 2-B: Gallery Integration
-(REFACTOR 단계, 별도 작업 권장)
-
-- 모든 최적화 기법 동시 적용
-
-- 아키텍처 재구성 포함 (모듈 병합, 레이어 재설계)- 🔄 Sub-Epic 4:
-  TWITTER-NATIVE-INTEGRATION (보류 - 리스크 높음)- 🔄 Sub-Epic 4:
-
-- 대규모 코드 이동 및 삭제 TWITTER-NATIVE-INTEGRATION (보류 - 리스크 높음)
-
-**장점**:**참조**: 완료된 Sub-Epic들은**참조**: 완료된 Sub-Epic들은
-
-- ✅ 빠른 결과 (1-2주)
-
-- ✅ 최대 효과 (목표 420 KB 달성
-  가능)[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
-
-**단점**:확인 가능확인 가능
-
-- ❌ 높은 리스크 (대규모 변경으로 회귀 가능성)
-
-- ❌ 디버깅 어려움 (변경 범위 너무 광범위)---
-
-- ❌ 롤백 곤란 (all-or-nothing)
-
-- ❌ 테스트 부담 증가 (전체 재검증 필요)## 4. TDD 워크플로## 4. TDD
-  워크플로## 4. TDD 워크플로
-
----1. **RED**: 실패 테스트 추가 (최소 명세)1. **RED**: 실패 테스트 추가 (최소
-
-명세)1. **RED**: 실패 테스트 추가 (최소 명세)
-
-##### 옵션 C: 하이브리드 접근 (선택적 최적화)
+1. **RED**: 실패 테스트 추가 (최소 명세)`docs/vendors-safe-api.md`
+   `docs/vendors-safe-api.md`
 
 2. **GREEN**: 최소 변경으로 통과
 
+3. **REFACTOR**: 중복 제거/구조 개선1. **Orphan 파일**: 37개 파일 (대부분 의도적
+   분리 모듈이나 일부 실제 미사용 파일
+
+4. **Document**: Completed 로그에 이관 존재)
+
+**품질 게이트**:2. **Pure annotations**: 0개 (목표: 50+ annotations로 Terser
+최적화
+
+강화)**식별자**: `BUNDLE-SIZE-DEEP-OPTIMIZATION`- 실행/CI/빌드 파이프라인:
+
+- ✅ `npm run typecheck` (strict 오류 0)
+
+- ✅ `npm run lint:fix` (자동 수정 적용)3. **Re-export 체인**: 과도한 barrel
+  exports로 tree-shaking 비효율`AGENTS.md`-
+
+- ✅ `npm test` (해당 Phase GREEN) 실행/CI/빌드 파이프라인: `AGENTS.md`
+
+- ✅ `npm run build` (산출물 검증 통과)
+
+4. **Dead code**: 미사용 export 및 함수 잔존
+
+---
+
+**목표**: 번들 크기 심층 최적화를 통한 로딩 시간 단축 및 사용자 경험 개선-
+
+## 5. 참조 문서
+
+#### 최적 솔루션: 옵션 A (점진적 최적화 4-Phase 접근)아키텍처 설계: `docs/ARCHITECTURE.md`- 아키텍처 설계: `docs/ARCHITECTURE.md`
+
+- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)
+
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)**선정
+  이유**:#### 현재 상황 분석- 본 문서: 활성 Epic/작업과 Acceptance 중심- 본
+
+- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)문서: 활성
+  Epic/작업과
+
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)
+
+- **완료된 Epic**:
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)1.
+  **낮은 리스크**: 각 Phase마다 독립적 검증 가능, 15개 계약 테스트로 회귀 방지
+
+---2. **측정 가능한 성과**: 각 Phase마다 번들 크기 변화 추적Acceptance 중심
+
+본 문서는 활성 Epic만 관리합니다. 완료된 Epic은
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다.3. **프로젝트 안정성**:
+기존 BUNDLE-SIZE-OPTIMIZATION (2025-10-05) 성공 경험
+
+활용
+
+4. **TDD 친화적**: RED → GREEN → REFACTOR 패턴 적용 용이**번들 크기**:
+
+**타임라인**:- Raw: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)- **Epic 분할
+원칙**: 복잡한
+
+- Phase 4: 2-3일 (Deep code audit) Epic은 독립적이고 작은 Sub-Epic으로 분할하여
+
+- Phase 5: 1-2일 (Pure annotations)
+
+- Phase 6: 2-3일 (Advanced tree-shaking)- Gzip: 123.73 KB (목표: ≤118 KB, **5.73
+  KB 초과** ⚠️) 단계적- \*\*Epic 분할
+
+- Phase 7: 1-2일 (Orphan 정리) 원칙\*\*: 복잡한 Epic은 독립적이고 작은
+  Sub-Epic으로
+
+- **총 예상**: 6-10일
+
+- 이상적 목표: Raw 420 KB (75 KB 감축), Gzip 105 KB (18.73 KB 감축) 분할하여
+
+**Acceptance Criteria**: 단계적
+
+- ✅ Raw 번들: ≤450 KB (현재 495 KB 대비 -45 KB, -9%)
+
+- ✅ Gzip 번들: ≤112 KB (현재 124 KB 대비 -12 KB, -10%)**완료된 최적화**
+  (2025-10-05): 진행 진행
+
+- ✅ 기존 15개 계약 테스트 모두 GREEN
+
+- ✅ 새 테스트 10개 추가 (Pure annotations, Orphan 검증)- ✅ Tree-shaking 개선
+  (`package.json` sideEffects, Rollup treeshake 옵션)
+
+- ✅ 품질 게이트 통과 (typecheck, lint, test, build)
+
+- ✅ 기능 회귀 없음 (전체 테스트 스위트 GREEN)- ✅ 중복 코드 제거
+  (`core-utils.ts` 3개 중복 → `utils.ts` 통합)---
+
+---- ✅ Terser 압축 강화 (pure_funcs, unsafe opts, mangleProps)
+
+#### Phase 4: Deep Code Audit (심층 코드 감사) 🔄 **IN PROGRESS**- ✅ 15개 계약 테스트 GREEN (회귀 방지)## 2. 활성 Epic 현황## 2. 활성 Epic 현황
+
+**목표**: 미사용 코드 탐지 및 제거**남은 과제**:### 현재 활성 Epic 없음**현재
+활성 Epic 없음**
+
+**Task 1: 미사용 Export 탐지** ⏳ **PENDING**1. **Orphan 파일**: 37개 파일
+(대부분 의도적 분리 모듈이나 일부 실제 미사용 파일
+
+- 정적 분석: `ts-unused-exports` 또는 `knip` 사용 존재)
+
+- 런타임 추적: 빌드 결과에서 실제 사용 여부 확인
+
+- 목표: 50+ 미사용 export 제거2. **Pure annotations**: 0개 (목표: 50+
+  annotations로 Terser 최적화 강화)모든
+
+  Epic이 완료되었습니다. 완료된 Epic들은모든 Epic이 완료되었습니다. 완료된
+
+**Task 2: Re-export 체인 단순화** ⏳ **PENDING**
+
+- 현재: `src/utils/index.ts` → `src/shared/index.ts` → 최종 사용처 (3+ depth)3.
+  **Re-export 체인**: 과도한 barrel exports로 tree-shaking 비효율Epic들은
+
+- 목표: Direct import 권장, barrel export ≤2 depth
+
+- 예상 효과: 10-15 KB 감축4. **Dead code**: 미사용 export 및 함수 잔존
+
+**Task 3: Dead Code 제거** ⏳
+**PENDING**[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+
+- 미사용 함수/변수 제거
+
+- 주석 처리된 코드 정리#### 솔루션 비교 분석
+
+- 예상 효과: 5-10 KB 감축
+
+확인하실 수 있습니다.확인하실 수 있습니다.
+
+**테스트**:
+
+```typescript##### 옵션 A: 점진적 최적화 (4-Phase 접근)
+
+// test/architecture/deep-code-audit.contract.test.ts
+
+describe('Phase 4: Deep Code Audit', () => {**최근 완료**:**최근 완료**:
+
+  it('[GREEN] should have no unused exports', () => {
+
+    // ts-unused-exports 결과 검증**Phase 4: Deep Code Audit**
+
+  });
+
+- 미사용 export 탐지 (정적 분석 + 런타임 추적)- ✅ Sub-Epic 3:
+
+  it('[GREEN] should have re-export chains ≤2 depth', () => {  TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역- ✅
+
+    // barrel export depth 검증
+
+  });- 과도한 re-export 체인 단순화 (≤3 depth) Sub-Epic 3:
+
+  TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 툴바 호버 영역
+
+  it('[GREEN] should have no commented-out code blocks', () => {
+
+    // 주석 처리된 코드 탐지- Dead code 제거 (미사용 함수/변수)
+
+  });
+
+});  확장 및 시각적 힌트 추가 확장 및 시각적 힌트 추가
+
+```
+
+**Phase 5: Pure Annotations 추가**
+
+**예상 효과**: Raw -20 KB, Gzip -5 KB
+
+- 부작용 없는 함수에 `/*#__PURE__*/` 주석 추가- ✅ Epic TIMELINE-VIDEO-CLICK-FIX
+
+--- (2025-10-05, a54c3957): 타임라인 비디오 클릭-
+
+#### Phase 5: Pure Annotations 추가 ⏳ **PENDING**- 목표: 50+ annotations (서비스 팩토리, 유틸리티 함수 중심) ✅ Epic
+
+TIMELINE-VIDEO-CLICK-FIX (2025-10-05, a54c3957): 타임라인 비디오 클릭
+
+**목표**: Terser 최적화 강화를 위한 Pure annotations 추가
+
+- Terser가 안전하게 제거 가능하도록 표시
+
+**Task 1: 서비스 팩토리 함수**
+
+````typescript 감지 개선 + body-scroll-manager 통합 감지 개선 + body-scroll-manager 통합
+
+// ✅ Before
+
+export function createMediaService() {**Phase 6: Advanced Tree-shaking**
+
+  return new MediaService();
+
+}- Barrel export 최소화 (direct import 권장)- ✅ Epic MEDIA-TYPE-ENHANCEMENT
+
+  (2025-10-05): 미디어 타입 지원 강화 (비디오,-
+
+// ✅ After
+
+export const createMediaService = /*#__PURE__*/ () => {- Side-effect 정밀 추적 (세분화된 sideEffects 설정) ✅ Epic
+
+  return new MediaService();  MEDIA-TYPE-ENHANCEMENT (2025-10-05): 미디어 타입 지원 강화 (비디오,
+
+};
+
+```- Dynamic import 검토 (코드 분할 가능성, Userscript 제약 고려)
+
+
+
+**Task 2: 유틸리티 함수**  GIF 컴포넌트) GIF 컴포넌트)
+
+```typescript
+
+// ✅ After**Phase 7: Orphan 파일 정리**
+
+export const isValidUrl = /*#__PURE__*/ (url: string): boolean => {
+
+  try {- 37개 orphan 파일 분석 (의도적 vs 실제 미사용)---
+
+    new URL(url);
+
+    return true;- 실제 미사용 파일만 선별 제거
+
+  } catch {
+
+    return false;- 의도적 분리 모듈은 문서화## 3. 향후 Epic 후보## 3. 향후 Epic 후보
+
+  }
+
+};**장점**:### Epic GALLERY-UX-ENHANCEMENT### Epic GALLERY-UX-ENHANCEMENT
+
+````
+
+- ✅ 낮은 리스크 (단계별 검증 가능)
+
+**Task 3: 자동화 스크립트**
+
+````pwsh- ✅ 점진적 개선 (각 Phase마다 측정 가능한 성과)**목표**: 갤러리 사용자 경험
+
+# scripts/add-pure-annotations.mjs  개선**목표**: 갤러리 사용자 경험 개선
+
+npm run optimize:pure-annotations
+
+```- ✅ 회귀 방지 (15개 계약 테스트로 자동 검증)
+
+
+
+**예상 효과**: Raw -10 KB, Gzip -3 KB- ✅ 기존 아키텍처 유지 (레이어 경계 변경 없음)**우선순위**: Medium**우선순위**:
+
+  Medium
+
+---
+
+**단점**:**완료 현황**:**완료 현황**:
+
+#### Phase 6: Advanced Tree-shaking ⏳ **PENDING**
+
+- ⚠️ 시간 소요 (4-Phase, 각 2-3일 예상)
+
+**목표**: Tree-shaking 효율성 극대화
+
+- ⚠️ 점진적 개선 (혁신적 변화 아님)- ✅ Sub-Epic 1: SCROLL-POSITION-RESTORATION
+
+**Task 1: Barrel Export 최소화**  (2025-10-05, 커밋: 4743bed2)- ✅
+
+- 현재: 30+ re-export 파일
+
+- 목표: Direct import 권장, barrel export ≤10 files  Sub-Epic 1: SCROLL-POSITION-RESTORATION (2025-10-05, 커밋: 4743bed2)
+
+
+
+**Task 2: Side-effect 세분화****예상 효과**:
+
+```json
+
+{- Raw: 495 KB → 450 KB (-45 KB, -9%)- ✅ Sub-Epic 2: CONTAINER-SIZE-OPTIMIZATION
+
+  "sideEffects": [  (2025-10-05, 커밋: fd20abfc)- ✅
+
+    "*.css",
+
+    "src/main.ts",- Gzip: 124 KB → 112 KB (-12 KB, -10%) Sub-Epic 2: CONTAINER-SIZE-OPTIMIZATION
+
+    "src/bootstrap/**/*.ts"  (2025-10-05, 커밋: fd20abfc)
+
+  ]
+
+}---- ✅ Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 구현 검증 완료-
+
+```✅
+
+
+
+**Task 3: Dynamic Import 검토**Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION (2025-10-06): 구현 검증 완료
+
+- Lazy loading 기회 파악 (Settings Modal, Keyboard Help)
+
+- Userscript 단일 파일 제약 고려##### 옵션 B: 공격적 리팩토링 (1-Phase 통합)
+
+
+
+**예상 효과**: Raw -10 KB, Gzip -3 KB- ⏸️ Sub-Epic 2-B: Gallery Integration (REFACTOR 단계, 별도 작업 권장)- ⏸️
+
+
+
+---**단일 Phase: All-in-One Optimization** Sub-Epic 2-B: Gallery Integration
+
+(REFACTOR 단계, 별도 작업 권장)
+
+#### Phase 7: Orphan 파일 정리 ⏳ **PENDING**
+
+- 모든 최적화 기법 동시 적용
+
+**목표**: 실제 미사용 orphan 파일만 선별 제거
+
+- 아키텍처 재구성 포함 (모듈 병합, 레이어 재설계)- 🔄 Sub-Epic 4:
+
+**현황**: 37개 orphan 파일 (의존성 그래프 분석 결과)  TWITTER-NATIVE-INTEGRATION (보류 - 리스크 높음)- 🔄 Sub-Epic 4:
+
+
+
+**Task 1: Orphan 파일 분류**- 대규모 코드 이동 및 삭제 TWITTER-NATIVE-INTEGRATION (보류 - 리스크 높음)
+
+
+
+의도적 분리 모듈 (유지 필요):**장점**:**참조**: 완료된 Sub-Epic들은**참조**: 완료된 Sub-Epic들은
+
+- `src/assets/icons/xeg-icons.ts` - Icon 정의
+
+- `src/bootstrap/*.ts` - 초기화 순서 명시적 제어- ✅ 빠른 결과 (1-2주)
+
+- `src/shared/polyfills/solid-jsx-dev-runtime.ts` - Polyfill
+
+- ✅ 최대 효과 (목표 420 KB 달성
+
+실제 미사용 파일 (제거 후보):  가능)[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
+
+- Legacy 코드
+
+- 미완성 실험 기능**단점**:확인 가능확인 가능
+
+
+
+**Task 2: 제거 전 검증**- ❌ 높은 리스크 (대규모 변경으로 회귀 가능성)
+
+```pwsh
+
+# 각 파일에 대해:- ❌ 디버깅 어려움 (변경 범위 너무 광범위)---
+
+1. grep 검색으로 참조 확인
+
+2. 테스트 실행 (제거 후 GREEN 유지 확인)- ❌ 롤백 곤란 (all-or-nothing)
+
+3. 빌드 크기 변화 측정
+
+```- ❌ 테스트 부담 증가 (전체 재검증 필요)## 4. TDD 워크플로## 4. TDD
+
+  워크플로## 4. TDD 워크플로
+
+**Task 3: 문서화**
+
+```markdown---1. **RED**: 실패 테스트 추가 (최소 명세)1. **RED**: 실패 테스트 추가 (최소
+
+<!-- docs/ARCHITECTURE.md 업데이트 -->
+
+## Orphan Files (의도적 분리 모듈)명세)1. **RED**: 실패 테스트 추가 (최소 명세)
+
+- `src/assets/icons/xeg-icons.ts`: Icon 정의 중앙 관리
+
+- `src/bootstrap/*.ts`: 초기화 순서 명시적 제어##### 옵션 C: 하이브리드 접근 (선택적 최적화)
+
+````
+
+2. **GREEN**: 최소 변경으로 통과
+
+**예상 효과**: Raw -5 KB, Gzip -1 KB
+
 **선별적 Phase 실행**
 
+---
+
 - Phase 5 (Pure annotations) + Phase 7 (Orphan 정리)만 우선 실행3. **REFACTOR**:
-  중복 제거/구조 개선2. **GREEN**: 최소 변경으로 통과2.
 
-- Phase 4/6은 효과 검증 후 결정 **GREEN**: 최소 변경으로 통과
+#### 종합 예상 효과 중복 제거/구조 개선2. **GREEN**: 최소 변경으로 통과2.
 
-**장점**:4. **Document**: Completed 로그에 이관
+| Phase | Raw 감축 | Gzip 감축 | 누적 Raw | 누적 Gzip |- Phase 4/6은 효과 검증
+후 결정 **GREEN**: 최소 변경으로 통과
 
-- ✅ 중간 리스크 (검증된 기법만 적용)
+|-------|----------|-----------|----------|-----------|
 
-- ✅ 빠른 성과 (2-Phase, 1주 예상)5. **REFACTOR**: 중복 제거/구조 개선3.
-  **REFACTOR**: 중복 제거/구조 개선
+| 현재 | - | - | 495 KB | 124 KB |**장점**:4. **Document**: Completed 로그에
+이관
 
-**단점**:### 품질 게이트
+| Phase 4 | -20 KB | -5 KB | 475 KB | 119 KB |
+
+| Phase 5 | -10 KB | -3 KB | 465 KB | 116 KB |- ✅ 중간 리스크 (검증된 기법만
+적용)
+
+| Phase 6 | -10 KB | -3 KB | 455 KB | 113 KB |
+
+| Phase 7 | -5 KB | -1 KB | 450 KB | 112 KB |- ✅ 빠른 성과 (2-Phase, 1주
+예상)5. **REFACTOR**: 중복 제거/구조 개선3.
+
+**REFACTOR**: 중복 제거/구조 개선
+
+**최종 목표**:
+
+- ✅ Raw: 450 KB (≤473 KB 달성, 이상적 목표 420 KB 근접)**단점**:### 품질 게이트
+
+- ✅ Gzip: 112 KB (≤118 KB 달성, 이상적 목표 105 KB 근접)
 
 - ⚠️ 제한적 효과 (20-30 KB 감축 예상)
 
+---
+
 - ⚠️ 근본 해결 부족 (re-export, dead code 미해결)4. **Document**: Completed
-  로그에 이관4. **Document**: Completed 로그에 이관
 
----- ✅ `npm run typecheck` (strict 오류 0)
+## 3. TDD 워크플로 로그에 이관4. **Document**: Completed 로그에 이관
 
-#### 최적 솔루션: 옵션 A (점진적 최적화)- ✅ `npm run lint:fix` (자동 수정 적용)### 품질 게이트**품질 게이트**:
+1. **RED**: 실패 테스트 추가 (최소 명세)---- ✅ `npm run typecheck` (strict
+   오류 0)
+
+2. **GREEN**: 최소 변경으로 통과
+
+3. **REFACTOR**: 중복 제거/구조 개선#### 최적 솔루션: 옵션 A (점진적 최적화)- ✅
+   `npm run lint:fix` (자동 수정 적용)### 품질 게이트**품질 게이트**:
+
+4. **Document**: Completed 로그에 이관
 
 **선정 이유**:- ✅ `npm test` (해당 Phase GREEN)
 
-1. **낮은 리스크**: 각 Phase마다 독립적 검증 가능, 15개 계약 테스트로 회귀 방지
+**품질 게이트**:
 
-2. **측정 가능한 성과**: 각 Phase마다 번들 크기 변화 추적- ✅ `npm run build`
-   (산출물 검증 통과)- ✅ `npm run typecheck` (strict 오류 0)-
+- ✅ `npm run typecheck` (strict 오류 0)1. **낮은 리스크**: 각 Phase마다 독립적
+  검증 가능, 15개 계약 테스트로 회귀 방지
 
-3. **프로젝트 안정성**: 기존 BUNDLE-SIZE-OPTIMIZATION (2025-10-05) 성공 경험
-   활용 ✅ `npm run typecheck` (strict 오류 0)
+- ✅ `npm run lint:fix` (자동 수정 적용)
+
+- ✅ `npm test` (해당 Phase GREEN)2. **측정 가능한 성과**: 각 Phase마다 번들
+  크기 변화 추적- ✅ `npm run build`
+
+- ✅ `npm run build` (산출물 검증 통과) (산출물 검증 통과)- ✅
+  `npm run typecheck` (strict 오류 0)-
+
+---3. **프로젝트 안정성**: 기존 BUNDLE-SIZE-OPTIMIZATION (2025-10-05) 성공 경험
+
+활용 ✅ `npm run typecheck` (strict 오류 0)
+
+## 4. 참조 문서
 
 4. **TDD 친화적**: RED → GREEN → REFACTOR 패턴 적용 용이
 
----- ✅ `npm run lint:fix` (자동 수정 적용)- ✅ `npm run lint:fix` (자동 수정
+- **아키텍처**: [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
-**타임라인**:적용)
+- **코딩 가이드**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md)---- ✅
+  `npm run lint:fix` (자동 수정 적용)- ✅ `npm run lint:fix` (자동 수정
+
+- **벤더 API**: [`vendors-safe-api.md`](vendors-safe-api.md)
+
+- **실행/CI**: [`../AGENTS.md`](../AGENTS.md)**타임라인**:적용)
+
+- **완료된 Epic**:
+  [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
 - Phase 4: 2-3일 (Deep code audit)
 
+---
+
 - Phase 5: 1-2일 (Pure annotations)## 5. 참조 문서- ✅ `npm test` (해당 Phase
-  GREEN)- ✅ `npm test` (해당 Phase GREEN)
+
+본 문서는 활성 Epic만 관리합니다. 완료된 Epic은
+`TDD_REFACTORING_PLAN_COMPLETED.md`로 자동 이관됩니다. GREEN)- ✅ `npm test`
+(해당 Phase GREEN)
 
 - Phase 6: 2-3일 (Advanced tree-shaking)
 
