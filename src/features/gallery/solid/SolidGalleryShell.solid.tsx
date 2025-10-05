@@ -28,6 +28,7 @@ import {
   announcePolite,
   ensurePoliteLiveRegion,
 } from '@/shared/utils/accessibility/live-region-manager';
+import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -230,6 +231,21 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     if (!state.isOpen) {
       helpOverlayController.close();
     }
+  });
+
+  // Body scroll lock 관리 - 갤러리 열림/닫힘 시 스크롤 잠금/해제
+  createEffect(() => {
+    const state = galleryState(); // Native SolidJS Accessor
+    if (state.isOpen) {
+      bodyScrollManager.lock('gallery', 5);
+    } else {
+      bodyScrollManager.unlock('gallery');
+    }
+  });
+
+  // onCleanup으로 정리 보장
+  onCleanup(() => {
+    bodyScrollManager.unlock('gallery');
   });
 
   createEffect(() => {

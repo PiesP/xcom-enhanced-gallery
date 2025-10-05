@@ -86,30 +86,63 @@ export class MediaClickDetector {
       }
     }
 
-    // 2. 미디어 플레이어 확인 - 더 포괄적인 선택자 사용
+    // 2. 미디어 플레이어 확인 (Twitter URL 검증 포함)
+    // Timeline과 Tweet Detail 페이지 양쪽 호환
     const videoSelectors = [
       SELECTORS.VIDEO_PLAYER,
-      'video',
       '[data-testid="videoPlayer"]',
       '[data-testid="videoComponent"]',
       '[data-testid="tweet"] video',
       'article video',
-      // 추가 비디오 선택자
       '.video-container',
       '.media-video',
     ];
     for (const selector of videoSelectors) {
-      if (target.closest(selector)) {
-        logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
-        return true;
+      const match = target.closest(selector);
+      if (match) {
+        // video 태그 포함 선택자는 URL 검증 필수 (보안)
+        if (selector.includes('video')) {
+          const videoElement =
+            match.tagName === 'VIDEO' ? (match as HTMLVideoElement) : match.querySelector('video');
+          if (videoElement && MediaClickDetector.isTwitterMediaElement(videoElement)) {
+            logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 (URL 검증) - ${selector}`);
+            return true;
+          }
+        } else {
+          // data-testid 기반 컨테이너는 Twitter 내부 요소이므로 신뢰
+          logger.info(`✅ MediaClickDetector: 미디어 플레이어 감지 - ${selector}`);
+          return true;
+        }
       }
     }
 
-    // 3. 직접적인 미디어 요소 확인
+    // 3. 직접적인 미디어 요소 확인 (IMG, VIDEO 태그)
     if (target.tagName === 'IMG' || target.tagName === 'VIDEO') {
       const isTwitterMedia = MediaClickDetector.isTwitterMediaElement(target);
       if (isTwitterMedia) {
         logger.info('✅ MediaClickDetector: 트위터 미디어 요소 직접 클릭');
+        return true;
+      }
+    }
+
+    // 3-1. Timeline 전용: role="button" + aria-label 패턴 감지
+    // Timeline에서는 video 태그 없이 div[role="button"]으로 동영상 표현
+    const ariaLabel = target.getAttribute('aria-label') || '';
+    const role = target.getAttribute('role') || '';
+
+    if (
+      role === 'button' &&
+      (ariaLabel.includes('동영상') ||
+        ariaLabel.includes('video') ||
+        ariaLabel.includes('재생') ||
+        ariaLabel.includes('Play'))
+    ) {
+      // videoComponent 또는 cellInnerDiv 컨테이너 내부에 있는지 확인
+      const isInVideoContext = target.closest(
+        '[data-testid="videoComponent"], [data-testid="cellInnerDiv"]'
+      );
+      if (isInVideoContext) {
+        logger.info('✅ MediaClickDetector: Timeline 동영상 role button 감지');
         return true;
       }
     }
@@ -161,6 +194,12 @@ export class MediaClickDetector {
 
   /**
    * 갤러리 트리거를 차단해야 하는 요소인지 확인
+   *
+   * **Epic TIMELINE-VIDEO-CLICK-FIX 개선 사항**:
+   * - 광범위한 `[data-testid="videoComponent"] button` 선택자 제거
+   * - 대신 aria-label 기반 구체적 패턴 사용 (재생/일시정지/진행 상태)
+   * - False positive 방지: "설정 열기" 등 일반 버튼은 갤러리 허용
+   *
    * @param target 클릭된 DOM 요소
    * @returns 차단 여부
    */
@@ -171,16 +210,21 @@ export class MediaClickDetector {
       return true;
     }
 
-    // 2. 확장된 비디오 제어 요소들 차단 (구체적인 컨트롤만)
+    // 2. 비디오 제어 요소: aria-label 기반 구체적 패턴만 차단
+    // (Epic TIMELINE-VIDEO-CLICK-FIX: 광범위한 선택자 제거)
     const videoControlSelectors = [
+      // 언어별 aria-label 패턴
       'button[aria-label*="다시보기"]',
       'button[aria-label*="일시정지"]',
       'button[aria-label*="재생"]',
       'button[aria-label*="Replay"]',
       'button[aria-label*="Pause"]',
       'button[aria-label*="Play"]',
-      '[data-testid="videoComponent"] button',
-      '[data-testid="videoPlayer"] button',
+      // videoPlayer 내부의 구체적 컨트롤만
+      '[data-testid="videoPlayer"] button[aria-label*="재생"]',
+      '[data-testid="videoPlayer"] button[aria-label*="일시정지"]',
+      '[data-testid="videoPlayer"] button[aria-label*="Play"]',
+      '[data-testid="videoPlayer"] button[aria-label*="Pause"]',
       '.video-controls button',
       '.player-controls button',
       '[role="slider"]', // 진행 바
@@ -285,8 +329,17 @@ export class MediaClickDetector {
       // 트위터 비디오는 보통 특정 컨테이너 안에 있음
       const video = element as HTMLVideoElement;
       const hasTrustedPoster = video.poster ? isTrustedTwitterMediaHostname(video.poster) : false;
+
+      // src 또는 currentSrc URL 검증 추가
+      const hasTrustedSrc = video.src ? isTrustedTwitterMediaHostname(video.src) : false;
+      const hasTrustedCurrentSrc = video.currentSrc
+        ? isTrustedTwitterMediaHostname(video.currentSrc)
+        : false;
+
       return (
         hasTrustedPoster ||
+        hasTrustedSrc ||
+        hasTrustedCurrentSrc ||
         !!element.closest('[data-testid="videoPlayer"], [data-testid="tweetVideo"]')
       );
     }

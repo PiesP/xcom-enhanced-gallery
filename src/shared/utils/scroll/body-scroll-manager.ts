@@ -47,6 +47,7 @@ export class BodyScrollManager {
   private readonly locks = new Map<string, BodyScrollLockContext>();
   private originalOverflow: string = '';
   private isOriginalSaved: boolean = false;
+  private savedScrollTop: number = 0;
 
   /**
    * Body scroll을 잠금
@@ -55,9 +56,12 @@ export class BodyScrollManager {
    * @param priority - 우선순위 (기본값: 0, 높을수록 우선)
    */
   lock(id: string, priority: number = 0): void {
-    // 첫 lock 시 원본 overflow 저장
+    // 첫 lock 시 원본 overflow 및 스크롤 위치 저장
     if (!this.isOriginalSaved) {
-      this.originalOverflow = typeof document !== 'undefined' ? document.body.style.overflow : '';
+      if (typeof document !== 'undefined') {
+        this.originalOverflow = document.body.style.overflow;
+        this.savedScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+      }
       this.isOriginalSaved = true;
     }
 
@@ -68,8 +72,8 @@ export class BodyScrollManager {
       lockedAt: Date.now(),
     });
 
-    // body overflow를 hidden으로 설정
-    this.applyBodyOverflow();
+    // body 스타일 적용: overflow hidden + position fixed
+    this.applyBodyLock();
   }
 
   /**
@@ -81,12 +85,12 @@ export class BodyScrollManager {
     // Lock 제거
     this.locks.delete(id);
 
-    // 남은 lock이 없으면 원본 overflow 복원
+    // 남은 lock이 없으면 원본 상태 복원
     if (this.locks.size === 0) {
-      this.restoreOriginalOverflow();
+      this.restoreBodyState();
     } else {
-      // 남은 lock이 있으면 body overflow 유지
-      this.applyBodyOverflow();
+      // 남은 lock이 있으면 body lock 유지
+      this.applyBodyLock();
     }
   }
 
@@ -118,27 +122,46 @@ export class BodyScrollManager {
    */
   clear(): void {
     this.locks.clear();
-    this.restoreOriginalOverflow();
+    this.restoreBodyState();
   }
 
   /**
-   * body.overflow를 'hidden'으로 설정
-   * (최고 우선순위 lock이 활성화된 경우)
+   * body에 스크롤 잠금 스타일 적용
+   * (overflow: hidden + position: fixed + 스크롤 위치 보존)
    */
-  private applyBodyOverflow(): void {
+  private applyBodyLock(): void {
     if (typeof document !== 'undefined' && this.locks.size > 0) {
-      document.body.style.overflow = 'hidden';
+      const body = document.body;
+      body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = `-${this.savedScrollTop}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.style.width = '100%';
     }
   }
 
   /**
-   * 원본 overflow 상태 복원
+   * 원본 overflow 및 스크롤 위치 복원
    */
-  private restoreOriginalOverflow(): void {
+  private restoreBodyState(): void {
     if (typeof document !== 'undefined') {
-      document.body.style.overflow = this.originalOverflow;
+      const body = document.body;
+      const scrollTop = this.savedScrollTop;
+
+      // body 스타일 복원
+      body.style.overflow = this.originalOverflow;
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      body.style.width = '';
+
+      // 스크롤 위치 복원
+      window.scrollTo(0, scrollTop);
     }
     this.isOriginalSaved = false;
+    this.savedScrollTop = 0;
   }
 }
 

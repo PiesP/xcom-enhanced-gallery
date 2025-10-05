@@ -34,11 +34,26 @@ interface BodyScrollManager {
 describe('BodyScrollManager', () => {
   let manager: BodyScrollManager;
   let originalOverflow: string;
+  let mockPageYOffset: number;
 
   beforeEach(async () => {
     // 원본 overflow 저장
     originalOverflow = document.body.style.overflow;
     document.body.style.overflow = '';
+
+    // scrollTo, pageYOffset mock 설정 (JSDOM에서 미구현)
+    mockPageYOffset = 0;
+    Object.defineProperty(window, 'pageYOffset', {
+      configurable: true,
+      get: () => mockPageYOffset,
+    });
+    Object.defineProperty(document.documentElement, 'scrollTop', {
+      configurable: true,
+      get: () => mockPageYOffset,
+    });
+    window.scrollTo = vi.fn((x: number, y: number) => {
+      mockPageYOffset = y;
+    });
 
     // 테스트용 mock manager (구현 전이므로 import 실패 예상)
     try {
@@ -57,6 +72,8 @@ describe('BodyScrollManager', () => {
     if (manager && typeof manager.clear === 'function') {
       manager.clear();
     }
+    // Mock 정리
+    mockPageYOffset = 0;
   });
 
   describe('기본 lock/unlock 동작', () => {
@@ -241,6 +258,97 @@ describe('BodyScrollManager', () => {
 
       manager.unlock('test-id');
       expect(document.body.style.overflow).toBe(''); // 빈 문자열 복원
+    });
+  });
+
+  describe('스크롤 위치 저장 및 복원', () => {
+    it('should save scroll position on first lock', () => {
+      expect(manager).toBeDefined();
+
+      // 스크롤 위치 설정
+      window.scrollTo(0, 500);
+      const savedScrollTop = window.pageYOffset;
+      expect(savedScrollTop).toBe(500);
+
+      // Lock 시 position: fixed와 top 스타일 적용
+      manager.lock('gallery', 5);
+      expect(document.body.style.position).toBe('fixed');
+      expect(document.body.style.top).toBe('-500px');
+      expect(document.body.style.left).toBe('0px'); // CSS는 '0'을 '0px'로 정규화
+      expect(document.body.style.right).toBe('0px');
+      expect(document.body.style.width).toBe('100%');
+    });
+
+    it('should restore scroll position on last unlock', () => {
+      expect(manager).toBeDefined();
+
+      // 스크롤 위치 설정 및 lock
+      window.scrollTo(0, 300);
+      manager.lock('gallery', 5);
+      expect(document.body.style.position).toBe('fixed');
+      expect(document.body.style.top).toBe('-300px');
+
+      // Unlock 시 스크롤 위치 복원
+      manager.unlock('gallery');
+      expect(document.body.style.position).toBe('');
+      expect(document.body.style.top).toBe('');
+      expect(document.body.style.left).toBe('');
+      expect(document.body.style.right).toBe('');
+      expect(document.body.style.width).toBe('');
+      expect(window.pageYOffset).toBe(300);
+    });
+
+    it('should preserve scroll position across multiple locks', () => {
+      expect(manager).toBeDefined();
+
+      // 초기 스크롤 위치
+      window.scrollTo(0, 100);
+
+      // 첫 번째 lock - 스크롤 위치 저장
+      manager.lock('gallery', 5);
+      expect(document.body.style.top).toBe('-100px');
+
+      // 두 번째 lock - 스크롤 위치 유지
+      manager.lock('settings', 10);
+      expect(document.body.style.top).toBe('-100px'); // 첫 lock 시 저장된 위치 유지
+
+      // 첫 번째 unlock - 스크롤 위치 유지 (settings lock 활성)
+      manager.unlock('gallery');
+      expect(document.body.style.position).toBe('fixed'); // 여전히 fixed
+      expect(document.body.style.top).toBe('-100px');
+
+      // 마지막 unlock - 스크롤 위치 복원
+      manager.unlock('settings');
+      expect(window.pageYOffset).toBe(100);
+    });
+
+    it('should handle zero scroll position', () => {
+      expect(manager).toBeDefined();
+
+      window.scrollTo(0, 0);
+      manager.lock('gallery', 5);
+      expect(document.body.style.top).toBe('0px');
+
+      manager.unlock('gallery');
+      expect(window.pageYOffset).toBe(0);
+    });
+
+    it('should not overwrite scroll position on subsequent locks', () => {
+      expect(manager).toBeDefined();
+
+      // 초기 스크롤 위치
+      window.scrollTo(0, 200);
+      manager.lock('first', 5);
+      expect(document.body.style.top).toBe('-200px');
+
+      // 사용자가 스크롤을 시도했다고 가정 (실제로는 fixed라 불가능하지만)
+      // 두 번째 lock은 이미 저장된 위치를 유지해야 함
+      manager.lock('second', 3);
+      expect(document.body.style.top).toBe('-200px'); // 200px 유지
+
+      manager.unlock('first');
+      manager.unlock('second');
+      expect(window.pageYOffset).toBe(200); // 최초 저장된 위치로 복원
     });
   });
 });
