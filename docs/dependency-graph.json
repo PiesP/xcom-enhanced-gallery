@@ -275,6 +275,48 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGifItem.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./VerticalGifItem.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalGifItem.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalGifItem.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGifItem.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
       "dependencies": [
         {
@@ -8793,8 +8835,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 285,
-    "totalDependenciesCruised": 350,
+    "totalCruised": 287,
+    "totalDependenciesCruised": 351,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
