@@ -530,6 +530,7 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/dom/index.ts" -> "src/shared/utils/dom/DOMBatcher.ts" [arrowhead="onormal" penwidth="1.0"]
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/error-handling.ts" [label=<error-handling.ts> tooltip="error-handling.ts" URL="src/shared/utils/error-handling.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/events.ts" [label=<events.ts> tooltip="events.ts" URL="src/shared/utils/events.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
+    subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/events" {label="events" "src/shared/utils/events/event-origin.ts" [label=<event-origin.ts> tooltip="event-origin.ts" URL="src/shared/utils/events/event-origin.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/events" {label="events" "src/shared/utils/events/wheel.ts" [label=<wheel.ts> tooltip="wheel.ts" URL="src/shared/utils/events/wheel.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" "src/shared/utils/focusTrap.ts" [label=<focusTrap.ts> tooltip="focusTrap.ts" URL="src/shared/utils/focusTrap.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309"] } } }
     subgraph "cluster_src" {label="src" subgraph "cluster_src/shared" {label="shared" subgraph "cluster_src/shared/utils" {label="utils" subgraph "cluster_src/shared/utils/html" {label="html" "src/shared/utils/html/decode-html-entities.ts" [label=<decode-html-entities.ts> tooltip="decode-html-entities.ts" URL="src/shared/utils/html/decode-html-entities.ts" fillcolor="#FFFBEB" color="#B45309" fontcolor="#B45309" style="rounded,filled,dashed" penwidth="1.5"] } } } }
@@ -541,6 +542,8 @@ strict digraph "dependency-cruiser output"{
     "src/shared/utils/index.ts" -> "src/shared/utils/error-handling.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/error-handling.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/utils/index.ts" -> "src/shared/utils/events.ts" [arrowhead="inv"]
+    "src/shared/utils/index.ts" -> "src/shared/utils/events/event-origin.ts" [arrowhead="inv"]
+    "src/shared/utils/index.ts" -> "src/shared/utils/events/event-origin.ts" [arrowhead="onormal" penwidth="1.0"]
     "src/shared/utils/index.ts" -> "src/shared/utils/events/wheel.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/lifecycle/leak-guard.ts" [arrowhead="inv"]
     "src/shared/utils/index.ts" -> "src/shared/utils/lifecycle/leak-guard.ts" [arrowhead="onormal" penwidth="1.0"]

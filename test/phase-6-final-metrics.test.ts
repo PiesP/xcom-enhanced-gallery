@@ -111,7 +111,7 @@ describe('Phase 6: 최종 정리 & 계측', () => {
 
     test('컴포넌트 수가 적절한 범위 내에 있어야 함', () => {
       expect(metricsData.componentFiles).toBeGreaterThan(0);
-      expect(metricsData.componentFiles).toBeLessThanOrEqual(263); // Phase C-3: Epic ARCH-SIMPLIFY-001 완료 후 증가
+      expect(metricsData.componentFiles).toBeLessThanOrEqual(264); // Phase 2: Epic SCROLL-ISOLATION-CONSOLIDATION - event-origin.ts 추가
     });
   });
 
