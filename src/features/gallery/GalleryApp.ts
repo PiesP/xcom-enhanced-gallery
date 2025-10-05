@@ -14,6 +14,7 @@ import {
   getMediaServiceFromContainer,
 } from '@shared/container/service-accessors';
 import { galleryState, closeGallery } from '@shared/state/signals/gallery.signals';
+import { scrollAnchorManager } from '@shared/utils/scroll/scroll-anchor-manager';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
 import { MediaService } from '@shared/services/MediaService';
@@ -122,6 +123,15 @@ export class GalleryApp {
       await initializeGalleryEvents({
         onMediaClick: async (_mediaInfo, element, _event) => {
           try {
+            // 클릭한 트윗 요소를 스크롤 앵커로 설정
+            const tweetElement = element.closest(
+              'article[data-testid="tweet"], [data-testid="tweet"]'
+            ) as HTMLElement;
+            if (tweetElement) {
+              scrollAnchorManager.setAnchor(tweetElement);
+              logger.debug('[GalleryApp] 스크롤 앵커 설정:', { tweetElement });
+            }
+
             const mediaService = await this.getMediaService();
             const result = await mediaService.extractFromClickedElement(element);
 
