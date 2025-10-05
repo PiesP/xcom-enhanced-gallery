@@ -62,7 +62,625 @@ Epic들은
 
 ## 3. 향후 Epic 후보## 3. 향후 Epic 후보
 
-현재 계획된 Epic이 없습니다._(현재 없음)_
+### Epic GALLERY-UX-ENHANCEMENT
+
+**목표**: 갤러리 사용자 경험 개선 (위치 복원, 컨테이너 최적화, 툴바 호버 영역
+개선)
+
+**우선순위**: High
+
+**예상 기간**: 4-6 주
+
+---
+
+#### 개선 사항 요약
+
+1. **스크롤 위치 복원 정교화**: 갤러리 닫을 때 원래 타임라인 위치를 정확히 복원
+2. **컨테이너 사이즈 최적화**: 이미지 표시를 위한 갤러리 컨테이너 사이즈 최적화
+3. **툴바 호버 영역 확장**: 화면 상단 일정 영역에서 툴바 쉽게 표시 가능하도록
+   개선
+4. **트위터 네이티브 API 통합**: 가능한 경우 트위터의 네이티브 위치 복원 활용
+
+---
+
+#### Sub-Epic 1: SCROLL-POSITION-RESTORATION
+
+**목표**: 갤러리 닫을 때 정교한 타임라인 위치 복원
+
+##### 솔루션 분석
+
+**현황**:
+
+- `bodyScrollManager`가 기본 스크롤 위치 복원 제공 (`savedScrollTop` 저장/복원)
+- 갤러리 열림 시 `lock('gallery', 5)` 호출하여 `position: fixed` + 스크롤 위치
+  저장
+- 닫힐 때 `unlock('gallery')` 호출하여 `window.scrollTo()` 복원
+- 복원 정확도: 픽셀 단위 복원이지만 동적 콘텐츠 로딩으로 오차 발생 가능
+
+**솔루션 옵션**:
+
+| 옵션                             | 장점                                                                               | 단점                                                                         | 복잡도 |
+| -------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------ |
+| **A. 트위터 네이티브 API 활용**  | 트위터 SPA 라우터와 완벽 호환, 동적 콘텐츠 처리 자동화, 유지보수 부담 감소         | API 존재 여부 불확실, 비공개 API 사용 리스크, 트위터 업데이트 시 깨질 가능성 | High   |
+| **B. DOM 앵커 기반 복원 (권장)** | 정확한 위치 복원 (요소 기준), 동적 콘텐츠 로딩에 강건, 트위터 DOM 구조 변경에 유연 | 초기 구현 복잡도 증가, 앵커 요소 선택 전략 필요                              | Medium |
+| **C. 현재 방식 개선**            | 구현 간단, 기존 코드 재사용                                                        | 동적 콘텐츠 오차 미해결, 트윗 높이 변화 시 부정확                            | Low    |
+
+**권장 솔루션**: **옵션 B (DOM 앵커 기반 복원)**
+
+**이유**:
+
+- 트위터 네이티브 API는 존재 여부가 불확실하고 유지보수 리스크 높음
+- DOM 앵커 방식은 정확도와 안정성의 균형점
+- 현재 방식 개선만으로는 동적 콘텐츠 문제 해결 불가
+
+##### 구현 계획 (TDD)
+
+###### Phase 1: RED - 테스트 작성
+
+```typescript
+// test/features/gallery/scroll-position-restoration.test.ts
+
+describe('Scroll Position Restoration', () => {
+  it('should save tweet element as scroll anchor before opening gallery', () => {
+    // 갤러리 열기 전 클릭한 트윗 요소를 앵커로 저장
+    const tweetElement = document.querySelector('[data-testid="tweet"]');
+    openGallery(mediaItems, 0);
+    expect(scrollAnchorManager.getAnchor()).toBe(tweetElement);
+  });
+
+  it('should restore scroll to anchor element after closing gallery', () => {
+    const tweetElement = createMockTweet();
+    scrollAnchorManager.setAnchor(tweetElement);
+
+    closeGallery();
+
+    // 앵커 요소가 뷰포트 내 예상 위치에 있는지 확인
+    const rect = tweetElement.getBoundingClientRect();
+    expect(rect.top).toBeGreaterThan(0);
+    expect(rect.top).toBeLessThan(window.innerHeight);
+  });
+
+  it('should handle missing anchor gracefully with fallback to pixel position', () => {
+    scrollAnchorManager.setAnchor(null);
+    const savedScrollTop = 500;
+
+    closeGallery();
+
+    expect(window.pageYOffset).toBe(savedScrollTop);
+  });
+
+  it('should handle dynamic content changes between open and close', () => {
+    const tweetElement = createMockTweet();
+    scrollAnchorManager.setAnchor(tweetElement);
+
+    // 동적 콘텐츠 추가 시뮬레이션 (DOM 높이 변화)
+    insertDynamicContent();
+
+    closeGallery();
+
+    // 앵커 요소가 여전히 올바른 위치에 있는지 확인
+    const rect = tweetElement.getBoundingClientRect();
+    expect(rect.top).toBeGreaterThan(0);
+  });
+});
+```
+
+**Phase 2: GREEN - 최소 구현**
+
+```typescript
+// src/shared/utils/scroll/scroll-anchor-manager.ts
+
+interface ScrollAnchor {
+  element: HTMLElement;
+  offsetTop: number;
+  timestamp: number;
+}
+
+export class ScrollAnchorManager {
+  private anchor: ScrollAnchor | null = null;
+  private fallbackScrollTop: number = 0;
+
+  setAnchor(element: HTMLElement | null): void {
+    if (!element) {
+      this.anchor = null;
+      return;
+    }
+
+    this.anchor = {
+      element,
+      offsetTop: element.offsetTop,
+      timestamp: Date.now(),
+    };
+
+    // Fallback 위치도 저장
+    this.fallbackScrollTop = window.pageYOffset;
+  }
+
+  getAnchor(): HTMLElement | null {
+    return this.anchor?.element ?? null;
+  }
+
+  restoreToAnchor(): void {
+    if (!this.anchor || !document.body.contains(this.anchor.element)) {
+      // 앵커가 없거나 DOM에서 제거된 경우 fallback
+      this.restoreToPixelPosition();
+      return;
+    }
+
+    // 앵커 요소를 기준으로 스크롤 위치 계산
+    const targetY = this.anchor.element.offsetTop - 100; // 상단 여백 100px
+    window.scrollTo({
+      top: Math.max(0, targetY),
+      behavior: 'auto', // 즉시 이동 (smooth는 UX 개선 시 옵션)
+    });
+  }
+
+  private restoreToPixelPosition(): void {
+    window.scrollTo(0, this.fallbackScrollTop);
+  }
+
+  clear(): void {
+    this.anchor = null;
+    this.fallbackScrollTop = 0;
+  }
+}
+
+export const scrollAnchorManager = new ScrollAnchorManager();
+```
+
+**Phase 3: REFACTOR - 통합 및 개선**
+
+- `bodyScrollManager`와 `scrollAnchorManager` 통합
+- `GalleryRenderer.close()`에서 앵커 기반 복원 호출
+- 트윗 클릭 감지 시 자동 앵커 설정
+- 성능 최적화 (앵커 쿼리 최적화, 디바운싱)
+
+**Acceptance Criteria**:
+
+- ✅ 갤러리 닫을 때 클릭한 트윗 위치로 정확히 복원
+- ✅ 동적 콘텐츠 로딩으로 인한 오차 최소화 (±50px 이내)
+- ✅ 앵커 요소 부재 시 픽셀 기반 fallback 동작
+- ✅ 모든 테스트 GREEN
+- ✅ 타입 체크 통과
+
+---
+
+#### Sub-Epic 2: CONTAINER-SIZE-OPTIMIZATION
+
+**목표**: 갤러리 컨테이너 사이즈를 최적화하여 더 많은 이미지 영역 확보
+
+##### 솔루션 분석
+
+**현황**:
+
+- 현재 컨테이너: `100vw × 100vh` (fullscreen)
+- 툴바/패딩으로 실제 미디어 영역 축소
+- CSS: `max-width: 90vw`, `max-height: 90vh` (미디어 요소)
+- 수직 갤러리: 각 아이템 `max-height: var(--xeg-viewport-height-constrained)`
+
+**문제점**:
+
+- 툴바 높이(`--xeg-toolbar-height: 60-80px`)로 상단 공간 손실
+- 패딩(`--xeg-spacing-gallery`)으로 좌우 공간 손실
+- 작은 화면에서 미디어 표시 영역 부족
+
+**솔루션 옵션**:
+
+| 옵션                           | 장점                                                                                    | 단점                                                                              | 복잡도 |
+| ------------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------ |
+| **A. 동적 뷰포트 계산 (권장)** | - 실제 가용 공간 최대 활용<br>- 툴바 상태에 따라 유연 조정<br>- 반응형 디자인 자동 대응 | - 툴바 표시/숨김 시 리플로우 발생<br>- CSS 변수 관리 복잡도 증가                  | Medium |
+| **B. 고정 최대 크기 증가**     | - 구현 간단<br>- 성능 영향 최소                                                         | - 툴바와 미디어 겹침 가능<br>- 작은 화면에서 문제 발생                            | Low    |
+| **C. Fullscreen API 활용**     | - 진정한 전체 화면 경험<br>- 브라우저 UI 제거                                           | - 사용자 명시 액션 필요<br>- 모든 브라우저 지원 제한<br>- 툴바 컨트롤 재설계 필요 | High   |
+
+**권장 솔루션**: **옵션 A (동적 뷰포트 계산)**
+
+**이유**:
+
+- Fullscreen API는 사용자 경험 급격히 변경하여 혼란 야기 가능
+- 고정 크기 증가는 툴바와 충돌 리스크 높음
+- 동적 계산은 현재 아키텍처와 자연스럽게 통합 가능
+
+##### 구현 계획 (TDD)
+
+**Phase 1: RED - 테스트 작성**
+
+```typescript
+// test/features/gallery/container-size-optimization.test.ts
+
+describe('Container Size Optimization', () => {
+  it('should calculate available viewport height excluding toolbar', () => {
+    const toolbarHeight = 80;
+    const availableHeight = getAvailableViewportHeight();
+
+    expect(availableHeight).toBe(window.innerHeight - toolbarHeight);
+  });
+
+  it('should update media container max-height when toolbar visibility changes', () => {
+    const container = document.querySelector(
+      '[data-xeg-role="items-container"]'
+    );
+
+    // 툴바 표시 상태
+    showToolbar();
+    let maxHeight = getComputedStyle(container).getPropertyValue(
+      '--xeg-media-max-height'
+    );
+    expect(maxHeight).toBe('calc(100vh - 80px)');
+
+    // 툴바 숨김 상태
+    hideToolbar();
+    maxHeight = getComputedStyle(container).getPropertyValue(
+      '--xeg-media-max-height'
+    );
+    expect(maxHeight).toBe('100vh');
+  });
+
+  it('should respect minimum padding for touch targets', () => {
+    const padding = getComputedStyle(document.documentElement).getPropertyValue(
+      '--xeg-spacing-gallery'
+    );
+    const minPadding = 16; // 최소 터치 타겟 여백
+
+    expect(parseInt(padding)).toBeGreaterThanOrEqual(minPadding);
+  });
+
+  it('should scale down gracefully on small screens', () => {
+    // 작은 화면 시뮬레이션 (모바일)
+    Object.defineProperty(window, 'innerHeight', {
+      value: 600,
+      configurable: true,
+    });
+    Object.defineProperty(window, 'innerWidth', {
+      value: 375,
+      configurable: true,
+    });
+
+    const availableHeight = getAvailableViewportHeight();
+    const mediaMaxHeight = getComputedStyle(
+      document.documentElement
+    ).getPropertyValue('--xeg-viewport-height-constrained');
+
+    // 최소 미디어 표시 영역 확보 (400px)
+    expect(availableHeight).toBeGreaterThanOrEqual(400);
+  });
+});
+```
+
+**Phase 2: GREEN - 최소 구현**
+
+```typescript
+// src/shared/utils/viewport/viewport-calculator.ts
+
+export interface ViewportDimensions {
+  width: number;
+  height: number;
+  availableHeight: number;
+  toolbarHeight: number;
+}
+
+export function calculateViewportDimensions(
+  toolbarVisible: boolean = false
+): ViewportDimensions {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const toolbarHeight = toolbarVisible ? 80 : 0;
+  const availableHeight = Math.max(400, height - toolbarHeight); // 최소 400px 보장
+
+  return {
+    width,
+    height,
+    availableHeight,
+    toolbarHeight,
+  };
+}
+
+export function applyViewportVariables(dimensions: ViewportDimensions): void {
+  const root = document.documentElement;
+
+  root.style.setProperty('--xeg-viewport-width', `${dimensions.width}px`);
+  root.style.setProperty('--xeg-viewport-height', `${dimensions.height}px`);
+  root.style.setProperty(
+    '--xeg-viewport-available-height',
+    `${dimensions.availableHeight}px`
+  );
+  root.style.setProperty(
+    '--xeg-media-max-height',
+    `calc(${dimensions.availableHeight}px - var(--xeg-spacing-gallery) * 2)`
+  );
+}
+```
+
+**Phase 3: REFACTOR - CSS 변수 통합**
+
+```css
+/* src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css */
+
+.image.fitHeight {
+  max-height: var(
+    --xeg-media-max-height,
+    var(--xeg-viewport-height-constrained)
+  );
+  object-fit: contain;
+}
+
+.video.fitHeight {
+  max-height: var(
+    --xeg-media-max-height,
+    var(--xeg-viewport-height-constrained)
+  );
+  object-fit: contain;
+}
+```
+
+**Acceptance Criteria**:
+
+- ✅ 툴바 숨김 시 미디어 영역 최대 80px 확장
+- ✅ 툴바 표시/숨김 전환 시 부드러운 리사이즈
+- ✅ 작은 화면(600px 이하)에서도 최소 400px 미디어 영역 확보
+- ✅ 반응형 디자인 유지 (모바일/태블릿/데스크톱)
+- ✅ 성능 영향 최소화 (리플로우 최적화)
+
+---
+
+#### Sub-Epic 3: TOOLBAR-HOVER-ZONE-EXPANSION
+
+**목표**: 툴바 호버 영역을 확장하여 사용자가 쉽게 툴바를 표시할 수 있도록 개선
+
+##### 솔루션 분석
+
+**현황**:
+
+- 현재 호버 영역: `.toolbarHoverZone` (상단 120px, `--xeg-hover-zone-height`)
+- 툴바 자동 숨김: 5초 후 (Phase B UX-001)
+- 호버 시 즉시 표시, 이탈 시 즉시 숨김
+- 구현: `useToolbarPositionBased` + CSS `:has()` 선택자
+
+**문제점**:
+
+- 120px 영역이 작아서 사용자가 찾기 어려움 (특히 큰 화면)
+- 툴바 숨김 상태에서 시각적 힌트 부족
+- 마우스 이동 거리가 멀어서 불편함
+
+**솔루션 옵션**:
+
+| 옵션                         | 장점                                                         | 단점                                                             | 복잡도 |
+| ---------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------- | ------ |
+| **A. 호버 영역 확장 (권장)** | - 즉각적인 UX 개선<br>- 기존 구조 유지<br>- 접근성 향상      | - 영역이 너무 크면 의도치 않은 표시<br>- 미디어 클릭과 간섭 가능 | Low    |
+| **B. 시각적 힌트 추가**      | - 사용자 학습 용이<br>- 디자인적으로 우아함<br>- 접근성 개선 | - 미디어 감상 방해 가능<br>- 추가 디자인 작업 필요               | Medium |
+| **C. 제스처 기반 표시**      | - 현대적인 UX<br>- 정밀한 제어 가능                          | - PC 전용 설계 위반 (Touch 이벤트 필요)<br>- 복잡도 높음         | High   |
+| **D. 단축키 확장**           | - 키보드 사용자 친화적<br>- 정확한 제어                      | - 마우스 사용자에게 도움 안 됨<br>- 단축키 학습 필요             | Low    |
+
+**권장 솔루션**: **옵션 A + B 조합 (호버 영역 확장 + 시각적 힌트)**
+
+**이유**:
+
+- 호버 영역 확장은 즉각적인 UX 개선 제공
+- 시각적 힌트는 사용자 학습 곡선 완화
+- 제스처 기반은 PC 전용 설계 원칙 위반
+- 단축키 확장만으로는 마우스 사용자 문제 미해결
+
+##### 구현 계획 (TDD)
+
+**Phase 1: RED - 테스트 작성**
+
+```typescript
+// test/features/gallery/toolbar-hover-zone-expansion.test.ts
+
+describe('Toolbar Hover Zone Expansion', () => {
+  it('should expand hover zone to 200px from top', () => {
+    const hoverZone = document.querySelector('.toolbarHoverZone');
+    const height = getComputedStyle(hoverZone).height;
+
+    expect(parseInt(height)).toBeGreaterThanOrEqual(200);
+  });
+
+  it('should show toolbar when mouse enters expanded zone', () => {
+    const hoverZone = document.querySelector('.toolbarHoverZone');
+
+    fireEvent.mouseEnter(hoverZone);
+
+    const toolbar = document.querySelector('.toolbarWrapper');
+    expect(getComputedStyle(toolbar).opacity).toBe('1');
+  });
+
+  it('should display visual hint when toolbar is hidden', () => {
+    hideToolbar();
+
+    const hint = document.querySelector('.toolbarHint');
+    expect(hint).toBeInTheDocument();
+    expect(getComputedStyle(hint).opacity).toBeGreaterThan('0');
+  });
+
+  it('should hide visual hint when toolbar is visible', () => {
+    showToolbar();
+
+    const hint = document.querySelector('.toolbarHint');
+    expect(getComputedStyle(hint).opacity).toBe('0');
+  });
+
+  it('should animate hint with subtle pulsing effect', () => {
+    const hint = document.querySelector('.toolbarHint');
+    const animation = getComputedStyle(hint).animation;
+
+    expect(animation).toContain('pulse');
+  });
+
+  it('should not interfere with media click events', () => {
+    const mediaItem = document.querySelector('[data-xeg-role="gallery-item"]');
+    const clickSpy = vi.fn();
+    mediaItem.addEventListener('click', clickSpy);
+
+    // 호버 영역 내 미디어 클릭
+    fireEvent.click(mediaItem);
+
+    expect(clickSpy).toHaveBeenCalled();
+  });
+});
+```
+
+**Phase 2: GREEN - 최소 구현**
+
+```css
+/* src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css */
+
+/* 확장된 호버 영역 */
+.toolbarHoverZone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px; /* 120px → 200px 확장 */
+  z-index: calc(var(--xeg-toolbar-z-index) - 1);
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* 시각적 힌트 */
+.toolbarHint {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background: var(--xeg-color-primary);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  pointer-events: none;
+  z-index: calc(var(--xeg-toolbar-z-index) - 2);
+}
+
+/* 툴바 숨김 상태에서 힌트 표시 */
+.container:not(.initialToolbarVisible) .toolbarHint {
+  opacity: 0.6;
+  animation: toolbarHintPulse 2s ease-in-out infinite;
+}
+
+/* 툴바 표시 상태에서 힌트 숨김 */
+.container.initialToolbarVisible .toolbarHint,
+.container:has(.toolbarWrapper:hover) .toolbarHint {
+  opacity: 0;
+}
+
+@keyframes toolbarHintPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+```
+
+```typescript
+// src/shared/hooks/useToolbarPositionBased.ts 수정
+
+export interface UseToolbarPositionBasedOptions {
+  // ... 기존 옵션
+  /** 호버 영역 높이 (px, 기본값: 200) */
+  readonly hoverZoneHeight?: number;
+  /** 시각적 힌트 표시 여부 (기본값: true) */
+  readonly showVisualHint?: boolean;
+}
+```
+
+**Phase 3: REFACTOR - 디자인 토큰화 및 접근성 개선**
+
+```css
+/* src/styles/tokens/layout-tokens.css */
+
+:root {
+  --xeg-hover-zone-height: 200px; /* 120px → 200px */
+  --xeg-hover-zone-height-mobile: 150px; /* 모바일용 */
+}
+```
+
+**Acceptance Criteria**:
+
+- ✅ 호버 영역 200px로 확장 (기존 120px 대비 67% 증가)
+- ✅ 시각적 힌트 표시 (툴바 숨김 상태에서만)
+- ✅ 힌트 애니메이션 부드럽고 눈에 거슬리지 않음
+- ✅ 미디어 클릭 이벤트와 간섭 없음
+- ✅ 접근성: 스크린 리더 힌트 제공 (`aria-label`)
+- ✅ 모든 테스트 GREEN
+
+---
+
+#### Sub-Epic 4: TWITTER-NATIVE-INTEGRATION (선택적)
+
+**목표**: 트위터 네이티브 API를 활용한 위치 복원 (가능한 경우)
+
+##### 솔루션 분석
+
+**현황**:
+
+- 트위터는 SPA 라우팅으로 히스토리 관리
+- `history.pushState`/`popstate` 이벤트로 네비게이션 추적 가능
+- 공개 API 없음, DOM 구조/내부 API 역공학 필요
+
+**리스크**:
+
+- 트위터 업데이트 시 API 변경/제거 가능
+- 비공개 API 사용은 서비스 약관 위반 소지
+- 유지보수 부담 증가
+
+**권장 사항**: **보류 (Defer)**
+
+**이유**:
+
+- Sub-Epic 1 (DOM 앵커 방식)으로 충분한 정확도 달성 가능
+- 리스크 대비 이득 불분명
+- 안정성 우선 원칙 준수
+
+**대안**:
+
+- Sub-Epic 1 구현 후 사용자 피드백 수집
+- 정확도 문제 발생 시 재검토
+- 트위터 공식 API 출시 시 통합 검토
+
+---
+
+#### 통합 타임라인
+
+| Sub-Epic                         | 기간  | 의존성     | 우선순위       |
+| -------------------------------- | ----- | ---------- | -------------- |
+| Sub-Epic 1: 스크롤 위치 복원     | 2주   | 없음       | P0 (Critical)  |
+| Sub-Epic 2: 컨테이너 최적화      | 1주   | Sub-Epic 3 | P1 (High)      |
+| Sub-Epic 3: 툴바 호버 확장       | 1.5주 | 없음       | P1 (High)      |
+| Sub-Epic 4: 트위터 네이티브 통합 | TBD   | Sub-Epic 1 | P2 (Low, 보류) |
+
+**총 예상 기간**: 4-6주 (병렬 작업 가능 시 단축 가능)
+
+---
+
+#### 품질 게이트
+
+각 Sub-Epic 완료 시:
+
+- ✅ 모든 테스트 GREEN (`npm test`)
+- ✅ 타입 체크 통과 (`npm run typecheck`)
+- ✅ 린트 오류 없음 (`npm run lint:fix`)
+- ✅ 빌드 성공 (`npm run build`)
+- ✅ 수동 테스트 통과 (실제 X.com에서 검증)
+- ✅ 접근성 검증 (WCAG 2.1 Level AA)
+- ✅ 성능 영향 최소화 (Lighthouse 점수 유지)
+- ✅ 문서 업데이트 (`ARCHITECTURE.md`, `CODING_GUIDELINES.md`)
+
+---
+
+#### 참조 문서
+
+- **스크롤 격리**:
+  [`ARCHITECTURE.md`](ARCHITECTURE.md#9-스크롤-격리-전략-scroll-isolation)
+- **툴바 가시성**: [`CODING_GUIDELINES.md`](CODING_GUIDELINES.md#ui-컴포넌트)
+- **Body Scroll Manager**:
+  [`src/shared/utils/scroll/body-scroll-manager.ts`](../src/shared/utils/scroll/body-scroll-manager.ts)
+- **Toolbar Position Based**:
+  [`src/shared/hooks/useToolbarPositionBased.ts`](../src/shared/hooks/useToolbarPositionBased.ts)
+
+---
 
 향후 새로운 Epic이 추가될 수 있습니다. 제안이 있으시면 이슈를 생성해주세요.향후
 새로운 Epic이 추가될 수 있습니다. 제안이 있으시면 이슈를 생성해주세요.
