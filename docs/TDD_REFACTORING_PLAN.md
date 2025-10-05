@@ -62,6 +62,101 @@ Epic들은
 
 ## 3. 향후 Epic 후보
 
+### Epic CODEQL-STATUS-REVIEW
+
+**목표**: CodeQL 보안 점검 현황 평가 및 향후 개선 방향 수립
+
+**상태**: ✅ 평가 완료 (2025-10-05)
+
+**우선순위**: Low (실질적 보안 문제 없음, 향후 확장성 고려)
+
+**예상 기간**: N/A (평가 완료, 실행은 외부 의존성에 따라 결정)
+
+#### 점검 결과 요약
+
+**CodeQL 스캔 실행 결과** (2025-10-05):
+
+- 총 규칙: 86개 (Fallback 쿼리 팩: `codeql/javascript-queries`)
+- 스캔 대상: 819/829 JavaScript/TypeScript 파일 (98.8%)
+- 발견된 경고: 1건 (WARNING)
+
+**발견된 문제**:
+
+| Rule ID                        | Severity | 위치                                                  | 상태                        |
+| ------------------------------ | -------- | ----------------------------------------------------- | --------------------------- |
+| js/prototype-pollution-utility | WARNING  | src/features/settings/services/SettingsService.ts:238 | ✅ False Positive 억제 완료 |
+
+**False Positive 억제 근거**:
+
+```typescript
+// codeql[js/prototype-pollution-utility]
+// Rationale: sanitizedValue is already sanitized by sanitizeSettingsTree() which filters
+// dangerous keys (__proto__, constructor, prototype). The key path is derived from
+// user input but the value has been sanitized against prototype pollution attacks.
+target[finalKey] = sanitizedValue;
+```
+
+#### 보안 상태 평가
+
+**✅ 실질적 보안 문제: 없음**
+
+- Epic CODEQL-SECURITY-HARDENING (2025-10-05) 완료로 5건 경고 이미 해결
+- False Positive 억제 정책 적용 완료 (Rationale 주석 명시)
+- 18개 보안 계약 테스트 GREEN (URL Sanitization 10건, Prototype Pollution 8건)
+
+**⚠️ 제약 사항**:
+
+- 로컬 환경: Fallback 쿼리 팩만 사용 (50+ 규칙)
+- GitHub Advanced Security 미활용: 표준 쿼리 팩 (400+ 규칙) 접근 불가
+- CI 환경: 표준 쿼리 팩 제공 가능 (GitHub Actions Code Scanning)
+
+#### 솔루션 분석
+
+| 옵션                                    | 장점                                                                                                                                        | 단점                                                                                            | 복잡도 | 결론                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------ | ---------------------------------------------------------- |
+| **A. 현상 유지 (Do Nothing)**           | - 추가 작업 없음<br>- 현재 보안 상태 양호<br>- 실질적 문제 없음                                                                             | - GitHub Advanced Security 미활용<br>- Fallback 쿼리 팩만 사용 (50+ 규칙)<br>- 향후 확장성 제한 | N/A    | 실질적 보안 문제가 없으므로 합리적이지만, 향후 확장성 제한 |
+| **B. GitHub Advanced Security 통합** ⭐ | - 표준 쿼리 팩 (400+ 규칙) 접근 가능<br>- GitHub Security Tab에서 보안 이슈 추적<br>- 자동 보안 업데이트 제안<br>- CI에서 표준 쿼리 팩 실행 | - 외부 의존성 (GitHub Advanced Security 라이선스)<br>- 조직/저장소 레벨 활성화 필요             | M      | 장기적으로 가장 효과적, 외부 의존성으로 HOLD 상태 유지     |
+| **C. 커스텀 CodeQL 규칙 확장**          | - 프로젝트별 맞춤 보안 규칙 추가 가능                                                                                                       | - CodeQL 쿼리 작성 복잡도 높음<br>- 유지보수 부담 증가<br>- 표준 쿼리 팩 대비 효과 제한적       | H      | 현재 보안 상태에서 과도한 투자                             |
+
+#### 권장 솔루션: 옵션 B (GitHub Advanced Security 통합) — HOLD
+
+**선택 이유**:
+
+- 표준 쿼리 팩 (400+ 규칙)은 Fallback 대비 8배 많은 보안 규칙 제공
+- GitHub Security Tab 통합으로 보안 이슈 추적 및 자동 업데이트 제안
+- CI 환경에서 표준 쿼리 팩 자동 실행 가능
+- 현재 보안 상태가 양호하므로 즉각적 작업 불필요
+
+**외부 의존성**:
+
+- GitHub Advanced Security 라이선스 (조직 또는 저장소 레벨)
+- 라이선스 획득 후 즉시 활성화 가능
+
+#### 향후 조치
+
+**즉시 조치** (완료):
+
+- [x] CodeQL 로컬 스캔 실행 (`npm run codeql:scan`)
+- [x] 결과 분석 및 False Positive 억제 검증
+- [x] TDD_REFACTORING_PLAN.md에 평가 Epic 추가
+
+**HOLD 상태 유지**:
+
+- [ ] TDD_REFACTORING_BACKLOG.md에 GITHUB-ADVANCED-SECURITY-INTEGRATION 등록
+      (이미 완료)
+- [ ] GitHub Advanced Security 라이선스 획득 시 즉시 활성화
+- [ ] CI 워크플로 개선: `github/codeql-action/init` + `analyze` 사용
+
+**참조**:
+
+- 백로그: `TDD_REFACTORING_BACKLOG.md` — GITHUB-ADVANCED-SECURITY-INTEGRATION
+  (HOLD)
+- 완료 로그: `TDD_REFACTORING_PLAN_COMPLETED.md` — Epic
+  CODEQL-SECURITY-HARDENING (2025-10-05)
+- 가이드: `docs/CODEQL_LOCAL_GUIDE.md` — 로컬 환경 제약 및 트러블슈팅
+
+---
+
 ### Epic GALLERY-UX-ENHANCEMENT
 
 **목표**: 갤러리 사용자 경험 개선 (툴바 호버 영역 개선)
