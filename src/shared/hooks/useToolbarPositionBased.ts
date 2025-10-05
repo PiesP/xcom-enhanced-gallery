@@ -204,7 +204,12 @@ export function useToolbarPositionBased(
   createEffect(() => {
     const enabled = enabledMemo();
 
-    if (!enabled || typeof document === 'undefined') {
+    // Guard: document 또는 addEventListener 미존재 시 early return
+    if (
+      !enabled ||
+      typeof document === 'undefined' ||
+      typeof document.addEventListener !== 'function'
+    ) {
       return;
     }
 
@@ -227,7 +232,9 @@ export function useToolbarPositionBased(
     document.addEventListener('keydown', handleKeyDown);
 
     onCleanup(() => {
-      document.removeEventListener('keydown', handleKeyDown);
+      if (typeof document.removeEventListener === 'function') {
+        document.removeEventListener('keydown', handleKeyDown);
+      }
     });
   });
 
