@@ -69,12 +69,12 @@ export interface MediaItemComponentProps {
 export function getMediaItemComponent(media: MediaInfo): Component<MediaItemComponentProps> {
   switch (media.type) {
     case 'video':
-      return VerticalVideoItem;
+      return VerticalVideoItem as Component<MediaItemComponentProps>;
     case 'gif':
-      return VerticalGifItem;
+      return VerticalGifItem as Component<MediaItemComponentProps>;
     case 'image':
     default:
-      return SolidVerticalImageItem;
+      return SolidVerticalImageItem as Component<MediaItemComponentProps>;
   }
 }
 
