@@ -523,7 +523,7 @@
       "valid": true
     },
     {
-      "source": "src/features/gallery/factories/MediaItemFactory.ts",
+      "source": "src/features/gallery/factories/MediaItemFactory.tsx",
       "dependencies": [],
       "dependents": [],
       "orphan": true,

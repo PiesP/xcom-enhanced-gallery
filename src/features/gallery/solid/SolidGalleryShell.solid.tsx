@@ -1,9 +1,11 @@
 /**
  * @fileoverview SolidJS 기반 갤러리 쉘
  * @description FRAME-ALT-001 Stage B - Gallery shell Solid 마이그레이션 1단계
+ * Epic MEDIA-TYPE-ENHANCEMENT Phase 1-4: MediaItemFactory 통합
  */
 
 import type { JSX } from 'solid-js';
+import { Dynamic } from 'solid-js/web';
 import { getSolidCore } from '@shared/external/vendors';
 import { GalleryContainer } from '@shared/components/isolation';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
@@ -12,7 +14,7 @@ import {
   type ToolbarSettingsRendererFactory,
 } from '@shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import { NavigationButton } from '@shared/components/ui/NavigationButton';
-import { SolidVerticalImageItem } from '@/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid';
+import { getMediaItemComponent } from '@/features/gallery/factories/MediaItemFactory';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types';
@@ -333,18 +335,22 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
   };
 
   const renderItems = createMemo(() =>
-    mediaItems().map((media, index) => (
-      <SolidVerticalImageItem
-        media={media}
-        index={index}
-        isActive={index === currentIndex()}
-        isFocused={index === currentIndex()}
-        isVisible={index === visibleIndex()}
-        forceVisible={index === currentIndex()}
-        fitMode={fitMode()}
-        onClick={() => handleItemSelection(index)}
-      />
-    ))
+    mediaItems().map((media, index) => {
+      const ComponentType = getMediaItemComponent(media);
+      return (
+        <Dynamic
+          component={ComponentType}
+          media={media}
+          index={index}
+          isActive={index === currentIndex()}
+          isFocused={index === currentIndex()}
+          isVisible={index === visibleIndex()}
+          forceVisible={index === currentIndex()}
+          fitMode={fitMode()}
+          onClick={() => handleItemSelection(index)}
+        />
+      );
+    })
   );
 
   onCleanup(() => {
