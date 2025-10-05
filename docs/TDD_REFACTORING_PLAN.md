@@ -226,18 +226,33 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ### Phase 1: MEDIA-TYPE-ENHANCEMENT
 
-#### Phase 1-1: 비디오 컴포넌트 개발 (RED → GREEN)
+#### Phase 1-1: 비디오 컴포넌트 개발 (RED → GREEN → REFACTOR) ✅ COMPLETED
 
 **Acceptance Criteria**:
 
-- [ ] `VerticalVideoItem.solid.tsx` 생성
-- [ ] 비디오 재생/일시정지 토글
-- [ ] 음소거/볼륨 조절
-- [ ] 진행바 표시 (시간 표시 포함)
-- [ ] 로딩/에러 상태 처리
-- [ ] 접근성: ARIA 라벨, 키보드 제어 (Space, ArrowUp/Down)
-- [ ] 디자인 토큰 사용 (하드코딩 금지)
-- [ ] PC 전용 입력 (Touch/Pointer 금지)
+- [x] `VerticalVideoItem.solid.tsx` 생성
+- [x] 비디오 재생/일시정지 토글
+- [x] 음소거/볼륨 조절
+- [x] 진행바 표시 (시간 표시 포함)
+- [x] 로딩/에러 상태 처리
+- [x] 접근성: ARIA 라벨, 키보드 제어 (Space, ArrowUp/Down)
+- [x] 디자인 토큰 사용 (하드코딩 금지)
+- [x] PC 전용 입력 (Touch/Pointer 금지)
+
+**구현 완료**: 2025-10-05 (Commit: dc651200)
+
+**테스트 결과**: 13/13 passing (GREEN maintained through REFACTOR)
+
+**주요 구현**:
+
+- Component: `VerticalVideoItem.solid.tsx` (215 lines)
+- Styles: `VerticalVideoItem.module.css` (CSS Modules + design tokens)
+- Tests: `vertical-video-item.contract.test.tsx` (13 contract tests)
+- Features: Play/pause, volume ±0.1, click-to-seek, loading/error overlays
+- Keyboard: Space (toggle), ArrowUp/Down (volume)
+- ARIA: video aria-label, button roles, time display
+- Design: --color-\*, --space-\*, --radius-\*, --duration-\*, --easing-\* tokens
+- Bundle: 472.60 KB raw, 117.34 KB gzip (no regression)
 
 **테스트**:
 

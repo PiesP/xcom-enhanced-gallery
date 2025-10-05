@@ -2,6 +2,323 @@
 
 ---
 
+## 2025-01-05: Epic MEDIA-TYPE-ENHANCEMENT Phase 1-1 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-01-05
+- **유형**: Epic MEDIA-TYPE-ENHANCEMENT Phase 1-1 (비디오 컴포넌트 개발)
+- **목적**: 갤러리에서 비디오 미디어 완전 지원 (재생 컨트롤, 키보드 네비게이션,
+  접근성)
+- **결과**: ✅ **완료** (13 contract tests GREEN, TDD RED → GREEN → REFACTOR)
+- **브랜치**: `feat/media-type-enhancement-phase1`
+- **커밋**: `dc651200` - feat(gallery): add video component
+  (MEDIA-TYPE-ENHANCEMENT Phase 1-1)
+
+### 배경
+
+**선정 일자**: 2025-01-05 **선정 이유**: 기존 갤러리는 이미지 중심이며
+비디오/GIF 미디어 타입은 제한적 지원. MediaInfo 타입은 video/gif를 지원하지만
+전용 렌더링 최적화 부재.
+
+**현재 구현 (Before)**:
+
+- ✅ MediaInfo 타입은 'image' | 'video' | 'gif' 지원
+- ✅ FallbackStrategy는 비디오 추출 지원
+- ✅ VerticalImageItem은 isVideoMedia로 비디오 감지
+- ❌ 비디오 전용 렌더링 최적화 부재
+- ❌ 비디오 재생 컨트롤 제한적
+- ❌ 미디어 타입별 UX 차별화 없음
+
+**문제점**:
+
+1. 단일 컴포넌트에 모든 미디어 타입 로직 집중 (복잡도 증가)
+2. 비디오 특화 기능 부족 (볼륨 조절, 진행바, 키보드 제어)
+3. 타입별 조건 분기 증가로 테스트 복잡도 증가
+
+**영향 범위**:
+
+- `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx`
+- `src/features/gallery/solid/SolidGalleryShell.solid.tsx`
+
+### Phase 1-1: 비디오 컴포넌트 개발
+
+**TDD 워크플로**: RED → GREEN → REFACTOR ✅
+
+#### 1단계: RED (실패하는 테스트 작성)
+
+**생성 파일**:
+
+- `test/features/gallery/vertical-video-item.contract.test.tsx` (13 tests)
+
+**테스트 항목**:
+
+1. **렌더링 계약** (2 tests):
+   - 비디오 URL이 주어지면 video 요소를 렌더링
+   - 비디오 요소에 적절한 ARIA 속성 설정 (aria-label)
+
+2. **재생 컨트롤 계약** (2 tests):
+   - 재생 버튼 클릭 시 비디오 재생
+   - 일시정지 버튼 클릭 시 비디오 일시정지
+
+3. **키보드 제어 계약** (2 tests):
+   - Space 키로 재생/일시정지 토글
+   - ArrowUp/Down 키로 볼륨 ±0.1 조절
+
+4. **로딩/에러 상태 계약** (2 tests):
+   - 로딩 중 스피너 표시 (loadStart, waiting 이벤트)
+   - 에러 발생 시 에러 메시지 표시 (error 이벤트)
+
+5. **입력 제약 계약** (2 tests):
+   - Touch 이벤트를 사용하지 않음 (PC 전용 설계)
+   - Pointer 이벤트를 사용하지 않음
+
+6. **디자인 토큰 계약** (1 test):
+   - 하드코딩된 색상/시간/이징을 사용하지 않음
+
+7. **진행바 계약** (2 tests):
+   - 진행바에 현재 시간과 전체 시간 표시 (MM:SS)
+   - 진행바 클릭 시 해당 위치로 이동 (click-to-seek)
+
+**초기 결과**: 전체 13 tests FAIL (예상된 RED 상태)
+
+#### 2단계: GREEN (최소 구현)
+
+**생성 파일**:
+
+- `src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.solid.tsx`
+  (215 lines)
+
+**구현 내용**:
+
+**Props 인터페이스**:
+
+```typescript
+interface VerticalVideoItemProps {
+  media: MediaInfo;
+  index: number;
+  isActive: boolean;
+  isFocused?: boolean;
+  isVisible?: boolean;
+  forceVisible?: boolean;
+  fitMode?: ImageFitMode;
+}
+```
+
+**SolidJS Signals (상태 관리)**:
+
+- `isPlaying`: 재생 중 여부
+- `isLoading`: 로딩 중 여부
+- `hasError`: 에러 발생 여부
+- `currentTime`: 현재 재생 시간 (초)
+- `duration`: 전체 재생 시간 (초)
+
+**핵심 기능**:
+
+1. **재생 컨트롤**:
+   - `handlePlayPause()`: 재생/일시정지 토글
+   - `videoRef.play()` / `videoRef.pause()` 직접 호출
+   - 상태 동기화: `isPlaying` Signal 업데이트
+
+2. **키보드 제어**:
+   - `handleKeyDown()`: Space, ArrowUp, ArrowDown 이벤트 처리
+   - Space: `handlePlayPause()` 호출
+   - ArrowUp: `videoRef.volume = Math.min(1, videoRef.volume + 0.1)`
+   - ArrowDown: `videoRef.volume = Math.max(0, videoRef.volume - 0.1)`
+
+3. **진행바**:
+   - `handleProgressBarClick()`: 클릭 위치 계산 → seekTime
+   - `getBoundingClientRect()`: 진행바 크기/위치 확인
+   - `videoRef.currentTime = seekTime` 설정
+
+4. **비디오 이벤트**:
+   - `onLoadStart`: `setIsLoading(true)`
+   - `onWaiting`: 로딩 중 상태 유지
+   - `onCanPlay`: `setIsLoading(false)`
+   - `onError`: `setHasError(true)`
+   - `onTimeUpdate`: `setCurrentTime(videoRef.currentTime)`
+   - `onLoadedMetadata`: `setDuration(videoRef.duration)`
+
+5. **유틸리티**:
+   - `getObjectFit()`: ImageFitMode → CSS object-fit 변환
+   - `formatTime()`: 초 → MM:SS 포맷 변환
+
+6. **접근성**:
+   - video aria-label: `${media.url}의 비디오`
+   - button role: "재생" / "일시정지"
+   - tabIndex={0}: 키보드 포커스 가능
+
+**인라인 스타일 (GREEN phase 임시)**:
+
+- 하드코딩 색상/시간 사용 (REFACTOR 단계에서 수정 예정)
+
+**결과**: 10/13 tests passing → 추가 수정 → **13/13 tests passing** ✅
+
+#### 3단계: REFACTOR (코드 품질 개선)
+
+**생성 파일**:
+
+- `src/features/gallery/components/vertical-gallery-view/VerticalVideoItem.module.css`
+  (150 lines)
+
+**리팩토링 항목**:
+
+1. **CSS Modules 적용**:
+   - 인라인 스타일 → CSS 클래스 마이그레이션
+   - `.container`, `.video`, `.loadingOverlay`, `.errorOverlay`, `.controls` 등
+   - class={styles.\*} 패턴 적용
+
+2. **디자인 토큰 사용**:
+
+   ```css
+   .container {
+     background: var(--color-bg-primary);
+   }
+   .loadingOverlay {
+     color: var(--color-text-inverse);
+     background: var(--color-overlay-medium);
+     border-radius: var(--radius-md);
+   }
+   .errorOverlay {
+     color: var(--color-text-inverse);
+     background: var(--color-error-bg);
+   }
+   .controls {
+     background: var(--color-overlay-strong);
+     padding: var(--space-md);
+   }
+   .progressBar {
+     background: var(--color-white-alpha-30);
+     border-radius: var(--radius-sm);
+   }
+   .progressFill {
+     background: var(--color-base-white);
+     transition: width var(--duration-smooth) var(--easing-standard);
+   }
+   .playButton {
+     background: var(--color-base-white);
+     color: var(--color-text-primary);
+     border-radius: var(--radius-md);
+     transition: background var(--duration-fast) var(--easing-standard);
+   }
+   .playButton:focus-visible {
+     outline: 2px solid var(--color-primary);
+   }
+   .timeDisplay {
+     color: var(--color-text-inverse);
+     font-family: monospace;
+   }
+   ```
+
+3. **JSDoc 주석 추가**:
+   - 파일 목적: `@fileoverview VerticalVideoItem Component (TDD REFACTOR Phase)`
+   - Epic 표시: `Epic: MEDIA-TYPE-ENHANCEMENT Phase 1-1`
+   - Props 설명
+   - 함수 역할 설명
+
+**결과**: 전체 13/13 tests passing (GREEN 유지) ✅
+
+**번들 검증**:
+
+- Raw: 472.60 KB (≤ 473 KB 목표)
+- Gzip: 117.34 KB (≤ 118 KB 목표)
+- 회귀 없음 ✅
+
+### 테스트 결과
+
+**계약 테스트**: `vertical-video-item.contract.test.tsx`
+
+```
+✓ 비디오 URL이 주어지면 video 요소를 렌더링한다
+✓ 비디오 요소에 적절한 ARIA 속성이 설정된다
+✓ 재생 버튼 클릭 시 비디오를 재생한다
+✓ 일시정지 버튼 클릭 시 비디오를 일시정지한다
+✓ 키보드 Space로 재생/일시정지를 토글한다
+✓ ArrowUp/Down으로 볼륨을 조절한다
+✓ 로딩 중 스피너를 표시한다
+✓ 에러 발생 시 에러 메시지를 표시한다
+✓ Touch 이벤트를 사용하지 않는다
+✓ Pointer 이벤트를 사용하지 않는다
+✓ 하드코딩된 색상/시간/이징을 사용하지 않는다
+✓ 진행바에 현재 시간과 전체 시간을 표시한다
+✓ 진행바 클릭 시 해당 위치로 이동한다
+
+Test Files: 1 passed (1)
+Tests: 13 passed (13)
+Duration: 88ms
+```
+
+### 주요 개선 사항
+
+**Before**:
+
+- 비디오 전용 렌더링 없음
+- 재생 컨트롤 제한적
+- 키보드 제어 부재
+- 디자인 토큰 미적용 (하드코딩)
+
+**After**:
+
+- ✅ 비디오 전용 컴포넌트 (`VerticalVideoItem.solid.tsx`)
+- ✅ 완전한 재생 컨트롤 (play/pause, volume, progress bar)
+- ✅ 키보드 네비게이션 (Space, ArrowUp/Down)
+- ✅ 접근성 (ARIA labels, roles, tabIndex)
+- ✅ 로딩/에러 상태 UI (spinner, error overlay)
+- ✅ 디자인 토큰 100% 사용 (CSS Modules)
+- ✅ PC 전용 입력 (Touch/Pointer 금지)
+- ✅ click-to-seek 기능 (진행바 클릭)
+- ✅ 시간 표시 (MM:SS 포맷)
+
+### 기술 부채 제거
+
+1. **단일 책임 원칙 (SRP)**: 비디오 로직을 전용 컴포넌트로 분리
+2. **테스트 격리**: 비디오 기능만 독립적으로 테스트 가능
+3. **확장성**: 향후 GIF, 오디오 등 추가 미디어 타입 지원 용이
+4. **유지보수성**: CSS Modules + 디자인 토큰으로 스타일 관리 일관성 확보
+
+### 다음 단계
+
+**Phase 1-2**: GIF 컴포넌트 개발 (선택적)
+
+- GIF는 `<img>` 태그로도 처리 가능하므로, 추가 기능(자동 재생 제어, 반복 횟수
+  등)이 필요한 경우만 별도 컴포넌트 개발
+
+**Phase 1-3**: 미디어 Factory 패턴 적용 (우선순위 높음)
+
+- `MediaItemFactory.ts` 생성
+- 타입 기반 컴포넌트 선택 로직
+- `SolidGalleryShell` 통합
+- 기존 `VerticalImageItem` 호환성 유지
+
+**예상 완료**: 2025-01-06 ~ 2025-01-08
+
+### 교훈
+
+**성공 요인**:
+
+1. **TDD 엄격 준수**: RED → GREEN → REFACTOR 순서로 안전한 구현
+2. **계약 테스트 우선**: 13개 테스트로 모든 요구사항 명확히 정의
+3. **점진적 개선**: GREEN phase는 최소 구현, REFACTOR에서 품질 향상
+4. **디자인 시스템 일관성**: 디자인 토큰만 사용하여 테마 일관성 확보
+
+**개선 포인트**:
+
+1. **초기 타입 설계**: GREEN phase에서 일부 타입 불일치 발생 (ImageFitMode →
+   object-fit 변환)
+2. **JSDOM 제약**: HTMLVideoElement 타입 부재로 테스트 시 타입 캐스팅 필요
+3. **토큰 누락**: 일부 --xeg-_ 토큰이 디자인 시스템에 없어 기존 --color-_
+   토큰으로 매핑
+
+**재사용 가능한 패턴**:
+
+- SolidJS Signals를 통한 반응형 상태 관리
+- CSS Modules + 디자인 토큰 조합
+- 키보드 이벤트 핸들러 패턴 (Space, Arrow 키)
+- ARIA 속성 설정 패턴
+- 진행바 클릭 계산 로직 (getBoundingClientRect)
+
+---
+
 ## 2025-01-05: Epic SCROLL-ISOLATION-CONSOLIDATION 완전 완료 ✅
 
 ### 개요
