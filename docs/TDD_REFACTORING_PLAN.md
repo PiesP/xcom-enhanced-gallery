@@ -437,58 +437,10 @@ npm test -- auto-focus-soft-visual.contract
 - [ ] ARIA 속성 정확히 설정됨
 - [ ] 타입 안전성 유지 (선택적 prop, 기본값 `false`)
 - [ ] 11/11 테스트 통과
-- [ ] 접근성 검증 완료
+- [x] 접근성 검증 완료
 
-**예상 번들 크기 영향**: +0.5 KB (CSS + 로직 추가)
-
-#### Phase 2-2: visibleIndex 기반 시각적 힌트 적용
-
-**Acceptance Criteria**:
-
-- [ ] `useGalleryVisibleIndex` 훅을 `SolidGalleryShell`에 통합
-- [ ] visibleIndex를 각 아이템의 `isVisible` prop으로 전달
-- [ ] currentIndex와 visibleIndex 독립 유지
-- [ ] 자동 스크롤 미발생 검증
-
-**구현**:
-
-```typescript
-// SolidGalleryShell.solid.tsx
-const { visibleIndex } = useGalleryVisibleIndex(
-  () => itemsContainerRef,
-  totalCount(),
-  { rafCoalesce: true }
-);
-
-const renderItems = createMemo(() =>
-  mediaItems().map((media, index) => (
-    <SolidVerticalImageItem
-      media={media}
-      index={index}
-      isActive={index === currentIndex()}
-      isFocused={index === currentIndex()}
-      isVisible={index === visibleIndex()} // 새로 추가
-      forceVisible={index === currentIndex()}
-      fitMode={fitMode()}
-      onClick={() => handleItemSelection(index)}
-    />
-  ))
-);
-```
-
-**테스트**:
-
-```typescript
-// test/features/gallery/auto-focus-soft.contract.test.tsx
-describe('Auto Focus Soft Contract', () => {
-  it('visibleIndex 아이템에 .visible 클래스가 적용된다', () => {});
-  it('visibleIndex 변경 시 자동 스크롤이 발생하지 않는다', () => {});
-  it('currentIndex와 visibleIndex가 독립적으로 동작한다', () => {});
-  it('키보드 네비게이션 시 currentIndex만 변경된다', () => {});
-  it('스크롤 시 visibleIndex만 변경된다', () => {});
-  it('visibleIndex 아이템에 aria-current="true"가 설정된다', () => {});
-});
-```
+**예상 번들 크기 영향**: +0.5 KB (CSS + 로직 추가) ✅ **실제**: +3.04 KB raw,
++0.43 KB gzip
 
 #### Phase 2-3: 접근성 강화
 
