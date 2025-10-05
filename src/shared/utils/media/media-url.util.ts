@@ -156,10 +156,16 @@ export function createMediaInfoFromVideo(
       return null;
     }
 
+    // lgtm[js/incomplete-url-substring-sanitization]
+    // Rationale: isTrustedTwitterMediaHostname() uses URL object to extract exact hostname
+    // and validates against allowlist (TWITTER_MEDIA_HOSTS). No substring-based validation.
     if (src && !isTrustedTwitterMediaHostname(src)) {
       return null;
     }
 
+    // lgtm[js/incomplete-url-substring-sanitization]
+    // Rationale: isTrustedTwitterMediaHostname() uses URL object to extract exact hostname
+    // and validates against allowlist (TWITTER_MEDIA_HOSTS). No substring-based validation.
     if (poster && !isTrustedTwitterMediaHostname(poster)) {
       return null;
     }

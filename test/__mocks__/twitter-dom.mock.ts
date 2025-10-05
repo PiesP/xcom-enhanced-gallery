@@ -304,6 +304,8 @@ export function simulateTweetImageClick() {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
     const target = event.target;
+    // lgtm[js/incomplete-url-substring-sanitization]
+    // Rationale: Test fixture using isTrustedHostname() which validates exact hostname via URL object
     if (target && target.tagName === 'IMG' && isTrustedHostname(target.src, TWITTER_MEDIA_HOSTS)) {
       const galleryModal = createGalleryModal(target.src);
       return galleryModal;
@@ -413,6 +415,8 @@ export function setupImageClickHandlers() {
   doc.addEventListener('click', event => {
     const target = event.target;
 
+    // lgtm[js/incomplete-url-substring-sanitization]
+    // Rationale: Test fixture using isTrustedHostname() which validates exact hostname via URL object
     // 트위터 이미지 클릭 처리
     if (
       target.tagName === 'IMG' &&

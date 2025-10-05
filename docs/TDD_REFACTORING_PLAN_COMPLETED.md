@@ -2,6 +2,220 @@
 
 ---
 
+## 2025-10-05: Epic CODEQL-FALSE-POSITIVE-SUPPRESSION 완료 ✅
+
+### 개요
+
+- **작업일**: 2025-10-05
+- **유형**: CodeQL False Positive 억제
+- **목적**: 보안 함수 동작 정상, 테스트 GREEN 상태에서 CodeQL 정적 분석 경고 5건
+  억제
+- **결과**: ✅ **완료** (5개 위치 Suppression 주석 추가)
+- **브랜치**: `feat/codeql-false-positive-suppression`
+- **커밋**: TBD
+
+### 배경
+
+**문제점**:
+
+- CodeQL 경고 5건 존재 (URL Sanitization 4건, Prototype Pollution 1건)
+- 실제 코드는 이미 안전하게 구현됨 (Epic CODEQL-SECURITY-HARDENING 완료)
+- 18개 보안 계약 테스트 + 2679개 전체 테스트 GREEN
+- CodeQL이 보안 함수(`isTrustedTwitterMediaHostname`, `sanitizeSettingsTree`)의
+  내부 구현을 정적으로 인식하지 못함
+
+**현상**:
+
+```text
+js/incomplete-url-substring-sanitization (4건):
+- src/shared/utils/media/media-url.util.ts: 159, 163
+- test/__mocks__/twitter-dom.mock.ts: 304, 414
+- 사용: isTrustedTwitterMediaHostname() — URL 객체로 정확한 hostname 추출 후 allowlist 검증
+
+js/prototype-pollution-utility (1건):
+- src/features/settings/services/SettingsService.ts: 232
+- 사용: sanitizeSettingsTree() — 위험 키(__proto__, constructor, prototype) 제거
+```
+
+**솔루션 선택**: 옵션 A (CodeQL Suppression Comments)
+
+- 실용적이고 빠른 구현
+- 이미 보안 테스트로 검증된 코드
+- GitHub Advanced Security 환경에서 표준 방식
+- 억제 사유를 명확히 기록하여 향후 리뷰 용이
+
+### 완료된 Phase
+
+#### Phase 1: RED — ✅ 완료 (Epic CODEQL-SECURITY-HARDENING)
+
+**작업 내용**:
+
+- URL Sanitization 테스트: 10/10 GREEN
+- Prototype Pollution 테스트: 8/8 GREEN
+- 전체 테스트: 2679/2679 GREEN
+
+**파일**:
+
+- `test/security/url-sanitization-hardening.contract.test.ts` (10 tests)
+- `test/security/prototype-pollution-hardening.contract.test.ts` (8 tests)
+
+**결과**: 보안 함수가 이미 올바르게 동작 중 (False Positive 확인)
+
+#### Phase 2: GREEN — Suppression 주석 추가 ✅
+
+**작업 내용**:
+
+1. `src/shared/utils/media/media-url.util.ts` (2건)
+   - 159번 라인: `isTrustedTwitterMediaHostname(src)` 검증
+   - 163번 라인: `isTrustedTwitterMediaHostname(poster)` 검증
+   - Rationale: URL 객체를 통한 정확한 hostname 추출 및 allowlist 검증
+
+2. `test/__mocks__/twitter-dom.mock.ts` (2건)
+   - 304번 라인: 테스트 픽스처 생성 (`simulateTweetImageClick`)
+   - 414번 라인: 테스트 픽스처 생성 (`setupImageClickHandlers`)
+   - Rationale: 테스트 픽스처에서 `isTrustedHostname()` 사용 (안전한 검증)
+
+3. `src/features/settings/services/SettingsService.ts` (1건)
+   - 232번 라인: `target[finalKey] = sanitizedValue` 할당
+   - Rationale: `sanitizeSettingsTree()`로 이미 정화된 값 사용 (위험 키 제거
+     완료)
+
+**Suppression 주석 형식**:
+
+```typescript
+// lgtm[js/incomplete-url-substring-sanitization]
+// Rationale: isTrustedTwitterMediaHostname() uses URL object to extract exact hostname
+// and validates against allowlist (TWITTER_MEDIA_HOSTS). No substring-based validation.
+
+// lgtm[js/prototype-pollution-utility]
+// Rationale: sanitizedValue is already sanitized by sanitizeSettingsTree() which filters
+// dangerous keys (__proto__, constructor, prototype).
+```
+
+**Acceptance 결과**:
+
+- [x] 5개 위치에 Suppression 주석 추가
+- [x] 억제 사유(Rationale) 명확히 기록
+- [x] 타입 체크 GREEN
+- [x] 린트 GREEN
+- [x] 전체 테스트 GREEN (2679 passed)
+- [x] 번들 크기 변화 없음 (471.67 KB raw, 117.12 KB gzip)
+
+#### Phase 3: REFACTOR — 문서 업데이트 ✅
+
+**작업 내용**:
+
+1. `codeql-improvement-plan.md` 업데이트
+   - Suppression 적용 이력 기록
+   - False Positive 억제 사유 정리
+   - 상태 업데이트: "해결 완료" → "해결 완료 + 억제됨"
+
+2. `docs/ARCHITECTURE.md` 보안 섹션 업데이트
+   - CodeQL False Positive 억제 패턴 추가
+   - 보안 검증 흐름 명시 (3-Phase TDD)
+   - Epic 완료 기록
+
+**Acceptance 결과**:
+
+- [x] 문서 2개 업데이트 (codeql-improvement-plan.md, ARCHITECTURE.md)
+- [x] 품질 게이트 GREEN (typecheck, lint, test, build)
+- [x] 전체 테스트 GREEN (2679 passed)
+
+### 변경 파일 요약
+
+**소스 코드** (3 files):
+
+- `src/shared/utils/media/media-url.util.ts`: Suppression 주석 2건 추가
+- `test/__mocks__/twitter-dom.mock.ts`: Suppression 주석 2건 추가
+- `src/features/settings/services/SettingsService.ts`: Suppression 주석 1건 추가
+
+**문서** (2 files):
+
+- `codeql-improvement-plan.md`: False Positive 억제 이력 기록
+- `docs/ARCHITECTURE.md`: CodeQL 보안 섹션 강화
+
+### 품질 게이트 결과
+
+**타입 체크**: ✅ PASS
+
+```pwsh
+npm run typecheck
+# 출력: (오류 없음)
+```
+
+**린트**: ✅ PASS
+
+```pwsh
+npm run lint
+# 출력: (경고 없음)
+```
+
+**테스트**: ✅ PASS (2679/2679)
+
+```pwsh
+npm test
+# Test Files  426 passed | 18 skipped (444)
+# Tests  2679 passed | 107 skipped | 1 todo (2787)
+```
+
+**빌드**: ✅ PASS
+
+```pwsh
+npm run build
+# Raw: 471.67 KB (≤473 KB ✅)
+# Gzip: 117.12 KB (≤118 KB ✅)
+```
+
+### 번들 영향
+
+**크기 변화**: 없음 (주석 추가만, 런타임 영향 0)
+
+- Raw 번들: 471.67 KB (목표: 473 KB 이하 ✅)
+- Gzip 번들: 117.12 KB (목표: 118 KB 이하 ✅)
+
+### 성과 요약
+
+**보안 강화**:
+
+- ✅ CodeQL 경고 5건 억제 (False Positive 명확히 기록)
+- ✅ 보안 함수 동작 검증 완료 (18개 계약 테스트 GREEN)
+- ✅ 억제 사유 문서화 (향후 리뷰 용이)
+
+**품질 유지**:
+
+- ✅ 전체 테스트 GREEN (2679 passed)
+- ✅ 번들 크기 회귀 없음
+- ✅ 타입/린트 오류 없음
+
+**프로세스 개선**:
+
+- ✅ False Positive 억제 패턴 확립
+- ✅ CodeQL 보안 검증 흐름 문서화 (3-Phase TDD)
+- ✅ GitHub Advanced Security 표준 방식 적용
+
+### 교훈 및 향후 개선
+
+**배운 점**:
+
+1. **정적 분석 한계 인식**: CodeQL이 모든 보안 패턴을 이해하지 못함 (보안 함수
+   내부 구현 추적 실패)
+2. **Suppression 주석의 가치**: False Positive 억제 시 Rationale 주석으로 억제
+   사유 명확히 기록
+3. **테스트 기반 검증**: 보안 계약 테스트로 실제 동작 검증 (정적 분석 보완)
+
+**향후 개선**:
+
+- CodeQL Custom Query 작성 검토 (보안 함수 패턴 학습)
+- GitHub Advanced Security 활성화 시 표준 쿼리 팩 활용
+
+### 관련 Epic
+
+- **선행**: CODEQL-SECURITY-HARDENING (2025-10-05) — 보안 함수 구현 및 테스트
+  작성
+- **후속**: 없음 (보안 강화 완료)
+
+---
+
 ## 2025-10-05: Epic THEME-ICON-UNIFY-002 Phase B 완료 ✅ (Phase C는 JSDOM 제약으로 SKIP)
 
 ### 개요
