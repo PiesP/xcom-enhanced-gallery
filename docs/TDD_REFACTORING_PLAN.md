@@ -339,28 +339,81 @@ describe('MediaItemFactory Contract', () => {
 
 ### Phase 2: AUTO-FOCUS-UPDATE (Soft Focus)
 
-#### Phase 2-1: 시각적 강조 스타일 추가
+#### Phase 2-1: 시각적 강조 스타일 추가 🔄 [RED]
+
+**목표**: VerticalImageItem, VerticalVideoItem에 `isVisible` prop 추가
+
+**RED 단계**: ✅ **COMPLETE** (2025-01-XX)
+
+1. Contract 테스트 작성: ✅
+   - 테스트 파일:
+     `test/features/gallery/auto-focus-soft-visual.contract.test.tsx` (239
+     lines)
+   - 테스트 결과: **11개 중 8개 실패, 3개 통과** (예상된 RED)
+   - 실패 이유:
+     - `.container` 요소 null → `isVisible` prop 미구현
+     - CSS `.visible` 클래스 미정의
+     - ARIA `aria-current` 로직 미구현
+   - 통과 테스트: 타입 안전성 검증 (TypeScript 레벨)
+   - 브랜치: `feat/auto-focus-soft-phase2-1`
+   - 커밋: [다음 단계]
+
+**GREEN 단계**: ⏳
+
+1. VerticalImageItem 수정:
+   - `isVisible?: boolean` prop 추가
+   - CSS 클래스 바인딩: `${styles.container} ${isVisible ? styles.visible : ''}`
+   - ARIA 속성: `aria-current={isVisible ? 'true' : undefined}`
+
+2. VerticalVideoItem 수정:
+   - 동일한 `isVisible` prop 추가
+   - 동일한 클래스/ARIA 로직 적용
+
+3. 디자인 토큰 정의:
+
+   ```css
+   /* src/styles/design-tokens.css */
+   --xeg-item-visible-border: 2px solid var(--xeg-accent);
+   --xeg-item-visible-shadow: 0 0 12px var(--xeg-accent-alpha);
+   --xeg-item-visible-bg: var(--xeg-bg-hover);
+   ```
+
+4. CSS 스타일 추가:
+
+   ```css
+   /* VerticalImageItem.module.css, VerticalVideoItem.module.css */
+   .container.visible {
+     border: var(--xeg-item-visible-border);
+     box-shadow: var(--xeg-item-visible-shadow);
+     background: var(--xeg-item-visible-bg);
+   }
+   ```
+
+**REFACTOR 단계**: ⏳
+
+1. 코드 품질:
+   - JSDoc 문서화 (특히 `isVisible` 동작)
+   - CSS 클래스 적용 일관성 검토
+   - 접근성 검증 (스크린 리더 테스트)
+
+2. 테스트 검증:
+
+   ```bash
+   npm test -- auto-focus-soft-visual.contract
+   ```
 
 **Acceptance Criteria**:
 
-- [ ] `isVisible` prop 추가 (VerticalImageItem, VerticalVideoItem)
-- [ ] 디자인 토큰 추가:
-  - `--xeg-item-visible-border: 2px solid var(--xeg-accent)`
-  - `--xeg-item-visible-shadow: 0 0 12px var(--xeg-accent-alpha)`
-  - `--xeg-item-visible-bg: var(--xeg-bg-hover)`
-- [ ] CSS 클래스: `.visible` (border + shadow + background)
-- [ ] 접근성: `aria-current="true"` 추가
+- [x] Contract 테스트 작성 완료 (11 tests)
+- [x] RED 상태 달성 (8 failed, 3 passed)
+- [ ] `isVisible` prop이 모든 미디어 아이템에 추가됨
+- [ ] `.visible` CSS 클래스가 디자인 토큰만 사용
+- [ ] ARIA 속성 정확히 설정됨
+- [ ] 타입 안전성 유지 (선택적 prop, 기본값 `false`)
+- [ ] 11/11 테스트 통과
+- [ ] 접근성 검증 완료
 
-**CSS**:
-
-```css
-/* VerticalImageItem.module.css */
-.container.visible {
-  border: var(--xeg-item-visible-border);
-  box-shadow: var(--xeg-item-visible-shadow);
-  background: var(--xeg-item-visible-bg);
-}
-```
+**예상 번들 크기 영향**: +0.5 KB (CSS + 로직 추가)
 
 #### Phase 2-2: visibleIndex 기반 시각적 힌트 적용
 
