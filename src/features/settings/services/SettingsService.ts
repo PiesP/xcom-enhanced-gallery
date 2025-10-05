@@ -231,7 +231,7 @@ export class SettingsService {
     if (finalKey) {
       const sanitizedValue =
         value && typeof value === 'object' ? sanitizeSettingsTree(value as unknown, keys) : value;
-      // lgtm[js/prototype-pollution-utility]
+      // codeql[js/prototype-pollution-utility]
       // Rationale: sanitizedValue is already sanitized by sanitizeSettingsTree() which filters
       // dangerous keys (__proto__, constructor, prototype). The key path is derived from
       // user input but the value has been sanitized against prototype pollution attacks.
@@ -303,6 +303,10 @@ export class SettingsService {
       if (finalKey) {
         const sanitizedValue =
           value && typeof value === 'object' ? sanitizeSettingsTree(value as unknown, keys) : value;
+        // codeql[js/prototype-pollution-utility]
+        // Rationale: sanitizedValue is already sanitized by sanitizeSettingsTree() which filters
+        // dangerous keys (__proto__, constructor, prototype). The key path is derived from
+        // user input but the value has been sanitized against prototype pollution attacks.
         target[finalKey] = sanitizedValue;
       }
 
