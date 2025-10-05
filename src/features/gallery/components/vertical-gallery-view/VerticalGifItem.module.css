@@ -57,7 +57,9 @@
   align-items: center;
   justify-content: center;
   background: var(--color-bg-overlay);
-  backdrop-filter: blur(var(--space-2));
+  /* Epic GLASSMORPHISM-CLEANUP: backdrop-filter removed */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   z-index: var(--xeg-z-toolbar);
 }
 
@@ -101,7 +103,9 @@
   gap: var(--space-2);
   padding: var(--space-2);
   background: var(--color-bg-overlay);
-  backdrop-filter: blur(var(--space-2));
+  /* Epic GLASSMORPHISM-CLEANUP: backdrop-filter removed */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border-radius: var(--xeg-radius-lg);
   opacity: 0;
   transition: opacity var(--xeg-transition-fast);

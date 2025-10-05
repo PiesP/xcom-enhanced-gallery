@@ -222,7 +222,7 @@
   width: 60px;
   height: 4px;
   background: var(--xeg-color-primary);
-  border-radius: 2px;
+  border-radius: var(--xeg-radius-sm, var(--radius-sm, 4px));
   opacity: 0;
   transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   pointer-events: none;
@@ -234,7 +234,9 @@
 /* 툴바 숨김 상태에서 힌트 표시 */
 .container:not(.initialToolbarVisible) .toolbarHint {
   opacity: 0.6;
-  animation: toolbarHintPulse 2s ease-in-out infinite;
+  /* Pulse animation: 2000ms = 6x slower duration for gentle pulsing */
+  animation: toolbarHintPulse calc(var(--xeg-duration-slow, 350ms) * 6)
+    var(--xeg-easing-ease-in-out, ease-in-out) infinite;
 }
 
 /* 툴바 표시 상태에서 힌트 숨김 */
