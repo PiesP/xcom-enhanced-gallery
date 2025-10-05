@@ -23,321 +23,55 @@ Epic들을 관리합니다. 완료된 내용은 `TDD_REFACTORING_PLAN_COMPLETED.
 
 ## 2. 활성 Epic 현황
 
-### Epic: MEDIA-TYPE-ENHANCEMENT (미디어 타입 지원 강화)
+### Epic: MEDIA-TYPE-ENHANCEMENT (미디어 타입 지원 강화) ✅ **100% COMPLETE**
 
 **목표**: 이미지 외 미디어(비디오, GIF)를 갤러리에서 완전히 지원하도록 개선
 
-**현재 상태 분석**:
+**최종 상태** (2025-10-05):
+
+- ✅ Phase 1-1: VerticalVideoItem 개발 완료 (2025-10-05)
+- ✅ Phase 1-2: VerticalGifItem 개발 완료 (2025-10-05)
+- ✅ Phase 1-3: MediaItemFactory 패턴 적용 (2025-01-05)
+- ✅ Phase 1-4: SolidGalleryShell 통합 완료 (2025-10-05)
+
+**달성 내용**:
 
 - ✅ MediaInfo 타입은 'image' | 'video' | 'gif' 지원
-- ✅ FallbackStrategy는 비디오/이미지 추출 지원
-- ✅ VerticalImageItem은 isVideoMedia로 비디오 감지
-- ❌ 비디오/GIF 전용 렌더링 최적화 부재
-- ❌ 비디오 재생 컨트롤이 제한적
-- ❌ 미디어 타입별 UX 차별화 없음
-
-**솔루션 분석**:
-
-#### 옵션 A: 전용 컴포넌트 개발 (권장)
-
-**장점**:
-
-- 미디어 타입별 최적화된 렌더링
-- 비디오: 재생/일시정지, 음소거, 볼륨, 진행바
-- GIF: 자동 재생, 반복 제어
-- 단일 책임 원칙 준수 (SRP)
-- 향후 확장성 (예: 오디오, PDF 등)
-- 테스트 격리 용이
-
-**단점**:
-
-- 초기 개발 비용 증가
-- 컴포넌트 수 증가
-- Props 인터페이스 통일 필요
-
-**구현 계획**:
-
-1. `VerticalVideoItem.solid.tsx` 생성
-2. `VerticalGifItem.solid.tsx` 생성 (선택적)
-3. `MediaItemFactory.ts` - 타입별 컴포넌트 선택
-4. `SolidGalleryShell` - Factory 패턴 적용
-
-#### 옵션 B: 기존 컴포넌트 확장
-
-**장점**:
-
-- 빠른 구현
-- 기존 코드 재사용
-- 컴포넌트 수 유지
-
-**단점**:
-
-- 단일 컴포넌트 복잡도 증가
-- 타입별 조건 분기 증가
-- 테스트 복잡도 증가
-- 장기 유지보수 어려움
-
-#### 옵션 C: 하이브리드 접근
-
-**장점**:
-
-- 점진적 마이그레이션
-- 공통 로직 추상화 + 타입별 특화
-- 리스크 분산
-
-**단점**:
-
-- 아키텍처 복잡도 증가
-- 명확한 경계 설정 필요
-
-**최종 선택**: **옵션 A (전용 컴포넌트 개발)**
-
-- 이유: 장기 유지보수성, 테스트 격리, SRP 준수, 확장성
-
----
-
-### Epic: AUTO-FOCUS-UPDATE (자동 포커스 갱신)
-
-**목표**: 화면에 표시된 미디어 중 가장 적절한 아이템을 자동으로 포커스하되, 자동
-스크롤은 비활성화
-
-**현재 상태 분석**:
-
-- ✅ `useVisibleIndex` 훅으로 가시 인덱스 추적 (IntersectionObserver)
-- ✅ visibleIndex 갱신 시 자동 스크롤 미발생 (이미 구현됨)
-- ❌ visibleIndex → currentIndex 동기화 없음
-- ❌ 수동 네비게이션과 자동 포커스 충돌 가능성
-
-**솔루션 분석**:
-
-#### 옵션 A: visibleIndex → currentIndex 단방향 동기화 (신중히 검토 필요)
-
-**장점**:
-
-- 단순한 구현
-- 즉각적인 포커스 반영
-
-**단점**:
-
-- 사용자 의도와 충돌 위험
-  - 예: 사용자가 키보드로 네비게이션 중 갑자기 포커스 이탈
-  - 예: 스크롤 중 의도하지 않은 인덱스 변경
-- 자동 스크롤 비활성화가 어려움
-  - currentIndex 변경 시 기존 createEffect가 자동 스크롤 트리거
-- UX 혼란 초래 가능성
-
-#### 옵션 B: 조건부 동기화 (권장)
-
-**장점**:
-
-- 사용자 의도 존중
-- 명시적 활성화 필요 (설정 또는 모드)
-- 자동/수동 모드 전환 가능
-- 자동 스크롤과 분리 가능
-
-**단점**:
-
-- 구현 복잡도 증가
-- 설정 UI 필요
-- 모드 전환 로직 추가
-
-**구현 계획**:
-
-1. 설정 추가: `gallery.autoFocusEnabled` (기본값: false)
-2. 타이머 기반 디바운스 (1초)
-3. 수동 네비게이션 감지 플래그
-4. 자동 스크롤 억제 플래그 분리
-
-#### 옵션 C: 인디케이터 전용 (현재 상태 유지)
-
-**장점**:
-
-- 안전한 UX (변경 없음)
-- 사용자 혼란 없음
-- 테스트 불필요
-
-**단점**:
-
-- 요구사항 미충족
-- 개선 효과 없음
-
-#### 옵션 D: 하이브리드 - Soft Focus (절충안, 추천)
-
-**장점**:
-
-- 시각적 힌트만 제공 (border, shadow 등)
-- currentIndex는 사용자 액션에만 변경
-- visibleIndex는 독립적으로 UI 강조
-- 자동 스크롤 충돌 없음
-- 점진적 UX 개선
-
-**단점**:
-
-- 시각적 구분 필요 (디자인 작업)
-- "자동 포커스"의 정의 재해석
-
-**구현 계획** (옵션 D):
-
-1. VerticalImageItem에 `isVisible` prop 추가
-2. visibleIndex 기반 시각적 강조 스타일
-3. currentIndex는 명시적 액션에만 변경
-4. 디자인 토큰 추가: `--xeg-item-visible-border`, `--xeg-item-visible-shadow`
-
-**최종 선택**: **옵션 D (Soft Focus - 하이브리드 접근)**
-
-- 이유: 사용자 의도 존중, 자동 스크롤 충돌 없음, 안전한 UX, 점진적 개선
-
----
-
-## 3. 솔루션 비교 매트릭스
-
-### MEDIA-TYPE-ENHANCEMENT
-
-| 기준            | 옵션 A (전용) | 옵션 B (확장) | 옵션 C (하이브리드) |
-| --------------- | ------------- | ------------- | ------------------- |
-| **유지보수성**  | ⭐⭐⭐⭐⭐    | ⭐⭐          | ⭐⭐⭐              |
-| **테스트 격리** | ⭐⭐⭐⭐⭐    | ⭐⭐          | ⭐⭐⭐⭐            |
-| **초기 개발**   | ⭐⭐          | ⭐⭐⭐⭐⭐    | ⭐⭐⭐              |
-| **확장성**      | ⭐⭐⭐⭐⭐    | ⭐⭐          | ⭐⭐⭐⭐            |
-| **SRP 준수**    | ⭐⭐⭐⭐⭐    | ⭐⭐          | ⭐⭐⭐⭐            |
-| **코드 복잡도** | ⭐⭐⭐⭐      | ⭐⭐          | ⭐⭐⭐              |
-| **종합 점수**   | 29/30         | 14/30         | 23/30               |
-
-### AUTO-FOCUS-UPDATE
-
-| 기준              | 옵션 A (단방향) | 옵션 B (조건부) | 옵션 C (유지) | 옵션 D (Soft) |
-| ----------------- | --------------- | --------------- | ------------- | ------------- |
-| **UX 안전성**     | ⭐⭐            | ⭐⭐⭐⭐        | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐⭐    |
-| **사용자 의도**   | ⭐⭐            | ⭐⭐⭐⭐⭐      | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐⭐    |
-| **구현 복잡도**   | ⭐⭐⭐⭐⭐      | ⭐⭐⭐          | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐      |
-| **스크롤 제어**   | ⭐⭐            | ⭐⭐⭐⭐        | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐⭐    |
-| **요구사항 충족** | ⭐⭐⭐⭐⭐      | ⭐⭐⭐⭐⭐      | ⭐            | ⭐⭐⭐⭐      |
-| **테스트 용이성** | ⭐⭐⭐⭐        | ⭐⭐⭐          | ⭐⭐⭐⭐⭐    | ⭐⭐⭐⭐      |
-| **종합 점수**     | 18/30           | 24/30           | 29/30         | 28/30         |
-
-**최종 선택 근거**:
-
-1. **MEDIA-TYPE-ENHANCEMENT**: 옵션 A (29점) - 장기 유지보수성과 확장성 우선
-2. **AUTO-FOCUS-UPDATE**: 옵션 D (28점) - 안전한 UX와 점진적 개선 균형
+- ✅ 비디오 전용 컴포넌트 (재생 컨트롤, 진행바, 볼륨)
+- ✅ GIF 전용 컴포넌트 (Canvas 기반 재생/일시정지, 반복 제어)
+- ✅ Factory 패턴으로 타입별 자동 라우팅
+- ✅ 미디어 타입별 최적화된 UX
 
 ---
 
 ## 4. Phase별 구현 계획
 
-### Phase 1: MEDIA-TYPE-ENHANCEMENT
+### Phase 1: MEDIA-TYPE-ENHANCEMENT ✅ **100% COMPLETE**
 
-#### Phase 1-1: 비디오 컴포넌트 개발 (RED → GREEN → REFACTOR) ✅ COMPLETED
+모든 Phase 완료. 상세 내용:
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
-**Acceptance Criteria**:
+#### Phase 1-1: 비디오 컴포넌트 개발 ✅ COMPLETED (2025-10-05, dc651200)
 
-- [x] `VerticalVideoItem.solid.tsx` 생성
-- [x] 비디오 재생/일시정지 토글
-- [x] 음소거/볼륨 조절
-- [x] 진행바 표시 (시간 표시 포함)
-- [x] 로딩/에러 상태 처리
-- [x] 접근성: ARIA 라벨, 키보드 제어 (Space, ArrowUp/Down)
-- [x] 디자인 토큰 사용 (하드코딩 금지)
-- [x] PC 전용 입력 (Touch/Pointer 금지)
+- 13/13 tests passing
+- VerticalVideoItem.solid.tsx (215 lines)
+- 번들: 472.60 KB raw, 117.34 KB gzip
 
-**구현 완료**: 2025-10-05 (Commit: dc651200)
+#### Phase 1-2: GIF 컴포넌트 개발 ✅ COMPLETED (2025-10-05, 80648630)
 
-**테스트 결과**: 13/13 passing (GREEN maintained through REFACTOR)
+- 24/24 tests passing (17 GIF + 7 Factory)
+- VerticalGifItem.solid.tsx (367 lines)
+- Canvas 기반 재생 제어, 반복 모드
 
-**주요 구현**:
+#### Phase 1-3: MediaItemFactory ✅ COMPLETED (2025-01-05)
 
-- Component: `VerticalVideoItem.solid.tsx` (215 lines)
-- Styles: `VerticalVideoItem.module.css` (CSS Modules + design tokens)
-- Tests: `vertical-video-item.contract.test.tsx` (13 contract tests)
-- Features: Play/pause, volume ±0.1, click-to-seek, loading/error overlays
-- Keyboard: Space (toggle), ArrowUp/Down (volume)
-- ARIA: video aria-label, button roles, time display
-- Design: --color-\*, --space-\*, --radius-\*, --duration-\*, --easing-\* tokens
-- Bundle: 472.60 KB raw, 117.34 KB gzip (no regression)
+- 7/7 tests passing
+- 타입 기반 컴포넌트 라우팅
 
-**테스트**:
+#### Phase 1-4: SolidGalleryShell 통합 ✅ COMPLETED (2025-10-05, c19c0263, 24ad2ef0)
 
-```typescript
-// test/features/gallery/vertical-video-item.contract.test.tsx
-describe('VerticalVideoItem Contract', () => {
-  it('비디오 URL이 주어지면 video 요소를 렌더링한다', () => {});
-  it('재생 버튼 클릭 시 비디오를 재생한다', () => {});
-  it('일시정지 버튼 클릭 시 비디오를 일시정지한다', () => {});
-  it('키보드 Space로 재생/일시정지를 토글한다', () => {});
-  it('ArrowUp/Down으로 볼륨을 조절한다', () => {});
-  it('로딩 중 스피너를 표시한다', () => {});
-  it('에러 발생 시 에러 메시지를 표시한다', () => {});
-  it('Touch 이벤트를 사용하지 않는다', () => {});
-  it('하드코딩된 색상/시간/이징을 사용하지 않는다', () => {});
-});
-```
-
-#### Phase 1-2: GIF 컴포넌트 개발 (선택적)
-
-**Acceptance Criteria**:
-
-- [ ] `VerticalGifItem.solid.tsx` 생성
-- [ ] 자동 재생/일시정지 토글
-- [ ] 반복 제어 (1회/무한)
-- [ ] 로딩/에러 상태 처리
-- [ ] 접근성 지원
-- [ ] 디자인 토큰 사용
-
-**참고**: GIF는 `<img>` 태그로도 처리 가능하므로, 추가 기능이 필요한 경우만 별도
-컴포넌트 개발
-
-#### Phase 1-3: 미디어 Factory 패턴 적용 ✅ COMPLETED (2025-01-05)
-
-**완료 내용**: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
-
-**Acceptance Criteria** (모두 충족):
-
-- [x] `MediaItemFactory.ts` 생성 (157 lines, 타입 기반 라우팅)
-- [x] 타입 기반 컴포넌트 선택 로직 (video/image/gif/default)
-- [x] 7 contract tests GREEN (RED → GREEN → REFACTOR 완료)
-- [x] 기존 `VerticalImageItem` 호환성 유지
-
-**Phase 1-4 완료**: ✅ SolidGalleryShell 통합 (Dynamic component pattern,
-2025-10-05)
-
-- 상세 내용: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
-- 8/8 contract tests GREEN, 번들 크기: 483.37 KB raw, 120.38 KB gzip
-
-**구현**:
-
-```typescript
-// src/features/gallery/factories/MediaItemFactory.ts
-import type { MediaInfo } from '@shared/types/media.types';
-import type { JSX } from 'solid-js';
-
-export function createMediaItem(
-  media: MediaInfo,
-  index: number,
-  props: CommonMediaItemProps
-): JSX.Element {
-  switch (media.type) {
-    case 'video':
-      return <VerticalVideoItem media={media} index={index} {...props} />;
-    case 'gif':
-      // 기본 이미지 처리 또는 전용 컴포넌트
-      return <VerticalImageItem media={media} index={index} {...props} />;
-    case 'image':
-    default:
-      return <VerticalImageItem media={media} index={index} {...props} />;
-  }
-}
-```
-
-**테스트**:
-
-```typescript
-// test/features/gallery/media-item-factory.contract.test.tsx
-describe('MediaItemFactory Contract', () => {
-  it('image 타입은 VerticalImageItem을 반환한다', () => {});
-  it('video 타입은 VerticalVideoItem을 반환한다', () => {});
-  it('gif 타입은 적절한 컴포넌트를 반환한다', () => {});
-  it('알 수 없는 타입은 VerticalImageItem을 폴백한다', () => {});
-});
-```
+- 8/8 tests passing
+- 번들: 483.37 KB raw, 120.38 KB gzip
 
 ---
 
