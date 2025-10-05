@@ -1,0 +1,161 @@
+/**
+ * @fileoverview Scroll Anchor Manager
+ * Epic: GALLERY-UX-ENHANCEMENT Sub-Epic 1
+ * TDD Phase: GREEN (구현)
+ *
+ * 목표:
+ * - DOM 앵커 기반 스크롤 위치 복원으로 정확도 향상
+ * - 동적 콘텐츠 로딩으로 인한 오차 최소화 (±50px 이내)
+ * - 앵커 부재 시 픽셀 기반 fallback 동작
+ */
+
+/**
+ * Scroll 앵커 정보
+ */
+interface ScrollAnchor {
+  /** 앵커 DOM 요소 */
+  element: HTMLElement;
+  /** 앵커 설정 시점의 offsetTop (참조용) */
+  offsetTop: number;
+  /** 앵커 설정 시각 (타임스탬프) */
+  timestamp: number;
+}
+
+/**
+ * Scroll Anchor Manager
+ *
+ * 특징:
+ * - DOM 요소를 앵커로 사용하여 스크롤 위치 복원
+ * - 동적 콘텐츠 로딩 시에도 정확한 위치 복원
+ * - 앵커 요소가 DOM에서 제거된 경우 픽셀 기반 fallback
+ * - 브라우저 환경 안전 처리 (Node/테스트 환경 호환)
+ *
+ * 사용 예시:
+ * ```typescript
+ * // 트윗 클릭 시 앵커 설정
+ * const tweetElement = document.querySelector('[data-testid="tweet"]');
+ * scrollAnchorManager.setAnchor(tweetElement);
+ *
+ * // 갤러리 닫을 때 복원
+ * scrollAnchorManager.restoreToAnchor();
+ *
+ * // 정리
+ * scrollAnchorManager.clear();
+ * ```
+ */
+export class ScrollAnchorManager {
+  private anchor: ScrollAnchor | null = null;
+  private fallbackScrollTop: number = 0;
+
+  /**
+   * 스크롤 앵커 설정
+   *
+   * @param element - 앵커로 사용할 DOM 요소 (null이면 앵커 제거)
+   */
+  setAnchor(element: HTMLElement | null): void {
+    if (!element) {
+      this.anchor = null;
+      this.fallbackScrollTop = typeof window !== 'undefined' ? window.pageYOffset : 0;
+      return;
+    }
+
+    // 앵커 정보 저장
+    this.anchor = {
+      element,
+      offsetTop: element.offsetTop,
+      timestamp: Date.now(),
+    };
+
+    // Fallback 위치도 저장 (앵커 요소 제거 시 사용)
+    if (typeof window !== 'undefined') {
+      this.fallbackScrollTop = window.pageYOffset;
+    }
+  }
+
+  /**
+   * 현재 앵커 요소 조회
+   *
+   * @returns 앵커 DOM 요소 (없으면 null)
+   */
+  getAnchor(): HTMLElement | null {
+    return this.anchor?.element ?? null;
+  }
+
+  /**
+   * 앵커 기반 스크롤 위치 복원
+   *
+   * 동작:
+   * 1. 앵커 요소가 있고 DOM에 존재하면 앵커 기준 복원
+   * 2. 앵커가 없거나 DOM에서 제거되었으면 픽셀 기반 fallback
+   * 3. 브라우저 환경이 아니면 무시 (Node/테스트 환경 호환)
+   */
+  restoreToAnchor(): void {
+    // 브라우저 환경 체크
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    // window.scrollTo가 없는 환경 처리
+    if (typeof window.scrollTo !== 'function') {
+      return;
+    }
+
+    // 앵커가 없거나 DOM에서 제거된 경우 fallback
+    if (!this.anchor || !document.body.contains(this.anchor.element)) {
+      this.restoreToPixelPosition();
+      return;
+    }
+
+    // 앵커 요소를 기준으로 스크롤 위치 계산
+    // 상단 여백 100px을 두어 앵커 요소가 뷰포트 상단에 너무 가깝지 않도록 함
+    const topMargin = 100;
+    const targetY = this.anchor.element.offsetTop - topMargin;
+
+    // 음수 방지 (상단 경계)
+    const clampedY = Math.max(0, targetY);
+
+    // 스크롤 복원 (즉시 이동, smooth는 UX 개선 시 옵션)
+    window.scrollTo({
+      top: clampedY,
+      behavior: 'auto',
+    });
+  }
+
+  /**
+   * 픽셀 기반 스크롤 위치 복원 (Fallback)
+   *
+   * @private
+   */
+  private restoreToPixelPosition(): void {
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo(0, this.fallbackScrollTop);
+    }
+  }
+
+  /**
+   * 앵커 상태 초기화
+   *
+   * 모든 앵커 정보 및 fallback 위치 제거
+   * (테스트/정리 용도)
+   */
+  clear(): void {
+    this.anchor = null;
+    this.fallbackScrollTop = 0;
+  }
+
+  /**
+   * 앵커 데이터 조회 (테스트 목적)
+   *
+   * @internal
+   * @returns 현재 앵커 데이터 (없으면 null)
+   */
+  _getAnchorData(): ScrollAnchor | null {
+    return this.anchor;
+  }
+}
+
+/**
+ * 싱글톤 Scroll Anchor Manager 인스턴스
+ * (프로젝트 전역에서 단일 인스턴스 사용)
+ */
+export const scrollAnchorManager = new ScrollAnchorManager();

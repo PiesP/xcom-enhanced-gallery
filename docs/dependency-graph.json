@@ -8655,6 +8655,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/scroll/scroll-anchor-manager.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/shortcut-parser.ts",
       "dependencies": [],
       "dependents": [],
@@ -8835,7 +8842,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 287,
+    "totalCruised": 288,
     "totalDependenciesCruised": 351,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
