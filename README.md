@@ -58,16 +58,13 @@
 
 ### 2️⃣ 스크립트 설치
 
-<div align="center">
+**🔗
+[여기를 클릭하여 설치하기](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)**
 
-### 🔗 **[여기를 클릭하여 설치하기](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)**
-
-_클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다_
+> 클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 나타납니다
 
 **📦
 [최신 릴리스 보기](https://github.com/PiesP/xcom-enhanced-gallery/releases)**
-
-</div>
 
 ### 3️⃣ 설치 확인
 

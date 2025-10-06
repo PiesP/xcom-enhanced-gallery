@@ -65,7 +65,7 @@ element.addEventListener('pointerdown', handler);
 
 ### 언제 어떤 상태 관리를 사용하나?
 
-```
+```text
 상태가 필요한가?
 ├─ YES → 범위는?
 │   ├─ 컴포넌트 로컬 → createSignal()
@@ -78,7 +78,7 @@ element.addEventListener('pointerdown', handler);
 
 ### 어떤 서비스를 사용하나?
 
-```
+```text
 미디어 추출/다운로드?
 ├─ 추출 → MediaExtractionService
 ├─ 단일 다운로드 → MediaService.downloadSingle()
@@ -96,7 +96,7 @@ element.addEventListener('pointerdown', handler);
 
 ### 어떤 이벤트 핸들러를 사용하나?
 
-```
+```text
 사용자 입력?
 ├─ 클릭 → onClick, click
 ├─ 키보드 → onKeyDown, onKeyUp, keydown, keyup
@@ -220,7 +220,7 @@ import styles from './Component.module.css';
 
 ## 레이어 & 의존성
 
-```
+```text
 Features → Shared → External
 ```
 

@@ -6,7 +6,7 @@
 
 - 근거 문서: `docs/ARCHITECTURE.md`, `docs/CODING_GUIDELINES.md`,
   `docs/DEPENDENCY-GOVERNANCE.md`
-- 환경: Vitest + JSDOM, 기본 URL https://x.com, vendors/userscript는
+- 환경: Vitest + JSDOM, 기본 URL `https://x.com`, vendors/userscript는
   getter/adapter로 모킹
 - 공통 원칙: 최소 diff, 3계층 단방향(Features → Shared → External), PC 전용
   입력, CSS Modules + 디자인 토큰만

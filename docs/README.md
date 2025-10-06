@@ -49,9 +49,9 @@
 **대상 독자**: 모든 개발자
 
 **관련 문서**: [아키텍처](#1-아키텍처-설계서-architecturemd),
-[테스트 가이드](#5-테스트-가이드-testing_guidemd),
-[성능 가이드](#6-성능-가이드-performance_guidemd),
-[보안 가이드](#7-보안-가이드-security_guidemd)
+[테스트 가이드](#5-테스트-가이드-testing_guidemd--new),
+[성능 가이드](#6-성능-가이드-performance_guidemd--new),
+[보안 가이드](#7-보안-가이드-security_guidemd--new)
 
 ### 3. 실행/CI 가이드 (AGENTS.md)
 
@@ -87,7 +87,7 @@
 **대상 독자**: 모든 개발자
 
 **관련 문서**: [아키텍처](#1-아키텍처-설계서-architecturemd),
-[테스트 가이드](#5-테스트-가이드-testing_guidemd)
+[테스트 가이드](#5-테스트-가이드-testing_guidemd--new)
 
 ---
 
@@ -152,7 +152,7 @@
 
 **관련 문서**: [아키텍처](#1-아키텍처-설계서-architecturemd),
 [코딩 가이드라인](#2-코딩-가이드라인-coding_guidelinesmd),
-[테스트 가이드](#5-테스트-가이드-testing_guidemd),
+[테스트 가이드](#5-테스트-가이드-testing_guidemd--new),
 [CodeQL 로컬 가이드](#8-codeql-로컬-가이드-codeql_local_guidemd)
 
 ### 8. CodeQL 로컬 가이드 (CODEQL_LOCAL_GUIDE.md)
@@ -168,7 +168,7 @@
 
 **대상 독자**: 개발자, 보안 팀
 
-**관련 문서**: [보안 가이드](#7-보안-가이드-security_guidemd),
+**관련 문서**: [보안 가이드](#7-보안-가이드-security_guidemd--new),
 [실행/CI 가이드](#3-실행ci-가이드-agentsmd)
 
 ---
@@ -334,27 +334,31 @@
 
 **Q: 어떤 문서부터 읽어야 하나요?**
 
-A: [문서 네비게이션 맵](#-문서-네비게이션-맵)을 참조하세요. 역할에 따라 다른
+A: [문서 네비게이션 맵](#️-문서-네비게이션-맵)을 참조하세요. 역할에 따라 다른
 경로를 제공합니다.
 
 **Q: 새로운 기능을 추가하려면?**
 
-A: ARCHITECTURE.md의 [Extension Points](#1-아키텍처-설계서-architecturemd)
-섹션을 참조하세요.
+A:
+[ARCHITECTURE.md의 Extension Points 섹션](#1-아키텍처-설계서-architecturemd)을
+참조하세요.
 
 **Q: 테스트를 어떻게 작성하나요?**
 
-A: TESTING_GUIDE.md의 [RED → GREEN → REFACTOR](#5-테스트-가이드-testing_guidemd)
-섹션을 참조하세요.
+A:
+[TESTING_GUIDE.md의 RED → GREEN → REFACTOR 섹션](#5-테스트-가이드-testing_guidemd--new)을
+참조하세요.
 
 **Q: 번들 크기가 너무 큽니다.**
 
-A: PERFORMANCE_GUIDE.md의 [번들 최적화](#6-성능-가이드-performance_guidemd)
-섹션을 참조하세요.
+A:
+[PERFORMANCE_GUIDE.md의 번들 최적화 섹션](#6-성능-가이드-performance_guidemd--new)을
+참조하세요.
 
 **Q: 보안 취약점을 발견했습니다.**
 
-A: SECURITY_GUIDE.md의 [보안 이슈 보고](#7-보안-가이드-security_guidemd) 섹션을
+A:
+[SECURITY_GUIDE.md의 보안 이슈 보고 섹션](#7-보안-가이드-security_guidemd--new)을
 참조하세요.
 
 ---
