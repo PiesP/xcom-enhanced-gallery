@@ -18,7 +18,10 @@
  * const num3 = safeParseInt(null); // 0
  * ```
  */
-export function safeParseInt(value: string | undefined | null, radix: number = 10): number {
+/*#__PURE__*/ export function safeParseInt(
+  value: string | undefined | null,
+  radix: number = 10
+): number {
   if (value === undefined || value === null || value === '') {
     return 0;
   }
@@ -29,7 +32,7 @@ export function safeParseInt(value: string | undefined | null, radix: number = 1
 /**
  * 안전한 parseFloat 함수
  */
-export function safeParseFloat(value: string | undefined | null): number {
+/*#__PURE__*/ export function safeParseFloat(value: string | undefined | null): number {
   if (value === undefined || value === null || value === '') {
     return 0;
   }
@@ -77,7 +80,7 @@ export function safeNodeListAccess<T extends Node>(
 /**
  * 정규식 매치 결과에서 안전하게 값 추출
  */
-export function safeMatchExtract(
+/*#__PURE__*/ export function safeMatchExtract(
   match: RegExpMatchArray | null,
   index: number,
   defaultValue: string | null = null
@@ -128,7 +131,10 @@ export function nullToUndefined<T>(value: T | null): T | undefined {
 /**
  * string 기본값 적용
  */
-export function stringWithDefault(value: string | undefined, defaultValue: string = ''): string {
+/*#__PURE__*/ export function stringWithDefault(
+  value: string | undefined,
+  defaultValue: string = ''
+): string {
   return value ?? defaultValue;
 }
 

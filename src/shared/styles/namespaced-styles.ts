@@ -156,13 +156,13 @@ export function cleanupNamespacedStyles(): void {
 /**
  * 네임스페이스 클래스명 생성
  */
-export function createNamespacedClass(className: string): string {
+/*#__PURE__*/ export function createNamespacedClass(className: string): string {
   return `${NAMESPACE}-${className}`;
 }
 
 /**
  * 네임스페이스 셀렉터 생성
  */
-export function createNamespacedSelector(selector: string): string {
+/*#__PURE__*/ export function createNamespacedSelector(selector: string): string {
   return `.${NAMESPACE} ${selector}`;
 }

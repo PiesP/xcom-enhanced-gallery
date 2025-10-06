@@ -56,6 +56,9 @@ export function updateComponentState(
 /**
  * 테마 기반 클래스명 생성
  */
-export function createThemedClassName(baseClass: string, theme: string = 'auto'): string {
+/*#__PURE__*/ export function createThemedClassName(
+  baseClass: string,
+  theme: string = 'auto'
+): string {
   return theme === 'auto' ? baseClass : `${baseClass}--${theme}`;
 }

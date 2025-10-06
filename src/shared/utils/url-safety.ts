@@ -73,7 +73,7 @@ function sanitizeResult(result: ParsedTrustedUrl): ParsedTrustedUrl {
   return Object.freeze(result);
 }
 
-export function parseTrustedUrl(
+/*#__PURE__*/ export function parseTrustedUrl(
   candidate: string,
   allowlist: HostnameAllowlistInput,
   options: ParseTrustedUrlOptions = {}
@@ -176,7 +176,7 @@ export function parseTrustedUrl(
  * 허용된 호스트명인지 검사합니다.
  * 기본적으로 HTTPS만 허용합니다 (보안 강화).
  */
-export function isTrustedHostname(
+/*#__PURE__*/ export function isTrustedHostname(
   url: string,
   allowlist: ReadonlyArray<string> | ReadonlySet<string>,
   options: TrustedHostnameGuardOptions = {}
@@ -189,7 +189,7 @@ export function isTrustedHostname(
   return parsed !== null;
 }
 
-export function createTrustedHostnameGuard(
+/*#__PURE__*/ export function createTrustedHostnameGuard(
   allowlist: HostnameAllowlistInput,
   options: TrustedHostnameGuardOptions = {}
 ): (candidate: string) => boolean {
