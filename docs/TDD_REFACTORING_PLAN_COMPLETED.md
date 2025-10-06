@@ -1,3 +1,109 @@
+# TDD 리팩토링 완료 로그 (xcom-enhanced-gallery)
+
+> 이 문서는 리팩토링 계획(TDD_REFACTORING_PLAN.md)에서 완료된 항목들을
+> 시간순으로 기록합니다. 각 항목은 작업 근거, 수용 기준, 수행 결과를 포함합니다.
+
+---
+
+### 2025-10-07 — Shadow DOM → Light DOM 완전 전환 (Phase 1-4 완료)
+
+**목표**: Shadow DOM을 Light DOM으로 완전히 전환하여 코드 복잡도를 낮추고,
+스타일 격리는 CSS Modules + Cascade Layers로 대체
+
+**현황 분석**:
+
+- `GalleryRenderer.ts`에서 `useShadowDOM: true` 하드코딩
+- `GalleryContainer.tsx`에서 Shadow DOM 마운트 로직 (attachShadow, shadowRoot)
+  존재
+- 스타일 격리를 위해 Shadow DOM에 `@import` 방식으로 CSS 주입
+- 프로젝트에 이미 CSS Modules + 디자인 토큰 + Cascade Layers 인프라 존재
+
+**전환 방법 선택**: **점진적 전환 (방법 1) + CSS Cascade Layers (전략 A)**
+⭐⭐⭐⭐⭐
+
+- TDD 원칙 부합 (RED → GREEN → REFACTOR)
+- 기존 인프라 활용 (`cascade-layers.css`, CSS Modules, `xeg-` 프리픽스)
+- 롤백 용이, 단계별 검증으로 리스크 최소화
+
+**Phase 1: 사전 준비 및 테스트 RED 작성**
+
+- 작업: `test/refactoring/light-dom-transition.test.ts` 생성
+- 테스트 구성:
+  - Shadow DOM 제거 검증 (3개 테스트): GalleryRenderer, GalleryContainer 소스
+    검증
+  - Cascade Layers 구조 (3개 테스트): 레이어 정의, 순서, gallery 레이어 존재
+  - 스타일 격리 메커니즘 (2개 테스트): CSS Modules, 디자인 토큰 사용
+  - 코드 품질 (2개 테스트): deprecated API 참조 금지
+- 결과: 7 FAIL, 3 PASS (예상된 RED 상태)
+- 커밋: `test: add Shadow DOM to Light DOM transition tests (Phase 1)`
+
+**Phase 2: Cascade Layers 강화**
+
+- 작업: `src/shared/styles/cascade-layers.css` 갤러리 레이어 추가
+
+  ```css
+  @layer reset, tokens, base, layout, components, gallery, utilities, overrides;
+
+  @layer gallery {
+    .xeg-gallery-root {
+      isolation: isolate;
+      contain: layout style paint;
+      position: relative;
+      z-index: 100;
+    }
+  }
+  ```
+
+- 목적: 갤러리 전용 레이어로 Twitter 스타일과 격리, 명시적 우선순위 보장
+- 결과: 7 PASS, 3 FAIL (Cascade Layers 테스트 GREEN)
+- 커밋: `refactor: add gallery layer to Cascade Layers (Phase 2)`
+
+**Phase 3: GalleryRenderer Light DOM 전환**
+
+- 작업: `src/features/gallery/GalleryRenderer.ts` 수정
+  - `useShadowDOM: false` 변경
+  - `.xeg-gallery-root` 클래스 추가 (Cascade Layers 연동)
+- 결과: 8 PASS, 2 FAIL (Light DOM 스위치 작동)
+- 커밋: `refactor: switch to Light DOM in GalleryRenderer (Phase 3)`
+
+**Phase 4: Shadow DOM 코드 완전 제거**
+
+- 작업:
+  - `GalleryContainer.tsx`: useShadowDOM prop 제거, mountGallery 단순화 (90행 →
+    60행, 33% 감소)
+  - `GalleryRenderer.ts`: useShadowDOM prop 제거
+  - Return type 변경: `{ root: Element; shadowRoot?: ShadowRoot }` → `Element`
+  - shadowRoot 참조, attachShadow 호출 모두 제거
+- 결과: **10/10 PASS** ✅ (Shadow DOM 제거 완료)
+- 커밋: `refactor: remove Shadow DOM code from components (Phase 4)`
+
+**통합 검증**:
+
+- 전체 테스트 스위트: **124개 파일 PASS, 584개 테스트 PASS** ✅
+- 빌드 검증: dev/prod 빌드 성공, 산출물 검증 PASS ✅
+- 의존성 그래프: 순환 의존 0, 의존성 위반 0 ✅
+- 최종 번들 크기: 336.77 KB (raw), 88.37 KB (gzip)
+
+**수용 기준 달성**:
+
+- [x] Shadow DOM 관련 코드 완전 제거 (attachShadow, shadowRoot, useShadowDOM)
+- [x] CSS Cascade Layers로 스타일 격리 달성 (gallery 레이어)
+- [x] CSS Modules + xeg- 프리픽스로 네이밍 충돌 방지
+- [x] 전체 테스트 스위트 GREEN (기존 기능 영향 없음)
+- [x] 빌드/번들 정상 동작 (dev/prod)
+
+**장점 실현**:
+
+- 코드 복잡도 감소 (GalleryContainer 33% 축소)
+- 유지보수 용이 (분기 로직 제거, 명확한 DOM 구조)
+- 표준 기반 스타일 격리 (Cascade Layers)
+- 디버깅 개선 (Light DOM은 개발자 도구에서 직접 접근 가능)
+- 테스트 용이 (Shadow DOM 경계 없이 테스트 가능)
+
+**브랜치**: `feature/light-dom-transition`
+
+---
+
 ### 2025-09-16 — PLAN-CLOSE (B/C/F 관찰 지속 항목 정리)
 
 - 대상: B(legacy vendor-manager.ts), C(toolbarConfig.ts @deprecated),
