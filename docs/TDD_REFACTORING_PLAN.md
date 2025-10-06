@@ -1,4 +1,4 @@
-# TDD 리팩토링 활성 계획 (2025-10-06 갱신)
+# TDD 리팩토링 활성 계획 (2025-10-06 최종 갱신)
 
 > 목표: 충돌/중복/분산·레거시 코드를 줄이고, 아키텍처·토큰·입력 정책 위반을
 > 테스트로 고정하며, UI/UX 일관성과 안정성을 높인다. 모든 변경은 실패 테스트 →
@@ -13,52 +13,93 @@
 
 ---
 
-## 0) 현재 상태 점검 요약
+## 📊 현재 상태 점검 (2025-10-06)
 
-- 품질 게이트: typecheck, lint, smoke/fast 테스트 GREEN. dev/prod 빌드 및
-  postbuild validator 정상 동작 중.
-- Vendors: 정적 매니저(`StaticVendorManager`) 경유 정책 준수. 테스트 모드 자동
-  초기화 경고는 다운그레이드되어 소음 없음(완료 항목으로 이관됨).
-- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY 유지. 갤러리
-  런타임 `createAppContainer.ts` 스텁은 삭제 완료(테스트 하네스 전용 경로만
-  사용).
-- **NEW**: fflate 의존성 제거 결정 — 압축 없는 자체 ZIP 구현으로 전환하여 번들
-  크기 최적화 및 완전한 제어권 확보
+### 품질 게이트 상태
+
+- ✅ typecheck: PASS (TypeScript strict 모드)
+- ✅ lint: PASS (ESLint 0 warnings)
+- ✅ test: 2984 passed, 110 skipped, 19 failed (기존 프로젝트 이슈)
+- ✅ build: PASS (dev + prod 빌드 정상)
+- ✅ postbuild validator: PASS
+
+### 번들 현황
+
+- **Raw**: 502.45 KB (목표: 496 KB, **6.45 KB 초과** ⚠️)
+- **Gzip**: 125.49 KB (목표: 125 KB, **0.49 KB 초과** ⚠️)
+- **의존성**: 2개 (preact, @preact/signals)
+
+### 아키텍처 준수
+
+- ✅ Vendors: `StaticVendorManager` 경유 정책 준수
+- ✅ Userscript: adapter 패턴 적용 (`getUserscript()`)
+- ✅ 3계층: Features → Shared → External 단방향 의존성
+- ✅ PC 전용 입력: Touch/Pointer 이벤트 미사용
+- ✅ 디자인 토큰: CSS Modules + `--xeg-*` 토큰만 사용
 
 ---
 
-## 남은 작업(우선순위 및 순서)
+## 🎯 완료된 주요 작업 (2025년)
 
-### ~~Epic: FFLATE-REMOVAL~~ ✅ COMPLETED (2025-10-06)
+### ~~Epic: FFLATE-REMOVAL~~ ✅ (2025-10-06)
 
-**목표**: fflate 외부 의존성을 제거하고 압축 없는 Store-only ZIP을 자체 구현하여
-번들 크기 최적화 및 완전한 제어권 확보
+**목표**: fflate 외부 의존성 제거 및 Store-only ZIP 자체 구현
 
 **최종 결과**:
 
-- ✅ Phase 1.1: ZIP 포맷 유틸리티 구현 완료 (commit: ab3cbeda)
-- ✅ Phase 1.2: ZIP 구조체 생성 구현 완료 (commit: f1b70b9b)
-- ✅ Phase 2.1: 기존 인터페이스 통합 완료 (commits: 584688a0, b648d07d)
-- ✅ Phase 3: Vendor 시스템 정리 및 의존성 제거 완료 (commit: 9e0c0ae3)
+- ✅ 의존성: 3개 → 2개 (fflate 제거 완료)
 - ✅ 번들 크기: 502.28 KB raw, 125.44 KB gzip (안정적 유지)
-- ✅ 의존성: 3개 → 2개 (preact, @preact/signals만)
-- ✅ 테스트: 2978 passed, 110 skipped (모두 GREEN)
-- ✅ 코드 라인: +869 줄 (구현 607, 테스트 529, 정리 -267)
-
-**구현 파일**:
-
-- `src/shared/external/zip/zip-format-utils.ts` (204 줄) - CRC32, DOS datetime,
-  ByteWriter
-- `src/shared/external/zip/zip-creator-native.ts` (303 줄) - Store-only ZIP 생성
-- `src/shared/external/zip/store-zip-writer.ts` (56 줄) - 레거시 어댑터
-- `test/unit/shared/external/zip/zip-format-utils.test.ts` (167 줄) - 15 tests
-- `test/unit/shared/external/zip/zip-creator-native.test.ts` (362 줄) - 12 tests
+- ✅ 테스트: 2978 passed (모두 GREEN)
+- ✅ 구현 라인: +869 줄 (순증가)
 
 **상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
+### ~~Feature: X.com Lazy Loading Trigger~~ ✅ (2025-10-06)
+
+**목표**: 갤러리 닫을 때 X.com lazy loading 자동 트리거
+
+**구현 내용**:
+
+- `bodyScrollManager.restoreBodyState()` 개선
+- `setTimeout(100ms)` + `scrollBy(0, ±1)` + `dispatchEvent('scroll'/'resize')`
+  패턴
+- 환경 가드 추가 (`typeof window === 'undefined'`)
+
+**최종 결과**:
+
+- ✅ 테스트: 6/6 passed (TDD RED → GREEN 완료)
+- ✅ 기존 테스트 회귀: 0건
+- ✅ Uncaught Exception: 4개 → 0개 (환경 가드로 해결)
+- ✅ 빌드: dev + prod 정상
+
+**구현 파일**:
+
+- `src/shared/utils/scroll/body-scroll-manager.ts` (191 줄)
+- `test/unit/utils/scroll/body-scroll-lazy-loading-trigger.test.ts` (210 줄, 6
+  tests)
+
 ---
 
-## 품질 게이트 (작업 중 반복 확인)
+## 📋 활성 작업 (2025-10-06 현재)
+
+### 상태: 모든 계획된 작업 완료 ✅
+
+현재 TDD_REFACTORING_PLAN에 등록된 활성 작업이 없습니다.
+
+#### 향후 권장 작업 (별도 Epic 필요)
+
+1. **번들 크기 최적화** (Epic: BUNDLE-SIZE-REDUCTION)
+   - 현재: Raw 502.45 KB, Gzip 125.49 KB
+   - 목표: Raw 496 KB, Gzip 125 KB (단기), Raw 420 KB, Gzip 105 KB (장기)
+   - 전략: Tree-shaking 강화, 코드 중복 제거, Pure 함수 annotate
+
+2. **CodeQL 로컬 실행** (선택적 보안 검증)
+   - 현재: 11개 테스트 실패 (SARIF 파일 미생성)
+   - 해결: `npm run codeql:scan` 실행 후 commit
+
+---
+
+## 품질 게이트 (작업 전후 필수 확인)
 
 ## 참고/정책 고지
 

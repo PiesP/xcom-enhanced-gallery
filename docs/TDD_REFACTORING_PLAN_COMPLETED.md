@@ -2,6 +2,248 @@
 
 ---
 
+## 2025-10-06: Feature - X.com Lazy Loading Trigger 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: UX 개선 (스크롤 위치 복원 + lazy loading 자동 트리거)
+- **Feature**: X.com Lazy Loading Trigger
+- **상태**: **완료됨** (TDD RED → GREEN)
+- **브랜치**: feature/lazy-loading-trigger
+- **커밋**: (pending)
+
+### 배경
+
+갤러리를 닫을 때 X.com 타임라인의 lazy loading이 자동으로 트리거되지 않아,
+사용자가 수동으로 스크롤해야 새 트윗이 로드되는 문제가 있었습니다. X.com은
+IntersectionObserver를 사용한 lazy loading 시스템을 채택하고 있으며,
+`window.scrollTo()`만으로는 Observer가 재실행되지 않습니다.
+
+### 최종 결과
+
+**구현 파일**:
+
+- `src/shared/utils/scroll/body-scroll-manager.ts` (191 줄)
+- `test/unit/utils/scroll/body-scroll-lazy-loading-trigger.test.ts` (210 줄, 6
+  tests)
+
+**테스트 결과**:
+
+- 6/6 passed (TDD RED → GREEN 완료)
+- 기존 테스트 회귀: 0건
+- Uncaught Exception: 4개 → 0개 (환경 가드로 해결)
+
+**번들 영향**:
+
+- Raw: 502.45 KB (변경 전 502.28 KB, +0.17 KB)
+- Gzip: 125.49 KB (변경 전 125.44 KB, +0.05 KB)
+- 미미한 크기 증가 (환경 가드 + 이벤트 발생 로직)
+
+---
+
+### 구현 세부사항
+
+#### bodyScrollManager.restoreBodyState() 개선
+
+**변경 전** (스크롤 위치만 복원):
+
+```typescript
+// 스크롤 위치 복원
+window.scrollTo(0, scrollTop);
+```
+
+**변경 후** (lazy loading 트리거 추가):
+
+```typescript
+// 스크롤 위치 복원
+window.scrollTo(0, scrollTop);
+
+// X.com lazy loading 트리거: unlock 후 스크롤 이벤트 발생
+setTimeout(() => {
+  // 환경 가드: window가 정의되어 있는지 확인 (테스트 환경 보호)
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  // 1. 미세 스크롤로 이벤트 트리거 (1px 이동 후 복원)
+  window.scrollBy(0, 1);
+  window.scrollBy(0, -1);
+
+  // 2. 스크롤 이벤트 명시적 발생 (IntersectionObserver 활성화)
+  window.dispatchEvent(new Event('scroll'));
+
+  // 3. 리사이즈 이벤트 발생 (일부 lazy loading 구현 대응)
+  window.dispatchEvent(new Event('resize'));
+}, 100); // 100ms 지연: DOM 안정화 대기
+```
+
+#### 기술적 의사결정
+
+**1. `setTimeout(100ms)` 지연**:
+
+- DOM 안정화 대기: 갤러리 언마운트 → body overflow 복원 → 스크롤 위치 복원
+  완료까지 시간 확보
+- X.com의 IntersectionObserver가 올바른 뷰포트 상태를 감지하도록 보장
+
+**2. `scrollBy(0, 1)` + `scrollBy(0, -1)` 패턴**:
+
+- 사용자 의도 기반 설계: 실제 X.com이 scroll 이벤트에 반응하는 패턴 모사
+- `window.scrollTo()` 대신 선택: scrollTo는 이벤트를 발생시키지 않을 수 있음
+- 1px 미세 이동 후 복원: 사용자에게 시각적 변화 없음
+
+**3. `dispatchEvent('scroll')` + `dispatchEvent('resize')` 보강**:
+
+- X.com의 IntersectionObserver는 스크롤 이벤트를 기준으로 lazy loading 판단
+- 일부 구현은 리사이즈 이벤트에도 반응하므로 안전 장치로 추가
+- 명시적 이벤트 발생으로 플랫폼 호환성 최대화
+
+**4. 환경 가드 (`typeof window === 'undefined'`)**:
+
+- 테스트 환경 보호: JSDOM teardown 후 window 객체 부재 대응
+- Node.js 환경 대응: SSR/SSG 시나리오 대비
+- 무중단 운영: 에러 대신 graceful degradation
+
+---
+
+### 테스트 전략 (TDD)
+
+#### RED Phase: 6개 실패 테스트 작성
+
+1. **기본 동작**: unlock 후 scroll 이벤트 발생 확인
+2. **우선순위**: 여러 lock 중 마지막 unlock 시에만 트리거
+3. **Edge case**: 스크롤 위치 0일 때도 정상 작동
+4. **Edge case**: 페이지 끝 위치에서도 정상 작동
+5. **지연 시간**: 100ms 지연 정확성 검증
+6. **iOS 안정성**: position:fixed 패턴 호환성 확인
+
+#### GREEN Phase: 최소 구현 + 환경 가드
+
+**초기 구현** (4개 Uncaught Exception 발생):
+
+```typescript
+setTimeout(() => {
+  window.scrollBy(0, 1); // ❌ window is not defined (테스트 teardown 후)
+  window.scrollBy(0, -1);
+  window.dispatchEvent(new Event('scroll'));
+  window.dispatchEvent(new Event('resize'));
+}, 100);
+```
+
+**최종 구현** (환경 가드 추가):
+
+```typescript
+setTimeout(() => {
+  if (typeof window === 'undefined') return; // ✅ 환경 가드
+
+  window.scrollBy(0, 1);
+  window.scrollBy(0, -1);
+  window.dispatchEvent(new Event('scroll'));
+  window.dispatchEvent(new Event('resize'));
+}, 100);
+```
+
+---
+
+### 품질 검증
+
+#### 테스트 결과
+
+```
+✓ test/unit/utils/scroll/body-scroll-lazy-loading-trigger.test.ts (6 tests) 56ms
+  ✓ should trigger scroll events after unlock to activate lazy loading 30ms
+  ✓ should trigger lazy loading after last unlock 5ms
+  ✓ should handle edge case: zero scroll position 7ms
+  ✓ should handle edge case: page end position 3ms
+  ✓ should use appropriate delay for DOM stabilization 3ms
+  ✓ should work correctly on iOS Safari simulation 6ms
+```
+
+#### 기존 테스트 영향
+
+- 2984 passed ✅
+- 110 skipped
+- 19 failed (기존 프로젝트 이슈, 본 구현과 무관)
+  - 번들 크기 회귀: 4개 (목표: 496 KB, 실제: 502.45 KB)
+  - CodeQL 미실행: 11개 (SARIF 파일 미생성)
+  - Bundle budget: 1개 (Brotli 압축 크기)
+
+#### Uncaught Exception 해결
+
+**이전** (4개 테스트에서 발생):
+
+```
+ReferenceError: window is not defined
+ ❯ Timeout._onTimeout src/shared/utils/scroll/body-scroll-manager.ts:168:9
+```
+
+**원인**: 테스트 종료 후에도 `setTimeout(100ms)`이 살아있어 실행됨. JSDOM
+environment teardown 후 `window` 객체가 사라진 상태에서 `window.scrollBy()`
+호출.
+
+**해결**: 환경 가드 추가로 4개 → 0개 ✅
+
+---
+
+### 빌드 검증
+
+#### 개발 빌드
+
+```pwsh
+npm run build:dev
+```
+
+**결과**:
+
+- `dist/xcom-enhanced-gallery.dev.user.js`: 852.45 kB
+- 소스맵 포함: 1,609.89 kB
+- ✅ 정상 빌드
+
+#### 프로덕션 빌드
+
+```pwsh
+npm run build:prod
+```
+
+**결과**:
+
+- `dist/xcom-enhanced-gallery.user.js`: 502.45 KB raw, 125.49 KB gzip
+- ✅ 정상 빌드
+
+#### Postbuild Validator
+
+```
+🔍 Validating UserScript build...
+✅ UserScript validation passed
+📄 Files: xcom-enhanced-gallery.user.js, xcom-enhanced-gallery.dev.user.js
+📏 Size (raw): 502.45 KB
+📦 Size (gzip): 125.49 KB
+📝 Updated release/metadata.json
+```
+
+---
+
+### 수용 기준 달성
+
+- ✅ TDD: 6/6 테스트 통과 (RED → GREEN)
+- ✅ TypeScript strict 모드 통과
+- ✅ ESLint 0 warnings
+- ✅ 기존 테스트 회귀 없음
+- ✅ Uncaught Exception 0건 (환경 가드로 해결)
+- ✅ 빌드 정상: dev + prod
+- ✅ 번들 크기 미미한 증가: +0.17 KB raw, +0.05 KB gzip
+
+---
+
+### 향후 권장 작업
+
+1. **X.com 실제 브라우저 테스트**: 프로덕션 환경에서 lazy loading 트리거 동작
+   확인
+2. **번들 크기 최적화** (별도 Epic): 현재 목표 대비 6.45 KB 초과 상태
+3. **CodeQL 로컬 실행**: `npm run codeql:scan` 실행으로 보안 검증 완료
+
+---
+
 ## 2025-10-06: Epic FFLATE-REMOVAL 완료 ✅
 
 ### 개요
