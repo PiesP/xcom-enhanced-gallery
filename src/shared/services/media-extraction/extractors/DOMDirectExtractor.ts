@@ -185,6 +185,49 @@ export class DOMDirectExtractor {
       }
     });
 
+    // Phase 1-5 (GREEN): 비디오 요소가 없을 때 썸네일 이미지에서 비디오 URL 추출
+    if (videos.length === 0) {
+      logger.debug('[DOMDirectExtractor] 비디오 요소 없음 - 썸네일 이미지 검색 시작');
+
+      // 비디오 컨테이너 내부의 썸네일 이미지 찾기
+      const videoContainers = container.querySelectorAll('[data-testid="videoComponent"]');
+      videoContainers.forEach(videoContainer => {
+        // video_thumb 패턴을 포함한 썸네일 이미지 검색
+        const thumbnails =
+          videoContainer.querySelectorAll<HTMLImageElement>('img[src*="video_thumb"]');
+
+        thumbnails.forEach(thumbnail => {
+          if (thumbnail.src) {
+            const videoUrl = convertThumbnailToVideoUrl(thumbnail.src);
+
+            if (videoUrl) {
+              // 중복 방지: 이미 추가된 URL인지 확인
+              const isDuplicate = mediaItems.some(item => item.url === videoUrl);
+
+              if (!isDuplicate) {
+                // GIF vs 비디오 구분
+                const isGif = detectMediaTypeFromUrl(videoUrl) === 'gif';
+
+                if (isGif) {
+                  logger.debug(
+                    `[DOMDirectExtractor] 썸네일 이미지에서 GIF URL 변환: ${thumbnail.src} → ${videoUrl}`
+                  );
+                  mediaItems.push(this.createGifMediaInfo(videoUrl, mediaItems.length, tweetInfo));
+                } else {
+                  logger.debug(
+                    `[DOMDirectExtractor] 썸네일 이미지에서 비디오 URL 변환: ${thumbnail.src} → ${videoUrl}`
+                  );
+                  mediaItems.push(
+                    this.createVideoMediaInfo(videoUrl, mediaItems.length, tweetInfo)
+                  );
+                }
+              }
+            }
+          }
+        });
+      });
+    }
+
     logger.debug(`[DOMDirectExtractor] 총 ${mediaItems.length}개 미디어 추출 완료`);
     return mediaItems;
   }

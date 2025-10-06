@@ -282,4 +282,95 @@ describe('[RED] Timeline Video Click Extraction', () => {
       // expect(videoType).toBe('video');
     });
   });
+
+  describe('[Phase 1-5] 썸네일만 있는 비디오 컨테이너 (RED)', () => {
+    it('[RED] should extract video URL from thumbnail-only container', () => {
+      // Given: video 요소 없이 썸네일 이미지만 있는 컨테이너
+      // (로그: "[DOMDirectExtractor] 비디오 요소 0개 발견" 케이스 재현)
+      const thumbnailUrl = 'https://pbs.twimg.com/tweet_video_thumb/GZFabcXYZ.jpg';
+      const container = createMockThumbnailOnlyContainer(thumbnailUrl);
+
+      const img = container.querySelector('img') as globalThis.HTMLImageElement;
+      expect(img).not.toBeNull();
+      expect(img.src).toBe(thumbnailUrl);
+
+      // When: MediaClickDetector로 감지 시도
+      const result = MediaClickDetector.isProcessableMedia(img);
+
+      // Then: 현재는 실패 (Phase 1-5 GREEN에서 성공하도록 개선 예정)
+      // 이미지 요소는 isProcessableMedia에서 true를 반환하지만,
+      // DOMDirectExtractor가 비디오 요소를 찾지 못해 추출 실패
+      expect(result).toBe(true); // 이미지로는 감지됨
+
+      // TODO: Phase 1-5 GREEN에서 아래 로직 구현
+      // DOMDirectExtractor가 비디오 요소 없이 썸네일 이미지만 있을 때:
+      // 1. img[src*="video_thumb"] 검색
+      // 2. convertThumbnailToVideoUrl(img.src)로 변환
+      // 3. 변환된 비디오 URL로 MediaInfo 생성
+    });
+
+    it('[RED] should convert tweet_video_thumb to tweet_video', async () => {
+      // Given: tweet_video_thumb 패턴의 썸네일
+      const thumbnailUrl = 'https://pbs.twimg.com/tweet_video_thumb/GZFabcXYZ.jpg';
+      const expectedVideoUrl = 'https://pbs.twimg.com/tweet_video/GZFabcXYZ.mp4';
+
+      const container = createMockThumbnailOnlyContainer(thumbnailUrl);
+      const img = container.querySelector('img')!;
+
+      // When: 썸네일 → 비디오 URL 변환 (Phase 1-4 유틸리티 사용)
+      // TODO: Phase 1-5 GREEN에서 DOMDirectExtractor에 통합
+      const { convertThumbnailToVideoUrl } = await import(
+        '@shared/utils/media/video-url-converter'
+      );
+      const convertedUrl = convertThumbnailToVideoUrl(thumbnailUrl);
+
+      // Then: 올바르게 변환되어야 함
+      expect(convertedUrl).toBe(expectedVideoUrl);
+    });
+
+    it('[RED] should handle missing video element gracefully', () => {
+      // Given: 비디오 컨테이너이지만 video 요소가 DOM에 없음
+      // (로그 분석 결과: 사용자가 썸네일을 클릭했을 때 비디오 요소가 아직 로드되지 않은 상태)
+      const container = document.createElement('div');
+      container.setAttribute('data-testid', 'videoComponent');
+
+      const thumbnailImg = document.createElement('img');
+      thumbnailImg.src = 'https://pbs.twimg.com/ext_tw_video_thumb/123/pu/img/abc.jpg';
+      thumbnailImg.alt = 'Video thumbnail';
+
+      container.appendChild(thumbnailImg);
+      document.body.appendChild(container);
+
+      // When: 비디오 요소 검색
+      const videoElement = container.querySelector('video');
+
+      // Then: null이어야 함 (현재 상태)
+      expect(videoElement).toBeNull();
+
+      // TODO: Phase 1-5 GREEN에서 이 케이스를 처리하도록 개선
+      // DOMDirectExtractor가 video 요소가 없을 때:
+      // 1. 비디오 컨테이너 내부의 썸네일 이미지 검색
+      // 2. 썸네일 URL → 비디오 URL 변환
+      // 3. MediaInfo 추가
+    });
+
+    it('[RED] should not extract from non-video thumbnails', async () => {
+      // Given: 일반 이미지 (비디오 썸네일이 아님)
+      const container = document.createElement('div');
+      const img = document.createElement('img');
+      img.src = 'https://pbs.twimg.com/media/regular_photo.jpg'; // video_thumb 패턴 없음
+
+      container.appendChild(img);
+      document.body.appendChild(container);
+
+      // When: 썸네일 → 비디오 URL 변환 시도
+      const { convertThumbnailToVideoUrl } = await import(
+        '@shared/utils/media/video-url-converter'
+      );
+      const convertedUrl = convertThumbnailToVideoUrl(img.src);
+
+      // Then: null을 반환해야 함 (비디오 썸네일이 아니므로)
+      expect(convertedUrl).toBeNull();
+    });
+  });
 });

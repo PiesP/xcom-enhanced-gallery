@@ -35,9 +35,61 @@ export function convertThumbnailToVideoUrl(thumbnailUrl: string): string | null 
   }
 
   try {
-    // URL 유효성 검사
-    const url = new URL(thumbnailUrl);
+    // JSDOM 환경 대응: URL constructor가 없으면 문자열 처리로 폴백
+    let url: URL;
+    try {
+      url = new URL(thumbnailUrl);
+    } catch {
+      // JSDOM 환경에서는 문자열 처리로 폴백
+      logger.debug('[video-url-converter] URL constructor 미지원 - 문자열 처리로 폴백');
 
+      // tweet_video_thumb → tweet_video (GIF)
+      if (thumbnailUrl.includes('tweet_video_thumb')) {
+        const converted = thumbnailUrl
+          .replace('tweet_video_thumb', 'tweet_video')
+          .replace(/\.(jpg|jpeg|png)$/i, '.mp4');
+
+        logger.debug('[video-url-converter] tweet_video_thumb → tweet_video 변환 (fallback)', {
+          from: thumbnailUrl,
+          to: converted,
+        });
+        return converted;
+      }
+
+      // ext_tw_video_thumb → ext_tw_video (일반 비디오)
+      if (thumbnailUrl.includes('ext_tw_video_thumb')) {
+        const converted = thumbnailUrl
+          .replace('ext_tw_video_thumb', 'ext_tw_video')
+          .replace(/\/pu\/img\//i, '/pu/vid/')
+          .replace(/\.(jpg|jpeg|png)$/i, '.mp4');
+
+        logger.debug('[video-url-converter] ext_tw_video_thumb → ext_tw_video 변환 (fallback)', {
+          from: thumbnailUrl,
+          to: converted,
+        });
+        return converted;
+      }
+
+      // amplify_video_thumb → amplify_video (스폰서 비디오)
+      if (thumbnailUrl.includes('amplify_video_thumb')) {
+        const converted = thumbnailUrl
+          .replace('amplify_video_thumb', 'amplify_video')
+          .replace(/\/pu\/img\//i, '/pu/vid/')
+          .replace(/\.(jpg|jpeg|png)$/i, '.mp4');
+
+        logger.debug('[video-url-converter] amplify_video_thumb → amplify_video 변환 (fallback)', {
+          from: thumbnailUrl,
+          to: converted,
+        });
+        return converted;
+      }
+
+      // 비디오 썸네일 패턴이 아님
+      logger.debug('[video-url-converter] 비디오 썸네일 패턴 없음 (fallback)', { thumbnailUrl });
+      return null;
+    }
+
+    // URL constructor 사용 가능한 경우 (브라우저 환경)
     // tweet_video_thumb → tweet_video (GIF)
     if (url.pathname.includes('tweet_video_thumb')) {
       const converted = url.href
