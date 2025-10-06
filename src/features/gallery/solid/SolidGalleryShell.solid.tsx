@@ -389,6 +389,47 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     announcePolite(message);
   });
 
+  // Sub-Epic 3: Auto-focus Sync (visibleIndex → currentIndex)
+  // 화면에 보이는 아이템이 변경되면 자동으로 포커스를 갱신 (자동 스크롤 없이)
+  createEffect(
+    (() => {
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+      return () => {
+        const idx = visibleIndex();
+        const current = currentIndex();
+        const isOpened = isOpen();
+
+        // Debounce cleanup
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+          timeoutId = undefined;
+        }
+
+        // 동기화 조건:
+        // 1. 갤러리가 열려 있어야 함
+        // 2. visibleIndex가 유효해야 함 (>= 0)
+        // 3. currentIndex와 다를 때만 동기화
+        if (!isOpened || idx < 0 || idx === current) {
+          return;
+        }
+
+        // 300ms debounce: 스크롤 중 과도한 업데이트 방지
+        timeoutId = setTimeout(() => {
+          navigateToItem(idx, { skipScroll: true });
+          timeoutId = undefined;
+        }, 300);
+
+        // Cleanup on next effect run
+        onCleanup(() => {
+          if (timeoutId !== undefined) {
+            clearTimeout(timeoutId);
+          }
+        });
+      };
+    })()
+  );
+
   const handleItemSelection = (index: number) => {
     if (index === currentIndex()) {
       return;

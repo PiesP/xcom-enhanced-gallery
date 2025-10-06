@@ -119,8 +119,11 @@ export function closeGallery(): void {
 
 /**
  * Navigate to media item
+ * @param index - Target index
+ * @param options - Navigation options
+ * @param options.skipScroll - If true, update currentIndex without triggering scroll (default: false)
  */
-export function navigateToItem(index: number): void {
+export function navigateToItem(index: number, options?: { skipScroll?: boolean }): void {
   const state = galleryState();
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
 
@@ -134,7 +137,9 @@ export function navigateToItem(index: number): void {
     currentIndex: validIndex,
   });
 
-  logger.debug(`[Gallery] Navigated to item: ${index}`);
+  logger.debug(
+    `[Gallery] Navigated to item: ${index}${options?.skipScroll ? ' (skipScroll)' : ''}`
+  );
 }
 
 /**
