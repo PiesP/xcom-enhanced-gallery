@@ -11,7 +11,7 @@
  * @param targetKB - 목표 크기 (KB, 기본값: 400)
  * @returns 범위 내 여부
  */
-export function isWithinSizeTarget(sizeKB: number, targetKB = 400): boolean {
+/*#__PURE__*/ export function isWithinSizeTarget(sizeKB: number, targetKB = 400): boolean {
   return sizeKB <= targetKB;
 }
 
@@ -21,7 +21,7 @@ export function isWithinSizeTarget(sizeKB: number, targetKB = 400): boolean {
  * @param sizeBytes - 번들 크기 (bytes)
  * @returns 크기 정보
  */
-export function createBundleInfo(sizeBytes: number) {
+/*#__PURE__*/ export function createBundleInfo(sizeBytes: number) {
   const sizeKB = sizeBytes / 1024;
   return {
     size: sizeBytes,

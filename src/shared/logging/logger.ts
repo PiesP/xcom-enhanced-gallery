@@ -325,7 +325,7 @@ export function createScopedLogger(scope: string, config: Partial<LoggerConfig> 
  * Generates a short correlation id for tracing a request/task chain.
  * Uses crypto.getRandomValues when available, falls back to Math.random.
  */
-export function createCorrelationId(): string {
+/*#__PURE__*/ export function createCorrelationId(): string {
   try {
     if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
       const bytes = new Uint8Array(8);

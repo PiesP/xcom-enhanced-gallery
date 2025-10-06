@@ -91,7 +91,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
 /**
  * 이미지 요소에서 MediaInfo 생성
  */
-export function createMediaInfoFromImage(
+/*#__PURE__*/ export function createMediaInfoFromImage(
   imgElement: HTMLImageElement,
   tweetId: string,
   index: number
@@ -142,7 +142,7 @@ export function createMediaInfoFromImage(
 /**
  * 비디오 요소에서 MediaInfo 생성
  */
-export function createMediaInfoFromVideo(
+/*#__PURE__*/ export function createMediaInfoFromVideo(
   videoElement: HTMLVideoElement,
   tweetId: string,
   index: number
