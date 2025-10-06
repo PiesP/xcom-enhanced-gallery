@@ -1,7 +1,7 @@
 /**
  * @fileoverview DOM 추출기 (백업 전략용)
  * @description 기본적인 DOM 파싱을 수행하는 백업 추출기
- * @version 3.0.0 - Clean Architecture
+ * @version 3.1.0 - Phase 1-2 (GREEN): 비디오/GIF 추출 강화
  */
 
 import { logger } from '@shared/logging/logger';
@@ -9,6 +9,10 @@ import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/me
 import { createSelectorRegistry } from '@shared/dom';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
+import {
+  detectMediaTypeFromUrl,
+  detectGifFromVideoElement,
+} from '@shared/utils/media/media-type-detection';
 
 /**
  * DOM 추출기 (백업 전략용)
@@ -57,10 +61,11 @@ export class DOMDirectExtractor {
   }
 
   /**
-   * 미디어 컨테이너 찾기 (단순화된 로직)
+   * 미디어 컨테이너 찾기
+   * Phase 1-2 (GREEN): 단독 이미지/비디오 요소도 자체를 컨테이너로 허용
    */
   private findMediaContainer(element: HTMLElement): HTMLElement | null {
-    // 우선 가장 가까운 상위 트윗 컨테이너를 우선 선택
+    // 1. 가장 가까운 상위 트윗 컨테이너 우선 선택
     const closestTweet = this.selectors.findClosest(
       [
         'article[data-testid="tweet"]',
@@ -72,39 +77,142 @@ export class DOMDirectExtractor {
     );
     if (closestTweet) return closestTweet as HTMLElement;
 
-    // fallback: 기존 우선순위로 탐색
+    // 2. fallback: 기존 우선순위로 탐색
     const first = this.selectors.findTweetContainer(element) || this.selectors.findTweetContainer();
-    return (first as HTMLElement) || element;
-  }
+    if (first) return first as HTMLElement;
 
-  /**
+    // 3. 트윗 컨테이너를 찾지 못한 경우, 단독 미디어 요소인지 확인
+    if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
+      return element;
+    }
+
+    // 4. 모든 탐색 실패 시 자기 자신을 컨테이너로 반환 (단독 요소 케이스)
+    return element;
+  } /**
    * 컨테이너에서 미디어 추출
+   * Phase 1-2 (GREEN): 비디오/GIF 탐색 범위 확대 및 타입 추론 강화
+   * Phase 1-3 (REFACTOR): 로깅 강화
    */
   private extractMediaFromContainer(container: HTMLElement, tweetInfo?: TweetInfo): MediaInfo[] {
     const mediaItems: MediaInfo[] = [];
 
-    // 이미지 추출
-    const images = container.querySelectorAll('img[src]');
+    // 이미지 추출 (기존 로직 유지 + GIF 감지 추가)
+    let images: NodeListOf<Element>;
+
+    // 컨테이너가 직접 IMG 요소인 경우
+    if (container.tagName === 'IMG') {
+      logger.debug('[DOMDirectExtractor] 단독 IMG 요소 처리');
+      // 자기 자신만 포함
+      const imgArray = [container];
+      images = imgArray as unknown as NodeListOf<Element>;
+    } else {
+      images = container.querySelectorAll('img[src]');
+    }
+
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
         const originalUrl = extractOriginalImageUrl(imgElement.src);
         if (originalUrl) {
-          mediaItems.push(this.createImageMediaInfo(originalUrl, index, tweetInfo));
+          // URL 패턴 기반 타입 추론
+          const detectedType = detectMediaTypeFromUrl(originalUrl);
+          if (detectedType === 'gif') {
+            logger.debug(`[DOMDirectExtractor] GIF 감지 (URL 패턴): ${originalUrl}`);
+            mediaItems.push(this.createGifMediaInfo(originalUrl, index, tweetInfo));
+          } else {
+            mediaItems.push(this.createImageMediaInfo(originalUrl, index, tweetInfo));
+          }
         }
       }
     });
 
-    // 비디오 추출
-    const videos = container.querySelectorAll('video[src*="video.twimg.com"]');
-    videos.forEach((video, _index) => {
-      const videoElement = video as HTMLVideoElement;
+    // 비디오 추출 (확장된 범위)
+    const videos = this.findVideoElements(container);
+    logger.debug(`[DOMDirectExtractor] 비디오 요소 ${videos.length}개 발견`);
+
+    videos.forEach((videoElement, _index) => {
       if (videoElement.src) {
-        mediaItems.push(this.createVideoMediaInfo(videoElement.src, mediaItems.length, tweetInfo));
+        // GIF vs 비디오 구분
+        const isGif =
+          detectGifFromVideoElement(videoElement) ||
+          detectMediaTypeFromUrl(videoElement.src) === 'gif';
+
+        if (isGif) {
+          logger.debug(`[DOMDirectExtractor] GIF 감지 (비디오 요소): ${videoElement.src}`);
+          mediaItems.push(this.createGifMediaInfo(videoElement.src, mediaItems.length, tweetInfo));
+        } else {
+          logger.debug(`[DOMDirectExtractor] 비디오 추가: ${videoElement.src}`);
+          mediaItems.push(
+            this.createVideoMediaInfo(videoElement.src, mediaItems.length, tweetInfo)
+          );
+        }
       }
     });
 
+    logger.debug(`[DOMDirectExtractor] 총 ${mediaItems.length}개 미디어 추출 완료`);
     return mediaItems;
+  }
+
+  /**
+   * Phase 1-2 (GREEN): 비디오 요소 탐색 범위 확대
+   *
+   * 탐색 전략:
+   * 1. 직접 video 태그
+   * 2. 자식 video 태그
+   * 3. role="button" 내부 video (Twitter 플레이어)
+   * 4. data-testid="videoComponent" 내부 video
+   * 5. 상위 컨테이너에서 video 탐색
+   */
+  private findVideoElements(element: HTMLElement): HTMLVideoElement[] {
+    const videos: HTMLVideoElement[] = [];
+    const seen = new Set<HTMLVideoElement>();
+
+    // 중복 제거 헬퍼
+    const addUnique = (video: HTMLVideoElement | null) => {
+      if (video && !seen.has(video)) {
+        seen.add(video);
+        videos.push(video);
+      }
+    };
+
+    // 1. 직접 video 태그
+    if (element.tagName === 'VIDEO') {
+      addUnique(element as HTMLVideoElement);
+    }
+
+    // 2. 자식 video 태그 (모든 비디오 요소)
+    const childVideos = element.querySelectorAll('video');
+    childVideos.forEach(v => addUnique(v as HTMLVideoElement));
+
+    // 3. role="button" 내부 video 탐색 (Twitter 비디오 플레이어)
+    const videoPlayers = element.querySelectorAll('[role="button"]');
+    for (const player of videoPlayers) {
+      const video = player.querySelector('video');
+      if (video) addUnique(video as HTMLVideoElement);
+    }
+
+    // 4. data-testid="videoComponent" 내부 video
+    const videoComponents = element.querySelectorAll('[data-testid="videoComponent"]');
+    for (const component of videoComponents) {
+      const video = component.querySelector('video');
+      if (video) addUnique(video as HTMLVideoElement);
+    }
+
+    // 5. 상위 컨테이너에서 video 탐색 (클릭 지점이 하위 요소인 경우)
+    const parentVideoComponent = element.closest('[data-testid="videoComponent"]');
+    if (parentVideoComponent) {
+      const video = parentVideoComponent.querySelector('video');
+      if (video) addUnique(video as HTMLVideoElement);
+    }
+
+    // 6. 상위 role="button"에서 video 탐색
+    const parentPlayer = element.closest('[role="button"]');
+    if (parentPlayer) {
+      const video = parentPlayer.querySelector('video');
+      if (video) addUnique(video as HTMLVideoElement);
+    }
+
+    return videos;
   }
 
   /**
@@ -117,6 +225,23 @@ export class DOMDirectExtractor {
       type: 'image',
       originalUrl: url,
       filename: this.generateFilename('image', index, tweetInfo),
+      tweetId: tweetInfo?.tweetId,
+      tweetUsername: tweetInfo?.username,
+    };
+  }
+
+  /**
+   * GIF MediaInfo 생성
+   * Phase 1-2 (GREEN): GIF 타입 지원 추가
+   */
+  private createGifMediaInfo(url: string, index: number, tweetInfo?: TweetInfo): MediaInfo {
+    return {
+      id: `gif_${Date.now()}_${index}`,
+      url,
+      type: 'gif',
+      originalUrl: url,
+      filename: this.generateFilename('gif', index, tweetInfo),
+      thumbnailUrl: this.generateVideoThumbnail(url),
       tweetId: tweetInfo?.tweetId,
       tweetUsername: tweetInfo?.username,
     };
@@ -140,9 +265,15 @@ export class DOMDirectExtractor {
 
   /**
    * 파일명 생성
+   * Phase 1-2 (GREEN): GIF 확장자 지원 추가
    */
   private generateFilename(type: string, index: number, tweetInfo?: TweetInfo): string {
-    const extension = type === 'image' ? 'jpg' : 'mp4';
+    const extensionMap: Record<string, string> = {
+      image: 'jpg',
+      video: 'mp4',
+      gif: 'mp4', // Twitter GIF는 mp4로 변환됨
+    };
+    const extension = extensionMap[type] ?? 'jpg';
     const prefix = tweetInfo?.username ? `${tweetInfo.username}_` : '';
     const tweetSuffix = tweetInfo?.tweetId ? `_${tweetInfo.tweetId}` : '';
     return `${prefix}media_${index + 1}${tweetSuffix}.${extension}`;

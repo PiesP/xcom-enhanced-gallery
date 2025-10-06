@@ -281,6 +281,7 @@ export function isValidMediaUrl(url: string): boolean {
       const isVideoThumb =
         /\/ext_tw_video_thumb\//.test(path) ||
         /\/tweet_video_thumb\//.test(path) ||
+        /\/tweet_video\//.test(path) || // Phase 1-2 (GREEN): tweet_video 경로도 GIF로 간주
         /\/video_thumb\//.test(path);
       return (isMedia || isVideoThumb) && !path.includes('/profile_images/');
     }
@@ -324,6 +325,7 @@ function isValidMediaUrlFallback(url: string): boolean {
   const isVideoThumb =
     url.includes('/ext_tw_video_thumb/') ||
     url.includes('/tweet_video_thumb/') ||
+    url.includes('/tweet_video/') || // Phase 1-2 (GREEN): tweet_video 경로도 GIF로 간주
     url.includes('/video_thumb/');
   const isVideoContent = url.includes('/ext_tw_video/') || url.includes('/amplify_video/');
 
