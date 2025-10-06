@@ -31,13 +31,26 @@ export class MediaExtractionService implements MediaExtractor {
    * 간소화된 2단계 추출
    * 1. 트윗 정보 추출
    * 2. API 우선 추출 또는 DOM 직접 추출
+   *
+   * @version 3.1.0 - Production 환경 감지 및 디버깅 강화 (Epic PRODUCTION-ENVIRONMENT-VALIDATION)
    */
   async extractFromClickedElement(
     element: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
-    logger.info(`[MediaExtractor] ${extractionId}: 추출 시작`);
+
+    // Production 환경 감지
+    const isProduction =
+      typeof window !== 'undefined' &&
+      (window.location.hostname.includes('x.com') ||
+        window.location.hostname.includes('twitter.com'));
+
+    logger.info(`[MediaExtractor] ${extractionId}: 추출 시작`, {
+      environment: isProduction ? 'production' : 'test',
+      elementTag: element.tagName,
+      elementClasses: element.className.substring(0, 50), // 보안: 길이 제한
+    });
 
     try {
       // 1단계: 트윗 정보 추출
@@ -49,12 +62,18 @@ export class MediaExtractionService implements MediaExtractor {
 
         // DOM 직접 추출 실패 시 자세한 디버그 정보 포함
         if (!domResult.success || domResult.mediaItems.length === 0) {
+          // Production 환경에서 상세 DOM 스냅샷 캡처
+          const domSnapshot = isProduction ? this.captureDOMStructureSnapshot(element) : null;
+          const selectorTests = isProduction ? this.testAllSelectors(element) : null;
+
           logger.warn(`[MediaExtractor] ${extractionId}: DOM 직접 추출 실패`, {
             success: domResult.success,
             mediaCount: domResult.mediaItems.length,
             element: element.tagName,
             elementClass: element.className,
             parentElement: element.parentElement?.tagName,
+            domSnapshot, // Production 환경 전용 상세 정보
+            selectorTests, // Production 환경 전용 셀렉터 테스트
           });
 
           return {
@@ -74,6 +93,8 @@ export class MediaExtractionService implements MediaExtractor {
                   success: domResult.success,
                   mediaCount: domResult.mediaItems.length,
                 },
+                domSnapshot, // Production 디버깅용 DOM 구조
+                selectorTests, // Production 디버깅용 셀렉터 테스트
               },
             },
             tweetInfo: domResult.tweetInfo,
@@ -129,12 +150,18 @@ export class MediaExtractionService implements MediaExtractor {
 
       // DOM 추출도 실패한 경우 자세한 오류 정보 포함
       if (!domResult.success || domResult.mediaItems.length === 0) {
+        // Production 환경에서 상세 DOM 스냅샷 캡처
+        const domSnapshot = isProduction ? this.captureDOMStructureSnapshot(element) : null;
+        const selectorTests = isProduction ? this.testAllSelectors(element) : null;
+
         logger.error(`[MediaExtractor] ${extractionId}: DOM 백업 추출도 실패`, {
           domSuccess: domResult.success,
           mediaCount: domResult.mediaItems.length,
           element: element.tagName,
           elementClass: element.className,
           tweetId: tweetInfo.tweetId,
+          domSnapshot, // Production 환경 전용 상세 정보
+          selectorTests, // Production 환경 전용 셀렉터 테스트
         });
 
         return {
@@ -154,6 +181,8 @@ export class MediaExtractionService implements MediaExtractor {
                 success: domResult.success,
                 mediaCount: domResult.mediaItems.length,
               },
+              domSnapshot, // Production 디버깅용 DOM 구조
+              selectorTests, // Production 디버깅용 셀렉터 테스트
             },
           },
           tweetInfo: domResult.tweetInfo,
@@ -235,6 +264,62 @@ export class MediaExtractionService implements MediaExtractor {
   }
 
   /**
+   * Production 환경 디버깅: DOM 구조 스냅샷 캡처
+   * Epic PRODUCTION-ENVIRONMENT-VALIDATION Phase 1-3
+   *
+   * @param element 분석할 요소
+   * @returns DOM 구조 요약 객체
+   */
+  private captureDOMStructureSnapshot(element: HTMLElement): object {
+    return {
+      tagName: element.tagName,
+      classes: element.className.substring(0, 100), // 보안: 긴 값은 잘라냄
+      attributes: Array.from(element.attributes)
+        .map(a => ({
+          name: a.name,
+          value: a.value.substring(0, 50), // 보안: 긴 값은 잘라냄
+        }))
+        .slice(0, 10), // 최대 10개 속성만
+      childrenTags: Array.from(element.children)
+        .map(c => c.tagName)
+        .slice(0, 20), // 최대 20개 자식만
+      videoElements: element.querySelectorAll('video').length,
+      imgElements: element.querySelectorAll('img').length,
+      hasVideoPlayer: element.querySelector('[data-testid="videoPlayer"]') !== null,
+      hasVideoComponent: element.querySelector('[data-testid="videoComponent"]') !== null,
+      hasRoleButton: element.querySelector('[role="button"]') !== null,
+    };
+  }
+
+  /**
+   * Production 환경 디버깅: 여러 셀렉터 테스트 결과
+   *
+   * @param element 테스트할 요소
+   * @returns 각 셀렉터별 매칭 결과
+   */
+  private testAllSelectors(element: HTMLElement): object {
+    const selectors = [
+      'video',
+      '[data-testid="videoPlayer"] video',
+      '[data-testid="videoComponent"] video',
+      '[role="button"] video',
+      'video[playsinline][loop][autoplay]',
+      'img[src*="twimg.com"]',
+    ];
+
+    const results: Record<string, number> = {};
+    for (const selector of selectors) {
+      try {
+        results[selector] = element.querySelectorAll(selector).length;
+      } catch {
+        results[selector] = -1; // 셀렉터 오류
+      }
+    }
+
+    return results;
+  }
+
+  /**
    * 오류 결과 생성
    */
   private createErrorResult(error: unknown): MediaExtractionResult {
@@ -262,13 +347,7 @@ export class MediaExtractionService implements MediaExtractor {
         },
       },
       tweetInfo: null,
-      errors: [
-        new ExtractionError(
-          ExtractionErrorCode.UNKNOWN_ERROR,
-          `미디어 추출 중 오류가 발생했습니다: ${errorMessage}`,
-          error instanceof Error ? error : undefined
-        ),
-      ],
+      errors: [new ExtractionError(ExtractionErrorCode.UNKNOWN_ERROR, errorMessage)],
     };
   }
 }
