@@ -69,14 +69,14 @@ Get-ChildItem dist -File | Select-Object Name, @{Name="SizeKB";Expression={[math
 npx vitest run test/architecture/bundle-size-optimization.contract.test.ts
 
 # 상한선 확인 (회귀 방지)
-# Raw: 495.19 KB ≤ 473 KB (목표 초과 22 KB) ⚠️
-# Gzip: 123.73 KB ≤ 118 KB (목표 초과 5.73 KB) ⚠️
+# Raw: 495.86 KB ≤ 473 KB (목표 초과 22.86 KB) ⚠️
+# Gzip: 123.95 KB ≤ 118 KB (목표 초과 5.95 KB) ⚠️
 ```
 
 **목표**:
 
-- Raw 크기: ≤473 KB (현재: 495.19 KB, **22 KB 초과** ⚠️)
-- Gzip 크기: ≤118 KB (현재: 123.73 KB, **5.73 KB 초과** ⚠️)
+- Raw 크기: ≤473 KB (현재: 495.86 KB, **22.86 KB 초과** ⚠️)
+- Gzip 크기: ≤118 KB (현재: 123.95 KB, **5.95 KB 초과** ⚠️)
 - 향후 이상적 목표: Raw 420 KB, Gzip 105 KB
 
 ---

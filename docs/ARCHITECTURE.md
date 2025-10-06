@@ -2,8 +2,8 @@
 
 > 프로젝트 구조, 레이어 책임, 경계, 핵심 유스케이스를 정의
 
-**최근 업데이트**: 2025-10-06 **버전**: 0.2.4 **프로젝트 상태**: 테스트 2869
-passed (110 skipped, 1 todo) | 번들 495.19 KB (목표 초과 22 KB)
+**최근 업데이트**: 2025-10-06 **버전**: 0.2.4 **프로젝트 상태**: 테스트 2931
+passed (110 skipped, 1 todo) | 번들 495.86 KB
 
 **관련 문서**: [코딩 가이드](CODING_GUIDELINES.md) |
 [Vendors API](vendors-safe-api.md) | [실행/CI](../AGENTS.md) |
@@ -292,21 +292,16 @@ function sanitize(obj) {
 
 **현재 상태** (2025-10-06, v0.2.4):
 
-- Raw 번들: 495.19 KB (목표: ≤473 KB, **22 KB 초과** ⚠️)
-- Gzip 번들: 123.73 KB (목표: ≤118 KB, **5.73 KB 초과** ⚠️)
+- Raw 번들: 495.86 KB (목표: ≤473 KB, **22.86 KB 초과** ⚠️)
+- Gzip 번들: 123.95 KB (목표: ≤118 KB, **5.95 KB 초과** ⚠️)
 - 이상적 목표: Raw 420 KB, Gzip 105 KB
 
-**완료된 최적화** (Phase 1-3, 2025-10-05):
+**완료된 최적화** (Phase 1-6, 2025-10-05 ~ 2025-10-06):
 
 1. Tree-shaking 개선: `package.json` sideEffects, Rollup treeshake 옵션
-2. 코드 중복 제거: `core-utils.ts` 통합
+2. 코드 중복 제거: `core-utils.ts` 통합, theme-utils.ts 제거
 3. Terser 압축 강화: pure_funcs, unsafe opts, mangleProps
-
-**향후 최적화 계획** (Phase 4-7, 분석 완료):
-
-- knip 분석 결과: 111 unused exports, 96 unused files
-- 예상 감축: -45 KB (-9%)
-- 상세: `TDD_REFACTORING_PLAN.md` → Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
+4. Unused Files 제거: Phase 4A/4B에서 16개 파일 제거
 
 ---
 

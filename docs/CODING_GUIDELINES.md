@@ -3,8 +3,8 @@
 > 집행 가능한 규칙 중심. 세부 설계는 [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 > [`vendors-safe-api.md`](vendors-safe-api.md) 참조
 
-**최근 업데이트**: 2025-10-06 **버전**: 0.2.4 **프로젝트 상태**: 테스트 2869
-passed (110 skipped, 1 todo) | 번들 495.19 KB
+**최근 업데이트**: 2025-10-06 **버전**: 0.2.4 **프로젝트 상태**: 테스트 2931
+passed (110 skipped, 1 todo) | 번들 495.86 KB
 
 ---
 
