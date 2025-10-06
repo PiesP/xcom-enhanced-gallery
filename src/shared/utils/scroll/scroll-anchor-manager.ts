@@ -77,11 +77,15 @@ export class ScrollAnchorManager {
 
   /**
    * 스크롤 앵커 설정
-   * Sub-Epic 3: 로깅 추가
+   * Sub-Epic 3: Production 로깅 추가
    *
    * @param element - 앵커로 사용할 DOM 요소 (null이면 앵커 제거)
    */
   setAnchor(element: HTMLElement | null): void {
+    // Production 환경 감지
+    const isProduction =
+      typeof window !== 'undefined' && window.location.hostname.includes('x.com');
+
     if (!element) {
       logger.debug('[ScrollAnchorManager] 앵커 제거', {
         previousOffsetTop: this.anchor?.offsetTop,
@@ -109,6 +113,7 @@ export class ScrollAnchorManager {
       fallbackScrollTop: this.fallbackScrollTop,
       elementTag: element.tagName,
       elementClass: element.className,
+      environment: isProduction ? 'production' : 'test',
     });
   }
 
@@ -123,7 +128,7 @@ export class ScrollAnchorManager {
 
   /**
    * 앵커 기반 스크롤 위치 복원
-   * Sub-Epic 3: 로깅 추가
+   * Sub-Epic 3: Production 로깅 추가
    *
    * 동작:
    * 1. 앵커 요소가 있고 DOM에 존재하면 앵커 기준 복원
@@ -131,6 +136,10 @@ export class ScrollAnchorManager {
    * 3. 브라우저 환경이 아니면 무시 (Node/테스트 환경 호환)
    */
   restoreToAnchor(): void {
+    // Production 환경 감지
+    const isProduction =
+      typeof window !== 'undefined' && window.location.hostname.includes('x.com');
+
     // 브라우저 환경 체크
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       logger.debug('[ScrollAnchorManager] 브라우저 환경 아님 - 복원 스킵');
@@ -149,6 +158,7 @@ export class ScrollAnchorManager {
         hasAnchor: !!this.anchor,
         inDOM: this.anchor ? document.body.contains(this.anchor.element) : false,
         fallbackScrollTop: this.fallbackScrollTop,
+        environment: isProduction ? 'production' : 'test',
       });
       this.restoreToPixelPosition();
       return;
@@ -168,6 +178,7 @@ export class ScrollAnchorManager {
       targetY,
       clampedY,
       currentScrollY: window.pageYOffset,
+      environment: isProduction ? 'production' : 'test',
     });
 
     // 스크롤 복원 (즉시 이동, smooth는 UX 개선 시 옵션)

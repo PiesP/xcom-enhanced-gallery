@@ -92,6 +92,9 @@ export function useGalleryVisibleIndex(
   const rootMargin = options.rootMargin ?? '0px';
   const rafCoalesce = options.rafCoalesce ?? true;
 
+  // Production 환경 감지 (Sub-Epic 2)
+  const isProduction = typeof window !== 'undefined' && window.location.hostname.includes('x.com');
+
   const clampIndex = (candidate: number): number => {
     if (itemCount <= 0 || candidate < 0) {
       return -1;
@@ -113,7 +116,21 @@ export function useGalleryVisibleIndex(
   };
 
   const updateVisibleIndex = (next: number) => {
-    setVisibleIndex(prev => (prev !== next ? next : prev));
+    const prev = visibleIndexSignal();
+    if (prev === next) return;
+
+    setVisibleIndex(next);
+
+    // Production 환경 로깅 (Sub-Epic 2)
+    if (isProduction) {
+      logger.info('[AutoFocus] visibleIndex 업데이트', {
+        from: prev,
+        to: next,
+        itemCount,
+        observerActive: !!intersectionObserver,
+        environment: 'production',
+      });
+    }
   };
 
   const updateByRects = () => {
@@ -257,8 +274,28 @@ export function useGalleryVisibleIndex(
 
     try {
       observeWithIntersectionObserver(container, items, thresholds);
+
+      // Production 환경 로깅 (Sub-Epic 2)
+      if (isProduction) {
+        logger.info('[AutoFocus] IntersectionObserver 초기화 완료', {
+          itemCount: items.length,
+          thresholds: thresholds.length,
+          rootMargin,
+          environment: 'production',
+        });
+      }
     } catch (error) {
       logger.warn('useVisibleIndex: IntersectionObserver 설정 실패, 폴백 사용', error);
+
+      // Production 환경 폴백 로깅 (Sub-Epic 2)
+      if (isProduction) {
+        logger.warn('[AutoFocus] IntersectionObserver 실패, rect 기반 fallback 사용', {
+          error: error instanceof Error ? error.message : String(error),
+          itemCount: items.length,
+          environment: 'production',
+        });
+      }
+
       updateByRects();
       const onScroll = () => scheduleRectUpdate();
       const onResize = () => scheduleRectUpdate();
