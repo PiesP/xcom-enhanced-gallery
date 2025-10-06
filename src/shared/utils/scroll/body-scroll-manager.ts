@@ -159,6 +159,24 @@ export class BodyScrollManager {
 
       // 스크롤 위치 복원
       window.scrollTo(0, scrollTop);
+
+      // X.com lazy loading 트리거: unlock 후 스크롤 이벤트 발생
+      setTimeout(() => {
+        // 환경 가드: window가 정의되어 있는지 확인 (테스트 환경 보호)
+        if (typeof window === 'undefined') {
+          return;
+        }
+
+        // 1. 미세 스크롤로 이벤트 트리거 (1px 이동 후 복원)
+        window.scrollBy(0, 1);
+        window.scrollBy(0, -1);
+
+        // 2. 스크롤 이벤트 명시적 발생 (IntersectionObserver 활성화)
+        window.dispatchEvent(new Event('scroll'));
+
+        // 3. 리사이즈 이벤트 발생 (일부 lazy loading 구현 대응)
+        window.dispatchEvent(new Event('resize'));
+      }, 100); // 100ms 지연: DOM 안정화 대기
     }
     this.isOriginalSaved = false;
     this.savedScrollTop = 0;
