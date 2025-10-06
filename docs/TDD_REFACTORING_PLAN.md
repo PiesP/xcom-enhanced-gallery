@@ -16,7 +16,7 @@ Vitest + JSDOM, 기본 URL `https://x.com` **원칙**: 최소 diff, 3계층
 
 **로그 파일 기반 분석**: `x.com-1759746704795.log`
 
-#### 이슈 1: 타임라인에서 동영상/GIF 클릭 시 섬네일만 표시 ⚠️
+#### ✅ 이슈 1: 타임라인에서 동영상/GIF 클릭 시 섬네일만 표시 (완료 - 2025-10-06)
 
 **증상**:
 
@@ -41,10 +41,30 @@ Vitest + JSDOM, 기본 URL `https://x.com` **원칙**: 최소 diff, 3계층
 
 **선택된 솔루션**: **A + B 하이브리드**
 
-- Phase 1: MediaClickDetector에 비디오 컨테이너 특수 처리 추가 (빠른 수정)
-- Phase 2: DOMDirectExtractor에 비디오 URL 추출 강화 (근본 해결)
+- Phase 1: MediaClickDetector에 비디오 컨테이너 특수 처리 추가 (빠른 수정) ✅
+- Phase 2: DOMDirectExtractor에 비디오 URL 추출 강화 (근본 해결) ✅
 
-**구현 계획**:
+**최종 결과** (2025-10-06):
+
+- ✅ 테스트: 29/29 passing (100%)
+  - `test/production/timeline-video-extraction-failure.test.ts`: 8/8
+  - `test/shared/utils/media/timeline-video-click.contract.test.ts`: 9/9
+  - `test/features/gallery/timeline-video-click-extraction.test.ts`: 12/12
+- ✅ 구현: 다중 전략 비디오 URL 추출
+  - Direct src extraction (confidence: 1.0)
+  - Source tag extraction (confidence: 1.0)
+  - Poster → video conversion (confidence: 0.8-0.85)
+  - Data attributes fallback
+- ✅ Thumbnail → Video URL 패턴 변환
+  - tweet_video_thumb → tweet_video
+  - ext_tw_video_thumb → ext_tw_video
+  - amplify_video_thumb → amplify_video
+- ✅ 정밀한 컨트롤 차단 (aria-label 기반)
+- ✅ GIF vs 일반 동영상 구분
+
+**상세**: `TDD_REFACTORING_PLAN_COMPLETED.md` Issue #1 섹션 참조
+
+**구현 계획** (아카이브):
 
 ##### Phase 1-1: RED - 실패 테스트 작성
 
@@ -378,7 +398,7 @@ export function convertVideoToThumbnailUrl(videoUrl: string): string | null {
 
 ---
 
-#### 이슈 2: 현재 화면의 미디어 자동 포커스 갱신 미동작 ⚠️
+#### ✅ 이슈 2: 현재 화면의 미디어 자동 포커스 갱신 미동작 (완료 - 2025-10-06)
 
 **증상**:
 
@@ -403,10 +423,35 @@ export function convertVideoToThumbnailUrl(videoUrl: string): string | null {
 
 **선택된 솔루션**: **A + B 하이브리드**
 
-- Phase 1: IntersectionObserver 초기화 타이밍 수정 (근본 해결)
-- Phase 2: Fallback 로직 추가 (안정성 보장)
+- Phase 1: IntersectionObserver 초기화 타이밍 수정 (근본 해결) ✅
+- Phase 2: Fallback 로직 추가 (안정성 보장) ✅
 
-**구현 계획**:
+**최종 결과** (2025-10-06):
+
+- ✅ 테스트: 32/34 passing (2 intentionally skipped)
+  - `test/features/gallery/auto-focus-sync.test.tsx`: 5/5
+  - `test/features/gallery/auto-focus-visible-index-integration.contract.test.tsx`:
+    8/9 (1 skipped)
+  - `test/features/gallery/auto-focus-accessibility-phase2-3.contract.test.tsx`:
+    10/11 (1 skipped)
+  - `test/features/gallery/auto-focus-soft-visual.contract.test.tsx`: 11/11
+- ✅ 구현: IntersectionObserver + Fallback
+  - Primary: IntersectionObserver with thresholds [0, 0.1, 0.25, 0.5, 0.75, 0.9,
+    1]
+  - Fallback: `getBoundingClientRect()` + manual ratio calculation
+  - RAF coalescing for performance
+  - Production environment detection
+- ✅ Auto-focus Sync: 300ms debounce, skipScroll: true
+- ✅ ARIA Accessibility:
+  - Live regions (polite)
+  - Screen reader announcements
+  - aria-current on visible items
+  - Message format: "현재 화면에 표시된 아이템: X/Y"
+- ✅ Visual Emphasis: isVisible prop, .visible class
+
+**상세**: `TDD_REFACTORING_PLAN_COMPLETED.md` Issue #2 섹션 참조
+
+**구현 계획** (아카이브):
 
 ##### Phase 2-1: RED - 실패 테스트 작성
 
