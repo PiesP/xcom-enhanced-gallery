@@ -150,8 +150,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
           this.onCloseCallback();
         }
       },
-      className: 'xeg-gallery-renderer',
-      useShadowDOM: true, // Shadow DOM 활성화로 스타일 격리
+      className: 'xeg-gallery-renderer xeg-gallery-root', // Light DOM: xeg-gallery-root 추가
+      useShadowDOM: false, // Light DOM 전환: Cascade Layers로 스타일 격리
       children: createElement(
         ErrorBoundary,
         {},
