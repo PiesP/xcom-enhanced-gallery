@@ -8059,6 +8059,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/media/media-type-detection.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/memory/index.ts",
       "dependencies": [
         {
@@ -8573,7 +8580,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 277,
+    "totalCruised": 278,
     "totalDependenciesCruised": 341,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
