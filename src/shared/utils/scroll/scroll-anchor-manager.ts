@@ -13,15 +13,18 @@
 import { logger } from '@shared/logging';
 
 /**
- * Scroll 앵커 정보
+ * Scroll 앵커 정보 (Dual Anchor Strategy)
+ * Production Issue #3: getBoundingClientRect 기반으로 변경
  */
 interface ScrollAnchor {
   /** 앵커 DOM 요소 */
   element: HTMLElement;
-  /** 앵커 설정 시점의 offsetTop (참조용) */
+  /** 앵커 설정 시점의 offsetTop (getBoundingClientRect + scrollY 기반) */
   offsetTop: number;
   /** 앵커 설정 시각 (타임스탬프) */
   timestamp: number;
+  /** Pixel offset fallback (DOM 앵커 실패 시 사용) */
+  fallbackScrollTop: number;
 }
 
 /**
@@ -40,7 +43,7 @@ interface ScrollAnchor {
  * scrollAnchorManager.setAnchor(tweetElement);
  *
  * // 갤러리 닫을 때 복원
- * scrollAnchorManager.restoreToAnchor();
+ * scrollAnchorManager.restoreScroll();
  *
  * // 정리
  * scrollAnchorManager.clear();
@@ -48,7 +51,6 @@ interface ScrollAnchor {
  */
 export class ScrollAnchorManager {
   private anchor: ScrollAnchor | null = null;
-  private fallbackScrollTop: number = 0;
 
   /**
    * 뷰포트 크기에 따른 상단 여백 계산
@@ -78,6 +80,7 @@ export class ScrollAnchorManager {
   /**
    * 스크롤 앵커 설정
    * Sub-Epic 3: Production 로깅 추가
+   * Production Issue #3: getBoundingClientRect 기반 offsetTop 계산
    *
    * @param element - 앵커로 사용할 DOM 요소 (null이면 앵커 제거)
    */
@@ -92,25 +95,31 @@ export class ScrollAnchorManager {
         fallbackScrollTop: typeof window !== 'undefined' ? window.pageYOffset : 0,
       });
       this.anchor = null;
-      this.fallbackScrollTop = typeof window !== 'undefined' ? window.pageYOffset : 0;
       return;
     }
 
-    // 앵커 정보 저장
-    this.anchor = {
-      element,
-      offsetTop: element.offsetTop,
-      timestamp: Date.now(),
-    };
+    // Dual Anchor Strategy: DOM 앵커 + Pixel fallback
+    const fallbackScrollTop = typeof window !== 'undefined' ? window.pageYOffset : 0;
 
-    // Fallback 위치도 저장 (앵커 요소 제거 시 사용)
+    // getBoundingClientRect를 사용하여 정확한 offsetTop 계산
+    // element.offsetTop은 SPA 환경에서 0을 반환할 수 있음 (Production Issue #3)
+    let offsetTop = 0;
     if (typeof window !== 'undefined') {
-      this.fallbackScrollTop = window.pageYOffset;
+      const rect = element.getBoundingClientRect();
+      offsetTop = rect.top + window.scrollY;
     }
 
+    // 앵커 정보 저장 (Dual Anchor)
+    this.anchor = {
+      element,
+      offsetTop,
+      timestamp: Date.now(),
+      fallbackScrollTop,
+    };
+
     logger.info('[ScrollAnchorManager] 앵커 설정 완료', {
-      offsetTop: element.offsetTop,
-      fallbackScrollTop: this.fallbackScrollTop,
+      offsetTop,
+      fallbackScrollTop,
       elementTag: element.tagName,
       elementClass: element.className,
       environment: isProduction ? 'production' : 'test',
@@ -127,15 +136,33 @@ export class ScrollAnchorManager {
   }
 
   /**
-   * 앵커 기반 스크롤 위치 복원
+   * 앵커 기반 스크롤 위치 복원 (Public API)
+   * Production Issue #3: Dual Anchor Strategy 구현
+   *
+   * 복원 우선순위:
+   * 1. DOM 앵커 (getBoundingClientRect 기반)
+   * 2. Pixel offset fallback
+   * 3. 경고 로그 출력
+   *
+   * @returns 복원 성공 여부
+   */
+  restoreScroll(): boolean {
+    return this.restoreToAnchor();
+  }
+
+  /**
+   * 앵커 기반 스크롤 위치 복원 (내부 구현)
    * Sub-Epic 3: Production 로깅 추가
+   * Production Issue #3: Dual Anchor Strategy 구현
    *
    * 동작:
-   * 1. 앵커 요소가 있고 DOM에 존재하면 앵커 기준 복원
-   * 2. 앵커가 없거나 DOM에서 제거되었으면 픽셀 기반 fallback
+   * 1. 앵커 요소가 있고 DOM에 존재하면 DOM 기준 복원
+   * 2. DOM 앵커 실패 시 픽셀 기반 fallback
    * 3. 브라우저 환경이 아니면 무시 (Node/테스트 환경 호환)
+   *
+   * @returns 복원 성공 여부
    */
-  restoreToAnchor(): void {
+  private restoreToAnchor(): boolean {
     // Production 환경 감지
     const isProduction =
       typeof window !== 'undefined' && window.location.hostname.includes('x.com');
@@ -143,78 +170,70 @@ export class ScrollAnchorManager {
     // 브라우저 환경 체크
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       logger.debug('[ScrollAnchorManager] 브라우저 환경 아님 - 복원 스킵');
-      return;
+      return false;
     }
 
     // window.scrollTo가 없는 환경 처리
     if (typeof window.scrollTo !== 'function') {
       logger.debug('[ScrollAnchorManager] window.scrollTo 미지원 - 복원 스킵');
-      return;
+      return false;
     }
 
-    // 앵커가 없거나 DOM에서 제거된 경우 fallback
-    if (!this.anchor || !document.body.contains(this.anchor.element)) {
-      logger.info('[ScrollAnchorManager] 앵커 없음 또는 제거됨 - 픽셀 기반 fallback', {
-        hasAnchor: !!this.anchor,
-        inDOM: this.anchor ? document.body.contains(this.anchor.element) : false,
-        fallbackScrollTop: this.fallbackScrollTop,
+    // 앵커 없음 - 진단 정보 제공
+    if (!this.anchor) {
+      logger.warn('[ScrollAnchorManager] 앵커가 설정되지 않음', {
+        currentScrollY: window.pageYOffset,
         environment: isProduction ? 'production' : 'test',
       });
-      this.restoreToPixelPosition();
-      return;
+      return false;
     }
 
-    // 앵커 요소를 기준으로 스크롤 위치 계산
-    // 상단 여백을 뷰포트 크기에 따라 동적으로 계산
-    const topMargin = this.calculateTopMargin();
-    const targetY = this.anchor.element.offsetTop - topMargin;
+    // Strategy 1: DOM 앵커 (element가 DOM에 존재)
+    if (document.body.contains(this.anchor.element)) {
+      // getBoundingClientRect를 사용하여 현재 위치 재계산
+      const rect = this.anchor.element.getBoundingClientRect();
+      const currentOffsetTop = rect.top + window.scrollY;
 
-    // 음수 방지 (상단 경계)
-    const clampedY = Math.max(0, targetY);
+      const topMargin = this.calculateTopMargin();
+      const targetY = currentOffsetTop - topMargin;
+      const clampedY = Math.max(0, targetY);
 
-    logger.info('[ScrollAnchorManager] 앵커 기반 스크롤 복원 실행', {
-      anchorOffsetTop: this.anchor.element.offsetTop,
-      topMargin,
-      targetY,
-      clampedY,
-      currentScrollY: window.pageYOffset,
+      logger.info('[ScrollAnchorManager] DOM 앵커 기반 스크롤 복원 실행', {
+        anchorOffsetTop: currentOffsetTop,
+        topMargin,
+        targetY,
+        clampedY,
+        currentScrollY: window.pageYOffset,
+        environment: isProduction ? 'production' : 'test',
+      });
+
+      window.scrollTo({
+        top: clampedY,
+        behavior: 'auto',
+      });
+      return true;
+    }
+
+    // Strategy 2: Pixel offset fallback (DOM 앵커 실패)
+    logger.info('[ScrollAnchorManager] DOM 앵커 제거됨 - 픽셀 기반 fallback', {
+      hasAnchor: !!this.anchor,
+      inDOM: false,
+      fallbackScrollTop: this.anchor.fallbackScrollTop,
       environment: isProduction ? 'production' : 'test',
     });
 
-    // 스크롤 복원 (즉시 이동, smooth는 UX 개선 시 옵션)
-    window.scrollTo({
-      top: clampedY,
-      behavior: 'auto',
-    });
-  }
-
-  /**
-   * 픽셀 기반 스크롤 위치 복원 (Fallback)
-   * Sub-Epic 3: 로깅 추가
-   *
-   * @private
-   */
-  private restoreToPixelPosition(): void {
-    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-      logger.info('[ScrollAnchorManager] 픽셀 기반 스크롤 복원 (Fallback)', {
-        fallbackScrollTop: this.fallbackScrollTop,
-        currentScrollY: window.pageYOffset,
-      });
-      window.scrollTo(0, this.fallbackScrollTop);
-    } else {
-      logger.debug('[ScrollAnchorManager] 브라우저 환경 아님 - 픽셀 복원 스킵');
-    }
+    window.scrollTo(0, this.anchor.fallbackScrollTop);
+    return true;
   }
 
   /**
    * 앵커 상태 초기화
    *
-   * 모든 앵커 정보 및 fallback 위치 제거
+   * 모든 앵커 정보 제거
    * (테스트/정리 용도)
    */
   clear(): void {
     this.anchor = null;
-    this.fallbackScrollTop = 0;
   }
 
   /**

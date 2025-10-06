@@ -719,35 +719,18 @@ createEffect(
 
 ---
 
-#### 이슈 3: 갤러리 닫을 때 타임라인 원래 위치 복원 실패 ⚠️
+#### ✅ 이슈 3: 갤러리 닫을 때 타임라인 원래 위치 복원 실패 (COMPLETED 2025-10-06)
 
-**증상**:
+**상태**: ✅ 완료 **커밋**: `2bdaf15c`, `9b1d641a` **테스트**: 30/30 passing (12
+production + 18 integration) **문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
+참조
 
-- 로그:
-  `[ScrollAnchorManager] 앵커 기반 스크롤 복원 실행 {anchorOffsetTop: 0, ...}`
-- `anchorOffsetTop: 0`으로 잘못 기록됨
-- 갤러리 닫을 때 타임라인 최상단으로 스크롤됨
+**구현 결과**:
 
-**원인 분석**:
-
-1. `scrollAnchorManager.setAnchor()` 호출 시점에 이미 요소의 `offsetTop`이
-   변경됨
-2. X.com의 동적 콘텐츠 로딩으로 앵커 요소 위치 변동
-3. `fallbackScrollTop`이 정확하게 저장되지 않음 (로그:
-   `fallbackScrollTop: 6666.6669921875` → 복원 시 `currentScrollY: 0`)
-
-**해결 방안 비교**:
-
-| 방안                                | 장점                          | 단점                       | 점수 |
-| ----------------------------------- | ----------------------------- | -------------------------- | ---- |
-| A. 앵커 설정 시점을 클릭 직전으로   | 정확한 위치 캡처, 최소 변경   | 타이밍 민감                | 8/10 |
-| B. 이중 앵커 전략 (DOM + pixel)     | 안정성 최고, 동적 콘텐츠 대응 | 복잡도 증가                | 9/10 |
-| C. IntersectionObserver로 앵커 추적 | 실시간 위치 추적              | 성능 영향, 오버 엔지니어링 | 5/10 |
-
-**선택된 솔루션**: **A + B 하이브리드**
-
-- Phase 1: 앵커 설정 시점을 미디어 클릭 직전으로 변경
-- Phase 2: 이중 앵커 전략 (DOM 앵커 + pixel 백업)으로 안정성 보장
+- ✅ Dual Anchor Strategy: `getBoundingClientRect() + window.scrollY` 사용
+- ✅ API 변경: `restoreScroll()` public, `restoreToAnchor()` private
+- ✅ Viewport-responsive margins: Mobile 60px, Tablet 80px, Desktop 100px
+- ✅ 번들 임팩트: +10KB (최적화 필요, 별도 Issue)
 
 **구현 계획**:
 

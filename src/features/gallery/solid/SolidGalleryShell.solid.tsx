@@ -246,7 +246,8 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
     } else {
       bodyScrollManager.unlock('gallery');
       // 스크롤 앵커 기반 위치 복원 (동적 콘텐츠 대응)
-      scrollAnchorManager.restoreToAnchor();
+      // Production Issue #3: Dual Anchor Strategy 적용
+      scrollAnchorManager.restoreScroll();
     }
   });
 

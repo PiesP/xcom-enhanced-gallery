@@ -31,13 +31,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { MediaClickDetector } from '@shared/utils/media/MediaClickDetector';
 
-describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
+describe('[PRODUCTION-GREEN] Timeline Video Extraction Success', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
   });
 
-  describe('Issue Reproduction: 비디오 요소 0개 발견', () => {
-    it('should fail to extract video from thumbnail-only container (current behavior)', () => {
+  describe('Issue Resolved: 비디오 요소 추출 성공', () => {
+    it('should successfully extract video from thumbnail-only container', () => {
       // Given: 타임라인 동영상 구조 (썸네일만 있고 video 태그 없음)
       // 실제 X.com 타임라인 DOM 구조 재현
       const article = document.createElement('article');
@@ -62,14 +62,12 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       const detector = MediaClickDetector.getInstance();
       const result = detector.detectMediaFromClick(thumbnail);
 
-      // Then: 현재는 비디오를 감지하지 못함 (이미지로만 감지)
-      // Expected: type === 'none' 또는 type === 'image' (비디오 URL 없음)
-      // 이 테스트가 실패하면 이미 수정된 것임
-      expect(result.type).not.toBe('video');
-      expect(result.mediaUrl).not.toContain('ext_tw_video');
+      // Then: Issue #1 수정으로 이제 비디오를 정상적으로 감지
+      expect(result.type).toBe('video');
+      expect(result.mediaUrl).toContain('ext_tw_video');
     });
 
-    it('should fail when video element has no src (only poster)', () => {
+    it('should successfully extract video URL from poster attribute', () => {
       // Given: video 요소는 있지만 src 없이 poster만 있는 경우
       const videoContainer = document.createElement('div');
       videoContainer.setAttribute('data-testid', 'videoPlayer');
@@ -85,13 +83,13 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       const detector = MediaClickDetector.getInstance();
       const result = detector.detectMediaFromClick(video);
 
-      // Then: 현재는 비디오 URL을 추출하지 못함
-      // poster에서 video URL로 변환하는 로직이 없음
-      expect(result.type).toBe('video'); // 비디오로는 감지
-      expect(result.mediaUrl || '').toBe(''); // 하지만 URL은 없음
+      // Then: Issue #1 수정으로 poster에서 video URL 추출 성공
+      expect(result.type).toBe('video'); // 비디오로 감지
+      expect(result.mediaUrl).not.toBe(''); // URL도 추출됨
+      expect(result.mediaUrl).toContain('ext_tw_video');
     });
 
-    it('should fail to extract video URL from data attributes', () => {
+    it('should successfully extract video URL from data attributes', () => {
       // Given: Twitter가 data-* 속성으로 비디오 정보를 제공하는 경우
       const videoContainer = document.createElement('div');
       videoContainer.setAttribute('data-testid', 'videoComponent');
@@ -110,16 +108,15 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       const detector = MediaClickDetector.getInstance();
       const result = detector.detectMediaFromClick(thumbnail);
 
-      // Then: 현재는 data 속성을 확인하지 않음
-      // Expected: 비디오 URL 추출 실패
-      const extractedUrl = result.mediaUrl || '';
-      expect(extractedUrl).not.toContain('ext_tw_video/');
-      expect(extractedUrl).not.toContain('/vid/');
+      // Then: Issue #1 수정으로 data 속성에서 비디오 URL 추출 성공
+      expect(result.type).toBe('video');
+      expect(result.mediaUrl).toContain('ext_tw_video/');
+      expect(result.mediaUrl).toContain('/vid/');
     });
   });
 
-  describe('Expected Behavior: 썸네일 → 비디오 URL 변환', () => {
-    it('[RED] should extract video URL from thumbnail pattern', () => {
+  describe('[GREEN] Expected Behavior: 썸네일 → 비디오 URL 변환', () => {
+    it('should extract video URL from thumbnail pattern', () => {
       // Given: 썸네일 URL 패턴에서 비디오 URL 유추 가능
       const thumbnailUrl = 'https://pbs.twimg.com/ext_tw_video_thumb/1234567890/pu/img/abc123.jpg';
       // Expected video URL: https://video.twimg.com/ext_tw_video/1234567890/pu/vid/1280x720/video.mp4
@@ -137,13 +134,12 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       const result = detector.detectMediaFromClick(thumbnail);
 
       // Then: 썸네일 URL 패턴에서 비디오 URL 추출 성공
-      // 현재는 이 기능이 없어서 실패할 것임 (RED)
-      expect(result.type).toBe('video'); // GREEN 구현 시 변경
+      expect(result.type).toBe('video');
       expect(result.mediaUrl).toContain('ext_tw_video/');
       expect(result.mediaUrl).toContain('/pu/vid/');
     });
 
-    it('[RED] should distinguish GIF from regular video', () => {
+    it('should distinguish GIF from regular video', () => {
       // Given: GIF는 tweet_video_thumb 패턴 사용
       const gifThumbnailUrl = 'https://pbs.twimg.com/tweet_video_thumb/AbC123.jpg';
       // Expected: https://video.twimg.com/tweet_video/AbC123.mp4
@@ -177,8 +173,7 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       // When: 일반 동영상 썸네일 감지
       const videoResult = detector.detectMediaFromClick(videoThumb);
 
-      // Then: GIF와 일반 동영상 구분
-      // 현재는 구분 로직이 없어서 실패할 것임 (RED)
+      // Then: GIF와 일반 동영상 구분 성공
       expect(gifResult.mediaUrl).toContain('tweet_video/');
       expect(gifResult.mediaUrl).toMatch(/\.mp4$/);
 
@@ -186,7 +181,7 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       expect(videoResult.mediaUrl).toContain('/vid/');
     });
 
-    it('[RED] should extract video info from Twitter API data', () => {
+    it('should extract video info from Twitter API data', () => {
       // Given: Twitter가 __NEXT_DATA__ 등에 비디오 정보를 포함하는 경우
       // 실제로는 React Props나 API 응답에서 추출해야 함
       const article = document.createElement('article');
@@ -210,15 +205,14 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       const detector = MediaClickDetector.getInstance();
       const result = detector.detectMediaFromClick(thumbnail);
 
-      // Then: data 속성 또는 React Props에서 비디오 URL 추출
-      // 현재는 이 기능이 없어서 실패할 것임 (RED)
+      // Then: data 속성 또는 React Props에서 비디오 URL 추출 성공
       expect(result.type).toBe('video');
       expect(result.mediaUrl).toContain('ext_tw_video/1234567890');
     });
   });
 
-  describe('Edge Cases: Production 시나리오', () => {
-    it('[RED] should handle lazy-loaded video elements', () => {
+  describe('[GREEN] Edge Cases: Production 시나리오', () => {
+    it('should handle lazy-loaded video elements', () => {
       // Given: 초기에는 썸네일만 있다가 나중에 video 요소가 추가되는 경우
       const videoContainer = document.createElement('div');
       videoContainer.setAttribute('data-testid', 'videoComponent');
@@ -250,7 +244,7 @@ describe('[PRODUCTION-RED] Timeline Video Extraction Failure', () => {
       expect(updatedResult.mediaUrl).toBe(video.src);
     });
 
-    it('[RED] should fallback to multiple extraction strategies', () => {
+    it('should fallback to multiple extraction strategies', () => {
       // Given: 다양한 추출 전략이 필요한 복잡한 케이스
       const videoContainer = document.createElement('div');
       videoContainer.setAttribute('data-testid', 'videoComponent');

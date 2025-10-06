@@ -28,6 +28,10 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       configurable: true,
       get: () => mockPageYOffset,
     });
+    Object.defineProperty(window, 'scrollY', {
+      configurable: true,
+      get: () => mockPageYOffset,
+    });
     window.scrollTo = vi.fn((x: number | ScrollOptions, y?: number) => {
       if (typeof x === 'number') {
         mockPageYOffset = y ?? x;
@@ -84,12 +88,18 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       expect(scrollAnchorManager.getAnchor()).toBeNull();
     });
 
-    it('should store anchor metadata (offsetTop, timestamp)', () => {
+    it('should store anchor metadata (position, timestamp)', () => {
       expect(scrollAnchorManager).toBeDefined();
 
       const tweetElement = document.createElement('div');
-      tweetElement.style.position = 'absolute';
-      tweetElement.style.top = '300px';
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 300,
+        bottom: 400,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
       document.body.appendChild(tweetElement);
 
       const timestampBefore = Date.now();
@@ -109,7 +119,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
   describe('앵커 기반 복원', () => {
     it('should restore scroll to anchor element position', () => {
       expect(scrollAnchorManager).toBeDefined();
-      expect(typeof scrollAnchorManager.restoreToAnchor).toBe('function');
+      expect(typeof scrollAnchorManager.restoreScroll).toBe('function');
 
       // JSDOM 기본 뷰포트 명시적 설정 (태블릿 범위)
       Object.defineProperty(window, 'innerHeight', {
@@ -117,18 +127,27 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 768,
       });
 
-      // Mock 트윗 요소 (offsetTop 시뮬레이션)
+      // 현재 스크롤 위치 설정 (setAnchor 호출 전)
+      mockPageYOffset = 0;
+
+      // Mock 트윗 요소 (getBoundingClientRect returns viewport-relative position)
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        get: () => 500,
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500, // viewport-relative top
+        bottom: 600,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      // setAnchor will calculate: offsetTop = rect.top (500) + window.scrollY (0) = 500
 
-      // 앵커 위치 - 상단 여백 80px (태블릿)
+      scrollAnchorManager.restoreScroll();
+
+      // 앵커 위치 (offsetTop: 500) - 상단 여백 80px (태블릿) = 420
       const expectedScrollTop = 500 - 80;
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -142,14 +161,18 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
 
       // Mock 트윗 요소 (상단에 위치)
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        get: () => 50, // 상단 여백 100px보다 작음
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 50,
+        bottom: 150,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      scrollAnchorManager.restoreScroll();
 
       // 음수가 아닌 최소값 0
       expect(window.scrollTo).toHaveBeenCalledWith(
@@ -167,7 +190,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       scrollAnchorManager.setAnchor(null);
 
       // 복원 시 픽셀 기반 fallback 사용
-      scrollAnchorManager.restoreToAnchor();
+      scrollAnchorManager.restoreScroll();
       expect(window.scrollTo).toHaveBeenCalledWith(0, 500);
     });
 
@@ -175,9 +198,13 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       expect(scrollAnchorManager).toBeDefined();
 
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        get: () => 300,
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 300,
+        bottom: 300 + 100,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
@@ -189,7 +216,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       document.body.removeChild(tweetElement);
 
       // 복원 시 fallback 사용
-      scrollAnchorManager.restoreToAnchor();
+      scrollAnchorManager.restoreScroll();
       expect(window.scrollTo).toHaveBeenCalledWith(0, 400);
     });
   });
@@ -204,30 +231,43 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 768,
       });
 
+      // 초기 스크롤 위치
+      mockPageYOffset = 0;
+
       // 초기 트윗 요소
       const tweetElement = document.createElement('div');
       tweetElement.setAttribute('data-testid', 'tweet');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        writable: true,
-        value: 500,
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500,
+        bottom: 600,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
       scrollAnchorManager.setAnchor(tweetElement);
+      // offsetTop = 500 + 0 = 500
 
       // 동적 콘텐츠 추가 시뮬레이션 (DOM 높이 변화)
       const newContent = document.createElement('div');
       newContent.style.height = '200px';
       document.body.insertBefore(newContent, tweetElement);
 
-      // offsetTop 업데이트 (실제로는 브라우저가 자동 계산)
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        value: 700, // 200px 아래로 이동
+      // getBoundingClientRect 업데이트 (element가 아래로 이동)
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 700, // 200px 아래로 이동
+        bottom: 800,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
 
-      // 복원 시 현재 offsetTop 사용 (동적 변화 반영)
-      scrollAnchorManager.restoreToAnchor();
+      // 복원 시 현재 getBoundingClientRect 사용 (동적 변화 반영)
+      // offsetTop = 700 + 0 = 700
+      scrollAnchorManager.restoreScroll();
       const expectedScrollTop = 700 - 80; // 태블릿 여백
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -239,24 +279,35 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
     it('should maintain accuracy within ±50px tolerance', () => {
       expect(scrollAnchorManager).toBeDefined();
 
+      // 현재 스크롤 위치 설정
+      mockPageYOffset = 900;
+
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        value: 1000,
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 100, // viewport-relative: 스크롤된 상태에서 100px 위치
+        bottom: 200,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
-      // 원래 스크롤 위치
-      const originalScrollTop = 900; // 앵커 - 100px
-      window.scrollTo(0, originalScrollTop);
+      // 앵커 설정: offsetTop = 100 + 900 = 1000
       scrollAnchorManager.setAnchor(tweetElement);
 
-      // 복원
-      scrollAnchorManager.restoreToAnchor();
+      // 복원: targetY = 1000 - 100 (desktop) = 900
+      scrollAnchorManager.restoreScroll();
 
       // ±50px 허용 오차 내에 있는지 확인
-      const callArg = (window.scrollTo as any).mock.calls[1][0];
+      const scrollToCalls = (window.scrollTo as any).mock.calls;
+      expect(scrollToCalls.length).toBeGreaterThan(0);
+
+      const lastCall = scrollToCalls[scrollToCalls.length - 1];
+      const callArg = lastCall[0];
       const restoredTop = typeof callArg === 'number' ? callArg : callArg.top;
       const tolerance = 50;
+      const originalScrollTop = 900;
       expect(Math.abs(restoredTop - originalScrollTop)).toBeLessThanOrEqual(tolerance);
     });
   });
@@ -277,25 +328,31 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       bodyScrollManager.clear();
 
       // 1. 사용자가 타임라인을 스크롤 (300px)
-      window.scrollTo(0, 300);
+      mockPageYOffset = 300;
 
       // 2. 트윗 클릭 → 앵커 설정
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        value: 350,
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 50, // viewport-relative
+        bottom: 150,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
       scrollAnchorManager.setAnchor(tweetElement);
+      // offsetTop = 50 + 300 = 350
 
       // 3. 갤러리 열림 → body scroll lock
       bodyScrollManager.lock('gallery', 5);
 
       // 4. 갤러리 닫힘 → body scroll unlock + 앵커 복원
       bodyScrollManager.unlock('gallery');
-      scrollAnchorManager.restoreToAnchor();
+      scrollAnchorManager.restoreScroll();
 
-      // 5. 앵커 위치로 복원 확인 (350 - 80 = 270, 태블릿)
-      const expectedScrollTop = 270;
+      // 5. 앵커 위치로 복원 확인 (offsetTop: 350 - 80 = 270, 태블릿)
+      const expectedScrollTop = 350 - 80;
       expect(window.scrollTo).toHaveBeenCalledWith(
         expect.objectContaining({
           top: expectedScrollTop,
@@ -325,8 +382,22 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
 
       const tweet1 = document.createElement('div');
       const tweet2 = document.createElement('div');
-      Object.defineProperty(tweet1, 'offsetTop', { value: 100 });
-      Object.defineProperty(tweet2, 'offsetTop', { value: 500 });
+      tweet1.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 100,
+        bottom: 100 + 100,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
+      tweet2.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500,
+        bottom: 500 + 100,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
       document.body.appendChild(tweet1);
       document.body.appendChild(tweet2);
 
@@ -347,14 +418,24 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 768,
       });
 
+      // 현재 스크롤 위치 설정
+      mockPageYOffset = 0;
+
       const tweetElement = document.createElement('div');
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        value: 50000, // 매우 긴 타임라인
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 50000, // viewport-relative (unrealistic but tests boundary)
+        bottom: 50100,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
       });
       document.body.appendChild(tweetElement);
 
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      // offsetTop = 50000 + 0 = 50000
+
+      scrollAnchorManager.restoreScroll();
 
       const expectedScrollTop = 50000 - 80; // 태블릿 여백
       expect(window.scrollTo).toHaveBeenCalledWith(
@@ -377,7 +458,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
 
       // 오류 없이 처리
       expect(() => {
-        scrollAnchorManager.restoreToAnchor();
+        scrollAnchorManager.restoreScroll();
       }).not.toThrow();
 
       // 복원
@@ -395,20 +476,25 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 500,
       });
 
-      // Mock 트윗 요소 (offsetTop = 500)
+      // 현재 스크롤 위치 설정
+      mockPageYOffset = 0;
+
+      // Mock 트윗 요소 (getBoundingClientRect)
       const tweetElement = document.createElement('div');
-      tweetElement.style.position = 'absolute';
-      tweetElement.style.top = '500px';
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500,
+        bottom: 600,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
       document.body.appendChild(tweetElement);
 
-      // offsetTop을 실제로 반영하도록 mock
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        value: 500,
-      });
-
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      // offsetTop = 500 + 0 = 500
+
+      scrollAnchorManager.restoreScroll();
 
       // 기대값: 500 - 60 = 440
       expect(window.scrollTo).toHaveBeenCalledWith({
@@ -426,18 +512,24 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 768,
       });
 
+      // 현재 스크롤 위치 설정
+      mockPageYOffset = 0;
+
       const tweetElement = document.createElement('div');
-      tweetElement.style.position = 'absolute';
-      tweetElement.style.top = '500px';
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500,
+        bottom: 600,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
       document.body.appendChild(tweetElement);
 
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        value: 500,
-      });
-
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      // offsetTop = 500 + 0 = 500
+
+      scrollAnchorManager.restoreScroll();
 
       // 기대값: 500 - 80 = 420
       expect(window.scrollTo).toHaveBeenCalledWith({
@@ -455,18 +547,24 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
         value: 1080,
       });
 
+      // 현재 스크롤 위치 설정
+      mockPageYOffset = 0;
+
       const tweetElement = document.createElement('div');
-      tweetElement.style.position = 'absolute';
-      tweetElement.style.top = '500px';
+      tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+        top: 500,
+        bottom: 600,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 100,
+      });
       document.body.appendChild(tweetElement);
 
-      Object.defineProperty(tweetElement, 'offsetTop', {
-        configurable: true,
-        value: 500,
-      });
-
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      // offsetTop = 500 + 0 = 500
+
+      scrollAnchorManager.restoreScroll();
 
       // 기대값: 500 - 100 = 400
       expect(window.scrollTo).toHaveBeenCalledWith({
@@ -495,7 +593,7 @@ describe('Scroll Position Restoration (DOM Anchor)', () => {
       });
 
       scrollAnchorManager.setAnchor(tweetElement);
-      scrollAnchorManager.restoreToAnchor();
+      scrollAnchorManager.restoreScroll();
 
       // 기대값: max(0, 50 - 60) = 0 (음수 방지)
       expect(window.scrollTo).toHaveBeenCalledWith({

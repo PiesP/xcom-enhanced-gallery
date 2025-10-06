@@ -16,7 +16,7 @@ describe('Production DOM Extraction (Sub-Epic 1 Phase 1-1)', () => {
     extractor = new DOMDirectExtractor();
   });
 
-  describe('[RED] X.com 실제 비디오 구조', () => {
+  describe('[GREEN] X.com 실제 비디오 구조', () => {
     it('should extract video from current X.com video player structure', async () => {
       // 실제 X.com 비디오 트윗 DOM 구조 재현
       // 2025-10-06 기준 X.com 비디오 플레이어 구조
@@ -122,7 +122,7 @@ describe('Production DOM Extraction (Sub-Epic 1 Phase 1-1)', () => {
     });
   });
 
-  describe('[RED] 셀렉터 폴백 전략', () => {
+  describe('[GREEN] 셀렉터 폴백 전략', () => {
     it('should try multiple selectors for video elements', async () => {
       // 다양한 X.com 레이아웃 패턴 테스트
       const patterns = [
@@ -171,7 +171,7 @@ describe('Production DOM Extraction (Sub-Epic 1 Phase 1-1)', () => {
     });
   });
 
-  describe('[RED] 복합 미디어 추출', () => {
+  describe('[GREEN] 복합 미디어 추출', () => {
     it('should extract both images and videos from same tweet', async () => {
       const container = document.createElement('article');
       container.setAttribute('data-testid', 'tweet');
@@ -232,7 +232,7 @@ describe('Production DOM Extraction (Sub-Epic 1 Phase 1-1)', () => {
     });
   });
 
-  describe('[RED] 엣지 케이스', () => {
+  describe('[GREEN] 엣지 케이스', () => {
     it('should handle video without src attribute', async () => {
       const container = document.createElement('article');
       container.setAttribute('data-testid', 'tweet');

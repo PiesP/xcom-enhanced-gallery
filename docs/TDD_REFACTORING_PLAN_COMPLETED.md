@@ -2,6 +2,388 @@
 
 ---
 
+## 2025-10-06: Production Issue #3 - Scroll Anchor Restoration Failure 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: Production Bug Fix
+- **Feature**: Scroll Anchor Restoration Failure 해결
+- **상태**: **완료됨** (TDD RED → GREEN)
+- **브랜치**: feature/production-issue-3-scroll-anchor
+- **커밋**: `2bdaf15c`, `9b1d641a`
+
+### 배경
+
+갤러리를 닫을 때 타임라인의 원래 스크롤 위치로 복원되지 않고, 최상단으로
+이동하는 문제가 발생했습니다. Production 로그 분석 결과:
+
+```
+[ScrollAnchorManager] 앵커 설정 완료 {
+  offsetTop: 0,  // ❌ Always 0 in Twitter SPA
+  fallbackScrollTop: 11321.111328125
+}
+```
+
+**근본 원인**:
+
+- Twitter SPA 환경에서 `element.offsetTop`이 항상 `0`을 반환
+- 갤러리 열린 후 DOM 재구성으로 인한 offsetTop 값 변경
+- Fallback 메커니즘 부재로 정확한 복원 불가
+
+### 최종 결과
+
+**구현 완료**:
+
+- ✅ Dual Anchor Strategy: `getBoundingClientRect() + window.scrollY` 사용
+- ✅ API 변경: `restoreScroll()` public, `restoreToAnchor()` private
+- ✅ Viewport-responsive margins: Mobile 60px, Tablet 80px, Desktop 100px
+- ✅ 테스트: 30/30 passing (12 production + 18 integration)
+
+**품질 게이트 상태**:
+
+- ✅ typecheck: PASS
+- ✅ lint: PASS (ESLint 추가: `/* eslint-disable no-undef */`)
+- ✅ test: 30/30 passed (100% GREEN)
+- ✅ build: PASS (dev + prod)
+
+**번들 임팩트**:
+
+- Raw: +10KB (496KB → 506KB, ⚠️ 최적화 필요)
+- Gzip: +1KB (125KB → 126KB, ⚠️ 최적화 필요)
+
+---
+
+### 작업 세부사항
+
+#### 1. Production Test 작성 (12 tests)
+
+**파일**: `test/production/scroll-anchor-restoration.test.ts`
+
+**테스트 구성**:
+
+```typescript
+describe('Production Scroll Anchor Restoration', () => {
+  // RED → GREEN: 문서의 offsetTop: 0 → 정확한 위치
+  it('[RED→GREEN] should extract accurate offsetTop using getBoundingClientRect', () => {
+    // Implementation: rect.top + window.scrollY
+    expect(offsetTop).toBeGreaterThan(0);
+  });
+
+  // Dual Strategy: getBoundingClientRect + fallback
+  it('should store both anchor element and pixel fallback', () => {
+    scrollAnchorManager.setAnchor(element);
+    expect(anchor.offsetTop).toBe(rect.top + window.scrollY);
+    expect(fallbackScrollTop).toBe(window.pageYOffset);
+  });
+
+  // Edge Cases: SPA 동적 변경 대응
+  it('should handle dynamic content changes between set and restore', () => {
+    // Content insertion 시뮬레이션
+    element.getBoundingClientRect = vi.fn().mockReturnValue({
+      top: 700, // 200px 이동
+    });
+    scrollAnchorManager.restoreScroll();
+    expect(window.scrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ top: 620 }) // 700 - 80 (tablet margin)
+    );
+  });
+
+  // Integration: Gallery lifecycle
+  it('should integrate with gallery open/close lifecycle', async () => {
+    // Given: Timeline scrolled to Y=5000
+    // When: Open gallery → Close gallery
+    // Then: Restore to Y=5000 ± tolerance
+    expect(window.pageYOffset).toBeGreaterThanOrEqual(4900);
+    expect(window.pageYOffset).toBeLessThanOrEqual(5100);
+  });
+});
+```
+
+**결과**: 12/12 tests passing ✅
+
+#### 2. Implementation - Dual Anchor Strategy
+
+**파일**: `src/shared/utils/scroll/scroll-anchor-manager.ts`
+
+**핵심 변경 (Before/After)**:
+
+```typescript
+// ❌ BEFORE (broken in SPA):
+const offsetTop = element.offsetTop; // Returns 0 in Twitter SPA
+
+// ✅ AFTER (fixed):
+const rect = element.getBoundingClientRect();
+const offsetTop = rect.top + window.scrollY; // Accurate position
+```
+
+**API 변경**:
+
+- Public: `setAnchor(element)`, `restoreScroll()`, `clearAnchor()`
+- Private: `restoreToAnchor()` (내부 전략 메서드)
+
+**Viewport-responsive Top Margins**:
+
+```typescript
+private calculateTopMargin(): number {
+  const viewportHeight = window.innerHeight;
+  if (viewportHeight < 600) return 60;   // Mobile
+  if (viewportHeight < 900) return 80;   // Tablet
+  return 100;                             // Desktop
+}
+```
+
+**로깅 강화** (Production 디버깅):
+
+```typescript
+logger.info('[ScrollAnchorManager] 앵커 설정 완료', {
+  offsetTop,
+  currentScrollY: window.scrollY,
+  viewportHeight: window.innerHeight,
+  topMargin: this.calculateTopMargin(),
+});
+```
+
+#### 3. Integration Test Migration (18 tests)
+
+**파일**: `test/features/gallery/scroll-position-restoration.test.ts`
+
+**마이그레이션 작업** (180 insertions, 76 deletions):
+
+**Before (broken)**:
+
+```typescript
+Object.defineProperty(tweetElement, 'offsetTop', {
+  configurable: true,
+  value: 500,
+});
+```
+
+**After (fixed)**:
+
+```typescript
+mockPageYOffset = 0;
+tweetElement.getBoundingClientRect = vi.fn().mockReturnValue({
+  top: 500, // Viewport-relative position
+  bottom: 600,
+  left: 0,
+  right: 100,
+  width: 100,
+  height: 100,
+});
+// Calculated: offsetTop = rect.top (500) + mockPageYOffset (0) = 500
+```
+
+**테스트 시나리오**:
+
+1. ✅ "restore scroll to anchor position" (basic restoration)
+2. ✅ "dynamic content changes" (SPA content insertion)
+3. ✅ "accuracy within ±50px tolerance" (precision check)
+4. ✅ "bodyScrollManager workflow integration" (lock/unlock)
+5. ✅ "very large scroll positions" (boundary test)
+6. ✅ "mobile 60px margin" (viewport responsive)
+7. ✅ "tablet 80px margin" (viewport responsive)
+8. ✅ "desktop 100px margin" (viewport responsive)
+
+**결과**: 18/18 tests passing ✅ (was 11/18, fixed 7 failures)
+
+#### 4. ESLint 수정
+
+**문제**: DOMRect, ScrollToOptions not defined **해결**:
+
+```typescript
+/* eslint-disable no-undef */
+// DOMRect, ScrollToOptions 사용을 위한 ESLint 예외 처리
+```
+
+**파일**: `test/production/scroll-anchor-restoration.test.ts`,
+`test/features/gallery/scroll-position-restoration.test.ts`
+
+---
+
+### Breaking Changes & Migration Guide
+
+**API Change**:
+
+- `restoreToAnchor()` → `restoreScroll()` (public method renamed)
+- `restoreToAnchor()` is now private (internal use only)
+
+**Migration for existing code**:
+
+```typescript
+// ❌ BEFORE:
+scrollAnchorManager.restoreToAnchor();
+
+// ✅ AFTER:
+scrollAnchorManager.restoreScroll();
+```
+
+**Test Migration Pattern**:
+
+```typescript
+// Step 1: Add window.scrollY mock
+Object.defineProperty(window, 'scrollY', {
+  configurable: true,
+  get: () => mockPageYOffset,
+});
+
+// Step 2: Replace offsetTop mock with getBoundingClientRect
+// OLD:
+Object.defineProperty(element, 'offsetTop', { value: 500 });
+
+// NEW:
+mockPageYOffset = 0; // Current scroll
+element.getBoundingClientRect = vi.fn().mockReturnValue({
+  top: 500, // Viewport-relative
+  // ... other properties
+});
+
+// Step 3: Update expected values
+// offsetTop = rect.top + mockPageYOffset
+// targetY = offsetTop - topMargin
+```
+
+---
+
+### 학습 내용
+
+#### 1. Twitter SPA 환경 특성
+
+- **문제**: `offsetTop` 속성이 항상 0을 반환
+- **원인**: Twitter의 virtual scrolling/SPA 아키텍처로 인한 DOM 구조 단순화
+- **교훈**: 절대적인 위치 정보는 `getBoundingClientRect() + scrollY` 사용 필수
+
+#### 2. Dual Strategy의 중요성
+
+- **Primary**: `getBoundingClientRect()` (정확성 우선)
+- **Fallback**: `window.pageYOffset` 저장 (안정성 보장)
+- **이유**: 동적 콘텐츠 로딩으로 앵커 요소가 제거될 수 있음
+
+#### 3. Viewport-responsive Design
+
+- 고정값(예: 80px margin) 대신 viewport 높이 기반 동적 계산
+- Mobile/Tablet/Desktop 각각 다른 여백 제공 → UX 개선
+
+#### 4. Production Logging의 가치
+
+- `logger.info()`로 앵커 설정/복원 시점 정보 기록
+- Production 환경 디버깅에 필수적 (로컬 재현 어려운 버그)
+
+#### 5. Test Migration의 정밀성
+
+- Mock 변경 시 실제 계산 로직 반영 필수
+- 예: `rect.top + scrollY` 계산을 테스트에서도 정확히 시뮬레이션
+
+---
+
+### 후속 작업 계획
+
+#### 번들 크기 최적화 (고우선순위) ⚠️
+
+**현재 상태**:
+
+- Raw: +10KB (496KB → 506KB)
+- Gzip: +1KB (125KB → 126KB)
+
+**최적화 방안**:
+
+1. 로깅 메시지 최적화 (Production 환경만 활성화)
+2. Viewport margin 계산 로직 경량화
+3. Dead code elimination 강화 (Rollup treeshake)
+
+**목표**: Raw < 500KB, Gzip < 126KB
+
+#### 추가 Edge Case 테스트
+
+**시나리오**:
+
+- [ ] 갤러리 열림 → 브라우저 뒤로가기 → 스크롤 복원
+- [ ] 갤러리 열림 → 페이지 새로고침 → 복원 동작 확인
+- [ ] 매우 긴 타임라인(10,000px+) 하단에서 갤러리 열고 닫기
+
+#### Documentation 업데이트
+
+**파일**:
+
+- [x] `docs/TDD_REFACTORING_PLAN.md` → Issue #3 완료 표시
+- [x] `docs/TDD_REFACTORING_PLAN_COMPLETED.md` → 세부 내용 추가
+- [ ] `docs/ARCHITECTURE.md` → Scroll Anchor Manager 아키텍처 문서화
+- [ ] `docs/CODING_GUIDELINES.md` → Production 로깅 가이드라인 추가
+
+---
+
+### Acceptance Criteria 검증
+
+- ✅ 갤러리 닫을 때 타임라인 원래 위치로 복원 (±100px 오차 허용)
+- ✅ Dual Anchor Strategy: DOM 앵커 우선, pixel fallback 사용
+- ✅ Viewport-responsive margins: Mobile 60px, Tablet 80px, Desktop 100px
+- ✅ Production 로깅 강화: 앵커 설정/복원 시점 정보 기록
+- ✅ API 변경: `restoreScroll()` public, `restoreToAnchor()` private
+- ✅ 테스트 커버리지: 30/30 passing (100% GREEN)
+- ✅ TypeScript strict 모드 통과
+- ✅ ESLint 0 warnings (예외 처리 명시)
+- ⚠️ 번들 크기: +10KB (최적화 필요, 별도 Issue)
+
+---
+
+### 커밋 이력
+
+**Commit 1: 2bdaf15c**
+
+```
+fix(utils): resolve scroll anchor restoration failure in Twitter SPA
+
+- Implement dual anchor strategy with getBoundingClientRect + scrollY
+- Add viewport-responsive top margins (mobile/tablet/desktop)
+- Change API: restoreScroll() public, restoreToAnchor() private
+- Add 12 production tests for scroll restoration scenarios
+
+Issue: #3
+Tests: 12/12 passing
+```
+
+**Commit 2: 9b1d641a**
+
+```
+test(utils): migrate scroll-position-restoration tests to getBoundingClientRect
+
+- Replace offsetTop mocks with getBoundingClientRect mocks
+- Update window.scrollY calculations to match implementation
+- Fix viewport-responsive margin tests
+- All 18/18 tests now passing
+
+Related to #3
+Tests: 18/18 passing
+```
+
+---
+
+### 결론
+
+Production Issue #3 "Scroll Anchor Restoration Failure"를 TDD 방법론(RED → GREEN
+→ REFACTOR)으로 성공적으로 해결했습니다:
+
+**성과**:
+
+1. ✅ 30개 테스트 전부 GREEN (100% passing)
+2. ✅ Dual Anchor Strategy로 안정성 확보
+3. ✅ Viewport-responsive margins로 UX 개선
+4. ✅ Production 로깅 강화로 디버깅 용이성 향상
+5. ✅ 품질 게이트 통과 (typecheck, lint, test, build)
+
+**Trade-offs**:
+
+- 번들 크기 +10KB: 로깅/마진 계산/이중 전략으로 인한 증가
+- 최적화 필요: 별도 Issue로 추적 및 해결 예정
+
+**학습 효과**:
+
+- Twitter SPA 환경에서 `getBoundingClientRect()` 필수성 이해
+- Production 로깅의 가치 재확인
+- Test Migration의 정밀성 중요성 체득
+
+---
+
 ## 2025-10-06: Test Cleanup and Optimization 완료 ✅
 
 ### 개요
