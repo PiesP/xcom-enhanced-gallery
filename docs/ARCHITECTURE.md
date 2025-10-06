@@ -49,7 +49,7 @@ External (vendors/userscript/zip)
 **금지**:
 
 - ServiceManager 직접 import
-- solid-js, fflate 등 직접 import
+- solid-js 등 직접 import (getter 사용 필수)
 - GM\_\* 직접 사용
 
 **예**: `features/gallery/*`, `features/settings/*`
@@ -80,7 +80,15 @@ External (vendors/userscript/zip)
 - Vendors: `initializeVendors()`, `getSolidCore()`, `getSolidStore()`,
   `getSolidWeb()`, `getNativeDownload()`
 - Userscript: `getUserscript().download()`, `.xhr()`, `.info()`
-- ZIP: `createZipFromItems()`
+- ZIP: `createZipFromFiles()` (Native Store-only ZIP 구현)
+
+**ZIP 구현** (2025-10-06):
+
+- fflate 의존성 제거, 압축 없는 Store-only ZIP 자체 구현
+- `src/shared/external/zip/zip-format-utils.ts` - CRC32, DOS datetime,
+  ByteWriter
+- `src/shared/external/zip/zip-creator-native.ts` - Store-only ZIP 생성
+- `src/shared/external/zip/store-zip-writer.ts` - 레거시 어댑터
 
 ---
 

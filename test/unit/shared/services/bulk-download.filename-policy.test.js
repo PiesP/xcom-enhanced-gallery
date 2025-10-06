@@ -3,23 +3,34 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock vendors: capture zipSync input and stub downloadBlob
-/** @type {Record<string, Uint8Array> | null} */
-let capturedZipInput = null;
+// Mock vendors: stub downloadBlob (native ZIP implementation used internally)
+/** @type {Map<string, Uint8Array> | null} */
+let capturedZipFileMap = null;
+
 vi.mock('@shared/external/vendors', async () => {
   const actual = await vi.importActual('@shared/external/vendors');
   return {
     ...actual,
-    getFflate: () => ({
-      /** @param {Record<string, Uint8Array>} files */
-      zipSync: files => {
-        capturedZipInput = files;
-        // return dummy bytes
-        return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-      },
-    }),
     getNativeDownload: () => ({
       downloadBlob: vi.fn(),
+    }),
+  };
+});
+
+// Spy on zip-creator to capture filenames passed to native ZIP creation
+vi.mock('@shared/external/zip/zip-creator', async () => {
+  const actual = await vi.importActual('@shared/external/zip/zip-creator');
+  return {
+    ...actual,
+    createZipBlobFromFileMap: vi.fn(async fileMap => {
+      capturedZipFileMap = fileMap;
+      // Return minimal valid ZIP blob (EOCD only)
+      return new globalThis.Blob(
+        [new Uint8Array([0x50, 0x4b, 0x05, 0x06].concat(new Array(18).fill(0)))],
+        {
+          type: 'application/zip',
+        }
+      );
     }),
   };
 });
@@ -42,7 +53,7 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
-    capturedZipInput = null;
+    capturedZipFileMap = null;
   });
 
   afterEach(() => {
@@ -80,9 +91,10 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
 
     const res = await svc.downloadMultiple(items, {});
     expect(res.success).toBe(true);
-    expect(capturedZipInput).toBeTruthy();
+    expect(capturedZipFileMap).toBeTruthy();
+    expect(capturedZipFileMap instanceof Map).toBe(true);
 
-    const keys = Object.keys(capturedZipInput);
+    const keys = Array.from(capturedZipFileMap.keys());
     // base + -1 + -2
     expect(keys).toHaveLength(3);
     expect(keys).toContain('alice_100_1.jpg');
