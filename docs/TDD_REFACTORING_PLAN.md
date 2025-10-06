@@ -38,13 +38,88 @@
 
 ## 현재 활성 작업
 
-### Epic GALLERY-ENHANCEMENT-001 (2025-10-06 승격)
+**상태**: 현재 활성 Epic 없음 ✅
 
-**목표**: 갤러리 UX 개선 - 비디오 지원, 자동 포커스 갱신, 타임라인 위치 복원
+**최근 완료**:
 
-**선정 이유**: 실제 환경 테스트에서 발견된 사용자 경험 문제 3건 통합 해결
+- ✅ **Epic SOLID-NATIVE-MIGRATION** (2025-10-06 확인 완료)
+- ✅ **Epic GALLERY-ENHANCEMENT-001** (2025-10-06 완료 - 3 Sub-Epics 모두 구현)
 
-**구성**:
+---
+
+## 다음 우선순위 Epic 후보
+
+### Epic BUNDLE-ANALYZER-INTEGRATION
+
+**우선순위**: Low **난이도**: S **예상 기간**: 1-2일
+
+**목표**: 실제 번들 구성 시각화 및 추가 최적화 기회 발견
+
+**작업 대상**:
+
+- `rollup-plugin-visualizer` 통합
+- 큰 모듈 식별
+- Dynamic import 검토
+
+---
+
+## Epic SOLID-NATIVE-MIGRATION 완료 확인
+
+### 배경
+
+TDD_REFACTORING_PLAN.md의 "향후 Epic 후보"에 나열되어 있던 Epic이지만, 코드 분석
+결과 **이미 완료된 상태**였습니다.
+
+### 검증 결과
+
+`test/architecture/solid-native-inventory.test.ts` 실행 (11 tests, 모두 GREEN):
+
+```text
+✅ createGlobalSignal imports: 0 files (모두 제거됨)
+✅ createGlobalSignal calls: 0 occurrences (모두 제거됨)
+✅ .value 접근: 4개 (DOM 요소 등 다른 용도, 허용됨)
+✅ .subscribe() 호출: 3개 (다른 패턴, 허용됨)
+```
+
+### 완료 상태 요약
+
+- ✅ 모든 `createGlobalSignal` import 제거
+- ✅ 모든 `createGlobalSignal` 호출 제거
+- ✅ SolidJS Native 패턴으로 전환 완료:
+  - `toolbar.signals.ts` (Phase G-3-1)
+  - `download.signals.ts` (Phase G-3-2)
+  - `gallery.signals.ts` (Phase G-3-3)
+- ✅ 호환 레이어 (`src/shared/state/createGlobalSignal.ts`) 제거 (Phase G-4)
+
+### 관련 문서
+
+완료 상세는
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)의
+"2025-01-04: BUILD — Epic JSX-PRAGMA-CLEANUP Phase 1-3 완료" 섹션에 기록되어
+있습니다.
+
+**참조**:
+
+- [`vendors-safe-api.md`](vendors-safe-api.md) - SolidJS Native 패턴 가이드
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) - 상태 관리 섹션
+
+---
+
+## TDD 워크플로
+
+1. **RED**: 실패 테스트 추가 (최소 명세)
+2. **GREEN**: 최소 변경으로 통과
+3. **REFACTOR**: 중복 제거/구조 개선
+4. **Document**: Completed 로그에 이관
+
+**품질 게이트**:
+
+- ✅ `npm run typecheck` (strict 오류 0)
+- ✅ `npm run lint:fix` (자동 수정 적용)
+- ✅ `npm test` (해당 Phase GREEN)
+- ✅ `npm run build` (산출물 검증 통과)
+
+---
 
 - Sub-Epic 1 (S): 타임라인 스크롤 위치 복원 (앵커 설정 누락)
 - Sub-Epic 2 (M): 비디오 미디어 갤러리 표시 지원

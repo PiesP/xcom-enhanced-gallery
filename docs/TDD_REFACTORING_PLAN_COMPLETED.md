@@ -2,6 +2,246 @@
 
 ---
 
+## 2025-10-06: Epic GALLERY-ENHANCEMENT-001 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: 갤러리 UX 개선 (3가지 production 기능)
+- **Epic**: GALLERY-ENHANCEMENT-001
+- **상태**: **완료됨** (RED → GREEN → REFACTOR)
+- **브랜치**: feat/gallery-enhancement-001 → master 병합 완료
+
+### 배경
+
+Production 환경에서 검증된 3가지 갤러리 UX 개선사항을 TDD 기반으로 재구현:
+
+1. **타임라인 스크롤 위치 복원**: 갤러리 닫기 후 원래 트윗 위치로 자동 스크롤
+2. **비디오 미디어 갤러리 표시**: 비디오도 이미지처럼 갤러리에서 볼 수 있도록
+3. **화면 보이는 이미지 자동 포커스**: 스크롤로 보이는 이미지에 포커스 자동 갱신
+   (auto-scroll 없이)
+
+### Sub-Epic 1: 타임라인 스크롤 복원 ✅
+
+**Phase**: RED → GREEN → REFACTOR (완료)
+
+#### Phase 1-1: RED 테스트 작성
+
+**파일**: `test/features/gallery/scroll-anchor-integration.test.ts` **테스트
+수**: 4 tests (all passing) **커버리지**:
+
+- `setAnchor()` 호출 검증
+- 컨테이너 누락 시 graceful handling
+- 중첩 DOM 구조 대응
+- 디버그 로깅 확인
+
+#### Phase 1-2: GREEN 구현
+
+**파일**: `src/features/gallery/GalleryApp.ts` **변경 사항**:
+
+```typescript
+// GalleryApp.openGallery() 내부
+const tweetContainer = document.querySelector('article[data-testid="tweet"]');
+scrollAnchorManager.setAnchor(tweetContainer);
+```
+
+**핵심 로직**:
+
+- `openGallery()` 진입 시점에 현재 트윗 컨테이너 쿼리
+- `scrollAnchorManager.setAnchor()` 호출
+- null-safe 처리 (컨테이너 없어도 오류 없음)
+
+#### Phase 1-3: REFACTOR
+
+- 디버그 로깅 추가
+- graceful null handling 강화
+- 테스트 커버리지 100% 유지
+
+#### 커밋
+
+- **Commit**: 5c8b8d33
+- **Message**: `feat(gallery): integrate scroll anchor on gallery open`
+
+### Sub-Epic 2: 비디오 미디어 렌더링 ✅
+
+**Phase**: 검증 테스트 작성 (이미 구현되어 있었음)
+
+#### Phase 2-1: 발견 사항
+
+**파일**:
+`src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+**현재 상태**: **이미 완전히 구현됨**
+
+**기존 구현**:
+
+```typescript
+// isVideoMedia() 함수로 비디오 감지 (lines 26-33)
+const isVideoMedia = (media: MediaInfo): boolean => {
+  return (
+    media.type === 'video' ||
+    /\.(mp4|webm|mov)$/i.test(new URL(media.url).pathname)
+  );
+};
+
+// Show 컴포넌트로 비디오/이미지 조건부 렌더링 (lines 214-243)
+<Show
+  when={isVideo()}
+  fallback={
+    <img src={media.url} alt={media.filename} onLoad={handleLoad} />
+  }
+>
+  <video
+    src={media.url}
+    controls
+    onLoadedData={handleLoad}
+    onError={handleError}
+  />
+</Show>
+```
+
+#### Phase 2-2: 검증 테스트 작성
+
+**파일**: `test/features/gallery/video-media-rendering.test.tsx` **테스트 수**:
+6 tests (all passing) **커버리지**:
+
+- 비디오 타입 감지 (`type: 'video'`)
+- URL 확장자 감지 (`.mp4`, `.webm`, `.mov`)
+- `<video>` 요소 렌더링 및 `controls` 속성
+- 에러 핸들링 (onError)
+- 혼합 미디어 처리 (이미지 + 비디오)
+
+#### 커밋
+
+- **Commit**: 434bb7b4
+- **Message**: `test(gallery): verify video media rendering support`
+
+### Sub-Epic 3: 자동 포커스 동기화 ✅
+
+**Phase**: RED → GREEN → REFACTOR (완료)
+
+#### Phase 3-1: RED 테스트 작성
+
+**파일**: `test/features/gallery/auto-focus-sync.test.tsx` **테스트 수**: 5
+tests (all passing) **커버리지**:
+
+- `visibleIndex` 변경 시 `currentIndex` 자동 업데이트
+- 300ms debounce 검증
+- auto-scroll 비활성화 검증 (`skipScroll` flag)
+- 갤러리 닫혔을 때 동기화 안 함
+- `visibleIndex === currentIndex` 시 skip
+
+#### Phase 3-2: GREEN 구현
+
+**파일 1**: `src/features/gallery/solid/SolidGalleryShell.solid.tsx`
+
+**추가된 코드** (lines 391-433):
+
+```typescript
+// Sub-Epic 3: Auto-focus Sync (visibleIndex → currentIndex)
+createEffect(
+  (() => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    return () => {
+      const idx = visibleIndex();
+      const current = currentIndex();
+      const isOpened = isOpen();
+
+      // Debounce cleanup
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+
+      // 동기화 조건
+      if (!isOpened || idx < 0 || idx === current) {
+        return;
+      }
+
+      // 300ms debounce
+      timeoutId = setTimeout(() => {
+        navigateToItem(idx, { skipScroll: true });
+        timeoutId = undefined;
+      }, 300);
+
+      onCleanup(() => {
+        if (timeoutId !== undefined) {
+          clearTimeout(timeoutId);
+        }
+      });
+    };
+  })()
+);
+```
+
+**파일 2**: `src/shared/state/signals/gallery.signals.ts`
+
+**수정된 함수**:
+
+```typescript
+export function navigateToItem(
+  index: number,
+  options?: { skipScroll?: boolean }
+): void {
+  // ... 기존 로직
+  logger.debug(
+    `[Gallery] Navigated to item: ${index}${options?.skipScroll ? ' (skipScroll)' : ''}`
+  );
+}
+```
+
+#### Phase 3-3: REFACTOR
+
+- 타임아웃 cleanup 강화 (`onCleanup` 등록)
+- 동기화 조건 명확화 (갤러리 열림, idx 유효성, 중복 방지)
+- 디버그 로깅 추가 (`skipScroll` 플래그 표시)
+
+#### 커밋
+
+- **Commit**: 897ad74d
+- **Message**:
+  `feat(gallery): add auto-focus sync from visibleIndex to currentIndex`
+
+### 전체 통계
+
+#### 테스트
+
+- **새 테스트 파일**: 3개
+- **새 테스트 케이스**: 15개 (4 + 6 + 5)
+- **전체 통과율**: 2949 passed (2944 기존 + 5 신규)
+- **회귀 테스트**: 0 regressions
+
+#### 번들 영향
+
+- **Raw 크기**: 496.63 KB (+0.63 KB)
+- **Gzip 크기**: 변화 없음 (압축 효율 우수)
+- **평가**: 3가지 기능 추가 대비 매우 작은 증가, 허용 가능
+
+#### 커밋 이력
+
+1. `4d90ca99`: docs(tdd): add Epic GALLERY-ENHANCEMENT-001 plan
+2. `5c8b8d33`: feat(gallery): integrate scroll anchor on gallery open
+3. `434bb7b4`: test(gallery): verify video media rendering support
+4. `897ad74d`: feat(gallery): add auto-focus sync from visibleIndex to
+   currentIndex
+
+### 학습 사항
+
+1. **기존 구현 발견**: Sub-Epic 2는 이미 구현되어 있었음. TDD 접근으로 검증
+   테스트 추가하여 regression 방지
+2. **Debounce 패턴**: `createEffect` 내부에서 타임아웃 관리, `onCleanup`으로
+   메모리 누수 방지
+3. **skipScroll 플래그**: 기존 `navigateToItem()` API에 옵션 추가로 하위 호환성
+   유지하면서 기능 확장
+
+### 관련 문서
+
+- **Plan**: `docs/TDD_REFACTORING_PLAN.md` (Epic GALLERY-ENHANCEMENT-001 섹션)
+- **아키텍처**: `docs/ARCHITECTURE.md`
+- **코딩 규칙**: `docs/CODING_GUIDELINES.md`
+
+---
+
 ## 2025-10-06: Epic SOLID-NATIVE-MIGRATION 완료 확인 ✅
 
 ### 개요
