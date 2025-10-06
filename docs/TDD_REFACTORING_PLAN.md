@@ -1,83 +1,79 @@
 # TDD 리팩토링 활성 계획 (2025-10-07 갱신)
 
-> 목표: 충돌/중복/분산·레거시 코드를 줄이고, 아키텍처·토큰·입력 정책 위반을
-> 테스트로 고정하며, UI/UX 일관성과 안정성을 높인다. 모든 변경은 실패 테스트 →
-> 최소 구현 → 리팩토링 순으로 진행한다.
-
-- 근거 문서: `docs/ARCHITECTURE.md`, `docs/CODING_GUIDELINES.md`,
-  `docs/DEPENDENCY-GOVERNANCE.md`
-- 환경: Vitest + JSDOM, 기본 URL https://x.com, vendors/userscript는
-  getter/adapter로 모킹
-- 공통 원칙: 최소 diff, 3계층 단방향(Features → Shared → External), PC 전용
-  입력, CSS Modules + 디자인 토큰만
+> **현재 상태**: 모든 계획된 리팩토링 작업이 완료되었습니다. 새로운 리팩토링
+> 요구 사항이 발견될 때까지 이 문서는 최신 상태를 유지합니다.
 
 ---
 
-## 0) 현재 상태 점검 요약
+## 프로젝트 현황 (2025-10-07 기준)
 
-- 품질 게이트: typecheck, lint, smoke/fast 테스트 GREEN. dev/prod 빌드 및
-  postbuild validator 정상 동작 중.
-- Vendors: 정적 매니저(`StaticVendorManager`) 경유 정책 준수. 테스트 모드 자동
-  초기화 경고는 다운그레이드되어 소음 없음(완료 항목으로 이관됨).
-- 레거시 표면: 동적 VendorManager(`vendor-manager.ts`)는 TEST-ONLY 유지. 갤러리
-  런타임 `createAppContainer.ts` 스텁은 삭제 완료(테스트 하네스 전용 경로만
-  사용).
-- **fflate 의존성**: ✅ 완전 제거 완료 (2025-10-07). StoreZipWriter로 대체.
-  자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
+### 코드 품질 현황
 
----
+- ✅ **빌드**: dev/prod 빌드 정상 동작, postbuild validator 통과
+- ✅ **테스트**: 전체 테스트 스위트 GREEN (124 파일 / 584 테스트)
+- ✅ **타입**: TypeScript strict 모드 100% 적용
+- ✅ **린트**: ESLint 규칙 위반 0건
+- ✅ **의존성**: dependency-cruiser 순환 의존성 위반 0건
 
-## 남은 작업(우선순위 및 순서)
+### 아키텍처 정책 준수 현황
 
-### ✅ Shadow DOM → Light DOM 완전 전환 (2025-10-07 완료)
+- ✅ **3계층 구조**: Features → Shared → External 단방향 의존성 유지
+- ✅ **Vendors 접근**: `StaticVendorManager` 경유 getter 패턴 100% 적용
+- ✅ **Userscript API**: `getUserscript()` adapter를 통한 안전한 GM\_\* 접근
+- ✅ **입력 정책**: PC 전용 이벤트만 사용 (터치/포인터 이벤트 금지)
+- ✅ **스타일 정책**: CSS Modules + 디자인 토큰만 사용 (하드코딩 금지)
 
-**상태**: ✅ Phase 1-4 완료, 모든 테스트 GREEN, 빌드 검증 PASS
+### 최근 완료된 주요 작업
 
-**결과**:
+1. **Shadow DOM → Light DOM 전환** (2025-10-07 완료)
+   - CSS Cascade Layers로 스타일 격리 달성
+   - GalleryContainer 코드 33% 축소
+   - 테스트: `test/refactoring/light-dom-transition.test.ts`
+2. **fflate 의존성 제거** (2025-10-07 완료)
+   - StoreZipWriter 구현으로 대체
+   - 번들 크기 최적화
 
-- Shadow DOM 코드 완전 제거 (GalleryContainer 33% 축소)
-- CSS Cascade Layers로 스타일 격리 달성
-- 전체 테스트 스위트 GREEN (124 파일 / 584 테스트)
-- 빌드 정상 동작 (dev/prod)
-
-**세부 사항**: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (2025-10-07 항목)
-
----
-
-## 품질 게이트 (작업 중 반복 확인)
-
-## 참고/정책 고지
+_완료된 모든 작업의 상세 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를
+참조하세요._
 
 ---
 
-## 부록 — SOURCE PATH RENAME / CLEANUP PLAN (정리됨)
+## 활성 작업 (현재 없음)
 
-> 목적: 레거시/혼동 가능 경로를 식별하고, 안전한 단계별 리네임/정리를 통해
+현재 진행 중인 리팩토링 작업이 없습니다. 새로운 요구 사항이나 개선 기회가
+발견되면 이 섹션에 추가됩니다.
 
-- 근거/제약: 3계층 단방향(Features → Shared → External), vendors/userscript
-  getter 규칙, PC-only, CSS Tokens, 테스트 우선(TDD)
+---
 
-### 스코프(1차)
+## 품질 게이트 (모든 작업 시 필수)
 
-- (해결) B/C/F 항목은 TEST-ONLY/LEGACY 표면 유지 정책으로 확정되었습니다. 활성
-  계획에서는 제외되었으며, 완료 로그에서 가드/수용 기준과 함께 추적합니다.
+변경 전:
 
-### 후보와 제안
+- [ ] `npm run typecheck` — 타입 오류 0건
+- [ ] `npm run lint` — 린트 오류 0건
+- [ ] `npm test` — 모든 테스트 통과
 
-- 해당 없음(완료 로그 참조). 필요 시 후속 스캔/가드 강화만 수행.
+변경 후:
 
-### 단계별 실행 순서(요약 현행화)
+- [ ] `npm run build` — dev/prod 빌드 성공
+- [ ] `node scripts/validate-build.js` — 번들 검증 통과
+- [ ] `npm run deps:check` — 의존성 규칙 위반 0건
 
-- 현재 없음 — 신규 관찰 대상이 생기면 추가.
+---
 
-### 리스크/롤백
+## 리팩토링 원칙 (참고)
 
-- 리스크: 테스트 경로 의존(특히 vendor-manager.ts) 및 스캔 규칙 민감도
-- 롤백: re-export 유지, 배럴 되돌림, 문서/테스트만 수정으로 복구 가능
+1. **TDD 우선**: 실패 테스트 → 최소 구현 → 리팩토링
+2. **최소 diff**: 변경 범위를 최소화하여 리뷰 가능하게 유지
+3. **단계별 진행**: 큰 작업은 여러 단계로 분할하여 검증
+4. **문서화**: 완료 시 `TDD_REFACTORING_PLAN_COMPLETED.md`에 이관
 
-### 수용 기준(전역)
+---
 
-- deps-cruiser 순환/금지 위반 0
-- src/\*\*에서 TEST-ONLY/LEGACY 대상의 런타임 import 0
-- 번들 문자열 가드 PASS(VendorManager 등 금지 키워드 0)
-- 전체 테스트/빌드/포스트빌드 GREEN
+## 참고 문서
+
+- **아키텍처**: `docs/ARCHITECTURE.md` — 3계층 구조, 의존성 경계
+- **코딩 가이드**: `docs/CODING_GUIDELINES.md` — 스타일, 토큰, 테스트 정책
+- **의존성 거버넌스**: `docs/DEPENDENCY-GOVERNANCE.md` — 의존성 규칙, CI 강제
+- **완료 로그**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` — 완료된 작업 이력
+- **실행 가이드**: `AGENTS.md` — 개발 환경, 스크립트, 워크플로
