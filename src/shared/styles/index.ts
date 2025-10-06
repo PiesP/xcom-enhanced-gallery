@@ -10,12 +10,3 @@ export {
   createNamespacedClass,
   createNamespacedSelector,
 } from './namespaced-styles';
-
-// 테마 유틸리티
-export {
-  isInsideGallery,
-  getXEGVariable,
-  setGalleryTheme,
-  STYLE_CONSTANTS,
-  type Theme,
-} from './theme-utils';
