@@ -51,7 +51,7 @@ export async function importMainWithMocks(
       getPreactCompat: vi.fn(() => ({})),
     };
     return {
-      getFflate: vi.fn(() => ({})),
+      // fflate removed - using native ZIP implementation
       legacyPreact,
       getNativeDownload: vi.fn(() => ({})),
       getSolidCore: vi.fn(() => ({

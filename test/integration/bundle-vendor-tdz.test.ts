@@ -45,7 +45,7 @@ describe('번들 환경 Vendor TDZ 문제', () => {
       // 현재 vendor-api.ts의 initializeVendors() 패턴을 시뮬레이션
 
       // 번들 환경에서 동적 import가 변환된 상황
-      let fflateModule;
+      let solidModule;
       let preactModule;
       let hooksModule;
       let signalsModule;
@@ -53,7 +53,7 @@ describe('번들 환경 Vendor TDZ 문제', () => {
       // 모듈들이 아직 초기화되지 않은 상태에서 Promise.all 실행 시도
       const initializeVendorsSimulation = async () => {
         return await Promise.all([
-          Promise.resolve(fflateModule), // undefined reference
+          Promise.resolve(solidModule), // undefined reference
           Promise.resolve(preactModule), // undefined reference
           Promise.resolve(hooksModule), // undefined reference
           Promise.resolve(signalsModule), // undefined reference
@@ -68,27 +68,29 @@ describe('번들 환경 Vendor TDZ 문제', () => {
 
       // 실제 사용 시 에러 발생
       expect(() => {
-        if (result[0]?.deflate) {
-          result[0].deflate();
+        if (result[0]?.createSignal) {
+          result[0].createSignal();
         }
       }).not.toThrow(); // undefined이므로 조건문에서 걸러짐, 하지만 사실상 사용 불가
     });
 
     it('getter 함수 호출 시 초기화되지 않은 캐시로 인한 에러가 발생한다', async () => {
       // vendor-api.ts의 현재 패턴 시뮬레이션
-      let cachedFflate = null;
+      let cachedSolid = null;
 
-      const getFflate = () => {
-        if (!cachedFflate) {
-          throw new Error('fflate가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.');
+      const getSolidCore = () => {
+        if (!cachedSolid) {
+          throw new Error(
+            'SolidJS가 초기화되지 않았습니다. initializeVendors()를 먼저 호출하세요.'
+          );
         }
-        return cachedFflate;
+        return cachedSolid;
       };
 
       // 초기화 없이 호출 시 에러 발생해야 함
       expect(() => {
-        getFflate();
-      }).toThrow('fflate가 초기화되지 않았습니다');
+        getSolidCore();
+      }).toThrow('SolidJS가 초기화되지 않았습니다');
     });
   });
 
@@ -129,8 +131,8 @@ describe('번들 환경 Vendor TDZ 문제', () => {
         const moduleOrder = [
           'vendor-api.ts', // vendor 초기화 코드
           'vendor-manager-static.ts', // Solid 전용 vendor 관리 코드
-          'fflate module', // 실제 라이브러리
           'solid-js module', // 실제 라이브러리
+          'preact module', // 실제 라이브러리
         ];
 
         // vendor-api가 먼저 로드되면서 아직 정의되지 않은 모듈에 접근 시도
