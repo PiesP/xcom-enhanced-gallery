@@ -4002,6 +4002,13 @@
       "valid": true
     },
     {
+      "source": "src/shared/external/zip/zip-format-utils.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/shared/hooks/index.ts",
       "dependencies": [
         {
@@ -8580,7 +8587,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 278,
+    "totalCruised": 279,
     "totalDependenciesCruised": 341,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
