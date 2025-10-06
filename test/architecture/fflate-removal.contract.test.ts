@@ -207,7 +207,9 @@ describe('fflate Deprecated API 제거 검증 (Epic: FFLATE-DEPRECATED-API-REMOV
     });
   });
 
-  describe('Task 1.5: 라이선스 보존', () => {
+  describe.skip('Task 1.5: 라이선스 보존 (SKIP - fflate 의존성 완전 제거됨)', () => {
+    // fflate 의존성이 완전히 제거되고 Store-only ZIP 자체 구현으로 대체되었으므로
+    // 라이선스 파일도 제거되었습니다. (2025-10-06)
     it('LICENSES/fflate-MIT.txt 파일이 존재해야 함 (기여 인정)', () => {
       const licensePath = resolve(projectRoot, 'LICENSES/fflate-MIT.txt');
 
