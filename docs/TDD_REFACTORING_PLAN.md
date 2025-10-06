@@ -1,9 +1,16 @@
 # TDD 리팩토링 활성 계획
 
-> 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링 Epic 관리 문서
+> 복잡한 구현/구조를 간결하고 현대적으로 재구축하기 위한 리팩토링 Epic**Phase
+> 구성**:
 
-**최근 업데이트**: 2025-10-06 **현재 상태**: Epic BUNDLE-SIZE-DEEP-OPTIMIZATION
-Phase 4 진행 중
+- ✅ **Phase 1-3**: 완료 (Tree-shaking, 중복 제거, Terser 최적화)
+- ✅ **Phase 4A**: 완료 (Unused Files Removal, 코드베이스 정리)
+- ✅ **Phase 4B**: 완료 (Investigation-based Removal, delegation wrapper 제거)
+- ✅ **Phase 5**: 완료 (Pure Annotations, 교육적 가치, 번들 효과 없음)
+- ⏳ **Phase 6**: Dead Code 제거 (다음 단계, knip 기반, -45 KB 예상)
+- 📋 **Phase 7**: Bundle Analyzer 도입 (계획됨, 세밀 최적화)
+- ⏸️ **Phase 8**: Orphan 정리 (보류, 실제 orphan 2개뿐)**최근 업데이트**:
+  2025-10-06 **현재 상태**: Epic BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4 진행 중
 
 완료된 내용은
 [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)에서
@@ -90,89 +97,71 @@ Phase 4B 준비 중 **시작일**: 2025-10-06
 
 ---
 
-### Phase 5: Pure Annotations 추가 - 활성
+### Phase 5 완료 요약 (2025-10-06)
 
-**목표**: `/*#__PURE__*/` 주석 추가로 Terser 최적화 강화 (-10 KB) **예상 기간**:
-2-3일 **현재 상태**: 준비 중
+**작업 내용**:
 
-**작업 대상**:
+- 31개 pure 함수 식별 (4개 카테고리)
+- 15개 함수에 `/*#__PURE__*/` 어노테이션 추가
+- 27개 계약 테스트 작성 (RED 단계)
+- 자동화 스크립트 작성 및 실행 (GREEN 단계)
 
-- Logger 함수들 (`logInfo`, `logError`, `logDebug`, `logWarn`)
-- 헬퍼 유틸리티 (부작용 없는 순수 함수만)
-- factory 함수들 (`createMediaItem`, `createServiceFactory` 등)
+**결과**:
 
-**예시**:
+- TDD: RED → GREEN → REFACTOR 성공
+- 테스트: 2926 passed
+- 번들: 495.86 KB (baseline: 495.19 KB, +0.67 KB)
+- 교육적 가치: PURE 어노테이션 올바른 사용법 학습
 
-```typescript
-// Before
-export function createMediaItem(data: MediaData): MediaItem {
-  return { ...data, id: generateId() };
-}
+**분석**:
 
-// After
-export const createMediaItem = /*#__PURE__*/ (data: MediaData): MediaItem => {
-  return { ...data, id: generateId() };
-};
-```
+- PURE 주석은 함수 정의가 아닌 함수 호출 앞에 있어야 효과적
+- 모든 어노테이션 추가 함수가 실제 사용 중 (dead code 없음)
+- 실제 번들 감소는 Phase 6 (Dead Code 제거)에서 기대
 
-**TDD 워크플로** (Phase 5):
-
-#### 분석 단계
-
-1. **순수 함수 식별**:
-
-   ```pwsh
-   # 로거 함수 찾기
-   grep -rn "export function log" src/shared/logging/
-
-   # factory 함수 찾기
-   grep -rn "export function create" src/ --include="*.ts"
-
-   # 헬퍼 유틸리티 찾기
-   grep -rn "export function" src/shared/utils/ --include="*.ts"
-   ```
-
-2. **순수성 검증**:
-   - 부작용 없음 (DOM 조작, 네트워크 요청, 전역 상태 변경 등)
-   - 동일 입력 → 동일 출력
-   - 외부 의존성 최소화
-
-#### RED 단계
-
-- 순수 함수 목록 작성
-- 각 함수에 PURE annotation 추가 여부 검증 테스트
-- 번들 크기 베이스라인 기록
-
-#### GREEN 단계
-
-- 검증된 순수 함수에 `/*#__PURE__*/` 추가
-- 함수 → 화살표 함수 const로 변환 (필요시)
-- 번들 크기 감소 확인
-
-#### REFACTOR 단계
-
-- 타입 안전성 검증
-- ESLint 규칙 업데이트 (PURE annotation 권장)
-- 문서화
-
-#### Verification
-
-- 번들 크기 -10 KB 달성
-- 모든 테스트 통과
-- 타입 체크 통과
+**상세**:
+[`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md),
+[`docs/phase5-pure-annotations-analysis.md`](phase5-pure-annotations-analysis.md)
 
 ---
 
-### Phase 6 준비: Advanced Tree-shaking
+### Phase 6: Dead Code 제거 - 활성
 
-**목표**: 고급 tree-shaking 기법 적용 (-10 KB) **예상 기간**: 3-4일 **Phase 5
-완료 후 진행**
+**목표**: knip 보고서 기반 미사용 코드 제거 (-45 KB, -9%) **예상 기간**: 3-4일
+**현재 상태**: 준비 중
+
+**작업 대상** (knip 보고서 분석):
+
+- **Unused exports**: 111개
+- **Unused files**: 96개
+- **Unused dependencies**: 3개
+- **Unused devDependencies**: 2개
+
+**전략**:
+
+1. **분석 단계**: 각 항목의 실제 사용 여부 검증 (grep, semantic search)
+2. **RED 단계**: 제거 대상 테스트 작성 (absence verification)
+3. **GREEN 단계**: 안전 제거 (단계별 커밋)
+4. **REFACTOR 단계**: 의존성 그래프 재검증, import 정리
+
+**우선순위**:
+
+- **High**: Unused files (큰 번들 영향)
+- **Medium**: Unused exports (tree-shaking 개선)
+- **Low**: Unused dependencies (package.json 정리)
+
+---
+
+### Phase 7 준비: Bundle Analyzer 도입
+
+**목표**: 실제 번들 구성 시각화 및 세밀 최적화 (-10 KB) **예상 기간**: 2-3일
+**Phase 6 완료 후 진행**
 
 **작업 대상**:
 
-- Re-export 체인 최적화 (≤3 depth 유지)
-- Side-effect 명시 강화
-- Dynamic import 최적화
+- `rollup-plugin-visualizer` 통합
+- 큰 모듈 식별 및 최적화
+- Dynamic import 전환 (필요 시)
 
 ---
 
