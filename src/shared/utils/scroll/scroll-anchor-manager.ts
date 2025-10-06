@@ -2,12 +2,15 @@
  * @fileoverview Scroll Anchor Manager
  * Epic: GALLERY-UX-ENHANCEMENT Sub-Epic 1
  * TDD Phase: GREEN (구현)
+ * Sub-Epic 3 (Production Issue #3): 로깅 강화
  *
  * 목표:
  * - DOM 앵커 기반 스크롤 위치 복원으로 정확도 향상
  * - 동적 콘텐츠 로딩으로 인한 오차 최소화 (±50px 이내)
  * - 앵커 부재 시 픽셀 기반 fallback 동작
  */
+
+import { logger } from '@shared/logging';
 
 /**
  * Scroll 앵커 정보
@@ -74,11 +77,16 @@ export class ScrollAnchorManager {
 
   /**
    * 스크롤 앵커 설정
+   * Sub-Epic 3: 로깅 추가
    *
    * @param element - 앵커로 사용할 DOM 요소 (null이면 앵커 제거)
    */
   setAnchor(element: HTMLElement | null): void {
     if (!element) {
+      logger.debug('[ScrollAnchorManager] 앵커 제거', {
+        previousOffsetTop: this.anchor?.offsetTop,
+        fallbackScrollTop: typeof window !== 'undefined' ? window.pageYOffset : 0,
+      });
       this.anchor = null;
       this.fallbackScrollTop = typeof window !== 'undefined' ? window.pageYOffset : 0;
       return;
@@ -95,6 +103,13 @@ export class ScrollAnchorManager {
     if (typeof window !== 'undefined') {
       this.fallbackScrollTop = window.pageYOffset;
     }
+
+    logger.info('[ScrollAnchorManager] 앵커 설정 완료', {
+      offsetTop: element.offsetTop,
+      fallbackScrollTop: this.fallbackScrollTop,
+      elementTag: element.tagName,
+      elementClass: element.className,
+    });
   }
 
   /**
@@ -108,6 +123,7 @@ export class ScrollAnchorManager {
 
   /**
    * 앵커 기반 스크롤 위치 복원
+   * Sub-Epic 3: 로깅 추가
    *
    * 동작:
    * 1. 앵커 요소가 있고 DOM에 존재하면 앵커 기준 복원
@@ -117,16 +133,23 @@ export class ScrollAnchorManager {
   restoreToAnchor(): void {
     // 브라우저 환경 체크
     if (typeof window === 'undefined' || typeof document === 'undefined') {
+      logger.debug('[ScrollAnchorManager] 브라우저 환경 아님 - 복원 스킵');
       return;
     }
 
     // window.scrollTo가 없는 환경 처리
     if (typeof window.scrollTo !== 'function') {
+      logger.debug('[ScrollAnchorManager] window.scrollTo 미지원 - 복원 스킵');
       return;
     }
 
     // 앵커가 없거나 DOM에서 제거된 경우 fallback
     if (!this.anchor || !document.body.contains(this.anchor.element)) {
+      logger.info('[ScrollAnchorManager] 앵커 없음 또는 제거됨 - 픽셀 기반 fallback', {
+        hasAnchor: !!this.anchor,
+        inDOM: this.anchor ? document.body.contains(this.anchor.element) : false,
+        fallbackScrollTop: this.fallbackScrollTop,
+      });
       this.restoreToPixelPosition();
       return;
     }
@@ -139,6 +162,14 @@ export class ScrollAnchorManager {
     // 음수 방지 (상단 경계)
     const clampedY = Math.max(0, targetY);
 
+    logger.info('[ScrollAnchorManager] 앵커 기반 스크롤 복원 실행', {
+      anchorOffsetTop: this.anchor.element.offsetTop,
+      topMargin,
+      targetY,
+      clampedY,
+      currentScrollY: window.pageYOffset,
+    });
+
     // 스크롤 복원 (즉시 이동, smooth는 UX 개선 시 옵션)
     window.scrollTo({
       top: clampedY,
@@ -148,12 +179,19 @@ export class ScrollAnchorManager {
 
   /**
    * 픽셀 기반 스크롤 위치 복원 (Fallback)
+   * Sub-Epic 3: 로깅 추가
    *
    * @private
    */
   private restoreToPixelPosition(): void {
     if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      logger.info('[ScrollAnchorManager] 픽셀 기반 스크롤 복원 (Fallback)', {
+        fallbackScrollTop: this.fallbackScrollTop,
+        currentScrollY: window.pageYOffset,
+      });
       window.scrollTo(0, this.fallbackScrollTop);
+    } else {
+      logger.debug('[ScrollAnchorManager] 브라우저 환경 아님 - 픽셀 복원 스킵');
     }
   }
 

@@ -31,6 +31,7 @@ import {
 import { bodyScrollManager } from '@shared/utils/scroll/body-scroll-manager';
 import { scrollAnchorManager } from '@shared/utils/scroll/scroll-anchor-manager';
 import { updateViewportForToolbar } from '@shared/utils/viewport/viewport-calculator';
+import { logger } from '@shared/logging';
 import styles from './SolidGalleryShell.module.css';
 
 export interface SolidGalleryShellOverrides {
@@ -391,6 +392,7 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
 
   // Sub-Epic 3: Auto-focus Sync (visibleIndex → currentIndex)
   // 화면에 보이는 아이템이 변경되면 자동으로 포커스를 갱신 (자동 스크롤 없이)
+  // Sub-Epic 2 (Production Issue #2): 로깅 강화
   createEffect(
     (() => {
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
@@ -406,6 +408,14 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
           timeoutId = undefined;
         }
 
+        // 동기화 조건 로깅 (Sub-Epic 2)
+        logger.debug('[AutoFocusSync] visibleIndex 변경 감지', {
+          visibleIndex: idx,
+          currentIndex: current,
+          isOpen: isOpened,
+          willSync: isOpened && idx >= 0 && idx !== current,
+        });
+
         // 동기화 조건:
         // 1. 갤러리가 열려 있어야 함
         // 2. visibleIndex가 유효해야 함 (>= 0)
@@ -416,6 +426,11 @@ const SolidGalleryShell = (props: SolidGalleryShellProps): JSX.Element => {
 
         // 300ms debounce: 스크롤 중 과도한 업데이트 방지
         timeoutId = setTimeout(() => {
+          logger.info('[AutoFocusSync] currentIndex 동기화 실행', {
+            from: current,
+            to: idx,
+            skipScroll: true,
+          });
           navigateToItem(idx, { skipScroll: true });
           timeoutId = undefined;
         }, 300);
