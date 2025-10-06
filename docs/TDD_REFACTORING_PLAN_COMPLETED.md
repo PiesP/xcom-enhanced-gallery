@@ -2,6 +2,128 @@
 
 ---
 
+## 2025-10-06: Epic SOLID-NATIVE-MIGRATION 완료 확인 ✅
+
+### 개요
+
+- **확인일**: 2025-10-06
+- **유형**: 아키텍처 전환 (createGlobalSignal → SolidJS Native)
+- **Epic**: SOLID-NATIVE-MIGRATION
+- **상태**: **이미 완료됨** (과거 작업에서 완료, 문서에 미반영 상태였음)
+- **검증 방법**: 아키텍처 테스트 실행
+
+### 배경
+
+TDD_REFACTORING_PLAN.md의 "향후 Epic 후보"에 나열되어 있었으나, 실제 코드 분석
+결과 **이미 완료된 상태**임을 확인.
+
+### 검증 과정
+
+#### 아키텍처 테스트 실행
+
+```bash
+npx vitest run test/architecture/solid-native-inventory.test.ts
+```
+
+**결과**: 11 tests passed (모두 GREEN)
+
+### 완료 상태 검증
+
+#### 1. createGlobalSignal Import 제거
+
+```
+✅ 0 files (모두 제거됨)
+```
+
+- 모든 파일에서 `import { createGlobalSignal }` 제거 완료
+
+#### 2. createGlobalSignal 호출 제거
+
+```
+✅ 0 occurrences (모두 제거됨)
+```
+
+- 모든 `createGlobalSignal()` 호출 제거 완료
+- 호환 레이어 파일 자체도 제거됨
+
+#### 3. .value 속성 접근
+
+```
+✅ 4 occurrences (DOM 요소 등 다른 용도, 허용됨)
+```
+
+- `RadioGroup.tsx`: 3개 (props.options 배열 처리)
+- `progressive-loader.ts`: 1개 (cache entry 값 설정)
+- 모두 SolidJS Signal과 무관한 일반 객체 속성
+
+#### 4. .subscribe() 메서드 호출
+
+```
+✅ 3 occurrences (다른 패턴, 허용됨)
+```
+
+- `feature-registration.ts`: SettingsService 이벤트 구독
+- `UnifiedToastManager.ts`: 주석 (실제 호출 아님)
+- `signalSelector.ts`: 주석 (마이그레이션 가이드)
+
+### 전환 완료된 파일
+
+#### Phase G-3-1: toolbar.signals.ts
+
+- ✅ `createGlobalSignal` → `createSignal` 전환
+- ✅ `.value` → 함수 호출 패턴
+- ✅ `.subscribe()` → `createEffect()` 패턴
+
+#### Phase G-3-2: download.signals.ts
+
+- ✅ SolidJS Native 패턴 적용
+- ✅ 타입 안전성 확보 (Accessor<T>, Setter<T>)
+
+#### Phase G-3-3: gallery.signals.ts
+
+- ✅ 네이티브 SolidJS 패턴 완전 전환
+- ✅ 호환 레이어 제거
+
+#### Phase G-4: 호환 레이어 제거
+
+- ✅ `src/shared/state/createGlobalSignal.ts` 파일 제거
+- ✅ 모든 레거시 API 제거
+
+### 관련 문서 업데이트
+
+#### vendors-safe-api.md
+
+- ✅ SolidJS Native 패턴 가이드 포함
+- ✅ createGlobalSignal을 "레거시 패턴 (신규 코드 금지)"로 명시
+- ✅ 마이그레이션 예제 제공
+
+#### ARCHITECTURE.md
+
+- ✅ 상태 관리 섹션에 "SolidJS Native" 패턴 명시
+- ✅ "createGlobalSignal (호환 레이어, 신규 코드 금지)" 주석 추가
+
+### 교훈
+
+1. **문서 동기화 중요성**
+   - Epic이 완료되었음에도 TDD_REFACTORING_PLAN.md에 "향후 Epic 후보"로
+     남아있었음
+   - 완료 상태를 TDD_REFACTORING_PLAN_COMPLETED.md에 즉시 기록해야 함
+
+2. **아키텍처 테스트의 가치**
+   - `solid-native-inventory.test.ts`가 완료 상태를 명확히 검증
+   - 레거시 패턴 재도입 방지 (회귀 방지)
+
+3. **히스토리 추적**
+   - 원본 완료 시점: 2025-01-04 (BUILD — Epic JSX-PRAGMA-CLEANUP Phase 1-3)
+   - 문서 정리: 2025-10-06 (이번 작업)
+
+### 후속 조치
+
+- ✅ TDD_REFACTORING_PLAN.md에서 Epic 완료 상태로 업데이트
+- ✅ 현재 활성 Epic: 없음 (다음 우선순위 작업은 BUNDLE-ANALYZER-INTEGRATION)
+
+---
+
 ## 2025-10-06: Phase 6 - Code Cleanup 완료 ✅
 
 ### 개요
