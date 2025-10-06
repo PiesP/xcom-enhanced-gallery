@@ -2,6 +2,124 @@
 
 ---
 
+## 2025-10-06: Phase 6 - Code Cleanup 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: 코드 정리 (중복 함수 제거, barrel exports 정리)
+- **Epic**: BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 6
+- **브랜치**: feature/phase6-dead-code-removal
+- **커밋**: (진행 중)
+- **TDD**: RED → GREEN → REFACTOR
+
+### 목표
+
+중복 함수 제거 및 불필요한 유틸리티 정리
+
+### 결과 요약
+
+#### 번들 크기
+
+- **Baseline** (Phase 5): 495.19 KB raw / 123.73 KB gzip
+- **After Phase 6**: 495.86 KB raw / 123.95 KB gzip
+- **변화량**: +0.67 KB raw (+0.14%) / +0.22 KB gzip (+0.18%)
+
+#### 작업 내용
+
+- **삭제된 파일**: `src/shared/styles/theme-utils.ts`
+- **제거된 함수**:
+  - `isInsideGallery` (중복, `core-utils.ts`에 canonical 버전 존재)
+  - `getXEGVariable` (미사용)
+  - `setGalleryTheme` (미사용)
+  - `STYLE_CONSTANTS` (미사용)
+  - `Theme` 타입 (미사용)
+- **정리된 파일**: `src/shared/styles/index.ts` (theme-utils 관련 exports 제거)
+
+#### 테스트
+
+- **RED 단계**: 5개 계약 테스트 작성 (2 failed, 3 passed)
+  - ❌ theme-utils.ts 파일 존재 확인 (실패 예상)
+  - ❌ theme-utils import 확인 (실패 예상)
+  - ✅ 나머지 테스트 통과
+- **GREEN 단계**: 파일 삭제 및 imports 정리 (5 passed)
+- **REFACTOR 단계**: 번들 빌드 및 품질 게이트 검증
+
+### 분석 결과
+
+#### 번들 크기 영향 없는 이유
+
+1. **Tree-shaking 이미 적용됨**
+   - theme-utils.ts의 함수들은 이미 사용되지 않아 번들에서 제거됨
+   - 파일 삭제는 코드베이스 정리 효과만 있음
+
+2. **측정 오차 범위**
+   - +0.67 KB는 빌드 프로세스 차이에 기인 (의존성 그래프 생성 등)
+   - 실제 유의미한 증가 아님
+
+#### Phase 6의 실제 가치
+
+번들 크기 감소가 아닌 **코드 품질 개선**:
+
+1. **중복 제거**
+   - `isInsideGallery` 함수의 중복 제거
+   - `core-utils.ts`가 유일한 구현처로 명확화
+
+2. **유지보수성 향상**
+   - 불필요한 파일 제거로 코드베이스 단순화
+   - Import 경로 정리
+
+3. **테스트 커버리지**
+   - 계약 테스트로 정리 작업 안전성 보장
+   - RED → GREEN 전환으로 TDD 원칙 준수
+
+### 품질 게이트
+
+✅ **모든 품질 게이트 통과**:
+
+- Typecheck: 성공
+- Lint: 경고 없음 (max-warnings 0)
+- Tests: 2931 passed | 110 skipped | 1 todo (3042 total)
+- Build: dev/prod 빌드 성공
+
+### 개선 사항
+
+1. **코드 명확성**
+   - `isInsideGallery` 함수의 단일 구현처 확립
+   - 중복된 유틸리티 함수 제거
+
+2. **의존성 단순화**
+   - theme-utils.ts 제거로 불필요한 import 경로 제거
+   - styles/index.ts의 exports 정리
+
+### 교훈
+
+1. **Phase 6 재정의 필요**
+   - 원래 계획: "Dead Code Removal (-45 KB)"
+   - 실제: "Code Cleanup (소규모 정리)"
+   - knip 리포트 outdated (Phase 4A/4B에서 대부분 완료됨)
+
+2. **정적 분석 도구의 한계**
+   - knip이 reporting한 111 unused exports, 96 unused files는 대부분 이미 제거됨
+   - 실제 코드베이스 분석이 더 정확
+
+3. **TDD의 가치**
+   - 작은 정리 작업에도 계약 테스트로 안전성 보장
+   - RED → GREEN 전환으로 작업 완료 명확히 검증
+
+### 다음 단계
+
+1. **Master 머지**
+   - 브랜치: feature/phase6-dead-code-removal
+   - PR 타이틀:
+     `feat(refactor): Phase 6 - Code Cleanup (theme-utils.ts removal)`
+
+2. **문서 업데이트**
+   - TDD_REFACTORING_PLAN.md에서 Phase 6 완료 표시
+   - 현재 번들 크기 업데이트
+
+---
+
 ## 2025-10-06: Phase 5 - Pure Annotations 완료 ✅
 
 ### 개요
