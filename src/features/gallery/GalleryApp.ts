@@ -216,6 +216,19 @@ export class GalleryApp {
         startIndex: validIndex,
       });
 
+      // [Sub-Epic 1] 스크롤 앵커 설정 (타임라인 위치 저장)
+      const tweetContainer = document.querySelector('article[data-testid="tweet"]');
+      if (tweetContainer instanceof HTMLElement) {
+        const { scrollAnchorManager } = await import('@shared/utils/scroll/scroll-anchor-manager');
+        scrollAnchorManager.setAnchor(tweetContainer);
+        logger.debug('[GalleryApp] 스크롤 앵커 설정 완료:', {
+          element: tweetContainer.tagName,
+          offsetTop: tweetContainer.offsetTop,
+        });
+      } else {
+        logger.debug('[GalleryApp] 트윗 컨테이너를 찾을 수 없어 앵커 설정 생략');
+      }
+
       const mediaService = await this.getMediaService();
       await mediaService.prepareForGallery();
 
