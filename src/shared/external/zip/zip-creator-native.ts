@@ -126,7 +126,7 @@ function createFileEntry(
  * Offset  Size  Content
  * 0       4     Local file header signature (0x04034b50)
  * 4       2     Version needed to extract (10 = 1.0)
- * 6       2     General purpose bit flag (0)
+ * 6       2     General purpose bit flag (0x0800 = UTF-8)
  * 8       2     Compression method (0 = store)
  * 10      2     Last mod file time (DOS)
  * 12      2     Last mod file date (DOS)
@@ -147,8 +147,8 @@ function writeLocalFileHeader(writer: ByteWriter, entry: FileEntry): void {
   // Version needed to extract: 10 (1.0)
   writer.writeUint16LE(10);
 
-  // General purpose bit flag: 0
-  writer.writeUint16LE(0);
+  // General purpose bit flag: 0x0800 (UTF-8 encoding)
+  writer.writeUint16LE(0x0800);
 
   // Compression method: 0 (store)
   writer.writeUint16LE(0);
@@ -185,7 +185,7 @@ function writeLocalFileHeader(writer: ByteWriter, entry: FileEntry): void {
  * 0       4     Central directory signature (0x02014b50)
  * 4       2     Version made by (10 = 1.0)
  * 6       2     Version needed (10 = 1.0)
- * 8       2     Flag (0)
+ * 8       2     Flag (0x0800 = UTF-8)
  * 10      2     Compression (0)
  * 12      2     Mod time
  * 14      2     Mod date
@@ -211,8 +211,8 @@ function writeCentralDirectoryHeader(writer: ByteWriter, entry: FileEntry): void
   // Version needed: 10 (1.0)
   writer.writeUint16LE(10);
 
-  // Flag: 0
-  writer.writeUint16LE(0);
+  // Flag: 0x0800 (UTF-8 encoding)
+  writer.writeUint16LE(0x0800);
 
   // Compression: 0 (store)
   writer.writeUint16LE(0);

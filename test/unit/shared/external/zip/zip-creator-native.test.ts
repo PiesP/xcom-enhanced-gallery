@@ -132,9 +132,9 @@ describe('createZipFromFiles', () => {
     expect(zip[4]).toBe(10);
     expect(zip[5]).toBe(0);
 
-    // General purpose bit flag: 0 (little endian)
-    expect(zip[6]).toBe(0);
-    expect(zip[7]).toBe(0);
+    // General purpose bit flag: 0x0800 (UTF-8, little endian)
+    expect(zip[6]).toBe(0x00);
+    expect(zip[7]).toBe(0x08);
 
     // Compression method: 0 (store, little endian)
     expect(zip[8]).toBe(0);
