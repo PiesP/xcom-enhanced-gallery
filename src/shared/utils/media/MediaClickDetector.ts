@@ -11,6 +11,92 @@ import { createTrustedHostnameGuard, TWITTER_MEDIA_HOSTS } from '@shared/utils/u
 const isTrustedTwitterMediaHostname = createTrustedHostnameGuard(TWITTER_MEDIA_HOSTS);
 
 /**
+ * 썸네일 URL에서 비디오 URL 추출 (Production Issue Fix)
+ * @param thumbnailUrl 썸네일 이미지 URL
+ * @returns 변환된 비디오 URL 또는 null
+ */
+function convertThumbnailToVideoUrl(thumbnailUrl: string): string | null {
+  if (!thumbnailUrl) return null;
+
+  try {
+    // Pattern 1: GIF (tweet_video_thumb -> tweet_video)
+    // https://pbs.twimg.com/tweet_video_thumb/AbC123.jpg
+    // -> https://video.twimg.com/tweet_video/AbC123.mp4
+    if (thumbnailUrl.includes('tweet_video_thumb/')) {
+      const match = thumbnailUrl.match(/tweet_video_thumb\/([^/.]+)/);
+      if (match) {
+        const videoId = match[1];
+        return `https://video.twimg.com/tweet_video/${videoId}.mp4`;
+      }
+    }
+
+    // Pattern 2: Regular Video (ext_tw_video_thumb -> ext_tw_video)
+    // https://pbs.twimg.com/ext_tw_video_thumb/1234567890/pu/img/abc.jpg
+    // -> https://video.twimg.com/ext_tw_video/1234567890/pu/vid/1280x720/video.mp4
+    if (thumbnailUrl.includes('ext_tw_video_thumb/')) {
+      const match = thumbnailUrl.match(/ext_tw_video_thumb\/(\d+)/);
+      if (match) {
+        const videoId = match[1];
+        // 기본 해상도로 시도 (실제로는 여러 해상도 존재)
+        return `https://video.twimg.com/ext_tw_video/${videoId}/pu/vid/1280x720/video.mp4`;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    logger.error('[MediaClickDetector] 썸네일 URL 변환 실패:', error);
+    return null;
+  }
+}
+
+/**
+ * 비디오 컨테이너에서 비디오 URL 추출 (다중 전략)
+ * @param container 비디오 컨테이너 요소
+ * @returns 추출된 비디오 URL 또는 null
+ */
+function extractVideoUrlFromContainer(container: HTMLElement): string | null {
+  // Strategy 1: video 태그의 src 속성
+  const video = container.querySelector('video') as HTMLVideoElement | null;
+  if (video) {
+    const videoSrc = video.src || video.currentSrc;
+    if (videoSrc && isTrustedTwitterMediaHostname(videoSrc)) {
+      return videoSrc;
+    }
+
+    // Strategy 2: video 태그의 poster 속성에서 변환
+    if (video.poster) {
+      const convertedUrl = convertThumbnailToVideoUrl(video.poster);
+      if (convertedUrl) {
+        return convertedUrl;
+      }
+    }
+
+    // Strategy 3: source 태그
+    const source = video.querySelector('source') as HTMLSourceElement | null;
+    if (source?.src && isTrustedTwitterMediaHostname(source.src)) {
+      return source.src;
+    }
+  }
+
+  // Strategy 4: 썸네일 이미지에서 변환
+  const thumbnail = container.querySelector('img[src*="video_thumb"]') as HTMLImageElement | null;
+  if (thumbnail?.src) {
+    const convertedUrl = convertThumbnailToVideoUrl(thumbnail.src);
+    if (convertedUrl) {
+      return convertedUrl;
+    }
+  }
+
+  // Strategy 5: data 속성
+  const dataVideoUrl = container.getAttribute('data-video-url');
+  if (dataVideoUrl && isTrustedTwitterMediaHostname(dataVideoUrl)) {
+    return dataVideoUrl;
+  }
+
+  return null;
+}
+
+/**
  * 미디어 감지 결과
  */
 export interface MediaDetectionResult {
@@ -391,6 +477,38 @@ export class MediaClickDetector {
       // 직접적인 미디어 요소
       if (target.tagName === 'IMG' && MediaClickDetector.isTwitterMediaElement(target)) {
         const img = target as HTMLImageElement;
+
+        // Production Fix: 썸네일 이미지가 비디오 컨테이너 내부에 있는지 확인
+        const videoContainer = img.closest(
+          '[data-testid="videoComponent"], [data-testid="videoPlayer"]'
+        );
+        if (videoContainer) {
+          // 비디오 URL 추출 시도
+          const videoUrl = extractVideoUrlFromContainer(videoContainer as HTMLElement);
+          if (videoUrl) {
+            return {
+              type: 'video',
+              element: videoContainer as HTMLElement,
+              mediaUrl: videoUrl,
+              confidence: 0.85,
+              method: 'thumbnail_to_video_conversion',
+            };
+          }
+
+          // 썸네일 URL에서 직접 변환 시도
+          const convertedUrl = convertThumbnailToVideoUrl(img.src);
+          if (convertedUrl) {
+            return {
+              type: 'video',
+              element: videoContainer as HTMLElement,
+              mediaUrl: convertedUrl,
+              confidence: 0.8,
+              method: 'thumbnail_url_pattern',
+            };
+          }
+        }
+
+        // 일반 이미지로 반환
         return {
           type: 'image',
           element: target,
@@ -402,12 +520,30 @@ export class MediaClickDetector {
 
       if (target.tagName === 'VIDEO' && MediaClickDetector.isTwitterMediaElement(target)) {
         const video = target as HTMLVideoElement;
+        let videoUrl = video.src || video.currentSrc;
+
+        // Production Fix: src가 없으면 poster에서 변환 시도
+        if (!videoUrl && video.poster) {
+          const convertedUrl = convertThumbnailToVideoUrl(video.poster);
+          if (convertedUrl) {
+            videoUrl = convertedUrl;
+          }
+        }
+
+        // source 태그 확인
+        if (!videoUrl) {
+          const source = video.querySelector('source') as HTMLSourceElement | null;
+          if (source?.src) {
+            videoUrl = source.src;
+          }
+        }
+
         return {
           type: 'video',
           element: target,
-          mediaUrl: video.src || video.currentSrc,
-          confidence: 1.0,
-          method: 'direct_element',
+          mediaUrl: videoUrl || '',
+          confidence: videoUrl ? 1.0 : 0.5,
+          method: videoUrl ? 'direct_element' : 'no_src_available',
         };
       }
 
@@ -430,18 +566,23 @@ export class MediaClickDetector {
         }
       }
 
-      // 미디어 플레이어 검색
-      const videoSelectors = [SELECTORS.VIDEO_PLAYER, 'video'];
+      // 미디어 플레이어 검색 (Production Fix: 비디오 URL 추출 강화)
+      const videoSelectors = [
+        SELECTORS.VIDEO_PLAYER,
+        '[data-testid="videoComponent"]',
+        '[data-testid="videoPlayer"]',
+        'video',
+      ];
       for (const selector of videoSelectors) {
         const container = target.closest(selector) as HTMLElement;
         if (container) {
-          // 비디오 찾기
-          const video = container.querySelector('video') as HTMLVideoElement;
-          if (video) {
+          // 다중 전략으로 비디오 URL 추출
+          const videoUrl = extractVideoUrlFromContainer(container);
+          if (videoUrl) {
             return {
               type: 'video',
-              element: video,
-              mediaUrl: video.src || video.currentSrc,
+              element: container,
+              mediaUrl: videoUrl,
               confidence: 0.9,
               method: `player_search:${selector}`,
             };

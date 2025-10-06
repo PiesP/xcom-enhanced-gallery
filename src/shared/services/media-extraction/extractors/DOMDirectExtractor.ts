@@ -13,6 +13,7 @@ import {
   detectMediaTypeFromUrl,
   detectGifFromVideoElement,
 } from '@shared/utils/media/media-type-detection';
+import { convertThumbnailToVideoUrl } from '@shared/utils/media/video-url-converter';
 
 /**
  * DOM 추출기 (백업 전략용)
@@ -131,23 +132,101 @@ export class DOMDirectExtractor {
     logger.debug(`[DOMDirectExtractor] 비디오 요소 ${videos.length}개 발견`);
 
     videos.forEach((videoElement, _index) => {
-      if (videoElement.src) {
-        // GIF vs 비디오 구분
-        const isGif =
-          detectGifFromVideoElement(videoElement) ||
-          detectMediaTypeFromUrl(videoElement.src) === 'gif';
+      // Phase 1-3 (GREEN): 비디오 URL 추출 강화
+      // 우선순위: video.src → source.src → poster → 변환
+      let videoUrl: string | null = null;
 
-        if (isGif) {
-          logger.debug(`[DOMDirectExtractor] GIF 감지 (비디오 요소): ${videoElement.src}`);
-          mediaItems.push(this.createGifMediaInfo(videoElement.src, mediaItems.length, tweetInfo));
-        } else {
-          logger.debug(`[DOMDirectExtractor] 비디오 추가: ${videoElement.src}`);
-          mediaItems.push(
-            this.createVideoMediaInfo(videoElement.src, mediaItems.length, tweetInfo)
-          );
+      // 1. video.src 직접 확인
+      if (videoElement.src) {
+        videoUrl = videoElement.src;
+        logger.debug('[DOMDirectExtractor] video.src에서 URL 추출', { videoUrl });
+      }
+
+      // 2. source 태그 확인
+      if (!videoUrl) {
+        const source = videoElement.querySelector('source');
+        if (source?.src) {
+          videoUrl = source.src;
+          logger.debug('[DOMDirectExtractor] source 태그에서 URL 추출', { videoUrl });
         }
       }
+
+      // 3. poster 속성 → 비디오 URL 변환
+      if (!videoUrl && videoElement.poster) {
+        const converted = convertThumbnailToVideoUrl(videoElement.poster);
+        if (converted) {
+          videoUrl = converted;
+          logger.debug('[DOMDirectExtractor] poster → video URL 변환', {
+            poster: videoElement.poster,
+            videoUrl: converted,
+          });
+        }
+      }
+
+      // 비디오 URL이 추출된 경우에만 MediaInfo 추가
+      if (videoUrl) {
+        // GIF vs 비디오 구분
+        const isGif =
+          detectGifFromVideoElement(videoElement) || detectMediaTypeFromUrl(videoUrl) === 'gif';
+
+        if (isGif) {
+          logger.debug(`[DOMDirectExtractor] GIF 감지 (비디오 요소): ${videoUrl}`);
+          mediaItems.push(this.createGifMediaInfo(videoUrl, mediaItems.length, tweetInfo));
+        } else {
+          logger.debug(`[DOMDirectExtractor] 비디오 추가: ${videoUrl}`);
+          mediaItems.push(this.createVideoMediaInfo(videoUrl, mediaItems.length, tweetInfo));
+        }
+      } else {
+        logger.warn('[DOMDirectExtractor] 비디오 URL 추출 실패 - src, source, poster 모두 없음', {
+          tagName: videoElement.tagName,
+          hasSource: !!videoElement.querySelector('source'),
+          hasPoster: !!videoElement.poster,
+        });
+      }
     });
+
+    // Phase 1-5 (GREEN): 비디오 요소가 없을 때 썸네일 이미지에서 비디오 URL 추출
+    if (videos.length === 0) {
+      logger.debug('[DOMDirectExtractor] 비디오 요소 없음 - 썸네일 이미지 검색 시작');
+
+      // 비디오 컨테이너 내부의 썸네일 이미지 찾기
+      const videoContainers = container.querySelectorAll('[data-testid="videoComponent"]');
+      videoContainers.forEach(videoContainer => {
+        // video_thumb 패턴을 포함한 썸네일 이미지 검색
+        const thumbnails =
+          videoContainer.querySelectorAll<HTMLImageElement>('img[src*="video_thumb"]');
+
+        thumbnails.forEach(thumbnail => {
+          if (thumbnail.src) {
+            const videoUrl = convertThumbnailToVideoUrl(thumbnail.src);
+
+            if (videoUrl) {
+              // 중복 방지: 이미 추가된 URL인지 확인
+              const isDuplicate = mediaItems.some(item => item.url === videoUrl);
+
+              if (!isDuplicate) {
+                // GIF vs 비디오 구분
+                const isGif = detectMediaTypeFromUrl(videoUrl) === 'gif';
+
+                if (isGif) {
+                  logger.debug(
+                    `[DOMDirectExtractor] 썸네일 이미지에서 GIF URL 변환: ${thumbnail.src} → ${videoUrl}`
+                  );
+                  mediaItems.push(this.createGifMediaInfo(videoUrl, mediaItems.length, tweetInfo));
+                } else {
+                  logger.debug(
+                    `[DOMDirectExtractor] 썸네일 이미지에서 비디오 URL 변환: ${thumbnail.src} → ${videoUrl}`
+                  );
+                  mediaItems.push(
+                    this.createVideoMediaInfo(videoUrl, mediaItems.length, tweetInfo)
+                  );
+                }
+              }
+            }
+          }
+        });
+      });
+    }
 
     logger.debug(`[DOMDirectExtractor] 총 ${mediaItems.length}개 미디어 추출 완료`);
     return mediaItems;
