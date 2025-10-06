@@ -2,6 +2,210 @@
 
 ---
 
+## 2025-10-06: Phase 4B - Investigation-based File Removal 완료 ✅
+
+### 개요
+
+- **완료일**: 2025-10-06
+- **유형**: 번들 최적화 (delegation wrapper 및 empty file 제거)
+- **Epic**: BUNDLE-SIZE-DEEP-OPTIMIZATION Phase 4B
+- **브랜치**: feat/bundle-size-phase4b-investigation
+- **커밋**: 946ae039
+- **TDD**: RED → GREEN → REFACTOR
+
+### 목표
+
+분석 기반으로 검증된 delegation wrapper 및 빈 파일 제거를 통한 코드베이스 정리
+
+### 분석 프로세스
+
+각 파일 카테고리별로 grep 검색을 통해 사용처 분석:
+
+1. **UnifiedSettingsModal.tsx**: 0 imports (단순 SettingsModal wrapper)
+2. **vendor-api.ts**: 0 imports (vendor-api-safe.ts로 위임)
+3. **core-icons.ts**: 0 imports (iconRegistry.ts로 위임)
+4. **event-managers.ts**: 0 imports (통합 인덱스, 사용되지 않음)
+5. **icon-types.ts**: empty file
+6. **barrel.ts**: 0 imports (불필요한 re-export)
+7. **BatchDOMUpdateManager.ts**: 0 imports (DOMBatcher로 위임)
+8. **position-calculator.ts**: 0 imports (calculateMenuPosition 함수)
+
+### 제거된 파일 (8개)
+
+1. **UnifiedSettingsModal.tsx**
+   - 경로: `src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx`
+   - 사유: SettingsModal의 단순 wrapper, 실제 사용처 없음
+
+2. **vendor-api.ts**
+   - 경로: `src/shared/external/vendors/vendor-api.ts`
+   - 사유: vendor-api-safe.ts로 완전 위임, 레거시 호환 계층
+
+3. **core-icons.ts**
+   - 경로: `src/shared/services/core-icons.ts`
+   - 사유: iconRegistry.ts로 위임, transitional shim
+
+4. **event-managers.ts**
+   - 경로: `src/shared/services/event-managers.ts`
+   - 사유: 통합 인덱스, 실제 사용처 없음
+
+5. **icon-types.ts**
+   - 경로: `src/shared/services/icon-types.ts`
+   - 사유: empty file
+
+6. **barrel.ts**
+   - 경로: `src/shared/utils/accessibility/barrel.ts`
+   - 사유: 불필요한 re-export, 사용처 없음
+
+7. **BatchDOMUpdateManager.ts**
+   - 경로: `src/shared/utils/dom/BatchDOMUpdateManager.ts`
+   - 사유: DOMBatcher로 위임, Phase G Week 2 정리 대상
+
+8. **position-calculator.ts**
+   - 경로: `src/shared/utils/position-calculator.ts`
+   - 사유: Epic CONTEXT-MENU-UI Phase 2 계산 유틸리티, 사용처 없음
+
+### TDD 워크플로
+
+#### RED 단계
+
+```typescript
+// test/architecture/bundle-size-phase4b-removal.test.ts
+describe('Phase 4B: Investigation-based File Removal', () => {
+  describe('Component Wrappers', () => {
+    it('should remove UnifiedSettingsModal (단순 SettingsModal wrapper, 0 imports)', () => {
+      const filePath = join(
+        ROOT,
+        'shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
+      );
+      expect(existsSync(filePath)).toBe(false); // ❌ RED: 파일 존재
+    });
+  });
+
+  describe('Vendor API Re-exports', () => {
+    it('should remove vendor-api.ts (vendor-api-safe.ts로 위임, 0 imports)', () => {
+      const filePath = join(ROOT, 'shared/external/vendors/vendor-api.ts');
+      expect(existsSync(filePath)).toBe(false); // ❌ RED: 파일 존재
+    });
+  });
+
+  // ... 총 9 tests (모두 RED)
+});
+```
+
+**결과**: 9 tests failed (as expected) ✅
+
+#### GREEN 단계
+
+```powershell
+# 8개 파일 일괄 제거
+Remove-Item "src\shared\components\ui\SettingsModal\UnifiedSettingsModal.tsx" -Force
+Remove-Item "src\shared\external\vendors\vendor-api.ts" -Force
+Remove-Item "src\shared\services\core-icons.ts" -Force
+Remove-Item "src\shared\services\event-managers.ts" -Force
+Remove-Item "src\shared\services\icon-types.ts" -Force
+Remove-Item "src\shared\utils\accessibility\barrel.ts" -Force
+Remove-Item "src\shared\utils\dom\BatchDOMUpdateManager.ts" -Force
+Remove-Item "src\shared\utils\position-calculator.ts" -Force
+```
+
+**결과**: 9 tests passed ✅
+
+#### REFACTOR 단계
+
+기존 테스트 파일 수정:
+
+- `test/architecture/fflate-removal.contract.test.ts`: vendor-api.ts 참조를 파일
+  존재 여부 체크로 변경
+
+### 검증 결과
+
+#### 품질 게이트
+
+```powershell
+npm run typecheck  # ✓ 통과
+npm run lint       # ✓ 통과
+npm test           # ✓ 2899 tests passed (110 skipped, 1 todo)
+npm run build:prod # ✓ 빌드 성공
+```
+
+#### 번들 크기
+
+| 지표      | Phase 4A   | Phase 4B   | 변화 |
+| --------- | ---------- | ---------- | ---- |
+| Raw 크기  | 495.86 KB  | 495.86 KB  | 0 KB |
+| Gzip 크기 | ~123.95 KB | ~123.95 KB | 0 KB |
+
+**분석**: 제거된 파일들은 이미 tree-shaking으로 번들에서 제외되어 있었음. 번들
+크기 변화는 없지만 코드베이스 정리 목적 달성.
+
+### 교훈 및 통찰
+
+#### 성공 요인
+
+1. **체계적 분석 접근**
+   - grep 검색으로 각 파일의 실제 사용처 확인
+   - 0 imports 파일만 제거 대상으로 선정
+   - 동적 import 가능성 고려
+
+2. **계약 테스트 우선**
+   - TDD RED → GREEN → REFACTOR 철저히 준수
+   - 각 파일 제거를 명시적으로 검증
+
+3. **안전한 제거 전략**
+   - delegation wrapper (위임 계층) 제거
+   - empty file 제거
+   - transitional shim 제거
+
+#### 한계 및 개선점
+
+1. **번들 크기 영향 없음**
+   - 제거한 파일들은 이미 tree-shaken 상태
+   - knip 분석과 번들 영향의 괴리
+
+2. **Phase 4B 후속 작업**
+   - MediaMappingService/MediaTabUrlDirectStrategy는 실제 사용 중
+   - style-utils.ts, theme-utils.ts는 index.ts에서 export
+   - gallery/types.ts는 타입 정의로 유지 필요
+
+3. **향후 최적화 방향**
+   - Phase 5: Pure Annotations 추가 (예상: -10 KB)
+   - knip 오탐 결과 정리 필요
+   - ServiceContainer 등록 파일은 동적 참조 고려
+
+### 다음 단계
+
+#### Phase 5 준비: Pure Annotations 추가
+
+**목표**: `/*#__PURE__*/` 주석 추가로 Terser 최적화 강화 (-10 KB 예상)
+
+**작업 대상**:
+
+- Logger 함수들 (`logInfo`, `logError`, etc.)
+- 헬퍼 유틸리티 (순수 함수만)
+- factory 함수들
+
+**예시**:
+
+```typescript
+// Before
+export function createMediaItem(data: MediaData): MediaItem {
+  return { ...data, id: generateId() };
+}
+
+// After
+export const createMediaItem = /*#__PURE__*/ (data: MediaData): MediaItem => {
+  return { ...data, id: generateId() };
+};
+```
+
+### 관련 이슈
+
+- knip 분석 결과: 111 unused exports, 96 unused files
+- 실제 미사용: 8개 (Phase 4B 제거 완료)
+- 나머지는 ServiceContainer 등록, barrel exports, 타입 정의 등으로 유지 필요
+
+---
+
 ## 2025-10-06: Phase 4A - Unused File Removal 완료 ✅
 
 ### 개요

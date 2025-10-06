@@ -62,123 +62,44 @@ Phase 4B 준비 중 **시작일**: 2025-10-06
 
 - ✅ **Phase 1-3**: 완료 (Tree-shaking, 중복 제거, Terser 최적화)
 - ✅ **Phase 4A**: 완료 (Unused Files Removal, 코드베이스 정리)
-- 🚀 **Phase 4B**: Needs Investigation (다음 단계, -4~6 KB 예상)
-- 📋 **Phase 5**: Pure Annotations 추가 (계획됨, -10 KB 예상)
+- ✅ **Phase 4B**: 완료 (Investigation-based Removal, delegation wrapper 제거)
+- � **Phase 5**: Pure Annotations 추가 (다음 단계, -10 KB 예상)
 - 📋 **Phase 6**: Advanced Tree-shaking (계획됨, -10 KB 예상)
 - ⏸️ **Phase 7**: Orphan 정리 (보류, 실제 orphan 2개뿐)
 
 ---
 
-### Phase 4A 완료 요약 (2025-10-06)
+### Phase 4B 완료 요약 (2025-10-06)
 
-**제거된 파일**:
+**제거된 파일** (8개):
 
-- createParitySnapshot.ts (gallery, settings) - 미사용 테스트 헬퍼
-- VerticalGalleryView.tsx + CSS - 레거시 에러 스텁
+- UnifiedSettingsModal.tsx (wrapper), vendor-api.ts (delegation)
+- core-icons.ts (delegation), event-managers.ts (unused index)
+- icon-types.ts (empty), barrel.ts (re-export)
+- BatchDOMUpdateManager.ts (delegation), position-calculator.ts (unused util)
 
 **결과**:
 
 - TDD: RED → GREEN → REFACTOR 성공
-- 테스트: 2890 passed (계약 테스트 추가)
-- 번들: 495.19 KB → 495.86 KB (미미한 증가, 코드베이스 정리 목적 달성)
+- 테스트: 2899 passed (계약 테스트 추가)
+- 번들: 495.86 KB (변화 없음, 이미 tree-shaken)
+- 코드베이스 정리 목적 달성
 
 **상세**:
 [`TDD_REFACTORING_PLAN_COMPLETED.md`](TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ---
 
-### Phase 4B: 신중 검토 후 제거 (Needs Investigation) - 활성
-
-**목표**: 의심되는 미사용 파일 검증 후 제거 (-4~6 KB) **예상 기간**: 2-3일
-**현재 상태**: 준비 중
-
-**작업 대상**:
-
-1. **UnifiedSettingsModal.tsx**
-   - `src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx`
-   - **분석 필요**: SettingsModal wrapper, 실제 사용 여부 확인
-   - **검증 방법**: `grep -r 'UnifiedSettingsModal' src/`, 동적 import 확인
-
-2. **vendor-api.ts**
-   - `src/shared/external/vendors/vendor-api.ts`
-   - **분석 필요**: 벤더 타입 정의, tree-shaking 가능 여부
-   - **검증 방법**: 타입만 포함 시 런타임 영향 없음
-
-3. **서비스 파일들** (5개)
-   - `src/shared/services/core-icons.ts`
-   - `src/shared/services/event-managers.ts`
-   - `src/shared/services/icon-types.ts`
-   - `src/shared/services/media-mapping/MediaMappingService.ts`
-   - `src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts`
-   - **분석 필요**: dynamic import로 인한 오탐 가능성
-   - **검증 방법**: ServiceContainer 등록 여부, 런타임 사용 추적
-
-4. **유틸리티 파일들** (6개)
-   - `src/shared/utils/accessibility/barrel.ts`
-   - `src/shared/utils/dom/BatchDOMUpdateManager.ts`
-   - `src/shared/utils/position-calculator.ts`
-   - `src/shared/utils/styles/style-utils.ts`
-   - `src/shared/styles/theme-utils.ts`
-   - `src/features/gallery/types.ts`
-   - **분석 필요**: 타입 vs 구현체 구분, 실제 사용처 확인
-
-**TDD 워크플로** (Phase 4B):
-
-#### 분석 단계 (Phase 4B)
-
-1. **사용처 검색**:
-
-   ```pwsh
-   foreach ($file in @('UnifiedSettingsModal', 'vendor-api', 'core-icons', 'event-managers')) {
-     Write-Host "`n=== $file ===" -ForegroundColor Cyan
-     grep -rn "$file" src/ --include="*.ts" --include="*.tsx" | Select-String -Pattern "import"
-   }
-   ```
-
-2. **동적 import 확인**:
-
-   ```pwsh
-   grep -rn "import(" src/ --include="*.ts" --include="*.tsx"
-   ```
-
-3. **ServiceContainer 확인**:
-
-   ```pwsh
-   grep -rn "register.*Service" src/shared/container/ --include="*.ts"
-   ```
-
-#### RED 단계 (Phase 4B)
-
-- 파일별로 제거 테스트 작성 (Phase 4A 패턴 유사)
-- 각 파일의 영향 범위 문서화
-
-#### GREEN 단계 (Phase 4B)
-
-- 검증된 미사용 파일만 제거
-- 단계별 테스트 실행 (파일 1개 제거 → 테스트 → 다음 파일)
-
-#### REFACTOR 단계 (Phase 4B)
-
-- 타입 정의 통합 (여러 파일에 분산된 타입 정리)
-- barrel exports 최적화
-
-#### Verification (Phase 4B)
-
-- 각 파일 제거 후 즉시 검증
-- 누적 번들 크기 감축 확인
-
----
-
-### Phase 5 준비: Pure Annotations 추가
+### Phase 5: Pure Annotations 추가 - 활성
 
 **목표**: `/*#__PURE__*/` 주석 추가로 Terser 최적화 강화 (-10 KB) **예상 기간**:
-2-3일 **Phase 4 완료 후 즉시 진행**
+2-3일 **현재 상태**: 준비 중
 
 **작업 대상**:
 
-- Logger 함수들 (`logInfo`, `logError`, etc.)
-- 헬퍼 유틸리티 (순수 함수만)
-- factory 함수들
+- Logger 함수들 (`logInfo`, `logError`, `logDebug`, `logWarn`)
+- 헬퍼 유틸리티 (부작용 없는 순수 함수만)
+- factory 함수들 (`createMediaItem`, `createServiceFactory` 등)
 
 **예시**:
 
@@ -193,6 +114,65 @@ export const createMediaItem = /*#__PURE__*/ (data: MediaData): MediaItem => {
   return { ...data, id: generateId() };
 };
 ```
+
+**TDD 워크플로** (Phase 5):
+
+#### 분석 단계
+
+1. **순수 함수 식별**:
+
+   ```pwsh
+   # 로거 함수 찾기
+   grep -rn "export function log" src/shared/logging/
+
+   # factory 함수 찾기
+   grep -rn "export function create" src/ --include="*.ts"
+
+   # 헬퍼 유틸리티 찾기
+   grep -rn "export function" src/shared/utils/ --include="*.ts"
+   ```
+
+2. **순수성 검증**:
+   - 부작용 없음 (DOM 조작, 네트워크 요청, 전역 상태 변경 등)
+   - 동일 입력 → 동일 출력
+   - 외부 의존성 최소화
+
+#### RED 단계
+
+- 순수 함수 목록 작성
+- 각 함수에 PURE annotation 추가 여부 검증 테스트
+- 번들 크기 베이스라인 기록
+
+#### GREEN 단계
+
+- 검증된 순수 함수에 `/*#__PURE__*/` 추가
+- 함수 → 화살표 함수 const로 변환 (필요시)
+- 번들 크기 감소 확인
+
+#### REFACTOR 단계
+
+- 타입 안전성 검증
+- ESLint 규칙 업데이트 (PURE annotation 권장)
+- 문서화
+
+#### Verification
+
+- 번들 크기 -10 KB 달성
+- 모든 테스트 통과
+- 타입 체크 통과
+
+---
+
+### Phase 6 준비: Advanced Tree-shaking
+
+**목표**: 고급 tree-shaking 기법 적용 (-10 KB) **예상 기간**: 3-4일 **Phase 5
+완료 후 진행**
+
+**작업 대상**:
+
+- Re-export 체인 최적화 (≤3 depth 유지)
+- Side-effect 명시 강화
+- Dynamic import 최적화
 
 ---
 

@@ -2708,7 +2708,6 @@
       ],
       "dependents": [
         "src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx",
-        "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
         "src/shared/components/ui/SettingsModal/index.ts",
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/index.ts"
@@ -2741,49 +2740,6 @@
         "src/shared/components/ui/SettingsModal/index.ts",
         "src/shared/components/ui/index.ts"
       ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
       "orphan": false,
       "valid": true
     },
@@ -3960,8 +3916,7 @@
         }
       ],
       "dependents": [
-        "src/shared/external/vendors/index.ts",
-        "src/shared/external/vendors/vendor-api.ts"
+        "src/shared/external/vendors/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -4044,31 +3999,6 @@
       "dependencies": [],
       "dependents": [],
       "orphan": true,
-      "valid": true
-    },
-    {
-      "source": "src/shared/external/vendors/vendor-api.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./vendor-api-safe",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-api-safe.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
       "valid": true
     },
     {
@@ -6250,8 +6180,7 @@
       ],
       "dependents": [
         "src/shared/utils/index.ts",
-        "src/shared/utils/utils.ts",
-        "src/shared/utils/accessibility/barrel.ts"
+        "src/shared/utils/utils.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6519,8 +6448,7 @@
       "source": "src/shared/utils/dom/DOMBatcher.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/utils/dom/index.ts",
-        "src/shared/utils/dom/BatchDOMUpdateManager.ts"
+        "src/shared/utils/dom/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7296,73 +7224,12 @@
     {
       "source": "src/shared/services/EventManager.ts",
       "dependencies": [],
-      "dependents": [
-        "src/shared/services/event-managers.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/core-icons.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./iconRegistry",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/iconRegistry.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
       "dependents": [],
-      "orphan": false,
+      "orphan": true,
       "valid": true
     },
     {
       "source": "src/shared/services/iconRegistry.ts",
-      "dependencies": [],
-      "dependents": [
-        "src/shared/services/core-icons.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/event-managers.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/services/EventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/services/icon-types.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -8034,31 +7901,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/accessibility/barrel.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../accessibility",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/accessibility.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/accessibility/focus-restore-manager.ts",
       "dependencies": [],
       "dependents": [
@@ -8198,31 +8040,6 @@
             "export"
           ],
           "resolved": "src/shared/utils/debug/gallery-debug.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/dom/BatchDOMUpdateManager.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./DOMBatcher",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/dom/DOMBatcher.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8588,13 +8405,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/utils/position-calculator.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/utils/scroll/scroll-anchor-manager.ts",
       "dependencies": [],
       "dependents": [],
@@ -8789,8 +8599,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 286,
-    "totalDependenciesCruised": 349,
+    "totalCruised": 278,
+    "totalDependenciesCruised": 342,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
