@@ -8,9 +8,8 @@
  * 주의: 런타임/앱 코드는 반드시 `@shared/external/vendors` 배럴을 사용하세요.
  */
 
-// 타입은 정적 매니저의 정의를 사용
+// 타입은 정적 매니저의 정의를 사용 (fflate 제거)
 export type {
-  FflateAPI,
   PreactAPI,
   PreactHooksAPI,
   PreactSignalsAPI,
@@ -18,10 +17,9 @@ export type {
   NativeDownloadAPI,
 } from './vendor-manager-static';
 
-// TDZ-safe API로 위임
+// TDZ-safe API로 위임 (getFflateSafe 제거)
 export {
   initializeVendorsSafe as initializeVendors,
-  getFflateSafe as getFflate,
   getPreactSafe as getPreact,
   getPreactHooksSafe as getPreactHooks,
   getPreactSignalsSafe as getPreactSignals,

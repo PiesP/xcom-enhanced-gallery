@@ -15,7 +15,7 @@
   접근합니다.
 - Vendors/Userscript는 반드시 안전 getter 경유:
   - Vendors: `@shared/external/vendors`의
-    `getPreact()`/`getPreactSignals()`/`getFflate()`/`getPreactCompat()`
+    `getPreact()`/`getPreactSignals()`/`getPreactCompat()`
   - Userscript: `@shared/external/userscript/adapter`의 `getUserscript()`
 
 ## 디렉터리 지도(요약)

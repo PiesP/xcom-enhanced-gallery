@@ -8,7 +8,6 @@
 import { logger } from '../../logging';
 import {
   StaticVendorManager,
-  type FflateAPI,
   type PreactAPI,
   type PreactHooksAPI,
   type PreactSignalsAPI,
@@ -54,18 +53,6 @@ export async function initializeVendorsSafe(): Promise<void> {
     throw error;
   } finally {
     isInitializing = false;
-  }
-}
-
-/**
- * fflate 라이브러리 안전 접근 (동기)
- */
-export function getFflateSafe(): FflateAPI {
-  try {
-    return staticVendorManager.getFflate();
-  } catch (error) {
-    logger.error('fflate 접근 실패:', error);
-    throw new Error('fflate 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
   }
 }
 
@@ -171,8 +158,8 @@ export function getVendorInitializationReportSafe() {
     availableAPIs: status.availableAPIs,
     versions,
     initializationRate: status.isInitialized ? 100 : 0,
-    totalCount: 5, // fflate, preact, hooks, signals, compat
-    initializedCount: status.isInitialized ? 5 : 0,
+    totalCount: 4, // preact, hooks, signals, compat
+    initializedCount: status.isInitialized ? 4 : 0,
   };
 }
 
@@ -184,7 +171,6 @@ export function getVendorStatusesSafe() {
 
   if (!status.isInitialized) {
     return {
-      fflate: false,
       preact: false,
       preactHooks: false,
       preactSignals: false,
@@ -193,7 +179,6 @@ export function getVendorStatusesSafe() {
   }
 
   return {
-    fflate: status.availableAPIs.includes('fflate'),
     preact: status.availableAPIs.includes('preact'),
     preactHooks: status.availableAPIs.includes('preact-hooks'),
     preactSignals: status.availableAPIs.includes('preact-signals'),
@@ -208,8 +193,6 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
   const statuses = getVendorStatusesSafe();
 
   switch (vendorName) {
-    case 'fflate':
-      return statuses.fflate;
     case 'preact':
       return statuses.preact;
     case 'preactHooks':

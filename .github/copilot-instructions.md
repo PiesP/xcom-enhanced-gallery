@@ -21,9 +21,9 @@
 - 외부 라이브러리 접근은 오직 getter 경유: `@shared/external/vendors`가 안전
   API를 제공(TDZ-safe, 모킹 용이)
   - 예)
-    `const { h, render } = getPreact(); const { signal } = getPreactSignals(); const { zip } = getFflate();`
-  - 직접 import 금지: `preact`, `@preact/signals`, `fflate`, `preact/compat`
-    등을 코드에서 바로 import 하지 마세요
+    `const { h, render } = getPreact(); const { signal } = getPreactSignals();`
+  - 직접 import 금지: `preact`, `@preact/signals`, `preact/compat` 등을 코드에서
+    바로 import 하지 마세요
 - Userscript 통합: `shared/external/userscript/adapter.ts`에서 GM\_\* 안전
   래핑(`getUserscript()`), Node/Vitest에서 fallback 제공
 
@@ -94,7 +94,7 @@
 ## 통합 포인트 예시
 
 - Vendors:
-  `import { initializeVendors, getPreact, getPreactSignals, getFflate } from '@shared/external/vendors'`
+  `import { initializeVendors, getPreact, getPreactSignals } from '@shared/external/vendors'`
 - Userscript:
   `import { getUserscript } from '@shared/external/userscript/adapter'` →
   `await getUserscript().download(url, name)`/`xhr(...)`

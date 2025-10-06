@@ -9,7 +9,6 @@ import { logger } from '../../logging';
 import { globalTimerManager } from '../../utils/timer-management';
 
 // 정적 import로 모든 라이브러리를 안전하게 로드
-import * as fflate from 'fflate';
 import * as preact from 'preact';
 import * as preactHooks from 'preact/hooks';
 import * as preactSignals from '@preact/signals';
@@ -23,18 +22,7 @@ const MEMORY_CONSTANTS = {
   URL_CLEANUP_TIMEOUT: 60000,
 } as const;
 
-// 타입 정의들 (기존과 동일)
-export interface FflateAPI {
-  zip: typeof fflate.zip;
-  unzip: typeof fflate.unzip;
-  strToU8: typeof fflate.strToU8;
-  strFromU8: typeof fflate.strFromU8;
-  zipSync: typeof fflate.zipSync;
-  unzipSync: typeof fflate.unzipSync;
-  deflate: typeof fflate.deflate;
-  inflate: typeof fflate.inflate;
-}
-
+// 타입 정의들 (fflate 제거)
 export interface PreactAPI {
   h: typeof preact.h;
   render: typeof preact.render;
@@ -91,9 +79,8 @@ export interface NativeDownloadAPI {
 export class StaticVendorManager {
   private static instance: StaticVendorManager | null = null;
 
-  // 정적으로 로드된 라이브러리들 (TDZ 문제 없음)
+  // 정적으로 로드된 라이브러리들 (TDZ 문제 없음, fflate 제거)
   private readonly vendors = {
-    fflate,
     preact,
     preactHooks,
     preactSignals,
@@ -153,11 +140,6 @@ export class StaticVendorManager {
   }
 
   private validateStaticImports(): void {
-    // fflate 검증
-    if (!this.vendors.fflate.deflate || typeof this.vendors.fflate.deflate !== 'function') {
-      throw new Error('fflate 라이브러리 검증 실패');
-    }
-
     // Preact 검증
     if (!this.vendors.preact.render || typeof this.vendors.preact.render !== 'function') {
       throw new Error('Preact 라이브러리 검증 실패');
@@ -195,18 +177,6 @@ export class StaticVendorManager {
   }
 
   private cacheAPIs(): void {
-    // fflate API
-    const fflateAPI: FflateAPI = {
-      zip: this.vendors.fflate.zip,
-      unzip: this.vendors.fflate.unzip,
-      strToU8: this.vendors.fflate.strToU8,
-      strFromU8: this.vendors.fflate.strFromU8,
-      zipSync: this.vendors.fflate.zipSync,
-      unzipSync: this.vendors.fflate.unzipSync,
-      deflate: this.vendors.fflate.deflate,
-      inflate: this.vendors.fflate.inflate,
-    };
-
     // Preact API
     const preactAPI: PreactAPI = {
       h: this.vendors.preact.h,
@@ -249,37 +219,13 @@ export class StaticVendorManager {
       createElement: this.vendors.preactCompat.createElement,
     };
 
-    // 캐시에 저장
-    this.apiCache.set('fflate', fflateAPI);
+    // 캐시에 저장 (fflate 제거)
     this.apiCache.set('preact', preactAPI);
     this.apiCache.set('preact-hooks', preactHooksAPI);
     this.apiCache.set('preact-signals', preactSignalsAPI);
     this.apiCache.set('preact-compat', preactCompatAPI);
 
     logger.debug('✅ 모든 API 캐시 완료');
-  }
-
-  /**
-   * fflate 라이브러리 안전 접근
-   */
-  public getFflate(): FflateAPI {
-    if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
-      // 동기 초기화 시도 (정적 import이므로 안전)
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('fflate') as FflateAPI;
-    if (!api) {
-      throw new Error('fflate API를 찾을 수 없습니다.');
-    }
-    return api;
   }
 
   /**
@@ -454,13 +400,6 @@ export class StaticVendorManager {
     const errors: string[] = [];
 
     try {
-      this.getFflate();
-      loadedLibraries.push('fflate');
-    } catch (error) {
-      errors.push(`fflate: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    try {
       this.getPreact();
       loadedLibraries.push('Preact');
     } catch (error) {
@@ -504,7 +443,6 @@ export class StaticVendorManager {
    */
   public getVersionInfo() {
     return Object.freeze({
-      fflate: '0.8.2',
       preact: '10.27.1',
       signals: '2.3.1',
       motion: 'removed', // Motion One 완전 제거

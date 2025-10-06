@@ -3170,3 +3170,87 @@ SIGNALS-SAFE-FACTORY (완료)
   - Phase A — 부트스트랩/수명주기/PC 전용 이벤트: 아이드포턴트/핫키/핸들러 정리
     GREEN
   - Phase B —
+
+---
+
+## 2025-10-07 — Phase 1: fflate 의존성 제거 및 StoreZipWriter 구현 완료
+
+**목적**: fflate 라이브러리를 라이선스 표기를 포함하여 완전히 제거하고, 압축
+없이 파일을 묶는 STORE 방식 ZIP 생성기를 직접 구현.
+
+**완료 항목**:
+
+1. **StoreZipWriter 구현** (`src/shared/external/zip/store-zip-writer.ts`)
+   - ZIP 포맷 명세 준수: Local File Header, Central Directory, EOCD 구현
+   - STORE 방식 전용: 압축 없이 파일 원본 그대로 저장
+   - CRC-32 체크섬 계산 구현 (slice-by-8 알고리즘)
+   - DOS datetime 변환 지원
+   - UTF-8 파일명 처리
+   - 테스트: 32개 테스트 케이스 모두 GREEN
+     - 단일 파일, 여러 파일, 빈 파일, 큰 파일
+     - 특수 문자 파일명 (한글, 공백, UTF-8)
+     - 중복 파일명 처리
+     - ZIP 유효성 검증 (표준 도구 호환성)
+
+2. **zip-creator.ts 통합**
+   - fflate 의존성 제거
+   - StoreZipWriter 사용으로 교체
+   - 기존 테스트 모두 통과
+
+3. **vendor 시스템 완전 정리**
+   - `vendor-manager-static.ts`: fflate 초기화/export 제거
+   - `vendor-api.ts`: getFflate() 함수 제거
+   - `vendor-api-safe.ts`: fflate 상태 체크 제거 (3개 함수 수정)
+     - getVendorInitializationReportSafe(): totalCount 5→4
+     - getVendorStatusesSafe(): fflate 속성 제거
+     - isVendorInitializedSafe(): fflate case 제거
+   - `index.ts`: getFflate export 제거
+
+4. **의존성 제거**
+   - `package.json`에서 fflate 0.8.2 제거
+   - npm install 실행: 63개 패키지 제거
+   - `LICENSES/fflate-MIT.txt` 삭제
+
+5. **테스트 모킹 업데이트**
+   - `test/features/gallery/bulk-download.filename-policy.test.ts`: fflate 대신
+     StoreZipWriter 모킹
+
+6. **문서 업데이트**
+   - `.github/copilot-instructions.md`: getFflate() 예제 및 import 제한 목록에서
+     fflate 제거 (3곳)
+   - `docs/ARCHITECTURE.md`: vendor getter 목록에서 getFflate() 제거 (1곳)
+   - `docs/CODING_GUIDELINES.md`:
+     - Vendor 사용 규칙에서 fflate 제거 (3곳)
+     - ZIP 생성 정책에서 fflate.zip/zipSync 언급 제거 (1곳)
+
+**검증 결과**:
+
+- ✅ 타입 체크: 0 에러
+- ✅ 린트: 0 경고
+- ✅ 테스트: 모두 GREEN (StoreZipWriter 32개 테스트 포함)
+- ✅ 빌드 (dev/prod): 성공
+  - 프로덕션 번들: 336.91 KB raw / 88.43 KB gzipped
+  - fflate 문자열 참조: 0 (빌드 산출물에서 완전 제거 확인)
+- ✅ 빌드 검증: `scripts/validate-build.js` 통과
+
+**성과**:
+
+- 외부 의존성 1개 제거 → 라이선스 관리 부담 제거
+- 프로젝트 요구사항에 정확히 맞춤 (압축 불필요, STORE만)
+- 코드베이스 완전 제어 확보
+- TDD 접근으로 안정적 구현 (32개 테스트로 검증)
+- 번들 크기 최적화 (불필요한 압축 알고리즘 제거)
+
+**브랜치**: `feature/remove-fflate-implement-store-zip-writer`
+
+**관련 파일**:
+
+- 신규: `src/shared/external/zip/store-zip-writer.ts`
+- 신규: `test/unit/shared/external/zip/store-zip-writer.test.ts`
+- 수정: `src/shared/external/zip/zip-creator.ts`
+- 수정: `src/shared/external/vendors/vendor-manager-static.ts`
+- 수정: `src/shared/external/vendors/vendor-api.ts`
+- 수정: `src/shared/external/vendors/vendor-api-safe.ts`
+- 수정: `src/shared/external/vendors/index.ts`
+- 수정: `test/features/gallery/bulk-download.filename-policy.test.ts`
+- 삭제: `LICENSES/fflate-MIT.txt`

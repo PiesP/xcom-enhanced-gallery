@@ -61,7 +61,7 @@ import {
 
 - 동적 VendorManager(`vendor-manager.ts`)는 테스트 전용입니다. 프로덕션 소스는
   반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getPreact/
-  getPreactSignals/getFflate/getPreactCompat 등)만 사용하세요.
+  getPreactSignals/getPreactCompat 등)만 사용하세요.
 - 포스트빌드 가드가 prod 번들 내 'VendorManager' 식별자/경로 문자열 누출을
   금지합니다.
 
@@ -108,11 +108,9 @@ services/
 
 ### Vendor 사용 규칙 (중요)
 
-- 외부 라이브러리(preact, @preact/signals, fflate, preact/compat 등)는 직접
-  import 금지.
+- 외부 라이브러리(preact, @preact/signals, preact/compat 등)는 직접 import 금지.
 - 반드시 안전 getter를 사용: `@shared/external/vendors`의 `getPreact()`,
-  `getPreactHooks()`, `getPreactSignals()`, `getPreactCompat()`, `getFflate()`
-  등.
+  `getPreactHooks()`, `getPreactSignals()`, `getPreactCompat()` 등.
 - 와일드카드 import(`import * as Vendors from ...`) 금지. 필요한 심볼만
   명시적으로 가져옵니다.
 - Legacy 동적 API 금지: `*Legacy` 접미사, 동적 `VendorManager`, `vendor-api.ts`
@@ -861,8 +859,8 @@ var(--color-overlay-backdrop); }
 
 ### 외부 의존성 접근 (Vendor Getters)
 
-- preact, @preact/signals, fflate, Userscript API(GM\_\*) 등 외부 의존성은
-  반드시 전용 getter를 통해 접근합니다.
+- preact, @preact/signals, Userscript API(GM\_\*) 등 외부 의존성은 반드시 전용
+  getter를 통해 접근합니다.
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야
   합니다.
 - 예:
@@ -873,7 +871,7 @@ var(--color-overlay-backdrop); }
 - ZIP 생성은 반드시 전용 어댑터를 통해 수행합니다:
   `@shared/external/zip/zip-creator.ts`의
   `createZipBytesFromFileMap(files, config?)`.
-- `fflate.zip`/`zipSync`를 어댑터 외부에서 직접 호출하는 것은 금지입니다.
+- ZIP 라이브러리를 어댑터 외부에서 직접 호출하는 것은 금지입니다.
   서비스/오케스트레이터는 어댑터만 사용하세요.
 - 사유: 실행 환경에 따라 async/sync 지원 차이를 어댑터에서 흡수하고, 테스트에서
   벤더를 안전하게 모킹하기 위함입니다.

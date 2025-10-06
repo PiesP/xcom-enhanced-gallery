@@ -71,7 +71,6 @@
       "dependents": [
         "src/bootstrap/env-init.ts",
         "src/shared/services/BulkDownloadService.ts",
-        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/state/signals/signal-factory.ts",
@@ -1730,23 +1729,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -1778,11 +1760,37 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./store-zip-writer",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/zip/store-zip-writer.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/shared/services/download/DownloadOrchestrator.ts",
         "src/shared/external/zip/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/zip/store-zip-writer.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/zip/zip-creator.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13220,13 +13228,6 @@
       ],
       "dependents": [],
       "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Icon/icons/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
       "valid": true
     },
     {

@@ -9,7 +9,7 @@
  */
 
 import { logger } from '../../logging';
-import { getFflate } from '../../external/vendors';
+import { StoreZipWriter } from './store-zip-writer';
 import { safeParseInt } from '../../utils/type-safety-helpers';
 
 /**
@@ -71,21 +71,28 @@ const DEFAULT_ZIP_CONFIG: ZipCreationConfig = {
  */
 export async function createZipFromItems(
   items: MediaItemForZip[],
-  zipFileName: string,
-  onProgress?: ZipProgressCallback,
-  config: Partial<ZipCreationConfig> = {}
+  _zipFileName: string,
+  _progressCallback?: (downloaded: number, total: number) => void
 ): Promise<Blob> {
-  const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config };
-
   try {
     logger.time('[ZipCreator] createZipFromItems');
     logger.info(`[ZipCreator] Creating ZIP with ${items.length} items`);
 
     // Download all files and prepare for ZIP
-    const fileData = await downloadFilesForZip(items, onProgress, fullConfig);
+    const fileData = await downloadFilesForZip(items, undefined, DEFAULT_ZIP_CONFIG);
 
-    // Create ZIP using fflate
-    const zipBlob = await createZipBlob(fileData, zipFileName, fullConfig);
+    // Create ZIP using StoreZipWriter
+    const writer = new StoreZipWriter();
+    for (const [filename, data] of fileData.entries()) {
+      writer.addFile(filename, data);
+    }
+    const zipBytes = writer.build();
+    // Convert Uint8Array to proper ArrayBuffer for Blob
+    const arrayBuffer = zipBytes.buffer.slice(
+      zipBytes.byteOffset,
+      zipBytes.byteOffset + zipBytes.byteLength
+    ) as ArrayBuffer;
+    const zipBlob = new Blob([arrayBuffer], { type: 'application/zip' });
 
     logger.info(`[ZipCreator] ZIP created successfully: ${zipBlob.size} bytes`);
     return zipBlob;
@@ -103,66 +110,37 @@ export async function createZipFromItems(
 
 /**
  * Creates a ZIP Uint8Array from in-memory files map
- * - Adapter function to consolidate zip path usage from services
+ * - Uses StoreZipWriter for lightweight, dependency-free ZIP creation
+ * - No compression (STORE method) suitable for already compressed media files
  */
 export async function createZipBytesFromFileMap(
   files: Record<string, Uint8Array>,
-  config: Partial<ZipCreationConfig> = {}
+  _config: Partial<ZipCreationConfig> = {}
 ): Promise<Uint8Array> {
-  const fullConfig = { ...DEFAULT_ZIP_CONFIG, ...config };
-  const api = getFflate();
-  if (!api) throw new Error('fflate library not available');
+  try {
+    logger.time('[ZipCreator] createZipBytesFromFileMap');
 
-  // Prefer async API if available
-  if (typeof (api as { zip?: unknown }).zip === 'function') {
-    return new Promise<Uint8Array>((resolve, reject) => {
-      try {
-        const options = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
-        const callback: (err: unknown, data: Uint8Array) => void = (err, data) => {
-          if (err) {
-            const msg = err instanceof Error ? err.message : String(err);
-            logger.error('[ZipCreator] fflate.zip failed:', msg);
-            reject(new Error(`ZIP creation failed: ${msg}`));
-            return;
-          }
-          if (!data || data.byteLength === 0) {
-            reject(new Error('No valid data returned from fflate.zip'));
-            return;
-          }
-          resolve(new Uint8Array(data));
-        };
+    const writer = new StoreZipWriter();
 
-        (
-          api.zip as unknown as (
-            data: unknown,
-            opts: unknown,
-            cb: (err: unknown, data: Uint8Array) => void
-          ) => void
-        )(files as unknown, options, callback);
-      } catch (e) {
-        reject(e instanceof Error ? e : new Error(String(e)));
-      }
-    });
-  }
-
-  // Fallback: legacy sync API (used by tests to capture input)
-  if (typeof (api as { zipSync?: unknown }).zipSync === 'function') {
-    try {
-      const syncOptions = { level: fullConfig.compressionLevel ?? NO_COMPRESSION_LEVEL } as unknown;
-      const bytes = (api.zipSync as unknown as (data: unknown, opts?: unknown) => Uint8Array)(
-        files as unknown,
-        syncOptions
-      );
-      if (!bytes || bytes.byteLength === 0) {
-        throw new Error('No valid data returned from fflate.zipSync');
-      }
-      return new Uint8Array(bytes);
-    } catch (e) {
-      throw e instanceof Error ? e : new Error(String(e));
+    // Add all files to the ZIP
+    for (const [filename, data] of Object.entries(files)) {
+      writer.addFile(filename, data);
     }
-  }
 
-  throw new Error('No supported fflate zip API available');
+    // Build the ZIP
+    const zipBytes = writer.build();
+
+    logger.info(
+      `[ZipCreator] ZIP created: ${zipBytes.byteLength} bytes, ${Object.keys(files).length} files`
+    );
+    logger.timeEnd('[ZipCreator] createZipBytesFromFileMap');
+
+    return zipBytes;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error('[ZipCreator] createZipBytesFromFileMap failed:', msg);
+    throw new Error(`ZIP creation failed: ${msg}`);
+  }
 }
 
 /**
@@ -245,80 +223,6 @@ async function downloadMediaForZip(
 
   const arrayBuffer = await response.arrayBuffer();
   return new Uint8Array(arrayBuffer);
-}
-
-/**
- * Creates ZIP blob using fflate
- */
-async function createZipBlob(
-  fileData: Map<string, Uint8Array>,
-  _zipFileName: string,
-  config: ZipCreationConfig
-): Promise<Blob> {
-  const fflate = await getFflate();
-
-  if (!fflate) {
-    throw new Error('fflate library not available');
-  }
-
-  return new Promise((resolve, reject) => {
-    try {
-      // Convert Map to fflate format with compression settings
-      const files: Record<string, [Uint8Array, { level?: number }]> = {};
-      for (const [filename, data] of fileData) {
-        files[filename] = [data, { level: config.compressionLevel }];
-      }
-
-      // Create ZIP using fflate with proper type handling
-      const zipFiles: Record<string, Uint8Array> = {};
-      for (const [filename, [data]] of Object.entries(files)) {
-        zipFiles[filename] = data;
-      }
-
-      fflate.zip(zipFiles, { level: 6 }, (error: Error | null, data: Uint8Array) => {
-        if (error) {
-          logger.error('[ZipCreator] fflate.zip failed:', error.message);
-          reject(new Error(`ZIP creation failed: ${error.message}`));
-          return;
-        }
-
-        // fflate 콜백에서 반환된 데이터의 유효성을 확인
-        // TypeScript 타입 정의와 달리 런타임에서는 빈 데이터가 올 수 있음
-        if (!data || data.byteLength === 0) {
-          reject(new Error('No valid data returned from fflate.zip'));
-          return;
-        }
-
-        try {
-          // ArrayBufferLike 호환성 문제 해결을 위해 새로운 Uint8Array로 복사
-          const safeData = new Uint8Array(data);
-          const blob = new Blob([safeData], { type: 'application/zip' });
-          logger.info(`[ZipCreator] fflate ZIP created: ${blob.size} bytes`);
-          resolve(blob);
-        } catch (blobError) {
-          logger.error(
-            '[ZipCreator] Failed to create blob:',
-            blobError instanceof Error ? blobError.message : String(blobError)
-          );
-          reject(
-            new Error(
-              `Failed to create ZIP blob: ${blobError instanceof Error ? blobError.message : String(blobError)}`
-            )
-          );
-        }
-      });
-    } catch (zipError) {
-      logger.error(
-        '[ZipCreator] ZIP creation error:',
-        zipError instanceof Error ? zipError.message : String(zipError)
-      );
-      reject(
-        new Error(
-          `ZIP creation failed: ${zipError instanceof Error ? zipError.message : String(zipError)}`
-        )
-      );
-    }
-  });
 }
 
 /**

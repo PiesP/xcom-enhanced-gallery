@@ -10,7 +10,6 @@
 // 💡 새로운 TDZ-safe 정적 import 기반 API (권장)
 export {
   initializeVendorsSafe as initializeVendors,
-  getFflateSafe as getFflate,
   getPreactSafe as getPreact,
   getPreactHooksSafe as getPreactHooks,
   getPreactSignalsSafe as getPreactSignals,
@@ -29,7 +28,6 @@ export {
 
 // 타입 정의 exports (정적 import 기반으로 변경)
 export type {
-  FflateAPI,
   PreactAPI,
   PreactHooksAPI,
   PreactSignalsAPI,
