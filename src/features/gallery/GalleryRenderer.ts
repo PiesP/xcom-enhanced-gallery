@@ -151,7 +151,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
         }
       },
       className: 'xeg-gallery-renderer xeg-gallery-root', // Light DOM: xeg-gallery-root 추가
-      useShadowDOM: false, // Light DOM 전환: Cascade Layers로 스타일 격리
       children: createElement(
         ErrorBoundary,
         {},
