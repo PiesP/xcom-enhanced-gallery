@@ -27,8 +27,8 @@ export async function createStoreZipBlob(fileData: Map<string, Uint8Array>): Pro
   // Call native implementation
   const zipBytes = createZipFromFiles(filesRecord);
 
-  // Return as Blob for compatibility
-  return new Blob([zipBytes], { type: 'application/zip' });
+  // Return as Blob for compatibility (slice() creates a new Uint8Array with proper type)
+  return new Blob([zipBytes.slice()], { type: 'application/zip' });
 }
 
 /**

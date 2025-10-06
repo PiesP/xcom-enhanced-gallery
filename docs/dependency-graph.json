@@ -3987,7 +3987,25 @@
     },
     {
       "source": "src/shared/external/zip/store-zip-writer.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./zip-creator-native",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/zip/zip-creator-native.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/external/zip/zip-creator.ts"
       ],
@@ -3995,14 +4013,43 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/userscript/adapter.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
+      "source": "src/shared/external/zip/zip-creator-native.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./zip-format-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/zip/zip-format-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/external/zip/store-zip-writer.ts"
+      ],
+      "orphan": false,
       "valid": true
     },
     {
       "source": "src/shared/external/zip/zip-format-utils.ts",
+      "dependencies": [],
+      "dependents": [
+        "src/shared/external/zip/zip-creator-native.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/external/userscript/adapter.ts",
       "dependencies": [],
       "dependents": [],
       "orphan": true,
@@ -8587,8 +8634,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 279,
-    "totalDependenciesCruised": 341,
+    "totalCruised": 280,
+    "totalDependenciesCruised": 343,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
