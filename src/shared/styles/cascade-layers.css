@@ -13,10 +13,11 @@
  * 3. base - 기본 스타일
  * 4. layout - 레이아웃 컴포넌트
  * 5. components - UI 컴포넌트
- * 6. utilities - 유틸리티 클래스
- * 7. overrides - 긴급 오버라이드
+ * 6. gallery - 갤러리 전용 스타일 (Light DOM 전환 후 추가)
+ * 7. utilities - 유틸리티 클래스
+ * 8. overrides - 긴급 오버라이드
  */
-@layer reset, tokens, base, layout, components, utilities, overrides;
+@layer reset, tokens, base, layout, components, gallery, utilities, overrides;
 
 /**
  * Reset Layer - 브라우저 기본 스타일 초기화
@@ -75,6 +76,61 @@
  */
 @layer components {
   /* CSS Modules 컴포넌트들은 빌드 시 자동으로 이 레이어에 포함 */
+}
+
+/**
+ * Gallery Layer - 갤러리 전용 스타일
+ * Shadow DOM에서 Light DOM 전환을 위한 스타일 격리
+ * components보다 높은 우선순위로 Twitter UI와의 충돌 방지
+ */
+@layer gallery {
+  /* 갤러리 루트 컨테이너 */
+  .xeg-gallery-root {
+    /* Twitter 스타일과 격리를 위한 기본 리셋 */
+    all: initial;
+
+    /* 고정 위치 오버레이 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    /* 최상위 레이어 */
+    z-index: var(--xeg-z-gallery, 9999);
+
+    /* 스타일 격리 */
+    isolation: isolate;
+    contain: layout style paint;
+
+    /* 기본 폰트 복원 */
+    font-family:
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      Oxygen,
+      Ubuntu,
+      Cantarell,
+      'Open Sans',
+      'Helvetica Neue',
+      sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+
+    /* 박스 모델 */
+    box-sizing: border-box;
+  }
+
+  .xeg-gallery-root *,
+  .xeg-gallery-root *::before,
+  .xeg-gallery-root *::after {
+    box-sizing: border-box;
+  }
+
+  /* 갤러리 전역 스타일은 gallery-global.css에서 관리 */
+  /* import는 Vite 빌드 시점에 처리됨 */
 }
 
 /**
