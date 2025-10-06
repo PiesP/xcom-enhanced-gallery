@@ -6,6 +6,8 @@
  *
  * 목적: 현재 CodeQL이 표준 보안 쿼리를 실행하지 않음을 증명
  *
+ * CI 전용: 로컬 환경에서는 SARIF 파일이 필요하므로 skip
+ *
  * Acceptance:
  * - SARIF에 실제 JavaScript 보안 규칙 존재 (js/로 시작)
  * - "Hello, world!" 테스트 쿼리만 있는 상태 감지
@@ -16,6 +18,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import process from 'node:process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,7 +26,11 @@ const projectRoot = resolve(__dirname, '..', '..');
 const sarifPath = resolve(projectRoot, 'codeql-results.sarif');
 const improvementPlanPath = resolve(projectRoot, 'codeql-improvement-plan.md');
 
-describe('CodeQL 표준 쿼리 팩 실행 검증 (Epic: CODEQL-STANDARD-QUERY-PACKS)', () => {
+// CI 환경 감지: SARIF 파일이 없으면 skip
+const isCI = (typeof process !== 'undefined' && process.env.CI === 'true') || existsSync(sarifPath);
+const describeCI = isCI ? describe : describe.skip;
+
+describeCI('CodeQL 표준 쿼리 팩 실행 검증 (Epic: CODEQL-STANDARD-QUERY-PACKS)', () => {
   describe('Task 1.1: SARIF 결과 검증', () => {
     it('codeql-results.sarif 파일이 존재해야 함', () => {
       expect(
