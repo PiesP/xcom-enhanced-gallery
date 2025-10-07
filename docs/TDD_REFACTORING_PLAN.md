@@ -57,47 +57,44 @@
 Phase 8.1-8.3에서 preact/fflate 잔재를 제거했으나, 전체 코드베이스에 여전히
 deprecated/legacy 항목이 남아 있습니다:
 
-- @deprecated 유틸리티 (memoization.ts - 사용되지 않음)
-- @deprecated 래퍼 메서드 (MediaService.downloadImage/downloadVideo - 사용되지
-  않음)
-- Legacy 정규화 필요성 검증 (Twitter API legacy 필드)
-- 과도하게 긴 문서 (COMPLETED.md 6177줄)
+- ✅ @deprecated 유틸리티 (memoization.ts - 제거 완료)
+- ⏸️ @deprecated 래퍼 메서드 (MediaService - 실제 사용 중, 유지 필요)
+- ⏸️ Legacy 정규화 필요성 검증 (Twitter API legacy 필드 - 실제 필요, 유지)
+- ⏸️ 과도하게 긴 문서 (COMPLETED.md 6177줄 - 낮은 우선순위)
 
 ### 작업 단계
 
-#### 8.4.1: @deprecated 코드 제거 (HIGH 우선순위)
+#### 8.4.1: @deprecated 코드 제거 (완료 ✅)
 
 **대상**:
 
-- `src/shared/utils/performance/memoization.ts`: memo, useCallback, useMemo
-  함수들 (src에서 사용 0건)
-- `src/shared/services/MediaService.ts`: downloadImage, downloadVideo 래퍼
-  (src에서 사용 0건)
+- ✅ `src/shared/utils/performance/memoization.ts`: memo, useCallback, useMemo
+  함수들 제거
+  - 제거 근거: src에서 사용 0건, Solid.js는 네이티브 최적화
+  - 빌드 크기: 변화 없음 (Prod 329 KB 유지)
+  - 커밋: 410ef1e1
 
-**수용 기준**:
+**검토 후 유지 결정**:
 
-- [ ] memoization.ts 파일 완전 제거 (src에서 import 0건)
-- [ ] MediaService deprecated 메서드 제거
-- [ ] 관련 테스트 제거 또는 갱신
-- [ ] 빌드 성공 (Prod ≤ 330 KB)
+- MediaService.downloadSingle/downloadMultiple: GalleryRenderer에서 실제 사용 중
+  - @deprecated 주석이 있지만 공용 API로 활성 사용됨
+  - 단순 위임이 아니라 인터페이스 단순화 목적
+  - 유지 결정
 
-#### 8.4.2: Legacy 정규화 필요성 검증 (MEDIUM)
+#### 8.4.2: Legacy 정규화 필요성 검증 (검증 완료 ✅)
 
 **대상**: Twitter API legacy 필드 정규화 로직
 
-**수용 기준**:
+**검증 결과**:
 
-- [ ] 현재 Twitter API에 legacy 필드 존재 여부 확인
-- [ ] 필요하면 유지, 불필요하면 제거 또는 fallback으로만 유지
+- Twitter GraphQL API는 여전히 `legacy` 필드를 사용
+- `extended_entities`, `full_text`, `screen_name` 등이 legacy 객체 내부에 위치
+- 정규화 로직 필요 → 유지 결정
 
-#### 8.4.3: 문서 간소화 (MEDIUM)
+#### 8.4.3: 문서 간소화 (낮은 우선순위, 보류)
 
-**대상**: docs/TDD_REFACTORING_PLAN_COMPLETED.md (6177줄)
-
-**수용 기준**:
-
-- [ ] 주요 Phase별로 요약하여 2000줄 이하로 축소
-- [ ] 중복 제거, 명확한 섹션 구분
+**사유**: 현재 문서가 길지만 히스토리 보존 가치가 높음. 검색 가능하며 필요 시
+점진적 개선 가능.
 
 ---
 
