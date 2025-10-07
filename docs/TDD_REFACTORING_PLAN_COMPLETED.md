@@ -3736,3 +3736,279 @@ SIGNALS-SAFE-FACTORY (완료)
 - Phase 4.5 Toolbar 시스템 전환 (Button, IconButton, Toolbar, ToolbarHeadless,
   ToolbarShell, ToolbarWithSettings)
 - 또는 Phase 5 Features 계층 전환 (우선순위 재평가 필요)
+
+---
+
+### 2025-10-07 — Phase 4.5 완료: Toolbar 시스템 Solid.js 전환 ✅
+
+**목표**: Toolbar 시스템을 Solid.js로 전환하여 반응성 성능 개선
+
+**작업 기간**: 1일 (2025-10-07)
+
+**브랜치**: `feature/phase-4-components`
+
+#### 컴포넌트별 전환 내역
+
+**1. createToolbarState.solid.ts (Primitive) ✅**
+
+- **원본**: `useToolbarState.ts` (246 lines, 5 useState + 5 useCallback +
+  useEffect)
+- **Solid**: `createToolbarState.solid.ts` (246 lines)
+- **변경 사항**:
+  - useState → createSignal (5개: isDownloading, isLoading, hasError,
+    currentFitMode, needsHighContrast)
+  - useCallback → 일반 함수 (Solid는 자동 메모이제이션)
+  - useRef → 클로저 변수 (lastDownloadToggle, downloadTimeout)
+  - useEffect cleanup → onCleanup
+  - 300ms 최소 다운로드 표시 시간 유지 (플리커 방지)
+  - globalTimerManager 통합
+- **테스트**: 23 Phase 0 type tests (46 executions: fast + unit projects) ✅
+- **커밋**: ed5f6cb0 `feat(core): add createToolbarState.solid for Phase 4.5`
+
+**2. Toolbar.solid.tsx (Main Component) ✅**
+
+- **원본**: `Toolbar.tsx` (580 lines, h() calls, memo + compareToolbarProps)
+- **Solid**: `Toolbar.solid.tsx` (431 lines)
+- **변경 사항**:
+  - Preact h() → Solid JSX
+  - createToolbarState() primitive 사용
+  - 12 IconButton 인스턴스 (네비게이션, 핏 모드, 다운로드, 설정, 닫기)
+  - createEffect for background brightness detection (3-point sampling)
+  - createMemo for navigation state (canGoNext, canGoPrevious)
+  - Show component for conditional rendering
+  - Hero icon Solid versions (개별 import)
+- **기술적 과제**:
+  - Icon VNode vs JSX.Element 타입 불일치 → Hero\*.solid.tsx 개별 import
+  - disabled prop `boolean | undefined` → `!!` 강제 변환
+    (exactOptionalPropertyTypes)
+  - role prop 타입 → `as any` workaround
+- **테스트**: 29 Phase 0 type tests (58 executions) ✅
+- **커밋**: 5ceec47d `feat(ui): add Toolbar.solid.tsx for Phase 4.5`
+
+**3. ToolbarWithSettings.solid.tsx (Wrapper) ✅**
+
+- **원본**: `ToolbarWithSettings.tsx` (57 lines, Preact Fragment)
+- **Solid**: `ToolbarWithSettings.solid.tsx` (98 lines)
+- **변경 사항**:
+  - Preact useState → Solid createSignal (isSettingsOpen)
+  - Preact useCallback → 일반 함수
+  - Fragment → `<>...</>`
+  - Show component for conditional SettingsModal rendering
+  - Props spread operator for clean pass-through
+  - Position normalization (center/bottom-sheet → toolbar-below)
+- **테스트**: 21 Phase 0 type tests (42 executions) ✅
+- **커밋**: a7e18fc0 `feat(ui): add ToolbarWithSettings.solid.tsx for Phase 4.5`
+
+#### 의존성 컴포넌트 (이미 완료됨)
+
+**4. Button.solid.tsx** ✅ (Phase 4.1)
+
+- **커밋**: 647942f8 `feat(ui): add Button.solid.tsx with comprehensive types`
+- **테스트**: 56 Phase 0 tests
+- **특징**: variant system, size map, ARIA support
+
+**5. IconButton.solid.tsx** ✅ (Phase 4.1)
+
+- **커밋**: f96d70ec `feat(ui): upgrade IconButton.solid.tsx to full component`
+- **테스트**: 11 Phase 0 tests
+- **특징**: loading state, size variants, accessibility
+
+**6. ToolbarShell.solid.tsx** ✅ (Phase 4.1)
+
+- **커밋**: 4db7f560 `feat(ui): add ToolbarShell.solid.tsx for Phase 4`
+- **테스트**: 17 Phase 0 tests
+- **특징**: glassmorphism, positioning, data attributes
+
+**7. ToolbarHeadless.solid.tsx** ✅ (Phase 4.1)
+
+- **커밋**: 97cfab1c `feat(ui): add ToolbarHeadless.solid.tsx`
+- **테스트**: 22 Phase 0 tests (44 executions)
+- **특징**: headless UI pattern, composition
+
+**8. SettingsModal.solid.tsx** ✅ (Phase 4.4)
+
+- **커밋**: Phase 4.4 (Modal 시스템)
+- **특징**: Portal rendering, ModalShell composition
+
+#### Phase 4.5 종합 통계
+
+**컴포넌트 전환**:
+
+- **신규 전환**: 3개 (createToolbarState, Toolbar, ToolbarWithSettings)
+- **의존성 재사용**: 5개 (Button, IconButton, ToolbarShell, ToolbarHeadless,
+  SettingsModal)
+- **총 6개 컴포넌트** Solid 기반 완성
+
+**테스트 커버리지**:
+
+- **신규 테스트**: 73 Phase 0 tests (146 executions: fast + unit)
+  - createToolbarState: 23 tests (46 executions)
+  - Toolbar: 29 tests (58 executions)
+  - ToolbarWithSettings: 21 tests (42 executions)
+- **통과율**: 146/146 ✅ (100%)
+
+**코드 메트릭**:
+
+- **라인 수**:
+  - createToolbarState: 246 lines (useState → createSignal)
+  - Toolbar: 580 → 431 lines (-149 lines, -25.7%)
+  - ToolbarWithSettings: 57 → 98 lines (+41 lines, spread operator 사용)
+- **코드 품질**:
+  - TypeScript strict mode 100% 준수
+  - ESLint 위반 0건
+  - PC-only events 정책 준수
+  - 디자인 토큰만 사용 (하드코딩 0건)
+
+**빌드 검증** ✅:
+
+```bash
+# 2025-10-07 빌드 결과
+Dev Build:  1,065.82 KB (sourcemap 포함)
+Prod Build:   377.20 KB raw
+              102.44 KB gzip
+```
+
+- ✅ dev/prod 빌드 성공
+- ✅ scripts/validate-build.js 통과
+- ✅ dependency-cruiser 순환 의존성 0건 (4 info: orphans)
+
+**타입 안전성**:
+
+- TypeScript 듀얼 프로젝트 (tsconfig.json + tsconfig.solid.json)
+- `npm run typecheck` 0 errors
+- exactOptionalPropertyTypes 준수
+
+**접근성**:
+
+- ARIA 속성 완전 지원 (aria-label, aria-describedby, role)
+- 키보드 단축키 힌트 (title 속성)
+- 모든 버튼 접근 가능 상태
+
+#### 기술적 결정 사항
+
+**1. Icon 컴포넌트 임포트 전략**
+
+```typescript
+// ❌ 실패: '../Icon' 배럴 export (Preact VNode 반환)
+import { ChevronLeft } from '../Icon';
+
+// ✅ 성공: Hero*.solid 개별 import
+import { HeroChevronLeft } from '../Icon/hero/HeroChevronLeft.solid';
+```
+
+**이유**: Solid JSX는 VNode를 받지 못함. Solid 버전 아이콘만 사용.
+
+**2. disabled Prop 타입 처리**
+
+```typescript
+// ❌ 에러: exactOptionalPropertyTypes와 충돌
+disabled={props.disabled || condition}  // boolean | undefined
+
+// ✅ 해결: 명시적 boolean 강제
+disabled={!!(props.disabled || condition)}  // boolean
+```
+
+**이유**: TypeScript strict mode + exactOptionalPropertyTypes: true
+
+**3. Props Pass-through 전략**
+
+```typescript
+// ❌ 복잡: 모든 props 나열
+<Toolbar currentIndex={props.currentIndex} totalCount={props.totalCount} ... />
+
+// ✅ 간결: spread operator
+const toolbarProps = (): ToolbarProps => {
+  const { settingsPosition, settingsTestId, ...rest } = props as any;
+  return { ...rest, onOpenSettings: handleOpenSettings };
+};
+<Toolbar {...toolbarProps()} />
+```
+
+**이유**: ToolbarProps가 많고 변경 가능성 있음. 유지보수성 향상.
+
+**4. Background Brightness Detection**
+
+```typescript
+createEffect(() => {
+  // JSDOM/테스트 환경 가드
+  const canDetect =
+    typeof document !== 'undefined' &&
+    typeof (document as any).elementsFromPoint === 'function' &&
+    typeof window !== 'undefined' &&
+    typeof window.getComputedStyle === 'function';
+
+  if (!canDetect) return;
+
+  // Multi-point sampling (3 points)
+  const samplePoints = [...];
+  // RequestAnimationFrame throttle
+  // EventManager integration
+});
+```
+
+**이유**: 테스트 환경 호환성 + 정확한 배경 감지
+
+#### 성과 및 학습
+
+**개발 속도**:
+
+- **예상**: 2일 (Phase 4.5 계획서)
+- **실제**: 1일 (Phase 0 테스트 중심 TDD)
+- **가속 요인**: Phase 4.1-4.4에서 확립한 패턴 재사용
+
+**새로운 패턴**:
+
+1. **Primitive + Component 분리**: createToolbarState() → Toolbar.solid
+2. **Spread Props**: ToolbarWithSettings에서 깔끔한 props 전달
+3. **Hero Icon 개별 Import**: 타입 안전성 확보
+4. **Boolean Coercion**: exactOptionalPropertyTypes 대응
+
+**코드 품질**:
+
+- 코드 간소화: Toolbar -149 lines (-25.7%)
+- 반응성 자동화: Solid fine-grained reactivity (수동 최적화 불필요)
+- 타입 안전성: TypeScript strict + exactOptionalPropertyTypes 100%
+
+**번들 크기**:
+
+- Phase 4.4 대비 변화 없음 (377.20 KB raw, 102.44 KB gzip)
+- Solid.js overhead 최소화 확인
+
+#### Phase 4 전체 진행 상황 (2025-10-07 업데이트)
+
+- ✅ **Phase 4.1**: Icon 컴포넌트 (10 components, 160 tests)
+- ✅ **Phase 4.2**: Primitive 컴포넌트 (2 components, 25 tests)
+- ✅ **Phase 4.3**: Toast 시스템 (2 components, 21 tests)
+- ✅ **Phase 4.4**: Modal 시스템 (2 components, 28 tests)
+- ✅ **Phase 4.5**: Toolbar 시스템 (6 components, 73+106 tests) **완료!**
+
+**총 누적** (Phase 4.1-4.5):
+
+- **컴포넌트**: 22개 Solid 전환 ✅
+- **Primitive**: 1개 (createToolbarState)
+- **테스트**: 307개 신규 추가 (모두 GREEN)
+- **번들 크기**: 안정적 유지 (377.20 KB raw / 102.44 KB gzip)
+
+**남은 Phase 4 작업**:
+
+- ⏳ Phase 4.6: 기타 컴포넌트 (LazyIcon, GalleryHOC, ErrorBoundary)
+
+**다음 단계 옵션**:
+
+1. **Phase 4.6 완료** (기타 컴포넌트, 예상 1일)
+2. **Phase 5 시작** (Features 계층: Gallery, Settings, 예상 5-7일)
+
+**관련 파일**:
+
+- **Primitive**:
+  - 신규: `src/shared/primitives/createToolbarState.solid.ts`
+  - 신규: `test/unit/shared/primitives/createToolbarState.solid.test.ts`
+- **Components**:
+  - 신규: `src/shared/components/ui/Toolbar/Toolbar.solid.tsx`
+  - 신규: `test/unit/shared/components/ui/Toolbar/Toolbar.solid.test.tsx`
+  - 신규:
+    `src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.solid.tsx`
+  - 신규:
+    `test/unit/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.solid.test.tsx`
+
+---
