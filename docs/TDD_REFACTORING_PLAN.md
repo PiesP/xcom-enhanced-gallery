@@ -296,13 +296,15 @@
 
 ---
 
-### Phase 3: Shared/Utils 전환 (Hooks → Primitives) 🛠️
+### Phase 3: Shared/Utils 전환 (Hooks → Primitives) 🛠️ 진행 중
 
 **목표**: Preact Hooks 기반 유틸리티를 Solid Primitives로 전환
 
+**진행 상황**: 2/4 완료 (Signal Selector ✅, Performance Utils ✅)
+
 **작업 내용**:
 
-1. **Signal Selector 재작성**
+1. **Signal Selector 재작성** ✅ 완료
 
    ```typescript
    // src/shared/utils/signalSelector-solid.ts
@@ -319,45 +321,92 @@
      });
    }
 
-   // useSelector → createSelector 패턴 전환
-   // useCombinedSelector → createMemo 기반 재구현
-   // useAsyncSelector → createResource 기반 재구현
+   // ✅ useSelector → createSelector 구현 완료
+   // ✅ useCombinedSelector → createCombinedSelector 구현 완료
+   // ⏳ useAsyncSelector → createResource 기반 재구현 (보류)
    ```
 
-2. **Performance 유틸리티 전환**
+   **실제 결과**:
+   - 완료일: 2025-10-07
+   - 커밋: `feat(core): implement Signal Selector Solid primitives` (3a9ed5a9)
+   - 파일: `src/shared/utils/signalSelector-solid.ts` (210 lines)
+   - 테스트: `test/unit/utils/signalSelector-solid.test.ts` (20/20 PASS)
+   - 기능:
+     - `createSelector<T, R>`: Solid createMemo 기반, 의존성 캐싱 지원
+     - `createCombinedSelector<T, R>`: 다중 signal 결합
+     - Debug mode with statistics (computeCount, cacheHits, etc.)
+   - 환경 설정: vitest.config.ts에
+     `resolve.conditions: ['browser', 'development']` 추가
+   - 빌드 검증: 1,065KB dev bundle (Solid 브라우저 모드 활성화)
+
+2. **Performance 유틸리티 전환** ✅ 완료
 
    ```typescript
    // src/shared/utils/performance/signalOptimization-solid.ts
-   // Preact useMemo → Solid createMemo
-   // Preact useCallback → 불필요 (Solid는 컴포넌트 1회 실행)
-   // Preact useEffect → createEffect
+   export function createMemoizedSelector<T, R>(
+     source: Accessor<T>,
+     selector: SelectorFunction<T, R>,
+     debug = false
+   ): Accessor<R> & { getStats: () => PerformanceStats };
+
+   export function createAsyncSelector<T, R>(
+     source: Accessor<T>,
+     selector: (state: T) => Promise<R>,
+     defaultValue: R,
+     debounceMs = 300
+   ): Accessor<AsyncSelectorResult<R>>;
    ```
 
-3. **Custom Hooks → Custom Primitives**
+   **실제 결과**:
+   - 완료일: 2025-01-07
+   - 파일: `src/shared/utils/performance/signalOptimization-solid.ts` (199
+     lines)
+   - 테스트: `test/unit/performance/signal-optimization-solid.test.ts` (30/30
+     PASS)
+   - 기능:
+     - `createMemoizedSelector`: Manual caching with Object.is equality
+     - `createAsyncSelector`: Async operations with debouncing, generation-based
+       cancellation
+     - Global statistics tracking (calls, hits, misses)
+     - Debug mode with console logging
+   - 주요 해결:
+     - 초기 reactivity 버그: createSignal + untrack()으로 무한 루프 방지
+     - Timer import: `../timer-management` 경로 수정
+     - Async selector: 초기 loading=true, debounce 후 실행
+   - 빌드 검증: 1,065.82 KB dev bundle (clean build)
+
+   **계획**:
+   - TDD RED: `test/unit/performance/signal-optimization-solid.test.ts` 작성
+   - TDD GREEN: signalOptimization-solid.ts 구현
+   - 기존 Preact 버전과 API 호환성 유지 (마이그레이션 용이)
+   - 성능 벤치마크 추가 (re-render 횟수 측정)
+
+3. **Custom Hooks → Custom Primitives** ⏳ 대기
 
    ```typescript
    // src/shared/hooks/* → src/shared/primitives/*
-   // useFocusTrap → createFocusTrap
-   // useScrollLock → createScrollLock
-   // useDOMReady → createDOMReady
+   // ⏳ useFocusTrap → createFocusTrap
+   // ⏳ useScrollLock → createScrollLock
+   // ⏳ useDOMReady → createDOMReady
    // 등등...
    ```
 
-4. **테스트 전환 (TDD)**
+4. **테스트 전환 (TDD)** ⏳ 대기
    - `test/unit/performance/signal-optimization.test.tsx` → Solid 기반
-   - `test/unit/utils/signalSelector.test.ts` → Solid 기반
+   - `test/unit/utils/signalSelector.test.ts` → ✅ 완료
+     (signalSelector-solid.test.ts)
    - Hooks vs Primitives 차이 문서화
 
-**성공 기준**:
+**현재 성공 기준**:
 
-- ✅ 모든 유틸리티가 Solid primitives 기반으로 동작
-- ✅ 기존 기능 동등성 보장 (테스트로 검증)
-- ✅ 불필요한 Hooks 로직 제거 (useCallback 등)
-- ✅ 성능 개선 측정 (re-render 횟수)
+- ✅ Signal Selector가 Solid primitives 기반으로 동작
+- ✅ 기존 기능 동등성 보장 (20개 테스트로 검증)
+- ⏳ 불필요한 Hooks 로직 제거 (useCallback 등) - Performance Utils에서 진행 예정
+- ⏳ 성능 개선 측정 (re-render 횟수) - 다음 단계
 
-**의존성**: Phase 2 완료
+**의존성**: Phase 2 완료 ✅
 
-**예상 기간**: 4-5일
+**예상 완료**: Phase 3 전체 완료까지 3-4일 예상 (Signal Selector: 1일 완료)
 
 ---
 
