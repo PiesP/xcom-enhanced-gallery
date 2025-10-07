@@ -1,18 +1,18 @@
 /**
  * @fileoverview 기본 컴포넌트 Props 통합
- * @description Phase 2-3A: 모든 컴포넌트의 공통 Props 기반 클래스
- * @version 1.0.0
+ * @description Phase 6: Solid.js 전용 (ComponentChildren 제거)
+ * @version 2.0.0
  */
 
-import type { ComponentChildren } from '../../external/vendors';
+import type { JSX } from 'solid-js';
 
 /**
  * 모든 컴포넌트의 최상위 기본 Props
  * GalleryComponentProps + BaseUIComponentProps 통합
  */
 export interface BaseComponentProps {
-  /** 자식 컴포넌트 */
-  children?: ComponentChildren;
+  /** 자식 컴포넌트 (Solid.js JSX.Element) */
+  children?: JSX.Element;
   /** 추가 클래스명 */
   className?: string;
   /** 테스트 ID */

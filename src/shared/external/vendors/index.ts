@@ -26,13 +26,5 @@ export {
 // 타입 정의 exports (Solid.js only)
 export type { SolidAPI, SolidWebAPI, NativeDownloadAPI } from './vendor-manager-static';
 
-// Vendor-specific types (기존 유지)
-export type {
-  PreactComponent,
-  MemoCompareFunction,
-  ForwardRefComponent,
-  PreactCompat,
-} from './vendor-types';
-
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';
