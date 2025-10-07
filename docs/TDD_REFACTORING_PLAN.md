@@ -530,61 +530,235 @@
 
 **목표**: 공통 UI 컴포넌트를 Solid 기반으로 전환
 
+**상태**: 🟠 진행 중 (2025-10-07 시작)
+
+**전략**: Bottom-Up + TDD (Leaf 컴포넌트부터, 각 단계별 테스트 우선)
+
+#### Phase 4.1: Icon 컴포넌트 전환 (우선순위: 최고)
+
+**대상 컴포넌트** (10개):
+
+- `Icon.tsx` (기본 Icon 래퍼)
+- `hero/Hero*.tsx` (9개 아이콘: ArrowAutofitHeight, ArrowAutofitWidth,
+  ArrowsMaximize, ChevronLeft, ChevronRight, Download, FileZip, Settings, X,
+  ZoomIn)
+
+**이유**:
+
+- 의존성 없음 (Pure presentational components)
+- 단순 JSX 변환만 필요
+- 테스트가 간단하고 빠름
+
 **작업 내용**:
 
-1. **기본 컴포넌트 전환**
-
-   ```typescript
-   // src/shared/components/LazyIcon.tsx → LazyIcon.solid.tsx
-   // h() 함수 호출 → JSX로 전환
-   import { createSignal, Show } from 'solid-js';
-
-   export function LazyIcon(props: IconProps) {
-     const [loaded, setLoaded] = createSignal(false);
-
-     return (
-       <Show when={loaded()} fallback={<div class={styles.placeholder} />}>
-         {/* icon content */}
-       </Show>
-     );
-   }
-   ```
-
-2. **Toast 시스템 전환**
-
-   ```typescript
-   // src/shared/components/ui/Toast/* → Solid 기반
-   // UnifiedToastManager → Solid Store로 재작성
-   // Toast 컴포넌트 → Solid JSX
-   ```
-
-3. **Toolbar 컴포넌트 전환**
-
-   ```typescript
-   // src/shared/components/ui/Toolbar* → Solid 기반
-   // memo/forwardRef 제거 (Solid 자동 최적화)
-   ```
-
-4. **h() 함수 호출 제거**
-   - 모든 `h('div', ...)` → `<div>...</div>` JSX 전환
-   - Fragment 사용 정리
-
-5. **테스트 전환 (TDD)**
-   - `test/unit/components/*` → Solid Testing Library 사용
-   - 스냅샷 테스트 갱신
-   - 접근성 테스트 유지
+1. TDD: `test/unit/shared/components/ui/Icon/*.solid.test.tsx` 작성
+2. 구현: `Icon.solid.tsx`, `hero/Hero*.solid.tsx` 생성
+3. Preact 버전과 동일 props/동작 보장
+4. 접근성 검증 (aria-label, role 등)
+5. 스냅샷 테스트 갱신
 
 **성공 기준**:
 
-- ✅ 모든 Shared 컴포넌트가 Solid 기반
+- ✅ 10개 Icon 컴포넌트 Solid 버전 완성
+- ✅ 기존 Preact 테스트와 동일한 커버리지
+- ✅ 접근성 테스트 통과
+- ✅ 번들 크기 측정 (Solid icon vs Preact icon)
+
+**예상 기간**: 1일
+
+---
+
+#### Phase 4.2: Primitive 컴포넌트 전환 (우선순위: 높음)
+
+**대상 컴포넌트** (2개):
+
+- `primitive/Button.tsx` → `Button.solid.tsx`
+- `primitive/Panel.tsx` → `Panel.solid.tsx`
+
+**이유**:
+
+- 가장 기본적인 building blocks
+- 다른 컴포넌트들이 의존하는 기초 컴포넌트
+- memo/forwardRef 제거 기회 (Solid 자동 최적화 검증)
+
+**작업 내용**:
+
+1. TDD: `primitive/*.solid.test.tsx` 작성
+2. 구현: Solid JSX, createSignal/createMemo 활용
+3. CSS Modules 유지 (디자인 토큰 준수)
+4. 이벤트 핸들링 검증 (PC 전용 입력 정책)
+5. 성능 비교 (re-render 횟수 측정)
+
+**성공 기준**:
+
+- ✅ Button/Panel Solid 버전 완성
+- ✅ memo/forwardRef 없이 동일 성능
+- ✅ 모든 variant 테스트 통과
+- ✅ PC 전용 이벤트만 사용
+
+**예상 기간**: 1-2일
+
+---
+
+#### Phase 4.3: Toast 시스템 전환 (우선순위: 중간)
+
+**대상 컴포넌트** (3개):
+
+- `Toast/Toast.tsx` → `Toast.solid.tsx`
+- `Toast/ToastContainer.tsx` → `ToastContainer.solid.tsx`
+- 서비스: `UnifiedToastManager.ts` → Solid Store 기반 재작성
+
+**이유**:
+
+- 독립적인 시스템 (다른 UI와 분리)
+- Signal 기반 상태 관리로 자연스러운 전환
+- 애니메이션 검증 기회
+
+**작업 내용**:
+
+1. TDD: Toast 컴포넌트 및 통합 테스트
+2. UnifiedToastManager를 Solid Store로 재작성
+   ```typescript
+   // createToastStore() 패턴 활용
+   const [toasts, { add, remove, clear }] = createToastStore();
+   ```
+3. 진입/퇴장 애니메이션 (CSS transitions + Solid Transition)
+4. 접근성 (aria-live, role="status")
+
+**성공 기준**:
+
+- ✅ Toast 시스템 완전 Solid 기반
+- ✅ 애니메이션 정상 동작
+- ✅ 접근성 검증 통과
+- ✅ 통합 테스트 GREEN
+
+**예상 기간**: 1-2일
+
+---
+
+#### Phase 4.4: Modal 시스템 전환 (우선순위: 중간)
+
+**대상 컴포넌트** (5개):
+
+- `ModalShell/ModalShell.tsx` → `ModalShell.solid.tsx`
+- `SettingsModal/SettingsModal.tsx` → `SettingsModal.solid.tsx`
+- `SettingsModal/HeadlessSettingsModal.tsx`
+- `SettingsModal/RefactoredSettingsModal.tsx` (중복 제거 검토)
+- `SettingsModal/UnifiedSettingsModal.tsx` (통합 버전)
+
+**이유**:
+
+- Focus trap, scroll lock 등 복잡한 로직
+- 이미 Solid primitives (useFocusTrap-solid, useScrollLock-solid) 완료
+- Portal 사용 (Solid Portal API 활용)
+
+**작업 내용**:
+
+1. TDD: Modal 동작 테스트 (open/close, focus trap, ESC key 등)
+2. ModalShell Solid 전환 (Portal, animation)
+3. SettingsModal Solid 전환 (form inputs, validation)
+4. Focus management (createFocusTrap primitive 활용)
+5. 중복 컴포넌트 정리 (Refactored/Unified 통합)
+
+**성공 기준**:
+
+- ✅ Modal 시스템 Solid 기반
+- ✅ Focus trap 정상 동작
+- ✅ 접근성 (ARIA modal 패턴)
+- ✅ 키보드 네비게이션 (Tab, ESC)
+
+**예상 기간**: 2일
+
+---
+
+#### Phase 4.5: Toolbar 시스템 전환 (우선순위: 중간)
+
+**대상 컴포넌트** (6개):
+
+- `Button/Button.tsx` → `Button.solid.tsx` (UI Button)
+- `Button/IconButton.tsx` → `IconButton.solid.tsx`
+- `Toolbar/Toolbar.tsx` → `Toolbar.solid.tsx`
+- `Toolbar/ToolbarHeadless.tsx` → `ToolbarHeadless.solid.tsx`
+- `ToolbarShell/ToolbarShell.tsx` → `ToolbarShell.solid.tsx`
+- `ToolbarWithSettings/ToolbarWithSettings.tsx`
+
+**이유**:
+
+- Gallery의 핵심 UI
+- 복잡한 상태 관리 (toolbar signals 이미 Solid로 전환됨)
+- 성능 최적화 효과 검증 기회
+
+**작업 내용**:
+
+1. TDD: Toolbar 동작 테스트 (버튼 클릭, 상태 변화 등)
+2. Button 컴포넌트 Solid 전환 (variant, size props)
+3. Toolbar 컴포넌트 Solid 전환 (composition pattern)
+4. Signal 연결 (toolbar.signals.ts 활용)
+5. 애니메이션 검증 (hover, active states)
+
+**성공 기준**:
+
+- ✅ Toolbar 시스템 Solid 기반
+- ✅ Signal 기반 상태 관리
+- ✅ 애니메이션 smooth
+- ✅ 성능 측정 (렌더링 최적화)
+
+**예상 기간**: 2일
+
+---
+
+#### Phase 4.6: 기타 컴포넌트 전환 (우선순위: 낮음)
+
+**대상 컴포넌트** (3개):
+
+- `LazyIcon.tsx` → `LazyIcon.solid.tsx`
+- `hoc/GalleryHOC.tsx` → 제거 검토 (Solid는 HOC 불필요)
+- `isolation/GalleryContainer.tsx` → Solid 버전
+- `ErrorBoundary/ErrorBoundary.tsx` → Solid ErrorBoundary 활용
+
+**이유**:
+
+- 덜 중요하거나 제거 가능
+- HOC 패턴은 Solid에서 권장되지 않음 (composition 선호)
+
+**작업 내용**:
+
+1. LazyIcon: createSignal + Show 컴포넌트
+2. GalleryHOC: 제거 또는 composition으로 재작성
+3. GalleryContainer: Solid Portal 활용
+4. ErrorBoundary: Solid의 ErrorBoundary API 사용
+
+**성공 기준**:
+
+- ✅ 모든 컴포넌트 Solid 기반
+- ✅ HOC 패턴 제거
+- ✅ 코드 간결화
+
+**예상 기간**: 1일
+
+---
+
+#### Phase 4 전체 성공 기준:
+
+- ✅ 모든 Shared 컴포넌트가 Solid 기반 (33개 → .solid.tsx)
 - ✅ h() 함수 호출 완전 제거
 - ✅ memo/forwardRef 불필요 (Solid 자동 최적화 확인)
-- ✅ 컴포넌트 테스트 모두 GREEN
-- ✅ 번들 크기 감소 측정
+- ✅ 컴포넌트 테스트 모두 GREEN (150+ 테스트)
+- ✅ 접근성 테스트 통과
+- ✅ 번들 크기 측정 및 최적화 검증
+- ✅ 기존 Preact 컴포넌트 제거 또는 Deprecated 표시
 
-**의존성**: Phase 3 완료
+**예상 기간**: 7-9일 (Phase 4.1~4.6 합산)
 
-**예상 기간**: 5-6일
+**의존성**: Phase 3 완료 ✅
+
+**위험 및 대응**:
+
+- ⚠️ 복잡한 컴포넌트 전환 시간 초과 → 단계별 분할, Preact 버전 병행 유지
+- ⚠️ 테스트 작성 어려움 → Solid Testing Library 문서 참고, 예제 코드 활용
+- ⚠️ 성능 저하 → 프로파일링, 최적화 포인트 식별
+
+**Phase 4 완료 후 다음 단계**: Phase 5 (Features 계층 전환)
 
 ---
 
@@ -893,8 +1067,8 @@
 **다음 액션**:
 
 1. ✅ 기존 Preact 컴포넌트 테스트 실패 원인 분석 및 수정 **[완료 2025-10-07]**
-2. ⏳ Phase 4 작업 계획 수립
-3. ⏳ UI 컴포넌트 마이그레이션 우선순위 결정
+2. ✅ Phase 4 작업 계획 수립 **[완료 2025-10-07]**
+3. ⏳ UI 컴포넌트 마이그레이션 우선순위 결정 및 실행
 4. ⏳ TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 0-3 이관
 
 **블로커 해결 완료** ✅:
