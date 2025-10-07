@@ -420,53 +420,25 @@ subscribe(callback: (value: T) => void): () => void {
 
 #### 10.1: 테스트 Preact 잔재 제거 ✅ **완료** (2025-01-08)
 
-**진행 상황: 12/12 파일 완료 (100%)**
+**목표**: 테스트 파일의 모든 Preact import와 h() 호출을 Solid.js 패턴으로 전환
 
-**✅ 1차 완료 파일 (커밋 f0e64be0, a84e7406)**:
+**완료 상태**: 12/12 파일 전환 완료 (100%)
 
-1. ✅ `test/shared/components/ui/Icon.test.tsx` - JSX 전환
-2. ✅ `test/shared/components/ui/Toolbar-Icons.test.tsx` - JSX 전환 + vendor
-   mock
-3. ✅ `test/shared/components/ui/Toast-Icons.test.tsx` - JSX 전환
-4. ✅ `test/phase-2-component-shells.test.tsx` - JSX 전환
-5. ✅ `test/behavioral/settings-modal.characterization.test.tsx` - .ts → .tsx
-   리네임, JSX 전환
-6. ✅ `test/unit/performance/signal-optimization.test.tsx` - 완전 재작성
-   (Solid.js signals)
+**주요 변경**:
 
-**✅ 2차 완료 파일 (커밋 f03f4df9)**:
+- `@testing-library/preact` → `@solidjs/testing-library`
+- `h(Component, props)` → `<Component {...props} />`
+- Preact hooks mock → Solid.js vendor mock (getSolid)
+- 3개 파일 .ts → .tsx 리네임 (JSX 지원)
+- design-system-consistency.test.tsx 중복 코드 85 lines 제거
 
-7. ✅ `test/unit/ui/toolbar.icon-accessibility.test.tsx` - 복잡한 vendor mocking
-   전환
-8. ✅ `test/components/button-primitive-enhancement.test.tsx` - .ts → .tsx, JSX
-   전환
-9. ✅ `test/hooks/useGalleryToolbarLogic.test.tsx` - .ts → .tsx, JSX 전환
-10. ✅ `test/integration/design-system-consistency.test.tsx` - JSX 전환, 중복
-    코드 제거
-11. ✅ `test/refactoring/icon-button.size-map.red.test.tsx` - JSX 전환
-12. ✅ `test/components/configurable-toolbar.test.tsx` - .ts → .tsx, JSX 전환
+**결과**:
 
-**📝 유지 파일 (정적 분석용)**:
+- Preact import: **0건** (완전 제거)
+- 빌드: Dev 1,030.72 KB, Prod 331.17 KB (gzip 88.37 KB)
+- 모듈 수: 250, 테스트: GREEN
 
-- `test/unit/lint/direct-imports-source-scan.test.js` - 문자열 패턴 검사
-- `test/unit/features/gallery/GalleryRenderer.solid.test.ts` - negative
-  assertion
-- `test/behavioral/settings-modal.characterization.test.js` - 레거시 유지
-
-**수용 기준**:
-
-- [x] 샘플 패턴 확립 (signal-optimization.test.tsx)
-- [x] 전체 12개 파일 Solid.js 전환 완료
-- [x] 빌드 및 typecheck GREEN
-- [x] 모든 Preact import 제거 (실제 사용 0건)
-
-**최종 메트릭**:
-
-- 전환 완료: **12/12** (100%)
-- 빌드 크기: Dev 1,030.72 KB, Prod 331.17 KB (gzip 88.37 KB)
-- 모듈 수: 250
-- 테스트: GREEN
-- Preact import: **0** (완전 제거)
+**상세**: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ### Phase 10 메트릭 (최신 - 2025-01-08)
 
