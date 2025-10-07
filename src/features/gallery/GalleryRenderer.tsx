@@ -129,7 +129,16 @@ export class GalleryRenderer implements GalleryRendererInterface {
             navigateToItem(state.mediaItems.length - 1);
           }
         },
-        // Escape는 GalleryContainer에서 처리하므로 여기서는 생략
+        onEscape: () => {
+          const state = galleryState.value;
+          if (state.isOpen) {
+            logger.debug('[GalleryRenderer] Escape - close gallery');
+            closeGallery();
+            if (this.onCloseCallback) {
+              this.onCloseCallback();
+            }
+          }
+        },
         // Space는 향후 Fit mode 토글 기능 추가 시 구현
       },
       {

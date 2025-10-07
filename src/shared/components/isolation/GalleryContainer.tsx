@@ -3,10 +3,9 @@
  * @description Light DOM 기반 갤러리 컨테이너 (Cascade Layers로 스타일 격리)
  */
 
-import { createEffect, onCleanup, type JSX } from 'solid-js';
+import { type JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 import { logger } from '@shared/logging';
-import { EventManager } from '@shared/services/EventManager';
 
 /**
  * 갤러리 컨테이너 Props
@@ -52,32 +51,10 @@ export function unmountGallery(container: Element): void {
 
 /**
  * 갤러리 컨테이너 컴포넌트 - Light DOM 기반
+ *
+ * Note: Escape 키 처리는 KeyboardNavigator가 중앙집중식으로 처리합니다.
  */
 export function GalleryContainer(props: GalleryContainerProps): JSX.Element {
-  // 키보드 이벤트 핸들러
-  const handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && props.onClose) {
-      event.preventDefault();
-      event.stopPropagation();
-      props.onClose();
-    }
-  };
-
-  // 키보드 이벤트 리스너 등록
-  createEffect(() => {
-    if (props.onClose) {
-      const id = EventManager.getInstance().addListener(
-        document,
-        'keydown',
-        handleKeyDown as unknown as EventListener
-      );
-
-      onCleanup(() => {
-        EventManager.getInstance().removeListener(id);
-      });
-    }
-  });
-
   return (
     <div
       class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${props.className || ''}`}

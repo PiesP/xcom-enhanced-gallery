@@ -18,14 +18,49 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('Phase 7.1: Gallery Keyboard Navigation Integration', () => {
+  let cleanupFunctions: Array<() => void> = [];
+
   beforeEach(() => {
     vi.clearAllMocks();
+    cleanupFunctions = [];
     // JSDOM 환경 초기화
     document.body.innerHTML = '';
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // 역순으로 정리 (LIFO - Last In, First Out)
+    while (cleanupFunctions.length > 0) {
+      const cleanup = cleanupFunctions.pop();
+      if (cleanup) {
+        try {
+          cleanup();
+        } catch (error) {
+          console.warn('Cleanup failed:', error);
+        }
+      }
+    }
+
+    // 갤러리 상태 완전 리셋
+    try {
+      const { closeGallery } = await import('@/shared/state/signals/gallery.signals');
+      closeGallery();
+    } catch {
+      // 모듈 import 실패는 무시
+    }
+
+    // GalleryRenderer 정리
+    try {
+      const { galleryRenderer } = await import('@/features/gallery/GalleryRenderer');
+      galleryRenderer.destroy();
+    } catch {
+      // 모듈 import 실패는 무시
+    }
+
+    // DOM 정리
     document.body.innerHTML = '';
+
+    // 약간의 딜레이를 주어 비동기 정리 완료 대기
+    await new Promise(resolve => setTimeout(resolve, 10));
   });
 
   /**
