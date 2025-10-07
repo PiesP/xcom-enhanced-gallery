@@ -463,6 +463,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
                 <VerticalImageItem
                   media={item}
                   index={actualIndex}
+                  totalCount={mediaItems().length}
                   isActive={actualIndex === currentIndex()}
                   isFocused={actualIndex === focusedIndex()}
                   forceVisible={forcePreload}

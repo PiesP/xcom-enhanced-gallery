@@ -52,6 +52,11 @@ export function unmountGallery(container: Element): void {
 /**
  * 갤러리 컨테이너 컴포넌트 - Light DOM 기반
  *
+ * WCAG 2.1 AA 준수:
+ * - role="dialog": 모달 다이얼로그 역할 명시
+ * - aria-modal="true": 모달 상태 명시 (백그라운드 콘텐츠 비활성화)
+ * - aria-label: Screen reader를 위한 설명
+ *
  * Note: Escape 키 처리는 KeyboardNavigator가 중앙집중식으로 처리합니다.
  */
 export function GalleryContainer(props: GalleryContainerProps): JSX.Element {
@@ -59,6 +64,9 @@ export function GalleryContainer(props: GalleryContainerProps): JSX.Element {
     <div
       class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${props.className || ''}`}
       data-xeg-gallery-container=''
+      role='dialog'
+      aria-modal='true'
+      aria-label='이미지 갤러리'
     >
       {props.children}
     </div>
