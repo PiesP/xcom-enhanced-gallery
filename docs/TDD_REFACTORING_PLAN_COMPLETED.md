@@ -4249,3 +4249,285 @@ createEffect(() => {
     `test/unit/shared/components/isolation/GalleryContainer.solid.test.tsx`
 
 ---
+
+## ✅ Phase 5.1: VerticalImageItem Solid 전환 (2025-10-07)
+
+**목표**: Features 계층 Gallery 컴포넌트를 Solid.js로 전환 시작 -
+VerticalImageItem 우선 전환
+
+**배경**:
+
+- Phase 4.6에서 연기된 GalleryHOC 처리를 위한 첫 단계
+- VerticalImageItem은 withGallery HOC를 사용하는 유일한 컴포넌트
+- Solid composition 패턴으로 전환하여 HOC 의존성 제거
+
+### 작업 내용
+
+#### 1. VerticalImageItem.solid.tsx 구현
+
+**파일**:
+`src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+
+**라인 수**: 489 lines (Preact 571 lines → 14.4% 감소)
+
+**주요 변경사항**:
+
+1. **withGallery HOC 제거**:
+
+   ```typescript
+   // Before (Preact)
+   export const VerticalImageItem = withGallery(BaseVerticalImageItem, {
+     type: 'item',
+     className: 'vertical-item',
+     events: {
+       preventClick: false,
+       preventKeyboard: false,
+       blockTwitterNative: true,
+     },
+   });
+
+   // After (Solid)
+   const galleryMarkerAttributes = {
+     'data-xeg-gallery': 'true',
+     'data-xeg-gallery-type': 'item',
+     'data-xeg-gallery-version': '2.0',
+     'data-xeg-gallery-component': 'vertical-image-item',
+     'data-xeg-gallery-role': 'gallery-item',
+   };
+   ```
+
+2. **Preact Hooks → Solid Primitives**:
+
+   ```typescript
+   // Before: Preact
+   const [isLoaded, setIsLoaded] = useState(false);
+   const [isError, setIsError] = useState(false);
+   const [isVisible, setIsVisible] = useState(false);
+
+   // After: Solid
+   const [isLoaded, setIsLoaded] = createSignal(false);
+   const [isError, setIsError] = createSignal(false);
+   const [isVisible, setIsVisible] = createSignal(false);
+   ```
+
+3. **useEffect → createEffect + onCleanup**:
+
+   ```typescript
+   // Before: Preact useEffect
+   useEffect(() => {
+     const observer = new IntersectionObserver(...);
+     observer.observe(container);
+     return () => { /* cleanup */ };
+   }, [dependencies]);
+
+   // After: Solid createEffect
+   createEffect(() => {
+     const observer = new IntersectionObserver(...);
+     observer.observe(container);
+     onCleanup(() => {
+       observer.disconnect();
+     });
+   });
+   ```
+
+4. **memo 제거** (Solid 자동 최적화):
+
+   ```typescript
+   // Before: Preact memo
+   const { memo } = getPreactCompat();
+   const BaseVerticalImageItem = memo(
+     BaseVerticalImageItemCore,
+     compareVerticalImageItemProps
+   );
+
+   // After: Solid (불필요)
+   export function VerticalImageItem(
+     props: VerticalImageItemProps
+   ): JSX.Element {
+     // Solid의 fine-grained reactivity가 자동으로 최적화
+   }
+   ```
+
+5. **mergeProps 활용**:
+   ```typescript
+   const merged = mergeProps(
+     {
+       isFocused: false,
+       isVisible: true,
+       forceVisible: false,
+       className: '',
+       role: 'button',
+       tabIndex: 0,
+     },
+     props
+   );
+   ```
+
+**유지된 기능**:
+
+- ✅ IntersectionObserver 기반 lazy loading
+- ✅ 비디오 가시성 제어 (자동 일시정지/재생)
+- ✅ 이미지/비디오 로딩 상태 관리
+- ✅ 에러 핸들링
+- ✅ 컨텍스트 메뉴 지원
+- ✅ 접근성 속성 (ARIA, role, tabIndex)
+- ✅ 다운로드 버튼
+- ✅ 드래그 방지
+
+#### 2. Phase 0 테스트 작성
+
+**파일**:
+`test/unit/features/gallery/components/VerticalImageItem.solid.test.tsx`
+
+**테스트 수**: 37 tests × 2 projects (fast + unit) = **74 executions**
+
+**테스트 카테고리**:
+
+1. 기본 컴파일 검증 (2 tests)
+2. Props 타입 검증 (2 tests)
+3. 컴포넌트 구조 검증 (2 tests)
+4. 유틸리티 함수 검증 (3 tests)
+5. Solid.js 통합 검증 (4 tests)
+6. Gallery 마킹 속성 검증 (3 tests)
+7. 접근성 검증 (2 tests)
+8. 미디어 로딩 검증 (4 tests)
+9. 비디오 지원 검증 (4 tests)
+10. 이벤트 핸들링 검증 (5 tests)
+11. 스타일링 검증 (4 tests)
+12. 최적화 검증 (2 tests)
+
+**테스트 결과**: ✅ 74/74 GREEN (100%)
+
+### 기술적 결정
+
+#### 1. HOC → Direct Marking 전환
+
+**문제**: Solid.js에서는 HOC 패턴이 부자연스럽고 타입 안전성이 떨어짐
+
+**해결**:
+
+- Gallery 마킹 속성을 컴포넌트에 직접 추가
+- 코드 간결화 및 타입 추론 개선
+- 런타임 오버헤드 제거
+
+**장점**:
+
+- 더 명확한 코드
+- 타입 체킹 향상
+- Solid의 컴파일 최적화 활용
+
+#### 2. Solid Primitives 활용
+
+**createSignal**:
+
+- 로컬 상태 관리 (isLoaded, isError, isVisible)
+- Fine-grained reactivity로 불필요한 재렌더링 방지
+
+**createEffect**:
+
+- IntersectionObserver 설정 및 정리
+- 비디오 가시성 제어
+- 캐시된 미디어 감지
+
+**onCleanup**:
+
+- Observer disconnect
+- 메모리 누수 방지
+
+**mergeProps**:
+
+- Props defaults 병합
+- 타입 안전성 유지
+
+#### 3. 자동 최적화
+
+**제거된 것**:
+
+- memo HOC
+- compareVerticalImageItemProps 함수
+- 수동 props 비교 로직
+
+**이유**:
+
+- Solid의 fine-grained reactivity가 자동으로 최적화
+- Props 변경 시 영향받는 부분만 업데이트
+- 더 나은 성능과 간결한 코드
+
+### 코드 메트릭
+
+| 항목                 | Preact                                       | Solid                                                 | 변화 | %      |
+| -------------------- | -------------------------------------------- | ----------------------------------------------------- | ---- | ------ |
+| **Lines**            | 571                                          | 489                                                   | -82  | -14.4% |
+| **Functions**        | 8                                            | 5                                                     | -3   | -37.5% |
+| **HOC Usage**        | withGallery                                  | 직접 마킹                                             | -    | -      |
+| **Hooks/Primitives** | 8 (useState, useEffect, useRef, useCallback) | 4 (createSignal, createEffect, onCleanup, mergeProps) | -4   | -50%   |
+| **memo**             | 1 (getPreactCompat().memo)                   | 0 (불필요)                                            | -1   | -100%  |
+
+### 테스트 통계
+
+- **Phase 0 Tests**: 37 tests
+- **Projects**: 2 (fast + unit)
+- **Total Executions**: 74
+- **Pass Rate**: 100% (74/74 GREEN)
+- **Coverage**: 컴파일, 타입, 구조, 유틸리티, 통합, 마킹, 접근성, 미디어,
+  비디오, 이벤트, 스타일, 최적화
+
+### 빌드 검증
+
+```
+✅ TypeScript: 0 errors (strict mode)
+✅ ESLint: 0 warnings
+✅ Build Dev: 1,065.82 KB (+ 2,092.23 KB sourcemap)
+✅ Build Prod: 377.20 KB raw / 102.44 KB gzip
+✅ dependency-cruiser: 0 errors (4 orphan warnings - 허용)
+```
+
+**번들 크기**: 안정적 유지 (Phase 4 대비 변화 없음)
+
+### Phase 5.1 워크플로 개선점
+
+- **TDD 패턴**: Phase 0 테스트 우선 작성 → 최소 구현 → 리팩토링
+- **HOC 제거 전략**: 직접 마킹 속성으로 간결화
+- **Solid 최적화 활용**: memo 불필요, fine-grained reactivity
+- **작업 속도**: 대형 컴포넌트(571 lines)를 안정적으로 전환
+
+### 남은 작업
+
+#### Phase 5 계속 진행
+
+- **Phase 5.2**: VerticalGalleryView.solid.tsx 전환
+  - 600+ lines 컴포넌트
+  - For, Show 등 Solid 제어 흐름 활용
+  - Toolbar 통합 유지
+- **Phase 5.3**: GalleryHOC 완전 제거 또는 composition helper로 전환
+- **Phase 5.4**: GalleryRenderer Solid render() 통합
+- **Phase 5.5**: Hooks → Primitives 전환 (useGalleryScroll 등)
+
+### 관련 커밋
+
+- **Phase 5.1**: `c6a1cc0a` - feat(gallery): add VerticalImageItem.solid.tsx for
+  Phase 5.1
+
+**완료 시각**: 2025-10-07 15:30 KST
+
+**소요 시간**: ~1.5시간 (571 lines 대형 컴포넌트 안정적 전환)
+
+**품질 검증**: ✅ All checks passed
+
+**관련 파일**:
+
+- **Components**:
+  - 신규:
+    `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx`
+    (489 lines)
+  - 유지:
+    `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx`
+    (571 lines, Preact 버전)
+- **Tests**:
+  - 신규:
+    `test/unit/features/gallery/components/VerticalImageItem.solid.test.tsx` (37
+    tests)
+
+**다음 단계**: Phase 5.2 - VerticalGalleryView Solid 전환
+
+---
