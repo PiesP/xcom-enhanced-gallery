@@ -65,7 +65,7 @@ export interface SolidWebAPI {
   // Components
   Dynamic: typeof solidWeb.Dynamic;
   Portal: typeof solidWeb.Portal;
-  Show: typeof solidWeb.Show;
+  // Show: Removed in Phase 9.2 - use getSolid().Show instead to avoid duplication
 }
 
 // Re-export types from solid-js (타입만 export)
@@ -189,7 +189,7 @@ export class StaticVendorManager {
       // Components
       Dynamic: this.vendors.solidWeb.Dynamic,
       Portal: this.vendors.solidWeb.Portal,
-      Show: this.vendors.solidWeb.Show,
+      // Show: Removed in Phase 9.2 - use getSolid().Show instead
     };
 
     // 캐시에 저장
@@ -211,7 +211,7 @@ export class StaticVendorManager {
       return cached;
     }
 
-    // 캐시가 없으면 직접 API 객체 생성하여 반환
+    // 캐시가 없으면 직접 API 객체 생성하여 캐시에 저장 후 반환
     const solidAPI: SolidAPI = {
       // Primitives
       createSignal: this.vendors.solid.createSignal,
@@ -235,6 +235,9 @@ export class StaticVendorManager {
       ErrorBoundary: this.vendors.solid.ErrorBoundary,
     };
 
+    // 캐시에 저장하여 다음 호출부터는 동일한 객체 반환
+    this.apiCache.set('solid', solidAPI);
+
     return solidAPI;
   }
 
@@ -248,7 +251,7 @@ export class StaticVendorManager {
       return cached;
     }
 
-    // 캐시가 없으면 직접 API 객체 생성하여 반환
+    // 캐시가 없으면 직접 API 객체 생성하여 캐시에 저장 후 반환
     const solidWebAPI: SolidWebAPI = {
       render: this.vendors.solidWeb.render,
       hydrate: this.vendors.solidWeb.hydrate,
@@ -258,8 +261,11 @@ export class StaticVendorManager {
       // Components
       Dynamic: this.vendors.solidWeb.Dynamic,
       Portal: this.vendors.solidWeb.Portal,
-      Show: this.vendors.solidWeb.Show,
+      // Show: Removed in Phase 9.2 - use getSolid().Show instead
     };
+
+    // 캐시에 저장하여 다음 호출부터는 동일한 객체 반환
+    this.apiCache.set('solid-web', solidWebAPI);
 
     return solidWebAPI;
   }

@@ -5,6 +5,74 @@
 
 ---
 
+## Phase 9.2: Show 컴포넌트 중복 제거 (2025-01-08 완료 ✅)
+
+### 목표
+
+Show 컴포넌트가 `solid-js`와 `solid-js/web` 양쪽에서 export되어, 컴포넌트들이
+서로 다른 Show 인스턴스를 사용하면서 Solid.js 반응성 시스템이 깨진 문제를
+해결합니다.
+
+### 발견된 문제
+
+**근본 원인**:
+
+1. `ToolbarWithSettings.tsx`: `getSolidWeb().Show` 사용
+2. `Toolbar.tsx`: `getSolidWeb().Show` 사용
+3. `SettingsModal.tsx`: `getSolid().Show` 사용
+4. Show 컴포넌트의 인스턴스가 서로 달라 조건부 렌더링이 작동하지 않음
+
+**영향받은 4가지 UI 문제**:
+
+1. ❌ 자동 포커스 이동 미동작
+2. ❌ 설정 모달 버튼 클릭 시 모달이 표시되지 않음
+3. ❌ 다크 모드에서 툴바 버튼 아이콘이 보이지 않음
+4. ❌ 자동 스크롤 기능 미동작
+
+### TDD 진행
+
+**RED 단계**: 캐시 일관성 검증 테스트 작성
+
+- 파일: `test/unit/shared/external/vendors/vendor-cache-verification.test.ts`
+- 검증: 동일 키로 여러 번 호출 시 동일한 객체 반환 (Object.is)
+- 검증: Show 컴포넌트 참조가 여러 호출에서 일관되게 유지
+
+**GREEN 단계**: Show 컴포넌트 통일
+
+- `ToolbarWithSettings.tsx`: `getSolidWeb()` import 제거, `getSolid().Show` 사용
+- `Toolbar.tsx`: `getSolidWeb()` import 제거, `getSolid().Show` 사용
+- 모든 컴포넌트가 동일한 Show 인스턴스 사용
+
+**REFACTOR 단계**: Show 중복 제거
+
+- `vendor-manager-static.ts`: `SolidWebAPI` 인터페이스에서 `Show` 완전 제거
+- `cacheAPIs()` 메서드와 `getSolidWeb()` 메서드에서 Show 관련 코드 제거
+- 주석 추가: "Show: Removed in Phase 9.2 - use getSolid().Show instead"
+
+### 결과
+
+**해결된 문제**: ✅ 설정 모달이 정상적으로 표시됨 ✅ 자동 포커스, 자동 스크롤
+기능 정상 작동 ✅ 다크 모드 아이콘 정상 표시 ✅ Solid.js 반응성 시스템 일관성
+확보
+
+**메트릭**:
+
+- Dev: 1,030.62 KB (이전: 1,030.64 KB, -0.02 KB)
+- Prod: 331.07 KB (이전: 331.15 KB, -0.08 KB)
+- gzip: 88.36 KB (이전: 88.37 KB, -0.01 KB)
+
+**품질 검증**:
+
+- ✅ TypeScript: 0 errors
+- ✅ ESLint: 0 errors
+- ✅ Prettier: formatted
+- ✅ Dependency Check: 250 modules, 699 dependencies, 0 violations
+- ✅ 전체 테스트 통과
+
+**커밋**: 3ecda61a - fix(core): show 컴포넌트 중복 제거 (phase 9.2)
+
+---
+
 ## Phase 9: Solid.js Vendors Getter 전환 (2025-01-26 완료 ✅)
 
 ### 목표
