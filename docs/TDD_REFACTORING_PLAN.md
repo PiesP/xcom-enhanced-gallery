@@ -1,8 +1,7 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-# TDD-driven Refactoring Plan (xcom-enhanced-gallery)
-
-> **Last updated**: 2025-01-08 **Status**: Phase 9.2 Completed ✅
+> **Last updated**: 2025-01-08 **Status**: Phase 9.2 Completed ✅ / Phase 10
+> 진행 중 (2/3)
 
 ## Overview
 
@@ -13,109 +12,72 @@
 
 ## Recent Completions
 
-### Phase 9.2: Show 컴포넌트 중복 제거 (2025-01-08 완료 ✅)
+### Phase 9.2: Vendor Getter Cache 버그 수정 (2025-01-08 완료 ✅)
 
-**해결된 4가지 UI 문제**:
-
-1. ✅ 자동 포커스 이동 정상 작동
-2. ✅ 설정 모달 정상 표시
-3. ✅ 다크 모드 아이콘 정상 표시
-4. ✅ 자동 스크롤 기능 정상 작동
+**해결된 문제**: `getSolid()`와 `getSolidWeb()` 메서드가 캐시를 확인만 하고 새로
+생성한 API 객체를 **캐시에 저장하지 않는** 버그를 수정했습니다.
 
 **근본 원인**:
 
-Show 컴포넌트가 `getSolid()`와 `getSolidWeb()` 양쪽에서 제공되어, 서로 다른
-인스턴스를 사용하면서 Solid.js 반응성 시스템이 깨짐:
+`vendor-manager-static.ts`의 `getSolid()`와 `getSolidWeb()` 메서드가:
 
-- `ToolbarWithSettings.tsx`: `getSolidWeb().Show` 사용
-- `Toolbar.tsx`: `getSolidWeb().Show` 사용
-- `SettingsModal.tsx`: `getSolid().Show` 사용
+1. 캐시된 API 객체가 있으면 반환 (정상)
+2. 캐시가 없을 때 새 API 객체를 생성하지만 **캐시에 저장하지 않고 바로 반환**
+3. 결과적으로 매 호출마다 새로운 객체가 생성됨
+4. Show 컴포넌트가 매번 다른 인스턴스로 생성되어 Solid.js 반응성 시스템 오작동
+
+**영향**:
+
+이 버그로 인해 Phase 9.1과 Phase 9에서 수정했다고 기록된 UI 문제들이 실제로는
+해결되지 않았습니다:
+
+- ❌ 자동 포커스 이동 미동작
+- ❌ 설정 모달이 표시되지 않음
+- ❌ 다크 모드에서 툴바 아이콘이 보이지 않음
+- ❌ 자동 스크롤 기능 미동작
 
 **주요 변경**:
 
-- `ToolbarWithSettings.tsx`, `Toolbar.tsx`: `getSolid().Show` 사용으로 통일
-- `vendor-manager-static.ts`: `SolidWebAPI`에서 `Show` 완전 제거
-- 모든 컴포넌트가 동일한 Show 인스턴스 사용
+```typescript
+// Before (버그)
+public getSolid(): SolidAPI {
+  const cached = this.apiCache.get('solid') as SolidAPI | undefined;
+  if (cached) {
+    return cached;
+  }
+  const solidAPI: SolidAPI = { /* ... */ };
+  return solidAPI; // 캐시에 저장 안 함! ❌
+}
 
-**메트릭**: Dev 1,030.62 KB, Prod 331.07 KB (gzip 88.36 KB)
+// After (수정)
+public getSolid(): SolidAPI {
+  const cached = this.apiCache.get('solid') as SolidAPI | undefined;
+  if (cached) {
+    return cached;
+  }
+  const solidAPI: SolidAPI = { /* ... */ };
+  this.apiCache.set('solid', solidAPI); // 캐시에 저장 ✅
+  return solidAPI;
+}
+```
 
-커밋: 3ecda61a - fix(core): show 컴포넌트 중복 제거 (phase 9.2)
+동일한 수정을 `getSolidWeb()`에도 적용했습니다.
 
-상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
+**결과**:
 
----
+이제 모든 호출에서 동일한 API 객체가 반환되어:
 
-## Overview
-
-모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
-작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
-
----
-
-## Active Phase
-
-### Phase 9.2: Vendor Getter Cache 버그 수정 (진행 중 - 2025-01-08)
-
-**발견된 문제**: Phase 9.1에서 수정했다고 기록되었으나, 실제 코드에서는 여전히
-문제가 존재합니다.
-
-**근본 원인 분석**:
-
-1. `vendor-manager-static.ts`의 `getSolid()`와 `getSolidWeb()` 메서드가 캐시
-   체크는 하지만
-2. 캐시가 없을 때 생성한 API 객체를 **캐시에 저장하지 않고 반환만 함**
-3. 결과적으로 매 호출마다 새로운 객체가 생성됨
-4. Show 컴포넌트가 solid-js와 solid-js/web 양쪽에서 각각 다른 인스턴스로 중복
-   생성
-5. Solid.js 반응성 시스템이 깨져서 조건부 렌더링이 작동하지 않음
-
-**영향받는 4가지 UI 문제**:
-
-1. ❌ 자동 포커스 이동 미동작
-2. ❌ 설정 모달 버튼 클릭 시 모달이 표시되지 않음
-3. ❌ 다크 모드에서 툴바 버튼 아이콘이 보이지 않음
-4. ❌ 자동 스크롤 기능 미동작
-
-**솔루션 설계**:
-
-**접근 방법 1: 캐시 저장 추가 (권장) ✅**
-
-- 장점: 최소 변경, 원래 의도대로 동작, 성능 최적화
-- 단점: 없음
-- 구현: `getSolid()`와 `getSolidWeb()`에서 생성한 객체를 `this.apiCache.set()`로
-  저장
-
-**접근 방법 2: 매번 새 객체 생성 (비권장) ❌**
-
-- 장점: 캐시 로직 제거로 코드 단순화
-- 단점: 성능 저하, Show 컴포넌트 중복 문제 미해결, 메모리 낭비
-- 이유: 근본 원인 해결 안 됨
-
-**접근 방법 3: Show 컴포넌트 통합 (부가 개선)**
-
-- 장점: Show 중복 완전 제거
-- 단점: 추가 리팩토링 필요
-- 구현: solid-js의 Show만 사용하도록 SolidWebAPI에서 Show 제거
-
-**선택된 솔루션**: 접근 방법 1 + 3 (캐시 저장 + Show 통합)
-
-**구현 계획**:
-
-1. RED: 캐시가 제대로 동작하는지 검증하는 테스트 작성
-2. GREEN: `getSolid()`와 `getSolidWeb()`에서 생성한 객체를 캐시에 저장
-3. REFACTOR: SolidWebAPI에서 Show 제거하고 solid-js의 Show만 사용
-
-**성공 기준**:
-
-- ✅ 동일 키로 두 번 호출 시 동일한 객체 반환 (Object.is 검증)
 - ✅ Show 컴포넌트가 단일 인스턴스로 동작
+- ✅ 조건부 렌더링이 정상적으로 작동
 - ✅ 설정 모달이 정상적으로 표시됨
 - ✅ 자동 포커스, 자동 스크롤, 다크 모드 아이콘 모두 정상 작동
-- ✅ 빌드 성공 및 전체 테스트 통과
+- ✅ 성능 개선 (불필요한 객체 생성 방지)
+
+**메트릭**: Dev 1,030.72 KB, Prod 331.17 KB (gzip 88.37 KB)
 
 ---
 
-## Recent Completions
+## Previous Completions (Historical)
 
 ### Phase 9.1: Vendors Getter API 수정 (2025-01-07 완료 ✅)
 
