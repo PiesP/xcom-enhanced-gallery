@@ -1,7 +1,7 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 9.2 Completed ✅ / Phase 10
-> 진행 중 (2/3)
+> **Last updated**: 2025-01-08 **Status**: Phase 10 진행 중 (3.5/4 완료 - Phase
+> 10.1-10.3 완료)
 
 ## Overview
 
@@ -418,172 +418,53 @@ subscribe(callback: (value: T) => void): () => void {
 - ⚠️ 장시간 실행 시나리오에서 잠재적 위험
 - ✅ Phase 11 이전에 해결 권장
 
-#### 10.1: 테스트 Preact 잔재 제거 🔴 **높은 우선순위** (진행 중 - 2025-01-08)
+#### 10.1: 테스트 Preact 잔재 제거 ✅ **완료** (2025-01-08)
 
-**현재 상태 (2025-01-08 점검)**:
+**목표**: 테스트 파일의 모든 Preact import와 h() 호출을 Solid.js 패턴으로 전환
 
-코드베이스 전체 점검 결과, **18개 테스트 파일**에서 Preact import를 사용
-중입니다:
+**완료 상태**: 12/12 파일 전환 완료 (100%)
 
-**실제 Preact 사용 현황**:
+**주요 변경**:
 
-1. `test/unit/ui/toolbar.icon-accessibility.test.tsx` - `h` 사용
-2. `test/unit/performance/signal-optimization.test.tsx` - `@preact/signals` 사용
-3. `test/shared/components/ui/Icon.test.tsx` - `h` 사용
-4. `test/shared/components/ui/Toolbar-Icons.test.tsx` - `h` 사용
-5. `test/shared/components/ui/Toast-Icons.test.tsx` - `h` 사용
-6. `test/refactoring/icon-button.size-map.red.test.tsx` - `h` 사용
-7. `test/phase-2-component-shells.test.tsx` - `h` 사용
-8. `test/integration/design-system-consistency.test.tsx` - `h` 사용
-9. `test/hooks/useGalleryToolbarLogic.test.ts` - `h` 사용
-10. `test/components/configurable-toolbar.test.ts` - `h` 사용
-11. `test/components/button-primitive-enhancement.test.ts` - `h` 사용
-12. `test/behavioral/settings-modal.characterization.test.ts` - `h` 사용
-13. `test/behavioral/settings-modal.characterization.test.js` - `h` 사용
-14. `test/unit/lint/direct-imports-source-scan.test.js` - 문자열 패턴 (정적
-    분석용)
-15. `test/unit/features/gallery/GalleryRenderer.solid.test.ts` - 문자열 검증용
-    (negative assertion)
+- `@testing-library/preact` → `@solidjs/testing-library`
+- `h(Component, props)` → `<Component {...props} />`
+- Preact hooks mock → Solid.js vendor mock (getSolid)
+- 3개 파일 .ts → .tsx 리네임 (JSX 지원)
+- design-system-consistency.test.tsx 중복 코드 85 lines 제거
 
-**제거 확인 완료**:
+**결과**:
 
-- ✅ `test/utils/render-with-vendor-preact.tsx` - 이미 제거됨
+- Preact import: **0건** (완전 제거)
+- 빌드: Dev 1,030.72 KB, Prod 331.17 KB (gzip 88.37 KB)
+- 모듈 수: 250, 테스트: GREEN
 
-**작업 전략 (개선)**:
+**상세**: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
-##### 단계 1: 분류 및 우선순위
+### Phase 10 메트릭 (최신 - 2025-01-08)
 
-1. **정적 분석/검증 테스트 (유지)**:
-   - `direct-imports-source-scan.test.js` - 문자열 패턴 검사용
-   - `GalleryRenderer.solid.test.ts` - negative assertion
+| 메트릭               | Phase 9     | 현재 (Phase 10) | 변화       | Phase 10 목표   |
+| -------------------- | ----------- | --------------- | ---------- | --------------- |
+| Dev 빌드             | 1,029.96 KB | 1,030.72 KB     | +0.76 KB   | ~1,030 KB       |
+| Prod 빌드            | 330.73 KB   | 331.17 KB       | +0.44 KB   | ~331 KB         |
+| gzip                 | 88.35 KB    | 88.37 KB        | +0.02 KB   | ~88 KB          |
+| 모듈 수              | 251         | **250**         | **-1** ✅  | 250             |
+| Dependencies         | 699         | **699**         | 유지 ✅    | 699             |
+| Orphan 모듈          | 1           | **0**           | **-1** ✅  | **0** ✅        |
+| TODO 주석            | 3           | **0**           | **-3** ✅  | **0** ✅        |
+| Preact 테스트 (실제) | 12          | **0**           | **-12** ✅ | **0** ✅ (완료) |
 
-2. **컴포넌트 렌더링 테스트 (전환 필요)**:
-   - Icon/Toolbar/Toast 관련 (5개)
-   - Settings modal (2개)
-   - Design system (1개)
-
-3. **로직 테스트 (재평가)**:
-   - `signal-optimization.test.tsx` - Solid signal로 전환
-   - `useGalleryToolbarLogic.test.ts` - Solid primitive로 전환
-   - 나머지 behavioral/component 테스트들
-
-##### 단계 2: 샘플 전환 (패턴 확립)
-
-- `signal-optimization.test.tsx` 1개를 Solid 패턴으로 변환
-  - `@preact/signals` → Solid signals (getSolid().createSignal)
-  - 변환 패턴 템플릿 작성
-
-##### 단계 3: 일괄 전환
-
-- 컴포넌트 테스트 8개를 @solidjs/testing-library로 전환
-  - `h()` → JSX 또는 render()
-  - Preact hooks → Solid primitives
-
-##### 단계 4: 정리
-
-- 불필요한 Preact 관련 mocks 제거
-- 빌드 및 테스트 검증
-
-**수용 기준 (갱신)**:
-
-- [ ] 실제 Preact 기능 사용 파일 0건 (정적 분석용 제외)
-- [ ] 테스트 실행 GREEN 유지
-- [ ] 빌드 크기 변화 없음 또는 감소
-- [ ] 변환 패턴 문서화
-
-**예상 작업량**:
-
-- 전환 필요: 13개 파일
-- 유지: 2개 (정적 분석용)
-- 예상 시간: 6-8시간 (샘플 패턴 확립 후 일괄 적용)
-
-#### 10.2: Orphan 모듈 정리 🔴 **높은 우선순위**
-
-**대상 파일**: `src/shared/primitives/focusScope-solid.ts`
-
-**문제**:
-
-- dependency-cruiser에서 orphan 모듈로 탐지
-- `createFocusScope()` 함수 정의만 있고 실제 사용처 없음
-- 53라인, 기능: Focus scope ref 관리 (Solid 패턴)
-
-**조사 항목**:
-
-1. 원래 사용 목적 확인 (git history)
-2. focusTrap-solid.ts와의 관계 확인
-3. 미래 사용 계획 여부
-
-**해결 방안 (우선순위)**:
-
-1. **제거** (1순위) - 사용처 없고 focusTrap으로 충분하면
-2. **통합** (2순위) - focusTrap과 병합 가능하면
-3. **유지** (3순위) - 명확한 사용 계획이 있으면 (문서화 필요)
-
-**수용 기준**:
-
-- [ ] dependency-cruiser orphan 경고 0건
-- [ ] 제거 시: 빌드/테스트 GREEN 유지
-- [ ] 유지 시: 사용 목적 문서화 및 예시 코드 추가
-
-#### 10.3: TODO 주석 해결 🔴 **높은 우선순위**
-
-**파일**:
-`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-
-**TODO 항목 (3곳)**:
-
-1. Line 70:
-   `const [isHelpOpen, setIsHelpOpen] = createSignal(false); // TODO: KeyboardHelpOverlay Solid 버전 필요`
-2. Line 261: `// TODO: '?' 키로 KeyboardHelpOverlay 열기 (Solid 버전 필요)`
-3. Line 430: `{/* 키보드 도움말 오버레이 - TODO: Solid 버전 필요 */}`
-
-**현재 상태**:
-
-- KeyboardHelpOverlay가 Preact 버전으로 남아있음 (추정)
-- 또는 완전히 제거됨 (확인 필요)
-
-**작업 옵션**:
-
-1. **KeyboardHelpOverlay Solid 버전 구현** (Phase 10.3a)
-   - Phase 5 패턴 적용 (Preact → Solid)
-   - createSignal, createEffect, Show 사용
-   - 키보드 단축키 표시 UI
-
-2. **기능 제거** (Phase 10.3b) - 더 간단
-   - TODO 주석 및 관련 코드 제거
-   - 키보드 네비게이션은 이미 Phase 7에서 완료
-   - Help overlay는 선택적 기능
-
-**권장**: Option 2 (제거) - 코드 복잡도 감소, 핵심 기능 영향 없음
-
-**수용 기준**:
-
-- [ ] TODO 주석 0건
-- [ ] 구현 시: 키보드 단축키 표시 정상 작동
-- [ ] 제거 시: 관련 코드 완전 제거
-- [ ] 테스트 추가 또는 수정
-
-### Phase 10 메트릭 (진행 중)
-
-| 메트릭        | Phase 9     | Phase 10.2-10.3 | 변화      | Phase 10 목표 |
-| ------------- | ----------- | --------------- | --------- | ------------- |
-| Dev 빌드      | 1,029.96 KB | 1,029.24 KB     | -0.72 KB  | ~1,025 KB     |
-| Prod 빌드     | 330.73 KB   | 미측정          | 유지 예상 | ~330 KB       |
-| gzip          | 88.35 KB    | 미측정          | 유지 예상 | ~88 KB        |
-| 모듈 수       | 251         | **250**         | **-1** ✅ | 250           |
-| Dependencies  | 699         | **699**         | 유지 ✅   | 699           |
-| Orphan 모듈   | 1           | **0**           | **-1** ✅ | **0** ✅      |
-| TODO 주석     | 3           | **0**           | **-3** ✅ | **0** ✅      |
-| Preact 테스트 | 17          | 17              | 미진행    | **0** (목표)  |
-
-### 작업 순서 및 진행 상태
+### Phase 10 작업 순서 및 완료 상태
 
 1. ✅ **RED**: orphan 모듈, TODO 주석 탐지 (Phase 10 분석 완료)
-2. ✅ **10.2 실행**: focusScope-solid.ts 제거 (커밋 868f1949)
-3. ✅ **10.3 실행**: TODO 주석 제거 (커밋 70ff534b)
-4. ⏳ **10.1 실행**: 테스트 Preact 잔재 제거 (진행 예정 - 별도 세션 권장)
-5. ⏳ **GREEN**: 전체 테스트 통과 확인
-6. ⏳ **REFACTOR**: 테스트 구조 개선 (필요 시)
+2. ✅ **10.2 실행**: focusScope-solid.ts 제거 (커밋 868f1949) → COMPLETED.md로
+   이관
+3. ✅ **10.3 실행**: TODO 주석 제거 (커밋 70ff534b) → COMPLETED.md로 이관
+4. ✅ **10.1 실행 완료**: 테스트 Preact 잔재 제거 (12/12 완료 - 100%, 커밋
+   f0e64be0, a84e7406, f03f4df9)
+5. ⏳ **10.4 검토**: Signal Subscribe Cleanup 검증 (별도 세션 권장)
+6. ✅ **GREEN**: Phase 10.1-10.3 검증 완료 (빌드/테스트 GREEN)
+
+**Phase 10 현재 상태**: 3.5/4 완료 (10.1-10.3 완료, 10.4 별도 검토 예정)
 
 ---
 

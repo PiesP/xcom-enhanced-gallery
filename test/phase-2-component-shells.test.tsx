@@ -4,16 +4,15 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render } from '@solidjs/testing-library';
 import { ToolbarShell } from '../src/shared/components/ui/ToolbarShell/ToolbarShell';
 import { ModalShell } from '../src/shared/components/ui/ModalShell/ModalShell';
 
 describe('Phase 2: ToolbarShell 컴포넌트', () => {
   test('기본 구조와 role이 올바르게 렌더링되어야 함', () => {
-    const { container } = render(
-      h(ToolbarShell, { 'data-testid': 'test-toolbar' }, 'Toolbar Content')
-    );
+    const { container } = render(() => (
+      <ToolbarShell data-testid='test-toolbar'>Toolbar Content</ToolbarShell>
+    ));
 
     const toolbar = container.querySelector('[role="toolbar"]');
     expect(toolbar).toBeTruthy();
@@ -22,28 +21,30 @@ describe('Phase 2: ToolbarShell 컴포넌트', () => {
   });
 
   test('elevation prop에 따른 클래스가 적용되어야 함', () => {
-    const { container } = render(h(ToolbarShell, { elevation: 'high' }, 'Content'));
+    const { container } = render(() => <ToolbarShell elevation='high'>Content</ToolbarShell>);
 
     const toolbar = container.querySelector('[role="toolbar"]');
     expect(toolbar?.className).toContain('toolbar-elevation-high');
   });
 
   test('surfaceVariant prop에 따른 클래스가 적용되어야 함', () => {
-    const { container } = render(h(ToolbarShell, { surfaceVariant: 'solid' }, 'Content'));
+    const { container } = render(() => <ToolbarShell surfaceVariant='solid'>Content</ToolbarShell>);
 
     const toolbar = container.querySelector('[role="toolbar"]');
     expect(toolbar?.className).toContain('toolbar-surface-solid');
   });
 
   test('aria-label이 올바르게 설정되어야 함', () => {
-    const { container } = render(h(ToolbarShell, { 'aria-label': 'Custom Toolbar' }, 'Content'));
+    const { container } = render(() => (
+      <ToolbarShell aria-label='Custom Toolbar'>Content</ToolbarShell>
+    ));
 
     const toolbar = container.querySelector('[role="toolbar"]');
     expect(toolbar?.getAttribute('aria-label')).toBe('Custom Toolbar');
   });
 
   test('기본 aria-label이 설정되어야 함', () => {
-    const { container } = render(h(ToolbarShell, {}, 'Content'));
+    const { container } = render(() => <ToolbarShell>Content</ToolbarShell>);
 
     const toolbar = container.querySelector('[role="toolbar"]');
     expect(toolbar?.getAttribute('aria-label')).toBe('Toolbar');
@@ -52,15 +53,17 @@ describe('Phase 2: ToolbarShell 컴포넌트', () => {
 
 describe('Phase 2: ModalShell 컴포넌트', () => {
   test('isOpen=false일 때 렌더링되지 않아야 함', () => {
-    const { container } = render(h(ModalShell, { isOpen: false }, 'Modal Content'));
+    const { container } = render(() => <ModalShell isOpen={false}>Modal Content</ModalShell>);
 
     expect(container.firstChild).toBeNull();
   });
 
   test('isOpen=true일 때 올바른 구조로 렌더링되어야 함', () => {
-    const { container } = render(
-      h(ModalShell, { isOpen: true, 'data-testid': 'test-modal' }, 'Modal Content')
-    );
+    const { container } = render(() => (
+      <ModalShell isOpen={true} data-testid='test-modal'>
+        Modal Content
+      </ModalShell>
+    ));
 
     // 백드롭 확인
     const backdrop = container.querySelector('.modal-backdrop');
@@ -75,48 +78,44 @@ describe('Phase 2: ModalShell 컴포넌트', () => {
   });
 
   test('size prop에 따른 클래스가 적용되어야 함', () => {
-    const { container } = render(h(ModalShell, { isOpen: true, size: 'lg' }, 'Content'));
+    const { container } = render(() => (
+      <ModalShell isOpen={true} size='lg'>
+        Content
+      </ModalShell>
+    ));
 
     const modal = container.querySelector('[role="dialog"]');
     expect(modal?.className).toContain('modal-size-lg');
   });
 
   test('surfaceVariant prop에 따른 클래스가 적용되어야 함', () => {
-    const { container } = render(
-      h(ModalShell, { isOpen: true, surfaceVariant: 'elevated' }, 'Content')
-    );
+    const { container } = render(() => (
+      <ModalShell isOpen={true} surfaceVariant='elevated'>
+        Content
+      </ModalShell>
+    ));
 
     const modal = container.querySelector('[role="dialog"]');
     expect(modal?.className).toContain('modal-surface-elevated');
   });
 
   test('aria-label이 올바르게 설정되어야 함', () => {
-    const { container } = render(
-      h(
-        ModalShell,
-        {
-          isOpen: true,
-          'aria-label': 'Custom Modal',
-        },
-        'Content'
-      )
-    );
+    const { container } = render(() => (
+      <ModalShell isOpen={true} aria-label='Custom Modal'>
+        Content
+      </ModalShell>
+    ));
 
     const modal = container.querySelector('[role="dialog"]');
     expect(modal?.getAttribute('aria-label')).toBe('Custom Modal');
   });
 
   test('백드롭에 적절한 테스트 ID가 설정되어야 함', () => {
-    const { container } = render(
-      h(
-        ModalShell,
-        {
-          isOpen: true,
-          'data-testid': 'test-modal',
-        },
-        'Content'
-      )
-    );
+    const { container } = render(() => (
+      <ModalShell isOpen={true} data-testid='test-modal'>
+        Content
+      </ModalShell>
+    ));
 
     const backdrop = container.querySelector('[data-testid="test-modal-backdrop"]');
     expect(backdrop).toBeTruthy();

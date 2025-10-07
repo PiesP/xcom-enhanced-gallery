@@ -2,21 +2,34 @@
  * Toolbar Icon Accessibility Tests (UI-ICN-01)
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, screen, cleanup } from '@solidjs/testing-library';
 
 // Vendors/Hook/Utils 모킹: 툴바 내부의 사이드이펙트(useEffect, vendors 초기화)로 인한 테스트 정지 방지
 vi.mock('@shared/external/vendors', () => ({
   getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: (fn: any, _deps?: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: (_fn: any, _deps?: any) => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
+  getSolid: vi.fn(() => ({
+    createSignal: vi.fn((init: any) => [() => init, vi.fn()]),
+    createEffect: vi.fn(),
+    createMemo: vi.fn((fn: any) => fn),
+    onCleanup: vi.fn(),
+    onMount: vi.fn(),
+    mergeProps: vi.fn((...args: any[]) => Object.assign({}, ...args)),
+    splitProps: vi.fn((props: any, keys: string[]) => {
+      const picked: any = {};
+      const rest: any = {};
+      Object.keys(props).forEach(key => {
+        if (keys.includes(key)) {
+          picked[key] = props[key];
+        } else {
+          rest[key] = props[key];
+        }
+      });
+      return [picked, rest];
+    }),
   })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({ memo: (C: any) => C, forwardRef: (C: any) => C })),
+  getSolidWeb: vi.fn(() => ({
+    render: vi.fn(),
+  })),
   initializeVendors: vi.fn(() => Promise.resolve()),
   isVendorsInitialized: vi.fn(() => true),
 }));
@@ -77,7 +90,7 @@ describe('Toolbar - Icon accessibility (UI-ICN-01)', () => {
   });
 
   it('renders toolbar with accessible icon buttons (aria-label present)', () => {
-    render(h(Toolbar as any, mkProps()));
+    render(() => <Toolbar {...mkProps()} />);
 
     // toolbar container
     const toolbar = screen.getByRole('toolbar');
@@ -103,13 +116,13 @@ describe('Toolbar - Icon accessibility (UI-ICN-01)', () => {
   });
 
   it('disables Next/Prev buttons appropriately at boundaries', () => {
-    const { rerender } = render(h(Toolbar as any, mkProps({ currentIndex: 0, totalCount: 2 })));
+    const { rerender } = render(() => <Toolbar {...mkProps({ currentIndex: 0, totalCount: 2 })} />);
     // at start: previous disabled
     expect(screen.getByLabelText('이전 미디어')).toHaveAttribute('data-disabled', 'true');
     expect(screen.getByLabelText('다음 미디어')).not.toHaveAttribute('data-disabled', 'true');
 
     // at end: next disabled
-    rerender(h(Toolbar as any, mkProps({ currentIndex: 1, totalCount: 2 })));
+    rerender(() => <Toolbar {...mkProps({ currentIndex: 1, totalCount: 2 })} />);
     expect(screen.getByLabelText('다음 미디어')).toHaveAttribute('data-disabled', 'true');
   });
 });

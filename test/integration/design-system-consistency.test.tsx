@@ -4,33 +4,38 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '@solidjs/testing-library';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 // Mock dependencies
 vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({ h, Fragment: h }),
-  getPreactHooks: () => {
-    return {
-      // effect는 통합 테스트에서 사이드이펙트 최소화를 위해 noop
-      useEffect: vi.fn(),
-      // useState 초기값(또는 이니셜라이저 함수) 실행하여 실제 인스턴스를 유지
-      useState: vi.fn(initial => {
-        const value = typeof initial === 'function' ? initial() : initial;
-        return [value, vi.fn()];
-      }),
-      useRef: vi.fn(initial => ({ current: initial ?? null })),
-      useCallback: vi.fn(fn => fn),
-      useMemo: vi.fn(factory => factory()),
-    };
-  },
-  getPreactCompat: () => ({
-    memo: vi.fn(component => component),
-    forwardRef: vi.fn(fn => fn),
+  getSolid: () => ({
+    createSignal: vi.fn((initial: any) => {
+      const value = typeof initial === 'function' ? initial() : initial;
+      return [() => value, vi.fn()];
+    }),
+    createEffect: vi.fn(),
+    createMemo: vi.fn((factory: any) => factory),
+    onCleanup: vi.fn(),
+    onMount: vi.fn(),
+    mergeProps: vi.fn((...args: any[]) => Object.assign({}, ...args)),
+    splitProps: vi.fn((props: any, keys: string[]) => {
+      const picked: any = {};
+      const rest: any = {};
+      Object.keys(props).forEach(key => {
+        if (keys.includes(key)) {
+          picked[key] = props[key];
+        } else {
+          rest[key] = props[key];
+        }
+      });
+      return [picked, rest];
+    }),
   }),
-  h,
+  getSolidWeb: () => ({
+    render: vi.fn(),
+  }),
 }));
 
 vi.mock('@shared/logging', () => {
@@ -114,7 +119,7 @@ describe('디자인 시스템 일관성 테스트', () => {
         onFitContainer: vi.fn(),
       };
 
-      const { container } = render(h(Toolbar, mockProps));
+      const { container } = render(() => <Toolbar {...mockProps} />);
 
       // 툴바 내 모든 버튼 요소 찾기
       const buttons = container.querySelectorAll('button');
@@ -149,8 +154,8 @@ describe('디자인 시스템 일관성 테스트', () => {
         onClose: vi.fn(),
       };
 
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
+      const { container: toolbarContainer } = render(() => <Toolbar {...toolbarProps} />);
+      const { container: modalContainer } = render(() => <SettingsModal {...settingsProps} />);
 
       const toolbarButtons = toolbarContainer.querySelectorAll('button');
       const modalButtons = modalContainer.querySelectorAll('button');
@@ -192,8 +197,8 @@ describe('디자인 시스템 일관성 테스트', () => {
         onClose: vi.fn(),
       };
 
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
+      const { container: toolbarContainer } = render(() => <Toolbar {...toolbarProps} />);
+      const { container: modalContainer } = render(() => <SettingsModal {...settingsProps} />);
 
       // glass-surface 클래스를 가진 요소들 찾기
       const toolbarGlass = toolbarContainer.querySelector('.glass-surface, .galleryToolbar');
@@ -229,8 +234,8 @@ describe('디자인 시스템 일관성 테스트', () => {
         onClose: vi.fn(),
       };
 
-      const { container: toolbarContainer } = render(h(Toolbar, toolbarProps));
-      const { container: modalContainer } = render(h(SettingsModal, settingsProps));
+      const { container: toolbarContainer } = render(() => <Toolbar {...toolbarProps} />);
+      const { container: modalContainer } = render(() => <SettingsModal {...settingsProps} />);
 
       const glassSurfaces = [
         ...toolbarContainer.querySelectorAll('.glass-surface, .galleryToolbar'),
@@ -264,7 +269,7 @@ describe('디자인 시스템 일관성 테스트', () => {
         onFitContainer: vi.fn(),
       };
 
-      const { container } = render(h(Toolbar, toolbarProps));
+      const { container } = render(() => <Toolbar {...toolbarProps} />);
 
       const primaryButtons = container.querySelectorAll(
         '.variant-primary, .downloadButton, .navButton'

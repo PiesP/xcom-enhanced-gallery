@@ -1,377 +1,240 @@
 /**
- * @fileoverview P7: Signal Selector Optimization Unit Tests
+ * @fileoverview Signal Selector Optimization Unit Tests (Solid.js)
  *
- * Signal selector 성능 최적화 유틸리티들을 검증합니다.
+ * Solid.js Signal selector 성능 최적화 유틸리티들을 검증합니다.
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { signal, computed } from '@preact/signals';
-import {
-  createSelector,
-  useSelector,
-  useCombinedSelector,
-  useAsyncSelector,
-  setDebugMode,
-  getGlobalSelectorStats,
-  clearGlobalSelectorStats,
-  type SelectorFn,
-} from '../../../src/shared/utils/signalSelector.js';
-import { renderHook } from '@testing-library/preact';
+import { describe, test, expect, vi } from 'vitest';
+import { getSolid } from '../../../src/shared/external/vendors';
+import { createSelector, createCombinedSelector } from '../../../src/shared/utils/signalSelector';
 
-describe('P7: Signal Selector Optimization Unit Tests', () => {
-  beforeEach(() => {
-    setDebugMode(false);
-    clearGlobalSelectorStats();
-  });
+const { createSignal, createMemo } = getSolid();
 
-  afterEach(() => {
-    setDebugMode(false);
-  });
-
+describe('Signal Selector Optimization Unit Tests (Solid.js)', () => {
   describe('createSelector', () => {
-    test('기본 selector를 생성해야 함', () => {
-      interface TestState {
-        user: { name: string; age: number };
-        posts: Array<{ id: number; title: string }>;
-      }
+    test('Signal에서 값을 선택해야 함', () => {
+      const [state] = createSignal({ user: { name: 'John', age: 30 }, counter: 0 });
 
-      const state: TestState = {
-        user: { name: 'John', age: 30 },
-        posts: [
-          { id: 1, title: 'Post 1' },
-          { id: 2, title: 'Post 2' },
-        ],
-      };
+      const selectUserName = createSelector(state, s => s.user.name);
 
-      const selectUserName: SelectorFn<TestState, string> = createSelector(
-        state => state.user.name
-      );
-
-      expect(selectUserName(state)).toBe('John');
+      expect(selectUserName()).toBe('John');
     });
 
     test('의존성 기반 메모이제이션을 수행해야 함', () => {
-      interface TestState {
-        user: { name: string; age: number };
-        counter: number;
-      }
-
-      const computeSpy = vi.fn((state: TestState) => state.user.name.toUpperCase());
-
-      const selector = createSelector(computeSpy, {
-        dependencies: state => [state.user.name],
+      const [state, setState] = createSignal({
+        user: { name: 'John', age: 30 },
+        counter: 0,
       });
 
-      const state1: TestState = { user: { name: 'John', age: 30 }, counter: 1 };
-      const state2: TestState = { user: { name: 'John', age: 30 }, counter: 2 }; // counter만 변경
-      const state3: TestState = { user: { name: 'Jane', age: 30 }, counter: 2 }; // name 변경
+      const computeSpy = vi.fn((s: any) => s.user.name.toUpperCase());
+      const selector = createSelector(state, computeSpy, {
+        dependencies: s => [s.user.name],
+      });
 
       // 첫 번째 계산
-      expect(selector(state1)).toBe('JOHN');
+      expect(selector()).toBe('JOHN');
       expect(computeSpy).toHaveBeenCalledTimes(1);
 
-      // counter만 변경된 경우 - 캐시 사용
-      expect(selector(state2)).toBe('JOHN');
-      expect(computeSpy).toHaveBeenCalledTimes(1); // 재계산되지 않음
+      // counter만 변경 - 의존성 동일하므로 재계산 안됨
+      setState({ user: { name: 'John', age: 30 }, counter: 1 });
+      expect(selector()).toBe('JOHN');
+      expect(computeSpy).toHaveBeenCalledTimes(1);
 
-      // name이 변경된 경우 - 재계산
-      expect(selector(state3)).toBe('JANE');
+      // name 변경 - 의존성 변경으로 재계산
+      setState({ user: { name: 'Jane', age: 30 }, counter: 1 });
+      expect(selector()).toBe('JANE');
       expect(computeSpy).toHaveBeenCalledTimes(2);
     });
 
-    test('디버그 모드에서 성능 통계를 제공해야 함', () => {
-      setDebugMode(true);
-
+    test('디버그 모드에서 통계를 제공해야 함', () => {
       const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-      const selector = createSelector((state: { value: number }) => state.value * 2, {
+      const [state] = createSignal({ value: 5 });
+      const selector = createSelector(state, s => s.value * 2, {
         debug: true,
         name: 'TestSelector',
       });
 
-      selector({ value: 5 });
-      selector({ value: 5 }); // 같은 값으로 재호출
+      selector();
+      selector();
 
       expect(consoleSpy).toHaveBeenCalled();
-
       consoleSpy.mockRestore();
     });
 
-    test('Object.is를 사용한 참조 동일성 검사를 수행해야 함', () => {
-      const computeSpy = vi.fn((state: { items: number[] }) => state.items);
+    test('Object.is를 사용한 참조 동일성 검사', () => {
+      const [state, setState] = createSignal({ items: [1, 2, 3] });
+      const computeSpy = vi.fn((s: any) => s.items);
 
-      const selector = createSelector(computeSpy);
-
-      const items = [1, 2, 3];
-      const state1 = { items };
+      const selector = createSelector(state, computeSpy);
 
       // 첫 번째 호출
-      expect(selector(state1)).toBe(items);
+      const result1 = selector();
+      expect(result1).toEqual([1, 2, 3]);
       expect(computeSpy).toHaveBeenCalledTimes(1);
 
-      // 같은 객체로 두 번째 호출 - 캐시 사용
-      expect(selector(state1)).toBe(items);
-      expect(computeSpy).toHaveBeenCalledTimes(1);
-
-      // 다른 객체지만 같은 배열 참조
-      const state2 = { items }; // 같은 배열 참조
-      expect(selector(state2)).toBe(items);
-      expect(computeSpy).toHaveBeenCalledTimes(2); // 객체가 다르므로 재계산
-
-      // 다른 배열 (내용은 같음)
-      const state3 = { items: [1, 2, 3] };
-      expect(selector(state3)).toEqual(items);
-      expect(computeSpy).toHaveBeenCalledTimes(3); // 재계산됨
-    });
-  });
-
-  describe('useSelector Hook', () => {
-    test('Signal에서 값을 선택해야 함', () => {
-      const testSignal = signal({ user: { name: 'John', age: 30 }, counter: 0 });
-
-      const { result } = renderHook(() => useSelector(testSignal, state => state.user.name));
-
-      expect(result.current).toBe('John');
-    });
-
-    test('Signal 변경 시 선택된 값만 업데이트해야 함', () => {
-      const testSignal = signal({ user: { name: 'John', age: 30 }, counter: 0 });
-
-      const renderSpy = vi.fn();
-
-      const { result, rerender } = renderHook(() => {
-        const name = useSelector(testSignal, state => state.user.name, {
-          dependencies: state => [state.user.name],
-        });
-        renderSpy();
-        return name;
-      });
-
-      expect(result.current).toBe('John');
-      expect(renderSpy).toHaveBeenCalledTimes(1);
-
-      // counter만 변경 (name은 동일)
-      testSignal.value = { ...testSignal.value, counter: 1 };
-      rerender();
-
-      // name이 변경되지 않았으므로 컴포넌트가 리렌더링되지 않아야 함
-      expect(result.current).toBe('John');
-    });
-
-    test('의존성 배열을 통한 최적화를 제공해야 함', () => {
-      const testSignal = signal({ a: 1, b: 2, c: 3 });
-
-      const computeSpy = vi.fn((state: typeof testSignal.value) => state.a + state.b);
-
-      const { result } = renderHook(() =>
-        useSelector(testSignal, computeSpy, {
-          dependencies: state => [state.a, state.b], // c는 의존성에 없음
-        })
-      );
-
-      expect(result.current).toBe(3);
-      expect(computeSpy).toHaveBeenCalledTimes(1);
-
-      // c만 변경
-      testSignal.value = { ...testSignal.value, c: 4 };
-
-      // c는 의존성에 없으므로 재계산되지 않아야 함
-      expect(computeSpy).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('useCombinedSelector Hook', () => {
-    test('여러 Signal을 조합해야 함', () => {
-      const signal1 = signal(10);
-      const signal2 = signal(20);
-      const signal3 = signal(30);
-
-      const { result } = renderHook(() =>
-        useCombinedSelector([signal1, signal2, signal3], (a, b, c) => a + b + c)
-      );
-
-      expect(result.current).toBe(60);
-    });
-
-    test('조합된 Signal의 의존성을 최적화해야 함', () => {
-      const signal1 = signal({ value: 10, metadata: 'a' });
-      const signal2 = signal({ value: 20, metadata: 'b' });
-
-      const combineSpy = vi.fn(
-        (a: typeof signal1.value, b: typeof signal2.value) => a.value + b.value
-      );
-
-      const { result } = renderHook(() =>
-        useCombinedSelector(
-          [signal1, signal2],
-          combineSpy,
-          (a, b) => [a.value, b.value] // metadata는 의존성에서 제외
-        )
-      );
-
-      expect(result.current).toBe(30);
-      expect(combineSpy).toHaveBeenCalledTimes(1);
-
-      // metadata만 변경
-      signal1.value = { ...signal1.value, metadata: 'changed' };
-
-      // value는 변경되지 않았으므로 재계산되지 않아야 함
-      expect(combineSpy).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('useAsyncSelector Hook', () => {
-    test('비동기 selector를 처리해야 함', async () => {
-      const testSignal = signal({ id: 1 });
-
-      const asyncSelector = vi.fn(async (state: typeof testSignal.value) => {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        return `User ${state.id}`;
-      });
-
-      const { result } = renderHook(
-        () => useAsyncSelector(testSignal, asyncSelector, 'Loading...', 0) // 디바운스 0으로 설정
-      );
-
-      // 초기 상태
-      expect(result.current.value).toBe('Loading...');
-      expect(result.current.error).toBeNull();
-
-      // 비동기 처리 완료 대기 (좀 더 충분한 시간)
-      await vi.waitFor(
-        () => {
-          expect(result.current.value).toBe('User 1');
-        },
-        { timeout: 1000 }
-      );
-
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error).toBeNull();
-    });
-
-    test('비동기 selector 에러를 처리해야 함', async () => {
-      const testSignal = signal({ id: 1 });
-
-      const asyncSelector = vi.fn(async () => {
-        throw new Error('Async error');
-      });
-
-      const { result } = renderHook(() =>
-        useAsyncSelector(testSignal, asyncSelector, 'Default', 0)
-      );
-
-      // 에러 발생 대기
-      await vi.waitFor(
-        () => {
-          expect(result.current.error).toBeInstanceOf(Error);
-        },
-        { timeout: 1000 }
-      );
-
-      expect(result.current.value).toBe('Default'); // 기본값 유지
-      expect(result.current.loading).toBe(false);
-      expect(result.current.error?.message).toBe('Async error');
-    });
-
-    test('디바운싱을 통한 요청 최적화를 수행해야 함', async () => {
-      const testSignal = signal({ query: 'initial' });
-
-      const asyncSelector = vi.fn(async (state: typeof testSignal.value) => {
-        await new Promise(resolve => setTimeout(resolve, 10));
-        return `Result for ${state.query}`;
-      });
-
-      const { result, rerender } = renderHook(() =>
-        useAsyncSelector(testSignal, asyncSelector, 'Default', 50)
-      );
-
-      // 빠르게 여러 번 변경
-      testSignal.value = { query: 'test1' };
-      rerender();
-      testSignal.value = { query: 'test2' };
-      rerender();
-      testSignal.value = { query: 'test3' };
-      rerender();
-
-      // 디바운싱으로 인해 마지막 값만 처리되어야 함
-      await vi.waitFor(
-        () => {
-          expect(result.current.value).toBe('Result for test3');
-        },
-        { timeout: 1000 }
-      );
-
-      expect(result.current.loading).toBe(false);
-      // 디바운싱으로 인해 실제 호출 횟수는 제한됨 (최소 1번, 최대 4번)
-      expect(asyncSelector).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('Performance Monitoring', () => {
-    test('글로벌 통계를 수집해야 함', () => {
-      const stats = getGlobalSelectorStats();
-      expect(typeof stats).toBe('object');
-    });
-
-    test('통계를 초기화할 수 있어야 함', () => {
-      clearGlobalSelectorStats();
-      const stats = getGlobalSelectorStats();
-      expect(Object.keys(stats)).toHaveLength(0);
-    });
-
-    test('디버그 모드를 전역으로 설정할 수 있어야 함', () => {
-      setDebugMode(true);
-
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
-
-      const selector = createSelector((state: { value: number }) => state.value, {
-        name: 'GlobalDebugTest',
-      });
-
-      selector({ value: 42 });
-
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Memory Efficiency', () => {
-    test('메모리 누수를 방지해야 함', () => {
-      // WeakMap과 같은 메모리 효율적인 구조 사용 검증
-      const selector = createSelector((state: { value: number }) => state.value * 2);
-
-      // 여러 번 호출해도 메모리가 증가하지 않아야 함
-      for (let i = 0; i < 1000; i++) {
-        selector({ value: i });
-      }
-
-      // 메모리 누수 검증은 실제 메모리 측정이 어려우므로,
-      // 의도된 동작이 수행되는지 확인
-      expect(selector({ value: 100 })).toBe(200);
-    });
-
-    test('의존성 배열의 얕은 비교를 효율적으로 수행해야 함', () => {
-      const computeSpy = vi.fn((state: { items: number[] }) => state.items.length);
-
-      const selector = createSelector(computeSpy, {
-        dependencies: state => [state.items.length, state.items[0]], // 첫 번째 요소와 길이만 의존성
-      });
-
-      const items1 = [1, 2, 3];
-      const items2 = [1, 2, 4]; // 마지막 요소만 변경
-      const items3 = [2, 2, 3]; // 첫 번째 요소 변경
-
-      expect(selector({ items: items1 })).toBe(3);
-      expect(computeSpy).toHaveBeenCalledTimes(1);
-
-      // 마지막 요소 변경 - 의존성에 없으므로 재계산되지 않음
-      expect(selector({ items: items2 })).toBe(3);
-      expect(computeSpy).toHaveBeenCalledTimes(1);
-
-      // 첫 번째 요소 변경 - 의존성에 있으므로 재계산됨
-      expect(selector({ items: items3 })).toBe(3);
+      // 새 배열로 설정 - 재계산됨
+      setState({ items: [1, 2, 3] });
       expect(computeSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('createCombinedSelector', () => {
+    test('여러 Signal을 조합해야 함', () => {
+      const [signal1] = createSignal(10);
+      const [signal2] = createSignal(20);
+
+      const combined = createCombinedSelector([signal1, signal2], ([a, b]) => a + b);
+
+      expect(combined()).toBe(30);
+    });
+
+    test('Signal 변경 시 재계산되어야 함', () => {
+      const [signal1, setSignal1] = createSignal(10);
+      const [signal2, setSignal2] = createSignal(20);
+
+      const computeSpy = vi.fn(([a, b]: [number, number]) => a + b);
+      const combined = createCombinedSelector([signal1, signal2], computeSpy);
+
+      expect(combined()).toBe(30);
+      expect(computeSpy).toHaveBeenCalledTimes(1);
+
+      setSignal1(15);
+      expect(combined()).toBe(35);
+      expect(computeSpy).toHaveBeenCalledTimes(2);
+
+      setSignal2(25);
+      expect(combined()).toBe(40);
+      expect(computeSpy).toHaveBeenCalledTimes(3);
+    });
+
+    test('복잡한 객체 조합', () => {
+      const [user] = createSignal({ name: 'John', age: 30 });
+      const [posts] = createSignal([
+        { id: 1, title: 'Post 1' },
+        { id: 2, title: 'Post 2' },
+      ]);
+
+      const combined = createCombinedSelector([user, posts], ([u, p]) => ({
+        userName: u.name,
+        postCount: p.length,
+      }));
+
+      const result = combined();
+      expect(result.userName).toBe('John');
+      expect(result.postCount).toBe(2);
+    });
+  });
+
+  describe('createMemo 기반 성능 최적화', () => {
+    test('동일한 값에 대해 재계산하지 않아야 함', () => {
+      const computeSpy = vi.fn((value: number) => value * 2);
+      const [signal, setSignal] = createSignal(5);
+
+      const doubled = createMemo(() => computeSpy(signal()));
+
+      expect(doubled()).toBe(10);
+      expect(computeSpy).toHaveBeenCalledTimes(1);
+
+      // 같은 값으로 설정 - Solid는 값 비교로 재계산 안함
+      setSignal(5);
+      expect(doubled()).toBe(10);
+      expect(computeSpy).toHaveBeenCalledTimes(1);
+
+      // 다른 값으로 변경
+      setSignal(10);
+      expect(doubled()).toBe(20);
+      expect(computeSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('중첩된 memo 작동', () => {
+      const [signal, setSignal] = createSignal(5);
+
+      const doubled = createMemo(() => signal() * 2);
+      const quadrupled = createMemo(() => doubled() * 2);
+
+      expect(quadrupled()).toBe(20);
+
+      setSignal(10);
+      expect(quadrupled()).toBe(40);
+    });
+
+    test('복잡한 데이터 구조 메모이제이션', () => {
+      const computeSpy = vi.fn((items: number[]) => items.filter(x => x % 2 === 0));
+      const [signal, setSignal] = createSignal([1, 2, 3, 4, 5]);
+
+      const evenNumbers = createMemo(() => computeSpy(signal()));
+
+      expect(evenNumbers()).toEqual([2, 4]);
+      expect(computeSpy).toHaveBeenCalledTimes(1);
+
+      // 배열 변경
+      setSignal([2, 4, 6, 8]);
+      expect(evenNumbers()).toEqual([2, 4, 6, 8]);
+      expect(computeSpy).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('실전 사용 패턴', () => {
+    test('깊은 중첩 객체에서 값 선택', () => {
+      const [state] = createSignal({
+        user: {
+          profile: {
+            personal: {
+              firstName: 'John',
+              lastName: 'Doe',
+            },
+          },
+        },
+      });
+
+      const selectFirstName = createSelector(state, s => s.user.profile.personal.firstName);
+
+      expect(selectFirstName()).toBe('John');
+    });
+
+    test('배열 필터링 최적화', () => {
+      const [state, setState] = createSignal({
+        items: [1, 2, 3, 4, 5, 6],
+        filterThreshold: 3,
+      });
+
+      const filterSpy = vi.fn((s: any) => s.items.filter((x: number) => x > s.filterThreshold));
+
+      const filtered = createSelector(state, filterSpy, {
+        dependencies: s => [s.items, s.filterThreshold],
+      });
+
+      expect(filtered()).toEqual([4, 5, 6]);
+      expect(filterSpy).toHaveBeenCalledTimes(1);
+
+      // 동일 값으로 설정 - 재계산 안됨
+      setState({ ...state(), filterThreshold: 3 });
+      expect(filterSpy).toHaveBeenCalledTimes(1);
+
+      // filterThreshold 변경
+      setState({ ...state(), filterThreshold: 4 });
+      expect(filtered()).toEqual([5, 6]);
+      expect(filterSpy).toHaveBeenCalledTimes(2);
+    });
+
+    test('여러 Signal 조합하여 파생 상태 생성', () => {
+      const [count1, setCount1] = createSignal(0);
+      const [count2, setCount2] = createSignal(0);
+      const [count3, setCount3] = createSignal(0);
+
+      const total = createCombinedSelector([count1, count2, count3], ([a, b, c]) => a + b + c);
+
+      expect(total()).toBe(0);
+
+      setCount1(10);
+      expect(total()).toBe(10);
+
+      setCount2(20);
+      expect(total()).toBe(30);
+
+      setCount3(30);
+      expect(total()).toBe(60);
     });
   });
 });
