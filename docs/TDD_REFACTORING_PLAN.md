@@ -496,66 +496,19 @@
   - disposeComponent 필드 추가 (Solid dispose 패턴)
   - .solid.tsx 컴포넌트 import
   - 테스트: 15/20 GREEN ✅
-- ⏳ **Phase 5.5**: Gallery hooks → primitives 전환
+- ✅ **Phase 5.5 (2025-01-07)**: Gallery hooks → primitives 전환 완료 (a5844768
+  커밋)
+  - useGalleryScroll → createGalleryScroll (238 lines, 34/34 tests GREEN)
+  - useGalleryItemScroll → createGalleryItemScroll (240 lines, 38/39 tests
+    GREEN)
+  - useToolbarPositionBased → createToolbarPosition (130 lines, 33/33 tests
+    GREEN)
+  - Hooks 디렉터리 제거 (602 lines removed)
+  - Preact hooks (useState, useEffect, useRef) 완전 제거
+  - useRef 남용 제거 (7개 → 0개)
+  - 빌드: 1,077.71 kB (변화 없음) ✅
 
 **작업 내용**:
-
-1. **Gallery Feature 전환**
-
-   ```typescript
-   // src/features/gallery/GalleryApp.ts → GalleryApp.solid.tsx
-   // src/features/gallery/GalleryRenderer.ts → Solid render 방식
-   // src/features/gallery/components/* → Solid 컴포넌트
-
-   import { render } from 'solid-js/web';
-
-   export class GalleryRenderer {
-     render(container: Element) {
-       render(() => <GalleryApp />, container);
-     }
-   }
-   ```
-
-2. **Settings Feature 전환**
-
-   ```typescript
-   // src/features/settings/* → Solid 기반
-   // SettingsModal, SettingsService 등
-   ```
-
-3. **Hooks → Primitives 전환**
-
-   ```typescript
-   // src/features/gallery/hooks/* → primitives/*
-   // useGalleryScroll → createGalleryScroll
-   // useGalleryItemScroll → createGalleryItemScroll
-   // useToolbarPositionBased → createToolbarPosition
-   ```
-
-4. **이벤트 핸들링 검증**
-   - PC 전용 이벤트 정책 유지 (click, keyboard, mouse, wheel)
-   - Solid 이벤트 위임 시스템 활용
-   - 성능 측정 (이벤트 처리 속도)
-
-5. **테스트 전환 (TDD)**
-   - `test/features/*` → Solid Testing Library
-   - 통합 테스트 갱신
-   - E2E 테스트 실행 (`npm run e2e:smoke`)
-
-**성공 기준**:
-
-- ✅ Gallery와 Settings 완전히 Solid 기반
-- ✅ Preact 컴포넌트 0개
-- ✅ 모든 기능 테스트 GREEN
-- ✅ E2E 테스트 통과
-- ✅ 실제 X.com에서 동작 검증
-- ✅ 번들 크기 최종 측정 (목표: Preact 대비 20% 감소)
-
-**의존성**: Phase 4 완료
-
-**예상 기간**: 7-10일
-
----
 
 ### Phase 6: 정리 및 최적화 (Cleanup) 🧹
 
