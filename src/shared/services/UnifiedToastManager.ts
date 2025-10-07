@@ -91,10 +91,11 @@ export class ToastManager {
             setToasts(v);
           },
           subscribe(callback: (v: ToastItem[]) => void) {
-            const cleanup = solid.createEffect(() => {
+            solid.createEffect(() => {
               callback(toasts());
             });
-            return cleanup || (() => {});
+            // Solid createEffect는 cleanup 함수를 반환하지 않음
+            return () => {};
           },
         };
       }

@@ -1,4 +1,4 @@
-import type { VNode } from '../external/vendors';
+import type { JSX } from 'solid-js';
 
 export type IconName =
   | 'Download'
@@ -8,7 +8,7 @@ export type IconName =
   | 'ChevronRight'
   | (string & {});
 
-type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
+type IconComponent = (props?: Record<string, unknown>) => JSX.Element | unknown;
 
 export interface IconRegistry {
   loadIcon: (name: IconName) => Promise<IconComponent>;

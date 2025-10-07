@@ -38,8 +38,9 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       },
       subscribe: (callback: (value: T) => void): (() => void) => {
         try {
-          const cleanup = solid.createEffect(() => callback(getter()));
-          return cleanup || (() => {});
+          solid.createEffect(() => callback(getter()));
+          // Solid createEffect는 cleanup 함수를 반환하지 않으므로 noop 반환
+          return () => {};
         } catch (error) {
           logger.warn('Solid effect 구독 실패 - noop 처리', { error });
           return () => {};
@@ -86,8 +87,9 @@ export function effectSafe(fn: () => void): () => void {
   const solid = getSolidOrNull();
   if (solid?.createEffect) {
     try {
-      const cleanup = solid.createEffect(fn);
-      return cleanup || (() => {});
+      solid.createEffect(fn);
+      // Solid createEffect는 cleanup 함수를 반환하지 않음
+      return () => {};
     } catch (error) {
       logger.warn('Solid effect 실행 실패 - noop 처리', { error });
     }
