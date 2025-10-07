@@ -1,7 +1,49 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 9.2 In Progress - Vendor Getter
-> Cache 수정
+# TDD-driven Refactoring Plan (xcom-enhanced-gallery)
+
+> **Last updated**: 2025-01-08 **Status**: Phase 9.2 Completed ✅
+
+## Overview
+
+모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
+작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
+
+---
+
+## Recent Completions
+
+### Phase 9.2: Show 컴포넌트 중복 제거 (2025-01-08 완료 ✅)
+
+**해결된 4가지 UI 문제**:
+
+1. ✅ 자동 포커스 이동 정상 작동
+2. ✅ 설정 모달 정상 표시
+3. ✅ 다크 모드 아이콘 정상 표시
+4. ✅ 자동 스크롤 기능 정상 작동
+
+**근본 원인**:
+
+Show 컴포넌트가 `getSolid()`와 `getSolidWeb()` 양쪽에서 제공되어, 서로 다른
+인스턴스를 사용하면서 Solid.js 반응성 시스템이 깨짐:
+
+- `ToolbarWithSettings.tsx`: `getSolidWeb().Show` 사용
+- `Toolbar.tsx`: `getSolidWeb().Show` 사용
+- `SettingsModal.tsx`: `getSolid().Show` 사용
+
+**주요 변경**:
+
+- `ToolbarWithSettings.tsx`, `Toolbar.tsx`: `getSolid().Show` 사용으로 통일
+- `vendor-manager-static.ts`: `SolidWebAPI`에서 `Show` 완전 제거
+- 모든 컴포넌트가 동일한 Show 인스턴스 사용
+
+**메트릭**: Dev 1,030.62 KB, Prod 331.07 KB (gzip 88.36 KB)
+
+커밋: 3ecda61a - fix(core): show 컴포넌트 중복 제거 (phase 9.2)
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
+
+---
 
 ## Overview
 
