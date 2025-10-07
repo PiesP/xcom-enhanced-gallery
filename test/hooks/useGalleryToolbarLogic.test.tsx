@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render } from '@solidjs/testing-library';
 import { useGalleryToolbarLogic } from '@shared/hooks/useGalleryToolbarLogic';
 
 // 테스트용 컴포넌트
@@ -34,10 +33,7 @@ function TestHookComponent(props: any) {
     },
   };
 
-  return h('div', {
-    'data-testid': 'hook-result',
-    'data-result': JSON.stringify(result),
-  });
+  return <div data-testid='hook-result' data-result={JSON.stringify(result)} />;
 }
 
 describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
@@ -77,7 +73,7 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
   describe('네비게이션 경계 계산', () => {
     it('첫 번째 항목에서 canGoPrevious가 false이다', () => {
       const props = { ...defaultProps, currentIndex: 0 };
-      const { getByTestId } = render(h(TestHookComponent, props));
+      const { getByTestId } = render(() => <TestHookComponent {...props} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.state.canGoPrevious).toBe(false);
@@ -85,14 +81,14 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
 
     it('마지막 항목에서 canGoNext가 false이다', () => {
       const props = { ...defaultProps, currentIndex: 4, totalCount: 5 };
-      const { getByTestId } = render(h(TestHookComponent, props));
+      const { getByTestId } = render(() => <TestHookComponent {...props} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.state.canGoNext).toBe(false);
     });
 
     it('중간 항목에서는 둘 다 true이다', () => {
-      const { getByTestId } = render(h(TestHookComponent, defaultProps));
+      const { getByTestId } = render(() => <TestHookComponent {...defaultProps} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.state.canGoPrevious).toBe(true);
@@ -102,14 +98,14 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
 
   describe('FitMode 상태 관리', () => {
     it('초기 fitMode가 fitContainer로 설정된다', () => {
-      const { getByTestId } = render(h(TestHookComponent, defaultProps));
+      const { getByTestId } = render(() => <TestHookComponent {...defaultProps} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.state.currentFitMode).toBe('fitContainer');
     });
 
     it('fit 모드 버튼의 selected 상태를 반환한다', () => {
-      const { getByTestId } = render(h(TestHookComponent, defaultProps));
+      const { getByTestId } = render(() => <TestHookComponent {...defaultProps} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       // 초기 fitMode는 'fitContainer'
@@ -119,7 +115,7 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
 
   describe('버튼 Props 생성', () => {
     it('getActionProps 함수가 존재한다', () => {
-      const { getByTestId } = render(h(TestHookComponent, defaultProps));
+      const { getByTestId } = render(() => <TestHookComponent {...defaultProps} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.hasGetActionProps).toBe(true);
@@ -127,7 +123,7 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
 
     it('경계에서 올바른 disabled 상태를 반환한다', () => {
       const props = { ...defaultProps, currentIndex: 0 };
-      const { getByTestId } = render(h(TestHookComponent, props));
+      const { getByTestId } = render(() => <TestHookComponent {...props} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.prevProps.disabled).toBe(true);
@@ -136,7 +132,7 @@ describe('useGalleryToolbarLogic - Headless 로직 (Phase T2)', () => {
 
   describe('상태 파생', () => {
     it('mediaCounter 정보를 올바르게 파생한다', () => {
-      const { getByTestId } = render(h(TestHookComponent, defaultProps));
+      const { getByTestId } = render(() => <TestHookComponent {...defaultProps} />);
       const result = JSON.parse(getByTestId('hook-result').dataset.result!);
 
       expect(result.state.mediaCounter.current).toBe(2); // currentIndex + 1
