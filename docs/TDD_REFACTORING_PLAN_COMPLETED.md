@@ -5683,3 +5683,105 @@ errors
 **다음 단계**: Phase 6 - Preact 완전 제거 및 최종 최적화
 
 ---
+
+---
+
+## Phase 6 완료: Preact 완전 제거 및 Solid.js 전용 전환 (2025-10-07)
+
+### 목표
+
+Preact 의존성 완전 제거, Vendor 시스템 Solid.js 전용으로 정리, 문서 갱신
+
+### Phase 6.1-6.6: 기본 인프라 Solid 전환
+
+**작업**:
+
+- 27개 Preact 컴포넌트 파일 삭제
+- tsconfig.json, vite.config.ts, main.ts Solid.js 설정
+- .solid 확장자 제거 (57개 파일 import 경로 수정)
+
+**결과**:
+
+- 타입 체크: GREEN
+- 빌드: SUCCESS
+- 커밋: 1e30a23b, 21f39654, 02414ebe
+
+### Phase 6.7: Vendor 시스템 정리
+
+**작업**:
+
+- vendor-manager-static.ts에서 getPreact\* 메서드 4개 제거
+- Preact 타입/import 전체 제거
+- 3,134줄 삭제, 638줄 추가 (순 감소 2,496줄)
+
+**커밋**: 261a99ae
+
+### Phase 6.8: Preact 의존성 제거
+
+**작업**:
+
+- npm uninstall preact @preact/signals @preact/preset-vite
+  @testing-library/preact
+- 22 packages 제거, 282줄 삭제
+
+**커밋**: ce61b542
+
+### Phase 6.9: 빌드 검증 및 최종 정리
+
+**작업**:
+
+- Legacy vendor 파일 3개 삭제
+- Preact hooks 12개 삭제 (shared 9 + gallery 3)
+- Variant 컴포넌트 3개 삭제
+- signal-factory.ts Solid 전환
+- UnifiedToastManager.ts Solid 전환
+- signalSelector/signalOptimization Solid 버전 활성화
+- BaseComponentProps 타입 수정
+- heroicons-react 간소화
+- KeyboardHelpOverlay 삭제 (TODO: Solid 버전 필요)
+
+**결과**:
+
+- 타입 체크: GREEN ✅
+- 빌드: SUCCESS ✅
+- Dev: 1,027 KB (이전 1,173 KB 대비 -146 KB / -12%)
+- Prod: 366 KB (변경 없음)
+- 총 20개 파일 삭제, 13개 파일 수정
+
+**커밋**: 20c62e51, 2ae34b85, 1e9d7bcf
+
+### 최종 통계
+
+**코드 변경**:
+
+- 삭제: 20개 파일 (~3,400 줄)
+- 수정: 13개 파일
+- 의존성 제거: 22 packages
+
+**빌드 크기**:
+
+- Dev: -146 KB (-12%)
+- Prod: 0 KB (최적화 유지)
+
+**품질**:
+
+- 타입 체크: GREEN (TypeScript strict 100%)
+- 린트: 0 에러 (41개 any 경고는 비기능적)
+- 테스트: 전체 스위트 GREEN
+- 빌드: dev/prod 정상 동작
+
+### 남은 TODO
+
+**선택적**:
+
+1. KeyboardHelpOverlay Solid 버전 (현재 미사용)
+2. Heroicons 통합 개선
+3. 린트 any 타입 경고 정리 (41개, 비기능적)
+
+**문서**:
+
+- ✅ AGENTS.md Solid.js 업데이트
+- ⏸️ ARCHITECTURE.md Solid 계층 구조 반영
+- ⏸️ CODING_GUIDELINES.md Solid 패턴 추가
+
+---
