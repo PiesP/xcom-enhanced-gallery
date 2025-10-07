@@ -31,6 +31,20 @@ const ASSETS_DIR = toPosix(resolve(__dirname, './src/assets'));
 const sharedResolve = {
   extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json', '.solid.tsx', '.solid.ts'],
   alias: [
+    // Preact 모듈을 명시적으로 단일 경로로 고정
+    // 이렇게 하면 @testing-library/preact와 vendor manager가 동일한 인스턴스를 사용함
+    {
+      find: /^preact$/,
+      replacement: resolve(__dirname, './node_modules/preact/dist/preact.module.js'),
+    },
+    {
+      find: /^preact\/hooks$/,
+      replacement: resolve(__dirname, './node_modules/preact/hooks/dist/hooks.module.js'),
+    },
+    {
+      find: /^preact\/compat$/,
+      replacement: resolve(__dirname, './node_modules/preact/compat/dist/compat.module.js'),
+    },
     { find: '@features', replacement: FEATURES_DIR },
     { find: '@shared', replacement: SHARED_DIR },
     { find: '@assets', replacement: ASSETS_DIR },

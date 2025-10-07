@@ -128,7 +128,8 @@
         "src/shared/hooks/useSettingsModal.ts",
         "src/shared/utils/optimization/memo.ts",
         "src/shared/state/signals/signal-factory.ts",
-        "src/shared/utils/performance/signalOptimization.ts"
+        "src/shared/utils/performance/signalOptimization.ts",
+        "src/shared/utils/signalSelector-solid.ts"
       ],
       "orphan": false,
       "valid": true
@@ -371,6 +372,7 @@
         "src/shared/memory/MemoryTracker.ts",
         "src/shared/services/BaseServiceImpl.ts",
         "src/shared/state/signals/toolbar.signals.ts",
+        "src/shared/primitives/domReady-solid.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/shared/state/signals/signal-factory.ts",
@@ -480,6 +482,7 @@
         "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/services/AnimationService.ts",
+        "src/shared/utils/performance/signalOptimization-solid.ts",
         "src/shared/utils/performance/signalOptimization.ts"
       ],
       "orphan": false,
@@ -2020,7 +2023,8 @@
       "dependents": [
         "src/shared/utils/accessibility/accessibility-utils.ts",
         "src/shared/hooks/useFocusTrap.ts",
-        "src/shared/index.ts"
+        "src/shared/index.ts",
+        "src/shared/primitives/focusTrap-solid.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15485,6 +15489,85 @@
       "valid": true
     },
     {
+      "source": "src/shared/primitives/domReady-solid.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/primitives/focusScope-solid.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
+      "source": "src/shared/primitives/focusTrap-solid.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../utils/focusTrap",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/focusTrap.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/primitives/scrollLock-solid.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/services/event-managers.ts",
       "dependencies": [
         {
@@ -16303,6 +16386,31 @@
       "valid": true
     },
     {
+      "source": "src/shared/utils/performance/signalOptimization-solid.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/utils/performance/signalOptimization.ts",
       "dependencies": [
         {
@@ -16332,6 +16440,31 @@
             "import"
           ],
           "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/utils/signalSelector-solid.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16457,13 +16590,32 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/primitives/focusScope-solid.ts",
+        "to": "src/shared/primitives/focusScope-solid.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      },
+      {
+        "type": "module",
+        "from": "src/shared/primitives/scrollLock-solid.ts",
+        "to": "src/shared/primitives/scrollLock-solid.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 268,
-    "totalDependenciesCruised": 748,
+    "totalCruised": 274,
+    "totalDependenciesCruised": 752,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

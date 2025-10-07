@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 import { Button } from '@shared/components/ui/Button/Button';
 
 describe('P3: ARIA Attributes Migration', () => {

@@ -899,9 +899,34 @@
 
 **블로커**:
 
-- 🔴 기존 Preact 컴포넌트 테스트 146개 실패 (Preact hooks context 초기화 문제)
+- 🔴 기존 Preact 컴포넌트 테스트 133개 실패 (Preact hooks context 초기화 문제)
 - 원인: `Cannot read properties of undefined (reading '__H')`
 - 영향: Phase 4 시작 전 해결 필요
+- 근본 원인 분석 (2025-10-07):
+  - @testing-library/preact가 preact를 직접 import하여 사용
+  - Vendor manager가 제공하는 Preact 인스턴스와 불일치
+  - 테스트에서 vendor의 `h`와 testing-library의 `render`를 혼용하면 hooks
+    context 불일치 발생
+  - 해결 시도:
+    - vitest.config.ts에 preact 모듈 alias 추가 (효과 없음)
+    - test/setup.ts에서 Preact options 및 hooks context 초기화 (부분 효과)
+    - test/utils/vendor-testing-library.ts 래퍼 작성 (검증 필요)
+  - 추천 해결책:
+    1. JSX 구문 사용 (h() 함수 대신)
+    2. 또는 testing-library가 사용하는 preact를 vendor manager와 통일
+    3. 또는 preact를 single instance로 강제 (모듈 해상도 제어)
+
+**Phase 3 → 4 준비 작업 (2025-10-07)**:
+
+- ✅ 테스트 파일 vendor import 통일 (test/unit/shared/components/ui/\*.test.tsx
+  8개)
+  - `import { h } from 'preact'` →
+    `import { h } from '@shared/external/vendors'`
+  - 목적: vendor system 일관성 유지 (아키텍처 정책 준수)
+  - 결과: 테스트 실패 건수 변화 없음 (기존 블로커 확인)
+- ✅ vitest.config.ts에 preact 모듈 alias 추가 (단일 인스턴스 강제 시도)
+- ✅ test/setup.ts 개선 (Preact options 및 hooks context 초기화)
+- ✅ 빌드 검증 완료 (dev 1,065.82 KB, prod 377.20 KB raw / 102.44 KB gzip)
 
 **예상 시작**: 블로커 해결 후
 

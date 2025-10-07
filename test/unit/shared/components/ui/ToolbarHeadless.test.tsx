@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 import { ToolbarHeadless } from '../../../../../src/shared/components/ui/Toolbar/ToolbarHeadless';
 
 describe('ToolbarHeadless (P1)', () => {
