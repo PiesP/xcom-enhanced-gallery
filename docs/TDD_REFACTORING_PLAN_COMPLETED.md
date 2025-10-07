@@ -5,6 +5,88 @@
 
 ---
 
+## Phase 9: Toolbar CSS 리팩토링 (2025-01-07 완료)
+
+### 목표
+
+Toolbar.module.css에서 과도한 `!important` 사용을 최소화하여 코드 유지보수성을
+개선합니다.
+
+### 배경
+
+- 현재 상태: 모든 상태(idle, loading, downloading, error)에서 visibility 관련
+  속성에 `!important` 사용 (20+ 개소)
+- 원인: 과거 X.com의 스타일 충돌로 인한 가시성 버그 수정을 위한 방어적 코딩
+- 문제점: CSS 우선순위가 과도하게 강제되어 스타일 확장/수정이 어려움
+
+### Phase 9.1: 가시성 회귀 테스트 작성 ✅
+
+**파일**: `test/styles/toolbar-visibility-regression.test.ts`
+
+**작성된 테스트**:
+
+- idle 상태 가시성 (4개 테스트)
+- loading 상태 가시성 (3개 테스트)
+- downloading 상태 가시성 (3개 테스트)
+- error 상태 가시성 (3개 테스트)
+- 상태 없음(기본값) 가시성 (4개 테스트)
+- z-index 계층 구조 (1개 테스트)
+- CSS 변수 검증 (2개 테스트)
+- 리팩토링 전후 일관성 (3개 테스트)
+
+**결과**: 23개 테스트 모두 GREEN ✅
+
+### Phase 9.2: CSS 리팩토링 구현 ✅
+
+**제거된 !important**:
+
+- idle 상태: 4개 (opacity, visibility, display, pointer-events)
+- loading 상태: 2개 (opacity, pointer-events)
+- downloading 상태: 2개 (opacity, pointer-events)
+- error 상태: 2개 (opacity, pointer-events)
+- CSS 변수 정의: 8개 (--toolbar-opacity, --toolbar-pointer-events 각 상태별)
+- **총 18개 제거** ✅
+
+**유지된 !important** (22개, 모두 정당한 이유):
+
+- 버튼 크기 (fitButton): 8개 - 다른 버튼과의 일관성 유지
+- 버튼 크기 미디어 쿼리: 5개 - 반응형 크기 보장
+- 애니메이션 비활성화: 1개 - prefers-reduced-motion 최우선 적용
+- 고대비 모드 테마: 8개 - 접근성을 위한 시각적 구분 강제
+
+### Phase 9.3: 최종 검증 ✅
+
+**빌드 검증**:
+
+- TypeScript: 0 errors ✅
+- ESLint: passed ✅
+- Prettier: passed ✅
+- Tests: 모든 테스트 통과 (23개 회귀 테스트 포함) ✅
+- Build: Dev 1,025.86 KB, Prod 328.92 KB (gzip 87.74 KB) ✅
+
+**메트릭 달성**:
+
+- `!important` 사용: 40+ → 22 (45% 감소, 가시성 관련 90% 제거)
+- 번들 크기: 영향 미미 (예상대로)
+- 테스트: 모든 가시성 테스트 GREEN 유지
+
+### 완료 사항
+
+- ✅ 가시성 회귀 테스트 23개 작성 (GREEN)
+- ✅ !important 18개 제거 (가시성 관련 전체)
+- ✅ 정당한 !important 22개 유지 (버튼/접근성)
+- ✅ 전체 빌드 및 테스트 통과
+- ✅ 커밋: 91d6dc38
+  `refactor(ui): remove unnecessary !important from Toolbar CSS (Phase 9)`
+
+### 교훈
+
+- TDD 접근으로 안전한 리팩토링 달성 (RED → GREEN → REFACTOR)
+- 과거 방어적 코딩의 필요성을 테스트로 검증 후 제거
+- !important의 정당한 사용 사례 명확화 (접근성, 일관성, 반응형)
+
+---
+
 ## Phase 8.4: Deprecated/Legacy 코드 정리 (2025-01-07 완료)
 
 ### 목표
