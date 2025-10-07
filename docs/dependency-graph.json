@@ -277,6 +277,7 @@
         "src/shared/services/media-extraction/strategies/fallback/FallbackStrategy.ts",
         "src/shared/services/media/VideoControlService.ts",
         "src/features/gallery/GalleryRenderer.tsx",
+        "src/shared/services/input/KeyboardNavigator.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/error/ErrorHandler.ts",
         "src/shared/services/core-services.ts",
@@ -293,7 +294,6 @@
         "src/shared/primitives/createGalleryItemScroll.ts",
         "src/shared/primitives/createGalleryScroll.ts",
         "src/shared/primitives/domReady-solid.ts",
-        "src/shared/services/input/KeyboardNavigator.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
         "src/shared/state/signals/signal-factory.ts",
@@ -2490,10 +2490,10 @@
       ],
       "dependents": [
         "src/shared/components/isolation/GalleryContainer.tsx",
+        "src/shared/services/input/KeyboardNavigator.ts",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/primitives/createGalleryScroll.ts",
-        "src/shared/services/event-managers.ts",
-        "src/shared/services/input/KeyboardNavigator.ts"
+        "src/shared/services/event-managers.ts"
       ],
       "orphan": false,
       "valid": true
@@ -5464,6 +5464,23 @@
           "valid": true
         },
         {
+          "dynamic": false,
+          "module": "../../shared/services/input/KeyboardNavigator",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/input/KeyboardNavigator.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
           "dynamic": true,
           "module": "../../shared/services/service-factories",
           "moduleSystem": "es6",
@@ -5644,6 +5661,50 @@
       "dependents": [
         "src/features/gallery/GalleryRenderer.tsx",
         "src/shared/components/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/services/input/KeyboardNavigator.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../EventManager",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/EventManager.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/GalleryRenderer.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -13229,48 +13290,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/services/input/KeyboardNavigator.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/EventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/services/media-extraction/index.ts",
       "dependencies": [
         {
@@ -14226,7 +14245,7 @@
     "info": 2,
     "ignore": 0,
     "totalCruised": 253,
-    "totalDependenciesCruised": 627,
+    "totalDependenciesCruised": 628,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

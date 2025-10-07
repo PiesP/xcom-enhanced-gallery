@@ -29,6 +29,8 @@ import { GalleryContainer } from '../../shared/components/isolation/GalleryConta
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
 import { logger } from '../../shared/logging/logger';
+import { keyboardNavigator } from '../../shared/services/input/KeyboardNavigator';
+import { navigateToItem } from '../../shared/state/signals/gallery.signals';
 
 /**
  * 갤러리 정리 관리자
@@ -61,10 +63,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private disposeComponent: (() => void) | null = null; // Solid dispose function
+  private keyboardUnsubscribe: (() => void) | null = null; // Keyboard navigator unsubscribe
   private onCloseCallback?: () => void;
 
   constructor() {
     this.setupStateSubscription();
+    this.setupKeyboardNavigation();
   }
 
   /**
@@ -88,6 +92,53 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
       // 이미 렌더링된 상태에서는 컴포넌트가 signal을 직접 구독하므로 재렌더링하지 않음
     });
+  }
+
+  /**
+   * 키보드 네비게이션 설정
+   * Phase 7.1: ArrowLeft/Right, Home/End 지원
+   */
+  private setupKeyboardNavigation(): void {
+    this.keyboardUnsubscribe = keyboardNavigator.subscribe(
+      {
+        onLeft: () => {
+          const state = galleryState.value;
+          if (state.isOpen) {
+            logger.debug('[GalleryRenderer] ArrowLeft - navigatePrevious');
+            navigatePrevious();
+          }
+        },
+        onRight: () => {
+          const state = galleryState.value;
+          if (state.isOpen) {
+            logger.debug('[GalleryRenderer] ArrowRight - navigateNext');
+            navigateNext();
+          }
+        },
+        onHome: () => {
+          const state = galleryState.value;
+          if (state.isOpen) {
+            logger.debug('[GalleryRenderer] Home - navigate to first');
+            navigateToItem(0);
+          }
+        },
+        onEnd: () => {
+          const state = galleryState.value;
+          if (state.isOpen && state.mediaItems.length > 0) {
+            logger.debug('[GalleryRenderer] End - navigate to last');
+            navigateToItem(state.mediaItems.length - 1);
+          }
+        },
+        // Escape는 GalleryContainer에서 처리하므로 여기서는 생략
+        // Space는 향후 Fit mode 토글 기능 추가 시 구현
+      },
+      {
+        context: 'gallery-renderer',
+        capture: true,
+        preventDefault: true,
+        stopPropagation: true,
+      }
+    );
   }
 
   /**
@@ -273,6 +324,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     logger.info('[GalleryRenderer] 완전 정리 시작');
 
     this.stateUnsubscribe?.();
+    this.keyboardUnsubscribe?.();
     this.cleanupGallery();
 
     logger.info('[GalleryRenderer] 완전 정리 완료');
