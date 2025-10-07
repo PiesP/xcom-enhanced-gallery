@@ -557,6 +557,19 @@
 4. 접근성 검증 (aria-label, role 등)
 5. 스냅샷 테스트 갱신
 
+**진행 상황** (2025-10-07):
+
+- ✅ 인프라 구축 완료:
+  - TypeScript 듀얼 프로젝트 설정 (`tsconfig.json` + `tsconfig.solid.json`)
+  - ESLint Solid 파일 제외 설정
+  - `package.json` typecheck 스크립트 수정 (Preact + Solid 동시 체크)
+  - 커밋: 48c0ff37
+- ✅ Icon.solid.tsx 생성 및 타입 검증 테스트 작성 (8/8 GREEN)
+  - 컴파일/타입 검증 테스트 (Phase 0 스타일)
+  - DOM 렌더링 테스트는 Phase 4 후반으로 연기 (JSDOM 호환성)
+  - 커밋: ad59dd89
+- ⏳ Hero 아이콘 9개 Solid 전환 (다음 작업)
+
 **성공 기준**:
 
 - ✅ 10개 Icon 컴포넌트 Solid 버전 완성
@@ -1068,8 +1081,15 @@
 
 1. ✅ 기존 Preact 컴포넌트 테스트 실패 원인 분석 및 수정 **[완료 2025-10-07]**
 2. ✅ Phase 4 작업 계획 수립 **[완료 2025-10-07]**
-3. ⏳ UI 컴포넌트 마이그레이션 우선순위 결정 및 실행
-4. ⏳ TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 0-3 이관
+3. ✅ Phase 4.1 Icon 컴포넌트 인프라 구축 **[완료 2025-10-07]**
+   - TypeScript 듀얼 프로젝트 설정 (Preact + Solid 분리)
+   - ESLint 설정 업데이트 (Solid 파일 제외)
+   - Icon.solid.tsx 타입 검증 테스트 작성 (8/8 GREEN)
+   - 빌드 파이프라인 검증 완료
+   - 커밋: 48c0ff37 "fix(infra): resolve TypeScript and test issues for Solid.js
+     components"
+4. ⏳ Phase 4.1 Icon 컴포넌트 완성 및 Hero 아이콘 전환
+5. ⏳ TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 0-3 이관
 
 **블로커 해결 완료** ✅:
 
@@ -1100,6 +1120,29 @@
 - ✅ vitest.config.ts에 preact 모듈 alias 추가 (단일 인스턴스 강제 시도)
 - ✅ test/setup.ts 개선 (Preact options 및 hooks context 초기화)
 - ✅ 빌드 검증 완료 (dev 1,065.82 KB, prod 377.20 KB raw / 102.44 KB gzip)
+
+**Phase 4.1 인프라 구축 (2025-10-07)**:
+
+- ✅ TypeScript 듀얼 프로젝트 설정
+  - `tsconfig.json`: `**/*.solid.{ts,tsx}` 파일 제외
+  - `tsconfig.solid.json`: Solid 파일만 포함 (`jsx: preserve`,
+    `jsxImportSource: solid-js`)
+  - `package.json`: typecheck 스크립트 수정
+    (`tsc && tsc --project tsconfig.solid.json`)
+- ✅ ESLint 설정 업데이트
+  - `eslint.config.js`: `**/*.solid.{ts,tsx}` 파일 ignore 추가
+  - 이유: Solid 파일은 별도 tsconfig 사용, Preact 린트 규칙과 충돌 방지
+- ✅ Icon.solid.tsx 컴포넌트 및 테스트 작성
+  - Phase 0 스타일 테스트 (컴파일/타입 검증)
+  - 8/8 테스트 GREEN
+  - DOM 렌더링 테스트는 Phase 4 후반으로 연기 (@solidjs/testing-library JSDOM
+    이슈)
+- ✅ 전체 빌드 파이프라인 검증 완료
+  - `npm run typecheck`: Preact + Solid 모두 PASS
+  - `npm run lint`: Solid 파일 스킵, 나머지 PASS
+  - `npm run build`: dev + prod 빌드 성공
+- 커밋: 48c0ff37 "fix(infra): resolve TypeScript and test issues for Solid.js
+  components"
 
 **예상 시작**: 블로커 해결 후
 
