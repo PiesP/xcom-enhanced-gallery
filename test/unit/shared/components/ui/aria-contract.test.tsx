@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
 import { h } from '@shared/external/vendors';
 
 // Phase S1 RED: UnifiedButton 통합 후 ARIA 표준 검증

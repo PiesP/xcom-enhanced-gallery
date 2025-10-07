@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
 import { h } from '@shared/external/vendors';
 import { ToolbarHeadless } from '../../../../../src/shared/components/ui/Toolbar/ToolbarHeadless';
 
