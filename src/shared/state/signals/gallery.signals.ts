@@ -1,15 +1,16 @@
 /**
  * @fileoverview Gallery State Management
- * @version 1.0.0 - Clean Architecture
+ * @version 2.0.0 - Solid.js Signals
  *
- * Gallery state management using Preact signals
+ * Gallery state management using Solid.js signals
+ * - Preact .value accessor 호환 유지
  * - Clear structure
  * - Type safety
  * - Immutable state
  */
 
 import type { MediaInfo } from '../../types/media.types';
-import { effectSafe, createSignalSafe } from './signal-factory';
+import { effectSafe, createSignalSafe } from './signal-factory-solid';
 // Break runtime dependency on services: use logging barrel directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 

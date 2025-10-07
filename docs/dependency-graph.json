@@ -73,7 +73,7 @@
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
-        "src/shared/state/signals/signal-factory.ts",
+        "src/shared/state/signals/signal-factory-solid.ts",
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
@@ -127,6 +127,7 @@
         "src/shared/hooks/useGalleryToolbarLogic.ts",
         "src/shared/hooks/useSettingsModal.ts",
         "src/shared/utils/optimization/memo.ts",
+        "src/shared/state/signals/signal-factory.ts",
         "src/shared/utils/performance/signalOptimization.ts"
       ],
       "orphan": false,
@@ -323,7 +324,7 @@
         "src/shared/services/EventManager.ts",
         "src/shared/dom/DOMEventManager.ts",
         "src/shared/utils/events.ts",
-        "src/shared/state/signals/signal-factory.ts",
+        "src/shared/state/signals/signal-factory-solid.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/dom/utils/dom-utils.ts",
         "src/shared/utils/utils.ts",
@@ -372,6 +373,7 @@
         "src/shared/state/signals/toolbar.signals.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
         "src/shared/services/media-mapping/MediaTabUrlDirectStrategy.ts",
+        "src/shared/state/signals/signal-factory.ts",
         "src/utils/index.ts"
       ],
       "orphan": false,
@@ -2845,14 +2847,14 @@
         },
         {
           "dynamic": false,
-          "module": "./signal-factory",
+          "module": "./signal-factory-solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/state/signals/signal-factory.ts",
+          "resolved": "src/shared/state/signals/signal-factory-solid.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -2876,7 +2878,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/state/signals/signal-factory.ts",
+      "source": "src/shared/state/signals/signal-factory-solid.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -2922,8 +2924,7 @@
       "dependents": [
         "src/shared/state/signals/gallery.signals.ts",
         "src/shared/state/signals/download.signals.ts",
-        "src/shared/state/signals/toolbar.signals.ts",
-        "src/shared/state/gallery-store.ts"
+        "src/shared/state/signals/toolbar.signals.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8361,14 +8362,14 @@
         },
         {
           "dynamic": false,
-          "module": "./signal-factory",
+          "module": "./signal-factory-solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/state/signals/signal-factory.ts",
+          "resolved": "src/shared/state/signals/signal-factory-solid.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -12807,6 +12808,48 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/HelloSolid.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./HelloSolid.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/HelloSolid.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/HelloSolid.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/HelloSolid.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/LazyIcon.tsx",
       "dependencies": [
         {
@@ -15229,14 +15272,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "./signal-factory",
+          "module": "./signal-factory-solid",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/state/signals/signal-factory.ts",
+          "resolved": "src/shared/state/signals/signal-factory-solid.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15932,6 +15975,56 @@
       "valid": true
     },
     {
+      "source": "src/shared/state/signals/signal-factory.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/state/gallery-store.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/styles/index.ts",
       "dependencies": [
         {
@@ -16369,8 +16462,8 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 265,
-    "totalDependenciesCruised": 745,
+    "totalCruised": 268,
+    "totalDependenciesCruised": 748,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
