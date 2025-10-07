@@ -477,6 +477,15 @@
 
 **목표**: Feature 계층 컴포넌트를 Solid로 전환, 앱 전체 Solid 기반화
 
+**진행 상황**:
+
+- ✅ **Phase 5.1 (2025-10-07)**: VerticalImageItem.solid.tsx 구현 완료 (489
+  lines, 37 tests, 100% GREEN)
+- 🚧 **Phase 5.2 (진행 중)**: VerticalGalleryView.solid.tsx 전환 중
+- ⏳ **Phase 5.3**: GalleryHOC 제거 또는 composition 전환
+- ⏳ **Phase 5.4**: GalleryRenderer Solid render() 통합
+- ⏳ **Phase 5.5**: Gallery hooks → primitives 전환
+
 **작업 내용**:
 
 1. **Gallery Feature 전환**
