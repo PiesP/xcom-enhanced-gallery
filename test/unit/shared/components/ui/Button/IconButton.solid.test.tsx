@@ -18,8 +18,8 @@ describe('IconButton.solid - Phase 0: Compile & Type Verification', () => {
   it('should export ICON_BUTTON_SIZES constant', () => {
     expect(ICON_BUTTON_SIZES).toBeDefined();
     expect(Array.isArray(ICON_BUTTON_SIZES)).toBe(true);
-    // 현재는 Primitive Button 사용으로 'toolbar' 미지원
-    expect(ICON_BUTTON_SIZES).toEqual(['sm', 'md', 'lg']);
+    // UI Button 사용으로 'toolbar' 지원
+    expect(ICON_BUTTON_SIZES).toEqual(['sm', 'md', 'lg', 'toolbar']);
   });
 
   it('should require children prop', () => {
@@ -28,14 +28,16 @@ describe('IconButton.solid - Phase 0: Compile & Type Verification', () => {
     expect(true).toBe(true);
   });
 
-  it('should accept size prop (sm | md | lg)', () => {
+  it('should accept size prop (sm | md | lg | toolbar)', () => {
     const sm = IconButton({ size: 'sm', children: 'Icon' });
     const md = IconButton({ size: 'md', children: 'Icon' });
     const lg = IconButton({ size: 'lg', children: 'Icon' });
+    const toolbar = IconButton({ size: 'toolbar', children: 'Icon' });
 
     expect(sm).toBeDefined();
     expect(md).toBeDefined();
     expect(lg).toBeDefined();
+    expect(toolbar).toBeDefined();
   });
 
   it('should accept children prop', () => {
