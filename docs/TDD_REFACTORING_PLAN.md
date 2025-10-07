@@ -50,9 +50,60 @@
 
 ---
 
+## Phase 8.4: Deprecated/Legacy 코드 정리 (진행 중)
+
+### 목표
+
+Phase 8.1-8.3에서 preact/fflate 잔재를 제거했으나, 전체 코드베이스에 여전히
+deprecated/legacy 항목이 남아 있습니다:
+
+- @deprecated 유틸리티 (memoization.ts - 사용되지 않음)
+- @deprecated 래퍼 메서드 (MediaService.downloadImage/downloadVideo - 사용되지
+  않음)
+- Legacy 정규화 필요성 검증 (Twitter API legacy 필드)
+- 과도하게 긴 문서 (COMPLETED.md 6177줄)
+
+### 작업 단계
+
+#### 8.4.1: @deprecated 코드 제거 (HIGH 우선순위)
+
+**대상**:
+
+- `src/shared/utils/performance/memoization.ts`: memo, useCallback, useMemo
+  함수들 (src에서 사용 0건)
+- `src/shared/services/MediaService.ts`: downloadImage, downloadVideo 래퍼
+  (src에서 사용 0건)
+
+**수용 기준**:
+
+- [ ] memoization.ts 파일 완전 제거 (src에서 import 0건)
+- [ ] MediaService deprecated 메서드 제거
+- [ ] 관련 테스트 제거 또는 갱신
+- [ ] 빌드 성공 (Prod ≤ 330 KB)
+
+#### 8.4.2: Legacy 정규화 필요성 검증 (MEDIUM)
+
+**대상**: Twitter API legacy 필드 정규화 로직
+
+**수용 기준**:
+
+- [ ] 현재 Twitter API에 legacy 필드 존재 여부 확인
+- [ ] 필요하면 유지, 불필요하면 제거 또는 fallback으로만 유지
+
+#### 8.4.3: 문서 간소화 (MEDIUM)
+
+**대상**: docs/TDD_REFACTORING_PLAN_COMPLETED.md (6177줄)
+
+**수용 기준**:
+
+- [ ] 주요 Phase별로 요약하여 2000줄 이하로 축소
+- [ ] 중복 제거, 명확한 섹션 구분
+
+---
+
 ## 다음 단계 (Next Phase)
 
-Phase 8 완료. 다음 단계 옵션:
+Phase 8.4 완료 후 옵션:
 
 ### 옵션 1: 사용자 피드백 수집
 
