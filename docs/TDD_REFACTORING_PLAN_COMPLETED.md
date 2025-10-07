@@ -5,6 +5,126 @@
 
 ---
 
+## Phase 10.3: TODO 주석 해결 (2025-01-08 완료 ✅)
+
+### 목표
+
+VerticalGalleryView에서 KeyboardHelpOverlay 관련 TODO 주석 3개를 제거하여 코드를
+정리하고 미래 유지보수성을 향상시킵니다.
+
+### 배경
+
+**발견된 TODO 항목**:
+
+- `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+  파일에 3개 TODO 주석 존재
+- KeyboardHelpOverlay Solid 버전이 필요하다는 주석이었으나, Phase 7에서 키보드
+  네비게이션 기능은 이미 완료됨
+- Help overlay는 선택적 기능으로, 없어도 핵심 기능에 영향 없음
+
+**제거된 TODO 항목**:
+
+1. Line 70:
+   `const [isHelpOpen, setIsHelpOpen] = createSignal(false); // TODO: KeyboardHelpOverlay Solid 버전 필요`
+2. Line 261: `// TODO: '?' 키로 KeyboardHelpOverlay 열기 (Solid 버전 필요)`
+3. Line 430:
+   `{/* 키보드 도움말 오버레이 - TODO: Solid 버전 필요 */} {/* <KeyboardHelpOverlay open={isHelpOpen()} onClose={() => setIsHelpOpen(false)} /> */}`
+
+### 작업 수행
+
+**제거 사항**:
+
+- TODO 주석 3개 제거
+- 주석 처리된 코드 2줄 제거 (isHelpOpen 선언, KeyboardHelpOverlay 렌더링)
+
+**결정**: 기능 제거 (구현하지 않음)
+
+- 키보드 네비게이션은 Phase 7에서 이미 완료
+- Help overlay는 선택적 기능
+- 구현 우선순위 낮음 (Phase 11 이후 재검토 가능)
+
+### 결과
+
+**수용 기준**: ✅ 모두 충족
+
+- [x] TODO 주석 0건 (해당 파일에서)
+- [x] 관련 코드 완전 제거
+- [x] 빌드/테스트 GREEN 유지
+
+**메트릭**:
+
+- Dev: 1,029.24 KB (변화 없음)
+- Prod: 330.73 KB (변화 없음)
+- 모듈 수: 250
+- 코드 복잡도: 감소 ✅
+
+**커밋**: `70ff534b` - refactor(gallery): remove KeyboardHelpOverlay TODO
+comments (Phase 10.3)
+
+---
+
+## Phase 10.2: Orphan 모듈 정리 (2025-01-08 완료 ✅)
+
+### 목표
+
+dependency-cruiser에서 탐지된 orphan 모듈
+`src/shared/primitives/focusScope-solid.ts`를 제거하여 코드 품질을 개선합니다.
+
+### 배경
+
+**발견된 문제**:
+
+- dependency-cruiser에서 orphan 모듈로 탐지됨
+- `createFocusScope()` 함수 정의만 있고 실제 사용처 없음
+- 53라인 규모, 기능: Focus scope ref 관리 (Solid 패턴)
+- 관련 테스트 파일: `test/unit/hooks/useFocusScope-solid.test.tsx` (118 라인)
+
+**조사 결과**:
+
+- 원래 목적: Focus trap과 함께 사용할 focus scope 관리
+- 현재 상태: `focusTrap-solid.ts`만으로 충분함
+- 미래 사용 계획: 없음
+
+### 작업 수행
+
+**제거된 파일**:
+
+1. `src/shared/primitives/focusScope-solid.ts` (53 라인)
+2. `test/unit/hooks/useFocusScope-solid.test.tsx` (118 라인)
+
+**제거 근거**:
+
+- Focus scope ref 관리는 `focusTrap-solid.ts`로 충분
+- 중복 기능 제공
+- 실제 사용처 없음
+
+### 결과
+
+**수용 기준**: ✅ 모두 충족
+
+- [x] dependency-cruiser orphan 경고 0건
+- [x] 빌드/테스트 GREEN 유지
+- [x] 모듈 수 감소
+
+**메트릭**:
+
+- Dev: 1,029.24 KB (이전: 1,029.96 KB, -0.72 KB)
+- Prod: 330.73 KB (변화 없음, tree-shaking 효과)
+- 모듈 수: 251 → **250** ✅
+- Dependencies: 699 (변화 없음)
+- Orphan 모듈: 1 → **0** ✅
+
+**제거된 코드**:
+
+- 소스 코드: 53 라인
+- 테스트 코드: 118 라인
+- 총 171 라인 정리
+
+**커밋**: `868f1949` - refactor(core): remove orphan focusScope module (Phase
+10.2)
+
+---
+
 ## Phase 9.2: Show 컴포넌트 중복 제거 (2025-01-08 완료 ✅)
 
 ### 목표
