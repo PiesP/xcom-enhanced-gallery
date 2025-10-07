@@ -132,52 +132,9 @@ export function getVendorInitializationReportSafe() {
     availableAPIs: status.availableAPIs,
     versions,
     initializationRate: status.isInitialized ? 100 : 0,
-    totalCount: 4, // preact, hooks, signals, compat
-    initializedCount: status.isInitialized ? 4 : 0,
+    totalCount: 2, // solid-js, solid-js/web
+    initializedCount: status.isInitialized ? 2 : 0,
   };
-}
-
-/**
- * vendor 상태 확인
- */
-export function getVendorStatusesSafe() {
-  const status = staticVendorManager.getInitializationStatus();
-
-  if (!status.isInitialized) {
-    return {
-      preact: false,
-      preactHooks: false,
-      preactSignals: false,
-      preactCompat: false,
-    };
-  }
-
-  return {
-    preact: status.availableAPIs.includes('preact'),
-    preactHooks: status.availableAPIs.includes('preact-hooks'),
-    preactSignals: status.availableAPIs.includes('preact-signals'),
-    preactCompat: status.availableAPIs.includes('preact-compat'),
-  };
-}
-
-/**
- * 개별 vendor 초기화 확인
- */
-export function isVendorInitializedSafe(vendorName: string): boolean {
-  const statuses = getVendorStatusesSafe();
-
-  switch (vendorName) {
-    case 'preact':
-      return statuses.preact;
-    case 'preactHooks':
-      return statuses.preactHooks;
-    case 'preactSignals':
-      return statuses.preactSignals;
-    case 'preactCompat':
-      return statuses.preactCompat;
-    default:
-      return false;
-  }
 }
 
 // 정리 핸들러 등록 (명시적 호출로 변경하여 import 시 부작용 제거)

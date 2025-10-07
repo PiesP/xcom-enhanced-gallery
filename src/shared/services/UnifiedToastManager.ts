@@ -105,7 +105,7 @@ export class ToastManager {
 
     // 폴백: 로컬 신호 구현 사용
     if (!toastsSignalImpl) {
-      logger.warn('[ToastManager] Preact Signals 미가용: 로컬 신호 폴백을 사용합니다.');
+      logger.warn('[ToastManager] Signals 미가용: 로컬 신호 폴백을 사용합니다.');
       toastsSignalImpl = createLocalSignal<ToastItem[]>([]);
     }
 
@@ -267,7 +267,7 @@ export class ToastManager {
   }
 
   /**
-   * Preact signals와의 통합을 위한 signal 접근자
+   * Signals 통합을 위한 signal 접근자
    */
   public get signal() {
     return this.toastsSignal;
@@ -384,7 +384,7 @@ export function clearAllToasts(): void {
 }
 
 /**
- * Preact 컴포넌트에서 사용할 수 있는 signals 기반 상태
+ * Signals 기반 상태 (Solid.js 컴포넌트에서 사용)
  */
 export const toasts = {
   get value(): ToastItem[] {

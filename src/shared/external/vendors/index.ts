@@ -18,8 +18,6 @@ export {
   registerVendorCleanupOnUnloadSafe,
   isVendorsInitializedSafe as isVendorsInitialized,
   getVendorInitializationReportSafe as getVendorInitializationReport,
-  getVendorStatusesSafe as getVendorStatuses,
-  isVendorInitializedSafe as isVendorInitialized,
   resetVendorManagerInstance,
 } from './vendor-api-safe';
 

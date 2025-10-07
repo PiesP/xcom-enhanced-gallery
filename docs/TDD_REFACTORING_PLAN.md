@@ -50,10 +50,81 @@
 
 ---
 
+## Phase 8: Preact/fflate 잔재 제거
+
+### 배경
+
+Phase 1-6에서 Preact에서 Solid.js로 마이그레이션하고 fflate를 제거했지만,
+코드베이스에 다음과 같은 잔재가 남아있습니다:
+
+1. **vendor-api-safe.ts**: preact 관련 상태 확인 함수들
+2. **주석**: 여러 파일에 preact/fflate 언급
+3. **테스트 mock**: 사용되지 않는 preact/fflate mock 코드
+4. **빌드 산출물**: preact 관련 코드 포함
+
+### Phase 8.1: vendor-api-safe 정리 (우선순위: 높음)
+
+**목표**: preact 관련 함수 제거 및 Solid.js 중심으로 재구성
+
+**작업**:
+
+- [ ] `getVendorStatusesSafe()` 함수에서 preact 관련 코드 제거
+- [ ] `isVendorInitializedSafe()` 함수에서 preact case 제거
+- [ ] totalCount 주석 수정 (preact 제거 후 실제 개수 반영)
+- [ ] 테스트 작성: vendor-api-safe.test.ts 수정/추가
+- [ ] 빌드 및 전체 테스트 실행
+
+**예상 결과**: vendor-api-safe.ts가 Solid.js만 지원하는 깔끔한 코드로 변경
+
+### Phase 8.2: 주석 정리 (우선순위: 중간)
+
+**목표**: 혼란을 야기하는 preact/fflate 주석 제거 또는 간소화
+
+**작업**:
+
+- [ ] "Preact에서 마이그레이션됨" 형태로 간소화 (역사적 맥락 유지)
+- [ ] "Preact 권장", "Preact 호환" 등 현재 상태와 맞지 않는 주석 제거
+- [ ] fflate 관련 주석 제거 (zip-creator.ts 등)
+
+**대상 파일**:
+
+- UnifiedToastManager.ts
+- signalSelector.ts
+- signalOptimization.ts
+- memoization.ts
+- app.types.ts
+- primitives/\*.ts
+- signal-factory-solid.ts
+- 기타 signal 파일들
+
+### Phase 8.3: 테스트 mock 정리 (우선순위: 중간)
+
+**목표**: 사용되지 않는 preact/fflate mock 제거
+
+**작업**:
+
+- [ ] vendor.mock.ts, vendor.mock.js, vendor-mock-clean.js 분석
+- [ ] 실제 사용되는 mock 확인 (grep으로 참조 검색)
+- [ ] 사용되지 않는 mock 파일 제거
+- [ ] 사용되는 mock은 preact/fflate 부분만 제거
+- [ ] 테스트 실행으로 영향 확인
+
+### Phase 8.4: 문서 갱신 (우선순위: 높음)
+
+**목표**: 프로젝트 문서를 현재 상태에 맞게 갱신
+
+**작업**:
+
+- [ ] ARCHITECTURE.md: preact 언급 제거, Solid.js 중심으로 재작성
+- [ ] CODING_GUIDELINES.md: preact 규칙 제거 (필요시)
+- [ ] README.md: 기술 스택 확인 및 갱신
+- [ ] TDD_REFACTORING_PLAN_COMPLETED.md: Phase 8 작업 이관
+
+---
+
 ## 다음 단계 (Next Phase)
 
-Phase 7 완료로 **접근성 및 사용성 목표 달성**이 완료되었습니다. 다음 단계는
-사용자 피드백 또는 새로운 기능 개발로 진행할 수 있습니다:
+Phase 8 완료 후:
 
 ### 옵션 1: 사용자 피드백 수집
 
