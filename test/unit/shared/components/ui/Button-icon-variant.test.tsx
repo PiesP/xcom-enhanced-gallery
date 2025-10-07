@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/preact';
+import { screen } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
 import { h } from '@shared/external/vendors';
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';
 

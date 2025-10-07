@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
+import { cleanup } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact.tsx';
 import { h } from 'preact';
 import { GalleryContainer } from '@/shared/components/isolation/GalleryContainer';
 

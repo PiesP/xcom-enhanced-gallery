@@ -5,7 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
-import { render, screen, cleanup } from '@testing-library/preact';
+import { screen, cleanup } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../utils/render-with-vendor-preact';
 import { getPreact } from '../../../../src/shared/external/vendors';
 import { SettingsModal } from '../../../../src/shared/components/ui/SettingsModal/SettingsModal';
 

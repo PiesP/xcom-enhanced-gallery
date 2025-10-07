@@ -1,4 +1,5 @@
-import { render, fireEvent } from '@testing-library/preact';
+import { screen, fireEvent } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../utils/render-with-vendor-preact';
 import { getPreact } from '@shared/external/vendors';
 import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
@@ -7,11 +8,9 @@ const { h } = getPreact();
 describe('KeyboardHelpOverlay', () => {
   it('opens and closes with ESC and backdrop click', () => {
     const onClose = vi.fn();
-    const { getByRole, queryByRole, rerender, container } = render(
-      h(KeyboardHelpOverlay, { open: true, onClose })
-    );
+    const { rerender, container } = render(h(KeyboardHelpOverlay, { open: true, onClose }));
 
-    const dialog = getByRole('dialog');
+    const dialog = screen.getByRole('dialog');
     expect(dialog).toBeTruthy();
 
     // ESC closes
@@ -26,6 +25,6 @@ describe('KeyboardHelpOverlay', () => {
 
     // Closed state renders null
     rerender(h(KeyboardHelpOverlay, { open: false, onClose }));
-    expect(queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

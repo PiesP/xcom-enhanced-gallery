@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { cleanup, render } from '@testing-library/preact';
+import { cleanup } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../utils/render-with-vendor-preact';
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 import { h } from 'preact';
 

@@ -3,22 +3,16 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/preact';
-import { h } from '@shared/external/vendors';
+import { screen } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
 import { IconButton } from '../../../../../src/shared/components/ui/Button/IconButton';
 
 describe('IconButton', () => {
   it('renders an icon-only button with required aria-label', () => {
     render(
-      h(
-        IconButton,
-        {
-          'aria-label': 'Download',
-          'data-testid': 'icon-button',
-          title: 'Download',
-        },
-        '⬇'
-      )
+      <IconButton aria-label='Download' data-testid='icon-button' title='Download'>
+        ⬇
+      </IconButton>
     );
 
     const btn = screen.getByTestId('icon-button');
@@ -29,18 +23,12 @@ describe('IconButton', () => {
   });
 
   it('supports sizes sm, md, lg via class names', () => {
-    const sizes = ['sm', 'md', 'lg'];
+    const sizes = ['sm', 'md', 'lg'] as const;
     sizes.forEach(size => {
       render(
-        h(
-          IconButton,
-          {
-            size,
-            'aria-label': `${size} icon`,
-            'data-testid': `icon-${size}`,
-          },
-          '⚙'
-        )
+        <IconButton size={size} aria-label={`${size} icon`} data-testid={`icon-${size}`}>
+          ⚙
+        </IconButton>
       );
 
       const btn = screen.getByTestId(`icon-${size}`);
@@ -50,16 +38,14 @@ describe('IconButton', () => {
 
   it('respects disabled and loading states', () => {
     render(
-      h(
-        IconButton,
-        {
-          disabled: true,
-          loading: true,
-          'aria-label': 'Loading Icon',
-          'data-testid': 'icon-loading',
-        },
-        '⏳'
-      )
+      <IconButton
+        disabled={true}
+        loading={true}
+        aria-label='Loading Icon'
+        data-testid='icon-loading'
+      >
+        ⏳
+      </IconButton>
     );
 
     const btn = screen.getByTestId('icon-loading');

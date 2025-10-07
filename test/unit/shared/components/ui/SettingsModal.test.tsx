@@ -3,8 +3,11 @@
  * @description TDD 기반 설정 모달 컴포넌트 테스트
  */
 
+/// <reference lib="dom" />
+
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup } from '@testing-library/preact';
+import { fireEvent, screen, cleanup } from '@testing-library/preact';
+import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal', () => {
@@ -118,11 +121,11 @@ describe('SettingsModal', () => {
     it('테마 변경 시 즉시 적용되어야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
-      const themeSelect = screen.getByLabelText('Theme') as HTMLSelectElement;
+      const themeSelect = screen.getByLabelText('Theme');
       fireEvent.change(themeSelect, { target: { value: 'dark' } });
 
       // 테마 변경이 즉시 적용되는지 확인
-      expect(themeSelect.value).toBe('dark');
+      expect((themeSelect as Element & { value: string }).value).toBe('dark');
     });
 
     it('테마 옵션들이 올바르게 표시되어야 함', () => {
@@ -142,11 +145,11 @@ describe('SettingsModal', () => {
     it('언어 변경 시 즉시 적용되어야 함', () => {
       render(<SettingsModal {...mockProps} />);
 
-      const languageSelect = screen.getByLabelText('Language') as HTMLSelectElement;
+      const languageSelect = screen.getByLabelText('Language');
       fireEvent.change(languageSelect, { target: { value: 'en' } });
 
       // 언어 변경이 즉시 적용되는지 확인
-      expect(languageSelect.value).toBe('en');
+      expect((languageSelect as Element & { value: string }).value).toBe('en');
     });
 
     it('언어 옵션들이 올바르게 표시되어야 함', () => {
