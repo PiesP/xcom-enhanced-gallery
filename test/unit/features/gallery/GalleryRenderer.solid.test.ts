@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const GALLERY_RENDERER_PATH = join(process.cwd(), 'src/features/gallery/GalleryRenderer.ts');
+const GALLERY_RENDERER_PATH = join(process.cwd(), 'src/features/gallery/GalleryRenderer.tsx');
 
 describe('Phase 0: GalleryRenderer Solid Integration Tests', () => {
   describe('1. TypeScript Compilation', () => {

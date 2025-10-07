@@ -1,11 +1,11 @@
 /**
  * @fileoverview Gallery Renderer
- * @version 2.0.0 - Clean Architecture 적용
+ * @version 3.0.0 - Solid.js Integration
  *
  * 단일 책임 원칙에 따른 갤러리 렌더러
- * - 렌더링만 담당
+ * - Solid.js render 사용
  * - 상태 관리는 signals에 위임
- * - 간결한 생명주기 관리
+ * - 간결한 생명주기 관리 (dispose 패턴)
  */
 
 import type {
@@ -23,12 +23,12 @@ import {
   navigateNext,
 } from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { VerticalGalleryView } from './components/vertical-gallery-view';
-import { GalleryContainer } from '../../shared/components/isolation';
-import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
+import { render } from 'solid-js/web';
+import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView.solid';
+import { GalleryContainer } from '../../shared/components/isolation/GalleryContainer.solid';
+import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary.solid';
 import './styles/gallery-global.css';
 import { logger } from '../../shared/logging/logger';
-import { getPreact } from '../../shared/external/vendors';
 
 /**
  * 갤러리 정리 관리자
@@ -53,13 +53,14 @@ class GalleryCleanupManager {
 }
 
 /**
- * 간소화된 갤러리 렌더러
+ * 간소화된 갤러리 렌더러 (Solid.js)
  */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private isRenderingFlag = false;
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
+  private disposeComponent: (() => void) | null = null; // Solid dispose function
   private onCloseCallback?: () => void;
 
   constructor() {
@@ -135,44 +136,38 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컴포넌트 렌더링 - 갤러리 컴포넌트 렌더링
+   * 컴포넌트 렌더링 - Solid.js로 갤러리 컴포넌트 렌더링
    */
   private renderComponent(): void {
     if (!this.container) return;
 
-    const { render, createElement } = getPreact();
+    const handleClose = () => {
+      closeGallery();
+      if (this.onCloseCallback) {
+        this.onCloseCallback();
+      }
+    };
 
-    // GalleryContainer → ErrorBoundary → VerticalGalleryView 계층으로 래핑
-    const galleryElement = createElement(GalleryContainer, {
-      onClose: () => {
-        closeGallery();
-        if (this.onCloseCallback) {
-          this.onCloseCallback();
-        }
-      },
-      className: 'xeg-gallery-renderer xeg-gallery-root', // Light DOM: xeg-gallery-root 추가
-      children: createElement(
-        ErrorBoundary,
-        {},
-        createElement(VerticalGalleryView, {
-          // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
-          onClose: () => {
-            closeGallery();
-            if (this.onCloseCallback) {
-              this.onCloseCallback();
-            }
-          },
-          onPrevious: () => this.handleNavigation('previous'),
-          onNext: () => this.handleNavigation('next'),
-          onDownloadCurrent: () => this.handleDownload('current'),
-          onDownloadAll: () => this.handleDownload('all'),
-          className: 'xeg-vertical-gallery',
-        })
+    // Solid.js render with JSX
+    this.disposeComponent = render(
+      () => (
+        <GalleryContainer onClose={handleClose} className='xeg-gallery-renderer xeg-gallery-root'>
+          <ErrorBoundary>
+            <VerticalGalleryView
+              onClose={handleClose}
+              onPrevious={() => this.handleNavigation('previous')}
+              onNext={() => this.handleNavigation('next')}
+              onDownloadCurrent={() => this.handleDownload('current')}
+              onDownloadAll={() => this.handleDownload('all')}
+              className='xeg-vertical-gallery'
+            />
+          </ErrorBoundary>
+        </GalleryContainer>
       ),
-    });
+      this.container
+    );
 
-    render(galleryElement, this.container);
-    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
+    logger.info('[GalleryRenderer] Solid 갤러리 컴포넌트 렌더링 완료');
   }
 
   /**
@@ -228,13 +223,14 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 컨테이너 정리
+   * 컨테이너 정리 - Solid dispose 패턴 사용
    */
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        const { render } = getPreact();
-        render(null, this.container);
+        // Solid.js dispose 호출
+        this.disposeComponent?.();
+        this.disposeComponent = null;
 
         if (document.contains(this.container)) {
           this.container.remove();
