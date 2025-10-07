@@ -4012,3 +4012,240 @@ createEffect(() => {
     `test/unit/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.solid.test.tsx`
 
 ---
+
+## ✅ Phase 4.6: 기타 유틸리티 컴포넌트 Solid 전환 (2025-01-07)
+
+**목표**: LazyIcon, ErrorBoundary, GalleryContainer를 Solid.js로 전환
+
+**실행 내용**:
+
+### 완료 컴포넌트 (3/4)
+
+1. **LazyIcon.solid.tsx** (62줄)
+   - **Before**: Preact useEffect (54줄)
+   - **After**: Solid createEffect + onCleanup (62줄)
+   - **주요 변경**:
+     - `useEffect` → `createEffect` 전환
+     - `getSolidWeb` 제거 (Dynamic 컴포넌트 불필요)
+     - `useIconPreload`, `useCommonIconPreload` 훅 유지
+     - fallback props 처리 로직 보존
+   - **테스트**: 23 Phase 0 tests (46 executions: fast + unit)
+
+2. **ErrorBoundary.solid.tsx** (42줄)
+   - **Before**: Preact useErrorBoundary (43줄)
+   - **After**: Solid ErrorBoundary API (42줄)
+   - **주요 변경**:
+     - Preact useErrorBoundary → Solid ErrorBoundary 컴포넌트
+     - ToastManager + LanguageService 통합 유지
+     - fallback UI: 사용자 제공 또는 빈 Fragment
+     - 조용한 에러 처리 패턴 보존
+   - **테스트**: 22 Phase 0 tests (44 executions: fast + unit)
+
+3. **GalleryContainer.solid.tsx** (90줄)
+   - **Before**: Preact useEffect + useCallback (103줄)
+   - **After**: Solid createEffect + onCleanup (90줄)
+   - **주요 변경**:
+     - Light DOM render() 사용 (solid-js/web)
+     - Portal import 제거 (현재 미사용, 향후 용도 보류)
+     - Escape 키 처리: EventManager 통합
+     - data-xeg-gallery-container 속성 유지
+   - **테스트**: 30 Phase 0 tests (60 executions: fast + unit)
+
+4. **GalleryHOC.tsx** (495줄) → **Phase 5로 연기**
+   - **사유**: `VerticalImageItem.tsx` (Phase 5 Features)에서 `withGallery` HOC
+     사용 중
+   - **전략**: Features 계층 전환 시 HOC 패턴을 Solid composition으로 재작성
+   - **영향**: Phase 4.6 완료 시 HOC는 Preact 버전 유지
+
+### 테스트 결과
+
+- **Phase 0 테스트**: 75개 작성 (150 executions)
+  - LazyIcon: 23 tests (46 executions)
+  - ErrorBoundary: 22 tests (44 executions)
+  - GalleryContainer: 30 tests (60 executions)
+- **통과율**: 150/150 GREEN (100%)
+- **타입 검증**: TypeScript strict mode, exactOptionalPropertyTypes 준수
+
+### 코드 메트릭
+
+| 컴포넌트            | Preact | Solid | 변화량   | 변화율    |
+| ------------------- | ------ | ----- | -------- | --------- |
+| LazyIcon            | 54줄   | 62줄  | +8줄     | +14.8%    |
+| ErrorBoundary       | 43줄   | 42줄  | -1줄     | -2.3%     |
+| GalleryContainer    | 103줄  | 90줄  | -13줄    | -12.6%    |
+| **합계**            | 200줄  | 194줄 | **-6줄** | **-3.0%** |
+| **GalleryHOC 제외** | 200줄  | 194줄 | **-6줄** | **-3.0%** |
+
+### 주요 기술 결정
+
+#### 1. LazyIcon getSolidWeb 제거
+
+- **Before**:
+
+  ```tsx
+  const { Dynamic } = getSolidWeb();
+  ```
+
+- **After**:
+  ```tsx
+  // Dynamic 컴포넌트 불필요 (단순 placeholder만 렌더링)
+  ```
+- **이유**: LazyIcon은 로딩 상태 placeholder만 표시하므로 Dynamic 불필요
+- **영향**: 의존성 간소화, TDZ 위험 제거
+
+#### 2. ErrorBoundary Solid API 사용
+
+- **Before** (Preact):
+
+  ```tsx
+  const [error] = useErrorBoundary((err: unknown) => {
+    /* toast */
+  });
+  ```
+
+- **After** (Solid):
+
+  ```tsx
+  <SolidErrorBoundary
+    fallback={(err: Error) => {
+      handleError(err);
+      return props.fallback ?? <></>;
+    }}
+  >
+    {props.children ?? <></>}
+  </SolidErrorBoundary>
+  ```
+
+- **이유**: Solid 네이티브 ErrorBoundary가 더 나은 에러 복구 제공
+- **영향**: 더 안정적인 에러 처리, ToastManager 통합 유지
+
+#### 3. GalleryContainer Portal 제거
+
+- **Before**:
+
+  ```tsx
+  import { Portal, render } from 'solid-js/web';
+  ```
+
+- **After**:
+  ```tsx
+  import { render } from 'solid-js/web';
+  ```
+- **이유**: 현재 구현은 직접 render() 사용, Portal은 미래 용도 보류
+- **영향**: 미사용 import 제거, 명확한 API 노출
+
+#### 4. GalleryHOC Phase 5 연기 결정
+
+- **문제**: `VerticalImageItem.tsx`가 `withGallery` HOC 의존
+- **대안 검토**:
+  1. HOC → Solid composition wrapper 즉시 전환
+  2. VerticalImageItem Solid 전환 후 함께 처리 (선택)
+- **결정**: Phase 5로 연기
+- **이유**:
+  - Phase 4.6은 "Shared 유틸리티" 범위
+  - HOC는 Features 컴포넌트와 밀접하게 연결
+  - Phase 5에서 VerticalImageItem Solid 전환 시 자연스럽게 composition 적용
+
+### Phase 4 누적 진행 상황 (4.1-4.6)
+
+#### 컴포넌트 전환
+
+- **신규 Solid 컴포넌트**: 25개 (22 from 4.1-4.5 + 3 from 4.6)
+- **신규 Primitives**: 1개 (createToolbarState)
+- **테스트 추가**: 382개 (307 from 4.1-4.5 + 75 from 4.6)
+- **테스트 실행**: 764회 (614 from 4.1-4.5 + 150 from 4.6)
+- **통과율**: 100% (764/764 GREEN)
+
+#### 빌드 상태
+
+- **Dev 빌드**: 1,065.82 KB (sourcemap 포함)
+- **Prod 빌드**: 377.20 KB raw / 102.44 KB gzip
+- **변화**: 안정적 유지 (Phase 4.5 대비 변화 없음)
+- **의존성**: 302 modules, 810 dependencies
+
+#### 품질 메트릭
+
+- **TypeScript**: 0 errors (strict + exactOptionalPropertyTypes)
+- **ESLint**: 0 violations
+- **dependency-cruiser**: 0 errors (4 orphan warnings acceptable)
+- **Prettier**: 모든 파일 formatted
+
+### 학습 및 패턴 정리
+
+#### Solid.js 유틸리티 컴포넌트 패턴
+
+1. **createEffect + onCleanup**:
+
+   ```tsx
+   createEffect(() => {
+     /* setup */
+     onCleanup(() => {
+       /* teardown */
+     });
+   });
+   ```
+
+2. **ErrorBoundary 통합**:
+
+   ```tsx
+   <SolidErrorBoundary fallback={err => <Fallback error={err} />}>
+     {children}
+   </SolidErrorBoundary>
+   ```
+
+3. **render() 활용** (Light DOM):
+   ```tsx
+   render(() => <Component />, container);
+   ```
+
+#### Phase 4.6 워크플로 개선점
+
+- **TDD 패턴**: Phase 0 테스트 먼저 작성 → 구현 → GREEN (일관성)
+- **타입 안전성**: `__dirname` 문제 발견 → `import.meta.url` 활용
+- **커밋 메시지**: commitlint 규칙 준수 (subject 72자, body 100자)
+- **작업 속도**: 예상 1일 → 실제 1시간 (87.5% 단축)
+
+### 남은 작업
+
+#### Phase 4 완료 후 다음 단계
+
+- **Phase 5**: Features 계층 전환 (Gallery, Settings)
+  - GalleryHOC → composition 패턴
+  - VerticalImageItem → Solid 전환
+  - GalleryApp → Solid render() 통합
+  - SettingsModal 전체 Solid 전환
+
+#### 향후 최적화 기회
+
+- LazyIcon 실제 icon 로딩 구현 (현재는 placeholder만)
+- GalleryContainer Portal 활용 검토 (모달/오버레이 렌더링)
+- ErrorBoundary fallback UI 커스터마이징
+
+### 관련 커밋
+
+- **Phase 4.6**: `2acea1b8` - feat(ui): add Phase 4.6 Solid components (3/3)
+- **Phase 4.5**: `40c84490` - docs: add Phase 4.5 completion to
+  TDD_REFACTORING_PLAN_COMPLETED.md
+- **Phase 4.4**: (이전 커밋들)
+
+**완료 시각**: 2025-01-07 14:52 KST
+
+**소요 시간**: ~1시간 (예상 1일, 실제 87.5% 단축)
+
+**품질 검증**: ✅ All checks passed
+
+**관련 파일**:
+
+- **Components**:
+  - 신규: `src/shared/components/LazyIcon.solid.tsx`
+  - 신규: `src/shared/components/ui/ErrorBoundary/ErrorBoundary.solid.tsx`
+  - 신규: `src/shared/components/isolation/GalleryContainer.solid.tsx`
+  - 연기: `src/shared/components/hoc/GalleryHOC.tsx` (Phase 5)
+- **Tests**:
+  - 신규: `test/unit/shared/components/LazyIcon.solid.test.tsx`
+  - 신규:
+    `test/unit/shared/components/ui/ErrorBoundary/ErrorBoundary.solid.test.tsx`
+  - 신규:
+    `test/unit/shared/components/isolation/GalleryContainer.solid.test.tsx`
+
+---
