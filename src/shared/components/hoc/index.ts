@@ -1,10 +1,12 @@
 /**
  * Higher-Order Components Barrel Export
  *
- * HOC 컴포넌트들을 중앙집중식으로 export합니다.
- * Version 4.0 - 간소화된 HOC 시스템 (Phase 3)
+ * Version 5.0 - Deprecated (Phase 5.4)
+ *
+ * GalleryHOC가 제거되었습니다. Solid.js는 HOC 패턴 대신
+ * 컴포넌트 props와 signals로 직접 데이터를 전달합니다.
+ *
+ * @deprecated Use Solid.js components directly with signals
  */
 
-// 갤러리 HOC (메인)
-// 배럴 표면 최소화: 실제 사용되는 심볼만 노출
-export { withGallery, type GalleryComponentProps } from './GalleryHOC';
+// No exports - GalleryHOC removed in Phase 5.4
