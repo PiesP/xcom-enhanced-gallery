@@ -1,9 +1,11 @@
+import { getSolid } from '@shared/external/vendors';
+const { createSignal } = getSolid();
+
 /**
  * @fileoverview Phase 0: Hello World Solid.js Component
  * @description Solid.js 빌드 환경 검증용 최소 컴포넌트
  */
 
-import { createSignal } from 'solid-js';
 import styles from './HelloSolid.module.css';
 
 export interface HelloSolidProps {

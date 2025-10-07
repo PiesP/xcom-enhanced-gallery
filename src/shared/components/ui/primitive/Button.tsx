@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview Button Primitive Solid Component
  * @description 기본 버튼 컴포넌트 - Solid.js 기반, 디자인 토큰 사용
  */
 
-import { mergeProps, splitProps, type Component, type JSX } from 'solid-js';
 import './Button.css';
 
 export interface ButtonProps {

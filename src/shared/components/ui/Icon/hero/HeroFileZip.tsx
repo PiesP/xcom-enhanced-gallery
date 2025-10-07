@@ -1,10 +1,14 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps } = getSolid();
+import { getSolidWeb } from '@shared/external/vendors';
+const { Dynamic } = getSolidWeb();
+import type { Component } from '@shared/external/vendors';
+
 /**
  * @fileoverview HeroFileZip Icon Component (Solid.js)
  * @version 1.0.0 - Solid.js Hero FileZip Icon Adapter
  */
 
-import { Dynamic } from 'solid-js/web';
-import { mergeProps, splitProps, type Component } from 'solid-js';
 import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 

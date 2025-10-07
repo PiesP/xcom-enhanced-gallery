@@ -1,12 +1,39 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-25 **Status**: Phase 7 Completed - Ready for New
+> **Last updated**: 2025-01-26 **Status**: Phase 9 Completed - Ready for New
 > Features
 
 ## Overview
 
 모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
 작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
+
+---
+
+## Recent Completions
+
+### Phase 9: Solid.js Vendors Getter 전환 (2025-01-26 완료 ✅)
+
+**치명적 버그 해결**: 59개 파일에서 `solid-js`, `solid-js/web`를 직접 import하던
+것을 vendors getter 경유로 전환하여 TDZ 문제를 해결하고 Solid.js 반응성 시스템을
+정상화했습니다.
+
+**해결된 4가지 버그**:
+
+1. ✅ 자동 스크롤 기능 정상 작동
+2. ✅ 자동 포커스 이동 정상 작동
+3. ✅ 설정 모달 정상 표시
+4. ✅ 다크 모드 아이콘 정상 표시
+
+**주요 변경**:
+
+- 42개 파일을 자동화 스크립트로 변환
+- Vendor manager 타입 export 수정 (type vs runtime 분리)
+- Vendors getter 규칙 100% 준수 달성
+
+**메트릭**: Dev 1,029.96 KB, Prod 330.73 KB (gzip 88.35 KB)
+
+상세 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
 
 ---
 
@@ -120,27 +147,277 @@ Phase 8.4에서 memoization.ts를 제거했으나, 추가로 정리 가능한 de
 
 ---
 
-## 다음 단계 (Next Phase)
+---
 
-이제 모든 주요 리팩토링이 완료되었습니다 (Phase 1-9). 다음 옵션을 고려하세요:
+## Phase 10: Post-SolidJS 전환 잔재 정리 (진행 중)
 
-### 옵션 1: 사용자 피드백 수집
+### Phase 10 목표
 
-- 실제 사용자 피드백 기반 개선 사항 도출
-- Phase 7.3-7.5 우선순위 재조정
-- A/B 테스트 또는 사용성 테스트 진행
+Phase 9에서 Solid.js vendors getter 전환을 완료했으나, 테스트 코드와 일부 미사용
+코드에 Preact 관련 잔재가 남아있습니다. 이를 완전히 제거하여 Solid.js 전환의
+완전성을 확보합니다.
 
-### 옵션 2: 새로운 기능 개발
+### 배경
 
-- 비디오 지원 (현재 이미지만 지원)
-- 고급 필터/정렬 기능
-- 커스텀 테마 시스템
+**현재 상태 (2025-01-07)**:
 
-### 옵션 3: 코드 품질 개선
+- ✅ 소스 코드: Preact 직접 import 완전 제거 (Phase 9)
+- ⚠️ 테스트 코드: Preact 관련 유틸리티 및 모킹 파일 다수 잔존
+- ⚠️ Orphan 모듈: `focusScope-solid.ts` (dependency-cruiser 경고)
+- ⚠️ TODO 주석: KeyboardHelpOverlay Solid 버전 필요 (3곳)
 
-- 테스트 커버리지 95%+ 목표
-- 성능 프로파일링 (실제 데이터 기반)
-- 문서 개선 (사용자 가이드, API 문서)
+### 작업 범위
+
+#### 10.1: 테스트 Preact 잔재 제거 🔴 **높은 우선순위**
+
+**제거 대상 파일**:
+
+1. `test/utils/vendor-testing-library.ts` - getPreact() 사용
+2. `test/utils/render-with-vendor-preact.tsx` - Preact 렌더링 유틸
+3. `test/__mocks__/vendor.mock.js` - mockPreactAPI, mockPreactSignalsAPI
+4. `test/__mocks__/vendor.mock.ts` - 중복 Preact 모킹
+5. `test/__mocks__/vendor-mock-clean.js` - Preact Hooks/Signals 모킹
+
+**수정 대상 테스트**:
+
+- `test/unit/vendors/*.test.ts` - getPreact 참조 제거 또는 Solid 전환
+- `test/unit/shared/runtime-vendor-initialization.test.ts` - getPreactCompat
+  제거
+- `test/unit/ui/toolbar.icon-accessibility.test.tsx` - Preact 모킹 제거
+
+**수용 기준**:
+
+- [ ] 모든 테스트 파일에서 `getPreact` 참조 0건
+- [ ] `__mocks__`에서 Preact 관련 모킹 완전 제거
+- [ ] 테스트 실행 GREEN 유지 (npm test)
+- [ ] 빌드 크기 변화 없음 또는 감소
+
+**예상 결과**:
+
+- 제거 파일: 5개
+- 수정 테스트: ~10개
+- 테스트 복잡도 감소
+
+#### 10.2: Orphan 모듈 정리 🔴 **높은 우선순위**
+
+**대상 파일**: `src/shared/primitives/focusScope-solid.ts`
+
+**문제**:
+
+- dependency-cruiser에서 orphan 모듈로 탐지
+- `createFocusScope()` 함수 정의만 있고 실제 사용처 없음
+- 53라인, 기능: Focus scope ref 관리 (Solid 패턴)
+
+**조사 항목**:
+
+1. 원래 사용 목적 확인 (git history)
+2. focusTrap-solid.ts와의 관계 확인
+3. 미래 사용 계획 여부
+
+**해결 방안 (우선순위)**:
+
+1. **제거** (1순위) - 사용처 없고 focusTrap으로 충분하면
+2. **통합** (2순위) - focusTrap과 병합 가능하면
+3. **유지** (3순위) - 명확한 사용 계획이 있으면 (문서화 필요)
+
+**수용 기준**:
+
+- [ ] dependency-cruiser orphan 경고 0건
+- [ ] 제거 시: 빌드/테스트 GREEN 유지
+- [ ] 유지 시: 사용 목적 문서화 및 예시 코드 추가
+
+#### 10.3: TODO 주석 해결 🔴 **높은 우선순위**
+
+**파일**:
+`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+
+**TODO 항목 (3곳)**:
+
+1. Line 70:
+   `const [isHelpOpen, setIsHelpOpen] = createSignal(false); // TODO: KeyboardHelpOverlay Solid 버전 필요`
+2. Line 261: `// TODO: '?' 키로 KeyboardHelpOverlay 열기 (Solid 버전 필요)`
+3. Line 430: `{/* 키보드 도움말 오버레이 - TODO: Solid 버전 필요 */}`
+
+**현재 상태**:
+
+- KeyboardHelpOverlay가 Preact 버전으로 남아있음 (추정)
+- 또는 완전히 제거됨 (확인 필요)
+
+**작업 옵션**:
+
+1. **KeyboardHelpOverlay Solid 버전 구현** (Phase 10.3a)
+   - Phase 5 패턴 적용 (Preact → Solid)
+   - createSignal, createEffect, Show 사용
+   - 키보드 단축키 표시 UI
+
+2. **기능 제거** (Phase 10.3b) - 더 간단
+   - TODO 주석 및 관련 코드 제거
+   - 키보드 네비게이션은 이미 Phase 7에서 완료
+   - Help overlay는 선택적 기능
+
+**권장**: Option 2 (제거) - 코드 복잡도 감소, 핵심 기능 영향 없음
+
+**수용 기준**:
+
+- [ ] TODO 주석 0건
+- [ ] 구현 시: 키보드 단축키 표시 정상 작동
+- [ ] 제거 시: 관련 코드 완전 제거
+- [ ] 테스트 추가 또는 수정
+
+### Phase 10 예상 메트릭
+
+| 메트릭      | Phase 9     | Phase 10 예상 | 변화        |
+| ----------- | ----------- | ------------- | ----------- |
+| Dev 빌드    | 1,029.96 KB | ~1,025 KB     | **-5 KB**   |
+| Prod 빌드   | 330.73 KB   | ~330 KB       | 유지        |
+| gzip        | 88.35 KB    | ~88 KB        | 유지        |
+| Orphan 모듈 | 1           | **0**         | **-1** ✅   |
+| 테스트 파일 | 기존        | 5개 제거      | **정리** ✅ |
+| TODO 주석   | 3           | **0**         | **-3** ✅   |
+
+### 작업 순서
+
+1. **RED**: orphan 모듈, TODO 주석 탐지 테스트 작성
+2. **10.2 실행**: focusScope-solid.ts 처리 (조사 → 결정 → 실행)
+3. **10.3 실행**: TODO 주석 해결 (제거 권장)
+4. **10.1 실행**: 테스트 Preact 잔재 제거
+5. **GREEN**: 전체 테스트 통과 확인
+6. **REFACTOR**: 테스트 구조 개선 (필요 시)
+
+---
+
+## Phase 11: Deprecated 항목 정리 (계획) 🟡 **중간 우선순위**
+
+### Phase 11 목표
+
+실사용이 없는 deprecated 항목을 제거하여 코드 품질을 개선합니다. 단, 실제로 사용
+중인 항목은 유지합니다.
+
+### Phase 11 작업 범위
+
+#### 11.1: 완전 미사용 Deprecated 파일 제거
+
+**제거 대상**:
+
+1. `src/shared/components/ui/Toolbar/toolbarConfig.ts` (전체 파일 deprecated,
+   테스트 전용)
+2. `src/shared/dom/DOMEventManager.ts` (UnifiedEventManager로 대체됨)
+3. `src/shared/utils/events.ts` EventManager 클래스 (내부 호환 용도로
+   표시되었으나 실사용 확인 필요)
+
+**조사 항목**:
+
+- 각 파일의 실제 참조 확인 (grep 검색)
+- 테스트에서만 사용되는지 확인
+- 제거 시 영향 범위 분석
+
+**수용 기준**:
+
+- [ ] 실사용 없는 deprecated 파일 0건
+- [ ] 빌드/테스트 GREEN 유지
+- [ ] 린트 경고 감소
+
+#### 11.2: Deprecated Props/Methods 정리
+
+**검토 대상**:
+
+1. `Button.tsx` - `variant` prop (intent로 대체됨)
+2. `ServiceManager.getDiagnostics()` - 실사용 중이므로 **유지**
+3. `BrowserService.getDiagnostics()` - 실사용 중이므로 **유지**
+4. `UnifiedToastManager` 레거시 export - 하위 호환성으로 **유지**
+
+**작업**:
+
+- variant prop: 마이그레이션 가이드 작성 후 제거
+- getDiagnostics: deprecated 태그 제거 (정상 API로 인정)
+
+**수용 기준**:
+
+- [ ] 사용되지 않는 deprecated props 0건
+- [ ] 마이그레이션 가이드 문서화
+- [ ] 실사용 API는 deprecated 태그 제거
+
+### Phase 11 예상 메트릭
+
+| 메트릭          | Phase 10  | Phase 11 예상 | 변화        |
+| --------------- | --------- | ------------- | ----------- |
+| Dev 빌드        | ~1,025 KB | ~1,020 KB     | **-5 KB**   |
+| Deprecated 파일 | 3         | **0-1**       | **정리** ✅ |
+| 코드 복잡도     | 중간      | **낮음**      | **개선** ✅ |
+
+---
+
+## Phase 12: 성능 최적화 및 문서 갱신 (계획) 🟢 **낮은 우선순위**
+
+### Phase 12 목표
+
+Solid.js 반응성 시스템을 더욱 효율적으로 활용하고 프로젝트 문서를 최신 상태로
+갱신합니다.
+
+### Phase 12 작업 범위
+
+#### 12.1: createEffect 패턴 최적화
+
+**검토 대상**:
+
+1. `signalOptimization.ts` - `untrack()` 사용 패턴
+2. `createAsyncSelector` - generation 추적 패턴
+3. 불필요한 createEffect → createMemo 전환 가능 영역
+
+**작업**:
+
+- 부수효과 없는 effect를 memo로 전환
+- untrack 사용이 정말 필요한지 검토
+- batch 사용으로 업데이트 최소화
+
+**수용 기준**:
+
+- [ ] 성능 벤치마크 개선 (Vitest performance project)
+- [ ] createEffect 사용 횟수 최적화
+- [ ] 불필요한 재계산 제거
+
+#### 12.2: 테스트 구조 개선
+
+**작업**:
+
+1. Solid 테스트 패턴 일관화
+2. 중복 테스트 제거
+3. 테스트 속도 개선 (현재 20s timeout)
+
+**수용 기준**:
+
+- [ ] 테스트 실행 시간 감소
+- [ ] 테스트 코드 중복 제거
+- [ ] 일관된 테스트 패턴 적용
+
+#### 12.3: 문서 갱신
+
+**대상 문서**:
+
+1. `ARCHITECTURE.md` - Solid.js 아키텍처 반영
+2. `CODING_GUIDELINES.md` - Solid 패턴 가이드 강화
+3. `TDD_REFACTORING_PLAN_COMPLETED.md` - Phase 10-11 이관
+4. `AGENTS.md` - 현재 상태 업데이트
+
+**작업**:
+
+- 과도하게 긴 문서 재작성 (COMPLETED.md 6,600줄 → 필요 내용만)
+- Solid.js 베스트 프랙티스 추가
+- 예시 코드 업데이트
+
+**수용 기준**:
+
+- [ ] 모든 문서가 현재 상태 반영
+- [ ] COMPLETED.md 길이 50% 감소
+- [ ] 실용적인 예시 코드 포함
+
+### Phase 12 예상 메트릭
+
+| 메트릭            | Phase 11 | Phase 12 예상 | 변화        |
+| ----------------- | -------- | ------------- | ----------- |
+| createEffect 사용 | 기존     | 최적화        | **개선** ✅ |
+| 테스트 시간       | 기존     | 단축          | **개선** ✅ |
+| 문서 길이         | 6,600줄  | ~3,000줄      | **-50%** ✅ |
 
 ---
 
@@ -149,5 +426,6 @@ Phase 8.4에서 memoization.ts를 제거했으나, 추가로 정리 가능한 de
 1. **TDD 엄수**: RED → GREEN → REFACTOR
 2. **PC 전용**: 터치/포인터 이벤트 금지
 3. **디자인 토큰**: 하드코딩 색상 금지 (`--xeg-*` 토큰만)
-4. **Vendor getter**: Solid.js, heroicons 직접 import 금지
+4. **Vendor getter**: Solid.js, heroicons 직접 import 금지 ✅ **Phase 9에서
+   완료**
 5. **문서 동기화**: 작업 완료 시 COMPLETED.md 이관

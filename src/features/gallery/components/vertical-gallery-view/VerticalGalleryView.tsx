@@ -1,3 +1,5 @@
+import { getSolid } from '@shared/external/vendors';
+
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery - MIT License
  *
@@ -12,7 +14,6 @@
  * - 통합 툴바 상태 관리 (Signals 기반)
  */
 
-import { createSignal, createEffect, onCleanup, mergeProps, For, Show } from 'solid-js';
 import { logger } from '../../../../shared/logging/logger';
 import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '../../../../shared/types';
@@ -42,6 +43,9 @@ export interface VerticalGalleryViewProps {
 }
 
 export function VerticalGalleryView(props: VerticalGalleryViewProps) {
+  // vendors getter를 함수 내부에서 호출
+  const { createSignal, createEffect, onCleanup, mergeProps, For, Show } = getSolid();
+
   // Props에 기본값 병합
   const merged = mergeProps(
     {

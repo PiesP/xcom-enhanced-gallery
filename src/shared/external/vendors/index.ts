@@ -24,5 +24,8 @@ export {
 // 타입 정의 exports (Solid.js only)
 export type { SolidAPI, SolidWebAPI, NativeDownloadAPI } from './vendor-manager-static';
 
+// Re-export Solid.js types (런타임 값이 아닌 타입만)
+export type { Component, JSX, Accessor } from 'solid-js';
+
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';

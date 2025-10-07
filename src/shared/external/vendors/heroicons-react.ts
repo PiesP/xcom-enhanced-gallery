@@ -1,11 +1,11 @@
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview Heroicons(React) getter (Phase 6: Simplified for Solid.js)
  * @description 외부 아이콘 라이브러리 접근은 전용 getter를 통해서만 수행합니다.
  * - 사용 아이콘만 개별 import하여 트리셰이킹을 보장합니다.
  * - Solid.js에서는 Dynamic 컴포넌트로 React 아이콘을 래핑합니다.
  */
-
-import type { JSX } from 'solid-js';
 
 // Outline 세트에서 필요한 아이콘만 개별 import
 import {

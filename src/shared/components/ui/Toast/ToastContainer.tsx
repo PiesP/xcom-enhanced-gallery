@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps, createMemo, For } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview ToastContainer Solid Component
  * @description Container for Toast notifications with position management
  */
 
-import { mergeProps, splitProps, createMemo, For, type Component, type JSX } from 'solid-js';
 import { Toast, type ToastItem } from './Toast';
 import { UnifiedToastManager } from '@/shared/services/UnifiedToastManager';
 import styles from './ToastContainer.module.css';

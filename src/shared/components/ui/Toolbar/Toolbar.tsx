@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+import { getSolidWeb } from '@shared/external/vendors';
+import type { Component } from '@shared/external/vendors';
+
 /**
  * @file Toolbar.solid.tsx
  * @description
@@ -22,8 +26,6 @@
  * - memo → 제거 (Solid 자동 최적화)
  */
 
-import { createEffect, createMemo, onCleanup, type Component } from 'solid-js';
-import { Show } from 'solid-js/web';
 import type { ViewMode } from '../../../types';
 import {
   createToolbarState,
@@ -101,6 +103,10 @@ export interface ToolbarProps {
 export type GalleryToolbarProps = ToolbarProps;
 
 export const Toolbar: Component<ToolbarProps> = props => {
+  // vendors getter를 컴포넌트 내부에서 호출
+  const { createEffect, createMemo, onCleanup } = getSolid();
+  const { Show } = getSolidWeb();
+
   // Toolbar state primitive 사용
   const [toolbarState, toolbarActions] = createToolbarState();
   let toolbarRef: HTMLDivElement | undefined;

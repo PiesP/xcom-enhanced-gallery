@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, createSignal, onCleanup, untrack } = getSolid();
+import type { Accessor } from '@shared/external/vendors';
+
 /**
  * @fileoverview Performance Optimization Primitives (Solid.js) - Phase 3
  * @description Solid Primitives 기반 성능 최적화 유틸리티
@@ -8,8 +12,6 @@
  * - Preact useEffect → Solid createEffect
  */
 
-import type { Accessor } from 'solid-js';
-import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 import { globalTimerManager } from '../timer-management';
 
 /**

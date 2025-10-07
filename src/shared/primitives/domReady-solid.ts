@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, createSignal, onCleanup } = getSolid();
+import type { Accessor } from '@shared/external/vendors';
+
 /**
  * DOM Ready Solid Primitive (Phase 3)
  * @description Solid.js reactive primitive for DOM ready detection
@@ -9,7 +13,6 @@
  * - Double requestAnimationFrame ensures layout & paint completion
  */
 
-import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
 import { logger } from '@shared/logging/logger';
 
 /**

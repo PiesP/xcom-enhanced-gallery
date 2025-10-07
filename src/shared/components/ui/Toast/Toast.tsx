@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps, onCleanup } = getSolid();
+import type { Component } from '@shared/external/vendors';
+
 /**
  * @fileoverview Toast Solid Component
  * @description Solid.js implementation of Toast notification
  */
 
-import { mergeProps, splitProps, onCleanup, type Component } from 'solid-js';
 import { globalTimerManager } from '@/shared/utils/timer-management';
 import styles from './Toast.module.css';
 

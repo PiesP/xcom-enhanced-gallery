@@ -1,8 +1,10 @@
+import { getSolid } from '@shared/external/vendors';
+import type { Component } from '@shared/external/vendors';
+
 /**
  * @fileoverview SettingsModal.solid - Simplified Solid.js Settings Modal
  * @description Solid.js version of SettingsModal using ModalShell and primitives
  */
-import { mergeProps, splitProps, createSignal, type Component, Show } from 'solid-js';
 import { ModalShell } from '../ModalShell/ModalShell';
 import styles from './SettingsModal.module.css';
 
@@ -40,6 +42,9 @@ export interface SettingsModalProps {
  * />
  */
 export const SettingsModal: Component<SettingsModalProps> = props => {
+  // vendors getter를 컴포넌트 내부에서 호출
+  const { mergeProps, splitProps, createSignal, Show } = getSolid();
+
   const merged = mergeProps(
     {
       mode: 'panel' as const,

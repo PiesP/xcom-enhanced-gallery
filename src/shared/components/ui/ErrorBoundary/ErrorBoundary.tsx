@@ -1,10 +1,14 @@
+import { getSolid } from '@shared/external/vendors';
+import type { JSX } from '@shared/external/vendors';
+
+const { ErrorBoundary: SolidErrorBoundary } = getSolid();
+
 /**
  * @fileoverview 상위 Error Boundary (Solid.js)
  * @description 자식 컴포넌트에서 발생한 렌더 오류를 포착하여 사용자에게 토스트로 알리고
  * UI는 조용히 대체합니다(텍스트 렌더링 없이). PC 전용 이벤트/벤더 getter 정책을 준수합니다.
  */
 
-import { ErrorBoundary as SolidErrorBoundary, type JSX } from 'solid-js';
 import { ToastManager } from '@shared/services/UnifiedToastManager';
 import { languageService } from '@shared/services/LanguageService';
 

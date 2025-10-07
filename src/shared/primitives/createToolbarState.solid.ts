@@ -1,3 +1,6 @@
+import { getSolid } from '@shared/external/vendors';
+const { createSignal, onCleanup } = getSolid();
+
 /**
  * @file createToolbarState.solid.ts
  * @description
@@ -20,7 +23,6 @@
  * - Fine-grained reactivity (자동 의존성 추적)
  */
 
-import { createSignal, onCleanup } from 'solid-js';
 import { globalTimerManager } from '../utils/timer-management';
 
 /**

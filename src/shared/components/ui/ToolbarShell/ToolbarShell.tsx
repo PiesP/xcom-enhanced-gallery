@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview ToolbarShell.solid - Solid.js 툴바 셸 컴포넌트
  * @description 툴바의 공통 레이아웃/스타일 Shell - 디자인 토큰 기반
@@ -9,8 +13,6 @@
  * - ARIA 접근성 지원
  * - 디자인 토큰 기반 클래스 조합
  */
-
-import { mergeProps, type Component, type JSX } from 'solid-js';
 
 export interface ToolbarShellProps {
   /** 컨텐츠 */

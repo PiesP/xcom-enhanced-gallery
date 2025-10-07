@@ -1,3 +1,6 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, onCleanup } = getSolid();
+
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
@@ -5,8 +8,6 @@
  * @fileoverview Solid.js primitive for gallery scroll management
  * @description Provides stable scroll handling without relying on mouse movements
  */
-
-import { createEffect, onCleanup } from 'solid-js';
 
 import { logger } from '@shared/logging/logger';
 import { EventManager } from '@shared/services/EventManager';

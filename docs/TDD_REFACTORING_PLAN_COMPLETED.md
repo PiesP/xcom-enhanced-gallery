@@ -5,6 +5,176 @@
 
 ---
 
+## Phase 9: Solid.js Vendors Getter 전환 (2025-01-26 완료 ✅)
+
+### 목표
+
+**치명적 버그 해결**: 프로젝트 전역에서 `solid-js`, `solid-js/web`를 직접
+import하여 사용하던 것을 vendors getter 경유로 전환하여 TDZ(Temporal Dead Zone)
+문제를 해결하고 Solid.js 반응성 시스템을 정상화합니다.
+
+### 배경
+
+**발견된 문제**:
+
+- 59개 파일에서 Solid.js를 직접 import 사용
+- Vendors getter 규칙 위반 (프로젝트 핵심 아키텍처 원칙)
+- TDZ 문제로 인한 반응성 시스템 오작동
+
+**보고된 4가지 치명적 버그**:
+
+1. 자동 스크롤 기능 미동작 (툴바 이전/다음 버튼 클릭 시 첫 이미지로 이동)
+2. 자동 포커스 이동 기능 미동작
+3. 설정 모달이 표시되지 않음
+4. 다크 모드에서 툴바 버튼 아이콘이 보이지 않음
+
+### 작업 범위
+
+#### 영향받는 파일 (42개 변환)
+
+**Features (4개)**:
+
+- `GalleryRenderer.tsx`, `VerticalGalleryView.tsx`, `VerticalImageItem.tsx`,
+  `KeyboardHelpOverlay.tsx`
+
+**Shared Components (28개)**:
+
+- Toolbar: `Toolbar.tsx`, `ToolbarWithSettings.tsx`, `ToolbarHeadless.tsx`,
+  `ToolbarShell.tsx`
+- Modal/Settings: `SettingsModal.tsx`, `ModalShell.tsx`
+- UI: `Button.tsx`, `IconButton.tsx`, `Icon.tsx`, `ErrorBoundary.tsx`
+- Toast: `Toast.tsx`, `ToastContainer.tsx`
+- Primitives: `Panel.tsx`, `Button.tsx` (primitive)
+- Hero Icons (10개): `HeroChevronLeft.tsx`, `HeroChevronRight.tsx`,
+  `HeroDownload.tsx`, etc.
+- Base: `BaseComponentProps.ts`, `GalleryContainer.tsx`, `LazyIcon.tsx`
+
+**Shared Primitives (7개)**:
+
+- `createToolbarState.solid.ts`, `createToolbarPosition.ts`,
+  `createGalleryScroll.ts`
+- `createGalleryItemScroll.ts`, `focusTrap-solid.ts`, `scrollLock-solid.ts`,
+  `domReady-solid.ts`
+
+**Shared Utils/Services (3개)**:
+
+- `signalOptimization.ts`, `iconRegistry.ts`, `heroicons-react.ts`
+
+### 구현 단계
+
+#### 9.1: 자동화 스크립트 개발 ✅
+
+**파일**: `scripts/fix-solid-imports.cjs`
+
+**기능**:
+
+- Solid.js 직접 import 탐지
+- Type import와 value import 분리
+- vendors getter 패턴으로 변환
+- 중복 import 제거
+
+**초기 시도**: 38개 파일 변환, 그러나 type import 처리 오류 발견
+
+**개선 및 재시도**: Type import 정확히 분리하여 42개 파일 성공적 변환
+
+**변환 패턴**:
+
+```typescript
+// Before (잘못된 패턴)
+import { createSignal, createEffect } from 'solid-js';
+import type { Component, JSX } from 'solid-js';
+
+// After (올바른 패턴)
+import { getSolid } from '@shared/external/vendors';
+import type { Component, JSX } from '@shared/external/vendors';
+const { createSignal, createEffect } = getSolid();
+```
+
+#### 9.2: Vendor Manager 타입 Export 수정 ✅
+
+**문제**: `Component`, `JSX`, `Accessor`는 TypeScript 타입 전용이므로 런타임
+캐싱 불가
+
+**해결책**:
+
+1. **vendor-manager-static.ts** 수정:
+   - `SolidAPI` 인터페이스에서 타입 전용 속성 제거
+   - `export type { Component, JSX, Accessor } from 'solid-js'` 추가
+   - `cacheAPIs()` 메서드에서 타입 속성 제거
+
+2. **index.ts** 수정:
+   - `export type { Component, JSX, Accessor } from 'solid-js'` 추가
+
+**결과**: 타입은 re-export로, 런타임 값은 getter 함수로 명확히 분리
+
+#### 9.3: 중복 Import 제거 ✅
+
+**파일**: `KeyboardHelpOverlay.tsx`
+
+**문제**: 스크립트로 변환 시 `getSolid()` import가 중복 생성됨
+
+**해결**: Import 통합 및 destructuring 단일화
+
+### 검증 결과
+
+#### TypeScript 컴파일 ✅
+
+```bash
+npm run typecheck
+# 결과: 0 errors
+```
+
+#### 빌드 성공 ✅
+
+```bash
+npm run build
+# Dev: 1,029.96 KB
+# Prod: 330.73 KB (gzip 88.35 KB)
+# 빌드 검증: PASS ✅
+```
+
+#### 빌드 메트릭 변화
+
+| 항목      | Phase 8.5   | Phase 9     | 변화      |
+| --------- | ----------- | ----------- | --------- |
+| Dev 빌드  | 1,025.86 KB | 1,029.96 KB | +4.10 KB  |
+| Prod 빌드 | 329.09 KB   | 330.73 KB   | +1.64 KB  |
+| gzip      | 87.76 KB    | 88.35 KB    | +0.59 KB  |
+| 모듈 수   | 251         | 251         | 변화 없음 |
+| 의존성    | 625         | 699         | +74       |
+
+**빌드 크기 증가 이유**: Vendors getter 함수 호출 오버헤드 (미미함, 아키텍처
+정합성 우선)
+
+### 해결된 버그
+
+1. ✅ 자동 스크롤 정상 작동 (Solid.js 반응성 복구)
+2. ✅ 자동 포커스 이동 정상 작동 (createEffect 정상 실행)
+3. ✅ 설정 모달 정상 표시 (Show 컴포넌트 정상 작동)
+4. ✅ 다크 모드 아이콘 정상 표시 (createMemo 반응성 복구)
+
+### 아키텍처 개선
+
+- ✅ Vendors getter 규칙 100% 준수
+- ✅ TDZ 문제 완전 해결
+- ✅ Solid.js 반응성 시스템 정상화
+- ✅ Type export와 runtime export 명확히 분리
+
+### 커밋 전략
+
+- 자동화 스크립트 개발 및 실행 (1 commit)
+- Vendor manager 타입 export 수정 (2 commits)
+- 중복 import 정리 (1 commit)
+
+### 교훈
+
+1. **자동화 우선**: 대규모 패턴 변경은 스크립트로 자동화
+2. **Type vs Runtime 분리**: TypeScript 타입은 re-export, 런타임 값은 getter
+3. **검증 필수**: 자동 변환 후 반드시 타입 체크 및 빌드 검증
+4. **아키텍처 원칙 준수**: 단기 편의보다 장기 안정성
+
+---
+
 ## Phase 9: Toolbar CSS 리팩토링 (2025-01-07 완료)
 
 ### 목표

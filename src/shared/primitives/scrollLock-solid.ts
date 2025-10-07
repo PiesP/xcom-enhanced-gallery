@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, onCleanup } = getSolid();
+import type { Accessor } from '@shared/external/vendors';
+
 /**
  * Scroll Lock Solid Primitive (Phase 3)
  * @description Solid.js reactive primitive for scroll locking functionality
@@ -8,8 +12,6 @@
  * - Manual lock/unlock methods for imperative control
  * - Follows external signal pattern from Focus Trap
  */
-
-import { createEffect, onCleanup, type Accessor } from 'solid-js';
 
 export interface ScrollLockOptions {
   reserveScrollBarGap?: boolean;

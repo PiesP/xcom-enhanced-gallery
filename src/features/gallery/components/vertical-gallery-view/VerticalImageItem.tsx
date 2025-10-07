@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createSignal, createEffect, onCleanup, mergeProps } = getSolid();
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
@@ -7,7 +11,6 @@
  * @description 수직 이미지 아이템 컴포넌트 - Solid.js 네이티브 반응성 활용
  */
 
-import { createSignal, createEffect, onCleanup, type JSX, mergeProps } from 'solid-js';
 import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { languageService } from '../../../../shared/services/LanguageService';

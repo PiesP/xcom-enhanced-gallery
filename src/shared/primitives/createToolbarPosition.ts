@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, createSignal, onCleanup } = getSolid();
+import type { Accessor } from '@shared/external/vendors';
+
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
@@ -7,7 +11,6 @@
  * @version 1.0.0 - Preact hook에서 Solid primitive로 전환
  */
 
-import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
 import { toolbarSlideDown, toolbarSlideUp } from '@shared/utils/animations';
 
 export interface CreateToolbarPositionOptions {

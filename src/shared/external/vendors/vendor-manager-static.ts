@@ -34,6 +34,7 @@ export interface NativeDownloadAPI {
 // ================================
 
 export interface SolidAPI {
+  // Primitives
   createSignal: typeof solid.createSignal;
   createEffect: typeof solid.createEffect;
   createMemo: typeof solid.createMemo;
@@ -44,6 +45,15 @@ export interface SolidAPI {
   on: typeof solid.on;
   onMount: typeof solid.onMount;
   onCleanup: typeof solid.onCleanup;
+
+  // Props utilities
+  mergeProps: typeof solid.mergeProps;
+  splitProps: typeof solid.splitProps;
+
+  // Components
+  Show: typeof solid.Show;
+  For: typeof solid.For;
+  ErrorBoundary: typeof solid.ErrorBoundary;
 }
 
 export interface SolidWebAPI {
@@ -51,7 +61,15 @@ export interface SolidWebAPI {
   hydrate: typeof solidWeb.hydrate;
   renderToString: typeof solidWeb.renderToString;
   isServer: typeof solidWeb.isServer;
+
+  // Components
+  Dynamic: typeof solidWeb.Dynamic;
+  Portal: typeof solidWeb.Portal;
+  Show: typeof solidWeb.Show;
 }
+
+// Re-export types from solid-js (타입만 export)
+export type { Component, JSX, Accessor } from 'solid-js';
 
 // ================================
 // 정적 벤더 매니저 (TDZ 안전)
@@ -137,8 +155,9 @@ export class StaticVendorManager {
   private cacheAPIs(): void {
     // Phase 6: Solid.js only - Preact API 캐싱 제거 완료
 
-    // Solid.js API
+    // Solid.js API (런타임 값만 캐시)
     const solidAPI: SolidAPI = {
+      // Primitives
       createSignal: this.vendors.solid.createSignal,
       createEffect: this.vendors.solid.createEffect,
       createMemo: this.vendors.solid.createMemo,
@@ -149,6 +168,15 @@ export class StaticVendorManager {
       on: this.vendors.solid.on,
       onMount: this.vendors.solid.onMount,
       onCleanup: this.vendors.solid.onCleanup,
+
+      // Props utilities
+      mergeProps: this.vendors.solid.mergeProps,
+      splitProps: this.vendors.solid.splitProps,
+
+      // Components
+      Show: this.vendors.solid.Show,
+      For: this.vendors.solid.For,
+      ErrorBoundary: this.vendors.solid.ErrorBoundary,
     };
 
     // Solid.js Web API
@@ -157,6 +185,11 @@ export class StaticVendorManager {
       hydrate: this.vendors.solidWeb.hydrate,
       renderToString: this.vendors.solidWeb.renderToString,
       isServer: this.vendors.solidWeb.isServer,
+
+      // Components
+      Dynamic: this.vendors.solidWeb.Dynamic,
+      Portal: this.vendors.solidWeb.Portal,
+      Show: this.vendors.solidWeb.Show,
     };
 
     // 캐시에 저장
@@ -169,39 +202,21 @@ export class StaticVendorManager {
   // Phase 6: Preact getter 메서드 모두 제거 완료
 
   /**
-   * Solid.js 안전 접근
+   * Solid.js 안전 접근 - 항상 정적 import 반환 (TDZ 방지)
    */
   public getSolid(): SolidAPI {
-    if (!this.isInitialized) {
-      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('solid') as SolidAPI;
-    if (!api) {
-      throw new Error('Solid.js API를 찾을 수 없습니다.');
-    }
-    return api;
+    // 정적 import는 항상 사용 가능하므로 직접 반환
+    // 캐시를 사용하지 않고 vendors 객체에서 직접 가져옴
+    return this.vendors.solid;
   }
 
   /**
-   * Solid.js Web 안전 접근 (TDZ 문제 해결)
+   * Solid.js Web 안전 접근 - 항상 정적 import 반환 (TDZ 방지)
    */
   public getSolidWeb(): SolidWebAPI {
-    if (!this.isInitialized) {
-      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('solid-web') as SolidWebAPI;
-    if (!api) {
-      throw new Error('Solid.js Web API를 찾을 수 없습니다.');
-    }
-    return api;
+    // 정적 import는 항상 사용 가능하므로 직접 반환
+    // 캐시를 사용하지 않고 vendors 객체에서 직접 가져옴
+    return this.vendors.solidWeb;
   }
 
   /**

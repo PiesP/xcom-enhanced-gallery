@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, onCleanup } = getSolid();
+import type { Accessor } from '@shared/external/vendors';
+
 /**
  * Focus Trap Solid Primitive (Phase 3)
  * @description Solid.js reactive primitive for focus trap functionality
@@ -10,7 +14,6 @@
  * - This follows Solid's philosophy: effects for side effects, signals for state
  */
 
-import { createEffect, onCleanup, type Accessor } from 'solid-js';
 import {
   createFocusTrap as createFocusTrapUtil,
   type FocusTrap as FocusTrapUtil,

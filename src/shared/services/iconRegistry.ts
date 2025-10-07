@@ -1,4 +1,4 @@
-import type { JSX } from 'solid-js';
+import type { JSX } from '@shared/external/vendors';
 
 export type IconName =
   | 'Download'

@@ -1,3 +1,6 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, onCleanup } = getSolid();
+
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
@@ -7,7 +10,6 @@
  * @version 1.0.0 - Preact hook에서 Solid primitive로 전환
  */
 
-import { createEffect, onCleanup } from 'solid-js';
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 

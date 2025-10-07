@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { createEffect, onCleanup } = getSolid();
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview LazyIcon Solid.js Component
  * @description Solid.js 기반 지연 로딩 아이콘 컴포넌트
  */
 
-import { createEffect, onCleanup, type JSX } from 'solid-js';
 import {
   getIconRegistry,
   preloadCommonIcons,

@@ -1,3 +1,5 @@
+import { getSolidWeb } from '@shared/external/vendors';
+
 /**
  * @fileoverview Gallery Renderer
  * @version 3.0.0 - Solid.js Integration
@@ -23,7 +25,6 @@ import {
   navigateNext,
 } from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { render } from 'solid-js/web';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
 import { GalleryContainer } from '../../shared/components/isolation/GalleryContainer';
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
@@ -208,7 +209,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
       }
     };
 
-    // Solid.js render with JSX
+    // Solid.js render with JSX - vendors getter를 함수 내부에서 호출
+    const { render } = getSolidWeb();
     this.disposeComponent = render(
       () => (
         <GalleryContainer onClose={handleClose} className='xeg-gallery-renderer xeg-gallery-root'>

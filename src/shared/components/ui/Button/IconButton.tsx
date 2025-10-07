@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview IconButton - Solid.js version
  * @description Thin wrapper over Button for icon-only actions
  */
 
-import { mergeProps, splitProps, type Component, type JSX } from 'solid-js';
 import { Button, type ButtonProps } from './Button';
 
 // IconButton 사이즈 맵 (TDD: icon-button.size-map)

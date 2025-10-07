@@ -1,10 +1,12 @@
+import { getSolidWeb } from '@shared/external/vendors';
+const { render } = getSolidWeb();
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview 갤러리 컨테이너 (Solid.js)
  * @description Light DOM 기반 갤러리 컨테이너 (Cascade Layers로 스타일 격리)
  */
 
-import { type JSX } from 'solid-js';
-import { render } from 'solid-js/web';
 import { logger } from '@shared/logging';
 
 /**

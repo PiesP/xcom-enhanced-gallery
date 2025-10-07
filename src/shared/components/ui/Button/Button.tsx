@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps, createEffect } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview Button.solid - Solid.js 통합 버튼 컴포넌트
  * @description 모든 버튼 요구사항을 만족하는 통합 컴포넌트 (Solid.js)
@@ -12,7 +16,6 @@
  * - Intent 시스템 (색상 오버레이)
  */
 
-import { mergeProps, splitProps, createEffect, type Component, type JSX } from 'solid-js';
 import { logger } from '@shared/logging';
 import styles from './Button.module.css';
 

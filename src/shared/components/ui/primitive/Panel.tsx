@@ -1,9 +1,12 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps } = getSolid();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview Panel Primitive Solid Component
  * @description 기본 패널/표면 컴포넌트 - Solid.js 기반
  */
 
-import { mergeProps, splitProps, type Component, type JSX } from 'solid-js';
 import './Panel.css';
 
 export interface PanelProps {

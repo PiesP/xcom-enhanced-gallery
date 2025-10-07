@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps } = getSolid();
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview Icon Component (Solid.js)
  * @version 1.0.0 - Solid.js Icon Container
@@ -8,8 +12,6 @@
  * - accessibility support
  * - TypeScript strict mode compliant
  */
-
-import { type JSX, mergeProps, splitProps } from 'solid-js';
 
 export interface IconProps extends JSX.SvgSVGAttributes<SVGSVGElement> {
   /**

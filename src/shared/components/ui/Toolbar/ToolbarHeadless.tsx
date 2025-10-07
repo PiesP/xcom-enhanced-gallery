@@ -1,3 +1,7 @@
+import { getSolid } from '@shared/external/vendors';
+const { createSignal, createMemo } = getSolid();
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @file ToolbarHeadless.solid.tsx
  * @description
@@ -15,8 +19,6 @@
  * - Render props children → JSX function call
  * - Fine-grained reactivity (자동 의존성 추적)
  */
-
-import { createSignal, createMemo, type JSX } from 'solid-js';
 
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 

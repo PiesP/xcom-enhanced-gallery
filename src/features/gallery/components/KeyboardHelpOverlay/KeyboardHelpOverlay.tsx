@@ -1,15 +1,16 @@
+import { getSolid } from '@shared/external/vendors';
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * KeyboardHelpOverlay - Solid.js version
  */
-import { type JSX, createSignal, createEffect, onCleanup, Show } from 'solid-js';
-import { getSolid } from '@shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { createFocusTrap } from '@shared/primitives/focusTrap-solid';
 import styles from './KeyboardHelpOverlay.module.css';
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import { languageService } from '@shared/services/LanguageService';
 
-const { createMemo } = getSolid();
+const { createSignal, createEffect, onCleanup, Show, createMemo } = getSolid();
 
 export interface KeyboardHelpOverlayProps {
   open: boolean;

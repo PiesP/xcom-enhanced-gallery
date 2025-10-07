@@ -1,10 +1,10 @@
+import type { JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview 기본 컴포넌트 Props 통합
  * @description Phase 6: Solid.js 전용 (ComponentChildren 제거)
  * @version 2.0.0
  */
-
-import type { JSX } from 'solid-js';
 
 /**
  * 모든 컴포넌트의 최상위 기본 Props

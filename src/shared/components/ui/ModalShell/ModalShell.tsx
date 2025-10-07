@@ -1,10 +1,14 @@
+import { getSolid } from '@shared/external/vendors';
+const { mergeProps, splitProps, Show } = getSolid();
+import { getSolidWeb } from '@shared/external/vendors';
+const { Portal } = getSolidWeb();
+import type { Component, JSX } from '@shared/external/vendors';
+
 /**
  * @fileoverview ModalShell Solid Component
  * @description Solid.js implementation of modal shell with Portal
  */
 
-import { mergeProps, splitProps, Show, type Component, type JSX } from 'solid-js';
-import { Portal } from 'solid-js/web';
 import styles from './ModalShell.module.css';
 
 export interface ModalShellProps {
