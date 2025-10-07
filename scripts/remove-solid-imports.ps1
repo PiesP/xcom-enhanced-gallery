@@ -18,11 +18,11 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 foreach ($file in $files) {
     $content = [System.IO.File]::ReadAllText($file.FullName, [System.Text.Encoding]::UTF8)
     $originalContent = $content
-    
+
     # Replace .solid extensions in import/export statements
     $content = $content -replace "(import\s+.*?from\s+['""].*?)\.solid(['""])", '$1$2'
     $content = $content -replace "(export\s+.*?from\s+['""].*?)\.solid(['""])", '$1$2'
-    
+
     if ($content -ne $originalContent) {
         [System.IO.File]::WriteAllText($file.FullName, $content, $utf8NoBom)
         $changes = ([regex]::Matches($originalContent, "\.solid")).Count

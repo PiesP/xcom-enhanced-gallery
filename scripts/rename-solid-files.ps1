@@ -13,15 +13,15 @@ $count = 0
 foreach ($file in $files) {
     $newName = $file.Name -replace '\.solid\.tsx$', '.tsx'
     $newPath = Join-Path $file.Directory.FullName $newName
-    
+
     Write-Host "Renaming: $($file.Name) -> $newName"
-    
+
     # Use relative path for git mv
     $relativePath = $file.FullName.Substring($rootPath.Length + 1)
     $relativeNewPath = $newPath.Substring($rootPath.Length + 1)
-    
+
     git mv "$relativePath" "$relativeNewPath"
-    
+
     if ($LASTEXITCODE -eq 0) {
         $count++
     } else {

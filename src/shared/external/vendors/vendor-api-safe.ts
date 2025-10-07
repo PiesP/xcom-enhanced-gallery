@@ -2,16 +2,12 @@
  * @fileoverview TDZ 안전한 Vendor API
  * @description 정적 import 기반으로 TDZ 문제를 해결한 안전한 vendor 접근 API
  *
- * TDD Phase: GREEN - 안전한 초기화와 동기 접근 보장
+ * Phase 6: Solid.js only - Preact 제거 완료
  */
 
 import { logger } from '../../logging';
 import {
   StaticVendorManager,
-  type PreactAPI,
-  type PreactHooksAPI,
-  type PreactSignalsAPI,
-  type PreactCompatAPI,
   type SolidAPI,
   type SolidWebAPI,
   type NativeDownloadAPI,
@@ -58,58 +54,10 @@ export async function initializeVendorsSafe(): Promise<void> {
   }
 }
 
-/**
- * Preact 라이브러리 안전 접근 (동기)
- */
-export function getPreactSafe(): PreactAPI {
-  try {
-    return staticVendorManager.getPreact();
-  } catch (error) {
-    logger.error('Preact 접근 실패:', error);
-    throw new Error('Preact 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
+// Phase 6: Preact 함수들 모두 제거 완료
 
 /**
- * Preact Hooks 안전 접근 (동기)
- */
-export function getPreactHooksSafe(): PreactHooksAPI {
-  try {
-    return staticVendorManager.getPreactHooks();
-  } catch (error) {
-    logger.error('Preact Hooks 접근 실패:', error);
-    throw new Error('Preact Hooks 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Signals 안전 접근 (동기)
- */
-export function getPreactSignalsSafe(): PreactSignalsAPI {
-  try {
-    return staticVendorManager.getPreactSignals();
-  } catch (error) {
-    logger.error('Preact Signals 접근 실패:', error);
-    throw new Error('Preact Signals 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Compat 안전 접근 (동기) - TDZ 문제 완전 해결
- */
-export function getPreactCompatSafe(): PreactCompatAPI {
-  try {
-    return staticVendorManager.getPreactCompat();
-  } catch (error) {
-    logger.error('Preact Compat 접근 실패:', error);
-
-    // 정적 import 기반이므로 fallback 없이 즉시 에러
-    throw new Error('Preact Compat 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Solid.js 안전 접근 (동기) - TDZ 문제 완전 해결
+ * Solid.js 안전 접근 (동기)
  */
 export function getSolidSafe(): SolidAPI {
   try {
@@ -258,34 +206,5 @@ export const resetVendorManagerInstance = (): void => {
   initializationPromise = null;
 };
 
-// ================================
-// Preact 함수들 직접 export (UI 컴포넌트/테스트 편의용)
-// ================================
-
-/**
- * Preact h 함수 (JSX createElement)
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().h를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
- */
-export const h = getPreactSafe().h;
-
-/**
- * Preact render 함수
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().render를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
- */
-export const render = getPreactSafe().render;
-
-/**
- * Preact Component 클래스
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Component를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
- */
-export const Component = getPreactSafe().Component;
-
-/**
- * Preact Fragment 컴포넌트
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Fragment를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
- */
-export const Fragment = getPreactSafe().Fragment;
+// Phase 6: Preact deprecated exports 제거 완료
+// 이제 Solid.js만 지원합니다.
