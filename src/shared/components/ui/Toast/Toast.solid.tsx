@@ -62,7 +62,10 @@ export const Toast: Component<ToastProps> = props => {
   };
 
   const toastClass = () => {
-    const classes = [styles.toast, styles[`toast--${local.toast.type}`]];
+    const classes = [styles.toast];
+    if (local.toast?.type) {
+      classes.push(styles[`toast--${local.toast.type}`]);
+    }
     if (local.className) {
       classes.push(local.className);
     }
