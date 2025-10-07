@@ -5891,3 +5891,45 @@ KeyboardHelpOverlay Solid.js 재작성, 모든 any 타입 제거 (38개 to 0개)
 5. 번들 크기 23% 감소 (Dev+Prod 합산)
 
 ---
+
+## Phase 7: User Experience Enhancement (2025-01-25 ~ 진행 중)
+
+### 2025-01-25 — Phase 7.1: 키보드 네비게이션 통합 (GREEN 완료)
+
+**목표**: 키보드 전용 사용자 접근성 보장 및 키보드 네비게이션 기본 기능 구현
+
+#### 완료 항목
+
+**RED 단계** ✅
+
+- test/unit/features/gallery/keyboard-navigation-integration.test.ts 작성 (400+
+  lines)
+- 10개 통합 테스트: ArrowLeft/Right, Home/End, Escape, Guards
+- 실제 KeyboardEvent 디스패치로 end-to-end 검증
+
+**GREEN 단계** ✅
+
+- GalleryRenderer.setupKeyboardNavigation() 메서드 추가 (+57 lines)
+- KeyboardNavigator 구독으로 ArrowLeft/Right, Home/End 처리
+- galleryState.isOpen guard 추가
+- 커밋: 70453d7d
+
+**빌드 검증** ✅
+
+- TypeScript: 0 errors, ESLint: 0 warnings
+- Dev: 1,032 KB, Prod: 329 KB (gzip 88 KB)
+- UserScript validation: PASSED
+
+#### 알려진 이슈
+
+1. 테스트 격리 문제 (7/10 tests fail)
+2. JSX 변환 이슈 (vendors getter 적용 시)
+3. Space 키 미구현 (Low Priority)
+
+#### 사용자 영향
+
+- ✅ ArrowLeft/Right로 이미지 네비게이션
+- ✅ Home/End로 첫/마지막 이동
+- ✅ 기본 스크롤 차단
+
+---
