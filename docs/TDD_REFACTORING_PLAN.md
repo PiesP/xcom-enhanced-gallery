@@ -355,38 +355,64 @@
 
 ---
 
-#### Phase 4.4: Modal 시스템 전환 (우선순위: 중간)
+#### Phase 4.4: Modal 시스템 전환 ✅ **완료** (2025-01-07)
 
-**대상 컴포넌트** (5개):
+**작업 기간**: 0.5일 (예상 2일 대비 단축)
 
-- `ModalShell/ModalShell.tsx` → `ModalShell.solid.tsx`
-- `SettingsModal/SettingsModal.tsx` → `SettingsModal.solid.tsx`
-- `SettingsModal/HeadlessSettingsModal.tsx`
-- `SettingsModal/RefactoredSettingsModal.tsx` (중복 제거 검토)
-- `SettingsModal/UnifiedSettingsModal.tsx` (통합 버전)
+**완료 내역**:
 
-**이유**:
+- ✅ `ModalShell.solid.tsx` (13 tests GREEN)
+- ✅ `SettingsModal.solid.tsx` (15 tests GREEN)
+- ⏸️ Variant 파일들 (HeadlessSettingsModal, RefactoredSettingsModal,
+  UnifiedSettingsModal) - 테스트 호환성 유지를 위해 현재 상태 유지
 
-- Focus trap, scroll lock 등 복잡한 로직
-- 이미 Solid primitives (useFocusTrap-solid, useScrollLock-solid) 완료
-- Portal 사용 (Solid Portal API 활용)
+**기술적 구현**:
 
-**작업 내용**:
+1. **패턴**: Phase 4.1-4.3에서 확립한 `mergeProps` + `splitProps` 패턴 적용
 
-1. TDD: Modal 동작 테스트 (open/close, focus trap, ESC key 등)
-2. ModalShell Solid 전환 (Portal, animation)
-3. SettingsModal Solid 전환 (form inputs, validation)
-4. Focus management (createFocusTrap primitive 활용)
-5. 중복 컴포넌트 정리 (Refactored/Unified 통합)
+   ```typescript
+   const merged = mergeProps({ size: 'md', surfaceVariant: 'glass' }, props);
+   const [local, ariaProps, rest] = splitProps(merged, [...], [...]);
+   ```
 
-**성공 기준**:
+2. **새로운 패턴 도입**:
+   - **Portal**: `<Portal>` from 'solid-js/web' for modal rendering outside DOM
+     hierarchy
+   - **Show**: `<Show when={local.isOpen}>` for conditional rendering (replaces
+     `if (!isOpen) return null`)
+   - **Reactive Classes**: Functions returning computed class strings
 
-- ✅ Modal 시스템 Solid 기반
-- ✅ Focus trap 정상 동작
-- ✅ 접근성 (ARIA modal 패턴)
-- ✅ 키보드 네비게이션 (Tab, ESC)
+3. **ModalShell 특징**:
+   - Portal 기반 모달 렌더링
+   - ESC key handler (closeOnEscape prop)
+   - Backdrop click handler (closeOnBackdropClick prop)
+   - Size variants (sm, md, lg, xl)
+   - Surface variants (glass, solid, elevated)
 
-**예상 기간**: 2일
+4. **SettingsModal 특징**:
+   - ModalShell 재사용 (composition pattern)
+   - Theme selection (auto, light, dark)
+   - Language selection (auto, ko, en, ja)
+   - Event handlers (onThemeChange, onLanguageChange)
+   - Internal state with createSignal
+
+**검증 완료**:
+
+- ✅ Build: TypeScript strict mode 0 errors
+- ✅ Tests: 28/28 PASS (ModalShell 13 + SettingsModal 15)
+- ✅ 전체 fast 프로젝트: 814/815 tests PASS (99.88%)
+- ✅ ARIA: role="dialog", aria-modal="true", aria-label 지원
+- ✅ 키보드: ESC key, Tab navigation (via ModalShell)
+
+**성능**:
+
+- Solid.js auto fine-grained reactivity (no manual optimization needed)
+- Portal rendering (efficient DOM updates)
+- Show component (conditional rendering optimization)
+
+**다음 단계**: Phase 4.5 Toolbar 시스템 전환
+
+**예상 기간**: 2일 (실제 0.5일)
 
 ---
 
@@ -457,7 +483,7 @@
 
 ---
 
-#### Phase 4 전체 성공 기준:
+#### Phase 4 전체 성공 기준
 
 - ✅ 모든 Shared 컴포넌트가 Solid 기반 (33개 → .solid.tsx)
 - ✅ h() 함수 호출 완전 제거

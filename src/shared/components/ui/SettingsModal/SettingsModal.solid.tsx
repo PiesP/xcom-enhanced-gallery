@@ -1,0 +1,169 @@
+/**
+ * @fileoverview SettingsModal.solid - Simplified Solid.js Settings Modal
+ * @description Solid.js version of SettingsModal using ModalShell and primitives
+ */
+import { mergeProps, splitProps, createSignal, type Component, Show } from 'solid-js';
+import { ModalShell } from '../ModalShell/ModalShell.solid';
+import styles from './SettingsModal.module.css';
+
+export interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  mode?: 'panel' | 'modal';
+  position?: 'toolbar-below' | 'top-right' | 'center' | 'bottom-sheet';
+  theme?: 'auto' | 'light' | 'dark';
+  language?: 'auto' | 'ko' | 'en' | 'ja';
+  onThemeChange?: (theme: 'auto' | 'light' | 'dark') => void;
+  onLanguageChange?: (language: 'auto' | 'ko' | 'en' | 'ja') => void;
+  className?: string;
+  'data-testid'?: string;
+  'aria-label'?: string;
+}
+
+/**
+ * SettingsModal - Simplified settings modal using ModalShell
+ *
+ * Simplified version focusing on core functionality:
+ * - Theme selection (auto, light, dark)
+ * - Language selection (auto, ko, en, ja)
+ * - ModalShell for portal rendering and accessibility
+ * - Focus trap and scroll lock via primitives (future)
+ *
+ * @example
+ * <SettingsModal
+ *   isOpen={isOpen()}
+ *   onClose={() => setIsOpen(false)}
+ *   theme={theme()}
+ *   language={language()}
+ *   onThemeChange={handleThemeChange}
+ *   onLanguageChange={handleLanguageChange}
+ * />
+ */
+export const SettingsModal: Component<SettingsModalProps> = props => {
+  const merged = mergeProps(
+    {
+      mode: 'panel' as const,
+      position: 'center' as const,
+      theme: 'auto' as const,
+      language: 'auto' as const,
+      'aria-label': 'Settings',
+    },
+    props
+  );
+
+  const [local, handlers, ariaProps] = splitProps(
+    merged,
+    ['isOpen', 'onClose', 'mode', 'position', 'theme', 'language', 'className'],
+    ['onThemeChange', 'onLanguageChange'],
+    ['aria-label', 'data-testid']
+  );
+
+  // Internal state for controlled inputs (if external props not provided)
+  const [internalTheme, setInternalTheme] = createSignal(local.theme);
+  const [internalLanguage, setInternalLanguage] = createSignal(local.language);
+
+  // Handle theme change
+  const handleThemeChange = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    const value = target.value as 'auto' | 'light' | 'dark';
+    setInternalTheme(value);
+    handlers.onThemeChange?.(value);
+  };
+
+  // Handle language change
+  const handleLanguageChange = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    const value = target.value as 'auto' | 'ko' | 'en' | 'ja';
+    setInternalLanguage(value);
+    handlers.onLanguageChange?.(value);
+  };
+
+  // Reactive class for panel/modal container
+  const containerClass = () => {
+    const classes = [styles['settings-modal']];
+    if (local.mode === 'panel') {
+      classes.push(styles['settings-panel']);
+    }
+    if (local.position) {
+      classes.push(styles[`position-${local.position}`]);
+    }
+    if (local.className) {
+      classes.push(local.className);
+    }
+    return classes.filter(Boolean).join(' ');
+  };
+
+  return (
+    <Show when={local.isOpen}>
+      <ModalShell
+        isOpen={local.isOpen}
+        onClose={local.onClose}
+        size='md'
+        surfaceVariant='glass'
+        closeOnBackdropClick={true}
+        closeOnEscape={true}
+        className={containerClass()}
+        aria-label={ariaProps['aria-label']}
+        {...(ariaProps['data-testid'] ? { 'data-testid': ariaProps['data-testid'] } : {})}
+      >
+        <div class={styles['settings-content']}>
+          {/* Header */}
+          <div class={styles['settings-header']}>
+            <h2 class={styles['settings-title']}>Settings</h2>
+            <button
+              onClick={local.onClose}
+              class={styles['close-button']}
+              type='button'
+              aria-label='Close'
+              data-testid='settings-close-button'
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Settings Form */}
+          <form class={styles['settings-form']}>
+            {/* Theme Selection */}
+            <div class={styles['form-group']}>
+              <label for='theme-select' class={styles['form-label']}>
+                Theme
+              </label>
+              <select
+                id='theme-select'
+                class={styles['form-select']}
+                value={local.theme || internalTheme()}
+                onChange={handleThemeChange}
+                data-testid='theme-select'
+              >
+                <option value='auto'>Auto (System)</option>
+                <option value='light'>Light</option>
+                <option value='dark'>Dark</option>
+              </select>
+            </div>
+
+            {/* Language Selection */}
+            <div class={styles['form-group']}>
+              <label for='language-select' class={styles['form-label']}>
+                Language
+              </label>
+              <select
+                id='language-select'
+                class={styles['form-select']}
+                value={local.language || internalLanguage()}
+                onChange={handleLanguageChange}
+                data-testid='language-select'
+              >
+                <option value='auto'>Auto (Detect)</option>
+                <option value='ko'>한국어</option>
+                <option value='en'>English</option>
+                <option value='ja'>日本語</option>
+              </select>
+            </div>
+          </form>
+        </div>
+      </ModalShell>
+    </Show>
+  );
+};
+
+export default SettingsModal;
