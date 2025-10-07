@@ -38,24 +38,33 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       },
       subscribe(callback: (value: T) => void): () => void {
         try {
-          // 초기값 즉시 전달
-          const currentValue = get();
-          callback(currentValue);
-
-          // JSDOM 환경(SSR)에서는 createEffect가 undefined를 반환할 수 있음
-          let dispose: (() => void) | void = undefined;
+          // createRoot로 effect를 감싸서 안전한 cleanup 보장
+          const { createRoot } = getSolid();
+          let rootDispose: (() => void) | void = undefined;
 
           try {
-            // Solid createEffect로 구독 구현
-            dispose = createEffect(() => {
-              callback(get());
+            rootDispose = createRoot(dispose => {
+              // Effect를 createRoot 스코프 내에서 생성
+              // createEffect는 즉시 실행되므로 초기값 호출도 여기서 처리
+              createEffect(() => {
+                callback(get());
+              });
+
+              // createRoot의 dispose 함수 반환 (root와 그 안의 effect 모두 cleanup)
+              return dispose;
             });
-          } catch {
-            // SSR 환경에서 effect가 동작하지 않을 수 있음
+          } catch (error) {
+            // SSR 환경 또는 createRoot 실패 시 fallback
+            logger.warn('Solid Signal subscribe - createRoot 실패, 초기값만 호출', {
+              error,
+            });
+            // SSR 환경에서는 최소한 초기값은 전달
+            const currentValue = get();
+            callback(currentValue);
           }
 
           // cleanup 함수 반환 (항상 함수 반환)
-          return typeof dispose === 'function' ? dispose : () => {};
+          return typeof rootDispose === 'function' ? rootDispose : () => {};
         } catch (error) {
           logger.warn('Solid Signal subscribe 실패', { error });
           return () => {};
