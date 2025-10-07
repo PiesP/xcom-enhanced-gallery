@@ -2,8 +2,8 @@ import { getPreact, getPreactHooks } from '../../../../shared/external/vendors';
 import { globalTimerManager } from '../../../../shared/utils/timer-management';
 import { useFocusTrap } from '../../../../shared/hooks/useFocusTrap';
 import styles from './KeyboardHelpOverlay.module.css';
-import { IconButton } from '../../../../shared/components/ui/Button/IconButton';
 import { languageService } from '../../../../shared/services/LanguageService';
+// TODO: Convert KeyboardHelpOverlay to Solid.js to use IconButton properly
 
 export interface KeyboardHelpOverlayProps {
   open: boolean;
@@ -218,15 +218,19 @@ export function KeyboardHelpOverlay({ open, onClose }: KeyboardHelpOverlayProps)
         'aria-describedby': descId,
       },
       [
-        h(IconButton, {
-          key: 'close',
-          className: styles.closeButton || '',
-          size: 'md',
-          tabIndex: 0,
-          onClick: () => onClose(),
-          'aria-label': languageService.getString('toolbar.close'),
-          'data-testid': 'kho-close-button',
-        }),
+        h(
+          'button',
+          {
+            key: 'close',
+            type: 'button',
+            className: `${styles.closeButton} xeg-icon-button xeg-icon-button-md`,
+            tabIndex: 0,
+            onClick: () => onClose(),
+            'aria-label': languageService.getString('toolbar.close'),
+            'data-testid': 'kho-close-button',
+          },
+          '✕'
+        ),
         h(
           'h2',
           { id: titleId, className: styles.title },

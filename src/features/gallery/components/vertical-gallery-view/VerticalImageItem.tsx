@@ -12,7 +12,7 @@ import type { ImageFitMode } from '@shared/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { languageService } from '../../../../shared/services/LanguageService';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
-import { Button } from '../../../../shared/components/ui/Button/Button.solid';
+import { Button } from '../../../../shared/components/ui/Button/Button';
 import styles from './VerticalImageItem.module.css';
 
 /**

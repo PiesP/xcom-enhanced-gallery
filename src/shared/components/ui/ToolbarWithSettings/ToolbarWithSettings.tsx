@@ -6,8 +6,8 @@
 
 import { createSignal, type Component } from 'solid-js';
 import { Show } from 'solid-js/web';
-import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar.solid';
-import { SettingsModal } from '../SettingsModal/SettingsModal.solid';
+import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
+import { SettingsModal } from '../SettingsModal/SettingsModal';
 
 export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSettings'> {
   /** 설정 모달 위치 (기본: toolbar-below) */

@@ -5,7 +5,7 @@
 
 import { Dynamic } from 'solid-js/web';
 import { mergeProps, splitProps, type Component } from 'solid-js';
-import { Icon, type IconProps } from '../Icon.solid';
+import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
 export function HeroChevronLeft(props: IconProps): ReturnType<Component> {

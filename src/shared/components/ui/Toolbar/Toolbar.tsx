@@ -33,18 +33,18 @@ import {
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/EventManager';
 import { ComponentStandards } from '../StandardProps';
-import { HeroChevronLeft } from '../Icon/hero/HeroChevronLeft.solid';
-import { HeroChevronRight } from '../Icon/hero/HeroChevronRight.solid';
-import { HeroDownload } from '../Icon/hero/HeroDownload.solid';
-import { HeroFileZip } from '../Icon/hero/HeroFileZip.solid';
-import { HeroSettings } from '../Icon/hero/HeroSettings.solid';
-import { HeroX } from '../Icon/hero/HeroX.solid';
-import { HeroZoomIn } from '../Icon/hero/HeroZoomIn.solid';
-import { HeroArrowAutofitWidth } from '../Icon/hero/HeroArrowAutofitWidth.solid';
-import { HeroArrowAutofitHeight } from '../Icon/hero/HeroArrowAutofitHeight.solid';
-import { HeroArrowsMaximize } from '../Icon/hero/HeroArrowsMaximize.solid';
+import { HeroChevronLeft } from '../Icon/hero/HeroChevronLeft';
+import { HeroChevronRight } from '../Icon/hero/HeroChevronRight';
+import { HeroDownload } from '../Icon/hero/HeroDownload';
+import { HeroFileZip } from '../Icon/hero/HeroFileZip';
+import { HeroSettings } from '../Icon/hero/HeroSettings';
+import { HeroX } from '../Icon/hero/HeroX';
+import { HeroZoomIn } from '../Icon/hero/HeroZoomIn';
+import { HeroArrowAutofitWidth } from '../Icon/hero/HeroArrowAutofitWidth';
+import { HeroArrowAutofitHeight } from '../Icon/hero/HeroArrowAutofitHeight';
+import { HeroArrowsMaximize } from '../Icon/hero/HeroArrowsMaximize';
 import styles from './Toolbar.module.css';
-import { IconButton } from '../Button/IconButton.solid';
+import { IconButton } from '../Button/IconButton';
 
 // 통합된 Toolbar Props - 구체적인 타입 정의
 export interface ToolbarProps {

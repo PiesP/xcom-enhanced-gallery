@@ -1,15 +1,15 @@
 /**
- * @fileoverview HeroZoomIn Icon Component (Solid.js)
- * @version 1.0.0 - Solid.js Hero ZoomIn Icon Adapter
+ * @fileoverview HeroArrowAutofitHeight Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero ArrowAutofitHeight Icon Adapter
  */
 
 import { Dynamic } from 'solid-js/web';
 import { mergeProps, splitProps, type Component } from 'solid-js';
-import { Icon, type IconProps } from '../Icon.solid';
+import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
-export function HeroZoomIn(props: IconProps): ReturnType<Component> {
-  const { MagnifyingGlassPlusIcon } = getHeroiconsOutline();
+export function HeroArrowAutofitHeight(props: IconProps): ReturnType<Component> {
+  const { ArrowsUpDownIcon } = getHeroiconsOutline();
   const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
   const [local, others] = splitProps(merged, ['size']);
   const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
@@ -17,7 +17,7 @@ export function HeroZoomIn(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={MagnifyingGlassPlusIcon as any}
+        component={ArrowsUpDownIcon as any}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

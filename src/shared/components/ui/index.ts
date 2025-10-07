@@ -15,7 +15,7 @@ export type { IconProps } from './Icon/Icon';
 // Button 컴포넌트
 export { default as Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';
-export { default as IconButton } from './Button/IconButton';
+export { IconButton } from './Button/IconButton';
 export type { IconButtonProps } from './Button/IconButton';
 
 // Toast 컴포넌트 — 상태성 함수는 서비스에서만 제공(배럴 재노출 금지)

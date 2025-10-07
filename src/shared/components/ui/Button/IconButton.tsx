@@ -4,7 +4,7 @@
  */
 
 import { mergeProps, splitProps, type Component, type JSX } from 'solid-js';
-import { Button, type ButtonProps } from './Button.solid';
+import { Button, type ButtonProps } from './Button';
 
 // IconButton 사이즈 맵 (TDD: icon-button.size-map)
 // 중앙에서 허용되는 사이즈 키를 관리하여 테스트로 일관성 가드

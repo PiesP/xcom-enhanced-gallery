@@ -1,15 +1,15 @@
 /**
- * @fileoverview HeroArrowAutofitHeight Icon Component (Solid.js)
- * @version 1.0.0 - Solid.js Hero ArrowAutofitHeight Icon Adapter
+ * @fileoverview HeroSettings Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero Settings Icon Adapter
  */
 
 import { Dynamic } from 'solid-js/web';
 import { mergeProps, splitProps, type Component } from 'solid-js';
-import { Icon, type IconProps } from '../Icon.solid';
+import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
-export function HeroArrowAutofitHeight(props: IconProps): ReturnType<Component> {
-  const { ArrowsUpDownIcon } = getHeroiconsOutline();
+export function HeroSettings(props: IconProps): ReturnType<Component> {
+  const { Cog6ToothIcon } = getHeroiconsOutline();
   const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
   const [local, others] = splitProps(merged, ['size']);
   const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
@@ -17,7 +17,7 @@ export function HeroArrowAutofitHeight(props: IconProps): ReturnType<Component> 
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArrowsUpDownIcon as any}
+        component={Cog6ToothIcon as any}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

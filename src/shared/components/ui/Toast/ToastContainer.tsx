@@ -4,7 +4,7 @@
  */
 
 import { mergeProps, splitProps, createMemo, For, type Component, type JSX } from 'solid-js';
-import { Toast, type ToastItem } from './Toast.solid';
+import { Toast, type ToastItem } from './Toast';
 import { UnifiedToastManager } from '@/shared/services/UnifiedToastManager';
 import styles from './ToastContainer.module.css';
 

@@ -3,7 +3,7 @@
  * @description Solid.js version of SettingsModal using ModalShell and primitives
  */
 import { mergeProps, splitProps, createSignal, type Component, Show } from 'solid-js';
-import { ModalShell } from '../ModalShell/ModalShell.solid';
+import { ModalShell } from '../ModalShell/ModalShell';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {

@@ -330,7 +330,7 @@ async function initializeGalleryApp(): Promise<void> {
     logger.info('🎨 갤러리 앱 지연 초기화 시작');
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer.solid');
+    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
     registerGalleryRenderer(new GalleryRenderer());
 
     // 갤러리 앱 인스턴스 생성

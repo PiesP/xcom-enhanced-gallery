@@ -1,15 +1,15 @@
 /**
- * @fileoverview HeroChevronRight Icon Component (Solid.js)
- * @version 1.0.0 - Solid.js Hero ChevronRight Icon Adapter
+ * @fileoverview HeroArrowsMaximize Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero ArrowsMaximize Icon Adapter
  */
 
 import { Dynamic } from 'solid-js/web';
 import { mergeProps, splitProps, type Component } from 'solid-js';
-import { Icon, type IconProps } from '../Icon.solid';
+import { Icon, type IconProps } from '../Icon';
 import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
-export function HeroChevronRight(props: IconProps): ReturnType<Component> {
-  const { ChevronRightIcon } = getHeroiconsOutline();
+export function HeroArrowsMaximize(props: IconProps): ReturnType<Component> {
+  const { ArrowsPointingOutIcon } = getHeroiconsOutline();
   const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
   const [local, others] = splitProps(merged, ['size']);
   const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
@@ -17,7 +17,7 @@ export function HeroChevronRight(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ChevronRightIcon as any}
+        component={ArrowsPointingOutIcon as any}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'
