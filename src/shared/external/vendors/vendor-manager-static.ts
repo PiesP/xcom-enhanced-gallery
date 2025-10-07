@@ -65,7 +65,7 @@ export interface SolidWebAPI {
   // Components
   Dynamic: typeof solidWeb.Dynamic;
   Portal: typeof solidWeb.Portal;
-  Show: typeof solidWeb.Show;
+  // Show: Removed in Phase 9.2 - use getSolid().Show instead to avoid duplication
 }
 
 // Re-export types from solid-js (타입만 export)
@@ -189,7 +189,7 @@ export class StaticVendorManager {
       // Components
       Dynamic: this.vendors.solidWeb.Dynamic,
       Portal: this.vendors.solidWeb.Portal,
-      Show: this.vendors.solidWeb.Show,
+      // Show: Removed in Phase 9.2 - use getSolid().Show instead
     };
 
     // 캐시에 저장
@@ -258,7 +258,7 @@ export class StaticVendorManager {
       // Components
       Dynamic: this.vendors.solidWeb.Dynamic,
       Portal: this.vendors.solidWeb.Portal,
-      Show: this.vendors.solidWeb.Show,
+      // Show: Removed in Phase 9.2 - use getSolid().Show instead
     };
 
     return solidWebAPI;

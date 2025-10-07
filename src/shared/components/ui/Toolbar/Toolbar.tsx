@@ -1,5 +1,4 @@
 import { getSolid } from '@shared/external/vendors';
-import { getSolidWeb } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
 
 /**
@@ -8,6 +7,7 @@ import type { Component } from '@shared/external/vendors';
  * Gallery Toolbar Component (Solid.js 버전)
  *
  * Preact Toolbar를 Solid.js로 마이그레이션
+ * Phase 9.2: Show 컴포넌트를 solid-js에서만 import (solid-js/web 중복 제거)
  *
  * 주요 기능:
  * - 12개 IconButton (Navigation, FitModes, Downloads, Controls)
@@ -104,8 +104,8 @@ export type GalleryToolbarProps = ToolbarProps;
 
 export const Toolbar: Component<ToolbarProps> = props => {
   // vendors getter를 컴포넌트 내부에서 호출
-  const { createEffect, createMemo, onCleanup } = getSolid();
-  const { Show } = getSolidWeb();
+  // Phase 9.2: Show는 solid-js에서만 가져와야 함 (solid-js/web의 Show와 중복 방지)
+  const { createEffect, createMemo, onCleanup, Show } = getSolid();
 
   // Toolbar state primitive 사용
   const [toolbarState, toolbarActions] = createToolbarState();

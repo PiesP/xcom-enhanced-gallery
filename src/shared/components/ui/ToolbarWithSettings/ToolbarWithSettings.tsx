@@ -1,11 +1,15 @@
 import { getSolid } from '@shared/external/vendors';
-import { getSolidWeb } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
 
 /**
  * @fileoverview ToolbarWithSettings.solid - Toolbar + Settings Modal Integration
  * @description Solid.js implementation combining Toolbar and SettingsModal
- * @version 1.0.0 - Solid.js Migration
+ * @version 1.0.1 - Phase 9.2: Show 컴포넌트 통일
+ *
+ * Phase 9.2 수정:
+ * - Show 컴포넌트를 solid-js에서만 import (solid-js/web 중복 제거)
+ * - Solid.js 반응성 시스템의 일관성 보장
+ * - getSolidWeb() import 제거 (불필요)
  */
 
 import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
@@ -44,8 +48,8 @@ export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSett
  */
 export const ToolbarWithSettings: Component<ToolbarWithSettingsProps> = props => {
   // vendors getter를 컴포넌트 내부에서 호출
-  const { createSignal } = getSolid();
-  const { Show } = getSolidWeb();
+  // Show는 solid-js에서만 가져와야 함 (solid-js/web의 Show와 중복 방지)
+  const { createSignal, Show } = getSolid();
 
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
