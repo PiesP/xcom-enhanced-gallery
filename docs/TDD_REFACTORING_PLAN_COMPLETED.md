@@ -5,6 +5,192 @@
 
 ---
 
+## Phase 10.4: Signal Subscribe Cleanup 검증 (2025-01-08 완료 ✅)
+
+### 목표
+
+`signal-factory-solid.ts`의 `subscribe` 메서드가 createRoot 없이 createEffect를
+호출하여 발생하는 메모리 누수 경고 및 cleanup 문제를 해결합니다.
+
+### 배경
+
+**발견된 문제**:
+
+- Solid.js 경고: "computations created outside createRoot will never be
+  disposed"
+- subscribe 후 unsubscribe가 effect를 정리하지 못함
+- 장시간 실행 시 메모리 누수 가능성
+
+**현재 구현 (Before)**:
+
+```typescript
+subscribe(callback: (value: T) => void): () => void {
+  try {
+    const dispose = solid.createEffect(() => callback(get()));
+    // ❌ createEffect는 cleanup 함수를 반환하지 않음!
+    return () => {};
+  } catch (error) {
+    return () => {};
+  }
+}
+```
+
+**사용처 (4곳)**:
+
+1. `GalleryRenderer.tsx`: destroy() 메서드에서 cleanup
+2. `UnifiedToastManager.ts`: notifySubscribers 바인딩
+3. `KeyboardNavigator.ts`: 키보드 이벤트 핸들러
+4. `feature-registration.ts`: 설정 변경 이벤트
+
+### 작업 수행
+
+#### RED 단계: Memory Leak 검증 테스트 작성
+
+**테스트 파일**: `test/unit/state/signal-factory-solid-subscribe-leak.test.ts`
+(175 lines)
+
+**5개 테스트 케이스**:
+
+1. **100회 subscribe/unsubscribe 반복**:
+   - subscribe → unsubscribe 100회 반복 후 callback 호출 횟수 검증
+   - 예상: 100회 (초기값만), 실제(RED): 200회+ (cleanup 미작동)
+
+2. **빠른 subscribe/unsubscribe 사이클**:
+   - 10회 빠른 사이클 테스트
+   - 누적 효과 없이 각 사이클당 정확히 1회 호출 검증
+
+3. **SSR 환경 시뮬레이션**:
+   - createRoot 실패 시나리오 (SSR 모킹)
+   - fallback cleanup 검증
+
+4. **Signal scope 제거**:
+   - GC 시뮬레이션
+   - Signal 참조 제거 후 cleanup 검증
+
+5. **다중 동시 구독**:
+   - 3개 동시 구독 → 선택적 unsubscribe
+   - 각 구독의 독립적 cleanup 검증
+
+**RED 결과**: 5/5 tests FAILED ✅
+
+- Solid.js 경고 100회 출력 (예상대로)
+- unsubscribe 후에도 effect 계속 실행 (메모리 누수 재현)
+
+#### GREEN 단계: createRoot 기반 구현
+
+**1차 수정** (초기값 중복 문제):
+
+```typescript
+subscribe(callback: (value: T) => void): () => void {
+  let rootDispose: (() => void) | undefined;
+  try {
+    const { createRoot, createEffect } = getSolid();
+
+    rootDispose = createRoot(dispose => {
+      createEffect(() => {
+        callback(get());
+      });
+      return dispose;
+    });
+
+    // ❌ 초기값 중복 호출 (createEffect가 즉시 실행됨)
+    callback(get());
+  } catch (error) {
+    try {
+      callback(get());
+    } catch { /* ignore */ }
+  }
+  return rootDispose ?? (() => {});
+}
+```
+
+**1차 실행 결과**: 1/5 tests PASSED (초기값 2번 호출 문제)
+
+**2차 수정** (초기값 로직 제거):
+
+```typescript
+subscribe(callback: (value: T) => void): () => void {
+  let rootDispose: (() => void) | undefined;
+  try {
+    const { createRoot, createEffect } = getSolid();
+
+    rootDispose = createRoot(dispose => {
+      createEffect(() => {
+        callback(get()); // createEffect가 즉시 실행됨 (초기값 자동 호출)
+      });
+      return dispose;
+    });
+  } catch (error) {
+    // SSR fallback: 초기값만 호출
+    try {
+      callback(get());
+    } catch { /* ignore */ }
+  }
+  return rootDispose ?? (() => {});
+}
+```
+
+**GREEN 결과**: 5/5 tests PASSED ✅
+
+- Solid.js 경고 0건
+- unsubscribe 후 effect 정지 확인
+- SSR fallback 정상 작동
+
+#### REFACTOR 단계: 빌드 검증 및 문서화
+
+**빌드 검증**:
+
+```pwsh
+npm run build
+```
+
+**결과**:
+
+- TypeScript: 0 errors ✅
+- ESLint: 0 warnings ✅
+- Dependency-cruiser: 0 violations ✅
+- Dev build: 1,031.05 KB (+0.33 KB)
+- Prod build: 331.29 KB (+0.12 KB)
+- gzip: 88.42 KB (+0.05 KB)
+
+**테스트 파일 리네임**:
+
+```pwsh
+git mv signal-factory-solid-subscribe-leak.red.test.ts signal-factory-solid-subscribe-leak.test.ts
+```
+
+### 수용 기준
+
+- [x] Memory leak 테스트 GREEN (100회 반복) ✅
+- [x] SSR 환경 안전한 cleanup (fallback 검증) ✅
+- [x] 기존 기능 영향 없음 (회귀 테스트 통과) ✅
+- [x] Solid.js 경고 0건 ✅
+
+### 결과
+
+**핵심 개선**:
+
+- ✅ Solid.js 경고 완전 제거 (createRoot 패턴)
+- ✅ 메모리 누수 해결 (unsubscribe 후 effect 정지 확인)
+- ✅ SSR 호환성 강화 (createRoot 실패 시 fallback)
+- ✅ 5/5 테스트 GREEN (175 lines 검증 코드)
+
+**메트릭 변화**:
+
+| 메트릭             | Before      | After       | 변화        |
+| ------------------ | ----------- | ----------- | ----------- |
+| Dev 빌드           | 1,030.72 KB | 1,031.05 KB | +0.33 KB    |
+| Prod 빌드          | 331.17 KB   | 331.29 KB   | +0.12 KB    |
+| gzip               | 88.37 KB    | 88.42 KB    | +0.05 KB    |
+| Subscribe 구현     | noop        | createRoot  | **안전** ✅ |
+| Memory leak 리스크 | 있음        | **없음**    | **해결** ✅ |
+| SSR 호환성         | 취약        | **강화**    | **개선** ✅ |
+| Solid.js 경고      | 100회       | **0건**     | **제거** ✅ |
+
+**커밋**: `1a4e2e05` - fix(core): implement createRoot-based subscribe cleanup
+
+---
+
 ## Phase 10.1: 테스트 Preact 잔재 제거 (2025-01-08 완료 ✅)
 
 ### 목표
