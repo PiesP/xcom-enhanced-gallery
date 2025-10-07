@@ -83,18 +83,18 @@ export interface ToolbarProps {
   /** ARIA 속성들 */
   'aria-describedby'?: string;
   /** 접근성 역할 */
-  role?: string;
+  role?: 'toolbar' | 'group' | 'navigation' | 'region';
   /** 탭 인덱스 */
   tabIndex?: number;
   /** ImageFitCallbacks 지원 */
-  onFitOriginal?: (event?: any) => void;
-  onFitWidth?: (event?: any) => void;
-  onFitHeight?: (event?: any) => void;
-  onFitContainer?: (event?: any) => void;
+  onFitOriginal?: (event?: MouseEvent) => void;
+  onFitWidth?: (event?: MouseEvent) => void;
+  onFitHeight?: (event?: MouseEvent) => void;
+  onFitContainer?: (event?: MouseEvent) => void;
   // 표준 이벤트 핸들러들
-  onFocus?: (event: any) => void;
-  onBlur?: (event: any) => void;
-  onKeyDown?: (event: any) => void;
+  onFocus?: (event: FocusEvent) => void;
+  onBlur?: (event: FocusEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
 }
 
 // 호환성을 위한 별칭
@@ -123,7 +123,8 @@ export const Toolbar: Component<ToolbarProps> = props => {
     // 테스트/JSDOM 환경 가드: 필수 브라우저 API가 없으면 감지를 건너뜀
     const canDetect =
       typeof document !== 'undefined' &&
-      typeof (document as any).elementsFromPoint === 'function' &&
+      typeof (document as Document & { elementsFromPoint?: (x: number, y: number) => Element[] })
+        .elementsFromPoint === 'function' &&
       typeof window !== 'undefined' &&
       typeof window.getComputedStyle === 'function';
 
@@ -165,7 +166,10 @@ export const Toolbar: Component<ToolbarProps> = props => {
         let lightBackgroundCount = 0;
 
         samplePoints.forEach(point => {
-          const elementsBelow = (document as any).elementsFromPoint(point.x, point.y) as Element[];
+          const docWithElements = document as Document & {
+            elementsFromPoint: (x: number, y: number) => Element[];
+          };
+          const elementsBelow = docWithElements.elementsFromPoint(point.x, point.y);
           const hasLight = elementsBelow.some((el: Element) => {
             const computedStyles = window.getComputedStyle(el);
             const bgColor = computedStyles.backgroundColor || '';
@@ -217,13 +221,13 @@ export const Toolbar: Component<ToolbarProps> = props => {
   const canGoPrevious = createMemo(() => props.currentIndex > 0);
 
   // 버튼 클릭 피드백 - 상태 변경 없이 직접 실행
-  const handleButtonClick = (event: any, _buttonId: string, action: () => void) => {
+  const handleButtonClick = (event: MouseEvent, _buttonId: string, action: () => void) => {
     event.stopPropagation();
     action();
   };
 
   // 크기 조절 버튼 핸들러 - 이벤트 전파 차단 추가
-  const handleFitMode = (event: any, mode: string, action?: () => void) => {
+  const handleFitMode = (event: MouseEvent, mode: string, action?: () => void) => {
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
@@ -238,7 +242,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
     <div
       ref={toolbarRef}
       class={toolbarClass()}
-      role={(props.role as any) || 'toolbar'}
+      role={props.role || 'toolbar'}
       aria-label={props['aria-label'] || '갤러리 도구모음'}
       aria-describedby={props['aria-describedby']}
       aria-disabled={props.disabled}
@@ -266,7 +270,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
             disabled={!!(props.disabled || !canGoPrevious())}
-            onClick={(e: any) => handleButtonClick(e, 'previous', props.onPrevious)}
+            onClick={(e: MouseEvent) => handleButtonClick(e, 'previous', props.onPrevious)}
             data-gallery-element='nav-previous'
             data-disabled={!!(props.disabled || !canGoPrevious())}
           >
@@ -277,7 +281,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
             disabled={!!(props.disabled || !canGoNext())}
-            onClick={(e: any) => handleButtonClick(e, 'next', props.onNext)}
+            onClick={(e: MouseEvent) => handleButtonClick(e, 'next', props.onNext)}
             data-gallery-element='nav-next'
             data-disabled={!!(props.disabled || !canGoNext())}
           >
@@ -315,7 +319,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
           {/* 이미지 핏 모드 버튼들 */}
           <IconButton
             size='toolbar'
-            onClick={(e: any) => handleFitMode(e, 'original', props.onFitOriginal)}
+            onClick={(e: MouseEvent) => handleFitMode(e, 'original', props.onFitOriginal)}
             disabled={!!(props.disabled || !props.onFitOriginal)}
             aria-label='원본 크기'
             title='원본 크기 (1:1)'
@@ -327,7 +331,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
           </IconButton>
           <IconButton
             size='toolbar'
-            onClick={(e: any) => handleFitMode(e, 'fitWidth', props.onFitWidth)}
+            onClick={(e: MouseEvent) => handleFitMode(e, 'fitWidth', props.onFitWidth)}
             disabled={!!(props.disabled || !props.onFitWidth)}
             aria-label='가로에 맞춤'
             title='가로에 맞추기'
@@ -339,7 +343,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
           </IconButton>
           <IconButton
             size='toolbar'
-            onClick={(e: any) => handleFitMode(e, 'fitHeight', props.onFitHeight)}
+            onClick={(e: MouseEvent) => handleFitMode(e, 'fitHeight', props.onFitHeight)}
             disabled={!!(props.disabled || !props.onFitHeight)}
             aria-label='세로에 맞춤'
             title='세로에 맞추기'
@@ -351,7 +355,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
           </IconButton>
           <IconButton
             size='toolbar'
-            onClick={(e: any) => handleFitMode(e, 'fitContainer', props.onFitContainer)}
+            onClick={(e: MouseEvent) => handleFitMode(e, 'fitContainer', props.onFitContainer)}
             disabled={!!(props.disabled || !props.onFitContainer)}
             aria-label='창에 맞춤'
             title='창에 맞추기'
@@ -366,7 +370,9 @@ export const Toolbar: Component<ToolbarProps> = props => {
           <IconButton
             size='toolbar'
             loading={!!props.isDownloading}
-            onClick={(e: any) => handleButtonClick(e, 'download-current', props.onDownloadCurrent)}
+            onClick={(e: MouseEvent) =>
+              handleButtonClick(e, 'download-current', props.onDownloadCurrent)
+            }
             disabled={!!(props.disabled || props.isDownloading)}
             aria-label='현재 파일 다운로드'
             title='현재 파일 다운로드 (Ctrl+D)'
@@ -380,7 +386,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
           <Show when={props.totalCount > 1}>
             <IconButton
               size='toolbar'
-              onClick={(e: any) => handleButtonClick(e, 'download-all', props.onDownloadAll)}
+              onClick={(e: MouseEvent) => handleButtonClick(e, 'download-all', props.onDownloadAll)}
               disabled={!!(props.disabled || props.isDownloading)}
               aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
@@ -399,8 +405,10 @@ export const Toolbar: Component<ToolbarProps> = props => {
               aria-label='설정 열기'
               title='설정'
               disabled={!!props.disabled}
-              onClick={(e: any) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
-              onMouseDown={(e: any) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
+              onClick={(e: MouseEvent) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
+              onMouseDown={(e: MouseEvent) =>
+                handleButtonClick(e, 'settings', props.onOpenSettings!)
+              }
               data-gallery-element='settings'
               data-disabled={!!props.disabled}
             >
@@ -415,7 +423,7 @@ export const Toolbar: Component<ToolbarProps> = props => {
             aria-label='갤러리 닫기'
             title='갤러리 닫기 (Esc)'
             disabled={!!props.disabled}
-            onClick={(e: any) => handleButtonClick(e, 'close', props.onClose)}
+            onClick={(e: MouseEvent) => handleButtonClick(e, 'close', props.onClose)}
             data-gallery-element='close'
             data-disabled={!!props.disabled}
           >

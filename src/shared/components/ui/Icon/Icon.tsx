@@ -100,13 +100,13 @@ export function Icon(props: IconProps) {
       fill='none'
       stroke='var(--xeg-icon-color, currentColor)'
       stroke-width='var(--xeg-icon-stroke-width)'
-      stroke-linecap={'round' as any}
-      stroke-linejoin={'round' as any}
+      stroke-linecap='round'
+      stroke-linejoin='round'
       class={local.class}
       {...accessibilityProps()}
       {...others}
     >
       {local.children}
     </svg>
-  ) as any;
+  );
 }

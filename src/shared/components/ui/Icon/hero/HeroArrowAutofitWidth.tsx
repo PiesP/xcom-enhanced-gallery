@@ -17,7 +17,7 @@ export function HeroArrowAutofitWidth(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArrowsRightLeftIcon as any}
+        component={ArrowsRightLeftIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

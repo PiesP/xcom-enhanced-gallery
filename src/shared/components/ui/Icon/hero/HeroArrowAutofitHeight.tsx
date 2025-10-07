@@ -17,7 +17,7 @@ export function HeroArrowAutofitHeight(props: IconProps): ReturnType<Component> 
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArrowsUpDownIcon as any}
+        component={ArrowsUpDownIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

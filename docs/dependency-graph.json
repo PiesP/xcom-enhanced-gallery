@@ -73,6 +73,7 @@
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/state/signals/signal-factory-solid.ts",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/main.ts",
         "src/shared/external/index.ts",
         "src/shared/utils/signalSelector.ts",
@@ -386,6 +387,7 @@
         "src/shared/utils/animations.ts",
         "src/shared/utils/css-animations.ts",
         "src/shared/utils/viewport.ts",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/main.ts",
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/utils/index.ts",
@@ -1737,6 +1739,7 @@
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/shared/services/index.ts"
       ],
       "orphan": false,
@@ -1919,8 +1922,8 @@
       "dependencies": [],
       "dependents": [
         "src/shared/utils/accessibility/accessibility-utils.ts",
-        "src/shared/index.ts",
-        "src/shared/primitives/focusTrap-solid.ts"
+        "src/shared/primitives/focusTrap-solid.ts",
+        "src/shared/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6516,6 +6519,7 @@
       ],
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
@@ -7938,6 +7942,175 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./KeyboardHelpOverlay.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/components/ui/Button/IconButton",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/IconButton.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/primitives/focusTrap-solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/primitives/focusTrap-solid.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/primitives/focusTrap-solid.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../utils/focusTrap",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/focusTrap.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -13018,31 +13191,6 @@
       ]
     },
     {
-      "source": "src/shared/primitives/focusTrap-solid.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../utils/focusTrap",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/focusTrap.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/primitives/scrollLock-solid.ts",
       "dependencies": [],
       "dependents": [],
@@ -14077,8 +14225,8 @@
     "warn": 0,
     "info": 2,
     "ignore": 0,
-    "totalCruised": 251,
-    "totalDependenciesCruised": 621,
+    "totalCruised": 253,
+    "totalDependenciesCruised": 627,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

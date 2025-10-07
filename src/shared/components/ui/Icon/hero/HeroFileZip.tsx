@@ -17,7 +17,7 @@ export function HeroFileZip(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArchiveBoxArrowDownIcon as any}
+        component={ArchiveBoxArrowDownIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

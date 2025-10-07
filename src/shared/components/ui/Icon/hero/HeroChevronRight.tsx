@@ -17,7 +17,7 @@ export function HeroChevronRight(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ChevronRightIcon as any}
+        component={ChevronRightIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

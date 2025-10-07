@@ -17,7 +17,7 @@ export function HeroZoomIn(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={MagnifyingGlassPlusIcon as any}
+        component={MagnifyingGlassPlusIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

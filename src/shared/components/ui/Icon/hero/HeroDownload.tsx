@@ -17,7 +17,7 @@ export function HeroDownload(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArrowDownTrayIcon as any}
+        component={ArrowDownTrayIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

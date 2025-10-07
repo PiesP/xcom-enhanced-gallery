@@ -3,6 +3,13 @@
 > eslint ./src --report-unused-disable-directives --max-warnings 0
 
 
+C:\git\xcom-enhanced-gallery\src\features\gallery\components\KeyboardHelpOverlay\KeyboardHelpOverlay.tsx
+  161:41  error  Replace `"presentation"` with `'presentation'`          prettier/prettier
+  165:16  error  Replace `"dialog"` with `'dialog'`                      prettier/prettier
+  166:22  error  Replace `"true"` with `'true'`                          prettier/prettier
+  172:18  error  Replace `"md"` with `'md'`                              prettier/prettier
+  176:25  error  Replace `"kho-close-button"` with `'kho-close-button'`  prettier/prettier
+
 C:\git\xcom-enhanced-gallery\src\features\gallery\components\vertical-gallery-view\VerticalGalleryView.tsx
   110:29  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
@@ -69,6 +76,6 @@ C:\git\xcom-enhanced-gallery\src\shared\components\ui\Toolbar\Toolbar.tsx
   403:32  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   418:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-??38 problems (0 errors, 38 warnings)
+??43 problems (5 errors, 38 warnings)
+  5 errors and 0 warnings potentially fixable with the `--fix` option.
 
-ESLint found too many warnings (maximum: 0).

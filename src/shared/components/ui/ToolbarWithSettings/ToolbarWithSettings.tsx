@@ -61,9 +61,9 @@ export const ToolbarWithSettings: Component<ToolbarWithSettingsProps> = props =>
   const toolbarProps = (): Omit<ToolbarProps, 'onOpenSettings'> & {
     onOpenSettings: () => void;
   } => {
-    const { settingsPosition, settingsTestId, ...rest } = props as any;
+    const { settingsPosition, settingsTestId, ...rest } = props;
     return {
-      ...rest,
+      ...(rest as ToolbarProps),
       onOpenSettings: handleOpenSettings,
     };
   };

@@ -2,49 +2,31 @@
 /**
  * Vitest 테스트 설정 (최적화)
  * 간결하고 효율적인 테스트 환경 구성
- * Phase 0: Solid.js 테스트 지원 추가
+ * Phase 6: Solid.js 전용 전환
  */
 
-import preact from '@preact/preset-vite';
 import solid from 'vite-plugin-solid';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 import os from 'node:os';
 import { fileURLToPath, URL } from 'node:url';
-// note: no fs usage
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const CPU_COUNT = Math.max(1, (os.cpus?.() || []).length || 4);
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
-// helpers kept minimal for lint cleanliness
-// NOTE: 테스트에서는 vite-tsconfig-paths로 TS paths를 그대로 사용합니다.
 
-// 공용 alias/resolve 구성 (프로젝트별 config에도 주입)
+// 공용 alias/resolve 구성
 const SRC_DIR = toPosix(resolve(__dirname, './src'));
 const FEATURES_DIR = toPosix(resolve(__dirname, './src/features'));
 const SHARED_DIR = toPosix(resolve(__dirname, './src/shared'));
 const ASSETS_DIR = toPosix(resolve(__dirname, './src/assets'));
 
 const sharedResolve = {
-  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json', '.solid.tsx', '.solid.ts'],
+  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
   alias: [
-    // Preact 모듈을 명시적으로 단일 경로로 고정
-    // 이렇게 하면 @testing-library/preact와 vendor manager가 동일한 인스턴스를 사용함
-    {
-      find: /^preact$/,
-      replacement: resolve(__dirname, './node_modules/preact/dist/preact.module.js'),
-    },
-    {
-      find: /^preact\/hooks$/,
-      replacement: resolve(__dirname, './node_modules/preact/hooks/dist/hooks.module.js'),
-    },
-    {
-      find: /^preact\/compat$/,
-      replacement: resolve(__dirname, './node_modules/preact/compat/dist/compat.module.js'),
-    },
     { find: '@features', replacement: FEATURES_DIR },
     { find: '@shared', replacement: SHARED_DIR },
     { find: '@assets', replacement: ASSETS_DIR },
@@ -85,18 +67,13 @@ export default defineConfig({
         } catch {}
       },
     },
-    // Phase 0: Solid.js support for .solid.tsx files
+    // Solid.js support
     solid({
-      include: ['**/*.solid.tsx', '**/*.solid.ts'],
-      extensions: ['.solid.tsx', '.solid.ts'],
-      // Solid는 dev 모드에서도 production 빌드로 실행 (테스트 안정성)
-      dev: false,
+      dev: false, // 테스트 안정성을 위해 production 모드 사용
     }),
     // TS paths를 테스트에서도 동일하게 사용하도록 활성화
     tsconfigPaths({ projects: ['tsconfig.json'] }),
-    // Preact preset (기본 .tsx 파일 처리)
-    preact(),
-  ].filter(Boolean) as any,
+  ].filter(Boolean) as any[],
 
   resolve: sharedResolve,
   test: {

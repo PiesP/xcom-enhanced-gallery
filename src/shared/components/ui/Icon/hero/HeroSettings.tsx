@@ -17,7 +17,7 @@ export function HeroSettings(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={Cog6ToothIcon as any}
+        component={Cog6ToothIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

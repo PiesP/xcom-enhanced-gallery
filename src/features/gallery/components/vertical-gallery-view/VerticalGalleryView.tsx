@@ -107,7 +107,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
   // 메모이제이션된 미디어 아이템
   const memoizedMediaItems = () => {
     const items = mediaItems();
-    return items.map((item: any, index: number) => ({
+    return items.map((item, index: number) => ({
       ...item,
       _galleryKey: `${item.id || item.url}-${index}`,
       _index: index,

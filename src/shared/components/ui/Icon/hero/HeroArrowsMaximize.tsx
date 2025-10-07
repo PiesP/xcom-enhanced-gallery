@@ -17,7 +17,7 @@ export function HeroArrowsMaximize(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={ArrowsPointingOutIcon as any}
+        component={ArrowsPointingOutIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'

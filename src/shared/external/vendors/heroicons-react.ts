@@ -5,6 +5,8 @@
  * - Solid.js에서는 Dynamic 컴포넌트로 React 아이콘을 래핑합니다.
  */
 
+import type { JSX } from 'solid-js';
+
 // Outline 세트에서 필요한 아이콘만 개별 import
 import {
   ChevronLeftIcon as ReactChevronLeftIcon,
@@ -19,7 +21,24 @@ import {
   ArchiveBoxArrowDownIcon as ReactArchiveBoxArrowDownIcon,
 } from '@heroicons/react/24/outline';
 
-export type HeroIconComponent = (props: Record<string, unknown>) => unknown;
+/**
+ * Hero Icon Component type for Solid.js Dynamic
+ * React 컴포넌트를 Solid의 Dynamic으로 사용하기 위한 타입
+ */
+export type HeroIconComponent = (props: {
+  width?: string | number;
+  height?: string | number;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: string | number;
+  'stroke-width'?: string | number;
+  strokeLinecap?: string;
+  strokeLinejoin?: string;
+  class?: string;
+  className?: string;
+  [key: string]: unknown;
+}) => JSX.Element;
+
 export type HeroiconsOutline = {
   ChevronLeftIcon: HeroIconComponent;
   ChevronRightIcon: HeroIconComponent;

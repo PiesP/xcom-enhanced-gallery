@@ -17,7 +17,7 @@ export function HeroX(props: IconProps): ReturnType<Component> {
   return (
     <Icon size={local.size} {...others}>
       <Dynamic
-        component={XMarkIcon as any}
+        component={XMarkIcon}
         width={sizeValue()}
         height={sizeValue()}
         fill='none'
