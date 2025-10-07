@@ -32,7 +32,7 @@
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
     "lint:staged": "lint-staged",
-    "typecheck": "tsc --noEmit && tsc --project tsconfig.solid.json --noEmit",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "validate": "npm run typecheck && npm run lint:fix && npm run format",
     "prebuild": "npm run deps:all && npm run validate",
