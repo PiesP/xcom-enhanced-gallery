@@ -169,6 +169,17 @@
 
 **예상 기간**: 2-3일
 
+**✅ Phase 0 완료 (2025-01-07)**:
+
+- ✅ Solid.js 3.9.9, vite-plugin-solid, @solidjs/testing-library 설치
+- ✅ vite.config.ts: `.solid.tsx` 확장자 기반 Solid 컴파일 설정
+- ✅ vitest.config.ts: Solid 테스트 환경 구성
+- ✅ HelloSolid 컴포넌트 및 테스트 작성 (디자인 토큰 준수)
+- ✅ tsconfig.solid.json 생성 (jsx: preserve, jsxImportSource: solid-js)
+- ✅ Dev 번들: 1,056KB / Prod 번들: 337KB (기준선 수립)
+- ✅ 기존 테스트 587개 중 585개 PASS (Solid 무관 기존 RED 2개 유지)
+- ✅ 커밋: `feat(infra): add solid.js build infrastructure (phase 0)` (d413fd34)
+
 ---
 
 ### Phase 1: External 계층 전환 (Vendors Adapter) 🔌

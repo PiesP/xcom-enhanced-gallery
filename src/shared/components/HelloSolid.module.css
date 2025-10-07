@@ -1,0 +1,66 @@
+/* Phase 0: Hello Solid Component Styles - 디자인 토큰만 사용 */
+
+.container {
+  padding: var(--xeg-spacing-4);
+  background: var(--xeg-bg-surface);
+  border-radius: var(--xeg-radius-lg);
+  border: 1px solid var(--xeg-border-default);
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.title {
+  color: var(--xeg-text-primary);
+  font-size: var(--xeg-text-xl);
+  font-weight: 600;
+  margin: 0 0 var(--xeg-spacing-3) 0;
+}
+
+.description {
+  color: var(--xeg-text-secondary);
+  font-size: var(--xeg-text-sm);
+  margin: 0 0 var(--xeg-spacing-4) 0;
+  line-height: 1.6;
+}
+
+.counter {
+  display: flex;
+  align-items: center;
+  gap: var(--xeg-spacing-3);
+}
+
+.counter p {
+  color: var(--xeg-text-primary);
+  font-size: var(--xeg-text-base);
+  margin: 0;
+}
+
+.count {
+  font-weight: 700;
+  color: var(--xeg-accent-primary);
+}
+
+.button {
+  padding: var(--xeg-spacing-2) var(--xeg-spacing-3);
+  background: var(--xeg-accent-primary);
+  color: var(--xeg-text-on-accent);
+  border: none;
+  border-radius: var(--xeg-radius-md);
+  font-size: var(--xeg-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--xeg-transition-fast) ease;
+}
+
+.button:hover {
+  background: var(--xeg-accent-primary-hover);
+}
+
+.button:active {
+  background: var(--xeg-accent-primary-active);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--xeg-focus-ring);
+  outline-offset: 2px;
+}

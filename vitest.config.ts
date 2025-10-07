@@ -2,9 +2,11 @@
 /**
  * Vitest 테스트 설정 (최적화)
  * 간결하고 효율적인 테스트 환경 구성
+ * Phase 0: Solid.js 테스트 지원 추가
  */
 
 import preact from '@preact/preset-vite';
+import solid from 'vite-plugin-solid';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
@@ -27,7 +29,7 @@ const SHARED_DIR = toPosix(resolve(__dirname, './src/shared'));
 const ASSETS_DIR = toPosix(resolve(__dirname, './src/assets'));
 
 const sharedResolve = {
-  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
+  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json', '.solid.tsx', '.solid.ts'],
   alias: [
     { find: '@features', replacement: FEATURES_DIR },
     { find: '@shared', replacement: SHARED_DIR },
@@ -67,9 +69,16 @@ export default defineConfig({
         } catch {}
       },
     },
+    // Phase 0: Solid.js support for .solid.tsx files
+    solid({
+      include: ['**/*.solid.tsx', '**/*.solid.ts'],
+      extensions: ['.solid.tsx', '.solid.ts'],
+      // Solid는 dev 모드에서도 production 빌드로 실행 (테스트 안정성)
+      dev: false,
+    }),
     // TS paths를 테스트에서도 동일하게 사용하도록 활성화
     tsconfigPaths({ projects: ['tsconfig.json'] }),
-    // Preact preset
+    // Preact preset (기본 .tsx 파일 처리)
     preact(),
   ].filter(Boolean) as any,
 
