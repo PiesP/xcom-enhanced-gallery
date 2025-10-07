@@ -5,6 +5,144 @@
 
 ---
 
+## Preact → Solid.js 마이그레이션 (2025-01-07 ~ 진행 중)
+
+### 2025-01-07 — Phase 0-3 완료: Preact → Solid.js 인프라 및 유틸리티 전환
+
+**목표**: Solid.js 개발 환경 구축, Vendors/State/Utils 계층을 Solid 기반으로
+완전 전환
+
+**Phase 0: 준비 및 인프라 (Foundation) ✅**
+
+- **작업 내용**:
+  - Solid.js 3.9.9, vite-plugin-solid, @solidjs/testing-library 설치
+  - vite.config.ts: `.solid.tsx` 확장자 기반 Solid 컴파일 설정
+  - vitest.config.ts: Solid 테스트 환경 구성
+    (`resolve.conditions: ['browser', 'development']`)
+  - tsconfig.solid.json 생성 (jsx: preserve, jsxImportSource: solid-js)
+  - HelloSolid 컴포넌트 및 테스트 작성 (디자인 토큰 준수)
+
+- **결과**:
+  - 번들 크기 기준선: Dev 1,056KB / Prod 337KB
+  - 테스트: 587개 중 585개 PASS (Solid 무관 기존 RED 2개 유지)
+  - 커밋: `feat(infra): add solid.js build infrastructure (phase 0)` (d413fd34)
+
+**Phase 1: External 계층 전환 (Vendors Adapter) ✅**
+
+- **작업 내용**:
+  - `vendor-manager-static.ts`에 Solid.js import 추가
+  - `SolidAPI`, `SolidWebAPI` 타입 정의
+  - `getSolid()`, `getSolidWeb()` getter 메서드 구현
+  - `getSolidSafe()`, `getSolidWebSafe()` 안전 래퍼 추가
+  - TDZ-safe 초기화 보장 (정적 import 기반)
+
+- **테스트**:
+  - `test/unit/vendors/solid-vendor-initialization.test.ts` (7개 신규 테스트)
+  - Solid Core API, Solid Web API, Preact 독립성, 자동 초기화 검증
+  - 전체 14/14 테스트 PASS
+
+- **결과**:
+  - TDD 방식: RED (테스트 작성) → GREEN (구현) → REFACTOR (정리)
+  - 커밋: `feat(infra): add solid.js vendor support (phase 1 tdd green)`
+
+**Phase 2: Shared/State 전환 (Signals → Solid Signals) ✅**
+
+- **작업 내용**:
+  - `signal-factory-solid.ts` 신규 생성
+  - `createSignalSafe<T>`: Solid createSignal + `.value` accessor (Preact 호환)
+  - `computedSafe<T>`: Solid createMemo wrapper
+  - `effectSafe`: Solid createEffect with manual initial run
+  - State 모듈 전환: `toolbar.signals.ts`, `gallery.signals.ts`,
+    `download.signals.ts`
+
+- **테스트**:
+  - `test/unit/state/signal-factory-solid.test.ts` (11개 테스트)
+  - createSignalSafe, computedSafe, effectSafe, Preact 호환성, Error Handling
+  - 전체 22/22 테스트 PASS (fast+unit projects)
+
+- **결과**:
+  - TDD 방식: RED → GREEN (2회 수정) → REFACTOR
+  - 번들 크기: 377.20 KB raw, 102.44 KB gzip (증가 없음)
+  - 커밋: `feat(core): solid.js signals integration with preact compatibility`
+    (24a0ef80)
+
+**Phase 3: Shared/Utils 전환 (Hooks → Primitives) ✅**
+
+- **작업 내용**:
+  1. **Signal Selector** (20 tests):
+     - `signalSelector-solid.ts` (210 lines)
+     - `createSelector<T, R>`: Solid createMemo 기반, 의존성 캐싱 지원
+     - `createCombinedSelector<T, R>`: 다중 signal 결합
+     - Debug mode with statistics (computeCount, cacheHits, etc.)
+     - 커밋: `feat(core): implement Signal Selector Solid primitives` (3a9ed5a9)
+
+  2. **Performance Utils** (30 tests):
+     - `signalOptimization-solid.ts` (199 lines)
+     - `createMemoizedSelector`: Manual caching with Object.is equality
+     - `createAsyncSelector`: Async operations with debouncing, generation-based
+       cancellation
+     - Global statistics tracking, Debug mode
+     - 커밋: (관련 커밋 통합)
+
+  3. **Focus Trap** (26 tests):
+     - `focusTrap-solid.ts` (106 lines)
+     - **External Signal 직접 반환** 패턴 (Fine-grained reactivity)
+     - Effects는 DOM 부작용만 담당, Manual methods 제공
+     - 커밋: `feat(core): complete focus trap solid primitive` (7aa74baf)
+
+  4. **Scroll Lock** (20 tests):
+     - `scrollLock-solid.ts` (110 lines)
+     - Body scroll locking, scrollbar gap reservation, manual lock/unlock
+     - Preact `useEffect` → Solid `createEffect`
+     - 커밋: `feat(core): complete scroll lock solid primitive` (d5dd0be5)
+
+  5. **DOM Ready** (14 tests):
+     - `domReady-solid.ts` (87 lines)
+     - Double requestAnimationFrame pattern (완전한 렌더링 감지)
+     - Dependency tracking, automatic frame cleanup
+     - 커밋: `feat(core): complete dom ready solid primitive` (208b2adf)
+
+  6. **Focus Scope** (14 tests):
+     - `focusScope-solid.ts` (57 lines)
+     - Simple ref management (Preact useRef보다 단순, no .current property)
+     - Closure with `let` variable + ref function
+     - 커밋: `feat(core): complete focus scope solid primitive` (ac16acc1)
+
+- **통계**:
+  - 총 6개 primitives 완료
+  - 총 124개 테스트 (20+30+26+20+14+14 = 124)
+  - 100% 테스트 통과율
+  - 빌드 검증: 1,065.82 KB dev bundle (성공)
+
+- **학습한 패턴**:
+  1. **External Signal Pattern**: 외부 signal 직접 반환, 동기적 읽기 + reactive
+     추적
+  2. **Async Test Handling**: `queueMicrotask` + `async/await`, Try/catch with
+     dispose
+  3. **Resource Cleanup**: `onCleanup()` for disposal, Cancel pending operations
+  4. **Manual Methods**: Imperative API alongside reactive primitives
+
+- **Business Logic Hooks 결정**:
+  - `useGalleryToolbarLogic`, `useSettingsModal`, `useToolbarState`,
+    `useAccessibility`
+  - Phase 4 이후로 연기 (Features layer와 함께 마이그레이션)
+
+**종합 검증**:
+
+- 빌드: Dev/Prod 모두 성공, 377.20 KB raw, 102.44 KB gzip
+- 테스트: Phase 0-3 신규 테스트 모두 GREEN (124 tests)
+- 의존성: 2개 info warnings (orphans - 예상된 것, 아직 사용되지 않는 primitives)
+- TypeScript: strict 모드 100% 적용
+- ESLint: 0 violations
+
+**다음 단계**: Phase 4 (Shared/Components 전환 - UI 컴포넌트)
+
+- 기본 컴포넌트, Toast 시스템, Toolbar 컴포넌트를 Solid 기반으로 전환
+- h() 함수 호출 제거, memo/forwardRef 제거 (Solid 자동 최적화)
+- 예상 기간: 5-6일
+
+---
+
 ### 2025-10-07 — Shadow DOM → Light DOM 완전 전환 (Phase 1-4 완료)
 
 **목표**: Shadow DOM을 Light DOM으로 완전히 전환하여 코드 복잡도를 낮추고,
