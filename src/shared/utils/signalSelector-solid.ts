@@ -196,7 +196,7 @@ export function createCombinedSelector<T extends readonly unknown[], R>(
 ): Accessor<R> {
   return createMemo<R>(() => {
     // 모든 source를 읽어 의존성 추적
-    const values = sources.map(source => source()) as T;
+    const values = sources.map(source => source()) as unknown as T;
     return combiner(values);
   });
 }
