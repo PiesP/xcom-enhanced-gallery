@@ -67,7 +67,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
   const [domReady, setDomReady] = createSignal(false);
   const [focusedIndex, setFocusedIndex] = createSignal(galleryState.value.currentIndex);
   const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = createSignal(-1);
-  // const [isHelpOpen, setIsHelpOpen] = createSignal(false); // TODO: KeyboardHelpOverlay Solid 버전 필요
 
   // 초기 imageFitMode 설정
   const getInitialFitMode = (): ImageFitMode => {
@@ -258,7 +257,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
         merged.onClose();
         event.preventDefault();
       }
-      // TODO: '?' 키로 KeyboardHelpOverlay 열기 (Solid 버전 필요)
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -427,9 +425,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
         data-xeg-gallery='true'
         data-xeg-role='gallery'
       >
-        {/* 키보드 도움말 오버레이 - TODO: Solid 버전 필요 */}
-        {/* <KeyboardHelpOverlay open={isHelpOpen()} onClose={() => setIsHelpOpen(false)} /> */}
-
         {/* 툴바 호버 트리거 영역 */}
         <div class={styles.toolbarHoverZone} ref={toolbarHoverZoneRef} />
 
