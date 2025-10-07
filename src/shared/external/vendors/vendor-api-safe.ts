@@ -12,6 +12,8 @@ import {
   type PreactHooksAPI,
   type PreactSignalsAPI,
   type PreactCompatAPI,
+  type SolidAPI,
+  type SolidWebAPI,
   type NativeDownloadAPI,
 } from './vendor-manager-static';
 
@@ -103,6 +105,30 @@ export function getPreactCompatSafe(): PreactCompatAPI {
 
     // 정적 import 기반이므로 fallback 없이 즉시 에러
     throw new Error('Preact Compat 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+  }
+}
+
+/**
+ * Solid.js 안전 접근 (동기) - TDZ 문제 완전 해결
+ */
+export function getSolidSafe(): SolidAPI {
+  try {
+    return staticVendorManager.getSolid();
+  } catch (error) {
+    logger.error('Solid.js 접근 실패:', error);
+    throw new Error('Solid.js 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+  }
+}
+
+/**
+ * Solid.js Web 안전 접근 (동기) - TDZ 문제 완전 해결
+ */
+export function getSolidWebSafe(): SolidWebAPI {
+  try {
+    return staticVendorManager.getSolidWeb();
+  } catch (error) {
+    logger.error('Solid.js Web 접근 실패:', error);
+    throw new Error('Solid.js Web 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
   }
 }
 

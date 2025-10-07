@@ -3,6 +3,7 @@
  * @description TDZ 문제 없는 안전한 vendor 초기화를 위한 정적 import 기반 구현
  *
  * TDD Phase: GREEN - 정적 import로 TDZ 문제 해결
+ * Phase 1: Solid.js 지원 추가
  */
 
 import { logger } from '../../logging';
@@ -13,6 +14,10 @@ import * as preact from 'preact';
 import * as preactHooks from 'preact/hooks';
 import * as preactSignals from '@preact/signals';
 import * as preactCompat from 'preact/compat';
+
+// Phase 1: Solid.js 정적 import 추가
+import * as solid from 'solid-js';
+import * as solidWeb from 'solid-js/web';
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -73,6 +78,30 @@ export interface NativeDownloadAPI {
 }
 
 // ================================
+// Phase 1: Solid.js 타입 정의
+// ================================
+
+export interface SolidAPI {
+  createSignal: typeof solid.createSignal;
+  createEffect: typeof solid.createEffect;
+  createMemo: typeof solid.createMemo;
+  createRoot: typeof solid.createRoot;
+  createResource: typeof solid.createResource;
+  batch: typeof solid.batch;
+  untrack: typeof solid.untrack;
+  on: typeof solid.on;
+  onMount: typeof solid.onMount;
+  onCleanup: typeof solid.onCleanup;
+}
+
+export interface SolidWebAPI {
+  render: typeof solidWeb.render;
+  hydrate: typeof solidWeb.hydrate;
+  renderToString: typeof solidWeb.renderToString;
+  isServer: typeof solidWeb.isServer;
+}
+
+// ================================
 // 정적 벤더 매니저 (TDZ 안전)
 // ================================
 
@@ -85,6 +114,8 @@ export class StaticVendorManager {
     preactHooks,
     preactSignals,
     preactCompat,
+    solid,
+    solidWeb,
   };
 
   // 검증된 API 캐시
@@ -173,6 +204,16 @@ export class StaticVendorManager {
       throw new Error('Preact Compat 라이브러리 검증 실패');
     }
 
+    // Phase 1: Solid.js 검증
+    if (!this.vendors.solid.createSignal || typeof this.vendors.solid.createSignal !== 'function') {
+      throw new Error('Solid.js 라이브러리 검증 실패');
+    }
+
+    // Solid Web 검증
+    if (!this.vendors.solidWeb.render || typeof this.vendors.solidWeb.render !== 'function') {
+      throw new Error('Solid.js Web 라이브러리 검증 실패');
+    }
+
     logger.debug('✅ 모든 정적 import 검증 완료');
   }
 
@@ -219,13 +260,37 @@ export class StaticVendorManager {
       createElement: this.vendors.preactCompat.createElement,
     };
 
+    // Solid.js API
+    const solidAPI: SolidAPI = {
+      createSignal: this.vendors.solid.createSignal,
+      createEffect: this.vendors.solid.createEffect,
+      createMemo: this.vendors.solid.createMemo,
+      createRoot: this.vendors.solid.createRoot,
+      createResource: this.vendors.solid.createResource,
+      batch: this.vendors.solid.batch,
+      untrack: this.vendors.solid.untrack,
+      on: this.vendors.solid.on,
+      onMount: this.vendors.solid.onMount,
+      onCleanup: this.vendors.solid.onCleanup,
+    };
+
+    // Solid.js Web API
+    const solidWebAPI: SolidWebAPI = {
+      render: this.vendors.solidWeb.render,
+      hydrate: this.vendors.solidWeb.hydrate,
+      renderToString: this.vendors.solidWeb.renderToString,
+      isServer: this.vendors.solidWeb.isServer,
+    };
+
     // 캐시에 저장 (fflate 제거)
     this.apiCache.set('preact', preactAPI);
     this.apiCache.set('preact-hooks', preactHooksAPI);
     this.apiCache.set('preact-signals', preactSignalsAPI);
     this.apiCache.set('preact-compat', preactCompatAPI);
+    this.apiCache.set('solid', solidAPI);
+    this.apiCache.set('solid-web', solidWebAPI);
 
-    logger.debug('✅ 모든 API 캐시 완료');
+    logger.debug('✅ 모든 API 캐시 완료 (Preact, Solid.js)');
   }
 
   /**
@@ -308,6 +373,42 @@ export class StaticVendorManager {
     const api = this.apiCache.get('preact-compat') as PreactCompatAPI;
     if (!api) {
       throw new Error('Preact Compat API를 찾을 수 없습니다.');
+    }
+    return api;
+  }
+
+  /**
+   * Solid.js 안전 접근 (TDZ 문제 해결)
+   */
+  public getSolid(): SolidAPI {
+    if (!this.isInitialized) {
+      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      this.validateStaticImports();
+      this.cacheAPIs();
+      this.isInitialized = true;
+    }
+
+    const api = this.apiCache.get('solid') as SolidAPI;
+    if (!api) {
+      throw new Error('Solid.js API를 찾을 수 없습니다.');
+    }
+    return api;
+  }
+
+  /**
+   * Solid.js Web 안전 접근 (TDZ 문제 해결)
+   */
+  public getSolidWeb(): SolidWebAPI {
+    if (!this.isInitialized) {
+      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
+      this.validateStaticImports();
+      this.cacheAPIs();
+      this.isInitialized = true;
+    }
+
+    const api = this.apiCache.get('solid-web') as SolidWebAPI;
+    if (!api) {
+      throw new Error('Solid.js Web API를 찾을 수 없습니다.');
     }
     return api;
   }
