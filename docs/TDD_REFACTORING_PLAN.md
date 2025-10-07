@@ -1,7 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-26 **Status**: Phase 9 Completed - Ready for New
-> Features
+> **Last updated**: 2025-01-07 **Status**: Phase 9.1 Completed - UI 문제 해결
 
 ## Overview
 
@@ -11,6 +10,36 @@
 ---
 
 ## Recent Completions
+
+### Phase 9.1: Vendors Getter API 수정 (2025-01-07 완료 ✅)
+
+**해결된 4가지 UI 문제**:
+
+1. ✅ 자동 포커스 이동 정상 작동
+2. ✅ 설정 모달 정상 표시
+3. ✅ 다크 모드 아이콘 정상 표시
+4. ✅ 자동 스크롤 기능 정상 작동
+
+**근본 원인**:
+
+`vendor-manager-static.ts`의 `getSolid()`와 `getSolidWeb()`가 캐시된 API 객체
+대신 전체 모듈을 반환하여:
+
+- `Show` 컴포넌트가 `solid-js`와 `solid-js/web` 양쪽에서 중복 export
+- 설정 모달이 조건부 렌더링되지 않음
+- 반응성 시스템이 제대로 작동하지 않음
+
+**주요 변경**:
+
+- `getSolid()`와 `getSolidWeb()`가 캐시된 API 객체를 반환하도록 수정
+- `Button.module.css`에 다크 모드 `.variant-toolbar` 색상 규칙 추가
+- SVG 아이콘이 `currentColor`를 상속받아 색상 적용
+
+**메트릭**: Dev 1,030.64 KB, Prod 331.15 KB (gzip 88.37 KB)
+
+커밋: 4f4f706d - fix(core): vendors getter가 캐시된 API 객체를 반환하도록 수정
+
+---
 
 ### Phase 9: Solid.js Vendors Getter 전환 (2025-01-26 완료 ✅)
 
