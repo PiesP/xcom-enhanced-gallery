@@ -158,41 +158,82 @@
 
 **전략**: Bottom-Up + TDD (Leaf 컴포넌트부터, 각 단계별 테스트 우선)
 
-#### Phase 4.1: Icon 컴포넌트 전환 (우선순위: 최고)
+#### Phase 4.1: Icon 컴포넌트 전환 ✅ **완료** (2025-01-07)
 
-**대상 컴포넌트** (10개):
+**작업 기간**: 2일 (2025-01-06 인프라 → 2025-01-07 구현)
 
-- `Icon.tsx` (기본 Icon 래퍼)
-- `hero/Hero*.tsx` (9개 아이콘: ArrowAutofitHeight, ArrowAutofitWidth,
-  ArrowsMaximize, ChevronLeft, ChevronRight, Download, FileZip, Settings, X,
-  ZoomIn)
+**완료 내역**:
 
-**이유**:
-
-- 의존성 없음 (Pure presentational components)
-- 단순 JSX 변환만 필요
-- 테스트가 간단하고 빠름
-
-**작업 내용**:
-
-1. TDD: `test/unit/shared/components/ui/Icon/*.solid.test.tsx` 작성
-2. 구현: `Icon.solid.tsx`, `hero/Hero*.solid.tsx` 생성
-3. Preact 버전과 동일 props/동작 보장
-4. 접근성 검증 (aria-label, role 등)
-5. 스냅샷 테스트 갱신
-
-**진행 상황** (2025-10-07):
-
-- ✅ 인프라 구축 완료:
+- ✅ **인프라 구축** (2025-01-06):
   - TypeScript 듀얼 프로젝트 설정 (`tsconfig.json` + `tsconfig.solid.json`)
   - ESLint Solid 파일 제외 설정
   - `package.json` typecheck 스크립트 수정 (Preact + Solid 동시 체크)
   - 커밋: 48c0ff37
-- ✅ Icon.solid.tsx 생성 및 타입 검증 테스트 작성 (8/8 GREEN)
-  - 컴파일/타입 검증 테스트 (Phase 0 스타일)
-  - DOM 렌더링 테스트는 Phase 4 후반으로 연기 (JSDOM 호환성)
+
+- ✅ **Icon.solid.tsx** (2025-01-06):
+  - 기본 Icon 래퍼 컴포넌트 생성
+  - 타입 검증 테스트 8/8 GREEN (compile/type verification)
   - 커밋: ad59dd89
-- ⏳ Hero 아이콘 9개 Solid 전환 (다음 작업)
+
+- ✅ **Hero 아이콘 9개** (2025-01-07):
+  - `HeroX.solid.tsx` (XMarkIcon)
+  - `HeroArrowAutofitHeight.solid.tsx` (ArrowsUpDownIcon)
+  - `HeroArrowAutofitWidth.solid.tsx` (ArrowsRightLeftIcon)
+  - `HeroArrowsMaximize.solid.tsx` (ArrowsPointingOutIcon)
+  - `HeroChevronLeft.solid.tsx` (ChevronLeftIcon)
+  - `HeroChevronRight.solid.tsx` (ChevronRightIcon)
+  - `HeroDownload.solid.tsx` (ArrowDownTrayIcon)
+  - `HeroFileZip.solid.tsx` (ArchiveBoxArrowDownIcon)
+  - `HeroSettings.solid.tsx` (Cog6ToothIcon)
+  - `HeroZoomIn.solid.tsx` (MagnifyingGlassPlusIcon)
+
+**기술적 결정사항**:
+
+1. **패턴 탐색** (3회 반복):
+   - ❌ 시도 1: Preact 스타일 `h()` 함수 → Solid.js에 없음 (20 에러)
+   - ❌ 시도 2: JSX + 조건부 props 할당 → TypeScript strict 모드 위반 (10 에러)
+   - ✅ 시도 3: `mergeProps` + `splitProps` + `<Dynamic>` → 타입 안전 성공 (0
+     에러)
+
+2. **최종 패턴**:
+
+   ```typescript
+   import { Dynamic } from 'solid-js/web';
+   import { mergeProps, splitProps } from 'solid-js';
+
+   const merged = mergeProps({ size: 'var(--xeg-icon-size)' }, props);
+   const [local, others] = splitProps(merged, ['size']);
+   return <Icon size={local.size} {...others}>
+     <Dynamic component={Icon} {...iconProps} />
+   </Icon>;
+   ```
+
+3. **자동화**:
+   - `scripts/update-hero-icons.cjs` 생성 (8개 아이콘 일괄 업데이트)
+   - 패턴 일관성 보장
+
+**테스트 결과**:
+
+- ✅ `HeroX.solid.test.tsx`: 8 tests GREEN
+- ✅ `HeroIcons.solid.test.tsx`: 72 tests GREEN (9 icons × 8 scenarios)
+- ✅ 총 160 tests 통과 (fast + unit projects)
+- ✅ TypeScript typecheck: 0 errors (dual project)
+
+**검증 완료**:
+
+- ✅ Build 성공: dev 1,065 KB / prod 377 KB (기준선 유지)
+- ✅ 접근성: `aria-label` prop 지원 및 테스트 통과
+- ✅ PC 전용 이벤트만 사용 (정책 준수)
+- ✅ 디자인 토큰 사용 (CSS Variables)
+
+**학습 포인트**:
+
+- Solid.js는 JSX 중심 API (Preact의 `h()` 함수 없음)
+- Props 기본값: `mergeProps()` 사용 (타입 안전)
+- Props 분리: `splitProps()` 사용 (`undefined` 회피)
+- 동적 컴포넌트: `<Dynamic component={...} />`
+
+**다음 단계**: Phase 4.2 Primitive 컴포넌트 전환 (Button, Panel)
 
 **성공 기준**:
 

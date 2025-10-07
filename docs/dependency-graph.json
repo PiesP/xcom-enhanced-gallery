@@ -7264,7 +7264,17 @@
         "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
         "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
         "src/shared/components/ui/Icon/hero/HeroX.tsx",
-        "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx"
+        "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronLeft.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronRight.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroDownload.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroFileZip.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroSettings.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroX.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroZoomIn.solid.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -13280,15 +13290,470 @@
     {
       "source": "src/shared/components/ui/Icon/Icon.solid.tsx",
       "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
+      "dependents": [
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronLeft.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroChevronRight.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroDownload.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroFileZip.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroSettings.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroX.solid.tsx",
+        "src/shared/components/ui/Icon/hero/HeroZoomIn.solid.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.solid.tsx",
+      "dependencies": [
         {
-          "severity": "info",
-          "name": "no-orphans"
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
-      ]
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroChevronLeft.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroChevronRight.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroDownload.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroFileZip.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroSettings.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroX.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Icon/hero/HeroZoomIn.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../Icon.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Icon/Icon.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors/heroicons-react",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/heroicons-react.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
     },
     {
       "source": "src/shared/components/ui/ModalShell/ModalShell.tsx",
@@ -16606,15 +17071,6 @@
     "violations": [
       {
         "type": "module",
-        "from": "src/shared/components/ui/Icon/Icon.solid.tsx",
-        "to": "src/shared/components/ui/Icon/Icon.solid.tsx",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      },
-      {
-        "type": "module",
         "from": "src/shared/primitives/focusScope-solid.ts",
         "to": "src/shared/primitives/focusScope-solid.ts",
         "rule": {
@@ -16634,10 +17090,10 @@
     ],
     "error": 0,
     "warn": 0,
-    "info": 3,
+    "info": 2,
     "ignore": 0,
-    "totalCruised": 275,
-    "totalDependenciesCruised": 752,
+    "totalCruised": 285,
+    "totalDependenciesCruised": 772,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
