@@ -5,6 +5,57 @@
 
 ---
 
+## Phase 8: Preact/fflate 잔재 제거 (2025-01-07 완료)
+
+### 목표
+
+Phase 1-6에서 Preact에서 Solid.js로 마이그레이션하고 fflate를 제거했지만,
+코드베이스에 다음과 같은 잔재 제거:
+
+- vendor-api-safe.ts의 preact 관련 상태 확인 함수들
+- 여러 파일의 혼란스러운 preact/fflate 주석
+- 사용되지 않는 preact/fflate mock 코드
+- 빌드 산출물의 preact 관련 코드
+
+### Phase 8.1-8.2: vendor-api-safe 정리 및 주석 정리 ✅
+
+**작업 내용**:
+
+- `getVendorStatusesSafe()` 함수 제거 (preact 상태 반환)
+- `isVendorInitializedSafe()` 함수 제거 (preact case 처리)
+- `getVendorInitializationReportSafe()`의 totalCount 수정 (4 → 2: solid-js,
+  solid-js/web)
+- vendor index.ts에서 제거된 함수 export 삭제
+- UnifiedToastManager.ts: "Preact Signals" → "Signals", "Preact 컴포넌트" →
+  "Solid.js 컴포넌트"
+- memoization.ts: @deprecated 주석 추가 (Solid.js는 네이티브 최적화)
+
+**삭제된 테스트 및 mock 파일**:
+
+- `test/refactoring/vendor-performance.test.ts` (fflate/preact 참조)
+- `test/unit/utils/vendor-mocks.contract.test.ts` (무효한 계약)
+- `test/__mocks__/vendor.mock.{ts,js}` (사용되지 않음)
+- `test/__mocks__/vendor-mock-clean.js` (사용되지 않음)
+- `test/utils/mocks/vendor-mocks-clean.ts` (사용되지 않음)
+- `test/utils/mocks/vendor-mocks.ts`: fflate/preact mock 제거, Motion만 유지
+
+**결과**:
+
+- 빌드: Dev 1,031 KB, Prod 329 KB (gzip 88 KB) - 크기 변화 없음
+- TypeScript: 0 에러
+- 모든 테스트 통과 (호환되지 않는 테스트 제거)
+- 코드베이스가 이제 Solid.js만 일관되게 참조
+- 커밋: cf93944c `refactor(deps): remove preact/fflate remnants from codebase`
+
+**메트릭스**:
+
+- 제거된 파일: 6개
+- 제거된 코드 라인: ~1,200 라인
+- 정리된 주석: 5개 파일
+- 정리된 함수: 2개 (vendor-api-safe.ts)
+
+---
+
 ## Preact → Solid.js 마이그레이션 (2025-01-07 ~ 진행 중)
 
 ### 2025-01-07 — Phase 0-3 완료: Preact → Solid.js 인프라 및 유틸리티 전환
