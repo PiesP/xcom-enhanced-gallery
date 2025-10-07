@@ -1,18 +1,17 @@
 /**
- * @fileoverview Icon Component
- * @version 2.0.0 - 공통 아이콘 컨테이너 (Heroicons 어댑터 기반)
+ * @fileoverview Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Icon Container
  * @description
- * 범용 SVG 아이콘 컨테이너 컴포넌트
- * - 24x24 기본 크기
- * - stroke 기반 아이콘
- * - 접근성 지원
- * - TypeScript strict 모드 준수
+ * Solid.js implementation of the Icon component
+ * - 24x24 default size
+ * - stroke-based icons
+ * - accessibility support
+ * - TypeScript strict mode compliant
  */
 
-import { getPreact } from '../../../external/vendors';
-import type { VNode, ComponentChildren } from '../../../external/vendors';
+import { type JSX, mergeProps, splitProps } from 'solid-js';
 
-export interface IconProps {
+export interface IconProps extends JSX.SvgSVGAttributes<SVGSVGElement> {
   /**
    * 아이콘 크기 (width, height)
    * CSS 변수 또는 em 단위를 사용하여 상대적 크기 지원
@@ -23,27 +22,22 @@ export interface IconProps {
   /**
    * CSS 클래스명
    */
-  className?: string;
+  class?: string;
 
   /**
    * 아이콘의 SVG 경로들 (path, line, circle 등)
    */
-  children?: ComponentChildren;
+  children?: JSX.Element;
 
   /**
    * 접근성을 위한 아이콘 설명
    * 제공되면 role="img"가 설정됨
    */
   'aria-label'?: string;
-
-  /**
-   * 기타 SVG 속성들
-   */
-  [key: string]: unknown;
 }
 
 /**
- * SVG 아이콘 컨테이너 컴포넌트
+ * SVG 아이콘 컨테이너 컴포넌트 (Solid.js)
  * CSS 변수 기반으로 일관된 디자인 시스템 지원
  *
  * @example
@@ -66,43 +60,53 @@ export interface IconProps {
  * </Icon>
  * ```
  */
-export function Icon({
-  size = 'var(--xeg-icon-size)', // CSS 변수를 기본값으로 사용
-  className = '',
-  children,
-  'aria-label': ariaLabel,
-  ...otherProps
-}: IconProps): VNode {
-  const { h } = getPreact();
+export function Icon(props: IconProps) {
+  // Solid.js에서는 props를 직접 destructure하지 않고 mergeProps를 사용
+  const merged = mergeProps(
+    {
+      size: 'var(--xeg-icon-size)', // CSS 변수를 기본값으로 사용
+      class: '',
+    },
+    props
+  );
+
+  // Solid.js splitProps로 size, class, aria-label, children과 나머지 props 분리
+  const [local, others] = splitProps(merged, ['size', 'class', 'children', 'aria-label']);
 
   // 접근성 속성 설정
-  const accessibilityProps: Record<string, string> = {};
-  if (ariaLabel) {
-    accessibilityProps.role = 'img';
-    accessibilityProps['aria-label'] = ariaLabel;
-  } else {
-    accessibilityProps['aria-hidden'] = 'true';
-  }
+  const accessibilityProps = () => {
+    if (local['aria-label']) {
+      return {
+        role: 'img' as const,
+        'aria-label': local['aria-label'],
+      };
+    }
+    return {
+      'aria-hidden': 'true' as const,
+    };
+  };
 
   // 크기 값 처리 - 숫자인 경우 픽셀로, 문자열인 경우 그대로 사용
-  const sizeValue = typeof size === 'number' ? `${size}px` : size;
+  const sizeValue = () => {
+    return typeof local.size === 'number' ? `${local.size}px` : local.size;
+  };
 
-  return h(
-    'svg',
-    {
-      xmlns: 'http://www.w3.org/2000/svg',
-      width: sizeValue,
-      height: sizeValue,
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      'stroke-width': 'var(--xeg-icon-stroke-width)',
-      'stroke-linecap': 'round' as const,
-      'stroke-linejoin': 'round' as const,
-      className,
-      ...accessibilityProps,
-      ...otherProps,
-    } as Record<string, unknown>,
-    children
-  );
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width={sizeValue()}
+      height={sizeValue()}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='var(--xeg-icon-color, currentColor)'
+      stroke-width='var(--xeg-icon-stroke-width)'
+      stroke-linecap={'round' as any}
+      stroke-linejoin={'round' as any}
+      class={local.class}
+      {...accessibilityProps()}
+      {...others}
+    >
+      {local.children}
+    </svg>
+  ) as any;
 }

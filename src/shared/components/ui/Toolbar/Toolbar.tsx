@@ -1,45 +1,48 @@
 /**
- * Copyright import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  FileZip,
-  Settings,
-  X,
-  ZoomIn,
-  ArrowAutofitWidth,
-  ArrowAutofitHeight,
-  ArrowsMaximize,
-  Loader2,
-} from '../Icon';om Enhanced Gallery
- * Licensed under the MIT License
+ * @file Toolbar.solid.tsx
+ * @description
+ * Gallery Toolbar Component (Solid.js 버전)
  *
- * @fileoverview Gallery Toolbar Component
- * @version 6.0.0 - Phase 3 StandardProps 시스템 적용
+ * Preact Toolbar를 Solid.js로 마이그레이션
+ *
+ * 주요 기능:
+ * - 12개 IconButton (Navigation, FitModes, Downloads, Controls)
+ * - 배경 밝기 자동 감지 (다중 포인트 샘플링)
+ * - Toolbar state 관리 (createToolbarState primitive)
+ * - 진행률 바 표시
+ * - Position-based layout (top|bottom|left|right)
+ *
+ * Solid 마이그레이션:
+ * - h() → JSX
+ * - useToolbarState → createToolbarState ✅
+ * - useMemo → createMemo
+ * - useCallback → 일반 함수 (자동 메모이제이션)
+ * - useEffect → createEffect + onCleanup
+ * - useRef → 일반 변수
+ * - memo → 제거 (Solid 자동 최적화)
  */
 
+import { createEffect, createMemo, onCleanup, type Component } from 'solid-js';
+import { Show } from 'solid-js/web';
 import type { ViewMode } from '../../../types';
-import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
 import {
-  useToolbarState,
+  createToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '../../../hooks/useToolbarState';
+} from '../../../primitives/createToolbarState.solid';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/EventManager';
 import { ComponentStandards } from '../StandardProps';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  FileZip,
-  Settings,
-  X,
-  ZoomIn,
-  ArrowAutofitWidth,
-  ArrowAutofitHeight,
-  ArrowsMaximize,
-} from '../Icon';
+import { HeroChevronLeft } from '../Icon/hero/HeroChevronLeft';
+import { HeroChevronRight } from '../Icon/hero/HeroChevronRight';
+import { HeroDownload } from '../Icon/hero/HeroDownload';
+import { HeroFileZip } from '../Icon/hero/HeroFileZip';
+import { HeroSettings } from '../Icon/hero/HeroSettings';
+import { HeroX } from '../Icon/hero/HeroX';
+import { HeroZoomIn } from '../Icon/hero/HeroZoomIn';
+import { HeroArrowAutofitWidth } from '../Icon/hero/HeroArrowAutofitWidth';
+import { HeroArrowAutofitHeight } from '../Icon/hero/HeroArrowAutofitHeight';
+import { HeroArrowsMaximize } from '../Icon/hero/HeroArrowsMaximize';
 import styles from './Toolbar.module.css';
 import { IconButton } from '../Button/IconButton';
 
@@ -84,70 +87,43 @@ export interface ToolbarProps {
   /** 탭 인덱스 */
   tabIndex?: number;
   /** ImageFitCallbacks 지원 */
-  onFitOriginal?: (event?: Event) => void;
-  onFitWidth?: (event?: Event) => void;
-  onFitHeight?: (event?: Event) => void;
-  onFitContainer?: (event?: Event) => void;
+  onFitOriginal?: (event?: any) => void;
+  onFitWidth?: (event?: any) => void;
+  onFitHeight?: (event?: any) => void;
+  onFitContainer?: (event?: any) => void;
   // 표준 이벤트 핸들러들
-  onFocus?: (event: FocusEvent) => void;
-  onBlur?: (event: FocusEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
+  onFocus?: (event: any) => void;
+  onBlur?: (event: any) => void;
+  onKeyDown?: (event: any) => void;
 }
 
 // 호환성을 위한 별칭
 export type GalleryToolbarProps = ToolbarProps;
 
-function ToolbarCore({
-  currentIndex,
-  totalCount,
-  isDownloading = false,
-  disabled = false,
-  className = '',
-  onPrevious,
-  onNext,
-  onDownloadCurrent,
-  onDownloadAll,
-  onClose,
-  onOpenSettings,
-  onFitOriginal,
-  onFitHeight,
-  onFitWidth,
-  onFitContainer,
-  'data-testid': testId,
-  'aria-label': ariaLabel,
-  'aria-describedby': ariaDescribedBy,
-  role,
-  tabIndex,
-  onFocus,
-  onBlur,
-  onKeyDown,
-}: ToolbarProps): VNode {
-  const { h } = getPreact();
-  const { useMemo, useCallback, useEffect, useRef } = getPreactHooks();
-
-  // 새로운 상태 관리 훅 사용
-  const [toolbarState, toolbarActions] = useToolbarState();
-  const toolbarRef = useRef<HTMLDivElement | null>(null);
+export const Toolbar: Component<ToolbarProps> = props => {
+  // Toolbar state primitive 사용
+  const [toolbarState, toolbarActions] = createToolbarState();
+  let toolbarRef: HTMLDivElement | undefined;
 
   // 표준화된 클래스명 생성 - 컴포넌트 토큰 기반 스타일
-  const toolbarClass = ComponentStandards.createClassName(
-    styles.toolbar,
-    getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
-    className
-  );
+  const toolbarClass = () =>
+    ComponentStandards.createClassName(
+      styles.toolbar,
+      getToolbarClassName(toolbarState(), styles.galleryToolbar || ''),
+      props.className || ''
+    );
 
   // Props에서 받은 isDownloading 상태를 내부 상태와 동기화
-  useEffect(() => {
-    toolbarActions.setDownloading(isDownloading);
-  }, [isDownloading, toolbarActions]);
+  createEffect(() => {
+    toolbarActions.setDownloading(!!props.isDownloading);
+  });
 
   // 배경 밝기 감지 및 자동 대비 조정 - 개선된 다중 포인트 샘플링
-  useEffect(() => {
+  createEffect(() => {
     // 테스트/JSDOM 환경 가드: 필수 브라우저 API가 없으면 감지를 건너뜀
     const canDetect =
       typeof document !== 'undefined' &&
-      typeof (document as unknown as { elementsFromPoint?: unknown }).elementsFromPoint ===
-        'function' &&
+      typeof (document as any).elementsFromPoint === 'function' &&
       typeof window !== 'undefined' &&
       typeof window.getComputedStyle === 'function';
 
@@ -157,11 +133,11 @@ function ToolbarCore({
 
     const detectBackgroundBrightness = (): void => {
       try {
-        if (!toolbarRef.current) {
+        if (!toolbarRef) {
           return;
         }
 
-        const toolbar = toolbarRef.current;
+        const toolbar = toolbarRef;
         const rect = toolbar.getBoundingClientRect();
 
         // 실제 렌더 크기가 0이면 감지를 수행하지 않음(JSDOM 등)
@@ -189,7 +165,6 @@ function ToolbarCore({
         let lightBackgroundCount = 0;
 
         samplePoints.forEach(point => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const elementsBelow = (document as any).elementsFromPoint(point.x, point.y) as Element[];
           const hasLight = elementsBelow.some((el: Element) => {
             const computedStyles = window.getComputedStyle(el);
@@ -223,7 +198,7 @@ function ToolbarCore({
       } else {
         detectBackgroundBrightness();
       }
-    }); // RAF 기반으로 최적화된 스크롤 감지
+    });
 
     const listenerId = EventManager.getInstance().addListener(
       window,
@@ -231,349 +206,225 @@ function ToolbarCore({
       throttledDetect as unknown as EventListener,
       { passive: true }
     );
-    return (): void => {
+
+    onCleanup(() => {
       EventManager.getInstance().removeListener(listenerId);
-    };
-  }, [toolbarActions]);
+    });
+  });
 
   // 네비게이션 가능 여부 계산
-  const canGoNext = useMemo(() => currentIndex < totalCount - 1, [currentIndex, totalCount]);
-  const canGoPrevious = useMemo(() => currentIndex > 0, [currentIndex, totalCount]);
+  const canGoNext = createMemo(() => props.currentIndex < props.totalCount - 1);
+  const canGoPrevious = createMemo(() => props.currentIndex > 0);
 
   // 버튼 클릭 피드백 - 상태 변경 없이 직접 실행
-  const handleButtonClick = useCallback((event: Event, _buttonId: string, action: () => void) => {
+  const handleButtonClick = (event: any, _buttonId: string, action: () => void) => {
     event.stopPropagation();
     action();
-  }, []);
+  };
 
   // 크기 조절 버튼 핸들러 - 이벤트 전파 차단 추가
-  const handleFitMode = useCallback(
-    (event: Event, mode: string, action?: () => void) => {
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation(); // 추가된 강화된 이벤트 차단
+  const handleFitMode = (event: any, mode: string, action?: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
 
-      toolbarActions.setCurrentFitMode(mode);
-      if (action && !disabled) {
-        action();
-      }
-    },
-    [toolbarActions, disabled]
+    toolbarActions.setCurrentFitMode(mode);
+    if (action && !props.disabled) {
+      action();
+    }
+  };
+
+  return (
+    <div
+      ref={toolbarRef}
+      class={toolbarClass()}
+      role={(props.role as any) || 'toolbar'}
+      aria-label={props['aria-label'] || '갤러리 도구모음'}
+      aria-describedby={props['aria-describedby']}
+      aria-disabled={props.disabled}
+      data-testid={props['data-testid']}
+      data-gallery-element='toolbar'
+      data-state={getToolbarDataState(toolbarState())}
+      data-disabled={props.disabled}
+      data-high-contrast={toolbarState().needsHighContrast}
+      tabIndex={props.tabIndex}
+      onFocus={props.onFocus}
+      onBlur={props.onBlur}
+      onKeyDown={props.onKeyDown}
+    >
+      <div
+        class={`${styles.toolbarContent} xeg-center-between xeg-gap-md`}
+        data-gallery-element='toolbar-content'
+      >
+        {/* 좌측 네비게이션 섹션 */}
+        <div
+          class={`${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft xeg-row-center xeg-gap-sm`}
+          data-gallery-element='navigation-left'
+        >
+          <IconButton
+            size='toolbar'
+            aria-label='이전 미디어'
+            title='이전 미디어 (←)'
+            disabled={!!(props.disabled || !canGoPrevious())}
+            onClick={(e: any) => handleButtonClick(e, 'previous', props.onPrevious)}
+            data-gallery-element='nav-previous'
+            data-disabled={!!(props.disabled || !canGoPrevious())}
+          >
+            <HeroChevronLeft size={18} />
+          </IconButton>
+          <IconButton
+            size='toolbar'
+            aria-label='다음 미디어'
+            title='다음 미디어 (→)'
+            disabled={!!(props.disabled || !canGoNext())}
+            onClick={(e: any) => handleButtonClick(e, 'next', props.onNext)}
+            data-gallery-element='nav-next'
+            data-disabled={!!(props.disabled || !canGoNext())}
+          >
+            <HeroChevronRight size={18} />
+          </IconButton>
+        </div>
+
+        {/* 중앙 카운터 섹션 */}
+        <div
+          class={`${styles.toolbarSection} ${styles.toolbarCenter} xeg-row-center`}
+          data-gallery-element='counter-section'
+        >
+          <div class={styles.mediaCounterWrapper}>
+            <span class={styles.mediaCounter} aria-live='polite' data-gallery-element='counter'>
+              <span class={styles.currentIndex}>{props.currentIndex + 1}</span>
+              <span class={styles.separator}>/</span>
+              <span class={styles.totalCount}>{props.totalCount}</span>
+            </span>
+            <div class={styles.progressBar}>
+              <div
+                class={styles.progressFill}
+                style={{
+                  width: `${props.totalCount > 0 ? ((props.currentIndex + 1) / props.totalCount) * 100 : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* 우측 액션 섹션 */}
+        <div
+          class={`${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`}
+          data-gallery-element='actions-right'
+        >
+          {/* 이미지 핏 모드 버튼들 */}
+          <IconButton
+            size='toolbar'
+            onClick={(e: any) => handleFitMode(e, 'original', props.onFitOriginal)}
+            disabled={!!(props.disabled || !props.onFitOriginal)}
+            aria-label='원본 크기'
+            title='원본 크기 (1:1)'
+            data-gallery-element='fit-original'
+            data-selected={toolbarState().currentFitMode === 'original'}
+            data-disabled={!!(props.disabled || !props.onFitOriginal)}
+          >
+            <HeroZoomIn size={18} />
+          </IconButton>
+          <IconButton
+            size='toolbar'
+            onClick={(e: any) => handleFitMode(e, 'fitWidth', props.onFitWidth)}
+            disabled={!!(props.disabled || !props.onFitWidth)}
+            aria-label='가로에 맞춤'
+            title='가로에 맞추기'
+            data-gallery-element='fit-width'
+            data-selected={toolbarState().currentFitMode === 'fitWidth'}
+            data-disabled={!!(props.disabled || !props.onFitWidth)}
+          >
+            <HeroArrowAutofitWidth size={18} />
+          </IconButton>
+          <IconButton
+            size='toolbar'
+            onClick={(e: any) => handleFitMode(e, 'fitHeight', props.onFitHeight)}
+            disabled={!!(props.disabled || !props.onFitHeight)}
+            aria-label='세로에 맞춤'
+            title='세로에 맞추기'
+            data-gallery-element='fit-height'
+            data-selected={toolbarState().currentFitMode === 'fitHeight'}
+            data-disabled={!!(props.disabled || !props.onFitHeight)}
+          >
+            <HeroArrowAutofitHeight size={18} />
+          </IconButton>
+          <IconButton
+            size='toolbar'
+            onClick={(e: any) => handleFitMode(e, 'fitContainer', props.onFitContainer)}
+            disabled={!!(props.disabled || !props.onFitContainer)}
+            aria-label='창에 맞춤'
+            title='창에 맞추기'
+            data-gallery-element='fit-container'
+            data-selected={toolbarState().currentFitMode === 'fitContainer'}
+            data-disabled={!!(props.disabled || !props.onFitContainer)}
+          >
+            <HeroArrowsMaximize size={18} />
+          </IconButton>
+
+          {/* 다운로드 버튼들 */}
+          <IconButton
+            size='toolbar'
+            loading={!!props.isDownloading}
+            onClick={(e: any) => handleButtonClick(e, 'download-current', props.onDownloadCurrent)}
+            disabled={!!(props.disabled || props.isDownloading)}
+            aria-label='현재 파일 다운로드'
+            title='현재 파일 다운로드 (Ctrl+D)'
+            data-gallery-element='download-current'
+            data-disabled={!!(props.disabled || props.isDownloading)}
+            data-loading={!!props.isDownloading}
+          >
+            <HeroDownload size={18} />
+          </IconButton>
+
+          <Show when={props.totalCount > 1}>
+            <IconButton
+              size='toolbar'
+              onClick={(e: any) => handleButtonClick(e, 'download-all', props.onDownloadAll)}
+              disabled={!!(props.disabled || props.isDownloading)}
+              aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+              title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+              data-gallery-element='download-all'
+              data-disabled={!!(props.disabled || props.isDownloading)}
+              data-loading={!!props.isDownloading}
+            >
+              <HeroFileZip size={18} />
+            </IconButton>
+          </Show>
+
+          {/* 설정 버튼 */}
+          <Show when={props.onOpenSettings}>
+            <IconButton
+              size='toolbar'
+              aria-label='설정 열기'
+              title='설정'
+              disabled={!!props.disabled}
+              onClick={(e: any) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
+              onMouseDown={(e: any) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
+              data-gallery-element='settings'
+              data-disabled={!!props.disabled}
+            >
+              <HeroSettings size={18} />
+            </IconButton>
+          </Show>
+
+          {/* 닫기 버튼 */}
+          <IconButton
+            size='toolbar'
+            intent='danger'
+            aria-label='갤러리 닫기'
+            title='갤러리 닫기 (Esc)'
+            disabled={!!props.disabled}
+            onClick={(e: any) => handleButtonClick(e, 'close', props.onClose)}
+            data-gallery-element='close'
+            data-disabled={!!props.disabled}
+          >
+            <HeroX size={18} />
+          </IconButton>
+        </div>
+      </div>
+    </div>
   );
-
-  return h(
-    'div',
-    {
-      ref: toolbarRef,
-      className: toolbarClass,
-      role: role || 'toolbar',
-      'aria-label': ariaLabel || '갤러리 도구모음',
-      'aria-describedby': ariaDescribedBy,
-      'aria-disabled': disabled,
-      'data-testid': testId,
-      'data-gallery-element': 'toolbar',
-      'data-state': getToolbarDataState(toolbarState),
-      'data-disabled': disabled,
-      'data-high-contrast': toolbarState.needsHighContrast,
-      tabIndex,
-      onFocus,
-      onBlur,
-      onKeyDown,
-    } as Record<string, unknown>,
-    h(
-      'div',
-      {
-        className: `${styles.toolbarContent} xeg-center-between xeg-gap-md`,
-        'data-gallery-element': 'toolbar-content',
-      },
-      [
-        // 좌측 네비게이션 섹션
-        h(
-          'div',
-          {
-            className: `${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft xeg-row-center xeg-gap-sm`,
-            'data-gallery-element': 'navigation-left',
-            key: 'toolbar-left',
-          },
-          [
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                'aria-label': '이전 미디어',
-                title: '이전 미디어 (←)',
-                disabled: disabled || !canGoPrevious,
-                onClick: (e: Event) => handleButtonClick(e, 'previous', onPrevious),
-                'data-gallery-element': 'nav-previous',
-                'data-disabled': disabled || !canGoPrevious,
-                key: 'previous-button',
-              },
-              h(ChevronLeft, { size: 18 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                'aria-label': '다음 미디어',
-                title: '다음 미디어 (→)',
-                disabled: disabled || !canGoNext,
-                onClick: (e: Event) => handleButtonClick(e, 'next', onNext),
-                'data-gallery-element': 'nav-next',
-                'data-disabled': disabled || !canGoNext,
-                key: 'next-button',
-              },
-              h(ChevronRight, { size: 18 })
-            ),
-          ]
-        ),
-
-        // 중앙 카운터 섹션
-        h(
-          'div',
-          {
-            className: `${styles.toolbarSection} ${styles.toolbarCenter} xeg-row-center`,
-            'data-gallery-element': 'counter-section',
-            key: 'toolbar-center',
-          },
-          h(
-            'div',
-            {
-              className: styles.mediaCounterWrapper,
-              key: 'media-counter-wrapper',
-            },
-            [
-              h(
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                'span' as any,
-                {
-                  className: styles.mediaCounter,
-                  'aria-live': 'polite',
-                  'data-gallery-element': 'counter',
-                  key: 'counter-text',
-                },
-                [
-                  h('span', { className: styles.currentIndex, key: 'current' }, currentIndex + 1),
-                  h('span', { className: styles.separator, key: 'separator' }, '/'),
-                  h('span', { className: styles.totalCount, key: 'total' }, totalCount),
-                ]
-              ),
-              h(
-                'div',
-                {
-                  className: styles.progressBar,
-                  key: 'progress-bar',
-                },
-                h('div', {
-                  className: styles.progressFill,
-                  style: {
-                    width: `${totalCount > 0 ? ((currentIndex + 1) / totalCount) * 100 : 0}%`,
-                  },
-                  key: 'progress-fill',
-                })
-              ),
-            ]
-          )
-        ),
-
-        // 우측 액션 섹션
-        h(
-          'div',
-          {
-            className: `${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`,
-            'data-gallery-element': 'actions-right',
-            key: 'toolbar-right',
-          },
-          [
-            // 이미지 핏 모드 버튼들 - 독립적으로 배치
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'original', onFitOriginal),
-                disabled: disabled || !onFitOriginal,
-                'aria-label': '원본 크기',
-                title: '원본 크기 (1:1)',
-                'data-gallery-element': 'fit-original',
-                'data-selected': toolbarState.currentFitMode === 'original',
-                'data-disabled': disabled || !onFitOriginal,
-                key: 'fit-original',
-              },
-              h(ZoomIn, { size: 18 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitWidth', onFitWidth),
-                disabled: disabled || !onFitWidth,
-                'aria-label': '가로에 맞춤',
-                title: '가로에 맞추기',
-                'data-gallery-element': 'fit-width',
-                'data-selected': toolbarState.currentFitMode === 'fitWidth',
-                'data-disabled': disabled || !onFitWidth,
-                key: 'fit-width',
-              },
-              h(ArrowAutofitWidth, { size: 18 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitHeight', onFitHeight),
-                disabled: disabled || !onFitHeight,
-                'aria-label': '세로에 맞춤',
-                title: '세로에 맞추기',
-                'data-gallery-element': 'fit-height',
-                'data-selected': toolbarState.currentFitMode === 'fitHeight',
-                'data-disabled': disabled || !onFitHeight,
-                key: 'fit-height',
-              },
-              h(ArrowAutofitHeight, { size: 18 })
-            ),
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                onClick: (e: Event) => handleFitMode(e, 'fitContainer', onFitContainer),
-                disabled: disabled || !onFitContainer,
-                'aria-label': '창에 맞춤',
-                title: '창에 맞추기',
-                'data-gallery-element': 'fit-container',
-                'data-selected': toolbarState.currentFitMode === 'fitContainer',
-                'data-disabled': disabled || !onFitContainer,
-                key: 'fit-container',
-              },
-              h(ArrowsMaximize, { size: 18 })
-            ),
-
-            // 다운로드 버튼들
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                loading: isDownloading,
-                onClick: (e: Event) => handleButtonClick(e, 'download-current', onDownloadCurrent),
-                disabled: disabled || isDownloading,
-                'aria-label': '현재 파일 다운로드',
-                title: '현재 파일 다운로드 (Ctrl+D)',
-                'data-gallery-element': 'download-current',
-                'data-disabled': disabled || isDownloading,
-                'data-loading': isDownloading,
-                key: 'download-current',
-              },
-              h(Download, { size: 18, key: 'download-icon' })
-            ),
-
-            totalCount > 1 &&
-              h(
-                IconButton,
-                {
-                  size: 'toolbar',
-                  onClick: (e: Event) => handleButtonClick(e, 'download-all', onDownloadAll),
-                  disabled: disabled || isDownloading,
-                  'aria-label': `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  title: `전체 ${totalCount}개 파일 ZIP 다운로드`,
-                  'data-gallery-element': 'download-all',
-                  'data-disabled': disabled || isDownloading,
-                  'data-loading': isDownloading,
-                  key: 'download-all',
-                },
-                h(FileZip, { size: 18, key: 'download-all-icon' })
-              ),
-
-            // 설정 버튼
-            onOpenSettings &&
-              h(
-                IconButton,
-                {
-                  size: 'toolbar',
-                  'aria-label': '설정 열기',
-                  title: '설정',
-                  disabled,
-                  onClick: (e: Event) => handleButtonClick(e, 'settings', onOpenSettings),
-                  // 마우스다운 시점에 즉시 트리거하여 hover/pointer-events 경계에서의 클릭 손실 최소화
-                  onMouseDown: (e: MouseEvent) =>
-                    handleButtonClick(e as unknown as Event, 'settings', onOpenSettings),
-                  'data-gallery-element': 'settings',
-                  'data-disabled': disabled,
-                  key: 'settings',
-                },
-                h(Settings, { size: 18 })
-              ),
-
-            // 닫기 버튼
-            h(
-              IconButton,
-              {
-                size: 'toolbar',
-                intent: 'danger',
-                'aria-label': '갤러리 닫기',
-                title: '갤러리 닫기 (Esc)',
-                disabled,
-                onClick: (e: Event) => handleButtonClick(e, 'close', onClose),
-                'data-gallery-element': 'close',
-                'data-disabled': disabled,
-                key: 'close',
-              },
-              h(X, { size: 18 })
-            ),
-          ]
-        ),
-      ]
-    )
-  );
-}
-
-/**
- * Props 비교 함수 - Toolbar 최적화
- */
-export const compareToolbarProps = (prevProps: ToolbarProps, nextProps: ToolbarProps): boolean => {
-  // 핵심 상태 props 비교
-  if (prevProps.currentIndex !== nextProps.currentIndex) return false;
-  if (prevProps.totalCount !== nextProps.totalCount) return false;
-  if (prevProps.isDownloading !== nextProps.isDownloading) return false;
-  if (prevProps.disabled !== nextProps.disabled) return false;
-  if (prevProps.className !== nextProps.className) return false;
-
-  // ViewMode 비교
-  if (prevProps.currentViewMode !== nextProps.currentViewMode) return false;
-
-  // 함수 props 참조 비교
-  if (prevProps.onPrevious !== nextProps.onPrevious) return false;
-  if (prevProps.onNext !== nextProps.onNext) return false;
-  if (prevProps.onDownloadCurrent !== nextProps.onDownloadCurrent) return false;
-  if (prevProps.onDownloadAll !== nextProps.onDownloadAll) return false;
-  if (prevProps.onClose !== nextProps.onClose) return false;
-  if (prevProps.onViewModeChange !== nextProps.onViewModeChange) return false;
-  if (prevProps.onOpenSettings !== nextProps.onOpenSettings) return false;
-
-  // ImageFit 콜백들
-  if (prevProps.onFitOriginal !== nextProps.onFitOriginal) return false;
-  if (prevProps.onFitWidth !== nextProps.onFitWidth) return false;
-  if (prevProps.onFitHeight !== nextProps.onFitHeight) return false;
-  if (prevProps.onFitContainer !== nextProps.onFitContainer) return false;
-
-  // 이벤트 핸들러들
-  if (prevProps.onFocus !== nextProps.onFocus) return false;
-  if (prevProps.onBlur !== nextProps.onBlur) return false;
-  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
-
-  return true;
 };
-
-// memo 적용
-import { getPreactCompat } from '../../../external/vendors';
-const { memo } = getPreactCompat();
-const MemoizedToolbar = memo(ToolbarCore, compareToolbarProps);
-
-// displayName 설정
-Object.defineProperty(MemoizedToolbar, 'displayName', {
-  value: 'memo(Toolbar)',
-  writable: false,
-  configurable: true,
-});
-
-// 메모이제이션된 컴포넌트를 export
-export const Toolbar = MemoizedToolbar;
 
 export default Toolbar;

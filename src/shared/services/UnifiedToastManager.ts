@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../logging/logger';
-import { getPreactSignals } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
 
 // 통합된 Toast 타입 정의
@@ -53,9 +53,7 @@ export class ToastManager {
   private readonly subscribers = new Set<(toasts: ToastItem[]) => void>();
 
   private constructor() {
-    // Preact signals를 사용한 반응형 상태 관리
-    // 테스트에서 vendors가 부분 모킹되어 getPreactSignals().signal이 없을 수 있으므로
-    // 안전한 폴백 신호를 제공한다.
+    // Phase 6: Solid.js signal을 사용한 반응형 상태 관리
     const createLocalSignal = <T>(initial: T) => {
       let _value = initial;
       const subscribers = new Set<(v: T) => void>();
@@ -65,7 +63,6 @@ export class ToastManager {
         },
         set value(v: T) {
           _value = v;
-          // 구독자들에게 변경 알림
           subscribers.forEach(cb => {
             try {
               cb(_value);
@@ -83,14 +80,24 @@ export class ToastManager {
 
     let toastsSignalImpl: typeof this.toastsSignal | null = null;
     try {
-      const vendorsSignals = getPreactSignals() as unknown as {
-        signal?: <U>(v: U) => { value: U; subscribe: (cb: (v: U) => void) => () => void };
-      };
-      const createSignal = vendorsSignals?.signal as
-        | (<U>(v: U) => { value: U; subscribe: (cb: (v: U) => void) => () => void })
-        | undefined;
-      if (typeof createSignal === 'function') {
-        toastsSignalImpl = createSignal<ToastItem[]>([]);
+      const solid = getSolid();
+      if (solid && typeof solid.createSignal === 'function') {
+        const [toasts, setToasts] = solid.createSignal<ToastItem[]>([]);
+        toastsSignalImpl = {
+          get value() {
+            return toasts();
+          },
+          set value(v: ToastItem[]) {
+            setToasts(v);
+          },
+          subscribe(callback: (v: ToastItem[]) => void) {
+            solid.createEffect(() => {
+              callback(toasts());
+            });
+            // Solid createEffect는 cleanup 함수를 반환하지 않음
+            return () => {};
+          },
+        };
       }
     } catch {
       // ignore and use fallback

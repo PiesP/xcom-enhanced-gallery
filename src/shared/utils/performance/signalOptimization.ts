@@ -1,9 +1,15 @@
 /**
- * @fileoverview Signal Selector Optimization
- * @description 메모화를 통한 시그널 셀렉터 성능 최적화
+ * @fileoverview Performance Optimization Primitives (Solid.js) - Phase 3
+ * @description Solid Primitives 기반 성능 최적화 유틸리티
+ *
+ * 마이그레이션 노트:
+ * - Preact useMemo → Solid createMemo (자동 의존성 추적)
+ * - Preact useCallback → 불필요 (Solid 컴포넌트는 1회 실행)
+ * - Preact useEffect → Solid createEffect
  */
 
-import { getPreactHooks } from '../../external/vendors';
+import type { Accessor } from 'solid-js';
+import { createEffect, createSignal, onCleanup, untrack } from 'solid-js';
 import { globalTimerManager } from '../timer-management';
 
 /**
@@ -12,23 +18,57 @@ import { globalTimerManager } from '../timer-management';
 type SelectorFunction<T, R> = (state: T) => R;
 
 /**
- * 메모화된 셀렉터 생성 함수
- * Object.is를 사용한 참조 동일성 검사로 불필요한 재계산 방지
+ * 비동기 셀렉터 결과
  */
-export function createSelector<T, R>(
+export interface AsyncSelectorResult<T> {
+  value: T;
+  loading: boolean;
+  error: Error | null;
+}
+
+/**
+ * 전역 성능 통계
+ */
+interface PerformanceStats {
+  selectorCalls: number;
+  cacheHits: number;
+  cacheMisses: number;
+}
+
+let globalStats: PerformanceStats = {
+  selectorCalls: 0,
+  cacheHits: 0,
+  cacheMisses: 0,
+};
+
+let debugMode = false;
+
+/**
+ * 메모화된 셀렉터 생성 함수 (Solid Primitives)
+ * createMemo를 사용하여 Accessor 기반 메모이제이션 제공
+ *
+ * @param source - Solid signal accessor
+ * @param selector - 변환 함수
+ * @param debug - 디버그 모드
+ * @returns 메모화된 accessor 함수
+ */
+export function createMemoizedSelector<T, R>(
+  source: Accessor<T>,
   selector: SelectorFunction<T, R>,
   debug = false
-): SelectorFunction<T, R> {
+): Accessor<R> & { getStats: () => { calls: number; hits: number; misses: number } } {
   let lastInput: T;
   let lastOutput: R;
   let hasResult = false;
   const stats = { calls: 0, hits: 0, misses: 0 };
 
-  const memoizedSelector = (input: T): R => {
+  const memoizedSelector = () => {
     stats.calls++;
     globalStats.selectorCalls++;
 
-    // Object.is를 사용한 참조 동일성 검사 (입력 전체가 아닌 실제 비교할 값 확인)
+    const input = source();
+
+    // Object.is를 사용한 참조 동일성 검사
     if (hasResult && Object.is(input, lastInput)) {
       stats.hits++;
       globalStats.cacheHits++;
@@ -56,137 +96,80 @@ export function createSelector<T, R>(
   (memoizedSelector as typeof memoizedSelector & { getStats: () => typeof stats }).getStats =
     () => ({ ...stats });
 
-  return memoizedSelector;
+  return memoizedSelector as Accessor<R> & {
+    getStats: () => { calls: number; hits: number; misses: number };
+  };
 }
 
 /**
- * 비동기 셀렉터 결과
+ * 비동기 셀렉터 Primitive (Solid.js)
+ * createEffect를 사용한 비동기 작업 처리
+ *
+ * @param source - Solid signal accessor
+ * @param selector - 비동기 변환 함수
+ * @param defaultValue - 기본값
+ * @param debounceMs - 디바운스 시간 (ms)
+ * @returns 비동기 결과 accessor
  */
-interface AsyncSelectorResult<T> {
-  value: T;
-  loading: boolean;
-  error: Error | null;
-}
-
-/**
- * 비동기 셀렉터 훅
- * 디바운싱을 통한 요청 최적화
- */
-export function useAsyncSelector<T, R>(
-  state: { value: T } | T,
+export function createAsyncSelector<T, R>(
+  source: Accessor<T>,
   selector: (state: T) => Promise<R>,
   defaultValue: R,
   debounceMs = 300
-): AsyncSelectorResult<R> {
-  const { useState, useEffect, useRef } = getPreactHooks();
-
-  const [result, setResult] = useState<AsyncSelectorResult<R>>(() => ({
+): Accessor<AsyncSelectorResult<R>> {
+  // Solid signal을 사용하여 reactive하게 만듭니다
+  const [result, setResult] = createSignal<AsyncSelectorResult<R>>({
     value: defaultValue,
-    loading: false,
+    loading: true, // 초기에는 loading 상태
     error: null,
-  }));
+  });
 
-  const mountedRef = useRef(true);
-  const currentGenerationRef = useRef(0);
+  let currentGeneration = 0;
+  let isDisposed = false;
 
-  // Signal 또는 값 추출
-  const actualState =
-    (state as { value?: T })?.value !== undefined ? (state as { value: T }).value : (state as T);
-
-  useEffect(() => {
+  createEffect(() => {
     // 새로운 generation 시작
-    const generation = ++currentGenerationRef.current;
+    const generation = ++currentGeneration;
+    const state = source();
 
-    setResult((prev: AsyncSelectorResult<R>) => ({ ...prev, loading: true, error: null }));
+    // 즉시 loading 상태로 설정
+    untrack(() => setResult({ ...result(), loading: true, error: null }));
 
     const timeoutId = globalTimerManager.setTimeout(async () => {
-      if (!mountedRef.current || generation !== currentGenerationRef.current) return;
+      if (isDisposed || generation !== currentGeneration) return;
 
       try {
-        const value = await selector(actualState);
-        if (mountedRef.current && generation === currentGenerationRef.current) {
-          setResult({ value, loading: false, error: null });
+        const value = await selector(state);
+        if (!isDisposed && generation === currentGeneration) {
+          untrack(() => setResult({ value, loading: false, error: null }));
         }
       } catch (error) {
-        if (mountedRef.current && generation === currentGenerationRef.current) {
-          setResult({
-            value: defaultValue,
-            loading: false,
-            error: error instanceof Error ? error : new Error('Unknown error'),
-          });
+        if (!isDisposed && generation === currentGeneration) {
+          untrack(() =>
+            setResult({
+              value: defaultValue,
+              loading: false,
+              error: error instanceof Error ? error : new Error('Unknown error'),
+            })
+          );
         }
       }
     }, debounceMs);
 
-    // 컴포넌트 unmount 시 정리
-    return () => {
+    onCleanup(() => {
       globalTimerManager.clearTimeout(timeoutId);
-    };
-  }, [actualState, selector, defaultValue, debounceMs]);
+    });
+  });
 
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  onCleanup(() => {
+    isDisposed = true;
+  });
 
   return result;
 }
 
 /**
- * useSelector Hook
- * Signal에서 값을 선택하는 훅
- */
-export function useSelector<T, R>(
-  signal: { value: T },
-  selector: (value: T) => R,
-  deps?: unknown[]
-): R {
-  const { useMemo } = getPreactHooks();
-
-  return useMemo(
-    () => {
-      return selector(signal.value);
-    },
-    deps ? [signal.value, ...deps] : [signal.value]
-  );
-}
-
-/**
- * useCombinedSelector Hook
- * 여러 Signal을 조합하는 훅
- */
-export function useCombinedSelector<T1, T2, R>(
-  signal1: { value: T1 },
-  signal2: { value: T2 },
-  selector: (value1: T1, value2: T2) => R
-): R {
-  const { useMemo } = getPreactHooks();
-
-  return useMemo(() => {
-    return selector(signal1.value, signal2.value);
-  }, [signal1.value, signal2.value]);
-}
-
-/**
- * 전역 성능 통계
- */
-interface PerformanceStats {
-  selectorCalls: number;
-  cacheHits: number;
-  cacheMisses: number;
-}
-
-let globalStats: PerformanceStats = {
-  selectorCalls: 0,
-  cacheHits: 0,
-  cacheMisses: 0,
-};
-
-let debugMode = false;
-
-/**
- * 글로벌 통계 수집
+ * 글로벌 통계 조회
  */
 export function getGlobalStats(): PerformanceStats {
   return { ...globalStats };

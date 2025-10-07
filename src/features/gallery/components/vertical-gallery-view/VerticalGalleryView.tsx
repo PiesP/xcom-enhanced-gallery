@@ -14,7 +14,7 @@
 
 import { createSignal, createEffect, onCleanup, mergeProps, For, Show } from 'solid-js';
 import { logger } from '../../../../shared/logging/logger';
-import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.solid';
+import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
@@ -27,7 +27,7 @@ import {
 } from '../../../../shared/utils/animations';
 import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
-import { VerticalImageItem } from './VerticalImageItem.solid';
+import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '../../../../shared/utils/performance';
 import { getSetting, setSetting } from '../../../../shared/container/settings-access';
 import { observeViewportCssVars } from '../../../../shared/utils/viewport';

@@ -1,19 +1,19 @@
 /**
- * @fileoverview Button - 통합 버튼 컴포넌트
- * @description 모든 버튼 요구사항을 만족하는 통합 컴포넌트
+ * @fileoverview Button.solid - Solid.js 통합 버튼 컴포넌트
+ * @description 모든 버튼 요구사항을 만족하는 통합 컴포넌트 (Solid.js)
  *
  * @features
- * - 다중 variant 지원 (primary, secondary, icon, danger, ghost)
+ * - 다중 variant 지원 (primary, secondary, icon, danger, ghost, toolbar, navigation, action)
  * - 완전한 접근성 (ARIA 속성, 키보드 네비게이션)
  * - Loading 상태 및 disabled 상태
  * - 타입 안전성 (TypeScript strict mode)
  * - CSS 모듈 기반 스타일링
  * - Icon-only 모드 지원
+ * - Intent 시스템 (색상 오버레이)
  */
 
-import type { ComponentChildren, VNode } from '../../../external/vendors';
-import { getPreact, getPreactHooks } from '../../../external/vendors';
-import { logger } from '../../../logging';
+import { mergeProps, splitProps, createEffect, type Component, type JSX } from 'solid-js';
+import { logger } from '@shared/logging';
 import styles from './Button.module.css';
 
 // 간단한 clsx 대체 함수
@@ -27,21 +27,28 @@ type ButtonVariant =
   | 'icon'
   | 'danger'
   | 'ghost'
-  | 'toolbar' // 툴바 전용 버튼
-  | 'navigation' // 네비게이션 버튼 (이전/다음)
-  | 'action'; // 액션 버튼 (다운로드 등)
+  | 'toolbar'
+  | 'navigation'
+  | 'action';
 
-type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar'; // toolbar 크기 추가
+type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
 type ButtonIntent = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
 
-// Base HTML Button Attributes
-interface ButtonHTMLAttributes {
-  readonly id?: string;
-  readonly className?: string;
+export interface ButtonProps {
+  readonly children?: JSX.Element;
+  readonly variant?: ButtonVariant;
+  readonly size?: ButtonSize;
+  readonly intent?: ButtonIntent;
+  readonly iconOnly?: boolean;
+  readonly loading?: boolean;
   readonly disabled?: boolean;
-  readonly form?: string;
   readonly type?: 'button' | 'submit' | 'reset';
+  readonly form?: string;
   readonly autoFocus?: boolean;
+  readonly className?: string;
+  readonly id?: string;
+  readonly title?: string;
+  readonly role?: 'button' | 'tab' | 'link' | 'menuitem' | 'switch' | 'checkbox';
   readonly tabIndex?: number;
   readonly 'aria-label'?: string;
   readonly 'aria-labelledby'?: string;
@@ -56,9 +63,6 @@ interface ButtonHTMLAttributes {
   readonly 'data-disabled'?: boolean | string;
   readonly 'data-selected'?: boolean | string;
   readonly 'data-loading'?: boolean | string;
-  readonly key?: string;
-  readonly title?: string;
-  readonly role?: string;
   readonly onClick?: (event: MouseEvent) => void;
   readonly onMouseDown?: (event: MouseEvent) => void;
   readonly onMouseUp?: (event: MouseEvent) => void;
@@ -67,231 +71,180 @@ interface ButtonHTMLAttributes {
   readonly onKeyDown?: (event: KeyboardEvent) => void;
   readonly onMouseEnter?: (event: MouseEvent) => void;
   readonly onMouseLeave?: (event: MouseEvent) => void;
-}
-
-export interface ButtonProps extends ButtonHTMLAttributes {
-  readonly children?: ComponentChildren;
-  readonly variant?: ButtonVariant;
-  readonly size?: ButtonSize;
-  readonly intent?: ButtonIntent;
-  readonly iconOnly?: boolean;
-  readonly loading?: boolean;
   readonly ref?: (element: HTMLButtonElement | null) => void;
-  readonly className?: string;
-  readonly 'data-testid'?: string;
   /** @deprecated Use intent instead */
   readonly iconVariant?: ButtonIntent;
 }
 
-// 직접 컴포넌트 구현 (forwardRef 없이)
-function ButtonComponent(props: ButtonProps): VNode {
-  const {
-    children,
-    variant = 'primary',
-    size = 'md',
-    intent,
-    iconVariant, // 하위 호환성
-    iconOnly = false,
-    type = 'button',
-    form,
-    autoFocus,
-    disabled = false,
-    loading = false,
-    className,
-    id,
-    tabIndex,
-    'aria-label': ariaLabel,
-    'aria-labelledby': ariaLabelledBy,
-    'aria-describedby': ariaDescribedBy,
-    'aria-pressed': ariaPressed,
-    'aria-expanded': ariaExpanded,
-    'aria-controls': ariaControls,
-    'aria-haspopup': ariaHaspopup,
-    'aria-busy': ariaBusy,
-    'data-testid': dataTestId,
-    'data-gallery-element': dataGalleryElement,
-    'data-disabled': dataDisabled,
-    'data-selected': dataSelected,
-    'data-loading': dataLoading,
-    title,
-    role,
-    onClick,
-    onFocus,
-    onBlur,
-    onKeyDown,
-    onMouseDown,
-    onMouseUp,
-    onMouseEnter,
-    onMouseLeave,
-    ref,
-    ...restProps
-  } = props;
+export const Button: Component<ButtonProps> = props => {
+  const merged = mergeProps(
+    {
+      variant: 'primary' as const,
+      size: 'md' as const,
+      type: 'button' as const,
+      disabled: false,
+      loading: false,
+      iconOnly: false,
+    },
+    props
+  );
 
-  const { useRef, useEffect } = getPreactHooks();
-  const { h } = getPreact();
+  const [local, handlers, aria, data, rest] = splitProps(
+    merged,
+    [
+      'variant',
+      'size',
+      'intent',
+      'iconOnly',
+      'loading',
+      'disabled',
+      'children',
+      'className',
+      'ref',
+      'type',
+      'iconVariant',
+      'form',
+      'autoFocus',
+      'id',
+      'title',
+      'role',
+      'tabIndex',
+    ],
+    [
+      'onClick',
+      'onMouseDown',
+      'onMouseUp',
+      'onFocus',
+      'onBlur',
+      'onKeyDown',
+      'onMouseEnter',
+      'onMouseLeave',
+    ],
+    [
+      'aria-label',
+      'aria-labelledby',
+      'aria-describedby',
+      'aria-pressed',
+      'aria-expanded',
+      'aria-controls',
+      'aria-haspopup',
+      'aria-busy',
+    ],
+    ['data-testid', 'data-gallery-element', 'data-disabled', 'data-selected', 'data-loading']
+  );
 
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  let buttonRef: HTMLButtonElement | undefined;
 
-  // ref 처리
-  useEffect(() => {
-    if (ref && buttonRef.current) {
-      ref(buttonRef.current);
+  // Ref 처리
+  createEffect(() => {
+    if (local.ref) {
+      local.ref(buttonRef || null);
     }
-    return () => {
-      if (ref) {
-        ref(null);
-      }
-    };
-  }, [ref]);
+  });
 
-  // 하위 호환성: iconVariant를 intent로 변환
-  const resolvedIntent = intent || iconVariant;
-
-  // 접근성 검증
-  useEffect(() => {
-    if (iconOnly) {
-      const derived = ariaLabel || ariaLabelledBy || title;
+  // 접근성 검증 (iconOnly 모드)
+  createEffect(() => {
+    if (local.iconOnly) {
+      const derived = aria['aria-label'] || aria['aria-labelledby'] || local.title;
       if (!derived) {
-        const msg =
-          'Icon-only buttons must have accessible labels (aria-label or aria-labelledby).';
-        const context = { component: 'UnifiedButton', variant, iconOnly } as const;
-        // 정책: 현재 구현은 런타임에서는 경고만 남기고 렌더링을 계속합니다.
-        // 테스트에서도 동일하게 경고로 처리하여, 별도의 탐지 테스트가 구성된 대로 동작하게 합니다.
-        logger.warn(msg, context);
+        logger.warn(
+          'Icon-only buttons must have accessible labels (aria-label or aria-labelledby).',
+          { component: 'Button', variant: local.variant, iconOnly: local.iconOnly }
+        );
       }
     }
-  }, [iconOnly, ariaLabel, ariaLabelledBy, variant]);
+  });
 
-  // 클릭 핸들러
+  // 하위 호환성: iconVariant → intent
+  const resolvedIntent = () => local.intent || local.iconVariant;
+
+  // 이벤트 핸들러 (disabled/loading 체크)
   const handleClick = (event: MouseEvent) => {
-    if (disabled || loading) {
+    if (local.disabled || local.loading) {
       event.preventDefault();
       return;
     }
-    onClick?.(event);
+    handlers.onClick?.(event);
   };
 
   const handleMouseDown = (event: MouseEvent) => {
-    if (disabled || loading) {
+    if (local.disabled || local.loading) {
       event.preventDefault();
       return;
     }
-    onMouseDown?.(event);
+    handlers.onMouseDown?.(event);
   };
 
   const handleMouseUp = (event: MouseEvent) => {
-    if (disabled || loading) return;
-    onMouseUp?.(event);
+    if (local.disabled || local.loading) return;
+    handlers.onMouseUp?.(event);
   };
 
-  // 키보드 핸들러
   const handleKeyDown = (event: KeyboardEvent) => {
-    if (disabled || loading) {
-      return;
-    }
-    onKeyDown?.(event);
+    if (local.disabled || local.loading) return;
+    handlers.onKeyDown?.(event);
   };
 
-  // 클래스 조합
-  const buttonClasses = classnames(
-    styles.unifiedButton,
-    styles[`variant-${variant}`],
-    styles[`size-${size}`],
-    resolvedIntent && styles[`intent-${resolvedIntent}`],
-    iconOnly && styles['iconOnly'],
-    // 하위 호환성을 위한 추가 클래스명
-    variant === 'icon' && styles['icon'],
-    resolvedIntent && styles[resolvedIntent],
-    styles[size],
-    loading && styles.loading,
-    disabled && styles.disabled,
-    className
-  );
+  // 클래스 조합 (함수로 만들어 반응성 확보)
+  const buttonClasses = () =>
+    classnames(
+      styles.unifiedButton,
+      styles[`variant-${local.variant}`],
+      styles[`size-${local.size}`],
+      resolvedIntent() && styles[`intent-${resolvedIntent()}`],
+      local.iconOnly && styles['iconOnly'],
+      // 하위 호환성을 위한 추가 클래스명
+      local.variant === 'icon' && styles['icon'],
+      resolvedIntent() && styles[resolvedIntent()!],
+      styles[local.size],
+      local.loading && styles.loading,
+      local.disabled && styles.disabled,
+      local.className
+    );
 
   // tabIndex 처리
-  const resolvedTabIndex = disabled ? -1 : tabIndex;
+  const resolvedTabIndex = () => (local.disabled ? -1 : local.tabIndex);
 
-  return h(
-    'button',
-    {
-      ref: buttonRef,
-      type,
-      form,
-      autoFocus,
-      disabled: disabled || loading,
-      className: buttonClasses,
-      id,
-      role: role || 'button', // 기본적으로 명시적 role="button" 설정
-      'aria-label': ariaLabel,
-      'aria-labelledby': ariaLabelledBy,
-      'aria-describedby': ariaDescribedBy,
-      'aria-pressed': ariaPressed,
-      'aria-expanded': ariaExpanded,
-      'aria-controls': ariaControls,
-      'aria-haspopup': ariaHaspopup,
-      'aria-busy': ariaBusy || loading,
-      'aria-disabled': disabled || loading, // 명시적 aria-disabled 설정
-      tabIndex: resolvedTabIndex,
-      'data-testid': dataTestId,
-      'data-gallery-element': dataGalleryElement,
-      'data-disabled': dataDisabled,
-      'data-selected': dataSelected,
-      'data-loading': dataLoading,
-      onClick: handleClick,
-      onMouseDown: handleMouseDown,
-      onMouseUp: handleMouseUp,
-      onFocus,
-      onBlur,
-      onKeyDown: handleKeyDown,
-      onMouseEnter,
-      onMouseLeave,
-      ...restProps,
-    },
-    // loading 상태에서 스피너와 children 렌더링
-    loading
-      ? [
-          h('span', {
-            className: styles.spinner,
-            'aria-hidden': 'true',
-          }),
-          children,
-        ]
-      : children
-  ) as VNode;
-}
-
-ButtonComponent.displayName = 'Button';
-
-// Memoization with custom comparison for performance
-const areEqual = (prevProps: ButtonProps, nextProps: ButtonProps): boolean => {
-  // High-impact props that should trigger re-render
-  if (prevProps.disabled !== nextProps.disabled) return false;
-  if (prevProps.loading !== nextProps.loading) return false;
-  if (prevProps.variant !== nextProps.variant) return false;
-  if (prevProps.size !== nextProps.size) return false; // size 비교 추가!
-  if (prevProps.intent !== nextProps.intent) return false; // intent 비교 추가!
-  if (prevProps.children !== nextProps.children) return false;
-  if (prevProps.onClick !== nextProps.onClick) return false;
-  if (prevProps['aria-pressed'] !== nextProps['aria-pressed']) return false;
-  if (prevProps['aria-label'] !== nextProps['aria-label']) return false; // aria-label 비교 추가!
-
-  return true;
+  return (
+    <button
+      ref={buttonRef}
+      type={local.type}
+      form={local.form}
+      autofocus={local.autoFocus}
+      disabled={local.disabled || local.loading}
+      class={buttonClasses()}
+      id={local.id}
+      role={local.role || 'button'}
+      aria-label={aria['aria-label']}
+      aria-labelledby={aria['aria-labelledby']}
+      aria-describedby={aria['aria-describedby']}
+      aria-pressed={aria['aria-pressed']}
+      aria-expanded={aria['aria-expanded']}
+      aria-controls={aria['aria-controls']}
+      aria-haspopup={aria['aria-haspopup']}
+      aria-busy={aria['aria-busy'] || local.loading}
+      aria-disabled={local.disabled || local.loading}
+      tabIndex={resolvedTabIndex()}
+      data-testid={data['data-testid']}
+      data-gallery-element={data['data-gallery-element']}
+      data-disabled={data['data-disabled']}
+      data-selected={data['data-selected']}
+      data-loading={data['data-loading']}
+      title={local.title}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
+      onFocus={handlers.onFocus}
+      onBlur={handlers.onBlur}
+      onKeyDown={handleKeyDown}
+      onMouseEnter={handlers.onMouseEnter}
+      onMouseLeave={handlers.onMouseLeave}
+      {...rest}
+    >
+      {local.loading && <span class={styles.spinner} aria-hidden='true' />}
+      {local.children}
+    </button>
+  );
 };
-
-// 간단한 memo 구현 (외부 의존성 없이)
-function memo<P>(component: (props: P) => VNode, compare?: (prev: P, next: P) => boolean) {
-  let lastProps: P | undefined;
-  let lastResult: VNode | undefined;
-
-  return (props: P): VNode => {
-    if (lastProps === undefined || !compare?.(lastProps, props)) {
-      lastProps = props;
-      lastResult = component(props);
-    }
-    return lastResult!;
-  };
-}
-
-export const Button = memo(ButtonComponent, areEqual);
 
 export default Button;

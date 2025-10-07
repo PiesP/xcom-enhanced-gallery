@@ -1,13 +1,13 @@
 /**
- * @fileoverview Button Primitive Component
- * @description 기본 버튼 컴포넌트 - 디자인 토큰 사용
+ * @fileoverview Button Primitive Solid Component
+ * @description 기본 버튼 컴포넌트 - Solid.js 기반, 디자인 토큰 사용
  */
 
-import type { ComponentChildren } from '../../../external/vendors';
+import { mergeProps, splitProps, type Component, type JSX } from 'solid-js';
 import './Button.css';
 
 export interface ButtonProps {
-  readonly children: ComponentChildren;
+  readonly children: JSX.Element;
   readonly className?: string;
   readonly variant?: 'primary' | 'secondary' | 'outline';
   readonly size?: 'sm' | 'md' | 'lg';
@@ -26,79 +26,101 @@ export interface ButtonProps {
   readonly loading?: boolean;
 }
 
-export function Button({
-  children,
-  className = '',
-  variant = 'primary',
-  size = 'md',
-  disabled = false,
-  type = 'button',
-  onClick,
-  onKeyDown,
+export const Button: Component<ButtonProps> = props => {
+  // Solid.js의 mergeProps로 기본값 설정
+  const merged = mergeProps(
+    {
+      className: '',
+      variant: 'primary' as const,
+      size: 'md' as const,
+      disabled: false,
+      type: 'button' as const,
+      loading: false,
+    },
+    props
+  );
 
-  // T1 확장 props
-  intent,
-  selected,
-  loading = false,
-  ...props
-}: ButtonProps) {
+  // splitProps로 이벤트 핸들러와 나머지 props 분리
+  const [local, handlers, accessibilityProps, rest] = splitProps(
+    merged,
+    [
+      'children',
+      'className',
+      'variant',
+      'size',
+      'disabled',
+      'type',
+      'intent',
+      'selected',
+      'loading',
+    ],
+    ['onClick', 'onKeyDown'],
+    ['aria-label', 'data-action']
+  );
+
   const handleKeyDown = (event: KeyboardEvent) => {
     // 키보드 접근성: Enter, Space 키 지원
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      if (!disabled && !loading && onClick) {
-        onClick(event as unknown as MouseEvent);
+      if (!local.disabled && !local.loading && handlers.onClick) {
+        handlers.onClick(event as unknown as MouseEvent);
       }
     }
-    onKeyDown?.(event);
+    handlers.onKeyDown?.(event);
   };
 
   const handleClick = (event: MouseEvent) => {
-    if (!disabled && !loading) {
-      onClick?.(event);
+    if (!local.disabled && !local.loading) {
+      handlers.onClick?.(event);
     }
   };
 
-  // 클래스 조합
-  const classes = [
-    'xeg-button',
-    `xeg-button--${variant}`,
-    `xeg-button--${size}`,
-    intent && `xeg-button--${intent}`,
-    selected && 'xeg-button--selected',
-    loading && 'xeg-button--loading',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  // 클래스 조합 (Solid.js reactive derived value)
+  const classes = () =>
+    [
+      'xeg-button',
+      `xeg-button--${local.variant}`,
+      `xeg-button--${local.size}`,
+      local.intent && `xeg-button--${local.intent}`,
+      local.selected && 'xeg-button--selected',
+      local.loading && 'xeg-button--loading',
+      local.className,
+    ]
+      .filter(Boolean)
+      .join(' ');
 
-  // 접근성 속성
-  const accessibilityProps: Record<string, unknown> = {
-    role: 'button',
-    tabIndex: disabled || loading ? -1 : 0,
+  // 접근성 속성 (reactive)
+  const a11yProps = () => {
+    const props: Record<string, unknown> = {
+      role: 'button',
+      tabIndex: local.disabled || local.loading ? -1 : 0,
+    };
+
+    // selected 상태 aria 속성
+    if (local.selected !== undefined) {
+      props['aria-pressed'] = String(local.selected);
+    }
+
+    // loading 상태 aria 속성
+    if (local.loading) {
+      props['aria-busy'] = 'true';
+    }
+
+    return props;
   };
-
-  // selected 상태 aria 속성
-  if (selected !== undefined) {
-    accessibilityProps['aria-pressed'] = String(selected);
-  }
-
-  // loading 상태 aria 속성
-  if (loading) {
-    accessibilityProps['aria-busy'] = 'true';
-  }
 
   return (
     <button
-      type={type}
-      className={classes}
-      disabled={disabled || loading}
+      type={local.type}
+      class={classes()}
+      disabled={local.disabled || local.loading}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
+      {...a11yProps()}
       {...accessibilityProps}
-      {...props}
+      {...rest}
     >
-      {children}
+      {local.children}
     </button>
   );
-}
+};

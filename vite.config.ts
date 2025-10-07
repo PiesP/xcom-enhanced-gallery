@@ -3,11 +3,10 @@
  * - Dev: sourcemap + unminified
  * - Prod: terser + drop console
  * - Output: single userscript file
- * - Phase 0: Preact + Solid.js coexistence support (via file extension)
+ * - Phase 6: Solid.js only
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import preact from '@preact/preset-vite';
 import solid from 'vite-plugin-solid';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -153,13 +152,8 @@ export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
-      // Phase 0: Solid.js support for .solid.tsx files
-      solid({
-        include: ['**/*.solid.tsx', '**/*.solid.ts'],
-        extensions: ['.solid.tsx', '.solid.ts'],
-      }),
-      // Preact support for .tsx files (default)
-      preact({ devToolsEnabled: flags.isDev, prefreshEnabled: flags.isDev }),
+      // Solid.js support (Phase 6: Solid only)
+      solid(),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
     ],
@@ -172,7 +166,7 @@ export default defineConfig(({ mode }) => {
       global: 'globalThis',
     },
     resolve: {
-      extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json', '.solid.tsx', '.solid.ts'],
+      extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
       alias: [
         { find: '@features', replacement: '/src/features' },
         { find: '@shared', replacement: '/src/shared' },
@@ -222,7 +216,7 @@ export default defineConfig(({ mode }) => {
       }),
     },
     optimizeDeps: {
-      include: ['preact', 'preact/hooks', '@preact/signals', 'solid-js', 'solid-js/web'],
+      include: ['solid-js', 'solid-js/web'],
       force: flags.isDev,
     },
     server: { port: 3000, hmr: flags.isDev },

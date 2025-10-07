@@ -10,8 +10,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
@@ -30,10 +30,10 @@
       "@shared/*": ["shared/*"],
       "@assets/*": ["assets/*"]
     },
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["vite/client", "vitest/globals", "solid-js"],
     "incremental": true,
     "tsBuildInfoFile": ".tsbuildinfo"
   },
   "include": ["src/**/*", "types/**/*", "vite.config.ts", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist", "build", "coverage", "**/*.solid.tsx", "**/*.solid.ts"]
+  "exclude": ["node_modules", "dist", "build", "coverage"]
 }

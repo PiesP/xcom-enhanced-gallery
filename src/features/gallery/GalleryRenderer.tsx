@@ -24,9 +24,9 @@ import {
 } from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { render } from 'solid-js/web';
-import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView.solid';
-import { GalleryContainer } from '../../shared/components/isolation/GalleryContainer.solid';
-import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary.solid';
+import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
+import { GalleryContainer } from '../../shared/components/isolation/GalleryContainer';
+import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
 import { logger } from '../../shared/logging/logger';
 

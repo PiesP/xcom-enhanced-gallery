@@ -1,31 +1,31 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/**
+ * @fileoverview HeroZoomIn Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero ZoomIn Icon Adapter
+ */
+
+import { Dynamic } from 'solid-js/web';
+import { mergeProps, splitProps, type Component } from 'solid-js';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
+import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
+export function HeroZoomIn(props: IconProps): ReturnType<Component> {
+  const { MagnifyingGlassPlusIcon } = getHeroiconsOutline();
+  const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
+  const [local, others] = splitProps(merged, ['size']);
+  const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
 
-/** Heroicons 기반 ZoomIn(MagnifyingGlassPlus) 어댑터 */
-export function HeroZoomIn(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { MagnifyingGlassPlusIcon } = getHeroiconsOutline() as unknown as Record<string, IconLike>;
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(MagnifyingGlassPlusIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+  return (
+    <Icon size={local.size} {...others}>
+      <Dynamic
+        component={MagnifyingGlassPlusIcon as any}
+        width={sizeValue()}
+        height={sizeValue()}
+        fill='none'
+        stroke='var(--xeg-icon-color, currentColor)'
+        strokeWidth='var(--xeg-icon-stroke-width)'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </Icon>
   );
 }

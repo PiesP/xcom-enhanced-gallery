@@ -124,19 +124,18 @@ function initializeNonCriticalSystems(): void {
 }
 
 /**
- * Toast 컨테이너 지연 초기화
+ * Toast 컨테이너 지연 초기화 (Solid.js)
  */
 async function initializeToastContainer(): Promise<void> {
   try {
     logger.debug('Toast 컨테이너 지연 로딩 시작');
 
-    // UI 컴포넌트를 지연 로딩
-    const [{ ToastContainer }, { getPreact }] = await Promise.all([
+    // UI 컴포넌트를 지연 로딩 (Solid)
+    const [{ ToastContainer }, { render }] = await Promise.all([
       import('@shared/components/ui'),
-      import('./shared/external/vendors'),
+      import('solid-js/web'),
     ]);
 
-    const { h, render } = getPreact();
     let toastContainer = document.getElementById('xeg-toast-container');
     if (!toastContainer) {
       toastContainer = document.createElement('div');
@@ -144,7 +143,7 @@ async function initializeToastContainer(): Promise<void> {
       document.body.appendChild(toastContainer);
     }
 
-    render(h(ToastContainer, {}), toastContainer as HTMLElement);
+    render(() => ToastContainer({}), toastContainer as HTMLElement);
     logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);
@@ -201,17 +200,13 @@ async function cleanup(): Promise<void> {
     // CoreService 인스턴스 정리 (features 레이어에서 접근 금지이므로 여기서만 수행)
     CoreService.getInstance().cleanup();
 
-    // Toast 컨테이너 언마운트 및 DOM 제거
+    // Toast 컨테이너 언마운트 및 DOM 제거 (Solid.js)
     try {
       // 테스트 모드에서는 초기화 자체를 건너뛰므로 언마운트도 생략
       if (import.meta.env.MODE !== 'test') {
         const container = document.getElementById('xeg-toast-container');
         if (container) {
-          const { getPreact } = await import('./shared/external/vendors');
-          const { render } = getPreact();
-          // 언마운트
-          render(null, container as HTMLElement);
-          // DOM 제거
+          // Solid.js는 단순히 DOM 제거로 충분
           container.remove();
         }
       }

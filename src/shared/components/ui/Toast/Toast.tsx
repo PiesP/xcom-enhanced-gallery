@@ -1,169 +1,105 @@
+/**
+ * @fileoverview Toast Solid Component
+ * @description Solid.js implementation of Toast notification
+ */
+
+import { mergeProps, splitProps, onCleanup, type Component } from 'solid-js';
+import { globalTimerManager } from '@/shared/utils/timer-management';
 import styles from './Toast.module.css';
-import { getPreact, getPreactHooks, getPreactCompat, type VNode } from '../../../external/vendors';
-import { ComponentStandards } from '../StandardProps';
-import type { StandardToastProps } from '../StandardProps';
-import type { ToastItem as ServiceToastItem } from '@/shared/services/UnifiedToastManager';
 
-// Constants (상태/함수는 서비스에서 관리)
+export interface ToastItem {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  title: string;
+  message: string;
+  duration?: number;
+  actionText?: string;
+  onAction?: () => void;
+}
 
-// UI에서는 서비스의 ToastItem 타입만 사용하여 드리프트를 방지합니다.
-export interface ToastItem extends ServiceToastItem {}
-
-// 레거시 Props 인터페이스 (하위 호환성)
-interface LegacyToastProps {
+export interface ToastProps {
   toast: ToastItem;
   onRemove: (id: string) => void;
+  className?: string;
+  role?: 'alert' | 'status';
+  'aria-label'?: string;
+  'data-testid'?: string;
 }
 
-// 통합된 Toast Props
-export interface ToastProps extends Partial<StandardToastProps>, Partial<LegacyToastProps> {
-  // 필수 props
-  toast?: ToastItem;
-  onRemove?: (id: string) => void;
-}
+/**
+ * Toast component - displays a notification message
+ */
+export const Toast: Component<ToastProps> = props => {
+  const merged = mergeProps({ role: 'alert' as const }, props);
+  const [local, ariaProps, rest] = splitProps(
+    merged,
+    ['toast', 'onRemove', 'className', 'role'],
+    ['aria-label', 'data-testid']
+  );
 
-function ToastComponent({
-  toast,
-  onRemove,
-  className,
-  'data-testid': testId,
-  'aria-label': ariaLabel,
-  role = 'alert',
-}: ToastProps): VNode {
-  const { useEffect } = getPreactHooks();
-  // 표준화된 타이머 매니저 사용(누수/정리 용이)
-  const { globalTimerManager } = require('../../../utils/timer-management');
+  // Auto-dismiss timer with cleanup
+  if (local.toast?.duration && local.toast.duration > 0) {
+    const timer = globalTimerManager.setTimeout(() => {
+      local.onRemove?.(local.toast?.id ?? '');
+    }, local.toast.duration);
 
-  // 안전성 체크
-  if (!toast || !onRemove) {
-    throw new Error('Toast component requires both toast and onRemove props');
+    onCleanup(() => {
+      globalTimerManager.clearTimeout(timer);
+    });
   }
 
-  useEffect(() => {
-    if (toast.duration && toast.duration > 0) {
-      const timer = globalTimerManager.setTimeout(() => {
-        onRemove(toast.id);
-      }, toast.duration);
+  const handleClose = (e: MouseEvent | KeyboardEvent) => {
+    e.preventDefault();
+    local.onRemove?.(local.toast?.id ?? '');
+  };
 
-      return (): void => globalTimerManager.clearTimeout(timer);
+  const handleAction = (e: MouseEvent | KeyboardEvent) => {
+    e.preventDefault();
+    if (local.toast?.onAction) {
+      local.toast.onAction();
     }
-
-    // duration이 없거나 0일 때도 cleanup 함수 반환
-    return (): void => {
-      // 정리할 것이 없지만 일관성을 위해 빈 함수 반환
-    };
-  }, [toast.id, toast.duration, onRemove]);
-
-  const handleClose = (event: Event): void => {
-    event.stopPropagation();
-    onRemove(toast.id);
+    local.onRemove?.(local.toast?.id ?? '');
   };
 
-  const handleAction = (event: Event): void => {
-    event.stopPropagation();
-    if (toast.onAction) {
-      toast.onAction();
+  const toastClass = () => {
+    const classes = [styles.toast];
+    if (local.toast?.type) {
+      classes.push(styles[`toast--${local.toast.type}`]);
     }
-    onRemove(toast.id);
+    if (local.className) {
+      classes.push(local.className);
+    }
+    return classes.filter(Boolean).join(' ');
   };
 
-  // Toast 타입에 따른 아이콘 선택
-  const getToastIcon = () => {
-    // 임시로 간단한 아이콘 반환
-    return '🔔';
-  };
-
-  // 표준화된 클래스명 생성
-  const toastClass = ComponentStandards.createClassName(
-    styles.toast,
-    styles[toast.type],
-    className
+  return (
+    <div class={toastClass()} role={local.role} {...ariaProps} {...rest}>
+      <div class={styles['toast__content']}>
+        <div class={styles['toast__header']}>
+          <span class={styles['toast__title']}>{local.toast.title}</span>
+          <button
+            type='button'
+            class={styles['toast__close']}
+            onClick={handleClose}
+            aria-label='Close notification'
+          >
+            ×
+          </button>
+        </div>
+        <div class={styles['toast__message']}>{local.toast.message}</div>
+        {local.toast.actionText && (
+          <div class={styles['toast__actions']}>
+            <button
+              type='button'
+              class={styles['toast__action']}
+              onClick={handleAction}
+              aria-label={local.toast.actionText}
+            >
+              {local.toast.actionText}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
-
-  // 표준화된 테스트 속성 생성
-  const testProps = ComponentStandards.createTestProps(testId);
-
-  const { h } = getPreact();
-
-  return h(
-    'div',
-    {
-      className: toastClass,
-      role: role as 'alert' | 'status' | 'log',
-      'aria-label': ariaLabel || `${toast.type} 알림: ${toast.title}`,
-      ...testProps,
-    } as Record<string, unknown>,
-    h('div', { className: styles.content }, [
-      h('div', { className: styles.header, key: 'header' }, [
-        getToastIcon(),
-        h('h4', { className: styles.title, key: 'title' }, toast.title),
-        h(
-          'button',
-          {
-            className: styles.closeButton,
-            onClick: handleClose,
-            'aria-label': '알림 닫기',
-            key: 'close',
-          },
-          '×'
-        ),
-      ]),
-      h('p', { className: styles.message, key: 'message' }, toast.message),
-      toast.actionText &&
-        toast.onAction &&
-        h(
-          'div',
-          { className: styles.actions, key: 'actions' },
-          h('button', { className: styles.actionButton, onClick: handleAction }, toast.actionText)
-        ),
-    ])
-  );
-}
-
-// Toast props 비교 함수 - 효율적인 메모이제이션을 위함
-const areToastPropsEqual = (prevProps: ToastProps, nextProps: ToastProps): boolean => {
-  // toast 객체가 변경되었는지 확인
-  if (prevProps.toast?.id !== nextProps.toast?.id) return false;
-  if (prevProps.toast?.type !== nextProps.toast?.type) return false;
-  if (prevProps.toast?.title !== nextProps.toast?.title) return false;
-  if (prevProps.toast?.message !== nextProps.toast?.message) return false;
-  if (prevProps.toast?.duration !== nextProps.toast?.duration) return false;
-  if (prevProps.toast?.actionText !== nextProps.toast?.actionText) return false;
-
-  // onRemove 함수 비교 (참조 비교)
-  if (prevProps.onRemove !== nextProps.onRemove) return false;
-
-  // 기타 props 비교
-  if (prevProps.className !== nextProps.className) return false;
-  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
-  if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
-  if (prevProps.role !== nextProps.role) return false;
-
-  return true;
 };
-
-// memo를 적용한 최적화된 Toast 컴포넌트 (안전한 지연 접근)
-const MemoizedToast = (() => {
-  try {
-    const compat = getPreactCompat();
-    if (compat && typeof compat.memo === 'function') {
-      return compat.memo(ToastComponent, areToastPropsEqual);
-    }
-  } catch {
-    // noop
-  }
-  // Fallback: memo 미적용 (테스트 환경에서 getPreactCompat 모킹 누락 시에도 모듈 로드 보장)
-  return (props: ToastProps) => ToastComponent(props);
-})();
-
-// displayName 설정
-Object.defineProperty(MemoizedToast, 'displayName', {
-  value: 'Toast',
-  writable: false,
-  configurable: true,
-});
-
-// 메모이제이션된 컴포넌트를 Toast로 export
-export const Toast = MemoizedToast;
-
-// UI 컴포넌트는 상태/함수를 소유하지 않습니다. 상태 제어는 UnifiedToastManager가 담당합니다.

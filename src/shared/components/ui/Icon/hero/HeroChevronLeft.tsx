@@ -1,35 +1,31 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
-import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
-
 /**
- * Heroicons 기반 ChevronLeft 어댑터
- * - 내부 Icon 래퍼를 사용해 디자인 토큰과 aria 규칙을 일관 적용합니다.
+ * @fileoverview HeroChevronLeft Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero ChevronLeft Icon Adapter
  */
-type IconLike = (props: Record<string, unknown>) => VNode | null;
 
-export function HeroChevronLeft(props: IconProps): VNode {
-  const { h } = getPreact();
+import { Dynamic } from 'solid-js/web';
+import { mergeProps, splitProps, type Component } from 'solid-js';
+import { Icon, type IconProps } from '../Icon';
+import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
+
+export function HeroChevronLeft(props: IconProps): ReturnType<Component> {
   const { ChevronLeftIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
+  const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
+  const [local, others] = splitProps(merged, ['size']);
+  const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
 
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ChevronLeftIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      // stroke 기반 아이콘이므로 fill은 none, 색상은 Icon 래퍼의 stroke 토큰을 사용
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+  return (
+    <Icon size={local.size} {...others}>
+      <Dynamic
+        component={ChevronLeftIcon as any}
+        width={sizeValue()}
+        height={sizeValue()}
+        fill='none'
+        stroke='var(--xeg-icon-color, currentColor)'
+        strokeWidth='var(--xeg-icon-stroke-width)'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </Icon>
   );
 }

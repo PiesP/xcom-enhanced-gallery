@@ -1,4 +1,22 @@
-import { getPreactHooks, type VNode } from '../../../external/vendors';
+/**
+ * @file ToolbarHeadless.solid.tsx
+ * @description
+ * Headless UI 패턴의 Toolbar 컴포넌트 (Solid.js 버전)
+ *
+ * 주요 기능:
+ * - Render props 패턴으로 UI를 자식에게 위임
+ * - 10개 toolbar items 관리 (navigation, fitModes, downloads, controls)
+ * - 4개 내부 상태 관리 (fitMode, downloading, highContrast, mode)
+ * - Props 기반 동적 item 생성 (disabled, loading, onAction)
+ *
+ * Solid 마이그레이션:
+ * - useState → createSignal (×4)
+ * - useMemo → createMemo
+ * - Render props children → JSX function call
+ * - Fine-grained reactivity (자동 의존성 추적)
+ */
+
+import { createSignal, createMemo, type JSX } from 'solid-js';
 
 export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -53,20 +71,22 @@ export interface ToolbarHeadlessProps {
   readonly onFitWidth?: () => void;
   readonly onFitHeight?: () => void;
   readonly onFitContainer?: () => void;
-  readonly children: (state: ToolbarState, actions: ToolbarActions) => VNode;
+  readonly children: (state: ToolbarState, actions: ToolbarActions) => JSX.Element;
 }
 
-export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
-  const { useMemo, useState } = getPreactHooks();
+export function ToolbarHeadless(props: ToolbarHeadlessProps): JSX.Element {
+  // Internal state management (Solid Signals)
+  const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('original');
+  const [isDownloading, setDownloading] = createSignal<boolean>(!!props.isDownloading);
+  const [highContrast, setHighContrast] = createSignal<boolean>(false);
+  const [mode, setMode] = createSignal<string>('default');
 
-  const [currentFitMode, setCurrentFitMode] = useState<FitMode>('original');
-  const [isDownloading, setDownloading] = useState<boolean>(!!props.isDownloading);
-  const [highContrast, setHighContrast] = useState<boolean>(false);
-  const [mode, setMode] = useState<string>('default');
-
-  const items = useMemo<readonly ToolbarItem[]>(() => {
+  // Computed items array (automatically tracks dependencies)
+  const items = createMemo<readonly ToolbarItem[]>(() => {
     const disabledPrev = props.currentIndex <= 0;
     const disabledNext = props.currentIndex >= props.totalCount - 1;
+    const downloading = isDownloading();
+
     return [
       {
         type: 'previous',
@@ -103,13 +123,13 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
       {
         type: 'downloadCurrent',
         group: 'downloads',
-        loading: isDownloading,
+        loading: downloading,
         ...(props.onDownloadCurrent ? { onAction: props.onDownloadCurrent } : {}),
       },
       {
         type: 'downloadAll',
         group: 'downloads',
-        loading: isDownloading,
+        loading: downloading,
         ...(props.onDownloadAll ? { onAction: props.onDownloadAll } : {}),
       },
       {
@@ -120,18 +140,20 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
       },
       { type: 'close', group: 'controls', ...(props.onClose ? { onAction: props.onClose } : {}) },
     ];
-  }, [props.currentIndex, props.totalCount, isDownloading]);
+  });
 
-  const state: ToolbarState = {
-    items,
-    currentMode: mode,
-    needsHighContrast: highContrast,
-    isDownloading,
+  // Computed state object
+  const state = (): ToolbarState => ({
+    items: items(),
+    currentMode: mode(),
+    needsHighContrast: highContrast(),
+    isDownloading: isDownloading(),
     currentIndex: props.currentIndex,
     totalCount: props.totalCount,
-    currentFitMode,
-  };
+    currentFitMode: currentFitMode(),
+  });
 
+  // Actions object
   const actions: ToolbarActions = {
     setMode,
     setHighContrast,
@@ -140,7 +162,8 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): VNode {
     updateItems: () => void 0,
   };
 
-  return props.children(state, actions);
+  // Render props pattern: call children with state and actions
+  return props.children(state(), actions);
 }
 
 export default ToolbarHeadless;

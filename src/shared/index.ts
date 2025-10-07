@@ -1,7 +1,7 @@
 /**
  * @fileoverview Shared Layer Exports
- * @version 3.0.0 - Phase 4: Core 통합 완료
- * @description 모든 공통 기능을 통합한 Shared 레이어
+ * @version 6.0.0 - Phase 6: Solid.js 전용
+ * @description 모든 공통 기능을 통합한 Shared 레이어 (Solid.js only)
  */
 
 // 핵심 UI 컴포넌트들
@@ -10,8 +10,8 @@ export * from './components/ui';
 // 격리 컴포넌트들 (갤러리 전용)
 export * from './components/isolation';
 
-// HOC 컴포넌트들
-export * from './components/hoc';
+// HOC 컴포넌트들 제거됨 (Solid.js는 HOC 패턴 사용 안 함)
+// export * from './components/hoc';
 
 // 최적화 컴포넌트들 제거됨 (기본 Preact memo 사용 권장)
 // export * from './components/optimization';
@@ -50,22 +50,19 @@ export { isInsideGallery } from './utils/dom';
 // 최적화 유틸리티들 (Phase 3)
 export * from './utils/optimization';
 
-// 새로운 P4-P7 유틸리티들
+// 새로운 P4-P7 유틸리티들 (Phase 6: Solid.js)
 export {
   createSelector,
-  useSelector,
-  useCombinedSelector,
-  useAsyncSelector,
-  getGlobalSelectorStats,
-  clearGlobalSelectorStats,
+  createCombinedSelector,
+  setDebugMode as setSignalDebugMode,
 } from './utils/signalSelector';
 export { createFocusTrap } from './utils/focusTrap';
 export type { FocusTrapOptions, FocusTrap } from './utils/focusTrap';
 
-// 새로운 P4-P7 훅들
-export { useScrollLock } from './hooks/useScrollLock';
-export { useGalleryToolbarLogic } from './hooks/useGalleryToolbarLogic';
-export { useFocusTrap } from './hooks/useFocusTrap';
+// Hooks 제거됨 (Solid.js primitives 사용)
+// - useScrollLock → Solid primitives
+// - useGalleryToolbarLogic → Solid primitives
+// - useFocusTrap → Solid primitives
 
 // 새로운 P6 스타일 토큰들
 export * from './styles/tokens';

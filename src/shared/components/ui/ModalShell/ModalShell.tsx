@@ -1,99 +1,133 @@
 /**
- * @fileoverview Phase 2: ModalShell 추상화 컴포넌트
- * @description 모달의 공통 레이아웃/스타일 Shell - semantic props 사용
+ * @fileoverview ModalShell Solid Component
+ * @description Solid.js implementation of modal shell with Portal
  */
 
-import { getPreact, type ComponentChildren } from '../../../external/vendors';
+import { mergeProps, splitProps, Show, type Component, type JSX } from 'solid-js';
+import { Portal } from 'solid-js/web';
+import styles from './ModalShell.module.css';
 
 export interface ModalShellProps {
-  /** 컨텐츠 */
-  children: ComponentChildren;
+  /** Content */
+  children: JSX.Element;
 
-  /** 모달 표시 여부 */
+  /** Modal visibility */
   isOpen: boolean;
 
-  /** 닫기 핸들러 */
+  /** Close handler */
   onClose?: () => void;
 
-  /** 크기 */
+  /** Size */
   size?: 'sm' | 'md' | 'lg' | 'xl';
 
-  /** 표면 변형 */
+  /** Surface variant */
   surfaceVariant?: 'glass' | 'solid' | 'elevated';
 
-  /** 백드롭 클릭으로 닫기 */
+  /** Close on backdrop click */
   closeOnBackdropClick?: boolean;
 
-  /** ESC 키로 닫기 */
+  /** Close on ESC key */
   closeOnEscape?: boolean;
 
-  /** 추가 클래스 */
+  /** Additional class */
   className?: string;
 
-  /** 테스트 ID */
+  /** Test ID */
   'data-testid'?: string;
 
-  /** ARIA 레이블 */
+  /** ARIA label */
   'aria-label'?: string;
 }
 
 /**
- * 모달의 공통 껍데기 - 디자인 토큰 기반
+ * Modal shell component - design token based
  */
-export function ModalShell({
-  children,
-  isOpen,
-  onClose,
-  size = 'md',
-  surfaceVariant = 'glass',
-  closeOnBackdropClick = true,
-  closeOnEscape = true,
-  className = '',
-  'data-testid': testId,
-  'aria-label': ariaLabel,
-  ...props
-}: ModalShellProps) {
-  const { h } = getPreact();
-  const sizeClass = `modal-size-${size}`;
-  const surfaceClass = `modal-surface-${surfaceVariant}`;
-
-  // ESC 키 핸들러
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (closeOnEscape && event.key === 'Escape' && onClose) {
-      onClose();
-    }
-  };
-
-  // 백드롭 클릭 핸들러
-  const handleBackdropClick = (event: Event) => {
-    if (closeOnBackdropClick && event.target === event.currentTarget && onClose) {
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return h(
-    'div',
+export const ModalShell: Component<ModalShellProps> = props => {
+  const merged = mergeProps(
     {
-      class: `modal-backdrop ${isOpen ? 'modal-open' : ''}`.trim(),
-      onClick: handleBackdropClick,
-      onKeyDown: handleKeyDown,
-      'data-testid': testId ? `${testId}-backdrop` : undefined,
+      size: 'md' as const,
+      surfaceVariant: 'glass' as const,
+      closeOnBackdropClick: true,
+      closeOnEscape: true,
+      'aria-label': 'Modal',
     },
-    h(
-      'div',
-      {
-        class: `modal-shell ${sizeClass} ${surfaceClass} ${className}`.trim(),
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-label': ariaLabel || 'Modal',
-        'data-testid': testId,
-        ...props,
-      },
-      children
-    )
+    props
   );
-}
 
-export default ModalShell;
+  const [local, ariaProps, rest] = splitProps(
+    merged,
+    [
+      'children',
+      'isOpen',
+      'onClose',
+      'size',
+      'surfaceVariant',
+      'closeOnBackdropClick',
+      'closeOnEscape',
+      'className',
+    ],
+    ['aria-label', 'data-testid']
+  );
+
+  // ESC key handler
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (local.closeOnEscape && event.key === 'Escape' && local.onClose) {
+      event.preventDefault();
+      local.onClose();
+    }
+  };
+
+  // Backdrop click handler
+  const handleBackdropClick = (event: MouseEvent) => {
+    if (local.closeOnBackdropClick && event.target === event.currentTarget && local.onClose) {
+      event.preventDefault();
+      local.onClose();
+    }
+  };
+
+  const backdropClass = () => {
+    const classes = [styles['modal-backdrop']];
+    if (local.isOpen) {
+      classes.push(styles['modal-open']);
+    }
+    return classes.filter(Boolean).join(' ');
+  };
+
+  const shellClass = () => {
+    const classes = [
+      styles['modal-shell'],
+      styles[`modal-size-${local.size}`],
+      styles[`modal-surface-${local.surfaceVariant}`],
+    ];
+    if (local.className) {
+      classes.push(local.className);
+    }
+    return classes.filter(Boolean).join(' ');
+  };
+
+  return (
+    <Show when={local.isOpen}>
+      <Portal>
+        <div
+          class={backdropClass()}
+          onClick={handleBackdropClick}
+          onKeyDown={handleKeyDown}
+          data-testid={
+            ariaProps['data-testid'] ? `${ariaProps['data-testid']}-backdrop` : undefined
+          }
+        >
+          <div
+            class={shellClass()}
+            role='dialog'
+            aria-modal='true'
+            aria-label={ariaProps['aria-label']}
+            data-testid={ariaProps['data-testid']}
+            {...rest}
+          >
+            {local.children}
+          </div>
+        </div>
+      </Portal>
+    </Show>
+  );
+};

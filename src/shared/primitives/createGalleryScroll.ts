@@ -141,7 +141,7 @@ export function createGalleryScroll({
     twitterScroller.style.overflow = 'hidden';
     twitterScroller.style.pointerEvents = 'none';
 
-    globalTimerManager.requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
       twitterScroller.style.overflow = originalOverflow;
       twitterScroller.style.pointerEvents = originalPointerEvents;
     });

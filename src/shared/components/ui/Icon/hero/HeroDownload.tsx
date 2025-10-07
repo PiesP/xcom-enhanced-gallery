@@ -1,31 +1,31 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/**
+ * @fileoverview HeroDownload Icon Component (Solid.js)
+ * @version 1.0.0 - Solid.js Hero Download Icon Adapter
+ */
+
+import { Dynamic } from 'solid-js/web';
+import { mergeProps, splitProps, type Component } from 'solid-js';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
+import { getHeroiconsOutline } from '@shared/external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 Download(ArrowDownTray) 어댑터 */
-export function HeroDownload(props: IconProps): VNode {
-  const { h } = getPreact();
+export function HeroDownload(props: IconProps): ReturnType<Component> {
   const { ArrowDownTrayIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
+  const merged = mergeProps({ size: 'var(--xeg-icon-size)' as string | number }, props);
+  const [local, others] = splitProps(merged, ['size']);
+  const sizeValue = () => (typeof local.size === 'number' ? `${local.size}px` : local.size);
 
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ArrowDownTrayIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+  return (
+    <Icon size={local.size} {...others}>
+      <Dynamic
+        component={ArrowDownTrayIcon as any}
+        width={sizeValue()}
+        height={sizeValue()}
+        fill='none'
+        stroke='var(--xeg-icon-color, currentColor)'
+        strokeWidth='var(--xeg-icon-stroke-width)'
+        strokeLinecap='round'
+        strokeLinejoin='round'
+      />
+    </Icon>
   );
 }
