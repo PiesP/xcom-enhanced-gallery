@@ -188,65 +188,62 @@
 - ✅ 키보드 네비게이션과 시너지
 - ✅ WCAG 2.1 AA 준수
 
-#### Phase 7.3: ZIP 다운로드 UX 개선 (Medium Priority)
+#### Phase 7.3: 다운로드 UX 개선 (Low Priority)
 
-**목표**: 대용량 ZIP 다운로드 진행 상태 시각화
+**목표**: 부분 실패 시 복구 옵션 명확화
+
+**배경**:
+
+- 트위터 미디어는 최대 8개 제한 → Progress bar는 과도함
+- 현재 Toast로 실패 알림 → 복구 옵션 명확성 부족
 
 **작업 내용**:
 
-- [ ] **RED**: ZIP 진행 상태 UI 테스트
-  - Progress bar 표시
-  - "Downloading 15/50 (30%)" 텍스트
-  - 취소 버튼 동작
-- [ ] **GREEN**: Progress bar UI 추가
-  - Toolbar에 inline progress bar
-  - BulkDownloadService.onProgress 콜백 활용
-  - 실시간 파일명 표시
+- [ ] **RED**: 부분 실패 UX 테스트
+  - 부분 실패 모달 표시
+  - "재시도", "무시" 옵션
+  - 실패 목록 표시
 - [ ] **GREEN**: 부분 실패 모달 구현
   - Toast 대신 Modal로 실패 목록 표시
-  - "재시도", "실패한 항목만 ZIP", "무시" 옵션
+  - "재시도" → 실패한 항목만 다시 시도
+  - "무시" → 모달 닫기
   - DownloadFailureModal.tsx 생성
-- [ ] **REFACTOR**: 다운로드 상태 Signal 통합
-  - downloadState signal 추가
-  - Toast와 Progress bar 동기화
+- [ ] **REFACTOR**: Toast 메시지 개선
+  - 성공 시 명확한 피드백
+  - 단일 다운로드도 Toast 표시
 
 **예상 효과**:
 
-- 대용량 ZIP (50+ 파일) 다운로드 시 불안감 해소
 - 부분 실패 시 복구 옵션 명확화
-- 취소 기능 접근성 향상
+- 사용자 혼란 감소
 
-#### Phase 7.4: 성능 최적화 (Medium Priority)
+#### Phase 7.4: 성능 최적화 (Low Priority)
 
-**목표**: 100+ 이미지 갤러리 메모리 및 렌더링 최적화
+**목표**: 큰 트윗 스레드에서 탐색 성능 개선
+
+**배경**:
+
+- 트위터 미디어는 최대 8개 → Virtual scrolling/메모리 최적화 불필요
+- fflate 이미 제거됨 (Phase 1) → Web Worker 불필요
+- 큰 트윗 스레드 탐색 시에만 성능 이슈 가능
 
 **작업 내용**:
 
-- [ ] **RED**: 성능 테스트 작성
-  - 100+ 이미지 로딩 시간 측정
-  - 메모리 사용량 모니터링
-  - ZIP 압축 시 UI 블로킹 검증
-- [ ] **GREEN**: Virtual scrolling 구현
-  - VerticalGalleryView에 windowing 적용
-  - @solid-primitives/virtual 활용
-  - 가시 영역만 렌더링 (10개 버퍼)
+- [ ] **RED**: DOM 탐색 성능 테스트
+  - 큰 스레드 (100+ 트윗) 시뮬레이션
+  - MediaClickDetector querySelector 시간 측정
 - [ ] **GREEN**: DOMCache 강화
-  - MediaClickDetector querySelector 결과 캐싱
   - 캐시 TTL 2초 → 5초 증가
+  - 캐시 hit/miss 로깅
   - 큰 스레드에서 탐색 성능 개선
-- [ ] **GREEN**: Web Worker ZIP 압축
-  - `shared/external/zip/zip-worker.ts` 생성
-  - fflate를 Worker로 이동
-  - Main thread 블로킹 제거
 - [ ] **REFACTOR**: 성능 모니터링 추가
   - logger.time() / logger.timeEnd() 활용
   - 주요 경로 성능 추적
 
 **예상 효과**:
 
-- 100+ 이미지 갤러리 메모리 사용량 50% 감소
-- ZIP 압축 시 UI 응답성 유지
 - 큰 트윗 스레드에서 클릭 반응 속도 개선
+- 성능 모니터링 인프라 구축
 
 #### Phase 7.5: 설정 확장 (Low Priority)
 
@@ -278,19 +275,52 @@
 
 ### 우선순위 요약
 
-| Phase                 | 우선순위 | 예상 공수 | 사용자 영향              |
-| --------------------- | -------- | --------- | ------------------------ |
-| 7.1 키보드 네비게이션 | High     | 2-3일     | 접근성 대폭 향상         |
-| 7.2 접근성 강화       | High     | 3-4일     | 법적 준수, Screen reader |
-| 7.3 ZIP UX 개선       | Medium   | 2-3일     | 대용량 다운로드 만족도   |
-| 7.4 성능 최적화       | Medium   | 4-5일     | 100+ 이미지 안정성       |
-| 7.5 설정 확장         | Low      | 2-3일     | 파워 유저 편의           |
+| Phase                 | 우선순위 | 예상 공수 | 사용자 영향              | 비고                                |
+| --------------------- | -------- | --------- | ------------------------ | ----------------------------------- |
+| 7.1 키보드 네비게이션 | High     | 2-3일     | 접근성 대폭 향상         | ✅ 완료                             |
+| 7.2 접근성 강화       | High     | 3-4일     | 법적 준수, Screen reader | ✅ 완료                             |
+| 7.3 다운로드 UX 개선  | Low      | 1-2일     | 부분 실패 복구 명확화    | Progress bar 제거 (최대 8개 미디어) |
+| 7.4 성능 최적화       | Low      | 1-2일     | 큰 스레드 탐색 개선      | Virtual scrolling/Worker 제거       |
+| 7.5 설정 확장         | Low      | 2-3일     | 파워 유저 편의           | -                                   |
+
+**재평가 근거**:
+
+1. **트위터 미디어 최대 8개 제한**:
+   - Virtual scrolling 불필요 (Phase 7.4)
+   - Progress bar 과도함 (Phase 7.3)
+   - 메모리 최적화 불필요
+
+2. **fflate 이미 제거됨** (Phase 1 완료):
+   - Web Worker ZIP 압축 불필요 (Phase 7.4)
+   - StoreZipWriter 동기식 최적화로 충분
+
+3. **현실적인 우선순위**:
+   - Phase 7.1, 7.2 완료로 접근성 목표 달성 ✅
+   - Phase 7.3-7.5는 선택적 개선 (Nice-to-have)
 
 ### 다음 단계
 
-1. Phase 7.1 (키보드 네비게이션)부터 시작
-2. 각 Phase 완료 시 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관
-3. 사용자 피드백 수집 후 우선순위 재조정
+**Phase 7 현황**:
+
+- ✅ Phase 7.1 완료: 키보드 네비게이션 (ArrowLeft/Right, Home/End, Escape)
+- ✅ Phase 7.2 완료: 접근성 강화 (WCAG 2.1 AA 준수, Screen reader 지원)
+- ⏸️ Phase 7.3-7.5: 선택적 개선 (우선순위 낮음)
+
+**권장 사항**:
+
+1. **Phase 7 종료 고려**:
+   - 핵심 목표 (접근성) 달성 완료 ✅
+   - 남은 작업은 현실적 제약 하에서 우선순위 낮음
+   - 사용자 피드백 수집 후 재평가 권장
+
+2. **다른 영역 탐색**:
+   - 새로운 기능 추가 (예: 비디오 지원, 고급 필터)
+   - 코드 품질 개선 (예: 테스트 커버리지 95%+)
+   - 성능 프로파일링 (실제 데이터 기반)
+
+3. **Phase 7.3-7.5 진행 시**:
+   - 사용자 피드백 기반 우선순위 재조정
+   - 실제 사용 시나리오 검증 후 진행
 
 ---
 
