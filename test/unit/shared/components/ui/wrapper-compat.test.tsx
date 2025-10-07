@@ -1,11 +1,10 @@
 /**
- * @fileoverview Wrapper Compatibility Test (Phase 1 RED - v4.1)
- * @description 기존 import 경로의 호환성 보장 테스트
+ * @fileoverview Wrapper Compatibility Tests (TDD - fail first)
  */
 
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, screen } from '@testing-library/preact';
+import { h } from '@shared/external/vendors';
 
 // 기존 import 경로들 (현재 구현)
 import { Button as CurrentButton } from '../../../../../src/shared/components/ui/Button/Button';

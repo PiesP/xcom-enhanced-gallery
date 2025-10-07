@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 
 // TODO: UnifiedButton이 구현되면 이 import를 교체
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';

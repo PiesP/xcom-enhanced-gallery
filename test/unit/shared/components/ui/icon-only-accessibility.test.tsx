@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 
 // 현재 구현들
 import { Button } from '@shared/components/ui/Button';

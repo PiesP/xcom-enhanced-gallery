@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';
 
 describe('Button Icon Variant (P2)', () => {

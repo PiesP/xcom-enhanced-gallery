@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/preact';
-import { h } from 'preact';
+import { h } from '@shared/external/vendors';
 import { IconButton } from '../../../../../src/shared/components/ui/Button/IconButton';
 
 describe('IconButton', () => {

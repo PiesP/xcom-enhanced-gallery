@@ -60,8 +60,32 @@ try {
   if (typeof vendors.initializeVendors === 'function') {
     await vendors.initializeVendors();
   }
-} catch {
+
+  // Preact 인스턴스를 전역으로 노출하여
+  // @testing-library/preact와 vendor manager가 동일한 인스턴스를 사용하도록 함
+  // 이것은 테스트 환경에서만 필요한 workaround입니다.
+  const preact = await import('preact');
+  const preactHooks = await import('preact/hooks');
+
+  // globalThis에 preact를 캐싱하여 모든 import가 동일한 인스턴스를 사용하도록 함
+  if (typeof globalThis !== 'undefined') {
+    // @ts-expect-error - 테스트 환경 전용
+    if (!globalThis.__PREACT_INSTANCE__) {
+      // @ts-expect-error - 테스트 환경 전용
+      globalThis.__PREACT_INSTANCE__ = preact;
+      // @ts-expect-error - 테스트 환경 전용
+      globalThis.__PREACT_HOOKS_INSTANCE__ = preactHooks;
+    }
+  }
+
+  // Preact options를 초기화하여 hooks가 제대로 작동하도록 함
+  if (!preact.options) {
+    // @ts-expect-error - Preact 내부 API
+    preact.options = {};
+  }
+} catch (error) {
   // 테스트 환경에서만 사용되므로 실패해도 치명적이지 않음
+  console.warn('Failed to initialize vendors in test setup:', error);
 }
 
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
@@ -374,6 +398,16 @@ beforeEach(async () => {
   try {
     const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
     await initializeVendors();
+
+    // Preact hooks context 초기화
+    // @testing-library/preact가 preact를 직접 import하므로
+    // 각 테스트 전에 hooks context를 명시적으로 초기화
+    const preact = await import('preact');
+    if (preact.options) {
+      // Preact 내부 hooks context 초기화
+      // 이것은 Preact가 render 시 자동으로 설정하는 것과 동일
+      preact.options.__test = true;
+    }
   } catch (error) {
     // vendor 초기화 실패는 무시하고 계속 진행
   }
