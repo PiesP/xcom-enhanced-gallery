@@ -97,6 +97,8 @@ export interface VerticalImageItemProps {
   media: MediaInfo;
   /** Index of the item in the list */
   index: number;
+  /** Total count of items (for ARIA labels) */
+  totalCount?: number;
   /** Whether this item is currently active/selected */
   isActive: boolean;
   /** Whether this item is focused for scrolling */
@@ -377,15 +379,20 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSX.Element {
     ComponentStandards.createClassName(styles.image, getFitModeClass(merged.fitMode));
 
   // 표준화된 ARIA 속성 생성
-  const ariaProps = () =>
-    ComponentStandards.createAriaProps({
+  const ariaProps = () => {
+    // 위치 정보를 포함한 ARIA 레이블 생성
+    const positionInfo = merged.totalCount ? ` (${merged.index + 1} / ${merged.totalCount})` : '';
+
+    return ComponentStandards.createAriaProps({
       'aria-label':
         merged['aria-label'] ||
-        `미디어 ${merged.index + 1}: ${cleanFilename(merged.media.filename)}`,
+        `미디어 ${merged.index + 1}${positionInfo}: ${cleanFilename(merged.media.filename)}`,
       'aria-describedby': merged['aria-describedby'],
+      'aria-current': merged.isActive ? 'true' : undefined,
       role: merged.role,
       tabIndex: merged.tabIndex,
     } as Record<string, string | number | boolean | undefined>);
+  };
 
   // 표준화된 테스트 속성 생성
   const testProps = () => ComponentStandards.createTestProps(merged['data-testid']);
