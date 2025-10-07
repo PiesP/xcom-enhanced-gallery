@@ -10,5 +10,5 @@ export type { VerticalGalleryViewProps } from './vertical-gallery-view';
 export { VerticalImageItem } from './vertical-gallery-view';
 export type { VerticalImageItemProps } from './vertical-gallery-view';
 
-// 갤러리 훅들
-export * from './vertical-gallery-view/hooks';
+// 갤러리 훅들 제거됨 (Phase 6: Solid.js primitives 직접 사용)
+// export * from './vertical-gallery-view/hooks';
