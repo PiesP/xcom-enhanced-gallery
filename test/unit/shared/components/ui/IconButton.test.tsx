@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/preact';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
+import { screen } from '@solidjs/testing-library';
+import { render } from '@solidjs/testing-library';
 import { IconButton } from '../../../../../src/shared/components/ui/Button/IconButton';
 
 describe('IconButton', () => {

@@ -14647,19 +14647,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/primitives/focusScope-solid.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/primitives/scrollLock-solid.ts",
       "dependencies": [
         {
@@ -15705,22 +15692,12 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/primitives/focusScope-solid.ts",
-        "to": "src/shared/primitives/focusScope-solid.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 251,
+    "totalCruised": 250,
     "totalDependenciesCruised": 699,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",

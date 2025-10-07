@@ -4,9 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { screen, cleanup } from '@testing-library/preact';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
-import { h } from '@shared/external/vendors';
+import { screen, render, cleanup } from '@solidjs/testing-library';
 import { Button } from '@shared/components/ui/Button/Button';
 
 describe('P3: ARIA Attributes Migration', () => {
@@ -24,15 +22,9 @@ describe('P3: ARIA Attributes Migration', () => {
   describe('Toolbar ARIA Migration', () => {
     it('버튼이 aria-pressed를 사용해야 함 (토글 상태)', () => {
       render(
-        h(
-          Button,
-          {
-            'aria-pressed': 'true',
-            'aria-label': 'Fit to Width',
-            'data-testid': 'fit-width-button',
-          },
-          'Fit'
-        )
+        <Button aria-pressed='true' aria-label='Fit to Width' data-testid='fit-width-button'>
+          Fit
+        </Button>
       );
 
       const button = screen.getByTestId('fit-width-button');
@@ -42,16 +34,14 @@ describe('P3: ARIA Attributes Migration', () => {
 
     it('버튼이 aria-expanded를 사용해야 함 (드롭다운)', () => {
       render(
-        h(
-          Button,
-          {
-            'aria-expanded': 'false',
-            'aria-haspopup': 'menu',
-            'aria-label': 'Download Options',
-            'data-testid': 'download-menu-button',
-          },
-          'Download'
-        )
+        <Button
+          aria-expanded='false'
+          aria-haspopup='menu'
+          aria-label='Download Options'
+          data-testid='download-menu-button'
+        >
+          Download
+        </Button>
       );
 
       const button = screen.getByTestId('download-menu-button');
@@ -63,16 +53,14 @@ describe('P3: ARIA Attributes Migration', () => {
   describe('Settings Modal ARIA Migration', () => {
     it('폼 버튼들은 적절한 ARIA 속성을 가져야 함', () => {
       render(
-        h(
-          Button,
-          {
-            type: 'submit',
-            'aria-describedby': 'form-help',
-            'aria-label': 'Save Settings',
-            'data-testid': 'save-button',
-          },
-          'Save'
-        )
+        <Button
+          type='submit'
+          aria-describedby='form-help'
+          aria-label='Save Settings'
+          data-testid='save-button'
+        >
+          Save
+        </Button>
       );
 
       const button = screen.getByTestId('save-button');
@@ -85,15 +73,9 @@ describe('P3: ARIA Attributes Migration', () => {
     it('버튼 상태가 aria 속성과 일치해야 함', () => {
       // 비활성 상태 버튼
       render(
-        h(
-          Button,
-          {
-            disabled: true,
-            'aria-label': 'Download All',
-            'data-testid': 'disabled-download-button',
-          },
-          'Download'
-        )
+        <Button disabled={true} aria-label='Download All' data-testid='disabled-download-button'>
+          Download
+        </Button>
       );
 
       const disabledButton = screen.getByTestId('disabled-download-button');
@@ -103,16 +85,14 @@ describe('P3: ARIA Attributes Migration', () => {
 
     it('로딩 상태 버튼은 aria-busy를 사용해야 함', () => {
       render(
-        h(
-          Button,
-          {
-            loading: true,
-            'aria-label': 'Processing Download',
-            'aria-busy': 'true',
-            'data-testid': 'loading-button',
-          },
-          'Processing...'
-        )
+        <Button
+          loading={true}
+          aria-label='Processing Download'
+          aria-busy='true'
+          data-testid='loading-button'
+        >
+          Processing...
+        </Button>
       );
 
       const loadingButton = screen.getByTestId('loading-button');
@@ -130,14 +110,9 @@ describe('P3: ARIA Attributes Migration', () => {
 
       buttons.forEach(({ label, testId }) => {
         render(
-          h(
-            Button,
-            {
-              'aria-label': label,
-              'data-testid': testId,
-            },
-            label
-          )
+          <Button aria-label={label} data-testid={testId}>
+            {label}
+          </Button>
         );
 
         const button = screen.getByTestId(testId);
@@ -148,15 +123,9 @@ describe('P3: ARIA Attributes Migration', () => {
 
     it('버튼이 tabindex를 올바르게 설정해야 함', () => {
       render(
-        h(
-          Button,
-          {
-            tabIndex: 0,
-            'aria-label': 'Primary Action',
-            'data-testid': 'primary-button',
-          },
-          'Primary'
-        )
+        <Button tabIndex={0} aria-label='Primary Action' data-testid='primary-button'>
+          Primary
+        </Button>
       );
 
       const button = screen.getByTestId('primary-button');
@@ -167,14 +136,9 @@ describe('P3: ARIA Attributes Migration', () => {
   describe('Legacy Data Attributes Removal', () => {
     it('data-role 속성이 제거되어야 함', () => {
       render(
-        h(
-          Button,
-          {
-            'aria-label': 'Test Button',
-            'data-testid': 'clean-button',
-          },
-          'Test'
-        )
+        <Button aria-label='Test Button' data-testid='clean-button'>
+          Test
+        </Button>
       );
 
       const button = screen.getByTestId('clean-button');

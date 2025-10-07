@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
-import { h } from '@shared/external/vendors';
+import { render } from '@solidjs/testing-library';
 import { ToolbarHeadless } from '../../../../../src/shared/components/ui/Toolbar/ToolbarHeadless';
 
 describe('ToolbarHeadless (P1)', () => {
@@ -35,10 +34,10 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
-      render(h(ToolbarHeadless, { ...mockProps, children: TestChild }));
+      render(() => <ToolbarHeadless {...mockProps}>{TestChild}</ToolbarHeadless>);
 
       expect(capturedState).not.toBeNull();
       expect(capturedState.items).toBeDefined();
@@ -57,18 +56,15 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
       // 첫 번째 아이템 테스트 (previous 비활성화)
-      render(
-        h(ToolbarHeadless, {
-          ...mockProps,
-          currentIndex: 0,
-          totalCount: 3,
-          children: TestChild,
-        })
-      );
+      render(() => (
+        <ToolbarHeadless {...mockProps} currentIndex={0} totalCount={3}>
+          {TestChild}
+        </ToolbarHeadless>
+      ));
 
       const previousBtn = capturedState.items.find(item => item.type === 'previous');
       const nextBtn = capturedState.items.find(item => item.type === 'next');
@@ -82,18 +78,15 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
       // 마지막 아이템 테스트
-      render(
-        h(ToolbarHeadless, {
-          ...mockProps,
-          currentIndex: 2,
-          totalCount: 3,
-          children: TestChild,
-        })
-      );
+      render(() => (
+        <ToolbarHeadless {...mockProps} currentIndex={2} totalCount={3}>
+          {TestChild}
+        </ToolbarHeadless>
+      ));
 
       const previousBtn = capturedState.items.find(item => item.type === 'previous');
       const nextBtn = capturedState.items.find(item => item.type === 'next');
@@ -109,16 +102,14 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
-      render(
-        h(ToolbarHeadless, {
-          ...mockProps,
-          isDownloading: true,
-          children: TestChild,
-        })
-      );
+      render(() => (
+        <ToolbarHeadless {...mockProps} isDownloading={true}>
+          {TestChild}
+        </ToolbarHeadless>
+      ));
 
       expect(capturedState.isDownloading).toBe(true);
 
@@ -136,10 +127,10 @@ describe('ToolbarHeadless (P1)', () => {
       const TestChild = (state, actions) => {
         capturedState = state;
         capturedActions = actions;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
-      render(h(ToolbarHeadless, { ...mockProps, children: TestChild }));
+      render(() => <ToolbarHeadless {...mockProps}>{TestChild}</ToolbarHeadless>);
 
       // 초기 상태 확인
       expect(capturedState.currentFitMode).toBe('original');
@@ -158,10 +149,10 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
-      render(h(ToolbarHeadless, { ...mockProps, children: TestChild }));
+      render(() => <ToolbarHeadless {...mockProps}>{TestChild}</ToolbarHeadless>);
 
       // 액션 핸들러 매핑 확인
       const previousBtn = capturedState.items.find(item => item.type === 'previous');
@@ -180,7 +171,7 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
       const propsWithoutSettings = {
@@ -188,7 +179,7 @@ describe('ToolbarHeadless (P1)', () => {
         onOpenSettings: undefined,
       };
 
-      render(h(ToolbarHeadless, { ...propsWithoutSettings, children: TestChild }));
+      render(() => <ToolbarHeadless {...propsWithoutSettings}>{TestChild}</ToolbarHeadless>);
 
       const settingsBtn = capturedState.items.find(item => item.type === 'settings');
       expect(settingsBtn?.disabled).toBe(true);
@@ -201,10 +192,10 @@ describe('ToolbarHeadless (P1)', () => {
 
       const TestChild = state => {
         capturedState = state;
-        return h('div', {}, 'test');
+        return <div>test</div>;
       };
 
-      render(h(ToolbarHeadless, { ...mockProps, children: TestChild }));
+      render(() => <ToolbarHeadless {...mockProps}>{TestChild}</ToolbarHeadless>);
 
       const navigationItems = capturedState.items.filter(item => item.group === 'navigation');
       const fitModeItems = capturedState.items.filter(item => item.group === 'fitModes');
@@ -220,9 +211,9 @@ describe('ToolbarHeadless (P1)', () => {
 
   describe('Render Prop 패턴', () => {
     it('children 함수가 state와 actions를 받아야 함', () => {
-      const childrenSpy = vi.fn().mockReturnValue(h('div', {}, 'test'));
+      const childrenSpy = vi.fn().mockReturnValue(<div>test</div>);
 
-      render(h(ToolbarHeadless, { ...mockProps, children: childrenSpy }));
+      render(() => <ToolbarHeadless {...mockProps}>{childrenSpy}</ToolbarHeadless>);
 
       expect(childrenSpy).toHaveBeenCalledWith(
         expect.objectContaining({
