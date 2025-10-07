@@ -483,8 +483,18 @@
   lines, 37 tests, 100% GREEN)
 - ✅ **Phase 5.2 (2025-10-07)**: VerticalGalleryView.solid.tsx 구현 완료 (424
   lines, 56 tests, 100% GREEN, -28.3% 감소)
-- ⏳ **Phase 5.3**: GalleryHOC 제거 또는 composition 전환
-- ⏳ **Phase 5.4**: GalleryRenderer Solid render() 통합
+- ✅ **Phase 5.3 (2025-10-07)**: GalleryHOC 제거 완료 (85e541b3 커밋)
+  - GalleryHOC.tsx 제거 (Solid는 HOC 패턴 불필요)
+  - VerticalImageItem.tsx (Preact) 제거
+  - VerticalGalleryView.tsx (Preact) 제거
+  - 관련 스크립트 제거 (fix-gallery-hoc-naming.*)
+  - **1,778 lines 제거**
+- ✅ **Phase 5.4 (2025-10-07)**: GalleryRenderer Solid render() 통합 완료 (c946352b 커밋)
+  - GalleryRenderer.ts → .tsx 변환 (JSX 지원)
+  - Preact render → Solid render + JSX
+  - disposeComponent 필드 추가 (Solid dispose 패턴)
+  - .solid.tsx 컴포넌트 import
+  - 테스트: 15/20 GREEN ✅
 - ⏳ **Phase 5.5**: Gallery hooks → primitives 전환
 
 **작업 내용**:
