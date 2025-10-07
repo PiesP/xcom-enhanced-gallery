@@ -36,6 +36,8 @@ const sharedResolve = {
     { find: '@assets', replacement: ASSETS_DIR },
     { find: '@', replacement: SRC_DIR },
   ],
+  // Phase 3: Solid.js를 브라우저 모드로 강제 (JSDOM에서 reactivity 활성화)
+  conditions: ['browser', 'development'],
 } as const;
 
 export default defineConfig({
