@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '@solidjs/testing-library';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 
 describe('Icon Component', () => {
@@ -19,13 +18,13 @@ describe('Icon Component', () => {
 
   describe('기본 렌더링', () => {
     it('Tabler Icons 표준 형태로 SVG가 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Icon, {}, [
-          h('path', { stroke: 'none', d: 'M0 0h24v24H0z', fill: 'none' }),
-          h('path', { d: 'M18 6l-12 12' }),
-          h('path', { d: 'M6 6l12 12' }),
-        ])
-      );
+      const { container } = render(() => (
+        <Icon>
+          <path stroke='none' d='M0 0h24v24H0z' fill='none' />
+          <path d='M18 6l-12 12' />
+          <path d='M6 6l12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       expect(svg).toBeTruthy();
@@ -41,13 +40,13 @@ describe('Icon Component', () => {
     });
 
     it('children으로 전달된 아이콘 경로들이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Icon, {}, [
-          h('path', { stroke: 'none', d: 'M0 0h24v24H0z', fill: 'none' }),
-          h('path', { d: 'M18 6l-12 12' }),
-          h('path', { d: 'M6 6l12 12' }),
-        ])
-      );
+      const { container } = render(() => (
+        <Icon>
+          <path stroke='none' d='M0 0h24v24H0z' fill='none' />
+          <path d='M18 6l-12 12' />
+          <path d='M6 6l12 12' />
+        </Icon>
+      ));
 
       const paths = container.querySelectorAll('path');
       expect(paths).toHaveLength(3);
@@ -59,7 +58,11 @@ describe('Icon Component', () => {
 
   describe('Props 처리', () => {
     it('size prop이 올바르게 적용되어야 함', () => {
-      const { container } = render(h(Icon, { size: 16 }, [h('path', { d: 'M18 6l-12 12' })]));
+      const { container } = render(() => (
+        <Icon size={16}>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       // TDD 개선 후 size prop이 픽셀 단위로 처리됨
@@ -68,7 +71,11 @@ describe('Icon Component', () => {
     });
 
     it('기본 size는 CSS 변수를 사용해야 함', () => {
-      const { container } = render(h(Icon, {}, [h('path', { d: 'M18 6l-12 12' })]));
+      const { container } = render(() => (
+        <Icon>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       // TDD 개선 후 기본값은 CSS 변수 사용
@@ -77,25 +84,22 @@ describe('Icon Component', () => {
     });
 
     it('className이 올바르게 전달되어야 함', () => {
-      const { container } = render(
-        h(Icon, { className: 'custom-icon' }, [h('path', { d: 'M18 6l-12 12' })])
-      );
+      const { container } = render(() => (
+        <Icon className='custom-icon'>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       expect(svg?.classList.contains('custom-icon')).toBe(true);
     });
 
     it('추가 props가 SVG에 전달되어야 함', () => {
-      const { container } = render(
-        h(
-          Icon,
-          {
-            'aria-label': '닫기 아이콘',
-            'data-testid': 'close-icon',
-          },
-          [h('path', { d: 'M18 6l-12 12' })]
-        )
-      );
+      const { container } = render(() => (
+        <Icon aria-label='닫기 아이콘' data-testid='close-icon'>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       expect(svg?.getAttribute('aria-label')).toBe('닫기 아이콘');
@@ -105,16 +109,22 @@ describe('Icon Component', () => {
 
   describe('접근성', () => {
     it('aria-label이 제공되면 role="img"가 설정되어야 함', () => {
-      const { container } = render(
-        h(Icon, { 'aria-label': '다운로드' }, [h('path', { d: 'M18 6l-12 12' })])
-      );
+      const { container } = render(() => (
+        <Icon aria-label='다운로드'>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       expect(svg?.getAttribute('role')).toBe('img');
     });
 
     it('aria-label이 없으면 aria-hidden="true"가 설정되어야 함', () => {
-      const { container } = render(h(Icon, {}, [h('path', { d: 'M18 6l-12 12' })]));
+      const { container } = render(() => (
+        <Icon>
+          <path d='M18 6l-12 12' />
+        </Icon>
+      ));
 
       const svg = container.querySelector('svg');
       expect(svg?.getAttribute('aria-hidden')).toBe('true');
@@ -124,12 +134,12 @@ describe('Icon Component', () => {
   describe('타입 안전성', () => {
     it('children이 없으면 에러를 던지지 않아야 함', () => {
       expect(() => {
-        render(h(Icon, {}));
+        render(() => <Icon />);
       }).not.toThrow();
     });
 
     it('빈 children을 허용해야 함', () => {
-      const { container } = render(h(Icon, {}, null));
+      const { container } = render(() => <Icon>{null}</Icon>);
       const svg = container.querySelector('svg');
       expect(svg).toBeTruthy();
     });

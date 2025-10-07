@@ -4,23 +4,19 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '@solidjs/testing-library';
 
 // Vendor mocks 먼저 설정
 vi.mock('@shared/external/vendors', () => ({
   getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: vi.fn(factory => factory()),
-    useCallback: vi.fn(callback => callback),
-    useEffect: vi.fn(),
-    useRef: vi.fn(() => ({ current: null })),
+  getSolid: vi.fn(() => ({
+    createSignal: vi.fn(() => [() => undefined, vi.fn()]),
+    createEffect: vi.fn(),
+    createMemo: vi.fn(fn => fn()),
+    onCleanup: vi.fn(),
   })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({
-    memo: vi.fn(Component => Component),
-    forwardRef: vi.fn(Component => Component),
+  getSolidWeb: vi.fn(() => ({
+    render: vi.fn(),
   })),
   getNativeDownload: vi.fn(() => ({})),
   initializeVendors: vi.fn(() => Promise.resolve()),
@@ -109,17 +105,17 @@ describe('Toolbar Icons Integration', () => {
 
   describe('네비게이션 아이콘', () => {
     it('이전 버튼에 chevron-left 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 1,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={1}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+        />
+      ));
 
       const prevButton = container.querySelector('[data-gallery-element="nav-previous"]');
       expect(prevButton).toBeTruthy();
@@ -130,17 +126,17 @@ describe('Toolbar Icons Integration', () => {
     });
 
     it('다음 버튼에 chevron-right 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 0,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={0}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+        />
+      ));
 
       const nextButton = container.querySelector('[data-gallery-element="nav-next"]');
       expect(nextButton).toBeTruthy();
@@ -153,17 +149,17 @@ describe('Toolbar Icons Integration', () => {
 
   describe('액션 아이콘', () => {
     it('다운로드 버튼에 download 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 0,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={0}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+        />
+      ));
 
       const downloadButton = container.querySelector('[data-gallery-element="download-current"]');
       expect(downloadButton).toBeTruthy();
@@ -174,17 +170,17 @@ describe('Toolbar Icons Integration', () => {
     });
 
     it('전체 다운로드 버튼에 file-zip 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 0,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={0}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+        />
+      ));
 
       const downloadAllButton = container.querySelector('[data-gallery-element="download-all"]');
       expect(downloadAllButton).toBeTruthy();
@@ -195,17 +191,17 @@ describe('Toolbar Icons Integration', () => {
     });
 
     it('닫기 버튼에 x 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 0,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={0}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+        />
+      ));
 
       const closeButton = container.querySelector('[data-gallery-element="close"]');
       expect(closeButton).toBeTruthy();
@@ -218,21 +214,21 @@ describe('Toolbar Icons Integration', () => {
 
   describe('핏 모드 아이콘', () => {
     it('원본 크기 버튼에 zoom-in 아이콘이 렌더링되어야 함', () => {
-      const { container } = render(
-        h(Toolbar, {
-          currentIndex: 0,
-          totalCount: 3,
-          onPrevious: () => {},
-          onNext: () => {},
-          onClose: () => {},
-          onDownloadCurrent: () => {},
-          onDownloadAll: () => {},
-          onFitOriginal: () => {},
-          onFitWidth: () => {},
-          onFitHeight: () => {},
-          onFitContainer: () => {},
-        })
-      );
+      const { container } = render(() => (
+        <Toolbar
+          currentIndex={0}
+          totalCount={3}
+          onPrevious={() => {}}
+          onNext={() => {}}
+          onClose={() => {}}
+          onDownloadCurrent={() => {}}
+          onDownloadAll={() => {}}
+          onFitOriginal={() => {}}
+          onFitWidth={() => {}}
+          onFitHeight={() => {}}
+          onFitContainer={() => {}}
+        />
+      ));
 
       const fitOriginalButton = container.querySelector('[data-gallery-element="fit-original"]');
       expect(fitOriginalButton).toBeTruthy();
