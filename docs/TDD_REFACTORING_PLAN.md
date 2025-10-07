@@ -50,57 +50,79 @@
 
 ---
 
-## Phase 8.4: Deprecated/Legacy 코드 정리 (진행 중)
+## Phase 8.5: 추가 Deprecated 코드 정리 (완료 ✅)
 
 ### 목표
 
-Phase 8.1-8.3에서 preact/fflate 잔재를 제거했으나, 전체 코드베이스에 여전히
-deprecated/legacy 항목이 남아 있습니다:
+Phase 8.4에서 memoization.ts를 제거했으나, 추가로 정리 가능한 deprecated 코드가
+발견되었습니다:
 
-- ✅ @deprecated 유틸리티 (memoization.ts - 제거 완료)
-- ⏸️ @deprecated 래퍼 메서드 (MediaService - 실제 사용 중, 유지 필요)
-- ⏸️ Legacy 정규화 필요성 검증 (Twitter API legacy 필드 - 실제 필요, 유지)
-- ⏸️ 과도하게 긴 문서 (COMPLETED.md 6177줄 - 낮은 우선순위)
+- ✅ HOC 디렉토리 완전 제거 (Phase 5.4에서 deprecated)
+- ✅ createZipFromItems 및 관련 레거시 함수 제거
+- ✅ 사용되지 않는 상수 및 헬퍼 제거
 
-### 작업 단계
+### 완료된 작업
 
-#### 8.4.1: @deprecated 코드 제거 (완료 ✅)
+#### 8.5.1: HOC 디렉토리 제거
 
-**대상**:
+**제거 대상**: `src/shared/components/hoc/` 전체 디렉토리
 
-- ✅ `src/shared/utils/performance/memoization.ts`: memo, useCallback, useMemo
-  함수들 제거
-  - 제거 근거: src에서 사용 0건, Solid.js는 네이티브 최적화
-  - 빌드 크기: 변화 없음 (Prod 329 KB 유지)
-  - 커밋: 410ef1e1
+- Phase 5.4에서 deprecated, Solid.js로 전환
+- src/test 전역 검색: 사용처 0건 확인
+- 안전하게 제거
 
-**검토 후 유지 결정**:
+#### 8.5.2: ZIP 레거시 함수 제거
 
-- MediaService.downloadSingle/downloadMultiple: GalleryRenderer에서 실제 사용 중
-  - @deprecated 주석이 있지만 공용 API로 활성 사용됨
-  - 단순 위임이 아니라 인터페이스 단순화 목적
-  - 유지 결정
+**제거된 항목**:
 
-#### 8.4.2: Legacy 정규화 필요성 검증 (검증 완료 ✅)
+- `createZipFromItems()` - 레거시 ZIP 생성 함수
+- `downloadFilesForZip()` - 파일 다운로드 헬퍼
+- `downloadMediaForZip()` - 개별 미디어 다운로드
+- `chunkArray()` - 배열 분할 유틸리티
+- `generateUniqueFilename()` - 중복 방지 파일명 생성
+- `DEFAULT_ZIP_CONFIG` - 미사용 설정 상수
+- 미사용 import: `safeParseInt`
 
-**대상**: Twitter API legacy 필드 정규화 로직
+**유지된 API**:
 
-**검증 결과**:
+- `createZipBytesFromFileMap()` - 현재 활성 ZIP API
+- `MediaItemForZip`, `ZipCreationConfig` 타입
 
-- Twitter GraphQL API는 여전히 `legacy` 필드를 사용
-- `extended_entities`, `full_text`, `screen_name` 등이 legacy 객체 내부에 위치
-- 정규화 로직 필요 → 유지 결정
+#### 8.5.3: Deprecated 메서드 검증 (유지 결정)
 
-#### 8.4.3: 문서 간소화 (낮은 우선순위, 보류)
+**검증 항목**:
 
-**사유**: 현재 문서가 길지만 히스토리 보존 가치가 높음. 검색 가능하며 필요 시
-점진적 개선 가능.
+- `ServiceManager.getDiagnostics()` → service-diagnostics.ts에서 사용 (진단
+  도구)
+- `BrowserService.getDiagnostics()` → 브라우저 진단 도구에서 사용
+- `UnifiedToastManager` export → ToastController, ToastContainer에서 사용 (하위
+  호환성)
+- MediaService deprecated 메서드 → Phase 8.4에서 검증 완료 (실사용)
+- Legacy Twitter normalizers → Phase 8.4에서 검증 완료 (API 필수)
+
+### 최종 메트릭
+
+| 메트릭     | Phase 8.4 이후 | Phase 8.5   | 변화            |
+| ---------- | -------------- | ----------- | --------------- |
+| Dev 빌드   | 1,030.40 KB    | 1,025.86 KB | **-4.54 KB** ✅ |
+| Prod 빌드  | 329.09 KB      | 329.09 KB   | 변화 없음       |
+| gzip       | 87.76 KB       | 87.76 KB    | 변화 없음       |
+| 모듈 수    | 252            | 251         | **-1**          |
+| 의존성     | 626            | 625         | **-1**          |
+| TypeScript | 0 errors       | 0 errors    | ✅              |
+
+### 제거된 코드 요약
+
+- HOC 디렉토리: 1개 파일 (~15 lines)
+- ZIP 레거시 함수: ~120 lines
+- 총 제거: ~135 lines
+- 번들 크기 감소: 4.54 KB
 
 ---
 
 ## 다음 단계 (Next Phase)
 
-Phase 8.4 완료 후 옵션:
+Phase 8 완료 후 옵션:
 
 ### 옵션 1: 사용자 피드백 수집
 

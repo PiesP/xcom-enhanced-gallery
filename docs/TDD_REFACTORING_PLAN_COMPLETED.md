@@ -82,6 +82,128 @@ deprecated/legacy 항목 검증 및 정리:
 
 ---
 
+## Phase 8.5: 추가 Deprecated 코드 정리 (2025-01-07 완료)
+
+### 목표
+
+Phase 8.4에서 memoization.ts를 제거한 후, 추가로 발견된 deprecated/사용되지 않는
+코드 정리:
+
+- HOC 디렉토리 (Phase 5.4에서 deprecated)
+- ZIP 레거시 함수들 (createZipFromItems 등)
+- 사용되지 않는 헬퍼 및 상수
+
+### Phase 8.5.1: HOC 디렉토리 제거 ✅
+
+**작업 내용**:
+
+- `src/shared/components/hoc/` 디렉토리 전체 제거
+  - index.ts만 남아있었음 (내용: 주석만, export 없음)
+  - Phase 5.4에서 GalleryHOC 제거 후 deprecated 표시
+  - Solid.js는 HOC 패턴 대신 signals와 props 직접 전달 사용
+- src/test 전역 검색: `from '@shared/components/hoc'` → 0건
+- 안전하게 제거 가능 확인
+
+**결과**:
+
+- 제거된 파일: 1개 (hoc/index.ts, ~15 라인)
+- 빌드 영향: 없음 (빈 export였음)
+
+### Phase 8.5.2: ZIP 레거시 함수 제거 ✅
+
+**제거된 함수들**:
+
+`src/shared/external/zip/zip-creator.ts`:
+
+- `createZipFromItems()` - 고수준 ZIP 생성 함수 (deprecated)
+  - DownloadOrchestrator 기반 흐름으로 대체됨
+  - 프로덕션 src에서 사용 0건 (테스트 가드 존재)
+- `downloadFilesForZip()` - ZIP용 파일 다운로드 헬퍼
+- `downloadMediaForZip()` - 개별 미디어 항목 다운로드
+- `chunkArray()` - 배열 분할 유틸리티
+- `generateUniqueFilename()` - ZIP 내 파일명 중복 방지
+- `DEFAULT_ZIP_CONFIG` - 사용되지 않는 ZIP 설정 상수
+- `ZipProgressCallback` 타입 - 진행 콜백 (미사용)
+
+**제거된 상수들**:
+
+- `BYTES_PER_KB`, `BYTES_PER_MB`, `MAX_FILE_SIZE_MB`
+- `REQUEST_TIMEOUT_MS`, `DEFAULT_CONCURRENT_DOWNLOADS`
+- `NO_COMPRESSION_LEVEL`
+
+**제거된 import**:
+
+- `safeParseInt` from `@shared/utils/type-safety-helpers`
+
+**유지된 API**:
+
+- `createZipBytesFromFileMap()` - 현재 활성 ZIP 생성 API
+- `MediaItemForZip` 인터페이스
+- `ZipCreationConfig` 인터페이스
+
+**index.ts 업데이트**:
+
+- `createZipFromItems` export 제거
+- `createZipBytesFromFileMap`, `MediaItemForZip` export 유지
+
+**결과**:
+
+- 제거된 코드: ~120 라인
+- 번들 크기 감소: Dev 1,030.40 KB → 1,025.86 KB (-4.54 KB)
+- 프로덕션 빌드: 329.09 KB (변화 없음, tree-shaking으로 이미 제거되어 있었음)
+- gzip: 87.76 KB (변화 없음)
+
+### Phase 8.5.3: Deprecated 메서드 검증 (유지 결정) ✅
+
+**검증 항목 및 결과**:
+
+1. `ServiceManager.getDiagnostics()`
+   - 사용처: `service-diagnostics.ts` (Line 32)
+   - 용도: 서비스 등록/초기화 상태 진단
+   - 결정: **유지** (진단 도구로 활용)
+
+2. `BrowserService.getDiagnostics()`
+   - 사용처: `BrowserUtils.ts`, `BrowserService.ts`
+   - 용도: 브라우저 호환성 진단
+   - 결정: **유지** (진단 도구로 활용)
+
+3. `UnifiedToastManager` 레거시 export
+   - 사용처: ToastController.ts (Lines 63, 107, 164, 171), ToastContainer.tsx
+     (Line 44)
+   - 용도: 하위 호환성 유지 (ToastManager 클래스의 별칭)
+   - 결정: **유지** (활발히 사용 중)
+
+4. `MediaService` deprecated 메서드
+   - Phase 8.4에서 이미 검증 완료
+   - 결정: **유지** (공용 API)
+
+5. Legacy Twitter normalizers
+   - Phase 8.4에서 이미 검증 완료
+   - 결정: **유지** (Twitter GraphQL API 필수)
+
+### 최종 메트릭 (Phase 8.4 + 8.5 누적)
+
+| 메트릭     | Phase 8 이전 | Phase 8.5 후 | 변화         |
+| ---------- | ------------ | ------------ | ------------ |
+| Dev 빌드   | 1,030.40 KB  | 1,025.86 KB  | **-4.54 KB** |
+| Prod 빌드  | 329.09 KB    | 329.09 KB    | 변화 없음    |
+| gzip       | 87.76 KB     | 87.76 KB     | 변화 없음    |
+| 모듈 수    | 252          | 251          | **-1**       |
+| 의존성     | 626          | 625          | **-1**       |
+| TypeScript | 0 errors     | 0 errors     | ✅           |
+
+**총 제거 코드**:
+
+- Phase 8.4: ~75 라인 (memoization.ts)
+- Phase 8.5: ~135 라인 (HOC + ZIP 레거시)
+- **합계: ~210 라인**
+
+**커밋**:
+
+- a50cab90 `refactor(core): remove additional deprecated code (Phase 8.5)`
+
+---
+
 ## Phase 8: Preact/fflate 잔재 제거 (2025-01-07 완료)
 
 ### 목표
