@@ -1,7 +1,7 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-25  
-> **Status**: Phase 7 Planning - User Experience Enhancement
+> **Last updated**: 2025-01-25 **Status**: Phase 7 Planning - User Experience
+> Enhancement
 
 ## Overview
 
