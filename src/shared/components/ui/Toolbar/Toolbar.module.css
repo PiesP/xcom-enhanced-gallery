@@ -51,44 +51,44 @@
   }
 }
 
-/* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
+/* 상태별 가시성 설정 - 구체성으로 우선순위 확보 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
   /* 명시적 가시성 보장 */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  opacity: 1;
+  visibility: visible;
+  display: flex;
+  pointer-events: auto;
 }
 
 .galleryToolbar[data-state='loading'] {
-  --toolbar-opacity: 0.7 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 0.7;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-loading);
   /* 로딩 상태에서도 가시성 보장 */
-  opacity: 0.7 !important;
-  pointer-events: auto !important;
+  opacity: 0.7;
+  pointer-events: auto;
 }
 
 .galleryToolbar[data-state='downloading'] {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-downloading);
   /* 다운로드 상태에서도 가시성 보장 */
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .galleryToolbar[data-state='error'] {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-error);
   --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
   /* 에러 상태에서도 가시성 보장 */
-  opacity: 1 !important;
-  pointer-events: auto !important;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .toolbarContent {
