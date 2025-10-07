@@ -849,7 +849,6 @@
       "dependents": [
         "src/shared/utils/patterns/url-patterns.ts",
         "src/shared/media/FilenameService.ts",
-        "src/shared/external/zip/zip-creator.ts",
         "src/shared/services/media/TwitterVideoExtractor.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/utils/index.ts",
@@ -1644,23 +1643,6 @@
             "import"
           ],
           "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../utils/type-safety-helpers",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/type-safety-helpers.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -10972,13 +10954,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/hoc/index.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/index.ts",
       "dependencies": [
         {
@@ -14197,8 +14172,8 @@
     "warn": 0,
     "info": 2,
     "ignore": 0,
-    "totalCruised": 252,
-    "totalDependenciesCruised": 626,
+    "totalCruised": 251,
+    "totalDependenciesCruised": 625,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
