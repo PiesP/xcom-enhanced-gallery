@@ -1,7 +1,8 @@
 # TDD 리팩토링 활성 계획: Preact → Solid.js 전환 (2025-10-07 수립)
 
 > **프로젝트 목표**: Preact + @preact/signals에서 Solid.js로 완전 전환 **전략**:
-> 계층별 점진적 전환 (Bottom-Up, TDD 우선) **현재 상태**: Phase 0 (준비 단계)
+> 계층별 점진적 전환 (Bottom-Up, TDD 우선) **현재 상태**: Phase 3 완료 → Phase 4
+> 준비 중
 
 ---
 
@@ -871,25 +872,38 @@
 
 ## 🔄 활성 작업 (현재 Phase)
 
-### 현재 Phase: Phase 0 (준비 단계)
+### 현재 Phase: Phase 3 완료 → Phase 4 준비
 
-**상태**: 🟡 계획 수립 완료, 실행 대기
+**Phase 0-3 완료 상태**: ✅
+
+- ✅ Phase 0: 준비 및 인프라 (Foundation)
+- ✅ Phase 1: External 계층 전환 (Vendors Adapter)
+- ✅ Phase 2: Shared/State 전환 (Signals → Solid Signals)
+- ✅ Phase 3: Shared/Utils 전환 (Hooks → Primitives)
+  - Signal Selector (20 tests)
+  - Performance Utils (30 tests)
+  - Focus Trap (26 tests)
+  - Scroll Lock (20 tests)
+  - DOM Ready (14 tests)
+  - Focus Scope (14 tests)
+  - **총 124개 테스트 100% 통과**
+
+**다음 Phase**: Phase 4 (Shared/Components 전환)
 
 **다음 액션**:
 
-1. ✅ 이 문서 작성 완료
-2. ⏳ `vite-plugin-solid` 설치
-3. ⏳ `vite.config.ts` 확장 (Preact + Solid 공존)
-4. ⏳ Hello World Solid 컴포넌트 작성 및 테스트
-5. ⏳ 번들 크기 측정 기준선 수립
+1. ⏳ 기존 Preact 컴포넌트 테스트 실패 원인 분석 및 수정
+2. ⏳ Phase 4 작업 계획 수립
+3. ⏳ UI 컴포넌트 마이그레이션 우선순위 결정
+4. ⏳ TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 0-3 이관
 
-**예상 완료**: 2025-10-09
+**블로커**:
 
----
+- 🔴 기존 Preact 컴포넌트 테스트 146개 실패 (Preact hooks context 초기화 문제)
+- 원인: `Cannot read properties of undefined (reading '__H')`
+- 영향: Phase 4 시작 전 해결 필요
 
-## 활성 작업 (현재 없음)
-
-현재 진행 중인 작업: Phase 0 준비 중
+**예상 시작**: 블로커 해결 후
 
 ---
 
