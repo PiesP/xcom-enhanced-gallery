@@ -4,17 +4,16 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { cleanup } from '@testing-library/preact';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact.tsx';
+import { render, cleanup } from '@solidjs/testing-library';
 import { GalleryContainer } from '@/shared/components/isolation/GalleryContainer';
 
 describe('GalleryContainer (inline style policy)', () => {
   it('should not use inline overlay styles and should apply CSS classes', () => {
-    const { container, unmount } = render(
+    const { container, unmount } = render(() => (
       <GalleryContainer className=''>
         <div>content</div>
       </GalleryContainer>
-    );
+    ));
     try {
       const root = container.firstElementChild;
       expect(root).not.toBeNull();

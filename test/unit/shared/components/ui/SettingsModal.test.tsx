@@ -6,8 +6,7 @@
 /// <reference lib="dom" />
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { fireEvent, screen, cleanup } from '@testing-library/preact';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
+import { fireEvent, screen, render, cleanup } from '@solidjs/testing-library';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal', () => {

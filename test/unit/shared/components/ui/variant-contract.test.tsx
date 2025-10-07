@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { renderWithVendorPreact as render } from '../../../../utils/render-with-vendor-preact';
+import { render } from '@solidjs/testing-library';
 import { h } from '@shared/external/vendors';
 
 // TODO: UnifiedButton이 구현되면 이 import를 교체
