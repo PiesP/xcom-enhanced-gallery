@@ -10,6 +10,4 @@ export * from './schedulers';
 export * from './prefetch-bench';
 
 // Note: Legacy signal optimization exports removed (use '@shared/utils/signalSelector')
-
-// Component Memoization
-export { memo, useCallback, useMemo } from './memoization';
+// Note: Component memoization removed (Solid.js handles optimization natively)

@@ -50,9 +50,57 @@
 
 ---
 
+## Phase 8.4: Deprecated/Legacy 코드 정리 (진행 중)
+
+### 목표
+
+Phase 8.1-8.3에서 preact/fflate 잔재를 제거했으나, 전체 코드베이스에 여전히
+deprecated/legacy 항목이 남아 있습니다:
+
+- ✅ @deprecated 유틸리티 (memoization.ts - 제거 완료)
+- ⏸️ @deprecated 래퍼 메서드 (MediaService - 실제 사용 중, 유지 필요)
+- ⏸️ Legacy 정규화 필요성 검증 (Twitter API legacy 필드 - 실제 필요, 유지)
+- ⏸️ 과도하게 긴 문서 (COMPLETED.md 6177줄 - 낮은 우선순위)
+
+### 작업 단계
+
+#### 8.4.1: @deprecated 코드 제거 (완료 ✅)
+
+**대상**:
+
+- ✅ `src/shared/utils/performance/memoization.ts`: memo, useCallback, useMemo
+  함수들 제거
+  - 제거 근거: src에서 사용 0건, Solid.js는 네이티브 최적화
+  - 빌드 크기: 변화 없음 (Prod 329 KB 유지)
+  - 커밋: 410ef1e1
+
+**검토 후 유지 결정**:
+
+- MediaService.downloadSingle/downloadMultiple: GalleryRenderer에서 실제 사용 중
+  - @deprecated 주석이 있지만 공용 API로 활성 사용됨
+  - 단순 위임이 아니라 인터페이스 단순화 목적
+  - 유지 결정
+
+#### 8.4.2: Legacy 정규화 필요성 검증 (검증 완료 ✅)
+
+**대상**: Twitter API legacy 필드 정규화 로직
+
+**검증 결과**:
+
+- Twitter GraphQL API는 여전히 `legacy` 필드를 사용
+- `extended_entities`, `full_text`, `screen_name` 등이 legacy 객체 내부에 위치
+- 정규화 로직 필요 → 유지 결정
+
+#### 8.4.3: 문서 간소화 (낮은 우선순위, 보류)
+
+**사유**: 현재 문서가 길지만 히스토리 보존 가치가 높음. 검색 가능하며 필요 시
+점진적 개선 가능.
+
+---
+
 ## 다음 단계 (Next Phase)
 
-Phase 8 완료. 다음 단계 옵션:
+Phase 8.4 완료 후 옵션:
 
 ### 옵션 1: 사용자 피드백 수집
 

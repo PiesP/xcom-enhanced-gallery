@@ -4258,23 +4258,6 @@
         },
         {
           "dynamic": false,
-          "module": "./memoization",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/utils/performance/memoization.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./performance-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -4370,15 +4353,6 @@
           "valid": true
         }
       ],
-      "dependents": [
-        "src/shared/utils/performance/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/utils/performance/memoization.ts",
-      "dependencies": [],
       "dependents": [
         "src/shared/utils/performance/index.ts"
       ],
@@ -14223,8 +14197,8 @@
     "warn": 0,
     "info": 2,
     "ignore": 0,
-    "totalCruised": 253,
-    "totalDependenciesCruised": 627,
+    "totalCruised": 252,
+    "totalDependenciesCruised": 626,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
