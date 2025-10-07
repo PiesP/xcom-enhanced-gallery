@@ -1,13 +1,15 @@
 /**
  * @fileoverview Download State Management with Signals
- * @version 1.0.0 - Clean Architecture 적용
+ * @version 2.0.0 - Solid.js Signals
  *
- * Result 타입 패턴과 브랜드 타입을 활용한 타입 안전한 다운로드 상태 관리
+ * Solid.js Signals 기반 다운로드 상태 관리
+ * - Preact .value accessor 호환 유지
+ * - Result 타입 패턴과 브랜드 타입을 활용한 타입 안전한 다운로드 상태 관리
  */
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
-import { createSignalSafe, effectSafe } from './signal-factory';
+import { createSignalSafe, effectSafe } from './signal-factory-solid';
 // Remove runtime dependency on services to avoid cycles; use logging directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 

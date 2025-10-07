@@ -1,15 +1,17 @@
 /**
  * @fileoverview Toolbar State Management
- * @version 2.0.0 - CSS Hover System
+ * @version 3.0.0 - Solid.js Signals
  *
  * 간소화된 툴바 상태 관리 시스템
+ * - Solid.js Signals 기반으로 전환
  * - CSS 호버 기반으로 대부분의 상태 관리 제거
  * - 설정 및 모드 관리만 유지
  * - 타입 안전성 보장
+ * - Preact .value accessor 호환 유지
  */
 
 import { logger } from '@shared/logging/logger';
-import { createSignalSafe } from './signal-factory';
+import { createSignalSafe } from './signal-factory-solid';
 
 /**
  * 간소화된 툴바 상태 인터페이스

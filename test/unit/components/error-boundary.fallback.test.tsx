@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { initializeVendors, getPreact } from '@/shared/external/vendors';
 import { ErrorBoundary } from '@/shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { ToastManager } from '@/shared/services/UnifiedToastManager';
 
-const { h, render } = getPreact();
+beforeAll(() => {
+  // Phase 2: Solid Signals 전환 대응 - vendors 초기화 필수
+  initializeVendors();
+});
 
 function ProblemChild() {
   throw new Error('Boom');
@@ -11,6 +14,7 @@ function ProblemChild() {
 
 describe('UI-ERROR-BOUNDARY-01', () => {
   it('renders fallback without crashing and emits toast on error', () => {
+    const { h, render } = getPreact();
     const tm = ToastManager.getInstance();
     tm.clear();
 

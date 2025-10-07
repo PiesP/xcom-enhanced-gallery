@@ -20,7 +20,7 @@ let removeSpy;
 async function importEventsWithVendorsMock() {
   vi.resetModules();
 
-  // 최소 Preact Signals 모킹 (strict-friendly)
+  // Solid.js Signals 모킹 (Phase 2: Solid 전환 대응)
   vi.doMock('@/shared/external/vendors', () => {
     function signal(initial) {
       let _v = initial;
@@ -43,8 +43,27 @@ async function importEventsWithVendorsMock() {
       return () => {};
     }
 
+    function createSignal(initial) {
+      let _v = initial;
+      const get = () => _v;
+      const set = n => {
+        _v = n;
+      };
+      return [get, set];
+    }
+
+    function createEffect(fn) {
+      try {
+        fn();
+      } catch {
+        // 테스트 폴백: effect 콜백 에러 무시
+      }
+      return () => {};
+    }
+
     return {
       getPreactSignals: vi.fn(() => ({ signal, effect })),
+      getSolid: vi.fn(() => ({ createSignal, createEffect })),
     };
   });
 
