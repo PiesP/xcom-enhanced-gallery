@@ -381,13 +381,65 @@
    - 기존 Preact 버전과 API 호환성 유지 (마이그레이션 용이)
    - 성능 벤치마크 추가 (re-render 횟수 측정)
 
-3. **Custom Hooks → Custom Primitives** ⏳ 대기
+3. **Custom Hooks → Custom Primitives** 🟢 진행 중 (1/N 완료)
+
+   **완료된 항목**:
+   - ✅ **Focus Trap Primitive** (2025-01-07)
+     - 파일: `src/shared/primitives/focusTrap-solid.ts` (106 lines)
+     - 테스트: `test/unit/hooks/useFocusTrap-solid.test.tsx` (26/26 PASS)
+     - 패턴: **External Signal 직접 반환** (Fine-grained reactivity)
+
+       ```typescript
+       export function createFocusTrap(
+         containerAccessor: Accessor<HTMLElement | null>,
+         isActiveAccessor: Accessor<boolean>,
+         options?: FocusTrapOptions
+       ): FocusTrapResult {
+         // Effects handle side effects only
+         createEffect(() => {
+           /* Container lifecycle */
+         });
+         createEffect(() => {
+           /* Active state sync */
+         });
+
+         return {
+           isActive: isActiveAccessor, // 🔑 외부 signal 직접 반환 (동기적 읽기)
+           activate: () => {
+             /* DOM only */
+           },
+           deactivate: () => {
+             /* DOM only */
+           },
+         };
+       }
+       ```
+
+     - 핵심 개념:
+       - **isActive accessor**: 외부 signal 그대로 반환 → 동기적 읽기 보장
+       - **Effects**: DOM 부작용만 담당 (activate/deactivate 호출)
+       - **Manual methods**: DOM 조작만 수행, external signal 변경 없음
+       - Solid의 "Effects for side effects, Signals for state" 철학 준수
+     - 마이그레이션 패턴:
+       - Preact `useLayoutEffect` → Solid `createEffect`
+       - Preact `useState` → Solid `createSignal` (내부 상태 불필요)
+       - Preact `useRef` → 일반 `let` 변수 (재실행 없음)
+     - 해결한 이슈:
+       - ❌ `batch()` 시도: 여전히 비동기 effect 실행
+       - ❌ `createSignal + setIsActive`: Effect 업데이트 microtask 큐
+       - ✅ **External signal 직접 반환**: 동기적 읽기 + reactive 추적
+       - ✅ **Test async timing**: `queueMicrotask` + `async/await` 적용
+     - 사용처: `useFocusTrap.ts` (3 usages, 기존 Preact Hook 보존)
+     - 다음 우선순위: 사용 빈도 낮은 hooks부터 점진적 전환
+
+   **대기 중**:
 
    ```typescript
    // src/shared/hooks/* → src/shared/primitives/*
-   // ⏳ useFocusTrap → createFocusTrap
    // ⏳ useScrollLock → createScrollLock
    // ⏳ useDOMReady → createDOMReady
+   // ⏳ usePreventScroll → createPreventScroll
+   // ⏳ useLazyEffect → createLazyEffect
    // 등등...
    ```
 
