@@ -205,18 +205,63 @@ export class StaticVendorManager {
    * Solid.js 안전 접근 - 항상 정적 import 반환 (TDZ 방지)
    */
   public getSolid(): SolidAPI {
-    // 정적 import는 항상 사용 가능하므로 직접 반환
-    // 캐시를 사용하지 않고 vendors 객체에서 직접 가져옴
-    return this.vendors.solid;
+    // 캐시된 API 객체를 반환 (Show 등의 컴포넌트 중복 방지)
+    const cached = this.apiCache.get('solid') as SolidAPI | undefined;
+    if (cached) {
+      return cached;
+    }
+
+    // 캐시가 없으면 직접 API 객체 생성하여 반환
+    const solidAPI: SolidAPI = {
+      // Primitives
+      createSignal: this.vendors.solid.createSignal,
+      createEffect: this.vendors.solid.createEffect,
+      createMemo: this.vendors.solid.createMemo,
+      createRoot: this.vendors.solid.createRoot,
+      createResource: this.vendors.solid.createResource,
+      batch: this.vendors.solid.batch,
+      untrack: this.vendors.solid.untrack,
+      on: this.vendors.solid.on,
+      onMount: this.vendors.solid.onMount,
+      onCleanup: this.vendors.solid.onCleanup,
+
+      // Props utilities
+      mergeProps: this.vendors.solid.mergeProps,
+      splitProps: this.vendors.solid.splitProps,
+
+      // Components
+      Show: this.vendors.solid.Show,
+      For: this.vendors.solid.For,
+      ErrorBoundary: this.vendors.solid.ErrorBoundary,
+    };
+
+    return solidAPI;
   }
 
   /**
    * Solid.js Web 안전 접근 - 항상 정적 import 반환 (TDZ 방지)
    */
   public getSolidWeb(): SolidWebAPI {
-    // 정적 import는 항상 사용 가능하므로 직접 반환
-    // 캐시를 사용하지 않고 vendors 객체에서 직접 가져옴
-    return this.vendors.solidWeb;
+    // 캐시된 API 객체를 반환
+    const cached = this.apiCache.get('solid-web') as SolidWebAPI | undefined;
+    if (cached) {
+      return cached;
+    }
+
+    // 캐시가 없으면 직접 API 객체 생성하여 반환
+    const solidWebAPI: SolidWebAPI = {
+      render: this.vendors.solidWeb.render,
+      hydrate: this.vendors.solidWeb.hydrate,
+      renderToString: this.vendors.solidWeb.renderToString,
+      isServer: this.vendors.solidWeb.isServer,
+
+      // Components
+      Dynamic: this.vendors.solidWeb.Dynamic,
+      Portal: this.vendors.solidWeb.Portal,
+      Show: this.vendors.solidWeb.Show,
+    };
+
+    return solidWebAPI;
   }
 
   /**

@@ -416,6 +416,18 @@
     color: var(--xeg-color-text-primary);
     border-color: var(--xeg-color-border-hover);
   }
+
+  /* 툴바 버튼 다크 모드 */
+  .variant-toolbar {
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-border-primary);
+  }
+
+  .variant-toolbar:hover:not(:disabled) {
+    background: var(--xeg-color-neutral-800);
+    color: var(--xeg-color-text-primary);
+    border-color: var(--xeg-color-border-hover);
+  }
 }
 
 /* ===== 고대비 모드 지원 ===== */
