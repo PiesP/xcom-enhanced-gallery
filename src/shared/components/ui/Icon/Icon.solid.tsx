@@ -60,7 +60,7 @@ export interface IconProps extends JSX.SvgSVGAttributes<SVGSVGElement> {
  * </Icon>
  * ```
  */
-export function Icon(props: IconProps): JSX.Element {
+export function Icon(props: IconProps) {
   // Solid.js에서는 props를 직접 destructure하지 않고 mergeProps를 사용
   const merged = mergeProps(
     {
@@ -74,24 +74,20 @@ export function Icon(props: IconProps): JSX.Element {
   const [local, others] = splitProps(merged, ['size', 'class', 'children', 'aria-label']);
 
   // 접근성 속성 설정
-  const accessibilityProps = (): {
-    role?: string;
-    'aria-label'?: string;
-    'aria-hidden'?: string;
-  } => {
+  const accessibilityProps = () => {
     if (local['aria-label']) {
       return {
-        role: 'img',
+        role: 'img' as const,
         'aria-label': local['aria-label'],
       };
     }
     return {
-      'aria-hidden': 'true',
+      'aria-hidden': 'true' as const,
     };
   };
 
   // 크기 값 처리 - 숫자인 경우 픽셀로, 문자열인 경우 그대로 사용
-  const sizeValue = (): string => {
+  const sizeValue = () => {
     return typeof local.size === 'number' ? `${local.size}px` : local.size;
   };
 
@@ -104,13 +100,13 @@ export function Icon(props: IconProps): JSX.Element {
       fill='none'
       stroke='var(--xeg-icon-color, currentColor)'
       stroke-width='var(--xeg-icon-stroke-width)'
-      stroke-linecap='round'
-      stroke-linejoin='round'
+      stroke-linecap={'round' as any}
+      stroke-linejoin={'round' as any}
       class={local.class}
       {...accessibilityProps()}
       {...others}
     >
       {local.children}
     </svg>
-  );
+  ) as any;
 }

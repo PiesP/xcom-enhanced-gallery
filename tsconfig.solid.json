@@ -3,7 +3,9 @@
   "compilerOptions": {
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "vitest/globals", "solid-js"]
+    "types": ["vite/client", "vitest/globals", "solid-js"],
+    "noEmit": true
   },
-  "include": ["**/*.solid.tsx", "**/*.solid.ts"]
+  "include": ["src/**/*.solid.tsx", "src/**/*.solid.ts", "test/**/*.solid.tsx", "test/**/*.solid.ts"],
+  "exclude": ["node_modules", "dist", "build", "coverage"]
 }

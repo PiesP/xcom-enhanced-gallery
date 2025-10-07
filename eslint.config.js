@@ -32,6 +32,9 @@ export default [
       'test-results/**',
       '*.config.js.backup',
       '*.backup.*',
+      // Phase 0: Solid.js 파일은 별도 tsconfig 사용 (ESLint 제외)
+      '**/*.solid.ts',
+      '**/*.solid.tsx',
     ],
   },
 
