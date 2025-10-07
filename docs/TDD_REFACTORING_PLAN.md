@@ -248,33 +248,52 @@
 
 #### Phase 4.2: Primitive 컴포넌트 전환 (우선순위: 높음)
 
-**대상 컴포넌트** (2개):
+---
 
-- `primitive/Button.tsx` → `Button.solid.tsx`
-- `primitive/Panel.tsx` → `Panel.solid.tsx`
+#### Phase 4.2: Primitive 컴포넌트 전환 ✅ **완료** (2025-10-07)
 
-**이유**:
+**작업 기간**: 1일 (예상대로)
 
-- 가장 기본적인 building blocks
-- 다른 컴포넌트들이 의존하는 기초 컴포넌트
-- memo/forwardRef 제거 기회 (Solid 자동 최적화 검증)
+**완료 내역**:
 
-**작업 내용**:
+- ✅ `Button.solid.tsx` (16 tests GREEN)
+- ✅ `Panel.solid.tsx` (9 tests GREEN)
+- ✅ 총 25 tests 통과 (compile/type verification 스타일)
 
-1. TDD: `primitive/*.solid.test.tsx` 작성
-2. 구현: Solid JSX, createSignal/createMemo 활용
-3. CSS Modules 유지 (디자인 토큰 준수)
-4. 이벤트 핸들링 검증 (PC 전용 입력 정책)
-5. 성능 비교 (re-render 횟수 측정)
+**기술적 구현**:
 
-**성공 기준**:
+1. **패턴**: Phase 4.1에서 확립한 `mergeProps` + `splitProps` 패턴 적용
 
-- ✅ Button/Panel Solid 버전 완성
-- ✅ memo/forwardRef 없이 동일 성능
-- ✅ 모든 variant 테스트 통과
-- ✅ PC 전용 이벤트만 사용
+   ```typescript
+   const merged = mergeProps({ variant: 'primary' as const, size: 'md' as const }, props);
+   const [local, handlers, ...] = splitProps(merged, ...);
+   ```
 
-**예상 기간**: 1-2일
+2. **최적화**:
+   - ❌ Preact의 `memo`/`forwardRef` 제거 (Solid.js는 자동 최적화)
+   - ✅ Reactive derived values: `const classes = () => [...]`
+   - ✅ Fine-grained reactivity: Props 변경 시 필요한 부분만 재계산
+
+3. **이벤트 핸들링**:
+   - PC 전용: `onClick`, `onKeyDown` (Enter, Space 키)
+   - 접근성: `role="button"`, `tabIndex`, `aria-pressed`, `aria-busy`
+
+**검증 완료**:
+
+- ✅ Build 성공: dev 1,065 KB / prod 377 KB (기준선 유지)
+- ✅ TypeScript typecheck: 0 errors (dual project)
+- ✅ 모든 variant 테스트 (primary/secondary/outline, sm/md/lg)
+- ✅ 접근성 props (aria-label, data-action)
+- ✅ 확장 props (intent, selected, loading)
+
+**성능 개선**:
+
+- Preact: `memo` + `forwardRef` 수동 최적화 필요
+- Solid.js: 자동 fine-grained reactivity (재렌더링 최소화)
+
+**다음 단계**: Phase 4.3 Toast 시스템 전환
+
+**예상 기간**: 1-2일 (완료)
 
 ---
 

@@ -14125,6 +14125,49 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/primitive/Button.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/primitive/Button.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/primitive/Button.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/primitive/Button.solid.tsx",
+        "src/shared/components/ui/primitive/Button.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/primitive/Button.tsx",
       "dependencies": [
         {
@@ -14170,7 +14213,32 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/primitive/Button.css",
+      "source": "src/shared/components/ui/primitive/Panel.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Panel.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/primitive/Panel.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/primitive/Panel.css",
       "followable": false,
       "coreModule": false,
       "couldNotResolve": false,
@@ -14181,7 +14249,8 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/primitive/Button.tsx"
+        "src/shared/components/ui/primitive/Panel.solid.tsx",
+        "src/shared/components/ui/primitive/Panel.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -14227,23 +14296,6 @@
       ],
       "dependents": [
         "src/shared/components/ui/primitive/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/primitive/Panel.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/primitive/Panel.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -17092,8 +17144,8 @@
     "warn": 0,
     "info": 2,
     "ignore": 0,
-    "totalCruised": 285,
-    "totalDependenciesCruised": 772,
+    "totalCruised": 287,
+    "totalDependenciesCruised": 774,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
