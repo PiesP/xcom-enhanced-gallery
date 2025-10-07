@@ -7942,7 +7942,8 @@
         }
       ],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid.tsx",
+        "src/shared/primitives/createToolbarPosition.ts"
       ],
       "orphan": false,
       "valid": true
@@ -15759,8 +15760,7 @@
         }
       ],
       "dependents": [
-        "src/shared/services/index.ts",
-        "src/shared/primitives/createToolbarPosition.ts"
+        "src/shared/services/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16351,7 +16351,7 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "@shared/services/AnimationService",
+          "module": "@shared/utils/animations",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -16361,7 +16361,7 @@
             "local",
             "import"
           ],
-          "resolved": "src/shared/services/AnimationService.ts",
+          "resolved": "src/shared/utils/animations.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
