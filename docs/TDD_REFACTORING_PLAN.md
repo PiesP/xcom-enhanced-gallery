@@ -1,6 +1,7 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 10 진행 중 (3.5/4 완료)
+> **Last updated**: 2025-01-08 **Status**: Phase 10 진행 중 (3.5/4 완료 - Phase
+> 10.1-10.3 완료)
 
 ## Overview
 
@@ -417,11 +418,11 @@ subscribe(callback: (value: T) => void): () => void {
 - ⚠️ 장시간 실행 시나리오에서 잠재적 위험
 - ✅ Phase 11 이전에 해결 권장
 
-#### 10.1: 테스트 Preact 잔재 제거 � **부분 완료** (2025-01-08 업데이트)
+#### 10.1: 테스트 Preact 잔재 제거 ✅ **완료** (2025-01-08)
 
-**진행 상황: 6/12 파일 완료 (50%)**
+**진행 상황: 12/12 파일 완료 (100%)**
 
-**✅ 완료된 파일 (커밋 f0e64be0, a84e7406)**:
+**✅ 1차 완료 파일 (커밋 f0e64be0, a84e7406)**:
 
 1. ✅ `test/shared/components/ui/Icon.test.tsx` - JSX 전환
 2. ✅ `test/shared/components/ui/Toolbar-Icons.test.tsx` - JSX 전환 + vendor
@@ -433,15 +434,17 @@ subscribe(callback: (value: T) => void): () => void {
 6. ✅ `test/unit/performance/signal-optimization.test.tsx` - 완전 재작성
    (Solid.js signals)
 
-**⏳ 미완료 파일 (복잡한 변환 필요)**:
+**✅ 2차 완료 파일 (커밋 f03f4df9)**:
 
-1. `test/unit/ui/toolbar.icon-accessibility.test.tsx` - 복잡한 vendor mocking
-2. `test/components/button-primitive-enhancement.test.ts` - 한글 깨짐 및 문법
-   오류
-3. `test/hooks/useGalleryToolbarLogic.test.ts` - 9개 h() 호출 변환 필요
-4. `test/integration/design-system-consistency.test.tsx` - 11개 중첩 h() 호출
-5. `test/refactoring/icon-button.size-map.red.test.tsx` - screen import 누락
-6. `test/components/configurable-toolbar.test.ts` - 복잡한 구조
+7. ✅ `test/unit/ui/toolbar.icon-accessibility.test.tsx` - 복잡한 vendor mocking
+   전환
+8. ✅ `test/components/button-primitive-enhancement.test.tsx` - .ts → .tsx, JSX
+   전환
+9. ✅ `test/hooks/useGalleryToolbarLogic.test.tsx` - .ts → .tsx, JSX 전환
+10. ✅ `test/integration/design-system-consistency.test.tsx` - JSX 전환, 중복
+    코드 제거
+11. ✅ `test/refactoring/icon-button.size-map.red.test.tsx` - JSX 전환
+12. ✅ `test/components/configurable-toolbar.test.tsx` - .ts → .tsx, JSX 전환
 
 **📝 유지 파일 (정적 분석용)**:
 
@@ -450,64 +453,46 @@ subscribe(callback: (value: T) => void): () => void {
   assertion
 - `test/behavioral/settings-modal.characterization.test.js` - 레거시 유지
 
-**작업 전략**:
-
-미완료 6개 파일은 다음 작업 세션에서 처리 예정:
-
-- 한글 인코딩 이슈 해결
-- 복잡한 h() 중첩 구조 수동 전환
-- vendor mocking 패턴 재검토
-
 **수용 기준**:
 
 - [x] 샘플 패턴 확립 (signal-optimization.test.tsx)
-- [x] 6개 파일 Solid.js 전환 완료
-- [ ] 나머지 6개 파일 전환 (다음 세션)
+- [x] 전체 12개 파일 Solid.js 전환 완료
 - [x] 빌드 및 typecheck GREEN
+- [x] 모든 Preact import 제거 (실제 사용 0건)
 
-**현재 메트릭**:
+**최종 메트릭**:
 
-- 전환 완료: **6/12** (50%)
+- 전환 완료: **12/12** (100%)
 - 빌드 크기: Dev 1,030.72 KB, Prod 331.17 KB (gzip 88.37 KB)
 - 모듈 수: 250
-- 테스트: GREEN (전환된 파일 모두 통과)
+- 테스트: GREEN
+- Preact import: **0** (완전 제거)
 
 ### Phase 10 메트릭 (최신 - 2025-01-08)
 
-| 메트릭               | Phase 9     | 현재 (Phase 10) | 변화      | Phase 10 목표 |
-| -------------------- | ----------- | --------------- | --------- | ------------- |
-| Dev 빌드             | 1,029.96 KB | 1,030.72 KB     | +0.76 KB  | ~1,030 KB     |
-| Prod 빌드            | 330.73 KB   | 331.17 KB       | +0.44 KB  | ~331 KB       |
-| gzip                 | 88.35 KB    | 88.37 KB        | +0.02 KB  | ~88 KB        |
-| 모듈 수              | 251         | **250**         | **-1** ✅ | 250           |
-| Dependencies         | 699         | **699**         | 유지 ✅   | 699           |
-| Orphan 모듈          | 1           | **0**           | **-1** ✅ | **0** ✅      |
-| TODO 주석            | 3           | **0**           | **-3** ✅ | **0** ✅      |
-| Preact 테스트 (실제) | 12          | **6**           | **-6** ✅ | **0** (목표)  |
+| 메트릭               | Phase 9     | 현재 (Phase 10) | 변화       | Phase 10 목표   |
+| -------------------- | ----------- | --------------- | ---------- | --------------- |
+| Dev 빌드             | 1,029.96 KB | 1,030.72 KB     | +0.76 KB   | ~1,030 KB       |
+| Prod 빌드            | 330.73 KB   | 331.17 KB       | +0.44 KB   | ~331 KB         |
+| gzip                 | 88.35 KB    | 88.37 KB        | +0.02 KB   | ~88 KB          |
+| 모듈 수              | 251         | **250**         | **-1** ✅  | 250             |
+| Dependencies         | 699         | **699**         | 유지 ✅    | 699             |
+| Orphan 모듈          | 1           | **0**           | **-1** ✅  | **0** ✅        |
+| TODO 주석            | 3           | **0**           | **-3** ✅  | **0** ✅        |
+| Preact 테스트 (실제) | 12          | **0**           | **-12** ✅ | **0** ✅ (완료) |
 
-### 작업 순서 및 진행 상태
+### Phase 10 작업 순서 및 완료 상태
 
 1. ✅ **RED**: orphan 모듈, TODO 주석 탐지 (Phase 10 분석 완료)
 2. ✅ **10.2 실행**: focusScope-solid.ts 제거 (커밋 868f1949) → COMPLETED.md로
    이관
 3. ✅ **10.3 실행**: TODO 주석 제거 (커밋 70ff534b) → COMPLETED.md로 이관
-4. ⏳ **10.1 실행 중**: 테스트 Preact 잔재 제거 (6/12 완료 - 50%)
+4. ✅ **10.1 실행 완료**: 테스트 Preact 잔재 제거 (12/12 완료 - 100%, 커밋
+   f0e64be0, a84e7406, f03f4df9)
 5. ⏳ **10.4 검토**: Signal Subscribe Cleanup 검증 (별도 세션 권장)
-6. ⏳ **GREEN**: Phase 10 완료 후 전체 검증
+6. ✅ **GREEN**: Phase 10.1-10.3 검증 완료 (빌드/테스트 GREEN)
 
----
-
-| TODO 주석 | 3 | **0** | **-3** ✅ | **0** ✅ | | Preact 테스트 | 17 | 17 |
-미진행 | **0** (목표) |
-
-### 작업 순서 및 진행 상태
-
-1. ✅ **RED**: orphan 모듈, TODO 주석 탐지 (Phase 10 분석 완료)
-2. ✅ **10.2 실행**: focusScope-solid.ts 제거 (커밋 868f1949)
-3. ✅ **10.3 실행**: TODO 주석 제거 (커밋 70ff534b)
-4. ⏳ **10.1 실행**: 테스트 Preact 잔재 제거 (진행 예정 - 별도 세션 권장)
-5. ⏳ **GREEN**: 전체 테스트 통과 확인
-6. ⏳ **REFACTOR**: 테스트 구조 개선 (필요 시)
+**Phase 10 현재 상태**: 3.5/4 완료 (10.1-10.3 완료, 10.4 별도 검토 예정)
 
 ---
 
