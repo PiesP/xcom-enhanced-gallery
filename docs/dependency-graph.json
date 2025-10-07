@@ -295,9 +295,9 @@
         "src/shared/media/MediaProcessor.ts",
         "src/shared/media/pipeline.ts",
         "src/shared/utils/css-animations.ts",
+        "src/shared/components/ui/Button/Button.solid.tsx",
         "src/main.ts",
         "src/shared/components/isolation/GalleryContainer.solid.tsx",
-        "src/shared/components/ui/Button/Button.solid.tsx",
         "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/index.ts",
         "src/shared/services/AnimationService.ts",
@@ -1358,6 +1358,7 @@
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/state/signals/download.signals.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
         "src/shared/types/core/extraction.types.ts",
         "src/shared/interfaces/ServiceInterfaces.ts",
         "src/shared/services/media-mapping/MediaMappingService.ts",
@@ -1844,6 +1845,7 @@
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.solid.tsx",
         "src/shared/services/index.ts"
       ],
@@ -3623,6 +3625,7 @@
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
         "src/features/gallery/types.ts",
         "src/shared/components/ui/Toolbar/Toolbar.solid.tsx",
         "src/shared/index.ts"
@@ -8092,6 +8095,7 @@
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/shared/components/hoc/GalleryHOC.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
         "src/shared/components/ui/index.ts",
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
@@ -9722,7 +9726,8 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx"
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -10065,6 +10070,172 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../../shared/components/ui/Button/Button.solid",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.solid.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../shared/components/ui/StandardProps",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/StandardProps.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../../shared/services/LanguageService",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/LanguageService.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./VerticalImageItem.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/types/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/types/media.types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/types/media.types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Button/Button.solid.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./Button.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid.tsx",
+        "src/shared/components/ui/Button/IconButton.solid.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -13353,53 +13524,6 @@
         }
       ],
       "dependents": [],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Button/Button.solid.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./Button.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/Button.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Button/IconButton.solid.tsx"
-      ],
       "orphan": false,
       "valid": true
     },
@@ -17990,8 +18114,8 @@
     "warn": 0,
     "info": 4,
     "ignore": 0,
-    "totalCruised": 302,
-    "totalDependenciesCruised": 810,
+    "totalCruised": 303,
+    "totalDependenciesCruised": 816,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
