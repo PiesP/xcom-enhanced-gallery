@@ -5920,16 +5920,49 @@ KeyboardHelpOverlay Solid.js 재작성, 모든 any 타입 제거 (38개 to 0개)
 - Dev: 1,032 KB, Prod: 329 KB (gzip 88 KB)
 - UserScript validation: PASSED
 
-#### 알려진 이슈
+### 2025-01-25 — Phase 7.1: REFACTOR 완료 (focusTrap 통합 및 코드 정리)
 
-1. 테스트 격리 문제 (7/10 tests fail)
-2. JSX 변환 이슈 (vendors getter 적용 시)
-3. Space 키 미구현 (Low Priority)
+**목표**: 이벤트 충돌 방지 및 코드 단순화
+
+#### 변경 사항
+
+1. **GalleryContainer 단순화** (76% 코드 감소)
+   - Escape 키 직접 처리 로직 제거
+   - createEffect, EventManager 사용 제거
+   - 코드 라인 수: 50 → 12 lines
+
+2. **GalleryRenderer에 onEscape 추가**
+   - KeyboardNavigator를 통한 중앙집중식 Escape 처리
+   - onLeft/Right/Home/End와 일관성 있는 구조
+
+3. **테스트 개선**
+   - afterEach에 cleanupFunctions 배열 추가
+   - LIFO 방식 정리 및 비동기 대기
+
+#### REFACTOR 결과
+
+- ✅ 이벤트 충돌 방지
+- ✅ 코드 단순화 및 유지보수성 향상
+- ✅ 중앙집중식 키보드 이벤트 처리 완성
+- 📝 테스트 14/20 fail (JSX 변환 이슈, 별도 추적)
+
+#### 빌드 검증
+
+- TypeScript: 0 errors, ESLint: 0 warnings
+- Dev: 1,032 KB (1,845 KB sourcemap), Prod: 329 KB (88 KB gzip)
+- Dependencies: 253 modules, 627 dependencies
+- 커밋: af4c3813
 
 #### 사용자 영향
 
 - ✅ ArrowLeft/Right로 이미지 네비게이션
 - ✅ Home/End로 첫/마지막 이동
 - ✅ 기본 스크롤 차단
+
+#### 알려진 이슈 (별도 추적)
+
+1. vendors getter 적용 불가 (JSX 변환 이슈)
+2. 테스트 격리 문제 (통합 테스트 환경, 빌드에 영향 없음)
+3. Space 키 미구현 (Low Priority)
 
 ---
