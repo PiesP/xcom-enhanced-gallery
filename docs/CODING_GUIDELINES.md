@@ -845,12 +845,12 @@ var(--color-overlay-backdrop); }
 
 ### 외부 의존성 접근 (Vendor Getters)
 
-- preact, @preact/signals, Userscript API(GM\_\*) 등 외부 의존성은 반드시 전용
+- solid-js, solid-js/web, Userscript API(GM\_\*) 등 외부 의존성은 반드시 전용
   getter를 통해 접근합니다.
 - 직접 import 금지. 테스트에서 정적 스캔으로 차단되며, getter는 모킹이 가능해야
   합니다.
 - 예:
-  `import { getPreact } from '@shared/external/vendors'; const { useEffect } = getPreact();`
+  `import { getSolid } from '@shared/external/vendors'; const { createSignal } = getSolid();`
 
 #### ZIP 생성 정책 (Adapter)
 
@@ -1230,15 +1230,14 @@ async function loadImage(url: string): Promise<Result<HTMLImageElement>> {
 
 ## 🧩 컴포넌트 패턴
 
-### Preact 컴포넌트
+### Solid.js 컴포넌트
 
 ```typescript
-import type { ComponentProps } from '@shared/types';
-import { getPreact, getPreactSignals } from '@shared/external/vendors';
+import type { Component } from 'solid-js';
+import { getSolid } from '@shared/external/vendors';
 import styles from './GalleryItem.module.css';
 
-const { useCallback } = getPreact();
-const { signal } = getPreactSignals();
+const { createSignal } = getSolid();
 
 interface GalleryItemProps {
   readonly item: MediaItem;
@@ -1246,48 +1245,59 @@ interface GalleryItemProps {
   onSelect?: (item: MediaItem) => void;
 }
 
-export function GalleryItem({ item, className, onSelect }: GalleryItemProps) {
-  const isSelected = signal(false);
+export const GalleryItem: Component<GalleryItemProps> = (props) => {
+  const [isSelected, setIsSelected] = createSignal(false);
 
-  const handleClick = useCallback(() => {
-    onSelect?.(item);
-  }, [item, onSelect]);
+  const handleClick = () => {
+    props.onSelect?.(props.item);
+  };
 
   return (
-    <div className={`${styles.item} ${className || ''}`} onClick={handleClick}>
-      <img src={item.thumbnail} alt={item.description} />
+    <div
+      class={`${styles.item} ${props.className || ''}`}
+      onClick={handleClick}
+    >
+      <img src={props.item.thumbnail} alt={props.item.description} />
     </div>
   );
-}
+};
 ```
 
-### 상태 관리 (Signals)
+### 상태 관리 (Solid Signals)
 
 ```typescript
-import { getPreactSignals } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 
-const { signal, computed } = getPreactSignals();
+const { createSignal, createMemo } = getSolid();
 
 // Signal 정의
-export const mediaItems = signal<MediaItem[]>([]);
-export const selectedIndex = signal(0);
+export const [mediaItems, setMediaItems] = createSignal<MediaItem[]>([]);
+export const [selectedIndex, setSelectedIndex] = createSignal(0);
 
-// Computed values
-export const currentItem = computed(() => {
-  const items = mediaItems.value;
-  const index = selectedIndex.value;
+// Computed values (Memo)
+export const currentItem = createMemo(() => {
+  const items = mediaItems();
+  const index = selectedIndex();
   return items[index] || null;
 });
 
-// Action 함수 (직접 signal 변경 금지)
-export function setMediaItems(items: MediaItem[]) {
-  mediaItems.value = items;
-  selectedIndex.value = 0;
+// Action 함수 (setter 사용)
+export function updateMediaItems(items: MediaItem[]) {
+  setMediaItems(items);
+  setSelectedIndex(0);
 }
 
 export function selectNext() {
-  if (selectedIndex.value < mediaItems.value.length - 1) {
-    selectedIndex.value++;
+  if (selectedIndex() < mediaItems().length - 1) {
+    setSelectedIndex(prev => prev + 1);
+  }
+}
+
+export function selectPrevious() {
+  if (selectedIndex() > 0) {
+    setSelectedIndex(prev => prev - 1);
+  }
+}
   }
 }
 ```
