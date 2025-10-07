@@ -892,29 +892,28 @@
 
 **다음 액션**:
 
-1. ⏳ 기존 Preact 컴포넌트 테스트 실패 원인 분석 및 수정
+1. ✅ 기존 Preact 컴포넌트 테스트 실패 원인 분석 및 수정 **[완료 2025-10-07]**
 2. ⏳ Phase 4 작업 계획 수립
 3. ⏳ UI 컴포넌트 마이그레이션 우선순위 결정
 4. ⏳ TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 0-3 이관
 
-**블로커**:
+**블로커 해결 완료** ✅:
 
-- 🔴 기존 Preact 컴포넌트 테스트 133개 실패 (Preact hooks context 초기화 문제)
-- 원인: `Cannot read properties of undefined (reading '__H')`
-- 영향: Phase 4 시작 전 해결 필요
-- 근본 원인 분석 (2025-10-07):
+- ✅ **기존 Preact 컴포넌트 테스트 133개 실패 → 653개 통과 (99.5%)**
+- 해결 방법: Custom render utility (`test/utils/render-with-vendor-preact.tsx`)
+- 핵심 솔루션:
+  - Vendor manager의 Preact 인스턴스를 사용하는 커스텀 렌더 함수 작성
+  - @testing-library/preact와 호환되는 인터페이스 제공
+  - 테스트 렌더링과 컴포넌트 훅이 동일한 Preact 인스턴스 사용 보장
+- 근본 원인:
   - @testing-library/preact가 preact를 직접 import하여 사용
   - Vendor manager가 제공하는 Preact 인스턴스와 불일치
-  - 테스트에서 vendor의 `h`와 testing-library의 `render`를 혼용하면 hooks
-    context 불일치 발생
-  - 해결 시도:
-    - vitest.config.ts에 preact 모듈 alias 추가 (효과 없음)
-    - test/setup.ts에서 Preact options 및 hooks context 초기화 (부분 효과)
-    - test/utils/vendor-testing-library.ts 래퍼 작성 (검증 필요)
-  - 추천 해결책:
-    1. JSX 구문 사용 (h() 함수 대신)
-    2. 또는 testing-library가 사용하는 preact를 vendor manager와 통일
-    3. 또는 preact를 single instance로 강제 (모듈 해상도 제어)
+  - 두 개의 서로 다른 Preact 인스턴스 → 훅 context 불일치 (`__H` undefined)
+- 수정된 파일 (16개):
+  - 신규: `test/utils/render-with-vendor-preact.tsx`
+  - UI 컴포넌트 테스트 9개, 기능 테스트 3개, 훅 테스트 1개, 격리 테스트 2개
+- 커밋: `fix: resolve preact hooks context mismatch in 15 test files` (6fa79d8d)
+- 병합: `Merge branch 'fix/test-jsx-syntax' into master`
 
 **Phase 3 → 4 준비 작업 (2025-10-07)**:
 
