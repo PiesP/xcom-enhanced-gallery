@@ -8,7 +8,7 @@
  */
 
 import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
-import { toolbarSlideDown, toolbarSlideUp } from '@shared/services/AnimationService';
+import { toolbarSlideDown, toolbarSlideUp } from '@shared/utils/animations';
 
 export interface CreateToolbarPositionOptions {
   /** 툴바 element */
