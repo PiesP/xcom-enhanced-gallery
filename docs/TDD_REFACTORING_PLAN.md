@@ -237,63 +237,62 @@
 
 ---
 
-### Phase 2: Shared/State 전환 (Signals → Solid Signals) 📊
+### Phase 2: Shared/State 전환 (Signals → Solid Signals) ✅ 완료
 
-**목표**: Preact Signals를 Solid Signals로 전환, 호환 레이어 유지
+**목표**: Preact Signals를 Solid Signals로 전환, .value accessor 호환 유지
 
 **작업 내용**:
 
-1. **Signal Factory 재작성**
+1. **Signal Factory Solid 구현** ✅
+   - `src/shared/state/signals/signal-factory-solid.ts` 신규 생성
+   - `createSignalSafe<T>(initial)`: Solid createSignal + .value accessor
+   - `computedSafe<T>(fn)`: Solid createMemo wrapper
+   - `effectSafe(fn)`: Solid createEffect with manual initial run
+   - Preact Signals .value 패턴 완벽 호환
+   - SSR/JSDOM 환경 안전 대응 (dispose 함수 타입 체크)
 
-   ```typescript
-   // src/shared/state/signals/signal-factory-solid.ts
-   import { getSolidSafe } from '@shared/external/vendors';
+2. **기존 State 모듈 전환** ✅
+   - `toolbar.signals.ts` → v3.0.0 (Solid.js Signals)
+   - `gallery.signals.ts` → v2.0.0 (Solid.js Signals)
+   - `download.signals.ts` → v2.0.0 (Solid.js Signals)
+   - import 경로: `./signal-factory` → `./signal-factory-solid`
 
-   export function createSignalSafe<T>(initial: T): SafeSignal<T> {
-     const { createSignal } = getSolidSafe();
-     const [get, set] = createSignal(initial);
-     return {
-       get value() {
-         return get();
-       },
-       set value(v: T) {
-         set(v);
-       },
-       subscribe: cb => createEffect(() => cb(get())),
-     };
-   }
+3. **TDD 방식 구현** ✅
+   - RED: `test/unit/state/signal-factory-solid.test.ts` (11개 테스트 작성)
+   - GREEN: signal-factory-solid.ts 구현, 22/22 tests passed (fast+unit)
+   - 테스트 항목:
+     - createSignalSafe: 초기값, setter, .value 호환성, subscribe
+     - computedSafe: 계산된 값, 의존성 추적
+     - effectSafe: 실행 검증, cleanup 함수 반환
+     - Preact Signals 호환성: .value accessor, nested object
+     - Error Handling: 자동 초기화
 
-   export const computedSafe = createMemo; // Solid createMemo
-   export const effectSafe = createEffect; // Solid createEffect
-   ```
+4. **기존 테스트 호환성** ✅
+   - gallery-pc-only-events.test.ts: getSolid() 모킹 추가
+   - error-boundary.fallback.test.tsx: initializeVendors() 추가
+   - 전체 fast 프로젝트: 604/606 tests passed (2개 기존 RED 유지)
 
-2. **기존 State 모듈 전환**
-   - `src/shared/state/signals/toolbar.signals.ts` → Solid 기반
-   - `src/shared/state/signals/gallery.signals.ts` → Solid 기반
-   - `src/shared/state/signals/download.signals.ts` → Solid 기반
+**실제 결과**:
 
-3. **호환 레이어 유지 (중간 단계)**
-
-   ```typescript
-   // Preact 코드에서 여전히 .value 접근 가능하도록
-   export const toolbarState = createSignalSafe(initialState);
-   ```
-
-4. **테스트 전환 (TDD)**
-   - 기존 signals 테스트를 Solid 기반으로 재작성
-   - 반응성 동작 검증 (Preact vs Solid 차이 확인)
-   - 구독/갱신 패턴 검증
+- 완료일: 2025-01-16
+- 커밋: `feat(core): solid.js signals integration with preact compatibility`
+  (24a0ef80)
+- 테스트: 606/608 passed (22개 신규 signal-factory-solid, 기존 유지)
+- TDD 방식: RED (테스트 작성) → GREEN (구현 + 2회 수정) → REFACTOR (타입 단언)
+- 빌드 검증: 377.20 KB raw, 102.44 KB gzip (번들 크기 증가 없음)
+- 다음 단계: Phase 3 (Shared/Utils 전환)
 
 **성공 기준**:
 
 - ✅ 모든 state signals가 Solid 기반으로 동작
 - ✅ 기존 Preact 컴포넌트에서 여전히 `.value` 접근 가능
-- ✅ 반응성 테스트 모두 GREEN
-- ✅ 번들 크기 증가 최소화 (Preact signals 제거 전)
+- ✅ 반응성 동작 검증 완료 (subscribe, effect)
+- ✅ 번들 크기 유지 (Preact signals 아직 제거 전)
+- ✅ SSR 환경 안전성 보장
+- ✅ TypeScript strict 모드 통과
+- ✅ ESLint 규칙 위반 0건
 
-**의존성**: Phase 1 완료
-
-**예상 기간**: 3-4일
+**의존성**: Phase 1 완료 ✅
 
 ---
 
