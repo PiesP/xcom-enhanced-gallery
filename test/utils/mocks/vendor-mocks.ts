@@ -1,6 +1,6 @@
 /**
  * Vendor 라이브러리 모킹 유틸리티
- * 프로젝트의 vendors getter 패턴에 맞는 테스트 Mock
+ * Solid.js 중심으로 프로젝트의 vendors getter 패턴에 맞는 테스트 Mock 제공
  */
 
 import { vi } from 'vitest';
@@ -8,199 +8,6 @@ import { vi } from 'vitest';
 // ================================
 // Mock Vendor Implementations
 // ================================
-
-/**
- * Mock fflate API 생성
- */
-export function createMockFflate() {
-  return {
-    zip: vi.fn().mockImplementation((files, callback) => {
-      // 간단한 zip 시뮬레이션
-      const result = new Uint8Array([0x50, 0x4b, 0x03, 0x04]); // ZIP 매직 넘버
-      callback(null, result);
-    }),
-
-    unzip: vi.fn().mockImplementation((data, callback) => {
-      // 간단한 unzip 시뮬레이션
-      callback(null, { 'test.txt': new Uint8Array([116, 101, 115, 116]) });
-    }),
-
-    strToU8: vi.fn().mockImplementation(str => {
-      // TextEncoder 대신 간단한 변환
-      const bytes = [];
-      for (let i = 0; i < str.length; i++) {
-        bytes.push(str.charCodeAt(i));
-      }
-      return new Uint8Array(bytes);
-    }),
-
-    strFromU8: vi.fn().mockImplementation(data => {
-      // TextDecoder 대신 간단한 변환
-      return String.fromCharCode.apply(null, Array.from(data));
-    }),
-
-    zipSync: vi.fn().mockImplementation(() => {
-      return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
-    }),
-
-    unzipSync: vi.fn().mockImplementation(() => {
-      return { 'test.txt': new Uint8Array([116, 101, 115, 116]) };
-    }),
-
-    deflate: vi.fn().mockImplementation((data, callback) => {
-      // 압축된 데이터 시뮬레이션
-      const compressed = new Uint8Array(Math.floor(data.length * 0.7));
-      callback(null, compressed);
-    }),
-
-    inflate: vi.fn().mockImplementation((data, callback) => {
-      // 압축 해제된 데이터 시뮬레이션
-      const decompressed = new Uint8Array(Math.floor(data.length * 1.3));
-      callback(null, decompressed);
-    }),
-  };
-}
-
-/**
- * Mock Preact API 생성
- */
-export function createMockPreact() {
-  const MockComponent = vi.fn().mockImplementation(function MockComponent() {
-    return { render: vi.fn() };
-  });
-
-  return {
-    h: vi.fn().mockImplementation((type, props, ...children) => {
-      return {
-        type,
-        props: { ...props, children: children.length === 1 ? children[0] : children },
-        key: props?.key || null,
-        ref: props?.ref || null,
-      };
-    }),
-
-    render: vi.fn().mockImplementation((vnode, container) => {
-      // 간단한 렌더링 시뮬레이션 (document 사용하지 않음)
-      if (container && typeof container.appendChild === 'function') {
-        const mockElement = { textContent: JSON.stringify(vnode) };
-        container.appendChild(mockElement);
-      }
-    }),
-
-    Component: MockComponent,
-
-    Fragment: vi.fn().mockImplementation(props => props.children),
-
-    createContext: vi.fn().mockImplementation(defaultValue => ({
-      Provider: vi.fn(),
-      Consumer: vi.fn(),
-      _defaultValue: defaultValue,
-    })),
-
-    cloneElement: vi.fn().mockImplementation((vnode, props) => {
-      return { ...vnode, props: { ...vnode?.props, ...props } };
-    }),
-
-    createRef: vi.fn().mockImplementation(() => ({ current: null })),
-
-    isValidElement: vi.fn().mockImplementation(obj => {
-      return obj != null && typeof obj === 'object' && 'type' in obj;
-    }),
-
-    options: {},
-
-    createElement: vi.fn().mockImplementation((type, props, ...children) => {
-      return {
-        type,
-        props: { ...props, children: children.length === 1 ? children[0] : children },
-        key: props?.key || null,
-        ref: props?.ref || null,
-      };
-    }),
-  };
-}
-
-/**
- * Mock Preact Hooks API 생성
- */
-export function createMockPreactHooks() {
-  return {
-    useState: vi.fn().mockImplementation(initialValue => {
-      const setValue = vi.fn();
-      return [initialValue, setValue];
-    }),
-
-    useEffect: vi.fn().mockImplementation(effect => {
-      // 동기적으로 effect 실행 (테스트 환경)
-      const cleanup = effect();
-      return cleanup;
-    }),
-
-    useMemo: vi.fn().mockImplementation(factory => {
-      return factory();
-    }),
-
-    useCallback: vi.fn().mockImplementation(callback => {
-      return callback;
-    }),
-
-    useRef: vi.fn().mockImplementation(initialValue => {
-      return { current: initialValue };
-    }),
-
-    useContext: vi.fn().mockImplementation(context => {
-      return context?._defaultValue;
-    }),
-
-    useReducer: vi.fn().mockImplementation((reducer, initialState) => {
-      const dispatch = vi.fn();
-      return [initialState, dispatch];
-    }),
-
-    useLayoutEffect: vi.fn().mockImplementation(effect => {
-      // useEffect와 동일하게 처리 (테스트 환경)
-      const cleanup = effect();
-      return cleanup;
-    }),
-  };
-}
-
-/**
- * Mock Preact Signals API 생성
- */
-export function createMockPreactSignals() {
-  return {
-    signal: vi.fn().mockImplementation(initialValue => {
-      const signalObj = {
-        value: initialValue,
-        peek: () => signalObj.value,
-        subscribe: vi.fn(),
-        unsubscribe: vi.fn(),
-      };
-      return signalObj;
-    }),
-
-    computed: vi.fn().mockImplementation(computation => {
-      const computedObj = {
-        value: computation(),
-        peek: () => computedObj.value,
-        subscribe: vi.fn(),
-        unsubscribe: vi.fn(),
-      };
-      return computedObj;
-    }),
-
-    effect: vi.fn().mockImplementation(fn => {
-      const dispose = vi.fn();
-      fn(); // 즉시 실행
-      return dispose;
-    }),
-
-    batch: vi.fn().mockImplementation(fn => {
-      return fn(); // 동기적으로 실행
-    }),
-  };
-}
 
 /**
  * Mock Motion API 생성
@@ -232,40 +39,13 @@ export function createMockMotion() {
   };
 }
 
-/**
- * Mock Preact Compat API 생성
- */
-export function createMockPreactCompat() {
-  return {
-    forwardRef: vi.fn().mockImplementation(component => {
-      // forwardRef 컴포넌트 시뮬레이션
-      const wrappedComponent = vi.fn().mockImplementation((props, ref) => {
-        return component(props, ref);
-      });
-      wrappedComponent.displayName = `forwardRef(${component.name || 'Component'})`;
-      return wrappedComponent;
-    }),
-
-    memo: vi.fn().mockImplementation((component, areEqual) => {
-      // memo 컴포넌트 시뮬레이션
-      const memoizedComponent = vi.fn().mockImplementation(props => {
-        return component(props);
-      });
-      memoizedComponent.displayName = `memo(${component.name || 'Component'})`;
-      memoizedComponent._isMemoized = true;
-      memoizedComponent.compare = areEqual;
-      return memoizedComponent;
-    }),
-  };
-}
-
 // ================================
 // Vendor Manager Mock
 // ================================
 
 /**
  * Vendor Manager Mock 클래스
- * 실제 프로젝트의 VendorManager와 호환되는 인터페이스
+ * 실제 프로젝트의 VendorManager와 호환되는 인터페이스 (Solid.js 전용)
  */
 export class MockVendorManager {
   static instance = null;
@@ -278,41 +58,6 @@ export class MockVendorManager {
 
   static resetInstance() {
     MockVendorManager.instance = null;
-  }
-
-  async getFflate() {
-    if (!this.cache.has('fflate')) {
-      this.cache.set('fflate', createMockFflate());
-    }
-    return this.cache.get('fflate');
-  }
-
-  async getPreact() {
-    if (!this.cache.has('preact')) {
-      this.cache.set('preact', createMockPreact());
-    }
-    return this.cache.get('preact');
-  }
-
-  async getPreactHooks() {
-    if (!this.cache.has('preact-hooks')) {
-      this.cache.set('preact-hooks', createMockPreactHooks());
-    }
-    return this.cache.get('preact-hooks');
-  }
-
-  async getPreactSignals() {
-    if (!this.cache.has('preact-signals')) {
-      this.cache.set('preact-signals', createMockPreactSignals());
-    }
-    return this.cache.get('preact-signals');
-  }
-
-  async getPreactCompat() {
-    if (!this.cache.has('preact-compat')) {
-      this.cache.set('preact-compat', createMockPreactCompat());
-    }
-    return this.cache.get('preact-compat');
   }
 
   getMotion() {
@@ -340,11 +85,6 @@ export function setupVendorMocks() {
 
   // @shared/external/vendors 모듈 Mock
   vi.doMock('@shared/external/vendors', () => ({
-    getFflate: () => mockManager.getFflate(),
-    getPreact: () => mockManager.getPreact(),
-    getPreactHooks: () => mockManager.getPreactHooks(),
-    getPreactSignals: () => mockManager.getPreactSignals(),
-    getPreactCompat: () => mockManager.getPreactCompat(),
     getMotion: () => mockManager.getMotion(),
   }));
 

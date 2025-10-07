@@ -29,7 +29,8 @@ function shallowEqual<T extends Record<string, unknown>>(a: T, b: T): boolean {
 }
 
 /**
- * Preact 컴포넌트 메모화
+ * 컴포넌트 메모화 (Solid.js 네이티브 기능 권장)
+ * @deprecated Solid.js는 기본적으로 최적화되어 있어 메모화가 불필요함
  */
 export function memo<P extends Record<string, unknown>>(
   Component: (props: P) => unknown,
@@ -53,20 +54,18 @@ export function memo<P extends Record<string, unknown>>(
 }
 
 /**
- * 콜백 메모화 (useCallback 대체)
+ * 콜백 메모화
+ * @deprecated Solid.js는 컴포넌트가 1회 실행되므로 useCallback 불필요
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useCallback<T extends (...args: any[]) => any>(callback: T, _deps: unknown[]): T {
-  // 간단한 의존성 배열 기반 메모화
-  // 실제 프로덕션에서는 Preact의 useCallback 사용 권장
   return callback;
 }
 
 /**
- * 값 메모화 (useMemo 대체)
+ * 값 메모화
+ * @deprecated Solid.js는 createMemo를 사용
  */
 export function useMemo<T>(factory: () => T, _deps: unknown[]): T {
-  // 간단한 의존성 배열 기반 메모화
-  // 실제 프로덕션에서는 Preact의 useMemo 사용 권장
   return factory();
 }
