@@ -137,11 +137,6 @@
   --xeg-surface-glass-border: var(--color-glass-border);
   --xeg-surface-glass-shadow: var(--shadow-lg);
 
-  /* Surface Glass - Unified Tokens */
-  --xeg-surface-glass-bg: var(--color-glass-bg);
-  --xeg-surface-glass-border: var(--color-glass-border);
-  --xeg-surface-glass-shadow: var(--shadow-lg);
-
   /* Surface Glass Hover States */
   --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
   --xeg-surface-glass-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -196,7 +191,6 @@
     /* prefers-color-scheme 다크 모드 갤러리 배경 - 시인성 개선 */
     --xeg-gallery-bg: var(--color-gray-900);
     --xeg-bg-toolbar: var(--color-gray-800);
-    --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
     /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
   }
 }
@@ -283,11 +277,9 @@
   --xeg-modal-bg: var(--xeg-modal-bg-dark);
   --xeg-modal-border: var(--xeg-modal-border-dark);
 
-  /* 다크 테마 Glass Surface 시인성 개선 */
-  --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
+  /* 다크 테마 Glass Surface 시인성 개선 - 이미 위 [data-theme='dark'] 블록에 정의됨 */
   --xeg-surface-glass-bg-dark: rgba(30, 30, 30, 0.95);
   --xeg-surface-glass-border-dark: rgba(255, 255, 255, 0.2);
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
 /* 시스템 테마 기본 지원 */
