@@ -60,7 +60,6 @@ class GalleryCleanupManager {
  */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
-  private isRenderingFlag = false;
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private disposeComponent: (() => void) | null = null; // Solid dispose function
@@ -153,17 +152,19 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   /**
    * 갤러리 렌더링 - 한 번만 실행
+   * Phase 9.16: 이중 렌더링 방지 - container 존재 여부로만 판단
    */
   private renderGallery(): void {
-    if (this.isRenderingFlag || this.container) {
-      // 이미 렌더링 중이거나 컨테이너가 존재하면 중복 렌더링 방지
+    // Phase 9.16: container가 이미 존재하면 중복 렌더링 방지
+    // isRenderingFlag는 제거 - container 존재가 더 정확한 가드 조건
+    if (this.container) {
+      logger.debug('[GalleryRenderer] 이미 렌더링됨, 중복 렌더링 방지');
       return;
     }
 
     const state = galleryState.value;
     if (!state.isOpen || state.mediaItems.length === 0) return;
 
-    this.isRenderingFlag = true;
     logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트');
 
     try {
@@ -173,8 +174,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     } catch (error) {
       logger.error('[GalleryRenderer] 렌더링 실패:', error);
       setError('갤러리 렌더링에 실패했습니다.');
-    } finally {
-      this.isRenderingFlag = false;
     }
   }
 
@@ -277,7 +276,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupGallery(): void {
     logger.info('[GalleryRenderer] 정리 시작');
 
-    this.isRenderingFlag = false;
     this.cleanupContainer();
     this.cleanupManager.executeAll();
 
@@ -328,7 +326,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   isRendering(): boolean {
-    return this.isRenderingFlag;
+    // Phase 9.16: container 존재 여부로 렌더링 상태 판단
+    return this.container !== null;
   }
 
   destroy(): void {

@@ -5,6 +5,147 @@
 
 ---
 
+## Phase 9.15: SETTINGS-MODAL-TOGGLE-BUG (2025-01-08 ✅)
+
+### 목표
+
+설정 모달 토글 버그 수정 - 버튼 클릭 시 열림/닫힘이 정상적으로 전환되도록 수정
+
+### 배경
+
+**버그 발견 경위**:
+
+- 유저스크립트 로그 분석 (`x.com-1759902697873.log`) 중 Critical 버그 발견
+- 증상: 설정 버튼을 여러 번 클릭해도 모달이 닫히지 않음
+- 로그: `{previousState: true}` → `{newState: true}` 반복 (토글 실패)
+- 영향: 사용자가 설정 버튼으로 모달을 닫을 수 없음 (갤러리 종료로만 닫힘)
+
+**근본 원인**:
+
+- `ToolbarWithSettings.tsx`의 `handleOpenSettings()` 함수가 **항상
+  `setIsSettingsOpen(true)`로만 설정**
+- 토글 로직이 아닌 "항상 열기" 로직으로 구현되어 있었음
+- Phase 9.12에서 ModalShell의 반응성 문제를 해결했으나, 실제로는 토글 로직
+  자체가 잘못되어 있었음
+
+### 작업 수행
+
+#### Phase 1: RED - 설정 모달 토글 통합 테스트 작성
+
+**파일**: `test/behavioral/settings-modal-toggle.test.tsx`
+
+**시나리오**:
+
+1. ToolbarWithSettings 렌더링
+2. 설정 버튼 연속 5회 클릭
+3. 각 클릭마다 모달 상태가 교대로 변경되는지 확인
+   - 1회 클릭: 열림 (`modal-open` 클래스 추가)
+   - 2회 클릭: 닫힘 (`modal-open` 클래스 제거)
+   - 3회 클릭: 열림
+   - 4회 클릭: 닫힘
+   - 5회 클릭: 열림
+
+**테스트 구현 포인트**:
+
+- ModalShell은 항상 DOM에 렌더링되고 CSS로 가시성 제어
+- `backdrop` 요소의 className에 `_modal-open_[hash]` 클래스 포함 여부로 상태
+  확인
+- `getBackdrop()` 헬퍼 함수로 항상 최신 요소 조회 (Solid.js 반응성 대응)
+- `waitFor`를 사용하여 Solid.js의 비동기 상태 업데이트 대응
+
+**초기 테스트 결과**: FAIL (예상대로 RED)
+
+- 1회 클릭 후: `modal-open` 클래스 추가됨 ✅
+- 2회 클릭 후: `modal-open` 클래스 유지됨 ❌ (닫히지 않음)
+
+#### Phase 2: GREEN - ToolbarWithSettings 토글 로직 수정
+
+**파일**: `src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx`
+
+**변경 내용**:
+
+```typescript
+// Before (버그)
+const handleOpenSettings = (): void => {
+  logger.debug('[ToolbarWithSettings] 설정 버튼 클릭됨', {
+    timestamp: new Date().toISOString(),
+    previousState: isSettingsOpen(),
+  });
+  setIsSettingsOpen(true); // ❌ 항상 true로만 설정
+  logger.debug('[ToolbarWithSettings] 설정 모달 열림 상태로 변경됨', {
+    newState: true,
+  });
+};
+
+// After (수정)
+const handleOpenSettings = (): void => {
+  const previousState = isSettingsOpen();
+  logger.debug('[ToolbarWithSettings] 설정 버튼 클릭됨', {
+    timestamp: new Date().toISOString(),
+    previousState,
+  });
+  // Phase 9.15: 토글 로직으로 수정 (항상 true 설정 버그 수정)
+  setIsSettingsOpen(prev => !prev); // ✅ 토글
+  logger.debug('[ToolbarWithSettings] 설정 모달 상태 변경됨', {
+    previousState,
+    newState: !previousState,
+  });
+};
+```
+
+**수정 후 테스트 결과**: ✅ PASS (2/2 tests GREEN)
+
+- 설정 버튼 5회 연속 클릭 토글 동작 정상
+- 짝수/홀수 클릭 일관성 유지 정상
+
+#### Phase 3: REFACTOR - 테스트 및 빌드 검증
+
+**테스트 검증**:
+
+- ✅ `test/behavioral/settings-modal-toggle.test.tsx`: 2/2 PASS
+- ✅ 기존 테스트 영향 없음 확인
+
+**빌드 검증**:
+
+- ✅ Typecheck: PASS
+- ✅ Lint: PASS
+- ✅ Dependency check: 0 violations (247 modules, 704 dependencies)
+- ✅ Build Dev: 1,054.02 KB (map 1,886.96 KB)
+- ✅ Build Prod: 336.65 KB (gzip 90.32 KB)
+
+### 결과
+
+**정량적 성과**:
+
+- 🔴 Critical 버그 수정: 설정 모달 토글 불가 → 정상 토글 동작
+- 코드 변경: 1줄 (`setIsSettingsOpen(true)` →
+  `setIsSettingsOpen(prev => !prev)`)
+- 테스트 추가: 2개 (5회 토글, 일관성 검증)
+- 빌드 크기: Dev 1,054.02 KB, Prod 336.65 KB (이전 대비 +0.37 KB Dev, +0.69 KB
+  Prod)
+
+**정성적 성과**:
+
+- 사용성 개선: 사용자가 설정 버튼으로 모달을 정상적으로 닫을 수 있음
+- 로그 개선: previousState와 newState를 명확하게 로깅
+- 테스트 커버리지 증가: 토글 동작에 대한 통합 테스트 추가
+- 유지보수성 향상: 명확한 토글 패턴 (`prev => !prev`)
+
+**교훈**:
+
+- 로그 분석은 버그 발견에 매우 효과적 (실제 사용 패턴 반영)
+- 단순해 보이는 토글 버그도 사용성에 치명적 영향
+- Phase 9.12의 반응성 수정도 중요했지만, 근본 원인은 토글 로직 자체였음
+- Solid.js 테스트 시 `getBackdrop()` 같은 헬퍼로 항상 최신 요소 조회 필요
+
+**변경 파일** (2개):
+
+- ✏️ `src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx` (1줄
+  토글 로직 수정)
+- ➕ `test/behavioral/settings-modal-toggle.test.tsx` (신규, 2개 테스트)
+
+---
+
 ## Phase 9.14: TOOLBAR-CSS-CONSOLIDATION (2025-01-08 ✅)
 
 ### 목표
