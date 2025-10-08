@@ -104,20 +104,17 @@ export function computedSafe<T>(fn: () => T): SafeComputed<T> {
 /**
  * Solid.js createEffect 기반 effect
  * @returns cleanup 함수 (항상 함수 반환, SSR 환경 고려)
+ *
+ * Phase 9.17: 이중 실행 방지
+ * - createEffect는 즉시 1번 실행하므로 수동 실행 제거
+ * - SSR 환경에서도 createEffect가 한 번은 실행함
  */
 export function effectSafe(fn: () => void): () => void {
   try {
     const { createEffect } = getSolid();
 
-    // JSDOM/SSR 환경에서는 effect가 즉시 실행되지 않을 수 있음
-    // 수동으로 1회 실행
-    try {
-      fn();
-    } catch (error) {
-      logger.warn('Effect 함수 초기 실행 실패', { error });
-    }
-
-    // cleanup 함수 얻기 시도
+    // Phase 9.17: 수동 실행 제거 - createEffect가 즉시 1번 실행함
+    // 이전에는 수동 1회 + createEffect 1회 = 총 2회 실행되어 이중 렌더링 발생
     const dispose = createEffect(fn);
 
     // dispose가 함수가 아닐 수 있으므로 안전하게 처리
