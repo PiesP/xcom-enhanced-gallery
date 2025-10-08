@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/preact';
+import { render, screen, fireEvent } from '@solidjs/testing-library';
 import { h } from 'preact';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 

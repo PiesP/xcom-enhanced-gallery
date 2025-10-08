@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/preact';
+import { renderHook, act } from '@solidjs/testing-library';
 import { useToolbarPositionBased } from '@features/gallery/hooks/useToolbarPositionBased';
 
 // Mock CSS 변수 조작
@@ -263,8 +263,8 @@ describe('useToolbarPositionBased', () => {
 
       // DOM 요소에 실제 이벤트 리스너가 등록되었는지 확인하기 위해
       // mousenter/mouseleave 이벤트를 발생시켜 봅니다
-      const mouseEnterEvent = new Event('mouseenter');
-      const mouseLeaveEvent = new Event('mouseleave');
+      const mouseEnterEvent = new window.Event('mouseenter');
+      const mouseLeaveEvent = new window.Event('mouseleave');
 
       // 호버 존에 마우스 진입
       act(() => {
@@ -305,7 +305,7 @@ describe('useToolbarPositionBased', () => {
       });
 
       // 이제 이벤트가 정상 동작해야 함
-      const mouseLeaveEvent = new Event('mouseleave');
+      const mouseLeaveEvent = new window.Event('mouseleave');
       act(() => {
         hoverZoneElement.dispatchEvent(mouseLeaveEvent);
       });

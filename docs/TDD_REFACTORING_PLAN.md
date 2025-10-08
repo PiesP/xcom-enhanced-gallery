@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: 정리/대기 중 🎯
+> **Last updated**: 2025-01-08 **Status**: Phase 9.8 진행 중 🚧
 
 ## Overview
 
@@ -9,25 +9,50 @@
 
 ---
 
-## Current Status
+## Current Phase
 
-### 최근 완료: Phase 9.7
+### Phase 9.8: 삭제된 파일 import 정리
 
-Phase 9.7 (Solid.js 패턴 일관성 및 메모리 안전성 점검)이 완료되었습니다.
+**배경**:
 
-**주요 성과** (2025-01-08 완료 ✅):
+Preact에서 Solid.js로 전환하면서 대부분의 테스트는 `@solidjs/testing-library`로
+마이그레이션되었지만, 일부 테스트 파일(11개)에서 여전히
+`@testing-library/preact`를 사용하고 있습니다. 이는 코드베이스의 일관성을 해치고
+불필요한 의존성을 유지하게 만듭니다.
 
-- ✅ Show/Portal 안티패턴: 0건 (전체 스캔 결과 위반 없음)
-- ✅ createEffect 메모리 누수: 0건 (cleanup 패턴 모두 준수)
-- ✅ Show 중첩 깊이: 모두 2단계 이하 유지
-- ✅ 패턴 가드 테스트 추가 (2개 파일, 571+468 lines)
-- ✅ CODING_GUIDELINES.md에 Solid.js 패턴 가이드 추가 (~150 lines)
-- ✅ 빌드: Prod 331.79 KB (gzip 88.57 KB)
+**문제점**:
 
-상세 내용은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`의 Phase 9.7 섹션을
-참고하세요.
+1. **일관성 결여**: 동일한 기능(컴포넌트 테스트)에 두 가지 테스팅 라이브러리가
+   혼용됨
+2. **불필요한 의존성**: `@testing-library/preact`와 `preact` 패키지가 더 이상
+   런타임에서 사용되지 않음
+3. **혼란**: `test/utils/vendor-testing-library.ts`가 Preact를 래핑하지만
+   실제로는 사용되지 않음
 
----
+**점검 항목**:
+
+1. **@testing-library/preact import** (High):
+   - 11개 테스트 파일에서 직접 import 사용
+   - `@solidjs/testing-library`로 교체 필요
+2. **vendor-testing-library.ts 파일** (Medium):
+   - Preact 래퍼이지만 사용되지 않음
+   - 삭제 검토 필요
+3. **관련 유틸/훅 경로** (Low):
+   - 삭제된 파일 import 여부 스캔
+
+**작업 계획** (RED → GREEN → REFACTOR):
+
+1. RED: 삭제된 import 스캔 테스트 작성
+   - `test/unit/lint/deprecated-preact-imports.scan.red.test.ts`
+   - `@testing-library/preact` import 검출
+2. GREEN: import 교체 및 파일 정리
+   - 11개 파일에서 `@solidjs/testing-library`로 교체
+   - `test/utils/vendor-testing-library.ts` 제거
+3. REFACTOR: 빌드 검증 및 문서화
+   - `npm run build` 실행
+   - 테스트 통과 확인
+
+**우선순위**: Medium (코드 품질 개선, 의존성 정리)
 
 ### 대기 중 (향후 Phase 후보)
 

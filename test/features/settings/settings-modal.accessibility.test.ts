@@ -1,12 +1,10 @@
 // Safe document accessor (jsdom or browser)
-function getDoc(): Document | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getDoc(): typeof document | null {
   if (typeof document !== 'undefined') return document;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (globalThis as any)?.document || null;
 }
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
+import { render, fireEvent, waitFor } from '@solidjs/testing-library';
 import { getPreact, initializeVendors } from '@shared/external/vendors';
 import { ToolbarWithSettings } from '../../../src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
 

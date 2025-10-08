@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
+import { render, fireEvent, waitFor } from '@solidjs/testing-library';
 import { getPreact, initializeVendors } from '@shared/external/vendors';
 
 // Mock services

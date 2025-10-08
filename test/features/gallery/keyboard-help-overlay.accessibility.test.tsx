@@ -3,7 +3,7 @@ function getDoc() {
   return (globalThis as any)?.document || null;
 }
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
+import { render, fireEvent, waitFor } from '@solidjs/testing-library';
 import { getPreact, getPreactSignals, initializeVendors } from '@/shared/external/vendors';
 import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
