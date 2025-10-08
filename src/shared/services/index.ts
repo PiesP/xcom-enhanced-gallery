@@ -65,6 +65,13 @@ export { BrowserService } from '@shared/browser';
 // 8. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './ServiceManager';
 
+// 9. 입력 서비스
+export { KeyboardNavigator, keyboardNavigator } from './input/KeyboardNavigator';
+export type {
+  KeyboardNavigatorHandlers,
+  KeyboardNavigatorOptions,
+} from './input/KeyboardNavigator';
+
 // ====================================
 // 유틸리티 및 타입들
 // ====================================

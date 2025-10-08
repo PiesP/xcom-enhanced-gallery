@@ -148,6 +148,36 @@ SRC-PATH-RENAME-01) 분석 결과, 2개는 이미 해결되었고 1개(SRC-PATH-
 
 **상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.10 참조
 
+### Phase 9.11: KBD-CENTRALIZATION-MISSING 완료 (키보드 리스너 중앙화) ✅
+
+**배경**: keyboard-listener.centralization.policy.test가 1건 위반 검출.
+VerticalGalleryView가 document.addEventListener('keydown')을 직접 사용
+
+**해결 내용**:
+
+- RED: keyboard-listener.centralization.policy.test 실행 (1건 위반 검출)
+  - `VerticalGalleryView.tsx:262`: document.addEventListener('keydown',
+    handleKeyDown)
+- GREEN: KeyboardNavigator 서비스 사용으로 전환
+  - `services/index.ts`에 keyboardNavigator export 추가
+  - `VerticalGalleryView.tsx`에서 keyboardNavigator.subscribe() 사용
+  - Escape 키 핸들링 중앙화 (context: 'vertical-gallery-view')
+  - createEffect의 onCleanup으로 자동 정리
+- TEST: keyboard-listener.centralization.policy.test PASS (1건 → 0건)
+
+**결과**:
+
+- ✅ 키보드 리스너 위반: 1건 → 0건 (-100%)
+- ✅ 코드 품질: 직접 이벤트 리스너 제거, EventManager 중앙화 완료
+- ✅ 빌드: Dev 1,053.53 KB (-0.03 KB, 사실상 동일)
+- ✅ 타입/린트/빌드 검증 통과
+
+**다음 Phase 후보**:
+
+1. 백로그 검토 필요 (High/Medium 우선순위 항목 완료)
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.11 참조
+
 ---
 
 ## 트러블슈팅 팁id.js 1.9\*\*, 테스트: Vitest 3 + JSDOM

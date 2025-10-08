@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 9.10 완료 ✅
+> **Last updated**: 2025-01-08 **Status**: Phase 9.11 완료 ✅
 
 ## Overview
 
@@ -10,6 +10,46 @@
 ---
 
 ## Current Phase
+
+### Phase 9.11: KBD-CENTRALIZATION-MISSING 완료 (2025-01-08 ✅)
+
+**목표**: 키보드 리스너 중앙화 - VerticalGalleryView의 직접 이벤트 리스너를
+KeyboardNavigator로 통합
+
+**완료 내역**:
+
+- ✅ RED: `keyboard-listener.centralization.policy.test.ts` 실행
+  - 1건 위반 검출: `VerticalGalleryView.tsx:262` -
+    `document.addEventListener('keydown')`
+- ✅ GREEN: KeyboardNavigator 서비스 사용으로 전환
+  - `services/index.ts`에 `keyboardNavigator` export 추가
+  - `VerticalGalleryView.tsx`에서 `keyboardNavigator.subscribe()` 사용
+  - Escape 키 핸들링 중앙화 (context: 'vertical-gallery-view')
+  - 자동 cleanup (createEffect의 onCleanup 활용)
+- ✅ GREEN: `keyboard-listener.centralization.policy.test.ts` PASS (1건 → 0건)
+- ✅ REFACTOR: 타입/린트/빌드 검증 통과
+- ✅ 빌드: Dev 1,053.53 KB (-0.03 KB vs Phase 9.10, 사실상 동일)
+
+**변경 파일** (2개):
+
+- ✏️ `src/shared/services/index.ts` (keyboardNavigator export)
+- ✏️
+  `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+  (13줄 → 16줄, 중앙화)
+
+**메트릭스**:
+
+- 키보드 리스너 위반: 1건 → 0건 (-100%)
+- 코드 품질: 직접 이벤트 리스너 제거, EventManager 중앙화 완료
+- 빌드 크기: Dev 1,053.56 KB → 1,053.53 KB (±0%)
+
+**다음 Phase 후보**:
+
+- 백로그 검토 필요 (현재 High/Medium 우선순위 항목 완료)
+
+---
+
+## Completed Phases
 
 ### Phase 9.10: I18N-MISSING-LITERALS 완료 (2025-01-08 ✅)
 
@@ -47,16 +87,7 @@
 - 컴포넌트: -2 files (HelloSolid 제거)
 - 빌드 크기: Dev 1,031.52 KB → 1,053.56 KB (+2.1%)
 
-**다음 Phase 후보** (우선순위 순):
-
-1. **`KBD-CENTRALIZATION-MISSING`: 키보드 리스너 중앙화 누락 (S, READY)**
-   - keyboard-listener.centralization.policy.test 실패
-   - 기대 효과: 키보드 입력 일관성 향상
-   - 우선순위: Medium
-
 ---
-
-## Completed Phases
 
 ### Phase 9.9: SRC-PATH-RENAME-01 완료 (2025-01-08 ✅)
 

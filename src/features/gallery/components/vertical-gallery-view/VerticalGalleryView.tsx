@@ -20,6 +20,7 @@ import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { languageService } from '../../../../shared/services/LanguageService';
+import { keyboardNavigator } from '../../../../shared/services';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
@@ -250,17 +251,22 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps) {
     }
   });
 
-  // 키보드 이벤트 처리
+  // 키보드 이벤트 처리 (중앙화된 KeyboardNavigator 사용)
   createEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        merged.onClose();
-        event.preventDefault();
+    const unsubscribe = keyboardNavigator.subscribe(
+      {
+        onEscape: () => {
+          merged.onClose();
+        },
+      },
+      {
+        context: 'vertical-gallery-view',
+        preventDefault: true,
+        stopPropagation: true,
       }
-    };
+    );
 
-    document.addEventListener('keydown', handleKeyDown);
-    onCleanup(() => document.removeEventListener('keydown', handleKeyDown));
+    onCleanup(unsubscribe);
   });
 
   // 미디어 로드 완료 핸들러
