@@ -20,6 +20,7 @@ interface EventOptions {
 
 /**
  * DOM 이벤트 등록 및 관리를 위한 유틸리티 클래스
+ * EventManager 서비스에서 내부적으로 사용됩니다.
  */
 export class DomEventManager {
   private cleanups: EventCleanup[] = [];
@@ -140,8 +141,7 @@ export class DomEventManager {
 
 /**
  * DOM 이벤트 매니저 인스턴스 생성
- *
- * @deprecated UnifiedEventManager를 사용하세요
+ * EventManager 서비스에서 내부적으로 사용됩니다.
  * @returns 새로운 내부 DOM 이벤트 매니저 인스턴스
  */
 export function createDomEventManager(): DomEventManager {

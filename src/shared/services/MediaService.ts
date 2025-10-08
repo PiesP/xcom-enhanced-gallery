@@ -821,27 +821,21 @@ export class MediaService {
 
   /**
    * 단일 미디어 다운로드
+   * BulkDownloadService로 위임하여 구현 중복을 방지합니다.
    */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
     const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadSingle(media);
   }
 
   /**
    * 여러 미디어를 ZIP으로 다운로드
+   * BulkDownloadService로 위임하여 구현 중복을 방지합니다.
    */
   async downloadMultiple(
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
     const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadMultiple(mediaItems, options);
   }

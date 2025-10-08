@@ -849,8 +849,9 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
 // ================================
 
 /**
- * 통합 이벤트 관리자 클래스
- * @deprecated 외부 소비자는 `@shared/services/EventManager`를 사용하세요. 이 클래스는 내부 호환 용도로만 유지됩니다.
+ * 갤러리 이벤트 관리자 클래스
+ * 갤러리 관련 이벤트 처리를 담당합니다.
+ * 외부에서는 `@shared/services/EventManager`를 사용하세요.
  */
 export class GalleryEventManager {
   private static instance: GalleryEventManager | null = null;

@@ -356,7 +356,7 @@ export const toastService = toastManager;
 export const toastController = toastManager;
 
 /**
- * @deprecated 이전 이름들 (하위 호환성 유지)
+ * UnifiedToastManager (하위 호환성 유지, ToastManager 권장)
  */
 export const UnifiedToastManager = ToastManager;
 

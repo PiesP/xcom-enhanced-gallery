@@ -1,11 +1,14 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 10 완료 ✅ (4/4 완료)
+> **Last updated**: 2025-10-08 **Status**: Phase 11 완료 ✅ (모든 완료)
 
 ## Overview
 
 모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
 작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
+
+**Phase 1-11 완료됨**: 모든 계획된 리팩토링이 완료되었습니다. 세부 내용은
+`TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
 ---
 
@@ -444,67 +447,6 @@ subscribe(callback: (value: T) => void): () => void {
 6. ✅ **GREEN**: Phase 10.1-10.4 검증 완료 (빌드/테스트 GREEN)
 
 **Phase 10 최종 상태**: ✅ **완료** (4/4 완료 - 100%)
-
----
-
-## Phase 11: Deprecated 항목 정리 (계획) 🟡 **중간 우선순위**
-
-### Phase 11 목표
-
-실사용이 없는 deprecated 항목을 제거하여 코드 품질을 개선합니다. 단, 실제로 사용
-중인 항목은 유지합니다.
-
-### Phase 11 작업 범위
-
-#### 11.1: 완전 미사용 Deprecated 파일 제거
-
-**제거 대상**:
-
-1. `src/shared/components/ui/Toolbar/toolbarConfig.ts` (전체 파일 deprecated,
-   테스트 전용)
-2. `src/shared/dom/DOMEventManager.ts` (UnifiedEventManager로 대체됨)
-3. `src/shared/utils/events.ts` EventManager 클래스 (내부 호환 용도로
-   표시되었으나 실사용 확인 필요)
-
-**조사 항목**:
-
-- 각 파일의 실제 참조 확인 (grep 검색)
-- 테스트에서만 사용되는지 확인
-- 제거 시 영향 범위 분석
-
-**수용 기준**:
-
-- [ ] 실사용 없는 deprecated 파일 0건
-- [ ] 빌드/테스트 GREEN 유지
-- [ ] 린트 경고 감소
-
-#### 11.2: Deprecated Props/Methods 정리
-
-**검토 대상**:
-
-1. `Button.tsx` - `variant` prop (intent로 대체됨)
-2. `ServiceManager.getDiagnostics()` - 실사용 중이므로 **유지**
-3. `BrowserService.getDiagnostics()` - 실사용 중이므로 **유지**
-4. `UnifiedToastManager` 레거시 export - 하위 호환성으로 **유지**
-
-**작업**:
-
-- variant prop: 마이그레이션 가이드 작성 후 제거
-- getDiagnostics: deprecated 태그 제거 (정상 API로 인정)
-
-**수용 기준**:
-
-- [ ] 사용되지 않는 deprecated props 0건
-- [ ] 마이그레이션 가이드 문서화
-- [ ] 실사용 API는 deprecated 태그 제거
-
-### Phase 11 예상 메트릭
-
-| 메트릭          | Phase 10  | Phase 11 예상 | 변화        |
-| --------------- | --------- | ------------- | ----------- |
-| Dev 빌드        | ~1,025 KB | ~1,020 KB     | **-5 KB**   |
-| Deprecated 파일 | 3         | **0-1**       | **정리** ✅ |
-| 코드 복잡도     | 중간      | **낮음**      | **개선** ✅ |
 
 ---
 

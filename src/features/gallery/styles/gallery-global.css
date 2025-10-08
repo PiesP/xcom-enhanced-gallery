@@ -124,8 +124,7 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - ToolbarButton.module.css로 통합됨 */
-/* @deprecated - ToolbarButton.module.css 사용 권장 */
+/* 툴바 버튼 스타일은 ToolbarButton.module.css에서 관리됩니다 */
 
 /* 갤러리 카운터 - 현대적 디자인 */
 .xeg-gallery-counter {

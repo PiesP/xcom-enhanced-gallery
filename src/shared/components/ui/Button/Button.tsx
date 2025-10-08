@@ -75,7 +75,7 @@ export interface ButtonProps {
   readonly onMouseEnter?: (event: MouseEvent) => void;
   readonly onMouseLeave?: (event: MouseEvent) => void;
   readonly ref?: (element: HTMLButtonElement | null) => void;
-  /** @deprecated Use intent instead */
+  /** iconVariant (하위 호환성 지원, intent 사용 권장) */
   readonly iconVariant?: ButtonIntent;
 }
 
