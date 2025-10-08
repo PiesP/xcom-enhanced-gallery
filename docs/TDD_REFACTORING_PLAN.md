@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 9.8 완료, 다음 Phase 대기 ⏸️
+> **Last updated**: 2025-01-08 **Status**: 활성 Phase 없음, 백로그 검토 필요 ⏸️
 
 ## Overview
 
@@ -11,15 +11,27 @@
 
 ## Current Phase
 
-### 대기 중 (향후 Phase 후보)
+### 다음 Phase 선택 필요
 
-1. **Signal/Effect 메모리 누수 점검 (Phase 9.9 후보)**:
-   - createRoot 누락 검사
-   - onCleanup 패턴 검증
-   - viewport.ts 경고 해결
+**Phase 9.8까지 완료**되었으며, 당초 계획된 Phase 9.9 (Signal/Effect 메모리 누수
+점검)는 **Phase 9.7과 Phase 10.4에서 이미 완료**되었습니다:
+
+- ✅ Phase 9.7: createEffect 메모리 관리 패턴 가드 테스트 작성 (468줄)
+- ✅ Phase 10.4: Signal Subscribe Cleanup 완료 (createRoot 적용)
+
+**다음 작업 후보** (우선순위 순):
+
+1. **`SRC-PATH-RENAME-01`: 소스 경로 정리 (S/M, READY)** ⭐ 추천
+   - 경로 리네임으로 유지보수성 향상
+   - 세부 계획: `docs/SOURCE_PATH_RENAME_PLAN.md` (문서 확인 필요)
+   - 우선순위: Medium-High (명확한 계획 존재)
+
+2. **`MEDIA-CYCLE-PRUNE-01`: shared/media 순환 참조 제거 (M)**
+   - index ↔ pipeline ↔ media-url.util 순환 제거
+   - 의존성 위생 개선, 테스트 용이성 향상
    - 우선순위: Medium
 
-2. **컴포넌트 중첩 구조 검토 (Phase 9.10 후보)**:
+3. **컴포넌트 중첩 구조 검토 (Low)**
    - 불필요한 래퍼 컴포넌트 식별
    - prop drilling 최소화
    - 우선순위: Low

@@ -58,6 +58,27 @@ plugins: [
 
 **상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.5 참조
 
+### Phase 9.8: Deprecated @testing-library/preact 정리 ✅
+
+**배경**: Preact에서 Solid.js로 전환 완료 후에도 일부 테스트(11개)가 여전히
+`@testing-library/preact`를 사용하여 일관성 문제 발생
+
+**해결 내용**:
+
+- RED: `deprecated-preact-imports.scan.red.test.ts` 작성 (11개 파일 검출)
+- GREEN: 11개 테스트 파일에서 `@solidjs/testing-library`로 import 교체
+- REFACTOR: `test/utils/vendor-testing-library.ts` 삭제 (미사용 Preact 래퍼)
+- 린트 수정: Event, IntersectionObserver, Document 타입 문제 해결
+
+**결과**:
+
+- ✅ 테스트 라이브러리 일관성 확보 (100% Solid.js)
+- ✅ 불필요한 Preact 의존성 제거 준비
+- ✅ 빌드: Prod 331.79 KB (gzip 88.57 KB) - 변동 없음
+- ✅ 모든 테스트 GREEN 유지
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.8 참조
+
 ### Phase 9.3 & 9.4: Solid.js Show 컴포넌트 중첩 제거 ✅
 
 **배경**: 설정 버튼 클릭 시 모달이 표시되지 않는 문제 발견 및 전체 프로젝트
