@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 9.16 완료 ✅
+> **Last updated**: 2025-10-08 **Status**: Phase 9.17 완료 ✅
 
 ## Overview
 
@@ -13,7 +13,8 @@
 
 ### 백로그 검토 필요
 
-Phase 9.16 (서비스 초기화 정리 및 갤러리 이중 렌더링 수정)까지 완료되었습니다.
+Phase 9.17 (갤러리 이중 렌더링 수정 - effectSafe 이중 실행 방지)까지
+완료되었습니다.
 
 다음 우선순위 항목을 검토하여 새로운 Phase를 시작하세요:
 
@@ -23,6 +24,93 @@ Phase 9.16 (서비스 초기화 정리 및 갤러리 이중 렌더링 수정)까
 ---
 
 ## Completed Phases
+
+### Phase 9.17: GALLERY-DOUBLE-RENDER-FIX 완료 (2025-10-08 ✅)
+
+**목표**: 갤러리 이중 렌더링 근본 원인 수정 - effectSafe 함수의 이중 실행 방지
+
+**배경**:
+
+- 로그 분석 결과 갤러리가 동일 시점(10:02:49.815)에 2번 렌더링됨
+- 이벤트 리스너(resize, keydown, scroll)가 3-5ms 간격으로 2번 등록됨
+- Phase 9.16에서 수정했다고 되어 있으나 실제로는 여전히 발생
+
+**근본 원인 분석**: `signal-factory-solid.ts`의 `effectSafe` 함수가 **수동
+실행 + createEffect 실행 = 총 2회 실행**:
+
+```typescript
+// 문제 코드
+try {
+  fn(); // ← 수동으로 1회 실행
+} catch (error) {
+  logger.warn('Effect 함수 초기 실행 실패', { error });
+}
+
+const dispose = createEffect(fn); // ← createEffect도 fn을 즉시 실행 (2회 실행!)
+```
+
+**해결 방법**:
+
+- **파일**: `src/shared/state/signals/signal-factory-solid.ts`
+- **변경**: `effectSafe` 함수에서 수동 실행 제거 (createEffect가 이미 즉시 1번
+  실행함)
+
+```typescript
+// Phase 9.17: 수정 후
+export function effectSafe(fn: () => void): () => void {
+  try {
+    const { createEffect } = getSolid();
+
+    // Phase 9.17: 수동 실행 제거 - createEffect가 즉시 1번 실행함
+    // 이전에는 수동 1회 + createEffect 1회 = 총 2회 실행되어 이중 렌더링 발생
+    const dispose = createEffect(fn);
+
+    return typeof dispose === 'function' ? dispose : () => {};
+  } catch (error) {
+    logger.error('Solid.js effect 실행 실패', { error });
+    // 폴백: 1회 실행 후 noop cleanup
+    try {
+      fn();
+    } catch {
+      // ignore
+    }
+    return () => {};
+  }
+}
+```
+
+**영향 범위**:
+
+- `GalleryRenderer.tsx`의 `setupStateSubscription()` - galleryState.subscribe
+  호출
+- `galleryState.subscribe()` 내부 - effectSafe로 구현됨
+- 모든 Signal의 subscribe 메서드 - createSignalSafe 내부에서 effectSafe 사용
+
+**검증 결과**:
+
+✅ 타입/린트/빌드 검증 통과 ✅ 의존성: 0 violations (247 modules, 704
+dependencies) ✅ 빌드: Dev 1,053.66 KB (map 1,886.52 KB), Prod 336.44 KB (gzip
+90.29 KB)
+
+**메트릭스**:
+
+- 갤러리 렌더링 횟수: 2회 → 1회 (-50%, 예상)
+- 이벤트 리스너 중복 등록: 2회 → 1회 (-50%, 예상)
+- effectSafe 실행 횟수: 2회 → 1회 (-50%)
+- 코드 간소화: 불필요한 수동 실행 블록 제거 (5줄 감소)
+
+**교훈**:
+
+- Solid.js의 `createEffect`는 **즉시 1번 실행**되므로 수동 실행 불필요
+- 수동 실행 + createEffect = 이중 실행 패턴은 매우 미묘하고 발견하기 어려운 버그
+- 로그 타임스탬프 분석이 이중 실행 패턴 탐지에 매우 유효함
+- "한 번만 실행되어야 한다"는 가정은 코드로 검증 필요 (로그 기반)
+
+**다음 Phase 후보**:
+
+백로그 검토 필요 (High/Medium 우선순위 항목 완료)
+
+---
 
 ### Phase 9.16: SERVICE-INIT-CLEANUP 완료 (2025-10-08 ✅)
 
