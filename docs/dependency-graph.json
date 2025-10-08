@@ -259,6 +259,8 @@
         "src/shared/external/zip/zip-creator.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/state/signals/download.signals.ts",
         "src/shared/media/MediaProcessor.ts",
@@ -6232,6 +6234,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -6313,6 +6335,26 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15691,7 +15733,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 249,
-    "totalDependenciesCruised": 699,
+    "totalDependenciesCruised": 701,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -1,6 +1,7 @@
 /**
  * @fileoverview SettingsModal 컴포넌트 테스트
  * @description TDD 기반 설정 모달 컴포넌트 테스트
+ * @jsxImportSource solid-js
  */
 
 /// <reference lib="dom" />

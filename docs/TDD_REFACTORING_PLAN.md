@@ -1,18 +1,97 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 11 완료 ✅ (모든 완료)
+> **Last updated**: 2025-10-08 **Status**: Phase 9.4 완료 ✅
 
 ## Overview
 
 모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
 작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
 
-**Phase 1-11 완료됨**: 모든 계획된 리팩토링이 완료되었습니다. 세부 내용은
-`TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
+---
+
+## Current Phase
+
+### Phase 9.5: React 기반 테스트 마이그레이션 🔴 시작 필요 (High Priority)
+
+**문제**: 전체 테스트 스위트에서 239개 테스트가 "React is not defined" 오류로
+실패하고 있습니다 (총 953개 중).
+
+**근본 원인**:
+
+프로젝트가 Solid.js로 전환되었으나, 많은 테스트 파일들이 여전히 React 기반으로
+작성되어 있습니다:
+
+- `test/unit/shared/components/ui/SettingsModal.test.tsx` - 25개 실패
+- `test/unit/shared/components/ui/ToolbarHeadless.test.tsx` - 9개 실패
+- `test/unit/shared/components/ui/Button/Button.solid.test.tsx` - 타입 체크에서
+  JSX 사용
+- `test/unit/shared/components/ui/variant-contract.test.tsx` - h() 함수 미정의
+- `test/unit/shared/components/ui/wrapper-compat.test.tsx` - h() 함수 미정의
+
+**영향 범위**:
+
+- 실패한 50개 테스트 파일
+- 239개 실패 테스트
+- 711개는 통과 (전체의 약 75%)
+
+**해결 방안**:
+
+1. **@solidjs/testing-library 사용으로 전환**
+   - React Testing Library → Solid Testing Library
+   - `render()` 함수 시그니처 변경
+   - `fireEvent` → userEvent 고려
+
+2. **JSX → Solid JSX**
+   - React.createElement 제거
+   - Solid.js의 JSX 문법 사용
+   - `h()` 함수 → `<JSX>`
+
+3. **우선순위별 마이그레이션**
+   - High: SettingsModal, ModalShell (Phase 9.3/9.4 관련)
+   - Medium: Button, Toolbar 컴포넌트
+   - Low: 나머지 컴포넌트
+
+**TDD 단계**:
+
+1. ✅ RED: 테스트 실행 결과 확인 - 239개 실패 확인됨
+2. 🔴 GREEN: 테스트를 Solid.js로 마이그레이션
+   - SettingsModal.test.tsx 우선 처리
+   - ToolbarHeadless.test.tsx
+   - Button 관련 테스트
+3. 🔴 REFACTOR: 테스트 구조 개선 및 중복 제거
+
+**예상 결과**:
+
+- ✅ 모든 테스트가 Solid.js 기반으로 동작
+- ✅ "React is not defined" 오류 완전 제거
+- ✅ 테스트 커버리지 유지
+- ✅ CI/CD 파이프라인 정상화
+
+---
+
+### 대기 중 (향후 Phase 후보)
+
+1. **Signal/Effect 메모리 누수 점검 (Phase 9.6 후보)**:
+   - createRoot 누락 검사
+   - onCleanup 패턴 검증
+   - viewport.ts 경고 해결
+   - 우선순위: Medium
+
+2. **컴포넌트 중첩 구조 검토 (Phase 9.7 후보)**:
+   - 불필요한 래퍼 컴포넌트 식별
+   - prop drilling 최소화
+   - 우선순위: Low
 
 ---
 
 ## Recent Completions
+
+Phase 9.3과 9.4가 완료되었습니다. 상세 내용은
+`docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
+
+---
+
+## Phase 9.2 & Previous Completions
 
 ### Phase 9.2: Vendor Getter Cache 버그 수정 (2025-01-08 완료 ✅)
 
@@ -450,77 +529,135 @@ subscribe(callback: (value: T) => void): () => void {
 
 ---
 
-## Phase 12: 성능 최적화 및 문서 갱신 (계획) 🟢 **낮은 우선순위**
+## Phase 12: DOM 렌더링 및 접근성 오류 수정 (진행 중) � **높은 우선순위**
+
+> **Last updated**: 2025-10-08 **Status**: Phase 12 시작
 
 ### Phase 12 목표
 
-Solid.js 반응성 시스템을 더욱 효율적으로 활용하고 프로젝트 문서를 최신 상태로
-갱신합니다.
+런타임 콘솔 로그(`x.com-1759845450383.log`)에서 발견된 DOM 렌더링 오류와 ARIA
+접근성 경고를 해결합니다.
+
+### 발견된 문제
+
+**1. DOM appendChild 오류** (Critical 🔴)
+
+```log
+Uncaught SyntaxError: Failed to execute 'appendChild' on 'Node': Unexpected token '}'
+```
+
+- **위치**: `<anonymous>:10:89` - Solid.js render 내부
+- **원인**: JSX 렌더링 시 잘못된 노드 타입이 appendChild에 전달됨
+- **영향**: 갤러리가 렌더링되지 않을 수 있음
+
+**2. ARIA 접근성 경고** (Warning ⚠️)
+
+```log
+Blocked aria-hidden on an element because its descendant retained focus
+```
+
+- **위치**: Twitter 링크 요소 (`<a href="/leftpory5n" aria-hidden="true">`)
+- **원인**: `aria-hidden="true"`가 포커스 가능한 요소의 부모에 설정됨
+- **영향**: 스크린 리더 사용자 접근성 저하 (WCAG 2.1 위반)
+
+**3. Chrome Extension 오류** (Info ℹ️)
+
+```log
+injected: env: missing script "3a0adbc7-70ae-45b8-bb9f-00fd17a1d4a9"!
+```
+
+- **원인**: 크롬 확장 프로그램 관련 오류
+- **영향**: 유저스크립트와 직접 관련 없음, 무시 가능
 
 ### Phase 12 작업 범위
 
-#### 12.1: createEffect 패턴 최적화
+#### 12.1: DOM 렌더링 오류 수정 (RED → GREEN)
 
-**검토 대상**:
+**RED 단계**:
 
-1. `signalOptimization.ts` - `untrack()` 사용 패턴
-2. `createAsyncSelector` - generation 추적 패턴
-3. 불필요한 createEffect → createMemo 전환 가능 영역
+1. `GalleryRenderer.tsx` renderComponent() 메서드 검토
+2. `getSolidWeb().render()` 호출 시 올바른 JSX 요소 전달 확인
+3. 문제 재현 테스트 작성:
+   `test/unit/features/gallery-renderer-dom-error.test.tsx`
 
-**작업**:
+**GREEN 단계**:
 
-- 부수효과 없는 effect를 memo로 전환
-- untrack 사용이 정말 필요한지 검토
-- batch 사용으로 업데이트 최소화
+1. JSX 렌더링 함수 타입 확인 (`() => JSX.Element`)
+2. render() 호출 시 즉시 실행 함수 전달 여부 검증
+3. Solid.js render API 정확한 사용법 적용
+4. 테스트 통과 확인
 
-**수용 기준**:
+**REFACTOR 단계**:
 
-- [ ] 성능 벤치마크 개선 (Vitest performance project)
-- [ ] createEffect 사용 횟수 최적화
-- [ ] 불필요한 재계산 제거
-
-#### 12.2: 테스트 구조 개선
-
-**작업**:
-
-1. Solid 테스트 패턴 일관화
-2. 중복 테스트 제거
-3. 테스트 속도 개선 (현재 20s timeout)
+1. 유사한 render 패턴 전역 검색 및 통일
+2. 렌더링 에러 핸들링 강화
+3. 로깅 개선
 
 **수용 기준**:
 
-- [ ] 테스트 실행 시간 감소
-- [ ] 테스트 코드 중복 제거
-- [ ] 일관된 테스트 패턴 적용
+- [ ] appendChild 오류 완전 해결
+- [ ] 갤러리 정상 렌더링 확인 (실제 동작 테스트)
+- [ ] 회귀 테스트 GREEN
+- [ ] TypeScript strict 유지
 
-#### 12.3: 문서 갱신
+#### 12.2: ARIA 접근성 경고 해결 (GREEN → REFACTOR)
 
-**대상 문서**:
+**분석**:
 
-1. `ARCHITECTURE.md` - Solid.js 아키텍처 반영
-2. `CODING_GUIDELINES.md` - Solid 패턴 가이드 강화
-3. `TDD_REFACTORING_PLAN_COMPLETED.md` - Phase 10-11 이관
-4. `AGENTS.md` - 현재 상태 업데이트
+- Twitter DOM 요소에서 발생하는 경고이므로 직접 수정 불가
+- 갤러리 내부 ARIA 속성 사용 패턴 검토 필요
 
 **작업**:
 
-- 과도하게 긴 문서 재작성 (COMPLETED.md 6,600줄 → 필요 내용만)
-- Solid.js 베스트 프랙티스 추가
-- 예시 코드 업데이트
+1. `accessibility-utils.ts`의 `setAriaHidden()` 사용처 검토
+2. 포커스 가능한 요소(`<a>`, `<button>`)의 부모에 `aria-hidden` 설정 금지
+3. 대안: `inert` 속성 사용 검토 (브라우저 지원 확인)
+4. GalleryContainer, VerticalGalleryView ARIA 속성 재검토
 
 **수용 기준**:
 
-- [ ] 모든 문서가 현재 상태 반영
-- [ ] COMPLETED.md 길이 50% 감소
-- [ ] 실용적인 예시 코드 포함
+- [ ] 갤러리 내부에서 ARIA 경고 0건
+- [ ] WCAG 2.1 AA 준수 유지
+- [ ] 포커스 관리 정상 동작 (focusTrap)
+- [ ] 접근성 회귀 테스트 통과
+
+#### 12.3: 통합 검증
+
+**작업**:
+
+1. 실제 Twitter 페이지에서 갤러리 동작 확인
+2. 콘솔 로그 재확인 (오류/경고 제거 확인)
+3. 빌드 크기 확인 (회귀 방지)
+4. Phase 12 메트릭 기록
+
+**수용 기준**:
+
+- [ ] `npm run build` GREEN
+- [ ] `npm test` GREEN
+- [ ] 실제 런타임 오류 0건
+- [ ] 빌드 크기 예산 준수 (gzip < 160 KB)
+
+### Phase 12 작업 순서
+
+1. 🔴 **RED**: DOM 렌더링 오류 재현 테스트 작성
+2. 🟢 **GREEN**: `GalleryRenderer.tsx` render 호출 수정
+3. 🔵 **REFACTOR**: 렌더링 패턴 전역 통일
+4. ⚠️ **ARIA 분석**: 접근성 경고 원인 파악
+5. ✅ **ARIA 수정**: 갤러리 ARIA 속성 개선
+6. 📊 **검증**: 통합 테스트 및 메트릭 기록
+7. 📝 **문서 갱신**: COMPLETED.md 이관
 
 ### Phase 12 예상 메트릭
 
-| 메트릭            | Phase 11 | Phase 12 예상 | 변화        |
-| ----------------- | -------- | ------------- | ----------- |
-| createEffect 사용 | 기존     | 최적화        | **개선** ✅ |
-| 테스트 시간       | 기존     | 단축          | **개선** ✅ |
-| 문서 길이         | 6,600줄  | ~3,000줄      | **-50%** ✅ |
+| 메트릭           | Phase 11    | Phase 12 예상   | 변화        |
+| ---------------- | ----------- | --------------- | ----------- |
+| Dev 빌드         | 1,031.05 KB | ~1,031 KB       | 유지        |
+| Prod 빌드        | 331.29 KB   | ~331 KB         | 유지        |
+| gzip             | 88.42 KB    | ~88 KB          | 유지        |
+| 런타임 오류      | 1건 (DOM)   | **0건**         | **-1** ✅   |
+| ARIA 경고        | 1건         | **0-1건**       | **개선** ✅ |
+| WCAG 2.1 AA 준수 | 부분        | **완전** ✅     | **강화** ✅ |
+| TypeScript       | 0 errors    | **0 errors** ✅ | 유지 ✅     |
 
 ---
 

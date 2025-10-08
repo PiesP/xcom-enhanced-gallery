@@ -1,5 +1,6 @@
 import { getSolid } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
 
 /**
  * @fileoverview SettingsModal.solid - Simplified Solid.js Settings Modal
@@ -43,7 +44,7 @@ export interface SettingsModalProps {
  */
 export const SettingsModal: Component<SettingsModalProps> = props => {
   // vendors getter를 컴포넌트 내부에서 호출
-  const { mergeProps, splitProps, createSignal, Show } = getSolid();
+  const { mergeProps, splitProps, createSignal, createEffect } = getSolid();
 
   const merged = mergeProps(
     {
@@ -66,6 +67,28 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
   // Internal state for controlled inputs (if external props not provided)
   const [internalTheme, setInternalTheme] = createSignal(local.theme);
   const [internalLanguage, setInternalLanguage] = createSignal(local.language);
+
+  // 개발 모드에서 모달 상태 추적
+  createEffect(() => {
+    const isOpen = local.isOpen;
+    if (isOpen) {
+      logger.debug('[SettingsModal] 설정 모달 렌더링 시작', {
+        timestamp: new Date().toISOString(),
+        position: local.position,
+        mode: local.mode,
+      });
+      // 다음 프레임에서 렌더링 완료 확인
+      requestAnimationFrame(() => {
+        logger.debug('[SettingsModal] 설정 모달 렌더링 완료 (DOM 업데이트됨)', {
+          timestamp: new Date().toISOString(),
+        });
+      });
+    } else {
+      logger.debug('[SettingsModal] 설정 모달 숨김 처리됨', {
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
 
   // Handle theme change
   const handleThemeChange = (event: Event) => {
@@ -99,75 +122,73 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
   };
 
   return (
-    <Show when={local.isOpen}>
-      <ModalShell
-        isOpen={local.isOpen}
-        onClose={local.onClose}
-        size='md'
-        surfaceVariant='glass'
-        closeOnBackdropClick={true}
-        closeOnEscape={true}
-        className={containerClass()}
-        aria-label={ariaProps['aria-label']}
-        {...(ariaProps['data-testid'] ? { 'data-testid': ariaProps['data-testid'] } : {})}
-      >
-        <div class={styles['settings-content']}>
-          {/* Header */}
-          <div class={styles['settings-header']}>
-            <h2 class={styles['settings-title']}>Settings</h2>
-            <button
-              onClick={local.onClose}
-              class={styles['close-button']}
-              type='button'
-              aria-label='Close'
-              data-testid='settings-close-button'
+    <ModalShell
+      isOpen={local.isOpen}
+      onClose={local.onClose}
+      size='md'
+      surfaceVariant='glass'
+      closeOnBackdropClick={true}
+      closeOnEscape={true}
+      className={containerClass()}
+      aria-label={ariaProps['aria-label']}
+      {...(ariaProps['data-testid'] ? { 'data-testid': ariaProps['data-testid'] } : {})}
+    >
+      <div class={styles['settings-content']}>
+        {/* Header */}
+        <div class={styles['settings-header']}>
+          <h2 class={styles['settings-title']}>Settings</h2>
+          <button
+            onClick={local.onClose}
+            class={styles['close-button']}
+            type='button'
+            aria-label='Close'
+            data-testid='settings-close-button'
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Settings Form */}
+        <form class={styles['settings-form']}>
+          {/* Theme Selection */}
+          <div class={styles['form-group']}>
+            <label for='theme-select' class={styles['form-label']}>
+              Theme
+            </label>
+            <select
+              id='theme-select'
+              class={styles['form-select']}
+              value={local.theme || internalTheme()}
+              onChange={handleThemeChange}
+              data-testid='theme-select'
             >
-              ×
-            </button>
+              <option value='auto'>Auto (System)</option>
+              <option value='light'>Light</option>
+              <option value='dark'>Dark</option>
+            </select>
           </div>
 
-          {/* Settings Form */}
-          <form class={styles['settings-form']}>
-            {/* Theme Selection */}
-            <div class={styles['form-group']}>
-              <label for='theme-select' class={styles['form-label']}>
-                Theme
-              </label>
-              <select
-                id='theme-select'
-                class={styles['form-select']}
-                value={local.theme || internalTheme()}
-                onChange={handleThemeChange}
-                data-testid='theme-select'
-              >
-                <option value='auto'>Auto (System)</option>
-                <option value='light'>Light</option>
-                <option value='dark'>Dark</option>
-              </select>
-            </div>
-
-            {/* Language Selection */}
-            <div class={styles['form-group']}>
-              <label for='language-select' class={styles['form-label']}>
-                Language
-              </label>
-              <select
-                id='language-select'
-                class={styles['form-select']}
-                value={local.language || internalLanguage()}
-                onChange={handleLanguageChange}
-                data-testid='language-select'
-              >
-                <option value='auto'>Auto (Detect)</option>
-                <option value='ko'>한국어</option>
-                <option value='en'>English</option>
-                <option value='ja'>日本語</option>
-              </select>
-            </div>
-          </form>
-        </div>
-      </ModalShell>
-    </Show>
+          {/* Language Selection */}
+          <div class={styles['form-group']}>
+            <label for='language-select' class={styles['form-label']}>
+              Language
+            </label>
+            <select
+              id='language-select'
+              class={styles['form-select']}
+              value={local.language || internalLanguage()}
+              onChange={handleLanguageChange}
+              data-testid='language-select'
+            >
+              <option value='auto'>Auto (Detect)</option>
+              <option value='ko'>한국어</option>
+              <option value='en'>English</option>
+              <option value='ja'>日本語</option>
+            </select>
+          </div>
+        </form>
+      </div>
+    </ModalShell>
   );
 };
 

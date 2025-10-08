@@ -7,7 +7,47 @@
 
 - 패키지 매니저: npm (단일 패키지)
 - Node.js: 20 권장 (CI는 20/22에서 검증)
-- 번들러: Vite 7, 프레임워크: **Solid.js 1.9**, 테스트: Vitest 3 + JSDOM
+- 번들러: Vite 7,## PR 규칙
+
+- 제목: `[xcom-enhanced-gallery] <Title>`
+- 머지 전 필수: `npm run typecheck` / `npm run lint` / `npm test`
+- 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
+  따릅니다.
+  - PR 설명에 다음 확인 사항을 포함해 주세요:
+    - 최소 컨텍스트 제공(파일 경로/타입/제약/수용 기준)
+    - "한 줄 구조 리팩토링"/최소 diff 원칙 적용 여부
+    - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
+    - RED→GREEN 테스트 링크 또는 요약
+
+## 최근 완료된 작업 (2025-10-08)
+
+### Phase 9.3 & 9.4: Solid.js Show 컴포넌트 중첩 제거 ✅
+
+**배경**: 설정 버튼 클릭 시 모달이 표시되지 않는 문제 발견 및 전체 프로젝트
+Solid.js 패턴 스캔 수행
+
+**해결한 문제**:
+
+- Phase 9.3: ToolbarWithSettings ↔ SettingsModal Show 중첩 제거
+- Phase 9.4: SettingsModal ↔ ModalShell Show 중첩 제거
+
+**Solid.js 베스트 프랙티스 적용**:
+
+- Show 컴포넌트는 중첩하지 않음
+- 각 컴포넌트는 자신의 렌더링 조건만 관리
+- 부모는 자식의 가시성 조건을 중복 평가하지 않음
+
+**검증 완료**:
+
+- Show 사용 패턴 스캔: 6개 검토, 2개 수정
+- Vendors getter 규칙: 전체 준수 확인
+- 빌드: Dev 1,114.75 KB / Prod 331.17 KB
+- 의존성: 249 modules, 699 dependencies (위반 없음)
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.3, 9.4 참조
+
+## 트러블슈팅 팁id.js 1.9\*\*, 테스트: Vitest 3 + JSDOM
+
 - 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
 - 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,
   PC 전용 이벤트, TDD 우선)

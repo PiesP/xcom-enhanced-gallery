@@ -55,10 +55,16 @@ export default defineConfig({
     return undefined;
   })(),
   plugins: [
+    // Solid.js support
+    solid({
+      dev: false,
+    }),
+    // TS paths를 테스트에서도 동일하게 사용하도록 활성화
+    tsconfigPaths({ projects: ['tsconfig.json'] }),
     // CI에서는 로그를 줄여 I/O 오버헤드를 최소화
     !isCI && {
       name: 'xeg-log-config',
-      enforce: 'pre',
+      enforce: 'post',
       configResolved(cfg) {
         try {
           console.log('[xeg-log-config] final resolve.alias =', cfg.resolve?.alias);
@@ -67,12 +73,6 @@ export default defineConfig({
         } catch {}
       },
     },
-    // Solid.js support
-    solid({
-      dev: false, // 테스트 안정성을 위해 production 모드 사용
-    }),
-    // TS paths를 테스트에서도 동일하게 사용하도록 활성화
-    tsconfigPaths({ projects: ['tsconfig.json'] }),
   ].filter(Boolean) as any[],
 
   resolve: sharedResolve,
