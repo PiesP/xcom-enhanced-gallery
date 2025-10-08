@@ -19,7 +19,43 @@
     - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
     - RED→GREEN 테스트 링크 또는 요약
 
-## 최근 완료된 작업 (2025-01-08)
+## 최근 완료된 작업 (2025-01-10)
+
+### Phase 9.16: SERVICE-INIT-CLEANUP 완료 (서비스 초기화 정리 및 갤러리 이중 렌더링 수정) ✅
+
+**배경**: 로그 분석 중 서비스 중복 등록(3건 WARN)과 갤러리 이중 렌더링(8ms 간격)
+발견
+
+**근본 원인**:
+
+- `service-initialization.ts`에서 동일 서비스를 여러 키로 중복 등록
+  - `toast.controller` 2회 등록 (SERVICE_KEYS.TOAST + 'toast.controller')
+  - `theme.service` 2회 등록 (SERVICE_KEYS.THEME + 'theme.service')
+- `GalleryRenderer.tsx`에서 `isRenderingFlag` 필드가 finally 블록에서 즉시 리셋
+  - 컨테이너 존재 여부와 플래그가 이중으로 체크되어 혼란
+  - Solid.js `effectSafe`가 즉시 실행 후 signal 변경으로 재실행
+
+**해결 방법**:
+
+- 서비스 중복 등록 3건 제거 (단일 키로만 등록)
+- `isRenderingFlag` 필드 제거, `container` 존재 여부를 단일 진실 원천으로 사용
+- `renderGallery()` 가드를 `if (this.container)` 단순화
+
+**결과**:
+
+- ✅ WARN 로그 3건 → 0건 (100% 제거)
+- ✅ 갤러리 렌더링 2회 → 1회 (8ms 절약)
+- ✅ 코드 간소화 (isRenderingFlag 필드 제거)
+- ✅ 빌드: Dev 1,053.80 KB, Prod 336.52 KB (gzip 90.31 KB)
+- ✅ 타입/린트/빌드 검증 통과
+
+**교훈**:
+
+- 서비스 등록은 단일 키로만 수행 (중복 키는 디버깅 혼란 초래)
+- 상태 가드는 단일 진실 원천 사용 (이중 플래그는 경합 조건 유발)
+- 로그 타임스탬프 분석으로 렌더링 중복/경합 조건 조기 탐지 가능
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.16 참조
 
 ### Phase 9.13: SETTINGS-MODAL-CSS 완료 (설정 모달 CSS 품질 및 UX 개선) ✅
 
