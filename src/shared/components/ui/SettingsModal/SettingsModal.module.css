@@ -32,6 +32,9 @@
   transition: var(--xeg-transition-fast);
   background: var(--xeg-modal-bg);
   border: 1px solid var(--xeg-modal-border);
+  /* Conditional Glassmorphism - Progressive Enhancement */
+  backdrop-filter: blur(var(--xeg-glassmorphism-blur));
+  -webkit-backdrop-filter: blur(var(--xeg-glassmorphism-blur));
 }
 
 /* 내부 컨테이너 (레이아웃만) */
@@ -231,7 +234,5 @@
   .panel {
     background: Canvas;
     border: 2px solid CanvasText;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }

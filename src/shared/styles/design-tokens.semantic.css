@@ -137,6 +137,9 @@
   --xeg-surface-glass-border: var(--color-glass-border);
   --xeg-surface-glass-shadow: var(--shadow-lg);
 
+  /* Conditional Glassmorphism - CSS Variable System */
+  --xeg-glassmorphism-blur: 0px; /* Default: OFF (progressive enhancement) */
+
   /* Surface Glass Hover States */
   --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
   --xeg-surface-glass-shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -150,6 +153,13 @@
   --xeg-radius-2xl: var(--radius-2xl);
   --xeg-radius-pill: var(--radius-pill);
   --xeg-radius-full: var(--radius-full);
+}
+
+/* Conditional Glassmorphism - Progressive Enhancement */
+@supports (backdrop-filter: blur(10px)) {
+  :root {
+    --xeg-glassmorphism-blur: 10px; /* Enable glassmorphism when supported */
+  }
 }
 
 /* Theme Support - Dark/Light Mode */
@@ -208,6 +218,7 @@
     --transition-fast: 0ms;
     --transition-normal: 0ms;
     --transition-slow: 0ms;
+    --xeg-glassmorphism-blur: 0px; /* Disable glassmorphism for reduced motion */
   }
 }
 
