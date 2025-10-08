@@ -1,6 +1,7 @@
 import { getSolid } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
+import { languageService } from '@shared/services';
 
 /**
  * @fileoverview SettingsModal.solid - Simplified Solid.js Settings Modal
@@ -136,12 +137,12 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
       <div class={styles['settings-content']}>
         {/* Header */}
         <div class={styles['settings-header']}>
-          <h2 class={styles['settings-title']}>Settings</h2>
+          <h2 class={styles['settings-title']}>{languageService.getString('settings.title')}</h2>
           <button
             onClick={local.onClose}
             class={styles['close-button']}
             type='button'
-            aria-label='Close'
+            aria-label={languageService.getString('settings.close')}
             data-testid='settings-close-button'
           >
             ×
@@ -153,7 +154,7 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
           {/* Theme Selection */}
           <div class={styles['form-group']}>
             <label for='theme-select' class={styles['form-label']}>
-              Theme
+              {languageService.getString('settings.theme')}
             </label>
             <select
               id='theme-select'
@@ -162,16 +163,16 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
               onChange={handleThemeChange}
               data-testid='theme-select'
             >
-              <option value='auto'>Auto (System)</option>
-              <option value='light'>Light</option>
-              <option value='dark'>Dark</option>
+              <option value='auto'>{languageService.getString('settings.themeAuto')}</option>
+              <option value='light'>{languageService.getString('settings.themeLight')}</option>
+              <option value='dark'>{languageService.getString('settings.themeDark')}</option>
             </select>
           </div>
 
           {/* Language Selection */}
           <div class={styles['form-group']}>
             <label for='language-select' class={styles['form-label']}>
-              Language
+              {languageService.getString('settings.language')}
             </label>
             <select
               id='language-select'
@@ -180,10 +181,10 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
               onChange={handleLanguageChange}
               data-testid='language-select'
             >
-              <option value='auto'>Auto (Detect)</option>
-              <option value='ko'>한국어</option>
-              <option value='en'>English</option>
-              <option value='ja'>日本語</option>
+              <option value='auto'>{languageService.getString('settings.languageAuto')}</option>
+              <option value='ko'>{languageService.getString('settings.languageKo')}</option>
+              <option value='en'>{languageService.getString('settings.languageEn')}</option>
+              <option value='ja'>{languageService.getString('settings.languageJa')}</option>
             </select>
           </div>
         </form>

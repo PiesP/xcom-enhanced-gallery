@@ -23,6 +23,10 @@ export interface LanguageStrings {
     readonly themeAuto: string;
     readonly themeLight: string;
     readonly themeDark: string;
+    readonly languageAuto: string;
+    readonly languageKo: string;
+    readonly languageEn: string;
+    readonly languageJa: string;
     readonly close: string;
   };
   readonly messages: {
@@ -89,6 +93,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: '자동',
       themeLight: '라이트',
       themeDark: '다크',
+      languageAuto: '자동 (감지)',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: '닫기',
     },
     messages: {
@@ -134,6 +142,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: 'Auto',
       themeLight: 'Light',
       themeDark: 'Dark',
+      languageAuto: 'Auto (Detect)',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: 'Close',
     },
     messages: {
@@ -183,6 +195,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: '自動',
       themeLight: 'ライト',
       themeDark: 'ダーク',
+      languageAuto: '自動 (検出)',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: '閉じる',
     },
     messages: {

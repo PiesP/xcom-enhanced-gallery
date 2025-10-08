@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: 활성 Phase 없음, 백로그 검토 필요 ⏸️
+> **Last updated**: 2025-01-08 **Status**: Phase 9.10 완료 ✅
 
 ## Overview
 
@@ -11,19 +11,67 @@
 
 ## Current Phase
 
-### Phase 9.9: SRC-PATH-RENAME-01 완료 (2025-10-08 ✅)
+### Phase 9.10: I18N-MISSING-LITERALS 완료 (2025-01-08 ✅)
+
+**목표**: 하드코딩 문자열 국제화 - SettingsModal 다국어 지원 완성
+
+**완료 내역**:
+
+- ✅ HelloSolid 제거: Phase 0 검증용 컴포넌트 삭제 (2 files)
+- ✅ LanguageService 확장:
+  - `LanguageStrings` 인터페이스에 `languageAuto`, `languageKo`, `languageEn`,
+    `languageJa` 추가
+  - 한국어/영어/일본어 3개 언어 리소스에 각 4개 키 추가
+  - `services/index.ts`에서 `languageService` 인스턴스 export
+- ✅ SettingsModal 국제화:
+  - Line 139: "Settings" → `languageService.getString('settings.title')`
+  - Line 144: "Close" → `languageService.getString('settings.close')`
+  - Line 156-170: Theme 섹션 3개 문자열 국제화
+  - Line 173-187: Language 섹션 4개 문자열 국제화
+- ✅ GREEN: `i18n-literal.scan.red.test.ts` PASS (2건 위반 → 0건)
+- ✅ REFACTOR: 타입/린트/빌드 검증 통과
+- ✅ 빌드: Dev 1,053.56 KB (+ 21.94 KB vs Phase 9.9)
+
+**변경 파일** (5개):
+
+- ❌ `src/shared/components/HelloSolid.tsx` (삭제)
+- ❌ `src/shared/components/HelloSolid.module.css` (삭제)
+- ✏️ `src/shared/services/LanguageService.ts` (+4 keys × 3 langs)
+- ✏️ `src/shared/services/index.ts` (languageService export)
+- ✏️ `src/shared/components/ui/SettingsModal/SettingsModal.tsx` (7개 문자열
+  국제화)
+
+**메트릭스**:
+
+- i18n 위반: 2건 → 0건 (-100%)
+- 컴포넌트: -2 files (HelloSolid 제거)
+- 빌드 크기: Dev 1,031.52 KB → 1,053.56 KB (+2.1%)
+
+**다음 Phase 후보** (우선순위 순):
+
+1. **`KBD-CENTRALIZATION-MISSING`: 키보드 리스너 중앙화 누락 (S, READY)**
+   - keyboard-listener.centralization.policy.test 실패
+   - 기대 효과: 키보드 입력 일관성 향상
+   - 우선순위: Medium
+
+---
+
+## Completed Phases
+
+### Phase 9.9: SRC-PATH-RENAME-01 완료 (2025-01-08 ✅)
 
 **목표**: Legacy 용어 명확성 개선 - 모호한 주석을 구체적 맥락으로 교체
 
 **완료 내역**:
 
-- ✅ RED: `test/unit/lint/legacy-terminology.clarity.red.test.ts` 작성
+- ✅ RED: `test/unit/lint/legacy-terminology.clarity.red.test.ts` 작성 (1건 위반
+  검출)
 - ✅ GREEN: `shared/utils/styles/index.ts` 주석 수정
   - 변경 전: `// Legacy style utils (for backward compatibility)`
   - 변경 후:
     `// Style utility functions (combineClasses, toggleClass 등 - 하위 호환성 유지)`
 - ✅ REFACTOR: 타입/린트/빌드 검증 통과
-- ✅ 빌드: Dev 1,031.52 KB (map 1,844.92 KB)
+- ✅ 빌드: Dev 1,031.52 KB
 
 **백로그 정리**:
 
@@ -32,26 +80,11 @@
 - ✅ SRC-PATH-RENAME-01: 완료 (icons/normalizer 2025-09-16, legacy 주석
   2025-10-08)
 
-**다음 Phase 후보** (우선순위 순):
-
-1. **`I18N-MISSING-LITERALS`: 국제화 누락 문자열 수정 (S, READY)** ⭐ 추천
-   - 발견된 위반: 2건
-     - `src/shared/components/HelloSolid.tsx`: "Hello Solid.js! 등"
-     - `src/shared/components/ui/SettingsModal/SettingsModal.tsx`: "Settings |
-       Theme"
-   - 기대 효과: 다국어 지원 완성, i18n 가드 GREEN
-   - 우선순위: High (i18n-literal.scan.red.test 실패 중)
-
-2. **`KBD-CENTRALIZATION-MISSING`: 키보드 리스너 중앙화 누락 (S, READY)**
-   - keyboard-listener.centralization.policy.test 실패
-   - 기대 효과: 키보드 입력 일관성 향상
-   - 우선순위: Medium
-
 ---
 
 ## Recent Completions
 
-Phase 9.3 ~ 9.8이 완료되었습니다. 상세 내용은
+Phase 9.3 ~ 9.9가 완료되었습니다. 상세 내용은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
 
 **Phase 9.8 주요 성과** (2025-01-08 완료 ✅):

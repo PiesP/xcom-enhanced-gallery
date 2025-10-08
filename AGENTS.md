@@ -113,30 +113,42 @@ SRC-PATH-RENAME-01) 분석 결과, 2개는 이미 해결되었고 1개(SRC-PATH-
 
 **상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.9 참조
 
-### Phase 9.3 & 9.4: Solid.js Show 컴포넌트 중첩 제거 ✅
+### Phase 9.10: I18N-MISSING-LITERALS 완료 (국제화 누락 문자열 수정) ✅
 
-**배경**: 설정 버튼 클릭 시 모달이 표시되지 않는 문제 발견 및 전체 프로젝트
-Solid.js 패턴 스캔 수행
+**배경**: i18n-literal.scan.red.test.ts가 2건 위반 검출. HelloSolid (Phase 0
+검증용)는 삭제하고 SettingsModal만 국제화 적용
 
-**해결한 문제**:
+**해결 내용**:
 
-- Phase 9.3: ToolbarWithSettings ↔ SettingsModal Show 중첩 제거
-- Phase 9.4: SettingsModal ↔ ModalShell Show 중첩 제거
+- HelloSolid 제거: Phase 0 검증용 컴포넌트 삭제 (HelloSolid.tsx,
+  HelloSolid.module.css)
+- LanguageService 확장:
+  - `LanguageStrings` 인터페이스에 language 옵션 키 4개 추가 (`languageAuto`,
+    `languageKo`, `languageEn`, `languageJa`)
+  - 한국어/영어/일본어 3개 언어 리소스에 각각 추가
+  - `services/index.ts`에서 `languageService` 인스턴스 export
+- SettingsModal 국제화:
+  - "Settings", "Close" → `languageService.getString('settings.title|close')`
+  - "Theme", "Auto (System)", "Light", "Dark" → `settings.theme*` 키 사용
+  - "Language", "Auto (Detect)", "한국어", "English", "日本語" →
+    `settings.language*` 키 사용
+- GREEN: i18n-literal.scan.red.test.ts PASS (2건 → 0건)
 
-**Solid.js 베스트 프랙티스 적용**:
+**결과**:
 
-- Show 컴포넌트는 중첩하지 않음
-- 각 컴포넌트는 자신의 렌더링 조건만 관리
-- 부모는 자식의 가시성 조건을 중복 평가하지 않음
+- ✅ i18n 위반: 2건 → 0건 (-100%)
+- ✅ HelloSolid 제거 (-2 files)
+- ✅ SettingsModal 완전 국제화 (7개 문자열)
+- ✅ 빌드: Dev 1,053.56 KB (+21.94 KB vs Phase 9.9)
+- ✅ 타입/린트/빌드 검증 통과
 
-**검증 완료**:
+**다음 Phase 후보**:
 
-- Show 사용 패턴 스캔: 6개 검토, 2개 수정
-- Vendors getter 규칙: 전체 준수 확인
-- 빌드: Dev 1,114.75 KB / Prod 331.17 KB
-- 의존성: 249 modules, 699 dependencies (위반 없음)
+1. KBD-CENTRALIZATION-MISSING (Medium)
 
-**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.3, 9.4 참조
+**상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.10 참조
+
+---
 
 ## 트러블슈팅 팁id.js 1.9\*\*, 테스트: Vitest 3 + JSDOM
 
