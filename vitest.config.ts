@@ -55,9 +55,11 @@ export default defineConfig({
     return undefined;
   })(),
   plugins: [
-    // Solid.js support
+    // Solid.js support - 테스트 파일 포함
     solid({
-      dev: false,
+      extensions: ['.tsx', '.ts', '.jsx', '.js'],
+      hot: false,
+      ssr: false,
     }),
     // TS paths를 테스트에서도 동일하게 사용하도록 활성화
     tsconfigPaths({ projects: ['tsconfig.json'] }),
