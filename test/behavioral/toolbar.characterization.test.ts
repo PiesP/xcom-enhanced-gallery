@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/preact';
+import { cleanup } from '@solidjs/testing-library';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 import { getPreact } from '@shared/external/vendors';

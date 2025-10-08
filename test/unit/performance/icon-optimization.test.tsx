@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/preact';
+import { render, screen } from '@solidjs/testing-library';
 import {
   IconRegistry,
   getIconRegistry,
