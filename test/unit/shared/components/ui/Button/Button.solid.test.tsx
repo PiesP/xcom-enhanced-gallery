@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { Component, JSX } from 'solid-js';
-import type { ButtonProps } from '@shared/components/ui/Button/Button.solid';
+import type { ButtonProps } from '@shared/components/ui/Button/Button';
 
 describe('Button.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

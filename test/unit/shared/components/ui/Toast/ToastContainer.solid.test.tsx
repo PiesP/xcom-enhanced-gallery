@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ToastContainer } from '@shared/components/ui/Toast/ToastContainer.solid';
+import { ToastContainer } from '@shared/components/ui/Toast/ToastContainer';
 
 describe('ToastContainer.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

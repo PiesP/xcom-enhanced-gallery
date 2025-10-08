@@ -7,22 +7,18 @@ import type { Component } from 'solid-js';
 
 describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification', () => {
   it('should compile SettingsModal.solid.tsx', async () => {
-    const module = await import('@/shared/components/ui/SettingsModal/SettingsModal.solid');
+    const module = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     expect(module).toBeDefined();
     expect(module.SettingsModal).toBeDefined();
   });
 
   it('should be a function component', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     expect(typeof SettingsModal).toBe('function');
   });
 
   it('should require isOpen and onClose props', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -31,9 +27,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept basic props (isOpen, onClose)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -42,9 +36,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept mode prop (panel | modal)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -54,9 +46,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept position prop (toolbar-below | top-right | center | bottom-sheet)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -66,9 +56,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept theme prop (auto | light | dark)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -78,9 +66,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept language prop (auto | ko | en | ja)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -90,9 +76,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept onThemeChange handler', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -102,9 +86,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept onLanguageChange handler', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -114,9 +96,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept className prop', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -126,9 +106,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept data-testid prop', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -138,9 +116,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept aria-label prop', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -150,9 +126,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should accept all props combined', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;
@@ -170,9 +144,7 @@ describe('[Solid][Phase 0] SettingsModal.solid - Compile and Type Verification',
   });
 
   it('should handle isOpen=false state (should return null or empty)', async () => {
-    const { SettingsModal } = await import(
-      '@/shared/components/ui/SettingsModal/SettingsModal.solid'
-    );
+    const { SettingsModal } = await import('@/shared/components/ui/SettingsModal/SettingsModal');
     const component: Component<{
       isOpen: boolean;
       onClose: () => void;

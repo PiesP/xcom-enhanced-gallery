@@ -23,14 +23,14 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('LazyIcon.solid.tsx를 import할 수 있어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       expect(module).toBeDefined();
     });
   });
 
   describe('LazyIconProps Type Validation', () => {
     it('LazyIconProps는 필수 props를 포함해야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       const { LazyIcon } = module;
 
       // Type assertion으로 props 타입 검증
@@ -42,7 +42,7 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('LazyIconProps는 선택적 props를 포함해야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       type LazyIconPropsType = Parameters<typeof module.LazyIcon>[0];
 
@@ -65,14 +65,14 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Component Structure', () => {
     it('LazyIcon은 Solid Component 함수여야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       const { LazyIcon } = module;
 
       expect(typeof LazyIcon).toBe('function');
     });
 
     it('LazyIcon default export가 있어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       expect(module.default).toBeDefined();
       expect(typeof module.default).toBe('function');
@@ -81,21 +81,21 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Icon Preload Hooks', () => {
     it('useIconPreload 훅이 export되어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       const { useIconPreload } = module;
 
       expect(typeof useIconPreload).toBe('function');
     });
 
     it('useCommonIconPreload 훅이 export되어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       const { useCommonIconPreload } = module;
 
       expect(typeof useCommonIconPreload).toBe('function');
     });
 
     it('useIconPreload는 IconName 배열을 받아야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
       const { useIconPreload } = module;
 
       type UseIconPreloadParams = Parameters<typeof useIconPreload>;
@@ -111,7 +111,7 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Fallback Handling', () => {
     it('fallback prop은 JSX.Element를 받을 수 있어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       type LazyIconPropsType = Parameters<typeof module.LazyIcon>[0];
 
@@ -124,7 +124,7 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('errorFallback prop은 JSX.Element를 받을 수 있어야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       type LazyIconPropsType = Parameters<typeof module.LazyIcon>[0];
 
@@ -213,7 +213,7 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Default Props', () => {
     it('fallback이 제공되면 즉시 반환해야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       type LazyIconPropsType = Parameters<typeof module.LazyIcon>[0];
 
@@ -226,7 +226,7 @@ describe('LazyIcon.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('size가 제공되면 style에 width/height를 설정해야 함', async () => {
-      const module = await import('@/shared/components/LazyIcon.solid');
+      const module = await import('@/shared/components/LazyIcon');
 
       type LazyIconPropsType = Parameters<typeof module.LazyIcon>[0];
 

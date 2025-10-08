@@ -33,14 +33,14 @@ describe('VerticalImageItem.solid - Phase 0 타입 검증', () => {
       // 타입 검증: 파일이 올바르게 import 되는지
       expect(async () => {
         await import(
-          '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid'
+          '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem'
         );
       }).not.toThrow();
     });
 
     it('should export VerticalImageItem component', async () => {
       const mod = await import(
-        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid'
+        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem'
       );
       expect(mod.VerticalImageItem).toBeDefined();
       expect(typeof mod.VerticalImageItem).toBe('function');
@@ -115,7 +115,7 @@ describe('VerticalImageItem.solid - Phase 0 타입 검증', () => {
   describe('유틸리티 함수 검증', () => {
     it('should export cleanFilename utility', async () => {
       const mod = await import(
-        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid'
+        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem'
       );
       // cleanFilename은 내부 함수로 export되지 않을 수 있음 (구현에 따라)
       // 여기서는 구현이 존재하는지만 확인
@@ -124,14 +124,14 @@ describe('VerticalImageItem.solid - Phase 0 타입 검증', () => {
 
     it('should export isVideoMedia utility', async () => {
       const mod = await import(
-        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid'
+        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem'
       );
       expect(mod).toBeDefined();
     });
 
     it('should export getFitModeClass utility', async () => {
       const mod = await import(
-        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem.solid'
+        '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem'
       );
       expect(mod).toBeDefined();
     });

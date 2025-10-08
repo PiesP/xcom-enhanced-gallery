@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { HelloSolid } from '../../../src/shared/components/HelloSolid.solid';
+import { HelloSolid } from '../../../src/shared/components/HelloSolid';
 
 describe('Phase 0: Solid.js Infrastructure', () => {
   describe('Build System Verification', () => {

@@ -23,14 +23,14 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('GalleryContainer.solid.tsx를 import할 수 있어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
       expect(module).toBeDefined();
     });
   });
 
   describe('GalleryContainerProps Type Validation', () => {
     it('GalleryContainerProps는 children을 포함해야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
       const { GalleryContainer } = module;
 
       // Type assertion으로 props 타입 검증
@@ -42,7 +42,7 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('GalleryContainerProps는 선택적 props를 포함해야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type GalleryContainerPropsType = Parameters<typeof module.GalleryContainer>[0];
 
@@ -59,14 +59,14 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Component Structure', () => {
     it('GalleryContainer는 Solid Component 함수여야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
       const { GalleryContainer } = module;
 
       expect(typeof GalleryContainer).toBe('function');
     });
 
     it('GalleryContainer default export가 있어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       expect(module.default).toBeDefined();
       expect(typeof module.default).toBe('function');
@@ -75,21 +75,21 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Mount/Unmount Functions', () => {
     it('mountGallery 함수가 export되어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
       const { mountGallery } = module;
 
       expect(typeof mountGallery).toBe('function');
     });
 
     it('unmountGallery 함수가 export되어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
       const { unmountGallery } = module;
 
       expect(typeof unmountGallery).toBe('function');
     });
 
     it('mountGallery는 Element를 반환해야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type MountGalleryReturnType = ReturnType<typeof module.mountGallery>;
 
@@ -98,7 +98,7 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('unmountGallery는 void를 반환해야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type UnmountGalleryReturnType = ReturnType<typeof module.unmountGallery>;
 
@@ -188,7 +188,7 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Keyboard Event Handling', () => {
     it('Escape 키로 닫기 기능이 있어야 함 (타입 체크)', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type GalleryContainerPropsType = Parameters<typeof module.GalleryContainer>[0];
 
@@ -201,7 +201,7 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('onClose는 선택적이어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type GalleryContainerPropsType = Parameters<typeof module.GalleryContainer>[0];
 
@@ -222,7 +222,7 @@ describe('GalleryContainer.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('커스텀 클래스명을 추가할 수 있어야 함', async () => {
-      const module = await import('@/shared/components/isolation/GalleryContainer.solid');
+      const module = await import('@/shared/components/isolation/GalleryContainer');
 
       type GalleryContainerPropsType = Parameters<typeof module.GalleryContainer>[0];
 

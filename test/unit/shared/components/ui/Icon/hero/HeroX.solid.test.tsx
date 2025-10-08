@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { HeroX } from '@shared/components/ui/Icon/hero/HeroX.solid';
+import { HeroX } from '@shared/components/ui/Icon/hero/HeroX';
 
 describe('HeroX.solid (Type Verification - Phase 0 Style)', () => {
   it('should compile and export HeroX function', () => {
