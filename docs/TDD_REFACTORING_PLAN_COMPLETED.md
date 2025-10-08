@@ -5,6 +5,138 @@
 
 ---
 
+## Phase 9.7: Solid.js 패턴 일관성 및 메모리 안전성 점검 (2025-01-08 완료 ✅)
+
+### 목표
+
+전체 코드베이스에서 Solid.js 제어 흐름 컴포넌트(Show, Portal 등)와 반응성
+패턴(createEffect, onCleanup)의 일관성 및 안전성을 종합 점검하고 자동화된 가드
+테스트를 추가합니다.
+
+### 배경
+
+**계기**:
+
+Phase 9.6에서 Show 컴포넌트가 Portal을 감싸서 DOM 렌더링을 차단하는 문제를
+발견했습니다. 이는 Solid.js의 세분화된 반응성 시스템에서 제어 흐름 컴포넌트 사용
+시 주의가 필요함을 보여주는 사례입니다.
+
+**점검 범위**:
+
+1. **Show/Portal 상호작용** (CRITICAL): Show가 Portal을 감싸는 안티패턴
+2. **createEffect 메모리 관리** (CRITICAL): onCleanup 누락 검사
+3. **Show 중첩 깊이** (HIGH): 과도한 중첩으로 인한 가독성 저하
+4. **조건부 렌더링 일관성** (MEDIUM): Show vs CSS 사용 기준 혼용
+
+### 작업 수행
+
+#### RED 단계: 패턴 스캔 테스트 작성
+
+**1. `test/unit/patterns/solid-control-flow.scan.red.test.ts` (571 lines)**
+
+- Show wrapping Portal 안티패턴 검사 (CRITICAL)
+- Show 중첩 깊이 > 2 검사 (HIGH)
+- 복잡한 Show 조건 검사 (MEDIUM)
+
+**2. `test/unit/patterns/solid-effect-cleanup.scan.red.test.ts` (468 lines)**
+
+- addEventListener without onCleanup (CRITICAL)
+- setTimeout/setInterval without onCleanup (CRITICAL)
+- IntersectionObserver without onCleanup (HIGH)
+- onCleanup usage outside createEffect (WARNING)
+
+#### GREEN 단계: 전체 스캔 결과
+
+**Show/Portal 패턴 검사**:
+
+```text
+✓ CRITICAL: Show wrapping Portal (0 violations found)
+✓ HIGH: Show nesting depth > 2 levels (0 violations found)
+⚠ MEDIUM: Complex Show conditions (1 warning)
+  - src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:420
+  - 복잡한 조건문이지만 기능상 문제 없음
+```
+
+**createEffect 메모리 관리 검사**:
+
+```text
+✓ CRITICAL: addEventListener cleanup (all properly implemented)
+✓ CRITICAL: timer cleanup (all properly implemented)
+✓ HIGH: Observer cleanup (all properly implemented)
+⚠ WARNING: onCleanup outside effect/component (9 occurrences)
+  - primitives, utils 레이어에서 의도적 사용 (안전)
+```
+
+**주요 발견 사항**:
+
+- ✅ Show/Portal 안티패턴 없음 (Phase 9.6에서 제거 완료)
+- ✅ 메모리 누수 위험 패턴 없음
+- ✅ Show 중첩 깊이 모두 2 이하 유지
+- ⚠️ VerticalGalleryView.tsx 복잡 조건 1건 (기능 정상)
+- ℹ️ onCleanup outside effect 9건 (primitives/utils에서 의도적 사용)
+
+#### REFACTOR 단계: 문서화 및 정책 수립
+
+**1. `docs/CODING_GUIDELINES.md` 업데이트** (commit 1a320790):
+
+- **Control Flow Best Practices** 섹션 추가 (~150 lines)
+- Show/Portal 사용 규칙 명시
+- createEffect cleanup 패턴 문서화
+- onCleanup 범위 가이드라인
+- 안티패턴 예시 및 권장 솔루션
+
+**2. 자동화된 가드 테스트** (commit cd977de1):
+
+- `test/unit/patterns/solid-control-flow.scan.red.test.ts`
+- `test/unit/patterns/solid-effect-cleanup.scan.red.test.ts`
+- 지속적 검증을 위한 CI 통합
+
+### 수행 결과
+
+**테스트 결과**:
+
+- ✅ `solid-control-flow.scan.red.test.ts`: 3 tests PASSED (40ms)
+- ✅ `solid-effect-cleanup.scan.red.test.ts`: 4 tests PASSED (98ms)
+- ⚠️ 1 복잡 조건 경고 (VerticalGalleryView.tsx:420)
+- ℹ️ 9 onCleanup 경고 (primitives/utils 의도적 사용)
+
+**빌드 검증**:
+
+```text
+✓ Dev: 1,031.52 KB (sourcemap: 1,844.92 KB)
+✓ Prod: 331.79 KB (gzip: 88.57 KB)
+✓ 249 modules, 701 dependencies
+✓ no dependency violations
+```
+
+**커밋**:
+
+- `cd977de1`: test(core): add Solid.js pattern guard tests for Phase 9.7
+- `1a320790`: docs(core): add comprehensive Solid.js pattern guidelines for
+  Phase 9.7
+
+### 교훈 및 권장사항
+
+**Solid.js 제어 흐름 컴포넌트 사용 원칙**:
+
+1. **Show와 Portal 분리**: Show는 절대 Portal을 감싸지 않음
+2. **중첩 최소화**: Show 중첩은 2단계 이하 유지
+3. **조건 단순화**: 복잡한 boolean 표현식은 computed getter로 추출
+4. **일관된 패턴**: 컴포넌트 가시성은 Show 또는 CSS 중 하나로 통일
+
+**createEffect 메모리 관리 원칙**:
+
+1. **cleanup 필수**: addEventListener, timer, observer는 반드시 onCleanup 사용
+2. **cleanup 위치**: onCleanup은 createEffect 또는 컴포넌트 내부에서만 사용
+3. **primitives 예외**: 재사용 가능한 primitives는 caller가 cleanup 책임
+
+**자동화**:
+
+- 패턴 가드 테스트가 지속적으로 규칙 준수를 검증
+- 새로운 안티패턴 발견 시 테스트 추가
+
+---
+
 ## Phase 9.6: ModalShell Show 컴포넌트 제거 (2025-10-08 완료 ✅)
 
 ### 목표
