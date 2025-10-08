@@ -1349,6 +1349,135 @@ export function increment() {
 // import { MediaService } from '@shared/services/media/MediaService';
 ```
 
+### Solid.js 제어 흐름 및 메모리 패턴 (Phase 9.7)
+
+Solid.js의 반응성 시스템은 강력하지만, 잘못 사용하면 DOM 렌더링 차단이나 메모리
+누수를 일으킬 수 있습니다. 다음 패턴을 준수하세요.
+
+#### Show/Portal 상호작용 (Critical ⛔)
+
+**안티패턴**: Show가 Portal을 직접 감싸는 구조 (Phase 9.6에서 발견된 버그)
+
+```tsx
+// ❌ 금지: Show가 Portal을 감싸면 DOM이 렌더링되지 않음
+<Show when={isOpen()}>
+  <Portal>
+    <div>모달 내용</div>
+  </Portal>
+</Show>
+```
+
+**권장 패턴**: Portal은 항상 렌더링하고, CSS로 가시성 제어
+
+```tsx
+// ✅ 권장: Portal은 항상 렌더링, CSS로 가시성 제어
+<Portal>
+  <div class={isOpen() ? styles.modalOpen : styles.modalHidden}>
+    <div>모달 내용</div>
+  </div>
+</Portal>
+
+// CSS:
+// .modalOpen { opacity: 1; visibility: visible; }
+// .modalHidden { opacity: 0; visibility: hidden; }
+```
+
+- 가드 테스트: `test/unit/patterns/solid-control-flow.scan.red.test.ts`가
+  Show/Portal 안티패턴을 탐지하여 실패 처리합니다.
+
+#### Show 중첩 깊이 제한 (High 🔴)
+
+- Show 중첩은 **최대 2단계**까지만 허용합니다.
+- 더 깊은 중첩이 필요하면 컴포넌트를 분리하세요.
+- 가드: 동일한 테스트가 3단계 이상 중첩 시 경고합니다.
+
+#### createEffect 메모리 관리 (Critical ⛔)
+
+**필수 규칙**: createEffect 내에서 외부 리소스를 생성하면 반드시 onCleanup에서
+정리해야 합니다.
+
+```tsx
+// ✅ EventListener 정리
+createEffect(() => {
+  const handler = () => console.log('scroll');
+  window.addEventListener('scroll', handler);
+
+  onCleanup(() => {
+    window.removeEventListener('scroll', handler);
+  });
+});
+
+// ✅ Timer 정리
+createEffect(() => {
+  const timerId = setTimeout(() => console.log('delayed'), 1000);
+
+  onCleanup(() => {
+    clearTimeout(timerId);
+  });
+});
+
+// ✅ Observer 정리
+createEffect(() => {
+  const observer = new IntersectionObserver(entries => {
+    // ...
+  });
+  observer.observe(element);
+
+  onCleanup(() => {
+    observer.disconnect();
+  });
+});
+```
+
+- 가드 테스트: `test/unit/patterns/solid-effect-cleanup.scan.red.test.ts`가
+  onCleanup 누락을 탐지하여 실패 처리합니다.
+- 감지 대상: addEventListener, setTimeout/setInterval,
+  IntersectionObserver/MutationObserver/ResizeObserver
+
+#### onCleanup 사용 범위
+
+- onCleanup은 **createEffect 또는 컴포넌트 내부**에서만 사용 가능합니다.
+- 일반 함수나 클래스 메서드에서는 사용할 수 없습니다.
+
+```tsx
+// ✅ 컴포넌트 내부
+export const MyComponent: Component = () => {
+  onCleanup(() => {
+    // 컴포넌트 언마운트 시 정리
+  });
+
+  return <div>...</div>;
+};
+
+// ❌ 금지: 일반 함수에서 사용
+export function setupListener() {
+  window.addEventListener('resize', handler);
+  onCleanup(() => {
+    // ❌ 동작하지 않음!
+    window.removeEventListener('resize', handler);
+  });
+}
+```
+
+#### 조건부 렌더링 vs CSS 가시성
+
+상황에 따라 적절한 방법을 선택하세요:
+
+- **Show 사용**: DOM 노드가 많고 렌더링 비용이 큰 경우
+- **CSS visibility**: 빠른 토글이 필요하고 노드가 적은 경우
+
+```tsx
+// Show: 복잡한 컴포넌트 조건부 렌더링
+<Show when={isLoggedIn()}>
+  <ComplexDashboard data={dashboardData()} />
+</Show>
+
+// CSS: 간단한 UI 요소 토글
+<button class={isActive() ? styles.active : styles.inactive}>
+  클릭
+</button>
+```
+
 검증:
 
 - 의존성 순환은 `npm run deps:check`에서 자동 검출됩니다.
