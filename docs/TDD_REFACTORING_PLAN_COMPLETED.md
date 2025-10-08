@@ -5,6 +5,49 @@
 
 ---
 
+## Phase 9.8: 삭제된 파일 import 정리 (2025-01-08 완료 ✅)
+
+### 목표
+
+Preact에서 Solid.js 전환 후 남아있던 `@testing-library/preact` import를 제거하고
+테스트 라이브러리를 `@solidjs/testing-library`로 통일합니다.
+
+### 배경
+
+대부분의 테스트는 Solid.js로 마이그레이션되었으나, 11개 테스트 파일에서 여전히
+`@testing-library/preact`를 사용하고 있었습니다. 이는 코드베이스 일관성을 해치고
+불필요한 의존성을 유지하는 문제가 있었습니다.
+
+### 작업 수행 (RED → GREEN → REFACTOR)
+
+**RED**: 검출 테스트 작성
+
+- `test/unit/lint/deprecated-preact-imports.scan.red.test.ts` (127 lines)
+- 11개 파일에서 `@testing-library/preact` import 검출 ✅
+- `test/utils/vendor-testing-library.ts` 미사용 확인 ✅
+
+**GREEN**: Import 교체 및 파일 정리
+
+- 11개 테스트 파일: `@testing-library/preact` → `@solidjs/testing-library`
+- `test/utils/vendor-testing-library.ts` 삭제
+- Lint 오류 수정: `window.Event`, `typeof document`,
+  `window.IntersectionObserver`
+
+**REFACTOR**: 빌드 검증
+
+- Build: 331.79 KB prod (88.57 KB gzip) ✅
+- 모든 테스트 통과 ✅
+- 의존성 정리 완료 ✅
+
+### 결과
+
+- ✅ 테스트 라이브러리 통일 (단일 라이브러리 사용)
+- ✅ 불필요한 파일 제거 (vendor-testing-library.ts)
+- ✅ 가드 테스트 추가 (향후 재발 방지)
+- ✅ 코드베이스 일관성 개선
+
+---
+
 ## Phase 9.7: Solid.js 패턴 일관성 및 메모리 안전성 점검 (2025-01-08 완료 ✅)
 
 ### 목표
