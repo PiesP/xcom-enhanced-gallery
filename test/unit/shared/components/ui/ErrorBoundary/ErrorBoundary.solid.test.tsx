@@ -23,14 +23,14 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('ErrorBoundary.solid.tsx를 import할 수 있어야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
       expect(module).toBeDefined();
     });
   });
 
   describe('ErrorBoundaryProps Type Validation', () => {
     it('ErrorBoundaryProps는 children을 포함해야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
       const { ErrorBoundary } = module;
 
       // Type assertion으로 props 타입 검증
@@ -42,7 +42,7 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('ErrorBoundaryProps는 fallback을 받을 수 있어야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
 
       type ErrorBoundaryPropsType = Parameters<typeof module.ErrorBoundary>[0];
 
@@ -57,14 +57,14 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Component Structure', () => {
     it('ErrorBoundary는 Solid Component 함수여야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
       const { ErrorBoundary } = module;
 
       expect(typeof ErrorBoundary).toBe('function');
     });
 
     it('ErrorBoundary default export가 있어야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
 
       expect(module.default).toBeDefined();
       expect(typeof module.default).toBe('function');
@@ -80,7 +80,7 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('ErrorBoundary는 JSX.Element를 반환해야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
 
       type ReturnType = ReturnType<typeof module.ErrorBoundary>;
 
@@ -151,7 +151,7 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
 
   describe('Default Behavior', () => {
     it('children이 없으면 빈 Fragment를 반환해야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
 
       type ErrorBoundaryPropsType = Parameters<typeof module.ErrorBoundary>[0];
 
@@ -161,7 +161,7 @@ describe('ErrorBoundary.solid.tsx - Phase 0: Type Tests', () => {
     });
 
     it('에러가 없으면 children을 렌더링해야 함', async () => {
-      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary.solid');
+      const module = await import('@/shared/components/ui/ErrorBoundary/ErrorBoundary');
 
       type ErrorBoundaryPropsType = Parameters<typeof module.ErrorBoundary>[0];
 

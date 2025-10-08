@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 9.4 완료 ✅
+> **Last updated**: 2025-10-08 **Status**: Phase 9.5 완료 ✅
 
 ## Overview
 
@@ -11,73 +11,20 @@
 
 ## Current Phase
 
-### Phase 9.5: React 기반 테스트 마이그레이션 🔴 시작 필요 (High Priority)
-
-**문제**: 전체 테스트 스위트에서 239개 테스트가 "React is not defined" 오류로
-실패하고 있습니다 (총 953개 중).
-
-**근본 원인**:
-
-프로젝트가 Solid.js로 전환되었으나, 많은 테스트 파일들이 여전히 React 기반으로
-작성되어 있습니다:
-
-- `test/unit/shared/components/ui/SettingsModal.test.tsx` - 25개 실패
-- `test/unit/shared/components/ui/ToolbarHeadless.test.tsx` - 9개 실패
-- `test/unit/shared/components/ui/Button/Button.solid.test.tsx` - 타입 체크에서
-  JSX 사용
-- `test/unit/shared/components/ui/variant-contract.test.tsx` - h() 함수 미정의
-- `test/unit/shared/components/ui/wrapper-compat.test.tsx` - h() 함수 미정의
-
-**영향 범위**:
-
-- 실패한 50개 테스트 파일
-- 239개 실패 테스트
-- 711개는 통과 (전체의 약 75%)
-
-**해결 방안**:
-
-1. **@solidjs/testing-library 사용으로 전환**
-   - React Testing Library → Solid Testing Library
-   - `render()` 함수 시그니처 변경
-   - `fireEvent` → userEvent 고려
-
-2. **JSX → Solid JSX**
-   - React.createElement 제거
-   - Solid.js의 JSX 문법 사용
-   - `h()` 함수 → `<JSX>`
-
-3. **우선순위별 마이그레이션**
-   - High: SettingsModal, ModalShell (Phase 9.3/9.4 관련)
-   - Medium: Button, Toolbar 컴포넌트
-   - Low: 나머지 컴포넌트
-
-**TDD 단계**:
-
-1. ✅ RED: 테스트 실행 결과 확인 - 239개 실패 확인됨
-2. 🔴 GREEN: 테스트를 Solid.js로 마이그레이션
-   - SettingsModal.test.tsx 우선 처리
-   - ToolbarHeadless.test.tsx
-   - Button 관련 테스트
-3. 🔴 REFACTOR: 테스트 구조 개선 및 중복 제거
-
-**예상 결과**:
-
-- ✅ 모든 테스트가 Solid.js 기반으로 동작
-- ✅ "React is not defined" 오류 완전 제거
-- ✅ 테스트 커버리지 유지
-- ✅ CI/CD 파이프라인 정상화
-
----
-
 ### 대기 중 (향후 Phase 후보)
 
-1. **Signal/Effect 메모리 누수 점검 (Phase 9.6 후보)**:
+1. **삭제된 파일 import 정리 (Phase 9.6 후보)**:
+   - `@testing-library/preact` import 제거
+   - 삭제된 훅/유틸 경로 정리
+   - 우선순위: Medium
+
+2. **Signal/Effect 메모리 누수 점검 (Phase 9.7 후보)**:
    - createRoot 누락 검사
    - onCleanup 패턴 검증
    - viewport.ts 경고 해결
    - 우선순위: Medium
 
-2. **컴포넌트 중첩 구조 검토 (Phase 9.7 후보)**:
+3. **컴포넌트 중첩 구조 검토 (Phase 9.8 후보)**:
    - 불필요한 래퍼 컴포넌트 식별
    - prop drilling 최소화
    - 우선순위: Low
@@ -86,8 +33,15 @@
 
 ## Recent Completions
 
-Phase 9.3과 9.4가 완료되었습니다. 상세 내용은
+Phase 9.3, 9.4, 9.5가 완료되었습니다. 상세 내용은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
+
+**Phase 9.5 주요 성과**:
+
+- ✅ vitest.config.ts 재작성 (348줄 → 70줄, 80% 감소)
+- ✅ Solid JSX transform 문제 해결
+- ✅ 테스트 pass rate 대폭 개선 (28% → 79%)
+- ✅ 187개 테스트 파일 복구
 
 ---
 

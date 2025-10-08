@@ -18,7 +18,7 @@ import type {
   Toolbar,
   ToolbarProps,
   GalleryToolbarProps,
-} from '@shared/components/ui/Toolbar/Toolbar.solid';
+} from '@shared/components/ui/Toolbar/Toolbar';
 
 describe('Toolbar.solid - Phase 0 Type Tests', () => {
   describe('ToolbarProps Type', () => {

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Icon } from '../../../../../src/shared/components/ui/Icon/Icon.solid';
+import { Icon } from '../../../../../src/shared/components/ui/Icon/Icon';
 
 describe('Icon.solid (TDD - Phase 4.1)', () => {
   describe('Build System Verification', () => {

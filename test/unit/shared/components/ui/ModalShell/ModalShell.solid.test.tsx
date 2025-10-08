@@ -4,10 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  ModalShell,
-  type ModalShellProps,
-} from '@shared/components/ui/ModalShell/ModalShell.solid';
+import { ModalShell, type ModalShellProps } from '@shared/components/ui/ModalShell/ModalShell';
 
 describe('ModalShell.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

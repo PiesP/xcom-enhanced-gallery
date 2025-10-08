@@ -31,13 +31,13 @@ describe('Phase 0: VerticalGalleryView.solid - TypeScript Compilation', () => {
   it('should compile TypeScript without errors', async () => {
     // 동적 import로 TypeScript 컴파일 검증
     expect(async () => {
-      await import('@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid');
+      await import('@features/gallery/components/vertical-gallery-view/VerticalGalleryView');
     }).not.toThrow();
   });
 
   it('should export VerticalGalleryView component', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
     expect(module.VerticalGalleryView).toBeDefined();
     expect(typeof module.VerticalGalleryView).toBe('function');
@@ -47,7 +47,7 @@ describe('Phase 0: VerticalGalleryView.solid - TypeScript Compilation', () => {
 describe('Phase 0: VerticalGalleryView.solid - Props Interface', () => {
   it('should accept all required props without TypeScript errors', async () => {
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     // Props interface 검증 (컴파일 타임 검증)
@@ -68,7 +68,7 @@ describe('Phase 0: VerticalGalleryView.solid - Props Interface', () => {
 
   it('should make all props optional', async () => {
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     // 모든 props가 선택적이어야 함
@@ -87,7 +87,7 @@ describe('Phase 0: VerticalGalleryView.solid - Basic Structure', () => {
   it('should render gallery container with Solid', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -103,7 +103,7 @@ describe('Phase 0: VerticalGalleryView.solid - Basic Structure', () => {
   it('should apply custom className', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -120,7 +120,7 @@ describe('Phase 0: VerticalGalleryView.solid - Basic Structure', () => {
 describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
   it('should use Solid For component for items', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     // Solid For 컴포넌트 사용 검증 (소스 코드 검사)
@@ -130,7 +130,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should use Solid Show component for conditionals', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -139,7 +139,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should use createSignal for local state', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -148,7 +148,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should use createEffect for side effects', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -157,7 +157,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should use onCleanup for cleanup', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -166,7 +166,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should use mergeProps for prop defaults', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -175,7 +175,7 @@ describe('Phase 0: VerticalGalleryView.solid - Solid.js Integration', () => {
 
   it('should NOT use Preact memo', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -188,7 +188,7 @@ describe('Phase 0: VerticalGalleryView.solid - Toolbar Integration', () => {
   it('should render ToolbarWithSettings.solid', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -203,7 +203,7 @@ describe('Phase 0: VerticalGalleryView.solid - Toolbar Integration', () => {
   it('should pass toolbar props correctly', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -254,7 +254,7 @@ describe('Phase 0: VerticalGalleryView.solid - Item Rendering', () => {
   it('should render empty state when no media items', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -268,7 +268,7 @@ describe('Phase 0: VerticalGalleryView.solid - Item Rendering', () => {
 
   it('should use For component to render items', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -278,7 +278,7 @@ describe('Phase 0: VerticalGalleryView.solid - Item Rendering', () => {
 
   it('should render VerticalImageItem.solid for each media', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -291,7 +291,7 @@ describe('Phase 0: VerticalGalleryView.solid - Keyboard Handling', () => {
   it('should render KeyboardHelpOverlay', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -307,7 +307,7 @@ describe('Phase 0: VerticalGalleryView.solid - Keyboard Handling', () => {
   it('should handle Escape key to close gallery', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -328,7 +328,7 @@ describe('Phase 0: VerticalGalleryView.solid - Keyboard Handling', () => {
   it('should handle "?" key to open help overlay', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -349,7 +349,7 @@ describe('Phase 0: VerticalGalleryView.solid - Keyboard Handling', () => {
 describe('Phase 0: VerticalGalleryView.solid - Scroll Management', () => {
   it('should set up scroll observers', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -360,7 +360,7 @@ describe('Phase 0: VerticalGalleryView.solid - Scroll Management', () => {
   it('should handle wheel events (PC-only)', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -375,7 +375,7 @@ describe('Phase 0: VerticalGalleryView.solid - Scroll Management', () => {
 
   it('should NOT use touch/pointer events (PC-only policy)', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -392,7 +392,7 @@ describe('Phase 0: VerticalGalleryView.solid - Scroll Management', () => {
 describe('Phase 0: VerticalGalleryView.solid - Viewport Tracking', () => {
   it('should observe viewport changes', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -403,7 +403,7 @@ describe('Phase 0: VerticalGalleryView.solid - Viewport Tracking', () => {
   it('should inject CSS variables for viewport constraints', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -421,7 +421,7 @@ describe('Phase 0: VerticalGalleryView.solid - Event Handling', () => {
   it('should handle background click to close', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -441,7 +441,7 @@ describe('Phase 0: VerticalGalleryView.solid - Event Handling', () => {
   it('should NOT close when clicking toolbar area', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -463,7 +463,7 @@ describe('Phase 0: VerticalGalleryView.solid - Download Handlers', () => {
   it('should call onDownloadCurrent when download button clicked', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -483,7 +483,7 @@ describe('Phase 0: VerticalGalleryView.solid - Download Handlers', () => {
   it('should call onDownloadAll when bulk download triggered', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -502,7 +502,7 @@ describe('Phase 0: VerticalGalleryView.solid - Download Handlers', () => {
 describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
   it('should support fitOriginal mode', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -511,7 +511,7 @@ describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
 
   it('should support fitWidth mode', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -520,7 +520,7 @@ describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
 
   it('should support fitHeight mode', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -529,7 +529,7 @@ describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
 
   it('should support fitContainer mode', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -538,7 +538,7 @@ describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
 
   it('should persist fit mode to settings', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -549,7 +549,7 @@ describe('Phase 0: VerticalGalleryView.solid - Image Fit Mode', () => {
 describe('Phase 0: VerticalGalleryView.solid - Styling', () => {
   it('should use CSS Modules', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -558,7 +558,7 @@ describe('Phase 0: VerticalGalleryView.solid - Styling', () => {
 
   it('should NOT have hardcoded colors', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -569,7 +569,7 @@ describe('Phase 0: VerticalGalleryView.solid - Styling', () => {
 
   it('should use design tokens only', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -582,7 +582,7 @@ describe('Phase 0: VerticalGalleryView.solid - Accessibility', () => {
   it('should have gallery role', async () => {
     const { render } = await import('solid-js/web');
     const { VerticalGalleryView } = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const container = document.getElementById('test-container')!;
@@ -596,7 +596,7 @@ describe('Phase 0: VerticalGalleryView.solid - Accessibility', () => {
 
   it('should handle keyboard navigation', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -606,7 +606,7 @@ describe('Phase 0: VerticalGalleryView.solid - Accessibility', () => {
 
   it('should support focus management', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -617,7 +617,7 @@ describe('Phase 0: VerticalGalleryView.solid - Accessibility', () => {
 describe('Phase 0: VerticalGalleryView.solid - Optimization', () => {
   it('should NOT use Preact memo (Solid auto-optimizes)', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -626,7 +626,7 @@ describe('Phase 0: VerticalGalleryView.solid - Optimization', () => {
 
   it('should use Solid reactive primitives', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -636,7 +636,7 @@ describe('Phase 0: VerticalGalleryView.solid - Optimization', () => {
 
   it('should compute preload indices', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -647,7 +647,7 @@ describe('Phase 0: VerticalGalleryView.solid - Optimization', () => {
 describe('Phase 0: VerticalGalleryView.solid - Code Metrics', () => {
   it('should have reasonable file size (<650 lines)', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();
@@ -659,7 +659,7 @@ describe('Phase 0: VerticalGalleryView.solid - Code Metrics', () => {
 
   it('should have fewer functions than Preact version', async () => {
     const module = await import(
-      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView.solid'
+      '@features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const source = module.VerticalGalleryView.toString();

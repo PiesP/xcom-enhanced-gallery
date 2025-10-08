@@ -8,7 +8,7 @@ import {
   IconButton,
   type IconButtonProps,
   ICON_BUTTON_SIZES,
-} from '@shared/components/ui/Button/IconButton.solid';
+} from '@shared/components/ui/Button/IconButton';
 
 describe('IconButton.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

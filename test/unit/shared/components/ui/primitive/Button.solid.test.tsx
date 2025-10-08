@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Button } from '@shared/components/ui/primitive/Button.solid';
+import { Button } from '@shared/components/ui/primitive/Button';
 
 describe('Button.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

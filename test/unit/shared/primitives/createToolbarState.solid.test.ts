@@ -19,7 +19,7 @@ import type {
   createToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '@shared/primitives/createToolbarState.solid';
+} from '@shared/primitives/createToolbarState';
 
 describe('createToolbarState.solid - Phase 0 Type Tests', () => {
   describe('ToolbarState Type', () => {

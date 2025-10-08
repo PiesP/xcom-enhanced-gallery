@@ -5,15 +5,15 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { HeroArrowAutofitHeight } from '@shared/components/ui/Icon/hero/HeroArrowAutofitHeight.solid';
-import { HeroArrowAutofitWidth } from '@shared/components/ui/Icon/hero/HeroArrowAutofitWidth.solid';
-import { HeroArrowsMaximize } from '@shared/components/ui/Icon/hero/HeroArrowsMaximize.solid';
-import { HeroChevronLeft } from '@shared/components/ui/Icon/hero/HeroChevronLeft.solid';
-import { HeroChevronRight } from '@shared/components/ui/Icon/hero/HeroChevronRight.solid';
-import { HeroDownload } from '@shared/components/ui/Icon/hero/HeroDownload.solid';
-import { HeroFileZip } from '@shared/components/ui/Icon/hero/HeroFileZip.solid';
-import { HeroSettings } from '@shared/components/ui/Icon/hero/HeroSettings.solid';
-import { HeroZoomIn } from '@shared/components/ui/Icon/hero/HeroZoomIn.solid';
+import { HeroArrowAutofitHeight } from '@shared/components/ui/Icon/hero/HeroArrowAutofitHeight';
+import { HeroArrowAutofitWidth } from '@shared/components/ui/Icon/hero/HeroArrowAutofitWidth';
+import { HeroArrowsMaximize } from '@shared/components/ui/Icon/hero/HeroArrowsMaximize';
+import { HeroChevronLeft } from '@shared/components/ui/Icon/hero/HeroChevronLeft';
+import { HeroChevronRight } from '@shared/components/ui/Icon/hero/HeroChevronRight';
+import { HeroDownload } from '@shared/components/ui/Icon/hero/HeroDownload';
+import { HeroFileZip } from '@shared/components/ui/Icon/hero/HeroFileZip';
+import { HeroSettings } from '@shared/components/ui/Icon/hero/HeroSettings';
+import { HeroZoomIn } from '@shared/components/ui/Icon/hero/HeroZoomIn';
 
 const iconComponents = [
   { name: 'HeroArrowAutofitHeight', component: HeroArrowAutofitHeight },

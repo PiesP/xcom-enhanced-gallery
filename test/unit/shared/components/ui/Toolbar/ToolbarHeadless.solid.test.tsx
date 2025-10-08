@@ -19,7 +19,7 @@ import type {
   ToolbarActions,
   ToolbarItem,
   FitMode,
-} from '@shared/components/ui/Toolbar/ToolbarHeadless.solid';
+} from '@shared/components/ui/Toolbar/ToolbarHeadless';
 
 describe('ToolbarHeadless.solid - Phase 0 Type Tests', () => {
   describe('FitMode Type', () => {

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { Panel } from '@shared/components/ui/primitive/Panel.solid';
+import { Panel } from '@shared/components/ui/primitive/Panel';
 
 describe('Panel.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {

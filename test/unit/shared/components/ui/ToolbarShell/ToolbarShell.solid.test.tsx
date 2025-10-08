@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { Component, JSX } from 'solid-js';
-import type { ToolbarShellProps } from '@shared/components/ui/ToolbarShell/ToolbarShell.solid';
+import type { ToolbarShellProps } from '@shared/components/ui/ToolbarShell/ToolbarShell';
 
 describe('ToolbarShell.solid - Phase 0: Compile & Type Verification', () => {
   it('should compile and be a function', () => {
