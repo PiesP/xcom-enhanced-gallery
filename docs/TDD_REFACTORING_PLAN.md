@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 9.6 완료 ✅
+> **Last updated**: 2025-10-08 **Status**: Phase 9.7 진행 중 🚧
 
 ## Overview
 
@@ -10,6 +10,50 @@
 ---
 
 ## Current Phase
+
+### Phase 9.7: Solid.js 패턴 일관성 및 메모리 안전성 점검
+
+**배경**:
+
+Phase 9.6에서 Show 컴포넌트가 Portal을 감싸서 DOM 렌더링을 차단하는 문제를
+발견하고 수정했습니다. 이를 계기로 전체 코드베이스에서 Solid.js 제어 흐름
+컴포넌트와 반응성 패턴의 일관성 및 안전성을 종합 점검합니다.
+
+**점검 항목**:
+
+1. **Show/Portal 상호작용 패턴** (Critical):
+   - Show가 Portal을 감싸는 안티패턴 검색
+   - Show/Switch/Match와 렌더링 경계의 충돌 가능성
+2. **조건부 렌더링 일관성** (High):
+   - Show 컴포넌트 vs CSS visibility 사용 기준
+   - 패턴 혼용으로 인한 혼란 최소화
+3. **createEffect 메모리 관리** (Medium):
+   - onCleanup 누락 검사
+   - DOM 조작 createEffect의 메모리 누수 가능성
+   - EventListener, Timer, IntersectionObserver 정리 확인
+
+4. **반응성 시스템 오용** (Medium):
+   - Signal getter 캐싱 패턴 검증 (Phase 9.2에서 수정됨)
+   - 불필요한 createEffect 중첩
+5. **문서-코드 동기화** (Low):
+   - Phase 문서와 실제 코드 일치 여부 검증
+   - 오래된 문서 정리 및 갱신
+
+**작업 계획** (RED → GREEN → REFACTOR):
+
+1. RED: Show/Portal/createEffect 패턴 스캔 테스트 작성
+   - `test/unit/patterns/solid-control-flow.scan.red.test.ts`
+   - `test/unit/patterns/solid-effect-cleanup.scan.red.test.ts`
+2. GREEN: 발견된 문제 수정
+   - 안티패턴 제거
+   - 가이드라인 수립 및 문서화
+3. REFACTOR: 코딩 가이드라인 및 가드 테스트 추가
+   - `docs/CODING_GUIDELINES.md`에 Solid.js 패턴 섹션 추가
+   - 지속적 검증을 위한 정적 분석 테스트
+
+**우선순위**: High (사용자 경험에 직접 영향)
+
+---
 
 ### 대기 중 (향후 Phase 후보)
 
