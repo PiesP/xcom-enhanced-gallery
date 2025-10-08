@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 9.5 완료 ✅
+> **Last updated**: 2025-01-08 **Status**: 정리/대기 중 🎯
 
 ## Overview
 
@@ -9,22 +9,40 @@
 
 ---
 
-## Current Phase
+## Current Status
+
+### 최근 완료: Phase 9.7
+
+Phase 9.7 (Solid.js 패턴 일관성 및 메모리 안전성 점검)이 완료되었습니다.
+
+**주요 성과** (2025-01-08 완료 ✅):
+
+- ✅ Show/Portal 안티패턴: 0건 (전체 스캔 결과 위반 없음)
+- ✅ createEffect 메모리 누수: 0건 (cleanup 패턴 모두 준수)
+- ✅ Show 중첩 깊이: 모두 2단계 이하 유지
+- ✅ 패턴 가드 테스트 추가 (2개 파일, 571+468 lines)
+- ✅ CODING_GUIDELINES.md에 Solid.js 패턴 가이드 추가 (~150 lines)
+- ✅ 빌드: Prod 331.79 KB (gzip 88.57 KB)
+
+상세 내용은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`의 Phase 9.7 섹션을
+참고하세요.
+
+---
 
 ### 대기 중 (향후 Phase 후보)
 
-1. **삭제된 파일 import 정리 (Phase 9.6 후보)**:
+1. **삭제된 파일 import 정리 (Phase 9.7 후보)**:
    - `@testing-library/preact` import 제거
    - 삭제된 훅/유틸 경로 정리
    - 우선순위: Medium
 
-2. **Signal/Effect 메모리 누수 점검 (Phase 9.7 후보)**:
+2. **Signal/Effect 메모리 누수 점검 (Phase 9.8 후보)**:
    - createRoot 누락 검사
    - onCleanup 패턴 검증
    - viewport.ts 경고 해결
    - 우선순위: Medium
 
-3. **컴포넌트 중첩 구조 검토 (Phase 9.8 후보)**:
+3. **컴포넌트 중첩 구조 검토 (Phase 9.9 후보)**:
    - 불필요한 래퍼 컴포넌트 식별
    - prop drilling 최소화
    - 우선순위: Low
@@ -33,8 +51,15 @@
 
 ## Recent Completions
 
-Phase 9.3, 9.4, 9.5가 완료되었습니다. 상세 내용은
+Phase 9.3, 9.4, 9.5, 9.6이 완료되었습니다. 상세 내용은
 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`를 참고하세요.
+
+**Phase 9.6 주요 성과** (2025-01-08 완료 ✅):
+
+- ✅ ModalShell에서 Show 컴포넌트 제거 (설정 모달 미표시 버그 수정)
+- ✅ CSS 기반 가시성 제어로 변경 (modal-open 클래스)
+- ✅ Solid.js 반응성 시스템과의 충돌 해결
+- ✅ 빌드: Prod 331.79 KB (gzip 88.57 KB)
 
 **Phase 9.5 주요 성과**:
 
