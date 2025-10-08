@@ -21,6 +21,43 @@
 
 ## 최근 완료된 작업 (2025-10-08)
 
+### Phase 9.5: vitest.config.ts 전면 재작성 및 Solid JSX Transform 해결 ✅
+
+**배경**: 240개 테스트가 "React is not defined" 오류로 실패. vitest.config.ts가
+348줄로 과도하게 복잡했고, vite-plugin-solid가 JSX transform을 적용하지 않음.
+
+**해결 방법**:
+
+- solidjs/solid-start 프로젝트의 간단한 패턴 참고
+- vitest.config.ts 전면 재작성 (348줄 → 70줄, 80% 감소)
+- `solid()` 플러그인을 옵션 없이 사용
+- 명시적 resolve.alias 추가
+
+**결과**:
+
+- ✅ JSX transform 문제 해결 (핵심 목표)
+- ✅ 테스트 pass rate: 28% → 79% (+175% 증가)
+- ✅ Passing files: 107 → 294 (+187 files)
+- ✅ 빌드 성공: Dev 1,031.79 KB, Prod 331.86 KB
+
+**Vitest 설정 패턴**:
+
+```typescript
+plugins: [
+  solid(), // 옵션 없음 - solid-start 패턴
+  tsconfigPaths({ projects: ['tsconfig.json'] }),
+];
+```
+
+**교훈**:
+
+- 단순함이 최고: 복잡한 설정보다 공식 예제의 간단한 패턴이 효과적
+- 플러그인 옵션 주의: 과도한 옵션이 오히려 동작을 방해할 수 있음
+- 공식 예제 참조: solidjs/solid-start 같은 공식 프로젝트가 가장 신뢰할 수 있는
+  레퍼런스
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.5 참조
+
 ### Phase 9.3 & 9.4: Solid.js Show 컴포넌트 중첩 제거 ✅
 
 **배경**: 설정 버튼 클릭 시 모달이 표시되지 않는 문제 발견 및 전체 프로젝트
