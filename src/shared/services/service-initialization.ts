@@ -37,16 +37,9 @@ export async function registerCoreServices(): Promise<void> {
   const themeService = new ThemeService();
   const toastController = new ToastController();
 
+  // Phase 9.16: 중복 등록 제거 - 각 서비스는 단일 키로만 등록
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
   serviceManager.register(SERVICE_KEYS.TOAST, toastController);
-
-  // 하위 호환성을 위한 추가 키 등록
-  serviceManager.register('theme.service', themeService); // 테스트에서 사용하는 키
-  serviceManager.register('toast.controller', toastController); // 테스트에서 사용하는 키
-
-  // 기존 키들과의 호환성을 위해 중복 등록
-  serviceManager.register(SERVICE_KEYS.THEME, themeService);
-  // TOAST_CONTROLLER는 이미 위에서 등록됨
 
   // ====================================
   // 독립 유지 서비스들

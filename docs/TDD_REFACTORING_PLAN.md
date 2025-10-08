@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-01-08 **Status**: Phase 9.11 완료 ✅
+> **Last updated**: 2025-10-08 **Status**: Phase 9.16 완료 ✅
 
 ## Overview
 
@@ -11,47 +11,96 @@
 
 ## Current Phase
 
-### Phase 9.11: KBD-CENTRALIZATION-MISSING 완료 (2025-01-08 ✅)
+### 백로그 검토 필요
 
-**목표**: 키보드 리스너 중앙화 - VerticalGalleryView의 직접 이벤트 리스너를
-KeyboardNavigator로 통합
+Phase 9.16 (서비스 초기화 정리 및 갤러리 이중 렌더링 수정)까지 완료되었습니다.
 
-**완료 내역**:
+다음 우선순위 항목을 검토하여 새로운 Phase를 시작하세요:
 
-- ✅ RED: `keyboard-listener.centralization.policy.test.ts` 실행
-  - 1건 위반 검출: `VerticalGalleryView.tsx:262` -
-    `document.addEventListener('keydown')`
-- ✅ GREEN: KeyboardNavigator 서비스 사용으로 전환
-  - `services/index.ts`에 `keyboardNavigator` export 추가
-  - `VerticalGalleryView.tsx`에서 `keyboardNavigator.subscribe()` 사용
-  - Escape 키 핸들링 중앙화 (context: 'vertical-gallery-view')
-  - 자동 cleanup (createEffect의 onCleanup 활용)
-- ✅ GREEN: `keyboard-listener.centralization.policy.test.ts` PASS (1건 → 0건)
-- ✅ REFACTOR: 타입/린트/빌드 검증 통과
-- ✅ 빌드: Dev 1,053.53 KB (-0.03 KB vs Phase 9.10, 사실상 동일)
-
-**변경 파일** (2개):
-
-- ✏️ `src/shared/services/index.ts` (keyboardNavigator export)
-- ✏️
-  `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-  (13줄 → 16줄, 중앙화)
-
-**메트릭스**:
-
-- 키보드 리스너 위반: 1건 → 0건 (-100%)
-- 코드 품질: 직접 이벤트 리스너 제거, EventManager 중앙화 완료
-- 빌드 크기: Dev 1,053.56 KB → 1,053.53 KB (±0%)
-
----
-
-## Current Phase
-
-**Status**: 백로그 검토 필요 - Phase 9.14 완료 후 우선순위 재평가
+- 백로그 문서: `docs/TDD_REFACTORING_BACKLOG.md`
+- 완료 기록: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 
 ---
 
 ## Completed Phases
+
+### Phase 9.16: SERVICE-INIT-CLEANUP 완료 (2025-10-08 ✅)
+
+**목표**: 서비스 중복 등록 제거 및 갤러리 이중 렌더링 수정
+
+**배경**: 로그 분석 결과 다음 2가지 문제 발견:
+
+1. `toast.controller`, `theme.auto` 서비스 중복 등록으로 WARN 로그 발생
+2. 갤러리 컴포넌트가 8ms 간격으로 2번 연속 렌더링됨
+
+**완료 내역**:
+
+#### 문제 1: 서비스 중복 등록 제거 ✅
+
+- **파일**: `src/shared/services/service-initialization.ts`
+- **변경**: 중복 키 등록 제거 (3개 → 2개)
+
+  ```typescript
+  // 제거 전 (3개 중복)
+  serviceManager.register(SERVICE_KEYS.THEME, themeService);
+  serviceManager.register('theme.service', themeService);
+  serviceManager.register(SERVICE_KEYS.THEME, themeService); // 중복!
+
+  // 제거 후 (1개만)
+  serviceManager.register(SERVICE_KEYS.THEME, themeService);
+  ```
+
+- **효과**: WARN 로그 3건 → 0건 제거
+
+#### 문제 2: 갤러리 이중 렌더링 방지 ✅
+
+- **파일**: `src/features/gallery/GalleryRenderer.tsx`
+- **근본 원인**:
+  - `setupStateSubscription()`이 `effectSafe` 기반으로 즉시 1번 실행
+  - `openGallery()` signal 변경 시 다시 1번 실행
+  - `isRenderingFlag`가 `finally`에서 바로 리셋되어 가드 효과 없음
+- **해결 방법**:
+  - `isRenderingFlag` 필드 제거
+  - `renderGallery()` 가드를 `container` 존재 여부로만 판단
+  - `isRendering()` 메서드도 `container !== null`로 변경
+
+  ```typescript
+  // 제거 전
+  if (this.isRenderingFlag || this.container) return;
+  this.isRenderingFlag = true;
+  try { ... } finally { this.isRenderingFlag = false; }
+
+  // 제거 후
+  if (this.container) return; // container가 정확한 가드 조건
+  try { ... } // finally 불필요
+  ```
+
+- **효과**: 이중 렌더링 방지 (8ms 낭비 제거)
+
+**검증 결과**:
+
+✅ 타입/린트/빌드 검증 통과 ✅ 의존성: 0 violations (247 modules, 704
+dependencies) ✅ 빌드: Dev 1,053.80 KB (map 1,886.54 KB), Prod 336.52 KB (gzip
+90.31 KB)
+
+**메트릭스**:
+
+- 서비스 중복 WARN: 3건 → 0건 (-100%)
+- 갤러리 렌더링 횟수: 2회 → 1회 (-50%)
+- 코드 복잡도 감소: `isRenderingFlag` 제거, finally 블록 제거
+
+**교훈**:
+
+- 서비스 등록은 단일 키로만 수행 (하위 호환 키는 불필요)
+- Solid.js `effectSafe` 기반 subscribe는 즉시 1번 실행됨을 고려
+- 상태 플래그보다 실제 DOM 상태(`container`)가 더 정확한 가드 조건
+- 로그 분석으로 미세한 성능 이슈도 조기 발견 가능
+
+**다음 Phase 후보**:
+
+백로그 검토 필요 (High/Medium 우선순위 항목 모두 완료)
+
+---
 
 ### Phase 9.14: TOOLBAR-CSS-CONSOLIDATION 완료 (2025-01-08 ✅)
 

@@ -60,13 +60,16 @@ export const ToolbarWithSettings: Component<ToolbarWithSettingsProps> = props =>
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
   const handleOpenSettings = (): void => {
+    const previousState = isSettingsOpen();
     logger.debug('[ToolbarWithSettings] 설정 버튼 클릭됨', {
       timestamp: new Date().toISOString(),
-      previousState: isSettingsOpen(),
+      previousState,
     });
-    setIsSettingsOpen(true);
-    logger.debug('[ToolbarWithSettings] 설정 모달 열림 상태로 변경됨', {
-      newState: true,
+    // Phase 9.15: 토글 로직으로 수정 (항상 true 설정 버그 수정)
+    setIsSettingsOpen(prev => !prev);
+    logger.debug('[ToolbarWithSettings] 설정 모달 상태 변경됨', {
+      previousState,
+      newState: !previousState,
     });
   };
 
