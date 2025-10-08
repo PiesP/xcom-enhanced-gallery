@@ -1,246 +1,166 @@
 /**
- * Gallery Toolbar Styles - Modern State-Based Architecture
- * @version 5.0.0 - 상태 기반 CSS 아키텍처 및 CSS 커스텀 프로퍼티 활용
+ * Gallery Toolbar - Modern State Architecture v5.0
  */
-
-/* 통합 디자인 토큰 사용 - 로컬 CSS 변수 제거됨 */
-
-/* ===== 상태 기반 CSS ===== */
-
-/* 클릭 상태 - 단순화된 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
   box-shadow: var(--xeg-shadow-sm);
-  /* 단순한 클릭 효과 - transform 제거 */
 }
-
-/* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
-  /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
   background: var(--xeg-bg-toolbar);
   border: 1px solid var(--color-border-default);
   border-radius: var(--xeg-radius-lg);
-
-  /* 레이아웃 속성 */
   position: fixed;
-  top: 1.25em; /* 20px → 1.25em */
+  top: 1.25em;
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
-
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 3em; /* 48px → 3em */
-  padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
-  gap: 0.75em; /* 12px → 0.75em */
-
-  /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
+  min-height: 3em;
+  padding: 0.5em 1em;
+  gap: 0.75em;
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard);
-
   user-select: none;
 }
-
-/* 감소된 모션 지원 강화 */
 @media (prefers-reduced-motion: reduce) {
   .galleryToolbar {
     transition: none;
   }
 }
-
-/* 상태별 가시성 설정 - 구체성으로 우선순위 확보 */
 .galleryToolbar[data-state='idle'],
-.galleryToolbar:not([data-state]) {
+.galleryToolbar:not([data-state]),
+.galleryToolbar[data-state='downloading'],
+.galleryToolbar[data-state='error'] {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
-  /* 명시적 가시성 보장 */
-  opacity: 1;
-  visibility: visible;
-  display: flex;
-  pointer-events: auto;
 }
-
 .galleryToolbar[data-state='loading'] {
   --toolbar-opacity: 0.7;
   --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-loading);
-  /* 로딩 상태에서도 가시성 보장 */
-  opacity: 0.7;
-  pointer-events: auto;
 }
-
 .galleryToolbar[data-state='downloading'] {
-  --toolbar-opacity: 1;
-  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-downloading);
-  /* 다운로드 상태에서도 가시성 보장 */
-  opacity: 1;
-  pointer-events: auto;
 }
-
 .galleryToolbar[data-state='error'] {
-  --toolbar-opacity: 1;
-  --toolbar-pointer-events: auto;
   --toolbar-bg: var(--toolbar-bg-error);
-  --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
-  /* 에러 상태에서도 가시성 보장 */
-  opacity: 1;
-  pointer-events: auto;
+  --toolbar-offset-y: -0.25em;
 }
-
 .toolbarContent {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  gap: 0.5em; /* 8px → 0.5em */
+  gap: 0.5em;
   max-width: 100%;
   overflow: hidden;
 }
-
 .toolbarSection {
   display: flex;
   align-items: center;
-  gap: 0.125em; /* 2px → 0.125em */
+  gap: 0.125em;
   position: relative;
 }
-
-/* 좌측, 우측 섹션을 같은 크기로 균등 배치 */
 .toolbarLeft,
 .toolbarRight {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.125em; /* 2px → 0.125em */
+  gap: 0.125em;
 }
-
 .toolbarLeft {
   justify-content: flex-start;
 }
-
 .toolbarRight {
   justify-content: flex-end;
 }
-
-/* 중앙 섹션 */
 .toolbarCenter {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-/* 구분선 제거 */
 .toolbarSection::after {
-  display: none; /* 모든 구분선 제거 */
+  display: none;
 }
-
 .separator {
-  /* 구분자('/')를 인디케이터 숫자와 동일 톤(Primary)으로 통일 */
   color: var(--xeg-color-text-primary);
-  margin: 0 0.125em; /* 0 2px → 0 0.125em */
+  margin: 0 0.125em;
 }
-
-/* 🎨 REFACTOR: 통일된 툴바 버튼 스타일 - glassmorphism 클래스 기반 */
 .toolbarButton {
-  /* 기본 크기와 레이아웃만 정의, glassmorphism은 클래스로 */
-  width: 2.5em; /* 40px → 2.5em */
-  height: 2.5em; /* 40px → 2.5em */
-  min-width: 2.5em; /* 40px → 2.5em */
-  min-height: 2.5em; /* 40px → 2.5em */
-  padding: 0.5em; /* 8px → 0.5em */
-
-  /* 텍스트 및 커서 */
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  padding: 0.5em;
   color: var(--xeg-color-text-primary);
   cursor: pointer;
-
-  /* 레이아웃 */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875em; /* 14px → 0.875em */
+  font-size: 0.875em;
   font-weight: 500;
   position: relative;
   overflow: hidden;
   border-radius: var(--xeg-radius-md);
 }
-
-/* 데이터 속성 기반 상태 관리 */
 .toolbarButton[data-active='true'] {
   background: var(--xeg-color-primary);
   --button-color: white;
   box-shadow:
     0 0 0 0.125em var(--xeg-color-primary-alpha-30),
-    /* 2px → 0.125em */ 0 0.25em 1em var(--color-overlay-light); /* 4px 16px → 0.25em 1em */
+    0 0.25em 1em var(--color-overlay-light);
 }
-
 .toolbarButton[data-selected='true'] {
   --button-bg: var(--xeg-color-primary);
   --button-color: white;
   border-color: var(--xeg-color-primary);
 }
-
 .toolbarButton[data-loading='true'] {
   --button-opacity: 0.7;
   --button-transform: scale(0.95);
 }
-
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
   background: var(--xeg-surface-disabled);
   --button-color: var(--xeg-color-neutral-400);
   cursor: not-allowed;
 }
-
-/* 호버 상태는 glassmorphism 클래스에서 처리 */
 @media (hover: hover) {
   .toolbarButton:hover:not([data-disabled='true']) {
-    /* glassmorphism 클래스의 호버 효과 사용 */
-    /* 복잡한 transform 효과 제거 */
     background: var(--xeg-glass-bg-hover, var(--color-glass-bg));
     transform: translateY(var(--xeg-button-lift));
   }
 }
-
-/* 의미론적 버튼 변형 */
 .toolbarButton.primary {
   border-color: var(--xeg-color-primary);
 }
-
 .toolbarButton.primary:hover:not([data-disabled='true']) {
   background: var(--xeg-color-primary-50);
   border-color: var(--xeg-color-primary-hover);
 }
-
 .toolbarButton.success {
   border-color: var(--xeg-color-success);
 }
-
 .toolbarButton.success:hover:not([data-disabled='true']) {
   background: var(--xeg-color-success-50);
   border-color: var(--xeg-color-success-hover);
 }
-
 .toolbarButton.danger {
   border-color: var(--xeg-color-error);
 }
-
 .toolbarButton.danger:hover:not([data-disabled='true']) {
   background: var(--xeg-color-error-50);
   border-color: var(--xeg-color-error-hover);
   color: var(--xeg-color-error);
 }
-
-/* 클릭 상태 */
 .toolbarButton:active:not([data-disabled='true']) {
   box-shadow: var(--xeg-shadow-sm);
-  /* 단순한 클릭 효과만 */
 }
-
-/* 접근성 개선 - 포커스 상태 */
 .toolbarButton:focus-visible,
 .navButton:focus-visible,
 .downloadButton:focus-visible,
@@ -250,81 +170,65 @@
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
-/* 네비게이션 섹션 */
 .toolbarNavigation {
-  gap: 0.5em; /* 8px → 0.5em */
+  gap: 0.5em;
 }
-
-/* 네비게이션 버튼 - 기본 스타일 상속 */
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
   color: var(--color-text-inverse);
 }
-
-/* 미디어 카운터 */
 .mediaCounterWrapper {
-  /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative; /* 진행 바를 오버레이로 배치 */
-  gap: 0; /* 세로 갭 제거 – 진행 바는 absolute로 하단에 고정 */
-  min-width: 5em; /* 80px → 5em */
-  min-height: 2.5em; /* 아이콘 버튼과 동일 높이로 수직 중심 정렬 보장 */
-  padding-bottom: 0.5em; /* 진행 바 공간 확보 (em 기반) */
+  position: relative;
+  gap: 0;
+  min-width: 5em;
+  min-height: 2.5em;
+  padding-bottom: 0.5em;
   box-sizing: border-box;
 }
-
 .mediaCounter {
   color: var(--xeg-text-counter);
   font-size: var(--xeg-font-size-md);
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  /* 베이스라인 동기화: 텍스트 자체의 라인 박스를 최소화 */
   display: inline-flex;
   align-items: center;
   line-height: 1;
   background: var(--xeg-bg-counter);
-  padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
+  padding: 0.25em 0.5em;
   border-radius: var(--xeg-radius-md);
   border: 1px solid var(--xeg-border-counter);
 }
-
 .currentIndex {
   color: var(--xeg-color-text-primary);
   font-weight: 700;
 }
-
-/* 고대비 필요 상태(data-high-contrast) 또는 시스템 고대비에서 1차 텍스트 색상으로 승격 */
 .galleryToolbar[data-high-contrast='true'] .separator {
   color: var(--xeg-color-text-primary);
 }
-
 .totalCount {
   color: var(--xeg-color-neutral-600);
 }
-/* 고대비 모드에서 구분자 시인성 강화 */
 @media (prefers-contrast: more), (prefers-contrast: high) {
   .separator {
     color: var(--xeg-color-text-primary);
   }
 }
-/* 진행률 바 */
 .progressBar {
-  /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
   position: absolute;
   left: 50%;
-  bottom: 0.125em; /* em 기반 하단 여백 */
+  bottom: 0.125em;
   transform: translateX(-50%);
-  width: 3.75em; /* 60px → 3.75em */
-  height: 0.125em; /* 2px → 0.125em */
+  width: 3.75em;
+  height: 0.125em;
   background: var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-sm);
   overflow: hidden;
 }
-
 .progressFill {
   width: 100%;
   height: 100%;
@@ -337,179 +241,147 @@
   transition: var(--xeg-transition-normal);
   transform-origin: left;
 }
-
-.fitButton,
-button.fitButton {
-  /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
-  width: 2.5em !important; /* 40px → 2.5em */
-  height: 2.5em !important; /* 40px → 2.5em */
-  min-width: 2.5em !important; /* 40px → 2.5em */
-  min-height: 2.5em !important; /* 40px → 2.5em */
-  max-width: 2.5em !important; /* 40px → 2.5em */
-  max-height: 2.5em !important; /* 40px → 2.5em */
-  padding: 0.5em !important; /* 8px → 0.5em */
-  box-sizing: border-box !important;
-
-  /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
+.toolbarButton.fitButton,
+button.fitButton,
+.toolbarSection .fitButton {
+  width: 2.5em;
+  height: 2.5em;
+  min-width: 2.5em;
+  min-height: 2.5em;
+  max-width: 2.5em;
+  max-height: 2.5em;
+  padding: 0.5em;
+  box-sizing: border-box;
   border-radius: var(--xeg-radius-md);
   background: transparent;
   border: none;
   color: var(--xeg-color-neutral-600);
   transition: var(--xeg-transition-normal);
-
-  /* 이벤트 전파 방지 및 안정성 */
   position: relative;
   z-index: 10;
   pointer-events: auto;
 }
-
 .fitButton.selected {
   background: var(--xeg-color-primary);
   color: var(--color-text-inverse);
 }
-/* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
   border-radius: var(--xeg-radius-md);
 }
-
 .downloadButton:hover:not([data-disabled='true']) {
-  /* 다른 버튼들과 동일한 호버 효과 */
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-neutral-300);
-  transform: translateY(-0.0625em); /* -1px → -0.0625em */
+  transform: translateY(-0.0625em);
   box-shadow: var(--xeg-shadow-md);
 }
-
 .downloadCurrent {
-  /* primary 변형 적용 */
   border-color: var(--xeg-color-primary);
 }
-
 .downloadCurrent:hover:not([data-disabled='true']) {
   background: var(--xeg-color-primary-50);
   border-color: var(--xeg-color-primary-hover);
 }
-
 .downloadAll {
-  /* success 변형 적용 */
   border-color: var(--xeg-color-success);
 }
-
 .downloadAll:hover:not([data-disabled='true']) {
   background: var(--xeg-color-success-50);
   border-color: var(--xeg-color-success-hover);
 }
-
 .downloadSpinner {
   position: absolute;
-  top: -0.375em; /* -6px → -0.375em */
-  right: -0.375em; /* -6px → -0.375em */
-  width: 0.75em; /* 12px → 0.75em */
-  height: 0.75em; /* 12px → 0.75em */
+  top: -0.375em;
+  right: -0.375em;
+  width: 0.75em;
+  height: 0.75em;
   background: var(--color-green-500);
   color: var(--color-text-inverse);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.5em; /* 8px → 0.5em */
+  font-size: 0.5em;
   animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
 }
-
-/* 설정 및 닫기 버튼 - 기본 스타일 상속 */
 .closeButton {
-  /* danger 변형을 위한 기본 설정 */
   border-color: var(--xeg-color-neutral-300);
 }
-/* 반응형 디자인 */
 @media (max-width: 48em) {
-  /* 768px → 48em */
   .galleryToolbar {
-    padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
+    background: var(--xeg-glass-bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0.5em 0.75em;
+    min-height: 3em;
   }
-
+  [data-theme='dark'] .galleryToolbar {
+    background: var(--xeg-color-neutral-900);
+  }
   .toolbarContent {
-    gap: 0.75em; /* 12px → 0.75em */
+    gap: 0.75em;
   }
-
   .toolbarSection {
-    gap: 0.375em; /* 6px → 0.375em */
+    gap: 0.375em;
   }
-
   .toolbarButton,
   .toolbarButton.fitButton,
   .toolbarButton.downloadButton,
   .toolbarButton.settingsButton,
   .toolbarButton.closeButton,
   .fitButton {
-    /* ✅ 최소 클릭 타겟 유지: 2.5em (정책 준수) */
-    width: 2.5em !important;
-    height: 2.5em !important;
-    min-width: 2.5em !important;
-    min-height: 2.5em !important;
-    padding: 0.5em !important;
-    font-size: 0.8125em; /* 13px → 0.8125em */
-  }
-
-  .mediaCounter {
-    font-size: 0.875em; /* 14px → 0.875em */
-  }
-
-  .progressBar {
-    width: 3.125em; /* 50px → 3.125em */
-  }
-
-  /* 반응형에서도 separator 표시 유지 */
-}
-
-@media (max-width: 30em) {
-  /* 480px → 30em */
-  .galleryToolbar {
-    padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
-  }
-
-  .toolbarContent {
-    gap: 0.5em; /* 8px → 0.5em */
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .toolbarSection {
-    gap: 0.25em; /* 4px → 0.25em */
-  }
-
-  .toolbarButton {
-    /* ✅ 작은 화면에서도 클릭 타겟 최소치 유지 */
-    width: 2.5em; /* 고정 폭으로 정렬 안정화 */
+    width: 2.5em;
     height: 2.5em;
     min-width: 2.5em;
     min-height: 2.5em;
-    padding: 0.5em; /* 컨텐츠 여백 유지 */
+    padding: 0.5em;
+    font-size: 0.8125em;
   }
-
-  .mediaCounterWrapper {
-    min-width: 4.375em; /* 70px → 4.375em */
-  }
-
   .mediaCounter {
-    font-size: 0.8125em; /* 13px → 0.8125em */
+    font-size: 0.875em;
   }
-
   .progressBar {
-    width: 2.5em; /* 40px → 2.5em */
-    height: 0.125em; /* 2px → 0.125em */
+    width: 3.125em;
   }
-
-  /* (white box 제거 유지 - 별도 스타일 불필요) */
-
-  .fitButton {
-    padding: 0.1875em 0.375em; /* 3px 6px → 0.1875em 0.375em */
-  }
-
-  /* 작은 화면에서도 separator 표시 유지 */
 }
-/* 고대비 모드 - 시인성 개선 */
+@media (max-width: 30em) {
+  .galleryToolbar {
+    width: calc(100vw - 1.25em);
+    max-width: none;
+    left: 0.625em;
+    transform: none;
+    border-radius: var(--xeg-radius-md);
+    padding: 0.625em 0.75em;
+  }
+  .toolbarContent {
+    gap: 0.5em;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .toolbarSection {
+    gap: 0.25em;
+  }
+  .toolbarButton {
+    width: 2.5em;
+    height: 2.5em;
+    min-width: 2.5em;
+    min-height: 2.5em;
+    padding: 0.5em;
+  }
+  .mediaCounterWrapper {
+    min-width: 4.375em;
+  }
+  .mediaCounter {
+    font-size: 0.8125em;
+  }
+  .progressBar {
+    width: 2.5em;
+    height: 0.125em;
+  }
+  .fitButton {
+    padding: 0.1875em 0.375em;
+  }
+}
 @media (prefers-contrast: high) {
   .galleryToolbar {
     background: var(--color-base-white);
@@ -518,63 +390,51 @@ button.fitButton {
     -webkit-backdrop-filter: none;
     box-shadow: 0 4px 20px var(--xeg-color-overlay-medium);
   }
-
   .toolbarButton {
     background: var(--xeg-color-neutral-100);
     border: 1px solid var(--xeg-color-neutral-900);
     color: var(--xeg-color-neutral-900);
   }
-
   .toolbarButton:hover:not(:disabled) {
     background: var(--xeg-color-neutral-200);
     border: 2px solid var(--xeg-color-neutral-900);
   }
-
   .navButton {
     background: var(--xeg-color-primary-500);
     border: 1px solid var(--xeg-color-neutral-900);
     color: var(--xeg-color-neutral-100);
   }
-
   .downloadButton {
     background: var(--xeg-color-success-500);
     border: 1px solid var(--xeg-color-neutral-900);
     color: var(--xeg-color-neutral-100);
   }
-
   .closeButton {
     background: var(--xeg-color-error-500);
     border: 1px solid var(--xeg-color-neutral-900);
     color: var(--xeg-color-neutral-100);
   }
 }
-
-/* 다크 테마에서 고대비 모드 */
 [data-theme='dark'] .galleryToolbar {
   background: var(--xeg-color-neutral-900);
   border: 2px solid var(--xeg-color-neutral-100);
 }
-
 [data-theme='dark'] .toolbarButton {
   background: var(--xeg-color-neutral-700);
   border: 1px solid var(--xeg-color-neutral-100);
   color: var(--xeg-color-neutral-100);
 }
-
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
     background: var(--xeg-color-neutral-900);
     border: 2px solid var(--xeg-color-neutral-100);
   }
-
   .toolbarButton {
     background: var(--xeg-color-neutral-700);
     border: 1px solid var(--xeg-color-neutral-100);
     color: var(--xeg-color-neutral-100);
   }
 }
-
-/* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
     background: var(--xeg-color-neutral-100);
@@ -584,41 +444,10 @@ button.fitButton {
       0 4px 16px var(--xeg-color-overlay-light),
       0 2px 8px var(--xeg-color-overlay-light);
   }
-
   [data-theme='dark'] .galleryToolbar {
     background: var(--xeg-color-neutral-900);
   }
 }
-
-/* 모바일 환경에서 시인성 강화 */
-@media (max-width: 48em) {
-  /* 768px → 48em */
-  .galleryToolbar {
-    background: var(--xeg-glass-bg); /* 모바일에서 더 불투명 */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
-    min-height: 3em; /* 48px → 3em */
-  }
-
-  [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-color-neutral-900);
-  }
-}
-
-/* 작은 모바일 화면 */
-@media (max-width: 30em) {
-  /* 480px → 30em */
-  .galleryToolbar {
-    width: calc(100vw - 1.25em); /* 20px → 1.25em */
-    max-width: none;
-    left: 0.625em; /* 10px → 0.625em */
-    transform: none;
-    border-radius: var(--xeg-radius-md);
-  }
-}
-
-/* 감소된 모션 */
 @media (prefers-reduced-motion: reduce) {
   .toolbarButton,
   .progressFill,
@@ -626,60 +455,43 @@ button.fitButton {
     transition: none;
     animation: none;
   }
-
-  /* 모든 버튼에서 transform 효과 제거 */
   .toolbarButton:hover:not(:disabled),
   .navButton:hover:not(:disabled),
   .downloadButton:hover:not(:disabled),
   .settingsButton:hover:not(:disabled),
   .closeButton:hover:not(:disabled),
   .fitButton:hover {
-    transform: none !important;
+    transform: none;
   }
 }
-
-/* ===== 동적 시인성 조정 ===== */
-
-/* 동적 고대비 모드 - 완전 불투명 배경 */
 .galleryToolbar.highContrast {
-  background: var(--xeg-color-neutral-100) !important; /* 완전 불투명 */
+  background: var(--xeg-color-neutral-100) !important;
   border: 2px solid var(--xeg-color-overlay-medium) !important;
-  backdrop-filter: none !important; /* 블러 효과 제거 */
+  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow:
     0 4px 20px var(--xeg-color-overlay-medium),
     0 2px 8px var(--xeg-color-overlay-light) !important;
 }
-
 [data-theme='dark'] .galleryToolbar.highContrast {
-  background: var(--xeg-color-neutral-900) !important; /* 완전 불투명 */
+  background: var(--xeg-color-neutral-900) !important;
   border: 2px solid var(--xeg-glass-border) !important;
   box-shadow:
     0 4px 20px var(--xeg-color-overlay-medium),
     0 2px 8px var(--xeg-color-overlay-medium) !important;
 }
-
-/* 고대비 모드에서 버튼 시인성 개선 */
 .highContrast .toolbarButton {
   background: var(--xeg-glass-bg);
   border: 1px solid var(--xeg-color-overlay-light);
   color: var(--xeg-color-overlay-strong);
 }
-
 .highContrast .toolbarButton:hover:not(:disabled) {
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-overlay-medium);
-  box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light); /* 2px 8px → 0.125em 0.5em */
+  box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light);
 }
-
 [data-theme='dark'] .highContrast .toolbarButton {
   background: var(--xeg-color-neutral-700);
   border: 1px solid var(--xeg-glass-border);
   color: var(--xeg-glass-bg);
 }
-
-/* ===== 접근성 개선 ===== */
-
-/* 고대비 모드 - 시인성 개선 */
-
-/* Fit Mode Group 래퍼 제거 - 독립 버튼 배치 원칙 준수 */

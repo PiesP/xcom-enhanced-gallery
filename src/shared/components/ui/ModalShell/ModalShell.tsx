@@ -1,5 +1,5 @@
 import { getSolid } from '@shared/external/vendors';
-const { mergeProps, splitProps } = getSolid();
+const { mergeProps, splitProps, createMemo } = getSolid();
 import { getSolidWeb } from '@shared/external/vendors';
 const { Portal } = getSolidWeb();
 import type { Component, JSX } from '@shared/external/vendors';
@@ -100,16 +100,16 @@ export const ModalShell: Component<ModalShellProps> = props => {
     }
   };
 
-  // Phase 9.6: CSS 클래스 기반 가시성 제어
-  const backdropClass = () => {
+  // Phase 9.6: CSS 클래스 기반 가시성 제어 - createMemo로 반응성 보장
+  const backdropClass = createMemo(() => {
     const classes = [styles['modal-backdrop']];
     if (local.isOpen) {
       classes.push(styles['modal-open']);
     }
     return classes.filter(Boolean).join(' ');
-  };
+  });
 
-  const shellClass = () => {
+  const shellClass = createMemo(() => {
     const classes = [
       styles['modal-shell'],
       styles[`modal-size-${local.size}`],
@@ -119,7 +119,7 @@ export const ModalShell: Component<ModalShellProps> = props => {
       classes.push(local.className);
     }
     return classes.filter(Boolean).join(' ');
-  };
+  });
 
   // Phase 9.6: Show 제거 - Portal은 항상 렌더링, CSS로 가시성 제어
   return (

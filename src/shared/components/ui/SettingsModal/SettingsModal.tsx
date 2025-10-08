@@ -2,6 +2,7 @@ import { getSolid } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { languageService } from '@shared/services';
+import { HeroX } from '@shared/components/ui/Icon/hero/HeroX';
 
 /**
  * @fileoverview SettingsModal.solid - Simplified Solid.js Settings Modal
@@ -145,20 +146,20 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
             aria-label={languageService.getString('settings.close')}
             data-testid='settings-close-button'
           >
-            ×
+            <HeroX size={18} />
           </button>
         </div>
 
         {/* Settings Form */}
         <form class={styles['settings-form']}>
           {/* Theme Selection */}
-          <div class={styles['form-group']}>
-            <label for='theme-select' class={styles['form-label']}>
+          <div class={styles['settings-group']}>
+            <label for='theme-select' class={styles['settings-label']}>
               {languageService.getString('settings.theme')}
             </label>
             <select
               id='theme-select'
-              class={styles['form-select']}
+              class={styles['settings-select']}
               value={local.theme || internalTheme()}
               onChange={handleThemeChange}
               data-testid='theme-select'
@@ -170,13 +171,13 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
           </div>
 
           {/* Language Selection */}
-          <div class={styles['form-group']}>
-            <label for='language-select' class={styles['form-label']}>
+          <div class={styles['settings-group']}>
+            <label for='language-select' class={styles['settings-label']}>
               {languageService.getString('settings.language')}
             </label>
             <select
               id='language-select'
-              class={styles['form-select']}
+              class={styles['settings-select']}
               value={local.language || internalLanguage()}
               onChange={handleLanguageChange}
               data-testid='language-select'

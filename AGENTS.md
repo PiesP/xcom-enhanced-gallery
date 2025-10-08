@@ -19,9 +19,70 @@
     - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
     - RED→GREEN 테스트 링크 또는 요약
 
-## 최근 완료된 작업 (2025-10-08)
+## 최근 완료된 작업 (2025-01-08)
 
-### Phase 9.5: vitest.config.ts 전면 재작성 및 Solid JSX Transform 해결 ✅
+### Phase 9.13: SETTINGS-MODAL-CSS 완료 (설정 모달 CSS 품질 및 UX 개선) ✅
+
+**배경**: Phase 9.12에서 설정 모달 반응성 문제를 해결한 후, CSS 중복 선언,
+클래스 네이밍 불일치, UX 개선 기회를 발견
+
+**주요 변경**:
+
+- CSS 중복 제거: background/border 중복 선언 4건 제거
+- 클래스 네이밍 통일: settings-form, settings-content 등 일관된 접두사
+- HeroX 아이콘: 닫기 버튼에 텍스트 대신 X 아이콘 사용
+- 커스텀 select: 디자인 토큰 기반 드롭다운 화살표 스타일 개선
+
+**결과**:
+
+- ✅ CSS 코드 품질 향상 (중복 제거, 일관성 확보)
+- ✅ UX 개선 (아이콘화, 시각적 피드백 강화)
+- ✅ 빌드: Dev 1,053.96 KB (+0.37 KB), Prod 336.96 KB (gzip 90.33 KB)
+- ✅ 타입/린트/빌드 검증 통과
+
+**교훈**:
+
+- CSS 중복은 유지보수 비용 증가 원인, 정기적 점검 필요
+- 일관된 클래스 네이밍은 가독성과 유지보수성 향상
+- 디자인 토큰 시스템의 엄격한 준수가 품질 유지의 핵심
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.13 참조
+
+### Phase 9.12: MODAL-REACTIVITY-FIX 완료 (설정 모달 표시 버그 수정) ✅
+
+**배경**: 설정 모달이 콘솔 로그에는 "설정 모달 렌더링 시작"이 출력되지만 실제로
+사용자에게 표시되지 않는 버그 발생
+
+**근본 원인**:
+
+- `ModalShell.tsx`의 `backdropClass()`와 `shellClass()` 함수가 일반 함수로 정의
+- Solid.js 반응성 시스템이 `local.isOpen` prop 변경을 추적하지 못함
+- CSS 클래스 `modal-open`이 동적으로 추가/제거되지 않아 모달이
+  `opacity: 0; visibility: hidden` 상태로 고정됨
+
+**해결 방법**:
+
+- `createMemo` import 추가 (`getSolid()`에서)
+- `backdropClass` 함수를 `createMemo(() => {...})` 로 변경
+- `shellClass` 함수를 `createMemo(() => {...})` 로 변경
+- 반응성 컨텍스트를 명시적으로 생성하여 `local.isOpen` 변경 감지 보장
+
+**결과**:
+
+- ✅ 설정 모달 정상 표시 (Critical 버그 해결)
+- ✅ 반응성 패턴 개선 (createMemo 사용)
+- ✅ 빌드: Dev 1,053.59 KB (+0.03 KB), Prod 335.96 KB (gzip 89.92 KB)
+- ✅ 타입/린트/빌드 검증 통과
+
+**교훈**:
+
+- Solid.js에서 props 접근 로직이 복잡하거나 조건부일 경우 `createMemo` 사용 권장
+- 로그 출력과 실제 DOM 상태 불일치 시 반응성 추적 문제 의심
+- CSS 기반 제어(Phase 9.6 Show 제거)는 올바른 방향이었으나 반응성 보장이 필수적
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.12 참조
+
+### Phase 9.11 & 9.5: vitest.config 재작성 & 키보드 리스너 중앙화 ✅
 
 **배경**: 240개 테스트가 "React is not defined" 오류로 실패. vitest.config.ts가
 348줄로 과도하게 복잡했고, vite-plugin-solid가 JSX transform을 적용하지 않음.
