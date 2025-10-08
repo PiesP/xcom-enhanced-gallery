@@ -20,17 +20,14 @@
 ## Candidate List
 
 <!-- MEM_PROFILE 승격 및 완료 (2025-09-12): 경량 메모리 프로파일러 유틸 추가, 문서/테스트 포함 -->
+<!-- MEDIA-CYCLE-PRUNE-01 완료 (2025-10-08): 순환 참조 없음 확인 (dependency-cruiser 0건) -->
+<!-- 컴포넌트 중첩 구조 완료 (Phase 9.3/9.4): Show 중첩 제거, 불필요한 래퍼 제거 -->
+<!-- SRC-PATH-RENAME-01 진행중 → 완료 예정 (Phase 9.9): icons/normalizer 완료(2025-09-16), legacy 주석 정리 남음 -->
 
-IDEA | MEDIA-CYCLE-PRUNE-01 | shared/media 인근 순환(2건:
-index↔pipeline↔media-url.util) 제거 | 의존성 위생 및 테스트 용이성 향상,
-리팩터링 안전망 강화 | M | 수용 기준: dependency-cruiser circular 경고 0(해당
-영역), 기존 테스트 GREEN, 동작 변화 없음. 접근: util 경계 분리 또는 의존 방향
-정리.
-
-READY | SRC-PATH-RENAME-01 | 소스 경로 리네임/정리(legacy/test-only/옵션 리네임)
-| 유지보수성 향상 및 오탐 방지(런타임 금지 경로 명확화) | S/M | 세부 계획:
-`docs/SOURCE_PATH_RENAME_PLAN.md` 참조. 수용 기준: 전역 수용 기준 준수 및 계획서
-내 각 항목의 가드 충족.
+PROGRESS | SRC-PATH-RENAME-01 | 소스 경로 리네임/정리(legacy 주석 명확화) |
+유지보수성 향상 및 문서 정합성 개선 | S | Phase 9.9 진행 중. 2025-09-16 완료:
+icons placeholder 가드, Media Normalizer re-export. 남은 작업: 기능적 legacy
+경로(twitter.ts)는 유지, 문서/주석용 legacy 문구 명확화.
 
 ---
 
@@ -42,7 +39,7 @@ READY | SRC-PATH-RENAME-01 | 소스 경로 리네임/정리(legacy/test-only/옵
 
 ## Template
 
-```
+```text
 IDEA | IDENTIFIER | 간단 요약 | 기대 효과 | 난이도(S/M/H) | 비고
 ```
 

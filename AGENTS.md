@@ -79,6 +79,40 @@ plugins: [
 
 **상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.8 참조
 
+### Phase 9.9: SRC-PATH-RENAME-01 완료 (Legacy 용어 명확성 개선) ✅
+
+**배경**: 백로그 3개 후보(MEDIA-CYCLE-PRUNE-01, 컴포넌트 중첩,
+SRC-PATH-RENAME-01) 분석 결과, 2개는 이미 해결되었고 1개(SRC-PATH-RENAME)만 잔여
+작업 필요
+
+**해결 내용**:
+
+- 백로그 정리:
+  - MEDIA-CYCLE-PRUNE-01: 순환 참조 없음 확인 (dependency-cruiser 0건)
+  - 컴포넌트 중첩: Phase 9.3/9.4에서 이미 완료
+  - SRC-PATH-RENAME-01: icons/normalizer는 2025-09-16 완료, legacy 주석 명확화만
+    남음
+- RED: `test/unit/lint/legacy-terminology.clarity.red.test.ts` 작성 (1건 위반
+  검출)
+- GREEN: `shared/utils/styles/index.ts` 주석 수정
+  - "Legacy style utils" → "Style utility functions (combineClasses 등 - 하위
+    호환성 유지)"
+- REFACTOR: 타입/린트/빌드 검증 통과
+
+**결과**:
+
+- ✅ SRC-PATH-RENAME-01 완료 (모든 항목 처리)
+- ✅ 모호한 "legacy" 용어 0건 (기능적 twitter.ts는 의도적 유지)
+- ✅ 빌드: Dev 1,031.52 KB (map 1,844.92 KB)
+- ✅ 의존성: 249 modules, 701 dependencies (위반 없음)
+
+**다음 Phase 후보**:
+
+1. I18N-MISSING-LITERALS (2건 위반, High)
+2. KBD-CENTRALIZATION-MISSING (Medium)
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN.md` Phase 9.9 참조
+
 ### Phase 9.3 & 9.4: Solid.js Show 컴포넌트 중첩 제거 ✅
 
 **배경**: 설정 버튼 클릭 시 모달이 표시되지 않는 문제 발견 및 전체 프로젝트

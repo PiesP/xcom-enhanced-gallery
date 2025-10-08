@@ -11,30 +11,41 @@
 
 ## Current Phase
 
-### 다음 Phase 선택 필요
+### Phase 9.9: SRC-PATH-RENAME-01 완료 (2025-10-08 ✅)
 
-**Phase 9.8까지 완료**되었으며, 당초 계획된 Phase 9.9 (Signal/Effect 메모리 누수
-점검)는 **Phase 9.7과 Phase 10.4에서 이미 완료**되었습니다:
+**목표**: Legacy 용어 명확성 개선 - 모호한 주석을 구체적 맥락으로 교체
 
-- ✅ Phase 9.7: createEffect 메모리 관리 패턴 가드 테스트 작성 (468줄)
-- ✅ Phase 10.4: Signal Subscribe Cleanup 완료 (createRoot 적용)
+**완료 내역**:
 
-**다음 작업 후보** (우선순위 순):
+- ✅ RED: `test/unit/lint/legacy-terminology.clarity.red.test.ts` 작성
+- ✅ GREEN: `shared/utils/styles/index.ts` 주석 수정
+  - 변경 전: `// Legacy style utils (for backward compatibility)`
+  - 변경 후:
+    `// Style utility functions (combineClasses, toggleClass 등 - 하위 호환성 유지)`
+- ✅ REFACTOR: 타입/린트/빌드 검증 통과
+- ✅ 빌드: Dev 1,031.52 KB (map 1,844.92 KB)
 
-1. **`SRC-PATH-RENAME-01`: 소스 경로 정리 (S/M, READY)** ⭐ 추천
-   - 경로 리네임으로 유지보수성 향상
-   - 세부 계획: `docs/SOURCE_PATH_RENAME_PLAN.md` (문서 확인 필요)
-   - 우선순위: Medium-High (명확한 계획 존재)
+**백로그 정리**:
 
-2. **`MEDIA-CYCLE-PRUNE-01`: shared/media 순환 참조 제거 (M)**
-   - index ↔ pipeline ↔ media-url.util 순환 제거
-   - 의존성 위생 개선, 테스트 용이성 향상
+- ✅ MEDIA-CYCLE-PRUNE-01: 순환 참조 없음 확인 (dependency-cruiser 0건)
+- ✅ 컴포넌트 중첩 구조: Phase 9.3/9.4에서 완료
+- ✅ SRC-PATH-RENAME-01: 완료 (icons/normalizer 2025-09-16, legacy 주석
+  2025-10-08)
+
+**다음 Phase 후보** (우선순위 순):
+
+1. **`I18N-MISSING-LITERALS`: 국제화 누락 문자열 수정 (S, READY)** ⭐ 추천
+   - 발견된 위반: 2건
+     - `src/shared/components/HelloSolid.tsx`: "Hello Solid.js! 등"
+     - `src/shared/components/ui/SettingsModal/SettingsModal.tsx`: "Settings |
+       Theme"
+   - 기대 효과: 다국어 지원 완성, i18n 가드 GREEN
+   - 우선순위: High (i18n-literal.scan.red.test 실패 중)
+
+2. **`KBD-CENTRALIZATION-MISSING`: 키보드 리스너 중앙화 누락 (S, READY)**
+   - keyboard-listener.centralization.policy.test 실패
+   - 기대 효과: 키보드 입력 일관성 향상
    - 우선순위: Medium
-
-3. **컴포넌트 중첩 구조 검토 (Low)**
-   - 불필요한 래퍼 컴포넌트 식별
-   - prop drilling 최소화
-   - 우선순위: Low
 
 ---
 
