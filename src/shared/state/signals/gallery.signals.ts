@@ -13,6 +13,10 @@ import type { MediaInfo } from '../../types/media.types';
 import { effectSafe, createSignalSafe } from './signal-factory-solid';
 // Break runtime dependency on services: use logging barrel directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
+import { getSolid } from '../../external/vendors';
+
+// Solid API
+const { createMemo } = getSolid();
 
 // Signal type
 type Signal<T> = {
@@ -88,6 +92,16 @@ export const galleryState = {
     });
   },
 };
+
+/**
+ * Phase 9.21.3: Derived signal - isOpen만 추적
+ *
+ * createMemo를 사용하여 galleryState.value.isOpen만 파생
+ * - currentIndex 등 다른 속성 변경 시: createMemo 재실행되지만 결과값 동일 → 의존자 업데이트 안 함
+ * - isOpen 변경 시에만 의존자(GalleryRenderer의 createEffect) 재실행
+ * - Phase 9.21.2의 untrack() 패턴 실패 원인: untrack 내부 값은 반응성 없음
+ */
+export const isGalleryOpen = createMemo(() => galleryState.value.isOpen);
 
 // Action Functions
 // =============================================================================
@@ -240,7 +254,7 @@ export function hasNextMedia(): boolean {
 }
 
 // State Accessor Functions
-export const isGalleryOpen = (): boolean => galleryState.value.isOpen;
+// Note: isGalleryOpen은 Phase 9.21.3에서 createMemo derived signal로 변경됨
 export const getCurrentIndex = (): number => galleryState.value.currentIndex;
 export const getMediaItems = (): readonly MediaInfo[] => galleryState.value.mediaItems;
 export const isLoading = (): boolean => galleryState.value.isLoading;

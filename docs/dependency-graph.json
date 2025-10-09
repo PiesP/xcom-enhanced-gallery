@@ -73,6 +73,7 @@
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/UnifiedToastManager.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
+        "src/shared/state/signals/gallery.signals.ts",
         "src/shared/state/signals/signal-factory-solid.ts",
         "src/features/gallery/GalleryRenderer.tsx",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
@@ -260,6 +261,7 @@
         "src/shared/state/signals/gallery.signals.ts",
         "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/ModalShell/ModalShell.tsx",
         "src/shared/services/AnimationService.ts",
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/state/signals/download.signals.ts",
@@ -4184,6 +4186,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6271,6 +6290,26 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/services",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/index.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -6499,6 +6538,26 @@
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/index.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6925,7 +6984,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "export"
+            "import"
           ],
           "resolved": "src/shared/services/ThemeService.ts",
           "coreModule": false,
@@ -7028,6 +7087,7 @@
       ],
       "dependents": [
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/index.ts"
       ],
@@ -15766,7 +15826,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 247,
-    "totalDependenciesCruised": 704,
+    "totalDependenciesCruised": 707,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

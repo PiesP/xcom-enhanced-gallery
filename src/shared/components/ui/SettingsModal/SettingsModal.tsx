@@ -161,7 +161,7 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
               id='theme-select'
               class={styles['settings-select']}
               value={local.theme || internalTheme()}
-              onChange={handleThemeChange}
+              onInput={handleThemeChange}
               data-testid='theme-select'
             >
               <option value='auto'>{languageService.getString('settings.themeAuto')}</option>
@@ -179,7 +179,7 @@ export const SettingsModal: Component<SettingsModalProps> = props => {
               id='language-select'
               class={styles['settings-select']}
               value={local.language || internalLanguage()}
-              onChange={handleLanguageChange}
+              onInput={handleLanguageChange}
               data-testid='language-select'
             >
               <option value='auto'>{languageService.getString('settings.languageAuto')}</option>

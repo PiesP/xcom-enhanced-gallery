@@ -1,4 +1,4 @@
-import { getSolidWeb } from '@shared/external/vendors';
+import { getSolid, getSolidWeb } from '@shared/external/vendors';
 
 /**
  * @fileoverview Gallery Renderer
@@ -23,6 +23,7 @@ import {
   setViewMode,
   navigatePrevious,
   navigateNext,
+  isGalleryOpen,
 } from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
@@ -80,17 +81,48 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   /**
    * 상태 구독 설정
+   * Phase 9.23: isInitialized 플래그로 재렌더링 방지
+   * - on() helper: isGalleryOpen 신호의 값 변경만 추적
+   * - defer: true: 초기 실행 스킵
+   * - isInitialized: 최초 1회만 renderGallery() 호출, 네비게이션 시 재렌더링 방지
    */
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = galleryState.subscribe(state => {
-      if (state.isOpen && !this.container) {
-        // 갤러리가 열렸고 컨테이너가 없을 때만 최초 렌더링
-        this.renderGallery();
-      } else if (!state.isOpen && this.container) {
-        // 갤러리가 닫혔을 때만 정리
-        this.cleanupGallery();
-      }
-      // 이미 렌더링된 상태에서는 컴포넌트가 signal을 직접 구독하므로 재렌더링하지 않음
+    const { createEffect, createRoot, on } = getSolid();
+
+    // createRoot로 effect를 감싸서 안전한 cleanup 보장
+    this.stateUnsubscribe = createRoot(dispose => {
+      // Phase 9.23: 초기화 플래그 추가
+      let isInitialized = false;
+
+      // on() helper로 isOpen 값 변경만 추적
+      createEffect(
+        on(
+          isGalleryOpen, // 추적할 signal
+          isOpen => {
+            // isOpen 값 변경 시에만 실행
+            logger.debug('[GalleryRenderer] isOpen 변경 감지', {
+              isOpen,
+              isInitialized,
+              hasContainer: !!this.container,
+              timestamp: Date.now(),
+            });
+
+            if (isOpen && !isInitialized) {
+              // 최초 한 번만 렌더링
+              this.renderGallery();
+              isInitialized = true;
+            } else if (!isOpen && isInitialized) {
+              // 갤러리가 닫혔을 때만 정리
+              this.cleanupGallery();
+              isInitialized = false;
+            }
+            // isOpen이 true로 유지되는 동안에는 재렌더링하지 않음
+          },
+          { defer: true } // 초기 실행 스킵
+        )
+      );
+
+      return dispose;
     });
   }
 
@@ -153,6 +185,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   /**
    * 갤러리 렌더링 - 한 번만 실행
    * Phase 9.16: 이중 렌더링 방지 - container 존재 여부로만 판단
+   * Phase 9.19: renderComponent 내부의 Solid render가 subscription trigger 의심
    */
   private renderGallery(): void {
     // Phase 9.16: container가 이미 존재하면 중복 렌더링 방지
@@ -165,7 +198,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const state = galleryState.value;
     if (!state.isOpen || state.mediaItems.length === 0) return;
 
-    logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트');
+    logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트', {
+      timestamp: Date.now(),
+      hasContainer: !!this.container,
+    });
 
     try {
       this.createContainer();

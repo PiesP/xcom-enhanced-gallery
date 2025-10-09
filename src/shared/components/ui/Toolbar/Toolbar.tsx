@@ -412,9 +412,6 @@ export const Toolbar: Component<ToolbarProps> = props => {
               title='설정'
               disabled={!!props.disabled}
               onClick={(e: MouseEvent) => handleButtonClick(e, 'settings', props.onOpenSettings!)}
-              onMouseDown={(e: MouseEvent) =>
-                handleButtonClick(e, 'settings', props.onOpenSettings!)
-              }
               data-gallery-element='settings'
               data-disabled={!!props.disabled}
             >

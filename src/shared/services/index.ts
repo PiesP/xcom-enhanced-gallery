@@ -41,7 +41,12 @@ export type { DownloadProgress } from './download/types';
 
 // 3. 테마 서비스
 export { ThemeService } from './ThemeService';
-export type { Theme } from './ThemeService';
+export type { Theme, ThemeSetting } from './ThemeService';
+
+// Phase 9.22: ThemeService 인스턴스 export (ToolbarWithSettings에서 사용)
+// LanguageService와 동일한 패턴
+import { ThemeService as _ThemeService } from './ThemeService';
+export const themeService = new _ThemeService();
 
 // 4. 언어 서비스
 export { LanguageService, languageService } from './LanguageService';

@@ -1,6 +1,6 @@
 # TDD-driven Refactoring Plan (xcom-enhanced-gallery)
 
-> **Last updated**: 2025-10-08 **Status**: Phase 9.17 완료 ✅
+> **Last updated**: 2025-10-09 **Status**: Phase 9.23 작업 중 🔄
 
 ## Overview
 
@@ -11,21 +11,117 @@
 
 ## Current Phase
 
-### 백로그 검토 필요
+### Phase 9.23: BROWSER-TEST-CRITICAL-FIXES (2025-10-09 작업중 🔄)
 
-Phase 9.17 (갤러리 이중 렌더링 수정 - effectSafe 이중 실행 방지)까지
-완료되었습니다.
+**우선순위**: Critical (P0)
 
-다음 우선순위 항목을 검토하여 새로운 Phase를 시작하세요:
+**목표**: 브라우저 테스트(v0.3.1-dev.1759929188276)에서 발견된 4가지 Critical
+버그 수정
 
-- 백로그 문서: `docs/TDD_REFACTORING_BACKLOG.md`
-- 완료 기록: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
+**브라우저 테스트 결과** (Phase 9.21.3 완료 후):
+
+1. ❌ **네비게이션 깜빡임**: 이전/다음 버튼 클릭 시 화면이 깜빡이며 첫 이미지로
+   리셋
+2. ❌ **툴바 아이콘 안 보임**: 다크모드에서 툴바 버튼이 투명하게 렌더링
+3. ❌ **설정 모달 CSS 깨짐**: 모달이 평범한 텍스트/버튼으로 보임 (glassmorphism
+   효과 없음)
+4. ❌ **언어 설정 미작동**: 언어 선택 후 변경되지 않음 (영어로 고정)
+
+**선택된 솔루션** (최소 침습 + 즉시 효과):
+
+1. **네비게이션**: `isInitialized` 플래그로 재렌더링 방지
+2. **툴바**: ThemeService 동기 초기화 + CSS fallback 강화
+3. **모달**: `SIZE_CLASS_MAP`/`SURFACE_CLASS_MAP` 명시적 매핑
+4. **언어**: `onChange` → `onInput` 변경
+
+**작업 범위**:
+
+- **RED**: `test/unit/features/gallery/browser-test-critical-fixes.red.test.ts`
+- **GREEN**:
+  - `src/features/gallery/GalleryRenderer.tsx` (isInitialized 플래그)
+  - `src/shared/services/ThemeService.ts` (동기 초기화)
+  - `src/shared/components/ui/Toolbar/Toolbar.module.css` (fallback)
+  - `src/shared/components/ui/ModalShell/ModalShell.tsx` (클래스 매핑)
+  - `src/shared/components/ui/SettingsModal/SettingsModal.tsx` (onInput)
+- **REFACTOR**: 빌드, 브라우저 테스트 4개 시나리오, 문서 갱신
+
+**상세 계획**: `docs/TDD_REFACTORING_PLAN_PHASE_9.23.md` 참조
 
 ---
 
 ## Completed Phases
 
-### Phase 9.17: GALLERY-DOUBLE-RENDER-FIX 완료 (2025-10-08 ✅)
+### Phase 9.21.3: GALLERY-STATE-ISOPEN-DERIVED-SIGNAL 완료 (2025-10-08 ✅)
+
+**목표**: Phase 9.21.2 버그 수정 - createMemo로 isOpen만 추적하는 derived signal
+구현
+
+**완료 내용**:
+
+- ✅ isGalleryOpen derived signal (createMemo) 구현
+- ✅ untrack() 패턴 제거 (반응성 복구)
+- ✅ 10개 테스트 모두 PASS (RED → GREEN)
+- ✅ 빌드: Dev 1,054.98 KB, Prod 336.82 KB (gzip 90.36 KB)
+
+**브라우저 테스트**: 부분적 성공 (70%)
+
+- ✅ 갤러리 정상 표시
+- ✅ currentIndex 변경 시 renderGallery() 호출 안 함
+- ❌ 다음 미디어 1번 클릭 시 불필요한 effect 재실행
+- ❌ 설정 모달이 사용자에게 보이지 않음
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.3 참조.
+
+### Phase 9.21.2: GALLERY-STATE-ISOPEN-UNTRACK-FIX (2025-10-08 ❌ → Phase 9.21.3)
+
+**목표**: Phase 9.21.1 HOTFIX 수정 시도 (실패)
+
+**결과**: 빌드 성공했으나 갤러리가 화면에 표시되지 않음 (Critical 버그)
+
+**실패 원인**: untrack() 패턴이 모든 반응성 제거, isOpen 변경 감지 불가
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.2 참조.
+
+## Overview
+
+모든 Phase는 **RED → GREEN → REFACTOR** 사이클로 진행됩니다. 테스트를 먼저
+작성하고, 최소 구현으로 GREEN을 달성한 뒤, 품질을 개선합니다.
+
+---
+
+## Current Phase
+
+**현재 진행 중인 Phase 없음** - Phase 9.21.3까지 모두 완료
+
+최근 완료된 Phase는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`의 Phase 9.21.3 참조
+
+---
+
+## Completed Phases
+
+### Phase 9.21.3: GALLERY-STATE-ISOPEN-DERIVED-SIGNAL 완료 (2025-10-08 ✅)
+
+**목표**: Phase 9.21.2 버그 수정 - createMemo로 isOpen만 추적하는 derived signal
+구현
+
+**완료 내용**:
+
+- ✅ isGalleryOpen derived signal (createMemo) 구현
+- ✅ untrack() 패턴 제거 (반응성 복구)
+- ✅ 10개 테스트 모두 PASS (RED → GREEN)
+- ✅ 빌드: Dev 1,054.98 KB, Prod 336.82 KB (gzip 90.36 KB)
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.3 참조.
+
+### Phase 9.21.2: GALLERY-STATE-ISOPEN-UNTRACK-FIX (2025-10-08 ❌ → Phase 9.21.3)
+
+**목표**: Phase 9.21.1 HOTFIX 수정 시도 (실패)
+
+**결과**: 빌드 성공했으나 갤러리가 화면에 표시되지 않음 (Critical 버그)
+
+**실패 원인**: untrack() 패턴이 모든 반응성 제거, isOpen 변경 감지 불가
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.2 참조.
 
 **목표**: 갤러리 이중 렌더링 근본 원인 수정 - effectSafe 함수의 이중 실행 방지
 

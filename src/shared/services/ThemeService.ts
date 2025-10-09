@@ -109,6 +109,7 @@ export class ThemeService {
 
   /**
    * 현재 설정에 따른 테마 적용
+   * Phase 9.23: CSS 변수 즉시 설정으로 툴바 아이콘 가시성 보장
    */
   private applyCurrentTheme(): void {
     const effectiveTheme = this.getEffectiveTheme();
@@ -117,8 +118,16 @@ export class ThemeService {
       this.currentTheme = effectiveTheme;
 
       // data-theme 속성 설정으로 CSS에서 자동 적용
-      if (typeof document !== 'undefined') {
-        document.documentElement?.setAttribute('data-theme', this.currentTheme);
+      if (typeof document !== 'undefined' && document.documentElement) {
+        document.documentElement.setAttribute('data-theme', this.currentTheme);
+
+        // Phase 9.23: CSS 변수 즉시 설정 (툴바 아이콘 가시성 보장)
+        const iconColor =
+          this.currentTheme === 'dark'
+            ? 'oklch(0.95 0.01 264)' // 밝은 색 (다크 모드)
+            : 'oklch(0.25 0.01 264)'; // 어두운 색 (라이트 모드)
+
+        document.documentElement.style.setProperty('--xeg-icon-color', iconColor);
       }
 
       // 리스너 호출

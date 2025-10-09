@@ -1,11 +1,18 @@
 import { getSolid } from '@shared/external/vendors';
 import type { Component } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
+import { themeService, languageService } from '@shared/services';
 
 /**
  * @fileoverview ToolbarWithSettings.solid - Toolbar + Settings Modal Integration
  * @description Solid.js implementation combining Toolbar and SettingsModal
- * @version 1.0.1 - Phase 9.2: Show 컴포넌트 통일
+ * @version 1.1.0 - Phase 9.22: ThemeService/LanguageService 연동
+ *
+ * Phase 9.22 수정:
+ * - themeService, languageService import 추가
+ * - handleThemeChange, handleLanguageChange 구현
+ * - SettingsModal에 theme, language, onChange props 전달
+ * - 현재 설정값을 reactive getter로 제공
  *
  * Phase 9.2 수정:
  * - Show 컴포넌트를 solid-js에서만 import (solid-js/web 중복 제거)
@@ -80,6 +87,22 @@ export const ToolbarWithSettings: Component<ToolbarWithSettingsProps> = props =>
     setIsSettingsOpen(false);
   };
 
+  // Phase 9.22: ThemeService 연동
+  const handleThemeChange = (theme: 'auto' | 'light' | 'dark'): void => {
+    logger.debug('[ToolbarWithSettings] 테마 변경 요청', { theme });
+    themeService.setTheme(theme);
+  };
+
+  // Phase 9.22: LanguageService 연동
+  const handleLanguageChange = (language: 'auto' | 'ko' | 'en' | 'ja'): void => {
+    logger.debug('[ToolbarWithSettings] 언어 변경 요청', { language });
+    languageService.setLanguage(language);
+  };
+
+  // Phase 9.22: 현재 설정값 가져오기 (reactive)
+  const currentTheme = () => themeService.getCurrentTheme();
+  const currentLanguage = () => languageService.getCurrentLanguage();
+
   // SettingsModal은 'toolbar-below' | 'top-right'만 지원
   const modalPosition = (): 'toolbar-below' | 'top-right' => {
     const pos = props.settingsPosition;
@@ -102,10 +125,15 @@ export const ToolbarWithSettings: Component<ToolbarWithSettingsProps> = props =>
       <Toolbar {...toolbarProps()} />
 
       {/* Phase 9.3: Show 제거 - SettingsModal이 내부적으로 처리 */}
+      {/* Phase 9.22: theme, language, onChange props 추가 */}
       <SettingsModal
         isOpen={isSettingsOpen()}
         onClose={handleCloseSettings}
         position={modalPosition()}
+        theme={currentTheme()}
+        language={currentLanguage()}
+        onThemeChange={handleThemeChange}
+        onLanguageChange={handleLanguageChange}
         data-testid={props.settingsTestId || 'toolbar-settings-modal'}
       />
     </>

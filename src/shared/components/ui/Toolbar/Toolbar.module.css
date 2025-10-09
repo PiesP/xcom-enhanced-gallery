@@ -100,7 +100,10 @@
   min-width: 2.5em;
   min-height: 2.5em;
   padding: 0.5em;
-  color: var(--xeg-color-text-primary);
+  /* Phase 9.23: 명시적 fallback으로 툴바 아이콘 가시성 보장 */
+  color: var(--xeg-color-text-primary, oklch(0.95 0.01 264));
+  opacity: 1 !important;
+  pointer-events: auto !important;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -110,6 +113,16 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--xeg-radius-md);
+}
+
+/* Phase 9.23: 다크 모드 명시적 색상 */
+[data-theme='dark'] .toolbarButton {
+  color: oklch(0.95 0.01 264); /* 밝은 색 */
+}
+
+/* Phase 9.23: 라이트 모드 명시적 색상 */
+[data-theme='light'] .toolbarButton {
+  color: oklch(0.25 0.01 264); /* 어두운 색 */
 }
 .toolbarButton[data-active='true'] {
   background: var(--xeg-color-primary);

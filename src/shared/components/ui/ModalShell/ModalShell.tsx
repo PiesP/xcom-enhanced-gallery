@@ -1,8 +1,9 @@
 import { getSolid } from '@shared/external/vendors';
-const { mergeProps, splitProps, createMemo } = getSolid();
+const { mergeProps, splitProps, createMemo, createEffect } = getSolid();
 import { getSolidWeb } from '@shared/external/vendors';
 const { Portal } = getSolidWeb();
 import type { Component, JSX } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
 
 /**
  * @fileoverview ModalShell Solid Component
@@ -16,6 +17,20 @@ import type { Component, JSX } from '@shared/external/vendors';
  */
 
 import styles from './ModalShell.module.css';
+
+// Phase 9.23: 명시적 클래스 매핑 객체 (CSS Modules 계산 오류 방지)
+const SIZE_CLASS_MAP = {
+  sm: styles.modalSizeSm,
+  md: styles.modalSizeMd,
+  lg: styles.modalSizeLg,
+  xl: styles.modalSizeXl,
+} as const;
+
+const SURFACE_CLASS_MAP = {
+  glass: styles.modalSurfaceGlass,
+  solid: styles.modalSurfaceSolid,
+  elevated: styles.modalSurfaceElevated,
+} as const;
 
 export interface ModalShellProps {
   /** Content */
@@ -102,23 +117,37 @@ export const ModalShell: Component<ModalShellProps> = props => {
 
   // Phase 9.6: CSS 클래스 기반 가시성 제어 - createMemo로 반응성 보장
   const backdropClass = createMemo(() => {
-    const classes = [styles['modal-backdrop']];
+    const classes = [styles.modalBackdrop];
     if (local.isOpen) {
-      classes.push(styles['modal-open']);
+      classes.push(styles.modalOpen);
     }
     return classes.filter(Boolean).join(' ');
   });
 
   const shellClass = createMemo(() => {
+    // Phase 9.23: 명시적 클래스 매핑 사용 (문자열 계산 제거)
     const classes = [
-      styles['modal-shell'],
-      styles[`modal-size-${local.size}`],
-      styles[`modal-surface-${local.surfaceVariant}`],
+      styles.modalShell,
+      SIZE_CLASS_MAP[local.size],
+      SURFACE_CLASS_MAP[local.surfaceVariant],
     ];
+
     if (local.className) {
       classes.push(local.className);
     }
+
     return classes.filter(Boolean).join(' ');
+  });
+
+  // Phase 9.21.4: 디버깅 로깅 - 설정 모달 반응성 추적
+  // isOpen 변경 시 CSS 클래스가 올바르게 업데이트되는지 확인
+  createEffect(() => {
+    logger.debug('[ModalShell] Reactivity check', {
+      isOpen: local.isOpen,
+      backdropClass: backdropClass(),
+      shellClass: shellClass(),
+      timestamp: Date.now(),
+    });
   });
 
   // Phase 9.6: Show 제거 - Portal은 항상 렌더링, CSS로 가시성 제어

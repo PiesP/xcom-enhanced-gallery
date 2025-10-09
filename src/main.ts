@@ -330,8 +330,9 @@ async function initializeGalleryApp(): Promise<void> {
     logger.info('🎨 갤러리 앱 지연 초기화 시작');
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    registerGalleryRenderer(new GalleryRenderer());
+    // Phase 9.19: 싱글톤 인스턴스 사용 (중복 인스턴스 생성 방지)
+    const { galleryRenderer } = await import('@features/gallery/GalleryRenderer');
+    registerGalleryRenderer(galleryRenderer);
 
     // 갤러리 앱 인스턴스 생성
     const { GalleryApp } = await import('@features/gallery/GalleryApp');

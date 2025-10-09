@@ -21,6 +21,125 @@
 
 ## 최근 완료된 작업 (2025-01-10)
 
+### Phase 9.22: SETTINGS-THEME-INTEGRATION 완료 (Preact→Solid 리팩토링 버그 수정) ✅
+
+**배경**: 브라우저 테스트에서 3가지 Critical/High 버그 발견
+(v0.3.1-dev.1759929188276)
+
+**발견된 문제**:
+
+1. ❌ **Critical**: 설정 변경이 적용되지 않음 - 설정 모달에서 테마/언어 선택 시
+   아무 반응 없음
+2. ❌ **High**: 다크모드에서 툴바 아이콘이 보이지 않음 - 다크 배경에 다크
+   아이콘으로 렌더링
+3. ⚠️ **Medium**: 설정 모달 CSS가 무너진 것처럼 보임 (문제 2와 동일 원인)
+
+**근본 원인**:
+
+1. `ToolbarWithSettings`가 `SettingsModal`에 `onThemeChange`, `onLanguageChange`
+   props 전달 안 함
+   - SettingsModal의 select onChange → `handlers.onThemeChange?.(value)` 호출 →
+     undefined 호출
+   - ThemeService.setTheme() 절대 호출되지 않음
+2. CSS에 `[data-theme="dark"]` 선택자 없음
+   (`@media (prefers-color-scheme: dark)`만 존재)
+   - ThemeService는 `<html data-theme="dark">` 속성 설정
+   - 그러나 CSS가 이를 인식 못함 → 수동 테마 변경 불가
+
+**해결 방법**:
+
+1. ThemeService 인스턴스를 `src/shared/services/index.ts`에서 export
+   (LanguageService 패턴과 일관성)
+2. ToolbarWithSettings에 `handleThemeChange`, `handleLanguageChange` 구현 및
+   SettingsModal에 6개 props 전달
+3. `design-tokens.semantic.css`에 `[data-theme='dark']`와 `[data-theme='light']`
+   선택자 추가
+4. 테스트에서 `@solidjs/testing-library`의 `cleanup()` 사용 (Portal 정리 문제
+   해결)
+
+**결과**:
+
+- ✅ 설정 변경 적용됨 (onChange 핸들러 연결)
+- ✅ 다크모드 아이콘 표시됨 (CSS [data-theme] 선택자)
+- ✅ 설정 모달 CSS 정상 (위 문제 2 해결로 자동 해결)
+- ✅ 4개 테스트 모두 PASS (RED → GREEN)
+- ✅ 빌드: Dev 1,056.06 KB, Prod 338.07 KB (gzip 90.63 KB)
+- ✅ 타입/린트/빌드 검증 통과
+- ✅ 의존성: 247 modules, 707 dependencies (위반 0건)
+
+**교훈**:
+
+- Solid.js 리팩토링 시 onChange 핸들러 연결을 놓치기 쉬움 (특히 props 전달
+  체인이 긴 경우)
+- CSS에 @media와 [data-attribute] 선택자를 모두 제공해야 수동/자동 테마 전환
+  지원 가능
+- 서비스 인스턴스는 일관되게 export해야 테스트 가능 (themeService ≈
+  languageService 패턴)
+- @solidjs/testing-library의 cleanup()이 Portal 정리에 필수적
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.22 참조
+
+---
+
+### Phase 9.21.3: GALLERY-STATE-ISOPEN-DERIVED-SIGNAL 완료 (Phase 9.21.2 버그 수정) ✅
+
+**배경**: Phase 9.21.2 완료 후 Critical 버그 발견 - 갤러리가 화면에 표시되지
+않음. 로그에는 "갤러리 컨테이너 생성됨"이 출력되지만 "[GalleryRenderer] isOpen
+변경 감지" 로그가 없음
+
+**Phase 9.21.2의 치명적 오류**: `untrack()` 패턴이 모든 반응성을 제거
+
+- `const currentState = untrack(() => galleryState.value);` → snapshot (zero
+  reactivity)
+- `const isOpen = currentState.isOpen;` → plain boolean (not tracked)
+- createEffect가 isOpen 변경을 감지하지 못함 → `renderGallery()` 호출 안 됨
+- untrack()는 "모든 반응성 제거" 도구, "일부만 추적"에는 부적합
+
+**올바른 해결 방법 (Phase 9.21.3)**:
+
+- createMemo로 derived signal 구현:
+  `export const isGalleryOpen = createMemo(() => galleryState.value.isOpen);`
+- GalleryRenderer에서 사용: `const isOpen = isGalleryOpen();` - **isOpen만
+  추적**
+- createMemo의 equality check가 핵심: currentIndex 변경 시 결과값(isOpen) 동일 →
+  effect 재실행 안 함
+
+**결과**:
+
+- ✅ 갤러리 정상 표시 (renderGallery() 호출 보장)
+- ✅ currentIndex 변경 시 재렌더링 없음 (createMemo equality check)
+- ✅ 설정 모달 정상 표시
+- ✅ 10개 테스트 모두 PASS (RED → GREEN)
+- ✅ 빌드: Dev 1,054.98 KB, Prod 336.82 KB (gzip 90.36 KB)
+- ✅ 타입/린트/빌드 검증 통과
+
+**교훈**:
+
+- Solid.js 반응성: untrack()는 모든 반응성 제거, derived signals에는 createMemo
+  사용
+- createMemo equality check: 결과값 동일하면 의존자 업데이트 안 함
+- TDD 효과: RED 테스트가 올바른 패턴 강제 (untrack 제거, createMemo 사용)
+- Test-driven debugging: 로그 분석 + 테스트로 반응성 문제 조기 탐지
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.3 참조
+
+### Phase 9.21.2: GALLERY-STATE-ISOPEN-UNTRACK-FIX (Phase 9.21.1 HOTFIX 오류 수정 시도 ❌)
+
+**배경**: Phase 9.21.1 HOTFIX 적용 후에도 2가지 Critical 버그 재발
+
+**Phase 9.21.1 HOTFIX의 오류**: Solid.js transitive tracking 메커니즘 미숙지 -
+`galleryState.value.isOpen` 접근 시 `value` 객체 전체를 추적
+
+**Phase 9.21.2 시도**: untrack() 패턴 적용
+
+**결과**: ❌ 빌드는 성공했으나 갤러리가 화면에 표시되지 않음 (Critical 버그)
+
+**실패 원인**: untrack()가 모든 반응성 제거, isOpen 변경 감지 불가
+
+**최종 해결**: Phase 9.21.3에서 createMemo derived signal로 수정
+
+**상세 문서**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 9.21.2 참조
+
 ### Phase 9.16: SERVICE-INIT-CLEANUP 완료 (서비스 초기화 정리 및 갤러리 이중 렌더링 수정) ✅
 
 **배경**: 로그 분석 중 서비스 중복 등록(3건 WARN)과 갤러리 이중 렌더링(8ms 간격)
