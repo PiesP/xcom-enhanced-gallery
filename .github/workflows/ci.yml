@@ -65,6 +65,7 @@ jobs:
 
       - name: 🔎 Type check
         run: npm run typecheck
+        # Uses tsgo for faster type checking (configured in package.json)
 
       - name: 🧹 Lint
         run: npm run lint

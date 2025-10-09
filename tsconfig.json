@@ -23,12 +23,11 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "src",
     "paths": {
-      "@/*": ["./*"],
-      "@features/*": ["features/*"],
-      "@shared/*": ["shared/*"],
-      "@assets/*": ["assets/*"]
+      "@/*": ["./src/*"],
+      "@features/*": ["./src/features/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@assets/*": ["./src/assets/*"]
     },
     "types": ["vite/client", "vitest/globals"],
     "incremental": true,

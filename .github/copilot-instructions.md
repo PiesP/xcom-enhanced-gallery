@@ -10,8 +10,8 @@
 - Userscript 번들: `vite.config.ts`의 userscript 플러그인이 단일
   파일(`dist/xcom-enhanced-gallery*.user.js`) 생성, Dev는 sourcemap 포함
 - 경로 별칭: `@`, `@features`, `@shared`, `@assets` (vite/vitest/tsconfig 일치)
-- 스크립트: 타입 `npm run typecheck`, 린트 `npm run lint:fix`, 테스트
-  `npm test`/`npm run test:watch`, 빌드 `npm run build:dev|prod`, 종합
+- 스크립트: 타입 `npm run typecheck` (tsgo 사용), 린트 `npm run lint:fix`,
+  테스트 `npm test`/`npm run test:watch`, 빌드 `npm run build:dev|prod`, 종합
   `npm run validate`
 
 ## 아키텍처와 경계

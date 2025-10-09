@@ -32,7 +32,7 @@
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
     "lint:staged": "lint-staged",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "format": "prettier --write .",
     "validate": "npm run typecheck && npm run lint:fix && npm run format",
     "prebuild": "npm run deps:all && npm run validate",
@@ -63,6 +63,7 @@
     "@types/tampermonkey": "^5.0.4",
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251008.1",
     "@vitest/coverage-istanbul": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
@@ -94,7 +95,8 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "bash -c 'npm run typecheck'"
     ],
     "*.{js,jsx}": [
       "eslint --fix",

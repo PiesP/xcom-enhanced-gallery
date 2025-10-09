@@ -20,9 +20,21 @@ npm ci
 
 Windows PowerShell에서도 위 명령 그대로 사용 가능합니다.
 
+### tsgo 설치 (권장)
+
+프로젝트는 빠른 타입 체크를 위해 `tsgo`를 사용합니다:
+
+```pwsh
+# npx로 자동 실행 (package.json에 이미 설정됨)
+npm run typecheck
+
+# 직접 설치하려면
+npm install -g @typescript/tsgo
+```
+
 ## 자주 쓰는 스크립트
 
-- 타입 체크: `npm run typecheck`
+- 타입 체크: `npm run typecheck` (tsgo 사용)
 - 린트(수정 포함): `npm run lint` / `npm run lint:fix`
 - 포맷: `npm run format`
 - 테스트:

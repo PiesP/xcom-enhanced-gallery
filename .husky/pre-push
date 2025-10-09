@@ -24,6 +24,7 @@ fi
 
 echo "🧪 Pre-push: typecheck + tests (scope: $SCOPE)"
 
+# Type checking with tsgo (fast TypeScript checker)
 npm run typecheck || {
   echo "❌ Typecheck failed"
   exit 1

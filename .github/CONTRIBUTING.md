@@ -55,7 +55,7 @@ chore: 기타 작업
 ```bash
 npm run quality     # 전체 품질 검사
 npm run lint        # ESLint 검사
-npm run typecheck   # TypeScript 검사
+npm run typecheck   # TypeScript 검사 (tsgo 사용)
 npm run test        # 테스트 실행
 npm run format      # 코드 포맷팅
 ```
