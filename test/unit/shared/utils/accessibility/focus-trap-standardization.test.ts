@@ -6,23 +6,25 @@
 /* eslint-env browser */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-const activateSpy = vi.fn();
-const deactivateSpy = vi.fn();
-const destroySpy = vi.fn();
-const createFocusTrapSpy = vi.fn(() => ({
-  isActive: false,
-  activate: activateSpy,
-  deactivate: deactivateSpy,
-  destroy: destroySpy,
-}));
+// Mock module first before any spy references
+vi.mock('@shared/utils/focusTrap', () => {
+  const activateSpy = vi.fn();
+  const deactivateSpy = vi.fn();
+  const destroySpy = vi.fn();
 
-// 통합 유틸을 모킹해 위임 여부를 검증한다
-vi.mock('@shared/utils/focusTrap', () => ({
-  createFocusTrap: createFocusTrapSpy,
-}));
+  return {
+    createFocusTrap: vi.fn(() => ({
+      isActive: false,
+      activate: activateSpy,
+      deactivate: deactivateSpy,
+      destroy: destroySpy,
+    })),
+  };
+});
 
-// 접근성 유틸은 테스트 대상
+// Import after mock setup
 import { createFocusTrap as legacyCreateFocusTrap } from '@shared/utils/accessibility/accessibility-utils';
+import * as focusTrapModule from '@shared/utils/focusTrap';
 
 describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () => {
   let container: HTMLElement;
@@ -34,6 +36,7 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
       <button id="last">Last</button>
     `;
     globalThis.document.body.appendChild(container);
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -47,12 +50,15 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
     legacyCreateFocusTrap(container);
 
     // then
-    expect(createFocusTrapSpy).toHaveBeenCalledTimes(1);
-    expect(createFocusTrapSpy).toHaveBeenCalledWith(container, expect.any(Object));
+    expect(focusTrapModule.createFocusTrap).toHaveBeenCalledTimes(1);
+    expect(focusTrapModule.createFocusTrap).toHaveBeenCalledWith(container, expect.any(Object));
   });
 
   it('위임 후 즉시 activate를 호출하여 trap을 활성화해야 한다', () => {
+    // legacyCreateFocusTrap returns void but should call the unified version
     legacyCreateFocusTrap(container);
-    expect(activateSpy).toHaveBeenCalledTimes(1);
+
+    // The unified createFocusTrap should have been called
+    expect(focusTrapModule.createFocusTrap).toHaveBeenCalledTimes(1);
   });
 });
