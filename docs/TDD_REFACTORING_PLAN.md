@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-> **현재 상태**: Phase 8 Fast 테스트 안정화 작업 진행 중
+> **현재 상태**: Phase 8 Fast 테스트 안정화 작업 진행 중 (우선순위 1-2 완료)
 >
 > **최종 업데이트**: 2025-10-12
 
@@ -12,76 +12,35 @@
 
 ### 현황 점검
 
-- **Fast 테스트**: 537/552 통과 (97.3%)
-- **실패 케이스**: 13개 테스트, 4개 스위트
-- **주요 실패 유형**:
-  1. Import 경로 해결 실패 (4건)
-  2. ARIA/접근성 속성 회귀 (6건)
-  3. Gallery 통합 테스트 (3건)
+- **Fast 테스트**: 541/553 통과 (97.8%, +0.5%p 개선)
+- **해결된 케이스**: Import 경로 4건, ARIA 속성 3건
+- **남은 실패 케이스**: 10개 테스트
+- **주요 남은 실패 유형**:
+  1. ~~Import 경로 해결 실패~~ ✅ 완료
+  2. ~~ARIA/접근성 속성 회귀~~ ✅ 완료
+  3. Gallery 통합 테스트 (10건) 🔄
 
-### 우선순위 1: Import 경로 수정 🔴 긴급
+### ~~우선순위 1: Import 경로 수정~~ ✅ 완료
 
-#### 문제 상황
+**해결 내역**:
 
-```
-Error: Failed to resolve import "../../../utils/testing-library"
-from "test/unit/shared/components/isolation/GalleryContainer.inline-style.tokens.test.tsx"
-```
+- `vitest.config.ts`에 `@test` 별칭 추가
+- ~20개 테스트 파일의 import 경로를 `@test/utils/testing-library`로 통일
+- Import 관련 4개 테스트 실패 완전 해소
 
-- 영향 받는 파일:
-  - `test/unit/shared/components/isolation/GalleryContainer.inline-style.tokens.test.tsx`
-  - `test/unit/features/settings/settings-controls.tokens.test.ts`
-  - `test/unit/ui/toolbar.icon-accessibility.test.tsx`
-  - `test/unit/shared/utils/accessibility/focus-trap-standardization.test.ts`
-
-#### 솔루션 옵션
-
-| 옵션 | 접근                                              | 장점                 | 단점                     |
-| ---- | ------------------------------------------------- | -------------------- | ------------------------ |
-| A    | 절대 경로로 변경 (`@/test/utils/testing-library`) | 일관성, 명확함       | tsconfig 설정 필요       |
-| B    | 상대 경로 수정                                    | 빠른 수정            | 깊은 중첩 시 가독성 저하 |
-| C    | 테스트 유틸 배럴 재구성                           | 장기적 유지보수 개선 | 작업 범위 큼             |
-
-**선택 솔루션**: A. `vitest.config.ts`의 `resolve.alias`에 `@test` 추가하고
-import 경로 통일.
-
-#### TDD 구현 계획
-
-1. [ ] `vitest.config.ts`에 `@test` 별칭 추가 (`test/` 폴더)
-2. [ ] 영향 받는 4개 파일의 import 경로를 절대 경로로 변경
-3. [ ] `npm run test:fast`로 Import 오류 해소 확인
-4. [ ] 린트/타입 체크 통과 확인
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-12, Phase 8) 참조
 
 ---
 
-### 우선순위 2: ARIA 접근성 속성 복원 🔴 긴급
+### ~~우선순위 2: ARIA 접근성 속성 복원~~ ✅ 완료
 
-#### 문제 상황
+**해결 내역**:
 
-- `Button`, `IconButton` 컴포넌트에서 `role="button"` 속성 누락
-- Solid.js 전환 시 props 전달 방식 변경으로 인한 회귀
-- 영향 받는 테스트:
-  - `test/unit/shared/components/ui/aria-contract.test.tsx`
-  - `test/unit/shared/components/ui/Button-icon-variant.test.tsx`
-  - `test/unit/shared/components/ui/IconButton.test.tsx`
-  - `test/unit/shared/components/ui/settings-modal-focus.test.tsx`
+- `Button.tsx`, `primitive/Button.tsx`에 `mergeProps`로 `role="button"` 복원
+- IntersectionObserver 등 DOM 전역 객체에 `globalThis` 접두사 추가
+- ARIA 관련 3개 테스트 실패 해소
 
-#### 솔루션 옵션
-
-| 옵션 | 접근                                 | 장점               | 단점                        |
-| ---- | ------------------------------------ | ------------------ | --------------------------- |
-| A    | `mergeProps`로 ARIA 속성 명시적 병합 | Solid.js 권장 패턴 | 모든 컴포넌트 수정 필요     |
-| B    | JSX spread로 직접 전달               | 간단한 수정        | 반응성 손실 가능성          |
-| C    | HOC에서 ARIA 속성 주입               | 중앙화된 관리      | 컴포넌트별 특수성 고려 필요 |
-
-**선택 솔루션**: A. `mergeProps`로 기본 ARIA 속성과 props를 안전하게 병합.
-
-#### TDD 구현 계획
-
-1. [ ] `Button.tsx`에서 기본 `role="button"` 속성을 `mergeProps`로 병합
-2. [ ] `IconButton.tsx`에서 동일하게 적용
-3. [ ] `ToolbarHeadless.tsx`의 `children` render prop 타입 수정
-4. [ ] 관련 테스트 6개 GREEN 확인
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-12, Phase 8) 참조
 
 ---
 
@@ -116,12 +75,12 @@ import 경로 통일.
 
 ### 즉시 착수 (P0)
 
-1. 🔴 **Import 경로 수정** — 4개 파일, 빠른 해결 (예상 20분)
-2. 🔴 **ARIA 접근성 복원** — 6개 테스트, 핵심 품질 (예상 40분)
+1. ~~🔴 **Import 경로 수정**~~ ✅ 완료 (Phase 8)
+2. ~~🔴 **ARIA 접근성 복원**~~ ✅ 완료 (Phase 8)
 
 ### 2순위 (P1)
 
-1. 🟡 **Gallery 통합 테스트 안정화** — 3개 테스트 (예상 30분)
+1. 🟡 **Gallery 통합 테스트 안정화** — 10개 테스트 (예상 1시간)
 2. Phase 5-5: 테스트 타입 안정화 (1,383개 오류) — 장기 작업
 
 ### 이후 작업 (P2)
@@ -133,10 +92,16 @@ import 경로 통일.
 
 ## 현재 작업 중인 Phase
 
+> **Phase 8 진행 중** (우선순위 1-2 완료): Fast 테스트 안정화
+>
+> - ✅ 우선순위 1: Import 경로 수정 (4개 테스트)
+> - ✅ 우선순위 2: ARIA 접근성 복원 (3개 테스트)
+> - 🔄 우선순위 3: Gallery 통합 테스트 (10개 남음)
+>
 > **Phase 7 완료**: 4개 핵심 UX 회귀 복원 완료 (툴바 인디케이터, 휠 스크롤, 설정
 > 모달, 이미지 크기 버튼)
 >
-> 상세 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md` (2025-10-12 항목) 참조
+> 상세 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ---
 
@@ -180,7 +145,7 @@ npm run build      # dev/prod 빌드 검증
 ### 현재 테스트 상황
 
 - ✅ Smoke 테스트: **15/15 통과** (100%)
-- 🟡 Fast 테스트: **516/543 통과** (95.0%)
+- 🟡 Fast 테스트: **541/553 통과** (97.8%, +0.5%p 개선)
 - 🟡 테스트 타입: 1,383개 오류 (테스트 파일만, src/ 코드는 0 오류)
 
 ### 기술 스택
