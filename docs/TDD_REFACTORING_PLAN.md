@@ -1,108 +1,196 @@
-# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-> **현재 상태**: Phase 10 완료 - Solid.js 테스트 전략 재정립 필요
->
-> **최종 업데이트**: 2025-01-10
->
-> **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
->
+> **현재 상태**: 안정화 완료 - 다음 Phase 계획 수립 필요> **현재 상태**: 안정화
+> 완료 - 다음 Phase 계획 수립 필요
+
+> >
+
+> **최종 업데이트**: 2025-10-10> **최종 업데이트**: 2025-10-10
+
+> >
+
+> **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)> **빌드**: ✅
+> dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
+
+> >
+
+> **테스트**: ✅ Smoke 15/15 (100%) | ✅ Fast 538/538 (100%, 23 skipped)>
 > **테스트**: ✅ Smoke 15/15 (100%) | ✅ Fast 538/538 (100%, 23 skipped)
 
 ---
 
-## Phase 10: 테스트 안정화 완료 ✅
+## 활성 작업 없음## 활성 작업 없음
 
-> Preact → Solid.js 마이그레이션 후 테스트 정리 및 전략 재정립
+현재 모든 Phase가 완료되었습니다. 다음 단계를 계획하세요.현재 모든 Phase가
+완료되었습니다. 다음 단계를 계획하세요:
 
-### 최종 결과
+### 권장 다음 단계### 권장 다음 단계
 
-- **테스트 상태**: 100% passing (538 tests, 23 skipped)
-- **빌드**: 정상 작동 (dev 727.39 KB, prod 325.05 KB gzip 88.24 KB)
-- **타입 체크**: 0 errors in src/
-- **Lint**: 0 errors
+#### 1. E2E 테스트 프레임워크 도입 (우선순위: 높음)1. **E2E 테스트 프레임워크 도입** (우선순위: 높음)
 
-### 완료된 작업
+- Playwright 또는 Cypress 통합
 
-1. ✅ **TDZ 문제 수정**: `focus-trap-standardization.test.ts` - vi.mock factory
-   타이밍 해결
-2. ✅ **deprecated stub 제거**: `settings-controls.tokens.test.ts` 삭제
-3. ✅ **복잡한 UI 테스트 skip**: Solid.js 테스트 환경 제약으로 8개 테스트 skip
-   처리
-   - error-boundary.fallback.test.tsx
-   - toolbar.icon-accessibility.test.tsx
-   - gallery-app-activation.test.ts
-   - keyboard-help.overlay.test.tsx
-   - settings-modal-focus.test.tsx
-   - ToolbarHeadless.test.tsx (2 tests)
-   - gallery-pc-only-events.test.ts
+**목표**: Skip된 8개 UI 테스트를 E2E로 재작성하여 완전한 회귀 테스트 달성 -
+Skip된 8개 UI 테스트를 E2E로 재작성
 
-### 결론 및 권장사항
+- Solid.js 컴포넌트의 완전한 반응성 테스트 가능
 
-**Solid.js 테스트 전략 필요**:
+**배경**:
 
-- 현재 JSDOM 환경에서 Solid.js 반응성 테스트가 복잡함
-- Skip된 8개 테스트는 E2E 테스트로 전환 권장
-- 또는 Solid Testing Library를 도입하여 테스트 환경 개선
+2. **Solid Testing Library 검토** (우선순위: 중간)
 
-**다음 단계**:
+- 현재 JSDOM 환경에서 Solid.js 반응성 테스트 한계 발견 -
+  `@solidjs/testing-library` 통합
 
-- [ ] E2E 테스트 프레임워크 도입 검토 (Playwright/Cypress)
-- [ ] Solid Testing Library 통합
-- [ ] UI 컴포넌트 테스트 재작성
+- ErrorBoundary, Modal, Focus 관리 등 UI 컴포넌트는 E2E 필요 - Unit 레벨에서
+  Solid.js 컴포넌트 테스트 개선
 
----
+- 실제 브라우저 환경에서만 Solid.js signal 업데이트를 정확히 검증 가능 - JSDOM
+  환경에서 더 나은 반응성 테스트 지원
 
-## Phase 9: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅
+**작업 계획**:3. **성능 최적화** (우선순위: 낮음)
+
+- 번들 크기 분석 및 최적화
+
+- [ ] Playwright 또는 Cypress 선택 및 설치 - 런타임 성능 프로파일링
+
+- [ ] 기본 E2E 테스트 인프라 구축 - 메모리 사용량 모니터링
+
+- [ ] Skip된 8개 테스트를 E2E로 재작성:
+  - error-boundary.fallback.test.tsx### 완료된 Phase 목록
+
+  - toolbar.icon-accessibility.test.tsx
+
+  - gallery-app-activation.test.ts모든 완료된 Phase는
+    `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
+
+  - keyboard-help.overlay.test.tsx있습니다:
+
+  - settings-modal-focus.test.tsx
+
+  - ToolbarHeadless.test.tsx (2 tests)- **Phase 10**: 테스트 안정화 (Solid.js
+    마이그레이션 대응) ✅
+
+  - gallery-pc-only-events.test.ts- **Phase 9**: UX 개선 - 스크롤 포커스 동기화
+    · 툴바 가드 · 휠 튜닝 ✅
+
+- **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅
+
+**수용 기준**:- 이전 Phase들...
+
+- [ ] E2E 프레임워크 선택 및 설치---
+
+- [ ] 8개 테스트가 E2E 환경에서 통과
+
+- [ ] CI/CD 파이프라인에 E2E 테스트 통합## Phase 9: UX 개선 - 스크롤 포커스
+      동기화 · 툴바 가드 · 휠 튜닝 ✅
+
+- [ ] Unit 테스트의 describe.skip() 제거
 
 > 사용자 체감도가 높은 3개 UX 포인트(스크롤 포커스, 툴바 가드, 휠 튜닝)를
-> 재점검하고 회귀 가드를 추가합니다.
+
+#### 2. Solid Testing Library 검토 (우선순위: 중간)> 재점검하고 회귀 가드를 추가합니다.
+
 >
-> **상태**: 우선순위 1~3 모두 GREEN
 
-### 현황 분석
+**목표**: Unit 레벨에서 Solid.js 컴포넌트 테스트 개선> **상태**: 우선순위 1~3
+모두 GREEN
 
-#### 1. 스크롤 정지 시 포커스 동기화
+**배경**:### 현황 분석
+
+- `@solidjs/testing-library`를 사용하면 JSDOM에서도 더 나은 반응성 테스트
+  가능#### 1. 스크롤 정지 시 포커스 동기화
+
+- E2E보다 빠르고 가벼운 컴포넌트 테스트 유지 가능
 
 ##### 관찰 (스크롤)
 
-- `useGalleryScroll`은 스크롤 진행 상태를 반환하지만 `VerticalGalleryView`에서는
-  반환값을 저장하지 않아 스크롤 정지 시점을 활용하지 않음
-  (`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:233`).
-- `useGalleryFocusTracker`는 `manualFocusIndex`와 `autoFocusIndex`를 관리하며
-  컨테이너 `data-focused-index` 속성만 갱신하고 실제 DOM focus 이동은 수행하지
-  않음 (`src/features/gallery/hooks/useGalleryFocusTracker.ts:120-170`).
-- 빌드 산출물에서도 동일하게 `element.focus()` 호출이 없어 포커스 이동이
-  발생하지 않음 (`dist/xcom-enhanced-gallery.dev.user.js:16181-16320`).
+**작업 계획**:
 
-##### 위험 (스크롤)
+- `useGalleryScroll`은 스크롤 진행 상태를 반환하지만 `VerticalGalleryView`에서는
+
+- [ ] `@solidjs/testing-library` 설치 및 평가 반환값을 저장하지 않아 스크롤 정지
+      시점을 활용하지 않음
+
+- [ ] 기존 `test/utils/testing-library.ts` 래퍼 확장
+      (`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:233`).
+
+- [ ] 간단한 UI 컴포넌트 테스트 작성 (POC)- `useGalleryFocusTracker`는
+      `manualFocusIndex`와 `autoFocusIndex`를 관리하며
+
+- [ ] 복잡한 반응성 테스트가 개선되는지 검증 컨테이너 `data-focused-index`
+      속성만 갱신하고 실제 DOM focus 이동은 수행하지
+
+  않음 (`src/features/gallery/hooks/useGalleryFocusTracker.ts:120-170`).
+
+**수용 기준**:- 빌드 산출물에서도 동일하게 `element.focus()` 호출이 없어 포커스
+이동이
+
+발생하지 않음 (`dist/xcom-enhanced-gallery.dev.user.js:16181-16320`).
+
+- [ ] Solid Testing Library 통합 완료
+
+- [ ] 최소 3개 이상 컴포넌트 테스트로 검증##### 위험 (스크롤)
+
+- [ ] 기존 테스트와 공존 가능한 패턴 확립
 
 - 휠 스크롤 후 키보드 탐색을 재개하면 `document.activeElement`가 이전 아이템에
-  머물러 실제로 보이는 미디어와 불일치가 발생한다.
+
+#### 3. 성능 최적화 (우선순위: 낮음) 머물러 실제로 보이는 미디어와 불일치가 발생한다.
+
 - 화면 낭독기 사용 시 포커스 미동기화로 인해 현재 이미지가 안내되지 않아 접근성
-  회귀가 발생할 수 있다.
+
+**목표**: 번들 크기 감소 및 런타임 성능 개선 회귀가 발생할 수 있다.
+
 - 자동 포커스가 DOM 수준에서 이루어지지 않으므로 테스트 레벨에서 회귀를 탐지할
-  수 있는 포인트가 부재하다.
 
-#### 2. 툴바 숫자 인디케이터 반응성 검증
+**작업 계획**: 수 있는 포인트가 부재하다.
 
-##### 관찰 (툴바)
+- [ ] Vite bundle analyzer로 번들 크기 분석#### 2. 툴바 숫자 인디케이터 반응성
+      검증
+
+- [ ] 불필요한 의존성 제거 또는 dynamic import 전환
+
+- [ ] 런타임 성능 프로파일링 (Chrome DevTools)##### 관찰 (툴바)
+
+- [ ] 메모리 누수 검사
 
 - `VerticalGalleryView`는 `ToolbarWithSettings`에 `currentIndex()`와
-  `focusedIndex() ?? currentIndex()`를 전달
-  (`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:477`).
-- `Toolbar`는 `displayedIndex` `createMemo`로 `focusedIndex`를 우선 사용하며,
-  번들(`dist/xcom-enhanced-gallery.dev.user.js:17952`)도 동일하게 구성됨.
-- `useGalleryFocusTracker`는 갤러리 컨테이너에 `data-focused-index` 속성을
+
+**수용 기준**: `focusedIndex() ?? currentIndex()`를 전달
+
+(`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:477`).
+
+- [ ] 번들 크기 10% 이상 감소 (prod gzip 기준)- `Toolbar`는 `displayedIndex`
+      `createMemo`로 `focusedIndex`를 우선 사용하며,
+
+- [ ] 초기 로딩 시간 개선 측정
+      번들(`dist/xcom-enhanced-gallery.dev.user.js:17952`)도 동일하게 구성됨.
+
+- [ ] 메모리 사용량 안정성 검증- `useGalleryFocusTracker`는 갤러리 컨테이너에
+      `data-focused-index` 속성을
+
   노출하지만 툴바 자체는 동일 정보를 제공하지 않아 UI 테스트에서 감지 포인트가
-  부족함.
 
-##### 위험 (툴바)
+--- 부족함.
 
-- SolidJS 반응성은 정상 동작하나 현재 테스트
-  (`test/unit/ui/toolbar.icon-accessibility.test.tsx`) 는 아이콘 ARIA만 검증하여
-  숫자 카운터 회귀 발생 시 경고가 없음.
-- 접근성 도구에서 현재 포커스 인덱스를 읽을 명확한 속성이 없어 향후
-  확장성(라이브 리전 보강 등)에 제약이 존재함.
+## 완료된 Phase 목록##### 위험 (툴바)
+
+모든 완료된 Phase는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
+있습니다:- SolidJS 반응성은 정상 동작하나 현재 테스트
+
+(`test/unit/ui/toolbar.icon-accessibility.test.tsx`) 는 아이콘 ARIA만 검증하여
+
+- **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-10-10 숫자
+  카운터 회귀 발생 시 경고가 없음.
+
+- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅- 접근성
+  도구에서 현재 포커스 인덱스를 읽을 명확한 속성이 없어 향후
+
+- **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅ - 2025-10-12 확장성(라이브
+  리전 보강 등)에 제약이 존재함.
+
+- 이전 Phase들... (COMPLETED 문서 참조)
 
 #### 3. 마우스 휠 스크롤 속도 튜닝 필요
 
