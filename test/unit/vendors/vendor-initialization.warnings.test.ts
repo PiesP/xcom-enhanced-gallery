@@ -15,7 +15,7 @@ describe('Vendors initialization (test mode warnings)', () => {
     }
 
     // Accessing getter should auto-initialize without warn in test mode (debug only)
-    const api = vendors.getPreact();
+    const api = vendors.getSolid();
     expect(api).toBeTruthy();
     expect(typeof api.render).toBe('function');
 

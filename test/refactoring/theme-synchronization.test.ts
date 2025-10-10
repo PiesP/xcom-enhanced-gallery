@@ -5,40 +5,101 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+type ClassListOperation = (...tokens: string[]) => void;
+
+interface MockClassList {
+  add: ClassListOperation;
+  remove: ClassListOperation;
+  contains: (token: string) => boolean;
+  toggle: (token: string) => boolean;
+}
+
+interface MockElement {
+  tagName: string;
+  style: Record<string, string>;
+  setAttribute: (name: string, value: string) => void;
+  getAttribute: (name: string) => string | null;
+  classList: MockClassList;
+}
+
+interface MockDocument {
+  createElement: (tagName: string) => MockElement;
+  querySelector: (selector: string) => MockElement | null;
+  querySelectorAll: (selector: string) => MockElement[];
+  documentElement: {
+    setAttribute: (name: string, value: string) => void;
+    getAttribute: (name: string) => string | null;
+    style: Record<string, string>;
+  };
+}
+
+interface MockWindow {
+  getComputedStyle: (element: MockElement) => {
+    getPropertyValue: (prop: string) => string;
+  };
+  matchMedia: (query: string) => {
+    matches: boolean;
+    addListener: () => void;
+    removeListener: () => void;
+  };
+}
+
 describe('Phase 2: 테마 동기화 메커니즘', () => {
-  let mockDocument;
-  let mockWindow;
+  let mockDocument: MockDocument;
+  let mockWindow: MockWindow;
 
   beforeEach(() => {
     // DOM 환경 모킹 - 실제 테마 변경을 반영하는 저장소
     let currentTheme = 'light';
 
-    mockDocument = {
-      createElement: tagName => ({
+    const createMockElement = (tagName: string): MockElement => {
+      const attributes: Record<string, string> = {};
+      const classNames = new Set<string>();
+
+      const classList: MockClassList = {
+        add: (...tokens: string[]) => {
+          tokens.forEach(token => {
+            if (token) {
+              classNames.add(token);
+            }
+          });
+        },
+        remove: (...tokens: string[]) => {
+          tokens.forEach(token => classNames.delete(token));
+        },
+        contains: (token: string) => classNames.has(token),
+        toggle: (token: string) => {
+          if (classNames.has(token)) {
+            classNames.delete(token);
+            return false;
+          }
+          classNames.add(token);
+          return true;
+        },
+      };
+
+      return {
         tagName: tagName.toUpperCase(),
         style: {},
-        setAttribute: function (name, value) {
-          this[name] = value;
+        setAttribute: (name: string, value: string) => {
+          attributes[name] = value;
         },
-        getAttribute: function (name) {
-          return this[name];
-        },
-        classList: {
-          add: () => {},
-          remove: () => {},
-          contains: () => false,
-          toggle: () => false,
-        },
-      }),
+        getAttribute: (name: string) => attributes[name] ?? null,
+        classList,
+      };
+    };
+
+    mockDocument = {
+      createElement: createMockElement,
       querySelector: () => null,
       querySelectorAll: () => [],
       documentElement: {
-        setAttribute: (name, value) => {
+        setAttribute: (name: string, value: string) => {
           if (name === 'data-theme') {
             currentTheme = value;
           }
         },
-        getAttribute: name => {
+        getAttribute: (name: string) => {
           if (name === 'data-theme') {
             return currentTheme;
           }
@@ -50,18 +111,17 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
 
     mockWindow = {
       getComputedStyle: () => ({
-        getPropertyValue: prop => {
-          // 다크 테마 감지 로직 추가
+        getPropertyValue: (prop: string) => {
           const isDarkTheme = mockDocument.documentElement.getAttribute('data-theme') === 'dark';
 
-          const lightThemeVars = {
+          const lightThemeVars: Record<string, string> = {
             '--xeg-surface-glass-bg': 'rgba(255, 255, 255, 0.85)',
             '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.2)',
             '--xeg-surface-glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.15)',
             '--xeg-surface-glass-blur': 'blur(12px)',
           };
 
-          const darkThemeVars = {
+          const darkThemeVars: Record<string, string> = {
             '--xeg-surface-glass-bg': 'rgba(0, 0, 0, 0.85)',
             '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.15)',
             '--xeg-surface-glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.5)',
@@ -69,10 +129,10 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
           };
 
           const cssVars = isDarkTheme ? darkThemeVars : lightThemeVars;
-          return cssVars[prop] || '';
+          return cssVars[prop] ?? '';
         },
       }),
-      matchMedia: query => ({
+      matchMedia: (query: string) => ({
         matches: query.includes('dark'),
         addListener: () => {},
         removeListener: () => {},

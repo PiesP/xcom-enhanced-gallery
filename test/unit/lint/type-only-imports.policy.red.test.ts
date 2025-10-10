@@ -4,7 +4,7 @@
  *   when sourced from the vendors barrel ("@/shared/external/vendors" or relative variants).
  * - Allowed patterns:
  *   - import type { VNode } from '.../external/vendors';
- *   - import { getPreact, type VNode } from '.../external/vendors';
+ *   - import { getSolid, type VNode } from '.../external/vendors';
  * - Forbidden pattern (examples):
  *   - import { VNode } from '.../external/vendors';
  */

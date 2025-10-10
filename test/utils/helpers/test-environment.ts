@@ -3,7 +3,7 @@
  * 다양한 시나리오에 맞는 환경을 쉽게 설정할 수 있도록 도와주는 유틸리티
  */
 
-import { setupUserscriptAPIMocks, clearMockStorage } from '../../__mocks__/userscript-api.mock.js';
+import { setupGlobalMocks, clearMockStorage } from '../../__mocks__/userscript-api.mock.js';
 
 import { setupTwitterDOM, clearTwitterDOM } from '../../__mocks__/twitter-dom.mock.js';
 
@@ -33,7 +33,7 @@ export async function setupMinimalEnvironment() {
  */
 export async function setupBrowserTestEnvironment() {
   await setupMinimalEnvironment();
-  setupUserscriptAPIMocks();
+  setupGlobalMocks();
   setupBrowserEnvironment();
 }
 

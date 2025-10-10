@@ -4,6 +4,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
+import { filterDefined } from '../utils/filterDefined';
 
 describe('Phase 1: 디자인 토큰 계층화 (GREEN 테스트)', () => {
   test('primitive.css 파일이 존재해야 한다', async () => {
@@ -32,7 +33,7 @@ describe('Phase 1: 디자인 토큰 계층화 (GREEN 테스트)', () => {
 });
 
 // 실제 CSS 내용을 시뮬레이션하여 하드코딩된 값들 검출
-const simulateFileContent = filename => {
+const simulateFileContent = (filename: string) => {
   if (filename.includes('VerticalGalleryView.module.css')) {
     return `
       .toolbarHoverZone {
@@ -119,10 +120,10 @@ describe('CSS Modules Token Usage - 실제 하드코딩 검출', () => {
     const matches = Array.from(content.matchAll(hardcodedPixelPattern));
     const allowedValues = ['0', '1', '2']; // 테두리나 기본값만 허용
 
-    const invalidHardcoded = matches
-      .map(match => match[1])
+    const pixelValues = filterDefined(matches.map(match => match[1]));
+    const invalidHardcoded = pixelValues
       .filter(value => !allowedValues.includes(value))
-      .filter(value => parseInt(value) > 2); // 2px 초과값만
+      .filter(value => parseInt(value, 10) > 2); // 2px 초과값만
 
     if (cssPath.includes('VerticalGalleryView')) {
       // VerticalGalleryView에는 하드코딩된 값들이 있어야 함 (RED 테스트)
@@ -160,9 +161,8 @@ describe('CSS Modules Token Usage - 실제 하드코딩 검출', () => {
     const timeMatches = Array.from(content.matchAll(hardcodedTimePattern));
     const allowedTimes = ['0']; // 0ms만 허용
 
-    const invalidTimes = timeMatches
-      .map(match => match[1])
-      .filter(time => !allowedTimes.includes(time));
+    const timeValues = filterDefined(timeMatches.map(match => match[1]));
+    const invalidTimes = timeValues.filter(time => !allowedTimes.includes(time));
 
     // 하드코딩된 시간값이 있어야 함 (RED 테스트)
     expect(invalidTimes.length).toBeGreaterThan(0);

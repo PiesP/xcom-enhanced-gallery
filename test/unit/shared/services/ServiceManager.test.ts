@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 
 describe('CoreService (ServiceManager)', () => {
-  let coreService;
+  let coreService: CoreService;
 
   beforeEach(() => {
     // 환경 격리: 각 테스트마다 깨끗한 CoreService 인스턴스
@@ -48,7 +48,7 @@ describe('CoreService (ServiceManager)', () => {
       coreService.register(serviceKey, testService);
 
       expect(coreService.has(serviceKey)).toBe(true);
-      expect(coreService.get(serviceKey)).toBe(testService);
+      expect(coreService.get<typeof testService>(serviceKey)).toBe(testService);
     });
 
     it('동일한 키로 서비스를 덮어쓸 수 있어야 함', () => {
@@ -60,7 +60,7 @@ describe('CoreService (ServiceManager)', () => {
       coreService.register(serviceKey, service1);
       coreService.register(serviceKey, service2);
 
-      expect(coreService.get(serviceKey)).toBe(service2);
+      expect(coreService.get<typeof service2>(serviceKey)).toBe(service2);
     });
   });
 
@@ -71,7 +71,7 @@ describe('CoreService (ServiceManager)', () => {
       const serviceKey = 'test-service';
 
       coreService.register(serviceKey, testService);
-      const retrievedService = coreService.get(serviceKey);
+      const retrievedService = coreService.get<typeof testService>(serviceKey);
 
       expect(retrievedService).toBe(testService);
     });
@@ -85,7 +85,7 @@ describe('CoreService (ServiceManager)', () => {
 
     it('tryGet()은 존재하지 않는 서비스에 대해 null을 반환해야 함', () => {
       // 행위 중심 테스트: 안전한 조회 동작 검증
-      const result = coreService.tryGet('non-existent-service');
+      const result = coreService.tryGet<unknown>('non-existent-service');
 
       expect(result).toBeNull();
     });

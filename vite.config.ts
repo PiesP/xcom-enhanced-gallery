@@ -6,7 +6,7 @@
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import preact from '@preact/preset-vite';
+import solidPlugin from 'vite-plugin-solid';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
@@ -151,7 +151,7 @@ export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
-      preact({ devToolsEnabled: flags.isDev, prefreshEnabled: flags.isDev }),
+      solidPlugin({ dev: flags.isDev, ssr: false }),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
     ],
@@ -162,6 +162,10 @@ export default defineConfig(({ mode }) => {
       'process.env.NODE_ENV': JSON.stringify(flags.isProd ? 'production' : 'development'),
       'process.env': '{}',
       global: 'globalThis',
+    },
+    esbuild: {
+      jsx: 'preserve',
+      jsxImportSource: 'solid-js',
     },
     resolve: {
       extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],

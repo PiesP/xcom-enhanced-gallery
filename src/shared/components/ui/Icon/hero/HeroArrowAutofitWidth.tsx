@@ -1,31 +1,11 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/** Heroicons ArrowAutofitWidth adapter (Solid.js) */
+import type { JSXElement } from '../../../../external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 ArrowAutofitWidth 대체(ArrowsRightLeft) 어댑터 */
-export function HeroArrowAutofitWidth(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { ArrowsRightLeftIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ArrowsRightLeftIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+export function HeroArrowAutofitWidth(props: IconProps): JSXElement {
+  return (
+    <Icon {...props}>
+      <path d='M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5' />
+    </Icon>
   );
 }

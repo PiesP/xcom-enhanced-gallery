@@ -1,31 +1,11 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/** Heroicons ArchiveBoxArrowDown adapter (Solid.js) */
+import type { JSXElement } from '../../../../external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 FileZip 대체(ArchiveBoxArrowDown) 어댑터 */
-export function HeroFileZip(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { ArchiveBoxArrowDownIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ArchiveBoxArrowDownIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+export function HeroFileZip(props: IconProps): JSXElement {
+  return (
+    <Icon {...props}>
+      <path d='m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0-3-3m3 3 3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z' />
+    </Icon>
   );
 }

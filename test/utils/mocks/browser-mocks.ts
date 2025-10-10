@@ -119,13 +119,13 @@ class MockStorage {
     // 간단한 바이트 계산 시뮬레이션
     if (!keys) {
       return Array.from(this.data.values()).reduce(
-        (total, value) => total + JSON.stringify(value).length,
+        (total: number, value: unknown) => total + JSON.stringify(value).length,
         0
       );
     }
 
     const keysArray = Array.isArray(keys) ? keys : [keys];
-    return keysArray.reduce((total, key) => {
+    return keysArray.reduce((total: number, key) => {
       const value = this.data.get(key);
       return total + (value ? JSON.stringify(value).length : 0);
     }, 0);
@@ -226,8 +226,8 @@ export function createBrowserExtensionMock(): MockBrowserAPI {
       }),
 
     remove: vi.fn().mockImplementation(async (tabIds: number | number[]) => {
-      const ids = Array.isArray(tabIds) ? tabIds : [tabIds];
-      return Promise.resolve();
+      const _ids = Array.isArray(tabIds) ? tabIds : [tabIds];
+      return Promise.resolve(_ids);
     }),
   };
 
@@ -241,22 +241,26 @@ export function createBrowserExtensionMock(): MockBrowserAPI {
 /**
  * Web API Mock 설정 (Fetch, ResizeObserver 등)
  */
+type FetchOptionsLike = Record<string, unknown> | undefined;
+
 export function setupWebAPIMocks(): void {
   // Fetch API Mock
-  global.fetch = vi.fn().mockImplementation(async (url: string, options?: RequestInit) => {
-    const mockResponse = {
-      ok: true,
-      status: 200,
-      statusText: 'OK',
-      headers: new Headers(),
-      json: async () => ({ url, options }),
-      text: async () => JSON.stringify({ url, options }),
-      blob: async () => new Blob([JSON.stringify({ url, options })]),
-      arrayBuffer: async () => new ArrayBuffer(0),
-    };
+  (globalThis as Record<string, unknown>).fetch = vi
+    .fn()
+    .mockImplementation(async (url: string, options?: FetchOptionsLike) => {
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        json: async () => ({ url, options }),
+        text: async () => JSON.stringify({ url, options }),
+        blob: async () => ({ data: JSON.stringify({ url, options }) }),
+        arrayBuffer: async () => new ArrayBuffer(0),
+      };
 
-    return Promise.resolve(mockResponse as Response);
-  });
+      return Promise.resolve(mockResponse);
+    });
 
   // ResizeObserver Mock
   global.ResizeObserver = vi.fn().mockImplementation(() => ({

@@ -9,35 +9,23 @@
  * - ARIA 상태 관리
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 간소화된 키보드 네비게이션 훅 (Esc 키만 지원)
  */
-export function useKeyboardNavigation(
-  handlers: {
-    onEscape?: () => void;
-  } = {},
-  dependencies: unknown[] = []
-) {
-  const { useEffect } = getPreactHooks();
-  const { onEscape } = handlers;
+export function useKeyboardNavigation(handlers: { onEscape?: () => void } = {}): void {
+  const { createEffect, onCleanup } = getSolid();
 
-  useEffect(() => {
+  createEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      switch (event.key) {
-        case 'Escape':
-          onEscape?.();
-          break;
-        // 다른 키들은 더 이상 지원하지 않음
-        default:
-          break;
+      if (event.key === 'Escape') {
+        handlers.onEscape?.();
       }
     };
 
-    // 중앙 이벤트 매니저 경유 등록 (정책상 직접 등록 금지)
     const { EventManager } = require('../services/EventManager');
     EventManager.getInstance().addListener(
       document,
@@ -46,24 +34,24 @@ export function useKeyboardNavigation(
       { capture: false },
       'use-accessibility'
     );
-    return () => {
+
+    onCleanup(() => {
       const { EventManager } = require('../services/EventManager');
       EventManager.getInstance().removeByContext('use-accessibility');
-    };
-  }, dependencies);
+    });
+  });
 }
 
 /**
  * 포커스 트랩 훅
  */
 export function useFocusTrap(enabled: boolean = true) {
-  const { useRef, useEffect } = getPreactHooks();
-  const containerRef = useRef<HTMLElement>(null);
+  const { useRef, createEffect, onCleanup } = getSolid();
+  const containerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!enabled || !containerRef.current) return;
-
+  createEffect(() => {
     const container = containerRef.current;
+    if (!enabled || !container) return;
     const focusableSelector = [
       'button:not([disabled])',
       '[href]',
@@ -111,8 +99,8 @@ export function useFocusTrap(enabled: boolean = true) {
     }
 
     container.addEventListener('keydown', handleTabKey);
-    return () => container.removeEventListener('keydown', handleTabKey);
-  }, [enabled]);
+    onCleanup(() => container.removeEventListener('keydown', handleTabKey));
+  });
 
   return containerRef;
 }
@@ -120,35 +108,31 @@ export function useFocusTrap(enabled: boolean = true) {
 /**
  * ARIA 라이브 리전 훅
  */
-export function useAriaLive(message: string, politeness: 'polite' | 'assertive' = 'polite') {
-  const { useEffect } = getPreactHooks();
-  useEffect(() => {
+export function useAriaLive(message: string, politeness: 'polite' | 'assertive' = 'polite'): void {
+  const { createEffect } = getSolid();
+  createEffect(() => {
     if (!message) return;
-    // 중앙 라이브 리전 매니저를 사용하여 단일 인스턴스에 공지
     try {
       const { announce } = require('../utils/accessibility/live-region-manager');
       announce(message, politeness);
     } catch {
       // fallback: 무시 (테스트/비브라우저 환경)
     }
-    return () => void 0;
-  }, [message, politeness]);
+  });
 }
 
 /**
  * 라이브 리전 메시지 알림 훅
  */
 export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
-  const { useCallback } = getPreactHooks();
-  const announce = useCallback(
-    (message: string) => {
-      if (!message) return;
+  return (message: string) => {
+    if (!message) return;
 
-      const liveRegion = document.createElement('div');
-      liveRegion.setAttribute('aria-live', politeness);
-      liveRegion.setAttribute('aria-atomic', 'true');
-      liveRegion.setAttribute('class', 'sr-only');
-      liveRegion.style.cssText = `
+    const liveRegion = document.createElement('div');
+    liveRegion.setAttribute('aria-live', politeness);
+    liveRegion.setAttribute('aria-atomic', 'true');
+    liveRegion.setAttribute('class', 'sr-only');
+    liveRegion.style.cssText = `
       position: absolute;
       width: 1px;
       height: 1px;
@@ -160,48 +144,44 @@ export function useLiveRegion(politeness: 'polite' | 'assertive' = 'polite') {
       border: 0;
     `;
 
-      document.body.appendChild(liveRegion);
+    document.body.appendChild(liveRegion);
 
+    globalTimerManager.setTimeout(() => {
+      liveRegion.textContent = message;
       globalTimerManager.setTimeout(() => {
-        liveRegion.textContent = message;
-        globalTimerManager.setTimeout(() => {
-          if (document.body.contains(liveRegion)) {
-            document.body.removeChild(liveRegion);
-          }
-        }, 1000);
-      }, 100);
-    },
-    [politeness]
-  );
-
-  return announce;
+        if (document.body.contains(liveRegion)) {
+          document.body.removeChild(liveRegion);
+        }
+      }, 1000);
+    }, 100);
+  };
 }
 
 /**
  * 외부 클릭 감지 훅
  */
 export function useClickOutside(callback: () => void, enabled: boolean = true) {
-  const { useRef, useCallback, useEffect } = getPreactHooks();
-  const ref = useRef<HTMLElement>(null);
+  const { useRef, createEffect, onCleanup } = getSolid();
+  const ref = useRef<HTMLElement | null>(null);
 
-  const handleClickOutside = useCallback(
-    (event: Event) => {
-      if (enabled && ref.current && !ref.current.contains(event.target as Node)) {
+  createEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    const handleClickOutside = (event: Event) => {
+      const element = ref.current;
+      if (element && !element.contains(event.target as Node)) {
         callback();
       }
-    },
-    [callback, enabled]
-  );
-
-  useEffect(() => {
-    if (!enabled) return;
+    };
 
     document.addEventListener('mousedown', handleClickOutside);
 
-    return () => {
+    onCleanup(() => {
       document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [handleClickOutside, enabled]);
+    });
+  });
 
   return ref;
 }
@@ -209,8 +189,8 @@ export function useClickOutside(callback: () => void, enabled: boolean = true) {
 /**
  * 화면 크기 감지 훅
  */
-export function useMediaQuery(query: string): boolean {
-  const { useState, useEffect } = getPreactHooks();
+export function useMediaQuery(query: string): () => boolean {
+  const { createSignal, createEffect, onCleanup } = getSolid();
 
   const getMatches = (query: string): boolean => {
     if (typeof window !== 'undefined') {
@@ -219,9 +199,9 @@ export function useMediaQuery(query: string): boolean {
     return false;
   };
 
-  const [matches, setMatches] = useState(getMatches(query));
+  const [matches, setMatches] = createSignal(getMatches(query));
 
-  useEffect(() => {
+  createEffect(() => {
     const matchMedia = window.matchMedia(query);
 
     const handleChange = () => {
@@ -230,12 +210,12 @@ export function useMediaQuery(query: string): boolean {
 
     if (matchMedia.addEventListener) {
       matchMedia.addEventListener('change', handleChange);
-      return () => matchMedia.removeEventListener('change', handleChange);
+      onCleanup(() => matchMedia.removeEventListener('change', handleChange));
     } else {
       matchMedia.addListener(handleChange);
-      return () => matchMedia.removeListener(handleChange);
+      onCleanup(() => matchMedia.removeListener(handleChange));
     }
-  }, [query]);
+  });
 
   return matches;
 }

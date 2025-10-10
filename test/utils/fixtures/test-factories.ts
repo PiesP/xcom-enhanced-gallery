@@ -45,6 +45,64 @@ export interface GalleryState {
   error: Error | null;
 }
 
+type NavigatorLike = {
+  userAgent?: string;
+  vendor?: string;
+  language?: string;
+  languages?: string[];
+  platform?: string;
+  cookieEnabled?: boolean;
+  onLine?: boolean;
+  [key: string]: unknown;
+};
+
+type LocationLike = {
+  hostname: string;
+  href: string;
+  pathname: string;
+  search: string;
+  hash: string;
+  protocol: string;
+  port: string;
+  host: string;
+};
+
+type DocumentLike = Record<string, unknown>;
+
+type WindowLike = {
+  location: LocationLike;
+  navigator: NavigatorLike;
+  innerWidth: number;
+  innerHeight: number;
+  outerWidth: number;
+  outerHeight: number;
+  devicePixelRatio: number;
+  document: DocumentLike;
+  [key: string]: unknown;
+};
+
+type KeyboardEventLike = {
+  key: string;
+  code: string;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  altKey: boolean;
+  metaKey: boolean;
+  preventDefault: () => void;
+  stopPropagation: () => void;
+};
+
+type MouseEventLike = {
+  type: 'click' | 'mousedown' | 'mouseup' | 'mousemove';
+  clientX: number;
+  clientY: number;
+  button: number;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  preventDefault: () => void;
+  stopPropagation: () => void;
+};
+
 // ================================
 // Media Item Factories
 // ================================
@@ -249,8 +307,8 @@ export function createMockMediaUrl(
  */
 export function createMockBrowserInfo(
   browser: 'chrome' | 'firefox' | 'safari' = 'chrome',
-  overrides: Partial<Navigator> = {}
-): Partial<Navigator> {
+  overrides: Partial<NavigatorLike> = {}
+): NavigatorLike {
   const baseInfo = mockBrowserEnvironment[browser];
 
   return {
@@ -268,7 +326,7 @@ export function createMockBrowserInfo(
 /**
  * Window 객체 팩토리 (테스트용)
  */
-export function createMockWindow(overrides: Partial<Window> = {}): Partial<Window> {
+export function createMockWindow(overrides: Partial<WindowLike> = {}): WindowLike {
   return {
     location: {
       hostname: 'x.com',
@@ -279,9 +337,9 @@ export function createMockWindow(overrides: Partial<Window> = {}): Partial<Windo
       protocol: 'https:',
       port: '',
       host: 'x.com',
-    } as Location,
+    } as LocationLike,
 
-    navigator: createMockBrowserInfo() as Navigator,
+    navigator: createMockBrowserInfo(),
 
     innerWidth: 1920,
     innerHeight: 1080,
@@ -289,7 +347,7 @@ export function createMockWindow(overrides: Partial<Window> = {}): Partial<Windo
     outerHeight: 1080,
     devicePixelRatio: 1,
 
-    document: {} as Document,
+    document: {} as DocumentLike,
 
     ...overrides,
   };
@@ -310,7 +368,7 @@ export function createMockKeyboardEvent(
     altKey?: boolean;
     metaKey?: boolean;
   } = {}
-): KeyboardEvent {
+): KeyboardEventLike {
   return {
     key,
     code: `Key${key.toUpperCase()}`,
@@ -320,7 +378,7 @@ export function createMockKeyboardEvent(
     metaKey: options.metaKey ?? false,
     preventDefault: () => {},
     stopPropagation: () => {},
-  } as KeyboardEvent;
+  };
 }
 
 /**
@@ -335,7 +393,7 @@ export function createMockMouseEvent(
     ctrlKey?: boolean;
     shiftKey?: boolean;
   } = {}
-): MouseEvent {
+): MouseEventLike {
   return {
     type,
     clientX: options.clientX ?? 0,
@@ -345,7 +403,7 @@ export function createMockMouseEvent(
     shiftKey: options.shiftKey ?? false,
     preventDefault: () => {},
     stopPropagation: () => {},
-  } as MouseEvent;
+  };
 }
 
 // ================================
@@ -376,5 +434,10 @@ export function parseFileSize(size: string): number {
   if (!match) return 0;
 
   const [, num, unit] = match;
-  return parseFloat(num) * (units[unit.toUpperCase() as keyof typeof units] || 1);
+  if (!num || !unit) {
+    return 0;
+  }
+
+  const multiplier = units[unit.toUpperCase() as keyof typeof units] ?? 1;
+  return parseFloat(num) * multiplier;
 }

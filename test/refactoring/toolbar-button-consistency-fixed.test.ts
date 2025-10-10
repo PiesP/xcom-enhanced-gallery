@@ -5,8 +5,14 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+const createToolbarContainer = () => globalThis.document.createElement('div');
+type ToolbarContainer = ReturnType<typeof createToolbarContainer>;
+
+const createToolbarButton = () => globalThis.document.createElement('button');
+type ToolbarButtonElement = ReturnType<typeof createToolbarButton>;
+
 describe('툴바 버튼 크기 일관성', () => {
-  let testContainer;
+  let testContainer: ToolbarContainer;
 
   beforeEach(() => {
     // 테스트 컨테이너 생성
@@ -68,11 +74,12 @@ describe('툴바 버튼 크기 일관성', () => {
     styles.forEach(style => style.remove());
   });
 
-  function getAllToolbarButtons() {
-    return Array.from(testContainer?.querySelectorAll('.xeg-toolbar-button') || []);
+  function getAllToolbarButtons(): ToolbarButtonElement[] {
+    const buttons = testContainer?.querySelectorAll('.xeg-toolbar-button') ?? [];
+    return Array.from(buttons) as ToolbarButtonElement[];
   }
 
-  function getButtonSize(button) {
+  function getButtonSize(button: ToolbarButtonElement) {
     const computedStyle = globalThis.window.getComputedStyle(button);
     return {
       width: computedStyle.width,
@@ -88,7 +95,7 @@ describe('툴바 버튼 크기 일관성', () => {
     const buttonSizes = buttons.map(getButtonSize);
 
     // 모든 버튼이 동일한 크기여야 함
-    buttonSizes.forEach((size, index) => {
+    buttonSizes.forEach(size => {
       expect(size.width).toBe(expectedSize);
       expect(size.height).toBe(expectedSize);
     });
@@ -102,8 +109,15 @@ describe('툴바 버튼 크기 일관성', () => {
     expect(fitButtons.length).toBeGreaterThan(0);
     expect(otherButtons.length).toBeGreaterThan(0);
 
-    const fitButtonSize = globalThis.window.getComputedStyle(fitButtons[0]);
-    const otherButtonSize = globalThis.window.getComputedStyle(otherButtons[0]);
+    const firstFit = fitButtons[0];
+    const firstOther = otherButtons[0];
+
+    if (!firstFit || !firstOther) {
+      throw new Error('Toolbar buttons missing for comparison');
+    }
+
+    const fitButtonSize = globalThis.window.getComputedStyle(firstFit);
+    const otherButtonSize = globalThis.window.getComputedStyle(firstOther);
 
     // GREEN 단계: 이제 fitButton도 40px로 통일됨
     expect(fitButtonSize.width).toBe('40px');
@@ -120,7 +134,7 @@ describe('툴바 버튼 크기 일관성', () => {
       });
 
       const buttons = getAllToolbarButtons();
-      buttons.forEach((button: any) => {
+      buttons.forEach(button => {
         const computedStyle = globalThis.window.getComputedStyle(button);
         expect(computedStyle.width).toBe('40px');
         expect(computedStyle.height).toBe('40px');
@@ -149,8 +163,7 @@ describe('툴바 버튼 크기 일관성', () => {
       globalThis.document.head.appendChild(mobileStyle);
 
       const buttons = getAllToolbarButtons();
-      // 모바일에서는 36px로 동일해야 함
-      buttons.forEach((button: any) => {
+      buttons.forEach(button => {
         const computedStyle = globalThis.window.getComputedStyle(button);
         expect(computedStyle.width).toBe('36px');
         expect(computedStyle.height).toBe('36px');

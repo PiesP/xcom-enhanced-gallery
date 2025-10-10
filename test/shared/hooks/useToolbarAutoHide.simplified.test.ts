@@ -1,55 +1,78 @@
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 
 // vendor 시스템 목업
-vi.mock('@shared/external/vendors', () => ({
-  getPreactHooks: () => ({
-    useEffect: vi.fn(),
-    useRef: vi.fn(() => ({ current: null })),
-    useCallback: vi.fn(fn => fn),
-    useMemo: vi.fn(fn => fn()),
-  }),
-  getPreactSignals: () => ({
-    signal: vi.fn(value => ({ value })),
-  }),
-}));
+vi.mock('@shared/external/vendors', () => {
+  function createSignal<T>(initial: T) {
+    let current = initial;
+    const getter = () => current;
+    const setter = (next: T | ((prev: T) => T)) => {
+      current = typeof next === 'function' ? (next as (prev: T) => T)(current) : next;
+      return current;
+    };
+    return [getter, setter] as const;
+  }
 
-// useToolbarAutoHide 훅 목업
-const useToolbarAutoHide = vi.fn(() => ({
+  const createMemo = <T>(factory: () => T) => factory();
+  const createEffect = (_fn: () => void) => undefined;
+
+  return {
+    getSolid: () => ({
+      createEffect,
+      createSignal,
+      createMemo,
+    }),
+  };
+});
+
+interface ToolbarElementMock {
+  style: Record<string, unknown>;
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
+  contains: ReturnType<typeof vi.fn>;
+  closest: ReturnType<typeof vi.fn>;
+}
+
+interface ToolbarAutoHideOptions {
+  toolbarElement: ToolbarElementMock | null;
+  hoverZoneElement?: ToolbarElementMock | null;
+  initialDelay: number;
+  enabled: boolean;
+}
+
+interface ToolbarAutoHideApi {
+  isVisible: boolean;
+  isAutoHideActive: boolean;
+  showToolbar: () => void;
+  hideToolbar: () => void;
+}
+
+const createToolbarAutoHideApi = (): ToolbarAutoHideApi => ({
   isVisible: true,
   isAutoHideActive: false,
   showToolbar: vi.fn(),
   hideToolbar: vi.fn(),
-}));
-
-// HTMLElement 목업 설정
-Object.defineProperty(globalThis, 'HTMLElement', {
-  value: class MockHTMLElement {
-    constructor() {
-      this.style = {};
-      this.addEventListener = vi.fn();
-      this.removeEventListener = vi.fn();
-      this.contains = vi.fn(() => false);
-      this.closest = vi.fn(() => null);
-    }
-  },
-  writable: true,
 });
+
+// useToolbarAutoHide 훅 목업
+const useToolbarAutoHide = vi.fn((_: ToolbarAutoHideOptions) => createToolbarAutoHideApi());
+
+class MockElement implements ToolbarElementMock {
+  style: Record<string, unknown> = {};
+  addEventListener = vi.fn();
+  removeEventListener = vi.fn();
+  contains = vi.fn(() => false);
+  closest = vi.fn(() => null);
+}
 
 // 타이머 모킹
 vi.useFakeTimers();
 
 describe('useToolbarAutoHide - Simplified', () => {
-  let mockElement;
+  let mockElement: MockElement;
 
   beforeEach(() => {
     // HTML 요소 목 생성
-    mockElement = {
-      style: {},
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      contains: vi.fn(() => false),
-      closest: vi.fn(() => null),
-    };
+    mockElement = new MockElement();
 
     // 모든 타이머 정리
     vi.clearAllTimers();

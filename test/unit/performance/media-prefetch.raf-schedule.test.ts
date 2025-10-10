@@ -1,24 +1,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mediaService } from '../../../src/shared/services/MediaService';
 
+type MediaServiceWithInternals = typeof mediaService & {
+  prefetchSingle: (url: string) => Promise<void>;
+};
+
+const mediaServiceInternal = mediaService as MediaServiceWithInternals;
+
 describe('MediaService.prefetchNextMedia with raf scheduling', () => {
-  const originalFetch = global.fetch;
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     // mock fetch to resolve with a small blob
-    global.fetch = vi.fn(
-      async () => new Response(new Blob([new Uint8Array([1, 2, 3])]))
-    ) as unknown as typeof fetch;
+    globalThis.fetch = vi.fn(
+      async () => new globalThis.Response(new Uint8Array([1, 2, 3]))
+    ) as typeof globalThis.fetch;
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
+    globalThis.fetch = originalFetch;
     mediaService.clearPrefetchCache();
     mediaService.cancelAllPrefetch();
   });
 
   it('schedules prefetch tasks on next animation frame when schedule="raf"', async () => {
-    const spy = vi.spyOn<any, any>(mediaService as any, 'prefetchSingle').mockResolvedValue();
+    const spy = vi.spyOn(mediaServiceInternal, 'prefetchSingle').mockResolvedValue(undefined);
     vi.useFakeTimers();
     await mediaService.prefetchNextMedia(['a', 'b', 'c'], 0, {
       prefetchRange: 1,

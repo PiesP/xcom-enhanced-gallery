@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render } from '../utils/testing-library';
+import h from 'solid-js/h';
 
 describe('Toolbar Config-based Rendering (Phase T3)', () => {
   const mockProps = {

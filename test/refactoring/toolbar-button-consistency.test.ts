@@ -5,8 +5,14 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
+const createToolbarContainer = () => document.createElement('div');
+type ToolbarContainer = ReturnType<typeof createToolbarContainer>;
+
+const createToolbarButton = () => document.createElement('button');
+type ToolbarButtonElement = ReturnType<typeof createToolbarButton>;
+
 describe('Toolbar Button Size Consistency', () => {
-  let testContainer;
+  let testContainer: ToolbarContainer;
 
   beforeEach(() => {
     testContainer = document.createElement('div');
@@ -74,24 +80,22 @@ describe('Toolbar Button Size Consistency', () => {
   });
 
   it('모든 툴바 버튼이 동일한 크기를 가져야 함', () => {
-    const buttons = testContainer.querySelectorAll('.toolbarButton');
+    const buttons = Array.from(
+      testContainer.querySelectorAll('.toolbarButton')
+    ) as ToolbarButtonElement[];
     expect(buttons.length).toBeGreaterThan(0);
 
-    const buttonSizes = Array.from(buttons).map(button => {
+    const buttonSizes = buttons.map(button => {
       const computedStyle = window.getComputedStyle(button);
       return {
         width: computedStyle.width,
         height: computedStyle.height,
-        element: button.getAttribute('data-testid') || button.className,
+        element: button.getAttribute('data-testid') ?? button.className,
       };
     });
 
-    // 기준 크기 (첫 번째 네비게이션 버튼)
-    const expectedSize = buttonSizes[0];
-    console.log('Expected size:', expectedSize);
-    console.log('All button sizes:', buttonSizes);
+    const expectedSize = buttonSizes[0]!;
 
-    // 모든 버튼이 동일한 크기를 가져야 함
     buttonSizes.forEach(({ width, height, element }, index) => {
       expect(
         width,
@@ -105,7 +109,9 @@ describe('Toolbar Button Size Consistency', () => {
   });
 
   it('데스크탑에서 모든 버튼이 40px 크기를 가져야 함', () => {
-    const buttons = testContainer.querySelectorAll('.toolbarButton');
+    const buttons = Array.from(
+      testContainer.querySelectorAll('.toolbarButton')
+    ) as ToolbarButtonElement[];
 
     buttons.forEach(button => {
       const computedStyle = window.getComputedStyle(button);
@@ -117,14 +123,28 @@ describe('Toolbar Button Size Consistency', () => {
   });
 
   it('핏 모드 버튼들이 다른 버튼들과 동일한 크기를 가져야 함', () => {
-    const fitButtons = testContainer.querySelectorAll('.fitButton');
-    const otherButtons = testContainer.querySelectorAll('.toolbarButton:not(.fitButton)');
+    const fitButtons = Array.from(
+      testContainer.querySelectorAll('.fitButton')
+    ) as ToolbarButtonElement[];
+    const otherButtons = Array.from(
+      testContainer.querySelectorAll('.toolbarButton:not(.fitButton)')
+    ) as ToolbarButtonElement[];
 
     expect(fitButtons.length).toBeGreaterThan(0);
     expect(otherButtons.length).toBeGreaterThan(0);
 
-    const fitButtonSize = window.getComputedStyle(fitButtons[0]);
-    const otherButtonSize = window.getComputedStyle(otherButtons[0]);
+    const firstFit = fitButtons[0];
+    const firstOther = otherButtons[0];
+
+    expect(firstFit).toBeTruthy();
+    expect(firstOther).toBeTruthy();
+
+    if (!firstFit || !firstOther) {
+      throw new Error('Toolbar buttons missing for size comparison');
+    }
+
+    const fitButtonSize = window.getComputedStyle(firstFit);
+    const otherButtonSize = window.getComputedStyle(firstOther);
 
     expect(fitButtonSize.width, 'Fit buttons width should match other buttons').toBe(
       otherButtonSize.width
@@ -156,7 +176,9 @@ describe('Toolbar Button Size Consistency', () => {
       `;
       document.head.appendChild(style);
 
-      const buttons = testContainer.querySelectorAll('.toolbarButton');
+      const buttons = Array.from(
+        testContainer.querySelectorAll('.toolbarButton')
+      ) as ToolbarButtonElement[];
       const expectedSize = '36px';
 
       buttons.forEach(button => {
@@ -198,7 +220,9 @@ describe('Toolbar Button Size Consistency', () => {
       `;
       document.head.appendChild(style);
 
-      const buttons = testContainer.querySelectorAll('.toolbarButton');
+      const buttons = Array.from(
+        testContainer.querySelectorAll('.toolbarButton')
+      ) as ToolbarButtonElement[];
       const expectedSize = '32px';
 
       buttons.forEach(button => {

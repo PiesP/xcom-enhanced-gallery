@@ -2,21 +2,19 @@
  * Toolbar Icon Accessibility Tests (UI-ICN-01)
  */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, screen, cleanup, h } from '../../utils/testing-library';
 
-// Vendors/Hook/Utils 모킹: 툴바 내부의 사이드이펙트(useEffect, vendors 초기화)로 인한 테스트 정지 방지
+// Vendors/Hook/Utils 모킹: 툴바 내부의 사이드이펙트(createEffect, vendors 초기화)로 인한 테스트 정지 방지
 vi.mock('@shared/external/vendors', () => ({
   getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: (fn: any, _deps?: any) => fn(),
-    useCallback: (fn: any) => fn,
-    useEffect: (_fn: any, _deps?: any) => void 0,
-    useRef: (init?: any) => ({ current: init ?? null }),
+  getSolid: vi.fn(() => ({
+    h,
+    createMemo: (fn: any) => fn,
+    createEffect: (_fn: any, _deps?: any) => void 0,
+    createSignal: (init?: any) => ({ current: init ?? null }),
+    memo: (C: any) => C,
+    forwardRef: (C: any) => C,
   })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({ memo: (C: any) => C, forwardRef: (C: any) => C })),
   initializeVendors: vi.fn(() => Promise.resolve()),
   isVendorsInitialized: vi.fn(() => true),
 }));

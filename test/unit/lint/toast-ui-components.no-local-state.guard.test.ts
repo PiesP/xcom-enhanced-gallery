@@ -1,6 +1,6 @@
 /**
  * Guard: UI components must not define local Toast state/APIs
- *  - No local `signal([...])` or arrays named toasts within UI Toast files
+ *  - No local `createSignal([...])` or arrays named toasts within UI Toast files
  *  - Enforce service-only type usage for ToastItem via type-only import
  *
  * Scope: src/shared/components/ui/Toast/*.tsx

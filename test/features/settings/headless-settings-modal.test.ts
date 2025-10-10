@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/preact';
-import { getPreact, initializeVendors } from '@shared/external/vendors';
+import { render, fireEvent, waitFor } from '../utils/testing-library';
+import { getSolid, initializeVendors } from '@shared/external/vendors';
 
 // Mock services
 const mockLanguageService = {
@@ -41,8 +41,8 @@ describe('HeadlessSettingsModal TDD', () => {
       const { HeadlessSettingsModal } = await import(
         '../../../src/shared/components/ui/SettingsModal/HeadlessSettingsModal'
       );
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h } = getSolid();
 
       const mockOnClose = vi.fn();
       const mockChildren = vi.fn(() => h('div', {}, 'test'));

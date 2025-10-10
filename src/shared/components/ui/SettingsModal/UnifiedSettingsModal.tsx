@@ -1,17 +1,17 @@
-import { getPreact } from '../../../external/vendors';
+import type { JSXElement } from '../../../external/vendors';
 import { SettingsModal as RealSettingsModal, type SettingsModalProps } from './SettingsModal';
 
 export interface UnifiedSettingsModalProps extends SettingsModalProps {}
 
 // 통합 엔트리: 실제 SettingsModal을 래핑하여 테스트 호환(class/role) 유지
-export function UnifiedSettingsModal(props: UnifiedSettingsModalProps) {
-  const { h } = getPreact();
+export function UnifiedSettingsModal(props: UnifiedSettingsModalProps): JSXElement | null {
+  if (!props.isOpen) return null;
   const outerClass = ['glass-surface', props.className].filter(Boolean).join(' ');
-  if (!props.isOpen) return null as unknown as ReturnType<typeof h>;
-  return h(
-    'div',
-    { className: outerClass, role: 'dialog', 'aria-modal': props.mode !== 'panel' },
-    h(RealSettingsModal, props)
+
+  return (
+    <div class={outerClass} role='dialog' aria-modal={props.mode !== 'panel'}>
+      <RealSettingsModal {...props} />
+    </div>
   );
 }
 

@@ -1,31 +1,11 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/** Heroicons ArrowsPointingOut adapter (Solid.js) */
+import type { JSXElement } from '../../../../external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 ArrowsMaximize 대체(ArrowsPointingOut) 어댑터 */
-export function HeroArrowsMaximize(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { ArrowsPointingOutIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(ArrowsPointingOutIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+export function HeroArrowsMaximize(props: IconProps): JSXElement {
+  return (
+    <Icon {...props}>
+      <path d='M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15' />
+    </Icon>
   );
 }

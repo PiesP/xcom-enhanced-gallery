@@ -6,8 +6,6 @@
 
 import { logger } from '../../logging/logger';
 import type { ComponentType } from '../../types/app.types';
-import { getPreact } from '../../external/vendors';
-import type { VNode } from '../../external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
 
 /**
@@ -103,9 +101,7 @@ export function withGallery<P extends GalleryComponentProps>(
   // 타입별 기본값과 사용자 옵션 병합
   const mergedOptions = mergeOptionsWithDefaults(options);
 
-  const GalleryComponent = (props: P): VNode | null => {
-    const { createElement } = getPreact();
-
+  const GalleryComponent: ComponentType<P> = (props: P) => {
     // 마킹 속성 생성
     const markerAttributes = createMarkerAttributes(mergedOptions);
 
@@ -133,8 +129,7 @@ export function withGallery<P extends GalleryComponentProps>(
       events: mergedOptions.events,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return createElement(Component as any, finalProps) as unknown as VNode;
+    return Component(finalProps as P);
   };
 
   // 컴포넌트 이름 설정

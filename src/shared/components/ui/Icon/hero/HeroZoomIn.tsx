@@ -1,31 +1,11 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+/** Heroicons MagnifyingGlassPlus adapter (Solid.js) */
+import type { JSXElement } from '../../../../external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 ZoomIn(MagnifyingGlassPlus) 어댑터 */
-export function HeroZoomIn(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { MagnifyingGlassPlusIcon } = getHeroiconsOutline() as unknown as Record<string, IconLike>;
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(MagnifyingGlassPlusIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+export function HeroZoomIn(props: IconProps): JSXElement {
+  return (
+    <Icon {...props}>
+      <path d='m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607ZM10.5 7.5v6m3-3h-6' />
+    </Icon>
   );
 }

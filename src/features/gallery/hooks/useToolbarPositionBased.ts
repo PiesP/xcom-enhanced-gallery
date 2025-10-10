@@ -1,4 +1,4 @@
-import { getPreactHooks } from '../../../shared/external/vendors';
+import { getSolid } from '../../../shared/external/vendors';
 import { toolbarSlideDown, toolbarSlideUp } from '../../../shared/utils/animations';
 
 export interface UseToolbarPositionBasedOptions {
@@ -9,14 +9,14 @@ export interface UseToolbarPositionBasedOptions {
 }
 
 export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions): {
-  isVisible: boolean;
+  isVisible: () => boolean;
   show: () => void;
   hide: () => void;
 } {
-  const { useEffect, useRef, useState } = getPreactHooks();
+  const { createEffect, onCleanup, useRef, createSignal } = getSolid();
   const enabled = options.enabled !== false;
 
-  const [isVisible, setIsVisible] = useState<boolean>(enabled);
+  const [isVisible, setIsVisible] = createSignal<boolean>(enabled);
   const hoverEnterRef = useRef<((e?: Event) => void) | null>(null);
   const hoverLeaveRef = useRef<((e?: Event) => void) | null>(null);
   const toolbarEnterRef = useRef<((e?: Event) => void) | null>(null);
@@ -56,13 +56,12 @@ export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions)
     }
   };
 
-  useEffect(() => {
-    // set initial visibility according to enabled
+  createEffect(() => {
     setIsVisible(enabled);
     applyVisibility(enabled);
-  }, [enabled]);
+  });
 
-  useEffect(() => {
+  createEffect(() => {
     const hoverEl = options.hoverZoneElement ?? null;
     const toolbarEl = options.toolbarElement ?? null;
 
@@ -81,13 +80,13 @@ export function useToolbarPositionBased(options: UseToolbarPositionBasedOptions)
     toolbarEl?.addEventListener('mouseenter', onEnter as EventListener);
     toolbarEl?.addEventListener('mouseleave', onLeave as EventListener);
 
-    return () => {
+    onCleanup(() => {
       hoverEl?.removeEventListener('mouseenter', onEnter as EventListener);
       hoverEl?.removeEventListener('mouseleave', onLeave as EventListener);
       toolbarEl?.removeEventListener('mouseenter', onEnter as EventListener);
       toolbarEl?.removeEventListener('mouseleave', onLeave as EventListener);
-    };
-  }, [options.hoverZoneElement, options.toolbarElement, enabled]);
+    });
+  });
 
   return { isVisible, show, hide };
 }

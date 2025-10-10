@@ -93,11 +93,11 @@ describe('Phase 5: Component Cleanup', () => {
     it('should use memoization where appropriate', async () => {
       // Heavy components should be memoized
       const perfModule = await import('../../src/shared/utils/performance/memoization.ts');
-      const { memo, useCallback, useMemo } = perfModule;
+      const { memo, createMemo, createMemo } = perfModule;
 
       expect(memo).toBeDefined();
-      expect(useCallback).toBeDefined();
-      expect(useMemo).toBeDefined();
+      expect(createMemo).toBeDefined();
+      expect(createMemo).toBeDefined();
     });
 
     it('should implement virtual scrolling', async () => {

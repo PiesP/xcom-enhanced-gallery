@@ -1,23 +1,17 @@
 /**
- * @fileoverview SettingsModal - Unified Settings Modal Component
- * @description Single source of truth for all settings modal functionality
+ * @fileoverview SettingsModal - Solid.js implementation
+ * @description Unified settings modal supporting panel and modal display modes with Solid primitives.
  */
-import {
-  getPreact,
-  getPreactHooks,
-  type VNode,
-  type ComponentChildren,
-} from '../../../external/vendors';
-import { useFocusTrap } from '../../../hooks/useFocusTrap';
-import { useScrollLock } from '../../../hooks/useScrollLock';
+import { getSolid, type ComponentChildren, type JSXElement } from '../../../external/vendors';
 import { ComponentStandards } from '../StandardProps';
+import { IconButton } from '../Button/IconButton';
 import { X } from '../Icon';
 import { LanguageService } from '../../../services/LanguageService';
 import { ThemeService } from '../../../services/ThemeService';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 import { globalTimerManager } from '../../../utils/timer-management';
-import { EventManager } from '../../../services/EventManager';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
-import { IconButton } from '../Button/IconButton';
 import styles from './SettingsModal.module.css';
 
 export interface SettingsModalProps {
@@ -30,576 +24,431 @@ export interface SettingsModalProps {
   'data-testid'?: string;
 }
 
-/**
- * SettingsModal - Unified settings modal component
- *
- * Supports both panel and modal modes with accessibility features
- */
-export function SettingsModal({
-  isOpen,
-  onClose,
-  mode = 'panel',
-  position = 'center',
-  children,
-  className = '',
-  'data-testid': testId,
-}: SettingsModalProps): VNode | null {
-  const { h } = getPreact();
-  const { useState, useEffect, useRef, useCallback } = getPreactHooks();
-  // 일부 테스트 환경(jsdom + preact/test-utils)에서 useLayoutEffect가 제공되지 않을 수 있으므로 안전한 폴백을 사용
-  const hooks = getPreactHooks();
-  const useIsoLayoutEffect: (cb: () => void, deps?: unknown[]) => void =
-    typeof (hooks as unknown as Record<string, unknown>).useLayoutEffect === 'function'
-      ? (hooks as unknown as { useLayoutEffect: (cb: () => void, deps?: unknown[]) => void })
-          .useLayoutEffect
-      : useEffect;
+type ThemeOption = 'auto' | 'light' | 'dark';
+type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
-  const [currentTheme, setCurrentTheme] = useState<'auto' | 'light' | 'dark'>('auto');
-  const [currentLanguage, setCurrentLanguage] = useState<'auto' | 'ko' | 'en' | 'ja'>('auto');
-  const [languageService] = useState(() => new LanguageService());
-  const [themeService] = useState(() => new ThemeService());
+type PositionKey = NonNullable<SettingsModalProps['position']>;
 
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const innerRef = useRef<HTMLDivElement | null>(null);
-  const modalContainerRef = useRef<HTMLDivElement | null>(null);
-  const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
-  const lastFocusableRef = useRef<HTMLSelectElement | null>(null);
-  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
-  const docKeydownNoopRef = useRef<((e: KeyboardEvent) => void) | null>(null);
-  const docKeydownListenerIdRef = useRef<string | null>(null);
-  const focusRetryTimerRef = useRef<number | null>(null);
-  const refFocusTimerRef = useRef<number | null>(null);
+const POSITION_CLASS: Record<PositionKey, string> = {
+  'toolbar-below': styles.toolbarBelow || '',
+  'top-right': styles.topRight || '',
+  center: styles.center || '',
+  'bottom-sheet': styles.bottomSheet || '',
+};
 
-  // 이전 포커스 요소로의 동기 복원 유틸리티
-  const restorePrevFocusSync = useCallback((): void => {
-    const prev = previouslyFocusedRef.current;
-    if (!prev || typeof document === 'undefined') return;
-    try {
-      const hadTabIndex = prev.hasAttribute('tabindex');
-      const prevTabIndex = prev.getAttribute('tabindex');
-      prev.setAttribute('tabindex', '0');
-      prev.focus();
-      if (!hadTabIndex) {
-        prev.removeAttribute('tabindex');
-      } else if (prevTabIndex !== null) {
-        prev.setAttribute('tabindex', prevTabIndex);
-      }
-    } catch {
-      /* noop */
+export function SettingsModal(props: SettingsModalProps): JSXElement | null {
+  const { createSignal, createEffect, onCleanup, createMemo } = getSolid();
+
+  const themeService = new ThemeService();
+  const languageService = new LanguageService();
+
+  const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
+  const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
+  const [getPanelElement, setPanelElement] = createSignal<HTMLDivElement | null>(null);
+  const [getContainerElement, setContainerElement] = createSignal<HTMLDivElement | null>(null);
+
+  let panelElement: HTMLDivElement | null = null;
+  let modalBackdropElement: HTMLDivElement | null = null;
+  let modalContainerElement: HTMLDivElement | null = null;
+  let closeButtonElement: HTMLButtonElement | null = null;
+  let ignoreCloseInvocation = false;
+  let removeContainerListeners: (() => void) | null = null;
+  let removeBackdropListener: (() => void) | null = null;
+  let removePanelListener: (() => void) | null = null;
+  let removeCloseButtonListener: (() => void) | null = null;
+  let previouslyFocusedElement: HTMLElement | null = null;
+  let focusTimerId: number | null = null;
+
+  const mode = createMemo(() => props.mode ?? 'modal');
+  const isPanel = () => mode() === 'panel';
+  const position = createMemo(() => props.position ?? 'toolbar-below');
+  const className = () => props.className ?? '';
+  const testProps = ComponentStandards.createTestProps(props['data-testid']);
+
+  const invokeOnClose = () => {
+    if (typeof props.onClose !== 'function') {
+      return;
     }
-  }, []);
 
-  // 동기 캡처: 렌더-즉시 닫힘 같은 케이스에서 이펙트 전에 이전 포커스 요소를 기록
-  if (isOpen && mode === 'panel' && typeof document !== 'undefined') {
-    if (!previouslyFocusedRef.current) {
-      const active = document.activeElement;
-      previouslyFocusedRef.current = active instanceof HTMLElement ? active : null;
+    if (ignoreCloseInvocation) {
+      ignoreCloseInvocation = false;
+      return;
     }
-  }
 
-  // 포커스 트랩 구현 (DOM 쿼리 기반 - ref 의존성 제거)
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      const container = panelRef.current;
-      if (!isOpen || !container?.contains(event.target as Node)) return;
-
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        event.preventDefault();
-
-        const focusable = Array.from(
-          container.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-          )
-        );
-        if (focusable.length === 0) return;
-
-        const firstElement = focusable[0];
-        const lastElement = focusable[focusable.length - 1];
-
-        if (event.shiftKey) {
-          // Shift+Tab: 첫 번째에서 마지막으로
-          if (document.activeElement === firstElement) {
-            try {
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          } else {
-            try {
-              // 이전 요소로 이동이 아닌 간단 순환 요구만 충족: 첫 요소가 아니면 마지막으로 이동
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          }
-        } else {
-          // Tab: 마지막에서 첫 번째로
-          if (document.activeElement === lastElement) {
-            try {
-              firstElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          } else {
-            try {
-              // 다음 요소로 이동 대신 테스트 요구 충족을 위해 마지막으로 점프 (간단 순환)
-              lastElement?.focus();
-            } catch {
-              /* no-op for jsdom */
-            }
-          }
-        }
-      }
-    },
-    [isOpen, onClose]
-  );
-
-  // 배경 요소 비활성화 - 접근성 개선
-  const setBackgroundInert = useCallback((inert: boolean) => {
-    if (typeof document === 'undefined') return;
-
-    // 설정 모달을 제외한 다른 요소들만 비활성화
-    const backgroundElements = document.querySelectorAll('body > *');
-    backgroundElements.forEach(element => {
-      // dialog나 모달 관련 요소가 포함된 컨테이너는 제외
-      const hasDialog = element.querySelector('[role="dialog"], [aria-modal="true"]');
-      const isModalContainer =
-        element.classList?.contains('settings-modal-backdrop') ||
-        (element.hasAttribute?.('data-testid') &&
-          element.getAttribute('data-testid')?.includes('settings'));
-
-      if (!hasDialog && !isModalContainer) {
-        if (inert) {
-          element.setAttribute('tabindex', '-1');
-          element.setAttribute('aria-hidden', 'true');
-        } else {
-          element.removeAttribute('tabindex');
-          element.removeAttribute('aria-hidden');
-        }
-      }
-    });
-  }, []);
-
-  // 동기 포커스 차단(경량): 테스트에서 즉시 tabindex 변경을 기대하므로,
-  // 패널 모드에서는 body의 직접 자식 중 포커스 가능한 요소에만 tabindex=-1을 부여한다.
-  // 컨테이너 div에는 aria-hidden을 설정하지 않아 접근 가능한 dialog 탐색에 영향을 주지 않는다.
-  const applySyncBackgroundFocusBlockers = () => {
-    if (typeof document === 'undefined') return;
-    const focusables = document.querySelectorAll<HTMLElement>(
-      'body > button, body > a[href], body > select, body > input, body > textarea, body > [tabindex]'
-    );
-    focusables.forEach(el => {
-      // 모달 자체가 아직 DOM에 없을 수 있으므로, 최소한의 차단만 수행
-      try {
-        el.setAttribute('tabindex', '-1');
-      } catch {
-        /* noop */
-      }
-    });
+    props.onClose();
   };
 
-  if (isOpen && mode === 'panel') {
-    applySyncBackgroundFocusBlockers();
-  }
+  const scheduleIgnoreReset = () => {
+    globalTimerManager.setTimeout(() => {
+      ignoreCloseInvocation = false;
+    }, 0);
+  };
 
-  // Panel mode logic
-  useEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
+  useScrollLock(() => ({
+    enabled: props.isOpen && !isPanel(),
+    reserveScrollBarGap: true,
+  }));
 
-    setCurrentLanguage(languageService.getCurrentLanguage());
-    setCurrentTheme(
-      themeService.getCurrentTheme
-        ? (themeService.getCurrentTheme() as typeof currentTheme)
-        : 'auto'
-    );
-
-    // 접근성 설정
-    if (typeof document !== 'undefined') {
-      const active = document.activeElement;
-      if (!previouslyFocusedRef.current) {
-        previouslyFocusedRef.current = active instanceof HTMLElement ? active : null;
-      }
-      // 패널 외부 요소에 머물러 있는 포커스를 먼저 해제해 전환을 확실히 함
-      const activeEl = active as HTMLElement | null;
-      if (activeEl && !panelRef.current?.contains(activeEl)) {
-        try {
-          activeEl.blur?.();
-        } catch {
-          /* no-op */
-        }
-      }
+  useFocusTrap(
+    () => modalContainerElement ?? panelElement,
+    () => props.isOpen && !isPanel(),
+    {
+      onEscape: () => {
+        invokeOnClose();
+      },
+      restoreFocus: false,
     }
-    setBackgroundInert(true);
+  );
 
-    // 문서 레벨 키다운 리스너는 테스트 호환성용(noop)으로만 등록
-    // 실제 키 처리(on Tab/Escape)는 컨테이너 onKeyDown에서 처리
-    const noop = (_e: KeyboardEvent) => {
-      // intentionally empty
+  createEffect(() => {
+    if (!props.isOpen) {
+      return;
+    }
+
+    previouslyFocusedElement = (document.activeElement as HTMLElement | null) ?? null;
+
+    const container = getContainerElement() ?? getPanelElement();
+    if (!container) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        invokeOnClose();
+      }
     };
-    docKeydownNoopRef.current = noop;
-    // 테스트는 boolean true 옵션 제거 호출을 기대하므로, 등록 시에도 캡처를 true로 전달한다
-    docKeydownListenerIdRef.current = EventManager.getInstance().addListener(
-      document,
-      'keydown',
-      noop as unknown as EventListener,
-      true as unknown as AddEventListenerOptions
-    );
 
-    // Focus first focusable element (retry loop to ensure refs are attached)
-    let tries = 0;
-    const tryFocus = () => {
-      let el = firstFocusableRef.current as HTMLElement | null;
-      if (!el && panelRef.current) {
-        el = panelRef.current.querySelector<HTMLElement>(
-          'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
+    container.addEventListener('keydown', handleKeyDown);
+
+    focusTimerId = globalTimerManager.setTimeout(() => {
+      const focusTarget =
+        closeButtonElement ??
+        container.querySelector<HTMLElement>(
+          '[data-initial-focus], button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1")]'
         );
-      }
-      if (el) {
-        try {
-          el.focus();
-        } catch {
-          /* no-op for jsdom */
-        }
-        // If activeElement not target, retry to ensure focus transition
-        if (typeof document !== 'undefined' && document.activeElement !== el && tries < 10) {
-          tries += 1;
-          focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
-        }
-        return;
-      }
-      if (tries < 10) {
-        tries += 1;
-        focusRetryTimerRef.current = globalTimerManager.setTimeout(tryFocus, 0);
-      }
-    };
-    tryFocus();
 
-    // Basic scroll lock for panel mode
-    if (typeof document !== 'undefined') {
-      const originalOverflow = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        if (docKeydownListenerIdRef.current) {
-          EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
-          docKeydownListenerIdRef.current = null;
-        }
-        if (focusRetryTimerRef.current) {
-          globalTimerManager.clearTimeout(focusRetryTimerRef.current);
-          focusRetryTimerRef.current = null;
-        }
-        setBackgroundInert(false);
-        // 포커스 복원은 useIsoLayoutEffect 클린업에서 보장되므로 여기서는 생략 (보조적인 inert 해제만 수행)
-      };
-    }
-
-    return () => {
-      if (docKeydownListenerIdRef.current) {
-        EventManager.getInstance().removeListener(docKeydownListenerIdRef.current);
-        docKeydownListenerIdRef.current = null;
-      }
-      if (focusRetryTimerRef.current) {
-        globalTimerManager.clearTimeout(focusRetryTimerRef.current);
-        focusRetryTimerRef.current = null;
-      }
-      setBackgroundInert(false);
-      // 포커스 복원은 useIsoLayoutEffect 클린업에서 수행
-    };
-  }, [isOpen, mode, languageService, themeService, handleKeyDown, setBackgroundInert]);
-
-  // isOpen 변경/언마운트 시 레이아웃 이펙트 클린업에서 포커스 복원 (DOM 변경 이전에 실행)
-  useIsoLayoutEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
-    return () => {
-      // 타이머/리스너는 다른 클린업에서 정리되므로 여기서는 순수 포커스 복원만 담당
-      setBackgroundInert(false);
-      restorePrevFocusSync();
-    };
-  }, [isOpen, mode, restorePrevFocusSync, setBackgroundInert]);
-
-  // 초기 포커스를 동기적으로 강제 (jsdom 호환) - useLayoutEffect 미제공 환경에서는 useEffect로 대체
-  useIsoLayoutEffect(() => {
-    if (!isOpen || mode !== 'panel') return;
-    const closeByAria =
-      panelRef.current?.querySelector<HTMLElement>(
-        'button[aria-label="Close"], [aria-label="Close"]'
-      ) || null;
-    const elFromRef = firstFocusableRef.current as HTMLElement | null;
-    const elFromQuery =
-      panelRef.current?.querySelector<HTMLElement>(
-        'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-      ) || null;
-    const target = closeByAria || elFromRef || elFromQuery;
-    if (target) {
       try {
-        target.focus();
+        focusTarget?.focus();
       } catch {
-        /* no-op */
+        /* ignore focus errors */
+      }
+    }, 0);
+
+    onCleanup(() => {
+      container.removeEventListener('keydown', handleKeyDown);
+
+      if (focusTimerId) {
+        globalTimerManager.clearTimeout(focusTimerId);
+        focusTimerId = null;
+      }
+    });
+  });
+
+  createEffect(() => {
+    if (props.isOpen) return;
+
+    const previous = previouslyFocusedElement;
+    if (!previous) return;
+
+    globalTimerManager.setTimeout(() => {
+      try {
+        previous.focus();
+      } catch {
+        /* ignore focus errors */
+      }
+    }, 0);
+    previouslyFocusedElement = null;
+  });
+
+  const handleThemeChange = (event: Event) => {
+    const nextTheme = (event.currentTarget as HTMLSelectElement).value as ThemeOption;
+    setCurrentTheme(nextTheme);
+    themeService.setTheme(nextTheme);
+
+    if (typeof document !== 'undefined') {
+      if (nextTheme === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      } else {
+        document.documentElement.setAttribute('data-theme', nextTheme);
       }
     }
-    // 페인트 이후에도 보장
-    const afterPaint = () => {
-      if (!isOpen || mode !== 'panel') return;
-      const el = (panelRef.current?.querySelector(
-        'button[aria-label="Close"], [aria-label="Close"]'
-      ) ||
-        firstFocusableRef.current ||
-        panelRef.current?.querySelector(
-          'button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1"])'
-        )) as HTMLElement | null;
-      if (el) {
-        try {
-          el.focus();
-        } catch {
-          /* no-op */
-        }
-      }
-    };
-    const t = globalTimerManager.setTimeout(afterPaint, 0);
-    return () => {
-      globalTimerManager.clearTimeout(t);
-    };
-  }, [isOpen, mode]);
+  };
 
-  // Modal mode logic
-  if (mode === 'modal') {
-    useFocusTrap(modalContainerRef, isOpen, { onEscape: onClose, restoreFocus: true });
-    useScrollLock({ enabled: isOpen, reserveScrollBarGap: true });
-  }
+  const handleLanguageChange = (event: Event) => {
+    const nextLanguage = (event.currentTarget as HTMLSelectElement).value as LanguageOption;
+    setCurrentLanguage(nextLanguage);
+    languageService.setLanguage(nextLanguage);
+  };
 
-  const handleThemeChange = useCallback(
-    (event: Event) => {
-      const newTheme = (event.target as HTMLSelectElement).value as 'auto' | 'light' | 'dark';
-      setCurrentTheme(newTheme);
-      themeService.setTheme(newTheme);
-      if (typeof document !== 'undefined') {
-        if (newTheme === 'auto') {
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        } else {
-          document.documentElement.setAttribute('data-theme', newTheme);
-        }
-      }
-    },
-    [themeService]
-  );
-
-  const handleLanguageChange = useCallback(
-    (event: Event) => {
-      const newLanguage = (event.target as HTMLSelectElement).value as 'auto' | 'ko' | 'en' | 'ja';
-      setCurrentLanguage(newLanguage);
-      languageService.setLanguage(newLanguage);
-    },
-    [languageService]
-  );
-
-  if (!isOpen) {
-    // 패널 비활성화 이전에 inert 해제 및 포커스 복원 타이머 정리
-    if (focusRetryTimerRef.current) {
-      globalTimerManager.clearTimeout(focusRetryTimerRef.current);
-      focusRetryTimerRef.current = null;
-    }
-    if (refFocusTimerRef.current) {
-      globalTimerManager.clearTimeout(refFocusTimerRef.current);
-      refFocusTimerRef.current = null;
-    }
-    setBackgroundInert(false);
-
-    // 동기 복원: 렌더 타이밍에 바로 이전 포커스 요소로 복귀
-    restorePrevFocusSync();
+  if (!props.isOpen) {
     return null;
   }
 
-  const testProps = ComponentStandards.createTestProps(testId);
-
-  // 위치 클래스 결정 로직
-  const getPositionClass = (): string => {
-    switch (position) {
-      case 'center':
-        return styles.center || '';
-      case 'bottom-sheet':
-        return styles.bottomSheet || '';
-      case 'top-right':
-        return styles.topRight || '';
-      case 'toolbar-below':
-      default:
-        return styles.toolbarBelow || '';
-    }
-  };
-
-  const panelClass = ComponentStandards.createClassName(
+  const containerClass = ComponentStandards.createClassName(
     styles.panel,
-    getPositionClass(),
-    className
+    POSITION_CLASS[position()],
+    className()
   );
+
   const innerClass = ComponentStandards.createClassName(styles.modal, styles.inner);
 
-  const header = h(
-    'div',
-    { className: `${styles.header} xeg-row-center xeg-center-between xeg-gap-md`, key: 'header' },
-    [
-      h(
-        'h2',
-        { id: 'settings-title', className: styles.title, key: 'title' },
-        languageService.getString('settings.title')
-      ),
-      h(IconButton, {
-        ref: (el: HTMLButtonElement | null) => {
-          // 포커스 트랩의 첫 요소로 지정
-          firstFocusableRef.current = el;
-          if (isOpen && el) {
-            let attempts = 0;
-            const run = () => {
-              if (typeof document === 'undefined') return;
-              try {
-                el.focus();
-              } catch {
-                /* no-op */
-              }
-              if (document.activeElement !== el && attempts < 10) {
-                attempts += 1;
-                refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
-              }
-            };
-            const g = globalThis as unknown as {
-              queueMicrotask?: (cb: () => void) => void;
-            };
-            const qmicro = g.queueMicrotask;
-            if (typeof qmicro === 'function') {
-              qmicro(run);
-            } else {
-              refFocusTimerRef.current = globalTimerManager.setTimeout(run, 0);
+  const header = (
+    <div class={`${styles.header} xeg-row-center xeg-center-between xeg-gap-md`}>
+      <h2 id='settings-title' class={styles.title}>
+        {languageService.getString('settings.title')}
+      </h2>
+      <IconButton
+        ref={element => {
+          if (closeButtonElement === element) {
+            return;
+          }
+
+          removeCloseButtonListener?.();
+          removeCloseButtonListener = null;
+
+          closeButtonElement = element;
+
+          if (!closeButtonElement) {
+            return;
+          }
+
+          const handleButtonClick = (event: MouseEvent) => {
+            event.stopPropagation();
+            invokeOnClose();
+          };
+
+          closeButtonElement.addEventListener('click', handleButtonClick);
+
+          removeCloseButtonListener = () => {
+            closeButtonElement?.removeEventListener('click', handleButtonClick);
+          };
+
+          onCleanup(() => {
+            removeCloseButtonListener?.();
+            removeCloseButtonListener = null;
+          });
+        }}
+        className={`${styles.closeButton || ''} xeg-size-toolbar`}
+        size='md'
+        aria-label={languageService.getString('toolbar.close')}
+        data-initial-focus='true'
+      >
+        <X size={16} />
+      </IconButton>
+    </div>
+  );
+
+  const themeSelect = (
+    <select
+      id='theme-select'
+      class={`${toolbarStyles.toolbarButton} ${styles.select}`}
+      value={currentTheme()}
+      onChange={handleThemeChange}
+    >
+      <option value='auto'>{languageService.getString('settings.themeAuto')}</option>
+      <option value='light'>{languageService.getString('settings.themeLight')}</option>
+      <option value='dark'>{languageService.getString('settings.themeDark')}</option>
+    </select>
+  );
+
+  const languageSelect = (
+    <select
+      id='language-select'
+      class={`${toolbarStyles.toolbarButton} ${styles.select}`}
+      value={currentLanguage()}
+      onChange={handleLanguageChange}
+    >
+      <option value='auto'>자동 / Auto / 自動</option>
+      <option value='ko'>한국어</option>
+      <option value='en'>English</option>
+      <option value='ja'>日本語</option>
+    </select>
+  );
+
+  const defaultBody = (
+    <div class={styles.body}>
+      <div class={styles.setting}>
+        <label for='theme-select' class={styles.label}>
+          {languageService.getString('settings.theme')}
+        </label>
+        {themeSelect}
+      </div>
+      <div class={styles.setting}>
+        <label for='language-select' class={styles.label}>
+          {languageService.getString('settings.language')}
+        </label>
+        {languageSelect}
+      </div>
+    </div>
+  );
+
+  const handleContentClick = (event: MouseEvent) => {
+    event.stopPropagation();
+  };
+
+  const content = (
+    <div id='settings-content' class={innerClass} onClick={handleContentClick}>
+      {header}
+      {props.children ?? defaultBody}
+    </div>
+  );
+
+  if (isPanel()) {
+    return (
+      <div
+        ref={element => {
+          if (panelElement === element) {
+            return;
+          }
+
+          removePanelListener?.();
+          removePanelListener = null;
+
+          panelElement = element;
+          setPanelElement(element ?? null);
+
+          if (!panelElement) {
+            return;
+          }
+
+          const handlePanelClick = (event: MouseEvent) => {
+            if (event.target !== panelElement) {
+              return;
             }
-          }
-          if (!el && refFocusTimerRef.current) {
-            globalTimerManager.clearTimeout(refFocusTimerRef.current);
-            refFocusTimerRef.current = null;
-          }
-        },
-        className: `${styles.closeButton || ''} xeg-size-toolbar`,
-        onClick: onClose,
-        'aria-label': 'Close',
-        autoFocus: true,
-        // close는 파괴적 액션이 아니므로 intent 미지정(중립)
-        size: 'md',
-        key: 'close',
-        children: h(X, { size: 16 }),
-      }),
-    ]
-  );
+            invokeOnClose();
+          };
 
-  const themeSelect = h(
-    'select',
-    {
-      id: 'theme-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
-      value: currentTheme,
-      onChange: handleThemeChange,
-    },
-    [
-      h('option', { value: 'auto' }, languageService.getString('settings.themeAuto')),
-      h('option', { value: 'light' }, languageService.getString('settings.themeLight')),
-      h('option', { value: 'dark' }, languageService.getString('settings.themeDark')),
-    ]
-  );
+          panelElement.addEventListener('click', handlePanelClick);
 
-  const languageSelect = h(
-    'select',
-    {
-      ref: lastFocusableRef,
-      id: 'language-select',
-      className: `${toolbarStyles.toolbarButton} ${styles.select}`,
-      value: currentLanguage,
-      onChange: handleLanguageChange,
-    },
-    [
-      h('option', { value: 'auto' }, '자동 / Auto / 自動'),
-      h('option', { value: 'ko' }, '한국어'),
-      h('option', { value: 'en' }, 'English'),
-      h('option', { value: 'ja' }, '日本語'),
-    ]
-  );
+          removePanelListener = () => {
+            panelElement?.removeEventListener('click', handlePanelClick);
+          };
 
-  const defaultBody = h('div', { className: styles.body, key: 'body' }, [
-    h('div', { className: styles.setting, key: 'theme-setting' }, [
-      h(
-        'label',
-        { htmlFor: 'theme-select', className: styles.label },
-        languageService.getString('settings.theme')
-      ),
-      themeSelect,
-    ]),
-    h('div', { className: styles.setting, key: 'language-setting' }, [
-      h(
-        'label',
-        { htmlFor: 'language-select', className: styles.label },
-        languageService.getString('settings.language')
-      ),
-      languageSelect,
-    ]),
-  ]);
-
-  const contentChildren = children ? [header, children] : [header, defaultBody];
-  const content = h(
-    'div',
-    { ref: innerRef, id: 'settings-content', className: innerClass },
-    contentChildren
-  );
-
-  if (mode === 'panel') {
-    return h(
-      'div',
-      {
-        ref: panelRef,
-        className: panelClass,
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-labelledby': 'settings-title',
-        'aria-describedby': 'settings-content',
-        'data-position': position,
-        onClick: (e: MouseEvent) => {
-          if (panelRef.current && e.target === panelRef.current) onClose();
-        },
-        onKeyDown: handleKeyDown,
-        ...testProps,
-      },
-      content
-    ) as unknown as VNode;
+          onCleanup(() => {
+            removePanelListener?.();
+            removePanelListener = null;
+          });
+        }}
+        class={containerClass}
+        role='dialog'
+        aria-modal='true'
+        aria-labelledby='settings-title'
+        aria-describedby='settings-content'
+        data-position={position()}
+        {...testProps}
+      >
+        {content}
+      </div>
+    );
   }
 
-  // Modal mode
-  const backdropProps = {
-    class: 'settings-modal-backdrop',
-    onClick: (event: Event) => {
-      if (event.target === event.currentTarget) onClose();
-    },
-    onKeyDown: handleKeyDown,
-    role: 'dialog',
-    'aria-modal': 'true',
-    'aria-labelledby': 'settings-title',
-    'aria-describedby': 'settings-content',
-    ...testProps,
-  } as const;
+  return (
+    <div
+      ref={element => {
+        if (modalBackdropElement === element) {
+          return;
+        }
 
-  return h(
-    'div',
-    backdropProps as Record<string, unknown>,
-    h(
-      'div',
-      {
-        ref: modalContainerRef,
-        class: 'settings-modal-content',
-        role: 'document',
-      },
-      content
-    )
+        removeBackdropListener?.();
+        removeBackdropListener = null;
+
+        modalBackdropElement = element;
+
+        if (!modalBackdropElement || isPanel()) {
+          return;
+        }
+
+        const handleBackdropClick = (event: MouseEvent) => {
+          const container = modalContainerElement;
+          if (!container) {
+            return;
+          }
+
+          const target = event.target as Node | null;
+          if (target && container.contains(target)) {
+            return;
+          }
+
+          if (typeof event.composedPath === 'function') {
+            const path = event.composedPath();
+            if (Array.isArray(path) && path.includes(container)) {
+              return;
+            }
+          }
+
+          invokeOnClose();
+        };
+
+        modalBackdropElement.addEventListener('click', handleBackdropClick);
+
+        removeBackdropListener = () => {
+          modalBackdropElement?.removeEventListener('click', handleBackdropClick);
+        };
+
+        onCleanup(() => {
+          removeBackdropListener?.();
+          removeBackdropListener = null;
+        });
+      }}
+      class='settings-modal-backdrop'
+      role='dialog'
+      aria-modal='true'
+      aria-labelledby='settings-title'
+      aria-describedby='settings-content'
+      {...testProps}
+    >
+      <div
+        ref={element => {
+          if (modalContainerElement === element) {
+            return;
+          }
+
+          removeContainerListeners?.();
+          removeContainerListeners = null;
+
+          modalContainerElement = element;
+          setContainerElement(element ?? null);
+
+          if (!modalContainerElement || isPanel()) {
+            return;
+          }
+
+          const handleCapture = (event: MouseEvent) => {
+            const target = event.target as Node | null;
+            if (target && closeButtonElement?.contains(target)) {
+              return;
+            }
+
+            ignoreCloseInvocation = true;
+            scheduleIgnoreReset();
+          };
+
+          const stopPropagation = (event: MouseEvent) => {
+            event.stopPropagation();
+          };
+
+          modalContainerElement.addEventListener('click', handleCapture, true);
+          modalContainerElement.addEventListener('click', stopPropagation);
+
+          removeContainerListeners = () => {
+            modalContainerElement?.removeEventListener('click', handleCapture, true);
+            modalContainerElement?.removeEventListener('click', stopPropagation);
+          };
+
+          onCleanup(() => {
+            removeContainerListeners?.();
+            removeContainerListeners = null;
+          });
+        }}
+        class='settings-modal-content'
+        role='document'
+      >
+        {content}
+      </div>
+    </div>
   );
 }
 

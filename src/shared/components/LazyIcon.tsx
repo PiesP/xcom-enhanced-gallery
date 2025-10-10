@@ -1,4 +1,4 @@
-import { getPreact, getPreactHooks, type VNode } from '../external/vendors';
+import { getSolid, type JSXElement } from '../external/vendors';
 import {
   getIconRegistry,
   preloadCommonIcons,
@@ -12,46 +12,48 @@ export interface LazyIconProps {
   readonly stroke?: number;
   readonly color?: string;
   readonly className?: string;
-  readonly fallback?: VNode | unknown;
-  readonly errorFallback?: VNode | unknown;
+  readonly fallback?: JSXElement | unknown;
+  readonly errorFallback?: JSXElement | unknown;
 }
 
-export function LazyIcon(props: LazyIconProps): VNode | unknown {
-  const { h } = getPreact();
-
+export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
   // 커스텀 fallback이 제공되면 즉시 반환 (테스트 기대)
   if (props.fallback) return props.fallback;
 
   const className = ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
-  const style = props.size ? { width: props.size, height: props.size } : undefined;
+  const style = props.size ? { width: `${props.size}px`, height: `${props.size}px` } : undefined;
 
   // 기본 반환은 로딩 상태 placeholder
-  return h('div', {
-    className,
-    'data-testid': 'lazy-icon-loading',
-    'aria-label': '아이콘 로딩 중',
-    style,
-  });
+  return (
+    <div
+      class={className}
+      data-testid='lazy-icon-loading'
+      aria-label='아이콘 로딩 중'
+      style={style}
+    />
+  );
 }
 
 export function useIconPreload(names: readonly IconName[]): void {
-  const { useEffect } = getPreactHooks();
+  const { createEffect, onCleanup } = getSolid();
   const registry: IconRegistry = getIconRegistry();
-  useEffect(() => {
-    let mounted = true;
-    Promise.all(names.map(n => registry.loadIcon(n))).catch(() => void 0);
-    return () => {
-      mounted = false;
-      void mounted;
-    };
-  }, [names.join('|')]);
+  createEffect(() => {
+    let disposed = false;
+    void Promise.all(names.map(name => registry.loadIcon(name))).catch(() => {
+      // ignore load failures in preload
+    });
+    onCleanup(() => {
+      disposed = true;
+      void disposed;
+    });
+  });
 }
 
 export function useCommonIconPreload(): void {
-  const { useEffect } = getPreactHooks();
-  useEffect(() => {
+  const { createEffect } = getSolid();
+  createEffect(() => {
     void preloadCommonIcons();
-  }, []);
+  });
 }
 
 export default LazyIcon;

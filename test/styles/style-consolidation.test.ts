@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render } from '@testing-library/preact';
-import { getPreact, initializeVendors } from '@shared/external/vendors';
+import { initializeVendors } from '@shared/external/vendors';
 
 describe('P6 Style System Consolidation TDD', () => {
   beforeEach(() => {

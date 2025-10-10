@@ -39,8 +39,9 @@ describe('Phase C: API 추출 재시도/타임아웃 정책', () => {
     const svc = new MediaExtractionService();
 
     // 지연되는 Promise로 타임아웃 유도
-    const delayed = () =>
-      new Promise(() => {
+    type TweetMediaResult = Awaited<ReturnType<(typeof TwitterAPI)['getTweetMedias']>>;
+    const delayed = (): Promise<TweetMediaResult> =>
+      new Promise<TweetMediaResult>(() => {
         /* never resolves */
       });
 

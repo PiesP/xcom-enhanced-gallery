@@ -9,6 +9,8 @@
  * - app.types.ts (앱 특화 타입)
  */
 
+import type { JSXElement } from '@shared/external/vendors';
+
 // ================================
 // 기본 서비스 인터페이스
 // ================================
@@ -287,16 +289,12 @@ export interface BaseConfig {
 // Preact/React 타입들
 // ================================
 
-export interface VNode {
-  type: string | Function;
-  props: Record<string, unknown> | null;
-  key: string | number | null;
-}
+export type VNode = JSXElement;
 
-export type ComponentType<P = Record<string, unknown>> = (props: P) => VNode | null;
+export type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
 
 export type ComponentChildren =
-  | VNode
+  | JSXElement
   | string
   | number
   | boolean

@@ -1,31 +1,59 @@
-import { render, fireEvent } from '@testing-library/preact';
-import { getPreact } from '@shared/external/vendors';
-import { KeyboardHelpOverlay } from '@/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
+import { sharedConfig } from 'solid-js';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, waitFor } from '../../../utils/testing-library';
+import { getSolid } from '../../../../src/shared/external/vendors';
+import { KeyboardHelpOverlay } from '../../../../src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
-const { h } = getPreact();
+vi.mock('../../../../src/shared/hooks/useFocusTrap', () => ({
+  useFocusTrap: () => ({
+    isActive: false,
+    activate: vi.fn(),
+    deactivate: vi.fn(),
+  }),
+}));
+
+const { createSignal, createComponent } = getSolid();
+
+function resetSharedConfig(): void {
+  Reflect.set(sharedConfig, 'context', undefined);
+  Reflect.set(sharedConfig, 'registry', undefined);
+}
 
 describe('KeyboardHelpOverlay', () => {
-  it('opens and closes with ESC and backdrop click', () => {
-    const onClose = vi.fn();
-    const { getByRole, queryByRole, rerender, container } = render(
-      h(KeyboardHelpOverlay, { open: true, onClose })
+  it('opens and closes with ESC and backdrop click', async () => {
+    resetSharedConfig();
+    const [isOpen, setIsOpen] = createSignal(true);
+    const onClose = vi.fn(() => {
+      setIsOpen(false);
+    });
+
+    const { getByRole, queryByRole, container } = render(() =>
+      createComponent(KeyboardHelpOverlay, {
+        open: isOpen(),
+        onClose,
+      })
     );
 
     const dialog = getByRole('dialog');
     expect(dialog).toBeTruthy();
 
     // ESC closes
-    fireEvent.keyDown(globalThis.document as unknown as any, { key: 'Escape' });
+    fireEvent.keyDown(globalThis.document ?? window.document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    // Backdrop click closes (re-open with same instance)
-    rerender(h(KeyboardHelpOverlay, { open: true, onClose }));
-    const backdrop = container.firstElementChild as unknown as any;
-    fireEvent.click(backdrop);
+    setIsOpen(true);
+    await waitFor(() => expect(getByRole('dialog')).toBeTruthy());
+
+    // Backdrop click closes
+    const backdrop = container.firstElementChild as HTMLElement | null;
+    expect(backdrop).toBeTruthy();
+    if (backdrop) {
+      fireEvent.click(backdrop);
+    }
     expect(onClose).toHaveBeenCalledTimes(2);
 
     // Closed state renders null
-    rerender(h(KeyboardHelpOverlay, { open: false, onClose }));
+    setIsOpen(false);
     expect(queryByRole('dialog')).toBeNull();
   });
 });

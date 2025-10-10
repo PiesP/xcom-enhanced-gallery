@@ -5,14 +5,14 @@
  * 불필요한 리렌더링을 방지하여 성능을 최적화합니다.
  */
 
-import { getPreactHooks, getPreactSignals } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 import { globalTimerManager } from './timer-management';
 
 // 타입 정의
 type Signal<T> = {
   /**
-   * Current value of the signal. Accessing this inside a computed/effect
-   * body will correctly register reactive dependencies via preact/signals.
+   * Current value of the signal. Accessing this inside Solid.js reactive
+   * contexts will correctly register dependencies.
    */
   value: T;
 };
@@ -172,23 +172,14 @@ export function useSelector<T, R>(
   signalInstance: Signal<T>,
   selector: SelectorFn<T, R>,
   options: SelectorOptions<T> = {}
-): R {
-  const { useMemo } = getPreactHooks();
-  const { computed } = getPreactSignals();
+): () => R {
+  const { createMemo } = getSolid();
 
-  // 메모이제이션된 셀렉터 생성
-  const memoizedSelector = useMemo(
-    () => createSelector(selector, options),
-    [selector, options.dependencies, options.debug, options.name]
-  );
+  const memoizedSelector = createSelector(selector, options);
 
-  // Signal 값에 셀렉터 적용
-  const computedValue = useMemo(
-    () => computed(() => memoizedSelector(signalInstance.value)),
-    [signalInstance, memoizedSelector]
-  );
+  const memo = createMemo(() => memoizedSelector(signalInstance.value));
 
-  return computedValue.value;
+  return memo;
 }
 
 /**
@@ -205,28 +196,35 @@ export function useCombinedSelector<T extends readonly Signal<unknown>[], R>(
   dependencies?: (
     ...values: { [K in keyof T]: T[K] extends Signal<infer U> ? U : never }
   ) => readonly unknown[]
-): R {
-  const { useMemo } = getPreactHooks();
-  const { computed } = getPreactSignals();
+): () => R {
+  const { createMemo } = getSolid();
 
-  const combinedSignal = useMemo(() => {
-    return computed(() => {
-      const values = signals.map(s => s.value) as {
-        [K in keyof T]: T[K] extends Signal<infer U> ? U : never;
-      };
-      return combiner(...values);
-    });
-  }, [signals, combiner]);
+  let lastDependencies: readonly unknown[] | undefined;
+  let lastResult: R;
+  let hasResult = false;
 
-  // 의존성 기반 최적화
-  if (dependencies) {
-    // 타입 체크를 우회하여 실제 동작에 집중
-    const signalValues = signals.map(s => s.value);
-    const deps = (dependencies as (...args: unknown[]) => readonly unknown[])(...signalValues);
-    return useMemo(() => combinedSignal.value, [combinedSignal, ...deps]);
-  }
+  const memo = createMemo(() => {
+    const values = signals.map(signal => signal.value) as {
+      [K in keyof T]: T[K] extends Signal<infer U> ? U : never;
+    };
 
-  return combinedSignal.value;
+    if (dependencies) {
+      const currentDependencies = dependencies(...values);
+
+      if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
+        return lastResult;
+      }
+
+      lastDependencies = currentDependencies;
+    }
+
+    const result = combiner(...values);
+    lastResult = result;
+    hasResult = true;
+    return result;
+  });
+
+  return memo;
 }
 
 /**
@@ -243,51 +241,64 @@ export function useAsyncSelector<T, R>(
   asyncSelector: (state: T) => Promise<R>,
   defaultValue: R,
   debounceMs = 300
-): { value: R; loading: boolean; error: Error | null } {
-  const { useMemo, useCallback, useRef, useEffect } = getPreactHooks();
-  const { signal } = getPreactSignals();
+): () => { value: R; loading: boolean; error: Error | null } {
+  const { createSignal, createEffect, onCleanup } = getSolid();
 
-  const result = useMemo(
-    () => signal({ value: defaultValue, loading: false, error: null as Error | null }),
-    [defaultValue]
-  );
+  const [result, setResult] = createSignal<{ value: R; loading: boolean; error: Error | null }>({
+    value: defaultValue,
+    loading: false,
+    error: null,
+  });
 
-  // Generation counter로 race condition 방지
-  const generationRef = useRef(0);
+  let debounceTimer: number | null = null;
+  let generation = 0;
 
-  const debouncedSelector = useCallback(
-    debounce(async (state: T) => {
-      const currentGeneration = ++generationRef.current;
+  const clearTimer = () => {
+    if (debounceTimer !== null) {
+      globalTimerManager.clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+  };
 
-      result.value = { value: result.value.value, loading: true, error: null };
+  const runSelector = async (state: T) => {
+    const currentGeneration = ++generation;
 
-      try {
-        const value = await asyncSelector(state);
+    setResult(prev => ({
+      value: prev.value,
+      loading: true,
+      error: null,
+    }));
 
-        // 최신 요청인지 확인 (race condition 방지)
-        if (currentGeneration === generationRef.current) {
-          result.value = { value, loading: false, error: null };
-        }
-      } catch (error) {
-        // 최신 요청인지 확인
-        if (currentGeneration === generationRef.current) {
-          result.value = {
-            value: result.value.value,
-            loading: false,
-            error: error instanceof Error ? error : new Error(String(error)),
-          };
-        }
+    try {
+      const value = await asyncSelector(state);
+
+      if (currentGeneration === generation) {
+        setResult({ value, loading: false, error: null });
       }
-    }, debounceMs),
-    [asyncSelector, result, debounceMs]
-  );
+    } catch (error) {
+      if (currentGeneration === generation) {
+        setResult(prev => ({
+          value: prev.value,
+          loading: false,
+          error: error instanceof Error ? error : new Error(String(error)),
+        }));
+      }
+    }
+  };
 
-  // Signal 값 변경 시 비동기 셀렉터 실행
-  useEffect(() => {
-    debouncedSelector(signalInstance.value);
-  }, [signalInstance.value, debouncedSelector]);
+  createEffect(() => {
+    const state = signalInstance.value;
+    clearTimer();
+    debounceTimer = globalTimerManager.setTimeout(() => {
+      void runSelector(state);
+    }, debounceMs);
+  });
 
-  return result.value;
+  onCleanup(() => {
+    clearTimer();
+  });
+
+  return result;
 }
 
 /**
@@ -305,28 +316,6 @@ function shallowEqual(a: readonly unknown[], b: readonly unknown[]): boolean {
   }
 
   return true;
-}
-
-/**
- * 디바운스 함수 (개선된 버전)
- */
-function debounce<TArgs extends readonly unknown[]>(
-  func: (...args: TArgs) => unknown,
-  wait: number
-): (...args: TArgs) => void {
-  let timeout: number | undefined;
-
-  return (...args: TArgs) => {
-    const later = () => {
-      timeout = undefined;
-      func(...args);
-    };
-
-    if (timeout) {
-      globalTimerManager.clearTimeout(timeout);
-    }
-    timeout = globalTimerManager.setTimeout(later, wait);
-  };
 }
 
 /**

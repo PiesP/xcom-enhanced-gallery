@@ -7,7 +7,17 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createFocusTrap } from '@shared/utils/focusTrap';
 
 describe('P4: Focus Trap Utility', () => {
-  let container;
+  type ModalContainerElement = HTMLElement;
+
+  let container: ModalContainerElement;
+
+  const getModalContainer = (): ModalContainerElement => {
+    const modal = document.getElementById('modal-container');
+    if (!(modal instanceof HTMLElement)) {
+      throw new Error('Modal container가 준비되지 않았습니다.');
+    }
+    return modal;
+  };
 
   beforeEach(() => {
     // DOM 환경 설정
@@ -34,7 +44,7 @@ describe('P4: Focus Trap Utility', () => {
     });
 
     it('focus trap 인스턴스를 반환해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       expect(typeof focusTrap).toBe('object');
@@ -53,14 +63,14 @@ describe('P4: Focus Trap Utility', () => {
 
   describe('Focus Trap 활성화', () => {
     it('초기 상태는 비활성화여야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       expect(focusTrap.isActive).toBe(false);
     });
 
     it('activate 호출 시 활성화되어야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       focusTrap.activate();
@@ -68,7 +78,7 @@ describe('P4: Focus Trap Utility', () => {
     });
 
     it('deactivate 호출 시 비활성화되어야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       focusTrap.activate();
@@ -79,8 +89,11 @@ describe('P4: Focus Trap Utility', () => {
 
   describe('Focus 관리', () => {
     test('활성화 시 첫 번째 요소로 포커스 이동해야 함', () => {
-      const modalContainer = document.getElementById('modal-container') as HTMLElement;
-      const firstButton = document.getElementById('first-focusable') as HTMLButtonElement;
+      const modalContainer = getModalContainer();
+      const firstButton = document.getElementById('first-focusable');
+      if (!(firstButton instanceof HTMLElement)) {
+        throw new Error('첫 번째 focusable 요소 버튼이 없습니다.');
+      }
 
       // focus 메서드를 spy로 감시
       const focusSpy = vi.spyOn(firstButton, 'focus');
@@ -96,8 +109,11 @@ describe('P4: Focus Trap Utility', () => {
     });
 
     it('initialFocus 옵션이 작동해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const inputField = document.getElementById('input-field');
+      if (!(inputField instanceof HTMLElement)) {
+        throw new Error('초기 포커스 대상 요소가 없습니다.');
+      }
       const focusTrap = createFocusTrap(modalContainer, {
         initialFocus: '#input-field',
       });
@@ -143,7 +159,7 @@ describe('P4: Focus Trap Utility', () => {
 
   describe('Options', () => {
     it('onEscape 콜백을 받아야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
 
       expect(() => {
         createFocusTrap(modalContainer, {
@@ -153,7 +169,7 @@ describe('P4: Focus Trap Utility', () => {
     });
 
     it('restoreFocus 옵션을 받아야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
 
       expect(() => {
         createFocusTrap(modalContainer, {
@@ -165,7 +181,7 @@ describe('P4: Focus Trap Utility', () => {
 
   describe('Resource Management', () => {
     it('destroy 호출 시 정리되어야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       focusTrap.activate();
@@ -176,7 +192,7 @@ describe('P4: Focus Trap Utility', () => {
     });
 
     it('여러 번 activate/deactivate 호출해도 안전해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const focusTrap = createFocusTrap(modalContainer);
 
       expect(() => {
@@ -190,15 +206,23 @@ describe('P4: Focus Trap Utility', () => {
 
   describe('ARIA Support', () => {
     it('focusable 요소를 올바르게 식별해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
-      const buttons = modalContainer.querySelectorAll('button');
-      const inputs = modalContainer.querySelectorAll('input');
+      const modalContainer = getModalContainer();
+      const buttons = Array.from(modalContainer.querySelectorAll('button'));
+      const inputs = Array.from(modalContainer.querySelectorAll('input'));
 
       expect(buttons.length).toBe(2);
       expect(inputs.length).toBe(1);
-      expect(buttons[0].id).toBe('first-focusable');
-      expect(buttons[1].id).toBe('last-focusable');
-      expect(inputs[0].id).toBe('input-field');
+
+      const [firstButton, lastButton] = buttons;
+      const [inputField] = inputs;
+
+      if (!firstButton || !lastButton || !inputField) {
+        throw new Error('필수 focusable 요소가 누락되었습니다.');
+      }
+
+      expect(firstButton.id).toBe('first-focusable');
+      expect(lastButton.id).toBe('last-focusable');
+      expect(inputField.id).toBe('input-field');
     });
   });
 });

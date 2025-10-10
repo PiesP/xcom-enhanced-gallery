@@ -7,7 +7,7 @@ const FILES = {
   gallery: 'src/features/gallery/styles/Gallery.module.css',
 };
 
-function read(path) {
+function read(path: string): string {
   return readFileSync(path, 'utf-8');
 }
 

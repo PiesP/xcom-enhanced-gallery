@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import MediaProcessor from '@/shared/media/MediaProcessor';
+import MediaProcessor, { type MediaProcessStageEvent } from '@/shared/media/MediaProcessor';
 
 function makeDom(html: string) {
   const dom = new JSDOM(`<div id="root">${html}</div>`);
@@ -10,15 +10,15 @@ function makeDom(html: string) {
 describe('MediaProcessor stage metrics', () => {
   it('calls onStage with stageMs and totalMs when telemetry=true', () => {
     const root = makeDom('<img src="https://pbs.twimg.com/media/a.jpg" />');
-    const onStage = vi.fn();
+    const onStage = vi.fn<(event: MediaProcessStageEvent) => void>();
     const processor = new MediaProcessor();
 
     // act
-    const result = processor.process(root, { onStage, telemetry: true });
+    const result = processor.process(root, { stage: 'collect', onStage, telemetry: true });
 
     // assert
     expect(onStage).toHaveBeenCalled();
-    const calls = onStage.mock.calls.map(c => c[0]);
+    const calls = onStage.mock.calls.map(([event]) => event);
 
     // should include all stages and complete
     const stages = calls.map(c => c.stage);

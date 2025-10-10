@@ -95,6 +95,9 @@ docs/archived
 *.old
 *.orig
 *~
+temp.js
+temp.css
+vitest-transform-*.js
 
 # Automation & Build artifacts
 build-metrics.json

@@ -1,16 +1,9 @@
 /**
- * @fileoverview Icon Component
- * @version 2.0.0 - 공통 아이콘 컨테이너 (Heroicons 어댑터 기반)
- * @description
- * 범용 SVG 아이콘 컨테이너 컴포넌트
- * - 24x24 기본 크기
- * - stroke 기반 아이콘
- * - 접근성 지원
- * - TypeScript strict 모드 준수
+ * @fileoverview Icon Component (Solid.js)
+ * @version 2.1.0 - 공통 아이콘 컨테이너
  */
 
-import { getPreact } from '../../../external/vendors';
-import type { VNode, ComponentChildren } from '../../../external/vendors';
+import type { ComponentChildren, JSXElement } from '../../../external/vendors';
 
 export interface IconProps {
   /**
@@ -67,15 +60,12 @@ export interface IconProps {
  * ```
  */
 export function Icon({
-  size = 'var(--xeg-icon-size)', // CSS 변수를 기본값으로 사용
+  size = 'var(--xeg-icon-size)',
   className = '',
   children,
   'aria-label': ariaLabel,
   ...otherProps
-}: IconProps): VNode {
-  const { h } = getPreact();
-
-  // 접근성 속성 설정
+}: IconProps): JSXElement {
   const accessibilityProps: Record<string, string> = {};
   if (ariaLabel) {
     accessibilityProps.role = 'img';
@@ -84,25 +74,24 @@ export function Icon({
     accessibilityProps['aria-hidden'] = 'true';
   }
 
-  // 크기 값 처리 - 숫자인 경우 픽셀로, 문자열인 경우 그대로 사용
   const sizeValue = typeof size === 'number' ? `${size}px` : size;
 
-  return h(
-    'svg',
-    {
-      xmlns: 'http://www.w3.org/2000/svg',
-      width: sizeValue,
-      height: sizeValue,
-      viewBox: '0 0 24 24',
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      'stroke-width': 'var(--xeg-icon-stroke-width)',
-      'stroke-linecap': 'round' as const,
-      'stroke-linejoin': 'round' as const,
-      className,
-      ...accessibilityProps,
-      ...otherProps,
-    } as Record<string, unknown>,
-    children
+  return (
+    <svg
+      xmlns='http://www.w3.org/2000/svg'
+      width={sizeValue}
+      height={sizeValue}
+      viewBox='0 0 24 24'
+      fill='none'
+      stroke='var(--xeg-icon-color, currentColor)'
+      stroke-width='var(--xeg-icon-stroke-width)'
+      stroke-linecap='round'
+      stroke-linejoin='round'
+      class={className}
+      {...accessibilityProps}
+      {...otherProps}
+    >
+      {children}
+    </svg>
   );
 }

@@ -16,7 +16,7 @@ export interface MockElementConfig {
   textContent?: string;
 }
 
-export interface MockElement extends Partial<HTMLElement> {
+export interface MockElement {
   tagName: string;
   setAttribute: ReturnType<typeof vi.fn>;
   getAttribute: ReturnType<typeof vi.fn>;
@@ -33,6 +33,23 @@ export interface MockElement extends Partial<HTMLElement> {
   style: Record<string, string>;
   children: MockElement[];
   parentNode: MockElement | null;
+  textContent?: string;
+  [key: string]: unknown;
+}
+
+interface MockDocument {
+  createElement: ReturnType<typeof vi.fn>;
+  getElementById: ReturnType<typeof vi.fn>;
+  querySelector: ReturnType<typeof vi.fn>;
+  querySelectorAll: ReturnType<typeof vi.fn>;
+  body: MockElement;
+  head: MockElement;
+  documentElement: MockElement;
+  readyState: string;
+  URL: string;
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
+  dispatchEvent: ReturnType<typeof vi.fn>;
 }
 
 /**
@@ -183,13 +200,13 @@ export function createMockVideoElement(
 export function setupDOMEnvironment(): void {
   const mockDocument = createMockDocument();
 
-  Object.defineProperty(global, 'document', {
+  Object.defineProperty(globalThis, 'document', {
     value: mockDocument,
     writable: true,
     configurable: true,
   });
 
-  Object.defineProperty(global, 'window', {
+  Object.defineProperty(globalThis, 'window', {
     value: {
       document: mockDocument,
       location: {
@@ -211,12 +228,24 @@ export function setupDOMEnvironment(): void {
       innerWidth: 1920,
       innerHeight: 1080,
       devicePixelRatio: 1,
-      setTimeout: vi.fn().mockImplementation((callback, delay) => setTimeout(callback, delay)),
-      clearTimeout: vi.fn().mockImplementation(clearTimeout),
-      setInterval: vi.fn().mockImplementation((callback, delay) => setInterval(callback, delay)),
-      clearInterval: vi.fn().mockImplementation(clearInterval),
+      setTimeout: vi
+        .fn()
+        .mockImplementation((callback: (...args: unknown[]) => unknown, delay?: number) =>
+          globalThis.setTimeout(callback, delay)
+        ),
+      clearTimeout: vi.fn().mockImplementation((id: number) => globalThis.clearTimeout(id)),
+      setInterval: vi
+        .fn()
+        .mockImplementation((callback: (...args: unknown[]) => unknown, delay?: number) =>
+          globalThis.setInterval(callback, delay)
+        ),
+      clearInterval: vi.fn().mockImplementation((id: number) => globalThis.clearInterval(id)),
       scrollTo: vi.fn(),
-      requestAnimationFrame: vi.fn().mockImplementation(callback => setTimeout(callback, 16)),
+      requestAnimationFrame: vi
+        .fn()
+        .mockImplementation((callback: (...args: unknown[]) => unknown) =>
+          globalThis.setTimeout(callback, 16)
+        ),
       cancelAnimationFrame: vi.fn(),
       matchMedia: vi.fn().mockImplementation(query => ({
         matches: false,
@@ -234,7 +263,7 @@ export function setupDOMEnvironment(): void {
 /**
  * Mock Document 생성
  */
-function createMockDocument(): Document {
+function createMockDocument(): MockDocument {
   const bodyElement = createMockElement({ tagName: 'body' });
   const headElement = createMockElement({ tagName: 'head' });
   const documentElement = createMockElement({
@@ -242,7 +271,7 @@ function createMockDocument(): Document {
     children: [headElement, bodyElement],
   });
 
-  return {
+  const mockDocument: MockDocument = {
     createElement: vi.fn().mockImplementation((tagName: string) => createMockElement({ tagName })),
 
     getElementById: vi
@@ -267,7 +296,9 @@ function createMockDocument(): Document {
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
-  } as unknown as Document;
+  };
+
+  return mockDocument;
 }
 
 /**
@@ -309,13 +340,13 @@ export function setupTwitterDOMStructure(): MockElement {
  * DOM 환경 정리
  */
 export function cleanupDOMEnvironment(): void {
-  Object.defineProperty(global, 'document', {
+  Object.defineProperty(globalThis, 'document', {
     value: undefined,
     writable: true,
     configurable: true,
   });
 
-  Object.defineProperty(global, 'window', {
+  Object.defineProperty(globalThis, 'window', {
     value: undefined,
     writable: true,
     configurable: true,

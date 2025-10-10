@@ -143,11 +143,11 @@ describe('번들 환경 Vendor TDZ 문제', () => {
 
   describe('현재 해결 시도의 한계점', () => {
     it('getPreactCompat의 자동 초기화 시도도 TDZ 문제를 근본적으로 해결하지 못한다', async () => {
-      // vendor-api.ts의 getPreactCompat() fallback 로직 시뮬레이션
+      // vendor-api.ts의 getSolid() fallback 로직 시뮬레이션
 
       let cachedPreactCompat = null;
 
-      const getPreactCompat = async () => {
+      const getSolid = async () => {
         if (!cachedPreactCompat) {
           try {
             // 자동 초기화 시도하지만 여전히 TDZ 문제 존재
@@ -171,7 +171,7 @@ describe('번들 환경 Vendor TDZ 문제', () => {
       };
 
       // fallback은 작동하지만 실제 라이브러리 기능은 사용할 수 없음
-      const compat = await getPreactCompat();
+      const compat = await getSolid();
       expect(compat.memo).toBeDefined();
       expect(compat.forwardRef).toBeDefined();
 

@@ -23,8 +23,8 @@ describe('Phase 6: Performance Optimization', () => {
       // Components should render efficiently
       const perfModule = await import('../../src/shared/utils/performance/index.ts');
       expect(perfModule.memo).toBeDefined();
-      expect(perfModule.useCallback).toBeDefined();
-      expect(perfModule.useMemo).toBeDefined();
+      expect(perfModule.createMemo).toBeDefined();
+      expect(perfModule.createMemo).toBeDefined();
     });
 
     it('should optimize signal-based state management', async () => {

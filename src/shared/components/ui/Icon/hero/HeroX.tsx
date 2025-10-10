@@ -1,31 +1,10 @@
-import type { VNode } from '../../../../external/vendors';
-import { getPreact } from '../../../../external/vendors';
+import type { JSXElement } from '../../../../external/vendors';
 import { Icon, type IconProps } from '../Icon';
-import { getHeroiconsOutline } from '../../../../external/vendors/heroicons-react';
 
-type IconLike = (props: Record<string, unknown>) => VNode | null;
-
-/** Heroicons 기반 X(닫기) 어댑터 */
-export function HeroX(props: IconProps): VNode {
-  const { h } = getPreact();
-  const { XMarkIcon } = getHeroiconsOutline();
-  const { size = 'var(--xeg-icon-size)', className, 'aria-label': ariaLabel } = props;
-
-  const iconProps: IconProps = { size };
-  if (className !== undefined) iconProps.className = className;
-  if (ariaLabel !== undefined) iconProps['aria-label'] = ariaLabel;
-
-  return h(
-    Icon,
-    iconProps,
-    h(XMarkIcon as unknown as IconLike, {
-      width: typeof size === 'number' ? `${size}px` : size,
-      height: typeof size === 'number' ? `${size}px` : size,
-      fill: 'none',
-      stroke: 'var(--xeg-icon-color, currentColor)',
-      strokeWidth: 'var(--xeg-icon-stroke-width)',
-      strokeLinecap: 'round',
-      strokeLinejoin: 'round',
-    })
+export function HeroX(props: IconProps): JSXElement {
+  return (
+    <Icon {...props}>
+      <path d='M6 18 18 6M6 6l12 12' />
+    </Icon>
   );
 }

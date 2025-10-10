@@ -4,7 +4,7 @@
  * @version 3.0.0 - Implementation unified (util-delegation)
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 import {
   createFocusTrap,
   type FocusTrap as FocusTrapUtil,
@@ -26,82 +26,93 @@ export interface FocusTrapResult {
 }
 
 type RefLike = { current: HTMLElement | null } | null;
+type Accessor<T> = () => T;
+type MaybeAccessor<T> = T | Accessor<T>;
 
-function isRefLike(v: unknown): v is { current: HTMLElement | null } {
-  if (typeof v !== 'object' || v === null) return false;
-  const rec = v as Record<string, unknown>;
-  return Object.prototype.hasOwnProperty.call(rec, 'current');
+function isRefLike(value: unknown): value is { current: HTMLElement | null } {
+  if (typeof value !== 'object' || value === null) return false;
+  return Object.prototype.hasOwnProperty.call(value as Record<string, unknown>, 'current');
 }
 
-function toRef(input: RefLike | HTMLElement | null): { current: HTMLElement | null } {
-  if (!input) return { current: null };
-  if (isRefLike(input)) return input;
-  return { current: input as HTMLElement };
+function resolveElement(candidate: RefLike | HTMLElement | null): HTMLElement | null {
+  if (!candidate) return null;
+  if (isRefLike(candidate)) {
+    return candidate.current;
+  }
+  return candidate as HTMLElement | null;
 }
 
 export function useFocusTrap(
-  containerOrRef: RefLike | HTMLElement | null,
-  isActive: boolean,
+  containerOrRef: MaybeAccessor<RefLike | HTMLElement | null>,
+  isActiveInput: MaybeAccessor<boolean>,
   options: FocusTrapOptions = {}
 ): FocusTrapResult {
-  const { useLayoutEffect, useMemo, useRef } = getPreactHooks();
+  const { createEffect, onCleanup } = getSolid();
 
-  const ref = useMemo(() => toRef(containerOrRef), [containerOrRef]);
-  const trapRef = useRef<FocusTrapUtil | null>(null);
-  const activeRef = useRef<boolean>(false);
+  const resolveContainer: Accessor<RefLike | HTMLElement | null> =
+    typeof containerOrRef === 'function'
+      ? (containerOrRef as Accessor<RefLike | HTMLElement | null>)
+      : () => containerOrRef;
+  const resolveIsActive: Accessor<boolean> =
+    typeof isActiveInput === 'function'
+      ? (isActiveInput as Accessor<boolean>)
+      : () => isActiveInput;
+  let trap: FocusTrapUtil | null = null;
+  let isActive = false;
 
-  // 컨테이너 변경 시 trap 인스턴스 생성/정리
-  useLayoutEffect(() => {
-    const el = ref.current;
-    // 기존 파기
-    trapRef.current?.destroy();
-    trapRef.current = null;
-    activeRef.current = false;
+  createEffect(() => {
+    const element = resolveElement(resolveContainer());
 
-    if (!el) return;
-    trapRef.current = createFocusTrap(el, options);
-    if (isActive) {
-      trapRef.current.activate();
-      activeRef.current = true;
+    trap?.destroy();
+    trap = null;
+    isActive = false;
+
+    if (!element) {
+      return;
     }
-    return () => {
+
+    trap = createFocusTrap(element, options);
+    if (resolveIsActive()) {
+      trap.activate();
+      isActive = true;
+    }
+
+    onCleanup(() => {
       try {
-        trapRef.current?.destroy();
+        trap?.destroy();
       } finally {
-        trapRef.current = null;
-        activeRef.current = false;
+        trap = null;
+        isActive = false;
       }
-    };
-  }, [ref, options, isActive]);
+    });
+  });
 
   // 활성 상태 변경 반영
-  useLayoutEffect(() => {
-    const trap = trapRef.current;
+  createEffect(() => {
     if (!trap) return;
-    if (isActive && !activeRef.current) {
+    const active = resolveIsActive();
+    if (active && !isActive) {
       trap.activate();
-      activeRef.current = true;
-    } else if (!isActive && activeRef.current) {
+      isActive = true;
+    } else if (!active && isActive) {
       trap.deactivate();
-      activeRef.current = false;
+      isActive = false;
     }
-  }, [isActive]);
+  });
 
   return {
     get isActive() {
-      return activeRef.current;
+      return isActive;
     },
     activate: () => {
-      const trap = trapRef.current;
       if (!trap) return;
       trap.activate();
-      activeRef.current = true;
+      isActive = true;
     },
     deactivate: () => {
-      const trap = trapRef.current;
       if (!trap) return;
       trap.deactivate();
-      activeRef.current = false;
+      isActive = false;
     },
   } as FocusTrapResult;
 }

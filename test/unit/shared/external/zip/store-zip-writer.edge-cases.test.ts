@@ -6,6 +6,32 @@
 import { describe, it, expect } from 'vitest';
 import { StoreZipWriter } from '@/shared/external/zip/store-zip-writer';
 
+const ensureRange = (buffer: Uint8Array, offset: number, byteLength: number): void => {
+  if (offset < 0 || offset + byteLength > buffer.length) {
+    throw new Error(
+      `Buffer 범위를 벗어났습니다. offset=${offset}, size=${byteLength}, length=${buffer.length}`
+    );
+  }
+};
+
+const readUint16LE = (buffer: Uint8Array, offset: number): number => {
+  ensureRange(buffer, offset, 2);
+  const low = buffer[offset]!;
+  const high = buffer[offset + 1]!;
+  return low | (high << 8);
+};
+
+const readUint32LE = (buffer: Uint8Array, offset: number): number => {
+  ensureRange(buffer, offset, 4);
+  return (
+    (buffer[offset]! |
+      (buffer[offset + 1]! << 8) |
+      (buffer[offset + 2]! << 16) |
+      (buffer[offset + 3]! << 24)) >>>
+    0
+  );
+};
+
 describe('StoreZipWriter - 엣지케이스', () => {
   describe('특수 문자 파일명', () => {
     it('should handle Korean filename', () => {
@@ -85,7 +111,7 @@ describe('StoreZipWriter - 엣지케이스', () => {
 
       // 파일 크기는 0
       // Local File Header의 uncompressed size (offset 22-25)
-      const size = zipBytes[22] | (zipBytes[23] << 8) | (zipBytes[24] << 16) | (zipBytes[25] << 24);
+      const size = readUint32LE(zipBytes, 22);
       expect(size).toBe(0);
     });
 
@@ -119,7 +145,7 @@ describe('StoreZipWriter - 엣지케이스', () => {
 
       // EOCD에서 파일 수 확인
       const eocdOffset = zipBytes.length - 22;
-      const fileCount = zipBytes[eocdOffset + 10] | (zipBytes[eocdOffset + 11] << 8);
+      const fileCount = readUint16LE(zipBytes, eocdOffset + 10);
       expect(fileCount).toBe(3);
     });
   });
@@ -138,7 +164,7 @@ describe('StoreZipWriter - 엣지케이스', () => {
       expect(zipBytes).toBeInstanceOf(Uint8Array);
 
       const eocdOffset = zipBytes.length - 22;
-      const fileCount = zipBytes[eocdOffset + 10] | (zipBytes[eocdOffset + 11] << 8);
+      const fileCount = readUint16LE(zipBytes, eocdOffset + 10);
       expect(fileCount).toBe(2);
     });
 
@@ -186,9 +212,9 @@ describe('StoreZipWriter - 엣지케이스', () => {
       const dataOffset = 30 + filenameLength;
 
       // 데이터가 정확히 보존되는지 확인
-      for (let i = 0; i < 256; i++) {
-        expect(zipBytes[dataOffset + i]).toBe(i);
-      }
+      ensureRange(zipBytes, dataOffset, data.length);
+      const dataSlice = zipBytes.slice(dataOffset, dataOffset + data.length);
+      expect(Array.from(dataSlice)).toEqual(Array.from(data));
     });
 
     it('should calculate correct CRC-32 for various data', () => {
@@ -201,18 +227,16 @@ describe('StoreZipWriter - 엣지케이스', () => {
         { data: new Uint8Array([0x00, 0x00, 0x00, 0x00]), expected: 0x2144df1c },
       ];
 
-      for (let i = 0; i < testCases.length; i++) {
-        const { data, expected } = testCases[i];
+      testCases.forEach(({ data, expected }, index) => {
         writer.clear();
-        writer.addFile(`test${i}.bin`, data);
+        writer.addFile(`test${index}.bin`, data);
         const zipBytes = writer.build();
 
         // Local File Header의 CRC-32 (offset 14-17)
-        const crc =
-          (zipBytes[14] | (zipBytes[15] << 8) | (zipBytes[16] << 16) | (zipBytes[17] << 24)) >>> 0;
+        const crc = readUint32LE(zipBytes, 14);
 
         expect(crc).toBe(expected);
-      }
+      });
     });
   });
 
@@ -232,7 +256,7 @@ describe('StoreZipWriter - 엣지케이스', () => {
 
       // EOCD에서 파일 수 확인
       const eocdOffset = zipBytes.length - 22;
-      const fileCount = zipBytes[eocdOffset + 10] | (zipBytes[eocdOffset + 11] << 8);
+      const fileCount = readUint16LE(zipBytes, eocdOffset + 10);
       expect(fileCount).toBe(100);
     });
 
@@ -250,7 +274,7 @@ describe('StoreZipWriter - 엣지케이스', () => {
       expect(zipBytes).toBeInstanceOf(Uint8Array);
 
       const eocdOffset = zipBytes.length - 22;
-      const fileCount = zipBytes[eocdOffset + 10] | (zipBytes[eocdOffset + 11] << 8);
+      const fileCount = readUint16LE(zipBytes, eocdOffset + 10);
       expect(fileCount).toBe(3);
     });
   });

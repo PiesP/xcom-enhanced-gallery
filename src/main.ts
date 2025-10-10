@@ -17,7 +17,7 @@ import {
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/ServiceManager';
-import { cleanupVendors } from './shared/external/vendors';
+import { cleanupVendors, getSolid } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 // 전역 스타일
@@ -29,6 +29,7 @@ import { globalTimerManager } from '@shared/utils/timer-management';
 let isStarted = false;
 let startPromise: Promise<void> | null = null;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
+let toastContainerDispose: (() => void) | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
 /**
@@ -131,12 +132,8 @@ async function initializeToastContainer(): Promise<void> {
     logger.debug('Toast 컨테이너 지연 로딩 시작');
 
     // UI 컴포넌트를 지연 로딩
-    const [{ ToastContainer }, { getPreact }] = await Promise.all([
-      import('@shared/components/ui'),
-      import('./shared/external/vendors'),
-    ]);
-
-    const { h, render } = getPreact();
+    const { ToastContainer } = await import('@shared/components/ui');
+    const { render, createComponent } = getSolid();
     let toastContainer = document.getElementById('xeg-toast-container');
     if (!toastContainer) {
       toastContainer = document.createElement('div');
@@ -144,7 +141,9 @@ async function initializeToastContainer(): Promise<void> {
       document.body.appendChild(toastContainer);
     }
 
-    render(h(ToastContainer, {}), toastContainer as HTMLElement);
+    toastContainerDispose?.();
+    const host = toastContainer as HTMLElement;
+    toastContainerDispose = render(() => createComponent(ToastContainer, {}), host);
     logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);
@@ -207,11 +206,8 @@ async function cleanup(): Promise<void> {
       if (import.meta.env.MODE !== 'test') {
         const container = document.getElementById('xeg-toast-container');
         if (container) {
-          const { getPreact } = await import('./shared/external/vendors');
-          const { render } = getPreact();
-          // 언마운트
-          render(null, container as HTMLElement);
-          // DOM 제거
+          toastContainerDispose?.();
+          toastContainerDispose = null;
           container.remove();
         }
       }

@@ -3,7 +3,7 @@
  * @description 공통 테스트 유틸리티 함수들
  */
 
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 /**
  * 비동기 함수 테스트를 위한 지연 함수
@@ -36,11 +36,8 @@ export function createElement(
 /**
  * Mock 함수 생성 및 설정 헬퍼
  */
-export function createMockFunction<T extends (...args: any[]) => any>(
-  implementation?: T
-): T & { mockClear: () => void } {
-  const mockFn = vi.fn(implementation) as T & { mockClear: () => void };
-  return mockFn;
+export function createMockFunction<T extends (...args: any[]) => any>(implementation?: T): Mock<T> {
+  return implementation ? vi.fn(implementation) : vi.fn<T>();
 }
 
 /**

@@ -3,10 +3,10 @@
  * Ensures the '/' separator uses text color tokens for adequate contrast
  */
 import { describe, it, expect } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
 
-const { h, render } = getPreact();
+const { h, render } = getSolid();
 
 describe('Toolbar separator contrast', () => {
   it('uses text color tokens for separator', () => {

@@ -3,7 +3,7 @@
  * @description 메모화를 통한 시그널 셀렉터 성능 최적화
  */
 
-import { getPreactHooks } from '../../external/vendors';
+import { getSolid } from '../../external/vendors';
 import { globalTimerManager } from '../timer-management';
 
 /**
@@ -77,33 +77,34 @@ export function useAsyncSelector<T, R>(
   selector: (state: T) => Promise<R>,
   defaultValue: R,
   debounceMs = 300
-): AsyncSelectorResult<R> {
-  const { useState, useEffect, useRef } = getPreactHooks();
+): () => AsyncSelectorResult<R> {
+  const { createSignal, createEffect, onCleanup, useRef } = getSolid();
 
-  const [result, setResult] = useState<AsyncSelectorResult<R>>(() => ({
+  const [result, setResult] = createSignal<AsyncSelectorResult<R>>({
     value: defaultValue,
     loading: false,
     error: null,
-  }));
+  });
 
-  const mountedRef = useRef(true);
-  const currentGenerationRef = useRef(0);
+  const mountedRef = useRef<boolean>(true);
+  const currentGenerationRef = useRef<number>(0);
 
-  // Signal 또는 값 추출
-  const actualState =
-    (state as { value?: T })?.value !== undefined ? (state as { value: T }).value : (state as T);
+  createEffect(() => {
+    const sourceValue =
+      (state as { value?: T })?.value !== undefined ? (state as { value: T }).value : (state as T);
 
-  useEffect(() => {
-    // 새로운 generation 시작
-    const generation = ++currentGenerationRef.current;
+    currentGenerationRef.current = (currentGenerationRef.current ?? 0) + 1;
+    const generation = currentGenerationRef.current;
 
-    setResult((prev: AsyncSelectorResult<R>) => ({ ...prev, loading: true, error: null }));
+    setResult(prev => ({ ...prev, loading: true, error: null }));
 
     const timeoutId = globalTimerManager.setTimeout(async () => {
-      if (!mountedRef.current || generation !== currentGenerationRef.current) return;
+      if (!mountedRef.current || generation !== currentGenerationRef.current) {
+        return;
+      }
 
       try {
-        const value = await selector(actualState);
+        const value = await selector(sourceValue);
         if (mountedRef.current && generation === currentGenerationRef.current) {
           setResult({ value, loading: false, error: null });
         }
@@ -118,17 +119,16 @@ export function useAsyncSelector<T, R>(
       }
     }, debounceMs);
 
-    // 컴포넌트 unmount 시 정리
-    return () => {
+    onCleanup(() => {
       globalTimerManager.clearTimeout(timeoutId);
-    };
-  }, [actualState, selector, defaultValue, debounceMs]);
+    });
+  });
 
-  useEffect(() => {
-    return () => {
+  createEffect(() => {
+    onCleanup(() => {
       mountedRef.current = false;
-    };
-  }, []);
+    });
+  });
 
   return result;
 }
@@ -141,15 +141,10 @@ export function useSelector<T, R>(
   signal: { value: T },
   selector: (value: T) => R,
   deps?: unknown[]
-): R {
-  const { useMemo } = getPreactHooks();
+): () => R {
+  const { createMemo } = getSolid();
 
-  return useMemo(
-    () => {
-      return selector(signal.value);
-    },
-    deps ? [signal.value, ...deps] : [signal.value]
-  );
+  return createMemo(() => selector(signal.value), deps ? [signal.value, ...deps] : [signal.value]);
 }
 
 /**
@@ -160,12 +155,10 @@ export function useCombinedSelector<T1, T2, R>(
   signal1: { value: T1 },
   signal2: { value: T2 },
   selector: (value1: T1, value2: T2) => R
-): R {
-  const { useMemo } = getPreactHooks();
+): () => R {
+  const { createMemo } = getSolid();
 
-  return useMemo(() => {
-    return selector(signal1.value, signal2.value);
-  }, [signal1.value, signal2.value]);
+  return createMemo(() => selector(signal1.value, signal2.value), [signal1.value, signal2.value]);
 }
 
 /**

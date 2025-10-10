@@ -6,7 +6,7 @@
  * @description DOM 렌더링 완료를 감지하는 커스텀 훅
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 import { logger } from '@shared/logging/logger';
 
 /**
@@ -24,7 +24,7 @@ import { logger } from '@shared/logging/logger';
  * ```typescript
  * const isDOMReady = useDOMReady([mediaItems.length]);
  *
- * useEffect(() => {
+ * createEffect(() => {
  *   if (isDOMReady) {
  *     // DOM이 완전히 렌더링된 후 실행
  *     scrollToInitialItem();
@@ -32,12 +32,22 @@ import { logger } from '@shared/logging/logger';
  * }, [isDOMReady]);
  * ```
  */
-export function useDOMReady(dependencies: unknown[] = []): boolean {
-  const { useEffect, useState, useRef } = getPreactHooks();
-  const [isReady, setIsReady] = useState(false);
-  const frameRef = useRef<number>();
+export function useDOMReady(dependencies: unknown[] = []): () => boolean {
+  const { createEffect, onCleanup, createSignal, useRef } = getSolid();
+  const [isReady, setIsReady] = createSignal(false);
+  const frameRef = useRef<number | null>(null);
 
-  useEffect(() => {
+  createEffect(() => {
+    dependencies.forEach(dep => {
+      if (typeof dep === 'function') {
+        try {
+          (dep as () => unknown)();
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+
     setIsReady(false);
 
     // 기존 애니메이션 프레임 취소
@@ -56,12 +66,13 @@ export function useDOMReady(dependencies: unknown[] = []): boolean {
     });
 
     // 클린업 함수
-    return () => {
+    onCleanup(() => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
       }
-    };
-  }, dependencies);
+    });
+  });
 
   return isReady;
 }

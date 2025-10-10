@@ -2,11 +2,11 @@
  * @fileoverview Integration test for prev/next navigation scrolling
  */
 import { describe, it, expect, vi } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 import { VerticalGalleryView } from '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView';
 import { openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 
-const { h, render } = getPreact();
+const { h, render } = getSolid();
 
 describe('Prev/Next buttons trigger scroll into view', () => {
   it('navigates and attempts to scroll target item', async () => {

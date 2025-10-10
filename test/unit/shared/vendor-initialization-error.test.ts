@@ -1,6 +1,6 @@
 /**
  * @fileoverview 벤더 초기화 순서 에러 재현 및 해결 검증
- * @description 컴포넌트 모듈 로드 시 getPreactCompat() 호출 순서 문제 해결
+ * @description 컴포넌트 모듈 로드 시 getSolid() 호출 순서 문제 해결
  * @version 1.0.0 - Vendor Initialization Error Fix
  */
 
@@ -17,7 +17,7 @@ describe('벤더 초기화 순서 에러 해결', () => {
   });
 
   describe('문제 재현', () => {
-    it('컴포넌트 모듈 로드 시 getPreactCompat() 호출로 인한 에러가 발생하지 않아야 한다', async () => {
+    it('컴포넌트 모듈 로드 시 getSolid() 호출로 인한 에러가 발생하지 않아야 한다', async () => {
       // 초기화 없이 컴포넌트 모듈을 직접 import
       // 이전에는 이 작업이 에러를 발생시켰음
 

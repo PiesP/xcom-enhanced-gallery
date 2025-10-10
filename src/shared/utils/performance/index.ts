@@ -12,4 +12,4 @@ export * from './prefetch-bench';
 // Note: Legacy signal optimization exports removed (use '@shared/utils/signalSelector')
 
 // Component Memoization
-export { memo, useCallback, useMemo } from './memoization';
+export { memo, useCallback, createMemo } from './memoization';

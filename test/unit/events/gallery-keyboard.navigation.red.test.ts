@@ -5,7 +5,7 @@ async function setup() {
 
   // Mock preact signals used by events module
   vi.doMock('@/shared/external/vendors', () => {
-    function signal(initial: any) {
+    function createSignal(initial: any) {
       let _v = initial;
       return {
         get value() {
@@ -16,7 +16,7 @@ async function setup() {
         },
       };
     }
-    function effect(fn: () => void) {
+    function createEffect(fn: () => void) {
       try {
         fn();
       } catch (_e) {
@@ -24,7 +24,7 @@ async function setup() {
       }
       return () => {};
     }
-    return { getPreactSignals: vi.fn(() => ({ signal, effect })) };
+    return { getSolid: vi.fn(() => ({ signal, effect })) };
   });
 
   const events = await import('@/shared/utils/events');

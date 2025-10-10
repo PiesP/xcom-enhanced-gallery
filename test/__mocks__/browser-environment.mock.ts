@@ -16,7 +16,7 @@ export const mockBrowserExtensionAPI = {
   // Chrome Extension API
   chrome: {
     runtime: {
-      sendMessage: vi.fn((message, callback) => {
+      sendMessage: vi.fn((_message, callback) => {
         if (callback) callback({ success: true });
       }),
       onMessage: {
@@ -30,7 +30,7 @@ export const mockBrowserExtensionAPI = {
         get: vi.fn((keys, callback) => {
           callback({ [keys]: 'mock-value' });
         }),
-        set: vi.fn((items, callback) => {
+        set: vi.fn((_items, callback) => {
           if (callback) callback();
         }),
       },
@@ -138,6 +138,12 @@ export const mockHistory = {
  * 이미지 로딩 모의
  */
 export class MockImage {
+  onload: (() => void) | null;
+  onerror: ((error?: Error) => void) | null;
+  src: string;
+  width: number;
+  height: number;
+
   constructor() {
     this.onload = null;
     this.onerror = null;
@@ -197,7 +203,7 @@ export const mockTimers = {
 export function setupBrowserEnvironment() {
   // Chrome Extension API
   if (typeof globalThis !== 'undefined') {
-    globalThis.chrome = mockBrowserExtensionAPI.chrome;
+    (globalThis as any).chrome = mockBrowserExtensionAPI.chrome;
   }
 
   // Storage API
@@ -222,12 +228,15 @@ export function setupBrowserEnvironment() {
     writable: true,
   });
 
-  // Media APIs
-  globalThis.Image = MockImage;
-  globalThis.Blob = mockBlob;
+  // Media APIs - 타입 단언 사용 (테스트 환경에서 필수)
+
+  (globalThis as any).Image = MockImage;
+
+  (globalThis as any).Blob = mockBlob;
 
   // Network APIs
-  globalThis.fetch = mockBrowserExtensionAPI.fetch;
+
+  (globalThis as any).fetch = mockBrowserExtensionAPI.fetch;
 
   // Navigator
   Object.defineProperty(globalThis, 'navigator', {
@@ -235,8 +244,9 @@ export function setupBrowserEnvironment() {
     writable: true,
   });
 
-  // URL API
-  globalThis.URL = {
+  // URL API - 타입 단언 사용 (테스트 환경에서 필수)
+
+  (globalThis as any).URL = {
     ...globalThis.URL,
     createObjectURL: mockBrowserExtensionAPI.URL.createObjectURL,
     revokeObjectURL: mockBrowserExtensionAPI.URL.revokeObjectURL,
@@ -270,7 +280,7 @@ export function clearBrowserEnvironment() {
 /**
  * 특정 URL로 위치 설정
  */
-export function setMockLocation(url) {
+export function setMockLocation(url: string): void {
   try {
     const urlObj = globalThis.URL
       ? new globalThis.URL(url)
@@ -303,13 +313,21 @@ export function setMockLocation(url) {
 /**
  * 네트워크 요청 응답 설정
  */
-export function setupMockFetchResponse(response) {
+export function setupMockFetchResponse(
+  response: Partial<{
+    ok: boolean;
+    status: number;
+    json: () => Promise<unknown>;
+    text: () => Promise<string>;
+    blob: () => Promise<{ size: number; type: string }>;
+  }>
+): void {
   mockBrowserExtensionAPI.fetch.mockResolvedValue({
     ok: true,
     status: 200,
-    json: () => Promise.resolve({}),
+    json: () => Promise.resolve({ success: true }),
     text: () => Promise.resolve(''),
     blob: () => Promise.resolve({ size: 0, type: 'application/octet-stream' }),
     ...response,
-  });
+  } as any);
 }

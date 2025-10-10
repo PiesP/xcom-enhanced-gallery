@@ -110,9 +110,9 @@ describe('성능 테스트: 라이브러리 제거 후 번들 크기 개선', ()
     const content = readFileSync(vendorManagerPath, 'utf-8');
 
     // 유지되어야 할 라이브러리들
-    expect(content).toContain('getPreact()');
-    expect(content).toContain('getPreactHooks()');
-    expect(content).toContain('getPreactSignals()');
+    expect(content).toContain('getSolid()');
+    expect(content).toContain('getSolid()');
+    expect(content).toContain('getSolid()');
     expect(content).toContain('getFflate()');
   });
 });

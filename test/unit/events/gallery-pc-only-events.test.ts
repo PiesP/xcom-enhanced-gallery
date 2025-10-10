@@ -13,38 +13,35 @@ const SIGNALS_SPEC = isWindows
   ? (`/@fs/${ROOT}/src/shared/state/signals/gallery.signals.ts` as string)
   : ('@/shared/state/signals/gallery.signals' as string);
 
-// 전역 스파이(타입 주석 제거: 파서 호환)
-let addSpy;
-let removeSpy;
+let addSpy: ReturnType<typeof vi.spyOn> | null = null;
+let removeSpy: ReturnType<typeof vi.spyOn> | null = null;
 
 async function importEventsWithVendorsMock() {
   vi.resetModules();
 
   // 최소 Preact Signals 모킹 (strict-friendly)
   vi.doMock('@/shared/external/vendors', () => {
-    function signal(initial) {
-      let _v = initial;
-      return {
-        get value() {
-          return _v;
-        },
-        set value(n) {
-          _v = n;
-        },
+    const createSignal = <T>(initial: T) => {
+      let value = initial;
+      const getter = () => value;
+      const setter = (next: T) => {
+        value = next;
+        return value;
       };
-    }
-    function effect(fn) {
-      // 즉시 1회 실행, 언서브 반환
+      return [getter, setter] as const;
+    };
+
+    const createEffect = (fn: () => void) => {
       try {
         fn();
       } catch {
         // 테스트 폴백: effect 콜백 에러 무시
       }
-      return () => {};
-    }
+      return () => void 0;
+    };
 
     return {
-      getPreactSignals: vi.fn(() => ({ signal, effect })),
+      getSolid: vi.fn(() => ({ createSignal, createEffect })),
     };
   });
 
@@ -76,6 +73,9 @@ describe('Gallery PC-only event policy', () => {
     const { initializeGalleryEvents, cleanupGalleryEvents } = await importEventsWithVendorsMock();
 
     // 노이즈 제거 후 초기화
+    if (!addSpy || !removeSpy) {
+      throw new Error('Document event spies not initialized');
+    }
     addSpy.mockClear();
     removeSpy.mockClear();
 
@@ -87,7 +87,8 @@ describe('Gallery PC-only event policy', () => {
 
     await initializeGalleryEvents(handlers, { enableKeyboard: true, enableMediaDetection: false });
 
-    const addTypes = addSpy.mock.calls.map(c => c[0]);
+    const addCalls = addSpy.mock.calls as Array<Parameters<typeof document.addEventListener>>;
+    const addTypes = addCalls.map(([eventType]) => eventType);
     // 최소 보장: click/keydown은 1회 이상
     expect(addTypes.filter(t => t === 'click').length).toBeGreaterThanOrEqual(1);
     expect(addTypes.filter(t => t === 'keydown').length).toBeGreaterThanOrEqual(1);
@@ -108,7 +109,10 @@ describe('Gallery PC-only event policy', () => {
 
     await cleanupGalleryEvents();
 
-    const removeTypes = removeSpy.mock.calls.map(c => c[0]);
+    const removeCalls = removeSpy.mock.calls as Array<
+      Parameters<typeof document.removeEventListener>
+    >;
+    const removeTypes = removeCalls.map(([eventType]) => eventType);
     expect(removeTypes.includes('click')).toBe(true);
     expect(removeTypes.includes('keydown')).toBe(true);
   });

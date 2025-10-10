@@ -1,12 +1,11 @@
 # GitHub Copilot 개발 지침 (xcom-enhanced-gallery)
 
-> Preact + Signals 기반 Userscript 프로젝트를 위한 AI 코딩 가이드 (프로젝트
-> 특화, TDD 우선)
+> Solid.js 기반 Userscript 프로젝트를 위한 AI 코딩 가이드 (프로젝트 특화, TDD
+> 우선)
 
 ## 핵심 스택/워크플로
 
-- Stack: TypeScript(strict) + Vite 7 + Preact 10 + @preact/signals + Vitest
-  3(JSDOM)
+- Stack: TypeScript(strict) + Vite 7 + Solid.js 1.9.9 + Vitest 3(JSDOM)
 - Userscript 번들: `vite.config.ts`의 userscript 플러그인이 단일
   파일(`dist/xcom-enhanced-gallery*.user.js`) 생성, Dev는 sourcemap 포함
 - 경로 별칭: `@`, `@features`, `@shared`, `@assets` (vite/vitest/tsconfig 일치)
@@ -21,8 +20,8 @@
 - 외부 라이브러리 접근은 오직 getter 경유: `@shared/external/vendors`가 안전
   API를 제공(TDZ-safe, 모킹 용이)
   - 예)
-    `const { h, render } = getPreact(); const { signal } = getPreactSignals();`
-  - 직접 import 금지: `preact`, `@preact/signals`, `preact/compat` 등을 코드에서
+    `const { createSignal, createEffect } = getSolid(); const { createStore } = getSolidStore();`
+  - 직접 import 금지: `solid-js`, `solid-js/store`, `solid-js/web` 등을 코드에서
     바로 import 하지 마세요
 - Userscript 통합: `shared/external/userscript/adapter.ts`에서 GM\_\* 안전
   래핑(`getUserscript()`), Node/Vitest에서 fallback 제공
@@ -43,9 +42,9 @@
 
 ## 상태/UI/스타일 규칙
 
-- 상태: Signals 중심(`src/shared/state/**`, `@shared/utils/signalSelector.ts`
-  활용). 컴포넌트에서는 signal selector로 파생값을 메모이즈
-- UI: Preact 컴포넌트. 필요 시 `getPreactCompat()`로 `forwardRef`/`memo` 사용
+- 상태: Solid.js의 내장 Signals(`createSignal`, `createStore`) 사용.
+  컴포넌트에서는 signal selector로 파생값을 메모이즈(`createMemo`)
+- UI: Solid.js 컴포넌트. JSX를 사용하며, 반응성은 자동으로 처리됨
 - 입력: PC 전용 이벤트만 사용(설계 원칙). 터치/모바일 제스처는 추가하지 않음
 - 스타일: CSS Modules + 디자인 토큰만 사용(`docs/CODING_GUIDELINES.md`) —
   색상/라운드 값 하드코딩 금지, `--xeg-*` 토큰만
@@ -94,12 +93,11 @@
 ## 통합 포인트 예시
 
 - Vendors:
-  `import { initializeVendors, getPreact, getPreactSignals } from '@shared/external/vendors'`
+  `import { initializeVendors, getSolid, getSolidStore } from '@shared/external/vendors'`
 - Userscript:
   `import { getUserscript } from '@shared/external/userscript/adapter'` →
   `await getUserscript().download(url, name)`/`xhr(...)`
-- 상태 선택자:
-  `useSignalSelector(signal, selectorFn)`/`useCombinedSelector([...], combiner)`(`@shared/utils/signalSelector.ts`)
+- 상태 선택자: Solid.js의 `createMemo`를 사용하여 파생 상태를 메모이제이션
 
 ## 품질 게이트
 

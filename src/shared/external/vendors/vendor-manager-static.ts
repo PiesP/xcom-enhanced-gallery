@@ -1,18 +1,93 @@
 /**
- * @fileoverview 정적 Import 기반 안전한 Vendor Manager
+ * @fileoverview 정적 Import 기반 안전한 Vendor Manager (Solid.js)
  * @description TDZ 문제 없는 안전한 vendor 초기화를 위한 정적 import 기반 구현
  *
- * TDD Phase: GREEN - 정적 import로 TDZ 문제 해결
+ * TDD Phase: GREEN - 정적 import로 TDZ 문제 해결 (Solid.js 마이그레이션)
  */
 
 import { logger } from '../../logging';
 import { globalTimerManager } from '../../utils/timer-management';
+import type {
+  ForwardRefComponent,
+  MemoCompareFunction,
+  PreactComponent,
+  PreactCompat,
+} from './vendor-types';
 
-// 정적 import로 모든 라이브러리를 안전하게 로드
-import * as preact from 'preact';
-import * as preactHooks from 'preact/hooks';
-import * as preactSignals from '@preact/signals';
-import * as preactCompat from 'preact/compat';
+// 정적 import로 Solid.js 라이브러리를 안전하게 로드
+import {
+  createSignal,
+  createEffect,
+  createMemo,
+  createResource,
+  createContext,
+  useContext,
+  batch,
+  untrack,
+  on,
+  onMount,
+  onCleanup,
+  Show,
+  For,
+  Switch,
+  Match,
+  Index,
+  ErrorBoundary,
+  Suspense,
+  lazy,
+  children as resolveChildren,
+  mergeProps,
+  splitProps,
+  createRoot,
+  createComponent,
+} from 'solid-js';
+
+import h from 'solid-js/h';
+
+import { render } from 'solid-js/web';
+import { createStore, produce } from 'solid-js/store';
+
+const useRefCompat = <T>(initialValue: T | null = null): { current: T | null } => ({
+  current: initialValue,
+});
+
+const useCallbackCompat = <T extends (...args: unknown[]) => unknown>(callback: T): T => callback;
+
+const assignDisplayName = (
+  target: unknown,
+  source: unknown,
+  wrapperName: 'memo' | 'forwardRef'
+): void => {
+  const functionTarget = target as { displayName?: string };
+  const functionSource = source as { displayName?: string; name?: string };
+  const sourceName = functionSource.displayName ?? functionSource.name ?? 'Component';
+  Object.defineProperty(functionTarget, 'displayName', {
+    configurable: true,
+    enumerable: false,
+    value: `${wrapperName}(${sourceName})`,
+    writable: false,
+  });
+};
+
+const memoCompat: PreactCompat['memo'] = <P>(
+  Component: PreactComponent<P>,
+  _compare?: MemoCompareFunction<P>
+): PreactComponent<P> => {
+  const MemoizedComponent: PreactComponent<P> = (props: P) => Component(props);
+  assignDisplayName(MemoizedComponent, Component, 'memo');
+  return MemoizedComponent;
+};
+
+const forwardRefCompat: PreactCompat['forwardRef'] = <P>(
+  Component: ForwardRefComponent<P>
+): PreactComponent<P> => {
+  const ForwardedComponent: PreactComponent<P> = (props: P) => {
+    const propsWithRef = props as P & { ref?: unknown };
+    return Component(props, propsWithRef.ref);
+  };
+  assignDisplayName(ForwardedComponent, Component, 'forwardRef');
+  return ForwardedComponent;
+};
 
 // 메모리 관리 상수
 const MEMORY_CONSTANTS = {
@@ -22,49 +97,50 @@ const MEMORY_CONSTANTS = {
   URL_CLEANUP_TIMEOUT: 60000,
 } as const;
 
-// 타입 정의들 (fflate 제거)
-export interface PreactAPI {
-  h: typeof preact.h;
-  render: typeof preact.render;
-  Component: typeof preact.Component;
-  Fragment: typeof preact.Fragment;
-  createContext: typeof preact.createContext;
-  cloneElement: typeof preact.cloneElement;
-  createRef: typeof preact.createRef;
-  isValidElement: typeof preact.isValidElement;
-  options: typeof preact.options;
-  createElement: typeof preact.createElement;
+// 타입 정의들 (Solid.js)
+export interface SolidAPI {
+  render: typeof render;
+  createSignal: typeof createSignal;
+  createEffect: typeof createEffect;
+  createMemo: typeof createMemo;
+  createStore: typeof createStore;
+  produce: typeof produce;
+  createResource: typeof createResource;
+  createContext: typeof createContext;
+  useContext: typeof useContext;
+  batch: typeof batch;
+  untrack: typeof untrack;
+  on: typeof on;
+  onMount: typeof onMount;
+  onCleanup: typeof onCleanup;
+  Show: typeof Show;
+  For: typeof For;
+  Switch: typeof Switch;
+  Match: typeof Match;
+  Index: typeof Index;
+  ErrorBoundary: typeof ErrorBoundary;
+  Suspense: typeof Suspense;
+  lazy: typeof lazy;
+  children: typeof resolveChildren;
+  mergeProps: typeof mergeProps;
+  splitProps: typeof splitProps;
+  createRoot: typeof createRoot;
+  createComponent: typeof createComponent;
+  h: typeof h;
+  useRef: typeof useRefCompat;
+  useCallback: typeof useCallbackCompat;
+  memo: PreactCompat['memo'];
+  forwardRef: PreactCompat['forwardRef'];
 }
 
-export type VNode = import('preact').VNode;
-
-export interface PreactHooksAPI {
-  useState: typeof preactHooks.useState;
-  useEffect: typeof preactHooks.useEffect;
-  useMemo: typeof preactHooks.useMemo;
-  useCallback: typeof preactHooks.useCallback;
-  useRef: typeof preactHooks.useRef;
-  useContext: typeof preactHooks.useContext;
-  useReducer: typeof preactHooks.useReducer;
-  useLayoutEffect: typeof preactHooks.useLayoutEffect;
-  /** Preact error boundary hook */
-  useErrorBoundary: typeof preactHooks.useErrorBoundary;
+export interface SolidStoreAPI {
+  createStore: typeof createStore;
+  produce: typeof produce;
 }
 
-export interface PreactSignalsAPI {
-  signal: typeof preactSignals.signal;
-  computed: typeof preactSignals.computed;
-  effect: typeof preactSignals.effect;
-  batch: typeof preactSignals.batch;
-}
-
-export interface PreactCompatAPI {
-  forwardRef: typeof preactCompat.forwardRef;
-  memo: typeof preactCompat.memo;
-  createElement: typeof preactCompat.createElement;
-}
-
-export type ComponentChildren = import('preact').ComponentChildren;
+export type JSXElement = import('solid-js').JSX.Element;
+export type VNode = import('solid-js').JSX.Element;
+export type ComponentChildren = import('solid-js').JSX.Element;
 
 export interface NativeDownloadAPI {
   downloadBlob: (blob: Blob, filename: string) => void;
@@ -73,18 +149,52 @@ export interface NativeDownloadAPI {
 }
 
 // ================================
-// 정적 벤더 매니저 (TDZ 안전)
+// 정적 벤더 매니저 (TDZ 안전, Solid.js)
 // ================================
 
 export class StaticVendorManager {
   private static instance: StaticVendorManager | null = null;
 
-  // 정적으로 로드된 라이브러리들 (TDZ 문제 없음, fflate 제거)
+  // 정적으로 로드된 Solid.js API들 (TDZ 문제 없음)
   private readonly vendors = {
-    preact,
-    preactHooks,
-    preactSignals,
-    preactCompat,
+    solid: {
+      render,
+      createSignal,
+      createEffect,
+      createMemo,
+      createStore,
+      produce,
+      createResource,
+      createContext,
+      useContext,
+      batch,
+      untrack,
+      on,
+      onMount,
+      onCleanup,
+      Show,
+      For,
+      Switch,
+      Match,
+      Index,
+      ErrorBoundary,
+      Suspense,
+      lazy,
+      children: resolveChildren,
+      mergeProps,
+      splitProps,
+      createRoot,
+      createComponent,
+      h,
+      useRef: useRefCompat,
+      useCallback: useCallbackCompat,
+      memo: memoCompat,
+      forwardRef: forwardRefCompat,
+    },
+    store: {
+      createStore,
+      produce,
+    },
   };
 
   // 검증된 API 캐시
@@ -99,7 +209,7 @@ export class StaticVendorManager {
   private initializationPromise: Promise<void> | null = null;
 
   private constructor() {
-    logger.debug('StaticVendorManager: 인스턴스 생성');
+    logger.debug('StaticVendorManager: 인스턴스 생성 (Solid.js)');
   }
 
   public static getInstance(): StaticVendorManager {
@@ -123,7 +233,7 @@ export class StaticVendorManager {
 
   private async performInitialization(): Promise<void> {
     try {
-      logger.debug('StaticVendorManager: 초기화 시작');
+      logger.debug('StaticVendorManager: 초기화 시작 (Solid.js)');
 
       // 정적 import된 모듈들을 검증
       this.validateStaticImports();
@@ -132,7 +242,7 @@ export class StaticVendorManager {
       this.cacheAPIs();
 
       this.isInitialized = true;
-      logger.info('✅ StaticVendorManager: 모든 vendor 초기화 완료');
+      logger.info('✅ StaticVendorManager: Solid.js vendor 초기화 완료');
     } catch (error) {
       logger.error('❌ StaticVendorManager: 초기화 실패:', error);
       throw error;
@@ -140,98 +250,73 @@ export class StaticVendorManager {
   }
 
   private validateStaticImports(): void {
-    // Preact 검증
-    if (!this.vendors.preact.render || typeof this.vendors.preact.render !== 'function') {
-      throw new Error('Preact 라이브러리 검증 실패');
+    // Solid.js 코어 검증
+    if (!this.vendors.solid.createSignal || typeof this.vendors.solid.createSignal !== 'function') {
+      throw new Error('Solid.js 라이브러리 검증 실패');
     }
 
-    // Preact Hooks 검증
-    if (
-      !this.vendors.preactHooks.useState ||
-      typeof this.vendors.preactHooks.useState !== 'function'
-    ) {
-      throw new Error('Preact Hooks 라이브러리 검증 실패');
+    // Solid.js Store 검증
+    if (!this.vendors.store.createStore || typeof this.vendors.store.createStore !== 'function') {
+      throw new Error('Solid.js Store 라이브러리 검증 실패');
     }
 
-    // Preact Signals 검증
-    if (
-      !this.vendors.preactSignals.signal ||
-      typeof this.vendors.preactSignals.signal !== 'function'
-    ) {
-      throw new Error('Preact Signals 라이브러리 검증 실패');
-    }
-
-    // Preact Compat 검증
-    if (
-      !this.vendors.preactCompat.forwardRef ||
-      typeof this.vendors.preactCompat.forwardRef !== 'function' ||
-      !this.vendors.preactCompat.memo ||
-      typeof this.vendors.preactCompat.memo !== 'function' ||
-      !this.vendors.preactCompat.createElement ||
-      typeof this.vendors.preactCompat.createElement !== 'function'
-    ) {
-      throw new Error('Preact Compat 라이브러리 검증 실패');
-    }
-
-    logger.debug('✅ 모든 정적 import 검증 완료');
+    logger.debug('✅ 모든 정적 import 검증 완료 (Solid.js)');
   }
 
   private cacheAPIs(): void {
-    // Preact API
-    const preactAPI: PreactAPI = {
-      h: this.vendors.preact.h,
-      render: this.vendors.preact.render,
-      Component: this.vendors.preact.Component,
-      Fragment: this.vendors.preact.Fragment,
-      createContext: this.vendors.preact.createContext,
-      cloneElement: this.vendors.preact.cloneElement,
-      createRef: this.vendors.preact.createRef,
-      isValidElement: this.vendors.preact.isValidElement,
-      options: this.vendors.preact.options,
-      createElement: this.vendors.preact.createElement,
+    // Solid.js API
+    const solidAPI: SolidAPI = {
+      render: this.vendors.solid.render,
+      createSignal: this.vendors.solid.createSignal,
+      createEffect: this.vendors.solid.createEffect,
+      createMemo: this.vendors.solid.createMemo,
+      createStore: this.vendors.solid.createStore,
+      produce: this.vendors.solid.produce,
+      createResource: this.vendors.solid.createResource,
+      createContext: this.vendors.solid.createContext,
+      useContext: this.vendors.solid.useContext,
+      batch: this.vendors.solid.batch,
+      untrack: this.vendors.solid.untrack,
+      on: this.vendors.solid.on,
+      onMount: this.vendors.solid.onMount,
+      onCleanup: this.vendors.solid.onCleanup,
+      Show: this.vendors.solid.Show,
+      For: this.vendors.solid.For,
+      Switch: this.vendors.solid.Switch,
+      Match: this.vendors.solid.Match,
+      Index: this.vendors.solid.Index,
+      ErrorBoundary: this.vendors.solid.ErrorBoundary,
+      Suspense: this.vendors.solid.Suspense,
+      lazy: this.vendors.solid.lazy,
+      children: this.vendors.solid.children,
+      mergeProps: this.vendors.solid.mergeProps,
+      splitProps: this.vendors.solid.splitProps,
+      createRoot: this.vendors.solid.createRoot,
+      createComponent: this.vendors.solid.createComponent,
+      h: this.vendors.solid.h,
+      useRef: this.vendors.solid.useRef,
+      useCallback: this.vendors.solid.useCallback,
+      memo: this.vendors.solid.memo,
+      forwardRef: this.vendors.solid.forwardRef,
     };
 
-    // Preact Hooks API
-    const preactHooksAPI: PreactHooksAPI = {
-      useState: this.vendors.preactHooks.useState,
-      useEffect: this.vendors.preactHooks.useEffect,
-      useMemo: this.vendors.preactHooks.useMemo,
-      useCallback: this.vendors.preactHooks.useCallback,
-      useRef: this.vendors.preactHooks.useRef,
-      useContext: this.vendors.preactHooks.useContext,
-      useReducer: this.vendors.preactHooks.useReducer,
-      useLayoutEffect: this.vendors.preactHooks.useLayoutEffect,
-      useErrorBoundary: this.vendors.preactHooks.useErrorBoundary,
+    // Solid.js Store API
+    const solidStoreAPI: SolidStoreAPI = {
+      createStore: this.vendors.store.createStore,
+      produce: this.vendors.store.produce,
     };
 
-    // Preact Signals API
-    const preactSignalsAPI: PreactSignalsAPI = {
-      signal: this.vendors.preactSignals.signal,
-      computed: this.vendors.preactSignals.computed,
-      effect: this.vendors.preactSignals.effect,
-      batch: this.vendors.preactSignals.batch,
-    };
+    // 캐시에 저장
+    this.apiCache.set('solid', solidAPI);
+    this.apiCache.set('solid-store', solidStoreAPI);
 
-    // Preact Compat API
-    const preactCompatAPI: PreactCompatAPI = {
-      forwardRef: this.vendors.preactCompat.forwardRef,
-      memo: this.vendors.preactCompat.memo,
-      createElement: this.vendors.preactCompat.createElement,
-    };
-
-    // 캐시에 저장 (fflate 제거)
-    this.apiCache.set('preact', preactAPI);
-    this.apiCache.set('preact-hooks', preactHooksAPI);
-    this.apiCache.set('preact-signals', preactSignalsAPI);
-    this.apiCache.set('preact-compat', preactCompatAPI);
-
-    logger.debug('✅ 모든 API 캐시 완료');
+    logger.debug('✅ 모든 API 캐시 완료 (Solid.js)');
   }
 
   /**
-   * Preact 라이브러리 안전 접근
+   * Solid.js 라이브러리 안전 접근
    */
-  public getPreact(): PreactAPI {
+  public getSolid(): SolidAPI {
     if (!this.isInitialized) {
       if (import.meta.env.MODE === 'test') {
         logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
@@ -243,17 +328,17 @@ export class StaticVendorManager {
       this.isInitialized = true;
     }
 
-    const api = this.apiCache.get('preact') as PreactAPI;
+    const api = this.apiCache.get('solid') as SolidAPI;
     if (!api) {
-      throw new Error('Preact API를 찾을 수 없습니다.');
+      throw new Error('Solid.js API를 찾을 수 없습니다.');
     }
     return api;
   }
 
   /**
-   * Preact Hooks 안전 접근
+   * Solid.js Store 안전 접근
    */
-  public getPreactHooks(): PreactHooksAPI {
+  public getSolidStore(): SolidStoreAPI {
     if (!this.isInitialized) {
       if (import.meta.env.MODE === 'test') {
         logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
@@ -265,49 +350,9 @@ export class StaticVendorManager {
       this.isInitialized = true;
     }
 
-    const api = this.apiCache.get('preact-hooks') as PreactHooksAPI;
+    const api = this.apiCache.get('solid-store') as SolidStoreAPI;
     if (!api) {
-      throw new Error('Preact Hooks API를 찾을 수 없습니다.');
-    }
-    return api;
-  }
-
-  /**
-   * Preact Signals 안전 접근
-   */
-  public getPreactSignals(): PreactSignalsAPI {
-    if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('preact-signals') as PreactSignalsAPI;
-    if (!api) {
-      throw new Error('Preact Signals API를 찾을 수 없습니다.');
-    }
-    return api;
-  }
-
-  /**
-   * Preact Compat 안전 접근 (TDZ 문제 해결)
-   */
-  public getPreactCompat(): PreactCompatAPI {
-    if (!this.isInitialized) {
-      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
-
-    const api = this.apiCache.get('preact-compat') as PreactCompatAPI;
-    if (!api) {
-      throw new Error('Preact Compat API를 찾을 수 없습니다.');
+      throw new Error('Solid.js Store API를 찾을 수 없습니다.');
     }
     return api;
   }
@@ -400,31 +445,17 @@ export class StaticVendorManager {
     const errors: string[] = [];
 
     try {
-      this.getPreact();
-      loadedLibraries.push('Preact');
+      this.getSolid();
+      loadedLibraries.push('Solid.js');
     } catch (error) {
-      errors.push(`Preact: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(`Solid.js: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     try {
-      this.getPreactHooks();
-      loadedLibraries.push('PreactHooks');
+      this.getSolidStore();
+      loadedLibraries.push('SolidStore');
     } catch (error) {
-      errors.push(`PreactHooks: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    try {
-      this.getPreactSignals();
-      loadedLibraries.push('PreactSignals');
-    } catch (error) {
-      errors.push(`PreactSignals: ${error instanceof Error ? error.message : String(error)}`);
-    }
-
-    try {
-      this.getPreactCompat();
-      loadedLibraries.push('PreactCompat');
-    } catch (error) {
-      errors.push(`PreactCompat: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(`SolidStore: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     const success = errors.length === 0;
@@ -443,7 +474,7 @@ export class StaticVendorManager {
    */
   public getVersionInfo() {
     return Object.freeze({
-      preact: '10.27.1',
+      solid: '1.9.9',
       signals: '2.3.1',
       motion: 'removed', // Motion One 완전 제거
     });

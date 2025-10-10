@@ -1,7 +1,7 @@
 /**
  * Scan test: Enforce vendor getter-only usage for Preact APIs
  * - Forbid importing { h, render, Component, Fragment } directly from '@shared/external/vendors'
- * - Allow: using getPreact().h / getPreact().render etc.
+ * - Allow: using getSolid().h / getSolid().render etc.
  * - Allow: tests/mocks in allowlist paths
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';

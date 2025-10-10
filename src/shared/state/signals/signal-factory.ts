@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { getPreactSignals } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 
 // 공통 시그널 타입 (subscribe 지원)
 export type SafeSignal<T> = {
@@ -13,22 +13,11 @@ export type SafeSignal<T> = {
   subscribe: (callback: (value: T) => void) => () => void;
 };
 
-function getSignalsOrNull():
-  | (ReturnType<typeof getPreactSignals> & {
-      signal: <T>(initial: T) => { value: T };
-      effect: (fn: () => void) => () => void;
-      computed: <T>(fn: () => T) => { value: T };
-    })
-  | null {
+function getSolidOrNull(): ReturnType<typeof getSolid> | null {
   try {
-    // 정적 vendor getter가 초기화되지 않았을 경우 예외가 날 수 있으므로 안전 처리
-    return getPreactSignals() as unknown as ReturnType<typeof getPreactSignals> & {
-      signal: <T>(initial: T) => { value: T };
-      effect: (fn: () => void) => () => void;
-      computed: <T>(fn: () => T) => { value: T };
-    };
+    return getSolid();
   } catch (error) {
-    logger.warn('Preact Signals 미사용 환경 감지 - 안전 폴백 사용', { error });
+    logger.warn('Solid.js 미사용 환경 감지 - 안전 폴백 사용', { error });
     return null;
   }
 }
@@ -37,21 +26,41 @@ function getSignalsOrNull():
  * 안전한 시그널 생성기. Preact Signals이 없으면 경량 폴백을 제공합니다.
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
-  const signals = getSignalsOrNull();
+  const solid = getSolidOrNull();
 
-  if (signals) {
-    const { signal, effect } = signals;
-    const s = signal<T>(initial) as SafeSignal<T> & { subscribe?: SafeSignal<T>['subscribe'] };
-    // subscribe를 effect 기반으로 제공
-    s.subscribe = (callback: (value: T) => void): (() => void) => {
-      try {
-        return effect(() => callback(s.value));
-      } catch (error) {
-        logger.warn('Signals effect 구독 실패 - noop 처리', { error });
-        return () => {};
-      }
-    };
-    return s as SafeSignal<T>;
+  if (solid) {
+    const { createSignal, createRoot, createEffect } = solid;
+    const [read, write] = createSignal(initial, { equals: false });
+
+    const signalObject = {
+      subscribe(callback: (value: T) => void): () => void {
+        try {
+          return createRoot(dispose => {
+            createEffect(() => {
+              callback(read());
+            });
+            return dispose;
+          });
+        } catch (error) {
+          logger.warn('Solid signal 구독 실패 - noop 처리', { error });
+          return () => {};
+        }
+      },
+    } as SafeSignal<T>;
+
+    Object.defineProperty(signalObject, 'value', {
+      get: () => read(),
+      set: (value: T) => {
+        try {
+          write(() => value);
+        } catch (error) {
+          logger.warn('Solid signal 값 설정 실패 - 기존 값 유지', { error });
+        }
+      },
+      enumerable: true,
+    });
+
+    return signalObject;
   }
 
   // 폴백: 간단한 옵저버 패턴 구현
@@ -89,12 +98,16 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
  * 안전한 effect. Signals이 없으면 콜백을 1회 실행하고 noop을 반환합니다.
  */
 export function effectSafe(fn: () => void): () => void {
-  const signals = getSignalsOrNull();
-  if (signals) {
+  const solid = getSolidOrNull();
+  if (solid) {
     try {
-      return signals.effect(fn);
+      const { createRoot, createEffect } = solid;
+      return createRoot(dispose => {
+        createEffect(() => fn());
+        return dispose;
+      });
     } catch (error) {
-      logger.warn('Signals effect 실행 실패 - noop 처리', { error });
+      logger.warn('Solid effect 실행 실패 - noop 처리', { error });
     }
   }
   try {
@@ -109,12 +122,32 @@ export function effectSafe(fn: () => void): () => void {
  * 안전한 computed. Signals이 없으면 접근 시 계산되는 getter를 제공합니다.
  */
 export function computedSafe<T>(compute: () => T): { readonly value: T } {
-  const signals = getSignalsOrNull();
-  if (signals) {
+  const solid = getSolidOrNull();
+  if (solid) {
     try {
-      return signals.computed(compute);
+      const { createRoot, createMemo } = solid;
+      let memoAccessor: (() => T) | null = null;
+
+      createRoot(dispose => {
+        memoAccessor = createMemo(compute);
+        return () => {
+          memoAccessor = null;
+          dispose();
+        };
+      });
+
+      return {
+        get value() {
+          try {
+            return memoAccessor ? memoAccessor() : compute();
+          } catch (error) {
+            logger.warn('Solid memo 접근 실패 - 즉시 계산으로 대체', { error });
+            return compute();
+          }
+        },
+      } as const;
     } catch (error) {
-      logger.warn('Signals computed 생성 실패 - fallback으로 진행', { error });
+      logger.warn('Solid computed 생성 실패 - fallback으로 진행', { error });
     }
   }
   return {

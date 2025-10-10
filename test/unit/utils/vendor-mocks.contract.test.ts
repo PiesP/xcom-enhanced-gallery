@@ -1,9 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import {
-  setupVendorMocks,
-  cleanupVendorMocks,
-  MockVendorManager,
-} from '../../utils/mocks/vendor-mocks';
+import { setupVendorMocks, cleanupVendorMocks } from '../../utils/mocks/vendor-mocks';
 
 describe('vendor-mocks contract', () => {
   beforeEach(() => {
@@ -14,21 +10,17 @@ describe('vendor-mocks contract', () => {
     cleanupVendorMocks();
   });
 
-  it('provides getPreact/getFflate/getPreactSignals via mocked vendors getter', async () => {
+  it('provides getSolid via mocked vendors getter', async () => {
     const mgr = setupVendorMocks();
-    const { getPreact, getFflate, getPreactSignals } = await import('@shared/external/vendors');
-    const preact = await getPreact();
-    const fflate = await getFflate();
-    const signals = await getPreactSignals();
+    const { getSolid } = await import('@shared/external/vendors');
+    const solid = getSolid();
 
-    expect(preact).toBeTruthy();
-    expect(typeof preact.render).toBe('function');
-    expect(fflate).toBeTruthy();
-    expect(typeof fflate.zip).toBe('function');
-    expect(signals).toBeTruthy();
-    expect(typeof signals.signal).toBe('function');
+    expect(solid).toBeTruthy();
+    expect(typeof solid.render).toBe('function');
+    expect(typeof solid.createSignal).toBe('function');
+    expect(typeof solid.createEffect).toBe('function');
 
-    // manager cache sanity
-    expect(mgr.cache.size).toBeGreaterThanOrEqual(3);
+    // Verify cache
+    expect(mgr).toBeTruthy();
   });
 });

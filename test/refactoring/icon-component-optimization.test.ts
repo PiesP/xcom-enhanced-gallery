@@ -96,7 +96,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
       };
 
       vi.doMock('@shared/external/vendors', () => ({
-        getPreact: () => mockPreact,
+        getSolid: () => mockPreact,
       }));
 
       const { Icon } = await import('../../src/shared/components/ui/Icon/Icon');
@@ -126,7 +126,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
       };
 
       vi.doMock('@shared/external/vendors', () => ({
-        getPreact: () => mockPreact,
+        getSolid: () => mockPreact,
       }));
 
       const { Icon } = await import('../../src/shared/components/ui/Icon/Icon');
@@ -156,7 +156,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
 
       // Mock을 다시 설정
       vi.doMock('@shared/external/vendors', () => ({
-        getPreact: () => mockPreact,
+        getSolid: () => mockPreact,
       }));
 
       // 모듈 캐시 삭제 후 재로드
@@ -263,7 +263,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
       };
 
       vi.doMock('@shared/external/vendors', () => ({
-        getPreact: () => mockPreact,
+        getSolid: () => mockPreact,
       }));
 
       vi.resetModules();

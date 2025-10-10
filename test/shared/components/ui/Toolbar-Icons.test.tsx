@@ -4,33 +4,48 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '../../../utils/testing-library';
+import h from 'solid-js/h';
 
 // Vendor mocks 먼저 설정
-vi.mock('@shared/external/vendors', () => ({
-  getFflate: vi.fn(() => ({})),
-  getPreact: vi.fn(() => ({ h })),
-  getPreactHooks: vi.fn(() => ({
-    useMemo: vi.fn(factory => factory()),
-    useCallback: vi.fn(callback => callback),
-    useEffect: vi.fn(),
-    useRef: vi.fn(() => ({ current: null })),
-  })),
-  getPreactSignals: vi.fn(() => ({})),
-  getPreactCompat: vi.fn(() => ({
-    memo: vi.fn(Component => Component),
-    forwardRef: vi.fn(Component => Component),
-  })),
-  getNativeDownload: vi.fn(() => ({})),
-  initializeVendors: vi.fn(() => Promise.resolve()),
-  cleanupVendors: vi.fn(() => Promise.resolve()),
-  getVendorVersions: vi.fn(() => ({})),
-  isVendorsInitialized: vi.fn(() => true),
-  getVendorInitializationReport: vi.fn(() => ({})),
-  getVendorStatuses: vi.fn(() => ({})),
-  isVendorInitialized: vi.fn(() => true),
-}));
+vi.mock('@shared/external/vendors', () => {
+  function createSignal<T>(initial: T) {
+    let current = initial;
+    const getter = () => current;
+    const setter = (next: T | ((prev: T) => T)) => {
+      current = typeof next === 'function' ? (next as (prev: T) => T)(current) : next;
+      return current;
+    };
+    return [getter, setter] as const;
+  }
+
+  const createMemo = <T,>(factory: () => T) => factory();
+  const createEffect = (_fn: () => void) => undefined;
+  const memo = <T,>(component: T) => component;
+  const forwardRef = <T,>(component: T) => component;
+
+  const solidPrimitives = {
+    h,
+    createMemo,
+    createEffect,
+    createSignal,
+    memo,
+    forwardRef,
+  };
+
+  return {
+    getFflate: vi.fn(() => ({})),
+    getSolid: vi.fn(() => solidPrimitives),
+    getNativeDownload: vi.fn(() => ({})),
+    initializeVendors: vi.fn(async () => undefined),
+    cleanupVendors: vi.fn(async () => undefined),
+    getVendorVersions: vi.fn(() => ({})),
+    isVendorsInitialized: vi.fn(() => true),
+    getVendorInitializationReport: vi.fn(() => ({})),
+    getVendorStatuses: vi.fn(() => ({})),
+    isVendorInitialized: vi.fn(() => true),
+  };
+});
 
 // Hooks mock
 vi.mock('@shared/hooks/useToolbarState', () => ({

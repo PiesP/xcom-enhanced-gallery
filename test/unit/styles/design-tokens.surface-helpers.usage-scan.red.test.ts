@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 
 function toPosix(p: string): string {
   return p.replace(/\\/g, '/');

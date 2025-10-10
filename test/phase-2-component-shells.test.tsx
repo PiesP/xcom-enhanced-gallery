@@ -4,8 +4,8 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { render } from '@testing-library/preact';
-import { h } from 'preact';
+import { render } from '../utils/testing-library';
+import h from 'solid-js/h';
 import { ToolbarShell } from '../src/shared/components/ui/ToolbarShell/ToolbarShell';
 import { ModalShell } from '../src/shared/components/ui/ModalShell/ModalShell';
 
