@@ -57,9 +57,9 @@
 /* 레거시 위치 클래스 (테스트 기대) */
 .center {
   /* center 위치 스타일 명시적 정의 */
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px));
+  transform: translate(-50%, -50%);
 }
 
 .bottomSheet {

@@ -41,6 +41,8 @@ const DEFAULT_TOOLBAR_PROPS = {
 export interface ToolbarProps {
   /** 현재 인덱스 */
   currentIndex: number;
+  /** 포커스된 인덱스 (옵션) */
+  focusedIndex?: number | null;
   /** 전체 개수 */
   totalCount: number;
   /** 다운로드 진행 상태 */
@@ -137,13 +139,21 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
     )
   );
 
+  const displayedIndex = createMemo(() => {
+    const focus = props.focusedIndex;
+    if (typeof focus === 'number' && focus >= 0 && focus < props.totalCount) {
+      return focus;
+    }
+    return props.currentIndex;
+  });
+
   const canGoNext = createMemo(() => props.currentIndex < props.totalCount - 1);
   const canGoPrevious = createMemo(() => props.currentIndex > 0);
   const progressWidth = createMemo(() => {
     if (props.totalCount <= 0) {
       return '0%';
     }
-    return `${((props.currentIndex + 1) / props.totalCount) * 100}%`;
+    return `${((displayedIndex() + 1) / props.totalCount) * 100}%`;
   });
 
   // props.isDownloading 변경 시에만 effect 실행 (on helper로 최적화)
@@ -348,7 +358,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
         >
           <div class={styles.mediaCounterWrapper}>
             <span class={styles.mediaCounter} aria-live='polite' data-gallery-element='counter'>
-              <span class={styles.currentIndex}>{props.currentIndex + 1}</span>
+              <span class={styles.currentIndex}>{displayedIndex() + 1}</span>
               <span class={styles.separator}>/</span>
               <span class={styles.totalCount}>{props.totalCount}</span>
             </span>

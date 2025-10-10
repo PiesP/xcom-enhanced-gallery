@@ -98,12 +98,14 @@
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/hooks/useToolbarState.ts",
         "src/shared/utils/signalSelector.ts",
+        "src/features/gallery/hooks/useGalleryFocusTracker.ts",
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
+        "src/shared/components/hoc/GalleryHOC.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
         "src/features/gallery/hooks/useToolbarPositionBased.ts",
         "src/main.ts",
@@ -328,6 +330,7 @@
         "src/shared/services/media/VideoControlService.ts",
         "src/features/gallery/GalleryRenderer.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/useGalleryFocusTracker.ts",
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
@@ -6220,6 +6223,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../hooks/useGalleryFocusTracker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/features/gallery/hooks/useGalleryFocusTracker.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../hooks/useGalleryItemScroll",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -8604,6 +8624,51 @@
       "valid": true
     },
     {
+      "source": "src/features/gallery/hooks/useGalleryFocusTracker.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/features/gallery/hooks/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/features/gallery/hooks/useGalleryItemScroll.ts",
       "dependencies": [
         {
@@ -9358,6 +9423,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9635,6 +9717,23 @@
     {
       "source": "src/features/gallery/hooks/index.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./useGalleryFocusTracker",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "export"
+          ],
+          "resolved": "src/features/gallery/hooks/useGalleryFocusTracker.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "./useGalleryItemScroll",
@@ -15972,8 +16071,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 266,
-    "totalDependenciesCruised": 720,
+    "totalCruised": 267,
+    "totalDependenciesCruised": 725,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -9,7 +9,7 @@ import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
 import { SettingsModal } from '../SettingsModal/SettingsModal';
 
 export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSettings'> {
-  /** 설정 모달 위치 (기본: toolbar-below) */
+  /** 설정 모달 위치 (기본: center) */
   settingsPosition?: 'center' | 'toolbar-below' | 'bottom-sheet' | 'top-right';
   /** 설정 모달 테스트 ID */
   settingsTestId?: string;
@@ -20,7 +20,7 @@ export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSett
  * @description 동일한 glassmorphism 디자인 시스템 적용으로 시각적 일관성 보장
  */
 export function ToolbarWithSettings({
-  settingsPosition = 'toolbar-below',
+  settingsPosition = 'center',
   settingsTestId = 'toolbar-settings-modal',
   ...toolbarProps
 }: ToolbarWithSettingsProps): JSXElement {
@@ -43,7 +43,7 @@ export function ToolbarWithSettings({
         <SettingsModal
           isOpen={isSettingsOpen()}
           onClose={handleCloseSettings}
-          position={settingsPosition === 'top-right' ? 'top-right' : 'toolbar-below'}
+          position={settingsPosition}
           data-testid={settingsTestId}
         />
       )}

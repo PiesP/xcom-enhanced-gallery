@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '../../../../utils/testing-library';
+import { cleanup, fireEvent, render, screen, h } from '../../../../utils/testing-library';
 import {
   SettingsModal,
   type SettingsModalProps,
@@ -18,11 +18,13 @@ type PartialProps = Partial<SettingsModalProps>;
 
 const mountModal = (override: PartialProps = {}) => {
   const { onClose = vi.fn(), children, ...rest } = override;
-  const result = render(() => (
-    <SettingsModal isOpen onClose={onClose} {...rest}>
-      {children}
-    </SettingsModal>
-  ));
+  const result = render(
+    h(
+      SettingsModal,
+      { isOpen: true, onClose, ...rest },
+      ...(children !== undefined ? [children] : [])
+    )
+  );
 
   return { ...result, onClose };
 };
@@ -49,8 +51,15 @@ describe('SettingsModal', () => {
     expect(screen.getByLabelText('Language')).toBeInTheDocument();
   });
 
+  it('defaults position to center when not provided', () => {
+    const { container } = render(h(SettingsModal, { isOpen: true, onClose: vi.fn() }));
+    const panel = container.querySelector('[data-position]');
+    expect(panel).not.toBeNull();
+    expect(panel?.getAttribute('data-position')).toBe('center');
+  });
+
   it('does not render when closed', () => {
-    render(() => <SettingsModal isOpen={false} onClose={vi.fn()} />);
+    render(h(SettingsModal, { isOpen: false, onClose: vi.fn() }));
 
     expect(screen.queryByRole('dialog')).toBeNull();
   });
@@ -134,9 +143,13 @@ describe('SettingsModal', () => {
   });
 
   it('respects custom children content', () => {
-    mountModal({
-      children: <div data-testid='custom-body'>Custom Settings</div>,
-    });
+    render(
+      h(
+        SettingsModal,
+        { isOpen: true, onClose: vi.fn() },
+        h('div', { 'data-testid': 'custom-body' }, 'Custom Settings')
+      )
+    );
 
     expect(screen.getByTestId('custom-body')).toHaveTextContent('Custom Settings');
     expect(screen.queryByText('Theme')).toBeNull();
