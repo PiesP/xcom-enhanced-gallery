@@ -25,6 +25,7 @@ import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
+import { useGalleryFocusTracker } from '../../hooks/useGalleryFocusTracker';
 import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
@@ -37,6 +38,8 @@ import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
+
+const WHEEL_SCROLL_MULTIPLIER = 0.85;
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -80,11 +83,23 @@ function VerticalGalleryViewCore({
 
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
+  const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
   const [isVisible, setIsVisible] = createSignal(mediaItems().length > 0);
-  const [focusedIndex, setFocusedIndex] = createSignal(currentIndex());
   const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = createSignal(-1);
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
+
+  const {
+    focusedIndex,
+    registerItem: registerFocusItem,
+    handleItemFocus,
+    handleItemBlur,
+    forceSync: forceFocusSync,
+  } = useGalleryFocusTracker({
+    container: () => containerEl(),
+    isEnabled: isVisible,
+    getCurrentIndex: currentIndex,
+  });
 
   const hideTimeoutRef = { current: null as number | null };
   const forceVisibleItems = new Set<number>();
@@ -108,10 +123,12 @@ function VerticalGalleryViewCore({
     }
   });
 
-  createEffect(() => {
-    setFocusedIndex(currentIndex());
-    setLastAutoScrolledIndex(-1);
-  });
+  createEffect(
+    on(currentIndex, () => {
+      setLastAutoScrolledIndex(-1);
+      forceFocusSync();
+    })
+  );
 
   const memoizedMediaItems = createMemo(() => {
     const items = mediaItems();
@@ -215,8 +232,49 @@ function VerticalGalleryViewCore({
 
   useGalleryScroll({
     container: () => containerEl(),
-    onScroll: delta => {
-      logger.debug('VerticalGalleryView: 스크롤 감지', { delta, timestamp: Date.now() });
+    scrollTarget: () => itemsContainerEl(),
+    onScroll: (delta, scrollTargetElement) => {
+      const container = containerEl();
+      const target = scrollTargetElement ?? container;
+
+      if (!container || !target) {
+        logger.debug('VerticalGalleryView: 스크롤 감지 - 대상 요소 없음', {
+          delta,
+          hasContainer: !!container,
+          hasTarget: !!target,
+        });
+        return;
+      }
+
+      const maxScrollTop = Math.max(0, target.scrollHeight - target.clientHeight);
+      const currentTop = target.scrollTop;
+      const desiredTop = currentTop + delta * WHEEL_SCROLL_MULTIPLIER;
+      const clampedTop = Math.max(0, Math.min(desiredTop, maxScrollTop));
+      const scrollDelta = clampedTop - currentTop;
+
+      if (scrollDelta === 0) {
+        logger.debug('VerticalGalleryView: 스크롤 감지 - 경계 도달', {
+          delta,
+          currentTop,
+          maxScrollTop,
+          targetType: target === container ? 'container' : 'itemsContainer',
+        });
+        return;
+      }
+
+      target.scrollBy({
+        top: scrollDelta,
+        left: 0,
+        behavior: Math.abs(scrollDelta) > 48 ? 'smooth' : 'auto',
+      });
+
+      logger.debug('VerticalGalleryView: 스크롤 감지', {
+        delta,
+        appliedDelta: scrollDelta,
+        targetTop: clampedTop,
+        timestamp: Date.now(),
+        targetType: target === container ? 'container' : 'itemsContainer',
+      });
     },
     enabled: isVisible,
     blockTwitterScroll: true,
@@ -417,6 +475,7 @@ function VerticalGalleryViewCore({
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}
           currentIndex={currentIndex()}
+          focusedIndex={focusedIndex() ?? currentIndex()}
           totalCount={mediaItems().length}
           isDownloading={isDownloading()}
           onDownloadCurrent={handleDownloadCurrent}
@@ -433,6 +492,7 @@ function VerticalGalleryViewCore({
         class={styles.itemsContainer}
         data-xeg-role='items-container'
         data-xeg-role-compat='items-list'
+        ref={el => setItemsContainerEl(el ?? null)}
       >
         <For each={memoizedMediaItems()}>
           {item => {
@@ -446,7 +506,7 @@ function VerticalGalleryViewCore({
                 isActive={actualIndex === currentIndex()}
                 isFocused={actualIndex === focusedIndex()}
                 forceVisible={forceVisibleItems.has(actualIndex) || forcePreload}
-                fitMode={imageFitMode()}
+                fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
                 onMediaLoad={handleMediaLoad}
                 className={`${styles.galleryItem} ${
@@ -454,13 +514,14 @@ function VerticalGalleryViewCore({
                 }`}
                 data-index={actualIndex}
                 data-xeg-role='gallery-item'
+                registerContainer={element => registerFocusItem(actualIndex, element)}
                 {...(onDownloadCurrent
                   ? {
                       onDownload: handleDownloadCurrent,
                     }
                   : {})}
-                onFocus={() => setFocusedIndex(actualIndex)}
-                onBlur={() => setFocusedIndex(-1)}
+                onFocus={() => handleItemFocus(actualIndex)}
+                onBlur={() => handleItemBlur(actualIndex)}
               />
             );
           }}

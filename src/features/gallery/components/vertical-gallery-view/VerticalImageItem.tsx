@@ -20,7 +20,7 @@ import { languageService } from '../../../../shared/services/LanguageService';
 import styles from './VerticalImageItem.module.css';
 
 const solid = getSolid();
-const { createSignal, createEffect, onCleanup } = solid;
+const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
 const ButtonCompat = Button as unknown as (props: ButtonProps) => JSX.Element;
 
@@ -65,6 +65,8 @@ function isVideoMedia(media: MediaInfo): boolean {
   return false;
 }
 
+type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
+
 interface VerticalImageItemProps extends GalleryComponentProps {
   readonly media: MediaInfo;
   readonly index: number;
@@ -74,10 +76,11 @@ interface VerticalImageItemProps extends GalleryComponentProps {
   readonly forceVisible?: boolean;
   readonly onClick: () => void;
   readonly onDownload?: () => void;
-  readonly fitMode?: ImageFitMode;
+  readonly fitMode?: FitModeProp;
   readonly onMediaLoad?: (mediaId: string, index: number) => void;
   readonly onImageContextMenu?: (event: MouseEvent, media: MediaInfo) => void;
   readonly className?: string;
+  readonly registerContainer?: (element: HTMLDivElement | null) => void;
   readonly 'data-testid'?: string;
   readonly 'aria-label'?: string;
   readonly 'aria-describedby'?: string;
@@ -103,27 +106,35 @@ function getFitModeClass(fitMode?: ImageFitMode): string {
   }
 }
 
-function BaseVerticalImageItemCore({
-  media,
-  index,
-  isActive,
-  isFocused = false,
-  forceVisible = false,
-  onClick,
-  onDownload,
-  onImageContextMenu,
-  className = '',
-  fitMode,
-  onMediaLoad,
-  'data-testid': testId,
-  'aria-label': ariaLabel,
-  'aria-describedby': ariaDescribedBy,
-  role,
-  tabIndex,
-  onFocus,
-  onBlur,
-  onKeyDown,
-}: VerticalImageItemProps): JSX.Element | null {
+const FIT_MODE_CLASSES: readonly string[] = [
+  styles.fitOriginal,
+  styles.fitWidth,
+  styles.fitHeight,
+  styles.fitContainer,
+].filter((className): className is string => Boolean(className));
+
+function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
+  const {
+    media,
+    index,
+    isActive,
+    isFocused = false,
+    forceVisible = false,
+    onClick,
+    onDownload,
+    onImageContextMenu,
+    className = '',
+    onMediaLoad,
+    'data-testid': testId,
+    'aria-label': ariaLabel,
+    'aria-describedby': ariaDescribedBy,
+    registerContainer,
+    role,
+    tabIndex,
+    onFocus,
+    onBlur,
+    onKeyDown,
+  } = props;
   const isVideo = isVideoMedia(media);
   const [isLoaded, setIsLoaded] = createSignal(false);
   const [isError, setIsError] = createSignal(false);
@@ -299,14 +310,78 @@ function BaseVerticalImageItemCore({
     }
   });
 
-  const containerClasses = ComponentStandards.createClassName(
-    styles.container,
-    isActive ? styles.active : undefined,
-    isFocused ? styles.focused : undefined,
-    className
+  const resolvedFitMode = createMemo<ImageFitMode>(() => {
+    const value = props.fitMode;
+    if (typeof value === 'function') {
+      const result = value();
+      return (result ?? 'fitWidth') as ImageFitMode;
+    }
+
+    return (value ?? 'fitWidth') as ImageFitMode;
+  });
+  const fitModeClass = createMemo(() => getFitModeClass(resolvedFitMode()));
+
+  const containerClasses = createMemo(() =>
+    ComponentStandards.createClassName(
+      styles.container,
+      styles.imageWrapper,
+      isActive ? styles.active : undefined,
+      isFocused ? styles.focused : undefined,
+      fitModeClass(),
+      className
+    )
   );
 
-  const imageClasses = ComponentStandards.createClassName(styles.image, getFitModeClass(fitMode));
+  const imageClasses = createMemo(() =>
+    ComponentStandards.createClassName(styles.image, fitModeClass())
+  );
+
+  createEffect(() => {
+    const mode = resolvedFitMode();
+    const container = containerRef();
+    const image = imageRef();
+    const video = videoRefSignal();
+    const currentFitClass = fitModeClass();
+
+    if (container && container.getAttribute('data-fit-mode') !== mode) {
+      container.setAttribute('data-fit-mode', mode);
+    }
+
+    if (container) {
+      if (FIT_MODE_CLASSES.length > 0) {
+        container.classList.remove(...FIT_MODE_CLASSES);
+      }
+      if (currentFitClass) {
+        container.classList.add(currentFitClass);
+      }
+    }
+
+    if (image && image.getAttribute('data-fit-mode') !== mode) {
+      image.setAttribute('data-fit-mode', mode);
+    }
+
+    if (image) {
+      if (FIT_MODE_CLASSES.length > 0) {
+        image.classList.remove(...FIT_MODE_CLASSES);
+      }
+      if (currentFitClass) {
+        image.classList.add(currentFitClass);
+      }
+    }
+
+    if (video && video.getAttribute('data-fit-mode') !== mode) {
+      video.setAttribute('data-fit-mode', mode);
+    }
+
+    if (video) {
+      if (FIT_MODE_CLASSES.length > 0) {
+        video.classList.remove(...FIT_MODE_CLASSES);
+      }
+      if (currentFitClass) {
+        video.classList.add(currentFitClass);
+      }
+    }
+  });
 
   const ariaProps = ComponentStandards.createAriaProps({
     'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
@@ -317,11 +392,17 @@ function BaseVerticalImageItemCore({
 
   const testProps = ComponentStandards.createTestProps(testId);
 
+  const assignContainerRef = (element: HTMLDivElement | null) => {
+    setContainerRef(element);
+    registerContainer?.(element);
+  };
+
   return (
     <div
-      ref={setContainerRef}
-      class={ComponentStandards.createClassName(containerClasses, styles.imageWrapper)}
+      ref={assignContainerRef}
+      class={containerClasses()}
       data-index={index}
+      data-fit-mode={resolvedFitMode()}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}
@@ -345,9 +426,10 @@ function BaseVerticalImageItemCore({
               ref={setVideoRefSignal}
               class={ComponentStandards.createClassName(
                 styles.video,
-                getFitModeClass(fitMode),
+                fitModeClass(),
                 isLoaded() ? styles.loaded : styles.loading
               )}
+              data-fit-mode={resolvedFitMode()}
               onLoadedMetadata={handleVideoLoadedMetadata}
               onLoadedData={handleVideoLoaded}
               onCanPlay={handleVideoLoaded}
@@ -368,9 +450,10 @@ function BaseVerticalImageItemCore({
               loading='lazy'
               decoding='async'
               class={ComponentStandards.createClassName(
-                imageClasses,
+                imageClasses(),
                 isLoaded() ? styles.loaded : styles.loading
               )}
+              data-fit-mode={resolvedFitMode()}
               onLoad={handleImageLoad}
               onError={handleImageError}
               onContextMenu={handleImageContextMenuInternal}

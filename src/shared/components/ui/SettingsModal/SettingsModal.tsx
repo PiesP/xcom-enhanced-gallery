@@ -61,7 +61,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
 
   const mode = createMemo(() => props.mode ?? 'modal');
   const isPanel = () => mode() === 'panel';
-  const position = createMemo(() => props.position ?? 'toolbar-below');
+  const position = createMemo(() => props.position ?? 'center');
   const className = () => props.className ?? '';
   const testProps = ComponentStandards.createTestProps(props['data-testid']);
 
@@ -444,6 +444,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
           });
         }}
         class='settings-modal-content'
+        data-position={position()}
         role='document'
       >
         {content}

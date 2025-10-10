@@ -6,7 +6,11 @@
 
 import { logger } from '../../logging/logger';
 import type { ComponentType } from '../../types/app.types';
+import { getSolid } from '../../external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
+
+const solid = getSolid();
+const { mergeProps } = solid;
 
 /**
  * 갤러리 마킹 타입
@@ -115,13 +119,9 @@ export function withGallery<P extends GalleryComponentProps>(
     const accessibilityAttributes = createAccessibilityAttributes(mergedOptions);
 
     // 최종 Props 구성
-    const finalProps = {
-      ...props,
-      ...markerAttributes,
-      ...eventHandlers,
-      ...accessibilityAttributes,
+    const finalProps = mergeProps(props, markerAttributes, eventHandlers, accessibilityAttributes, {
       className,
-    };
+    });
 
     logger.debug(`Rendering gallery component: ${mergedOptions.type}`, {
       type: mergedOptions.type,

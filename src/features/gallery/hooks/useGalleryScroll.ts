@@ -29,8 +29,10 @@ type ScrollDirection = 'up' | 'down' | 'idle';
 interface UseGalleryScrollOptions {
   /** 갤러리 컨테이너 참조 */
   container: HTMLElement | null | Accessor<HTMLElement | null>;
+  /** 실제 스크롤 타깃 (기본: container) */
+  scrollTarget?: HTMLElement | null | Accessor<HTMLElement | null>;
   /** 스크롤 콜백 함수 */
-  onScroll?: (delta: number) => void;
+  onScroll?: (delta: number, target: HTMLElement | null) => void;
   /** 스크롤 처리 활성화 여부 */
   enabled?: MaybeAccessor<boolean>;
   /** 트위터 페이지 스크롤 차단 여부 */
@@ -54,6 +56,7 @@ const SCROLL_IDLE_TIMEOUT = 150;
 
 export function useGalleryScroll({
   container,
+  scrollTarget,
   onScroll,
   enabled = true,
   blockTwitterScroll = true,
@@ -61,6 +64,7 @@ export function useGalleryScroll({
   onScrollDirectionChange,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
   const containerAccessor = toAccessor(container);
+  const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
   const enabledAccessor = toAccessor(enabled);
   const blockTwitterScrollAccessor = toAccessor(blockTwitterScroll);
   const enableScrollDirectionAccessor = toAccessor(enableScrollDirection);
@@ -150,10 +154,11 @@ export function useGalleryScroll({
     }
 
     const delta = event.deltaY;
+    const targetElement = scrollTargetAccessor();
     updateScrollState(true);
     updateScrollDirection(delta);
 
-    onScroll?.(delta);
+    onScroll?.(delta, targetElement);
 
     if (blockTwitterScrollAccessor()) {
       event.preventDefault();

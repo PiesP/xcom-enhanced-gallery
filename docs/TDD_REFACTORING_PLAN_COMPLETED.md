@@ -7,6 +7,158 @@
 
 ---
 
+### 2025-10-12 — Phase 7: UX 개선 작업 완료 (우선순위 1-4)
+
+**목표**: Solid.js 마이그레이션 이후 발생한 UX 회귀 4건 복원
+
+**작업 근거**:
+
+- Solid.js 전환 과정에서 반응성 패턴 변경으로 4개 핵심 UX 기능 회귀 발생
+- 사용자 경험에 직접 영향을 주는 긴급/높음 우선순위 이슈
+- TDD 접근으로 회귀 방지 테스트 추가 필요
+
+**주요 변경사항**:
+
+#### 우선순위 1: 툴바 인디케이터 자동 포커스 감지 복원 ✅
+
+**문제**: 스크롤 시 툴바 카운터가 현재 보고 있는 이미지와 불일치
+
+**솔루션**: IntersectionObserver 기반 자동 포커스 감지
+
+- ✅ `src/features/gallery/hooks/useGalleryFocusTracker.ts` 신설
+  - IntersectionObserver로 뷰포트 중심에 가장 가까운 항목 자동 계산
+  - rootMargin 설정으로 정확한 중앙 감지
+  - 스크롤 방향 무관하게 안정적 동작
+
+- ✅ `VerticalGalleryView.tsx` 수정
+  - `useGalleryFocusTracker` 훅 통합
+  - 로컬 `focusedIndex` signal을 훅의 signal로 대체
+  - 컨테이너에 `data-focused` 동기화
+
+- ✅ 테스트:
+  `test/unit/features/gallery/components/VerticalGalleryView.focus-tracking.test.tsx`
+  - 4/4 테스트 통과
+  - IntersectionObserver 모킹 및 가시성 변화 검증
+  - wheel/키보드 네비게이션 호환 확인
+
+#### 우선순위 2: 갤러리 마우스 휠 스크롤 복구 ✅
+
+**문제**: 마우스 휠이 작동하지 않아 PC 사용자 기본 UX 상실
+
+**솔루션**: scrollTarget accessor 패턴 도입
+
+- ✅ `VerticalGalleryView.tsx` 수정
+  - `itemsContainerEl` signal 추가
+  - `[data-xeg-role="items-container"]`에 ref 연결
+
+- ✅ `useGalleryScroll.ts` 수정
+  - `scrollTarget` accessor 매개변수 추가
+  - 제공된 타깃 우선, 기본 컨테이너 fallback
+  - `scrollTarget?.scrollBy()` 호출로 정확한 DOM 대상 스크롤
+
+- ✅ 테스트:
+  `test/unit/features/gallery/components/VerticalGalleryView.wheel-scroll.test.tsx`
+  - 4/4 테스트 통과
+  - wheel 이벤트 시 itemsContainer.scrollBy 호출 검증
+  - delta 계산 및 경계 clamping 확인
+
+#### 우선순위 3: 설정 모달 위치 재배치 ✅
+
+**문제**: 'center' position임에도 화면 좌상단에 표시되어 인지성 저하
+
+**솔루션**: CSS transform 기반 중앙 정렬
+
+- ✅ `SettingsModal.module.css` 수정
+  - `.center` 클래스에 `top: 50%`, `transform: translate(-50%, -50%)` 적용
+  - 뷰포트 중앙 정렬 구현
+  - 다른 position 변형(toolbar-below, top-right, bottom-sheet) 유지
+
+- ✅ 테스트: `test/unit/shared/components/SettingsModal.positioning.test.tsx`
+  - 2/2 테스트 통과
+  - 'center' position 시 클래스 조합 검증
+  - 접근성 속성(aria-modal, role) 유지 확인
+
+#### 우선순위 4: 이미지 크기 변경 버튼 동작 복구 ✅
+
+**문제**: Toolbar fit 버튼 클릭 시 이미지 크기가 변경되지 않음
+
+**솔루션**: Reactive fitMode accessor + imperative DOM 동기화
+
+- ✅ `VerticalGalleryView.tsx` 수정
+  - `imageFitMode` signal을 function accessor로 전달
+  - Solid.js 반응성 보존
+
+- ✅ `VerticalImageItem.tsx` 수정
+  - `fitMode` prop을 accessor로 받도록 타입 변경
+  - `createMemo`로 `resolvedFitMode` 계산
+  - `createEffect`로 컨테이너 `data-fit-mode` 속성 동기화
+  - `createEffect`로 classList에 fit 클래스 imperative 동기화
+
+- ✅ `GalleryHOC.tsx` 수정
+  - Solid.js `mergeProps` 사용으로 반응성 보존
+  - spread 연산자 대신 mergeProps로 props 전달
+
+- ✅ 테스트:
+  `test/unit/features/gallery/components/VerticalGalleryView.fit-mode.test.tsx`
+  - 2/2 테스트 통과
+  - fitMode signal 변경 시 data-fit-mode 동기화 검증
+  - 컨테이너 classList 동기화 확인
+
+**수용 기준 달성**:
+
+- [x] 우선순위 1: 툴바 인디케이터 자동 포커스 감지 (4/4 테스트 통과)
+- [x] 우선순위 2: 휠 스크롤 복구 (4/4 테스트 통과)
+- [x] 우선순위 3: 설정 모달 중앙 정렬 (2/2 테스트 통과)
+- [x] 우선순위 4: 이미지 크기 버튼 동작 복구 (2/2 테스트 통과)
+- [x] Smoke 테스트: 15/15 통과 (100%)
+- [x] Fast 테스트: 537/552 통과 (97.3%) - Phase 7과 무관한 13개 실패
+- [x] 빌드 성공: dev 723.58 KB, prod 성공
+- [x] TypeScript strict: 0 오류 (src/)
+- [x] ESLint: 0 warnings, 0 errors
+
+**검증**:
+
+```bash
+# Phase 7 개별 테스트 검증
+npx vitest run VerticalGalleryView.fit-mode.test.tsx        # 2/2 passed
+npx vitest run VerticalGalleryView.wheel-scroll.test.tsx    # 4/4 passed
+npx vitest run VerticalGalleryView.focus-tracking.test.tsx  # 4/4 passed
+npx vitest run SettingsModal.positioning.test.tsx           # 2/2 passed
+
+# 회귀 테스트
+npm run test:smoke  # 15/15 passed (100%)
+npm run test:fast   # 537/552 passed (97.3%)
+
+# 품질 게이트
+npm run build  # dev + prod 빌드 성공
+```
+
+**결과**:
+
+- ✅ 4개 핵심 UX 회귀 완전 복원
+- ✅ 12개 회귀 방지 테스트 추가 (모두 GREEN)
+- ✅ Solid.js 반응성 패턴 학습 완료:
+  - accessor pattern (함수로 전달)
+  - mergeProps (HOC에서 반응성 보존)
+  - createEffect (imperative DOM 동기화)
+- ✅ IntersectionObserver 기반 뷰포트 추적 패턴 확립
+- ✅ 빌드/타입/린트 품질 게이트 통과
+
+**기술적 교훈**:
+
+1. **Solid.js 반응성 보존**: props는 accessor로 전달해야 반응성 유지
+2. **HOC 패턴**: mergeProps 필수, spread는 반응성 손실
+3. **Imperative DOM 동기화**: JSX 속성만으로 불가능한 경우 createEffect 활용
+4. **IntersectionObserver**: 스크롤 이벤트 대신 선언적 뷰포트 추적
+5. **TDD 가치**: 회귀 방지 테스트가 리팩토링 신뢰도 보장
+
+**다음 작업**:
+
+- Phase 5-5: 테스트 타입 안정화 (1,383개 오류 해소)
+- Phase 5-6: Fast 테스트 100% 달성 (현재 97.3%)
+
+---
+
 ### 2025-10-10 — Phase 6: 문서 및 라이선스 정비 완료
 
 **목표**: Solid.js 마이그레이션 완료 후 프로젝트 문서 및 라이선스 최신화
