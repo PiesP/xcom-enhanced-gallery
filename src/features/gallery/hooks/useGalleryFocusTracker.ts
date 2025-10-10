@@ -1,6 +1,7 @@
 import type { Accessor } from 'solid-js';
 import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
+import { globalTimerManager } from '../../../shared/utils/timer-management';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -20,6 +21,10 @@ export interface UseGalleryFocusTrackerOptions {
   rootMargin?: string;
   /** 후보로 고려할 최소 가시 비율 */
   minimumVisibleRatio?: number;
+  /** 스크롤 idle 시 자동 포커스를 수행할지 여부 */
+  shouldAutoFocus?: MaybeAccessor<boolean>;
+  /** 자동 포커스 지연(ms) */
+  autoFocusDebounce?: MaybeAccessor<number>;
 }
 
 export interface UseGalleryFocusTrackerReturn {
@@ -44,6 +49,7 @@ interface CandidateScore {
 
 const DEFAULT_THRESHOLD = [0.25, 0.5, 0.75];
 const DEFAULT_MIN_VISIBLE_RATIO = 0.05;
+const DEFAULT_AUTO_FOCUS_DELAY = 150;
 
 const solid = getSolid();
 const { createSignal, createEffect, createMemo, onCleanup, batch } = solid;
@@ -55,9 +61,13 @@ export function useGalleryFocusTracker({
   threshold = DEFAULT_THRESHOLD,
   rootMargin = '0px',
   minimumVisibleRatio = DEFAULT_MIN_VISIBLE_RATIO,
+  shouldAutoFocus = false,
+  autoFocusDebounce = DEFAULT_AUTO_FOCUS_DELAY,
 }: UseGalleryFocusTrackerOptions): UseGalleryFocusTrackerReturn {
   const containerAccessor = toAccessor(container);
   const isEnabledAccessor = toAccessor(isEnabled);
+  const shouldAutoFocusAccessor = toAccessor(shouldAutoFocus);
+  const autoFocusDelayAccessor = toAccessor(autoFocusDebounce);
 
   const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
   const [autoFocusIndex, setAutoFocusIndex] = createSignal<number | null>(null);
@@ -67,6 +77,8 @@ export function useGalleryFocusTracker({
   const entryCache = new Map<number, IntersectionObserverEntry>();
 
   let observer: IntersectionObserver | null = null;
+  let autoFocusTimerId: number | null = null;
+  let lastAutoFocusedIndex: number | null = null;
 
   const updateContainerFocusAttribute = (value: number | null) => {
     const containerElement = containerAccessor();
@@ -82,6 +94,80 @@ export function useGalleryFocusTracker({
 
   const scheduleSync = () => {
     recomputeFocus();
+  };
+
+  const clearAutoFocusTimer = () => {
+    if (autoFocusTimerId !== null) {
+      globalTimerManager.clearTimeout(autoFocusTimerId);
+      autoFocusTimerId = null;
+    }
+  };
+
+  const applyAutoFocus = (index: number, reason: string) => {
+    const element = itemElements.get(index);
+    if (!element?.isConnected) {
+      return;
+    }
+
+    if (document.activeElement === element) {
+      lastAutoFocusedIndex = index;
+      return;
+    }
+
+    try {
+      element.focus({ preventScroll: true });
+      lastAutoFocusedIndex = index;
+      logger.debug('useGalleryFocusTracker: auto focus applied', { index, reason });
+    } catch (error) {
+      try {
+        element.focus();
+        lastAutoFocusedIndex = index;
+        logger.debug('useGalleryFocusTracker: auto focus applied (fallback)', {
+          index,
+          reason,
+        });
+      } catch (fallbackError) {
+        logger.warn('useGalleryFocusTracker: auto focus failed', {
+          index,
+          reason,
+          error,
+          fallbackError,
+        });
+      }
+    }
+  };
+
+  const evaluateAutoFocus = (reason: string) => {
+    clearAutoFocusTimer();
+
+    if (!shouldAutoFocusAccessor()) {
+      return;
+    }
+
+    if (manualFocusIndex() !== null) {
+      return;
+    }
+
+    const targetIndex = autoFocusIndex();
+    if (targetIndex === null || Number.isNaN(targetIndex)) {
+      return;
+    }
+
+    const targetElement = itemElements.get(targetIndex);
+    if (!targetElement?.isConnected) {
+      return;
+    }
+
+    if (document.activeElement === targetElement && lastAutoFocusedIndex === targetIndex) {
+      return;
+    }
+
+    const delay = Math.max(0, autoFocusDelayAccessor());
+
+    autoFocusTimerId = globalTimerManager.setTimeout(() => {
+      applyAutoFocus(targetIndex, reason);
+      autoFocusTimerId = null;
+    }, delay);
   };
 
   const cleanupObserver = () => {
@@ -108,6 +194,7 @@ export function useGalleryFocusTracker({
     if (!containerElement || !isEnabledAccessor()) {
       setAutoFocusIndex(null);
       updateContainerFocusAttribute(null);
+      evaluateAutoFocus('disabled');
       return;
     }
 
@@ -142,9 +229,17 @@ export function useGalleryFocusTracker({
     });
 
     if (candidates.length === 0) {
+      if (entryCache.size === 0) {
+        const previousIndex = autoFocusIndex();
+        const resolvedIndex = previousIndex ?? getCurrentIndex();
+        updateContainerFocusAttribute(resolvedIndex);
+        return;
+      }
+
       const fallbackIndex = getCurrentIndex();
       setAutoFocusIndex(fallbackIndex);
       updateContainerFocusAttribute(fallbackIndex);
+      evaluateAutoFocus('fallback');
       return;
     }
 
@@ -163,6 +258,7 @@ export function useGalleryFocusTracker({
     const nextIndex = candidates[0]?.index ?? null;
     setAutoFocusIndex(nextIndex);
     updateContainerFocusAttribute(nextIndex);
+    evaluateAutoFocus('recompute');
   };
 
   const registerItem = (index: number, element: HTMLElement | null) => {
@@ -182,6 +278,7 @@ export function useGalleryFocusTracker({
       itemElements.delete(index);
       entryCache.delete(index);
       scheduleSync();
+      evaluateAutoFocus('register-remove');
       return;
     }
 
@@ -194,12 +291,15 @@ export function useGalleryFocusTracker({
     }
 
     scheduleSync();
+    evaluateAutoFocus('register');
   };
 
   const handleItemFocus = (index: number) => {
     setManualFocusIndex(index);
     logger.debug('useGalleryFocusTracker: manual focus applied', { index });
     updateContainerFocusAttribute(index);
+    clearAutoFocusTimer();
+    lastAutoFocusedIndex = index;
   };
 
   const handleItemBlur = (index: number) => {
@@ -207,6 +307,7 @@ export function useGalleryFocusTracker({
       setManualFocusIndex(null);
       logger.debug('useGalleryFocusTracker: manual focus cleared', { index });
       scheduleSync();
+      evaluateAutoFocus('manual-blur');
     }
   };
 
@@ -221,7 +322,12 @@ export function useGalleryFocusTracker({
 
   const forceSync = () => {
     recomputeFocus();
+    evaluateAutoFocus('force');
   };
+
+  createEffect(() => {
+    evaluateAutoFocus('effect');
+  });
 
   createEffect(() => {
     const enabled = isEnabledAccessor();
@@ -257,6 +363,8 @@ export function useGalleryFocusTracker({
 
     onCleanup(() => {
       cleanupObserver();
+      clearAutoFocusTimer();
+      lastAutoFocusedIndex = null;
     });
   });
 
@@ -267,6 +375,8 @@ export function useGalleryFocusTracker({
       setAutoFocusIndex(null);
     });
     itemElements.clear();
+    clearAutoFocusTimer();
+    lastAutoFocusedIndex = null;
   });
 
   return {

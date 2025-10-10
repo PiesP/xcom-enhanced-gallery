@@ -466,6 +466,7 @@
         "src/shared/utils/css-animations.ts",
         "src/shared/utils/signalSelector.ts",
         "src/shared/utils/viewport.ts",
+        "src/features/gallery/hooks/useGalleryFocusTracker.ts",
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
@@ -8659,6 +8660,23 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -13642,19 +13660,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/heroicons-react.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": false,
-      "rules": [
-        {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      ]
-    },
-    {
       "source": "src/shared/external/vendors/vendor-api.ts",
       "dependencies": [
         {
@@ -16056,23 +16061,13 @@
     }
   ],
   "summary": {
-    "violations": [
-      {
-        "type": "module",
-        "from": "src/shared/external/vendors/heroicons-react.ts",
-        "to": "src/shared/external/vendors/heroicons-react.ts",
-        "rule": {
-          "severity": "info",
-          "name": "no-orphans"
-        }
-      }
-    ],
+    "violations": [],
     "error": 0,
     "warn": 0,
-    "info": 1,
+    "info": 0,
     "ignore": 0,
-    "totalCruised": 267,
-    "totalDependenciesCruised": 725,
+    "totalCruised": 266,
+    "totalDependenciesCruised": 726,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

@@ -52,7 +52,7 @@ export interface UseGalleryScrollReturn {
   scrollDirection: Accessor<ScrollDirection>;
 }
 
-const SCROLL_IDLE_TIMEOUT = 150;
+export const SCROLL_IDLE_TIMEOUT = 150;
 
 export function useGalleryScroll({
   container,

@@ -23,7 +23,7 @@ import {
 } from '../../../../shared/utils/animations';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryScroll } from '../../hooks/useGalleryScroll';
+import { useGalleryScroll, SCROLL_IDLE_TIMEOUT } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { useGalleryFocusTracker } from '../../hooks/useGalleryFocusTracker';
 import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
@@ -39,7 +39,7 @@ import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 const solidAPI = getSolid();
 const { For } = solidAPI;
 
-const WHEEL_SCROLL_MULTIPLIER = 0.85;
+const WHEEL_SCROLL_MULTIPLIER = 1.2; // TODO: 설정에서 제어할 수 있도록 이동
 
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
@@ -89,18 +89,6 @@ function VerticalGalleryViewCore({
   const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = createSignal(-1);
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
 
-  const {
-    focusedIndex,
-    registerItem: registerFocusItem,
-    handleItemFocus,
-    handleItemBlur,
-    forceSync: forceFocusSync,
-  } = useGalleryFocusTracker({
-    container: () => containerEl(),
-    isEnabled: isVisible,
-    getCurrentIndex: currentIndex,
-  });
-
   const hideTimeoutRef = { current: null as number | null };
   const forceVisibleItems = new Set<number>();
 
@@ -122,13 +110,6 @@ function VerticalGalleryViewCore({
       });
     }
   });
-
-  createEffect(
-    on(currentIndex, () => {
-      setLastAutoScrolledIndex(-1);
-      forceFocusSync();
-    })
-  );
 
   const memoizedMediaItems = createMemo(() => {
     const items = mediaItems();
@@ -230,7 +211,7 @@ function VerticalGalleryViewCore({
     )
   );
 
-  useGalleryScroll({
+  const { isScrolling } = useGalleryScroll({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     onScroll: (delta, scrollTargetElement) => {
@@ -274,11 +255,33 @@ function VerticalGalleryViewCore({
         targetTop: clampedTop,
         timestamp: Date.now(),
         targetType: target === container ? 'container' : 'itemsContainer',
+        multiplier: WHEEL_SCROLL_MULTIPLIER,
       });
     },
     enabled: isVisible,
     blockTwitterScroll: true,
   });
+
+  const {
+    focusedIndex,
+    registerItem: registerFocusItem,
+    handleItemFocus,
+    handleItemBlur,
+    forceSync: forceFocusSync,
+  } = useGalleryFocusTracker({
+    container: () => containerEl(),
+    isEnabled: isVisible,
+    getCurrentIndex: currentIndex,
+    shouldAutoFocus: () => !isScrolling(),
+    autoFocusDebounce: SCROLL_IDLE_TIMEOUT,
+  });
+
+  createEffect(
+    on(currentIndex, () => {
+      setLastAutoScrolledIndex(-1);
+      forceFocusSync();
+    })
+  );
 
   useGalleryItemScroll(
     () => containerEl(),

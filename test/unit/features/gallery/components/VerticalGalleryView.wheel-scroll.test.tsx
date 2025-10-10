@@ -25,6 +25,7 @@ vi.mock('../../../../../src/features/gallery/hooks/useGalleryScroll', () => ({
     useGalleryScrollMock(
       options as { onScroll?: (delta: number, target: HTMLElement | null) => void }
     ),
+  SCROLL_IDLE_TIMEOUT: 150,
 }));
 
 vi.mock(
@@ -158,7 +159,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
       left?: number;
       behavior?: globalThis.ScrollBehavior;
     };
-    expect(callArg?.top).toBeGreaterThan(0);
+    expect(callArg?.top).toBeCloseTo(144, 5);
     expect(callArg?.left ?? 0).toBe(0);
     expect(scrollSpy).not.toHaveBeenCalled();
   });

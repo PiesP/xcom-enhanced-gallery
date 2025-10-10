@@ -314,6 +314,8 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       data-state={getToolbarDataState(toolbarState)}
       data-disabled={props.disabled}
       data-high-contrast={toolbarState.needsHighContrast}
+      data-focused-index={String(displayedIndex())}
+      data-current-index={String(props.currentIndex)}
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
@@ -357,7 +359,13 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
           data-gallery-element='counter-section'
         >
           <div class={styles.mediaCounterWrapper}>
-            <span class={styles.mediaCounter} aria-live='polite' data-gallery-element='counter'>
+            <span
+              class={styles.mediaCounter}
+              aria-live='polite'
+              data-gallery-element='counter'
+              data-focused-index={String(displayedIndex())}
+              data-current-index={String(props.currentIndex)}
+            >
               <span class={styles.currentIndex}>{displayedIndex() + 1}</span>
               <span class={styles.separator}>/</span>
               <span class={styles.totalCount}>{props.totalCount}</span>
@@ -442,7 +450,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 const ToolbarMemo = solid.memo<ToolbarProps>(ToolbarComponent);
 
 Object.defineProperty(ToolbarMemo, 'displayName', {
-  value: 'Toolbar',
+  value: 'memo(ToolbarComponent)',
   configurable: true,
 });
 
