@@ -55,6 +55,7 @@ const sharedResolve: ResolveOptions = {
     { find: '@features', replacement: resolve(__dirname, 'src/features') },
     { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
     { find: '@assets', replacement: resolve(__dirname, 'src/assets') },
+    { find: '@test', replacement: resolve(__dirname, 'test') },
     {
       find: 'solid-js/h',
       replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/h/dist/h.js')),

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, h } from '../../../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 // TODO: UnifiedButton이 구현되면 이 import를 교체
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';

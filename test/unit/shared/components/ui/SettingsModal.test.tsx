@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, h } from '../../../../utils/testing-library';
+import { cleanup, fireEvent, render, screen, h } from '@test/utils/testing-library';
 import {
   SettingsModal,
   type SettingsModalProps,

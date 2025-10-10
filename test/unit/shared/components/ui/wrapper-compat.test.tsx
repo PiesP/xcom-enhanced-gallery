@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, h } from '../../../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 // 기존 import 경로들 (현재 구현)
 import { Button as CurrentButton } from '../../../../../src/shared/components/ui/Button/Button';

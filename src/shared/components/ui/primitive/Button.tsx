@@ -7,7 +7,7 @@ import type { JSX } from 'solid-js';
 import { getSolid } from '@shared/external/vendors';
 import './Button.css';
 
-const { createMemo, splitProps } = getSolid();
+const { createMemo, splitProps, mergeProps } = getSolid();
 
 export interface ButtonProps
   extends Omit<
@@ -86,20 +86,24 @@ export function Button(props: ButtonProps): JSX.Element {
     local.selected !== undefined ? (local.selected ? 'true' : 'false') : local['aria-pressed'];
   const ariaBusy = local.loading ? true : local['aria-busy'];
 
-  return (
-    <button
-      {...others}
-      type={(local.type as ButtonProps['type']) ?? 'button'}
-      class={effectiveClass()}
-      disabled={Boolean(local.disabled || local.loading)}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role={resolvedRole}
-      tabIndex={resolvedTabIndex}
-      aria-pressed={ariaPressed}
-      aria-busy={ariaBusy}
-    >
-      {local.children}
-    </button>
+  const buttonProps = mergeProps(
+    {
+      role: 'button' as const,
+      tabIndex: 0,
+    },
+    others,
+    {
+      type: (local.type as ButtonProps['type']) ?? 'button',
+      class: effectiveClass(),
+      disabled: Boolean(local.disabled || local.loading),
+      onClick: handleClick,
+      onKeyDown: handleKeyDown,
+      role: resolvedRole,
+      tabIndex: resolvedTabIndex,
+      'aria-pressed': ariaPressed,
+      'aria-busy': ariaBusy,
+    }
   );
+
+  return <button {...buttonProps}>{local.children}</button>;
 }

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { cwd } from 'node:process';
-import { cleanup, render, screen } from '../../../utils/testing-library';
+import { cleanup, render, screen } from '@test/utils/testing-library';
 import { initializeVendors } from '@shared/external/vendors';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 

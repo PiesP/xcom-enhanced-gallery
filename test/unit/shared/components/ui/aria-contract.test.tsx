@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, h } from '../../../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 // Phase S1 RED: UnifiedButton 통합 후 ARIA 표준 검증
 import { Button as UnifiedButton } from '../../../../../src/shared/components/ui/Button/Button';

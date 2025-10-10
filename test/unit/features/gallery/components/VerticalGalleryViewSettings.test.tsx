@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup, waitFor } from '../../../../utils/testing-library';
+import { render, fireEvent, screen, cleanup, waitFor } from '@test/utils/testing-library';
 
 // 문제가 되는 VerticalGalleryView 대신 더 간단한 테스트 대상으로 변경
 // 실제로는 ToolbarWithSettings 컴포넌트의 설정 모달 기능을 테스트
@@ -81,7 +81,7 @@ describe('VerticalGalleryView - Settings Integration (Simplified)', () => {
       expect(global.IntersectionObserver || window.IntersectionObserver).toBeDefined();
 
       // 모킹된 IntersectionObserver가 안전하게 작동하는지 확인
-      const mockObserver = new IntersectionObserver(() => {}, {});
+      const mockObserver = new globalThis.IntersectionObserver(() => {}, {});
       expect(mockObserver).toBeDefined();
       expect(typeof mockObserver.observe).toBe('function');
       expect(typeof mockObserver.disconnect).toBe('function');

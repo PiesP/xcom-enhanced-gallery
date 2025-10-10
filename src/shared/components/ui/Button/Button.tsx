@@ -178,6 +178,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
           local.ref(element ?? null);
         }
       }}
+      role='button'
       type={local.type}
       form={local.form}
       autofocus={local.autoFocus}
