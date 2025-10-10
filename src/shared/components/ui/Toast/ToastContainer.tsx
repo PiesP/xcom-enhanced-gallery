@@ -1,143 +1,95 @@
 /**
- * @fileoverview Toast Container Component
- * @version 3.0.0 - Phase 3 StandardProps 시스템 적용
+ * @fileoverview Toast Container Component (Solid.js)
  */
 
-import { getPreact, getPreactCompat } from '../../../external/vendors';
-import { Toast } from './Toast';
+import { getSolid, type JSXElement } from '@shared/external/vendors';
+import { useSelector } from '@shared/utils/signalSelector';
 import { UnifiedToastManager, type ToastItem } from '@/shared/services/UnifiedToastManager';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
+import { Toast } from './Toast';
 import styles from './ToastContainer.module.css';
-import type { VNode } from '../../../external/vendors';
-import { useSelector } from '@/shared/utils/signalSelector';
 
-// 통합된 ToastContainer Props (표준 우선, 레거시 fallback)
 export interface ToastContainerProps extends Partial<StandardToastContainerProps> {
-  // 레거시 호환성을 위한 추가 속성들
   className?: string;
-  // 표준 이벤트 핸들러들
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
 }
 
-/**
- * Toast 컨테이너 컴포넌트
- *
- * 화면에 고정되어 모든 토스트 알림을 표시합니다.
- * Phase 3: StandardProps 시스템 적용으로 일관된 인터페이스 제공
- */
-function ToastContainerCore({
-  className = '',
-  position = 'top-right',
-  maxToasts = 5,
-  'data-testid': testId,
-  'aria-label': ariaLabel,
-  'aria-describedby': ariaDescribedBy,
-  role,
-  tabIndex,
-  onFocus,
-  onBlur,
-  onKeyDown,
-}: ToastContainerProps = {}): VNode {
-  const { h } = getPreact();
-  const manager = UnifiedToastManager.getInstance();
-  // Selector 기반으로 토스트 목록을 구독하여 불필요한 리렌더를 줄입니다.
-  const currentToasts = useSelector<ToastItem[], ToastItem[]>(
-    manager.signal as unknown as { value: ToastItem[] },
-    (s: ToastItem[]) => s
-  );
+const solid = getSolid();
+const { mergeProps, splitProps, createMemo, For } = solid;
 
-  // 표준화된 클래스명 생성
-  const containerClass = ComponentStandards.createClassName(
-    styles.container,
-    styles[position] || styles['top-right'], // position에 따른 스타일
-    className
-  );
-
-  // 표준화된 ARIA 속성 생성
-  const ariaPropsData: Partial<BaseComponentProps> = {
-    'aria-label': ariaLabel || 'Toast 알림 컨테이너',
-    role: role || 'region',
-  };
-
-  if (ariaDescribedBy) {
-    ariaPropsData['aria-describedby'] = ariaDescribedBy;
-  }
-
-  if (typeof tabIndex === 'number') {
-    ariaPropsData.tabIndex = tabIndex;
-  }
-
-  const ariaProps = ComponentStandards.createAriaProps(ariaPropsData);
-
-  // 표준화된 테스트 속성 생성
-  const testProps = ComponentStandards.createTestProps(testId || 'toast-container');
-
-  // maxToasts 제한 적용
-  const limitedToasts = currentToasts.slice(0, maxToasts);
-
-  return h(
-    'div',
-    {
-      className: containerClass,
-      'data-position': position,
-      'data-max-toasts': maxToasts,
-      'aria-live': 'polite',
-      'aria-atomic': 'false',
-      ...ariaProps,
-      ...testProps,
-      onFocus,
-      onBlur,
-      onKeyDown,
-    } as Record<string, unknown>,
-    limitedToasts.map(toast =>
-      h(Toast, {
-        key: toast.id,
-        toast,
-        onRemove: id => manager.remove(id),
-      })
-    )
-  );
-}
-
-// ToastContainer props 비교 함수
-const areToastContainerPropsEqual = (
-  prevProps: ToastContainerProps,
-  nextProps: ToastContainerProps
-): boolean => {
-  // 구조적 변경이 적은 props들 우선 체크
-  if (prevProps.position !== nextProps.position) return false;
-  if (prevProps.maxToasts !== nextProps.maxToasts) return false;
-  if (prevProps.className !== nextProps.className) return false;
-
-  // 이벤트 핸들러들 (참조 비교)
-  if (prevProps.onFocus !== nextProps.onFocus) return false;
-  if (prevProps.onBlur !== nextProps.onBlur) return false;
-  if (prevProps.onKeyDown !== nextProps.onKeyDown) return false;
-
-  // 기타 props
-  if (prevProps['data-testid'] !== nextProps['data-testid']) return false;
-  if (prevProps['aria-label'] !== nextProps['aria-label']) return false;
-  if (prevProps['aria-describedby'] !== nextProps['aria-describedby']) return false;
-  if (prevProps.role !== nextProps.role) return false;
-  if (prevProps.tabIndex !== nextProps.tabIndex) return false;
-
-  return true;
+const defaults: Required<Pick<ToastContainerProps, 'position' | 'maxToasts'>> = {
+  position: 'top-right',
+  maxToasts: 5,
 };
 
-// memo로 최적화된 ToastContainer
-const { memo } = getPreactCompat();
-const MemoizedToastContainer = memo(ToastContainerCore, areToastContainerPropsEqual);
+export function ToastContainer(rawProps: ToastContainerProps = {}): JSXElement {
+  const props = mergeProps(defaults, rawProps);
+  const [local, rest] = splitProps(props, [
+    'className',
+    'position',
+    'maxToasts',
+    'data-testid',
+    'aria-label',
+    'aria-describedby',
+    'role',
+    'tabIndex',
+    'onFocus',
+    'onBlur',
+    'onKeyDown',
+  ]);
 
-// displayName 설정
-Object.defineProperty(MemoizedToastContainer, 'displayName', {
-  value: 'ToastContainer',
-  writable: false,
-  configurable: true,
-});
+  const manager = UnifiedToastManager.getInstance();
+  const currentToasts = useSelector(
+    manager.signal as unknown as { value: ToastItem[] },
+    state => state
+  );
 
-// 메모이제이션된 컴포넌트를 export
-export const ToastContainer = MemoizedToastContainer;
+  const limitedToasts = createMemo(() => currentToasts().slice(0, local.maxToasts));
+
+  const containerClass = () =>
+    ComponentStandards.createClassName(
+      styles.container,
+      styles[local.position] || styles['top-right'],
+      local.className
+    );
+
+  const ariaData: Partial<BaseComponentProps> = {
+    'aria-label': local['aria-label'] ?? 'Toast 알림 컨테이너',
+    role: local.role ?? 'region',
+  };
+
+  if (local['aria-describedby']) {
+    ariaData['aria-describedby'] = local['aria-describedby'];
+  }
+
+  if (typeof local.tabIndex === 'number') {
+    ariaData.tabIndex = local.tabIndex;
+  }
+
+  const ariaProps = ComponentStandards.createAriaProps(ariaData);
+  const testProps = ComponentStandards.createTestProps(local['data-testid'] ?? 'toast-container');
+
+  return (
+    <div
+      {...rest}
+      class={containerClass()}
+      data-position={local.position}
+      data-max-toasts={local.maxToasts}
+      aria-live='polite'
+      aria-atomic='false'
+      {...ariaProps}
+      {...testProps}
+      onFocus={local.onFocus}
+      onBlur={local.onBlur}
+      onKeyDown={local.onKeyDown}
+    >
+      <For each={limitedToasts()}>
+        {toast => <Toast toast={toast} onRemove={id => manager.remove(id)} />}
+      </For>
+    </div>
+  );
+}

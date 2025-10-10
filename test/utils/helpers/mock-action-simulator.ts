@@ -8,11 +8,11 @@ import { mockUserscriptAPI, mockApiState } from '../../__mocks__/userscript-api.
 /**
  * Mock API 상태 설정
  */
-export function enableAutoDownload() {
+export function enableAutoDownload(): void {
   mockApiState.isAutoDownloadEnabled = true;
 }
 
-export function disableAutoDownload() {
+export function disableAutoDownload(): void {
   mockApiState.isAutoDownloadEnabled = false;
 }
 
@@ -20,12 +20,12 @@ export function disableAutoDownload() {
  * 다운로드 액션 시뮬레이션
  * 실제 애플리케이션에서 다운로드가 트리거될 때의 동작을 모방
  */
-export function simulateDownloadAction(imageUrl, filename) {
+export function simulateDownloadAction(imageUrl: string, filename: string): void {
   // 실제 애플리케이션에서 일어나는 다운로드 로직 시뮬레이션
   globalThis.setTimeout(() => {
     // GM_download 호출 시뮬레이션
-    if (globalThis.GM_download && typeof globalThis.GM_download === 'function') {
-      globalThis.GM_download(imageUrl, filename);
+    if ((globalThis as any).GM_download && typeof (globalThis as any).GM_download === 'function') {
+      (globalThis as any).GM_download(imageUrl, filename);
     }
   }, 50);
 }
@@ -34,18 +34,32 @@ export function simulateDownloadAction(imageUrl, filename) {
  * 알림 액션 시뮬레이션
  * 실제 애플리케이션에서 알림이 트리거될 때의 동작을 모방
  */
-export function simulateNotificationAction(options) {
+export function simulateNotificationAction(options: {
+  title?: string;
+  text?: string;
+  image?: string;
+}): void {
   globalThis.setTimeout(() => {
-    if (globalThis.GM_notification && typeof globalThis.GM_notification === 'function') {
-      globalThis.GM_notification(options);
+    if (
+      (globalThis as any).GM_notification &&
+      typeof (globalThis as any).GM_notification === 'function'
+    ) {
+      (globalThis as any).GM_notification(options);
     }
   }, 50);
+}
+
+interface ClickOptions {
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
 }
 
 /**
  * 클릭 이벤트 시뮬레이션
  */
-export function simulateClick(element, options = {}) {
+export function simulateClick(element: HTMLElement, options: ClickOptions = {}): void {
   if (!element) return;
 
   const event = new globalThis.MouseEvent('click', {
@@ -65,13 +79,16 @@ export function simulateClick(element, options = {}) {
 /**
  * 키보드 이벤트 시뮬레이션 (다운로드 트리거 포함)
  */
-export function simulateKeyboardDownload(key, imageElement) {
+export function simulateKeyboardDownload(
+  key: string,
+  imageElement?: HTMLImageElement | null
+): void {
   if (key === 'd' || key === 'D') {
     // 현재 활성 이미지 찾기
     const currentImage =
       imageElement ||
-      globalThis.document.querySelector('[data-current="true"]') ||
-      globalThis.document.querySelector('img[src*="pbs.twimg.com"]');
+      globalThis.document.querySelector<HTMLImageElement>('[data-current="true"]') ||
+      globalThis.document.querySelector<HTMLImageElement>('img[src*="pbs.twimg.com"]');
 
     if (currentImage && currentImage.src) {
       const filename = extractFilenameFromUrl(currentImage.src);
@@ -83,7 +100,7 @@ export function simulateKeyboardDownload(key, imageElement) {
 /**
  * 자동 다운로드 설정 기반 다운로드 시뮬레이션
  */
-export function simulateAutoDownload(imageElement) {
+export function simulateAutoDownload(imageElement: HTMLImageElement): boolean {
   if (mockApiState.isAutoDownloadEnabled) {
     const filename = extractFilenameFromUrl(imageElement.src);
     simulateDownloadAction(imageElement.src, filename);
@@ -95,7 +112,7 @@ export function simulateAutoDownload(imageElement) {
 /**
  * 대량 다운로드 시뮬레이션
  */
-export function simulateBulkDownload(imageElements) {
+export function simulateBulkDownload(imageElements: HTMLImageElement[]): void {
   imageElements.forEach((img, index) => {
     globalThis.setTimeout(() => {
       const filename = extractFilenameFromUrl(img.src);
@@ -107,13 +124,13 @@ export function simulateBulkDownload(imageElements) {
 /**
  * 오류 상황 시뮬레이션
  */
-export function simulateNetworkError() {
+export function simulateNetworkError(): void {
   globalThis.setTimeout(() => {
     simulateNotificationAction({
       text: '다운로드 중 오류가 발생했습니다.',
       title: '오류',
       timeout: 3000,
-    });
+    } as any);
   }, 100);
 }
 
@@ -121,7 +138,10 @@ export function simulateNetworkError() {
  * 진행률 업데이트 시뮬레이션
  * CI 캐시 갱신을 위한 수정
  */
-export function simulateProgressUpdate(progressElement, targetPercent = 100) {
+export function simulateProgressUpdate(
+  progressElement: HTMLElement | null,
+  targetPercent = 100
+): void {
   let currentPercent = 0;
   const incrementStep = 20;
   const interval = globalThis.setInterval(() => {
@@ -145,7 +165,7 @@ export function simulateProgressUpdate(progressElement, targetPercent = 100) {
 /**
  * URL에서 파일명 추출 헬퍼
  */
-function extractFilenameFromUrl(url) {
+function extractFilenameFromUrl(url: string): string {
   try {
     const urlObj = new globalThis.URL(url);
     const pathname = urlObj.pathname;
@@ -159,16 +179,16 @@ function extractFilenameFromUrl(url) {
 /**
  * Mock API 상태 확인 헬퍼
  */
-export function getMockApiCallCount(apiName) {
-  const mockFunction = mockUserscriptAPI[apiName];
+export function getMockApiCallCount(apiName: string): number {
+  const mockFunction = (mockUserscriptAPI as any)[apiName];
   return mockFunction && mockFunction.mock ? mockFunction.mock.calls.length : 0;
 }
 
 /**
  * Mock API 호출 인자 확인 헬퍼
  */
-export function getMockApiCallArgs(apiName, callIndex = 0) {
-  const mockFunction = mockUserscriptAPI[apiName];
+export function getMockApiCallArgs(apiName: string, callIndex = 0): any[] | null {
+  const mockFunction = (mockUserscriptAPI as any)[apiName];
   return mockFunction && mockFunction.mock && mockFunction.mock.calls[callIndex]
     ? mockFunction.mock.calls[callIndex]
     : null;
@@ -177,7 +197,7 @@ export function getMockApiCallArgs(apiName, callIndex = 0) {
 /**
  * 키보드 이벤트 시뮬레이션
  */
-export function simulateKeypress(key, options = {}) {
+export function simulateKeypress(key: string, options: ClickOptions = {}): void {
   const keyEvent = new globalThis.KeyboardEvent('keydown', {
     key,
     bubbles: true,
@@ -193,6 +213,6 @@ export function simulateKeypress(key, options = {}) {
 
   // 특정 키에 대한 특별한 처리
   if (key === 'd' || key === 'D') {
-    simulateKeyboardDownload(key);
+    simulateKeyboardDownload(key, null);
   }
 }

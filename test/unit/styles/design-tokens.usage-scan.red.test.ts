@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 
 function toPosix(p: string): string {
   return p.replace(/\\/g, '/');
@@ -59,7 +59,6 @@ describe('LEGACY-TOKENS-PRUNE-01: unused legacy aliases scan (RED)', () => {
       const usageNeedle = `var(${token})`;
       let used = false;
       for (const f of files) {
-        const rel = toPosix(relative(ROOT, f));
         if (toPosix(f) === TOKENS_FILE) continue; // 선언 파일은 제외
         const text = readFileSync(f, 'utf8');
         if (text.includes(usageNeedle)) {

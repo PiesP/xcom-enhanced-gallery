@@ -4,15 +4,38 @@
  * 간결하고 효율적인 테스트 환경 구성
  */
 
-import preact from '@preact/preset-vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
+import type { ResolveOptions } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
 import os from 'node:os';
 import { fileURLToPath, URL } from 'node:url';
-// note: no fs usage
+// note: minimal fs usage for debug logging
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const debugLogPath = resolve(__dirname, './vitest-debug.log');
+const appendDebug = (message: string) => {
+  try {
+    const timestamp = new Date().toISOString();
+    appendFileSync(debugLogPath, `[${timestamp}] ${message}\n`, { encoding: 'utf8' });
+  } catch (error) {
+    console.error('[vitest-config][appendDebug] failed', error);
+  }
+};
+
+const logStage = (stage: string, payload: string) => {
+  appendDebug(`[${stage}] ${payload}`);
+};
+
+try {
+  writeFileSync(debugLogPath, '', { encoding: 'utf8', flag: 'w' });
+} catch (error) {
+  console.error('[vitest-config] failed to initialize debug log', error);
+}
+
+appendDebug('[vitest-config] loaded');
 const CPU_COUNT = Math.max(1, (os.cpus?.() || []).length || 4);
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 // Helpers
@@ -26,14 +49,51 @@ const FEATURES_DIR = toPosix(resolve(__dirname, './src/features'));
 const SHARED_DIR = toPosix(resolve(__dirname, './src/shared'));
 const ASSETS_DIR = toPosix(resolve(__dirname, './src/assets'));
 
-const sharedResolve = {
-  extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
+const sharedResolve: ResolveOptions = {
   alias: [
-    { find: '@features', replacement: FEATURES_DIR },
-    { find: '@shared', replacement: SHARED_DIR },
-    { find: '@assets', replacement: ASSETS_DIR },
-    { find: '@', replacement: SRC_DIR },
+    { find: '@', replacement: resolve(__dirname, 'src') },
+    { find: '@features', replacement: resolve(__dirname, 'src/features') },
+    { find: '@shared', replacement: resolve(__dirname, 'src/shared') },
+    { find: '@assets', replacement: resolve(__dirname, 'src/assets') },
+    {
+      find: 'solid-js/h',
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/h/dist/h.js')),
+    },
+    {
+      find: 'solid-js/web',
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/web/dist/web.js')),
+    },
+    {
+      find: 'solid-js/store',
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/store/dist/store.js')),
+    },
+    {
+      find: 'solid-js/jsx-runtime',
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/h/jsx-runtime/dist/jsx.js')),
+    },
+    {
+      find: 'solid-js/jsx-dev-runtime',
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/h/jsx-runtime/dist/jsx.js')),
+    },
+    {
+      find: /^solid-js$/,
+      replacement: toPosix(resolve(__dirname, 'node_modules/solid-js/dist/solid.js')),
+    },
   ],
+  // Force browser conditions to avoid SSR builds in jsdom tests
+  // Solid.js exports have 'node' → server.js and 'browser' → solid.js
+  // We must prioritize 'browser' over 'node' even though Vitest runs in Node
+  conditions: ['browser', 'development', 'import'],
+};
+
+const solidEsbuildConfig = {
+  jsx: 'automatic',
+  jsxImportSource: 'solid-js',
+} as const;
+
+const solidTransformMode = {
+  web: [/\.[jt]sx?$/],
+  ssr: [/\.[jt]sx?$/],
 } as const;
 
 export default defineConfig({
@@ -61,19 +121,25 @@ export default defineConfig({
       enforce: 'pre',
       configResolved(cfg) {
         try {
-          console.log('[xeg-log-config] final resolve.alias =', cfg.resolve?.alias);
+          logStage('configResolved', `alias=${JSON.stringify(cfg.resolve?.alias ?? null)}`);
           const names = (cfg.plugins || []).map(p => p.name + (p.enforce ? `(${p.enforce})` : ''));
-          console.log('[xeg-log-config] plugins order:', names.join(' -> '));
+          logStage('configResolved', `plugins=${names.join(' -> ')}`);
         } catch {}
       },
     },
+    solidPlugin({ dev: true, hot: false }),
     // TS paths를 테스트에서도 동일하게 사용하도록 활성화
     tsconfigPaths({ projects: ['tsconfig.json'] }),
-    // Preact preset
-    preact(),
   ].filter(Boolean) as any,
 
+  esbuild: solidEsbuildConfig,
   resolve: sharedResolve,
+  define: {
+    'import.meta.env.SSR': false,
+    'import.meta.env.DEV': true,
+    __BROWSER__: true,
+    __DEV__: true,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -81,10 +147,12 @@ export default defineConfig({
     isolate: true, // 테스트 파일 간 격리
     testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
     hookTimeout: 25000,
+    transformMode: solidTransformMode,
 
     // Bare import로 인식되는 @features/@shared/@assets/@* 별칭을
     // 외부 의존성으로 최적화(deps optimize)하지 말고 Vitest(vite-node)
     // 파이프라인에서 인라인 처리하도록 지정. Windows에서 alias 미적용 문제 방지.
+    // solid-js도 inline으로 처리하여 browser conditions를 강제 적용
     server: {
       deps: {
         inline: [
@@ -96,6 +164,8 @@ export default defineConfig({
           /^@shared$/,
           /^@assets$/,
           /^@$/,
+          /^solid-js/,
+          '@solidjs/testing-library',
         ],
       },
     },
@@ -168,6 +238,7 @@ export default defineConfig({
       {
         // 개별 프로젝트에도 동일한 resolve를 명시적으로 주입 (Windows vite-node 호환)
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'smoke',
           globals: true,
@@ -183,6 +254,7 @@ export default defineConfig({
               storageQuota: 10000000,
             },
           },
+          transformMode: solidTransformMode,
           include: [
             'test/unit/main/main-initialization.test.ts',
             'test/unit/viewport-utils.test.ts',
@@ -195,6 +267,7 @@ export default defineConfig({
       // 빠른 단위 테스트: red/벤치/퍼포먼스 제외
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'fast',
           globals: true,
@@ -218,11 +291,13 @@ export default defineConfig({
             'test/unit/performance/**',
             '**/*.bench.test.*',
           ],
+          transformMode: solidTransformMode,
         },
       },
       // 전체 단위 테스트(성능/벤치 포함 안함)
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'unit',
           globals: true,
@@ -239,11 +314,13 @@ export default defineConfig({
           },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
         },
       },
       // 스타일 관련 테스트(토큰/테마/정책)
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'styles',
           globals: true,
@@ -263,11 +340,13 @@ export default defineConfig({
             'test/unit/styles/**/*.{test,spec}.{ts,tsx}',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
         },
       },
       // 성능/벤치마크 전용
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'performance',
           globals: true,
@@ -288,11 +367,13 @@ export default defineConfig({
             '**/*.bench.test.*',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
         },
       },
       // 단계별(phase-*)/최종 스위트
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'phases',
           globals: true,
@@ -309,11 +390,13 @@ export default defineConfig({
           },
           include: ['test/phase-*.*', 'test/final/**/*.{test,spec}.{ts,tsx}'],
           exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
         },
       },
       // 리팩토링 진행/가드 스위트
       {
         resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
         test: {
           name: 'refactor',
           globals: true,
@@ -336,6 +419,7 @@ export default defineConfig({
             'test/refactoring/event-manager-integration.test.ts',
             'test/refactoring/service-diagnostics-integration.test.ts',
           ],
+          transformMode: solidTransformMode,
         },
       },
     ],

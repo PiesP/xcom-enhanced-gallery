@@ -4,7 +4,7 @@
  * UI는 조용히 대체합니다(텍스트 렌더링 없이). PC 전용 이벤트/벤더 getter 정책을 준수합니다.
  */
 
-import { getPreact, getPreactHooks, type ComponentChildren } from '@shared/external/vendors';
+import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
 import { ToastManager } from '@shared/services/UnifiedToastManager';
 import { languageService } from '@shared/services/LanguageService';
 
@@ -12,11 +12,16 @@ type Props = {
   children?: ComponentChildren;
 };
 
-export function ErrorBoundary(props: Props) {
-  const { h, Fragment } = getPreact();
-  const { useErrorBoundary } = getPreactHooks();
+export function ErrorBoundary({ children }: Props): JSXElement {
+  const { ErrorBoundary: SolidErrorBoundary } = getSolid();
+  let reportedError: unknown = null;
 
-  const [error] = useErrorBoundary((err: unknown) => {
+  const reportError = (err: unknown): void => {
+    if (reportedError === err) {
+      return;
+    }
+    reportedError = err;
+
     try {
       const title = languageService.getString('messages.errorBoundary.title');
       const body = languageService.getFormattedString('messages.errorBoundary.body', {
@@ -26,14 +31,24 @@ export function ErrorBoundary(props: Props) {
     } catch {
       // 토스트/언어 서비스 실패는 조용히 무시
     }
-  });
+  };
 
-  if (error) {
-    // fallback UI: 텍스트 없는 조용한 컨테이너 반환(토스트로만 사용자 통지)
-    return h(Fragment, {});
-  }
-
-  return props.children ?? h(Fragment, {});
+  return (
+    <SolidErrorBoundary
+      fallback={(err, reset) => {
+        reportError(err);
+        return (
+          <>
+            {reset && typeof reset === 'function' && (
+              <span style='display: none' data-xeg-error-boundary-reset />
+            )}
+          </>
+        );
+      }}
+    >
+      {children ?? <></>}
+    </SolidErrorBoundary>
+  );
 }
 
 export default ErrorBoundary;

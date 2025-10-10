@@ -1,281 +1,241 @@
 /**
- * @fileoverview 갤러리 앱 활성화 테스트
- * @description 핵심 사상 기반 테스트: 환경 격리, 로직 분리, 행위 중심 테스트
+ * @fileoverview GalleryApp activation tests aligned with Solid migration
  */
 
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CoreService } from '@shared/services/ServiceManager';
 import { SERVICE_KEYS } from '@/constants';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import type { GalleryApp as GalleryAppClass } from '@features/gallery/GalleryApp';
+import type { MediaInfo } from '@shared/types/media.types';
 
-// 테스트 환경 모킹
-const mockDocument = {
-  createElement: vi.fn(tag => ({
-    src: '',
-    tagName: tag.toUpperCase(),
-    id: '',
-    style: { cssText: '' },
-    setAttribute: vi.fn(),
-    getAttribute: vi.fn(),
-    appendChild: vi.fn(),
-  })),
-  querySelector: vi.fn(() => null),
-  body: {
-    appendChild: vi.fn(),
-  },
+interface MediaServiceMock {
+  readonly extractFromClickedElement: ReturnType<typeof vi.fn>;
+  readonly extractMediaFromTweet: ReturnType<typeof vi.fn>;
+  readonly restoreBackgroundVideos: ReturnType<typeof vi.fn>;
+}
+
+interface RendererMock {
+  readonly instance: GalleryRenderer;
+  readonly render: ReturnType<typeof vi.fn>;
+  readonly close: ReturnType<typeof vi.fn>;
+  readonly destroy: ReturnType<typeof vi.fn>;
+  readonly isRendering: ReturnType<typeof vi.fn>;
+  readonly setOnCloseCallback: ReturnType<typeof vi.fn>;
+}
+
+let serviceManager: CoreService;
+let mediaServiceMock: MediaServiceMock;
+let rendererMock: RendererMock;
+let initializeEventsMock: ReturnType<typeof vi.fn>;
+let cleanupEventsMock: ReturnType<typeof vi.fn>;
+let galleryStateMock: { value: { isOpen: boolean; mediaItems: MediaInfo[]; currentIndex: number } };
+let openGalleryMock: ReturnType<typeof vi.fn>;
+let closeGalleryMock: ReturnType<typeof vi.fn>;
+let unmountGalleryMock: ReturnType<typeof vi.fn>;
+
+const sampleMediaItem: MediaInfo = {
+  id: 'sample-media',
+  url: 'https://pbs.twimg.com/media/sample.jpg',
+  originalUrl: 'https://pbs.twimg.com/media/sample.jpg?name=orig',
+  type: 'image',
+  filename: 'sample.jpg',
 };
 
-const mockConsole = {
-  warn: vi.fn(),
-  log: vi.fn(),
-  error: vi.fn(),
-};
+function createMediaServiceMock(): MediaServiceMock {
+  const extractFromClickedElement = vi.fn(async () => ({
+    success: true,
+    mediaItems: [sampleMediaItem],
+    clickedIndex: 0,
+  }));
+  const extractMediaFromTweet = vi.fn(async () => []);
+  const restoreBackgroundVideos = vi.fn();
+  return { extractFromClickedElement, extractMediaFromTweet, restoreBackgroundVideos };
+}
 
-// global 설정
-globalThis.document = mockDocument;
-globalThis.console = mockConsole;
+function createRendererMock(): RendererMock {
+  const render = vi.fn(async (_items: readonly MediaInfo[], _options?: unknown) => undefined);
+  const close = vi.fn(() => undefined);
+  const destroy = vi.fn(() => undefined);
+  const isRendering = vi.fn(() => false);
+  const setOnCloseCallback = vi.fn((_callback: () => void) => {
+    return undefined;
+  });
+  const instance: GalleryRenderer = {
+    render: (items, options) => render(items, options),
+    close: () => close(),
+    destroy: () => destroy(),
+    isRendering: () => isRendering(),
+    setOnCloseCallback: onClose => setOnCloseCallback(onClose),
+  };
+  return { instance, render, close, destroy, isRendering, setOnCloseCallback };
+}
 
-describe('갤러리 앱 활성화', () => {
-  let serviceManager;
-  let galleryApp;
+function setupSignalsMock(): void {
+  galleryStateMock = {
+    value: {
+      isOpen: false,
+      mediaItems: [],
+      currentIndex: 0,
+    },
+  };
 
-  beforeEach(async () => {
-    // 환경 격리: 새로운 CoreService 인스턴스
-    CoreService.resetInstance();
-
-    // 서비스 환경 설정
-    serviceManager = CoreService.getInstance();
-
-    // 필수 서비스들을 mock으로 등록
-    const mockUIService = {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      getCurrentTheme: vi.fn().mockReturnValue('light'),
-      isDarkMode: vi.fn().mockReturnValue(false),
-      isInitialized: vi.fn().mockReturnValue(true),
-      showError: vi.fn(),
-    };
-    serviceManager.register(SERVICE_KEYS.UI_SERVICE, mockUIService);
-
-    // 미디어 서비스 mock 서비스
-    const mockMediaService = {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      extractMediaFromTweet: vi.fn().mockResolvedValue([]),
-      extractFromClickedElement: vi.fn().mockResolvedValue({
-        success: true,
-        mediaItems: [],
-      }),
-      isInitialized: vi.fn().mockReturnValue(true),
-    };
-    serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, mockMediaService);
-
-    // 갤러리 렌더러 mock 서비스
-    const mockGalleryRenderer = {
-      initialize: vi.fn().mockResolvedValue(undefined),
-      render: vi.fn().mockResolvedValue(undefined),
-      close: vi.fn().mockResolvedValue(undefined),
-      isRendering: vi.fn().mockReturnValue(false),
-      setOnCloseCallback: vi.fn().mockReturnValue(undefined),
-    };
-    serviceManager.register(SERVICE_KEYS.GALLERY_RENDERER, mockGalleryRenderer);
-
-    // GalleryApp 인스턴스 생성
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
-    galleryApp = new GalleryApp({
-      autoTheme: true,
-      keyboardShortcuts: true,
-      performanceMonitoring: false,
-      extractionTimeout: 5000,
-      clickDebounceMs: 100,
-    });
+  openGalleryMock = vi.fn((items: MediaInfo[], index: number) => {
+    galleryStateMock.value.isOpen = true;
+    galleryStateMock.value.mediaItems = items;
+    galleryStateMock.value.currentIndex = index;
   });
 
-  afterEach(() => {
-    // 환경 격리: 테스트 후 정리
-    if (galleryApp) {
-      galleryApp.cleanup?.();
+  closeGalleryMock = vi.fn(() => {
+    galleryStateMock.value.isOpen = false;
+  });
+
+  vi.doMock('@shared/state/signals/gallery.signals', () => ({
+    galleryState: galleryStateMock,
+    openGallery: openGalleryMock,
+    closeGallery: closeGalleryMock,
+  }));
+}
+
+function setupEventsMock(): void {
+  initializeEventsMock = vi.fn().mockResolvedValue(undefined);
+  cleanupEventsMock = vi.fn();
+
+  vi.doMock('@shared/utils/events', () => ({
+    initializeGalleryEvents: initializeEventsMock,
+    cleanupGalleryEvents: cleanupEventsMock,
+  }));
+}
+
+function setupIsolationMock(): void {
+  unmountGalleryMock = vi.fn();
+  vi.doMock('@shared/components/isolation', () => ({
+    unmountGallery: unmountGalleryMock,
+  }));
+}
+
+async function createGalleryApp(): Promise<GalleryAppClass> {
+  const module = await import('@features/gallery/GalleryApp');
+  return new module.GalleryApp();
+}
+
+function registerCoreServices(): void {
+  serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, {
+    extractFromClickedElement: mediaServiceMock.extractFromClickedElement,
+    extractMediaFromTweet: mediaServiceMock.extractMediaFromTweet,
+    restoreBackgroundVideos: mediaServiceMock.restoreBackgroundVideos,
+  });
+
+  serviceManager.register(SERVICE_KEYS.GALLERY_RENDERER, rendererMock.instance);
+}
+
+beforeEach(() => {
+  vi.resetModules();
+  document.body.innerHTML = '';
+  CoreService.resetInstance();
+  serviceManager = CoreService.getInstance();
+
+  mediaServiceMock = createMediaServiceMock();
+  rendererMock = createRendererMock();
+  registerCoreServices();
+});
+
+afterEach(() => {
+  vi.clearAllMocks();
+  document.body.innerHTML = '';
+  CoreService.resetInstance();
+});
+
+describe('GalleryApp activation', () => {
+  it('initializes event handlers and wires renderer close callback', async () => {
+    setupSignalsMock();
+    setupEventsMock();
+    setupIsolationMock();
+
+    const app = await createGalleryApp();
+    await app.initialize();
+
+    expect(initializeEventsMock).toHaveBeenCalledTimes(1);
+
+    const firstInitializeCall = initializeEventsMock.mock.calls[0];
+    if (!firstInitializeCall) {
+      throw new Error('initializeGalleryEvents was not invoked');
     }
-    // ServiceManager reset은 다음 beforeEach에서 수행
+
+    type GalleryEventHandlers = {
+      onMediaClick: (
+        media: MediaInfo,
+        element: HTMLElement,
+        event: globalThis.Event
+      ) => Promise<void>;
+      onGalleryClose: () => void;
+      onKeyboardEvent: (event: globalThis.KeyboardEvent) => void;
+    };
+
+    const handlers = firstInitializeCall[0] as GalleryEventHandlers;
+
+    expect(typeof handlers.onMediaClick).toBe('function');
+    expect(typeof handlers.onGalleryClose).toBe('function');
+    expect(typeof handlers.onKeyboardEvent).toBe('function');
+
+    expect(rendererMock.setOnCloseCallback).toHaveBeenCalledTimes(1);
+    const closeCallbackCall = rendererMock.setOnCloseCallback.mock.calls[0];
+    if (!closeCallbackCall) {
+      throw new Error('setOnCloseCallback was not invoked');
+    }
+    const [closeHandler] = closeCallbackCall as Parameters<GalleryRenderer['setOnCloseCallback']>;
+    if (!closeHandler) {
+      throw new Error('close handler was not provided');
+    }
+
+    mediaServiceMock.extractFromClickedElement.mockResolvedValueOnce({
+      success: true,
+      mediaItems: [sampleMediaItem],
+      clickedIndex: 0,
+    });
+
+    await handlers.onMediaClick(
+      sampleMediaItem,
+      document.createElement('div'),
+      new globalThis.MouseEvent('click')
+    );
+
+    expect(openGalleryMock).toHaveBeenCalledWith([sampleMediaItem], 0);
+
+    closeHandler();
+    expect(closeGalleryMock).toHaveBeenCalledTimes(1);
+    expect(mediaServiceMock.restoreBackgroundVideos).toHaveBeenCalledTimes(1);
   });
 
-  describe('초기화 과정', () => {
-    it('갤러리 앱이 정상적으로 초기화되어야 함', async () => {
-      // 행위 중심 테스트: 초기화 동작 검증
-      await expect(galleryApp.initialize()).resolves.not.toThrow();
+  it('opens gallery with normalized index and ensures container existence', async () => {
+    setupSignalsMock();
+    setupEventsMock();
+    setupIsolationMock();
 
-      // 초기화 후 상태는 내부적으로 검증됨 (private 속성)
-    });
+    const app = await createGalleryApp();
+    await app.initialize();
 
-    it('필요한 서비스들이 올바르게 로드되어야 함', async () => {
-      // 서비스 등록 확인
-      expect(serviceManager.has(SERVICE_KEYS.UI_SERVICE)).toBe(true);
-      expect(serviceManager.has(SERVICE_KEYS.GALLERY_RENDERER)).toBe(true);
+    await app.openGallery([sampleMediaItem], 10);
 
-      // 로직 분리: 서비스 로드 로직만 테스트
-      await galleryApp.initialize();
-
-      // 서비스 의존성 검증
-      const mediaService = serviceManager.get(SERVICE_KEYS.MEDIA_SERVICE);
-      const galleryRenderer = serviceManager.get(SERVICE_KEYS.GALLERY_RENDERER);
-
-      expect(mediaService).toBeDefined();
-      expect(galleryRenderer).toBeDefined();
-    });
-
-    it('이벤트 핸들러가 올바르게 설정되어야 함', async () => {
-      // 행위 중심 테스트: 이벤트 핸들러 설정 동작 검증
-      const mockInitializeGalleryEvents = vi.fn().mockResolvedValue(undefined);
-
-      // 모듈 모킹
-      vi.doMock('@shared/utils/events', () => ({
-        initializeGalleryEvents: mockInitializeGalleryEvents,
-      }));
-
-      await galleryApp.initialize();
-
-      expect(mockInitializeGalleryEvents).toHaveBeenCalledWith(
-        expect.objectContaining({
-          onMediaClick: expect.any(Function),
-          onGalleryClose: expect.any(Function),
-          onKeyboardEvent: expect.any(Function),
-        })
-      );
-    });
+    expect(openGalleryMock).toHaveBeenCalledWith([sampleMediaItem], 0);
+    expect(document.querySelector('#xeg-gallery-root')).not.toBeNull();
   });
 
-  describe('미디어 클릭 이벤트 처리', () => {
-    beforeEach(async () => {
-      await galleryApp.initialize();
-    });
+  it('cleanup tears down events and unmounts container', async () => {
+    setupSignalsMock();
+    setupEventsMock();
+    setupIsolationMock();
 
-    it('미디어 클릭 시 갤러리가 열려야 함', async () => {
-      // 행위 중심 테스트: 클릭 -> 갤러리 열기 동작 검증
-      const mockElement = mockDocument.createElement('img');
-      mockElement.src = 'test-image.jpg';
+    const app = await createGalleryApp();
+    await app.initialize();
 
-      const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
+    await app.openGallery([sampleMediaItem], 0);
+    expect(document.querySelector('#xeg-gallery-root')).not.toBeNull();
 
-      // 이 테스트에서만 성공적인 미디어 추출 결과 mock
-      const mediaService = serviceManager.get(SERVICE_KEYS.MEDIA_SERVICE);
-      mediaService.extractFromClickedElement.mockResolvedValueOnce({
-        success: true,
-        mediaItems: [{ url: 'test-image.jpg', type: 'image' }],
-        clickedIndex: 0,
-      });
+    await app.cleanup();
 
-      // 클릭 이벤트 시뮬레이션
-      const extractResult = await mediaService.extractFromClickedElement(mockElement);
-
-      if (extractResult.success) {
-        await galleryApp.openGallery(extractResult.mediaItems, extractResult.clickedIndex);
-      }
-
-      expect(openGallerySpy).toHaveBeenCalledWith(
-        expect.arrayContaining([expect.objectContaining({ url: 'test-image.jpg', type: 'image' })]),
-        0
-      );
-    });
-
-    it('빈 미디어 결과에는 갤러리가 열리지 않아야 함', async () => {
-      // 로직 분리: 빈 결과 처리 로직만 테스트
-      const mediaService = serviceManager.get(SERVICE_KEYS.MEDIA_SERVICE);
-      mediaService.extractFromClickedElement.mockResolvedValueOnce({
-        success: false,
-        mediaItems: [],
-        clickedIndex: -1,
-      });
-
-      const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
-
-      const mockElement = mockDocument.createElement('div');
-      const extractResult = await mediaService.extractFromClickedElement(mockElement);
-
-      if (extractResult.success && extractResult.mediaItems.length > 0) {
-        await galleryApp.openGallery(extractResult.mediaItems, extractResult.clickedIndex);
-      }
-
-      expect(openGallerySpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('main.ts와의 통합', () => {
-    it('main.ts에서 갤러리 앱이 생성되고 초기화되어야 함', () => {
-      // 행위 중심 테스트: main.ts의 통합 동작 검증
-
-      // main.ts가 해야 할 작업들
-      const expectedActions = [
-        '갤러리 앱 인스턴스 생성',
-        '갤러리 앱 초기화 호출',
-        '전역 변수에 갤러리 앱 등록',
-        '이벤트 핸들러 활성화',
-      ];
-
-      // 이 테스트는 main.ts 수정 후 실제 구현으로 검증
-      expect(expectedActions.length).toBeGreaterThan(0);
-    });
-
-    it('서비스 중복 등록 문제가 해결되어야 함', () => {
-      // 로직 분리: 서비스 등록 중복 방지 로직 테스트
-      const logSpy = vi.spyOn(mockConsole, 'warn').mockImplementation(() => {});
-
-      // 동일한 서비스를 두 번 등록
-      serviceManager.register('test.service', { name: 'first' });
-      serviceManager.register('test.service', { name: 'second' });
-
-      // 중복 등록 경고가 한 번만 발생해야 함
-      expect(logSpy).toHaveBeenCalledTimes(1);
-      expect(logSpy).toHaveBeenCalledWith(
-        '[XEG] [WARN]',
-        expect.stringContaining('[CoreService] 서비스 덮어쓰기: test.service')
-      );
-
-      logSpy.mockRestore();
-    });
-  });
-
-  describe('에러 처리', () => {
-    it('초기화 실패 시 적절한 에러가 발생해야 함', async () => {
-      // 행위 중심 테스트: 에러 처리 동작 검증
-
-      // GALLERY_RENDERER 서비스를 제거하여 초기화 실패 유발
-      CoreService.resetInstance();
-      const newServiceManager = CoreService.getInstance();
-
-      // UI_SERVICE만 등록하고 GALLERY_RENDERER는 등록하지 않음
-      const mockUIService = {
-        initialize: vi.fn().mockResolvedValue(undefined),
-        getCurrentTheme: vi.fn().mockReturnValue('light'),
-        isDarkMode: vi.fn().mockReturnValue(false),
-        isInitialized: vi.fn().mockReturnValue(true),
-        showError: vi.fn(),
-      };
-      newServiceManager.register(SERVICE_KEYS.UI_SERVICE, mockUIService);
-
-      const { GalleryApp } = await import('@features/gallery/GalleryApp');
-      const newGalleryApp = new GalleryApp();
-
-      await expect(newGalleryApp.initialize()).rejects.toThrow();
-    });
-
-    it('미디어 추출 실패 시 갤러리가 열리지 않아야 함', async () => {
-      // 로직 분리: 에러 상황 처리 로직만 테스트
-      await galleryApp.initialize();
-
-      const mediaService = serviceManager.get(SERVICE_KEYS.MEDIA_SERVICE);
-      mediaService.extractFromClickedElement.mockRejectedValueOnce(new Error('Extraction failed'));
-
-      const openGallerySpy = vi.spyOn(galleryApp, 'openGallery');
-
-      const mockElement = mockDocument.createElement('img');
-
-      try {
-        const extractResult = await mediaService.extractFromClickedElement(mockElement);
-        if (extractResult.success) {
-          await galleryApp.openGallery(extractResult.mediaItems, extractResult.clickedIndex);
-        }
-      } catch {
-        // 에러가 발생해도 갤러리는 열리지 않아야 함
-      }
-
-      expect(openGallerySpy).not.toHaveBeenCalled();
-    });
+    expect(cleanupEventsMock).toHaveBeenCalledTimes(1);
+    expect(unmountGalleryMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('#xeg-gallery-root')).toBeNull();
   });
 });

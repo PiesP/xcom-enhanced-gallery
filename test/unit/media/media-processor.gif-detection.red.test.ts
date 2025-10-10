@@ -16,7 +16,7 @@ describe('MediaProcessor - GIF 타입 감지 (RED)', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(1);
-      const item = result.data[0];
+      const item = result.data[0]!;
       expect(item.type).toBe('gif');
       // variants는 존재하나 원본 url은 name=orig를 포함할 수 있음
       expect(item.url).toMatch(

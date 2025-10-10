@@ -75,7 +75,7 @@ describe('성능 테스트: 가상 스크롤링 제거 후에도 성능 유지',
 
     // 컴포넌트에서 memo 사용 확인
     const componentSource = VerticalGalleryView.toString();
-    expect(componentSource).toMatch(/memo|useMemo/);
+    expect(componentSource).toMatch(/memo|createMemo/);
   });
 
   it('기존 성능 최적화 로직이 유지되어야 한다', async () => {

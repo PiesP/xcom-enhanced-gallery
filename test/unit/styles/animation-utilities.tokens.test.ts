@@ -12,7 +12,7 @@ describe('Animation Utilities Token Policy', () => {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
 
-  function readCSS(rel) {
+  function readCSS(rel: string): string {
     const projectRoot = resolve(__dirname, '..', '..', '..');
     const filePath = resolve(projectRoot, 'src', ...rel.split('/'));
     return readFileSync(filePath, 'utf-8');

@@ -4,9 +4,28 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// 테스트 전역 스파이 보관용 (any로 선언해 파서 문제 회피)
-let addEventSpy;
-let removeEventSpy;
+const createAddEventSpy = () => vi.spyOn(window, 'addEventListener');
+const createRemoveEventSpy = () => vi.spyOn(window, 'removeEventListener');
+
+type WindowAddEventSpy = ReturnType<typeof createAddEventSpy>;
+type WindowRemoveEventSpy = ReturnType<typeof createRemoveEventSpy>;
+type WindowEventListenerCall = Parameters<typeof window.addEventListener>;
+
+let addEventSpy: WindowAddEventSpy | undefined;
+let removeEventSpy: WindowRemoveEventSpy | undefined;
+
+function requireSpies(): { add: WindowAddEventSpy; remove: WindowRemoveEventSpy } {
+  if (!addEventSpy || !removeEventSpy) {
+    throw new Error('window event spies are not initialized');
+  }
+
+  return { add: addEventSpy, remove: removeEventSpy };
+}
+
+const countEvents = (
+  calls: readonly WindowEventListenerCall[],
+  eventType: WindowEventListenerCall[0]
+): number => calls.filter(([type]) => type === eventType).length;
 
 // 모듈 캐시를 리셋하고 필요한 모듈을 모킹한 뒤 main을 동적 임포트
 async function importMainWithMocks() {
@@ -124,16 +143,18 @@ describe('main start/cleanup idempotency', () => {
   it('start 재호출 시 추가 등록이 없어야 함 (idempotent)', async () => {
     const main = await importMainWithMocks();
 
+    const { add, remove } = requireSpies();
+
     const vendors = (await import('@/shared/external/vendors')) as unknown as any;
 
     // 외부 노이즈 제거 후 1차 시작
-    addEventSpy.mockClear();
-    removeEventSpy.mockClear();
+    add.mockClear();
+    remove.mockClear();
     await main.start();
 
-    const callsAfterFirst = addEventSpy.mock.calls.slice();
-    const beforeUnloadAfterFirst = callsAfterFirst.filter(c => c[0] === 'beforeunload').length;
-    const pagehideAfterFirst = callsAfterFirst.filter(c => c[0] === 'pagehide').length;
+    const callsAfterFirst = add.mock.calls.slice() as WindowEventListenerCall[];
+    const beforeUnloadAfterFirst = countEvents(callsAfterFirst, 'beforeunload');
+    const pagehideAfterFirst = countEvents(callsAfterFirst, 'pagehide');
 
     // 2차 시작(이미 시작됨) - 추가 등록이 없어야 함
     await main.start();
@@ -143,9 +164,9 @@ describe('main start/cleanup idempotency', () => {
     expect((vendors as any).__calls.initialize).toBe(1);
 
     // 2차 호출 이후 추가 등록 없음(델타 0)
-    const callsAfterSecond = addEventSpy.mock.calls.slice();
-    const beforeUnloadAfterSecond = callsAfterSecond.filter(c => c[0] === 'beforeunload').length;
-    const pagehideAfterSecond = callsAfterSecond.filter(c => c[0] === 'pagehide').length;
+    const callsAfterSecond = add.mock.calls.slice() as WindowEventListenerCall[];
+    const beforeUnloadAfterSecond = countEvents(callsAfterSecond, 'beforeunload');
+    const pagehideAfterSecond = countEvents(callsAfterSecond, 'pagehide');
 
     expect(beforeUnloadAfterSecond - beforeUnloadAfterFirst).toBe(0);
     expect(pagehideAfterSecond - pagehideAfterFirst).toBe(0);
@@ -154,28 +175,26 @@ describe('main start/cleanup idempotency', () => {
   it('cleanup은 글로벌 핸들러를 제거하고 재시작 시 중복 등록이 없어야 함', async () => {
     const main = await importMainWithMocks();
 
-    // 첫 시작: 노이즈 제거 후 등록 수 스냅샷
-    addEventSpy.mockClear();
-    removeEventSpy.mockClear();
-    await main.start();
+    const { add, remove } = requireSpies();
 
-    const addCallsFirst = addEventSpy.mock.calls.slice();
-    const beforeFirst = addCallsFirst.filter(c => c[0] === 'beforeunload').length;
-    const pagehideFirst = addCallsFirst.filter(c => c[0] === 'pagehide').length;
+    // 첫 시작: 노이즈 제거 후 등록 수 스냅샷
+    add.mockClear();
+    remove.mockClear();
+    await main.start();
 
     await main.cleanup();
 
-    const removeCalls = removeEventSpy.mock.calls.slice();
-    expect(removeCalls.filter(c => c[0] === 'beforeunload').length).toBeGreaterThanOrEqual(1);
-    expect(removeCalls.filter(c => c[0] === 'pagehide').length).toBeGreaterThanOrEqual(1);
+    const removeCalls = remove.mock.calls.slice() as WindowEventListenerCall[];
+    expect(countEvents(removeCalls, 'beforeunload')).toBeGreaterThanOrEqual(1);
+    expect(countEvents(removeCalls, 'pagehide')).toBeGreaterThanOrEqual(1);
 
     // 재시작: 다시 카운터 초기화 후 델타 1 검증
-    addEventSpy.mockClear();
-    removeEventSpy.mockClear();
+    add.mockClear();
+    remove.mockClear();
     await main.start();
-    const addCallsSecond = addEventSpy.mock.calls.slice();
-    const beforeSecond = addCallsSecond.filter(c => c[0] === 'beforeunload').length;
-    const pagehideSecond = addCallsSecond.filter(c => c[0] === 'pagehide').length;
+    const addCallsSecond = add.mock.calls.slice() as WindowEventListenerCall[];
+    const beforeSecond = countEvents(addCallsSecond, 'beforeunload');
+    const pagehideSecond = countEvents(addCallsSecond, 'pagehide');
     expect(beforeSecond).toBeGreaterThanOrEqual(1);
     expect(pagehideSecond).toBeGreaterThanOrEqual(1);
   });

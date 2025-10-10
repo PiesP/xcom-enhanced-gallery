@@ -8,8 +8,8 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 describe('Toolbar Button Design Consistency', () => {
-  let toolbarCssContent;
-  let buttonCssContent;
+  let toolbarCssContent: string;
+  let buttonCssContent: string;
 
   beforeEach(() => {
     // CSS 파일 내용 읽기
@@ -27,42 +27,31 @@ describe('Toolbar Button Design Consistency', () => {
   });
 
   describe('Border Radius Consistency', () => {
-    it('fitButton은 CSS 변수를 사용해야 한다', () => {
-      // Given: CSS 파일 내용 검사
-      // When: fitButton 스타일 찾기
-      const fitButtonMatch = toolbarCssContent.match(
-        /\.fitButton[^{]*\{[^}]*border-radius:\s*([^;]+);/
-      );
-
-      // Then: CSS 변수를 사용해야 함
-      expect(fitButtonMatch).toBeTruthy();
-      const borderRadiusValue = fitButtonMatch[1].trim();
-      expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
-    });
-
     it('mediaCounter는 CSS 변수를 사용해야 한다', () => {
-      // Given: CSS 파일 내용 검사
-      // When: mediaCounter 스타일 찾기
       const mediaCounterMatch = toolbarCssContent.match(
-        /\.mediaCounter[^{]*\{[^}]*border-radius:\s*([^;]+);/
+        /\.mediaCounter[^{}]*\{[^}]*border-radius:\s*([^;]+);/
       );
 
-      // Then: CSS 변수를 사용해야 함
       expect(mediaCounterMatch).toBeTruthy();
-      const borderRadiusValue = mediaCounterMatch[1].trim();
+      if (!mediaCounterMatch) {
+        throw new Error('mediaCounter border-radius not found');
+      }
+
+      const borderRadiusValue = mediaCounterMatch[1]?.trim();
       expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
     });
 
     it('fitModeGroup 래퍼가 없어도 버튼은 일관된 radius를 유지해야 한다', () => {
-      // Given: CSS 파일 내용 검사
-      // When: fitButton 스타일 찾기
       const fitButtonMatch = toolbarCssContent.match(
-        /\.fitButton[^\{]*\{[^}]*border-radius:\s*([^;]+);/
+        /\.fitButton[^{]*\{[^}]*border-radius:\s*([^;]+);/
       );
 
-      // Then: CSS 변수를 사용해야 함
       expect(fitButtonMatch).toBeTruthy();
-      const borderRadiusValue = fitButtonMatch[1].trim();
+      if (!fitButtonMatch) {
+        throw new Error('fitButton border-radius not found');
+      }
+
+      const borderRadiusValue = fitButtonMatch[1]?.trim();
       expect(borderRadiusValue).toBe('var(--xeg-radius-md)');
     });
 
@@ -71,8 +60,10 @@ describe('Toolbar Button Design Consistency', () => {
       // When: border-radius 값 찾기
       const borderRadiusMatches = buttonCssContent.match(/border-radius:\s*([^;]+);/g);
 
-      // Then: 모든 border-radius가 --xeg-radius-* 변수를 사용해야 함
       expect(borderRadiusMatches).toBeTruthy();
+      if (!borderRadiusMatches) {
+        throw new Error('Button border-radius declarations not found');
+      }
       borderRadiusMatches.forEach(match => {
         const value = match.replace('border-radius:', '').replace(';', '').trim();
         if (value.includes('var(')) {

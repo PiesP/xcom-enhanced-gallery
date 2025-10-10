@@ -233,9 +233,9 @@ describe('Architecture Dependency Rules', () => {
         // vendors getter 사용 패턴 검사
         const vendorGetterPatterns = [
           /getFflate\(\)/g,
-          /getPreact\(\)/g,
-          /getPreactHooks\(\)/g,
-          /getPreactSignals\(\)/g,
+          /getSolid\(\)/g,
+          /getSolid\(\)/g,
+          /getSolid\(\)/g,
           /getMotion\(\)/g,
         ];
 

@@ -4,14 +4,14 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/preact';
+import { cleanup } from '../utils/testing-library';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
-import { getPreact } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 
 // Mock external dependencies
 vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({
+  getSolid: () => ({
     // 실제 DOM 구조와 유사한 mock h 구현
     h: function (tag, props, ...children) {
       const flatChildren = children.flat().filter(Boolean);
@@ -33,14 +33,14 @@ vi.mock('@shared/external/vendors', () => ({
     },
     Fragment: 'Fragment',
   }),
-  getPreactHooks: () => ({
-    useState: vi.fn(initial => [initial, vi.fn()]),
-    useEffect: vi.fn(),
-    useMemo: vi.fn(fn => fn()),
-    useCallback: vi.fn(fn => fn),
-    useRef: vi.fn(() => ({ current: null })),
+  getSolid: () => ({
+    createSignal: vi.fn(initial => [initial, vi.fn()]),
+    createEffect: vi.fn(),
+    createMemo: vi.fn(fn => fn()),
+    createMemo: vi.fn(fn => fn),
+    createSignal: vi.fn(() => ({ current: null })),
   }),
-  getPreactCompat: () => ({
+  getSolid: () => ({
     memo: vi.fn(component => component),
   }),
 }));
@@ -194,7 +194,7 @@ describe('Toolbar Characterization (P0)', () => {
     };
 
     it('툴바 기본 구조가 올바르게 생성되어야 함', () => {
-      const { h } = getPreact();
+      const { h } = getSolid();
 
       // h 함수로 직접 렌더링 시도
       const result = h(Toolbar, mockProps);
@@ -205,7 +205,7 @@ describe('Toolbar Characterization (P0)', () => {
     });
 
     it('네비게이션 버튼들이 존재해야 함', () => {
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 버튼 탐지 로직
@@ -237,7 +237,7 @@ describe('Toolbar Characterization (P0)', () => {
     });
 
     it('다운로드 버튼이 존재해야 함', () => {
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 요소 수집 함수
@@ -275,7 +275,7 @@ describe('Toolbar Characterization (P0)', () => {
     });
 
     it('핏 모드 버튼 그룹이 존재해야 함', () => {
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 요소 수집 함수
@@ -327,7 +327,7 @@ describe('Toolbar Characterization (P0)', () => {
         onOpenSettings: vi.fn(),
       };
 
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 요소 수집 함수
@@ -371,7 +371,7 @@ describe('Toolbar Characterization (P0)', () => {
         onClose: vi.fn(),
       };
 
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 요소 수집 함수
@@ -425,7 +425,7 @@ describe('Toolbar Characterization (P0)', () => {
         onClose: vi.fn(),
       };
 
-      const { h } = getPreact();
+      const { h } = getSolid();
       const result = h(Toolbar, mockProps);
 
       // 개선된 요소 수집 함수

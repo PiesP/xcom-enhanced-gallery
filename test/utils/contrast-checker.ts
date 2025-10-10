@@ -17,7 +17,11 @@ export function extractLightness(oklchString: string): number {
   if (!match) {
     throw new Error(`Invalid OKLCH format: ${oklchString}`);
   }
-  return parseFloat(match[1]);
+  const [, lightness] = match;
+  if (typeof lightness !== 'string' || lightness.length === 0) {
+    throw new Error(`Missing lightness component in OKLCH string: ${oklchString}`);
+  }
+  return parseFloat(lightness);
 }
 
 /**

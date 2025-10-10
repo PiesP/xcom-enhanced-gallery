@@ -3,7 +3,7 @@
  * @description Toolbar 컴포넌트의 헤드리스 로직 분리
  */
 
-import { getPreactHooks } from '../external/vendors';
+import { getSolid } from '../external/vendors';
 
 type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -46,7 +46,7 @@ interface ButtonProps {
 interface ToolbarState {
   canGoPrevious: boolean;
   canGoNext: boolean;
-  currentFitMode: FitMode;
+  currentFitMode: () => FitMode;
   mediaCounter: {
     current: number;
     total: number;
@@ -55,8 +55,8 @@ interface ToolbarState {
 }
 
 export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
-  const { useState } = getPreactHooks();
-  const [currentFitMode, setCurrentFitMode] = useState<FitMode>('fitContainer');
+  const { createSignal } = getSolid();
+  const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('fitContainer');
 
   // 네비게이션 경계 계산
   const canGoPrevious = props.currentIndex > 0;
@@ -147,7 +147,7 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
       case 'fitOriginal':
         return {
           ...baseProps,
-          selected: currentFitMode === 'original',
+          selected: currentFitMode() === 'original',
           onClick: () => {
             actions.setFitMode('original');
             props.onFitOriginal();
@@ -157,7 +157,7 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
       case 'fitWidth':
         return {
           ...baseProps,
-          selected: currentFitMode === 'fitWidth',
+          selected: currentFitMode() === 'fitWidth',
           onClick: () => {
             actions.setFitMode('fitWidth');
             props.onFitWidth();
@@ -167,7 +167,7 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
       case 'fitHeight':
         return {
           ...baseProps,
-          selected: currentFitMode === 'fitHeight',
+          selected: currentFitMode() === 'fitHeight',
           onClick: () => {
             actions.setFitMode('fitHeight');
             props.onFitHeight();
@@ -177,7 +177,7 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
       case 'fitContainer':
         return {
           ...baseProps,
-          selected: currentFitMode === 'fitContainer',
+          selected: currentFitMode() === 'fitContainer',
           onClick: () => {
             actions.setFitMode('fitContainer');
             props.onFitContainer();

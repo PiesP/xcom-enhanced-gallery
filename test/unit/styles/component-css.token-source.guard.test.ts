@@ -68,7 +68,11 @@ describe('Component CSS token source guard', () => {
       COLOR_PROPS.lastIndex = 0;
       let propMatch: RegExpExecArray | null;
       while ((propMatch = COLOR_PROPS.exec(css))) {
-        const value = propMatch[3].trim();
+        const rawValue = propMatch[3];
+        if (!rawValue) {
+          continue;
+        }
+        const value = rawValue.trim();
         const usesToken = /var\(\s*--[a-z0-9-]+\s*(?:,[^)]+)?\)/i.test(value);
         const isAllowedKeyword = allowedKeywords.some(k => new RegExp(`\\b${k}\\b`).test(value));
         const hasRawKeyword = /(\bwhite\b|\bblack\b)/i.test(value);

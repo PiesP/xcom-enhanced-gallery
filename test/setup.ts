@@ -3,6 +3,43 @@
  * 새로운 모듈화된 테스트 인프라 사용
  */
 
+// ================================
+// Solid.js 클라이언트 모드 설정 (모든 import 전에!)
+// ================================
+
+// Solid.js가 브라우저 환경으로 인식하도록 설정
+// SSR 플래그를 false로 명시적으로 설정
+type SolidHydrationRuntime = {
+  _$HY?: {
+    running: boolean;
+    context: unknown;
+    owner: unknown;
+  };
+  IS_SERVER?: boolean;
+  _SERVER_?: boolean;
+};
+
+if (typeof globalThis !== 'undefined') {
+  const solidRuntime = globalThis as typeof globalThis & SolidHydrationRuntime;
+  solidRuntime._$HY = solidRuntime._$HY || {
+    running: false,
+    context: null,
+    owner: null,
+  };
+  solidRuntime.IS_SERVER = false;
+  solidRuntime._SERVER_ = false;
+}
+
+// Node 환경 변수도 설정
+if (typeof process !== 'undefined' && process.env) {
+  process.env.SSR = 'false';
+  process.env.IS_SERVER = 'false';
+}
+
+// ================================
+// 전역 imports
+// ================================
+
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
@@ -31,7 +68,6 @@ function setupURLPolyfill() {
   // window 레벨에도 설정 (안전하게)
   try {
     if (typeof window !== 'undefined') {
-      // @ts-expect-error — jsdom Window type
       window.URL = URLPolyfill;
     }
   } catch {
@@ -54,30 +90,38 @@ setupURLPolyfill();
 // Vendors 선행 초기화 (모듈 로드 시 1회)
 // 자동 초기화 경고/신호 폴백 경고를 줄이기 위해 테스트 시작 전에 초기화합니다.
 // 중복 호출은 StaticVendorManager에서 안전하게 처리됩니다.
-try {
-  // vitest는 ESM을 지원하므로 top-level await 사용 가능
-  const vendors = await import('../src/shared/external/vendors/index.ts');
-  if (typeof vendors.initializeVendors === 'function') {
-    await vendors.initializeVendors();
+const vendorInitializationPromise = (async () => {
+  try {
+    const vendors = await import('../src/shared/external/vendors/index.ts');
+    if (typeof vendors.initializeVendors === 'function') {
+      await vendors.initializeVendors();
+    }
+  } catch {
+    // 테스트 환경에서만 사용되므로 실패해도 치명적이지 않음
   }
-} catch {
-  // 테스트 환경에서만 사용되므로 실패해도 치명적이지 않음
-}
+})();
 
 // jsdom 환경 호환성 향상을 위한 polyfill 설정
 function setupJsdomPolyfills() {
   // window.scrollTo polyfill (jsdom에서 지원하지 않음)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.scrollTo) {
-    globalThis.window.scrollTo = function (x, y) {
-      // 테스트에서는 실제 스크롤이 필요하지 않으므로 빈 함수로 구현
-      globalThis.window.scrollX = x || 0;
-      globalThis.window.scrollY = y || 0;
+    globalThis.window.scrollTo = function (
+      optionsOrX?: ScrollToOptions | number,
+      y?: number
+    ): void {
+      if (typeof optionsOrX === 'object') {
+        globalThis.window.scrollX = optionsOrX.left || 0;
+        globalThis.window.scrollY = optionsOrX.top || 0;
+      } else {
+        globalThis.window.scrollX = optionsOrX || 0;
+        globalThis.window.scrollY = y || 0;
+      }
     };
   }
 
   // navigation API polyfill (jsdom limitation)
-  if (typeof globalThis.window !== 'undefined' && !globalThis.window.navigation) {
-    globalThis.window.navigation = {
+  if (typeof globalThis.window !== 'undefined') {
+    (globalThis.window as any).navigation = {
       navigate: () => Promise.resolve(),
       addEventListener: () => {},
       removeEventListener: () => {},
@@ -86,7 +130,7 @@ function setupJsdomPolyfills() {
 
   // document.elementsFromPoint polyfill (jsdom limitation)
   if (typeof globalThis.document !== 'undefined' && !globalThis.document.elementsFromPoint) {
-    globalThis.document.elementsFromPoint = function (x, y) {
+    globalThis.document.elementsFromPoint = function (_x: number, _y: number): Element[] {
       // 테스트 환경에서는 빈 배열 반환
       return [];
     };
@@ -94,28 +138,55 @@ function setupJsdomPolyfills() {
 
   // matchMedia polyfill 강화
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.matchMedia) {
-    globalThis.window.matchMedia = function (query) {
-      return {
+    globalThis.window.matchMedia = (query: string): MediaQueryList =>
+      ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: function () {},
-        removeListener: function () {},
-        addEventListener: function () {},
-        removeEventListener: function () {},
-        dispatchEvent: function () {
-          return true;
-        },
-      };
-    };
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        dispatchEvent: () => true,
+      }) as MediaQueryList;
   }
 
   // IntersectionObserver polyfill (jsdom limitation)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.IntersectionObserver) {
-    globalThis.window.IntersectionObserver = class MockIntersectionObserver {
-      constructor(callback, options) {
+    const createDomRectReadOnly = (size: number): DOMRectReadOnly =>
+      ({
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: size,
+        bottom: size,
+        width: size,
+        height: size,
+        toJSON: () => ({
+          x: 0,
+          y: 0,
+          top: 0,
+          left: 0,
+          right: size,
+          bottom: size,
+          width: size,
+          height: size,
+        }),
+      }) as DOMRectReadOnly;
+
+    (globalThis.window as any).IntersectionObserver = class MockIntersectionObserver {
+      callback: IntersectionObserverCallback;
+      options: IntersectionObserverInit | undefined;
+      root: Element | Document | null;
+      rootMargin: string;
+      thresholds: readonly number[];
+      _observing: Set<Element>;
+      _isDisconnected: boolean;
+
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
         this.callback = callback;
-        this.options = options;
+        this.options = options ?? undefined;
         this.root = options?.root || null;
         this.rootMargin = options?.rootMargin || '0px';
         this.thresholds = Array.isArray(options?.threshold)
@@ -125,7 +196,7 @@ function setupJsdomPolyfills() {
         this._isDisconnected = false;
       }
 
-      observe(element) {
+      observe(element: Element): void {
         if (element && typeof element === 'object' && !this._isDisconnected) {
           this._observing.add(element);
 
@@ -138,30 +209,9 @@ function setupJsdomPolyfills() {
                     target: element,
                     isIntersecting: true,
                     intersectionRatio: 1,
-                    boundingClientRect: {
-                      top: 0,
-                      left: 0,
-                      right: 100,
-                      bottom: 100,
-                      width: 100,
-                      height: 100,
-                    },
-                    intersectionRect: {
-                      top: 0,
-                      left: 0,
-                      right: 100,
-                      bottom: 100,
-                      width: 100,
-                      height: 100,
-                    },
-                    rootBounds: {
-                      top: 0,
-                      left: 0,
-                      right: 1000,
-                      bottom: 1000,
-                      width: 1000,
-                      height: 1000,
-                    },
+                    boundingClientRect: createDomRectReadOnly(100),
+                    intersectionRect: createDomRectReadOnly(100),
+                    rootBounds: createDomRectReadOnly(1000),
                     time: Date.now(),
                   },
                 ],
@@ -175,18 +225,18 @@ function setupJsdomPolyfills() {
         }
       }
 
-      unobserve(element) {
+      unobserve(element: Element): void {
         if (element && this._observing.has(element)) {
           this._observing.delete(element);
         }
       }
 
-      disconnect() {
+      disconnect(): void {
         this._isDisconnected = true;
         this._observing.clear();
       }
 
-      takeRecords() {
+      takeRecords(): IntersectionObserverEntry[] {
         return [];
       }
     };
@@ -294,29 +344,32 @@ if (typeof globalThis !== 'undefined') {
   // 안전한 window 객체 설정
   if (!globalThis.window || typeof globalThis.window !== 'object') {
     // 기본 형태의 window 객체 확보
-    // @ts-expect-error — define minimal window for tests
-    globalThis.window = {};
+    globalThis.window = {} as Window & typeof globalThis;
   }
 
   // 안전한 document 객체 설정 - body 포함
   if (!globalThis.document || typeof globalThis.document !== 'object') {
     // 최소 document 구현을 제공하여 스파이 설정이 실패하지 않도록 함
-    // @ts-expect-error — lightweight document stub for tests
     globalThis.document = {
-      body: { innerHTML: '' },
-      createElement: () => ({ innerHTML: '' }),
-      querySelector: () => null,
-      querySelectorAll: () => [],
-      addEventListener: () => {},
-      removeEventListener: () => {},
-    };
+      body: { innerHTML: '' } as unknown as HTMLBodyElement,
+      createElement: ((tagName: string) =>
+        ({
+          innerHTML: '',
+          tagName: String(tagName).toUpperCase(),
+        }) as unknown as HTMLElement) as Document['createElement'],
+      querySelector: (() => null) as Document['querySelector'],
+      querySelectorAll: (() =>
+        [] as unknown as NodeListOf<Element>) as Document['querySelectorAll'],
+      addEventListener: (() => {}) as Document['addEventListener'],
+      removeEventListener: (() => {}) as Document['removeEventListener'],
+    } as unknown as Document;
   } else if (!globalThis.document.body) {
-    globalThis.document.body = { innerHTML: '' };
+    globalThis.document.body = { innerHTML: '' } as unknown as HTMLBodyElement;
   }
 
   // document.body가 안전하게 설정되었는지 다시 확인
   if (globalThis.document.body && typeof globalThis.document.body !== 'object') {
-    globalThis.document.body = { innerHTML: '' };
+    globalThis.document.body = { innerHTML: '' } as unknown as HTMLBodyElement;
   }
 
   // 안전한 location 객체 설정
@@ -326,7 +379,7 @@ if (typeof globalThis !== 'undefined') {
       hostname: 'x.com',
       pathname: '/',
       search: '',
-    };
+    } as unknown as Location;
   }
 
   // jsdom polyfill 적용
@@ -369,6 +422,8 @@ beforeEach(async () => {
     const URLPolyfill = createURLPolyfill();
     globalThis.URL = URLPolyfill;
   }
+
+  await vendorInitializationPromise;
 
   // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
   try {

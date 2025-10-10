@@ -5,7 +5,7 @@
 import { describe, test, expect } from 'vitest';
 import { getButtonTokens } from '../../../src/shared/styles/tokens/button';
 
-function hasRawColor(str) {
+function hasRawColor(str: string): boolean {
   return /(#[0-9a-fA-F]{3,8})|(rgba?\()/.test(str);
 }
 

@@ -4,10 +4,18 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logger, createLogger } from '@/shared/logging/logger';
+import { createLogger } from '@/shared/logging/logger';
+
+type ConsoleSpyMap = {
+  info: ReturnType<typeof vi.spyOn>;
+  warn: ReturnType<typeof vi.spyOn>;
+  error: ReturnType<typeof vi.spyOn>;
+  debug: ReturnType<typeof vi.spyOn>;
+  log: ReturnType<typeof vi.spyOn>;
+};
 
 describe('Logger Output Channels', () => {
-  let consoleSpy: any;
+  let consoleSpy: ConsoleSpyMap;
 
   beforeEach(() => {
     // Console 메소드들을 spy로 모킹

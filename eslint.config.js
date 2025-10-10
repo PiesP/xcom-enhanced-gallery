@@ -32,6 +32,11 @@ export default [
       'test-results/**',
       '*.config.js.backup',
       '*.backup.*',
+      // Backup files
+      'test/.backup-preact/**',
+      // Type definitions
+      'types/jsdom.d.ts',
+      'src/types/solid-js-client.d.ts',
     ],
   },
 

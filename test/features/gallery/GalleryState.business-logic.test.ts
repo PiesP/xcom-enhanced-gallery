@@ -5,8 +5,36 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// 타입 정의
+type ViewMode = 'grid' | 'list' | 'fullscreen';
+
+interface MediaItem {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  filename?: string;
+}
+
+interface GallerySettings {
+  autoPlay: boolean;
+  showThumbnails: boolean;
+  keyboardNavigation: boolean;
+}
+
+type EventCallback = (data: any) => void;
+
 // 갤러리 상태 모킹
 class MockGalleryState {
+  currentIndex: number;
+  mediaItems: MediaItem[];
+  isVisible: boolean;
+  isLoading: boolean;
+  viewMode: ViewMode;
+  settings: GallerySettings;
+
   constructor() {
     this.currentIndex = 0;
     this.mediaItems = [];
@@ -20,12 +48,12 @@ class MockGalleryState {
     };
   }
 
-  setMediaItems(items) {
+  setMediaItems(items: MediaItem[]): void {
     this.mediaItems = items;
     this.currentIndex = 0;
   }
 
-  setCurrentIndex(index) {
+  setCurrentIndex(index: number): boolean {
     if (index >= 0 && index < this.mediaItems.length) {
       this.currentIndex = index;
       return true;
@@ -33,45 +61,45 @@ class MockGalleryState {
     return false;
   }
 
-  nextMedia() {
+  nextMedia(): boolean {
     const nextIndex = this.currentIndex + 1;
     return this.setCurrentIndex(nextIndex);
   }
 
-  previousMedia() {
+  previousMedia(): boolean {
     const prevIndex = this.currentIndex - 1;
     return this.setCurrentIndex(prevIndex);
   }
 
-  getCurrentMedia() {
+  getCurrentMedia(): MediaItem | null {
     return this.mediaItems[this.currentIndex] || null;
   }
 
-  getMediaCount() {
+  getMediaCount(): number {
     return this.mediaItems.length;
   }
 
-  setVisible(visible) {
+  setVisible(visible: boolean): void {
     this.isVisible = visible;
   }
 
-  setLoading(loading) {
+  setLoading(loading: boolean): void {
     this.isLoading = loading;
   }
 
-  setViewMode(mode) {
+  setViewMode(mode: string): boolean {
     if (['grid', 'list', 'fullscreen'].includes(mode)) {
-      this.viewMode = mode;
+      this.viewMode = mode as ViewMode;
       return true;
     }
     return false;
   }
 
-  updateSettings(newSettings) {
+  updateSettings(newSettings: Partial<GallerySettings>): void {
     this.settings = { ...this.settings, ...newSettings };
   }
 
-  reset() {
+  reset(): void {
     this.currentIndex = 0;
     this.mediaItems = [];
     this.isVisible = false;
@@ -82,19 +110,22 @@ class MockGalleryState {
 
 // 갤러리 서비스 모킹
 class MockGalleryService {
+  state: MockGalleryState;
+  eventListeners: Map<string, EventCallback[]>;
+
   constructor() {
     this.state = new MockGalleryState();
     this.eventListeners = new Map();
   }
 
-  async loadMediaFromTweet(tweetId) {
+  async loadMediaFromTweet(_tweetId: string): Promise<MediaItem[]> {
     this.state.setLoading(true);
 
     try {
       // 실제 API 호출 시뮬레이션
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      const mockMedia = [
+      const mockMedia: MediaItem[] = [
         {
           id: '1',
           type: 'image',
@@ -122,7 +153,7 @@ class MockGalleryService {
     }
   }
 
-  openGallery(initialIndex = 0) {
+  openGallery(initialIndex = 0): void {
     if (this.state.getMediaCount() === 0) {
       throw new Error('No media items to display');
     }
@@ -132,12 +163,12 @@ class MockGalleryService {
     this.emit('gallery:opened', { index: initialIndex });
   }
 
-  closeGallery() {
+  closeGallery(): void {
     this.state.setVisible(false);
-    this.emit('gallery:closed');
+    this.emit('gallery:closed', undefined);
   }
 
-  navigateToNext() {
+  navigateToNext(): boolean {
     const success = this.state.nextMedia();
     if (success) {
       this.emit('media:changed', {
@@ -148,7 +179,7 @@ class MockGalleryService {
     return success;
   }
 
-  navigateToPrevious() {
+  navigateToPrevious(): boolean {
     const success = this.state.previousMedia();
     if (success) {
       this.emit('media:changed', {
@@ -159,7 +190,7 @@ class MockGalleryService {
     return success;
   }
 
-  downloadCurrentMedia() {
+  downloadCurrentMedia(): { url: string; filename: string } {
     const media = this.state.getCurrentMedia();
     if (!media) {
       throw new Error('No media to download');
@@ -167,10 +198,10 @@ class MockGalleryService {
 
     // 다운로드 로직 시뮬레이션
     this.emit('download:started', { media });
-    return { url: media.url, filename: media.filename };
+    return { url: media.url, filename: media.filename || 'unknown' };
   }
 
-  downloadAllMedia() {
+  downloadAllMedia(): { url: string; filename: string }[] {
     if (this.state.getMediaCount() === 0) {
       throw new Error('No media to download');
     }
@@ -179,20 +210,20 @@ class MockGalleryService {
     this.emit('download:bulk:started', { count: mediaItems.length });
     return mediaItems.map(media => ({
       url: media.url,
-      filename: media.filename,
+      filename: media.filename || 'unknown',
     }));
   }
 
-  on(event, callback) {
+  on(event: string, callback: EventCallback): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
-    this.eventListeners.get(event).push(callback);
+    this.eventListeners.get(event)!.push(callback);
   }
 
-  off(event, callback) {
+  off(event: string, callback: EventCallback): void {
     if (this.eventListeners.has(event)) {
-      const listeners = this.eventListeners.get(event);
+      const listeners = this.eventListeners.get(event)!;
       const index = listeners.indexOf(callback);
       if (index > -1) {
         listeners.splice(index, 1);
@@ -200,9 +231,9 @@ class MockGalleryService {
     }
   }
 
-  emit(event, data) {
+  emit(event: string, data: any): void {
     if (this.eventListeners.has(event)) {
-      this.eventListeners.get(event).forEach(callback => {
+      this.eventListeners.get(event)!.forEach(callback => {
         callback(data);
       });
     }
@@ -210,7 +241,7 @@ class MockGalleryService {
 }
 
 describe('Gallery State Management - Business Logic', () => {
-  let galleryState;
+  let galleryState: MockGalleryState;
 
   beforeEach(() => {
     galleryState = new MockGalleryState();
@@ -218,7 +249,7 @@ describe('Gallery State Management - Business Logic', () => {
 
   describe('Media Items Management', () => {
     it('should set and manage media items correctly', () => {
-      const mediaItems = [
+      const mediaItems: MediaItem[] = [
         { id: '1', type: 'image', url: 'test1.jpg' },
         { id: '2', type: 'video', url: 'test2.mp4' },
       ];
@@ -239,7 +270,7 @@ describe('Gallery State Management - Business Logic', () => {
 
     it('should reset state when new media items are set', () => {
       galleryState.setCurrentIndex(2);
-      galleryState.setMediaItems([{ id: '1', type: 'image' }]);
+      galleryState.setMediaItems([{ id: '1', type: 'image', url: 'test.jpg' }]);
 
       expect(galleryState.currentIndex).toBe(0);
     });
@@ -247,10 +278,10 @@ describe('Gallery State Management - Business Logic', () => {
 
   describe('Navigation Logic', () => {
     beforeEach(() => {
-      const mediaItems = [
-        { id: '1', type: 'image' },
-        { id: '2', type: 'image' },
-        { id: '3', type: 'video' },
+      const mediaItems: MediaItem[] = [
+        { id: '1', type: 'image', url: 'test1.jpg' },
+        { id: '2', type: 'image', url: 'test2.jpg' },
+        { id: '3', type: 'video', url: 'test3.mp4' },
       ];
       galleryState.setMediaItems(mediaItems);
     });
@@ -344,7 +375,7 @@ describe('Gallery State Management - Business Logic', () => {
 });
 
 describe('Gallery Service - Integration Tests', () => {
-  let galleryService;
+  let galleryService: MockGalleryService;
 
   beforeEach(() => {
     galleryService = new MockGalleryService();
@@ -355,8 +386,8 @@ describe('Gallery Service - Integration Tests', () => {
       const media = await galleryService.loadMediaFromTweet('123456789');
 
       expect(media).toHaveLength(2);
-      expect(media[0].type).toBe('image');
-      expect(media[1].type).toBe('video');
+      expect(media[0]?.type).toBe('image');
+      expect(media[1]?.type).toBe('video');
       expect(galleryService.state.isLoading).toBe(false);
     });
 
@@ -462,8 +493,8 @@ describe('Gallery Service - Integration Tests', () => {
       const results = galleryService.downloadAllMedia();
 
       expect(results).toHaveLength(2);
-      expect(results[0].url).toBeDefined();
-      expect(results[1].url).toBeDefined();
+      expect(results[0]?.url).toBeDefined();
+      expect(results[1]?.url).toBeDefined();
       expect(listener).toHaveBeenCalledWith({ count: 2 });
     });
 
@@ -539,9 +570,9 @@ describe('Gallery Service - Integration Tests', () => {
 
     it('should handle rapid navigation', () => {
       galleryService.state.setMediaItems([
-        { id: '1', type: 'image' },
-        { id: '2', type: 'image' },
-        { id: '3', type: 'image' },
+        { id: '1', type: 'image', url: 'test1.jpg' },
+        { id: '2', type: 'image', url: 'test2.jpg' },
+        { id: '3', type: 'image', url: 'test3.jpg' },
       ]);
 
       // 빠른 연속 탐색

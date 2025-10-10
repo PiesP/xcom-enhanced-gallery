@@ -28,7 +28,7 @@ import { GalleryContainer } from '../../shared/components/isolation';
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
 import { logger } from '../../shared/logging/logger';
-import { getPreact } from '../../shared/external/vendors';
+import { getSolid } from '../../shared/external/vendors';
 
 /**
  * 갤러리 정리 관리자
@@ -61,6 +61,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
+  private disposeApp: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -140,38 +141,38 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private renderComponent(): void {
     if (!this.container) return;
 
-    const { render, createElement } = getPreact();
+    const { render, createComponent } = getSolid();
+    const self = this;
+    const handleClose = () => {
+      closeGallery();
+      self.onCloseCallback?.();
+    };
+    const handleNavigate = (direction: 'previous' | 'next') => {
+      self.handleNavigation(direction);
+    };
+    const handleDownload = (type: 'current' | 'all') => self.handleDownload(type);
 
-    // GalleryContainer → ErrorBoundary → VerticalGalleryView 계층으로 래핑
-    const galleryElement = createElement(GalleryContainer, {
-      onClose: () => {
-        closeGallery();
-        if (this.onCloseCallback) {
-          this.onCloseCallback();
-        }
-      },
-      className: 'xeg-gallery-renderer xeg-gallery-root', // Light DOM: xeg-gallery-root 추가
-      children: createElement(
-        ErrorBoundary,
-        {},
-        createElement(VerticalGalleryView, {
-          // 이벤트 핸들러만 전달, 상태는 Signal에서 직접 구독
-          onClose: () => {
-            closeGallery();
-            if (this.onCloseCallback) {
-              this.onCloseCallback();
-            }
-          },
-          onPrevious: () => this.handleNavigation('previous'),
-          onNext: () => this.handleNavigation('next'),
-          onDownloadCurrent: () => this.handleDownload('current'),
-          onDownloadAll: () => this.handleDownload('all'),
-          className: 'xeg-vertical-gallery',
-        })
-      ),
-    });
+    const elementFactory = () =>
+      createComponent(GalleryContainer, {
+        onClose: handleClose,
+        className: 'xeg-gallery-renderer xeg-gallery-root',
+        get children() {
+          return createComponent(ErrorBoundary, {
+            get children() {
+              return createComponent(VerticalGalleryView, {
+                onClose: handleClose,
+                onPrevious: () => handleNavigate('previous'),
+                onNext: () => handleNavigate('next'),
+                onDownloadCurrent: () => handleDownload('current'),
+                onDownloadAll: () => handleDownload('all'),
+                className: 'xeg-vertical-gallery',
+              });
+            },
+          });
+        },
+      });
 
-    render(galleryElement, this.container);
+    this.disposeApp = render(elementFactory, this.container);
     logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
   }
 
@@ -233,8 +234,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        const { render } = getPreact();
-        render(null, this.container);
+        this.disposeApp?.();
+        this.disposeApp = null;
 
         if (document.contains(this.container)) {
           this.container.remove();

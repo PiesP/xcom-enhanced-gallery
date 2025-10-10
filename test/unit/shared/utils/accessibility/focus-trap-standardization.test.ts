@@ -6,30 +6,26 @@
 /* eslint-env browser */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+const activateSpy = vi.fn();
+const deactivateSpy = vi.fn();
+const destroySpy = vi.fn();
+const createFocusTrapSpy = vi.fn(() => ({
+  isActive: false,
+  activate: activateSpy,
+  deactivate: deactivateSpy,
+  destroy: destroySpy,
+}));
+
 // 통합 유틸을 모킹해 위임 여부를 검증한다
-vi.mock('@shared/utils/focusTrap', () => {
-  const activateSpy = vi.fn();
-  const deactivateSpy = vi.fn();
-  const destroySpy = vi.fn();
-  const mockedCreateFocusTrap = vi.fn(() => ({
-    isActive: false,
-    activate: activateSpy,
-    deactivate: deactivateSpy,
-    destroy: destroySpy,
-  }));
-  return {
-    createFocusTrap: mockedCreateFocusTrap,
-    __createSpy: mockedCreateFocusTrap,
-    __activateSpy: activateSpy,
-  };
-});
+vi.mock('@shared/utils/focusTrap', () => ({
+  createFocusTrap: createFocusTrapSpy,
+}));
 
 // 접근성 유틸은 테스트 대상
 import { createFocusTrap as legacyCreateFocusTrap } from '@shared/utils/accessibility/accessibility-utils';
-import { __createSpy, __activateSpy } from '@shared/utils/focusTrap';
 
 describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () => {
-  let container;
+  let container: HTMLElement;
 
   beforeEach(() => {
     container = globalThis.document.createElement('div');
@@ -51,12 +47,12 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
     legacyCreateFocusTrap(container);
 
     // then
-    expect(__createSpy).toHaveBeenCalledTimes(1);
-    expect(__createSpy).toHaveBeenCalledWith(container, expect.any(Object));
+    expect(createFocusTrapSpy).toHaveBeenCalledTimes(1);
+    expect(createFocusTrapSpy).toHaveBeenCalledWith(container, expect.any(Object));
   });
 
   it('위임 후 즉시 activate를 호출하여 trap을 활성화해야 한다', () => {
     legacyCreateFocusTrap(container);
-    expect(__activateSpy).toHaveBeenCalledTimes(1);
+    expect(activateSpy).toHaveBeenCalledTimes(1);
   });
 });

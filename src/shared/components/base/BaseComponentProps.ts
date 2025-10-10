@@ -23,10 +23,10 @@ export interface BaseComponentProps {
   'aria-describedby'?: string;
   'aria-expanded'?: boolean;
   'aria-hidden'?: boolean;
-  'aria-disabled'?: string;
-  'aria-busy'?: string;
-  'aria-pressed'?: string;
-  'aria-haspopup'?: string;
+  'aria-disabled'?: boolean | 'true' | 'false';
+  'aria-busy'?: boolean | 'true' | 'false';
+  'aria-pressed'?: boolean | 'true' | 'false';
+  'aria-haspopup'?: boolean | 'true' | 'false' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
   /** 접근성 역할 */
   role?: string;
   /** 탭 인덱스 */

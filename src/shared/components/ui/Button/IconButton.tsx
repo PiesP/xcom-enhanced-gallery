@@ -1,8 +1,7 @@
 /**
- * @file IconButton - Thin wrapper over Unified Button for icon-only actions
+ * @file IconButton - Unified Button wrapper for icon-only actions (Solid.js)
  */
-import type { ComponentChildren, VNode } from '../../../external/vendors';
-import { getPreact } from '../../../external/vendors';
+import type { ComponentChildren, JSXElement } from '../../../external/vendors';
 import { Button } from './Button';
 import type { ButtonProps } from './Button';
 
@@ -19,20 +18,14 @@ export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly
   readonly children?: ComponentChildren;
 }
 
-export function IconButton({ size = 'md', ...props }: IconButtonProps): VNode {
-  // 방어적: 허용되지 않은 값이 들어오면 기본 md 사용
+export function IconButton({ size = 'md', ...props }: IconButtonProps): JSXElement {
   const safeSize: IconButtonProps['size'] = ICON_BUTTON_SIZES.includes(
     size as 'sm' | 'md' | 'lg' | 'toolbar'
   )
     ? size
     : 'md';
-  const { h } = getPreact();
-  return h(Button as unknown as (p: ButtonProps) => VNode, {
-    ...props,
-    variant: 'icon',
-    size: safeSize,
-    iconOnly: true,
-  });
+
+  return <Button {...props} variant='icon' size={safeSize} iconOnly />;
 }
 
 export default IconButton;

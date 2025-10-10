@@ -1,6 +1,6 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Preact + Signals 기반 Userscript의 3계층 구조와 의존성 경계 코딩
+> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 코딩
 > 규칙/스타일/토큰/테스트 정책은 중복 없이 `docs/CODING_GUIDELINES.md`를 단일
 > 기준으로 참조하세요.
 
@@ -14,8 +14,7 @@
 - 단방향 의존만 허용: Features는 Shared까지만, Shared는 External까지만
   접근합니다.
 - Vendors/Userscript는 반드시 안전 getter 경유:
-  - Vendors: `@shared/external/vendors`의
-    `getPreact()`/`getPreactSignals()`/`getPreactCompat()`
+  - Vendors: `@shared/external/vendors`의 `getSolid()`/`getSolidStore()`
   - Userscript: `@shared/external/userscript/adapter`의 `getUserscript()`
 
 ## 디렉터리 지도(요약)

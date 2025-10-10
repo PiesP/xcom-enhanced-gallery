@@ -7,34 +7,31 @@
 
 import { beforeEach, describe, it, expect, vi, afterEach } from 'vitest';
 
+type SolidSignal<T> = [() => T, (value: T | ((prev: T) => T)) => void];
+
 // vendor 시스템 목업 - REFACTOR: 더 현실적인 Mock 구현
 vi.mock('@shared/external/vendors', () => {
   let stateCounter = 0;
-  const stateMap = new Map();
+  const stateMap = new Map<number, unknown>();
 
   return {
-    getPreactHooks: () => ({
-      useEffect: vi.fn(fn => {
-        // effect 함수 즉시 실행
-        const cleanup = fn();
-        return cleanup;
-      }),
-      useRef: vi.fn(initialValue => ({ current: initialValue })),
-      useCallback: vi.fn(fn => fn),
-      useState: vi.fn(initialValue => {
+    getSolid: () => ({
+      createEffect: vi.fn((fn: () => void | (() => void)) => fn() ?? undefined),
+      createMemo: vi.fn(<T>(factory: () => T) => factory()),
+      createSignal: vi.fn(<T>(initialValue: T): SolidSignal<T> => {
         const id = stateCounter++;
         stateMap.set(id, initialValue);
 
-        const setState = vi.fn(newValue => {
-          const currentValue = stateMap.get(id);
-          const updatedValue = typeof newValue === 'function' ? newValue(currentValue) : newValue;
+        const setState = vi.fn((newValue: T | ((prev: T) => T)) => {
+          const currentValue = stateMap.get(id) as T;
+          const updatedValue =
+            typeof newValue === 'function' ? (newValue as (prev: T) => T)(currentValue) : newValue;
           stateMap.set(id, updatedValue);
         });
 
-        return [
-          () => stateMap.get(id), // getter로 반환하여 최신 상태 제공
-          setState,
-        ];
+        const getter = () => stateMap.get(id) as T;
+
+        return [getter, setState];
       }),
     }),
   };
@@ -50,85 +47,61 @@ vi.mock('@shared/logging/logger', () => ({
   },
 }));
 
-// 간단한 테스트용 renderHook 구현 - REFACTOR: 상태 추적 개선
-function renderHook(hookFn) {
-  let result;
-  let lastResult;
-
-  const testRun = () => {
-    lastResult = result;
-    result = hookFn();
-  };
-
-  testRun();
-
-  return {
-    result: {
-      get current() {
-        return result;
-      },
-    },
-    rerender: () => {
-      testRun();
-      return {
-        result: {
-          get current() {
-            return result;
-          },
-        },
-      };
-    },
-    unmount: vi.fn(),
-  };
-}
-
-// 간단한 act 구현 - REFACTOR: 타이머 상태 동기화
-function act(fn) {
-  fn();
-  // 타이머와 상태 변경이 반영되도록 작은 지연
-  vi.runAllTimers();
-}
-
 // 타이머 모킹
 vi.useFakeTimers();
 
 // Mock HTMLElement - REFACTOR: 이벤트 추적 개선
-function createMockElement() {
-  const eventListeners = new Map();
+type MockEventHandler = () => void;
+type MockEventMap = Map<string, MockEventHandler[]>;
 
-  const mockElement = {
+interface MockElement {
+  style: {
+    setProperty: ReturnType<typeof vi.fn>;
+    removeProperty: ReturnType<typeof vi.fn>;
+  };
+  addEventListener: (event: string, handler: MockEventHandler) => void;
+  removeEventListener: (event: string, handler: MockEventHandler) => void;
+  triggerEvent: (event: string) => void;
+}
+
+function createMockElement(): MockElement {
+  const eventListeners: MockEventMap = new Map();
+
+  const mockElement: MockElement = {
     style: {
       setProperty: vi.fn(),
       removeProperty: vi.fn(),
     },
-    addEventListener: vi.fn((event, handler) => {
+    addEventListener: vi.fn((event: string, handler: MockEventHandler) => {
       if (!eventListeners.has(event)) {
         eventListeners.set(event, []);
       }
-      eventListeners.get(event).push(handler);
+      eventListeners.get(event)!.push(handler);
     }),
-    removeEventListener: vi.fn((event, handler) => {
-      if (eventListeners.has(event)) {
-        const handlers = eventListeners.get(event);
-        const index = handlers.indexOf(handler);
-        if (index > -1) {
-          handlers.splice(index, 1);
-        }
+    removeEventListener: vi.fn((event: string, handler: MockEventHandler) => {
+      const handlers = eventListeners.get(event);
+      if (!handlers) return;
+      const index = handlers.indexOf(handler);
+      if (index > -1) {
+        handlers.splice(index, 1);
       }
     }),
-    // 테스트용 이벤트 트리거 함수
-    triggerEvent: event => {
-      if (eventListeners.has(event)) {
-        eventListeners.get(event).forEach(handler => handler());
-      }
+    triggerEvent: (event: string) => {
+      const handlers = eventListeners.get(event);
+      if (!handlers) return;
+      handlers.forEach(handler => handler());
     },
   };
   return mockElement;
 }
 
+const asHTMLElement = (element: MockElement): HTMLElement => element as unknown as HTMLElement;
+
 describe('TDD: 툴바 자동 숨김 기능 통합', () => {
-  let mockToolbarElement;
-  let mockHoverZoneElement;
+  let mockToolbarElement: MockElement;
+  let mockHoverZoneElement: MockElement;
+  let toolbarElement: HTMLElement;
+  let hoverZoneElement: HTMLElement;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -136,6 +109,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
 
     mockToolbarElement = createMockElement();
     mockHoverZoneElement = createMockElement();
+    toolbarElement = asHTMLElement(mockToolbarElement);
+    hoverZoneElement = asHTMLElement(mockHoverZoneElement);
   });
 
   afterEach(() => {
@@ -152,8 +127,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
 
       // 테스트를 단순화 - 함수 시그니처만 검증
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: true,
         initialAutoHideDelay: 1000,
       });
@@ -174,8 +149,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
       );
 
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: true,
         initialAutoHideDelay: 0, // 자동 숨김 비활성화
       });
@@ -192,8 +167,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
       );
 
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: true,
         initialAutoHideDelay: 1000,
       });
@@ -211,8 +186,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
       );
 
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: true,
         initialAutoHideDelay: 1000,
       });
@@ -229,8 +204,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
       );
 
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: true,
         initialAutoHideDelay: 1000,
       });
@@ -246,8 +221,8 @@ describe('TDD: 툴바 자동 숨김 기능 통합', () => {
       );
 
       const hookResult = useToolbarPositionBased({
-        toolbarElement: mockToolbarElement,
-        hoverZoneElement: mockHoverZoneElement,
+        toolbarElement,
+        hoverZoneElement,
         enabled: false, // 비활성화
         initialAutoHideDelay: 1000,
       });

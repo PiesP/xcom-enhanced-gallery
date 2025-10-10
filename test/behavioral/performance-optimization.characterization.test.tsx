@@ -93,7 +93,7 @@ describe('P7: Performance Optimization Characterization', () => {
           performanceImpact: 'High - 불필요한 리렌더링 발생',
         },
         computed: {
-          pattern: 'computed(() => signal.value.someProperty)',
+          pattern: 'createMemo(() => signal.value.someProperty)',
           description: 'computed signal 사용',
           recomputeFrequency: 'When dependency changes',
           performanceImpact: 'Medium - 의존성 변경 시만 재계산',
@@ -103,7 +103,7 @@ describe('P7: Performance Optimization Characterization', () => {
       // 목표 패턴: Memoized selector
       const targetPattern = {
         memoizedSelector: {
-          pattern: 'useMemo(() => selectProperty(signal.value), [signal.value.someProperty])',
+          pattern: 'createMemo(() => selectProperty(signal.value), [signal.value.someProperty])',
           description: 'memoized selector 사용',
           recomputeFrequency: 'Only when selected property changes',
           performanceImpact: 'Low - 최소한의 재계산',
@@ -151,7 +151,7 @@ describe('P7: Performance Optimization Characterization', () => {
       const iconCachingStrategy = {
         level1: {
           name: 'Component Level Cache',
-          implementation: 'useMemo for icon components',
+          implementation: 'createMemo for icon components',
           scope: 'Single component instance',
           evictionPolicy: 'Component unmount',
         },
@@ -183,13 +183,13 @@ describe('P7: Performance Optimization Characterization', () => {
     test('signal 메모리 누수 방지 전략이 정의되어야 함', () => {
       const memoryLeakPrevention = {
         signalCleanup: {
-          strategy: 'useEffect cleanup functions',
-          implementation: 'Return cleanup function in useEffect',
+          strategy: 'createEffect cleanup functions',
+          implementation: 'Return cleanup function in createEffect',
           target: 'Signal subscriptions',
         },
         selectorMemoization: {
           strategy: 'Dependency array optimization',
-          implementation: 'Precise dependencies in useMemo/useCallback',
+          implementation: 'Precise dependencies in createMemo/createMemo',
           target: 'Computed values',
         },
         componentUnmount: {

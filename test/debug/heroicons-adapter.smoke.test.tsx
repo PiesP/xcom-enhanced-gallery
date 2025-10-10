@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
-import { getPreact } from '@/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 import { HeroX } from '@/shared/components/ui/Icon/hero/HeroX';
 import { getHeroiconsOutline } from '@/shared/external/vendors/heroicons-react';
 
-const { h, render } = getPreact();
+const { h, render } = getSolid();
 
 describe('Heroicons Adapter Smoke', () => {
   // Instrument attribute setters to debug invalid QName

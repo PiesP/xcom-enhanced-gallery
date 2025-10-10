@@ -3,7 +3,7 @@
  * @description 툴바의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '../../../external/vendors';
+import type { ComponentChildren, JSXElement } from '../../../external/vendors';
 
 export interface ToolbarShellProps {
   /** 컨텐츠 */
@@ -40,22 +40,21 @@ export function ToolbarShell({
   'data-testid': testId,
   'aria-label': ariaLabel,
   ...props
-}: ToolbarShellProps) {
-  const { h } = getPreact();
+}: ToolbarShellProps): JSXElement {
   const elevationClass = `toolbar-elevation-${elevation}`;
   const surfaceClass = `toolbar-surface-${surfaceVariant}`;
   const positionClass = `toolbar-position-${position}`;
 
-  return h(
-    'div',
-    {
-      class: `toolbar-shell ${elevationClass} ${surfaceClass} ${positionClass} ${className}`.trim(),
-      role: 'toolbar',
-      'aria-label': ariaLabel || 'Toolbar',
-      'data-testid': testId,
-      ...props,
-    },
-    children
+  return (
+    <div
+      class={`toolbar-shell ${elevationClass} ${surfaceClass} ${positionClass} ${className}`.trim()}
+      role='toolbar'
+      aria-label={ariaLabel || 'Toolbar'}
+      data-testid={testId}
+      {...props}
+    >
+      {children}
+    </div>
   );
 }
 

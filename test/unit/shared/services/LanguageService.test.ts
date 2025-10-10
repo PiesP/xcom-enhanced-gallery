@@ -5,16 +5,17 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { LanguageService } from '../../../../src/shared/services/LanguageService';
+import { createMockBrowserInfo } from '../../../utils/fixtures/test-factories';
 
 describe('LanguageService', () => {
   let languageService: LanguageService;
-  let mockNavigator: Partial<Navigator>;
+  type MutableNavigator = ReturnType<typeof createMockBrowserInfo>;
+
+  let mockNavigator: MutableNavigator;
 
   beforeEach(() => {
     // Navigator mock 설정
-    mockNavigator = {
-      language: 'ko-KR',
-    };
+    mockNavigator = createMockBrowserInfo('chrome', { language: 'ko-KR' });
     vi.stubGlobal('navigator', mockNavigator);
 
     languageService = new LanguageService();

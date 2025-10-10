@@ -36,8 +36,8 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h, render } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h, render } = getSolid();
 
       if (typeof document === 'undefined') return;
 
@@ -110,8 +110,8 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h, render } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h, render } = getSolid();
 
       if (typeof document === 'undefined') return;
 
@@ -140,8 +140,8 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h, render } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h, render } = getSolid();
 
       if (typeof document === 'undefined') return;
 
@@ -169,8 +169,8 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h, render } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h, render } = getSolid();
 
       if (typeof document === 'undefined') return;
 
@@ -213,8 +213,8 @@ describe('Settings Modal Unification', () => {
         '../../src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx'
       );
       const { UnifiedSettingsModal } = module;
-      const { getPreact } = await import('@shared/external/vendors');
-      const { h, render } = getPreact();
+      const { getSolid } = await import('@shared/external/vendors');
+      const { h, render } = getSolid();
 
       if (typeof document === 'undefined') return;
 

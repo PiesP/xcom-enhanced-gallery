@@ -5,7 +5,6 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen } from '@testing-library/preact';
 import {
   IconRegistry,
   getIconRegistry,
@@ -19,14 +18,19 @@ import {
   useCommonIconPreload,
 } from '../../../src/shared/components/LazyIcon.js';
 
+type TestVNode = {
+  props: Record<string, unknown>;
+  children?: unknown;
+};
+
+const toVNode = (value: unknown): TestVNode => value as TestVNode;
+
 // Mock external vendors
 vi.mock('../../../src/shared/external/vendors', () => ({
-  getPreact: () => ({
+  getSolid: () => ({
     h: vi.fn((tag, props, ...children) => ({ tag, props, children: children.flat() })),
-  }),
-  getPreactHooks: () => ({
-    useState: vi.fn(initial => [initial, vi.fn()]),
-    useEffect: vi.fn((effect, deps) => {
+    createSignal: vi.fn(initial => [initial, vi.fn()]),
+    createEffect: vi.fn((effect: () => unknown) => {
       if (typeof effect === 'function') {
         effect();
       }
@@ -211,7 +215,7 @@ describe('P7: Performance Optimization Unit Tests', () => {
     });
 
     test('아이콘을 지연 로딩해야 함', async () => {
-      const result = LazyIcon({ name: 'Download' });
+      const result = toVNode(LazyIcon({ name: 'Download' }));
 
       // LazyIcon은 기본적으로 로딩 상태를 반환
       expect(result.props['data-testid']).toBe('lazy-icon-loading');
@@ -237,7 +241,7 @@ describe('P7: Performance Optimization Unit Tests', () => {
         children: ['Icon not found'],
       };
 
-      const result = LazyIcon({ name: 'X', errorFallback: customErrorFallback });
+      const result = toVNode(LazyIcon({ name: 'X', errorFallback: customErrorFallback }));
 
       // LazyIcon은 초기에는 로딩 상태이므로, 에러 상태 테스트를 위해 다른 접근법 필요
       // 여기서는 errorFallback이 제대로 전달되는지만 확인
@@ -245,13 +249,15 @@ describe('P7: Performance Optimization Unit Tests', () => {
     });
 
     test('아이콘 props를 전달해야 함', () => {
-      const result = LazyIcon({
-        name: 'ChevronLeft',
-        size: 32,
-        stroke: 3,
-        color: 'red',
-        className: 'test-class',
-      });
+      const result = toVNode(
+        LazyIcon({
+          name: 'ChevronLeft',
+          size: 32,
+          stroke: 3,
+          color: 'red',
+          className: 'test-class',
+        })
+      );
 
       // LazyIcon 컴포넌트 자체의 props 확인
       expect(result.props).toMatchObject({

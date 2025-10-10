@@ -19,11 +19,11 @@ describe('MediaProcessor - URL 정규화 및 dedupe (RED)', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data).toHaveLength(1);
-      const item = result.data[0];
+      const item = result.data[0]!;
       // 정규화된 URL은 name=orig를 가져야 한다
       expect(item.url).toMatch(/name=orig/);
       // 변형(variants)에 small/large/orig가 포함되어야 한다
-      const qualities = new Set((item.variants || []).map(v => v.quality));
+      const qualities = new Set((item.variants ?? []).map(v => v.quality));
       expect(qualities.has('orig')).toBe(true);
       expect(qualities.has('large')).toBe(true);
       expect(qualities.has('small')).toBe(true);

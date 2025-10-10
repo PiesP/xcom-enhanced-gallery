@@ -1,380 +1,186 @@
-# TDD 리팩토링 활성 계획 (2025-10-09 갱신)
+# TDD 리팩토링 활성 계획
 
-> **현재 상태**: Preact → Solid.js 마이그레이션 계획 수립 완료
+> **현재 상태**: Solid.js 마이그레이션 완료, UX 개선 작업 진행 중
+>
+> **최종 업데이트**: 2025-10-10
 
 ---
 
-## 프로젝트 현황 (2025-10-09 기준)
+## Phase 7: UX 개선 작업 🔄 진행 중
 
-### 코드 품질 현황
+> Solid.js 마이그레이션 이후 발견된 사용성 이슈 해결
 
-- ✅ **빌드**: dev/prod 빌드 정상 동작, postbuild validator 통과
-- ✅ **테스트**: 전체 테스트 스위트 GREEN (124 파일 / 584 테스트)
-- ✅ **타입**: TypeScript strict 모드 100% 적용
-- ✅ **린트**: ESLint 규칙 위반 0건
-- ✅ **의존성**: dependency-cruiser 순환 의존성 위반 0건
+### 우선순위 1: 툴바 인디케이터 현재 포커스 자동 감지 회복 🔴 긴급
 
-### 현재 기술 스택
+**증상**:
 
-- **UI 프레임워크**: Preact 10.27.2
-- **상태 관리**: @preact/signals 2.3.2
+- 툴바의 숫자 인디케이터가 현재 스크롤 중인 이미지를 실시간으로 반영하지 못함
+- `currentIndex`만 표시되고 `focusedIndex`는 표시되지 않음
+
+**원인 분석**:
+
+- `VerticalGalleryView.tsx`에서 `focusedIndex`를 로컬 상태로 관리
+- `Toolbar` 컴포넌트에는 `currentIndex`만 props로 전달됨
+- 스크롤 시 뷰포트에 보이는 이미지와 툴바 인디케이터 불일치
+
+**솔루션 옵션**:
+
+| 옵션 | 접근                                                        | 장점                          | 단점                         | 우선순위 |
+| ---- | ----------------------------------------------------------- | ----------------------------- | ---------------------------- | -------- |
+| A    | `focusedIndex`를 `galleryState`로 승격                      | 단일 진실 공급원, 자동 동기화 | 상태 구조 변경, 영향 범위 큼 | 장기     |
+| B    | `VerticalGalleryView`에서 `focusedIndex`를 `Toolbar`에 전달 | 최소 변경, 빠른 수정          | prop drilling, 결합도 증가   | 단기 ✅  |
+| C    | IntersectionObserver로 실시간 감지                          | 정확한 뷰포트 기준            | 성능 오버헤드, 복잡도 증가   | 추후     |
+
+**선택된 솔루션**: B (단기) → A (장기)
+
+**구현 단계**:
+
+1. [x] 문제 진단 및 솔루션 분석
+2. [ ] `Toolbar` 컴포넌트에 `focusedIndex` prop 추가
+3. [ ] `VerticalGalleryView`에서 `focusedIndex` 전달 로직 구현
+4. [ ] 툴바 인디케이터 표시 로직 수정 (`currentIndex` →
+       `focusedIndex ?? currentIndex`)
+5. [ ] 수동 테스트 (스크롤 시 인디케이터 변화 확인)
+6. [ ] 단위 테스트 추가/수정
+
+---
+
+### 우선순위 2: 갤러리 마우스 휠 스크롤 활성화 🔴 긴급
+
+**증상**:
+
+- 갤러리 내에서 마우스 휠 스크롤이 동작하지 않음
+- 키보드 네비게이션만 동작
+
+**원인 분석**:
+
+- `useGalleryScroll` 훅에서 wheel 이벤트는 감지됨
+- `onScroll` 콜백이 전달되지만 실제 DOM 스크롤 처리가 없음
+- 로깅만 수행하고 컨테이너를 스크롤하지 않음 (`VerticalGalleryView.tsx:219`)
+
+**솔루션 옵션**:
+
+| 옵션 | 접근                                         | 장점             | 단점                             | 우선순위 |
+| ---- | -------------------------------------------- | ---------------- | -------------------------------- | -------- |
+| A    | `onScroll` 콜백에서 `scrollBy` 직접 실행     | 간단하고 직관적  | 스크롤 로직 중복 가능성          | 단기 ✅  |
+| B    | `useGalleryItemScroll`의 `scrollToItem` 연동 | 기존 로직 재사용 | wheel delta를 인덱스로 변환 필요 | 중기     |
+| C    | 커스텀 스크롤 애니메이션 구현                | 부드러운 UX      | 복잡도 높음, 과도한 엔지니어링   | 낮음     |
+
+**선택된 솔루션**: A (단기) → B (중기 최적화)
+
+**구현 단계**:
+
+1. [x] 문제 진단 및 솔루션 분석
+2. [ ] `VerticalGalleryView.tsx`의 `onScroll` 콜백에 `scrollBy` 로직 추가
+3. [ ] 스크롤 속도 조정 (delta \* multiplier)
+4. [ ] 경계 체크 (overflow 방지)
+5. [ ] 수동 테스트 (다양한 휠 스피드 확인)
+6. [ ] 테스트 추가 (wheel 이벤트 시뮬레이션)
+
+---
+
+### 우선순위 3: 설정 모달 표시 위치 개선 🟡 중요
+
+**증상**:
+
+- 설정 모달이 왼쪽 상단에 표시됨
+- 사용자가 인지하기 어려운 위치
+
+**원인 분석**:
+
+- `SettingsModal.tsx` 64줄에서 기본 `position`이 `'toolbar-below'`
+- CSS에서 `.panel`의 기본 위치가 중앙이지만 position prop에 따라 달라짐
+- 사용자의 기대: 화면 중앙 또는 툴바 근처
+
+**솔루션 옵션**:
+
+| 옵션 | 접근                              | 장점             | 단점              | 우선순위 |
+| ---- | --------------------------------- | ---------------- | ----------------- | -------- |
+| A    | 기본 position을 `'center'`로 변경 | 가장 간단        | 툴바 위치 무시    | 단기 ✅  |
+| B    | 툴바 위치에 따라 동적 계산        | 문맥에 맞는 배치 | 복잡도 증가       | 중기     |
+| C    | 사용자 설정에서 위치 선택 가능    | 최대 유연성      | 과도한 옵션, 혼란 | 낮음     |
+
+**선택된 솔루션**: A (단기) → B (중기 개선)
+
+**구현 단계**:
+
+1. [x] 문제 진단 및 솔루션 분석
+2. [ ] `SettingsModal.tsx` 64줄 기본값 `'toolbar-below'` → `'center'` 변경
+3. [ ] CSS 확인 및 필요 시 조정
+4. [ ] 수동 테스트 (다양한 화면 크기 확인)
+5. [ ] 선택적: 툴바 위치 감지 로직 추가 (중기)
+
+---
+
+## 작업 우선순위 정리
+
+### 즉시 착수 (P0)
+
+1. 🔴 **툴바 인디케이터 포커스 감지** - 사용자 혼란 최소화
+2. 🔴 **휠 스크롤 활성화** - 기본 기능 복구
+
+### 다음 작업 (P1)
+
+3. 🟡 **설정 모달 위치** - UX 개선
+
+### 이후 작업 (P2)
+
+- Phase 5-5: 테스트 타입 안정화 지속 (현재 1,383개 오류)
+- Phase 5-6: Fast 테스트 통과율 100% 달성 (현재 95.0%)
+
+---
+
+## 개발 가이드라인
+
+### TDD 접근
+
+- 각 작업은 실패하는 테스트 작성 → 최소 구현 → 리팩토링 순서
+- RED → GREEN → REFACTOR 사이클 준수
+
+### 코딩 규칙 준수
+
+- Solid.js Signals 사용: `getSolid()`, `getSolidStore()` getter 경유
+- PC 전용 이벤트만 사용: click, keydown/up, wheel, contextmenu, mouse\*
+- CSS Modules + 디자인 토큰만 사용 (하드코딩 금지)
+- 경로 별칭 사용: `@`, `@features`, `@shared`, `@assets`
+
+### 검증 절차
+
+각 작업 완료 후:
+
+```powershell
+npm run typecheck  # TypeScript 타입 체크
+npm run lint:fix   # ESLint 자동 수정
+npm test:smoke     # 핵심 기능 스모크 테스트
+npm run build      # dev/prod 빌드 검증
+```
+
+---
+
+## 코드 품질 현황
+
+### 마이그레이션 완료 현황
+
+- ✅ **Phase 1-6**: Solid.js 전환, 테스트 인프라, 문서 정비 완료
+- ✅ **빌드**: dev 711.28 KB / prod 성공
+- ✅ **소스 코드**: 0 타입 오류 (TypeScript strict)
+- ✅ **린트**: 0 warnings, 0 errors
+- ✅ **의존성 그래프**: 1개 정보 메시지 (비크리티컬)
+
+### 현재 테스트 상황
+
+- ✅ Smoke 테스트: **15/15 통과** (100%)
+- 🟡 Fast 테스트: **516/543 통과** (95.0%)
+- 🟡 테스트 타입: 1,383개 오류 (테스트 파일만, src/ 코드는 0 오류)
+
+### 기술 스택
+
+- **UI**: Solid.js 1.9.9
+- **상태**: Solid Signals (내장)
 - **번들러**: Vite 7
-- **타입시스템**: TypeScript strict
-- **테스트**: Vitest 3 + JSDOM (584 테스트)
-
-### 마이그레이션 배경
-
-Preact + @preact/signals에서 Solid.js로 전환하여 다음 이점을 달성:
-
-1. **성능 향상**: 진정한 fine-grained reactivity (Virtual DOM 제거)
-2. **번들 크기 축소**: Solid.js의 컴파일 타임 최적화
-3. **개발 경험 개선**: Signals가 1급 시민, 더 나은 TypeScript 지원
-4. **아키텍처 단순화**: Preact + signals 분리 → Solid 통합 시스템
+- **타입**: TypeScript strict
+- **테스트**: Vitest 3 + JSDOM
 
 ---
 
-## 마이그레이션 전략 분석
-
-### Option A: 점진적 마이그레이션 (Hybrid)
-
-**장점:**
-
-- 단계별 검증으로 위험 분산
-- 부분 롤백 가능
-
-**단점:**
-
-- 두 라이브러리 동시 유지로 번들 크기 증가 (70KB+ 오버헤드)
-- Preact/Solid 간 호환 레이어 없음 (상호운용 불가)
-- 중간 상태 복잡성 증가
-
-**실현성:** ❌ 불가능 (호환 레이어 부재)
-
-### Option B: 빅뱅 마이그레이션 (All-at-once)
-
-**장점:**
-
-- 깔끔한 전환, 중간 상태 없음
-- 최종 번들 크기 최소화
-- 기존 vendor getter 패턴 활용 가능
-
-**단점:**
-
-- 큰 변경 범위 (전체 컴포넌트 + 584개 테스트)
-- 높은 초기 투자 비용
-
-**실현성:** ✅ 가능 (우수한 테스트 커버리지로 회귀 검증 가능)
-
-### Option C: Adapter 패턴 (현재 Vendor 시스템 확장)
-
-**장점:**
-
-- 기존 아키텍처 유지 (getter 패턴)
-- 점진적 내부 전환 가능
-
-**단점:**
-
-- 추상화 오버헤드
-- Solid의 fine-grained reactivity 이점 제한
-
-**실현성:** ✅ 높음
-
----
-
-## 선택된 전략: **Option B + Adapter 패턴**
-
-**근거:**
-
-1. **기존 아키텍처 활용**: `StaticVendorManager`의 getter 패턴이 이미 잘 설계됨
-2. **테스트 커버리지**: 584개 테스트로 회귀 검증 가능
-3. **번들 효율성**: 단일 라이브러리 유지로 크기 최적화
-4. **개념 유사성**: Solid의 `createSignal` ↔ Preact의 `signal`
-
----
-
-## 활성 작업: Preact → Solid.js 마이그레이션
-
-### Phase 1: 환경 준비 및 의존성 전환 🔴 진행 예정
-
-**목표**: Vite 설정, 의존성, 타입 정의 전환
-
-**작업 항목:**
-
-1. **의존성 변경**
-   - [ ] `solid-js` 설치
-   - [ ] `vite-plugin-solid` 설치
-   - [ ] `preact`, `@preact/signals`, `@preact/preset-vite` 제거
-   - [ ] `package.json` 업데이트
-
-2. **Vite 설정 수정**
-   - [ ] `vite.config.ts`: `@preact/preset-vite` → `vite-plugin-solid`로 교체
-   - [ ] JSX 컴파일 설정 변경 (`jsxImportSource: "solid-js"`)
-   - [ ] Userscript 번들링 검증 (단일 파일 출력 유지)
-
-3. **TypeScript 설정**
-   - [ ] `tsconfig.json`: `jsx: "react-jsx"` → `jsx: "preserve"`
-   - [ ] `jsxImportSource: "solid-js"` 추가
-   - [ ] Solid 타입 정의 import
-
-**수용 기준:**
-
-- `npm run typecheck` 통과 (타입 오류 0건)
-- `npm run build:dev` 성공 (경고 허용)
-- 테스트는 Phase 2 이후 수정
-
-**예상 영향 범위:**
-
-- `package.json` (1개)
-- `vite.config.ts` (1개)
-- `tsconfig.json` (1개)
-
----
-
-### Phase 2: Vendor 어댑터 전환 🔴 대기 중
-
-**목표**: `StaticVendorManager`를 Solid.js 기반으로 재구현
-
-**작업 항목:**
-
-1. **Vendor Manager 재작성**
-   - [ ] `vendor-manager-static.ts`: Solid.js import로 교체
-
-     ```ts
-     // Before
-     import * as preact from 'preact';
-     import * as preactSignals from '@preact/signals';
-
-     // After
-     import { render, createSignal, createEffect, createMemo, ... } from 'solid-js';
-     import { createStore } from 'solid-js/store';
-     ```
-
-   - [ ] API 인터페이스 매핑 정의:
-     - `getSolid()`: render, createComponent, Show, For 등
-     - `getSolidSignals()`: createSignal, createEffect, createMemo, batch
-     - `getSolidStore()`: createStore, produce (복잡한 상태용)
-
-2. **Getter 함수 재작성**
-   - [ ] `vendor-api-safe.ts`: Solid API 노출
-   - [ ] 기존 `getPreact()` → `getSolid()`로 교체
-   - [ ] 기존 `getPreactSignals()` → `getSolidSignals()`로 교체
-   - [ ] 기존 `getPreactCompat()` 제거 (Solid에서 불필요)
-
-3. **타입 정의 갱신**
-   - [ ] `PreactAPI` → `SolidAPI` 인터페이스 재정의
-   - [ ] `PreactSignalsAPI` → `SolidSignalsAPI`
-   - [ ] `VNode` → Solid의 `JSX.Element`로 교체
-
-**수용 기준:**
-
-- `npm run typecheck` 통과
-- Vendor getter 호출 시 Solid API 반환
-- 테스트 모킹 준비 (Phase 5)
-
-**예상 영향 범위:**
-
-- `src/shared/external/vendors/*` (5개 파일)
-
----
-
-### Phase 3: Signals 레이어 마이그레이션 🔴 대기 중
-
-**목표**: `src/shared/state/signals/*`의 모든 signal을 Solid의 `createSignal`로
-전환
-
-**작업 항목:**
-
-1. **Signal 팩토리 전환**
-   - [ ] `signal-factory.ts`: `createSignalSafe` → Solid 기반으로 재작성
-
-     ```ts
-     // Before
-     const { signal } = getPreactSignals();
-     export const mySignal = signal(initialValue);
-
-     // After
-     const { createSignal } = getSolidSignals();
-     export const [myValue, setMyValue] = createSignal(initialValue);
-     ```
-
-2. **Computed 값 전환**
-   - [ ] `computed()` → `createMemo()` 교체
-   - [ ] 반응성 의존성 자동 추적 검증
-
-3. **Effect 전환**
-   - [ ] `effect()` → `createEffect()` 교체
-   - [ ] 클린업 함수 패턴 통일
-
-4. **Batch 업데이트**
-   - [ ] `batch()` → Solid의 `batch()` 교체
-
-**수용 기준:**
-
-- 모든 signals 파일 타입 오류 0건
-- Signal 구독/변경 동작 유지
-- Phase 5에서 통합 테스트
-
-**예상 영향 범위:**
-
-- `src/shared/state/signals/*` (약 10개 파일)
-- `src/shared/utils/signalSelector.ts` (selector 유틸)
-
----
-
-### Phase 4: 컴포넌트 마이그레이션 🔴 대기 중
-
-**목표**: 모든 Preact 컴포넌트를 Solid.js 컴포넌트로 전환
-
-**작업 항목:**
-
-1. **Hooks → Primitives 매핑**
-   - [ ] `useState` → `createSignal`
-   - [ ] `useEffect` → `createEffect`
-   - [ ] `useMemo` → `createMemo`
-   - [ ] `useCallback` → 불필요 (Solid는 자동 메모이제이션)
-   - [ ] `useRef` → 직접 변수 사용 또는 signal
-   - [ ] `useContext` → `useContext` (Solid도 동일 API)
-
-2. **JSX 패턴 변경**
-   - [ ] `className` → `class`
-   - [ ] 이벤트 핸들러: `onClick` → `onClick` (동일하나 바인딩 방식 확인)
-   - [ ] 조건부 렌더링: `{condition && <Component />}` →
-         `<Show when={condition}><Component /></Show>`
-   - [ ] 리스트 렌더링: `.map()` → `<For each={items}>{item => ...}</For>`
-
-3. **컴포넌트별 전환**
-   - [ ] `src/features/gallery/*` (Gallery 기능)
-   - [ ] `src/features/settings/*` (Settings 기능)
-   - [ ] `src/shared/components/*` (공통 컴포넌트)
-
-4. **Props 타입 정의**
-   - [ ] `ComponentProps` → Solid의 `JSX.IntrinsicElements` 기반으로 재정의
-
-**수용 기준:**
-
-- 모든 `.tsx` 파일 타입 오류 0건
-- 컴포넌트 렌더링 로직 동일 동작
-- Phase 5에서 E2E 검증
-
-**예상 영향 범위:**
-
-- `src/features/**/*.tsx` (약 30개 파일)
-- `src/shared/components/**/*.tsx` (약 20개 파일)
-
----
-
-### Phase 5: 테스트 수정 및 검증 🔴 대기 중
-
-**목표**: 584개 모든 테스트를 Solid.js 기반으로 수정하고 GREEN 달성
-
-**작업 항목:**
-
-1. **테스트 유틸 전환**
-   - [ ] `@testing-library/preact` → `@testing-library/solid` 교체
-   - [ ] `renderHook` → Solid 버전으로 교체
-   - [ ] Mock vendors: `mockPreactAPI` → `mockSolidAPI`
-
-2. **테스트 패턴 수정**
-   - [ ] Signal 테스트: `signal.value` 접근 → `[value, setValue]` 패턴
-   - [ ] Effect 테스트: 반응성 추적 검증
-   - [ ] 컴포넌트 마운트: `render()` 호출 방식 확인
-
-3. **테스트 파일 일괄 수정**
-   - [ ] `test/unit/**/*.test.{ts,tsx}` (약 50개)
-   - [ ] `test/integration/**/*.test.{ts,tsx}` (약 30개)
-   - [ ] `test/components/**/*.test.{ts,tsx}` (약 20개)
-   - [ ] 나머지 테스트 파일 (24개)
-
-4. **분할 검증**
-   - [ ] `npm run test:smoke` GREEN
-   - [ ] `npm run test:fast` GREEN
-   - [ ] `npm run test:unit` GREEN
-   - [ ] `npm run test:full` GREEN (584개 전체)
-
-**수용 기준:**
-
-- 모든 테스트 스위트 GREEN
-- 커버리지 유지 또는 개선
-- 회귀 버그 0건
-
-**예상 영향 범위:**
-
-- `test/**/*.{test,spec}.{ts,tsx}` (124개 파일)
-
----
-
-### Phase 6: 문서 갱신 및 최종 검증 🔴 대기 중
-
-**목표**: 문서 업데이트, 라이선스, 빌드 검증, 릴리즈 준비
-
-**작업 항목:**
-
-1. **개발 문서 갱신**
-   - [ ] `AGENTS.md`: Preact → Solid.js 스택 명시
-   - [ ] `docs/ARCHITECTURE.md`: Vendor 시스템 설명 갱신
-   - [ ] `docs/CODING_GUIDELINES.md`: 컴포넌트 패턴 예시 교체
-   - [ ] `.github/copilot-instructions.md`: Solid.js 규칙 추가
-
-2. **라이선스 문서**
-   - [ ] `LICENSES/preact-MIT.txt` 제거
-   - [ ] `LICENSES/preact-signals-MIT.txt` 제거
-   - [ ] `LICENSES/solid-js-MIT.txt` 추가
-
-3. **빌드 및 배포**
-   - [ ] `npm run build:dev` 검증
-   - [ ] `npm run build:prod` 검증
-   - [ ] `node ./scripts/validate-build.js` 통과
-   - [ ] Userscript 메타데이터 갱신 (버전, 설명)
-
-4. **종합 품질 검증**
-   - [ ] `npm run validate` 통과
-   - [ ] `npm run deps:all` 통과
-   - [ ] `npm test` 전체 통과
-   - [ ] E2E 스모크 테스트: `npm run e2e:smoke`
-
-**수용 기준:**
-
-- 모든 문서가 Solid.js 기준으로 갱신됨
-- 빌드 산출물이 정상 동작 (dev/prod)
-- 라이선스 준수
-
-**예상 영향 범위:**
-
-- `docs/**/*.md` (5개)
-- `LICENSES/*` (3개)
-- `README.md` (1개)
-
----
-
-## 품질 게이트 (모든 작업 시 필수)
-
-변경 전:
-
-- [ ] `npm run typecheck` — 타입 오류 0건
-- [ ] `npm run lint` — 린트 오류 0건
-- [ ] `npm test` — 모든 테스트 통과
-
-변경 후:
-
-- [ ] `npm run build` — dev/prod 빌드 성공
-- [ ] `node scripts/validate-build.js` — 번들 검증 통과
-- [ ] `npm run deps:check` — 의존성 규칙 위반 0건
-
----
-
-## 리팩토링 원칙 (참고)
-
-1. **TDD 우선**: 실패 테스트 → 최소 구현 → 리팩토링
-2. **최소 diff**: 변경 범위를 최소화하여 리뷰 가능하게 유지
-3. **단계별 진행**: 큰 작업은 여러 단계로 분할하여 검증
-4. **문서화**: 완료 시 `TDD_REFACTORING_PLAN_COMPLETED.md`에 이관
-
----
-
-## 참고 문서
-
-- **아키텍처**: `docs/ARCHITECTURE.md` — 3계층 구조, 의존성 경계
-- **코딩 가이드**: `docs/CODING_GUIDELINES.md` — 스타일, 토큰, 테스트 정책
-- **의존성 거버넌스**: `docs/DEPENDENCY-GOVERNANCE.md` — 의존성 규칙, CI 강제
-- **완료 로그**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` — 완료된 작업 이력
-- **실행 가이드**: `AGENTS.md` — 개발 환경, 스크립트, 워크플로
+## 품질 게이트

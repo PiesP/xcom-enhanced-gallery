@@ -70,10 +70,10 @@
       ],
       "dependents": [
         "src/bootstrap/env-init.ts",
+        "src/shared/types/app.types.ts",
         "src/shared/services/BulkDownloadService.ts",
-        "src/shared/services/UnifiedToastManager.ts",
-        "src/shared/components/isolation/GalleryContainer.tsx",
         "src/shared/state/signals/signal-factory.ts",
+        "src/shared/components/isolation/GalleryContainer.tsx",
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
@@ -104,7 +104,6 @@
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
-        "src/shared/components/hoc/GalleryHOC.tsx",
         "src/features/gallery/components/vertical-gallery-view/hooks/useProgressiveImage.ts",
         "src/features/gallery/hooks/useToolbarPositionBased.ts",
         "src/main.ts",
@@ -126,7 +125,6 @@
         "src/shared/hooks/useFocusScope.ts",
         "src/shared/hooks/useGalleryToolbarLogic.ts",
         "src/shared/hooks/useSettingsModal.ts",
-        "src/shared/utils/optimization/memo.ts",
         "src/shared/utils/performance/signalOptimization.ts"
       ],
       "orphan": false,
@@ -186,29 +184,10 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./vendor-types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/external/vendors/vendor-types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
         }
       ],
       "dependents": [
-        "src/shared/external/vendors.ts",
-        "src/shared/external/vendors/heroicons-react.ts"
+        "src/shared/external/vendors.ts"
       ],
       "orphan": false,
       "valid": true
@@ -315,6 +294,7 @@
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/services/LanguageService.ts",
         "src/shared/services/UnifiedToastManager.ts",
+        "src/shared/state/signals/signal-factory.ts",
         "src/shared/services/ThemeService.ts",
         "src/shared/services/ToastController.ts",
         "src/shared/services/ServiceManager.ts",
@@ -323,7 +303,6 @@
         "src/shared/services/EventManager.ts",
         "src/shared/dom/DOMEventManager.ts",
         "src/shared/utils/events.ts",
-        "src/shared/state/signals/signal-factory.ts",
         "src/shared/utils/media/MediaClickDetector.ts",
         "src/shared/dom/utils/dom-utils.ts",
         "src/shared/utils/utils.ts",
@@ -413,12 +392,31 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./vendor-types",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors/vendor-types.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
         "src/shared/external/vendors/index.ts",
         "src/shared/external/vendors/vendor-api-safe.ts",
-        "src/shared/external/vendors/vendor-api.ts"
+        "src/shared/external/vendors/vendor-api.ts",
+        "src/shared/external/vendors/vendor-manager.ts"
       ],
       "orphan": false,
       "valid": true
@@ -475,7 +473,6 @@
         "src/shared/utils/index.ts",
         "src/shared/browser/BrowserService.ts",
         "src/shared/browser/utils/browser-utils.ts",
-        "src/shared/external/vendors/vendor-manager.ts",
         "src/shared/hooks/useAccessibility.ts",
         "src/shared/services/AnimationService.ts",
         "src/shared/utils/performance/signalOptimization.ts"
@@ -519,7 +516,7 @@
       "source": "src/shared/external/vendors/vendor-types.ts",
       "dependencies": [],
       "dependents": [
-        "src/shared/external/vendors/index.ts"
+        "src/shared/external/vendors/vendor-manager-static.ts"
       ],
       "orphan": false,
       "valid": true
@@ -1286,7 +1283,29 @@
     },
     {
       "source": "src/shared/types/app.types.ts",
-      "dependencies": [],
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
       "dependents": [
         "src/shared/interfaces/gallery.interfaces.ts",
         "src/shared/services/ToastController.ts",
@@ -1844,14 +1863,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../external/vendors",
+          "module": "../logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1861,14 +1880,14 @@
         },
         {
           "dynamic": false,
-          "module": "../logging/logger",
+          "module": "../state/signals/signal-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/logging/logger.ts",
+          "resolved": "src/shared/state/signals/signal-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -1902,6 +1921,60 @@
         "src/shared/components/ui/Toast/Toast.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/services/index.ts"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/state/signals/signal-factory.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/logging/logger",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/services/UnifiedToastManager.ts",
+        "src/shared/state/signals/gallery.signals.ts",
+        "src/shared/state/signals/download.signals.ts",
+        "src/shared/state/signals/toolbar.signals.ts",
+        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2483,24 +2556,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../logging",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -2616,7 +2671,6 @@
       ],
       "dependents": [
         "src/shared/components/isolation/GalleryContainer.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/services/input/KeyboardNavigator.ts",
@@ -2871,59 +2925,6 @@
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/shared/state/index.ts",
         "src/shared/state/app-state.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/signals/signal-factory.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "@shared/external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/state/signals/gallery.signals.ts",
-        "src/shared/state/signals/download.signals.ts",
-        "src/shared/state/signals/toolbar.signals.ts",
-        "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
       "valid": true
@@ -6081,6 +6082,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../../../shared/state/signals/gallery.signals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/state/signals/gallery.signals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../../shared/types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6462,23 +6481,6 @@
         },
         {
           "dynamic": false,
-          "module": "../../../services/EventManager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/EventManager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../../../services/LanguageService",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6735,23 +6737,6 @@
     {
       "source": "src/shared/components/ui/Button/IconButton.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../../external/vendors",
@@ -7141,44 +7126,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7211,79 +7162,8 @@
       "valid": true
     },
     {
-      "source": "src/shared/external/vendors/heroicons-react.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./index",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./index",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
-        "src/shared/components/ui/Icon/hero/HeroArrowAutofitWidth.tsx",
-        "src/shared/components/ui/Icon/hero/HeroArrowsMaximize.tsx",
-        "src/shared/components/ui/Icon/hero/HeroChevronLeft.tsx",
-        "src/shared/components/ui/Icon/hero/HeroChevronRight.tsx",
-        "src/shared/components/ui/Icon/hero/HeroDownload.tsx",
-        "src/shared/components/ui/Icon/hero/HeroFileZip.tsx",
-        "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
-        "src/shared/components/ui/Icon/hero/HeroX.tsx",
-        "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/Icon/Icon.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../../external/vendors",
@@ -7330,44 +7210,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7409,44 +7255,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7488,44 +7300,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7568,44 +7346,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7648,44 +7392,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7728,44 +7438,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7807,44 +7483,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7887,44 +7529,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7967,44 +7575,10 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
             "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../../external/vendors/heroicons-react",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors/heroicons-react.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -8111,6 +7685,24 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
@@ -9149,6 +8741,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../../shared/state/signals/gallery.signals",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/state/signals/gallery.signals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../shared/utils/core-utils",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9542,6 +9152,24 @@
         },
         {
           "dynamic": false,
+          "module": "../../../../shared/components/ui/Button/Button",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "type-only",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Button/Button.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../../shared/components/ui/StandardProps",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -9728,41 +9356,6 @@
     {
       "source": "src/shared/components/hoc/GalleryHOC.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../logging/logger",
@@ -11464,40 +11057,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../utils/timer-management",
-          "moduleSystem": "cjs",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "require"
-          ],
-          "resolved": "src/shared/utils/timer-management.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "../StandardProps",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11568,6 +11127,46 @@
           "matchesDoNotFollow": false,
           "circular": false,
           "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/timer-management",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/timer-management.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
         }
       ],
       "dependents": [
@@ -11598,41 +11197,6 @@
     {
       "source": "src/shared/components/ui/Toast/ToastContainer.tsx",
       "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
         {
           "dynamic": false,
           "module": "../../base/BaseComponentProps",
@@ -11742,7 +11306,27 @@
         },
         {
           "dynamic": false,
-          "module": "@/shared/utils/signalSelector",
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/utils/signalSelector",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -13240,6 +12824,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
@@ -13396,6 +12981,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
@@ -13531,6 +13117,7 @@
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
           "resolved": "src/shared/external/vendors.ts",
@@ -13604,24 +13191,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./Button.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13632,6 +13201,26 @@
           "resolved": "src/shared/components/ui/primitive/Button.css",
           "coreModule": false,
           "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -13666,24 +13255,6 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./Panel.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -13694,6 +13265,26 @@
           "resolved": "src/shared/components/ui/primitive/Panel.css",
           "coreModule": false,
           "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "@shared/external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -13952,6 +13543,19 @@
       "valid": true
     },
     {
+      "source": "src/shared/external/vendors/heroicons-react.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": false,
+      "rules": [
+        {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      ]
+    },
+    {
       "source": "src/shared/external/vendors/vendor-api.ts",
       "dependencies": [
         {
@@ -14016,14 +13620,14 @@
         },
         {
           "dynamic": false,
-          "module": "../../utils/timer-management",
+          "module": "./vendor-manager-static",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/timer-management.ts",
+          "resolved": "src/shared/external/vendors/vendor-manager-static.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15336,25 +14940,7 @@
     },
     {
       "source": "src/shared/utils/optimization/memo.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
+      "dependencies": [],
       "dependents": [
         "src/shared/utils/optimization/index.ts"
       ],
@@ -16321,6 +15907,13 @@
       "valid": true
     },
     {
+      "source": "src/types/solid-js-client.d.ts",
+      "dependencies": [],
+      "dependents": [],
+      "orphan": true,
+      "valid": true
+    },
+    {
       "source": "src/utils/index.ts",
       "dependencies": [
         {
@@ -16364,13 +15957,23 @@
     }
   ],
   "summary": {
-    "violations": [],
+    "violations": [
+      {
+        "type": "module",
+        "from": "src/shared/external/vendors/heroicons-react.ts",
+        "to": "src/shared/external/vendors/heroicons-react.ts",
+        "rule": {
+          "severity": "info",
+          "name": "no-orphans"
+        }
+      }
+    ],
     "error": 0,
     "warn": 0,
-    "info": 0,
+    "info": 1,
     "ignore": 0,
-    "totalCruised": 265,
-    "totalDependenciesCruised": 745,
+    "totalCruised": 266,
+    "totalDependenciesCruised": 720,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

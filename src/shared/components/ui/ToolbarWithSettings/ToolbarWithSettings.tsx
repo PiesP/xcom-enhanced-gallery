@@ -4,7 +4,7 @@
  * @version 6.0.0 - Glassmorphism 일관성 적용
  */
 
-import { getPreact, getPreactHooks, type VNode } from '../../../external/vendors';
+import { getSolid, type JSXElement } from '../../../external/vendors';
 import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
 import { SettingsModal } from '../SettingsModal/SettingsModal';
 
@@ -23,34 +23,30 @@ export function ToolbarWithSettings({
   settingsPosition = 'toolbar-below',
   settingsTestId = 'toolbar-settings-modal',
   ...toolbarProps
-}: ToolbarWithSettingsProps): VNode {
-  const { h, Fragment } = getPreact();
-  const { useState, useCallback } = getPreactHooks();
+}: ToolbarWithSettingsProps): JSXElement {
+  const { createSignal } = getSolid();
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
-  const handleOpenSettings = useCallback(() => {
+  const handleOpenSettings = () => {
     setIsSettingsOpen(true);
-  }, []);
+  };
 
-  const handleCloseSettings = useCallback(() => {
+  const handleCloseSettings = () => {
     setIsSettingsOpen(false);
-  }, []);
+  };
 
-  return h(Fragment, null, [
-    h(Toolbar, {
-      ...toolbarProps,
-      onOpenSettings: handleOpenSettings,
-      key: 'unified-toolbar',
-    }),
-    isSettingsOpen &&
-      h(SettingsModal, {
-        isOpen: isSettingsOpen,
-        onClose: handleCloseSettings,
-        // SettingsModal은 'toolbar-below' | 'top-right'만 지원
-        position: settingsPosition === 'top-right' ? 'top-right' : 'toolbar-below',
-        'data-testid': settingsTestId,
-        key: 'unified-settings-modal',
-      }),
-  ]);
+  return (
+    <>
+      <Toolbar {...toolbarProps} onOpenSettings={handleOpenSettings} />
+      {isSettingsOpen() && (
+        <SettingsModal
+          isOpen={isSettingsOpen()}
+          onClose={handleCloseSettings}
+          position={settingsPosition === 'top-right' ? 'top-right' : 'toolbar-below'}
+          data-testid={settingsTestId}
+        />
+      )}
+    </>
+  );
 }

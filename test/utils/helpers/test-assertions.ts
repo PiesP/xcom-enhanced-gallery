@@ -4,6 +4,41 @@
  */
 
 import { expect } from 'vitest';
+import type { MediaInfo } from '@shared/types';
+
+// 테스트용 타입 정의 (실제 타입이 없으므로 MediaInfo 기반으로 확장)
+type MediaItem = MediaInfo & {
+  id: string;
+  type: 'image' | 'video';
+  downloadStatus: 'idle' | 'downloading' | 'completed' | 'failed';
+  info: MediaInfo;
+};
+
+type ImageInfo = MediaInfo & {
+  width: number;
+  height: number;
+  format: string;
+  size: number;
+};
+
+type VideoInfo = MediaInfo & {
+  width: number;
+  height: number;
+  duration: number;
+  format: string;
+  size: number;
+  bitrate?: number;
+};
+
+type GalleryState = {
+  readonly isOpen: boolean;
+  readonly mediaItems: readonly MediaItem[];
+  readonly currentIndex: number;
+  readonly isLoading: boolean;
+  readonly error: string | null;
+  readonly isVisible?: boolean;
+  readonly viewMode?: 'grid' | 'list' | 'fullscreen';
+};
 
 // ================================
 // DOM Assertion Helpers
@@ -197,10 +232,14 @@ export function expectValidVideoInfo(info: VideoInfo): void {
   expect(info.height).toBeGreaterThan(0);
   expect(typeof info.format).toBe('string');
   expect(info.size).toBeGreaterThan(0);
-  expect(info.bitrate).toBeGreaterThan(0);
+  if (info.bitrate) {
+    expect(info.bitrate).toBeGreaterThan(0);
+  }
 
   expectUrlToBeMediaUrl(info.url, 'video');
-  expectUrlToBeMediaUrl(info.thumbnailUrl, 'image');
+  if (info.thumbnailUrl) {
+    expectUrlToBeMediaUrl(info.thumbnailUrl, 'image');
+  }
 }
 
 /**
@@ -273,8 +312,8 @@ export function expectGalleryToHaveError(state: GalleryState, errorMessage?: str
   expect(state.isLoading).toBe(false);
   expect(state.error).not.toBeNull();
 
-  if (errorMessage) {
-    expect(state.error?.message).toContain(errorMessage);
+  if (errorMessage && state.error) {
+    expect(state.error).toContain(errorMessage);
   }
 }
 

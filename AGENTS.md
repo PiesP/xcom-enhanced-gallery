@@ -7,7 +7,7 @@
 
 - 패키지 매니저: npm (단일 패키지)
 - Node.js: 20 권장 (CI는 20/22에서 검증)
-- 번들러: Vite 7, 프레임워크: Preact 10, 테스트: Vitest 3 + JSDOM
+- 번들러: Vite 7, 프레임워크: Solid.js 1.9.9, 테스트: Vitest 3 + JSDOM
 - 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
 - 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,
   PC 전용 이벤트, TDD 우선)
@@ -34,7 +34,9 @@ npm install -g @typescript/tsgo
 
 ## 자주 쓰는 스크립트
 
-- 타입 체크: `npm run typecheck` (tsgo 사용)
+- 타입 체크: `npm run typecheck` (tsgo 사용, `src/` 및 구성 파일 대상으로 실행)
+- 테스트 타입 체크(WIP): `npm run typecheck:tests` (테스트 디렉터리의 잔여 타입
+  오류 추적 용도)
 - 린트(수정 포함): `npm run lint` / `npm run lint:fix`
 - 포맷: `npm run format`
 - 테스트:

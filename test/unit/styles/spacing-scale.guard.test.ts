@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, sep, dirname } from 'node:path';
+import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Guard: Forbid raw px spacing in TS/TSX source.
@@ -13,7 +13,7 @@ const __filename_local = fileURLToPath(import.meta.url);
 const __dirname_local = dirname(__filename_local);
 const ROOT = join(__dirname_local, '..', '..', '..', 'src');
 
-function listFiles(dir, acc = []) {
+function listFiles(dir: string, acc: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
@@ -27,7 +27,7 @@ describe('Spacing scale guard (TSX inline styles only)', () => {
   it('should not use px values in inline style props within TSX components', () => {
     const files = listFiles(ROOT).filter(f => /\.(tsx)$/.test(f));
 
-    const violations = [];
+    const violations: Array<{ file: string; line: number; snippet: string }> = [];
 
     // Heuristics: only lines that look like inline style usage
     const STYLE_LINE = /(\bstyle\s*=|\bstyle\s*:\s*\{|\bstyle\s*:\s*\()/;

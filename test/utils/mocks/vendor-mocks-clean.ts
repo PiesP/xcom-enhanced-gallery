@@ -3,6 +3,7 @@
  * 프로젝트의 vendors getter 패턴에 맞는 테스트 Mock
  */
 
+import { Buffer } from 'node:buffer';
 import { vi } from 'vitest';
 
 // ================================
@@ -14,30 +15,30 @@ import { vi } from 'vitest';
  */
 export function createMockFflate() {
   return {
-    zip: vi.fn().mockImplementation((files, callback) => {
+    zip: vi.fn().mockImplementation((_files, callback) => {
       // 간단한 zip 시뮬레이션
       const result = new Uint8Array([0x50, 0x4b, 0x03, 0x04]); // ZIP 매직 넘버
       callback(null, result);
     }),
 
-    unzip: vi.fn().mockImplementation((data, callback) => {
+    unzip: vi.fn().mockImplementation((_data, callback) => {
       // 간단한 unzip 시뮬레이션
       callback(null, { 'test.txt': new Uint8Array([116, 101, 115, 116]) });
     }),
 
     strToU8: vi.fn().mockImplementation(str => {
-      return new TextEncoder().encode(str);
+      return new Uint8Array(Buffer.from(String(str), 'utf-8'));
     }),
 
     strFromU8: vi.fn().mockImplementation(data => {
-      return new TextDecoder().decode(data);
+      return Buffer.from(data).toString('utf-8');
     }),
 
-    zipSync: vi.fn().mockImplementation(files => {
+    zipSync: vi.fn().mockImplementation(_files => {
       return new Uint8Array([0x50, 0x4b, 0x03, 0x04]);
     }),
 
-    unzipSync: vi.fn().mockImplementation(data => {
+    unzipSync: vi.fn().mockImplementation(_data => {
       return { 'test.txt': new Uint8Array([116, 101, 115, 116]) };
     }),
 
@@ -125,17 +126,17 @@ export function createMockPreactHooks() {
       return [initialValue, setValue];
     }),
 
-    useEffect: vi.fn().mockImplementation((effect, deps) => {
+    useEffect: vi.fn().mockImplementation((effect, _deps) => {
       // 동기적으로 effect 실행 (테스트 환경)
       const cleanup = effect();
       return cleanup;
     }),
 
-    useMemo: vi.fn().mockImplementation((factory, deps) => {
+    useMemo: vi.fn().mockImplementation((factory, _deps) => {
       return factory();
     }),
 
-    useCallback: vi.fn().mockImplementation((callback, deps) => {
+    useCallback: vi.fn().mockImplementation((callback, _deps) => {
       return callback;
     }),
 
@@ -147,12 +148,12 @@ export function createMockPreactHooks() {
       return context?._defaultValue;
     }),
 
-    useReducer: vi.fn().mockImplementation((reducer, initialState) => {
+    useReducer: vi.fn().mockImplementation((_reducer, initialState) => {
       const dispatch = vi.fn();
       return [initialState, dispatch];
     }),
 
-    useLayoutEffect: vi.fn().mockImplementation((effect, deps) => {
+    useLayoutEffect: vi.fn().mockImplementation((effect, _deps) => {
       // useEffect와 동일하게 처리 (테스트 환경)
       const cleanup = effect();
       return cleanup;
@@ -202,7 +203,7 @@ export function createMockPreactSignals() {
  */
 export function createMockMotion() {
   return {
-    animate: vi.fn().mockImplementation(async (element, keyframes, options) => {
+    animate: vi.fn().mockImplementation(async (element, keyframes, _options) => {
       // 즉시 완료되는 애니메이션 시뮬레이션
       if (element && typeof element === 'object' && 'style' in element) {
         Object.assign(element.style, keyframes);
@@ -210,18 +211,18 @@ export function createMockMotion() {
       return Promise.resolve();
     }),
 
-    scroll: vi.fn().mockImplementation((onScroll, options) => {
+    scroll: vi.fn().mockImplementation((onScroll, _options) => {
       // 스크롤 이벤트 시뮬레이션
-      const handler = () => onScroll({ scrollY: 0, scrollX: 0 });
+      onScroll({ scrollY: 0, scrollX: 0 });
       return vi.fn(); // cleanup function
     }),
 
-    timeline: vi.fn().mockImplementation(async (keyframes, options) => {
+    timeline: vi.fn().mockImplementation(async (_keyframes, _options) => {
       // 타임라인 애니메이션 즉시 완료
       return Promise.resolve();
     }),
 
-    stagger: vi.fn().mockImplementation((duration = 0.1, options) => {
+    stagger: vi.fn().mockImplementation((duration = 0.1, _options) => {
       return vi.fn().mockImplementation(index => index * duration);
     }),
   };
@@ -236,15 +237,15 @@ export function createMockMotion() {
  * 실제 프로젝트의 VendorManager와 호환되는 인터페이스
  */
 export class MockVendorManager {
-  static instance = null;
-  cache = new Map();
+  static instance: MockVendorManager | null = null;
+  cache = new Map<string, unknown>();
 
-  static getInstance() {
+  static getInstance(): MockVendorManager {
     MockVendorManager.instance ??= new MockVendorManager();
     return MockVendorManager.instance;
   }
 
-  static resetInstance() {
+  static resetInstance(): void {
     MockVendorManager.instance = null;
   }
 

@@ -3,32 +3,39 @@
  * Licensed under the MIT License
  *
  * @fileoverview 통합된 갤러리 아이템 스크롤 훅
- * @description 갤러리 아이템들 간의 스크롤을 관리하는 단순하고 신뢰할 수 있는 훅
- * @version 1.0.0 - 초기 구현
+ * @description Solid.js 기반으로 갤러리 아이템 간 스크롤을 안정적으로 관리하는 훅
  */
 
-import { getPreactHooks } from '../../../shared/external/vendors';
+import { getSolid } from '../../../shared/external/vendors';
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
-const { useCallback, useEffect, useRef } = getPreactHooks();
+const { onCleanup } = getSolid();
+
+type Accessor<T> = () => T;
+type MaybeAccessor<T> = T | Accessor<T>;
+
+const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
+  typeof value === 'function' ? (value as Accessor<T>) : () => value;
+
+const INDEX_WATCH_INTERVAL = 32; // ~30fps 폴링으로 signal 비연동 환경에서도 안정 지원
 
 export interface UseGalleryItemScrollOptions {
   /** 스크롤 활성화 여부 */
-  enabled?: boolean;
+  enabled?: MaybeAccessor<boolean>;
   /** 스크롤 동작 방식 */
-  behavior?: ScrollBehavior;
+  behavior?: MaybeAccessor<ScrollBehavior>;
   /** 스크롤 블록 위치 */
-  block?: ScrollLogicalPosition;
+  block?: MaybeAccessor<ScrollLogicalPosition>;
   /** 디바운스 지연 시간 (ms) */
-  debounceDelay?: number;
+  debounceDelay?: MaybeAccessor<number>;
   /** 스크롤 오프셋 (px) */
-  offset?: number;
+  offset?: MaybeAccessor<number>;
   /** 중앙 정렬 여부 */
-  alignToCenter?: boolean;
+  alignToCenter?: MaybeAccessor<boolean>;
   /** motion 선호도 고려 여부 */
-  respectReducedMotion?: boolean;
+  respectReducedMotion?: MaybeAccessor<boolean>;
 }
 
 export interface UseGalleryItemScrollReturn {
@@ -38,212 +45,231 @@ export interface UseGalleryItemScrollReturn {
   scrollToCurrentItem: () => Promise<void>;
 }
 
-/**
- * 갤러리 아이템 스크롤 관리를 위한 통합 훅
- *
- * @description
- * - 미디어 요소 의존성 제거
- * - 컨테이너 기반 scrollIntoView 사용
- * - 단순하고 신뢰할 수 있는 스크롤 로직
- * - 디바운스 적용으로 성능 최적화
- *
- * @param containerRef 갤러리 컨테이너 참조
- * @param currentIndex 현재 선택된 아이템 인덱스
- * @param totalItems 전체 아이템 개수
- * @param options 스크롤 옵션
- */
 export function useGalleryItemScroll(
-  containerRef: { current: HTMLElement | null },
-  currentIndex: number,
-  totalItems: number,
-  {
-    enabled = true,
-    behavior = 'smooth',
-    block = 'start',
-    debounceDelay = 100,
-    offset = 0,
-    alignToCenter = false,
-    respectReducedMotion = true,
-  }: UseGalleryItemScrollOptions = {}
+  containerRef: { current: HTMLElement | null } | Accessor<HTMLElement | null>,
+  currentIndex: MaybeAccessor<number>,
+  totalItems: MaybeAccessor<number>,
+  options: UseGalleryItemScrollOptions = {}
 ): UseGalleryItemScrollReturn {
-  const lastScrolledIndexRef = useRef<number>(-1);
-  const scrollTimeoutRef = useRef<number | null>(null);
-  const retryCountRef = useRef<number>(0);
+  const containerAccessor: Accessor<HTMLElement | null> =
+    typeof containerRef === 'function'
+      ? (containerRef as Accessor<HTMLElement | null>)
+      : () => containerRef.current;
 
-  /**
-   * 특정 인덱스의 아이템으로 스크롤
-   */
-  const scrollToItem = useCallback(
-    async (index: number): Promise<void> => {
-      if (!enabled || !containerRef.current || index < 0 || index >= totalItems) {
-        logger.debug('useGalleryItemScroll: 스크롤 조건 불충족', {
-          enabled,
-          hasContainer: !!containerRef.current,
-          index,
-          totalItems,
+  const enabled = toAccessor(options.enabled ?? true);
+  const behavior = toAccessor(options.behavior ?? 'smooth');
+  const block = toAccessor(options.block ?? 'start');
+  const debounceDelay = toAccessor(options.debounceDelay ?? 100);
+  const offset = toAccessor(options.offset ?? 0);
+  const alignToCenter = toAccessor(options.alignToCenter ?? false);
+  const respectReducedMotion = toAccessor(options.respectReducedMotion ?? true);
+
+  const currentIndexAccessor = toAccessor(currentIndex);
+  const totalItemsAccessor = toAccessor(totalItems);
+
+  let lastScrolledIndex = -1;
+  let pendingIndex: number | null = null;
+  let scrollTimeoutId: number | null = null;
+  let indexWatcherId: number | null = null;
+  let retryCount = 0;
+
+  const clearScrollTimeout = () => {
+    if (scrollTimeoutId !== null) {
+      globalTimerManager.clearTimeout(scrollTimeoutId);
+      scrollTimeoutId = null;
+    }
+  };
+
+  const stopIndexWatcher = () => {
+    if (indexWatcherId !== null) {
+      globalTimerManager.clearInterval(indexWatcherId);
+      indexWatcherId = null;
+    }
+  };
+
+  const resolveBehavior = (): ScrollBehavior => {
+    if (!respectReducedMotion()) {
+      return behavior();
+    }
+
+    try {
+      if (typeof window !== 'undefined') {
+        const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        if (mediaQuery.matches) {
+          return 'auto';
+        }
+      }
+    } catch {
+      // matchMedia 미지원 환경에서는 기본 동작을 유지
+    }
+
+    return behavior();
+  };
+
+  const scrollToItem = async (index: number): Promise<void> => {
+    const container = containerAccessor();
+    const isEnabled = enabled();
+    const total = totalItemsAccessor();
+
+    if (!isEnabled || !container || index < 0 || index >= total) {
+      logger.debug('useGalleryItemScroll: 스크롤 조건 불충족', {
+        enabled: isEnabled,
+        hasContainer: !!container,
+        index,
+        totalItems: total,
+      });
+      pendingIndex = null;
+      return;
+    }
+
+    try {
+      const itemsRoot = container.querySelector(
+        '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+      ) as HTMLElement | null;
+
+      if (!itemsRoot) {
+        logger.warn('useGalleryItemScroll: 아이템 컨테이너를 찾을 수 없음', {
+          selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
         });
+        pendingIndex = null;
         return;
       }
 
-      try {
-        const container = containerRef.current;
-
-        // 아이템 루트 컨테이너 찾기 (호환: items-list | items-container)
-        const itemsRoot = container.querySelector(
-          '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
-        ) as HTMLElement | null;
-        if (!itemsRoot) {
-          logger.warn('useGalleryItemScroll: 아이템 컨테이너를 찾을 수 없음', {
-            selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
-          });
-          return;
-        }
-
-        const targetElement = itemsRoot.children[index] as HTMLElement;
-
-        if (!targetElement) {
-          logger.warn('useGalleryItemScroll: 타겟 요소를 찾을 수 없음', {
-            index,
-            totalItems,
-            itemsContainerChildrenCount: itemsRoot.children.length,
-          });
-          return;
-        }
-
-        // prefers-reduced-motion 확인
-        const actualBehavior =
-          respectReducedMotion && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            ? 'auto'
-            : behavior;
-
-        // scrollIntoView 사용 - 미디어 요소 의존성 없음
-        targetElement.scrollIntoView({
-          behavior: actualBehavior,
-          block: alignToCenter ? 'center' : block,
-          inline: 'nearest',
-        });
-
-        // 오프셋 보정 (헤더나 툴바 높이 보정)
-        if (offset !== 0) {
-          const scrollTop = container.scrollTop - offset;
-          container.scrollTo({
-            top: scrollTop,
-            behavior: actualBehavior,
-          });
-        }
-
-        lastScrolledIndexRef.current = index;
-        retryCountRef.current = 0; // reset retry counter on success
-
-        logger.debug('useGalleryItemScroll: 스크롤 완료', {
+      const targetElement = itemsRoot.children[index] as HTMLElement | undefined;
+      if (!targetElement) {
+        logger.warn('useGalleryItemScroll: 타겟 요소를 찾을 수 없음', {
           index,
+          totalItems: total,
+          itemsContainerChildrenCount: itemsRoot.children.length,
+        });
+        pendingIndex = null;
+        return;
+      }
+
+      const actualBehavior = resolveBehavior();
+
+      targetElement.scrollIntoView({
+        behavior: actualBehavior,
+        block: alignToCenter() ? 'center' : block(),
+        inline: 'nearest',
+      });
+
+      const offsetValue = offset();
+      if (offsetValue !== 0) {
+        container.scrollTo({
+          top: container.scrollTop - offsetValue,
           behavior: actualBehavior,
-          block: alignToCenter ? 'center' : block,
-          offset,
-          timestamp: Date.now(),
+        });
+      }
+
+      lastScrolledIndex = index;
+      pendingIndex = null;
+      retryCount = 0;
+
+      logger.debug('useGalleryItemScroll: 스크롤 완료', {
+        index,
+        behavior: actualBehavior,
+        block: alignToCenter() ? 'center' : block(),
+        offset: offsetValue,
+        timestamp: Date.now(),
+      });
+
+      if (actualBehavior === 'smooth') {
+        await new Promise<void>(resolve => {
+          globalTimerManager.setTimeout(resolve, 300);
+        });
+      }
+    } catch (error) {
+      logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
+      pendingIndex = null;
+
+      if (retryCount < 1) {
+        retryCount += 1;
+        logger.debug('useGalleryItemScroll: retry attempt', {
+          index,
+          retryCount,
         });
 
-        // smooth scroll의 경우 애니메이션 완료 대기
-        if (actualBehavior === 'smooth') {
-          await new Promise<void>(resolve => globalTimerManager.setTimeout(() => resolve(), 300));
-        }
-      } catch (error) {
-        logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
-
-        // Retry logic (max 1)
-        if (retryCountRef.current < 1) {
-          retryCountRef.current++;
-          logger.debug('useGalleryItemScroll: retry attempt', {
-            index,
-            retryCount: retryCountRef.current,
+        const observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              observer.disconnect();
+              globalTimerManager.setTimeout(() => {
+                void scrollToItem(index);
+              }, 50);
+            }
           });
+        });
 
-          // Retry after confirming visibility via IntersectionObserver
-          const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-              if (entry.isIntersecting) {
-                observer.disconnect();
-                globalTimerManager.setTimeout(() => scrollToItem(index), 50);
-              }
-            });
-          });
+        const itemsList = container?.querySelector('[data-xeg-role="items-list"]');
+        const candidate = itemsList?.children[index] as HTMLElement | undefined;
 
-          const targetElement = containerRef.current?.querySelector('[data-xeg-role="items-list"]')
-            ?.children[index] as HTMLElement;
-          if (targetElement) {
-            observer.observe(targetElement);
-            globalTimerManager.setTimeout(() => observer.disconnect(), 1000); // 1초 후 정리
-          }
+        if (candidate) {
+          observer.observe(candidate);
+          globalTimerManager.setTimeout(() => observer.disconnect(), 1000);
         }
       }
-    },
-    [
-      enabled,
-      containerRef,
-      totalItems,
-      behavior,
-      block,
-      offset,
-      alignToCenter,
-      respectReducedMotion,
-    ]
-  );
-
-  /**
-   * 현재 인덱스로 스크롤
-   */
-  const scrollToCurrentItem = useCallback(async (): Promise<void> => {
-    await scrollToItem(currentIndex);
-  }, [scrollToItem, currentIndex]);
-
-  /**
-   * currentIndex 변경 시 자동 스크롤 (디바운스 적용)
-   */
-  useEffect(() => {
-    if (!enabled || currentIndex < 0) {
-      return;
     }
+  };
 
-    // 이미 스크롤한 인덱스와 같으면 건너뜀
-    if (lastScrolledIndexRef.current === currentIndex) {
-      logger.debug('useGalleryItemScroll: 이미 스크롤한 인덱스로 건너뜀', {
-        currentIndex,
-        lastScrolledIndex: lastScrolledIndexRef.current,
-      });
-      return;
-    }
+  const scheduleScrollToIndex = (index: number): void => {
+    clearScrollTimeout();
 
-    // 이전 타이머 취소
-    if (scrollTimeoutRef.current) {
-      globalTimerManager.clearTimeout(scrollTimeoutRef.current);
-    }
+    const delay = debounceDelay();
+    pendingIndex = index;
 
-    // 디바운스 적용
-    scrollTimeoutRef.current = globalTimerManager.setTimeout(() => {
+    logger.debug('useGalleryItemScroll: 자동 스크롤 예약', {
+      currentIndex: index,
+      lastScrolledIndex,
+      delay,
+    });
+
+    scrollTimeoutId = globalTimerManager.setTimeout(() => {
       logger.debug('useGalleryItemScroll: 자동 스크롤 실행', {
-        currentIndex,
-        lastScrolledIndex: lastScrolledIndexRef.current,
+        currentIndex: index,
+        lastScrolledIndex,
       });
-      scrollToCurrentItem();
-    }, debounceDelay);
+      void scrollToItem(index);
+    }, delay);
+  };
 
-    return () => {
-      if (scrollTimeoutRef.current) {
-        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [enabled, currentIndex, debounceDelay, scrollToCurrentItem]);
+  const checkIndexChanges = () => {
+    const container = containerAccessor();
+    const isEnabled = enabled();
 
-  /**
-   * 컴포넌트 언마운트 시 타이머 정리
-   */
-  useEffect(() => {
-    return () => {
-      if (scrollTimeoutRef.current) {
-        globalTimerManager.clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, []);
+    if (!isEnabled || !container) {
+      lastScrolledIndex = -1;
+      pendingIndex = null;
+      clearScrollTimeout();
+      return;
+    }
+
+    const index = currentIndexAccessor();
+    const total = totalItemsAccessor();
+
+    if (index < 0 || index >= total) {
+      pendingIndex = null;
+      clearScrollTimeout();
+      return;
+    }
+
+    if (index === lastScrolledIndex || index === pendingIndex) {
+      return;
+    }
+
+    scheduleScrollToIndex(index);
+  };
+
+  indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
+
+  const scrollToCurrentItem = (): Promise<void> => {
+    return scrollToItem(currentIndexAccessor());
+  };
+
+  onCleanup(() => {
+    clearScrollTimeout();
+    stopIndexWatcher();
+  });
 
   return {
     scrollToItem,

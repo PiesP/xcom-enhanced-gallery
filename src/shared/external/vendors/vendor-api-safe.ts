@@ -1,17 +1,15 @@
 /**
- * @fileoverview TDZ 안전한 Vendor API
+ * @fileoverview TDZ 안전한 Vendor API (Solid.js)
  * @description 정적 import 기반으로 TDZ 문제를 해결한 안전한 vendor 접근 API
  *
- * TDD Phase: GREEN - 안전한 초기화와 동기 접근 보장
+ * TDD Phase: GREEN - 안전한 초기화와 동기 접근 보장 (Solid.js 마이그레이션)
  */
 
 import { logger } from '../../logging';
 import {
   StaticVendorManager,
-  type PreactAPI,
-  type PreactHooksAPI,
-  type PreactSignalsAPI,
-  type PreactCompatAPI,
+  type SolidAPI,
+  type SolidStoreAPI,
   type NativeDownloadAPI,
 } from './vendor-manager-static';
 
@@ -42,12 +40,12 @@ export async function initializeVendorsSafe(): Promise<void> {
   isInitializing = true;
 
   try {
-    logger.info('🚀 안전한 Vendor 초기화 시작...');
+    logger.info('🚀 안전한 Vendor 초기화 시작 (Solid.js)...');
 
     initializationPromise = staticVendorManager.initialize();
     await initializationPromise;
 
-    logger.info('✅ 안전한 Vendor 초기화 완료');
+    logger.info('✅ 안전한 Vendor 초기화 완료 (Solid.js)');
   } catch (error) {
     logger.error('❌ 안전한 Vendor 초기화 실패:', error);
     throw error;
@@ -57,52 +55,26 @@ export async function initializeVendorsSafe(): Promise<void> {
 }
 
 /**
- * Preact 라이브러리 안전 접근 (동기)
+ * Solid.js 라이브러리 안전 접근 (동기)
  */
-export function getPreactSafe(): PreactAPI {
+export function getSolidSafe(): SolidAPI {
   try {
-    return staticVendorManager.getPreact();
+    return staticVendorManager.getSolid();
   } catch (error) {
-    logger.error('Preact 접근 실패:', error);
-    throw new Error('Preact 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+    logger.error('Solid.js 접근 실패:', error);
+    throw new Error('Solid.js 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
   }
 }
 
 /**
- * Preact Hooks 안전 접근 (동기)
+ * Solid.js Store 안전 접근 (동기)
  */
-export function getPreactHooksSafe(): PreactHooksAPI {
+export function getSolidStoreSafe(): SolidStoreAPI {
   try {
-    return staticVendorManager.getPreactHooks();
+    return staticVendorManager.getSolidStore();
   } catch (error) {
-    logger.error('Preact Hooks 접근 실패:', error);
-    throw new Error('Preact Hooks 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Signals 안전 접근 (동기)
- */
-export function getPreactSignalsSafe(): PreactSignalsAPI {
-  try {
-    return staticVendorManager.getPreactSignals();
-  } catch (error) {
-    logger.error('Preact Signals 접근 실패:', error);
-    throw new Error('Preact Signals 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
-  }
-}
-
-/**
- * Preact Compat 안전 접근 (동기) - TDZ 문제 완전 해결
- */
-export function getPreactCompatSafe(): PreactCompatAPI {
-  try {
-    return staticVendorManager.getPreactCompat();
-  } catch (error) {
-    logger.error('Preact Compat 접근 실패:', error);
-
-    // 정적 import 기반이므로 fallback 없이 즉시 에러
-    throw new Error('Preact Compat 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
+    logger.error('Solid.js Store 접근 실패:', error);
+    throw new Error('Solid.js Store 라이브러리를 사용할 수 없습니다. 초기화가 필요합니다.');
   }
 }
 
@@ -152,14 +124,22 @@ export function getVendorInitializationReportSafe() {
   const status = staticVendorManager.getInitializationStatus();
   const versions = getVendorVersionsSafe();
 
+  const expectedVendors = ['solid', 'solid-store'] as const;
+  const initializedCount = expectedVendors.filter(vendor =>
+    status.availableAPIs.includes(vendor)
+  ).length;
+  const initializationRate = expectedVendors.length
+    ? Math.round((initializedCount / expectedVendors.length) * 100)
+    : 100;
+
   return {
     isInitialized: status.isInitialized,
     cacheSize: status.cacheSize,
     availableAPIs: status.availableAPIs,
     versions,
-    initializationRate: status.isInitialized ? 100 : 0,
-    totalCount: 4, // preact, hooks, signals, compat
-    initializedCount: status.isInitialized ? 4 : 0,
+    initializationRate,
+    totalCount: expectedVendors.length,
+    initializedCount,
   };
 }
 
@@ -171,18 +151,14 @@ export function getVendorStatusesSafe() {
 
   if (!status.isInitialized) {
     return {
-      preact: false,
-      preactHooks: false,
-      preactSignals: false,
-      preactCompat: false,
+      solid: false,
+      solidStore: false,
     };
   }
 
   return {
-    preact: status.availableAPIs.includes('preact'),
-    preactHooks: status.availableAPIs.includes('preact-hooks'),
-    preactSignals: status.availableAPIs.includes('preact-signals'),
-    preactCompat: status.availableAPIs.includes('preact-compat'),
+    solid: status.availableAPIs.includes('solid'),
+    solidStore: status.availableAPIs.includes('solid-store'),
   };
 }
 
@@ -193,14 +169,10 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
   const statuses = getVendorStatusesSafe();
 
   switch (vendorName) {
-    case 'preact':
-      return statuses.preact;
-    case 'preactHooks':
-      return statuses.preactHooks;
-    case 'preactSignals':
-      return statuses.preactSignals;
-    case 'preactCompat':
-      return statuses.preactCompat;
+    case 'solid':
+      return statuses.solid;
+    case 'solidStore':
+      return statuses.solidStore;
     default:
       return false;
   }
@@ -233,33 +205,35 @@ export const resetVendorManagerInstance = (): void => {
 };
 
 // ================================
-// Preact 함수들 직접 export (UI 컴포넌트/테스트 편의용)
+// Solid.js 함수들 직접 export (UI 컴포넌트/테스트 편의용)
 // ================================
 
 /**
- * Preact h 함수 (JSX createElement)
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().h를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
+ * Solid.js render 함수
  */
-export const h = getPreactSafe().h;
+export const render = getSolidSafe().render;
 
 /**
- * Preact render 함수
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().render를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
+ * Solid.js createSignal
  */
-export const render = getPreactSafe().render;
+export const createSignal = getSolidSafe().createSignal;
 
 /**
- * Preact Component 클래스
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Component를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
+ * Solid.js createEffect
  */
-export const Component = getPreactSafe().Component;
+export const createEffect = getSolidSafe().createEffect;
 
 /**
- * Preact Fragment 컴포넌트
- * @deprecated 사용 금지: 런타임/소스 코드에서는 getPreact().Fragment를 사용하세요.
- * 테스트/스텁 용도로만 남겨둡니다. 향후 제거될 수 있습니다.
+ * Solid.js createMemo
  */
-export const Fragment = getPreactSafe().Fragment;
+export const createMemo = getSolidSafe().createMemo;
+
+/**
+ * Solid.js Show 컴포넌트
+ */
+export const Show = getSolidSafe().Show;
+
+/**
+ * Solid.js For 컴포넌트
+ */
+export const For = getSolidSafe().For;

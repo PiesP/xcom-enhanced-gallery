@@ -4,12 +4,21 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { cleanup, render } from '@testing-library/preact';
-import { useFocusTrap } from '@shared/hooks/useFocusTrap';
-import { h } from 'preact';
+import { cleanup, render, h } from '../../../utils/testing-library';
+import { useFocusTrap, type FocusTrapResult } from '@shared/hooks/useFocusTrap';
 
 describe('P4: Focus Trap Hook', () => {
-  let container;
+  type ModalContainerElement = HTMLElement;
+
+  let container: ModalContainerElement;
+
+  const getModalContainer = (): ModalContainerElement => {
+    const modal = document.getElementById('modal-container');
+    if (!(modal instanceof HTMLElement)) {
+      throw new Error('Modal container가 준비되지 않았습니다.');
+    }
+    return modal;
+  };
 
   beforeEach(() => {
     // DOM 환경 설정
@@ -37,15 +46,19 @@ describe('P4: Focus Trap Hook', () => {
     });
 
     it('focus trap이 올바른 타입을 반환해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
-      const outputs = {} as any;
+      const modalContainer = getModalContainer();
+      const outputs: { api?: FocusTrapResult } = {};
       const Harness = () => {
         const api = useFocusTrap(modalContainer, false);
-        (outputs as any).api = api;
+        outputs.api = api;
         return null;
       };
       render(h(Harness, {}));
       const result = outputs.api;
+      expect(result).toBeDefined();
+      if (!result) {
+        throw new Error('Focus trap API 초기화 실패');
+      }
       expect(typeof result).toBe('object');
       expect(typeof result.isActive).toBe('boolean');
       expect(typeof result.activate).toBe('function');
@@ -63,26 +76,34 @@ describe('P4: Focus Trap Hook', () => {
 
   describe('Focus Trap 활성화', () => {
     it('활성화 시 isActive가 true가 되어야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
-      const outputs = {} as any;
+      const modalContainer = getModalContainer();
+      const outputs: { api?: FocusTrapResult } = {};
       const Harness = () => {
         const api = useFocusTrap(modalContainer, true);
-        (outputs as any).api = api;
+        outputs.api = api;
         return null;
       };
       render(h(Harness, {}));
+      expect(outputs.api).toBeDefined();
+      if (!outputs.api) {
+        throw new Error('Focus trap API가 정의되지 않았습니다.');
+      }
       expect(typeof outputs.api.isActive).toBe('boolean');
     });
 
     it('비활성화 시 isActive가 false여야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
-      const outputs = {} as any;
+      const modalContainer = getModalContainer();
+      const outputs: { api?: FocusTrapResult } = {};
       const Harness = () => {
         const api = useFocusTrap(modalContainer, false);
-        (outputs as any).api = api;
+        outputs.api = api;
         return null;
       };
       render(h(Harness, {}));
+      expect(outputs.api).toBeDefined();
+      if (!outputs.api) {
+        throw new Error('Focus trap API가 정의되지 않았습니다.');
+      }
       expect(outputs.api.isActive).toBe(false);
     });
   });
@@ -104,38 +125,46 @@ describe('P4: Focus Trap Hook', () => {
       const tempContainer = document.createElement('div');
       tempContainer.innerHTML = '<button>Test</button>';
       document.body.appendChild(tempContainer);
-      const outputs = {} as any;
+      const outputs: { api?: FocusTrapResult } = {};
       const Harness = () => {
         const api = useFocusTrap(tempContainer, true);
-        (outputs as any).api = api;
+        outputs.api = api;
         return null;
       };
       render(h(Harness, {}));
       document.body.removeChild(tempContainer);
       expect(() => {
-        outputs.api.activate();
-        outputs.api.deactivate();
+        outputs.api?.activate();
+        outputs.api?.deactivate();
       }).not.toThrow();
     });
   });
 
   describe('ARIA 지원', () => {
     it('focusable 요소를 올바르게 식별해야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
-      const buttons = modalContainer.querySelectorAll('button');
-      const inputs = modalContainer.querySelectorAll('input');
+      const modalContainer = getModalContainer();
+      const buttons = Array.from(modalContainer.querySelectorAll('button'));
+      const inputs = Array.from(modalContainer.querySelectorAll('input'));
 
       expect(buttons.length).toBe(2);
       expect(inputs.length).toBe(1);
-      expect(buttons[0].id).toBe('first-focusable');
-      expect(buttons[1].id).toBe('last-focusable');
-      expect(inputs[0].id).toBe('input-field');
+
+      const [firstButton, lastButton] = buttons;
+      const [inputField] = inputs;
+
+      if (!firstButton || !lastButton || !inputField) {
+        throw new Error('필수 focusable 요소가 존재하지 않습니다.');
+      }
+
+      expect(firstButton.id).toBe('first-focusable');
+      expect(lastButton.id).toBe('last-focusable');
+      expect(inputField.id).toBe('input-field');
     });
   });
 
   describe('Function Signature', () => {
     it('올바른 매개변수를 받아야 함', () => {
-      const modalContainer = document.getElementById('modal-container');
+      const modalContainer = getModalContainer();
       const HarnessBasic = () => {
         useFocusTrap(modalContainer, true);
         return null;

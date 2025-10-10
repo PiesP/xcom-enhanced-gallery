@@ -3,7 +3,7 @@
  * @description 모달의 공통 레이아웃/스타일 Shell - semantic props 사용
  */
 
-import { getPreact, type ComponentChildren } from '../../../external/vendors';
+import { type JSXElement, type ComponentChildren } from '../../../external/vendors';
 
 export interface ModalShellProps {
   /** 컨텐츠 */
@@ -52,8 +52,7 @@ export function ModalShell({
   'data-testid': testId,
   'aria-label': ariaLabel,
   ...props
-}: ModalShellProps) {
-  const { h } = getPreact();
+}: ModalShellProps): JSXElement | null {
   const sizeClass = `modal-size-${size}`;
   const surfaceClass = `modal-surface-${surfaceVariant}`;
 
@@ -73,26 +72,24 @@ export function ModalShell({
 
   if (!isOpen) return null;
 
-  return h(
-    'div',
-    {
-      class: `modal-backdrop ${isOpen ? 'modal-open' : ''}`.trim(),
-      onClick: handleBackdropClick,
-      onKeyDown: handleKeyDown,
-      'data-testid': testId ? `${testId}-backdrop` : undefined,
-    },
-    h(
-      'div',
-      {
-        class: `modal-shell ${sizeClass} ${surfaceClass} ${className}`.trim(),
-        role: 'dialog',
-        'aria-modal': 'true',
-        'aria-label': ariaLabel || 'Modal',
-        'data-testid': testId,
-        ...props,
-      },
-      children
-    )
+  return (
+    <div
+      class={`modal-backdrop ${isOpen ? 'modal-open' : ''}`.trim()}
+      onClick={handleBackdropClick}
+      onKeyDown={handleKeyDown}
+      data-testid={testId ? `${testId}-backdrop` : undefined}
+    >
+      <div
+        class={`modal-shell ${sizeClass} ${surfaceClass} ${className}`.trim()}
+        role='dialog'
+        aria-modal='true'
+        aria-label={ariaLabel || 'Modal'}
+        data-testid={testId}
+        {...props}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 

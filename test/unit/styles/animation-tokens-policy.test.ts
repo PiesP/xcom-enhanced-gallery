@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function read(path) {
+function read(path: string): string {
   return readFileSync(resolve(process.cwd(), path), 'utf8');
 }
 

@@ -47,11 +47,11 @@ describe('TDZ 문제 해결 검증', () => {
 
     it('초기화 없이 getter 호출 시 자동 초기화가 안전하게 작동한다', async () => {
       // 정적 import 기반에서는 자동 초기화가 안전하게 작동
-      const { getPreactCompatSafe } = await import('@shared/external/vendors/vendor-api-safe');
+      const { getSolidSafe } = await import('@shared/external/vendors/vendor-api-safe');
 
       // 초기화 없이 직접 호출해도 TDZ 에러 없이 작동
       expect(() => {
-        const compat = getPreactCompatSafe();
+        const compat = getSolidSafe();
         expect(compat).toBeDefined();
         expect(compat.memo).toBeDefined();
         expect(compat.forwardRef).toBeDefined();
@@ -63,10 +63,10 @@ describe('TDZ 문제 해결 검증', () => {
     it('모든 vendor getter가 TDZ 에러 없이 작동한다', async () => {
       const {
         getFflateSafe,
-        getPreactSafe,
-        getPreactHooksSafe,
-        getPreactSignalsSafe,
-        getPreactCompatSafe,
+        getSolidSafe,
+        getSolidSafe,
+        getSolidSafe,
+        getSolidSafe,
         getNativeDownloadSafe,
       } = await import('@shared/external/vendors/vendor-api-safe');
 
@@ -78,25 +78,25 @@ describe('TDZ 문제 해결 검증', () => {
       }).not.toThrow();
 
       expect(() => {
-        const preact = getPreactSafe();
+        const preact = getSolidSafe();
         expect(preact.render).toBeDefined();
         expect(typeof preact.render).toBe('function');
       }).not.toThrow();
 
       expect(() => {
-        const hooks = getPreactHooksSafe();
-        expect(hooks.useState).toBeDefined();
-        expect(typeof hooks.useState).toBe('function');
+        const hooks = getSolidSafe();
+        expect(hooks.createSignal).toBeDefined();
+        expect(typeof hooks.createSignal).toBe('function');
       }).not.toThrow();
 
       expect(() => {
-        const signals = getPreactSignalsSafe();
+        const signals = getSolidSafe();
         expect(signals.signal).toBeDefined();
         expect(typeof signals.signal).toBe('function');
       }).not.toThrow();
 
       expect(() => {
-        const compat = getPreactCompatSafe();
+        const compat = getSolidSafe();
         expect(compat.memo).toBeDefined();
         expect(typeof compat.memo).toBe('function');
       }).not.toThrow();
@@ -151,32 +151,32 @@ describe('TDZ 문제 해결 검증', () => {
       const staticImportBasedCode = async () => {
         // 이제는 정적 import이므로 TDZ 문제 없음
         const fflate = await import('fflate');
-        const preact = await import('preact');
-        const hooks = await import('preact/hooks');
+        const solid = await import('solid-js');
+        const solidStore = await import('solid-js/store');
 
         // 즉시 사용 가능
         return {
           fflate: fflate.deflate,
-          preact: preact.render,
-          hooks: hooks.useState,
+          solid: solid.createSignal,
+          solidStore: solidStore.createStore,
         };
       };
 
       // 정적 import 기반에서는 즉시 사용 가능
       const result = await staticImportBasedCode();
       expect(result.fflate).toBeDefined();
-      expect(result.preact).toBeDefined();
-      expect(result.hooks).toBeDefined();
+      expect(result.solid).toBeDefined();
+      expect(result.solidStore).toBeDefined();
     });
 
     it('inlineDynamicImports 설정과 무관하게 안정적으로 작동한다', async () => {
       // 정적 import는 번들러 설정과 무관하게 안정적
-      const { getPreactCompatSafe } = await import('@shared/external/vendors/vendor-api-safe');
+      const { getSolidSafe } = await import('@shared/external/vendors/vendor-api-safe');
 
       // 번들 환경에서도 안전하게 작동
       for (let i = 0; i < 10; i++) {
         expect(() => {
-          const compat = getPreactCompatSafe();
+          const compat = getSolidSafe();
           expect(compat.memo).toBeDefined();
         }).not.toThrow();
       }
@@ -195,10 +195,8 @@ describe('TDZ 문제 해결 검증', () => {
           for (const moduleName of order) {
             try {
               if (moduleName === 'vendor-api-safe') {
-                const { getPreactCompatSafe } = await import(
-                  '@shared/external/vendors/vendor-api-safe'
-                );
-                const compat = getPreactCompatSafe();
+                const { getSolidSafe } = await import('@shared/external/vendors/vendor-api-safe');
+                const compat = getSolidSafe();
                 expect(compat.memo).toBeDefined();
               }
             } catch (error) {
@@ -216,10 +214,10 @@ describe('TDZ 문제 해결 검증', () => {
   describe('기존 시스템과의 호환성', () => {
     it('기존 컴포넌트에서 안전한 API를 사용할 수 있다', async () => {
       // 기존 컴포넌트에서 memo 사용 패턴 테스트
-      const { getPreactCompatSafe } = await import('@shared/external/vendors/vendor-api-safe');
+      const { getSolidSafe } = await import('@shared/external/vendors/vendor-api-safe');
 
       const createMemoizedComponent = () => {
-        const compat = getPreactCompatSafe();
+        const compat = getSolidSafe();
 
         // 실제 컴포넌트 정의
         const TestComponent = props => {

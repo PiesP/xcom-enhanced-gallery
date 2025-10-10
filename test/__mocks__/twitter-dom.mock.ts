@@ -210,7 +210,7 @@ export function setupTwitterDOM() {
 /**
  * 이미지 트윗을 DOM에 추가
  */
-export function addTweetWithImages(container, tweetId = 'tweet-1') {
+export function addTweetWithImages(container: HTMLElement, tweetId = 'tweet-1'): HTMLElement {
   const doc = globalThis.document;
   const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_IMAGES_DOM;
@@ -223,7 +223,7 @@ export function addTweetWithImages(container, tweetId = 'tweet-1') {
 /**
  * 비디오 트윗을 DOM에 추가
  */
-export function addTweetWithVideo(container, tweetId = 'tweet-video-1') {
+export function addTweetWithVideo(container: HTMLElement, tweetId = 'tweet-video-1'): HTMLElement {
   const doc = globalThis.document;
   const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_VIDEO_DOM;
@@ -236,7 +236,7 @@ export function addTweetWithVideo(container, tweetId = 'tweet-video-1') {
 /**
  * GIF 트윗을 DOM에 추가
  */
-export function addTweetWithGIF(container, tweetId = 'tweet-gif-1') {
+export function addTweetWithGIF(container: HTMLElement, tweetId = 'tweet-gif-1'): HTMLElement {
   const doc = globalThis.document;
   const tweetElement = doc.createElement('div');
   tweetElement.innerHTML = TWEET_WITH_GIF_DOM;
@@ -249,7 +249,7 @@ export function addTweetWithGIF(container, tweetId = 'tweet-gif-1') {
 /**
  * 갤러리 모달을 DOM에 추가
  */
-export function addGalleryModal() {
+export function addGalleryModal(): HTMLElement {
   const doc = globalThis.document;
   const modalElement = doc.createElement('div');
   modalElement.innerHTML = GALLERY_MODAL_DOM;
@@ -264,7 +264,7 @@ export function addGalleryModal() {
 /**
  * Twitter DOM 구조 완전 정리
  */
-export function clearTwitterDOM() {
+export function clearTwitterDOM(): void {
   const doc = globalThis.document;
   if (doc && doc.body) {
     doc.body.innerHTML = '';
@@ -274,7 +274,7 @@ export function clearTwitterDOM() {
 /**
  * 특정 요소에 데이터 속성 추가 (트윗 ID, 미디어 URL 등)
  */
-export function addDataAttributes(element, attributes) {
+export function addDataAttributes(element: HTMLElement, attributes: Record<string, string>): void {
   Object.entries(attributes).forEach(([key, value]) => {
     element.setAttribute(`data-${key}`, value);
   });
@@ -283,7 +283,11 @@ export function addDataAttributes(element, attributes) {
 /**
  * 테스트용 이벤트 트리거
  */
-export function triggerEvent(element, eventType, eventData) {
+export function triggerEvent(
+  element: HTMLElement,
+  eventType: string,
+  eventData?: Record<string, unknown>
+): void {
   const event = new globalThis.Event(eventType, { bubbles: true, cancelable: true });
   if (eventData) {
     Object.assign(event, eventData);
@@ -297,13 +301,17 @@ export function triggerEvent(element, eventType, eventData) {
 /**
  * 트윗 이미지 클릭 시뮬레이션
  */
-export function simulateTweetImageClick() {
+export function simulateTweetImageClick(): void {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
-    const target = event.target;
-    if (target && target.tagName === 'IMG' && target.src.includes('pbs.twimg.com')) {
-      const galleryModal = createGalleryModal(target.src);
-      return galleryModal;
+    const target = event.target as HTMLElement | null;
+    if (target && 'tagName' in target && target.tagName === 'IMG') {
+      const imgTarget = target as HTMLImageElement;
+      if (imgTarget.src && imgTarget.src.includes('pbs.twimg.com')) {
+        const galleryModal = createGalleryModal(imgTarget.src);
+        // Modal created but not returned in event handler
+        void galleryModal;
+      }
     }
   });
 }
@@ -390,11 +398,14 @@ export function createGalleryModal(
 
   const mediaElement = globalThis.document.createElement(isVideo ? 'video' : 'img');
   mediaElement.src = mediaUrl;
-  mediaElement.alt = '갤러리 이미지';
   mediaElement.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
 
   if (isVideo) {
-    mediaElement.controls = true;
+    const videoElement = mediaElement as HTMLVideoElement;
+    videoElement.controls = true;
+  } else {
+    const imgElement = mediaElement as HTMLImageElement;
+    imgElement.alt = '갤러리 이미지';
   }
 
   modal.appendChild(mediaElement);
@@ -408,21 +419,25 @@ export function createGalleryModal(
 export function setupImageClickHandlers() {
   const doc = globalThis.document;
   doc.addEventListener('click', event => {
-    const target = event.target;
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
 
     // 트위터 이미지 클릭 처리
-    if (target.tagName === 'IMG' && target.src && target.src.includes('pbs.twimg.com')) {
-      // Ctrl+클릭 시 대량 다운로드 모드
-      if (event.ctrlKey) {
-        createBulkDownloadMode();
-      } else {
-        // 일반 클릭 시 갤러리 모달
-        createGalleryModal(target.src);
+    if ('tagName' in target && target.tagName === 'IMG') {
+      const imgTarget = target as HTMLImageElement;
+      if (imgTarget.src && imgTarget.src.includes('pbs.twimg.com')) {
+        // Ctrl+클릭 시 대량 다운로드 모드
+        if (event.ctrlKey) {
+          createBulkDownloadMode();
+        } else {
+          // 일반 클릭 시 갤러리 모달
+          createGalleryModal(imgTarget.src);
+        }
       }
     }
 
     // 다운로드 버튼 클릭 처리
-    if (target.getAttribute('data-testid') === 'download-all-btn') {
+    if ('getAttribute' in target && target.getAttribute('data-testid') === 'download-all-btn') {
       // 진행률 표시 생성
       createDownloadProgress();
     }

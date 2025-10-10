@@ -3,10 +3,11 @@
  * @description Light DOM 기반 갤러리 컨테이너 (Cascade Layers로 스타일 격리)
  */
 
-import { getPreact, getPreactHooks } from '../../external/vendors';
-import type { ComponentChildren } from '../../external/vendors';
+import { getSolid, type ComponentChildren, type JSXElement } from '../../external/vendors';
 import { logger } from '../../logging';
 import { EventManager } from '../../services/EventManager';
+
+const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
 
 /**
  * 갤러리 컨테이너 Props
@@ -26,11 +27,19 @@ export interface GalleryContainerProps {
  * @param element - 렌더링할 Preact 요소
  */
 export function mountGallery(container: Element, element: unknown): Element {
-  const preact = getPreact();
+  const solid = getSolid();
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preact.render(element as any, container);
+    const host = container as HTMLElement & {
+      [DISPOSE_SYMBOL]?: () => void;
+    };
+
+    host[DISPOSE_SYMBOL]?.();
+
+    const factory: () => JSXElement =
+      typeof element === 'function' ? (element as () => JSXElement) : () => element as JSXElement;
+
+    host[DISPOSE_SYMBOL] = solid.render(factory, host);
     logger.debug('Gallery mounted with Light DOM (Cascade Layers for style isolation)');
     return container;
   } catch (error) {
@@ -44,10 +53,13 @@ export function mountGallery(container: Element, element: unknown): Element {
  * @param container - 언마운트할 DOM 컨테이너
  */
 export function unmountGallery(container: Element): void {
-  const preact = getPreact();
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    preact.render(null as any, container);
+    const host = container as HTMLElement & {
+      [DISPOSE_SYMBOL]?: () => void;
+    };
+
+    host[DISPOSE_SYMBOL]?.();
+    delete host[DISPOSE_SYMBOL];
     logger.debug('Gallery unmounted successfully');
   } catch (error) {
     logger.error('Failed to unmount gallery:', error);
@@ -58,44 +70,39 @@ export function unmountGallery(container: Element): void {
 /**
  * 갤러리 컨테이너 컴포넌트 - Light DOM 기반
  */
-export function GalleryContainer({ children, onClose, className = '' }: GalleryContainerProps) {
-  const { useCallback, useEffect } = getPreactHooks();
-  const h = getPreact().h;
+export function GalleryContainer({
+  children,
+  onClose,
+  className = '',
+}: GalleryContainerProps): JSXElement {
+  const { createEffect, onCleanup } = getSolid();
 
-  // 키보드 이벤트 핸들러
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && onClose) {
-        event.preventDefault();
-        event.stopPropagation();
+  createEffect(() => {
+    if (!onClose) {
+      return;
+    }
+
+    const listenerId = EventManager.getInstance().addListener(document, 'keydown', event => {
+      const keyboardEvent = event as KeyboardEvent;
+      if (keyboardEvent.key === 'Escape') {
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
         onClose();
       }
-    },
-    [onClose]
-  );
+    });
 
-  // 키보드 이벤트 리스너 등록
-  useEffect(() => {
-    if (onClose) {
-      const id = EventManager.getInstance().addListener(
-        document,
-        'keydown',
-        handleKeyDown as unknown as EventListener
-      );
-      return () => {
-        EventManager.getInstance().removeListener(id);
-      };
-    }
-    return undefined;
-  }, [handleKeyDown, onClose]);
+    onCleanup(() => {
+      EventManager.getInstance().removeListener(listenerId);
+    });
+  });
 
-  return h(
-    'div',
-    {
-      className: `xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`,
-      'data-xeg-gallery-container': '',
-    },
-    children
+  return (
+    <div
+      class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
+      data-xeg-gallery-container=''
+    >
+      {children}
+    </div>
   );
 }
 

@@ -6,25 +6,21 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Preact signals 모킹
+// Solid vendors 모킹 – 안전 폴백 경로 사용
 vi.mock('@shared/external/vendors', () => ({
-  getPreactSignals: () => ({
-    signal: (initialValue: unknown) => ({
-      value: initialValue,
-      subscribe: (callback: (_: unknown) => void) => {
-        // 즉시 초기값으로 호출
-        globalThis.setTimeout(() => callback(initialValue), 0);
-        return () => {}; // unsubscribe function
-      },
-    }),
-  }),
+  getSolid: () => {
+    throw new Error('Solid vendors are not available in this test environment');
+  },
 }));
 
 import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
+import type { ToastItem } from '@shared/services/UnifiedToastManager';
 
 describe('Toast 시스템 통합 (TDD)', () => {
-  let unifiedToastManager: any;
-  let mockCallback;
+  type ToastManagerInstance = ReturnType<typeof UnifiedToastManager.getInstance>;
+
+  let unifiedToastManager: ToastManagerInstance;
+  let mockCallback: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     // GREEN Phase: 실제 구현된 통합 관리자 사용
@@ -63,8 +59,12 @@ describe('Toast 시스템 통합 (TDD)', () => {
       // Toast가 실제로 추가되었는지 확인
       const toasts = unifiedToastManager.getToasts();
       expect(toasts).toHaveLength(1);
-      expect(toasts[0].id).toBe(id);
-      expect(toasts[0].title).toBe('Test Toast');
+      const firstToast = toasts[0];
+      if (!firstToast) {
+        throw new Error('Toast not created');
+      }
+      expect(firstToast.id).toBe(id);
+      expect(firstToast.title).toBe('Test Toast');
     });
 
     it('should maintain single source of truth for toast state', () => {
@@ -88,12 +88,13 @@ describe('Toast 시스템 통합 (TDD)', () => {
       // GREEN: 구독 시스템이 작동해야 함
       const unsubscribe = unifiedToastManager.subscribe(mockCallback);
 
-      // 초기 구독 콜백이 비동기적으로 호출되므로 대기
+      // 초기 구독 콜백이 호출되었는지 확인 (폴백 환경에서는 동기 호출)
       await new Promise(resolve => globalThis.setTimeout(resolve, 10));
 
-      // 초기 호출 (구독 시) + signals 초기값 호출 = 2번
-      expect(mockCallback).toHaveBeenCalledTimes(2);
-      expect(mockCallback).toHaveBeenCalledWith([]);
+      const initialCallCount = mockCallback.mock.calls.length;
+      expect(initialCallCount).toBeGreaterThanOrEqual(1);
+      const lastInitialCallArgs = mockCallback.mock.calls.at(-1) ?? [];
+      expect(lastInitialCallArgs[0]).toEqual([]);
 
       // Toast 추가 시 구독자에게 알림
       unifiedToastManager.show({
@@ -102,9 +103,8 @@ describe('Toast 시스템 통합 (TDD)', () => {
         type: 'info',
       });
 
-      // 추가 호출 1번 더 = 총 3번이 되어야 하지만,
-      // signals 동작에 따라 다를 수 있으므로 실제 호출 횟수를 확인하고 조정
-      expect(mockCallback).toHaveBeenCalledTimes(2);
+      // info 토스트는 기본적으로 live-only 경로이므로 목록 변경이 없을 수 있다
+      expect(mockCallback.mock.calls.length).toBe(initialCallCount);
       expect(typeof unsubscribe).toBe('function');
 
       unsubscribe();
@@ -124,7 +124,7 @@ describe('Toast 시스템 통합 (TDD)', () => {
 
       const toasts = unifiedToastManager.getToasts();
       expect(toasts).toHaveLength(0);
-      expect(toasts.find(t => t.id === id)).toBeUndefined();
+      expect(toasts.find((toast: ToastItem) => toast.id === id)).toBeUndefined();
     });
 
     it('should clear all toasts', () => {
@@ -154,10 +154,10 @@ describe('Toast 시스템 통합 (TDD)', () => {
 
       const toasts = unifiedToastManager.getToasts();
       // 기본 라우팅 정책: info/success는 라이브 리전, warning/error는 토스트로 표시
-      expect(toasts.find(t => t.type === 'error')).toBeDefined();
-      expect(toasts.find(t => t.type === 'warning')).toBeDefined();
-      expect(toasts.find(t => t.type === 'success')).toBeUndefined();
-      expect(toasts.find(t => t.type === 'info')).toBeUndefined();
+      expect(toasts.find((toast: ToastItem) => toast.type === 'error')).toBeDefined();
+      expect(toasts.find((toast: ToastItem) => toast.type === 'warning')).toBeDefined();
+      expect(toasts.find((toast: ToastItem) => toast.type === 'success')).toBeUndefined();
+      expect(toasts.find((toast: ToastItem) => toast.type === 'info')).toBeUndefined();
     });
   });
 

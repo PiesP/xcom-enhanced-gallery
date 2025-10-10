@@ -83,7 +83,7 @@ describe('Vitest 타임아웃 vs 무한 루프', () => {
         throw new Error('무한 렌더링 감지 - 안전장치 작동');
       }
 
-      // useEffect 시뮬레이션
+      // createEffect 시뮬레이션
       const observer = new BadIntersectionObserver(() => {
         // 콜백에서 상태 변경 → 리렌더링 유발
         simulateComponentRender(); // 재귀적 렌더링
@@ -137,7 +137,7 @@ describe('Vitest 타임아웃 vs 무한 루프', () => {
         renderCount++;
         console.log(`안전한 렌더링 #${renderCount}`);
 
-        // useEffect 시뮬레이션
+        // createEffect 시뮬레이션
         const observer = new SafeIntersectionObserver(() => {
           if (renderCount < 3) {
             // 제한된 리렌더링만 허용

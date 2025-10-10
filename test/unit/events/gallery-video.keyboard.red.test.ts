@@ -5,26 +5,26 @@ async function setup() {
 
   // Mock signals used by gallery state
   vi.doMock('@/shared/external/vendors', () => {
-    function signal(initial: any) {
-      let _v = initial;
-      return {
-        get value() {
-          return _v;
-        },
-        set value(n) {
-          _v = n;
-        },
+    const createSignal = <T>(initial: T) => {
+      let value = initial;
+      const getter = () => value;
+      const setter = (next: T) => {
+        value = next;
+        return value;
       };
-    }
-    function effect(fn: () => void) {
+      return [getter, setter] as const;
+    };
+
+    const createEffect = (fn: () => void) => {
       try {
         fn();
       } catch {
         // ignore for tests
       }
-      return () => {};
-    }
-    return { getPreactSignals: vi.fn(() => ({ signal, effect })) };
+      return () => void 0;
+    };
+
+    return { getSolid: vi.fn(() => ({ createSignal, createEffect })) };
   });
 
   const events = await import('@/shared/utils/events');

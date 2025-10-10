@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '../../../utils/testing-library';
+import h from 'solid-js/h';
 import { Icon } from '@shared/components/ui/Icon/Icon';
 
 describe('Icon Component', () => {
@@ -51,9 +51,14 @@ describe('Icon Component', () => {
 
       const paths = container.querySelectorAll('path');
       expect(paths).toHaveLength(3);
-      expect(paths[0].getAttribute('d')).toBe('M0 0h24v24H0z');
-      expect(paths[1].getAttribute('d')).toBe('M18 6l-12 12');
-      expect(paths[2].getAttribute('d')).toBe('M6 6l12 12');
+
+      const first = paths.item(0);
+      const second = paths.item(1);
+      const third = paths.item(2);
+
+      expect(first?.getAttribute('d')).toBe('M0 0h24v24H0z');
+      expect(second?.getAttribute('d')).toBe('M18 6l-12 12');
+      expect(third?.getAttribute('d')).toBe('M6 6l12 12');
     });
   });
 

@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, screen, fireEvent } from '../utils/testing-library';
+import h from 'solid-js/h';
 import { Button } from '@shared/components/ui/primitive/Button';
 
 describe('Button Primitive - 확장 기능 (Phase T1)', () => {

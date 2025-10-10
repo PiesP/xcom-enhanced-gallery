@@ -5,60 +5,77 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// 타입 정의
+interface Service {
+  initialized?: boolean;
+  init?: () => Promise<void>;
+  destroy?: () => void;
+  getDependencies?: () => string[];
+}
+
 // Mock 서비스 클래스들
-class MockVideoService {
-  constructor(deps = []) {
+class MockVideoService implements Service {
+  initialized: boolean;
+  dependencies: string[];
+
+  constructor(deps: string[] = []) {
     this.initialized = false;
     this.dependencies = deps;
   }
 
-  async init() {
+  async init(): Promise<void> {
     this.initialized = true;
   }
 
-  destroy() {
+  destroy(): void {
     this.initialized = false;
   }
 
-  getDependencies() {
+  getDependencies(): string[] {
     return this.dependencies;
   }
 }
 
-class MockDependentService {
-  constructor(videoService) {
+class MockDependentService implements Service {
+  initialized: boolean;
+  videoService: MockVideoService;
+
+  constructor(videoService: MockVideoService) {
     this.initialized = false;
     this.videoService = videoService;
   }
 
-  async init() {
+  async init(): Promise<void> {
     if (!this.videoService.initialized) {
       throw new Error('VideoService must be initialized first');
     }
     this.initialized = true;
   }
 
-  destroy() {
+  destroy(): void {
     this.initialized = false;
   }
 }
 
 // ServiceManager 모킹 (실제 구현과 유사한 로직)
 class TestServiceManager {
+  services: Map<string, Service>;
+  initOrder: string[];
+
   constructor() {
     this.services = new Map();
     this.initOrder = [];
   }
 
-  register(name, service) {
+  register(name: string, service: Service): void {
     this.services.set(name, service);
   }
 
-  get(name) {
+  get(name: string): Service | undefined {
     return this.services.get(name);
   }
 
-  async initializeAll() {
+  async initializeAll(): Promise<void> {
     // 의존성 순서대로 초기화
     const sortedServices = this.resolveDependencyOrder();
 
@@ -71,7 +88,7 @@ class TestServiceManager {
     }
   }
 
-  destroyAll() {
+  destroyAll(): void {
     // 역순으로 파괴
     const reverseOrder = [...this.initOrder].reverse();
     for (const serviceName of reverseOrder) {
@@ -83,13 +100,13 @@ class TestServiceManager {
     this.initOrder = [];
   }
 
-  resolveDependencyOrder() {
+  resolveDependencyOrder(): string[] {
     // 간단한 토폴로지 정렬 구현
-    const result = [];
-    const visited = new Set();
-    const visiting = new Set();
+    const result: string[] = [];
+    const visited = new Set<string>();
+    const visiting = new Set<string>();
 
-    const visit = serviceName => {
+    const visit = (serviceName: string): void => {
       if (visiting.has(serviceName)) {
         throw new Error(`Circular dependency detected: ${serviceName}`);
       }
@@ -121,18 +138,18 @@ class TestServiceManager {
     return result;
   }
 
-  getInitializationOrder() {
+  getInitializationOrder(): string[] {
     return [...this.initOrder];
   }
 
-  isInitialized(serviceName) {
+  isInitialized(serviceName: string): boolean {
     const service = this.services.get(serviceName);
     return service?.initialized === true;
   }
 }
 
 describe('ServiceManager - Business Logic Integration', () => {
-  let serviceManager;
+  let serviceManager: TestServiceManager;
 
   beforeEach(() => {
     serviceManager = new TestServiceManager();
@@ -281,10 +298,10 @@ describe('ServiceManager - Business Logic Integration', () => {
     });
 
     it('should handle services without init method', async () => {
-      const staticService = {
+      const staticService: Service = {
         data: 'static data',
         // init/destroy 메서드 없음
-      };
+      } as any;
 
       serviceManager.register('static', staticService);
 

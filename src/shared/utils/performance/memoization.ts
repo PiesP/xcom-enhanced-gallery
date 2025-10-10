@@ -63,10 +63,10 @@ export function useCallback<T extends (...args: any[]) => any>(callback: T, _dep
 }
 
 /**
- * 값 메모화 (useMemo 대체)
+ * 값 메모화 (createMemo 대체)
  */
-export function useMemo<T>(factory: () => T, _deps: unknown[]): T {
+export function createMemo<T>(factory: () => T, _deps: unknown[]): T {
   // 간단한 의존성 배열 기반 메모화
-  // 실제 프로덕션에서는 Preact의 useMemo 사용 권장
+  // 실제 프로덕션에서는 Preact의 createMemo 사용 권장
   return factory();
 }

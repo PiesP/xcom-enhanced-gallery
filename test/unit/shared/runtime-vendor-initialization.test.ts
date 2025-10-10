@@ -12,7 +12,7 @@ describe('런타임 vendor 초기화 에러', () => {
   });
 
   describe('프로덕션 환경 시뮬레이션', () => {
-    it('프로덕션 환경에서 getPreactCompat() 호출 시 자동 초기화가 작동해야 한다', async () => {
+    it('프로덕션 환경에서 getSolid() 호출 시 자동 초기화가 작동해야 한다', async () => {
       // import.meta.env.DEV를 false로 설정
       vi.stubGlobal('import', {
         meta: {
@@ -27,11 +27,11 @@ describe('런타임 vendor 초기화 에러', () => {
       const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       // vendor-api를 새로 import
-      const { getPreactCompat } = await import('@shared/external/vendors');
+      const { getSolid } = await import('@shared/external/vendors');
 
       // 자동 초기화가 작동하여 에러가 발생하지 않아야 함
       expect(() => {
-        const compat = getPreactCompat();
+        const compat = getSolid();
         expect(compat).toBeDefined();
         expect(compat.memo).toBeDefined();
         expect(compat.forwardRef).toBeDefined();
@@ -76,10 +76,10 @@ describe('런타임 vendor 초기화 에러', () => {
           },
         });
 
-        const { getPreactCompat } = await import('@shared/external/vendors');
+        const { getSolid } = await import('@shared/external/vendors');
 
         expect(() => {
-          const compat = getPreactCompat();
+          const compat = getSolid();
           expect(compat).toBeDefined();
           expect(compat.memo).toBeDefined();
           expect(compat.forwardRef).toBeDefined();
@@ -90,9 +90,9 @@ describe('런타임 vendor 초기화 에러', () => {
 
   describe('fallback 메커니즘', () => {
     it('초기화 실패 시에도 기본 memo/forwardRef 구현을 제공해야 한다', async () => {
-      const { getPreactCompat } = await import('@shared/external/vendors');
+      const { getSolid } = await import('@shared/external/vendors');
 
-      const compat = getPreactCompat();
+      const compat = getSolid();
       expect(compat.memo).toBeDefined();
       expect(compat.forwardRef).toBeDefined();
 

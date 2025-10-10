@@ -60,8 +60,8 @@ import {
 보강(2025-09-15): VND-LEGACY-MOVE
 
 - 동적 VendorManager(`vendor-manager.ts`)는 테스트 전용입니다. 프로덕션 소스는
-  반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getPreact/
-  getPreactSignals/getPreactCompat 등)만 사용하세요.
+  반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getSolid/ getSolidStore
+  등)만 사용하세요.
 - 포스트빌드 가드가 prod 번들 내 'VendorManager' 식별자/경로 문자열 누출을
   금지합니다.
 
@@ -91,7 +91,7 @@ const config = {
 
 // ✅ Import 순서: 타입 → 외부 라이브러리 → 내부 모듈 → 스타일
 import type { MediaItem } from '@shared/types';
-import { getPreact } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import { MediaService } from '@shared/services';
 import styles from './Component.module.css';
 ```
@@ -108,22 +108,23 @@ services/
 
 ### Vendor 사용 규칙 (중요)
 
-- 외부 라이브러리(preact, @preact/signals, preact/compat 등)는 직접 import 금지.
-- 반드시 안전 getter를 사용: `@shared/external/vendors`의 `getPreact()`,
-  `getPreactHooks()`, `getPreactSignals()`, `getPreactCompat()` 등.
+- 외부 라이브러리(solid-js, solid-js/store 등)는 직접 import 금지.
+- 반드시 안전 getter를 사용: `@shared/external/vendors`의 `getSolid()`,
+  `getSolidStore()` 등.
 - 와일드카드 import(`import * as Vendors from ...`) 금지. 필요한 심볼만
   명시적으로 가져옵니다.
 - Legacy 동적 API 금지: `*Legacy` 접미사, 동적 `VendorManager`, `vendor-api.ts`
   등은 테스트/마이그레이션 문맥 이외 사용 금지입니다. 프로덕션 번들에서 해당
   문자열이 검출되면 postbuild validator가 실패합니다.
 - 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
-  `type ComponentChildren` 등.
+  `type JSXElement`, `type ComponentChildren` 등.
 
 #### 타입 한정자 import 정책
 
-- VNode/ComponentChildren 등 타입은 반드시 type 한정자로 import합니다.
+- VNode/JSXElement/ComponentChildren 등 타입은 반드시 type 한정자로
+  import합니다.
   - 허용: `import type { VNode } from '@shared/external/vendors'` 또는
-    `import { getPreact, type VNode } from '@shared/external/vendors'`
+    `import { getSolid, type VNode } from '@shared/external/vendors'`
   - 금지: `import { VNode } from '@shared/external/vendors'` (type 한정자 누락)
   - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts`가 위반 시 RED.
     RED로 탐지합니다.
@@ -227,23 +228,19 @@ services/
 ```ts
 // ✅ 권장
 import {
-  getPreact,
-  getPreactHooks,
-  getPreactCompat,
-  getPreactSignals,
+  getSolid,
+  getSolidStore,
   type VNode,
+  type JSXElement,
 } from '@shared/external/vendors';
 
-const { h } = getPreact();
-const { useEffect } = getPreactHooks();
-const compat = getPreactCompat();
-const { signal } = getPreactSignals();
+const { createSignal, createEffect } = getSolid();
+const { createStore } = getSolidStore();
 
 // ❌ 금지
 // import * as Vendors from '@shared/external/vendors';
-// import * as preact from 'preact';
-// import * as signals from '@preact/signals';
-// import compat from 'preact/compat';
+// import * as solid from 'solid-js';
+// import { createStore } from 'solid-js/store';
 ```
 
 ### 접근성 유틸/훅 표준화 (Focus Trap & Live Region)

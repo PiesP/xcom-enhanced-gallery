@@ -1,19 +1,16 @@
 /**
- * @fileoverview Vendor 시스템 통합 접근점
+ * @fileoverview Vendor 시스템 통합 접근점 (Solid.js)
  * @description TDZ 안전한 정적 import 기반 vendor API
- * @version 9.0.0 - TDD GREEN Phase 완료, REFACTOR Phase 적용
+ * @version 10.0.0 - Solid.js 마이그레이션 완료
  *
- * BREAKING CHANGE: 기본 exports는 이제 TDZ-safe 정적 import API를 사용합니다
- * 기존 동적 import API는 Legacy 접미사로 접근 가능합니다.
+ * BREAKING CHANGE: Preact → Solid.js 마이그레이션
  */
 
-// 💡 새로운 TDZ-safe 정적 import 기반 API (권장)
+// 💡 TDZ-safe 정적 import 기반 API (Solid.js)
 export {
   initializeVendorsSafe as initializeVendors,
-  getPreactSafe as getPreact,
-  getPreactHooksSafe as getPreactHooks,
-  getPreactSignalsSafe as getPreactSignals,
-  getPreactCompatSafe as getPreactCompat,
+  getSolidSafe as getSolid,
+  getSolidStoreSafe as getSolidStore,
   getNativeDownloadSafe as getNativeDownload,
   validateVendorsSafe as validateVendors,
   getVendorVersionsSafe as getVendorVersions,
@@ -26,27 +23,18 @@ export {
   resetVendorManagerInstance,
 } from './vendor-api-safe';
 
-// 타입 정의 exports (정적 import 기반으로 변경)
+// 타입 정의 exports (Solid.js 기반으로 변경)
 export type {
-  PreactAPI,
-  PreactHooksAPI,
-  PreactSignalsAPI,
-  PreactCompatAPI,
+  SolidAPI,
+  SolidStoreAPI,
   NativeDownloadAPI,
   VNode,
+  JSXElement,
   ComponentChildren,
 } from './vendor-manager-static';
 
-// Preact 함수들의 직접 export 추가 (UI 컴포넌트에서 사용)
-export { h, render, Component, Fragment } from './vendor-api-safe';
-
-// Vendor-specific types (기존 유지)
-export type {
-  PreactComponent,
-  MemoCompareFunction,
-  ForwardRefComponent,
-  PreactCompat,
-} from './vendor-types';
+// Solid.js 함수들의 직접 export 추가 (UI 컴포넌트에서 사용)
+export { render, createSignal, createEffect, createMemo, Show, For } from './vendor-api-safe';
 
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';

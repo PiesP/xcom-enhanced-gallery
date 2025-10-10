@@ -102,7 +102,20 @@ export const mockUserscriptAPI = {
 /**
  * Mock API 상태 추적
  */
-export const mockApiState = {
+interface DownloadCall {
+  url: string;
+  filename: string;
+  timestamp?: number;
+}
+
+interface MockApiState {
+  downloadQueue: Array<{ url: string; filename: string }>;
+  notifications: Array<unknown>;
+  isAutoDownloadEnabled: boolean;
+  lastDownloadCall: DownloadCall | null;
+}
+
+export const mockApiState: MockApiState = {
   downloadQueue: [],
   notifications: [],
   isAutoDownloadEnabled: false,
@@ -197,14 +210,22 @@ export function clearMockStorage() {
 /**
  * 특정 GM_getValue 응답 설정
  */
-export function setMockStorageValue(key, value) {
+export function setMockStorageValue(key: string, value: unknown): void {
   mockStorage.set(key, value);
 }
 
 /**
  * XML HTTP Request 모의 응답 설정
  */
-export function setupMockXMLHttpResponse(response) {
+export function setupMockXMLHttpResponse(
+  response: Partial<{
+    status: number;
+    statusText: string;
+    responseText: string;
+    response: string;
+    responseHeaders: string;
+  }>
+): void {
   mockUserscriptAPI.GM_xmlhttpRequest.mockImplementation(details => {
     const mockResponse = {
       status: 200,

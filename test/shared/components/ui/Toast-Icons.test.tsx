@@ -4,8 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { cleanup } from '../../../utils/testing-library';
 
 // Toast 컴포넌트 확인을 위한 간단한 임포트
 describe('Toast Icons Integration (Planning)', () => {

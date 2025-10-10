@@ -99,8 +99,7 @@ describe('토큰 체계 표준화 (TDD Phase 3)', () => {
     ];
 
     galleryTokenPatterns.forEach(pattern => {
-      const matches = semanticCss.match(pattern);
-      expect(matches).toBeTruthy();
+      const matches = semanticCss.match(pattern) ?? [];
       expect(matches.length).toBeGreaterThan(0);
     });
 
@@ -147,13 +146,13 @@ describe('토큰 체계 표준화 (TDD Phase 3)', () => {
 
     themeOverrides.forEach(token => {
       // 라이트 테마에서 오버라이드
-      const lightThemeSection = semanticCss.match(/\[data-theme='light'\]\s*\{[^}]+\}/g);
-      expect(lightThemeSection).toBeTruthy();
+      const lightThemeSection = semanticCss.match(/\[data-theme='light'\]\s*\{[^}]+\}/g) ?? [];
+      expect(lightThemeSection.length).toBeGreaterThan(0);
       expect(lightThemeSection.some(section => section.includes(token))).toBe(true);
 
       // 다크 테마에서 오버라이드
-      const darkThemeSection = semanticCss.match(/\[data-theme='dark'\]\s*\{[^}]+\}/g);
-      expect(darkThemeSection).toBeTruthy();
+      const darkThemeSection = semanticCss.match(/\[data-theme='dark'\]\s*\{[^}]+\}/g) ?? [];
+      expect(darkThemeSection.length).toBeGreaterThan(0);
       expect(darkThemeSection.some(section => section.includes(token))).toBe(true);
     });
   });
@@ -169,14 +168,23 @@ describe('토큰 체계 표준화 (TDD Phase 3)', () => {
     const semanticCss = readFileSync(semanticCssPath, 'utf-8');
 
     // prefers-color-scheme: light 미디어 쿼리
-    const lightMediaQuery = semanticCss.match(/@media \(prefers-color-scheme: light\)[^}]+\}/g);
-    expect(lightMediaQuery).toBeTruthy();
-    expect(lightMediaQuery[0]).toContain('--xeg-gallery-bg');
+    const lightMediaQuery =
+      semanticCss.match(/@media \(prefers-color-scheme: light\)[^}]+\}/g) ?? [];
+    expect(lightMediaQuery.length).toBeGreaterThan(0);
+    const [firstLightMediaQuery] = lightMediaQuery;
+    if (!firstLightMediaQuery) {
+      throw new Error('Missing light media query');
+    }
+    expect(firstLightMediaQuery).toContain('--xeg-gallery-bg');
 
     // prefers-color-scheme: dark 미디어 쿼리
-    const darkMediaQuery = semanticCss.match(/@media \(prefers-color-scheme: dark\)[^}]+\}/g);
-    expect(darkMediaQuery).toBeTruthy();
-    expect(darkMediaQuery[0]).toContain('--xeg-gallery-bg');
+    const darkMediaQuery = semanticCss.match(/@media \(prefers-color-scheme: dark\)[^}]+\}/g) ?? [];
+    expect(darkMediaQuery.length).toBeGreaterThan(0);
+    const [firstDarkMediaQuery] = darkMediaQuery;
+    if (!firstDarkMediaQuery) {
+      throw new Error('Missing dark media query');
+    }
+    expect(firstDarkMediaQuery).toContain('--xeg-gallery-bg');
   });
 
   it('폐기된 토큰이 제거되고 새로운 토큰으로 마이그레이션되어야 함', () => {

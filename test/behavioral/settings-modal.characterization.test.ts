@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, screen, fireEvent } from '../utils/testing-library';
+import h from 'solid-js/h';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal - 현행 기능 특성화 (Characterization)', () => {

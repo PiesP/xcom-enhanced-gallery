@@ -4,29 +4,29 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '@testing-library/preact';
-import { h } from 'preact';
+import { render, cleanup } from '../utils/testing-library';
+import h from 'solid-js/h';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 
 // Mock dependencies
 vi.mock('@shared/external/vendors', () => ({
-  getPreact: () => ({ h, Fragment: h }),
-  getPreactHooks: () => {
+  getSolid: () => ({ h, Fragment: h }),
+  getSolid: () => {
     return {
       // effect는 통합 테스트에서 사이드이펙트 최소화를 위해 noop
-      useEffect: vi.fn(),
-      // useState 초기값(또는 이니셜라이저 함수) 실행하여 실제 인스턴스를 유지
-      useState: vi.fn(initial => {
+      createEffect: vi.fn(),
+      // createSignal 초기값(또는 이니셜라이저 함수) 실행하여 실제 인스턴스를 유지
+      createSignal: vi.fn(initial => {
         const value = typeof initial === 'function' ? initial() : initial;
         return [value, vi.fn()];
       }),
-      useRef: vi.fn(initial => ({ current: initial ?? null })),
-      useCallback: vi.fn(fn => fn),
-      useMemo: vi.fn(factory => factory()),
+      createSignal: vi.fn(initial => ({ current: initial ?? null })),
+      createMemo: vi.fn(fn => fn),
+      createMemo: vi.fn(factory => factory()),
     };
   },
-  getPreactCompat: () => ({
+  getSolid: () => ({
     memo: vi.fn(component => component),
     forwardRef: vi.fn(fn => fn),
   }),
