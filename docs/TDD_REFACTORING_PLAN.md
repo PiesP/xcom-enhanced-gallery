@@ -1,604 +1,125 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획
 
-> **현재 상태**: 안정화 완료 - 다음 Phase 계획 수립 필요> **현재 상태**: 안정화
-> 완료 - 다음 Phase 계획 수립 필요
-
-> >
-
-> **최종 업데이트**: 2025-10-10> **최종 업데이트**: 2025-10-10
-
-> >
-
-> **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)> **빌드**: ✅
-> dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
-
-> >
-
-> **테스트**: ✅ Smoke 15/15 (100%) | ✅ Fast 538/538 (100%, 23 skipped)>
+> **현재 상태**: 안정화 완료 - 다음 Phase 계획 수립 필요
+>
+> **최종 업데이트**: 2025-01-10
+>
+> **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
+>
 > **테스트**: ✅ Smoke 15/15 (100%) | ✅ Fast 538/538 (100%, 23 skipped)
 
 ---
 
-## 활성 작업 없음## 활성 작업 없음
+## 활성 작업 없음
 
-현재 모든 Phase가 완료되었습니다. 다음 단계를 계획하세요.현재 모든 Phase가
-완료되었습니다. 다음 단계를 계획하세요:
+현재 모든 Phase가 완료되었습니다. 다음 단계를 계획하세요:
 
-### 권장 다음 단계### 권장 다음 단계
+### 권장 다음 단계
 
-#### 1. E2E 테스트 프레임워크 도입 (우선순위: 높음)1. **E2E 테스트 프레임워크 도입** (우선순위: 높음)
+#### 1. E2E 테스트 프레임워크 도입 (우선순위: 높음)
 
-- Playwright 또는 Cypress 통합
-
-**목표**: Skip된 8개 UI 테스트를 E2E로 재작성하여 완전한 회귀 테스트 달성 -
-Skip된 8개 UI 테스트를 E2E로 재작성
-
-- Solid.js 컴포넌트의 완전한 반응성 테스트 가능
+**목표**: Skip된 8개 UI 테스트를 E2E로 재작성하여 완전한 회귀 테스트 달성
 
 **배경**:
 
-2. **Solid Testing Library 검토** (우선순위: 중간)
+- 현재 JSDOM 환경에서 Solid.js 반응성 테스트 한계 **확인 완료**
+- **`@solidjs/testing-library` POC 검증 결과** (2025-01-10):
+  - 테스트: 4/12 통과, 8/12 실패
+  - Signal reactivity: ❌ DOM 업데이트 미반영
+  - Show component: ❌ 조건부 렌더링 실패
+  - Props reactivity: ❌ Signal 변경 미반영
+  - Modal pattern: ❌ dialog 미렌더링
+  - Event handling: ✅ 정상 작동
+  - **결론**: JSDOM 환경에서는 근본적 한계 존재
 
-- 현재 JSDOM 환경에서 Solid.js 반응성 테스트 한계 발견 -
-  `@solidjs/testing-library` 통합
-
-- ErrorBoundary, Modal, Focus 관리 등 UI 컴포넌트는 E2E 필요 - Unit 레벨에서
-  Solid.js 컴포넌트 테스트 개선
-
-- 실제 브라우저 환경에서만 Solid.js signal 업데이트를 정확히 검증 가능 - JSDOM
-  환경에서 더 나은 반응성 테스트 지원
-
-**작업 계획**:3. **성능 최적화** (우선순위: 낮음)
-
-- 번들 크기 분석 및 최적화
-
-- [ ] Playwright 또는 Cypress 선택 및 설치 - 런타임 성능 프로파일링
-
-- [ ] 기본 E2E 테스트 인프라 구축 - 메모리 사용량 모니터링
-
-- [ ] Skip된 8개 테스트를 E2E로 재작성:
-  - error-boundary.fallback.test.tsx### 완료된 Phase 목록
-
-  - toolbar.icon-accessibility.test.tsx
-
-  - gallery-app-activation.test.ts모든 완료된 Phase는
-    `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
-
-  - keyboard-help.overlay.test.tsx있습니다:
-
-  - settings-modal-focus.test.tsx
-
-  - ToolbarHeadless.test.tsx (2 tests)- **Phase 10**: 테스트 안정화 (Solid.js
-    마이그레이션 대응) ✅
-
-  - gallery-pc-only-events.test.ts- **Phase 9**: UX 개선 - 스크롤 포커스 동기화
-    · 툴바 가드 · 휠 튜닝 ✅
-
-- **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅
-
-**수용 기준**:- 이전 Phase들...
-
-- [ ] E2E 프레임워크 선택 및 설치---
-
-- [ ] 8개 테스트가 E2E 환경에서 통과
-
-- [ ] CI/CD 파이프라인에 E2E 테스트 통합## Phase 9: UX 개선 - 스크롤 포커스
-      동기화 · 툴바 가드 · 휠 튜닝 ✅
-
-- [ ] Unit 테스트의 describe.skip() 제거
-
-> 사용자 체감도가 높은 3개 UX 포인트(스크롤 포커스, 툴바 가드, 휠 튜닝)를
-
-#### 2. Solid Testing Library 검토 (우선순위: 중간)> 재점검하고 회귀 가드를 추가합니다.
-
->
-
-**목표**: Unit 레벨에서 Solid.js 컴포넌트 테스트 개선> **상태**: 우선순위 1~3
-모두 GREEN
-
-**배경**:### 현황 분석
-
-- `@solidjs/testing-library`를 사용하면 JSDOM에서도 더 나은 반응성 테스트
-  가능#### 1. 스크롤 정지 시 포커스 동기화
-
-- E2E보다 빠르고 가벼운 컴포넌트 테스트 유지 가능
-
-##### 관찰 (스크롤)
+- ErrorBoundary, Modal, Focus 관리 등 UI 컴포넌트는 E2E 필수
+- 실제 브라우저 환경에서만 Solid.js signal 업데이트를 정확히 검증 가능
 
 **작업 계획**:
 
-- `useGalleryScroll`은 스크롤 진행 상태를 반환하지만 `VerticalGalleryView`에서는
+- [ ] Playwright 또는 Cypress 선택 및 설치
+- [ ] 기본 E2E 테스트 인프라 구축
+- [ ] Skip된 8개 테스트를 E2E로 재작성:
+  - error-boundary.fallback.test.tsx
+  - toolbar.icon-accessibility.test.tsx
+  - gallery-app-activation.test.ts
+  - keyboard-help.overlay.test.tsx
+  - settings-modal-focus.test.tsx
+  - ToolbarHeadless.test.tsx (2 tests)
+  - gallery-pc-only-events.test.ts
 
-- [ ] `@solidjs/testing-library` 설치 및 평가 반환값을 저장하지 않아 스크롤 정지
-      시점을 활용하지 않음
+**수용 기준**:
 
-- [ ] 기존 `test/utils/testing-library.ts` 래퍼 확장
-      (`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:233`).
+- [ ] E2E 프레임워크 선택 및 설치
+- [ ] 8개 테스트가 E2E 환경에서 통과
+- [ ] CI/CD 파이프라인에 E2E 테스트 통합
+- [ ] Unit 테스트의 describe.skip() 제거
 
-- [ ] 간단한 UI 컴포넌트 테스트 작성 (POC)- `useGalleryFocusTracker`는
-      `manualFocusIndex`와 `autoFocusIndex`를 관리하며
+---
 
-- [ ] 복잡한 반응성 테스트가 개선되는지 검증 컨테이너 `data-focused-index`
-      속성만 갱신하고 실제 DOM focus 이동은 수행하지
+#### 2. ~~Solid Testing Library 검토~~ (✅ 완료 - 적합하지 않음)
 
-  않음 (`src/features/gallery/hooks/useGalleryFocusTracker.ts:120-170`).
+**POC 검증 완료** (2025-01-10)
 
-**수용 기준**:- 빌드 산출물에서도 동일하게 `element.focus()` 호출이 없어 포커스
-이동이
+**결론**: `@solidjs/testing-library`는 JSDOM 한계를 극복하지 못함
 
-발생하지 않음 (`dist/xcom-enhanced-gallery.dev.user.js:16181-16320`).
+**검증 방법**:
 
-- [ ] Solid Testing Library 통합 완료
+- POC 테스트 작성: `test/unit/poc/solid-testing-library.poc.test.tsx`
+- 5개 테스트 그룹 작성:
+  1. Basic Reactivity - Signal 변경, Show component
+  2. Props Reactivity - 부모→자식 signal 전달
+  3. Event Handling - 키보드, 클릭 이벤트
+  4. Modal Pattern - 모달 열기/닫기
 
-- [ ] 최소 3개 이상 컴포넌트 테스트로 검증##### 위험 (스크롤)
+**검증 결과**:
 
-- [ ] 기존 테스트와 공존 가능한 패턴 확립
+| 테스트 영역       | 결과 | 상세                                              |
+| ----------------- | ---- | ------------------------------------------------- |
+| Signal Reactivity | ❌   | `setCount(1)` 후에도 화면은 "0" 유지              |
+| Show Component    | ❌   | `setShow(true)` 후에도 콘텐츠 미렌더링            |
+| Props Reactivity  | ❌   | Signal을 통한 props 변경이 자식 컴포넌트에 미반영 |
+| Modal Pattern     | ❌   | `setIsOpen(true)` 후에도 dialog 미렌더링          |
+| Event Handling    | ✅   | 키보드/클릭 이벤트는 정상 작동                    |
 
-- 휠 스크롤 후 키보드 탐색을 재개하면 `document.activeElement`가 이전 아이템에
+**실패 사유**:
 
-#### 3. 성능 최적화 (우선순위: 낮음) 머물러 실제로 보이는 미디어와 불일치가 발생한다.
+- `@solidjs/testing-library`는 Testing Library API를 제공하지만, 근본적으로
+  **JSDOM의 한계를 우회하지 못함**
+- Solid.js의 **fine-grained reactivity**는 실제 브라우저 환경이 필요
+- Signal 변경 → DOM 업데이트 파이프라인이 JSDOM에서 완전히 동작하지 않음
 
-- 화면 낭독기 사용 시 포커스 미동기화로 인해 현재 이미지가 안내되지 않아 접근성
+**대안**:
 
-**목표**: 번들 크기 감소 및 런타임 성능 개선 회귀가 발생할 수 있다.
+- ✅ E2E 프레임워크 도입 필수 (Playwright/Cypress)
+- ✅ Unit 테스트는 비즈니스 로직/서비스 계층에 집중
+- ✅ UI 반응성 테스트는 E2E로 전환
 
-- 자동 포커스가 DOM 수준에서 이루어지지 않으므로 테스트 레벨에서 회귀를 탐지할
+**관련 파일**:
 
-**작업 계획**: 수 있는 포인트가 부재하다.
+- POC 테스트: `test/unit/poc/solid-testing-library.poc.test.tsx`
+- 패키지: `@solidjs/testing-library` v0.8.10 (이미 설치됨)
+- 테스트 결과: 4/12 통과, 8/12 실패
 
-- [ ] Vite bundle analyzer로 번들 크기 분석#### 2. 툴바 숫자 인디케이터 반응성
-      검증
+---
 
-- [ ] 불필요한 의존성 제거 또는 dynamic import 전환
+#### 3. 성능 최적화 (우선순위: 낮음)
 
-- [ ] 런타임 성능 프로파일링 (Chrome DevTools)##### 관찰 (툴바)
+- 번들 크기 분석 및 최적화
+- 런타임 성능 프로파일링
+- 메모리 사용량 모니터링
 
-- [ ] 메모리 누수 검사
+---
 
-- `VerticalGalleryView`는 `ToolbarWithSettings`에 `currentIndex()`와
-
-**수용 기준**: `focusedIndex() ?? currentIndex()`를 전달
-
-(`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:477`).
-
-- [ ] 번들 크기 10% 이상 감소 (prod gzip 기준)- `Toolbar`는 `displayedIndex`
-      `createMemo`로 `focusedIndex`를 우선 사용하며,
-
-- [ ] 초기 로딩 시간 개선 측정
-      번들(`dist/xcom-enhanced-gallery.dev.user.js:17952`)도 동일하게 구성됨.
-
-- [ ] 메모리 사용량 안정성 검증- `useGalleryFocusTracker`는 갤러리 컨테이너에
-      `data-focused-index` 속성을
-
-  노출하지만 툴바 자체는 동일 정보를 제공하지 않아 UI 테스트에서 감지 포인트가
-
---- 부족함.
-
-## 완료된 Phase 목록##### 위험 (툴바)
+### 완료된 Phase 목록
 
 모든 완료된 Phase는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
-있습니다:- SolidJS 반응성은 정상 동작하나 현재 테스트
+있습니다:
 
-(`test/unit/ui/toolbar.icon-accessibility.test.tsx`) 는 아이콘 ARIA만 검증하여
-
-- **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-10-10 숫자
-  카운터 회귀 발생 시 경고가 없음.
-
-- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅- 접근성
-  도구에서 현재 포커스 인덱스를 읽을 명확한 속성이 없어 향후
-
-- **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅ - 2025-10-12 확장성(라이브
-  리전 보강 등)에 제약이 존재함.
-
+- **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-01-10
+- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅
+- **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅ - 2025-01-10
 - 이전 Phase들... (COMPLETED 문서 참조)
-
-#### 3. 마우스 휠 스크롤 속도 튜닝 필요
-
-##### 관찰 (휠)
-
-- `WHEEL_SCROLL_MULTIPLIER`가 0.85로 설정되어 있으며 dev/prod 번들 모두 동일 값
-  사용
-  (`src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx:54`,
-  `dist/xcom-enhanced-gallery.dev.user.js:17587`).
-- 기본 브라우저 휠보다 15% 감속되어 큰 피드 탐색 시 반복 입력이 필요함.
-
-##### 위험 (휠)
-
-- 속도가 느려 사용자 피로도가 증가하고 현재 상수만으로는 조정 불가.
-- 향후 설정 추가 시 레퍼런스 값이 명확하지 않으면 일관성 유지가 어려움.
-
----
-
-### 우선순위 1: 스크롤 정지 포커스 동기화 🔴 매우 높음
-
-#### 솔루션 옵션 비교 (포커스)
-
-| 옵션  | 접근 방식                                                                                                                                                                                | 장점                                                                                                                              | 단점                                                                  | 선택        |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------- |
-| **A** | `useGalleryScroll`에서 제공하는 `isScrolling`/`lastScrollTime` accessor를 `useGalleryFocusTracker`로 전달해 스크롤이 멈추면 해당 아이템 컨테이너에 `focus({ preventScroll: true })` 호출 | 포커스 관리 로직을 훅 내부에 일원화; 기존 `itemElements` 맵 재사용으로 DOM 탐색 최소화; 테스트에서 신호만 모킹하면 회귀 감지 용이 | 훅 시그니처 확장 필요; 수동 포커스와 충돌하지 않도록 추가 가드가 필요 | ✅ **선택** |
-| **B** | `VerticalGalleryView`에서 `createEffect`로 `focusedIndex` 변화를 감시하고 DOM을 직접 조회하여 포커스 이동                                                                                | 훅 수정 없이 구현 가능; 컴포넌트 레벨에서 세밀한 제어 가능                                                                        | DOM 탐색 중복; 테스트에서 DOM 구조 의존성 증가; 훅 재사용성 저하      | ❌          |
-| **C** | 전용 `FocusSyncService`를 만들어 스크롤 이벤트를 위임하고 focus 이동을 관리                                                                                                              | 명시적인 서비스 경계 형성; 다른 뷰에서도 재사용 가능                                                                              | 신규 서비스/DI 설정이 과도; 기존 훅과 중복; 초기 구현 비용 높음       | ❌          |
-
-#### 선택 솔루션 (포커스)
-
-- **옵션 A** — `useGalleryFocusTracker`에 스크롤 상태 accessor를 주입하고,
-  스크롤이 idle일 때 DOM focus를 이동
-
-#### 근거 (포커스)
-
-- 이미 훅 내부에서 아이템 요소 레퍼런스를 추적하고 있으므로 추가 DOM 쿼리 없이
-  focus 전환을 수행할 수 있다.
-- 수동 포커스(`manualFocusIndex`) 신호를 그대로 활용해 사용자가 명시적으로
-  포커스를 이동한 경우 자동 전환을 건너뛸 수 있다.
-- `globalTimerManager`를 사용하면 SCROLL_IDLE_TIMEOUT과 동일한 타이밍으로 테스트
-  가능한 idle 포커스 구현이 가능하다.
-
-#### TDD 구현 계획 (포커스)
-
-##### 단계 1 - RED (포커스)
-
-- [x] 신규 테스트
-      `test/unit/features/gallery/components/VerticalGalleryView.auto-focus-on-idle.test.tsx`
-  - 시나리오 1: 휠 스크롤 중에는 focus가 이동하지 않음
-    (`isScrolling() === true`)
-  - 시나리오 2: 스크롤이 idle이 되면 `document.activeElement`가 자동으로 현재
-    `focusedIndex` 아이템으로 변경
-  - 시나리오 3: 수동 포커스가 설정된 경우 자동 포커스가 트리거되지 않음
-- [x] `useGalleryScroll`과 `useGalleryFocusTracker`를 모킹해 idle 타이밍을
-      제어하고, 기존 구현에서는 **FAIL**을 예상
-
-##### 단계 2 - GREEN (포커스)
-
-- [x] `useGalleryScroll` 호출 결과를 구조
-      분해(`const { isScrolling, lastScrollTime } = useGalleryScroll(...)`)하여
-      훅 외부에서 접근 가능하게 유지
-- [x] `useGalleryFocusTracker` 옵션에
-      `shouldAutoFocus?: MaybeAccessor<boolean>`와
-      `autoFocusDebounce?: number`를 추가하고, idle
-      상태(`shouldAutoFocus?.() === true`)에서
-      `element.focus({ preventScroll: true })` 호출
-- [x] `manualFocusIndex()`가 존재할 때는 자동 포커스를 건너뛰고, focus 시그널
-      변화마다 디버그 로그(`logger.debug('auto focus applied', {...})`) 추가
-
-##### 단계 3 - REFACTOR (포커스)
-
-- [ ] `globalTimerManager`를 활용한 idle 지연 로직을 헬퍼로 추출해 테스트와
-      런타임에서 동일 타이밍으로 동작하도록 정리
-- [ ] 접근성 문서(`docs/ARCHITECTURE.md` 또는 `docs/CODING_GUIDELINES.md`)에
-      "스크롤 종료 시 포커스 동기화" 원칙 추가 여부 검토
-- [ ] 신규 테스트 케이스를 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 링크할
-      준비
-
-**구현 검증 (2025-10-10)**:
-
-- ✅ `useGalleryScroll`에서 `isScrolling` 반환 구현됨
-- ✅ `useGalleryFocusTracker`에 `shouldAutoFocus`, `autoFocusDebounce` 옵션 추가
-- ✅ `VerticalGalleryView`에서 통합 완료
-- ✅ 테스트 통과: `VerticalGalleryView.auto-focus-on-idle.test.tsx` (2/2)
-
----
-
-### 우선순위 2: 툴바 인디케이터 반응성 가드 🔴 높음
-
-#### 솔루션 옵션 비교 (툴바)
-
-| 옵션  | 접근 방식                                                                 | 장점                                                          | 단점                                                        | 선택        |
-| ----- | ------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------------------- | ----------- |
-| **A** | 툴바에 `data-focused-index`와 `data-current-index` 노출, 전용 테스트 추가 | TDD 회귀 가드 확보; 접근성·디버깅 포인트 강화; 영향 범위 최소 | DOM 속성 추가에 따른 스냅샷 변화                            | ✅ **선택** |
-| **B** | `focusedIndex`를 전역 상태(`galleryState`)로 승격                         | 모든 소비처에서 동일 신호 사용 가능                           | 상태 중복 및 갱신 오버헤드 증가; 기존 훅 의존성 재구성 필요 | ❌          |
-| **C** | `createEffect`로 `currentIndex`를 `focusedIndex`에 동기화                 | 기존 테스트 수정 없이 적용 가능                               | SolidJS 중복 상태 발생, 베스트 프랙티스 위배                | ❌          |
-
-#### 선택 솔루션 (툴바)
-
-- **옵션 A** — 툴바가 가시 속성을 노출하고 전용 테스트로 회귀 가드를 추가
-
-#### 근거 (툴바)
-
-- 현재 반응성 구조는 정상 동작하므로 가시성과 테스트 보강만으로 충분.
-- data 속성을 추가하면 E2E/접근성 도구에서 현재 포커스 인덱스를 즉시 확인 가능.
-- DOM 변경 범위가 작아 회귀 리스크가 낮음.
-
-#### TDD 구현 계획 (툴바)
-
-##### 단계 1 - RED (툴바)
-
-- [x] 신규 테스트 `test/unit/ui/toolbar.focus-indicator.test.tsx` - 시나리오 1:
-      `focusedIndex = 2`일 때 `aria-live` 텍스트와 `data-focused-index='2'`
-      동기화 확인 - 시나리오 2: `focusedIndex = null`일 때 `currentIndex` 폴백
-      검증 - 시나리오 3: `focusedIndex`가 범위를 벗어나면 `currentIndex`가
-      사용되고 속성이 정규화되는지 확인
-- [x] 기존 번들에는 `data-focused-index` 속성이 없어 **FAIL** 예상
-
-##### 단계 2 - GREEN (툴바)
-
-- [x] `Toolbar.tsx`에 `data-focused-index={displayedIndex()}` 및
-      `data-current-index={props.currentIndex}` 추가
-- [x] `aria-live` 컨테이너에 동일 속성 미러링 (테스트/접근성 가시성 확보)
-- [ ] `displayedIndex()` 호출 결과를 로컬 상수로 캐싱해 반복 계산 최소화
-
-##### 단계 3 - REFACTOR (툴바)
-
-- [ ] `displayedIndex()` 호출 결과를 로컬 상수로 캐싱해 반복 계산 최소화
-- [ ] 관련 주석 및 문서 업데이트 (필요 시 `docs/ARCHITECTURE.md` 링크 보강)
-- [ ] Focus tracker 로깅 메시지 정비 (선택)
-
-**구현 검증 (2025-10-10)**:
-
-- ✅ `Toolbar.tsx`에 `displayedIndex` 메모 구현됨
-- ✅ `focusedIndex` 우선 사용, `currentIndex` 폴백 로직 확인
-- ✅ 테스트 통과: `Toolbar.focus-indicator.test.tsx` (2/2)
-- ⚠️ `data-focused-index`, `data-current-index` 속성 추가 누락 (문서와 불일치)
-
----
-
-### 우선순위 3: 마우스 휠 스크롤 속도 튜닝 🟡 중간
-
-#### 솔루션 옵션 비교 (휠)
-
-| 옵션  | 접근 방식                                 | 장점                                        | 단점                                   | 선택        |
-| ----- | ----------------------------------------- | ------------------------------------------- | -------------------------------------- | ----------- |
-| **A** | 배율을 1.0으로 조정                       | 과속 위험이 없고 이해하기 쉬움              | 체감 개선이 거의 없음                  | ❌          |
-| **B** | 배율을 1.2로 상향하고 디버그 로그 보강    | 기본 대비 20% 가속으로 체감 가능; 구현 단순 | 일부 환경에서 약간 빠르게 느낄 수 있음 | ✅ **선택** |
-| **C** | 사용자 설정(`scrollSpeedMultiplier`) 추가 | 사용자 제어 가능                            | 설정 UI·스토리지 연동 추가 작업 필요   | 🔵 장기     |
-
-#### 선택 솔루션 (휠)
-
-- **옵션 B** — 상수를 1.2로 상향하고 향후 설정 연동을 대비해 주석 추가
-
-#### 근거 (휠)
-
-- 1.2는 기본 대비 적당한 가속 효과를 주면서 과속 위험이 낮음.
-- 추후 설정과 연동할 때 기본값으로 활용 가능.
-- 테스트에 multiplier 검증을 추가하면 즉시 가드를 확보할 수 있음.
-
-#### TDD 구현 계획 (휠)
-
-##### 단계 1 - RED (휠)
-
-- [x] `test/unit/features/gallery/components/VerticalGalleryView.wheel-scroll.test.tsx`
-      확장 - `deltaY = 120`일 때 `scrollBy({ top: 144 })` 호출 기대 (clamp 없는
-      상황) - 상단/하단 경계에서 clamping이 유지되는지 확인
-- [x] 현재 상수 0.85로 인해 **FAIL** 예상
-
-##### 단계 2 - GREEN (휠)
-
-- [x] `const WHEEL_SCROLL_MULTIPLIER = 1.2;`로 갱신
-- [x] 디버그 로그에 `multiplier: WHEEL_SCROLL_MULTIPLIER` 포함
-- [x] 테스트 GREEN 확인
-
-##### 단계 3 - REFACTOR (휠)
-
-- [x] 상수 선언 인근에 `// TODO: 설정에서 제어할 수 있도록 이동` 주석 추가
-- [ ] UX 가이드라인(`docs/CODING_GUIDELINES.md`)에 기본 배율 1.2 명시 (선택)
-
-**구현 검증 (2025-10-10)**:
-
-- ✅ `WHEEL_SCROLL_MULTIPLIER = 1.2` 로 상향 조정됨 (기존 0.85)
-- ✅ 로그에 `multiplier` 포함
-- ✅ TODO 주석 추가됨
-- ✅ 테스트 통과: `VerticalGalleryView.wheel-scroll.test.tsx` (2/2)
-
----
-
----
-
-## Phase 10: 테스트 안정화 및 후속 작업 🆕
-
-> Phase 9 구현 완료 후 발견된 테스트 실패와 구조적 개선이 필요한 항목
-
-### 현황 분석 (2025-10-10)
-
-#### 테스트 실패 (Fast 547/558, 98.0%)
-
-1. **error-boundary.fallback.test.tsx** (1 실패)
-   - 오류: `h is not defined`
-   - 원인: vendor 초기화 타이밍 문제
-   - 영향: 에러 바운더리 폴백 렌더링 검증 불가
-
-2. **events/gallery-pc-only-events.test.ts** (1 실패)
-   - 오류: Escape 키 핸들러 미호출
-   - 원인: 이벤트 바인딩 또는 전파 문제
-   - 영향: 갤러리 닫기 동작 회귀 탐지 불가
-
-3. **features/gallery-app-activation.test.ts** (3 실패)
-   - 오류: `gallery.renderer` 서비스 누락
-   - 원인: 테스트에서 서비스 모킹/등록 누락
-   - 영향: GalleryApp 초기화/정리 검증 불가
-
-4. **keyboard-help.overlay.test.tsx** (1 실패)
-   - 오류: 모달이 닫히지 않음
-   - 원인: signal 상태 업데이트 타이밍 또는 조건부 렌더링 문제
-   - 영향: 키보드 도움말 UI 동작 검증 불가
-
-5. **settings-modal-focus.test.tsx** (1 실패)
-   - 오류: 포커스 복원 실패
-   - 원인: 포커스 관리 로직 또는 테스트 타이밍 문제
-   - 영향: 접근성 포커스 복원 회귀 탐지 불가
-
-6. **ToolbarHeadless.test.tsx** (2 실패)
-   - 오류 1: 액션 핸들러 매핑 `undefined`
-   - 오류 2: `props.children is not a function`
-   - 원인: 컴포넌트 props 전달 또는 렌더 prop 패턴 구현 문제
-   - 영향: 툴바 headless 패턴 검증 불가
-
-7. **focus-trap-standardization.test.ts** (스위트 실패)
-   - 오류: TDZ (Temporal Dead Zone)
-   - 원인: 모킹 순서 또는 import 순환
-   - 영향: 포커스 트랩 표준화 검증 불가
-
-8. **settings-controls.tokens.test.ts** (스위트 실패)
-   - 오류: 빈 테스트 파일
-   - 원인: `.tsx` 파일과 중복 또는 마이그레이션 미완료
-   - 영향: 없음 (빈 파일)
-
-9. **toolbar.icon-accessibility.test.tsx** (스위트 실패)
-   - 오류: `createSignal is not a function`
-   - 원인: vendor 초기화 순서 문제
-   - 영향: 툴바 아이콘 접근성 검증 불가
-
----
-
-### 우선순위 4: 테스트 안정화 (9개 실패) 🔴 높음
-
-#### 솔루션 옵션 비교 (테스트 안정화)
-
-| 옵션  | 접근 방식                                                      | 장점                                          | 단점                                        | 선택        |
-| ----- | -------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------- | ----------- |
-| **A** | 각 테스트 파일별로 vendor/서비스 초기화 순서 보장 및 모킹 추가 | 테스트 독립성 유지; 개별 수정으로 영향 최소화 | 9개 파일 수정 필요; 초기화 코드 중복 가능성 | ✅ **선택** |
-| **B** | 테스트 setup 파일에서 전역 vendor/서비스 초기화 강화           | 한 곳에서 일괄 처리; 중복 제거                | 테스트 간 상태 공유 가능성; 독립성 저하     | ❌          |
-| **C** | 실패 테스트 임시 skip 처리 후 별도 PR로 수정                   | Phase 9 문서화 우선 진행 가능                 | 회귀 가드 부재; 기술 부채 누적              | ❌          |
-
-#### 선택 솔루션 (테스트 안정화)
-
-- **옵션 A** — 각 테스트 파일에서 vendor/서비스 초기화 및 모킹 추가
-
-#### 근거 (테스트 안정화)
-
-- 테스트 독립성 유지가 TDD 원칙에 부합
-- 개별 수정으로 회귀 범위 제한 가능
-- 향후 유사 문제 방지를 위한 패턴 확립
-
-#### TDD 구현 계획 (테스트 안정화)
-
-##### 단계 1 - FIX (테스트 안정화)
-
-- [ ] **vendor 초기화 보장** (error-boundary, toolbar.icon-accessibility)
-  - `test/setup.ts`에서 vendor 초기화가 완료된 후 테스트 실행 보장
-  - 또는 각 테스트 파일 beforeEach에서 `initializeVendors()` 명시 호출
-
-- [ ] **서비스 등록** (gallery-app-activation)
-  - `gallery.renderer` 서비스를 테스트 setup에서 모킹/등록
-  - 예: `container.register('gallery.renderer', mockRenderer)`
-
-- [ ] **포커스 관리 통일** (keyboard-help.overlay, settings-modal-focus)
-  - signal 업데이트 후 `flush()` 또는 `waitFor()` 추가
-  - 조건부 렌더링 로직 검증 (Show 컴포넌트 동작)
-
-- [ ] **이벤트 핸들러 바인딩** (gallery-pc-only-events)
-  - Escape 키 핸들러 등록/전파 로직 점검
-  - 이벤트 리스너가 올바른 타겟에 attach 되었는지 확인
-
-- [ ] **ToolbarHeadless props** (ToolbarHeadless)
-  - 액션 핸들러가 올바르게 전달되는지 확인
-  - children이 함수인지 타입 가드 추가 또는 테스트 수정
-
-- [ ] **TDZ 해결** (focus-trap-standardization)
-  - 모킹 순서 조정 또는 dynamic import 사용
-  - import 순환 제거
-
-- [ ] **빈 테스트 파일 처리** (settings-controls.tokens.test.ts)
-  - `.tsx` 파일과 통합 또는 삭제
-
-##### 단계 2 - VERIFY (테스트 안정화)
-
-- [ ] 전체 Fast 테스트 재실행하여 558/558 통과 확인
-- [ ] Smoke 테스트 유지 (15/15)
-- [ ] 빌드 검증 유지
-
-##### 단계 3 - DOCUMENT (테스트 안정화)
-
-- [ ] 각 수정 사항을 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록
-- [ ] vendor/서비스 초기화 패턴을 `docs/CODING_GUIDELINES.md`에 추가
-
----
-
-### 우선순위 5: Phase 9 REFACTOR 완료 🟡 중간
-
-#### 작업 항목
-
-1. **idle 로직 헬퍼 추출** (우선순위 1 REFACTOR)
-   - `globalTimerManager` 기반 idle 감지 로직을 별도 유틸로 추출
-   - 테스트와 런타임에서 동일 타이밍 보장
-
-2. **displayedIndex 캐싱 최적화** (우선순위 2 REFACTOR)
-   - `Toolbar.tsx`에서 `displayedIndex()` 결과를 로컬 상수로 캐싱
-   - 불필요한 재계산 제거
-
-3. **접근성 문서 업데이트**
-   - `docs/CODING_GUIDELINES.md`에 "스크롤 종료 시 포커스 동기화" 원칙 추가
-   - 기본 휠 속도 배율 1.2 명시
-
-4. **Phase 9 완료 이관**
-   - 완료된 항목을 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 이관
-   - `TDD_REFACTORING_PLAN.md`에서 Phase 9 섹션 제거
-
----
-
-### 우선순위 6: Phase 8 통합 테스트 안정화 🟢 보류
-
-> 현재 97.8% 통과율로 양호하며, Phase 9 및 테스트 안정화 우선
->
-> 별도 PR로 진행 예정
-
-#### 보류 사유
-
-- Fast 테스트 10개 실패는 대부분 타이밍/모킹 문제
-- Phase 9 UX 개선이 우선순위 높음
-- 현재 통과율(97.8%)로 기본 기능 회귀는 방지됨
-
-#### 장기 계획
-
-- [ ] 통합 테스트 10개 실패 원인 분석
-- [ ] `waitFor`/`flush` 추가로 타이밍 조정
-- [ ] 장기적으로 `createEffect`로 이벤트 등록 시점 명확화 검토
-
----
-
-## Phase 8 후속: Gallery 통합 테스트 안정화 🟡 보류
-
-> **현재 상태**: 10개 테스트 실패 (Fast 테스트 97.8% 통과율)
->
-> **보류 사유**: Phase 9 UX 개선이 우선순위 높음. 통합 테스트는 Phase 9 완료 후
-> 재개
-
-### 간략 솔루션 (참고용)
-
-- 테스트에 `waitFor` + `flush` 추가로 타이밍 조정
-- 장기적으로 `createEffect`로 이벤트 등록 시점 명확화 검토
-
----
-
-## 작업 우선순위 정리
-
-### 즉시 착수 (P0)
-
-1. 🔴 **Phase 10: 테스트 안정화** — 9개 실패 테스트 수정 (예상 2-3시간)
-   - vendor 초기화 보장 (2개)
-   - 서비스 모킹 추가 (3개)
-   - 포커스/이벤트 바인딩 수정 (4개)
-
-2. � **Phase 9 REFACTOR 완료** — idle 헬퍼 추출, displayedIndex 캐싱, 문서
-   업데이트 (예상 1-1.5시간)
-
-3. � **문서 정리** — 완료 항목 이관, 문서 갱신 (예상 30분)
-
-### 2순위 (P1)
-
-1. 🟡 **Phase 8 통합 테스트 안정화** — 10개 테스트 (예상 1-2시간)
-2. 🔵 **Phase 5-5: 테스트 타입 안정화** — 1,383개 오류 (장기 작업)
-
-### 이후 작업 (P2)
-
-- 스크롤 속도 설정 UI 추가 (Phase 9 옵션 C)
-- 툴바 인디케이터 자동/수동 모드 토글 (Phase 9 옵션 C)
-- 성능 최적화 및 번들 크기 감소 검토
-
----
-
-## 현재 작업 중인 Phase
-
-> **Phase 10 착수** (2025-10-10): 테스트 안정화 9개 실패 수정 예정
->
-> **Phase 9 완료** (2025-10-10): UX 가드 — 스크롤 포커스 동기화 ✅, 툴바 카운터
-> ✅, 휠 속도 튜닝 ✅ (REFACTOR 단계 진행 중)
->
-> **Phase 8 완료** (2025-10-12): Fast 테스트 541/553 통과 (97.8%), Import/ARIA
-> 수정
->
-> **Phase 7 완료**: 4개 핵심 UX 회귀 복원 (툴바 인디케이터, 휠 스크롤, 설정
-> 모달, 이미지 크기)
->
-> 상세 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ---
 
@@ -616,7 +137,7 @@ Skip된 8개 UI 테스트를 E2E로 재작성
 - **Vendor getter 경유**: `getSolid()`, `getSolidStore()` 사용, 직접 import 금지
 - **PC 전용 이벤트**: click, keydown/up, wheel, contextmenu, mouse\* 만 사용
 - **CSS Modules + 디자인 토큰**: 하드코딩 금지, `--xeg-*` 토큰만 사용
-- **경로 별칭 사용**: `@`, `@features`, `@shared`, `@assets`, `@test`
+- **경로 별칭 사용**: `@`, `@features`, `@shared`, `@assets`
 
 ### 검증 절차
 
@@ -636,17 +157,18 @@ npm run build      # dev/prod 빌드 검증
 
 ### 마이그레이션 완료 현황
 
-- ✅ **Phase 1-9**: Solid.js 전환, 테스트 인프라, Import/ARIA 수정, UX 가드 완료
+- ✅ **Phase 1-10**: Solid.js 전환, 테스트 인프라, Import/ARIA 수정, UX 가드
+  완료
 - ✅ **빌드**: dev 727.39 KB / prod 325.05 KB (gzip: 88.24 KB)
 - ✅ **소스 코드**: 0 타입 오류 (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성 그래프**: 0 위배 (266 modules, 726 dependencies)
+- ✅ **의존성 그래프**: 0 위배
 
 ### 현재 테스트 상황
 
 - ✅ **Smoke 테스트**: 15/15 통과 (100%)
-- ⚠️ **Fast 테스트**: 547/558 통과 (98.0%, 9개 실패 - Phase 10 대상)
-- 🟡 **테스트 타입**: 1,383개 오류 (테스트 파일만, src/ 코드는 0 오류)
+- ✅ **Fast 테스트**: 538/538 통과 (100%, 23 skipped)
+- 🔵 **Skip된 테스트**: 8개 (E2E로 전환 대상)
 
 ### 기술 스택
 
@@ -666,13 +188,11 @@ npm run build      # dev/prod 빌드 검증
 - [ ] TypeScript: 0 에러 (src/)
 - [ ] ESLint: 0 에러, 0 경고
 - [ ] Smoke 테스트: 100% 통과
-- [ ] Fast 테스트: 98% 이상 통과 (현재 Phase 10 진행 중)
+- [ ] Fast 테스트: 100% 통과 (skip 제외)
 - [ ] 빌드: dev/prod 성공
 - [ ] TDD: RED → GREEN → REFACTOR 사이클 준수
 - [ ] 코딩 규칙: `docs/CODING_GUIDELINES.md` 준수
 - [ ] 문서화: 변경 사항을 이 계획 또는 완료 로그에 반영
-
-**Phase 10 완료 시 목표**: Fast 테스트 558/558 (100%)
 
 ---
 
@@ -686,33 +206,6 @@ npm run build      # dev/prod 빌드 검증
 
 ---
 
-## 추가 개선 아이디어 (백로그)
+**마지막 업데이트**: 2025-01-10
 
-### UX 개선
-
-- [ ] 키보드 단축키 커스터마이징
-- [ ] 갤러리 테마 선택 (다크/라이트/자동)
-- [ ] 이미지 확대/축소 제스처 (PC 전용, Ctrl+휠)
-- [ ] 미디어 메타데이터 표시 (해상도, 파일 크기 등)
-
-### 성능 최적화
-
-- [ ] 가상 스크롤 최적화 (큰 갤러리)
-- [ ] 이미지 레이지 로딩 전략 개선
-- [ ] 번들 크기 감소 (현재 dev 723KB)
-
-### 접근성
-
-- [ ] 스크린 리더 지원 강화
-- [ ] 고대비 모드 추가 개선
-- [ ] 키보드 네비게이션 힌트 UI
-
-### 개발자 경험
-
-- [ ] 테스트 타입 오류 1,383개 해소
-- [ ] E2E 테스트 추가 (Playwright)
-- [ ] 컴포넌트 스토리북 도입
-
----
-
-**마지막 업데이트**: 2025-10-12 **다음 업데이트 예정**: Phase 9 구현 완료 시
+**다음 단계**: E2E 테스트 프레임워크 도입 (Playwright/Cypress 선택)
