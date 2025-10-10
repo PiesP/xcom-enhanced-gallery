@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, h } from '../../../../utils/testing-library';
+import { render, screen, h } from '@test/utils/testing-library';
 import { Button } from '../../../../../src/shared/components/ui/Button/Button';
 
 describe('Button Icon Variant (P2)', () => {

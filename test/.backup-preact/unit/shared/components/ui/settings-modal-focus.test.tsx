@@ -3,7 +3,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '../../../../utils/testing-library';
+import { cleanup, fireEvent, render, screen, waitFor } from '@test/utils/testing-library';
 import { SettingsModal } from '../../../../../src/shared/components/ui/SettingsModal/SettingsModal';
 
 describe('SettingsModal focus management', () => {

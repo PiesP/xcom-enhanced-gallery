@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, h } from '../../../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 // 현재 구현들
 import { Button } from '@shared/components/ui/Button';

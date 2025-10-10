@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { cleanup, render, h } from '../../../utils/testing-library';
+import { cleanup, render, h } from '@test/utils/testing-library';
 import { useFocusTrap } from '@shared/hooks/useFocusTrap';
 
 describe('P4: Focus Trap Hook', () => {

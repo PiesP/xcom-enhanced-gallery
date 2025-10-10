@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, h } from '../../../../utils/testing-library';
+import { render, screen, cleanup, h } from '@test/utils/testing-library';
 import { Button } from '@shared/components/ui/Button/Button';
 
 describe('P3: ARIA Attributes Migration', () => {

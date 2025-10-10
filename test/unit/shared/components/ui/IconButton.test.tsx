@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen, h } from '../../../../utils/testing-library';
+import { render, screen, h } from '@test/utils/testing-library';
 import { IconButton } from '../../../../../src/shared/components/ui/Button/IconButton';
 
 describe('IconButton', () => {

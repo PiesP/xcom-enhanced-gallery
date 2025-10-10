@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, h } from '../../../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 interface ToolbarTestProps {
   currentIndex: number;

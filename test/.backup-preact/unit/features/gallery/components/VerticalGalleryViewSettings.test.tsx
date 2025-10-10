@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, cleanup, waitFor } from '../../../../utils/testing-library';
+import { render, fireEvent, screen, cleanup, waitFor } from '@test/utils/testing-library';
 
 // 문제가 되는 VerticalGalleryView 대신 더 간단한 테스트 대상으로 변경
 // 실제로는 ToolbarWithSettings 컴포넌트의 설정 모달 기능을 테스트

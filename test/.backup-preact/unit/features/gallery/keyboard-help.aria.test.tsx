@@ -1,6 +1,6 @@
 import { sharedConfig } from 'solid-js';
 import { describe, expect, it, vi } from 'vitest';
-import { render } from '../../../utils/testing-library';
+import { render } from '@test/utils/testing-library';
 import { getSolid } from '../../../../src/shared/external/vendors';
 import { KeyboardHelpOverlay } from '../../../../src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 

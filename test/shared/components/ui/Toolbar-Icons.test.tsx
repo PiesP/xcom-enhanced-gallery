@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, cleanup } from '../../../utils/testing-library';
+import { render, cleanup } from '@test/utils/testing-library';
 import h from 'solid-js/h';
 
 // Vendor mocks 먼저 설정

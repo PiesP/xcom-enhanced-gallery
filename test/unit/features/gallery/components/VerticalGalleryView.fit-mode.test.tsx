@@ -3,7 +3,7 @@
  */
 
 import { beforeAll, beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, h, waitFor, act } from '../../../../utils/testing-library';
+import { cleanup, render, h, waitFor, act } from '@test/utils/testing-library';
 import type { MediaInfo } from '../../../../../src/shared/types';
 import { galleryState } from '../../../../../src/shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../../src/shared/state/signals/download.signals';
