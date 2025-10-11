@@ -93,6 +93,47 @@
 
 ---
 
+## 🔄 라이선스 및 문서 정리 (2025-01)
+
+### 자동 라이선스 표기 시스템 구축
+
+- **커밋**: `chore: merge license attribution and documentation cleanup`
+  (master)
+- **내용**:
+  - vite.config.ts에 자동 라이선스 생성 로직 추가
+  - 빌드된 스크립트에 외부 라이브러리 라이선스 자동 포함
+  - LICENSES/ 디렉터리 구조화 (Solid.js, Heroicons, Tabler Icons, 자체)
+- **산출물**: LICENSES/ 폴더 구조화, 자동 빌드 검증 추가
+
+### 문서 간결화
+
+- **커밋**: `chore: merge license attribution and documentation cleanup`
+  (master)
+- **내용**:
+  - CODING_GUIDELINES.md 간결화 (1552→300 lines, 80% 감소)
+  - TDD_REFACTORING_PLAN_COMPLETED.md 간결화 (4441→100 lines, 98% 감소)
+  - 핵심 내용만 남기고 상세 내역은 Git 히스토리로 이관
+- **근거**: ModGo 실험 결과 - 구조화된 문서가 AI 컨텍스트 효율 37.91% 향상
+
+### 아이콘 라이브러리 통일 (Heroicons)
+
+- **브랜치**: feat/icon-library-unification
+- **커밋**: `refactor: unify icon library to Heroicons only` (edcf4ab7)
+- **분석 결과**:
+  - Heroicons: 10개 컴포넌트 활발히 사용 (ChevronLeft/Right, Download, Settings,
+    X, ZoomIn, FileZip, ArrowAutofitWidth/Height, ArrowsMaximize)
+  - Tabler Icons: 레거시 주석에만 언급, 실제 사용 없음
+- **작업 내용**:
+  - LICENSES/tabler-icons-MIT.txt 삭제
+  - vite.config.ts에서 Tabler Icons 라이선스 생성 제거
+  - Icon/index.ts를 v2.1.0으로 업데이트 (Heroicons 완전 이행 완료)
+- **효과**:
+  - 빌드 크기 감소: 328.47 KB → 327.35 KB (1.12 KB 절약)
+  - 라이선스 표기 단순화 (Solid.js + Heroicons만)
+  - 불필요한 의존성 제거
+
+---
+
 ## 📖 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
