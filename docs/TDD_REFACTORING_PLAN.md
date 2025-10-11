@@ -1,52 +1,27 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 17 계획 수립 최종 업데이트: 2025-01-11
+현재 상태: Phase 17 (17.1-17.2) 완료 최종 업데이트: 2025-01-11
 
 ---
 
 ## 현재 상태
 
-Phase 15.2 완료. 새로운 개선 기회 발견: 휠 스크롤 배율 설정 추가.
+Phase 17.1-17.2 완료. 휠 스크롤 배율 설정이 타입 안전하게 통합됨. Phase 17.3 (UI
+컨트롤) 진행 가능.
 
 ---
 
 ## Phase 17: 휠 스크롤 배율 설정 추가
 
-### 목표
+### 완료: 17.1-17.2 (타입 정의 및 통합)
 
-VerticalGalleryView.tsx의 TODO 해결: `WHEEL_SCROLL_MULTIPLIER`를 하드코딩에서
-설정으로 이동하여 사용자 맞춤 가능하게 개선
+**성과**:
 
-### 배경
-
-- 현재 `WHEEL_SCROLL_MULTIPLIER = 1.2`가 하드코딩됨
-- 사용자마다 선호하는 스크롤 속도가 다를 수 있음
-- TODO 주석으로 설정 이동이 계획되어 있음
-
-### 작업 계획 (TDD)
-
-#### 17.1: 타입 정의 및 테스트
-
-1. **`settings.types.ts` 확장**
-   - `GallerySettings`에 `wheelScrollMultiplier: number` 추가 (범위: 0.5 ~ 3.0)
-   - 기본값: 1.2
-
-2. **테스트 추가**
-   - `test/unit/features/settings/gallery-wheel-scroll-setting.test.ts` 생성
-   - 설정 저장/로드 검증
-   - 범위 제약 검증 (0.5 미만 → 0.5, 3.0 초과 → 3.0)
-
-#### 17.2: VerticalGalleryView 통합
-
-1. **`VerticalGalleryView.tsx` 수정**
-   - `WHEEL_SCROLL_MULTIPLIER` 상수 제거
-   - `getSetting('gallery.wheelScrollMultiplier', 1.2)` 사용
-   - TODO 주석 제거
-
-2. **테스트 추가**
-   - `test/unit/features/gallery/wheel-scroll-multiplier.test.tsx` 생성
-   - 설정 변경 시 스크롤 동작 반영 검증
-   - 기본값 1.2 동작 검증
+- ✅ `GallerySettings`에 `wheelScrollMultiplier` 추가 (0.5 ~ 3.0, 기본 1.2)
+- ✅ `DEFAULT_SETTINGS`에 기본값 설정
+- ✅ VerticalGalleryView에서 `getSetting()` 사용
+- ✅ 하드코딩된 상수 제거 및 TODO 해결
+- ✅ 테스트 5개 추가 (설정 검증)
 
 #### 17.3: UI 컨트롤 추가
 
