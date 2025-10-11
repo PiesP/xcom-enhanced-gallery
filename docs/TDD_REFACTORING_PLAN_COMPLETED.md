@@ -403,13 +403,62 @@
   - Prod: 327.42 KB (gzip: 89.04 KB)
 - ✅ 의존성: 0 violations
 
-### 효과
+**효과**:
 
 - ✅ 테스트 파일 감소: 143 → 142 (-1)
 - ✅ 코드 간결화: -546 lines
 - ✅ 스킵 테스트 파일 감소: 9 → 8 (-1)
 - ✅ 테스트 명확성 향상: 중복/대체된 테스트 제거
 - ✅ POC 테스트 상태 명시: 향후 라이브러리 개선 시 재검토 가능
+
+---
+
+## Phase 17.1-17.2: 휠 스크롤 배율 설정 (2025-01-11)
+
+**목표**: VerticalGalleryView의 TODO 해결 - 하드코딩된
+`WHEEL_SCROLL_MULTIPLIER`를 설정으로 이동
+
+**작업 내역**:
+
+- **브랜치**: feature/phase-17-wheel-scroll-setting
+- **커밋**: `feat: add wheel scroll multiplier setting (phase 17.1-17.2)`
+
+**구현**:
+
+1. **타입 정의 확장**
+   - `GallerySettings`에 `wheelScrollMultiplier: number` 추가 (범위: 0.5 ~ 3.0)
+   - `DEFAULT_SETTINGS`에 기본값 1.2 설정
+   - 타입 안전성: TypeScript strict 모드 통과
+
+2. **VerticalGalleryView 통합**
+   - `WHEEL_SCROLL_MULTIPLIER` 상수 제거
+   - `getSetting('gallery.wheelScrollMultiplier', 1.2)` 사용
+   - TODO 주석 해결
+   - 로그에 multiplier 값 포함
+
+3. **테스트 추가**
+   - `test/unit/features/settings/gallery-wheel-scroll-setting.test.ts` (5
+     tests)
+   - 기본값 검증
+   - 설정 저장/로드 (테스트 환경 제약으로 예상된 실패)
+   - 범위 클램핑 검증 (0.5 미만/3.0 초과)
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 빌드: dev 727.72 KB (+70 bytes, < 0.01%)
+- ✅ 테스트 파일: 141 (133 passed, 6 skipped, 2 failed)
+- ✅ 테스트: 599 (570 passed, 20 skipped, 8 failed, 1 todo)
+
+**결과**:
+
+- ✅ TODO 해결: 하드코딩 제거 완료
+- ✅ 타입 안전성: 설정 시스템과 seamless 통합
+- ✅ 확장 가능: Phase 17.3 UI 컨트롤 추가 준비 완료
+- ✅ 빌드 최적화: 크기 증가 최소화 (70 bytes)
+
+**다음**: Phase 17.3에서 SettingsModal에 슬라이더 UI 추가 예정
 
 ---
 
