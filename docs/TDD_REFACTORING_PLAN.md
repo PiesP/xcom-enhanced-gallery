@@ -1,121 +1,67 @@
 # TDD 리팩토링 활성 계획
 
-> **현재 상태**: 안정화 완료 - 다음 Phase 계획 수립 필요
+> **현재 상태**: Phase 12 완료 - 모든 E2E 테스트 안정화 및 CI 통합 완료
 >
-> **최종 업데이트**: 2025-01-10
+> **최종 업데이트**: 2025-10-11
 >
 > **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
 >
-> **테스트**: ✅ Smoke 15/15 (100%) | ✅ Fast 538/538 (100%, 23 skipped)
+> **테스트**: ✅ Vitest 538/538 (100%, 23 skipped) | ✅ E2E 8/8 (100%)
 
 ---
 
-## 활성 작업 없음
+## 활성 작업
 
-현재 모든 Phase가 완료되었습니다. 다음 단계를 계획하세요:
+### 라이선스 표기 개선 (우선순위: 높음)
 
-### 권장 다음 단계
+#### 목표
 
-#### 1. E2E 테스트 프레임워크 도입 (우선순위: 높음)
+- 빌드된 유저스크립트에 외부 라이브러리 라이선스 정보 자동 포함
+- 프로덕션 빌드에만 적용 (개발 빌드는 제외)
 
-**목표**: Skip된 8개 UI 테스트를 E2E로 재작성하여 완전한 회귀 테스트 달성
+#### 구현
 
-**배경**:
+- vite.config.ts에 `generateLicenseNotices()` 함수 추가
+- LICENSES/ 폴더의 라이선스 파일을 읽어 주석으로 변환
+- userscriptPlugin에서 프로덕션 빌드 시 헤더 다음에 라이선스 정보 삽입
 
-- 현재 JSDOM 환경에서 Solid.js 반응성 테스트 한계 **확인 완료**
-- **`@solidjs/testing-library` POC 검증 결과** (2025-01-10):
-  - 테스트: 4/12 통과, 8/12 실패
-  - Signal reactivity: ❌ DOM 업데이트 미반영
-  - Show component: ❌ 조건부 렌더링 실패
-  - Props reactivity: ❌ Signal 변경 미반영
-  - Modal pattern: ❌ dialog 미렌더링
-  - Event handling: ✅ 정상 작동
-  - **결론**: JSDOM 환경에서는 근본적 한계 존재
+#### 검증
 
-- ErrorBoundary, Modal, Focus 관리 등 UI 컴포넌트는 E2E 필수
-- 실제 브라우저 환경에서만 Solid.js signal 업데이트를 정확히 검증 가능
-
-**작업 계획**:
-
-- [ ] Playwright 또는 Cypress 선택 및 설치
-- [ ] 기본 E2E 테스트 인프라 구축
-- [ ] Skip된 8개 테스트를 E2E로 재작성:
-  - error-boundary.fallback.test.tsx
-  - toolbar.icon-accessibility.test.tsx
-  - gallery-app-activation.test.ts
-  - keyboard-help.overlay.test.tsx
-  - settings-modal-focus.test.tsx
-  - ToolbarHeadless.test.tsx (2 tests)
-  - gallery-pc-only-events.test.ts
-
-**수용 기준**:
-
-- [ ] E2E 프레임워크 선택 및 설치
-- [ ] 8개 테스트가 E2E 환경에서 통과
-- [ ] CI/CD 파이프라인에 E2E 테스트 통합
-- [ ] Unit 테스트의 describe.skip() 제거
+```powershell
+npm run build:prod
+# dist/xcom-enhanced-gallery.user.js 확인
+```
 
 ---
 
-#### 2. ~~Solid Testing Library 검토~~ (✅ 완료 - 적합하지 않음)
+## 다음 단계 제안
 
-**POC 검증 완료** (2025-01-10)
+### 문서 정리 (우선순위: 중간)
 
-**결론**: `@solidjs/testing-library`는 JSDOM 한계를 극복하지 못함
+- [x] CODING_GUIDELINES.md 간결화 (1552줄 → ~300줄)
+- [x] TDD_REFACTORING_PLAN_COMPLETED.md 요약 (4441줄 → ~100줄)
+- [ ] 백업 파일 제거 (.backup 파일들)
 
-**검증 방법**:
-
-- POC 테스트 작성: `test/unit/poc/solid-testing-library.poc.test.tsx`
-- 5개 테스트 그룹 작성:
-  1. Basic Reactivity - Signal 변경, Show component
-  2. Props Reactivity - 부모→자식 signal 전달
-  3. Event Handling - 키보드, 클릭 이벤트
-  4. Modal Pattern - 모달 열기/닫기
-
-**검증 결과**:
-
-| 테스트 영역       | 결과 | 상세                                              |
-| ----------------- | ---- | ------------------------------------------------- |
-| Signal Reactivity | ❌   | `setCount(1)` 후에도 화면은 "0" 유지              |
-| Show Component    | ❌   | `setShow(true)` 후에도 콘텐츠 미렌더링            |
-| Props Reactivity  | ❌   | Signal을 통한 props 변경이 자식 컴포넌트에 미반영 |
-| Modal Pattern     | ❌   | `setIsOpen(true)` 후에도 dialog 미렌더링          |
-| Event Handling    | ✅   | 키보드/클릭 이벤트는 정상 작동                    |
-
-**실패 사유**:
-
-- `@solidjs/testing-library`는 Testing Library API를 제공하지만, 근본적으로
-  **JSDOM의 한계를 우회하지 못함**
-- Solid.js의 **fine-grained reactivity**는 실제 브라우저 환경이 필요
-- Signal 변경 → DOM 업데이트 파이프라인이 JSDOM에서 완전히 동작하지 않음
-
-**대안**:
-
-- ✅ E2E 프레임워크 도입 필수 (Playwright/Cypress)
-- ✅ Unit 테스트는 비즈니스 로직/서비스 계층에 집중
-- ✅ UI 반응성 테스트는 E2E로 전환
-
-**관련 파일**:
-
-- POC 테스트: `test/unit/poc/solid-testing-library.poc.test.tsx`
-- 패키지: `@solidjs/testing-library` v0.8.10 (이미 설치됨)
-- 테스트 결과: 4/12 통과, 8/12 실패
-
----
-
-#### 3. 성능 최적화 (우선순위: 낮음)
+#### 성능 최적화 (우선순위: 낮음)
 
 - 번들 크기 분석 및 최적화
 - 런타임 성능 프로파일링
 - 메모리 사용량 모니터링
 
+#### Vitest Skipped 테스트 정리 (우선순위: 중간)
+
+- E2E로 대체 완료된 8개 skip 테스트 제거 또는 참조 주석 추가
+- 나머지 15개 skipped 테스트 검토 및 정리
+
 ---
 
-### 완료된 Phase 목록
+## 완료된 Phase
 
 모든 완료된 Phase는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
 있습니다:
 
+- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ - 2025-10-11
+- **Phase 11**: E2E 회귀 커버리지 구축 (Playwright) ✅ - 2025-10-11
 - **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-01-10
 - **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅
 - **Phase 8**: Fast 테스트 안정화 (우선순위 1-2) ✅ - 2025-01-10
@@ -157,8 +103,8 @@ npm run build      # dev/prod 빌드 검증
 
 ### 마이그레이션 완료 현황
 
-- ✅ **Phase 1-10**: Solid.js 전환, 테스트 인프라, Import/ARIA 수정, UX 가드
-  완료
+- ✅ **Phase 1-12**: Solid.js 전환, 테스트 인프라, Import/ARIA 수정, UX 가드,
+  E2E 통합 완료
 - ✅ **빌드**: dev 727.39 KB / prod 325.05 KB (gzip: 88.24 KB)
 - ✅ **소스 코드**: 0 타입 오류 (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
@@ -168,7 +114,8 @@ npm run build      # dev/prod 빌드 검증
 
 - ✅ **Smoke 테스트**: 15/15 통과 (100%)
 - ✅ **Fast 테스트**: 538/538 통과 (100%, 23 skipped)
-- 🔵 **Skip된 테스트**: 8개 (E2E로 전환 대상)
+- ✅ **E2E 테스트**: 8/8 통과 (100%)
+- 🔵 **Skip된 테스트**: 23개 (정리 권장)
 
 ### 기술 스택
 
@@ -176,7 +123,8 @@ npm run build      # dev/prod 빌드 검증
 - **상태 관리**: Solid Signals (내장, 경량 반응형)
 - **번들러**: Vite 7
 - **타입**: TypeScript strict
-- **테스트**: Vitest 3 + JSDOM
+- **테스트**: Vitest 3 + JSDOM, Playwright (E2E)
+
 - **디자인 시스템**: CSS Modules + 디자인 토큰
 
 ---

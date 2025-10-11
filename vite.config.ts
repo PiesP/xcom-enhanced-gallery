@@ -30,6 +30,38 @@ function resolveFlags(mode: string): BuildFlags {
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
+/**
+ * 외부 라이브러리 라이선스 정보 생성
+ */
+function generateLicenseNotices(): string {
+  const licenseFiles = [
+    { path: './LICENSES/solid-js-MIT.txt', name: 'Solid.js' },
+    { path: './LICENSES/heroicons-MIT.txt', name: 'Heroicons' },
+    { path: './LICENSES/tabler-icons-MIT.txt', name: 'Tabler Icons' },
+  ];
+
+  let notices = '\n/*\n * Third-Party Licenses\n * ====================\n';
+
+  for (const { path: licensePath, name } of licenseFiles) {
+    try {
+      if (fs.existsSync(licensePath)) {
+        const content = fs.readFileSync(licensePath, 'utf8');
+        notices += ` *\n * ${name}:\n`;
+        notices += content
+          .split('\n')
+          .map(line => ` * ${line}`.trimEnd())
+          .join('\n');
+        notices += '\n';
+      }
+    } catch (error) {
+      console.warn(`[license] ${name} 라이선스 파일 읽기 실패:`, error);
+    }
+  }
+
+  notices += ' */\n';
+  return notices;
+}
+
 function userscriptHeader(flags: BuildFlags): string {
   const version = flags.isDev ? `${pkg.version}-dev.${Date.now()}` : pkg.version;
   const devSuffix = flags.isDev ? ' (Dev)' : '';
@@ -104,7 +136,10 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         .replace(/\/\/#\s*sourceMappingURL\s*=.*$/gm, '')
         .replace(/\/\*#\s*sourceMappingURL\s*=.*?\*\//gs, '');
 
-      const wrapped = `${userscriptHeader(flags)}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
+      // 라이선스 정보 추가 (프로덕션 빌드에만)
+      const licenseNotices = flags.isProd ? generateLicenseNotices() : '';
+
+      const wrapped = `${userscriptHeader(flags)}${licenseNotices}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';
