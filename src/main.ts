@@ -178,12 +178,7 @@ async function cleanup(): Promise<void> {
           byType: beforeEvents.byType,
           byContext: beforeEvents.byContext,
         });
-        // Vitest에서 보기 쉽도록 console에도 출력
-        // eslint-disable-next-line no-console
-        console.log('[TEST][cleanup:before]', {
-          timers: beforeTimers,
-          events: beforeEvents,
-        });
+        // Phase 19: 테스트용 console.log 제거, logger.debug로 충분
       } catch (e) {
         logger.debug('[TEST] cleanup pre-diagnostics skipped:', e);
       }
@@ -277,11 +272,7 @@ async function cleanup(): Promise<void> {
           byType: afterEvents.byType,
           byContext: afterEvents.byContext,
         });
-        // eslint-disable-next-line no-console
-        console.log('[TEST][cleanup:after]', {
-          timers: afterTimers,
-          events: afterEvents,
-        });
+        // Phase 19: 테스트용 console.log 제거, logger.debug로 충분
       } catch (e) {
         logger.debug('[TEST] cleanup post-diagnostics skipped:', e);
       }
