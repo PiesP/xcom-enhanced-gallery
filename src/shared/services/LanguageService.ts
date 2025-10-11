@@ -24,6 +24,10 @@ export interface LanguageStrings {
     readonly themeLight: string;
     readonly themeDark: string;
     readonly close: string;
+    readonly gallery: {
+      readonly sectionTitle: string;
+      readonly wheelScrollSpeed: string;
+    };
   };
   readonly messages: {
     readonly errorBoundary: {
@@ -90,6 +94,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: '라이트',
       themeDark: '다크',
       close: '닫기',
+      gallery: {
+        sectionTitle: '갤러리',
+        wheelScrollSpeed: '휠 스크롤 속도',
+      },
     },
     messages: {
       errorBoundary: { title: '오류 발생', body: '예기치 않은 오류가 발생했습니다: {error}' },
@@ -135,6 +143,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'Light',
       themeDark: 'Dark',
       close: 'Close',
+      gallery: {
+        sectionTitle: 'Gallery',
+        wheelScrollSpeed: 'Wheel Scroll Speed',
+      },
     },
     messages: {
       errorBoundary: { title: 'An error occurred', body: 'An unexpected error occurred: {error}' },
@@ -184,6 +196,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeLight: 'ライト',
       themeDark: 'ダーク',
       close: '閉じる',
+      gallery: {
+        sectionTitle: 'ギャラリー',
+        wheelScrollSpeed: 'ホイールスクロール速度',
+      },
     },
     messages: {
       errorBoundary: {
