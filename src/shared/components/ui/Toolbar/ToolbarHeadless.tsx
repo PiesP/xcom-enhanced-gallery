@@ -66,16 +66,14 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): JSXElement {
   const [highContrast, setHighContrast] = createSignal<boolean>(false);
   const [mode, setMode] = createSignal<string>('default');
 
-  const currentIndex = createMemo(() => props.currentIndex);
-  const totalCount = createMemo(() => props.totalCount);
-
   createEffect(() => {
     setDownloading(!!props.isDownloading);
   });
 
   const items = createMemo<readonly ToolbarItem[]>(() => {
-    const index = currentIndex();
-    const total = totalCount();
+    // Use props directly - they are already reactive getters
+    const index = props.currentIndex;
+    const total = props.totalCount;
     const downloading = isDownloading();
     const disabledPrev = index <= 0;
     const disabledNext = index >= total - 1;
@@ -139,8 +137,9 @@ export function ToolbarHeadless(props: ToolbarHeadlessProps): JSXElement {
     currentMode: mode,
     needsHighContrast: highContrast,
     isDownloading,
-    currentIndex,
-    totalCount,
+    // Wrap props in arrow functions to create accessors for state interface
+    currentIndex: () => props.currentIndex,
+    totalCount: () => props.totalCount,
     currentFitMode,
   };
 

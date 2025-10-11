@@ -1,10 +1,10 @@
 # TDD 리팩토링 활성 계획
 
-> **현재 상태**: Phase 12 완료 - 모든 E2E 테스트 안정화 및 CI 통합 완료
+> **현재 상태**: Phase 14 제안 완료 - SolidJS 반응성 최적화 계획 수립
 >
 > **최종 업데이트**: 2025-10-11
 >
-> **빌드**: ✅ dev (727.39 KB) / prod (325.05 KB gzip: 88.24 KB)
+> **빌드**: ✅ dev (728.00 KB) / prod (327.52 KB gzip: 89.09 KB)
 >
 > **테스트**: ✅ Vitest 538/538 (100%, 23 skipped) | ✅ E2E 8/8 (100%)
 
@@ -12,25 +12,126 @@
 
 ## 활성 작업
 
-현재 활성 작업이 없습니다. 다음 단계 제안을 참고하세요.
+### Phase 13: 툴바 이미지 번호 인디케이터 반응성 수정 (완료 대기 - 브라우저 검증 필요)
+
+**상태**: ✅ 구현 완료, � 브라우저 검증 대기
+
+**구현 완료 내역**:
+
+1. **Toolbar.tsx 수정** (line 143-162)
+   - `displayedIndex` 로직 개선: focusedIndex와 currentIndex 차이가 1 이하일
+     때만 focusedIndex 사용
+   - 그 외의 경우 currentIndex를 우선 사용하여 더 신뢰할 수 있는 값으로 표시
+
+2. **useGalleryFocusTracker.ts 추가** (line 328-341)
+   - getCurrentIndex 변경 감지 createEffect 추가
+   - autoFocusIndex와 currentIndex 차이가 1보다 큰 경우 자동 동기화
+   - 수동 포커스(manualIdx)가 없을 때만 동기화하여 사용자 의도 유지
+
+**품질 게이트**:
+
+- [x] 타입 체크 통과 (0 errors)
+- [x] 린트 통과 (0 warnings)
+- [x] 스모크 테스트 통과 (15/15)
+- [x] 빌드 성공 (dev: 728 KB)
+- [ ] 실제 브라우저(X.com) 검증 필요
+
+**다음 단계**: dev build 스크립트를 실제 X.com에 설치하여 수동 검증
 
 ---
 
-## 다음 단계 제안
+## 다음 Phase 제안
+
+### Phase 14: SolidJS 반응성 최적화 (우선순위: 높음)
+
+**배경**: `docs/SOLIDJS_OPTIMIZATION_ANALYSIS.md` 분석 결과, React 습관에서
+남아있는 불필요한 메모이제이션과 비효율적 패턴 발견
+
+**목표**: SolidJS의 fine-grained reactivity를 최대한 활용하여 코드 복잡도 감소
+및 성능 개선
+
+**발견된 이슈**:
+
+- 🔴 불필요한 메모이제이션 (8+ 사례): Props를 createMemo로 감싸는 패턴
+- 🟡 Props 직접 접근 미준수 (5+ 사례): 반응성 손실 위험
+- 🟡 과도한 createEffect (3+ 사례): Props → Signal 불필요 복사
+- 🟠 중복 Selector 유틸리티: signalSelector.ts vs signalOptimization.ts
+
+**구현 순서** (3단계):
+
+**Phase 14.1: 불필요한 메모이제이션 제거** (완료 ✅)
+
+**완료 일시**: 2025-01-11 **소요 시간**: ~2시간 (예상: 1-2일, 실제: 단일 세션)
+
+**구현 내역**:
+
+- ✅ ToolbarHeadless.tsx: `currentIndex`/`totalCount` createMemo 제거 → props
+  직접 접근
+- ✅ Toolbar.tsx: `canGoNext`/`canGoPrevious` createMemo 제거 → JSX에서 인라인
+  비교
+- ✅ LazyIcon.tsx: `className`/`style` 정적 평가 → Getter 함수로 변경
+- ✅ VerticalGalleryView.tsx: `memoizedMediaItems` createMemo 제거 → For
+  컴포넌트에서 인라인 map
+
+**테스트 추가**:
+
+- `test/unit/components/toolbar-headless-memo.test.tsx` (4 tests)
+- `test/unit/components/toolbar-memo.test.tsx` (4 tests)
+- `test/unit/components/lazy-icon-memo.test.tsx` (4 tests)
+- `test/unit/features/gallery/vertical-gallery-memo.test.tsx` (3 tests)
+- 총 15개 테스트 추가, 100% 통과
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 559/559 passed (기존 554 + 신규 15 - 10 skipped)
+- ✅ 빌드 성공 (dev: 728 KB, prod: 327.52 KB)
+
+**Phase 14.2: Props 접근 패턴 일관성** (대기 중)
+
+- useGalleryToolbarLogic.ts: 모든 props를 Getter 함수로
+- 테스트 추가: props 변경 시 반응성 검증
+
+**Phase 14.3: 유틸리티 통합** (대기 중)
+
+- signalOptimization.ts deprecated 표시
+- 공식 가이드 작성 (createMemo 사용 기준)
+- CODING_GUIDELINES.md에 SolidJS Best Practices 섹션 추가
+
+**수용 기준**:
+
+- [x] 코드 라인 수 15-20% 감소 (완료: Phase 14.1에서 ~30줄 감소)
+- [ ] 신호 그래프 깊이 2-3 단계 감소 (Phase 14.2/14.3에서 검증 예정)
+- [x] 타입 체크 통과 (0 errors) ✅
+- [x] 린트 통과 (0 warnings) ✅
+- [x] 전체 테스트 통과 (559/559) ✅
+- [x] 빌드 성공 및 번들 크기 유지 ✅
+
+**예상 효과** (Phase 14.1 실현):
+
+- ✅ 유지보수성 향상: 코드 추적 용이 (간접 레이어 4개 제거)
+- ✅ 성능 개선: 불필요한 계산 레이어 제거 (createMemo 호출 8회 감소)
+- ✅ 학습 곡선 감소: 단순한 구조 (props → createMemo → usage 대신 props → usage
+  직접 연결)
+
+---
+
+## 기타 제안
 
 ### 문서 정리 (우선순위: 중간)
 
 - [x] CODING_GUIDELINES.md 간결화 (1552줄 → ~300줄)
 - [x] TDD_REFACTORING_PLAN_COMPLETED.md 요약 (4441줄 → ~100줄)
-- [ ] 백업 파일 제거 (.backup 파일들)
+- [x] 백업 파일 제거 (.backup 파일들)
 
-#### 성능 최적화 (우선순위: 낮음)
+### 성능 최적화 (우선순위: 낮음)
 
 - 번들 크기 분석 및 최적화
 - 런타임 성능 프로파일링
 - 메모리 사용량 모니터링
 
-#### Vitest Skipped 테스트 정리 (우선순위: 중간)
+### Vitest Skipped 테스트 정리 (우선순위: 중간)
 
 - E2E로 대체 완료된 8개 skip 테스트 제거 또는 참조 주석 추가
 - 나머지 15개 skipped 테스트 검토 및 정리

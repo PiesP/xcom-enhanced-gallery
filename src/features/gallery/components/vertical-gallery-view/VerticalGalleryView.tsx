@@ -111,21 +111,6 @@ function VerticalGalleryViewCore({
     }
   });
 
-  const memoizedMediaItems = createMemo(() => {
-    const items = mediaItems();
-    const itemsWithKeys = items.map((item, index) => ({
-      ...item,
-      _galleryKey: `${item.id || item.url}-${index}`,
-      _index: index,
-    }));
-
-    logger.debug('VerticalGalleryView: 미디어 아이템 메모이제이션', {
-      count: itemsWithKeys.length,
-    });
-
-    return itemsWithKeys;
-  });
-
   const preloadIndices = createMemo(() => {
     const count = getSetting<number>('gallery.preloadCount', 0);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
@@ -497,7 +482,13 @@ function VerticalGalleryViewCore({
         data-xeg-role-compat='items-list'
         ref={el => setItemsContainerEl(el ?? null)}
       >
-        <For each={memoizedMediaItems()}>
+        <For
+          each={mediaItems().map((item, index) => ({
+            ...item,
+            _galleryKey: `${item.id || item.url}-${index}`,
+            _index: index,
+          }))}
+        >
           {item => {
             const actualIndex = (item as Record<string, unknown>)._index as number;
             const forcePreload = preloadIndices().includes(actualIndex);

@@ -329,6 +329,24 @@ export function useGalleryFocusTracker({
     evaluateAutoFocus('effect');
   });
 
+  // currentIndex 변경 시 autoFocusIndex와 동기화
+  createEffect(() => {
+    const currentIdx = getCurrentIndex();
+    const autoIdx = autoFocusIndex();
+    const manualIdx = manualFocusIndex();
+
+    // 수동 포커스가 없고, autoFocusIndex가 currentIndex와 크게 차이나는 경우 동기화
+    if (manualIdx === null && autoIdx !== null && Math.abs(autoIdx - currentIdx) > 1) {
+      logger.debug('useGalleryFocusTracker: syncing autoFocusIndex with currentIndex', {
+        autoIdx,
+        currentIdx,
+        diff: Math.abs(autoIdx - currentIdx),
+      });
+      setAutoFocusIndex(currentIdx);
+      updateContainerFocusAttribute(currentIdx);
+    }
+  });
+
   createEffect(() => {
     const enabled = isEnabledAccessor();
     const containerElement = containerAccessor();

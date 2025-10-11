@@ -141,14 +141,21 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
   const displayedIndex = createMemo(() => {
     const focus = props.focusedIndex;
+    const current = props.currentIndex;
+
+    // focusedIndex가 유효하고 currentIndex와 일치하거나 근접한 경우에만 사용
     if (typeof focus === 'number' && focus >= 0 && focus < props.totalCount) {
-      return focus;
+      // currentIndex와 동일하거나 매우 근접한 경우 focusedIndex 사용
+      const diff = Math.abs(focus - current);
+      if (diff <= 1) {
+        return focus;
+      }
     }
-    return props.currentIndex;
+
+    // 그 외의 경우 currentIndex를 우선 사용 (더 신뢰할 수 있는 값)
+    return current;
   });
 
-  const canGoNext = createMemo(() => props.currentIndex < props.totalCount - 1);
-  const canGoPrevious = createMemo(() => props.currentIndex > 0);
   const progressWidth = createMemo(() => {
     if (props.totalCount <= 0) {
       return '0%';
@@ -333,10 +340,10 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             size='toolbar'
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
-            disabled={props.disabled || !canGoPrevious()}
+            disabled={props.disabled || props.currentIndex <= 0}
             onClick={event => handleButtonClick(event, props.onPrevious)}
             data-gallery-element='nav-previous'
-            data-disabled={props.disabled || !canGoPrevious()}
+            data-disabled={props.disabled || props.currentIndex <= 0}
           >
             <ChevronLeft size={18} />
           </IconButton>
@@ -345,10 +352,10 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             size='toolbar'
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
-            disabled={props.disabled || !canGoNext()}
+            disabled={props.disabled || props.currentIndex >= props.totalCount - 1}
             onClick={event => handleButtonClick(event, props.onNext)}
             data-gallery-element='nav-next'
-            data-disabled={props.disabled || !canGoNext()}
+            data-disabled={props.disabled || props.currentIndex >= props.totalCount - 1}
           >
             <ChevronRight size={18} />
           </IconButton>
