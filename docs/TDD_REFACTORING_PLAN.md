@@ -1,99 +1,183 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-현재 상태: Phase 21 완료 (21.1-21.2) 현재 상태: Phase 21 완료 (21.1-21.2)
+현재 상태: Phase 21 완료 (21.1-21.2) 현재 상태: Phase 21 완료 (21.1-21.2) 현재
+상태: Phase 21 완료 (21.1-21.2)
+
+최종 업데이트: 2025-10-12
 
 최종 업데이트: 2025-10-12최종 업데이트: 2025-10-12
 
 ---
 
+---
+
+## 📊 현재 상태
+
 ## 📊 현재 상태## 📊 현재 상태
 
+Phase 21 완료 - 추가 최적화 계획은 필요 시 수립 가능
+
 Phase 21 완료 - 추가 최적화 계획은 필요 시 수립 가능Phase 21 완료, 추가 최적화
-계획 수립 가능
 
-프로젝트 상태:프로젝트 상태:
+프로젝트 상태:계획 수립 가능
 
-- ✅ 빌드: dev 730 KB, prod 329.68 KB (gzip: 89.69 KB)- ✅ 빌드: 성공 (dev: 730
-  KB, prod: 329.68 KB, gzip: 89.69 KB)
+- ✅ 빌드: dev 730 KB, prod 330 KB (gzip: 89.79 KB)프로젝트 상태:프로젝트 상태:
 
-- ✅ 테스트: 603/603 passing (24 skipped, 1 todo)- ✅ 테스트: 603/603 passing
-  (24 skipped, 1 todo)
+- ✅ 테스트: 603/603 passing (24 skipped, 1 todo)
+
+- ✅ 의존성: 0 violations (265 modules, 729 dependencies)- ✅ 빌드: dev 730 KB,
+  prod 329.68 KB (gzip: 89.69 KB)- ✅ 빌드: 성공 (dev: 730
+
+- ✅ 브랜치: feature/solidjs-optimization-phase21 KB, prod: 329.68 KB, gzip:
+  89.69 KB)
+
+------- ✅ 테스트: 603/603 passing (24 skipped, 1 todo)- ✅ 테스트: 603/603
+passing
+
+(24 skipped, 1 todo)
+
+## 📚 참고 문서
 
 - ✅ 의존성: 0 violations (265 modules, 729 dependencies)- ✅ 의존성: 0
-  violations (265 modules, 729 dependencies)
 
-- ✅ 브랜치: feature/solidjs-optimization-phase21- ✅ 브랜치:
+- `AGENTS.md`: 개발 환경 및 워크플로 violations (265 modules, 729 dependencies)
+
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.2 완료 내역
+
+- `docs/ARCHITECTURE.md`: 프로젝트 아키텍처- ✅ 브랜치:
+  feature/solidjs-optimization-phase21- ✅ 브랜치:
+
+- `docs/CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준
   feature/solidjs-optimization-phase21 (master에서 분기)
 
 ---
 
-## 📚 참고 문서## 📚 참고 문서
+## 🎯 Phase 21 완료 요약## 📚 참고 문서## 📚 참고 문서
 
-- `AGENTS.md`: 개발 환경 및 워크플로- `AGENTS.md`: 개발 환경 및 워크플로
+### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅- `AGENTS.md`: 개발 환경 및 워크플로- `AGENTS.md`: 개발 환경 및 워크플로
 
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.2 완료 내역-
-  `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.2 완료 내역
+**완료일**: 2025-10-12 - `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.2
+완료 내역-
 
-- `docs/ARCHITECTURE.md`: 프로젝트 아키텍처- `docs/ARCHITECTURE.md`: 프로젝트
-  아키텍처
+**커밋**: `feat(gallery): prevent IntersectionObserver infinite loop`
+`docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.2 완료 내역
 
-- `docs/CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준-
-  `docs/CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준
+**개선사항**:- `docs/ARCHITECTURE.md`: 프로젝트 아키텍처-
+`docs/ARCHITECTURE.md`: 프로젝트
 
-- `docs/SOLIDJS_OPTIMIZATION_GUIDE.md`: SolidJS 최적화 가이드 (Phase 21 기반)
+아키텍처
 
----
+- untrack(): IntersectionObserver 콜백에서 반응성 체인 끊기
 
----
+- on(): 명시적 의존성 지정으로 effect 최적화- `docs/CODING_GUIDELINES.md`: 코딩
+  규칙 및 품질 기준-
 
-## 🎯 Phase 21 완료 요약
+- debounce: setAutoFocusIndex 업데이트 제한 (50ms) `docs/CODING_GUIDELINES.md`:
+  코딩 규칙 및 품질 기준
 
-## 🎯 Phase 21 완료 요약
-
-### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
-
-### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
-
-**완료일**: 2025-10-12
-
-**커밋**: `feat(gallery): prevent IntersectionObserver infinite loop`-
-**완료일**: 2025-10-12
-
-- **커밋**: `feat(gallery): prevent IntersectionObserver infinite loop`
-
-**개선사항**:- **효과**: focusedIndex effect 99% 감소 (200+ → 2회)
-
-- untrack(): IntersectionObserver 콜백에서 반응성 체인 끊기### Phase 21.2:
-  galleryState Fine-grained Signals 분리 ✅
-
-- on(): 명시적 의존성 지정으로 effect 최적화
-
-- debounce: setAutoFocusIndex 업데이트 제한 (50ms)- **완료일**: 2025-10-12
-
-- **커밋**: `feat(core): implement fine-grained signals for gallery state`
-
-**효과**: focusedIndex effect 99% 감소 (200+ → 2회)- **효과**: 불필요한 재렌더링
-100% 제거 (currentIndex 변경 시 mediaItems 구독자 재실행 안 됨)
+**효과**: focusedIndex effect 99% 감소 (200+ → 2회)-
+`docs/SOLIDJS_OPTIMIZATION_GUIDE.md`: SolidJS 최적화 가이드 (Phase 21 기반)
 
 ### Phase 21.2: galleryState Fine-grained Signals 분리 ✅---
 
-      currentIndex: gallerySignals.currentIndex.value,
+**완료일**: 2025-10-12 ---
 
-**완료일**: 2025-10-12 isLoading: gallerySignals.isLoading.value,
+**커밋**: `feat(core): implement fine-grained signals for gallery state`
 
-**커밋**: `feat(core): implement fine-grained signals for gallery state` error:
+## 🎯 Phase 21 완료 요약
+
+**개선사항**:
+
+## 🎯 Phase 21 완료 요약
+
+- gallerySignals 추가: 각 상태 속성에 대한 개별 signal
+
+- 호환 레이어: 기존 galleryState.value API 유지### Phase 21.1:
+  IntersectionObserver 무한 루프 방지 ✅
+
+- batch() 지원: 다중 signal 업데이트 최적화
+
+### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
+
+**효과**: 불필요한 재렌더링 100% 제거
+
+**완료일**: 2025-10-12
+
+---
+
+**커밋**: `feat(gallery): prevent IntersectionObserver infinite loop`-
+
+## 📝 다음 작업 제안 (선택적)**완료일**: 2025-10-12
+
+Phase 21이 완료되었습니다. 추가 최적화가 필요한 경우 다음을 고려할 수 있습니다:-
+**커밋**: `feat(gallery): prevent IntersectionObserver infinite loop`
+
+- **useGalleryScroll Passive Listener**: 스크롤 성능 개선 (MEDIUM)**개선사항**:-
+  **효과**: focusedIndex effect 99% 감소 (200+ → 2회)
+
+- **불필요한 Memo 제거**: 코드 간결성 향상 (LOW)
+
+- **컴포넌트 마이그레이션**: gallerySignals 사용으로 전환 (OPTIONAL)- untrack():
+  IntersectionObserver 콜백에서 반응성 체인 끊기### Phase 21.2:
+
+  galleryState Fine-grained Signals 분리 ✅
+
+현재 프로젝트는 안정적인 상태이며, 즉각적인 리팩토링이 필요하지 않습니다.
+
+- on(): 명시적 의존성 지정으로 effect 최적화
+
+---
+
+- debounce: setAutoFocusIndex 업데이트 제한 (50ms)- **완료일**: 2025-10-12
+
+## 🔄 브랜치 병합 가이드
+
+- **커밋**: `feat(core): implement fine-grained signals for gallery state`
+
+Phase 21 작업을 master에 병합하려면:
+
+**효과**: focusedIndex effect 99% 감소 (200+ → 2회)- **효과**: 불필요한 재렌더링
+
+1. 전체 검증 실행100% 제거 (currentIndex 변경 시 mediaItems 구독자 재실행 안 됨)
+
+````pwsh### Phase 21.2: galleryState Fine-grained Signals 분리 ✅---
+
+npm run validate
+
+npm run build      currentIndex: gallerySignals.currentIndex.value,
+
+npm test
+
+```**완료일**: 2025-10-12 isLoading: gallerySignals.isLoading.value,
+
+
+
+2. master로 병합**커밋**: `feat(core): implement fine-grained signals for gallery state` error:
+
 gallerySignals.error.value,
 
-      viewMode: gallerySignals.viewMode.value,
+```pwsh
 
-**개선사항**: };
+git checkout master      viewMode: gallerySignals.viewMode.value,
+
+git merge feature/solidjs-optimization-phase21
+
+git push origin master**개선사항**: };
+
+````
 
 },
 
-- gallerySignals 추가: 각 상태 속성에 대한 개별 signal set value(state:
-  GalleryState) {
+3. 브랜치 정리
 
-- 호환 레이어: 기존 galleryState.value API 유지 batch(() => {
+- gallerySignals 추가: 각 상태 속성에 대한 개별 signal set value(state:
+
+````pwsh GalleryState) {
+
+git branch -d feature/solidjs-optimization-phase21
+
+```- 호환 레이어: 기존 galleryState.value API 유지 batch(() => {
+
 
 - batch() 지원: 다중 signal 업데이트 최적화 gallerySignals.isOpen.value =
   state.isOpen;
@@ -126,7 +210,8 @@ Phase 21이 완료되었습니다. 추가 최적화가 필요한 경우 다음�
 
 1. Phase 21.2.1: 새 API 추가 (`gallerySignals.*`)
 
-현재 프로젝트는 안정적인 상태이며, 즉각적인 리팩토링이 필요하지 않습니다.2. Phase 21.2.2: 호환 레이어 구현 (기존 API 유지)
+현재 프로젝트는 안정적인 상태이며, 즉각적인 리팩토링이 필요하지 않습니다.2.
+Phase 21.2.2: 호환 레이어 구현 (기존 API 유지)
 
 3. Phase 21.2.3: VerticalGalleryView 전환 (useSelector 제거)
 
@@ -142,11 +227,11 @@ Phase 21 작업을 master에 병합하려면:
 
 1. **RED**: Fine-grained signals 업데이트 시 불필요한 재렌더링 감지 테스트
 
-1. 전체 검증 실행   - `test/unit/state/gallery-signals-fine-grained.red.test.ts`
+1. 전체 검증 실행 - `test/unit/state/gallery-signals-fine-grained.red.test.ts`
 
-2. **GREEN**: `gallerySignals` 구현 및 호환 레이어 추가
+1. **GREEN**: `gallerySignals` 구현 및 호환 레이어 추가
 
-```pwsh3. **REFACTOR**: VerticalGalleryView부터 점진적 전환
+````pwsh3. **REFACTOR**: VerticalGalleryView부터 점진적 전환
 
 npm run validate
 
