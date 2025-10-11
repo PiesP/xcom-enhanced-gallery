@@ -1,8 +1,19 @@
 /**
  * POC: Solid Testing Library 통합 테스트
  *
+ * ⚠️ 현재 상태: FAILING (4/6 tests)
+ *
  * @solidjs/testing-library를 사용하여 Solid.js 컴포넌트의 반응성을
  * 올바르게 테스트할 수 있는지 검증합니다.
+ *
+ * 알려진 이슈:
+ * - Signal 변경 후 UI 업데이트가 waitFor에서 감지되지 않음
+ * - Show 컴포넌트 조건부 렌더링 실패
+ * - Props 반응성 테스트 실패
+ * - Modal 패턴 테스트 실패
+ *
+ * 이는 Proof of Concept 테스트로, 실제 기능에는 영향이 없습니다.
+ * 향후 @solidjs/testing-library 개선 시 재검토 예정.
  */
 
 import { describe, expect, it, vi } from 'vitest';
