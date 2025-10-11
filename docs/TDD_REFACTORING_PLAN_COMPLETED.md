@@ -149,6 +149,65 @@
 
 **테스트**: 기존 테스트 통과 (추가 테스트 불필요)
 
+#### Phase 21.5: gallerySignals 마이그레이션 ✅
+
+**완료일**: 2025-10-12 **커밋**: 예정 **브랜치**:
+`feature/phase21-5-gallery-signals-migration`
+
+**목표**: `galleryState.value` 직접 사용을 `gallerySignals`로 전환하여
+fine-grained reactivity 활용
+
+**마이그레이션 패턴**:
+
+```typescript
+// Before (Phase 21.2 이전):
+const state = galleryState.value;
+if (!state.isOpen || state.mediaItems.length === 0) return;
+
+// After (Phase 21.5):
+const isOpen = gallerySignals.isOpen.value;
+const mediaItems = gallerySignals.mediaItems.value;
+if (!isOpen || mediaItems.length === 0) return;
+```
+
+**변경된 파일 (2개, 총 9곳)**:
+
+1. **GalleryRenderer.ts**
+   - Line 102-103: `renderGallery()` - isOpen, mediaItems 개별 접근
+   - Line 201-203: `handleDownload()` - mediaItems, currentIndex 개별 접근
+
+2. **GalleryApp.ts**
+   - Line 167: Escape key handler - isOpen 개별 접근
+   - Line 235: `closeGallery()` - isOpen 개별 접근
+   - Line 292-294: `getDiagnostics()` - isOpen, mediaItems.length, currentIndex
+     개별 접근 (3곳)
+   - Line 321: cleanup - isOpen 개별 접근
+
+**성능 개선**:
+
+- 불필요한 객체 composition 오버헤드 제거
+- Fine-grained reactivity 강화: 각 signal 변경 시 해당 구독자만 실행
+- 반응성 추적 범위 최소화
+
+**호환성**:
+
+- `galleryState.value` API는 Phase 21.2의 호환 레이어 덕분에 계속 사용 가능
+- 점진적 마이그레이션 가능 (모든 코드를 한 번에 변경할 필요 없음)
+
+**테스트**: 9개 테스트 추가 (`gallery-signals-migration.test.ts`)
+
+- Individual signal access 검증
+- Backward compatibility 검증
+- Performance characteristics 검증
+- Migration targets 검증
+
+**검증 결과**:
+
+- ✅ 전체 테스트: 603/603 passing (24 skipped, 1 todo)
+- ✅ 타입 체크: 0 errors
+- ✅ 빌드: dev 730 KB, prod 330 KB (gzip: 89.81 KB)
+- ✅ 의존성: 0 violations
+
 ---
 
 ## 📝 주요 성과
