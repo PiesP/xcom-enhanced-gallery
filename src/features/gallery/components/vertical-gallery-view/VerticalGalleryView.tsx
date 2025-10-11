@@ -39,8 +39,6 @@ import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 const solidAPI = getSolid();
 const { For } = solidAPI;
 
-const WHEEL_SCROLL_MULTIPLIER = 1.2; // TODO: 설정에서 제어할 수 있도록 이동
-
 export interface VerticalGalleryViewProps {
   onClose?: () => void;
   className?: string;
@@ -98,6 +96,9 @@ function VerticalGalleryViewCore({
   };
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
+
+  // 휠 스크롤 배율 설정 로드
+  const wheelScrollMultiplier = getSetting<number>('gallery.wheelScrollMultiplier', 1.2);
 
   createEffect(() => {
     const visible = mediaItems().length > 0;
@@ -214,7 +215,7 @@ function VerticalGalleryViewCore({
 
       const maxScrollTop = Math.max(0, target.scrollHeight - target.clientHeight);
       const currentTop = target.scrollTop;
-      const desiredTop = currentTop + delta * WHEEL_SCROLL_MULTIPLIER;
+      const desiredTop = currentTop + delta * wheelScrollMultiplier;
       const clampedTop = Math.max(0, Math.min(desiredTop, maxScrollTop));
       const scrollDelta = clampedTop - currentTop;
 
@@ -240,7 +241,7 @@ function VerticalGalleryViewCore({
         targetTop: clampedTop,
         timestamp: Date.now(),
         targetType: target === container ? 'container' : 'itemsContainer',
-        multiplier: WHEEL_SCROLL_MULTIPLIER,
+        multiplier: wheelScrollMultiplier,
       });
     },
     enabled: isVisible,
