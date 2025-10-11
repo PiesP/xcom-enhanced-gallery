@@ -205,6 +205,44 @@
   - ✅ 성능 개선: createMemo 호출 8회 감소, 불필요한 계산 레이어 제거
   - ✅ 학습 곡선 감소: props → createMemo → usage 대신 props → usage 직접 연결
 
+### Phase 14.2: Props 접근 패턴 일관성 확보 (2025-01-11)
+
+- **브랜치**: refactor/solidjs-props-patterns
+- **커밋**:
+  `refactor(core): convert useGalleryToolbarLogic props to reactive getters`
+  (대기 중)
+- **소요 시간**: ~1시간 (예상: 1-2시간, 실제: 단일 세션)
+- **배경**: useGalleryToolbarLogic에서 props를 정적으로 할당하여 반응성 상실
+- **구현 내역**:
+  - ✅ ToolbarState 인터페이스 타입 수정 (lines 47-54)
+    - `canGoPrevious: boolean` → `canGoPrevious: () => boolean`
+    - `canGoNext: boolean` → `canGoNext: () => boolean`
+    - `mediaCounter: {...}` → `mediaCounter: () => {...}`
+  - ✅ 구현을 getter 함수로 변경 (lines 66-73)
+    - `const canGoPrevious = () => props.currentIndex > 0;`
+    - `const canGoNext = () => props.currentIndex < props.totalCount - 1;`
+    - `const mediaCounter = () => ({...});`
+  - ✅ 호출 사이트 업데이트 (lines 82-91, 107-118)
+    - actions.handlePrevious/handleNext: `canGoPrevious()`, `canGoNext()`로 호출
+    - getActionProps: `!canGoPrevious()`, `!canGoNext()`로 호출
+- **테스트 추가**:
+  - `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` (14 tests)
+  - canGoPrevious/canGoNext getter 검증 (4 tests)
+  - mediaCounter getter 검증 (2 tests)
+  - ToolbarState 타입 시그니처 검증 (3 tests)
+  - getActionProps 함수 호출 검증 (2 tests)
+  - state 객체 getter 할당 검증 (3 tests)
+  - 총 14개 테스트 추가, 100% 통과
+- **품질 게이트**:
+  - ✅ 타입 체크: 0 errors
+  - ✅ 린트: 0 warnings
+  - ✅ 테스트: 569/573 passed (4 POC failures 기존, Phase 14.2 28/28)
+  - ✅ 빌드 성공 (dev: 727.65 KB, prod: 327.42 KB, gzip: 89.04 KB)
+- **효과**:
+  - ✅ 반응성 복원: props 변경 시 자동으로 재계산되도록 수정
+  - ✅ 안티패턴 제거: React 스타일 props 구조분해 패턴 제거
+  - ✅ SolidJS Best Practice 준수: props는 항상 getter로 접근
+
 ---
 
 ## 📖 문서

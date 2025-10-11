@@ -1,0 +1,139 @@
+/**
+ * @fileoverview Props 접근 패턴 검증 테스트 (Phase 14.2 - TDD RED)
+ * @description useGalleryToolbarLogic에서 props를 getter 함수로 일관되게 접근하는지 검증
+ */
+
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const filePath = join(process.cwd(), 'src/shared/hooks/useGalleryToolbarLogic.ts');
+const fileContent = readFileSync(filePath, 'utf-8');
+
+describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
+  describe('canGoPrevious/canGoNext - Getter 함수 패턴', () => {
+    it('canGoPrevious는 getter 함수여야 함 (const canGoPrevious = () => ...)', () => {
+      // RED: 현재는 const canGoPrevious = props.currentIndex > 0; 형태
+      const hasGetterPattern =
+        /const\s+canGoPrevious\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*>\s*0/.test(fileContent);
+
+      expect(hasGetterPattern).toBe(true);
+    });
+
+    it('canGoNext는 getter 함수여야 함 (const canGoNext = () => ...)', () => {
+      // RED: 현재는 const canGoNext = props.currentIndex < props.totalCount - 1; 형태
+      const hasGetterPattern =
+        /const\s+canGoNext\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1/.test(
+          fileContent
+        );
+
+      expect(hasGetterPattern).toBe(true);
+    });
+
+    it('canGoPrevious는 직접 값 할당을 사용하지 않아야 함', () => {
+      // Anti-pattern: const canGoPrevious = props.currentIndex > 0;
+      const hasDirectAssignment = /const\s+canGoPrevious\s*=\s*props\.currentIndex\s*>\s*0;/.test(
+        fileContent
+      );
+
+      expect(hasDirectAssignment).toBe(false);
+    });
+
+    it('canGoNext는 직접 값 할당을 사용하지 않아야 함', () => {
+      // Anti-pattern: const canGoNext = props.currentIndex < props.totalCount - 1;
+      const hasDirectAssignment =
+        /const\s+canGoNext\s*=\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1;/.test(
+          fileContent
+        );
+
+      expect(hasDirectAssignment).toBe(false);
+    });
+  });
+
+  describe('mediaCounter - Getter 함수 패턴', () => {
+    it('mediaCounter는 getter 함수여야 함 (const mediaCounter = () => ({ ... }))', () => {
+      // RED: 현재는 const mediaCounter = { ... } 형태
+      const hasGetterPattern = /const\s+mediaCounter\s*=\s*\(\)\s*=>\s*\({/.test(fileContent);
+
+      expect(hasGetterPattern).toBe(true);
+    });
+
+    it('mediaCounter는 직접 객체 할당을 사용하지 않아야 함', () => {
+      // Anti-pattern: const mediaCounter = { current: props.currentIndex + 1, ... };
+      const hasDirectObjectAssignment =
+        /const\s+mediaCounter\s*=\s*{[^}]*current:\s*props\.currentIndex\s*\+\s*1/.test(
+          fileContent
+        );
+
+      expect(hasDirectObjectAssignment).toBe(false);
+    });
+  });
+
+  describe('ToolbarState 타입 - Getter 함수 시그니처', () => {
+    it('ToolbarState.canGoPrevious는 () => boolean 타입이어야 함', () => {
+      const hasGetterType = /canGoPrevious:\s*\(\)\s*=>\s*boolean/.test(fileContent);
+
+      expect(hasGetterType).toBe(true);
+    });
+
+    it('ToolbarState.canGoNext는 () => boolean 타입이어야 함', () => {
+      const hasGetterType = /canGoNext:\s*\(\)\s*=>\s*boolean/.test(fileContent);
+
+      expect(hasGetterType).toBe(true);
+    });
+
+    it('ToolbarState.mediaCounter는 getter 함수 타입이어야 함', () => {
+      const hasGetterType =
+        /mediaCounter:\s*\(\)\s*=>\s*{[^}]*current:\s*number[^}]*total:\s*number[^}]*progress:\s*number[^}]*}/.test(
+          fileContent
+        );
+
+      expect(hasGetterType).toBe(true);
+    });
+  });
+
+  describe('getActionProps 내부 - Getter 함수 호출', () => {
+    it('getActionProps에서 canGoPrevious()를 함수로 호출해야 함', () => {
+      // props.disabled || !canGoPrevious() 패턴
+      const hasGetterCall = /disabled:\s*props\.disabled\s*\|\|\s*!canGoPrevious\(\)/.test(
+        fileContent
+      );
+
+      expect(hasGetterCall).toBe(true);
+    });
+
+    it('getActionProps에서 canGoNext()를 함수로 호출해야 함', () => {
+      // props.disabled || !canGoNext() 패턴
+      const hasGetterCall = /disabled:\s*props\.disabled\s*\|\|\s*!canGoNext\(\)/.test(fileContent);
+
+      expect(hasGetterCall).toBe(true);
+    });
+  });
+
+  describe('state 객체 - Getter 함수 할당', () => {
+    it('state.canGoPrevious에 getter 함수를 할당해야 함', () => {
+      // state 객체 내에서 canGoPrevious, (쉼표나 줄바꿈)
+      const hasGetterInState = /state:\s*ToolbarState\s*=\s*{[^}]*canGoPrevious,/.test(
+        fileContent.replace(/\s+/g, ' ')
+      );
+
+      expect(hasGetterInState).toBe(true);
+    });
+
+    it('state.canGoNext에 getter 함수를 할당해야 함', () => {
+      const hasGetterInState = /state:\s*ToolbarState\s*=\s*{[^}]*canGoNext,/.test(
+        fileContent.replace(/\s+/g, ' ')
+      );
+
+      expect(hasGetterInState).toBe(true);
+    });
+
+    it('state.mediaCounter에 getter 함수를 할당해야 함', () => {
+      const hasGetterInState = /state:\s*ToolbarState\s*=\s*{[^}]*mediaCounter,/.test(
+        fileContent.replace(/\s+/g, ' ')
+      );
+
+      expect(hasGetterInState).toBe(true);
+    });
+  });
+});
