@@ -176,9 +176,8 @@ memoization 제거---
 
 ### Phase 21.5: gallerySignals 마이그레이션 (OPTIONAL)
 
-**우선순위**: OPTIONAL  
-**목표**: galleryState.value 직접 사용을 gallerySignals로 전환하여 fine-grained
-reactivity 활용
+**우선순위**: OPTIONAL **목표**: galleryState.value 직접 사용을 gallerySignals로
+전환하여 fine-grained reactivity 활용
 
 **분석 필요**:
 

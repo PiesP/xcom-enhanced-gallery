@@ -72,8 +72,8 @@
 
 #### Phase 21.2: galleryState Fine-grained Signals 분리 ✅
 
-**완료일**: 2025-10-12  
-**커밋**: `feat(core): implement fine-grained signals for gallery state`
+**완료일**: 2025-10-12 **커밋**:
+`feat(core): implement fine-grained signals for gallery state`
 
 **개선사항**:
 
@@ -122,8 +122,7 @@
 
 #### Phase 21.3: useGalleryScroll Passive Listener ✅
 
-**완료일**: 2025-10-12 (코드 검증으로 확인)  
-**상태**: 이미 적용됨
+**완료일**: 2025-10-12 (코드 검증으로 확인) **상태**: 이미 적용됨
 
 **개선사항**:
 
