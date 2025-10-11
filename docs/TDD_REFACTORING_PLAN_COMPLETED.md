@@ -54,8 +54,8 @@
 
 #### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
 
-**완료일**: 2025-10-12  
-**커밋**: `feat(gallery): prevent IntersectionObserver infinite loop in useGalleryFocusTracker`
+**완료일**: 2025-10-12 **커밋**:
+`feat(gallery): prevent IntersectionObserver infinite loop in useGalleryFocusTracker`
 
 **개선사항**:
 
@@ -72,8 +72,8 @@
 
 #### Phase 21.2: galleryState Fine-grained Signals 분리 ✅
 
-**완료일**: 2025-10-12  
-**커밋**: `feat(core): implement fine-grained signals for gallery state`
+**완료일**: 2025-10-12 **커밋**:
+`feat(core): implement fine-grained signals for gallery state`
 
 **개선사항**:
 
