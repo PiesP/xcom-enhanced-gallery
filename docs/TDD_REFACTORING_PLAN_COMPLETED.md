@@ -311,18 +311,18 @@
 
 ## Phase 15.2: 스킵 테스트 검토 및 문서화 (2025-01-11)
 
-### 배경
+**배경**:
 
 - Phase 15.1 완료 후 20개의 스킵 테스트가 남음
 - 각 스킵 테스트에 대한 명확한 문서화 필요
 - E2E 대안 또는 향후 재작성 계획 명시 필요
 
-### 작업 내역
+**작업 내역**:
 
 - **브랜치**: test/phase-15-2-skip-test-review
 - **커밋**: `test: phase 15.2 - skip test review and cleanup` (9998bf4d)
 
-#### 제거된 테스트 파일 (2개)
+**제거된 테스트 파일** (2개):
 
 1. **`test/unit/ui/toolbar-fit-group-contract.test.tsx`**
    - 이유: fitModeGroup CSS class가 Toolbar.module.css에서 제거됨
@@ -333,7 +333,7 @@
    - 복잡한 vi.doMock 타이밍 이슈
    - PC 전용 이벤트는 E2E에서 충분히 검증됨
 
-#### 문서화된 스킵 테스트 (20개)
+**문서화된 스킵 테스트** (20개):
 
 1. **`test/unit/features/gallery-app-activation.test.ts`** (3 skipped)
    - 이슈: vi.resetModules()와 ServiceManager 싱글톤 간 타이밍 충돌
@@ -370,7 +370,7 @@
      커버
    - 향후: Toolbar 리팩터링으로 테스트 용이성 개선
 
-#### 향상된 todo 테스트
+**향상된 todo 테스트**:
 
 - **`test/unit/alias/alias-resolution.test.ts`** (1 todo)
   - 문서: 플랫폼별 절대 경로 import 테스트 계획 추가
@@ -378,7 +378,7 @@
   - Unix: `file:///...` 또는 `/@fs/...`
   - 현재는 alias 해석만으로 충분, 실제 필요 시 구현
 
-### 품질 게이트
+**품질 게이트**:
 
 - ✅ 타입 체크: 0 errors
 - ✅ 린트: 0 warnings
@@ -386,7 +386,7 @@
 - ✅ 빌드: dev 727.65 KB, prod 327.42 KB
 - ✅ 테스트 파일: 142 → 140
 
-### 결과
+**결과**:
 
 - **스킵 감소**: 23 → 20 (-3, 파일 제거로)
 - **명확성 향상**: 모든 스킵에 한국어 문서화 추가
@@ -486,13 +486,13 @@
 
 ## Phase 16: 문서 정리 및 구조 최적화 (2025-01-11)
 
-### 배경
+**배경**:
 
 - Phase 14 완료 후 SOLIDJS_OPTIMIZATION_ANALYSIS.md가 더 이상 필요하지 않음
 - 모든 최적화 권장사항이 Phase 14.1-14.3에서 구현 완료
 - 문서 관리 효율성 향상을 위한 정리 필요
 
-### 작업 내역
+**작업 내역**:
 
 - **브랜치**: docs/phase-16-documentation-cleanup
 - **커밋**: `docs: phase 16 - documentation cleanup` (711a49a7)
@@ -509,7 +509,7 @@
     - SOLIDJS_OPTIMIZATION_ANALYSIS.md 참조 제거
     - 파일 손상 해결 (중복 헤더/인코딩 문제 완전 제거)
 
-### 품질 게이트
+**품질 게이트**:
 
 - ✅ 타입 체크: 0 errors
 - ✅ 린트: 0 warnings
@@ -519,14 +519,14 @@
   - Prod: 327.42 KB (gzip: 89.04 KB)
 - ✅ 의존성: 0 violations
 
-### 효과
+**효과**:
 
 - ✅ 문서 간결화: -606 lines (545 from SOLIDJS + 61 from PLAN updates)
 - ✅ 유지보수성 향상: 구현 완료된 분석 문서 제거로 혼란 방지
 - ✅ 파일 안정성: TDD_REFACTORING_PLAN.md 재생성으로 손상 해결
 - ✅ 프로젝트 정리: Phase 14 완료 후 정리 작업 완료
 
-### 근거
+**근거**:
 
 ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 효율을 최대 37.91%
 향상시킴. 구현 완료된 분석 문서는 히스토리로 이관하고 현재 활성 계획만 유지하는
