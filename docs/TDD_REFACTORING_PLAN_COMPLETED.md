@@ -298,6 +298,106 @@
 - ✅ 타입 체크: 0 errors
 - ✅ 린트: 0 warnings
 - ✅ 테스트: 569/573 passed (4 POC failures 예상됨)
+- ✅ 빌드: dev 727.65 KB, prod 327.42 KB (gzip: 89.04 KB)
+- ✅ 테스트 파일: 143 → 142
+
+### 결과
+
+- 코드 감소: -546 lines
+- 테스트 명확성 향상
+- 유지보수 부담 감소
+
+---
+
+## Phase 15.2: 스킵 테스트 검토 및 문서화 (2025-01-11)
+
+### 배경
+
+- Phase 15.1 완료 후 20개의 스킵 테스트가 남음
+- 각 스킵 테스트에 대한 명확한 문서화 필요
+- E2E 대안 또는 향후 재작성 계획 명시 필요
+
+### 작업 내역
+
+- **브랜치**: test/phase-15-2-skip-test-review
+- **커밋**: `test: phase 15.2 - skip test review and cleanup` (9998bf4d)
+
+#### 제거된 테스트 파일 (2개)
+
+1. **`test/unit/ui/toolbar-fit-group-contract.test.tsx`**
+   - 이유: fitModeGroup CSS class가 Toolbar.module.css에서 제거됨
+   - 테스트 대상 코드가 더 이상 존재하지 않음
+
+2. **`test/unit/events/gallery-pc-only-events.test.ts`**
+   - 이유: E2E 커버리지 존재 (playwright/smoke/gallery-events.spec.ts)
+   - 복잡한 vi.doMock 타이밍 이슈
+   - PC 전용 이벤트는 E2E에서 충분히 검증됨
+
+#### 문서화된 스킵 테스트 (20개)
+
+1. **`test/unit/features/gallery-app-activation.test.ts`** (3 skipped)
+   - 이슈: vi.resetModules()와 ServiceManager 싱글톤 간 타이밍 충돌
+   - 대안: E2E (playwright/smoke/gallery-app.spec.ts) 및 통합 테스트
+     (full-workflow.test.ts)
+   - 향후: 모듈 모킹 없이 실제 서비스를 사용하는 통합 테스트로 재작성
+
+2. **`test/unit/shared/components/ui/settings-modal-focus.test.tsx`** (4
+   skipped)
+   - 이슈: jsdom은 브라우저 포커스 동작을 완전히 재현하지 못함
+   - 대안: E2E (playwright/smoke/modals.spec.ts)에서 실제 브라우저 검증
+   - 문서: "jsdom 환경에서는 focus/blur가 제대로 작동하지 않음"
+
+3. **`test/unit/shared/components/ui/ToolbarHeadless.test.tsx`** (9 skipped)
+   - 이슈: Preact → Solid.js 마이그레이션 필요
+   - 요구사항: render props 패턴을 Solid.js 방식으로 재작성
+   - 대안: Toolbar.tsx E2E 커버리지 + useGalleryToolbarLogic.test.ts
+   - 향후: Phase 15.2c 또는 별도 Phase로 재작성
+
+4. **`test/unit/components/error-boundary.fallback.test.tsx`** (1 skipped)
+   - 이슈: Solid.js ErrorBoundary가 jsdom에서 에러를 제대로 포착하지 못함
+   - 대안: E2E (playwright/smoke/error-boundary.spec.ts)
+   - 향후: E2E 커버리지 충분하므로 제거 검토
+
+5. **`test/unit/features/gallery/keyboard-help.overlay.test.tsx`** (1 skipped)
+   - 이슈: Solid.js fine-grained reactivity가 jsdom에서 불안정
+   - 대안: E2E (playwright/smoke/modals.spec.ts)
+   - 향후: 개별 동작(포커스 트랩, 키보드 핸들러)을 단위 테스트로 분리
+
+6. **`test/unit/ui/toolbar.icon-accessibility.test.tsx`** (2 skipped)
+   - 이슈: Toolbar의 복잡한 사이드이펙트(createEffect, vendors 초기화) 모킹
+     어려움
+   - 대안: aria-label 검증은 wrapper-compat.test.tsx와 IconButton.test.tsx에서
+     커버
+   - 향후: Toolbar 리팩터링으로 테스트 용이성 개선
+
+#### 향상된 todo 테스트
+
+- **`test/unit/alias/alias-resolution.test.ts`** (1 todo)
+  - 문서: 플랫폼별 절대 경로 import 테스트 계획 추가
+  - Windows: `file:///C:/...` 또는 `/@fs/C:/...`
+  - Unix: `file:///...` 또는 `/@fs/...`
+  - 현재는 alias 해석만으로 충분, 실제 필요 시 구현
+
+### 품질 게이트
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 569/594 passed (20 skipped, 4 POC failures, 1 todo)
+- ✅ 빌드: dev 727.65 KB, prod 327.42 KB
+- ✅ 테스트 파일: 142 → 140
+
+### 결과
+
+- **스킵 감소**: 23 → 20 (-3, 파일 제거로)
+- **명확성 향상**: 모든 스킵에 한국어 문서화 추가
+- **E2E 매핑**: 각 스킵 테스트에 대응하는 E2E 테스트 명시
+- **향후 계획**: ToolbarHeadless (9 tests) 재작성은 별도 Phase로 분리
+- **테스트 명확성**: 개발자가 스킵 이유를 즉시 파악 가능
+
+---
+
+## Phase 16: 문서 정리 (2025-01-11)
+
 - ✅ 빌드 성공:
   - Dev: 727.65 KB
   - Prod: 327.42 KB (gzip: 89.04 KB)
