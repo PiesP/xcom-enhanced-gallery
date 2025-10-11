@@ -160,10 +160,8 @@ export function useGalleryScroll({
 
     onScroll?.(delta, targetElement);
 
-    if (blockTwitterScrollAccessor()) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    // Note: preventDefault/stopPropagation 제거 - 브라우저/OS 네이티브 스크롤 동작 사용
+    // 트위터 페이지와의 충돌은 preventTwitterScroll 함수에서 별도 처리
 
     handleScrollEnd();
 
@@ -191,9 +189,10 @@ export function useGalleryScroll({
 
     const eventManager = new EventManager();
 
+    // 갤러리 휠 이벤트는 passive 리스너로 등록 (브라우저 네이티브 스크롤 동작 사용)
     eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
       capture: true,
-      passive: false,
+      passive: true, // 브라우저/OS 네이티브 스크롤 속도 설정 준수
     });
 
     if (shouldBlockTwitterScroll) {

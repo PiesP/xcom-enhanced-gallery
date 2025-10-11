@@ -10,14 +10,14 @@ import styles from './Toast.module.css';
 // UI에서는 서비스의 ToastItem 타입만 사용하여 드리프트를 방지합니다.
 export interface ToastItem extends ServiceToastItem {}
 
-// 레거시 Props 인터페이스 (하위 호환성)
-interface LegacyToastProps {
+// Toast 전용 Props 인터페이스
+interface ToastSpecificProps {
   toast: ToastItem;
   onRemove: (id: string) => void;
 }
 
 // 통합된 Toast Props
-export interface ToastProps extends Partial<StandardToastProps>, Partial<LegacyToastProps> {
+export interface ToastProps extends Partial<StandardToastProps>, Partial<ToastSpecificProps> {
   // 필수 props
   toast?: ToastItem;
   onRemove?: (id: string) => void;

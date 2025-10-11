@@ -20,16 +20,18 @@ export function LazyIcon(props: LazyIconProps): JSXElement | unknown {
   // 커스텀 fallback이 제공되면 즉시 반환 (테스트 기대)
   if (props.fallback) return props.fallback;
 
-  const className = ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
-  const style = props.size ? { width: `${props.size}px`, height: `${props.size}px` } : undefined;
+  // Use getter functions to maintain reactivity for props
+  const className = () => ['lazy-icon-loading', props.className].filter(Boolean).join(' ');
+  const style = () =>
+    props.size ? { width: `${props.size}px`, height: `${props.size}px` } : undefined;
 
   // 기본 반환은 로딩 상태 placeholder
   return (
     <div
-      class={className}
+      class={className()}
       data-testid='lazy-icon-loading'
       aria-label='아이콘 로딩 중'
-      style={style}
+      style={style()}
     />
   );
 }

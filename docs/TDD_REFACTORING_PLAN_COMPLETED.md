@@ -10,12 +10,12 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (727.39 KB) / prod (325.05 KB, gzip: 88.24 KB)
+- ✅ **빌드**: dev (727.34 KB) / prod (327.30 KB, gzip: 89.01 KB)
 - ✅ **Vitest**: 538/538 (100%, 23 skipped)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations
+- ✅ **의존성**: 0 violations (265 modules, 726 dependencies)
 
 ### 기술 스택
 
@@ -131,6 +131,79 @@
   - 빌드 크기 감소: 328.47 KB → 327.35 KB (1.12 KB 절약)
   - 라이선스 표기 단순화 (Solid.js + Heroicons만)
   - 불필요한 의존성 제거
+
+### 휠 스크롤 네이티브 복원 & Legacy 코드 정리
+
+- **브랜치**: refactor/wheel-scroll-and-legacy-cleanup
+- **커밋**: `refactor: restore native wheel scroll and remove legacy code`
+  (22c4c712)
+- **휠 스크롤 변경**:
+  - `handleGalleryWheel`에서 `preventDefault()` 제거
+  - Wheel 이벤트 리스너를 `passive: true`로 변경
+  - 브라우저/OS 네이티브 스크롤 속도 설정 준수
+- **Legacy 코드 정리**:
+  - `toolbarConfig.ts` 삭제 (deprecated, 사용되지 않음)
+  - `LegacyToastProps` → `ToastSpecificProps` 이름 변경
+  - Legacy 주석 제거 (styles/index.ts, performance/index.ts)
+- **효과**:
+  - ✅ 사용자 경험 개선 (자연스러운 스크롤)
+  - ✅ 코드베이스 약 100줄 감소
+  - ✅ 유지보수성 향상
+  - ✅ 빌드: 327.30 KB (gzip: 89.01 KB)
+
+### Phase 13: 툴바 이미지 번호 인디케이터 반응성 수정 (2025-01-11)
+
+- **브랜치**: refactor/wheel-scroll-and-legacy-cleanup
+- **상태**: ✅ 구현 완료, 🔵 브라우저 검증 대기
+- **배경**: 툴바 인디케이터가 현재 인덱스와 불일치하는 경우 발생
+- **구현 내역**:
+  1. **Toolbar.tsx 수정** (line 143-162)
+     - `displayedIndex` 로직 개선: focusedIndex와 currentIndex 차이가 1 이하일
+       때만 focusedIndex 사용
+     - 그 외의 경우 currentIndex를 우선 사용하여 더 신뢰할 수 있는 값으로 표시
+  2. **useGalleryFocusTracker.ts 추가** (line 328-341)
+     - getCurrentIndex 변경 감지 createEffect 추가
+     - autoFocusIndex와 currentIndex 차이가 1보다 큰 경우 자동 동기화
+     - 수동 포커스(manualIdx)가 없을 때만 동기화하여 사용자 의도 유지
+- **품질 게이트**:
+  - ✅ 타입 체크 통과 (0 errors)
+  - ✅ 린트 통과 (0 warnings)
+  - ✅ 스모크 테스트 통과 (15/15)
+  - ✅ 빌드 성공 (dev: 728 KB)
+  - 🔵 실제 브라우저(X.com) 검증 필요
+- **다음 단계**: dev build 스크립트를 실제 X.com에 설치하여 수동 검증
+
+### Phase 14.1: 불필요한 메모이제이션 제거 (2025-01-11)
+
+- **브랜치**: refactor/wheel-scroll-and-legacy-cleanup
+- **커밋**:
+  `refactor(core): remove unnecessary memoization per SolidJS best practices`
+  (5e426b9c)
+- **소요 시간**: ~2시간 (예상: 1-2일, 실제: 단일 세션)
+- **배경**: React 습관에서 남아있는 불필요한 메모이제이션 패턴 제거
+- **구현 내역**:
+  - ✅ ToolbarHeadless.tsx: `currentIndex`/`totalCount` createMemo 제거 → props
+    직접 접근
+  - ✅ Toolbar.tsx: `canGoNext`/`canGoPrevious` createMemo 제거 → JSX에서 인라인
+    비교
+  - ✅ LazyIcon.tsx: `className`/`style` 정적 평가 → Getter 함수로 변경
+  - ✅ VerticalGalleryView.tsx: `memoizedMediaItems` createMemo 제거 → For
+    컴포넌트에서 인라인 map
+- **테스트 추가**:
+  - `test/unit/components/toolbar-headless-memo.test.tsx` (4 tests)
+  - `test/unit/components/toolbar-memo.test.tsx` (4 tests)
+  - `test/unit/components/lazy-icon-memo.test.tsx` (4 tests)
+  - `test/unit/features/gallery/vertical-gallery-memo.test.tsx` (3 tests)
+  - 총 15개 테스트 추가, 100% 통과
+- **품질 게이트**:
+  - ✅ 타입 체크: 0 errors
+  - ✅ 린트: 0 warnings
+  - ✅ 테스트: 559/559 passed (기존 554 + 신규 15 - 10 skipped)
+  - ✅ 빌드 성공 (dev: 728 KB, prod: 327.52 KB)
+- **효과**:
+  - ✅ 유지보수성 향상: 간접 레이어 4개 제거, 코드 추적 용이
+  - ✅ 성능 개선: createMemo 호출 8회 감소, 불필요한 계산 레이어 제거
+  - ✅ 학습 곡선 감소: props → createMemo → usage 대신 props → usage 직접 연결
 
 ---
 

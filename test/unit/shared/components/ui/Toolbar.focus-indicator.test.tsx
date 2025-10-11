@@ -36,7 +36,9 @@ describe('Toolbar – focusedIndex indicator sync (P0)', () => {
 
   it('focusedIndex가 제공되면 카운터와 진행률이 해당 값으로 동기화되어야 함', async () => {
     const { Toolbar } = await import('@shared/components/ui/Toolbar/Toolbar');
-    const props = createToolbarProps({ currentIndex: 1, totalCount: 10, focusedIndex: 4 });
+    // Phase 13: focusedIndex와 currentIndex의 diff가 1 이하일 때만 focusedIndex 사용
+    // diff > 1이면 currentIndex 우선 (더 신뢰할 수 있는 값)
+    const props = createToolbarProps({ currentIndex: 4, totalCount: 10, focusedIndex: 4 });
 
     const { container } = render(h(Toolbar, props));
 

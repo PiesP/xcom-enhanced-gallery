@@ -13254,13 +13254,6 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/Toolbar/toolbarConfig.ts",
-      "dependencies": [],
-      "dependents": [],
-      "orphan": true,
-      "valid": true
-    },
-    {
       "source": "src/shared/components/ui/ToolbarShell/index.ts",
       "dependencies": [
         {
@@ -16066,7 +16059,7 @@
     "warn": 0,
     "info": 0,
     "ignore": 0,
-    "totalCruised": 266,
+    "totalCruised": 265,
     "totalDependenciesCruised": 726,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
