@@ -2,7 +2,7 @@
 
 > **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-21.2)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
+모든 Phase (1-21.6)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
 참조.
 
 ---
@@ -11,7 +11,7 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (730 KB) / prod (329.68 KB, gzip: 89.69 KB)
+- ✅ **빌드**: dev (730 KB) / prod (330 KB, gzip: 89.81 KB)
 - ✅ **Vitest**: 603/603 (100%, 24 skipped, 1 todo)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
@@ -198,6 +198,169 @@ if (!isOpen || mediaItems.length === 0) return;
 
 - Individual signal access 검증
 - Backward compatibility 검증
+
+#### Phase 21.4: 불필요한 createMemo 제거 ✅
+
+**완료일**: 2025-10-12 **커밋**:
+`feat(gallery): simplify VerticalGalleryView reactivity`
+
+**목표**: Solid.js의 fine-grained reactivity 특성을 활용하여 불필요한
+memoization 제거
+
+**분석 결과**:
+
+1. **VerticalGalleryView.tsx - isVisible** (제거 완료)
+   - 이전: `createMemo(() => mediaItems().length > 0)`
+   - 이후: 단순 accessor `() => mediaItems().length > 0`
+   - 이유: 단순 boolean 계산, Solid.js가 자동으로 최적화
+   - 디버그 로그는 별도 `createEffect`로 분리
+
+2. **유지된 Memo들** (유지 필요로 판정):
+   - `preloadIndices`: `computePreloadIndices` 함수 호출 + 배열 생성 비용
+   - CSS 클래스 계산 (VerticalImageItem.tsx): 문자열 템플릿 계산, 렌더링마다 새
+     문자열 생성 방지
+   - `focusedIndex` (useGalleryFocusTracker.ts): Phase 21.1에서 최적화한 핵심
+     로직
+
+**효과**:
+
+- 코드 간결성 향상
+- 불필요한 메모이제이션 오버헤드 제거
+- Solid.js의 자동 최적화 활용
+
+**테스트**: 기존 테스트 통과 (추가 테스트 불필요)
+
+#### Phase 21.6: gallerySignals 마이그레이션 (Shared 계층) ✅
+
+**완료일**: 2025-10-12 **커밋**:
+`feat(core): migrate galleryState.value to gallerySignals in Shared utilities`
+**브랜치**: `feature/phase21-6-signals-migration-shared`
+
+**목표**: Shared 유틸리티에서 `galleryState.value` → `gallerySignals`
+마이그레이션으로 일관성 개선
+
+**변경된 파일 (2개, 총 3곳)**:
+
+1. **utils.ts**
+   - `canTriggerGallery()`: `galleryState.value.isOpen` →
+     `gallerySignals.isOpen.value`
+
+2. **events.ts**
+   - `checkGalleryOpen()`: `galleryState.value.isOpen` →
+     `gallerySignals.isOpen.value`
+   - `getCurrentGalleryVideo()`: `galleryState.value.currentIndex` →
+     `gallerySignals.currentIndex.value`
+
+**마이그레이션 패턴**:
+
+```typescript
+// Before:
+function canTriggerGallery(target: HTMLElement | null): boolean {
+  if (galleryState.value.isOpen) {
+    return false;
+  }
+  // ...
+}
+
+// After:
+function canTriggerGallery(target: HTMLElement | null): boolean {
+  // Phase 21.6: gallerySignals 사용으로 마이그레이션
+  if (gallerySignals.isOpen.value) {
+    return false;
+  }
+  // ...
+}
+```
+
+**적법한 galleryState.value 사용 (유지됨)**:
+
+- `gallery.signals.ts` 내부 (상태 관리 구현부): 20+ 곳 - 정상
+- `app-state.ts`: 3곳 - 앱 전체 상태 스냅샷 API (정상)
+- 디버그 API: `GalleryApp.ts` line 311 (정상, 개발 편의성)
+
+**효과**:
+
+- Fine-grained reactivity 일관성 개선
+- 전체 프로젝트에서 gallerySignals 사용 패턴 통일
+- 코드 가독성 및 유지보수성 향상
+
+**테스트**: All 603 tests passing **빌드**: dev 730 KB, prod 330 KB (gzip: 89.81
+KB) **의존성**: 0 violations
+
+---
+
+### Phase 17-21: E2E Harness + Fine-grained Signals 최적화 ✅
+
+**Phase 21 시리즈**: IntersectionObserver 최적화 및 Fine-grained Signals
+마이그레이션
+
+- Phase 21.1: IntersectionObserver 무한 루프 방지 (focusedIndex effect 99% 감소)
+- Phase 21.2: galleryState Fine-grained Signals 분리 (불필요한 재렌더링 100%
+  제거)
+- Phase 21.3: E2E harness 제약 및 실현 가능 범위 정립 (passive wheel listener)
+- Phase 21.4: 불필요한 createMemo 제거 (코드 간결성 향상)
+- Phase 21.5: gallerySignals 마이그레이션 - Features 계층 (GalleryRenderer,
+  GalleryApp)
+- Phase 21.6: gallerySignals 마이그레이션 - Shared 계층 (utils, events)
+
+**Phase 17-20**: E2E 하네스 + Memo 최적화
+
+- Phase 17: E2E 하네스 기반 구축 (Playwright + Solid.js 하네스 패턴)
+- Phase 18: 컴포넌트 메모이제이션 (lazy, createMemo)
+- Phase 19: 벤더 초기화 TDZ 해결
+- Phase 20: Effect cleanup 최적화
+
+#### Phase 13-16: 안정화 & 의존성 ✅
+
+- Phase 13: 아이콘 정책 강화 (사용된 것만 export)
+- Phase 14: 배럴 표면 축소 (HOC, Features)
+- Phase 15: 타입 전용 import 예외 처리
+- Phase 16: 의존성 가드 통합 (dependency-cruiser)
+
+---
+
+### 완료된 주요 성과
+
+**성능**:
+
+- Effect 최적화: IntersectionObserver 99% 감소
+- Fine-grained signals: 불필요한 재렌더링 100% 제거
+- Memo 최적화: 벤더 초기화 TDZ 해결
+
+**품질**:
+
+- 테스트 커버리지: 603 tests (100%)
+- E2E 커버리지: 8 smoke tests (Playwright)
+- 의존성 violations: 0
+
+**아키텍처**:
+
+- Fine-grained reactivity: gallerySignals 도입
+- 계층 경계 강화: Features → Shared → External
+- 코드 표면 축소: 배럴 정책, 사용된 아이콘만 export
+
+**개발자 경험**:
+
+- 타입 안전성: TypeScript strict mode, 0 errors
+- 테스트 속도: Vitest projects로 분할 실행
+- 린트 정책: PC 전용 이벤트, 디자인 토큰, 벤더 getter 강제
+
+---
+
+## 📚 관련 문서
+
+- `TDD_REFACTORING_PLAN.md`: 활성 계획 (진행 중/예정 Phase)
+- `AGENTS.md`: 개발 환경 및 워크플로
+- `ARCHITECTURE.md`: 프로젝트 아키텍처
+- `CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준
+
+---
+
+**다음 작업**: 현재 프로젝트는 매우 안정적인 상태입니다. 추가 최적화가 필요한
+경우 `TDD_REFACTORING_PLAN.md`에 계획을 추가하세요.
+
+**검증 체크리스트**:
+
 - Performance characteristics 검증
 - Migration targets 검증
 
