@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../logging/logger';
-import { galleryState } from '../state/signals/gallery.signals';
+import { gallerySignals } from '../state/signals/gallery.signals';
 import {
   CSS as CSS_CONST,
   isVideoControlElement as isVideoControlElementCentral,
@@ -83,8 +83,9 @@ const GALLERY_SELECTORS = [
 export function canTriggerGallery(target: HTMLElement | null): boolean {
   if (!target) return false;
 
+  // Phase 21.6: gallerySignals 사용으로 마이그레이션
   // 갤러리가 이미 열려있으면 트리거하지 않음
-  if (galleryState.value.isOpen) {
+  if (gallerySignals.isOpen.value) {
     return false;
   }
 

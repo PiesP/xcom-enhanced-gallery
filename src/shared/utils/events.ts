@@ -7,7 +7,7 @@ import { globalTimerManager } from './timer-management';
 import { isGalleryInternalElement } from './utils';
 import { MediaClickDetector } from './media/MediaClickDetector';
 import { isVideoControlElement, isTwitterNativeGalleryElement } from '../../constants';
-import { galleryState } from '../state/signals/gallery.signals';
+import { gallerySignals } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';
 
@@ -256,10 +256,11 @@ export function cleanupEventDispatcher(): void {
 // 갤러리 전용 이벤트 처리 (기존 event-utils 기능)
 // ================================
 
+// Phase 21.6: gallerySignals 사용으로 마이그레이션
 // Helper 함수들
 function checkGalleryOpen(): boolean {
   try {
-    return galleryState.value.isOpen;
+    return gallerySignals.isOpen.value;
   } catch {
     return false;
   }
@@ -658,7 +659,8 @@ function handleKeyboardEvent(
             const root = doc.querySelector('#xeg-gallery-root');
             const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
-            const index = galleryState.value.currentIndex;
+            // Phase 21.6: gallerySignals 사용으로 마이그레이션
+            const index = gallerySignals.currentIndex.value;
             const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
             if (!target) return null;
             const v = target.querySelector('video');
