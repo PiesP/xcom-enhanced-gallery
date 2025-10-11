@@ -45,6 +45,7 @@ npm install -g @typescript/tsgo
   - 커버리지: `npm run test:coverage` (사전 단계: `pretest:coverage`가 프로덕션
     빌드를 수행)
   - UI: `npm run test:ui`
+  - E2E: `npm run e2e:smoke` (Playwright 스모크 테스트, Chromium 브라우저 실행)
 - 빌드:
   - 개발: `npm run build:dev`
   - 프로덕션: `npm run build:prod`
@@ -126,6 +127,110 @@ git push
   생성됩니다.
 - PC 전용 입력/디자인 토큰/벤더 getter 규칙 위반은 테스트로 RED가 됩니다.
 
+## E2E 테스트 가이드 (Playwright)
+
+- 환경: Playwright + Chromium, Solid.js 하네스 패턴
+- 실행 타임아웃: 테스트 60s
+- 테스트 위치: `playwright/smoke/*.spec.ts`
+
+### 실행 방법
+
+```pwsh
+# 전체 E2E 스모크 테스트 실행
+npm run e2e:smoke
+
+# 특정 테스트만 실행
+npx playwright test playwright/smoke/<파일명>.spec.ts
+
+# 헤드풀 모드 (브라우저 UI 표시)
+npx playwright test --headed
+
+# 디버그 모드
+npx playwright test --debug
+```
+
+### 하네스 패턴 (Harness Pattern)
+
+Playwright 테스트는 JSDOM 제약을 우회하기 위해 **실제 브라우저 환경**에서
+Solid.js 컴포넌트를 로드하는 하네스 패턴을 사용합니다.
+
+**구조**:
+
+- `playwright/harness/index.ts`: 런타임 API (`window.__XEG_HARNESS__` 노출)
+- `playwright/harness/types.d.ts`: 타입 정의
+- `playwright/global-setup.ts`: esbuild + babel 파이프라인으로 harness 번들링
+
+**주요 API**:
+
+- `errorBoundaryScenario()`: ErrorBoundary 테스트 시나리오
+- `mountToolbar()`: Toolbar 컴포넌트 마운트
+- `mountKeyboardOverlay()`: KeyboardHelpOverlay 마운트
+- `focusSettingsModal()`: SettingsModal 포커스 테스트
+- `setupGalleryApp()`: GalleryApp 초기화 및 이벤트 등록
+- `evaluateGalleryEvents()`: PC 전용 이벤트 정책 검증
+
+**JSX 변환**:
+
+- esbuild + babel-preset-solid 파이프라인 사용
+- CSS Modules는 Proxy 스텁으로 대체 (`cssModuleStubPlugin`)
+
+**서비스 모킹**:
+
+- `HarnessMediaService`: 미디어 추출 로직 모킹
+- `HarnessRenderer`: 렌더링 로직 모킹
+
+### E2E 테스트 작성 가이드
+
+**Solid.js 반응성 제약사항**:
+
+Playwright 브라우저 환경에서 Solid.js의 fine-grained reactivity는 제한적으로
+작동합니다. Signal getter를 통한 props 전달이 반응성 추적을 제대로 수립하지
+못합니다.
+
+**권장 패턴**:
+
+1. **Remount 패턴**: props 변경 테스트 시 `dispose()` + `mount()` 사용
+
+   ```typescript
+   // ❌ 작동하지 않음: reactive props update
+   await harness.updateToolbar({ currentIndex: 1 });
+
+   // ✅ 권장: remount 패턴
+   await harness.disposeToolbar();
+   await harness.mountToolbar({ currentIndex: 1 });
+   ```
+
+2. **마운트/언마운트 검증**: 이벤트 기반 상호작용 대신 상태 전환 검증
+
+   ```typescript
+   // ❌ 작동하지 않음: Escape key로 모달 닫기
+   await page.keyboard.press('Escape');
+   await expect(modal).toBeHidden();
+
+   // ✅ 권장: 마운트/언마운트 사이클 검증
+   await harness.mountKeyboardOverlay();
+   await expect(modal).toBeVisible();
+   await harness.disposeKeyboardOverlay();
+   await expect(modal).toBeHidden();
+   ```
+
+3. **에러 경계 테스트**: 하네스 래퍼에서 예외 처리
+
+   ```typescript
+   // 하네스에서 try-catch로 감싸서 에러 전파 방지
+   await harness.errorBoundaryScenario();
+   // 토스트 생성 여부만 확인
+   ```
+
+**주의사항**:
+
+- Playwright 테스트는 실제 브라우저에서 실행되므로, JSDOM 환경과 다를 수
+  있습니다.
+- Solid.js 반응성은 Playwright 환경에서 JSDOM과 다르게 동작합니다.
+- 하네스 API를 수정할 때는 `playwright/harness/types.d.ts`도 함께
+  업데이트하세요.
+- 환경의 한계를 인정하고 달성 가능한 시나리오로 테스트를 설계하세요.
+
 ## 빌드/검증 플로우
 
 로컬
@@ -145,8 +250,9 @@ CI
 - 워크플로: `.github/workflows/ci.yml`
 - Node 20/22 매트릭스에서 다음을 수행:
   - typecheck → lint → prettier check → 테스트(20에서는 커버리지)
+  - **E2E 테스트**: Playwright 브라우저 자동 설치 및 스모크 테스트 실행
   - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
-  - 커버리지/빌드 아티팩트 업로드
+  - 커버리지/빌드/E2E 실패 아티팩트 업로드
 
 보안/라이선스
 

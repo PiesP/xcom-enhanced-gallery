@@ -1,337 +1,669 @@
-# 💻 코딩 가이드라인
+# 💻 코딩 가이드라인# 💻 코딩 가이드라인
 
-> **일관된 코드 스타일과 품질 보장**
+> **프로젝트 코딩 규칙 및 품질 기준**> **일관된 코드 스타일과 품질 보장**
 
-문서 분리 안내: 구조/계층/경계는 `docs/ARCHITECTURE.md`, 의존성 가드 정책과 CI
+## 📚 관련 문서문서 분리 안내: 구조/계층/경계는 `docs/ARCHITECTURE.md`, 의존성 가드 정책과 CI
+
 강제 기준은 `docs/DEPENDENCY-GOVERNANCE.md`를 참고하세요. 이 문서는 구현
-규칙/스타일/토큰/테스트 가이드에 집중합니다.
 
-## 리팩토링/계획 이관 정책
+- 구조/계층/경계: `ARCHITECTURE.md`규칙/스타일/토큰/테스트 가이드에 집중합니다.
 
-- 모든 TDD 리팩토링 활성 계획은 완료 즉시
-  `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
-- 활성 계획은 항상 최신 상태로 유지하며, 완료된 항목은 PLAN.md에서 제거합니다.
+- 의존성 정책: `DEPENDENCY-GOVERNANCE.md`
 
-## 컴포넌트 배럴 표면 정책 (U4)
+- TDD 계획: `TDD_REFACTORING_PLAN.md`## 리팩토링/계획 이관 정책
 
-- HOC 배럴(`@shared/components/hoc`)은 실제 사용 심볼만 노출합니다.
-  - 허용: `withGallery`, `type GalleryComponentProps`
-  - 금지: 미사용 편의 함수/유틸(예: `withGalleryContainer`, `withGalleryItem`,
+---- 모든 TDD 리팩토링 활성 계획은 완료 즉시
+
+`docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 이관합니다.
+
+## 🎯 핵심 원칙- 활성 계획은 항상 최신 상태로 유지하며, 완료된 항목은 PLAN.md에서 제거합니다.
+
+### 1. Solid.js 반응성## 컴포넌트 배럴 표면 정책 (U4)
+
+```typescript- HOC 배럴(`@shared/components/hoc`)은 실제 사용 심볼만 노출합니다.
+
+// ✅ Vendor getter 사용 (TDZ-safe) - 허용: `withGallery`,
+`type GalleryComponentProps`
+
+import { getSolid, getSolidStore } from '@shared/external/vendors'; - 금지:
+미사용 편의 함수/유틸(예: `withGalleryContainer`, `withGalleryItem`,
+
     `withGalleryOverlay`, `GalleryHOC`, `getGalleryType` 등)과 타입 도메인의
-    과도한 전역 노출
-- 목적: dead export를 줄여 번들/스캔 복잡도를 낮추고 경계 가드를 단순화합니다.
+
+const { createSignal, createMemo, createEffect } = getSolid(); 과도한 전역 노출
+
+const { createStore } = getSolidStore();- 목적: dead export를 줄여 번들/스캔
+복잡도를 낮추고 경계 가드를 단순화합니다.
+
 - 테스트: `test/unit/refactoring/unused-exports.scan.red.test.ts`가 배럴의
-  미사용 export를 RED로 탐지합니다(Windows 경로 정규화 적용).
 
-보강(2025-09-14):
+// ❌ 직접 import 금지 미사용 export를 RED로 탐지합니다(Windows 경로 정규화
+적용).
 
-- Windows 경로 정규화: 스캔 테스트는 모든 경로를 POSIX(`/`)로 정규화하여 OS에
+// import { createSignal } from 'solid-js';
+
+````보강(2025-09-14):
+
+
+
+### 2. PC 전용 이벤트- Windows 경로 정규화: 스캔 테스트는 모든 경로를 POSIX(`/`)로 정규화하여 OS에
+
   독립적으로 동작합니다.
-- 오프너 허용목록 축소: 배럴/가드 테스트의 allowlist는 가능한 한 비워두거나 단일
-  파일로 한정합니다(예: 토큰 추출기만 예외).
-- 타입 전용 import 예외: 런타임 import 금지 가드에서는 type-only import는
-  허용되며, 이를 제외한 모든 런타임 import는 금지됩니다.
 
-보강(2025-09-15): Features 배럴(F1)
+```typescript- 오프너 허용목록 축소: 배럴/가드 테스트의 allowlist는 가능한 한 비워두거나 단일
 
-- features 배럴(`src/features/<feature>/index.ts`)은 동일 feature 폴더의 모듈만
-  재노출합니다. shared 레이어(`@shared/**` 또는 `../../shared/**`)의 서비스나
+// ✅ 허용: 마우스, 키보드, 휠  파일로 한정합니다(예: 토큰 추출기만 예외).
+
+onClick, onKeyDown, onKeyUp, onWheel, onContextMenu- 타입 전용 import 예외: 런타임 import 금지 가드에서는 type-only import는
+
+onMouseEnter, onMouseLeave, onMouseMove, onMouseDown, onMouseUp  허용되며, 이를 제외한 모든 런타임 import는 금지됩니다.
+
+
+
+// ❌ 금지: 터치, 포인터보강(2025-09-15): Features 배럴(F1)
+
+onTouchStart, onTouchMove, onTouchEnd
+
+onPointerDown, onPointerUp, onPointerMove- features 배럴(`src/features/<feature>/index.ts`)은 동일 feature 폴더의 모듈만
+
+```  재노출합니다. shared 레이어(`@shared/**` 또는 `../../shared/**`)의 서비스나
+
   구현을 재노출하지 않습니다. 또한 배럴은 “UI 컴포넌트 + 타입 + Factory”로
-  표면을 한정합니다. 구체 구현(Service 클래스) 재노출은 금지합니다.
+
+### 3. CSS 디자인 토큰  표면을 한정합니다. 구체 구현(Service 클래스) 재노출은 금지합니다.
+
 - 목적: 공개 표면을 최소화하여 순환/의존성 복잡성을 줄이고 리팩토링 안전도를
-  높입니다. 소비처는 필요한 경우 factory 또는 shared 레이어에서 직접 import
-  하세요(정책 허용 범위 내). 예를 들어 Settings 기능은 다음과 같이 사용합니다:
 
-```ts
-// ✅ 권장: factory/type만 배럴을 통해 접근
+```css  높입니다. 소비처는 필요한 경우 factory 또는 shared 레이어에서 직접 import
+
+/* ✅ 토큰 사용 */  하세요(정책 허용 범위 내). 예를 들어 Settings 기능은 다음과 같이 사용합니다:
+
+color: var(--xeg-color-primary);
+
+border-radius: var(--xeg-radius-md);```ts
+
+padding: var(--xeg-spacing-sm);// ✅ 권장: factory/type만 배럴을 통해 접근
+
 import {
-  getSettingsService,
-  type ISettingsServiceFactoryShape,
-} from '@features/settings';
 
-// ❌ 금지: 구현(Service 클래스) 재노출/직접 경로를 배럴로 노출
+/* ❌ 하드코딩 금지 */  getSettingsService,
+
+color: #1da1f2;  type ISettingsServiceFactoryShape,
+
+border-radius: 8px;} from '@features/settings';
+
+padding: 8px;
+
+```// ❌ 금지: 구현(Service 클래스) 재노출/직접 경로를 배럴로 노출
+
 // import { SettingsService } from '@features/settings';
-// import { TwitterTokenExtractor } from '@features/settings';
-```
 
-- 가드: `test/unit/lint/features-barrel.surface.scan.red.test.ts`가 배럴에서
-  금지된 경로 재노출을 RED로 탐지합니다.
+### 4. 경로 별칭// import { TwitterTokenExtractor } from '@features/settings';
 
-보강(2025-09-15): VND-LEGACY-MOVE
+````
+
+````typescript
+
+// ✅ 별칭 사용- 가드: `test/unit/lint/features-barrel.surface.scan.red.test.ts`가 배럴에서
+
+import { MediaService } from '@shared/services';  금지된 경로 재노출을 RED로 탐지합니다.
+
+import { GalleryApp } from '@features/gallery';
+
+import { Button } from '@shared/components';보강(2025-09-15): VND-LEGACY-MOVE
+
+import logo from '@assets/logo.svg';
 
 - 동적 VendorManager(`vendor-manager.ts`)는 테스트 전용입니다. 프로덕션 소스는
-  반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getSolid/ getSolidStore
-  등)만 사용하세요.
-- 포스트빌드 가드가 prod 번들 내 'VendorManager' 식별자/경로 문자열 누출을
+
+// ❌ 상대 경로 지양  반드시 `@shared/external/vendors`의 TDZ-safe 정적 API(getSolid/ getSolidStore
+
+// import { MediaService } from '../../../shared/services';  등)만 사용하세요.
+
+```- 포스트빌드 가드가 prod 번들 내 'VendorManager' 식별자/경로 문자열 누출을
+
   금지합니다.
+
+---
 
 ## 아이콘 시스템(I2) — 사용된 아이콘만 export
 
+## 📂 아키텍처 경계
+
 - 원칙: 아이콘 배럴(`src/shared/components/ui/Icon/index.ts`)은 실제 소스
-  코드에서 사용되는 아이콘만 export 합니다. 불필요한 래퍼/별칭은 추가/유지하지
-  않습니다.
-- 가드: `test/unit/lint/icons-used-only.scan.red.test.ts`가 배럴 export된
-  아이콘이 소스 전역에서 최소 1회 이상 사용되는지 정적으로 스캔합니다(주석 제외,
-  JSX 및 `h(Name, ...)` 패턴 포함). 미사용 발견 시 RED.
-- 신규 아이콘 추가 시: 배럴에 추가했다면 실제 사용 코드를 함께 포함하세요.
-  부득이하게 미사용 상태를 유지해야 한다면 allowlist를 신중히 사용하되, 원칙은
+
+```  코드에서 사용되는 아이콘만 export 합니다. 불필요한 래퍼/별칭은 추가/유지하지
+
+Features (UI/기능)  않습니다.
+
+    ↓- 가드: `test/unit/lint/icons-used-only.scan.red.test.ts`가 배럴 export된
+
+Shared (서비스/상태/유틸)  아이콘이 소스 전역에서 최소 1회 이상 사용되는지 정적으로 스캔합니다(주석 제외,
+
+    ↓  JSX 및 `h(Name, ...)` 패턴 포함). 미사용 발견 시 RED.
+
+External (어댑터/벤더)- 신규 아이콘 추가 시: 배럴에 추가했다면 실제 사용 코드를 함께 포함하세요.
+
+```  부득이하게 미사용 상태를 유지해야 한다면 allowlist를 신중히 사용하되, 원칙은
+
   “사용 추가 → 가드 GREEN”입니다.
 
-## 🎨 코딩 스타일
+- **단방향 의존만 허용**: Features → Shared → External
+
+- **배럴 표면 최소화**: 실제 사용되는 심볼만 export## 🎨 코딩 스타일
+
+- **순환 참조 금지**: dependency-cruiser로 강제
 
 ### 기본 포맷팅
 
+---
+
 ```typescript
-// ✅ 2 spaces 들여쓰기, 세미콜론, 단일 따옴표
+
+## 🧪 테스트 전략 (TDD)// ✅ 2 spaces 들여쓰기, 세미콜론, 단일 따옴표
+
 const config = {
-  gallery: {
+
+### RED → GREEN → REFACTOR  gallery: {
+
     autoplay: false,
-  },
-};
 
-// ✅ Import 순서: 타입 → 외부 라이브러리 → 내부 모듈 → 스타일
-import type { MediaItem } from '@shared/types';
-import { getSolid } from '@shared/external/vendors';
-import { MediaService } from '@shared/services';
-import styles from './Component.module.css';
-```
+```typescript  },
 
-### 파일 네이밍
+// 1. RED: 실패하는 테스트 작성};
 
-```
-// 파일 및 디렉토리: kebab-case
-gallery-view.tsx
+describe('MediaService', () => {
+
+  it('should extract media from tweet', () => {// ✅ Import 순서: 타입 → 외부 라이브러리 → 내부 모듈 → 스타일
+
+    const result = service.extract(tweetData);import type { MediaItem } from '@shared/types';
+
+    expect(result).toHaveLength(4);import { getSolid } from '@shared/external/vendors';
+
+  });import { MediaService } from '@shared/services';
+
+});import styles from './Component.module.css';
+
+````
+
+// 2. GREEN: 최소 구현
+
+class MediaService {### 파일 네이밍
+
+extract(data: unknown) {
+
+    return extractImages(data);```
+
+}// 파일 및 디렉토리: kebab-case
+
+}gallery-view.tsx
+
 media-processor.ts
-components/
-services/
-```
 
-### Vendor 사용 규칙 (중요)
+// 3. REFACTOR: 개선components/
 
-- 외부 라이브러리(solid-js, solid-js/store 등)는 직접 import 금지.
+class MediaService {services/
+
+extract(data: TweetData): MediaItem[] {```
+
+    return this.strategy.extract(data);
+
+}### Vendor 사용 규칙 (중요)
+
+}
+
+````- 외부 라이브러리(solid-js, solid-js/store 등)는 직접 import 금지.
+
 - 반드시 안전 getter를 사용: `@shared/external/vendors`의 `getSolid()`,
-  `getSolidStore()` 등.
+
+### 테스트 환경  `getSolidStore()` 등.
+
 - 와일드카드 import(`import * as Vendors from ...`) 금지. 필요한 심볼만
-  명시적으로 가져옵니다.
-- Legacy 동적 API 금지: `*Legacy` 접미사, 동적 `VendorManager`, `vendor-api.ts`
-  등은 테스트/마이그레이션 문맥 이외 사용 금지입니다. 프로덕션 번들에서 해당
+
+- **단위**: Vitest + JSDOM  명시적으로 가져옵니다.
+
+- **E2E**: Playwright + Chromium- Legacy 동적 API 금지: `*Legacy` 접미사, 동적 `VendorManager`, `vendor-api.ts`
+
+- **모킹**: Vendor getter를 통한 의존성 주입  등은 테스트/마이그레이션 문맥 이외 사용 금지입니다. 프로덕션 번들에서 해당
+
   문자열이 검출되면 postbuild validator가 실패합니다.
-- 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
+
+---- 타입도 가능하면 벤더 index에서 재export된 것을 사용합니다: `type VNode`,
+
   `type JSXElement`, `type ComponentChildren` 등.
+
+## 📦 Import 순서
 
 #### 타입 한정자 import 정책
 
-- VNode/JSXElement/ComponentChildren 등 타입은 반드시 type 한정자로
-  import합니다.
+```typescript
+
+// 1. 타입- VNode/JSXElement/ComponentChildren 등 타입은 반드시 type 한정자로
+
+import type { MediaItem, GalleryState } from '@shared/types';  import합니다.
+
   - 허용: `import type { VNode } from '@shared/external/vendors'` 또는
-    `import { getSolid, type VNode } from '@shared/external/vendors'`
-  - 금지: `import { VNode } from '@shared/external/vendors'` (type 한정자 누락)
+
+// 2. 외부 라이브러리 (Vendor getter)    `import { getSolid, type VNode } from '@shared/external/vendors'`
+
+import { getSolid } from '@shared/external/vendors';  - 금지: `import { VNode } from '@shared/external/vendors'` (type 한정자 누락)
+
   - 테스트: `test/unit/lint/type-only-imports.policy.red.test.ts`가 위반 시 RED.
-    RED로 탐지합니다.
 
-가드/테스트:
+// 3. 내부 모듈    RED로 탐지합니다.
 
-- 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
-  `test/unit/lint/direct-imports-source-scan.test.js`를 참고하세요. 반드시
-  `@shared/external/vendors`의 getter로만 접근하세요.
+import { MediaService } from '@shared/services';
 
-추가 보강(2025-09-14):
+import { useGalleryState } from '@shared/state';가드/테스트:
 
-- Prod 누출 가드: postbuild 검증은 StaticVendorManager는 허용하고 동적
+
+
+// 4. 스타일- 직접 import 금지 정책은 테스트에서 정적으로 스캔되어 위반 시 실패합니다.
+
+import styles from './Component.module.css';  `test/unit/lint/direct-imports-source-scan.test.js`를 참고하세요. 반드시
+
+```  `@shared/external/vendors`의 getter로만 접근하세요.
+
+
+
+---추가 보강(2025-09-14):
+
+
+
+## 🚀 빌드 & 검증- Prod 누출 가드: postbuild 검증은 StaticVendorManager는 허용하고 동적
+
   VendorManager 식별자를 금지합니다. 또한 `vendor-api.ts` 문자열이 산출물에
-  포함되면 실패합니다.
 
-추가(2025-09-15):
+```powershell  포함되면 실패합니다.
 
-- `vendor-api.ts` 직접 import 금지(허용목록 제외). 소스 레벨 스캔 테스트
-  `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시 RED로
-  탐지합니다.
+# 타입 체크
 
-보강(2025-09-15):
+npm run typecheck추가(2025-09-15):
 
-- DOM 유틸 표면: `DOMEventManager`/`createEventManager`는 내부 전용입니다. 외부
-  소비자는 `@shared/services/EventManager` 어댑터만 사용하세요. 배럴
+
+
+# 린트 & 포맷- `vendor-api.ts` 직접 import 금지(허용목록 제외). 소스 레벨 스캔 테스트
+
+npm run lint:fix  `test/unit/lint/vendor-api.imports.scan.red.test.ts`가 위반 시 RED로
+
+npm run format  탐지합니다.
+
+
+
+# 테스트보강(2025-09-15):
+
+npm run test:smoke    # 스모크 테스트
+
+npm run test:fast     # 빠른 단위 테스트- DOM 유틸 표면: `DOMEventManager`/`createEventManager`는 내부 전용입니다. 외부
+
+npm run e2e:smoke     # E2E 스모크  소비자는 `@shared/services/EventManager` 어댑터만 사용하세요. 배럴
+
   (`@shared/dom`)에서는 더 이상 재노출하지 않습니다.
-- Toolbar 애니메이션: CSS `toolbar-slide-*` 키프레임/변수는 제거되었습니다. 툴바
-  show/hide는 JS API(`toolbarSlideDown/Up`)만 사용합니다.
+
+# 빌드- Toolbar 애니메이션: CSS `toolbar-slide-*` 키프레임/변수는 제거되었습니다. 툴바
+
+npm run build:dev     # 개발 빌드  show/hide는 JS API(`toolbarSlideDown/Up`)만 사용합니다.
+
+npm run build:prod    # 프로덕션 빌드
 
 ### 로깅 정책(L2) — 프로덕션 게이트 강화
 
-- 개발(dev) 모드에서는 `logger.debug()`가 활성화되고, 타임스탬프 및 스택
-  트레이스 출력이 허용됩니다.
+# 종합 검증
+
+npm run validate      # typecheck + lint + format- 개발(dev) 모드에서는 `logger.debug()`가 활성화되고, 타임스탬프 및 스택
+
+```  트레이스 출력이 허용됩니다.
+
 - 프로덕션(prod) 번들에서는 기본 로그 레벨을 `warn` 이상으로 제한하고
-  `Stack trace:` 문자열이 산출물에 포함되지 않도록 합니다. 스택 트레이스 출력은
+
+---  `Stack trace:` 문자열이 산출물에 포함되지 않도록 합니다. 스택 트레이스 출력은
+
   개발 모드에서만 활성화되며, prod에서는 트리쉐이킹으로 제거됩니다.
-- 가드: `scripts/validate-build.js`가 prod Userscript에서 `Stack trace:`
+
+## 🎨 스타일 규칙- 가드: `scripts/validate-build.js`가 prod Userscript에서 `Stack trace:`
+
   문자열을 검출하면 실패 처리합니다.
+
+### CSS Modules
 
 ## 빌드 크기 예산(B2)
 
-- Userscript gzip 사이즈 예산을 포스트빌드에서 강제합니다.
-- 임계값(2025-09-15): WARN 120 KB, FAIL 160 KB.
-- 위치: `scripts/validate-build.js` — gzip 길이가 FAIL 초과면 프로세스
-  종료(실패), WARN 초과면 경고 로그를 출력합니다.
-- 목적: 번들 크기 회귀를 조기에 감지하고, 불가피한 증가 시 최적화/정리 우선
-  검토를 유도합니다.
+```css
 
-### 파일명 정책 (단일 소스)
+/* Component.module.css */- Userscript gzip 사이즈 예산을 포스트빌드에서 강제합니다.
 
-- 모든 파일명 생성은 `FilenameService` 또는 동등 편의 함수
-  (`generateMediaFilename`, `generateZipFilename`)를 통해서만 수행합니다.
-- 소비처(서비스/유틸/컴포넌트)에서 파일명 직접 조립(문자열 연결, suffix 관리
-  등)을 구현하지 않습니다. 충돌 처리(`-1`, `-2` 접미사)는 호출층(예: ZIP 단계)
+.container {- 임계값(2025-09-15): WARN 120 KB, FAIL 160 KB.
+
+  display: flex;- 위치: `scripts/validate-build.js` — gzip 길이가 FAIL 초과면 프로세스
+
+  gap: var(--xeg-spacing-md);  종료(실패), WARN 초과면 경고 로그를 출력합니다.
+
+  padding: var(--xeg-spacing-lg);- 목적: 번들 크기 회귀를 조기에 감지하고, 불가피한 증가 시 최적화/정리 우선
+
+  background: var(--xeg-color-bg-primary);  검토를 유도합니다.
+
+  border-radius: var(--xeg-radius-lg);
+
+}### 파일명 정책 (단일 소스)
+
+
+
+.button {- 모든 파일명 생성은 `FilenameService` 또는 동등 편의 함수
+
+  color: var(--xeg-color-text-primary);  (`generateMediaFilename`, `generateZipFilename`)를 통해서만 수행합니다.
+
+  transition: var(--xeg-transition-fast);- 소비처(서비스/유틸/컴포넌트)에서 파일명 직접 조립(문자열 연결, suffix 관리
+
+}  등)을 구현하지 않습니다. 충돌 처리(`-1`, `-2` 접미사)는 호출층(예: ZIP 단계)
+
   또는 서비스 내부 정책으로 일원화합니다.
-- 스캔 가드: 파일명 직접 조립이 확인되면 RED로 전환하는 테스트를 유지/보강합니다
-  (예: ad-hoc 파일명 패턴 탐지). 현재 구현은 MediaService/BulkDownloadService가
-  FilenameService를 사용합니다.
+
+.button:hover {- 스캔 가드: 파일명 직접 조립이 확인되면 RED로 전환하는 테스트를 유지/보강합니다
+
+  transform: translateY(var(--xeg-button-lift));  (예: ad-hoc 파일명 패턴 탐지). 현재 구현은 MediaService/BulkDownloadService가
+
+}  FilenameService를 사용합니다.
+
+````
 
 추가 보강(2025-09-14):
 
+### TypeScript
+
 - 런타임 AppContainer import 금지: 테스트 전용 하니스 이외에서
-  AppContainer/createAppContainer 런타임 import 금지. 타입 전용은 허용.
-- SERVICE_KEYS 직접 사용 금지: 허용된 service-accessors 경유만 사용. 직접
-  import/접근은 가드 테스트에서 실패 처리.
 
-보강(2025-09-15):
+````typescript AppContainer/createAppContainer 런타임 import 금지. 타입 전용은 허용.
 
-- Settings 마이그레이션: DEFAULT_SETTINGS 변경에 따른 사용자 설정 호환성은
+// ✅ Strict 모드- SERVICE_KEYS 직접 사용 금지: 허용된 service-accessors 경유만 사용. 직접
+
+export interface MediaItem {  import/접근은 가드 테스트에서 실패 처리.
+
+  id: string;
+
+  url: string;보강(2025-09-15):
+
+  type: 'image' | 'video';
+
+}- Settings 마이그레이션: DEFAULT_SETTINGS 변경에 따른 사용자 설정 호환성은
+
   SettingsMigration 헬퍼를 통해 처리합니다. 서비스는 헬퍼를 호출해 누락 필드
-  보완/버전 업을 수행해야 하며, 구조 변경(키 변경/삭제/리네임)은 명시적
-  migration 스텝으로 추가합니다.
-- Postbuild 가드 확장: PC 전용 정책 강화로 Userscript 산출물 내
-  `onPointer*`/`PointerEvent` 문자열과 런타임
-  `AppContainer`/`createAppContainer` 식별자 누출을 금지합니다. validator에서
-  실패 처리됩니다.
 
-### URL 패턴(정규식) 단일 소스 정책
+// ✅ 명시적 타입  보완/버전 업을 수행해야 하며, 구조 변경(키 변경/삭제/리네임)은 명시적
 
-- 정의 위치: `src/shared/utils/patterns/url-patterns.ts`의 `URL_PATTERNS`가
+function processMedia(items: MediaItem[]): ProcessedMedia[] {  migration 스텝으로 추가합니다.
+
+  return items.map((item) => ({- Postbuild 가드 확장: PC 전용 정책 강화로 Userscript 산출물 내
+
+    ...item,  `onPointer*`/`PointerEvent` 문자열과 런타임
+
+    processed: true,  `AppContainer`/`createAppContainer` 식별자 누출을 금지합니다. validator에서
+
+  }));  실패 처리됩니다.
+
+}
+
+```### URL 패턴(정규식) 단일 소스 정책
+
+
+
+---- 정의 위치: `src/shared/utils/patterns/url-patterns.ts`의 `URL_PATTERNS`가
+
   유일한 소스입니다.
-- 사용 규칙: 다른 레이어(예: `src/constants.ts`)에서는 이 객체를 재노출만
+
+## 🔒 보안 & 접근성- 사용 규칙: 다른 레이어(예: `src/constants.ts`)에서는 이 객체를 재노출만
+
   수행하며, 별도의 중복 정의를 금지합니다.
-- 목적: 정규식 드리프트/불일치 방지 및 테스트/가드의 단일 기준 유지.
+
+### Userscript 권한- 목적: 정규식 드리프트/불일치 방지 및 테스트/가드의 단일 기준 유지.
+
 - 테스트/가드: 정적 스캔/단위 테스트로 동등성 및 단일 소스 원칙을 검증할 수
-  있습니다(위반 시 RED 권장).
 
-보강(2025-09-15): 배럴 우회로 순환 방지
+```javascript  있습니다(위반 시 RED 권장).
 
-- 내부 유틸/서비스에서 상위 도메인 배럴(`index.ts`)을 참조하면 역참조 사이클이
-  발생할 수 있습니다.
+// @grant GM_setValue
+
+// @grant GM_getValue보강(2025-09-15): 배럴 우회로 순환 방지
+
+// @grant GM_download
+
+// @grant GM_xmlhttpRequest- 내부 유틸/서비스에서 상위 도메인 배럴(`index.ts`)을 참조하면 역참조 사이클이
+
+```  발생할 수 있습니다.
+
 - 원칙: 내부 모듈 간에는 필요한 심볼을 구체 경로로 직접 import하고, 배럴은 외부
-  공개 표면에 한정합니다.
-- 사례: `media-url.util.ts`는 `../../media` 배럴 대신
-  `../../media/FilenameService`를 직접 import하도록 수정(MEDIA-CYCLE-PRUNE-01
-  완료).
 
-예시:
+### 접근성 (ARIA)  공개 표면에 한정합니다.
+
+- 사례: `media-url.util.ts`는 `../../media` 배럴 대신
+
+```typescript  `../../media/FilenameService`를 직접 import하도록 수정(MEDIA-CYCLE-PRUNE-01
+
+// ✅ 의미 있는 레이블  완료).
+
+<button aria-label="Close gallery" onClick={handleClose}>
+
+  <CloseIcon />예시:
+
+</button>
 
 ```ts
-// ✅ 권장
-import {
-  getSolid,
-  getSolidStore,
-  type VNode,
-  type JSXElement,
-} from '@shared/external/vendors';
 
-const { createSignal, createEffect } = getSolid();
+// ✅ 키보드 네비게이션// ✅ 권장
+
+<div role="toolbar" onKeyDown={handleKeyDown}>import {
+
+  {/* ... */}  getSolid,
+
+</div>  getSolidStore,
+
+```  type VNode,
+
+  type JSXElement,
+
+---} from '@shared/external/vendors';
+
+
+
+## 📊 성능 최적화const { createSignal, createEffect } = getSolid();
+
 const { createStore } = getSolidStore();
 
-// ❌ 금지
-// import * as Vendors from '@shared/external/vendors';
-// import * as solid from 'solid-js';
-// import { createStore } from 'solid-js/store';
-```
+### Signal 메모이제이션
 
-### 접근성 유틸/훅 표준화 (Focus Trap & Live Region)
+// ❌ 금지
+
+```typescript// import * as Vendors from '@shared/external/vendors';
+
+const { createMemo } = getSolid();// import * as solid from 'solid-js';
+
+// import { createStore } from 'solid-js/store';
+
+// ✅ 파생 상태 메모이제이션```
+
+const filteredItems = createMemo(() => {
+
+  return items().filter((item) => item.visible);### 접근성 유틸/훅 표준화 (Focus Trap & Live Region)
+
+});
 
 - Focus Trap: 통합 유틸 `@shared/utils/focusTrap`이 단일 소스입니다. 훅
-  `useFocusTrap`은 얇은 래퍼로 유틸을 위임하며, 문서 레벨 키 이벤트는 표준 DOM
-  API(`document.addEventListener('keydown', ...)`, capture=true)를 사용해 직접
-  등록·해제합니다. 저수준 유틸은 서비스 이벤트 매니저에 의존하지 않습니다.
+
+// ❌ 매번 재계산 지양  `useFocusTrap`은 얇은 래퍼로 유틸을 위임하며, 문서 레벨 키 이벤트는 표준 DOM
+
+const filteredItems = () => items().filter((item) => item.visible);  API(`document.addEventListener('keydown', ...)`, capture=true)를 사용해 직접
+
+```  등록·해제합니다. 저수준 유틸은 서비스 이벤트 매니저에 의존하지 않습니다.
+
 - Live Region: 단일 인스턴스 매니저
-  `@shared/utils/accessibility/live-region-manager`를 사용합니다. `useAriaLive`
+
+### 번들 크기  `@shared/utils/accessibility/live-region-manager`를 사용합니다. `useAriaLive`
+
   훅은 매니저의 `announce(message, politeness)`를 호출합니다. 매니저는
-  beforeunload 리스너/DOM 노드 정리를 포함한 자체 정리 로직을 갖습니다.
-- 테스트: 포커스 초기화/복원(Escape) 및 라이브 리전 싱글톤/속성 가드는 단위
+
+- Dev: ~730 KB  beforeunload 리스너/DOM 노드 정리를 포함한 자체 정리 로직을 갖습니다.
+
+- Prod: ~325 KB (gzip: ~88 KB)- 테스트: 포커스 초기화/복원(Escape) 및 라이브 리전 싱글톤/속성 가드는 단위
+
   테스트로 검증됩니다.
+
+---
 
 #### Utils ↔ Services 의존성 경계 (추가 규정)
 
+## 🚫 금지 사항
+
 utils 레이어는 순수 도메인/플랫폼 보조 계층으로, 런타임
-서비스(`@shared/services/**`)에 의존하지 않습니다. 접근성/이벤트 등 저수준
+
+### ❌ 직접 import서비스(`@shared/services/**`)에 의존하지 않습니다. 접근성/이벤트 등 저수준
+
 유틸은 가능한 한 표준 DOM API (`window.addEventListener`,
-`document.addEventListener` 등)를 우선 사용하며, 서비스의 이벤트
-중개자(`EventManager` 등)를 직접 참조하지 않습니다.
+
+```typescript`document.addEventListener` 등)를 우선 사용하며, 서비스의 이벤트
+
+// ❌ Solid.js 직접 import중개자(`EventManager` 등)를 직접 참조하지 않습니다.
+
+import { createSignal } from 'solid-js';
 
 - 허용: 타입 전용 import(`import type`), 로깅(`@shared/logging`), 상수/순수
-  함수(`@shared/utils/**` 내부 참조), 벤더 getter(`@shared/external/vendors`).
-- 금지: 서비스 단 참조(`@shared/services/**`), 컨테이너/ServiceManager 경유
-  참조, 상위 배럴을 통해 간접적으로 서비스로 연결되는 import.
+
+// ✅ Vendor getter 사용  함수(`@shared/utils/**` 내부 참조), 벤더 getter(`@shared/external/vendors`).
+
+import { getSolid } from '@shared/external/vendors';- 금지: 서비스 단 참조(`@shared/services/**`), 컨테이너/ServiceManager 경유
+
+const { createSignal } = getSolid();  참조, 상위 배럴을 통해 간접적으로 서비스로 연결되는 import.
+
+````
 
 이 규정은 의존성 순환(cycle) 예방과 테스트 격리를 보장하기 위한 것으로, 예를
-들어 `focusTrap`/`live-region-manager`는 표준 DOM 리스너를 사용하고 서비스
+
+### ❌ 터치 이벤트들어 `focusTrap`/`live-region-manager`는 표준 DOM 리스너를 사용하고 서비스
+
 이벤트 매니저에 의존하지 않습니다.
 
-### TSX 인라인 스타일 — 색상 정책 (CSS 토큰만)
+````typescript
+
+// ❌ 터치 이벤트 핸들러### TSX 인라인 스타일 — 색상 정책 (CSS 토큰만)
+
+<div onTouchStart={handler} />
 
 - 원칙: TSX의 inline style에서 색상 관련 속성(color/background/backgroundColor/
-  borderColor/outlineColor/fill/stroke/caretColor 등)에 색상 리터럴을 직접
-  사용하지 않습니다.
-- 허용 값: 디자인 토큰 변수 `var(--xeg-*/--color-*)`만 사용합니다. 시스템 키워드
+
+// ✅ PC 전용 이벤트  borderColor/outlineColor/fill/stroke/caretColor 등)에 색상 리터럴을 직접
+
+<div onClick={handler} />  사용하지 않습니다.
+
+```- 허용 값: 디자인 토큰 변수 `var(--xeg-*/--color-*)`만 사용합니다. 시스템 키워드
+
   `transparent`/`currentColor`/`Canvas`/`CanvasText`/`HighlightText`는
-  예외적으로 허용됩니다.
+
+### ❌ 하드코딩  예외적으로 허용됩니다.
+
 - 금지 예: `'#fff'`, `'rgb(255,255,255)'`, `'hsl(0,0%,100%)'`, `'oklch(...)'`,
-  `'color-mix(...)'`, `'white'`, `'black'` 등.
-- 권장: 인라인 스타일 대신 CSS Modules로 옮겨 토큰을 사용하세요.
-- 가드: `test/unit/styles/tsx-inline-colors.guard.test.ts`가 위반을 RED로
-  검출합니다.
 
-### 테스트 DI 가이드(U6) — ServiceHarness 사용
+```css  `'color-mix(...)'`, `'white'`, `'black'` 등.
 
-- 런타임에서는 AppContainer를 사용하지 않습니다. 테스트에서도 가능한
-  ServiceManager + 접근자 패턴을 그대로 사용합니다.
+/* ❌ 하드코딩된 값 */- 권장: 인라인 스타일 대신 CSS Modules로 옮겨 토큰을 사용하세요.
+
+color: #1da1f2;- 가드: `test/unit/styles/tsx-inline-colors.guard.test.ts`가 위반을 RED로
+
+padding: 16px;  검출합니다.
+
+
+
+/* ✅ 디자인 토큰 */### 테스트 DI 가이드(U6) — ServiceHarness 사용
+
+color: var(--xeg-color-primary);
+
+padding: var(--xeg-spacing-md);- 런타임에서는 AppContainer를 사용하지 않습니다. 테스트에서도 가능한
+
+```  ServiceManager + 접근자 패턴을 그대로 사용합니다.
+
 - 테스트에서 서비스 초기화/리셋/주입이 필요할 때 `ServiceHarness`를 사용하세요.
-  - `await harness.initCoreServices()`로 코어 서비스 등록
+
+---  - `await harness.initCoreServices()`로 코어 서비스 등록
+
   - `harness.get/tryGet/register`로 조회/주입
-  - `harness.reset()`으로 싱글톤 상태 초기화(테스트 간 격리)
+
+## 📝 커밋 규칙  - `harness.reset()`으로 싱글톤 상태 초기화(테스트 간 격리)
+
 - AppContainer/createAppContainer는 리팩토링 스위트 전용이며, 일반 단위
-  테스트에서 금지합니다.
-- 가드: `test/unit/lint/runtime-appcontainer.imports.red.test.ts`가 런타임
-  import를 금지합니다(type-only 허용).
 
-샘플(단위 테스트):
+```bash  테스트에서 금지합니다.
 
-```ts
-import { createServiceHarness } from '@/shared/container/ServiceHarness';
-import { SERVICE_KEYS } from '@/constants';
+# Conventional Commits- 가드: `test/unit/lint/runtime-appcontainer.imports.red.test.ts`가 런타임
 
-const h = createServiceHarness();
-await h.initCoreServices();
-expect(h.get(SERVICE_KEYS.TOAST)).toBeDefined();
-h.reset();
-expect(h.tryGet(SERVICE_KEYS.TOAST)).toBeNull();
-```
+feat: 새로운 기능  import를 금지합니다(type-only 허용).
+
+fix: 버그 수정
+
+docs: 문서 변경샘플(단위 테스트):
+
+style: 코드 스타일 (포맷, 세미콜론 등)
+
+refactor: 리팩토링```ts
+
+test: 테스트 추가/수정import { createServiceHarness } from '@/shared/container/ServiceHarness';
+
+chore: 빌드/도구 변경import { SERVICE_KEYS } from '@/constants';
+
+
+
+# 예시const h = createServiceHarness();
+
+git commit -m "feat: add keyboard navigation to gallery"await h.initCoreServices();
+
+git commit -m "fix: resolve memory leak in media loader"expect(h.get(SERVICE_KEYS.TOAST)).toBeDefined();
+
+git commit -m "docs: update coding guidelines"h.reset();
+
+```expect(h.tryGet(SERVICE_KEYS.TOAST)).toBeNull();
+
+````
+
+---
 
 ### Toast 시스템(싱글톤 매니저)
 
-- 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는 통합
-  매니저의 API를 사용하세요.
-- UI 컴포넌트에서 토스트 목록을 구독해야 할 경우,
-  `UnifiedToastManager.getInstance().subscribe(...)`를 사용합니다.
-- 레거시 `Toast.tsx`의 `toasts` 신호를 외부에서 직접 구독/조작하지 마세요.
-  브리징은 제거되었으며, 외부 소비자는 통합 매니저만 사용합니다.
+## 🔍 코드 리뷰 체크리스트
 
-가드/테스트:
+- 토스트 상태의 단일 소스는 `UnifiedToastManager`입니다. 컴포넌트/서비스는 통합
+
+- [ ] Vendor getter 사용 (직접 import 없음) 매니저의 API를 사용하세요.
+
+- [ ] PC 전용 이벤트만 사용- UI 컴포넌트에서 토스트 목록을 구독해야 할 경우,
+
+- [ ] CSS 디자인 토큰 사용 `UnifiedToastManager.getInstance().subscribe(...)`를
+      사용합니다.
+
+- [ ] 경로 별칭 사용- 레거시 `Toast.tsx`의 `toasts` 신호를 외부에서 직접
+      구독/조작하지 마세요.
+
+- [ ] 타입 명시 (TypeScript strict) 브리징은 제거되었으며, 외부 소비자는 통합
+      매니저만 사용합니다.
+
+- [ ] 테스트 추가/수정
+
+- [ ] 린트/포맷 통과가드/테스트:
+
+- [ ] 빌드 성공
 
 - UI 배럴 표면 가드:
-  `test/unit/lint/toast-ui-barrel.stateful-exports.guard.test.ts`
-  - 금지: `src/shared/components/ui/index.ts`에서 `addToast`/`removeToast`/
-    `clearAllToasts`/`toasts` 같은 상태성 API의 런타임 export
-  - 허용: 컴포넌트(`Toast`, `ToastContainer`)와 타입(type-only)만
-- UI 컴포넌트 가드:
+
+--- `test/unit/lint/toast-ui-barrel.stateful-exports.guard.test.ts`
+
+- 금지: `src/shared/components/ui/index.ts`에서 `addToast`/`removeToast`/
+
+## 📖 추가 참고 `clearAllToasts`/`toasts` 같은 상태성 API의 런타임 export
+
+- 허용: 컴포넌트(`Toast`, `ToastContainer`)와 타입(type-only)만
+
+- **Solid.js 가이드**: https://www.solidjs.com/docs/latest- UI 컴포넌트 가드:
+
+- **GitHub 이슈**: https://github.com/piesp/xcom-enhanced-gallery/issues
   `test/unit/lint/toast-ui-components.no-local-state.guard.test.ts`
-  - 금지: UI Toast 파일에서 로컬 상태/함수 정의(토스트 추가/삭제 등)
+
+- **Userscript 가이드**: https://www.tampermonkey.net/documentation.php - 금지:
+  UI Toast 파일에서 로컬 상태/함수 정의(토스트 추가/삭제 등)
   - 요구: `ToastItem`은 서비스 타입을 type-only import로 사용
 
 ### Border Radius 정책 (Design Tokens)
