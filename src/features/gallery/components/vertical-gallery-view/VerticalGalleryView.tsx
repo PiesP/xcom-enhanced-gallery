@@ -83,14 +83,17 @@ function VerticalGalleryViewCore({
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
-  // isVisible을 파생 상태(Derived Signal)로 변환 - Phase 20.1
-  const isVisible = createMemo(() => {
-    const visible = mediaItems().length > 0;
+  // Phase 21.4: isVisible을 단순 accessor로 변경 (불필요한 createMemo 제거)
+  // Solid.js의 fine-grained reactivity가 자동으로 최적화하므로 memo 불필요
+  const isVisible = () => mediaItems().length > 0;
+
+  // 가시성 변경 디버깅 로그를 별도 effect로 분리
+  createEffect(() => {
+    const visible = isVisible();
     logger.debug('VerticalGalleryView: 가시성 계산', {
       visible,
       mediaCount: mediaItems().length,
     });
-    return visible;
   });
 
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
