@@ -1,13 +1,13 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-> **현재 상태**: Phase 14 완료 - 다음 Phase 제안 검토 중> **현재 상태**: Phase
-> 14 완료 - 다음 Phase 제안 검토 중> **현재 상태**: Phase
+> **현재 상태**: Phase 16 진행 중 - 문서 정리> **현재 상태**: Phase 14 완료 -
+> 다음 Phase 제안 검토 중> **현재 상태**: Phase
 
-> > 14.3 대기 - SolidJS 반응성 최적화 진행 중> **현재 상태**:
+> > 14 완료 - 다음 Phase 제안 검토 중> **현재 상태**: Phase
 
 > **최종 업데이트**: 2025-01-11
 
-> > > Phase 14.3 대기 - SolidJS 반응성 최적화 진행 중
+> > > 14.3 대기 - SolidJS 반응성 최적화 진행 중> **현재 상태**:
 
 > **빌드**: ✅ dev (727.65 KB) / prod (327.42 KB gzip: 89.04 KB)
 
@@ -16,7 +16,7 @@
 > **테스트**: ✅ Vitest 569/573 (99.3%, 23 skipped, 4 POC failures) | ✅ E2E 8/8
 > (100%)
 
-> > >
+> > > Phase 14.3 대기 - SolidJS 반응성 최적화 진행 중
 
 ---
 
@@ -24,153 +24,307 @@
 
 ## 활성 작업
 
-> > **최종 업데이트**: 2025-01-11> **최종 업데이트**: 2025-01-11
+> > **최종 업데이트**: 2025-01-11
 
-현재 진행 중인 Phase가 없습니다. 다음 Phase 제안 검토 중입니다.
+### Phase 16: 문서 정리
 
 > **테스트**: ✅ Vitest 569/573 (99.3%, 23 skipped, 4 POC failures) | ✅ E2E 8/8
 
----> (100%)
+**목표**: 프로젝트 문서 구조 정리 및 최신화> (100%)
 
-## 완료된 Phase> >
+**작업 내용**:> > >
+
+- [x] SOLIDJS_OPTIMIZATION_ANALYSIS.md 삭제 (내용은 Phase 14에 이미 반영됨)---
+
+- [ ] TDD_REFACTORING_PLAN.md 복원 및 정리
+
+- [ ] 참고 문서 섹션 업데이트> **빌드**: ✅ dev (727.65 KB) / prod (327.42 KB
+      gzip: 89.04 KB)
+
+**진행 상황**:## 활성 작업
+
+SOLIDJS_OPTIMIZATION_ANALYSIS.md는 Phase 14의 근거 문서로서 역할을 마쳤습니다.
+모든 최적화가 완료되어 더 이상 유지할 필요가 없으므로 삭제했습니다.> > **최종
+업데이트**: 2025-01-11> **최종 업데이트**: 2025-01-11
+
+---현재 진행 중인 Phase가 없습니다. 다음 Phase 제안 검토 중입니다.
+
+## 완료된 Phase> **테스트**: ✅ Vitest 569/573 (99.3%, 23 skipped, 4 POC failures) | ✅ E2E 8/8
 
 모든 완료된 Phase는 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
-있습니다:---
+있습니다:---> (100%)
 
-- **Phase 14**: SolidJS 반응성 최적화 ✅ - 2025-01-11> **빌드**: ✅ dev (727.65
-  KB) / prod (327.42 KB gzip: 89.04 KB)> **빌드**: ✅
+- **Phase 14**: SolidJS 반응성 최적화 ✅ - 2025-01-11## 완료된 Phase> >
   - Phase 14.1: 불필요한 메모이제이션 제거
 
-  - Phase 14.2: Props 접근 패턴 일관성## 활성 작업> dev (727.65 KB) / prod
-    (327.42 KB gzip: 89.04 KB)
+  - Phase 14.2: Props 접근 패턴 일관성모든 완료된 Phase는
+    `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
 
+  - Phase 14.3: 유틸리티 통합 (signalSelector.ts 공식화)있습니다:---
+
+- **Phase 13**: 툴바 인디케이터 반응성 수정 ✅ - 2025-01-11- **Phase 14**:
+  SolidJS 반응성 최적화 ✅ - 2025-01-11> **빌드**: ✅ dev (727.65
+
+  KB) / prod (327.42 KB gzip: 89.04 KB)> **빌드**: ✅
+
+- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ - 2025-01-10 - Phase 14.1:
+  불필요한 메모이제이션 제거
+
+- **Phase 11**: E2E 회귀 커버리지 구축 (Playwright) ✅ - 2025-01-10 - Phase
+  14.2: Props 접근 패턴 일관성## 활성 작업> dev (727.65 KB) / prod
+
+  (327.42 KB gzip: 89.04 KB)
+
+- **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-01-10
   - Phase 14.3: 유틸리티 통합 (signalSelector.ts 공식화)
-
-현재 진행 중인 Phase가 없습니다. 다음 Phase 제안 검토 중입니다.> >
-
-- **Phase 13**: 툴바 인디케이터 반응성 수정 ✅ - 2025-01-11
-
----> **테스트**: ✅ Vitest 569/573 (99.3%, 23 skipped, 4 POC failures)>
-
-- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ - 2025-01-10**테스트**:
-
-- **Phase 11**: E2E 회귀 커버리지 구축 (Playwright) ✅ - 2025-01-10> ✅ Vitest
-  569/573 (99.3%, 23 skipped, 4 POC failures)
-
-- **Phase 10**: 테스트 안정화 (Solid.js 마이그레이션 대응) ✅ - 2025-01-10##
-  완료된 Phase
-
-- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅---
-
-- 이전 Phase들... (COMPLETED 문서 참조)모든 완료된 Phase는
-  `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
-
-있습니다:
-
----
-
-## 활성 작업## 활성 작업
-
-## 다음 Phase 제안
-
-- **Phase 14**: SolidJS 반응성 최적화 ✅ - 2025-01-11
-
-### Phase 15: Vitest Skipped 테스트 정리 (우선순위: 중간) - Phase 14.1: 불필요한 메모이제이션 제거### Phase 14: SolidJS 반응성 최적화###
-
-    Phase 14: SolidJS 반응성 최적화
-
-**배경**: 현재 23개의 테스트가 skip 상태이며, 대부분은 E2E로 대체되었거나 레거시
-POC 테스트입니다.
-
-- Phase 14.2: Props 접근 패턴 일관성
-
-**목표**: 테스트 스위트 정리 및 유지보수성 향상
-
-- Phase 14.3: 유틸리티 통합 (signalSelector.ts 공식화)**배경**:
-
-**작업 내용**: `docs/SOLIDJS_OPTIMIZATION_ANALYSIS.md` 분석 결과, React 습관에서
-
-- E2E로 대체 완료한 8개 skip 테스트 제거 또는 참고 주석 추가남아있는 불필요한
-  메모이제이션과 비효율적 패턴 발견**배경**:
-
-- 나머지 15개 skipped 테스트 검토 및 정리
-
-- POC 실패 4개는 의도적 실패이므로 별도 표시 유지- **Phase 13**: 툴바 인디케이터
-  반응성 수정 ✅ -
-
-  2025-01-11`docs/SOLIDJS_OPTIMIZATION_ANALYSIS.md` 분석 결과, React 습관에서
-
-**수용 기준**: 남아있는
-
-- [ ] 불필요한 skip 제거불필요한 메모이제이션과 비효율적 패턴 발견
-
-- [ ] 필요한 skip은 명확한 이유 주석 추가
-
-- [ ] 타입 체크/린트/빌드 통과- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ -
-      2025-01-10
-
-### Phase 16: 문서 정리 (우선순위: 낮음)**목표**: SolidJS의 fine-grained reactivity를 최대한 활용하여 코드 복잡도 감소
-
-**목표**: 프로젝트 문서 구조 정리 및 최신화- **Phase 11**: E2E 회귀 커버리지
-구축 (Playwright) ✅ - 2025-01-10및 성능
-
-개선**목표**: SolidJS의 fine-grained reactivity를 최대한 활용하여 코드
-
-**작업 내용**:
-
-복잡도 감소 및 성능 개선
-
-- [ ] SOLIDJS_OPTIMIZATION_ANALYSIS.md를 COMPLETED.md와 통합하여 간결화
-
-- [ ] 백업 파일 최종 정리 (.backup 파일들)- **Phase 10**: 테스트 안정화
-      (Solid.js 마이그레이션 대응) ✅ - 2025-01-10
-
-- [ ] 아키텍처 다이어그램 최신화 (필요 시)
-
-**완료 현황**:**완료 현황**:
-
-### Phase 17: 성능 최적화 (우선순위: 낮음)
 
 - **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅
 
-**목표**: 번들 크기 및 런타임 성능 개선
-
-- ✅ Phase 14.1: 불필요한 메모이제이션 제거 (2025-01-11)
-
-**작업 내용**:
+현재 진행 중인 Phase가 없습니다. 다음 Phase 제안 검토 중입니다.> >
 
 - 이전 Phase들... (COMPLETED 문서 참조)
 
-- 번들 크기 분석 및 최적화
-
-- 런타임 성능 프로파일링- ✅ Phase 14.1: 불필요한 메모이제이션 제거
-  (2025-01-11)- ✅ Phase 14.2: Props
-
-- 메모리 사용량 모니터링
-
---- 접근 패턴 일관성 확보 (2025-01-11)
+- **Phase 13**: 툴바 인디케이터 반응성 수정 ✅ - 2025-01-11
 
 ---
 
-## 다음 Phase 제안- ✅ Phase 14.2: Props 접근 패턴 일관성 확보 (2025-01-11)- � Phase 14.3:
+---> **테스트**: ✅ Vitest 569/573 (99.3%, 23 skipped, 4 POC failures)>
 
-## 개발 가이드라인
+## 다음 Phase 제안
 
-유틸리티 통합 및 문서화
-
-### TDD 접근
+- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ - 2025-01-10**테스트**:
 
 ### Phase 15: Vitest Skipped 테스트 정리 (우선순위: 중간)
 
+- **Phase 11**: E2E 회귀 커버리지 구축 (Playwright) ✅ - 2025-01-10> ✅ Vitest
+
+**배경**: 현재 23개의 테스트가 skip 상태이며, 대부분은 E2E로 대체되었거나 레거시
+POC 테스트입니다. 569/573 (99.3%, 23 skipped, 4 POC failures)
+
+**목표**: 테스트 스위트 정리 및 유지보수성 향상- **Phase 10**: 테스트 안정화
+(Solid.js 마이그레이션 대응) ✅ - 2025-01-10##
+
+완료된 Phase
+
+**작업 내용**:
+
+- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅---
+
+- E2E로 대체 완료한 skip 테스트 제거 또는 참고 주석 추가
+
+- 나머지 skipped 테스트 검토 및 정리- 이전 Phase들... (COMPLETED 문서 참조)모든
+  완료된 Phase는
+
+- POC 실패 4개는 의도적 실패이므로 별도 표시 유지
+  `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어
+
+**수용 기준**:있습니다:
+
+- [ ] 불필요한 skip 제거---
+
+- [ ] 필요한 skip은 명확한 이유 주석 추가
+
+- [ ] 타입 체크/린트/빌드 통과## 활성 작업## 활성 작업
+
+### Phase 17: 성능 최적화 (우선순위: 낮음)## 다음 Phase 제안
+
+**목표**: 번들 크기 및 런타임 성능 개선- **Phase 14**: SolidJS 반응성 최적화
+✅ - 2025-01-11
+
+**작업 내용**:### Phase 15: Vitest Skipped 테스트 정리 (우선순위: 중간) - Phase
+14.1: 불필요한 메모이제이션 제거### Phase 14: SolidJS 반응성 최적화###
+
+- 번들 크기 분석 및 최적화 Phase 14: SolidJS 반응성 최적화
+
+- 런타임 성능 프로파일링
+
+- 메모리 사용량 모니터링**배경**: 현재 23개의 테스트가 skip 상태이며, 대부분은
+  E2E로 대체되었거나 레거시
+
+POC 테스트입니다.
+
+---
+
+- Phase 14.2: Props 접근 패턴 일관성
+
+## 개발 가이드라인
+
+**목표**: 테스트 스위트 정리 및 유지보수성 향상
+
+### TDD 접근
+
+- Phase 14.3: 유틸리티 통합 (signalSelector.ts 공식화)**배경**:
+
 - 각 작업은 실패하는 테스트 작성 → 최소 구현 → 리팩토링 순서
 
-- RED → GREEN → REFACTOR 사이클 준수- 📋 Phase 14.3: 유틸리티 통합 및 문서화
+- RED → GREEN → REFACTOR 사이클 준수**작업 내용**:
+  `docs/SOLIDJS_OPTIMIZATION_ANALYSIS.md` 분석 결과, React 습관에서
 
 - 테스트 우선 작성으로 명확한 수용 기준 설정
 
-**배경**: 현재 23개의 테스트가 skip 상태이며, 대부분은 E2E로 대체되었거나 레거시
+- E2E로 대체 완료한 8개 skip 테스트 제거 또는 참고 주석 추가남아있는 불필요한
 
-### 코딩 규칙 준수POC 테스트입니다.
+### 코딩 규칙 준수 메모이제이션과 비효율적 패턴 발견**배경**:
+
+- **SolidJS 반응성**: `createSignal`, `createMemo`, `createEffect` 적절히 활용-
+  나머지 15개 skipped 테스트 검토 및 정리
+
+- **Vendor getter 경유**: `getSolid()`, `getSolidStore()` 사용, 직접 import 금지
+
+- **PC 전용 이벤트**: click, keydown/up, wheel, contextmenu, mouse\* 만 사용-
+  POC 실패 4개는 의도적 실패이므로 별도 표시 유지- **Phase 13**: 툴바 인디케이터
+
+- **CSS Modules + 디자인 토큰**: 하드코딩 금지, `--xeg-*` 토큰만 사용 반응성
+  수정 ✅ -
+
+- **경로 별칭 사용**: `@`, `@features`, `@shared`, `@assets`
+
+  2025-01-11`docs/SOLIDJS_OPTIMIZATION_ANALYSIS.md` 분석 결과, React 습관에서
+
+### 검증 절차
+
+**수용 기준**: 남아있는
+
+각 작업 완료 후:
+
+- [ ] 불필요한 skip 제거불필요한 메모이제이션과 비효율적 패턴 발견
+
+````````powershell
+
+npm run typecheck  # TypeScript 타입 체크- [ ] 필요한 skip은 명확한 이유 주석 추가
+
+npm run lint:fix   # ESLint 자동 수정
+
+npm test:smoke     # 핵심 기능 스모크 테스트- [ ] 타입 체크/린트/빌드 통과- **Phase 12**: E2E 테스트 안정화 및 CI 통합 ✅ -
+
+npm test:fast      # 빠른 단위 테스트      2025-01-10
+
+npm run build      # dev/prod 빌드 검증
+
+```### Phase 16: 문서 정리 (우선순위: 낮음)**목표**: SolidJS의 fine-grained reactivity를 최대한 활용하여 코드 복잡도 감소
+
+
+
+---**목표**: 프로젝트 문서 구조 정리 및 최신화- **Phase 11**: E2E 회귀 커버리지
+
+구축 (Playwright) ✅ - 2025-01-10및 성능
+
+## 코드 품질 현황
+
+개선**목표**: SolidJS의 fine-grained reactivity를 최대한 활용하여 코드
+
+### 마이그레이션 완료 현황
+
+**작업 내용**:
+
+- ✅ **Phase 1-14**: Solid.js 전환, 테스트 인프라, Import/ARIA 수정, UX 가드, E2E 통합, SolidJS 최적화 완료
+
+- ✅ **빌드**: dev 727.65 KB / prod 327.42 KB (gzip: 89.04 KB)복잡도 감소 및 성능 개선
+
+- ✅ **소스 코드**: 0 타입 오류 (TypeScript strict)
+
+- ✅ **린트**: 0 warnings, 0 errors- [ ] SOLIDJS_OPTIMIZATION_ANALYSIS.md를 COMPLETED.md와 통합하여 간결화
+
+- ✅ **의존성 그래프**: 0 위배
+
+- [ ] 백업 파일 최종 정리 (.backup 파일들)- **Phase 10**: 테스트 안정화
+
+### 현재 테스트 상황      (Solid.js 마이그레이션 대응) ✅ - 2025-01-10
+
+
+
+- ✅ **Smoke 테스트**: 15/15 통과 (100%)- [ ] 아키텍처 다이어그램 최신화 (필요 시)
+
+- ✅ **Fast 테스트**: 554/554 통과 (100%, 23 skipped)
+
+- ✅ **Unit 테스트**: 569/573 통과 (99.3%, 23 skipped, 4 POC failures)**완료 현황**:**완료 현황**:
+
+- ✅ **E2E 테스트**: 8/8 통과 (100%)
+
+- 🔵 **Skip된 테스트**: 23개 (정리 권장)### Phase 17: 성능 최적화 (우선순위: 낮음)
+
+- 🟡 **POC 실패**: 4개 (의도적 실패, 참고용)
+
+- **Phase 9**: UX 개선 - 스크롤 포커스 동기화 · 툴바 가드 · 휠 튜닝 ✅
+
+### 기술 스택
+
+**목표**: 번들 크기 및 런타임 성능 개선
+
+- **UI 프레임워크**: Solid.js 1.9.9
+
+- **상태 관리**: Solid Signals (내장, 경량 반응형)- ✅ Phase 14.1: 불필요한 메모이제이션 제거 (2025-01-11)
+
+- **번들러**: Vite 7
+
+- **타입**: TypeScript strict**작업 내용**:
+
+- **테스트**: Vitest 3 + JSDOM, Playwright (E2E)
+
+- **디자인 시스템**: CSS Modules + 디자인 토큰- 이전 Phase들... (COMPLETED 문서 참조)
+
+
+
+---- 번들 크기 분석 및 최적화
+
+
+
+## 품질 게이트- 런타임 성능 프로파일링- ✅ Phase 14.1: 불필요한 메모이제이션 제거
+
+  (2025-01-11)- ✅ Phase 14.2: Props
+
+모든 PR은 다음 기준을 충족해야 합니다:
+
+- 메모리 사용량 모니터링
+
+- [ ] TypeScript: 0 에러 (src/)
+
+- [ ] ESLint: 0 에러, 0 경고--- 접근 패턴 일관성 확보 (2025-01-11)
+
+- [ ] Smoke 테스트: 100% 통과
+
+- [ ] Fast 테스트: 100% 통과 (skip 제외)---
+
+- [ ] 빌드: dev/prod 성공
+
+- [ ] TDD: RED → GREEN → REFACTOR 사이클 준수## 다음 Phase 제안- ✅ Phase 14.2: Props 접근 패턴 일관성 확보 (2025-01-11)- � Phase 14.3:
+
+- [ ] 코딩 규칙: `docs/CODING_GUIDELINES.md` 준수
+
+- [ ] 문서화: 변경 사항을 이 계획 또는 완료 로그에 반영## 개발 가이드라인
+
+
+
+---유틸리티 통합 및 문서화
+
+
+
+## 참고 문서### TDD 접근
+
+
+
+- **아키텍처**: `docs/ARCHITECTURE.md` - 3계층 구조, 의존성 경계### Phase 15: Vitest Skipped 테스트 정리 (우선순위: 중간)
+
+- **코딩 가이드**: `docs/CODING_GUIDELINES.md` - 스타일, 토큰, 테스트 정책
+
+- **의존성 거버넌스**: `docs/DEPENDENCY-GOVERNANCE.md` - 의존성 가드 규칙- 각 작업은 실패하는 테스트 작성 → 최소 구현 → 리팩토링 순서
+
+- **에이전트 가이드**: `AGENTS.md` - 로컬/CI 워크플로, 스크립트 사용법
+
+- **완료 로그**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` - 이전 Phase 상세 내역- RED → GREEN → REFACTOR 사이클 준수- 📋 Phase 14.3: 유틸리티 통합 및 문서화
+
+
+
+---- 테스트 우선 작성으로 명확한 수용 기준 설정
+
+
+
+**마지막 업데이트**: 2025-01-11**배경**: 현재 23개의 테스트가 skip 상태이며, 대부분은 E2E로 대체되었거나 레거시
+
+
+
+**다음 단계**: Phase 16 완료 후 Phase 15 또는 17 진행### 코딩 규칙 준수POC 테스트입니다.
+
 
 - **SolidJS 반응성**: `createSignal`, `createMemo`, `createEffect` 적절히
   활용**구현 순서** (3단계):#### Phase 14.1: 불필요한 메모이제이션 제거 ✅ 완료
@@ -797,7 +951,7 @@ npm run lint:fix   # ESLint 자동 수정
 npm test:smoke     # 핵심 기능 스모크 테스트
 npm test:fast      # 빠른 단위 테스트
 npm run build      # dev/prod 빌드 검증
-```````
+````````
 
 ---
 
