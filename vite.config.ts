@@ -37,7 +37,6 @@ function generateLicenseNotices(): string {
   const licenseFiles = [
     { path: './LICENSES/solid-js-MIT.txt', name: 'Solid.js' },
     { path: './LICENSES/heroicons-MIT.txt', name: 'Heroicons' },
-    { path: './LICENSES/tabler-icons-MIT.txt', name: 'Tabler Icons' },
   ];
 
   let notices = '\n/*\n * Third-Party Licenses\n * ====================\n';
