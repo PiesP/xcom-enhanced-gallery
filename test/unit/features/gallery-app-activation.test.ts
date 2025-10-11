@@ -152,9 +152,20 @@ afterEach(() => {
 });
 
 describe.skip('GalleryApp activation', () => {
-  // SKIP: Module mocking timing issues with vi.resetModules() and ServiceManager singleton
-  // TODO: Refactor to avoid vi.resetModules() or use different testing approach
-  // Related: Phase 10 test stabilization - service registration timing
+  // ⚠️ SKIPPED: 복잡한 모듈 모킹 및 싱글톤 타이밍 이슈
+  //
+  // 이슈:
+  // - vi.resetModules()와 ServiceManager 싱글톤 간의 타이밍 충돌
+  // - vi.doMock()을 통한 동적 모듈 모킹의 불안정성
+  // - CoreService 초기화 순서 의존성
+  //
+  // 대안:
+  // - GalleryApp은 E2E에서 검증됨 (playwright/smoke/gallery-app.spec.ts)
+  // - 개별 기능은 통합 테스트에서 커버 (full-workflow.test.ts)
+  //
+  // 향후:
+  // - 모듈 모킹 없이 실제 서비스를 사용하는 통합 테스트로 재작성
+  // - 또는 GalleryApp을 더 작은 단위로 리팩터링하여 테스트 용이성 개선
 
   it('initializes event handlers and wires renderer close callback', async () => {
     setupSignalsMock();

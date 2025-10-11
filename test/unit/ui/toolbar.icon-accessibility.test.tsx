@@ -81,9 +81,19 @@ const mkProps = (overrides: Partial<Parameters<typeof Toolbar>[0]> = {}) => ({
 });
 
 describe.skip('Toolbar - Icon accessibility (UI-ICN-01)', () => {
-  // SKIP: Complex Solid.js component mocking required
-  // TODO: Convert to E2E test or integration test with proper Solid.js setup
-  // Related: Phase 10 test stabilization - toolbar tests need rework
+  // ⚠️ SKIPPED: 복잡한 Solid.js 모킹 및 접근성 검증 제약
+  //
+  // 이슈:
+  // - Toolbar는 createEffect, vendors 초기화 등 복잡한 사이드이펙트 포함
+  // - 정확한 Solid.js 모킹 없이는 접근성 속성 검증이 불안정
+  //
+  // 대안:
+  // - aria-label 검증은 wrapper-compat.test.tsx와 IconButton.test.tsx에서 커버
+  // - Toolbar 자체는 통합/E2E 테스트에서 검증 가능
+  //
+  // 향후:
+  // - Toolbar를 더 작은 단위로 리팩터링하여 테스트 용이성 개선
+  // - 또는 E2E 테스트에서 접근성 트리 검증으로 대체
 
   beforeEach(() => {
     cleanup();

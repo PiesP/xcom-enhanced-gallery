@@ -1,6 +1,19 @@
 /**
  * @fileoverview ToolbarHeadless Component Tests
  * @description 툴바 렌더링 및 상태 관리 테스트
+ *
+ * ⚠️ SKIPPED: Solid.js 마이그레이션 후 재작성 필요
+ *
+ * 이 테스트는 Preact 시절에 작성되었으며, Solid.js로 전환 후 다음이 필요합니다:
+ * - Render props 패턴을 Solid.js 방식으로 재작성
+ * - Props getter 함수 패턴 적용 (Phase 14.2 참조)
+ * - @solidjs/testing-library 사용 또는 E2E로 전환
+ *
+ * 대안:
+ * - Toolbar.tsx (통합 컴포넌트)는 E2E에서 검증됨 (playwright/smoke/toolbar.spec.ts)
+ * - ToolbarHeadless의 로직은 useGalleryToolbarLogic.test.ts에서 검증됨
+ *
+ * 향후: Phase 15.2c 또는 별도 Phase로 재작성
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
