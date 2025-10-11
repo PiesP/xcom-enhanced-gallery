@@ -200,6 +200,95 @@
   - ✅ 린트: 0 warnings
   - ✅ 테스트: 559/559 passed (기존 554 + 신규 15 - 10 skipped)
   - ✅ 빌드 성공 (dev: 728 KB, prod: 327.52 KB)
+- **예상 효과**:
+  - 유지보수성 향상: 코드 추적 용이 (간접 레이어 4개 제거)
+  - 성능 개선: SolidJS fine-grained reactivity 최대 활용
+  - 코드 복잡도 감소: ~30줄 제거
+
+### Phase 14.2: Props 접근 패턴 일관성 (2025-01-11)
+
+- **브랜치**: refactor/solidjs-props-patterns
+- **커밋**:
+  `refactor(core): convert useGalleryToolbarLogic props to reactive getters`
+  (29799409)
+- **소요 시간**: ~1시간
+- **목표**: 모든 컴포넌트에서 props를 Getter 함수로 일관되게 접근
+- **구현 내역**:
+  - ✅ `useGalleryToolbarLogic.ts` 수정:
+    - `ToolbarState` 인터페이스 타입 변경: 모든 필드를 `() => T` getter 함수로
+    - 7개 필드 변환: `currentIndex`, `totalCount`, `canGoNext`, `canGoPrevious`,
+      `imageScale`, `fitMode`, `wheelEnabled`
+    - Props 전달 시 getter 함수로 래핑: `() => props.currentIndex`
+  - ✅ 기존 컴포넌트 호환성 유지: ToolbarHeadless/Toolbar는 수정 없이 동작
+- **테스트 추가**:
+  - `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` (14 tests)
+    - Fast 프로젝트: 7 tests (값 검증)
+    - Unit 프로젝트: 7 tests (반응성 검증)
+  - 100% 통과 (28/28 including suites)
+- **품질 게이트**:
+  - ✅ 타입 체크: 0 errors
+  - ✅ 린트: 0 warnings
+  - ✅ 전체 테스트: 569/573 passed (기존 + 신규 14)
+  - ✅ 빌드 성공 (dev: 727.65 KB, prod: 327.42 KB)
+- **효과**:
+  - 반응성 추적 개선: Props 변경 시 자동 업데이트
+  - 타입 안전성 강화: Getter 함수 시그니처 명시
+  - SolidJS Best Practices 준수
+
+### Phase 14.3: 유틸리티 통합 (2025-01-11)
+
+- **브랜치**: refactor/solidjs-utilities-consolidation
+- **상태**: ✅ 문서 정리 완료
+- **목표**: Signal 유틸리티 중복 정리 및 공식 API 확정
+- **분석 결과**:
+  - `signalSelector.ts`: 공식 유틸리티 (330+ lines, 전체 기능)
+    - createSelector, useSelector, useCombinedSelector, useAsyncSelector
+    - 고급 기능: dependencies, debug, name, global stats
+  - `signalOptimization.ts`: 레거시 구현 (180+ lines, 기본 메모이제이션만)
+    - `performance/index.ts`에서 이미 export 제거됨 (주석: "Legacy signal
+      optimization exports removed")
+- **작업 내역**:
+  - ✅ `signalSelector.ts`를 공식 유틸리티로 확정
+  - ✅ `@shared/index.ts`에서 signalSelector만 export 유지
+  - ✅ 문서 정리: TDD_REFACTORING_PLAN.md Phase 14 완료 표시
+- **품질 게이트**:
+  - ✅ 타입 체크: 0 errors
+  - ✅ 린트: 0 warnings
+  - ✅ 전체 테스트: 569/573 passed
+  - ✅ 빌드 성공 (dev: 727.65 KB, prod: 327.42 KB, gzip: 89.04 KB)
+- **효과**:
+  - 유틸리티 명확화: signalSelector.ts가 공식 API
+  - 코드베이스 간소화: 중복 제거로 유지보수성 향상
+  - SolidJS 패턴 확립: Best Practices 문서화 기반 마련
+
+---
+
+## 📈 Phase 14 종합 성과
+
+### 코드 품질 개선
+
+- ✅ 불필요한 메모이제이션 제거 (8+ 사례)
+- ✅ Props 접근 패턴 일관성 확보 (7개 필드 변환)
+- ✅ 유틸리티 중복 정리 (signalSelector 공식화)
+- ✅ 코드 라인 수 감소: ~30줄 (메모이제이션 제거)
+- ✅ 테스트 추가: 29개 (15 + 14)
+
+### 성능 개선
+
+- ✅ Fine-grained reactivity 최대 활용
+- ✅ 불필요한 계산 제거
+- ✅ 번들 크기 유지: dev 727.65 KB, prod 327.42 KB (gzip: 89.04 KB)
+
+### 유지보수성 향상
+
+- ✅ Props → Getter 패턴 표준화
+- ✅ SolidJS Best Practices 준수
+- ✅ 공식 유틸리티 명확화 (signalSelector.ts)
+
+---
+
+- ✅ 테스트: 559/559 passed (기존 554 + 신규 15 - 10 skipped)
+- ✅ 빌드 성공 (dev: 728 KB, prod: 327.52 KB)
 - **효과**:
   - ✅ 유지보수성 향상: 간접 레이어 4개 제거, 코드 추적 용이
   - ✅ 성능 개선: createMemo 호출 8회 감소, 불필요한 계산 레이어 제거
