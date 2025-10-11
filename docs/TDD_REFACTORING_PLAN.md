@@ -1,10 +1,31 @@
-# TDD 리팩토링 활성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획
 
-현재 상태: Phase 18 진행 중 최종 업데이트: 2025-01-11
+현재 상태: Phase 18 완료, 다음 페이즈 대기현재 상태: Phase 18 완료 최종
+업데이트: 2025-01-11
 
----
+최종 업데이트: 2025-01-11---
 
-## 📋 Phase 18: 수동 스크롤 방해 제거
+---## 현재 상태
+
+## 📊 현재 상태Phase 18 (수동 스크롤 방해 제거) 완료 → COMPLETED.md로 이관. 다음 페이즈 대기.
+
+Phase 18 (수동 스크롤 방해 제거) 완료 → COMPLETED.md로 이관 완료.---
+
+다음 페이즈 계획 대기 중.## 참고 문서
+
+---- AGENTS.md: 개발 환경 및 워크플로
+
+- TDD_REFACTORING_PLAN_COMPLETED.md: Phase 1-18 완료 내역
+
+## 📚 참고 문서
+
+- `AGENTS.md`: 개발 환경 및 워크플로---
+
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-18 완료 내역
+
+- `docs/ARCHITECTURE.md`: 프로젝트 아키텍처## 📋 Phase 18: 수동 스크롤 방해 제거
+
+- `docs/CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준
 
 **목표**: 유저가 수동으로 스크롤하는 중이나 직후에 이미지 위치를 조정하는 로직
 제거

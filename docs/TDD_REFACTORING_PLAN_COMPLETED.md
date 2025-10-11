@@ -10,8 +10,8 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (730.00 KB) / prod (329.67 KB, gzip: 89.63 KB)
-- ✅ **Vitest**: 582/582 (100%, 24 skipped, 1 todo)
+- ✅ **빌드**: dev (728.24 KB) / prod (329.03 KB, gzip: 89.47 KB)
+- ✅ **Vitest**: 587/587 (100%, 24 skipped, 1 todo)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
@@ -702,6 +702,66 @@ ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 �
 
 ---
 
+## Phase 18: 수동 스크롤 방해 제거 (2025-01-11)
+
+**목표**: 유저가 수동으로 스크롤하는 중이나 직후에 이미지 위치를 조정하는 로직
+제거
+
+**배경**:
+
+- 미디어 로드 완료 시 `handleMediaLoad`가 자동으로 `scrollIntoView` 실행
+- 사용자가 수동 스크롤 중이거나 직후에도 이미지 위치가 강제로 조정되는 문제
+- 자동 스크롤은 prev/next 버튼 네비게이션에만 필요
+
+**작업 내역**:
+
+- **브랜치**: refactor/phase-18-remove-manual-scroll-interference
+- **커밋**:
+  `refactor(gallery): remove manual scroll interference from media load`
+  (c0bbc29d)
+
+**구현**:
+
+1. **handleMediaLoad 단순화**
+   - `scrollIntoView` 호출 제거 (약 50줄)
+   - 미디어 로드 이벤트 리스너 제거
+   - 로그만 남기고 스크롤 로직 전체 제거
+   - Phase 18 주석 추가: "수동 스크롤을 방해하지 않도록"
+
+2. **lastAutoScrolledIndex 상태 제거**
+   - 상태 선언 제거:
+     `const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = createSignal(-1);`
+   - 모든 `setLastAutoScrolledIndex` 호출 제거 (3곳)
+   - `createEffect(on(currentIndex, ...))` 단순화
+
+3. **테스트 추가**
+   - `test/unit/features/gallery/vertical-gallery-no-auto-scroll.test.tsx` (5
+     tests)
+   - scrollIntoView 미호출 검증
+   - lastAutoScrolledIndex 제거 검증
+   - useGalleryItemScroll 유지 검증
+   - handleMediaLoad 단순화 검증
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 587/587 passed (0 failed, 24 skipped, 1 todo)
+  - Phase 18 테스트: 5/5 passed
+- ✅ 빌드: dev 728.24 KB (-1.76 KB), prod 329.03 KB (-0.64 KB), gzip: 89.47 KB
+  (-0.16 KB)
+
+**결과**:
+
+- ✅ 수동 스크롤 방해 제거: 미디어 로드 시 위치 조정 없음
+- ✅ 자동 스크롤 유지: prev/next 네비게이션은 정상 작동
+- ✅ 코드 감소: 약 50줄 제거 (복잡한 스크롤 로직 제거)
+- ✅ 번들 크기 감소: dev -1.76 KB, prod -0.64 KB
+
+**Phase 18 전체 완료**: 수동 스크롤 방해 제거 완성 (분석 → 구현 → 테스트 → 검증)
+
+---
+
 ## 📖 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
@@ -714,7 +774,7 @@ ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 �
 
 ## 🎉 결론
 
-모든 Phase (1-16)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
+모든 Phase (1-18)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
 향후 기능 추가 및 유지보수가 용이한 구조를 갖추었습니다.
 
 **다음 단계**: `TDD_REFACTORING_PLAN.md` 참조
