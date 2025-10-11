@@ -33,6 +33,14 @@ test-profile/
 .vitest-cache/
 test-output/
 
+# CodeQL
+codeql-db/
+*.sarif
+results.sarif
+.codeql/
+codeql-results/
+codeql-custom-queries-javascript/test-samples/
+
 # Logs
 logs
 *.log

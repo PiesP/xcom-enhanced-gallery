@@ -1,8 +1,8 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-01-11
+> **최종 업데이트**: 2025-01-12
 
-모든 Phase (1-16)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
+모든 Phase (1-19)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
 
 ---
 
@@ -759,6 +759,57 @@ ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 �
 - ✅ 번들 크기 감소: dev -1.76 KB, prod -0.64 KB
 
 **Phase 18 전체 완료**: 수동 스크롤 방해 제거 완성 (분석 → 구현 → 테스트 → 검증)
+
+---
+
+## Phase 19: 테스트 console.log 제거 (2025-01-12)
+
+**목표**: 프로덕션 코드에 남아있는 테스트용 console.log 제거
+
+**배경**:
+
+- `main.ts`, `event-wiring.ts` 등에 `[TEST]` 태그가 있는 console.log가 발견됨
+- 이들은 개발/디버깅 중 추가된 것으로 프로덕션에는 불필요
+- logger 시스템을 통한 로깅으로 대체 또는 완전 제거
+
+**작업 내역**:
+
+- **브랜치**: master
+- **커밋**: `test: phase 19 - remove test console.log statements` (예정)
+
+**확인 결과**:
+
+1. **main.ts**
+   - `[TEST]` 태그가 있는 console.log가 이미 logger.debug로 변경됨 (line
+     176-181, 278-284)
+   - cleanup 진단 로그는 테스트 모드에서만 실행
+   - logger.debug 사용으로 충분한 로깅 유지
+
+2. **event-wiring.ts**
+   - `[TEST]` 태그가 있는 console.log가 이미 logger.debug로 변경됨 (line 18, 26)
+   - 이벤트 연결/해제 로그는 디버깅에 유용하므로 logger로 유지
+
+3. **테스트 파일**
+   - `test-console-logs.red.test.ts` → `test-console-logs.test.ts`로 파일명 변경
+   - 7개 테스트 모두 GREEN 상태
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 587/587 passed (24 skipped, 1 todo)
+  - Phase 19 테스트: 7/7 passed
+- ✅ 빌드: dev 728.24 KB, prod 329.08 KB (gzip: 89.48 KB)
+
+**결과**:
+
+- ✅ console.log 제거 완료: 모든 `[TEST]` 태그 로그가 logger.debug로 대체됨
+- ✅ 로깅 시스템 사용: logger를 통한 일관된 로깅
+- ✅ 테스트 통과: console.log 제거 확인 테스트 7/7 GREEN
+- ✅ 코드 품질 향상: 프로덕션에 불필요한 로그 제거
+
+**Phase 19 전체 완료**: 테스트 console.log 제거 완성 (확인 → 테스트 변경 → 빌드
+검증)
 
 ---
 
