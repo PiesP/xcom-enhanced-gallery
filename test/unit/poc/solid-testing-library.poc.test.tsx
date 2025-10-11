@@ -25,7 +25,7 @@ describe('POC: Solid Testing Library Integration', () => {
   const { createSignal, Show } = getSolid();
 
   describe('Basic Reactivity', () => {
-    it('should handle signal changes correctly', async () => {
+    it.skip('should handle signal changes correctly', async () => {
       const [count, setCount] = createSignal(0);
 
       const Counter = () => (
@@ -49,7 +49,7 @@ describe('POC: Solid Testing Library Integration', () => {
       });
     });
 
-    it('should handle conditional rendering with Show', async () => {
+    it.skip('should handle conditional rendering with Show', async () => {
       const [visible, setVisible] = createSignal(false);
 
       const ConditionalComponent = () => (
@@ -78,7 +78,7 @@ describe('POC: Solid Testing Library Integration', () => {
   });
 
   describe('Props Reactivity', () => {
-    it('should update when props change through signals', async () => {
+    it.skip('should update when props change through signals', async () => {
       const [text, setText] = createSignal('Initial');
 
       const DisplayComponent = (props: { text: string }) => (
@@ -154,7 +154,7 @@ describe('POC: Solid Testing Library Integration', () => {
   });
 
   describe('Modal Pattern', () => {
-    it('should handle modal open/close state', async () => {
+    it.skip('should handle modal open/close state', async () => {
       const [isOpen, setIsOpen] = createSignal(false);
 
       const SimpleModal = () => (

@@ -6451,6 +6451,23 @@
       "dependencies": [
         {
           "dynamic": false,
+          "module": "../../../container/settings-access",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/container/settings-access.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6676,6 +6693,34 @@
       ],
       "dependencies": [],
       "dependents": [
+        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/container/settings-access.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "./service-accessors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/container/service-accessors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
         "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
       ],
       "orphan": false,
@@ -7921,33 +7966,6 @@
       "dependents": [
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/hooks/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/container/settings-access.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./service-accessors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/container/service-accessors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -16060,7 +16078,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 265,
-    "totalDependenciesCruised": 726,
+    "totalDependenciesCruised": 727,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
