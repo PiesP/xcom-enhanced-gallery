@@ -263,6 +263,56 @@
 
 ---
 
+## Phase 15.1: 레거시 테스트 정리 (2025-01-11)
+
+### 배경
+
+- 스킵된 테스트 23개 중 6개는 이미 대체되었거나 기능 제거됨
+- POC 테스트 4개 실패 (실제 기능에는 영향 없음)
+- 테스트 정리로 명확성 향상 필요
+
+### 작업 내역
+
+- **브랜치**: test/phase-15-legacy-cleanup
+- **커밋**: `test: phase 15.1 - remove legacy and duplicate test files`
+  (a3dfaf17)
+- **제거된 파일** (6개, 총 546 lines):
+  1. `test/unit/lint/direct-imports-source-scan.test.ts` - TypeScript 중복 버전
+  2. `test/unit/lint/ui-toast-component.no-local-state.scan.red.test.ts` - guard
+     테스트로 대체됨
+  3. `test/unit/lint/ui-toast-barrel.no-state.scan.red.test.ts` - guard 테스트로
+     대체됨
+  4. `test/refactoring/remove-virtual-scrolling.test.ts` - 가상 스크롤링 기능
+     이미 제거 완료
+  5. `test/refactoring/service-diagnostics-integration.test.ts` - DISABLED, 통합
+     계획 없음
+  6. `test/refactoring/event-manager-integration.test.ts` - DISABLED, 통합 계획
+     없음
+- **POC 테스트 문서화**:
+  - `test/unit/poc/solid-testing-library.poc.test.tsx` 주석 추가
+  - @solidjs/testing-library 반응성 이슈 명시
+  - 4/6 테스트 실패 원인 및 향후 계획 문서화
+
+### 품질 게이트
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 569/573 passed (4 POC failures 예상됨)
+- ✅ 빌드 성공:
+  - Dev: 727.65 KB
+  - Prod: 327.42 KB (gzip: 89.04 KB)
+- ✅ 의존성: 0 violations
+
+### 효과
+
+- ✅ 테스트 파일 감소: 143 → 142 (-1)
+- ✅ 코드 간결화: -546 lines
+- ✅ 스킵 테스트 파일 감소: 9 → 8 (-1)
+- ✅ 테스트 명확성 향상: 중복/대체된 테스트 제거
+- ✅ POC 테스트 상태 명시: 향후 라이브러리 개선 시 재검토 가능
+
+---
+
 ## 📈 Phase 14 종합 성과
 
 ### 코드 품질 개선
