@@ -83,7 +83,16 @@ function VerticalGalleryViewCore({
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
-  const [isVisible, setIsVisible] = createSignal(mediaItems().length > 0);
+  // isVisible을 파생 상태(Derived Signal)로 변환 - Phase 20.1
+  const isVisible = createMemo(() => {
+    const visible = mediaItems().length > 0;
+    logger.debug('VerticalGalleryView: 가시성 계산', {
+      visible,
+      mediaCount: mediaItems().length,
+    });
+    return visible;
+  });
+
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
 
   const hideTimeoutRef = { current: null as number | null };
@@ -99,18 +108,6 @@ function VerticalGalleryViewCore({
   // 휠 스크롤 배율 설정 로드
   const wheelScrollMultiplier = getSetting<number>('gallery.wheelScrollMultiplier', 1.2);
 
-  createEffect(() => {
-    const visible = mediaItems().length > 0;
-    if (visible !== isVisible()) {
-      setIsVisible(visible);
-      logger.debug('VerticalGalleryView: 가시성 상태 변경', {
-        wasVisible: !visible,
-        nowVisible: visible,
-        mediaCount: mediaItems().length,
-      });
-    }
-  });
-
   const preloadIndices = createMemo(() => {
     const count = getSetting<number>('gallery.preloadCount', 0);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
@@ -124,18 +121,24 @@ function VerticalGalleryViewCore({
     })
   );
 
-  createEffect(() => {
-    const container = containerEl();
-    if (!container) return;
+  // Phase 20.2: 애니메이션 effect에 명시적 의존성 추가
+  createEffect(
+    on(
+      [containerEl, isVisible],
+      ([container, visible]) => {
+        if (!container) return;
 
-    if (isVisible()) {
-      animateGalleryEnter(container);
-      logger.debug('갤러리 진입 애니메이션 실행');
-    } else {
-      animateGalleryExit(container);
-      logger.debug('갤러리 종료 애니메이션 실행');
-    }
-  });
+        if (visible) {
+          animateGalleryEnter(container);
+          logger.debug('갤러리 진입 애니메이션 실행');
+        } else {
+          animateGalleryExit(container);
+          logger.debug('갤러리 종료 애니메이션 실행');
+        }
+      },
+      { defer: true }
+    )
+  );
 
   createEffect(
     on(

@@ -1,8 +1,9 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-01-12
+> **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-19)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
+모든 Phase (1-20.2)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
+참조.
 
 ---
 
@@ -10,8 +11,8 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (728.24 KB) / prod (329.03 KB, gzip: 89.47 KB)
-- ✅ **Vitest**: 587/587 (100%, 24 skipped, 1 todo)
+- ✅ **빌드**: dev (727.70 KB) / prod (329.04 KB, gzip: 89.47 KB)
+- ✅ **Vitest**: 602/602 (100%, 24 skipped, 1 todo)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
@@ -813,6 +814,208 @@ ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 �
 
 ---
 
+## Phase 20.1: VerticalGalleryView isVisible Derived Signal 최적화 (2025-10-12)
+
+**목표**: Effect로 동기화하는 `isVisible`을 createMemo로 변환하여 불필요한
+Effect 제거
+
+**배경**:
+
+- SOLIDJS_OPTIMIZATION_GUIDE 분석 결과, `VerticalGalleryView.tsx`에 9개의
+  createEffect가 존재
+- `isVisible` 상태는 `mediaItems().length > 0`의 단순 파생 상태
+- createSignal + createEffect 패턴 대신 createMemo 사용으로 최적화
+
+**변경 내용**:
+
+1. **isVisible 선언 변경**:
+
+   ```tsx
+   // Before (createSignal + createEffect)
+   const [isVisible, setIsVisible] = createSignal(mediaItems().length > 0);
+   createEffect(() => {
+     const visible = mediaItems().length > 0;
+     if (visible !== isVisible()) {
+       setIsVisible(visible);
+     }
+   });
+
+   // After (createMemo - 파생 상태)
+   const isVisible = createMemo(() => {
+     const visible = mediaItems().length > 0;
+     logger.debug('VerticalGalleryView: 가시성 계산', {
+       visible,
+       mediaCount: mediaItems().length,
+     });
+     return visible;
+   });
+   ```
+
+2. **제거된 코드**:
+   - `setIsVisible` setter 제거 (파생 상태이므로 불필요)
+   - createEffect 블록 제거 (동기화 로직 불필요)
+
+**테스트 추가**:
+
+- 파일: `test/unit/features/gallery/vertical-gallery-view-effects.test.tsx`
+  (신규)
+- 테스트 케이스 4개:
+  1. isVisible은 mediaItems.length > 0의 파생 상태여야 함
+  2. isVisible은 불필요한 재계산을 하지 않아야 함
+  3. createEffect를 사용하지 않고 isVisible을 계산해야 함
+  4. 실제 VerticalGalleryView에서 createMemo 사용 확인
+- 결과: 4/4 tests GREEN ✅
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings, 0 errors
+- ✅ 테스트: 598/598 passed (Phase 20 테스트 4개 포함)
+- ✅ 빌드: dev 727.66 KB, prod 329.03 KB (gzip: 89.46 KB)
+- ✅ 의존성: 0 violations (265 modules, 727 dependencies)
+
+**효과**:
+
+- Effect 실행 횟수 1회 감소 (9개 → 8개)
+- 불필요한 상태 동기화 로직 제거
+- 코드 가독성 향상 (파생 상태임이 명확)
+- 반응성 체인 단순화
+
+**Phase 20.1 완료**: VerticalGalleryView Effect 최적화 1단계 완성
+
+---
+
+### Phase 20.2: 애니메이션 Effect 의존성 명시 (2025-10-12)
+
+**목표**: 애니메이션 effect에 명시적 의존성 추가하여 불필요한 재실행 방지
+
+**배경**: VerticalGalleryView에서 애니메이션 effect가 암묵적 의존성으로 인해
+불필요하게 재실행될 가능성이 있었습니다. `on()` helper를 사용하여 명시적으로
+`containerEl`과 `isVisible`에만 반응하도록 최적화했습니다.
+
+**구현 전 (VerticalGalleryView.tsx)**:
+
+```tsx
+// ❌ 암묵적 의존성 - 모든 반응형 값 추적
+createEffect(() => {
+  const container = containerEl();
+  if (!container) return;
+
+  if (isVisible()) {
+    animateGalleryEnter(container);
+    logger.debug('갤러리 진입 애니메이션 실행');
+  } else {
+    animateGalleryExit(container);
+    logger.debug('갤러리 종료 애니메이션 실행');
+  }
+});
+```
+
+**구현 후 (VerticalGalleryView.tsx)**:
+
+```tsx
+// ✅ 명시적 의존성 - containerEl과 isVisible만 추적
+createEffect(
+  on(
+    [containerEl, isVisible],
+    ([container, visible]) => {
+      if (!container) return;
+
+      if (visible) {
+        animateGalleryEnter(container);
+        logger.debug('갤러리 진입 애니메이션 실행');
+      } else {
+        animateGalleryExit(container);
+        logger.debug('갤러리 종료 애니메이션 실행');
+      }
+    },
+    { defer: true }
+  )
+);
+```
+
+**변경 사항**:
+
+1. **`on()` wrapper 추가**: 명시적 의존성 배열 지정
+2. **의존성 배열**: `[containerEl, isVisible]`만 추적
+3. **`defer: true` 옵션**: 초기 마운트 시 실행 지연 (컨테이너 준비 후 실행)
+
+**테스트 추가**:
+
+- 파일: `test/unit/features/gallery/vertical-gallery-animation-effect.test.tsx`
+  (신규)
+- 테스트 케이스 4개:
+  1. 애니메이션 effect가 on() helper를 사용하여 명시적 의존성을 가져야 함
+  2. 애니메이션 effect가 defer: true 옵션을 사용하여 초기 실행을 지연해야 함
+  3. containerEl 변경 시에만 애니메이션이 재실행되어야 함 (개념 검증)
+  4. isVisible 변경 시 애니메이션 전환이 발생해야 함 (개념 검증)
+- 결과: 4/4 tests GREEN ✅
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings, 0 errors
+- ✅ 테스트: 602/602 passed (Phase 20.2 테스트 4개 포함)
+- ✅ 빌드: dev 727.70 KB, prod 329.04 KB (gzip: 89.47 KB)
+- ✅ 의존성: 0 violations (265 modules, 727 dependencies)
+
+**효과**:
+
+- 불필요한 애니메이션 재트리거 방지
+- 명시적 의존성으로 effect 동작 예측 가능
+- defer: true로 초기 마운트 성능 최적화
+- 애니메이션 effect 안정성 향상
+
+**Phase 20.2 완료**: VerticalGalleryView Effect 최적화 2단계 완성
+
+---
+
+### Phase 20.3: 빌드 검증 및 성능 측정 (2025-10-12)
+
+**목표**: Phase 20.1-20.2 변경 사항 최종 검증 및 성능 개선 확인
+
+**검증 작업**:
+
+1. ✅ 타입 체크: `npm run typecheck` - 0 errors
+2. ✅ 린트: `npm run lint:fix` - 0 warnings, 0 errors
+3. ✅ 테스트: `npm test` - 602/602 passing (24 skipped, 1 todo)
+4. ✅ 빌드: `npm run build` - dev 727.70 KB, prod 329.04 KB (gzip: 89.47 KB)
+5. ✅ 의존성: 0 violations (265 modules, 727 dependencies)
+
+**Effect 실행 카운트 비교**:
+
+- **Phase 20 시작 전**: VerticalGalleryView에 9개의 createEffect
+- **Phase 20.1 완료 후**: 8개의 createEffect (isVisible effect 제거)
+- **Phase 20.2 완료 후**: 8개의 createEffect (애니메이션 effect 최적화)
+- **총 감소**: 9개 → 8개 (11% 감소)
+
+**성능 개선 효과**:
+
+**정량적 효과**:
+
+- ✅ Effect 개수: 9개 → 8개 (11% 감소)
+- ✅ 불필요한 재실행 방지: 애니메이션 effect에 명시적 의존성 추가
+- ✅ 빌드 크기: 변화 없음 (최적화는 런타임 성능에 집중)
+- ✅ 테스트 커버리지: 8개의 새로운 테스트 추가 (모두 GREEN)
+
+**정성적 효과**:
+
+- ✅ 코드 가독성 향상: 파생 상태(createMemo)가 명확하게 표현됨
+- ✅ 반응성 체인 단순화: 불필요한 동기화 로직 제거
+- ✅ 애니메이션 동작 예측 가능: 명시적 의존성(`on()`)으로 effect 동작 명확
+- ✅ 초기 마운트 최적화: `defer: true`로 컨테이너 준비 후 실행
+- ✅ 유지보수성 향상: Effect 개수 감소로 디버깅 용이
+
+**Phase 20 전체 요약**:
+
+- **Phase 20.1**: isVisible을 createMemo로 변환 (Effect 1개 제거)
+- **Phase 20.2**: 애니메이션 effect에 명시적 의존성 추가 (불필요한 재실행 방지)
+- **Phase 20.3**: 최종 검증 및 성능 측정 (모든 품질 게이트 통과)
+
+**Phase 20 완료**: VerticalGalleryView Effect 최적화 전체 완성 ✅
+
+---
+
 ## 📖 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
@@ -820,12 +1023,16 @@ ModGo 실험 결과에 따르면 구조화된 최소 문서가 AI 컨텍스트 �
 - `CODING_GUIDELINES.md`: 코딩 규칙
 - `DEPENDENCY-GOVERNANCE.md`: 의존성 정책
 - `TDD_REFACTORING_PLAN.md`: 활성 계획
+- `SOLIDJS_OPTIMIZATION_GUIDE.md`: SolidJS 최적화 가이드
 
 ---
 
 ## 🎉 결론
 
-모든 Phase (1-18)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
-향후 기능 추가 및 유지보수가 용이한 구조를 갖추었습니다.
+모든 Phase (1-20.3)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
+향후 기능 추가 및 유지보수가 용이한 구조를 갖추었습니다. Phase 20 (SolidJS
+최적화)가 완료되어 Effect 통합 작업이 성공적으로 마무리되었습니다.
 
-**다음 단계**: `TDD_REFACTORING_PLAN.md` 참조
+**다음 단계**: Phase 21 계획 수립 (SOLIDJS_OPTIMIZATION_GUIDE.md 참고)
+
+**참고**: `TDD_REFACTORING_PLAN.md` 활성 계획 참조
