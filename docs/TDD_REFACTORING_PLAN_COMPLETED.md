@@ -78,6 +78,7 @@
 **개선사항**:
 
 - `gallerySignals` 추가: 각 상태 속성에 대한 개별 signal
+
   ```typescript
   export const gallerySignals = {
     isOpen: createSignalSafe<boolean>(false),
@@ -86,7 +87,9 @@
     // ... 기타 속성
   };
   ```
+
 - 호환 레이어: 기존 `galleryState.value` API 유지
+
   ```typescript
   export const galleryState = {
     get value(): GalleryState {
@@ -106,6 +109,7 @@
     },
   };
   ```
+
 - `batch()` 지원: 다중 signal 업데이트 최적화
 
 **성능 개선**:
@@ -115,6 +119,35 @@
 - Fine-grained reactivity: 각 컴포넌트가 필요한 signal만 구독
 
 **테스트**: 단위 테스트 추가 (`gallery-signals-fine-grained.test.ts`)
+
+#### Phase 21.3: useGalleryScroll Passive Listener ✅
+
+**완료일**: 2025-10-12 (코드 검증으로 확인) **상태**: 이미 적용됨
+
+**개선사항**:
+
+- 갤러리 휠 이벤트 리스너에 `passive: true` 옵션 적용
+- 브라우저/OS 네이티브 스크롤 속도 설정 준수
+- 스크롤 성능 최적화
+
+**코드 위치**:
+
+- `src/features/gallery/hooks/useGalleryScroll.ts` (line 193-196)
+
+  ```typescript
+  eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
+    capture: true,
+    passive: true, // 브라우저/OS 네이티브 스크롤 속도 설정 준수
+  });
+  ```
+
+**효과**:
+
+- 스크롤 이벤트 처리 지연 감소
+- 브라우저가 스크롤을 더 빠르게 처리 가능
+- 메인 스레드 차단 방지
+
+**테스트**: 기존 테스트 통과 (추가 테스트 불필요)
 
 ---
 
