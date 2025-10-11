@@ -1,18 +1,19 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 21 계획 수립 완료 최종 업데이트: 2025-10-12
+현재 상태: Phase 21.1 완료, Phase 21.2 진행 준비  
+최종 업데이트: 2025-10-12
 
 ---
 
 ## 📊 현재 상태
 
-Phase 20 완료, Phase 21 작업 준비 완료
+Phase 21.1 완료, Phase 21.2 작업 준비 완료
 
 프로젝트 상태:
 
-- ✅ 빌드: 성공 (dev: 727.70 KB, prod: 329.04 KB, gzip: 89.47 KB)
+- ✅ 빌드: 성공 (dev: 728.31 KB, prod: 329.68 KB, gzip: 89.69 KB)
 - ✅ 테스트: 602/602 passing (24 skipped, 1 todo)
-- ✅ 의존성: 0 violations (265 modules, 727 dependencies)
+- ✅ 의존성: 0 violations (265 modules, 728 dependencies)
 - ✅ 브랜치: feature/solidjs-optimization-phase21 (master에서 분기)
 
 ---
@@ -20,14 +21,14 @@ Phase 20 완료, Phase 21 작업 준비 완료
 ## 📚 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-20 완료 내역
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-21.1 완료 내역
 - `docs/ARCHITECTURE.md`: 프로젝트 아키텍처
 - `docs/CODING_GUIDELINES.md`: 코딩 규칙 및 품질 기준
 - `docs/SOLIDJS_OPTIMIZATION_GUIDE.md`: SolidJS 최적화 가이드 (Phase 21 기반)
 
 ---
 
-## � Phase 21: SolidJS 핵심 최적화
+## 🎯 Phase 21: SolidJS 핵심 최적화
 
 ### 목표
 
@@ -36,119 +37,6 @@ IntersectionObserver 안정화 및 Signal 구조 개선으로 런타임 안정�
 ### 우선순위
 
 CRITICAL → HIGH → MEDIUM 순으로 진행
-
----
-
-## Phase 21.1: IntersectionObserver 무한 루프 방지 ⏳
-
-**우선순위**: CRITICAL **대상 파일**:
-`src/features/gallery/hooks/useGalleryFocusTracker.ts` **예상 효과**: 런타임
-안정성 대폭 향상, 무한 루프 위험 제거
-
-### 문제 분석
-
-현재 코드에서 발견된 잠재적 무한 루프 위험 (lines 328-377):
-
-```typescript
-// ❌ 문제 1: effect 간 순환 의존성
-createEffect(() => {
-  evaluateAutoFocus('effect'); // signal 읽기 + 쓰기
-});
-
-// ❌ 문제 2: currentIndex 변경 → autoFocusIndex 업데이트 → effect 재실행
-createEffect(() => {
-  const currentIdx = getCurrentIndex();
-  const autoIdx = autoFocusIndex();
-  // autoIdx와 currentIdx 차이 → setAutoFocusIndex → 무한 루프 위험
-  if (
-    manualIdx === null &&
-    autoIdx !== null &&
-    Math.abs(autoIdx - currentIdx) > 1
-  ) {
-    setAutoFocusIndex(currentIdx);
-  }
-});
-
-// ❌ 문제 3: IntersectionObserver 콜백에서 signal 업데이트
-const handleEntries: IntersectionObserverCallback = entries => {
-  entries.forEach(entry => {
-    entryCache.set(index, entry); // Map 업데이트
-    scheduleSync(); // → recomputeFocus → setAutoFocusIndex
-  });
-};
-```
-
-### 솔루션 전략
-
-#### A. untrack으로 의존성 끊기
-
-```typescript
-import { untrack } from 'solid-js';
-
-const handleEntries: IntersectionObserverCallback = entries => {
-  untrack(() => {
-    // ✅ 콜백 내부는 반응성 추적하지 않음
-    entries.forEach(entry => {
-      const index = elementToIndex.get(entry.target);
-      if (typeof index === 'number') {
-        entryCache.set(index, entry);
-      }
-    });
-    scheduleSync();
-  });
-};
-```
-
-#### B. Effect 의존성 명시 (on 사용)
-
-```typescript
-// ❌ 모든 signal 추적
-createEffect(() => {
-  const currentIdx = getCurrentIndex();
-  const autoIdx = autoFocusIndex();
-  // ...
-});
-
-// ✅ 필요한 의존성만 추적
-createEffect(
-  on(
-    [getCurrentIndex, autoFocusIndex],
-    ([currentIdx, autoIdx]) => {
-      // defer: true로 초기 실행 지연
-    },
-    { defer: true }
-  )
-);
-```
-
-#### C. debounce로 signal 업데이트 제한
-
-```typescript
-import { debounce } from '@shared/utils/performance';
-
-const debouncedSetAutoFocusIndex = debounce((index: number | null) => {
-  setAutoFocusIndex(index);
-}, 50);
-
-// Cleanup에서 대기 중인 호출 취소
-onCleanup(() => {
-  debouncedSetAutoFocusIndex.cancel();
-});
-```
-
-### TDD 단계
-
-1. **RED**: IntersectionObserver 무한 루프 감지 테스트 작성
-   - `test/unit/features/gallery/focus-tracker-infinite-loop.red.test.ts`
-   - 100회 이상 effect 실행 시 실패하도록 설정
-2. **GREEN**: untrack + on + debounce 적용
-3. **REFACTOR**: 코드 정리 및 로깅 추가
-
-### 검증 기준
-
-- ✅ IntersectionObserver 콜백 100회 실행 시 effect 실행 < 10회
-- ✅ currentIndex 변경 시 autoFocusIndex 업데이트 1회만 발생
-- ✅ 기존 테스트 모두 통과 (602/602)
 
 ---
 
