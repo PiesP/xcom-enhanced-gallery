@@ -13,19 +13,11 @@ export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   window.addEventListener('beforeunload', beforeUnloadHandler);
   window.addEventListener('pagehide', beforeUnloadHandler);
 
-  logger.debug('🧩 Global events wired');
-  if (import.meta.env.MODE === 'test') {
-    // eslint-disable-next-line no-console
-    console.log('[TEST] wired global events: beforeunload + pagehide');
-  }
+  logger.debug('🧩 Global events wired: beforeunload + pagehide');
 
   return () => {
     window.removeEventListener('beforeunload', beforeUnloadHandler);
     window.removeEventListener('pagehide', beforeUnloadHandler);
-    logger.debug('🧩 Global events unwired');
-    if (import.meta.env.MODE === 'test') {
-      // eslint-disable-next-line no-console
-      console.log('[TEST] unwired global events: beforeunload + pagehide');
-    }
+    logger.debug('🧩 Global events unwired: beforeunload + pagehide');
   };
 }
