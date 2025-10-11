@@ -511,7 +511,8 @@
         "src/shared/utils/core-utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/shared/utils/performance/index.ts",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/features/gallery/hooks/useGalleryFocusTracker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -8681,6 +8682,23 @@
         },
         {
           "dynamic": false,
+          "module": "../../../shared/utils/performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../../../shared/utils/timer-management",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -16078,7 +16096,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 265,
-    "totalDependenciesCruised": 727,
+    "totalDependenciesCruised": 728,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

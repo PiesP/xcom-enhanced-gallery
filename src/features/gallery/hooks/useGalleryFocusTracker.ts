@@ -2,6 +2,7 @@ import type { Accessor } from 'solid-js';
 import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
+import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -52,7 +53,7 @@ const DEFAULT_MIN_VISIBLE_RATIO = 0.05;
 const DEFAULT_AUTO_FOCUS_DELAY = 150;
 
 const solid = getSolid();
-const { createSignal, createEffect, createMemo, onCleanup, batch } = solid;
+const { createSignal, createEffect, createMemo, onCleanup, batch, untrack, on } = solid;
 
 export function useGalleryFocusTracker({
   container,
@@ -79,6 +80,11 @@ export function useGalleryFocusTracker({
   let observer: IntersectionObserver | null = null;
   let autoFocusTimerId: number | null = null;
   let lastAutoFocusedIndex: number | null = null;
+
+  // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
+  const debouncedSetAutoFocusIndex = createDebouncer((index: number | null) => {
+    setAutoFocusIndex(index);
+  }, 50);
 
   const updateContainerFocusAttribute = (value: number | null) => {
     const containerElement = containerAccessor();
@@ -177,22 +183,25 @@ export function useGalleryFocusTracker({
   };
 
   const handleEntries: IntersectionObserverCallback = entries => {
-    entries.forEach(entry => {
-      const targetIndex = elementToIndex.get(entry.target as HTMLElement);
-      if (typeof targetIndex !== 'number') {
-        return;
-      }
+    // ✅ Phase 21.1: untrack으로 반응성 체인 끊기
+    untrack(() => {
+      entries.forEach(entry => {
+        const targetIndex = elementToIndex.get(entry.target as HTMLElement);
+        if (typeof targetIndex !== 'number') {
+          return;
+        }
 
-      entryCache.set(targetIndex, entry);
+        entryCache.set(targetIndex, entry);
+      });
+
+      scheduleSync();
     });
-
-    scheduleSync();
   };
 
   const recomputeFocus = () => {
     const containerElement = containerAccessor();
     if (!containerElement || !isEnabledAccessor()) {
-      setAutoFocusIndex(null);
+      debouncedSetAutoFocusIndex.execute(null);
       updateContainerFocusAttribute(null);
       evaluateAutoFocus('disabled');
       return;
@@ -237,7 +246,7 @@ export function useGalleryFocusTracker({
       }
 
       const fallbackIndex = getCurrentIndex();
-      setAutoFocusIndex(fallbackIndex);
+      debouncedSetAutoFocusIndex.execute(fallbackIndex);
       updateContainerFocusAttribute(fallbackIndex);
       evaluateAutoFocus('fallback');
       return;
@@ -256,7 +265,7 @@ export function useGalleryFocusTracker({
     });
 
     const nextIndex = candidates[0]?.index ?? null;
-    setAutoFocusIndex(nextIndex);
+    debouncedSetAutoFocusIndex.execute(nextIndex);
     updateContainerFocusAttribute(nextIndex);
     evaluateAutoFocus('recompute');
   };
@@ -325,27 +334,36 @@ export function useGalleryFocusTracker({
     evaluateAutoFocus('force');
   };
 
-  createEffect(() => {
-    evaluateAutoFocus('effect');
-  });
+  // ✅ Phase 21.1: on()으로 명시적 의존성 지정 (evaluateAutoFocus는 직접 signal 읽지 않음)
+  createEffect(
+    on(
+      [shouldAutoFocusAccessor, manualFocusIndex, autoFocusIndex],
+      () => {
+        evaluateAutoFocus('effect');
+      },
+      { defer: true }
+    )
+  );
 
-  // currentIndex 변경 시 autoFocusIndex와 동기화
-  createEffect(() => {
-    const currentIdx = getCurrentIndex();
-    const autoIdx = autoFocusIndex();
-    const manualIdx = manualFocusIndex();
-
-    // 수동 포커스가 없고, autoFocusIndex가 currentIndex와 크게 차이나는 경우 동기화
-    if (manualIdx === null && autoIdx !== null && Math.abs(autoIdx - currentIdx) > 1) {
-      logger.debug('useGalleryFocusTracker: syncing autoFocusIndex with currentIndex', {
-        autoIdx,
-        currentIdx,
-        diff: Math.abs(autoIdx - currentIdx),
-      });
-      setAutoFocusIndex(currentIdx);
-      updateContainerFocusAttribute(currentIdx);
-    }
-  });
+  // ✅ Phase 21.1: currentIndex 동기화 effect - on()으로 필요한 의존성만 추적
+  createEffect(
+    on(
+      [getCurrentIndex, autoFocusIndex, manualFocusIndex],
+      ([currentIdx, autoIdx, manualIdx]) => {
+        // 수동 포커스가 없고, autoFocusIndex가 currentIndex와 크게 차이나는 경우 동기화
+        if (manualIdx === null && autoIdx !== null && Math.abs(autoIdx - currentIdx) > 1) {
+          logger.debug('useGalleryFocusTracker: syncing autoFocusIndex with currentIndex', {
+            autoIdx,
+            currentIdx,
+            diff: Math.abs(autoIdx - currentIdx),
+          });
+          debouncedSetAutoFocusIndex.execute(currentIdx);
+          updateContainerFocusAttribute(currentIdx);
+        }
+      },
+      { defer: true }
+    )
+  );
 
   createEffect(() => {
     const enabled = isEnabledAccessor();
@@ -354,7 +372,7 @@ export function useGalleryFocusTracker({
     cleanupObserver();
 
     if (!enabled || !containerElement) {
-      setAutoFocusIndex(null);
+      debouncedSetAutoFocusIndex.execute(null);
       return;
     }
 
@@ -388,8 +406,10 @@ export function useGalleryFocusTracker({
 
   onCleanup(() => {
     cleanupObserver();
+    debouncedSetAutoFocusIndex.cancel();
     batch(() => {
       setManualFocusIndex(null);
+      debouncedSetAutoFocusIndex.flush(); // 대기 중인 업데이트를 즉시 실행
       setAutoFocusIndex(null);
     });
     itemElements.clear();
