@@ -458,7 +458,63 @@
 - ✅ 확장 가능: Phase 17.3 UI 컨트롤 추가 준비 완료
 - ✅ 빌드 최적화: 크기 증가 최소화 (70 bytes)
 
-**다음**: Phase 17.3에서 SettingsModal에 슬라이더 UI 추가 예정
+---
+
+## Phase 17.3: 휠 스크롤 설정 UI 추가 (2025-01-11)
+
+**목표**: SettingsModal에 휠 스크롤 배율 조절 슬라이더 추가
+
+**작업 내역**:
+
+- **브랜치**: feature/phase-17-3-wheel-scroll-ui
+- **커밋**: `feat: phase 17.3 - add wheel scroll speed slider UI`
+
+**구현**:
+
+1. **i18n 지원 (LanguageService.ts)**
+   - `settings.gallery.sectionTitle` 추가 (ko: 갤러리, en: Gallery,
+     ja: ギャラリー)
+   - `settings.gallery.wheelScrollSpeed` 추가 (ko: 휠 스크롤 속도, en: Wheel
+     Scroll Speed, ja: ホイールスクロール速度)
+   - 3개 로케일 모두 지원
+
+2. **SettingsModal 확장**
+   - `wheelScrollMultiplier` signal 추가 (초기값: getSetting)
+   - 갤러리 섹션 추가 (theme, language 다음)
+   - 슬라이더 입력: range 0.5~3.0, step 0.1
+   - 값 표시: `{value}x` 형식 (예: "1.2x")
+   - onChange 핸들러: `setSetting('gallery.wheelScrollMultiplier', value)` 호출
+
+3. **CSS 스타일 추가 (SettingsModal.module.css)**
+   - `.sliderContainer`: 슬라이더와 값 표시를 가로로 배치
+   - `.slider`: 디자인 토큰 기반 슬라이더 스타일
+   - `.sliderValue`: 현재 값 표시 (최소 너비 3em, 오른쪽 정렬)
+   - 브라우저 호환: `-webkit-slider-thumb`, `-moz-range-thumb` 지원
+   - 접근성: `focus-visible` 스타일 포함
+
+4. **테스트 추가**
+   - `test/unit/features/settings/settings-wheel-scroll-ui.test.tsx` (7 tests)
+   - wheelScrollMultiplier 타입 검증
+   - i18n 문자열 제공 검증
+   - 범위 검증 (0.5~3.0)
+   - 로케일별 문자열 검증 (ko, en, ja)
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 빌드: dev 730.00 KB (+2.28 KB from Phase 17.2)
+- ✅ 테스트: 14/14 passed (7 tests × 2 projects: fast, unit)
+
+**결과**:
+
+- ✅ 사용자 설정 가능: 휠 스크롤 속도를 UI에서 직접 조절 가능
+- ✅ 다국어 지원: 한국어, 영어, 일본어 완전 지원
+- ✅ 접근성: 키보드 네비게이션 및 포커스 스타일 포함
+- ✅ 디자인 일관성: 디자인 토큰 기반 스타일 시스템 준수
+- ✅ 타입 안전성: TypeScript strict 모드 통과
+
+**Phase 17 전체 완료**: 휠 스크롤 배율 설정 시스템 완성 (타입 정의 → 통합 → UI)
 
 ---
 
