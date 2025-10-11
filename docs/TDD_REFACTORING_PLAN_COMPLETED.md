@@ -2,7 +2,7 @@
 
 > **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-20.1)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
+모든 Phase (1-20.2)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
 참조.
 
 ---
@@ -11,8 +11,8 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (727.66 KB) / prod (329.03 KB, gzip: 89.46 KB)
-- ✅ **Vitest**: 598/598 (100%, 24 skipped, 1 todo)
+- ✅ **빌드**: dev (727.70 KB) / prod (329.04 KB, gzip: 89.47 KB)
+- ✅ **Vitest**: 602/602 (100%, 24 skipped, 1 todo)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
@@ -885,6 +885,91 @@ Effect 제거
 
 ---
 
+### Phase 20.2: 애니메이션 Effect 의존성 명시 (2025-10-12)
+
+**목표**: 애니메이션 effect에 명시적 의존성 추가하여 불필요한 재실행 방지
+
+**배경**: VerticalGalleryView에서 애니메이션 effect가 암묵적 의존성으로 인해
+불필요하게 재실행될 가능성이 있었습니다. `on()` helper를 사용하여 명시적으로
+`containerEl`과 `isVisible`에만 반응하도록 최적화했습니다.
+
+**구현 전 (VerticalGalleryView.tsx)**:
+
+```tsx
+// ❌ 암묵적 의존성 - 모든 반응형 값 추적
+createEffect(() => {
+  const container = containerEl();
+  if (!container) return;
+
+  if (isVisible()) {
+    animateGalleryEnter(container);
+    logger.debug('갤러리 진입 애니메이션 실행');
+  } else {
+    animateGalleryExit(container);
+    logger.debug('갤러리 종료 애니메이션 실행');
+  }
+});
+```
+
+**구현 후 (VerticalGalleryView.tsx)**:
+
+```tsx
+// ✅ 명시적 의존성 - containerEl과 isVisible만 추적
+createEffect(
+  on(
+    [containerEl, isVisible],
+    ([container, visible]) => {
+      if (!container) return;
+
+      if (visible) {
+        animateGalleryEnter(container);
+        logger.debug('갤러리 진입 애니메이션 실행');
+      } else {
+        animateGalleryExit(container);
+        logger.debug('갤러리 종료 애니메이션 실행');
+      }
+    },
+    { defer: true }
+  )
+);
+```
+
+**변경 사항**:
+
+1. **`on()` wrapper 추가**: 명시적 의존성 배열 지정
+2. **의존성 배열**: `[containerEl, isVisible]`만 추적
+3. **`defer: true` 옵션**: 초기 마운트 시 실행 지연 (컨테이너 준비 후 실행)
+
+**테스트 추가**:
+
+- 파일: `test/unit/features/gallery/vertical-gallery-animation-effect.test.tsx`
+  (신규)
+- 테스트 케이스 4개:
+  1. 애니메이션 effect가 on() helper를 사용하여 명시적 의존성을 가져야 함
+  2. 애니메이션 effect가 defer: true 옵션을 사용하여 초기 실행을 지연해야 함
+  3. containerEl 변경 시에만 애니메이션이 재실행되어야 함 (개념 검증)
+  4. isVisible 변경 시 애니메이션 전환이 발생해야 함 (개념 검증)
+- 결과: 4/4 tests GREEN ✅
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings, 0 errors
+- ✅ 테스트: 602/602 passed (Phase 20.2 테스트 4개 포함)
+- ✅ 빌드: dev 727.70 KB, prod 329.04 KB (gzip: 89.47 KB)
+- ✅ 의존성: 0 violations (265 modules, 727 dependencies)
+
+**효과**:
+
+- 불필요한 애니메이션 재트리거 방지
+- 명시적 의존성으로 effect 동작 예측 가능
+- defer: true로 초기 마운트 성능 최적화
+- 애니메이션 effect 안정성 향상
+
+**Phase 20.2 완료**: VerticalGalleryView Effect 최적화 2단계 완성
+
+---
+
 ## 📖 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
@@ -898,10 +983,10 @@ Effect 제거
 
 ## 🎉 결론
 
-모든 Phase (1-20.1)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
+모든 Phase (1-20.2)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
 향후 기능 추가 및 유지보수가 용이한 구조를 갖추었습니다. Phase 20 (SolidJS
-최적화)가 시작되어 Effect 통합 작업이 진행 중입니다.
+최적화) 진행 중이며, Effect 통합 작업이 순조롭게 진행되고 있습니다.
 
-**다음 단계**: Phase 20.2 (애니메이션 Effect 의존성 명시) 진행
+**다음 단계**: Phase 20.3 (빌드 검증 및 성능 측정) 진행
 
 **참고**: `TDD_REFACTORING_PLAN.md` 활성 계획 참조

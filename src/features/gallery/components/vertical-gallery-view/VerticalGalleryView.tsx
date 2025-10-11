@@ -121,18 +121,24 @@ function VerticalGalleryViewCore({
     })
   );
 
-  createEffect(() => {
-    const container = containerEl();
-    if (!container) return;
+  // Phase 20.2: 애니메이션 effect에 명시적 의존성 추가
+  createEffect(
+    on(
+      [containerEl, isVisible],
+      ([container, visible]) => {
+        if (!container) return;
 
-    if (isVisible()) {
-      animateGalleryEnter(container);
-      logger.debug('갤러리 진입 애니메이션 실행');
-    } else {
-      animateGalleryExit(container);
-      logger.debug('갤러리 종료 애니메이션 실행');
-    }
-  });
+        if (visible) {
+          animateGalleryEnter(container);
+          logger.debug('갤러리 진입 애니메이션 실행');
+        } else {
+          animateGalleryExit(container);
+          logger.debug('갤러리 종료 애니메이션 실행');
+        }
+      },
+      { defer: true }
+    )
+  );
 
   createEffect(
     on(
