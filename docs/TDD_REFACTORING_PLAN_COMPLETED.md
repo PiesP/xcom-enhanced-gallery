@@ -10,12 +10,12 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (727.39 KB) / prod (325.05 KB, gzip: 88.24 KB)
+- ✅ **빌드**: dev (727.34 KB) / prod (327.30 KB, gzip: 89.01 KB)
 - ✅ **Vitest**: 538/538 (100%, 23 skipped)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations
+- ✅ **의존성**: 0 violations (265 modules, 726 dependencies)
 
 ### 기술 스택
 
@@ -131,6 +131,25 @@
   - 빌드 크기 감소: 328.47 KB → 327.35 KB (1.12 KB 절약)
   - 라이선스 표기 단순화 (Solid.js + Heroicons만)
   - 불필요한 의존성 제거
+
+### 휠 스크롤 네이티브 복원 & Legacy 코드 정리
+
+- **브랜치**: refactor/wheel-scroll-and-legacy-cleanup
+- **커밋**: `refactor: restore native wheel scroll and remove legacy code`
+  (22c4c712)
+- **휠 스크롤 변경**:
+  - `handleGalleryWheel`에서 `preventDefault()` 제거
+  - Wheel 이벤트 리스너를 `passive: true`로 변경
+  - 브라우저/OS 네이티브 스크롤 속도 설정 준수
+- **Legacy 코드 정리**:
+  - `toolbarConfig.ts` 삭제 (deprecated, 사용되지 않음)
+  - `LegacyToastProps` → `ToastSpecificProps` 이름 변경
+  - Legacy 주석 제거 (styles/index.ts, performance/index.ts)
+- **효과**:
+  - ✅ 사용자 경험 개선 (자연스러운 스크롤)
+  - ✅ 코드베이스 약 100줄 감소
+  - ✅ 유지보수성 향상
+  - ✅ 빌드: 327.30 KB (gzip: 89.01 KB)
 
 ---
 
