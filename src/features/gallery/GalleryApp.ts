@@ -15,6 +15,7 @@ import {
 } from '../../shared/container/service-accessors';
 import {
   galleryState,
+  gallerySignals,
   openGallery,
   closeGallery,
 } from '../../shared/state/signals/gallery.signals';
@@ -164,7 +165,8 @@ export class GalleryApp {
           this.closeGallery();
         },
         onKeyboardEvent: event => {
-          if (event.key === 'Escape' && galleryState.value.isOpen) {
+          // Phase 21.5: Fine-grained signal 사용
+          if (event.key === 'Escape' && gallerySignals.isOpen.value) {
             this.closeGallery();
           }
         },
@@ -232,7 +234,8 @@ export class GalleryApp {
    */
   public closeGallery(): void {
     try {
-      if (galleryState.value.isOpen) {
+      // Phase 21.5: Fine-grained signal 사용
+      if (gallerySignals.isOpen.value) {
         closeGallery();
       }
 
@@ -285,13 +288,14 @@ export class GalleryApp {
    * 진단 정보
    */
   public getDiagnostics() {
+    // Phase 21.5: Fine-grained signals 사용
     return {
       isInitialized: this.isInitialized,
       config: this.config,
       galleryState: {
-        isOpen: galleryState.value.isOpen,
-        mediaCount: galleryState.value.mediaItems.length,
-        currentIndex: galleryState.value.currentIndex,
+        isOpen: gallerySignals.isOpen.value,
+        mediaCount: gallerySignals.mediaItems.value.length,
+        currentIndex: gallerySignals.currentIndex.value,
       },
     };
   }
@@ -311,14 +315,15 @@ export class GalleryApp {
   }
 
   /**
-   * 정리 - 격리된 시스템 포함
+   * 정리 - 격리된 시스템
    */
   public async cleanup(): Promise<void> {
     try {
       logger.info('GalleryApp 정리 시작 - 격리된 시스템');
 
       // 갤러리가 열려있다면 닫기
-      if (galleryState.value.isOpen) {
+      // Phase 21.5: Fine-grained signal 사용
+      if (gallerySignals.isOpen.value) {
         this.closeGallery();
       }
 

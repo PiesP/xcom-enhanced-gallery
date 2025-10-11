@@ -15,6 +15,7 @@ import type {
 import {
   closeGallery,
   galleryState,
+  gallerySignals,
   setError,
   setLoading,
   openGallery,
@@ -99,8 +100,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return;
     }
 
-    const state = galleryState.value;
-    if (!state.isOpen || state.mediaItems.length === 0) return;
+    // Phase 21.5: Fine-grained signals 사용
+    const isOpen = gallerySignals.isOpen.value;
+    const mediaItems = gallerySignals.mediaItems.value;
+    if (!isOpen || mediaItems.length === 0) return;
 
     this.isRenderingFlag = true;
     logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트');
@@ -197,15 +200,18 @@ export class GalleryRenderer implements GalleryRendererInterface {
       // 다운로드 서비스 - factory 경유 사용 (Phase 6)
       const { getBulkDownloadService } = await import('../../shared/services/service-factories');
       const downloadService = await getBulkDownloadService();
-      const state = galleryState.value;
+
+      // Phase 21.5: Fine-grained signals 사용
+      const mediaItems = gallerySignals.mediaItems.value;
+      const currentIndex = gallerySignals.currentIndex.value;
 
       if (type === 'current') {
-        const currentMedia = state.mediaItems[state.currentIndex];
+        const currentMedia = mediaItems[currentIndex];
         if (currentMedia) {
           await downloadService.downloadSingle(currentMedia);
         }
       } else {
-        await downloadService.downloadMultiple(state.mediaItems);
+        await downloadService.downloadMultiple(mediaItems);
       }
     } catch (error) {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);
