@@ -1,16 +1,87 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 15.2 완료 최종 업데이트: 2025-01-11
+현재 상태: Phase 17 계획 수립 최종 업데이트: 2025-01-11
 
 ---
 
 ## 현재 상태
 
-Phase 15.2 완료. 스킵 테스트 23개 전체 검토 및 문서화 완료.
+Phase 15.2 완료. 새로운 개선 기회 발견: 휠 스크롤 배율 설정 추가.
 
 ---
 
-## 완료된 Phase
+## Phase 17: 휠 스크롤 배율 설정 추가
+
+### 목표
+
+VerticalGalleryView.tsx의 TODO 해결: `WHEEL_SCROLL_MULTIPLIER`를 하드코딩에서
+설정으로 이동하여 사용자 맞춤 가능하게 개선
+
+### 배경
+
+- 현재 `WHEEL_SCROLL_MULTIPLIER = 1.2`가 하드코딩됨
+- 사용자마다 선호하는 스크롤 속도가 다를 수 있음
+- TODO 주석으로 설정 이동이 계획되어 있음
+
+### 작업 계획 (TDD)
+
+#### 17.1: 타입 정의 및 테스트
+
+1. **`settings.types.ts` 확장**
+   - `GallerySettings`에 `wheelScrollMultiplier: number` 추가 (범위: 0.5 ~ 3.0)
+   - 기본값: 1.2
+
+2. **테스트 추가**
+   - `test/unit/features/settings/gallery-wheel-scroll-setting.test.ts` 생성
+   - 설정 저장/로드 검증
+   - 범위 제약 검증 (0.5 미만 → 0.5, 3.0 초과 → 3.0)
+
+#### 17.2: VerticalGalleryView 통합
+
+1. **`VerticalGalleryView.tsx` 수정**
+   - `WHEEL_SCROLL_MULTIPLIER` 상수 제거
+   - `getSetting('gallery.wheelScrollMultiplier', 1.2)` 사용
+   - TODO 주석 제거
+
+2. **테스트 추가**
+   - `test/unit/features/gallery/wheel-scroll-multiplier.test.tsx` 생성
+   - 설정 변경 시 스크롤 동작 반영 검증
+   - 기본값 1.2 동작 검증
+
+#### 17.3: UI 컨트롤 추가
+
+1. **SettingsModal 확장**
+   - 갤러리 섹션에 슬라이더 추가
+   - 라벨: "휠 스크롤 속도" / "Wheel Scroll Speed"
+   - 범위: 0.5 ~ 3.0, 단계: 0.1
+   - 현재값 표시: `{value}x`
+
+2. **테스트 추가**
+   - `test/unit/features/settings/settings-wheel-scroll-ui.test.tsx` 생성
+   - 슬라이더 렌더링 검증
+   - 값 변경 시 설정 업데이트 검증
+
+### 예상 산출물
+
+- 타입 변경: 1 file
+- 소스 수정: 2 files
+- 테스트 추가: 3 files
+- 예상 테스트 증가: +12 tests
+
+### 품질 게이트
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 581/606 passed (20 skipped, 4 POC, 1 todo)
+- ✅ 빌드: 크기 변화 최소 (< 1 KB 증가 예상)
+
+### 예상 소요 시간
+
+- 1-2 시간 (단일 세션)
+
+---
+
+## 완료된 Phase (최근 3개)
 
 ### Phase 15.2: 스킵 테스트 검토 및 문서화 (2025-01-11)
 

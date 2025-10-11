@@ -420,6 +420,7 @@ export const DEFAULT_SETTINGS = {
     theme: 'auto' as const,
     animations: true,
     enableKeyboardNav: false,
+    wheelScrollMultiplier: 1.2,
   },
   download: {
     filenamePattern: 'original' as const,

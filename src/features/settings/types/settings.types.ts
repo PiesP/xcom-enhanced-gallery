@@ -21,6 +21,8 @@ export interface GallerySettings {
   animations: boolean;
   /** 키보드 네비게이션 사용 */
   enableKeyboardNav: boolean;
+  /** 휠 스크롤 배율 (0.5 ~ 3.0) */
+  wheelScrollMultiplier: number;
 }
 
 /**
