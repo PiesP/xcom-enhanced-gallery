@@ -4,7 +4,7 @@
 > 유저스크립트**
 
 [![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![버전](https://img.shields.io/badge/버전-v3.2.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
+[![버전](https://img.shields.io/badge/버전-v0.3.1-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
 [![라이센스](https://img.shields.io/badge/라이센스-MIT-green.svg)](LICENSE)
 [![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
 [![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
@@ -12,8 +12,8 @@
 
 **X.com Enhanced Gallery**는 현대적인 웹 기술로 구축된 경량 유저스크립트입니다:
 
-- **UI 프레임워크**: Solid.js 1.9 - 반응형 UI, 고성능
-- **번들 크기**: 711KB (dev), 최적화된 프로덕션 빌드
+- **UI 프레임워크**: Solid.js 1.9.9 - 반응형 UI, 고성능
+- **번들 크기**: 730KB (dev), 325KB (prod, gzip: ~88KB)
 - **브라우저 호환**: Chrome 88+, Firefox 78+, Safari 14+, Edge 88+
 - **PC 전용 설계**: 마우스/키보드 최적화, 터치 이벤트 미지원
 
@@ -123,23 +123,21 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 핵심 기술
 
-- **UI 프레임워크**: Preact (3KB) - React 호환, 경량화
-- **상태 관리**: Preact Signals - 반응형 상태 관리
+- **UI 프레임워크**: Solid.js 1.9.9 - 반응형 UI, 고성능
+- **상태 관리**: Solid.js Signals - Fine-grained 반응형 상태 관리
 - **압축**: fflate - 고성능 ZIP 압축 라이브러리
 - **스타일링**: CSS Modules + 디자인 토큰 시스템
 
 ### 아이콘 시스템
 
 - **아이콘 라이브러리**: Heroicons (React) 컴포넌트를 안전하게 사용하기 위해
-  “벤더 getter” 패턴을 적용했습니다.
+  "벤더 getter" 패턴을 적용했습니다.
   - 애플리케이션 코드에서는 `@shared/external/vendors`의 getter만 사용하며, 외부
     라이브러리를 직접 import하지 않습니다.
-  - `@heroicons/react` 컴포넌트는 getter 내부에서 React Element → Preact VNode로
-    변환되어 jsdom/테스트 환경(QName/DOM mutation 오류)을 회피합니다.
+  - `@heroicons/react` 컴포넌트는 getter 내부에서 React Element → Solid VNode로
+    변환되어 안전하게 렌더링됩니다.
   - UI에서는 의미적 이름의 어댑터(예: `HeroDownload` → `Download`)를 통해 일관된
     `Icon` 래퍼로 렌더링합니다.
-  - 레거시 Tabler 아이콘은 제거되었고(내보내기 대상에서 제외), 현재는 Heroicons
-    기반만 사용합니다.
 
 ### 브라우저 호환성
 
@@ -156,12 +154,11 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ### 사용된 오픈소스 라이브러리
 
-| 라이브러리           | 라이센스 | 용도             |
-| -------------------- | -------- | ---------------- |
-| **Preact**           | MIT      | UI 프레임워크    |
-| **@preact/signals**  | MIT      | 반응형 상태 관리 |
-| **fflate**           | MIT      | 고성능 압축      |
-| **@heroicons/react** | MIT      | 아이콘 컴포넌트  |
+| 라이브러리           | 라이센스 | 용도            |
+| -------------------- | -------- | --------------- |
+| **Solid.js**         | MIT      | UI 프레임워크   |
+| **fflate**           | MIT      | 고성능 압축     |
+| **@heroicons/react** | MIT      | 아이콘 컴포넌트 |
 
 모든 라이센스 전문은 [`LICENSES/`](LICENSES/) 디렉토리에서 확인할 수 있습니다.
 
