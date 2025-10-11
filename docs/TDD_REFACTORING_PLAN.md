@@ -12,25 +12,94 @@
 
 ## 활성 작업
 
-### 라이선스 표기 개선 (우선순위: 높음)
+### 휠 스크롤 네이티브 동작 복원 & Legacy 코드 정리 (우선순위: 높음)
 
-#### 목표
+**브랜치**: `refactor/wheel-scroll-and-legacy-cleanup`
 
-- 빌드된 유저스크립트에 외부 라이브러리 라이선스 정보 자동 포함
-- 프로덕션 빌드에만 적용 (개발 빌드는 제외)
+#### 목표 1: 휠 스크롤 속도 제어 제거
 
-#### 구현
+**현재 문제**:
 
-- vite.config.ts에 `generateLicenseNotices()` 함수 추가
-- LICENSES/ 폴더의 라이선스 파일을 읽어 주석으로 변환
-- userscriptPlugin에서 프로덕션 빌드 시 헤더 다음에 라이선스 정보 삽입
+- `useGalleryScroll` 훅에서 `preventDefault()`로 휠 이벤트를 가로채고 있음
+- 브라우저/OS의 네이티브 스크롤 속도 설정을 무시
+- 사용자 경험에 부자연스러운 동작 발생 가능
+
+**솔루션 옵션**:
+
+1. **Option A: preventDefault 제거 (권장)**
+   - 장점: 브라우저/OS 기본 동작 완전 준수, 코드 단순화
+   - 단점: 트위터 페이지와의 스크롤 충돌 처리 필요
+   - 구현: `handleGalleryWheel`에서 `preventDefault()` 제거, passive 리스너 사용
+
+2. **Option B: 조건부 preventDefault**
+   - 장점: 필요시에만 브라우저 동작 차단
+   - 단점: 복잡도 증가, 엣지 케이스 관리 필요
+   - 구현: 갤러리 내부 스크롤만 네이티브로 처리
+
+**선택**: Option A (브라우저 기본 동작 완전 준수)
+
+#### 목표 2: Legacy/Deprecated 코드 정리
+
+**정리 대상**:
+
+- `src/shared/components/ui/Toolbar/toolbarConfig.ts` - 전체 deprecated
+- `src/shared/components/ui/Toast/Toast.tsx` - LegacyToastProps 인터페이스
+- `src/shared/utils/events.ts` - deprecated EventRegistry 클래스
+- `src/shared/services/MediaService.ts` - deprecated wrapper 메서드
+- `src/shared/services/ServiceManager.ts` - deprecated getServiceStatus
+- `src/shared/services/UnifiedToastManager.ts` - deprecated 별칭
+- `src/shared/utils/styles/index.ts` - Legacy style utils 주석
+- `src/shared/utils/performance/index.ts` - Legacy signal optimization 주석
+
+**처리 방침**:
+
+1. **완전 제거**: 더 이상 사용되지 않는 코드/파일
+2. **마이그레이션 가이드 추가**: 대체 방법이 있는 경우
+3. **주석 정리**: Legacy 언급이 있지만 현재 활성 코드인 경우
+
+#### 구현 단계
+
+**Step 1**: 휠 스크롤 네이티브 동작 복원
+
+```powershell
+# 테스트 작성 (RED)
+# test/features/gallery/hooks/useGalleryScroll.test.ts 수정
+# - passive 리스너 사용 검증
+# - preventDefault 호출 안 됨 검증
+
+# 구현 (GREEN)
+# src/features/gallery/hooks/useGalleryScroll.ts
+# - handleGalleryWheel에서 preventDefault() 제거
+# - 이벤트 리스너를 passive: true로 변경
+
+# 리팩토링
+# - preventTwitterScroll 함수 검토 및 필요시 수정
+```
+
+**Step 2**: Deprecated 코드 제거
+
+```powershell
+# toolbarConfig.ts 사용처 확인 후 제거
+# Legacy 인터페이스/주석 정리
+# 테스트 수정
+```
 
 #### 검증
 
 ```powershell
-npm run build:prod
-# dist/xcom-enhanced-gallery.user.js 확인
+npm run typecheck     # 타입 오류 없음
+npm run lint:fix      # 린트 통과
+npm test:smoke        # 스모크 테스트 통과
+npm test:fast         # 단위 테스트 통과
+npm run build         # 빌드 성공
 ```
+
+#### 예상 효과
+
+- ✅ 브라우저/OS 네이티브 스크롤 속도 설정 준수
+- ✅ 코드베이스 약 200-300줄 감소
+- ✅ 유지보수 복잡도 감소
+- ✅ 사용자 경험 개선 (자연스러운 스크롤)
 
 ---
 

@@ -7,7 +7,7 @@
 // CSS utilities
 export * from './css-utilities';
 
-// Legacy style utils (for backward compatibility)
+// Style utilities
 export {
   combineClasses,
   toggleClass,
