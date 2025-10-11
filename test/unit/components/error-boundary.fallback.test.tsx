@@ -9,9 +9,19 @@ function ThrowError() {
 }
 
 describe.skip('UI-ERROR-BOUNDARY-01', () => {
-  // SKIP: Solid.js ErrorBoundary doesn't work properly in JSDOM environment
-  // TODO: Convert to E2E test or integration test with proper Solid.js runtime
-  // Related: Phase 10 test stabilization - needs proper Solid.js testing setup
+  // ⚠️ SKIPPED: Solid.js ErrorBoundary의 jsdom 제약
+  //
+  // 이슈:
+  // - Solid.js ErrorBoundary는 jsdom 환경에서 에러를 제대로 포착하지 못함
+  // - 테스트 라이브러리의 render()와 Solid.js의 에러 경계 간 불일치
+  //
+  // 대안:
+  // - E2E 테스트에서 검증됨 (playwright/smoke/error-boundary.spec.ts)
+  // - 실제 브라우저 환경에서 에러 포착 및 토스트 생성 확인
+  //
+  // 향후:
+  // - E2E 커버리지가 충분하므로 이 테스트는 제거 검토
+  // - 또는 통합 테스트로 재작성 (jsdom 우회)
 
   beforeEach(() => {
     vi.clearAllMocks();
