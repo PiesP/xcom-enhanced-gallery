@@ -53,8 +53,8 @@ chore: 기타 작업
 ### 코드 품질
 
 ```bash
-npm run quality     # 전체 품질 검사
-npm run lint        # ESLint 검사
+npm run validate    # 전체 검증 (typecheck + lint + format)
+npm run lint:fix    # ESLint 검사 및 자동 수정
 npm run typecheck   # TypeScript 검사 (tsgo 사용)
 npm run test        # 테스트 실행
 npm run format      # 코드 포맷팅
@@ -63,9 +63,13 @@ npm run format      # 코드 포맷팅
 ## 🔧 코딩 가이드라인
 
 - **TypeScript Strict 모드** 사용
-- **Preact 함수형 컴포넌트** 스타일
-- **의존성 규칙** 준수: `features → shared → core → infrastructure`
-- **외부 라이브러리**는 `@infrastructure/external/vendors` 경유만 허용
+- **Solid.js 컴포넌트** 스타일 (Vendor getter 사용)
+- **아키텍처 경계** 준수: `Features → Shared → External`
+- **외부 라이브러리**는 `@shared/external/vendors` getter를 통해서만 접근
+- **PC 전용 이벤트**만 사용 (터치/포인터 이벤트 금지)
+- **CSS 디자인 토큰** 필수 (하드코딩 금지)
+
+상세 규칙은 `docs/CODING_GUIDELINES.md` 참조
 
 ## 📝 Pull Request
 
