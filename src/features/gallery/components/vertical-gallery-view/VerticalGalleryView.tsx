@@ -84,7 +84,6 @@ function VerticalGalleryViewCore({
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
 
   const [isVisible, setIsVisible] = createSignal(mediaItems().length > 0);
-  const [lastAutoScrolledIndex, setLastAutoScrolledIndex] = createSignal(-1);
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
 
   const hideTimeoutRef = { current: null as number | null };
@@ -264,7 +263,6 @@ function VerticalGalleryViewCore({
 
   createEffect(
     on(currentIndex, () => {
-      setLastAutoScrolledIndex(-1);
       forceFocusSync();
     })
   );
@@ -370,55 +368,9 @@ function VerticalGalleryViewCore({
 
   const handleMediaLoad = (mediaId: string, index: number) => {
     logger.debug('VerticalGalleryView: 미디어 로드 완료', { mediaId, index });
-
-    const current = currentIndex();
-    if (index === current && index !== lastAutoScrolledIndex()) {
-      const container = containerEl();
-      const itemsContainerElement = container?.querySelector('[data-xeg-role="items-container"]');
-      const targetElement = itemsContainerElement?.children[index] as HTMLElement | undefined;
-
-      if (!targetElement) {
-        return;
-      }
-
-      const mediaElement = targetElement.querySelector('img, video') as
-        | HTMLImageElement
-        | HTMLVideoElement
-        | null;
-
-      const isFullyLoaded =
-        mediaElement instanceof HTMLImageElement
-          ? mediaElement.complete
-          : mediaElement instanceof HTMLVideoElement
-            ? mediaElement.readyState >= 1
-            : true;
-
-      const scrollIntoView = () => {
-        targetElement.scrollIntoView({
-          block: 'start',
-          behavior: 'smooth',
-        });
-        setLastAutoScrolledIndex(index);
-        logger.debug('VerticalGalleryView: 자동 스크롤 실행', {
-          index,
-          mediaType: mediaElement instanceof HTMLImageElement ? 'image' : 'video',
-        });
-      };
-
-      if (isFullyLoaded) {
-        scrollIntoView();
-      } else if (mediaElement) {
-        const handleLoadComplete = () => {
-          scrollIntoView();
-        };
-
-        if (mediaElement instanceof HTMLImageElement) {
-          mediaElement.addEventListener('load', handleLoadComplete, { once: true });
-        } else if (mediaElement instanceof HTMLVideoElement) {
-          mediaElement.addEventListener('loadeddata', handleLoadComplete, { once: true });
-        }
-      }
-    }
+    // Phase 18: 자동 스크롤 제거
+    // - 수동 스크롤을 방해하지 않도록 미디어 로드 시 자동 스크롤 제거
+    // - prev/next 네비게이션은 useGalleryItemScroll 훅이 처리
   };
 
   const handleMediaItemClick = (index: number) => {
@@ -426,7 +378,6 @@ function VerticalGalleryViewCore({
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      setLastAutoScrolledIndex(-1);
       navigateToItem(index);
       logger.debug('VerticalGalleryView: 미디어 아이템 클릭으로 네비게이션', { index });
     }
