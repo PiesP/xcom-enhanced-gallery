@@ -44,10 +44,10 @@ interface ButtonProps {
 }
 
 interface ToolbarState {
-  canGoPrevious: boolean;
-  canGoNext: boolean;
+  canGoPrevious: () => boolean;
+  canGoNext: () => boolean;
   currentFitMode: () => FitMode;
-  mediaCounter: {
+  mediaCounter: () => {
     current: number;
     total: number;
     progress: number;
@@ -58,16 +58,16 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
   const { createSignal } = getSolid();
   const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('fitContainer');
 
-  // 네비게이션 경계 계산
-  const canGoPrevious = props.currentIndex > 0;
-  const canGoNext = props.currentIndex < props.totalCount - 1;
+  // 네비게이션 경계 계산 (Getter 함수)
+  const canGoPrevious = () => props.currentIndex > 0;
+  const canGoNext = () => props.currentIndex < props.totalCount - 1;
 
-  // 미디어 카운터 계산
-  const mediaCounter = {
+  // 미디어 카운터 계산 (Getter 함수)
+  const mediaCounter = () => ({
     current: props.currentIndex + 1,
     total: props.totalCount,
     progress: ((props.currentIndex + 1) / props.totalCount) * 100,
-  };
+  });
 
   // 상태 객체
   const state: ToolbarState = {
@@ -80,12 +80,12 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
   // 액션 핸들러
   const actions = {
     handlePrevious: () => {
-      if (!props.disabled && canGoPrevious) {
+      if (!props.disabled && canGoPrevious()) {
         props.onPrevious();
       }
     },
     handleNext: () => {
-      if (!props.disabled && canGoNext) {
+      if (!props.disabled && canGoNext()) {
         props.onNext();
       }
     },
@@ -105,14 +105,14 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
       case 'previous':
         return {
           ...baseProps,
-          disabled: props.disabled || !canGoPrevious,
+          disabled: props.disabled || !canGoPrevious(),
           onClick: actions.handlePrevious,
         };
 
       case 'next':
         return {
           ...baseProps,
-          disabled: props.disabled || !canGoNext,
+          disabled: props.disabled || !canGoNext(),
           onClick: actions.handleNext,
         };
 
