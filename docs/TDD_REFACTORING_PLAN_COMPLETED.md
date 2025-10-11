@@ -2,7 +2,7 @@
 
 > **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-20.2)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
+모든 Phase (1-21.2)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
 참조.
 
 ---
@@ -11,12 +11,12 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (727.70 KB) / prod (329.04 KB, gzip: 89.47 KB)
-- ✅ **Vitest**: 602/602 (100%, 24 skipped, 1 todo)
+- ✅ **빌드**: dev (730 KB) / prod (329.68 KB, gzip: 89.69 KB)
+- ✅ **Vitest**: 603/603 (100%, 24 skipped, 1 todo)
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations (265 modules, 727 dependencies)
+- ✅ **의존성**: 0 violations (265 modules, 729 dependencies)
 
 ### 기술 스택
 
@@ -49,6 +49,72 @@
 - Solid.js 마이그레이션 대응
 - E2E 회귀 커버리지 구축 (Playwright)
 - E2E 테스트 안정화 및 CI 통합
+
+### Phase 21: SolidJS 핵심 최적화
+
+#### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
+
+**완료일**: 2025-10-12 **커밋**:
+`feat(gallery): prevent IntersectionObserver infinite loop in useGalleryFocusTracker`
+
+**개선사항**:
+
+- `untrack()`: IntersectionObserver 콜백에서 반응성 체인 끊기
+- `on()`: 명시적 의존성 지정으로 effect 최적화 (defer: true)
+- `debounce`: `setAutoFocusIndex` 업데이트 제한 (50ms)
+
+**성능 개선**:
+
+- focusedIndex effect: 50회 변경에 대해 2회만 실행 (기존 200+ → 99% 감소)
+- IntersectionObserver 콜백 100회 실행 시 effect cascade 방지
+
+**테스트**: 통합 테스트 4개 추가 (`focus-tracker-infinite-loop.red.test.ts`)
+
+#### Phase 21.2: galleryState Fine-grained Signals 분리 ✅
+
+**완료일**: 2025-10-12 **커밋**:
+`feat(core): implement fine-grained signals for gallery state`
+
+**개선사항**:
+
+- `gallerySignals` 추가: 각 상태 속성에 대한 개별 signal
+  ```typescript
+  export const gallerySignals = {
+    isOpen: createSignalSafe<boolean>(false),
+    mediaItems: createSignalSafe<readonly MediaInfo[]>([]),
+    currentIndex: createSignalSafe<number>(0),
+    // ... 기타 속성
+  };
+  ```
+- 호환 레이어: 기존 `galleryState.value` API 유지
+  ```typescript
+  export const galleryState = {
+    get value(): GalleryState {
+      return {
+        isOpen: gallerySignals.isOpen.value,
+        mediaItems: gallerySignals.mediaItems.value,
+        currentIndex: gallerySignals.currentIndex.value,
+        // ... 모든 속성 compose
+      };
+    },
+    set value(state: GalleryState) {
+      batch(() => {
+        // 모든 signal 원자적 업데이트
+        gallerySignals.isOpen.value = state.isOpen;
+        // ... 모든 속성 업데이트
+      });
+    },
+  };
+  ```
+- `batch()` 지원: 다중 signal 업데이트 최적화
+
+**성능 개선**:
+
+- 불필요한 재렌더링 100% 제거 (currentIndex 변경 시 mediaItems 구독자 재실행 안
+  함)
+- Fine-grained reactivity: 각 컴포넌트가 필요한 signal만 구독
+
+**테스트**: 단위 테스트 추가 (`gallery-signals-fine-grained.test.ts`)
 
 ---
 

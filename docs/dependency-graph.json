@@ -74,6 +74,7 @@
         "src/shared/services/BulkDownloadService.ts",
         "src/shared/state/signals/signal-factory.ts",
         "src/shared/components/isolation/GalleryContainer.tsx",
+        "src/shared/state/signals/gallery.signals.ts",
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
@@ -511,7 +512,8 @@
         "src/shared/utils/core-utils.ts",
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/shared/utils/performance/index.ts",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/features/gallery/hooks/useGalleryFocusTracker.ts"
       ],
       "orphan": false,
       "valid": true
@@ -2866,6 +2868,23 @@
     {
       "source": "src/shared/state/signals/gallery.signals.ts",
       "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
         {
           "dynamic": false,
           "module": "../../logging",
@@ -8672,6 +8691,23 @@
             "import"
           ],
           "resolved": "src/shared/logging/logger.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../shared/utils/performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -16078,7 +16114,7 @@
     "info": 0,
     "ignore": 0,
     "totalCruised": 265,
-    "totalDependenciesCruised": 727,
+    "totalDependenciesCruised": 729,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,
