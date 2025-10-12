@@ -2,7 +2,7 @@
 
 > **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-23)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
+모든 Phase (1-25)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
 
 ---
 
@@ -10,12 +10,13 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (730 KB) / prod (330 KB, gzip: 89.91 KB)
-- ✅ **Vitest**: 607/607 (100%, 24 skipped, 1 todo) ← **Phase 23: +4 tests**
+- ✅ **빌드**: dev (728 KB) / prod (329 KB, gzip: 89.49 KB) ← **Phase 25: -2 KB
+  dev, -1 KB prod**
+- ✅ **Vitest**: 607/607 (100%, 24 skipped, 1 todo) ← **Phase 25: -2 tests**
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations (264 modules, 727 dependencies)
+- ✅ **의존성**: 0 violations (264 modules, 726 dependencies)
 
 ### 기술 스택
 
@@ -49,12 +50,13 @@
 - E2E 회귀 커버리지 구축 (Playwright)
 - E2E 테스트 안정화 및 CI 통합
 
-### Phase 21-23: 최적화 & 아키텍처
+### Phase 21-25: 최적화 & 아키텍처
 
 - **Phase 21**: IntersectionObserver 무한 루프 방지, Fine-grained Signals (99%
   성능 개선)
 - **Phase 22**: constants.ts 리팩토링 (37% 코드 감소), 단일 책임 원칙 준수
 - **Phase 23**: DOMCache 아키텍처 개선 (계층 경계 강화, 28% 코드 감소)
+- **Phase 25**: 휠 스크롤 속도 제어 제거 (브라우저 네이티브 동작 위임, -3 KB)
 - E2E 테스트 안정화 및 CI 통합
 
 ### Phase 21: SolidJS 핵심 최적화
@@ -1818,6 +1820,127 @@ tests)
 - 우선순위: MEDIUM
 - 예상 소요: 6-9시간 (3개 sub-phase)
 - 영향 범위: 60+ 파일 리네임, 100-150개 파일 import 업데이트
+
+---
+
+## Phase 24: 레거시 TODO 정리 (2025-01-12)
+
+**목표**: Phase 17 휠 스크롤 multiplier 설정 구현으로 레거시 TODO 해결
+
+**작업 내역**:
+
+- **브랜치**: refactor/phase-25-remove-wheel-scroll-multiplier
+- **상태**: ✅ 문서 정리 완료
+
+**레거시 TODO 현황**:
+
+- ✅ `VerticalGalleryView.tsx` line 101 TODO 해결:
+  - 하드코딩된 `WHEEL_SCROLL_MULTIPLIER` 제거 완료
+  - Phase 17.1-17.2: 설정 시스템 통합
+  - Phase 17.3: UI 슬라이더 추가
+  - **결과**: 구현 완료, TODO 주석 제거 완료
+
+**Phase 24 전체 완료**: TODO 문서 정리 완성 (확인 → 문서 업데이트)
+
+---
+
+## Phase 25: 휠 스크롤 배율 설정 제거 (2025-01-12)
+
+**목표**: wheelScrollMultiplier 설정을 완전히 제거하고 브라우저 기본 동작에 위임
+
+**배경**:
+
+- Phase 17에서 추가한 wheelScrollMultiplier 설정(0.5-3.0)이 사용자 시스템 스크롤
+  설정을 덮어쓰는 문제 발견
+- 브라우저/OS의 네이티브 스크롤 속도 설정이 무시됨
+- 사용자 경험 저하: OS 레벨 접근성 설정(스크롤 속도 조절)이 작동하지 않음
+
+**작업 내역**:
+
+- **브랜치**: refactor/phase-25-remove-wheel-scroll-multiplier
+- **커밋**: (예정)
+
+**구현**:
+
+1. **타입 정의 제거**
+   - `src/features/settings/types/settings.types.ts`: wheelScrollMultiplier
+     property 제거 (line 28)
+   - `GallerySettings` 인터페이스 간소화 (8 properties → 7 properties)
+
+2. **설정 기본값 제거**
+   - `src/constants.ts`: DEFAULT_SETTINGS.gallery.wheelScrollMultiplier: 1.2
+     제거 (line 70)
+
+3. **i18n 문자열 제거**
+   - `src/shared/services/LanguageService.ts`: wheelScrollSpeed 문자열 제거 (3개
+     로케일)
+     - Line 35: `LanguageStrings` 인터페이스에서 제거
+     - Line 79: 한국어 문자열 제거
+     - Line 131: 영어 문자열 제거
+     - Line 185: 일본어 문자열 제거
+
+4. **SettingsModal UI 제거**
+   - `src/shared/components/ui/SettingsModal/SettingsModal.tsx`:
+     wheelScrollMultiplier 슬라이더 제거
+     - Line 34-36: wheelScrollMultiplier signal 제거 (3줄)
+     - Line 46-50: handleWheelScrollChange 핸들러 제거 (5줄)
+     - Line 103-119: 슬라이더 섹션 전체 제거 (17줄)
+     - Import 정리: getSetting, setSetting 제거 (불필요)
+
+5. **갤러리 스크롤 로직 복원**
+   - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`:
+     multiplier 제거
+     - Line 112: wheelScrollMultiplier 상수 제거
+     - Line 220: `delta * wheelScrollMultiplier` → `delta` (브라우저 기본값
+       사용)
+     - Line 246: 디버그 로그에서 multiplier 제거
+
+6. **테스트 업데이트**
+   - `test/unit/features/gallery/components/VerticalGalleryView.wheel-scroll.test.tsx`:
+     - Line 162: expected value 수정 (144 → 120)
+     - 이유: 120 delta × 1.2 multiplier → 120 delta (네이티브)
+
+7. **테스트 파일 제거**
+   - `test/unit/features/settings/gallery-wheel-scroll-setting.test.ts` 삭제 (65
+     lines)
+     - 설정 기본값, 저장/로드, 범위 클램핑 테스트
+   - `test/unit/features/settings/settings-wheel-scroll-ui.test.tsx` 삭제 (93
+     lines)
+     - UI 슬라이더 렌더링, 값 표시, i18n 검증 테스트
+
+**품질 게이트**:
+
+- ✅ 타입 체크: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 테스트: 607/607 passed (609 → 607, 2개 감소)
+  - Phase 25 테스트 제거: -2 test files
+  - 수정된 테스트: VerticalGalleryView.wheel-scroll.test.tsx (2/2 passed)
+- ✅ 빌드: dev 728 KB (-2 KB), prod 329 KB (-1 KB), gzip: 89.49 KB (-0.42 KB)
+- ✅ 의존성: 0 violations
+
+**결과**:
+
+- ✅ 사용자 접근성 복원: OS/브라우저 스크롤 속도 설정이 정상 작동
+- ✅ 코드 간소화: 총 203줄 제거 (158줄 실제 코드 + 45줄 주석/공백)
+  - 타입 정의: -1줄
+  - 설정 기본값: -1줄
+  - i18n 문자열: -12줄 (3개 로케일)
+  - SettingsModal UI: -25줄 (signal, 핸들러, 슬라이더)
+  - 갤러리 로직: -3줄
+  - 테스트 파일: -158줄 (2개 파일 삭제)
+  - 테스트 수정: 1줄 (expected value)
+- ✅ 번들 크기 감소: -3 KB total (-2 KB dev, -1 KB prod)
+- ✅ 사용자 경험 개선: 브라우저 기본 스크롤 동작 준수
+
+**근거**:
+
+- wheelScrollMultiplier는 사용자의 시스템 전체 접근성 설정을 무시함
+- 브라우저/OS의 스크롤 속도 설정이 더 정확하고 일관된 경험 제공
+- 추가 설정 UI는 복잡도만 증가시키고 실질적 가치 없음
+- 접근성 우선 원칙: 사용자의 시스템 설정을 존중해야 함
+
+**Phase 25 전체 완료**: 휠 스크롤 배율 설정 제거 완성 (분석 → 제거 → 테스트 수정
+→ 빌드 검증 → 문서 업데이트)
 
 ---
 

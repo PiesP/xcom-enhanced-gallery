@@ -1,10 +1,10 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 23 완료 ✅ | Phase 24 계획 수립 완료 📋
+현재 상태: Phase 24 완료 대기 | Phase 25 완료 ✅
 
 최종 업데이트: 2025-10-12
 
-브랜치: master
+브랜치: refactor/phase-25-remove-wheel-scroll-multiplier
 
 ---
 
@@ -12,9 +12,9 @@
 
 프로젝트 안정 상태 - 모든 품질 지표 GREEN
 
-- ✅ 빌드: dev 730 KB, prod 330 KB (gzip: 89.91 KB)
-- ✅ 테스트: 607/607 passing (24 skipped, 1 todo) ← **Phase 23: +4 tests**
-- ✅ 의존성: 0 violations (264 modules, 727 dependencies)
+- ✅ 빌드: dev 728 KB, prod 329 KB (gzip: 89.49 KB)
+- ✅ 테스트: 607/607 passing (24 skipped, 1 todo) ← **Phase 25: -2 tests**
+- ✅ 의존성: 0 violations (264 modules, 726 dependencies)
 - ✅ 타입: 0 errors (TypeScript strict)
 - ✅ 린트: 0 warnings, 0 errors
 
@@ -30,6 +30,50 @@
 ---
 
 ## 🎯 최근 완료 작업
+
+### Phase 25: 휠 스크롤 속도 제어 제거 (브라우저 기본 동작 위임) ✅ (2025-10-12)
+
+**성과**:
+
+- wheelScrollMultiplier 설정 및 UI 완전 제거
+- 브라우저/OS 네이티브 스크롤 속도 설정 준수
+- 테스트 2개 제거, 1개 수정 (607/607 passing, -2 tests)
+- 빌드 크기: dev 728 KB (-2 KB), prod 329 KB (-1 KB), gzip 89.49 KB (-0.42 KB)
+
+**주요 변경**:
+
+- 제거: `GallerySettings.wheelScrollMultiplier` (types/settings.types.ts)
+- 제거: `DEFAULT_SETTINGS.gallery.wheelScrollMultiplier` (constants.ts)
+- 제거: SettingsModal의 wheelScrollMultiplier 슬라이더 UI
+- 제거: LanguageService의 wheelScrollSpeed 문자열 (한국어/영어/일본어)
+- 수정: VerticalGalleryView 스크롤 계산에서 multiplier 제거
+  (`delta * multiplier` → `delta`)
+- 제거: test/unit/features/settings/gallery-wheel-scroll-setting.test.ts
+- 제거: test/unit/features/settings/settings-wheel-scroll-ui.test.tsx
+- 수정: VerticalGalleryView.wheel-scroll.test.tsx (기댓값 144 → 120)
+
+**아키텍처 개선**:
+
+- 사용자 경험: 브라우저/OS 네이티브 스크롤 속도 설정 준수 (일관성 향상)
+- 설정 단순화: wheelScrollMultiplier 제거로 설정 항목 감소
+- 유지보수성: 스크롤 관련 코드 단순화 (multiplier 계산 제거)
+
+**성능 영향**:
+
+- 빌드 크기 감소: dev -2 KB, prod -1 KB, gzip -0.42 KB
+- 런타임 오버헤드 제거: multiplier 계산 및 설정 로드 제거
+- 코드 복잡도 감소: SettingsModal UI 및 관련 로직 제거
+
+**테스트 커버리지**:
+
+- 제거된 테스트 2개: wheelScrollMultiplier 관련 설정/UI 테스트
+- 수정된 테스트 1개: wheel scroll 통합 테스트 (기댓값 업데이트)
+- 실행: unit + fast 프로젝트 = 607/607 passing
+- 결과: 100% passing (wheelScrollMultiplier 관련 테스트 제거로 -2)
+
+**상세 내역**: 이 문서 Phase 25 참조
+
+---
 
 ### Phase 23: DOMCache 연동 로직 아키텍처 개선 ✅ (2025-10-12)
 
