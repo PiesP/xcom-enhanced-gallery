@@ -1,18 +1,75 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-12
+> **최종 업데이트**: 2025-01-27
 >
-> **상태**: Phase 1-30 완료 ✅
+> **상태**: Phase 1-33 (Step 1) 완료 ✅
 
-## 프로젝트 상태 스냅샷 (2025-10-12)
+## 프로젝트 상태 스냅샷 (2025-01-27)
 
-- **빌드**: dev 741.61 KB / prod 320.73 KB (gzip 87.39 KB) ✅
+- **빌드**: dev 831.69 KB / prod 320.73 KB (gzip 87.40 KB) ✅
 - **테스트**: Vitest 634/659 (24 skipped, 1 todo), Playwright 8/8 ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser violations 0 ✅
 
 ## 최근 완료 Phase
+
+### Phase 33 Step 1: Bundle Analysis Infrastructure (2025-01-27)
+
+**목표**: JavaScript 번들 구성 분석 및 최적화 전략 수립 (Step 2 구현 준비)
+
+**배경**: Phase 32에서 CSS 최적화로는 번들 크기 절감이 어렵다는 것을 확인.
+JavaScript 레벨 접근이 필요하므로 번들 구성 분석 인프라 구축.
+
+**구현 내역**:
+
+1. **번들 분석 도구 통합**
+   - `rollup-plugin-visualizer` 설치 (6개 패키지 추가)
+   - `vite.config.ts`에 visualizer 플러그인 추가 (프로덕션 빌드 전용)
+   - 인터랙티브 HTML 트리맵 리포트 생성 (`docs/bundle-analysis.html`)
+   - Python 분석 스크립트 작성 (`scripts/analyze-bundle.py`)
+
+2. **번들 구성 분석**
+   - 전체 번들: 320.73 KB (gzip 87.40 KB)
+   - Top 20 모듈 분석: 266.25 KB
+   - **Solid.js 런타임**: 62.78 KB (23.6%)
+     - solid-js/dist/solid.js: 33.72 KB
+     - solid-js/web/dist/web.js: 21.08 KB
+     - solid-js/store/dist/store.js: 7.98 KB
+   - **애플리케이션 코드**: 203.47 KB (76.4%)
+     - media-service.ts: 21.58 KB
+     - events.ts: 19.28 KB
+     - Toolbar.tsx: 14.99 KB
+     - VerticalImageItem.tsx: 13.80 KB
+     - twitter-video-extractor.ts: 13.87 KB
+     - SettingsModal.tsx: 12.73 KB
+     - bulk-download-service.ts: 11.87 KB
+
+3. **최적화 전략 수립** (Step 2 구현 계획)
+   - **이벤트 핸들링**: 19.28 KB → 15 KB (4 KB 절감)
+   - **컴포넌트**: 41.52 KB → 35 KB (6.5 KB 절감)
+   - **서비스**: 59.11 KB → 50 KB (9 KB 절감)
+   - **총 목표**: 320.73 KB → 301 KB (19.5 KB 절감)
+
+**성과**:
+
+- ✅ 번들 구성 완전 가시화 (treemap + JSON 데이터)
+- ✅ 최적화 대상 우선순위 선정 (Top 10 모듈 식별)
+- ✅ 구체적 절감 목표 수립 (19.5 KB)
+- ✅ TDD 기반 구현 계획 수립 (RED → GREEN → REFACTOR)
+
+**핵심 발견**:
+
+- Solid.js 런타임(23.6%)은 프레임워크 필수 요소로 최적화 불가
+- 애플리케이션 코드(76.4%)에서 실질적 절감 가능
+- 이벤트 유틸리티, 컴포넌트, 서비스 레이어가 주요 최적화 대상
+- TDD 접근: 각 영역별 크기 가드 테스트 → 최적화 구현 → 리팩터링
+
+**결론**: Step 1에서 번들 분석 인프라와 최적화 전략 수립 완료. Step 2에서는 TDD
+기반으로 events.ts, 컴포넌트, 서비스 레이어를 단계적으로 최적화하여 19.5 KB 절감
+목표 달성 예정.
+
+---
 
 ### Phase 32: CSS Optimization Analysis (2025-01-27)
 
