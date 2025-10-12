@@ -5,7 +5,7 @@
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../logging/logger';
-import { DomEventManager, createDomEventManager } from '../dom/DOMEventManager';
+import { DomEventManager, createDomEventManager } from '../dom/dom-event-manager';
 import { GalleryEventManager } from '../utils/events';
 import type { EventHandlers, GalleryEventOptions } from '../utils/events';
 

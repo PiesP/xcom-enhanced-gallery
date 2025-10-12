@@ -10,9 +10,9 @@ export {
   isValidZipFilename,
   type FilenameOptions,
   type ZipFilenameOptions,
-} from './FilenameService';
+} from './filename-service';
 
 // New MediaProcessor exports
-export { MediaProcessor, processMedia } from './MediaProcessor';
+export { MediaProcessor, processMedia } from './media-processor';
 export { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
 export type { MediaDescriptor, MediaType, MediaVariant, RawMediaCandidate, Result } from './types';

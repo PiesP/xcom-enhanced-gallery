@@ -9,13 +9,13 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
   describe('1. MediaProcessor 기본 구조', () => {
     it('MediaProcessor 클래스가 존재해야 한다', async () => {
       // GREEN: 클래스 import 성공
-      const { MediaProcessor } = await import('@shared/media/MediaProcessor');
+      const { MediaProcessor } = await import('@shared/media/media-processor');
       expect(typeof MediaProcessor).toBe('function');
     });
 
     it('processMedia 함수가 존재해야 한다', async () => {
       // GREEN: 함수 import 성공
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       expect(typeof processMedia).toBe('function');
     });
   });
@@ -64,7 +64,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
   describe('4. 기본 동작 검증', () => {
     it('빈 DOM에서 빈 배열을 반환해야 한다', async () => {
       // GREEN: 기본 동작 검증
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
       const result = processMedia(div);
 
@@ -76,7 +76,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
 
     it('img 요소에서 MediaDescriptor를 추출해야 한다', async () => {
       // GREEN: img 추출 로직 검증
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
       const img = document.createElement('img');
       img.src = 'https://example.com/image.jpg';
@@ -94,7 +94,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
 
     it('video 요소에서 MediaDescriptor를 추출해야 한다', async () => {
       // GREEN: video 추출 로직 검증
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
       const video = document.createElement('video');
       video.src = 'https://example.com/video.mp4';
@@ -114,7 +114,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
   describe('5. Result 패턴 적용', () => {
     it('processMedia가 Result<MediaDescriptor[]>를 반환해야 한다', async () => {
       // GREEN: Result 패턴 검증
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
 
       const result = processMedia(div);
@@ -131,7 +131,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
 
     it('에러 시 Result.error를 반환해야 한다', async () => {
       // GREEN: 에러 처리 검증
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
 
       // null을 전달하여 에러 유발
       // TS 구문을 사용하지 않고 런타임에서 강제로 호출하기 위해 JSDoc 캐스트 사용
@@ -148,7 +148,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
 
   describe('6. 고급 케이스 (C2 커버리지 보강)', () => {
     it('data-src 속성에서도 URL을 추출해야 한다', async () => {
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const root = document.createElement('div');
       const img = document.createElement('img');
       img.setAttribute('data-src', '/assets/pic.png');
@@ -164,7 +164,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
     });
 
     it('<video>와 <source>가 함께 있을 때 중복 없이 한 항목만 생성해야 한다', async () => {
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const root = document.createElement('div');
       const video = document.createElement('video');
       video.src = 'https://example.com/clip.mp4';
@@ -183,7 +183,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
     });
 
     it('상대 경로와 data: URL도 유효로 간주해야 한다', async () => {
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const root = document.createElement('div');
       const img1 = document.createElement('img');
       img1.src = '/images/pic.jpg';
@@ -203,7 +203,7 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
     });
 
     it('img와 source가 같은 URL을 가리키면 dedupe되어야 한다', async () => {
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const root = document.createElement('div');
       const picture = document.createElement('picture');
       const source = document.createElement('source');

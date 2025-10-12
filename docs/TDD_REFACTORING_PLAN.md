@@ -1,10 +1,11 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 24 완료 대기 | Phase 25 완료 ✅
+현재 상태: Phase 24-C 준비 중 | Phase 24-A 완료 ✅ | Phase 24-B 완료 ✅ | Phase
+25 완료 ✅
 
 최종 업데이트: 2025-10-12
 
-브랜치: refactor/phase-25-remove-wheel-scroll-multiplier
+브랜치: feature/phase24a-rename-small-dirs
 
 ---
 
@@ -13,7 +14,7 @@
 프로젝트 안정 상태 - 모든 품질 지표 GREEN
 
 - ✅ 빌드: dev 728 KB, prod 329 KB (gzip: 89.49 KB)
-- ✅ 테스트: 607/607 passing (24 skipped, 1 todo) ← **Phase 25: -2 tests**
+- ✅ 테스트: 609/609 passing (24 skipped, 1 todo) ← **Phase 24-A: +2 tests**
 - ✅ 의존성: 0 violations (264 modules, 726 dependencies)
 - ✅ 타입: 0 errors (TypeScript strict)
 - ✅ 린트: 0 warnings, 0 errors
@@ -137,99 +138,57 @@
 **목표**: PascalCase와 kebab-case가 혼재된 src/shared 디렉터리 파일명을
 kebab-case로 통일하여 코드베이스 일관성 확보
 
-**현재 문제**:
+**진행 상태**:
 
-- PascalCase 파일 60개+ (BrowserService.ts, DOMCache.ts, ErrorHandler.ts 등)
-- kebab-case 파일과 혼재 (media-url.util.ts, events.ts 등)
-- 파일명 규칙 불일치로 인한 탐색 효율성 저하
-- 새 파일 생성 시 규칙 불명확
+- ✅ Phase 24-A: 소형 디렉터리 리네임 완료 (browser, container, dom, error,
+  external, loader, logging, memory) —
+  `test/phase-24a-file-naming-convention.test.ts` GREEN
+- ✅ Phase 24-B: 중형 디렉터리 리네임 완료 (components, hooks, interfaces,
+  media, state, styles, types) — 22개 파일 리네임,
+  `test/phase-24b-file-naming-convention.test.ts` GREEN
+- 🔲 Phase 24-C: 대형 디렉터리 리네임 예정 (services, utils)
 
-**작업 계획**:
+#### Phase 24-C 다음 작업
 
-#### Phase 24-A: 작은 디렉터리 리네임 (20개 파일)
+1. **RED 단계**
+   - `test/phase-24c-file-naming-convention.test.ts` 추가
+   - services/, utils/ 디렉터리의 PascalCase .ts/.tsx 파일 존재 시 FAIL
+2. **GREEN 단계**
+   - 각 디렉터리 파일을 kebab-case로 리네임
+   - 배럴 export 및 import 경로 업데이트 (고참조 모듈 주의)
+   - 모든 Phase 24 테스트 GREEN 유지
+3. **REFACTOR 단계**
+   - Swizzled imports 영향 검증
+   - ESLint naming rule 도입 및 `docs/CODING_GUIDELINES.md` 업데이트
 
-**브랜치**: `feature/phase24a-rename-small-dirs`
+#### 평가 기준
 
-1. **RED 단계**:
-   - `test/architecture/file-naming-convention.test.ts` 생성
-   - src/shared의 모든 .ts 파일이 kebab-case인지 검증하는 테스트 (FAIL)
-   - 특정 PascalCase 파일이 존재하지 않는지 검증하는 테스트 (FAIL)
+- ✅ services/, utils/ 디렉터리 파일명 kebab-case
+- ✅ Phase 24-A/B/C 테스트 통과 + 전체 스위트 GREEN
+- ✅ 타입/린트/빌드/의존성 검사 통과
+- ✅ 파일명 규칙 문서 업데이트 및 ESLint 규칙 적용
 
-2. **GREEN 단계**:
-   - **대상 디렉터리**: browser/, container/, dom/, error/, external/, loader/,
-     logging/, memory/
-   - 파일명 변경 (예시):
-     - `BrowserService.ts` → `browser-service.ts`
-     - `DOMCache.ts` → `dom-cache.ts`
-     - `ErrorHandler.ts` → `error-handler.ts`
-     - `MemoryTracker.ts` → `memory-tracker.ts`
-   - 모든 import 경로 업데이트 (grep + 일괄 replace)
-   - 배럴 export(index.ts) 업데이트
-   - 타입 체크 및 빌드 검증
+#### 준비 사항
 
-3. **REFACTOR 단계**:
-   - 중복 파일 제거 (예: BrowserUtils 중복)
-   - import 경로 최적화 (불필요한 재수출 제거)
-   - 린트 규칙 업데이트 (파일명 규칙 강제화 검토)
+- 브랜치: `feature/phase24c-rename-large-dirs`
+- 테스트: `npx vitest run test/phase-24*-file-naming-convention.test.ts`
 
-**평가 기준**:
+#### Phase 24 시리즈 완료 후
 
-- ✅ 대상 디렉터리의 모든 파일명이 kebab-case
-- ✅ 모든 import 경로 정상 작동
-- ✅ 모든 테스트 통과 (603/603)
-- ✅ 타입 체크 및 린트 통과
-- ✅ 빌드 크기 변화 없음
+- 모든 Phase 24 (A/B/C) 완료 시 `docs/CODING_GUIDELINES.md` 파일명 섹션 종합
+  업데이트
+- ESLint 규칙 적용 및 CI에 통합
+- Phase 24-C 미리보기 섹션 제거
 
-#### Phase 24-B: 중간 디렉터리 리네임 (25개 파일)
+---
 
-**브랜치**: `feature/phase24b-rename-medium-dirs`
+### Phase 24-C 미리보기
 
-1. **대상 디렉터리**: components/, hooks/, interfaces/, media/, state/, styles/,
-   types/
-2. 작업 절차는 Phase 24-A와 동일
-
-#### Phase 24-C: 큰 디렉터리 리네임 (15개 파일)
-
-**브랜치**: `feature/phase24c-rename-large-dirs`
-
-1. **대상 디렉터리**: services/, utils/
-2. 작업 절차는 Phase 24-A와 동일
-
-**전체 평가 기준**:
-
-- ✅ src/shared의 모든 .ts 파일이 kebab-case 준수
-- ✅ 60개+ 파일 리네임 완료
-- ✅ 100-150개 파일의 import 경로 업데이트 완료
-- ✅ 모든 테스트 통과 (603/603)
-- ✅ 의존성 그래프 검증 통과
-- ✅ 파일명 규칙 문서 업데이트
-
-**예상 효과**:
-
-- 코드베이스 파일명 일관성 100% 달성
-- 파일 탐색 효율성 향상 (일관된 명명 규칙)
-- 새 파일 생성 시 명확한 규칙 제공
-- IDE 자동완성 정확도 향상
-
-**예상 영향 범위**:
-
-- 변경 파일: 60+ 파일 리네임
-- import 업데이트: 100-150개 파일 예상
-- 테스트 검증: 전체 603개 테스트
-- 예상 소요 시간: Phase당 2-3시간, 총 6-9시간
-
-**Breaking Change**: Yes (내부 리팩토링, 외부 API는 변경 없음)
-
-**선행 작업**:
-
-- Phase 24-A 시작 전: 사용되지 않는 중복 파일 제거 완료
-- 주요 의존성 매핑 문서화 완료
-
-**후속 작업**:
-
-- 새 파일 생성 시 kebab-case 규칙 강제화 (ESLint rule 검토)
-- `docs/CODING_GUIDELINES.md`의 파일명 규칙 섹션 업데이트
-- 프로젝트 README에 파일명 규칙 명시
+- 대상: services/, utils/
+- 전략: Phase 24-B와 동일한 TDD 흐름, 고참조 모듈은 swizzled imports 영향 검증
+  필요
+- 완료 후 `docs/CODING_GUIDELINES.md` 파일명 섹션 업데이트 및 ESLint 규칙 적용
+  검토
 
 ---
 

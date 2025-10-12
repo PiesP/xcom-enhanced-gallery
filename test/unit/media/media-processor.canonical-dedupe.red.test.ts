@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('MediaProcessor - URL 정규화 및 dedupe (RED)', () => {
   it('같은 트위터 이미지의 다른 quality URL들이 하나로 정규화(dedupe)되어야 한다', async () => {
-    const { processMedia } = await import('@shared/media/MediaProcessor');
+    const { processMedia } = await import('@shared/media/media-processor');
 
     const root = document.createElement('div');
     const img1 = document.createElement('img');

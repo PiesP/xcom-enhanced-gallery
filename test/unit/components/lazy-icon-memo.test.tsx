@@ -14,7 +14,7 @@ import { join } from 'node:path';
 
 describe('[Phase 14.1.3] LazyIcon - Reactive Evaluation', () => {
   it('should NOT statically evaluate className from props', () => {
-    const filePath = join(process.cwd(), 'src/shared/components/LazyIcon.tsx');
+    const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
     const content = readFileSync(filePath, 'utf-8');
 
     // Anti-pattern: const className = [...props.className...];
@@ -32,7 +32,7 @@ describe('[Phase 14.1.3] LazyIcon - Reactive Evaluation', () => {
   });
 
   it('should NOT statically evaluate style from props', () => {
-    const filePath = join(process.cwd(), 'src/shared/components/LazyIcon.tsx');
+    const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
     const content = readFileSync(filePath, 'utf-8');
 
     // Anti-pattern: const style = props.size ? {...} : undefined;
@@ -50,7 +50,7 @@ describe('[Phase 14.1.3] LazyIcon - Reactive Evaluation', () => {
   });
 
   it('should use getter functions for className and style', () => {
-    const filePath = join(process.cwd(), 'src/shared/components/LazyIcon.tsx');
+    const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
     const content = readFileSync(filePath, 'utf-8');
 
     // Expected pattern: const className = () => ...
@@ -63,7 +63,7 @@ describe('[Phase 14.1.3] LazyIcon - Reactive Evaluation', () => {
   });
 
   it('should call getter functions in JSX', () => {
-    const filePath = join(process.cwd(), 'src/shared/components/LazyIcon.tsx');
+    const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
     const content = readFileSync(filePath, 'utf-8');
 
     // Should use className() and style() in JSX

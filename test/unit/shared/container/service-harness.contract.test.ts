@@ -3,7 +3,7 @@
  * - 목적: AppContainer 없이 테스트용 DI/초기화가 가능한지 검증
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createServiceHarness } from '@/shared/container/ServiceHarness';
+import { createServiceHarness } from '@/shared/container/service-harness';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('ServiceHarness — 경량 테스트 하네스', () => {

@@ -5,7 +5,7 @@ import { relative, join } from 'node:path';
 /**
  * Guard: Avoid importing shared/media barrel from sensitive layers
  * - Disallowed: "@shared/media" or "../media" (relative) inside shared/services or shared/container
- * - Allowed: concrete modules like "@shared/media/FilenameService"
+ * - Allowed: concrete modules like "@shared/media/filename-service"
  */
 describe('lint: media barrel avoidance in sensitive modules', () => {
   it('services/container should not import shared/media barrel', () => {

@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const filePath = join(process.cwd(), 'src/shared/hooks/useGalleryToolbarLogic.ts');
+const filePath = join(process.cwd(), 'src/shared/hooks/use-gallery-toolbar-logic.ts');
 const fileContent = readFileSync(filePath, 'utf-8');
 
 describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {

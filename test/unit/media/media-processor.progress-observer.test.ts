@@ -11,7 +11,7 @@ interface StageEventCapture {
 
 describe('MediaProcessor - 진행률 옵저버', () => {
   it('파이프라인 단계 순서대로 stage 이벤트를 방출해야 한다', async () => {
-    const { MediaProcessor } = await import('@shared/media/MediaProcessor');
+    const { MediaProcessor } = await import('@shared/media/media-processor');
 
     const root = document.createElement('div');
     const img1 = document.createElement('img');

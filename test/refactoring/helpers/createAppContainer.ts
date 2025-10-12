@@ -11,9 +11,9 @@ import { logger } from '@shared/logging/logger';
 import { bridgeGetService } from '@shared/container/service-bridge';
 import { registerGalleryRenderer } from '@shared/container/service-accessors';
 import { SERVICE_KEYS } from '@/constants';
-import { FilenameService } from '@shared/media/FilenameService';
+import { FilenameService } from '@shared/media/filename-service';
 import type { MediaItemForFilename, MediaInfoForFilename } from '@shared/types/media.types';
-import type { FilenameOptions } from '@shared/media/FilenameService';
+import type { FilenameOptions } from '@shared/media/filename-service';
 import type {
   AppContainer,
   CreateContainerOptions,
@@ -24,7 +24,7 @@ import type {
   IVideoService,
   ISettingsService,
   IGalleryApp,
-} from '@shared/container/AppContainer';
+} from '@shared/container/app-container';
 import type { AppConfig } from '@/types';
 
 type LegacyServiceMap = Record<string, unknown>;

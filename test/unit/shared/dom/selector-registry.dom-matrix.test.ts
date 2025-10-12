@@ -1,5 +1,5 @@
 /* eslint-env browser */
-/* eslint-disable no-undef */
+
 /* @vitest-environment jsdom */
 // @ts-nocheck
 /**
@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createSelectorRegistry } from '../../../../src/shared/dom/SelectorRegistry';
+import { createSelectorRegistry } from '../../../../src/shared/dom/selector-registry';
 import { STABLE_SELECTORS } from '../../../../src/constants';
 
 describe('SelectorRegistry', () => {

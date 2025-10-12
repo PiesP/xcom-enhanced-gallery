@@ -9,7 +9,7 @@ import type { MediaItemForFilename } from '../types/media.types';
 import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '../logging/logger';
 import { getNativeDownload } from '../external/vendors';
 import { getErrorMessage } from '../utils/error-handling';
-import { generateMediaFilename } from '../media/FilenameService';
+import { generateMediaFilename } from '../media/filename-service';
 import { toastManager } from './UnifiedToastManager';
 import { languageService } from './LanguageService';
 import type { BaseResultStatus } from '../types/result.types';

@@ -3,4 +3,4 @@
  */
 
 export * from './gallery.interfaces';
-export * from './ServiceInterfaces';
+export * from './service-interfaces';

@@ -13,7 +13,7 @@ declare const document: any;
 
 describe('MediaProcessor URL Sanitization (RED)', () => {
   it('허용되지 않은 스킴(javascript:, data:text/html 등)은 필터링하거나 실패 처리해야 한다', async () => {
-    const { MediaProcessor } = await import('@shared/media/MediaProcessor');
+    const { MediaProcessor } = await import('@shared/media/media-processor');
     const root = document.createElement('div');
 
     const imgSafe = document.createElement('img');
