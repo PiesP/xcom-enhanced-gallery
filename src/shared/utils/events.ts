@@ -4,9 +4,8 @@
 
 import { logger } from '../logging/logger';
 import { globalTimerManager } from './timer-management';
-import { isGalleryInternalElement } from './utils';
+import { isGalleryInternalElement, isVideoControlElement } from './utils';
 import { MediaClickDetector } from './media/MediaClickDetector';
-import { isVideoControlElement, isTwitterNativeGalleryElement } from '../../constants';
 import { gallerySignals } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';
@@ -47,6 +46,68 @@ function generateListenerId(context?: string): string {
   return context
     ? `${context}:${timestamp}_${counter}_${random}`
     : `event_${timestamp}_${counter}_${random}`;
+}
+
+/**
+ * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
+ */
+function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
+  // 우리의 갤러리 요소는 제외
+  if (
+    element.closest('.xeg-gallery-container') ||
+    element.closest('[data-xeg-gallery]') ||
+    element.classList.contains('xeg-gallery-item') ||
+    element.classList.contains('xeg-gallery') ||
+    element.closest('.xeg-gallery') ||
+    element.hasAttribute('data-xeg-gallery-type')
+  ) {
+    return false;
+  }
+
+  // 트위터 네이티브 갤러리 트리거 요소들 (클릭 시 갤러리가 열리는 요소들)
+  const twitterGalleryTriggerSelectors = [
+    // 미디어 컨테이너들 - 클릭 시 갤러리가 열림
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="tweetPhoto"] img',
+    '[data-testid="tweetPhoto"] > div',
+    '[data-testid="videoPlayer"]',
+    '[data-testid="videoPlayer"] > *',
+
+    // 미디어 링크들
+    'a[href*="/photo/"]',
+    'a[href*="/status/"][href*="/photo/"] *',
+    'a[href*="/status/"][href*="/video/"] *',
+
+    // 트위터 이미지/비디오 요소들
+    'img[src*="pbs.twimg.com"]',
+    'img[src*="twimg.com"]',
+    'video[poster*="twimg.com"]',
+
+    // 미디어 오버레이 및 플레이 버튼들
+    '[data-testid="playButton"]',
+    '[data-testid="videoComponent"]',
+    'div[role="button"][aria-label*="재생"]',
+    'div[role="button"][aria-label*="Play"]',
+  ];
+
+  // 이미 열린 트위터 갤러리 모달 요소들
+  const twitterGalleryModalSelectors = [
+    '[aria-modal="true"][data-testid="Drawer"]',
+    '[data-testid="swipe-to-dismiss"]',
+    '[data-testid="photoViewer"]',
+    '[data-testid="media-overlay"]',
+    '[data-testid="Drawer"] [role="button"]',
+  ];
+
+  const allSelectors = [...twitterGalleryTriggerSelectors, ...twitterGalleryModalSelectors];
+
+  return allSelectors.some(selector => {
+    try {
+      return element.matches(selector) || element.closest(selector) !== null;
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**

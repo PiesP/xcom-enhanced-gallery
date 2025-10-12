@@ -18,6 +18,7 @@ export type { FilenameOptions };
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
 import { SELECTORS } from '../../../constants';
+import { URL_PATTERNS } from '../patterns/url-patterns';
 
 /**
  * 트윗 document에서 미디어 URL들을 추출
@@ -503,4 +504,38 @@ export function cleanFilename(filename: string): string {
   }
 
   return cleaned;
+}
+
+/**
+ * 미디어 ID 추출 (video thumbnail URL 지원)
+ * @param url - 미디어 URL
+ * @returns 추출된 미디어 ID 또는 null
+ */
+export function extractMediaId(url: string): string | null {
+  const match = url.match(URL_PATTERNS.MEDIA_ID);
+  if (match?.[1]) return match[1];
+
+  const videoMatch = url.match(URL_PATTERNS.VIDEO_THUMB_ID);
+  // For ext_tw_video_thumb|video_thumb, group 1 captures the media id (e.g., ZZYYXX)
+  // For tweet_video_thumb, group 2 captures the id
+  if (videoMatch) {
+    return videoMatch[1] || videoMatch[2] || null;
+  }
+
+  return null;
+}
+
+/**
+ * video thumbnail URL을 original media URL로 변환
+ * @param url - video thumbnail URL
+ * @returns original media URL 또는 null
+ */
+export function generateOriginalUrl(url: string): string | null {
+  const mediaId = extractMediaId(url);
+  if (!mediaId) return null;
+
+  const formatMatch = url.match(/[?&]format=([^&]+)/);
+  const format = formatMatch?.[1] ?? 'jpg';
+
+  return `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=orig`;
 }

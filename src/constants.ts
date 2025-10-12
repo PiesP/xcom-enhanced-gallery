@@ -265,133 +265,8 @@ export const SYSTEM_PAGES = [
 // ================================
 // 유틸리티 함수
 // ================================
-
-/**
- * 미디어 URL이 유효한지 확인
- */
-export function isValidMediaUrl(url: string): boolean {
-  return URL_PATTERNS.MEDIA.test(url);
-}
-
-/**
- * 갤러리용 미디어 URL인지 확인
- */
-export function isValidGalleryUrl(url: string): boolean {
-  return URL_PATTERNS.GALLERY_MEDIA.test(url);
-}
-
-/**
- * 미디어 ID 추출
- */
-export function extractMediaId(url: string): string | null {
-  const match = url.match(URL_PATTERNS.MEDIA_ID);
-  if (match?.[1]) return match[1];
-
-  const videoMatch = url.match(URL_PATTERNS.VIDEO_THUMB_ID);
-  // For ext_tw_video_thumb|video_thumb, group 1 captures the media id (e.g., ZZYYXX)
-  // For tweet_video_thumb, group 2 captures the id
-  if (videoMatch) {
-    return videoMatch[1] || videoMatch[2] || null;
-  }
-
-  return null;
-}
-
-/**
- * 원본 URL 생성
- */
-export function generateOriginalUrl(url: string): string | null {
-  const mediaId = extractMediaId(url);
-  if (!mediaId) return null;
-
-  const formatMatch = url.match(/[?&]format=([^&]+)/);
-  const format = formatMatch?.[1] ?? 'jpg';
-
-  return `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=orig`;
-}
-
-/**
- * 비디오 제어 요소인지 확인
- */
-export function isVideoControlElement(element: HTMLElement): boolean {
-  return VIDEO_CONTROL_SELECTORS.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
-}
-
-/**
- * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
- */
-export function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
-  // 우리의 갤러리 요소는 제외
-  if (
-    element.closest('.xeg-gallery-container') ||
-    element.closest('[data-xeg-gallery]') ||
-    element.classList.contains('xeg-gallery-item') ||
-    element.classList.contains('xeg-gallery') ||
-    element.closest('.xeg-gallery') ||
-    element.hasAttribute('data-xeg-gallery-type')
-  ) {
-    return false;
-  }
-
-  // 트위터 네이티브 갤러리 트리거 요소들 (클릭 시 갤러리가 열리는 요소들)
-  const twitterGalleryTriggerSelectors = [
-    // 미디어 컨테이너들 - 클릭 시 갤러리가 열림
-    '[data-testid="tweetPhoto"]',
-    '[data-testid="tweetPhoto"] img',
-    '[data-testid="tweetPhoto"] > div',
-    '[data-testid="videoPlayer"]',
-    '[data-testid="videoPlayer"] > *',
-
-    // 미디어 링크들
-    'a[href*="/photo/"]',
-    'a[href*="/status/"][href*="/photo/"] *',
-    'a[href*="/status/"][href*="/video/"] *',
-
-    // 트위터 이미지/비디오 요소들
-    'img[src*="pbs.twimg.com"]',
-    'img[src*="twimg.com"]',
-    'video[poster*="twimg.com"]',
-
-    // 미디어 오버레이 및 플레이 버튼들
-    '[data-testid="playButton"]',
-    '[data-testid="videoComponent"]',
-    'div[role="button"][aria-label*="재생"]',
-    'div[role="button"][aria-label*="Play"]',
-  ];
-
-  // 이미 열린 트위터 갤러리 모달 요소들
-  const twitterGalleryModalSelectors = [
-    '[aria-modal="true"][data-testid="Drawer"]',
-    '[data-testid="swipe-to-dismiss"]',
-    '[data-testid="photoViewer"]',
-    '[data-testid="media-overlay"]',
-    '[data-testid="Drawer"] [role="button"]',
-  ];
-
-  const allSelectors = [...twitterGalleryTriggerSelectors, ...twitterGalleryModalSelectors];
-
-  return allSelectors.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
-}
-
-/**
- * 트윗 ID 추출
- */
-export function extractTweetId(url: string): string | null {
-  const match = url.match(URL_PATTERNS.TWEET_ID);
-  return match?.[2] ?? null;
-}
+// NOTE: 대부분의 유틸리티 함수는 shared/utils로 이동되었습니다.
+// 남은 함수들도 점진적으로 이동 예정입니다.
 
 // ================================
 // 뷰 모드 상수
@@ -399,13 +274,6 @@ export function extractTweetId(url: string): string | null {
 
 /** 갤러리 뷰 모드 - 수직 갤러리만 지원 */
 export const VIEW_MODES = ['verticalList'] as const;
-
-/**
- * ViewMode 유효성 검사 함수
- */
-export function isValidViewMode(mode: string): mode is ViewMode {
-  return VIEW_MODES.includes(mode as ViewMode);
-}
 
 // ================================
 // 설정 기본값
