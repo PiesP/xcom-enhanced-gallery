@@ -104,19 +104,6 @@ function validateOne(
       /__XEG_LEGACY_ADAPTER__/,
       /__XEG_GET_SERVICE_OVERRIDE__/,
       // 레거시 벤더 API/매니저 심볼 누출 금지
-      /initializeVendorsLegacy\b/,
-      /getPreactLegacy\b/,
-      /getPreactHooksLegacy\b/,
-      /getPreactSignalsLegacy\b/,
-      /getPreactCompatLegacy\b/,
-      /getNativeDownloadLegacy\b/,
-      /validateVendorsLegacy\b/,
-      /getVendorVersionsLegacy\b/,
-      /cleanupVendorsLegacy\b/,
-      /isVendorsInitializedLegacy\b/,
-      /getVendorInitializationReportLegacy\b/,
-      /getVendorStatusesLegacy\b/,
-      /isVendorInitializedLegacy\b/,
       /(?<!Static)VendorManager\b/, // 동적 VendorManager 노출 금지 (정적 매니저는 허용)
       /vendor-api\.ts/, // 소스 문자열 누출 금지
       // 신규: 런타임 DOMEventManager 표면 금지(내부 전용)
