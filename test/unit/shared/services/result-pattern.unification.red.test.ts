@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
 import { mediaService } from '../../../../src/shared/services/MediaService';
-import { SettingsService } from '../../../../src/features/settings/services/SettingsService';
+import { SettingsService } from '../../../../src/features/settings/services/settings-service';
 
 describe('RED: 공통 Result 패턴 통일', () => {
   it('BulkDownloadService.downloadMultiple 가 status 필드를 제공해야 한다 (현재 없음)', async () => {

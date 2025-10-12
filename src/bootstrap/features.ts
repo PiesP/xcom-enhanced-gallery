@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Bootstrap - Features Services Registration
+ * @description Features 레이어 서비스의 지연 등록
+ * @module bootstrap/features
+ */
 import { logger } from '@/shared/logging';
 import {
   registerSettingsManager,
@@ -6,7 +11,15 @@ import {
 import type { NestedSettingKey } from '@features/settings/types/settings.types';
 
 /**
- * Features 서비스 지연 등록 (초기화는 하지 않음)
+ * Features 레이어 서비스를 지연 등록합니다
+ * - SettingsManager: 사용자 설정 관리
+ * - TwitterTokenExtractor: 트위터 토큰 추출
+ * - DOMCache 연동: 설정 변경 시 캐시 TTL 동기화
+ *
+ * @returns {Promise<void>}
+ *
+ * @todo DOMCache 연동 로직을 DOMCache 또는 SettingsService로 이동
+ *       현재 bootstrap 레이어에서 처리하고 있으나, shared/services 레이어의 책임
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
@@ -40,7 +53,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
 
     // Twitter Token Extractor - Features 레이어
     const { TwitterTokenExtractor } = await import(
-      '@features/settings/services/TwitterTokenExtractor'
+      '@features/settings/services/twitter-token-extractor'
     );
     registerTwitterTokenExtractor(new TwitterTokenExtractor());
 

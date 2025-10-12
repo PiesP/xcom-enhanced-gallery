@@ -25,9 +25,9 @@ describe('Phase 19: 테스트 console.log 제거 (RED → GREEN)', () => {
       expect(matches).toBeNull();
     });
 
-    it('event-wiring.ts에 [TEST] 태그가 있는 console.log가 없어야 함', () => {
-      const eventWiringPath = resolve(projectRoot, 'src/bootstrap/event-wiring.ts');
-      const content = readFileSync(eventWiringPath, 'utf-8');
+    it('events.ts에 [TEST] 태그가 있는 console.log가 없어야 함', () => {
+      const eventsPath = resolve(projectRoot, 'src/bootstrap/events.ts');
+      const content = readFileSync(eventsPath, 'utf-8');
 
       // [TEST] 태그가 있는 console.log 찾기
       const testLogRegex = /console\.log\s*\(\s*['"`]\[TEST\]/gi;
@@ -61,10 +61,10 @@ describe('Phase 19: 테스트 console.log 제거 (RED → GREEN)', () => {
     });
   });
 
-  describe('19.3: event-wiring.ts 로그 logger로 변경', () => {
+  describe('19.3: events.ts 로그 logger로 변경', () => {
     it('이벤트 연결 로그가 logger.debug를 사용해야 함', () => {
-      const eventWiringPath = resolve(projectRoot, 'src/bootstrap/event-wiring.ts');
-      const content = readFileSync(eventWiringPath, 'utf-8');
+      const eventsPath = resolve(projectRoot, 'src/bootstrap/events.ts');
+      const content = readFileSync(eventsPath, 'utf-8');
 
       // logger import 확인
       const hasLoggerImport =
@@ -99,19 +99,19 @@ describe('Phase 19: 테스트 console.log 제거 (RED → GREEN)', () => {
       // 일부 console.log는 logger 시스템 내부나 에러 핸들러에서 사용될 수 있음
       // 하지만 [TEST] 태그가 있는 것들은 제거되어야 함
       const mainPath = resolve(projectRoot, 'src/main.ts');
-      const eventWiringPath = resolve(projectRoot, 'src/bootstrap/event-wiring.ts');
+      const eventsPath = resolve(projectRoot, 'src/bootstrap/events.ts');
 
       const mainContent = readFileSync(mainPath, 'utf-8');
-      const eventWiringContent = readFileSync(eventWiringPath, 'utf-8');
+      const eventsContent = readFileSync(eventsPath, 'utf-8');
 
       // [TEST] 태그가 있는 모든 console 사용 확인
       const testConsoleRegex = /console\.(log|warn|error|debug)\s*\(\s*['"`]\[TEST\]/gi;
 
       const mainMatches = mainContent.match(testConsoleRegex);
-      const eventWiringMatches = eventWiringContent.match(testConsoleRegex);
+      const eventsMatches = eventsContent.match(testConsoleRegex);
 
       expect(mainMatches).toBeNull();
-      expect(eventWiringMatches).toBeNull();
+      expect(eventsMatches).toBeNull();
     });
   });
 });

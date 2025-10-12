@@ -18,11 +18,11 @@ describe('Components Animations Token Policy', () => {
     return readFileSync(filePath, 'utf-8');
   }
 
-  it('xeg-animate-* classes should be tokenized and not hardcode durations', () => {
-    const css = readCSS('assets/styles/components/animations.css');
+  it('animation utility classes should be tokenized and not hardcode durations', () => {
+    const css = readCSS('assets/styles/utilities/animations.css');
 
-    // Extract only .xeg-animate-* blocks for stricter checks
-    const animateBlocks = (css.match(/\.xeg-animate-[^{]+{[^}]+}/g) || []).join('\n');
+    // Extract animation classes like .xeg-fade-in, .xeg-slide-up, etc.
+    const animateBlocks = (css.match(/\.xeg-[a-z-]+\s*{[^}]*animation:[^}]+}/g) || []).join('\n');
 
     // No raw durations like 1s, 250ms inside animation declarations
     const hardcodedInAnimations = animateBlocks.match(/animation:[^;]*(\d+(?:\.\d+)?m?s)/g) || [];
@@ -36,22 +36,23 @@ describe('Components Animations Token Policy', () => {
     expect(hasEasing).toBe(true);
   });
 
-  it('interaction hover utilities should use tokenized transitions', () => {
-    const css = readCSS('assets/styles/components/animations.css');
+  it('interaction hover/transition utilities should use tokenized transitions', () => {
+    const css = readCSS('assets/styles/utilities/animations.css');
 
-    // Check .xeg-hover-* transition declarations
-    const hoverBlocks = (css.match(/\.xeg-hover-[^{]+{[^}]+}/g) || []).join('\n');
+    // Check .xeg-transition* classes (e.g., .xeg-transition-hover)
+    const transitionBlocks = (css.match(/\.xeg-transition[^{]*{[^}]+}/g) || []).join('\n');
 
     // Either use var(--xeg-transition-*) or explicit duration+ease tokens
     const usesTransitionTokens =
-      /var\(--xeg-transition-[^)]+\)/.test(hoverBlocks) ||
-      (/var\(--xeg-duration-(?:fast|normal|slow)\)/.test(hoverBlocks) &&
-        /var\(--xeg-ease-[^)]+\)|var\(--xeg-easing-[^)]+\)/.test(hoverBlocks));
+      /var\(--xeg-transition-[^)]+\)/.test(transitionBlocks) ||
+      (/var\(--xeg-duration-(?:fast|normal|slow)\)/.test(transitionBlocks) &&
+        /var\(--xeg-ease-[^)]+\)|var\(--xeg-easing-[^)]+\)/.test(transitionBlocks));
 
     expect(usesTransitionTokens).toBe(true);
 
     // Forbid hardcoded duration numbers in transition declarations
-    const hardcodedInTransitions = hoverBlocks.match(/transition:[^;]*(\d+(?:\.\d+)?m?s)/g) || [];
+    const hardcodedInTransitions =
+      transitionBlocks.match(/transition:[^;]*(\d+(?:\.\d+)?m?s)/g) || [];
     expect(hardcodedInTransitions.length).toBe(0);
   });
 });

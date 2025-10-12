@@ -1,5 +1,7 @@
 /**
- * 갤러리 앱 기능 타입 정의
+ * @fileoverview Gallery Types
+ * @description 갤러리 기능 관련 타입 정의
+ * @module features/gallery/types
  */
 
 import type { BaseComponentProps } from '@shared/types';

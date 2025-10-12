@@ -1,8 +1,8 @@
 /**
- * SettingsService Factory (features 레이어)
- * shared 레이어에서 features 로 직접 의존하지 않도록 분리.
+ * @fileoverview 설정 서비스 팩토리
+ * @description SettingsService 싱글톤 인스턴스를 제공하는 팩토리
  */
-import { SettingsService } from './SettingsService';
+import { SettingsService } from './settings-service';
 
 export interface ISettingsServiceFactoryShape {
   get<T = unknown>(key: string): T;

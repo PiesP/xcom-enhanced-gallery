@@ -1,5 +1,7 @@
 /**
- * 갤러리 애플리케이션
+ * @fileoverview Gallery Application
+ * @description 갤러리 애플리케이션의 핵심 로직 관리
+ * @module features/gallery
  *
  * 책임:
  * - 핵심 갤러리 로직 관리

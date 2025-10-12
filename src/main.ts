@@ -7,10 +7,10 @@
  */
 
 import { logger } from '@/shared/logging';
-import { initializeEnvironment } from '@/bootstrap/env-init';
-import { wireGlobalEvents } from '@/bootstrap/event-wiring';
+import { initializeEnvironment } from '@/bootstrap/environment';
+import { wireGlobalEvents } from '@/bootstrap/events';
 import type { AppConfig } from '@/types';
-import { registerFeatureServicesLazy as registerFeatures } from '@/bootstrap/feature-registration';
+import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import {
   warmupCriticalServices,
   warmupNonCriticalServices,
@@ -87,13 +87,6 @@ async function initializeCriticalSystems(): Promise<void> {
     logger.error('❌ Critical Path 초기화 실패:', error);
     throw error;
   }
-}
-
-/**
- * Features 서비스 지연 등록
- */
-async function registerFeatureServicesLazy(): Promise<void> {
-  await registerFeatures();
 }
 
 /**

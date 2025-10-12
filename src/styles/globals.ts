@@ -11,13 +11,13 @@ import '@shared/styles/isolated-gallery.css';
 import '@shared/styles/design-tokens.css';
 
 // 디자인 토큰 - 애니메이션 시스템
-import '@assets/styles/design-tokens.animation.css';
-
-// 애니메이션 유틸리티 클래스
-import '@assets/styles/animation-utilities.css';
+import '@assets/styles/tokens/animation.css';
 
 // 브라우저 스타일 초기화 (갤러리 컨테이너 내부에만 적용)
 import '@assets/styles/base/reset.css';
 
-// 정렬/간격/크기 유틸리티 (경량) — em/토큰 기반
-import '@assets/styles/components/alignment.css';
+// 유틸리티 클래스: 정렬/간격/크기 (경량, em/토큰 기반)
+import '@assets/styles/utilities/layout.css';
+
+// 유틸리티 클래스: 애니메이션/트랜지션
+import '@assets/styles/utilities/animations.css';

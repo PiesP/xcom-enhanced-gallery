@@ -11,8 +11,8 @@ import type {
   SettingValidationResult,
 } from '../types/settings.types';
 import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
-import { migrateSettings as runMigration } from './SettingsMigration';
-import { computeCurrentSettingsSchemaHash } from './SettingsSchema';
+import { migrateSettings as runMigration } from './settings-migration';
+import { computeCurrentSettingsSchemaHash } from './settings-schema';
 
 /**
  * 설정 저장 키

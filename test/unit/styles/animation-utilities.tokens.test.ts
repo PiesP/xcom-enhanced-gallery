@@ -18,8 +18,8 @@ describe('Animation Utilities Token Policy', () => {
     return readFileSync(filePath, 'utf-8');
   }
 
-  it('animation-utilities.css should not hardcode durations', () => {
-    const css = readCSS('assets/styles/animation-utilities.css');
+  it('utilities/animations.css should not hardcode durations', () => {
+    const css = readCSS('assets/styles/utilities/animations.css');
     // no patterns like: 0.2s or 200ms directly in animation/transition lines
     const hardcoded = css.match(/(animation|transition):[^;]*(\d+(?:\.\d+)?m?s)/g) || [];
     expect(hardcoded.length).toBe(0);

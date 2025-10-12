@@ -1,0 +1,60 @@
+/**
+ * @fileoverview Layout Utilities
+ * @description 정렬, 간격, 크기를 위한 토큰 기반 유틸리티 클래스
+ * @scope 격리된 갤러리 컨테이너 내부 요소에 적용
+ */
+
+/* ============================= */
+/*       Flexbox 정렬 프리셋      */
+/* ============================= */
+
+/* 수평/수직 중앙 정렬 */
+.xeg-row-center {
+  display: flex;
+  align-items: center;
+}
+
+/* 양쪽 끝 정렬 */
+.xeg-center-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ============================= */
+/*       간격 프리셋              */
+/* ============================= */
+
+/* Gap 토큰 기반 간격 */
+.xeg-gap-sm {
+  gap: var(--xeg-space-4);
+}
+
+.xeg-gap-md {
+  gap: var(--xeg-space-8);
+}
+
+.xeg-gap-lg {
+  gap: var(--xeg-space-12);
+}
+
+/* ============================= */
+/*       크기 프리셋              */
+/* ============================= */
+
+/* 최소 클릭 타겟 크기 (접근성) */
+.xeg-size-toolbar {
+  min-width: 2.5em;
+  min-height: 2.5em;
+}
+
+/* ============================= */
+/*       접근성 고려사항         */
+/* ============================= */
+
+/*
+ * 색상과 애니메이션은 별도 유틸리티에서 관리합니다.
+ * - 색상: design-tokens.css
+ * - 애니메이션: utilities/animations.css
+ * - 접근성: utilities/accessibility.css
+ */

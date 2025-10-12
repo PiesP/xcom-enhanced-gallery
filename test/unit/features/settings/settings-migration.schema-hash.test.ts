@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import { SettingsService } from '@/features/settings/services/SettingsService';
+import { SettingsService } from '@/features/settings/services/settings-service';
 import { DEFAULT_SETTINGS } from '@/features/settings/types/settings.types';
 
 const STORAGE_KEY = 'xeg-app-settings';

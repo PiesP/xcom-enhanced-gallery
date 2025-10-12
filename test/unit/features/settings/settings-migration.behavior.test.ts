@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { migrateSettings } from '@/features/settings/services/SettingsMigration';
+import { describe, it, expect } from 'vitest';
+import { migrateSettings } from '@/features/settings/services/settings-migration';
 import { DEFAULT_SETTINGS } from '@/features/settings/types/settings.types';
 
 function stripVolatile(s: any) {
