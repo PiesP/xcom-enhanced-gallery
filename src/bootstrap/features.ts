@@ -8,18 +8,14 @@ import {
   registerSettingsManager,
   registerTwitterTokenExtractor,
 } from '@shared/container/service-accessors';
-import type { NestedSettingKey } from '@features/settings/types/settings.types';
 
 /**
  * Features 레이어 서비스를 지연 등록합니다
  * - SettingsManager: 사용자 설정 관리
  * - TwitterTokenExtractor: 트위터 토큰 추출
- * - DOMCache 연동: 설정 변경 시 캐시 TTL 동기화
+ * - DOMCache 초기화: 설정 변경 구독 (DOMCache 자율성)
  *
  * @returns {Promise<void>}
- *
- * @todo DOMCache 연동 로직을 DOMCache 또는 SettingsService로 이동
- *       현재 bootstrap 레이어에서 처리하고 있으나, shared/services 레이어의 책임
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
@@ -30,23 +26,10 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     const settingsService = await getSettingsService();
     registerSettingsManager(settingsService);
 
-    // 성능 설정(cacheTTL) 변화를 DOMCache에 반영
+    // DOMCache 초기화 - Shared 레이어의 자율적 설정 구독
     try {
       const { globalDOMCache } = await import('@shared/dom/DOMCache');
-      const initialTTL = settingsService.get<number>('performance.cacheTTL' as NestedSettingKey);
-      if (typeof initialTTL === 'number') {
-        globalDOMCache.setDefaultTTL(initialTTL);
-      }
-      if (typeof settingsService.subscribe === 'function') {
-        settingsService.subscribe(event => {
-          if (
-            (event.key as NestedSettingKey) === 'performance.cacheTTL' &&
-            typeof event.newValue === 'number'
-          ) {
-            globalDOMCache.setDefaultTTL(event.newValue);
-          }
-        });
-      }
+      await globalDOMCache.initializeDOMCache(settingsService);
     } catch {
       // DOMCache가 없거나 초기화 전이면 무시
     }

@@ -2,8 +2,7 @@
 
 > **최종 업데이트**: 2025-10-12
 
-모든 Phase (1-21.6)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일
-참조.
+모든 Phase (1-23)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
 
 ---
 
@@ -11,12 +10,12 @@
 
 ### 빌드 & 테스트
 
-- ✅ **빌드**: dev (730 KB) / prod (330 KB, gzip: 89.81 KB)
-- ✅ **Vitest**: 603/603 (100%, 24 skipped, 1 todo)
+- ✅ **빌드**: dev (730 KB) / prod (330 KB, gzip: 89.91 KB)
+- ✅ **Vitest**: 607/607 (100%, 24 skipped, 1 todo) ← **Phase 23: +4 tests**
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations (265 modules, 729 dependencies)
+- ✅ **의존성**: 0 violations (264 modules, 727 dependencies)
 
 ### 기술 스택
 
@@ -48,6 +47,14 @@
 
 - Solid.js 마이그레이션 대응
 - E2E 회귀 커버리지 구축 (Playwright)
+- E2E 테스트 안정화 및 CI 통합
+
+### Phase 21-23: 최적화 & 아키텍처
+
+- **Phase 21**: IntersectionObserver 무한 루프 방지, Fine-grained Signals (99%
+  성능 개선)
+- **Phase 22**: constants.ts 리팩토링 (37% 코드 감소), 단일 책임 원칙 준수
+- **Phase 23**: DOMCache 아키텍처 개선 (계층 경계 강화, 28% 코드 감소)
 - E2E 테스트 안정화 및 CI 통합
 
 ### Phase 21: SolidJS 핵심 최적화
@@ -1503,6 +1510,317 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
 ---
 
+## Phase 23: DOMCache 연동 로직 아키텍처 개선 (2025-10-12)
+
+### 개요
+
+**우선순위**: LOW
+
+**브랜치**: `feature/phase23-domcache-architecture`
+
+**목표**: Bootstrap 레이어의 DOMCache TTL 설정 구독을 Shared 레이어로 이동하여
+아키텍처 일관성 확보
+
+### 문제 상황
+
+**계층 경계 위반**:
+
+- `src/bootstrap/features.ts`에서 DOMCache의 내부 동작(TTL 설정 구독) 직접 처리
+- Bootstrap 레이어가 Shared 레이어의 구현 세부사항에 의존
+- DOMCache 초기화 로직이 두 곳으로 분산 (생성 시 + Bootstrap에서 구독)
+
+**기존 코드 문제점**:
+
+```typescript
+// bootstrap/features.ts - 기존 (18줄)
+const initialTTL = settingsService.get<number>(
+  'performance.cacheTTL' as NestedSettingKey
+);
+if (typeof initialTTL === 'number') {
+  globalDOMCache.setDefaultTTL(initialTTL);
+}
+if (typeof settingsService.subscribe === 'function') {
+  settingsService.subscribe(event => {
+    if ((event.key as NestedSettingKey) === 'performance.cacheTTL' && ...) {
+      globalDOMCache.setDefaultTTL(event.newValue);
+    }
+  });
+}
+```
+
+**아키텍처 이슈**:
+
+- Bootstrap 레이어가 DOMCache의 TTL 업데이트 책임 부담
+- NestedSettingKey 타입 의존 (Features 레이어 타입에 의존)
+- 설정 변경 감지가 Bootstrap에 하드코딩됨 (재사용 불가)
+
+### TDD 작업 단계
+
+#### 1. RED 단계
+
+**테스트 파일**: `test/unit/architecture/domcache-initialization.test.ts`
+
+**4개 테스트 케이스**:
+
+1. **자체 구독 검증**: DOMCache가 `initializeDOMCache` 메서드를 가지는지
+
+   ```typescript
+   test('DOMCache가 자체적으로 설정 변경을 구독해야 한다', () => {
+     expect(typeof DOMCache.prototype.initializeDOMCache).toBe('function');
+   });
+   ```
+
+2. **초기화 시그니처**: SettingsService 주입 인터페이스 검증
+
+   ```typescript
+   test('DOMCache 초기화 시 SettingsService를 주입받아야 한다', async () => {
+     const cache = new DOMCache();
+     const settingsService = {
+       get: vi.fn(() => 1000),
+       subscribe: vi.fn(),
+     };
+     await cache.initializeDOMCache(settingsService);
+     expect(settingsService.get).toHaveBeenCalledWith('performance.cacheTTL');
+   });
+   ```
+
+3. **자동 TTL 업데이트**: 설정 변경 시 자동 업데이트 확인
+
+   ```typescript
+   test('DOMCache가 설정 변경 시 자동으로 TTL을 업데이트해야 한다', async () => {
+     // subscribe 콜백 캡처 및 변경 시뮬레이션
+     // setDefaultTTL이 새 값으로 호출되는지 검증
+   });
+   ```
+
+4. **Bootstrap 경계 검증**: Bootstrap 레이어에 DOMCache 구독 로직이 없는지
+
+   ```typescript
+   test('bootstrap/features.ts에 DOMCache 설정 구독 로직이 없어야 한다', () => {
+     const source = fs.readFileSync(featuresPath, 'utf-8');
+     expect(source).not.toMatch(/settingsService\.subscribe/);
+     expect(source).not.toMatch(/setDefaultTTL\(/);
+     expect(source).not.toMatch(/cacheTTL/);
+     expect(source).toMatch(/initializeDOMCache/); // 초기화 호출은 허용
+   });
+   ```
+
+**RED 결과**: 6 tests FAILED (3 per project × 2 projects: unit + fast)
+
+- `DOMCache.prototype.initializeDOMCache is undefined`
+- `cache.initializeDOMCache is not a function`
+- `bootstrap/features.ts contains globalDOMCache/setDefaultTTL/cacheTTL`
+
+#### 2. GREEN 단계
+
+**구현 파일 1**: `src/shared/dom/DOMCache.ts`
+
+**추가된 메서드** (lines 58-82):
+
+```typescript
+/**
+ * DOMCache 초기화 - SettingsService 구독 설정
+ *
+ * SettingsService에서 performance.cacheTTL 설정 변경을 구독하여
+ * 자동으로 defaultTTL을 업데이트합니다.
+ *
+ * @param settingsService Settings 서비스 인스턴스
+ */
+async initializeDOMCache(settingsService: {
+  get: <T>(key: string) => T | undefined;
+  subscribe?: (
+    callback: (event: { key: string; newValue: unknown; oldValue?: unknown }) => void
+  ) => void;
+}): Promise<void> {
+  try {
+    // 초기 TTL 설정
+    const initialTTL = settingsService.get<number>('performance.cacheTTL');
+    if (typeof initialTTL === 'number') {
+      this.setDefaultTTL(initialTTL);
+      logger.debug(`DOMCache: initialized with TTL ${initialTTL}ms`);
+    }
+
+    // 설정 변경 구독
+    if (typeof settingsService.subscribe === 'function') {
+      settingsService.subscribe(event => {
+        if (event.key === 'performance.cacheTTL' && typeof event.newValue === 'number') {
+          this.setDefaultTTL(event.newValue);
+          logger.debug(`DOMCache: TTL updated to ${event.newValue}ms via settings change`);
+        }
+      });
+    }
+  } catch (error) {
+    logger.warn('DOMCache initialization failed, using default TTL', error);
+  }
+}
+```
+
+**구현 특징**:
+
+- 인라인 인터페이스: SettingsService 타입 의존성 없음 (덕 타이핑)
+- 초기화 + 구독: 한 메서드에서 모든 설정 관리
+- 에러 핸들링: 초기화 실패 시 기본 TTL로 fallback
+- 로깅: 초기화 및 변경 추적 로그 추가
+
+**구현 파일 2**: `src/bootstrap/features.ts`
+
+**변경 전** (67줄):
+
+```typescript
+// 18줄의 DOMCache TTL 설정 구독 로직
+const initialTTL = settingsService.get<number>('performance.cacheTTL' as NestedSettingKey);
+if (typeof initialTTL === 'number') {
+  globalDOMCache.setDefaultTTL(initialTTL);
+}
+if (typeof settingsService.subscribe === 'function') {
+  settingsService.subscribe(event => {
+    if ((event.key as NestedSettingKey) === 'performance.cacheTTL' && ...) {
+      globalDOMCache.setDefaultTTL(event.newValue);
+    }
+  });
+}
+```
+
+**변경 후** (48줄):
+
+```typescript
+// DOMCache 초기화 - Shared 레이어의 자율적 설정 구독
+try {
+  const { globalDOMCache } = await import('@shared/dom/DOMCache');
+  await globalDOMCache.initializeDOMCache(settingsService);
+} catch {
+  // DOMCache가 없거나 초기화 전이면 무시
+}
+```
+
+**변경 내역**:
+
+- 제거: 18줄 DOMCache TTL 설정 구독 로직
+- 제거: `NestedSettingKey` import (불필요)
+- 추가: 단일 `initializeDOMCache()` 호출 (3줄)
+- 간소화: 주석 개선 ("DOMCache 자율성" 강조)
+
+**GREEN 결과**: 8 tests PASSED (4 tests × 2 projects)
+
+#### 3. REFACTOR 단계
+
+**코드 품질 점검**:
+
+- ✅ DRY 원칙: 설정 구독 로직 한 곳에 집중
+- ✅ SRP 원칙: Bootstrap은 등록만, DOMCache는 자체 초기화
+- ✅ 계층 경계: Bootstrap → Shared (단방향 의존성 유지)
+- ✅ 에러 핸들링: try-catch로 초기화 실패 안전 처리
+- ✅ 타입 안전성: 인라인 인터페이스로 타입 의존성 제거
+
+**로깅 개선**:
+
+- 초기화 성공: `DOMCache: initialized with TTL ${initialTTL}ms`
+- TTL 변경: `DOMCache: TTL updated to ${newValue}ms via settings change`
+- 초기화 실패: `DOMCache initialization failed, using default TTL`
+
+**추가 리팩토링 고려사항** (현재는 보류):
+
+- ⏳ 설정 구독 해제 로직 추가 (cleanup 메서드)
+- ⏳ 구독 콜백 테스트 확장 (multiple changes)
+
+### 성과
+
+**정량 지표**:
+
+- **코드 감소**: bootstrap/features.ts 67줄 → 48줄 (19줄 감소, 28% 축소)
+- **로직 제거**: DOMCache TTL 설정 구독 로직 18줄 완전 제거
+- **테스트 추가**: 4개 신규 테스트 (8회 실행 = 4 tests × 2 projects)
+- **빌드 크기**: 변화 없음 (330 KB raw / 89.91 KB gzipped)
+- **성능 영향**: 없음 (초기화 로직 위치만 변경)
+
+**정성 개선**:
+
+- **계층 경계 강화**: Bootstrap은 Features 등록만 담당 (순수성 유지)
+- **Shared 자율성**: DOMCache가 자체 설정 구독 관리 (캡슐화 향상)
+- **응집도 향상**: DOMCache 관련 로직 한 곳에 집중
+- **타입 의존성 제거**: NestedSettingKey 불필요 (인라인 인터페이스 사용)
+- **재사용성 향상**: DOMCache 초기화 로직 독립적으로 재사용 가능
+
+**아키텍처 개선**:
+
+- Bootstrap 레이어: Features 등록만 담당 (계층 책임 명확화)
+- Shared 레이어: 자율적 설정 구독 관리 (내부 로직 캡슐화)
+- 계층 의존성: Features → Shared (단방향 유지)
+
+### 테스트 커버리지
+
+**신규 테스트**: `test/unit/architecture/domcache-initialization.test.ts` (4
+tests)
+
+1. ✅ DOMCache가 자체적으로 설정 변경을 구독해야 한다
+2. ✅ DOMCache 초기화 시 SettingsService를 주입받아야 한다
+3. ✅ DOMCache가 설정 변경 시 자동으로 TTL을 업데이트해야 한다
+4. ✅ bootstrap/features.ts에 DOMCache 설정 구독 로직이 없어야 한다
+
+**Vitest 실행**:
+
+- **Projects**: unit, fast (2개)
+- **Test Files**: 2 passed (동일 파일, 2 프로젝트)
+- **Tests**: 8 passed (4 tests × 2 projects)
+- **Duration**: 3.25s
+
+**전체 테스트 통과**: 607/607 (603 기존 + 4 신규)
+
+### 빌드 검증
+
+**의존성 검증**:
+
+```text
+✔ no dependency violations found (264 modules, 727 dependencies cruised)
+```
+
+**타입 체크**:
+
+```text
+✅ tsgo --project ./tsconfig.json --noEmit
+```
+
+**린트**:
+
+```text
+✅ eslint ./src --report-unused-disable-directives --max-warnings 0
+```
+
+**빌드 산출물**:
+
+- **Dev Build**: 729.63 KB (sourcemap: 1,392.25 kB)
+- **Prod Build**: 330.21 KB raw / 89.91 KB gzipped
+- **Validation**: UserScript build passed ✅
+
+### 기술적 결정
+
+**1. 인라인 인터페이스 사용**:
+
+- 장점: SettingsService 타입 의존성 제거, 덕 타이핑으로 유연성 확보
+- 단점: 타입 안전성 약간 감소 (허용 가능 수준)
+
+**2. try-catch 에러 핸들링**:
+
+- 장점: DOMCache 초기화 실패 시 앱 중단 방지, 기본 TTL로 fallback
+- 단점: 에러 숨김 위험 (로깅으로 완화)
+
+**3. 설정 구독 해제 미구현**:
+
+- 결정: 현재 보류 (DOMCache는 앱 생명주기 동안 유지)
+- 추후 검토: cleanup 메서드 추가 가능
+
+### 다음 단계
+
+**Phase 23 완료** ✅
+
+**Phase 24 준비**: src/shared 파일명 규칙 통일 (kebab-case)
+
+- 우선순위: MEDIUM
+- 예상 소요: 6-9시간 (3개 sub-phase)
+- 영향 범위: 60+ 파일 리네임, 100-150개 파일 import 업데이트
+
+---
+
 ## 📖 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
@@ -1516,7 +1834,7 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
 ## 🎉 결론
 
-모든 Phase (1-20.3)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
+모든 Phase (1-23)가 성공적으로 완료되었습니다. 프로젝트는 안정적인 상태이며,
 향후 기능 추가 및 유지보수가 용이한 구조를 갖추었습니다. Phase 20 (SolidJS
 최적화)가 완료되어 Effect 통합 작업이 성공적으로 마무리되었습니다.
 

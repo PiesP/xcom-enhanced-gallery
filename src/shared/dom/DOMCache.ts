@@ -53,6 +53,42 @@ export class DOMCache {
   }
 
   /**
+   * DOMCache 초기화 - SettingsService 구독 설정
+   *
+   * SettingsService에서 performance.cacheTTL 설정 변경을 구독하여
+   * 자동으로 defaultTTL을 업데이트합니다.
+   *
+   * @param settingsService Settings 서비스 인스턴스
+   */
+  async initializeDOMCache(settingsService: {
+    get: <T>(key: string) => T | undefined;
+    subscribe?: (
+      callback: (event: { key: string; newValue: unknown; oldValue?: unknown }) => void
+    ) => void;
+  }): Promise<void> {
+    try {
+      // 초기 TTL 설정
+      const initialTTL = settingsService.get<number>('performance.cacheTTL');
+      if (typeof initialTTL === 'number') {
+        this.setDefaultTTL(initialTTL);
+        logger.debug(`DOMCache: initialized with TTL ${initialTTL}ms`);
+      }
+
+      // 설정 변경 구독
+      if (typeof settingsService.subscribe === 'function') {
+        settingsService.subscribe(event => {
+          if (event.key === 'performance.cacheTTL' && typeof event.newValue === 'number') {
+            this.setDefaultTTL(event.newValue);
+            logger.debug(`DOMCache: TTL updated to ${event.newValue}ms via settings change`);
+          }
+        });
+      }
+    } catch (error) {
+      logger.warn('DOMCache: initialization failed, using default TTL', error);
+    }
+  }
+
+  /**
    * 기본 TTL 업데이트 (런타임 설정 반영)
    */
   setDefaultTTL(ttl: number): void {
