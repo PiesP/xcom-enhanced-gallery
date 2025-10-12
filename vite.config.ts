@@ -10,6 +10,7 @@ import solidPlugin from 'vite-plugin-solid';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
+import { transformSync } from '@babel/core';
 
 interface BuildFlags {
   mode: string;
@@ -181,14 +182,76 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
   };
 }
 
+function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
+  if (!flags.isProd) {
+    return null;
+  }
+
+  return {
+    name: 'xeg-strip-logger-debug',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id.includes('node_modules')) {
+        return null;
+      }
+
+      if (!/\.(ts|tsx|js|jsx)$/.test(id)) {
+        return null;
+      }
+
+      const result = transformSync(code, {
+        filename: id,
+        babelrc: false,
+        configFile: false,
+        sourceMaps: true,
+        parserOpts: {
+          sourceType: 'module',
+          plugins: ['typescript', 'jsx'],
+        },
+        plugins: [
+          ({ types: t }) => ({
+            name: 'strip-logger-debug-call',
+            visitor: {
+              CallExpression(path: any) {
+                const callee = path.node.callee;
+                if (
+                  t.isMemberExpression(callee) &&
+                  !callee.computed &&
+                  t.isIdentifier(callee.property, { name: 'debug' })
+                ) {
+                  if (path.parentPath?.isExpressionStatement()) {
+                    path.parentPath.remove();
+                  } else {
+                    path.replaceWith(t.identifier('undefined'));
+                  }
+                }
+              },
+            },
+          }),
+        ],
+      });
+
+      if (!result) {
+        return null;
+      }
+
+      return {
+        code: result.code ?? code,
+        map: result.map ?? null,
+      };
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
+      stripLoggerDebugPlugin(flags),
       solidPlugin({ dev: flags.isDev, ssr: false }),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
-    ],
+    ].filter(Boolean) as Plugin[],
     define: {
       __DEV__: flags.isDev,
       __PROD__: flags.isProd,

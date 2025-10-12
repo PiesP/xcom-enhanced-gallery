@@ -102,7 +102,7 @@ function VerticalGalleryViewCore({
   const forceVisibleItems = new Set<number>();
 
   const getInitialFitMode = (): ImageFitMode => {
-    const saved = getSetting<ImageFitMode>('gallery.imageFitMode' as unknown as string, 'fitWidth');
+    const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
     return saved ?? 'fitWidth';
   };
 

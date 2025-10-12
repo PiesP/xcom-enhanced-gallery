@@ -140,20 +140,24 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   );
 
   const displayedIndex = createMemo(() => {
-    const focus = props.focusedIndex;
-    const current = props.currentIndex;
-
-    // focusedIndex가 유효하고 currentIndex와 일치하거나 근접한 경우에만 사용
-    if (typeof focus === 'number' && focus >= 0 && focus < props.totalCount) {
-      // currentIndex와 동일하거나 매우 근접한 경우 focusedIndex 사용
-      const diff = Math.abs(focus - current);
-      if (diff <= 1) {
-        return focus;
-      }
+    const total = props.totalCount;
+    if (!(typeof total === 'number' && total > 0)) {
+      return 0;
     }
 
-    // 그 외의 경우 currentIndex를 우선 사용 (더 신뢰할 수 있는 값)
-    return current;
+    const focus = props.focusedIndex;
+    if (typeof focus === 'number' && focus >= 0 && focus < total) {
+      return focus;
+    }
+
+    const current = props.currentIndex;
+    if (typeof current === 'number' && current >= 0 && current < total) {
+      return current;
+    }
+
+    // currentIndex가 범위를 벗어나더라도 0~total-1 범위로 클램프하여 반환
+    const clampedCurrent = Math.min(Math.max(Number(current) || 0, 0), total - 1);
+    return clampedCurrent;
   });
 
   const progressWidth = createMemo(() => {

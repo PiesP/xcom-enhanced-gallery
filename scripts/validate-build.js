@@ -193,6 +193,20 @@ function validateUserScript() {
     );
   }
 
+  const RAW_FAIL_BUDGET = 325 * 1024; // 325KB (Phase 31 hard limit)
+  const RAW_WARN_BUDGET = 320 * 1024; // 320KB (early warning)
+
+  if (rawBytes > RAW_FAIL_BUDGET) {
+    console.error(
+      `❌ Raw size exceeds hard limit: ${(rawBytes / 1024).toFixed(2)} KB (limit ${(RAW_FAIL_BUDGET / 1024).toFixed(0)} KB)`
+    );
+    process.exit(1);
+  } else if (rawBytes > RAW_WARN_BUDGET) {
+    console.warn(
+      `⚠️ Raw size approaching limit: ${(rawBytes / 1024).toFixed(2)} KB (budget ${(RAW_WARN_BUDGET / 1024).toFixed(0)} KB)`
+    );
+  }
+
   console.log('✅ UserScript validation passed');
   console.log(`📄 Files: \n  - ${prodPath}\n  - ${devPath}`);
   console.log(`📏 Size (raw): ${(rawBytes / 1024).toFixed(2)} KB`);

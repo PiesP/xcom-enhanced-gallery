@@ -6,10 +6,17 @@
 import { tryGetSettingsManager } from './service-accessors';
 
 // Minimal settings service contract used by accessors (avoid AppContainer types)
+interface SettingsChangeEvent {
+  key?: string;
+  newValue?: unknown;
+  oldValue?: unknown;
+}
+
 interface SettingsServiceLike {
   get<T = unknown>(key: string): T;
   set<T = unknown>(key: string, value: T): Promise<void>;
   cleanup?: () => void;
+  subscribe?: (listener: (event: SettingsChangeEvent | null) => void) => (() => void) | void;
 }
 
 /**
