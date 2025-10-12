@@ -1,14 +1,14 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-12
+> **최종 업데이트**: 2025-01-27
 >
-> **브랜치**: master
+> **브랜치**: feature/phase-32-bundle-optimization
 >
-> **상태**: 안정 (Phase 31 완료) ✅
+> **상태**: Phase 32 계획 수립 중 🚧
 
 ## 프로젝트 상태
 
-- **빌드**: dev 741.61 KB / prod 320.73 KB (gzip 87.39 KB) ✅
+- **빌드**: dev 831.69 KB / prod 320.73 KB (gzip 87.39 KB) ✅
 - **테스트**: 634/659 passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
@@ -25,8 +25,55 @@
 
 ## 활성 작업
 
-현재 진행 중인 Phase가 없습니다. 새로운 작업을 시작하려면 "작업 시작
-체크리스트"를 참고하세요.
+### Phase 32: CSS Optimization & Bundle Size Reduction 🚧
+
+**목표**: 320.73 KB → 290-300 KB (20-30 KB 절감, 6-9%)
+
+**배경**:
+
+- Phase 31에서 logger 최적화로 13.95 KB 절감 완료
+- CSS 소스 파일 26개, 총 187.38 KB (minified 후 실제 크기는 더 작음)
+- 중복 패턴 발견: transition 정의, 레거시 alias, media query 반복
+
+**지연 로딩 평가 결과**: ❌ 실효성 없음
+
+- Userscript 제약: `inlineDynamicImports: true` (단일 번들 필수)
+- 동적 import는 빌드 시점에 모두 인라인됨
+- KeyboardHelpOverlay/Settings는 이미 조건부 렌더링으로 최적화됨
+
+**실행 전략** (TDD 우선):
+
+1. **CSS 중복 제거** (예상 10-15 KB)
+   - [ ] 테스트: CSS 중복 검증 테스트 작성
+   - [ ] 구현: 공통 transition을 유틸리티 클래스로 통합
+   - [ ] 구현: Media query를 전역 레이어로 통합
+   - [ ] 리팩토링: 레거시 토큰 alias 제거
+
+2. **디자인 토큰 정리** (예상 5-8 KB)
+   - [ ] 테스트: unused alias 검증 테스트
+   - [ ] 구현: semantic 토큰 중복 정리
+   - [ ] 리팩토링: 토큰 계층 단순화
+
+3. **Component CSS 최적화** (예상 5-7 KB)
+   - [ ] 테스트: 선택자 복잡도 검증
+   - [ ] 구현: 공통 패턴 추출
+   - [ ] 리팩토링: 선택자 단순화
+
+**주요 파일** (큰 순서):
+
+- Gallery.module.css (24.18 KB)
+- Toolbar.module.css (18.93 KB)
+- VerticalGalleryView.module.css (17.77 KB)
+- Button.module.css (16.37 KB)
+- gallery-global.css (13.61 KB)
+- design-tokens.semantic.css (12.57 KB)
+
+**검증 기준**:
+
+- [ ] Prod bundle < 300 KB (raw)
+- [ ] 모든 기존 테스트 통과 (634/659)
+- [ ] 시각적 회귀 없음 (E2E 스모크 테스트)
+- [ ] 접근성 유지 (contrast, reduced-motion 등)
 
 ---
 
