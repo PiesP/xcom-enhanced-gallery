@@ -202,29 +202,6 @@
   }
 }
 
-/* Legacy compatibility - 점진적 제거 예정 */
-@keyframes slideInFromRight {
-  from {
-    transform: translateX(100%) translateZ(0);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0) translateZ(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeSlideIn {
-  from {
-    transform: translateY(-10px) translateZ(0);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0) translateZ(0);
-    opacity: 1;
-  }
-}
-
 /* Glassmorphism Base Class - 테스트 요구사항 */
 .xeg-glassmorphism {
   background: var(--glass-bg);
