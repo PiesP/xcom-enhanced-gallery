@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 23, 24 계획 수립 완료 📋
+현재 상태: Phase 23 완료 ✅ | Phase 24 계획 수립 완료 📋
 
 최종 업데이트: 2025-10-12
 
@@ -12,9 +12,9 @@
 
 프로젝트 안정 상태 - 모든 품질 지표 GREEN
 
-- ✅ 빌드: dev 730 KB, prod 330 KB (gzip: 89.81 KB)
-- ✅ 테스트: 603/603 passing (24 skipped, 1 todo)
-- ✅ 의존성: 0 violations (265 modules, 729 dependencies)
+- ✅ 빌드: dev 730 KB, prod 330 KB (gzip: 89.91 KB)
+- ✅ 테스트: 607/607 passing (24 skipped, 1 todo) ← **Phase 23: +4 tests**
+- ✅ 의존성: 0 violations (264 modules, 727 dependencies)
 - ✅ 타입: 0 errors (TypeScript strict)
 - ✅ 린트: 0 warnings, 0 errors
 
@@ -30,6 +30,41 @@
 ---
 
 ## 🎯 최근 완료 작업
+
+### Phase 23: DOMCache 연동 로직 아키텍처 개선 ✅ (2025-10-12)
+
+**성과**:
+
+- bootstrap/features.ts: 67줄 → 48줄 (19줄 감소, 28% 축소)
+- DOMCache TTL 설정 구독 로직 18줄 제거 (Bootstrap → Shared 이동)
+- 아키텍처 경계 명확화: Bootstrap은 등록만, Shared는 자체 초기화
+- 새 테스트 4개 추가 (607/607 passing, +4)
+- 빌드 크기 변화 없음 (성능 영향 없음)
+
+**주요 변경**:
+
+- 추가: `DOMCache.initializeDOMCache()` 메서드 구현 (SettingsService 주입)
+- 기능: DOMCache가 자체적으로 performance.cacheTTL 설정 변경 구독
+- 제거: Bootstrap 레이어의 DOMCache TTL 설정 구독 로직 (18줄)
+- 제거: NestedSettingKey import (불필요)
+- 개선: DOMCache 초기화 로직 한 곳으로 집중 (응집도 향상)
+
+**아키텍처 개선**:
+
+- Bootstrap 레이어: Features 등록만 담당 (순수성 유지)
+- Shared 레이어: 자율적 설정 구독 관리 (자율성 향상)
+- 계층 경계: Features → Shared 의존성만 유지 (경계 준수)
+
+**테스트 커버리지**:
+
+- 새 테스트 4개: DOMCache 자체 구독, 초기화 시그니처, 자동 TTL 업데이트,
+  Bootstrap 경계 검증
+- 실행: unit + fast 프로젝트 = 8회 실행 (각 4개 테스트)
+- 결과: 8/8 passing (100%)
+
+**상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 23 참조
+
+---
 
 ### Phase 22: src/constants.ts 리팩토링 ✅ (2025-10-12)
 
@@ -48,67 +83,6 @@
 - 중복 제거: isVideoControlElement (utils.ts만 사용)
 
 **상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 22 참조
-
----
-
-## 🚀 활성 Phase 계획
-
-### Phase 23: DOMCache 연동 로직 아키텍처 개선
-
-**우선순위**: LOW
-
-**목표**: Bootstrap 레이어의 DOMCache TTL 설정 구독을 Shared 레이어로 이동하여
-아키텍처 일관성 확보
-
-**현재 문제**:
-
-- `src/bootstrap/features.ts`에서 DOMCache TTL 설정 구독 처리
-- Bootstrap 레이어가 Shared 레이어의 내부 동작에 관여 (계층 경계 위반)
-- DOMCache 초기화 로직이 두 곳으로 분산
-
-**작업 계획**:
-
-1. **RED 단계**:
-   - `test/architecture/domcache-initialization.test.ts` 생성
-   - DOMCache가 자체적으로 설정 변경 구독하는지 검증하는 테스트 (FAIL)
-   - `bootstrap/features.ts`에 DOMCache 관련 로직이 없는지 검증하는 테스트
-     (FAIL)
-   - DOMCache 초기화 시 TTL 설정이 즉시 반영되는지 검증하는 테스트 (FAIL)
-
-2. **GREEN 단계**:
-   - `shared/dom/DOMCache.ts`에 설정 구독 로직 추가
-   - `initializeDOMCache()` 메서드 구현 (SettingsService 주입)
-   - TTL 변경 시 자동 업데이트 로직 구현
-   - `bootstrap/features.ts`에서 DOMCache 관련 코드 제거
-
-3. **REFACTOR 단계**:
-   - DOMCache 초기화 로직 정리
-   - 설정 구독 해제 로직 추가 (cleanup)
-   - 로깅 개선 (DOMCache TTL 변경 추적)
-
-**평가 기준**:
-
-- ✅ `bootstrap/features.ts`에서 DOMCache 관련 로직 완전 제거
-- ✅ DOMCache가 자체적으로 설정 변경 감지 및 업데이트
-- ✅ 모든 테스트 통과 (603개 + 신규 3개)
-- ✅ 타입 체크 및 린트 통과
-- ✅ 빌드 크기 변화 없음 (성능 영향 없음)
-
-**예상 효과**:
-
-- Bootstrap 레이어 순수성 유지 (Features 등록만 담당)
-- Shared 레이어의 자율성 향상 (자체 초기화 로직 포함)
-- DOMCache 관련 로직 응집도 향상 (한 곳에 집중)
-- 아키텍처 경계 명확화 (Features → Shared 의존성만 유지)
-
-**예상 파일 변경**:
-
-- 수정: `src/shared/dom/DOMCache.ts` (설정 구독 추가)
-- 수정: `src/bootstrap/features.ts` (DOMCache 코드 제거)
-- 생성: `test/architecture/domcache-initialization.test.ts` (신규 테스트)
-- 수정: `test/architecture/dependency-rules.test.ts` (경계 검증 강화)
-
-**브랜치**: `feature/phase23-domcache-architecture`
 
 ---
 
@@ -275,5 +249,5 @@ kebab-case로 통일하여 코드베이스 일관성 확보
 
 ---
 
-**프로젝트 상태**: Phase 23, 24 계획 수립 완료 📋 | 다음 단계: Phase 23 또는
-Phase 24 시작
+**프로젝트 상태**: Phase 23 완료 ✅ | Phase 24 계획 수립 완료 📋 | 다음 단계:
+Phase 24 시작 가능
