@@ -17,6 +17,10 @@ export interface UserscriptAPI {
   info(): UserScriptInfo | null;
   download(url: string, filename: string): Promise<void>;
   xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined;
+  setValue(key: string, value: unknown): Promise<void>;
+  getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
+  deleteValue(key: string): Promise<void>;
+  listValues(): Promise<string[]>;
 }
 
 function detectManager(): UserscriptManager {
@@ -136,9 +140,10 @@ export function getUserscript(): UserscriptAPI {
   const g: any = globalThis as any;
   const hasGMDownload = typeof g.GM_download === 'function';
   const hasGMXhr = typeof g.GM_xmlhttpRequest === 'function';
+  const hasGMStorage = typeof g.GM_setValue === 'function' && typeof g.GM_getValue === 'function';
 
   return Object.freeze({
-    hasGM: hasGMDownload || hasGMXhr,
+    hasGM: hasGMDownload || hasGMXhr || hasGMStorage,
     manager: detectManager(),
     info: safeInfo,
     async download(url: string, filename: string): Promise<void> {
@@ -162,6 +167,95 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       return fallbackXhr(options);
+    },
+    async setValue(key: string, value: unknown): Promise<void> {
+      if (hasGMStorage) {
+        try {
+          await Promise.resolve(g.GM_setValue(key, value));
+          return;
+        } catch (error) {
+          // GM_setValue 실패 시 localStorage로 fallback
+          if (typeof localStorage !== 'undefined') {
+            try {
+              localStorage.setItem(key, JSON.stringify(value));
+              return;
+            } catch {
+              // localStorage도 실패하면 에러 throw
+            }
+          }
+          throw error;
+        }
+      }
+      // GM_setValue가 없으면 localStorage 사용
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(key, JSON.stringify(value));
+      } else {
+        throw new Error('No storage mechanism available');
+      }
+    },
+    async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+      if (hasGMStorage) {
+        try {
+          const value = await Promise.resolve(g.GM_getValue(key, defaultValue));
+          return value as T | undefined;
+        } catch {
+          // GM_getValue 실패 시 localStorage로 fallback
+          if (typeof localStorage !== 'undefined') {
+            try {
+              const stored = localStorage.getItem(key);
+              if (stored === null) return defaultValue;
+              return JSON.parse(stored) as T;
+            } catch {
+              return defaultValue;
+            }
+          }
+          return defaultValue;
+        }
+      }
+      // GM_getValue가 없으면 localStorage 사용
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const stored = localStorage.getItem(key);
+          if (stored === null) return defaultValue;
+          return JSON.parse(stored) as T;
+        } catch {
+          return defaultValue;
+        }
+      }
+      return defaultValue;
+    },
+    async deleteValue(key: string): Promise<void> {
+      if (hasGMStorage) {
+        try {
+          if (typeof g.GM_deleteValue === 'function') {
+            await Promise.resolve(g.GM_deleteValue(key));
+          }
+          return;
+        } catch {
+          // 실패 시 localStorage fallback
+        }
+      }
+      // GM_deleteValue가 없으면 localStorage 사용
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+    },
+    async listValues(): Promise<string[]> {
+      if (hasGMStorage) {
+        try {
+          if (typeof g.GM_listValues === 'function') {
+            const values = await Promise.resolve(g.GM_listValues());
+            return Array.isArray(values) ? values : [];
+          }
+        } catch {
+          // 실패 시 localStorage fallback
+        }
+      }
+      // GM_listValues가 없으면 localStorage 사용
+      if (typeof localStorage !== 'undefined') {
+        return Object.keys(localStorage);
+      }
+      return [];
     },
   });
 }
