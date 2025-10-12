@@ -14,7 +14,7 @@ interface TelemetryEntry {
 
 describe('MediaProcessor - Telemetry', () => {
   it('단계별 latency 텔레메트리를 반환해야 한다', async () => {
-    const { MediaProcessor } = await import('@shared/media/MediaProcessor');
+    const { MediaProcessor } = await import('@shared/media/media-processor');
     const root = document.createElement('div');
     for (let i = 0; i < 3; i++) {
       const img = document.createElement('img');

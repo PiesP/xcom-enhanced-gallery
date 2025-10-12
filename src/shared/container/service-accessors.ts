@@ -4,7 +4,7 @@
  */
 import type { BulkDownloadService } from '../services/BulkDownloadService';
 import { bulkDownloadService as __bulkDownloadServiceInstance } from '../services/BulkDownloadService';
-import type { FilenameService } from '../media/FilenameService';
+import type { FilenameService } from '../media/filename-service';
 import type { ThemeService } from '../services/ThemeService';
 import type { ToastController } from '../services/ToastController';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';

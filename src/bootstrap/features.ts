@@ -28,7 +28,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
 
     // DOMCache 초기화 - Shared 레이어의 자율적 설정 구독
     try {
-      const { globalDOMCache } = await import('@shared/dom/DOMCache');
+      const { globalDOMCache } = await import('@shared/dom/dom-cache');
       await globalDOMCache.initializeDOMCache(settingsService);
     } catch {
       // DOMCache가 없거나 초기화 전이면 무시

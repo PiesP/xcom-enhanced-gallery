@@ -10,10 +10,10 @@
 
 import { logger } from '../../logging/logger';
 // FilenameService는 shared/media 레이어에 있으므로 직접 import 허용(services 아님)
-import { generateMediaFilename } from '../../media/FilenameService';
-import type { FilenameOptions } from '../../media/FilenameService';
-// Username은 shared/media/UsernameSource 헬퍼를 통해 제공
-import { getPreferredUsername } from '../../media/UsernameSource';
+import { generateMediaFilename } from '../../media/filename-service';
+import type { FilenameOptions } from '../../media/filename-service';
+// Username은 shared/media/username-source 헬퍼를 통해 제공
+import { getPreferredUsername } from '../../media/username-source';
 export type { FilenameOptions };
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';

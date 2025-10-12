@@ -12,14 +12,14 @@ describe('Architecture: DOMCache Initialization', () => {
   describe('DOMCache 자율성', () => {
     it('DOMCache가 자체적으로 설정 변경을 구독해야 한다', async () => {
       // RED: DOMCache가 initializeDOMCache 메서드를 가지고 있는지 검증
-      const { DOMCache } = await import('../../../src/shared/dom/DOMCache');
+      const { DOMCache } = await import('../../../src/shared/dom/dom-cache');
 
       expect(typeof DOMCache.prototype.initializeDOMCache).toBe('function');
     });
 
     it('DOMCache 초기화 시 SettingsService를 주입받아야 한다', async () => {
       // RED: DOMCache.initializeDOMCache가 SettingsService를 받는지 검증
-      const { DOMCache } = await import('../../../src/shared/dom/DOMCache');
+      const { DOMCache } = await import('../../../src/shared/dom/dom-cache');
       const mockSettingsService = {
         get: vi.fn().mockReturnValue(20000),
         subscribe: vi.fn(),
@@ -35,7 +35,7 @@ describe('Architecture: DOMCache Initialization', () => {
 
     it('DOMCache가 설정 변경 시 자동으로 TTL을 업데이트해야 한다', async () => {
       // RED: 설정 변경 시 자동 TTL 업데이트 검증
-      const { DOMCache } = await import('../../../src/shared/dom/DOMCache');
+      const { DOMCache } = await import('../../../src/shared/dom/dom-cache');
 
       let subscribeCallback: any = null;
       const mockSettingsService = {

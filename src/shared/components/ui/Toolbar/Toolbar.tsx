@@ -10,7 +10,7 @@ import {
   useToolbarState,
   getToolbarDataState,
   getToolbarClassName,
-} from '../../../hooks/useToolbarState';
+} from '../../../hooks/use-toolbar-state';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/EventManager';
 import { ComponentStandards } from '../StandardProps';

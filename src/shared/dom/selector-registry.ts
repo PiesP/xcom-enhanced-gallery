@@ -4,7 +4,7 @@
  */
 
 import { STABLE_SELECTORS } from '../../constants';
-import { cachedQuerySelectorAll, cachedStableQuery } from './DOMCache';
+import { cachedQuerySelectorAll, cachedStableQuery } from './dom-cache';
 
 export type QueryContainer = Document | Element;
 

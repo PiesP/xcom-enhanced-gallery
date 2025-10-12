@@ -12,7 +12,7 @@
 
 - ✅ **빌드**: dev (728 KB) / prod (329 KB, gzip: 89.49 KB) ← **Phase 25: -2 KB
   dev, -1 KB prod**
-- ✅ **Vitest**: 607/607 (100%, 24 skipped, 1 todo) ← **Phase 25: -2 tests**
+- ✅ **Vitest**: 594/594 (100%, 24 skipped, 1 todo) ← **Phase 24-B: +2 tests**
 - ✅ **E2E**: 8/8 (100%)
 - ✅ **타입**: 0 errors (TypeScript strict)
 - ✅ **린트**: 0 warnings, 0 errors
@@ -56,6 +56,10 @@
   성능 개선)
 - **Phase 22**: constants.ts 리팩토링 (37% 코드 감소), 단일 책임 원칙 준수
 - **Phase 23**: DOMCache 아키텍처 개선 (계층 경계 강화, 28% 코드 감소)
+- **Phase 24-A**: shared 소형 디렉터리 파일명 kebab-case 통일 (9개 파일 리네임,
+  naming 테스트 추가)
+- **Phase 24-B**: shared 중형 디렉터리 파일명 kebab-case 통일 (22개 파일 리네임,
+  의미론적 suffix 패턴 허용)
 - **Phase 25**: 휠 스크롤 속도 제어 제거 (브라우저 네이티브 동작 위임, -3 KB)
 - E2E 테스트 안정화 및 CI 통합
 
@@ -1823,24 +1827,102 @@ tests)
 
 ---
 
-## Phase 24: 레거시 TODO 정리 (2025-01-12)
+## Phase 24-A: shared 소형 디렉터리 파일명 kebab-case (2025-10-12)
 
-**목표**: Phase 17 휠 스크롤 multiplier 설정 구현으로 레거시 TODO 해결
+**목표**: src/shared의 소형 디렉터리(browser, container, dom, error, external,
+loader, logging, memory)에 남아 있는 PascalCase 파일명을 kebab-case로 통일하고
+TDD 가드를 추가
 
 **작업 내역**:
 
-- **브랜치**: refactor/phase-25-remove-wheel-scroll-multiplier
-- **상태**: ✅ 문서 정리 완료
+- **브랜치**: feature/phase24a-rename-small-dirs
+- **테스트**: `test/phase-24a-file-naming-convention.test.ts` (새로 추가, 2
+  tests)
 
-**레거시 TODO 현황**:
+**주요 변경**:
 
-- ✅ `VerticalGalleryView.tsx` line 101 TODO 해결:
-  - 하드코딩된 `WHEEL_SCROLL_MULTIPLIER` 제거 완료
-  - Phase 17.1-17.2: 설정 시스템 통합
-  - Phase 17.3: UI 슬라이더 추가
-  - **결과**: 구현 완료, TODO 주석 제거 완료
+- 파일 리네임: `BrowserService.ts`, `BrowserUtils.ts`, `AppContainer.ts`,
+  `ServiceHarness.ts`, `DOMCache.ts`, `DOMEventManager.ts`,
+  `SelectorRegistry.ts`, `ErrorHandler.ts`, `MemoryTracker.ts`
+- 배럴 정리: browser/index.ts, dom/index.ts, error/index.ts, memory/index.ts,
+  services/EventManager.ts에서 신규 경로로 업데이트
+- 동적 import 수정: bootstrap/features.ts, main.ts가 `@shared/dom/dom-cache`
+  경로 사용
+- 신규 테스트: Phase 24-A naming convention 테스트로 대상 디렉터리의 kebab-case
+  준수 여부를 상시 검증
 
-**Phase 24 전체 완료**: TODO 문서 정리 완성 (확인 → 문서 업데이트)
+**품질 게이트**:
+
+- ✅ `npx vitest run test/phase-24a-file-naming-convention.test.ts`
+- ✅ 전체 스위트 609/609 (24 skipped, 1 todo)
+- ✅ 타입/린트/빌드 검증 (유지)
+
+**후속 작업**:
+
+- Phase 24-B: components/hooks/interfaces/media/state/styles/types 디렉터리 확장
+- Phase 24-C: services/utils 고참조 모듈 리네임 및 ESLint naming rule 검토
+
+---
+
+## Phase 24-B: shared 중형 디렉터리 파일명 kebab-case (2025-01-15)
+
+**목표**: src/shared의 중형 디렉터리(components, hooks, interfaces, media,
+state, styles, types)에 남아 있는 PascalCase 파일명을 kebab-case로 통일하고
+Phase 24-A의 TDD 흐름 확장
+
+**작업 내역**:
+
+- **브랜치**: feature/phase24b-rename-medium-dirs
+- **테스트**: `test/phase-24b-file-naming-convention.test.ts` (새로 추가, 2
+  tests)
+
+**주요 변경**:
+
+- **파일 리네임 (22개)**:
+  - components/: `LazyIcon.tsx` → `lazy-icon.tsx`
+  - hooks/: 7개 파일 (useAccessibility, useDOMReady, useFocusScope,
+    useFocusTrap, useGalleryFocusTracker, useGalleryToolbarLogic,
+    useMobileDetector) → kebab-case
+  - interfaces/: `ServiceInterfaces.ts` → `service-interfaces.ts`
+  - media/: `FilenameService.ts`, `MediaProcessor.ts`, `UsernameSource.ts` →
+    kebab-case
+  - 추가: memory/index.ts 중복 export 수정 (구문 오류 해결)
+
+- **테스트 파일 업데이트 (6개)**:
+  - `test/unit/components/lazy-icon-memo.test.tsx`: 4 occurrences 수정
+  - `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts`: import 경로 수정
+  - `test/unit/shared/container/service-harness.contract.test.ts`: import 경로
+    수정
+  - `test/unit/shared/hooks/useFocusTrap.test.tsx`: import 경로 수정
+  - `test/unit/architecture/domcache-initialization.test.ts`: 3 import 문 수정
+  - `test/unit/shared/dom/selector-registry.dom-matrix.test.ts`: import 경로
+    수정
+
+- **신규 테스트**: Phase 24-B naming convention 테스트로 중형 디렉터리의
+  kebab-case 준수 여부를 상시 검증
+
+**기술적 결정**:
+
+- **Regex 패턴 설계**: 초기 패턴 `/^[a-z0-9]+(?:-[a-z0-9]+)*\.(?:ts|tsx)$/`이
+  의미론적 suffix 패턴(`.types.ts`, `.interfaces.ts`)을 거부하는 문제 발견
+- **최종 패턴**: `/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)?\.(?:ts|tsx)$/`로
+  수정하여 `app.types.ts`, `gallery.interfaces.ts`, `*.test.ts` 등의 의미론적
+  파일명 패턴 허용
+- **설계 원칙**: 기계적 case 변환보다 의미 있는 naming 패턴 보존 우선
+
+**품질 게이트**:
+
+- ✅
+  `npx vitest run test/phase-24a-file-naming-convention.test.ts test/phase-24b-file-naming-convention.test.ts`
+  (4 tests)
+- ✅ 전체 스위트 594/594 (24 skipped, 1 todo)
+- ✅ 타입/린트/빌드 검증 통과
+- ✅ Dev build: 727.60 KB, Prod build: 329.17 KB (gzip: 89.49 KB)
+
+**후속 작업**:
+
+- Phase 24-C: services/utils 고참조 모듈 리네임 (MEDIUM 우선순위, swizzled
+  imports 영향 검증 필요)
 
 ---
 

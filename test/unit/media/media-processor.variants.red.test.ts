@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 
 describe('MediaProcessor - variants 생성 (RED)', () => {
   it('pbs.twimg.com 이미지에서 small/large/orig variants를 생성해야 한다', async () => {
-    const { processMedia } = await import('@shared/media/MediaProcessor');
+    const { processMedia } = await import('@shared/media/media-processor');
 
     const root = document.createElement('div');
     const img = document.createElement('img');

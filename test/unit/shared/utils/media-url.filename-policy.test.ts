@@ -3,7 +3,7 @@ import {
   createMediaInfoFromImage,
   createMediaInfoFromVideo,
 } from '@shared/utils/media/media-url.util';
-import { isValidMediaFilename } from '@shared/media/FilenameService';
+import { isValidMediaFilename } from '@shared/media/filename-service';
 
 vi.mock('@shared/services/media/UsernameExtractionService', () => ({
   parseUsernameFast: () => 'alice',

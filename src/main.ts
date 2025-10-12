@@ -212,7 +212,7 @@ async function cleanup(): Promise<void> {
 
     // DOMCache 전역 인스턴스 정리 (import 시점 interval 제거)
     try {
-      const { globalDOMCache } = await import('@shared/dom/DOMCache');
+      const { globalDOMCache } = await import('@shared/dom/dom-cache');
       if (globalDOMCache) {
         globalDOMCache.dispose();
       }

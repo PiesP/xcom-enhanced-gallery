@@ -9,7 +9,7 @@ describe('Phase 5: Result 패턴 도입 (GREEN 테스트)', () => {
   describe('1. MediaProcessor Result 패턴', () => {
     it('MediaProcessor가 Result 패턴을 사용해야 한다', async () => {
       // GREEN: 이미 구현됨
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
       const result = processMedia(div);
 
@@ -27,7 +27,7 @@ describe('Phase 5: Result 패턴 도입 (GREEN 테스트)', () => {
   describe('2. 에러 처리 개선', () => {
     it('성공 케이스가 올바르게 처리되어야 한다', async () => {
       // GREEN: 구현됨
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       const div = document.createElement('div');
       const result = processMedia(div);
 
@@ -39,7 +39,7 @@ describe('Phase 5: Result 패턴 도입 (GREEN 테스트)', () => {
 
     it('실패 케이스가 올바르게 처리되어야 한다', async () => {
       // GREEN: 구현됨
-      const { processMedia } = await import('@shared/media/MediaProcessor');
+      const { processMedia } = await import('@shared/media/media-processor');
       // @ts-ignore - 의도적으로 null 전달하여 에러 테스트
       const result = processMedia(null);
 

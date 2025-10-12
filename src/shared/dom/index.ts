@@ -1,7 +1,7 @@
 /**
  * @fileoverview Core DOM Utilities Barrel Export
  * Note: DOMEventManager is intentionally NOT re-exported to prevent external runtime imports.
- * Internal modules should import from './DOMEventManager' via relative path when necessary.
+ * Internal modules should import from './dom-event-manager' via relative path when necessary.
  */
 
 // Core DOM utilities (moved from Infrastructure)
@@ -15,7 +15,7 @@ export {
   cachedQuerySelectorAll,
   cachedStableQuery,
   invalidateCacheOnMutation,
-} from './DOMCache';
+} from './dom-cache';
 
 // SelectorRegistry
 export {
@@ -23,7 +23,7 @@ export {
   createSelectorRegistry,
   type ISelectorRegistry,
   type QueryContainer,
-} from './SelectorRegistry';
+} from './selector-registry';
 
 // Named exports for convenience
 export {

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { cleanup, render, h } from '@test/utils/testing-library';
-import { useFocusTrap, type FocusTrapResult } from '@shared/hooks/useFocusTrap';
+import { useFocusTrap, type FocusTrapResult } from '@shared/hooks/use-focus-trap';
 
 describe('P4: Focus Trap Hook', () => {
   type ModalContainerElement = HTMLElement;

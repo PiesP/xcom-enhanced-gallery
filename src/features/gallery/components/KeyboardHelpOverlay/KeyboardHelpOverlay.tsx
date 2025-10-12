@@ -3,7 +3,7 @@
  * @description Provides keyboard shortcuts help overlay with focus management.
  */
 import { getSolid, type JSXElement } from '../../../../shared/external/vendors';
-import { useFocusTrap } from '../../../../shared/hooks/useFocusTrap';
+import { useFocusTrap } from '../../../../shared/hooks/use-focus-trap';
 import { globalTimerManager } from '../../../../shared/utils/timer-management';
 import styles from './KeyboardHelpOverlay.module.css';
 import { IconButton } from '../../../../shared/components/ui/Button/IconButton';

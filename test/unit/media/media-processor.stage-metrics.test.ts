@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { JSDOM } from 'jsdom';
-import MediaProcessor, { type MediaProcessStageEvent } from '@/shared/media/MediaProcessor';
+import MediaProcessor, { type MediaProcessStageEvent } from '@/shared/media/media-processor';
 
 function makeDom(html: string) {
   const dom = new JSDOM(`<div id="root">${html}</div>`);
