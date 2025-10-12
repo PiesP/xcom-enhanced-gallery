@@ -19,6 +19,8 @@ let capturedFitHandlers:
 
 const getSettingMock = vi.fn(() => 'fitWidth');
 const setSettingMock = vi.fn(() => Promise.resolve());
+const unsubscribeMock = vi.fn();
+const subscribeMock = vi.fn(() => unsubscribeMock);
 const scrollIntoViewMock = vi.fn();
 
 beforeAll(() => {
@@ -44,6 +46,9 @@ vi.mock('../../../../../src/shared/components/ui/ToolbarWithSettings/ToolbarWith
 vi.mock('../../../../../src/shared/container/settings-access', () => ({
   getSetting: getSettingMock,
   setSetting: setSettingMock,
+  tryGetSettingsService: () => ({
+    subscribe: subscribeMock,
+  }),
 }));
 
 const mediaItems: MediaInfo[] = [
@@ -80,6 +85,8 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     capturedFitHandlers = undefined;
     getSettingMock.mockClear();
     setSettingMock.mockClear();
+    subscribeMock.mockClear();
+    unsubscribeMock.mockClear();
     resetGalleryState();
     resetDownloadState();
   });

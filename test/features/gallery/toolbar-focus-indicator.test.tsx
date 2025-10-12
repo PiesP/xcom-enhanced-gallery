@@ -1,0 +1,104 @@
+/**
+ * @fileoverview Toolbar focus indicator regression tests (preview rollback).
+ * @description Confirms the toolbar renders accessibility cues without the Phase 29 preview UI.
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, h } from '../../utils/testing-library';
+
+interface ToolbarOverrides {
+  readonly currentIndex?: number;
+  readonly totalCount?: number;
+  readonly focusedIndex?: number | null;
+}
+
+const createToolbarProps = (overrides: ToolbarOverrides = {}) => ({
+  currentIndex: overrides.currentIndex ?? 0,
+  focusedIndex: overrides.focusedIndex ?? overrides.currentIndex ?? 0,
+  totalCount: overrides.totalCount ?? 5,
+  isDownloading: false,
+  disabled: false,
+  onPrevious: vi.fn(),
+  onNext: vi.fn(),
+  onDownloadCurrent: vi.fn(),
+  onDownloadAll: vi.fn(),
+  onClose: vi.fn(),
+  onOpenSettings: vi.fn(),
+  onFitOriginal: vi.fn(),
+  onFitWidth: vi.fn(),
+  onFitHeight: vi.fn(),
+  onFitContainer: vi.fn(),
+});
+
+describe('Toolbar focus indicator (preview removed)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('does not render the legacy focus preview container', async () => {
+    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+
+    const previewProps = {
+      ...createToolbarProps(),
+      focusPreview: {
+        src: 'https://cdn.example.com/thumb.jpg',
+        alt: 'Focused media preview',
+        label: 'Preview 1/5',
+      },
+    } as Record<string, unknown>;
+
+    const { container } = render(h(Toolbar as any, previewProps));
+    expect(container.querySelector('[data-gallery-element="focus-preview"]')).toBeNull();
+  });
+
+  it('keeps the counter aria-live region without the preview', async () => {
+    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+
+    const { container } = render(h(Toolbar, createToolbarProps()));
+
+    const counter = container.querySelector('[data-gallery-element="counter"]');
+    expect(counter).not.toBeNull();
+    expect(counter?.getAttribute('aria-live')).toBe('polite');
+    expect(counter?.textContent?.replace(/\s+/g, '')).toBe('1/5');
+  });
+
+  it('syncs counter and progress with focused index even when it diverges from current index', async () => {
+    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+
+    const { container, rerender } = render(
+      h(
+        Toolbar,
+        createToolbarProps({
+          currentIndex: 0,
+          focusedIndex: 0,
+          totalCount: 5,
+        })
+      )
+    );
+
+    const counter = container.querySelector('[data-gallery-element="counter"]');
+    expect(counter).not.toBeNull();
+    expect(counter?.textContent).toContain('1/5');
+    expect(counter?.getAttribute('data-focused-index')).toBe('0');
+
+    rerender(
+      h(
+        Toolbar,
+        createToolbarProps({
+          currentIndex: 0,
+          focusedIndex: 3,
+          totalCount: 5,
+        })
+      )
+    );
+
+    const updatedCounter = container.querySelector('[data-gallery-element="counter"]');
+    expect(updatedCounter).not.toBeNull();
+    expect(updatedCounter?.textContent).toContain('4/5');
+    expect(updatedCounter?.getAttribute('data-focused-index')).toBe('3');
+
+    const progressFill = updatedCounter?.parentElement?.querySelector('div[class*="progressFill"]');
+    expect(progressFill).not.toBeNull();
+    expect((progressFill as HTMLElement).style.width).toBe('80%');
+  });
+});

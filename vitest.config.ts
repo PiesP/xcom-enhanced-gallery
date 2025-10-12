@@ -318,6 +318,29 @@ export default defineConfig({
           transformMode: solidTransformMode,
         },
       },
+      // Features 레이어 중심 테스트
+      {
+        resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
+        test: {
+          name: 'features',
+          globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
+          include: ['test/features/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
+        },
+      },
       // 스타일 관련 테스트(토큰/테마/정책)
       {
         resolve: sharedResolve,
