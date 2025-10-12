@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { JSDOM } from 'jsdom';
 import { SettingsService } from '@/features/settings/services/settings-service';
 import { DEFAULT_SETTINGS } from '@/features/settings/types/settings.types';
+import { InMemoryStorageAdapter } from '../../../__mocks__/in-memory-storage-adapter';
 
 const STORAGE_KEY = 'xeg-app-settings';
 
@@ -11,25 +11,11 @@ function stripVolatile(obj: any) {
 }
 
 describe('SettingsService – SETTINGS-MIG-HASH-01', () => {
-  let dom: JSDOM;
+  let storage: InMemoryStorageAdapter;
 
   beforeEach(() => {
-    dom = new JSDOM('<!doctype html><html><head></head><body></body></html>', {
-      url: 'https://x.com/home',
-      runScripts: 'outside-only',
-      resources: 'usable',
-    });
-
-    Object.assign(globalThis, {
-      window: dom.window,
-      document: dom.window.document,
-      location: dom.window.location,
-      localStorage: dom.window.localStorage,
-      sessionStorage: dom.window.sessionStorage,
-    });
-
+    storage = new InMemoryStorageAdapter();
     vi.useFakeTimers();
-    dom.window.localStorage.clear();
   });
 
   it('migrates and saves when stored __schemaHash mismatches current', async () => {
@@ -40,12 +26,14 @@ describe('SettingsService – SETTINGS-MIG-HASH-01', () => {
       __schemaHash: 'deadbeef',
       lastModified: Date.now() - 1000,
     };
-    dom.window.localStorage.setItem(STORAGE_KEY, JSON.stringify(legacy));
+    await storage.setItem(STORAGE_KEY, JSON.stringify(legacy));
 
-    const svc = new SettingsService();
+    const svc = new SettingsService(storage);
     await svc.initialize();
 
-    const saved = JSON.parse(dom.window.localStorage.getItem(STORAGE_KEY)!) as any;
+    const savedJson = await storage.getItem(STORAGE_KEY);
+    expect(savedJson).toBeDefined();
+    const saved = JSON.parse(savedJson!) as any;
     expect(saved.__schemaHash).toBeTypeOf('string');
     // The service should have filled defaults while preserving explicit values
     expect(saved.gallery.enableKeyboardNav).toBe(false);
@@ -54,22 +42,28 @@ describe('SettingsService – SETTINGS-MIG-HASH-01', () => {
   });
 
   it('first-run initializes defaults and writes current __schemaHash', async () => {
-    const svc = new SettingsService();
+    const svc = new SettingsService(storage);
     await svc.initialize();
-    const saved = JSON.parse(dom.window.localStorage.getItem(STORAGE_KEY)!) as any;
+    const savedJson = await storage.getItem(STORAGE_KEY);
+    expect(savedJson).toBeDefined();
+    const saved = JSON.parse(savedJson!) as any;
     expect(saved.__schemaHash).toBeTypeOf('string');
     expect(stripVolatile(saved)).toEqual(stripVolatile(DEFAULT_SETTINGS));
   });
 
   it('idempotent: repeated initialize does not change persisted structure', async () => {
-    const svc = new SettingsService();
+    const svc = new SettingsService(storage);
     await svc.initialize();
-    const first = JSON.parse(dom.window.localStorage.getItem(STORAGE_KEY)!) as any;
+    const firstJson = await storage.getItem(STORAGE_KEY);
+    expect(firstJson).toBeDefined();
+    const first = JSON.parse(firstJson!) as any;
     await svc.cleanup();
 
-    const svc2 = new SettingsService();
+    const svc2 = new SettingsService(storage);
     await svc2.initialize();
-    const second = JSON.parse(dom.window.localStorage.getItem(STORAGE_KEY)!) as any;
+    const secondJson = await storage.getItem(STORAGE_KEY);
+    expect(secondJson).toBeDefined();
+    const second = JSON.parse(secondJson!) as any;
 
     expect(stripVolatile(second)).toEqual(stripVolatile(first));
     expect(second.__schemaHash).toEqual(first.__schemaHash);

@@ -5,14 +5,13 @@
 
 /* @vitest-environment jsdom */
 /* eslint-env browser */
-/* global document */
 
 import { describe, it, expect } from 'vitest';
 
 describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
   it('이미지 URL을 중앙 유틸 규칙대로 orig 품질로 변환해야 한다', async () => {
     const { DOMDirectExtractor } = await import(
-      '@shared/services/media-extraction/extractors/DOMDirectExtractor'
+      '@shared/services/media-extraction/extractors/dom-direct-extractor'
     );
     const { extractOriginalImageUrl } = await import('@shared/utils/media/media-url.util');
 
@@ -34,7 +33,7 @@ describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
 
   it('profile_images 경로는 제외해야 하며, isValid 규칙을 따라야 한다', async () => {
     const { DOMDirectExtractor } = await import(
-      '@shared/services/media-extraction/extractors/DOMDirectExtractor'
+      '@shared/services/media-extraction/extractors/dom-direct-extractor'
     );
 
     const container = document.createElement('article');
@@ -60,7 +59,7 @@ describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
 
   it('png 형식은 유지하되 name=orig로만 승격해야 한다', async () => {
     const { DOMDirectExtractor } = await import(
-      '@shared/services/media-extraction/extractors/DOMDirectExtractor'
+      '@shared/services/media-extraction/extractors/dom-direct-extractor'
     );
 
     const container = document.createElement('article');
@@ -82,7 +81,7 @@ describe('DOMDirectExtractor - 규칙 유틸 통합', () => {
 
   it('우선순위 선택자 기반으로 가장 가까운 상위 트윗 컨테이너(article[data-testid="tweet"])를 선택해야 한다', async () => {
     const { DOMDirectExtractor } = await import(
-      '@shared/services/media-extraction/extractors/DOMDirectExtractor'
+      '@shared/services/media-extraction/extractors/dom-direct-extractor'
     );
 
     // 구조: article[data-testid="tweet"] (outer)

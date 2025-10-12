@@ -13,7 +13,7 @@ describe('BulkDownloadService • FETCH-OK-GUARD-01', () => {
   });
 
   it('treats non-OK response as a failure during ZIP flow (partial success)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     const okUrl = 'https://example.com/ok.jpg';
@@ -70,7 +70,7 @@ describe('BulkDownloadService • FETCH-OK-GUARD-01', () => {
   });
 
   it('single-item path: non-OK response yields error result (no success)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     const badUrl = 'https://example.com/bad-single.jpg';
