@@ -36,7 +36,7 @@ describe('Solid vendor 통합', () => {
 
 describe('AnimationService 통합', () => {
   it('AnimationService 인스턴스를 노출한다', async () => {
-    const { AnimationService } = await import('@shared/services/AnimationService');
+    const { AnimationService } = await import('@shared/services/animation-service');
     const animationService = AnimationService.getInstance();
 
     expect(typeof animationService.fadeIn).toBe('function');
@@ -45,7 +45,7 @@ describe('AnimationService 통합', () => {
   });
 
   it('fadeIn이 DOM 요소에서 작동한다', async () => {
-    const { AnimationService } = await import('@shared/services/AnimationService');
+    const { AnimationService } = await import('@shared/services/animation-service');
     const animationService = AnimationService.getInstance();
 
     const element = document.createElement('div');
@@ -55,7 +55,7 @@ describe('AnimationService 통합', () => {
   });
 
   it('cleanup이 예외 없이 수행된다', async () => {
-    const { AnimationService } = await import('@shared/services/AnimationService');
+    const { AnimationService } = await import('@shared/services/animation-service');
     const animationService = AnimationService.getInstance();
 
     expect(() => animationService.cleanup()).not.toThrow();

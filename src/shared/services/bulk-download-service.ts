@@ -454,6 +454,5 @@ export class BulkDownloadService {
   }
 }
 
-// 간단한 인스턴스 export (복잡한 싱글톤 패턴 없이)
-export const bulkDownloadService = new BulkDownloadService();
-export default bulkDownloadService;
+// Factory pattern: use getBulkDownloadService() from service-factories.ts
+// Direct instantiation is forbidden by Service Contract

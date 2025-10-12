@@ -29,11 +29,12 @@ describe('Service Contract – direct instantiation forbidden (GREEN)', () => {
   const SRC_ROOT = join(cwd, 'src');
   const ALLOWED_FILES = new Set([
     // 서비스 자신의 정의 파일은 허용 (클래스 정의 내부 new, 싱글톤 등)
-    join(cwd, 'src', 'shared', 'services', 'MediaService.ts').replace(/\\/g, '/'),
-    join(cwd, 'src', 'shared', 'services', 'BulkDownloadService.ts').replace(/\\/g, '/'),
-    join(cwd, 'src', 'features', 'settings', 'services', 'SettingsService.ts').replace(/\\/g, '/'),
+    join(cwd, 'src', 'shared', 'services', 'media-service.ts').replace(/\\/g, '/'),
+    join(cwd, 'src', 'shared', 'services', 'bulk-download-service.ts').replace(/\\/g, '/'),
+    join(cwd, 'src', 'features', 'settings', 'services', 'settings-service.ts').replace(/\\/g, '/'),
     // factory 내부 new 허용 (지연 생성 구현 세부)
     join(cwd, 'src', 'features', 'settings', 'services', 'settings-factory.ts').replace(/\\/g, '/'),
+    join(cwd, 'src', 'shared', 'services', 'service-factories.ts').replace(/\\/g, '/'),
   ]);
 
   const FORBIDDEN_PATTERNS = [

@@ -11,7 +11,7 @@ describe('Injected CSS — forbid transition: all', () => {
   });
 
   it('AnimationService CSS should not include transition: all', async () => {
-    const { AnimationService } = await import('@shared/services/AnimationService');
+    const { AnimationService } = await import('@shared/services/animation-service');
     const svc = AnimationService.getInstance();
     await svc.fadeIn(globalThis.document.createElement('div'));
 

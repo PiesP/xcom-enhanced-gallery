@@ -3,7 +3,6 @@
  * Use these helpers instead of referring to SERVICE_KEYS directly in features/bootstrap.
  */
 import type { BulkDownloadService } from '../services/bulk-download-service';
-import { bulkDownloadService as __bulkDownloadServiceInstance } from '../services/bulk-download-service';
 import type { FilenameService } from '../media/filename-service';
 import type { ThemeService } from '../services/theme-service';
 import type { ToastController } from '../services/toast-controller';
@@ -11,6 +10,7 @@ import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
+import { getBulkDownloadService } from '../services/service-factories';
 
 // Getters (from container)
 export function getToastController(): ToastController {
@@ -25,14 +25,14 @@ export function getMediaFilenameService(): FilenameService {
   return bridgeGetService<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
-export function getBulkDownloadServiceFromContainer(): BulkDownloadService {
+export async function getBulkDownloadServiceFromContainer(): Promise<BulkDownloadService> {
   try {
     return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
   } catch {
-    // Lazy fallback: register module-level singleton if not present
+    // Lazy fallback: register factory instance if not present
     // This keeps tests green even when core service registration hasn't run yet.
-    // Use module-level instance imported above to avoid dynamic import issues in ESM tests.
-    const bulkDownloadService = __bulkDownloadServiceInstance as BulkDownloadService;
+    // Use factory pattern to avoid direct instantiation.
+    const bulkDownloadService = await getBulkDownloadService();
     bridgeRegister(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
     // Also provide gallery alias for compatibility
     bridgeRegister(SERVICE_KEYS.GALLERY_DOWNLOAD, bulkDownloadService);

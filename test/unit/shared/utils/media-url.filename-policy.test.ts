@@ -5,8 +5,9 @@ import {
 } from '@shared/utils/media/media-url.util';
 import { isValidMediaFilename } from '@shared/media/filename-service';
 
-vi.mock('@shared/services/media/UsernameExtractionService', () => ({
-  parseUsernameFast: () => 'alice',
+// Mock the username source helper (used by media-url.util via getUsernameSafe)
+vi.mock('@shared/media/username-source', () => ({
+  getPreferredUsername: () => 'alice',
 }));
 
 function makeImage(src: string, width = 800, height = 600): any {

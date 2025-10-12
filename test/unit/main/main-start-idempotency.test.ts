@@ -61,7 +61,7 @@ async function importMainWithMocks() {
   // Core Services 등록 모킹: 실제 export 유지 + registerCoreServices만 덮어쓰기
   vi.mock('@/shared/services/core-services', async importOriginal => {
     const actual: any = await importOriginal();
-    const { CoreService } = await import('@/shared/services/ServiceManager');
+    const { CoreService } = await import('@/shared/services/service-manager');
     const core = CoreService.getInstance();
     const dummy = { initialize: vi.fn(async () => {}), cleanup: vi.fn(async () => {}) } as const;
     return {
@@ -116,7 +116,7 @@ async function importMainWithMocks() {
   removeEventSpy = vi.spyOn(window, 'removeEventListener');
 
   // 크리티컬 서비스 사전 등록(초기화 실패로 인한 조기 종료 방지)
-  const { CoreService } = await import('@/shared/services/ServiceManager');
+  const { CoreService } = await import('@/shared/services/service-manager');
   const core = CoreService.getInstance();
   const dummy = { initialize: vi.fn(async () => {}), cleanup: vi.fn(async () => {}) } as const;
   core.register('video.control', { ...dummy, name: 'video.control' });

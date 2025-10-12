@@ -827,7 +827,7 @@ export class MediaService {
      * @deprecated Wrapper — delegating to BulkDownloadService
      * Use BulkDownloadService for actual implementation to avoid duplication.
      */
-    const bulk = getBulkDownloadServiceFromContainer();
+    const bulk = await getBulkDownloadServiceFromContainer();
     return bulk.downloadSingle(media);
   }
 
@@ -842,7 +842,7 @@ export class MediaService {
      * @deprecated Wrapper — delegating to BulkDownloadService
      * Use BulkDownloadService for actual implementation to avoid duplication.
      */
-    const bulk = getBulkDownloadServiceFromContainer();
+    const bulk = await getBulkDownloadServiceFromContainer();
     return bulk.downloadMultiple(mediaItems, options);
   }
 
