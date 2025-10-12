@@ -1,0 +1,161 @@
+name: Monthly Maintenance Check
+
+on:
+  schedule:
+    # 매월 1일 09:00 UTC (18:00 KST)
+    - cron: "0 9 1 * *"
+  workflow_dispatch: # 수동 실행 가능
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  maintenance:
+    name: 유지보수 점검 및 이슈 생성
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 유지보수 점검 실행
+        id: maintenance
+        run: |
+          echo "## 유지보수 점검 결과" > report.md
+          echo "" >> report.md
+          npm run maintenance:check > maintenance-output.txt 2>&1 || true
+          cat maintenance-output.txt >> report.md
+          echo "" >> report.md
+
+      - name: 보안 취약점 검사
+        run: |
+          echo "## 보안 취약점 검사" >> report.md
+          echo "" >> report.md
+          npm audit --audit-level=moderate > audit-output.txt 2>&1 || true
+          cat audit-output.txt >> report.md
+          echo "" >> report.md
+
+      - name: 구식 의존성 검사
+        run: |
+          echo "## 구식 의존성" >> report.md
+          echo "" >> report.md
+          npm outdated > outdated-output.txt 2>&1 || true
+          cat outdated-output.txt >> report.md
+          echo "" >> report.md
+
+      - name: 테스트 커버리지 확인
+        run: |
+          echo "## 테스트 커버리지" >> report.md
+          echo "" >> report.md
+          npm run test:coverage -- --reporter=json --outputFile=coverage-summary.json 2>&1 || true
+          if [ -f coverage-summary.json ]; then
+            echo "커버리지 데이터 수집됨" >> report.md
+          else
+            echo "커버리지 데이터 없음" >> report.md
+          fi
+          echo "" >> report.md
+
+      - name: 빌드 크기 확인
+        run: |
+          echo "## 빌드 크기" >> report.md
+          echo "" >> report.md
+          npm run build:prod 2>&1 || true
+          if [ -f dist/xcom-enhanced-gallery.user.js ]; then
+            size=$(wc -c < dist/xcom-enhanced-gallery.user.js)
+            size_kb=$((size / 1024))
+            echo "프로덕션 빌드: ${size_kb} KB" >> report.md
+            if [ $size_kb -gt 325 ]; then
+              echo "⚠️ 예산 초과 (325 KB)" >> report.md
+            else
+              echo "✅ 예산 내" >> report.md
+            fi
+          else
+            echo "빌드 파일 없음" >> report.md
+          fi
+          echo "" >> report.md
+
+      - name: 이슈 내용 준비
+        id: prepare-issue
+        run: |
+          {
+            echo "monthly_date=$(date +'%Y년 %m월')"
+            echo "issue_body<<EOF"
+            cat report.md
+            echo ""
+            echo "---"
+            echo ""
+            echo "### 조치 사항"
+            echo ""
+            echo "- [ ] 백업/임시 디렉터리 제거"
+            echo "- [ ] 큰 문서 간소화 검토"
+            echo "- [ ] 보안 취약점 해결"
+            echo "- [ ] 구식 의존성 업데이트"
+            echo "- [ ] 빌드 크기 최적화 (필요 시)"
+            echo ""
+            echo "### 참고"
+            echo ""
+            echo "- [유지보수 가이드](../blob/main/docs/MAINTENANCE.md)"
+            echo "- 자동 생성: \`npm run maintenance:check\`"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: 이슈 생성 또는 업데이트
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `[유지보수] ${{ steps.prepare-issue.outputs.monthly_date }} 정기 점검`;
+            const body = process.env.ISSUE_BODY;
+            const labels = ['maintenance', 'automated'];
+
+            // 기존 이슈 검색
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: labels.join(','),
+              state: 'open',
+            });
+
+            const existingIssue = issues.find(issue => issue.title === title);
+
+            if (existingIssue) {
+              // 기존 이슈 업데이트
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `## 업데이트: ${new Date().toISOString()}\n\n${body}`,
+              });
+              console.log(`기존 이슈 업데이트됨: #${existingIssue.number}`);
+            } else {
+              // 새 이슈 생성
+              const { data: newIssue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels,
+              });
+              console.log(`새 이슈 생성됨: #${newIssue.number}`);
+            }
+        env:
+          ISSUE_BODY: ${{ steps.prepare-issue.outputs.issue_body }}
+
+      - name: 결과 요약
+        if: always()
+        run: |
+          echo "### 유지보수 점검 완료 ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat report.md >> $GITHUB_STEP_SUMMARY
