@@ -3,4 +3,4 @@
  * @version 3.0.0
  */
 
-export { MediaExtractionService } from './MediaExtractionService';
+export { MediaExtractionService } from './media-extraction-service';

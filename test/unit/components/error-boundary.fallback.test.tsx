@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getSolid } from '@/shared/external/vendors';
 import { ErrorBoundary } from '@/shared/components/ui/ErrorBoundary/ErrorBoundary';
-import { ToastManager } from '@/shared/services/UnifiedToastManager';
+import { ToastManager } from '@/shared/services/unified-toast-manager';
 import { render, screen } from '../../utils/testing-library';
 
 function ThrowError() {

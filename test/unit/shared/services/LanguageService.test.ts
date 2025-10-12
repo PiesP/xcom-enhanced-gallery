@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { LanguageService } from '../../../../src/shared/services/LanguageService';
+import { LanguageService } from '../../../../src/shared/services/language-service';
 import { createMockBrowserInfo } from '../../../utils/fixtures/test-factories';
 
 describe('LanguageService', () => {

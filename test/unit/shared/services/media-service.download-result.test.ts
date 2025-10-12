@@ -2,7 +2,7 @@
  * @fileoverview Phase E: MediaService 다운로드 Result 계약 테스트
  */
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { mediaService } from '../../../../src/shared/services/MediaService';
+import { mediaService } from '../../../../src/shared/services/media-service';
 import * as accessors from '../../../../src/shared/container/service-accessors';
 
 describe('Phase E: downloadSingle Result 계약', () => {

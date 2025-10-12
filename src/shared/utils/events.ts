@@ -5,7 +5,7 @@
 import { logger } from '../logging/logger';
 import { globalTimerManager } from './timer-management';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
-import { MediaClickDetector } from './media/MediaClickDetector';
+import { MediaClickDetector } from './media/media-click-detector';
 import { gallerySignals } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';

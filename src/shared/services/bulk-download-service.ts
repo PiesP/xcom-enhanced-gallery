@@ -10,11 +10,11 @@ import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '
 import { getNativeDownload } from '../external/vendors';
 import { getErrorMessage } from '../utils/error-handling';
 import { generateMediaFilename } from '../media/filename-service';
-import { toastManager } from './UnifiedToastManager';
-import { languageService } from './LanguageService';
+import { toastManager } from './unified-toast-manager';
+import { languageService } from './language-service';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
-import { DownloadOrchestrator } from './download/DownloadOrchestrator';
+import { DownloadOrchestrator } from './download/download-orchestrator';
 import type { DownloadProgress } from './download/types';
 
 // DownloadProgress 타입은 단일 소스에서 가져옵니다.

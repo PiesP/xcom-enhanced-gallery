@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { extractOriginalImageUrl, isValidMediaUrl } from '@/shared/utils/media/media-url.util';
-import { DOMDirectExtractor } from '@/shared/services/media-extraction/extractors/DOMDirectExtractor';
+import { DOMDirectExtractor } from '@/shared/services/media-extraction/extractors/dom-direct-extractor';
 
 describe('Phase C: 미디어 URL 정규화/유효성', () => {
   describe('isValidMediaUrl', () => {

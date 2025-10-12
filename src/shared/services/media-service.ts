@@ -83,15 +83,15 @@ export interface SingleDownloadResult {
 }
 
 // 기존 서비스들 import
-import { MediaExtractionService } from './media-extraction/MediaExtractionService';
-import { FallbackExtractor } from './media/FallbackExtractor';
-import { VideoControlService } from './media/VideoControlService';
+import { MediaExtractionService } from './media-extraction/media-extraction-service';
+import { FallbackExtractor } from './media/fallback-extractor';
+import { VideoControlService } from './media/video-control-service';
 import {
   UsernameParser,
   extractUsername,
   parseUsernameFast,
-} from './media/UsernameExtractionService';
-import type { UsernameExtractionResult } from './media/UsernameExtractionService';
+} from './media/username-extraction-service';
+import type { UsernameExtractionResult } from './media/username-extraction-service';
 
 /**
  * 통합 미디어 서비스 - Phase 4 간소화
@@ -281,34 +281,34 @@ export class MediaService {
     return {
       // TwitterVideoExtractor에서 가져온 유틸리티들
       isVideoThumbnail: async (imgElement: HTMLImageElement) => {
-        const { isVideoThumbnail } = await import('./media/TwitterVideoExtractor');
+        const { isVideoThumbnail } = await import('./media/twitter-video-extractor');
         return isVideoThumbnail(imgElement);
       },
       isVideoPlayer: async (element: HTMLElement) => {
-        const { isVideoPlayer } = await import('./media/TwitterVideoExtractor');
+        const { isVideoPlayer } = await import('./media/twitter-video-extractor');
         return isVideoPlayer(element);
       },
       isVideoElement: async (element: HTMLElement) => {
-        const { isVideoElement } = await import('./media/TwitterVideoExtractor');
+        const { isVideoElement } = await import('./media/twitter-video-extractor');
         return isVideoElement(element);
       },
       extractTweetId: async (url: string) => {
-        const { extractTweetId } = await import('./media/TwitterVideoExtractor');
+        const { extractTweetId } = await import('./media/twitter-video-extractor');
         return extractTweetId(url);
       },
       getTweetIdFromContainer: async (container: HTMLElement) => {
-        const { getTweetIdFromContainer } = await import('./media/TwitterVideoExtractor');
+        const { getTweetIdFromContainer } = await import('./media/twitter-video-extractor');
         return getTweetIdFromContainer(container);
       },
       getVideoMediaEntry: async (tweetId: string, thumbnailUrl?: string) => {
-        const { getVideoMediaEntry } = await import('./media/TwitterVideoExtractor');
+        const { getVideoMediaEntry } = await import('./media/twitter-video-extractor');
         return getVideoMediaEntry(tweetId, thumbnailUrl);
       },
       getVideoUrlFromThumbnail: async (
         imgElement: HTMLImageElement,
         tweetContainer: HTMLElement
       ) => {
-        const { getVideoUrlFromThumbnail } = await import('./media/TwitterVideoExtractor');
+        const { getVideoUrlFromThumbnail } = await import('./media/twitter-video-extractor');
         return getVideoUrlFromThumbnail(imgElement, tweetContainer);
       },
     };
@@ -919,7 +919,7 @@ export type { UsernameExtractionResult };
 // ====================================
 // Backward-compatible module-level export (lazy)
 // ====================================
-// 일부 테스트는 `import { mediaService } from './MediaService'` 형태를 기대합니다.
+// 일부 테스트는 `import { mediaService } from './media-service'` 형태를 기대합니다.
 // import 시점에 싱글톤을 즉시 생성하면 import-time 부작용(타이머/리스너)이 발생할 수 있어
 // Proxy를 사용해 최초 속성 접근 시에만 MediaService.getInstance()를 생성/바인딩합니다.
 // 메서드는 인스턴스에 바인딩되어 this 컨텍스트가 안전합니다.

@@ -2,8 +2,8 @@
  * @fileoverview Phase I: BulkDownloadService 오류/부분 실패/취소 UX 표준화 테스트
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
-import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
+import { toastManager } from '../../../../src/shared/services/unified-toast-manager';
 
 // 헬퍼: 성공/실패 미디어 항목
 function makeItem(url: string, name: string) {

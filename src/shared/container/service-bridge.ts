@@ -2,7 +2,7 @@
  * Bridge utilities for ServiceManager access hidden from features layer.
  * Features must import from this module instead of @shared/services/ServiceManager.
  */
-import { CoreService } from '../services/ServiceManager';
+import { CoreService } from '../services/service-manager';
 
 export function bridgeGetService<T>(key: string): T {
   return CoreService.getInstance().get<T>(key);

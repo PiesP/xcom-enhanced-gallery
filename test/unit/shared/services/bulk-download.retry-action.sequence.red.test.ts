@@ -2,8 +2,8 @@
  * @file RED: BulkDownloadService 재시도 액션 실제 실패 항목만 재다운로드 시퀀스 검증
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
-import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
+import { toastManager } from '../../../../src/shared/services/unified-toast-manager';
 
 function m(url: string, name: string) {
   return { id: name, url, filename: name, type: 'image' } as const;

@@ -16,9 +16,9 @@
 // ================================
 
 // CoreService (구 ServiceManager) - 명명 규칙 통일
-export { CoreService } from './ServiceManager';
-export { serviceManager } from './ServiceManager';
-export { getService } from './ServiceManager';
+export { CoreService } from './service-manager';
+export { serviceManager } from './service-manager';
+export { getService } from './service-manager';
 
 // ================================
 // Logger Interface & Implementation

@@ -12,7 +12,7 @@ import {
   getToolbarClassName,
 } from '../../../hooks/use-toolbar-state';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
-import { EventManager } from '../../../services/EventManager';
+import { EventManager } from '../../../services/event-manager';
 import { ComponentStandards } from '../StandardProps';
 import { IconButton } from '../Button/IconButton';
 import {

@@ -4,4 +4,4 @@
  */
 
 // Essential re-export only
-export { DOMBatcher as BatchDOMUpdateManager } from './DOMBatcher';
+export { DOMBatcher as BatchDOMUpdateManager } from './dom-batcher';

@@ -10,7 +10,7 @@
  *   features 레이어의 직접 의존을 피합니다.
  */
 import { bridgeGetService, bridgeTryGet, bridgeRegister } from './service-bridge';
-import { CoreService } from '../services/ServiceManager';
+import { CoreService } from '../services/service-manager';
 
 export class ServiceHarness {
   /** Core 서비스들을 등록합니다 (registerCoreServices 사용). */

@@ -4,4 +4,4 @@
  */
 
 // Fallback 전략
-export { FallbackStrategy } from './FallbackStrategy';
+export { FallbackStrategy } from './fallback-strategy';

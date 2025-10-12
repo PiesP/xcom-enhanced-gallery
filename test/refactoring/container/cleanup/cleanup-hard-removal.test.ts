@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SERVICE_KEYS } from '../../../../src/constants';
-import { CoreService } from '../../../../src/shared/services/ServiceManager';
+import { CoreService } from '../../../../src/shared/services/service-manager';
 
 describe('Phase 7 - Cleanup & Hard Removal', () => {
   let container: any;

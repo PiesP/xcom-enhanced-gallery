@@ -7,7 +7,7 @@
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { FallbackStrategy } from '@shared/services/media-extraction/strategies/fallback/FallbackStrategy';
+import { FallbackStrategy } from '@shared/services/media-extraction/strategies/fallback/fallback-strategy';
 
 /**
  * 백업 추출기

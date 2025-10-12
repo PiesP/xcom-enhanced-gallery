@@ -8,9 +8,9 @@ import { logger } from '@shared/logging/logger';
 import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types';
-import { TweetInfoExtractor } from './extractors/TweetInfoExtractor';
-import { TwitterAPIExtractor } from './extractors/TwitterAPIExtractor';
-import { DOMDirectExtractor } from './extractors/DOMDirectExtractor';
+import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
+import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
+import { DOMDirectExtractor } from './extractors/dom-direct-extractor';
 
 /**
  * 미디어 추출기

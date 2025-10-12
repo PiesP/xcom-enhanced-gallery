@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mediaService } from '../../../src/shared/services/MediaService';
+import { mediaService } from '../../../src/shared/services/media-service';
 
 type MediaServiceWithInternals = typeof mediaService & {
   prefetchSingle: (url: string) => Promise<void>;

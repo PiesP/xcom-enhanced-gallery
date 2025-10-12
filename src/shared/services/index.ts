@@ -16,18 +16,18 @@
 // 베이스 서비스 클래스
 // ====================================
 
-export { SingletonServiceImpl as BaseService } from './BaseServiceImpl';
+export { SingletonServiceImpl as BaseService } from './base-service-impl';
 
 // ====================================
 // 핵심 서비스들 (8개)
 // ====================================
 
 // 1. 애니메이션 서비스
-export { AnimationService } from './AnimationService';
+export { AnimationService } from './animation-service';
 
 // 2. 통합 미디어 서비스 (BulkDownload 완전 통합)
-export { MediaService } from './MediaService';
-export { extractUsername, parseUsernameFast } from './MediaService';
+export { MediaService } from './media-service';
+export { extractUsername, parseUsernameFast } from './media-service';
 export type {
   UsernameExtractionResult,
   MediaLoadingState,
@@ -36,21 +36,21 @@ export type {
   BulkDownloadOptions,
   DownloadResult,
   SingleDownloadResult,
-} from './MediaService';
+} from './media-service';
 export type { DownloadProgress } from './download/types';
 
 // 3. 테마 서비스
-export { ThemeService } from './ThemeService';
-export type { Theme } from './ThemeService';
+export { ThemeService } from './theme-service';
+export type { Theme } from './theme-service';
 
 // 4. 언어 서비스
-export { LanguageService } from './LanguageService';
-export type { SupportedLanguage, LanguageStrings } from './LanguageService';
+export { LanguageService } from './language-service';
+export type { SupportedLanguage, LanguageStrings } from './language-service';
 
 // 4. 토스트 서비스 - UnifiedToastManager 사용
-export { UnifiedToastManager } from './UnifiedToastManager';
-export { ToastController } from './ToastController';
-export type { ToastOptions } from './UnifiedToastManager';
+export { UnifiedToastManager } from './unified-toast-manager';
+export { ToastController } from './toast-controller';
+export type { ToastOptions } from './unified-toast-manager';
 
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';
@@ -63,7 +63,7 @@ export { BrowserService } from '@shared/browser';
 // export { LazyLoadingService } from './LazyLoadingService';
 
 // 8. 서비스 관리 (ServiceRegistry 통합)
-export { CoreService } from './ServiceManager';
+export { CoreService } from './service-manager';
 
 // ====================================
 // 유틸리티 및 타입들

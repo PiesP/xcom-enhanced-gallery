@@ -7,7 +7,7 @@
  *   아래 import가 모킹 대상이 됩니다.
  */
 
-import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
+import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
 
 /**
  * 가능한 가장 빠른 방식으로 username을 가져옵니다.

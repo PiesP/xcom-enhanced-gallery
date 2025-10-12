@@ -2,11 +2,11 @@
  * Typed service accessors wrapping the service-bridge and centralizing SERVICE_KEYS usage.
  * Use these helpers instead of referring to SERVICE_KEYS directly in features/bootstrap.
  */
-import type { BulkDownloadService } from '../services/BulkDownloadService';
-import { bulkDownloadService as __bulkDownloadServiceInstance } from '../services/BulkDownloadService';
+import type { BulkDownloadService } from '../services/bulk-download-service';
+import { bulkDownloadService as __bulkDownloadServiceInstance } from '../services/bulk-download-service';
 import type { FilenameService } from '../media/filename-service';
-import type { ThemeService } from '../services/ThemeService';
-import type { ToastController } from '../services/ToastController';
+import type { ThemeService } from '../services/theme-service';
+import type { ToastController } from '../services/toast-controller';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CoreService } from '../../../src/shared/services/ServiceManager';
+import { CoreService } from '../../../src/shared/services/service-manager';
 
 describe('Main.ts 초기화 오류 수정', () => {
   beforeEach(() => {

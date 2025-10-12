@@ -5,7 +5,7 @@
 
 import type { MediaMapping, MediaPageType } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-import { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
+import { MediaTabUrlDirectStrategy } from './media-tab-url-direct-strategy';
 
 /**
  * 간소화된 미디어 매핑 서비스

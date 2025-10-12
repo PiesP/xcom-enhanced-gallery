@@ -5,8 +5,8 @@
  */
 
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { ToastManager } from '@shared/services/UnifiedToastManager';
-import { languageService } from '@shared/services/LanguageService';
+import { ToastManager } from '@shared/services/unified-toast-manager';
+import { languageService } from '@shared/services/language-service';
 
 type Props = {
   children?: ComponentChildren;

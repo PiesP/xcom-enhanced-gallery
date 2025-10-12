@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bulkDownloadService } from '@shared/services/BulkDownloadService';
+import { bulkDownloadService } from '@shared/services/bulk-download-service';
 import { ErrorCode } from '@shared/types/result.types';
 
 // RED TEST: 서비스 실패/부분실패/취소/빈 입력 시 code 필드가 요구됨

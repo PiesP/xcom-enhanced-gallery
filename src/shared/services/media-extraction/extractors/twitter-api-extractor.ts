@@ -6,7 +6,7 @@
 
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/TwitterVideoExtractor';
+import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/twitter-video-extractor';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
 

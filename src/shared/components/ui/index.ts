@@ -21,7 +21,7 @@ export type { IconButtonProps } from './Button/IconButton';
 // Toast 컴포넌트 — 상태성 함수는 서비스에서만 제공(배럴 재노출 금지)
 export { Toast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
-export type { ToastItem } from '@/shared/services/UnifiedToastManager';
+export type { ToastItem } from '@/shared/services/unified-toast-manager';
 export type { ToastContainerProps } from './Toast/ToastContainer';
 
 // Toolbar 컴포넌트

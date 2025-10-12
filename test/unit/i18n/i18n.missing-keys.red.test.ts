@@ -5,7 +5,7 @@
  *  - languageService.getIntegrityReport() API 제공 (missing/extra 구조 보고)
  */
 import { describe, it, expect } from 'vitest';
-import { languageService } from '@shared/services/LanguageService';
+import { languageService } from '@shared/services/language-service';
 
 describe('i18n.missing-keys (RED)', () => {
   it('getIntegrityReport API가 각 로케일 키 정합을 보고하고, 현재 상태는 missing/extra 0이어야 한다', () => {

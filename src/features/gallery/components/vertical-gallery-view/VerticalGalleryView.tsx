@@ -14,7 +14,7 @@ import { galleryState, navigateToItem } from '../../../../shared/state/signals/g
 import type { GalleryState } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { getSolid } from '../../../../shared/external/vendors';
-import { languageService } from '../../../../shared/services/LanguageService';
+import { languageService } from '../../../../shared/services/language-service';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
@@ -32,7 +32,7 @@ import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '../../../../shared/utils/performance';
 import { getSetting, setSetting } from '../../../../shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { useSelector, useCombinedSelector } from '../../../../shared/utils/signalSelector';
+import { useSelector, useCombinedSelector } from '../../../../shared/utils/signal-selector';
 import type { MediaInfo } from '../../../../shared/types';
 import { observeViewportCssVars } from '../../../../shared/utils/viewport';
 

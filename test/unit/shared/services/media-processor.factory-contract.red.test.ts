@@ -9,7 +9,7 @@
  *  - 직접 인스턴스 등록(register) 사용을 통한 우회가 감지되면 테스트 실패 (향후 guard)
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CoreService, getService, registerServiceFactory } from '@shared/services/ServiceManager';
+import { CoreService, getService, registerServiceFactory } from '@shared/services/service-manager';
 
 // Phase 6에서 기대하는 새로운 API (아직 존재하지 않음 → RED)
 // 타입 단언을 사용하여 존재를 가정하고, 없으면 런타임 에러 유도

@@ -9,7 +9,7 @@ import {
   createFocusTrap,
   type FocusTrap as FocusTrapUtil,
   type FocusTrapOptions as UtilOptions,
-} from '../utils/focusTrap';
+} from '../utils/focus-trap';
 
 export interface FocusTrapOptions extends UtilOptions {
   previousFocusElement?: HTMLElement | null;

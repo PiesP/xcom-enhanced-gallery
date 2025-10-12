@@ -4,7 +4,7 @@
  * @version 2.0.0 - Service Consolidation
  */
 
-import { CoreService } from './ServiceManager';
+import { CoreService } from './service-manager';
 import { logger } from '@shared/logging/logger';
 import { getMediaService, getBulkDownloadService } from './service-factories';
 
@@ -31,8 +31,8 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.VIDEO_STATE, mediaService);
 
   // 개별 UI 서비스들
-  const { ThemeService } = await import('./ThemeService');
-  const { ToastController } = await import('./ToastController');
+  const { ThemeService } = await import('./theme-service');
+  const { ToastController } = await import('./toast-controller');
 
   const themeService = new ThemeService();
   const toastController = new ToastController();

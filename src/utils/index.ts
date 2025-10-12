@@ -9,7 +9,7 @@
  */
 
 // CoreService 별칭 (테스트/기존 코드 호환)
-export { CoreService } from '../shared/services/ServiceManager';
+export { CoreService } from '../shared/services/service-manager';
 
 // 로거 (경량 유틸리티)
 export { logger } from '../shared/logging/logger';

@@ -7,7 +7,7 @@ import { useFocusTrap } from '../../../../shared/hooks/use-focus-trap';
 import { globalTimerManager } from '../../../../shared/utils/timer-management';
 import styles from './KeyboardHelpOverlay.module.css';
 import { IconButton } from '../../../../shared/components/ui/Button/IconButton';
-import { languageService } from '../../../../shared/services/LanguageService';
+import { languageService } from '../../../../shared/services/language-service';
 
 export interface KeyboardHelpOverlayProps {
   open: boolean;

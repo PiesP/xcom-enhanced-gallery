@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from '@/constants';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { GalleryApp as GalleryAppClass } from '@features/gallery/GalleryApp';

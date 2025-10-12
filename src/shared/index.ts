@@ -58,9 +58,9 @@ export {
   useAsyncSelector,
   getGlobalSelectorStats,
   clearGlobalSelectorStats,
-} from './utils/signalSelector';
-export { createFocusTrap } from './utils/focusTrap';
-export type { FocusTrapOptions, FocusTrap } from './utils/focusTrap';
+} from './utils/signal-selector';
+export { createFocusTrap } from './utils/focus-trap';
+export type { FocusTrapOptions, FocusTrap } from './utils/focus-trap';
 
 // 새로운 P4-P7 훅들
 export { useScrollLock } from './hooks/use-scroll-lock';

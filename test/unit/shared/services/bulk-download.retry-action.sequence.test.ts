@@ -2,8 +2,8 @@
  * @file BulkDownloadService 재시도 액션 실패 항목 선택적 재시도 시퀀스 테스트 (GREEN)
  */
 import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
-import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
+import { toastManager } from '../../../../src/shared/services/unified-toast-manager';
 
 function m(url: string, name: string) {
   return { id: name, url, filename: name, type: 'image' } as const;

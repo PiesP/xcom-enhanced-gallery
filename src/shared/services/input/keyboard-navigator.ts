@@ -6,7 +6,7 @@
 
 // Internal imports use relative paths to avoid alias issues in Vitest
 import { logger } from '../../logging/logger';
-import { EventManager } from '../EventManager';
+import { EventManager } from '../event-manager';
 
 export interface KeyboardNavigatorHandlers {
   onEscape?: () => void;
