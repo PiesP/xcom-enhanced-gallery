@@ -16,7 +16,7 @@ import { Button } from '../../../../shared/components/ui/Button/Button';
 import type { ButtonProps } from '../../../../shared/components/ui/Button/Button';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
 import { getSolid } from '../../../../shared/external/vendors';
-import { languageService } from '../../../../shared/services/LanguageService';
+import { languageService } from '../../../../shared/services/language-service';
 import styles from './VerticalImageItem.module.css';
 
 const solid = getSolid();

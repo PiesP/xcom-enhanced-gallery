@@ -6,8 +6,8 @@ import { getSolid, type ComponentChildren, type JSXElement } from '../../../exte
 import { ComponentStandards } from '../StandardProps';
 import { IconButton } from '../Button/IconButton';
 import { X } from '../Icon';
-import { LanguageService } from '../../../services/LanguageService';
-import { ThemeService } from '../../../services/ThemeService';
+import { LanguageService } from '../../../services/language-service';
+import { ThemeService } from '../../../services/theme-service';
 import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useScrollLock } from '../../../hooks/use-scroll-lock';
 import { globalTimerManager } from '../../../utils/timer-management';

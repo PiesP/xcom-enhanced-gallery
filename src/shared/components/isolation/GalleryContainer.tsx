@@ -5,7 +5,7 @@
 
 import { getSolid, type ComponentChildren, type JSXElement } from '../../external/vendors';
 import { logger } from '../../logging';
-import { EventManager } from '../../services/EventManager';
+import { EventManager } from '../../services/event-manager';
 
 const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
 

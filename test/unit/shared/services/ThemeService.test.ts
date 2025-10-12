@@ -4,10 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ThemeService } from '../../../../src/shared/services/ThemeService';
+import { ThemeService } from '../../../../src/shared/services/theme-service';
 
 describe('ThemeService Extended', () => {
   let themeService: ThemeService;
+  // eslint-disable-next-line no-undef
   let mockDocument: Partial<Document>;
 
   beforeEach(() => {

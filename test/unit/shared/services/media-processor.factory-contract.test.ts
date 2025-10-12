@@ -2,7 +2,7 @@
  * @file GREEN: MediaProcessor Service Factory Contract Test
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CoreService, getService, registerServiceFactory } from '@shared/services/ServiceManager';
+import { CoreService, getService, registerServiceFactory } from '@shared/services/service-manager';
 
 interface ExpectedMediaProcessor {
   processHtml(): void;

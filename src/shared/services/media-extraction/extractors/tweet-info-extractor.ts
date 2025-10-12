@@ -6,11 +6,11 @@
 
 import { logger } from '@shared/logging/logger';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
-import { ClickedElementTweetStrategy } from '../strategies/ClickedElementTweetStrategy';
-import { UrlBasedTweetStrategy } from '../strategies/UrlBasedTweetStrategy';
-import { DomStructureTweetStrategy } from '../strategies/DomStructureTweetStrategy';
-import { DataAttributeTweetStrategy } from '../strategies/DataAttributeTweetStrategy';
-import { ParentTraversalTweetStrategy } from '../strategies/ParentTraversalTweetStrategy';
+import { ClickedElementTweetStrategy } from '../strategies/clicked-element-tweet-strategy';
+import { UrlBasedTweetStrategy } from '../strategies/url-based-tweet-strategy';
+import { DomStructureTweetStrategy } from '../strategies/dom-structure-tweet-strategy';
+import { DataAttributeTweetStrategy } from '../strategies/data-attribute-tweet-strategy';
+import { ParentTraversalTweetStrategy } from '../strategies/parent-traversal-tweet-strategy';
 
 /**
  * 트윗 정보 추출기

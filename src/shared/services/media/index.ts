@@ -4,11 +4,11 @@
  */
 
 // Core Media Services
-export { VideoControlService } from './VideoControlService';
-export { UsernameParser, extractUsername, parseUsernameFast } from './UsernameExtractionService';
+export { VideoControlService } from './video-control-service';
+export { UsernameParser, extractUsername, parseUsernameFast } from './username-extraction-service';
 
 // Media Extraction Services
-export { FallbackExtractor } from './FallbackExtractor';
+export { FallbackExtractor } from './fallback-extractor';
 
 // Twitter Video Extractor Utilities
 export {
@@ -21,7 +21,7 @@ export {
   getVideoMediaEntry,
   getVideoUrlFromThumbnail,
   type TweetMediaEntry,
-} from './TwitterVideoExtractor';
+} from './twitter-video-extractor';
 
 // Re-export types
-export type { UsernameExtractionResult } from './UsernameExtractionService';
+export type { UsernameExtractionResult } from './username-extraction-service';

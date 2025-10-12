@@ -3,8 +3,8 @@
  * 외부 모듈에서 직접 new 를 호출하지 않고 factory 경유로 서비스 싱글톤을 얻는다.
  * 테스트에서 direct instantiation 금지 규칙을 가드.
  */
-import type { MediaService } from './MediaService';
-import type { BulkDownloadService } from './BulkDownloadService';
+import type { MediaService } from './media-service';
+import type { BulkDownloadService } from './bulk-download-service';
 
 // Lazy singleton holders (Promise로 concurrency 안전 보장)
 let mediaServiceInstance: Promise<MediaService> | null = null;
@@ -15,14 +15,14 @@ export async function getMediaService(): Promise<MediaService> {
     // Use class-level singleton to avoid duplicate instances created via both
     // module-level exports (mediaService) and factory usage. This ensures a single
     // VideoControlService interval lifecycle that is properly cleaned up.
-    mediaServiceInstance = import('./MediaService').then(m => m.MediaService.getInstance());
+    mediaServiceInstance = import('./media-service').then(m => m.MediaService.getInstance());
   }
   return mediaServiceInstance;
 }
 
 export async function getBulkDownloadService(): Promise<BulkDownloadService> {
   if (!bulkDownloadServiceInstance) {
-    bulkDownloadServiceInstance = import('./BulkDownloadService').then(
+    bulkDownloadServiceInstance = import('./bulk-download-service').then(
       m => new m.BulkDownloadService()
     );
   }

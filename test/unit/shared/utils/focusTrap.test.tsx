@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createFocusTrap } from '@shared/utils/focusTrap';
+import { createFocusTrap } from '@shared/utils/focus-trap';
 
 describe('P4: Focus Trap Utility', () => {
   type ModalContainerElement = HTMLElement;

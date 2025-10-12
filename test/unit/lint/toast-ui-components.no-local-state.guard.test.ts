@@ -51,8 +51,8 @@ describe('lint: UI Toast components (no local state, type-only import)', () => {
       }
 
       // 2) ToastItem must be imported type-only from service (no runtime import)
-      //    Allow: `import type { ToastItem } from '@/shared/services/UnifiedToastManager'`
-      //    Forbid: `import { ToastItem } from '@/shared/services/UnifiedToastManager'` (without type)
+      //    Allow: `import type { ToastItem } from '@/shared/services/unified-toast-manager'`
+      //    Forbid: `import { ToastItem } from '@/shared/services/unified-toast-manager'` (without type)
       const badTypeImport =
         /import\s+\{\s*ToastItem\s*\}\s+from\s+['"]@\/shared\/services\/UnifiedToastManager['"];?/;
       if (badTypeImport.test(content)) {

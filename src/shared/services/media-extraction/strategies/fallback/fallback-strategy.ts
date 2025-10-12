@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { parseUsernameFast } from '@shared/services/media/UsernameExtractionService';
+import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
 

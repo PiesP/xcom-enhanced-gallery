@@ -4,8 +4,8 @@
  * 공통 BaseResult 형태({ status: 'success'|'partial'|'error'|'cancelled'; failures?:[]; error?: string })를 노출
  */
 import { describe, it, expect } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
-import { mediaService } from '../../../../src/shared/services/MediaService';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
+import { mediaService } from '../../../../src/shared/services/media-service';
 import { SettingsService } from '../../../../src/features/settings/services/settings-service';
 
 describe('RED: 공통 Result 패턴 통일', () => {

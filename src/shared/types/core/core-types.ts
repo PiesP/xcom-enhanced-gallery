@@ -48,12 +48,12 @@ export type ServiceFactory<T> = () => T | Promise<T>;
  * 서비스 타입 매핑 (Infrastructure 서비스들)
  */
 export type BulkDownloadServiceType =
-  import('../../services/BulkDownloadService').BulkDownloadService;
+  import('../../services/bulk-download-service').BulkDownloadService;
 export type FilenameServiceType = import('../../media').FilenameService;
-export type ThemeServiceType = import('../../services/ThemeService').ThemeService;
+export type ThemeServiceType = import('../../services/theme-service').ThemeService;
 export type VideoControlServiceType =
-  import('../../services/media/VideoControlService').VideoControlService;
-export type ToastControllerType = import('../../services/ToastController').ToastController;
+  import('../../services/media/video-control-service').VideoControlService;
+export type ToastControllerType = import('../../services/toast-controller').ToastController;
 
 /**
  * 갤러리 렌더러 서비스 타입

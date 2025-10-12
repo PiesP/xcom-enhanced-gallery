@@ -2,7 +2,7 @@
  * @fileoverview Phase E: ToastManager 공개 계약 가드 테스트
  */
 import { describe, it, expect, vi } from 'vitest';
-import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
+import { toastManager } from '../../../../src/shared/services/unified-toast-manager';
 
 const PUBLIC_METHODS = [
   'show',

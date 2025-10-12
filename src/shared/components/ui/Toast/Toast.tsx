@@ -1,7 +1,7 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastProps } from '../StandardProps';
-import type { ToastItem as ServiceToastItem } from '@/shared/services/UnifiedToastManager';
+import type { ToastItem as ServiceToastItem } from '@/shared/services/unified-toast-manager';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import styles from './Toast.module.css';
 

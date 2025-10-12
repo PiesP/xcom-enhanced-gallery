@@ -4,10 +4,10 @@
  */
 
 // 서비스
-export { MediaMappingService } from './MediaMappingService';
+export { MediaMappingService } from './media-mapping-service';
 
 // 전략들
-export { MediaTabUrlDirectStrategy } from './MediaTabUrlDirectStrategy';
+export { MediaTabUrlDirectStrategy } from './media-tab-url-direct-strategy';
 
 // 타입들
 export type {

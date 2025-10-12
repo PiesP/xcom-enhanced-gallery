@@ -12,7 +12,7 @@ export {
   releaseResource,
   releaseAllResources,
   type ResourceType,
-} from './ResourceManager';
+} from './resource-manager';
 
 // 하위 호환성을 위한 별칭들
 export {
@@ -26,10 +26,10 @@ export {
   globalResourceManager as addManagedEventListener,
   globalResourceManager as createManagedObserver,
   globalResourceManager as createManagedObjectURL,
-} from './ResourceManager';
+} from './resource-manager';
 
 // 편의 함수들
-import { globalResourceManager } from './ResourceManager';
+import { globalResourceManager } from './resource-manager';
 export const getResourceCount = () => globalResourceManager.getResourceCount();
 export const hasResource = (id: string) => globalResourceManager.hasResource(id);
 

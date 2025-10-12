@@ -13,8 +13,8 @@ vi.mock('@shared/external/vendors', () => ({
   },
 }));
 
-import { UnifiedToastManager } from '@shared/services/UnifiedToastManager';
-import type { ToastItem } from '@shared/services/UnifiedToastManager';
+import { UnifiedToastManager } from '@shared/services/unified-toast-manager';
+import type { ToastItem } from '@shared/services/unified-toast-manager';
 
 describe('Toast 시스템 통합 (TDD)', () => {
   type ToastManagerInstance = ReturnType<typeof UnifiedToastManager.getInstance>;

@@ -18,8 +18,8 @@ import type {
 } from './types';
 
 import { initializeVendors, getSolid } from '@shared/external/vendors';
-import { ToastManager } from '@shared/services/UnifiedToastManager';
-import { languageService } from '@shared/services/LanguageService';
+import { ToastManager } from '@shared/services/unified-toast-manager';
+import { languageService } from '@shared/services/language-service';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
@@ -27,7 +27,7 @@ import { KeyboardHelpOverlay } from '@features/gallery/components/KeyboardHelpOv
 import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { SERVICE_KEYS } from '@/constants';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import { initializeGalleryEvents, cleanupGalleryEvents } from '@shared/utils/events';
 

@@ -16,7 +16,7 @@ import {
   warmupNonCriticalServices,
   registerGalleryRenderer,
 } from '@shared/container/service-accessors';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { cleanupVendors, getSolid } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 

@@ -7,7 +7,7 @@
 // 테스트 계약: ThemeService가 import되고, 파일 내에 `new ThemeService()`와
 // `handleThemeChange` 시그널이 존재해야 합니다. 아래 유틸 함수는 호출 전까지는
 // 어떤 부작용도 일으키지 않습니다.
-import { ThemeService } from '../../../services/ThemeService';
+import { ThemeService } from '../../../services/theme-service';
 
 // ThemeService 인스턴스를 필요 시 생성하는 팩토리(지연 생성, no side-effect)
 export function createThemeServiceForSettingsModal(): ThemeService {

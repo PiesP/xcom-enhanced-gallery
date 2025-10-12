@@ -2,8 +2,8 @@
  * @file RED: BulkDownloadService 부분 실패 재시도 액션 토스트 테스트
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/BulkDownloadService';
-import { toastManager } from '../../../../src/shared/services/UnifiedToastManager';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
+import { toastManager } from '../../../../src/shared/services/unified-toast-manager';
 
 function item(url: string, name: string) {
   return { id: name, url, filename: name, type: 'image' } as const;

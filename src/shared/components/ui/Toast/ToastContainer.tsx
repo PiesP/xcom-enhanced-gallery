@@ -3,8 +3,8 @@
  */
 
 import { getSolid, type JSXElement } from '@shared/external/vendors';
-import { useSelector } from '@shared/utils/signalSelector';
-import { UnifiedToastManager, type ToastItem } from '@/shared/services/UnifiedToastManager';
+import { useSelector } from '@shared/utils/signal-selector';
+import { UnifiedToastManager, type ToastItem } from '@/shared/services/unified-toast-manager';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';

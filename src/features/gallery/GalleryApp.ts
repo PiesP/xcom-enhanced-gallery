@@ -23,8 +23,8 @@ import {
 } from '../../shared/state/signals/gallery.signals';
 import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '../../shared/logging/logger';
-import { MediaService } from '../../shared/services/MediaService';
-import { ToastController } from '../../shared/services/ToastController';
+import { MediaService } from '../../shared/services/media-service';
+import { ToastController } from '../../shared/services/toast-controller';
 import { unmountGallery } from '../../shared/components/isolation';
 
 /**

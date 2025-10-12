@@ -18,7 +18,7 @@ export class ServiceDiagnostics {
       // Dynamic imports to avoid static cycles
       const [{ registerCoreServices }, { CoreService }, { SERVICE_KEYS }] = await Promise.all([
         import('./service-initialization'),
-        import('./ServiceManager'),
+        import('./service-manager'),
         import('@/constants'),
       ]);
 
@@ -46,7 +46,7 @@ export class ServiceDiagnostics {
 
       // 4) Optional memory inspection (best-effort)
       try {
-        const { ResourceManager } = await import('../utils/memory/ResourceManager');
+        const { ResourceManager } = await import('../utils/memory/resource-manager');
         const resourceManager = new ResourceManager();
         const resourceCount = resourceManager.getResourceCount();
         if (resourceCount > 0) {

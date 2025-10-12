@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { MediaService } from '@/shared/services/MediaService';
+import { MediaService } from '@/shared/services/media-service';
 
 describe('N6 — viewport-weighted prefetch', () => {
   let svc: MediaService;
@@ -12,6 +12,7 @@ describe('N6 — viewport-weighted prefetch', () => {
     svc = MediaService.getInstance();
     // Prevent real network
     // @ts-expect-error private access in test by design
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     vi.spyOn(svc as any, 'prefetchSingle').mockImplementation(async (url: string) => {
       return Promise.resolve();
     });
@@ -25,6 +26,7 @@ describe('N6 — viewport-weighted prefetch', () => {
     const calls: string[] = [];
     // capture order
     // @ts-expect-error private access in test by design
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svc as any).prefetchSingle.mockImplementation(async (url: string) => {
       calls.push(url);
       return Promise.resolve();
@@ -49,6 +51,7 @@ describe('N6 — viewport-weighted prefetch', () => {
     const calls: string[] = [];
     // mock with micro delays to simulate async completion
     // @ts-expect-error private access in test by design
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (svc as any).prefetchSingle.mockImplementation(async (url: string) => {
       calls.push(url);
       await new Promise(r => setTimeout(r, 0));

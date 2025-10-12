@@ -5,11 +5,11 @@
 
 // Tweet info extraction strategies (active ones only)
 // export { ClickedElementStrategy } from './ClickedElementStrategy'; // DISABLED
-export { ClickedElementTweetStrategy } from './ClickedElementTweetStrategy';
-export { UrlBasedTweetStrategy } from './UrlBasedTweetStrategy';
+export { ClickedElementTweetStrategy } from './clicked-element-tweet-strategy';
+export { UrlBasedTweetStrategy } from './url-based-tweet-strategy';
 // export { DomStructureStrategy } from './DomStructureStrategy'; // DISABLED
-export { DomStructureTweetStrategy } from './DomStructureTweetStrategy';
-export { DataAttributeTweetStrategy } from './DataAttributeTweetStrategy';
-export { ParentTraversalTweetStrategy } from './ParentTraversalTweetStrategy';
+export { DomStructureTweetStrategy } from './dom-structure-tweet-strategy';
+export { DataAttributeTweetStrategy } from './data-attribute-tweet-strategy';
+export { ParentTraversalTweetStrategy } from './parent-traversal-tweet-strategy';
 
 // Fallback strategies have been moved to features/media/extraction/strategies/fallback/

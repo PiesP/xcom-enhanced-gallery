@@ -356,7 +356,7 @@ export function validateAltTextQuality(altText: string, imageType = 'informative
  * 포커스 트랩 설정
  * WCAG 2.4.3 Focus Order
  */
-import { createFocusTrap as unifiedCreateFocusTrap } from '../focusTrap';
+import { createFocusTrap as unifiedCreateFocusTrap } from '../focus-trap';
 import { globalTimerManager } from '../timer-management';
 
 export function createFocusTrap(container: HTMLElement): void {

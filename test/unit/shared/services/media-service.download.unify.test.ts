@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mediaService } from '../../../../src/shared/services/MediaService';
+import { mediaService } from '../../../../src/shared/services/media-service';
 import * as accessors from '../../../../src/shared/container/service-accessors';
 
 // Create a simple fake BulkDownloadService

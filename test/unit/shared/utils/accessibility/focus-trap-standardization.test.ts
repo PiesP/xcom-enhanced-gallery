@@ -24,7 +24,7 @@ vi.mock('@shared/utils/focusTrap', () => {
 
 // Import after mock setup
 import { createFocusTrap as legacyCreateFocusTrap } from '@shared/utils/accessibility/accessibility-utils';
-import * as focusTrapModule from '@shared/utils/focusTrap';
+import * as focusTrapModule from '@shared/utils/focus-trap';
 
 describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () => {
   let container: HTMLElement;

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { CoreService } from '@shared/services/ServiceManager';
+import { CoreService } from '@shared/services/service-manager';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 0 - Legacy Container Contract', () => {

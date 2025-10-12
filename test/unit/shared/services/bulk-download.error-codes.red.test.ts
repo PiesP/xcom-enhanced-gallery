@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { bulkDownloadService } from '@shared/services/BulkDownloadService';
+import { bulkDownloadService } from '@shared/services/bulk-download-service';
 import { ErrorCode } from '@shared/types/result.types';
 
 // 간단한 fetch 모킹: 첫 번째 URL 성공, 두 번째 실패 시나리오 등

@@ -5,7 +5,7 @@
 
 export * from './performance-utils';
 export * from './preload';
-export * from './idleScheduler';
+export * from './idle-scheduler';
 export * from './schedulers';
 export * from './prefetch-bench';
 

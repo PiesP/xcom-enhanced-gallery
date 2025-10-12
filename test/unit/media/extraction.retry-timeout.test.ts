@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { MediaExtractionService } from '@/shared/services/media-extraction/MediaExtractionService';
-import { TwitterAPI } from '@/shared/services/media/TwitterVideoExtractor';
+import { MediaExtractionService } from '@/shared/services/media-extraction/media-extraction-service';
+import { TwitterAPI } from '@/shared/services/media/twitter-video-extractor';
 
 describe('Phase C: API 추출 재시도/타임아웃 정책', () => {
   it('maxRetries만큼 재시도 후 실패하면 DOM 폴백으로 전환한다', async () => {

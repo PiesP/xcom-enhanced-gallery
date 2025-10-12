@@ -8,11 +8,11 @@ import {
   SettingsModal,
   type SettingsModalProps,
 } from '../../../../../src/shared/components/ui/SettingsModal/SettingsModal';
-import { ThemeService } from '../../../../../src/shared/services/ThemeService';
+import { ThemeService } from '../../../../../src/shared/services/theme-service';
 import {
   LanguageService,
   languageService,
-} from '../../../../../src/shared/services/LanguageService';
+} from '../../../../../src/shared/services/language-service';
 
 type PartialProps = Partial<SettingsModalProps>;
 
