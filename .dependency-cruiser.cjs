@@ -60,7 +60,7 @@ module.exports = {
           '^src/types/', // 전역 타입 정의
         ],
       },
-      to: { path: '^(fflate|preact|@preact)' },
+      to: { path: '^(fflate|solid-js)' },
     },
 
     // 순환 참조 방지
@@ -328,7 +328,7 @@ module.exports = {
             {
               criteria: {
                 from: { path: '^src' },
-                to: { path: '^(fflate|preact|@preact)' },
+                to: { path: '^(fflate|solid-js)' },
               },
               attributes: {
                 color: '#6B7280',

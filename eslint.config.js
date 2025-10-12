@@ -14,7 +14,6 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-plugin-prettier';
-// Preact 사용: react 전용 플러그인 의존 제거
 
 export default [
   eslint.configs.recommended,
@@ -32,8 +31,6 @@ export default [
       'test-results/**',
       '*.config.js.backup',
       '*.backup.*',
-      // Backup files
-      'test/.backup-preact/**',
       // Type definitions
       'types/jsdom.d.ts',
       'src/types/solid-js-client.d.ts',

@@ -252,7 +252,7 @@ export default defineConfig(({ mode }) => {
       }),
     },
     optimizeDeps: {
-      include: ['preact', 'preact/hooks', '@preact/signals'],
+      include: ['solid-js', 'solid-js/web', 'solid-js/store'],
       force: flags.isDev,
     },
     server: { port: 3000, hmr: flags.isDev },

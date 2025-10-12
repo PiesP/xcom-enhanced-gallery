@@ -7,12 +7,6 @@ build/
 coverage/
 release/
 
-# Git
-.git/
-
-# E2E test files (MCP browser automation)
-test/e2e/*.mcp.js
-
 # Generated files
 *.min.js
 *.min.css
@@ -22,10 +16,8 @@ test/e2e/*.mcp.js
 
 # Logs
 *.log
-mcp-debug.log
 
 # Documentation
-docs/api/
 docs/dependency-*.html
 docs/dependency-*.svg
 docs/dependency-*.json
