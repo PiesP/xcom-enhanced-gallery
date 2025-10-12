@@ -11,7 +11,7 @@ import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
-const { onCleanup } = getSolid();
+const { onCleanup, createEffect } = getSolid();
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
@@ -73,6 +73,11 @@ export function useGalleryItemScroll(
   let indexWatcherId: number | null = null;
   let retryCount = 0;
 
+  // Phase 28: 사용자 스크롤 감지 플래그
+  let userScrollDetected = false;
+  let userScrollTimeoutId: number | null = null;
+  let isAutoScrolling = false;
+
   const clearScrollTimeout = () => {
     if (scrollTimeoutId !== null) {
       globalTimerManager.clearTimeout(scrollTimeoutId);
@@ -85,6 +90,39 @@ export function useGalleryItemScroll(
       globalTimerManager.clearInterval(indexWatcherId);
       indexWatcherId = null;
     }
+  };
+
+  // Phase 28: 사용자 스크롤 타임아웃 정리
+  const clearUserScrollTimeout = () => {
+    if (userScrollTimeoutId !== null) {
+      globalTimerManager.clearTimeout(userScrollTimeoutId);
+      userScrollTimeoutId = null;
+    }
+  };
+
+  // Phase 28: 사용자 스크롤 감지 핸들러
+  const handleUserScroll = () => {
+    // 자동 스크롤 중에 발생한 스크롤 이벤트는 무시
+    if (isAutoScrolling) {
+      return;
+    }
+
+    userScrollDetected = true;
+    logger.debug('useGalleryItemScroll: 사용자 스크롤 감지', {
+      timestamp: Date.now(),
+    });
+
+    // 기존 타이머 정리
+    clearUserScrollTimeout();
+    clearScrollTimeout();
+
+    // 500ms 후 사용자 스크롤 플래그 해제
+    userScrollTimeoutId = globalTimerManager.setTimeout(() => {
+      userScrollDetected = false;
+      logger.debug('useGalleryItemScroll: 사용자 스크롤 종료, 자동 스크롤 재개', {
+        timestamp: Date.now(),
+      });
+    }, 500);
   };
 
   const resolveBehavior = (): ScrollBehavior => {
@@ -123,6 +161,9 @@ export function useGalleryItemScroll(
     }
 
     try {
+      // Phase 28: 자동 스크롤 플래그 설정
+      isAutoScrolling = true;
+
       const itemsRoot = container.querySelector(
         '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
       ) as HTMLElement | null;
@@ -132,6 +173,7 @@ export function useGalleryItemScroll(
           selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
         });
         pendingIndex = null;
+        isAutoScrolling = false;
         return;
       }
 
@@ -143,6 +185,7 @@ export function useGalleryItemScroll(
           itemsContainerChildrenCount: itemsRoot.children.length,
         });
         pendingIndex = null;
+        isAutoScrolling = false;
         return;
       }
 
@@ -179,9 +222,16 @@ export function useGalleryItemScroll(
           globalTimerManager.setTimeout(resolve, 300);
         });
       }
+
+      // Phase 28: 자동 스크롤 완료 후 플래그 해제
+      // 다음 틱에서 해제하여 스크롤 이벤트가 완전히 처리되도록 함
+      globalTimerManager.setTimeout(() => {
+        isAutoScrolling = false;
+      }, 50);
     } catch (error) {
       logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
       pendingIndex = null;
+      isAutoScrolling = false;
 
       if (retryCount < 1) {
         retryCount += 1;
@@ -257,10 +307,33 @@ export function useGalleryItemScroll(
       return;
     }
 
+    // Phase 28: 사용자 스크롤 중에는 자동 스크롤 차단
+    if (userScrollDetected) {
+      logger.debug('useGalleryItemScroll: 사용자 스크롤 중 - 자동 스크롤 차단', {
+        currentIndex: index,
+        userScrollDetected,
+      });
+      return;
+    }
+
     scheduleScrollToIndex(index);
   };
 
   indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
+
+  // Phase 28: 컨테이너 스크롤 이벤트 리스너 등록 (createEffect로 안전하게)
+  createEffect(() => {
+    const container = containerAccessor();
+    if (!container) {
+      return;
+    }
+
+    container.addEventListener('scroll', handleUserScroll, { passive: true });
+
+    onCleanup(() => {
+      container.removeEventListener('scroll', handleUserScroll);
+    });
+  });
 
   const scrollToCurrentItem = (): Promise<void> => {
     return scrollToItem(currentIndexAccessor());
@@ -269,6 +342,7 @@ export function useGalleryItemScroll(
   onCleanup(() => {
     clearScrollTimeout();
     stopIndexWatcher();
+    clearUserScrollTimeout();
   });
 
   return {

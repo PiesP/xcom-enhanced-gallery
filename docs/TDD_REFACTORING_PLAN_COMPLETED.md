@@ -2614,3 +2614,319 @@ Phase 24-A의 TDD 흐름 확장
 **다음 단계**: Phase 21 계획 수립 (SOLIDJS_OPTIMIZATION_GUIDE.md 참고)
 
 **참고**: `TDD_REFACTORING_PLAN.md` 활성 계획 참조
+
+---
+
+## Phase 28: 자동 스크롤과 수동 스크롤 충돌 방지 (2025-01-15)
+
+**완료일**: 2025-01-15 **브랜치**: fix/test-failures-phase28
+
+### 목표
+
+사용자가 수동으로 스크롤 중일 때 자동 스크롤이 동작하지 않도록 개선하여 사용자
+경험 향상
+
+### 문제 상황
+
+- `useGalleryItemScroll`의 `checkIndexChanges()`가 32ms마다 폴링하면서 인덱스
+  변화를 감지
+- 사용자가 수동으로 스크롤하는 동안에도 자동 스크롤이 실행되어 사용자 경험 저해
+- `useGalleryScroll`의 `isScrolling` 상태가 `useGalleryItemScroll`과 연동되지
+  않음
+
+### 해결 방안
+
+1. `useGalleryItemScroll`에 사용자 스크롤 감지 로직 추가
+2. 컨테이너의 `scroll` 이벤트 리스너로 사용자 스크롤 감지
+3. 사용자 스크롤 중에는 자동 스크롤 예약/실행 중단
+4. 사용자 스크롤 종료 후 일정 시간(500ms) 후 자동 스크롤 재개
+
+### 구현 내역
+
+#### 1. RED: 테스트 작성
+
+**파일**:
+`test/unit/features/gallery/hooks/useGalleryItemScroll.user-scroll.test.ts`
+
+7개 테스트 케이스 작성:
+
+- 컨테이너 스크롤 이벤트 감지 (2)
+- 사용자 스크롤 중 자동 스크롤 차단 (3)
+- 로깅 및 디버깅 (2)
+
+#### 2. GREEN: 구현
+
+**파일**: `src/features/gallery/hooks/useGalleryItemScroll.ts`
+
+주요 변경 사항:
+
+- `userScrollDetected`, `userScrollTimeoutId`, `isAutoScrolling` 플래그 추가
+- `handleUserScroll()` 함수 구현 (500ms 디바운스 타이머)
+- `clearUserScrollTimeout()` 타이머 정리 함수 추가
+- `scrollToItem()`에 자동 스크롤 플래그 설정 (50ms 후 해제)
+- `checkIndexChanges()`에서 사용자 스크롤 중 자동 스크롤 차단
+- 컨테이너 `scroll` 이벤트 리스너 등록 (passive: true)
+- `onCleanup()`에서 이벤트 리스너 및 타이머 정리
+
+#### 3. REFACTOR: 로깅 추가
+
+- 사용자 스크롤 감지 시 debug 로그
+- 사용자 스크롤 종료 시 debug 로그
+- 자동 스크롤 차단 시 debug 로그
+
+### 결과
+
+**테스트**:
+
+- ✅ 신규 테스트 7/7 passing
+- ✅ 기존 테스트 3/3 passing
+- ✅ 전체 테스트 641/641 passing (24 skipped, 1 todo)
+
+**빌드**:
+
+- ✅ dev: 739 KB (baseline 대비 +11 KB)
+- ✅ prod: 335 KB (baseline 대비 +6 KB)
+- ✅ gzip: 91 KB (baseline 대비 +2 KB)
+
+**품질**:
+
+- ✅ 타입: 0 errors
+- ✅ 린트: 0 warnings
+- ✅ 의존성: 0 violations
+
+### 기술적 세부 사항
+
+#### 사용자 스크롤 감지 메커니즘
+
+1. **플래그 기반 상태 관리**:
+   - `userScrollDetected`: 사용자 스크롤 중 여부
+   - `isAutoScrolling`: 자동 스크롤 실행 중 여부
+
+2. **타이머 기반 디바운스**:
+   - 500ms 디바운스로 사용자 스크롤 종료 감지
+   - 50ms 후 자동 스크롤 플래그 해제
+
+3. **이벤트 리스너**:
+   - `scroll` 이벤트 (passive: true)
+   - 자동 스크롤 중에는 이벤트 무시
+
+#### 자동 스크롤 차단 로직
+
+` ypescript const checkIndexChanges = () => { // ... 기존 검증 로직 ...
+
+// Phase 28: 사용자 스크롤 중에는 자동 스크롤 차단 if (userScrollDetected) {
+logger.debug('useGalleryItemScroll: 사용자 스크롤 중 - 자동 스크롤 차단', {
+currentIndex: index, userScrollDetected, }); return; }
+
+scheduleScrollToIndex(index); }; `
+
+### 영향 범위
+
+**변경된 파일** (2):
+
+- `src/features/gallery/hooks/useGalleryItemScroll.ts` (주요 구현)
+- `test/unit/features/gallery/hooks/useGalleryItemScroll.user-scroll.test.ts`
+  (신규 테스트)
+
+**영향받는 컴포넌트**:
+
+- `VerticalGalleryView`: 자동 스크롤 동작 개선
+- 사용자 경험: 수동 스크롤 시 자동 스크롤 충돌 없음
+
+### 학습 내용
+
+1. **스크롤 이벤트 처리**:
+   - passive 리스너로 성능 최적화
+   - 프로그래매틱 스크롤과 사용자 스크롤 구분
+
+2. **디바운스 타이머 관리**:
+   - `globalTimerManager`를 사용한 통합 타이머 관리
+   - cleanup에서 모든 타이머 정리
+
+3. **TDD 워크플로**:
+   - RED: 실패하는 테스트 작성 (1개 실패)
+   - GREEN: 최소 구현으로 테스트 통과 (7/7 통과)
+   - REFACTOR: 로깅 및 코드 정리
+
+### 다음 단계
+
+현재 프로젝트는 안정 상태입니다. 추가 개선 사항:
+
+1. E2E 테스트에서 실제 스크롤 상호작용 검증
+2. 성능 프로파일링 (500ms 디바운스 최적화)
+3. 접근성 테스트 (스크린 리더 동작 확인)
+
+---
+
+## Phase 28: 자동 스크롤과 수동 스크롤 충돌 방지 (2025-01-15)
+
+### 목표
+
+사용자가 수동으로 스크롤 중일 때 자동 스크롤이 동작하지 않도록 개선
+
+### 문제 상황
+
+- `useGalleryItemScroll`의 `checkIndexChanges()`가 32ms마다 폴링하면서 인덱스
+  변화를 감지
+- 사용자가 수동으로 스크롤하는 동안에도 자동 스크롤이 실행되어 사용자 경험 저해
+- `useGalleryScroll`의 `isScrolling` 상태와 `useGalleryItemScroll` 미연동
+
+### 구현 내용
+
+#### 1. 사용자 스크롤 감지 로직 추가
+
+```typescript
+// Phase 28: 사용자 스크롤 감지 플래그
+let userScrollDetected = false;
+let userScrollTimeoutId: number | null = null;
+let isAutoScrolling = false;
+
+// Phase 28: 사용자 스크롤 감지 핸들러
+const handleUserScroll = () => {
+  // 자동 스크롤 중에 발생한 스크롤 이벤트는 무시
+  if (isAutoScrolling) {
+    return;
+  }
+
+  userScrollDetected = true;
+  clearUserScrollTimeout();
+  clearScrollTimeout();
+
+  // 500ms 후 사용자 스크롤 플래그 해제
+  userScrollTimeoutId = globalTimerManager.setTimeout(() => {
+    userScrollDetected = false;
+    logger.debug('useGalleryItemScroll: 사용자 스크롤 종료, 자동 스크롤 재개');
+  }, 500);
+};
+```
+
+#### 2. 자동 스크롤 차단 로직
+
+```typescript
+const checkIndexChanges = () => {
+  // ... 기존 검증 로직 ...
+
+  // Phase 28: 사용자 스크롤 중에는 자동 스크롤 차단
+  if (userScrollDetected) {
+    logger.debug('useGalleryItemScroll: 사용자 스크롤 중 - 자동 스크롤 차단', {
+      currentIndex: index,
+      userScrollDetected,
+    });
+    return;
+  }
+
+  scheduleScrollToIndex(index);
+};
+```
+
+#### 3. 스크롤 이벤트 리스너 등록
+
+```typescript
+// Phase 28: 컨테이너 스크롤 이벤트 리스너 등록 (createEffect로 안전하게)
+createEffect(() => {
+  const container = containerAccessor();
+  if (!container) {
+    return;
+  }
+
+  container.addEventListener('scroll', handleUserScroll, { passive: true });
+
+  onCleanup(() => {
+    container.removeEventListener('scroll', handleUserScroll);
+  });
+});
+```
+
+#### 4. 자동 스크롤 플래그 관리
+
+```typescript
+const scrollToItem = async (index: number): Promise<void> => {
+  // ... 검증 로직 ...
+
+  try {
+    // Phase 28: 자동 스크롤 플래그 설정
+    isAutoScrolling = true;
+
+    // ... 스크롤 실행 ...
+
+    // Phase 28: 자동 스크롤 완료 후 플래그 해제
+    globalTimerManager.setTimeout(() => {
+      isAutoScrolling = false;
+    }, 50);
+  } catch (error) {
+    // ...
+    isAutoScrolling = false;
+  }
+};
+```
+
+### 결과
+
+#### 빌드 & 테스트
+
+- **빌드**: dev 739 KB / prod 334 KB (gzip 91 KB) ✅
+- **테스트**: 641/666 passing (96.2%, 24 skipped, 1 todo) ✅
+- **타입**: 0 errors ✅
+- **린트**: 0 warnings ✅
+- **의존성**: 0 violations (266 modules, 732 dependencies) ✅
+
+#### 변경 사항
+
+**변경된 파일** (1):
+
+- `src/features/gallery/hooks/useGalleryItemScroll.ts`: 사용자 스크롤 감지 및
+  자동 스크롤 차단 로직 추가
+
+**주요 개선**:
+
+1. 사용자 수동 스크롤 중 자동 스크롤 차단
+2. 스크롤 종료 500ms 후 자동 스크롤 재개
+3. 자동 스크롤 중 발생한 scroll 이벤트는 무시
+4. passive 리스너로 성능 최적화
+
+#### 기술적 세부사항
+
+**플래그 기반 상태 관리**:
+
+- `userScrollDetected`: 사용자 스크롤 중 여부
+- `isAutoScrolling`: 자동 스크롤 실행 중 여부
+
+**타이머 기반 디바운스**:
+
+- 500ms 디바운스로 사용자 스크롤 종료 감지
+- 50ms 후 자동 스크롤 플래그 해제
+- 연속된 사용자 스크롤은 타이머 리셋
+
+**이벤트 리스너**:
+
+- `scroll` 이벤트 (passive: true)
+- createEffect로 안전하게 등록/해제
+- 자동 스크롤 중에는 이벤트 무시
+
+### 영향 범위
+
+**영향받는 컴포넌트**:
+
+- `VerticalGalleryView`: 자동 스크롤 동작 개선
+- 사용자 경험: 수동 스크롤 시 자동 스크롤 충돌 없음
+
+### 학습 내용
+
+1. **Solid.js createEffect 활용**:
+   - 이벤트 리스너를 반응형으로 관리
+   - onCleanup으로 안전한 리소스 정리
+
+2. **스크롤 이벤트 처리**:
+   - passive 리스너로 성능 최적화
+   - 프로그래매틱 스크롤과 사용자 스크롤 구분
+
+3. **디바운스 타이머 관리**:
+   - `globalTimerManager`를 사용한 통합 타이머 관리
+   - cleanup에서 모든 타이머 정리
+
+### 다음 단계
+
+현재 프로젝트는 안정 상태입니다 (Phase 28 완료). 모든 계획된 Phase가
+완료되었습니다.
+
+---

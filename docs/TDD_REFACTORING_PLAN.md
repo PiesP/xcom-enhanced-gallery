@@ -1,309 +1,107 @@
-# TDD 리팩토링 활성 계획# TDD 리팩토링 활성 계획# TDD 리팩?�링 ?�성 계획
+# TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-01-15 > **최종 업데이트**: 2025-01-15 ?�재 ?�태: 모든
-> 계획??Phase ?�료 ?? 최종
-
-> **브랜치**: master > ?�데?�트: 2025-01-15
-
-> **상태**: Phase 27 완료 (Storage Adapter 패턴)
-
+> **최종 업데이트**: 2025-01-15
+>
 > **브랜치**: master
+>
+> **상태**: 모든 Phase 완료 ✅
 
 ## 프로젝트 상태
 
-> **상태**: 모든 Phase 완료브랜�? master
-
-- **빌드**: dev 735 KB / prod 333 KB (gzip 90 KB) ✅
-
-- **테스트**: 614/628 passing (97.8%, 9개 실패 - 스토리지 외 이슈)## 프로젝트
-  상태---
-
+- **빌드**: dev 739 KB / prod 334 KB (gzip 91 KB) ✅
+- **테스트**: 641/666 passing (96.2%%, 24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
-
-- **린트**: 0 warnings ✅- **빌드**: dev 728 KB / prod 329 KB (gzip 89 KB)## ?��
-  ?�재 ?�태
-
+- **린트**: 0 warnings ✅
 - **의존성**: 0 violations (266 modules, 732 dependencies) ✅
-
-- **테스트**: 594/594 passing (24 skipped, 1 todo)
 
 ## 참고 문서
 
-- **타입**: 0 errors (TypeScript strict)?�로?�트 ?�정 ?�태 - 모든 ?�질 지??GREEN
-
 - `AGENTS.md`: 개발 환경 및 워크플로
-
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-27 상세 기록-
-  **린트**: 0 warnings
-
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-28 상세 기록
 - `docs/ARCHITECTURE.md`: 아키텍처 구조
+- `docs/CODING_GUIDELINES.md`: 코딩 규칙
 
-- `docs/CODING_GUIDELINES.md`: 코딩 규칙- **의존성**: 0 violations (264 modules,
-  725 deps)- ??빌드: dev 728 KB, prod 329
-
-  KB (gzip: 89.49 KB)
-
-## 최근 완료 작업
-
-- ???�스?? 594/594 passing (24 skipped, 1 todo)
-
-### Phase 27: Storage Adapter 패턴 구현 (2025-01-15)
-
-## 참고 문서- ???�존?? 0 violations (264 modules, 725 dependencies)
-
-**완료 내역**:
-
-- ???�?? 0 errors (TypeScript strict)
-
-1. **Phase 1**: getUserscript() 저장소 API 추가
-   - `setValue`, `getValue`, `deleteValue`, `listValues` 구현- `AGENTS.md`: 개발
-     환경 및 워크플로- ??린트: 0 warnings, 0 errors
-
-   - GM\_\* API 우선, localStorage fallback
-
-   - 20/20 단위 테스트 통과- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된
-     Phase 1-26 상세 기록
-
-2. **Phase 2**: StorageAdapter 패턴 구현- `docs/ARCHITECTURE.md`: 아키텍처
-   구조---
-   - `StorageAdapter` 인터페이스 정의
-
-   - `UserscriptStorageAdapter` 프로덕션 구현- `docs/CODING_GUIDELINES.md`: 코딩
-     규칙 (파일명 규칙 포함)
-
-   - `InMemoryStorageAdapter` 테스트 헬퍼
-
-   - 20/20 단위 테스트 통과## ?�� 참고 문서
-
-3. **Phase 3**: 서비스 마이그레이션## 최근 완료 작업
-   - `SettingsService`: StorageAdapter 의존성 주입
-
-   - `ThemeService`: StorageAdapter 의존성 주입- `AGENTS.md`: 개발 ?�경
-     �??�크?�로
-
-   - 모든 저장소 관련 테스트 통과 (6/6)
-
-### Phase 26: 파일명 규칙 체계화 (2025-01-15)- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: ?�료??모든 Phase (1-26)
-
-4. **테스트 수정**: localStorage 직접 참조 제거
-   - `settings-migration.schema-hash.test.ts` (3 tests) ✅-
-     `docs/ARCHITECTURE.md`: ?�로?�트 ?�키?�처
-
-   - `ThemeService.test.ts` (3 tests) ✅
-
-   - Import 경로 수정 (BulkDownloadService, DOMDirectExtractor)-
-     CODING_GUIDELINES.md 파일명 섹션 확장 (8줄 → 80줄)-
-
-`docs/CODING_GUIDELINES.md`: 코딩 규칙 �??�질 기�? (?�일�?규칙 ?�함)
-
-**결과**:
-
-- 저장소 계층 분리 완료- `npm run test:naming` 스크립트 추가 (6 tests, 1.58s)
-
-- 테스트 격리성 향상 (InMemoryStorageAdapter 사용)
-
-- userscript 환경과 일반 브라우저 환경 모두 지원- 하이브리드 접근: 문서화 + 기존
-  CI/Test 인프라---
-
-## 남은 작업 (선택적)- ESLint 규칙 도입 보류 (Vitest 테스트가 더 효과적)
-
-### 1. 에러 복구 메커니즘 (Phase 27-4)## ?�� 최근 ?�료 ?�업
-
-**우선순위**: 낮음 ## 활성 작업
-
-**내용**: StorageRetryWrapper 구현 (재시도 + 백오프)
-
-### Phase 26: ?�일�?규칙 체계??�?강제 ??(2025-01-15)
-
-### 2. 고급 기능 (Phase 27-5)
-
-현재 활성 작업 없음. 모든 계획된 Phase 완료.
-
-**우선순위**: 낮음
-
-**내용**:**?�과**:
-
-- GM_addValueChangeListener 래핑 (cross-tab sync)
-
-- 백업/복원 UI새로운 개선 사항이나 기능 요청 시:
-
-### 3. 기타 실패 테스트 수정 (9개)- CODING_GUIDELINES.md ?�일�??�션 10�??�장 (8�???80�?
-
-**우선순위**: 중간 1. GitHub Issues에 등록- `npm run test:naming` ?�크립트 추�?
-(Phase 24
-
-**분류**: ?�스??빠른 ?�행)
-
-- Focus trap 표준화 (2개)
-
-- Userscript adapter 계약 (1개)2. TDD 리팩토링 계획 수립- ?�합 ?�근 방식 ?�택:
-  문서??+ 기존 CI/Test ?�프??-
-
-- Service contract 인터페이스 (1개) ESLint 규칙 ?�입 보류
-
-- i18n 메시지 키 (1개)
-
-- Filename policy (2개)3. RED → GREEN → REFACTOR 흐름 준수 (Vitest ?�스?��?
-  ???�과??
-
-- 기타 (2개)
-
-4. 문서 업데이트
-
-**특징**: 모두 저장소와 무관한 독립적 이슈
-
-**문서???�용**:
+---
 
 ## 활성 작업
 
-## 작업 시작 체크리스트
-
-현재 활성 작업 없음. Phase 27 완료.
-
-- kebab-case 기본 규칙 �??�시
+**현재 활성 작업 없음** - 모든 계획된 Phase (1-28)가 완료되었습니다.
 
 새로운 개선 사항이나 기능 요청 시:
 
-1. 현재 상태 확인: `npm run validate && npm test`- Semantic suffix ?�턴 ?�명
-
-1. GitHub Issues에 등록 (`.types.ts`, `.test.ts` ??
-
-1. TDD 리팩토링 계획 수립
-
-1. RED → GREEN → REFACTOR 흐름 준수2. 관련 문서 검토 (AGENTS.md,
-   CODING_GUIDELINES.md, ARCHITECTURE.md)- ?�렉?�리
-
-1. 문서 업데이트 구조 규칙
-
-## 작업 시작 체크리스트3. 작업 브랜치 생성: `git checkout -b feature/phase-xx-...`- ?�동 검�?방법
-
-(Phase 24-A/B/C ?�스??
-
-1. 현재 상태 확인: `npm run validate && npm test`
-
-2. 관련 문서 검토 (AGENTS.md, CODING_GUIDELINES.md, ARCHITECTURE.md)4.
-   TDD_REFACTORING_PLAN.md에 계획 작성- Regex ?�턴 문서?? **검�?체계**:
-
-3. 작업 브랜치 생성: `git checkout -b feature/phase-xx-...`
-
-4. TDD_REFACTORING_PLAN.md에 계획 작성5. RED → GREEN → REFACTOR 흐름 준수
-
-5. RED → GREEN → REFACTOR 흐름 준수
-
-6. 빌드 검증: `Clear-Host && npm run build`6. 빌드 검증:
-   `Clear-Host && npm run build`- Phase 24-A/B/C ?�스??(6 tests,
-
-7. 유지보수 점검: `npm run maintenance:check` 1.58s)
-
-8. 문서 업데이트 (완료 시 TDD_REFACTORING_PLAN_COMPLETED.md로 이동)- CI workflow
-   ?�동 ?�행
-
-9. 유지보수 점검: `npm run maintenance:check`- Pre-push hook 로컬 차단
-
-- `npm run test:naming` ?�의 ?�크립트
-
-**?�세 ?�역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 26 참조
+1. GitHub Issues에 등록
+2. TDD 리팩토링 계획 수립
+3. RED → GREEN → REFACTOR 흐름 준수
+4. 문서 업데이트 (완료 시 TDD_REFACTORING_PLAN_COMPLETED.md로 이동)
 
 ---
 
-## ?? ?�성 ?�업
+## 최근 완료 Phase
 
-?�재 ?�성 ?�업???�습?�다. 모든 계획??Phase가 ?�료?�었?�니??
+### Phase 28: 자동/수동 스크롤 충돌 방지 (2025-01-15) ✅
 
-?�로??개선 ?�항?�나 기능 ?�청???�다�?
+**구현 내역**:
 
-1. GitHub Issues???�록
-2. TDD 리팩?�링 계획 ?�립
-3. RED ??GREEN ??REFACTOR ?�름 준??4. 문서 ?�데?�트 (AGENTS.md,
-   CODING_GUIDELINES.md, ARCHITECTURE.md ??
+1. 사용자 스크롤 감지 로직 추가 (handleUserScroll)
+2. 자동 스크롤 차단 로직 (checkIndexChanges 수정)
+3. 스크롤 이벤트 리스너 등록 (createEffect)
+4. 자동 스크롤 플래그 관리 (isAutoScrolling)
+
+**결과**: 사용자 수동 스크롤 중 자동 스크롤 차단, 500ms 후 재개
+
+### Phase 27: Storage Adapter 패턴 (2025-01-15) ✅
+
+**구현 내역**:
+
+1. getUserscript() 저장소 API 추가 (20/20 tests)
+2. StorageAdapter 패턴 구현 (20/20 tests)
+3. SettingsService, ThemeService 마이그레이션 (6/6 tests)
+
+**결과**: 저장소 계층 분리 완료, 테스트 격리성 향상
+
+### Phase 26: 파일명 규칙 체계화 (2025-01-15) ✅
+
+**구현 내역**:
+
+- CODING_GUIDELINES.md 파일명 섹션 확장 (8줄 → 80줄)
+- `npm run test:naming` 스크립트 추가 (6 tests)
+- 37개 파일 리네임, 88개 파일 import 경로 자동 업데이트
 
 ---
 
-## ?�� ?�료??주요 Phase ?�약
+## 완료된 주요 Phase 요약
 
-모든 Phase (1-26) ?�료. ?�세 ?�역?� `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
+모든 Phase (1-28) 완료. 상세 내역은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 참조.
 
-### ?�심 ?�료 ??��
+### 핵심 완료 항목
 
-- **Phase 1-6**: Solid.js ?�환, ?�스???�프?? ARIA ?�근?? ?�자???�큰
-- **Phase 7-12**: UX 개선, E2E ?�스?? ?�정??- **Phase 21**: IntersectionObserver
-  무한 루프 방�?, Fine-grained Signals (99% ?�능 개선)
-- **Phase 22**: constants.ts 리팩?�링 (37% 코드 감소)
-- **Phase 23**: DOMCache ?�키?�처 개선 (28% 코드 감소)
-- **Phase 24-A/B/C**: ?�일�?kebab-case ?�일 (68�??�일)
-- **Phase 25**: ???�크�?배율 ?�거 (브라?��? ?�이?�브 ?�작)
-- **Phase 26**: ?�일�?규칙 문서??�??�동 검�?
-
----
-
-## ?�� 문서 관�?
-
-### 주요 문서
-
-- `AGENTS.md`: 개발 ?�경, ?�크?�로, ?�크립트 ?�용�?- `docs/ARCHITECTURE.md`:
-  3계층 구조, ?�존??경계
-- `docs/CODING_GUIDELINES.md`: 코딩 규칙, ?�일�?규칙, ?�자???�큰
-- `docs/DEPENDENCY-GOVERNANCE.md`: ?�존???�책
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: ?�료??모든 Phase (1-26)
-
-### 문서 ?�성 ?�칙
-
-1. **간결??\*: ?�심 ?�용�??�함, 과도???��??�항 지??2. **최신??\*: 코드
-   변�???관??문서 즉시 ?�데?�트
-2. \*_명확??_: ?�시?� ?�턴?�로 ?�해 ?�기
-3. \*_?�결??_: 관??문서 �??�호 참조
-
-### 문서 길이 관�?
-
-- `AGENTS.md`: ~200�?(?�크?�로 중심)
-- `CODING_GUIDELINES.md`: ~400�?(규칙 + ?�시)
-- `ARCHITECTURE.md`: ~100�?(구조�? ?��???CODING_GUIDELINES 참조)
-- `TDD_REFACTORING_PLAN.md`: ~100�?(?�성 ?�업 중심, ?�료??별도 ?�일)
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: ?�세 기록 (?�한 ?�음)
+- **Phase 1-6**: Solid.js 전환, 테스트 인프라, ARIA 접근성, 디자인 토큰
+- **Phase 7-12**: UX 개선, E2E 테스트, 설정 UI
+- **Phase 21**: IntersectionObserver 무한 루프 방지 (99%% 성능 개선)
+- **Phase 22**: constants.ts 리팩토링 (37%% 코드 감소)
+- **Phase 23**: DOMCache 아키텍처 개선 (28%% 코드 감소)
+- **Phase 24-A/B/C**: 파일명 kebab-case 전환 (68개 파일)
+- **Phase 25**: 줌 스크롤 배율 제거
+- **Phase 26**: 파일명 규칙 문서화 및 자동 검증
+- **Phase 27**: Storage Adapter 패턴 구현
+- **Phase 28**: 자동/수동 스크롤 충돌 방지
 
 ---
 
-## ?�� ?�음 ?�업 ??체크리스??
+## 작업 시작 체크리스트
 
-?�로??Phase ?�작 ??
+새로운 Phase 시작 시:
 
-1. ???�재 ?�태 ?�인 (`npm run validate`, `npm test`)
-2. ??관??문서 검??(AGENTS.md, CODING_GUIDELINES.md, ARCHITECTURE.md)
-3. ???�업 브랜�??�성 (`git checkout -b feature/phase-xx-...`)
-4. ??TDD_REFACTORING_PLAN.md??계획 ?�성
-5. ??RED ??GREEN ??REFACTOR ?�름 준??6. ??빌드
-   검�?(`Clear-Host && npm run build`)
-6. ??문서 ?�데?�트 (?�료 ??TDD_REFACTORING_PLAN_COMPLETED.md�??��?)
-7. ???��?보수 ?��? (`npm run maintenance:check`)
+1. 현재 상태 확인: `npm run validate && npm test`
+2. 관련 문서 검토 (AGENTS.md, CODING_GUIDELINES.md, ARCHITECTURE.md)
+3. 작업 브랜치 생성: `git checkout -b feature/phase-xx-...`
+4. TDD_REFACTORING_PLAN.md에 계획 작성
+5. RED → GREEN → REFACTOR 흐름 준수
+6. 빌드 검증: `Clear-Host && npm run build`
+7. 문서 업데이트 (완료 시 TDD_REFACTORING_PLAN_COMPLETED.md로 이동)
+8. 유지보수 점검: `npm run maintenance:check`
 
 ---
 
-**?�� ?�재 ?�로?�트???�정 ?�태?�니?? ?�로??기능 추�? �??��?보수 준�??�료.**
-
-**?�과**:
-
-- 37�??�일 리네??(services/ 29�? utils/ 8�?
-- 88�??�일??import 경로 ?�동 ?�데?�트
-- Phase 24 ?�리�?(A/B/C) ?�료�??�일�?규칙 ?�체 ?�일
-- ?�스??2�?추�? (594/594 passing, +2)
-- 빌드 ?�기: 변???�음 (?�능 ?�향 ?�음)
-
-\*_주요 변�?_:
-
-- **services/ 리네??(29�?**:
-  - Core: AnimationService, BaseServiceImpl, BulkDownloadService, EventManager,
-    LanguageService, MediaService, ServiceManager, ThemeService,
-    ToastController, UnifiedToastManager, iconRegistry ??kebab-case
-  - download/, input/, media/, media-extraction/, media-mapping/ ?�위 ?�일 ?�체
-    ??kebab-case
-
-- **utils/ 리네??(8�?**:
-  - dom/, media/, memory/, performance/ ?�위 ?�일 �?root ?�벨 ?�일 ??kebab-case
-
-- **?�동???�크립트**: `scripts/fix-imports.mjs` (Node.js 기반 import 경로 ?�괄
-  ?�데?�트, 88�??�일)
-
-**기술???�전**:
-
-- Windows ?�일?�스???�슈: 2?�계 리네??(temp file 경유)
+**현재 프로젝트는 안정 상태이며, 모든 계획된 Phase가 완료되었습니다.**
