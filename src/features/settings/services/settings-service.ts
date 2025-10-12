@@ -4,6 +4,8 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import type { StorageAdapter } from '@shared/services/storage/storage-adapter.interface';
+import { UserscriptStorageAdapter } from '@shared/services/storage/userscript-storage-adapter';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -28,7 +30,7 @@ type SettingChangeListener = (event: SettingChangeEvent) => void;
  * 설정 관리 서비스
  *
  * 기능:
- * - 설정의 영구 저장/로드 (localStorage)
+ * - 설정의 영구 저장/로드 (StorageAdapter 사용)
  * - 타입 안전 설정 접근
  * - 설정 변경 이벤트 시스템
  * - 설정 유효성 검증
@@ -43,6 +45,11 @@ export class SettingsService {
   private readonly listeners = new Set<SettingChangeListener>();
   private initialized = false;
   private readonly schemaHash = computeCurrentSettingsSchemaHash();
+
+  /**
+   * @param storage 저장소 어댑터 (기본값: UserscriptStorageAdapter)
+   */
+  constructor(private readonly storage: StorageAdapter = new UserscriptStorageAdapter()) {}
 
   /** 기본 설정 깊은 복제 (1단계 depth - 각 카테고리 객체 분리) */
   private static cloneDefaults(): AppSettings {
@@ -352,7 +359,7 @@ export class SettingsService {
    */
   private async loadSettings(): Promise<void> {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = await this.storage.getItem(STORAGE_KEY);
       if (!stored) {
         logger.debug('저장된 설정이 없음, 기본값 사용');
         // 최초 저장에 현재 스키마 해시를 포함시켜 일관화
@@ -401,7 +408,7 @@ export class SettingsService {
         ...this.settings,
         __schemaHash: this.schemaHash,
       } as AppSettings & { __schemaHash: string };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(withHash));
+      await this.storage.setItem(STORAGE_KEY, JSON.stringify(withHash));
       logger.debug('설정 저장 완료');
     } catch (error) {
       logger.error('설정 저장 실패:', error);

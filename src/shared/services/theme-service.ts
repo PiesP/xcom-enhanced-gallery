@@ -5,6 +5,8 @@
  */
 
 import { logger } from '../logging/logger';
+import type { StorageAdapter } from './storage/storage-adapter.interface';
+import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
 
 /**
  * 테마 타입
@@ -35,7 +37,10 @@ export class ThemeService {
   private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
     null;
 
-  constructor() {
+  /**
+   * @param storage 저장소 어댑터 (기본값: UserscriptStorageAdapter)
+   */
+  constructor(private readonly storage: StorageAdapter = new UserscriptStorageAdapter()) {
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
       this.initialize();
@@ -43,13 +48,13 @@ export class ThemeService {
   }
 
   /**
-   * 서비스 초기화 (localStorage에서 설정 복원 및 시스템 감지 설정)
+   * 서비스 초기화 (storage에서 설정 복원 및 시스템 감지 설정)
    */
-  public initialize(): void {
+  public async initialize(): Promise<void> {
     if (this.isInitialized) return;
 
-    // localStorage에서 설정 복원
-    this.restoreThemeSetting();
+    // storage에서 설정 복원
+    await this.restoreThemeSetting();
 
     // 시스템 테마 감지 설정
     this.initializeSystemThemeDetection();
@@ -64,14 +69,16 @@ export class ThemeService {
   /**
    * 테마 설정 복원
    */
-  private restoreThemeSetting(): void {
+  private async restoreThemeSetting(): Promise<void> {
     try {
-      const savedSetting = localStorage?.getItem(ThemeService.STORAGE_KEY) as ThemeSetting;
+      const savedSetting = (await this.storage.getItem(
+        ThemeService.STORAGE_KEY
+      )) as ThemeSetting | null;
       if (savedSetting && ['auto', 'light', 'dark'].includes(savedSetting)) {
         this.themeSetting = savedSetting;
       }
     } catch (error) {
-      logger.warn('Failed to restore theme setting from localStorage:', error);
+      logger.warn('Failed to restore theme setting from storage:', error);
     }
   }
 
@@ -152,8 +159,8 @@ export class ThemeService {
 
     this.themeSetting = setting;
 
-    // localStorage에 저장
-    this.saveThemeSetting();
+    // storage에 저장
+    void this.saveThemeSetting();
 
     // 테마 적용
     this.applyCurrentTheme();
@@ -164,11 +171,11 @@ export class ThemeService {
   /**
    * 테마 설정 저장
    */
-  private saveThemeSetting(): void {
+  private async saveThemeSetting(): Promise<void> {
     try {
-      localStorage?.setItem(ThemeService.STORAGE_KEY, this.themeSetting);
+      await this.storage.setItem(ThemeService.STORAGE_KEY, this.themeSetting);
     } catch (error) {
-      logger.warn('Failed to save theme setting to localStorage:', error);
+      logger.warn('Failed to save theme setting to storage:', error);
     }
   }
 
