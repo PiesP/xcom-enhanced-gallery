@@ -203,6 +203,87 @@
 
 ---
 
+## 🚀 활성 작업
+
+### Phase 26: 파일명 규칙 체계화 및 강제 🔄
+
+**우선순위**: HIGH
+
+**목표**: Phase 24 시리즈 완료 후, 파일명 규칙을 문서화하고 자동 검증 체계를
+구축하여 일관성 유지
+
+**배경**:
+
+- Phase 24-A/B/C 완료로 68개 파일이 kebab-case로 통일됨
+- 파일명 규칙이 테스트로 검증되지만 문서화되지 않음
+- 개발자 온보딩 시 명확한 가이드 필요
+
+**작업 계획**:
+
+#### 1. 문서화 (CODING_GUIDELINES.md) ✅
+
+- ✅ "파일 네이밍" 섹션 대폭 확장
+- ✅ kebab-case 규칙 및 예시 추가
+- ✅ Semantic suffix 패턴 설명 (`.types.ts`, `.test.ts` 등)
+- ✅ Phase 24 테스트 참조 및 검증 범위 명시
+- ✅ Regex 패턴 문서화
+
+#### 2. 자동 검증 체계 강화
+
+**현재 상태**:
+
+- ✅ Phase 24-A/B/C 테스트가 이미 존재하여 파일명 검증
+- ✅ CI workflow가 전체 테스트를 자동 실행
+- ✅ Pre-push hook이 테스트를 실행하여 로컬에서도 차단
+
+**추가 개선**:
+
+- ✅ `npm run test:naming` 스크립트 추가 (Phase 24 테스트만 실행)
+- 🔲 CI workflow에 파일명 검증 단계 명시적 추가 (선택사항)
+- 🔲 Pre-commit hook에 빠른 파일명 검증 추가 (선택사항)
+
+#### 3. ESLint 규칙 검토 (보류)
+
+**결정**: ESLint 규칙 도입 보류
+
+**이유**:
+
+- Vitest 테스트가 더 강력하고 유연함 (regex 패턴, semantic suffix 지원)
+- ESLint 플러그인(eslint-plugin-unicorn 등)은 설정 복잡도 증가
+- 기존 Phase 24 테스트 인프라가 충분히 효과적
+- 유지보수 부담 최소화
+
+**평가 기준**:
+
+- ✅ CODING_GUIDELINES.md 파일명 섹션 완성도
+- ✅ Phase 24-A/B/C 테스트 실행 편의성 (`npm run test:naming`)
+- ✅ 개발자가 규칙을 쉽게 이해하고 준수할 수 있는 문서화
+- ✅ 빌드/테스트/린트 통과
+
+**브랜치**: `feature/phase26-file-naming-enforcement`
+
+**테스트**:
+
+```powershell
+# 파일명 규칙 테스트만 실행
+npm run test:naming
+
+# 또는 개별 실행
+npx vitest run test/phase-24a-file-naming-convention.test.ts
+npx vitest run test/phase-24b-file-naming-convention.test.ts
+npx vitest run test/phase-24c-file-naming-convention.test.ts
+```
+
+**다음 단계**:
+
+1. 빌드 및 테스트 검증
+2. 문서 검토 및 개선
+3. Phase 26 완료 후 TDD_REFACTORING_PLAN_COMPLETED.md로 이관
+
+---
+
+## 📋 대기 작업
+
 ### Phase 24: src/shared 파일명 규칙 통일 (kebab-case)
 
 **우선순위**: MEDIUM

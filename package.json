@@ -28,6 +28,7 @@
     "test:perf": "vitest --project performance run",
     "test:phases": "vitest --project phases run",
     "test:refactor": "vitest --project refactor run",
+    "test:naming": "vitest run test/phase-24a-file-naming-convention.test.ts test/phase-24b-file-naming-convention.test.ts test/phase-24c-file-naming-convention.test.ts",
     "test:ci:node22": "cross-env CI=true vitest --project fast run --reporter=dot",
     "test:ci:node20": "cross-env CI=true vitest --project unit --project styles run --coverage --reporter=dot",
     "// === E2E ===": "",

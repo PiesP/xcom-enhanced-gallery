@@ -128,15 +128,79 @@ import styles from './Component.module.css';
 
 ## 🎨 스타일 규칙
 
-### 파일 네이밍
+### 파일 네이밍 (kebab-case 필수)
+
+**기본 규칙**: 모든 파일명은 kebab-case를 사용합니다.
 
 ```text
-// kebab-case
+✅ 올바른 파일명
 gallery-view.tsx
 media-processor.ts
-components/
-services/
+bulk-download-service.ts
+dom-batcher.ts
+signal-selector.ts
+
+❌ 잘못된 파일명
+GalleryView.tsx          # PascalCase 금지
+mediaProcessor.ts        # camelCase 금지
+Bulk_Download_Service.ts # snake_case 금지
 ```
+
+**Semantic Suffix 허용**: 의미론적 suffix는 점(`.`)으로 구분하여 사용 가능
+
+```text
+✅ Semantic Suffix 패턴
+app.types.ts             # 타입 정의
+gallery.interfaces.ts    # 인터페이스 정의
+media.test.ts            # 테스트 파일
+service.mock.ts          # 모킹 파일
+button.module.css        # CSS Modules
+config.d.ts              # 타입 선언
+```
+
+**디렉터리 구조**: 모든 디렉터리명도 kebab-case 사용
+
+```text
+✅ 올바른 구조
+src/
+  features/
+    gallery/
+    settings/
+  shared/
+    services/
+      media-extraction/
+      media-mapping/
+    utils/
+      dom/
+      performance/
+```
+
+**자동 검증**: Phase 24 테스트 스위트가 파일명 규칙을 강제합니다.
+
+```powershell
+# Phase 24 테스트 실행
+npx vitest run test/phase-24a-file-naming-convention.test.ts
+npx vitest run test/phase-24b-file-naming-convention.test.ts
+npx vitest run test/phase-24c-file-naming-convention.test.ts
+
+# 또는 전체 실행
+npm test
+```
+
+**검증 범위**:
+
+- Phase 24-A: 소형 디렉터리 (container, dom, external, logging, state)
+- Phase 24-B: 중형 디렉터리 (components, hooks, interfaces, media, state,
+  styles, types)
+- Phase 24-C: 대형 디렉터리 (services, utils)
+
+**Regex 패턴**: `/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)?\.(?:ts|tsx)$/`
+
+이 패턴은 다음을 허용합니다:
+
+- 소문자 영숫자와 하이픈으로 구성된 파일명
+- 선택적 semantic suffix (예: `.types`, `.test`, `.mock`)
+- `.ts` 또는 `.tsx` 확장자
 
 ### CSS Modules
 
