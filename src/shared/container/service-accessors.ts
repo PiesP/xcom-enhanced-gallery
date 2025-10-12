@@ -10,7 +10,6 @@ import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 import { bridgeGetService, bridgeRegister, bridgeTryGet } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
-import { getBulkDownloadService } from '../services/service-factories';
 
 // Getters (from container)
 export function getToastController(): ToastController {
@@ -31,7 +30,8 @@ export async function getBulkDownloadServiceFromContainer(): Promise<BulkDownloa
   } catch {
     // Lazy fallback: register factory instance if not present
     // This keeps tests green even when core service registration hasn't run yet.
-    // Use factory pattern to avoid direct instantiation.
+    // Use dynamic import to avoid circular dependency with service-factories
+    const { getBulkDownloadService } = await import('../services/service-factories');
     const bulkDownloadService = await getBulkDownloadService();
     bridgeRegister(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
     // Also provide gallery alias for compatibility

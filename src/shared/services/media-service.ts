@@ -15,7 +15,6 @@ import { ErrorCode } from '@shared/types/result.types';
 // Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { getBulkDownloadServiceFromContainer } from '@shared/container/service-accessors';
 
 // 통합된 서비스 타입들
 /**
@@ -821,27 +820,31 @@ export class MediaService {
 
   /**
    * 단일 미디어 다운로드
+   * @deprecated Wrapper — delegating to BulkDownloadService
+   * Use BulkDownloadService for actual implementation to avoid duplication.
    */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
+    // Dynamic import to avoid circular dependency
+    const { getBulkDownloadServiceFromContainer } = await import(
+      '@shared/container/service-accessors'
+    );
     const bulk = await getBulkDownloadServiceFromContainer();
     return bulk.downloadSingle(media);
   }
 
   /**
    * 여러 미디어를 ZIP으로 다운로드
+   * @deprecated Wrapper — delegating to BulkDownloadService
+   * Use BulkDownloadService for actual implementation to avoid duplication.
    */
   async downloadMultiple(
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    /**
-     * @deprecated Wrapper — delegating to BulkDownloadService
-     * Use BulkDownloadService for actual implementation to avoid duplication.
-     */
+    // Dynamic import to avoid circular dependency
+    const { getBulkDownloadServiceFromContainer } = await import(
+      '@shared/container/service-accessors'
+    );
     const bulk = await getBulkDownloadServiceFromContainer();
     return bulk.downloadMultiple(mediaItems, options);
   }

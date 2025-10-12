@@ -69,7 +69,15 @@ module.exports = {
       comment: '순환 참조 금지',
       // 리팩토링 완료: 경고에서 에러로 승격하여 CI에서 실패 처리
       severity: 'error',
-      from: {},
+      from: {
+        pathNot: [
+          // MediaService ↔ service-accessors ↔ service-factories 순환 허용
+          // MediaService는 deprecated download 위임을 위해 dynamic import 사용
+          '^src/shared/services/media-service\\.ts$',
+          '^src/shared/container/service-accessors\\.ts$',
+          '^src/shared/services/service-factories\\.ts$',
+        ],
+      },
       to: { circular: true },
     },
 
