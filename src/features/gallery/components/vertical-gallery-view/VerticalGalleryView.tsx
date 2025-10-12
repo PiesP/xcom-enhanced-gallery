@@ -108,9 +108,6 @@ function VerticalGalleryViewCore({
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
 
-  // 휠 스크롤 배율 설정 로드
-  const wheelScrollMultiplier = getSetting<number>('gallery.wheelScrollMultiplier', 1.2);
-
   const preloadIndices = createMemo(() => {
     const count = getSetting<number>('gallery.preloadCount', 0);
     return computePreloadIndices(currentIndex(), mediaItems().length, count);
@@ -220,7 +217,7 @@ function VerticalGalleryViewCore({
 
       const maxScrollTop = Math.max(0, target.scrollHeight - target.clientHeight);
       const currentTop = target.scrollTop;
-      const desiredTop = currentTop + delta * wheelScrollMultiplier;
+      const desiredTop = currentTop + delta;
       const clampedTop = Math.max(0, Math.min(desiredTop, maxScrollTop));
       const scrollDelta = clampedTop - currentTop;
 
@@ -246,7 +243,6 @@ function VerticalGalleryViewCore({
         targetTop: clampedTop,
         timestamp: Date.now(),
         targetType: target === container ? 'container' : 'itemsContainer',
-        multiplier: wheelScrollMultiplier,
       });
     },
     enabled: isVisible,

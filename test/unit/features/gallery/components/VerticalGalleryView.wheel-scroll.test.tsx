@@ -159,7 +159,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
       left?: number;
       behavior?: globalThis.ScrollBehavior;
     };
-    expect(callArg?.top).toBeCloseTo(144, 5);
+    expect(callArg?.top).toBeCloseTo(120, 5);
     expect(callArg?.left ?? 0).toBe(0);
     expect(scrollSpy).not.toHaveBeenCalled();
   });

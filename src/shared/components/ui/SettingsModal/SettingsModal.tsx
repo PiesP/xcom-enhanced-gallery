@@ -8,7 +8,6 @@ import { IconButton } from '../Button/IconButton';
 import { X } from '../Icon';
 import { LanguageService } from '../../../services/LanguageService';
 import { ThemeService } from '../../../services/ThemeService';
-import { getSetting, setSetting } from '../../../container/settings-access';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 import { useScrollLock } from '../../../hooks/useScrollLock';
 import { globalTimerManager } from '../../../utils/timer-management';
@@ -45,9 +44,6 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
-  const [wheelScrollMultiplier, setWheelScrollMultiplier] = createSignal<number>(
-    getSetting<number>('gallery.wheelScrollMultiplier', 1.2)
-  );
   const [getPanelElement, setPanelElement] = createSignal<HTMLDivElement | null>(null);
   const [getContainerElement, setContainerElement] = createSignal<HTMLDivElement | null>(null);
 
@@ -187,12 +183,6 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
     languageService.setLanguage(nextLanguage);
   };
 
-  const handleWheelScrollChange = (event: Event) => {
-    const value = parseFloat((event.currentTarget as HTMLInputElement).value);
-    setWheelScrollMultiplier(value);
-    setSetting('gallery.wheelScrollMultiplier', value);
-  };
-
   if (!props.isOpen) {
     return null;
   }
@@ -291,25 +281,6 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
           {languageService.getString('settings.language')}
         </label>
         {languageSelect}
-      </div>
-      <div class={styles.setting}>
-        <label for='wheel-scroll-slider' class={styles.label}>
-          {languageService.getString('settings.gallery.wheelScrollSpeed')}
-        </label>
-        <div class={`${styles.sliderContainer} xeg-row-center xeg-gap-md`}>
-          <input
-            id='wheel-scroll-slider'
-            type='range'
-            min='0.5'
-            max='3.0'
-            step='0.1'
-            value={wheelScrollMultiplier()}
-            onInput={handleWheelScrollChange}
-            class={styles.slider}
-            aria-label={languageService.getString('settings.gallery.wheelScrollSpeed')}
-          />
-          <span class={styles.sliderValue}>{wheelScrollMultiplier().toFixed(1)}x</span>
-        </div>
       </div>
     </div>
   );

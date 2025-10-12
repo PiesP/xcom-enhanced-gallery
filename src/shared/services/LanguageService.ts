@@ -26,7 +26,6 @@ export interface LanguageStrings {
     readonly close: string;
     readonly gallery: {
       readonly sectionTitle: string;
-      readonly wheelScrollSpeed: string;
     };
   };
   readonly messages: {
@@ -96,7 +95,6 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '닫기',
       gallery: {
         sectionTitle: '갤러리',
-        wheelScrollSpeed: '휠 스크롤 속도',
       },
     },
     messages: {
@@ -145,7 +143,6 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: 'Close',
       gallery: {
         sectionTitle: 'Gallery',
-        wheelScrollSpeed: 'Wheel Scroll Speed',
       },
     },
     messages: {
@@ -198,7 +195,6 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       close: '閉じる',
       gallery: {
         sectionTitle: 'ギャラリー',
-        wheelScrollSpeed: 'ホイールスクロール速度',
       },
     },
     messages: {
