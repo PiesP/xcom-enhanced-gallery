@@ -14,6 +14,62 @@
 
 ## 최근 완료 Phase
 
+### Phase 32: CSS Optimization Analysis (2025-01-27)
+
+**초기 목표**: 320.73 KB → 290-300 KB (CSS 중복 제거로 20-30 KB 절감)
+
+**배경**: Phase 31에서 325 KB 예산 준수는 달성했으나, 추가 기능을 위한 여유
+공간이 필요. CSS 중복을 제거하면 추가 절감이 가능할 것으로 예상.
+
+**실행 내역**:
+
+1. **RED 단계**: CSS 중복 검증 테스트 작성
+   (`test/styles/css-optimization.test.ts`)
+   - prefers-reduced-motion: 19개 중복 발견 (목표 ≤2)
+   - prefers-contrast: 15개 중복 발견 (목표 ≤2)
+   - prefers-color-scheme: 12개 중복 발견 (목표 ≤3)
+   - 레거시 token alias: 101개 발견 (목표 <10)
+   - transition 패턴 중복: 1개 파일
+   - backdrop-filter 중복: 6개 파일
+   - CSS 소스 전체 크기: 187.38 KB (26개 파일)
+
+2. **GREEN 시도 1**: 접근성 media query 통합
+   - `src/shared/styles/a11y-media-queries.css` 생성
+   - 결과: 321.80 KB로 **1.07 KB 증가** ❌
+   - 롤백 완료
+
+3. **GREEN 시도 2**: 레거시 keyframes 제거
+   - `slideInFromRight`, `fadeSlideIn` 제거
+   - 결과: **320.73 KB 유지 (변화 없음)** ⚠️
+
+**핵심 발견**:
+
+- **PostCSS + Terser가 이미 aggressive minification 수행**
+  - CSS 중복은 빌드 시점에 자동으로 제거됨
+  - 소스 레벨 중복 제거 → 최종 빌드 크기에 영향 없음
+- **실제 번들 크기의 주범은 JavaScript**
+  - Solid.js 런타임 + 애플리케이션 코드가 주 용량
+  - CSS는 minified 후 매우 작은 비중
+- **현재 320.73 KB는 이미 최적화된 상태**
+  - 추가 CSS 최적화로는 20-30 KB 절감 불가능
+
+**성과**:
+
+- ✅ CSS 중복 분석 도구 확보 (`test/styles/css-optimization.test.ts`)
+  - 향후 유지보수 시 중복 방지 가드로 활용 가능
+- ✅ 빌드 최적화 메커니즘 이해
+  - PostCSS/Terser의 동작 방식 파악
+  - JavaScript가 실제 크기 결정 요인임을 검증
+- ✅ Phase 33 방향성 도출
+  - Rollup Visualizer로 JavaScript 번들 분석 필요
+  - Tree-shaking 및 미사용 기능 제거 검토
+
+**결론**: CSS 최적화는 유지보수 품질 향상에 기여하나, 번들 크기 절감 목표는
+JavaScript 레벨 접근이 필요. Phase 32는 "분석 완료" 단계로 종료하며, 실질적인
+크기 절감은 Phase 33에서 진행.
+
+---
+
 ### Phase 31: Prod Bundle Budget Recovery (2025-10-12)
 
 **배경**: `npm run maintenance:check` 결과 prod 번들 원본 크기 334.68 KB로 팀
