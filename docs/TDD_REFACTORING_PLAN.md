@@ -1,11 +1,10 @@
 # TDD 리팩토링 활성 계획
 
-현재 상태: Phase 24-C 준비 중 | Phase 24-A 완료 ✅ | Phase 24-B 완료 ✅ | Phase
-25 완료 ✅
+현재 상태: Phase 24 시리즈 완료 ✅ | Phase 25 완료 ✅
 
-최종 업데이트: 2025-10-12
+최종 업데이트: 2025-01-15
 
-브랜치: feature/phase24a-rename-small-dirs
+브랜치: master (Phase 24-C 머지 완료)
 
 ---
 
@@ -14,8 +13,8 @@
 프로젝트 안정 상태 - 모든 품질 지표 GREEN
 
 - ✅ 빌드: dev 728 KB, prod 329 KB (gzip: 89.49 KB)
-- ✅ 테스트: 609/609 passing (24 skipped, 1 todo) ← **Phase 24-A: +2 tests**
-- ✅ 의존성: 0 violations (264 modules, 726 dependencies)
+- ✅ 테스트: 594/594 passing (24 skipped, 1 todo) ← **Phase 24-C: +2 tests**
+- ✅ 의존성: 0 violations (264 modules, 725 dependencies)
 - ✅ 타입: 0 errors (TypeScript strict)
 - ✅ 린트: 0 warnings, 0 errors
 
@@ -31,6 +30,79 @@
 ---
 
 ## 🎯 최근 완료 작업
+
+### Phase 24-C: shared 대형 디렉터리 파일명 kebab-case ✅ (2025-01-15)
+
+**성과**:
+
+- 37개 파일 리네임 (services/ 29개, utils/ 8개)
+- 88개 파일의 import 경로 자동 업데이트
+- Phase 24 시리즈 (A/B/C) 완료로 파일명 규칙 전체 통일
+- 테스트 2개 추가 (594/594 passing, +2)
+- 빌드 크기: 변화 없음 (성능 영향 없음)
+
+**주요 변경**:
+
+- **services/ 리네임 (29개)**:
+  - Core: AnimationService, BaseServiceImpl, BulkDownloadService, EventManager,
+    LanguageService, MediaService, ServiceManager, ThemeService,
+    ToastController, UnifiedToastManager, iconRegistry → kebab-case
+  - download/, input/, media/, media-extraction/, media-mapping/ 하위 파일 전체
+    → kebab-case
+
+- **utils/ 리네임 (8개)**:
+  - dom/, media/, memory/, performance/ 하위 파일 및 root 레벨 파일 → kebab-case
+
+- **자동화 스크립트**: `scripts/fix-imports.mjs` (Node.js 기반 import 경로 일괄
+  업데이트, 88개 파일)
+
+**기술적 도전**:
+
+- Windows 파일시스템 이슈: 2단계 리네임 (temp file 경유)
+- Import 경로 자동화: PowerShell → Node.js 전환 (성능 개선)
+- 동적 import 수동 수정: service-factories, service-diagnostics, media-service
+- 테스트 lint 패턴: "as any" 모킹 및 global 타입은 eslint-disable로 허용
+
+**아키텍처 개선**:
+
+- 파일명 규칙 전체 통일: src/shared 전체 디렉터리 kebab-case 준수
+- Phase 24 시리즈 완료: 소형(9개), 중형(22개), 대형(37개) 총 68개 파일 리네임
+- 유지보수성: 일관된 파일명 규칙으로 코드 탐색 및 자동화 개선
+
+**테스트 커버리지**:
+
+- 추가된 테스트 2개: Phase 24-C naming convention 테스트 (services/, utils/)
+- 실행: Phase 24-A/B/C 테스트 전체 = 6/6 passing
+- 결과: 594/594 passing (100%)
+
+**상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 24-C 참조
+
+---
+
+### Phase 24-B: shared 중형 디렉터리 파일명 kebab-case ✅ (2025-01-15)
+
+**성과**:
+
+- 22개 파일 리네임 (components, hooks, interfaces, media, state, styles, types)
+- Regex 패턴 개선: 의미론적 suffix 패턴 허용 (`.types.ts`, `.interfaces.ts`)
+- 테스트 2개 추가 (594/594 passing)
+- 빌드 크기: 변화 없음
+
+**상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 24-B 참조
+
+---
+
+### Phase 24-A: shared 소형 디렉터리 파일명 kebab-case ✅ (2025-01-15)
+
+**성과**:
+
+- 9개 파일 리네임 (container, dom, external, logging, state 소형 디렉터리)
+- 테스트 2개 추가 (594/594 passing)
+- Phase 24 시리즈 시작점
+
+**상세 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 24-A 참조
+
+---
 
 ### Phase 25: 휠 스크롤 속도 제어 제거 (브라우저 기본 동작 위임) ✅ (2025-10-12)
 
