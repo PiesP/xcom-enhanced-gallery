@@ -243,6 +243,9 @@ npm run validate
 npm run build:dev
 npm run build:prod
 node ./scripts/validate-build.js
+
+# 유지보수 점검 (작업 종료 시)
+npm run maintenance:check
 ```
 
 CI
@@ -258,6 +261,13 @@ CI
 
 - 워크플로: `.github/workflows/security.yml`
 - `npm audit`와 라이선스 보고서 업로드를 자동화
+
+유지보수
+
+- 워크플로: `.github/workflows/maintenance.yml`
+- 매월 1일 09:00 UTC 자동 실행 (수동 실행 가능)
+- GitHub Issue 자동 생성: `[유지보수] YYYY년 MM월 정기 점검`
+- 로컬 실행: `npm run maintenance:check` (작업 종료 시 권장)
 
 릴리즈
 
@@ -322,6 +332,41 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
   필요).
 - 경로 별칭 오류: TS/Vite/테스트 설정의 alias가 일치하는지
   확인하세요(`vitest.config.ts`의 `resolve.alias`).
+
+## 작업 종료 체크리스트 (AI/개발자 공통)
+
+모든 개발 작업(기능 추가, 리팩토링, 버그 수정 등)을 완료한 후 반드시 실행:
+
+1. **코드 품질 검증**
+
+   ```pwsh
+   npm run validate  # typecheck + lint:fix + format
+   npm test          # 전체 테스트 실행
+   ```
+
+2. **빌드 검증**
+
+   ```pwsh
+   npm run build     # dev + prod 빌드 및 validate-build.js 자동 실행
+   ```
+
+3. **유지보수 점검** ⭐ 필수
+
+   ```pwsh
+   npm run maintenance:check
+   ```
+
+   **AI는 반드시 출력 결과를 사용자에게 보고:**
+   - ✅ 정상 항목 (보안, Git 상태 등)
+   - ⚠️ 조치 필요 항목 (백업 디렉터리, 큰 문서, 빌드 크기 초과 등)
+   - 💡 권장 조치 (발견된 항목에 대한 제거 명령 등)
+
+4. **커밋 준비**
+   - 모든 검증이 통과하면 커밋 권장
+   - 조치 필요 항목이 있으면 사용자에게 먼저 확인 요청
+
+**중요**: 대규모 작업(여러 파일 변경, 새 기능 추가) 후에는 반드시 maintenance
+점검을 실행하여 임시 파일이나 불필요한 백업이 남아있지 않은지 확인하세요.
 
 ---
 
