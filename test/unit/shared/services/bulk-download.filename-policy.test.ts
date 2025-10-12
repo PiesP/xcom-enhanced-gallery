@@ -65,7 +65,7 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
   });
 
   it('makes filenames unique in ZIP by suffixing -1, -2 when collisions occur (RED)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     // three items producing identical base filename "alice_100_1.jpg"
@@ -96,7 +96,7 @@ describe('BulkDownloadService - filename collision & failure summary', () => {
   });
 
   it('returns a concise failure summary when some downloads fail (RED)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     const okItem = mediaItem({ id: '100_media_0', url: 'https://ok/item.jpg' });

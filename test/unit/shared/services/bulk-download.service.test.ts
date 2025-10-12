@@ -16,6 +16,7 @@ vi.mock('@shared/external/vendors', async () => {
 });
 
 describe('BulkDownloadService - queue & concurrency', () => {
+  // eslint-disable-next-line no-undef
   let originalFetch: typeof fetch;
 
   beforeEach(() => {
@@ -39,7 +40,7 @@ describe('BulkDownloadService - queue & concurrency', () => {
   }
 
   it('should utilize concurrency when provided (RED: API to implement)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     // mock fetch measuring in-flight concurrency
@@ -67,9 +68,10 @@ describe('BulkDownloadService - queue & concurrency', () => {
   });
 
   it('should support cancellation via AbortSignal (RED)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
+    // eslint-disable-next-line no-undef
     const controller = new AbortController();
     let started = 0;
 
@@ -101,11 +103,12 @@ describe('BulkDownloadService - queue & concurrency', () => {
   });
 
   it('should retry failed downloads up to configured retries (RED)', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     // Simulate first call fails, second succeeds for first item; others succeed
     let callCount = 0;
+    // eslint-disable-next-line no-undef
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
       const url = typeof input === 'string' ? input : (input as URL).toString();
       if (url.includes('retry-0')) {

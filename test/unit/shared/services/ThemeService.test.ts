@@ -5,13 +5,17 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ThemeService } from '../../../../src/shared/services/theme-service';
+import { InMemoryStorageAdapter } from '../../../__mocks__/in-memory-storage-adapter';
 
 describe('ThemeService Extended', () => {
   let themeService: ThemeService;
+  let storage: InMemoryStorageAdapter;
   // eslint-disable-next-line no-undef
   let mockDocument: Partial<Document>;
 
   beforeEach(() => {
+    storage = new InMemoryStorageAdapter();
+
     // DOM mock 설정
     mockDocument = {
       documentElement: {
@@ -21,7 +25,7 @@ describe('ThemeService Extended', () => {
     };
     vi.stubGlobal('document', mockDocument);
 
-    themeService = new ThemeService();
+    themeService = new ThemeService(storage);
   });
 
   afterEach(() => {
@@ -63,7 +67,7 @@ describe('ThemeService Extended', () => {
       themeService.setTheme('light');
 
       // 새로운 ThemeService 인스턴스로 auto 설정 시 dark 시스템 테마 감지
-      const newThemeService = new ThemeService();
+      const newThemeService = new ThemeService(storage);
       newThemeService.setTheme('auto');
 
       // auto 설정 시 시스템 테마를 감지하여 적용
@@ -80,40 +84,25 @@ describe('ThemeService Extended', () => {
   });
 
   describe('theme persistence', () => {
-    it('테마 설정이 localStorage에 저장되어야 함', () => {
-      const mockLocalStorage = {
-        setItem: vi.fn(),
-        getItem: vi.fn(),
-      };
-      vi.stubGlobal('localStorage', mockLocalStorage);
-
+    it('테마 설정이 localStorage에 저장되어야 함', async () => {
       themeService.setTheme('dark');
 
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith('xeg-theme', 'dark');
+      const stored = await storage.getItem('xeg-theme');
+      expect(stored).toBe('dark');
     });
 
-    it('페이지 로드 시 저장된 테마를 복원해야 함', () => {
-      const mockLocalStorage = {
-        getItem: vi.fn().mockReturnValue('dark'),
-        setItem: vi.fn(),
-      };
-      vi.stubGlobal('localStorage', mockLocalStorage);
+    it('페이지 로드 시 저장된 테마를 복원해야 함', async () => {
+      await storage.setItem('xeg-theme', 'dark');
 
-      const newThemeService = new ThemeService();
-      newThemeService.initialize();
+      const newThemeService = new ThemeService(storage);
+      await newThemeService.initialize();
 
       expect(newThemeService.getCurrentTheme()).toBe('dark');
     });
 
-    it('저장된 테마가 없으면 auto를 기본값으로 사용해야 함', () => {
-      const mockLocalStorage = {
-        getItem: vi.fn().mockReturnValue(null),
-        setItem: vi.fn(),
-      };
-      vi.stubGlobal('localStorage', mockLocalStorage);
-
-      const newThemeService = new ThemeService();
-      newThemeService.initialize();
+    it('저장된 테마가 없으면 auto를 기본값으로 사용해야 함', async () => {
+      const newThemeService = new ThemeService(storage);
+      await newThemeService.initialize();
 
       expect(newThemeService.getCurrentTheme()).toBe('auto');
     });
@@ -177,7 +166,7 @@ describe('ThemeService Extended', () => {
   });
 
   describe('initialization', () => {
-    it('초기화 시 이벤트 리스너가 등록되어야 함', () => {
+    it('초기화 시 이벤트 리스너가 등록되어야 함', async () => {
       const mockMediaQueryList = {
         matches: true,
         addEventListener: vi.fn(),
@@ -189,8 +178,8 @@ describe('ThemeService Extended', () => {
       };
       vi.stubGlobal('window', mockWindow);
 
-      const newThemeService = new ThemeService();
-      newThemeService.initialize();
+      const newThemeService = new ThemeService(storage);
+      await newThemeService.initialize();
 
       expect(mockMediaQueryList.addEventListener).toHaveBeenCalledWith(
         'change',

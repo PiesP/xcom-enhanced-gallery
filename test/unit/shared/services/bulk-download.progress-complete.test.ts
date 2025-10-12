@@ -12,7 +12,7 @@ describe('BulkDownloadService • PROGRESS-API-CONSISTENCY-01', () => {
   });
 
   it('emits exactly one final complete(100%) event for single-item flow', async () => {
-    const { BulkDownloadService } = await import('@shared/services/BulkDownloadService');
+    const { BulkDownloadService } = await import('@shared/services/bulk-download-service');
     const svc = new BulkDownloadService();
 
     // minimal Blob polyfill for Node
