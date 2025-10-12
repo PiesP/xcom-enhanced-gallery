@@ -180,7 +180,15 @@ export interface GalleryInitOptions {
 // ========================================
 
 // Re-export from constants for better organization
-export { VIEW_MODES, isValidViewMode, type ViewMode } from '@/constants';
+import { VIEW_MODES } from '@/constants';
+export { VIEW_MODES, type ViewMode } from '@/constants';
+
+/**
+ * ViewMode 유효성 검사 함수
+ */
+export function isValidViewMode(mode: string): mode is (typeof VIEW_MODES)[number] {
+  return VIEW_MODES.includes(mode as (typeof VIEW_MODES)[number]);
+}
 
 // ========================================
 // CORE UTILITY TYPES

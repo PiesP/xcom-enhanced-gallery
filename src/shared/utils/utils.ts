@@ -6,10 +6,7 @@
 
 import { logger } from '../logging/logger';
 import { gallerySignals } from '../state/signals/gallery.signals';
-import {
-  CSS as CSS_CONST,
-  isVideoControlElement as isVideoControlElementCentral,
-} from '../../constants';
+import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '../../constants';
 
 // ================================
 // Re-exports from focused modules
@@ -143,7 +140,19 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
  */
 export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!element) return false;
-  return isVideoControlElementCentral(element);
+
+  // 기본 요소 확인
+  const tagName = element.tagName.toLowerCase();
+  if (tagName === 'video') return true;
+
+  // 선택자 매칭 확인
+  return VIDEO_CONTROL_SELECTORS.some(selector => {
+    try {
+      return element.matches(selector) || element.closest(selector) !== null;
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**

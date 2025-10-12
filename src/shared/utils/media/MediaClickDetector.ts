@@ -3,7 +3,8 @@
  * @description UI 변경에 강건한 미디어 클릭 감지 및 처리 로직 (DOM 캐싱 최적화)
  */
 
-import { STABLE_SELECTORS, CSS, isVideoControlElement } from '../../../constants';
+import { STABLE_SELECTORS, CSS } from '../../../constants';
+import { isVideoControlElement } from '../utils';
 import { logger } from '../../logging/logger';
 import { cachedQuerySelector } from '../../dom';
 

@@ -4,8 +4,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
-import { generateOriginalUrl } from '../../../../src/constants';
+import {
+  extractOriginalImageUrl,
+  isValidMediaUrl,
+  generateOriginalUrl,
+} from '@shared/utils/media/media-url.util';
 
 describe('Media URL Policy — Edge Cases', () => {
   describe('Duplicate query params', () => {
