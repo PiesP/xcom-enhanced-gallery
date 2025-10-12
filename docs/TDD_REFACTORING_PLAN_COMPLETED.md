@@ -1,134 +1,254 @@
-# TDD 리팩토링 완료 기록
+# TDD 리팩토링 완료 기록# TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-12
+> **최종 업데이트**: 2025-01-15 > **최종 업데이트**: 2025-10-12
+
+> **상태**: 모든 Phase (1-26) 완료
 
 모든 Phase (1-25)가 완료되었습니다. 상세 내역은 Git 히스토리 및 백업 파일 참조.
 
+## 현재 상태
+
 ---
 
-## 📊 현재 상태
+- **빌드**: dev 728 KB / prod 329 KB (gzip 89 KB)
 
-### 빌드 & 테스트
+- **테스트**: 594/594 passing (100%)## 📊 현재 상태
 
-- ✅ **빌드**: dev (728 KB) / prod (329 KB, gzip: 89.49 KB) ← **Phase 25: -2 KB
-  dev, -1 KB prod**
+- **E2E**: 8/8 passing (Playwright)
+
+- **타입**: 0 errors (TypeScript strict)### 빌드 & 테스트
+
+- **의존성**: 0 violations
+
+- ✅ **빌드**: dev (728 KB) / prod (329 KB, gzip: 89.49 KB) ← \*\*Phase 25: -2
+  KB
+
+## 완료된 Phase 요약 dev, -1 KB prod\*\*
+
 - ✅ **Vitest**: 594/594 (100%, 24 skipped, 1 todo) ← **Phase 24-C: +2 tests**
-- ✅ **E2E**: 8/8 (100%)
-- ✅ **타입**: 0 errors (TypeScript strict)
-- ✅ **린트**: 0 warnings, 0 errors
-- ✅ **의존성**: 0 violations (264 modules, 726 dependencies)
+
+### Phase 1-6: 기반 구축- ✅ **E2E**: 8/8 (100%)
+
+- Solid.js 전환 완료- ✅ **타입**: 0 errors (TypeScript strict)
+
+- 테스트 인프라 구축 (Vitest + Playwright)- ✅ **린트**: 0 warnings, 0 errors
+
+- ARIA 접근성 개선- ✅ **의존성**: 0 violations (264 modules, 726 dependencies)
+
+- 디자인 토큰 시스템 구축
 
 ### 기술 스택
 
-- **UI**: Solid.js 1.9.9
-- **상태**: Solid Signals (내장)
-- **번들러**: Vite 7
-- **테스트**: Vitest 3 + Playwright
+### Phase 7-12: UX 개선
 
----
+- 스크롤 포커스 동기화- **UI**: Solid.js 1.9.9
 
-## 🎯 완료된 Phase 요약
+- 툴바 가드 강화- **상태**: Solid Signals (내장)
 
-### Phase 1-6: 기반 구축
+- 키보드 네비게이션 개선- **번들러**: Vite 7
 
-- Solid.js 전환 완료
-- 테스트 인프라 구축
-- Import 규칙 정리
-- ARIA 접근성 개선
+- E2E 테스트 안정화- **테스트**: Vitest 3 + Playwright
+
+### Phase 13-16: 안정화---
+
+- 아이콘 정책 강화
+
+- 배럴 표면 축소## 🎯 완료된 Phase 요약
+
+- 의존성 가드 통합
+
+- 문서 정리### Phase 1-6: 기반 구축
+
+### Phase 17-19: 설정 및 로깅- Solid.js 전환 완료
+
+- 휠 스크롤 설정 구현 및 제거 (Phase 25에서 재제거)- 테스트 인프라 구축
+
+- 테스트 console.log 제거- Import 규칙 정리
+
+- 설정 시스템 안정화- ARIA 접근성 개선
+
 - 디자인 토큰 시스템 구축
 
-### Phase 7-9: UX 개선
+### Phase 20: Effect 최적화
 
-- 스크롤 포커스 동기화
+- `isVisible` createMemo 전환### Phase 7-9: UX 개선
+
+- 애니메이션 effect 의존성 명시
+
+- Effect 개수 감소: 9개 → 8개 (11% 감소)- 스크롤 포커스 동기화
+
 - 툴바 가드 강화
-- 휠 이벤트 튜닝
-- 키보드 네비게이션 개선
 
-### Phase 10-12: 안정화 & E2E
+### Phase 21: Solid.js 핵심 최적화- 휠 이벤트 튜닝
 
-- Solid.js 마이그레이션 대응
-- E2E 회귀 커버리지 구축 (Playwright)
-- E2E 테스트 안정화 및 CI 통합
+- **Phase 21.1**: IntersectionObserver 무한 루프 방지- 키보드 네비게이션 개선
+  - `untrack()` + `on()` + `debounce` 적용
 
-### Phase 21-25: 최적화 & 아키텍처
+  - focusedIndex effect 99% 감소### Phase 10-12: 안정화 & E2E
 
-- **Phase 21**: IntersectionObserver 무한 루프 방지, Fine-grained Signals (99%
-  성능 개선)
-- **Phase 22**: constants.ts 리팩토링 (37% 코드 감소), 단일 책임 원칙 준수
+- **Phase 21.2**: Fine-grained Signals 분리
+  - `gallerySignals` 도입 (개별 signal)- Solid.js 마이그레이션 대응
+
+  - 불필요한 재렌더링 100% 제거- E2E 회귀 커버리지 구축 (Playwright)
+
+- **Phase 21.3**: Passive Wheel Listener- E2E 테스트 안정화 및 CI 통합
+  - 브라우저/OS 네이티브 스크롤 속도 준수
+
+- **Phase 21.4**: 불필요한 createMemo 제거### Phase 21-25: 최적화 & 아키텍처
+  - 단순 계산은 Solid.js 자동 최적화 활용
+
+- **Phase 21.5-21.6**: gallerySignals 마이그레이션- **Phase 21**:
+  IntersectionObserver 무한 루프 방지, Fine-grained Signals (99%
+  - Features 계층 (GalleryRenderer, GalleryApp) 성능 개선)
+
+  - Shared 계층 (utils, events)- **Phase 22**: constants.ts 리팩토링 (37% 코드
+    감소), 단일 책임 원칙 준수
+
 - **Phase 23**: DOMCache 아키텍처 개선 (계층 경계 강화, 28% 코드 감소)
-- **Phase 24-A**: shared 소형 디렉터리 파일명 kebab-case 통일 (9개 파일 리네임,
-  naming 테스트 추가)
-- **Phase 24-C**: shared 대형 디렉터리 파일명 kebab-case 통일 (37개 파일 리네임,
-  88개 import 경로 업데이트, Phase 24 시리즈 완료) 의미론적 suffix 패턴 허용)
-- **Phase 25**: 휠 스크롤 속도 제어 제거 (브라우저 네이티브 동작 위임, -3 KB)
-- E2E 테스트 안정화 및 CI 통합
 
-### Phase 21: SolidJS 핵심 최적화
+### Phase 22: constants.ts 리팩토링- **Phase 24-A**: shared 소형 디렉터리 파일명 kebab-case 통일 (9개 파일 리네임,
+
+- 파일 크기: 476줄 → 301줄 (37% 감소) naming 테스트 추가)
+
+- 유틸리티 함수 제거: 8개 → 0개- **Phase 24-C**: shared 대형 디렉터리 파일명
+  kebab-case 통일 (37개 파일 리네임,
+
+- 단일 책임 원칙 준수 (constants는 상수만) 88개 import 경로 업데이트, Phase 24
+  시리즈 완료) 의미론적 suffix 패턴 허용)
+
+- **Phase 25**: 휠 스크롤 속도 제어 제거 (브라우저 네이티브 동작 위임, -3 KB)
+
+### Phase 23: DOMCache 아키텍처 개선- E2E 테스트 안정화 및 CI 통합
+
+- Bootstrap 레이어 의존성 제거
+
+- DOMCache 자율적 설정 구독 (28% 코드 감소)### Phase 21: SolidJS 핵심 최적화
+
+- 계층 경계 강화
 
 #### Phase 21.1: IntersectionObserver 무한 루프 방지 ✅
 
-**완료일**: 2025-10-12 **커밋**:
-`feat(gallery): prevent IntersectionObserver infinite loop in useGalleryFocusTracker`
+### Phase 24: 파일명 kebab-case 통일
 
-**개선사항**:
+- **Phase 24-A**: 소형 디렉터리 (9개 파일)**완료일**: 2025-10-12 **커밋**:
+
+- **Phase 24-B**: 중형 디렉터리 (22개
+  파일)`feat(gallery): prevent IntersectionObserver infinite loop in useGalleryFocusTracker`
+
+- **Phase 24-C**: 대형 디렉터리 (37개 파일)
+
+- **총 68개 파일** 리네임 완료**개선사항**:
+
+- 자동 검증 테스트 추가 (6 tests)
 
 - `untrack()`: IntersectionObserver 콜백에서 반응성 체인 끊기
-- `on()`: 명시적 의존성 지정으로 effect 최적화 (defer: true)
-- `debounce`: `setAutoFocusIndex` 업데이트 제한 (50ms)
 
-**성능 개선**:
+### Phase 25: 휠 스크롤 배율 제거- `on()`: 명시적 의존성 지정으로 effect 최적화 (defer: true)
+
+- wheelScrollMultiplier 설정 완전 제거- `debounce`: `setAutoFocusIndex` 업데이트
+  제한 (50ms)
+
+- 브라우저/OS 네이티브 스크롤 속도 복원
+
+- 코드 감소: 203줄**성능 개선**:
+
+- 번들 감소: -3 KB
 
 - focusedIndex effect: 50회 변경에 대해 2회만 실행 (기존 200+ → 99% 감소)
-- IntersectionObserver 콜백 100회 실행 시 effect cascade 방지
 
-**테스트**: 통합 테스트 4개 추가 (`focus-tracker-infinite-loop.red.test.ts`)
+### Phase 26: 파일명 규칙 체계화- IntersectionObserver 콜백 100회 실행 시 effect cascade 방지
 
-#### Phase 21.2: galleryState Fine-grained Signals 분리 ✅
+- CODING_GUIDELINES.md 확장 (8줄 → 80줄)
 
-**완료일**: 2025-10-12 **커밋**:
+- `npm run test:naming` 스크립트 추가**테스트**: 통합 테스트 4개 추가
+  (`focus-tracker-infinite-loop.red.test.ts`)
+
+- Regex 패턴 문서화
+
+- 하이브리드 접근 (문서 + 테스트)#### Phase 21.2: galleryState Fine-grained
+  Signals 분리 ✅
+
+## 주요 성과**완료일**: 2025-10-12 **커밋**:
+
 `feat(core): implement fine-grained signals for gallery state`
 
-**개선사항**:
+### 성능
 
-- `gallerySignals` 추가: 각 상태 속성에 대한 개별 signal
+- Effect 최적화: 99% 감소 (IntersectionObserver)**개선사항**:
+
+- Fine-grained signals: 재렌더링 100% 제거
+
+- 번들 크기: ~329 KB (gzip 89 KB)- `gallerySignals` 추가: 각 상태 속성에 대한
+  개별 signal
+
+### 품질 ```typescript
+
+- 테스트 커버리지: 594 tests (100%) export const gallerySignals = {
+
+- E2E 커버리지: 8 tests (Playwright) isOpen: createSignalSafe<boolean>(false),
+
+- 의존성 violations: 0 mediaItems: createSignalSafe<readonly MediaInfo[]>([]),
+
+- TypeScript: strict mode, 0 errors currentIndex: createSignalSafe<number>(0),
+
+  // ... 기타 속성
+
+### 아키텍처 };
+
+- 3계층 구조 확립 (Features → Shared → External) ```
+
+- Fine-grained reactivity (gallerySignals)
+
+- Vendor getter 패턴 (TDZ-safe)- 호환 레이어: 기존 `galleryState.value` API 유지
+
+- 계층 경계 강화
 
   ```typescript
-  export const gallerySignals = {
-    isOpen: createSignalSafe<boolean>(false),
-    mediaItems: createSignalSafe<readonly MediaInfo[]>([]),
-    currentIndex: createSignalSafe<number>(0),
-    // ... 기타 속성
-  };
+
   ```
 
-- 호환 레이어: 기존 `galleryState.value` API 유지
+### 개발 경험 export const galleryState = {
 
-  ```typescript
-  export const galleryState = {
-    get value(): GalleryState {
-      return {
-        isOpen: gallerySignals.isOpen.value,
-        mediaItems: gallerySignals.mediaItems.value,
+- 파일명 규칙 자동 검증 get value(): GalleryState {
+
+- 빠른 테스트 실행 (Vitest projects) return {
+
+- PC 전용 이벤트 정책 isOpen: gallerySignals.isOpen.value,
+
+- 디자인 토큰 강제 mediaItems: gallerySignals.mediaItems.value,
+
         currentIndex: gallerySignals.currentIndex.value,
-        // ... 모든 속성 compose
+
+## 관련 문서 // ... 모든 속성 compose
+
       };
-    },
-    set value(state: GalleryState) {
-      batch(() => {
-        // 모든 signal 원자적 업데이트
+
+- `TDD_REFACTORING_PLAN.md`: 활성 계획 },
+
+- `AGENTS.md`: 개발 환경 및 워크플로 set value(state: GalleryState) {
+
+- `ARCHITECTURE.md`: 아키텍처 batch(() => {
+
+- `CODING_GUIDELINES.md`: 코딩 규칙 // 모든 signal 원자적 업데이트
+
         gallerySignals.isOpen.value = state.isOpen;
-        // ... 모든 속성 업데이트
+
+--- // ... 모든 속성 업데이트
+
       });
-    },
-  };
-  ```
+
+**상세 내역**: Git 히스토리 및 커밋 메시지 참조 },
+
+};
+
+````
 
 - `batch()` 지원: 다중 signal 업데이트 최적화
 
 **성능 개선**:
 
 - 불필요한 재렌더링 100% 제거 (currentIndex 변경 시 mediaItems 구독자 재실행 안
-  함)
+함)
 - Fine-grained reactivity: 각 컴포넌트가 필요한 signal만 구독
 
 **테스트**: 단위 테스트 추가 (`gallery-signals-fine-grained.test.ts`)
@@ -147,12 +267,12 @@
 
 - `src/features/gallery/hooks/useGalleryScroll.ts` (line 193-196)
 
-  ```typescript
-  eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
-    capture: true,
-    passive: true, // 브라우저/OS 네이티브 스크롤 속도 설정 준수
-  });
-  ```
+```typescript
+eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
+  capture: true,
+  passive: true, // 브라우저/OS 네이티브 스크롤 속도 설정 준수
+});
+````
 
 **효과**:
 
@@ -2111,6 +2231,131 @@ Phase 24-A의 TDD 흐름 확장
 
 **Phase 25 전체 완료**: 휠 스크롤 배율 설정 제거 완성 (분석 → 제거 → 테스트 수정
 → 빌드 검증 → 문서 업데이트)
+
+---
+
+## Phase 26: 파일명 규칙 체계화 및 강제 (2025-01-15)
+
+**목표**: Phase 24 시리즈 완료 후, 파일명 규칙을 문서화하고 자동 검증 체계를
+구축하여 일관성 유지
+
+**배경**:
+
+- Phase 24-A/B/C 완료로 68개 파일이 kebab-case로 통일됨
+- 파일명 규칙이 테스트로 검증되지만 명확한 문서화 부족
+- 개발자 온보딩 시 명시적 가이드 필요
+- 자동 검증 인프라는 구축되었으나 접근성 개선 필요
+
+**작업 내역**:
+
+- **브랜치**: feature/phase26-file-naming-enforcement
+- **커밋**: feat(docs): phase 26 - file naming convention enforcement and
+  documentation
+
+### 1. 문서화 (CODING_GUIDELINES.md) ✅
+
+**추가된 내용**:
+
+- 파일 네이밍 섹션 대폭 확장 (8줄 → 80줄)
+- kebab-case 기본 규칙 및 예시 추가
+  - ✅ 올바른 파일명: gallery-view.tsx, media-processor.ts
+  - ❌ 잘못된 파일명: GalleryView.tsx, mediaProcessor.ts
+- Semantic suffix 패턴 설명
+  - 허용: app.types.ts, gallery.interfaces.ts, media.test.ts
+  - 의미론적 suffix는 점(`.`)으로 구분
+- 디렉터리 구조 규칙 (모든 디렉터리명도 kebab-case)
+- 자동 검증 방법 안내
+  - Phase 24-A/B/C 테스트 참조
+  - npm run test:naming 스크립트 사용법
+- 검증 범위 명시
+  - Phase 24-A: 소형 디렉터리 (container, dom, external, logging, state)
+  - Phase 24-B: 중형 디렉터리 (components, hooks, interfaces, media, state,
+    styles, types)
+  - Phase 24-C: 대형 디렉터리 (services, utils)
+- Regex 패턴 문서화: `/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)?\.(?:ts|tsx)$/`
+
+### 2. 자동 검증 체계 강화 ✅
+
+**현재 인프라 (이미 구축됨)**:
+
+- ✅ Phase 24-A/B/C 테스트가 파일명 규칙 검증 (6 tests)
+- ✅ CI workflow가 전체 테스트 자동 실행 (naming tests 포함)
+- ✅ Pre-push hook이 테스트를 실행하여 로컬에서 차단
+
+**추가 개선**:
+
+- ✅ `npm run test:naming` 스크립트 추가 (package.json)
+  - Phase 24-A/B/C 테스트만 빠르게 실행
+  - 개발자 편의성 향상 (1.58s 실행 시간)
+
+### 3. ESLint 규칙 검토 결과
+
+**결정**: ESLint 규칙 도입 보류
+
+**이유**:
+
+- Vitest 테스트가 더 강력하고 유연함
+  - Regex 패턴으로 semantic suffix 지원
+  - 디렉터리별 세분화된 검증 가능
+  - 테스트 코드로 명확한 의도 전달
+- ESLint 플러그인 도입 시 단점
+  - eslint-plugin-unicorn 등은 설정 복잡도 증가
+  - 커스텀 규칙 작성 시 유지보수 부담
+  - IDE 통합은 Vitest extension으로도 가능
+- 기존 Phase 24 테스트 인프라가 충분히 효과적
+  - 6개 테스트로 전체 src/shared 커버리지
+  - CI/Pre-push hook 통합으로 자동 차단
+
+**솔루션 선택**:
+
+- **혼합 접근**: 문서화 + 기존 CI/Test 인프라 활용
+- **장점**: 비용 대비 효과 최대화, 유지보수 부담 최소화
+- **단점 없음**: 필요한 모든 기능 충족
+
+### 4. 품질 게이트
+
+**테스트**:
+
+- ✅ Phase 24-A naming convention: 2/2 passed (소형 디렉터리)
+- ✅ Phase 24-B naming convention: 2/2 passed (중형 디렉터리)
+- ✅ Phase 24-C naming convention: 2/2 passed (대형 디렉터리)
+- ✅ 전체 스위트: 594/594 passing (100%)
+- ✅ 파일명 테스트만: 6/6 passing (npm run test:naming, 1.58s)
+
+**빌드**:
+
+- ✅ Dev: 727.61 KB (변화 없음)
+- ✅ Prod: 329.17 KB (변화 없음)
+- ✅ Gzip: 89.49 KB (변화 없음)
+
+**코드 품질**:
+
+- ✅ 타입체크: 0 errors
+- ✅ Lint: 0 warnings, 0 errors
+- ✅ 의존성: 0 violations (264 modules, 725 dependencies)
+
+### 5. 결과
+
+**문서 개선**:
+
+- CODING_GUIDELINES.md 파일명 섹션 10배 확장 (8줄 → 80줄)
+- 명확한 예시와 패턴 설명으로 개발자 가이드 완성
+- Phase 24 테스트 참조로 자동 검증 방법 명시
+
+**접근성 향상**:
+
+- `npm run test:naming` 명령으로 빠른 파일명 검증 (1.58s)
+- 개발자가 파일명 규칙을 쉽게 확인 가능
+- 기존 CI/Pre-push hook 통합으로 자동 차단 유지
+
+**비용 효율성**:
+
+- ESLint 플러그인 도입 없이 동일한 효과 달성
+- 기존 Vitest 인프라 활용으로 유지보수 부담 최소화
+- 설정 복잡도 증가 없음
+
+**Phase 26 완료**: 파일명 규칙 문서화 및 자동 검증 체계 완성 (분석 → 문서화 →
+스크립트 추가 → 검증)
 
 ---
 

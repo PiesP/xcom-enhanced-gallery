@@ -1,54 +1,109 @@
-# TDD 리팩?�링 ?�성 계획
+# TDD 리팩토링 활성 계획# TDD 리팩?�링 ?�성 계획
 
-?�재 ?�태: 모든 계획??Phase ?�료 ?? 최종 ?�데?�트: 2025-01-15
+> **최종 업데이트**: 2025-01-15 ?�재 ?�태: 모든 계획??Phase ?�료 ?? 최종
+> ?�데?�트: 2025-01-15
 
-브랜�? master
+> **브랜치**: master
 
----
+> **상태**: 모든 Phase 완료브랜�? master
 
-## ?�� ?�재 ?�태
+## 프로젝트 상태---
 
-?�로?�트 ?�정 ?�태 - 모든 ?�질 지??GREEN
+- **빌드**: dev 728 KB / prod 329 KB (gzip 89 KB)## ?�� ?�재 ?�태
 
-- ??빌드: dev 728 KB, prod 329 KB (gzip: 89.49 KB)
+- **테스트**: 594/594 passing (24 skipped, 1 todo)
+
+- **타입**: 0 errors (TypeScript strict)?�로?�트 ?�정 ?�태 - 모든 ?�질 지??GREEN
+
+- **린트**: 0 warnings
+
+- **의존성**: 0 violations (264 modules, 725 deps)- ??빌드: dev 728 KB, prod 329
+  KB (gzip: 89.49 KB)
+
 - ???�스?? 594/594 passing (24 skipped, 1 todo)
-- ???�존?? 0 violations (264 modules, 725 dependencies)
-- ???�?? 0 errors (TypeScript strict)
-- ??린트: 0 warnings, 0 errors
 
----
+## 참고 문서- ???�존?? 0 violations (264 modules, 725 dependencies)
+
+- ???�?? 0 errors (TypeScript strict)
+
+- `AGENTS.md`: 개발 환경 및 워크플로- ??린트: 0 warnings, 0 errors
+
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-26 상세 기록
+
+- `docs/ARCHITECTURE.md`: 아키텍처 구조---
+
+- `docs/CODING_GUIDELINES.md`: 코딩 규칙 (파일명 규칙 포함)
 
 ## ?�� 참고 문서
 
-- `AGENTS.md`: 개발 ?�경 �??�크?�로
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: ?�료??모든 Phase (1-26)
-- `docs/ARCHITECTURE.md`: ?�로?�트 ?�키?�처
-- `docs/CODING_GUIDELINES.md`: 코딩 규칙 �??�질 기�? (?�일�?규칙 ?�함)
+## 최근 완료 작업
 
----
+- `AGENTS.md`: 개발 ?�경 �??�크?�로
+
+### Phase 26: 파일명 규칙 체계화 (2025-01-15)- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: ?�료??모든 Phase (1-26)
+
+- `docs/ARCHITECTURE.md`: ?�로?�트 ?�키?�처
+
+- CODING_GUIDELINES.md 파일명 섹션 확장 (8줄 → 80줄)-
+  `docs/CODING_GUIDELINES.md`: 코딩 규칙 �??�질 기�? (?�일�?규칙 ?�함)
+
+- `npm run test:naming` 스크립트 추가 (6 tests, 1.58s)
+
+- 하이브리드 접근: 문서화 + 기존 CI/Test 인프라---
+
+- ESLint 규칙 도입 보류 (Vitest 테스트가 더 효과적)
 
 ## ?�� 최근 ?�료 ?�업
 
+## 활성 작업
+
 ### Phase 26: ?�일�?규칙 체계??�?강제 ??(2025-01-15)
+
+현재 활성 작업 없음. 모든 계획된 Phase 완료.
 
 **?�과**:
 
+새로운 개선 사항이나 기능 요청 시:
+
 - CODING_GUIDELINES.md ?�일�??�션 10�??�장 (8�???80�?
-- `npm run test:naming` ?�크립트 추�? (Phase 24 ?�스??빠른 ?�행)
-- ?�합 ?�근 방식 ?�택: 문서??+ 기존 CI/Test ?�프??- ESLint 규칙 ?�입 보류
-  (Vitest ?�스?��? ???�과??
+
+1. GitHub Issues에 등록- `npm run test:naming` ?�크립트 추�? (Phase 24
+   ?�스??빠른 ?�행)
+
+2. TDD 리팩토링 계획 수립- ?�합 ?�근 방식 ?�택: 문서??+ 기존 CI/Test ?�프??-
+   ESLint 규칙 ?�입 보류
+
+3. RED → GREEN → REFACTOR 흐름 준수 (Vitest ?�스?��? ???�과??
+
+4. 문서 업데이트
 
 **문서???�용**:
 
-- kebab-case 기본 규칙 �??�시
-- Semantic suffix ?�턴 ?�명 (`.types.ts`, `.test.ts` ??
-- ?�렉?�리 구조 규칙
-- ?�동 검�?방법 (Phase 24-A/B/C ?�스??
-- Regex ?�턴 문서?? **검�?체계**:
+## 작업 시작 체크리스트
 
-- Phase 24-A/B/C ?�스??(6 tests, 1.58s)
-- CI workflow ?�동 ?�행
-- Pre-push hook 로컬 차단
+- kebab-case 기본 규칙 �??�시
+
+1. 현재 상태 확인: `npm run validate && npm test`- Semantic suffix ?�턴 ?�명
+   (`.types.ts`, `.test.ts` ??
+
+2. 관련 문서 검토 (AGENTS.md, CODING_GUIDELINES.md, ARCHITECTURE.md)- ?�렉?�리
+   구조 규칙
+
+3. 작업 브랜치 생성: `git checkout -b feature/phase-xx-...`- ?�동 검�?방법
+   (Phase 24-A/B/C ?�스??
+
+4. TDD_REFACTORING_PLAN.md에 계획 작성- Regex ?�턴 문서?? **검�?체계**:
+
+5. RED → GREEN → REFACTOR 흐름 준수
+
+6. 빌드 검증: `Clear-Host && npm run build`- Phase 24-A/B/C ?�스??(6 tests,
+   1.58s)
+
+7. 문서 업데이트 (완료 시 TDD_REFACTORING_PLAN_COMPLETED.md로 이동)- CI workflow
+   ?�동 ?�행
+
+8. 유지보수 점검: `npm run maintenance:check`- Pre-push hook 로컬 차단
+
 - `npm run test:naming` ?�의 ?�크립트
 
 **?�세 ?�역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 26 참조
