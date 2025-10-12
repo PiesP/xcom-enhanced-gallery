@@ -2,9 +2,9 @@
 
 > **최종 업데이트**: 2025-01-27
 >
-> **브랜치**: main
+> **브랜치**: feature/phase-33-bundle-analysis
 >
-> **상태**: 모든 Phase 완료 ✅
+> **상태**: Phase 33 진행 중 🚧
 
 ## 프로젝트 상태
 
@@ -25,38 +25,71 @@
 
 ## 활성 작업
 
-현재 진행 중인 Phase가 없습니다.
+### Phase 33: JavaScript Bundle Analysis 🚧
 
----
+**목표**: JavaScript 번들 분석 및 최적화로 310 KB 이하 달성 (10 KB 절감)
 
-## 다음 Phase 제안
+**배경**: Phase 32에서 CSS 최적화는 이미 한계에 도달. 실제 번들 크기는
+JavaScript 코드(Solid.js 런타임 + 애플리케이션)에 의해 결정됨.
 
-### Phase 33: JavaScript Bundle Analysis (제안)
+**1단계: 번들 분석 도구 통합** ✅
 
-**목표**: Rollup Visualizer로 JavaScript 번들 분석 및 최적화 기회 탐색
+1. ✅ rollup-plugin-visualizer 설치
+2. ✅ vite.config.ts에 플러그인 추가 (prod 빌드만)
+3. ✅ 번들 구성 시각화 (docs/bundle-analysis.html)
+4. ✅ Python 분석 스크립트 작성 (scripts/analyze-bundle.py)
 
-**배경**: Phase 32에서 CSS 최적화만으로는 추가 크기 절감이 불가능함을 발견. 실제
-번들 크기는 JavaScript 코드(Solid.js 런타임 + 애플리케이션 코드)에 의해 결정됨.
+**번들 분석 결과** (Top 20 모듈):
 
-**제안 작업**:
+- **전체 크기**: 266.25 KB (Top 20 합계)
+  - Solid.js 런타임: 62.78 KB (23.6%)
+  - 애플리케이션 코드: 203.47 KB (76.4%)
 
-1. Rollup Visualizer 통합 (`rollup-plugin-visualizer`)
-   - 번들 구성 요소별 크기 분석
-   - Solid.js 런타임 vs 애플리케이션 코드 비율 파악
+**주요 최적화 대상**:
 
-2. Tree-shaking 최적화
-   - 사용하지 않는 Solid.js 기능 제거
-   - 미사용 유틸리티 함수 정리
+1. **solid-js/dist/solid.js** (33.72 KB) - Solid.js 핵심 런타임
+2. **media-service.ts** (21.58 KB) - 미디어 추출/처리 로직
+3. **solid-js/web/dist/web.js** (21.08 KB) - Solid DOM 렌더러
+4. **events.ts** (19.28 KB) - 이벤트 핸들링 유틸리티
+5. **Toolbar.tsx** (14.99 KB) - 툴바 컴포넌트
+6. **twitter-video-extractor.ts** (13.87 KB) - 트위터 비디오 추출
+7. **VerticalImageItem.tsx** (13.80 KB) - 이미지 아이템 컴포넌트
+8. **SettingsModal.tsx** (12.73 KB) - 설정 모달
+9. **bulk-download-service.ts** (11.87 KB) - 벌크 다운로드
+10. **settings-service.ts** (11.63 KB) - 설정 관리
 
-3. 코드 인라인화
-   - 불필요한 추상화 계층 제거
-   - 단일 사용 헬퍼 함수 인라인화
+**2단계: 최적화 전략 수립** (진행 예정)
 
-4. 동적 import 검토
-   - 현재 `inlineDynamicImports: true` 제약 하에서의 최적화 전략
-   - Userscript 단일 파일 제약 유지하며 최적화
+**A. 이벤트 핸들링 최적화** (19.28 KB → 목표 15 KB)
 
-**예상 효과**: 10-20 KB 추가 절감 가능성 (310 KB 이하 목표)
+- events.ts의 과도한 추상화 제거
+- 사용하지 않는 이벤트 유틸리티 제거
+- 인라인 가능한 단순 함수 인라인화
+
+**B. 컴포넌트 코드 최적화** (41.52 KB → 목표 35 KB)
+
+- Toolbar.tsx, VerticalImageItem.tsx, SettingsModal.tsx
+- 중복 로직 통합
+- Props 전달 패턴 단순화
+- 불필요한 memo/effect 제거
+
+**C. 서비스 레이어 최적화** (59.11 KB → 목표 50 KB)
+
+- media-service.ts, twitter-video-extractor.ts, bulk-download-service.ts
+- 전략 패턴 과다 사용 재검토
+- 팩토리 함수 인라인화
+- 미사용 추출 전략 제거
+
+**D. Solid.js 런타임 최적화** (62.78 KB - 현재 유지)
+
+- 현재 필요 최소 수준
+- createSignal, createStore, createMemo만 사용
+- 추가 최적화 불가
+
+**예상 효과**:
+
+- 이벤트 4 KB + 컴포넌트 6.5 KB + 서비스 9 KB = **19.5 KB 절감**
+- 목표: 320.73 KB → **301 KB 이하** (19.5 KB 절감)
 
 ---
 

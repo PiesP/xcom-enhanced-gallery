@@ -7,6 +7,7 @@
 import { defineConfig, Plugin, UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import solidPlugin from 'vite-plugin-solid';
+import { visualizer } from 'rollup-plugin-visualizer';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
@@ -251,6 +252,15 @@ export default defineConfig(({ mode }) => {
       solidPlugin({ dev: flags.isDev, ssr: false }),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
+      // Bundle 분석 (prod 빌드 시에만)
+      flags.isProd &&
+        visualizer({
+          filename: 'docs/bundle-analysis.html',
+          open: false,
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap', // or 'sunburst', 'network'
+        }),
     ].filter(Boolean) as Plugin[],
     define: {
       __DEV__: flags.isDev,
