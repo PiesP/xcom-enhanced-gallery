@@ -2,18 +2,61 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **상태**: Phase 37 완료 ✅
+> **상태**: Phase 38 완료 ✅
 
 ## 프로젝트 상태 스냅샷 (2025-10-13)
 
-- **빌드**: dev 732.38 KB / prod 320.53 KB ✅
+- **빌드**: dev 732.38 KB / prod 321.29 KB ⚠️ (예산 초과 1.29 KB)
 - **테스트**: 672+ passing, 24 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (271 modules, 741 deps) ✅
-- **번들 예산**: 320.53 KB / 325 KB (4.47 KB 여유) ✅
+- **번들 예산**: 321.29 KB / 325 KB (3.71 KB 여유) ⚠️
 
 ## 최근 완료 Phase
+
+### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) ✅
+
+**목표**: 설정 모달이 Modal 모드에서 실제 뷰포트의 가로·세로 중앙에 고정되도록
+CSS flex 기반 레이아웃으로 개선.
+
+**브랜치**: feature/settings-modal-center
+
+**배경**:
+
+- Phase 36에서 CSS 클래스 적용 회귀를 해결했으나, CSS `transform` 기반 중앙
+  정렬은 뷰포트보다 모달이 크거나 높이가 변동될 때 상단/하단이 잘리는 문제가
+  있었다.
+- 사용자는 언제나 화면 중앙에서 설정 모달을 확인하길 원하며, 뷰포트 크기가
+  변해도 중앙 정렬이 유지돼야 한다.
+
+**구현 내용**:
+
+1. **CSS 모듈 개선** (`SettingsModal.module.css`):
+   - `:global(.settings-modal-backdrop)` 추가: `display: flex`,
+     `align-items: center`, `justify-content: center`
+   - 뷰포트 패딩 적용: `padding: var(--space-lg, 16px)`
+   - `.panel` width 제약:
+     `width: min(28em, calc(100vw - var(--space-lg, 16px) * 2))`
+   - `.center` 스타일 조정: `max-height`, `overflow-y: auto`, backdrop 내에서
+     `position: static`
+
+2. **테스트 강화** (`SettingsModal.positioning.test.tsx`):
+   - CSS 규칙 검증 테스트 3개 추가:
+     - backdrop flex 레이아웃 확인
+     - center 클래스 max-height/overflow 확인
+     - backdrop 내 center override (static positioning) 확인
+   - 기존 위치 테스트 유지 (7개 테스트 통과)
+
+**결과**:
+
+- ✅ 모달이 항상 뷰포트 중앙에 노출
+- ✅ 뷰포트 경계로부터 최소 16px 여백 유지
+- ✅ 창 크기 변경 시 자동 재배치 (CSS flex)
+- ✅ 기존 위치 옵션(`toolbar-below`, `top-right`, `bottom-sheet`) 동작 보존
+- ⚠️ 번들 크기 소폭 증가 (320.53 KB → 321.29 KB, +0.76 KB)
+
+**커밋**: `feat(settings): implement viewport-centered modal with CSS flex`
 
 ### Phase 37: Gallery 하드코딩 제거 및 PC 전용 정책 준수 (2025-10-13) ✅
 
