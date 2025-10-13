@@ -8,12 +8,12 @@
 
 ## 프로젝트 상태
 
-- **빌드**: dev 732.38 KB / prod 320.53 KB ✅
+- **빌드**: dev 733.19 KB / prod 321.60 KB ⚠️
 - **테스트**: 672+ passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (271 modules, 741 dependencies) ✅
-- **번들 예산**: 320.53 KB / 325 KB (4.47 KB 여유) ✅
+- **번들 예산**: 321.60 KB / 325 KB (3.40 KB 여유) ⚠️ (예산 상향 검토 필요)
 
 ## 참고 문서
 
@@ -25,6 +25,25 @@
 ---
 
 ## 최근 완료 작업
+
+### Phase 39 Step 1: 번들 크기 최적화 시도 (2025-10-13) ⚠️ 부분 성공
+
+SettingsModal lazy loading 적용했으나 예상 효과 미달.
+
+**결과**:
+
+- Lazy loading 인프라 구축 완료
+- 번들 크기: 321.29 KB → 321.60 KB (+0.31 KB) - 목표 미달
+- 원인: Solid.js lazy() 오버헤드 > 절감 효과
+- 학습: 작은 컴포넌트(<20 KB)는 lazy loading 부적합
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
+
+### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) ✅
+
+CSS flex 기반 backdrop으로 뷰포트 중앙 정렬 개선.
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 ### Phase 37: Gallery 하드코딩 제거 및 PC 전용 정책 준수 (2025-10-13) ✅
 
