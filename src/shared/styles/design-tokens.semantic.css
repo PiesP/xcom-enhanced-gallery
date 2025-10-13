@@ -12,7 +12,8 @@
 
   /* 갤러리 및 툴바 배경 토큰 */
   --xeg-gallery-bg: var(--color-bg-primary);
-  --xeg-bg-toolbar: var(--color-bg-surface);
+  /* Fallback: light mode uses white background */
+  --xeg-bg-toolbar: var(--color-bg-surface, #ffffff);
 
   /* Text Colors - Semantic Roles */
   --color-text-primary: var(--color-base-black);
@@ -177,7 +178,8 @@
 
   /* 다크 테마 갤러리 배경 */
   --xeg-gallery-bg: var(--color-gray-900);
-  --xeg-bg-toolbar: var(--color-gray-800);
+  /* Fallback: dark mode uses gray-700 as toolbar background */
+  --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
 
   /* 다크 모드 컴포넌트 토큰 - 시인성 개선 */
   --xeg-comp-toolbar-bg: rgba(30, 30, 30, 0.95);
@@ -195,7 +197,8 @@
 
     /* prefers-color-scheme 다크 모드 갤러리 배경 - 시인성 개선 */
     --xeg-gallery-bg: var(--color-gray-900);
-    --xeg-bg-toolbar: var(--color-gray-800);
+    /* Fallback: prefers-color-scheme dark uses gray-700 */
+    --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
     --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
     /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
   }
