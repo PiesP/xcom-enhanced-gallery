@@ -256,20 +256,12 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
   const onSettingsClick = (event: Event | MouseEvent) => {
     event.stopPropagation();
-    const wasExpanded = isSettingsExpanded();
     toggleSettingsExpanded();
     props.onOpenSettings?.();
 
-    // Phase 47: Focus management - 확장 시 첫 컨트롤로 포커스 이동
-    if (!wasExpanded) {
-      solid.createEffect(() => {
-        const panel = document.querySelector('[data-gallery-element="settings-panel"]');
-        const firstControl = panel?.querySelector('select') as HTMLSelectElement;
-        if (firstControl) {
-          setTimeout(() => firstControl.focus(), 50);
-        }
-      });
-    }
+    // Phase 47 수정: 자동 포커스 제거 - 사용자가 직접 컨트롤 선택하도록 함
+    // 이유: select에 자동 포커스 시 드롭다운이 즉시 열리고,
+    //       사용자 클릭 시 토글되어 닫히는 문제 발생
   };
 
   // Phase 47: Keyboard navigation - Escape 키 핸들러
