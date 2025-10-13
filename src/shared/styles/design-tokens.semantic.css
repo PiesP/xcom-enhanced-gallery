@@ -232,6 +232,29 @@
   --xeg-comp-toolbar-radius: var(--xeg-radius-lg);
   --xeg-comp-toolbar-z-index: var(--xeg-layer-toolbar);
 
+  /* Toolbar Counter Tokens */
+  --xeg-text-counter: var(--color-text-primary);
+  --xeg-bg-counter: var(--color-bg-elevated);
+  --xeg-border-counter: var(--color-border-default);
+
+  /* Settings Component Tokens */
+  /* Layout */
+  --xeg-settings-gap: var(--space-md);
+  --xeg-settings-padding: var(--space-md);
+  --xeg-settings-control-gap: var(--space-sm);
+
+  /* Typography */
+  --xeg-settings-label-font-size: var(--font-size-sm);
+  --xeg-settings-label-font-weight: var(--font-weight-medium);
+  --xeg-settings-select-font-size: var(--font-size-sm);
+
+  /* Input */
+  --xeg-settings-select-padding: var(--space-sm) var(--space-md);
+  --xeg-settings-select-bg: var(--color-bg-secondary);
+  --xeg-settings-select-border: var(--color-border-default);
+  --xeg-settings-select-border-hover: var(--color-primary);
+  --xeg-settings-select-focus-ring: 0 0 0 3px var(--color-primary-alpha-20);
+
   /* Modal Component Tokens */
   /* NOTE: Modal component tokens now defer to semantic tokens to avoid
     cascading alias overwrite issues that previously caused dark mode
