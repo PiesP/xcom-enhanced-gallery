@@ -18,6 +18,7 @@ import {
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/event-manager';
 import { ComponentStandards } from '../StandardProps';
+import { logger } from '../../../logging/logger';
 import { IconButton } from '../Button/IconButton';
 import {
   ChevronLeft,
@@ -94,6 +95,118 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const isSettingsExpanded = createMemo(() => getToolbarExpandableState().isSettingsExpanded);
 
   let toolbarRef: HTMLDivElement | undefined;
+  let settingsPanelRef: HTMLDivElement | undefined;
+  let settingsButtonRef: HTMLButtonElement | undefined;
+
+  // Phase 48.5-48.9: 외부 클릭 감지 - 설정 패널이 확장되었을 때만 리스너 등록
+  createEffect(() => {
+    const expanded = isSettingsExpanded();
+
+    logger.debug('[Toolbar] Settings panel state changed:', { expanded });
+
+    if (expanded) {
+      logger.debug('[Toolbar] Registering outside click listener');
+
+      // Phase 48.9: Select 활성 상태 추적
+      let isSelectActive = false;
+      let selectChangeTimeout: number | undefined;
+
+      const handleSelectFocus = () => {
+        isSelectActive = true;
+        logger.debug('[Toolbar] Select focused - ignoring outside clicks');
+      };
+
+      const handleSelectBlur = () => {
+        // Blur 후 약간의 딜레이를 주어 change 이벤트가 완료되도록 함
+        setTimeout(() => {
+          isSelectActive = false;
+          logger.debug('[Toolbar] Select blurred - outside clicks enabled');
+        }, 100);
+      };
+
+      const handleSelectChange = () => {
+        // Change 이벤트 발생 시 300ms 동안 외부 클릭 무시
+        clearTimeout(selectChangeTimeout);
+        isSelectActive = true;
+        logger.debug('[Toolbar] Select changed - ignoring outside clicks for 300ms');
+        selectChangeTimeout = setTimeout(() => {
+          isSelectActive = false;
+          logger.debug('[Toolbar] Select change timeout - outside clicks enabled');
+        }, 300) as unknown as number;
+      };
+
+      const handleOutsideClick = (event: MouseEvent) => {
+        const target = event.target as Node;
+
+        logger.debug('[Toolbar] Outside click detected:', {
+          target: (target as HTMLElement).tagName,
+          targetElement: target,
+          isSelectActive,
+          hasSettingsButton: !!settingsButtonRef,
+          hasSettingsPanel: !!settingsPanelRef,
+        });
+
+        // Phase 48.9: Select가 활성 상태면 외부 클릭 무시
+        if (isSelectActive) {
+          logger.debug('[Toolbar] Outside click ignored - select is active');
+          return;
+        }
+
+        // 설정 버튼이나 패널 내부 클릭은 무시
+        // SVG 자식 요소도 제대로 감지하기 위해 closest() 사용
+        const targetElement = target as HTMLElement;
+        const clickedSettingsButton = targetElement.closest?.('#settings-button');
+        const isInsideButton = settingsButtonRef?.contains(target) || !!clickedSettingsButton;
+        const isInsidePanel = settingsPanelRef?.contains(target);
+
+        if (isInsideButton || isInsidePanel) {
+          logger.debug('[Toolbar] Outside click ignored - click inside button or panel', {
+            isInsideButton,
+            isInsidePanel,
+            clickedSettingsButton: !!clickedSettingsButton,
+          });
+          return;
+        }
+
+        // Phase 48.6: select 요소나 그 자식 클릭은 무시
+        // (브라우저가 생성하는 드롭다운 옵션은 DOM 외부에 있을 수 있음)
+        let currentNode = target as HTMLElement | null;
+        while (currentNode) {
+          if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
+            logger.debug('[Toolbar] Outside click ignored - click on select/option');
+            return;
+          }
+          currentNode = currentNode.parentElement;
+        }
+
+        // 외부 클릭 시 패널 닫기
+        logger.debug('[Toolbar] Closing settings panel - outside click confirmed');
+        setSettingsExpanded(false);
+      };
+
+      // Select 요소에 이벤트 리스너 등록
+      const panel = settingsPanelRef;
+      const selects = panel?.querySelectorAll('select') || [];
+      selects.forEach(select => {
+        select.addEventListener('focus', handleSelectFocus);
+        select.addEventListener('blur', handleSelectBlur);
+        select.addEventListener('change', handleSelectChange);
+      });
+
+      // bubble phase에서 이벤트 처리 (패널 내부의 stopPropagation이 먼저 작동하도록)
+      document.addEventListener('mousedown', handleOutsideClick, false);
+
+      onCleanup(() => {
+        clearTimeout(selectChangeTimeout);
+        document.removeEventListener('mousedown', handleOutsideClick, false);
+        selects.forEach(select => {
+          select.removeEventListener('focus', handleSelectFocus);
+          select.removeEventListener('blur', handleSelectBlur);
+          select.removeEventListener('change', handleSelectChange);
+        });
+      });
+    }
+  });
 
   const toolbarClass = createMemo(() =>
     ComponentStandards.createClassName(
@@ -254,14 +367,46 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const onDownloadAll = createActionHandler(props.onDownloadAll);
   const onCloseClick = createActionHandler(props.onClose);
 
-  const onSettingsClick = (event: Event | MouseEvent) => {
-    event.stopPropagation();
-    toggleSettingsExpanded();
-    props.onOpenSettings?.();
+  const onSettingsClick = (event: MouseEvent) => {
+    logger.debug('[Toolbar] Settings button clicked', {
+      wasExpanded: isSettingsExpanded(),
+      eventType: event.type,
+      timeStamp: event.timeStamp,
+    });
 
-    // Phase 47 수정: 자동 포커스 제거 - 사용자가 직접 컨트롤 선택하도록 함
-    // 이유: select에 자동 포커스 시 드롭다운이 즉시 열리고,
-    //       사용자 클릭 시 토글되어 닫히는 문제 발생
+    event.stopImmediatePropagation();
+    const wasExpanded = isSettingsExpanded();
+
+    // Phase 48.9: Toggle only - props.onOpenSettings는 제거 (이중 토글 방지)
+    toggleSettingsExpanded();
+
+    logger.debug('[Toolbar] Settings toggled', {
+      wasExpanded,
+      nowExpanded: isSettingsExpanded(),
+    });
+
+    // Phase 47→48.7: Focus management 수정 - createEffect 대신 직접 DOM 조작
+    if (!wasExpanded) {
+      // 패널이 열릴 때만 포커스 이동 (한 번만 실행)
+      setTimeout(() => {
+        const panel = document.querySelector('[data-gallery-element="settings-panel"]');
+        const firstControl = panel?.querySelector('select') as HTMLSelectElement;
+        if (firstControl) {
+          logger.debug('[Toolbar] Focusing first control in settings panel');
+          firstControl.focus();
+        }
+      }, 50);
+    }
+  };
+
+  // Phase Fix: 설정 버튼의 mousedown 이벤트 핸들러 - 외부 클릭 감지기에 전파되지 않도록 차단
+  const onSettingsMouseDown = (event: MouseEvent) => {
+    logger.debug('[Toolbar] Settings button mousedown', {
+      eventType: event.type,
+      timeStamp: event.timeStamp,
+      willStopPropagation: true,
+    });
+    event.stopPropagation();
   };
 
   // Phase 47: Keyboard navigation - Escape 키 핸들러
@@ -271,15 +416,15 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       event.stopPropagation();
       setSettingsExpanded(false);
 
-      // 설정 버튼으로 포커스 복원
-      solid.createEffect(() => {
+      // Phase 47→48.7: 설정 버튼으로 포커스 복원 - createEffect 대신 직접 DOM 조작
+      setTimeout(() => {
         const settingsButton = document.querySelector(
           '[data-gallery-element="settings"]'
         ) as HTMLButtonElement;
         if (settingsButton) {
-          setTimeout(() => settingsButton.focus(), 50);
+          settingsButton.focus();
         }
-      });
+      }, 50);
       return; // Escape 처리 완료
     }
 
@@ -430,6 +575,9 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
           {typeof props.onOpenSettings === 'function' && (
             <IconButton
+              ref={element => {
+                settingsButtonRef = element ?? undefined;
+              }}
               id='settings-button'
               size='toolbar'
               aria-label='설정 열기'
@@ -437,6 +585,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
               aria-controls='toolbar-settings-panel'
               title='설정'
               disabled={props.disabled}
+              onMouseDown={onSettingsMouseDown}
               onClick={onSettingsClick}
               data-gallery-element='settings'
               data-disabled={props.disabled}
@@ -462,9 +611,16 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
       {/* Settings Panel */}
       <div
+        ref={element => {
+          settingsPanelRef = element ?? undefined;
+        }}
         id='toolbar-settings-panel'
         class={styles.settingsPanel}
         data-expanded={isSettingsExpanded()}
+        onMouseDown={e => {
+          // Phase 48.5: 패널 내부 클릭은 전파하지 않음
+          e.stopPropagation();
+        }}
         role='region'
         aria-label='설정 패널'
         aria-labelledby='settings-button'
@@ -474,13 +630,17 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
           event.stopPropagation();
         }}
       >
-        <SettingsControls
-          currentTheme={currentTheme()}
-          currentLanguage={currentLanguage()}
-          onThemeChange={handleThemeChange}
-          onLanguageChange={handleLanguageChange}
-          compact={true}
-        />
+        {/* Phase 48.8: Show로 감싸서 패널이 열렸을 때만 렌더링 */}
+        <solid.Show when={isSettingsExpanded()}>
+          <SettingsControls
+            currentTheme={currentTheme()}
+            currentLanguage={currentLanguage()}
+            onThemeChange={handleThemeChange}
+            onLanguageChange={handleLanguageChange}
+            compact={true}
+            data-testid='settings-controls'
+          />
+        </solid.Show>
       </div>
     </div>
   );

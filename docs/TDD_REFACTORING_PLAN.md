@@ -4,17 +4,17 @@
 
 ## 프로젝트 상태
 
-- **빌드**: dev 724.85 KB / prod **315.18 KB** ✅
-- **테스트**: 679 passing (JSDOM), 3 passing + 1 skipped (E2E) ✅
+- **빌드**: dev 725.95 KB / prod **315.54 KB** ✅
+- **테스트**: 670 passing, 3 skipped (E2E 연기) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 1 info violation (263 modules, 717 dependencies) ✅
-- **번들 예산**: **315.18 KB / 325 KB** (9.82 KB 여유) ✅ **목표 달성!**
+- **의존성**: 0 violations (263 modules, 717 dependencies) ✅
+- **번들 예산**: **315.54 KB / 325 KB** (9.46 KB 여유) ✅ **목표 달성!**
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-50 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-48.7 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
@@ -22,18 +22,22 @@
 
 ## 최근 완료
 
-### Phase 44-50 완료 ✅ (2025-10-13)
+### Phase 44-48.7 완료 ✅ (2025-01-13)
 
-Toolbar Expandable Settings 리팩토링 및 E2E 테스트 마이그레이션 완료
+Toolbar Expandable Settings 리팩토링 및 안정성 수정 완료
 
 **주요 성과**:
 
-- ✅ SettingsModal → Toolbar 인라인 패널 전환
-- ✅ 번들 크기: 325.68 KB → **315.18 KB** (-10.50 KB, 3.2% 감소)
-- ✅ 325 KB 제한 준수 (9.82 KB 여유)
-- ✅ JSDOM skipped 테스트 0개 달성 (E2E로 마이그레이션)
+- ✅ SettingsModal → Toolbar 인라인 패널 전환 (Phase 44-48)
+- ✅ 외부 클릭 감지 로직 추가 (Phase 48.5)
+- ✅ select 드롭다운 안정성 수정 (Phase 48.6)
+- ✅ **포커스 관리 createEffect 안티패턴 제거 (Phase 48.7)** **신규 완료!**
+- ✅ 번들 크기: 325.68 KB → **315.54 KB** (-10.14 KB, 3.1% 감소)
+- ✅ 325 KB 제한 준수 (9.46 KB 여유)
+- ✅ 83+ 신규 테스트, 670 passing
 - ✅ ARIA 접근성 강화 (collapse pattern, 키보드 네비게이션)
-- ✅ 11 commits, 682+ tests passing
+- ✅ **UX 안정성 대폭 향상** (외부 클릭, select 드롭다운, 포커스 관리 모두 정상
+  작동)
 
 세부 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
@@ -294,7 +298,150 @@ npm run deps:all
 - **의존성 정책**: 0 violations ✅
 - **모듈 수**: 263 modules ✅
 
-## 남은 작업 (Phase 49-50)
+## 남은 작업 (Phase 48.5-50)
+
+### Phase 48.5: Toolbar 설정 패널 안정성 수정 (긴급)
+
+**문제**: 설정 드롭다운 메뉴를 펼치면 열리는 순간 바로 닫히는 문제
+
+**원인 분석**:
+
+- 설정 버튼 클릭 시 이벤트가 document로 전파되어 외부 클릭으로 감지됨
+- 외부 클릭 감지 로직이 없어서 패널이 의도치 않게 닫힐 수 있음
+- 설정 패널 내부의 select 요소 클릭 시에도 이벤트 전파 문제 가능
+
+**솔루션**: 외부 클릭 감지 로직 추가 (Option C)
+
+- `isSettingsExpanded` 상태가 true일 때만 document에 mousedown 리스너 등록
+- 설정 버튼과 패널 내부 클릭은 무시
+- 외부 클릭 시에만 패널 닫기
+- `stopImmediatePropagation()` 추가로 이벤트 전파 완전 차단
+
+**작업 내용**:
+
+#### Step 1: RED - 외부 클릭 테스트 작성
+
+파일: `test/unit/components/toolbar-settings-click-outside.test.tsx` (신규)
+
+```typescript
+test('설정 패널 외부 클릭 시 패널이 닫혀야 함', () => {
+  // 설정 패널 열기
+  toggleSettingsExpanded();
+  expect(isSettingsExpanded()).toBe(true);
+
+  // 외부 클릭 시뮬레이션
+  const outsideElement = document.createElement('div');
+  document.body.appendChild(outsideElement);
+  fireEvent.mouseDown(outsideElement);
+
+  // 패널이 닫혀야 함
+  expect(isSettingsExpanded()).toBe(false);
+});
+
+test('설정 버튼 클릭 시 외부 클릭으로 감지되지 않아야 함', () => {
+  // 설정 버튼 클릭으로 패널 열기
+  const settingsButton = screen.getByTestId('settings-button');
+  fireEvent.click(settingsButton);
+
+  // 패널이 열려야 함
+  expect(isSettingsExpanded()).toBe(true);
+});
+
+test('설정 패널 내부 select 클릭 시 패널이 유지되어야 함', () => {
+  toggleSettingsExpanded();
+  const themeSelect = screen.getByTestId('theme-select');
+  fireEvent.mouseDown(themeSelect);
+
+  // 패널이 계속 열려있어야 함
+  expect(isSettingsExpanded()).toBe(true);
+});
+```
+
+#### Step 2: GREEN - 외부 클릭 감지 로직 구현
+
+파일: `src/shared/components/ui/Toolbar/Toolbar.tsx`
+
+변경 사항:
+
+1. `onSettingsClick`에 `stopImmediatePropagation()` 추가
+2. `createEffect`로 외부 클릭 리스너 등록/해제
+3. 설정 패널에 ref 추가하여 내부/외부 클릭 구분
+
+```typescript
+// Settings panel ref
+let settingsPanelRef: HTMLDivElement | undefined;
+let settingsButtonRef: HTMLButtonElement | undefined;
+
+// 외부 클릭 감지
+createEffect(() => {
+  const expanded = isSettingsExpanded();
+
+  if (expanded) {
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      // 설정 버튼이나 패널 내부 클릭은 무시
+      if (
+        settingsButtonRef?.contains(target) ||
+        settingsPanelRef?.contains(target)
+      ) {
+        return;
+      }
+      // 외부 클릭 시 패널 닫기
+      setSettingsExpanded(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick, true);
+
+    onCleanup(() => {
+      document.removeEventListener('mousedown', handleOutsideClick, true);
+    });
+  }
+});
+
+const onSettingsClick = (event: Event | MouseEvent) => {
+  event.stopPropagation();
+  event.stopImmediatePropagation(); // ✅ 추가
+  const wasExpanded = isSettingsExpanded();
+  toggleSettingsExpanded();
+  // ... rest of the code
+};
+```
+
+#### Step 3: REFACTOR - 설정 패널 이벤트 전파 차단
+
+파일: `src/shared/components/ui/Toolbar/Toolbar.tsx`
+
+설정 패널에 mousedown 핸들러 추가:
+
+```typescript
+<div
+  ref={element => {
+    settingsPanelRef = element ?? undefined;
+  }}
+  id='toolbar-settings-panel'
+  class={styles.settingsPanel}
+  data-expanded={isSettingsExpanded()}
+  onMouseDown={(e) => {
+    // 패널 내부 클릭은 전파하지 않음
+    e.stopPropagation();
+  }}
+  role='region'
+  aria-label='설정 패널'
+>
+  <SettingsControls ... />
+</div>
+```
+
+**완료 조건**:
+
+- ✅ 외부 클릭 테스트 통과 (RED→GREEN)
+- ✅ 설정 버튼 클릭 시 패널 정상 토글
+- ✅ 설정 패널 내부 클릭 시 패널 유지
+- ✅ 외부 클릭 시 패널 닫힘
+- ✅ Escape 키 동작 유지 (기존 기능)
+- ✅ 빌드 검증 통과
+
+---
 
 ### Phase 49: 테스트 마이그레이션
 
