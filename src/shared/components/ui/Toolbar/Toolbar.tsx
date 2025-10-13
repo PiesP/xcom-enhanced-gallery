@@ -97,17 +97,29 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   let settingsPanelRef: HTMLDivElement | undefined;
   let settingsButtonRef: HTMLButtonElement | undefined;
 
-  // Phase 48.5: 외부 클릭 감지 - 설정 패널이 확장되었을 때만 리스너 등록
+  // Phase 48.5-48.6: 외부 클릭 감지 - 설정 패널이 확장되었을 때만 리스너 등록
   createEffect(() => {
     const expanded = isSettingsExpanded();
 
     if (expanded) {
       const handleOutsideClick = (event: MouseEvent) => {
         const target = event.target as Node;
+
         // 설정 버튼이나 패널 내부 클릭은 무시
         if (settingsButtonRef?.contains(target) || settingsPanelRef?.contains(target)) {
           return;
         }
+
+        // Phase 48.6: select 요소나 그 자식 클릭은 무시
+        // (브라우저가 생성하는 드롭다운 옵션은 DOM 외부에 있을 수 있음)
+        let currentNode = target as HTMLElement | null;
+        while (currentNode) {
+          if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
+            return;
+          }
+          currentNode = currentNode.parentElement;
+        }
+
         // 외부 클릭 시 패널 닫기
         setSettingsExpanded(false);
       };

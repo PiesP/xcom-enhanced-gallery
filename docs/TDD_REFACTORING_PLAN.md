@@ -4,17 +4,17 @@
 
 ## 프로젝트 상태
 
-- **빌드**: dev 734.31 KB / prod **315.18 KB** ✅
-- **테스트**: 669 passing, 2 skipped (E2E 연기) ✅
+- **빌드**: dev 725.78 KB / prod **315.51 KB** ✅
+- **테스트**: 667 passing, 3 skipped (E2E 연기) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (263 modules, 717 dependencies) ✅
-- **번들 예산**: **315.18 KB / 325 KB** (9.82 KB 여유) ✅ **목표 달성!**
+- **번들 예산**: **315.51 KB / 325 KB** (9.49 KB 여유) ✅ **목표 달성!**
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-48 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-48.5 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
@@ -22,17 +22,19 @@
 
 ## 현재 상태
 
-### Phase 44-48 완료 ✅ (2025-10-13)
+### Phase 44-48.5 완료 ✅ (2025-10-13)
 
-Toolbar Expandable Settings 리팩토링 완료
+Toolbar Expandable Settings 리팩토링 및 안정성 수정 완료
 
 **주요 성과**:
 
-- ✅ SettingsModal → Toolbar 인라인 패널 전환
-- ✅ 번들 크기: 325.68 KB → **315.18 KB** (-10.50 KB, 3.2% 감소)
-- ✅ 325 KB 제한 준수 (9.82 KB 여유)
-- ✅ 83+ 신규 테스트, 669 passing
+- ✅ SettingsModal → Toolbar 인라인 패널 전환 (Phase 44-48)
+- ✅ 외부 클릭 감지 로직 추가 (Phase 48.5) **신규 완료!**
+- ✅ 번들 크기: 325.68 KB → **315.51 KB** (-10.17 KB, 3.1% 감소)
+- ✅ 325 KB 제한 준수 (9.49 KB 여유)
+- ✅ 83+ 신규 테스트, 667 passing
 - ✅ ARIA 접근성 강화 (collapse pattern, 키보드 네비게이션)
+- ✅ UX 안정성 향상 (외부 클릭 시 패널 닫힘)
 
 세부 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
