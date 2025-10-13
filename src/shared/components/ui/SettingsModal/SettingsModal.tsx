@@ -384,7 +384,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
     >
       <div
         ref={element => setContainerElement(element ?? null)}
-        class='settings-modal-content'
+        class={containerClass}
         data-position={position()}
         role='document'
         style={
