@@ -1,17 +1,15 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-12
+> **최종 업데이트**: 2025-10-13
 >
 > **브랜치**: feature/phase-33-step-2-events
 >
-> **상태**: Phase 33 Step 2C 완료 ✅
+> **상태**: 테스트 수정 완료, Phase 33 Step 3 준비 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 824.26 KB / prod 318.18 KB ✅
-- **테스트**: 643/659 passing (14 skipped, 2 failing) ⚠️
-  - Failing: toolbar-effect-cleanup.test.tsx (함수명 변경),
-    SettingsModal.test.tsx (Escape 키 이슈)
+- **빌드**: dev 726.60 KB / prod 318.04 KB ✅
+- **테스트**: 652/677 passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (269 modules, 736 dependencies) ✅
@@ -28,72 +26,61 @@
 
 ## 활성 작업
 
-### Phase 33 Step 2C: Service Layer Bundle Optimization ✅
+### Phase 33 Step 3: 코드 품질 개선 및 최적화
 
-**상태**: **완료** �
+**상태**: **계획** 📋
 
-**목표**: 318.73 KB → 301 KB 이하 (17.73 KB 절감)
+**목표**:
 
-**최종 결과**: **318.18 KB** ✅ (301 KB 이하 달성)
+1. 번들 크기 추가 최적화 (318.04 KB → 301 KB 이하)
+2. 코드 구조 및 가독성 개선
+3. 성능 최적화 기회 탐색
 
-**소스 코드 절감**: 613 lines (16.86 KB) → 정확히 목표 도달
+#### 번들 크기 분석 (현재)
 
-#### 완료 항목
+**프로덕션 번들**: 318.04 KB (목표: 301 KB 이하, **17 KB 초과**)
 
-**3. twitter-video-extractor.ts** ✅
+**주요 크기 기여 파일들** (추정):
 
-- 641 lines (18.50 KB) → **428 lines (15.16 KB)**
-- **절감**: 213 lines, 3.34 KB
+1. `Toolbar.tsx` - 고도로 최적화됨, 추가 절감 어려움
+2. `SettingsModal.tsx` - 중복 핸들러 제거 완료
+3. `event-manager.ts` - 이벤트 관리 로직
+4. Solid.js 런타임 및 반응성 시스템
 
-**2. bulk-download-service.ts** ✅
+#### 최적화 전략 옵션
 
-- 459 lines (16.01 KB) → **359 lines (13.29 KB)**
-- **절감**: 100 lines, 2.72 KB
+##### Option A: Tree-shaking 개선
 
-**1. media-service.ts** ✅
+- 사용하지 않는 export 제거
+- 동적 import 활용 (Settings, KeyboardHelp 등)
+- 장점: 실질적인 번들 크기 감소
+- 단점: 코드 분할로 인한 복잡도 증가
 
-- 975 lines (28.98 KB) → **613 lines (20.30 KB)**
-- **절감**: 362 lines, 8.68 KB
+##### Option B: 미니파이케이션 설정 강화
 
-**총 절감**: 675 lines, 14.74 KB (소스 코드)
+- Vite/Rollup 설정 조정
+- Terser 옵션 최적화
+- 장점: 설정만 변경
+- 단점: 디버깅 어려움, 효과 제한적
 
-#### 주요 최적화 기법
+##### Option C: 추가 코드 리팩토링 (권장)
 
-1. **JSDoc 주석 최소화**: 파일 헤더, 메서드, 타입 설명 제거
-2. **섹션 주석 제거**: "=====" 구분선, 설명 블록 제거
-3. **인라인 주석 정리**: Phase 설명, 통합 설명 제거
-4. **공백 라인 정리**: 불필요한 빈 줄 제거
-5. **주석 대신 코드**: 명확한 함수/변수명으로 의도 표현
+- 중복 로직 추출
+- 인라인 함수 최소화
+- 상수 통합
+- 장점: 코드 품질과 번들 크기 동시 개선
+- 단점: 시간 소요
 
-#### 번들 크기 영향
+#### 다음 단계 (우선순위 순)
 
-- 프로덕션 번들: 318.73 KB → **318.18 KB** (0.55 KB 절감)
-- 소스 코드 대폭 감소 (675 lines), 번들 크기는 소폭 감소
-- 이유: Vite minifier가 이미 대부분 주석 제거
-- 결과: 유지보수성 대폭 향상, 번들 목표 달성
+1. **번들 분석 리포트 재검토** - `docs/bundle-analysis.html` 상세 분석
+2. **Tree-shaking 개선** - 사용하지 않는 export 제거
+3. **코드 리팩토링** - 중복 로직 제거 및 구조 개선
+4. **E2E 테스트 실행** - 런타임 동작 검증
 
 ---
 
-## 다음 작업
-
-Phase 33의 나머지 단계 진행 예정 3. **REFACTOR**: 코드 품질 개선 및 추가
-최적화 4. **검증**: 기존 테스트 스위트 통과 확인
-
----
-
-## 기술 부채 및 알려진 이슈
-
-### 테스트 실패 (기존 이슈, Step 2C와 무관)
-
-1. **toolbar-effect-cleanup.test.tsx**: `detectBackgroundBrightness` 함수명이
-   `evaluateHighContrast`로 변경됨
-   - 영향도: 낮음 (테스트 업데이트 필요)
-
-2. **SettingsModal.test.tsx**: Escape 키 이벤트 핸들러 중복 호출 (expected 1,
-   got 2)
-   - 영향도: 중간 (이벤트 버블링 이슈 가능성)
-
-### 런타임 검증 필요
+## 런타임 검증 필요
 
 - [ ] x.com 환경에서 갤러리 열기
 - [ ] 하이 콘트라스트 모드 자동 감지 확인
@@ -117,4 +104,4 @@ Phase 33의 나머지 단계 진행 예정 3. **REFACTOR**: 코드 품질 개선
 
 ---
 
-**다음 작업**: Phase 33 Step 2C 서비스 레이어 최적화 시작
+**다음 작업**: Phase 33 Step 3 - 번들 분석 및 최적화 전략 수립
