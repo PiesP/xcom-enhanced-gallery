@@ -125,10 +125,10 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
     });
 
     it('ThemeService가 활성화되고 설정 모달과 연동되어야 함', () => {
-      // RefactoredSettingsModal.tsx에서 ThemeService가 import되고 사용되는지 확인
+      // SettingsModal.tsx에서 ThemeService가 import되고 사용되는지 확인
       const settingsModalPath = resolve(
         process.cwd(),
-        'src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx'
+        'src/shared/components/ui/SettingsModal/SettingsModal.tsx'
       );
 
       if (existsSync(settingsModalPath)) {

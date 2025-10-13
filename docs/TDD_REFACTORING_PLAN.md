@@ -117,6 +117,44 @@ Gallery.module.css의 50+ 하드코딩된 px 값을 디자인 토큰으로 교�
 
 ---
 
+## 최근 완료 작업 (추가)
+
+### Phase 43: Settings Modal 레거시 코드 정리 (2025-10-13) ✅
+
+**브랜치**: `refactor/cleanup-settings-legacy`
+
+**목표**: Phase 39에서 ToolbarWithSettings로 통합된 이후 남아있는 레거시 파일 및
+테스트 제거
+
+**작업 내용**:
+
+#### 제거된 레거시 소스 파일:
+
+- `src/shared/components/ui/SettingsModal/UnifiedSettingsModal.tsx`
+- `src/shared/components/ui/SettingsModal/RefactoredSettingsModal.tsx`
+- `src/shared/components/ui/SettingsModal/HeadlessSettingsModal.tsx`
+
+#### 제거된 레거시 테스트 파일:
+
+- `test/components/settings-modal-unification.test.ts`
+- `test/features/settings/headless-settings-modal.test.ts`
+
+#### 수정된 테스트 파일:
+
+- `test/refactoring/theme-sync-simple.test.ts` - RefactoredSettingsModal →
+  SettingsModal 참조 변경
+- `test/phase-5-deprecated-removal.test.ts` - 레거시 경로 제거
+
+**결과**:
+
+- 테스트: 689 passing (변화 없음) ✅
+- 번들 크기: 322.07 KB (변화 없음, 레거시 파일이 번들에 포함되지 않았음 확인) ✅
+- 코드베이스 정리: -3 소스 파일, -2 테스트 파일 ✅
+
+**날짜**: 2025-10-13
+
+---
+
 ## 단기 개선 후보 (백로그)
 
 ### 접근성 개선

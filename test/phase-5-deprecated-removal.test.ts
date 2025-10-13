@@ -23,8 +23,6 @@ describe('Phase 5: Deprecated 제거 & 안전망 (RED)', () => {
     const componentPaths = [
       'features/gallery/components/Toolbar.tsx',
       'features/settings/components/SettingsModal.tsx',
-      'features/settings/components/EnhancedSettingsModal.tsx',
-      'features/settings/components/RefactoredSettingsModal.tsx',
       'shared/components/ui/Button/Button.tsx',
       'shared/components/ui/ToolbarShell/ToolbarShell.tsx',
       'shared/components/ui/ModalShell/ModalShell.tsx',
