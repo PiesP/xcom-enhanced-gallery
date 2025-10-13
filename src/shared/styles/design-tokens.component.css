@@ -95,6 +95,30 @@
   --xeg-icon-size-sm: var(--size-icon-sm);
   --xeg-icon-size-md: var(--size-icon-md);
   --xeg-icon-size-lg: var(--size-icon-lg);
+
+  /* Button Size Variants */
+  --xeg-button-size-sm: var(--size-button-sm);
+  --xeg-button-size-md: var(--size-button-md);
+  --xeg-button-size-lg: var(--size-button-lg);
+
+  /* Text Size Variants */
+  --xeg-text-2xs: var(--font-size-2xs);
+  --xeg-text-xs: var(--font-size-xs);
+  --xeg-text-sm: var(--font-size-sm);
+  --xeg-text-base: var(--font-size-base);
+  --xeg-text-md: var(--font-size-md);
+  --xeg-text-lg: var(--font-size-lg);
+  --xeg-text-xl: var(--font-size-xl);
+  --xeg-text-2xl: var(--font-size-2xl);
+  --xeg-text-3xl: var(--font-size-3xl);
+
+  /* Spacing Variants */
+  --xeg-spacing-xs: var(--space-xs);
+  --xeg-spacing-sm: var(--space-sm);
+  --xeg-spacing-md: var(--space-md);
+  --xeg-spacing-lg: var(--space-lg);
+  --xeg-spacing-xl: var(--space-xl);
+  --xeg-spacing-2xl: var(--space-2xl);
 }
 
 /* ======================================= */

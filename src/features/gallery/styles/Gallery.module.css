@@ -442,9 +442,9 @@
  */
 .loading {
   color: white;
-  font-size: 18px;
+  font-size: var(--xeg-text-xl);
   text-align: center;
-  padding: 20px;
+  padding: var(--xeg-spacing-lg);
 }
 
 /**
@@ -458,13 +458,13 @@
  */
 .loadingSpinner {
   display: inline-block;
-  width: 20px;
-  height: 20px;
+  width: var(--xeg-icon-size-md);
+  height: var(--xeg-icon-size-md);
   border: 2px solid var(--xeg-color-neutral-400);
   border-radius: var(--xeg-radius-full);
   border-top-color: var(--xeg-color-text-primary);
   animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  margin-right: 10px;
+  margin-right: var(--xeg-spacing-sm);
 }
 
 /**
@@ -488,9 +488,9 @@
  */
 .error {
   color: var(--xeg-color-error);
-  font-size: 18px;
+  font-size: var(--xeg-text-xl);
   text-align: center;
-  padding: 20px;
+  padding: var(--xeg-spacing-lg);
   background: var(--xeg-toolbar-bg);
   border-radius: var(--xeg-radius-lg);
   backdrop-filter: none;
@@ -510,12 +510,12 @@
  */
 .controls {
   position: absolute;
-  bottom: 20px;
+  bottom: var(--xeg-spacing-lg);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--xeg-spacing-md);
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-md);
   background: var(--xeg-toolbar-bg);
   border: 1px solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-pill);
@@ -555,9 +555,9 @@
   border: 1px solid var(--xeg-button-border);
   /* Interaction element radius policy: md */
   border-radius: var(--xeg-radius-md);
-  padding: 8px 12px;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
   color: var(--xeg-button-text);
-  font-size: 14px;
+  font-size: var(--xeg-text-sm);
   cursor: pointer;
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -606,8 +606,8 @@
 .downloadButton {
   /* controlButton 기본 속성 포함 (CSS Modules composes 미사용) */
   border-radius: var(--xeg-radius-md);
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
   cursor: pointer;
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -641,8 +641,8 @@
 .downloadAllButton {
   /* controlButton 기본 속성 포함 (CSS Modules composes 미사용) */
   border-radius: var(--xeg-radius-md);
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
   cursor: pointer;
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -675,92 +675,10 @@
  */
 .counter {
   color: var(--xeg-counter-text);
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
   white-space: nowrap;
   opacity: 0.8;
-}
-
-/**
- * 반응형 디자인 - 태블릿 크기 (768px 이하)
- * 중간 크기 화면에서의 레이아웃 조정을 제공합니다.
- *
- * Adjustments:
- * - 버튼 크기 축소
- * - 여백 조정
- * - 폰트 크기 축소
- * - 미디어 컨테이너 크기 조정
- */
-@media (max-width: 768px) {
-  .closeButton {
-    top: 10px;
-    right: 10px;
-    width: 35px;
-    height: 35px;
-    font-size: 16px;
-  }
-
-  .navButton {
-    width: 45px;
-    height: 45px;
-    font-size: 18px;
-  }
-
-  .navPrev {
-    left: 10px;
-  }
-
-  .navNext {
-    right: 10px;
-  }
-
-  .controls {
-    bottom: 10px;
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .controlButton {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
-  .counter {
-    padding: 6px 10px;
-    font-size: 12px;
-  }
-
-  .mediaContainer {
-    max-width: 95vw;
-    max-height: 85vh;
-  }
-}
-
-/**
- * 반응형 디자인 - 모바일 크기 (480px 이하)
- * 작은 화면에서의 최적화된 레이아웃을 제공합니다.
- *
- * Adjustments:
- * - 컨트롤 툴바 flex-wrap 적용
- * - 더 작은 패딩과 폰트 크기
- * - 최대 너비 제한
- */
-@media (max-width: 480px) {
-  .controls {
-    flex-wrap: wrap;
-    justify-content: center;
-    max-width: 90vw;
-  }
-
-  .controlButton {
-    padding: 5px 8px;
-    font-size: 11px;
-  }
-
-  .counter {
-    padding: 5px 8px;
-    font-size: 11px;
-  }
 }
 
 /**

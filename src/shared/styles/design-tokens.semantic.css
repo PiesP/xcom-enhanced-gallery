@@ -68,6 +68,9 @@
 
   /* Component Sizing - Semantic Roles */
   --size-button-height: 40px;
+  --size-button-sm: 32px;
+  --size-button-md: 40px;
+  --size-button-lg: 48px;
   --size-input-height: 40px;
   --size-icon-sm: 16px;
   --size-icon-md: 20px;
