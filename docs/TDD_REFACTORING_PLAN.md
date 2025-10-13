@@ -4,27 +4,34 @@
 >
 > **브랜치**: master
 >
-> **상태**: 활성 작업 없음 ✅
+> **상태**: 활성 작업 진행 중 🚧
 
 ## 프로젝트 상태
 
-- **빌드**: dev 732.38 KB / prod 319.92 KB ✅
-- **테스트**: 663+ passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 732.38 KB / prod 320.53 KB ✅
+- **테스트**: 672+ passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (271 modules, 741 dependencies) ✅
-- **번들 예산**: 319.92 KB / 325 KB (5.08 KB 여유) ✅
+- **번들 예산**: 320.53 KB / 325 KB (4.47 KB 여유) ✅
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-36 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-37 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
 ---
 
 ## 최근 완료 작업
+
+### Phase 37: Gallery 하드코딩 제거 및 PC 전용 정책 준수 (2025-10-13) ✅
+
+Gallery.module.css의 50+ 하드코딩된 px 값을 디자인 토큰으로 교체하고, 모바일
+미디어쿼리 제거.
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 ### Phase 36: 설정 모달 중앙 고정 위치 개선 (2025-10-13) ✅
 
@@ -45,196 +52,46 @@ Modal 모드에서 CSS 모듈 위치 클래스 정상 적용, 모든 위치 옵�
 
 ## 활성 작업
 
-### Phase 37: Gallery.module.css 하드코딩 제거 및 PC 전용 정책 준수
+### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) 🚧
 
-**목표**: Gallery.module.css의 하드코딩된 px 값을 디자인 토큰으로 교체하고, PC
-전용 정책 위반 요소 제거
+**목표**: 설정 모달이 Modal 모드에서 실제 뷰포트의 가로·세로 중앙에 고정되도록
+레이아웃을 조정하고, 화면 크기 변화에도 중앙 정렬을 유지한다.
 
-**우선순위**: High ⚠️
+**브랜치**: `feature/settings-modal-center`
 
-- **영향도**: 매우 높음 (갤러리 핵심 UI)
-- **하드코딩 개수**: 50+ 위치
-- **정책 위반**: 모바일 미디어쿼리 존재 (PC 전용 원칙 위반)
+**배경**:
 
-#### 문제 분석
+- Phase 36에서 CSS 클래스 적용 회귀를 해결했으나, CSS `transform` 기반 중앙
+  정렬은 뷰포트보다 모달이 크거나 높이가 변동될 때 상단/하단이 잘리는 문제가
+  있었다.
+- 사용자는 언제나 화면 중앙에서 설정 모달을 확인하길 원하며, 뷰포트 크기가
+  변해도 중앙 정렬이 유지돼야 한다.
+- 기존 구현은 backdrop 컨테이너가 화면 전체를 덮지 않아 flex 정렬을 적용하기
+  어려웠다.
 
-**하드코딩된 요소**:
+**TDD 진행 순서**:
 
-```css
-/* 발견된 하드코딩 (50+ 위치) */
-font-size: 18px, 14px, 12px, 11px, 16px
-padding: 20px, 12px, 8px, 6px, 5px
-width/height: 45px, 35px, 20px
-gap: 12px, 8px
-bottom/top/left/right: 20px, 10px
-border: 2px solid, 1px solid
-margin-right: 10px
-```
+1. **RED**: `test/unit/shared/components/SettingsModal.positioning.test.tsx`
+   - Modal 모드에서 center 위치일 때 backdrop 컨테이너가 flex 정렬과 뷰포트
+     패딩을 적용하는지 검증하는 테스트 추가.
+   - `.center` 패널이 최대 높이/오버플로우 제어를 통해 뷰포트 내에서 스크롤
+     가능하도록 만드는 회귀 테스트 추가.
+2. **GREEN**: `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
+   - backdrop을 flex 컨테이너로 전환하고, 디자인 토큰 기반의 패딩 및 정렬을
+     지정.
+   - `.panel`과 `.center` 스타일을 업데이트해 최소/최대 크기 및 스크롤 동작을
+     보장.
+3. **REFACTOR**:
+   - CSS 모듈 정리 및 관련 문서 업데이트.
+   - 필요 시 Modal 컴포넌트에서 center 위치 특수 처리를 제거해 단순화.
 
-**PC 전용 정책 위반**:
+**수용 기준**:
 
-```css
-/* 제거 필요 */
-@media (max-width: 768px) { ... }  /* line 694 */
-@media (max-width: 480px) { ... }  /* line 748 */
-```
-
-#### 솔루션 비교
-
-**Option 1: 점진적 토큰화 (선택됨 ✅)**
-
-- 장점:
-  - TDD 적용 가능 (단계별 검증)
-  - 위험 최소화 (부분 적용 후 검증)
-  - 롤백 용이
-- 단점:
-  - 다단계 작업 필요
-  - 시간 소요 중간
-- 평가: **최적** - 안정성과 검증 가능성
-
-**Option 2: 일괄 교체**
-
-- 장점:
-  - 빠른 완료
-  - 단순한 작업 흐름
-- 단점:
-  - 테스트 어려움 (한 번에 많은 변경)
-  - 위험 높음 (버그 발생 시 원인 추적 어려움)
-  - TDD 적용 불가
-- 평가: **부적합** - 프로젝트 원칙 위배
-
-**Option 3: 새 컴포넌트 재작성**
-
-- 장점:
-  - 클린 코드
-  - 처음부터 토큰 적용
-- 단점:
-  - 과도한 리소스
-  - 기존 로직 재검증 필요
-  - 불필요한 복잡도
-- 평가: **과도함** - 현재 필요 없음
-
-#### 작업 계획 (TDD)
-
-**Step 1: 디자인 토큰 추가**
-
-```typescript
-// design-tokens.component.css에 추가 필요
---xeg-button-size-md: 40px;
---xeg-button-size-lg: 45px;
---xeg-text-xs: 11px;  /* 12px가 아닌 11px 케이스 */
---space-xs: 4px;     /* 이미 존재하나 사용 확인 */
---space-2xs: 2px;    /* 필요시 추가 */
-```
-
-**Step 2-A: RED - 하드코딩 검증 테스트 (font-size)**
-
-```typescript
-// test/unit/styles/gallery-hardcoding.test.ts
-test('Gallery.module.css should not have hardcoded font-size', () => {
-  const css = readGalleryCss();
-  const hardcodedFontSize = /font-size:\s*\d+px(?!\s*;?\s*\/\*)/g;
-  expect(css).not.toMatch(hardcodedFontSize);
-});
-```
-
-**Step 2-B: GREEN - font-size 토큰 교체**
-
-```css
-/* Before */
-font-size: 18px; → font-size: var(--xeg-text-lg);
-font-size: 14px; → font-size: var(--xeg-text-base);
-font-size: 12px; → font-size: var(--xeg-text-sm);
-font-size: 11px; → font-size: var(--xeg-text-xs);
-font-size: 16px; → font-size: var(--xeg-text-base); /* 또는 --xeg-text-md */
-```
-
-**Step 3-A: RED - 하드코딩 검증 테스트 (spacing)**
-
-```typescript
-test('Gallery.module.css should not have hardcoded padding', () => {
-  const css = readGalleryCss();
-  const hardcodedPadding = /padding(-\w+)?:\s*\d+px(?!\s*;?\s*\/\*)/g;
-  expect(css).not.toMatch(hardcodedPadding);
-});
-```
-
-**Step 3-B: GREEN - spacing 토큰 교체**
-
-```css
-/* Before */
-padding: 20px; → padding: var(--xeg-spacing-lg);
-padding: 12px; → padding: var(--xeg-spacing-md);
-padding: 8px;  → padding: var(--xeg-spacing-sm);
-padding: 6px;  → padding: var(--xeg-spacing-xs);
-padding: 5px;  → padding: var(--space-xs); /* 특수 케이스 */
-
-gap: 12px; → gap: var(--xeg-spacing-md);
-gap: 8px;  → gap: var(--xeg-spacing-sm);
-```
-
-**Step 4-A: RED - 하드코딩 검증 테스트 (size)**
-
-```typescript
-test('Gallery.module.css should not have hardcoded width/height', () => {
-  const css = readGalleryCss();
-  const hardcodedSize = /(width|height):\s*\d+px(?!\s*;?\s*\/\*)/g;
-  expect(css).not.toMatch(hardcodedSize);
-});
-```
-
-**Step 4-B: GREEN - size 토큰 교체**
-
-```css
-/* Before */
-width: 45px; height: 45px; → width: var(--xeg-button-size-lg); height: var(--xeg-button-size-lg);
-width: 35px; height: 35px; → width: var(--xeg-button-size-md); height: var(--xeg-button-size-md);
-width: 20px; height: 20px; → width: var(--xeg-icon-size-md); height: var(--xeg-icon-size-md);
-```
-
-**Step 5: PC 전용 정책 준수 - 모바일 미디어쿼리 제거**
-
-```typescript
-// test/unit/styles/gallery-pc-only.test.ts
-test('Gallery.module.css should not have mobile media queries', () => {
-  const css = readGalleryCss();
-  expect(css).not.toMatch(/@media\s*\([^)]*max-width/);
-});
-```
-
-**제거 대상**:
-
-```css
-/* 삭제: line 694-732 */
-@media (max-width: 768px) { ... }
-
-/* 삭제: line 748-762 */
-@media (max-width: 480px) { ... }
-```
-
-**Step 6: REFACTOR - 최적화 및 검증**
-
-- 전체 테스트 실행 (663+ passing 유지)
-- 빌드 크기 확인 (예산 내 유지)
-- 시각적 회귀 테스트 (수동 확인)
-
-#### 예상 결과
-
-- ✅ 하드코딩 제거: 50+ 위치
-- ✅ 파일 크기 감소: 약 10-15% (미디어쿼리 64줄 제거)
-- ✅ 유지보수성 향상: 토큰 중앙 관리
-- ✅ 정책 준수: PC 전용 정책 100% 준수
-- ✅ 번들 크기: 예산 내 유지 (현재 319.92 KB / 325 KB)
-
-#### 작업 순서
-
-1. 브랜치 생성: `feature/gallery-hardcoding-removal`
-2. 디자인 토큰 추가 (필요 시)
-3. TDD 사이클 (Step 2-A → 2-B → 3-A → 3-B → 4-A → 4-B → 5)
-4. 전체 테스트 및 빌드 검증
-5. 커밋 & 푸시
-6. master 병합
-7. 문서 업데이트
+- Modal 모드에서 center 위치 선택 시 모달이 항상 가로·세로 중앙에 노출되고,
+  뷰포트 경계로부터 최소 16px 여백을 유지한다.
+- 창 크기를 변경해도 backdrop flex 정렬로 인해 모달이 중앙에 남아 있다.
+- 기존 위치 옵션(`toolbar-below`, `top-right`, `bottom-sheet`) 동작 변화 없음이
+  테스트로 보장된다.
 
 ---
 

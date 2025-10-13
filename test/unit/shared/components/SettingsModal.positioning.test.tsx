@@ -36,6 +36,32 @@ describe('SettingsModal positioning', () => {
 
       expect(centerBlock).toMatch(/top:\s*50%/);
       expect(centerBlock).toMatch(/transform:\s*translate\(-50%,\s*-50%\)/);
+      expect(centerBlock).toMatch(/max-height:\s*calc\(100vh - var\(--space-lg,\s*16px\) \* 2\)/);
+      expect(centerBlock).toMatch(/overflow-y:\s*auto/);
+    });
+
+    it('backdrop should use flex layout with viewport padding', () => {
+      const css = readFileSync(cssPath, 'utf-8');
+      const backdropMatch = css.match(/:global\(\.settings-modal-backdrop\)\s*\{[^}]*\}/);
+      expect(backdropMatch).not.toBeNull();
+      const backdropBlock = backdropMatch?.[0] ?? '';
+
+      expect(backdropBlock).toMatch(/display:\s*flex/);
+      expect(backdropBlock).toMatch(/align-items:\s*center/);
+      expect(backdropBlock).toMatch(/justify-content:\s*center/);
+      expect(backdropBlock).toMatch(/padding:\s*var\(--space-lg,\s*16px\)/);
+    });
+
+    it('backdrop center override should reset fixed positioning', () => {
+      const css = readFileSync(cssPath, 'utf-8');
+      const overrideMatch = css.match(
+        /:global\(\.settings-modal-backdrop\)\s*\.center\s*\{[^}]*\}/
+      );
+      expect(overrideMatch).not.toBeNull();
+      const overrideBlock = overrideMatch?.[0] ?? '';
+
+      expect(overrideBlock).toMatch(/position:\s*static/);
+      expect(overrideBlock).toMatch(/transform:\s*none/);
     });
   });
 
