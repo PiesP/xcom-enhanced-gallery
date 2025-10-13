@@ -3,6 +3,8 @@
  * 새로운 모듈화된 테스트 인프라 사용
  */
 
+/* eslint-disable no-undef */
+
 // ================================
 // Solid.js 클라이언트 모드 설정 (모든 import 전에!)
 // ================================
@@ -34,6 +36,13 @@ if (typeof globalThis !== 'undefined') {
 if (typeof process !== 'undefined' && process.env) {
   process.env.SSR = 'false';
   process.env.IS_SERVER = 'false';
+}
+
+// ================================
+// 전역 __DEV__ 변수 설정 (logger.ts에서 사용)
+// ================================
+if (typeof globalThis !== 'undefined') {
+  (globalThis as typeof globalThis & { __DEV__?: boolean }).__DEV__ = true;
 }
 
 // ================================

@@ -18,6 +18,7 @@ import {
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/event-manager';
 import { ComponentStandards } from '../StandardProps';
+import { logger } from '../../../logging/logger';
 import { IconButton } from '../Button/IconButton';
 import {
   ChevronLeft,
@@ -101,19 +102,25 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   createEffect(() => {
     const expanded = isSettingsExpanded();
 
+    logger.debug('[Toolbar] Settings panel state changed:', { expanded });
+
     if (expanded) {
+      logger.debug('[Toolbar] Registering outside click listener');
+
       // Phase 48.9: Select 활성 상태 추적
       let isSelectActive = false;
       let selectChangeTimeout: number | undefined;
 
       const handleSelectFocus = () => {
         isSelectActive = true;
+        logger.debug('[Toolbar] Select focused - ignoring outside clicks');
       };
 
       const handleSelectBlur = () => {
         // Blur 후 약간의 딜레이를 주어 change 이벤트가 완료되도록 함
         setTimeout(() => {
           isSelectActive = false;
+          logger.debug('[Toolbar] Select blurred - outside clicks enabled');
         }, 100);
       };
 
@@ -121,21 +128,43 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
         // Change 이벤트 발생 시 300ms 동안 외부 클릭 무시
         clearTimeout(selectChangeTimeout);
         isSelectActive = true;
+        logger.debug('[Toolbar] Select changed - ignoring outside clicks for 300ms');
         selectChangeTimeout = setTimeout(() => {
           isSelectActive = false;
+          logger.debug('[Toolbar] Select change timeout - outside clicks enabled');
         }, 300) as unknown as number;
       };
 
       const handleOutsideClick = (event: MouseEvent) => {
         const target = event.target as Node;
 
+        logger.debug('[Toolbar] Outside click detected:', {
+          target: (target as HTMLElement).tagName,
+          targetElement: target,
+          isSelectActive,
+          hasSettingsButton: !!settingsButtonRef,
+          hasSettingsPanel: !!settingsPanelRef,
+        });
+
         // Phase 48.9: Select가 활성 상태면 외부 클릭 무시
         if (isSelectActive) {
+          logger.debug('[Toolbar] Outside click ignored - select is active');
           return;
         }
 
         // 설정 버튼이나 패널 내부 클릭은 무시
-        if (settingsButtonRef?.contains(target) || settingsPanelRef?.contains(target)) {
+        // SVG 자식 요소도 제대로 감지하기 위해 closest() 사용
+        const targetElement = target as HTMLElement;
+        const clickedSettingsButton = targetElement.closest?.('#settings-button');
+        const isInsideButton = settingsButtonRef?.contains(target) || !!clickedSettingsButton;
+        const isInsidePanel = settingsPanelRef?.contains(target);
+
+        if (isInsideButton || isInsidePanel) {
+          logger.debug('[Toolbar] Outside click ignored - click inside button or panel', {
+            isInsideButton,
+            isInsidePanel,
+            clickedSettingsButton: !!clickedSettingsButton,
+          });
           return;
         }
 
@@ -144,12 +173,14 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
         let currentNode = target as HTMLElement | null;
         while (currentNode) {
           if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
+            logger.debug('[Toolbar] Outside click ignored - click on select/option');
             return;
           }
           currentNode = currentNode.parentElement;
         }
 
         // 외부 클릭 시 패널 닫기
+        logger.debug('[Toolbar] Closing settings panel - outside click confirmed');
         setSettingsExpanded(false);
       };
 
@@ -337,11 +368,22 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const onCloseClick = createActionHandler(props.onClose);
 
   const onSettingsClick = (event: MouseEvent) => {
+    logger.debug('[Toolbar] Settings button clicked', {
+      wasExpanded: isSettingsExpanded(),
+      eventType: event.type,
+      timeStamp: event.timeStamp,
+    });
+
     event.stopImmediatePropagation();
     const wasExpanded = isSettingsExpanded();
 
     // Phase 48.9: Toggle only - props.onOpenSettings는 제거 (이중 토글 방지)
     toggleSettingsExpanded();
+
+    logger.debug('[Toolbar] Settings toggled', {
+      wasExpanded,
+      nowExpanded: isSettingsExpanded(),
+    });
 
     // Phase 47→48.7: Focus management 수정 - createEffect 대신 직접 DOM 조작
     if (!wasExpanded) {
@@ -350,10 +392,21 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
         const panel = document.querySelector('[data-gallery-element="settings-panel"]');
         const firstControl = panel?.querySelector('select') as HTMLSelectElement;
         if (firstControl) {
+          logger.debug('[Toolbar] Focusing first control in settings panel');
           firstControl.focus();
         }
       }, 50);
     }
+  };
+
+  // Phase Fix: 설정 버튼의 mousedown 이벤트 핸들러 - 외부 클릭 감지기에 전파되지 않도록 차단
+  const onSettingsMouseDown = (event: MouseEvent) => {
+    logger.debug('[Toolbar] Settings button mousedown', {
+      eventType: event.type,
+      timeStamp: event.timeStamp,
+      willStopPropagation: true,
+    });
+    event.stopPropagation();
   };
 
   // Phase 47: Keyboard navigation - Escape 키 핸들러
@@ -532,6 +585,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
               aria-controls='toolbar-settings-panel'
               title='설정'
               disabled={props.disabled}
+              onMouseDown={onSettingsMouseDown}
               onClick={onSettingsClick}
               data-gallery-element='settings'
               data-disabled={props.disabled}

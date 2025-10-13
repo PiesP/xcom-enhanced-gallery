@@ -62,7 +62,9 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 const noop = (): void => {};
-const isDev = import.meta.env.DEV;
+// Use __DEV__ global (defined in vite.config.ts) instead of import.meta.env.DEV
+// to ensure proper tree-shaking in production builds
+const isDev = __DEV__;
 
 type LoggerFactory = (config?: Partial<LoggerConfig>) => Logger;
 type ScopedFactory = (scope: string, config?: Partial<LoggerConfig>) => Logger;
