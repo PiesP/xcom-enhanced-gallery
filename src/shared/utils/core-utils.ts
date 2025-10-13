@@ -49,13 +49,6 @@ export function isInsideGallery(element: Element | null): boolean {
 }
 
 /**
- * 클래스 이름 결합
- */
-export function combineClasses(...classes: (string | undefined | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-/**
  * 요소가 갤러리 컨테이너인지 확인
  */
 export function isGalleryContainer(element: HTMLElement | null): boolean {

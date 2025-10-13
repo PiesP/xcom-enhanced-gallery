@@ -1,37 +1,23 @@
 /**
- * @fileoverview 스타일 유틸리티 함수들
+ * @fileoverview Style Utilities
+ * @description CSS 조작을 위한 유틸리티 함수 (css-utilities 기반)
  */
 
-/** 클래스명 결합 */
-export function combineClasses(...classes: (string | undefined | false | null)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
-
-/** 클래스 토글 */
-export function toggleClass(element: Element | null, className: string, force?: boolean): void {
-  element?.classList.toggle(className, force);
-}
-
-// Re-export from css-utilities to avoid duplication
-export { setCSSVariable, setCSSVariables, createThemedClassName } from './css-utilities';
+// Re-export from css-utilities (canonical source)
+export {
+  combineClasses,
+  toggleClass,
+  setCSSVariable,
+  setCSSVariables,
+  createThemedClassName,
+  updateComponentState,
+} from './css-utilities';
 
 /** CSS 변수 조회 */
 export function getCSSVariable(element: HTMLElement | null, name: string): string {
   if (!element) return '';
   const varName = name.startsWith('--') ? name : `--${name}`;
   return getComputedStyle(element).getPropertyValue(varName).trim();
-}
-
-/** 컴포넌트 상태 클래스 업데이트 */
-export function updateComponentState(
-  element: Element | null,
-  state: Record<string, boolean>,
-  prefix = 'is'
-): void {
-  if (!element) return;
-  Object.entries(state).forEach(([key, value]) => {
-    toggleClass(element, `${prefix}-${key}`, value);
-  });
 }
 
 /** 테마 클래스 적용 */

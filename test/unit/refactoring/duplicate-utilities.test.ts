@@ -60,18 +60,15 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // 현재 상태: 3개 파일에서 발견될 것으로 예상 (RED)
-      expect(filesWithCombineClasses.length).toBeGreaterThan(1);
+      // GREEN 상태: 정확히 1개의 정의만 있어야 함
+      expect(filesWithCombineClasses.length).toBe(1);
+      expect(filesWithCombineClasses[0].file).toContain('css-utilities.ts');
 
       // 상세 정보 출력
-      console.log('\n📊 combineClasses 정의 위치:');
+      console.log('\n✅ combineClasses 정의 위치:');
       filesWithCombineClasses.forEach(({ file, count }) => {
         console.log(`  - ${file} (${count}회)`);
       });
-
-      // 목표: 정확히 1개의 정의만 있어야 함
-      // expect(filesWithCombineClasses.length).toBe(1);
-      // expect(filesWithCombineClasses[0].file).toContain('css-utilities.ts');
     });
 
     it('should identify duplicate implementations', () => {
@@ -102,10 +99,11 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // 현재 상태: 여러 구현이 있음 (RED)
-      expect(implementations.length).toBeGreaterThan(1);
+      // GREEN 상태: 단일 구현만 있어야 함
+      expect(implementations.length).toBe(1);
+      expect(implementations[0].file).toContain('css-utilities.ts');
 
-      console.log(`\n⚠️  ${implementations.length}개의 중복 구현 발견:`);
+      console.log(`\n✅ ${implementations.length}개의 구현 발견 (목표 달성):`);
       implementations.forEach(({ file }) => {
         console.log(`  - ${file}`);
       });
@@ -129,16 +127,14 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // 현재 상태: 2개 파일에서 발견될 것으로 예상 (RED)
-      expect(filesWithToggleClass.length).toBeGreaterThan(1);
+      // GREEN 상태: 정확히 1개의 정의만 있어야 함
+      expect(filesWithToggleClass.length).toBe(1);
+      expect(filesWithToggleClass[0].file).toContain('css-utilities.ts');
 
-      console.log('\n📊 toggleClass 정의 위치:');
+      console.log('\n✅ toggleClass 정의 위치:');
       filesWithToggleClass.forEach(({ file, count }) => {
         console.log(`  - ${file} (${count}회)`);
       });
-
-      // 목표: 정확히 1개의 정의만 있어야 함
-      // expect(filesWithToggleClass.length).toBe(1);
     });
   });
 
@@ -159,16 +155,14 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // 현재 상태: 2개 파일에서 발견될 것으로 예상 (RED)
-      expect(filesWithUpdateState.length).toBeGreaterThan(1);
+      // GREEN 상태: 정확히 1개의 정의만 있어야 함
+      expect(filesWithUpdateState.length).toBe(1);
+      expect(filesWithUpdateState[0].file).toContain('css-utilities.ts');
 
-      console.log('\n📊 updateComponentState 정의 위치:');
+      console.log('\n✅ updateComponentState 정의 위치:');
       filesWithUpdateState.forEach(({ file, count }) => {
         console.log(`  - ${file} (${count}회)`);
       });
-
-      // 목표: 정확히 1개의 정의만 있어야 함
-      // expect(filesWithUpdateState.length).toBe(1);
     });
   });
 
@@ -192,14 +186,11 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      console.log(`\n📊 총 중복 함수 정의: ${totalDuplicates}개`);
-      console.log('🎯 목표: 모든 중복 제거 (0개)');
+      console.log(`\n✅ 총 중복 함수 정의: ${totalDuplicates}개`);
+      console.log('🎯 목표 달성: 모든 중복 제거 완료');
 
-      // 현재 상태 확인 (RED)
-      expect(totalDuplicates).toBeGreaterThan(0);
-
-      // 목표 상태 (GREEN)
-      // expect(totalDuplicates).toBe(0);
+      // GREEN 상태: 모든 중복 제거됨
+      expect(totalDuplicates).toBe(0);
     });
   });
 });
