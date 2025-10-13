@@ -20,6 +20,13 @@ export interface ToolbarState {
 }
 
 /**
+ * 확장 가능한 설정 패널 상태 인터페이스 (Phase 44)
+ */
+export interface ToolbarExpandableState {
+  readonly isSettingsExpanded: boolean;
+}
+
+/**
  * 초기 툴바 상태
  */
 const INITIAL_TOOLBAR_STATE: ToolbarState = {
@@ -28,10 +35,18 @@ const INITIAL_TOOLBAR_STATE: ToolbarState = {
 };
 
 /**
+ * 초기 확장 가능한 설정 패널 상태 (Phase 44)
+ */
+const INITIAL_EXPANDABLE_STATE: ToolbarExpandableState = {
+  isSettingsExpanded: false,
+};
+
+/**
  * 툴바 이벤트 타입
  */
 export type ToolbarEvents = {
   'toolbar:mode-change': { mode: ToolbarState['currentMode'] };
+  'toolbar:settings-expanded': { expanded: boolean };
 };
 
 // Signal 타입 정의 (Preact Signals 지연 로딩 대응)
@@ -42,6 +57,7 @@ type Signal<T> = {
 
 // Preact Signals 지연 초기화
 let toolbarStateSignal: Signal<ToolbarState> | null = null;
+let expandableStateSignal: Signal<ToolbarExpandableState> | null = null;
 
 function getToolbarStateSignal(): Signal<ToolbarState> {
   if (!toolbarStateSignal) {
@@ -49,6 +65,17 @@ function getToolbarStateSignal(): Signal<ToolbarState> {
     logger.debug('Toolbar state signal initialized');
   }
   return toolbarStateSignal!;
+}
+
+/**
+ * 확장 가능한 설정 패널 신호 가져오기 (Phase 44)
+ */
+function getExpandableStateSignal(): Signal<ToolbarExpandableState> {
+  if (!expandableStateSignal) {
+    expandableStateSignal = createSignalSafe<ToolbarExpandableState>(INITIAL_EXPANDABLE_STATE);
+    logger.debug('Toolbar expandable state signal initialized');
+  }
+  return expandableStateSignal!;
 }
 
 /**
@@ -162,3 +189,42 @@ export function addEventListener<K extends keyof ToolbarEvents>(
 
 // 레거시 호환성을 위한 별칭들 (CSS 호버 시스템에서는 항상 true 반환)
 export const getCurrentMode = getCurrentToolbarMode;
+
+// =============================================================================
+// Phase 44: 확장 가능한 설정 패널 API
+// =============================================================================
+
+/**
+ * 확장 가능한 설정 패널 상태 가져오기
+ */
+export function getToolbarExpandableState(): ToolbarExpandableState {
+  return getExpandableStateSignal().value;
+}
+
+/**
+ * 설정 패널 확장 상태 토글
+ */
+export function toggleSettingsExpanded(): void {
+  const signal = getExpandableStateSignal();
+  const currentExpanded = signal.value.isSettingsExpanded;
+  const newExpanded = !currentExpanded;
+
+  signal.value = { isSettingsExpanded: newExpanded };
+
+  dispatchEvent('toolbar:settings-expanded', { expanded: newExpanded });
+  logger.debug(`Settings panel ${newExpanded ? 'expanded' : 'collapsed'}`);
+}
+
+/**
+ * 설정 패널 확장 상태 명시적 설정
+ */
+export function setSettingsExpanded(expanded: boolean): void {
+  const signal = getExpandableStateSignal();
+  const currentExpanded = signal.value.isSettingsExpanded;
+
+  if (currentExpanded !== expanded) {
+    signal.value = { isSettingsExpanded: expanded };
+    dispatchEvent('toolbar:settings-expanded', { expanded });
+    logger.debug(`Settings panel set to ${expanded ? 'expanded' : 'collapsed'}`);
+  }
+}
