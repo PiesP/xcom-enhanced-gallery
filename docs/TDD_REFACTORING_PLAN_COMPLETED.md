@@ -1,20 +1,351 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-13 **상태**: Phase 43 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 54.1 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
-## 프로젝트 상태 스냅샷 (2025-10-13)
+## 프로젝트 상태 스냅샷 (2025-10-14)
 
-- **빌드**: dev 725.78 KB / prod **315.51 KB** ✅
-- **테스트**: 667 passing, 3 skipped (E2E 연기) ✅
+- **빌드**: dev 838.69 KB / prod **318.66 KB** ✅
+- **테스트**: 662 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (263 modules, 717 deps) ✅
-- **번들 예산**: **315.51 KB / 325 KB** (9.49 KB 여유) ✅ **목표 달성!**
+- **의존성**: dependency-cruiser 0 violations (263 modules, 718 deps) ✅
+- **번들 예산**: **318.66 KB / 325 KB** (6.34 KB 여유) ✅
+- **개선**: Phase 54.0에서 -0.22 KB 절감, Phase 54.1에서 다크 모드 토큰 통합
+  완료
 
 ---
 
 ## 최근 완료 Phase (세부 기록)
+
+### Phase 54.0: 컴포넌트 토큰 재정의 제거 (2025-10-15) ✅
+
+**목표**: 디자인 불일치 근본 원인 해결 - 컴포넌트 레벨 토큰 재정의 패턴 제거
+
+**문제 분석**:
+
+- **디자인 불일치 발견**: 툴바(dark black `rgba(30,30,30,0.95)`) vs 설정(soft
+  gray `#4a4a4a`)
+- **근본 원인**: 컴포넌트 CSS에서 semantic 토큰을 로컬 재정의
+  ```css
+  /* ToolbarShell.module.css - 잘못된 패턴 */
+  --xeg-toolbar-bg: var(--xeg-surface-glass-bg);
+  --xeg-toolbar-border: var(--xeg-surface-glass-border);
+  --xeg-comp-toolbar-shadow: var(--xeg-shadow-md);
+  ```
+- **영향 범위**: 2개 파일, 6개 재정의
+  - `ToolbarShell.module.css`: 3개 (bg, border, shadow)
+  - `VerticalGalleryView.module.css`: 3개 (gallery-z-index, toolbar-z-index,
+    shadow-soft)
+
+**작업 내용**:
+
+**Phase 54.0.1**: TDD RED 테스트 작성
+
+- 파일: `test/styles/component-token-policy.test.ts`
+- 3개 정책 테스트:
+  1. ToolbarShell semantic 토큰 직접 참조 확인 (3개 재정의 검출)
+  2. VerticalGalleryView semantic 토큰 직접 참조 확인 (3개 재정의 검출)
+  3. Semantic layer에 필수 툴바 토큰 존재 확인 (모두 존재)
+
+**Phase 54.0.2**: ToolbarShell 토큰 재정의 제거
+
+- 파일: `src/shared/components/ui/ToolbarShell/ToolbarShell.module.css`
+- 제거된 재정의 (3개):
+  ```css
+  /* 제거 전 */
+  --xeg-toolbar-bg: var(--xeg-surface-glass-bg);
+  --xeg-toolbar-border: var(--xeg-surface-glass-border);
+  --xeg-comp-toolbar-shadow: var(--xeg-shadow-md);
+  ```
+- 직접 semantic 토큰 사용:
+  ```css
+  /* 적용 후 */
+  background: var(--xeg-bg-toolbar);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--xeg-shadow-md);
+  ```
+
+**Phase 54.0.3**: VerticalGalleryView 토큰 재정의 제거
+
+- 파일:
+  `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css`
+- 제거된 재정의 (3개):
+  ```css
+  /* 제거 전 */
+  --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
+  --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
+  --xeg-shadow-soft: var(--xeg-shadow-lg);
+  ```
+- 직접 semantic 토큰 사용:
+  ```css
+  /* 적용 후 */
+  z-index: var(--xeg-z-gallery, 10000);
+  z-index: var(--xeg-z-modal);
+  /* --xeg-shadow-soft는 사용되지 않아 제거만 수행 */
+  ```
+
+**Phase 54.0.4**: 구식 테스트 업데이트
+
+- 파일: `test/unit/shared/components/ui/ToolbarShell.tokens.test.ts`
+- 구식 `--xeg-comp-toolbar-shadow` 기대 제거
+- 새 정책 추가: semantic 토큰 직접 사용 검증
+
+**결과**:
+
+- ✅ 컴포넌트 토큰 재정의 제거: 6개 (ToolbarShell 3 + VerticalGalleryView 3)
+- ✅ 디자인 일관성 복원: 툴바와 설정이 동일한 semantic 토큰 사용
+- ✅ 자동 검증 테스트: 3개 추가 (모두 GREEN)
+- ✅ 빌드: **318.37 KB** (이전 318.59 KB → **-0.22 KB 개선**)
+- ✅ 테스트: 662 passing / 1 skipped (100% 안정)
+- ✅ 재발 방지: TDD 정책 테스트로 자동 검출
+
+**기술 부채 해결**:
+
+- 디자인 불일치 근본 원인 해결 (컴포넌트 레벨 재정의 안티패턴 제거)
+- 예방 메커니즘 구축 (자동 테스트 + 가이드라인)
+- 후속 Phase 54.1-54.3 계획 수립 (다크 모드 통합, glassmorphism 유틸리티, 레거시
+  alias 정리)
+
+---
+
+### Phase 54.1: 다크 모드 토큰 통합 (2025-10-14) ✅
+
+**목표**: 컴포넌트별 `@media (prefers-color-scheme: dark)` 중복 제거 및 semantic
+layer 중앙화
+
+**문제 분석**:
+
+- **중복 다크 모드 정의**: VerticalImageItem.module.css에 15줄 @media 블록 존재
+- **유지보수 어려움**: 컴포넌트마다 개별 다크 모드 정의 → 변경 시 모든 파일 수정
+  필요
+- **일관성 위험**: 동일한 디자인 의도가 파일마다 다르게 구현될 가능성
+- **번들 크기 증가**: 중복된 미디어 쿼리 블록으로 인한 불필요한 CSS
+
+**작업 내용**:
+
+**Phase 54.1.1**: TDD RED 테스트 작성
+
+- 파일: `test/styles/dark-mode-consolidation.test.ts`
+- 3개 정책 테스트:
+  1. **컴포넌트 @media 금지**: 컴포넌트 CSS에서
+     `@media (prefers-color-scheme: dark)` 사용 검출 (1개 위반 발견)
+  2. **Semantic layer 토큰 검증**: 다크 모드 토큰이 semantic layer에 정의되어
+     있는지 확인
+  3. **하드코딩 색상 금지**: 다크 모드 블록 내 하드코딩된 색상 값 검출
+- 초기 결과: VerticalImageItem.module.css의 493번째 줄에서 위반 감지 ❌
+
+**Phase 54.1.2**: Semantic Layer 토큰 추가
+
+- 파일: `src/shared/styles/design-tokens.semantic.css`
+- 추가된 Gallery Image Item 토큰 (4개):
+
+  ```css
+  /* Light Mode 기본값 (root 블록) */
+  --xeg-color-bg-secondary: var(--color-bg-secondary);
+  --xeg-color-bg-tertiary: var(--color-gray-100);
+  --xeg-color-bg-error: var(--color-error-bg);
+  --xeg-color-text-error: var(--color-error);
+
+  /* Dark Mode 오버라이드 ([data-theme='dark'] 블록) */
+  [data-theme='dark'] {
+    --xeg-color-bg-secondary: var(--color-gray-800);
+    --xeg-color-bg-tertiary: var(--color-gray-700);
+    --xeg-color-bg-error: var(--color-red-900);
+    --xeg-color-text-error: var(--color-red-300);
+  }
+
+  /* Dark Mode 오버라이드 (@media 블록) */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --xeg-color-bg-secondary: var(--color-gray-800);
+      --xeg-color-bg-tertiary: var(--color-gray-700);
+      --xeg-color-bg-error: var(--color-red-900);
+      --xeg-color-text-error: var(--color-red-300);
+    }
+  }
+  ```
+
+**Phase 54.1.3**: VerticalImageItem 마이그레이션
+
+- 파일:
+  `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css`
+- 제거된 @media 블록 (15줄):
+  ```css
+  /* 제거 전 */
+  @media (prefers-color-scheme: dark) {
+    .container {
+      background: var(--xeg-color-bg-secondary-dark);
+    }
+    .placeholder {
+      background: var(--xeg-color-bg-tertiary-dark);
+    }
+    .error {
+      background: var(--xeg-color-bg-error-dark);
+      color: var(--xeg-color-text-error-dark);
+    }
+  }
+  ```
+- 적용된 semantic 토큰:
+  ```css
+  /* 적용 후 */
+  .container {
+    background: var(--xeg-color-bg-secondary); /* 자동 다크 모드 지원 */
+  }
+  .error {
+    background: var(--xeg-color-bg-error);
+    color: var(--xeg-color-text-error);
+  }
+  /* .placeholder는 이미 --xeg-skeleton-bg 사용 (변경 불필요) */
+  ```
+
+**Phase 54.1.4**: TDD GREEN 검증
+
+- 테스트 재실행: 3개 모두 GREEN ✅
+  - ✅ 컴포넌트 CSS에서 @media 없음 (위반 0개)
+  - ✅ Semantic layer에 필수 토큰 모두 정의됨
+  - ✅ 하드코딩된 다크 모드 색상 없음
+- 전체 테스트: 662 passing / 1 skipped (100% 안정)
+- 빌드 검증: 318.66 KB (예산 유지)
+
+**결과**:
+
+- ✅ 다크 모드 중앙화: @media 블록 1개 제거 (15줄)
+- ✅ Semantic 토큰 확장: Gallery Image Item 토큰 4개 추가
+- ✅ 자동 다크 모드 지원: 컴포넌트가 토큰만 참조하면 자동 적용
+- ✅ 재발 방지: TDD 정책 테스트로 향후 @media 추가 자동 검출
+- ✅ 테스트: 662 passing (100% GREEN)
+- ✅ 빌드: **318.66 KB** (예산 325 KB 대비 6.34 KB 여유)
+
+**아키텍처 개선**:
+
+- **Before** (컴포넌트별 다크 모드):
+  - 각 컴포넌트가 자체 @media 블록 관리
+  - 다크 모드 변경 시 모든 컴포넌트 수정 필요
+  - 일관성 보장 어려움
+- **After** (Semantic Layer 중앙화):
+  - Semantic layer에서 단일 진실 소스 제공
+  - 컴포넌트는 토큰만 참조 (`--xeg-color-bg-*`)
+  - 다크 모드 변경 시 semantic layer만 수정
+  - 새 컴포넌트는 토큰 참조만으로 자동 다크 모드 지원
+
+**기술 부채 해결**:
+
+- 다크 모드 정의 중복 제거 (확장 시 12개 파일 → 1개 파일만 관리)
+- 유지보수성 향상 (단일 진실 소스)
+- 일관성 보장 (모든 컴포넌트가 동일한 다크 모드 정책 적용)
+- 번들 크기 최적화 가능성 (~0.5-1 KB 절감 예상, 추가 파일 마이그레이션 시)
+
+---
+
+### Phase 53: Button Fallback 제거 및 토큰 표준화 (2025-10-14) ✅
+
+**목표**: Button.module.css의 fallback 패턴을 제거하고 누락된 토큰을 semantic
+layer에 추가
+
+**문제 분석**:
+
+- Button.module.css에서 15개 fallback 패턴 발견:
+  `var(--xeg-opacity-disabled, 0.5)` 형태
+- 8개의 토큰이 semantic layer에 정의되지 않음:
+  - Size: `--xeg-size-button-sm/md/lg/touch`
+  - Color: `--xeg-color-primary`, `--xeg-color-success`,
+    `--xeg-color-border-hover`
+  - Neutral: `--xeg-color-neutral-100/200/300/400/500/700/800`
+
+**작업 내용**:
+
+**Phase 53.1**: TDD RED 테스트 작성
+
+- 파일: `test/styles/button-fallback-removal.test.ts`
+- 3개 테스트:
+  1. Fallback 패턴 검출 (15개 발견)
+  2. 토큰 정의 검증 (8개 누락 발견)
+  3. 특정 토큰 존재 확인
+
+**Phase 53.2**: Semantic Token Layer 확장
+
+- 파일: `src/shared/styles/design-tokens.semantic.css`
+- 추가된 토큰:
+  - **Button Size Tokens** (4개):
+    - `--xeg-size-button-sm: 32px`
+    - `--xeg-size-button-md: 40px`
+    - `--xeg-size-button-lg: 48px`
+    - `--xeg-size-button-touch: 44px` (터치 친화적)
+  - **Interactive Colors** (2개):
+    - `--xeg-color-primary: var(--color-primary)`
+    - `--xeg-color-success: var(--color-success)`
+  - **Border Colors** (1개):
+    - `--xeg-color-border-hover: var(--color-gray-300)`
+  - **Neutral Colors** (7개):
+    - `--xeg-color-neutral-100` ~ `--xeg-color-neutral-800`
+
+**Phase 53.3**: Button CSS Fallback 제거
+
+- 파일: `src/shared/components/ui/Button/Button.module.css`
+- 제거된 fallback 패턴 15개:
+  - `.disabled`: opacity fallback 제거
+  - `.toolbarButton`, `.xeg-toolbar-button`: 4개 fallback 제거
+  - `.xeg-icon-button`: 9개 fallback 제거 (hover/active/focus/disabled)
+
+**결과**:
+
+- ✅ 새 semantic 토큰: 14개 추가
+- ✅ Fallback 패턴 제거: 15개
+- ✅ 자동 검증 테스트: 3개 추가 (모두 GREEN)
+- ✅ 빌드: 318.59 KB (325 KB 제한 내, +0.31 KB)
+- ✅ 테스트: 662 passing / 1 skipped (JSDOM 제한으로 11개 제거, E2E로 커버)
+- ✅ 디자인 일관성: Button이 완전히 토큰 기반으로 전환
+
+**기술 부채 해결**:
+
+- Toolbar Settings 테스트 정리: JSDOM 제한으로 실패하는 11개 테스트 제거
+- E2E 테스트로 커버리지 확보: `playwright/smoke/toolbar-settings.spec.ts`
+
+### Phase 52: Toast 컴포넌트 디자인 토큰화 (2025-01-14) ✅
+
+**목표**: Toast 컴포넌트의 하드코딩된 px 값들을 디자인 토큰으로 전환하여
+툴바/설정과 디자인 일관성 유지
+
+**작업 내용**:
+
+- **Phase 52.3**: TDD RED 테스트 작성 (`test/styles/toast-tokenization.test.ts`)
+  - 5개 정책 테스트: spacing, sizing, border, font-size, font-weight
+  - 9개 하드코딩 값 검출 확인
+- **Phase 52.1**: Semantic Token Layer 확장 (`design-tokens.semantic.css`)
+  - Layout: 6개 (margin-bottom, padding, gap, header-gap, min/max-width)
+  - Border: 1개 (border-width)
+  - Typography: 3개 (title/message font-size, title font-weight)
+  - 4px grid 정규화: 12px → 16px, 18px → 24px
+- **Phase 52.2**: Toast CSS 리팩토링 (`Toast.module.css`)
+  - 9개 하드코딩 값 → 토큰 대체
+  - TDD GREEN 상태 확인
+
+**결과**:
+
+- ✅ 새 semantic 토큰: 10개 (총 24개 Toast 토큰)
+- ✅ 자동 검증 테스트: 5개 추가
+- ✅ 빌드: 318.28 KB (325 KB 제한 내, +0.92 KB)
+- ✅ 테스트: 677 passing (3 skipped)
+- ✅ 디자인 일관성 달성: Toast가 Toolbar/Settings와 동일한 spacing scale 사용
+
+### Phase 51: SettingsControls 디자인 토큰화 (2025-01-14) ✅
+
+**목표**: 툴바와 설정 메뉴의 디자인 요소 통일 및 토큰 체계 표준화
+
+**작업 내용**:
+
+- Phase 51.1: Semantic Token Layer 확장 (14개 토큰)
+- Phase 51.2: SettingsControls CSS 리팩토링 (하드코딩 제거)
+- Phase 51.3: 하드코딩 방지 테스트 추가 (7개)
+
+**결과**:
+
+- ✅ 하드코딩 fallback: 6개 → 0개
+- ✅ 비표준 토큰: 3개 → 0개
+- ✅ 새 토큰: 14개
+- ✅ 빌드: 317.09 KB (+0.57 KB)
+- ✅ 테스트: 677 passing (+7개)
 
 ### Phase 48.7: 포커스 관리 로직 수정 - createEffect 안티패턴 제거 (2025-01-13) ✅
 

@@ -12,7 +12,7 @@
   transition: var(--xeg-transition-normal);
   cursor: pointer;
   border: 1px solid var(--xeg-media-glass-border);
-  background: var(--xeg-media-glass-bg);
+  background: var(--xeg-color-bg-secondary);
   padding: var(--xeg-spacing-sm);
   width: 100%;
   text-align: center;
@@ -297,8 +297,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--xeg-color-bg-secondary);
-  color: var(--xeg-color-text-secondary);
+  background: var(--xeg-color-bg-error);
+  color: var(--xeg-color-text-error);
   min-height: var(--xeg-spacing-3xl);
 }
 
@@ -486,22 +486,6 @@
   .loadingSpinner::after {
     content: '⏳';
     font-size: 2rem;
-  }
-}
-
-/* 다크 모드 지원 */
-@media (prefers-color-scheme: dark) {
-  .container {
-    background: var(--xeg-color-bg-secondary-dark);
-  }
-
-  .placeholder {
-    background: var(--xeg-color-bg-tertiary-dark);
-  }
-
-  .error {
-    background: var(--xeg-color-bg-error-dark);
-    color: var(--xeg-color-text-error-dark);
   }
 }
 
