@@ -52,20 +52,9 @@ describe('Toolbar Settings Panel Integration', () => {
   });
 
   describe('Settings Button Behavior', () => {
-    // Phase 48: 설정 버튼 렌더링은 E2E에서 테스트 (JSDOM Solid.js 조건부 렌더링 제약)
-    it.skip('should render settings button when onOpenSettings is provided', () => {
-      const { container } = render(h(Toolbar, defaultProps));
-
-      // Check all buttons to see if settings exists
-      const allButtons = container.querySelectorAll('button');
-      const settingsButton = Array.from(allButtons).find(
-        btn => btn.getAttribute('data-gallery-element') === 'settings'
-      );
-
-      // The settings button should exist when onOpenSettings is provided
-      expect(settingsButton).toBeTruthy();
-      expect(settingsButton?.getAttribute('aria-label')).toBeTruthy();
-    });
+    // Phase 49: 설정 버튼 렌더링 테스트는 E2E로 이관됨
+    // - playwright/smoke/toolbar-settings.spec.ts:34 (should render settings button when onOpenSettings is provided)
+    // JSDOM에서는 Solid.js Show 컴포넌트의 조건부 렌더링이 제대로 작동하지 않음
 
     it('should call onOpenSettings prop when settings button is clicked', () => {
       const onOpenSettings = vi.fn();
@@ -150,19 +139,10 @@ describe('Toolbar Settings Panel Integration', () => {
       expect(settingsPanel?.getAttribute('aria-label')).toBeTruthy();
     });
 
-    // Phase 48: 설정 버튼 접근성은 E2E에서 테스트 (JSDOM Solid.js 조건부 렌더링 제약)
-    it.skip('should have settings button with proper accessibility', () => {
-      const { container } = render(h(Toolbar, defaultProps));
-
-      const allButtons = container.querySelectorAll('button');
-      const settingsButton = Array.from(allButtons).find(
-        btn => btn.getAttribute('data-gallery-element') === 'settings'
-      );
-
-      // Verify settings button exists and has proper aria-label
-      expect(settingsButton).toBeTruthy();
-      expect(settingsButton?.getAttribute('aria-label')).toBeTruthy();
-    });
+    // Phase 49: 설정 버튼 접근성 테스트는 E2E로 이관됨
+    // - playwright/smoke/toolbar-settings.spec.ts:60 (should have settings button with proper accessibility)
+    // - playwright/smoke/toolbar-settings.spec.ts:132 (should have accessible settings panel)
+    // JSDOM에서는 Solid.js Show 컴포넌트의 조건부 렌더링이 제대로 작동하지 않음
   });
 
   describe('Panel Position', () => {
