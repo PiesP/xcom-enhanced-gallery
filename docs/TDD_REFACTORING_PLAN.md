@@ -2,9 +2,9 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **브랜치**: master
+> **브랜치**: feature/fix-toolbar-transparency-and-modal-position
 >
-> **상태**: Phase 34 완료 평가 �
+> **상태**: Phase 35 진행 중 🚧
 
 ## 프로젝트 상태
 
@@ -21,6 +21,146 @@
 - `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-34 Step 1 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
+
+---
+
+## Phase 35: 툴바 초기 투명도 및 모달 위치 개선 🚧
+
+### 배경
+
+사용자 보고 이슈:
+
+1. **툴바 투명도 문제**: 갤러리 초기 기동 시 일부 요소가 투명하게 보이다가 설정
+   모달을 열면 색상이 복구됨
+2. **설정 모달 위치 문제**: 설정 모달이 적절하지 않은 위치에 표시됨
+
+### 문제 분석
+
+#### 1. 툴바 투명도 문제
+
+**근본 원인**:
+
+- `design-tokens.semantic.css`에서 `--xeg-bg-toolbar` 토큰 정의 순서 문제
+- 초기 로드 시 `data-theme` 속성이 설정되기 전에 툴바가 렌더링됨
+- `:root`의 기본값: `--xeg-bg-toolbar: var(--color-bg-surface)` (라이트 모드)
+- `[data-theme='dark']`의 값: `--xeg-bg-toolbar: var(--color-gray-800)` (다크
+  모드)
+- 설정 모달을 열면 `ThemeService`가 `data-theme`을 명시적으로 설정하여 색상 복구
+
+**영향**:
+
+- 초기 사용자 경험 저하
+- 시각적 일관성 부족
+- 테마 시스템의 신뢰성 문제
+
+#### 2. 설정 모달 위치 문제
+
+**현재 구조**:
+
+- `SettingsModal.module.css`에서 고정 위치 사용
+- `top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px))` → 80px 고정
+- 툴바의 실제 위치/높이를 고려하지 않음
+
+**문제점**:
+
+- 화면 크기 변경 시 부적절한 위치
+- 툴바와의 간격이 일관되지 않음
+- `center` 포지션이 제대로 작동하지 않음
+
+### Phase 35 Step 1: 툴바 초기 투명도 해결
+
+#### Step 1-A: RED - 초기 렌더링 투명도 테스트
+
+**테스트 파일**: `test/refactoring/toolbar-initial-transparency.test.ts`
+
+**테스트 시나리오**:
+
+1. 갤러리 초기화 시 `data-theme` 속성이 즉시 설정됨
+2. 툴바가 렌더링될 때 올바른 배경색이 적용됨
+3. 라이트/다크 모드 모두에서 투명도 문제 없음
+
+#### Step 1-B: GREEN - 테마 초기화 개선
+
+**수정 파일**:
+
+1. `src/bootstrap/initialize-theme.ts` (신규 생성)
+   - 갤러리 초기화 전 테마 설정
+   - 동기적 테마 적용
+2. `src/shared/services/theme-service.ts`
+   - 초기화 로직 개선
+   - 동기적 초기 설정 메서드 추가
+
+3. `src/features/gallery/GalleryApp.tsx`
+   - 테마 초기화를 컴포넌트 마운트 전으로 이동
+
+#### Step 1-C: REFACTOR - CSS 폴백 개선
+
+**수정 파일**:
+
+1. `src/shared/styles/design-tokens.semantic.css`
+   - `--xeg-bg-toolbar` 폴백 값 개선
+   - 시스템 테마 미디어 쿼리 우선순위 조정
+
+### Phase 35 Step 2: 설정 모달 위치 개선
+
+#### Step 2-A: RED - 동적 위치 계산 테스트
+
+**테스트 파일**: `test/refactoring/modal-position-calculation.test.ts`
+
+**테스트 시나리오**:
+
+1. 툴바 위치/크기 기반 모달 위치 계산
+2. 화면 경계 감지 및 조정
+3. 다양한 화면 크기에서 적절한 위치
+
+#### Step 2-B: GREEN - 동적 위치 계산 구현
+
+**수정 파일**:
+
+1. `src/shared/hooks/use-modal-position.ts` (신규 생성)
+   - 툴바 기준 동적 위치 계산
+   - 화면 경계 감지
+   - 자동 조정 로직
+
+2. `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
+   - `use-modal-position` 훅 적용
+   - 동적 스타일 바인딩
+
+3. `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
+   - 동적 위치 지원을 위한 CSS 변수 활용
+   - 고정값 제거
+
+#### Step 2-C: REFACTOR - 위치 로직 최적화
+
+- 성능 최적화 (debounce/throttle)
+- 엣지 케이스 처리
+- 접근성 개선
+
+### 작업 순서
+
+```
+Phase 35 Step 1: 툴바 초기 투명도 해결
+├─ Step 1-A: RED (테스트 작성)
+├─ Step 1-B: GREEN (테마 초기화 개선)
+└─ Step 1-C: REFACTOR (CSS 폴백 개선)
+
+Phase 35 Step 2: 설정 모달 위치 개선
+├─ Step 2-A: RED (위치 계산 테스트)
+├─ Step 2-B: GREEN (동적 위치 구현)
+└─ Step 2-C: REFACTOR (로직 최적화)
+```
+
+### 예상 효과
+
+1. **사용자 경험 개선**
+   - 갤러리 초기 로드 시 시각적 일관성 보장
+   - 설정 모달의 적절한 위치 표시
+2. **코드 품질 향상**
+   - 테마 초기화 로직 명확화
+   - 동적 레이아웃 지원 강화
+3. **유지보수성 개선**
+   - 명확한 테마 초기화 흐름
+   - 재사용 가능한 위치 계산 로직
 
 ---
 
