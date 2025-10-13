@@ -8,23 +8,29 @@
 
 ## 프로젝트 상태
 
-- **빌드**: dev 732.37 KB / prod 319.94 KB ✅
-- **테스트**: 661+ passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 732.38 KB / prod 319.92 KB ✅
+- **테스트**: 663+ passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (271 modules, 741 dependencies) ✅
-- **번들 예산**: 319.94 KB / 325 KB (5.06 KB 여유) ✅
+- **번들 예산**: 319.92 KB / 325 KB (5.08 KB 여유) ✅
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-35 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-36 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
 ---
 
 ## 최근 완료 작업
+
+### Phase 36: 설정 모달 중앙 고정 위치 개선 (2025-10-13) ✅
+
+Modal 모드에서 CSS 모듈 위치 클래스 정상 적용, 모든 위치 옵션 작동 확인.
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 ### Phase 35: 툴바 초기 투명도 및 모달 위치 개선 (2025-10-13) ✅
 
