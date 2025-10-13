@@ -31,8 +31,8 @@ beforeAll(() => {
   });
 });
 
-vi.mock('../../../../../src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings', () => ({
-  ToolbarWithSettings: (props: Record<string, unknown>) => {
+vi.mock('../../../../../src/shared/components/ui/Toolbar/Toolbar', () => ({
+  Toolbar: (props: Record<string, unknown>) => {
     capturedFitHandlers = {
       onFitOriginal: props.onFitOriginal as (event?: globalThis.Event) => void,
       onFitWidth: props.onFitWidth as (event?: globalThis.Event) => void,

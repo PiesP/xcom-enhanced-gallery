@@ -18,6 +18,13 @@
   --toolbar-padding: var(--spacing-component-padding);
   --toolbar-gap: var(--spacing-item-gap);
 
+  /* Toolbar Expandable Panel (Phase 44) */
+  --xeg-toolbar-panel-transition:
+    height var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+  --xeg-toolbar-panel-height: 0;
+  --xeg-toolbar-panel-max-height: 280px;
+
   /* Button Component */
   --button-bg-primary: var(--color-primary);
   --button-bg-primary-hover: var(--color-primary-hover);

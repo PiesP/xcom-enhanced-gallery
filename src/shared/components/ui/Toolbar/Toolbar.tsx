@@ -10,6 +10,11 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '../../../hooks/use-toolbar-state';
+import {
+  getToolbarExpandableState,
+  toggleSettingsExpanded,
+  setSettingsExpanded,
+} from '../../../state/signals/toolbar.signals';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/event-manager';
 import { ComponentStandards } from '../StandardProps';
@@ -26,6 +31,9 @@ import {
   ArrowAutofitHeight,
   ArrowsMaximize,
 } from '../Icon';
+import { SettingsControls } from '../Settings/SettingsControls';
+import { ThemeService } from '../../../services/theme-service';
+import { LanguageService } from '../../../services/language-service';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
 import styles from './Toolbar.module.css';
 
@@ -69,10 +77,21 @@ const FIT_MODE_ORDER: ReadonlyArray<{
 const HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
 
 function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
-  const { mergeProps, createMemo, createEffect, onCleanup, on } = solid;
+  const { mergeProps, createMemo, createEffect, onCleanup, on, createSignal } = solid;
 
   const props = mergeProps(DEFAULT_TOOLBAR_PROPS, rawProps);
   const [toolbarState, toolbarActions] = useToolbarState();
+
+  // Services for settings
+  const themeService = new ThemeService();
+  const languageService = new LanguageService();
+
+  // Settings state
+  const [currentTheme, setCurrentTheme] = createSignal<'auto' | 'light' | 'dark'>('auto');
+  const [currentLanguage, setCurrentLanguage] = createSignal<'auto' | 'ko' | 'en' | 'ja'>('auto');
+
+  // Expandable panel state - track with createMemo to make it reactive
+  const isSettingsExpanded = createMemo(() => getToolbarExpandableState().isSettingsExpanded);
 
   let toolbarRef: HTMLDivElement | undefined;
 
@@ -234,10 +253,60 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const onDownloadCurrent = createActionHandler(props.onDownloadCurrent);
   const onDownloadAll = createActionHandler(props.onDownloadAll);
   const onCloseClick = createActionHandler(props.onClose);
-  const onOpenSettings =
-    typeof props.onOpenSettings === 'function'
-      ? createActionHandler(props.onOpenSettings)
-      : undefined;
+
+  const onSettingsClick = (event: Event | MouseEvent) => {
+    event.stopPropagation();
+    const wasExpanded = isSettingsExpanded();
+    toggleSettingsExpanded();
+    props.onOpenSettings?.();
+
+    // Phase 47: Focus management - 확장 시 첫 컨트롤로 포커스 이동
+    if (!wasExpanded) {
+      solid.createEffect(() => {
+        const panel = document.querySelector('[data-gallery-element="settings-panel"]');
+        const firstControl = panel?.querySelector('select') as HTMLSelectElement;
+        if (firstControl) {
+          setTimeout(() => firstControl.focus(), 50);
+        }
+      });
+    }
+  };
+
+  // Phase 47: Keyboard navigation - Escape 키 핸들러
+  const handleToolbarKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && isSettingsExpanded()) {
+      event.preventDefault();
+      event.stopPropagation();
+      setSettingsExpanded(false);
+
+      // 설정 버튼으로 포커스 복원
+      solid.createEffect(() => {
+        const settingsButton = document.querySelector(
+          '[data-gallery-element="settings"]'
+        ) as HTMLButtonElement;
+        if (settingsButton) {
+          setTimeout(() => settingsButton.focus(), 50);
+        }
+      });
+      return; // Escape 처리 완료
+    }
+
+    // Escape 외의 키는 무시 (기존 키보드 핸들링은 개별 버튼에서 처리)
+  };
+
+  const handleThemeChange = (event: Event) => {
+    const select = event.target as HTMLSelectElement;
+    const theme = select.value as 'auto' | 'light' | 'dark';
+    setCurrentTheme(theme);
+    themeService.setTheme(theme);
+  };
+
+  const handleLanguageChange = (event: Event) => {
+    const select = event.target as HTMLSelectElement;
+    const language = select.value as 'auto' | 'ko' | 'en' | 'ja';
+    setCurrentLanguage(language);
+    languageService.setLanguage(language);
+  };
 
   return (
     <div
@@ -259,7 +328,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={props.onKeyDown as ((event: KeyboardEvent) => void) | undefined}
+      onKeyDown={handleToolbarKeyDown as unknown as ((event: Event) => void) | undefined}
     >
       <div
         class={`${styles.toolbarContent} xeg-center-between xeg-gap-md`}
@@ -367,14 +436,16 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             </IconButton>
           )}
 
-          {typeof props.onOpenSettings === 'function' && onOpenSettings && (
+          {typeof props.onOpenSettings === 'function' && (
             <IconButton
+              id='settings-button'
               size='toolbar'
               aria-label='설정 열기'
+              aria-expanded={isSettingsExpanded() ? 'true' : 'false'}
+              aria-controls='toolbar-settings-panel'
               title='설정'
               disabled={props.disabled}
-              onClick={onOpenSettings}
-              onMouseDown={onOpenSettings}
+              onClick={onSettingsClick}
               data-gallery-element='settings'
               data-disabled={props.disabled}
             >
@@ -395,6 +466,25 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             <X size={18} />
           </IconButton>
         </div>
+      </div>
+
+      {/* Settings Panel */}
+      <div
+        id='toolbar-settings-panel'
+        class={styles.settingsPanel}
+        data-expanded={isSettingsExpanded()}
+        role='region'
+        aria-label='설정 패널'
+        aria-labelledby='settings-button'
+        data-gallery-element='settings-panel'
+      >
+        <SettingsControls
+          currentTheme={currentTheme()}
+          currentLanguage={currentLanguage()}
+          onThemeChange={handleThemeChange}
+          onLanguageChange={handleLanguageChange}
+          compact={true}
+        />
       </div>
     </div>
   );

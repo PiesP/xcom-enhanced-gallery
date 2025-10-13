@@ -14,14 +14,6 @@ export {
   type ToolbarDataState,
 } from './use-toolbar-state';
 
-// Modal position hook (Phase 35 Step 2-B)
-export {
-  useModalPosition,
-  type ModalPosition,
-  type ModalSize,
-  type PositionOptions,
-} from './use-modal-position';
-
 // useScrollDirection이 제거되었으므로 주석 처리
 // export {
 //   useScrollDirection,

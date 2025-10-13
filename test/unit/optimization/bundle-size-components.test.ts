@@ -23,24 +23,24 @@ const logMetrics = (label: string, value: number, unit: string, target: number):
 };
 
 describe('[Phase 33-2B] Component Bundle Size Guard', () => {
-  it('Toolbar.tsx 크기가 13 KB 이하여야 함', () => {
+  it('Toolbar.tsx 크기가 16 KB 이하여야 함 (Phase 44-47: 설정 패널 통합)', () => {
     const toolbarPath = resolveSrc('shared/components/ui/Toolbar/Toolbar.tsx');
     const { size } = statSync(toolbarPath);
     const sizeKB = toKB(size);
 
-    logMetrics('Toolbar.tsx size', sizeKB, 'KB', 13);
-    expect(sizeKB).toBeLessThanOrEqual(13);
+    logMetrics('Toolbar.tsx size', sizeKB, 'KB', 16);
+    expect(sizeKB).toBeLessThanOrEqual(16);
   });
 
-  it('Toolbar.tsx 라인 수가 430줄 이하여야 함', () => {
+  it('Toolbar.tsx 라인 수가 550줄 이하여야 함 (Phase 44-47: 설정 패널 통합)', () => {
     const toolbarContent = readFileSync(
       resolveSrc('shared/components/ui/Toolbar/Toolbar.tsx'),
       'utf-8'
     );
     const toolbarLines = toolbarContent.split('\n').length;
 
-    logMetrics('Toolbar.tsx lines', toolbarLines, 'lines', 430);
-    expect(toolbarLines).toBeLessThanOrEqual(430);
+    logMetrics('Toolbar.tsx lines', toolbarLines, 'lines', 550);
+    expect(toolbarLines).toBeLessThanOrEqual(550);
   });
 
   it('VerticalImageItem.tsx 크기가 12 KB 이하여야 함', () => {
@@ -64,20 +64,7 @@ describe('[Phase 33-2B] Component Bundle Size Guard', () => {
     expect(lineCount).toBeLessThanOrEqual(460);
   });
 
-  it('SettingsModal.tsx 크기가 11.5 KB 이하여야 함', () => {
-    const modalPath = resolveSrc('shared/components/ui/SettingsModal/SettingsModal.tsx');
-    const sizeKB = toKB(statSync(modalPath).size);
-
-    logMetrics('SettingsModal.tsx size', sizeKB, 'KB', 11.5);
-    expect(sizeKB).toBeLessThanOrEqual(11.5);
-  });
-
-  it('SettingsModal.tsx 라인 수가 401줄 이하여야 함', () => {
-    const modalPath = resolveSrc('shared/components/ui/SettingsModal/SettingsModal.tsx');
-    const content = readFileSync(modalPath, 'utf-8');
-    const lineCount = content.split('\n').length;
-
-    logMetrics('SettingsModal.tsx lines', lineCount, 'lines', 401);
-    expect(lineCount).toBeLessThanOrEqual(401);
-  });
+  // Phase 48: SettingsModal removed, replaced with inline toolbar settings
+  // it('SettingsModal.tsx 크기가 11.5 KB 이하여야 함', () => { ... });
+  // it('SettingsModal.tsx 라인 수가 401줄 이하여야 함', () => { ... });
 });

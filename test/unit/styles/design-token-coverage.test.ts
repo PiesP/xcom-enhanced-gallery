@@ -5,8 +5,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 describe('Design Token Coverage', () => {
   function readCSSFile(fileName: string): string {
@@ -30,7 +34,9 @@ describe('Design Token Coverage', () => {
     const cssFiles = [
       'shared/components/ui/Button/Button.module.css',
       'shared/components/ui/Toast/Toast.module.css',
-      'shared/components/ui/SettingsModal/SettingsModal.module.css',
+      // Phase 48: SettingsModal removed, replaced with inline toolbar settings
+      // 'shared/components/ui/SettingsModal/SettingsModal.module.css',
+      'shared/components/ui/Settings/SettingsControls.module.css',
     ];
 
     cssFiles.forEach(fileName => {

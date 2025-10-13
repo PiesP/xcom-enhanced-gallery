@@ -78,12 +78,8 @@
         "src/features/gallery/GalleryRenderer.ts",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/hooks/use-focus-trap.ts",
-        "src/shared/hooks/use-modal-position.ts",
-        "src/shared/hooks/use-scroll-lock.ts",
-        "src/shared/hooks/use-settings-modal.ts",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/hooks/use-toolbar-state.ts",
         "src/shared/components/ui/Button/IconButton.tsx",
         "src/shared/components/ui/Button/Button.tsx",
         "src/shared/components/ui/Icon/hero/HeroArrowAutofitHeight.tsx",
@@ -97,14 +93,14 @@
         "src/shared/components/ui/Icon/hero/HeroSettings.tsx",
         "src/shared/components/ui/Icon/hero/HeroX.tsx",
         "src/shared/components/ui/Icon/hero/HeroZoomIn.tsx",
+        "src/shared/components/ui/Settings/SettingsControls.tsx",
         "src/shared/components/base/BaseComponentProps.ts",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/hooks/use-toolbar-state.ts",
         "src/shared/utils/signal-selector.ts",
         "src/features/gallery/hooks/useGalleryFocusTracker.ts",
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+        "src/shared/hooks/use-focus-trap.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup.ts",
         "src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
@@ -331,6 +327,7 @@
         "src/shared/utils/scroll/scroll-utils.ts",
         "src/features/gallery/GalleryRenderer.ts",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/shared/state/signals/toolbar.signals.ts",
         "src/features/gallery/hooks/useGalleryFocusTracker.ts",
         "src/features/gallery/hooks/useGalleryItemScroll.ts",
         "src/features/gallery/hooks/useGalleryScroll.ts",
@@ -352,7 +349,6 @@
         "src/shared/hooks/use-dom-ready.ts",
         "src/shared/memory/memory-tracker.ts",
         "src/shared/services/base-service-impl.ts",
-        "src/shared/state/signals/toolbar.signals.ts",
         "src/shared/services/media-mapping/media-mapping-service.ts",
         "src/shared/services/media-mapping/media-tab-url-direct-strategy.ts",
         "src/utils/index.ts"
@@ -461,7 +457,6 @@
         "src/shared/utils/performance/prefetch-bench.ts",
         "src/shared/utils/performance/schedulers.ts",
         "src/shared/utils/events.ts",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/hooks/use-toolbar-state.ts",
         "src/shared/utils/animations.ts",
         "src/shared/utils/css-animations.ts",
@@ -2023,8 +2018,8 @@
         "src/shared/services/bulk-download-service.ts",
         "src/shared/components/ui/ErrorBoundary/ErrorBoundary.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/hooks/use-settings-modal.ts",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/components/ui/Settings/SettingsControls.tsx",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/shared/services/index.ts"
@@ -2146,8 +2141,8 @@
       "dependents": [
         "src/shared/services/unified-toast-manager.ts",
         "src/shared/state/signals/gallery.signals.ts",
-        "src/shared/state/signals/download.signals.ts",
         "src/shared/state/signals/toolbar.signals.ts",
+        "src/shared/state/signals/download.signals.ts",
         "src/shared/state/gallery-store.ts"
       ],
       "orphan": false,
@@ -4558,8 +4553,7 @@
       ],
       "dependents": [
         "src/shared/container/service-accessors.ts",
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/hooks/use-settings-modal.ts",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/types/core/core-types.ts",
         "src/shared/services/service-initialization.ts",
         "src/shared/services/index.ts"
@@ -6270,14 +6264,14 @@
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings",
+          "module": "../../../../shared/components/ui/Toolbar/Toolbar",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6687,70 +6681,7 @@
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": true,
-          "module": "../SettingsModal/SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "dynamic-import"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Toolbar/Toolbar",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
-        "src/shared/components/ui/index.ts",
-        "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+      "source": "src/shared/components/ui/Toolbar/Toolbar.tsx",
       "dependencies": [
         {
           "dynamic": false,
@@ -6771,14 +6702,15 @@
         },
         {
           "dynamic": false,
-          "module": "../../../hooks/use-focus-trap",
+          "module": "../../../external/vendors",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
-          "resolved": "src/shared/hooks/use-focus-trap.ts",
+          "resolved": "src/shared/external/vendors.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6788,14 +6720,14 @@
         },
         {
           "dynamic": false,
-          "module": "../../../hooks/use-modal-position",
+          "module": "../../../hooks/use-toolbar-state",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/hooks/use-modal-position.ts",
+          "resolved": "src/shared/hooks/use-toolbar-state.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6805,31 +6737,14 @@
         },
         {
           "dynamic": false,
-          "module": "../../../hooks/use-scroll-lock",
+          "module": "../../../services/event-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/hooks/use-scroll-lock.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../hooks/use-settings-modal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/hooks/use-settings-modal.ts",
+          "resolved": "src/shared/services/event-manager.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6873,14 +6788,31 @@
         },
         {
           "dynamic": false,
-          "module": "../../../utils/timer-management",
+          "module": "../../../state/signals/toolbar.signals",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/timer-management.ts",
+          "resolved": "src/shared/state/signals/toolbar.signals.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../utils/performance/performance-utils",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/performance/performance-utils.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -6924,6 +6856,23 @@
         },
         {
           "dynamic": false,
+          "module": "../Settings/SettingsControls",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Settings/SettingsControls.tsx",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
           "module": "../StandardProps",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -6941,7 +6890,7 @@
         },
         {
           "dynamic": false,
-          "module": "../Toolbar/Toolbar.module.css",
+          "module": "./Toolbar.module.css",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
@@ -6958,16 +6907,17 @@
         },
         {
           "dynamic": false,
-          "module": "./SettingsModal.module.css",
+          "module": "./Toolbar.types",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
+            "type-only",
             "import"
           ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.types.ts",
           "coreModule": false,
-          "followable": false,
+          "followable": true,
           "couldNotResolve": false,
           "matchesDoNotFollow": false,
           "circular": false,
@@ -6975,8 +6925,10 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-        "src/shared/components/ui/SettingsModal/index.ts"
+        "src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx",
+        "src/shared/components/ui/index.ts",
+        "src/shared/components/index.ts",
+        "src/shared/components/ui/Toolbar/UnifiedToolbar.tsx"
       ],
       "orphan": false,
       "valid": true
@@ -6993,31 +6945,14 @@
       ],
       "dependencies": [],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/components/ui/Toolbar/Toolbar.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/components/ui/Settings/SettingsControls.tsx"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/components/ui/SettingsModal/SettingsModal.module.css",
-      "followable": false,
-      "coreModule": false,
-      "couldNotResolve": false,
-      "matchesDoNotFollow": false,
-      "dependencyTypes": [
-        "local",
-        "import"
-      ],
-      "dependencies": [],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/use-focus-trap.ts",
+      "source": "src/shared/hooks/use-toolbar-state.ts",
       "dependencies": [
         {
           "dynamic": false,
@@ -7038,14 +6973,14 @@
         },
         {
           "dynamic": false,
-          "module": "../utils/focus-trap",
+          "module": "../utils/timer-management",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/utils/focus-trap.ts",
+          "resolved": "src/shared/utils/timer-management.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7055,82 +6990,25 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/use-modal-position.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/shared/hooks/index.ts"
       ],
       "orphan": false,
       "valid": true
     },
     {
-      "source": "src/shared/hooks/use-scroll-lock.ts",
+      "source": "src/shared/state/signals/toolbar.signals.ts",
       "dependencies": [
         {
           "dynamic": false,
-          "module": "../external/vendors",
+          "module": "./signal-factory",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "import"
           ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-        "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/use-settings-modal.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
+          "resolved": "src/shared/state/signals/signal-factory.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7140,33 +7018,17 @@
         },
         {
           "dynamic": false,
-          "module": "../services/language-service",
+          "module": "@shared/logging/logger",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
+            "aliased",
+            "aliased-tsconfig",
+            "aliased-tsconfig-paths",
             "local",
-            "type-only",
             "import"
           ],
-          "resolved": "src/shared/services/language-service.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../services/theme-service",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/services/theme-service.ts",
+          "resolved": "src/shared/logging/logger.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -7176,7 +7038,9 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx"
+        "src/shared/components/ui/Toolbar/Toolbar.tsx",
+        "src/shared/state/index.ts",
+        "src/shared/state/app-state.ts"
       ],
       "orphan": false,
       "valid": true
@@ -7239,7 +7103,6 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
         "src/shared/components/ui/index.ts"
@@ -7557,7 +7420,6 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx"
       ],
       "orphan": false,
@@ -8058,6 +7920,101 @@
       "valid": true
     },
     {
+      "source": "src/shared/components/ui/Settings/SettingsControls.tsx",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../../../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../../../services/language-service",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/services/language-service.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../Toolbar/Toolbar.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "./SettingsControls.module.css",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/components/ui/Settings/SettingsControls.module.css",
+          "coreModule": false,
+          "followable": false,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/shared/components/ui/Toolbar/Toolbar.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/components/ui/Settings/SettingsControls.module.css",
+      "followable": false,
+      "coreModule": false,
+      "couldNotResolve": false,
+      "matchesDoNotFollow": false,
+      "dependencyTypes": [
+        "local",
+        "import"
+      ],
+      "dependencies": [],
+      "dependents": [
+        "src/shared/components/ui/Settings/SettingsControls.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
       "source": "src/shared/components/ui/StandardProps.ts",
       "dependencies": [
         {
@@ -8080,7 +8037,6 @@
         }
       ],
       "dependents": [
-        "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
         "src/shared/components/ui/Toolbar/Toolbar.tsx",
         "src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx",
         "src/shared/components/hoc/GalleryHOC.tsx",
@@ -8118,235 +8074,6 @@
         "src/shared/components/hoc/GalleryHOC.tsx",
         "src/shared/components/ui/Toast/ToastContainer.tsx",
         "src/shared/components/base/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/Toolbar/Toolbar.tsx",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../hooks/use-toolbar-state",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/hooks/use-toolbar-state.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../services/event-manager",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/services/event-manager.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../../../utils/performance/performance-utils",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/performance/performance-utils.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Button/IconButton",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Button/IconButton.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../Icon",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Icon/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../StandardProps",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/StandardProps.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Toolbar.module.css",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.module.css",
-          "coreModule": false,
-          "followable": false,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./Toolbar.types",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "import"
-          ],
-          "resolved": "src/shared/components/ui/Toolbar/Toolbar.types.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-        "src/shared/components/ui/index.ts",
-        "src/shared/components/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/hooks/use-toolbar-state.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "../external/vendors",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/external/vendors.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "../utils/timer-management",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/utils/timer-management.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/Toolbar/Toolbar.tsx",
-        "src/shared/hooks/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -9494,6 +9221,51 @@
       "dependencies": [],
       "dependents": [
         "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx"
+      ],
+      "orphan": false,
+      "valid": true
+    },
+    {
+      "source": "src/shared/hooks/use-focus-trap.ts",
+      "dependencies": [
+        {
+          "dynamic": false,
+          "module": "../external/vendors",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/external/vendors.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        },
+        {
+          "dynamic": false,
+          "module": "../utils/focus-trap",
+          "moduleSystem": "es6",
+          "exoticallyRequired": false,
+          "dependencyTypes": [
+            "local",
+            "import"
+          ],
+          "resolved": "src/shared/utils/focus-trap.ts",
+          "coreModule": false,
+          "followable": true,
+          "couldNotResolve": false,
+          "matchesDoNotFollow": false,
+          "circular": false,
+          "valid": true
+        }
+      ],
+      "dependents": [
+        "src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx",
+        "src/shared/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -11461,41 +11233,6 @@
         },
         {
           "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/index.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./StandardProps",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11600,41 +11337,6 @@
         },
         {
           "dynamic": false,
-          "module": "./ToolbarWithSettings/ToolbarWithSettings",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./ToolbarWithSettings/ToolbarWithSettings",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "@/shared/services/unified-toast-manager",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -11658,51 +11360,6 @@
       "dependents": [
         "src/main.ts",
         "src/shared/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/components/ui/SettingsModal/index.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./SettingsModal",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "type-only",
-            "export"
-          ],
-          "resolved": "src/shared/components/ui/SettingsModal/SettingsModal.tsx",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/components/ui/index.ts"
       ],
       "orphan": false,
       "valid": true
@@ -13613,14 +13270,14 @@
         },
         {
           "dynamic": false,
-          "module": "../ToolbarWithSettings/ToolbarWithSettings",
+          "module": "./Toolbar",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
           "dependencyTypes": [
             "local",
             "export"
           ],
-          "resolved": "src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings.tsx",
+          "resolved": "src/shared/components/ui/Toolbar/Toolbar.tsx",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -14156,23 +13813,6 @@
         },
         {
           "dynamic": false,
-          "module": "./use-modal-position",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/use-modal-position.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
           "module": "./use-toolbar-state",
           "moduleSystem": "es6",
           "exoticallyRequired": false,
@@ -14457,23 +14097,6 @@
             "export"
           ],
           "resolved": "src/shared/hooks/use-gallery-toolbar-logic.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "./hooks/use-scroll-lock",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "export"
-          ],
-          "resolved": "src/shared/hooks/use-scroll-lock.ts",
           "coreModule": false,
           "followable": true,
           "couldNotResolve": false,
@@ -15276,54 +14899,6 @@
       ],
       "dependents": [
         "src/shared/state/index.ts"
-      ],
-      "orphan": false,
-      "valid": true
-    },
-    {
-      "source": "src/shared/state/signals/toolbar.signals.ts",
-      "dependencies": [
-        {
-          "dynamic": false,
-          "module": "./signal-factory",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/state/signals/signal-factory.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        },
-        {
-          "dynamic": false,
-          "module": "@shared/logging/logger",
-          "moduleSystem": "es6",
-          "exoticallyRequired": false,
-          "dependencyTypes": [
-            "aliased",
-            "aliased-tsconfig",
-            "aliased-tsconfig-paths",
-            "local",
-            "import"
-          ],
-          "resolved": "src/shared/logging/logger.ts",
-          "coreModule": false,
-          "followable": true,
-          "couldNotResolve": false,
-          "matchesDoNotFollow": false,
-          "circular": false,
-          "valid": true
-        }
-      ],
-      "dependents": [
-        "src/shared/state/index.ts",
-        "src/shared/state/app-state.ts"
       ],
       "orphan": false,
       "valid": true
@@ -16437,8 +16012,8 @@
     "warn": 0,
     "info": 1,
     "ignore": 0,
-    "totalCruised": 268,
-    "totalDependenciesCruised": 738,
+    "totalCruised": 263,
+    "totalDependenciesCruised": 717,
     "optionsUsed": {
       "baseDir": "C:\\git\\xcom-enhanced-gallery",
       "combinedDependencies": false,

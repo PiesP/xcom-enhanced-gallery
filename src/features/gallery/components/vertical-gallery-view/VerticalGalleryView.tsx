@@ -8,7 +8,7 @@
 
 import type { JSX } from 'solid-js';
 import { logger } from '../../../../shared/logging/logger';
-import { ToolbarWithSettings } from '../../../../shared/components/ui/ToolbarWithSettings/ToolbarWithSettings';
+import { Toolbar } from '../../../../shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
 import type { GalleryState } from '../../../../shared/state/signals/gallery.signals';
@@ -412,7 +412,7 @@ function VerticalGalleryViewCore({
       <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
 
       <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>
-        <ToolbarWithSettings
+        <Toolbar
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}
@@ -426,6 +426,7 @@ function VerticalGalleryViewCore({
           onFitWidth={handleFitWidth}
           onFitHeight={handleFitHeight}
           onFitContainer={handleFitContainer}
+          onOpenSettings={() => {}}
           className={styles.toolbar || ''}
         />
       </div>
