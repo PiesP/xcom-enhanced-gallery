@@ -292,22 +292,22 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const onDownloadAll = createActionHandler(props.onDownloadAll);
   const onCloseClick = createActionHandler(props.onClose);
 
-  const onSettingsClick = (event: Event | MouseEvent) => {
-    event.stopPropagation();
-    event.stopImmediatePropagation(); // Phase 48.5: 이벤트 전파 완전 차단
+  const onSettingsClick = (event: MouseEvent) => {
+    event.stopImmediatePropagation();
     const wasExpanded = isSettingsExpanded();
     toggleSettingsExpanded();
     props.onOpenSettings?.();
 
-    // Phase 47: Focus management - 확장 시 첫 컨트롤로 포커스 이동
+    // Phase 47→48.7: Focus management 수정 - createEffect 대신 직접 DOM 조작
     if (!wasExpanded) {
-      solid.createEffect(() => {
+      // 패널이 열릴 때만 포커스 이동 (한 번만 실행)
+      setTimeout(() => {
         const panel = document.querySelector('[data-gallery-element="settings-panel"]');
         const firstControl = panel?.querySelector('select') as HTMLSelectElement;
         if (firstControl) {
-          setTimeout(() => firstControl.focus(), 50);
+          firstControl.focus();
         }
-      });
+      }, 50);
     }
   };
 
@@ -318,15 +318,15 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       event.stopPropagation();
       setSettingsExpanded(false);
 
-      // 설정 버튼으로 포커스 복원
-      solid.createEffect(() => {
+      // Phase 47→48.7: 설정 버튼으로 포커스 복원 - createEffect 대신 직접 DOM 조작
+      setTimeout(() => {
         const settingsButton = document.querySelector(
           '[data-gallery-element="settings"]'
         ) as HTMLButtonElement;
         if (settingsButton) {
-          setTimeout(() => settingsButton.focus(), 50);
+          settingsButton.focus();
         }
-      });
+      }, 50);
       return; // Escape 처리 완료
     }
 
