@@ -204,7 +204,7 @@ export class GalleryApp {
    * 갤러리 열기
    */
   public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
-    if (!mediaItems || mediaItems.length === 0) {
+    if (mediaItems?.length === 0) {
       logger.warn('갤러리 열기 실패: 미디어 아이템이 없음');
       return;
     }
