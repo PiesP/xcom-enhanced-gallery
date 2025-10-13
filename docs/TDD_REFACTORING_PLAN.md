@@ -2,14 +2,14 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **브랜치**: feature/phase-34-optimization-plan
+> **브랜치**: feature/phase-34-step-2-large-files
 >
-> **상태**: Phase 34 계획 수립 중 📝
+> **상태**: Phase 34 Step 2 준비 중 📝
 
 ## 프로젝트 상태
 
 - **빌드**: dev 726.49 KB / prod 318.04 KB ✅
-- **테스트**: 657/677 passing (24 skipped, 1 todo) ✅
+- **테스트**: 661/686 passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (269 modules, 736 dependencies) ✅
@@ -17,7 +17,7 @@
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-33 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-34 Step 1 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
@@ -27,101 +27,14 @@
 
 ### 목표
 
-1. **미사용 코드 제거**: 실제로 사용되지 않는 export 제거로 코드베이스 정리
-2. **대형 파일 리팩토링**: 23KB+ 파일들을 책임별로 분리하여 유지보수성 향상
+1. ~~**미사용 코드 제거**: 실제로 사용되지 않는 export 제거로 코드베이스 정리~~
+   ✅
+2. **대형 파일 리팩토링**: 23KB+ 파일들을 책임별로 분리하여 유지보수성 향상 🎯
 
 ### 우선순위
 
-**Phase 34 Step 1** → 미사용 Export 제거 (빠른 성과) **Phase 34 Step 2** → 대형
-파일 리팩토링 (구조 개선)
-
----
-
-## Phase 34 Step 1: 미사용 Export 제거 🎯
-
-**브랜치**: `feature/phase-34-step-1-unused-exports`
-
-### 배경
-
-`style-utils.ts`에 2개 함수가 export는 되지만 실제로는 사용되지 않음:
-
-- `getCSSVariable`: CSS 변수 조회 함수
-- `applyTheme`: 테마 클래스 적용 함수
-
-### 영향 분석
-
-**현재 상태**:
-
-- `style-utils.ts` (33줄): re-export 6개 + 독립 함수 2개
-- `index.ts`에서 재export되어 public API로 노출됨
-- 실제 사용처: 0개 (정의 및 export만 존재)
-
-**예상 효과**:
-
-- 소스 코드 정리: ~20 lines 감소
-- 번들 크기: 변화 없음 (tree-shaking 이미 최적화됨)
-- API 명확성: 사용되는 함수만 export
-- 유지보수성: 불필요한 코드 관리 부담 감소
-
-### TDD 계획
-
-#### Step 1-A: RED - 미사용 Export 감지 테스트
-
-**테스트 파일**: `test/unit/refactoring/unused-exports-removal.test.ts`
-
-```typescript
-describe('Unused Exports Detection - style-utils.ts', () => {
-  it('should detect getCSSVariable is not used in codebase', async () => {
-    // 코드베이스 전체 스캔
-    // getCSSVariable 사용처가 정의/export 외에 없어야 함
-  });
-
-  it('should detect applyTheme is not used in codebase', async () => {
-    // 코드베이스 전체 스캔
-    // applyTheme 사용처가 정의/export 외에 없어야 함
-  });
-
-  it('should verify other exports are still used', () => {
-    // combineClasses, toggleClass 등은 실제로 사용됨을 확인
-  });
-});
-```
-
-**예상 결과**: RED (2개 함수가 미사용으로 검출)
-
-#### Step 1-B: GREEN - 미사용 함수 제거
-
-**변경 대상 파일**:
-
-1. `src/shared/utils/styles/style-utils.ts`:
-   - `getCSSVariable` 함수 제거
-   - `applyTheme` 함수 제거
-   - 주석 업데이트: "CSS 유틸리티 re-export only"
-2. `src/shared/utils/styles/index.ts`:
-   - `getCSSVariable` export 제거
-   - `applyTheme` export 제거
-
-**검증**:
-
-- 테스트: GREEN 전환 확인
-- 타입 체크: `npm run typecheck`
-- 전체 테스트: `npm test`
-- 빌드: `npm run build`
-
-#### Step 1-C: REFACTOR - 문서 및 주석 정리
-
-- `style-utils.ts` 파일 헤더 주석 간소화
-- 남은 re-export 함수들의 역할 명확화
-- 변경 이력 커밋 메시지 작성
-
-### 예상 산출물
-
-| 항목           | Before | After | 변화       |
-| -------------- | ------ | ----- | ---------- |
-| style-utils.ts | 33줄   | ~13줄 | -20줄      |
-| index.ts       | 22줄   | ~20줄 | -2줄       |
-| 미사용 export  | 2개    | 0개   | -2개 ✅    |
-| 번들 크기      | 318KB  | 318KB | 0KB (예상) |
+~~**Phase 34 Step 1** → 미사용 Export 제거 (완료)~~ ✅ **Phase 34 Step 2** →
+대형 파일 리팩토링 (진행 중) 🎯
 
 ---
 

@@ -8,11 +8,4 @@
 export * from './css-utilities';
 
 // Style utilities
-export {
-  combineClasses,
-  toggleClass,
-  setCSSVariable,
-  getCSSVariable,
-  updateComponentState,
-  applyTheme,
-} from './style-utils';
+export { combineClasses, toggleClass, setCSSVariable, updateComponentState } from './style-utils';

@@ -2,17 +2,74 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **상태**: Phase 33 Step 3 완료 ✅
+> **상태**: Phase 34 Step 1 완료 ✅
 
 ## 프로젝트 상태 스냅샷 (2025-10-13)
 
 - **빌드**: dev 726.49 KB / prod 318.04 KB ✅
-- **테스트**: 657 passing, 24 skipped, 1 todo ✅
+- **테스트**: 661 passing, 24 skipped, 1 todo ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations ✅
 
 ## 최근 완료 Phase
+
+### Phase 34 Step 1: 미사용 Export 제거 (2025-10-13) ✅
+
+**목표**: 사용되지 않는 export 함수를 제거하여 코드베이스 정리 및 API 명확성
+향상.
+
+**배경**: `style-utils.ts`에 2개 함수(`getCSSVariable`, `applyTheme`)가 export는
+되지만 실제로는 사용되지 않음을 발견.
+
+#### TDD 진행
+
+- **RED**: `test/unit/refactoring/unused-exports-removal.test.ts` 작성
+  - 코드베이스 전체를 스캔하여 미사용 export 감지
+  - `getCSSVariable`: 정의 및 export만 존재, 실제 사용처 0개
+  - `applyTheme`: 정의 및 export만 존재, 실제 사용처 0개
+  - 테스트 결과: 2개 함수 모두 미사용 확인 ✅
+
+- **GREEN**: 미사용 함수 제거
+  1. **style-utils.ts** 정리 (33줄 → 13줄)
+     - `getCSSVariable` 함수 제거 (CSS 변수 조회)
+     - `applyTheme` 함수 제거 (테마 클래스 적용)
+     - 파일 헤더 주석 업데이트: "re-export only"
+  2. **index.ts** export 정리 (22줄 → 20줄)
+     - `getCSSVariable` export 제거
+     - `applyTheme` export 제거
+  3. 테스트 업데이트: RED → GREEN 전환 ✅
+
+- **REFACTOR**: 검증 및 최적화
+  1. 전체 테스트 실행: 661 passing ✅
+  2. 타입 체크: 0 errors ✅
+  3. 빌드 검증: dev 726.49 KB / prod 318.04 KB ✅
+  4. 린트 자동 수정 적용 ✅
+
+#### 결과
+
+| 항목                 | Before    | After     | 변화                            |
+| -------------------- | --------- | --------- | ------------------------------- |
+| **style-utils.ts**   | 33줄      | 13줄      | -20줄                           |
+| **index.ts**         | 22줄      | 20줄      | -2줄                            |
+| **미사용 export**    | 2개       | 0개       | -2개 ✅                         |
+| **번들 크기 (prod)** | 318.04 KB | 318.04 KB | 0 KB (tree-shaking 이미 최적화) |
+
+#### 주요 성과
+
+1. **API 명확성 향상**: 실제로 사용되는 함수만 export하여 API 표면 축소
+2. **유지보수성 향상**: 불필요한 코드 제거로 관리 부담 감소
+3. **Tree-shaking 효과 확인**: 번들러가 이미 미사용 코드를 최적화하고 있음을
+   검증
+4. **자동 감지 테스트**: 향후 미사용 export 방지를 위한 가드 추가
+
+#### 교훈
+
+- 번들 크기 변화 없음: Vite/Rollup의 tree-shaking이 이미 미사용 코드 제거
+- 소스 코드 품질 향상이 주요 목표 달성
+- 코드베이스 스캔 테스트로 향후 미사용 코드 조기 감지 가능
+
+---
 
 ### Phase 33 Step 3: 중복 유틸리티 함수 통합 (2025-10-13) ✅
 
