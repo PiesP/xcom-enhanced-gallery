@@ -18,7 +18,8 @@
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록 (Phase 33 Step 2C
+  서비스 레이어 최적화 포함)
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
@@ -52,7 +53,85 @@ Gallery.module.css의 50+ 하드코딩된 px 값을 디자인 토큰으로 교�
 
 ## 활성 작업
 
-**현재 활성 작업 없음** - 프로젝트 안정화 단계
+### Phase 39 Step 3: Headless Settings 로직 분리 (진행 중) 🚧
+
+**목표**: 설정 모달의 상태 관리 로직을 UI에서 분리하여 테스트 용이성과 재사용성
+향상
+
+**브랜치**: `feature/phase-39-step-3-headless-settings`
+
+**배경**:
+
+- Phase 39 Step 1 (Lazy loading) 완료, 번들 예산 내 유지 (321.60 KB / 325 KB)
+- 현재 `SettingsModal`이 ThemeService/LanguageService를 직접 생성하여 결합도
+  높음
+- 테스트에서 서비스 모킹이 어려움
+
+**가치**:
+
+- ✅ 테스트 용이성: 로직과 UI 분리로 단위 테스트 가능
+- ✅ 재사용성: 다른 컴포넌트에서도 설정 로직 사용 가능
+- ✅ 유지보수성: 서비스 의존성 주입으로 결합도 감소
+
+**TDD 진행 순서**:
+
+#### Step 3-A: RED - useSettingsModal 훅 테스트 작성
+
+1. 테스트 파일: `test/unit/hooks/use-settings-modal.test.ts`
+2. 검증 항목:
+   - 초기 테마/언어 상태 설정
+   - 테마 변경 핸들러 동작
+   - 언어 변경 핸들러 동작
+   - 서비스 메서드 호출 확인
+   - 서비스 주입 가능 여부
+
+**예상 인터페이스**:
+
+```typescript
+interface UseSettingsModalOptions {
+  themeService: ThemeService;
+  languageService: LanguageService;
+  onThemeChange?: (theme: ThemeOption) => void;
+  onLanguageChange?: (language: LanguageOption) => void;
+}
+
+interface UseSettingsModalReturn {
+  currentTheme: Accessor<ThemeOption>;
+  currentLanguage: Accessor<LanguageOption>;
+  handleThemeChange: (event: Event) => void;
+  handleLanguageChange: (event: Event) => void;
+}
+```
+
+#### Step 3-B: GREEN - useSettingsModal 구현
+
+1. 파일: `src/shared/hooks/use-settings-modal.ts`
+2. 구현 내용:
+   - ThemeService/LanguageService를 props로 받음
+   - createSignal로 상태 관리
+   - 핸들러 함수에서 서비스 메서드 호출
+   - 테스트 통과 확인
+
+#### Step 3-C: REFACTOR - SettingsModal 리팩토링
+
+1. `SettingsModal.tsx`에서 훅 사용하도록 수정
+2. 기존 테스트 모두 통과 확인
+3. 번들 크기 영향 확인
+
+**수용 기준**:
+
+- useSettingsModal 훅 테스트 모두 통과 ✅
+- 기존 SettingsModal 테스트 모두 통과 ✅
+- 번들 크기 325 KB 이하 유지 ✅
+- 타입 오류 0개 ✅
+
+**예상 효과**:
+
+- 테스트 커버리지 향상 (+10-15 tests)
+- 코드 결합도 감소
+- 번들 크기 영향 최소 (+0.5-1 KB 예상)
+
+---
 
 ### 단기 개선 후보 (선택적)
 

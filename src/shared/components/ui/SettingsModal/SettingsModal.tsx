@@ -11,6 +11,7 @@ import { ThemeService } from '../../../services/theme-service';
 import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useScrollLock } from '../../../hooks/use-scroll-lock';
 import { useModalPosition } from '../../../hooks/use-modal-position';
+import { useSettingsModal } from '../../../hooks/use-settings-modal';
 import { globalTimerManager } from '../../../utils/timer-management';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import styles from './SettingsModal.module.css';
@@ -24,9 +25,6 @@ export interface SettingsModalProps {
   className?: string;
   'data-testid'?: string;
 }
-
-type ThemeOption = 'auto' | 'light' | 'dark';
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 type PositionKey = NonNullable<SettingsModalProps['position']>;
 
@@ -43,8 +41,24 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
   const themeService = new ThemeService();
   const languageService = new LanguageService();
 
-  const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
-  const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
+  // Use headless settings hook for state management
+  const { currentTheme, currentLanguage, handleThemeChange, handleLanguageChange } =
+    useSettingsModal({
+      themeService,
+      languageService,
+      onThemeChange: theme => {
+        // Apply theme to DOM
+        if (typeof document !== 'undefined') {
+          if (theme === 'auto') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+          } else {
+            document.documentElement.setAttribute('data-theme', theme);
+          }
+        }
+      },
+    });
+
   const [getPanelElement, setPanelElement] = createSignal<HTMLDivElement | null>(null);
   const [getContainerElement, setContainerElement] = createSignal<HTMLDivElement | null>(null);
   const [getBackdropElement, setBackdropElement] = createSignal<HTMLDivElement | null>(null);
@@ -249,27 +263,6 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
     backdrop.addEventListener('click', handleBackdropClick);
     onCleanup(() => backdrop.removeEventListener('click', handleBackdropClick));
   });
-
-  const handleThemeChange = (event: Event) => {
-    const nextTheme = (event.currentTarget as HTMLSelectElement).value as ThemeOption;
-    setCurrentTheme(nextTheme);
-    themeService.setTheme(nextTheme);
-
-    if (typeof document !== 'undefined') {
-      if (nextTheme === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', nextTheme);
-      }
-    }
-  };
-
-  const handleLanguageChange = (event: Event) => {
-    const nextLanguage = (event.currentTarget as HTMLSelectElement).value as LanguageOption;
-    setCurrentLanguage(nextLanguage);
-    languageService.setLanguage(nextLanguage);
-  };
 
   if (!props.isOpen) {
     return null;

@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-lg, 16px);
-  background: var(--xeg-comp-modal-backdrop, rgba(15, 17, 26, 0.45));
+  background: var(--xeg-comp-modal-backdrop);
   z-index: var(--xeg-z-modal-backdrop, 1040);
 }
 
