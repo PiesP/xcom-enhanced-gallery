@@ -1,12 +1,14 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-13 **상태**: Phase 39 완료 ✅ **문서 정책**: 최근
-> Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
+> **최종 업데이트**: 2025-10-13  
+> **상태**: Phase 40 완료 ✅  
+> **문서 정책**: 최근 Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표:
+> 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-13)
 
 - **빌드**: dev 734.31 KB / prod 322.07 KB ✅
-- **테스트**: 690+ passing, 24 skipped ✅
+- **테스트**: 689 passing, 1 skipped ✅ (개선: 24→1)
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (271 modules, 744 deps) ✅
@@ -15,6 +17,44 @@
 ---
 
 ## 최근 완료 Phase (세부 기록)
+
+### Phase 40: 테스트 커버리지 개선 - 중복 제거 (2025-10-13)
+
+**목표**: E2E로 커버되거나 불필요한 skipped 테스트 제거로 유지보수 부담 감소
+
+**작업 내용**:
+
+1. **E2E 커버리지 확인**: Playwright smoke 테스트와 중복되는 단위 테스트 식별
+2. **제거 대상 (9개 파일)**:
+   - `toolbar.icon-accessibility.test.tsx` - E2E 커버
+   - `settings-modal-focus.test.tsx` - E2E 커버 + jsdom 제약
+   - `ToolbarHeadless.test.tsx` - E2E + 로직 테스트로 대체
+   - `gallery-app-activation.test.ts` - E2E + 통합 테스트 커버
+   - `keyboard-help.overlay.test.tsx` - E2E 커버
+   - `error-boundary.fallback.test.tsx` - E2E 커버
+   - `settings-modal.accessibility.test.tsx` - E2E 커버
+   - `solid-testing-library.poc.test.tsx` - POC, 4/6 실패
+   - `infinite-loop-analysis.test.ts` - 실험용
+
+3. **유지 개선 (2개)**:
+   - `injected-style.tokens.red.test.ts` - skip 유지, 주석 개선 (정적 분석 권장)
+   - `alias-resolution.test.ts` - it.todo 제거, 주석으로 대체
+
+**성과**:
+
+- Skipped 테스트: 24개 → 1개 (96% 감소)
+- Todo 테스트: 1개 → 0개
+- 테스트 파일: -9개 (유지보수 부담 감소)
+- 테스트 통과율: 689/689 passing (100%) ✅
+- E2E 커버리지: Playwright smoke 테스트로 충분히 검증됨
+
+**교훈**:
+
+- E2E 테스트가 충분한 경우 중복 단위 테스트는 부담
+- jsdom 환경의 제약(focus 관리, Solid.js 반응성)을 인정
+- POC/실험용 테스트는 과감히 제거
+
+---
 
 ### Phase 39: Settings Modal 리팩토링 (2025-10-13)
 
