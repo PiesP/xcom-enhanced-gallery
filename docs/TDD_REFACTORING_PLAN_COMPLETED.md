@@ -1,22 +1,55 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-13  
-> **상태**: Phase 40 완료 ✅  
-> **문서 정책**: 최근 Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표:
-> 400-500줄)
+> **최종 업데이트**: 2025-10-13 **상태**: Phase 43 완료 ✅ **문서 정책**: 최근
+> Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-13)
 
 - **빌드**: dev 734.31 KB / prod 322.07 KB ✅
-- **테스트**: 689 passing, 1 skipped ✅ (개선: 24→1)
+- **테스트**: 689 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (271 modules, 744 deps) ✅
+- **의존성**: dependency-cruiser 0 violations (268 modules, 738 deps) ✅
 - **번들 예산**: 322.07 KB / 325 KB (2.93 KB 여유) ⚠️ 예산 근접
 
 ---
 
 ## 최근 완료 Phase (세부 기록)
+
+### Phase 43: Settings Modal 레거시 정리 - 의존성 참조 제거 (2025-10-13)
+
+**목표**: Phase 39에서 ToolbarWithSettings로 통합 후 남은 레거시 참조 제거
+
+**작업 내용**:
+
+1. **의존성 정책 갱신**: `.dependency-cruiser.cjs`에서 레거시 경로 제거
+
+   ```javascript
+   // 제거됨:
+   '^src/shared/components/ui/SettingsModal/(UnifiedSettingsModal|HeadlessSettingsModal)[.]tsx$';
+   ```
+
+2. **의존성 그래프 재생성**: `npm run deps:all` 실행으로 문서 갱신
+   - `docs/dependency-graph.json` - 레거시 노드/엣지 제거
+   - `docs/dependency-graph.dot` - 그래프 구조 갱신
+   - `docs/dependency-graph.html` - 시각화 갱신
+
+3. **검증**: 빌드 및 테스트 성공
+   - 의존성: 271 modules → 268 modules (-3개)
+   - 테스트: 689 passing (변화 없음) ✅
+   - 번들 크기: 322.07 KB (변화 없음) ✅
+
+**성과**:
+
+- 의존성 정책 정확도 향상
+- 문서-코드 일치성 확보
+- 모듈 수 감소 (271→268개, -3개)
+- 불필요한 레거시 참조 완전 제거 ✅
+
+**영향 파일**:
+
+- `.dependency-cruiser.cjs` - 정책 갱신
+- `docs/dependency-graph.*` - 의존성 문서 재생성
 
 ### Phase 40: 테스트 커버리지 개선 - 중복 제거 (2025-10-13)
 
