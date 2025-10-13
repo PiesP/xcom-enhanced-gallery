@@ -1,12 +1,18 @@
 /**
  * @fileoverview ToolbarWithSettings 컴포넌트 (일관된 glassmorphism 디자인)
  * @description TDD로 개선된 툴바와 설정 모달 통합 컴포넌트
- * @version 6.0.0 - Glassmorphism 일관성 적용
+ * @version 7.0.0 - Phase 39: Lazy loading 적용으로 번들 크기 최적화
  */
 
 import { getSolid, type JSXElement } from '../../../external/vendors';
 import { Toolbar, type ToolbarProps } from '../Toolbar/Toolbar';
-import { SettingsModal } from '../SettingsModal/SettingsModal';
+
+const { lazy, Suspense } = getSolid();
+
+// Phase 39 Step 1: Lazy load SettingsModal to reduce initial bundle size
+const SettingsModal = lazy(() =>
+  import('../SettingsModal/SettingsModal').then(m => ({ default: m.SettingsModal }))
+);
 
 export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSettings'> {
   /** 설정 모달 위치 (기본: center) */
@@ -18,13 +24,14 @@ export interface ToolbarWithSettingsProps extends Omit<ToolbarProps, 'onOpenSett
 /**
  * 툴바와 설정 모달을 통합한 컴포넌트
  * @description 동일한 glassmorphism 디자인 시스템 적용으로 시각적 일관성 보장
+ * @description Phase 39: SettingsModal은 lazy loading으로 초기 번들 크기 감소
  */
 export function ToolbarWithSettings({
   settingsPosition = 'center',
   settingsTestId = 'toolbar-settings-modal',
   ...toolbarProps
 }: ToolbarWithSettingsProps): JSXElement {
-  const { createSignal } = getSolid();
+  const { createSignal, Show } = getSolid();
 
   const [isSettingsOpen, setIsSettingsOpen] = createSignal(false);
 
@@ -39,14 +46,16 @@ export function ToolbarWithSettings({
   return (
     <>
       <Toolbar {...toolbarProps} onOpenSettings={handleOpenSettings} />
-      {isSettingsOpen() && (
-        <SettingsModal
-          isOpen={isSettingsOpen()}
-          onClose={handleCloseSettings}
-          position={settingsPosition}
-          data-testid={settingsTestId}
-        />
-      )}
+      <Show when={isSettingsOpen()}>
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={isSettingsOpen()}
+            onClose={handleCloseSettings}
+            position={settingsPosition}
+            data-testid={settingsTestId}
+          />
+        </Suspense>
+      </Show>
     </>
   );
 }

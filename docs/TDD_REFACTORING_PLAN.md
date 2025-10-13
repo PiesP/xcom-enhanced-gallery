@@ -52,46 +52,103 @@ Modal 모드에서 CSS 모듈 위치 클래스 정상 적용, 모든 위치 옵�
 
 ## 활성 작업
 
-### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) 🚧
+### Phase 39: 하이브리드 설정 UI 전략 (2025-10-13) 🚧
 
-**목표**: 설정 모달이 Modal 모드에서 실제 뷰포트의 가로·세로 중앙에 고정되도록
-레이아웃을 조정하고, 화면 크기 변화에도 중앙 정렬을 유지한다.
+**목표**: 설정 모달을 유지하면서 번들 크기를 최적화하고, 향후 툴바 통합 패널로의
+점진적 전환을 준비한다.
 
-**브랜치**: `feature/settings-modal-center`
+**브랜치**: `feature/phase-39-hybrid-settings`
 
 **배경**:
 
-- Phase 36에서 CSS 클래스 적용 회귀를 해결했으나, CSS `transform` 기반 중앙
-  정렬은 뷰포트보다 모달이 크거나 높이가 변동될 때 상단/하단이 잘리는 문제가
-  있었다.
-- 사용자는 언제나 화면 중앙에서 설정 모달을 확인하길 원하며, 뷰포트 크기가
-  변해도 중앙 정렬이 유지돼야 한다.
-- 기존 구현은 backdrop 컨테이너가 화면 전체를 덮지 않아 flex 정렬을 적용하기
-  어려웠다.
+- Phase 38 완료 후 번들 크기가 321.29 KB로 예산(320 KB)을 1.29 KB 초과
+- 설정 모달을 툴바 확장 패널로 재구성하는 제안이 있으나, 접근성/재사용성/안정성
+  측면에서 신중한 접근 필요
+- 기존 Phase 35-38 작업(접근성, 동적 위치, 중앙 정렬) 보존이 중요
+
+**전략**:
+
+하이브리드 접근으로 장점만 취하고 위험 최소화:
+
+1. **즉시**: 번들 크기 최적화 (lazy loading, tree shaking)
+2. **단기**: Feature flag 인프라 구축
+3. **중기**: Headless UI 패턴으로 재사용 가능한 설정 로직 분리
+4. **장기**: 점진적 전환 (데스크톱 → 태블릿 → 모바일)
 
 **TDD 진행 순서**:
 
-1. **RED**: `test/unit/shared/components/SettingsModal.positioning.test.tsx`
-   - Modal 모드에서 center 위치일 때 backdrop 컨테이너가 flex 정렬과 뷰포트
-     패딩을 적용하는지 검증하는 테스트 추가.
-   - `.center` 패널이 최대 높이/오버플로우 제어를 통해 뷰포트 내에서 스크롤
-     가능하도록 만드는 회귀 테스트 추가.
-2. **GREEN**: `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
-   - backdrop을 flex 컨테이너로 전환하고, 디자인 토큰 기반의 패딩 및 정렬을
-     지정.
-   - `.panel`과 `.center` 스타일을 업데이트해 최소/최대 크기 및 스크롤 동작을
-     보장.
+#### Step 1: 번들 크기 최적화 (즉시 - 우선순위 1)
+
+1. **RED**: `test/unit/optimization/bundle-size-settings.test.ts`
+   - 설정 모달 관련 코드가 320 KB 예산 내에 수용되는지 검증
+   - 동적 import 적용 시 초기 번들 크기 감소 확인
+2. **GREEN**:
+   - `SettingsModal`을 lazy loading으로 전환
+   - 미사용 CSS 제거 (PurgeCSS 적용)
+   - 디자인 토큰 중복 제거
 3. **REFACTOR**:
-   - CSS 모듈 정리 및 관련 문서 업데이트.
-   - 필요 시 Modal 컴포넌트에서 center 위치 특수 처리를 제거해 단순화.
+   - 번들 분석 리포트 생성 (`npm run analyze`)
+   - 최적화 결과 문서화
+
+**예상 효과**: 5-8 KB 감소 (목표: 315 KB 이하)
+
+#### Step 2: Feature Flag 인프라 (단기 - 우선순위 2)
+
+1. **RED**: `test/unit/config/feature-flags.test.ts`
+   - Feature flag 시스템 동작 검증
+   - 런타임 전환 시 컴포넌트 교체 확인
+2. **GREEN**:
+   - `shared/config/feature-flags.ts` 생성
+   - `ToolbarWithSettings`에 flag 기반 분기 추가
+   - 환경 변수로 제어 가능하게 구성
+3. **REFACTOR**:
+   - Flag 문서화
+   - 개발자 가이드 업데이트
+
+**예상 효과**: 무중단 전환 기반 마련
+
+#### Step 3: Headless Settings 로직 분리 (중기 - 우선순위 3)
+
+1. **RED**: `test/unit/hooks/useSettingsPanel.test.ts`
+   - 설정 상태 관리 로직만 독립 테스트
+   - UI와 로직 분리 검증
+2. **GREEN**:
+   - `shared/hooks/useSettingsPanel.ts` 생성
+   - 테마/언어 설정 로직을 훅으로 추출
+   - 기존 `SettingsModal`에서 훅 사용하도록 리팩토링
+3. **REFACTOR**:
+   - 재사용 가능한 설정 API 문서화
+   - 다른 컴포넌트에서도 사용 가능하도록 export
+
+**예상 효과**: 재사용성 100%, 테스트 용이성 향상
+
+#### Step 4: Adaptive Layout 준비 (선택적 - 우선순위 4)
+
+1. **RED**: `test/unit/hooks/useAdaptiveLayout.test.ts`
+   - 뷰포트 크기별 레이아웃 전환 검증
+   - 리사이즈 이벤트 처리 확인
+2. **GREEN**:
+   - `shared/hooks/useAdaptiveLayout.ts` 생성
+   - 데스크톱/태블릿/모바일 분기 로직
+3. **REFACTOR**:
+   - 반응형 전략 문서화
+
+**예상 효과**: 향후 툴바 패널 전환 시 리스크 최소화
 
 **수용 기준**:
 
-- Modal 모드에서 center 위치 선택 시 모달이 항상 가로·세로 중앙에 노출되고,
-  뷰포트 경계로부터 최소 16px 여백을 유지한다.
-- 창 크기를 변경해도 backdrop flex 정렬로 인해 모달이 중앙에 남아 있다.
-- 기존 위치 옵션(`toolbar-below`, `top-right`, `bottom-sheet`) 동작 변화 없음이
-  테스트로 보장된다.
+- **Step 1 필수**: 프로덕션 번들 크기 320 KB 이하 달성
+- **Step 2 권장**: Feature flag로 기존/신규 UI 전환 가능
+- **Step 3-4 선택**: 향후 확장성 확보 (즉시 구현 불필요)
+- 기존 Phase 35-38 테스트 모두 통과 (회귀 방지)
+- 접근성 기준(WCAG 2.1 AA) 유지
+
+**작업 우선순위**:
+
+1. ✅ Step 1 (즉시): 번들 최적화 - 가장 시급
+2. 🎯 Step 2 (1주 내): Feature flag - 전환 준비
+3. 📋 Step 3 (2주 내): Headless 로직 - 재사용성 확보
+4. 💡 Step 4 (필요 시): Adaptive layout - 선택적
 
 ---
 
