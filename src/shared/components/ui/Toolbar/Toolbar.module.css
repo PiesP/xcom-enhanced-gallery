@@ -28,11 +28,12 @@
   z-index: var(--xeg-z-toolbar);
 
   display: inline-flex;
+  flex-direction: column; /* 설정 패널을 툴바 아래로 배치 */
   align-items: center;
   justify-content: space-between;
   min-height: 3em; /* 48px → 3em */
   padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
-  gap: 0.75em; /* 12px → 0.75em */
+  gap: 0; /* 설정 패널과의 간격은 별도 관리 */
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   opacity: var(--toolbar-opacity, 1);
@@ -692,25 +693,29 @@ button.fitButton {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-md);
+  padding: 0; /* 초기 상태에서는 패딩 제거 */
+  width: 100%; /* 툴바 전체 너비 사용 */
 
   /* Animation & Transition */
-  height: var(--xeg-toolbar-panel-height);
-  max-height: var(--xeg-toolbar-panel-max-height);
+  height: 0;
+  max-height: 0;
   overflow: hidden;
   opacity: 0;
   transition: var(--xeg-toolbar-panel-transition);
 
   /* Visual */
   background: var(--xeg-bg-toolbar);
-  border-top: 1px solid var(--color-border-default);
+  border-top: 1px solid transparent; /* 초기 상태에서는 보더 숨김 */
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
 }
 
 /* Expanded State */
 .settingsPanel[data-expanded='true'] {
   height: auto;
+  max-height: 500px; /* 최대 높이 제한 */
+  padding: var(--space-md);
   opacity: 1;
+  border-top-color: var(--color-border-default); /* 확장 시 보더 표시 */
 }
 
 /* Reduced Motion Support */

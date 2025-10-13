@@ -94,6 +94,32 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const isSettingsExpanded = createMemo(() => getToolbarExpandableState().isSettingsExpanded);
 
   let toolbarRef: HTMLDivElement | undefined;
+  let settingsPanelRef: HTMLDivElement | undefined;
+  let settingsButtonRef: HTMLButtonElement | undefined;
+
+  // Phase 48.5: 외부 클릭 감지 - 설정 패널이 확장되었을 때만 리스너 등록
+  createEffect(() => {
+    const expanded = isSettingsExpanded();
+
+    if (expanded) {
+      const handleOutsideClick = (event: MouseEvent) => {
+        const target = event.target as Node;
+        // 설정 버튼이나 패널 내부 클릭은 무시
+        if (settingsButtonRef?.contains(target) || settingsPanelRef?.contains(target)) {
+          return;
+        }
+        // 외부 클릭 시 패널 닫기
+        setSettingsExpanded(false);
+      };
+
+      // bubble phase에서 이벤트 처리 (패널 내부의 stopPropagation이 먼저 작동하도록)
+      document.addEventListener('mousedown', handleOutsideClick, false);
+
+      onCleanup(() => {
+        document.removeEventListener('mousedown', handleOutsideClick, false);
+      });
+    }
+  });
 
   const toolbarClass = createMemo(() =>
     ComponentStandards.createClassName(
@@ -256,6 +282,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
   const onSettingsClick = (event: Event | MouseEvent) => {
     event.stopPropagation();
+    event.stopImmediatePropagation(); // Phase 48.5: 이벤트 전파 완전 차단
     const wasExpanded = isSettingsExpanded();
     toggleSettingsExpanded();
     props.onOpenSettings?.();
@@ -438,6 +465,9 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
           {typeof props.onOpenSettings === 'function' && (
             <IconButton
+              ref={element => {
+                settingsButtonRef = element ?? undefined;
+              }}
               id='settings-button'
               size='toolbar'
               aria-label='설정 열기'
@@ -470,9 +500,16 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
       {/* Settings Panel */}
       <div
+        ref={element => {
+          settingsPanelRef = element ?? undefined;
+        }}
         id='toolbar-settings-panel'
         class={styles.settingsPanel}
         data-expanded={isSettingsExpanded()}
+        onMouseDown={e => {
+          // Phase 48.5: 패널 내부 클릭은 전파하지 않음
+          e.stopPropagation();
+        }}
         role='region'
         aria-label='설정 패널'
         aria-labelledby='settings-button'
