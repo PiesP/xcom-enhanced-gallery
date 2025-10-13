@@ -477,6 +477,10 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
         aria-label='설정 패널'
         aria-labelledby='settings-button'
         data-gallery-element='settings-panel'
+        onClick={(event: MouseEvent) => {
+          // 설정 패널 내부 클릭 시 이벤트 전파 방지 (툴바 버튼 토글 방지)
+          event.stopPropagation();
+        }}
       >
         <SettingsControls
           currentTheme={currentTheme()}

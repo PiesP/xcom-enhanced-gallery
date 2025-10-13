@@ -20,7 +20,7 @@
   border: 1px solid var(--color-border-default);
   border-radius: var(--xeg-radius-lg);
 
-  /* 레이아웃 속성 */
+  /* 레이아웃 속성 - 설정 패널 절대 위치를 위한 relative 컨텍스트 */
   position: fixed;
   top: 1.25em; /* 20px → 1.25em */
   left: 50%;
@@ -28,11 +28,11 @@
   z-index: var(--xeg-z-toolbar);
 
   display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column; /* 세로 방향 레이아웃 (툴바 + 패널) */
+  align-items: stretch; /* 자식 요소를 전체 너비로 확장 */
   min-height: 3em; /* 48px → 3em */
   padding: 0.5em 1em; /* 8px 16px → 0.5em 1em */
-  gap: 0.75em; /* 12px → 0.75em */
+  gap: 0; /* toolbarContent와 settingsPanel 간 간격 제거 */
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   opacity: var(--toolbar-opacity, 1);
@@ -108,10 +108,10 @@
   position: relative;
 }
 
-/* 좌측, 우측 섹션을 같은 크기로 균등 배치 */
+/* 좌측, 우측 섹션 - 콘텐츠 크기만큼만 차지 (균등 분배 제거) */
 .toolbarLeft,
 .toolbarRight {
-  flex: 1;
+  flex: 0 1 auto; /* flex: 1 → 0 1 auto (콘텐츠 크기 기반) */
   display: flex;
   align-items: center;
   gap: 0.125em; /* 2px → 0.125em */
@@ -686,31 +686,41 @@ button.fitButton {
 
 /* ===== Phase 44: Toolbar Expandable Panel Styles ===== */
 
-/* Expandable Settings Panel */
+/* Expandable Settings Panel - 툴바 아래 절대 위치 */
 .settingsPanel {
-  /* Layout */
+  /* Layout - 툴바 바로 아래 절대 위치 */
+  position: absolute;
+  top: 100%; /* 툴바 바로 아래 */
+  left: 0;
+  right: 0;
+  width: 100%;
+
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-md);
+  margin-top: 0.5em; /* 툴바와 약간의 간격 */
 
   /* Animation & Transition */
   height: var(--xeg-toolbar-panel-height);
   max-height: var(--xeg-toolbar-panel-max-height);
   overflow: hidden;
   opacity: 0;
+  pointer-events: none; /* 접힌 상태에서 클릭 방지 */
   transition: var(--xeg-toolbar-panel-transition);
 
   /* Visual */
   background: var(--xeg-bg-toolbar);
-  border-top: 1px solid var(--color-border-default);
-  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--xeg-shadow-lg);
 }
 
 /* Expanded State */
 .settingsPanel[data-expanded='true'] {
   height: auto;
   opacity: 1;
+  pointer-events: auto; /* 펼친 상태에서 클릭 가능 */
 }
 
 /* Reduced Motion Support */

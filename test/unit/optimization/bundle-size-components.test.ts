@@ -23,13 +23,13 @@ const logMetrics = (label: string, value: number, unit: string, target: number):
 };
 
 describe('[Phase 33-2B] Component Bundle Size Guard', () => {
-  it('Toolbar.tsx 크기가 16 KB 이하여야 함 (Phase 44-47: 설정 패널 통합)', () => {
+  it('Toolbar.tsx 크기가 16.5 KB 이하여야 함 (Phase 44-47: 설정 패널 통합 + 이벤트 핸들러)', () => {
     const toolbarPath = resolveSrc('shared/components/ui/Toolbar/Toolbar.tsx');
     const { size } = statSync(toolbarPath);
     const sizeKB = toKB(size);
 
-    logMetrics('Toolbar.tsx size', sizeKB, 'KB', 16);
-    expect(sizeKB).toBeLessThanOrEqual(16);
+    logMetrics('Toolbar.tsx size', sizeKB, 'KB', 16.5);
+    expect(sizeKB).toBeLessThanOrEqual(16.5);
   });
 
   it('Toolbar.tsx 라인 수가 550줄 이하여야 함 (Phase 44-47: 설정 패널 통합)', () => {
