@@ -10,6 +10,7 @@ import { LanguageService } from '../../../services/language-service';
 import { ThemeService } from '../../../services/theme-service';
 import { useFocusTrap } from '../../../hooks/use-focus-trap';
 import { useScrollLock } from '../../../hooks/use-scroll-lock';
+import { useModalPosition } from '../../../hooks/use-modal-position';
 import { globalTimerManager } from '../../../utils/timer-management';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import styles from './SettingsModal.module.css';
@@ -60,6 +61,21 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
   const position = createMemo(() => props.position ?? 'center');
   const className = () => props.className ?? '';
   const testProps = ComponentStandards.createTestProps(props['data-testid']);
+
+  // Dynamic positioning for modal mode with toolbar-below
+  const shouldUseDynamicPosition = () => !isPanel() && position() === 'toolbar-below';
+  const toolbarElement = () =>
+    shouldUseDynamicPosition() ? (document.getElementById('xeg-toolbar') ?? null) : null;
+
+  // Calculate modal size (approximate, can be refined with actual measurements)
+  const MODAL_SIZE = { width: 448, height: 300 }; // 28em width, ~300px height
+
+  const dynamicPosition = useModalPosition({
+    toolbarRef: toolbarElement(),
+    modalSize: MODAL_SIZE,
+    margin: 16,
+    centerHorizontally: true,
+  });
 
   const invokeOnClose = () => {
     if (typeof props.onClose !== 'function') {
@@ -371,6 +387,16 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
         class='settings-modal-content'
         data-position={position()}
         role='document'
+        style={
+          shouldUseDynamicPosition()
+            ? {
+                position: 'fixed',
+                top: `${dynamicPosition().top}px`,
+                left: `${dynamicPosition().left}px`,
+                transform: 'none',
+              }
+            : undefined
+        }
       >
         {content}
       </div>

@@ -131,40 +131,53 @@
 **커밋**:
 `feat(core): integrate theme initialization in GalleryApp and add CSS fallbacks`
 
-### Phase 35 Step 2: 설정 모달 위치 개선
+### Phase 35 Step 2: 설정 모달 위치 개선 🚧
 
-#### Step 2-A: RED - 동적 위치 계산 테스트
+#### ✅ Step 2-A: RED - 동적 위치 계산 테스트 (완료)
 
 **테스트 파일**: `test/refactoring/modal-position-calculation.test.ts`
 
-**테스트 시나리오**:
+**완료 사항**:
 
-1. 툴바 위치/크기 기반 모달 위치 계산
-2. 화면 경계 감지 및 조정
-3. 다양한 화면 크기에서 적절한 위치
+- 13개 테스트 작성 및 통과 ✅
+  - Toolbar-based Position (3 tests)
+  - Viewport Boundary Detection (3 tests)
+  - Responsive Behavior (3 tests)
+  - Edge Cases (3 tests)
+  - Performance (1 test)
 
-#### Step 2-B: GREEN - 동적 위치 계산 구현
+#### ✅ Step 2-B: GREEN - 동적 위치 계산 구현 (완료)
 
-**수정 파일**:
+**완료 파일**:
 
-1. `src/shared/hooks/use-modal-position.ts` (신규 생성)
+1. ✅ `src/shared/hooks/use-modal-position.ts` (신규 생성)
    - 툴바 기준 동적 위치 계산
-   - 화면 경계 감지
-   - 자동 조정 로직
+   - 화면 경계 감지 및 자동 조정
+   - 반응형 동작 (resize 리스너)
+   - 6개 훅 테스트 통과
 
-2. `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
-   - `use-modal-position` 훅 적용
+2. ✅ `src/shared/hooks/index.ts` - export 추가
+
+**커밋**: `feat(ui): add use-modal-position hook for dynamic modal positioning`
+
+#### 🚧 Step 2-C: REFACTOR - SettingsModal 적용 (미완)
+
+**남은 작업**:
+
+1. `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
+   - `useModalPosition` 훅 적용
+   - 툴바 ref 전달
    - 동적 스타일 바인딩
 
-3. `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
-   - 동적 위치 지원을 위한 CSS 변수 활용
-   - 고정값 제거
+2. `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
+   - 고정 위치 제거
+   - CSS 변수 기반 동적 위치로 전환
 
-#### Step 2-C: REFACTOR - 위치 로직 최적화
+3. 성능 최적화
+   - 필요 시 debounce/throttle 추가
+   - 메모이제이션 검토
 
-- 성능 최적화 (debounce/throttle)
-- 엣지 케이스 처리
-- 접근성 개선
+**예상 난이도**: 중간 (컴포넌트 수정, 스타일 조정)
 
 ### 작업 순서
 
