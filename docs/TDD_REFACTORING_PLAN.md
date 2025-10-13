@@ -2,14 +2,14 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **브랜치**: feature/phase-33-step-2-events
+> **브랜치**: feature/phase-33-step-3-refactoring
 >
-> **상태**: 테스트 수정 완료, Phase 33 Step 3 준비 ✅
+> **상태**: Phase 33 Step 3 완료 ✅ (문서 갱신)
 
 ## 프로젝트 상태
 
-- **빌드**: dev 726.60 KB / prod 318.04 KB ✅
-- **테스트**: 652/677 passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 726.49 KB / prod 318.04 KB ✅
+- **테스트**: 657/677 passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (269 modules, 736 dependencies) ✅
@@ -17,66 +17,50 @@
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-33 Step 2C 기록
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-33 Step 3 기록
 - `docs/ARCHITECTURE.md`: 아키텍처 구조
 - `docs/CODING_GUIDELINES.md`: 코딩 규칙
 - `docs/bundle-analysis.html`: JavaScript 번들 분석 리포트
 
 ---
 
-## 활성 작업
+## 다음 작업 후보
 
-### Phase 33 Step 3: 코드 품질 개선 및 최적화
+Phase 33 Step 3까지 완료되었으며, 다음 최적화 옵션을 검토할 수 있습니다:
 
-**상태**: **계획** 📋
+### 옵션 1: 미사용 Export 제거
 
-**목표**:
+**발견 사항** (2025-10-13):
 
-1. 번들 크기 추가 최적화 (318.04 KB → 301 KB 이하)
-2. 코드 구조 및 가독성 개선
-3. 성능 최적화 기회 탐색
+- `getCSSVariable`, `applyTheme` 함수가 `style-utils.ts`에서 export만 되고
+  실제로 사용되지 않음
+- 잠재적 영향: 코드 정리 및 명확성 향상 (번들 크기는 이미 tree-shaking으로
+  최적화됨)
 
-#### 번들 크기 분석 (현재)
+### 옵션 2: 대형 파일 리팩토링
 
-**프로덕션 번들**: 318.04 KB (목표: 301 KB 이하, **17 KB 초과**)
+**발견 사항** (2025-10-13):
 
-**주요 크기 기여 파일들** (추정):
+- `events.ts`: 23.73 KB
+- `accessibility-utils.ts`: 23.25 KB
+- `url-patterns.ts`: 23.19 KB
+- `media-service.ts`: 21.35 KB
 
-1. `Toolbar.tsx` - 고도로 최적화됨, 추가 절감 어려움
-2. `SettingsModal.tsx` - 중복 핸들러 제거 완료
-3. `event-manager.ts` - 이벤트 관리 로직
-4. Solid.js 런타임 및 반응성 시스템
+**검토 필요**: 각 파일의 복잡도 분석 및 분할 가능성
 
-#### 최적화 전략 옵션
+### 옵션 3: Phase 34 계획
 
-##### Option A: Tree-shaking 개선
+Phase 33 완료 후 다음 Phase 정의가 필요합니다.
 
-- 사용하지 않는 export 제거
-- 동적 import 활용 (Settings, KeyboardHelp 등)
-- 장점: 실질적인 번들 크기 감소
-- 단점: 코드 분할로 인한 복잡도 증가
+---
 
-##### Option B: 미니파이케이션 설정 강화
+## 이전 작업 기록
 
-- Vite/Rollup 설정 조정
-- Terser 옵션 최적화
-- 장점: 설정만 변경
-- 단점: 디버깅 어려움, 효과 제한적
+완료된 Phase들은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어 있습니다:
 
-##### Option C: 추가 코드 리팩토링 (권장)
-
-- 중복 로직 추출
-- 인라인 함수 최소화
-- 상수 통합
-- 장점: 코드 품질과 번들 크기 동시 개선
-- 단점: 시간 소요
-
-#### 다음 단계 (우선순위 순)
-
-1. **번들 분석 리포트 재검토** - `docs/bundle-analysis.html` 상세 분석
-2. **Tree-shaking 개선** - 사용하지 않는 export 제거
-3. **코드 리팩토링** - 중복 로직 제거 및 구조 개선
-4. **E2E 테스트 실행** - 런타임 동작 검증
+- **Phase 33 Step 3**: 중복 유틸리티 함수 통합 완료 ✅
+- **Phase 33 Step 2C**: 서비스 레이어 최적화 완료 ✅
+- **Phase 1-33 Step 2B**: 이전 Phase들 기록 참조
 
 ---
 

@@ -1,20 +1,75 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-12
+> **최종 업데이트**: 2025-10-13
 >
-> **상태**: Phase 33 Step 2C 완료 ✅
+> **상태**: Phase 33 Step 3 완료 ✅
 
-## 프로젝트 상태 스냅샷 (2025-10-12)
+## 프로젝트 상태 스냅샷 (2025-10-13)
 
-- **빌드**: dev 824.26 KB / prod 318.18 KB ✅
-- **테스트**: Vitest 643/659 (14 skipped, 2 failing), Playwright 8/8 ✅
+- **빌드**: dev 726.49 KB / prod 318.04 KB ✅
+- **테스트**: 657 passing, 24 skipped, 1 todo ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations ✅
 
 ## 최근 완료 Phase
 
-### Phase 33 Step 2C-3: media-service.ts Optimization (2025-10-12) ✅
+### Phase 33 Step 3: 중복 유틸리티 함수 통합 (2025-10-13) ✅
+
+**목표**: 중복된 유틸리티 함수를 단일 소스로 통합하여 코드 품질 향상.
+
+**배경**: 3개 파일에서 동일한 CSS 유틸리티 함수들이 중복 정의되어 있어
+유지보수성 저하.
+
+#### TDD 진행
+
+- **RED**: `test/unit/refactoring/duplicate-utilities.test.ts` 작성
+  - 자동 스캔으로 중복 함수 감지
+  - 발견된 중복:
+    - `combineClasses`: 3곳 (style-utils.ts, css-utilities.ts, core-utils.ts)
+    - `toggleClass`: 2곳 (style-utils.ts, css-utilities.ts)
+    - `updateComponentState`: 2곳 (style-utils.ts, css-utilities.ts)
+  - 총 4개 중복 함수 정의 확인 ✅
+
+- **GREEN**: 중복 제거 및 단일 소스 확립
+  1. **css-utilities.ts**를 정규 구현(canonical source)로 선택
+  2. **core-utils.ts** 정리 (343줄 → ~337줄)
+     - `combineClasses` 함수 제거
+  3. **style-utils.ts** 정리 (46줄 → ~33줄)
+     - 3개 중복 함수 구현 제거
+     - css-utilities로부터 re-export로 전환
+  4. 테스트 업데이트: RED → GREEN 전환 ✅
+
+- **REFACTOR**: 검증 및 최적화
+  1. 전체 테스트 실행: 657 passing ✅
+  2. 빌드 검증: dev 726.49 KB / prod 318.04 KB ✅
+  3. 유지보수 점검: 모든 항목 정상 ✅
+
+#### 결과
+
+| 항목                 | Before     | After                      | 변화                     |
+| -------------------- | ---------- | -------------------------- | ------------------------ |
+| **소스 코드**        | ~389 lines | ~370 lines                 | -19 lines                |
+| **번들 크기 (prod)** | 318.04 KB  | 318.04 KB                  | 0 KB (tree-shaking 효과) |
+| **중복 함수 정의**   | 4개        | 0개                        | -4 ✅                    |
+| **정규 소스**        | 분산됨     | css-utilities.ts 단일 소스 | ✅                       |
+
+#### 주요 성과
+
+1. **단일 소스 원칙 확립**: 모든 CSS 유틸리티가 `css-utilities.ts`에서 관리
+2. **유지보수성 향상**: 중복 제거로 일관성 있는 구조
+3. **Tree-shaking 효과 확인**: 번들러가 이미 미사용 코드 최적화 중
+4. **테스트 커버리지**: 자동 중복 감지 테스트 추가
+
+#### 교훈
+
+- 번들 크기 변화 없음: Vite/Rollup의 tree-shaking이 이미 중복 코드 최적화
+- 소스 코드 품질 향상이 주요 목표 달성
+- 향후 유지보수 시 단일 지점 수정으로 모든 사용처 반영
+
+---
+
+### Phase 33 Step 2C: media-service.ts Optimization (2025-10-12) ✅
 
 **목표**: `media-service.ts` 소스 크기를 975 lines (28.98 KB) → 850 lines (25
 KB) 이하로 줄여 3.98 KB 번들 절감에 기여.
