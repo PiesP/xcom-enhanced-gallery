@@ -19,9 +19,9 @@
  * @styles
  * - 둥근 모서리 (12px border-radius)
  * - 향상된 그림자와 백드롭 필터
- * - 왼쪽 4px 테두리로 타입 표시
+ * - 왼쪽 테두리로 타입 표시 (토큰 사용)
  * - 부드러운 슬라이드인 애니메이션 (CSS 변수 기반)
- * - 크기: 최소 320px, 최대 480px
+ * - 크기: 최소/최대 너비 토큰 사용
  * - glassmorphism 배경 효과
  */
 .toast {
@@ -31,11 +31,11 @@
   box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  margin-bottom: 12px;
-  padding: 18px;
-  min-width: 320px;
-  max-width: 480px;
-  border-left: 4px solid;
+  margin-bottom: var(--xeg-toast-margin-bottom);
+  padding: var(--xeg-toast-padding);
+  min-width: var(--xeg-toast-min-width);
+  max-width: var(--xeg-toast-max-width);
+  border-left: var(--xeg-toast-border-width) solid;
   animation: xeg-slide-in var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   position: relative;
   isolation: isolate;
@@ -98,12 +98,12 @@
  *
  * @layout
  * - Flex column layout
- * - 8px gap between elements
+ * - Gap between elements (토큰 사용)
  */
 .content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--xeg-toast-gap);
 }
 
 /**
@@ -112,27 +112,27 @@
  * @layout
  * - Flex row layout
  * - Space between alignment
- * - 12px gap between title and close button
+ * - Gap between title and close button (토큰 사용)
  */
 .header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--xeg-toast-header-gap);
 }
 
 /**
  * Toast title text
  *
  * @typography
- * - Size: 14px
- * - Weight: 600 (semi-bold)
+ * - Size: 토큰 사용 (14px)
+ * - Weight: 토큰 사용 (semi-bold)
  * - Color: var(--xeg-color-text-primary) (primary text color)
  * - Line height: 1.3
  */
 .title {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--xeg-toast-title-font-size);
+  font-weight: var(--xeg-toast-title-font-weight);
   margin: 0;
   color: var(--xeg-color-text-primary);
   line-height: 1.3;
@@ -142,12 +142,12 @@
  * Toast message text
  *
  * @typography
- * - Size: 13px
+ * - Size: 토큰 사용 (13px)
  * - Color: var(--xeg-color-text-secondary) (secondary text color)
  * - Line height: 1.4 (readable)
  */
 .message {
-  font-size: 13px;
+  font-size: var(--xeg-toast-message-font-size);
   color: var(--xeg-color-text-secondary);
   margin: 0;
   line-height: 1.4;

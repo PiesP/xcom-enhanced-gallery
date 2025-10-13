@@ -24,7 +24,7 @@ export class BrowserUtils {
    * CSS 주입
    */
   public injectCSS(id: string, css: string): void {
-    if (!css || css.trim().length === 0) {
+    if (css?.trim().length === 0) {
       logger.warn('[BrowserUtils] Empty CSS provided');
       return;
     }
@@ -49,7 +49,7 @@ export class BrowserUtils {
    */
   public removeCSS(id: string): void {
     const element = document.getElementById(id);
-    if (element && element.tagName === 'STYLE') {
+    if (element?.tagName === 'STYLE') {
       element.remove();
       this.injectedStyles.delete(id);
       logger.debug(`[BrowserUtils] CSS removed: ${id}`);

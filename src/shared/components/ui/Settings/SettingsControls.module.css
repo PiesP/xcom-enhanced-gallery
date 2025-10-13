@@ -1,50 +1,56 @@
 /**
  * SettingsControls.module.css
- * Styles for theme and language selection controls (Phase 48)
+ * Styles for theme and language selection controls (Phase 48, Phase 51.2 리팩토링)
  * Extracted from SettingsModal to support inline toolbar settings panel
+ * Phase 51.2: 하드코딩 fallback 제거, 표준 토큰명 사용
  */
 
 .body {
   display: flex;
   flex-direction: column;
-  gap: var(--xeg-settings-gap, 12px);
-  padding: var(--xeg-settings-padding, 12px);
+  gap: var(--xeg-settings-gap);
+  padding: var(--xeg-settings-padding);
 }
 
 .setting {
   display: flex;
   flex-direction: column;
-  gap: var(--xeg-settings-control-gap, 8px);
+  gap: var(--xeg-settings-control-gap);
 }
 
 .label {
-  font-size: var(--xeg-settings-label-font-size, 14px);
-  font-weight: var(--xeg-settings-label-font-weight, 500);
+  font-size: var(--xeg-settings-label-font-size);
+  font-weight: var(--xeg-settings-label-font-weight);
   color: var(--xeg-color-text-primary);
 }
 
 .select {
   width: 100%;
-  padding: var(--xeg-settings-select-padding, 8px 12px);
-  font-size: var(--xeg-settings-select-font-size, 14px);
+  padding: var(--xeg-settings-select-padding);
+  font-size: var(--xeg-settings-select-font-size);
   color: var(--xeg-color-text-primary);
-  background-color: var(--xeg-color-bg-secondary);
-  border: 1px solid var(--xeg-color-border);
-  border-radius: var(--xeg-border-radius-md);
+  background-color: var(--xeg-settings-select-bg);
+  border: 1px solid var(--xeg-settings-select-border);
+  border-radius: var(--xeg-radius-md);
   cursor: pointer;
+  appearance: none;
   transition:
-    border-color var(--xeg-transition-duration-fast) var(--xeg-transition-easing),
-    background-color var(--xeg-transition-duration-fast) var(--xeg-transition-easing);
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 .select:hover {
-  border-color: var(--xeg-color-primary);
+  border-color: var(--xeg-color-border-hover);
+  background-color: var(--xeg-settings-select-bg);
 }
 
-.select:focus {
-  outline: none;
-  border-color: var(--xeg-color-primary);
-  box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
+.select:focus,
+.select:focus-visible {
+  border-color: var(--xeg-color-border-hover);
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+  box-shadow: var(--xeg-settings-select-focus-ring);
 }
 
 .select option {

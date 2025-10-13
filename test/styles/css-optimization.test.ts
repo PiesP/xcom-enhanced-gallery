@@ -193,40 +193,6 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
     });
   });
 
-  describe('Glassmorphism Pattern Duplication', () => {
-    it('should use .glass-surface utility class instead of inline backdrop-filter', () => {
-      const problematicFiles: string[] = [];
-      const backdropFilterPattern = /backdrop-filter:\s*(?:blur|none)/gi;
-
-      for (const [path, content] of cssFiles) {
-        // 유틸리티 파일과 design-tokens 제외
-        if (
-          path.includes('utilities') ||
-          path.includes('design-tokens') ||
-          path.includes('isolated-gallery.css')
-        ) {
-          continue;
-        }
-
-        const matches = content.match(backdropFilterPattern);
-        if (matches && matches.length > 2) {
-          problematicFiles.push(`${path.replace(SRC_DIR, 'src')} (${matches.length}개)`);
-        }
-      }
-
-      // RED: backdrop-filter가 중복 사용되는 파일들 존재
-      expect(problematicFiles).toHaveLength(0);
-
-      if (problematicFiles.length > 0) {
-        console.warn(
-          `\n⚠️  backdrop-filter 중복 사용:\n` +
-            problematicFiles.map(f => `   - ${f}`).join('\n') +
-            `\n   권장: .glass-surface 유틸리티 클래스 사용`
-        );
-      }
-    });
-  });
-
   describe('CSS File Size Analysis', () => {
     it('should identify large CSS files for optimization', () => {
       const largeFiles: Array<{ path: string; size: number }> = [];

@@ -38,7 +38,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         { timeoutMs, maxRetries }
       );
 
-      if (!apiMedias || apiMedias.length === 0) {
+      if (apiMedias?.length === 0) {
         return this.createFailureResult('No media found in API response');
       }
 

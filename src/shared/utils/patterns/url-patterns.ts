@@ -412,7 +412,7 @@ export const URLPatterns = {
       const urlObj = new URLConstructor(url);
 
       // 추가 검증: hostname이 존재해야 함
-      if (!urlObj.hostname || urlObj.hostname.length === 0) {
+      if (urlObj.hostname?.length === 0) {
         return false;
       }
 

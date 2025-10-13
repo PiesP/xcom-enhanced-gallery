@@ -266,7 +266,7 @@ async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null
     const detector = MediaClickDetector.getInstance();
     const result = detector.detectMediaFromClick(target);
 
-    if (result && result.type !== 'none' && result.mediaUrl) {
+    if (result?.type !== 'none' && result.mediaUrl) {
       const mediaInfo: MediaInfo = {
         id: `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         url: result.mediaUrl,

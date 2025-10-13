@@ -54,6 +54,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@doist/todoist-ai": "^4.11.0",
     "solid-js": "1.9.9"
   },
   "devDependencies": {
@@ -69,9 +70,9 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.7.2",
     "@types/tampermonkey": "^5.0.4",
-    "@typescript-eslint/eslint-plugin": "^8.46.0",
-    "@typescript-eslint/parser": "^8.46.0",
-    "@typescript/native-preview": "^7.0.0-dev.20251012.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
+    "@typescript/native-preview": "^7.0.0-dev.20251013.1",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "autoprefixer": "^10.4.21",

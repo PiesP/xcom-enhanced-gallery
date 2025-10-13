@@ -43,7 +43,7 @@ export class StoreZipWriter {
    * @throws {Error} 파일명이 비어있을 경우
    */
   addFile(filename: string, data: Uint8Array): void {
-    if (!filename || filename.length === 0) {
+    if (filename?.length === 0) {
       throw new Error('Filename cannot be empty');
     }
 
