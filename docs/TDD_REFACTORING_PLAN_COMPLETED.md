@@ -238,27 +238,6 @@ layer 중앙화
 
 ---
 
-### Phase 54.2: Glassmorphism 유틸리티 (2025-10-14) ⏭️ Skip
-
-**재평가 결과**: 작업 불필요로 Skip
-
-**분석**:
-
-- 실제 glassmorphism effect: 3곳만 사용 (VerticalImageItem,
-  design-tokens.component, primitive/Panel)
-- 이미 토큰화 완료: `var(--xeg-media-glass-blur)`,
-  `var(--glass-backdrop-filter)` 사용
-- 대부분은 성능 최적화: `backdrop-filter: none` (40+ 인스턴스)
-
-**Skip 사유**:
-
-- 중복이 거의 없음 (3곳, 모두 토큰 사용 중)
-- 추가 유틸리티 클래스는 오히려 복잡도 증가
-- 실질적 번들 절감 효과 미미 (<0.1 KB)
-- 현재 토큰 시스템으로 충분히 관리 가능
-
-**결론**: Phase 54.2 Skip, Phase 54.3 (Alias 정리)로 이동
-
 ---
 
 ### Phase 53: Button Fallback 제거 및 토큰 표준화 (2025-10-14) ✅
