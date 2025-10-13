@@ -63,7 +63,6 @@ export { createFocusTrap } from './utils/focus-trap';
 export type { FocusTrapOptions, FocusTrap } from './utils/focus-trap';
 
 // 새로운 P4-P7 훅들
-export { useScrollLock } from './hooks/use-scroll-lock';
 export { useGalleryToolbarLogic } from './hooks/use-gallery-toolbar-logic';
 export { useFocusTrap } from './hooks/use-focus-trap';
 

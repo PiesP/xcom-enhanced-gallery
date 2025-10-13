@@ -27,11 +27,3 @@ export type { ToastContainerProps } from './Toast/ToastContainer';
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';
 export type { ToolbarProps } from './Toolbar/Toolbar';
-
-// Settings Modal Components
-export { SettingsModal } from './SettingsModal';
-export type { SettingsModalProps } from './SettingsModal';
-
-// ToolbarWithSettings 컴포넌트
-export { ToolbarWithSettings } from './ToolbarWithSettings/ToolbarWithSettings';
-export type { ToolbarWithSettingsProps } from './ToolbarWithSettings/ToolbarWithSettings';

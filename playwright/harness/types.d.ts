@@ -20,9 +20,10 @@ export type KeyboardOverlayResult = {
   containerId: string;
 };
 
-export type SettingsModalState = {
-  closeCalls: number;
-};
+// TODO Phase 49: Remove SettingsModalState after migrating E2E tests to Toolbar expandable panel
+// export type SettingsModalState = {
+//   closeCalls: number;
+// };
 
 export type ToolbarHeadlessResult = {
   items: Array<{
@@ -64,10 +65,11 @@ export interface XegHarness {
   openKeyboardOverlay(): Promise<void>;
   closeKeyboardOverlay(): Promise<void>;
   disposeKeyboardOverlay(): Promise<void>;
-  mountSettingsModal(initialOpen?: boolean): Promise<{ containerId: string }>;
-  setSettingsModalOpen(isOpen: boolean): Promise<void>;
-  getSettingsModalState(): Promise<SettingsModalState>;
-  disposeSettingsModal(): Promise<void>;
+  // TODO Phase 49: Restore settings panel testing with Toolbar expandable panel harness
+  // mountSettingsModal(initialOpen?: boolean): Promise<{ containerId: string }>;
+  // setSettingsModalOpen(isOpen: boolean): Promise<void>;
+  // getSettingsModalState(): Promise<SettingsModalState>;
+  // disposeSettingsModal(): Promise<void>;
   evaluateToolbarHeadless(
     props: ToolbarMountProps & { isDownloading?: boolean }
   ): Promise<ToolbarHeadlessResult>;

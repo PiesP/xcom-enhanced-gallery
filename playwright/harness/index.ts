@@ -8,7 +8,7 @@ import type {
   ErrorBoundaryResult,
   ToolbarMountResult,
   KeyboardOverlayResult,
-  SettingsModalState,
+  // SettingsModalState, // TODO Phase 49: Remove after migrating tests to Toolbar expandable panel
   ToolbarHeadlessResult,
   GalleryAppSetupResult,
   GalleryAppState,
@@ -24,7 +24,7 @@ import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 import { KeyboardHelpOverlay } from '@features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal';
+// import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal'; // TODO Phase 49: Migrate to Toolbar expandable settings
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { SERVICE_KEYS } from '@/constants';
 import { CoreService } from '@shared/services/service-manager';
@@ -247,6 +247,8 @@ async function disposeKeyboardOverlayHarness(): Promise<void> {
   keyboardOverlayHandle.dispose();
 }
 
+// TODO Phase 49: Remove SettingsModal harness functions after migrating E2E tests to Toolbar expandable panel
+/*
 type SettingsModalHandle = {
   container: HTMLElement;
   trigger: HTMLButtonElement;
@@ -330,6 +332,7 @@ async function disposeSettingsModalHarness(): Promise<void> {
   }
   settingsModalHandle.dispose();
 }
+*/
 
 async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   await ensureVendorsReady();
@@ -688,10 +691,11 @@ const harness: XegHarness = {
   openKeyboardOverlay: openKeyboardOverlayHarness,
   closeKeyboardOverlay: closeKeyboardOverlayHarness,
   disposeKeyboardOverlay: disposeKeyboardOverlayHarness,
-  mountSettingsModal: mountSettingsModalHarness,
-  setSettingsModalOpen: setSettingsModalOpenHarness,
-  getSettingsModalState: getSettingsModalStateHarness,
-  disposeSettingsModal: disposeSettingsModalHarness,
+  // TODO Phase 49: Restore settings panel testing with Toolbar expandable panel
+  // mountSettingsModal: mountSettingsModalHarness,
+  // setSettingsModalOpen: setSettingsModalOpenHarness,
+  // getSettingsModalState: getSettingsModalStateHarness,
+  // disposeSettingsModal: disposeSettingsModalHarness,
   evaluateToolbarHeadless: evaluateToolbarHeadlessHarness,
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,

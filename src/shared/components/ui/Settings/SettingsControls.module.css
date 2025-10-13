@@ -1,0 +1,53 @@
+/**
+ * SettingsControls.module.css
+ * Styles for theme and language selection controls (Phase 48)
+ * Extracted from SettingsModal to support inline toolbar settings panel
+ */
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xeg-settings-gap, 12px);
+  padding: var(--xeg-settings-padding, 12px);
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--xeg-settings-control-gap, 8px);
+}
+
+.label {
+  font-size: var(--xeg-settings-label-font-size, 14px);
+  font-weight: var(--xeg-settings-label-font-weight, 500);
+  color: var(--xeg-color-text-primary);
+}
+
+.select {
+  width: 100%;
+  padding: var(--xeg-settings-select-padding, 8px 12px);
+  font-size: var(--xeg-settings-select-font-size, 14px);
+  color: var(--xeg-color-text-primary);
+  background-color: var(--xeg-color-bg-secondary);
+  border: 1px solid var(--xeg-color-border);
+  border-radius: var(--xeg-border-radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--xeg-transition-duration-fast) var(--xeg-transition-easing),
+    background-color var(--xeg-transition-duration-fast) var(--xeg-transition-easing);
+}
+
+.select:hover {
+  border-color: var(--xeg-color-primary);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 3px var(--xeg-color-primary-alpha-20);
+}
+
+.select option {
+  background-color: var(--xeg-color-bg-primary);
+  color: var(--xeg-color-text-primary);
+}

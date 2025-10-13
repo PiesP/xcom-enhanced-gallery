@@ -5,7 +5,7 @@
 import { getSolid, type JSXElement } from '../../../external/vendors';
 import { LanguageService } from '../../../services/language-service';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
-import styles from '../SettingsModal/SettingsModal.module.css';
+import styles from './SettingsControls.module.css';
 
 export type ThemeOption = 'auto' | 'light' | 'dark';
 export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
