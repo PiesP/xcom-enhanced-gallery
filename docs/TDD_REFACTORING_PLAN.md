@@ -1,16 +1,16 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 48.9 완료, **DEV** 초기화 수정
-> ✅
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 49 완료, 툴바 설정 드롭다운
+> 안정화 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 729.62 KB / prod **316.11 KB** ✅
-- **테스트**: 668 passing, 11 RED (구현 예정), 1 skipped ✅
+- **빌드**: dev 729.71 KB / prod **316.52 KB** ✅
+- **테스트**: 670 passing, 11 RED (구현 예정), 3 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (263 modules, 718 dependencies) ✅
-- **번들 예산**: **316.11 KB / 325 KB** (8.89 KB 여유) ✅ **목표 달성!**
+- **번들 예산**: **316.52 KB / 325 KB** (8.48 KB 여유) ✅ **목표 달성!**
 
 ## 참고 문서
 
@@ -22,6 +22,33 @@
 ---
 
 ## 최근 완료
+
+### Phase 49: Toolbar Settings Dropdown 안정화 ✅ (2025-10-14)
+
+**목표**: 툴바 설정 패널의 중첩 구조를 줄이고 레이아웃 안정성 향상
+
+**변경사항**:
+
+- `.galleryToolbar`의 `flex-direction: column` 제거 (기본 row 사용)
+- 툴바 높이를 `min-height`에서 고정 `height: 3em`로 변경
+- 설정 패널 애니메이션 개선: `height` → `opacity + transform`
+- 설정 패널은 이미 `position: absolute` (Phase 44에서 유지)
+
+**결과**:
+
+- ✅ 툴바 높이가 설정 패널 확장/축소와 무관하게 고정 (48px/3em)
+- ✅ 설정 패널이 툴바 아래에 자연스럽게 드롭다운으로 표시
+- ✅ 더 부드러운 애니메이션 (opacity + translateY)
+- ✅ 레이아웃 안정성 향상 (부모 높이 변경 없음)
+- ✅ 번들 크기: **316.52 KB** (325 KB 제한 내)
+- ✅ 670개 테스트 통과 (3 skipped)
+
+**테스트**:
+
+- `test/unit/components/toolbar-layout-stability.test.tsx` 추가
+- 툴바 높이 고정 검증 ✅
+- absolute positioning 검증 ✅
+- 1개 테스트 skip (E2E 이관 필요: data-expanded 추적)
 
 ### Phase 48.9: **DEV** 전역 변수 초기화 수정 ✅ (2025-10-14)
 
@@ -62,44 +89,7 @@ Toolbar Expandable Settings 리팩토링 및 안정성 수정 완료
 
 ## 활성 작업 계획
 
-### 우선순위 1: Phase 49 - Toolbar Settings Dropdown 리팩토링
-
-**목표**: 툴바 설정 패널의 중첩 구조를 줄이고 레이아웃 안정성 향상
-
-**현재 문제**:
-
-- 설정 패널이 툴바 내부에 inline 구조로 삽입되어 있음
-- 패널 확장 시 툴바 전체 높이가 변경되어 레이아웃 불안정
-- `flex-direction: column` 사용으로 인한 구조적 복잡성
-
-**해결 방안 (Option 1: Dropdown with Absolute Positioning)**:
-
-- 설정 패널을 `position: absolute`로 변경하여 툴바 플로우에서 분리
-- 툴바 높이를 고정 (~48px)하고 패널은 아래로 떠있게 표시
-- 애니메이션을 `height` → `opacity + transform`으로 변경
-
-**TDD 단계**:
-
-1. RED: 툴바 높이 고정 테스트 작성 (설정 패널 확장 시에도 고정)
-2. GREEN: CSS 변경으로 absolute positioning 적용
-3. REFACTOR: 애니메이션 개선 및 z-index 조정
-
-**영향 받는 파일**:
-
-- `src/shared/components/ui/Toolbar/Toolbar.tsx` (구조 변경 없음, 스타일만)
-- `src/shared/components/ui/Toolbar/Toolbar.module.css` (주요 변경)
-- `test/unit/toolbar-layout-stability.test.tsx` (신규 테스트)
-
-**완료 조건**:
-
-- ✅ 툴바 높이가 설정 패널 확장/축소와 무관하게 고정
-- ✅ 패널이 툴바 아래에 자연스럽게 드롭다운으로 표시
-- ✅ 애니메이션이 부드럽고 접근성 유지
-- ✅ 모든 기존 테스트 통과 (668 passing 유지)
-
----
-
-### 우선순위 2: Phase 50 - RED 테스트 구현 (11개 RED 테스트)
+### 우선순위 1: Phase 50 - RED 테스트 구현 (11개 RED 테스트)
 
 **목표**: TDD 사이클 완료 - 현재 RED 상태인 테스트 구현
 
