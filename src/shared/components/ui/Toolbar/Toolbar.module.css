@@ -683,3 +683,39 @@ button.fitButton {
 /* 고대비 모드 - 시인성 개선 */
 
 /* Fit Mode Group 래퍼 제거 - 독립 버튼 배치 원칙 준수 */
+
+/* ===== Phase 44: Toolbar Expandable Panel Styles ===== */
+
+/* Expandable Settings Panel */
+.settingsPanel {
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+
+  /* Animation & Transition */
+  height: var(--xeg-toolbar-panel-height);
+  max-height: var(--xeg-toolbar-panel-max-height);
+  overflow: hidden;
+  opacity: 0;
+  transition: var(--xeg-toolbar-panel-transition);
+
+  /* Visual */
+  background: var(--xeg-bg-toolbar);
+  border-top: 1px solid var(--color-border-default);
+  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
+}
+
+/* Expanded State */
+.settingsPanel[data-expanded='true'] {
+  height: auto;
+  opacity: 1;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .settingsPanel {
+    transition: none;
+  }
+}
