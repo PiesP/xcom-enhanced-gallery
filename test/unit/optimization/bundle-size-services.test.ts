@@ -56,8 +56,8 @@ describe('Phase 33 Step 2C - Service Layer Size Guard', () => {
     });
   });
 
-  it('should document optimization strategy in TDD_REFACTORING_PLAN.md', () => {
-    const planPath = join(PROJECT_ROOT, 'docs/TDD_REFACTORING_PLAN.md');
+  it('should document optimization strategy in TDD_REFACTORING_PLAN_COMPLETED.md', () => {
+    const planPath = join(PROJECT_ROOT, 'docs/TDD_REFACTORING_PLAN_COMPLETED.md');
     const plan = readFileSync(planPath, 'utf-8');
 
     expect(plan).toContain('Step 2C');

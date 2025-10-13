@@ -8,18 +8,17 @@
 
 ## 프로젝트 상태
 
-- **빌드**: dev 733.19 KB / prod 321.60 KB ✅
-- **테스트**: 672+ passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 734.31 KB / prod 322.07 KB ✅
+- **테스트**: 690+ passing (24 skipped) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
-- **의존성**: 0 violations (271 modules, 741 dependencies) ✅
-- **번들 예산**: 321.60 KB / 325 KB (3.40 KB 여유) ✅
+- **의존성**: 0 violations (271 modules, 744 dependencies) ✅
+- **번들 예산**: 322.07 KB / 325 KB (2.93 KB 여유) ⚠️ 예산 근접
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록 (Phase 33 Step 2C
-  서비스 레이어 최적화 포함)
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록 (최근 간소화됨)
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
@@ -27,7 +26,24 @@
 
 ## 최근 완료 작업
 
-### Phase 39: 하이브리드 설정 UI 전략 (2025-10-13) ✅
+### Phase 39 Step 3: Headless Settings 로직 분리 (2025-10-13) ✅
+
+**목표**: SettingsModal 상태 관리를 UI에서 분리하여 테스트 용이성과 재사용성
+향상
+
+**TDD 단계**:
+
+- **RED**: `test/unit/hooks/use-settings-modal.test.ts` (219 lines, 11 tests)
+- **GREEN**: `src/shared/hooks/use-settings-modal.ts` (95 lines) - 11/11 passing
+  ✅
+- **REFACTOR**: SettingsModal.tsx 통합 (400 lines, -19 중복 코드) - 12/12
+  passing ✅
+
+**성과**: 로직/UI 분리로 테스트 용이성↑, 재사용성↑, 결합도↓ / 번들 +0.47 KB
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
+
+### Phase 39 Step 1-2: 하이브리드 설정 UI 전략 (2025-10-13) ✅
 
 Lazy loading 시도 및 번들 예산 검증 완료.
 
@@ -51,102 +67,89 @@ Gallery.module.css의 50+ 하드코딩된 px 값을 디자인 토큰으로 교�
 
 ---
 
-## 활성 작업
+## 다음 단계
 
-### Phase 39 Step 3: Headless Settings 로직 분리 (진행 중) 🚧
+### 우선순위 1: 문서 정리 (권장) ✅
 
-**목표**: 설정 모달의 상태 관리 로직을 UI에서 분리하여 테스트 용이성과 재사용성
-향상
+**완료 상태**: `TDD_REFACTORING_PLAN_COMPLETED.md` 간소화 완료 (998줄 → ~240줄)
 
-**브랜치**: `feature/phase-39-step-3-headless-settings`
+### 우선순위 2: 테스트 커버리지 개선 (권장)
 
-**배경**:
+**목표**: skipped tests 검토 및 활성화 또는 제거
 
-- Phase 39 Step 1 (Lazy loading) 완료, 번들 예산 내 유지 (321.60 KB / 325 KB)
-- 현재 `SettingsModal`이 ThemeService/LanguageService를 직접 생성하여 결합도
-  높음
-- 테스트에서 서비스 모킹이 어려움
+**현재 상태**:
 
-**가치**:
+- 690+ passing
+- 24 skipped tests
 
-- ✅ 테스트 용이성: 로직과 UI 분리로 단위 테스트 가능
-- ✅ 재사용성: 다른 컴포넌트에서도 설정 로직 사용 가능
-- ✅ 유지보수성: 서비스 의존성 주입으로 결합도 감소
+**작업 항목**:
 
-**TDD 진행 순서**:
+1. Skipped tests 목록 검토:
+   - 각 테스트의 skip 이유 확인
+   - 활성화 가능한 테스트 식별
+   - 불필요한 테스트 제거
 
-#### Step 3-A: RED - useSettingsModal 훅 테스트 작성
-
-1. 테스트 파일: `test/unit/hooks/use-settings-modal.test.ts`
-2. 검증 항목:
-   - 초기 테마/언어 상태 설정
-   - 테마 변경 핸들러 동작
-   - 언어 변경 핸들러 동작
-   - 서비스 메서드 호출 확인
-   - 서비스 주입 가능 여부
-
-**예상 인터페이스**:
-
-```typescript
-interface UseSettingsModalOptions {
-  themeService: ThemeService;
-  languageService: LanguageService;
-  onThemeChange?: (theme: ThemeOption) => void;
-  onLanguageChange?: (language: LanguageOption) => void;
-}
-
-interface UseSettingsModalReturn {
-  currentTheme: Accessor<ThemeOption>;
-  currentLanguage: Accessor<LanguageOption>;
-  handleThemeChange: (event: Event) => void;
-  handleLanguageChange: (event: Event) => void;
-}
-```
-
-#### Step 3-B: GREEN - useSettingsModal 구현
-
-1. 파일: `src/shared/hooks/use-settings-modal.ts`
-2. 구현 내용:
-   - ThemeService/LanguageService를 props로 받음
-   - createSignal로 상태 관리
-   - 핸들러 함수에서 서비스 메서드 호출
-   - 테스트 통과 확인
-
-#### Step 3-C: REFACTOR - SettingsModal 리팩토링
-
-1. `SettingsModal.tsx`에서 훅 사용하도록 수정
-2. 기존 테스트 모두 통과 확인
-3. 번들 크기 영향 확인
-
-**수용 기준**:
-
-- useSettingsModal 훅 테스트 모두 통과 ✅
-- 기존 SettingsModal 테스트 모두 통과 ✅
-- 번들 크기 325 KB 이하 유지 ✅
-- 타입 오류 0개 ✅
+2. 커버리지 분석:
+   - `npm run test:coverage` 실행
+   - 커버리지 낮은 영역 식별
+   - 우선순위 높은 파일에 테스트 추가
 
 **예상 효과**:
 
-- 테스트 커버리지 향상 (+10-15 tests)
-- 코드 결합도 감소
-- 번들 크기 영향 최소 (+0.5-1 KB 예상)
+- 테스트 수: 690+ → 710+
+- 커버리지: 85%+ → 90%+
+- 코드 품질 신뢰도 향상
+
+### 우선순위 3: 번들 크기 최적화 (선택적)
+
+**현재 상황**: 322.07 KB / 325 KB (2.93 KB 여유) ⚠️ 예산 근접
+
+**고려 사항**:
+
+1. CSS 최적화 가능성:
+   - 중복 토큰 제거
+   - 미사용 CSS 규칙 정리
+   - **예상 효과**: 2-3 KB 절감
+
+2. Code splitting 재검토:
+   - Phase 39에서 Lazy loading 효과 미미 확인
+   - 큰 컴포넌트(>50 KB) 타겟팅 필요
+
+3. Tree-shaking 최적화:
+   - 미사용 export 추가 확인
+   - barrel export 최소화
+
+**권장 시점**: 번들이 323 KB를 초과하거나 새 기능 추가 전
 
 ---
 
-### 단기 개선 후보 (선택적)
+## 단기 개선 후보 (백로그)
 
-#### 1. CSS 최적화 (낮은 우선순위)
+### 접근성 개선
 
-- 중복 토큰 제거
-- 미사용 CSS 규칙 정리
-- **예상 효과**: 2-3 KB 절감
-- **필요성**: 현재 번들 예산 내로 즉시 필요하지 않음
+- ARIA labels 확장
+- 키보드 네비게이션 개선
+- 스크린 리더 지원 강화
 
-#### 2. 문서 간소화 (권장)
+### 성능 개선
 
-- `TDD_REFACTORING_PLAN_COMPLETED.md` 간소화 필요 (현재 상세 내용 과다)
-- **목표**: 핵심 결과만 유지
-- **예상 효과**: 가독성 향상, 저장소 크기 감소
+- Intersection Observer 최적화
+- 이미지 lazy loading 개선
+- 메모리 사용량 프로파일링
+
+### 코드 품질
+
+- 복잡도 높은 함수 리팩토링
+- 타입 추론 개선
+- 중복 코드 추가 제거
+
+---
+
+**다음 작업 권장 순서**:
+
+1. ✅ 문서 정리 (완료)
+2. 테스트 커버리지 개선 (24 skipped tests 리뷰)
+3. (선택적) 번들 크기 최적화 (예산 근접 시)
 
 #### 3. 테스트 커버리지 개선 (권장)
 
