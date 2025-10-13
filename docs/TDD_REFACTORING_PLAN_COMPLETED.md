@@ -2,102 +2,63 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **상태**: Phase 38 완료 ✅
+> **상태**: Phase 39 완료 ✅
 
 ## 프로젝트 상태 스냅샷 (2025-10-13)
 
-- **빌드**: dev 732.38 KB / prod 321.29 KB ⚠️ (예산 초과 1.29 KB)
+- **빌드**: dev 733.19 KB / prod 321.60 KB ✅
 - **테스트**: 672+ passing, 24 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (271 modules, 741 deps) ✅
-- **번들 예산**: 321.29 KB / 325 KB (3.71 KB 여유) ⚠️
+- **번들 예산**: 321.60 KB / 325 KB (3.40 KB 여유) ✅
 
 ## 최근 완료 Phase
 
-### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) ✅
+### Phase 39: 하이브리드 설정 UI 전략 (2025-10-13) ✅
 
-**목표**: 설정 모달이 Modal 모드에서 실제 뷰포트의 가로·세로 중앙에 고정되도록
-CSS flex 기반 레이아웃으로 개선.
+**목표**: 번들 크기 최적화 시도 및 lazy loading 효과 검증
 
-**브랜치**: feature/settings-modal-center
-
-**배경**:
-
-- Phase 36에서 CSS 클래스 적용 회귀를 해결했으나, CSS `transform` 기반 중앙
-  정렬은 뷰포트보다 모달이 크거나 높이가 변동될 때 상단/하단이 잘리는 문제가
-  있었다.
-- 사용자는 언제나 화면 중앙에서 설정 모달을 확인하길 원하며, 뷰포트 크기가
-  변해도 중앙 정렬이 유지돼야 한다.
-
-**구현 내용**:
-
-1. **CSS 모듈 개선** (`SettingsModal.module.css`):
-   - `:global(.settings-modal-backdrop)` 추가: `display: flex`,
-     `align-items: center`, `justify-content: center`
-   - 뷰포트 패딩 적용: `padding: var(--space-lg, 16px)`
-   - `.panel` width 제약:
-     `width: min(28em, calc(100vw - var(--space-lg, 16px) * 2))`
-   - `.center` 스타일 조정: `max-height`, `overflow-y: auto`, backdrop 내에서
-     `position: static`
-
-2. **테스트 강화** (`SettingsModal.positioning.test.tsx`):
-   - CSS 규칙 검증 테스트 3개 추가:
-     - backdrop flex 레이아웃 확인
-     - center 클래스 max-height/overflow 확인
-     - backdrop 내 center override (static positioning) 확인
-   - 기존 위치 테스트 유지 (7개 테스트 통과)
+**브랜치**: feature/phase-39-hybrid-settings
 
 **결과**:
 
-- ✅ 모달이 항상 뷰포트 중앙에 노출
-- ✅ 뷰포트 경계로부터 최소 16px 여백 유지
-- ✅ 창 크기 변경 시 자동 재배치 (CSS flex)
-- ✅ 기존 위치 옵션(`toolbar-below`, `top-right`, `bottom-sheet`) 동작 보존
-- ⚠️ 번들 크기 소폭 증가 (320.53 KB → 321.29 KB, +0.76 KB)
+#### Step 1: Lazy Loading 시도 (부분 성공)
 
-**커밋**: `feat(settings): implement viewport-centered modal with CSS flex`
+- ToolbarWithSettings에 Suspense + lazy() 적용
+- 번들 크기 테스트 추가 (`test/unit/optimization/bundle-size-settings.test.ts`)
+- **실제 효과**: 321.29 KB → 321.60 KB (+0.31 KB) - 목표 미달
+- **학습**: Solid.js lazy() 오버헤드가 작은 컴포넌트(<20 KB)의 절감 효과를 상회
+
+#### Step 2: 번들 예산 검증 (완료)
+
+- 현재 예산: 경고 320 KB / 실패 325 KB
+- 현재 크기: 321.60 KB (예산 내)
+- 결론: 추가 조치 불필요
+
+**학습 사항**:
+
+- Lazy loading은 큰 컴포넌트(>50 KB)에만 효과적
+- SettingsModal(18.94 KB)은 초기 로드 필수 컴포넌트
+- Vite code splitting과 Solid.js reactivity 충돌 가능성
+
+**커밋**: `feat(settings): add lazy loading for SettingsModal (Phase 39 Step 1)`
+
+### Phase 38: 설정 모달 뷰포트 중앙 정렬 개선 (2025-10-13) ✅
+
+**목표**: CSS flex 기반 뷰포트 중앙 정렬 구현
+
+**구현**: `:global(.settings-modal-backdrop)` flex 컨테이너로 전환
+
+**결과**: ✅ 모달 항상 중앙 배치, ✅ 창 크기 변경 대응, ⚠️ 번들 +0.76 KB
 
 ### Phase 37: Gallery 하드코딩 제거 및 PC 전용 정책 준수 (2025-10-13) ✅
 
-**목표**: Gallery.module.css의 50+ 하드코딩된 px 값을 디자인 토큰으로 교체하고,
-모바일 미디어쿼리 제거로 PC 전용 정책 준수.
+**목표**: Gallery.module.css 디자인 토큰화 및 모바일 미디어쿼리 제거
 
-**브랜치**: feature/gallery-hardcoding-removal
+**구현**: 50+ 하드코딩 px 값 → 디자인 토큰, 모바일 쿼리 2개 제거
 
-**배경**:
-
-Gallery.module.css에 다음 문제 발견:
-
-- 50+ 하드코딩된 px 값 (font-size, padding, width/height, gap, position 등)
-- 모바일 미디어쿼리 2개 존재 (`@media max-width: 768px`, `480px`) → PC 전용 정책
-  위반
-
-#### Phase 37 Step 1: 디자인 토큰 추가 ✅
-
-**토큰 추가**:
-
-1. **primitive 레이어** (`design-tokens.primitive.css`):
-   - `--font-size-2xs: 11px` 추가
-   - `--font-size-xl: 18px` 수정 (was 20px)
-   - `--font-size-3xl: 24px` 추가
-
-2. **semantic 레이어** (`design-tokens.semantic.css`):
-   - `--size-button-sm: 32px`
-   - `--size-button-md: 40px`
-   - `--size-button-lg: 48px`
-
-3. **component 레이어** (`design-tokens.component.css`):
-   - Button size variants: `--xeg-button-size-{sm|md|lg}`
-   - Text size variants: `--xeg-text-{2xs|xs|sm|base|md|lg|xl|2xl|3xl}` (9개)
-   - Spacing variants: `--xeg-spacing-{xs|sm|md|lg|xl|2xl}` (6개)
-   - 총 25개 component 토큰 추가
-
-**총 토큰 추가**: 30+ (primitive 3개 + semantic 3개 + component 25개)
-
-#### Phase 37 Step 2-A: RED - 하드코딩 검증 테스트 작성 ✅
-
-**테스트 파일**: `test/unit/styles/gallery-hardcoding.test.ts` (156줄)
+**결과**: ✅ PC 전용 정책 준수, ✅ 디자인 시스템 일관성
 
 **테스트 구조**:
 
