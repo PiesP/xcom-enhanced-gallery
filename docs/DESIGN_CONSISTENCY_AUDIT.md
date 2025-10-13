@@ -1,9 +1,19 @@
 # 디자인 일관성 점검 보고서
 
-> **작성일**: 2025-10-14  
-> **목적**: 툴바와 설정 메뉴의 디자인 요소 통일성 분석 및 개선 계획 수립
+> **작성일**: 2025-10-14 **목적**: 툴바와 설정 메뉴의 디자인 요소 통일성 분석 및
+> 개선 계획 수립
 
 ## 📊 현황 분석
+
+### 2025-10-14 업데이트 요약 (Phase 52)
+
+- ✅ 설정 select semantic 토큰이 툴바 토큰(`--xeg-bg-toolbar`,
+  `--xeg-color-border-primary`, `--xeg-color-border-hover`,
+  `--xeg-focus-ring-color`)과 직접 연결됨
+- ✅ SettingsControls select hover/포커스 정책이 툴바 버튼과 동일한 border/focus
+  ring 토큰을 사용하도록 정렬됨
+- ✅ `test/styles/settings-toolbar-alignment.test.ts` 추가로 토큰 정합성을 자동
+  검증 (RED → GREEN)
 
 ### 1. 디자인 토큰 시스템 현황
 
@@ -46,6 +56,9 @@ border-radius: var(--xeg-border-radius-md); /* ⚠️ 비표준 토큰명 */
 3. `--xeg-border-radius-md` 대신 `--xeg-radius-md` 사용해야 함
 4. transition 토큰 사용 불일치
 
+**해결 현황 (2025-10-14)**: Phase 52에서 select 관련 semantic 토큰을 툴바
+토큰으로 재매핑하고 fallback/비표준 토큰을 정리함.
+
 #### 1.2 누락된 컴포넌트 토큰
 
 **툴바에서 사용되지만 semantic layer에 없는 토큰**:
@@ -63,6 +76,9 @@ border-radius: var(--xeg-border-radius-md); /* ⚠️ 비표준 토큰명 */
 - `--xeg-settings-label-font-weight`
 - `--xeg-settings-select-padding`
 - `--xeg-settings-select-font-size`
+
+**해결 현황 (2025-10-14)**: Phase 52에서 settings select 토큰 집합을 툴바
+팔레트와 동일한 semantic layer로 통합.
 
 #### 1.3 transition/easing 토큰 불일치
 
@@ -88,6 +104,10 @@ transition:
 - 툴바는 `var(--xeg-duration-normal)` 사용
 - 설정은 `var(--xeg-transition-duration-fast)` 사용
 - 토큰명 불일치: `--xeg-duration-*` vs `--xeg-transition-duration-*`
+
+**해결 현황 (2025-10-14)**: Phase 52에서 SettingsControls 전환 토큰을
+`--xeg-duration-*`, `--xeg-ease-standard`로 통일하고 hover/포커스 border 토큰을
+`--xeg-color-border-hover`로 정리.
 
 ### 2. 시각적 일관성 문제
 
@@ -289,6 +309,27 @@ border-radius: var(--xeg-border-radius-md); /* ❌ 비표준 토큰명 */
 - ✅ 표준 토큰명 사용
 - ✅ 툴바와 transition 토큰 일치
 - ✅ 테스트 통과
+
+---
+
+### Phase 52: Toolbar/Settings 시각 통합 ✅ (2025-10-14)
+
+**핵심 변경**:
+
+- `design-tokens.semantic.css`의 `--xeg-settings-select-*` 토큰을 툴바
+  토큰(`--xeg-bg-toolbar`, `--xeg-color-border-primary`,
+  `--xeg-color-border-hover`, `--xeg-focus-ring-color`)으로 재매핑
+- `SettingsControls.module.css`에서 select hover/포커스를 툴바 버튼과 동일한
+  border/focus ring 정책으로 정렬하고 `outline: none` 제거
+- `test/styles/settings-toolbar-alignment.test.ts` 추가로 토큰-스타일 정합성을
+  자동 검증 (RED → GREEN)
+
+**결과**:
+
+- ✅ 라이트/다크 테마 모두에서 설정 select와 툴바 버튼이 동일 팔레트 사용
+- ✅ 포커스 링이 공통 토큰(`--xeg-focus-ring`, `--xeg-focus-ring-offset`)을
+  사용하여 접근성 정책 일치
+- ✅ 스타일/토큰 스위트에 Phase 52 테스트 추가 (`npm run test:styles` GREEN)
 
 ---
 
