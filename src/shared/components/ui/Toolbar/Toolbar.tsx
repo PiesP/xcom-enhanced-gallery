@@ -10,6 +10,10 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '../../../hooks/use-toolbar-state';
+import {
+  getToolbarExpandableState,
+  toggleSettingsExpanded,
+} from '../../../state/signals/toolbar.signals';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/event-manager';
 import { ComponentStandards } from '../StandardProps';
@@ -26,6 +30,9 @@ import {
   ArrowAutofitHeight,
   ArrowsMaximize,
 } from '../Icon';
+import { SettingsControls } from '../Settings/SettingsControls';
+import { ThemeService } from '../../../services/theme-service';
+import { LanguageService } from '../../../services/language-service';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
 import styles from './Toolbar.module.css';
 
@@ -69,10 +76,21 @@ const FIT_MODE_ORDER: ReadonlyArray<{
 const HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
 
 function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
-  const { mergeProps, createMemo, createEffect, onCleanup, on } = solid;
+  const { mergeProps, createMemo, createEffect, onCleanup, on, createSignal } = solid;
 
   const props = mergeProps(DEFAULT_TOOLBAR_PROPS, rawProps);
   const [toolbarState, toolbarActions] = useToolbarState();
+
+  // Services for settings
+  const themeService = new ThemeService();
+  const languageService = new LanguageService();
+
+  // Settings state
+  const [currentTheme, setCurrentTheme] = createSignal<'auto' | 'light' | 'dark'>('auto');
+  const [currentLanguage, setCurrentLanguage] = createSignal<'auto' | 'ko' | 'en' | 'ja'>('auto');
+
+  // Expandable panel state - track with createMemo to make it reactive
+  const isSettingsExpanded = createMemo(() => getToolbarExpandableState().isSettingsExpanded);
 
   let toolbarRef: HTMLDivElement | undefined;
 
@@ -234,10 +252,26 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
   const onDownloadCurrent = createActionHandler(props.onDownloadCurrent);
   const onDownloadAll = createActionHandler(props.onDownloadAll);
   const onCloseClick = createActionHandler(props.onClose);
-  const onOpenSettings =
-    typeof props.onOpenSettings === 'function'
-      ? createActionHandler(props.onOpenSettings)
-      : undefined;
+
+  const onSettingsClick = (event: Event | MouseEvent) => {
+    event.stopPropagation();
+    toggleSettingsExpanded();
+    props.onOpenSettings?.();
+  };
+
+  const handleThemeChange = (event: Event) => {
+    const select = event.target as HTMLSelectElement;
+    const theme = select.value as 'auto' | 'light' | 'dark';
+    setCurrentTheme(theme);
+    themeService.setTheme(theme);
+  };
+
+  const handleLanguageChange = (event: Event) => {
+    const select = event.target as HTMLSelectElement;
+    const language = select.value as 'auto' | 'ko' | 'en' | 'ja';
+    setCurrentLanguage(language);
+    languageService.setLanguage(language);
+  };
 
   return (
     <div
@@ -367,14 +401,13 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             </IconButton>
           )}
 
-          {typeof props.onOpenSettings === 'function' && onOpenSettings && (
+          {typeof props.onOpenSettings === 'function' && (
             <IconButton
               size='toolbar'
               aria-label='설정 열기'
               title='설정'
               disabled={props.disabled}
-              onClick={onOpenSettings}
-              onMouseDown={onOpenSettings}
+              onClick={onSettingsClick}
               data-gallery-element='settings'
               data-disabled={props.disabled}
             >
@@ -395,6 +428,23 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             <X size={18} />
           </IconButton>
         </div>
+      </div>
+
+      {/* Settings Panel */}
+      <div
+        class={styles.settingsPanel}
+        data-expanded={isSettingsExpanded()}
+        role='region'
+        aria-label='설정 패널'
+        data-gallery-element='settings-panel'
+      >
+        <SettingsControls
+          currentTheme={currentTheme()}
+          currentLanguage={currentLanguage()}
+          onThemeChange={handleThemeChange}
+          onLanguageChange={handleLanguageChange}
+          compact={true}
+        />
       </div>
     </div>
   );
