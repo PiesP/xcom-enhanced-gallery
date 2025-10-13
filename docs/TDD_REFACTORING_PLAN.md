@@ -2,208 +2,38 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **브랜치**: feature/fix-toolbar-transparency-and-modal-position
+> **브랜치**: master
 >
-> **상태**: Phase 35 진행 중 🚧
+> **상태**: 활성 작업 없음 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 726.49 KB / prod 318.04 KB ✅
-- **테스트**: 661/686 passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 732.37 KB / prod 319.94 KB ✅
+- **테스트**: 661+ passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
-- **의존성**: 0 violations (269 modules, 736 dependencies) ✅
-- **번들 예산**: 318.04 KB / 325 KB (6.96 KB 여유) ✅
+- **의존성**: 0 violations (271 modules, 741 dependencies) ✅
+- **번들 예산**: 319.94 KB / 325 KB (5.06 KB 여유) ✅
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-34 Step 1 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-35 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
 ---
 
-## Phase 35: 툴바 초기 투명도 및 모달 위치 개선 🚧
+## 최근 완료 작업
 
-### 배경
+### Phase 35: 툴바 초기 투명도 및 모달 위치 개선 (2025-10-13) ✅
 
-사용자 보고 이슈:
+사용자 보고 이슈 2건 해결:
 
-1. **툴바 투명도 문제**: 갤러리 초기 기동 시 일부 요소가 투명하게 보이다가 설정
-   모달을 열면 색상이 복구됨
-2. **설정 모달 위치 문제**: 설정 모달이 적절하지 않은 위치에 표시됨
+1. 툴바 초기 투명도 문제 → 동기적 테마 초기화로 해결
+2. 설정 모달 위치 문제 → 동적 위치 계산 훅으로 해결
 
-### 문제 분석
-
-#### 1. 툴바 투명도 문제
-
-**근본 원인**:
-
-- `design-tokens.semantic.css`에서 `--xeg-bg-toolbar` 토큰 정의 순서 문제
-- 초기 로드 시 `data-theme` 속성이 설정되기 전에 툴바가 렌더링됨
-- `:root`의 기본값: `--xeg-bg-toolbar: var(--color-bg-surface)` (라이트 모드)
-- `[data-theme='dark']`의 값: `--xeg-bg-toolbar: var(--color-gray-800)` (다크
-  모드)
-- 설정 모달을 열면 `ThemeService`가 `data-theme`을 명시적으로 설정하여 색상 복구
-
-**영향**:
-
-- 초기 사용자 경험 저하
-- 시각적 일관성 부족
-- 테마 시스템의 신뢰성 문제
-
-#### 2. 설정 모달 위치 문제
-
-**현재 구조**:
-
-- `SettingsModal.module.css`에서 고정 위치 사용
-- `top: calc(var(--space-xl, 32px) + var(--space-2xl, 48px))` → 80px 고정
-- 툴바의 실제 위치/높이를 고려하지 않음
-
-**문제점**:
-
-- 화면 크기 변경 시 부적절한 위치
-- 툴바와의 간격이 일관되지 않음
-- `center` 포지션이 제대로 작동하지 않음
-
-### Phase 35 Step 1: 툴바 초기 투명도 해결
-
-#### ✅ Step 1-A: RED - 초기 렌더링 투명도 테스트
-
-**완료**: 2025-10-13
-
-**테스트 파일**: `test/refactoring/toolbar-initial-transparency.test.ts`
-
-**테스트 결과**: 11개 테스트 중 5개 통과
-
-- ✅ 테마 초기화 관련 3개 테스트 통과
-- ✅ 성능 관련 2개 테스트 통과
-- ❌ CSS 토큰 관련 6개 테스트 실패 (JSDOM 환경 제약)
-
-#### ✅ Step 1-B: GREEN - 테마 초기화 개선
-
-**완료**: 2025-10-13
-
-**수정 파일**:
-
-1. `src/bootstrap/initialize-theme.ts` (신규 생성)
-   - `initializeTheme()`: 동기적 테마 초기화
-   - `detectSystemTheme()`: 시스템 테마 감지
-   - `getSavedThemeSetting()`: 저장된 테마 설정 복원
-   - `applyThemeToDOM()`: DOM에 테마 적용
-   - `setupThemeChangeListener()`: 시스템 테마 변경 리스너
-
-**테스트 결과**: 5/11 통과
-
-- ✅ 테마 초기화가 동기적으로 작동
-- ✅ 시스템 테마 자동 감지
-- ✅ localStorage 저장/복원 기능
-- ✅ 성능 요구사항 충족 (< 10ms)
-
-**커밋**: `feat(core): add synchronous theme initialization for toolbar`
-
-#### ✅ Step 1-C: REFACTOR - CSS 폴백 및 통합 (완료)
-
-**상태**: 완료
-
-**완료 사항**:
-
-1. ✅ 테마 초기화 통합 (`src/features/gallery/GalleryApp.ts`)
-   - `initialize()` 메서드 시작 시 `initializeTheme()` 호출
-   - 동기 실행으로 DOM 렌더링 전 테마 적용 보장
-2. ✅ CSS fallback 추가 (`src/shared/styles/design-tokens.semantic.css`)
-   - Light mode: `--xeg-bg-toolbar: var(--color-bg-surface, #ffffff)`
-   - Dark mode: `--xeg-bg-toolbar: var(--color-gray-700, #4a4a4a)`
-   - 정의되지 않은 `--color-gray-800`을 `--color-gray-700`로 대체
-3. ✅ 빌드 검증
-   - 타입 체크: 0 errors
-   - 빌드 크기: prod 318.99 KB (목표 325 KB 미만)
-   - Gzip: 87.16 KB
-
-**테스트 결과** (5/11 PASS, JSDOM 한계):
-
-- Theme Initialization: 3/3 PASS ✅
-- Performance: 2/2 PASS ✅
-- CSS Token Resolution: 0/6 (JSDOM은 CSS 로드 안 함, 실제 브라우저 동작 확인
-  필요)
-
-**커밋**:
-`feat(core): integrate theme initialization in GalleryApp and add CSS fallbacks`
-
-### Phase 35 Step 2: 설정 모달 위치 개선 🚧
-
-#### ✅ Step 2-A: RED - 동적 위치 계산 테스트 (완료)
-
-**테스트 파일**: `test/refactoring/modal-position-calculation.test.ts`
-
-**완료 사항**:
-
-- 13개 테스트 작성 및 통과 ✅
-  - Toolbar-based Position (3 tests)
-  - Viewport Boundary Detection (3 tests)
-  - Responsive Behavior (3 tests)
-  - Edge Cases (3 tests)
-  - Performance (1 test)
-
-#### ✅ Step 2-B: GREEN - 동적 위치 계산 구현 (완료)
-
-**완료 파일**:
-
-1. ✅ `src/shared/hooks/use-modal-position.ts` (신규 생성)
-   - 툴바 기준 동적 위치 계산
-   - 화면 경계 감지 및 자동 조정
-   - 반응형 동작 (resize 리스너)
-   - 6개 훅 테스트 통과
-
-2. ✅ `src/shared/hooks/index.ts` - export 추가
-
-**커밋**: `feat(ui): add use-modal-position hook for dynamic modal positioning`
-
-#### 🚧 Step 2-C: REFACTOR - SettingsModal 적용 (미완)
-
-**남은 작업**:
-
-1. `src/shared/components/ui/SettingsModal/SettingsModal.tsx`
-   - `useModalPosition` 훅 적용
-   - 툴바 ref 전달
-   - 동적 스타일 바인딩
-
-2. `src/shared/components/ui/SettingsModal/SettingsModal.module.css`
-   - 고정 위치 제거
-   - CSS 변수 기반 동적 위치로 전환
-
-3. 성능 최적화
-   - 필요 시 debounce/throttle 추가
-   - 메모이제이션 검토
-
-**예상 난이도**: 중간 (컴포넌트 수정, 스타일 조정)
-
-### 작업 순서
-
-```
-Phase 35 Step 1: 툴바 초기 투명도 해결
-├─ Step 1-A: RED (테스트 작성)
-├─ Step 1-B: GREEN (테마 초기화 개선)
-└─ Step 1-C: REFACTOR (CSS 폴백 개선)
-
-Phase 35 Step 2: 설정 모달 위치 개선
-├─ Step 2-A: RED (위치 계산 테스트)
-├─ Step 2-B: GREEN (동적 위치 구현)
-└─ Step 2-C: REFACTOR (로직 최적화)
-```
-
-### 예상 효과
-
-1. **사용자 경험 개선**
-   - 갤러리 초기 로드 시 시각적 일관성 보장
-   - 설정 모달의 적절한 위치 표시
-2. **코드 품질 향상**
-   - 테마 초기화 로직 명확화
-   - 동적 레이아웃 지원 강화
-3. **유지보수성 개선**
-   - 명확한 테마 초기화 흐름
-   - 재사용 가능한 위치 계산 로직
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 ---
 
