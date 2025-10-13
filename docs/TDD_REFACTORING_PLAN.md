@@ -32,8 +32,8 @@
 
 ### 우선순위
 
-**Phase 34 Step 1** → 미사용 Export 제거 (빠른 성과)  
-**Phase 34 Step 2** → 대형 파일 리팩토링 (구조 개선)
+**Phase 34 Step 1** → 미사용 Export 제거 (빠른 성과) **Phase 34 Step 2** → 대형
+파일 리팩토링 (구조 개선)
 
 ---
 
