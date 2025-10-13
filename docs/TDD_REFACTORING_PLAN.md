@@ -26,57 +26,68 @@
 
 ## 활성 작업
 
-### Phase 33 Step 3: 코드 품질 개선 및 최적화
+### Phase 33 Step 3: 코드 리팩토링 - 중복 로직 제거
 
-**상태**: **계획** 📋
+**상태**: **진행 중** �
 
 **목표**:
 
-1. 번들 크기 추가 최적화 (318.04 KB → 301 KB 이하)
-2. 코드 구조 및 가독성 개선
-3. 성능 최적화 기회 탐색
+1. 중복된 유틸리티 함수 통합 (번들 크기 절감: 예상 5-10 KB)
+2. 사용하지 않는 export 제거
+3. 코드 구조 개선 및 가독성 향상
 
-#### 번들 크기 분석 (현재)
+#### 발견된 중복 코드
 
-**프로덕션 번들**: 318.04 KB (목표: 301 KB 이하, **17 KB 초과**)
+**1. Style Utilities 중복** ⚠️
 
-**주요 크기 기여 파일들** (추정):
+다음 함수들이 3개 파일에 중복 정의됨:
 
-1. `Toolbar.tsx` - 고도로 최적화됨, 추가 절감 어려움
-2. `SettingsModal.tsx` - 중복 핸들러 제거 완료
-3. `event-manager.ts` - 이벤트 관리 로직
-4. Solid.js 런타임 및 반응성 시스템
+- `combineClasses`: `style-utils.ts`, `css-utilities.ts`, `core-utils.ts`
+- `toggleClass`: `style-utils.ts`, `css-utilities.ts`
+- `updateComponentState`: `style-utils.ts`, `css-utilities.ts` (시그니처 다름)
 
-#### 최적화 전략 옵션
+**영향 분석**:
 
-##### Option A: Tree-shaking 개선
+- `style-utils.ts` (46줄) - 이미 css-utilities를 re-export
+- `css-utilities.ts` (65줄) - 독립적인 구현
+- `core-utils.ts` (343줄) - combineClasses만 포함
 
-- 사용하지 않는 export 제거
-- 동적 import 활용 (Settings, KeyboardHelp 등)
-- 장점: 실질적인 번들 크기 감소
-- 단점: 코드 분할로 인한 복잡도 증가
+**최적화 전략**:
 
-##### Option B: 미니파이케이션 설정 강화
+1. **단일 소스 원칙** - `css-utilities.ts`를 정규 구현으로 선택
+2. **점진적 마이그레이션** - 모든 import를 css-utilities로 변경
+3. **레거시 제거** - style-utils.ts와 core-utils.ts에서 중복 제거
 
-- Vite/Rollup 설정 조정
-- Terser 옵션 최적화
-- 장점: 설정만 변경
-- 단점: 디버깅 어려움, 효과 제한적
+#### 리팩토링 계획 (TDD)
 
-##### Option C: 추가 코드 리팩토링 (권장)
+##### Step 1: RED - 중복 감지 테스트 작성 ✅
 
-- 중복 로직 추출
-- 인라인 함수 최소화
-- 상수 통합
-- 장점: 코드 품질과 번들 크기 동시 개선
-- 단점: 시간 소요
+```typescript
+// test/unit/refactoring/duplicate-utilities.test.ts
+describe('Duplicate Utilities Detection', () => {
+  it('should have only one combineClasses implementation', () => {
+    // 파일 검색으로 중복 확인
+  });
+});
+```
 
-#### 다음 단계 (우선순위 순)
+##### Step 2: GREEN - 통합 및 마이그레이션
 
-1. **번들 분석 리포트 재검토** - `docs/bundle-analysis.html` 상세 분석
-2. **Tree-shaking 개선** - 사용하지 않는 export 제거
-3. **코드 리팩토링** - 중복 로직 제거 및 구조 개선
-4. **E2E 테스트 실행** - 런타임 동작 검증
+1. `css-utilities.ts`를 canonical source로 지정
+2. 모든 import 경로를 `css-utilities`로 변경
+3. `style-utils.ts`에서 중복 함수 제거 (re-export만 유지)
+4. `core-utils.ts`에서 `combineClasses` 제거
+
+##### Step 3: REFACTOR - 정리 및 검증
+
+1. 사용하지 않는 import 제거
+2. 타입 체크 및 테스트 통과 확인
+3. 번들 크기 측정 및 비교
+
+#### 예상 효과
+
+- **소스 코드 절감**: ~50-100 lines
+- **번들 크기 절감**: ~2-5 KB (중복 제거 + tree-shaking)
 
 ---
 
