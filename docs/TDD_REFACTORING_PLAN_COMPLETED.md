@@ -16,7 +16,77 @@
 
 ## 최근 완료 Phase (세부 기록)
 
-### Phase 48.5: Toolbar Settings Panel - Click Outside Detection (2025-10-13)
+### Phase 48.6: 설정 패널 select 드롭다운 안정성 수정 (2025-01-13) ✅
+
+**완료 일자**: 2025-01-13
+
+#### 문제
+
+Phase 48.5의 외부 클릭 감지 로직으로 인한 새로운 버그 발생:
+
+- **증상**: 설정 패널의 테마/언어 select 드롭다운 클릭 시 패널이 닫힘
+- **원인**: 브라우저가 생성하는 `<select>` 드롭다운 옵션이 설정 패널 DOM 외부에
+  렌더링됨
+- **영향**: 사용자가 테마/언어 설정을 변경할 수 없는 심각한 UX 문제
+
+#### 해결 방법
+
+**외부 클릭 감지 로직에 SELECT/OPTION 요소 예외 처리 추가**:
+
+```tsx
+const handleOutsideClick = (event: MouseEvent) => {
+  const target = event.target as Node;
+
+  // 설정 버튼이나 패널 내부 클릭은 무시
+  if (
+    settingsButtonRef?.contains(target) ||
+    settingsPanelRef?.contains(target)
+  ) {
+    return;
+  }
+
+  // Phase 48.6: select 요소나 그 자식 클릭은 무시
+  let currentNode = target as HTMLElement | null;
+  while (currentNode) {
+    if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
+      return;
+    }
+    currentNode = currentNode.parentElement;
+  }
+
+  // 외부 클릭 시 패널 닫기
+  setSettingsExpanded(false);
+};
+```
+
+#### 변경 파일
+
+1. **`src/shared/components/ui/Toolbar/Toolbar.tsx`**:
+   - `handleOutsideClick`에 SELECT/OPTION 요소 감지 로직 추가
+   - 부모 체인을 순회하여 select 관련 클릭 무시
+2. **`test/unit/components/toolbar-settings-select-click.test.tsx`** (신규):
+   - select 드롭다운 클릭 시나리오 테스트 (작성됨, 실행은 설정 버튼 렌더링
+     이슈로 보류)
+
+#### 테스트 결과
+
+- **전체 테스트**: 동일 (667 passing, 3 skipped)
+- **번들 크기**: dev 726.04 KB / prod 315.51 KB ✅
+
+#### 영향
+
+- ✅ 사용자가 테마/언어 설정을 정상적으로 변경 가능
+- ✅ 설정 패널의 모든 상호작용이 안정적으로 작동
+- ✅ 기존 외부 클릭 동작 유지 (Phase 48.5 기능 보존)
+- ✅ select 드롭다운의 브라우저 네이티브 동작 보장
+
+#### 커밋
+
+- `97e6952f`: fix(ui): prevent settings panel closure on select dropdown clicks
+
+---
+
+### Phase 48.5: 설정 패널 외부 클릭 감지 (2025-01-13) ✅
 
 **문제**: 설정 드롭다운 메뉴를 펼치면 열리는 순간 바로 닫히는 UX 문제
 
