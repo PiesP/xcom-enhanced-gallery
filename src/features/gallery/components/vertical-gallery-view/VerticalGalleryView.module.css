@@ -1,60 +1,52 @@
 /**
  * VerticalGalleryView Component Styles
- * @version 5.0.0 - Phase 2: 최신 CSS 기능 완전 통합
+ * @version 5.0.0 - Phase 2: 최신 CSS 기능 ?�전 ?�합
  *
  * @description
- * Phase 2에서 현대적 CSS 기능을 완전히 통합한 수직 갤러리 뷰 컴포넌트.
- * CSS Cascade Layers, OKLCH 색상, Container Queries, CSS Subgrid, CSS Containment 활용.
+ * Phase 2?�서 ?��???CSS 기능???�전???�합???�직 갤러�?�?컴포?�트.
+ * CSS Cascade Layers, OKLCH ?�상, Container Queries, CSS Subgrid, CSS Containment ?�용.
  *
  * @features
- * - CSS Cascade Layers로 스타일 우선순위 명확화
- * - OKLCH 색상 공간으로 일관된 색상 시스템
- * - Container Queries로 진정한 컴포넌트 기반 반응형 디자인
- * - CSS Subgrid로 고급 레이아웃 구현
- * - CSS Containment로 렌더링 성능 최적화
- * - CSS Logical Properties로 국제화 지원
- * - 고급 CSS 선택자 (:has, :where, :is) 활용
- * - CSS Nesting으로 가독성 향상
+ * - CSS Cascade Layers�??��????�선?�위 명확?? * - OKLCH ?�상 공간?�로 ?��????�상 ?�스?? * - Container Queries�?진정??컴포?�트 기반 반응???�자?? * - CSS Subgrid�?고급 ?�이?�웃 구현
+ * - CSS Containment�??�더�??�능 최적?? * - CSS Logical Properties�?�?��??지?? * - 고급 CSS ?�택??(:has, :where, :is) ?�용
+ * - CSS Nesting?�로 가?�성 ?�상
  */
 
-/* CSS Cascade Layer 정의 */
+/* CSS Cascade Layer ?�의 */
 @layer base, components, utilities;
 
-/* 컨테이너 설정 - 수직 갤러리 전용 컨테이너 */
+/* 컨테?�너 ?�정 - ?�직 갤러�??�용 컨테?�너 */
 .xegVerticalGalleryContainer {
   container-type: size;
   container-name: vertical-gallery;
 
-  /* CSS Containment로 성능 최적화 */
+  /* CSS Containment�??�능 최적??*/
   contain: layout style paint;
   content-visibility: auto;
   contain-intrinsic-size: 100vw 100vh;
 }
 
 @layer base {
-  /* OKLCH 색상 변수 정의 */
+  /* OKLCH ?�상 변???�의 */
   :root {
-    /* 수직 갤러리 전용 OKLCH 색상 */
+    /* ?�직 갤러�??�용 OKLCH ?�상 */
     --xeg-vertical-bg-oklch: oklch(0.15 0.02 220 / 0.95);
     --xeg-vertical-surface-oklch: oklch(0.25 0.03 220 / 0.9);
     --xeg-vertical-text-oklch: oklch(0.95 0.01 220);
     --xeg-vertical-border-oklch: oklch(0.35 0.05 220 / 0.3);
 
-    /* 성능 최적화 변수 */
+    /* ?�능 최적??변??*/
     --xeg-vertical-gpu-acceleration: translateZ(0);
 
-    /* Container Query 지원 감지 */
+    /* Container Query 지??감�? */
     --supports-container-queries: 1;
   }
 }
 
 @layer components {
-  /* 공통 CSS 변수 정의 - OKLCH 색상 시스템 적용 */
+  /* 공통 CSS 변???�의 - OKLCH ?�상 ?�스???�용 */
   :root {
-    --xeg-gallery-z-index: var(--xeg-z-gallery, 10000);
-    --xeg-toolbar-z-index: var(--xeg-z-modal, 10001);
-
-    /* 트랜지션 - 최신 easing 함수 사용 */
+    /* ?�랜지??- 최신 easing ?�수 ?�용 */
     --xeg-transition-fast:
       transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
@@ -66,66 +58,65 @@
       opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
       transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
-    /* 스페이싱 - CSS Logical Properties 활용 */
+    /* ?�페?�싱 - CSS Logical Properties ?�용 */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
     --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
     --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
 
-    /* 레이아웃 */
+    /* ?�이?�웃 */
     --xeg-toolbar-height: clamp(60px, 10vh, 80px);
 
-    /* 블러 효과와 그림자 */
+    /* 블러 ?�과 */
     --xeg-backdrop-blur: 8px;
-    --xeg-shadow-soft: var(--xeg-shadow-lg);
   }
 }
 
-/* 메인 컨테이너 - 단순화된 갤러리 컨테이너 */
+/* 메인 컨테?�너 - ?�순?�된 갤러�?컨테?�너 */
 .container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: var(--xeg-gallery-z-index);
+  z-index: var(--xeg-z-gallery, 10000);
   background: var(--xeg-gallery-bg);
 
-  /* 기본 레이아웃 */
+  /* 기본 ?�이?�웃 */
   display: flex;
   flex-direction: column;
 
-  /* 블러 효과 */
+  /* 블러 ?�과 */
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 
-  /* 하드웨어 가속 최적화 */
+  /* ?�드?�어 가??최적??*/
   transform: translateZ(0);
   will-change: opacity, transform;
   contain: layout style paint;
 
-  /* 초기 상태 */
+  /* 초기 ?�태 */
   opacity: 1;
   visibility: visible;
   transition: var(--xeg-transition-normal);
 
-  /* 이벤트 처리 - 스크롤 이벤트는 항상 허용 */
+  /* ?�벤??처리 - ?�크�??�벤?�는 ??�� ?�용 */
   cursor: default;
   pointer-events: auto;
 
-  /* 컨테이너 쿼리 활성화 */
+  /* 컨테?�너 쿼리 ?�성??*/
   container-type: size;
   container-name: gallery-container;
 
-  /* 스크롤 최적화 */
+  /* ?�크�?최적??*/
   scroll-behavior: smooth;
-  overscroll-behavior: contain; /* 스크롤 체이닝 방지 */
+  overscroll-behavior: contain; /* ?�크�?체이??방�? */
 
-  /* 갤러리 내부 스크롤만 허용 */
+  /* 갤러�??��? ?�크롤만 ?�용 */
 
-  /* 프로덕션 빌드 호환성을 위해 CSS 커스텀 프로퍼티 제거 */
+  /* ?�로?�션 빌드 ?�환?�을 ?�해 CSS 커스?� ?�로?�티 ?�거 */
 }
 
-/* 초기 툴바 표시 상태 (3초간) - 가시성 강화 */
+/* 초기 ?�바 ?�시 ?�태 (3초간) - 가?�성 강화 */
 .container.initialToolbarVisible .toolbarWrapper {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
@@ -133,28 +124,28 @@
   --toolbar-transform-y: 0;
 }
 
-/* UI 숨김 상태 - 스크롤 이벤트는 유지하되 시각적 요소만 숨김 */
+/* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
 .container.uiHidden {
-  /* UI는 숨기지만 스크롤 이벤트는 차단하지 않음 */
+  /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */
   cursor: none;
-  /* pointer-events: none; 제거 - 스크롤 차단 방지 */
+  /* pointer-events: none; ?�거 - ?�크�?차단 방�? */
 }
 
 .container.uiHidden .toolbarWrapper,
 .container.uiHidden .content > *:not([data-xeg-role='items-list']) {
-  /* 개별 UI 요소만 이벤트 차단 */
+  /* 개별 UI ?�소�??�벤??차단 */
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
-/* 스크롤 가능한 콘텐츠 영역은 항상 이벤트 허용 */
+/* ?�크�?가?�한 콘텐�??�역?� ??�� ?�벤???�용 */
 .container.uiHidden [data-xeg-role='items-list'],
 .container.uiHidden .itemsContainer {
   pointer-events: auto;
 }
 
-/* 상태별 최적화 */
+/* ?�태�?최적??*/
 .container.visible {
   opacity: 1;
   transform: scale3d(1, 1, 1);
@@ -165,63 +156,63 @@
   align-items: center;
 }
 
-/* :has() 선택자를 활용한 상태 기반 스타일링 */
+/* :has() ?�택?��? ?�용???�태 기반 ?��??�링 */
 .container:has(.toolbarWrapper:hover) {
-  /* 툴바 호버 시 컨테이너 상태 변경 */
+  /* ?�바 ?�버 ??컨테?�너 ?�태 변�?*/
   --toolbar-interaction: 1;
 }
 
 .container:has(.itemActive) {
-  /* 활성 아이템이 있을 때 */
+  /* ?�성 ?�이?�이 ?�을 ??*/
   --has-active-item: 1;
 }
 
-/* 모든 하위 요소의 이벤트 전파 최적화 */
+/* 모든 ?�위 ?�소???�벤???�파 최적??*/
 .container * {
   pointer-events: auto;
 }
 
-/* 독립적인 상단 호버 감지 영역 - 확장된 감지 영역 */
+/* ?�립?�인 ?�단 ?�버 감�? ?�역 - ?�장??감�? ?�역 */
 .toolbarHoverZone {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--xeg-hover-zone-height); /* 120px를 토큰으로 교체 */
-  z-index: calc(var(--xeg-toolbar-z-index) - 1); /* 툴바보다 낮은 z-index */
+  height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
+  z-index: calc(var(--xeg-z-modal) - 1); /* ?�바보다 ??? z-index */
   background: transparent;
-  pointer-events: auto; /* 호버 감지를 위해 이벤트 허용 */
+  pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
 }
 
-/* 호버 감지를 위한 기본 스타일 - 프로덕션 빌드 호환성 개선 */
+/* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
 .toolbarHoverZone:hover {
-  /* 호버 상태 표시를 위한 더미 속성 */
-  z-index: calc(var(--xeg-toolbar-z-index) - 1);
+  /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
+  z-index: calc(var(--xeg-z-modal) - 1);
 }
 
-/* 툴바가 표시된 상태에서는 호버 영역 완전히 비활성화 */
+/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 */
 .container.initialToolbarVisible .toolbarHoverZone,
 .container:has(.toolbarWrapper:hover) .toolbarHoverZone {
   pointer-events: none;
 }
 
-/* :has() 미지원 브라우저를 위한 대안 */
+/* :has() 미�???브라?��?�??�한 ?�??*/
 @supports not (selector(:has(*))) {
   .toolbarWrapper:hover ~ .toolbarHoverZone {
     pointer-events: none;
   }
 }
 
-/* 툴바 래퍼 - 기본 가시성 보장 및 개선된 트랜지션 */
+/* ?�바 ?�퍼 - 기본 가?�성 보장 �?개선???�랜지??*/
 .toolbarWrapper {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: auto;
-  z-index: var(--xeg-toolbar-z-index);
+  z-index: var(--xeg-z-modal);
 
-  /* 기본 상태: CSS 변수로 제어되는 숨김 상태 */
+  /* 기본 ?�태: CSS 변?�로 ?�어?�는 ?��? ?�태 */
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   pointer-events: var(--toolbar-pointer-events, none);
@@ -232,14 +223,14 @@
   will-change: transform, opacity, visibility;
   contain: layout style;
 
-  /* 즉시 반응을 위한 추가 최적화 */
-  transform: translateZ(0); /* GPU 가속 활성화 */
-  backface-visibility: hidden; /* 렌더링 최적화 */
+  /* 즉시 반응???�한 추�? 최적??*/
+  transform: translateZ(0); /* GPU 가???�성??*/
+  backface-visibility: hidden; /* ?�더�?최적??*/
 
-  /* 툴바 자체는 항상 클릭 가능하도록 설정 */
+  /* ?�바 ?�체????�� ?�릭 가?�하?�록 ?�정 */
   pointer-events: var(--toolbar-pointer-events, none);
 
-  /* 그라디언트 배경 */
+  /* 그라?�언??배경 */
   background: linear-gradient(
     to bottom,
     color-mix(in srgb, black 80%, transparent) 0%,
@@ -249,7 +240,7 @@
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
-/* 호버 시 부모 컨테이너에 CSS 변수 설정 - 강화된 가시성 */
+/* ?�버 ??부�?컨테?�너??CSS 변???�정 - 강화??가?�성 */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper,
 .container.initialToolbarVisible .toolbarWrapper {
   --toolbar-opacity: 1;
@@ -258,9 +249,9 @@
   --toolbar-transform-y: 0;
 }
 
-/* :has() 지원하지 않는 브라우저를 위한 대안 - 프로덕션 빌드 호환성 개선 */
+/* :has() 지?�하지 ?�는 브라?��?�??�한 ?�??- ?�로?�션 빌드 ?�환??개선 */
 @supports not (selector(:has(*))) {
-  /* 호버 트리거 영역 호버 시 직접 형제 요소인 툴바 래퍼에 적용 */
+  /* ?�버 ?�리�??�역 ?�버 ??직접 ?�제 ?�소???�바 ?�퍼???�용 */
   .toolbarHoverZone:hover + .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -268,7 +259,7 @@
     --toolbar-transform-y: 0;
   }
 
-  /* 추가 대안: 일반 형제 선택자 사용 */
+  /* 추�? ?�?? ?�반 ?�제 ?�택???�용 */
   .toolbarHoverZone:hover ~ .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -276,7 +267,7 @@
     --toolbar-transform-y: 0;
   }
 
-  /* 더 견고한 대안: 부모 호버 */
+  /* ??견고???�?? 부�??�버 */
   .container:hover .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -285,7 +276,7 @@
   }
 }
 
-/* 툴바 자체 호버 시에도 표시 유지 - 강화된 가시성 */
+/* ?�바 ?�체 ?�버 ?�에???�시 ?��? - 강화??가?�성 */
 .toolbarWrapper:hover {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
@@ -293,7 +284,7 @@
   --toolbar-transform-y: 0;
 }
 
-/* 표시 상태일 때 툴바 위치 - 강화된 가시성 */
+/* ?�시 ?�태?????�바 ?�치 - 강화??가?�성 */
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper,
 .container.initialToolbarVisible .toolbarWrapper,
 .toolbarWrapper:hover {
@@ -303,17 +294,17 @@
   --toolbar-transform-y: 0;
 }
 
-/* 접근성: 포커스 시에도 툴바 표시 - 더 강력한 보장 */
+/* ?�근?? ?�커???�에???�바 ?�시 - ??강력??보장 */
 .toolbarWrapper:focus-within {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
   --toolbar-transform-y: 0;
-  /* 포커스 시에는 더 빠른 트랜지션 */
+  /* ?�커???�에????빠른 ?�랜지??*/
   transition: var(--xeg-transition-fast);
 }
 
-/* 갤러리 툴바 컴포넌트 자체의 가시성 보장 */
+/* 갤러�??�바 컴포?�트 ?�체??가?�성 보장 */
 .toolbarWrapper [class*='galleryToolbar'],
 .toolbarWrapper [data-testid*='toolbar'] {
   opacity: var(--toolbar-opacity, 0);
@@ -322,12 +313,12 @@
   pointer-events: var(--toolbar-pointer-events, none);
 }
 
-/* 툴바 내부 모든 요소 클릭 보장 */
+/* ?�바 ?��? 모든 ?�소 ?�릭 보장 */
 .toolbarWrapper * {
   pointer-events: inherit;
 }
 
-/* 툴바 버튼의 이벤트 전파 방지 및 클릭 보장 */
+/* ?�바 버튼???�벤???�파 방�? �??�릭 보장 */
 .toolbarWrapper button,
 .toolbarWrapper [role='button'],
 .toolbarWrapper .toolbarButton {
@@ -336,78 +327,78 @@
   z-index: 10;
 }
 
-/* 콘텐츠 영역 - 컨테이너 쿼리 지원과 전체 화면 활용 */
+/* 콘텐�??�역 - 컨테?�너 쿼리 지?�과 ?�체 ?�면 ?�용 */
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  /* 툴바 영역 제거 - 현재 전체 화면 활용 */
+  /* ?�바 ?�역 ?�거 - ?�재 ?�체 ?�면 ?�용 */
 
-  /* 성능 최적화 */
+  /* ?�능 최적??*/
   contain: layout style;
   transform: translateZ(0);
 
-  /* 이벤트 전파 */
+  /* ?�벤???�파 */
   pointer-events: auto;
 
-  /* 컨테이너 쿼리 */
+  /* 컨테?�너 쿼리 */
   container-type: size;
   container-name: content-area;
 }
 
-/* 갤러리 아이템 기본 스타일 - 포커스 스크롤에 최적화 */
+/* 갤러�??�이??기본 ?��???- ?�커???�크롤에 최적??*/
 .galleryItem {
   position: relative;
   margin-bottom: var(--xeg-spacing-md, 16px);
   border-radius: var(--xeg-radius-lg, 8px);
   transition: var(--xeg-transition-normal);
-  scroll-margin-top: 0; /* 스크롤 시 상단 정렬 */
+  scroll-margin-top: 0; /* ?�크�????�단 ?�렬 */
 
-  /* 성능 최적화 */
+  /* ?�능 최적??*/
   contain: layout style;
   transform: translateZ(0);
 
-  /* 스크롤 스냅 */
+  /* ?�크�??�냅 */
   scroll-snap-align: start;
   scroll-margin-top: var(--xeg-spacing-sm);
 }
 
-/* 포커스된 아이템 강조 - 2중 테두리 방지를 위해 애니메이션 제거 */
+/* ?�커?�된 ?�이??강조 - 2�??�두�?방�?�??�해 ?�니메이???�거 */
 .itemActive {
   position: relative;
   z-index: 1;
-  /* 기존 itemActive::before 애니메이션 제거로 2중 테두리 방지 */
+  /* 기존 itemActive::before ?�니메이???�거�?2�??�두�?방�? */
 }
 
-/* focusGlow 애니메이션 제거 - 2중 테두리 방지 */
+/* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
 
-/* 아이템 컨테이너 - 네이티브 스크롤만 사용 */
+/* ?�이??컨테?�너 - ?�이?�브 ?�크롤만 ?�용 */
 .itemsContainer {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto; /* 갤러리 내부 스크롤만 허용 */
+  overflow: auto; /* 갤러�??��? ?�크롤만 ?�용 */
   position: relative;
 
-  /* 성능 최적화 */
+  /* ?�능 최적??*/
   contain: layout style;
   transform: translateZ(0);
 
-  /* 스크롤/이벤트 */
+  /* ?�크�??�벤??*/
   scrollbar-gutter: stable;
   scroll-snap-type: y proximity;
   pointer-events: auto;
 
-  /* 컨테이너 쿼리 */
+  /* 컨테?�너 쿼리 */
   container-type: size;
   container-name: items-list;
 }
 
-/* 웹킷 스크롤바 스타일 */
+/* ?�킷 ?�크롤바 ?��???*/
 .itemsContainer::-webkit-scrollbar {
-  width: var(--xeg-scrollbar-width); /* 8px를 토큰으로 교체 */
+  width: var(--xeg-scrollbar-width); /* 8px�??�큰?�로 교체 */
 }
 
 .itemsContainer::-webkit-scrollbar-track {
@@ -416,7 +407,7 @@
 
 .itemsContainer::-webkit-scrollbar-thumb {
   background: var(--xeg-neutral-300);
-  border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
+  border-radius: var(--xeg-scrollbar-border-radius); /* 4px�??�큰?�로 교체 */
   transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
@@ -424,7 +415,7 @@
   background: var(--xeg-neutral-400);
 }
 
-/* 애니메이션 - GPU 가속 */
+/* ?�니메이??- GPU 가??*/
 .fadeInOut {
   animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
@@ -440,7 +431,7 @@
   }
 }
 
-/* 빈 상태 메시지 - 통합된 타이포그래피 */
+/* �??�태 메시지 - ?�합???�?�포그래??*/
 .emptyMessage {
   text-align: center;
   color: var(--xeg-color-text-secondary);
@@ -462,7 +453,7 @@
   line-height: 1.5;
   color: var(--xeg-color-text-tertiary);
 }
-/* 컨테이너 쿼리 기반 반응형 디자인 */
+/* 컨테?�너 쿼리 기반 반응???�자??*/
 @container gallery-container (max-width: 768px) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
@@ -481,7 +472,7 @@
   }
 }
 
-/* 기존 미디어 쿼리는 컨테이너 쿼리 지원이 없는 브라우저를 위한 폴백 */
+/* 기존 미디??쿼리??컨테?�너 쿼리 지?�이 ?�는 브라?��?�??�한 ?�백 */
 @media (max-width: 768px) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
@@ -499,7 +490,7 @@
     gap: var(--xeg-spacing-compact);
   }
 }
-/* 접근성 - 고대비 모드 지원 */
+/* ?�근??- 고�?�?모드 지??*/
 @media (prefers-contrast: high) {
   .itemActive::before {
     border-color: HighlightText;
@@ -521,7 +512,7 @@
   }
 }
 
-/* 접근성 - 모션 감소 지원 */
+/* ?�근??- 모션 감소 지??*/
 @media (prefers-reduced-motion: reduce) {
   .itemsContainer {
     scroll-behavior: auto;
@@ -533,78 +524,78 @@
   }
 }
 
-/* 라이트 모드 선호도 지원 */
+/* ?�이??모드 ?�호??지??*/
 @media (prefers-color-scheme: light) {
   .container {
     background: color-mix(in srgb, white 95%, transparent);
   }
 }
 
-/* 빈 상태 버튼 스타일 */
+/* �??�태 버튼 ?��???*/
 .emptyButton {
   margin-top: 1rem;
 }
 
-/* N1: 통합 ToastContainer 사용으로 로컬 toastContainer 제거됨 */
+/* N1: ?�합 ToastContainer ?�용?�로 로컬 toastContainer ?�거??*/
 
-/* 감소된 모션 사용자를 위한 지원 - 개선된 접근성 */
+/* 감소??모션 ?�용?��? ?�한 지??- 개선???�근??*/
 @media (prefers-reduced-motion: reduce) {
   .toolbarWrapper {
     transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-    transform: translateY(-100%); /* Y축 이동만 제거 */
+    transform: translateY(-100%); /* Y�??�동�??�거 */
   }
 
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
-    transform: translateY(0); /* 단순한 Y축 이동만 */
+    transform: translateY(0); /* ?�순??Y�??�동�?*/
     transition: opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out);
   }
 
-  /* 컨테이너 레벨에서도 모션 감소 */
+  /* 컨테?�너 ?�벨?�서??모션 감소 */
   .container {
     transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
   }
 
-  /* 모든 애니메이션 제거 */
+  /* 모든 ?�니메이???�거 */
   .fadeInOut {
     animation: none;
   }
 }
 
-/* 고대비 모드 지원 - 향상된 가시성 */
+/* 고�?�?모드 지??- ?�상??가?�성 */
 @media (prefers-contrast: high) {
   .toolbarWrapper {
-    background: var(--xeg-color-overlay-dark); /* var(--color-overlay-backdrop)를 토큰으로 교체 */
+    background: var(--xeg-color-overlay-dark); /* var(--color-overlay-backdrop)�??�큰?�로 교체 */
     border: 2px solid white;
-    border-radius: var(--xeg-scrollbar-border-radius); /* 4px를 토큰으로 교체 */
-    margin: var(--xeg-gap-xs); /* 4px를 토큰으로 교체 */
+    border-radius: var(--xeg-scrollbar-border-radius); /* 4px�??�큰?�로 교체 */
+    margin: var(--xeg-gap-xs); /* 4px�??�큰?�로 교체 */
   }
 
-  /* 고대비 모드에서 호버 영역 시각화 */
+  /* 고�?�?모드?�서 ?�버 ?�역 ?�각??*/
   .toolbarHoverZone:hover {
-    background: var(--xeg-color-overlay-subtle); /* var(--color-overlay-light)를 토큰으로 교체 */
+    background: var(--xeg-color-overlay-subtle); /* var(--color-overlay-light)�??�큰?�로 교체 */
   }
 }
 
-/* 페이지 스크롤 방지 - 갤러리 내에서만 스크롤 */
+/* ?�이지 ?�크�?방�? - 갤러�??�에?�만 ?�크�?*/
 .container {
   /* ...existing code... */
   overscroll-behavior: contain;
 }
 
-/* 툴바 호버 트리거 영역 */
+/* ?�바 ?�버 ?�리�??�역 */
 .toolbarHoverTrigger {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--xeg-hover-zone-height); /* 확장된 호버 영역 */
-  z-index: calc(var(--xeg-toolbar-z-index) - 1);
+  height: var(--xeg-hover-zone-height); /* ?�장???�버 ?�역 */
+  z-index: calc(var(--xeg-z-modal) - 1);
   pointer-events: auto;
   background: transparent;
 }
 
-/* 호버 트리거 영역에 마우스가 올라갔을 때 툴바 표시 */
+/* ?�버 ?�리�??�역??마우?��? ?�라갔을 ???�바 ?�시 */
 .toolbarHoverTrigger:hover + .toolbarWrapper {
   opacity: 1;
   transform: translateY(0);
@@ -613,13 +604,13 @@
   --toolbar-pointer-events: auto;
 }
 
-/* 툴바 자체 호버 시에도 표시 유지 */
+/* ?�바 ?�체 ?�버 ?�에???�시 ?��? */
 .container [class*='galleryToolbar']:hover {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
 }
 
-/* 브라우저 호환성을 위한 대체 방법 */
+/* 브라?��? ?�환?�을 ?�한 ?��?방법 */
 @supports not (selector(:hover + *)) {
   .container:hover [class*='galleryToolbar'] {
     --toolbar-opacity: 1;
