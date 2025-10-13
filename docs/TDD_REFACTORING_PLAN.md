@@ -1,38 +1,39 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-13 **상태**: Phase 48까지 완료 ✅
+> **최종 업데이트**: 2025-10-13 **상태**: Phase 50까지 완료 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 734.31 KB / prod **315.18 KB** ✅
-- **테스트**: 669 passing, 2 skipped (E2E 연기) ✅
+- **빌드**: dev 724.85 KB / prod **315.18 KB** ✅
+- **테스트**: 679 passing (JSDOM), 3 passing + 1 skipped (E2E) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (263 modules, 717 dependencies) ✅
+- **의존성**: 1 info violation (263 modules, 717 dependencies) ✅
 - **번들 예산**: **315.18 KB / 325 KB** (9.82 KB 여유) ✅ **목표 달성!**
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-48 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-50 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
 ---
 
-## 현재 상태
+## 최근 완료
 
-### Phase 44-48 완료 ✅ (2025-10-13)
+### Phase 44-50 완료 ✅ (2025-10-13)
 
-Toolbar Expandable Settings 리팩토링 완료
+Toolbar Expandable Settings 리팩토링 및 E2E 테스트 마이그레이션 완료
 
 **주요 성과**:
 
 - ✅ SettingsModal → Toolbar 인라인 패널 전환
 - ✅ 번들 크기: 325.68 KB → **315.18 KB** (-10.50 KB, 3.2% 감소)
 - ✅ 325 KB 제한 준수 (9.82 KB 여유)
-- ✅ 83+ 신규 테스트, 669 passing
+- ✅ JSDOM skipped 테스트 0개 달성 (E2E로 마이그레이션)
 - ✅ ARIA 접근성 강화 (collapse pattern, 키보드 네비게이션)
+- ✅ 11 commits, 682+ tests passing
 
 세부 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md`를 참조하세요.
 
@@ -40,7 +41,99 @@ Toolbar Expandable Settings 리팩토링 완료
 
 ## 활성 작업 계획
 
-### Phase 49: 테스트 마이그레이션 (Playwright E2E)
+### 우선순위 1: Phase 47 ARIA 테스트 수정 (3 failing tests)
+
+**파일**: `test/unit/toolbar-expandable-a11y.test.tsx`
+
+**실패 테스트**:
+
+1. `설정 패널 확장 시 aria-expanded가 true로 변경되어야 함`
+2. `Enter 키로 설정 패널을 토글할 수 있어야 함`
+3. `Space 키로 설정 패널을 토글할 수 있어야 함`
+
+**문제**: JSDOM 환경에서 Solid.js Signal 기반 `aria-expanded` 속성 업데이트가
+정상 작동하지 않음
+
+**해결 방안**:
+
+- 옵션 A: E2E로 전환 (Playwright에서 실제 브라우저 환경 테스트)
+- 옵션 B: 테스트 파일 제거 (Phase 47 E2E 테스트로 충분히 커버)
+- 옵션 C: `flushSync()` 또는 `waitFor()`를 사용한 비동기 처리 시도
+
+**완료 조건**:
+
+- ✅ 모든 JSDOM 테스트 passing (0 failing)
+- ✅ 실패한 3개 테스트가 E2E로 마이그레이션되거나 수정됨
+
+---
+
+### 우선순위 2: 추적되지 않는 테스트 파일 정리
+
+**파일**: `test/unit/toolbar-expandable-a11y.test.tsx`
+
+**현황**: Git에서 추적되지 않는 파일 (untracked)
+
+**옵션**:
+
+1. **커밋**: Phase 47 테스트로 추가 (현재 3 failing 상태)
+2. **제거**: E2E 테스트로 충분하므로 삭제
+3. **수정 후 커밋**: 우선순위 1 해결 후 커밋
+
+**권장**: 옵션 2 (제거) - E2E 테스트가 동일 시나리오를 커버하고 있으며, JSDOM
+제약으로 인해 유지보수 부담이 큼
+
+---
+
+### 우선순위 3: 번들 최적화 여유분 활용
+
+**현재 상태**: 315.18 KB / 325 KB (9.82 KB 여유)
+
+**목표**: 여유분을 활용하여 UX/기능 개선
+
+**잠재적 추가 기능** (예산 내):
+
+1. 애니메이션 강화: 설정 패널 전환 시 부드러운 트랜지션 (+1-2 KB)
+2. 키보드 단축키 힌트: 설정 패널에 단축키 표시 (+1-2 KB)
+3. 다크/라이트 모드 미리보기: 테마 변경 전 미리보기 기능 (+2-3 KB)
+
+**평가**: 현재는 안정성 우선, 기능 추가는 신중하게 검토
+
+---
+
+### 백로그 (선택적)
+
+#### 추가 번들 최적화
+
+**현재**: 315.18 KB / 325 KB (9.82 KB 여유) ✅
+
+**잠재적 최적화 (우선순위 낮음)**:
+
+1. CSS 최적화: 미사용 규칙 정리 (예상 1-2 KB)
+2. Tree-shaking: barrel export 최소화
+3. 이미지/아이콘 최적화: SVG minify
+
+**평가**: 현재 여유분이 충분하므로 즉시 필요 없음
+
+---
+
+## 프로젝트 건강도 지표 (Phase 50 완료 시점)
+
+- **번들 크기**: **315.18 KB / 325 KB** ✅ (9.82 KB 여유)
+- **테스트 통과율**: 679 passing (JSDOM), 3 passing + 1 skipped (E2E) ✅
+- **타입 안전성**: TypeScript strict mode ✅
+- **코드 품질**: ESLint 0 warnings ✅
+- **의존성 정책**: 1 info violation (acceptable) ✅
+- **모듈 수**: 263 modules ✅
+
+---
+
+## 작업 히스토리
+
+- **2025-10-13**: Phase 44-50 완료, master 병합
+  - SettingsModal 제거, Toolbar 확장 패널 전환
+  - 번들 크기 -10.50 KB 감소 (3.2%)
+  - E2E 테스트 마이그레이션 (0 JSDOM skipped 달성)
+  - 11 commits, 682+ tests passing
 
 **목표**: Phase 48에서 skip된 2개 테스트를 Playwright E2E로 검증
 
