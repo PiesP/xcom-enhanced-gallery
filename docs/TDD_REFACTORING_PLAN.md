@@ -4,23 +4,36 @@
 >
 > **브랜치**: master
 >
-> **상태**: Phase 34 완료 평가 �
+> **상태**: 활성 작업 없음 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 726.49 KB / prod 318.04 KB ✅
-- **테스트**: 661/686 passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 732.37 KB / prod 319.94 KB ✅
+- **테스트**: 661+ passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
-- **의존성**: 0 violations (269 modules, 736 dependencies) ✅
-- **번들 예산**: 318.04 KB / 325 KB (6.96 KB 여유) ✅
+- **의존성**: 0 violations (271 modules, 741 dependencies) ✅
+- **번들 예산**: 319.94 KB / 325 KB (5.06 KB 여유) ✅
 
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-34 Step 1 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-35 완료 기록
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
+
+---
+
+## 최근 완료 작업
+
+### Phase 35: 툴바 초기 투명도 및 모달 위치 개선 (2025-10-13) ✅
+
+사용자 보고 이슈 2건 해결:
+
+1. 툴바 초기 투명도 문제 → 동기적 테마 초기화로 해결
+2. 설정 모달 위치 문제 → 동적 위치 계산 훅으로 해결
+
+자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조.
 
 ---
 

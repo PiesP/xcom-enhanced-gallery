@@ -26,6 +26,7 @@ import { logger } from '../../shared/logging/logger';
 import { MediaService } from '../../shared/services/media-service';
 import { ToastController } from '../../shared/services/toast-controller';
 import { unmountGallery } from '../../shared/components/isolation';
+import { initializeTheme } from '../../bootstrap/initialize-theme';
 
 /**
  * 갤러리 앱 설정
@@ -80,6 +81,10 @@ export class GalleryApp {
   public async initialize(): Promise<void> {
     try {
       logger.info('GalleryApp: 격리된 시스템으로 초기화 시작');
+
+      // 1. 테마 초기화 (동기, DOM 렌더링 전 실행)
+      const appliedTheme = initializeTheme();
+      logger.info(`[GalleryApp] Theme initialized: ${appliedTheme}`);
 
       // 토스트 컨트롤러 초기화
       await this.toastController.initialize();
