@@ -2,14 +2,14 @@
 
 > **최종 업데이트**: 2025-10-13
 >
-> **브랜치**: feature/phase-33-step-2-events
+> **브랜치**: feature/phase-33-step-3-refactoring
 >
-> **상태**: 테스트 수정 완료, Phase 33 Step 3 준비 ✅
+> **상태**: Phase 33 Step 3 완료 ✅ (문서 갱신)
 
 ## 프로젝트 상태
 
-- **빌드**: dev 726.60 KB / prod 318.04 KB ✅
-- **테스트**: 652/677 passing (24 skipped, 1 todo) ✅
+- **빌드**: dev 726.49 KB / prod 318.04 KB ✅
+- **테스트**: 657/677 passing (24 skipped, 1 todo) ✅
 - **타입**: 0 errors (TypeScript strict) ✅
 - **린트**: 0 warnings ✅
 - **의존성**: 0 violations (269 modules, 736 dependencies) ✅
@@ -17,85 +17,50 @@
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-33 Step 2C 기록
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 1-33 Step 3 기록
 - `docs/ARCHITECTURE.md`: 아키텍처 구조
 - `docs/CODING_GUIDELINES.md`: 코딩 규칙
 - `docs/bundle-analysis.html`: JavaScript 번들 분석 리포트
 
 ---
 
-## 활성 작업
+## 다음 작업 후보
 
-### Phase 33 Step 3: 코드 리팩토링 - 중복 로직 제거
+Phase 33 Step 3까지 완료되었으며, 다음 최적화 옵션을 검토할 수 있습니다:
 
-**상태**: **진행 중** ✅
+### 옵션 1: 미사용 Export 제거
 
-**목표**:
+**발견 사항** (2025-10-13):
 
-1. 중복된 유틸리티 함수 통합 (번들 크기 절감: 예상 5-10 KB)
-2. 사용하지 않는 export 제거
-3. 코드 구조 개선 및 가독성 향상
+- `getCSSVariable`, `applyTheme` 함수가 `style-utils.ts`에서 export만 되고
+  실제로 사용되지 않음
+- 잠재적 영향: 코드 정리 및 명확성 향상 (번들 크기는 이미 tree-shaking으로
+  최적화됨)
 
-#### 이전 단계 (완료)
+### 옵션 2: 대형 파일 리팩토링
 
-**Phase 33 Step 2C: 서비스 레이어 최적화** ✅
+**발견 사항** (2025-10-13):
 
-- 대형 서비스 파일들의 크기 가드 구현 완료
-- 예상 번들 크기 절감: 10-15 KB
-- 완료 상태: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+- `events.ts`: 23.73 KB
+- `accessibility-utils.ts`: 23.25 KB
+- `url-patterns.ts`: 23.19 KB
+- `media-service.ts`: 21.35 KB
 
-#### 발견된 중복 코드
+**검토 필요**: 각 파일의 복잡도 분석 및 분할 가능성
 
-**1. Style Utilities 중복** ⚠️
+### 옵션 3: Phase 34 계획
 
-다음 함수들이 3개 파일에 중복 정의됨:
+Phase 33 완료 후 다음 Phase 정의가 필요합니다.
 
-- `combineClasses`: `style-utils.ts`, `css-utilities.ts`, `core-utils.ts`
-- `toggleClass`: `style-utils.ts`, `css-utilities.ts`
-- `updateComponentState`: `style-utils.ts`, `css-utilities.ts` (시그니처 다름)
+---
 
-**영향 분석**:
+## 이전 작업 기록
 
-- `style-utils.ts` (46줄) - 이미 css-utilities를 re-export
-- `css-utilities.ts` (65줄) - 독립적인 구현
-- `core-utils.ts` (343줄) - combineClasses만 포함
+완료된 Phase들은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 기록되어 있습니다:
 
-**최적화 전략**:
-
-1. **단일 소스 원칙** - `css-utilities.ts`를 정규 구현으로 선택
-2. **점진적 마이그레이션** - 모든 import를 css-utilities로 변경
-3. **레거시 제거** - style-utils.ts와 core-utils.ts에서 중복 제거
-
-#### 리팩토링 계획 (TDD)
-
-##### Step 1: RED - 중복 감지 테스트 작성 ✅
-
-```typescript
-// test/unit/refactoring/duplicate-utilities.test.ts
-describe('Duplicate Utilities Detection', () => {
-  it('should have only one combineClasses implementation', () => {
-    // 파일 검색으로 중복 확인
-  });
-});
-```
-
-##### Step 2: GREEN - 통합 및 마이그레이션
-
-1. `css-utilities.ts`를 canonical source로 지정
-2. 모든 import 경로를 `css-utilities`로 변경
-3. `style-utils.ts`에서 중복 함수 제거 (re-export만 유지)
-4. `core-utils.ts`에서 `combineClasses` 제거
-
-##### Step 3: REFACTOR - 정리 및 검증
-
-1. 사용하지 않는 import 제거
-2. 타입 체크 및 테스트 통과 확인
-3. 번들 크기 측정 및 비교
-
-#### 예상 효과
-
-- **소스 코드 절감**: ~50-100 lines
-- **번들 크기 절감**: ~2-5 KB (중복 제거 + tree-shaking)
+- **Phase 33 Step 3**: 중복 유틸리티 함수 통합 완료 ✅
+- **Phase 33 Step 2C**: 서비스 레이어 최적화 완료 ✅
+- **Phase 1-33 Step 2B**: 이전 Phase들 기록 참조
 
 ---
 
