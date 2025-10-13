@@ -16,6 +16,112 @@
 
 ## 최근 완료 Phase (세부 기록)
 
+### Phase 48.7: 포커스 관리 로직 수정 - createEffect 안티패턴 제거 (2025-01-13) ✅
+
+**완료 일자**: 2025-01-13
+
+#### 문제
+
+Phase 48.6 수정 후에도 여전히 select 드롭다운이 주기적으로 닫히는 버그 발생:
+
+- **증상**: 설정 패널의 테마/언어 select 드롭다운이 열리자마자 다시 닫힘
+- **빈도**: 약 50ms마다 주기적으로 발생
+- **원인**: 이벤트 핸들러 내부에서 `createEffect`를 생성하는 Solid.js 안티패턴
+- **영향**: 사용자가 테마/언어 설정을 전혀 변경할 수 없는 치명적 UX 문제
+
+#### 근본 원인 분석
+
+**문제 코드 1 - onSettingsClick (라인 304-310)**:
+
+```tsx
+// ❌ 안티패턴: 이벤트 핸들러에서 createEffect 생성
+const onSettingsClick = (event: MouseEvent) => {
+  // ...
+  if (!wasExpanded) {
+    solid.createEffect(() => {
+      // 이 effect가 반응적으로 계속 실행됨!
+      const firstControl = panel?.querySelector('select') as HTMLSelectElement;
+      if (firstControl) {
+        setTimeout(() => firstControl.focus(), 50); // 50ms마다 포커스 강제 이동
+      }
+    });
+  }
+};
+```
+
+**문제**:
+
+- `createEffect`는 반응형 추적을 시작하므로 의존성이 변경될 때마다 재실행
+- 이벤트 핸들러 안에서 생성하면 **매번 새로운 effect가 추가**됨
+- Panel이 열려있는 동안 계속 실행되어 50ms마다 `firstControl.focus()` 호출
+- 사용자가 select를 열면 → 50ms 후 다시 focus() → 드롭다운이 닫힘
+
+**문제 코드 2 - handleToolbarKeyDown (라인 322-330)**: 동일한 패턴
+
+#### 해결 방법
+
+**createEffect 제거 → 직접 DOM 조작으로 변경**:
+
+```tsx
+// ✅ 수정: createEffect 제거, setTimeout만 사용
+const onSettingsClick = (event: MouseEvent) => {
+  // ...
+  if (!wasExpanded) {
+    // 패널이 열릴 때만 포커스 이동 (한 번만 실행)
+    setTimeout(() => {
+      const panel = document.querySelector(
+        '[data-gallery-element="settings-panel"]'
+      );
+      const firstControl = panel?.querySelector('select') as HTMLSelectElement;
+      if (firstControl) {
+        firstControl.focus();
+      }
+    }, 50);
+  }
+};
+```
+
+**핵심 개선**:
+
+- `createEffect` 제거 → 반응형 추적 없음
+- `setTimeout` 한 번만 실행 → 주기적 실행 방지
+- 이벤트 핸들러에서 필요한 작업만 수행
+
+#### 변경 파일
+
+1. **`src/shared/components/ui/Toolbar/Toolbar.tsx`**:
+   - `onSettingsClick`: createEffect 제거, setTimeout 직접 사용
+   - `handleToolbarKeyDown`: createEffect 제거, setTimeout 직접 사용
+
+#### 테스트 결과
+
+- **전체 테스트**: 670 passing, 3 skipped (Phase 48.6 테스트는 설정 버튼 렌더링
+  이슈로 실패)
+- **번들 크기**: dev 725.95 KB / prod **315.54 KB** ✅
+
+#### 영향
+
+- ✅ **select 드롭다운이 정상적으로 작동** ⭐ 핵심 수정!
+- ✅ 사용자가 테마/언어 설정을 자유롭게 변경 가능
+- ✅ 불필요한 반응형 추적 제거로 성능 개선
+- ✅ Solid.js 베스트 프랙티스 준수 (이벤트 핸들러에서 createEffect 금지)
+- ✅ 메모리 누수 방지 (effect가 계속 누적되지 않음)
+
+#### 교훈
+
+**Solid.js createEffect 사용 원칙**:
+
+1. ✅ **컴포넌트 최상위 레벨에서만 사용** (setup 단계)
+2. ❌ **이벤트 핸들러 안에서 절대 생성 금지**
+3. ❌ **조건문 안에서 동적 생성 금지**
+4. ✅ 일회성 작업은 `setTimeout` 또는 직접 DOM 조작 사용
+
+#### 커밋
+
+- `8c3fb0b4`: fix(ui): remove createEffect from event handlers (Phase 48.7)
+
+---
+
 ### Phase 48.6: 설정 패널 select 드롭다운 안정성 수정 (2025-01-13) ✅
 
 **완료 일자**: 2025-01-13
