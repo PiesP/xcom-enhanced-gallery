@@ -33,23 +33,22 @@
 
 **진행 예정 Phase**:
 
-#### Phase 54.2: Glassmorphism 유틸리티 생성
+#### Phase 54.2: Glassmorphism 유틸리티 (재평가 - Skip)
 
-**목표**: `backdrop-filter` 중복 제거 및 일관된 glass effect 적용
+**재평가 결과**:
 
-**현재 문제**:
+- **실제 glassmorphism effect**: 3곳만 사용 중 (VerticalImageItem,
+  design-tokens.component, primitive/Panel)
+- **이미 토큰화 완료**: `var(--xeg-media-glass-blur)`,
+  `var(--glass-backdrop-filter)` 사용
+- **대부분은 성능 최적화**: `backdrop-filter: none` (40+ 인스턴스)
+- **결론**: 유틸리티 클래스 불필요, 현재 토큰 시스템으로 충분
 
-- 20+ 인스턴스에서 개별 정의
-- 일관성 없는 blur/opacity 값
+**Phase 54.2 Skip 사유**:
 
-**솔루션**:
-
-1. `.glass-surface` 유틸리티 클래스 생성
-2. 중복 정의 제거
-3. 성능 최적화 (will-change 등)
-
-**예상 작업량**: 1-2시간  
-**예상 영향**: -0.3 KB ~ -0.5 KB
+- 중복이 거의 없음 (3곳, 모두 토큰 사용)
+- 추가 추상화는 오히려 복잡도 증가
+- 실질적 번들 절감 효과 미미 (<0.1 KB)
 
 ---
 
@@ -76,11 +75,13 @@
 ### Phase 54 종합
 
 **완료**: Phase 54.0, 54.1 (디자인 불일치 해결, 다크 모드 중앙화)  
-**남은 작업**: Phase 54.2, 54.3 (Glassmorphism 유틸리티, Alias 정리)  
-**예상 작업량**: 2-4시간  
-**예상 영향**: -0.5 KB ~ -1.0 KB
+**Skip**: Phase 54.2 (Glassmorphism 유틸리티 - 실제 중복 거의 없음, 이미 토큰화
+완료)  
+**남은 작업**: Phase 54.3 (Alias 정리)  
+**예상 작업량**: 1-2시간  
+**예상 영향**: -0.2 KB ~ -0.5 KB
 
-**권장 순서**: 54.2 (Glassmorphism) → 54.3 (Alias 정리)
+**권장 순서**: Phase 54.3 (Alias 정리) → 완료 후 Phase 55 계획
 
 ---
 
