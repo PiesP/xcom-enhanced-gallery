@@ -5,7 +5,6 @@
 
 import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
-import type { ViewMode } from '../../../types';
 import {
   useToolbarState,
   getToolbarDataState,
@@ -27,6 +26,7 @@ import {
   ArrowAutofitHeight,
   ArrowsMaximize,
 } from '../Icon';
+import type { ToolbarProps, FitMode } from './Toolbar.types';
 import styles from './Toolbar.module.css';
 
 const solid = getSolid();
@@ -36,62 +36,6 @@ const DEFAULT_TOOLBAR_PROPS = {
   disabled: false,
   className: '',
 } as const;
-
-// 통합된 Toolbar Props - 구체적인 타입 정의
-export interface ToolbarProps {
-  /** 현재 인덱스 */
-  currentIndex: number;
-  /** 포커스된 인덱스 (옵션) */
-  focusedIndex?: number | null;
-  /** 전체 개수 */
-  totalCount: number;
-  /** 다운로드 진행 상태 */
-  isDownloading?: boolean;
-  /** 비활성화 상태 */
-  disabled?: boolean;
-  /** 현재 뷰 모드 */
-  currentViewMode?: ViewMode;
-  /** 뷰 모드 변경 콜백 */
-  onViewModeChange?: (mode: ViewMode) => void;
-  /** 이전 버튼 콜백 */
-  onPrevious: () => void;
-  /** 다음 버튼 콜백 */
-  onNext: () => void;
-  /** 현재 항목 다운로드 콜백 */
-  onDownloadCurrent: () => void;
-  /** 전체 다운로드 콜백 */
-  onDownloadAll: () => void;
-  /** 닫기 콜백 */
-  onClose: () => void;
-  /** 설정 열기 콜백 */
-  onOpenSettings?: () => void;
-  /** 툴바 위치 */
-  position?: 'top' | 'bottom' | 'left' | 'right';
-  /** 추가 클래스명 */
-  className?: string;
-  /** 테스트 ID */
-  'data-testid'?: string;
-  /** 접근성 레이블 */
-  'aria-label'?: string;
-  /** ARIA 속성들 */
-  'aria-describedby'?: string;
-  /** 접근성 역할 */
-  role?: 'toolbar';
-  /** 탭 인덱스 */
-  tabIndex?: number;
-  /** ImageFitCallbacks 지원 */
-  onFitOriginal?: (event?: Event) => void;
-  onFitWidth?: (event?: Event) => void;
-  onFitHeight?: (event?: Event) => void;
-  onFitContainer?: (event?: Event) => void;
-  // 표준 이벤트 핸들러들
-  onFocus?: (event: FocusEvent) => void;
-  onBlur?: (event: FocusEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
-}
-
-// 호환성을 위한 별칭
-export type GalleryToolbarProps = ToolbarProps;
 
 const fitModeLabels = {
   original: {
@@ -110,21 +54,22 @@ const fitModeLabels = {
     label: '창에 맞춤',
     title: '창에 맞추기',
   },
-} as const;
+} as const satisfies Record<FitMode, { label: string; title: string }>;
 
-type FitMode = keyof typeof fitModeLabels;
+const FIT_MODE_ORDER: ReadonlyArray<{
+  readonly mode: FitMode;
+  readonly Icon: (props: { size?: number }) => JSXElement;
+}> = [
+  { mode: 'original', Icon: ZoomIn },
+  { mode: 'fitWidth', Icon: ArrowAutofitWidth },
+  { mode: 'fitHeight', Icon: ArrowAutofitHeight },
+  { mode: 'fitContainer', Icon: ArrowsMaximize },
+];
 
-type FitModeHandlerMap = Record<FitMode, ToolbarProps['onFitOriginal']>;
-
-const FIT_MODE_ICONS: Record<FitMode, (props: { size?: number }) => JSXElement> = {
-  original: ZoomIn,
-  fitWidth: ArrowAutofitWidth,
-  fitHeight: ArrowAutofitHeight,
-  fitContainer: ArrowsMaximize,
-};
+const HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
 
 function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
-  const { mergeProps, createMemo, createEffect, onCleanup, Show, on } = solid;
+  const { mergeProps, createMemo, createEffect, onCleanup, on } = solid;
 
   const props = mergeProps(DEFAULT_TOOLBAR_PROPS, rawProps);
   const [toolbarState, toolbarActions] = useToolbarState();
@@ -177,138 +122,122 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
     )
   );
 
-  createEffect(() => {
-    const canDetect =
-      typeof document !== 'undefined' &&
-      typeof (document as unknown as { elementsFromPoint?: unknown }).elementsFromPoint ===
-        'function' &&
-      typeof window !== 'undefined' &&
-      typeof window.getComputedStyle === 'function';
+  const evaluateHighContrast = ((): (() => void) => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return () => toolbarActions.setNeedsHighContrast(false);
+    }
 
-    if (!canDetect) {
+    if (typeof document.elementsFromPoint !== 'function') {
+      return () => toolbarActions.setNeedsHighContrast(false);
+    }
+
+    return () => {
+      if (!toolbarRef) {
+        toolbarActions.setNeedsHighContrast(false);
+        return;
+      }
+
+      const rect = toolbarRef.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        toolbarActions.setNeedsHighContrast(false);
+        return;
+      }
+
+      const lightHits = HIGH_CONTRAST_OFFSETS.filter(offset => {
+        const x = rect.left + rect.width * offset;
+        const y = rect.top + rect.height * 0.5;
+        return document.elementsFromPoint(x, y).some(element => {
+          const bg = window.getComputedStyle(element).backgroundColor || '';
+          return /(?:white|255)/i.test(bg);
+        });
+      }).length;
+
+      toolbarActions.setNeedsHighContrast(lightHits >= 2);
+    };
+  })();
+
+  createEffect(() => {
+    if (typeof window === 'undefined') {
       toolbarActions.setNeedsHighContrast(false);
       return;
     }
 
-    const detectBackgroundBrightness = (): void => {
-      try {
-        if (!toolbarRef) {
-          return;
-        }
+    evaluateHighContrast();
 
-        const rect = toolbarRef.getBoundingClientRect();
-        if (!rect || rect.width === 0 || rect.height === 0) {
-          toolbarActions.setNeedsHighContrast(false);
-          return;
-        }
-
-        const samplePoints = [
-          { x: rect.left + rect.width * 0.25, y: rect.top + rect.height / 2 },
-          { x: rect.left + rect.width * 0.5, y: rect.top + rect.height / 2 },
-          { x: rect.left + rect.width * 0.75, y: rect.top + rect.height / 2 },
-        ];
-
-        let lightBackgroundCount = 0;
-
-        samplePoints.forEach(point => {
-          const elementsBelow = (
-            document as unknown as {
-              elementsFromPoint: (x: number, y: number) => Element[];
-            }
-          ).elementsFromPoint(point.x, point.y);
-
-          const hasLight = elementsBelow.some((el: Element) => {
-            const computedStyles = window.getComputedStyle(el);
-            const bgColor = computedStyles.backgroundColor || '';
-            return (
-              bgColor.includes('rgb(255') ||
-              bgColor.includes('white') ||
-              bgColor.includes('rgba(255')
-            );
-          });
-
-          if (hasLight) {
-            lightBackgroundCount += 1;
-          }
-        });
-
-        toolbarActions.setNeedsHighContrast(lightBackgroundCount >= 2);
-      } catch {
-        toolbarActions.setNeedsHighContrast(false);
-      }
-    };
-
-    detectBackgroundBrightness();
-
-    const throttledDetect = throttleScroll(() => {
+    const detect = throttleScroll(() => {
       if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(detectBackgroundBrightness);
+        requestAnimationFrame(evaluateHighContrast);
       } else {
-        detectBackgroundBrightness();
+        evaluateHighContrast();
       }
     });
 
-    const listenerId = EventManager.getInstance().addListener(
-      window,
-      'scroll',
-      throttledDetect as unknown as EventListener,
-      { passive: true }
-    );
+    const manager = EventManager.getInstance();
+    const listenerId = manager.addListener(window, 'scroll', detect as EventListener, {
+      passive: true,
+    });
 
     onCleanup(() => {
-      EventManager.getInstance().removeListener(listenerId);
+      manager.removeListener(listenerId);
     });
   });
 
-  const handleButtonClick = (event: Event | MouseEvent, action?: () => void): void => {
+  const createActionHandler = (action?: () => void) => (event: Event | MouseEvent) => {
     event.stopPropagation();
-    if (!action) {
-      return;
-    }
-    action();
+    action?.();
   };
 
-  const handleFitMode = (event: Event, mode: FitMode, action?: (() => void) | null): void => {
+  const getFitHandler = (mode: FitMode): ToolbarProps['onFitOriginal'] => {
+    switch (mode) {
+      case 'fitWidth':
+        return props.onFitWidth ?? undefined;
+      case 'fitHeight':
+        return props.onFitHeight ?? undefined;
+      case 'fitContainer':
+        return props.onFitContainer ?? undefined;
+      default:
+        return props.onFitOriginal ?? undefined;
+    }
+  };
+
+  const handleFitModeClick = (mode: FitMode) => (event: Event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (
-      typeof (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation ===
-      'function'
-    ) {
-      (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
-    }
-
+    (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
     toolbarActions.setCurrentFitMode(mode);
-
-    if (action && !props.disabled) {
-      action();
+    if (!props.disabled) {
+      getFitHandler(mode)?.(event);
     }
   };
 
-  const renderFitButton = (mode: FitMode, handler?: (() => void) | null): JSXElement => {
-    const Icon = FIT_MODE_ICONS[mode];
-    return (
-      <IconButton
-        size='toolbar'
-        onClick={event => handleFitMode(event, mode, handler ?? undefined)}
-        disabled={props.disabled || !handler}
-        aria-label={fitModeLabels[mode].label}
-        title={fitModeLabels[mode].title}
-        data-gallery-element={`fit-${mode}`}
-        data-selected={toolbarState.currentFitMode === mode}
-        data-disabled={props.disabled || !handler}
-      >
-        <Icon size={18} />
-      </IconButton>
-    );
-  };
+  const isFitDisabled = (mode: FitMode): boolean => props.disabled || !getFitHandler(mode);
 
-  const fitModeHandlers: FitModeHandlerMap = {
-    original: props.onFitOriginal ?? undefined,
-    fitWidth: props.onFitWidth ?? undefined,
-    fitHeight: props.onFitHeight ?? undefined,
-    fitContainer: props.onFitContainer ?? undefined,
-  };
+  const navState = createMemo(() => {
+    const total = Math.max(0, props.totalCount ?? 0);
+    const clampedCurrent = Math.min(
+      Math.max(Number(props.currentIndex ?? 0) || 0, 0),
+      Math.max(total - 1, 0)
+    );
+    const disabled = !!props.disabled;
+    const isDownloading = !!props.isDownloading;
+
+    return {
+      prevDisabled: disabled || clampedCurrent <= 0,
+      nextDisabled: disabled || clampedCurrent >= total - 1,
+      canDownloadAll: total > 1,
+      downloadDisabled: disabled || isDownloading,
+    } as const;
+  });
+
+  const onPreviousClick = createActionHandler(props.onPrevious);
+  const onNextClick = createActionHandler(props.onNext);
+  const onDownloadCurrent = createActionHandler(props.onDownloadCurrent);
+  const onDownloadAll = createActionHandler(props.onDownloadAll);
+  const onCloseClick = createActionHandler(props.onClose);
+  const onOpenSettings =
+    typeof props.onOpenSettings === 'function'
+      ? createActionHandler(props.onOpenSettings)
+      : undefined;
 
   return (
     <div
@@ -344,10 +273,10 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             size='toolbar'
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
-            disabled={props.disabled || props.currentIndex <= 0}
-            onClick={event => handleButtonClick(event, props.onPrevious)}
+            disabled={navState().prevDisabled}
+            onClick={onPreviousClick}
             data-gallery-element='nav-previous'
-            data-disabled={props.disabled || props.currentIndex <= 0}
+            data-disabled={navState().prevDisabled}
           >
             <ChevronLeft size={18} />
           </IconButton>
@@ -356,10 +285,10 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             size='toolbar'
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
-            disabled={props.disabled || props.currentIndex >= props.totalCount - 1}
-            onClick={event => handleButtonClick(event, props.onNext)}
+            disabled={navState().nextDisabled}
+            onClick={onNextClick}
             data-gallery-element='nav-next'
-            data-disabled={props.disabled || props.currentIndex >= props.totalCount - 1}
+            data-disabled={navState().nextDisabled}
           >
             <ChevronRight size={18} />
           </IconButton>
@@ -391,54 +320,67 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
           class={`${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`}
           data-gallery-element='actions-right'
         >
-          {renderFitButton('original', fitModeHandlers.original)}
-          {renderFitButton('fitWidth', fitModeHandlers.fitWidth)}
-          {renderFitButton('fitHeight', fitModeHandlers.fitHeight)}
-          {renderFitButton('fitContainer', fitModeHandlers.fitContainer)}
+          {FIT_MODE_ORDER.map(({ mode, Icon }) => {
+            const label = fitModeLabels[mode];
+            return (
+              <IconButton
+                size='toolbar'
+                onClick={handleFitModeClick(mode)}
+                disabled={isFitDisabled(mode)}
+                aria-label={label.label}
+                title={label.title}
+                data-gallery-element={`fit-${mode}`}
+                data-selected={toolbarState.currentFitMode === mode}
+                data-disabled={isFitDisabled(mode)}
+              >
+                <Icon size={18} />
+              </IconButton>
+            );
+          })}
 
           <IconButton
             size='toolbar'
             loading={props.isDownloading}
-            onClick={event => handleButtonClick(event, props.onDownloadCurrent)}
-            disabled={props.disabled || !!props.isDownloading}
+            onClick={onDownloadCurrent}
+            disabled={navState().downloadDisabled}
             aria-label='현재 파일 다운로드'
             title='현재 파일 다운로드 (Ctrl+D)'
             data-gallery-element='download-current'
-            data-disabled={props.disabled || !!props.isDownloading}
+            data-disabled={navState().downloadDisabled}
             data-loading={props.isDownloading}
           >
             <Download size={18} />
           </IconButton>
 
-          <Show when={props.totalCount > 1}>
+          {navState().canDownloadAll && (
             <IconButton
               size='toolbar'
-              onClick={event => handleButtonClick(event, props.onDownloadAll)}
-              disabled={props.disabled || !!props.isDownloading}
+              onClick={onDownloadAll}
+              disabled={navState().downloadDisabled}
               aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               data-gallery-element='download-all'
-              data-disabled={props.disabled || !!props.isDownloading}
+              data-disabled={navState().downloadDisabled}
               data-loading={props.isDownloading}
             >
               <FileZip size={18} />
             </IconButton>
-          </Show>
+          )}
 
-          <Show when={typeof props.onOpenSettings === 'function'}>
+          {typeof props.onOpenSettings === 'function' && onOpenSettings && (
             <IconButton
               size='toolbar'
               aria-label='설정 열기'
               title='설정'
               disabled={props.disabled}
-              onClick={event => handleButtonClick(event, props.onOpenSettings ?? undefined)}
-              onMouseDown={event => handleButtonClick(event, props.onOpenSettings ?? undefined)}
+              onClick={onOpenSettings}
+              onMouseDown={onOpenSettings}
               data-gallery-element='settings'
               data-disabled={props.disabled}
             >
               <Settings size={18} />
             </IconButton>
-          </Show>
+          )}
 
           <IconButton
             size='toolbar'
@@ -446,7 +388,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
             aria-label='갤러리 닫기'
             title='갤러리 닫기 (Esc)'
             disabled={props.disabled}
-            onClick={event => handleButtonClick(event, props.onClose)}
+            onClick={onCloseClick}
             data-gallery-element='close'
             data-disabled={props.disabled}
           >
@@ -465,6 +407,7 @@ Object.defineProperty(ToolbarMemo, 'displayName', {
   configurable: true,
 });
 
+export type { ToolbarProps, GalleryToolbarProps, FitMode } from './Toolbar.types';
 export const Toolbar = ToolbarMemo;
 
 export default ToolbarMemo;

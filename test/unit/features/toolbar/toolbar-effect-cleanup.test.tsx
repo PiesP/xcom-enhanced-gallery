@@ -14,12 +14,11 @@ describe('Toolbar - Effect Cleanup (Phase 4.1)', () => {
     const sourceCode = readFileSync(toolbarPath, 'utf-8');
 
     // createEffect 안에 배경 감지 로직이 있어야 함
-    expect(sourceCode).toContain('detectBackgroundBrightness');
-    expect(sourceCode).toContain('EventManager.getInstance().addListener');
+    expect(sourceCode).toContain('evaluateHighContrast');
+    expect(sourceCode).toContain('manager.addListener');
 
     // onCleanup에서 removeListener 호출이 있어야 함
-    const cleanupPattern =
-      /onCleanup\(\(\)\s*=>\s*\{[^}]*EventManager\.getInstance\(\)\.removeListener[^}]*\}\)/s;
+    const cleanupPattern = /onCleanup\(\(\)\s*=>\s*\{[^}]*manager\.removeListener[^}]*\}\)/s;
     expect(sourceCode).toMatch(cleanupPattern);
 
     // scroll 이벤트 리스너 등록

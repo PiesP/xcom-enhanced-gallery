@@ -163,19 +163,6 @@ export function addListener(
 }
 
 /**
- * 다중 이벤트 리스너 추가
- */
-export function addMultipleEventListeners(
-  element: EventTarget,
-  types: string[],
-  listener: EventListener,
-  options?: AddEventListenerOptions,
-  context?: string
-): string[] {
-  return types.map(type => addListener(element, type, listener, options, context));
-}
-
-/**
  * 이벤트 리스너 제거
  */
 export function removeEventListenerManaged(id: string): boolean {
@@ -251,19 +238,6 @@ export function getEventListenerStatus() {
     })),
   };
 }
-
-/**
- * 이벤트 디스패처 정리
- */
-export function cleanupEventDispatcher(): void {
-  removeAllEventListeners();
-  listenerIdCounter = 0;
-  logger.debug('Event dispatcher cleaned up');
-}
-
-// ================================
-// 갤러리 전용 이벤트 처리 (기존 event-utils 기능)
-// ================================
 
 // Phase 21.6: gallerySignals 사용으로 마이그레이션
 // Helper 함수들
@@ -467,15 +441,6 @@ export async function initializeGalleryEvents(
   }
 }
 
-/**
- * 우선순위 강화 메커니즘 - Phase 4: 런타임 성능 최적화
- * 트위터가 동적으로 이벤트 리스너를 추가하는 경우를 대비해 주기적으로 우리의 리스너를 재등록
- *
- * 성능 최적화 사항:
- * - 인터벌 빈도를 15초로 제한하여 CPU 오버헤드 최소화
- * - 갤러리 열린 상태에서는 우선순위 강화 중단으로 메모리 절약
- * - 불필요한 리스너 재등록 방지로 성능 향상
- */
 function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
   // 기존 인터벌 정리
   if (galleryEventState.priorityInterval) {
@@ -824,143 +789,17 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
     logger.debug('Gallery event options updated', newOptions);
   }
 }
-
-// ================================
-// 통합 이벤트 관리자 클래스
-// ================================
-
 /**
- * 통합 이벤트 관리자 클래스
- * @deprecated 외부 소비자는 `@shared/services/EventManager`를 사용하세요. 이 클래스는 내부 호환 용도로만 유지됩니다.
+ * 갤러리 이벤트 상태 스냅샷
  */
-export class GalleryEventManager {
-  private static instance: GalleryEventManager | null = null;
-
-  public static getInstance(): GalleryEventManager {
-    if (!GalleryEventManager.instance) {
-      GalleryEventManager.instance = new GalleryEventManager();
-    }
-    return GalleryEventManager.instance;
-  }
-
-  // 기본 이벤트 관리
-  public addListener(
-    element: EventTarget,
-    type: string,
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string {
-    return addListener(element, type, listener, options, context);
-  }
-
-  public addMultipleListeners(
-    element: EventTarget,
-    types: string[],
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string[] {
-    return addMultipleEventListeners(element, types, listener, options, context);
-  }
-
-  public removeListener(id: string): boolean {
-    return removeEventListenerManaged(id);
-  }
-
-  public removeByContext(context: string): number {
-    return removeEventListenersByContext(context);
-  }
-
-  public removeByType(type: string): number {
-    let removedCount = 0;
-
-    for (const [id, eventContext] of listeners.entries()) {
-      if (eventContext.type === type) {
-        if (removeEventListenerManaged(id)) {
-          removedCount++;
-        }
-      }
-    }
-
-    logger.debug(`Removed ${removedCount} event listeners for type: ${type}`);
-    return removedCount;
-  }
-
-  public removeAll(): void {
-    removeAllEventListeners();
-  }
-
-  public getStatus() {
-    return getEventListenerStatus();
-  }
-
-  public cleanup(): void {
-    cleanupEventDispatcher();
-  }
-
-  // 갤러리 이벤트 관리
-  public async initializeGallery(
-    handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
-  ): Promise<void> {
-    return initializeGalleryEvents(handlers, options);
-  }
-
-  public cleanupGallery(): void {
-    cleanupGalleryEvents();
-  }
-
-  public getGalleryStatus() {
-    return {
-      initialized: galleryEventState.initialized,
-      listenerCount: galleryEventState.listenerIds.length,
-      options: galleryEventState.options,
-      hasHandlers: !!galleryEventState.handlers,
-      hasPriorityInterval: !!galleryEventState.priorityInterval,
-    };
-  }
-
-  public updateGalleryOptions(options: Partial<GalleryEventOptions>): void {
-    updateGalleryEventOptions(options);
-  }
-}
-
-// ================================
-// 백워드 호환성을 위한 추가 유틸리티 함수들
-// ================================
-
-/**
- * 커스텀 이벤트 생성
- */
-export function createCustomEvent<T = unknown>(
-  type: string,
-  detail?: T,
-  options?: EventInit
-): CustomEvent<T> {
-  const eventOptions = {
-    bubbles: true,
-    cancelable: true,
-    ...options,
+export function getGalleryEventSnapshot() {
+  return {
+    initialized: galleryEventState.initialized,
+    listenerCount: galleryEventState.listenerIds.length,
+    options: galleryEventState.options,
+    hasHandlers: Boolean(galleryEventState.handlers),
+    hasPriorityInterval: Boolean(galleryEventState.priorityInterval),
   };
-
-  if (detail !== undefined) {
-    return new CustomEvent(type, { ...eventOptions, detail });
-  }
-
-  return new CustomEvent(type, eventOptions) as CustomEvent<T>;
-}
-
-/**
- * Twitter 이벤트 처리
- */
-export function handleTwitterEvent(
-  element: EventTarget,
-  eventType: string,
-  handler: EventListener,
-  context?: string
-): string {
-  return addListener(element, eventType, handler, undefined, context);
 }
 
 // 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.

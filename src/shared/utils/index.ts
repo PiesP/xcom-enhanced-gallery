@@ -61,8 +61,8 @@ export {
   withFallback,
 } from './error-handling';
 
-// === 이벤트 (2개) ===
-export { addListener, createCustomEvent } from './events';
+// === 이벤트 (1개) ===
+export { addListener } from './events';
 
 // === Wheel Event utilities (R2) ===
 export { addWheelListener, ensureWheelLock } from './events/wheel';

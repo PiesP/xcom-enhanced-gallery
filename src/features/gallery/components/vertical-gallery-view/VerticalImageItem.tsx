@@ -8,88 +8,22 @@
 
 import type { ComponentType } from '@shared/types/app.types';
 import type { ImageFitMode } from '@shared/types';
-import type { MediaInfo } from '@shared/types/media.types';
 import type { JSX } from 'solid-js';
 
-import { withGallery, type GalleryComponentProps } from '../../../../shared/components/hoc';
+import { withGallery } from '../../../../shared/components/hoc';
 import { Button } from '../../../../shared/components/ui/Button/Button';
 import type { ButtonProps } from '../../../../shared/components/ui/Button/Button';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
 import { getSolid } from '../../../../shared/external/vendors';
 import { languageService } from '../../../../shared/services/language-service';
 import styles from './VerticalImageItem.module.css';
+import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
+import type { VerticalImageItemProps } from './VerticalImageItem.types';
 
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
 const ButtonCompat = Button as unknown as (props: ButtonProps) => JSX.Element;
-
-function cleanFilename(filename?: string): string {
-  if (!filename) {
-    return 'Untitled';
-  }
-
-  let cleaned = filename
-    .replace(/^twitter_media_\d{8}T\d{6}_\d+\./, '')
-    .replace(/^\/media\//, '')
-    .replace(/^\.\//g, '')
-    .replace(/[\\/]/g, '_');
-
-  if (cleaned.length > 40 || !cleaned) {
-    const match = filename.match(/([a-zA-Z0-9_-]+)$/);
-    cleaned = match?.[1] ?? 'Image';
-  }
-
-  return cleaned;
-}
-
-function isVideoMedia(media: MediaInfo): boolean {
-  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi'];
-  const urlLowerCase = media.url.toLowerCase();
-
-  if (videoExtensions.some(ext => urlLowerCase.includes(ext))) {
-    return true;
-  }
-
-  if (media.filename) {
-    const filenameLowerCase = media.filename.toLowerCase();
-    if (videoExtensions.some(ext => filenameLowerCase.endsWith(ext))) {
-      return true;
-    }
-  }
-
-  if (urlLowerCase.includes('video.twimg.com') || urlLowerCase.includes('/video/')) {
-    return true;
-  }
-
-  return false;
-}
-
-type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
-
-interface VerticalImageItemProps extends GalleryComponentProps {
-  readonly media: MediaInfo;
-  readonly index: number;
-  readonly isActive: boolean;
-  readonly isFocused?: boolean;
-  readonly isVisible?: boolean;
-  readonly forceVisible?: boolean;
-  readonly onClick: () => void;
-  readonly onDownload?: () => void;
-  readonly fitMode?: FitModeProp;
-  readonly onMediaLoad?: (mediaId: string, index: number) => void;
-  readonly onImageContextMenu?: (event: MouseEvent, media: MediaInfo) => void;
-  readonly className?: string;
-  readonly registerContainer?: (element: HTMLDivElement | null) => void;
-  readonly 'data-testid'?: string;
-  readonly 'aria-label'?: string;
-  readonly 'aria-describedby'?: string;
-  readonly role?: string;
-  readonly tabIndex?: number;
-  readonly onFocus?: (event: FocusEvent) => void;
-  readonly onBlur?: (event: FocusEvent) => void;
-  readonly onKeyDown?: (event: KeyboardEvent) => void;
-}
 
 function getFitModeClass(fitMode?: ImageFitMode): string {
   switch (fitMode) {
@@ -112,6 +46,28 @@ const FIT_MODE_CLASSES: readonly string[] = [
   styles.fitHeight,
   styles.fitContainer,
 ].filter((className): className is string => Boolean(className));
+
+const syncFitModeAttributes = (
+  element: HTMLElement | null,
+  mode: ImageFitMode,
+  className: string
+): void => {
+  if (!element) {
+    return;
+  }
+
+  if (element.getAttribute('data-fit-mode') !== mode) {
+    element.setAttribute('data-fit-mode', mode);
+  }
+
+  if (FIT_MODE_CLASSES.length > 0) {
+    element.classList.remove(...FIT_MODE_CLASSES);
+  }
+
+  if (className) {
+    element.classList.add(className);
+  }
+};
 
 function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
   const {
@@ -338,49 +294,11 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
   createEffect(() => {
     const mode = resolvedFitMode();
-    const container = containerRef();
-    const image = imageRef();
-    const video = videoRefSignal();
-    const currentFitClass = fitModeClass();
+    const nextClass = fitModeClass();
 
-    if (container && container.getAttribute('data-fit-mode') !== mode) {
-      container.setAttribute('data-fit-mode', mode);
-    }
-
-    if (container) {
-      if (FIT_MODE_CLASSES.length > 0) {
-        container.classList.remove(...FIT_MODE_CLASSES);
-      }
-      if (currentFitClass) {
-        container.classList.add(currentFitClass);
-      }
-    }
-
-    if (image && image.getAttribute('data-fit-mode') !== mode) {
-      image.setAttribute('data-fit-mode', mode);
-    }
-
-    if (image) {
-      if (FIT_MODE_CLASSES.length > 0) {
-        image.classList.remove(...FIT_MODE_CLASSES);
-      }
-      if (currentFitClass) {
-        image.classList.add(currentFitClass);
-      }
-    }
-
-    if (video && video.getAttribute('data-fit-mode') !== mode) {
-      video.setAttribute('data-fit-mode', mode);
-    }
-
-    if (video) {
-      if (FIT_MODE_CLASSES.length > 0) {
-        video.classList.remove(...FIT_MODE_CLASSES);
-      }
-      if (currentFitClass) {
-        video.classList.add(currentFitClass);
-      }
-    }
+    syncFitModeAttributes(containerRef(), mode, nextClass);
+    syncFitModeAttributes(imageRef(), mode, nextClass);
+    syncFitModeAttributes(videoRefSignal(), mode, nextClass);
   });
 
   const ariaProps = ComponentStandards.createAriaProps({
@@ -513,4 +431,5 @@ Object.defineProperty(VerticalImageItemMemo, 'displayName', {
   configurable: true,
 });
 
+export type { VerticalImageItemProps, FitModeProp } from './VerticalImageItem.types';
 export const VerticalImageItem = VerticalImageItemMemo;

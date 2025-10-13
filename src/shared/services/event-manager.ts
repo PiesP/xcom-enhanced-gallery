@@ -1,12 +1,19 @@
 /**
  * @fileoverview 통합 이벤트 관리자 (TDD GREEN 단계)
- * @description DOM 이벤트 매니저(DOM EM)와 GalleryEventManager를 통합한 단일 인터페이스
+ * @description DOM 이벤트 매니저(DOM EM)와 events 유틸리티를 통합한 단일 인터페이스
  */
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../logging/logger';
 import { DomEventManager, createDomEventManager } from '../dom/dom-event-manager';
-import { GalleryEventManager } from '../utils/events';
+import {
+  addListener as registerManagedListener,
+  removeEventListenerManaged,
+  removeEventListenersByContext,
+  initializeGalleryEvents,
+  cleanupGalleryEvents,
+  getGalleryEventSnapshot,
+} from '../utils/events';
 import type { EventHandlers, GalleryEventOptions } from '../utils/events';
 
 /**
@@ -16,12 +23,10 @@ import type { EventHandlers, GalleryEventOptions } from '../utils/events';
 export class EventManager {
   private static instance: EventManager | null = null;
   private readonly domManager: DomEventManager;
-  private readonly galleryManager: GalleryEventManager;
   private isDestroyed = false;
 
   constructor() {
     this.domManager = createDomEventManager();
-    this.galleryManager = GalleryEventManager.getInstance();
 
     logger.debug('EventManager 초기화 완료');
   }
@@ -113,21 +118,26 @@ export class EventManager {
     options?: AddEventListenerOptions,
     context?: string
   ): string {
-    return this.galleryManager.addListener(element, type, listener, options, context);
+    if (this.isDestroyed) {
+      logger.warn('EventManager가 파괴된 상태에서 addListener 호출');
+      return '';
+    }
+
+    return registerManagedListener(element, type, listener, options, context);
   }
 
   /**
    * 이벤트 리스너 제거
    */
   public removeListener(id: string): boolean {
-    return this.galleryManager.removeListener(id);
+    return removeEventListenerManaged(id);
   }
 
   /**
    * 컨텍스트별 이벤트 리스너 제거
    */
   public removeByContext(context: string): number {
-    return this.galleryManager.removeByContext(context);
+    return removeEventListenersByContext(context);
   }
 
   /**
@@ -137,21 +147,21 @@ export class EventManager {
     handlers: EventHandlers,
     options?: Partial<GalleryEventOptions>
   ): Promise<void> {
-    return this.galleryManager.initializeGallery(handlers, options);
+    return initializeGalleryEvents(handlers, options);
   }
 
   /**
    * 갤러리 이벤트 정리
    */
   public cleanupGallery(): void {
-    this.galleryManager.cleanupGallery();
+    cleanupGalleryEvents();
   }
 
   /**
    * 갤러리 상태 조회
    */
   public getGalleryStatus() {
-    return this.galleryManager.getGalleryStatus();
+    return getGalleryEventSnapshot();
   }
 
   // ================================
@@ -167,7 +177,12 @@ export class EventManager {
     handler: EventListener,
     context?: string
   ): string {
-    return this.galleryManager.addListener(element, eventType, handler, undefined, context);
+    if (this.isDestroyed) {
+      logger.warn('EventManager가 파괴된 상태에서 handleTwitterEvent 호출');
+      return '';
+    }
+
+    return registerManagedListener(element, eventType, handler, undefined, context);
   }
 
   /**
@@ -179,7 +194,7 @@ export class EventManager {
         listenerCount: this.getListenerCount(),
         isDestroyed: this.domManager.getIsDestroyed(),
       },
-      galleryEvents: this.galleryManager.getGalleryStatus(),
+      galleryEvents: getGalleryEventSnapshot(),
       totalListeners: this.getListenerCount(),
       isDestroyed: this.getIsDestroyed(),
     };

@@ -15,31 +15,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('[Phase 33-2A] Events Bundle Size Guard', () => {
-  it('events.ts 소스 파일 크기가 28 KB 이하여야 함 (최적화 목표)', () => {
+  it('events.ts 소스 파일 크기가 24 KB 이하여야 함 (Phase 33 Step 2 목표)', () => {
     const filePath = resolve(__dirname, '../../../src/shared/utils/events.ts');
     const stats = statSync(filePath);
     const fileSizeKB = stats.size / 1024;
 
-    console.log(`📄 events.ts 소스 파일 크기: ${fileSizeKB.toFixed(2)} KB (목표: 28 KB)`);
+    console.log(`[metrics] events.ts size: ${fileSizeKB.toFixed(2)} KB (target: 24 KB)`);
 
-    // 초기: 31.65 KB
-    // 목표: 28 KB (소스 레벨 최적화를 통해 3.65 KB 감소)
-    // 실제 번들 효과: 소스 감소 대비 번들은 tree-shaking으로 최소 영향
-    expect(fileSizeKB).toBeLessThanOrEqual(28);
+    // Phase 33 Step 1: 31.65 KB -> 27.82 KB
+    // Phase 33 Step 2: 24 KB 이하 (추가 3.82 KB 절감)
+    expect(fileSizeKB).toBeLessThanOrEqual(24);
   });
 
-  it('events.ts가 1000줄 이하로 유지되어야 함', () => {
+  it('events.ts가 850줄 이하로 유지되어야 함', () => {
     const eventsPath = resolve(process.cwd(), 'src/shared/utils/events.ts');
     const content = readFileSync(eventsPath, 'utf-8');
     const lineCount = content.split('\n').length;
 
-    console.log(`� events.ts 라인 수: ${lineCount} lines (목표: 1000 lines)`);
+    console.log(`[metrics] events.ts line count: ${lineCount} lines (target: 850 lines)`);
 
-    // RED: 현재는 1106 lines이므로 실패해야 함
-    expect(lineCount).toBeLessThanOrEqual(1000);
+    // Phase 33 Step 1: 1106 -> 967 lines
+    // Phase 33 Step 2: 850 lines 이하
+    expect(lineCount).toBeLessThanOrEqual(850);
   });
 
-  it('events.ts export 함수가 15개 이하여야 함', () => {
+  it('events.ts export 함수가 12개 이하여야 함', () => {
     const eventsPath = resolve(process.cwd(), 'src/shared/utils/events.ts');
     const content = readFileSync(eventsPath, 'utf-8');
 
@@ -47,9 +47,10 @@ describe('[Phase 33-2A] Events Bundle Size Guard', () => {
     const exports = content.match(/^export\s+(function|const|class|interface|type)\s+/gm) || [];
     const exportCount = exports.length;
 
-    console.log(`� events.ts export 개수: ${exportCount} (목표: 15개)`);
+    console.log(`[metrics] events.ts export count: ${exportCount} (target: 12)`);
 
-    // 너무 많은 export는 번들 크기 증가의 원인
-    expect(exportCount).toBeLessThanOrEqual(15);
+    // Phase 33 Step 1: 21 -> 14 exports
+    // Phase 33 Step 2: 12 exports 이하로 정리
+    expect(exportCount).toBeLessThanOrEqual(12);
   });
 });
