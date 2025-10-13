@@ -13,6 +13,7 @@ import {
 import {
   getToolbarExpandableState,
   toggleSettingsExpanded,
+  setSettingsExpanded,
 } from '../../../state/signals/toolbar.signals';
 import { throttleScroll } from '../../../utils/performance/performance-utils';
 import { EventManager } from '../../../services/event-manager';
@@ -255,8 +256,42 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
   const onSettingsClick = (event: Event | MouseEvent) => {
     event.stopPropagation();
+    const wasExpanded = isSettingsExpanded();
     toggleSettingsExpanded();
     props.onOpenSettings?.();
+
+    // Phase 47: Focus management - 확장 시 첫 컨트롤로 포커스 이동
+    if (!wasExpanded) {
+      solid.createEffect(() => {
+        const panel = document.querySelector('[data-gallery-element="settings-panel"]');
+        const firstControl = panel?.querySelector('select') as HTMLSelectElement;
+        if (firstControl) {
+          setTimeout(() => firstControl.focus(), 50);
+        }
+      });
+    }
+  };
+
+  // Phase 47: Keyboard navigation - Escape 키 핸들러
+  const handleToolbarKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && isSettingsExpanded()) {
+      event.preventDefault();
+      event.stopPropagation();
+      setSettingsExpanded(false);
+
+      // 설정 버튼으로 포커스 복원
+      solid.createEffect(() => {
+        const settingsButton = document.querySelector(
+          '[data-gallery-element="settings"]'
+        ) as HTMLButtonElement;
+        if (settingsButton) {
+          setTimeout(() => settingsButton.focus(), 50);
+        }
+      });
+      return; // Escape 처리 완료
+    }
+
+    // Escape 외의 키는 무시 (기존 키보드 핸들링은 개별 버튼에서 처리)
   };
 
   const handleThemeChange = (event: Event) => {
@@ -293,7 +328,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
-      onKeyDown={props.onKeyDown as ((event: KeyboardEvent) => void) | undefined}
+      onKeyDown={handleToolbarKeyDown as unknown as ((event: Event) => void) | undefined}
     >
       <div
         class={`${styles.toolbarContent} xeg-center-between xeg-gap-md`}
@@ -403,8 +438,11 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
           {typeof props.onOpenSettings === 'function' && (
             <IconButton
+              id='settings-button'
               size='toolbar'
               aria-label='설정 열기'
+              aria-expanded={isSettingsExpanded() ? 'true' : 'false'}
+              aria-controls='toolbar-settings-panel'
               title='설정'
               disabled={props.disabled}
               onClick={onSettingsClick}
@@ -432,10 +470,12 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
       {/* Settings Panel */}
       <div
+        id='toolbar-settings-panel'
         class={styles.settingsPanel}
         data-expanded={isSettingsExpanded()}
         role='region'
         aria-label='설정 패널'
+        aria-labelledby='settings-button'
         data-gallery-element='settings-panel'
       >
         <SettingsControls
