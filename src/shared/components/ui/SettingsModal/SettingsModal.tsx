@@ -46,16 +46,12 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
   const [getPanelElement, setPanelElement] = createSignal<HTMLDivElement | null>(null);
   const [getContainerElement, setContainerElement] = createSignal<HTMLDivElement | null>(null);
+  const [getBackdropElement, setBackdropElement] = createSignal<HTMLDivElement | null>(null);
+  const [getCloseButtonElement, setCloseButtonElement] = createSignal<HTMLButtonElement | null>(
+    null
+  );
 
-  let panelElement: HTMLDivElement | null = null;
-  let modalBackdropElement: HTMLDivElement | null = null;
-  let modalContainerElement: HTMLDivElement | null = null;
-  let closeButtonElement: HTMLButtonElement | null = null;
   let ignoreCloseInvocation = false;
-  let removeContainerListeners: (() => void) | null = null;
-  let removeBackdropListener: (() => void) | null = null;
-  let removePanelListener: (() => void) | null = null;
-  let removeCloseButtonListener: (() => void) | null = null;
   let previouslyFocusedElement: HTMLElement | null = null;
   let focusTimerId: number | null = null;
 
@@ -90,7 +86,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
   }));
 
   useFocusTrap(
-    () => modalContainerElement ?? panelElement,
+    () => getContainerElement() ?? getPanelElement(),
     () => props.isOpen && !isPanel(),
     {
       onEscape: () => {
@@ -112,19 +108,9 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
       return;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        event.stopPropagation();
-        invokeOnClose();
-      }
-    };
-
-    container.addEventListener('keydown', handleKeyDown);
-
     focusTimerId = globalTimerManager.setTimeout(() => {
       const focusTarget =
-        closeButtonElement ??
+        getCloseButtonElement() ??
         container.querySelector<HTMLElement>(
           '[data-initial-focus], button:not([disabled]), [href], select, [tabindex]:not([tabindex="-1")]'
         );
@@ -137,8 +123,6 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
     }, 0);
 
     onCleanup(() => {
-      container.removeEventListener('keydown', handleKeyDown);
-
       if (focusTimerId) {
         globalTimerManager.clearTimeout(focusTimerId);
         focusTimerId = null;
@@ -160,6 +144,94 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
       }
     }, 0);
     previouslyFocusedElement = null;
+  });
+
+  createEffect(() => {
+    const button = getCloseButtonElement();
+    if (!button) {
+      return;
+    }
+
+    const handleButtonClick = (event: MouseEvent) => {
+      event.stopPropagation();
+      invokeOnClose();
+    };
+
+    button.addEventListener('click', handleButtonClick);
+    onCleanup(() => button.removeEventListener('click', handleButtonClick));
+  });
+
+  createEffect(() => {
+    const panel = getPanelElement();
+    if (!panel || !props.isOpen || !isPanel()) {
+      return;
+    }
+
+    const handlePanelClick = (event: MouseEvent) => {
+      if (event.target !== panel) {
+        return;
+      }
+      invokeOnClose();
+    };
+
+    panel.addEventListener('click', handlePanelClick);
+    onCleanup(() => panel.removeEventListener('click', handlePanelClick));
+  });
+
+  createEffect(() => {
+    const container = getContainerElement();
+    if (!container || !props.isOpen || isPanel()) {
+      return;
+    }
+
+    const handleCapture = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && getCloseButtonElement()?.contains(target)) {
+        return;
+      }
+
+      ignoreCloseInvocation = true;
+      scheduleIgnoreReset();
+    };
+
+    const stopPropagation = (event: MouseEvent) => {
+      event.stopPropagation();
+    };
+
+    container.addEventListener('click', handleCapture, true);
+    container.addEventListener('click', stopPropagation);
+
+    onCleanup(() => {
+      container.removeEventListener('click', handleCapture, true);
+      container.removeEventListener('click', stopPropagation);
+    });
+  });
+
+  createEffect(() => {
+    const backdrop = getBackdropElement();
+    const container = getContainerElement();
+    if (!backdrop || !container || !props.isOpen || isPanel()) {
+      return;
+    }
+
+    const handleBackdropClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (target && container.contains(target)) {
+        return;
+      }
+
+      if (typeof event.composedPath === 'function') {
+        const path = event.composedPath();
+        if (Array.isArray(path) && path.includes(container)) {
+          return;
+        }
+      }
+
+      invokeOnClose();
+    };
+
+    backdrop.addEventListener('click', handleBackdropClick);
+    onCleanup(() => backdrop.removeEventListener('click', handleBackdropClick));
   });
 
   const handleThemeChange = (event: Event) => {
@@ -201,36 +273,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
         {languageService.getString('settings.title')}
       </h2>
       <IconButton
-        ref={element => {
-          if (closeButtonElement === element) {
-            return;
-          }
-
-          removeCloseButtonListener?.();
-          removeCloseButtonListener = null;
-
-          closeButtonElement = element;
-
-          if (!closeButtonElement) {
-            return;
-          }
-
-          const handleButtonClick = (event: MouseEvent) => {
-            event.stopPropagation();
-            invokeOnClose();
-          };
-
-          closeButtonElement.addEventListener('click', handleButtonClick);
-
-          removeCloseButtonListener = () => {
-            closeButtonElement?.removeEventListener('click', handleButtonClick);
-          };
-
-          onCleanup(() => {
-            removeCloseButtonListener?.();
-            removeCloseButtonListener = null;
-          });
-        }}
+        ref={element => setCloseButtonElement(element ?? null)}
         className={`${styles.closeButton || ''} xeg-size-toolbar`}
         size='md'
         aria-label={languageService.getString('toolbar.close')}
@@ -299,39 +342,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
   if (isPanel()) {
     return (
       <div
-        ref={element => {
-          if (panelElement === element) {
-            return;
-          }
-
-          removePanelListener?.();
-          removePanelListener = null;
-
-          panelElement = element;
-          setPanelElement(element ?? null);
-
-          if (!panelElement) {
-            return;
-          }
-
-          const handlePanelClick = (event: MouseEvent) => {
-            if (event.target !== panelElement) {
-              return;
-            }
-            invokeOnClose();
-          };
-
-          panelElement.addEventListener('click', handlePanelClick);
-
-          removePanelListener = () => {
-            panelElement?.removeEventListener('click', handlePanelClick);
-          };
-
-          onCleanup(() => {
-            removePanelListener?.();
-            removePanelListener = null;
-          });
-        }}
+        ref={element => setPanelElement(element ?? null)}
         class={containerClass}
         role='dialog'
         aria-modal='true'
@@ -347,52 +358,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
 
   return (
     <div
-      ref={element => {
-        if (modalBackdropElement === element) {
-          return;
-        }
-
-        removeBackdropListener?.();
-        removeBackdropListener = null;
-
-        modalBackdropElement = element;
-
-        if (!modalBackdropElement || isPanel()) {
-          return;
-        }
-
-        const handleBackdropClick = (event: MouseEvent) => {
-          const container = modalContainerElement;
-          if (!container) {
-            return;
-          }
-
-          const target = event.target as Node | null;
-          if (target && container.contains(target)) {
-            return;
-          }
-
-          if (typeof event.composedPath === 'function') {
-            const path = event.composedPath();
-            if (Array.isArray(path) && path.includes(container)) {
-              return;
-            }
-          }
-
-          invokeOnClose();
-        };
-
-        modalBackdropElement.addEventListener('click', handleBackdropClick);
-
-        removeBackdropListener = () => {
-          modalBackdropElement?.removeEventListener('click', handleBackdropClick);
-        };
-
-        onCleanup(() => {
-          removeBackdropListener?.();
-          removeBackdropListener = null;
-        });
-      }}
+      ref={element => setBackdropElement(element ?? null)}
       class='settings-modal-backdrop'
       role='dialog'
       aria-modal='true'
@@ -401,48 +367,7 @@ export function SettingsModal(props: SettingsModalProps): JSXElement | null {
       {...testProps}
     >
       <div
-        ref={element => {
-          if (modalContainerElement === element) {
-            return;
-          }
-
-          removeContainerListeners?.();
-          removeContainerListeners = null;
-
-          modalContainerElement = element;
-          setContainerElement(element ?? null);
-
-          if (!modalContainerElement || isPanel()) {
-            return;
-          }
-
-          const handleCapture = (event: MouseEvent) => {
-            const target = event.target as Node | null;
-            if (target && closeButtonElement?.contains(target)) {
-              return;
-            }
-
-            ignoreCloseInvocation = true;
-            scheduleIgnoreReset();
-          };
-
-          const stopPropagation = (event: MouseEvent) => {
-            event.stopPropagation();
-          };
-
-          modalContainerElement.addEventListener('click', handleCapture, true);
-          modalContainerElement.addEventListener('click', stopPropagation);
-
-          removeContainerListeners = () => {
-            modalContainerElement?.removeEventListener('click', handleCapture, true);
-            modalContainerElement?.removeEventListener('click', stopPropagation);
-          };
-
-          onCleanup(() => {
-            removeContainerListeners?.();
-            removeContainerListeners = null;
-          });
-        }}
+        ref={element => setContainerElement(element ?? null)}
         class='settings-modal-content'
         data-position={position()}
         role='document'

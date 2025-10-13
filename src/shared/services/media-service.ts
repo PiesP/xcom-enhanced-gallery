@@ -1,25 +1,14 @@
-/**
- * @fileoverview Media Service - 통합 미디어 서비스
- * @description 모든 미디어 관련 기능을 통합한 서비스
- * @version 1.0.0 - Phase 2: Service Consolidation
- */
-
+// Media Service - Optimized for bundle size
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging/logger';
-// downloads are delegated to BulkDownloadService; keep vendors/helpers unused here
 import type { BaseResultStatus } from '@shared/types/result.types';
 import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';
-// Schedulers for prefetch task coordination
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
-// 통합된 서비스 타입들
-/**
- * 미디어 로딩 상태 (MediaLoadingService에서 통합)
- */
 export interface MediaLoadingState {
   isLoading: boolean;
   hasError: boolean;
@@ -27,31 +16,17 @@ export interface MediaLoadingState {
   errorMessage?: string;
 }
 
-/**
- * 미디어 로딩 옵션
- */
 export interface MediaLoadingOptions {
   retryAttempts?: number;
   timeout?: number;
 }
 
-/**
- * 프리페치 옵션 (MediaPrefetchingService에서 통합)
- */
 export interface PrefetchOptions {
   maxConcurrent?: number;
   prefetchRange?: number;
-  /**
-   * 스케줄 방식: 즉시 실행(immediate) 또는 유휴 시간(idle) 예약.
-   * 기본값: 'immediate' (기존 동작과 동일)
-   */
   schedule?: 'immediate' | 'idle' | 'raf' | 'microtask';
 }
 
-/**
- * 대량 다운로드 관련 타입들 (BulkDownloadService에서 통합)
- */
-// DownloadProgress 타입은 단일 소스에서 import하세요.
 export type { DownloadProgress } from './download/types';
 
 export interface BulkDownloadOptions {
@@ -68,7 +43,6 @@ export interface DownloadResult {
   error?: string;
   filename?: string;
   failures?: Array<{ url: string; error: string }>;
-  /** Machine readable code (Result v2) */
   code?: ErrorCode;
 }
 
@@ -77,11 +51,9 @@ export interface SingleDownloadResult {
   status: BaseResultStatus;
   filename?: string;
   error?: string;
-  /** Machine readable code (Result v2) */
   code?: ErrorCode;
 }
 
-// 기존 서비스들 import
 import { MediaExtractionService } from './media-extraction/media-extraction-service';
 import { FallbackExtractor } from './media/fallback-extractor';
 import { VideoControlService } from './media/video-control-service';
@@ -92,49 +64,32 @@ import {
 } from './media/username-extraction-service';
 import type { UsernameExtractionResult } from './media/username-extraction-service';
 
-/**
- * 통합 미디어 서비스 - Phase 4 간소화
- *
- * 기존 분산된 미디어 서비스들을 하나로 통합:
- * - MediaExtractionService
- * - FallbackExtractor
- * - VideoControlService
- * - UsernameExtractionService
- * - TwitterVideoExtractor 유틸리티들
- * - WebPOptimizationService
- */
 export class MediaService {
   private static instance: MediaService | null = null;
 
-  // 통합된 서비스 컴포넌트들
   private readonly mediaExtraction: MediaExtractionService;
   private readonly fallbackExtractor: FallbackExtractor;
   private readonly videoControl: VideoControlService;
   private readonly usernameParser: UsernameParser;
 
-  // WebP 최적화 관련 상태
   private webpSupported: boolean | null = null;
 
-  // 미디어 로딩 관련 상태 (MediaLoadingService 통합)
   private readonly mediaLoadingStates = new Map<string, MediaLoadingState>();
 
-  // 미디어 프리페칭 관련 상태 (MediaPrefetchingService 통합)
   private readonly prefetchCache = new Map<string, Blob>();
   private readonly activePrefetchRequests = new Map<string, AbortController>();
   private readonly maxCacheEntries = 20;
   private prefetchCacheHits = 0;
   private prefetchCacheMisses = 0;
 
-  // 대량 다운로드 관련 상태 (BulkDownloadService 통합)
   private readonly currentAbortController?: AbortController;
 
   constructor() {
     this.mediaExtraction = new MediaExtractionService();
     this.fallbackExtractor = new FallbackExtractor();
-    this.videoControl = new VideoControlService(); // Phase 4 간소화: 직접 인스턴스화
-    this.usernameParser = new UsernameParser(); // Phase 4 간소화: 직접 인스턴스화
+    this.videoControl = new VideoControlService();
+    this.usernameParser = new UsernameParser();
 
-    // WebP 지원 감지 초기화 (async 메서드이므로 await 없이 호출)
     this.detectWebPSupport().catch(error => {
       logger.warn('[MediaService] WebP detection initialization failed:', error);
     });
@@ -145,21 +100,12 @@ export class MediaService {
     return MediaService.instance;
   }
 
-  protected async onInitialize(): Promise<void> {
-    // MediaService는 특별한 초기화 로직이 없음
-  }
+  protected async onInitialize(): Promise<void> {}
 
   protected onDestroy(): void {
     this.videoControl.destroy();
   }
 
-  // ====================================
-  // Media Extraction API
-  // ====================================
-
-  /**
-   * 클릭된 요소에서 미디어 추출
-   */
   async extractFromClickedElement(
     element: HTMLElement,
     options: MediaExtractionOptions = {}
@@ -167,9 +113,6 @@ export class MediaService {
     return this.mediaExtraction.extractFromClickedElement(element, options);
   }
 
-  /**
-   * 컨테이너에서 모든 미디어 추출
-   */
   async extractAllFromContainer(
     container: HTMLElement,
     options: MediaExtractionOptions = {}
@@ -177,9 +120,6 @@ export class MediaService {
     return this.mediaExtraction.extractAllFromContainer(container, options);
   }
 
-  /**
-   * 백업 추출 (API 실패 시)
-   */
   async extractWithFallback(
     element: HTMLElement,
     options: MediaExtractionOptions,
@@ -200,82 +140,46 @@ export class MediaService {
     this.videoControl.pauseAllBackgroundVideos();
   }
 
-  /**
-   * 배경 비디오 복원 (갤러리 종료 시)
-   */
   restoreBackgroundVideos(): void {
     this.videoControl.restoreBackgroundVideos();
   }
 
-  /**
-   * 비디오 제어 서비스 활성 상태
-   */
   isVideoControlActive(): boolean {
     return this.videoControl.isActive();
   }
-  /**
-   * 일시정지된 비디오 수
-   */
+
   getPausedVideoCount(): number {
     return this.videoControl.getPausedVideoCount();
   }
 
-  /**
-   * 비디오 제어 강제 초기화
-   */
   forceResetVideoControl(): void {
     this.videoControl.forceReset();
   }
 
-  /**
-   * 현재 갤러리 비디오 재생/일시정지 토글
-   * (이전에는 VideoControlService 싱글톤 경유 – 중앙 MediaService로 통합)
-   */
   togglePlayPauseCurrent(): void {
     this.videoControl.togglePlayPauseCurrent();
   }
 
-  /** 현재 갤러리 비디오 볼륨 증가 */
   volumeUpCurrent(step = 0.1): void {
     this.videoControl.volumeUpCurrent(step);
   }
 
-  /** 현재 갤러리 비디오 볼륨 감소 */
   volumeDownCurrent(step = 0.1): void {
     this.videoControl.volumeDownCurrent(step);
   }
 
-  /** 현재 갤러리 비디오 음소거 토글 */
   toggleMuteCurrent(): void {
     this.videoControl.toggleMuteCurrent();
   }
 
-  // ====================================
-  // Username Extraction API
-  // ====================================
-
-  /**
-   * 사용자명 추출 (상세 결과)
-   */
   extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
     return this.usernameParser.extractUsername(element);
   }
 
-  /**
-   * 빠른 사용자명 추출 (문자열만)
-   */
   parseUsernameFast(element?: HTMLElement | Document): string | null {
     return parseUsernameFast(element);
   }
 
-  // ====================================
-  // Twitter Video API (재export)
-  // ====================================
-
-  /**
-   * Twitter Video 관련 유틸리티들을 재export
-   * 기존 코드 호환성을 위해 유지
-   */
   get TwitterVideoUtils() {
     return {
       // TwitterVideoExtractor에서 가져온 유틸리티들
@@ -327,20 +231,10 @@ export class MediaService {
     return this.extractFromClickedElement(element, options);
   }
 
-  /**
-   * 미디어 다운로드 (단순화된 인터페이스)
-   */
   async downloadMedia(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
     return this.downloadSingle(media);
   }
 
-  // ====================================
-  // 편의 메서드들
-  // ====================================
-
-  /**
-   * 미디어 추출 + 사용자명 추출을 한 번에
-   */
   async extractMediaWithUsername(
     element: HTMLElement,
     options: MediaExtractionOptions = {}
@@ -356,30 +250,16 @@ export class MediaService {
     };
   }
 
-  /**
-   * 갤러리 진입 시 필요한 모든 미디어 설정
-   */
   async prepareForGallery(): Promise<void> {
     this.pauseAllBackgroundVideos();
   }
 
-  /**
-   * 갤러리 종료 시 미디어 정리
-   */
   async cleanupAfterGallery(): Promise<void> {
     this.restoreBackgroundVideos();
   }
 
-  // ====================================
-  // WebP Optimization API (통합됨)
-  // ====================================
-
-  /**
-   * WebP 지원 여부 감지
-   */
   private async detectWebPSupport(): Promise<void> {
     try {
-      // 테스트 환경에서는 기본값 false 사용
       if (typeof document === 'undefined' || typeof window === 'undefined') {
         this.webpSupported = false;
         return;
@@ -389,7 +269,6 @@ export class MediaService {
       canvas.width = 1;
       canvas.height = 1;
 
-      // canvas.toDataURL이 구현되지 않은 경우 (예: jsdom)
       if (typeof canvas.toDataURL !== 'function') {
         this.webpSupported = false;
         logger.debug('[MediaService] WebP detection skipped (canvas.toDataURL not available)');
@@ -398,7 +277,6 @@ export class MediaService {
 
       const dataURL = canvas.toDataURL('image/webp');
 
-      // dataURL이 null이나 유효하지 않은 경우 처리
       if (!dataURL || typeof dataURL !== 'string') {
         this.webpSupported = false;
         logger.debug('[MediaService] WebP detection failed (invalid dataURL)');
@@ -413,22 +291,15 @@ export class MediaService {
     }
   }
 
-  /**
-   * WebP 지원 여부 반환
-   */
   isWebPSupported(): boolean {
     return this.webpSupported ?? false;
   }
 
-  /**
-   * 최적 이미지 URL 생성 (WebP 최적화)
-   */
   getOptimizedImageUrl(originalUrl: string): string {
     if (!this.isWebPSupported()) {
       return originalUrl;
     }
 
-    // Twitter 이미지 URL에서 WebP 변환
     if (originalUrl.includes('pbs.twimg.com') && !originalUrl.includes('format=webp')) {
       const separator = originalUrl.includes('?') ? '&' : '?';
       return `${originalUrl}${separator}format=webp`;
@@ -437,13 +308,9 @@ export class MediaService {
     return originalUrl;
   }
 
-  /**
-   * WebP 최적화 (테스트에서 요구하는 메서드명)
-   */
   optimizeWebP(originalUrl: string): string {
     return this.getOptimizedImageUrl(originalUrl);
   }
-
   /**
    * 트위터 이미지 URL 최적화 (하위 호환성)
    */
@@ -451,13 +318,6 @@ export class MediaService {
     return this.getOptimizedImageUrl(originalUrl);
   }
 
-  // ====================================
-  // Media Loading API (통합됨)
-  // ====================================
-
-  /**
-   * 미디어 요소 등록 및 로딩
-   */
   registerMediaElement(
     id: string,
     element: HTMLElement,
@@ -471,23 +331,14 @@ export class MediaService {
     this.loadMediaElement(id, element, options.src);
   }
 
-  /**
-   * 미디어 요소 등록 해제
-   */
   unregisterMediaElement(id: string): void {
     this.mediaLoadingStates.delete(id);
   }
 
-  /**
-   * 로딩 상태 조회
-   */
   getLoadingState(id: string): MediaLoadingState | undefined {
     return this.mediaLoadingStates.get(id);
   }
 
-  /**
-   * 미디어 로딩 실행
-   */
   private loadMediaElement(id: string, element: HTMLElement, src: string): void {
     if (element instanceof HTMLImageElement) {
       this.loadImage(id, element, src);
@@ -496,9 +347,6 @@ export class MediaService {
     }
   }
 
-  /**
-   * 이미지 로딩
-   */
   private loadImage(id: string, img: HTMLImageElement, src: string): void {
     const state = this.mediaLoadingStates.get(id);
     if (!state) return;
@@ -524,9 +372,6 @@ export class MediaService {
     img.src = src;
   }
 
-  /**
-   * 비디오 로딩
-   */
   private loadVideo(id: string, video: HTMLVideoElement, src: string): void {
     const state = this.mediaLoadingStates.get(id);
     if (!state) return;
@@ -552,13 +397,6 @@ export class MediaService {
     video.src = src;
   }
 
-  // ====================================
-  // Media Prefetching API (통합됨)
-  // ====================================
-
-  /**
-   * 미디어 배열에서 현재 인덱스 기준으로 다음 이미지들을 프리페치
-   */
   async prefetchNextMedia(
     mediaItems: readonly string[],
     currentIndex: number,
@@ -572,11 +410,7 @@ export class MediaService {
 
     logger.debug('[MediaService] 미디어 프리페칭 시작:', { currentIndex, prefetchUrls });
 
-    // 스케줄 모드별 동작:
-    // - immediate: 동기 드레이닝(완료까지 대기)
-    // - idle/raf/microtask: 비동기 시드 후 즉시 반환(내부에서 동시성 한도로 끝까지 소진)
     if (scheduleMode === 'immediate') {
-      // 동시성 제한 큐 실행기: 전체 큐를 소진할 때까지 실행(블로킹)
       await new Promise<void>(resolve => {
         let i = 0;
         let running = 0;
@@ -664,14 +498,10 @@ export class MediaService {
     };
 
     startNext();
-    return; // 즉시 반환
+    return;
   }
 
-  /**
-   * 단일 미디어 프리페치
-   */
   private async prefetchSingle(url: string): Promise<void> {
-    // 이미 캐시되어 있거나 프리페치 중인 경우 스킵
     if (this.prefetchCache.has(url) || this.activePrefetchRequests.has(url)) {
       return;
     }
@@ -692,7 +522,6 @@ export class MediaService {
 
       const blob = await response.blob();
 
-      // 간단한 캐시 관리
       if (this.prefetchCache.size >= this.maxCacheEntries) {
         this.evictOldestPrefetchEntry();
       }
@@ -708,15 +537,11 @@ export class MediaService {
     }
   }
 
-  /**
-   * 프리페치할 URL들 계산
-   */
   private calculatePrefetchUrls(
     mediaItems: readonly string[],
     currentIndex: number,
     prefetchRange: number
   ): string[] {
-    // 대칭 이웃 기반 인덱스 계산(현재를 제외) + 뷰포트 가중치 정렬
     const total = mediaItems.length;
     const safeTotal = Number.isFinite(total) && total > 0 ? Math.floor(total) : 0;
     const safeIndex = Math.min(Math.max(0, Math.floor(currentIndex)), Math.max(0, safeTotal - 1));
@@ -736,12 +561,11 @@ export class MediaService {
       else break;
     }
 
-    // 거리 기준 오름차순 정렬, 동일 거리 시 다음(오른쪽) 우선
     const indices = raw.sort((a, b) => {
       const da = Math.abs(a - safeIndex);
       const db = Math.abs(b - safeIndex);
       if (da !== db) return da - db;
-      const aIsNext = a > safeIndex ? 0 : 1; // next 우선(0) / prev(1)
+      const aIsNext = a > safeIndex ? 0 : 1;
       const bIsNext = b > safeIndex ? 0 : 1;
       return aIsNext - bIsNext;
     });
@@ -751,9 +575,6 @@ export class MediaService {
       .filter((u): u is string => typeof u === 'string' && u.length > 0);
   }
 
-  /**
-   * 가장 오래된 프리페치 캐시 엔트리 제거
-   */
   private evictOldestPrefetchEntry(): void {
     const firstKey = this.prefetchCache.keys().next().value;
     if (firstKey) {
@@ -762,9 +583,6 @@ export class MediaService {
     }
   }
 
-  /**
-   * 캐시에서 미디어 조회
-   */
   getCachedMedia(url: string): Blob | null {
     const blob = this.prefetchCache.get(url);
     if (blob) {
@@ -777,9 +595,6 @@ export class MediaService {
     return null;
   }
 
-  /**
-   * 모든 프리페치 요청 취소
-   */
   cancelAllPrefetch(): void {
     for (const controller of this.activePrefetchRequests.values()) {
       controller.abort();
@@ -788,17 +603,11 @@ export class MediaService {
     logger.debug('[MediaService] 모든 프리페치 요청이 취소되었습니다.');
   }
 
-  /**
-   * 프리페치 캐시 정리
-   */
   clearPrefetchCache(): void {
     this.prefetchCache.clear();
     logger.debug('[MediaService] 프리페치 캐시가 정리되었습니다.');
   }
 
-  /**
-   * 프리페치 메트릭 조회
-   */
   getPrefetchMetrics() {
     const hitRate =
       this.prefetchCacheHits + this.prefetchCacheMisses > 0
@@ -814,17 +623,7 @@ export class MediaService {
     };
   }
 
-  // ====================================
-  // 대량 다운로드 기능 (BulkDownloadService 통합)
-  // ====================================
-
-  /**
-   * 단일 미디어 다운로드
-   * @deprecated Wrapper — delegating to BulkDownloadService
-   * Use BulkDownloadService for actual implementation to avoid duplication.
-   */
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    // Dynamic import to avoid circular dependency
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
@@ -832,16 +631,10 @@ export class MediaService {
     return bulk.downloadSingle(media);
   }
 
-  /**
-   * 여러 미디어를 ZIP으로 다운로드
-   * @deprecated Wrapper — delegating to BulkDownloadService
-   * Use BulkDownloadService for actual implementation to avoid duplication.
-   */
   async downloadMultiple(
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    // Dynamic import to avoid circular dependency
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
@@ -849,9 +642,6 @@ export class MediaService {
     return bulk.downloadMultiple(mediaItems, options);
   }
 
-  /**
-   * 대량 다운로드 (테스트 호환성을 위한 별칭)
-   */
   async downloadBulk(
     mediaItems: readonly (MediaItem | MediaInfo)[],
     options: BulkDownloadOptions = {}
@@ -859,73 +649,28 @@ export class MediaService {
     return this.downloadMultiple(Array.from(mediaItems), options);
   }
 
-  /**
-   * 현재 다운로드 중단
-   */
   public cancelDownload(): void {
     this.currentAbortController?.abort();
     logger.debug('Current download cancelled');
   }
 
-  /**
-   * 현재 다운로드 중인지 확인
-   */
   public isDownloading(): boolean {
     return this.currentAbortController !== undefined;
   }
 
-  /**
-   * 서비스 정리 (메모리 누수 방지)
-   */
   async cleanup(): Promise<void> {
-    // 모든 프리페치 요청 취소
     this.cancelAllPrefetch();
-
-    // 프리페치 캐시 정리
     this.clearPrefetchCache();
-
-    // 미디어 로딩 상태 정리
     this.mediaLoadingStates.clear();
-
-    // 비디오 제어 정리
     this.onDestroy();
-
     logger.debug('[MediaService] 서비스가 정리되었습니다.');
   }
 }
 
-// Note:
-// 전역 미디어 서비스 인스턴스(module-level singleton)는 import 시점 부작용으로
-// 백그라운드 interval/리스너가 시작되어 테스트/런타임에서 누수를 유발할 수 있습니다(R4).
-// 따라서 여기서는 인스턴스를 export 하지 않습니다. 필요한 곳에서 반드시
-// service-factories의 getMediaService() 또는 ServiceManager 등록 경유로 가져오세요.
-
-// ====================================
-// 편의 함수들 (기존 코드 호환성)
-// ====================================
-
-/**
- * 편의 함수: 사용자명 추출
- */
 export { extractUsername };
-
-/**
- * 편의 함수: 빠른 사용자명 추출
- */
 export { parseUsernameFast };
-
-/**
- * 편의 함수: 사용자명 추출 결과 타입
- */
 export type { UsernameExtractionResult };
 
-// ====================================
-// Backward-compatible module-level export (lazy)
-// ====================================
-// 일부 테스트는 `import { mediaService } from './media-service'` 형태를 기대합니다.
-// import 시점에 싱글톤을 즉시 생성하면 import-time 부작용(타이머/리스너)이 발생할 수 있어
-// Proxy를 사용해 최초 속성 접근 시에만 MediaService.getInstance()를 생성/바인딩합니다.
-// 메서드는 인스턴스에 바인딩되어 this 컨텍스트가 안전합니다.
 let __mediaServiceInstance: MediaService | null = null;
 function __getMediaService(): MediaService {
   if (!__mediaServiceInstance) {

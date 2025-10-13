@@ -10,7 +10,6 @@ import { gallerySignals } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import type { MediaInfo } from '../types/media.types';
 
-// 기본 이벤트 관리
 interface EventContext {
   id: string;
   element: EventTarget;
@@ -21,13 +20,6 @@ interface EventContext {
   created: number;
 }
 
-// 모듈 레벨 상태 관리
-const listeners = new Map<string, EventContext>();
-let listenerIdCounter = 0;
-// Fallback 재생 상태 추적(서비스 미가용 시 키보드 제어용)
-const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
-
-// Local minimal contract to avoid importing service types from utils layer
 type MediaServiceLike = {
   togglePlayPauseCurrent: () => void;
   volumeUpCurrent: () => void;
@@ -35,14 +27,14 @@ type MediaServiceLike = {
   toggleMuteCurrent: () => void;
 };
 
-/**
- * 고유 리스너 ID 생성
- */
+const listeners = new Map<string, EventContext>();
+let listenerIdCounter = 0;
+const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
+
 function generateListenerId(context?: string): string {
   const timestamp = Date.now();
   const counter = ++listenerIdCounter;
   const random = Math.random().toString(36).substr(2, 6);
-
   return context
     ? `${context}:${timestamp}_${counter}_${random}`
     : `event_${timestamp}_${counter}_${random}`;
@@ -54,44 +46,29 @@ function generateListenerId(context?: string): string {
 function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
   // 우리의 갤러리 요소는 제외
   if (
-    element.closest('.xeg-gallery-container') ||
-    element.closest('[data-xeg-gallery]') ||
+    element.closest('.xeg-gallery-container, [data-xeg-gallery], .xeg-gallery') ||
     element.classList.contains('xeg-gallery-item') ||
-    element.classList.contains('xeg-gallery') ||
-    element.closest('.xeg-gallery') ||
     element.hasAttribute('data-xeg-gallery-type')
   ) {
     return false;
   }
 
-  // 트위터 네이티브 갤러리 트리거 요소들 (클릭 시 갤러리가 열리는 요소들)
-  const twitterGalleryTriggerSelectors = [
-    // 미디어 컨테이너들 - 클릭 시 갤러리가 열림
+  const selectors = [
     '[data-testid="tweetPhoto"]',
     '[data-testid="tweetPhoto"] img',
     '[data-testid="tweetPhoto"] > div',
     '[data-testid="videoPlayer"]',
     '[data-testid="videoPlayer"] > *',
-
-    // 미디어 링크들
     'a[href*="/photo/"]',
     'a[href*="/status/"][href*="/photo/"] *',
     'a[href*="/status/"][href*="/video/"] *',
-
-    // 트위터 이미지/비디오 요소들
     'img[src*="pbs.twimg.com"]',
     'img[src*="twimg.com"]',
     'video[poster*="twimg.com"]',
-
-    // 미디어 오버레이 및 플레이 버튼들
     '[data-testid="playButton"]',
     '[data-testid="videoComponent"]',
     'div[role="button"][aria-label*="재생"]',
     'div[role="button"][aria-label*="Play"]',
-  ];
-
-  // 이미 열린 트위터 갤러리 모달 요소들
-  const twitterGalleryModalSelectors = [
     '[aria-modal="true"][data-testid="Drawer"]',
     '[data-testid="swipe-to-dismiss"]',
     '[data-testid="photoViewer"]',
@@ -99,9 +76,7 @@ function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
     '[data-testid="Drawer"] [role="button"]',
   ];
 
-  const allSelectors = [...twitterGalleryTriggerSelectors, ...twitterGalleryModalSelectors];
-
-  return allSelectors.some(selector => {
+  return selectors.some(selector => {
     try {
       return element.matches(selector) || element.closest(selector) !== null;
     } catch {
@@ -188,19 +163,6 @@ export function addListener(
 }
 
 /**
- * 다중 이벤트 리스너 추가
- */
-export function addMultipleEventListeners(
-  element: EventTarget,
-  types: string[],
-  listener: EventListener,
-  options?: AddEventListenerOptions,
-  context?: string
-): string[] {
-  return types.map(type => addListener(element, type, listener, options, context));
-}
-
-/**
  * 이벤트 리스너 제거
  */
 export function removeEventListenerManaged(id: string): boolean {
@@ -227,67 +189,40 @@ export function removeEventListenerManaged(id: string): boolean {
 }
 
 /**
- * 컨텍스트별 이벤트 리스너 제거
+ * 컨텍스트별 리스너 제거
  */
 export function removeEventListenersByContext(context: string): number {
   let removedCount = 0;
-
   for (const [id, eventContext] of listeners.entries()) {
     if (eventContext.context === context) {
-      if (removeEventListenerManaged(id)) {
-        removedCount++;
-      }
+      if (removeEventListenerManaged(id)) removedCount++;
     }
   }
-
   logger.debug(`Removed ${removedCount} event listeners for context: ${context}`);
   return removedCount;
 }
 
 /**
- * 타입별 이벤트 리스너 제거
- */
-export function removeEventListenersByType(type: string): number {
-  let removedCount = 0;
-
-  for (const [id, eventContext] of listeners.entries()) {
-    if (eventContext.type === type) {
-      if (removeEventListenerManaged(id)) {
-        removedCount++;
-      }
-    }
-  }
-
-  logger.debug(`Removed ${removedCount} event listeners for type: ${type}`);
-  return removedCount;
-}
-
-/**
- * 모든 이벤트 리스너 제거
+ * 모든 리스너 제거
  */
 export function removeAllEventListeners(): void {
   const totalCount = listeners.size;
-
   for (const id of Array.from(listeners.keys())) {
     removeEventListenerManaged(id);
   }
-
   logger.debug(`Removed all ${totalCount} event listeners`);
 }
 
 /**
- * 이벤트 리스너 상태 조회
+ * 리스너 상태 조회
  */
 export function getEventListenerStatus() {
   const contextGroups = new Map<string, number>();
   const typeGroups = new Map<string, number>();
 
   for (const eventContext of listeners.values()) {
-    // 컨텍스트별 집계
     const context = eventContext.context || 'default';
     contextGroups.set(context, (contextGroups.get(context) || 0) + 1);
-
-    // 타입별 집계
     typeGroups.set(eventContext.type, (typeGroups.get(eventContext.type) || 0) + 1);
   }
 
@@ -303,19 +238,6 @@ export function getEventListenerStatus() {
     })),
   };
 }
-
-/**
- * 이벤트 디스패처 정리
- */
-export function cleanupEventDispatcher(): void {
-  removeAllEventListeners();
-  listenerIdCounter = 0;
-  logger.debug('Event dispatcher cleaned up');
-}
-
-// ================================
-// 갤러리 전용 이벤트 처리 (기존 event-utils 기능)
-// ================================
 
 // Phase 21.6: gallerySignals 사용으로 마이그레이션
 // Helper 함수들
@@ -438,7 +360,7 @@ let galleryEventState = {
 };
 
 /**
- * 갤러리 이벤트 시스템 초기화
+ * 갤러리 이벤트 초기화
  */
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
@@ -519,15 +441,6 @@ export async function initializeGalleryEvents(
   }
 }
 
-/**
- * 우선순위 강화 메커니즘 - Phase 4: 런타임 성능 최적화
- * 트위터가 동적으로 이벤트 리스너를 추가하는 경우를 대비해 주기적으로 우리의 리스너를 재등록
- *
- * 성능 최적화 사항:
- * - 인터벌 빈도를 15초로 제한하여 CPU 오버헤드 최소화
- * - 갤러리 열린 상태에서는 우선순위 강화 중단으로 메모리 절약
- * - 불필요한 리스너 재등록 방지로 성능 향상
- */
 function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
   // 기존 인터벌 정리
   if (galleryEventState.priorityInterval) {
@@ -707,8 +620,6 @@ function handleKeyboardEvent(
         event.preventDefault();
         event.stopPropagation();
 
-        // 비디오 키 처리
-        // 내부 헬퍼: 현재 갤러리 비디오 검색 (Service 미사용 폴백)
         const getCurrentGalleryVideo = (): HTMLVideoElement | null => {
           try {
             const doc = (
@@ -720,7 +631,6 @@ function handleKeyboardEvent(
             const root = doc.querySelector('#xeg-gallery-root');
             const items = root?.querySelector('[data-xeg-role="items-container"]');
             if (!items) return null;
-            // Phase 21.6: gallerySignals 사용으로 마이그레이션
             const index = gallerySignals.currentIndex.value;
             const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
             if (!target) return null;
@@ -731,16 +641,19 @@ function handleKeyboardEvent(
           }
         };
 
+        const getService = (): MediaServiceLike | null => {
+          try {
+            return getMediaServiceFromContainer() as unknown as MediaServiceLike;
+          } catch {
+            return null;
+          }
+        };
+
         switch (key) {
-          case ' ': // fallthrough
+          case ' ':
           case 'Space':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = getService();
               if (svc) {
                 svc.togglePlayPauseCurrent();
               } else {
@@ -748,26 +661,19 @@ function handleKeyboardEvent(
                 if (v) {
                   const current = __videoPlaybackState.get(v)?.playing ?? false;
                   const next = !current;
-                  if (next) {
-                    (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.();
-                  } else {
-                    (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
-                  }
+                  next
+                    ? (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.()
+                    : (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
                   __videoPlaybackState.set(v, { playing: next });
                 }
               }
             } catch (err) {
-              logger.debug('togglePlayPauseCurrent dispatch failed', err);
+              logger.debug('togglePlayPauseCurrent failed', err);
             }
             break;
           case 'ArrowUp':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = getService();
               if (svc) {
                 svc.volumeUpCurrent();
               } else {
@@ -779,17 +685,12 @@ function handleKeyboardEvent(
                 }
               }
             } catch (err) {
-              logger.debug('volumeUpCurrent dispatch failed', err);
+              logger.debug('volumeUpCurrent failed', err);
             }
             break;
           case 'ArrowDown':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = getService();
               if (svc) {
                 svc.volumeDownCurrent();
               } else {
@@ -800,18 +701,13 @@ function handleKeyboardEvent(
                 }
               }
             } catch (err) {
-              logger.debug('volumeDownCurrent dispatch failed', err);
+              logger.debug('volumeDownCurrent failed', err);
             }
             break;
           case 'm':
           case 'M':
             try {
-              let svc: MediaServiceLike | null = null;
-              try {
-                svc = getMediaServiceFromContainer() as unknown as MediaServiceLike;
-              } catch {
-                svc = null;
-              }
+              const svc = getService();
               if (svc) {
                 svc.toggleMuteCurrent();
               } else {
@@ -819,7 +715,7 @@ function handleKeyboardEvent(
                 if (v) v.muted = !v.muted;
               }
             } catch (err) {
-              logger.debug('toggleMuteCurrent dispatch failed', err);
+              logger.debug('toggleMuteCurrent failed', err);
             }
             break;
         }
@@ -885,19 +781,6 @@ export function cleanupGalleryEvents(): void {
 }
 
 /**
- * 갤러리 이벤트 상태 조회
- */
-export function getGalleryEventStatus() {
-  return {
-    initialized: galleryEventState.initialized,
-    listenerCount: galleryEventState.listenerIds.length,
-    options: galleryEventState.options,
-    hasHandlers: !!galleryEventState.handlers,
-    hasPriorityInterval: !!galleryEventState.priorityInterval,
-  };
-}
-
-/**
  * 갤러리 이벤트 옵션 업데이트
  */
 export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOptions>): void {
@@ -906,200 +789,17 @@ export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOption
     logger.debug('Gallery event options updated', newOptions);
   }
 }
-
-// ================================
-// 통합 이벤트 관리자 클래스
-// ================================
-
 /**
- * 통합 이벤트 관리자 클래스
- * @deprecated 외부 소비자는 `@shared/services/EventManager`를 사용하세요. 이 클래스는 내부 호환 용도로만 유지됩니다.
+ * 갤러리 이벤트 상태 스냅샷
  */
-export class GalleryEventManager {
-  private static instance: GalleryEventManager | null = null;
-
-  public static getInstance(): GalleryEventManager {
-    if (!GalleryEventManager.instance) {
-      GalleryEventManager.instance = new GalleryEventManager();
-    }
-    return GalleryEventManager.instance;
-  }
-
-  // 기본 이벤트 관리
-  public addListener(
-    element: EventTarget,
-    type: string,
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string {
-    return addListener(element, type, listener, options, context);
-  }
-
-  public addMultipleListeners(
-    element: EventTarget,
-    types: string[],
-    listener: EventListener,
-    options?: AddEventListenerOptions,
-    context?: string
-  ): string[] {
-    return addMultipleEventListeners(element, types, listener, options, context);
-  }
-
-  public removeListener(id: string): boolean {
-    return removeEventListenerManaged(id);
-  }
-
-  public removeByContext(context: string): number {
-    return removeEventListenersByContext(context);
-  }
-
-  public removeByType(type: string): number {
-    return removeEventListenersByType(type);
-  }
-
-  public removeAll(): void {
-    removeAllEventListeners();
-  }
-
-  public getStatus() {
-    return getEventListenerStatus();
-  }
-
-  public cleanup(): void {
-    cleanupEventDispatcher();
-  }
-
-  // 갤러리 이벤트 관리
-  public async initializeGallery(
-    handlers: EventHandlers,
-    options?: Partial<GalleryEventOptions>
-  ): Promise<void> {
-    return initializeGalleryEvents(handlers, options);
-  }
-
-  public cleanupGallery(): void {
-    cleanupGalleryEvents();
-  }
-
-  public getGalleryStatus() {
-    return getGalleryEventStatus();
-  }
-
-  public updateGalleryOptions(options: Partial<GalleryEventOptions>): void {
-    updateGalleryEventOptions(options);
-  }
-}
-
-// ================================
-// 백워드 호환성을 위한 추가 유틸리티 함수들
-// ================================
-
-/**
- * 활성 리스너 개수 조회
- */
-export function getActiveListenerCount(): number {
-  return listeners.size;
-}
-
-/**
- * 모든 이벤트 리스너 제거 (removeAllEventListeners의 별칭)
- */
-export function clearAllEventListeners(): void {
-  removeAllEventListeners();
-}
-
-/**
- * 이벤트 리스너 정리 (cleanupEventDispatcher의 별칭)
- */
-export function cleanupEventListeners(): void {
-  cleanupEventDispatcher();
-}
-
-/**
- * 클릭 가능한 요소인지 확인
- */
-export function isClickableElement(element: Element): boolean {
-  if (!element) return false;
-
-  const clickableTags = ['BUTTON', 'A', 'INPUT'];
-  if (clickableTags.includes(element.tagName)) return true;
-
-  const clickableRoles = ['button', 'link', 'tab', 'menuitem'];
-  const role = element.getAttribute('role');
-  if (role && clickableRoles.includes(role)) return true;
-
-  return (
-    element.hasAttribute('onclick') ||
-    element.hasAttribute('data-testid') ||
-    getComputedStyle(element).cursor === 'pointer'
-  );
-}
-
-/**
- * 미디어 요소인지 확인
- */
-export function isMediaElement(element: Element): boolean {
-  if (!element) return false;
-
-  const mediaTags = ['IMG', 'VIDEO', 'AUDIO', 'PICTURE', 'SOURCE'];
-  if (mediaTags.includes(element.tagName)) return true;
-
-  // Twitter 미디어 관련 클래스나 속성 확인
-  const classList = element.className || '';
-  return (
-    classList.includes('media') ||
-    classList.includes('image') ||
-    classList.includes('video') ||
-    element.hasAttribute('data-image-url') ||
-    element.hasAttribute('data-video-url')
-  );
-}
-
-/**
- * 커스텀 이벤트 생성
- */
-export function createCustomEvent<T = unknown>(
-  type: string,
-  detail?: T,
-  options?: EventInit
-): CustomEvent<T> {
-  const eventOptions = {
-    bubbles: true,
-    cancelable: true,
-    ...options,
+export function getGalleryEventSnapshot() {
+  return {
+    initialized: galleryEventState.initialized,
+    listenerCount: galleryEventState.listenerIds.length,
+    options: galleryEventState.options,
+    hasHandlers: Boolean(galleryEventState.handlers),
+    hasPriorityInterval: Boolean(galleryEventState.priorityInterval),
   };
-
-  if (detail !== undefined) {
-    return new CustomEvent(type, { ...eventOptions, detail });
-  }
-
-  return new CustomEvent(type, eventOptions) as CustomEvent<T>;
-}
-
-/**
- * 관리형 이벤트 발송
- */
-export function dispatchManagedEvent<T = unknown>(
-  element: EventTarget,
-  type: string,
-  detail?: T,
-  options?: EventInit
-): boolean {
-  const event = createCustomEvent(type, detail, options);
-  return element.dispatchEvent(event);
-}
-
-/**
- * Twitter 이벤트 처리
- */
-export function handleTwitterEvent(
-  element: EventTarget,
-  eventType: string,
-  handler: EventListener,
-  context?: string
-): string {
-  return addListener(element, eventType, handler, undefined, context);
 }
 
 // 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.

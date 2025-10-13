@@ -1,22 +1,7 @@
-/**
- * Twitter Video Extractor Utility
- *
- * Twitter Click'n'Save 스크립트의 동영상 추출 로직을 참고하여
- * 동영상 썸네일에서 실제 동영상 URL을 추출합니다.
- */
-
+// Twitter Video Extractor - Optimized for bundle size
 import { logger } from '@shared/logging/logger';
-import { undefinedToNull } from '@shared/utils/type-safety-helpers';
-import {
-  normalizeTweetLegacy,
-  normalizeUserLegacy,
-} from '@shared/services/media/normalizers/legacy/twitter';
-
 import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
 
-/**
- * Twitter API 응답 타입 정의
- */
 interface TwitterAPIResponse {
   data?: {
     tweetResult?: {
@@ -25,7 +10,6 @@ interface TwitterAPIResponse {
   };
 }
 
-// 간소화된 트윗 타입 정의 (현대적 API 구조)
 interface TwitterTweet {
   __typename?: string;
   tweet?: TwitterTweet;
@@ -35,24 +19,14 @@ interface TwitterTweet {
       result?: TwitterUser;
     };
   };
-  // 통합된 미디어 정보
-  extended_entities?:
-    | {
-        media?: TwitterMedia[];
-      }
-    | undefined;
+  extended_entities?: { media?: TwitterMedia[] } | undefined;
   full_text?: string | undefined;
   id_str?: string | undefined;
   quoted_status_result?: {
     result?: TwitterTweet;
   };
-  // Legacy API 호환성
   legacy?: {
-    extended_entities?:
-      | {
-          media?: TwitterMedia[];
-        }
-      | undefined;
+    extended_entities?: { media?: TwitterMedia[] } | undefined;
     full_text?: string | undefined;
     id_str?: string | undefined;
   };
@@ -62,7 +36,6 @@ interface TwitterUser {
   rest_id?: string;
   screen_name?: string;
   name?: string;
-  // Legacy API 호환성
   legacy?: {
     screen_name?: string;
     name?: string;
@@ -86,9 +59,6 @@ interface TwitterMedia {
   };
 }
 
-/**
- * 트윗 미디어 엔트리 타입
- */
 export interface TweetMediaEntry {
   screen_name: string;
   tweet_id: string;
@@ -107,13 +77,9 @@ export interface TweetMediaEntry {
   tweet_text: string;
 }
 
-/**
- * 동영상 썸네일인지 감지하는 함수
- */
 export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
   const src = imgElement.src;
   const alt = imgElement.alt;
-
   return (
     src.includes('ext_tw_video_thumb') ||
     src.includes('amplify_video_thumb') ||
@@ -127,9 +93,6 @@ export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
   );
 }
 
-/**
- * 동영상 플레이어인지 감지하는 함수 (재생 중인 동영상 요소)
- */
 export function isVideoPlayer(element: HTMLElement): boolean {
   return (
     element.tagName === 'VIDEO' ||
@@ -139,9 +102,6 @@ export function isVideoPlayer(element: HTMLElement): boolean {
   );
 }
 
-/**
- * 동영상 관련 요소인지 감지 (썸네일 또는 플레이어)
- */
 export function isVideoElement(element: HTMLElement): boolean {
   if (element.tagName === 'IMG') {
     return isVideoThumbnail(element as HTMLImageElement);
@@ -149,37 +109,18 @@ export function isVideoElement(element: HTMLElement): boolean {
   return isVideoPlayer(element);
 }
 
-/**
- * 쿠키에서 값 가져오기 (환경 안전성 보장)
- */
 function getCookie(name: string): string | undefined {
-  // 환경 격리: 테스트 환경에서 안전하게 처리
-  if (typeof document === 'undefined' || !document.cookie) {
-    return undefined;
-  }
-
-  try {
-    const regExp = new RegExp(`(?<=${name}=)[^;]+`);
-    return document.cookie.match(regExp)?.[0];
-  } catch {
-    // 테스트 환경이나 제한된 환경에서 안전하게 처리
-    return undefined;
-  }
+  if (typeof document === 'undefined' || !document.cookie) return undefined;
+  const match = document.cookie.match(new RegExp(`(?<=${name}=)[^;]+`));
+  return match?.[0];
 }
 
-/**
- * Twitter API 클래스 (외부 사용을 위해 export)
- */
 export class TwitterAPI {
-  // lazy initialization으로 변경하여 모듈 로드 시점 문제 해결
   private static _guestToken: string | undefined = undefined;
   private static _csrfToken: string | undefined = undefined;
   private static _tokensInitialized = false;
   private static readonly requestCache = new Map<string, TwitterAPIResponse>();
 
-  /**
-   * 토큰 lazy 초기화
-   */
   private static initializeTokens(): void {
     if (!this._tokensInitialized) {
       this._guestToken = getCookie('gt');
@@ -188,49 +129,23 @@ export class TwitterAPI {
     }
   }
 
-  /**
-   * Guest Token 가져오기
-   */
   private static get guestToken(): string | undefined {
     this.initializeTokens();
     return this._guestToken;
   }
 
-  /**
-   * CSRF Token 가져오기
-   */
   private static get csrfToken(): string | undefined {
     this.initializeTokens();
     return this._csrfToken;
   }
 
-  /**
-   * 캐시 정리 (16개 이상일 때)
-   */
-  private static vacuumCache(): void {
-    if (this.requestCache.size > 16) {
-      const firstKey = this.requestCache.keys().next().value;
-      if (firstKey) {
-        this.requestCache.delete(firstKey);
-      }
-    }
-  }
-
-  /**
-   * Twitter API 요청
-   */
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
     const _url = url.toString();
-
-    // 캐시 확인
     if (this.requestCache.has(_url)) {
       logger.debug('Using cached API request:', _url);
       const cachedResult = this.requestCache.get(_url);
-      if (cachedResult) {
-        return cachedResult;
-      }
+      if (cachedResult) return cachedResult;
     }
-
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
       'x-csrf-token': this.csrfToken ?? '',
@@ -238,22 +153,21 @@ export class TwitterAPI {
       'x-twitter-active-user': 'yes',
       'content-type': 'application/json',
     });
-
     if (this.guestToken) {
       headers.append('x-guest-token', this.guestToken);
     } else {
       headers.append('x-twitter-auth-type', 'OAuth2Session');
     }
-
     try {
       const response = await fetch(_url, { headers });
       const json = (await response.json()) as TwitterAPIResponse;
-
       if (response.ok) {
-        this.vacuumCache();
+        if (this.requestCache.size > 16) {
+          const firstKey = this.requestCache.keys().next().value;
+          if (firstKey) this.requestCache.delete(firstKey);
+        }
         this.requestCache.set(_url, json);
       }
-
       return json;
     } catch (error) {
       logger.error('Twitter API request failed:', error);
@@ -261,19 +175,14 @@ export class TwitterAPI {
     }
   }
 
-  /**
-   * TweetResultByRestId API URL 생성
-   */
   private static createTweetJsonEndpointUrlByRestId(tweetId: string): string {
     const sitename = window.location.hostname.replace('.com', '');
-
     const variables = {
       tweetId,
       withCommunity: false,
       includePromotedContent: false,
       withVoice: false,
     };
-
     const features = {
       creator_subscriptions_tweet_preview_api_enabled: true,
       premium_content_api_read_enabled: false,
@@ -306,73 +215,39 @@ export class TwitterAPI {
       responsive_web_graphql_timeline_navigation_enabled: true,
       responsive_web_enhance_cards_enabled: false,
     };
-
     const fieldToggles = {
       withArticleRichContentState: true,
       withArticlePlainText: false,
       withGrokAnalyze: false,
       withDisallowedReplyControls: false,
     };
-
     const urlBase = `https://${sitename}.com/i/api/graphql/${TWITTER_API_CONFIG.TWEET_RESULT_BY_REST_ID_QUERY_ID}/TweetResultByRestId`;
-
-    // URL 생성자를 안전하게 시도
-    let URLConstructor: typeof URL | undefined;
-
-    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-      URLConstructor = globalThis.URL;
-    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-      URLConstructor = window.URL;
-    }
-
-    if (!URLConstructor) {
-      // Fallback: 간단한 문자열 조합
-      const encodedVariables = encodeURIComponent(JSON.stringify(variables));
-      const encodedFeatures = encodeURIComponent(JSON.stringify(features));
-      const encodedFieldToggles = encodeURIComponent(JSON.stringify(fieldToggles));
-      return `${urlBase}?variables=${encodedVariables}&features=${encodedFeatures}&fieldToggles=${encodedFieldToggles}`;
-    }
-
-    const urlObj = new URLConstructor(urlBase);
+    const urlObj = new URL(urlBase);
     urlObj.searchParams.set('variables', JSON.stringify(variables));
     urlObj.searchParams.set('features', JSON.stringify(features));
     urlObj.searchParams.set('fieldToggles', JSON.stringify(fieldToggles));
-
     return urlObj.toString();
   }
 
-  /**
-   * 트윗에서 미디어 정보 추출 (통합된 현대적 방식)
-   */
   private static extractMediaFromTweet(
     tweetResult: TwitterTweet,
     tweetUser: TwitterUser
   ): TweetMediaEntry[] {
-    if (!tweetResult.extended_entities?.media) {
-      return [];
-    }
-
+    if (!tweetResult.extended_entities?.media) return [];
     const mediaItems: TweetMediaEntry[] = [];
     const typeIndex: Record<string, number> = {};
     const screenName = tweetUser.screen_name ?? '';
     const tweetId = tweetResult.rest_id ?? tweetResult.id_str ?? '';
-
     for (let index = 0; index < tweetResult.extended_entities.media.length; index++) {
       const media: TwitterMedia | undefined = tweetResult.extended_entities.media[index];
-      if (!media?.type || !media.id_str || !media.media_url_https) {
-        continue;
-      }
-
+      if (!media?.type || !media.id_str || !media.media_url_https) continue;
       try {
         const mediaUrl = this.getHighQualityMediaUrl(media);
         if (!mediaUrl) continue;
-
         const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
         typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
-
         const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
-
-        const mediaEntry: TweetMediaEntry = {
+        mediaItems.push({
           screen_name: screenName,
           tweet_id: tweetId,
           download_url: mediaUrl,
@@ -388,229 +263,148 @@ export class TwitterAPI {
           short_expanded_url: media.display_url ?? '',
           short_tweet_url: media.url ?? '',
           tweet_text: tweetText,
-        };
-
-        mediaItems.push(mediaEntry);
+        });
       } catch (error) {
         logger.warn(`Failed to process media ${media.id_str}:`, error);
       }
     }
-
     return mediaItems;
   }
 
-  /**
-   * 고품질 미디어 URL 추출
-   */
   private static getHighQualityMediaUrl(media: TwitterMedia): string | null {
     if (media.type === 'photo') {
       return media.media_url_https.includes('?format=')
         ? media.media_url_https
         : media.media_url_https.replace(/\.(jpg|png)$/, '?format=$1&name=orig');
     }
-
     if (media.type === 'video' || media.type === 'animated_gif') {
       const variants = media.video_info?.variants ?? [];
       const mp4Variants = variants.filter(v => v.content_type === 'video/mp4');
-
       if (mp4Variants.length === 0) return null;
-
-      // 가장 높은 비트레이트 선택
       const bestVariant = mp4Variants.reduce((best, current) => {
         const bestBitrate = best.bitrate ?? 0;
         const currentBitrate = current.bitrate ?? 0;
         return currentBitrate > bestBitrate ? current : best;
       });
-
       return bestVariant.url;
     }
-
     return null;
   }
 
-  /**
-   * 트윗 미디어 가져오기
-   */
   public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
     const url = this.createTweetJsonEndpointUrlByRestId(tweetId);
     const json = await this.apiRequest(url);
-
-    if (!json.data?.tweetResult?.result) {
-      return [];
-    }
-
+    if (!json.data?.tweetResult?.result) return [];
     let tweetResult = json.data.tweetResult.result;
-    if (tweetResult.tweet) {
-      tweetResult = tweetResult.tweet;
-    }
-
+    if (tweetResult.tweet) tweetResult = tweetResult.tweet;
     const tweetUser = tweetResult.core?.user_results?.result;
-
-    // 현대적 API 구조와 legacy 구조 통합 (normalizer 사용)
-    normalizeTweetLegacy(tweetResult);
-
-    if (!tweetUser) {
-      return [];
+    // Inline legacy normalization
+    if (tweetResult.legacy) {
+      if (!tweetResult.extended_entities && tweetResult.legacy.extended_entities) {
+        tweetResult.extended_entities = tweetResult.legacy.extended_entities;
+      }
+      if (!tweetResult.full_text && tweetResult.legacy.full_text) {
+        tweetResult.full_text = tweetResult.legacy.full_text;
+      }
+      if (!tweetResult.id_str && tweetResult.legacy.id_str) {
+        tweetResult.id_str = tweetResult.legacy.id_str;
+      }
     }
-
-    // 사용자 정보도 통합
-    normalizeUserLegacy(tweetUser);
-
+    if (!tweetUser) return [];
+    if (tweetUser.legacy) {
+      if (!tweetUser.screen_name && tweetUser.legacy.screen_name) {
+        tweetUser.screen_name = tweetUser.legacy.screen_name;
+      }
+      if (!tweetUser.name && tweetUser.legacy.name) {
+        tweetUser.name = tweetUser.legacy.name;
+      }
+    }
     let result = this.extractMediaFromTweet(tweetResult, tweetUser);
-
-    // 인용 트윗 처리
     if (tweetResult.quoted_status_result?.result) {
       const quotedTweet = tweetResult.quoted_status_result.result;
       const quotedUser = quotedTweet.core?.user_results?.result;
-
       if (quotedTweet && quotedUser) {
-        // 인용 트윗/사용자도 통합
-        normalizeTweetLegacy(quotedTweet);
-        normalizeUserLegacy(quotedUser);
-
+        if (quotedTweet.legacy) {
+          if (!quotedTweet.extended_entities && quotedTweet.legacy.extended_entities) {
+            quotedTweet.extended_entities = quotedTweet.legacy.extended_entities;
+          }
+          if (!quotedTweet.full_text && quotedTweet.legacy.full_text) {
+            quotedTweet.full_text = quotedTweet.legacy.full_text;
+          }
+          if (!quotedTweet.id_str && quotedTweet.legacy.id_str) {
+            quotedTweet.id_str = quotedTweet.legacy.id_str;
+          }
+        }
+        if (quotedUser.legacy) {
+          if (!quotedUser.screen_name && quotedUser.legacy.screen_name) {
+            quotedUser.screen_name = quotedUser.legacy.screen_name;
+          }
+          if (!quotedUser.name && quotedUser.legacy.name) {
+            quotedUser.name = quotedUser.legacy.name;
+          }
+        }
         result = [...result, ...this.extractMediaFromTweet(quotedTweet, quotedUser)];
       }
     }
-
     return result;
   }
 }
 
-/**
- * 트윗 ID 추출
- */
 export function extractTweetId(url: string): string | null {
   const match = url.match(/(?<=\/status\/)\d+/);
   return match?.[0] ?? null;
 }
 
-/**
- * 트윗 컨테이너에서 트윗 ID 추출
- */
 export function getTweetIdFromContainer(container: HTMLElement): string | null {
-  // 트윗 링크에서 ID 추출
-  const tweetLinks = container.querySelectorAll('a[href*="/status/"]');
-  for (const link of tweetLinks) {
-    const href = (link as HTMLAnchorElement).href;
-    const tweetId = extractTweetId(href);
-    if (tweetId) {
-      return tweetId;
+  const links = container.querySelectorAll('a[href*="/status/"], time');
+  for (const element of links) {
+    let href: string | null = null;
+    if (element.tagName === 'A') {
+      href = (element as HTMLAnchorElement).href;
+    } else if (element.tagName === 'TIME') {
+      const parentLink = element.closest('a[href*="/status/"]');
+      if (parentLink) href = (parentLink as HTMLAnchorElement).href;
     }
-  }
-
-  // 시간 요소의 부모 링크에서 추출
-  const timeElements = container.querySelectorAll('time');
-  for (const timeElement of timeElements) {
-    const parentLink = timeElement.closest('a[href*="/status/"]');
-    if (parentLink) {
-      const href = (parentLink as HTMLAnchorElement).href;
-      const tweetId = extractTweetId(href);
-      if (tweetId) {
-        return tweetId;
-      }
-    }
-  }
-
-  // 미디어 링크에서 추출
-  const mediaLinks = container.querySelectorAll(
-    'a[href*="/status/"][href*="photo"], a[href*="/status/"][href*="video"]'
-  );
-  for (const link of mediaLinks) {
-    const href = (link as HTMLAnchorElement).href;
-    const tweetId = extractTweetId(href);
-    if (tweetId) {
-      return tweetId;
-    }
-  }
-
-  // 부모 요소에서 링크 검색
-  const parentLinks = container.querySelectorAll('a[href*="/status/"]');
-  for (const link of parentLinks) {
-    const href = (link as HTMLAnchorElement).href;
-    const tweetId = extractTweetId(href);
-    if (tweetId) {
-      return tweetId;
-    }
-  }
-
-  // 상대 경로 href 처리
-  const relativeLinks = container.querySelectorAll('a[href^="/"][href*="/status/"]');
-  for (const link of relativeLinks) {
-    const href = (link as HTMLAnchorElement).getAttribute('href');
     if (href) {
-      const tweetId = extractTweetId(`https://x.com${href}`);
-      if (tweetId) {
-        return tweetId;
-      }
+      if (href.startsWith('/')) href = `https://x.com${href}`;
+      const tweetId = extractTweetId(href);
+      if (tweetId) return tweetId;
     }
   }
-
-  // data attribute에서 트윗 ID 추출
-  const elementsWithData = container.querySelectorAll('[data-tweet-id]');
-  for (const element of elementsWithData) {
-    const tweetId = element.getAttribute('data-tweet-id');
-    if (tweetId && /^\d{15,20}$/.test(tweetId)) {
-      return tweetId;
-    }
-  }
-
-  // aria-label에서 트윗 ID 추출
-  const elementsWithAriaLabel = container.querySelectorAll('[aria-label]');
-  for (const element of elementsWithAriaLabel) {
+  const dataElements = container.querySelectorAll('[data-tweet-id], [aria-label]');
+  for (const element of dataElements) {
+    const dataTweetId = element.getAttribute('data-tweet-id');
+    if (dataTweetId && /^\d{15,20}$/.test(dataTweetId)) return dataTweetId;
     const ariaLabel = element.getAttribute('aria-label');
     if (ariaLabel) {
       const match = ariaLabel.match(/\b(\d{15,20})\b/);
-      if (match) {
-        return undefinedToNull(match?.[1]);
-      }
+      if (match?.[1]) return match[1];
     }
   }
-
-  // 텍스트 콘텐츠에서 트윗 ID 패턴 추출
   const textContent = container.textContent ?? '';
   const textMatch = textContent.match(/\b(\d{15,20})\b/);
-  if (textMatch) {
-    return undefinedToNull(textMatch?.[1]);
-  }
-
-  // 현재 URL에서 추출 시도
+  if (textMatch?.[1]) return textMatch[1];
   if (window.location.pathname.includes('/status/')) {
     return extractTweetId(window.location.href);
   }
-
   return null;
 }
 
-/**
- * 동영상 미디어 엔트리 가져오기
- */
 export async function getVideoMediaEntry(
   tweetId: string,
   thumbnailUrl?: string
 ): Promise<TweetMediaEntry | null> {
   try {
     const medias = await TwitterAPI.getTweetMedias(tweetId);
-
-    // 동영상 미디어만 필터링
     const videoMedias = medias.filter(media => media.type === 'video');
-
-    if (videoMedias.length === 0) {
-      return null;
-    }
-
-    // 썸네일 URL이 제공된 경우 매칭 시도
+    if (videoMedias.length === 0) return null;
     if (thumbnailUrl) {
       const normalizedThumbnail = thumbnailUrl.replace(/\?.*$/, '');
       const matchedVideo = videoMedias.find(media =>
         media.preview_url.startsWith(normalizedThumbnail)
       );
-
-      if (matchedVideo) {
-        return matchedVideo;
-      }
+      if (matchedVideo) return matchedVideo;
     }
-
-    // 첫 번째 동영상 반환
     return videoMedias[0] ?? null;
   } catch (error) {
     logger.error('Failed to get video media entry:', error);
@@ -618,23 +412,16 @@ export async function getVideoMediaEntry(
   }
 }
 
-/**
- * 이미지가 동영상 썸네일인지 확인하고 실제 동영상 URL 반환
- */
 export async function getVideoUrlFromThumbnail(
   imgElement: HTMLImageElement,
   tweetContainer: HTMLElement
 ): Promise<string | null> {
-  if (!isVideoThumbnail(imgElement)) {
-    return null;
-  }
-
+  if (!isVideoThumbnail(imgElement)) return null;
   const tweetId = getTweetIdFromContainer(tweetContainer);
   if (!tweetId) {
     logger.warn('Cannot extract tweet ID from container');
     return null;
   }
-
   const videoEntry = await getVideoMediaEntry(tweetId, imgElement.src);
   return videoEntry?.download_url ?? null;
 }
