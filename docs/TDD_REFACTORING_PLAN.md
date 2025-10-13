@@ -18,7 +18,8 @@
 ## 참고 문서
 
 - `AGENTS.md`: 개발 환경 및 워크플로
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록
+- `TDD_REFACTORING_PLAN_COMPLETED.md`: Phase 1-39 완료 기록 (Phase 33 Step 2C
+  서비스 레이어 최적화 포함)
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 
