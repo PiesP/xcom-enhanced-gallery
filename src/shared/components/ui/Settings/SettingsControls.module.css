@@ -33,18 +33,23 @@
   border: 1px solid var(--xeg-settings-select-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
+  appearance: none;
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 .select:hover {
-  border-color: var(--xeg-settings-select-border-hover);
+  border-color: var(--xeg-color-border-hover);
+  background-color: var(--xeg-settings-select-bg);
 }
 
-.select:focus {
-  outline: none;
-  border-color: var(--xeg-color-primary);
+.select:focus,
+.select:focus-visible {
+  border-color: var(--xeg-color-border-hover);
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
   box-shadow: var(--xeg-settings-select-focus-ring);
 }
 
