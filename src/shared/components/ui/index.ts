@@ -23,7 +23,6 @@ export { Toast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastItem } from '@/shared/services/unified-toast-manager';
 export type { ToastContainerProps } from './Toast/ToastContainer';
-
 // Toolbar 컴포넌트
 export { Toolbar } from './Toolbar/Toolbar';
 export type { ToolbarProps } from './Toolbar/Toolbar';
