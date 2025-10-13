@@ -701,13 +701,16 @@ button.fitButton {
   padding: var(--space-md);
   margin-top: 0.5em; /* 툴바와 약간의 간격 */
 
-  /* Animation & Transition */
-  height: var(--xeg-toolbar-panel-height);
-  max-height: var(--xeg-toolbar-panel-max-height);
+  /* Animation & Transition - max-height 사용 (height: auto는 transition 불가) */
+  max-height: 0;
   overflow: hidden;
   opacity: 0;
+  visibility: hidden; /* 완전히 숨김 */
   pointer-events: none; /* 접힌 상태에서 클릭 방지 */
-  transition: var(--xeg-toolbar-panel-transition);
+  transition:
+    max-height var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    visibility 0s var(--xeg-duration-normal); /* transition 후 숨김 */
 
   /* Visual */
   background: var(--xeg-bg-toolbar);
@@ -718,9 +721,14 @@ button.fitButton {
 
 /* Expanded State */
 .settingsPanel[data-expanded='true'] {
-  height: auto;
+  max-height: var(--xeg-toolbar-panel-max-height); /* 280px */
   opacity: 1;
+  visibility: visible; /* 즉시 표시 */
   pointer-events: auto; /* 펼친 상태에서 클릭 가능 */
+  transition:
+    max-height var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    visibility 0s 0s; /* 즉시 표시 (delay 0) */
 }
 
 /* Reduced Motion Support */
