@@ -1,7 +1,50 @@
 # TDD 리팩토링 완료 기록
 
 > **목적**: 완료된 Phase들의 달성 메트릭과 배운 점을 보관 **최종 업데이트**:
-> 2025-01-25
+> 2025-10-15
+
+---
+
+## Phase 72: 코드 품질 개선 - 하드코딩 제거 ✅
+
+**완료일**: 2025-10-15 **목표**: 하드코딩된 색상 값 제거
+
+### Phase 72 달성 메트릭
+
+| 항목                 | 목표        | 최종      | 상태 |
+| -------------------- | ----------- | --------- | ---- |
+| **하드코딩 색상**    | 0건         | 0건       | ✅   |
+| **디자인 토큰 추가** | 1개         | 1개       | ✅   |
+| **프로덕션 빌드**    | 325 KB 이내 | 317.41 KB | ✅   |
+| **테스트**           | 통과        | 775개     | ✅   |
+
+### Phase 72 주요 변경사항
+
+1. **semantic 디자인 토큰 추가**
+   - `--shadow-inset-border: 0 0 0 1px rgba(0, 0, 0, 0.05)`
+   - 용도: Button active 상태 inset border 효과
+   - Legacy alias: `--xeg-shadow-inset-border`
+
+2. **Button.module.css 하드코딩 제거**
+   - Before: `box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05)`
+   - After: `box-shadow: var(--xeg-shadow-inset-border)`
+   - 빌드 크기 영향: +0.11 KB (무시 가능)
+
+3. **테스트 검증**
+   - `hardcoded-color-detection.test.ts` 통과
+   - CodeQL 정책 준수 확인
+
+### Phase 72 배운 점
+
+- **토큰 설계**: inset border shadow는 semantic 레벨에서 정의
+- **빌드 영향**: 토큰 치환은 번들 크기에 미미한 영향 (~0.1 KB)
+- **ROI**: 30분 작업으로 코드 품질 향상 (ROI 0.8)
+
+### Phase 72 제한사항
+
+- **Skipped 테스트**: 9개 테스트 재활성화는 Phase 74로 이관
+  - 1개: E2E 이관 (JSDOM 제약)
+  - 8개: Phase 69 debounce 타이밍 조정 필요
 
 ---
 
