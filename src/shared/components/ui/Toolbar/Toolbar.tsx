@@ -344,18 +344,15 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
 
   const isFitDisabled = (mode: FitMode): boolean => props.disabled || !getFitHandler(mode);
 
+  // Phase 66: 순환 네비게이션 지원 - totalCount > 1이면 항상 활성화
   const navState = createMemo(() => {
     const total = Math.max(0, props.totalCount ?? 0);
-    const clampedCurrent = Math.min(
-      Math.max(Number(props.currentIndex ?? 0) || 0, 0),
-      Math.max(total - 1, 0)
-    );
     const disabled = !!props.disabled;
     const isDownloading = !!props.isDownloading;
 
     return {
-      prevDisabled: disabled || clampedCurrent <= 0,
-      nextDisabled: disabled || clampedCurrent >= total - 1,
+      prevDisabled: disabled || total <= 1,
+      nextDisabled: disabled || total <= 1,
       canDownloadAll: total > 1,
       downloadDisabled: disabled || isDownloading,
     } as const;

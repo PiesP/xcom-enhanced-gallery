@@ -42,8 +42,9 @@ test.describe('Toolbar accessibility', () => {
     await expect(page.getByLabel('갤러리 닫기')).toBeVisible();
   });
 
-  test('updates disabled state at boundaries', async ({ page }) => {
-    // 첫 번째 상태: currentIndex=0
+  test('circular navigation keeps buttons enabled', async ({ page }) => {
+    // Phase 66: 순환 네비게이션 - totalCount > 1이면 항상 활성화
+    // 첫 번째 상태: currentIndex=0, totalCount=2
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
@@ -53,10 +54,11 @@ test.describe('Toolbar accessibility', () => {
     const prevButton = page.getByLabel('이전 미디어');
     const nextButton = page.getByLabel('다음 미디어');
 
-    await expect(prevButton).toHaveAttribute('data-disabled', 'true');
-    await expect(nextButton).not.toHaveAttribute('data-disabled', 'true');
+    // 순환 네비게이션이므로 첫 번째 항목에서도 이전 버튼이 활성화되어야 함
+    await expect(prevButton).toHaveAttribute('data-disabled', 'false');
+    await expect(nextButton).toHaveAttribute('data-disabled', 'false');
 
-    // 두 번째 상태: currentIndex=1로 재마운트
+    // 두 번째 상태: currentIndex=1로 재마운트 (마지막 항목)
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
@@ -65,7 +67,11 @@ test.describe('Toolbar accessibility', () => {
     });
 
     // 재마운트 후 새로운 버튼 locator
+    const prevButton2 = page.getByLabel('이전 미디어');
     const nextButton2 = page.getByLabel('다음 미디어');
-    await expect(nextButton2).toHaveAttribute('data-disabled', 'true');
+
+    // 마지막 항목에서도 다음 버튼이 활성화되어야 함 (순환)
+    await expect(prevButton2).toHaveAttribute('data-disabled', 'false');
+    await expect(nextButton2).toHaveAttribute('data-disabled', 'false');
   });
 });

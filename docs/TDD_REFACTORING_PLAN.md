@@ -1,17 +1,35 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-01-27 **상태**: Phase 65 완료 ✅
+> **최종 업데이트**: 2025-10-14 **상태**: 모든 활성 작업 완료 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 836.28 KB / prod **319.32 KB** ✅
-- **테스트**: 755 passing, 1 skipped ✅
+- **빌드**: dev 836 KB / prod **319.25 KB** ✅
+- **테스트**: 763 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (**257 modules**, **712 dependencies**) ✅
-- **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
+- **번들 예산**: **319.25 KB / 325 KB** (5.75 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 66 Part 2: Focus Tracker Container Accessor Null 처리 (2025-10-14) ✅
+  - useGalleryFocusTracker에서 container accessor null 시 fallback 로직 추가
+  - forceClear 옵션으로 명시적/일시적 null 구분
+  - Regression 테스트 추가 (컨테이너 일시 null 처리 검증)
+  - 테스트: 763 passing (+1 regression test)
+  - 번들 크기: 319.25 KB (변화 없음)
+  - **안정성 개선**: 스크롤 중 포커스 상태 유지 보장
+
+- Phase 66 Part 1: Toolbar 순환 네비게이션 수정 (2025-10-14) ✅
+  - Toolbar.tsx navState() 함수 수정: 경계 조건 체크 제거
+  - totalCount > 1이면 항상 버튼 활성화 (prevDisabled/nextDisabled: total <= 1)
+  - TDD 테스트 7개 추가 (RED→GREEN 검증)
+  - Playwright E2E 테스트 수정 (순환 네비게이션 반영)
+  - 테스트 증가: 762 → 769 passing (+7)
+  - 번들 크기: 319.32 KB → 319.25 KB (-0.07 KB, 최적화)
+  - **버그 수정**: Phase 62에서 구현한 순환 네비게이션이 Toolbar에서 누락되어
+    있던 문제 해결
 
 - Phase 65 Step 1: Orphan 파일 정리 (2025-01-27) ✅
   - `twitter.ts` 레거시 normalizer 파일 이동 (src → test)
