@@ -184,9 +184,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
    */
   private handleNavigation(direction: 'previous' | 'next'): void {
     if (direction === 'previous') {
-      navigatePrevious();
+      navigatePrevious('button');
     } else {
-      navigateNext();
+      navigateNext('button');
     }
   }
 

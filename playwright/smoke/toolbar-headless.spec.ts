@@ -18,6 +18,7 @@ test.describe('ToolbarHeadless state', () => {
     const result = (await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
+      // @ts-expect-error - evaluateToolbarHeadless not yet in types, pending harness update
       return harness.evaluateToolbarHeadless({
         currentIndex: 0,
         totalCount: 3,
