@@ -1,21 +1,98 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 56 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 63 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-14)
 
-- **빌드**: dev 836.01 KB / prod **318.40 KB** ✅
-- **테스트**: 658 passing, 1 skipped ✅
+- **빌드**: dev 836.01 KB / prod **319.02 KB** ✅
+- **테스트**: 718 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (**257 modules**, **709 deps**) ✅
-- **번들 예산**: **318.40 KB / 325 KB** (6.60 KB 여유) ✅
-- **개선**: Phase 54-60 작업으로 코드베이스 단순화 및 불필요한 유틸리티 제거
+- **의존성**: dependency-cruiser 0 violations (**258 modules**, **711 deps**) ✅
+- **번들 예산**: **319.02 KB / 325 KB** (5.98 KB 여유) ✅
+- **개선**: Phase 63 완료로 네비게이션 동기화 강화 및 이벤트 기반 아키텍처 도입
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 63: 갤러리 인덱스 관리 통합 및 동기화 강화 (2025-10-14) ✅
+
+**목표**: currentIndex와 focusedIndex 간 동기화를 강화하여 명시적 네비게이션 시
+일관성 보장
+
+**현재 문제**:
+
+- 툴바 버튼/미디어 클릭 시 focusedIndex 즉시 반영 누락
+- IntersectionObserver 기반 포커스 추적이 스크롤 애니메이션 지연으로 중간 상태
+  노출
+- navigateToItem()과 useGalleryFocusTracker 간 결합도 부족
+
+**TDD 접근 (RED → GREEN → REFACTOR)**:
+
+#### Step 1: createEventEmitter 구현 (10/10 tests GREEN)
+
+- 경량 이벤트 시스템 추가: `src/shared/utils/event-emitter.ts` (31줄)
+- 타입 안전: 제네릭 타입 매개변수로 이벤트 타입 강제
+- 구독 관리: `on()` 메서드가 unsubscribe 함수 반환
+- 복수 리스너: 동일 이벤트에 여러 콜백 등록 가능
+- 10개 단위 테스트 작성 및 GREEN 확인 (test/unit/utils/event-emitter.test.ts)
+- 커밋: 7a3cab08
+
+#### Step 2: gallery.signals 이벤트 통합 (12/12 tests GREEN)
+
+- `galleryIndexEvents` 추가: navigate:start/navigate:complete 이벤트
+- trigger 매개변수: 'button' | 'click' | 'keyboard' 타입으로 네비게이션 소스
+  구분
+- navigateToItem(), navigatePrevious(), navigateNext()에 trigger 파라미터 추가
+- 이벤트 발행: navigate:start (변경 전) → 상태 변경 → navigate:complete (변경
+  후)
+- 12개 통합 테스트 작성 및 GREEN 확인
+  (test/unit/state/gallery-index-events.test.ts)
+- 커밋: 44404fe3
+
+#### Step 3: useGalleryFocusTracker 이벤트 구독 (12/12 tests GREEN)
+
+- createEffect에서 navigate:complete 이벤트 구독
+- 명시적 네비게이션(button/click/keyboard) 시 autoFocusIndex 즉시 동기화
+- 스크롤 기반 네비게이션은 기존 IntersectionObserver 정책 유지
+- 12개 hook 테스트 작성 및 GREEN 확인
+  (test/unit/hooks/use-gallery-focus-tracker-events.test.ts)
+- 커밋: acc71682
+
+#### Step 4: 호출 지점 trigger 파라미터 업데이트 (8/8 tests GREEN)
+
+- VerticalGalleryView.tsx: handleMediaItemClick에 'click' trigger 전달
+  (line 383)
+- GalleryRenderer.ts: handleNavigation에 'button' trigger 전달 (lines 185-189)
+- 8개 통합 테스트 작성 및 GREEN 확인
+  (test/unit/integration/gallery-navigation-sync.test.ts)
+- 테스트 커버리지: 툴바 버튼(2), 미디어 클릭(1), 키보드(1), 빠른 네비게이션(1),
+  혼합 소스(1), 이벤트 라이프사이클(2)
+- Playwright 타입 수정: toolbar-headless.spec.ts에 @ts-expect-error 추가
+- 커밋: 3aff02ef
+
+**성과**:
+
+- 테스트 증가: 678 passing → 718 passing (+40 tests)
+- 모듈 증가: 257 → 258 (+1 module, event-emitter.ts)
+- 의존성 증가: 709 → 711 (+2 deps)
+- 번들 크기 증가: 318.12 KB → 319.02 KB (+0.90 KB)
+- 예산 여유: 6.88 KB → 5.98 KB (여전히 충분)
+- 명시적 네비게이션 시 focusedIndex 즉시 동기화로 UX 일관성 향상
+- 이벤트 기반 아키텍처로 확장성 및 느슨한 결합 달성
+
+**문서**:
+
+- 세부 계획: `docs/TDD_REFACTORING_PLAN_Phase63.md`
+- 관련 파일:
+  - `src/shared/utils/event-emitter.ts` (신규)
+  - `src/shared/state/signals/gallery.signals.ts` (이벤트 통합)
+  - `src/features/gallery/hooks/useGalleryFocusTracker.ts` (이벤트 구독)
+  - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+    (trigger 업데이트)
+  - `src/features/gallery/GalleryRenderer.ts` (trigger 업데이트)
 
 ### Phase 56: 고대비/접근성 토큰 정비 (2025-10-14) ✅
 
