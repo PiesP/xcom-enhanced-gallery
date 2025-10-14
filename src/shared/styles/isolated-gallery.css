@@ -296,6 +296,8 @@
 }
 
 .glass-surface:hover {
-  background: var(--xeg-surface-glass-bg-hover) !important;
-  box-shadow: var(--xeg-surface-glass-shadow-hover) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1) !important;
 }

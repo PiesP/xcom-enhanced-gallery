@@ -518,7 +518,7 @@
   padding: var(--xeg-spacing-md) var(--xeg-spacing-md);
   background: var(--xeg-toolbar-bg);
   border: 1px solid var(--xeg-toolbar-border);
-  border-radius: var(--xeg-radius-pill);
+  border-radius: 28px;
   z-index: var(--xeg-z-gallery-toolbar);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
