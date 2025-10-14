@@ -1,17 +1,36 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 56 완료 ✅ 다음 Phase 대기 중
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 63 계획 중 ⏳
 
 ## 프로젝트 상태
 
-- **빌드**: dev 836.01 KB / prod **318.40 KB** ✅
-- **테스트**: 658 passing, 1 skipped ✅
+- **빌드**: dev 836.01 KB / prod **318.12 KB** ✅
+- **테스트**: 678 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (**257 modules**, **709 dependencies**) ✅
-- **번들 예산**: **318.40 KB / 325 KB** (6.60 KB 여유) ✅
+- **번들 예산**: **318.12 KB / 325 KB** (6.88 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 62: 툴바 네비게이션 순환 모드 구현 (2025-10-14) ✅
+  - 이전/다음 미디어 버튼을 항상 활성화 상태로 변경 (첫↔마지막 순환)
+  - `gallery.signals.ts` 순환 로직 이미 구현되어 있음 (검증만 진행)
+  - `use-gallery-toolbar-logic.ts` canGoPrevious/canGoNext: 경계 체크 →
+    `totalCount > 1` 체크로 변경
+  - `Toolbar.tsx` navState 단순화: 경계 조건 제거, totalCount 기반 비활성화
+  - 24개 TDD 테스트 작성 (16개 순환 네비게이션 + 8개 툴바 상태)
+  - 2개 기존 테스트 수정 (use-gallery-toolbar-logic-props.test.ts 경계 조건)
+  - 번들 크기 소폭 개선: 318.19 KB → 318.12 KB (-0.07 KB)
+  - 테스트 증가: 662 passing → 678 passing (+16 tests)
+
+- Phase 61: 갤러리 스크롤 동작 정리 (2025-10-14) ✅
+  - 휠 이벤트의 scrollBy() 호출 완전 제거, 브라우저 네이티브 스크롤 사용
+  - VerticalGalleryView.tsx onScroll 콜백 단순화: 47줄 → 9줄 (81% 감소)
+  - 6개 TDD 테스트로 새로운 동작 검증 (use-gallery-scroll.test.ts)
+  - 1개 구형 테스트 제거 (VerticalGalleryView.wheel-scroll.test.tsx)
+  - 번들 크기 소폭 개선: 318.40 KB → 318.19 KB (-0.21 KB)
+  - 테스트: 658 passing → 662 passing (+4 tests)
 
 - Phase 56: 고대비/접근성 토큰 정비 (2025-10-14) ✅
   - 고대비 모드용 툴바 토큰 8개 추가 (`--xeg-toolbar-*-high-contrast-*`)
@@ -51,10 +70,22 @@
   - 7개 TDD 테스트로 시각적 연속성 검증
   - DOM 구조는 현상 유지 (progressBar overlay 패턴에 최적화됨)
 
+## 진행 중 작업
+
+- **Phase 63: 갤러리 인덱스 관리 통합 및 동기화 강화** ⏳
+  - 상세 계획: `docs/TDD_REFACTORING_PLAN_Phase63.md` 참조
+  - 목표: currentIndex와 focusedIndex 간 동기화 강화
+  - 접근: 이벤트 시스템 추가로 명시적 네비게이션 시 즉시 동기화
+  - 예상 효과:
+    - 툴바 버튼 클릭 시 focusedIndex 즉시 반영
+    - 미디어 아이템 클릭 시 UX 일관성 보장
+    - 스크롤 중 자연스러운 불일치는 허용 (기존 정책 유지)
+  - 예상 번들 영향: +0.35 KB (event-emitter 추가)
+  - 예상 테스트: +45개 (이벤트 10 + signals 12 + hook 15 + 통합 8)
+
 ## 다음 작업 대기 중
 
-현재 활성 Phase 없음. 추가 백로그 항목을 검토하거나 새로운 개선 사항을
-제안하세요.
+(Phase 63 완료 후 재평가)
 
 ## 추가 백로그 (우선순위 검토 필요)
 
@@ -68,3 +99,4 @@
 - `ARCHITECTURE.md`: 아키텍처 구조
 - `CODING_GUIDELINES.md`: 코딩 규칙
 - `TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 기록
+- `TDD_REFACTORING_PLAN_Phase63.md`: Phase 63 상세 계획
