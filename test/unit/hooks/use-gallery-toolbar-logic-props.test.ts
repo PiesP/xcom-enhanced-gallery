@@ -13,26 +13,25 @@ const fileContent = readFileSync(filePath, 'utf-8');
 describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
   describe('canGoPrevious/canGoNext - Getter 함수 패턴', () => {
     it('canGoPrevious는 getter 함수여야 함 (const canGoPrevious = () => ...)', () => {
-      // RED: 현재는 const canGoPrevious = props.currentIndex > 0; 형태
+      // Phase 62: 순환 네비게이션 - totalCount > 1 패턴
       const hasGetterPattern =
-        /const\s+canGoPrevious\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*>\s*0/.test(fileContent);
+        /const\s+canGoPrevious\s*=\s*\(\)\s*=>\s*props\.totalCount\s*>\s*1/.test(fileContent);
 
       expect(hasGetterPattern).toBe(true);
     });
 
     it('canGoNext는 getter 함수여야 함 (const canGoNext = () => ...)', () => {
-      // RED: 현재는 const canGoNext = props.currentIndex < props.totalCount - 1; 형태
-      const hasGetterPattern =
-        /const\s+canGoNext\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1/.test(
-          fileContent
-        );
+      // Phase 62: 순환 네비게이션 - totalCount > 1 패턴
+      const hasGetterPattern = /const\s+canGoNext\s*=\s*\(\)\s*=>\s*props\.totalCount\s*>\s*1/.test(
+        fileContent
+      );
 
       expect(hasGetterPattern).toBe(true);
     });
 
     it('canGoPrevious는 직접 값 할당을 사용하지 않아야 함', () => {
-      // Anti-pattern: const canGoPrevious = props.currentIndex > 0;
-      const hasDirectAssignment = /const\s+canGoPrevious\s*=\s*props\.currentIndex\s*>\s*0;/.test(
+      // Anti-pattern: const canGoPrevious = props.totalCount > 1;
+      const hasDirectAssignment = /const\s+canGoPrevious\s*=\s*props\.totalCount\s*>\s*1;/.test(
         fileContent
       );
 
@@ -40,11 +39,10 @@ describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
     });
 
     it('canGoNext는 직접 값 할당을 사용하지 않아야 함', () => {
-      // Anti-pattern: const canGoNext = props.currentIndex < props.totalCount - 1;
-      const hasDirectAssignment =
-        /const\s+canGoNext\s*=\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1;/.test(
-          fileContent
-        );
+      // Anti-pattern: const canGoNext = props.totalCount > 1;
+      const hasDirectAssignment = /const\s+canGoNext\s*=\s*props\.totalCount\s*>\s*1;/.test(
+        fileContent
+      );
 
       expect(hasDirectAssignment).toBe(false);
     });

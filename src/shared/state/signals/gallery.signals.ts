@@ -82,6 +82,8 @@ export const gallerySignals = {
   isLoading: createSignalSafe<boolean>(INITIAL_STATE.isLoading),
   error: createSignalSafe<string | null>(INITIAL_STATE.error),
   viewMode: createSignalSafe<'horizontal' | 'vertical'>(INITIAL_STATE.viewMode),
+  // Phase 64: 스크롤 기반 포커스와 버튼 네비게이션 동기화
+  focusedIndex: createSignalSafe<number | null>(null),
 };
 
 // ============================================================================
@@ -157,6 +159,9 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
     error: null,
   };
 
+  // Phase 64: focusedIndex 초기화
+  gallerySignals.focusedIndex.value = validIndex;
+
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
 
@@ -168,10 +173,14 @@ export function closeGallery(): void {
     ...galleryState.value,
     isOpen: false,
     currentIndex: 0,
+    mediaItems: [],
     error: null,
   };
 
-  logger.debug('[Gallery] 갤러리 종료 완료');
+  // Phase 64: focusedIndex 초기화
+  gallerySignals.focusedIndex.value = null;
+
+  logger.debug('[Gallery] Closed');
 }
 
 /**
@@ -203,6 +212,9 @@ export function navigateToItem(
     currentIndex: validIndex,
   };
 
+  // Phase 64: focusedIndex도 currentIndex와 동기화
+  gallerySignals.focusedIndex.value = validIndex;
+
   // Phase 63: 네비게이션 완료 이벤트 발행
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
@@ -214,7 +226,9 @@ export function navigateToItem(
  */
 export function navigatePrevious(trigger: 'button' | 'click' | 'keyboard' = 'button'): void {
   const state = galleryState.value;
-  const newIndex = state.currentIndex > 0 ? state.currentIndex - 1 : state.mediaItems.length - 1;
+  // Phase 64 Step 2: focusedIndex 우선 사용, null이면 currentIndex로 fallback
+  const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
+  const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
   navigateToItem(newIndex, trigger);
 }
 
@@ -223,7 +237,9 @@ export function navigatePrevious(trigger: 'button' | 'click' | 'keyboard' = 'but
  */
 export function navigateNext(trigger: 'button' | 'click' | 'keyboard' = 'button'): void {
   const state = galleryState.value;
-  const newIndex = state.currentIndex < state.mediaItems.length - 1 ? state.currentIndex + 1 : 0;
+  // Phase 64 Step 2: focusedIndex 우선 사용, null이면 currentIndex로 fallback
+  const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
+  const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
   navigateToItem(newIndex, trigger);
 }
 
@@ -235,6 +251,28 @@ export function setLoading(isLoading: boolean): void {
     ...galleryState.value,
     isLoading,
   };
+}
+
+/**
+ * Set focused index (Phase 64)
+ * 스크롤이나 다른 방식으로 포커스가 변경될 때 호출
+ * @param index 포커스할 인덱스 (null이면 포커스 해제)
+ */
+export function setFocusedIndex(index: number | null): void {
+  const state = galleryState.value;
+
+  // null은 그대로 허용
+  if (index === null) {
+    gallerySignals.focusedIndex.value = null;
+    logger.debug('[Gallery] focusedIndex cleared');
+    return;
+  }
+
+  // 유효한 범위로 정규화
+  const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
+  gallerySignals.focusedIndex.value = validIndex;
+
+  logger.debug(`[Gallery] focusedIndex set to ${validIndex}`);
 }
 
 /**

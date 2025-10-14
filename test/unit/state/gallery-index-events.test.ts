@@ -87,12 +87,8 @@ describe('Gallery Index Events (Phase 63 - Step 2)', () => {
 
       navigateToItem(1, 'click');
 
-      expect(startListener).toHaveBeenCalledWith(
-        expect.objectContaining({ trigger: 'click' })
-      );
-      expect(completeListener).toHaveBeenCalledWith(
-        expect.objectContaining({ trigger: 'click' })
-      );
+      expect(startListener).toHaveBeenCalledWith(expect.objectContaining({ trigger: 'click' }));
+      expect(completeListener).toHaveBeenCalledWith(expect.objectContaining({ trigger: 'click' }));
     });
 
     it('should handle button trigger', () => {

@@ -58,9 +58,9 @@ export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
   const { createSignal } = getSolid();
   const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('fitContainer');
 
-  // 네비게이션 경계 계산 (Getter 함수)
-  const canGoPrevious = () => props.currentIndex > 0;
-  const canGoNext = () => props.currentIndex < props.totalCount - 1;
+  // Phase 62: 순환 네비게이션 - totalCount > 1이면 항상 활성화
+  const canGoPrevious = () => props.totalCount > 1;
+  const canGoNext = () => props.totalCount > 1;
 
   // 미디어 카운터 계산 (Getter 함수)
   const mediaCounter = () => ({

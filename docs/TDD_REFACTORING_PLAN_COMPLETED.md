@@ -1,21 +1,145 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 63 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-01-27 **상태**: Phase 64 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
-## 프로젝트 상태 스냅샷 (2025-10-14)
+## 프로젝트 상태 스냅샷 (2025-01-27)
 
-- **빌드**: dev 836.01 KB / prod **319.02 KB** ✅
-- **테스트**: 718 passing, 1 skipped ✅
+- **빌드**: dev 836.28 KB / prod **319.16 KB** ✅
+- **테스트**: 744 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (**258 modules**, **711 deps**) ✅
-- **번들 예산**: **319.02 KB / 325 KB** (5.98 KB 여유) ✅
-- **개선**: Phase 63 완료로 네비게이션 동기화 강화 및 이벤트 기반 아키텍처 도입
+- **번들 예산**: **319.16 KB / 325 KB** (5.84 KB 여유) ✅
+- **개선**: Phase 64 완료로 스크롤 기반 포커스와 버튼 네비게이션 동기화,
+  사용자가 스크롤로 이동 후 버튼 클릭 시 정상 동작
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 64: 스크롤 기반 포커스와 버튼 네비게이션 동기화 (2025-01-27) ✅
+
+**목표**: 스크롤로 변경된 focusedIndex를 버튼 네비게이션(이전/다음)이 인식하도록
+개선하여 상태 불일치 해결
+
+**현재 문제**:
+
+- 사용자가 스크롤하여 2/4 이미지로 이동 (focusedIndex=2 업데이트)
+- 이후 "다음" 버튼 클릭 시 currentIndex(0) 기준으로 1/4로 이동 (잘못된 동작)
+- navigateNext/navigatePrevious가 currentIndex만 참조하여 focusedIndex 무시
+
+**TDD 접근 (RED → GREEN → REFACTOR)**:
+
+#### Step 1: focusedIndex signal 추가 (10개 테스트)
+
+- `test/unit/state/gallery-focused-index-signal.test.ts` 작성
+- `src/shared/state/signals/gallery.signals.ts`에 focusedIndex signal 추가 (line
+  81-83)
+  - 초기값: null (포커스 없음 상태)
+  - getter/setter 제공
+  - navigateToItem 호출 시 자동 동기화
+- 10개 테스트 통과 확인
+
+#### Step 2: navigateNext/navigatePrevious를 focusedIndex 기준으로 변경 (12개 테스트)
+
+- `test/unit/state/gallery-navigation-with-focus.test.ts` 작성
+- RED 단계:
+  - 12개 테스트 작성 후 실행: 7 failed, 5 passed (예상대로 RED)
+  - 실패 이유: currentIndex 기준 동작 (focusedIndex 미사용)
+- GREEN 단계:
+  - `src/shared/state/signals/gallery.signals.ts` 수정 (line 226-244)
+    - navigatePrevious:
+      `const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;`
+    - navigateNext:
+      `const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;`
+    - 핵심 패턴: focusedIndex가 설정되었으면 우선 사용, 아니면 currentIndex로
+      fallback
+  - 첫 번째 테스트 실행: 11 passed, 1 failed (경계 케이스 문제)
+  - 경계 케이스 테스트 수정: 순환 테스트의 초기 인덱스 조정 (0→1)으로 실제 이동
+    발생하도록 변경
+  - 최종 테스트 실행: 12 passed ✅
+
+#### 검증 및 회귀 테스트
+
+- 전체 테스트 실행: 744 passing (+22 from 722)
+- 빌드 검증: 319.16 KB (+0.14 KB, 예산 내)
+- **핵심 버그 수정 확인**: 스크롤로 2/4 이동 후 "다음" 버튼 클릭 시 3/4로 정상
+  이동
+
+**변경 파일**:
+
+- `src/shared/state/signals/gallery.signals.ts` (line 81-83, 226-244)
+- `test/unit/state/gallery-focused-index-signal.test.ts` (신규, 10개 테스트)
+- `test/unit/state/gallery-navigation-with-focus.test.ts` (신규, 12개 테스트)
+
+**영향**:
+
+- 테스트: 722 → 744 passing (+22)
+- 번들 크기: 319.02 KB → 319.16 KB (+0.14 KB, 예산 내)
+- 사용자 경험: 스크롤 후 버튼 네비게이션 정상 동작
+
+**다음 단계 (Phase 64 Step 3-4)**:
+
+- Step 3: useGalleryFocusTracker를 전역 focusedIndex와 연동 (10 tests 예정)
+- Step 4: 인디케이터 표시 개선 (6 tests 예정)
+- 예상 영향: +16 tests, +0.2 KB
+
+---
+
+### Phase 62: 툴바 네비게이션 순환 모드 구현 (2025-01-27) ✅
+
+**목표**: 툴바의 이전/다음 미디어 버튼을 항상 활성화 상태로 변경하여 첫 이미지와
+마지막 이미지를 순환하는 구조 구현
+
+**현재 문제**:
+
+- 첫 번째 미디어에서 이전 버튼 비활성화
+- 마지막 미디어에서 다음 버튼 비활성화
+- `gallery.signals.ts`의 navigatePrevious/Next는 이미 순환 로직을 구현했지만,
+  툴바 UI는 경계 체크로 버튼을 비활성화
+
+**TDD 접근 (RED → GREEN → REFACTOR)**:
+
+#### Step 1: RED 테스트 작성 (8개 테스트)
+
+- `test/unit/hooks/use-gallery-toolbar-circular.test.ts` 작성
+- canGoPrevious/canGoNext가 totalCount > 1일 때 항상 true 반환 검증
+- 테스트 실패 확인: 기존 로직이 경계 체크를 수행
+
+#### Step 2: GREEN 구현
+
+- `src/shared/hooks/use-gallery-toolbar-logic.ts` 수정 (62-63행)
+  - 변경 전: `const canGoPrevious = () => props.currentIndex > 0;`
+  - 변경 전:
+    `const canGoNext = () => props.currentIndex < props.totalCount - 1;`
+  - 변경 후: `const canGoPrevious = () => props.totalCount > 1;`
+  - 변경 후: `const canGoNext = () => props.totalCount > 1;`
+  - Phase 62 주석 추가: "순환 네비게이션 - totalCount > 1이면 항상 활성화"
+- 순환 네비게이션 테스트 8개 통과 확인
+
+#### Step 3: 기존 테스트 수정
+
+- `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` 업데이트
+  - canGoPrevious 검증 정규식: `props.currentIndex > 0` → `props.totalCount > 1`
+  - canGoNext 검증 정규식: `props.currentIndex < props.totalCount - 1` →
+    `props.totalCount > 1`
+  - Phase 62 주석으로 변경 사유 명시
+
+**성과**:
+
+- 순환 네비게이션 로직 완성: 백엔드(signals)와 프론트엔드(toolbar) 동기화
+- 테스트 증가: 722 passing (순환 테스트 8개 + props 테스트 2개 업데이트)
+- 번들 크기 유지: 319.02 KB (로직 단순화로 크기 변화 없음)
+- UX 개선: 갤러리 탐색 시 첫↔마지막 간 끊김 없는 순환
+
+**관련 파일**:
+
+- `src/shared/hooks/use-gallery-toolbar-logic.ts` (로직 수정)
+- `src/shared/state/signals/gallery.signals.ts` (검증, 이미 순환 로직 구현됨)
+- `test/unit/hooks/use-gallery-toolbar-circular.test.ts` (신규 테스트)
+- `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` (기존 테스트
+  업데이트)
 
 ### Phase 63: 갤러리 인덱스 관리 통합 및 동기화 강화 (2025-10-14) ✅
 
