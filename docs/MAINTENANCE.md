@@ -1,238 +1,78 @@
 # 🔧 프로젝트 유지보수 가이드
 
 > 프로젝트를 최신 상태로 유지하고 기술 부채를 관리하기 위한 체계적인 가이드
-> (Phase 58, 2025-10-14)
 
 ## 📅 주기적 점검 일정
 
 ### 매주 (Weekly)
 
-- [ ] 의존성 보안 취약점 확인 (`npm audit`)
-- [ ] 테스트 실패 여부 확인
-- [ ] 빌드 크기 모니터링
+- [ ] 의존성 보안 취약점: `npm audit`
+- [ ] 테스트 실패 여부: `npm test`
+- [ ] 빌드 크기 모니터링: `npm run build`
 
 ### 매월 (Monthly)
 
-- [ ] 의존성 업데이트 검토
-- [ ] 사용되지 않는 코드 스캔
+- [ ] 의존성 업데이트: `npx npm-check-updates`
+- [ ] 사용되지 않는 코드: `npx depcheck`
 - [ ] 문서 최신성 검토
 - [ ] 설정 파일 정리
 
 ### 분기별 (Quarterly)
 
 - [ ] 전체 프로젝트 구조 리뷰
-- [ ] 테스트 커버리지 분석
+- [ ] 테스트 커버리지 분석: `npm run test:coverage`
 - [ ] 성능 벤치마크
 - [ ] 아키텍처 개선 검토
 
 ---
 
-## 🎯 점검 영역별 가이드
-
-### 1. 문서 (docs/)
-
-#### 점검 항목
-
-```bash
-# 1. 오래된 문서 찾기 (6개월 이상 미수정)
-git log --all --pretty=format: --name-only --diff-filter=M -- docs/ | \
-  sort -u | \
-  xargs -I {} git log -1 --format="%ai {}" -- {}
-
-# 2. 문서 크기 확인
-Get-ChildItem docs\ -File |
-  Where-Object { $_.Extension -eq '.md' } |
-  Select-Object Name, @{Name="Lines";Expression={(Get-Content $_.FullName | Measure-Object -Line).Lines}} |
-  Sort-Object Lines -Descending
-```
-
-#### 제거 후보
-
-- Phase 완료 검증 문서
-- 임시 실험/분석 문서
-- 중복된 가이드
-- 500줄 이상의 과도한 문서 (간소화 검토)
-
-#### 유지 기준
-
-- 활발히 참조되는 문서
-- 온보딩에 필수적인 문서
-- 아키텍처 결정 기록 (ADR)
-
----
-
-### 2. 테스트 디렉터리 (test/)
-
-#### 점검 항목
-
-```bash
-# 백업/임시 디렉터리 확인
-Get-ChildItem test\ -Directory -Recurse |
-  Where-Object { $_.Name -match 'backup|tmp|old|archive' }
-
-# 사용되지 않는 테스트 파일 찾기 (vitest.config.ts exclude 참조)
-```
-
-#### 제거 후보
-
-- `.backup-*` 디렉터리 (마이그레이션 완료 후)
-- `tmp/` 임시 파일
-- `*.skip.test.ts` (장기간 skip된 테스트)
-- 중복된 테스트 파일
-
-#### 현재 확인된 제거 대상
-
-```bash
-# .backup-preact 제거 (348개 파일)
-Remove-Item -Recurse -Force test\.backup-preact
-```
-
----
-
-### 3. 소스 코드 (src/)
-
-#### 사용되지 않는 코드 찾기
-
-```bash
-# 1. ESLint unused-exports 규칙 활성화
-# eslint.config.js에 추가:
-# '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
-
-# 2. TypeScript unused 체크
-npm run typecheck -- --noUnusedLocals --noUnusedParameters
-
-# 3. 수동 스캔: 특정 심볼 검색
-git grep -l "exportedFunction" src/ | wc -l
-```
-
-#### 제거 후보
-
-- Deprecated 마크된 함수/컴포넌트 (3개월 이상 경과)
-- 테스트만 사용하는 유틸리티 (test/로 이동)
-- 중복된 유틸리티 함수
-- 사용되지 않는 타입 정의
-
----
-
-### 4. 설정 파일
-
-#### 점검 항목
-
-```bash
-# 루트 설정 파일 목록
-Get-ChildItem -Path . -File |
-  Where-Object { $_.Name -match '\.(json|js|cjs|ts|yml|yaml|toml)$' -and $_.Name -notmatch 'lock' } |
-  Select-Object Name, LastWriteTime |
-  Sort-Object LastWriteTime
-```
-
-#### 중복 확인
-
-- `.eslintignore` vs `eslint.config.js` ignores
-- `.prettierignore` vs `.gitignore` 패턴 중복
-- 여러 `.browserslistrc` 설정
-
-#### 최신화 체크
-
-- ESLint 9+ flat config 사용
-- TypeScript 5.x 기능 활용
-- Vite 7 최신 옵션 적용
-
----
-
-### 5. 의존성 (package.json)
-
-#### 정기 점검
-
-```bash
-# 1. 오래된 패키지 확인
-npx npm-check-updates
-
-# 2. 사용되지 않는 의존성 찾기
-npx depcheck
-
-# 3. 번들 크기 분석
-npm run build:prod
-npx vite-bundle-visualizer
-
-# 4. 보안 취약점
-npm audit
-npm audit fix
-```
-
-#### 제거 후보 체크리스트
-
-- [ ] devDependencies에서 사용되지 않는 패키지
-- [ ] 중복 기능 제공 패키지 (예: jest + vitest)
-- [ ] Polyfill이 더 이상 필요없는 패키지
-- [ ] 테스트 전용 패키지가 dependencies에 있는 경우
-
----
-
-### 6. GitHub Actions (.github/workflows/)
-
-#### 점검 항목
-
-```bash
-# workflow 파일 확인
-Get-ChildItem .github\workflows\ -File | Select-Object Name
-```
-
-#### 최신화 체크
-
-- [ ] GitHub Actions 버전 (actions/checkout@v4, actions/setup-node@v4 등)
-- [ ] Node.js 버전 (현재 LTS 사용)
-- [ ] 캐싱 전략 최적화
-- [ ] 불필요한 워크플로 제거
-
----
-
 ## 🤖 자동화 스크립트
 
-### 1. 전체 점검 스크립트
+### 전체 점검
 
 ```bash
-# scripts/maintenance-check.js 실행
 npm run maintenance:check
 ```
 
-**현재 점검 항목** (Phase 58):
+**점검 항목**:
 
-- 보안: `npm audit` 실행, 취약점 검출
-- Git 상태: 추적되지 않는 파일 확인
-- 백업 디렉터리: `.backup-*`, `.old`, `tmp/` 패턴 검색
-- 큰 문서: 500줄 이상 Markdown 파일 감지
-- 빌드 크기: 325 KB 예산 초과 여부 (현재: 316.71 KB ✅)
-- 테스트 상태: 662 passing, 1 skipped ✅
+- ✅ 보안 취약점 (`npm audit`)
+- ✅ Git 추적되지 않는 파일
+- ✅ 백업 디렉터리 (`.backup-*`, `tmp/`)
+- ✅ 큰 문서 (500줄 이상)
+- ✅ 빌드 크기 예산 (325 KB)
+- ✅ 테스트 통과율
 
-결과는 콘솔에 출력되며, 조치 필요 항목이 발견되면 권장 명령을 제시합니다.
-
-### 2. 문서 최신성 체크
+### 개별 점검
 
 ```bash
-# 6개월 이상 미수정 문서 리스트
-npm run maintenance:docs
-```
+# 문서 크기 확인
+Get-ChildItem docs\ -File -Filter *.md |
+  Select-Object Name, @{N='Lines';E={(Get-Content $_.FullName | Measure-Object -Line).Lines}} |
+  Sort-Object Lines -Descending
 
-### 3. 사용되지 않는 파일 스캔
+# 백업 디렉터리 찾기
+Get-ChildItem test\ -Directory -Recurse |
+  Where-Object { $_.Name -match 'backup|tmp|old' }
 
-```bash
-# 백업/임시 파일 찾기
-npm run maintenance:scan
+# 사용되지 않는 의존성
+npx depcheck
+
+# 번들 분석
+npm run build:prod
+npx vite-bundle-visualizer
 ```
 
 ---
 
-## 📋 점검 체크리스트 템플릿
-
-### 월간 점검 (복사해서 사용)
+## 📋 월간 점검 체크리스트
 
 ```markdown
-## 🗓️ YYYY-MM 유지보수 체크리스트
+## 🗓️ YYYY-MM 유지보수
 
 ### 의존성
 
-- [ ] `npm audit` 실행 및 취약점 해결
+- [ ] `npm audit` 실행 및 해결
 - [ ] `npx npm-check-updates` 검토
 - [ ] `npx depcheck` 실행
 
@@ -244,162 +84,119 @@ npm run maintenance:scan
 
 ### 문서
 
-- [ ] README.md 최신성 확인
+- [ ] README.md 최신성
 - [ ] docs/ 문서 검토
-- [ ] 변경사항 changelog 업데이트
-
-### 설정
-
-- [ ] 설정 파일 중복 확인
-- [ ] .gitignore 최적화
-- [ ] CI/CD 워크플로 검토
+- [ ] 변경사항 기록
 
 ### 빌드
 
-- [ ] 빌드 크기 확인 (예산 초과 여부)
-- [ ] Sourcemap 정상 생성 확인
+- [ ] 빌드 크기 확인 (예산: 325 KB)
+- [ ] Sourcemap 생성 확인
 - [ ] 프로덕션 빌드 테스트
 
 ### 정리
 
 - [ ] 백업/임시 파일 삭제
-- [ ] 불필요한 주석 제거
 - [ ] Git 브랜치 정리
 ```
 
 ---
 
-## 🚨 즉시 조치 항목
+## 🎯 영역별 가이드
 
-### 현재 확인된 정리 대상
+### 1. 문서 (docs/)
 
-1. **test/.backup-preact/** (348개 파일)
+**제거 후보**:
 
-   ```bash
-   Remove-Item -Recurse -Force test\.backup-preact
-   ```
+- Phase 완료 검증 문서
+- 500줄 이상의 비대한 문서 (간소화 필요)
+- 임시 실험 문서
 
-2. **임시 디렉터리 확인**
+**유지 기준**:
 
-   ```bash
-   # test/tmp/ 내용 확인
-   Get-ChildItem test\tmp\ -Recurse
-   ```
+- 온보딩 필수 문서 (AGENTS.md, ARCHITECTURE.md)
+- 코딩 규칙 (CODING_GUIDELINES.md)
+- 히스토리 추적 (TDD_REFACTORING_PLAN_COMPLETED.md)
 
-3. **Git에서 추적되지 않는 큰 파일**
-   ```bash
-   git ls-files --others --exclude-standard | xargs -I {} ls -lh {}
-   ```
+### 2. 테스트 (test/)
 
----
+**제거 후보**:
 
-## 📊 메트릭 추적
+- `.backup-*` 디렉터리 (마이그레이션 완료 후)
+- `*.skip.test.ts` (장기간 skip)
+- 중복 테스트 파일
 
-### 프로젝트 건강도 지표
-
-```javascript
-// 추적할 메트릭
-const metrics = {
-  // 코드
-  linesOfCode: 'cloc src/',
-  testCoverage: 'npm run test:coverage',
-
-  // 빌드
-  bundleSize: {
-    dev: '~730 KB',
-    prod: '~325 KB',
-    gzip: '~88 KB',
-  },
-
-  // 품질
-  eslintIssues: 'npm run lint',
-  typeErrors: 'npm run typecheck',
-
-  // 의존성
-  dependencies: Object.keys(require('../package.json').dependencies).length,
-  devDependencies: Object.keys(require('../package.json').devDependencies)
-    .length,
-
-  // 테스트
-  totalTests: 662,
-  skippedTests: 1,
-};
-```
-
----
-
-## 🔄 주기적 작업 자동화
-
-### GitHub Actions로 자동화
-
-```yaml
-# .github/workflows/maintenance.yml (매월 1일 09:00 UTC 자동 실행)
-name: Monthly Maintenance
-
-on:
-  schedule:
-    - cron: '0 9 1 * *' # 매월 1일 09:00 UTC
-  workflow_dispatch:
-
-jobs:
-  maintenance-check:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - run: npm ci
-      - run: npm run maintenance:check
-      - name: Create maintenance issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const date = new Date();
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[유지보수] ${year}년 ${month}월 정기 점검`,
-              body: '자동 생성된 월간 유지보수 체크리스트입니다.',
-              labels: ['maintenance']
-            });
-```
-
----
-
-## 📝 문서화 규칙
-
-### 변경사항 기록
-
-모든 정리 작업은 다음 형식으로 커밋:
+**점검 명령**:
 
 ```bash
-chore(maintenance): clean up [영역]
-
-- Remove: [제거한 항목]
-- Update: [업데이트한 항목]
-- Reason: [이유]
+# vitest.config.ts exclude 참조
+grep "exclude:" vitest.config.ts
 ```
 
-### 월간 리포트
+### 3. 소스 코드 (src/)
 
-`docs/maintenance/YYYY-MM.md` 형식으로 작업 내역 기록
+**제거 후보**:
+
+- Deprecated 함수 (3개월 이상)
+- 중복 유틸리티
+- 사용되지 않는 타입
+
+**점검 명령**:
+
+```bash
+# TypeScript unused check
+npm run typecheck -- --noUnusedLocals --noUnusedParameters
+
+# 특정 심볼 사용처 확인
+git grep -l "symbolName" src/
+```
+
+### 4. 설정 파일
+
+**중복 확인**:
+
+- `.eslintignore` vs `eslint.config.js`
+- `.prettierignore` vs `.gitignore`
+
+**최신화 체크**:
+
+- ESLint 9+ flat config ✅
+- TypeScript 5.x ✅
+- Vite 7 ✅
+
+### 5. 의존성
+
+**정기 점검**:
+
+```bash
+npm audit                  # 보안
+npx npm-check-updates      # 업데이트
+npx depcheck               # 미사용 패키지
+```
+
+**제거 체크리스트**:
+
+- [ ] devDependencies 미사용 패키지
+- [ ] 중복 기능 패키지
+- [ ] 불필요한 polyfill
+- [ ] dependencies에 있는 테스트 전용 패키지
+
+### 6. GitHub Actions
+
+**최신화**:
+
+- [ ] Actions 버전 (checkout@v4, setup-node@v4)
+- [ ] Node.js LTS 버전
+- [ ] 캐싱 전략
+- [ ] 불필요한 워크플로 제거
 
 ---
 
-## 🎯 성공 기준
+## 참고 문서
 
-프로젝트가 잘 유지되고 있다는 지표 (Phase 58 현재):
+- [TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md): 리팩토링 백로그
+- [AGENTS.md](../AGENTS.md): 개발 워크플로
+- [ARCHITECTURE.md](./ARCHITECTURE.md): 아키텍처 구조
+- [DEPENDENCY-GOVERNANCE.md](./DEPENDENCY-GOVERNANCE.md): 의존성 정책
 
-- ✅ 모든 테스트 통과 (662 passing, 1 skipped)
-- ✅ 빌드 크기 예산 이내 (316.71 KB / 325 KB)
-- ✅ 보안 취약점 0건
-- ✅ TypeScript 오류 0건 (strict 모드)
-- ✅ ESLint 경고 0건
-- ✅ 의존성 위반 0건 (dependency-cruiser)
-
----
-
-**정기적인 유지보수로 기술 부채를 최소화하고 프로젝트 품질을 유지하세요!** 🚀
+> **자동화 우선**: 수동 점검보다 `npm run maintenance:check` 활용 권장

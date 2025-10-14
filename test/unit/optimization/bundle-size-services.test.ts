@@ -60,8 +60,10 @@ describe('Phase 33 Step 2C - Service Layer Size Guard', () => {
     const planPath = join(PROJECT_ROOT, 'docs/TDD_REFACTORING_PLAN_COMPLETED.md');
     const plan = readFileSync(planPath, 'utf-8');
 
-    // Phase 55 이후 문서가 요약 형식으로 변경됨 - Phase 33 관련 내용이 누적 요약에 포함되었는지만 확인
-    expect(plan).toContain('Phase 1-53');
-    expect(plan).toContain('누적 Phase 요약');
+    // Phase 33 최적화 전략이 문서화되어 있는지 확인
+    expect(plan).toContain('Phase 33');
+    expect(plan).toContain('events.ts 최적화');
+    expect(plan).toContain('805줄'); // 최종 라인 수
+    expect(plan).toContain('23.72 KB'); // 최종 크기
   });
 });

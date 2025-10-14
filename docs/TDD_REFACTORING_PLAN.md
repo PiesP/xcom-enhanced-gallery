@@ -1,62 +1,69 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 **상태**: Phase 69 완료, 다음 Phase 대기 ✅
+> **최종 업데이트**: 2025-10-14 | **상태**: 유지 관리 모드 ✅
 
-## 프로젝트 스냅샷
+## 프로젝트 현황
 
-- **빌드**: dev 733.96 KB / prod **317.30 KB** ✅ (번들 예산 7.70 KB 여유)
-- **테스트**: **775 passing**, 9 skipped (Phase 69 debounce 타이밍 조정 필요) ✅
+- **빌드**: prod **317.30 KB / 325 KB** (7.70 KB 여유, 2.4%) ✅
+- **테스트**: **775 passing**, 9 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (**257 modules**, **712 dependencies**) ✅
-- **번들 예산**: **317.30 KB / 325 KB** (2.4% 여유) ✅
+- **의존성**: 0 violations (257 modules, 712 dependencies) ✅
 
-## 디자인 토큰 현황 (2025-10-15)
+## 현재 상태: 유지보수 모드 ✅
 
-- **총 토큰**: 89개 (Phase 67 완료, 27.6% 감소)
-- **중복 정의**: 20개 (cross-scope override, 정책 준수)
-- **미사용 토큰**: 0개 ✅
-- **저사용 토큰**: 53개 (컴포넌트 응집·접근성 사유 유지)
+**결정 근거**:
 
----
+- 번들 예산 2.4% 여유 충분 (향후 7.70 KB 추가 가능)
+- Phase 33, 67, 69 완료로 모든 주요 최적화 목표 달성
+- 추가 최적화 항목의 ROI 낮음 (< 1.0)
 
-## 활성 계획
-
-_Phase 69 완료됨. 다음 Phase는 백로그 또는 별도 기획 필요._
+**활성 작업**: 없음
 
 ---
 
-## 백로그 (모니터링)
+## 백로그 (장기 계획)
 
-1. **번들 크기 경계**: prod 번들이 322 KB(예산 99%) 접근 시 Phase 67 Step 4-5
-   재개
-2. **StaticVendorManager 자동 초기화 경고**: Phase 70에서 bootstrap 순서 개선
-   예정
-3. **순환 네비 UX 개선**: 경계 경고 로그 재분석 필요 시 Phase 71 후보
-4. **Phase 69 skipped tests 리팩토링**: 8개 테스트의 debounce 타이밍 조정 필요
-   (별도 PR 예정)
-   - `use-gallery-focus-tracker-events.test.ts` (3 tests)
-   - `use-gallery-focus-tracker-global-sync.test.ts` (4 tests)
-   - `use-gallery-focus-tracker-deduplication.test.ts` (1 test)
+### Phase 70 최적화 후보
+
+다음 항목은 번들 크기가 **322 KB (예산 99%)** 도달 시 재검토:
+
+| 항목               | 예상 효과 | 시간   | ROI | 우선순위         |
+| ------------------ | --------- | ------ | --- | ---------------- |
+| Toolbar.tsx 분할   | ~4-5 KB   | 2-3일  | 0.7 | 중간             |
+| Lazy Loading 확장  | ~5 KB     | 1-2일  | 0.8 | 중간 (UX 우려)   |
+| CSS 토큰 정리      | ~1-2 KB   | 2-3h   | 0.4 | 낮음             |
+| events.ts 리팩토링 | ~3-4 KB   | 1-2일  | 0.2 | 낮음 (이미 최적) |
+| media-service 검토 | ~1-2 KB   | 0.5-1d | 0.3 | 매우 낮음        |
+
+**총 예상 효과**: ~10-13 KB 절감 (목표: ~307 KB)
 
 ---
 
-## 설계 원칙 (요약)
+## 모니터링 지표
 
-1. 유지보수성 우선 — 번들 크기보다 디자인 일관성
-2. 컴포넌트 응집도 — 1회 사용 토큰도 컴포넌트 책임이면 유지
-3. 과도 추상화 지양 — 재사용 없는 추상화 제거
-4. 접근성 우선 — WCAG 기준 준수 토큰/행동 유지
-5. TDD 기본 — RED → GREEN → REFACTOR 순서 준수
-6. ROI 검토 — 시간 대비 가치 평가 후 진행
+### 경계 조건
+
+- **번들 크기**: 322 KB (99%) 도달 시 Phase 70 재검토
+- **테스트 실패**: 5% 이상 증가 시 원인 분석
+- **빌드 시간**: 60초 초과 시 최적화 검토
+
+### 주기별 점검
+
+- **주간**: 번들 크기, 테스트 통과율, 보안 취약점
+- **월간**: 의존성 업데이트, 문서 최신성
+- **분기**: 아키텍처 리뷰, 성능 벤치마크
 
 ---
 
 ## 참고 문서
 
-- `AGENTS.md`: 개발 워크플로, 스크립트 규칙
-- `docs/ARCHITECTURE.md`: 3계층 구조와 의존성 경계
-- `docs/CODING_GUIDELINES.md`: 디자인 토큰·PC 이벤트·Vendor getter 규칙
-- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료 Phase 상세 기록
-- `docs/MAINTENANCE.md`: 유지보수 점검 절차
-- `docs/TDD_REFACTORING_PLAN_Phase63.md`: Phase 63 아카이브
+- [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md):
+  완료된 Phase 기록
+- [AGENTS.md](../AGENTS.md): 개발 워크플로
+- [ARCHITECTURE.md](./ARCHITECTURE.md): 3계층 구조
+- [CODING_GUIDELINES.md](./CODING_GUIDELINES.md): 코딩 규칙
+- [MAINTENANCE.md](./MAINTENANCE.md): 유지보수 체크리스트
+
+> **과거 Phase 기록**:
+> [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참조

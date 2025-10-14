@@ -91,6 +91,8 @@ bundle-analysis.json
 
 # Documentation
 docs/api/
+docs/bundle-analysis.html
+docs/dependency-graph.*
 
 # Package managers
 package-lock.json.backup
