@@ -257,6 +257,9 @@ describe('VerticalGalleryView focus tracking integration', () => {
     focusButton.click();
     flushAnimationFrame();
 
+    // Phase 69: microtask batching + debouncedUpdateContainerFocusAttribute (50ms) 대기
+    await vi.advanceTimersByTimeAsync(60);
+
     expect(root.getAttribute('data-focused')).toBe('2');
 
     focusButton.dispatchEvent(new globalThis.FocusEvent('blur'));
