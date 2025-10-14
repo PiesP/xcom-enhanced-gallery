@@ -16,12 +16,17 @@ const semantic = fs.readFileSync(path.join(STYLES_ROOT, 'design-tokens.semantic.
 const layered = fs.readFileSync(path.join(STYLES_ROOT, 'design-tokens.css'), 'utf-8');
 
 describe('modal-token.hardening (static)', () => {
-  it('semantic file defines dark modal background & border tokens', () => {
-    expect(semantic).toMatch(/--xeg-modal-bg-dark:/);
-    expect(semantic).toMatch(/--xeg-modal-border-dark:/);
-    // Dark theme override usage (rgba(...) or var(--xeg-modal-*-dark))
+  it('semantic file defines modal background & border tokens with dark theme support', () => {
+    // Phase 67: Modal tokens now use semantic primitive references instead of separate -dark tokens
+    expect(semantic).toMatch(/--xeg-modal-bg:\s*var\(--color-bg-elevated\)/);
+    expect(semantic).toMatch(/--xeg-modal-border:\s*var\(--color-border-default\)/);
+
+    // Dark theme overrides should use semantic primitives
     expect(
-      /\[data-theme='dark'\][^{]*{[^}]*--xeg-modal-bg:\s*(rgba\([^)]*\)|var\(--xeg-modal-bg-dark\))/i.test(
+      /\[data-theme='dark'\][^{]*{[^}]*--xeg-modal-bg:\s*var\(--color-gray-800\)/i.test(semantic)
+    ).toBe(true);
+    expect(
+      /\[data-theme='dark'\][^{]*{[^}]*--xeg-modal-border:\s*var\(--color-border-emphasis\)/i.test(
         semantic
       )
     ).toBe(true);
