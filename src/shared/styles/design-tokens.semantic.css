@@ -11,8 +11,7 @@
   --color-bg-elevated: var(--color-base-white);
 
   /* 갤러리 및 툴바 배경 토큰 */
-  /* Fallback: light mode uses white background */
-  --xeg-bg-toolbar: var(--color-bg-surface, #ffffff);
+  --xeg-bg-toolbar: var(--color-bg-surface);
 
   /* Gallery Image Item Background Tokens */
   --xeg-color-bg-secondary: var(--color-bg-secondary);
@@ -189,8 +188,8 @@
   --color-text-primary: var(--color-base-white);
   --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
-  /* Fallback: dark mode uses gray-700 as toolbar background */
-  --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
+  /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+  --xeg-bg-toolbar: var(--color-gray-800);
 
   /* Gallery Image Item Dark Mode Tokens */
   --xeg-color-bg-secondary: var(--color-gray-800);
@@ -198,7 +197,7 @@
   --xeg-color-text-error: var(--color-red-300);
 
   /* Modal Background/Border Tokens - Dark Mode */
-  --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+  --xeg-modal-bg-dark: var(--color-gray-800);
   --xeg-modal-border-dark: var(--color-border-emphasis);
   --xeg-modal-bg: var(--xeg-modal-bg-dark);
   --xeg-modal-border: var(--xeg-modal-border-dark);
@@ -210,10 +209,9 @@
     --color-text-primary: var(--color-base-white);
     --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
-    /* Fallback: prefers-color-scheme dark uses gray-700 */
-    --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
+    /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+    --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
-    /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
 
     /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
@@ -221,7 +219,7 @@
     --xeg-color-text-error: var(--color-red-300);
 
     /* Modal Background/Border Tokens - System Dark Mode */
-    --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+    --xeg-modal-bg-dark: var(--color-gray-800);
     --xeg-modal-border-dark: var(--color-border-emphasis);
     --xeg-modal-bg: var(--xeg-modal-bg-dark);
     --xeg-modal-border: var(--xeg-modal-border-dark);
@@ -276,7 +274,7 @@
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
 
   /* Modal Background/Border Tokens - Light Mode */
-  --xeg-modal-bg-light: var(--color-bg-elevated, #ffffff);
+  --xeg-modal-bg-light: var(--color-bg-elevated);
   --xeg-modal-border-light: var(--color-border-default);
   --xeg-modal-bg: var(--xeg-modal-bg-light);
   --xeg-modal-border: var(--xeg-modal-border-light);

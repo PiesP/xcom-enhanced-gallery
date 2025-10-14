@@ -256,4 +256,50 @@ describe('token-definition-guard (Phase 55.2)', () => {
 
     expect(missingTokens).toHaveLength(0);
   });
+
+  it('gray-800 primitive 토큰이 정의되어야 함 (Phase 55.3)', () => {
+    const primitiveTokensPath = join(projectRoot, 'src/shared/styles/design-tokens.primitive.css');
+    const primitiveTokens = readFileSync(primitiveTokensPath, 'utf-8');
+
+    // gray-800이 정의되어 있는지 확인
+    expect(primitiveTokens).toMatch(/--color-gray-800:\s*oklch\(/);
+
+    // gray-700과 gray-900 사이에 정의되어 있는지 확인
+    const grayScaleSection = primitiveTokens.match(
+      /\/\* Gray Scale \*\/[\s\S]*?\/\* Red Scale \*\//
+    );
+
+    expect(grayScaleSection).toBeTruthy();
+    expect(grayScaleSection![0]).toContain('--color-gray-700:');
+    expect(grayScaleSection![0]).toContain('--color-gray-800:');
+    expect(grayScaleSection![0]).toContain('--color-gray-900:');
+  });
+
+  it('semantic 토큰에서 하드코딩된 fallback 값이 제거되어야 함 (Phase 55.3)', () => {
+    const semanticTokens = readFileSync(semanticTokensPath, 'utf-8');
+
+    // 하드코딩된 hex 값 패턴 (fallback 용도로 사용된 것들)
+    const hardcodedFallbacks = [
+      /#2a2a2a/gi, // gray-800 fallback
+      /#4a4a4a/gi, // gray-700 fallback
+    ];
+
+    const foundHardcoded: string[] = [];
+
+    for (const pattern of hardcodedFallbacks) {
+      const matches = semanticTokens.match(pattern);
+      if (matches) {
+        foundHardcoded.push(...matches);
+      }
+    }
+
+    if (foundHardcoded.length > 0) {
+      throw new Error(
+        `semantic 토큰에서 하드코딩된 fallback 값을 발견했습니다:\n  ${foundHardcoded.join('\n  ')}\n\n` +
+          `→ 해결 방법: primitive 토큰을 정의하고 fallback 없이 사용하세요.`
+      );
+    }
+
+    expect(foundHardcoded).toHaveLength(0);
+  });
 });
