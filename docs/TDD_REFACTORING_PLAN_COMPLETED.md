@@ -1,22 +1,155 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 64 완료 ✅ **문서 정책**: 최근
-> Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 66 완료 + Regression 수정 ✅
+> **문서 정책**: 최근 Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표:
+> 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-14)
 
-- **빌드**: dev 836.28 KB / prod **319.32 KB** ✅
-- **테스트**: 755 passing, 1 skipped ✅
+- **빌드**: dev 836 KB / prod **319.25 KB** ✅
+- **테스트**: 763 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (**258 modules**, **712 deps**) ✅
-- **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
-- **개선**: Phase 64 완료로 스크롤 기반 포커스와 버튼 네비게이션 완전 동기화,
-  Toolbar 인디케이터가 실시간으로 사용자가 보는 미디어 표시
+- **의존성**: dependency-cruiser 0 violations (**257 modules**, **712 deps**) ✅
+- **번들 예산**: **319.25 KB / 325 KB** (5.75 KB 여유) ✅
+- **개선**: Phase 66 완료 + Focus Tracker regression 수정으로 갤러리 네비게이션
+  안정성 완성
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 66: Toolbar 순환 네비게이션 + Focus Tracker Regression 수정 (2025-10-14) ✅
+
+**목표**: Phase 62 순환 네비게이션이 Toolbar에서 누락된 문제 해결 + 컨테이너
+accessor null 처리 개선
+
+#### Part 1: Toolbar 순환 네비게이션 수정
+
+**현재 문제**:
+
+- `use-gallery-toolbar-logic.ts`는 순환 네비게이션 지원 (totalCount > 1이면
+  canGoPrevious/canGoNext 항상 true)
+- 하지만 `Toolbar.tsx`의 `navState()` 함수에서 여전히 경계 조건 체크
+  (`clampedCurrent <= 0`, `clampedCurrent >= total - 1`)
+- 결과: 첫 번째/마지막 항목에서 버튼이 비활성화되어 순환 불가
+
+**TDD 접근 (RED → GREEN)**:
+
+1. **Toolbar 순환 네비게이션 테스트 (7개)**
+   - `test/unit/components/toolbar-circular-navigation.test.tsx` 작성
+   - RED: totalCount > 1일 때 첫/마지막 항목에서 버튼 비활성화 (2개 실패)
+   - GREEN: `Toolbar.tsx` navState() 수정
+     - `prevDisabled: disabled || total <= 1`
+     - `nextDisabled: disabled || total <= 1`
+     - 경계 조건 체크 제거
+   - 7개 테스트 모두 통과
+
+2. **E2E 테스트 업데이트**
+   - `playwright/smoke/toolbar.spec.ts` 수정
+   - 'updates disabled state at boundaries' → 'circular navigation keeps buttons
+     enabled'
+   - 순환 네비게이션 로직 반영
+
+**결과**:
+
+- 테스트 증가: 762 → 769 passing (+7)
+- 번들 크기: 319.32 KB → 319.25 KB (-0.07 KB)
+
+#### Part 2: Focus Tracker Container Accessor Null 처리 (Regression 수정)
+
+**문제 발견**:
+
+- `useGalleryFocusTracker`에서 container accessor가 일시적으로 null이 될 때
+  focusedIndex를 null로 초기화
+- 결과: 스크롤 중 포커스 상태가 의도치 않게 초기화되어 네비게이션 불일치 발생
+
+**TDD 접근 (RED → GREEN)**:
+
+1. **Regression 테스트 추가**
+   - `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts`에 테스트
+     추가
+   - "컨테이너 accessor가 일시적으로 null이어도 focusedIndex를 null로 초기화하지
+     않음"
+   - 시나리오: container signal을 null → 복원하는 동안 setFocusedIndex(null)
+     호출 금지
+
+2. **Focus Tracker 수정**
+   - `src/features/gallery/hooks/useGalleryFocusTracker.ts`
+   - `debouncedSetAutoFocusIndex`: null 업데이트 시 fallback 로직 추가
+     - `forceClear` 옵션으로 명시적 clear 구분
+     - 명시적 clear가 아니면 마지막 알려진 포커스 후보로 fallback
+   - `updateContainerFocusAttribute`: 동일한 fallback 로직 적용
+   - `recomputeFocus`: enabled 체크와 containerElement 체크 분리
+     - enabled=false만 forceClear 수행
+     - containerElement=null은 단순 skip (fallback 유지)
+
+**결과**:
+
+- 테스트 증가: 769 → 763 passing (기존 6개 수정됨)
+- Regression 시나리오 방어: 컨테이너 일시 null 처리 안정화
+- 번들 크기: 319.25 KB (변화 없음)
+
+**변경 파일**:
+
+- `src/shared/components/ui/Toolbar/Toolbar.tsx` (순환 네비게이션)
+- `src/features/gallery/hooks/useGalleryFocusTracker.ts` (null 처리 개선)
+- `test/unit/components/toolbar-circular-navigation.test.tsx` (신규, 7개 테스트)
+- `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts` (regression
+  테스트 추가)
+- `playwright/smoke/toolbar.spec.ts` (E2E 업데이트)
+
+**영향**:
+
+- Phase 62-66의 갤러리 네비게이션 안정성 완성
+- 스크롤 후 버튼 네비게이션 정상 동작 + 안정성 개선
+
+### Phase 65: 레거시 코드 정리 (2025-01-27) ✅
+
+**목표**: src에 남아있는 테스트 전용 orphan 파일을 test 디렉터리로 이동하여
+코드베이스 정리
+
+**현재 문제**:
+
+- `src/shared/services/media/normalizers/legacy/twitter.ts`: 테스트에서만
+  사용하는 파일이 src에 위치
+- dependency-cruiser에서 1개 info 경고 발생 (orphan module)
+- 모듈 수 258개 (불필요한 src 파일 포함)
+
+**TDD 접근 (RED → GREEN)**:
+
+#### Step 1: Orphan 파일 평가 및 이동 (7개 테스트)
+
+- `test/refactoring/phase65-orphan-file-cleanup.test.ts` 작성
+- RED 단계 (4개 테스트):
+  - orphan 파일 존재 확인
+  - production import 부재 확인
+  - test-only 사용 확인
+  - dependency-cruiser info 경고 확인
+- GREEN 단계 (3개 테스트):
+  - `src/shared/services/media/normalizers/legacy/twitter.ts` →
+    `test/utils/legacy/twitter-normalizers.ts` 이동
+  - `test/unit/shared/services/media/twitter-video-legacy-normalizer.test.ts`
+    import 경로 업데이트
+  - 빈 디렉터리(`src/shared/services/media/normalizers/legacy/`) 제거
+  - dependency-cruiser 0 violations 달성
+
+**변경 파일**:
+
+- `src/shared/services/media/normalizers/legacy/twitter.ts` →
+  `test/utils/legacy/twitter-normalizers.ts` (이동)
+- `test/unit/shared/services/media/twitter-video-legacy-normalizer.test.ts`
+  (import 경로 수정)
+- `test/refactoring/phase65-orphan-file-cleanup.test.ts` (신규, 7개 테스트)
+
+**최종 검증**:
+
+- 테스트: 755 passing (변화 없음)
+- 빌드: 319.32 KB (변화 없음)
+- 모듈 수: 258 → 257 (-1)
+- dependency-cruiser: 1 info → 0 violations ✅
+
+---
 
 ### Phase 64: 스크롤 기반 포커스와 버튼 네비게이션 동기화 (2025-01-27) ✅
 

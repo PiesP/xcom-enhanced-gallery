@@ -84,19 +84,59 @@ export function useGalleryFocusTracker({
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
-  const debouncedSetAutoFocusIndex = createDebouncer((index: number | null) => {
-    setAutoFocusIndex(index);
-    setFocusedIndex(index); // Phase 64 Step 3: 전역 동기화
-  }, 50);
+  const debouncedSetAutoFocusIndex = createDebouncer<[number | null, { forceClear?: boolean }?]>(
+    (index, options) => {
+      const shouldForceClear = options?.forceClear ?? false;
 
-  const updateContainerFocusAttribute = (value: number | null) => {
+      if (index === null && !shouldForceClear) {
+        const fallbackIndex =
+          autoFocusIndex() ?? manualFocusIndex() ?? lastAutoFocusedIndex ?? getCurrentIndex();
+
+        if (fallbackIndex === null || Number.isNaN(fallbackIndex)) {
+          setAutoFocusIndex(null);
+          setFocusedIndex(null);
+          return;
+        }
+
+        setAutoFocusIndex(fallbackIndex);
+        setFocusedIndex(fallbackIndex);
+        return;
+      }
+
+      setAutoFocusIndex(index);
+      setFocusedIndex(index); // Phase 64 Step 3: 전역 동기화
+    },
+    50
+  );
+
+  const updateContainerFocusAttribute = (
+    value: number | null,
+    options?: { forceClear?: boolean }
+  ) => {
     const containerElement = containerAccessor();
     if (!containerElement) {
       return;
     }
 
-    const fallback = getCurrentIndex();
-    const normalized = value ?? fallback ?? -1;
+    const shouldForceClear = options?.forceClear ?? false;
+
+    const resolveCandidate = (candidate: number | null): candidate is number => {
+      return candidate !== null && !Number.isNaN(candidate);
+    };
+
+    const fallbackCandidates: Array<number | null> = [
+      value,
+      autoFocusIndex(),
+      manualFocusIndex(),
+      lastAutoFocusedIndex,
+      getCurrentIndex(),
+    ];
+
+    const fallbackValue = shouldForceClear
+      ? value
+      : (fallbackCandidates.find(resolveCandidate) ?? null);
+
+    const normalized = fallbackValue ?? -1;
     containerElement.setAttribute('data-focused', String(normalized));
     containerElement.setAttribute('data-focused-index', String(normalized));
   };
@@ -202,11 +242,17 @@ export function useGalleryFocusTracker({
   };
 
   const recomputeFocus = () => {
-    const containerElement = containerAccessor();
-    if (!containerElement || !isEnabledAccessor()) {
-      debouncedSetAutoFocusIndex.execute(null);
-      updateContainerFocusAttribute(null);
+    const enabled = isEnabledAccessor();
+    if (!enabled) {
+      debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
+      updateContainerFocusAttribute(null, { forceClear: true });
       evaluateAutoFocus('disabled');
+      return;
+    }
+
+    const containerElement = containerAccessor();
+    if (!containerElement) {
+      updateContainerFocusAttribute(autoFocusIndex());
       return;
     }
 
@@ -412,8 +458,12 @@ export function useGalleryFocusTracker({
 
     cleanupObserver();
 
-    if (!enabled || !containerElement) {
-      debouncedSetAutoFocusIndex.execute(null);
+    if (!enabled) {
+      debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
+      return;
+    }
+
+    if (!containerElement) {
       return;
     }
 

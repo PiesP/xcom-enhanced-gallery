@@ -198,6 +198,65 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
     });
   });
 
+  describe('Regression: 컨테이너 신호 변동 대응', () => {
+    it('컨테이너 accessor가 일시적으로 null이어도 focusedIndex를 null로 초기화하지 않음', async () => {
+      const { useGalleryFocusTracker } = await import(
+        '../../../src/features/gallery/hooks/useGalleryFocusTracker'
+      );
+      const [currentIndex] = createSignal(0);
+      const [containerRef, setContainerRef] = createSignal<globalThis.HTMLDivElement | null>(
+        mockContainer
+      );
+      let registerItem: ((index: number, element: HTMLElement | null) => void) | undefined;
+
+      await new Promise<void>(resolve => {
+        dispose = createRoot(innerDispose => {
+          const result = useGalleryFocusTracker({
+            container: containerRef,
+            isEnabled: true,
+            getCurrentIndex: currentIndex,
+          });
+
+          registerItem = result.registerItem;
+          resolve();
+          return innerDispose;
+        });
+      });
+
+      const item = document.createElement('div');
+      item.setAttribute('data-index', '0');
+      item.style.height = '300px';
+      mockContainer.appendChild(item);
+      registerItem?.(0, item);
+
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const initialCall =
+        setFocusedIndexSpy.mock.calls[setFocusedIndexSpy.mock.calls.length - 1]?.[0] ?? null;
+      expect(initialCall).not.toBeNull();
+
+      setFocusedIndexSpy.mockClear();
+
+      setContainerRef(null);
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const hasNullCallAfterDetach = setFocusedIndexSpy.mock.calls.some(
+        ([value]) => value === null
+      );
+      expect(hasNullCallAfterDetach).toBe(false);
+
+      setFocusedIndexSpy.mockClear();
+
+      setContainerRef(mockContainer);
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      const hasNullCallAfterRestore = setFocusedIndexSpy.mock.calls.some(
+        ([value]) => value === null
+      );
+      expect(hasNullCallAfterRestore).toBe(false);
+    });
+  });
+
   describe('REFACTOR: 성능 최적화 검증', () => {
     it('짧은 시간 내 여러 번 autoFocusIndex 변경 시 debounce로 한 번만 호출', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
