@@ -3,7 +3,7 @@ import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
-import { galleryIndexEvents } from '../../../shared/state/signals/gallery.signals';
+import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -83,8 +83,10 @@ export function useGalleryFocusTracker({
   let lastAutoFocusedIndex: number | null = null;
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
+  // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
   const debouncedSetAutoFocusIndex = createDebouncer((index: number | null) => {
     setAutoFocusIndex(index);
+    setFocusedIndex(index); // Phase 64 Step 3: 전역 동기화
   }, 50);
 
   const updateContainerFocusAttribute = (value: number | null) => {
