@@ -1,21 +1,93 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 58 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 59 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-14)
 
 - **빌드**: dev 836.01 KB / prod **316.71 KB** ✅
-- **테스트**: 662 passing, 1 skipped ✅
+- **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (263 modules, 716 deps) ✅
+- **의존성**: dependency-cruiser 0 violations (260 modules, 712 deps) ✅
 - **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
-- **개선**: Phase 54-58 작업으로 툴바/갤러리 UI 일관성 및 단순화 강화
+- **개선**: Phase 54-59 작업으로 툴바/갤러리 UI 일관성 및 코드베이스 단순화 강화
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 59: Toolbar 모듈 통폐합 및 명명 규칙 재검토 (2025-10-14) ✅
+
+**목표**: 사용되지 않는 레거시 파일 제거 및 import 경로 정리로 코드베이스 단순화
+
+**현재 문제**:
+
+- `ConfigurableToolbar.tsx`: 빈 스텁 파일 (null만 반환, 11줄)
+- `ToolbarHeadless.tsx`: Headless UI 패턴이지만 실제 사용처 없음 (158줄)
+- `UnifiedToolbar.tsx`: 단순 re-export 파일로 불필요한 간접 참조 추가 (8줄)
+
+**구현 (TDD: RED → GREEN → REFACTOR)**:
+
+1. **RED**: 파일 삭제 전 기존 테스트 통과 확인
+   - 662 passing, 1 skipped ✅
+   - grep 검색으로 import 사용처 0건 확인
+
+2. **GREEN**: 사용되지 않는 파일 삭제
+   - `src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx` 삭제
+   - `src/shared/components/ui/Toolbar/ToolbarHeadless.tsx` 삭제
+   - `src/shared/components/ui/Toolbar/UnifiedToolbar.tsx` 삭제
+   - `test/unit/components/toolbar-headless-memo.test.tsx` 삭제 (의존 테스트)
+   - 테스트 실행: 658 passing, 1 skipped ✅ (4개 테스트 감소, 예상대로)
+
+3. **REFACTOR**: Playwright 하네스 정리
+   - `playwright/harness/index.ts`:
+     - `ToolbarHeadless` import 제거
+     - `evaluateToolbarHeadlessHarness` 함수 제거 (65줄)
+   - `playwright/harness/types.d.ts`:
+     - `ToolbarHeadlessResult` 타입 제거
+     - `FitMode`, `ToolbarItem` import 제거
+     - `XegHarness.evaluateToolbarHeadless` 메서드 제거
+   - 빌드 검증: `npm run build` 성공 ✅
+
+**결과**:
+
+- 177+ 줄의 미사용 코드 제거 ✅
+- import 경로가 `Toolbar.tsx`로 직접 참조 (기존에도 직접 import 사용 중이었음)
+  ✅
+- 테스트 감소: 662 → 658 passing (삭제된 테스트 파일로 인한 예상된 감소) ✅
+- 타입 에러 0건 유지 ✅
+- 번들 크기 유지: 316.71 KB (변경 없음, 사용되지 않던 코드라 영향 없음) ✅
+- 모든 빌드/검증 통과 ✅
+
+**파일 변경**:
+
+- **삭제**: 4개 파일 (177+ 줄)
+  - `src/shared/components/ui/Toolbar/ConfigurableToolbar.tsx`
+  - `src/shared/components/ui/Toolbar/ToolbarHeadless.tsx`
+  - `src/shared/components/ui/Toolbar/UnifiedToolbar.tsx`
+  - `test/unit/components/toolbar-headless-memo.test.tsx`
+- **수정**: 2개 파일
+  - `playwright/harness/index.ts` (import 및 함수 제거)
+  - `playwright/harness/types.d.ts` (타입 및 메서드 제거)
+
+**Toolbar 디렉터리 최종 구조**:
+
+```
+src/shared/components/ui/Toolbar/
+├── Toolbar.tsx (661 줄) - 메인 구현
+├── Toolbar.types.ts - 타입 정의
+└── Toolbar.module.css - 스타일
+```
+
+**코드베이스 개선**:
+
+- 파일 수 감소: 6개 → 3개 (50% 축소)
+- 불필요한 추상화 제거 (Headless 패턴, Configurable 스텁, 재출력 래퍼)
+- 테스트 유지보수 부담 감소 (의존 테스트 제거)
+- 코드 가독성 향상 (import 경로가 명확해짐)
+
+---
 
 ### Phase 58: 툴바 UI 일관성 개선 (2025-10-14) ✅
 
