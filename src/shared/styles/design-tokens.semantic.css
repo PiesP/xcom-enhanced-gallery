@@ -19,6 +19,9 @@
   --xeg-color-bg-error: var(--color-error-bg);
   --xeg-color-text-error: var(--color-error);
 
+  /* Gallery Background - 기본값(라이트) */
+  --xeg-gallery-bg: var(--color-bg-primary);
+
   /* Text Colors - Semantic Roles */
   --color-text-primary: var(--color-base-black);
   --color-text-secondary: var(--color-gray-700);
@@ -43,6 +46,16 @@
   --xeg-button-text: var(--color-text-primary);
   --xeg-button-bg-hover: var(--color-bg-secondary);
   --xeg-button-border-hover: var(--color-border-hover);
+
+  /* Modal Background/Border Tokens - 기본값(라이트) */
+  --xeg-modal-bg: var(--color-bg-elevated);
+  --xeg-modal-border: var(--color-border-default);
+
+  /* Toolbar High Contrast Tokens (Phase 56) - 기본값(라이트) */
+  --xeg-toolbar-bg-high-contrast: var(--xeg-color-neutral-100);
+  --xeg-toolbar-border-high-contrast: var(--xeg-color-overlay-medium);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-glass-bg);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-color-overlay-light);
 
   /* State Colors - Semantic Roles */
   --color-success: var(--color-green-500);
@@ -136,6 +149,16 @@
   --xeg-focus-outline: 2px solid var(--color-primary);
   --xeg-focus-offset: 2px;
 
+  /* Animation Timing - Semantic Roles */
+  --xeg-duration: var(--duration-normal);
+  --xeg-duration-fast: var(--duration-fast);
+  --xeg-duration-slow: var(--duration-slow);
+
+  /* Surface Glass - Unified Tokens */
+  --xeg-surface-glass-bg: var(--color-glass-bg);
+  --xeg-surface-glass-border: var(--color-glass-border);
+  --xeg-surface-glass-shadow: var(--shadow-lg);
+
   /* Z-Index Management */
   --xeg-z-modal: 10000;
   --xeg-z-toolbar: 10001;
@@ -149,11 +172,6 @@
   --xeg-layer-modal: var(--xeg-z-modal);
   --xeg-layer-toast: var(--xeg-z-toast);
 
-  /* Animation Timing - Semantic Roles */
-  --xeg-duration: var(--duration-normal);
-  --xeg-duration-fast: var(--duration-fast);
-  --xeg-duration-slow: var(--duration-slow);
-
   /* Animation Easing */
   --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
   --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
@@ -163,11 +181,6 @@
   --xeg-button-lift: -1px;
   --xeg-button-lift-hover: -2px;
   --xeg-opacity-disabled: 0.5;
-
-  /* Surface Glass - Unified Tokens */
-  --xeg-surface-glass-bg: var(--color-glass-bg);
-  --xeg-surface-glass-border: var(--color-glass-border);
-  --xeg-surface-glass-shadow: var(--shadow-lg);
 
   /* Surface Glass Hover States */
   --xeg-surface-glass-bg-hover: rgba(255, 255, 255, 0.15);
@@ -189,12 +202,6 @@
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
   --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
-
-  /* High Contrast Toolbar Tokens - Light Mode (Phase 56) */
-  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
-  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
-  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
-  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 }
 
 [data-theme='dark'] {
@@ -211,6 +218,9 @@
   --xeg-color-bg-error: var(--color-red-900);
   --xeg-color-text-error: var(--color-red-300);
 
+  /* Gallery Background - 다크 모드 */
+  --xeg-gallery-bg: var(--color-gray-900);
+
   /* Button Tokens - Dark Mode */
   --xeg-button-bg: var(--color-gray-800);
   --xeg-button-border: var(--color-border-emphasis);
@@ -219,18 +229,14 @@
   --xeg-button-border-hover: var(--color-border-emphasis);
 
   /* Modal Background/Border Tokens - Dark Mode */
-  --xeg-modal-bg-dark: var(--color-gray-800);
-  --xeg-modal-border-dark: var(--color-border-emphasis);
-  --xeg-modal-bg: var(--xeg-modal-bg-dark);
-  --xeg-modal-border: var(--xeg-modal-border-dark);
+  --xeg-modal-bg: var(--color-gray-800);
+  --xeg-modal-border: var(--color-border-emphasis);
 
   /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
-  --xeg-toolbar-bg-high-contrast-dark: var(--xeg-color-neutral-900);
-  --xeg-toolbar-border-high-contrast-dark: var(--xeg-glass-border);
-  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
-  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
-  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
-  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-color-neutral-900);
+  --xeg-toolbar-border-high-contrast: var(--xeg-glass-border);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-color-neutral-700);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-glass-border);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -250,7 +256,7 @@
     --xeg-color-text-error: var(--color-red-300);
 
     /* Gallery Background */
-    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+    --xeg-gallery-bg: var(--color-gray-900);
 
     /* Button Tokens - System Dark Mode */
     --xeg-button-bg: var(--color-gray-800);
@@ -260,10 +266,8 @@
     --xeg-button-border-hover: var(--color-border-emphasis);
 
     /* Modal Background/Border Tokens - System Dark Mode */
-    --xeg-modal-bg-dark: var(--color-gray-800);
-    --xeg-modal-border-dark: var(--color-border-emphasis);
-    --xeg-modal-bg: var(--xeg-modal-bg-dark);
-    --xeg-modal-border: var(--xeg-modal-border-dark);
+    --xeg-modal-bg: var(--color-gray-800);
+    --xeg-modal-border: var(--color-border-emphasis);
   }
 }
 
@@ -277,6 +281,8 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --xeg-duration: 0ms;
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-slow: 0ms;
     --transition-fast: 0ms;
     --transition-normal: 0ms;
     --transition-slow: 0ms;
@@ -305,8 +311,7 @@
   --xeg-settings-select-padding: var(--space-sm) var(--space-md);
   --xeg-settings-select-bg: var(--xeg-bg-toolbar);
   --xeg-settings-select-border: var(--xeg-toolbar-border);
-  --xeg-settings-select-focus-ring: 0 0 0 calc(var(--xeg-focus-ring-width) + 1px)
-    var(--xeg-focus-ring-color);
+  --xeg-settings-select-focus-ring: 0 0 0 3px oklch(0.676 0.151 237.8);
 
   /* Modal Component Tokens */
   /* NOTE: Modal component tokens now defer to semantic tokens to avoid
@@ -315,30 +320,6 @@
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
   --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
   --xeg-comp-toolbar-border: var(--xeg-toolbar-border);
-
-  /* Modal Background/Border Tokens - Light Mode */
-  --xeg-modal-bg-light: var(--color-bg-elevated);
-  --xeg-modal-border-light: var(--color-border-default);
-  --xeg-modal-bg: var(--xeg-modal-bg-light);
-  --xeg-modal-border: var(--xeg-modal-border-light);
-
-  /* Toolbar High Contrast Tokens (Phase 56) */
-  /* 고대비 모드용 툴바 배경/경계 토큰 */
-  --xeg-toolbar-bg-high-contrast-light: var(--xeg-color-neutral-100);
-  --xeg-toolbar-border-high-contrast-light: var(--xeg-color-overlay-medium);
-  --xeg-toolbar-button-bg-high-contrast-light: var(--xeg-glass-bg);
-  --xeg-toolbar-button-border-high-contrast-light: var(--xeg-color-overlay-light);
-
-  --xeg-toolbar-bg-high-contrast-dark: var(--xeg-color-neutral-900);
-  --xeg-toolbar-border-high-contrast-dark: var(--xeg-glass-border);
-  --xeg-toolbar-button-bg-high-contrast-dark: var(--xeg-color-neutral-700);
-  --xeg-toolbar-button-border-high-contrast-dark: var(--xeg-glass-border);
-
-  /* 고대비 토큰 기본값 (라이트 모드) */
-  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
-  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
-  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
-  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
@@ -370,38 +351,7 @@
   /* Focus Ring Utilities */
   --xeg-focus-ring: 2px solid oklch(0.676 0.151 237.8);
   --xeg-focus-ring-offset: 2px;
-  --xeg-focus-ring-color: oklch(0.676 0.151 237.8);
-  --xeg-focus-ring-width: 2px;
-
-  /* 갤러리 테마별 배경 토큰 */
-  --xeg-gallery-bg-light: var(--color-bg-primary);
-  --xeg-gallery-bg-dark: var(--color-gray-900);
-  --xeg-gallery-bg: var(--xeg-gallery-bg-dark); /* 기본값: 다크 */
-}
-
-/* 테마별 토큰 오버라이드 */
-[data-theme='light'] {
-  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
-}
-
-[data-theme='dark'] {
-  --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-}
-
-/* 시스템 테마 기본 지원 */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme='dark']) {
-    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
-  }
-}
-
-/* ===== 유틸리티 클래스 ===== */
+} /* ===== 유틸리티 클래스 ===== */
 
 /* Toast 애니메이션 토큰 */
 .xeg-anim-slide-in {

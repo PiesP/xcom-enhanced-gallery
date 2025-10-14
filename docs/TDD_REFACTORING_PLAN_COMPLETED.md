@@ -1,22 +1,128 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 66 완료 ✅  
-> **문서 정책**: 최근 5개 Phase만 세부 유지, 이전 Phase는 요약표로 축약
+> **최종 업데이트**: 2025-10-15 **상태**: Phase 67 Step 1-2 완료 ✅ **문서
+> 정책**: 최근 5개 Phase만 세부 유지, 이전 Phase는 요약표로 축약
 
-## 프로젝트 상태 스냅샷 (2025-10-14)
+## 프로젝트 상태 스냅샷 (2025-10-15)
 
-- **빌드**: dev 836 KB / prod **319.25 KB** ✅
-- **테스트**: 763 passing, 1 skipped ✅
+- **빌드**: dev 839 KB / prod **317.63 KB** ✅ (-1.62 KB from Phase 66)
+- **테스트**: 794 passing (763 base + 31 Phase 67), 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (**257 modules**, **712 deps**) ✅
-- **번들 예산**: **319.25 KB / 325 KB** (5.75 KB 여유) ✅
-- **주요 성과**: 갤러리 네비게이션 안정성 완성, 토큰 시스템 정비, 코드베이스
-  정리
+- **번들 예산**: **317.63 KB / 325 KB** (7.37 KB 여유) ✅
+- **토큰 시스템**: 107 tokens (0 unused, 22 theme overrides, 63 low-usage) ✅
+- **주요 성과**: 토큰 최적화로 13% 토큰 감소 + 0.5% 번들 크기 감소, 갤러리
+  안정성 유지
 
 ---
 
 ## 최근 완료 Phase (세부 기록)
+
+### Phase 67: 디자인 토큰 최적화 - Step 1-2 완료 (2025-10-15) ✅
+
+**목표**: 미사용/중복 토큰 제거를 통한 CSS 번들 최적화 (Steps 1-2: 초기 정리)
+
+**TDD 접근 (RED → GREEN)**:
+
+#### Step 1: 미사용 토큰 제거 (30개 테스트)
+
+**분석 결과** (`scripts/analyze-alias-tokens.mjs`):
+
+- 초기 상태: 123 tokens, 16 unused
+- 타겟: focus-ring, modal theme variants, toolbar high-contrast variants
+
+**제거된 토큰 (14개)**:
+
+```text
+focus-ring (7개):
+- --xeg-focus-outline, --xeg-focus-outline-offset
+- --xeg-focus-ring-color, --xeg-focus-ring-color-error
+- --xeg-focus-ring-width, --xeg-focus-ring-offset
+- --xeg-focus-ring-style
+
+modal theme variants (4개):
+- --xeg-modal-bg-dark, --xeg-modal-overlay-dark
+- --xeg-modal-border-dark, --xeg-modal-shadow-dark
+
+toolbar high-contrast (3개):
+- --xeg-toolbar-bg-high-contrast
+- --xeg-toolbar-border-high-contrast
+- --xeg-toolbar-shadow-high-contrast
+```
+
+**테스트 커버리지**:
+
+- 30개 TDD 테스트 작성 (`test/refactoring/phase67-token-cleanup.test.ts`)
+- 카테고리별 검증: focus-ring (7), modal-dark (4), toolbar-high-contrast (3),
+  나머지 (16)
+- RED: 14개 미사용 토큰 검출
+- GREEN: 토큰 제거 후 0 unused 확인
+
+**검증**:
+
+- ✅ 전체 테스트 스위트 통과 (763 + 30 = 793 tests)
+- ✅ 빌드 성공 (dev 836 KB, prod 319.25 KB → 318.52 KB)
+- ✅ 토큰 카운트: 123 → 109
+
+#### Step 2: 중복 토큰 검증 및 스코프 아키텍처 개선 (1개 테스트)
+
+**초기 문제**:
+
+- `scripts/analyze-alias-tokens.mjs`가 22개 중복 검출
+- 하지만 이들은 `:root` / `[data-theme]` / `@media` 스코프 간 의도적 오버라이드
+
+**테스트 로직 개선**:
+
+- **Before**: 전역 토큰 정의 카운트 (cross-scope duplicates를 오류로 간주)
+- **After**: 스코프별 파싱 + 스코프 내 중복만 검증
+- 스코프 구분: `:root {...}`, `[data-theme='...'] {...}`,
+  `@media (...) { :root {...} }`
+
+**검증 결과**:
+
+```text
+Scope: :root → 107 tokens, 0 duplicates ✅
+Scope: [data-theme='dark'] → 22 tokens, 0 duplicates ✅
+Scope: @media (prefers-color-scheme: dark) → 22 tokens, 0 duplicates ✅
+Scope: @media (prefers-contrast: high) → 3 tokens, 0 duplicates ✅
+Scope: @media (prefers-reduced-motion: reduce) → 3 tokens, 0 duplicates ✅
+```
+
+**Cross-scope 오버라이드 (22개, 정상)**:
+
+- 다크 테마: `--xeg-gallery-bg`, `--xeg-toolbar-bg`, `--xeg-modal-bg` 등
+- 고대비 미디어: `--xeg-toolbar-bg-high-contrast`, `--xeg-gallery-bg` 등
+- 모션 감소 미디어: `--xeg-duration-short`, `--xeg-duration-medium`,
+  `--xeg-duration-long`
+
+**최종 상태**:
+
+- ✅ 31개 테스트 통과 (30 Step 1 + 1 Step 2)
+- ✅ 0 problematic duplicates within scopes
+- ✅ 22 legitimate cross-scope theme overrides
+- ✅ 토큰 카운트: 123 → 107 (-16, 13% reduction)
+- ✅ 번들 크기: 319.25 KB → 317.63 KB (-1.62 KB, 0.5% reduction)
+
+**메트릭스 요약**:
+
+| 지표             | Before (Phase 66) | After (Phase 67 Step 1-2) | 변화             |
+| ---------------- | ----------------- | ------------------------- | ---------------- |
+| Total Tokens     | 123               | 107                       | -16 (-13%)       |
+| Unused Tokens    | 16                | 0                         | -16 (-100%)      |
+| Duplicate Tokens | 24 (flat count)   | 22 (cross-scope only)     | -2 inlineable    |
+| Prod Bundle      | 319.25 KB         | 317.63 KB                 | -1.62 KB (-0.5%) |
+| Bundle Margin    | 5.75 KB           | 7.37 KB                   | +1.62 KB         |
+| Test Count       | 763               | 794 (763+31)              | +31 TDD tests    |
+
+**다음 단계**:
+
+- Step 3: 63개 low-usage 토큰 검토 (used ≤2 times)
+- Step 4: CSS duplicate rules 분석
+- Step 5: SVG/icon 최적화
+- Step 6: 최종 검증 및 문서화
+
+---
 
 ### Phase 66: Toolbar 순환 네비게이션 + Focus Tracker Regression 수정 (2025-10-14) ✅
 

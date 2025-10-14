@@ -133,8 +133,8 @@ GalleryView.tsx          # PascalCase 금지
 mediaProcessor.ts        # camelCase 금지
 ```
 
-**자동 검증**: Phase 24 테스트 스위트가 강제  
-**Regex**: `/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)?\.(?:ts|tsx)$/`
+**자동 검증**: Phase 24 테스트 스위트가 강제 **Regex**:
+`/^[a-z0-9]+(?:-[a-z0-9]+)*(?:\.[a-z]+)?\.(?:ts|tsx)$/`
 
 ---
 
