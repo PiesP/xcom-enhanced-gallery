@@ -196,6 +196,12 @@
   --xeg-color-bg-secondary: var(--color-gray-800);
   --xeg-color-bg-error: var(--color-red-900);
   --xeg-color-text-error: var(--color-red-300);
+
+  /* Modal Background/Border Tokens - Dark Mode */
+  --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -213,6 +219,12 @@
     --xeg-color-bg-secondary: var(--color-gray-800);
     --xeg-color-bg-error: var(--color-red-900);
     --xeg-color-text-error: var(--color-red-300);
+
+    /* Modal Background/Border Tokens - System Dark Mode */
+    --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+    --xeg-modal-border-dark: var(--color-border-emphasis);
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+    --xeg-modal-border: var(--xeg-modal-border-dark);
   }
 }
 
@@ -262,7 +274,12 @@
     cascading alias overwrite issues that previously caused dark mode
     transparency regressions (see 2025-09-11 fix log). */
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
-  /* Semantic tokens (authoritative) defined later in file control actual values */
+
+  /* Modal Background/Border Tokens - Light Mode */
+  --xeg-modal-bg-light: var(--color-bg-elevated, #ffffff);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
 
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
