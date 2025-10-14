@@ -47,9 +47,6 @@ export {
 
 export { isInsideGallery } from './utils/dom';
 
-// 최적화 유틸리티들 (Phase 3)
-export * from './utils/optimization';
-
 // 새로운 P4-P7 유틸리티들
 export {
   createSelector,

@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 59 완료 ✅ 다음 Phase 대기 중
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 60 완료 ✅ 다음 Phase 대기 중
 
 ## 프로젝트 상태
 
@@ -8,10 +8,18 @@
 - **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (260 modules, 712 dependencies) ✅
+- **의존성**: 0 violations (**257 modules**, **709 dependencies**) ✅
 - **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 60: 미사용 유틸리티 및 편의 함수 제거 (2025-10-14) ✅
+  - optimization 디렉터리 완전 제거 (memo.ts, bundle.ts, index.ts)
+  - GalleryHOC에서 5개 편의 함수 제거 (withGalleryContainer 등)
+  - 112+ 줄의 미사용 코드 제거로 코드베이스 단순화
+  - 모듈 수 감소: 260 → 257 (-3개), 의존성: 712 → 709 (-3개)
+  - 테스트 유지: 658 passing (변화 없음)
+  - 번들 크기 유지 (316.71 KB, Dead code elimination 최적화 완료)
 
 - Phase 59: Toolbar 모듈 통폐합 및 명명 규칙 재검토 (2025-10-14) ✅
   - 사용되지 않는 3개 파일 삭제 (ConfigurableToolbar, ToolbarHeadless,

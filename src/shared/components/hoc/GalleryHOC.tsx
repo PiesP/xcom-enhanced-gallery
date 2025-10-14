@@ -302,67 +302,6 @@ function getComponentName<T>(Component: ComponentType<T>): string {
 }
 
 /**
- * 타입별 편의 함수들
- */
-
-/**
- * 갤러리 컨테이너 HOC
- */
-export function withGalleryContainer<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'container',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 아이템 HOC
- */
-export function withGalleryItem<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'item',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 컨트롤 HOC
- */
-export function withGalleryControl<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'control',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 갤러리 오버레이 HOC
- */
-export function withGalleryOverlay<P extends GalleryComponentProps>(
-  Component: ComponentType<P>,
-  additionalOptions: Partial<GalleryOptions> = {}
-): ComponentType<P> {
-  return withGallery(Component, {
-    type: 'overlay',
-    ...additionalOptions,
-  });
-}
-
-/**
- * 기본 갤러리 HOC (withGallery의 별칭)
- */
-export const GalleryHOC = withGallery;
-
-/**
  * 유틸리티 함수들
  */
 
