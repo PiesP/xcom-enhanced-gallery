@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 64 완료 ✅
+> **최종 업데이트**: 2025-01-27 **상태**: Phase 65 완료 ✅
 
 ## 프로젝트 상태
 
@@ -8,10 +8,18 @@
 - **테스트**: 755 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (**258 modules**, **712 dependencies**) ✅
+- **의존성**: 0 violations (**257 modules**, **712 dependencies**) ✅
 - **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 65 Step 1: Orphan 파일 정리 (2025-01-27) ✅
+  - `twitter.ts` 레거시 normalizer 파일 이동 (src → test)
+  - dependency-cruiser: 1 info → 0 violations 달성
+  - 모듈 수: 258 → 257 (-1)
+  - TDD 테스트 7개 추가 (RED/GREEN 검증)
+  - 번들 크기: 319.32 KB (변화 없음)
+  - **코드베이스 정리**: 테스트 전용 파일을 적절한 위치로 이동
 
 - Phase 64 Step 3-4: 포커스 트래킹 및 인디케이터 개선 (2025-10-14) ✅
   - useGalleryFocusTracker 전역 동기화 (10개 테스트)
@@ -35,45 +43,7 @@
 
 ## 진행 중 작업
 
-### Phase 65: 레거시 코드 정리 🟡 **LOW**
-
-**배경**: 코드베이스에 미사용 레거시 코드 및 orphan 파일 존재
-
-**현재 상황**:
-
-- `src/shared/services/media/normalizers/legacy/twitter.ts`: orphan 파일
-  (테스트에서만 사용)
-- dependency-cruiser에서 1개 info 레벨 경고 지속
-
-**작업 범위**:
-
-#### Step 1: Orphan 파일 정리
-
-- `twitter.ts` 레거시 normalizer 파일 평가
-  - 실제 프로덕션에서 사용되는지 확인
-  - 테스트 전용이면 테스트 디렉터리로 이동 또는 제거
-  - 필요시 마이그레이션 가이드 작성
-- 5개 테스트 작성 (파일 사용처 스캔, 의존성 검증)
-
-#### Step 2: 의존성 경고 해결
-
-- dependency-cruiser 정책 업데이트
-- orphan 파일 예외 목록 정리
-- 3개 테스트 작성 (의존성 규칙 검증)
-
-**예상 영향**:
-
-- 번들 크기: -0.1 KB (파일 1개 제거/이동)
-- 테스트: +8개
-- 모듈: -1개 (258 → 257)
-- 의존성: 변경 없음
-
-**수용 기준**:
-
-- ✅ dependency-cruiser 0 violations (info 포함)
-- ✅ 모든 orphan 파일 정리 완료
-- ✅ 기존 테스트 755 passing 유지
-- ✅ 번들 예산 내 유지 (325 KB 이하)
+없음
 
 ## 다음 작업 대기 중
 

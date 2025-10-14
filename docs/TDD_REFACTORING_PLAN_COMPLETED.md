@@ -3,20 +3,67 @@
 > **최종 업데이트**: 2025-10-14 **상태**: Phase 64 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
-## 프로젝트 상태 스냅샷 (2025-10-14)
+## 프로젝트 상태 스냅샷 (2025-01-27)
 
 - **빌드**: dev 836.28 KB / prod **319.32 KB** ✅
 - **테스트**: 755 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (**258 modules**, **712 deps**) ✅
+- **의존성**: dependency-cruiser 0 violations (**257 modules**, **712 deps**) ✅
 - **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
-- **개선**: Phase 64 완료로 스크롤 기반 포커스와 버튼 네비게이션 완전 동기화,
-  Toolbar 인디케이터가 실시간으로 사용자가 보는 미디어 표시
+- **개선**: Phase 65 완료로 orphan 파일 제거, dependency-cruiser 0 violations
+  달성
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 65: 레거시 코드 정리 (2025-01-27) ✅
+
+**목표**: src에 남아있는 테스트 전용 orphan 파일을 test 디렉터리로 이동하여
+코드베이스 정리
+
+**현재 문제**:
+
+- `src/shared/services/media/normalizers/legacy/twitter.ts`: 테스트에서만
+  사용하는 파일이 src에 위치
+- dependency-cruiser에서 1개 info 경고 발생 (orphan module)
+- 모듈 수 258개 (불필요한 src 파일 포함)
+
+**TDD 접근 (RED → GREEN)**:
+
+#### Step 1: Orphan 파일 평가 및 이동 (7개 테스트)
+
+- `test/refactoring/phase65-orphan-file-cleanup.test.ts` 작성
+- RED 단계 (4개 테스트):
+  - orphan 파일 존재 확인
+  - production import 부재 확인
+  - test-only 사용 확인
+  - dependency-cruiser info 경고 확인
+- GREEN 단계 (3개 테스트):
+  - `src/shared/services/media/normalizers/legacy/twitter.ts` →
+    `test/utils/legacy/twitter-normalizers.ts` 이동
+  - `test/unit/shared/services/media/twitter-video-legacy-normalizer.test.ts`
+    import 경로 업데이트
+  - 빈 디렉터리(`src/shared/services/media/normalizers/legacy/`) 제거
+  - dependency-cruiser 0 violations 달성
+
+**변경 파일**:
+
+- `src/shared/services/media/normalizers/legacy/twitter.ts` →
+  `test/utils/legacy/twitter-normalizers.ts` (이동)
+- `test/unit/shared/services/media/twitter-video-legacy-normalizer.test.ts`
+  (import 경로 수정)
+- `test/refactoring/phase65-orphan-file-cleanup.test.ts` (신규, 7개 테스트)
+
+**최종 검증**:
+
+- 테스트: 755 passing (변화 없음)
+- 빌드: 319.32 KB (변화 없음)
+- 모듈 수: 258 → 257 (-1)
+- dependency-cruiser: 1 info → 0 violations ✅
+
+---
 
 ### Phase 64: 스크롤 기반 포커스와 버튼 네비게이션 동기화 (2025-01-27) ✅
 
