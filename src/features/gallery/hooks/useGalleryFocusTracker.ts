@@ -81,6 +81,7 @@ export function useGalleryFocusTracker({
   let observer: IntersectionObserver | null = null;
   let autoFocusTimerId: number | null = null;
   let lastAutoFocusedIndex: number | null = null;
+  let lastAppliedIndex: number | null = null; // Phase 69.2: 중복 applyAutoFocus 방지
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
@@ -109,10 +110,11 @@ export function useGalleryFocusTracker({
     50
   );
 
-  const updateContainerFocusAttribute = (
-    value: number | null,
-    options?: { forceClear?: boolean }
-  ) => {
+  // ✅ Phase 69.2: updateContainerFocusAttribute를 50ms debounce
+  // DOM 업데이트 빈도를 제한하여 렌더링 최적화
+  const debouncedUpdateContainerFocusAttribute = createDebouncer<
+    [number | null, { forceClear?: boolean }?]
+  >((value, options) => {
     const containerElement = containerAccessor();
     if (!containerElement) {
       return;
@@ -145,10 +147,23 @@ export function useGalleryFocusTracker({
     const normalized = finalValue ?? -1;
     containerElement.setAttribute('data-focused', String(normalized));
     containerElement.setAttribute('data-focused-index', String(normalized));
+  }, 50);
+
+  const updateContainerFocusAttribute = (
+    value: number | null,
+    options?: { forceClear?: boolean }
+  ) => {
+    debouncedUpdateContainerFocusAttribute.execute(value, options);
   };
 
-  const scheduleSync = () => {
+  // ✅ Phase 69.2: scheduleSync를 100ms debounce하여 호출 빈도 제한
+  // 빠른 연속 호출(아이템 등록/해제)을 배칭하여 불필요한 recompute 방지
+  const debouncedScheduleSync = createDebouncer<[]>(() => {
     recomputeFocus();
+  }, 100);
+
+  const scheduleSync = () => {
+    debouncedScheduleSync.execute();
   };
 
   const clearAutoFocusTimer = () => {
@@ -159,6 +174,12 @@ export function useGalleryFocusTracker({
   };
 
   const applyAutoFocus = (index: number, reason: string) => {
+    // ✅ Phase 69.2: lastAppliedIndex guard로 동일 인덱스 중복 방지
+    // 동일한 인덱스에 대해 이미 포커스가 적용되었다면 스킵
+    if (lastAppliedIndex === index) {
+      return;
+    }
+
     const element = itemElements.get(index);
     if (!element?.isConnected) {
       return;
@@ -166,17 +187,20 @@ export function useGalleryFocusTracker({
 
     if (document.activeElement === element) {
       lastAutoFocusedIndex = index;
+      lastAppliedIndex = index;
       return;
     }
 
     try {
       element.focus({ preventScroll: true });
       lastAutoFocusedIndex = index;
+      lastAppliedIndex = index;
       logger.debug('useGalleryFocusTracker: auto focus applied', { index, reason });
     } catch (error) {
       try {
         element.focus();
         lastAutoFocusedIndex = index;
+        lastAppliedIndex = index;
         logger.debug('useGalleryFocusTracker: auto focus applied (fallback)', {
           index,
           reason,
@@ -358,21 +382,54 @@ export function useGalleryFocusTracker({
     evaluateAutoFocus('register');
   };
 
+  // ✅ Phase 69.2: handleItemFocus/Blur microtask 배칭
+  // 빠른 연속 포커스 변경을 microtask로 배칭하여 불필요한 업데이트 방지
+  let pendingFocusIndex: number | null = null;
+  let pendingBlurIndex: number | null = null;
+  let focusBatchScheduled = false;
+
+  const flushFocusBatch = () => {
+    focusBatchScheduled = false;
+
+    if (pendingFocusIndex !== null) {
+      const index = pendingFocusIndex;
+      pendingFocusIndex = null;
+      setManualFocusIndex(index);
+      logger.debug('useGalleryFocusTracker: manual focus applied', { index });
+      updateContainerFocusAttribute(index);
+      clearAutoFocusTimer();
+      lastAutoFocusedIndex = index;
+      lastAppliedIndex = index;
+    }
+
+    if (pendingBlurIndex !== null) {
+      const index = pendingBlurIndex;
+      pendingBlurIndex = null;
+      if (manualFocusIndex() === index) {
+        setManualFocusIndex(null);
+        logger.debug('useGalleryFocusTracker: manual focus cleared', { index });
+        scheduleSync();
+        evaluateAutoFocus('manual-blur');
+      }
+    }
+  };
+
+  const scheduleFocusBatch = () => {
+    if (focusBatchScheduled) {
+      return;
+    }
+    focusBatchScheduled = true;
+    globalTimerManager.setTimeout(flushFocusBatch, 0); // microtask 대체
+  };
+
   const handleItemFocus = (index: number) => {
-    setManualFocusIndex(index);
-    logger.debug('useGalleryFocusTracker: manual focus applied', { index });
-    updateContainerFocusAttribute(index);
-    clearAutoFocusTimer();
-    lastAutoFocusedIndex = index;
+    pendingFocusIndex = index;
+    scheduleFocusBatch();
   };
 
   const handleItemBlur = (index: number) => {
-    if (manualFocusIndex() === index) {
-      setManualFocusIndex(null);
-      logger.debug('useGalleryFocusTracker: manual focus cleared', { index });
-      scheduleSync();
-      evaluateAutoFocus('manual-blur');
-    }
+    pendingBlurIndex = index;
+    scheduleFocusBatch();
   };
 
   const focusedIndex = createMemo(() => {
@@ -509,6 +566,8 @@ export function useGalleryFocusTracker({
   onCleanup(() => {
     cleanupObserver();
     debouncedSetAutoFocusIndex.cancel();
+    debouncedScheduleSync.cancel(); // Phase 69.2
+    debouncedUpdateContainerFocusAttribute.cancel(); // Phase 69.2
     batch(() => {
       setManualFocusIndex(null);
       debouncedSetAutoFocusIndex.flush(); // 대기 중인 업데이트를 즉시 실행
@@ -517,6 +576,7 @@ export function useGalleryFocusTracker({
     itemElements.clear();
     clearAutoFocusTimer();
     lastAutoFocusedIndex = null;
+    lastAppliedIndex = null; // Phase 69.2
   });
 
   return {
