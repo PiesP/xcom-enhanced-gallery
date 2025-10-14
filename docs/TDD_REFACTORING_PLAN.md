@@ -1,17 +1,25 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-01-27 **상태**: Phase 64 Step 1-2 완료 ✅
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 64 완료 ✅
 
 ## 프로젝트 상태
 
-- **빌드**: dev 836.28 KB / prod **319.16 KB** ✅
-- **테스트**: 744 passing, 1 skipped ✅
+- **빌드**: dev 836.28 KB / prod **319.32 KB** ✅
+- **테스트**: 755 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (**258 modules**, **711 dependencies**) ✅
-- **번들 예산**: **319.16 KB / 325 KB** (5.84 KB 여유) ✅
+- **의존성**: 0 violations (**258 modules**, **712 dependencies**) ✅
+- **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 64 Step 3-4: 포커스 트래킹 및 인디케이터 개선 (2025-10-14) ✅
+  - useGalleryFocusTracker 전역 동기화 (10개 테스트)
+  - Toolbar 인디케이터 focusedIndex 우선 표시 (6개 테스트 추가)
+  - 반응성 개선: createMemo로 displayIndex/mediaCounter 래핑
+  - 테스트 증가: 744 → 755 passing (+11)
+  - 번들 크기: 319.16 KB → 319.32 KB (+0.16 KB)
+  - **사용자 경험 개선**: 스크롤 탐색 시 Toolbar가 실시간으로 위치 표시
 
 - Phase 64 Step 1-2: 스크롤 기반 포커스와 버튼 네비게이션 동기화 (2025-01-27) ✅
   - focusedIndex signal 추가 (10개 테스트)
@@ -31,36 +39,7 @@
 
 ## 다음 작업 대기 중
 
-### Phase 64 Step 3-4: 포커스 트래킹 및 인디케이터 개선 🔴 **MEDIUM**
-
-**배경**: Phase 64 Step 1-2에서 focusedIndex signal과 버튼 네비게이션 통합 완료
-
-**남은 작업**:
-
-#### Step 3: useGalleryFocusTracker를 전역 focusedIndex와 연동
-
-- autoFocusIndex 업데이트 시 전역 `setFocusedIndex()` 호출
-- 명시적 네비게이션 시에는 이미 동기화되므로 중복 호출 방지
-- 10개 통합 테스트 작성 (스크롤 시 동기화, 버튼 클릭 시 정합성)
-
-#### Step 4: 인디케이터 표시 개선
-
-- Toolbar의 currentIndex 표시를 focusedIndex 우선으로 변경
-- 6개 UI 테스트 작성 (인디케이터 정확도)
-
-**예상 영향**:
-
-- 번들 크기: +0.2 KB (훅 업데이트, UI 로직 수정)
-- 테스트: +16개
-- 모듈: 변경 없음 (기존 파일 수정만)
-- 의존성: 변경 없음
-
-**수용 기준**:
-
-- ✅ 스크롤 시 focusedIndex가 전역 signal에 반영
-- ✅ 인디케이터가 사용자가 보고 있는 미디어를 정확히 표시
-- ✅ 모든 기존 테스트 통과 (744 passing 유지)
-- ✅ 번들 예산 내 유지 (325 KB 이하)
+없음 - 현재 모든 계획된 리팩토링 완료
 
 ## 추가 백로그 (우선순위 검토 필요)
 

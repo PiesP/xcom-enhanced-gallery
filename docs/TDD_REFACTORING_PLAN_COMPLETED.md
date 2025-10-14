@@ -1,18 +1,18 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-01-27 **상태**: Phase 64 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 64 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
-## 프로젝트 상태 스냅샷 (2025-01-27)
+## 프로젝트 상태 스냅샷 (2025-10-14)
 
-- **빌드**: dev 836.28 KB / prod **319.16 KB** ✅
-- **테스트**: 744 passing, 1 skipped ✅
+- **빌드**: dev 836.28 KB / prod **319.32 KB** ✅
+- **테스트**: 755 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (**258 modules**, **711 deps**) ✅
-- **번들 예산**: **319.16 KB / 325 KB** (5.84 KB 여유) ✅
-- **개선**: Phase 64 완료로 스크롤 기반 포커스와 버튼 네비게이션 동기화,
-  사용자가 스크롤로 이동 후 버튼 클릭 시 정상 동작
+- **의존성**: dependency-cruiser 0 violations (**258 modules**, **712 deps**) ✅
+- **번들 예산**: **319.32 KB / 325 KB** (5.68 KB 여유) ✅
+- **개선**: Phase 64 완료로 스크롤 기반 포커스와 버튼 네비게이션 완전 동기화,
+  Toolbar 인디케이터가 실시간으로 사용자가 보는 미디어 표시
 
 ---
 
@@ -79,11 +79,47 @@
 - 번들 크기: 319.02 KB → 319.16 KB (+0.14 KB, 예산 내)
 - 사용자 경험: 스크롤 후 버튼 네비게이션 정상 동작
 
-**다음 단계 (Phase 64 Step 3-4)**:
+#### Step 3: useGalleryFocusTracker 전역 동기화 (2025-10-14) ✅
 
-- Step 3: useGalleryFocusTracker를 전역 focusedIndex와 연동 (10 tests 예정)
-- Step 4: 인디케이터 표시 개선 (6 tests 예정)
-- 예상 영향: +16 tests, +0.2 KB
+- **목표**: 스크롤 기반 포커스 변경 시 전역 focusedIndex signal 자동 업데이트
+- **구현**: `src/features/gallery/hooks/useGalleryFocusTracker.ts` (line 88-91)
+  - `debouncedSetAutoFocusIndex` 함수에서 `setFocusedIndex(index)` 호출 추가
+  - 스크롤로 포커스가 변경될 때마다 전역 signal과 자동 동기화
+- **테스트**: `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts`
+  - 기존 10개 통합 테스트로 검증 완료 (이미 구현되어 있었음)
+
+#### Step 4: Toolbar 인디케이터 개선 (2025-10-14) ✅
+
+- **목표**: Toolbar의 currentIndex 표시를 focusedIndex 우선으로 변경
+- **구현**: `src/shared/hooks/use-gallery-toolbar-logic.ts`
+  - `import type { Accessor } from 'solid-js'` 추가
+  - `MediaCounter` 인터페이스 분리 (line 48-52)
+  - `displayIndex = createMemo(() => focusedIndex ?? currentIndex)` 추가
+    (line 70)
+  - `mediaCounter = createMemo(() => ({ ... }))` 반응성 개선 (line 73-77)
+  - `ToolbarState` 타입 정의 업데이트: `Accessor<number>`,
+    `Accessor<MediaCounter>`
+- **테스트**:
+  - `test/unit/components/toolbar-focused-index-display.test.tsx` (신규, 6개
+    테스트)
+  - `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` (createMemo 패턴
+    검증 업데이트)
+- **효과**: 스크롤로 이미지 탐색 시 Toolbar 인디케이터가 실시간으로 위치 표시
+
+**변경 파일**:
+
+- `src/features/gallery/hooks/useGalleryFocusTracker.ts` (line 88-91, Step 3)
+- `src/shared/hooks/use-gallery-toolbar-logic.ts` (line 6, 48-77, Step 4)
+- `test/unit/components/toolbar-focused-index-display.test.tsx` (신규, 6개
+  테스트)
+- `test/unit/hooks/use-gallery-toolbar-logic-props.test.ts` (createMemo 패턴
+  검증)
+
+**최종 검증**:
+
+- 테스트: 744 → 755 passing (+11)
+- 번들 크기: 319.16 KB → 319.32 KB (+0.16 KB, 예산 내: 325 KB)
+- 사용자 경험: 스크롤 기반 탐색과 버튼 네비게이션 완전 동기화
 
 ---
 

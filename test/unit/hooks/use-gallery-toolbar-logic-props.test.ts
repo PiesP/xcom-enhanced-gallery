@@ -48,12 +48,14 @@ describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
     });
   });
 
-  describe('mediaCounter - Getter 함수 패턴', () => {
-    it('mediaCounter는 getter 함수여야 함 (const mediaCounter = () => ({ ... }))', () => {
-      // RED: 현재는 const mediaCounter = { ... } 형태
-      const hasGetterPattern = /const\s+mediaCounter\s*=\s*\(\)\s*=>\s*\({/.test(fileContent);
+  describe('mediaCounter - createMemo 패턴 (Phase 64 Step 4)', () => {
+    it('mediaCounter는 createMemo로 래핑되어야 함 (const mediaCounter = createMemo(() => ({ ... })))', () => {
+      // Phase 64: focusedIndex 반응성 추적을 위해 createMemo 사용
+      const hasCreateMemoPattern = /const\s+mediaCounter\s*=\s*createMemo\(\(\)\s*=>\s*\({/.test(
+        fileContent
+      );
 
-      expect(hasGetterPattern).toBe(true);
+      expect(hasCreateMemoPattern).toBe(true);
     });
 
     it('mediaCounter는 직접 객체 할당을 사용하지 않아야 함', () => {
@@ -80,13 +82,11 @@ describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
       expect(hasGetterType).toBe(true);
     });
 
-    it('ToolbarState.mediaCounter는 getter 함수 타입이어야 함', () => {
-      const hasGetterType =
-        /mediaCounter:\s*\(\)\s*=>\s*{[^}]*current:\s*number[^}]*total:\s*number[^}]*progress:\s*number[^}]*}/.test(
-          fileContent
-        );
+    it('ToolbarState.mediaCounter는 Accessor<MediaCounter> 타입이어야 함 (Phase 64)', () => {
+      // Phase 64: createMemo는 Accessor<T>를 반환하므로 타입도 변경됨
+      const hasAccessorType = /mediaCounter:\s*Accessor<MediaCounter>/.test(fileContent);
 
-      expect(hasGetterType).toBe(true);
+      expect(hasAccessorType).toBe(true);
     });
   });
 
