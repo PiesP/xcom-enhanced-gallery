@@ -132,6 +132,7 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
   --shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-inset-border: 0 0 0 1px rgba(0, 0, 0, 0.05);
   --shadow-gallery-image: var(--shadow-xl);
   --shadow-gallery-nav: var(--shadow-md);
   --shadow-thumbnail: 0 2px 8px rgba(15, 23, 42, 0.08);
@@ -141,6 +142,7 @@
   --xeg-shadow-sm: var(--shadow-sm);
   --xeg-shadow-md: var(--shadow-md);
   --xeg-shadow-lg: var(--shadow-lg);
+  --xeg-shadow-inset-border: var(--shadow-inset-border);
 
   /* Focus & Accessibility */
   --xeg-focus-outline: 2px solid var(--color-primary);
