@@ -300,8 +300,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--xeg-color-bg-error);
-  color: var(--xeg-color-text-error);
+  background: var(--color-error-bg);
+  color: var(--color-error);
   min-height: var(--xeg-spacing-3xl);
 }
 

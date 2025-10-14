@@ -603,7 +603,7 @@
 
 .xeg-icon-button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: var(--xeg-shadow-xs);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05);
   background: var(--xeg-color-border-primary);
 }
 
