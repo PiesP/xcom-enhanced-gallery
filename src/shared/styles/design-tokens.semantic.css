@@ -11,8 +11,8 @@
   --color-bg-elevated: var(--color-base-white);
 
   /* 갤러리 및 툴바 배경 토큰 */
-  /* Fallback: light mode uses white background */
-  --xeg-bg-toolbar: var(--color-bg-surface, #ffffff);
+  --xeg-bg-toolbar: var(--color-bg-surface);
+  --xeg-toolbar-border: var(--color-border-default);
 
   /* Gallery Image Item Background Tokens */
   --xeg-color-bg-secondary: var(--color-bg-secondary);
@@ -36,6 +36,13 @@
 
   /* Border Color Tokens - xeg prefix for consistency */
   --xeg-color-border-hover: var(--color-border-hover);
+
+  /* Button Tokens - Semantic Roles */
+  --xeg-button-bg: var(--color-bg-surface);
+  --xeg-button-border: var(--color-border-default);
+  --xeg-button-text: var(--color-text-primary);
+  --xeg-button-bg-hover: var(--color-bg-secondary);
+  --xeg-button-border-hover: var(--color-border-hover);
 
   /* State Colors - Semantic Roles */
   --color-success: var(--color-green-500);
@@ -189,13 +196,27 @@
   --color-text-primary: var(--color-base-white);
   --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
-  /* Fallback: dark mode uses gray-700 as toolbar background */
-  --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
+  /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+  --xeg-bg-toolbar: var(--color-gray-800);
+  --xeg-toolbar-border: var(--color-border-emphasis);
 
   /* Gallery Image Item Dark Mode Tokens */
   --xeg-color-bg-secondary: var(--color-gray-800);
   --xeg-color-bg-error: var(--color-red-900);
   --xeg-color-text-error: var(--color-red-300);
+
+  /* Button Tokens - Dark Mode */
+  --xeg-button-bg: var(--color-gray-800);
+  --xeg-button-border: var(--color-border-emphasis);
+  --xeg-button-text: var(--color-text-primary);
+  --xeg-button-bg-hover: var(--color-gray-700);
+  --xeg-button-border-hover: var(--color-border-emphasis);
+
+  /* Modal Background/Border Tokens - Dark Mode */
+  --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -204,15 +225,31 @@
     --color-text-primary: var(--color-base-white);
     --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
 
-    /* Fallback: prefers-color-scheme dark uses gray-700 */
-    --xeg-bg-toolbar: var(--color-gray-700, #4a4a4a);
+    /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+    --xeg-bg-toolbar: var(--color-gray-800);
+    --xeg-toolbar-border: var(--color-border-emphasis);
     --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
-    /* 모달 토큰은 하단 시스템 테마 블록에서 var 매핑으로 일관 처리 */
 
     /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
     --xeg-color-bg-error: var(--color-red-900);
     --xeg-color-text-error: var(--color-red-300);
+
+    /* Gallery Background */
+    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+
+    /* Button Tokens - System Dark Mode */
+    --xeg-button-bg: var(--color-gray-800);
+    --xeg-button-border: var(--color-border-emphasis);
+    --xeg-button-text: var(--color-text-primary);
+    --xeg-button-bg-hover: var(--color-gray-700);
+    --xeg-button-border-hover: var(--color-border-emphasis);
+
+    /* Modal Background/Border Tokens - System Dark Mode */
+    --xeg-modal-bg-dark: var(--color-gray-800);
+    --xeg-modal-border-dark: var(--color-border-emphasis);
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+    --xeg-modal-border: var(--xeg-modal-border-dark);
   }
 }
 
@@ -253,7 +290,7 @@
   /* Input */
   --xeg-settings-select-padding: var(--space-sm) var(--space-md);
   --xeg-settings-select-bg: var(--xeg-bg-toolbar);
-  --xeg-settings-select-border: var(--xeg-color-border-primary);
+  --xeg-settings-select-border: var(--xeg-toolbar-border);
   --xeg-settings-select-focus-ring: 0 0 0 calc(var(--xeg-focus-ring-width) + 1px)
     var(--xeg-focus-ring-color);
 
@@ -262,7 +299,14 @@
     cascading alias overwrite issues that previously caused dark mode
     transparency regressions (see 2025-09-11 fix log). */
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
-  /* Semantic tokens (authoritative) defined later in file control actual values */
+  --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
+  --xeg-comp-toolbar-border: var(--xeg-toolbar-border);
+
+  /* Modal Background/Border Tokens - Light Mode */
+  --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
 
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);

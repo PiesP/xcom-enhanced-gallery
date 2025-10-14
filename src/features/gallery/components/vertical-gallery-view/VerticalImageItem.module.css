@@ -255,6 +255,8 @@
   color: var(--xeg-color-text-secondary);
 }
 
+/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+/*
 .downloadButton {
   position: absolute;
   top: var(--xeg-spacing-sm);
@@ -286,6 +288,7 @@
 .downloadIcon {
   display: block;
 }
+*/
 
 .error {
   position: absolute;
@@ -364,11 +367,12 @@
   cursor: grabbing;
 }
 
-/* 다운로드 버튼만 클릭 가능 */
+/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+/*
 .downloadButton {
-  /* 다운로드 버튼만 클릭 가능 */
   pointer-events: auto;
 }
+*/
 
 /* 이벤트 전파 차단을 위한 CSS 클래스 */
 .eventBlocked {
@@ -449,11 +453,14 @@
     box-shadow: var(--shadow-md);
   }
 
+  /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+  /*
   .downloadButton {
     background: ButtonFace;
     color: ButtonText;
     border: 1px solid ButtonText;
   }
+  */
 
   .error {
     background: Canvas;
@@ -503,10 +510,13 @@
     background: HighlightText;
   }
 
+  /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+  /*
   .downloadButton {
     background: ButtonFace;
     color: ButtonText;
     border: 1px solid ButtonText;
     forced-color-adjust: none;
   }
+  */
 }

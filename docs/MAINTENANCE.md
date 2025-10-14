@@ -1,6 +1,7 @@
 # 🔧 프로젝트 유지보수 가이드
 
 > 프로젝트를 최신 상태로 유지하고 기술 부채를 관리하기 위한 체계적인 가이드
+> (Phase 58, 2025-10-14)
 
 ## 📅 주기적 점검 일정
 
@@ -195,6 +196,17 @@ Get-ChildItem .github\workflows\ -File | Select-Object Name
 npm run maintenance:check
 ```
 
+**현재 점검 항목** (Phase 58):
+
+- 보안: `npm audit` 실행, 취약점 검출
+- Git 상태: 추적되지 않는 파일 확인
+- 백업 디렉터리: `.backup-*`, `.old`, `tmp/` 패턴 검색
+- 큰 문서: 500줄 이상 Markdown 파일 감지
+- 빌드 크기: 325 KB 예산 초과 여부 (현재: 316.71 KB ✅)
+- 테스트 상태: 662 passing, 1 skipped ✅
+
+결과는 콘솔에 출력되며, 조치 필요 항목이 발견되면 권장 명령을 제시합니다.
+
 ### 2. 문서 최신성 체크
 
 ```bash
@@ -309,8 +321,8 @@ const metrics = {
     .length,
 
   // 테스트
-  totalTests: 603,
-  skippedTests: 24,
+  totalTests: 662,
+  skippedTests: 1,
 };
 ```
 
@@ -321,12 +333,12 @@ const metrics = {
 ### GitHub Actions로 자동화
 
 ```yaml
-# .github/workflows/maintenance.yml
+# .github/workflows/maintenance.yml (매월 1일 09:00 UTC 자동 실행)
 name: Monthly Maintenance
 
 on:
   schedule:
-    - cron: '0 0 1 * *' # 매월 1일
+    - cron: '0 9 1 * *' # 매월 1일 09:00 UTC
   workflow_dispatch:
 
 jobs:
@@ -338,9 +350,21 @@ jobs:
         with:
           node-version: '20'
       - run: npm ci
-      - run: npm audit
-      - run: npx npm-check-updates
-      - run: npx depcheck
+      - run: npm run maintenance:check
+      - name: Create maintenance issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[유지보수] ${year}년 ${month}월 정기 점검`,
+              body: '자동 생성된 월간 유지보수 체크리스트입니다.',
+              labels: ['maintenance']
+            });
 ```
 
 ---
@@ -367,14 +391,14 @@ chore(maintenance): clean up [영역]
 
 ## 🎯 성공 기준
 
-프로젝트가 잘 유지되고 있다는 지표:
+프로젝트가 잘 유지되고 있다는 지표 (Phase 58 현재):
 
-- ✅ 모든 테스트 통과
-- ✅ 빌드 크기 예산 이내
+- ✅ 모든 테스트 통과 (662 passing, 1 skipped)
+- ✅ 빌드 크기 예산 이내 (316.71 KB / 325 KB)
 - ✅ 보안 취약점 0건
-- ✅ 사용되지 않는 코드 0%
-- ✅ 문서 최신성 100%
-- ✅ 의존성 6개월 이내 업데이트
+- ✅ TypeScript 오류 0건 (strict 모드)
+- ✅ ESLint 경고 0건
+- ✅ 의존성 위반 0건 (dependency-cruiser)
 
 ---
 
