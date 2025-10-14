@@ -13,26 +13,25 @@ const fileContent = readFileSync(filePath, 'utf-8');
 describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
   describe('canGoPrevious/canGoNext - Getter 함수 패턴', () => {
     it('canGoPrevious는 getter 함수여야 함 (const canGoPrevious = () => ...)', () => {
-      // RED: 현재는 const canGoPrevious = props.currentIndex > 0; 형태
+      // Phase 62: 순환 네비게이션 - totalCount > 1 패턴
       const hasGetterPattern =
-        /const\s+canGoPrevious\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*>\s*0/.test(fileContent);
+        /const\s+canGoPrevious\s*=\s*\(\)\s*=>\s*props\.totalCount\s*>\s*1/.test(fileContent);
 
       expect(hasGetterPattern).toBe(true);
     });
 
     it('canGoNext는 getter 함수여야 함 (const canGoNext = () => ...)', () => {
-      // RED: 현재는 const canGoNext = props.currentIndex < props.totalCount - 1; 형태
-      const hasGetterPattern =
-        /const\s+canGoNext\s*=\s*\(\)\s*=>\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1/.test(
-          fileContent
-        );
+      // Phase 62: 순환 네비게이션 - totalCount > 1 패턴
+      const hasGetterPattern = /const\s+canGoNext\s*=\s*\(\)\s*=>\s*props\.totalCount\s*>\s*1/.test(
+        fileContent
+      );
 
       expect(hasGetterPattern).toBe(true);
     });
 
     it('canGoPrevious는 직접 값 할당을 사용하지 않아야 함', () => {
-      // Anti-pattern: const canGoPrevious = props.currentIndex > 0;
-      const hasDirectAssignment = /const\s+canGoPrevious\s*=\s*props\.currentIndex\s*>\s*0;/.test(
+      // Anti-pattern: const canGoPrevious = props.totalCount > 1;
+      const hasDirectAssignment = /const\s+canGoPrevious\s*=\s*props\.totalCount\s*>\s*1;/.test(
         fileContent
       );
 
@@ -40,22 +39,23 @@ describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
     });
 
     it('canGoNext는 직접 값 할당을 사용하지 않아야 함', () => {
-      // Anti-pattern: const canGoNext = props.currentIndex < props.totalCount - 1;
-      const hasDirectAssignment =
-        /const\s+canGoNext\s*=\s*props\.currentIndex\s*<\s*props\.totalCount\s*-\s*1;/.test(
-          fileContent
-        );
+      // Anti-pattern: const canGoNext = props.totalCount > 1;
+      const hasDirectAssignment = /const\s+canGoNext\s*=\s*props\.totalCount\s*>\s*1;/.test(
+        fileContent
+      );
 
       expect(hasDirectAssignment).toBe(false);
     });
   });
 
-  describe('mediaCounter - Getter 함수 패턴', () => {
-    it('mediaCounter는 getter 함수여야 함 (const mediaCounter = () => ({ ... }))', () => {
-      // RED: 현재는 const mediaCounter = { ... } 형태
-      const hasGetterPattern = /const\s+mediaCounter\s*=\s*\(\)\s*=>\s*\({/.test(fileContent);
+  describe('mediaCounter - createMemo 패턴 (Phase 64 Step 4)', () => {
+    it('mediaCounter는 createMemo로 래핑되어야 함 (const mediaCounter = createMemo(() => ({ ... })))', () => {
+      // Phase 64: focusedIndex 반응성 추적을 위해 createMemo 사용
+      const hasCreateMemoPattern = /const\s+mediaCounter\s*=\s*createMemo\(\(\)\s*=>\s*\({/.test(
+        fileContent
+      );
 
-      expect(hasGetterPattern).toBe(true);
+      expect(hasCreateMemoPattern).toBe(true);
     });
 
     it('mediaCounter는 직접 객체 할당을 사용하지 않아야 함', () => {
@@ -82,13 +82,11 @@ describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
       expect(hasGetterType).toBe(true);
     });
 
-    it('ToolbarState.mediaCounter는 getter 함수 타입이어야 함', () => {
-      const hasGetterType =
-        /mediaCounter:\s*\(\)\s*=>\s*{[^}]*current:\s*number[^}]*total:\s*number[^}]*progress:\s*number[^}]*}/.test(
-          fileContent
-        );
+    it('ToolbarState.mediaCounter는 Accessor<MediaCounter> 타입이어야 함 (Phase 64)', () => {
+      // Phase 64: createMemo는 Accessor<T>를 반환하므로 타입도 변경됨
+      const hasAccessorType = /mediaCounter:\s*Accessor<MediaCounter>/.test(fileContent);
 
-      expect(hasGetterType).toBe(true);
+      expect(hasAccessorType).toBe(true);
     });
   });
 

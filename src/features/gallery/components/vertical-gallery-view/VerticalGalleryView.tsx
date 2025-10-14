@@ -380,7 +380,7 @@ function VerticalGalleryViewCore({
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
-      navigateToItem(index);
+      navigateToItem(index, 'click');
       logger.debug('VerticalGalleryView: 미디어 아이템 클릭으로 네비게이션', { index });
     }
   };

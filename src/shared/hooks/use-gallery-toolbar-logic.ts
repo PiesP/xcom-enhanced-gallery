@@ -3,7 +3,9 @@
  * @description Toolbar 컴포넌트의 헤드리스 로직 분리
  */
 
+import type { Accessor } from 'solid-js';
 import { getSolid } from '../external/vendors';
+import { gallerySignals } from '../state/signals/gallery.signals';
 
 type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 
@@ -43,37 +45,44 @@ interface ButtonProps {
   onClick: () => void;
 }
 
+interface MediaCounter {
+  current: number;
+  total: number;
+  progress: number;
+}
+
 interface ToolbarState {
   canGoPrevious: () => boolean;
   canGoNext: () => boolean;
   currentFitMode: () => FitMode;
-  mediaCounter: () => {
-    current: number;
-    total: number;
-    progress: number;
-  };
+  displayIndex: Accessor<number>;
+  mediaCounter: Accessor<MediaCounter>;
 }
 
 export function useGalleryToolbarLogic(props: ToolbarLogicProps) {
-  const { createSignal } = getSolid();
+  const { createSignal, createMemo } = getSolid();
   const [currentFitMode, setCurrentFitMode] = createSignal<FitMode>('fitContainer');
 
-  // 네비게이션 경계 계산 (Getter 함수)
-  const canGoPrevious = () => props.currentIndex > 0;
-  const canGoNext = () => props.currentIndex < props.totalCount - 1;
+  // Phase 62: 순환 네비게이션 - totalCount > 1이면 항상 활성화
+  const canGoPrevious = () => props.totalCount > 1;
+  const canGoNext = () => props.totalCount > 1;
 
-  // 미디어 카운터 계산 (Getter 함수)
-  const mediaCounter = () => ({
-    current: props.currentIndex + 1,
+  // Phase 64 Step 4: focusedIndex 우선 표시 (createMemo로 반응성 보장)
+  const displayIndex = createMemo(() => gallerySignals.focusedIndex.value ?? props.currentIndex);
+
+  // 미디어 카운터 계산 (displayIndex 기반)
+  const mediaCounter = createMemo(() => ({
+    current: displayIndex() + 1,
     total: props.totalCount,
-    progress: ((props.currentIndex + 1) / props.totalCount) * 100,
-  });
+    progress: ((displayIndex() + 1) / props.totalCount) * 100,
+  }));
 
   // 상태 객체
   const state: ToolbarState = {
     canGoPrevious,
     canGoNext,
     currentFitMode,
+    displayIndex,
     mediaCounter,
   };
 

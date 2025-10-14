@@ -3,6 +3,7 @@ import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
+import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -82,8 +83,10 @@ export function useGalleryFocusTracker({
   let lastAutoFocusedIndex: number | null = null;
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
+  // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
   const debouncedSetAutoFocusIndex = createDebouncer((index: number | null) => {
     setAutoFocusIndex(index);
+    setFocusedIndex(index); // Phase 64 Step 3: 전역 동기화
   }, 50);
 
   const updateContainerFocusAttribute = (value: number | null) => {
@@ -344,6 +347,44 @@ export function useGalleryFocusTracker({
       { defer: true }
     )
   );
+
+  // ✅ Phase 63: galleryIndexEvents 구독 - 명시적 네비게이션 시 즉시 동기화
+  createEffect(() => {
+    const enabled = isEnabledAccessor();
+
+    if (!enabled) {
+      return;
+    }
+
+    const unsubNavigate = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
+      // 버튼/클릭/키보드 네비게이션은 즉시 동기화
+      if (trigger !== 'button' && trigger !== 'click' && trigger !== 'keyboard') {
+        return;
+      }
+
+      logger.debug('useGalleryFocusTracker: navigation event received', {
+        index,
+        trigger,
+      });
+
+      // manualFocusIndex를 우회하고 autoFocusIndex를 즉시 업데이트
+      const { batch: solidBatch } = getSolid();
+      solidBatch(() => {
+        setAutoFocusIndex(index);
+        updateContainerFocusAttribute(index);
+      });
+
+      // 포커스 적용 (스크롤 완료 후)
+      const delay = autoFocusDelayAccessor();
+      globalTimerManager.setTimeout(() => {
+        applyAutoFocus(index, `navigation:${trigger}`);
+      }, delay + 100); // 스크롤 완료 대기
+    });
+
+    onCleanup(() => {
+      unsubNavigate();
+    });
+  });
 
   // ✅ Phase 21.1: currentIndex 동기화 effect - on()으로 필요한 의존성만 추적
   createEffect(
