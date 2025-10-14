@@ -16,8 +16,8 @@
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--color-border-default);
+  background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+  border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
   border-radius: var(--xeg-radius-lg);
 
   /* 레이아웃 속성 - 설정 패널 절대 위치를 위한 relative 컨텍스트 */
@@ -44,6 +44,17 @@
     transform var(--xeg-duration-normal) var(--xeg-ease-standard);
 
   user-select: none;
+}
+
+/* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
+
+/* 툴바 확장 상태 - 설정 패널과 시각적으로 연결 */
+.galleryToolbar[data-settings-expanded='true'] {
+  /* 하단 border-radius 제거하여 패널과 매끄럽게 연결 */
+  border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
+
+  /* 확장 상태에서 더 강조된 그림자 - 패널까지 포함하는 통합 그림자 */
+  box-shadow: var(--xeg-shadow-lg);
 }
 
 /* 감소된 모션 지원 강화 */
@@ -288,10 +299,10 @@
   display: inline-flex;
   align-items: center;
   line-height: 1;
-  background: var(--xeg-bg-counter);
+  background: transparent; /* Phase 58: 툴바 배경색과 통일하기 위해 투명화 */
   padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
   border-radius: var(--xeg-radius-md);
-  border: 1px solid var(--xeg-border-counter);
+  border: none; /* Phase 58: 외곽선 디자인 패턴 통일을 위해 제거 */
 }
 
 .currentIndex {
@@ -551,12 +562,6 @@ button.fitButton {
   }
 }
 
-/* 다크 테마에서 고대비 모드 */
-[data-theme='dark'] .galleryToolbar {
-  background: var(--xeg-color-neutral-900);
-  border: 2px solid var(--xeg-color-neutral-100);
-}
-
 [data-theme='dark'] .toolbarButton {
   background: var(--xeg-color-neutral-700);
   border: 1px solid var(--xeg-color-neutral-100);
@@ -565,8 +570,8 @@ button.fitButton {
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
-    background: var(--xeg-color-neutral-900);
-    border: 2px solid var(--xeg-color-neutral-100);
+    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    border: 2px solid var(--xeg-comp-toolbar-border);
   }
 
   .toolbarButton {
@@ -579,7 +584,7 @@ button.fitButton {
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: var(--xeg-color-neutral-100);
+    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
@@ -588,7 +593,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-color-neutral-900);
+    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
   }
 }
 
@@ -596,7 +601,7 @@ button.fitButton {
 @media (max-width: 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    background: var(--xeg-glass-bg); /* 모바일에서 더 불투명 */
+    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
@@ -604,7 +609,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-color-neutral-900);
+    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
   }
 }
 
@@ -715,7 +720,7 @@ button.fitButton {
     visibility 0s var(--xeg-duration-normal); /* transition 후 숨김 */
 
   /* Visual */
-  background: var(--xeg-bg-toolbar);
+  background: var(--xeg-comp-toolbar-bg);
   border-top: 1px solid transparent;
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
 }
@@ -726,7 +731,7 @@ button.fitButton {
   transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
-  border-top-color: var(--color-border-default);
+  border-top-color: var(--xeg-comp-toolbar-border);
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),

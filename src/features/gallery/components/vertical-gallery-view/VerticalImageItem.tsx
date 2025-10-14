@@ -11,8 +11,9 @@ import type { ImageFitMode } from '@shared/types';
 import type { JSX } from 'solid-js';
 
 import { withGallery } from '../../../../shared/components/hoc';
-import { Button } from '../../../../shared/components/ui/Button/Button';
-import type { ButtonProps } from '../../../../shared/components/ui/Button/Button';
+// Phase 58: 다운로드 버튼 제거로 인한 미사용 import 주석 처리
+// import { Button } from '../../../../shared/components/ui/Button/Button';
+// import type { ButtonProps } from '../../../../shared/components/ui/Button/Button';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
 import { getSolid } from '../../../../shared/external/vendors';
 import { languageService } from '../../../../shared/services/language-service';
@@ -23,7 +24,8 @@ import type { VerticalImageItemProps } from './VerticalImageItem.types';
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
-const ButtonCompat = Button as unknown as (props: ButtonProps) => JSX.Element;
+// Phase 58: 다운로드 버튼 제거로 인한 미사용 변수 주석 처리
+// const ButtonCompat = Button as unknown as (props: ButtonProps) => JSX.Element;
 
 function getFitModeClass(fitMode?: ImageFitMode): string {
   switch (fitMode) {
@@ -77,7 +79,8 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     isFocused = false,
     forceVisible = false,
     onClick,
-    onDownload,
+    // Phase 58: 다운로드 버튼 제거로 인한 미사용 prop 제거
+    // onDownload,
     onImageContextMenu,
     className = '',
     onMediaLoad,
@@ -126,11 +129,14 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     setIsLoaded(false);
   };
 
+  // Phase 58: 다운로드 버튼 제거로 인한 미사용 핸들러 주석 처리
+  /*
   const handleDownloadClick = (event?: Event) => {
     event?.preventDefault();
     (event as MouseEvent | undefined)?.stopPropagation();
     onDownload?.();
   };
+  */
 
   const handleVideoLoadedMetadata = () => {
     setIsLoaded(true);
@@ -392,17 +398,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
         </>
       )}
 
-      {onDownload && (
-        <ButtonCompat
-          variant='ghost'
-          size='sm'
-          className={styles.downloadButton || ''}
-          onClick={handleDownloadClick}
-          aria-label={languageService.getString('toolbar.download')}
-        >
-          <span class={styles.downloadIcon}>⬇️</span>
-        </ButtonCompat>
-      )}
+      {/* Phase 58: 이미지 오른쪽 상단의 다운로드용 버튼 제거 */}
     </div>
   );
 }

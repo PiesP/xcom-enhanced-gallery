@@ -460,6 +460,7 @@ function ToolbarComponent(rawProps: ToolbarProps): JSXElement {
       data-state={getToolbarDataState(toolbarState)}
       data-disabled={props.disabled}
       data-high-contrast={toolbarState.needsHighContrast}
+      data-settings-expanded={isSettingsExpanded()}
       data-focused-index={String(displayedIndex())}
       data-current-index={String(props.currentIndex)}
       tabIndex={props.tabIndex}
