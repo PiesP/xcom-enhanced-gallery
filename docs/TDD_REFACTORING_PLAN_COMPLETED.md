@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 59 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 60 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-14)
@@ -9,13 +9,81 @@
 - **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
-- **의존성**: dependency-cruiser 0 violations (260 modules, 712 deps) ✅
+- **의존성**: dependency-cruiser 0 violations (**257 modules**, **709 deps**) ✅
 - **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
-- **개선**: Phase 54-59 작업으로 툴바/갤러리 UI 일관성 및 코드베이스 단순화 강화
+- **개선**: Phase 54-60 작업으로 코드베이스 단순화 및 불필요한 유틸리티 제거
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 60: 미사용 유틸리티 및 편의 함수 제거 (2025-10-14) ✅
+
+**목표**: 실제로 사용되지 않는 유틸리티 모듈과 HOC 편의 함수 제거
+
+**현재 문제**:
+
+- `memo.ts`: 빈 스텁 함수 (component를 그대로 반환, 10줄)
+- `bundle.ts`: 테스트 전용 유틸리티가 프로덕션 번들에 포함 (32줄)
+- `optimization/index.ts`: 위 파일들의 barrel export (12줄)
+- `GalleryHOC.tsx` 내 5개 편의 함수: 사용되지 않는 convenience wrapper (~70줄)
+  - `withGalleryContainer`, `withGalleryItem`, `withGalleryControl`
+  - `withGalleryOverlay`, `GalleryHOC` (alias)
+
+**검증**: grep 검색으로 실제 사용처 0건 확인
+
+- `memo()` import: 0건
+- `createBundleInfo/isWithinSizeTarget` import (src/): 0건
+- 5개 HOC 편의 함수 호출: 0건 (정의만 존재)
+- 핵심 `withGallery` 함수는 18곳에서 사용 중 → 보존
+
+**구현 (TDD: RED → GREEN → REFACTOR)**:
+
+1. **RED**: 파일 삭제 전 기존 테스트 통과 확인
+   - 658 passing, 1 skipped ✅
+   - 의존성: 260 modules, 712 dependencies
+
+2. **GREEN**: 미사용 코드 삭제
+   - `src/shared/utils/optimization/memo.ts` 삭제 (10줄)
+   - `src/shared/utils/optimization/bundle.ts` 삭제 (32줄)
+   - `src/shared/utils/optimization/index.ts` 삭제 (12줄)
+   - `src/shared/index.ts`: `export * from './utils/optimization';` 제거
+   - `src/shared/components/hoc/GalleryHOC.tsx`: 5개 편의 함수 블록 제거 (~70줄)
+   - 테스트 실행: 658 passing, 1 skipped ✅ (유지, 테스트 파일 삭제 없음)
+
+3. **REFACTOR**: 빌드 및 의존성 검증
+   - 빌드: `npm run build` 성공 ✅
+   - 의존성: 260 → **257 modules** (-3), 712 → **709 deps** (-3) ✅
+   - 번들 크기: 316.71 KB 유지 (Dead code elimination 최적화 완료)
+
+**결과**:
+
+- 112+ 줄의 미사용 코드 제거 ✅
+- 모듈 수 감소: 260 → 257 (-3개) ✅
+- 의존성 감소: 712 → 709 (-3개) ✅
+- 테스트: 658 passing 유지 (변화 없음, 테스트 파일 삭제 없었음) ✅
+- 타입 에러 0건 유지 ✅
+- 번들 크기: 316.71 KB (변경 없음, DCE로 이미 최적화됨) ✅
+- 모든 빌드/검증 통과 ✅
+
+**파일 변경**:
+
+- **삭제**: 3개 파일 (54줄)
+  - `src/shared/utils/optimization/memo.ts`
+  - `src/shared/utils/optimization/bundle.ts`
+  - `src/shared/utils/optimization/index.ts`
+- **수정**: 2개 파일 (58줄 제거)
+  - `src/shared/index.ts` (optimization export 제거)
+  - `src/shared/components/hoc/GalleryHOC.tsx` (5개 편의 함수 블록 제거)
+
+**코드베이스 개선**:
+
+- Optimization 디렉터리 완전 제거 (불필요한 추상화 제거)
+- HOC 패턴 단순화: 핵심 `withGallery` 함수만 유지
+- 코드 가독성 향상 (불필요한 wrapper 제거)
+- 프로덕션 번들에 테스트 전용 코드 포함되지 않음 보장
+
+---
 
 ### Phase 59: Toolbar 모듈 통폐합 및 명명 규칙 재검토 (2025-10-14) ✅
 
@@ -73,7 +141,7 @@
 
 **Toolbar 디렉터리 최종 구조**:
 
-```
+```text
 src/shared/components/ui/Toolbar/
 ├── Toolbar.tsx (661 줄) - 메인 구현
 ├── Toolbar.types.ts - 타입 정의
