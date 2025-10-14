@@ -49,6 +49,75 @@ color: #1da1f2;
 border-radius: 8px;
 ```
 
+#### 컴포넌트 토큰 정의 규칙 (Phase 55)
+
+컴포넌트에서 사용하는 모든 `--xeg-*` 토큰은 반드시
+`src/shared/styles/design-tokens.semantic.css`에 정의되어야 합니다.
+
+**✅ 필수 규칙:**
+
+1. **3단 계층 구조 유지**
+
+   ```css
+   /* Primitive → Semantic → Component */
+
+   /* 1. Primitive (design-tokens.css) */
+   --color-gray-800: #2a2a2a;
+
+   /* 2. Semantic (design-tokens.semantic.css) */
+   --color-bg-elevated: var(--color-base-white);
+
+   /* 3. Component (design-tokens.semantic.css, Component Scope Tokens 섹션) */
+   --xeg-modal-bg-light: var(--color-bg-elevated);
+   --xeg-modal-bg: var(--xeg-modal-bg-light);
+   ```
+
+2. **라이트/다크 변형 정의**
+
+   ```css
+   /* Component Scope Tokens 섹션 */
+   :root {
+     /* Light mode defaults */
+     --xeg-modal-bg-light: var(--color-bg-elevated, #ffffff);
+     --xeg-modal-border-light: var(--color-border-default);
+     --xeg-modal-bg: var(--xeg-modal-bg-light);
+     --xeg-modal-border: var(--xeg-modal-border-light);
+   }
+
+   /* Dark mode overrides */
+   [data-theme='dark'] {
+     --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+     --xeg-modal-border-dark: var(--color-border-emphasis);
+     --xeg-modal-bg: var(--xeg-modal-bg-dark);
+     --xeg-modal-border: var(--xeg-modal-border-dark);
+   }
+   ```
+
+3. **시스템 테마 지원**
+
+   ```css
+   @media (prefers-color-scheme: dark) {
+     :root:not([data-theme='light']) {
+       --xeg-modal-bg-dark: var(--color-gray-800, #2a2a2a);
+       --xeg-modal-border-dark: var(--color-border-emphasis);
+       --xeg-modal-bg: var(--xeg-modal-bg-dark);
+       --xeg-modal-border: var(--xeg-modal-border-dark);
+     }
+   }
+   ```
+
+**❌ 금지 패턴:**
+
+- CSS 모듈에서 직접 primitive 토큰 참조 (`var(--color-gray-800)`)
+- 하드코딩된 색상/크기 값 (`#2a2a2a`, `8px`)
+- 라이트/다크 변형 없이 단일 토큰만 정의
+
+**검증:**
+
+- 가드 테스트: `test/styles/token-definition-guard.test.ts`
+- 실행: `npm run test:styles -- test/styles/token-definition-guard.test.ts`
+- CI에서 자동 검증됨
+
 ### 4. 경로 별칭
 
 ```typescript
