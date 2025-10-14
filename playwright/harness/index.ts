@@ -1,5 +1,4 @@
 import type { ToolbarProps as SolidToolbarProps } from '@shared/components/ui/Toolbar/Toolbar';
-import type { ToolbarHeadlessProps } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { EventHandlers } from '@shared/utils/events';
@@ -9,12 +8,10 @@ import type {
   ToolbarMountResult,
   KeyboardOverlayResult,
   // SettingsModalState, // TODO Phase 49: Remove after migrating tests to Toolbar expandable panel
-  ToolbarHeadlessResult,
   GalleryAppSetupResult,
   GalleryAppState,
   GalleryEventsResult,
   XegHarness,
-  FitMode,
 } from './types';
 
 import { initializeVendors, getSolid } from '@shared/external/vendors';
@@ -22,7 +19,6 @@ import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { ToolbarHeadless } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 import { KeyboardHelpOverlay } from '@features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
 // import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal'; // TODO Phase 49: Migrate to Toolbar expandable settings
 import { GalleryApp } from '@features/gallery/GalleryApp';
@@ -394,71 +390,6 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   };
 }
 
-async function evaluateToolbarHeadlessHarness(
-  props: ToolbarMountProps & { isDownloading?: boolean }
-): Promise<ToolbarHeadlessResult> {
-  await ensureVendorsReady();
-
-  const solid = getSolid();
-  const { createRoot, createComponent } = solid;
-
-  return createRoot(dispose => {
-    let snapshot: ToolbarHeadlessResult | null = null;
-
-    createComponent(ToolbarHeadless, {
-      currentIndex: props.currentIndex,
-      totalCount: props.totalCount,
-      isDownloading: props.isDownloading ?? false,
-      onPrevious: () => undefined,
-      onNext: () => undefined,
-      onDownloadCurrent: () => undefined,
-      onDownloadAll: () => undefined,
-      onClose: () => undefined,
-      onOpenSettings: () => undefined,
-      onFitOriginal: () => undefined,
-      onFitWidth: () => undefined,
-      onFitHeight: () => undefined,
-      onFitContainer: () => undefined,
-      children: (state, actions) => {
-        const items = state.items().map(item => ({
-          type: item.type,
-          group: item.group,
-          disabled: Boolean(item.disabled),
-          loading: Boolean(item.loading),
-        }));
-
-        const downloadItems = items.filter(
-          item => item.type === 'downloadCurrent' || item.type === 'downloadAll'
-        );
-        const downloadButtonsLoading =
-          downloadItems.length > 0 && downloadItems.every(item => item.loading);
-
-        const fitModeBefore = state.currentFitMode();
-        actions.setFitMode('fitWidth');
-        const fitModeAfter = state.currentFitMode();
-
-        snapshot = {
-          items,
-          downloadButtonsLoading,
-          fitModeBefore,
-          fitModeAfter,
-        };
-
-        return null;
-      },
-    } satisfies ToolbarHeadlessProps);
-
-    const result = snapshot ?? {
-      items: [],
-      downloadButtonsLoading: false,
-      fitModeBefore: 'original' as FitMode,
-      fitModeAfter: 'original' as FitMode,
-    };
-    dispose();
-    return result;
-  });
-}
-
 class HarnessMediaService {
   public extractCalls = 0;
   public restoreCalls = 0;
@@ -696,7 +627,6 @@ const harness: XegHarness = {
   // setSettingsModalOpen: setSettingsModalOpenHarness,
   // getSettingsModalState: getSettingsModalStateHarness,
   // disposeSettingsModal: disposeSettingsModalHarness,
-  evaluateToolbarHeadless: evaluateToolbarHeadlessHarness,
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,
   triggerGalleryAppClose: triggerGalleryAppCloseHarness,

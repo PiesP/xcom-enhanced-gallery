@@ -1,17 +1,26 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 58 완료 ✅ 다음 Phase 대기 중
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 59 완료 ✅ 다음 Phase 대기 중
 
 ## 프로젝트 상태
 
 - **빌드**: dev 836.01 KB / prod **316.71 KB** ✅
-- **테스트**: 662 passing, 1 skipped ✅
+- **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **의존성**: 0 violations (263 modules, 716 dependencies) ✅
+- **의존성**: 0 violations (260 modules, 712 dependencies) ✅
 - **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 59: Toolbar 모듈 통폐합 및 명명 규칙 재검토 (2025-10-14) ✅
+  - 사용되지 않는 3개 파일 삭제 (ConfigurableToolbar, ToolbarHeadless,
+    UnifiedToolbar)
+  - 관련 테스트 파일 1개 삭제 (toolbar-headless-memo.test.tsx)
+  - Playwright 하네스 코드 정리 (65줄 제거)
+  - 177+ 줄의 미사용 코드 제거로 코드베이스 단순화
+  - 테스트 감소: 662 → 658 passing (삭제된 테스트로 인한 예상된 감소)
+  - 번들 크기 유지 (316.71 KB, 8.29 KB 여유)
 
 - Phase 58: 툴바 UI 일관성 개선 (2025-10-14) ✅
   - mediaCounter 배경 투명화로 툴바와 시각적 통합
@@ -25,20 +34,6 @@
   - 설정 패널과 시각적 일체감 형성 (PC 전용, 디자인 토큰 기반)
   - 7개 TDD 테스트로 시각적 연속성 검증
   - DOM 구조는 현상 유지 (progressBar overlay 패턴에 최적화됨)
-
-## 현재 작업 (대기 중)
-
-현재 진행 중인 Phase가 없습니다. 다음 작업을 계획하거나 사용자의 요청을
-기다립니다. - 툴바 border 제거 (또는 `border: none`) - VerticalImageItem
-다운로드 버튼 조건 제거 또는 항상 false로 설정 3. REFACTOR: - 사용되지 않는
-토큰/스타일 정리 - 다크 모드/고대비 상태 검증 - 주석 추가 및 문서화
-
-- **완료 기준**:
-  - mediaCounter가 툴바와 시각적으로 통합됨
-  - 툴바 외곽선이 제거되고 다른 컴포넌트와 일관된 패턴 유지
-  - 갤러리 아이템에서 다운로드 버튼이 보이지 않음
-  - 모든 테스트 통과
-  - 번들 크기 영향 최소 (예상 1-2KB 감소)
 
 ## 다음 작업 대기 중
 

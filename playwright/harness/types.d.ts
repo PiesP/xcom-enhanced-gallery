@@ -1,6 +1,4 @@
-export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
 import type { ToolbarProps as SolidToolbarProps } from '@shared/components/ui/Toolbar/Toolbar';
-import type { FitMode, ToolbarItem } from '@shared/components/ui/Toolbar/ToolbarHeadless';
 
 export type ToolbarMountProps = Pick<
   SolidToolbarProps,
@@ -24,18 +22,6 @@ export type KeyboardOverlayResult = {
 // export type SettingsModalState = {
 //   closeCalls: number;
 // };
-
-export type ToolbarHeadlessResult = {
-  items: Array<{
-    type: ToolbarItem['type'];
-    group: ToolbarItem['group'];
-    disabled: boolean;
-    loading: boolean;
-  }>;
-  downloadButtonsLoading: boolean;
-  fitModeBefore: FitMode;
-  fitModeAfter: FitMode;
-};
 
 export type GalleryAppSetupResult = {
   initialized: boolean;
@@ -70,9 +56,6 @@ export interface XegHarness {
   // setSettingsModalOpen(isOpen: boolean): Promise<void>;
   // getSettingsModalState(): Promise<SettingsModalState>;
   // disposeSettingsModal(): Promise<void>;
-  evaluateToolbarHeadless(
-    props: ToolbarMountProps & { isDownloading?: boolean }
-  ): Promise<ToolbarHeadlessResult>;
   setupGalleryApp(): Promise<GalleryAppSetupResult>;
   triggerGalleryAppMediaClick(): Promise<void>;
   triggerGalleryAppClose(): Promise<void>;
