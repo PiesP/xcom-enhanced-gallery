@@ -1,132 +1,149 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 **상태**: 대기 중 (Phase 67 완료, 다음 작업
-> 없음) ⏸️
+> **최종 업데이트**: 2025-10-15 **상태**: Phase 69 진행 준비 🔶
 
-## 프로젝트 상태
+## 프로젝트 스냅샷
 
-- **빌드**: dev 839 KB / prod **317.00 KB** ✅ (번들 예산 8.00 KB 여유)
-- **테스트**: 794 passing (763 base + 42 Phase 67), 1 skipped ✅
+- **빌드**: dev 839 KB / prod **316.99 KB** ✅ (번들 예산 8.01 KB 여유)
+- **테스트**: **768 passing** (764 base + 4 Phase 68.1), 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (**257 modules**, **712 dependencies**) ✅
-- **번들 예산**: **317.00 KB / 325 KB** (2.5% 여유, 충분) ✅
+- **번들 예산**: **316.99 KB / 325 KB** (2.5% 여유) ✅
 
-## 디자인 토큰 현황 (2025-10-15 - Phase 67 완료)
+## 디자인 토큰 현황 (2025-10-15)
 
-- **총 토큰**: **89개** (Phase 67 완료 후, 이전 123개에서 -34개, 27.6% 감소)
-- **중복 정의**: 20개 (cross-scope 오버라이드, 정상)
-- **미사용**: **0개** ✅
-- **저사용 토큰**: **53개** (컴포넌트 응집도/아키텍처/접근성 이유로 유지)
-- **정상 사용**: 36개
-
-## 최근 완료 작업
-
-### Phase 67: 디자인 토큰 보수적 최적화 (2025-10-15) ✅ 완료
-
-**최종 결과**:
-
-- 토큰 수: 123개 → **89개** (-34개, **27.6% 감소**)
-- 번들 크기: 319.25 KB → **317.00 KB** (-2.25 KB, **0.7% 감소**)
-- 번들 예산 여유: 8.00 KB (2.5% below target)
-- 테스트: **42개 TDD 테스트 추가** (30 Step 1 + 1 Step 2 + 11 Step 3), 2개
-  업데이트
-- 커밋: 5개 (Step 1-3 완료 + 테스트 업데이트)
-
-**완료 단계**:
-
-- ✅ **Step 1**: 미사용 토큰 제거 (14개 제거, -0.73 KB)
-- ✅ **Step 2**: 중복 토큰 스코프 검증 (2개 추가 제거, -0.45 KB)
-- ✅ **Step 3**: 저사용 토큰 보수적 인라인 (18개 중 10개 제거, 53개 유지, -1.07
-  KB)
-- ⏭️ **Step 4-5**: CSS 중복/SVG 최적화 - **전략적 스킵** (ROI 분석 결과)
-
-**Step 4-5 스킵 사유** (ROI 분석):
-
-- **예상 시간**: 3-5시간
-- **예상 효과**: 2-3 KB (0.6-0.9 KB/hour)
-- **현재 상태**: 317.00 KB / 325 KB (충분한 여유)
-- **위험도**: CSS 리팩토링 중 스타일 깨짐 가능성
-- **결정**: 번들 여유 충분 + 낮은 ROI + 높은 위험 → 스킵
-- **재검토 조건**: 번들이 322 KB (예산의 99%) 근접 시
-
-**주요 학습**:
-
-1. 컴포넌트 응집도 > 단순 사용량 (Toast 15개, Settings 9개 유지)
-2. 아키텍처 토큰 유지 (Z-index, Layer, Focus)
-3. 접근성 우선 (High-contrast 토큰 유지)
-4. TDD 검증력 (42개 테스트로 안전한 리팩토링)
-5. ROI 기반 결정 (Step 4-5 스킵 판단)
-
-**세부 내역**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` Phase 67 섹션 참조
+- **총 토큰**: 89개 (Phase 67 완료, 27.6% 감소)
+- **중복 정의**: 20개 (cross-scope override, 정책 준수)
+- **미사용 토큰**: 0개 ✅
+- **저사용 토큰**: 53개 (컴포넌트 응집·접근성 사유 유지)
 
 ---
 
-## 진행 중 작업
+## 활성 계획
 
-_현재 진행 중인 Phase 없음. 다음 작업은 필요 시 정의._
+### Phase 69: 프로덕션 로그 기반 렌더링 최적화 (2025-10-15) 🔶
 
-### 향후 계획 후보
+**분석 근거**: `x.com-1760437874632.log` (Dev userscript) + `AGENTS.md`,
+`docs/ARCHITECTURE.md`, `docs/CODING_GUIDELINES.md`의 정책.
 
-**우선순위 1: 번들 크기 모니터링** (조건부)
+#### 핵심 관찰 요약
 
-- **트리거**: 번들이 322 KB (예산 99%) 근접 시
-- **작업**: Phase 67 Step 4-5 재검토 (CSS 중복, SVG 최적화)
+| ID  | 로그 스냅샷                                                                             | 영향                            | 근본 원인 가설                                            |
+| --- | --------------------------------------------------------------------------------------- | ------------------------------- | --------------------------------------------------------- |
+| L-1 | `[GalleryRenderer] 최초 렌더링 시작` 메시지가 10:31:05.501Z와 10:31:05.512Z에 연속 발생 | 초기 렌더링 중복, DOM 재구성    | 갤러리 마운트 effect가 두 번 실행, guard 부재             |
+| L-2 | `useGalleryFocusTracker` manual/auto focus 사이클이 100ms 간격으로 반복                 | CPU 스파이크, 200+ line 로그    | IntersectionObserver와 effect 간 순환, manual 상태 재설정 |
+| L-3 | 동일 delta 값 wheel 이벤트가 1ms 간격으로 두 번 처리                                    | 스크롤 과부하, UX 저하          | 이벤트 리스너 중복 또는 디바운스 부재                     |
+| L-4 | `System theme detection initialized` / `ThemeService initialized` 각 2회 기록           | 서비스 중복 초기화, 리소스 낭비 | ThemeService 싱글톤 가드 부재                             |
+| L-5 | `viewport:resize:*` ID가 다른 값으로 두 번 등록                                         | cleanup 부담, 불필요한 재처리   | 초기화 분기 간 이벤트 중복 등록                           |
 
-**우선순위 2: 성능 최적화** (필요 시)
+#### 솔루션 후보 비교
 
-- **트리거**: 사용자 피드백 또는 성능 이슈 발견
-- **작업**: 로딩 시간, 렌더링 성능 개선
-
-**우선순위 3: 유지보수** (주기적)
-
-- **트리거**: 의존성 업데이트, 보안 패치
-- **작업**: npm audit, dependency 업데이트
+| 옵션 | 개요                               | 장점                       | 단점                      | 채택 |
+| ---- | ---------------------------------- | -------------------------- | ------------------------- | ---- |
+| A    | Effect 배칭/디바운싱으로 증상 완화 | 구현 용이, 빠른 완화       | 근본 원인 남음, 지연 도입 | 보조 |
+| B    | 렌더링·서비스 구조 재설계          | 장기적 해결, 유지보수 향상 | 범위 큼, 회귀 위험        | 추후 |
+| C    | 증분 개선 (Phase 69.1~69.4)        | 단계별 검증, 위험 분산     | 총 소요 증가              | ✅   |
 
 ---
 
-## 설계 원칙 (Phase 67에서 확립)
+#### Phase 69.1: useGalleryFocusTracker 로직 단순화 🎯
 
-1. **유지보수성 우선**: 번들 크기 < 디자인 시스템 일관성
-2. **컴포넌트 응집도**: 1× 사용도 컴포넌트 토큰 유지 가능
-3. **명백한 과도 추상화만 제거**: 재사용 없는 단일 목적 토큰만 인라인
-4. **접근성 우선**: WCAG 준수 토큰은 사용량 관계없이 유지
-5. **TDD 검증**: 모든 리팩토링은 테스트로 검증
-6. **ROI 기반 결정**: 시간 대비 효과 분석 후 진행 여부 결정
+- **목표**: 동일 인덱스 반복 focus 사이클 제거, CPU 추가 60% 감소
+- **TDD 계획**
+  1. RED: `test/unit/hooks/use-gallery-focus-tracker-events.test.ts`
+     - 동일 인덱스 연속 navigation 시 autoFocus 1회만 발생
+     - manual focus cleared/applied 호출이 1 tick 내 중복 발생하지 않음
+     - IntersectionObserver 콜백이 requestAnimationFrame 배칭되는지 검증
+  2. GREEN: `useGalleryFocusTracker.ts`
+     - `createEffect`에 `on([isEnabled, container])` 적용, 타 signal 추적 방지
+     - manual/auto focus 상태 통합, 중복 호출 guard 추가
+     - IntersectionObserver 콜백을 RAF 디바운스로 감싸기
+  3. REFACTOR: 로깅 레벨 정리, mock Observer helper 도입
+- **성공 지표**: observer 초기화 로그 80% 감소, CPU 프로파일에서 hook 실행 40%
+  이하
+- **예상 번들 영향**: +0.5 KB | **예상 시간**: 3~4h
+
+#### Phase 69.2: GalleryRenderer 중복 렌더링 가드 🎯
+
+- **목표**: 최초 렌더링을 단 1회로 제한, DOM 재생성 제거
+- **TDD 계획**
+  1. RED: `test/unit/features/gallery/gallery-renderer-lifecycle.test.ts`
+     - 마운트 시 렌더 함수 호출이 1회인지 spy로 검증
+     - signal 업데이트 후 재마운트 없이 반응형 업데이트만 발생
+  2. GREEN: `GalleryRenderer.tsx`
+     - `onMount` + guard flag 혹은 memo로 중복 초기화 차단
+     - 초기 로그 메시지 1회로 축약
+  3. REFACTOR: effect/cleanup 구조 정리
+- **성공 지표**: 렌더 로그 1회, DevTools 초기 commit 50% 감소
+- **예상 번들 영향**: +0.3 KB | **예상 시간**: 2~3h
+
+#### Phase 69.3: 이벤트 핸들러 중복 방지 🔶
+
+- **목표**: wheel/resize/keydown 핸들러 중복 등록 제거, 스크롤 처리량 40~50%
+  감소
+- **TDD 계획**
+  1. RED: `test/unit/features/gallery/use-gallery-scroll.test.ts`
+     - 동일 이벤트 1 tick 내 다중 등록 차단 검증
+     - wheel 이벤트가 RAF 디바운스로 1회만 처리되는지 확인
+  2. GREEN: `useGalleryScroll.ts`, `EventManager.ts`
+     - 이벤트 등록 시 key 기반 dedupe map 도입
+     - wheel handler를 RAF 디바운스로 감싸고 cleanup 강화
+  3. REFACTOR: 로깅 축소, 이벤트 추적 util 공유
+- **성공 지표**: 로그에서 동일 delta 연속 기록 제거, 스크롤 체감 개선
+- **예상 번들 영향**: +0.4 KB | **예상 시간**: 2~3h
+
+#### Phase 69.4: ThemeService 중복 초기화 방지 🔶
+
+- **목표**: ThemeService/자동 테마 감지 초기화를 세션당 1회로 제한
+- **TDD 계획**
+  1. RED: `test/unit/shared/services/theme-service-lifecycle.test.ts`
+     - 동일 세션 재호출 시 초기화가 다시 발생하지 않는지 확인
+     - 갤러리 재오픈 시 기존 인스턴스 재사용 검증
+  2. GREEN: `ThemeService.ts`, `initializeTheme.ts`
+     - lazy singleton (`getThemeServiceInstance`) 가드 추가
+     - CoreService 등록 시 이미 존재하면 재사용
+  3. REFACTOR: 중복 로그 메시지 제거, 서비스 수명주기 문서화
+- **성공 지표**: 로그에서 ThemeService 초기화 메시지 1회, 초기 진입 시간 5~10ms
+  감소
+- **예상 번들 영향**: +0.2 KB | **예상 시간**: 1~2h
+
+#### Phase 69 완료 조건
+
+- 모든 하위 Phase 테스트 GREEN, `npm run validate` 및 `npm run build` 통과
+- 프로덕션 번들 ≤ 325 KB 유지, 디자인 토큰 정책 위배 없음
+- `npm run maintenance:check` 결과 이상 없음
+- Phase 69 이전/이후 로그 비교 시 L-1~L-5 패턴 재발 금지
+- Chrome DevTools Performance/Memory 프로파일에서 CPU·스크롤 지표 개선 확인
+
+---
+
+## 백로그 (모니터링)
+
+1. **번들 크기 경계**: prod 번들이 322 KB(예산 99%) 접근 시 Phase 67 Step 4-5
+   재개
+2. **StaticVendorManager 자동 초기화 경고**: Phase 70에서 bootstrap 순서 개선
+   예정
+3. **순환 네비 UX 개선**: 경계 경고 로그 재분석 필요 시 Phase 71 후보
+
+---
+
+## 설계 원칙 (요약)
+
+1. 유지보수성 우선 — 번들 크기보다 디자인 일관성
+2. 컴포넌트 응집도 — 1회 사용 토큰도 컴포넌트 책임이면 유지
+3. 과도 추상화 지양 — 재사용 없는 추상화 제거
+4. 접근성 우선 — WCAG 기준 준수 토큰/행동 유지
+5. TDD 기본 — RED → GREEN → REFACTOR 순서 준수
+6. ROI 검토 — 시간 대비 가치 평가 후 진행
 
 ---
 
 ## 참고 문서
 
-- **완료 기록**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
-- **아키텍처**: `docs/ARCHITECTURE.md`
-- **코딩 가이드**: `docs/CODING_GUIDELINES.md`
-- **유지보수**: `docs/MAINTENANCE.md`
-
----
-
-## 최근 완료 작업 (Phase 60-67)
-
-- **Phase 67**: 디자인 토큰 보수적 최적화 (34개 토큰 제거, 27.6% 감소)
-  (2025-10-15) ✅
-- **Phase 66 Part 2**: Focus Tracker Container Accessor Null 처리 (2025-10-14)
-  ✅
-- **Phase 66 Part 1**: Toolbar 순환 네비게이션 수정 (2025-10-14) ✅
-- **Phase 65**: Orphan 파일 정리 (2025-01-27) ✅
-- **Phase 64**: 포커스 트래킹 및 네비게이션 동기화 (2025-10-14) ✅
-- **Phase 62-63**: 툴바 네비게이션 및 인덱스 관리 (2025-01-27) ✅
-- **Phase 61**: 갤러리 스크롤 동작 정리 (2025-10-14) ✅
-
-상세 이력은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참고
-
----
-
-## 문서 링크
-
-- **온보딩**: `AGENTS.md` (개발 환경 및 워크플로)
-- **아키텍처**: `ARCHITECTURE.md` (시스템 구조)
-- **코딩 규칙**: `CODING_GUIDELINES.md` (스타일 가이드)
-- **유지보수**: `MAINTENANCE.md` (점검 절차)
-- `TDD_REFACTORING_PLAN_COMPLETED.md`: 완료된 Phase 기록 (Phase 67 Step 1-2
-  포함)
-- `TDD_REFACTORING_PLAN_Phase63.md`: Phase 63 상세 계획 (아카이브)
+- `AGENTS.md`: 개발 워크플로, 스크립트 규칙
+- `docs/ARCHITECTURE.md`: 3계층 구조와 의존성 경계
+- `docs/CODING_GUIDELINES.md`: 디자인 토큰·PC 이벤트·Vendor getter 규칙
+- `docs/TDD_REFACTORING_PLAN_COMPLETED.md`: 완료 Phase 상세 기록
+- `docs/MAINTENANCE.md`: 유지보수 점검 절차
+- `docs/TDD_REFACTORING_PLAN_Phase63.md`: Phase 63 아카이브

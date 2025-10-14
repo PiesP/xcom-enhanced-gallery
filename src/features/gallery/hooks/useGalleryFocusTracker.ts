@@ -124,19 +124,25 @@ export function useGalleryFocusTracker({
       return candidate !== null && !Number.isNaN(candidate);
     };
 
-    const fallbackCandidates: Array<number | null> = [
-      value,
-      autoFocusIndex(),
-      manualFocusIndex(),
-      lastAutoFocusedIndex,
-      getCurrentIndex(),
-    ];
+    // ✅ Phase 68.1: 명시적 값이 주어진 경우 즉시 사용
+    // fallback은 value가 invalid한 경우에만 사용
+    let finalValue: number | null = null;
 
-    const fallbackValue = shouldForceClear
-      ? value
-      : (fallbackCandidates.find(resolveCandidate) ?? null);
+    if (resolveCandidate(value)) {
+      // 명시적으로 전달된 유효한 값 사용
+      finalValue = value;
+    } else if (!shouldForceClear) {
+      // value가 invalid하고 forceClear가 아닌 경우 fallback 시도
+      const fallbackCandidates: Array<number | null> = [
+        autoFocusIndex(),
+        manualFocusIndex(),
+        lastAutoFocusedIndex,
+        getCurrentIndex(),
+      ];
+      finalValue = fallbackCandidates.find(resolveCandidate) ?? null;
+    }
 
-    const normalized = fallbackValue ?? -1;
+    const normalized = finalValue ?? -1;
     containerElement.setAttribute('data-focused', String(normalized));
     containerElement.setAttribute('data-focused-index', String(normalized));
   };
@@ -433,6 +439,7 @@ export function useGalleryFocusTracker({
   });
 
   // ✅ Phase 21.1: currentIndex 동기화 effect - on()으로 필요한 의존성만 추적
+  // ✅ Phase 68.1: updateContainerFocusAttribute 제거 - 이벤트 핸들러가 처리
   createEffect(
     on(
       [getCurrentIndex, autoFocusIndex, manualFocusIndex],
@@ -445,55 +452,59 @@ export function useGalleryFocusTracker({
             diff: Math.abs(autoIdx - currentIdx),
           });
           debouncedSetAutoFocusIndex.execute(currentIdx);
-          updateContainerFocusAttribute(currentIdx);
+          // updateContainerFocusAttribute는 이벤트 핸들러에서 이미 처리됨
         }
       },
       { defer: true }
     )
   );
 
-  createEffect(() => {
-    const enabled = isEnabledAccessor();
-    const containerElement = containerAccessor();
+  // ✅ Phase 68.1: Observer 생명주기 최적화
+  // Effect는 enabled/container 변경 시에만 실행되도록 명시적 의존성 지정
+  // scheduleSync() 제거로 순환 의존성 방지
+  createEffect(
+    on([isEnabledAccessor, containerAccessor], ([enabled, containerElement]) => {
+      cleanupObserver();
 
-    cleanupObserver();
-
-    if (!enabled) {
-      debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
-      return;
-    }
-
-    if (!containerElement) {
-      return;
-    }
-
-    observer = new IntersectionObserver(handleEntries, {
-      root: containerElement,
-      threshold,
-      rootMargin,
-    });
-
-    itemElements.forEach(element => {
-      if (!element) {
+      if (!enabled) {
+        debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
         return;
       }
-      observer?.observe(element);
-    });
 
-    logger.debug('useGalleryFocusTracker: observer initialized', {
-      itemCount: itemElements.size,
-      threshold,
-      rootMargin,
-    });
+      if (!containerElement) {
+        return;
+      }
 
-    scheduleSync();
+      observer = new IntersectionObserver(handleEntries, {
+        root: containerElement,
+        threshold,
+        rootMargin,
+      });
 
-    onCleanup(() => {
-      cleanupObserver();
-      clearAutoFocusTimer();
-      lastAutoFocusedIndex = null;
-    });
-  });
+      itemElements.forEach(element => {
+        if (!element) {
+          return;
+        }
+        observer?.observe(element);
+      });
+
+      logger.debug('useGalleryFocusTracker: observer initialized', {
+        itemCount: itemElements.size,
+        threshold,
+        rootMargin,
+      });
+
+      // ✅ Phase 68.1: scheduleSync() 제거 - observer 초기화와 focus 계산 분리
+      // 초기 동기화는 불필요 - IntersectionObserver가 자동으로 entries를 발생시키고
+      // galleryIndexEvents 구독이 이벤트 기반 동기화를 처리함
+
+      onCleanup(() => {
+        cleanupObserver();
+        clearAutoFocusTimer();
+        lastAutoFocusedIndex = null;
+      });
+    })
+  );
 
   onCleanup(() => {
     cleanupObserver();
