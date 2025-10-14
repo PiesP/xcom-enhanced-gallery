@@ -44,22 +44,13 @@
 - **UI는 가능한 얇게**: wiring+presentational 분리, 상태는 shared/state 신호로
   이동
 - **서비스는 테스트 친화**: 외부 의존은 adapter getter로 주입 가능해야 함
-- **이벤트는 PC 전용**: click, keydown/up(Arrow, Home/End, Escape, Space),
-  wheel, contextmenu, mouse\*
-  - 터치/포인터 이벤트 금지(설계 원칙)
+- **이벤트는 PC 전용**: 세부 사항은 `docs/CODING_GUIDELINES.md` 참조
 
-## 디자인 토큰 시스템 (3계층)
+## 디자인 토큰
 
-```plaintext
-Primitive (color-*, --xeg-font-*, --xeg-spacing-*)
-  ↓
-Semantic (--xeg-bg-*, --xeg-text-*, --xeg-border-*)
-  ↓
-Component (--xeg-comp-toolbar-*, --xeg-comp-modal-*)
-```
-
-- 하드코딩 금지: 색상/간격/폰트는 반드시 토큰 사용
-- 정책 강제: 정적 테스트로 하드코딩 감지 및 차단
+프로젝트는 3계층 디자인 토큰 시스템을 사용합니다 (Primitive → Semantic →
+Component). **상세 규칙**: `docs/CODING_GUIDELINES.md`의 "디자인 토큰 체계" 섹션
+참조
 
 ## 테스트 전략 개요
 
