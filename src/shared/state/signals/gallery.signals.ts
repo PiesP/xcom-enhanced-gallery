@@ -13,6 +13,7 @@ import { effectSafe, createSignalSafe } from './signal-factory';
 // Break runtime dependency on services: use logging barrel directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 import { getSolid } from '../../external/vendors';
+import { createEventEmitter } from '../../utils/event-emitter';
 
 const { batch } = getSolid();
 
@@ -52,6 +53,19 @@ export type GalleryEvents = {
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
+
+// ============================================================================
+// Index Navigation Events (Phase 63)
+// ============================================================================
+
+/**
+ * Gallery index navigation events
+ * 명시적 네비게이션 시 focusedIndex와 currentIndex 동기화를 위한 이벤트 시스템
+ */
+export const galleryIndexEvents = createEventEmitter<{
+  'navigate:start': { from: number; to: number; trigger: 'button' | 'click' | 'keyboard' };
+  'navigate:complete': { index: number; trigger: 'button' | 'click' | 'keyboard' };
+}>();
 
 // ============================================================================
 // Fine-grained Signals (NEW)
@@ -162,8 +176,13 @@ export function closeGallery(): void {
 
 /**
  * Navigate to media item
+ * @param index 대상 인덱스
+ * @param trigger 네비게이션 트리거 ('button' | 'click' | 'keyboard')
  */
-export function navigateToItem(index: number): void {
+export function navigateToItem(
+  index: number,
+  trigger: 'button' | 'click' | 'keyboard' = 'button'
+): void {
   const state = galleryState.value;
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
 
@@ -172,30 +191,40 @@ export function navigateToItem(index: number): void {
     return;
   }
 
+  // Phase 63: 네비게이션 시작 이벤트 발행
+  galleryIndexEvents.emit('navigate:start', {
+    from: state.currentIndex,
+    to: validIndex,
+    trigger,
+  });
+
   galleryState.value = {
     ...state,
     currentIndex: validIndex,
   };
 
-  logger.debug(`[Gallery] Navigated to item: ${index}`);
+  // Phase 63: 네비게이션 완료 이벤트 발행
+  galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
+
+  logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger})`);
 }
 
 /**
  * Navigate to previous media
  */
-export function navigatePrevious(): void {
+export function navigatePrevious(trigger: 'button' | 'click' | 'keyboard' = 'button'): void {
   const state = galleryState.value;
   const newIndex = state.currentIndex > 0 ? state.currentIndex - 1 : state.mediaItems.length - 1;
-  navigateToItem(newIndex);
+  navigateToItem(newIndex, trigger);
 }
 
 /**
  * Navigate to next media
  */
-export function navigateNext(): void {
+export function navigateNext(trigger: 'button' | 'click' | 'keyboard' = 'button'): void {
   const state = galleryState.value;
   const newIndex = state.currentIndex < state.mediaItems.length - 1 ? state.currentIndex + 1 : 0;
-  navigateToItem(newIndex);
+  navigateToItem(newIndex, trigger);
 }
 
 /**
