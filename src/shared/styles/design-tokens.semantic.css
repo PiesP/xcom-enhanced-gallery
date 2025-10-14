@@ -189,6 +189,12 @@
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
   --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
+
+  /* High Contrast Toolbar Tokens - Light Mode (Phase 56) */
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 }
 
 [data-theme='dark'] {
@@ -217,6 +223,14 @@
   --xeg-modal-border-dark: var(--color-border-emphasis);
   --xeg-modal-bg: var(--xeg-modal-bg-dark);
   --xeg-modal-border: var(--xeg-modal-border-dark);
+
+  /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
+  --xeg-toolbar-bg-high-contrast-dark: var(--xeg-color-neutral-900);
+  --xeg-toolbar-border-high-contrast-dark: var(--xeg-glass-border);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -307,6 +321,24 @@
   --xeg-modal-border-light: var(--color-border-default);
   --xeg-modal-bg: var(--xeg-modal-bg-light);
   --xeg-modal-border: var(--xeg-modal-border-light);
+
+  /* Toolbar High Contrast Tokens (Phase 56) */
+  /* 고대비 모드용 툴바 배경/경계 토큰 */
+  --xeg-toolbar-bg-high-contrast-light: var(--xeg-color-neutral-100);
+  --xeg-toolbar-border-high-contrast-light: var(--xeg-color-overlay-medium);
+  --xeg-toolbar-button-bg-high-contrast-light: var(--xeg-glass-bg);
+  --xeg-toolbar-button-border-high-contrast-light: var(--xeg-color-overlay-light);
+
+  --xeg-toolbar-bg-high-contrast-dark: var(--xeg-color-neutral-900);
+  --xeg-toolbar-border-high-contrast-dark: var(--xeg-glass-border);
+  --xeg-toolbar-button-bg-high-contrast-dark: var(--xeg-color-neutral-700);
+  --xeg-toolbar-button-border-high-contrast-dark: var(--xeg-glass-border);
+
+  /* 고대비 토큰 기본값 (라이트 모드) */
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
   /* Toast Component Tokens */
   --xeg-toast-bg-info: oklch(0.95 0.05 237.8);

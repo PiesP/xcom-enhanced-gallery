@@ -302,4 +302,88 @@ describe('token-definition-guard (Phase 55.2)', () => {
 
     expect(foundHardcoded).toHaveLength(0);
   });
+
+  it('고대비 모드용 툴바 토큰이 정의되어야 함 (Phase 56)', () => {
+    const semanticTokens = readFileSync(semanticTokensPath, 'utf-8');
+    const definedTokens = extractDefinedTokens(semanticTokens);
+
+    // 필수 고대비 툴바 토큰
+    const requiredHighContrastTokens = [
+      '--xeg-toolbar-bg-high-contrast-light',
+      '--xeg-toolbar-bg-high-contrast-dark',
+      '--xeg-toolbar-border-high-contrast-light',
+      '--xeg-toolbar-border-high-contrast-dark',
+      '--xeg-toolbar-button-bg-high-contrast-light',
+      '--xeg-toolbar-button-bg-high-contrast-dark',
+      '--xeg-toolbar-button-border-high-contrast-light',
+      '--xeg-toolbar-button-border-high-contrast-dark',
+    ];
+
+    const missingTokens = requiredHighContrastTokens.filter(token => !definedTokens.has(token));
+
+    if (missingTokens.length > 0) {
+      throw new Error(
+        `고대비 모드용 툴바 토큰이 누락되었습니다:\n  ${missingTokens.join('\n  ')}\n\n` +
+          `→ 해결 방법: design-tokens.semantic.css의 Component Scope Tokens 섹션에 토큰을 추가하세요.`
+      );
+    }
+
+    expect(missingTokens).toHaveLength(0);
+  });
+
+  it('[data-theme="light"] 블록에 고대비 라이트 변형이 오버라이드되어야 함 (Phase 56)', () => {
+    const semanticTokens = readFileSync(semanticTokensPath, 'utf-8');
+
+    // [data-theme='light'] 블록 추출 (있는 경우)
+    const lightThemeMatch = semanticTokens.match(/\[data-theme=['"]light['"]\]\s*\{[^}]+\}/);
+
+    if (lightThemeMatch) {
+      const lightThemeBlock = lightThemeMatch[0];
+
+      // 필수 고대비 라이트 오버라이드 (있는 경우)
+      const requiredTokens = [
+        '--xeg-toolbar-bg-high-contrast:',
+        '--xeg-toolbar-border-high-contrast:',
+      ];
+
+      const missingTokens = requiredTokens.filter(token => !lightThemeBlock.includes(token));
+
+      if (missingTokens.length > 0) {
+        throw new Error(
+          `[data-theme="light"] 블록에 다음 고대비 토큰이 누락되었습니다:\n  ${missingTokens.join('\n  ')}\n\n` +
+            `→ 해결 방법: [data-theme='light'] 블록에 고대비 토큰 오버라이드를 추가하세요.`
+        );
+      }
+
+      expect(missingTokens).toHaveLength(0);
+    }
+  });
+
+  it('[data-theme="dark"] 블록에 고대비 다크 변형이 오버라이드되어야 함 (Phase 56)', () => {
+    const semanticTokens = readFileSync(semanticTokensPath, 'utf-8');
+
+    const darkThemeMatch = semanticTokens.match(/\[data-theme=['"]dark['"]\]\s*\{[^}]+\}/);
+    expect(darkThemeMatch, '[data-theme="dark"] 블록이 존재해야 합니다').not.toBeNull();
+
+    const darkThemeBlock = darkThemeMatch![0];
+
+    // 필수 고대비 다크 오버라이드
+    const requiredTokens = [
+      '--xeg-toolbar-bg-high-contrast-dark',
+      '--xeg-toolbar-border-high-contrast-dark',
+      '--xeg-toolbar-bg-high-contrast:',
+      '--xeg-toolbar-border-high-contrast:',
+    ];
+
+    const missingTokens = requiredTokens.filter(token => !darkThemeBlock.includes(token));
+
+    if (missingTokens.length > 0) {
+      throw new Error(
+        `[data-theme="dark"] 블록에 다음 고대비 토큰이 누락되었습니다:\n  ${missingTokens.join('\n  ')}\n\n` +
+          `→ 해결 방법: [data-theme='dark'] 블록에 고대비 토큰 오버라이드를 추가하세요.`
+      );
+    }
+
+    expect(missingTokens).toHaveLength(0);
+  });
 });
