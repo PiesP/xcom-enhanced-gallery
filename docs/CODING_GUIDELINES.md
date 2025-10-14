@@ -112,6 +112,48 @@ border-radius: 8px;
 - 하드코딩된 색상/크기 값 (`#2a2a2a`, `8px`)
 - 라이트/다크 변형 없이 단일 토큰만 정의
 
+#### 접근성 토큰 사용 원칙 (Phase 56)
+
+고대비 모드 등 접근성 상태를 위한 토큰은 다음 원칙을 따릅니다:
+
+**✅ 고대비 토큰 정의:**
+
+```css
+/* Component Scope Tokens 섹션 */
+:root {
+  /* 고대비 모드용 라이트/다크 변형 */
+  --xeg-toolbar-bg-high-contrast-light: var(--xeg-color-neutral-100);
+  --xeg-toolbar-border-high-contrast-light: var(--xeg-color-overlay-medium);
+
+  --xeg-toolbar-bg-high-contrast-dark: var(--xeg-color-neutral-900);
+  --xeg-toolbar-border-high-contrast-dark: var(--xeg-glass-border);
+
+  /* 기본값 (라이트 모드) */
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(
+    --xeg-toolbar-border-high-contrast-light
+  );
+}
+
+/* 테마별 오버라이드 */
+[data-theme='dark'] {
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+  --xeg-toolbar-border-high-contrast: var(
+    --xeg-toolbar-border-high-contrast-dark
+  );
+}
+```
+
+**✅ CSS 모듈에서 사용:**
+
+```css
+/* 고대비 상태 클래스에서 토큰 사용 */
+.toolbar.highContrast {
+  background: var(--xeg-toolbar-bg-high-contrast) !important;
+  border: 2px solid var(--xeg-toolbar-border-high-contrast) !important;
+}
+```
+
 **검증:**
 
 - 가드 테스트: `test/styles/token-definition-guard.test.ts`

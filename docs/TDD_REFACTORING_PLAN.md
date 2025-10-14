@@ -1,17 +1,25 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 60 완료 ✅ 다음 Phase 대기 중
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 56 완료 ✅ 다음 Phase 대기 중
 
 ## 프로젝트 상태
 
-- **빌드**: dev 836.01 KB / prod **316.71 KB** ✅
+- **빌드**: dev 836.01 KB / prod **318.40 KB** ✅
 - **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (**257 modules**, **709 dependencies**) ✅
-- **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
+- **번들 예산**: **318.40 KB / 325 KB** (6.60 KB 여유) ✅
 
 ## 최근 완료 작업
+
+- Phase 56: 고대비/접근성 토큰 정비 (2025-10-14) ✅
+  - 고대비 모드용 툴바 토큰 8개 추가 (`--xeg-toolbar-*-high-contrast-*`)
+  - 라이트/다크 변형 및 테마별 오버라이드 완전 지원
+  - Toolbar.module.css에서 하드코딩된 중립색 직접 참조 제거
+  - token-definition-guard.test.ts에 3개 가드 테스트 추가로 재발 방지
+  - CODING_GUIDELINES.md에 접근성 토큰 사용 원칙 추가
+  - 번들 크기 미미한 증가 (+1.69 KB, 여전히 예산 내)
 
 - Phase 60: 미사용 유틸리티 및 편의 함수 제거 (2025-10-14) ✅
   - optimization 디렉터리 완전 제거 (memo.ts, bundle.ts, index.ts)
@@ -45,23 +53,8 @@
 
 ## 다음 작업 대기 중
 
-### 🔴 Phase 56: 고대비/접근성 토큰 정비 (대기)
-
-- **문제**: `.galleryToolbar.highContrast` 및 고대비 버튼 상태가 여전히 중립색
-  직접 값을 사용하여 모달 고대비 토큰과 괴리가 발생
-- **영향 범위**: `Toolbar.module.css`, `ModalShell.module.css`,
-  `token-definition-guard.test.ts`
-- **TDD 접근**:
-  1. RED: 고대비용 `--xeg-toolbar-*` 토큰 존재 여부와 오버라이드 검증을 token
-     guard 테스트에 추가
-  2. GREEN: `design-tokens.semantic.css`에 고대비 전용
-     토큰(`--xeg-toolbar-bg-high-contrast`,
-     `--xeg-toolbar-border-high-contrast`,
-     `--xeg-toolbar-button-bg-high-contrast` 등)과 라이트/다크 변형 정의
-  3. REFACTOR: Toolbar/Modal 고대비 구간이 새 토큰을 참조하도록 정비하고
-     문서(`CODING_GUIDELINES.md`)에 접근성 토큰 사용 원칙 추가
-- **완료 기준**: 고대비 상태에서도 툴바/모달 배경·경계 토큰이 일치, token guard
-  확장 테스트 GREEN, 번들/테스트/빌드 검증 통과
+현재 활성 Phase 없음. 추가 백로그 항목을 검토하거나 새로운 개선 사항을
+제안하세요.
 
 ## 추가 백로그 (우선순위 검토 필요)
 

@@ -647,11 +647,11 @@ button.fitButton {
 
 /* ===== 동적 시인성 조정 ===== */
 
-/* 동적 고대비 모드 - 완전 불투명 배경 */
+/* 동적 고대비 모드 - 완전 불투명 배경 (Phase 56: 토큰화) */
 .galleryToolbar.highContrast {
-  background: var(--xeg-color-neutral-100) !important; /* 완전 불투명 */
-  border: 2px solid var(--xeg-color-overlay-medium) !important;
-  backdrop-filter: none !important; /* 블러 효과 제거 */
+  background: var(--xeg-toolbar-bg-high-contrast) !important;
+  border: 2px solid var(--xeg-toolbar-border-high-contrast) !important;
+  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow:
     0 4px 20px var(--xeg-color-overlay-medium),
@@ -659,17 +659,17 @@ button.fitButton {
 }
 
 [data-theme='dark'] .galleryToolbar.highContrast {
-  background: var(--xeg-color-neutral-900) !important; /* 완전 불투명 */
-  border: 2px solid var(--xeg-glass-border) !important;
+  background: var(--xeg-toolbar-bg-high-contrast) !important;
+  border: 2px solid var(--xeg-toolbar-border-high-contrast) !important;
   box-shadow:
     0 4px 20px var(--xeg-color-overlay-medium),
     0 2px 8px var(--xeg-color-overlay-medium) !important;
 }
 
-/* 고대비 모드에서 버튼 시인성 개선 */
+/* 고대비 모드에서 버튼 시인성 개선 (Phase 56: 토큰화) */
 .highContrast .toolbarButton {
-  background: var(--xeg-glass-bg);
-  border: 1px solid var(--xeg-color-overlay-light);
+  background: var(--xeg-toolbar-button-bg-high-contrast);
+  border: 1px solid var(--xeg-toolbar-button-border-high-contrast);
   color: var(--xeg-color-overlay-strong);
 }
 
@@ -680,8 +680,8 @@ button.fitButton {
 }
 
 [data-theme='dark'] .highContrast .toolbarButton {
-  background: var(--xeg-color-neutral-700);
-  border: 1px solid var(--xeg-glass-border);
+  background: var(--xeg-toolbar-button-bg-high-contrast);
+  border: 1px solid var(--xeg-toolbar-button-border-high-contrast);
   color: var(--xeg-glass-bg);
 }
 

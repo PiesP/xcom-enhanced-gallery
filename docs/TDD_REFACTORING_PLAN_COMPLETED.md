@@ -1,21 +1,113 @@
 # TDD 리팩토링 완료 기록
 
-> **최종 업데이트**: 2025-10-14 **상태**: Phase 60 완료 ✅ **문서 정책**: 최근
+> **최종 업데이트**: 2025-10-14 **상태**: Phase 56 완료 ✅ **문서 정책**: 최근
 > Phase만 세부 유지, 이전 Phase는 요약표로 축약 (목표: 400-500줄)
 
 ## 프로젝트 상태 스냅샷 (2025-10-14)
 
-- **빌드**: dev 836.01 KB / prod **316.71 KB** ✅
+- **빌드**: dev 836.01 KB / prod **318.40 KB** ✅
 - **테스트**: 658 passing, 1 skipped ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings / 0 errors ✅
 - **의존성**: dependency-cruiser 0 violations (**257 modules**, **709 deps**) ✅
-- **번들 예산**: **316.71 KB / 325 KB** (8.29 KB 여유) ✅
+- **번들 예산**: **318.40 KB / 325 KB** (6.60 KB 여유) ✅
 - **개선**: Phase 54-60 작업으로 코드베이스 단순화 및 불필요한 유틸리티 제거
 
 ---
 
 ## 최근 완료 Phase
+
+### Phase 56: 고대비/접근성 토큰 정비 (2025-10-14) ✅
+
+**목표**: 툴바 고대비 모드에서 하드코딩된 중립색 직접 참조를 토큰화하여 모달과
+일관성 확보
+
+**현재 문제**:
+
+- `Toolbar.module.css`의 `.galleryToolbar.highContrast` 및
+  `.highContrast .toolbarButton`가 `var(--xeg-color-neutral-100)`,
+  `var(--xeg-color-neutral-900)` 등 중립색 직접 참조
+- 모달의 고대비 토큰 (`--xeg-modal-bg-high-contrast` 등)과 명명 패턴이 다르고
+  괴리 발생
+- 접근성 토큰 사용 원칙이 `CODING_GUIDELINES.md`에 명시되지 않음
+
+**TDD 접근 (RED → GREEN → REFACTOR)**:
+
+1. **RED**: 고대비 토큰 가드 테스트 추가
+   - `test/styles/token-definition-guard.test.ts`에 3개 테스트 추가:
+     - 고대비 모드용 툴바 토큰 8개 존재 검증
+       (`--xeg-toolbar-*-high-contrast-light/dark`,
+       `--xeg-toolbar-button-*-high-contrast-light/dark`)
+     - `[data-theme='light']` 블록에 라이트 변형 오버라이드 검증
+     - `[data-theme='dark']` 블록에 다크 변형 오버라이드 검증
+   - 테스트 실행 결과: 3개 실패 (예상대로 RED 상태)
+
+2. **GREEN**: 고대비 토큰 정의
+   - `src/shared/styles/design-tokens.semantic.css`의 `Component Scope Tokens`
+     섹션에 추가:
+     - 라이트 변형: `--xeg-toolbar-bg-high-contrast-light`,
+       `--xeg-toolbar-border-high-contrast-light`,
+       `--xeg-toolbar-button-bg-high-contrast-light`,
+       `--xeg-toolbar-button-border-high-contrast-light`
+     - 다크 변형: `--xeg-toolbar-bg-high-contrast-dark`,
+       `--xeg-toolbar-border-high-contrast-dark`,
+       `--xeg-toolbar-button-bg-high-contrast-dark`,
+       `--xeg-toolbar-button-border-high-contrast-dark`
+     - 기본값 (라이트 모드): `--xeg-toolbar-bg-high-contrast`,
+       `--xeg-toolbar-border-high-contrast`,
+       `--xeg-toolbar-button-bg-high-contrast`,
+       `--xeg-toolbar-button-border-high-contrast`
+   - `[data-theme='light']` 블록에 라이트 변형 오버라이드 추가
+   - `[data-theme='dark']` 블록에 다크 변형 오버라이드 추가
+   - 테스트 실행 결과: 10/10 passing ✅ (GREEN 상태)
+
+3. **REFACTOR**: Toolbar 고대비 구간 업데이트
+   - `src/shared/components/ui/Toolbar/Toolbar.module.css`:
+     - `.galleryToolbar.highContrast`: `var(--xeg-color-neutral-100)` →
+       `var(--xeg-toolbar-bg-high-contrast)`
+     - `.galleryToolbar.highContrast`: `var(--xeg-color-overlay-medium)` →
+       `var(--xeg-toolbar-border-high-contrast)`
+     - `[data-theme='dark'] .galleryToolbar.highContrast`:
+       `var(--xeg-color-neutral-900)` → `var(--xeg-toolbar-bg-high-contrast)`
+     - `[data-theme='dark'] .galleryToolbar.highContrast`:
+       `var(--xeg-glass-border)` → `var(--xeg-toolbar-border-high-contrast)`
+     - `.highContrast .toolbarButton`: `var(--xeg-glass-bg)` →
+       `var(--xeg-toolbar-button-bg-high-contrast)`
+     - `.highContrast .toolbarButton`: `var(--xeg-color-overlay-light)` →
+       `var(--xeg-toolbar-button-border-high-contrast)`
+     - `[data-theme='dark'] .highContrast .toolbarButton`:
+       `var(--xeg-color-neutral-700)` →
+       `var(--xeg-toolbar-button-bg-high-contrast)`
+     - `[data-theme='dark'] .highContrast .toolbarButton`:
+       `var(--xeg-glass-border)` →
+       `var(--xeg-toolbar-button-border-high-contrast)`
+   - `docs/CODING_GUIDELINES.md`: 접근성 토큰 사용 원칙 섹션 추가 (Phase 56)
+     - 고대비 토큰 정의 패턴 (라이트/다크 변형, 기본값, 테마별 오버라이드)
+     - CSS 모듈에서 사용 예시
+       (`.toolbar.highContrast { background: var(--xeg-toolbar-bg-high-contrast) !important; }`)
+
+**결과**:
+
+- ✅ 고대비 토큰 8개 정의 완료 (라이트/다크 변형 모두)
+- ✅ token-definition-guard.test.ts에 3개 가드 테스트 추가로 재발 방지
+- ✅ Toolbar.module.css에서 하드코딩된 중립색 직접 참조 완전 제거
+- ✅ 모달과 툴바의 고대비 토큰 명명 패턴 일관성 확보
+- ✅ CODING_GUIDELINES.md에 접근성 토큰 사용 원칙 추가
+- ✅ 번들 크기 미미한 증가: 316.71 KB → 318.40 KB (+1.69 KB, 여전히 예산 내 6.60
+  KB 여유)
+- ✅ 테스트: 658 passing 유지, 모든 품질 게이트 GREEN
+- ✅ TypeScript/ESLint: 0 errors/warnings 유지
+
+**교훈**:
+
+- 접근성 상태(고대비, 강조 포커스 등)도 컴포넌트 토큰으로 체계화하면 일관성이
+  향상됨
+- 라이트/다크 변형 + 테마별 오버라이드 패턴은 모든 상태 토큰에 적용 가능
+- token-definition-guard.test.ts의 가드 테스트로 토큰 누락을 조기에 감지할 수
+  있음
+- 번들 크기 영향이 미미하여 (1.69 KB) 접근성 개선 대비 비용이 낮음
+
+---
 
 ### Phase 60: 미사용 유틸리티 및 편의 함수 제거 (2025-10-14) ✅
 
