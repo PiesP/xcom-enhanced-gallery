@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizeTweetLegacy,
   normalizeUserLegacy,
-} from '@/shared/services/media/normalizers/legacy/twitter';
+} from '../../../../utils/legacy/twitter-normalizers';
 
 describe('TwitterVideoLegacyNormalizer', () => {
   it('legacy 필드를 현대 구조로 병합한다 (tweet)', () => {
