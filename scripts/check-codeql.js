@@ -15,15 +15,27 @@ const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
 const queriesDir = resolve(rootDir, 'codeql-custom-queries-javascript');
 
-// ANSI 색상 코드
-const colors = {
-  reset: '\x1b[0m',
-  bright: '\x1b[1m',
-  cyan: '\x1b[36m',
-  yellow: '\x1b[33m',
-  green: '\x1b[32m',
-  red: '\x1b[31m',
-};
+// CI 환경 감지
+const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+
+// ANSI 색상 코드 (CI에서는 비활성화)
+const colors = isCI
+  ? {
+      reset: '',
+      bright: '',
+      cyan: '',
+      yellow: '',
+      green: '',
+      red: '',
+    }
+  : {
+      reset: '\x1b[0m',
+      bright: '\x1b[1m',
+      cyan: '\x1b[36m',
+      yellow: '\x1b[33m',
+      green: '\x1b[32m',
+      red: '\x1b[31m',
+    };
 
 /**
  * CodeQL CLI가 설치되어 있는지 확인
@@ -41,6 +53,10 @@ function isCodeQLInstalled() {
  * 안내 메시지 출력
  */
 function printInfo() {
+  if (isCI) {
+    console.log('CodeQL check: Starting...');
+    return;
+  }
   console.log(`\n${colors.cyan}${colors.bright}ℹ️  CodeQL 커스텀 쿼리 검증${colors.reset}`);
   console.log(`${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}\n`);
 }
@@ -49,6 +65,10 @@ function printInfo() {
  * CodeQL CLI 설치 안내
  */
 function printInstallGuide() {
+  if (isCI) {
+    console.log('CodeQL CLI not installed. Skipping local checks (CI will run CodeQL separately).');
+    return;
+  }
   console.log(`${colors.yellow}⚠️  CodeQL CLI가 설치되어 있지 않습니다.${colors.reset}\n`);
   console.log(`${colors.bright}설치 방법:${colors.reset}`);
   console.log(
@@ -72,6 +92,11 @@ function printInstallGuide() {
  * CodeQL 쿼리 실행
  */
 function runCodeQLQueries() {
+  if (isCI) {
+    console.log('CodeQL queries will be executed by GitHub Actions workflow.');
+    return;
+  }
+
   console.log(`${colors.bright}실행 중: CodeQL 커스텀 쿼리...${colors.reset}\n`);
 
   // 쿼리 파일 확인

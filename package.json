@@ -19,6 +19,7 @@
     "test:all": "vitest run",
     "test:watch": "vitest --project fast",
     "test:coverage": "vitest --project unit --coverage --run",
+    "test:coverage:ci": "cross-env CI=true vitest --project unit --coverage --run --reporter=dot",
     "pretest:coverage": "npm run build:prod",
     "test:ui": "vitest --ui --project fast",
     "test:smoke": "vitest --project smoke run",
@@ -36,16 +37,22 @@
     "// === Lint & Format ===": "",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
+    "lint:ci": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:css": "stylelint \"src/**/*.css\"",
     "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
+    "lint:css:ci": "stylelint \"src/**/*.css\"",
     "lint:staged": "lint-staged",
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",
+    "typecheck:ci": "tsgo --project ./tsconfig.json --noEmit",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\"",
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "lint:md:ci": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\" --config .markdownlint.json",
     "codeql:check": "node ./scripts/check-codeql.js",
     "validate": "npm run typecheck && npm run lint:fix && npm run lint:css && npm run lint:md:fix && npm run codeql:check && npm run format",
+    "validate:ci": "npm run typecheck:ci && npm run lint:ci && npm run lint:css:ci && npm run lint:md:ci && npm run format:check",
     "// === Dependencies ===": "",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
@@ -113,8 +120,7 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write",
-      "bash -c 'npm run typecheck'"
+      "prettier --write"
     ],
     "*.{js,jsx}": [
       "eslint --fix",
@@ -128,6 +134,7 @@
       "prettier --write"
     ],
     "*.{css,scss}": [
+      "stylelint --fix",
       "prettier --write"
     ]
   }
