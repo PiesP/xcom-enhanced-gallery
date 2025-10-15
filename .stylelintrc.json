@@ -1,0 +1,27 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "unit-disallowed-list": [
+      ["px"],
+      {
+        "ignoreProperties": {
+          "px": ["/^--/"]
+        },
+        "message": "Use design tokens (rem/em) instead of hardcoded px values"
+      }
+    ],
+    "color-function-notation": "modern",
+    "alpha-value-notation": "percentage",
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null
+  },
+  "ignoreFiles": [
+    "dist/**",
+    "coverage/**",
+    "node_modules/**",
+    "**/design-tokens.primitive.css",
+    "**/design-tokens.semantic.css",
+    "**/design-tokens.css"
+  ]
+}

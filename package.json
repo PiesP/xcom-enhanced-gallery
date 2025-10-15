@@ -36,6 +36,7 @@
     "// === Lint & Format ===": "",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
+    "lint:css": "echo 'stylelint not installed yet. Install with: npm install --save-dev stylelint stylelint-config-standard'",
     "lint:staged": "lint-staged",
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",

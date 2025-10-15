@@ -29,16 +29,24 @@ const { createSignal, createMemo } = getSolid();
 // ❌ 금지: touchstart/move/end, pointerdown/up/move
 ```
 
-### 3. CSS 디자인 토큰
+### 3. CSS 디자인 토큰 (크기 + 색상)
 
 ```css
-/* ✅ 토큰 사용 */
-color: var(--xeg-color-primary);
-border-radius: var(--xeg-radius-md);
+/* ✅ 크기: rem/em 토큰 사용 */
+padding: var(--space-md); /* 1rem = 16px */
+font-size: var(--font-size-base); /* 0.9375rem = 15px */
+border-radius: var(--radius-md); /* 0.375em (폰트 비례) */
 
-/* ❌ 하드코딩 금지 (테스트에서 차단) */
-color: #1da1f2;
-border-radius: 8px;
+/* ✅ 색상: oklch 토큰 사용 */
+color: var(--xeg-color-primary);
+background: oklch(0 0 0 / var(--opacity-overlay-light));
+
+/* ❌ 하드코딩 금지 (테스트/stylelint에서 차단) */
+padding: 16px; /* rem/em 토큰 사용 */
+font-size: 14px; /* rem 토큰 사용 */
+border-radius: 8px; /* em 토큰 사용 */
+color: #1da1f2; /* oklch 토큰 사용 */
+background: rgba(0, 0, 0, 0.1); /* oklch 사용 */
 ```
 
 ---
@@ -48,16 +56,105 @@ border-radius: 8px;
 ### 계층 구조
 
 ```css
-/* 1. Primitive (design-tokens.css) */
---color-gray-800: #2a2a2a;
+/* 1. Primitive (design-tokens.primitive.css) */
+--space-md: 1rem; /* 16px - rem (절대 크기) */
+--radius-md: 0.375em; /* 6px @ 16px - em (상대 크기) */
+--font-size-base: 0.9375rem; /* 15px - rem */
+--color-gray-800: oklch(0.306 0.005 282);
 
 /* 2. Semantic (design-tokens.semantic.css) */
 --color-bg-elevated: var(--color-base-white);
+--size-button-md: 2.5em; /* 40px @ 16px - em */
 
 /* 3. Component (design-tokens.semantic.css) */
 --xeg-modal-bg-light: var(--color-bg-elevated);
 --xeg-modal-bg: var(--xeg-modal-bg-light);
 ```
+
+### 크기 단위 규칙 (Size Units)
+
+**필수 원칙**:
+
+- **rem**: 절대 크기 (spacing, font-size, layout) - 브라우저 설정 존중
+- **em**: 상대 크기 (radius, button/icon size) - 폰트 크기에 비례
+- **px 금지**: 디자인 토큰 정의 파일 외 사용 금지
+
+```css
+/* ✅ 올바른 사용 */
+.button {
+  padding: 0.5em 1em; /* em: 부모 폰트에 비례 */
+  font-size: var(--font-size-base); /* 0.9375rem */
+  border-radius: var(--radius-md); /* 0.375em */
+  margin-bottom: var(--space-md); /* 1rem */
+}
+
+/* ❌ 잘못된 사용 - stylelint에서 차단 */
+.button {
+  padding: 8px 16px; /* rem/em 토큰 사용 */
+  font-size: 14px; /* rem 토큰 사용 */
+  border-radius: 6px; /* em 토큰 사용 */
+  margin-bottom: 16px; /* rem 토큰 사용 */
+}
+```
+
+**rem vs em 선택 가이드**:
+
+| 속성                       | 단위   | 이유                 |
+| -------------------------- | ------ | -------------------- |
+| `font-size`                | rem    | 절대 크기, 중첩 방지 |
+| `padding`, `margin`, `gap` | rem/em | 컨텍스트에 따라 선택 |
+| `border-radius`            | em     | 폰트 크기에 비례     |
+| `width`, `height` (button) | em     | 폰트 크기에 비례     |
+| `line-height`              | 무단위 | 상속 고려            |
+
+### 색상 단위 규칙 (Color Units)
+
+**필수 원칙**:
+
+- **oklch 전용**: 모든 색상은 `oklch()` 사용
+- **투명도**: opacity 토큰 + oklch alpha 조합
+- **rgba/hex 금지**: 흑백 기본값(`#ffffff`, `#000000`) 제외 금지
+
+```css
+/* ✅ 올바른 사용 */
+.overlay {
+  background: oklch(0 0 0 / var(--opacity-overlay-light)); /* 검은색 + 10% */
+  color: oklch(1 0 0); /* 흰색 */
+  border: 1px solid oklch(0.378 0.005 286.3); /* gray-700 */
+}
+
+.glass {
+  background: oklch(1 0 0 / var(--opacity-glass)); /* 흰색 + 85% */
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.15); /* 그림자 */
+}
+
+/* ❌ 잘못된 사용 - 테스트/CodeQL에서 차단 */
+.overlay {
+  background: rgba(0, 0, 0, 0.1); /* oklch 사용 */
+  color: #ffffff; /* oklch 또는 var(--color-base-white) */
+  border: 1px solid #333; /* oklch 토큰 사용 */
+}
+```
+
+**oklch 구문**:
+
+```css
+/* 기본 형식: oklch(lightness chroma hue / alpha) */
+oklch(0.7 0.15 220)        /* 파란색 (lightness 70%, chroma 0.15, hue 220°) */
+oklch(0.7 0.15 220 / 0.5)  /* 50% 투명도 */
+oklch(0 0 0 / var(--opacity-overlay-light))  /* 검은색 + 토큰 opacity */
+
+/* 흑백 (chroma 0) */
+oklch(0 0 0)      /* 검은색 */
+oklch(1 0 0)      /* 흰색 */
+oklch(0.5 0 0)    /* 중간 회색 */
+```
+
+---
+
+## 🎨 디자인 토큰 사용 예제
+
+### 버튼 컴포넌트
 
 ### 컴포넌트 토큰 규칙
 
@@ -196,14 +293,22 @@ npm run build         # dev + prod + validate-build
 
 ## 🚫 금지 사항
 
-| 항목            | ❌ 금지                            | ✅ 허용                                         |
-| --------------- | ---------------------------------- | ----------------------------------------------- |
-| **Vendor**      | `import { createSignal } from...`  | `const { createSignal } = getSolid()`           |
-| **이벤트**      | `onTouchStart`, `onPointerDown`    | `onClick`, `onKeyDown`, `onWheel`               |
-| **스타일**      | `color: #1da1f2; padding: 16px;`   | `color: var(--xeg-*); padding: var(--xeg-*);`   |
-| **경로**        | `import from '../../../shared'`    | `import from '@shared'`                         |
-| **서비스 접근** | `ServiceManager` 직접 import       | `@shared/container/service-accessors` 헬퍼 사용 |
-| **파일명**      | `GalleryView.tsx`, `media_util.ts` | `gallery-view.tsx`, `media-util.ts`             |
+| 항목            | ❌ 금지                            | ✅ 허용                                                     |
+| --------------- | ---------------------------------- | ----------------------------------------------------------- |
+| **Vendor**      | `import { createSignal } from...`  | `const { createSignal } = getSolid()`                       |
+| **이벤트**      | `onTouchStart`, `onPointerDown`    | `onClick`, `onKeyDown`, `onWheel`                           |
+| **크기**        | `padding: 16px; font-size: 14px;`  | `padding: var(--space-md); font-size: var(--font-size-sm);` |
+| **색상**        | `color: #1da1f2; rgba(0,0,0,0.1);` | `color: var(--xeg-color-*); oklch(0 0 0 / 0.1);`            |
+| **경로**        | `import from '../../../shared'`    | `import from '@shared'`                                     |
+| **서비스 접근** | `ServiceManager` 직접 import       | `@shared/container/service-accessors` 헬퍼 사용             |
+| **파일명**      | `GalleryView.tsx`, `media_util.ts` | `gallery-view.tsx`, `media-util.ts`                         |
+
+**강제 도구**:
+
+- **stylelint**: px 하드코딩 차단 (디자인 토큰 외)
+- **CodeQL**: 하드코딩 색상/크기 감지
+- **테스트**: 토큰 사용 강제 검증
+- **Prettier**: 코드 포맷 자동화
 
 ---
 
