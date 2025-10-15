@@ -12,7 +12,6 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
   let toolbarCSSContent;
 
   beforeEach(() => {
-    // eslint-disable-next-line no-undef
     const cssPath = join(process.cwd(), 'src/shared/components/ui/Toolbar/Toolbar.module.css');
     toolbarCSSContent = readFileSync(cssPath, 'utf-8');
   });

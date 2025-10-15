@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '../utils/testing-library';
+import { render, screen, fireEvent } from '../../utils/testing-library';
 import h from 'solid-js/h';
 import { Button } from '@shared/components/ui/primitive/Button';
 

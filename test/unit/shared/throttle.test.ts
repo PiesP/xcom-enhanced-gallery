@@ -3,6 +3,7 @@
  * @version 1.0.0
  */
 
+/* eslint-disable no-undef */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { rafThrottle, throttleScroll } from '@shared/utils';
 

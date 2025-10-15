@@ -4,14 +4,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestEnvironment, cleanupTestEnvironment } from '../utils/helpers/test-environment.js';
+import { setupTestEnvironment, cleanupTestEnvironment } from '../../__mocks__/test-environment.js';
 import {
   setupTwitterDOM,
   addTweetWithImages,
   simulateClick,
   simulateKeypress,
-} from '../__mocks__/twitter-dom.mock';
-import { mockUserscriptAPI } from '../__mocks__/userscript-api.mock';
+} from '../../__mocks__/twitter-dom.mock';
+import { mockUserscriptAPI } from '../../__mocks__/userscript-api.mock';
 
 // Helper functions
 const wait = ms => new Promise(resolve => globalThis.setTimeout(resolve, ms));

@@ -64,8 +64,8 @@ describe('Architecture Dependency Rules', () => {
         const invalidImports = imports.filter(imp => {
           // @features/ 로 시작하지만 현재 파일이 아닌 다른 feature를 import하는 경우
           if (imp.startsWith('@features/')) {
-            const currentFeature = file.match(/src\/features\/([^\/]+)/)?.[1];
-            const importedFeature = imp.match(/@features\/([^\/]+)/)?.[1];
+            const currentFeature = file.match(/src\/features\/([^/]+)/)?.[1];
+            const importedFeature = imp.match(/@features\/([^/]+)/)?.[1];
             return currentFeature !== importedFeature;
           }
 
@@ -352,7 +352,7 @@ describe('Architecture Dependency Rules', () => {
             trimmedLine.startsWith('type ') ||
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*,?$/) || // 단순 식별자 (named export 목록)
             trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*:/) || // 객체 속성
-            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?\?\:/) || // 옵션 속성
+            trimmedLine.match(/^[a-zA-Z_][a-zA-Z0-9_]*\?\?:/) || // 옵션 속성
             trimmedLine === '}' ||
             trimmedLine === '};' ||
             trimmedLine === '{' ||

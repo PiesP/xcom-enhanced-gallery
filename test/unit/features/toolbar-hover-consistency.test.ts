@@ -13,7 +13,7 @@ describe('Toolbar Button Hover Consistency', () => {
 
   beforeEach(() => {
     // Toolbar.module.css 내용 읽기
-    // eslint-disable-next-line no-undef
+
     const cssPath = join(process.cwd(), 'src/shared/components/ui/Toolbar/Toolbar.module.css');
     toolbarCSSContent = readFileSync(cssPath, 'utf-8');
   });

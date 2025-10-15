@@ -3,7 +3,14 @@
  * @description 새로고침 후 즉시 미디어 클릭 시 유저스크립트 갤러리가 표시되는지 검증
  */
 
+/* eslint-disable no-undef */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
+// DOM 타입 명시적 참조
+type DOMEvent = Event;
+type DOMMouseEvent = MouseEvent;
+type DOMMutationObserver = MutationObserver;
+type DOMNode = Node;
 
 describe('갤러리 초기화 지연 문제 해결', () => {
   let mockMediaElement: HTMLElement;

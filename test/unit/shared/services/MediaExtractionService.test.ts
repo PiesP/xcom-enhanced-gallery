@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { setupTestEnvironment } from '../../../utils/helpers/test-environment.js';
+import { setupTestEnvironment } from '../../../__mocks__/test-environment.js';
 import {
   mockUserscriptAPI,
   setupMockXMLHttpResponse,
