@@ -10,12 +10,6 @@ import { LanguageService } from '../../services/language-service';
 import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
-import type { ToolbarExpandableState } from '../../state/signals/toolbar.signals';
-import {
-  getToolbarExpandableState,
-  setSettingsExpanded as defaultSetSettingsExpanded,
-  toggleSettingsExpanded as defaultToggleSettingsExpanded,
-} from '../../state/signals/toolbar.signals';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -37,9 +31,9 @@ type EventManagerLike = Pick<EventManager, 'addListener' | 'removeListener'>;
 
 export interface UseToolbarSettingsControllerOptions {
   readonly setNeedsHighContrast: (enabled: boolean) => void;
-  readonly getExpandableState?: () => ToolbarExpandableState;
-  readonly setSettingsExpanded?: (expanded: boolean) => void;
-  readonly toggleSettingsExpanded?: () => void;
+  readonly isSettingsExpanded: () => boolean;
+  readonly setSettingsExpanded: (expanded: boolean) => void;
+  readonly toggleSettingsExpanded: () => void;
   readonly documentRef?: Document;
   readonly windowRef?: Window;
   readonly eventManager?: EventManagerLike;
@@ -118,13 +112,13 @@ export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
 ): ToolbarSettingsControllerResult {
   const solid = getSolid();
-  const { createSignal, createMemo, createEffect, onCleanup } = solid;
+  const { createSignal, createEffect, onCleanup } = solid;
 
   const {
     setNeedsHighContrast,
-    getExpandableState = getToolbarExpandableState,
-    setSettingsExpanded = defaultSetSettingsExpanded,
-    toggleSettingsExpanded = defaultToggleSettingsExpanded,
+    isSettingsExpanded,
+    setSettingsExpanded,
+    toggleSettingsExpanded,
     documentRef = typeof document !== 'undefined' ? document : undefined,
     windowRef = typeof window !== 'undefined' ? window : undefined,
     eventManager = EventManager.getInstance(),
@@ -149,8 +143,6 @@ export function useToolbarSettingsController(
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
-
-  const isSettingsExpanded = createMemo(() => getExpandableState().isSettingsExpanded);
 
   const evaluateHighContrast = () => {
     const toolbarElement = toolbarRef();

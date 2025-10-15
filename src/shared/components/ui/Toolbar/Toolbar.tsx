@@ -10,11 +10,6 @@ import {
   getToolbarDataState,
   getToolbarClassName,
 } from '../../../hooks/use-toolbar-state';
-import {
-  getToolbarExpandableState,
-  setSettingsExpanded,
-  toggleSettingsExpanded,
-} from '../../../state/signals/toolbar.signals';
 import { ComponentStandards } from '../StandardProps';
 import { ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize } from '../Icon';
 import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
@@ -60,10 +55,14 @@ const FIT_MODE_ORDER = [
 const HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
 
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
-  const { mergeProps, createMemo, createEffect, on } = solid;
+  const { mergeProps, createMemo, createEffect, on, createSignal } = solid;
 
   const props = mergeProps(DEFAULT_TOOLBAR_PROPS, rawProps);
   const [toolbarState, toolbarActions] = useToolbarState();
+
+  // Local settings expanded state (component-owned for proper reactivity)
+  const [isSettingsExpanded, setIsSettingsExpanded] = createSignal(false);
+  const toggleSettingsExpanded = () => setIsSettingsExpanded(prev => !prev);
 
   const toolbarClass = createMemo(() =>
     ComponentStandards.createClassName(
@@ -111,8 +110,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   const settingsController = useToolbarSettingsController({
     setNeedsHighContrast: toolbarActions.setNeedsHighContrast,
-    getExpandableState: getToolbarExpandableState,
-    setSettingsExpanded,
+    isSettingsExpanded,
+    setSettingsExpanded: setIsSettingsExpanded,
     toggleSettingsExpanded,
     highContrastOffsets: HIGH_CONTRAST_OFFSETS,
   });
@@ -203,14 +202,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   });
 }
 
-const ToolbarMemo = solid.memo<ToolbarProps>(ToolbarContainer);
-
-Object.defineProperty(ToolbarMemo, 'displayName', {
-  value: 'memo(ToolbarContainer)',
-  configurable: true,
-});
-
 export type { ToolbarProps, GalleryToolbarProps, FitMode } from './Toolbar.types';
-export const Toolbar = ToolbarMemo;
+export const Toolbar = ToolbarContainer;
 
-export default ToolbarMemo;
+export default ToolbarContainer;

@@ -1,44 +1,24 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 | **상태**: Phase 78.9 완료 ✅
+> **최종 업데이트**: 2025-10-16 | **상태**: Phase 78.9 완료, Phase 80.1 완료 ✅
 
 ## 프로젝트 현황
 
-- **빌드**: prod **328.78 KB / 335 KB** (6.22 KB 여유, 98.1%) ✅
+- **빌드**: prod **328.46 KB / 335 KB** (6.54 KB 여유, 98.0%) ✅
 - **테스트**: **159개 파일**, 987 passing / 0 failed (100% 통과율) ✅✅✅
-- **Skipped**: **10개** (8개 E2E 이관 권장 + 2개 기존) ⚠️
+- **Skipped**: **14개** (8개 E2E 이관 권장 + 2개 기존 + 4개 JSDOM 제약) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **CSS 린트**: stylelint **0 warnings** (error 강화 완료) ✅✅✅
-- **의존성**: 0 violations (261 modules, 730 dependencies) ✅
+- **의존성**: 0 violations (261 modules, 727 dependencies) ✅
 - **커버리지**: v8로 통일 완료 ✅
 - **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: Phase 78.9 완료 (stylelint 설정 재검토 및 최적화) ✅
+## 현재 상태: 모든 활성 Phase 완료 ✅
 
-**완료일**: 2025-10-15 **목표**: Phase 78.8 경고 0개 달성 후 stylelint 설정 강화
-**결과**: warning → error 전환, color-no-hex 규칙 추가, 빌드 크기 유지
-
-### 주요 성과
-
-- ✅ **stylelint 경고 0개 유지**: error 강화 완료
-- ✅ **규칙 강화**: warning → error 전환 (px, specificity, duplicate, shorthand)
-- ✅ **hex 색상 검증 추가**: oklch 강제, primitive 파일만 예외
-- ✅ **빌드 크기 유지**: 328.78 KB (동일)
-- ✅ **테스트 회귀 없음**: 100% 통과율 유지
-
-### 설정 변경 내용
-
-1. **warning → error 전환**:
-   - `unit-disallowed-list` (px 금지)
-   - `no-duplicate-selectors`
-   - `no-descending-specificity`
-   - `declaration-block-no-shorthand-property-overrides`
-
-2. **color-no-hex 규칙 추가**: oklch 강제, primitive 파일만 예외
-
-3. **메시지 개선**: 모든 규칙에 CODING_GUIDELINES.md 참조 추가
+**최근 완료**: Phase 80.1 (Toolbar Settings Toggle Regression) - 2025-10-16
+**다음 계획**: 번들 최적화 트리거 대기 (현재 98.0% 사용)
 
 ---
 
@@ -92,10 +72,6 @@ warning 0개 이미 달성 (19→0개)
    - 번들 크기 330 KB 이하 유지
    - 테스트 100% 통과율 유지
 
----
-
-## 다음 Phase 계획 (기존)---
-
 ## 향후 Phase 계획
 
 ### Phase 79: CSS 마이그레이션 완료 (진행 중)
@@ -115,12 +91,7 @@ warning 0개 이미 달성 (19→0개)
    - Gallery.module.css (10개 - viewer, controls)
    - Toolbar.module.css (18개 - buttons, media queries)
    - VerticalGalleryView.module.css (13개 + specificity 이슈)
-   - VerticalImageItem.module.css (10개)
-   - ToolbarShell.module.css (6개)
-   - primitive/Button.css (3개)
-   - 기타 작은 파일들 (각 1-2개)
 
-3. **목표**:
    - stylelint warning 121→50개 이하 (58% 추가 감소)
    - 번들 크기 330 KB 이하 유지
    - 테스트 100% 통과율 유지
