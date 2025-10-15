@@ -176,9 +176,8 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
   });
 
   describe('manualFocusIndex 우선순위', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    // Issue: https://github.com/PiesP/xcom-enhanced-gallery/issues/XXX
-    it.skip('should not override manualFocusIndex with navigation events', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('should not override manualFocusIndex with navigation events', async () => {
       const getCurrentIndex = vi.fn(() => 0);
       let focusedIndexGetter: (() => number | null) | null = null;
       let handleItemFocus: ((index: number) => void) | null = null;
@@ -199,7 +198,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       // 수동 포커스 설정
       handleItemFocus?.(3);
 
-      // Phase 69: microtask batching으로 인해 대기 필요
+      // Phase 74: microtask batching 대기
       await Promise.resolve();
 
       expect(focusedIndexGetter?.()).toBe(3);
@@ -207,7 +206,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       // 네비게이션 이벤트 발생해도 manualFocusIndex가 우선
       galleryIndexEvents.emit('navigate:complete', { index: 5, trigger: 'button' });
 
-      // Phase 69: debouncedUpdateContainerFocusAttribute 대기
+      // Phase 74: debouncedUpdateContainerFocusAttribute 대기
       await vi.advanceTimersByTimeAsync(60);
 
       expect(focusedIndexGetter?.()).toBe(3); // 여전히 3
@@ -215,8 +214,8 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
   });
 
   describe('동기화 타이밍', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('should synchronize immediately without waiting for IntersectionObserver', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('should synchronize immediately without waiting for IntersectionObserver', async () => {
       const getCurrentIndex = vi.fn(() => 0);
       let focusedIndexGetter: (() => number | null) | null = null;
 
@@ -235,7 +234,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       // IntersectionObserver 콜백이 호출되기 전에도 즉시 동기화
       galleryIndexEvents.emit('navigate:complete', { index: 7, trigger: 'button' });
 
-      // Phase 69: debouncedUpdateContainerFocusAttribute 대기
+      // Phase 74: debouncedUpdateContainerFocusAttribute 대기
       await vi.advanceTimersByTimeAsync(60);
 
       expect(focusedIndexGetter?.()).toBe(7);
@@ -266,8 +265,8 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
   });
 
   describe('자동 포커스 적용', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('should schedule auto focus with delay after navigation', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('should schedule auto focus with delay after navigation', async () => {
       const getCurrentIndex = vi.fn(() => 0);
       const mockElement = document.createElement('div');
       mockElement.tabIndex = 0;
@@ -296,8 +295,8 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       // 즉시는 포커스되지 않음
       expect(document.activeElement).not.toBe(mockElement);
 
-      // delay(100) + 스크롤 대기(100) 후 포커스
-      await new Promise(resolve => setTimeout(resolve, 250));
+      // Phase 74: delay(100) + 스크롤 대기(100) + margin
+      await vi.advanceTimersByTimeAsync(250);
 
       expect(document.activeElement).toBe(mockElement);
     });
