@@ -96,9 +96,12 @@ describe('Userscript Adapter – 경계 가드', () => {
     const createObjSpy = vi
       .spyOn(globalThis.URL, 'createObjectURL')
       .mockReturnValue('blob://fallback');
+    // Phase 74.7: URL.revokeObjectURL 모킹 추가 (JSDOM 환경에서 fallback download 지원)
+    const revokeSpy = vi.spyOn(globalThis.URL, 'revokeObjectURL').mockImplementation(() => {});
 
     await expect(api.download('https://example.com/img2.jpg', 'img2.jpg')).resolves.toBeUndefined();
     expect(createObjSpy).toHaveBeenCalled();
+    expect(revokeSpy).toHaveBeenCalledWith('blob://fallback');
   });
 
   it('xhr: GM_xmlhttpRequest가 없으면 fetch 기반 fallback이 onload를 호출한다', async () => {

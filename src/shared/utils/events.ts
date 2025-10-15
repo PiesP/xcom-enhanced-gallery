@@ -3,11 +3,12 @@
  */
 
 import { logger } from '../logging/logger';
-import { globalTimerManager } from './timer-management';
+import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
 import { MediaClickDetector } from './media/media-click-detector';
 import { gallerySignals } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
+import { globalTimerManager } from './timer-management';
 import type { MediaInfo } from '../types/media.types';
 
 interface EventContext {
@@ -54,26 +55,13 @@ function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
   }
 
   const selectors = [
-    '[data-testid="tweetPhoto"]',
-    '[data-testid="tweetPhoto"] img',
-    '[data-testid="tweetPhoto"] > div',
-    '[data-testid="videoPlayer"]',
-    '[data-testid="videoPlayer"] > *',
-    'a[href*="/photo/"]',
-    'a[href*="/status/"][href*="/photo/"] *',
-    'a[href*="/status/"][href*="/video/"] *',
-    'img[src*="pbs.twimg.com"]',
-    'img[src*="twimg.com"]',
-    'video[poster*="twimg.com"]',
-    '[data-testid="playButton"]',
-    '[data-testid="videoComponent"]',
+    ...STABLE_SELECTORS.MEDIA_CONTAINERS,
+    ...STABLE_SELECTORS.IMAGE_CONTAINERS,
+    ...STABLE_SELECTORS.MEDIA_PLAYERS,
+    ...STABLE_SELECTORS.MEDIA_LINKS,
+    ...STABLE_SELECTORS.MEDIA_VIEWERS,
     'div[role="button"][aria-label*="재생"]',
     'div[role="button"][aria-label*="Play"]',
-    '[aria-modal="true"][data-testid="Drawer"]',
-    '[data-testid="swipe-to-dismiss"]',
-    '[data-testid="photoViewer"]',
-    '[data-testid="media-overlay"]',
-    '[data-testid="Drawer"] [role="button"]',
   ];
 
   return selectors.some(selector => {

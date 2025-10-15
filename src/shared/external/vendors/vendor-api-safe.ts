@@ -237,3 +237,8 @@ export const Show = getSolidSafe().Show;
  * Solid.js For 컴포넌트
  */
 export const For = getSolidSafe().For;
+
+/**
+ * Solid.js batch 함수
+ */
+export const batch = getSolidSafe().batch;

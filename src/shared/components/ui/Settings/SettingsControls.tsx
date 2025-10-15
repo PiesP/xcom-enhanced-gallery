@@ -72,16 +72,16 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
           <option value='auto' selected={props.currentLanguage === 'auto'}>
-            자동 / Auto / 自動
+            {languageService.getString('settings.languageAuto')}
           </option>
           <option value='ko' selected={props.currentLanguage === 'ko'}>
-            한국어
+            {languageService.getString('settings.languageKo')}
           </option>
           <option value='en' selected={props.currentLanguage === 'en'}>
-            English
+            {languageService.getString('settings.languageEn')}
           </option>
           <option value='ja' selected={props.currentLanguage === 'ja'}>
-            日本語
+            {languageService.getString('settings.languageJa')}
           </option>
         </select>
       </div>

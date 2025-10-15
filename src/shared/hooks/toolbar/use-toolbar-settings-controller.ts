@@ -9,6 +9,7 @@ import { ThemeService } from '../../services/theme-service';
 import { LanguageService } from '../../services/language-service';
 import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
+import { globalTimerManager } from '../../utils/timer-management';
 import type { ToolbarExpandableState } from '../../state/signals/toolbar.signals';
 import {
   getToolbarExpandableState,
@@ -67,30 +68,23 @@ export interface ToolbarSettingsControllerResult {
   readonly handleLanguageChange: (event: Event) => void;
 }
 
-type TimeoutHandle = number | ReturnType<typeof setTimeout>;
+type TimeoutHandle = number | ReturnType<typeof globalTimerManager.setTimeout>;
 
 interface TimeoutControls {
   readonly schedule: (callback: () => void, delay: number) => TimeoutHandle;
   readonly clear: (id: TimeoutHandle | undefined) => void;
 }
 
-function createTimeoutControls(windowRef: Window | undefined): TimeoutControls {
+function createTimeoutControls(_windowRef: Window | undefined): TimeoutControls {
   return {
     schedule: (callback, delay) => {
-      if (windowRef) {
-        return windowRef.setTimeout(callback, delay);
-      }
-      return setTimeout(callback, delay);
+      return globalTimerManager.setTimeout(callback, delay);
     },
     clear: id => {
       if (id === undefined) {
         return;
       }
-      if (windowRef) {
-        windowRef.clearTimeout(id as number);
-      } else {
-        clearTimeout(id as ReturnType<typeof setTimeout>);
-      }
+      globalTimerManager.clearTimeout(id as number);
     },
   };
 }

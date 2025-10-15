@@ -2,16 +2,13 @@
  * @fileoverview 통합 상수 파일
  */
 
-// 애플리케이션 기본 설정
 export const APP_CONFIG = {
   VERSION: '3.1.0',
   NAME: 'X.com Enhanced Gallery',
   MAX_MEDIA_ITEMS: 100,
-  // 토큰 기반 duration 사용(정책: raw ms 금지)
   ANIMATION_DURATION: 'var(--xeg-duration-normal)',
 } as const;
 
-// 타이밍 및 성능 상수
 export const TIMING = {
   DEBOUNCE_DELAY: 100,
   CLICK_TIMEOUT: 5000,
@@ -20,32 +17,22 @@ export const TIMING = {
   CACHE_CLEANUP_INTERVAL: 60 * 1000,
 } as const;
 
-// DOM 선택자
 export const SELECTORS = {
   TWEET: 'article[data-testid="tweet"]',
   TWEET_PHOTO: '[data-testid="tweetPhoto"]',
   VIDEO_PLAYER: '[data-testid="videoPlayer"]',
   GALLERY_OVERLAY: '.xeg-gallery-overlay',
-  /** 갤러리 컨테이너 */
   GALLERY_CONTAINER: '.xeg-gallery-container',
 } as const;
 
-// ================================
 // 미디어 관련 상수
-// ================================
-
 export const MEDIA = {
-  /** 지원 도메인 */
   DOMAINS: ['pbs.twimg.com', 'video.twimg.com', 'abs.twimg.com'] as const,
-
-  /** 미디어 타입 */
   TYPES: {
     IMAGE: 'image',
     VIDEO: 'video',
     GIF: 'gif',
   } as const,
-
-  /** 파일 확장자 */
   EXTENSIONS: {
     JPEG: 'jpg',
     PNG: 'png',
@@ -64,20 +51,12 @@ export const MEDIA = {
   } as const,
 } as const;
 
-// ================================
 // URL 패턴 (단일 소스 재노출)
-// ================================
-// 단일 소스는 shared/utils/patterns/url-patterns.ts 입니다.
-// constants.ts에서는 타입 안전 re-export만 수행합니다.
 import { URL_PATTERNS as SHARED_URL_PATTERNS } from './shared/utils/patterns/url-patterns';
 export const URL_PATTERNS = SHARED_URL_PATTERNS;
 
-// ================================
 // CSS 클래스 및 스타일
-// ================================
-
 export const CSS = {
-  /** CSS 클래스 */
   CLASSES: {
     GALLERY_CONTAINER: 'xeg-gallery-container',
     OVERLAY: 'xeg-overlay',
@@ -85,19 +64,13 @@ export const CSS = {
     TOOLBAR: 'xeg-toolbar',
     BUTTON: 'xeg-button',
   } as const,
-
-  /** Z-index 값 */
   Z_INDEX: {
-    // 토큰 기반 z-index 사용(정책: raw number 금지)
     GALLERY: 'var(--xeg-z-gallery)',
     MODAL: 'var(--xeg-z-modal)',
     TOOLBAR: 'var(--xeg-z-toolbar)',
     TOAST: 'var(--xeg-z-toast)',
   } as const,
-
-  /** 스페이싱 (8px 기반) */
   SPACING: {
-    // 토큰 기반 spacing 사용(정책: raw number 금지)
     XS: 'var(--xeg-spacing-xs)',
     SM: 'var(--xeg-spacing-sm)',
     MD: 'var(--xeg-spacing-md)',
@@ -107,20 +80,10 @@ export const CSS = {
   } as const,
 } as const;
 
-// ================================
-// 키보드 단축키
-// ================================
-
 export const HOTKEYS = {
-  /** 갤러리 열기 */
   OPEN: 'Enter',
-  /** 갤러리 닫기 */
   CLOSE: 'Escape',
 } as const;
-
-// ================================
-// 이벤트 타입
-// ================================
 
 export const EVENTS = {
   GALLERY_OPEN: 'xeg:gallery:open',
@@ -131,56 +94,52 @@ export const EVENTS = {
   DOWNLOAD_ERROR: 'xeg:download:error',
 } as const;
 
-// ================================
 // 안정적인 DOM 선택자 (Fallback 전략)
-// ================================
-
 export const STABLE_SELECTORS = {
-  /** 트윗 컨테이너 선택자 (우선순위 순) */
   TWEET_CONTAINERS: [
-    'article[data-testid="tweet"]', // 표준 트윗 - 가장 안정적
-    'article[role="article"]', // 접근성 기반 fallback
-    'div[data-testid="tweet"]', // 임베드된 트윗
-    'article', // 구조적 fallback
+    'article[data-testid="tweet"]',
+    'article[role="article"]',
+    'div[data-testid="tweet"]',
+    'article',
   ],
-
-  /** 미디어 컨테이너 선택자 */
   MEDIA_CONTAINERS: [
-    '[data-testid="tweetPhoto"]', // 트윗 이미지 컨테이너
-    '[data-testid="videoPlayer"]', // 비디오 플레이어 컨테이너
-    '[data-testid="tweetVideo"]', // 트윗 내 비디오
-    '.media-container', // 일반 미디어 컨테이너
-    '[role="img"]', // 접근성 기반 이미지
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="videoPlayer"]',
+    '[aria-label*="Image"]',
+    '[aria-label*="Video"]',
+  ],
+  VIDEO_CONTAINERS: [
+    '[data-testid="videoPlayer"]',
+    '[data-testid="tweetVideo"]',
+    '[data-testid="tweetPhoto"]',
+    'video',
+    '.media-container video',
+    '[role="button"][aria-label*="video"]',
   ],
 
-  /** 미디어 플레이어 선택자 */
-  MEDIA_PLAYERS: [
-    '[data-testid="videoPlayer"]', // 비디오 플레이어 - 최우선
-    '[data-testid="tweetVideo"]', // 트윗 내 비디오
-    '[data-testid="tweetPhoto"]', // 트윗 내 이미지
-    'video', // 표준 비디오 태그
-    '.media-container video', // 컨테이너 내 비디오
-    '[role="button"][aria-label*="video"]', // 접근성 기반 비디오 버튼
-  ],
-
-  /** 이미지 컨테이너 선택자 */
   IMAGE_CONTAINERS: [
-    '[data-testid="tweetPhoto"]', // 트윗 이미지 - 최우선
-    'img[src*="pbs.twimg.com"]', // 트위터 CDN 이미지 (직접 이미지 우선)
-    'img[src*="twimg.com"]', // 레거시 CDN 도메인
-    'a[href*="/photo/"]', // 이미지 링크 (이미지 다음 우선)
-    '.media-container img', // 컨테이너 내 이미지
-    '[role="img"]', // 접근성 기반 이미지
+    '[data-testid="tweetPhoto"]',
+    'img[src*="pbs.twimg.com"]',
+    'img[src*="twimg.com"]',
+    'a[href*="/photo/"]',
+    '.media-container img',
+    '[role="img"]',
   ],
-
-  /** 미디어 링크 선택자 */
   MEDIA_LINKS: [
-    'a[href*="/status/"][href*="/photo/"]', // 이미지 상세 링크
-    'a[href*="/status/"][href*="/video/"]', // 비디오 상세 링크
-    'a[data-testid="tweetPhoto"]', // 테스트 ID 기반 링크
+    'a[href*="/status/"][href*="/photo/"]',
+    'a[href*="/status/"][href*="/video/"]',
+    'a[data-testid="tweetPhoto"]',
   ],
-
-  /** 액션 버튼 선택자 */
+  MEDIA_VIEWERS: [
+    '[data-testid="photoViewer"]',
+    '[data-testid="videoComponent"]',
+    '[data-testid="media-overlay"]',
+    '[data-testid="playButton"]',
+    '[aria-modal="true"][data-testid="Drawer"]',
+    '[data-testid="swipe-to-dismiss"]',
+    '[data-testid="Drawer"] [role="button"]',
+  ],
+  MEDIA_PLAYERS: ['[data-testid="videoPlayer"]', 'video', '[role="button"][aria-label*="video"]'],
   ACTION_BUTTONS: {
     like: '[data-testid="like"]',
     retweet: '[data-testid="retweet"]',
@@ -190,32 +149,21 @@ export const STABLE_SELECTORS = {
   },
 } as const;
 
-// ================================
-// 서비스 키
-// ================================
-
 export const SERVICE_KEYS = {
-  // Phase 2: 통합된 서비스들
-  MEDIA_SERVICE: 'media.service', // 통합 미디어 서비스
-
-  // 기존 서비스들 (중복 제거)
+  MEDIA_SERVICE: 'media.service',
   BULK_DOWNLOAD: 'core.bulkDownload',
   GALLERY: 'gallery',
   GALLERY_RENDERER: 'gallery.renderer',
   GALLERY_DOWNLOAD: 'gallery.download',
   MEDIA_EXTRACTION: 'media.extraction',
   MEDIA_FILENAME: 'media.filename',
-  THEME: 'theme.auto', // AUTO_THEME 별칭 제거
-  TOAST: 'toast.controller', // TOAST_CONTROLLER 별칭 제거
-  SETTINGS: 'settings.manager', // SETTINGS_MANAGER 별칭 제거
+  THEME: 'theme.auto',
+  TOAST: 'toast.controller',
+  SETTINGS: 'settings.manager',
   TWITTER_TOKEN_EXTRACTOR: 'settings.tokenExtractor',
   VIDEO_STATE: 'video.state',
   VIDEO_CONTROL: 'video.control',
 } as const;
-
-// ================================
-// API 설정
-// ================================
 
 export const TWITTER_API_CONFIG = {
   /** Guest/Suspended account Bearer token */

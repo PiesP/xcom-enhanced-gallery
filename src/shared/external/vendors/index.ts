@@ -34,7 +34,15 @@ export type {
 } from './vendor-manager-static';
 
 // Solid.js 함수들의 직접 export 추가 (UI 컴포넌트에서 사용)
-export { render, createSignal, createEffect, createMemo, Show, For } from './vendor-api-safe';
+export {
+  render,
+  createSignal,
+  createEffect,
+  createMemo,
+  Show,
+  For,
+  batch,
+} from './vendor-api-safe';
 
 // 🔧 고급 사용자용 직접 접근
 export { StaticVendorManager } from './vendor-manager-static';

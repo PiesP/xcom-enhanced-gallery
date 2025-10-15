@@ -28,6 +28,7 @@ export interface DownloadResult {
   error?: string;
   filename?: string;
   failures?: Array<{ url: string; error: string }>;
+  code?: ErrorCode;
 }
 
 export interface SingleDownloadResult {
@@ -356,3 +357,6 @@ export class BulkDownloadService {
     return this.currentAbortController !== undefined;
   }
 }
+
+// Singleton instance for testing and direct usage
+export const bulkDownloadService = new BulkDownloadService();
