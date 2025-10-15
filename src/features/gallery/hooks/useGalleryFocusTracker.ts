@@ -242,6 +242,12 @@ export function useGalleryFocusTracker({
       return;
     }
 
+    // ✅ Phase 74.6: 인덱스가 변경되면 lastAppliedIndex 리셋
+    // 다른 인덱스로의 autoFocus를 허용
+    if (lastAppliedIndex !== null && lastAppliedIndex !== targetIndex) {
+      lastAppliedIndex = null;
+    }
+
     const delay = Math.max(0, autoFocusDelayAccessor());
 
     autoFocusTimerId = globalTimerManager.setTimeout(() => {
@@ -319,9 +325,12 @@ export function useGalleryFocusTracker({
 
     if (candidates.length === 0) {
       if (entryCache.size === 0) {
-        const previousIndex = autoFocusIndex();
-        const resolvedIndex = previousIndex ?? getCurrentIndex();
-        updateContainerFocusAttribute(resolvedIndex);
+        // ✅ Phase 74.6: entryCache가 비어있을 때도 getCurrentIndex()를 autoFocusIndex로 설정
+        // 테스트나 초기 상태에서 IntersectionObserver entries가 없을 때 대응
+        const fallbackIndex = getCurrentIndex();
+        debouncedSetAutoFocusIndex.execute(fallbackIndex);
+        updateContainerFocusAttribute(fallbackIndex);
+        evaluateAutoFocus('entryCache-empty');
         return;
       }
 
@@ -444,7 +453,14 @@ export function useGalleryFocusTracker({
 
   const forceSync = () => {
     recomputeFocus();
-    evaluateAutoFocus('force');
+    // ✅ Phase 74.6: forceSync는 즉시 적용을 위해 debouncer flush
+    debouncedSetAutoFocusIndex.flush();
+    debouncedUpdateContainerFocusAttribute.flush();
+    // Phase 74.6: flush 후 evaluateAutoFocus를 다음 microtask에서 호출하여
+    // autoFocusIndex가 업데이트된 상태에서 실행되도록 보장
+    Promise.resolve().then(() => {
+      evaluateAutoFocus('force');
+    });
   };
 
   // ✅ Phase 21.1: on()으로 명시적 의존성 지정 (evaluateAutoFocus는 직접 signal 읽지 않음)

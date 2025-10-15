@@ -45,7 +45,7 @@ describe('i18n.message-keys (Phase 4 완료 GREEN)', () => {
   it('한국어 사용자 노출 literal이 소스 코드(언어 리소스 제외)에 남아 있지 않다', () => {
     const testDir = dirname(fileURLToPath(import.meta.url));
     const srcRoot = join(testDir, '..', '..', '..', 'src');
-    const languageFile = join(srcRoot, 'shared', 'services', 'LanguageService.ts');
+    const languageFile = join(srcRoot, 'shared', 'services', 'language-service.ts');
     const files = collectSourceFiles(srcRoot).filter(f => f !== languageFile);
 
     const offenders: Array<{ file: string; literal: string }> = [];

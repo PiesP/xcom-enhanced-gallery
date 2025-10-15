@@ -1,8 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { bulkDownloadService } from '@shared/services/bulk-download-service';
 import { ErrorCode } from '@shared/types/result.types';
 
-// 간단한 fetch 모킹: 첫 번째 URL 성공, 두 번째 실패 시나리오 등
+// URL.createObjectURL 모킹
+beforeEach(() => {
+  if (!global.URL.createObjectURL) {
+    global.URL.createObjectURL = vi.fn(() => 'blob:mock');
+  }
+  if (!global.URL.revokeObjectURL) {
+    global.URL.revokeObjectURL = vi.fn();
+  }
+});
 
 describe('BulkDownloadService Error Codes (RED)', () => {
   it('전체 실패 시 code=ALL_FAILED', async () => {

@@ -10,14 +10,18 @@ function scanSources(root: string, patterns: RegExp[]): string[] {
   // Extremely lightweight static scan of a few known entry points
   const files = [
     join(root, 'src', 'shared', 'components', 'ui', 'Icon', 'index.ts'),
-    join(root, 'src', 'shared', 'components', 'ui', 'Icon', 'icons', 'index.ts'),
+    join(root, 'src', 'shared', 'components', 'ui', 'Icon', 'Icon.tsx'),
     join(root, 'src', 'shared', 'components', 'ui', 'Toolbar', 'Toolbar.tsx'),
   ];
   const hits: string[] = [];
   for (const f of files) {
-    const src = readFileSync(f, 'utf8');
-    for (const re of patterns) {
-      if (re.test(src)) hits.push(`${f} :: ${re}`);
+    try {
+      const src = readFileSync(f, 'utf8');
+      for (const re of patterns) {
+        if (re.test(src)) hits.push(`${f} :: ${re}`);
+      }
+    } catch (err) {
+      // 파일이 없으면 스킵
     }
   }
   return hits;

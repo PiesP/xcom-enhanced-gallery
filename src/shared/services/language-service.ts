@@ -23,6 +23,10 @@ export interface LanguageStrings {
     readonly themeAuto: string;
     readonly themeLight: string;
     readonly themeDark: string;
+    readonly languageAuto: string;
+    readonly languageKo: string;
+    readonly languageEn: string;
+    readonly languageJa: string;
     readonly close: string;
     readonly gallery: {
       readonly sectionTitle: string;
@@ -92,6 +96,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: '자동',
       themeLight: '라이트',
       themeDark: '다크',
+      languageAuto: '자동 / Auto / 自動',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: '닫기',
       gallery: {
         sectionTitle: '갤러리',
@@ -107,11 +115,11 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
         toggleHelp: '?: 이 도움말 표시',
       },
       download: {
+        // NOTE: i18n literal 스캐너 예외: 이미 리소스 테이블 내이므로 허용
         single: { error: { title: '다운로드 실패', body: '파일을 받을 수 없습니다: {error}' } },
         allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
         partial: { title: '일부 실패', body: '{count}개 항목을 받지 못했습니다.' },
         retry: {
-          // NOTE: i18n literal 스캐너 예외: 이미 리소스 테이블 내이므로 허용
           action: '재시도',
           success: { title: '재시도 성공', body: '실패했던 항목을 모두 받았습니다.' },
         },
@@ -140,6 +148,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: 'Auto',
       themeLight: 'Light',
       themeDark: 'Dark',
+      languageAuto: 'Auto / 자동 / 自動',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: 'Close',
       gallery: {
         sectionTitle: 'Gallery',
@@ -192,6 +204,10 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
       themeAuto: '自動',
       themeLight: 'ライト',
       themeDark: 'ダーク',
+      languageAuto: '自動 / Auto / 자동',
+      languageKo: '한국어',
+      languageEn: 'English',
+      languageJa: '日本語',
       close: '閉じる',
       gallery: {
         sectionTitle: 'ギャラリー',

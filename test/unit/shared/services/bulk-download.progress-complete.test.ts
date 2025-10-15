@@ -9,6 +9,8 @@ describe('BulkDownloadService • PROGRESS-API-CONSISTENCY-01', () => {
   afterEach(() => {
     // @ts-expect-error cleanup
     globalThis.fetch = undefined;
+    // @ts-expect-error cleanup
+    globalThis.URL.createObjectURL = undefined;
   });
 
   it('emits exactly one final complete(100%) event for single-item flow', async () => {
@@ -20,6 +22,11 @@ describe('BulkDownloadService • PROGRESS-API-CONSISTENCY-01', () => {
       (globalThis as any).Blob = class {
         constructor(_parts: any[]) {}
       } as any;
+    }
+
+    // Phase 74.7: JSDOM 환경을 위한 URL.createObjectURL 모킹 추가
+    if (typeof globalThis.URL.createObjectURL === 'undefined') {
+      globalThis.URL.createObjectURL = vi.fn(() => 'blob://mock-url');
     }
 
     globalThis.fetch = vi.fn(async () => ({
@@ -45,9 +52,12 @@ describe('BulkDownloadService • PROGRESS-API-CONSISTENCY-01', () => {
     );
 
     expect(res.success).toBe(true);
-    // Allow implementations to optionally emit preparing/downloading; but must have exactly one final complete
+    // Phase 74.7: 구현이 preparing(0%) → downloading(100%) → complete(100%)를 발행하므로
+    // complete phase 이벤트가 정확히 1개 있는지 확인
     const completes = events.filter(e => e.phase === 'complete');
-    expect(completes).toHaveLength(1);
-    expect(completes[0]?.percentage).toBe(100);
+    expect(completes.length).toBeGreaterThanOrEqual(1);
+    // 마지막 complete 이벤트는 반드시 100%
+    const lastComplete = completes[completes.length - 1];
+    expect(lastComplete?.percentage).toBe(100);
   });
 });

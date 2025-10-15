@@ -6,7 +6,6 @@ const MODULES: string[] = [
   '@/shared/utils/events',
   '@shared/utils/scroll/scroll-utils',
   '@shared/state/signals/toolbar.signals',
-  '@shared/services/ServiceManager',
   '@shared/services/core-services',
   '@features/gallery/GalleryApp',
   '@features/gallery/GalleryRenderer',
