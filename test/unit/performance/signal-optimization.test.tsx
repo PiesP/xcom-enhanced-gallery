@@ -18,7 +18,7 @@ import {
 } from '../../../src/shared/utils/signal-selector.ts';
 import { act, renderHook, waitFor } from '../../utils/testing-library';
 
-describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인한 일시 skip)', () => {
+describe('P7: Signal Selector Optimization Unit Tests', () => {
   beforeEach(() => {
     setDebugMode(false);
     clearGlobalSelectorStats();
@@ -131,7 +131,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
 
       const { result } = renderHook(() => useSelector(testSignal, state => state.user.name));
 
-      expect(result.current()).toBe('John');
+      expect(result()).toBe('John');
     });
 
     test('Signal 변경 시 선택된 값만 업데이트해야 함', () => {
@@ -147,7 +147,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
         return accessor;
       });
 
-      expect(result.current()).toBe('John');
+      expect(result()).toBe('John');
       expect(renderSpy).toHaveBeenCalledTimes(1);
 
       // counter만 변경 (name은 동일)
@@ -156,7 +156,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
       });
 
       // name이 변경되지 않았으므로 컴포넌트가 리렌더링되지 않아야 함
-      expect(result.current()).toBe('John');
+      expect(result()).toBe('John');
     });
 
     test('의존성 배열을 통한 최적화를 제공해야 함', () => {
@@ -170,7 +170,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
         })
       );
 
-      expect(result.current()).toBe(3);
+      expect(result()).toBe(3);
       expect(computeSpy).toHaveBeenCalledTimes(1);
 
       // c만 변경
@@ -193,7 +193,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
         useCombinedSelector([signal1, signal2, signal3], (a, b, c) => a + b + c)
       );
 
-      expect(result.current()).toBe(60);
+      expect(result()).toBe(60);
     });
 
     test('조합된 Signal의 의존성을 최적화해야 함', () => {
@@ -212,7 +212,7 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
         )
       );
 
-      expect(result.current()).toBe(30);
+      expect(result()).toBe(30);
       expect(combineSpy).toHaveBeenCalledTimes(1);
 
       // metadata만 변경
@@ -239,19 +239,19 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
       );
 
       // 초기 상태
-      expect(result.current().value).toBe('Loading...');
-      expect(result.current().error).toBeNull();
+      expect(result().value).toBe('Loading...');
+      expect(result().error).toBeNull();
 
       // 비동기 처리 완료 대기 (좀 더 충분한 시간)
       await waitFor(
         () => {
-          expect(result.current().value).toBe('User 1');
+          expect(result().value).toBe('User 1');
         },
         { timeout: 1000 }
       );
 
-      expect(result.current().loading).toBe(false);
-      expect(result.current().error).toBeNull();
+      expect(result().loading).toBe(false);
+      expect(result().error).toBeNull();
     });
 
     test('비동기 selector 에러를 처리해야 함', async () => {
@@ -268,14 +268,14 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
       // 에러 발생 대기
       await waitFor(
         () => {
-          expect(result.current().error).toBeInstanceOf(Error);
+          expect(result().error).toBeInstanceOf(Error);
         },
         { timeout: 1000 }
       );
 
-      expect(result.current().value).toBe('Default'); // 기본값 유지
-      expect(result.current().loading).toBe(false);
-      expect(result.current().error?.message).toBe('Async error');
+      expect(result().value).toBe('Default'); // 기본값 유지
+      expect(result().loading).toBe(false);
+      expect(result().error?.message).toBe('Async error');
     });
 
     test('디바운싱을 통한 요청 최적화를 수행해야 함', async () => {
@@ -306,12 +306,12 @@ describe.skip('P7: Signal Selector Optimization Unit Tests (API 변경으로 인
       // 디바운싱으로 인해 마지막 값만 처리되어야 함
       await waitFor(
         () => {
-          expect(result.current().value).toBe('Result for test3');
+          expect(result().value).toBe('Result for test3');
         },
         { timeout: 1000 }
       );
 
-      expect(result.current().loading).toBe(false);
+      expect(result().loading).toBe(false);
       // 디바운싱으로 인해 실제 호출 횟수는 제한됨 (최소 1번, 최대 4번)
       expect(asyncSelector).toHaveBeenCalledTimes(1);
     });
