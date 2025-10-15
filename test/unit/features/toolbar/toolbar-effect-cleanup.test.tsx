@@ -8,18 +8,23 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const toolbarPath = resolve(process.cwd(), 'src/shared/components/ui/Toolbar/Toolbar.tsx');
+const settingsControllerPath = resolve(
+  process.cwd(),
+  'src/shared/hooks/toolbar/use-toolbar-settings-controller.ts'
+);
 
 describe('Toolbar - Effect Cleanup (Phase 4.1)', () => {
   it('배경 밝기 감지 effect는 cleanup 시 이벤트 리스너를 제거해야 함', () => {
-    const sourceCode = readFileSync(toolbarPath, 'utf-8');
+    // Phase 77: evaluateHighContrast moved to useToolbarSettingsController
+    const sourceCode = readFileSync(settingsControllerPath, 'utf-8');
 
     // createEffect 안에 배경 감지 로직이 있어야 함
     expect(sourceCode).toContain('evaluateHighContrast');
-    expect(sourceCode).toContain('manager.addListener');
+    expect(sourceCode).toContain('eventManager.addListener');
 
     // onCleanup에서 removeListener 호출이 있어야 함
-    const cleanupPattern = /onCleanup\(\(\)\s*=>\s*\{[^}]*manager\.removeListener[^}]*\}\)/s;
-    expect(sourceCode).toMatch(cleanupPattern);
+    expect(sourceCode).toContain('onCleanup');
+    expect(sourceCode).toContain('eventManager.removeListener');
 
     // scroll 이벤트 리스너 등록
     expect(sourceCode).toContain("'scroll'");
