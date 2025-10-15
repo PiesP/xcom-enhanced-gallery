@@ -49,64 +49,51 @@ describe('useGalleryFocusTracker - Deduplication', () => {
   });
 
   describe('autoFocus 중복 방지', () => {
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동
-    it.skip('동일 인덱스 연속 autoFocus 호출 시 실제 focus 1회만 발생', async () => {
-      const focusSpy = vi.spyOn(items[1]!, 'focus');
+    it('동일 인덱스 연속 autoFocus 호출 시 실제 focus 1회만 발생', async () => {
+      const focusSpy = vi.spyOn(items[0]!, 'focus');
 
-      const result = await new Promise<{
-        applyAutoFocusCalls: number;
-        actualFocusCalls: number;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => 0,
-            shouldAutoFocus: true,
-            autoFocusDebounce: 50,
-          });
-
-          // 아이템 등록
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          // 동일 인덱스로 여러 번 IntersectionObserver entry 발생 시뮬레이션
-          // (실제로는 applyAutoFocus 내부에서 lastAppliedIndex guard가 필요)
-          let applyAutoFocusCalls = 0;
-
-          // 원본 applyAutoFocus를 추적하기 위해 private 함수 접근 불가
-          // 대신 focus 호출 횟수로 검증
-          setTimeout(() => {
-            // forceSync를 여러 번 호출하여 동일 인덱스 재계산 트리거
-            tracker.forceSync();
-            tracker.forceSync();
-            tracker.forceSync();
-
-            // autoFocus debounce 대기
-            setTimeout(() => {
-              resolve({
-                applyAutoFocusCalls: 3, // forceSync 3회
-                actualFocusCalls: focusSpy.mock.calls.length,
-              });
-            }, 200); // debounce + margin
-          }, 100);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => 0,
+          shouldAutoFocus: true,
+          autoFocusDebounce: 50,
         });
+
+        // 아이템 등록
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
+      });
+
+      // 동일 인덱스로 여러 번 IntersectionObserver entry 발생 시뮬레이션
+      tracker.forceSync();
+      tracker.forceSync();
+      tracker.forceSync();
+
+      // 모든 타이머 실행 (autoFocus debounce 포함)
+      vi.runAllTimers();
+
+      // 비동기 대기
+      await vi.waitFor(() => {
+        expect(focusSpy.mock.calls.length).toBeGreaterThan(0);
       });
 
       // 예상: forceSync 3회 호출해도 실제 focus는 1회만 (lastAppliedIndex guard)
-      expect(result.actualFocusCalls).toBeLessThanOrEqual(1);
+      expect(focusSpy.mock.calls.length).toBeLessThanOrEqual(1);
     });
 
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동 (별도 Phase로 분리)
-    it.skip('다른 인덱스로 변경 시에는 autoFocus 재적용', async () => {
+    it('다른 인덱스로 변경 시에는 autoFocus 재적용', async () => {
       const focusSpy0 = vi.spyOn(items[0]!, 'focus');
       const focusSpy1 = vi.spyOn(items[1]!, 'focus');
 
       let currentIndex = 0;
-      let tracker: ReturnType<typeof useGalleryFocusTracker>;
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
       dispose = createRoot(disposeRoot => {
         tracker = useGalleryFocusTracker({
@@ -125,19 +112,28 @@ describe('useGalleryFocusTracker - Deduplication', () => {
       });
 
       // 첫 번째 인덱스로 forceSync
-      await vi.advanceTimersByTimeAsync(50);
       currentIndex = 0;
       tracker.forceSync();
 
-      // Phase 74: debouncedScheduleSync (100ms) + applyAutoFocus (30ms)
-      await vi.advanceTimersByTimeAsync(200);
+      // 모든 타이머 실행
+      vi.runAllTimers();
+
+      // 비동기 대기
+      await vi.waitFor(() => {
+        expect(focusSpy0.mock.calls.length).toBeGreaterThan(0);
+      });
 
       // 두 번째 인덱스로 forceSync
       currentIndex = 1;
       tracker.forceSync();
 
-      // Phase 74: debouncedScheduleSync (100ms) + applyAutoFocus (30ms)
-      await vi.advanceTimersByTimeAsync(200);
+      // 모든 타이머 실행
+      vi.runAllTimers();
+
+      // 비동기 대기
+      await vi.waitFor(() => {
+        expect(focusSpy1.mock.calls.length).toBeGreaterThan(0);
+      });
 
       // 인덱스가 바뀌었으므로 각각 1회씩 focus
       expect(focusSpy0.mock.calls.length).toBeGreaterThan(0);
@@ -146,141 +142,128 @@ describe('useGalleryFocusTracker - Deduplication', () => {
   });
 
   describe('manual focus 중복 방지', () => {
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동
-    it.skip('1 tick 내 동일 인덱스 handleItemFocus 다중 호출 시 마지막 값만 적용', async () => {
-      const result = await new Promise<{
-        finalFocusedIndex: number | null;
-        logCallCount: number;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+    it('1 tick 내 동일 인덱스 handleItemFocus 다중 호출 시 마지막 값만 적용', async () => {
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => 0,
-          });
-
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          // 동일 tick 내 여러 번 호출
-          tracker.handleItemFocus(1);
-          tracker.handleItemFocus(1);
-          tracker.handleItemFocus(1);
-
-          // Phase 69: microtask batching - globalTimerManager.setTimeout(flushFocusBatch, 0) 대기
-          setTimeout(() => {
-            const focused = tracker.focusedIndex();
-            // 로그 spy는 복잡하므로 focusedIndex 값만 검증
-            resolve({
-              finalFocusedIndex: focused,
-              logCallCount: 3, // 호출은 3회지만 실제 적용은 1회
-            });
-          }, 10);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => 0,
         });
+
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
       });
 
-      expect(result.finalFocusedIndex).toBe(1);
-      // 중복 방지 로직 추가 후 logCallCount를 검증하는 별도 spy 테스트 추가 가능
+      // 동일 tick 내 여러 번 호출
+      tracker.handleItemFocus(1);
+      tracker.handleItemFocus(1);
+      tracker.handleItemFocus(1);
+
+      // 모든 타이머 실행
+      vi.runAllTimers();
+
+      // 비동기 대기
+      await vi.waitFor(() => {
+        expect(tracker.focusedIndex()).toBe(1);
+      });
+
+      expect(tracker.focusedIndex()).toBe(1);
     });
 
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동
-    it.skip('handleItemBlur 후 handleItemFocus가 빠르게 호출되면 배칭 처리', async () => {
-      const result = await new Promise<{
-        focusedAfterBlur: number | null;
-        focusedAfterFocus: number | null;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+    it('handleItemBlur 후 handleItemFocus가 빠르게 호출되면 배칭 처리', async () => {
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => 0,
-          });
-
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          tracker.handleItemFocus(1);
-
-          // Phase 69: microtask batching 대기
-          setTimeout(() => {
-            // 빠르게 blur → focus 반복
-            tracker.handleItemBlur(1);
-
-            setTimeout(() => {
-              const afterBlur = tracker.focusedIndex();
-
-              tracker.handleItemFocus(2);
-
-              setTimeout(() => {
-                const afterFocus = tracker.focusedIndex();
-
-                resolve({
-                  focusedAfterBlur: afterBlur,
-                  focusedAfterFocus: afterFocus,
-                });
-              }, 10);
-            }, 10);
-          }, 10);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => 0,
         });
+
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
+      });
+
+      tracker.handleItemFocus(1);
+      vi.runAllTimers();
+
+      await vi.waitFor(() => {
+        expect(tracker.focusedIndex()).toBe(1);
+      });
+
+      // 빠르게 blur → focus 반복
+      tracker.handleItemBlur(1);
+      vi.runAllTimers();
+
+      await vi.waitFor(() => {
+        const afterBlur = tracker.focusedIndex();
+        expect(afterBlur).toBeDefined();
+      });
+
+      const afterBlur = tracker.focusedIndex();
+
+      tracker.handleItemFocus(2);
+      vi.runAllTimers();
+
+      await vi.waitFor(() => {
+        expect(tracker.focusedIndex()).toBe(2);
       });
 
       // blur 후 autoFocus로 전환, 다시 focus 시 새 인덱스 적용
-      expect(result.focusedAfterFocus).toBe(2);
+      expect(tracker.focusedIndex()).toBe(2);
     });
   });
 
   describe('IntersectionObserver 콜백 RAF 배칭', () => {
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동
-    it.skip('여러 entries가 동시에 들어와도 RAF로 배칭되어 1회만 처리', async () => {
+    it('여러 entries가 동시에 들어와도 RAF로 배칭되어 1회만 처리', async () => {
       const rafSpy = vi.mocked(window.requestAnimationFrame);
 
-      const result = await new Promise<{
-        rafCallCount: number;
-        entriesProcessed: boolean;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => 0,
-            threshold: [0.5],
-          });
-
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          // IntersectionObserver mock이 필요하지만,
-          // 실제로는 handleEntries가 RAF로 감싸져 있는지만 확인
-          const initialRafCalls = rafSpy.mock.calls.length;
-
-          // forceSync는 RAF를 직접 호출하지 않으므로,
-          // 실제 observer entries를 시뮬레이션해야 함
-          // 일단 간접 검증: forceSync 후 RAF 스케줄링 확인
-          tracker.forceSync();
-
-          setTimeout(() => {
-            const rafCallsAfter = rafSpy.mock.calls.length;
-            resolve({
-              rafCallCount: rafCallsAfter - initialRafCalls,
-              entriesProcessed: true,
-            });
-          }, 50);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => 0,
+          threshold: [0.5],
         });
+
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
       });
+
+      const initialRafCalls = rafSpy.mock.calls.length;
+
+      // forceSync는 RAF를 직접 호출하지 않으므로,
+      // 실제 observer entries를 시뮬레이션해야 함
+      // 일단 간접 검증: forceSync 후 RAF 스케줄링 확인
+      tracker.forceSync();
+
+      vi.runAllTimers();
+
+      await vi.waitFor(() => {
+        const rafCallsAfter = rafSpy.mock.calls.length;
+        expect(rafCallsAfter - initialRafCalls).toBeGreaterThanOrEqual(0);
+      });
+
+      const rafCallsAfter = rafSpy.mock.calls.length;
+      const rafCallCount = rafCallsAfter - initialRafCalls;
 
       // Phase 69: RAF 배칭 대신 debounce + microtask 배칭을 구현했으므로
       // RAF 검증 대신 scheduleSync 호출 감소를 검증
       // 이 테스트는 추후 RAF 배칭이 필요하면 재활성화
-      expect(result.rafCallCount).toBeGreaterThanOrEqual(0);
+      expect(rafCallCount).toBeGreaterThanOrEqual(0);
     });
 
     it('RAF 배칭 후 한 번에 모든 entries 처리', async () => {
@@ -317,50 +300,47 @@ describe('useGalleryFocusTracker - Deduplication', () => {
   });
 
   describe('통합: 중복 방지 + RAF 배칭', () => {
-    // TODO: Phase 74.5 - Promise 기반 코드에서 fake timers 미작동
-    it.skip('스크롤 중 동일 인덱스 반복 entries도 1회만 처리', async () => {
+    it('스크롤 중 동일 인덱스 반복 entries도 1회만 처리', async () => {
       const focusSpy = vi.spyOn(items[2]!, 'focus');
 
-      const result = await new Promise<{
-        focusCalls: number;
-        rafCalls: number;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+      let tracker!: ReturnType<typeof useGalleryFocusTracker>;
 
-          const rafCallsBefore = vi.mocked(window.requestAnimationFrame).mock.calls.length;
+      const rafCallsBefore = vi.mocked(window.requestAnimationFrame).mock.calls.length;
 
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => 2,
-            shouldAutoFocus: true,
-            autoFocusDebounce: 30,
-          });
-
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          // 스크롤 시뮬레이션: 빠른 연속 forceSync
-          const syncCount = 10;
-          for (let i = 0; i < syncCount; i++) {
-            tracker.forceSync();
-          }
-
-          setTimeout(() => {
-            const rafCallsAfter = vi.mocked(window.requestAnimationFrame).mock.calls.length;
-            resolve({
-              focusCalls: focusSpy.mock.calls.length,
-              rafCalls: rafCallsAfter - rafCallsBefore,
-            });
-          }, 200);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => 2,
+          shouldAutoFocus: true,
+          autoFocusDebounce: 30,
         });
+
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
       });
 
+      // 스크롤 시뮬레이션: 빠른 연속 forceSync
+      const syncCount = 10;
+      for (let i = 0; i < syncCount; i++) {
+        tracker.forceSync();
+      }
+
+      vi.runAllTimers();
+
+      await vi.waitFor(() => {
+        expect(focusSpy.mock.calls.length).toBeGreaterThan(0);
+      });
+
+      const rafCallsAfter = vi.mocked(window.requestAnimationFrame).mock.calls.length;
+      const rafCalls = rafCallsAfter - rafCallsBefore;
+
       // RAF 배칭과 중복 방지가 함께 작동하면 focus는 1회, RAF는 적게 호출
-      expect(result.focusCalls).toBeLessThanOrEqual(1);
-      expect(result.rafCalls).toBeLessThan(10); // 10회 sync보다 훨씬 적게
+      expect(focusSpy.mock.calls.length).toBeLessThanOrEqual(1);
+      expect(rafCalls).toBeLessThan(10); // 10회 sync보다 훨씬 적게
     });
   });
 });
