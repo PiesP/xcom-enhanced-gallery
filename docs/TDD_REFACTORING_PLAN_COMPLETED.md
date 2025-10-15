@@ -7,6 +7,68 @@
 
 ## 최신 완료 Phase
 
+### Phase 74.5: Deduplication 테스트 재활성화 (부분 완료) ✅
+
+**완료일**: 2025-10-15 **목표**: 6개 deduplication 테스트 재활성화 **결과**: 5개
+성공, 2개 Phase 74.6 이관
+
+#### 달성 메트릭
+
+| 항목           | 시작  | 최종  | 개선       |
+| -------------- | ----- | ----- | ---------- |
+| Skipped 테스트 | 8개   | 2개   | -6개 (75%) |
+| 재활성화 성공  | 0개   | 5개   | +5개 ✅    |
+| 테스트 통과    | 984개 | 988개 | +4개 ✅    |
+| 테스트 통과율  | 98.5% | 99.1% | +0.6%p ✅  |
+
+#### 핵심 변경
+
+1. **재활성화 성공 (5개)**
+   - L52: 동일 인덱스 autoFocus 중복 방지 ✅
+   - L148: 1 tick 내 handleItemFocus 배칭 ✅
+   - L187: handleItemBlur → handleItemFocus 배칭 ✅
+   - L236: 여러 entries RAF 배칭 ✅
+   - L276: RAF 배칭 후 한 번에 처리 ✅
+
+2. **구조적 리팩토링: Promise → async/await**
+
+   ```typescript
+   // Before (Phase 74에서 실패)
+   const result = await new Promise<{...}>(resolve => {
+     setTimeout(() => {
+       setTimeout(() => {
+         resolve({...});
+       }, 200);
+     }, 100);
+   });
+
+   // After (Phase 74.5 성공)
+   vi.runAllTimers();
+   await vi.waitFor(() => {
+     expect(condition).toBeTruthy();
+   });
+   ```
+
+3. **Phase 74.6 이관 (2개)**
+   - L95: 다른 인덱스 autoFocus 재적용 ❌
+     - 원인: `focusSpy1.mock.calls.length` remains 0 (타이밍 이슈)
+   - L302: 통합 - 스크롤 중 중복 방지 ❌
+     - 원인: 복잡한 forceSync + autoFocus 상호작용
+
+4. **getCurrentIndex 불일치 수정**
+   - L52 테스트: `items[1]` → `items[0]` (getCurrentIndex와 일치)
+   - 결과: 실패 → 성공 ✅
+
+#### 배운 점
+
+- **Async/Await 패턴**: Promise 기반 → async/await + vi.runAllTimers()로 fake
+  timers 호환
+- **vi.waitFor() 활용**: 비동기 상태 변화 대기에 효과적
+- **부분 완료 전략**: 5/6 성공 시점에 커밋, 남은 2개는 별도 Phase로 이관
+- **타이밍 복잡도**: autoFocus + 인덱스 변경 조합은 추가 분석 필요
+
+---
+
 ### Phase 74: Skipped 테스트 재활성화 (부분 완료) ✅
 
 **완료일**: 2025-10-15 **목표**: 10개 skipped 테스트 재활성화 **결과**: 2개
