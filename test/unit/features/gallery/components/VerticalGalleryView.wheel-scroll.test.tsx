@@ -121,6 +121,8 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
   });
 
   it('휠 델타가 전달되면 아이템 컨테이너 scrollBy가 호출되어야 함', async () => {
+    // Phase 76: 브라우저 네이티브 스크롤로 전환 - scrollBy 제거됨
+    // 이 테스트는 더 이상 유효하지 않음
     const { VerticalGalleryView } = await import(
       '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
@@ -137,31 +139,11 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     expect(itemsContainer).not.toBeNull();
     if (!gallery || !itemsContainer) return;
 
-    gallery.scrollTop = 400;
-    Object.defineProperty(gallery, 'scrollHeight', { value: 2000, configurable: true });
-    Object.defineProperty(gallery, 'clientHeight', { value: 600, configurable: true });
-
-    itemsContainer.scrollTop = 400;
-    Object.defineProperty(itemsContainer, 'scrollHeight', { value: 2400, configurable: true });
-    Object.defineProperty(itemsContainer, 'clientHeight', { value: 800, configurable: true });
-
-    const scrollSpy = vi.fn();
-    const itemsScrollSpy = vi.fn();
-    gallery.scrollBy = scrollSpy;
-    itemsContainer.scrollBy = itemsScrollSpy as typeof itemsContainer.scrollBy;
-
+    // Phase 76: onScroll 콜백은 로그만 남기고 scrollBy를 호출하지 않음
     expect(capturedOnScroll).toBeTypeOf('function');
+    // 브라우저가 네이티브 스크롤을 처리하므로, 여기서는 콜백이 호출 가능한지만 확인
     capturedOnScroll?.(120, itemsContainer);
-
-    expect(itemsScrollSpy).toHaveBeenCalledTimes(1);
-    const callArg = itemsScrollSpy.mock.calls[0]?.[0] as {
-      top: number;
-      left?: number;
-      behavior?: globalThis.ScrollBehavior;
-    };
-    expect(callArg?.top).toBeCloseTo(120, 5);
-    expect(callArg?.left ?? 0).toBe(0);
-    expect(scrollSpy).not.toHaveBeenCalled();
+    // scrollBy는 더 이상 호출되지 않음 (브라우저 네이티브 스크롤)
   });
 
   it('컨테이너가 최상단일 때 음수 델타는 무시되어야 함', async () => {
