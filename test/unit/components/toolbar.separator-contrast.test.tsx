@@ -12,15 +12,16 @@ describe('Toolbar separator contrast', () => {
   it('uses text color tokens for separator', () => {
     const container = (globalThis as any).document.createElement('div');
     render(
-      h(Toolbar, {
-        currentIndex: 0,
-        totalCount: 10,
-        onPrevious: () => {},
-        onNext: () => {},
-        onDownloadCurrent: () => {},
-        onDownloadAll: () => {},
-        onClose: () => {},
-      }),
+      () =>
+        h(Toolbar, {
+          currentIndex: 0,
+          totalCount: 10,
+          onPrevious: () => {},
+          onNext: () => {},
+          onDownloadCurrent: () => {},
+          onDownloadAll: () => {},
+          onClose: () => {},
+        }),
       container
     );
 
@@ -31,6 +32,6 @@ describe('Toolbar separator contrast', () => {
     expect(className).toContain('separator');
 
     // cleanup: unmount to avoid async work after environment teardown
-    render(null as any, container);
+    render(() => null, container);
   });
 });
