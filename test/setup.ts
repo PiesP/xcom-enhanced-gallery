@@ -51,7 +51,7 @@ if (typeof globalThis !== 'undefined') {
 
 import '@testing-library/jest-dom';
 import { beforeEach, afterEach, vi } from 'vitest';
-import { setupTestEnvironment, cleanupTestEnvironment } from './utils/helpers/test-environment.js';
+import { setupTestEnvironment, cleanupTestEnvironment } from './__mocks__/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 import { URL as NodeURL } from 'node:url';
 

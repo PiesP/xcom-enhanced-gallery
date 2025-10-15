@@ -231,5 +231,146 @@ describe('Design Token Policy - Unified', () => {
         );
       }
     });
+
+    it('should not have local token redefinitions in component CSS', () => {
+      const files = listFilesRecursive(SRC).filter(f => /\.module\.css$/.test(f));
+      const SEMANTIC_FILE = toPosix(join(ROOT, 'src/shared/styles/design-tokens.semantic.css'));
+      const COMPONENT_FILE = toPosix(join(ROOT, 'src/shared/styles/design-tokens.component.css'));
+      const offenders: Array<{ file: string; redefinitions: string[] }> = [];
+
+      for (const file of files) {
+        const posixPath = toPosix(file);
+        // Skip token definition files themselves
+        if (posixPath === SEMANTIC_FILE || posixPath === COMPONENT_FILE) continue;
+
+        const content = readFileSync(file, 'utf8');
+
+        // Detect local redefinitions: --xeg-xxx: var(--xeg-yyy)
+        const redefinitions = content.match(/^\s*--xeg-[a-z0-9-]+:\s*var\(--xeg-/gm);
+
+        if (redefinitions && redefinitions.length > 0) {
+          offenders.push({ file, redefinitions });
+        }
+      }
+
+      if (offenders.length > 0) {
+        throw new Error(
+          'Component CSS must not redefine semantic tokens locally:\n' +
+            offenders
+              .map(o => `  - ${o.file}:\n` + o.redefinitions.map(r => `    ${r.trim()}`).join('\n'))
+              .join('\n') +
+            '\n\nUse semantic tokens directly from design-tokens.semantic.css'
+        );
+      }
+    });
+  });
+
+  describe('5. Token naming and consistency standards', () => {
+    it('should use consistent xeg- prefix for all component tokens', () => {
+      const files = listFilesRecursive(SRC).filter(f => /\.module\.css$/.test(f));
+      const SEMANTIC_FILE = toPosix(join(ROOT, 'src/shared/styles/design-tokens.semantic.css'));
+      const TOOLBAR_FILE = toPosix(
+        join(ROOT, 'src/shared/components/ui/Toolbar/Toolbar.module.css')
+      );
+      const offenders: Array<{ file: string; tokens: string[] }> = [];
+
+      const STANDARD_PREFIXES = [
+        '--color-',
+        '--shadow-',
+        '--radius-',
+        '--space-',
+        '--duration-',
+        '--ease-',
+        '--font-',
+        '--line-',
+        '--border-',
+      ];
+
+      // Local state tokens allowed in specific files
+      const LOCAL_STATE_TOKENS = new Set([
+        '--toolbar-opacity',
+        '--toolbar-pointer-events',
+        '--toolbar-bg',
+        '--toolbar-bg-loading',
+        '--toolbar-bg-downloading',
+        '--toolbar-bg-error',
+      ]);
+
+      for (const file of files) {
+        const posixPath = toPosix(file);
+        if (posixPath === SEMANTIC_FILE) continue;
+
+        const content = readFileSync(file, 'utf8');
+        const nonXegTokens = content.match(/var\(--(?!xeg-)[a-z][a-z0-9-]*\)/g) || [];
+
+        // Filter out standard CSS tokens and local state tokens
+        const nonStandard = nonXegTokens.filter(token => {
+          const isStandard = STANDARD_PREFIXES.some(prefix => token.includes(prefix));
+          const tokenName = token.match(/var\((--[^)]+)\)/)?.[1];
+          const isLocalState =
+            posixPath === TOOLBAR_FILE && tokenName && LOCAL_STATE_TOKENS.has(tokenName);
+          return !isStandard && !isLocalState;
+        });
+
+        if (nonStandard.length > 0) {
+          const uniqueTokens = Array.from(new Set(nonStandard));
+          offenders.push({ file, tokens: uniqueTokens });
+        }
+      }
+
+      if (offenders.length > 0) {
+        throw new Error(
+          'Component CSS should use xeg- prefixed tokens for custom properties:\n' +
+            offenders
+              .map(o => `  - ${o.file}:\n` + o.tokens.map(t => `    ${t}`).join('\n'))
+              .join('\n') +
+            '\n\nNote: Standard tokens (--color-, --shadow-, etc.) and local state tokens are allowed.'
+        );
+      }
+    });
+
+    it('should not have duplicate token definitions in semantic CSS', () => {
+      const SEMANTIC_FILE = join(ROOT, 'src/shared/styles/design-tokens.semantic.css');
+      const content = readFileSync(SEMANTIC_FILE, 'utf8');
+
+      // Extract all token definitions outside of theme scopes
+      const rootScope = content.match(/:root\s*\{[^}]+\}/gs)?.[0] || '';
+      const definitions = rootScope.match(/--[a-z0-9-]+:/g) || [];
+
+      const counts = new Map<string, number>();
+      for (const def of definitions) {
+        const token = def.slice(0, -1); // Remove ':'
+        counts.set(token, (counts.get(token) || 0) + 1);
+      }
+
+      const duplicates = Array.from(counts.entries()).filter(([_, count]) => count > 1);
+
+      if (duplicates.length > 0) {
+        throw new Error(
+          'Duplicate token definitions found in :root scope of semantic.css:\n' +
+            duplicates.map(([token, count]) => `  - ${token} (${count} times)`).join('\n')
+        );
+      }
+    });
+
+    it('should have required toolbar tokens in semantic CSS', () => {
+      const SEMANTIC_FILE = join(ROOT, 'src/shared/styles/design-tokens.semantic.css');
+      const content = readFileSync(SEMANTIC_FILE, 'utf8');
+
+      const REQUIRED_TOKENS = [
+        '--xeg-bg-toolbar',
+        '--color-border-default',
+        '--xeg-shadow-md',
+      ] as const;
+
+      const missing = REQUIRED_TOKENS.filter(token => !new RegExp(`${token}\\s*:`).test(content));
+
+      if (missing.length > 0) {
+        throw new Error(
+          'Required toolbar tokens missing in semantic CSS:\n' +
+            missing.map(t => `  - ${t}`).join('\n')
+        );
+      }
+    });
   });
 });
