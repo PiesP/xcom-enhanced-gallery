@@ -51,8 +51,33 @@ export type GalleryEvents = {
   'gallery:error': { error: string };
 };
 
+/**
+ * Navigation source type (Phase 77)
+ * 네비게이션의 출처를 추적하여 자동 포커스와 수동 네비게이션을 구분
+ */
+export type NavigationSource = 'button' | 'keyboard' | 'scroll' | 'auto-focus';
+
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
+
+// ============================================================================
+// Phase 77: Navigation Source Tracking
+// ============================================================================
+
+/**
+ * Last navigation source tracker
+ * 마지막 네비게이션의 출처를 추적하여 중복 검사 로직 개선
+ */
+let lastNavigationSource: NavigationSource = 'auto-focus';
+
+/**
+ * Get last navigation source (Phase 77)
+ * 테스트 및 디버깅 용도
+ * @returns 마지막 네비게이션 소스
+ */
+export function getLastNavigationSource(): NavigationSource {
+  return lastNavigationSource;
+}
 
 // ============================================================================
 // Index Navigation Events (Phase 63)
@@ -162,6 +187,9 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   // Phase 64: focusedIndex 초기화
   gallerySignals.focusedIndex.value = validIndex;
 
+  // Phase 77: 갤러리 오픈 시 lastNavigationSource를 auto-focus로 리셋
+  lastNavigationSource = 'auto-focus';
+
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
 
@@ -180,6 +208,9 @@ export function closeGallery(): void {
   // Phase 64: focusedIndex 초기화
   gallerySignals.focusedIndex.value = null;
 
+  // Phase 77: 갤러리 닫을 때 lastNavigationSource 리셋
+  lastNavigationSource = 'auto-focus';
+
   logger.debug('[Gallery] Closed');
 }
 
@@ -187,18 +218,33 @@ export function closeGallery(): void {
  * Navigate to media item
  * @param index 대상 인덱스
  * @param trigger 네비게이션 트리거 ('button' | 'click' | 'keyboard')
+ * @param source 네비게이션 소스 (Phase 77: 자동/수동 구분)
  */
 export function navigateToItem(
   index: number,
-  trigger: 'button' | 'click' | 'keyboard' = 'button'
+  trigger: 'button' | 'click' | 'keyboard' = 'button',
+  source: NavigationSource = 'button'
 ): void {
   const state = galleryState.value;
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
 
-  if (validIndex === state.currentIndex) {
-    logger.warn(`[Gallery] Already at index ${index}`);
+  // Phase 77: source 기반 중복 검사
+  // 수동 네비게이션(버튼/키보드)이면서 마지막 네비게이션도 수동이고,
+  // 이미 해당 인덱스에 있으면 focusedIndex만 동기화
+  const isDuplicateManual =
+    validIndex === state.currentIndex &&
+    source !== 'auto-focus' &&
+    lastNavigationSource !== 'auto-focus';
+
+  if (isDuplicateManual) {
+    logger.debug(`[Gallery] Already at index ${index} (source: ${source}), syncing focusedIndex`);
+    // 명시적 네비게이션이지만 같은 위치면 focusedIndex만 동기화
+    gallerySignals.focusedIndex.value = validIndex;
     return;
   }
+
+  // Phase 77: 네비게이션 소스 업데이트
+  lastNavigationSource = source;
 
   // Phase 63: 네비게이션 시작 이벤트 발행
   galleryIndexEvents.emit('navigate:start', {
@@ -218,7 +264,7 @@ export function navigateToItem(
   // Phase 63: 네비게이션 완료 이벤트 발행
   galleryIndexEvents.emit('navigate:complete', { index: validIndex, trigger });
 
-  logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger})`);
+  logger.debug(`[Gallery] Navigated to item: ${index} (trigger: ${trigger}, source: ${source})`);
 }
 
 /**
@@ -229,7 +275,10 @@ export function navigatePrevious(trigger: 'button' | 'click' | 'keyboard' = 'but
   // Phase 64 Step 2: focusedIndex 우선 사용, null이면 currentIndex로 fallback
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
   const newIndex = baseIndex > 0 ? baseIndex - 1 : state.mediaItems.length - 1;
-  navigateToItem(newIndex, trigger);
+
+  // Phase 77: source 명시
+  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
+  navigateToItem(newIndex, trigger, source);
 }
 
 /**
@@ -240,7 +289,10 @@ export function navigateNext(trigger: 'button' | 'click' | 'keyboard' = 'button'
   // Phase 64 Step 2: focusedIndex 우선 사용, null이면 currentIndex로 fallback
   const baseIndex = gallerySignals.focusedIndex.value ?? state.currentIndex;
   const newIndex = baseIndex < state.mediaItems.length - 1 ? baseIndex + 1 : 0;
-  navigateToItem(newIndex, trigger);
+
+  // Phase 77: source 명시
+  const source: NavigationSource = trigger === 'button' ? 'button' : 'keyboard';
+  navigateToItem(newIndex, trigger, source);
 }
 
 /**
@@ -257,8 +309,12 @@ export function setLoading(isLoading: boolean): void {
  * Set focused index (Phase 64)
  * 스크롤이나 다른 방식으로 포커스가 변경될 때 호출
  * @param index 포커스할 인덱스 (null이면 포커스 해제)
+ * @param source 네비게이션 소스 (Phase 77: 기본값 'auto-focus')
  */
-export function setFocusedIndex(index: number | null): void {
+export function setFocusedIndex(
+  index: number | null,
+  source: NavigationSource = 'auto-focus'
+): void {
   const state = galleryState.value;
 
   // null은 그대로 허용
@@ -272,7 +328,12 @@ export function setFocusedIndex(index: number | null): void {
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
   gallerySignals.focusedIndex.value = validIndex;
 
-  logger.debug(`[Gallery] focusedIndex set to ${validIndex}`);
+  // Phase 77: auto-focus에서의 변경은 lastNavigationSource 업데이트
+  if (source === 'auto-focus') {
+    lastNavigationSource = 'auto-focus';
+  }
+
+  logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
 
 /**

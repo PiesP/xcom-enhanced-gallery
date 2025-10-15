@@ -1,7 +1,75 @@
 # TDD 리팩토링 완료 기록
 
 > **목적**: 완료된 Phase들의 달성 메트릭과 배운 점을 보관 **최종 업데이트**:
-> 2025-10-16
+> 2025-10-15
+
+## Phase 77: NavigationSource 추적 시스템 ✅
+
+**완료일**: 2025-10-15 **목표**: focusedIndex/currentIndex 불일치로 인한
+"Already at index 0" 경고 버그를 NavigationSource 타입 시스템으로 근본 해결
+
+### Phase 77 달성 메트릭
+
+| 항목                      | 목표        | 최종        | 상태 |
+| ------------------------- | ----------- | ----------- | ---- |
+| **NavigationSource 추적** | 완료        | 완료        | ✅   |
+| **테스트 스위트**         | 20개 통과   | 20개 통과   | ✅   |
+| **프로덕션 빌드**         | 325 KB 이내 | 320.14 KB   | ✅   |
+| **전체 테스트**           | 784 passing | 784 passing | ✅   |
+| **번들 영향**             | +1 KB 이내  | +0.23 KB    | ✅   |
+
+### Phase 77 주요 변경사항
+
+1. **NavigationSource 타입 시스템 도입**
+   - 타입 정의: `'button' | 'keyboard' | 'scroll' | 'auto-focus'`
+   - lastNavigationSource 추적 변수와 getLastNavigationSource() getter 함수
+   - source 기반 중복 검사 로직: manual(button/keyboard)과 auto-focus 구분
+
+2. **gallery.signals.ts 핵심 수정**
+   - navigateToItem: source 파라미터 추가 (default: 'button')
+   - navigateNext/Previous: trigger에서 source 파생 (button vs keyboard)
+   - setFocusedIndex: source 파라미터 추가 (default: 'auto-focus')
+   - openGallery/closeGallery: lastNavigationSource 초기화 ('auto-focus')
+
+3. **버그 수정 메커니즘**
+
+   ```typescript
+   const isDuplicateManual =
+     validIndex === state.currentIndex &&
+     source !== 'auto-focus' &&
+     lastNavigationSource !== 'auto-focus';
+   ```
+
+   - auto-focus는 중복 체크 건너뛰어 focusedIndex 동기화 허용
+   - manual 네비게이션은 조기 종료하되 focusedIndex는 동기화
+
+4. **useGalleryFocusTracker 통합**
+   - setFocusedIndex(index, 'auto-focus') 명시적 호출
+   - 스크롤 기반 auto-focus와 수동 네비게이션 명확히 구분
+
+5. **테스트 커버리지**
+   - 버그 재현 테스트: 4개 (원본 로그 재현, source tracking)
+   - NavigationSource 추적: 8개 (button/keyboard/auto-focus)
+   - 중복 검사 로직: 3개 (manual 중복, auto-focus bypass)
+   - 경계 케이스: 5개 (빈 갤러리, null focusedIndex, 순환 네비게이션)
+
+### Phase 77 배운 점
+
+- **상태 머신 패턴의 명확성**: NavigationSource로 네비게이션 컨텍스트를 명시하면
+  조건부 로직이 간단해지고 버그가 줄어든다
+- **TDD의 버그 재현 전략**: 실제 로그를 기반으로 테스트를 작성하면 근본 원인을
+  정확히 파악할 수 있다
+- **자동/수동 분리의 중요성**: auto-focus(스크롤)와 manual
+  navigation(button/keyboard)을 타입으로 구분하면 UX 일관성이 향상된다
+- **최소 타입 확장 원칙**: 4개의 source 값만으로도 모든 네비게이션 시나리오를
+  표현할 수 있다
+
+### Phase 77 제한사항
+
+- 'scroll' source는 예약되어 있지만 현재 사용되지 않음 (미래 확장 대비)
+- lastNavigationSource는 단일 변수로 관리되므로 동시 네비게이션 추적 불가
+
+---
 
 ## Phase 75: Toolbar 설정 로직 모듈화 ✅
 

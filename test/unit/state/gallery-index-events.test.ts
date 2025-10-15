@@ -124,8 +124,8 @@ describe('Gallery Index Events (Phase 63 - Step 2)', () => {
       expect(listener).toHaveBeenCalledWith({ index: 2, trigger: 'keyboard' });
     });
 
-    it('should not emit events if already at target index', () => {
-      // RED
+    it('should emit events for manual navigation even at same index (Phase 77)', () => {
+      // Phase 77: source-aware duplicate checking
       openGallery(mockMediaItems, 1);
       const startListener = vi.fn();
       const completeListener = vi.fn();
@@ -133,10 +133,11 @@ describe('Gallery Index Events (Phase 63 - Step 2)', () => {
       galleryIndexEvents.on('navigate:start', startListener);
       galleryIndexEvents.on('navigate:complete', completeListener);
 
-      navigateToItem(1, 'button');
+      navigateToItem(1, 'button', 'button');
 
-      expect(startListener).not.toHaveBeenCalled();
-      expect(completeListener).not.toHaveBeenCalled();
+      // Manual navigation should emit events to sync focusedIndex
+      expect(startListener).toHaveBeenCalledWith({ from: 1, to: 1, trigger: 'button' });
+      expect(completeListener).toHaveBeenCalledWith({ index: 1, trigger: 'button' });
     });
   });
 

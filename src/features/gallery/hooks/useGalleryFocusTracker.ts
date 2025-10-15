@@ -85,6 +85,7 @@ export function useGalleryFocusTracker({
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
+  // ✅ Phase 77: setFocusedIndex 호출 시 'auto-focus' source 전달
   const debouncedSetAutoFocusIndex = createDebouncer<[number | null, { forceClear?: boolean }?]>(
     (index, options) => {
       const shouldForceClear = options?.forceClear ?? false;
@@ -100,12 +101,12 @@ export function useGalleryFocusTracker({
         }
 
         setAutoFocusIndex(fallbackIndex);
-        setFocusedIndex(fallbackIndex);
+        setFocusedIndex(fallbackIndex, 'auto-focus');
         return;
       }
 
       setAutoFocusIndex(index);
-      setFocusedIndex(index); // Phase 64 Step 3: 전역 동기화
+      setFocusedIndex(index, 'auto-focus'); // Phase 77: auto-focus source 전달
     },
     50
   );
