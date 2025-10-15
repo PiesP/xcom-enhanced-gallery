@@ -12,6 +12,16 @@
 
 import { logger } from '../shared/logging/logger';
 
+function getSafeLocalStorage(): Storage | null {
+  try {
+    const storage = globalThis.localStorage;
+    void storage.length;
+    return storage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type ThemeMode = 'light' | 'dark';
 export type ThemeSetting = 'auto' | ThemeMode;
 
@@ -36,12 +46,12 @@ export function detectSystemTheme(): ThemeMode {
  * 저장된 테마 설정을 가져옵니다
  */
 export function getSavedThemeSetting(): ThemeSetting | null {
-  if (typeof localStorage === 'undefined') {
-    return null;
-  }
-
   try {
-    const saved = localStorage.getItem('xeg-theme') as ThemeSetting | null;
+    const storage = getSafeLocalStorage();
+    if (!storage) {
+      return null;
+    }
+    const saved = storage.getItem('xeg-theme') as ThemeSetting | null;
     if (saved && ['auto', 'light', 'dark'].includes(saved)) {
       return saved;
     }

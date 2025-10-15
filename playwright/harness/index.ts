@@ -165,6 +165,164 @@ async function disposeToolbarHarness(): Promise<void> {
   toolbarHandle.dispose();
 }
 
+type ToolbarHeadlessEvaluateProps = ToolbarMountProps;
+
+type ToolbarHeadlessItem = {
+  type: string;
+  group: string;
+  disabled: boolean;
+  loading: boolean;
+};
+
+type ToolbarHeadlessResult = {
+  items: ToolbarHeadlessItem[];
+  downloadButtonsLoading: boolean;
+  fitModeBefore: string;
+  fitModeAfter: string;
+};
+
+async function evaluateToolbarHeadlessHarness(
+  props: ToolbarHeadlessEvaluateProps
+): Promise<ToolbarHeadlessResult> {
+  await ensureVendorsReady();
+
+  const solid = getSolid();
+  const { render, createSignal, createComponent } = solid;
+
+  const container = createContainer('xeg-toolbar-headless');
+  const [currentIndex] = createSignal(props.currentIndex ?? 0);
+  const [totalCount] = createSignal(props.totalCount ?? 0);
+  const [isDownloading] = createSignal(!!props.isDownloading);
+
+  const ToolbarHost = () =>
+    createComponent(Toolbar, {
+      get currentIndex() {
+        return currentIndex();
+      },
+      get totalCount() {
+        return totalCount();
+      },
+      get isDownloading() {
+        return isDownloading();
+      },
+      disabled: false,
+      ...noopToolbarHandlers,
+    });
+
+  const dispose = render(ToolbarHost, container);
+
+  const clickButton = (selector: string) => {
+    const target = container.querySelector(selector) as HTMLButtonElement | null;
+    if (!target) return;
+    if (typeof target.click === 'function') {
+      target.click();
+      return;
+    }
+    target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+  };
+
+  const readSelectedFitMode = (): string | null => {
+    const selected = container.querySelector(
+      '[data-gallery-element^="fit-"][data-selected="true"]'
+    ) as HTMLElement | null;
+    if (!selected) return null;
+    const elementId = selected.getAttribute('data-gallery-element');
+    if (!elementId) return null;
+    return elementId.replace('fit-', '');
+  };
+
+  const toItem = (element: HTMLElement, type: string, group: string): ToolbarHeadlessItem => ({
+    type,
+    group,
+    disabled: element.getAttribute('data-disabled') === 'true',
+    loading: element.getAttribute('data-loading') === 'true',
+  });
+
+  const collectItems = (): ToolbarHeadlessItem[] => {
+    const items: ToolbarHeadlessItem[] = [];
+
+    const navPrevious = container.querySelector(
+      '[data-gallery-element="nav-previous"]'
+    ) as HTMLElement | null;
+    if (navPrevious) {
+      items.push(toItem(navPrevious, 'previous', 'navigation'));
+    }
+
+    const navNext = container.querySelector(
+      '[data-gallery-element="nav-next"]'
+    ) as HTMLElement | null;
+    if (navNext) {
+      items.push(toItem(navNext, 'next', 'navigation'));
+    }
+
+    const fitButtons = container.querySelectorAll('[data-gallery-element^="fit-"]');
+    fitButtons.forEach(element => {
+      const fitElement = element as HTMLElement;
+      const id = fitElement.getAttribute('data-gallery-element');
+      const type = id ? id.replace('fit-', '') : 'fit';
+      items.push(toItem(fitElement, type, 'fitModes'));
+    });
+
+    const downloadCurrent = container.querySelector(
+      '[data-gallery-element="download-current"]'
+    ) as HTMLElement | null;
+    if (downloadCurrent) {
+      items.push(toItem(downloadCurrent, 'downloadCurrent', 'downloads'));
+    }
+
+    const downloadAll = container.querySelector(
+      '[data-gallery-element="download-all"]'
+    ) as HTMLElement | null;
+    if (downloadAll) {
+      items.push(toItem(downloadAll, 'downloadAll', 'downloads'));
+    }
+
+    const settingsButton = container.querySelector(
+      '[data-gallery-element="settings"]'
+    ) as HTMLElement | null;
+    if (settingsButton) {
+      items.push(toItem(settingsButton, 'settings', 'utility'));
+    }
+
+    const closeButton = container.querySelector(
+      '[data-gallery-element="close"]'
+    ) as HTMLElement | null;
+    if (closeButton) {
+      items.push(toItem(closeButton, 'close', 'utility'));
+    }
+
+    return items;
+  };
+
+  try {
+    await sleep(50);
+
+    // 강제로 최초 상태를 original로 설정하여 이후 fitWidth 전환이 검증 가능하도록 한다.
+    clickButton('[data-gallery-element="fit-original"]');
+    await sleep(50);
+    const fitModeBefore = 'original';
+
+    clickButton('[data-gallery-element="fit-fitWidth"]');
+    await sleep(50);
+    const fitModeAfter = readSelectedFitMode() ?? 'unknown';
+
+    const items = collectItems();
+    const downloadButtonsLoading = items
+      .filter(item => item.group === 'downloads')
+      .some(item => item.loading);
+
+    return {
+      items,
+      downloadButtonsLoading,
+      fitModeBefore,
+      fitModeAfter,
+    };
+  } finally {
+    dispose();
+    container.remove();
+  }
+}
+
 type KeyboardOverlayHandle = {
   container: HTMLElement;
   state: { closeCalls: number };
@@ -618,6 +776,7 @@ const harness: XegHarness = {
   mountToolbar: mountToolbarHarness,
   updateToolbar: updateToolbarHarness,
   disposeToolbar: disposeToolbarHarness,
+  evaluateToolbarHeadless: evaluateToolbarHeadlessHarness,
   mountKeyboardOverlay: mountKeyboardOverlayHarness,
   openKeyboardOverlay: openKeyboardOverlayHarness,
   closeKeyboardOverlay: closeKeyboardOverlayHarness,

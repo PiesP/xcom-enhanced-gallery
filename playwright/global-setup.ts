@@ -67,6 +67,7 @@ async function buildHarness(): Promise<void> {
     sourcemap: false,
     logLevel: 'silent',
     define: {
+      __DEV__: 'true',
       'process.env.NODE_ENV': '"development"',
       'import.meta.env.MODE': '"e2e"',
       'import.meta.env.DEV': '"true"',

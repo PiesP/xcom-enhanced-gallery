@@ -132,6 +132,17 @@ function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | 
   }
 }
 
+function getSafeLocalStorage(): Storage | null {
+  try {
+    const storage = globalThis.localStorage;
+    // length 접근으로 SecurityError 여부 확인
+    void storage.length;
+    return storage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Userscript API getter (외부 의존성 격리)
  */
@@ -175,9 +186,10 @@ export function getUserscript(): UserscriptAPI {
           return;
         } catch (error) {
           // GM_setValue 실패 시 localStorage로 fallback
-          if (typeof localStorage !== 'undefined') {
+          const localStorageRef = getSafeLocalStorage();
+          if (localStorageRef) {
             try {
-              localStorage.setItem(key, JSON.stringify(value));
+              localStorageRef.setItem(key, JSON.stringify(value));
               return;
             } catch {
               // localStorage도 실패하면 에러 throw
@@ -187,8 +199,9 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       // GM_setValue가 없으면 localStorage 사용
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(key, JSON.stringify(value));
+      const localStorageRef = getSafeLocalStorage();
+      if (localStorageRef) {
+        localStorageRef.setItem(key, JSON.stringify(value));
       } else {
         throw new Error('No storage mechanism available');
       }
@@ -200,9 +213,10 @@ export function getUserscript(): UserscriptAPI {
           return value as T | undefined;
         } catch {
           // GM_getValue 실패 시 localStorage로 fallback
-          if (typeof localStorage !== 'undefined') {
+          const localStorageRef = getSafeLocalStorage();
+          if (localStorageRef) {
             try {
-              const stored = localStorage.getItem(key);
+              const stored = localStorageRef.getItem(key);
               if (stored === null) return defaultValue;
               return JSON.parse(stored) as T;
             } catch {
@@ -213,9 +227,10 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       // GM_getValue가 없으면 localStorage 사용
-      if (typeof localStorage !== 'undefined') {
+      const localStorageRef = getSafeLocalStorage();
+      if (localStorageRef) {
         try {
-          const stored = localStorage.getItem(key);
+          const stored = localStorageRef.getItem(key);
           if (stored === null) return defaultValue;
           return JSON.parse(stored) as T;
         } catch {
@@ -236,8 +251,9 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       // GM_deleteValue가 없으면 localStorage 사용
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(key);
+      const localStorageRef = getSafeLocalStorage();
+      if (localStorageRef) {
+        localStorageRef.removeItem(key);
       }
     },
     async listValues(): Promise<string[]> {
@@ -252,8 +268,13 @@ export function getUserscript(): UserscriptAPI {
         }
       }
       // GM_listValues가 없으면 localStorage 사용
-      if (typeof localStorage !== 'undefined') {
-        return Object.keys(localStorage);
+      const localStorageRef = getSafeLocalStorage();
+      if (localStorageRef) {
+        try {
+          return Object.keys(localStorageRef);
+        } catch {
+          return [];
+        }
       }
       return [];
     },

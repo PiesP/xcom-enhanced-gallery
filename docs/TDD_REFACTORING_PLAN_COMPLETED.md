@@ -1,7 +1,51 @@
 # TDD 리팩토링 완료 기록
 
 > **목적**: 완료된 Phase들의 달성 메트릭과 배운 점을 보관 **최종 업데이트**:
-> 2025-10-15
+> 2025-10-16
+
+## Phase 75: Toolbar 설정 로직 모듈화 ✅
+
+**완료일**: 2025-10-16 **목표**: Toolbar 설정 흐름을 컨테이너/뷰로 분리하고
+테스트 하네스를 보강하여 회귀 위험을 줄인다
+
+### Phase 75 달성 메트릭
+
+| 항목                  | 목표        | 최종        | 상태 |
+| --------------------- | ----------- | ----------- | ---- |
+| **Toolbar 구조 분리** | 컨테이너/뷰 | 완료        | ✅   |
+| **Playwright smoke**  | 10개 통과   | 10개 통과   | ✅   |
+| **프로덕션 빌드**     | 325 KB 이내 | 319.91 KB   | ✅   |
+| **테스트**            | 775 passing | 775 passing | ✅   |
+
+### Phase 75 주요 변경사항
+
+1. **Toolbar 설정 로직 모듈화**
+   - GalleryToolbarContainer와 GalleryToolbarView를 분리하여 책임을 명확화
+   - useToolbarSettingsController 훅을 도입해 settings 모달 상태 및 액션을 집약
+     관리
+2. **Playwright 하네스 강화**
+   - evaluateToolbarHeadless 헬퍼로 headless 모드에서도 설정 토글 검증 가능
+   - global-setup에 \_\_DEV\_\_ define과 localStorage 가드를 추가해 테스트
+     안정성 확보
+3. **검증 파이프라인 수행**
+   - npm run test:smoke · npm run e2e:smoke · npm run build 모두 성공
+     (2025-10-16)
+
+### Phase 75 배운 점
+
+- 설정 로직을 훅으로 캡슐화하면 컨테이너/프레젠테이션 계층이 깔끔해지고 테스트가
+  용이해진다
+- Playwright 하네스는 안전 가드(\_\_DEV\_\_, localStorage) 없이는 headless
+  환경에서 실패할 수 있으므로 초기화 단계에서 방지해야 한다
+- Toolbar 관련 smoke 시나리오는 headless 모드를 기준으로 검증하면 UI 회귀 탐지가
+  빨라진다
+
+### Phase 75 제한사항
+
+- 기존 focus tracker debounce 테스트 8개는 여전히 skip 상태로 Phase 74 백로그
+  항목으로 유지
+- Toolbar 설정에 신규 기능 추가 시 useToolbarSettingsController 훅에 테스트 선행
+  필요
 
 ---
 
