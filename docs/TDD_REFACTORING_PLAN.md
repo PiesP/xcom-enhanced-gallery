@@ -1,18 +1,323 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 | **상태**: Phase 77 계획됨 �
+> **최종 업데이트**: 2025-10-15 | **상태**: Phase 78 계획 수립 중 🔍
 
 ## 프로젝트 현황
 
 - **빌드**: prod **319.91 KB / 325 KB** (5.09 KB 여유, 1.6%) ✅
-- **테스트**: **775 passing**, 9 skipped ✅
+- **테스트**: **392개 파일**, 775 passing, 9 skipped (98.9% 통과율) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (259 modules, 725 dependencies) ✅
+- **커버리지**: istanbul → v8 마이그레이션 필요 (CI 최적화)
 
-## 현재 상태: Phase 77 - 네비게이션 상태 머신 도입 �
+## 현재 상태: Phase 78 - 테스트 구조 최적화 및 현대화 🔍
 
-**계획됨** (Phase 76 완료 후)
+**계획 수립 중** (2025-10-15)
+
+### 배경 및 동기
+
+현재 테스트 스위트의 문제점:
+
+1. **테스트 파일 과다 (392개)**
+   - 중복 테스트 패턴 존재 (characterization, legacy, red)
+   - 유사 기능의 분산된 테스트들
+   - Phase별 테스트와 기능별 테스트의 혼재
+
+2. **Legacy 마커 테스트 (40+ 파일)**
+   - `.red.test.ts`: 의도적 실패 테스트 (현재 대부분 통과)
+   - `characterization.test`: 행위 특성화 테스트 (정규 테스트로 전환 필요)
+   - `legacy-*`: 이미 제거된 코드에 대한 가드 테스트
+   - `deprecated-*`: 더 이상 사용하지 않는 기능 테스트
+
+3. **테스트 skip 관리 부실 (9개)**
+   - E2E로 이관된 테스트 (정당한 skip)
+   - Debounce 타이밍 조정 필요 (임시 skip)
+   - 명확한 재활성화 계획 부재
+
+4. **테스트 구조 비일관성**
+   - test/ 하위 23개 디렉터리 (architecture, behavioral, build, cleanup,
+     components 등)
+   - 유사 테스트의 분산 배치 (예: 토큰 테스트가 styles/, unit/styles/,
+     refactoring/ 등에 분산)
+   - Phase 테스트와 도메인 테스트의 혼재
+
+5. **커버리지 도구 불일치**
+   - vitest.config.ts: CI는 v8, 로컬은 istanbul
+   - istanbul 의존성 누락 (최근 발견)
+   - 커버리지 임계값 정의되어 있으나 실제 측정 불가
+
+### 목표
+
+1. **테스트 수 감축**: 392개 → 300개 이하 (중복 제거, 통합)
+2. **테스트 구조 단순화**: 23개 디렉터리 → 10개 이하
+3. **커버리지 도구 통일**: v8로 단일화
+4. **Legacy 테스트 정리**: red/characterization/legacy 패턴 재평가
+5. **Skip 테스트 최소화**: 9개 → 5개 이하 (명확한 재활성화 계획)
+
+---
+
+## Phase 78 세부 계획
+
+### Step 1: 테스트 분류 및 분석 (1일) 🔍
+
+#### 1.1 테스트 카테고리 정의
+
+**A. 유지 (Keep)**
+
+- 핵심 기능 테스트 (MediaService, BulkDownload, GalleryApp 등)
+- 정책 가드 테스트 (vendor getter, PC-only events, design tokens)
+- 통합 테스트 (full-workflow, gallery-activation)
+- 성능 벤치마크
+- E2E 스모크 테스트 (Playwright)
+
+**B. 통합 (Merge)**
+
+- 중복 토큰 테스트 (styles/, unit/styles/, refactoring/)
+- 유사한 RED 테스트들 (단일 정책 테스트로 통합)
+- Characterization 테스트 → 정규 단위 테스트로 전환
+
+**C. 제거 (Remove)**
+
+- 이미 구현 완료된 RED 테스트 (현재 통과 중인 것들)
+- Legacy 가드 테스트 (Button-legacy, 이미 제거된 코드)
+- Deprecated 기능 테스트 (더 이상 사용하지 않음)
+- 중복 Phase 테스트 (phase-0~6은 이미 완료, 유지 불필요)
+
+**D. 이관 (Migrate)**
+
+- JSDOM 한계로 skip된 테스트 → Playwright E2E로
+- 빌드 검증 테스트 → scripts/validate-build.js로
+
+#### 1.2 디렉터리 구조 재설계
+
+**현재 (23개)**
+
+```
+test/
+├── __mocks__/
+├── architecture/
+├── behavioral/
+├── build/
+├── cleanup/
+├── components/
+├── core/
+├── features/
+├── final/
+├── hooks/
+├── infrastructure/
+├── integration/
+├── media/
+├── optimization/
+├── patterns/
+├── performance/
+├── refactoring/
+├── shared/
+├── state/
+├── styles/
+├── types/
+├── unit/
+└── utils/
+```
+
+**제안 (8개)**
+
+```
+test/
+├── __mocks__/              # Mock 구현체
+├── e2e/                    # E2E 테스트 (Playwright 이관)
+├── integration/            # 통합 테스트
+├── unit/                   # 단위 테스트
+│   ├── core/              # 핵심 도메인 로직
+│   ├── features/          # 기능 레이어
+│   ├── shared/            # 공유 서비스/유틸
+│   └── policies/          # 정책 가드 (vendor, events, tokens)
+├── performance/            # 성능 벤치마크
+├── fixtures/              # 테스트 픽스처 및 데이터
+└── utils/                 # 테스트 헬퍼 유틸리티
+```
+
+### Step 2: 커버리지 도구 통일 (0.5일) ⚙️
+
+#### 작업 내용
+
+1. **vitest.config.ts 수정**
+
+   ```typescript
+   coverage: {
+     provider: 'v8',  // istanbul 제거, v8로 통일
+     reporter: ['text', 'json-summary', 'html', 'lcov'],
+     // ... 나머지 설정 유지
+   }
+   ```
+
+2. **의존성 정리**
+
+   ```bash
+   npm uninstall @vitest/coverage-istanbul
+   # v8는 이미 설치됨 (@vitest/coverage-v8)
+   ```
+
+3. **커버리지 임계값 재검증**
+   - 실제 커버리지 측정 후 현실적인 값으로 조정
+   - 현재 정의: global 75%, core 80%, shared 75%
+
+### Step 3: Legacy 테스트 정리 (2일) 🧹
+
+#### 3.1 RED 테스트 재평가
+
+**현재 상태 확인**
+
+- 40+ `.red.test.ts` 파일
+- 대부분 이미 GREEN (구현 완료)
+- 일부는 정책 가드로 전환 필요
+
+**작업 방침**
+
+```typescript
+// ❌ 제거: 이미 구현 완료된 RED 테스트
+// test/unit/media/media-processor.canonical-dedupe.red.test.ts
+// → 정규 테스트로 이미 커버됨
+
+// ✅ 유지 → 정책 가드로 전환
+// test/unit/lint/vendor-api.imports.scan.red.test.ts
+// → test/unit/policies/vendor-getter-policy.test.ts
+
+// ✅ 통합: 유사한 RED 테스트들
+// test/unit/styles/design-tokens.usage-scan.red.test.ts
+// + test/unit/styles/design-tokens.surface-helpers.usage-scan.red.test.ts
+// → test/unit/policies/design-token-policy.test.ts
+```
+
+#### 3.2 Characterization 테스트 전환
+
+**현재**: `*.characterization.test.ts` (9개)
+
+- toolbar.characterization.test.ts
+- token-alignment.characterization.test.tsx
+- performance-optimization.characterization.test.tsx
+
+**목표**: 정규 단위/통합 테스트로 전환
+
+```typescript
+// Before: test/behavioral/toolbar.characterization.test.ts
+describe('Toolbar characterization', () => {
+  /* 행위 특성 */
+});
+
+// After: test/unit/features/toolbar/toolbar.test.ts
+describe('Toolbar', () => {
+  /* 명확한 단위 테스트 */
+});
+```
+
+#### 3.3 Legacy 가드 제거
+
+**제거 대상**
+
+- `button-wrapper-removal-red.test.ts` (Button-legacy 이미 제거됨)
+- `legacy-icons.removal.guard.test.ts` (icon-deprecated-placeholder 제거됨)
+- `button-consolidation-red.test.ts` (버튼 통합 완료)
+
+### Step 4: 테스트 통합 및 재구성 (3일) 🔄
+
+#### 4.1 토큰 테스트 통합
+
+**현재 분산**
+
+- `test/styles/design-tokens.test.ts`
+- `test/unit/styles/animation-utilities.tokens.test.ts`
+- `test/refactoring/design-token-violations.test.ts`
+- `test/styles/token-standardization.test.ts`
+- `test/integration/color-token-consistency.test.ts`
+
+**통합 후**
+
+```
+test/unit/policies/
+├── design-token-policy.test.ts     # 하드코딩 금지, 토큰 사용 강제
+├── design-token-definition.test.ts # 토큰 정의 검증
+└── design-token-usage.test.ts      # 실제 사용 검증
+```
+
+#### 4.2 이벤트 정책 테스트 통합
+
+**현재**
+
+- `test/unit/lint/event-deprecated-removal.test.ts`
+- `test/unit/lint/keyboard-listener.centralization.policy.test.ts`
+- (분산된 touch/pointer 이벤트 체크)
+
+**통합 후**
+
+```
+test/unit/policies/
+└── pc-only-events-policy.test.ts   # PC 전용 이벤트 정책 통합
+```
+
+#### 4.3 Phase 테스트 아카이빙
+
+**현재**: phase-0 ~ phase-6 테스트 (최상위 test/) **상태**: 모두 완료, 역사적
+기록용
+
+**처리 방안**
+
+- Option A: 완전 제거 (가장 깔끔)
+- Option B: `test/archive/phases/`로 이동
+- Option C: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`에 통합 후 제거
+
+**권장**: Option C (문서화 후 제거)
+
+### Step 5: Skip 테스트 재활성화 (1일) 🔧
+
+#### 5.1 정당한 Skip (유지)
+
+**E2E 이관**
+
+- `toolbar-layout-stability.test.tsx:80`
+  - 이유: JSDOM Signal 한계
+  - 대응: Playwright에서 검증 중
+  - 조치: skip 유지, 주석 개선
+
+#### 5.2 임시 Skip (수정)
+
+**Debounce 타이밍 (8개)**
+
+- `use-gallery-focus-tracker-*.test.ts`
+- 이유: Phase 69 debounce 도입 후 타이밍 불일치
+- 예상 시간: 2-3시간
+- 조치: vi.useFakeTimers() 타이밍 조정
+
+```typescript
+// Before
+await vi.advanceTimersByTimeAsync(100);
+
+// After (debounce 50ms 고려)
+await vi.advanceTimersByTimeAsync(150);
+```
+
+### Step 6: 테스트 문서 업데이트 (0.5일) 📝
+
+**업데이트 대상**
+
+1. `test/README.md`
+   - 새 디렉터리 구조 반영
+   - 정책 테스트 섹션 추가
+   - Legacy 패턴 제거
+
+2. `docs/CODING_GUIDELINES.md`
+   - 테스트 작성 가이드 보강
+   - RED → GREEN → REFACTOR 예시 추가
+
+3. `AGENTS.md`
+   - 테스트 스크립트 섹션 업데이트
+   - 새 디렉터리 구조 안내
+
+---
+
+## Phase 77: 네비게이션 상태 머신 도입 📋
+
+**계획됨** (Phase 78 완료 후)
 
 - Phase 77: 네비게이션 상태 머신 도입 (focusedIndex/currentIndex 불일치 해결) 📋
   (2025-10-15) — NavigationSource 추적 시스템으로 자동 포커스와 수동 네비게이션
