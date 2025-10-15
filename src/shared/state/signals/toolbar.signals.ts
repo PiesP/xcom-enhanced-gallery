@@ -9,7 +9,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { createSignalSafe } from './signal-factory';
+import { getSolid } from '@shared/external/vendors';
 
 /**
  * 간소화된 툴바 상태 인터페이스
@@ -49,33 +49,42 @@ export type ToolbarEvents = {
   'toolbar:settings-expanded': { expanded: boolean };
 };
 
-// Signal 타입 정의 (Preact Signals 지연 로딩 대응)
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
-};
+// Signal 타입 정의 (Solid Signals)
+type SignalAccessor<T> = () => T;
+type SignalSetter<T> = (value: T | ((prev: T) => T)) => T;
 
-// Preact Signals 지연 초기화
-let toolbarStateSignal: Signal<ToolbarState> | null = null;
-let expandableStateSignal: Signal<ToolbarExpandableState> | null = null;
+// Solid Signals 지연 초기화
+let toolbarStateAccessor: SignalAccessor<ToolbarState> | null = null;
+let toolbarStateSetter: SignalSetter<ToolbarState> | null = null;
+let expandableStateAccessor: SignalAccessor<ToolbarExpandableState> | null = null;
+let expandableStateSetter: SignalSetter<ToolbarExpandableState> | null = null;
 
-function getToolbarStateSignal(): Signal<ToolbarState> {
-  if (!toolbarStateSignal) {
-    toolbarStateSignal = createSignalSafe<ToolbarState>(INITIAL_TOOLBAR_STATE);
+function getToolbarStateSignal(): [SignalAccessor<ToolbarState>, SignalSetter<ToolbarState>] {
+  if (!toolbarStateAccessor || !toolbarStateSetter) {
+    const solid = getSolid();
+    const [get, set] = solid.createSignal<ToolbarState>(INITIAL_TOOLBAR_STATE);
+    toolbarStateAccessor = get;
+    toolbarStateSetter = set;
     logger.debug('Toolbar state signal initialized');
   }
-  return toolbarStateSignal!;
+  return [toolbarStateAccessor!, toolbarStateSetter!];
 }
 
 /**
  * 확장 가능한 설정 패널 신호 가져오기 (Phase 44)
  */
-function getExpandableStateSignal(): Signal<ToolbarExpandableState> {
-  if (!expandableStateSignal) {
-    expandableStateSignal = createSignalSafe<ToolbarExpandableState>(INITIAL_EXPANDABLE_STATE);
+function getExpandableStateSignal(): [
+  SignalAccessor<ToolbarExpandableState>,
+  SignalSetter<ToolbarExpandableState>,
+] {
+  if (!expandableStateAccessor || !expandableStateSetter) {
+    const solid = getSolid();
+    const [get, set] = solid.createSignal<ToolbarExpandableState>(INITIAL_EXPANDABLE_STATE);
+    expandableStateAccessor = get;
+    expandableStateSetter = set;
     logger.debug('Toolbar expandable state signal initialized');
   }
-  return expandableStateSignal!;
+  return [expandableStateAccessor!, expandableStateSetter!];
 }
 
 /**
@@ -83,20 +92,27 @@ function getExpandableStateSignal(): Signal<ToolbarExpandableState> {
  */
 export const toolbarState = {
   get value(): ToolbarState {
-    return getToolbarStateSignal().value;
+    const [get] = getToolbarStateSignal();
+    return get();
   },
 
   set value(newState: ToolbarState) {
-    const signal = getToolbarStateSignal();
-    signal.value = newState;
+    const [, set] = getToolbarStateSignal();
+    set(newState);
   },
 
   /**
    * 상태 변경 구독
    */
   subscribe(callback: (state: ToolbarState) => void): () => void {
-    const signal = getToolbarStateSignal();
-    return signal.subscribe?.(callback) || (() => {});
+    const solid = getSolid();
+    return solid.createRoot(dispose => {
+      solid.createEffect(() => {
+        const [get] = getToolbarStateSignal();
+        callback(get());
+      });
+      return dispose;
+    });
   },
 };
 
@@ -121,10 +137,11 @@ function dispatchEvent<K extends keyof ToolbarEvents>(event: K, data: ToolbarEve
  * 툴바 모드 변경
  */
 export function updateToolbarMode(mode: ToolbarState['currentMode']): void {
-  const currentState = toolbarState.value;
+  const [get, set] = getToolbarStateSignal();
+  const currentState = get();
 
   if (currentState.currentMode !== mode) {
-    toolbarState.value = { ...currentState, currentMode: mode };
+    set({ ...currentState, currentMode: mode });
     dispatchEvent('toolbar:mode-change', { mode });
     logger.debug(`Toolbar mode changed to: ${mode}`);
   }
@@ -134,10 +151,11 @@ export function updateToolbarMode(mode: ToolbarState['currentMode']): void {
  * 고대비 모드 설정
  */
 export function setHighContrast(enabled: boolean): void {
-  const currentState = toolbarState.value;
+  const [get, set] = getToolbarStateSignal();
+  const currentState = get();
 
   if (currentState.needsHighContrast !== enabled) {
-    toolbarState.value = { ...currentState, needsHighContrast: enabled };
+    set({ ...currentState, needsHighContrast: enabled });
     logger.debug(`High contrast mode ${enabled ? 'enabled' : 'disabled'}`);
   }
 }
@@ -150,7 +168,8 @@ export function setHighContrast(enabled: boolean): void {
  * 현재 툴바 모드 가져오기
  */
 export function getCurrentToolbarMode(): ToolbarState['currentMode'] {
-  return toolbarState.value.currentMode;
+  const [get] = getToolbarStateSignal();
+  return get().currentMode;
 }
 
 /**
@@ -160,7 +179,8 @@ export function getToolbarInfo(): {
   currentMode: string;
   needsHighContrast: boolean;
 } {
-  const state = toolbarState.value;
+  const [get] = getToolbarStateSignal();
+  const state = get();
   return {
     currentMode: state.currentMode,
     needsHighContrast: state.needsHighContrast,
@@ -198,18 +218,29 @@ export const getCurrentMode = getCurrentToolbarMode;
  * 확장 가능한 설정 패널 상태 가져오기
  */
 export function getToolbarExpandableState(): ToolbarExpandableState {
-  return getExpandableStateSignal().value;
+  const [get] = getExpandableStateSignal();
+  return get();
+}
+
+/**
+ * 설정 패널 확장 상태 accessor (반응형)
+ * Solid.js 반응성을 보장하기 위해 signal accessor 직접 노출
+ * @returns Signal accessor (() => boolean)
+ */
+export function getSettingsExpanded(): () => boolean {
+  const [get] = getExpandableStateSignal();
+  return () => get().isSettingsExpanded;
 }
 
 /**
  * 설정 패널 확장 상태 토글
  */
 export function toggleSettingsExpanded(): void {
-  const signal = getExpandableStateSignal();
-  const currentExpanded = signal.value.isSettingsExpanded;
+  const [get, set] = getExpandableStateSignal();
+  const currentExpanded = get().isSettingsExpanded;
   const newExpanded = !currentExpanded;
 
-  signal.value = { isSettingsExpanded: newExpanded };
+  set({ isSettingsExpanded: newExpanded });
 
   dispatchEvent('toolbar:settings-expanded', { expanded: newExpanded });
   logger.debug(`Settings panel ${newExpanded ? 'expanded' : 'collapsed'}`);
@@ -219,11 +250,11 @@ export function toggleSettingsExpanded(): void {
  * 설정 패널 확장 상태 명시적 설정
  */
 export function setSettingsExpanded(expanded: boolean): void {
-  const signal = getExpandableStateSignal();
-  const currentExpanded = signal.value.isSettingsExpanded;
+  const [get, set] = getExpandableStateSignal();
+  const currentExpanded = get().isSettingsExpanded;
 
   if (currentExpanded !== expanded) {
-    signal.value = { isSettingsExpanded: expanded };
+    set({ isSettingsExpanded: expanded });
     dispatchEvent('toolbar:settings-expanded', { expanded });
     logger.debug(`Settings panel set to ${expanded ? 'expanded' : 'collapsed'}`);
   }

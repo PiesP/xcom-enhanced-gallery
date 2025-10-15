@@ -64,13 +64,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const navState = props.navState;
   const fitModeOrder = props.fitModeOrder;
   const fitModeLabels = props.fitModeLabels;
-  const settingsController = props.settingsController;
   const isToolbarDisabled = () => Boolean(props.disabled);
   const isDownloading = () => Boolean(props.isDownloading);
 
   return (
     <div
-      ref={settingsController.assignToolbarRef}
+      ref={props.settingsController.assignToolbarRef}
       class={props.toolbarClass()}
       role={props.role ?? 'toolbar'}
       aria-label={props['aria-label'] ?? '갤러리 도구모음'}
@@ -81,14 +80,16 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       data-state={props.toolbarDataState()}
       data-disabled={isToolbarDisabled()}
       data-high-contrast={props.toolbarState.needsHighContrast}
-      data-settings-expanded={settingsController.isSettingsExpanded()}
+      data-settings-expanded={props.settingsController.isSettingsExpanded()}
       data-focused-index={String(props.displayedIndex())}
       data-current-index={String(props.currentIndex)}
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
       onKeyDown={
-        settingsController.handleToolbarKeyDown as unknown as ((event: Event) => void) | undefined
+        props.settingsController.handleToolbarKeyDown as unknown as
+          | ((event: Event) => void)
+          | undefined
       }
     >
       <div
@@ -199,16 +200,16 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           {props.showSettingsButton && (
             <IconButton
-              ref={settingsController.assignSettingsButtonRef}
+              ref={props.settingsController.assignSettingsButtonRef}
               id='settings-button'
               size='toolbar'
               aria-label='설정 열기'
-              aria-expanded={settingsController.isSettingsExpanded() ? 'true' : 'false'}
+              aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
               aria-controls='toolbar-settings-panel'
               title='설정'
               disabled={isToolbarDisabled()}
-              onMouseDown={settingsController.handleSettingsMouseDown}
-              onClick={settingsController.handleSettingsClick}
+              onMouseDown={props.settingsController.handleSettingsMouseDown}
+              onClick={props.settingsController.handleSettingsClick}
               data-gallery-element='settings'
               data-disabled={isToolbarDisabled()}
             >
@@ -232,23 +233,23 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       </div>
 
       <div
-        ref={settingsController.assignSettingsPanelRef}
+        ref={props.settingsController.assignSettingsPanelRef}
         id='toolbar-settings-panel'
         class={styles.settingsPanel}
-        data-expanded={settingsController.isSettingsExpanded()}
-        onMouseDown={settingsController.handlePanelMouseDown}
+        data-expanded={props.settingsController.isSettingsExpanded()}
+        onMouseDown={props.settingsController.handlePanelMouseDown}
         role='region'
         aria-label='설정 패널'
         aria-labelledby='settings-button'
         data-gallery-element='settings-panel'
-        onClick={settingsController.handlePanelClick}
+        onClick={props.settingsController.handlePanelClick}
       >
-        <solid.Show when={settingsController.isSettingsExpanded()}>
+        <solid.Show when={props.settingsController.isSettingsExpanded()}>
           <SettingsControls
-            currentTheme={settingsController.currentTheme() as ThemeOption}
-            currentLanguage={settingsController.currentLanguage() as LanguageOption}
-            onThemeChange={settingsController.handleThemeChange}
-            onLanguageChange={settingsController.handleLanguageChange}
+            currentTheme={props.settingsController.currentTheme() as ThemeOption}
+            currentLanguage={props.settingsController.currentLanguage() as LanguageOption}
+            onThemeChange={props.settingsController.handleThemeChange}
+            onLanguageChange={props.settingsController.handleLanguageChange}
             compact={true}
             data-testid='settings-controls'
           />
