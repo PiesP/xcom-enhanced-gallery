@@ -187,9 +187,9 @@ export default defineConfig({
 
     // 커버리지 설정
     coverage: {
-      // CI에서는 v8 커버리지가 더 빠름, 로컬에서는 istanbul 유지(리포트 포맷 호환)
-      provider: isCI ? 'v8' : 'istanbul',
-      reporter: ['text', 'json-summary', 'html'],
+      // v8로 통일 (Phase 78: 성능 최적화 및 유지보수성 향상)
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html', 'lcov'],
       reportsDirectory: './coverage',
       exclude: [
         'node_modules/',
