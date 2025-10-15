@@ -3,6 +3,105 @@
 > **목적**: 완료된 Phase들의 달성 메트릭과 배운 점을 보관 **최종 업데이트**:
 > 2025-10-15
 
+## Phase 77: 네비게이션 상태 머신 명시화 ✅
+
+**완료일**: 2025-10-15 **목표**: focusedIndex/currentIndex 동기화 명확화 + 상태
+전환 중앙화 **실제 기간**: 1일
+
+### Phase 77 달성 메트릭
+
+| 항목              | 시작      | 최종      | 상태 |
+| ----------------- | --------- | --------- | ---- |
+| **테스트 통과**   | 965/978   | 977/990   | ✅   |
+| **테스트 통과율** | 97.5%     | 99.6%     | ✅   |
+| **프로덕션 빌드** | 320.09 KB | 321.40 KB | ✅   |
+| **순환 의존성**   | 0개       | 0개       | ✅   |
+| **타입 오류**     | 0개       | 0개       | ✅   |
+
+### Phase 77 주요 변경사항
+
+#### Step 1: 상태 머신 설계 및 구현
+
+1. **NavigationStateMachine 클래스** (218줄)
+   - 순수 함수 기반 상태 전환 (immutable)
+   - 명시적 상태 타입: NavigationState, NavigationAction, TransitionResult
+   - 중복 네비게이션 감지 로직 내장
+   - 타임스탬프 자동 추적
+
+2. **NavigationSource 타입 분리** (12줄)
+   - 순환 의존성 해결: gallery.signals.ts → navigation-types.ts
+   - 'button' | 'keyboard' | 'scroll' | 'auto-focus' 정의
+
+3. **TDD 테스트 작성** (246줄, 12개 테스트)
+   - 초기 상태 생성
+   - NAVIGATE 액션 (4개): 동기화, 중복 감지, scroll vs button
+   - SET_FOCUS 액션 (3개): 포커스 설정, 해제, 중복
+   - RESET 액션 (1개)
+   - 복잡한 시나리오 (2개): 버튼→스크롤→버튼, 키보드 연속
+   - 타임스탬프 검증 (1개)
+
+#### Step 2: 기존 코드 통합
+
+1. **gallery.signals.ts 리팩토링**
+   - `lastNavigationSource` 파일 스코프 변수 제거
+   - `openGallery()`: RESET 액션으로 상태 초기화
+   - `closeGallery()`: RESET 액션으로 상태 초기화
+   - `navigateToItem()`: NAVIGATE 액션으로 전환 + 중복 감지
+   - `setFocusedIndex()`: SET_FOCUS 액션으로 전환
+
+2. **순환 의존성 해결**
+   - navigation-state-machine.ts → navigation-types.ts (import)
+   - gallery.signals.ts → navigation-types.ts (import)
+   - gallery.signals.ts → navigation-state-machine.ts (import)
+   - 3파일 간 의존성 방향 명확화
+
+### Phase 77 기술적 개선
+
+1. **상태 캡슐화**
+   - Before: 파일 스코프 변수 `lastNavigationSource`
+   - After: `navigationState` 객체 내부로 캡슐화
+   - 접근: `getNavigationState()` 함수로만 가능
+
+2. **로직 중앙화**
+   - Before: `isDuplicateManual` 조건이 `navigateToItem()`에 인라인
+   - After: `NavigationStateMachine.transition()` 내부로 이동
+   - 테스트 용이성 개선 (순수 함수)
+
+3. **타입 안정성**
+   - NavigationState: readonly 필드로 불변성 보장
+   - TransitionResult: shouldSync, isDuplicate 명시적 반환
+   - NavigationAction: discriminated union으로 타입 안전성
+
+### Phase 77 배운 점
+
+1. **순환 의존성 예방**
+   - 공통 타입은 별도 파일로 분리 (`types/` 디렉터리)
+   - 의존성 방향: 타입 ← 상태 머신 ← signals
+
+2. **순수 함수의 힘**
+   - 상태 전환을 순수 함수로 구현하면 테스트가 쉬움
+   - Side-effect 없이 모든 전환 시나리오 검증 가능
+
+3. **TDD 워크플로**
+   - 테스트 먼저 작성 → 12개 중 11개 통과 → 1개 수정 → 전체 GREEN
+   - 타임스탬프 테스트: `toBeGreaterThan()` → `toBeGreaterThanOrEqual()`
+
+### Phase 77 파일 변경사항
+
+**생성된 파일 (3개)**:
+
+- `src/shared/state/navigation-state-machine.ts` (218줄)
+- `src/shared/state/types/navigation-types.ts` (12줄)
+- `test/unit/state/navigation-state-machine.test.ts` (246줄)
+
+**수정된 파일 (1개)**:
+
+- `src/shared/state/signals/gallery.signals.ts` (88줄 변경)
+
+**총 변경량**: +592 줄, -36 줄
+
+---
+
 ## Phase 78: 테스트 구조 최적화 (Part 1) ✅
 
 **완료일**: 2025-10-15 **목표**: 373개 → 300개 테스트 파일 감축, 정책 테스트
