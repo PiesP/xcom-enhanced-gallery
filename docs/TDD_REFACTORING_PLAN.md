@@ -1,55 +1,68 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 | **상태**: Phase 78.6 완료 ✅
+> **최종 업데이트**: 2025-10-15 | **상태**: Phase 78.9 완료 ✅
 
 ## 프로젝트 현황
 
-- **빌드**: prod **328.03 KB / 335 KB** (6.97 KB 여유, 97.9%) ✅
+- **빌드**: prod **328.78 KB / 335 KB** (6.22 KB 여유, 98.1%) ✅
 - **테스트**: **159개 파일**, 987 passing / 0 failed (100% 통과율) ✅✅✅
 - **Skipped**: **10개** (8개 E2E 이관 권장 + 2개 기존) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
-- **CSS 린트**: stylelint **196 warnings** (247에서 51개 감소, 20.6% 개선) ✅
+- **CSS 린트**: stylelint **0 warnings** (error 강화 완료) ✅✅✅
 - **의존성**: 0 violations (261 modules, 730 dependencies) ✅
 - **커버리지**: v8로 통일 완료 ✅
 - **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: Phase 78.6 완료 (Component CSS 점진적 개선 - Part 1) ✅
+## 현재 상태: Phase 78.9 완료 (stylelint 설정 재검토 및 최적화) ✅
 
-**완료일**: 2025-10-15 **목표**: Global CSS + 주요 Component CSS 모듈에서 px
-하드코딩 제거 **결과**: stylelint warning 51개 감소 (247→196), 빌드 크기 +0.05
-KB
+**완료일**: 2025-10-15 **목표**: Phase 78.8 경고 0개 달성 후 stylelint 설정 강화
+**결과**: warning → error 전환, color-no-hex 규칙 추가, 빌드 크기 유지
 
 ### 주요 성과
 
-- ✅ **Global CSS 완성**: modern-features.css, performance.css,
-  cascade-layers.css
-- ✅ **Component Modules**: Button.module.css, Toast.module.css,
-  ModalShell.module.css
-- ✅ stylelint warning **20.6% 감소** (247→196개)
-- ✅ 빌드 크기 영향 최소 (328.03 KB, +0.05 KB)
-- ✅ 테스트 회귀 없음 (100% 통과율 유지)
+- ✅ **stylelint 경고 0개 유지**: error 강화 완료
+- ✅ **규칙 강화**: warning → error 전환 (px, specificity, duplicate, shorthand)
+- ✅ **hex 색상 검증 추가**: oklch 강제, primitive 파일만 예외
+- ✅ **빌드 크기 유지**: 328.78 KB (동일)
+- ✅ **테스트 회귀 없음**: 100% 통과율 유지
 
-### 해결 내용
+### 설정 변경 내용
 
-1. **Global CSS 개선 (22개 감소)**:
-   - `modern-features.css`: px → rem 변환 (grid, container queries,
-     width/height)
-   - `performance.css`: contain-intrinsic-size, fadeIn animation px → rem
-   - `cascade-layers.css`: font-size, sr-only, visually-hidden px → rem
+1. **warning → error 전환**:
+   - `unit-disallowed-list` (px 금지)
+   - `no-duplicate-selectors`
+   - `no-descending-specificity`
+   - `declaration-block-no-shorthand-property-overrides`
 
-2. **Component CSS Modules (29개 감소)**:
-   - `Button.module.css`: border, spinner, media query, icon sizes → rem/em
-   - `Toast.module.css`: border, font-size, margin, padding → rem/em
-   - `ModalShell.module.css`: border, transform, max-width/height, scrollbar →
-     rem
+2. **color-no-hex 규칙 추가**: oklch 강제, primitive 파일만 예외
 
-3. **남은 작업**: Phase 78.7로 연기
-   - `gallery-global.css` (77개 px 경고 - 가장 많음)
-   - `VerticalGalleryView.module.css` (28개 - specificity 이슈)
-   - `Toolbar.module.css` (37개), `Gallery.module.css` (11개)
-   - 목표: warning 196→120개 이하 (39% 추가 감소)
+3. **메시지 개선**: 모든 규칙에 CODING_GUIDELINES.md 참조 추가
+
+---
+
+## Phase 79: 남은 CSS Specificity 문제 완전 해결 ⏭️
+
+**상태**: Phase 78.8 완료로 **목표 달성**, 건너뛰기 권장 **이유**: stylelint
+warning 0개 이미 달성 (19→0개)
+
+### Phase 78.8 완료로 목표 달성
+
+- ✅ **Phase 78.8 결과**: stylelint 0 warnings (19개 완전 해결)
+- ✅ **Toolbar.module.css**: 6개 specificity 이슈 해결 (통합 `:focus-visible`
+  분리)
+- ✅ **VerticalGalleryView.module.css**: 6개 specificity 이슈 해결 (선택자 순서
+  재정렬)
+- ✅ **Button 계층**: 7개 이슈 해결 (Toast.module.css, primitive/Button.css,
+  Button.module.css)
+
+### 권장 조치
+
+- **Phase 79 건너뛰기**: 원래 목표였던 specificity 문제 완전 해결이 Phase
+  78.8에서 달성됨
+- **문서 업데이트**: 완료된 작업 내역은 `TDD_REFACTORING_PLAN_COMPLETED.md`
+  Phase 78.8-78.9 참조
 
 ---
 

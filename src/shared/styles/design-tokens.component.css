@@ -13,7 +13,7 @@
   --toolbar-text: var(--color-text-inverse);
   --toolbar-border: var(--color-border-default);
   --toolbar-shadow: var(--shadow-md);
-  --toolbar-height: 60px;
+  --toolbar-height: 3.75rem; /* 60px = 3.75rem */
   --toolbar-padding: var(--spacing-component-padding);
   --toolbar-gap: var(--spacing-item-gap);
 
@@ -22,7 +22,7 @@
     height var(--xeg-duration-normal) var(--xeg-ease-standard),
     opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
   --xeg-toolbar-panel-height: 0;
-  --xeg-toolbar-panel-max-height: 280px;
+  --xeg-toolbar-panel-max-height: 17.5rem; /* 280px = 17.5rem */
 
   /* Button Component */
   --button-bg-primary: var(--color-primary);
@@ -53,7 +53,7 @@
   --toast-radius: var(--xeg-radius-lg);
   --toast-padding: var(--spacing-component-padding);
   --toast-shadow: var(--shadow-md);
-  --toast-offset: 20px;
+  --toast-offset: 1.25rem; /* 20px = 1.25rem */
 
   /* Panel/Surface Component */
   --panel-bg: var(--color-bg-elevated);
@@ -74,13 +74,13 @@
   --media-placeholder-text: var(--color-text-muted);
 
   /* Scrollbar Component */
-  --scrollbar-width: 8px;
+  --scrollbar-width: 0.5rem; /* 8px = 0.5rem */
   --scrollbar-track-bg: var(--color-bg-secondary);
   --scrollbar-thumb-bg: var(--color-border-emphasis);
   --scrollbar-thumb-hover-bg: var(--color-text-secondary);
 
   /* Hover Zone Component */
-  --hover-zone-height: 120px;
+  --hover-zone-height: 7.5rem; /* 120px = 7.5rem */
   --hover-zone-bg: transparent;
   --hover-zone-transition: var(--transition-fast);
 
@@ -92,7 +92,7 @@
   /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
 
   /* Icon Component Tokens */
-  --xeg-icon-stroke-width: 2px;
+  --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
   --xeg-icon-size: var(--size-icon-md);
   --xeg-icon-line-height: 1;
   --xeg-icon-color: currentColor;
@@ -134,7 +134,7 @@
 /* Glassmorphism Base Class */
 .xeg-glassmorphism {
   background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  border: 0.0625rem solid var(--glass-border); /* 1px = 0.0625rem */
   backdrop-filter: var(--glass-backdrop-filter);
   box-shadow: var(--glass-shadow);
   border-radius: var(--xeg-radius-lg);
@@ -176,7 +176,7 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   :root {
-    --xeg-focus-outline: 3px solid var(--color-primary);
+    --xeg-focus-outline: 0.1875rem solid var(--color-primary); /* 3px = 0.1875rem */
     --color-border-emphasis: var(--color-base-black);
     --glass-bg: var(--color-bg-primary);
     --glass-border: var(--color-border-emphasis);
@@ -227,7 +227,7 @@
 @keyframes xeg-slide-in-bottom {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.95);
+    transform: translateY(1.25rem) scale(0.95); /* 20px = 1.25rem */
   }
   to {
     opacity: 1;
@@ -242,7 +242,7 @@
   }
   to {
     opacity: 0;
-    transform: translateY(-20px) scale(0.95);
+    transform: translateY(-1.25rem) scale(0.95); /* -20px = -1.25rem */
   }
 }
 

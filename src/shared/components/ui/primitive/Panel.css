@@ -5,7 +5,7 @@
 .xeg-panel {
   /* 기본 패널 스타일 */
   background-color: var(--panel-bg);
-  border: 1px solid var(--panel-border);
+  border: var(--border-width-thin) solid var(--panel-border);
   border-radius: var(--panel-radius);
   box-shadow: var(--panel-shadow);
 }

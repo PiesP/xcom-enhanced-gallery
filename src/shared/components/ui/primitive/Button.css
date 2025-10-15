@@ -7,7 +7,7 @@
   /* Component 토큰 사용 */
   background-color: var(--button-bg-primary);
   color: var(--button-text-primary);
-  border: 1px solid var(--button-border);
+  border: var(--border-width-thin) solid var(--button-border);
   border-radius: var(--button-radius);
   padding: var(--button-padding-y) var(--button-padding-x);
   height: var(--button-height);
@@ -33,6 +33,19 @@
   /* 접근성 */
   outline: none;
 
+  /* 포커스 상태 */
+  &:focus-visible {
+    outline: 0.125rem solid var(--color-primary); /* 2px = 0.125rem */
+    outline-offset: 0.125rem; /* 2px = 0.125rem */
+  }
+
+  /* 비활성 상태 */
+  &:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+    transform: none;
+  }
+
   /* 호버 상태 */
   &:hover:not(:disabled) {
     background-color: var(--button-bg-primary-hover);
@@ -44,19 +57,6 @@
   &:active:not(:disabled) {
     background-color: var(--button-bg-primary-active);
     transform: translateY(0);
-  }
-
-  /* 포커스 상태 */
-  &:focus-visible {
-    outline: 2px solid var(--color-primary);
-    outline-offset: 2px;
-  }
-
-  /* 비활성 상태 */
-  &:disabled {
-    opacity: var(--opacity-disabled);
-    cursor: not-allowed;
-    transform: none;
   }
 }
 

@@ -11,7 +11,7 @@
   overflow: visible;
   transition: var(--xeg-transition-normal);
   cursor: pointer;
-  border: 1px solid var(--xeg-media-glass-border);
+  border: 0.0625rem solid var(--xeg-media-glass-border); /* 1px = 0.0625rem */
   background: var(--xeg-color-bg-secondary);
   padding: var(--xeg-spacing-sm);
   width: 100%;
@@ -100,8 +100,8 @@
 .loadingSpinner {
   width: var(--xeg-spacing-lg);
   height: var(--xeg-spacing-lg);
-  border: 2px solid var(--xeg-color-border-primary);
-  border-top: 2px solid var(--xeg-color-primary);
+  border: 0.125rem solid var(--xeg-color-border-primary); /* 2px = 0.125rem */
+  border-top: 0.125rem solid var(--xeg-color-primary); /* 2px = 0.125rem */
   border-radius: var(--xeg-radius-full);
   /* Skeleton: 토큰화된 duration/easing 사용 */
   animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
@@ -311,7 +311,7 @@
 }
 
 .container.error {
-  border: 1px solid var(--xeg-color-error);
+  border: 0.0625rem solid var(--xeg-color-error); /* 1px = 0.0625rem */
 }
 
 /* 원본 크기 모드의 컨테이너별 조정 */
@@ -339,8 +339,8 @@
 }
 
 .container.fitOriginal .imageWrapper::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem; /* 8px = 0.5rem */
+  height: 0.5rem; /* 8px = 0.5rem */
 }
 
 .container.fitOriginal .imageWrapper::-webkit-scrollbar-track {
@@ -441,7 +441,7 @@
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
   .container {
-    border: 2px solid HighlightText;
+    border: 0.125rem solid HighlightText; /* 2px = 0.125rem */
     background: Canvas;
     color: CanvasText;
   }
@@ -465,7 +465,7 @@
   .error {
     background: Canvas;
     color: CanvasText;
-    border: 1px solid CanvasText;
+    border: 0.0625rem solid CanvasText; /* 1px = 0.0625rem */
   }
 }
 
@@ -499,14 +499,14 @@
 /* 강제 색상 모드 지원 (Windows 고대비 모드) */
 @media (forced-colors: active) {
   .container {
-    border: 1px solid ButtonText;
+    border: 0.0625rem solid ButtonText; /* 1px = 0.0625rem */
     background: ButtonFace;
     forced-color-adjust: none;
   }
 
   .container:focus-visible,
   .container.active {
-    border: 2px solid Highlight;
+    border: 0.125rem solid Highlight; /* 2px = 0.125rem */
     background: HighlightText;
   }
 

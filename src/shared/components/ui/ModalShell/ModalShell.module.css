@@ -47,6 +47,11 @@
 
   /* 포커스 관리 */
   outline: none;
+
+  /* 스크롤 처리 */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
 }
 
 .modal-open .modal-shell {
@@ -152,13 +157,6 @@
   .modal-shell {
     transform: none;
   }
-}
-
-/* ===== 스크롤 처리 ===== */
-.modal-shell {
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border-default) transparent;
 }
 
 .modal-shell::-webkit-scrollbar {

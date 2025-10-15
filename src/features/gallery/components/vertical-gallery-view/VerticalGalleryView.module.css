@@ -61,13 +61,13 @@
     /* ?�페?�싱 - CSS Logical Properties ?�용 */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
     --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
-    --xeg-spacing-compact: clamp(4px, 1.5vw, var(--xeg-spacing-sm));
+    --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
 
     /* ?�이?�웃 */
-    --xeg-toolbar-height: clamp(60px, 10vh, 80px);
+    --xeg-toolbar-height: clamp(3.75rem, 10vh, 5rem);
 
     /* 블러 ?�과 */
-    --xeg-backdrop-blur: 8px;
+    --xeg-backdrop-blur: 0.5rem;
   }
 }
 
@@ -116,93 +116,6 @@
   /* ?�로?�션 빌드 ?�환?�을 ?�해 CSS 커스?� ?�로?�티 ?�거 */
 }
 
-/* 초기 ?�바 ?�시 ?�태 (3초간) - 가?�성 강화 */
-.container.initialToolbarVisible .toolbarWrapper {
-  --toolbar-opacity: 1;
-  --toolbar-visibility: visible;
-  --toolbar-pointer-events: auto;
-  --toolbar-transform-y: 0;
-}
-
-/* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
-.container.uiHidden {
-  /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */
-  cursor: none;
-  /* pointer-events: none; ?�거 - ?�크�?차단 방�? */
-}
-
-.container.uiHidden .toolbarWrapper,
-.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
-  /* 개별 UI ?�소�??�벤??차단 */
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-}
-
-/* ?�크�?가?�한 콘텐�??�역?� ??�� ?�벤???�용 */
-.container.uiHidden [data-xeg-role='items-list'],
-.container.uiHidden .itemsContainer {
-  pointer-events: auto;
-}
-
-/* ?�태�?최적?? */
-.container.visible {
-  opacity: 1;
-  transform: scale3d(1, 1, 1);
-}
-
-.container.empty {
-  justify-content: center;
-  align-items: center;
-}
-
-/* :has() ?�택?��? ?�용???�태 기반 ?��??�링 */
-.container:has(.toolbarWrapper:hover) {
-  /* ?�바 ?�버 ??컨테?�너 ?�태 변�? */
-  --toolbar-interaction: 1;
-}
-
-.container:has(.itemActive) {
-  /* ?�성 ?�이?�이 ?�을 ?? */
-  --has-active-item: 1;
-}
-
-/* 모든 ?�위 ?�소???�벤???�파 최적?? */
-.container * {
-  pointer-events: auto;
-}
-
-/* ?�립?�인 ?�단 ?�버 감�? ?�역 - ?�장??감�? ?�역 */
-.toolbarHoverZone {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
-  z-index: calc(var(--xeg-z-modal) - 1); /* ?�바보다 ??? z-index */
-  background: transparent;
-  pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
-}
-
-/* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
-.toolbarHoverZone:hover {
-  /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
-  z-index: calc(var(--xeg-z-modal) - 1);
-}
-
-/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 */
-.container.initialToolbarVisible .toolbarHoverZone,
-.container:has(.toolbarWrapper:hover) .toolbarHoverZone {
-  pointer-events: none;
-}
-
-/* :has() 미�???브라?��?�??�한 ?�?? */
-@supports not (selector(:has(*))) {
-  .toolbarWrapper:hover ~ .toolbarHoverZone {
-    pointer-events: none;
-  }
-}
-
 /* ?�바 ?�퍼 - 기본 가?�성 보장 �?개선???�랜지?? */
 .toolbarWrapper {
   position: fixed;
@@ -237,9 +150,186 @@
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
+/* ?�바 ?�체 ?�버 ?�에???�시 ?��? - 강화??가?�성 */
+.toolbarWrapper:hover {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* ?�근?? ?�커???�에???�바 ?�시 - ??강력??보장 */
+.toolbarWrapper:focus-within {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+  /* ?�커???�에????빠른 ?�랜지?? */
+  transition: var(--xeg-transition-fast);
+}
+
+/* ?�바 ?��? 모든 ?�소 ?�릭 보장 */
+.toolbarWrapper * {
+  pointer-events: inherit;
+}
+
+/* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
+.container.uiHidden {
+  /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */
+  cursor: none;
+  /* pointer-events: none; ?�거 - ?�크�?차단 방�? */
+}
+
+/* 모든 ?�위 ?�소???�벤???�파 최적?? */
+.container * {
+  pointer-events: auto;
+}
+
+/* ?�이??컨테?�너 - ?�이?�브 ?�크롤만 ?�용 */
+.itemsContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto; /* 갤러�??��? ?�크롤만 ?�용 */
+  position: relative;
+
+  /* ?�능 최적?? */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* ?�크�??�벤?? */
+  scrollbar-gutter: stable;
+  scroll-snap-type: y proximity;
+  pointer-events: auto;
+
+  /* 컨테?�너 쿼리 */
+  container-type: size;
+  container-name: items-list;
+}
+
+/* ?�킷 ?�크롤바 ?��??? */
+.itemsContainer::-webkit-scrollbar {
+  width: var(--xeg-scrollbar-width); /* 0.5rem�??�큰?�로 교체 */
+}
+
+.itemsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsContainer::-webkit-scrollbar-thumb {
+  background: var(--xeg-neutral-300);
+  border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
+  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+.itemsContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-neutral-400);
+}
+
+.container.uiHidden .toolbarWrapper,
+.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
+  /* 개별 UI ?�소�??�벤??차단 */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/* ?�크�?가?�한 콘텐�??�역?� ??�� ?�벤???�용 */
+.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden .itemsContainer {
+  pointer-events: auto;
+}
+
+/* ?�태�?최적?? */
+.container.visible {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+
+.container.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+/* 갤러리 아이템 기본 스타일 - 앵커형 스크롤에 최적화 */
+.galleryItem {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem */
+  border-radius: var(--xeg-radius-lg, 0.5rem);
+  transition: var(--xeg-transition-normal); /* 앵커형 변단 렬 */
+
+  /* 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* 스크롤 스냅 */
+  scroll-snap-align: start;
+  scroll-margin-top: var(--xeg-spacing-sm);
+}
+
+/* ?�커?�된 ?�이??강조 - 2�??�두�?방�?�??�해 ?�니메이���거 */
+.itemActive {
+  position: relative;
+  z-index: 1;
+  /* 기존 itemActive::before ?�니메이???�거�?2�??�두�?방�? */
+}
+
+/* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
+
+.container:has(.itemActive) {
+  /* ?�성 ?�이?�이 ?�을 ?? */
+  --has-active-item: 1;
+}
+
+.container:has(.toolbarWrapper:hover) {
+  /* ?�바 ?�버 ??컨테?�너 ?�태 변�? */
+  --toolbar-interaction: 1;
+}
+
+/* ?�립?�인 ?�단 ?�버 감�? ?�역 - ?�장??감�? ?�역 */
+.toolbarHoverZone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
+  z-index: calc(var(--xeg-z-modal) - 1); /* ?�바보다 ??? z-index */
+  background: transparent;
+  pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
+}
+
+/* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
+.toolbarHoverZone:hover {
+  /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
+  z-index: calc(var(--xeg-z-modal) - 1);
+}
+
+/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 */
+.container.initialToolbarVisible .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover) .toolbarHoverZone {
+  pointer-events: none;
+}
+
+/* :has() 미�???브라?��?�??�한 ?�?? */
+@supports not (selector(:has(*))) {
+  .toolbarWrapper:hover ~ .toolbarHoverZone {
+    pointer-events: none;
+  }
+}
+
+/* ?�바 ?�버 ?�리�??�역??마우?��? ?�라갔을 ???�바 ?�시 */
+.toolbarHoverTrigger:hover + .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
 /* ?�버 ??부�?컨테?�너??CSS 변???�정 - 강화??가?�성 */
-.container:has(.toolbarHoverZone:hover) .toolbarWrapper,
-.container.initialToolbarVisible .toolbarWrapper {
+.container.initialToolbarVisible .toolbarWrapper,
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
@@ -273,34 +363,6 @@
   }
 }
 
-/* ?�바 ?�체 ?�버 ?�에???�시 ?��? - 강화??가?�성 */
-.toolbarWrapper:hover {
-  --toolbar-opacity: 1;
-  --toolbar-visibility: visible;
-  --toolbar-pointer-events: auto;
-  --toolbar-transform-y: 0;
-}
-
-/* ?�시 ?�태?????�바 ?�치 - 강화??가?�성 */
-.container:has(.toolbarHoverZone:hover) .toolbarWrapper,
-.container.initialToolbarVisible .toolbarWrapper,
-.toolbarWrapper:hover {
-  --toolbar-opacity: 1;
-  --toolbar-visibility: visible;
-  --toolbar-pointer-events: auto;
-  --toolbar-transform-y: 0;
-}
-
-/* ?�근?? ?�커???�에???�바 ?�시 - ??강력??보장 */
-.toolbarWrapper:focus-within {
-  --toolbar-opacity: 1;
-  --toolbar-visibility: visible;
-  --toolbar-pointer-events: auto;
-  --toolbar-transform-y: 0;
-  /* ?�커???�에????빠른 ?�랜지?? */
-  transition: var(--xeg-transition-fast);
-}
-
 /* 갤러�??�바 컴포?�트 ?�체??가?�성 보장 */
 .toolbarWrapper [class*='galleryToolbar'],
 .toolbarWrapper [data-testid*='toolbar'] {
@@ -308,11 +370,6 @@
   visibility: var(--toolbar-visibility, hidden);
   display: flex;
   pointer-events: var(--toolbar-pointer-events, none);
-}
-
-/* ?�바 ?��? 모든 ?�소 ?�릭 보장 */
-.toolbarWrapper * {
-  pointer-events: inherit;
 }
 
 /* ?�바 버튼???�벤???�파 방�? �??�릭 보장 */
@@ -345,72 +402,6 @@
   container-name: content-area;
 }
 
-/* 갤러�??�이??기본 ?��???- ?�커???�크롤에 최적?? */
-.galleryItem {
-  position: relative;
-  margin-bottom: var(--xeg-spacing-md, 16px);
-  border-radius: var(--xeg-radius-lg, 8px);
-  transition: var(--xeg-transition-normal); /* ?�크�????�단 ?�렬 */
-
-  /* ?�능 최적?? */
-  contain: layout style;
-  transform: translateZ(0);
-
-  /* ?�크�??�냅 */
-  scroll-snap-align: start;
-  scroll-margin-top: var(--xeg-spacing-sm);
-}
-
-/* ?�커?�된 ?�이??강조 - 2�??�두�?방�?�??�해 ?�니메이???�거 */
-.itemActive {
-  position: relative;
-  z-index: 1;
-  /* 기존 itemActive::before ?�니메이???�거�?2�??�두�?방�? */
-}
-
-/* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
-
-/* ?�이??컨테?�너 - ?�이?�브 ?�크롤만 ?�용 */
-.itemsContainer {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: auto; /* 갤러�??��? ?�크롤만 ?�용 */
-  position: relative;
-
-  /* ?�능 최적?? */
-  contain: layout style;
-  transform: translateZ(0);
-
-  /* ?�크�??�벤?? */
-  scrollbar-gutter: stable;
-  scroll-snap-type: y proximity;
-  pointer-events: auto;
-
-  /* 컨테?�너 쿼리 */
-  container-type: size;
-  container-name: items-list;
-}
-
-/* ?�킷 ?�크롤바 ?��??? */
-.itemsContainer::-webkit-scrollbar {
-  width: var(--xeg-scrollbar-width); /* 8px�??�큰?�로 교체 */
-}
-
-.itemsContainer::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.itemsContainer::-webkit-scrollbar-thumb {
-  background: var(--xeg-neutral-300);
-  border-radius: var(--xeg-scrollbar-border-radius); /* 4px�??�큰?�로 교체 */
-  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
-}
-
-.itemsContainer::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-neutral-400);
-}
-
 /* ?�니메이??- GPU 가?? */
 .fadeInOut {
   animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
@@ -431,13 +422,13 @@
 .emptyMessage {
   text-align: center;
   color: var(--xeg-color-text-secondary);
-  max-inline-size: min(400px, 90vw);
-  padding: clamp(30px, 5vw, 40px);
+  max-inline-size: min(25rem, 90vw); /* 400px = 25rem */
+  padding: clamp(1.875rem, 5vw, 2.5rem); /* 30px-40px = 1.875rem-2.5rem */
 }
 
 .emptyMessage h3 {
-  margin: 0 0 clamp(12px, 2vw, 16px);
-  font-size: clamp(20px, 4vw, 24px);
+  margin: 0 0 clamp(0.75rem, 2vw, 1rem); /* 10.125rem-16px = 0.75rem-1rem */
+  font-size: clamp(1.25rem, 4vw, 1.5rem); /* 20px-20.25rem = 1.25rem-1.5rem */
   font-weight: 600;
   color: var(--xeg-color-text-primary);
   line-height: 1.2;
@@ -445,12 +436,12 @@
 
 .emptyMessage p {
   margin: 0;
-  font-size: clamp(14px, 2.5vw, 16px);
+  font-size: clamp(0.875rem, 2.5vw, 1rem); /* 10.25rem-16px = 0.875rem-1rem */
   line-height: 1.5;
   color: var(--xeg-color-text-tertiary);
 }
 /* 컨테?�너 쿼리 기반 반응???�자?? */
-@container gallery-container (max-width: 768px) {
+@container gallery-container (max-width: 48rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
@@ -461,7 +452,7 @@
   }
 }
 
-@container gallery-container (max-width: 480px) {
+@container gallery-container (max-width: 30rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
@@ -469,7 +460,7 @@
 }
 
 /* 기존 미디??쿼리??컨테?�너 쿼리 지?�이 ?�는 브라?��?�??�한 ?�백 */
-@media (width <= 768px) {
+@media (width <= 760.5rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
     gap: var(--xeg-spacing-mobile);
@@ -480,7 +471,7 @@
   }
 }
 
-@media (width <= 480px) {
+@media (width <= 45rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-compact);
     gap: var(--xeg-spacing-compact);
@@ -508,13 +499,10 @@
   }
 }
 
-/* ?�근??- 모션 감소 지?? */
+/* 접근성 - 모션 감소 지원 */
 @media (prefers-reduced-motion: reduce) {
   .itemsContainer {
     scroll-behavior: auto;
-  }
-
-  .itemsContainer {
     will-change: auto;
     transform: none;
   }
@@ -562,21 +550,15 @@
 @media (prefers-contrast: high) {
   .toolbarWrapper {
     background: var(--xeg-color-overlay-dark); /* var(--color-overlay-backdrop)�??�큰?�로 교체 */
-    border: 2px solid white;
-    border-radius: var(--xeg-scrollbar-border-radius); /* 4px�??�큰?�로 교체 */
-    margin: var(--xeg-gap-xs); /* 4px�??�큰?�로 교체 */
+    border: 0.125rem solid white;
+    border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
+    margin: var(--xeg-gap-xs); /* 0.25rem�??�큰?�로 교체 */
   }
 
   /* 고�?�?모드?�서 ?�버 ?�역 ?�각?? */
   .toolbarHoverZone:hover {
     background: var(--xeg-color-overlay-subtle); /* var(--color-overlay-light)�??�큰?�로 교체 */
   }
-}
-
-/* ?�이지 ?�크�?방�? - 갤러�??�에?�만 ?�크�? */
-.container {
-  /* ...existing code... */
-  overscroll-behavior: contain;
 }
 
 /* ?�바 ?�버 ?�리�??�역 */
@@ -589,16 +571,6 @@
   z-index: calc(var(--xeg-z-modal) - 1);
   pointer-events: auto;
   background: transparent;
-}
-
-/* ?�버 ?�리�??�역??마우?��? ?�라갔을 ???�바 ?�시 */
-.toolbarHoverTrigger:hover + .toolbarWrapper {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-
-  --toolbar-opacity: 1;
-  --toolbar-pointer-events: auto;
 }
 
 /* ?�바 ?�체 ?�버 ?�에???�시 ?��? */

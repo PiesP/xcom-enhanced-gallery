@@ -7,6 +7,197 @@
 
 ## 최신 완료 Phase
 
+### Phase 78.9: stylelint 설정 재검토 및 최적화 ✅
+
+**완료일**: 2025-10-15 **목표**: Phase 78.8 경고 0개 달성 후 stylelint 설정 강화
+**결과**: warning → error 전환, color-no-hex 규칙 추가, 빌드 크기 유지
+
+#### 달성 메트릭
+
+| 항목             | 시작      | 최종      | 개선                    |
+| ---------------- | --------- | --------- | ----------------------- |
+| stylelint 경고   | 0개       | **0개**   | 유지 (error 강화) ✅    |
+| 빌드 크기        | 328.78 KB | 328.78 KB | 동일 (98.1%) ✅         |
+| 테스트 통과율    | 100%      | 100%      | 유지 ✅                 |
+| lint 규칙 엄격도 | warning   | **error** | **경고 → 오류 전환** ✅ |
+
+#### 핵심 변경 (.stylelintrc.json)
+
+1. **warning → error 전환** ✅
+   - `unit-disallowed-list` (px 금지): warning → error
+   - `no-duplicate-selectors`: warning → error
+   - `no-descending-specificity`: warning → error
+   - `declaration-block-no-shorthand-property-overrides`: warning → error
+
+2. **color-no-hex 규칙 추가** ✅
+   - hex 색상 금지 (oklch 강제)
+   - `#ffffff`, `#000000`은 primitive 파일에서만 허용 (ignoreFiles)
+   - 메시지: "See docs/CODING_GUIDELINES.md § Color Units"
+
+3. **color-named 규칙** ⚠️
+   - 테스트 결과 `transparent` 키워드 충돌
+   - 비활성화로 변경 (null)
+   - 이유: CSS 표준 키워드는 허용 필요
+
+4. **메시지 개선** ✅
+   - 모든 규칙에 CODING_GUIDELINES.md 참조 링크 추가
+   - 예: "See docs/CODING_GUIDELINES.md § Size Units"
+
+#### 설정 최적화 세부사항
+
+**제거된 severity 옵션**:
+
+```json
+// Before
+"unit-disallowed-list": [["px"], { "severity": "warning", ... }]
+"no-duplicate-selectors": [true, { "severity": "warning" }]
+
+// After (error로 강화)
+"unit-disallowed-list": [["px"], { ... }]  // severity 없으면 error
+"no-duplicate-selectors": true
+```
+
+**추가된 hex 검증**:
+
+```json
+"color-no-hex": [
+  true,
+  {
+    "message": "Use oklch() tokens instead of hex colors (#fff/#000 allowed). See docs/CODING_GUIDELINES.md § Color Units"
+  }
+]
+```
+
+**ignoreFiles 유지**:
+
+- `**/design-tokens.primitive.css`: `#ffffff`, `#000000` 정의 허용
+- `**/design-tokens.semantic.css`: 토큰 정의 허용
+- `**/design-tokens.css`: 통합 파일 허용
+
+#### 교훈
+
+- ✅ **점진적 강화**: Phase 78.8에서 warning 0개 달성 → error 전환 안전
+- ✅ **메시지 개선**: 가이드 문서 참조로 개발자 편의성 향상
+- ⚠️ **color-named 제약**: `transparent` 같은 표준 키워드는 필수
+- ✅ **ignoreFiles 정확성**: primitive 토큰 파일만 px/hex 허용
+- ✅ **빌드 영향 없음**: 설정 변경이 빌드 크기에 영향 없음
+
+---
+
+### Phase 78.8: CSS Specificity 문제 해결 완료 ✅
+
+**완료일**: 2025-10-15 **목표**: 남은 19개 CSS specificity 순서 문제 완전 해결
+**결과**: stylelint warning 0개 달성 (19→0), 빌드 크기 -0.13 KB
+
+#### 달성 메트릭
+
+| 항목           | 시작      | 최종      | 개선                |
+| -------------- | --------- | --------- | ------------------- |
+| stylelint 경고 | 19개      | **0개**   | **-19개 (100%)** ✅ |
+| 빌드 크기      | 328.91 KB | 328.78 KB | -0.13 KB (98.1%) ✅ |
+| 테스트 통과율  | 100%      | 100%      | 유지 ✅             |
+| 빌드 여유      | 6.09 KB   | 6.22 KB   | 98.1% 사용 ✅       |
+
+#### 핵심 변경
+
+1. **Toast.module.css (1개 해결)** ✅
+   - `.actionButton` 기본 스타일을 `.actionButton:focus-visible` 앞으로 이동
+   - 순서: 기본 → focus-visible → hover 순서로 재정렬
+
+2. **primitive/Button.css (2개 해결)** ✅
+   - `.xeg-button` 상태 순서 재정렬
+   - 순서: focus-visible → disabled → hover → active 순서로 변경
+
+3. **Button.module.css (4개 해결)** ✅
+   - `.toolbarButton` 상태 순서: disabled → focus-visible → hover → active
+   - `.xeg-icon-button` 상태 순서: focus-visible → disabled → hover → active
+
+4. **Toolbar.module.css (6개 해결)** ✅
+   - 통합 `:focus-visible` 선택자 제거, 각 버튼별로 개별 추가
+   - `.fitButton:focus-visible`, `.downloadButton:focus-visible`,
+     `.closeButton:focus-visible` 추가
+   - 테마 선택자 순서 재정렬:
+     - `[data-theme='dark'] .toolbarButton` → `.toolbarButton:active` 앞으로
+       이동
+     - `.highContrast .toolbarButton` → `.toolbarButton:active` 앞으로 이동
+     - `[data-theme='dark'] .highContrast .toolbarButton` →
+       `.highContrast .toolbarButton:hover` 앞으로 이동
+
+5. **VerticalGalleryView.module.css (6개 해결)** ✅
+   - `.itemsContainer` 기본 스타일을 `.container.uiHidden .itemsContainer`
+     앞으로 이동
+   - 스크롤바 스타일 포함 (`::-webkit-scrollbar`, `::-webkit-scrollbar-track`,
+     `::-webkit-scrollbar-thumb`)
+   - 중복 선택자 제거:
+     `.container.uiHidden [data-xeg-role='items-list'], .container.uiHidden .itemsContainer`
+   - `.toolbarWrapper` 상태 선택자 재정렬:
+     - `.toolbarWrapper:hover` 기본 스타일로 추가
+     - `.toolbarWrapper:focus-within` 기본 스타일로 추가
+     - 중복된 컨텍스트 선택자 제거
+
+#### 교훈
+
+- ✅ **CSS 선택자 순서 원칙**: 낮은 specificity → 높은 specificity 순서 엄격히
+  준수
+  - 기본 → 상태(focus-visible/disabled/hover/active) → 컨텍스트 → 테마
+- ✅ **통합 선택자의 함정**: 여러 버튼의 `:focus-visible`을 한 곳에 모으면 순서
+  문제 발생
+  - 해결: 각 버튼 기본 스타일 바로 뒤에 개별 상태 스타일 배치
+- ✅ **중복 제거 우선**: 중복 선택자는 specificity 문제의 근본 원인
+- ✅ **큰 파일은 단계별**: 600+ 라인 CSS 파일은 섹션별로 순서 조정
+- ⚠️ **빌드 크기 안정**: 0.13 KB 감소, 98.1% 사용률 유지 (330 KB 경계선 주의)
+
+---
+
+### Phase 78.7: CSS 간단한 개선 - Part 2 (구조적 문제 해결) ✅
+
+**완료일**: 2025-10-15 **목표**: 중복 선택자, shorthand 오류, 남은 px 하드코딩
+제거 **결과**: stylelint warning 10개 감소 (38→28), 빌드 크기 +0.96 KB
+
+#### 달성 메트릭
+
+| 항목           | 시작      | 최종      | 개선                |
+| -------------- | --------- | --------- | ------------------- |
+| stylelint 경고 | 38개      | 28개      | -10개 (26% 감소) ✅ |
+| 빌드 크기      | 328.03 KB | 328.99 KB | +0.96 KB (98.2%) ✅ |
+| 테스트 통과율  | 100%      | 100%      | 유지 ✅             |
+| 빌드 여유      | 6.97 KB   | 6.01 KB   | 98.2% 사용 ⚠️       |
+
+#### 핵심 변경
+
+1. **px 하드코딩 제거 (1개)** ✅
+   - `Panel.css`: `border: 1px solid → var(--border-width-thin) solid`
+
+2. **Shorthand 순서 문제 해결 (4개)** ✅
+   - `Toast.module.css`: `border-left-color` 다음에 `border-color` 사용
+   - 순서 변경: `border-color` → `border-left-color` (shorthand 우선)
+
+3. **중복 선택자 제거 (5개)** ✅
+   - `Gallery.module.css`: `.xegGalleryViewer` 테마 변형 병합
+   - `VerticalGalleryView.module.css`: `.itemsContainer` 병합
+   - `ModalShell.module.css`: `.modal-shell` 스크롤 처리 병합
+   - `Toolbar.module.css`: `.toolbarButton:active` 중복 제거
+
+4. **남은 문제 (28개)** ⚠️
+   - 모두 CSS specificity 순서 문제 (no-descending-specificity)
+   - VerticalGalleryView.module.css: 13개
+   - Toolbar.module.css: 7개
+   - Button.module.css: 4개
+   - primitive/Button.css: 2개
+   - Toast.module.css: 1개
+   - 중복 선택자: 1개 (VerticalGalleryView `.container`)
+
+#### 교훈
+
+- ✅ **간단한 구조적 문제 우선 해결**: px 하드코딩, shorthand 순서, 중복
+  선택자는 빠르게 처리 가능
+- ⚠️ **Specificity 문제는 복잡함**: CSS 선택자 순서 재정렬은 스타일 로직 이해
+  필요
+- ✅ **빌드 크기 증가 미미**: 0.96 KB 증가 (0.3%), 여전히 335 KB 제한 내 안정적
+- ⚠️ **98.2% 사용률**: Phase 80 번들 최적화 계획 검토 필요 (330 KB 도달 시)
+
+---
+
 ### Phase 78.6: Component CSS 점진적 개선 - Part 1 (Global CSS + Core Components) ✅
 
 **완료일**: 2025-10-15 **목표**: Global CSS + 주요 Component CSS 모듈에서 px

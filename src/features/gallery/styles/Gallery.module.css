@@ -110,6 +110,17 @@
   /* 미니멀 디자인 (블러 제거) */
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+
+  /* CSS Nesting - 테마별 변형 */
+  &.xegThemeLight {
+    background: var(--xeg-gallery-bg-light);
+  }
+  &.xegThemeDark {
+    background: var(--xeg-gallery-bg-dark);
+  }
+  &.xegThemeAuto {
+    background: var(--xeg-gallery-bg);
+  }
 }
 
 /* 갤러리가 활성화된 상태 - :has() 선택자 활용 */
@@ -151,24 +162,6 @@
   .xegGalleryViewer {
     /* 높이가 낮은 화면에서의 최적화 */
     padding-block: var(--xeg-spacing-sm);
-  }
-}
-
-/**
- * 테마 변형 스타일 - OKLCH 색상으로 최적화
- * 사용자의 테마 설정에 따라 다른 배경색을 적용합니다.
- * Features: OKLCH 색상 공간, 고급 CSS 선택자, CSS Nesting
- */
-.xegGalleryViewer {
-  /* CSS Nesting - 테마별 변형 */
-  &.xegThemeLight {
-    background: var(--xeg-gallery-bg-light);
-  }
-  &.xegThemeDark {
-    background: var(--xeg-gallery-bg-dark);
-  }
-  &.xegThemeAuto {
-    background: var(--xeg-gallery-bg);
   }
 }
 

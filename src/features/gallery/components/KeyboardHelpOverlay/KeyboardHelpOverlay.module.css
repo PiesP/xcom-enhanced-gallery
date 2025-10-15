@@ -21,7 +21,7 @@
   padding: var(--xeg-space-16);
   border-radius: var(--xeg-radius-2xl);
   background: var(--xeg-modal-bg);
-  border: 1px solid var(--xeg-modal-border);
+  border: var(--border-width-thin) solid var(--xeg-modal-border);
   box-shadow: var(--xeg-shadow-lg);
   z-index: calc(var(--xeg-z-modal) + 1);
 }

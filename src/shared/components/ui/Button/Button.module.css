@@ -546,16 +546,6 @@
   outline: none;
 }
 
-.toolbarButton:hover:not(:disabled),
-.xeg-toolbar-button:hover {
-  transform: translateY(var(--xeg-button-lift));
-}
-
-.toolbarButton:active:not(:disabled),
-.xeg-toolbar-button:active {
-  transform: translateY(0);
-}
-
 .toolbarButton:disabled,
 .xeg-toolbar-button:disabled {
   opacity: var(--xeg-opacity-disabled);
@@ -569,6 +559,16 @@
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
   z-index: 1;
+}
+
+.toolbarButton:hover:not(:disabled),
+.xeg-toolbar-button:hover {
+  transform: translateY(var(--xeg-button-lift));
+}
+
+.toolbarButton:active:not(:disabled),
+.xeg-toolbar-button:active {
+  transform: translateY(0);
 }
 
 /* IconButton primitive 매핑 */
@@ -594,6 +594,18 @@
   outline: none;
 }
 
+.xeg-icon-button:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+  z-index: 1;
+}
+
+.xeg-icon-button:disabled {
+  opacity: var(--xeg-opacity-disabled);
+  cursor: not-allowed;
+  transform: none;
+}
+
 .xeg-icon-button:hover:not(:disabled) {
   background: var(--xeg-color-neutral-100);
   color: var(--xeg-color-text-primary);
@@ -606,18 +618,6 @@
   transform: translateY(0);
   box-shadow: var(--xeg-shadow-inset-border);
   background: var(--xeg-color-border-primary);
-}
-
-.xeg-icon-button:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
-  z-index: 1;
-}
-
-.xeg-icon-button:disabled {
-  opacity: var(--xeg-opacity-disabled);
-  cursor: not-allowed;
-  transform: none;
 }
 
 /* IconButton size variants */

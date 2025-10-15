@@ -4,29 +4,25 @@
     "unit-disallowed-list": [
       ["px"],
       {
-        "severity": "warning",
         "ignoreProperties": {
           "px": ["/^--/"]
         },
-        "message": "Use design tokens (rem/em) instead of hardcoded px values. (Gradual migration in progress)"
+        "message": "Use design tokens (rem/em) instead of hardcoded px values. See docs/CODING_GUIDELINES.md § Size Units"
       }
     ],
-    "no-duplicate-selectors": [
-      true,
-      {
-        "severity": "warning"
-      }
-    ],
+    "no-duplicate-selectors": true,
     "no-descending-specificity": [
       true,
       {
-        "severity": "warning"
+        "message": "Reorder CSS rules from low to high specificity. See docs/CODING_GUIDELINES.md § CSS Specificity"
       }
     ],
-    "declaration-block-no-shorthand-property-overrides": [
+    "declaration-block-no-shorthand-property-overrides": true,
+    "color-named": null,
+    "color-no-hex": [
       true,
       {
-        "severity": "warning"
+        "message": "Use oklch() tokens instead of hex colors (#fff/#000 allowed). See docs/CODING_GUIDELINES.md § Color Units"
       }
     ],
     "color-function-notation": "modern",

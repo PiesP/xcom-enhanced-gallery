@@ -75,8 +75,8 @@ select {
 
 /* 스크롤바 초기화 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem; /* 8px = 0.5rem */
+  height: 0.5rem; /* 8px = 0.5rem */
 }
 
 ::-webkit-scrollbar-track {
