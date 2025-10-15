@@ -1,8 +1,7 @@
 # Phase 74: Skipped 테스트 재활성화
 
-> **목표**: 기술 부채 해소 및 테스트 커버리지 개선  
-> **시작일**: 2025-10-15  
-> **예상 시간**: 2-3시간
+> **목표**: 기술 부채 해소 및 테스트 커버리지 개선 **시작일**: 2025-10-15 **예상
+> 시간**: 2-3시간
 
 ---
 
@@ -178,18 +177,18 @@ await vi.advanceTimersByTimeAsync(300); // debounce 대기 시간
 
 ### 리스크 1: fake timers 부작용
 
-**증상**: 다른 테스트에 영향  
-**대응**: `beforeEach`/`afterEach`에서 명확히 setup/cleanup
+**증상**: 다른 테스트에 영향 **대응**: `beforeEach`/`afterEach`에서 명확히
+setup/cleanup
 
 ### 리스크 2: debounce 시간 부정확
 
-**증상**: `advanceTimersByTimeAsync` 시간이 실제와 다름  
-**대응**: 실제 debounce 시간 확인 후 조정
+**증상**: `advanceTimersByTimeAsync` 시간이 실제와 다름 **대응**: 실제 debounce
+시간 확인 후 조정
 
 ### 리스크 3: remount 패턴 복잡도
 
-**증상**: Solid.js remount가 예상대로 작동하지 않음  
-**대응**: 옵션 A (제거)로 전환
+**증상**: Solid.js remount가 예상대로 작동하지 않음 **대응**: 옵션 A (제거)로
+전환
 
 ---
 
