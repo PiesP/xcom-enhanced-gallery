@@ -203,6 +203,8 @@ function VerticalGalleryViewCore({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     onScroll: (delta, scrollTargetElement) => {
+      // Phase 76: 브라우저 네이티브 스크롤로 전환
+      // scrollBy 수동 호출 제거 - CSS overflow:auto로 자동 처리
       const container = containerEl();
       const target = scrollTargetElement ?? container;
 
@@ -215,32 +217,11 @@ function VerticalGalleryViewCore({
         return;
       }
 
-      const maxScrollTop = Math.max(0, target.scrollHeight - target.clientHeight);
-      const currentTop = target.scrollTop;
-      const desiredTop = currentTop + delta;
-      const clampedTop = Math.max(0, Math.min(desiredTop, maxScrollTop));
-      const scrollDelta = clampedTop - currentTop;
-
-      if (scrollDelta === 0) {
-        logger.debug('VerticalGalleryView: 스크롤 감지 - 경계 도달', {
-          delta,
-          currentTop,
-          maxScrollTop,
-          targetType: target === container ? 'container' : 'itemsContainer',
-        });
-        return;
-      }
-
-      target.scrollBy({
-        top: scrollDelta,
-        left: 0,
-        behavior: Math.abs(scrollDelta) > 48 ? 'smooth' : 'auto',
-      });
-
-      logger.debug('VerticalGalleryView: 스크롤 감지', {
+      logger.debug('VerticalGalleryView: 스크롤 감지 (네이티브)', {
         delta,
-        appliedDelta: scrollDelta,
-        targetTop: clampedTop,
+        currentTop: target.scrollTop,
+        scrollHeight: target.scrollHeight,
+        clientHeight: target.clientHeight,
         timestamp: Date.now(),
         targetType: target === container ? 'container' : 'itemsContainer',
       });
