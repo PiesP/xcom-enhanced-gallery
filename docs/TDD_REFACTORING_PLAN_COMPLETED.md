@@ -7,6 +7,48 @@
 
 ## 최신 완료 Phase
 
+### Phase 74: Skipped 테스트 재활성화 (부분 완료) ✅
+
+**완료일**: 2025-10-15 **목표**: 10개 skipped 테스트 재활성화 **결과**: 2개
+성공, 6개 Phase 74.5 이관, 2개 유지
+
+#### 달성 메트릭
+
+| 항목            | 시작  | 최종  | 개선       |
+| --------------- | ----- | ----- | ---------- |
+| Skipped 테스트  | 10개  | 8개   | -2개 (20%) |
+| 재활성화 성공   | 0개   | 2개   | +2개 ✅    |
+| Phase 74.5 이관 | 0개   | 6개   | 구조 개선  |
+| 테스트 통과율   | 98.7% | 98.5% | -0.2%p     |
+
+#### 핵심 변경
+
+1. **재활성화 성공 (2개)**
+   - `use-gallery-focus-tracker-events` L270: auto focus delay
+   - `use-gallery-focus-tracker-global-sync` L214, L275: 컨테이너 null, debounce
+
+2. **Fake Timers 적용**
+   - `vi.useFakeTimers()` + `vi.advanceTimersByTimeAsync()` 패턴 적용
+   - `setTimeout` → fake timers로 시간 제어
+
+3. **Phase 74.5 이관 (6개)**
+   - `use-gallery-focus-tracker-deduplication` 전체 6개 테스트
+   - 원인: Promise 기반 코드에서 fake timers 미작동 (10초 타임아웃)
+   - 해결: async/await + vi.runAllTimers() 패턴으로 구조 리팩토링 필요
+
+4. **보류 사항**
+   - Assertion 실패 3개: 별도 분석 필요
+   - toolbar-focus-indicator 1개: Solid.js 패턴 적용 필요
+
+#### 배운 점
+
+- **Fake Timers 제약**: Promise 기반 코드에서는 별도 패턴 필요
+- **점진적 접근**: 모두 재활성화보다 구조적 문제는 별도 Phase로 분리
+- **TDD 검증**: 재활성화 시 RED→GREEN 확인 필수
+- **타임아웃 패턴**: Promise + setTimeout은 vi.runAllTimers() 필요
+
+---
+
 ### Phase 76: 브라우저 네이티브 스크롤 전환 ✅
 
 **완료일**: 2025-10-15 **목표**: 커스텀 scrollBy 로직 제거, 브라우저 네이티브
