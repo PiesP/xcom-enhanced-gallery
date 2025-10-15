@@ -193,8 +193,9 @@ function validateUserScript() {
     );
   }
 
-  const RAW_FAIL_BUDGET = 325 * 1024; // 325KB (Phase 31 hard limit)
-  const RAW_WARN_BUDGET = 320 * 1024; // 320KB (early warning)
+  // Phase 78.4: OKLCH 폴백 자동 생성으로 인한 번들 크기 증가
+  const RAW_FAIL_BUDGET = 335 * 1024; // 335KB (+10KB from Phase 78 baseline)
+  const RAW_WARN_BUDGET = 330 * 1024; // 330KB (early warning)
 
   if (rawBytes > RAW_FAIL_BUDGET) {
     console.error(

@@ -1,0 +1,53 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "unit-disallowed-list": [
+      ["px"],
+      {
+        "severity": "warning",
+        "ignoreProperties": {
+          "px": ["/^--/"]
+        },
+        "message": "Use design tokens (rem/em) instead of hardcoded px values. (Gradual migration in progress)"
+      }
+    ],
+    "no-duplicate-selectors": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "no-descending-specificity": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "declaration-block-no-shorthand-property-overrides": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "color-function-notation": "modern",
+    "alpha-value-notation": ["percentage", { "exceptProperties": ["opacity"] }],
+    "value-keyword-case": ["lower", { "camelCaseSvgKeywords": true, "ignoreKeywords": ["currentColor"] }],
+    "property-no-vendor-prefix": null,
+    "property-no-deprecated": null,
+    "comment-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "media-feature-name-value-no-unknown": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null
+  },
+  "ignoreFiles": [
+    "dist/**",
+    "coverage/**",
+    "node_modules/**",
+    "**/design-tokens.primitive.css",
+    "**/design-tokens.semantic.css",
+    "**/design-tokens.css"
+  ]
+}

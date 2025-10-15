@@ -104,6 +104,85 @@ await getUserscript().download(url, filename);
 
 ---
 
+### 5. `hardcoded-size-values.ql` (경고) ⭐ NEW (Phase 78)
+
+**목적**: 하드코딩된 px 크기 값 감지
+
+**위반 예시**:
+
+```css
+/* ❌ 금지 */
+.button {
+  padding: 16px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+/* ✅ 허용 */
+.button {
+  padding: var(--space-md); /* 1rem = 16px */
+  font-size: var(--font-size-sm); /* 0.875rem = 14px */
+  border-radius: var(--radius-md); /* 0.375em = 6px @ 16px */
+}
+```
+
+**예외**:
+
+- `design-tokens.primitive.css` (토큰 정의)
+- `design-tokens.semantic.css` (토큰 정의)
+- `design-tokens.css` (레거시 토큰)
+
+**이유**: 접근성 (브라우저 설정 존중), 일관성, 유지보수성
+
+**Note**: CodeQL은 CSS 직접 지원이 제한적이므로, **실제 검증은 stylelint**로
+수행됩니다.
+
+---
+
+## Stylelint 통합 ⭐ (Phase 78)
+
+CSS 규칙(크기/색상)은 CodeQL 대신 **stylelint**로 강제합니다.
+
+### 설정 파일: `.stylelintrc.json`
+
+```json
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "unit-disallowed-list": [
+      ["px"],
+      {
+        "ignoreProperties": {
+          "px": ["/^--/"]
+        },
+        "message": "Use design tokens (rem/em) instead"
+      }
+    ],
+    "color-function-notation": "modern",
+    "alpha-value-notation": "percentage"
+  },
+  "ignoreFiles": ["**/design-tokens*.css"]
+}
+```
+
+### 실행
+
+```powershell
+# CSS 린트 (추가 예정)
+npm run lint:css
+
+# 자동 수정
+npm run lint:css -- --fix
+```
+
+### 강제되는 규칙
+
+1. **크기 단위**: px 하드코딩 금지 (토큰 정의 파일 제외)
+2. **색상 함수**: 최신 표기법 (oklch) 권장
+3. **투명도**: percentage 표기법 권장
+
+---
+
 ## 로컬 실행
 
 ```pwsh

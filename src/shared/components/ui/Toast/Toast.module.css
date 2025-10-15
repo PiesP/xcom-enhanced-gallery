@@ -17,7 +17,7 @@
  * Base toast container styles - 현대적 glassmorphism 디자인
  *
  * @styles
- * - 둥근 모서리 (12px border-radius)
+ * - 둥근 모서리 (0.75rem border-radius)
  * - 향상된 그림자와 백드롭 필터
  * - 왼쪽 테두리로 타입 표시 (토큰 사용)
  * - 부드러운 슬라이드인 애니메이션 (CSS 변수 기반)
@@ -26,7 +26,7 @@
  */
 .toast {
   background: var(--xeg-surface-glass-bg);
-  border: 1px solid var(--xeg-surface-glass-border);
+  border: 0.0625rem solid var(--xeg-surface-glass-border); /* 1px */
   border-radius: var(--xeg-radius-2xl);
   box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
@@ -125,7 +125,7 @@
  * Toast title text
  *
  * @typography
- * - Size: 토큰 사용 (14px)
+ * - Size: 토큰 사용 (0.875rem = 14px)
  * - Weight: 토큰 사용 (semi-bold)
  * - Color: var(--xeg-color-text-primary) (primary text color)
  * - Line height: 1.3
@@ -142,7 +142,7 @@
  * Toast message text
  *
  * @typography
- * - Size: 토큰 사용 (13px)
+ * - Size: 토큰 사용 (0.8125rem = 13px)
  * - Color: var(--xeg-color-text-secondary) (secondary text color)
  * - Line height: 1.4 (readable)
  */
@@ -157,9 +157,9 @@
  * Close button
  *
  * @interaction
- * - Size: 20x20px clickable area
+ * - Size: 1.25em clickable area
  * - Transparent background, hover state available
- * - Rounded corners (4px)
+ * - Rounded corners (0.25rem)
  * - CSS 변수 기반 hover transition
  */
 .closeButton {
@@ -167,7 +167,7 @@
   border: none;
   color: var(--xeg-color-text-secondary);
   cursor: pointer;
-  font-size: 18px;
+  font-size: 1.125em; /* 18px @ 16px */
   line-height: 1;
   padding: 0;
   width: var(--xeg-icon-size-md);
@@ -202,10 +202,10 @@
  * Toast actions container
  *
  * @layout
- * - Top margin 4px for spacing
+ * - Top margin 0.25rem for spacing
  */
 .actions {
-  margin-top: 4px;
+  margin-top: 0.25rem; /* 4px */
 }
 
 /**
@@ -214,8 +214,8 @@
  * @appearance
  * - 차분한 프라이머리 색상 배경
  * - 반투명 효과와 백드롭 필터
- * - 둥근 모서리 (8px)
- * - 적절한 크기 (13px 폰트, 8x16px 패딩)
+ * - 둥근 모서리 (0.5rem)
+ * - 적절한 크기 (0.8125rem 폰트, 0.5em x 1em 패딩)
  *
  * @interaction
  * - 호버 시 더 진한 색상과 상승 효과
@@ -223,14 +223,14 @@
  */
 .actionButton {
   background: var(--xeg-color-primary);
-  border: 1px solid var(--xeg-toast-border-info);
+  border: 0.0625rem solid var(--xeg-toast-border-info); /* 1px */
   /* Interaction element radius policy: use md */
   border-radius: var(--xeg-radius-md);
   color: var(--color-text-inverse);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 0.8125rem; /* 13px */
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 0.5em 1em; /* 8px 16px @ 13px */
   transition:
     background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
     border-color var(--xeg-duration-normal) var(--xeg-ease-standard),

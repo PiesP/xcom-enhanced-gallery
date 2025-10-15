@@ -38,11 +38,11 @@
 .modal-shell {
   background: var(--xeg-modal-bg);
   border-radius: var(--xeg-radius-lg);
-  border: 1px solid var(--xeg-modal-border);
+  border: 0.0625rem solid var(--xeg-modal-border); /* 1px */
   overflow: hidden;
 
   /* 시작 상태 */
-  transform: scale(0.95) translateY(-10px);
+  transform: scale(0.95) translateY(-0.625rem); /* -10px */
   transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
 
   /* 포커스 관리 */
@@ -56,25 +56,25 @@
 /* ===== 크기 변형 ===== */
 .modal-size-sm {
   width: 100%;
-  max-width: 400px;
-  max-height: 300px;
+  max-width: 25rem; /* 400px */
+  max-height: 18.75rem; /* 300px */
 }
 
 .modal-size-md {
   width: 100%;
-  max-width: 500px;
+  max-width: 31.25rem; /* 500px */
   max-height: 70vh;
 }
 
 .modal-size-lg {
   width: 100%;
-  max-width: 700px;
+  max-width: 43.75rem; /* 700px */
   max-height: 80vh;
 }
 
 .modal-size-xl {
   width: 100%;
-  max-width: 900px;
+  max-width: 56.25rem; /* 900px */
   max-height: 90vh;
 }
 
@@ -101,7 +101,8 @@
 }
 
 /* ===== 반응형 ===== */
-@media (max-width: 768px) {
+@media (width <= 48rem) {
+  /* 768px */
   .modal-backdrop {
     padding: var(--space-md);
   }
@@ -161,7 +162,7 @@
 }
 
 .modal-shell::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem; /* 6px */
 }
 
 .modal-shell::-webkit-scrollbar-track {

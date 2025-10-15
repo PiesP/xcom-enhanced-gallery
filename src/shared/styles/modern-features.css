@@ -10,9 +10,9 @@
  */
 :root {
   /* OKLCH 색상 공간 - 더 자연스러운 색상 보간 */
-  --xeg-color-primary-oklch: oklch(0.7 0.15 220);
-  --xeg-color-primary-hover-oklch: oklch(0.65 0.15 220);
-  --xeg-color-accent-oklch: oklch(0.8 0.12 180);
+  --xeg-color-primary-oklch: oklch(70% 0.15 220deg);
+  --xeg-color-primary-hover-oklch: oklch(65% 0.15 220deg);
+  --xeg-color-accent-oklch: oklch(80% 0.12 180deg);
 
   /* 동적 색상 보간 */
   --xeg-color-primary-gradient: linear-gradient(
@@ -31,8 +31,8 @@
  */
 .xeg-gallery-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-template-rows: repeat(auto-fit, minmax(200px, auto));
+  grid-template-columns: repeat(auto-fit, minmax(17.5rem, 1fr)); /* 280px */
+  grid-template-rows: repeat(auto-fit, minmax(12.5rem, auto)); /* 200px */
   gap: var(--xeg-spacing-md);
 
   /* Container Queries 지원 */
@@ -67,21 +67,24 @@
 /**
  * Container Queries 확장
  */
-@container gallery-grid (width > 768px) {
+@container gallery-grid (width > 48rem) {
+  /* 768px */
   .xeg-gallery-grid {
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(21.875rem, 1fr)); /* 350px */
     gap: var(--xeg-spacing-lg);
   }
 }
 
-@container gallery-grid (width > 1200px) {
+@container gallery-grid (width > 75rem) {
+  /* 1200px */
   .xeg-gallery-grid {
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(25rem, 1fr)); /* 400px */
     gap: var(--xeg-spacing-xl);
   }
 }
 
-@container gallery-grid (height > 800px) {
+@container gallery-grid (height > 50rem) {
+  /* 800px */
   .xeg-gallery-item {
     grid-template-rows: subgrid;
     grid-row: span 4; /* 더 많은 공간 활용 */
@@ -100,8 +103,8 @@
   /* @deprecated - ToolbarButton.module.css의 .toolbarButton 사용 권장 */
 
   & .toolbar-separator {
-    width: 1px;
-    height: 24px;
+    width: 0.0625rem; /* 1px */
+    height: 1.5rem; /* 24px */
     background: var(--xeg-color-border-secondary);
     margin: 0 var(--xeg-spacing-sm);
   }
@@ -114,7 +117,7 @@
   padding-block: var(--xeg-spacing-lg);
   padding-inline: var(--xeg-spacing-md);
   margin-block-start: var(--xeg-spacing-md);
-  border-inline-start: 2px solid var(--xeg-color-border-primary);
+  border-inline-start: 0.125rem solid var(--xeg-color-border-primary); /* 2px */
 }
 
 /**
@@ -132,7 +135,7 @@
 /* :where() 선택자로 우선순위 조정 */
 :where(.xeg-button) {
   background: var(--xeg-color-surface);
-  border: 1px solid var(--xeg-color-border-primary);
+  border: 0.0625rem solid var(--xeg-color-border-primary); /* 1px */
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
 }
@@ -197,20 +200,13 @@
   position: absolute;
   position-anchor: --tooltip-anchor;
   inset-area: top;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem; /* 8px */
 }
 
 /**
  * 폴백 지원
+ * Note: OKLCH 색상 폴백은 PostCSS 플러그인(@csstools/postcss-oklab-function)이 자동 생성
  */
-@supports not (color: oklch(0.7 0.15 220)) {
-  :root {
-    --xeg-color-primary-oklch: var(--xeg-color-primary-500);
-    --xeg-color-primary-hover-oklch: var(--xeg-color-primary-600);
-    --xeg-color-accent-oklch: var(--xeg-color-primary-400);
-  }
-}
-
 @supports not (container-type: size) {
   .xeg-gallery-grid {
     /* 미디어 쿼리 폴백 */

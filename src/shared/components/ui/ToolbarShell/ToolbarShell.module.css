@@ -67,7 +67,7 @@
 }
 
 /* ===== 반응형 ===== */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .toolbar-shell {
     border-radius: var(--xeg-radius-md);
   }

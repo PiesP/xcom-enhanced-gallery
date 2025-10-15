@@ -10,7 +10,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--xeg-spacing-sm);
-  border: 1px solid transparent;
+  border: 0.0625rem solid transparent; /* 1px */
   border-radius: var(--xeg-radius-md);
 
   /* 타이포그래피 */
@@ -358,8 +358,8 @@
 .spinner {
   width: 1em;
   height: 1em;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
+  border: 0.125rem solid transparent; /* 2px */
+  border-top: 0.125rem solid currentColor; /* 2px */
   border-radius: 50%;
   animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
   margin-right: var(--xeg-spacing-xs);
@@ -421,7 +421,7 @@
 /* ===== 고대비 모드 지원 ===== */
 @media (prefers-contrast: high) {
   .unifiedButton {
-    border-width: 2px;
+    border-width: 0.125rem; /* 2px */
   }
 
   .variant-secondary,
@@ -459,7 +459,8 @@
 }
 
 /* ===== 반응형 디자인 ===== */
-@media (max-width: 768px) {
+@media (width <= 48rem) {
+  /* 768px */
   .unifiedButton {
     min-height: var(--xeg-size-button-touch);
     min-width: var(--xeg-size-button-touch);
@@ -528,7 +529,7 @@
   font-weight: var(--xeg-font-weight-medium);
   font-size: var(--xeg-font-size-sm);
   line-height: 1.2;
-  border: 1px solid transparent;
+  border: 0.0625rem solid transparent; /* 1px */
   border-radius: var(--xeg-radius-md);
   background: transparent;
   color: currentColor;
@@ -573,7 +574,7 @@
 /* IconButton primitive 매핑 */
 .xeg-icon-button {
   background: transparent;
-  border: 1px solid var(--xeg-color-border-primary);
+  border: 0.0625rem solid var(--xeg-color-border-primary); /* 1px */
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm);
   display: inline-flex;
@@ -622,18 +623,18 @@
 /* IconButton size variants */
 .xeg-icon-button--sm {
   padding: var(--xeg-spacing-xs);
-  width: 28px;
-  height: 28px;
+  width: 1.75em; /* 28px @ 16px */
+  height: 1.75em;
 }
 .xeg-icon-button--md {
   padding: var(--xeg-spacing-sm);
-  width: 36px;
-  height: 36px;
+  width: 2.25em; /* 36px @ 16px */
+  height: 2.25em;
 }
 .xeg-icon-button--lg {
   padding: var(--xeg-spacing-md);
-  width: 44px;
-  height: 44px;
+  width: 2.75em; /* 44px @ 16px */
+  height: 2.75em;
 }
 
 /* loading spinner placeholder (ToolbarButton -> Unified) */

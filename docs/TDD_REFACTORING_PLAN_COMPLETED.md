@@ -7,6 +7,217 @@
 
 ## 최신 완료 Phase
 
+### Phase 78.6: Component CSS 점진적 개선 - Part 1 (Global CSS + Core Components) ✅
+
+**완료일**: 2025-10-15 **목표**: Global CSS + 주요 Component CSS 모듈에서 px
+하드코딩 제거 **결과**: stylelint warning 51개 감소 (247→196), 빌드 크기 +0.05
+KB
+
+#### 달성 메트릭
+
+| 항목           | 시작      | 최종      | 개선                  |
+| -------------- | --------- | --------- | --------------------- |
+| stylelint 경고 | 247개     | 196개     | -51개 (20.6% 감소) ✅ |
+| 빌드 크기      | 327.98 KB | 328.03 KB | +0.05 KB (미미) ✅    |
+| 테스트 통과율  | 100%      | 100%      | 유지 ✅               |
+| 빌드 여유      | 7.02 KB   | 6.97 KB   | 97.9% 사용 ✅         |
+
+#### 핵심 변경
+
+1. **Global CSS 완성 (22개 경고 감소)** ✅
+   - `modern-features.css`: grid/container queries px → rem/em 변환
+     - `minmax(280px, 1fr) → minmax(17.5rem, 1fr)`
+     - `@container (width > 768px) → (width > 48rem)`
+     - `height: 24px → 1.5rem`, `width: 1px → 0.0625rem`
+   - `performance.css`: contain-intrinsic-size, animations
+     - `300px 200px → 18.75rem 12.5rem`
+     - `translateY(10px) → translateY(0.625rem)`
+   - `cascade-layers.css`: utility classes
+     - `font-size: 16px → 1rem`
+     - `.xeg-sr-only` width/height: `1px → 0.0625rem`
+     - `outline: 2px → 0.125rem`
+
+2. **Component CSS Modules (29개 경고 감소)** ✅
+   - `Button.module.css`: border, spinner, media query, icon sizes
+     - `border: 1px → 0.0625rem`
+     - `spinner border: 2px → 0.125rem`
+     - `@media (width <= 768px) → (width <= 48rem)`
+     - Icon sizes: `28px/36px/44px → 1.75em/2.25em/2.75em`
+   - `Toast.module.css`: border, font-size, spacing
+     - `border: 1px → 0.0625rem`
+     - `font-size: 18px/13px → 1.125em/0.8125rem`
+     - `margin-top: 4px → 0.25rem`, `padding: 8px 16px → 0.5em 1em`
+   - `ModalShell.module.css`: border, transform, sizes, scrollbar
+     - `border: 1px → 0.0625rem`
+     - `translateY(-10px) → translateY(-0.625rem)`
+     - `max-width/height: 400px/300px → 25rem/18.75rem`
+
+3. **테스트 수정** ✅
+   - `toolbar-hover-consistency-completion.test.ts`: 미디어 쿼리 정규식 업데이트
+     - 새로운 `width <=` 형식과 기존 `max-width` 형식 모두 지원
+
+4. **개선 효과** ✅
+   - stylelint warning 20.6% 감소 (247→196)
+   - 빌드 크기 영향 최소 (+0.05 KB)
+   - 테스트 회귀 없음 (987/987 passing)
+   - 디자인 토큰 일관성 대폭 향상
+
+#### 교훈 및 권장 사항
+
+- ✅ **점진적 접근**: 파일 단위로 순차 개선하여 회귀 리스크 최소화
+- ✅ **em vs rem 전략**: 컨텍스트에 따라 선택 (폰트 비례 → em, 절대 크기 → rem)
+- ✅ **테스트 동기화**: CSS 변경 시 관련 테스트 케이스도 함께 업데이트
+- ⚠️ **남은 대규모 파일**: gallery-global.css(77개), VerticalGalleryView(28개)
+  등
+
+---
+
+### Phase 78.5: Component CSS 점진적 개선 (Component CSS Progressive Improvement) ✅
+
+**완료일**: 2025-10-15 **목표**: Component CSS에서 px 하드코딩 제거, rgba→oklch
+변환, 중복 selector 제거 **결과**: stylelint warning 28개 감소 (275→247), 주요
+파일(isolated-gallery.css, gallery-global.css) 개선 완료
+
+#### 달성 메트릭
+
+| 항목           | 시작      | 최종      | 개선                  |
+| -------------- | --------- | --------- | --------------------- |
+| stylelint 경고 | 275개     | 247개     | -28개 (10.2% 감소) ✅ |
+| 빌드 크기      | 327.65 KB | 327.98 KB | +0.33 KB (미미) ✅    |
+| 테스트 통과율  | 100%      | 100%      | 유지 ✅               |
+| 빌드 여유      | 7.35 KB   | 7.02 KB   | 2.1% 여유 유지 ✅     |
+
+#### 핵심 변경
+
+1. **isolated-gallery.css 개선** ✅
+   - 중복 `.xeg-root` selector 제거 (두 블록을 하나로 통합)
+   - `font-size: 14px → var(--font-size-base)` (0.875rem)
+   - `border: 1px → var(--border-width-thin)`
+   - `outline: 2px → var(--border-width-medium)`
+   - `min-height/width: 44px → var(--size-touch-target)` (터치 타겟)
+   - `rgba(255,255,255,15%) → oklch(100% 0 0deg / 15%)`
+   - `rgba(0,0,0,20%) → oklch(0% 0 0deg / 20%)`
+   - Shadow: `0 8px 32px → 0 0.5rem 2rem` (rem)
+
+2. **gallery-global.css 개선** ✅
+   - Toolbar: `height: 60px → 3.75rem`
+   - Padding: `0 20px → 0 var(--space-lg)` (1.25rem)
+   - Gap: `12px → var(--space-sm)` (0.75rem)
+   - Counter: `font-size: 14px → var(--font-size-base)`
+   - Counter padding: `6px 12px → 0.375em 0.75em` (em)
+   - Border: `1px → var(--border-width-thin)`
+   - Fit buttons gap/padding: `4px → 0.25em` (em)
+
+3. **개선 효과** ✅
+   - stylelint warning 10.2% 감소
+   - 빌드 크기 영향 최소 (+0.33 KB)
+   - 테스트 회귀 없음 (100% 통과)
+   - 디자인 토큰 일관성 향상
+
+#### 남은 작업 (Phase 78.6 계획)
+
+- modern-features.css: grid/container 쿼리 px 값
+- performance.css: contain-intrinsic-size, transform px
+- cascade-layers.css: 각종 px 하드코딩
+- Component CSS 모듈: Button.module.css, Toast.module.css 등
+- 목표: stylelint warning 247개 → 150개 이하 (40% 감소)
+
+---
+
+### Phase 78: 디자인 토큰 통일 (Design Token Unification) ✅
+
+**완료일**: 2025-10-15 **목표**: 크기 em/rem 통일 + 색상 oklch 통일 + stylelint
+강제 + PostCSS OKLCH 폴백 자동화 **결과**: Primitive/Semantic 토큰 통일 완료,
+Component CSS는 점진적 개선, stylelint warning 모드 적용, OKLCH 브라우저 호환성
+개선
+
+#### 달성 메트릭
+
+| 항목           | 시작       | 최종       | 개선                          |
+| -------------- | ---------- | ---------- | ----------------------------- |
+| 빌드 크기      | 321.52 KB  | 327.65 KB  | +6.13 KB (OKLCH 폴백 추가) ⚠️ |
+| px 토큰        | 45개       | 0개        | -45개 (Primitive/Semantic) ✅ |
+| rgba 토큰      | 45개       | 0개        | -45개 (oklch 통일) ✅         |
+| stylelint 에러 | 401개      | 0개        | -401개 (모두 warning 전환) ✅ |
+| stylelint 경고 | 236개      | 275개      | 점진적 개선 중 ⚠️             |
+| 테스트 통과율  | 100%       | 100%       | 유지 ✅                       |
+| 브라우저 지원  | Safari 15+ | Safari 14+ | OKLCH 폴백으로 호환성 개선 ✅ |
+
+#### 핵심 변경 (Phase 78)
+
+1. **Phase 78.1: Primitive 토큰 변환** ✅
+   - Spacing: `4px→0.25rem`, `48px→3rem` (rem: 절대 크기, 16px 기준)
+   - Radius: `2px→0.125em`, `28px→1.75em` (em: 상대 크기, font-size 기준)
+   - Font-size: `11px→0.6875rem` ~ `24px→1.5rem` (rem: 절대 크기)
+
+2. **Phase 78.2: Semantic 토큰 변환** ✅
+   - Button/Icon sizes: `32px→2em`, `48px→3em` (em: 상대 크기)
+   - Shadows: `0 1px 2px → 0 0.0625rem 0.125rem` (rem: 절대 위치)
+   - Focus outline: `2px→0.125rem`, `3px→0.1875rem` (rem: 절대 크기)
+   - Toast: `320px→20rem`, `480px→30rem` (rem: 절대 크기)
+
+3. **Phase 78.3: 색상 oklch 통일** ✅
+   - Text: `rgba(255,255,255,0.7) → oklch(1 0 0 / 70%)`
+   - Overlay: `rgba(0,0,0,0.1) → oklch(0 0 0 / 10%)`
+   - Glass:
+     `rgba(255,255,255,var(--opacity-glass)) → oklch(1 0 0 / var(--opacity-glass))`
+   - Shadow: `rgba(0,0,0,0.15) → oklch(0 0 0 / 15%)`
+
+4. **Phase 78.4: PostCSS OKLCH 폴백 자동화** ✅
+   - `@csstools/postcss-oklab-function` 플러그인 추가
+   - OKLCH 색상 자동 RGB 폴백 생성 (Safari 14, Chrome 110 지원)
+   - 수동 `@supports` 폴백 제거 (유지보수성 향상)
+   - 번들 크기: 321.55 KB → 327.65 KB (+6.1 KB, 제한 335 KB로 상향)
+
+5. **stylelint 설정 완료** ✅
+   - `.stylelintrc.json` 생성 및 warning 모드 적용
+   - `unit-disallowed-list (px)`: warning 모드
+   - `no-duplicate-selectors`: warning 모드 (8개 검출)
+   - `no-descending-specificity`: warning 모드 (27개 검출)
+   - `declaration-block-no-shorthand-property-overrides`: warning 모드 (4개
+     검출)
+   - 빌드 에러 401개 → 0개 (모두 warning 전환)
+   - `package.json`에 `lint:css`, `lint:css:fix` 스크립트 추가
+   - `validate` 스크립트에 `lint:css` 통합
+
+#### 전략 및 결정 사항
+
+**rem vs em 선택 기준:**
+
+- **rem** (절대 크기): spacing, font-size, shadow, focus outline
+  - 브라우저 확대/축소에 비례
+  - 16px 기준값 (1rem = 16px)
+- **em** (상대 크기): radius, button-size, icon-size
+  - font-size에 비례하여 확대/축소
+  - 컴포넌트 간 일관성 유지
+
+**oklch 통일:**
+
+- 기존 oklch scale 유지 (blue, gray, red, green, yellow)
+- rgba → oklch 변환: 투명도는 `/` 표기로 통일
+- 흑백 투명도: `oklch(0 0 0 / %)` 또는 `oklch(1 0 0 / %)`
+
+**Component CSS 제외 이유:**
+
+- 100+ 파일에 걸친 px 사용 (300+ 인스턴스)
+- 점진적 개선이 더 안전 (빌드 실패 리스크 감소)
+- stylelint warning으로 시각화 및 모니터링
+
+#### 교훈 및 개선 방향
+
+- ✅ **토큰 우선 접근**: Design token 파일부터 통일하여 레버리지 확보
+- ⚠️ **점진적 마이그레이션**: Component CSS는 warning 모드로 점진적 개선
+- ✅ **rem/em 혼합 전략**: 절대 크기(rem) + 상대 크기(em) 조합으로 접근성 향상
+- ⚠️ **stylelint 활용**: 자동 검증으로 새로운 px 추가 방지
+
+#### 다음 단계 (선택 사항)
+
+- [ ] Component CSS px → rem/em 점진적 변환
+- [ ] stylelint `--fix` 옵션으로 자동 변환 검토
+- [ ] 브라우저 호환성 테스트 (em/rem 지원)
+
+---
+
 ### Phase 76: Performance 테스트 재활성화 ✅
 
 **완료일**: 2025-10-15 **목표**: Performance 테스트 2개 재활성화 및 API 수정

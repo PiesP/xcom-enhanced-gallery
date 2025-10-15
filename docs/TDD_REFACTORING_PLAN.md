@@ -1,49 +1,123 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 | **상태**: Phase 76 완료 ✅
+> **최종 업데이트**: 2025-10-15 | **상태**: Phase 78.6 완료 ✅
 
 ## 프로젝트 현황
 
-- **빌드**: prod **321.52 KB / 325 KB** (3.48 KB 여유, 1.1%) ✅
+- **빌드**: prod **328.03 KB / 335 KB** (6.97 KB 여유, 97.9%) ✅
 - **테스트**: **159개 파일**, 987 passing / 0 failed (100% 통과율) ✅✅✅
 - **Skipped**: **10개** (8개 E2E 이관 권장 + 2개 기존) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
+- **CSS 린트**: stylelint **196 warnings** (247에서 51개 감소, 20.6% 개선) ✅
 - **의존성**: 0 violations (261 modules, 730 dependencies) ✅
 - **커버리지**: v8로 통일 완료 ✅
+- **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
+- **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: Phase 76 완료 ✅
+## 현재 상태: Phase 78.6 완료 (Component CSS 점진적 개선 - Part 1) ✅
 
-**완료일**: 2025-10-15 **목표**: Performance 테스트 재활성화 **결과**: 13개
-테스트 활성화, skip 15→10개로 감소
+**완료일**: 2025-10-15 **목표**: Global CSS + 주요 Component CSS 모듈에서 px
+하드코딩 제거 **결과**: stylelint warning 51개 감소 (247→196), 빌드 크기 +0.05
+KB
 
 ### 주요 성과
 
-- ✅ icon-optimization.test.tsx 재활성화 (13 passed | 3 skipped E2E)
-- ✅ signal-optimization.test.tsx 재활성화 (17 passed)
-- ✅ vendor mock에 onCleanup 추가
-- ✅ renderHook API 수정 (result.current() → result())
-- ✅ Skip 테스트 15 → 10개로 감소
+- ✅ **Global CSS 완성**: modern-features.css, performance.css,
+  cascade-layers.css
+- ✅ **Component Modules**: Button.module.css, Toast.module.css,
+  ModalShell.module.css
+- ✅ stylelint warning **20.6% 감소** (247→196개)
+- ✅ 빌드 크기 영향 최소 (328.03 KB, +0.05 KB)
+- ✅ 테스트 회귀 없음 (100% 통과율 유지)
 
 ### 해결 내용
 
-1. **icon-optimization.test.tsx**: describe.skip 제거, vendor mock에 onCleanup
-   추가
-   - LazyIcon 구조 테스트 3개는 E2E 이관 권장 (JSX 변환 시점 문제)
-   - IconRegistry, preload, hooks 테스트 모두 통과
-2. **signal-optimization.test.tsx**: describe.skip 제거, result.current() →
-   result() API 수정
-   - createSelector, useSelector, useCombinedSelector 테스트 모두 통과
-   - 비동기 selector 및 성능 모니터링 검증
+1. **Global CSS 개선 (22개 감소)**:
+   - `modern-features.css`: px → rem 변환 (grid, container queries,
+     width/height)
+   - `performance.css`: contain-intrinsic-size, fadeIn animation px → rem
+   - `cascade-layers.css`: font-size, sr-only, visually-hidden px → rem
+
+2. **Component CSS Modules (29개 감소)**:
+   - `Button.module.css`: border, spinner, media query, icon sizes → rem/em
+   - `Toast.module.css`: border, font-size, margin, padding → rem/em
+   - `ModalShell.module.css`: border, transform, max-width/height, scrollbar →
+     rem
+
+3. **남은 작업**: Phase 78.7로 연기
+   - `gallery-global.css` (77개 px 경고 - 가장 많음)
+   - `VerticalGalleryView.module.css` (28개 - specificity 이슈)
+   - `Toolbar.module.css` (37개), `Gallery.module.css` (11개)
+   - 목표: warning 196→120개 이하 (39% 추가 감소)
 
 ---
 
 ## 다음 Phase 계획
 
-### Phase 73: 번들 최적화 (Quick Wins)
+### Phase 78.7: 대규모 Component CSS 개선 (계획 중)
 
-**상태**: 대기 (현재 321.52 KB, 98.9% 사용) **트리거**: 빌드 322 KB (99%) 도달
-시 **목표**: 7-10 KB 절감으로 12-15 KB 여유 확보 **예상 시간**: 5-8시간
+**상태**: 준비 중 **목표**: gallery-global.css + 주요 Gallery 컴포넌트 CSS 개선
+**예상 시간**: 4-5시간 **우선순위**: 중
+
+#### 개선 대상 파일
+
+1. **최우선 대상** (경고 많은 순):
+   - `gallery-global.css`: 77개 (가장 많음) - toolbar, counter, fit-buttons
+   - `Toolbar.module.css`: 37개 - button sizes, shadows, media queries
+   - `VerticalGalleryView.module.css`: 28개 - layout, transitions (+ specificity
+     이슈)
+   - `Gallery.module.css`: 11개 - viewer, controls
+
+2. **부가 파일**:
+   - `VerticalImageItem.module.css`: 10개
+   - primitive, settings 등: 각 1-6개
+
+3. **목표**:
+   - stylelint warning 196→120개 이하 (39% 감소)
+   - CSS specificity 이슈 해결 (VerticalGalleryView)
+   - 번들 크기 330 KB 이하 유지
+   - 테스트 100% 통과율 유지
+
+---
+
+## 다음 Phase 계획 (기존)---
+
+## 향후 Phase 계획
+
+### Phase 79: CSS 마이그레이션 완료 (진행 중)
+
+**상태**: 진행 중 (121개 warning 남음) **목표**: 남은 CSS Modules 파일들의 px
+하드코딩 제거 **예상 시간**: 2-3시간
+
+#### 개선 대상 파일
+
+1. **Global CSS**:
+   - design-tokens.component.css (3개)
+   - isolated-gallery.css (2개)
+   - reset.css (2개)
+   - animations.css (1개)
+
+2. **Component Modules**:
+   - Gallery.module.css (10개 - viewer, controls)
+   - Toolbar.module.css (18개 - buttons, media queries)
+   - VerticalGalleryView.module.css (13개 + specificity 이슈)
+   - VerticalImageItem.module.css (10개)
+   - ToolbarShell.module.css (6개)
+   - primitive/Button.css (3개)
+   - 기타 작은 파일들 (각 1-2개)
+
+3. **목표**:
+   - stylelint warning 121→50개 이하 (58% 추가 감소)
+   - 번들 크기 330 KB 이하 유지
+   - 테스트 100% 통과율 유지
+
+---
+
+### Phase 80: 번들 최적화 (계획)
+
+**상태**: 대기 (현재 327.98 KB, 97.9% 사용) **트리거**: 빌드 330 KB (98.5%) 도달
+시 **목표**: 7-10 KB 절감으로 14-17 KB 여유 확보 **예상 시간**: 5-8시간
 
 #### 최적화 전략
 
@@ -64,6 +138,8 @@
 
 자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
+- **Phase 78.5** (2025-10-15): Component CSS 점진적 개선, warning 28개 감소 ✅
+- **Phase 78** (2025-10-15): 디자인 토큰 통일 (Primitive/Semantic) ✅
 - **Phase 75** (2025-10-15): test:coverage 실패 4개 수정, E2E 이관 권장 5개 추가
   ✅
 - **Phase 74.9** (2025-10-15): 테스트 최신화 및 수정 ✅
@@ -78,8 +154,8 @@
 
 ### 경계 조건
 
-- **번들 크기**: 322 KB (99%) 도달 시 Phase 73 활성화
-- **테스트 skipped**: 20개 이상 시 즉시 검토 (현재 15개)
+- **번들 크기**: 330 KB (98.5%) 도달 시 Phase 73 활성화
+- **테스트 skipped**: 20개 이상 시 즉시 검토 (현재 10개)
 - **테스트 통과율**: 95% 미만 시 Phase 74 재활성화
 - **빌드 시간**: 60초 초과 시 최적화 검토
 - **문서 크기**: 개별 문서 800줄 초과 시 분할 검토

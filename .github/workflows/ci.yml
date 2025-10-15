@@ -64,14 +64,20 @@ jobs:
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🔎 Type check
-        run: npm run typecheck
-        # Uses tsgo for faster type checking (configured in package.json)
+        run: npm run typecheck:ci
+        # Uses tsgo for faster type checking with compact output
 
       - name: 🧹 Lint
-        run: npm run lint
+        run: npm run lint:ci
+
+      - name: 🎨 CSS Lint
+        run: npm run lint:css:ci
+
+      - name: 📝 Markdown Lint
+        run: npm run lint:md:ci
 
       - name: 🎨 Prettier check
-        run: npx --yes prettier --check .
+        run: npm run format:check
 
       - name: 🧭 Dependency policy check
         run: npm run deps:check

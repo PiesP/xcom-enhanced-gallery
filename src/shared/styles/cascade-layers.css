@@ -116,7 +116,7 @@
       'Open Sans',
       'Helvetica Neue',
       sans-serif;
-    font-size: 16px;
+    font-size: 1rem; /* 16px */
     line-height: 1.5;
 
     /* 박스 모델 */
@@ -140,10 +140,10 @@
   /* 기존 design-tokens.css의 유틸리티 클래스들을 이곳으로 이동 예정 */
   .xeg-sr-only {
     position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
+    width: 0.0625rem !important; /* 1px */
+    height: 0.0625rem !important; /* 1px */
     padding: 0 !important;
-    margin: -1px !important;
+    margin: -0.0625rem !important; /* -1px */
     overflow: hidden !important;
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
@@ -153,16 +153,16 @@
   .xeg-visually-hidden {
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
-    height: 1px;
+    height: 0.0625rem; /* 1px */
     overflow: hidden;
     position: absolute;
     white-space: nowrap;
-    width: 1px;
+    width: 0.0625rem; /* 1px */
   }
 
   .xeg-focus-visible {
-    outline: 2px solid var(--xeg-color-primary);
-    outline-offset: 2px;
+    outline: 0.125rem solid var(--xeg-color-primary); /* 2px */
+    outline-offset: 0.125rem; /* 2px */
   }
 }
 

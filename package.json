@@ -19,6 +19,7 @@
     "test:all": "vitest run",
     "test:watch": "vitest --project fast",
     "test:coverage": "vitest --project unit --coverage --run",
+    "test:coverage:ci": "cross-env CI=true vitest --project unit --coverage --run --reporter=dot",
     "pretest:coverage": "npm run build:prod",
     "test:ui": "vitest --ui --project fast",
     "test:smoke": "vitest --project smoke run",
@@ -36,11 +37,22 @@
     "// === Lint & Format ===": "",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
+    "lint:ci": "eslint ./src --report-unused-disable-directives --max-warnings 0",
+    "lint:css": "stylelint \"src/**/*.css\"",
+    "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
+    "lint:css:ci": "stylelint \"src/**/*.css\"",
     "lint:staged": "lint-staged",
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",
+    "typecheck:ci": "tsgo --project ./tsconfig.json --noEmit",
     "format": "prettier --write .",
-    "validate": "npm run typecheck && npm run lint:fix && npm run format",
+    "format:check": "prettier --check .",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "lint:md:ci": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\" --config .markdownlint.json",
+    "codeql:check": "node ./scripts/check-codeql.js",
+    "validate": "npm run typecheck && npm run lint:fix && npm run lint:css && npm run lint:md:fix && npm run codeql:check && npm run format",
+    "validate:ci": "npm run typecheck:ci && npm run lint:ci && npm run lint:css:ci && npm run lint:md:ci && npm run format:check",
     "// === Dependencies ===": "",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
@@ -62,6 +74,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@csstools/postcss-oklab-function": "^4.0.12",
     "@eslint/js": "^9.37.0",
     "@playwright/test": "^1.56.0",
     "@solidjs/testing-library": "^0.8.10",
@@ -88,6 +101,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.0.0",
     "lint-staged": "^16.2.4",
+    "markdownlint-cli2": "^0.18.1",
     "playwright": "^1.56.0",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
@@ -95,6 +109,8 @@
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
     "rollup-plugin-visualizer": "^6.0.4",
+    "stylelint": "^16.25.0",
+    "stylelint-config-standard": "^39.0.1",
     "terser": "^5.44.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.10",
@@ -105,17 +121,21 @@
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write",
-      "bash -c 'npm run typecheck'"
+      "prettier --write"
     ],
     "*.{js,jsx}": [
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,md,yml,yaml}": [
+    "*.md": [
+      "markdownlint-cli2 --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml}": [
       "prettier --write"
     ],
     "*.{css,scss}": [
+      "stylelint --fix",
       "prettier --write"
     ]
   }

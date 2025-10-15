@@ -16,7 +16,7 @@
   content-visibility: auto;
 
   /* 내재적 크기 설정으로 스크롤 성능 향상 */
-  contain-intrinsic-size: 300px 200px;
+  contain-intrinsic-size: 18.75rem 12.5rem; /* 300px 200px */
 
   /* GPU 레이어 생성 */
   will-change: transform;
@@ -99,7 +99,7 @@
 }
 
 /* 애니메이션 완료 후 will-change 제거 */
-.xeg-gpu-accelerated:not(:hover):not(:focus) {
+.xeg-gpu-accelerated:not(:hover, :focus) {
   will-change: auto;
 }
 
@@ -127,7 +127,7 @@
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(0.625rem); /* 10px */
   }
   to {
     opacity: 1;
@@ -169,7 +169,6 @@
  */
 .xeg-layout-optimized {
   /* Flexbox 최적화 */
-  display: flex;
   flex-direction: column;
   min-height: 0; /* Firefox 버그 방지 */
 
@@ -236,8 +235,8 @@
 .xeg-performance-marker::before {
   content: attr(data-timing);
   position: absolute;
-  top: -9999px;
-  left: -9999px;
+  top: -62.4375rem; /* -9999px */
+  left: -62.4375rem; /* -9999px */
   opacity: 0;
 }
 
