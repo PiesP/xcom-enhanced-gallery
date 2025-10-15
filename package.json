@@ -42,7 +42,9 @@
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",
     "format": "prettier --write .",
-    "validate": "npm run typecheck && npm run lint:fix && npm run lint:css && npm run format",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "validate": "npm run typecheck && npm run lint:fix && npm run lint:css && npm run lint:md:fix && npm run format",
     "// === Dependencies ===": "",
     "deps:check": "dependency-cruiser src --validate --config .dependency-cruiser.cjs",
     "deps:json": "dependency-cruiser --config .dependency-cruiser.cjs --output-type json --output-to docs/dependency-graph.json src",
@@ -90,6 +92,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.0.0",
     "lint-staged": "^16.2.4",
+    "markdownlint-cli2": "^0.18.1",
     "playwright": "^1.56.0",
     "postcss": "^8.5.6",
     "postcss-cli": "^11.0.1",
@@ -116,7 +119,11 @@
       "eslint --fix",
       "prettier --write"
     ],
-    "*.{json,md,yml,yaml}": [
+    "*.md": [
+      "markdownlint-cli2 --fix",
+      "prettier --write"
+    ],
+    "*.{json,yml,yaml}": [
       "prettier --write"
     ],
     "*.{css,scss}": [
