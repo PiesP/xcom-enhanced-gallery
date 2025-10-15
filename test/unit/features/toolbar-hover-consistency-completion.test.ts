@@ -144,7 +144,10 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
     });
 
     it('모바일 반응형 지원이 유지되었다', () => {
-      const mobileMatch = toolbarCSSContent.match(/@media.*max-width.*(768px|48em)/g);
+      // 새로운 미디어 쿼리 형식 (width <=) 또는 구버전 (max-width) 모두 지원
+      const mobileMatch = toolbarCSSContent.match(
+        /@media.*(max-width.*(768px|48em)|width\s*<=\s*(768px|48em))/g
+      );
       expect(mobileMatch).toBeTruthy('모바일 반응형 지원 유지');
     });
   });

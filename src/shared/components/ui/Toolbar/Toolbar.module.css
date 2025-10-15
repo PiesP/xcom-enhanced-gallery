@@ -26,7 +26,6 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
-
   display: inline-flex;
   /* Phase 49: flex-direction 제거 - 기본 row 사용 */
   /* 설정 패널은 absolute positioning으로 플로우에서 제외됨 */
@@ -42,7 +41,6 @@
   transition:
     opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard);
-
   user-select: none;
 }
 
@@ -184,7 +182,9 @@
 /* 데이터 속성 기반 상태 관리 */
 .toolbarButton[data-active='true'] {
   background: var(--xeg-color-primary);
+
   --button-color: white;
+
   box-shadow:
     0 0 0 0.125em var(--xeg-color-primary-alpha-30),
     /* 2px → 0.125em */ 0 0.25em 1em var(--color-overlay-light); /* 4px 16px → 0.25em 1em */
@@ -193,6 +193,7 @@
 .toolbarButton[data-selected='true'] {
   --button-bg: var(--xeg-color-primary);
   --button-color: white;
+
   border-color: var(--xeg-color-primary);
 }
 
@@ -203,8 +204,11 @@
 
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
+
   background: var(--xeg-surface-disabled);
+
   --button-color: var(--xeg-color-neutral-400);
+
   cursor: not-allowed;
 }
 
@@ -436,7 +440,7 @@ button.fitButton {
   border-color: var(--xeg-color-neutral-300);
 }
 /* 반응형 디자인 */
-@media (max-width: 48em) {
+@media (width <= 48em) {
   /* 768px → 48em */
   .galleryToolbar {
     padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
@@ -476,7 +480,7 @@ button.fitButton {
   /* 반응형에서도 separator 표시 유지 */
 }
 
-@media (max-width: 30em) {
+@media (width <= 30em) {
   /* 480px → 30em */
   .galleryToolbar {
     padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
@@ -526,57 +530,57 @@ button.fitButton {
 @media (prefers-contrast: high) {
   .galleryToolbar {
     background: var(--color-base-white);
-    border: 2px solid var(--color-base-black);
+    border: var(--border-width-sm) solid var(--color-base-black); /* 2px → var(--border-width-sm) */
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow: 0 4px 20px var(--xeg-color-overlay-medium);
+    box-shadow: 0 0.25rem 1.25rem var(--xeg-color-overlay-medium); /* 4px 20px → 0.25rem 1.25rem */
   }
 
   .toolbarButton {
     background: var(--xeg-color-neutral-100);
-    border: 1px solid var(--xeg-color-neutral-900);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-900);
   }
 
   .toolbarButton:hover:not(:disabled) {
     background: var(--xeg-color-neutral-200);
-    border: 2px solid var(--xeg-color-neutral-900);
+    border: var(--border-width-sm) solid var(--xeg-color-neutral-900); /* 2px → var(--border-width-sm) */
   }
 
   .navButton {
     background: var(--xeg-color-primary-500);
-    border: 1px solid var(--xeg-color-neutral-900);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-100);
   }
 
   .downloadButton {
     background: var(--xeg-color-success-500);
-    border: 1px solid var(--xeg-color-neutral-900);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-100);
   }
 
   .closeButton {
     background: var(--xeg-color-error-500);
-    border: 1px solid var(--xeg-color-neutral-900);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-100);
   }
 }
 
 [data-theme='dark'] .toolbarButton {
   background: var(--xeg-color-neutral-700);
-  border: 1px solid var(--xeg-color-neutral-100);
+  border: var(--border-width-thin) solid var(--xeg-color-neutral-100); /* 1px → var(--border-width-thin) */
   color: var(--xeg-color-neutral-100);
 }
 
 @media (prefers-color-scheme: dark) and (prefers-contrast: high) {
   .galleryToolbar {
     background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
-    border: 2px solid var(--xeg-comp-toolbar-border);
+    border: var(--border-width-sm) solid var(--xeg-comp-toolbar-border); /* 2px → var(--border-width-sm) */
   }
 
   .toolbarButton {
     background: var(--xeg-color-neutral-700);
-    border: 1px solid var(--xeg-color-neutral-100);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-100); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-100);
   }
 }
@@ -588,8 +592,8 @@ button.fitButton {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
-      0 4px 16px var(--xeg-color-overlay-light),
-      0 2px 8px var(--xeg-color-overlay-light);
+      0 0.25rem 1rem var(--xeg-color-overlay-light),
+      /* 4px 16px → 0.25rem 1rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light); /* 2px 8px → 0.125rem 0.5rem */
   }
 
   [data-theme='dark'] .galleryToolbar {
@@ -598,7 +602,7 @@ button.fitButton {
 }
 
 /* 모바일 환경에서 시인성 강화 */
-@media (max-width: 48em) {
+@media (width <= 48em) {
   /* 768px → 48em */
   .galleryToolbar {
     background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
@@ -614,7 +618,7 @@ button.fitButton {
 }
 
 /* 작은 모바일 화면 */
-@media (max-width: 30em) {
+@media (width <= 30em) {
   /* 480px → 30em */
   .galleryToolbar {
     width: calc(100vw - 1.25em); /* 20px → 1.25em */
@@ -650,26 +654,26 @@ button.fitButton {
 /* 동적 고대비 모드 - 완전 불투명 배경 (Phase 56: 토큰화) */
 .galleryToolbar.highContrast {
   background: var(--xeg-toolbar-bg-high-contrast) !important;
-  border: 2px solid var(--xeg-toolbar-border-high-contrast) !important;
+  border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow:
-    0 4px 20px var(--xeg-color-overlay-medium),
-    0 2px 8px var(--xeg-color-overlay-light) !important;
+    0 0.25rem 1.25rem var(--xeg-color-overlay-medium),
+    /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
 [data-theme='dark'] .galleryToolbar.highContrast {
   background: var(--xeg-toolbar-bg-high-contrast) !important;
-  border: 2px solid var(--xeg-toolbar-border-high-contrast) !important;
+  border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
   box-shadow:
-    0 4px 20px var(--xeg-color-overlay-medium),
-    0 2px 8px var(--xeg-color-overlay-medium) !important;
+    0 0.25rem 1.25rem var(--xeg-color-overlay-medium),
+    /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-medium) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
 /* 고대비 모드에서 버튼 시인성 개선 (Phase 56: 토큰화) */
 .highContrast .toolbarButton {
   background: var(--xeg-toolbar-button-bg-high-contrast);
-  border: 1px solid var(--xeg-toolbar-button-border-high-contrast);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast); /* 1px → var(--border-width-thin) */
   color: var(--xeg-color-overlay-strong);
 }
 
@@ -681,7 +685,7 @@ button.fitButton {
 
 [data-theme='dark'] .highContrast .toolbarButton {
   background: var(--xeg-toolbar-button-bg-high-contrast);
-  border: 1px solid var(--xeg-toolbar-button-border-high-contrast);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast); /* 1px → var(--border-width-thin) */
   color: var(--xeg-glass-bg);
 }
 
@@ -701,12 +705,11 @@ button.fitButton {
   left: 0;
   right: 0;
   width: 100%;
-
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-md); /* Phase 49: 항상 패딩 유지 */
-  max-height: 500px; /* Phase 49: 항상 max-height 유지 */
+  max-height: 31.25rem; /* 500px = 31.25rem - Phase 49: 항상 max-height 유지 */
 
   /* Phase 49: 애니메이션 개선 - height → opacity + transform */
   /* 초기 상태 (축소) */
@@ -721,7 +724,7 @@ button.fitButton {
 
   /* Visual */
   background: var(--xeg-comp-toolbar-bg);
-  border-top: 1px solid transparent;
+  border-top: var(--border-width-thin) solid transparent; /* 1px → var(--border-width-thin) */
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
 }
 

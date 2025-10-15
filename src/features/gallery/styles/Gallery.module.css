@@ -24,9 +24,9 @@
  */
 :root {
   /* OKLCH 색상 시스템 - 더 자연스러운 색상 보간 */
-  --xeg-gallery-bg-oklch: oklch(0.15 0.02 220 / 0.95);
-  --xeg-gallery-surface-oklch: oklch(0.98 0.01 220 / 0.9);
-  --xeg-gallery-overlay-oklch: oklch(0.1 0.02 220 / 0.8);
+  --xeg-gallery-bg-oklch: oklch(15% 0.02 220deg / 95%);
+  --xeg-gallery-surface-oklch: oklch(98% 0.01 220deg / 90%);
+  --xeg-gallery-overlay-oklch: oklch(10% 0.02 220deg / 80%);
 
   /* Container Query 관련 변수 */
   --xeg-gallery-container-inline-size: 100vw;
@@ -184,7 +184,7 @@
 
   /* 표면/경계 - Semantic 토큰 (alias 제거) */
   background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--color-border-default);
+  border: var(--border-width-thin) solid var(--color-border-default);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -255,7 +255,7 @@
 
   /* 표면/경계 - Semantic 토큰 */
   background: var(--xeg-bg-toolbar);
-  border: 1px solid var(--color-border-default);
+  border: var(--border-width-thin) solid var(--color-border-default);
   border-radius: var(--xeg-radius-full);
 
   /* 크기 */
@@ -318,7 +318,7 @@
 
     &:hover {
       background: var(--xeg-gallery-surface-oklch);
-      border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 0.2);
+      border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 20%);
       transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
     }
   }
@@ -460,7 +460,7 @@
   display: inline-block;
   width: var(--xeg-icon-size-md);
   height: var(--xeg-icon-size-md);
-  border: 2px solid var(--xeg-color-neutral-400);
+  border: var(--border-width-sm) solid var(--xeg-color-neutral-400);
   border-radius: var(--xeg-radius-full);
   border-top-color: var(--xeg-color-text-primary);
   animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
@@ -517,8 +517,8 @@
   gap: var(--xeg-spacing-md);
   padding: var(--xeg-spacing-md) var(--xeg-spacing-md);
   background: var(--xeg-toolbar-bg);
-  border: 1px solid var(--xeg-toolbar-border);
-  border-radius: 28px;
+  border: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  border-radius: var(--radius-pill); /* 28px → var(--radius-pill) = 1.75em */
   z-index: var(--xeg-z-gallery-toolbar);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
@@ -552,7 +552,7 @@
  */
 .controlButton {
   background: var(--xeg-button-bg);
-  border: 1px solid var(--xeg-button-border);
+  border: var(--border-width-thin) solid var(--xeg-button-border);
   /* Interaction element radius policy: md */
   border-radius: var(--xeg-radius-md);
   padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
@@ -816,7 +816,7 @@
 }
 
 /**
- * 스크린 리더 전용 텍스트
+/**
  * 시각적으로는 숨기지만 스크린 리더에서는 읽을 수 있는 텍스트 스타일입니다.
  *
  * Features:
@@ -826,10 +826,10 @@
  */
 .srOnly {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: 0.0625rem; /* 1px = 0.0625rem */
+  height: 0.0625rem; /* 1px = 0.0625rem */
   padding: 0;
-  margin: -1px;
+  margin: -0.0625rem; /* -1px = -0.0625rem */
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
@@ -853,11 +853,11 @@
   .controlButton,
   .navButton,
   .closeButton {
-    border: 2px solid white;
+    border: var(--border-width-sm) solid white; /* 2px → var(--border-width-sm) */
   }
 
   .error {
-    border: 2px solid var(--color-error);
+    border: var(--border-width-sm) solid var(--color-error); /* 2px → var(--border-width-sm) */
   }
 }
 

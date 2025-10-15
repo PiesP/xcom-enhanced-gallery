@@ -74,6 +74,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@csstools/postcss-oklab-function": "^4.0.12",
     "@eslint/js": "^9.37.0",
     "@playwright/test": "^1.56.0",
     "@solidjs/testing-library": "^0.8.10",

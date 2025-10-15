@@ -11,6 +11,24 @@
         "message": "Use design tokens (rem/em) instead of hardcoded px values. (Gradual migration in progress)"
       }
     ],
+    "no-duplicate-selectors": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "no-descending-specificity": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
+    "declaration-block-no-shorthand-property-overrides": [
+      true,
+      {
+        "severity": "warning"
+      }
+    ],
     "color-function-notation": "modern",
     "alpha-value-notation": ["percentage", { "exceptProperties": ["opacity"] }],
     "value-keyword-case": ["lower", { "camelCaseSvgKeywords": true, "ignoreKeywords": ["currentColor"] }],
