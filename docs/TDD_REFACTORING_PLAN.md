@@ -5,7 +5,7 @@
 ## 프로젝트 현황
 
 - **빌드**: prod **320.09 KB / 325 KB** (4.91 KB 여유, 1.5%) ✅
-- **테스트**: **386개 파일**, 775 passing, 9 skipped (98.9% 통과율) ✅
+- **테스트**: **373개 파일**, 775 passing, 9 skipped (98.9% 통과율) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (259 modules, 725 dependencies) ✅
@@ -14,7 +14,8 @@
 ## 현재 상태: Phase 78 - 테스트 구조 최적화 (진행 중) �
 
 **시작일**: 2025-10-15  
-**목표**: 386개 → 300개 이하, 23개 디렉터리 → 10개 이하
+**목표**: 373개 → 300개 이하, 23개 디렉터리 → 10개 이하  
+**진행률**: 15/82 (18.3%)
 
 ### 완료된 작업 ✅
 
@@ -25,9 +26,11 @@
 - ✅ lcov 리포터 추가 (CI 호환성)
 - ✅ 테스트 및 빌드 검증 완료
 
-#### Step 3: Legacy 테스트 정리 (부분 완료)
+#### Step 3: Legacy 테스트 정리 (진행 중)
 
-제거된 파일 (6개):
+**제거된 파일 (15개)**:
+
+First Batch (6개, 2025-10-15):
 
 - `button-wrapper-removal-red.test.ts` - Button-legacy 이미 제거됨
 - `button-consolidation-red.test.ts` - 버튼 통합 완료
@@ -36,7 +39,22 @@
 - `toolbar.characterization.test.js` - 빈 파일
 - `token-alignment.characterization.test.tsx` - 중복 파일
 
-**진행 상황**: 392개 → 386개 (6개 감소, 1.5%)
+Second Batch (9개, 2025-10-15):
+
+- Characterization tests (5개 - 정규 테스트로 대체됨):
+  - `toolbar.characterization.test.ts`
+  - `token-alignment.characterization.test.ts`
+  - `performance-optimization.characterization.test.tsx`
+  - `legacy-class-cleanup.characterization.test.tsx`
+  - `toolbar-a11y.characterization.test.ts`
+- RED tests (4개 - 구현 완료, 정규 테스트 존재):
+  - `bulk-download.retry-action.red.test.ts`
+  - `bulk-download.retry-action.sequence.red.test.ts`
+  - `media-processor.progress-observer.red.test.ts`
+  - `media-processor.telemetry.red.test.ts`
+
+**진행 상황**: 382개 → 373개 (15개 감소, 18.3%)  
+**다음**: 약 58개 추가 제거 필요 (RED/중복 테스트 재평가)
 
 ### 다음 단계 (우선순위 순)
 
