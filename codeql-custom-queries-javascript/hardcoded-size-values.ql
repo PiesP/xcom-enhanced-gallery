@@ -16,6 +16,9 @@
  * Ignores: design-tokens.*.css files
  */
 
-// CodeQL for JavaScript does not have native CSS support.
-// Use stylelint for CSS linting instead.
-// This file is kept for documentation purposes.
+import javascript
+
+// Empty query that never matches - used as documentation placeholder
+from File f
+where none()
+select f, "This query is a placeholder. Use stylelint for CSS linting."
