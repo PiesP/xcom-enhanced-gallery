@@ -7,6 +7,84 @@
 
 ## 최신 완료 Phase
 
+### Phase 78: 디자인 토큰 통일 (Design Token Unification) ✅
+
+**완료일**: 2025-10-15 **목표**: 크기 em/rem 통일 + 색상 oklch 통일 + stylelint
+강제 **결과**: Primitive/Semantic 토큰 통일 완료, Component CSS는 점진적 개선
+
+#### 달성 메트릭
+
+| 항목          | 시작      | 최종         | 개선                          |
+| ------------- | --------- | ------------ | ----------------------------- |
+| 빌드 크기     | 321.52 KB | 321.52 KB    | 예산 내 유지 ✅               |
+| px 토큰       | 45개      | 0개          | -45개 (Primitive/Semantic) ✅ |
+| rgba 토큰     | 45개      | 0개          | -45개 (oklch 통일) ✅         |
+| stylelint     | N/A       | warning 모드 | 점진적 개선 ⚠️                |
+| 테스트 통과율 | 100%      | 100%         | 유지 ✅                       |
+
+#### 핵심 변경 (Phase 78)
+
+1. **Phase 78.1: Primitive 토큰 변환** ✅
+   - Spacing: `4px→0.25rem`, `48px→3rem` (rem: 절대 크기, 16px 기준)
+   - Radius: `2px→0.125em`, `28px→1.75em` (em: 상대 크기, font-size 기준)
+   - Font-size: `11px→0.6875rem` ~ `24px→1.5rem` (rem: 절대 크기)
+
+2. **Phase 78.2: Semantic 토큰 변환** ✅
+   - Button/Icon sizes: `32px→2em`, `48px→3em` (em: 상대 크기)
+   - Shadows: `0 1px 2px → 0 0.0625rem 0.125rem` (rem: 절대 위치)
+   - Focus outline: `2px→0.125rem`, `3px→0.1875rem` (rem: 절대 크기)
+   - Toast: `320px→20rem`, `480px→30rem` (rem: 절대 크기)
+
+3. **Phase 78.3: 색상 oklch 통일** ✅
+   - Text: `rgba(255,255,255,0.7) → oklch(1 0 0 / 70%)`
+   - Overlay: `rgba(0,0,0,0.1) → oklch(0 0 0 / 10%)`
+   - Glass:
+     `rgba(255,255,255,var(--opacity-glass)) → oklch(1 0 0 / var(--opacity-glass))`
+   - Shadow: `rgba(0,0,0,0.15) → oklch(0 0 0 / 15%)`
+
+4. **stylelint 설정** ✅
+   - `.stylelintrc.json` 생성 (px 사용 warning, design-tokens 제외)
+   - `package.json`에 `lint:css` 스크립트 추가
+   - Warning 모드로 점진적 개선 (기존 코드는 빌드 실패 방지)
+
+#### 전략 및 결정 사항
+
+**rem vs em 선택 기준:**
+
+- **rem** (절대 크기): spacing, font-size, shadow, focus outline
+  - 브라우저 확대/축소에 비례
+  - 16px 기준값 (1rem = 16px)
+- **em** (상대 크기): radius, button-size, icon-size
+  - font-size에 비례하여 확대/축소
+  - 컴포넌트 간 일관성 유지
+
+**oklch 통일:**
+
+- 기존 oklch scale 유지 (blue, gray, red, green, yellow)
+- rgba → oklch 변환: 투명도는 `/` 표기로 통일
+- 흑백 투명도: `oklch(0 0 0 / %)` 또는 `oklch(1 0 0 / %)`
+
+**Component CSS 제외 이유:**
+
+- 100+ 파일에 걸친 px 사용 (300+ 인스턴스)
+- 점진적 개선이 더 안전 (빌드 실패 리스크 감소)
+- stylelint warning으로 시각화 및 모니터링
+
+#### 교훈 및 개선 방향
+
+- ✅ **토큰 우선 접근**: Design token 파일부터 통일하여 레버리지 확보
+- ⚠️ **점진적 마이그레이션**: Component CSS는 warning 모드로 점진적 개선
+- ✅ **rem/em 혼합 전략**: 절대 크기(rem) + 상대 크기(em) 조합으로 접근성 향상
+- ⚠️ **stylelint 활용**: 자동 검증으로 새로운 px 추가 방지
+
+#### 다음 단계 (선택 사항)
+
+- [ ] Component CSS px → rem/em 점진적 변환
+- [ ] stylelint `--fix` 옵션으로 자동 변환 검토
+- [ ] 브라우저 호환성 테스트 (em/rem 지원)
+
+---
+
 ### Phase 76: Performance 테스트 재활성화 ✅
 
 **완료일**: 2025-10-15 **목표**: Performance 테스트 2개 재활성화 및 API 수정

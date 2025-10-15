@@ -25,8 +25,8 @@
   --color-text-secondary: var(--color-gray-700);
   --color-text-muted: var(--color-gray-500);
   --color-text-inverse: var(--color-base-white);
-  --color-text-error: rgba(255, 255, 255, 0.7);
-  --color-text-on-overlay: rgba(255, 255, 255, 0.9);
+  --color-text-error: oklch(1 0 0 / 70%); /* white with 70% opacity */
+  --color-text-on-overlay: oklch(1 0 0 / 90%); /* white with 90% opacity */
 
   /* Border Colors - Semantic Roles */
   --color-border-default: var(--color-gray-200);
@@ -85,19 +85,19 @@
   --xeg-color-neutral-700: var(--color-gray-700);
   --xeg-color-neutral-800: var(--color-gray-800);
 
-  /* Overlay Colors - Semantic Roles */
-  --color-overlay-light: rgba(0, 0, 0, var(--opacity-overlay-light));
-  --color-overlay-medium: rgba(0, 0, 0, var(--opacity-overlay-medium));
-  --color-overlay-strong: rgba(0, 0, 0, var(--opacity-overlay-strong));
-  --color-overlay-backdrop: rgba(0, 0, 0, var(--opacity-overlay-backdrop));
-  --color-overlay-light-bg: rgba(255, 255, 255, 0.95);
-  --color-overlay-dark-bg: rgba(0, 0, 0, 0.95);
-  --color-overlay-button-light: rgba(0, 0, 0, 0.1);
-  --color-overlay-button-light-hover: rgba(0, 0, 0, 0.2);
+  /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
+  --color-overlay-light: oklch(0 0 0 / var(--opacity-overlay-light));
+  --color-overlay-medium: oklch(0 0 0 / var(--opacity-overlay-medium));
+  --color-overlay-strong: oklch(0 0 0 / var(--opacity-overlay-strong));
+  --color-overlay-backdrop: oklch(0 0 0 / var(--opacity-overlay-backdrop));
+  --color-overlay-light-bg: oklch(1 0 0 / 95%); /* white with 95% opacity */
+  --color-overlay-dark-bg: oklch(0 0 0 / 95%); /* black with 95% opacity */
+  --color-overlay-button-light: oklch(0 0 0 / 10%); /* black with 10% opacity */
+  --color-overlay-button-light-hover: oklch(0 0 0 / 20%); /* black with 20% opacity */
 
-  /* Glass Effect - Semantic Roles */
-  --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
-  --color-glass-border: rgba(255, 255, 255, 0.2);
+  /* Glass Effect - Semantic Roles (oklch with opacity tokens) */
+  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
+  --color-glass-border: oklch(1 0 0 / 20%); /* white with 20% opacity */
 
   /* Spacing - Semantic Roles */
   --spacing-component-padding: var(--space-md);
@@ -105,38 +105,38 @@
   --spacing-section-gap: var(--space-lg);
   --spacing-item-gap: var(--space-sm);
 
-  /* Component Sizing - Semantic Roles */
-  --size-button-height: 40px;
-  --size-button-sm: 32px;
-  --size-button-md: 40px;
-  --size-button-lg: 48px;
-  --size-button-touch: 44px; /* Touch-friendly button size (min 44px) */
-  --size-input-height: 40px;
+  /* Component Sizing - Semantic Roles (em: relative to font-size) */
+  --size-button-height: 2.5em; /* 40px @ 16px */
+  --size-button-sm: 2em; /* 32px @ 16px */
+  --size-button-md: 2.5em; /* 40px @ 16px */
+  --size-button-lg: 3em; /* 48px @ 16px */
+  --size-button-touch: 2.75em; /* 44px @ 16px, Touch-friendly button size */
+  --size-input-height: 2.5em; /* 40px @ 16px */
 
   /* Button Size Tokens - xeg prefix for consistency */
   --xeg-size-button-sm: var(--size-button-sm);
   --xeg-size-button-md: var(--size-button-md);
   --xeg-size-button-lg: var(--size-button-lg);
   --xeg-size-button-touch: var(--size-button-touch);
-  --size-icon-sm: 16px;
-  --size-icon-md: 20px;
-  --size-icon-lg: 24px;
+  --size-icon-sm: 1em; /* 16px @ 16px */
+  --size-icon-md: 1.25em; /* 20px @ 16px */
+  --size-icon-lg: 1.5em; /* 24px @ 16px */
 
   /* Animation - Semantic Roles */
   --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Shadows - Semantic Roles */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.15);
-  --shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-inset-border: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  /* Shadows - Semantic Roles (rem for absolute positioning, oklch for colors) */
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0 0 0 / 5%); /* 0 1px 2px, black 5% */
+  --shadow-md: 0 0.25rem 0.75rem oklch(0 0 0 / 15%); /* 0 4px 12px, black 15% */
+  --shadow-lg: 0 0.5rem 2rem oklch(0 0 0 / 15%); /* 0 8px 32px, black 15% */
+  --shadow-xl: 0 0.25rem 1.25rem oklch(0 0 0 / 30%); /* 0 4px 20px, black 30% */
+  --shadow-inset-border: 0 0 0 0.0625rem oklch(0 0 0 / 5%); /* 0 0 0 1px, black 5% */
   --shadow-gallery-image: var(--shadow-xl);
   --shadow-gallery-nav: var(--shadow-md);
-  --shadow-thumbnail: 0 2px 8px rgba(15, 23, 42, 0.08);
-  --shadow-thumbnail-hover: 0 4px 16px rgba(15, 23, 42, 0.12);
+  --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0.006 277.8 / 8%); /* 0 2px 8px, slate-900 8% */
+  --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0.006 277.8 / 12%); /* 0 4px 16px, slate-900 12% */
 
   /* Legacy Shadow Tokens - 호환성 보장 */
   --xeg-shadow-sm: var(--shadow-sm);
@@ -144,9 +144,9 @@
   --xeg-shadow-lg: var(--shadow-lg);
   --xeg-shadow-inset-border: var(--shadow-inset-border);
 
-  /* Focus & Accessibility */
-  --xeg-focus-outline: 2px solid var(--color-primary);
-  --xeg-focus-offset: 2px;
+  /* Focus & Accessibility (rem for absolute outline width) */
+  --xeg-focus-outline: 0.125rem solid var(--color-primary); /* 2px */
+  --xeg-focus-offset: 0.125rem; /* 2px */
 
   /* Animation Timing - Semantic Roles */
   --xeg-duration: var(--duration-normal);
@@ -194,13 +194,13 @@
 [data-theme='light'] {
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
-  --color-glass-bg: rgba(255, 255, 255, var(--opacity-glass));
+  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
 }
 
 [data-theme='dark'] {
   --color-bg-primary: var(--color-gray-900);
   --color-text-primary: var(--color-base-white);
-  --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+  --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
 
   /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
   --xeg-bg-toolbar: var(--color-gray-800);
@@ -234,12 +234,12 @@
   :root:not([data-theme='light']) {
     --color-bg-primary: var(--color-gray-900);
     --color-text-primary: var(--color-base-white);
-    --color-glass-bg: rgba(0, 0, 0, var(--opacity-glass));
+    --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
 
     /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-toolbar-border: var(--color-border-emphasis);
-    --xeg-surface-glass-bg: rgba(30, 30, 30, 0.95);
+    --xeg-surface-glass-bg: oklch(0.234 0.006 277.8 / 95%); /* gray-900 with 95% opacity */
 
     /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
@@ -262,7 +262,7 @@
 
 @media (prefers-contrast: high) {
   :root {
-    --xeg-focus-outline: 3px solid var(--color-primary);
+    --xeg-focus-outline: 0.1875rem solid var(--color-primary); /* 3px */
     --color-border-emphasis: var(--color-base-black);
   }
 }
@@ -295,7 +295,7 @@
   --xeg-settings-select-padding: var(--space-sm) var(--space-md);
   --xeg-settings-select-bg: var(--xeg-bg-toolbar);
   --xeg-settings-select-border: var(--xeg-toolbar-border);
-  --xeg-settings-select-focus-ring: 0 0 0 3px oklch(0.676 0.151 237.8);
+  --xeg-settings-select-focus-ring: 0 0 0 0.1875rem oklch(0.676 0.151 237.8); /* 3px */
 
   /* Modal Component Tokens */
   /* NOTE: Modal component tokens now defer to semantic tokens to avoid
@@ -315,26 +315,26 @@
   --xeg-toast-bg-error: oklch(0.971 0.013 17.4);
   --xeg-toast-border-error: oklch(0.628 0.257 27.3);
   --xeg-toast-bg-neutral: oklch(0.943 0.006 206.2);
-  --xeg-toast-shadow-info: 0 2px 8px oklch(0.676 0.151 237.8 / 0.15);
-  --xeg-toast-shadow-focus: 0 4px 16px oklch(0.676 0.151 237.8 / 0.25);
+  --xeg-toast-shadow-info: 0 0.125rem 0.5rem oklch(0.676 0.151 237.8 / 0.15); /* 0 2px 8px */
+  --xeg-toast-shadow-focus: 0 0.25rem 1rem oklch(0.676 0.151 237.8 / 0.25); /* 0 4px 16px */
 
   /* Toast Layout Tokens (Phase 52) */
   --xeg-toast-margin-bottom: var(--space-md); /* 16px - 4px grid normalized */
   --xeg-toast-padding: var(--space-lg); /* 24px - 4px grid normalized */
   --xeg-toast-gap: var(--space-sm); /* 8px - content gap */
   --xeg-toast-header-gap: var(--space-md); /* 16px - header gap normalized */
-  --xeg-toast-min-width: 320px;
-  --xeg-toast-max-width: 480px;
-  --xeg-toast-border-width: 4px;
+  --xeg-toast-min-width: 20rem; /* 320px */
+  --xeg-toast-max-width: 30rem; /* 480px */
+  --xeg-toast-border-width: 0.25rem; /* 4px */
 
   /* Toast Typography Tokens (Phase 52) */
   --xeg-toast-title-font-size: var(--font-size-sm); /* 14px */
   --xeg-toast-title-font-weight: 600;
-  --xeg-toast-message-font-size: 13px;
+  --xeg-toast-message-font-size: 0.8125rem; /* 13px */
 
   /* Focus Ring Utilities */
-  --xeg-focus-ring: 2px solid oklch(0.676 0.151 237.8);
-  --xeg-focus-ring-offset: 2px;
+  --xeg-focus-ring: 0.125rem solid oklch(0.676 0.151 237.8); /* 2px */
+  --xeg-focus-ring-offset: 0.125rem; /* 2px */
 } /* ===== 유틸리티 클래스 ===== */
 
 /* Toast 애니메이션 토큰 */
