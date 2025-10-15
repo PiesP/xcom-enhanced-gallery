@@ -104,6 +104,7 @@ function runCodeQLQueries() {
     'direct-vendor-imports.ql',
     'forbidden-touch-events.ql',
     'hardcoded-color-values.ql',
+    'hardcoded-size-values.ql',
     'unsafe-download-pattern.ql',
   ];
 

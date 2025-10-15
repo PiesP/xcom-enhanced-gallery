@@ -27,7 +27,9 @@ predicate isHardcodedColor(StringLiteral lit) {
       or
       // hsl/hsla functions
       value.regexpMatch("hsla?\\s*\\(.*\\)")
-    )
+    ) and
+    // Exclude oklch() - the only allowed color format per CODING_GUIDELINES.md
+    not value.regexpMatch(".*oklch\\s*\\(.*\\).*")
   )
 }
 
@@ -60,8 +62,8 @@ where
   isHardcodedColor(lit) and
   not isAllowedFile(lit.getFile()) and
   not isTokenReference(lit) and
-  // Exclude zero/transparent values (commonly used for borders/shadows)
-  not lit.getValue().regexpMatch("(#0{3,8}|rgba?\\(0,\\s*0,\\s*0,.*|transparent)")
+  // Exclude black/white/transparent (allowed exceptions per CODING_GUIDELINES.md)
+  not lit.getValue().regexpMatch("(#0{6,8}|#[fF]{6,8}|transparent)")
 select lit,
   "Hardcoded color value '" + lit.getValue() +
-    "' detected. Use design tokens (--xeg-* custom properties) instead for consistent theming."
+    "' detected. Use oklch() format or design tokens (--xeg-* custom properties) instead for consistent theming."

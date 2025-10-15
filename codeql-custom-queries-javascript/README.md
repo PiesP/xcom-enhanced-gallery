@@ -56,27 +56,68 @@ element.addEventListener('wheel', handler);
 **위반 예시**:
 
 ```typescript
-// ❌ 금지
-const style = { color: '#ffffff', background: 'rgb(0, 0, 0)' };
+// ❌ 금지: hex, rgb, rgba, hsl
+const style = { color: '#1da1f2', background: 'rgb(29, 161, 242)' };
 
-// ✅ 허용
+// ✅ 허용: oklch() 전용
 const style = {
-  color: 'var(--xeg-color-text)',
+  color: 'oklch(0.7 0.15 220)', // 파란색
+  background: 'oklch(0 0 0 / var(--opacity-overlay-light))', // 검은색 + opacity
+};
+
+// ✅ 허용: 디자인 토큰
+const style = {
+  color: 'var(--xeg-color-primary)',
   background: 'var(--xeg-color-bg)',
 };
 ```
 
 **예외**:
 
-- 디자인 토큰 정의 파일
+- 디자인 토큰 정의 파일 (`design-tokens*.css`)
 - 테스트 파일
-- `#000000` / `transparent` (보더/섀도우용)
+- 흑백 기본값: `#000000`, `#ffffff`, `transparent`
+- oklch 형식은 항상 허용
 
-**이유**: 일관된 테마 적용, 다크모드 지원
+**이유**: 일관된 테마 적용, oklch 색공간 사용 (CODING_GUIDELINES.md)
 
 ---
 
-### 4. `unsafe-download-pattern.ql` (경고)
+### 4. `hardcoded-size-values.ql` (경고)
+
+**목적**: 하드코딩된 px 크기값 감지
+
+**위반 예시**:
+
+```typescript
+// ❌ 금지: JavaScript/TypeScript에서 px 직접 사용
+const style = {
+  padding: '16px',
+  fontSize: '14px',
+  borderRadius: '8px',
+};
+
+// ✅ 허용: rem (절대 크기) / em (상대 크기) 토큰
+const style = {
+  padding: 'var(--space-md)', // 1rem
+  fontSize: 'var(--font-size-base)', // 0.9375rem
+  borderRadius: 'var(--radius-md)', // 0.375em
+};
+```
+
+**예외**:
+
+- 디자인 토큰 정의 파일 (`design-tokens*.css`)
+- 테스트 파일
+- 설정 파일 (`vite.config.ts`, `postcss.config.js`)
+
+**이유**: rem/em 단위 사용으로 접근성 향상, 일관된 스케일링
+
+**참고**: CSS 파일의 px 검증은 stylelint가 담당 (`.stylelintrc.json`)
+
+---
+
+### 5. `unsafe-download-pattern.ql` (경고)
 
 **목적**: 부적절한 다운로드 패턴 감지
 
@@ -104,42 +145,7 @@ await getUserscript().download(url, filename);
 
 ---
 
-### 5. `hardcoded-size-values.ql` (경고) ⭐ NEW (Phase 78)
-
-**목적**: 하드코딩된 px 크기 값 감지
-
-**위반 예시**:
-
-```css
-/* ❌ 금지 */
-.button {
-  padding: 16px;
-  font-size: 14px;
-  border-radius: 6px;
-}
-
-/* ✅ 허용 */
-.button {
-  padding: var(--space-md); /* 1rem = 16px */
-  font-size: var(--font-size-sm); /* 0.875rem = 14px */
-  border-radius: var(--radius-md); /* 0.375em = 6px @ 16px */
-}
-```
-
-**예외**:
-
-- `design-tokens.primitive.css` (토큰 정의)
-- `design-tokens.semantic.css` (토큰 정의)
-- `design-tokens.css` (레거시 토큰)
-
-**이유**: 접근성 (브라우저 설정 존중), 일관성, 유지보수성
-
-**Note**: CodeQL은 CSS 직접 지원이 제한적이므로, **실제 검증은 stylelint**로
-수행됩니다.
-
----
-
-## Stylelint 통합 ⭐ (Phase 78)
+## Stylelint 통합 ⭐ (CSS 규칙)
 
 CSS 규칙(크기/색상)은 CodeQL 대신 **stylelint**로 강제합니다.
 

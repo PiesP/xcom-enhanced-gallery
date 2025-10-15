@@ -29,6 +29,7 @@ playwright/.cache/
 
 # CodeQL
 codeql-db/
+.codeql-db/
 *.sarif
 .codeql/
 codeql-results/
