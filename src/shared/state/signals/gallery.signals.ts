@@ -14,6 +14,13 @@ import { effectSafe, createSignalSafe } from './signal-factory';
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 import { getSolid } from '../../external/vendors';
 import { createEventEmitter } from '../../utils/event-emitter';
+// Phase 77: Navigation State Machine
+import type { NavigationSource } from '../types/navigation-types';
+import {
+  NavigationStateMachine,
+  type NavigationState,
+  type NavigationAction,
+} from '../navigation-state-machine';
 
 const { batch } = getSolid();
 
@@ -51,32 +58,38 @@ export type GalleryEvents = {
   'gallery:error': { error: string };
 };
 
-/**
- * Navigation source type (Phase 77)
- * 네비게이션의 출처를 추적하여 자동 포커스와 수동 네비게이션을 구분
- */
-export type NavigationSource = 'button' | 'keyboard' | 'scroll' | 'auto-focus';
+// Re-export NavigationSource type for backward compatibility
+export type { NavigationSource };
 
 // Logger instance (services-free)
 const logger: ILogger = rootLogger;
 
 // ============================================================================
-// Phase 77: Navigation Source Tracking
+// Phase 77: Navigation State Machine
 // ============================================================================
 
 /**
- * Last navigation source tracker
- * 마지막 네비게이션의 출처를 추적하여 중복 검사 로직 개선
+ * Navigation state machine instance
+ * 갤러리 네비게이션 상태 전환을 중앙에서 관리
  */
-let lastNavigationSource: NavigationSource = 'auto-focus';
+let navigationState: NavigationState = NavigationStateMachine.createInitialState();
+
+/**
+ * Get current navigation state (Phase 77)
+ * 테스트 및 디버깅 용도
+ * @returns 현재 네비게이션 상태
+ */
+export function getNavigationState(): NavigationState {
+  return navigationState;
+}
 
 /**
  * Get last navigation source (Phase 77)
- * 테스트 및 디버깅 용도
+ * 하위 호환성을 위한 래퍼
  * @returns 마지막 네비게이션 소스
  */
 export function getLastNavigationSource(): NavigationSource {
-  return lastNavigationSource;
+  return navigationState.lastSource;
 }
 
 // ============================================================================
@@ -187,8 +200,10 @@ export function openGallery(items: readonly MediaInfo[], startIndex = 0): void {
   // Phase 64: focusedIndex 초기화
   gallerySignals.focusedIndex.value = validIndex;
 
-  // Phase 77: 갤러리 오픈 시 lastNavigationSource를 auto-focus로 리셋
-  lastNavigationSource = 'auto-focus';
+  // Phase 77: 상태 머신 리셋
+  const resetAction: NavigationAction = { type: 'RESET' };
+  const result = NavigationStateMachine.transition(navigationState, resetAction);
+  navigationState = result.newState;
 
   logger.debug(`[Gallery] Opened with ${items.length} items, starting at index ${validIndex}`);
 }
@@ -208,8 +223,10 @@ export function closeGallery(): void {
   // Phase 64: focusedIndex 초기화
   gallerySignals.focusedIndex.value = null;
 
-  // Phase 77: 갤러리 닫을 때 lastNavigationSource 리셋
-  lastNavigationSource = 'auto-focus';
+  // Phase 77: 상태 머신 리셋
+  const resetAction: NavigationAction = { type: 'RESET' };
+  const result = NavigationStateMachine.transition(navigationState, resetAction);
+  navigationState = result.newState;
 
   logger.debug('[Gallery] Closed');
 }
@@ -228,23 +245,24 @@ export function navigateToItem(
   const state = galleryState.value;
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
 
-  // Phase 77: source 기반 중복 검사
-  // 수동 네비게이션(버튼/키보드)이면서 마지막 네비게이션도 수동이고,
-  // 이미 해당 인덱스에 있으면 focusedIndex만 동기화
-  const isDuplicateManual =
-    validIndex === state.currentIndex &&
-    source !== 'auto-focus' &&
-    lastNavigationSource !== 'auto-focus';
+  // Phase 77: 상태 머신 기반 전환
+  const navigateAction: NavigationAction = {
+    type: 'NAVIGATE',
+    payload: {
+      targetIndex: validIndex,
+      source,
+      trigger,
+    },
+  };
+  const result = NavigationStateMachine.transition(navigationState, navigateAction);
+  navigationState = result.newState;
 
-  if (isDuplicateManual) {
+  // 중복 수동 네비게이션이면 focusedIndex만 동기화
+  if (result.isDuplicate) {
     logger.debug(`[Gallery] Already at index ${index} (source: ${source}), syncing focusedIndex`);
-    // 명시적 네비게이션이지만 같은 위치면 focusedIndex만 동기화
     gallerySignals.focusedIndex.value = validIndex;
     return;
   }
-
-  // Phase 77: 네비게이션 소스 업데이트
-  lastNavigationSource = source;
 
   // Phase 63: 네비게이션 시작 이벤트 발행
   galleryIndexEvents.emit('navigate:start', {
@@ -317,6 +335,17 @@ export function setFocusedIndex(
 ): void {
   const state = galleryState.value;
 
+  // Phase 77: 상태 머신 기반 전환
+  const setFocusAction: NavigationAction = {
+    type: 'SET_FOCUS',
+    payload: {
+      focusIndex: index,
+      source,
+    },
+  };
+  const result = NavigationStateMachine.transition(navigationState, setFocusAction);
+  navigationState = result.newState;
+
   // null은 그대로 허용
   if (index === null) {
     gallerySignals.focusedIndex.value = null;
@@ -327,11 +356,6 @@ export function setFocusedIndex(
   // 유효한 범위로 정규화
   const validIndex = Math.max(0, Math.min(index, state.mediaItems.length - 1));
   gallerySignals.focusedIndex.value = validIndex;
-
-  // Phase 77: auto-focus에서의 변경은 lastNavigationSource 업데이트
-  if (source === 'auto-focus') {
-    lastNavigationSource = 'auto-focus';
-  }
 
   logger.debug(`[Gallery] focusedIndex set to ${validIndex} (source: ${source})`);
 }
