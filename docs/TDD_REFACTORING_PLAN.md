@@ -86,12 +86,65 @@ test/
 
 ---
 
+## 현재 작업: Phase 77 (진행 중) 🚀
+
+### Phase 77: 네비게이션 상태 머신 명시화
+
+**시작일**: 2025-10-15 **목표**: focusedIndex/currentIndex 동기화 명확화 + 상태
+전환 중앙화 **예상 기간**: 2-3일
+
+#### 현재 문제
+
+1. **분산된 상태 전환 로직**
+   - `navigateToItem`, `navigatePrevious`, `navigateNext`, `setFocusedIndex`
+     등에 분산
+   - `lastNavigationSource` 파일 스코프 변수 (캡슐화 부족)
+
+2. **불명확한 동기화 조건**
+   - `isDuplicateManual` 조건이 복잡하고 테스트하기 어려움
+   - 스크롤 vs 버튼 네비게이션 우선순위 모호
+
+3. **테스트 가능성**
+   - 상태 머신이 암묵적이어서 단위 테스트 작성 어려움
+
+#### 해결 방안
+
+**Step 1**: 상태 머신 인터페이스 설계
+
+- NavigationState 타입 정의:
+  `{ source: NavigationSource; lastIndex: number; ... }`
+- 명시적 전환 함수: `transition(from: State, action: Action) => State`
+
+**Step 2**: NavigationStateMachine 클래스 구현
+
+- 순수 함수 기반 상태 전환 로직
+- 기존 `galleryIndexEvents`와 통합
+- 테스트 용이한 구조
+
+**Step 3**: 기존 코드 통합
+
+- `navigateToItem` 등에서 상태 머신 사용
+- `lastNavigationSource` 제거하고 상태 머신으로 대체
+- focusedIndex/currentIndex 동기화 로직 단순화
+
+**Step 4**: TDD로 검증
+
+- 각 전환 시나리오별 테스트
+- 경계 조건 테스트 (동일 인덱스, 범위 초과 등)
+
+#### 작업 진척
+
+- [x] 현재 상태 분석
+- [ ] 상태 머신 인터페이스 설계
+- [ ] NavigationStateMachine 구현
+- [ ] 기존 코드 통합
+- [ ] 테스트 작성
+- [ ] 빌드 검증
+- [ ] 문서 업데이트
+
+---
+
 ## 다음 Phase 계획
-
-### Phase 77: 네비게이션 상태 머신 도입 📋
-
-**상태**: 계획 중 (Phase 78 완료 후) **목표**: focusedIndex/currentIndex 불일치
-해결 **예상**: 2-3일
 
 ### Phase 76: 스크롤 로직 단순화 ⏸️
 
