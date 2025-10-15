@@ -4,7 +4,7 @@
 
 import { logger } from '../../logging/logger';
 import { Debouncer } from '../performance/performance-utils';
-import { addWheelListener, ensureWheelLock } from '../events/wheel';
+import { addWheelListener } from '../events/wheel';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
@@ -38,21 +38,6 @@ export function isGalleryElement(element: HTMLElement | null): boolean {
 /** 스크롤 디바운서 생성 */
 export function createScrollDebouncer(callback: () => void, delay: number = 150): Debouncer<[]> {
   return new Debouncer(callback, delay);
-}
-
-/**
- * 스크롤 전파 방지
- */
-export function preventScrollPropagation(
-  element: HTMLElement,
-  options: { disableBodyScroll?: boolean } = {}
-): () => void {
-  const { disableBodyScroll = false } = options;
-
-  return ensureWheelLock(element, _e => {
-    if (disableBodyScroll) return true;
-    return false;
-  });
 }
 
 // Re-export throttleScroll from performance utils (RAF-based, more efficient)

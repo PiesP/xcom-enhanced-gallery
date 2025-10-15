@@ -28,7 +28,6 @@ export {
   findTwitterScrollContainer,
   isGalleryElement,
   createScrollDebouncer,
-  preventScrollPropagation,
 } from './scroll';
 
 // Core utilities (from core-utils)
