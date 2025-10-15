@@ -7,11 +7,49 @@
 
 ## 최신 완료 Phase
 
+### Phase 76: Performance 테스트 재활성화 ✅
+
+**완료일**: 2025-10-15 **목표**: Performance 테스트 2개 재활성화 및 API 수정
+**결과**: 30개 테스트 활성화, skip 15→10개로 감소
+
+#### 달성 메트릭
+
+| 항목          | 시작   | 최종   | 개선                |
+| ------------- | ------ | ------ | ------------------- |
+| Skip 테스트   | 15개   | 10개   | -5개 ✅             |
+| 활성화 테스트 | N/A    | 30개   | +30개 (13+17) ✅    |
+| 빌드 크기     | 321.52 | 321.52 | 예산 내 유지 ✅     |
+| 테스트 통과율 | 100%   | 100%   | 유지 (skip 제외) ✅ |
+
+#### 핵심 변경
+
+1. **icon-optimization.test.tsx 재활성화** ✅
+   - describe.skip 제거 및 vendor mock에 `onCleanup` 추가
+   - LazyIcon 구조 테스트 3개는 E2E 이관 권장 (JSX 변환 시점 문제)
+   - 결과: 13 passed | 3 skipped
+
+2. **signal-optimization.test.tsx 재활성화** ✅
+   - describe.skip 제거 및 `result.current()` → `result()` API 수정
+   - renderHook 반환값이 함수 자체이므로 직접 호출
+   - 결과: 17 passed | 0 skipped
+
+3. **E2E 이관 권장 항목** ⚠️
+   - LazyIcon 3개 테스트: JSX 컴파일 시점 문제로 단위 테스트 불가
+   - Playwright E2E 테스트로 이관 필요
+
+#### 교훈 및 개선 방향
+
+- **Vendor Mocking**: `onCleanup`, `batch` 등 누락 API는 사전 체크리스트 필요
+- **renderHook API**: `result.current` vs `result()` 차이 명확히 문서화
+- **JSX 테스트**: 컴파일된 JSX는 mock된 `h` 함수 호출 불가 → E2E로 이관
+- **Skip 관리**: 성능상 이유로 skip된 테스트는 정기적 재검토 필요
+
+---
+
 ### Phase 75: test:coverage 실패 테스트 수정 ✅
 
-**완료일**: 2025-10-15  
-**목표**: `npm run test:coverage` 실패 4개 해결  
-**결과**: 테스트 파일 경로 수정 및 복잡한 통합 테스트 E2E 이관 권장으로 skip
+**완료일**: 2025-10-15 **목표**: `npm run test:coverage` 실패 4개 해결 **결과**:
+테스트 파일 경로 수정 및 복잡한 통합 테스트 E2E 이관 권장으로 skip
 
 #### 달성 메트릭
 

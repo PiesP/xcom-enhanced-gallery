@@ -1,39 +1,40 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-15 | **상태**: Phase 75 완료 ✅
+> **최종 업데이트**: 2025-10-15 | **상태**: Phase 76 완료 ✅
 
 ## 프로젝트 현황
 
 - **빌드**: prod **321.52 KB / 325 KB** (3.48 KB 여유, 1.1%) ✅
 - **테스트**: **159개 파일**, 987 passing / 0 failed (100% 통과율) ✅✅✅
-- **Skipped**: **15개** (13개 E2E 이관 권장 + 2개 기존) ⚠️
+- **Skipped**: **10개** (8개 E2E 이관 권장 + 2개 기존) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **의존성**: 0 violations (261 modules, 730 dependencies) ✅
 - **커버리지**: v8로 통일 완료 ✅
 
-## 현재 상태: Phase 75 완료 ✅
+## 현재 상태: Phase 76 완료 ✅
 
-**완료일**: 2025-10-15  
-**목표**: test:coverage 실패 4개 해결  
-**결과**: 모든 테스트 통과, E2E 이관 권장 5개 추가
+**완료일**: 2025-10-15 **목표**: Performance 테스트 재활성화 **결과**: 13개
+테스트 활성화, skip 15→10개로 감소
 
 ### 주요 성과
 
-- ✅ 4개 실패 테스트 해결 (경로 수정 + E2E 이관 권장)
-- ✅ icon-optimization, signal-optimization 테스트 경로 수정 및 skip
-- ✅ iconlib 테스트 try-catch 추가 및 Icon.tsx로 경로 변경
-- ✅ gallery-keyboard, gallery-video 테스트 E2E 이관 권장 (3개)
-- ⚠️ Skip 테스트 10 → 15개로 증가 (E2E 이관 권장 13개)
+- ✅ icon-optimization.test.tsx 재활성화 (13 passed | 3 skipped E2E)
+- ✅ signal-optimization.test.tsx 재활성화 (17 passed)
+- ✅ vendor mock에 onCleanup 추가
+- ✅ renderHook API 수정 (result.current() → result())
+- ✅ Skip 테스트 15 → 10개로 감소
 
 ### 해결 내용
 
-1. **icon-optimization.test.tsx**: 파일명 불일치 해결 → API 변경으로 skip
-2. **signal-optimization.test.tsx**: 파일명 불일치 해결 → API 변경으로 skip
-3. **iconlib.no-external-imports.red.test.ts**: 파일 누락 → try-catch로 안전
-   처리
-4. **gallery-keyboard.navigation.red.test.ts**: 복잡한 모킹 → E2E 이관 권장
-5. **gallery-video.keyboard.red.test.ts (2개)**: 비디오 이벤트 → E2E 이관 권장
+1. **icon-optimization.test.tsx**: describe.skip 제거, vendor mock에 onCleanup
+   추가
+   - LazyIcon 구조 테스트 3개는 E2E 이관 권장 (JSX 변환 시점 문제)
+   - IconRegistry, preload, hooks 테스트 모두 통과
+2. **signal-optimization.test.tsx**: describe.skip 제거, result.current() →
+   result() API 수정
+   - createSelector, useSelector, useCombinedSelector 테스트 모두 통과
+   - 비동기 selector 및 성능 모니터링 검증
 
 ---
 
