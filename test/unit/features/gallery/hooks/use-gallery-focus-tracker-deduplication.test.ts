@@ -15,6 +15,9 @@ describe('useGalleryFocusTracker - Deduplication', () => {
   let dispose: () => void;
 
   beforeEach(() => {
+    // Phase 74: fake timers 설정
+    vi.useFakeTimers();
+
     // DOM 설정
     container = document.createElement('div');
     container.id = 'gallery-container';
@@ -41,6 +44,7 @@ describe('useGalleryFocusTracker - Deduplication', () => {
     }
     container.remove();
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   describe('autoFocus 중복 방지', () => {
@@ -94,55 +98,48 @@ describe('useGalleryFocusTracker - Deduplication', () => {
       expect(result.actualFocusCalls).toBeLessThanOrEqual(1);
     });
 
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요 (실제 timers 사용으로 인한 타이밍 조정)
-    it.skip('다른 인덱스로 변경 시에는 autoFocus 재적용', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('다른 인덱스로 변경 시에는 autoFocus 재적용', async () => {
       const focusSpy0 = vi.spyOn(items[0]!, 'focus');
       const focusSpy1 = vi.spyOn(items[1]!, 'focus');
 
-      const result = await new Promise<{
-        focus0Calls: number;
-        focus1Calls: number;
-      }>(resolve => {
-        createRoot(disposeRoot => {
-          dispose = disposeRoot;
+      let currentIndex = 0;
+      let tracker: ReturnType<typeof useGalleryFocusTracker>;
 
-          let currentIndex = 0;
-          const tracker = useGalleryFocusTracker({
-            container,
-            isEnabled: true,
-            getCurrentIndex: () => currentIndex,
-            shouldAutoFocus: true,
-            autoFocusDebounce: 30,
-          });
-
-          items.forEach((item, idx) => {
-            tracker.registerItem(idx, item);
-          });
-
-          setTimeout(() => {
-            currentIndex = 0;
-            tracker.forceSync();
-
-            // Phase 69: debouncedScheduleSync (100ms) 대기 + applyAutoFocus 실행 (30ms)
-            setTimeout(() => {
-              currentIndex = 1;
-              tracker.forceSync();
-
-              // Phase 69: debouncedScheduleSync (100ms) 대기 + applyAutoFocus 실행 (30ms)
-              setTimeout(() => {
-                resolve({
-                  focus0Calls: focusSpy0.mock.calls.length,
-                  focus1Calls: focusSpy1.mock.calls.length,
-                });
-              }, 200);
-            }, 200);
-          }, 50);
+      dispose = createRoot(disposeRoot => {
+        tracker = useGalleryFocusTracker({
+          container,
+          isEnabled: true,
+          getCurrentIndex: () => currentIndex,
+          shouldAutoFocus: true,
+          autoFocusDebounce: 30,
         });
+
+        items.forEach((item, idx) => {
+          tracker.registerItem(idx, item);
+        });
+
+        return disposeRoot;
       });
 
+      // 첫 번째 인덱스로 forceSync
+      await vi.advanceTimersByTimeAsync(50);
+      currentIndex = 0;
+      tracker.forceSync();
+
+      // Phase 74: debouncedScheduleSync (100ms) + applyAutoFocus (30ms)
+      await vi.advanceTimersByTimeAsync(200);
+
+      // 두 번째 인덱스로 forceSync
+      currentIndex = 1;
+      tracker.forceSync();
+
+      // Phase 74: debouncedScheduleSync (100ms) + applyAutoFocus (30ms)
+      await vi.advanceTimersByTimeAsync(200);
+
       // 인덱스가 바뀌었으므로 각각 1회씩 focus
-      expect(result.focus0Calls).toBeGreaterThan(0);
-      expect(result.focus1Calls).toBeGreaterThan(0);
+      expect(focusSpy0.mock.calls.length).toBeGreaterThan(0);
+      expect(focusSpy1.mock.calls.length).toBeGreaterThan(0);
     });
   });
 

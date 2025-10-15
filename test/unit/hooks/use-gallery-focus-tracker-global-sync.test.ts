@@ -104,8 +104,8 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
       expect(setFocusedIndexSpy).toHaveBeenCalled();
     });
 
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('autoFocusIndex가 null로 변경되면 setFocusedIndex(null)을 호출해야 함', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('autoFocusIndex가 null로 변경되면 setFocusedIndex(null)을 호출해야 함', async () => {
       // Given: useGalleryFocusTracker가 비활성화 상태
       const { useGalleryFocusTracker } = await import(
         '../../../src/features/gallery/hooks/useGalleryFocusTracker'
@@ -128,7 +128,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
 
       // When: 비활성화
       setIsEnabled(false);
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await vi.advanceTimersByTimeAsync(150);
 
       // Then: setFocusedIndex(null)이 호출되어야 함 (아직 구현 안 됨 - RED)
       expect(setFocusedIndexSpy).toHaveBeenCalledWith(null);
@@ -175,8 +175,8 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
   });
 
   describe('GREEN: 수동 포커스는 전역 동기화하지 않음', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('handleItemFocus로 manualFocusIndex 설정 시 전역 setFocusedIndex 호출 안 함', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('handleItemFocus로 manualFocusIndex 설정 시 전역 setFocusedIndex 호출 안 함', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
       const { useGalleryFocusTracker } = await import(
         '../../../src/features/gallery/hooks/useGalleryFocusTracker'
@@ -202,7 +202,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
 
       // When: 수동 포커스 설정
       handleItemFocus?.(2);
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await vi.advanceTimersByTimeAsync(60);
 
       // Then: 수동 포커스는 전역 동기화 대상이 아니므로 호출 안 함
       expect(setFocusedIndexSpy).not.toHaveBeenCalled();
@@ -210,8 +210,8 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
   });
 
   describe('Regression: 컨테이너 신호 변동 대응', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('컨테이너 accessor가 일시적으로 null이어도 focusedIndex를 null로 초기화하지 않음', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('컨테이너 accessor가 일시적으로 null이어도 focusedIndex를 null로 초기화하지 않음', async () => {
       const { useGalleryFocusTracker } = await import(
         '../../../src/features/gallery/hooks/useGalleryFocusTracker'
       );
@@ -241,7 +241,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
       mockContainer.appendChild(item);
       registerItem?.(0, item);
 
-      // Phase 69: debouncedScheduleSync (100ms) 대기
+      // Phase 74: debouncedScheduleSync (100ms) 대기
       await vi.advanceTimersByTimeAsync(150);
 
       const initialCall =
@@ -251,7 +251,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
       setFocusedIndexSpy.mockClear();
 
       setContainerRef(null);
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await vi.advanceTimersByTimeAsync(150);
 
       const hasNullCallAfterDetach = setFocusedIndexSpy.mock.calls.some(
         ([value]) => value === null
@@ -261,7 +261,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
       setFocusedIndexSpy.mockClear();
 
       setContainerRef(mockContainer);
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await vi.advanceTimersByTimeAsync(150);
 
       const hasNullCallAfterRestore = setFocusedIndexSpy.mock.calls.some(
         ([value]) => value === null
@@ -271,8 +271,8 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
   });
 
   describe('REFACTOR: 성능 최적화 검증', () => {
-    // TODO: Phase 69 debounce 타이밍에 맞춰 테스트 리팩토링 필요
-    it.skip('짧은 시간 내 여러 번 autoFocusIndex 변경 시 debounce로 한 번만 호출', async () => {
+    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    it('짧은 시간 내 여러 번 autoFocusIndex 변경 시 debounce로 한 번만 호출', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
       const { useGalleryFocusTracker } = await import(
         '../../../src/features/gallery/hooks/useGalleryFocusTracker'
@@ -301,7 +301,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
       forceSync?.();
       forceSync?.();
 
-      await new Promise(resolve => setTimeout(resolve, 150)); // debounce 대기
+      await vi.advanceTimersByTimeAsync(150); // debounce 대기
 
       // Then: debounce로 인해 호출 횟수가 제한되어야 함
       // (정확한 횟수는 debounce 구현에 따라 다를 수 있음)
