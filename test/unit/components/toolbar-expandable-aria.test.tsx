@@ -1,14 +1,16 @@
 /**
  * @fileoverview Phase 47: Toolbar Expandable Panel Accessibility Tests
  * @description ARIA collapse pattern 검증 (간소화 버전 - 키보드는 E2E에서 검증)
+ *
+ * ✅ E2E Migration Complete (Phase 82.5): Interactive aria-expanded tests migrated
+ *   - playwright/smoke/toolbar-aria-e2e.spec.ts (3 tests)
+ *   - Migration Status: All interactive ARIA tests passing in E2E
+ *   - Remaining: Static ARIA attribute verification tests (7 tests in this file)
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { ToolbarProps } from '../../../src/shared/components/ui/Toolbar/Toolbar.types';
-import {
-  getToolbarExpandableState,
-  setSettingsExpanded,
-} from '../../../src/shared/state/signals/toolbar.signals';
+import { setSettingsExpanded } from '../../../src/shared/state/signals/toolbar.signals';
 import { getSolid } from '../../../src/shared/external/vendors';
 
 const { render, cleanup } = await import('../../utils/testing-library');
@@ -99,45 +101,6 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
 
       expect(settingsButton?.getAttribute('id')).toBe('settings-button');
       expect(settingsPanel?.getAttribute('aria-labelledby')).toBe('settings-button');
-    });
-
-    // Phase 84: JSDOM에서 Solid.js 반응성 시뮬레이션 한계로 E2E로 이관 권장
-    it.skip('설정 버튼 클릭 시 aria-expanded가 true로 변경되어야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
-
-      const props: ToolbarProps = {
-        currentIndex: 0,
-        totalCount: 5,
-        onPrevious: vi.fn(),
-        onNext: vi.fn(),
-        onDownloadCurrent: vi.fn(),
-        onDownloadAll: vi.fn(),
-        onClose: vi.fn(),
-        onOpenSettings: vi.fn(),
-      };
-
-      const { container } = render(() => solid.createComponent(Toolbar, props));
-
-      const allButtons = container.querySelectorAll('button');
-      const settingsButton = Array.from(allButtons).find(
-        btn => btn.getAttribute('data-gallery-element') === 'settings'
-      );
-
-      // 초기 상태
-      expect(settingsButton?.getAttribute('aria-expanded')).toBe('false');
-
-      // 상태 직접 변경 (JSDOM에서 click 이벤트 시뮬레이션 제약)
-      setSettingsExpanded(true);
-
-      // 새로운 렌더링 확인
-      const { container: container2 } = render(() => solid.createComponent(Toolbar, props));
-
-      const allButtons2 = container2.querySelectorAll('button');
-      const settingsButton2 = Array.from(allButtons2).find(
-        btn => btn.getAttribute('data-gallery-element') === 'settings'
-      );
-
-      expect(settingsButton2?.getAttribute('aria-expanded')).toBe('true');
     });
   });
 
