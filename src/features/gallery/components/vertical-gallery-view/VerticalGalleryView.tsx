@@ -14,6 +14,7 @@ import { galleryState, navigateToItem } from '../../../../shared/state/signals/g
 import type { GalleryState } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { getSolid } from '../../../../shared/external/vendors';
+import { createStabilityDetector } from '../../../../shared/services/stability-detector';
 import { languageService } from '../../../../shared/services/language-service';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {
@@ -82,6 +83,8 @@ function VerticalGalleryViewCore({
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
+  // StabilityDetector: Activity 기반 안정 상태 감지 (Phase 83.1)
+  const stabilityDetector = createStabilityDetector();
 
   // Phase 21.4: isVisible을 단순 accessor로 변경 (불필요한 createMemo 제거)
   // Solid.js의 fine-grained reactivity가 자동으로 최적화하므로 memo 불필요
@@ -228,6 +231,7 @@ function VerticalGalleryViewCore({
     },
     enabled: isVisible,
     blockTwitterScroll: true,
+    stabilityDetector,
   });
 
   const {
@@ -240,8 +244,10 @@ function VerticalGalleryViewCore({
     container: () => containerEl(),
     isEnabled: isVisible,
     getCurrentIndex: currentIndex,
+    // 사용자/자동 스크롤 중에는 자동 포커스를 억제
     shouldAutoFocus: () => !isScrolling(),
-    autoFocusDebounce: SCROLL_IDLE_TIMEOUT,
+    // idle 판정 + 안정성 마진(100ms)
+    autoFocusDebounce: SCROLL_IDLE_TIMEOUT + 100,
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 

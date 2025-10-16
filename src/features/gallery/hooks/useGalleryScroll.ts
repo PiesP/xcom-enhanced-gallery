@@ -55,7 +55,9 @@ export interface UseGalleryScrollReturn {
   scrollDirection: Accessor<ScrollDirection>;
 }
 
-export const SCROLL_IDLE_TIMEOUT = 150;
+// Focus Stability Quick Reference 제안에 따라 idle 판정을 완화
+// 기존 150ms → 250ms 로 상향하여 스크롤 중 포커스 흔들림을 줄임
+export const SCROLL_IDLE_TIMEOUT = 250;
 
 export function useGalleryScroll({
   container,

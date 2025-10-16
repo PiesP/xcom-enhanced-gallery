@@ -23,12 +23,15 @@ export class Debouncer<T extends unknown[] = unknown[]> {
   execute(...args: T): void {
     this.lastArgs = args;
     this.clearTimer();
-    this.timerId = window.setTimeout(() => {
-      if (this.lastArgs) {
-        this.fn(...this.lastArgs);
-        this.lastArgs = null;
-      }
-    }, this.delay);
+    // 테스트/Node 환경에서도 동작하도록 globalThis 사용
+    this.timerId = Number(
+      globalThis.setTimeout(() => {
+        if (this.lastArgs) {
+          this.fn(...this.lastArgs);
+          this.lastArgs = null;
+        }
+      }, this.delay)
+    );
   }
 
   flush(): void {
@@ -50,7 +53,7 @@ export class Debouncer<T extends unknown[] = unknown[]> {
 
   private clearTimer(): void {
     if (this.timerId !== null) {
-      clearTimeout(this.timerId);
+      globalThis.clearTimeout(this.timerId);
       this.timerId = null;
     }
   }
