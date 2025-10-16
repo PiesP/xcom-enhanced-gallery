@@ -170,14 +170,6 @@ export const galleryState = {
       callback(galleryState.value);
     });
   },
-
-  /**
-   * Expose fine-grained signals for migration
-   * @deprecated Use direct import of gallerySignals instead
-   */
-  get signals() {
-    return gallerySignals;
-  },
 };
 
 // Action Functions
