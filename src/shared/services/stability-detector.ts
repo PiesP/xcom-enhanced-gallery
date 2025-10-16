@@ -8,12 +8,28 @@
  * - Settling 상태 판정 (idle time 기반)
  * - 상태 변화 감지 및 콜백 호출
  * - 메트릭 조회 (activity 통계)
+ * - Phase 83.4: 자동 안정성 체크 (Lazy checkStability)
  */
 
 import { getSolid } from '../external/vendors';
 import { logger } from '../logging/logger';
+import { globalTimerManager } from '../utils/timer-management';
 
 export type ActivityType = 'scroll' | 'focus' | 'layout' | 'programmatic';
+
+// ✅ Phase 83.4: Adaptive Threshold 설정
+export interface StabilityConfig {
+  userScrollThreshold: number; // 사용자 스크롤: 200ms (빠른 반응)
+  programmaticThreshold: number; // 자동 스크롤: 400ms (애니메이션 대기)
+  mixedThreshold: number; // 혼합: 300ms (안정적인 중간값)
+}
+
+// Phase 83.4: 기본 adaptive threshold 설정
+const DEFAULT_CONFIG: StabilityConfig = {
+  userScrollThreshold: 200,
+  programmaticThreshold: 400,
+  mixedThreshold: 300,
+};
 
 export interface StabilityMetrics {
   totalActivities: number;
@@ -46,10 +62,14 @@ export interface StabilityDetector {
   clear(): void;
 }
 
-const DEFAULT_STABILITY_THRESHOLD = 300; // ms
+const MAX_EVENT_AGE = 60000; // Phase 83.4: 60초 이상 된 이벤트 자동 정리
+const PRUNE_INTERVAL = 100; // Phase 83.4: 100개마다 정리 실행
 
-export function createStabilityDetector(): StabilityDetector {
+// ✅ Phase 83.4: Adaptive Threshold 구현
+export function createStabilityDetector(config?: Partial<StabilityConfig>): StabilityDetector {
   const { createSignal } = getSolid();
+
+  const adaptiveConfig: StabilityConfig = { ...DEFAULT_CONFIG, ...config };
 
   const [isStableSignal, setIsStableSignal] = createSignal(true);
   const [lastActivityTimeSignal, setLastActivityTimeSignal] = createSignal(0);
@@ -57,6 +77,26 @@ export function createStabilityDetector(): StabilityDetector {
   const activityEvents: Array<{ type: ActivityType; time: number }> = [];
   const stateChangeListeners: Set<(isStable: boolean) => void> = new Set();
   let currentStableState = true;
+  let stabilityCheckTimerId: number | null = null; // Phase 83.4: 자동 안정성 체크 타이머
+
+  const clearStabilityCheckTimer = () => {
+    if (stabilityCheckTimerId !== null) {
+      globalTimerManager.clearTimeout(stabilityCheckTimerId);
+      stabilityCheckTimerId = null;
+    }
+  };
+
+  // ✅ Phase 83.4: 시간 기반 자동 정리
+  // 60초 이상 된 오래된 이벤트를 자동으로 제거하여 메모리 효율성 향상
+  const pruneOldEvents = () => {
+    const cutoff = Date.now() - MAX_EVENT_AGE;
+    const validIndex = activityEvents.findIndex(e => e.time >= cutoff);
+
+    if (validIndex > 0) {
+      activityEvents.splice(0, validIndex);
+      logger.debug('StabilityDetector: pruned old events', { removed: validIndex });
+    }
+  };
 
   const updateStability = (newState: boolean) => {
     if (currentStableState !== newState) {
@@ -83,9 +123,11 @@ export function createStabilityDetector(): StabilityDetector {
     const now = Date.now();
     activityEvents.push({ type, time: now });
 
-    // 메모리 효율성: 최근 1000개 이벤트만 유지
-    if (activityEvents.length > 1000) {
-      activityEvents.shift();
+    // ✅ Phase 83.4: 메모리 효율성 개선
+    // 1000개 제한 제거하고 시간 기반 정리로 대체
+    // 100개마다 정리 실행하여 성능 최적화
+    if (activityEvents.length % PRUNE_INTERVAL === 0) {
+      pruneOldEvents();
     }
 
     setLastActivityTimeSignal(now);
@@ -93,13 +135,36 @@ export function createStabilityDetector(): StabilityDetector {
     // Activity 기록 시 불안정 상태로 전환
     updateStability(false);
 
+    // ✅ Phase 83.4: 자동 안정성 체크 스케줄링 - adaptive threshold 사용
+    // 명시적 checkStability() 호출 없이도 자동으로 settling 감지
+    clearStabilityCheckTimer();
+    stabilityCheckTimerId = globalTimerManager.setTimeout(() => {
+      const isNowStable = checkStability();
+      if (isNowStable) {
+        updateStability(true); // 자동으로 콜백 실행
+      }
+      stabilityCheckTimerId = null;
+    }, getAdaptiveThreshold() + 50); // adaptive threshold + 50ms 마진
+
     logger.debug('StabilityDetector: activity recorded', {
       type,
       totalActivities: activityEvents.length,
     });
   };
 
-  const checkStability = (threshold: number = DEFAULT_STABILITY_THRESHOLD): boolean => {
+  // ✅ Phase 83.4: Adaptive Threshold 판정
+  // 최근 activity 패턴에 따라 최적의 threshold를 동적으로 선택
+  const getAdaptiveThreshold = (): number => {
+    const recentActivities = activityEvents.slice(-5); // 최근 5개 확인
+    const hasProgrammatic = recentActivities.some(e => e.type === 'programmatic');
+    const hasScroll = recentActivities.some(e => e.type === 'scroll');
+
+    if (hasProgrammatic && hasScroll) return adaptiveConfig.mixedThreshold;
+    if (hasProgrammatic) return adaptiveConfig.programmaticThreshold;
+    return adaptiveConfig.userScrollThreshold;
+  };
+
+  const checkStability = (threshold?: number): boolean => {
     if (activityEvents.length === 0) {
       updateStability(true);
       return true;
@@ -107,7 +172,10 @@ export function createStabilityDetector(): StabilityDetector {
 
     const lastActivity = activityEvents[activityEvents.length - 1]!;
     const timeSinceLastActivity = Date.now() - lastActivity.time;
-    const isNowStable = timeSinceLastActivity >= threshold;
+
+    // ✅ Phase 83.4: threshold가 명시적으로 제공되면 사용, 아니면 adaptive threshold 사용
+    const effectiveThreshold = threshold ?? getAdaptiveThreshold();
+    const isNowStable = timeSinceLastActivity >= effectiveThreshold;
 
     if (isNowStable) {
       updateStability(true);
@@ -152,6 +220,7 @@ export function createStabilityDetector(): StabilityDetector {
     activityEvents.length = 0;
     setLastActivityTimeSignal(0);
     updateStability(true);
+    clearStabilityCheckTimer(); // Phase 83.4: 타이머도 정리
 
     logger.debug('StabilityDetector: cleared');
   };

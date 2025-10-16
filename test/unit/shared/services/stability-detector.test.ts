@@ -102,7 +102,8 @@ describe('StabilityDetector', () => {
       vi.setSystemTime(0);
       detector.recordActivity('scroll');
 
-      vi.advanceTimersByTime(299);
+      // Phase 83.4 - Adaptive Threshold: scroll은 200ms 사용
+      vi.advanceTimersByTime(199);
       expect(detector.checkStability()).toBe(false);
 
       vi.advanceTimersByTime(1);

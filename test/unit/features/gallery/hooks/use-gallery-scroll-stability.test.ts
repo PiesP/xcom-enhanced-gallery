@@ -92,8 +92,9 @@ describe('useGalleryScroll 통합 - StabilityDetector Activity 기록', () => {
       vi.setSystemTime(200);
       detector.recordActivity('programmatic');
 
-      // 마지막 activity로부터 300ms 경과
-      vi.setSystemTime(500);
+      // Phase 83.4 - Adaptive Threshold: programmatic은 400ms 사용
+      // 마지막 activity(200ms)로부터 400ms 경과 = 600ms
+      vi.setSystemTime(600);
       const isSettled = detector.checkStability();
 
       expect(isSettled).toBe(true);
@@ -227,16 +228,17 @@ describe('useGalleryScroll 통합 - StabilityDetector Activity 기록', () => {
       detector.recordActivity('scroll');
       expect(stateChanges).toEqual([false]);
 
-      // settling 진행 중
-      vi.setSystemTime(250);
+      // Phase 83.4 - Adaptive Threshold: scroll은 200ms 사용
+      // settling 진행 중 (150ms 경과)
+      vi.setSystemTime(150);
       expect(detector.checkStability()).toBe(false);
 
       // 새로운 activity 기록
       detector.recordActivity('scroll');
       expect(stateChanges).toEqual([false]); // 상태 변화 없음
 
-      // 다시 300ms idle
-      vi.setSystemTime(550);
+      // 다시 200ms idle (150 + 200 = 350ms)
+      vi.setSystemTime(350);
       detector.checkStability();
       expect(stateChanges).toEqual([false, true]); // 최종 settling
     });

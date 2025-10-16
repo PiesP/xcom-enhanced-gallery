@@ -86,7 +86,7 @@ export function useGalleryFocusTracker({
   let autoFocusTimerId: number | null = null;
   let lastAutoFocusedIndex: number | null = null;
   let lastAppliedIndex: number | null = null; // Phase 69.2: 중복 applyAutoFocus 방지
-  let pendingRecomputeRequest: { timestamp: number; reason: string } | null = null; // Phase 83.3: 포커스 갱신 큐
+  let hasPendingRecompute = false; // Phase 83.4: 포커스 갱신 큐 (Boolean 플래그로 단순화)
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
@@ -165,19 +165,17 @@ export function useGalleryFocusTracker({
   // ✅ Phase 69.2: scheduleSync를 100ms debounce하여 호출 빈도 제한
   // 빠른 연속 호출(아이템 등록/해제)을 배칭하여 불필요한 recompute 방지
   // ✅ Phase 83.3: 스크롤 중에는 큐에만 추가, settling 후 처리
+  // ✅ Phase 83.4: Boolean 플래그로 단순화 (timestamp/reason은 로깅용으로만 사용됨)
   const debouncedScheduleSync = createDebouncer<[]>(() => {
-    // 스크롤 중이면 큐에만 추가
+    // 스크롤 중이면 큐에만 플래그 설정
     if (isScrollingAccessor()) {
-      pendingRecomputeRequest = {
-        timestamp: Date.now(),
-        reason: 'deferred-during-scroll',
-      };
+      hasPendingRecompute = true;
       return;
     }
 
     // Settling 상태이거나 스크롤 중이 아니면 즉시 처리
     recomputeFocus();
-    pendingRecomputeRequest = null;
+    hasPendingRecompute = false;
   }, 100);
 
   const scheduleSync = () => {
@@ -185,19 +183,16 @@ export function useGalleryFocusTracker({
   };
 
   // ✅ Phase 83.3: settling 후 큐 처리
+  // ✅ Phase 83.4: Boolean 플래그로 단순화
   // isScrolling이 false로 전환될 때 보류된 recompute 요청을 처리
   createEffect(() => {
     const scrolling = isScrollingAccessor();
 
-    if (!scrolling && pendingRecomputeRequest) {
-      logger.debug('useGalleryFocusTracker: processing deferred recompute after settling', {
-        timestamp: pendingRecomputeRequest.timestamp,
-        reason: pendingRecomputeRequest.reason,
-        elapsed: Date.now() - pendingRecomputeRequest.timestamp,
-      });
+    if (!scrolling && hasPendingRecompute) {
+      logger.debug('useGalleryFocusTracker: processing deferred recompute after settling');
 
       recomputeFocus();
-      pendingRecomputeRequest = null;
+      hasPendingRecompute = false;
     }
   });
 
