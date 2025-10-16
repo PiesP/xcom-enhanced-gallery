@@ -14,12 +14,18 @@
 - **디자인 토큰**: px 0개, rgba 0개 ✅✅✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 - **로깅 일관성**: console 직접 사용 0건 ✅✅✅
-- **CodeQL 성능**: 캐시 히트 시 30-40초 절약 ✅✅✅
+- **CodeQL 성능**: 병렬 실행 29.5초 (Phase 85.1 캐시 + Phase 85.2 병렬화) ✅✅✅
 
 ## 현재 상태: 다음 Phase 준비 중 ⏸️
 
 **최근 완료**:
 
+- ✅ **Phase 85.2**: CodeQL 쿼리 병렬 실행 최적화 완료 (2025-10-16)
+  - Promise.all()로 5개 쿼리 병렬 실행 (forEach → Promise.all())
+  - runQuery/runCodeQLQueries/main 함수 async/await 변환
+  - test-samples/ 디렉토리 필터링 추가 (intentional violations 제외)
+  - 실행 시간: 순차 90-100초 → 병렬 29.5초 (60-70초 절약, ~70% 개선)
+  - Phase 85.1 캐시와 누적 효과: 75-105초 총 절약 (2회차 이후) ✅
 - ✅ **Phase 86**: Deprecated 코드 안전 제거 완료 (2025-10-16)
   - Button.iconVariant, galleryState.signals, enableLegacyAdapter 제거
   - createZipFromItems 및 연관 코드 대규모 정리 (~150줄)
@@ -49,21 +55,19 @@
 
 **다음 작업 후보**:
 
-1. **CodeQL 병렬 쿼리 실행** (우선순위: 중간, Phase 85.2) 🎯
-   - 10-15초 추가 절약 예상
-   - Promise.all()로 5개 쿼리 병렬 실행
-   - 안정성 검증 필요 (CodeQL CLI 동시 실행 지원 확인)
+1. **기존 테스트 스킵 15개 검토** (우선순위: 중간) 🎯
+   - toolbar-settings-toggle: 4개 (JSDOM limitation, E2E 이관 권장)
+   - use-gallery-focus-tracker: 6개 (E2E 이관 권장)
+   - 기타: 5개 (E2E 이관 권장)
+   - 실제 실패가 아닌 의도적 스킵 확인 완료
+   - E2E 이관 또는 제거 여부 결정 필요
 
-2. **기존 테스트 실패 4건 수정** (우선순위: 중간)
-   - toolbar-hover-consistency: CSS focus-visible 선택자 추가
-   - bundle-size-policy: Phase 33 문서 참조 업데이트
-   - vendor-initialization: assertion 타입 수정
-
-3. **E2E 테스트 마이그레이션 계속** (우선순위: 중간)
+2. **E2E 테스트 마이그레이션 계속** (우선순위: 중간)
    - Phase 82.3의 10개 스켈레톤 구현
-   - 남은 11개 JSDOM 스킵 테스트 E2E 전환
+   - 남은 15개 JSDOM 스킵 테스트 E2E 전환
+   - Playwright 하네스 패턴 활용
 
-4. **번들 크기 최적화** (우선순위: 낮음)
+3. **번들 크기 최적화** (우선순위: 낮음)
    - 목표: 330 KB 도달 시 Phase 73 활성화
    - 현재: 329.86 KB (여유 5.14 KB)
 
