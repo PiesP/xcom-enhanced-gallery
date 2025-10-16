@@ -13,6 +13,7 @@ import type {
   GalleryEventsResult,
   FocusTrackerHarnessResult,
   ViewportChangeResult,
+  FocusIndicatorPosition,
   KeyboardSimulationOptions,
   PerformanceMetrics,
   MemoryMetrics,
@@ -911,6 +912,45 @@ async function disposeFocusTrackerHarness(): Promise<void> {
 }
 
 // ============================================================
+// Phase 82.6: Focus Tracking Extended E2E API
+// NOTE: E2E 이관 시도 실패 (Solid.js 반응성 트리거 실패)
+// 실패 원인: getGlobalFocusedIndex()는 data-focused 속성 조회하지만,
+//           실제 FocusTracker 서비스가 초기화되지 않아 속성이 설정되지 않음
+// 하네스 API는 유지 (향후 page API 패턴 연구 후 활용 가능)
+// ============================================================
+
+async function waitForFocusStableHarness(timeout: number = 500): Promise<void> {
+  // Wait for focus to stabilize (debounce period)
+  await sleep(timeout);
+}
+
+async function getFocusIndicatorPositionHarness(): Promise<FocusIndicatorPosition> {
+  const indicator = document.querySelector(
+    '[data-gallery-element="focus-indicator"]'
+  ) as HTMLElement;
+  if (!indicator) {
+    throw new Error('Focus indicator not found');
+  }
+
+  const computedStyle = window.getComputedStyle(indicator);
+  return {
+    translateX: computedStyle.transform,
+    left: computedStyle.left,
+    width: computedStyle.width,
+  };
+}
+
+async function triggerFocusChangeHarness(index: number): Promise<void> {
+  // Trigger manual focus change by dispatching a custom event
+  const event = new CustomEvent('xeg:focus-change', {
+    detail: { index },
+    bubbles: true,
+  });
+  document.dispatchEvent(event);
+  await sleep(16); // Allow event handlers to process
+}
+
+// ============================================================
 // Phase 82.3: Keyboard & Performance E2E API
 // ============================================================
 
@@ -1002,6 +1042,10 @@ const harness: XegHarness = {
   getGlobalFocusedIndex: getGlobalFocusedIndexHarness,
   getElementFocusCount: getElementFocusCountHarness,
   disposeFocusTracker: disposeFocusTrackerHarness,
+  // Phase 82.6: Focus Tracking Extended E2E API
+  waitForFocusStable: waitForFocusStableHarness,
+  getFocusIndicatorPosition: getFocusIndicatorPositionHarness,
+  triggerFocusChange: triggerFocusChangeHarness,
   // Phase 82.3: Keyboard & Performance E2E API
   simulateKeyPress: simulateKeyPressHarness,
   measureKeyboardPerformance: measureKeyboardPerformanceHarness,
