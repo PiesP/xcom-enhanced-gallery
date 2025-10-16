@@ -3,9 +3,9 @@
 > Phase 80.1 (Toolbar Settings Toggle Regression) 해결 과정에서 학습한 Solid.js
 > 반응성 시스템의 핵심 원리와 공식 문서 검증 결과
 
-**작성일:** 2025-10-16  
-**관련 Phase:** Phase 80.1 (TDD_REFACTORING_PLAN_COMPLETED.md 참고)  
-**검증 출처:** Solid.js 공식 문서, @solidjs/testing-library GitHub
+**작성일:** 2025-10-16 **관련 Phase:** Phase 80.1
+(TDD_REFACTORING_PLAN_COMPLETED.md 참고) **검증 출처:** Solid.js 공식 문서,
+@solidjs/testing-library GitHub
 
 ---
 

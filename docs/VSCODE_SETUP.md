@@ -2,8 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트를 위한 VS Code 최적화 설정
 
-**작성일:** 2025-10-16  
-**관련 파일:** `.vscode/settings.json`
+**작성일:** 2025-10-16 **관련 파일:** `.vscode/settings.json`
 
 ---
 
