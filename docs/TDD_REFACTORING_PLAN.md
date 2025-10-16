@@ -51,6 +51,95 @@ Phase 82.3 상세 구현 **목표**: 10개 E2E 테스트 상세 구현 + 11개 �
 
 ---
 
+## Phase 83: 포커스 안정성 개선 (Focus Stability Detector) 🚀
+
+**상태**: 준비 중 **목표**: useGalleryFocusTracker의 스크롤 중 포커스 불안정성
+해결
+
+### 배경
+
+- **문제**: 사용자 스크롤/자동 스크롤 중 포커스가 계속 변하여 인디케이터
+  깜빡거림
+- **근인**: IntersectionObserver 이벤트마다 recomputeFocus() 호출, 여러 포커스
+  변경 소스의 경쟁
+- **솔루션**: `StabilityDetector` 서비스로 settling 상태를 감지하고 안정
+  상태에서만 포커스 갱신
+- **참고 문서**: `docs/FOCUS_STABILITY_SOLUTIONS.md`,
+  `FOCUS_STABILITY_QUICK_REFERENCE.md`
+
+### 구현 단계
+
+#### Phase 83.1: StabilityDetector 서비스 구현 (TDD)
+
+**목표**: Activity 기반 settling 상태 감지 서비스
+
+**작업**:
+
+1. 테스트 작성 (`test/shared/services/stability-detector.test.ts`)
+   - Activity 이벤트 기록 검증
+   - Settling 상태 판정 로직 (threshold 기반)
+   - Timeout 동안 activity 없음 → isStable=true
+   - 새로운 activity 기록 → isStable=false 리셋
+   - 상태 변화 콜백 동작
+
+2. 서비스 구현 (`src/shared/services/stability-detector.ts`)
+   - 인터페이스: `StabilityDetector`
+   - Activity 유형: 'scroll' | 'focus' | 'layout' | 'programmatic'
+   - 메서드:
+     - `recordActivity(type: ActivityType): void`
+     - `checkStability(threshold?: number): boolean`
+     - `onStabilityChange(callback: (isStable: boolean) => void): () => void`
+     - `getMetrics(): StabilityMetrics`
+
+3. Vitest + JSDOM 검증
+   - Settling 상태 감지: 300ms idle → isStable
+   - Activity 기록: 이벤트 배열에 타입/시간 저장
+   - 콜백 호출: 상태 변화 시 listener 실행
+
+**난이도**: ⭐⭐⭐ (중간) | **구현 시간**: 2-3시간
+
+#### Phase 83.2: useGalleryScroll 통합 (Activity 기록)
+
+**목표**: 스크롤 활동을 StabilityDetector에 기록
+
+**작업**:
+
+1. 의존성 추가: StabilityDetector 인스턴스 주입
+2. 이벤트 기록:
+   - wheel 이벤트 → recordActivity('scroll')
+   - 자동 스크롤 시작 → recordActivity('programmatic')
+3. settling 감지: onStabilityChange 콜백으로 isSettled 신호 제공
+
+**난이도**: ⭐⭐ (낮음) | **구현 시간**: 1시간
+
+#### Phase 83.3: useGalleryFocusTracker 최적화 (Settling 기반 포커스 갱신)
+
+**목표**: Settling 상태에서만 포커스를 갱신하여 안정성 확보
+
+**작업**:
+
+1. recomputeFocus() 호출 조건 추가:
+   - isScrolling === true → recomputeFocus() 보류
+   - isSettled === true → deferred recomputeFocus() 실행
+
+2. 포커스 갱신 큐 구현:
+   - IntersectionObserver 이벤트 → 큐에 추가 (최신만)
+   - Settling 감지 → 큐의 최신 요청만 적용
+
+3. 통합 테스트 (`test/integration/focus-stability-integration.test.ts`):
+   - 스크롤 중 recomputeFocus 호출 빈도 0으로 감소
+   - Settling 후 최신 포커스만 적용
+   - 자동 스크롤 중 인디케이터 불변
+
+**난이도**: ⭐⭐⭐⭐ (높음) | **구현 시간**: 3-4시간
+
+### 검증 기준
+
+✅ 포커스 변경 빈도: 5-10회 → 1회 (스크롤 중 0회) ✅ 인디케이터 깜빡임: 제거됨
+✅ 모든 테스트 통과 (기존 + 신규) ✅ 번들 크기 330 KB 유지
+
+---
+
 ## 다음 Phase 계획
 
 ### Phase 82: E2E 테스트 마이그레이션 (활성화)
