@@ -7,6 +7,166 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 86: Deprecated 코드 안전 제거 ✅
+
+**완료일**: 2025-10-16 **목표**: `@deprecated` 주석이 있는 코드를 안전하게
+제거하여 유지보수성 향상 **결과**: 약 420줄 레거시 코드 제거 (소스 ~170줄 +
+테스트 249줄), 코드베이스 단순화 ✅
+
+#### 배경
+
+- **문제**: 프로젝트에 여러 `@deprecated` 표시된 코드가 누적되어 유지보수 비용
+  증가
+- **목표**: 번들 크기 0.5-1 KB 감소 예상 (실제로는 트리 셰이킹으로 이미 제거됨)
+- **영향**: 코드 품질 개선, deprecated API 완전 제거, 불필요한 호환성 코드 정리
+- **솔루션**: 사용처 분석 후 안전 제거 가능 항목 우선 제거, 조건부 항목 검토
+
+#### 달성 메트릭
+
+| 항목               | 시작                 | 최종      | 개선                                                                                  |
+| ------------------ | -------------------- | --------- | ------------------------------------------------------------------------------------- |
+| 제거된 소스 코드   | -                    | ~170줄    | Button 3곳, galleryState 5줄, app-container 1줄, zip-creator ~150줄, zip/index 1줄 ✅ |
+| 제거된 테스트 코드 | -                    | 249줄     | Button-icon-variant.test.tsx 전체 ✅                                                  |
+| 총 제거 코드       | -                    | ~420줄    | 소스 + 테스트 ✅                                                                      |
+| 타입 에러          | 0개                  | 0개       | 유지 ✅                                                                               |
+| 테스트 통과율      | 99.6%                | 98.5%     | 1018/1033 passed (15 skipped, 테스트 5개 제거) ✅                                     |
+| 빌드 크기          | 329.86 KB            | 329.86 KB | 변화 없음 (트리 셰이킹) ✅                                                            |
+| Deprecated 항목    | A그룹 3개, B그룹 1개 | 0개       | 완전 제거 ✅                                                                          |
+
+#### 구현 상세
+
+**제거 1: Button.iconVariant 제거** (완료 시간: 0.5시간)
+
+```typescript
+// src/shared/components/ui/Button/Button.tsx
+
+// ❌ 이전 (3곳)
+export interface ButtonProps extends ComponentProps<'button'> {
+  iconVariant?: ButtonIntent; // @deprecated intent 사용을 권장
+}
+const [local, others] = splitProps(props, ['iconVariant', ...]);
+const resolvedIntent = () => local.intent ?? local.iconVariant;
+
+// ✅ 개선
+export interface ButtonProps extends ComponentProps<'button'> {
+  // iconVariant 제거
+}
+const [local, others] = splitProps(props, [/* 'iconVariant' 제거 */, ...]);
+const resolvedIntent = () => local.intent; // 단순화
+```
+
+**제거 2: galleryState.signals getter 제거** (완료 시간: 0.3시간)
+
+```typescript
+// src/shared/state/signals/gallery.signals.ts
+
+// ❌ 이전 (5줄)
+export const galleryState = {
+  get signals() {
+    // @deprecated Use direct import of gallerySignals instead
+    return gallerySignals;
+  },
+};
+
+// ✅ 개선
+export const galleryState = {
+  // signals getter 완전 제거
+};
+```
+
+**제거 3: enableLegacyAdapter 옵션 제거** (완료 시간: 0.2시간)
+
+```typescript
+// src/shared/container/app-container.ts
+
+// ❌ 이전
+export interface CreateContainerOptions {
+  config?: Partial<AppConfig>;
+  enableLegacyAdapter?: boolean; // 미사용 옵션
+}
+
+// ✅ 개선
+export interface CreateContainerOptions {
+  config?: Partial<AppConfig>;
+  // enableLegacyAdapter 제거
+}
+```
+
+**제거 4: createZipFromItems 및 연관 코드 대규모 정리** (완료 시간: 2시간)
+
+```typescript
+// src/shared/external/zip/zip-creator.ts (~150줄 제거)
+
+// ❌ 이전: 제거된 함수들
+- createZipFromItems (36줄) - @deprecated superseded by createZipBytesFromFileMap
+- downloadFilesForZip (39줄) - createZipFromItems의 헬퍼
+- downloadMediaForZip (34줄) - createZipFromItems의 헬퍼
+- chunkArray (유틸) - downloadFilesForZip 의존성
+- generateUniqueFilename (유틸) - downloadMediaForZip 의존성
+- DEFAULT_ZIP_CONFIG, MAX_CONCURRENT_DOWNLOADS 등 상수 (~10줄)
+- safeParseInt import (1줄)
+
+// ✅ 개선: createZipBytesFromFileMap만 유지 (~100줄)
+// 실제 사용 중인 함수만 보존
+```
+
+```typescript
+// src/shared/external/zip/index.ts
+
+// ❌ 이전
+export { createZipBytesFromFileMap, createZipFromItems } from './zip-creator';
+
+// ✅ 개선
+export { createZipBytesFromFileMap } from './zip-creator';
+```
+
+**제거 5: deprecated 기능 테스트 파일 제거** (완료 시간: 0.5시간)
+
+```pwsh
+# test/unit/shared/components/ui/Button-icon-variant.test.tsx 전체 삭제 (249줄)
+# iconVariant prop 제거로 인해 테스트 5개 실패 → 파일 전체 제거
+Remove-Item test/unit/shared/components/ui/Button-icon-variant.test.tsx
+```
+
+#### 조건부 제거 분석 결과
+
+**제거 불가 항목** (실사용 확인)
+
+1. **Toast 별칭**: `ToastService`, `toastService`, `toastController` (20+
+   사용처)
+2. **getNativeDownload**: BulkDownloadService 등에서 실사용 2곳
+
+#### 검증 결과
+
+- ✅ 타입 체크: 0 errors (2회 검증, tsgo 사용)
+- ✅ 린트: 0 warnings (ESLint)
+- ✅ 테스트: 1018 passed / 1033 total, 15 skipped (98.5% 통과율)
+  - 첫 실행: 5개 실패 (Button-icon-variant.test.tsx)
+  - 해결: 테스트 파일 제거 후 재실행 → 전체 통과 ✅
+- ✅ 빌드: dev + prod 성공, 329.86 KB (변화 없음)
+  - CodeQL: 8개 문제 (모두 test-samples/, 의도적 위반)
+
+#### 교훈 및 인사이트
+
+1. **트리 셰이킹 효과**: deprecated 코드가 이미 번들에서 제거되어 있어 번들 크기
+   변화 없음
+   - 코드 제거의 주요 효과는 유지보수성 향상 (0.5-1 KB 목표 미달성)
+2. **연쇄 의존성 처리**: 함수 제거 시 미사용 의존성(헬퍼, 상수, import) 순차
+   정리 필요
+   - createZipFromItems → downloadFilesForZip → safeParseInt →
+     DEFAULT_ZIP_CONFIG (5단계 연쇄)
+3. **테스트 동기화**: deprecated 기능 제거 시 관련 테스트도 함께 제거
+   - Button-icon-variant.test.tsx (249줄) 전체 삭제로 테스트 5개 감소
+4. **사용처 분석 중요성**: grep으로 철저히 확인 후 제거 가능 여부 판단
+   - Toast 별칭 (20+ 사용처) → 제거 불가
+   - createZipFromItems (정의/export만) → 제거 가능
+   - getNativeDownload (실사용 2곳) → 제거 불가
+5. **replace_string_in_file의 한계**: 큰 함수 제거 시 oldString 범위 부족으로
+   문법 오류 발생 가능
+   - 해결: 전체 파일 읽고 정확한 범위 지정
+
+---
+
 ### Phase 87: Toolbar SolidJS 최적화 ✅
 
 **완료일**: 2025-10-16 **목표**: Toolbar 컴포넌트의 SolidJS 반응성 패턴 최적화로

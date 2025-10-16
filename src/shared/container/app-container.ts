@@ -105,7 +105,6 @@ export interface AppContainer {
  */
 export interface CreateContainerOptions {
   config?: Partial<AppConfig>;
-  enableLegacyAdapter?: boolean;
 }
 
 /**

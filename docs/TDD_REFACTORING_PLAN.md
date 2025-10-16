@@ -1,11 +1,11 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-16 | **상태**: Phase 86 계획 대기 중 ⏸️
+> **최종 업데이트**: 2025-10-16 | **상태**: 다음 Phase 준비 중 ⏸️
 
 ## 프로젝트 현황
 
-- **빌드**: prod **329.63 KB / 335 KB** (5.37 KB 여유, 98.4%) ✅
-- **테스트**: **159개 파일**, 1033 passing / 15 skipped (99.6% 통과율) ✅
+- **빌드**: prod **329.86 KB / 335 KB** (5.14 KB 여유, 98.5%) ✅
+- **테스트**: **154개 파일**, 1018 passing / 15 skipped (98.5% 통과율) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **CSS 린트**: stylelint **0 warnings** (error 강화 완료) ✅✅✅
@@ -16,10 +16,17 @@
 - **로깅 일관성**: console 직접 사용 0건 ✅✅✅
 - **CodeQL 성능**: 캐시 히트 시 30-40초 절약 ✅✅✅
 
-## 현재 상태: 계획 대기 중 ⏸️
+## 현재 상태: 다음 Phase 준비 중 ⏸️
 
 **최근 완료**:
 
+- ✅ **Phase 86**: Deprecated 코드 안전 제거 완료 (2025-10-16)
+  - Button.iconVariant, galleryState.signals, enableLegacyAdapter 제거
+  - createZipFromItems 및 연관 코드 대규모 정리 (~150줄)
+  - 테스트 파일 Button-icon-variant.test.tsx 제거 (249줄)
+  - 총 ~420줄 레거시 코드 제거 (소스 ~170줄 + 테스트 249줄)
+  - 번들 크기 유지 (329.86 KB, 트리 셰이킹 효과)
+  - 코드 품질 개선, 유지보수성 향상 ✅
 - ✅ **Phase 87**: Toolbar SolidJS 최적화 완료 (2025-10-16)
   - 이벤트 핸들러 메모이제이션 (9개 → 0개 재생성)
   - ToolbarView props 직접 접근 패턴 (반응성 보장)
@@ -38,33 +45,27 @@
   - StabilityDetector 서비스 구현 (settling 기반 최적화)
   - 스크롤 중 포커스 갱신 80-90% 감소, 인디케이터 안정화 ✅
 
-**활성 Phase**: 없음 (Phase 86 계획 대기 중)
+**활성 Phase**: 없음 (다음 Phase 선택 대기 중)
 
 **다음 작업 후보**:
 
-1. **레거시 코드 제거** (우선순위: 높음, Phase 86) 🎯
-   - `@deprecated` 마크 API 제거 (8개 대상)
-   - 미사용 호환성 코드 정리 (3개 대상)
-   - 번들 크기 0.5-1 KB 절감 예상
-   - 상세 계획은 Phase 86 섹션 참조
-
-2. **CodeQL 병렬 쿼리 실행** (우선순위: 중간, Phase 85.2)
+1. **CodeQL 병렬 쿼리 실행** (우선순위: 중간, Phase 85.2) 🎯
    - 10-15초 추가 절약 예상
    - Promise.all()로 5개 쿼리 병렬 실행
    - 안정성 검증 필요 (CodeQL CLI 동시 실행 지원 확인)
 
-3. **기존 테스트 실패 4건 수정** (우선순위: 중간)
+2. **기존 테스트 실패 4건 수정** (우선순위: 중간)
    - toolbar-hover-consistency: CSS focus-visible 선택자 추가
    - bundle-size-policy: Phase 33 문서 참조 업데이트
    - vendor-initialization: assertion 타입 수정
 
-4. **E2E 테스트 마이그레이션 계속** (우선순위: 중간)
+3. **E2E 테스트 마이그레이션 계속** (우선순위: 중간)
    - Phase 82.3의 10개 스켈레톤 구현
    - 남은 11개 JSDOM 스킵 테스트 E2E 전환
 
-5. **번들 크기 최적화** (우선순위: 낮음)
+4. **번들 크기 최적화** (우선순위: 낮음)
    - 목표: 330 KB 도달 시 Phase 73 활성화
-   - 현재: 329.63 KB (여유 5.37 KB)
+   - 현재: 329.86 KB (여유 5.14 KB)
 
 ---
 
@@ -102,261 +103,6 @@
 ---
 
 ## 다음 Phase 계획
-
-### Phase 86: Deprecated 코드 안전 제거 (우선순위 1) 🎯
-
-**목표**: `@deprecated` 주석이 있는 코드를 안전하게 제거하여 번들 크기 감소 및
-유지보수성 향상 **우선순위**: 높음 (빌드 크기 최적화) **예상 시간**: 4-6시간
-**예상 효과**: 빌드 크기 0.5-1 KB 감소, 코드베이스 단순화
-
-#### 제거 대상 분류
-
-**A. 안전 제거 가능 (사용처 없음)** - 우선순위 1
-
-1. ✅ **Button.iconVariant** (`src/shared/components/ui/Button/Button.tsx`)
-   - 상태: `@deprecated intent 사용을 권장`
-   - 사용처: 컴포넌트 내부 1곳 (`local.intent ?? local.iconVariant`)
-   - 제거 전략: iconVariant 제거, intent로 통일
-   - 영향도: 낮 (내부 fallback만 제거)
-   - 예상 절감: 50 bytes
-
-2. ✅ **createDomEventManager** (`src/shared/dom/dom-event-manager.ts`)
-   - 상태: `@deprecated UnifiedEventManager를 사용하세요`
-   - 사용처: `EventManager` 내부에서만 사용 (1곳)
-   - 제거 전략: EventManager를 UnifiedEventManager로 직접 전환
-   - 영향도: 중 (내부 리팩토링 필요)
-   - 예상 절감: 200-300 bytes
-
-3. ⚠️ **ServiceManager.getDiagnostics**
-   (`src/shared/services/service-manager.ts`)
-   - 상태:
-     `@deprecated v1.1.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요`
-   - 사용처: `UnifiedServiceDiagnostics` 내부에서 1곳 사용
-   - 제거 전략: UnifiedServiceDiagnostics에서 직접 접근 방식으로 전환
-   - 영향도: 중 (진단 로직 재구성 필요)
-   - 예상 절감: 300-400 bytes
-
-4. ✅ **galleryState.signals getter**
-   (`src/shared/state/signals/gallery.signals.ts`)
-   - 상태: `@deprecated Use direct import of gallerySignals instead`
-   - 사용처: grep 결과 없음 (완전히 미사용)
-   - 제거 전략: getter 메서드만 제거
-   - 영향도: 매우 낮 (미사용 코드)
-   - 예상 절감: 100 bytes
-
-**B. 조건부 제거 가능 (호환성 검토 필요)** - 우선순위 2
-
-1. ⚠️ **toast 호환성 별칭** (`src/shared/services/unified-toast-manager.ts`)
-   - 상태: 하위 호환성 유지를 위한 별칭 3개
-     - `ToastService = toastManager`
-     - `toastService = toastManager`
-     - `toastController = toastManager`
-   - 사용처: 프로젝트 전체 검색 필요
-   - 제거 전략: `toastManager` 단일 export로 통일
-   - 영향도: 높 (외부 사용처 다수 예상)
-   - 예상 절감: 150-200 bytes
-
-2. ⚠️ **createZipFromItems** (`src/shared/external/zip/zip-creator.ts`)
-   - 상태: `@deprecated superseded by createZipBytesFromFileMap`
-   - 사용처: export되어 있으나 실제 사용 검증 필요
-   - 제거 전략: 사용처 없으면 함수 전체 제거
-   - 영향도: 중 (12.73 KB 파일, 함수는 일부)
-   - 예상 절감: 500-800 bytes
-
-3. ⚠️ **getNativeDownload**
-   (`src/shared/external/vendors/vendor-manager-static.ts`)
-   - 상태: `@deprecated Use getUserscript().download() instead`
-   - 사용처: 테스트 및 fallback으로 사용 가능성
-   - 제거 전략: getUserscript().download() 완전 전환 후 제거
-   - 영향도: 높 (다운로드 핵심 로직)
-   - 예상 절감: 400-600 bytes
-
-4. ⚠️ **BrowserUtils.downloadFile** (`src/shared/browser/browser-utils.ts`)
-   - 상태: `@deprecated Use getUserscript().download() instead`
-   - 사용처: 테스트 및 fallback으로 사용 가능성
-   - 제거 전략: getUserscript().download() 완전 전환 후 제거
-   - 영향도: 높 (다운로드 핵심 로직)
-   - 예상 절감: 300-400 bytes
-
-**C. 유지 필요 (기능적 필요성)** - 제거 대상 아님
-
-1. ✅ **twitter-video-extractor legacy 처리**
-   (`src/shared/services/media/twitter-video-extractor.ts`)
-   - 상태: Twitter API 응답 정규화 (301-343줄)
-   - 이유: Twitter API가 실제로 `legacy` 필드를 반환함 (외부 API 스펙)
-   - 조치: 유지 (제거 불가)
-
-2. ✅ **SPACING_MIGRATION_MAP** (`src/shared/styles/tokens.ts`)
-   - 상태: Legacy 값 마이그레이션 맵
-   - 이유: 점진적 마이그레이션 가이드로 문서 역할
-   - 조치: 유지 (문서화 목적)
-
-3. ✅ **vendor-api.ts Legacy facade**
-   (`src/shared/external/vendors/vendor-api.ts`)
-   - 상태: 정적 API로 리다이렉트하는 얇은 어댑터
-   - 이유: 우발적 사용 시 안전 경로 유도
-   - 조치: 유지 (안전망 역할)
-
-**D. 미사용 옵션 필드 제거** - 우선순위 3
-
-1. ✅ **enableLegacyAdapter** (`src/shared/container/app-container.ts`)
-   - 상태: CreateContainerOptions의 미사용 옵션
-   - 사용처: grep 결과 1곳 (타입 정의만)
-   - 제거 전략: 인터페이스에서 필드 제거
-   - 영향도: 매우 낮 (타입 정의만)
-   - 예상 절감: 50 bytes
-
-#### 제거 전략 및 단계
-
-**1단계: 안전 제거 (A 그룹)** - 2시간 예상
-
-```typescript
-// 1. Button.iconVariant 제거
-// Before:
-const resolvedIntent = () => local.intent ?? local.iconVariant;
-// After:
-const resolvedIntent = () => local.intent;
-
-// 2. galleryState.signals getter 제거 (미사용)
-// Before:
-get signals() { return gallerySignals; }
-// After:
-// (완전 제거)
-
-// 3. enableLegacyAdapter 제거
-// Before:
-export interface CreateContainerOptions {
-  config?: Partial<AppConfig>;
-  enableLegacyAdapter?: boolean;
-}
-// After:
-export interface CreateContainerOptions {
-  config?: Partial<AppConfig>;
-}
-```
-
-**2단계: 사용처 분석 및 마이그레이션 (B 그룹)** - 3-4시간 예상
-
-```pwsh
-# toast 별칭 사용처 검색
-rg "ToastService|toastService|toastController" src/ --type ts
-
-# createZipFromItems 사용처 검색
-rg "createZipFromItems" src/ --type ts
-
-# getNativeDownload 사용처 검색
-rg "getNativeDownload" src/ --type ts
-
-# downloadFile 사용처 검색
-rg "downloadFile" src/ --type ts
-```
-
-**3단계: 고위험 API 처리 (createDomEventManager, getDiagnostics)** - 2시간 예상
-
-```typescript
-
-```
-
-마이그레이션 전략:
-
-- toast 별칭 → `toastManager`로 통일
-- createZipFromItems → `createZipBytesFromFileMap` + `DownloadOrchestrator` 사용
-- getNativeDownload/downloadFile → `getUserscript().download()` 완전 전환
-
-**3단계: 고위험 API 처리 (createDomEventManager, getDiagnostics)** - 2시간 예상
-
-```typescript
-// EventManager 리팩토링
-// Before:
-this.domManager = createDomEventManager();
-// After:
-this.domManager = new UnifiedEventManager();
-
-// ServiceDiagnostics 리팩토링
-// Before:
-const diagnostics = serviceManager.getDiagnostics();
-// After:
-// ServiceManager 내부 상태를 직접 접근하도록 구조 변경
-```
-
-**4단계: 검증** - 1시간 예상
-
-```pwsh
-# 타입 체크
-npm run typecheck
-
-# 린트
-npm run lint:fix
-
-# 테스트 (특히 toast, 이벤트, 다운로드 관련)
-npm test -- -t "toast|event|download"
-
-# 전체 테스트
-npm test
-
-# 빌드
-npm run build
-
-# 빌드 크기 확인
-node scripts/validate-build.js
-
-# @deprecated 주석 잔여 확인
-rg "@deprecated" src/ --type ts
-```
-
-#### 검증 기준
-
-- ✅ `@deprecated` 주석: 유지 필요한 3개만 남음 (legacy API 응답, 문서용 맵,
-  안전망)
-- ✅ 번들 크기: 327 KB 이하 (2-3 KB 절감)
-- ✅ 타입 에러: 0개
-- ✅ 린트 경고: 0개
-- ✅ 테스트 통과율: 99.6% 이상 유지
-- ✅ 빌드 성공: dev + prod 모두 성공
-- ✅ 사용처 검증: 제거된 API에 대한 import 없음
-
-#### 위험 및 대응
-
-**위험 1**: toast 별칭 제거 시 외부 사용처 깨짐
-
-- **대응**: 사용처 검색 → toastManager로 일괄 치환 → 테스트 실행
-
-**위험 2**: 다운로드 API 제거 시 fallback 경로 손실
-
-- **대응**: getUserscript().download()가 모든 환경에서 동작하는지 검증
-- **조건부 제거**: 테스트 환경에서 문제 발견 시 deprecated 주석만 유지
-
-**위험 3**: EventManager 리팩토링 시 이벤트 핸들링 깨짐
-
-- **대응**: 단위 테스트 + 통합 테스트로 이벤트 등록/해제 검증
-- **롤백 계획**: 커밋 단위로 진행, 문제 발견 시 즉시 revert
-
-#### 추가 고려사항
-
-**번들 크기 최적화 연계**:
-
-- Phase 86 완료 후 빌드 크기: ~327 KB (2.5 KB 절감 예상)
-- Phase 81 트리거: 330 KB 도달 전 여유 확보
-- 연계 효과: 레거시 제거 + 트리 쉐이킹으로 추가 0.5-1 KB 절감 가능
-
-**문서 업데이트**:
-
-- AGENTS.md: deprecated API 제거 내역 추가
-- ARCHITECTURE.md: EventManager → UnifiedEventManager 전환 기록
-- CODING_GUIDELINES.md: toast/download API 사용 가이드 갱신
-
-**Git 커밋 전략**:
-
-1. `refactor(cleanup): remove Button.iconVariant deprecated prop`
-2. `refactor(cleanup): remove unused galleryState.signals getter`
-3. `refactor(cleanup): remove enableLegacyAdapter option`
-4. `refactor(toast): unify toast manager exports`
-5. `refactor(zip): remove deprecated createZipFromItems`
-6. `refactor(download): migrate to getUserscript().download()`
-7. `refactor(events): migrate to UnifiedEventManager`
-8. `refactor(diagnostics): inline getDiagnostics logic`
-
----
 
 ### Phase 84: 로깅 일관성 & CSS 토큰 통일 (완료) ✅
 

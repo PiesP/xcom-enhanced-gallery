@@ -71,8 +71,6 @@ export interface ButtonProps extends ButtonHTMLAttributes {
   readonly iconOnly?: boolean;
   readonly loading?: boolean;
   readonly ref?: (element: HTMLButtonElement | null) => void;
-  /** @deprecated intent 사용을 권장 */
-  readonly iconVariant?: ButtonIntent;
 }
 
 type DefaultKeys = 'variant' | 'size' | 'type' | 'iconOnly' | 'disabled' | 'loading';
@@ -93,7 +91,6 @@ export function Button(rawProps: ButtonProps): JSXElement {
     'variant',
     'size',
     'intent',
-    'iconVariant',
     'iconOnly',
     'loading',
     'ref',
@@ -151,7 +148,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
     local.ref?.(null);
   });
 
-  const resolvedIntent = () => local.intent ?? local.iconVariant;
+  const resolvedIntent = () => local.intent;
   const isDisabled = () => local.disabled || local.loading;
 
   const buttonClasses = () =>
