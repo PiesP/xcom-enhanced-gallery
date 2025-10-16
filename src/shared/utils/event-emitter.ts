@@ -8,6 +8,8 @@
  * - 최소 번들 크기 (+~200 bytes)
  */
 
+import { logger } from '../logging';
+
 /**
  * 타입 안전 이벤트 이미터 생성
  *
@@ -60,7 +62,7 @@ export function createEventEmitter<T extends Record<string, unknown>>() {
           callback(data);
         } catch (error) {
           // 에러 격리: 하나의 리스너 실패가 다른 리스너 실행을 막지 않음
-          console.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
+          logger.error(`[EventEmitter] Listener error for event "${String(event)}":`, error);
         }
       });
     },

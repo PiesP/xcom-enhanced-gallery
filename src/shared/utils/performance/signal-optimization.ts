@@ -5,6 +5,7 @@
 
 import { getSolid } from '../../external/vendors';
 import { globalTimerManager } from '../timer-management';
+import { logger } from '../../logging';
 
 /**
  * 셀렉터 함수 타입
@@ -33,7 +34,7 @@ export function createSelector<T, R>(
       stats.hits++;
       globalStats.cacheHits++;
       if (debug || debugMode) {
-        console.log('[Signal Selector] Cache hit:', stats);
+        logger.debug('[Signal Selector] Cache hit:', stats);
       }
       return lastOutput;
     }
@@ -46,7 +47,7 @@ export function createSelector<T, R>(
     hasResult = true;
 
     if (debug || debugMode) {
-      console.log('[Signal Selector] Cache miss, computed new result:', stats);
+      logger.debug('[Signal Selector] Cache miss, computed new result:', stats);
     }
 
     return lastOutput;

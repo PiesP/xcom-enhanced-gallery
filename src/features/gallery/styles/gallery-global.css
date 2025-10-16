@@ -32,7 +32,7 @@
 
 /* 테마별 Surface 변형 */
 .glass-surface-light {
-  background: var(--xeg-surface-glass-bg-light, rgb(255 255 255 / 85%));
+  background: var(--xeg-surface-glass-bg-light, oklch(100% 0 0deg / 85%));
   transition:
     background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
     border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
@@ -49,7 +49,7 @@
 }
 
 .glass-surface-dark {
-  background: var(--xeg-surface-glass-bg-dark, rgb(0 0 0 / 85%));
+  background: var(--xeg-surface-glass-bg-dark, oklch(0% 0 0deg / 85%));
   color: var(--xeg-surface-glass-text-dark, var(--color-text-inverse));
   border: var(--border-width-thin) solid
     var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
@@ -262,8 +262,8 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
-    0 0.25rem 1rem rgb(15 23 42 / 10%),
-    /* 4px 16px */ 0 0.125rem 0.5rem rgb(15 23 42 / 6%); /* 2px 8px */
+    0 0.25rem 1rem oklch(22% 0.02 250deg / 10%),
+    /* 4px 16px */ 0 0.125rem 0.5rem oklch(22% 0.02 250deg / 6%); /* 2px 8px */
 }
 
 .xeg-gallery-nav-left {
@@ -279,8 +279,8 @@
   background: var(--xeg-color-neutral-200);
   transform: translateY(-50%) translateY(-0.1875rem) scale(1.05); /* -3px = -0.1875rem */
   box-shadow:
-    0 0.5rem 1.5rem rgb(15 23 42 / 15%),
-    /* 8px 24px */ 0 0.25rem 0.75rem rgb(15 23 42 / 10%); /* 4px 12px */
+    0 0.5rem 1.5rem oklch(22% 0.02 250deg / 15%),
+    /* 8px 24px */ 0 0.25rem 0.75rem oklch(22% 0.02 250deg / 10%); /* 4px 12px */
 }
 
 .xeg-gallery-nav-left:active,

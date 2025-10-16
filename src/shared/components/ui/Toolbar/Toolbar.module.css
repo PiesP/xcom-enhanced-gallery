@@ -45,6 +45,12 @@
   color: var(--xeg-color-overlay-strong);
 }
 
+/* 포커스 상태 - 접근성 */
+.toolbarButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
 /* 클릭 상태 - 단순화된 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
   box-shadow: var(--xeg-shadow-sm);
@@ -566,6 +572,11 @@ button.fitButton {
     background: var(--xeg-color-primary-500);
     border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
     color: var(--xeg-color-neutral-100);
+  }
+
+  .navButton:focus-visible {
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
   }
 
   .downloadButton {

@@ -5,6 +5,8 @@
  */
 
 import { globalTimerManager } from './timer-management';
+import { logger } from '../logging';
+
 /**
  * 에러 컨텍스트 정보
  */
@@ -196,7 +198,7 @@ export async function withFallback<T>(
     });
 
     // 로깅은 외부에서 처리하도록 에러를 다시 throw하지 않고 fallback 실행
-    console.warn('Operation failed, executing fallback:', standardError.message);
+    logger.warn('Operation failed, executing fallback:', standardError.message);
 
     try {
       return await fallback();
@@ -207,7 +209,7 @@ export async function withFallback<T>(
         fatal: true,
       });
 
-      console.error('Fallback also failed:', fallbackStandardError.message);
+      logger.error('Fallback also failed:', fallbackStandardError.message);
       throw fallbackStandardError;
     }
   }

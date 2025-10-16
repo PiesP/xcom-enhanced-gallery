@@ -63,24 +63,15 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔎 Type check
-        run: npm run typecheck:ci
-        # Uses tsgo for faster type checking with compact output
+      - name: � Setup GitHub CLI with CodeQL extension
+        run: |
+          gh extension install github/gh-codeql || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🧹 Lint
-        run: npm run lint:ci
-
-      - name: 🎨 CSS Lint
-        run: npm run lint:css:ci
-
-      - name: 📝 Markdown Lint
-        run: npm run lint:md:ci
-
-      - name: 🎨 Prettier check
-        run: npm run format:check
-
-      - name: 🧭 Dependency policy check
-        run: npm run deps:check
+      - name: ✅ Run quality checks
+        run: npm run validate:ci
+        # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
 
   tests:
     name: 🧪 Tests
@@ -105,11 +96,11 @@ jobs:
 
       - name: 🧪 Run tests (Node ${{ matrix.node-version }})
         if: ${{ matrix.node-version != 20 }}
-        run: npm run test:ci:node22
+        run: npm test
 
       - name: 🧪 Run tests with coverage (Node 20)
         if: ${{ matrix.node-version == 20 }}
-        run: npm run test:coverage:ci
+        run: npm run test:coverage
 
       - name: 📊 Upload coverage reports
         uses: actions/upload-artifact@v4

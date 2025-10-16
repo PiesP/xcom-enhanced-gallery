@@ -7,6 +7,7 @@
 
 import { getSolid } from '../external/vendors';
 import { globalTimerManager } from './timer-management';
+import { logger } from '../logging';
 
 // 타입 정의
 type Signal<T> = {
@@ -101,9 +102,9 @@ export function createSelector<T, R>(
 
     // Object.is 기반 인자 참조 동일성 검사
     if (hasResult && lastArgs && Object.is(lastArgs, state)) {
-      if (debug) {
+      if (debug && import.meta.env.DEV) {
         stats.cacheHits++;
-        console.info(`[Selector:${name}] Cache hit (same reference)`, { stats });
+        logger.debug(`[Selector:${name}] Cache hit (same reference)`, { stats });
       }
       return lastResult;
     }
@@ -113,9 +114,9 @@ export function createSelector<T, R>(
       const currentDependencies = dependencies(state);
 
       if (hasResult && lastDependencies && shallowEqual(lastDependencies, currentDependencies)) {
-        if (debug) {
+        if (debug && import.meta.env.DEV) {
           stats.cacheHits++;
-          console.info(`[Selector:${name}] Cache hit (dependencies)`, { stats });
+          logger.debug(`[Selector:${name}] Cache hit (dependencies)`, { stats });
         }
         return lastResult;
       }
@@ -131,11 +132,11 @@ export function createSelector<T, R>(
     lastResult = result;
     hasResult = true;
 
-    if (debug) {
+    if (debug && import.meta.env.DEV) {
       stats.computeCount++;
       stats.cacheMisses++;
       stats.lastComputeTime = performance.now() - startTime;
-      console.info(`[Selector:${name}] Computed new value`, {
+      logger.debug(`[Selector:${name}] Computed new value`, {
         result,
         computeTime: stats.lastComputeTime,
         stats,

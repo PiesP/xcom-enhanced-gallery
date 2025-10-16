@@ -78,9 +78,9 @@
   --xeg-easing-linear: linear;
 
   /* Shadow 토큰 - 테스트 요구사항 */
-  --xeg-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.1);
-  --xeg-shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
-  --xeg-shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+  --xeg-shadow-sm: 0 1px 2px oklch(0 0 0 / 0.1);
+  --xeg-shadow-md: 0 4px 8px oklch(0 0 0 / 0.15);
+  --xeg-shadow-lg: 0 8px 16px oklch(0 0 0 / 0.2);
 
   /* Legacy Primary Colors - 호환성 보장 */
   /* Primary Colors */
@@ -148,22 +148,22 @@
 
 /* 테마 선택자 - 테스트 요구사항 */
 [data-theme='light'] {
-  --xeg-surface-glass-bg: rgba(255, 255, 255, 0.1);
-  --xeg-surface-glass-border: rgba(255, 255, 255, 0.2);
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --xeg-surface-glass-bg: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
 }
 
 [data-theme='dark'] {
-  --xeg-surface-glass-bg: rgba(0, 0, 0, 0.1);
-  --xeg-surface-glass-border: rgba(255, 255, 255, 0.1);
-  --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --xeg-surface-glass-bg: rgba(0, 0, 0, 0.1);
-    --xeg-surface-glass-border: rgba(255, 255, 255, 0.1);
-    --xeg-surface-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+    --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+    --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
   }
 }
 

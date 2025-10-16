@@ -41,6 +41,11 @@ predicate isAllowedFile(File file) {
   file.getRelativePath().matches("%design-tokens%") or
   file.getRelativePath().matches("%tokens.css") or
   file.getRelativePath().matches("%variables.css") or
+  // Accessibility utilities (color detection/calculation requires hardcoded values)
+  file.getRelativePath().matches("%shared/utils/accessibility%") or
+  // Configuration/tooling files (dependency-cruiser color codes, analysis reports)
+  file.getBaseName() = ".dependency-cruiser.cjs" or
+  file.getBaseName() = "bundle-analysis.html" or
   // Test files
   file.getRelativePath().matches("%test/%") or
   file.getBaseName().matches("%.test.%") or

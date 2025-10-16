@@ -174,6 +174,7 @@ export function detectActualBackgroundColor(element: HTMLElement): string {
     const style = window.getComputedStyle(current);
     const bgColor = style.backgroundColor;
 
+    // codeql[js/hardcoded-color-values] - Transparent color detection
     if (bgColor && bgColor !== 'transparent' && bgColor !== 'rgba(0, 0, 0, 0)') {
       return bgColor;
     }
@@ -181,6 +182,7 @@ export function detectActualBackgroundColor(element: HTMLElement): string {
     current = current.parentElement;
   }
 
+  // codeql[js/hardcoded-color-values] - Default fallback color for accessibility calculation
   return 'rgb(255, 255, 255)'; // 기본값: 흰색
 }
 

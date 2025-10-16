@@ -1,7 +1,33 @@
 # CodeQL Custom Queries for xcom-enhanced-gallery
 
 이 디렉터리는 프로젝트 특화 CodeQL 쿼리를 포함합니다. 각 쿼리는 코딩 규칙을
-자동으로 검증합니다
+자동으로 검증합니다.
+
+## 로컬 실행 방법
+
+### 1. CodeQL 도구 설치 (권장 순서)
+
+**옵션 A: GitHub CLI 확장 (권장)**
+
+```pwsh
+gh extension install github/gh-codeql
+```
+
+**옵션 B: CodeQL CLI 직접 설치**
+
+[CodeQL CLI 다운로드](https://github.com/github/codeql-cli-binaries/releases)에서
+바이너리를 다운로드하고 PATH에 추가
+
+### 2. 쿼리 실행
+
+```pwsh
+# 스크립트로 자동 실행 (데이터베이스 생성 + 쿼리 실행 + 결과 출력)
+node scripts/check-codeql.js
+
+# 결과는 codeql-results/ 디렉터리에 SARIF 형식으로 저장됩니다
+```
+
+**참고**: `npm run validate` 실행 시 자동으로 CodeQL 검사가 포함됩니다
 
 ## 쿼리 목록
 

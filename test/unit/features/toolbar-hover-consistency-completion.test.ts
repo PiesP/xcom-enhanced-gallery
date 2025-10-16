@@ -67,7 +67,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
         'toolbarButton',
         'navButton',
         'downloadButton',
-        'settingsButton',
+        // 'settingsButton', // IconButton 사용으로 별도 클래스 불필요 (toolbarButton 상속)
         'closeButton',
         'fitButton',
       ];
