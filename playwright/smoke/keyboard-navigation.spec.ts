@@ -1,19 +1,16 @@
-import { test, expect } from '@playwright/test';
-import type { XegHarness } from '../harness/types';
+import { expect, test } from '@playwright/test';
+import { ensureHarness } from './utils';
 
 declare global {
   interface Window {
-    __XEG_HARNESS__?: XegHarness;
+    __XEG_HARNESS__?: import('../harness/types').XegHarness;
   }
 }
 
 test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://x.com');
-    // Load harness
-    await page.waitForFunction(() => typeof window.__XEG_HARNESS__ !== 'undefined', {
-      timeout: 5000,
-    });
+    await page.goto('about:blank');
+    await ensureHarness(page);
   });
 
   test('Test K1: ArrowLeft navigates to previous item', async ({ page }) => {
@@ -21,6 +18,7 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
       await harness.setupGalleryApp();
+      await harness.triggerGalleryAppMediaClick();
     });
 
     // Get initial state (should be at index 0)
@@ -78,6 +76,7 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
       await harness.setupGalleryApp();
+      await harness.triggerGalleryAppMediaClick();
     });
 
     // Get initial state (should be at index 0)
@@ -121,6 +120,7 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
       await harness.setupGalleryApp();
+      await harness.triggerGalleryAppMediaClick();
     });
 
     // Navigate to item 4 using ArrowRight 4 times
@@ -170,6 +170,7 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
       await harness.setupGalleryApp();
+      await harness.triggerGalleryAppMediaClick();
     });
 
     // Get initial state (should be at index 0)
