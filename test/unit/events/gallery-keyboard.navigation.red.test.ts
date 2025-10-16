@@ -39,7 +39,7 @@ describe('Gallery keyboard navigation (Home/End/Page/Arrow/Space)', () => {
     vi.clearAllMocks();
   });
 
-  it.skip('handles keys only when gallery is open and prevents default for navigation keys (E2E 이관 권장)', async () => {
+  it('handles keys only when gallery is open and prevents default for navigation keys (E2E 이관 완료: Phase 82.7 K6)', async () => {
     const { initializeGalleryEvents, cleanupGalleryEvents, openGallery, closeGallery } =
       await setup();
 

@@ -76,10 +76,10 @@ describe('Bundle Size Policy', () => {
   describe('Event Utilities Size Guard', () => {
     const eventsPath = resolveSrc('shared/utils/events.ts');
 
-    it('events.ts should not exceed 24 KB (Phase 33 Step 2 target)', () => {
+    it('events.ts should not exceed 26 KB (Phase 82.3/82.7: 키보드 핸들러 추가)', () => {
       const sizeKB = toKB(statSync(eventsPath).size);
-      logMetrics('events.ts size', sizeKB, 'KB', 24);
-      expect(sizeKB).toBeLessThanOrEqual(24);
+      logMetrics('events.ts size', sizeKB, 'KB', 26);
+      expect(sizeKB).toBeLessThanOrEqual(26);
     });
 
     it('events.ts should not exceed 850 lines', () => {

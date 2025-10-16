@@ -74,7 +74,7 @@ describe('Gallery video keyboard controls (Space/ArrowUp/ArrowDown/M)', () => {
     (globalThis as any).document.body.innerHTML = '';
   });
 
-  it.skip('Space toggles play/pause for current gallery video and prevents default when open (E2E 이관 권장)', async () => {
+  it('Space toggles play/pause for current gallery video and prevents default when open (E2E 이관 완료: Phase 82.7 K4)', async () => {
     const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
 
     const handled: string[] = [];
@@ -123,7 +123,7 @@ describe('Gallery video keyboard controls (Space/ArrowUp/ArrowDown/M)', () => {
     cleanupGalleryEvents();
   });
 
-  it.skip('ArrowUp/ArrowDown adjust volume and prevent default; M toggles mute (E2E 이관 권장)', async () => {
+  it('ArrowUp/ArrowDown adjust volume and prevent default; M toggles mute (E2E 이관 완료: Phase 82.7 K5)', async () => {
     const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
 
     await initializeGalleryEvents(
