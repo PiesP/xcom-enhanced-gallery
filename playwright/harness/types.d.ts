@@ -58,6 +58,15 @@ export type ViewportChangeResult = {
   appliedIndex: number | null;
 };
 
+// Phase 82.6: Focus Tracking Extended E2E API
+// NOTE: E2E 이관 시도 실패 (Solid.js 반응성 트리거 실패)
+// 하네스 API는 유지 (향후 page API 패턴 연구 후 활용)
+export type FocusIndicatorPosition = {
+  translateX: string;
+  left: string;
+  width: string;
+};
+
 // Phase 82.3: Keyboard & Performance E2E API
 export type KeyboardSimulationOptions = {
   ctrlKey?: boolean;
@@ -112,6 +121,11 @@ export interface XegHarness {
   getGlobalFocusedIndex(): Promise<number | null>;
   getElementFocusCount(selector: string): Promise<number>;
   disposeFocusTracker(): Promise<void>;
+  // Phase 82.6: Focus Tracking Extended E2E API
+  // NOTE: E2E 이관 시도 실패, API는 유지 (향후 활용)
+  waitForFocusStable(timeout?: number): Promise<void>;
+  getFocusIndicatorPosition(): Promise<FocusIndicatorPosition>;
+  triggerFocusChange(index: number): Promise<void>;
   // Phase 82.3: Keyboard & Performance E2E API
   simulateKeyPress(key: string, options?: KeyboardSimulationOptions): Promise<void>;
   measureKeyboardPerformance(action: () => Promise<void>): Promise<PerformanceMetrics>;

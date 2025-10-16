@@ -7,6 +7,87 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 82.6 (시도): 하네스 API 추가, E2E 이관 보류 ⏸️
+
+**완료일**: 2025-10-17 **목표**: 포커스 추적 9개 스킵 테스트 E2E 이관 **결과**:
+하네스 API 3개 추가 완료, E2E 이관 보류 (Solid.js 반응성 트리거 실패) ⏸️
+
+#### 배경
+
+- **문제**: 포커스 추적 관련 9개 스킵 테스트 (deduplication 3개, global-sync
+  3개, events 2개, toolbar-focus-indicator 1개)
+- **목표**: Phase 82.2 하네스 API를 확장하여 E2E 이관
+- **제약**: Phase 82.5와 동일한 문제 (harness 함수가 Solid.js 반응성 트리거
+  못함)
+- **결정**: 하네스 API는 유지 (향후 page API 패턴 연구 후 활용), E2E 이관 보류
+
+#### 달성 메트릭
+
+| 항목             | 시작     | 최종     | 결과                      |
+| ---------------- | -------- | -------- | ------------------------- |
+| 하네스 API 추가  | 0개      | 3개      | 완료 ✅                   |
+| E2E 테스트 작성  | 0개      | 9개      | 작성 후 삭제 ⏸️           |
+| E2E 테스트 통과  | -        | 2/9      | 7개 실패 (78% 실패율) ❌  |
+| 스킵 테스트      | 10개     | 10개     | 유지 (E2E 이관 실패) ⏸️   |
+| 빌드 크기        | 329.81KB | 329.81KB | 변화 없음 ✅              |
+| 타입/린트/CodeQL | 통과     | 통과     | 모든 검증 통과 ✅         |
+| 소요 시간        | -        | 4시간    | API 구현 1h + E2E 시도 3h |
+
+#### 구현 상세
+
+**하네스 API 추가** (완료 시간: 1시간)
+
+1. **types.d.ts**: FocusIndicatorPosition 타입 추가
+2. **index.ts**: 3개 함수 구현
+   - `waitForFocusStableHarness(timeout)`: debounce 안정화 대기
+   - `getFocusIndicatorPositionHarness()`: 인디케이터 translateX 조회
+   - `triggerFocusChangeHarness(index)`: 커스텀 이벤트로 포커스 변경
+3. **harness 객체**: Phase 82.6 API 등록
+
+**E2E 테스트 시도 및 실패** (시도 시간: 3시간)
+
+- **작성**: focus-tracking-extended-e2e.spec.ts (9개 테스트)
+- **실행 결과**: 7개 실패 (deduplication 1개, global-sync 3개, events 2개,
+  toolbar-focus-indicator 1개)
+- **실패 원인**:
+  - `getGlobalFocusedIndex()` → null (전역 상태 미동기화)
+  - `getElementFocusCount()` → 0 (focus() 호출 미추적)
+  - `getFocusIndicatorPosition()` → Element not found
+- **근본 문제**: Phase 82.2 하네스는 IntersectionObserver 시뮬레이션만 제공,
+  실제 FocusTracker 서비스가 초기화되지 않음
+
+#### 핵심 교훈
+
+**1. E2E 이관 제약사항 확인 (Phase 82.5/82.6 공통)**
+
+- **harness 함수만으로는 부족**: evaluate() 내부에서는 DOM API만 사용 가능
+- **Solid.js 반응성 트리거 실패**: Signal 업데이트가 일어나지 않음
+- **실제 서비스 미초기화**: FocusTracker/GalleryState 등이 초기화되지 않음
+- **page API 필요**: page.click(), page.keyboard.press() 등 브라우저 이벤트
+  시스템 필요
+
+**2. Phase 82.2 하네스의 한계**
+
+- **시뮬레이션만 제공**: IntersectionObserver entries만 시뮬레이션
+- **서비스 통합 없음**: 실제 FocusTracker 서비스와 연동되지 않음
+- **전역 상태 미동기화**: data-focused 속성이 설정되지 않음
+- **focus() 추적 실패**: 하네스 spy가 실제 focus 호출을 감지하지 못함
+
+**3. 향후 개선 방향**
+
+- **page API 패턴 연구**: toolbar-settings-migration.spec.ts 성공 패턴 분석
+- **실제 서비스 초기화**: setupGalleryApp에서 FocusTracker 명시적 초기화
+- **waitForFunction 활용**: Solid.js Signal 변화를 page API로 대기
+- **별도 Phase 재도전**: Phase 82.6-retry (E2E 이관 재시도)
+
+#### 다음 단계
+
+- Phase 82.7: 키보드 & 레이아웃 4개 테스트 (기존 Phase 82.3 하네스 활용)
+- 또는 Phase 73: 번들 최적화 (330KB 초과 시)
+- Phase 82.6-retry: page API 패턴 연구 후 재도전 (별도 계획)
+
+---
+
 ### Phase 82.5 (부분): JSDOM 테스트 정리 ✅
 
 **완료일**: 2025-10-17 **목표**: JSDOM Limitation 스킵 테스트 5개 제거, E2E 이관
@@ -48,18 +129,6 @@
 - 결정: E2E 이관 보류 (별도 Phase로 재도전)
 
 #### 핵심 교훈
-
-1. **JSDOM vs E2E 경계**: 구조 검증은 JSDOM 유지, 동적 반응성은 E2E 필요
-2. **하네스 패턴 제약**: DOM API만 호출하는 하네스는 Solid.js 반응성 트리거 못함
-3. **page API 필요성**: page.click() + waitForFunction()이 E2E에서 유일한 패턴
-4. **부분 성과 인정**: 완벽한 달성 실패 시 부분 성과라도 커밋하여 진행
-
-#### 다음 단계
-
-- Phase 82.6: 포커스 추적 9개 테스트 E2E 이관 (IntersectionObserver 필요)
-- Phase 82.5 E2E 재도전: page API 패턴 연구 후 별도 Phase로 진행 (보류)
-
-### Phase 85.2: CodeQL 쿼리 병렬 실행 최적화 ✅
 
 **완료일**: 2025-10-16 **목표**: 5개 CodeQL 쿼리를 병렬 실행하여 빌드 시간 단축
 **결과**: 순차 실행 90-100초 → 병렬 실행 29.5초, 60-70초 절약 (~70% 개선) ✅
