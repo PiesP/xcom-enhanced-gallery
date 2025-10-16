@@ -6,7 +6,12 @@ import { logger } from '../logging/logger';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
 import { MediaClickDetector } from './media/media-click-detector';
-import { gallerySignals } from '../state/signals/gallery.signals';
+import {
+  gallerySignals,
+  navigateToItem,
+  navigatePrevious,
+  navigateNext,
+} from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import { globalTimerManager } from './timer-management';
 import type { MediaInfo } from '../types/media.types';
@@ -657,6 +662,56 @@ function handleKeyboardEvent(
               }
             } catch (err) {
               logger.debug('togglePlayPauseCurrent failed', err);
+            }
+            break;
+          case 'ArrowLeft':
+            try {
+              navigatePrevious('keyboard');
+            } catch (err) {
+              logger.debug('navigatePrevious failed', err);
+            }
+            break;
+          case 'ArrowRight':
+            try {
+              navigateNext('keyboard');
+            } catch (err) {
+              logger.debug('navigateNext failed', err);
+            }
+            break;
+          case 'Home':
+            try {
+              navigateToItem(0, 'keyboard');
+            } catch (err) {
+              logger.debug('navigateToItem(Home) failed', err);
+            }
+            break;
+          case 'End':
+            try {
+              const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
+              navigateToItem(lastIndex, 'keyboard');
+            } catch (err) {
+              logger.debug('navigateToItem(End) failed', err);
+            }
+            break;
+          case 'PageDown':
+            try {
+              // Page Down: +5 items
+              const nextIndex = Math.min(
+                gallerySignals.mediaItems.value.length - 1,
+                gallerySignals.currentIndex.value + 5
+              );
+              navigateToItem(nextIndex, 'keyboard');
+            } catch (err) {
+              logger.debug('navigateToItem(PageDown) failed', err);
+            }
+            break;
+          case 'PageUp':
+            try {
+              // Page Up: -5 items
+              const prevIndex = Math.max(0, gallerySignals.currentIndex.value - 5);
+              navigateToItem(prevIndex, 'keyboard');
+            } catch (err) {
+              logger.debug('navigateToItem(PageUp) failed', err);
             }
             break;
           case 'ArrowUp':

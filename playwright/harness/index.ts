@@ -17,6 +17,7 @@ import type {
   KeyboardSimulationOptions,
   PerformanceMetrics,
   MemoryMetrics,
+  DebugInfo,
   XegHarness,
 } from './types';
 
@@ -40,6 +41,44 @@ const SAMPLE_MEDIA: MediaInfo = {
   type: 'image',
   filename: 'sample.jpg',
 };
+
+const SAMPLE_MEDIA_ARRAY: MediaInfo[] = [
+  {
+    id: 'sample-media-0',
+    url: 'https://example.com/sample-0.jpg',
+    originalUrl: 'https://example.com/sample-0.jpg?orig',
+    type: 'image',
+    filename: 'sample-0.jpg',
+  },
+  {
+    id: 'sample-media-1',
+    url: 'https://example.com/sample-1.jpg',
+    originalUrl: 'https://example.com/sample-1.jpg?orig',
+    type: 'image',
+    filename: 'sample-1.jpg',
+  },
+  {
+    id: 'sample-media-2',
+    url: 'https://example.com/sample-2.jpg',
+    originalUrl: 'https://example.com/sample-2.jpg?orig',
+    type: 'image',
+    filename: 'sample-2.jpg',
+  },
+  {
+    id: 'sample-media-3',
+    url: 'https://example.com/sample-3.jpg',
+    originalUrl: 'https://example.com/sample-3.jpg?orig',
+    type: 'image',
+    filename: 'sample-3.jpg',
+  },
+  {
+    id: 'sample-media-4',
+    url: 'https://example.com/sample-4.jpg',
+    originalUrl: 'https://example.com/sample-4.jpg?orig',
+    type: 'image',
+    filename: 'sample-4.jpg',
+  },
+];
 
 const sleep = (ms = 0) => new Promise<void>(resolve => setTimeout(resolve, ms));
 
@@ -638,6 +677,8 @@ async function setupGalleryAppHarness(): Promise<GalleryAppSetupResult> {
 
   const app = new GalleryApp();
   try {
+    // GalleryApp.initialize() will call setupEventHandlers() internally,
+    // which calls initializeGalleryEvents() with proper keyboard handlers
     await app.initialize();
   } finally {
     document.addEventListener = originalAdd;
@@ -659,7 +700,7 @@ async function triggerGalleryAppMediaClickHarness(): Promise<void> {
   if (!galleryHandle) {
     throw new Error('Gallery app is not initialized.');
   }
-  await galleryHandle.app.openGallery([SAMPLE_MEDIA], 0);
+  await galleryHandle.app.openGallery(SAMPLE_MEDIA_ARRAY, 0);
   await sleep();
 }
 
@@ -1015,6 +1056,15 @@ async function getMemoryUsageHarness(): Promise<MemoryMetrics> {
   };
 }
 
+async function getDebugInfoHarness(): Promise<DebugInfo> {
+  return {
+    isOpen: galleryState.value.isOpen,
+    currentIndex: galleryState.value.currentIndex,
+    mediaCount: galleryState.value.mediaItems.length,
+    checkGalleryOpenResult: galleryState.value.isOpen, // checkGalleryOpen() 대신 직접 확인
+  };
+}
+
 const harness: XegHarness = {
   errorBoundaryScenario: runErrorBoundaryScenario,
   mountToolbar: mountToolbarHarness,
@@ -1050,6 +1100,7 @@ const harness: XegHarness = {
   simulateKeyPress: simulateKeyPressHarness,
   measureKeyboardPerformance: measureKeyboardPerformanceHarness,
   getMemoryUsage: getMemoryUsageHarness,
+  getDebugInfo: getDebugInfoHarness,
 };
 
 (globalThis as typeof globalThis & { __XEG_HARNESS__?: XegHarness }).__XEG_HARNESS__ = harness;
