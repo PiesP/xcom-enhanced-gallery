@@ -221,7 +221,8 @@ npm test
   [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
 - **💡 기능 제안**:
   [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
-- **📚 문서**: [docs/](docs/) 디렉토리
+- **📚 문서**: [문서 가이드](docs/DOCUMENTATION.md) · [개발자 가이드](AGENTS.md)
+  · [전체 docs/](docs/)
 - **📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
 
 ---

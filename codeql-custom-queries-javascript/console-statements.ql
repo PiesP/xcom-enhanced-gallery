@@ -37,5 +37,4 @@ where
   call.getReceiver().(GlobalVarAccess).getName() = "console" and
   not isTestFile(call.getFile()) and
   not isAllowedFile(call.getFile())
-select call,
-  "Use '@shared/logging/logger' instead of console." + method + "() in production code."
+select call, "Use '@shared/logging/logger' instead of console." + method + "() in production code."

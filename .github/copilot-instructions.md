@@ -3,6 +3,8 @@
 > Solid.js 기반 Userscript 프로젝트를 위한 AI 코딩 가이드 (프로젝트 특화, TDD
 > 우선)
 
+> 📚 **전체 문서 구조**: [docs/DOCUMENTATION.md](../docs/DOCUMENTATION.md) 참고
+
 ## 핵심 스택/워크플로
 
 - Stack: TypeScript(strict) + Vite 7 + Solid.js 1.9.9 + Vitest 3(JSDOM)

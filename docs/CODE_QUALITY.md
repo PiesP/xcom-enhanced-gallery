@@ -368,25 +368,22 @@ graph TD
 
 ## FAQ
 
-**Q: CodeQL이 로컬에서 실행되지 않아요.**  
-A: CodeQL CLI는 선택적 도구입니다. CI에서 자동으로 실행되므로 로컬 설치는 필수가
-아닙니다. 설치를 원하면 [GitHub CLI를 사용](https://cli.github.com/)하거나
+**Q: CodeQL이 로컬에서 실행되지 않아요.** A: CodeQL CLI는 선택적 도구입니다.
+CI에서 자동으로 실행되므로 로컬 설치는 필수가 아닙니다. 설치를 원하면
+[GitHub CLI를 사용](https://cli.github.com/)하거나
 [직접 다운로드](https://github.com/github/codeql-cli-binaries/releases)하세요.
 
-**Q: 테스트가 너무 느려요.**  
-A: `npm run test:fast`를 사용하면 빠른 테스트만 실행됩니다. CI에서는 전체
-테스트가 실행됩니다.
+**Q: 테스트가 너무 느려요.** A: `npm run test:fast`를 사용하면 빠른 테스트만
+실행됩니다. CI에서는 전체 테스트가 실행됩니다.
 
-**Q: 빌드 크기가 초과되면 어떻게 하나요?**  
-A: 330 KB 도달 시 Phase 81(번들 최적화)이 트리거됩니다.
-`docs/TDD_REFACTORING_PLAN.md`를 참고하세요.
+**Q: 빌드 크기가 초과되면 어떻게 하나요?** A: 330 KB 도달 시 Phase 81(번들
+최적화)이 트리거됩니다. `docs/TDD_REFACTORING_PLAN.md`를 참고하세요.
 
-**Q: maintenance-check의 경고를 무시해도 되나요?**  
-A: 일부는 무시 가능하지만, 백업 디렉터리나 추적되지 않는 파일은 정기적으로
-정리하는 것이 좋습니다.
+**Q: maintenance-check의 경고를 무시해도 되나요?** A: 일부는 무시 가능하지만,
+백업 디렉터리나 추적되지 않는 파일은 정기적으로 정리하는 것이 좋습니다.
 
-**Q: 모든 점검을 한 번에 실행하려면?**  
-A: `npm run validate && npm run maintenance:check`를 실행하세요. 작업 완료 시
+**Q: 모든 점검을 한 번에 실행하려면?** A:
+`npm run validate && npm run maintenance:check`를 실행하세요. 작업 완료 시
 권장합니다.
 
 ---

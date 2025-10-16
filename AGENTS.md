@@ -389,6 +389,9 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
 
 ## 참고 문서 및 가이드
 
+> 📚 **[문서 통합 가이드](docs/DOCUMENTATION.md)**: 모든 문서를 한눈에 보려면
+> 여기를 참고하세요
+
 ### 핵심 개발 가이드
 
 - **[CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md)**: 코딩 규칙, 디자인 토큰,
@@ -397,6 +400,8 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
   External), 의존성 규칙
 - **[DEPENDENCY-GOVERNANCE.md](docs/DEPENDENCY-GOVERNANCE.md)**: 의존성 관리
   정책, dependency-cruiser 규칙
+- **[TESTING_STRATEGY.md](docs/TESTING_STRATEGY.md)**: Testing Trophy, JSDOM
+  제약사항, E2E 하네스 패턴
 
 ### TDD 및 리팩토링
 
