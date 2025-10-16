@@ -23,5 +23,42 @@
             ]
         }
     },
-    "codeQL.createQuery.qlPackLocation": "c:\\git\\xcom-enhanced-gallery"
+    "codeQL.createQuery.qlPackLocation": "c:\\git\\xcom-enhanced-gallery",
+    // 파일 탐색기 및 검색에서 제외
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/coverage": true,
+        "**/.tsbuildinfo": true,
+        "**/test-results": true,
+        "**/playwright-report": true,
+        "**/.nyc_output": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/build": true,
+        "**/coverage": true,
+        "**/test-results": true,
+        "**/playwright-report": true,
+        "**/.tsbuildinfo": true,
+        "**/*.lock": true,
+        "**/*.log": true
+    },
+    // TypeScript 검사에서 제외
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "typescript.validate.enable": true,
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    // ESLint 검사에서 제외 (이미 eslint.config.js에 있지만 명시)
+    "eslint.workingDirectories": [
+        {
+            "mode": "auto"
+        }
+    ],
+    // 문제 패널 필터링
+    "problems.decorations.enabled": true,
+    // JavaScript/TypeScript 언어 서버 최적화
+    "js/ts.implicitProjectConfig.checkJs": false,
+    "javascript.validate.enable": false
 }
