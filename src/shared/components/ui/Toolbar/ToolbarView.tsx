@@ -61,9 +61,7 @@ export interface ToolbarViewProps extends ToolbarViewBaseProps {
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const solid = getSolid();
 
-  const navState = props.navState;
-  const fitModeOrder = props.fitModeOrder;
-  const fitModeLabels = props.fitModeLabels;
+  // Phase 87: props 직접 접근 (구조 분해 제거)
   const isToolbarDisabled = () => Boolean(props.disabled);
   const isDownloading = () => Boolean(props.isDownloading);
 
@@ -104,10 +102,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
-            disabled={navState().prevDisabled}
+            disabled={props.navState().prevDisabled}
             onClick={props.onPreviousClick}
             data-gallery-element='nav-previous'
-            data-disabled={navState().prevDisabled}
+            data-disabled={props.navState().prevDisabled}
           >
             <ChevronLeft size={18} />
           </IconButton>
@@ -116,10 +114,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
-            disabled={navState().nextDisabled}
+            disabled={props.navState().nextDisabled}
             onClick={props.onNextClick}
             data-gallery-element='nav-next'
-            data-disabled={navState().nextDisabled}
+            data-disabled={props.navState().nextDisabled}
           >
             <ChevronRight size={18} />
           </IconButton>
@@ -151,8 +149,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           class={`${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`}
           data-gallery-element='actions-right'
         >
-          {fitModeOrder.map(({ mode, Icon }) => {
-            const label = fitModeLabels[mode];
+          {props.fitModeOrder.map(({ mode, Icon }) => {
+            const label = props.fitModeLabels[mode];
             return (
               <IconButton
                 size='toolbar'
@@ -173,25 +171,25 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             loading={isDownloading()}
             onClick={props.onDownloadCurrent}
-            disabled={navState().downloadDisabled}
+            disabled={props.navState().downloadDisabled}
             aria-label='현재 파일 다운로드'
             title='현재 파일 다운로드 (Ctrl+D)'
             data-gallery-element='download-current'
-            data-disabled={navState().downloadDisabled}
+            data-disabled={props.navState().downloadDisabled}
             data-loading={isDownloading()}
           >
             <Download size={18} />
           </IconButton>
 
-          {navState().canDownloadAll && (
+          {props.navState().canDownloadAll && (
             <IconButton
               size='toolbar'
               onClick={props.onDownloadAll}
-              disabled={navState().downloadDisabled}
+              disabled={props.navState().downloadDisabled}
               aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               data-gallery-element='download-all'
-              data-disabled={navState().downloadDisabled}
+              data-disabled={props.navState().downloadDisabled}
               data-loading={isDownloading()}
             >
               <FileZip size={18} />

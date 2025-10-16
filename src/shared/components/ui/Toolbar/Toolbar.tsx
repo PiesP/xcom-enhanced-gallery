@@ -72,7 +72,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     )
   );
 
-  const displayedIndex = createMemo(() => {
+  const displayedIndex = createMemo((): number => {
     const total = props.totalCount;
     if (!(typeof total === 'number' && total > 0)) {
       return 0;
@@ -92,7 +92,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     return clampedCurrent;
   });
 
-  const progressWidth = createMemo(() => {
+  const progressWidth = createMemo((): string => {
     if (props.totalCount <= 0) {
       return '0%';
     }
@@ -142,22 +142,47 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     }
   };
 
-  const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
-    toolbarActions.setCurrentFitMode(mode);
-    if (!props.disabled) {
-      getFitHandler(mode)?.(event as unknown as Event);
-    }
-  };
+  // Phase 87: 이벤트 핸들러 메모이제이션으로 불필요한 재생성 방지
+  const handleFitModeClick = createMemo(() => {
+    const disabled = props.disabled;
+    return (mode: FitMode) => (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
+      toolbarActions.setCurrentFitMode(mode);
+      if (!disabled) {
+        getFitHandler(mode)?.(event as unknown as Event);
+      }
+    };
+  });
 
   const isFitDisabled = (mode: FitMode): boolean => props.disabled || !getFitHandler(mode);
 
-  const createActionHandler = (action?: () => void) => (event: MouseEvent) => {
+  // Phase 87: 개별 액션 핸들러 메모이제이션
+  const onPreviousClick = createMemo(() => (event: MouseEvent) => {
     event.stopPropagation();
-    action?.();
-  };
+    props.onPrevious?.();
+  });
+
+  const onNextClick = createMemo(() => (event: MouseEvent) => {
+    event.stopPropagation();
+    props.onNext?.();
+  });
+
+  const onDownloadCurrent = createMemo(() => (event: MouseEvent) => {
+    event.stopPropagation();
+    props.onDownloadCurrent?.();
+  });
+
+  const onDownloadAll = createMemo(() => (event: MouseEvent) => {
+    event.stopPropagation();
+    props.onDownloadAll?.();
+  });
+
+  const onCloseClick = createMemo(() => (event: MouseEvent) => {
+    event.stopPropagation();
+    props.onClose?.();
+  });
 
   const navState = createMemo(() => {
     const total = Math.max(0, props.totalCount ?? 0);
@@ -172,15 +197,10 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     } as const;
   });
 
-  const onPreviousClick = createActionHandler(props.onPrevious);
-  const onNextClick = createActionHandler(props.onNext);
-  const onDownloadCurrent = createActionHandler(props.onDownloadCurrent);
-  const onDownloadAll = createActionHandler(props.onDownloadAll);
-  const onCloseClick = createActionHandler(props.onClose);
-
   const showSettingsButton = typeof props.onOpenSettings === 'function';
 
-  return solid.createComponent(ToolbarView, {
+  const { createComponent } = solid;
+  return createComponent(ToolbarView, {
     ...props,
     toolbarClass,
     toolbarState,
@@ -190,13 +210,13 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     progressWidth,
     fitModeOrder: FIT_MODE_ORDER,
     fitModeLabels,
-    handleFitModeClick,
+    handleFitModeClick: handleFitModeClick(),
     isFitDisabled,
-    onPreviousClick,
-    onNextClick,
-    onDownloadCurrent,
-    onDownloadAll,
-    onCloseClick,
+    onPreviousClick: onPreviousClick(),
+    onNextClick: onNextClick(),
+    onDownloadCurrent: onDownloadCurrent(),
+    onDownloadAll: onDownloadAll(),
+    onCloseClick: onCloseClick(),
     settingsController: enhancedSettingsController,
     showSettingsButton,
   });

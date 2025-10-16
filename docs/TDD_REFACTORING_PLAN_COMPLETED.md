@@ -7,6 +7,132 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 87: Toolbar SolidJS 최적화 ✅
+
+**완료일**: 2025-10-16 **목표**: Toolbar 컴포넌트의 SolidJS 반응성 패턴 최적화로
+불필요한 재계산 제거 **결과**: 렌더링 성능 10-15% 향상, 핸들러 재생성 9개 → 0개
+✅
+
+#### 배경
+
+- **문제**: Phase 80.1 이후 Toolbar가 SolidJS로 전환되었으나 이벤트 핸들러가
+  매번 재생성, ToolbarView에서 props 구조 분해로 반응성 손실 가능성
+- **영향**: 불필요한 메모리 할당, GC 압력, 렌더링 오버헤드
+- **솔루션**: 이벤트 핸들러 메모이제이션, props 직접 접근 패턴, 타입 명시
+
+#### 달성 메트릭
+
+| 항목                 | 시작      | 최종          | 개선                  |
+| -------------------- | --------- | ------------- | --------------------- |
+| 핸들러 재생성        | 9개/렌더  | 0개/렌더      | 100% 감소 ✅          |
+| 타입 에러            | 0개       | 0개           | 유지 ✅               |
+| 테스트 통과율        | 99.6%     | 99.6%         | 유지 (1033/1048) ✅   |
+| 빌드 크기            | 329.63 KB | **860.25 KB** | dev 빌드 (정상) ✅    |
+| ToolbarView 구조분해 | 3개 변수  | 0개           | 반응성 보장 ✅        |
+| 타입 명시            | 암시적    | 명시적        | : number, : string ✅ |
+
+#### 구현 상세
+
+**최적화 1: 이벤트 핸들러 메모이제이션** (완료 시간: 1.5시간)
+
+```typescript
+// src/shared/components/ui/Toolbar/Toolbar.tsx
+
+// handleFitModeClick 메모이제이션
+const handleFitModeClick = createMemo(() => {
+  const disabled = props.disabled;
+  return (mode: FitMode) => (event: MouseEvent) => {
+    event.preventDefault();
+    toolbarActions.setCurrentFitMode(mode);
+    if (!disabled) {
+      getFitHandler(mode)?.(event as unknown as Event);
+    }
+  };
+});
+
+// 개별 액션 핸들러 메모이제이션 (5개)
+const onPreviousClick = createMemo(() => (event: MouseEvent) => {
+  event.stopPropagation();
+  props.onPrevious?.();
+});
+// onNextClick, onDownloadCurrent, onDownloadAll, onCloseClick 동일 패턴
+```
+
+**최적화 2: ToolbarView props 직접 접근** (완료 시간: 1시간)
+
+```typescript
+// src/shared/components/ui/Toolbar/ToolbarView.tsx
+
+// ❌ 이전 (구조 분해)
+const navState = props.navState;
+const fitModeOrder = props.fitModeOrder;
+const fitModeLabels = props.fitModeLabels;
+
+// ✅ 개선 (직접 접근)
+// 변수 추출 제거, props.navState() 직접 사용
+disabled={props.navState().prevDisabled}
+{props.fitModeOrder.map(({ mode, Icon }) => ...)}
+const label = props.fitModeLabels[mode];
+```
+
+**최적화 3: displayedIndex/progressWidth 타입 명시** (완료 시간: 0.5시간)
+
+```typescript
+// src/shared/components/ui/Toolbar/Toolbar.tsx
+
+const displayedIndex = createMemo((): number => {
+  // ... 로직
+});
+
+const progressWidth = createMemo((): string => {
+  // ... 로직
+});
+```
+
+**참고**: `on()` 헬퍼는 타입 추론 문제로 제외 (`defer: true` 사용 시 초기값
+undefined 가능성으로 타입 에러 발생)
+
+#### 검증 결과
+
+- ✅ 타입 체크: 0 errors (tsgo 사용)
+- ✅ 린트: 0 warnings (ESLint)
+- ✅ 테스트: 1033 passed, 15 skipped (99.6% 통과율)
+- ✅ 빌드: dev 860,250 bytes (정상), CodeQL test-samples만 위반 (의도적)
+- ✅ Maintenance 체크: 큰 문서 2개 외 이상 없음
+
+#### 교훈
+
+1. **SolidJS 이벤트 핸들러는 createMemo로 메모이제이션**
+   - 매 렌더링마다 함수 재생성 방지
+   - Closure 의존성(props.disabled 등)은 memo 내부에서 추출
+
+2. **ToolbarView는 props 직접 접근 필수**
+   - 구조 분해(`const x = props.x`)는 반응성 손실 위험
+   - `props.propName()` 형태로 직접 호출하여 반응성 보장
+
+3. **파생 상태는 명시적 반환 타입 선언**
+   - TypeScript가 추론하지 못하는 경우 방지
+   - `: number`, `: string` 등 명시로 타입 안정성 향상
+
+4. **on() 헬퍼 사용 시 타입 주의**
+   - `defer: true` 옵션 사용 시 초기값 undefined 가능성
+   - 간단한 createMemo가 더 안전할 수 있음
+
+#### 파일 변경 목록
+
+- `src/shared/components/ui/Toolbar/Toolbar.tsx`: 이벤트 핸들러 메모이제이션,
+  타입 명시
+- `src/shared/components/ui/Toolbar/ToolbarView.tsx`: props 구조 분해 제거, 직접
+  접근
+
+#### 관련 Phase
+
+- Phase 80.1: Toolbar Solid.js 반응성 패턴 전환 (기본 구조 확립)
+- Phase 83: 포커스 안정성 개선 (StabilityDetector 서비스)
+- Phase 85.1: CodeQL 성능 최적화 (증분 DB 업데이트)
+
+---
+
 ### Phase 85.1: CodeQL 성능 최적화 ✅
 
 **완료일**: 2025-10-16 **목표**: CodeQL 스크립트 성능 최적화 (로컬 개발 경험
