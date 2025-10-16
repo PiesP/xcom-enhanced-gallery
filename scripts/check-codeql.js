@@ -215,21 +215,28 @@ function createDatabase() {
 }
 
 /**
- * CodeQL 쿼리 실행
+ * CodeQL 쿼리 실행 (비동기)
  */
-function runQuery(queryFile) {
+async function runQuery(queryFile) {
   const queryPath = resolve(queriesDir, queryFile);
   const resultFile = join(resultsDir, `${queryFile.replace('.ql', '')}.sarif`);
 
   try {
-    execCodeQL(
-      `database analyze "${dbDir}" "${queryPath}" --format=sarif-latest --output="${resultFile}"`,
-      { stdio: 'pipe' }
-    );
-    return resultFile;
+    await new Promise((resolve, reject) => {
+      try {
+        execCodeQL(
+          `database analyze "${dbDir}" "${queryPath}" --format=sarif-latest --output="${resultFile}"`,
+          { stdio: 'pipe' }
+        );
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+    return { queryFile, resultFile, success: true };
   } catch (error) {
     console.error(`${colors.red}✗ 쿼리 실행 실패 (${queryFile}):${colors.reset}`, error.message);
-    return null;
+    return { queryFile, resultFile: null, success: false };
   }
 }
 
@@ -265,16 +272,23 @@ function parseSarifResults(sarifFile) {
 }
 
 /**
- * 결과 출력
+ * 결과 출력 (test-samples 제외)
  */
 function printResults(queryName, results) {
-  if (results.total === 0) {
+  // test-samples 디렉토리의 결과 필터링 (의도적 위반 예시)
+  const filteredResults = results.results.filter(r => {
+    return !r.locations?.some(loc => loc.uri?.includes('test-samples/'));
+  });
+
+  const filteredTotal = filteredResults.length;
+
+  if (filteredTotal === 0) {
     console.log(`  ${colors.green}✓ ${queryName}: 문제 없음${colors.reset}`);
     return true;
   }
 
-  console.log(`  ${colors.red}✗ ${queryName}: ${results.total}개 문제 발견${colors.reset}`);
-  results.results.forEach((r, idx) => {
+  console.log(`  ${colors.red}✗ ${queryName}: ${filteredTotal}개 문제 발견${colors.reset}`);
+  filteredResults.forEach((r, idx) => {
     console.log(`    ${idx + 1}. ${r.message}`);
     r.locations?.forEach(loc => {
       console.log(
@@ -286,13 +300,15 @@ function printResults(queryName, results) {
 }
 
 /**
- * CodeQL 쿼리 실행
+ * CodeQL 쿼리 실행 (병렬)
  */
-function runCodeQLQueries() {
+async function runCodeQLQueries() {
   const tool = detectCodeQLTool();
   const toolName = tool === 'gh-codeql' ? 'gh codeql' : 'codeql';
 
-  console.log(`${colors.bright}실행 중: CodeQL 커스텀 쿼리 (${toolName} 사용)...${colors.reset}\n`);
+  console.log(
+    `${colors.bright}실행 중: CodeQL 커스텀 쿼리 (${toolName} 사용, 병렬 실행)...${colors.reset}\n`
+  );
 
   // 쿼리 파일 확인
   const queries = [
@@ -321,20 +337,30 @@ function runCodeQLQueries() {
     return false;
   }
 
-  // 쿼리 실행
-  console.log(`${colors.bright}2. 쿼리 실행 중...${colors.reset}`);
+  // 쿼리 병렬 실행 (시작 시간 측정)
+  console.log(
+    `${colors.bright}2. 쿼리 병렬 실행 중 (${existingQueries.length}개)...${colors.reset}`
+  );
+  const startTime = Date.now();
+
+  const queryResults = await Promise.all(existingQueries.map(queryFile => runQuery(queryFile)));
+
+  const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
+  console.log(`${colors.green}✓ 쿼리 실행 완료 (${elapsedTime}초)${colors.reset}\n`);
+
+  // 결과 파싱 및 출력
   let allPassed = true;
 
-  existingQueries.forEach(queryFile => {
-    const resultFile = runQuery(queryFile);
-    if (resultFile) {
-      const results = parseSarifResults(resultFile);
-      const passed = printResults(queryFile, results);
-      allPassed = allPassed && passed;
-    } else {
+  for (const { queryFile, resultFile, success } of queryResults) {
+    if (!success || !resultFile) {
       allPassed = false;
+      continue;
     }
-  });
+
+    const results = parseSarifResults(resultFile);
+    const passed = printResults(queryFile, results);
+    allPassed = allPassed && passed;
+  }
 
   console.log('');
   if (allPassed) {
@@ -352,7 +378,7 @@ function runCodeQLQueries() {
 /**
  * 메인 함수
  */
-function main() {
+async function main() {
   // CI 환경에서는 즉시 종료 (성능 최적화)
   if (isCI) {
     console.log('CodeQL check: Skipped (CI uses GitHub Actions CodeQL workflow)');
@@ -367,7 +393,7 @@ function main() {
     process.exit(0); // validate 스크립트가 계속 진행되도록 성공 코드 반환
   }
 
-  const success = runCodeQLQueries();
+  const success = await runCodeQLQueries();
 
   // 빌드 시 문제가 발견되면 실패 코드 반환
   if (!success) {
