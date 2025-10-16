@@ -1,13 +1,12 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-16 | **상태**: Phase 83 완료 ✅, Phase 82 활성화 🚀
+> **최종 업데이트**: 2025-10-16 | **상태**: Phase 82.3 활성화 🚀
 
 ## 프로젝트 현황
 
 - **빌드**: prod **328.46 KB / 335 KB** (6.54 KB 여유, 98.0%) ✅
 - **테스트**: **159개 파일**, 1030 passing / 4 failed (99.6% 통과율) ✅
-  - Phase 83 관련: 45/45 (100%) ✅
-  - 기존 실패 4개 (Phase 83과 무관):
+  - 기존 실패 4개 (Phase 82.3과 무관):
     - toolbar-hover-consistency (2개 - CSS focus-visible 누락)
     - bundle-size-policy (1개 - Phase 33 문서 확인)
     - vendor-initialization (1개 - assertion 수정 필요)
@@ -22,9 +21,12 @@
 
 ## 현재 상태: Phase 82.3 상세 구현 준비 🚀
 
-**완료 Phase**:
+**최근 완료**:
 
-- ✅ Phase 83.1-83.3: 포커스 안정성 개선 완료 (2025-10-16)
+- ✅ Phase 83: 포커스 안정성 개선 완료 (2025-10-16)
+  - StabilityDetector 서비스 구현 (settling 기반 최적화)
+  - 스크롤 중 포커스 갱신 80-90% 감소, 인디케이터 안정화 ✅
+  - 상세 내역: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 - ✅ Phase 82.3 스켈레톤 → COMPLETED로 이관 완료
 
 **활성 Phase**: Phase 82.3 상세 구현 **목표**: 10개 E2E 테스트 상세 구현 + 11개
@@ -33,13 +35,6 @@
 - keyboard-navigation.spec.ts: 4개 테스트 (K1-K3b)
 - keyboard-interaction.spec.ts: 6개 테스트 (K4-K6, P1-P3)
 - 스킵 테스트 전환: use-gallery-focus-tracker (8개), gallery-keyboard (3개)
-
-**최근 완료**: Phase 83 포커스 안정성 개선 (settling 기반 최적화) ✅
-
-- StabilityDetector 서비스 구현 (22개 테스트)
-- useGalleryScroll 통합 (11개 테스트)
-- useGalleryFocusTracker settling 최적화 (12개 테스트)
-- **기대 효과**: 스크롤 중 포커스 갱신 80-90% 감소, 인디케이터 안정화 ✅
 
 ---
 
@@ -64,117 +59,6 @@
 ### 3. 버그 수정
 
 - ✅ **Phase 80.1**: Toolbar Settings Toggle Regression (Solid.js 반응성 이슈)
-
----
-
-## Phase 83: 포커스 안정성 개선 (Focus Stability Detector) ✅
-
-**상태**: Phase 83.3 완료 (2025-10-16) **목표**: useGalleryFocusTracker의 스크롤
-중 포커스 불안정성 해결 ✅
-
-### 배경
-
-- **문제**: 사용자 스크롤/자동 스크롤 중 포커스가 계속 변하여 인디케이터
-  깜빡거림
-- **근본 원인**: IntersectionObserver 이벤트마다 recomputeFocus() 호출, 여러
-  포커스 변경 소스의 경쟁
-- **솔루션**: `StabilityDetector` 서비스로 settling 상태를 감지하고 안정
-  상태에서만 포커스 갱신 ✅
-- **참고 문서**: `docs/FOCUS_STABILITY_SOLUTIONS.md` (간소화됨),
-  `FOCUS_STABILITY_QUICK_REFERENCE.md`
-
-### 구현 단계
-
-#### Phase 83.1: StabilityDetector 서비스 구현 (TDD) ✅
-
-**완료일**: 2025-10-16 **목표**: Activity 기반 settling 상태 감지 서비스
-
-**작업 완료**:
-
-1. ✅ 테스트 작성 (`test/unit/shared/services/stability-detector.test.ts`)
-   - 22개 테스트 케이스 (100% 통과)
-   - Activity 이벤트 기록 검증
-   - Settling 상태 판정 로직 (300ms idle threshold)
-   - 상태 변화 콜백 동작
-
-2. ✅ 서비스 구현 (`src/shared/services/stability-detector.ts`)
-   - 인터페이스: `StabilityDetector`
-   - Activity 유형: 'scroll' | 'focus' | 'layout' | 'programmatic'
-   - 메서드:
-     - `recordActivity(type: ActivityType): void`
-     - `checkStability(threshold?: number): boolean`
-     - `onStabilityChange(callback: (isStable: boolean) => void): () => void`
-     - `getMetrics(): StabilityMetrics`
-
-3. ✅ Vitest + JSDOM 검증
-   - Settling 상태 감지: 300ms idle → isStable
-   - Activity 기록: 이벤트 배열에 타입/시간 저장
-   - 콜백 호출: 상태 변화 시 listener 실행 (중복 방지)
-
-**결과**: 테스트 22/22 통과, 마스터 브랜치 병합 완료 ✅
-
-#### Phase 83.2: useGalleryScroll 통합 (Activity 기록) ✅
-
-**완료일**: 2025-10-16 **목표**: 스크롤 활동을 StabilityDetector에 기록
-
-**작업 완료**:
-
-1. ✅ 의존성 추가: StabilityDetector 인스턴스 주입 (옵션 파라미터)
-2. ✅ 이벤트 기록:
-   - wheel 이벤트 → `recordActivity('scroll')`
-   - `isScrolling` 신호로 스크롤 중 상태 제공
-3. ✅ 통합 테스트
-   (`test/unit/features/gallery/hooks/use-gallery-scroll-stability.test.ts`)
-   - 11개 테스트 케이스 (100% 통과)
-   - wheel/programmatic/mixed 활동 시나리오 검증
-
-**결과**: 테스트 11/11 통과, 커밋 완료 ✅
-
-#### Phase 83.3: useGalleryFocusTracker 최적화 (Settling 기반 포커스 갱신) ✅
-
-**완료일**: 2025-10-16 **목표**: Settling 상태에서만 포커스를 갱신하여 안정성
-확보
-
-**작업 완료**:
-
-1. ✅ recomputeFocus() 호출 조건 추가:
-   - `isScrolling === true` → recomputeFocus() 보류 (큐에 추가)
-   - `isScrolling === false` (settling) → deferred recomputeFocus() 실행
-
-2. ✅ 포커스 갱신 큐 구현:
-   - IntersectionObserver 이벤트 → 큐에 추가 (`pendingRecomputeRequest`)
-   - scheduleSync에서 isScrolling 체크 → 스크롤 중 큐에만 추가
-   - settling 감지 effect (createEffect) → 큐의 최신 요청만 적용
-
-3. ✅ Settling 테스트
-   (`test/unit/features/gallery/hooks/use-gallery-focus-tracker-settling.test.ts`):
-   - 12개 테스트 케이스 (100% 통과)
-   - 스크롤 중 recomputeFocus 호출 0회 검증
-   - Settling 후 큐의 최신 요청만 처리
-   - 스크롤 시작/종료 반복 시나리오 검증
-   - 성능 검증: 스크롤 중 0회, settling 후 1회만 호출
-
-4. ✅ VerticalGalleryView 통합:
-   - useGalleryFocusTracker에 `isScrolling` prop 전달
-   - useGalleryScroll의 isScrolling 신호 활용
-
-**결과**: 테스트 12/12 통과, 커밋 완료 (ec8a6475) ✅
-
-### 검증 기준 달성
-
-✅ 포커스 변경 빈도: 5-10회 → 1회 (스크롤 중 0회) ✅ 인디케이터 깜빡임: 제거됨
-(settling 후 1회만 갱신) ✅ 모든 테스트 통과: 45개 (Phase 83.1-83.3) ✅ 번들
-크기: 328.46 KB (98.0%) 유지 ✅ 타입체크: 0 errors ✅ ESLint: 0 warnings
-
-### Phase 83 완료 요약
-
-- **총 테스트**: 45개 (22 + 11 + 12)
-- **구현 파일**: 3개 (StabilityDetector, useGalleryScroll,
-  useGalleryFocusTracker)
-- **통합 파일**: 1개 (VerticalGalleryView)
-- **성능 개선**: 스크롤 중 포커스 갱신 80-90% 감소
-- **사용자 경험**: 인디케이터 안정성 대폭 향상
-- **기대 효과**: 포커스 불안정성 근본 해결 ✅
 
 ---
 
@@ -334,6 +218,8 @@ getMemoryUsage(): Promise<{ usedJSHeapSize: number }>;
 
 자세한 내용은 `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
+- **Phase 83** (2025-10-16): 포커스 안정성 개선 (StabilityDetector, settling
+  기반 최적화) ✅
 - **Phase 78.5** (2025-10-15): Component CSS 점진적 개선, warning 28개 감소 ✅
 - **Phase 78** (2025-10-15): 디자인 토큰 통일 (Primitive/Semantic) ✅
 - **Phase 75** (2025-10-15): test:coverage 실패 4개 수정, E2E 이관 권장 5개 추가

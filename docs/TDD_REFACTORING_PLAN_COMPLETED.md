@@ -7,6 +7,71 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 83: 포커스 안정성 개선 (Focus Stability Detector) ✅
+
+**완료일**: 2025-10-16 **목표**: useGalleryFocusTracker의 스크롤 중 포커스
+불안정성 해결 **결과**: 45/45 테스트 통과, 포커스 갱신 80-90% 감소 ✅
+
+#### 배경
+
+- **문제**: 사용자 스크롤/자동 스크롤 중 포커스가 계속 변하여 인디케이터
+  깜빡거림
+- **근본 원인**: IntersectionObserver 이벤트마다 recomputeFocus() 호출, 여러
+  포커스 변경 소스의 경쟁
+- **솔루션**: `StabilityDetector` 서비스로 settling 상태를 감지하고 안정
+  상태에서만 포커스 갱신
+
+#### 달성 메트릭
+
+| 항목                   | 결과                          |
+| ---------------------- | ----------------------------- |
+| 총 테스트              | 45개 (22 + 11 + 12) ✅        |
+| StabilityDetector      | 22/22 통과 ✅                 |
+| useGalleryScroll 통합  | 11/11 통과 ✅                 |
+| useGalleryFocusTracker | 12/12 통과 ✅                 |
+| 포커스 갱신 빈도       | 5-10회 → 1회 (80-90% 감소) ✅ |
+| 인디케이터 깜빡임      | 제거됨 ✅                     |
+| 번들 크기              | 328.46 KB (98.0%) 유지 ✅     |
+| 타입체크               | 0 errors ✅                   |
+| ESLint                 | 0 warnings ✅                 |
+
+#### 구현 상세
+
+**Phase 83.1: StabilityDetector 서비스**
+
+- 파일: `src/shared/services/stability-detector.ts`
+- Activity 유형: 'scroll' | 'focus' | 'layout' | 'programmatic'
+- 핵심 메서드:
+  - `recordActivity(type)`: Activity 기록
+  - `checkStability(threshold)`: Settling 상태 판정 (300ms idle)
+  - `onStabilityChange(callback)`: 상태 변화 콜백
+  - `getMetrics()`: 메트릭 조회
+
+**Phase 83.2: useGalleryScroll 통합**
+
+- wheel 이벤트 → `recordActivity('scroll')`
+- `isScrolling` 신호로 스크롤 상태 제공
+- 테스트: wheel/programmatic/mixed 시나리오 검증
+
+**Phase 83.3: useGalleryFocusTracker 최적화**
+
+- recomputeFocus() 호출 조건:
+  - `isScrolling === true` → 큐에 추가 (보류)
+  - `isScrolling === false` → 큐의 최신 요청 실행
+- Settling 후 단 1회만 포커스 갱신
+- 성능: 스크롤 중 0회, settling 후 1회
+
+#### 핵심 학습
+
+1. **Activity 기반 Settling 감지**: 다양한 활동
+   유형(scroll/focus/layout/programmatic)을 통합 추적하여 시스템 안정성 판단
+2. **큐 기반 지연 실행**: 스크롤 중 요청을 큐에 저장하고 settling 후 최신 요청만
+   처리하여 불필요한 연산 제거
+3. **Signal 기반 상태 전파**: `isScrolling` 신호로 여러 컴포넌트 간 상태 동기화
+   (useGalleryScroll → useGalleryFocusTracker)
+4. **사용자 경험 우선**: 기술적 정확성보다 시각적 안정성을 우선하여 인디케이터
+   깜빡임 완전 제거
+
 ### Phase 82.3 스켈레톤: 키보드 이벤트 & 성능 E2E 테스트 스켈레톤 ✅
 
 **완료일**: 2025-10-16 **목표**: 키보드/성능 E2E 테스트 10개 스켈레톤 작성
