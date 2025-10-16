@@ -5,6 +5,11 @@
  * ⚠️ JSDOM Limitation: Solid.js reactivity with component-scoped signals works correctly in real browsers
  * but fails in JSDOM environment. These tests verify the implementation structure.
  *
+ * ✅ E2E Migration: These tests are migrated to Playwright E2E in Phase 82.1
+ *   - playwright/smoke/toolbar-settings-migration.spec.ts
+ *   - Migration Status: 2/4 tests passing in E2E
+ *   - Remaining: Fix first-click and outside-click event handling in Toolbar component
+ *
  * ✅ Manual Browser Verification: Confirmed working in real browser environment (2025-10-16)
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

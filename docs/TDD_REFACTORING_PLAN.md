@@ -1,12 +1,12 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-16 | **상태**: Phase 78.9 완료, Phase 80.1 완료 ✅
+> **최종 업데이트**: 2025-10-16 | **상태**: Phase 80.1 완료, Phase 82 활성화 ✅
 
 ## 프로젝트 현황
 
 - **빌드**: prod **328.46 KB / 335 KB** (6.54 KB 여유, 98.0%) ✅
 - **테스트**: **159개 파일**, 987 passing / 0 failed (100% 통과율) ✅✅✅
-- **Skipped**: **14개** (8개 E2E 이관 권장 + 2개 기존 + 4개 JSDOM 제약) ⚠️
+- **Skipped**: **23개** (E2E 마이그레이션 대상) → Phase 82에서 처리
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings ✅
 - **CSS 린트**: stylelint **0 warnings** (error 강화 완료) ✅✅✅
@@ -15,11 +15,11 @@
 - **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: 모든 활성 Phase 완료 ✅
+## 현재 상태: Phase 82 진행 중 🚀
 
-**최근 완료**: Phase 80.1 (Toolbar Settings Toggle Regression) - 2025-10-16
-**다음 계획**: 번들 최적화 트리거 대기 (현재 98.0% 사용) **핵심 학습**: Solid.js
-반응성 메커니즘 이해 심화 (→ `SOLID_REACTIVITY_LESSONS.md` 참고)
+**활성 Phase**: Phase 82 (E2E 테스트 마이그레이션) - 2025-10-16 시작 **목표**:
+JSDOM 제약 테스트 23개 → E2E(Playwright) 전환 **핵심 학습**: Solid.js 반응성,
+E2E 테스트 패턴 (→ `SOLID_REACTIVITY_LESSONS.md` 참고)
 
 ---
 
@@ -48,6 +48,44 @@
 ---
 
 ## 다음 Phase 계획
+
+### Phase 82: E2E 테스트 마이그레이션 (활성화)
+
+**상태**: 진행 중 **목표**: 스킵된 JSDOM 테스트 23개를 E2E(Playwright)로 단계적
+전환 **우선순위**: 높 (신뢰도 향상, 실제 브라우저 검증)
+
+#### 마이그레이션 전략
+
+**Phase 82.1: UI 상호작용 (Toolbar Settings)**
+
+- 대상: `toolbar-settings-toggle.test.tsx` × 4
+- 난이도: ⭐ (쉬움)
+- 구현: `playwright/smoke/toolbar-settings-migration.spec.ts`
+- 완료 기준: 4개 테스트 GREEN, data-expanded 상태 검증
+- 예상 시간: 1-2시간
+
+**Phase 82.2: 갤러리 포커스 추적**
+
+- 대상: `use-gallery-focus-tracker-*.test.ts` × 6
+- 난이도: ⭐⭐ (중간)
+- 구현: `playwright/smoke/focus-tracking.spec.ts`
+- 완료 기준: IntersectionObserver 시뮬레이션, 동기화 검증
+- 예상 시간: 3-4시간
+
+**Phase 82.3: 키보드 이벤트 & 성능**
+
+- 대상: 키보드 이벤트 × 5, 성능 최적화 × 3
+- 난이도: ⭐⭐⭐ (높음)
+- 구현: `playwright/smoke/keyboard-events.spec.ts`, `performance.spec.ts`
+- 완료 기준: Space/Arrow/M 키 검증, 성능 메트릭 확인
+- 예상 시간: 5-6시간
+
+#### 검증 기준
+
+- 스킵 테스트: 23개 → 0개 (E2E로 이관)
+- E2E 테스트: 5개 → 12개 이상 (Chromium)
+- 테스트 통과율: 100% 유지
+- 빌드: 구조 변화 없음
 
 ### Phase 81: 번들 최적화 (트리거 대기)
 
@@ -81,17 +119,12 @@
 
 ## 향후 개선 영역 후보
 
-### 1. E2E 테스트 확장
-
-**현황**: Playwright 스모크 테스트 5개 (Chromium) **제안**: 핵심 사용자 시나리오
-E2E 커버리지 확장 **우선순위**: 낮 (현재 단위 테스트로 충분)
-
-### 2. 접근성 (A11y) 강화
+### 1. 접근성 (A11y) 강화
 
 **현황**: axe-core 기본 검증, ARIA 레이블 적용 **제안**: WCAG 2.1 AA 수준 완전
 준수 검증 **우선순위**: 낮 (기본 요구사항 충족)
 
-### 3. 성능 모니터링
+### 2. 성능 모니터링
 
 **현황**: 빌드 크기, 테스트 실행 시간만 추적 **제안**: 런타임 성능 메트릭 수집
 (렌더링, 스크롤, 다운로드) **우선순위**: 중 (사용자 경험 개선 기회)
