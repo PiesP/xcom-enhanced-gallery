@@ -242,6 +242,7 @@ function VerticalGalleryViewCore({
     getCurrentIndex: currentIndex,
     shouldAutoFocus: () => !isScrolling(),
     autoFocusDebounce: SCROLL_IDLE_TIMEOUT,
+    isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 
   createEffect(

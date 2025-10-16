@@ -17,6 +17,8 @@ export interface UseGalleryFocusTrackerOptions {
   isEnabled: MaybeAccessor<boolean>;
   /** 현재 인덱스 accessor (fallback 용도) */
   getCurrentIndex: Accessor<number>;
+  /** 스크롤 중 여부 (settling 기반 최적화) */
+  isScrolling?: MaybeAccessor<boolean>;
   /** IntersectionObserver threshold 설정 */
   threshold?: number | number[];
   /** IntersectionObserver rootMargin 설정 */
@@ -60,6 +62,7 @@ export function useGalleryFocusTracker({
   container,
   isEnabled,
   getCurrentIndex,
+  isScrolling = false,
   threshold = DEFAULT_THRESHOLD,
   rootMargin = '0px',
   minimumVisibleRatio = DEFAULT_MIN_VISIBLE_RATIO,
@@ -68,6 +71,7 @@ export function useGalleryFocusTracker({
 }: UseGalleryFocusTrackerOptions): UseGalleryFocusTrackerReturn {
   const containerAccessor = toAccessor(container);
   const isEnabledAccessor = toAccessor(isEnabled);
+  const isScrollingAccessor = toAccessor(isScrolling);
   const shouldAutoFocusAccessor = toAccessor(shouldAutoFocus);
   const autoFocusDelayAccessor = toAccessor(autoFocusDebounce);
 
@@ -82,6 +86,7 @@ export function useGalleryFocusTracker({
   let autoFocusTimerId: number | null = null;
   let lastAutoFocusedIndex: number | null = null;
   let lastAppliedIndex: number | null = null; // Phase 69.2: 중복 applyAutoFocus 방지
+  let pendingRecomputeRequest: { timestamp: number; reason: string } | null = null; // Phase 83.3: 포커스 갱신 큐
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
@@ -159,13 +164,42 @@ export function useGalleryFocusTracker({
 
   // ✅ Phase 69.2: scheduleSync를 100ms debounce하여 호출 빈도 제한
   // 빠른 연속 호출(아이템 등록/해제)을 배칭하여 불필요한 recompute 방지
+  // ✅ Phase 83.3: 스크롤 중에는 큐에만 추가, settling 후 처리
   const debouncedScheduleSync = createDebouncer<[]>(() => {
+    // 스크롤 중이면 큐에만 추가
+    if (isScrollingAccessor()) {
+      pendingRecomputeRequest = {
+        timestamp: Date.now(),
+        reason: 'deferred-during-scroll',
+      };
+      return;
+    }
+
+    // Settling 상태이거나 스크롤 중이 아니면 즉시 처리
     recomputeFocus();
+    pendingRecomputeRequest = null;
   }, 100);
 
   const scheduleSync = () => {
     debouncedScheduleSync.execute();
   };
+
+  // ✅ Phase 83.3: settling 후 큐 처리
+  // isScrolling이 false로 전환될 때 보류된 recompute 요청을 처리
+  createEffect(() => {
+    const scrolling = isScrollingAccessor();
+
+    if (!scrolling && pendingRecomputeRequest) {
+      logger.debug('useGalleryFocusTracker: processing deferred recompute after settling', {
+        timestamp: pendingRecomputeRequest.timestamp,
+        reason: pendingRecomputeRequest.reason,
+        elapsed: Date.now() - pendingRecomputeRequest.timestamp,
+      });
+
+      recomputeFocus();
+      pendingRecomputeRequest = null;
+    }
+  });
 
   const clearAutoFocusTimer = () => {
     if (autoFocusTimerId !== null) {
