@@ -58,12 +58,29 @@ npm install -g @typescript/tsgo
 - JSON/그래프/검증 일괄: `npm run deps:all`
 - 산출물 위치: `docs/dependency-graph.(json|dot|svg)`
 
+## 테스트 전략 개요
+
+**핵심 원칙**: Testing Trophy 모델 기반 - Static Analysis(가장 많음) →
+Unit(많음) → Integration(중간) → E2E(적음)
+
+**책임 분리**:
+
+- **Static Analysis**: TypeScript, ESLint, stylelint, CodeQL (타입/린트/보안)
+- **Unit Tests** (JSDOM): 순수 함수, 단일 서비스, 컴포넌트 렌더링 (1-2분)
+- **Integration Tests** (JSDOM): 다중 서비스 협업, 상태 동기화 (2-5분)
+- **E2E Tests** (Playwright): 핵심 사용자 시나리오, 브라우저 전용 API (5-15분)
+
+**상세 가이드**: [`docs/TESTING_STRATEGY.md`](docs/TESTING_STRATEGY.md) 참고
+(JSDOM 제약사항, 선택 기준, 패턴 등)
+
 ## 테스트 가이드 (Vitest)
 
 - 환경: JSDOM, 기본 URL `https://x.com`, 격리 실행, `test/setup.ts` 자동 로드
 - 실행 타임아웃: 테스트 20s, 훅 25s (장시간 I/O 모킹 시 유의)
 - 테스트 포함 경로: `test/**/*.{test,spec}.{ts,tsx}`
 - 일부 리팩터링 테스트는 임시 제외됨(워크플로 파일 참고)
+- **JSDOM 제약사항**: Solid.js 반응성 제한, CSS 레이아웃 미지원,
+  IntersectionObserver 부분 모킹 필요 → E2E 고려
 
 ### 분할 실행(Projects)
 
