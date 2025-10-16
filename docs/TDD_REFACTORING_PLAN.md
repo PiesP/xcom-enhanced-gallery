@@ -15,12 +15,15 @@
 - **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: Phase 82.3 스켈레톤 완료, 상세 구현 준비 🚀
+## 현재 상태: Phase 82.3 상세 구현 준비 🚀
 
-**완료 Phase**: Phase 82.3 스켈레톤 (키보드/성능 E2E 테스트 스켈레톤) -
-2025-10-16 완료 ✅ **활성 Phase**: Phase 82.3 상세 구현 **목표**: 10개 E2E
-테스트 상세 구현 (keyboard-navigation × 4, keyboard-interaction × 3, performance
-× 3)
+**완료 Phase**: Phase 82.3 스켈레톤 → COMPLETED로 이관 완료 ✅ **활성 Phase**:
+Phase 82.3 상세 구현 **목표**: 10개 E2E 테스트 상세 구현 + 11개 스킵 JSDOM
+테스트 E2E 전환 **범위**:
+
+- keyboard-navigation.spec.ts: 4개 테스트 (K1-K3b)
+- keyboard-interaction.spec.ts: 6개 테스트 (K4-K6, P1-P3)
+- 스킵 테스트 전환: use-gallery-focus-tracker (8개), gallery-keyboard (3개)
 
 ---
 
@@ -57,25 +60,104 @@
 
 #### 마이그레이션 전략
 
-**Phase 82.3: 키보드 이벤트 & 성능** (다음 활성화)
+**Phase 82.3: 키보드 이벤트 & 성능 E2E 상세 구현** (활성화 ⭐)
 
-- **상태**: 준비 대기 (2025-10-16 계획)
+- **상태**: 진행 중 (2025-10-16 스켈레톤 완료)
 - **대상**:
-  - 키보드 이벤트 테스트 (ArrowLeft, ArrowRight, Home, End, Space, M 키)
-  - 성능 최적화 테스트 (렌더링, 스크롤, 메모리)
-  - **합계**: 약 8-10개 테스트
-- **난이도**: ⭐⭐⭐ (높음)
-- **구현 계획**: `playwright/smoke/keyboard-events.spec.ts`,
-  `performance.spec.ts`
-- **완료 기준**: 모든 키보드 입력 검증, 성능 메트릭 확인
-- **예상 시간**: 5-6시간
+  - ✅ 10개 E2E 테스트 스켈레톤 완료 (keyboard-navigation × 4,
+    keyboard-interaction × 6)
+  - 🔄 11개 스킵 JSDOM 테스트 분석 완료
+    - use-gallery-focus-tracker-global-sync: 3개
+    - use-gallery-focus-tracker-events: 2개
+    - gallery-video.keyboard: 2개
+    - gallery-keyboard.navigation: 1개
+    - use-gallery-focus-tracker-deduplication: 3개
+  - **합계**: 10개 E2E 상세 구현 + 11개 JSDOM → E2E 전환
+- **난이도**: ⭐⭐⭐⭐ (매우 높음 - Playwright 하네스 확장 필요)
+- **구현 계획**:
+  1. **하네스 API 확장** (우선 작업)
+     - 키보드 이벤트 시뮬레이션: `simulateKeyPress(key: string, options?)`
+     - 갤러리 상태 조회: `getGalleryState()` → isOpen, currentIndex, totalCount
+     - 성능 메트릭 수집: `measurePerformance(action: () => Promise<void>)` →
+       duration
+     - 메모리 추적: `trackMemoryUsage()` → 초기/최종 heap size
+  2. **키보드 네비게이션 구현** (K1-K3b)
+     - setupGalleryApp으로 초기화
+     - simulateKeyPress로 ArrowLeft/Right, Home/End 시뮬레이션
+     - getGalleryState로 currentIndex 검증
+     - data-focused 속성 DOM 검증
+  3. **키보드 상호작용 구현** (K4-K6)
+     - Space 키 다운로드 트리거 검증
+     - M 키 토글 상태 변화 검증
+     - Escape 키 갤러리 닫기 검증
+  4. **성능 테스트 구현** (P1-P3)
+     - P1: measurePerformance로 키 입력 렌더링 < 50ms 검증
+     - P2: 스크롤 중 frame rate 측정 (requestAnimationFrame 활용)
+     - P3: 1000회 네비게이션 후 메모리 안정성 검증
+  5. **JSDOM 테스트 전환**
+     - 11개 스킵 테스트를 E2E 시나리오로 변환
+     - IntersectionObserver 실제 동작 검증
+     - 키보드 이벤트 preventDefault 검증
+- **완료 기준**:
+  - E2E 테스트: 30개 → 41개 (11개 추가)
+  - 스킵 테스트: 23개 → 12개 (11개 이관)
+  - 하네스 API: 4-5개 메서드 추가
+  - 테스트 통과율: 100% 유지
+  - 빌드: 구조 변화 없음, 328 KB 유지
+- **예상 시간**: 8-10시간 (하네스 확장 3h + 테스트 구현 5-7h)
 
 #### 검증 기준
 
-- E2E 테스트: Phase 82.2 후 21개 → Phase 82.3 후 30개 (9개 추가)
-- 스킵 테스트: Phase 82.2 후 16개 → Phase 82.3 후 ~7개 (9개 이관)
+- E2E 테스트: Phase 82.2 후 21개 → Phase 82.3 스켈레톤 후 31개 → Phase 82.3 완료
+  후 41개 (10개 추가)
+- 스킵 테스트: Phase 82.2 후 16개 → Phase 82.3 스켈레톤 후 23개 → Phase 82.3
+  완료 후 12개 (11개 이관)
+- 하네스 메서드: Phase 82.2 후 20개 → Phase 82.3 완료 후 24-25개 (4-5개 추가)
 - 테스트 통과율: 100% 유지
 - 빌드: 구조 변화 없음, 328 KB 유지
+
+#### Phase 82.3 상세 구현 가이드
+
+**1단계: 하네스 API 확장** (3시간 예상)
+
+추가할 메서드:
+
+```typescript
+// 키보드 이벤트 시뮬레이션
+simulateKeyPress(key: string, options?: { ctrlKey?: boolean; shiftKey?: boolean }): Promise<void>;
+
+// 갤러리 상태 조회 (기존 getGalleryAppState 확장)
+// 이미 존재하므로 추가 불필요
+
+// 성능 메트릭 수집
+measureKeyboardPerformance(action: () => Promise<void>): Promise<{ duration: number }>;
+
+// 메모리 추적
+getMemoryUsage(): Promise<{ usedJSHeapSize: number }>;
+```
+
+**2단계: 키보드 네비게이션 테스트** (2시간 예상)
+
+- K1-K3b: 4개 테스트
+- setupGalleryApp + simulateKeyPress + getGalleryAppState 조합
+- data-focused 속성 검증
+
+**3단계: 키보드 상호작용 테스트** (2시간 예상)
+
+- K4-K6: 3개 테스트
+- 다운로드, 토글, 닫기 동작 검증
+- 이벤트 핸들러 spy/mock 필요 시 하네스 확장
+
+**4단계: 성능 테스트** (2시간 예상)
+
+- P1-P3: 3개 테스트
+- performance.now() 또는 performance.measure 활용
+- memory API 활용 (performance.memory)
+
+**5단계: JSDOM 테스트 전환** (1-2시간 예상)
+
+- 11개 스킵 테스트를 E2E 시나리오로 재작성
+- 기존 스켈레톤에 통합 또는 새 spec 파일 생성
 
 ### Phase 81: 번들 최적화 (트리거 대기)
 

@@ -58,6 +58,26 @@ export type ViewportChangeResult = {
   appliedIndex: number | null;
 };
 
+// Phase 82.3: Keyboard & Performance E2E API
+export type KeyboardSimulationOptions = {
+  ctrlKey?: boolean;
+  shiftKey?: boolean;
+  altKey?: boolean;
+  metaKey?: boolean;
+};
+
+export type PerformanceMetrics = {
+  duration: number;
+  startTime: number;
+  endTime: number;
+};
+
+export type MemoryMetrics = {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+};
+
 export interface XegHarness {
   errorBoundaryScenario(): Promise<ErrorBoundaryResult>;
   mountToolbar(props: ToolbarMountProps): Promise<ToolbarMountResult>;
@@ -92,6 +112,10 @@ export interface XegHarness {
   getGlobalFocusedIndex(): Promise<number | null>;
   getElementFocusCount(selector: string): Promise<number>;
   disposeFocusTracker(): Promise<void>;
+  // Phase 82.3: Keyboard & Performance E2E API
+  simulateKeyPress(key: string, options?: KeyboardSimulationOptions): Promise<void>;
+  measureKeyboardPerformance(action: () => Promise<void>): Promise<PerformanceMetrics>;
+  getMemoryUsage(): Promise<MemoryMetrics>;
 }
 
 declare global {

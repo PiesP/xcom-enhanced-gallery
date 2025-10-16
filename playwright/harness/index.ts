@@ -13,6 +13,9 @@ import type {
   GalleryEventsResult,
   FocusTrackerHarnessResult,
   ViewportChangeResult,
+  KeyboardSimulationOptions,
+  PerformanceMetrics,
+  MemoryMetrics,
   XegHarness,
 } from './types';
 
@@ -907,6 +910,71 @@ async function disposeFocusTrackerHarness(): Promise<void> {
   focusTrackerHandle = null;
 }
 
+// ============================================================
+// Phase 82.3: Keyboard & Performance E2E API
+// ============================================================
+
+async function simulateKeyPressHarness(
+  key: string,
+  options: KeyboardSimulationOptions = {}
+): Promise<void> {
+  const event = new KeyboardEvent('keydown', {
+    key,
+    code: key,
+    bubbles: true,
+    cancelable: true,
+    ctrlKey: options.ctrlKey ?? false,
+    shiftKey: options.shiftKey ?? false,
+    altKey: options.altKey ?? false,
+    metaKey: options.metaKey ?? false,
+  });
+
+  document.dispatchEvent(event);
+  await sleep(16); // Allow event handlers to process
+}
+
+async function measureKeyboardPerformanceHarness(
+  action: () => Promise<void>
+): Promise<PerformanceMetrics> {
+  const startTime = performance.now();
+  await action();
+  const endTime = performance.now();
+  const duration = endTime - startTime;
+
+  return {
+    duration,
+    startTime,
+    endTime,
+  };
+}
+
+async function getMemoryUsageHarness(): Promise<MemoryMetrics> {
+  // TypeScript doesn't include performance.memory in standard lib
+  // It's a non-standard Chrome API
+  const perfWithMemory = performance as Performance & {
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
+  };
+
+  if (!perfWithMemory.memory) {
+    // Fallback for browsers without performance.memory
+    return {
+      usedJSHeapSize: 0,
+      totalJSHeapSize: 0,
+      jsHeapSizeLimit: 0,
+    };
+  }
+
+  return {
+    usedJSHeapSize: perfWithMemory.memory.usedJSHeapSize,
+    totalJSHeapSize: perfWithMemory.memory.totalJSHeapSize,
+    jsHeapSizeLimit: perfWithMemory.memory.jsHeapSizeLimit,
+  };
+}
+
 const harness: XegHarness = {
   errorBoundaryScenario: runErrorBoundaryScenario,
   mountToolbar: mountToolbarHarness,
@@ -934,6 +1002,10 @@ const harness: XegHarness = {
   getGlobalFocusedIndex: getGlobalFocusedIndexHarness,
   getElementFocusCount: getElementFocusCountHarness,
   disposeFocusTracker: disposeFocusTrackerHarness,
+  // Phase 82.3: Keyboard & Performance E2E API
+  simulateKeyPress: simulateKeyPressHarness,
+  measureKeyboardPerformance: measureKeyboardPerformanceHarness,
+  getMemoryUsage: getMemoryUsageHarness,
 };
 
 (globalThis as typeof globalThis & { __XEG_HARNESS__?: XegHarness }).__XEG_HARNESS__ = harness;
