@@ -105,7 +105,7 @@ export function createStabilityDetector(): StabilityDetector {
       return true;
     }
 
-    const lastActivity = activityEvents[activityEvents.length - 1];
+    const lastActivity = activityEvents[activityEvents.length - 1]!;
     const timeSinceLastActivity = Date.now() - lastActivity.time;
     const isNowStable = timeSinceLastActivity >= threshold;
 
