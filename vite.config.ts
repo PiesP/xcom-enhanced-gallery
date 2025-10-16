@@ -64,7 +64,19 @@ function generateLicenseNotices(): string {
 }
 
 function userscriptHeader(flags: BuildFlags): string {
-  const version = flags.isDev ? `${pkg.version}-dev.${Date.now()}` : pkg.version;
+  // 개발 빌드용 사람이 읽기 쉬운 버전 형식: YYYY.MMDD.HHmmss.SSS
+  const devTimestamp = (() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const sec = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    return `${year}.${month}${day}.${hour}${min}${sec}.${ms}`;
+  })();
+  const version = flags.isDev ? `${pkg.version}-dev.${devTimestamp}` : pkg.version;
   const devSuffix = flags.isDev ? ' (Dev)' : '';
   return (
     `// ==UserScript==\n` +

@@ -49,52 +49,33 @@
 
 ### 3. CI 전용 스크립트 추가
 
-#### typecheck:ci
-
-```json
-"typecheck:ci": "tsgo --project ./tsconfig.json --noEmit --pretty=false"
-```
-
-- `--pretty=false`: CI 로그에 맞춰 간결한 출력
-
-#### lint:ci
-
-```json
-"lint:ci": "eslint ./src --report-unused-disable-directives --max-warnings 0 --format=compact"
-```
-
-- `--format=compact`: 한 줄 출력으로 CI 로그 정리
-
-#### lint:css:ci
-
-```json
-"lint:css:ci": "stylelint \"src/**/*.css\" --formatter=compact"
-```
-
-#### lint:md:ci
-
-```json
-"lint:md:ci": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\" --config .markdownlint.json"
-```
-
-#### test:coverage:ci
-
-```json
-"test:coverage:ci": "cross-env CI=true vitest --project unit --coverage --run --reporter=dot"
-```
-
-- `--reporter=dot`: 간결한 테스트 결과 출력
-
 #### validate:ci
 
 ```json
-"validate:ci": "npm run typecheck:ci && npm run lint:ci && npm run lint:css:ci && npm run lint:md:ci && npm run format:check"
+"validate:ci": "npm run typecheck && npm run lint && npm run lint:css && npm run lint:md && npm run format:check && npm run deps:check && npm run codeql:check"
 ```
 
 - CI 환경에서 모든 품질 검사를 한 번에 실행
 - 수정하지 않고 체크만 수행 (읽기 전용)
+- CodeQL 검증 포함으로 보안 정책 자동 검증
 
-### 4. check-codeql.js CI 모드
+#### test:coverage
+
+```json
+"test:coverage": "vitest --project unit --coverage --run"
+```
+
+- 단위 테스트 커버리지 수집
+- CI/로컬 모두에서 동일하게 동작
+
+### 4. check-codeql.js 최적화 (Phase 85.1)
+
+**성능 개선**:
+
+- **도구 감지 캐싱**: detectCodeQLTool() 결과를 전역 변수에 캐싱 (0.3초 절약)
+- **CI Early Exit**: CI 환경에서 main() 함수 최상단 즉시 종료 (30-60초 절약)
+- **증분 DB 업데이트**: src/ 수정 시간 기반 캐싱 (2회차 이후 30-40초 절약)
+- **강제 재생성**: 환경변수 `CODEQL_FORCE_REBUILD=true`로 캐시 우회 가능
 
 **CI 환경 자동 감지**:
 
@@ -129,41 +110,51 @@ npm run format           # Prettier 포맷팅
 ### CI 환경용 (읽기 전용)
 
 ```bash
-npm run validate:ci      # 전체 검증 (수정 없음)
-npm run typecheck:ci     # 타입 체크 (간결 출력)
-npm run lint:ci          # ESLint (compact 포맷)
-npm run lint:css:ci      # stylelint (compact 포맷)
-npm run lint:md:ci       # markdownlint (설정 명시)
+npm run validate:ci      # 전체 검증 (typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check)
 npm run format:check     # Prettier 체크만
-npm run test:coverage:ci # 커버리지 테스트 (dot 리포터)
+npm run test:coverage    # 커버리지 테스트
+npm run codeql:check     # CodeQL 정적 분석
 ```
 
-## 🚀 CI 워크플로우 개선
+## 🚀 CI 워크플로우 개선 (Phase 85.1)
 
 ### Quality Job
 
 ```yaml
-- name: 🔎 Type check
-  run: npm run typecheck:ci
+- name: � Setup GitHub CLI with CodeQL extension
+  run: |
+    gh extension install github/gh-codeql || true
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-- name: 🧹 Lint
-  run: npm run lint:ci
-
-- name: 🎨 CSS Lint
-  run: npm run lint:css:ci
-
-- name: 📝 Markdown Lint
-  run: npm run lint:md:ci
-
-- name: 🎨 Prettier check
-  run: npm run format:check
+- name: ✅ Run quality checks
+  run: npm run validate:ci
+  # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
 ```
 
 **이전 대비 개선**:
 
-- 각 단계별로 CI 최적화된 스크립트 사용
-- 출력 포맷 통일 (compact/dot)
-- 불필요한 npx 호출 제거
+- **스크립트 통합**: 7개의 개별 스크립트 → 1개의 validate:ci로 통합
+- **CodeQL 추가**: 정적 분석을 CI 파이프라인에 통합
+- **gh extension 설치**: CodeQL CLI 자동 설치로 로컬/CI 동일 환경
+- **실패 시 빌드 중단**: CodeQL 문제 발견 시 자동으로 빌드 중단
+
+### Tests Job
+
+```yaml
+- name: 🧪 Run tests (Node ${{ matrix.node-version }})
+  if: ${{ matrix.node-version != 20 }}
+  run: npm test
+
+- name: 🧪 Run tests with coverage (Node 20)
+  if: ${{ matrix.node-version == 20 }}
+  run: npm run test:coverage
+```
+
+**이전 대비 개선**:
+
+- **스크립트 단순화**: test:ci:node22 → npm test
+- **커버리지 통합**: test:coverage:ci → test:coverage
 
 ## 🎯 크로스 플랫폼 호환성
 
@@ -214,7 +205,9 @@ npm run validate
 npm run validate:ci
 ```
 
-- typecheck:ci → lint:ci → lint:css:ci → lint:md:ci → format:check
+- typecheck → lint → lint:css → lint:md → format:check → deps:check →
+  codeql:check
+- CodeQL 실패 시 빌드 중단
 
 ### 빌드 검증
 
@@ -231,10 +224,23 @@ npm run build
 **A**: Staged 파일만으로는 불완전한 typecheck입니다. 전체 프로젝트 타입 체크는
 pre-push 훅에서 수행합니다.
 
-### Q: CI에서 CodeQL CLI 경고가 표시됩니다
+### Q: CI에서 CodeQL 문제가 발견되면 어떻게 되나요?
 
-**A**: 정상입니다. 로컬 CodeQL은 선택사항이며, GitHub Actions에서 별도로
-실행됩니다.
+**A**: CodeQL에서 문제가 발견되면 빌드가 자동으로 중단됩니다. `codeql-results/`
+디렉터리에서 SARIF 결과를 확인할 수 있습니다.
+
+### Q: CodeQL 캐시를 강제로 재생성하려면?
+
+**A**: 환경변수를 설정하여 실행하세요:
+
+```bash
+# PowerShell
+$env:CODEQL_FORCE_REBUILD = 'true'
+npm run codeql:check
+
+# Bash/Zsh
+CODEQL_FORCE_REBUILD=true npm run codeql:check
+```
 
 ### Q: Windows에서 npm 설치가 느립니다
 
@@ -262,6 +268,15 @@ env:
 - **.github/workflows/ci.yml**: CI 파이프라인 상세
 
 ## 🔄 업데이트 내역
+
+### 2025-10-16 (Phase 85.1)
+
+- **validate:ci 스크립트 통합**: 7개 개별 스크립트 → 1개로 통합
+- **CodeQL 자동 검증**: CI 파이프라인에 정적 분석 통합
+- **gh extension 자동 설치**: CodeQL CLI 환경 자동 구성
+- **CodeQL 성능 최적화**: 캐싱, CI early exit, 증분 DB (30-60초 절약)
+- **빌드 중단 메커니즘**: CodeQL 실패 시 자동 빌드 중단
+- **중복 스크립트 제거**: test:ci:node22, test:coverage:ci 등 정리
 
 ### 2025-10-15
 

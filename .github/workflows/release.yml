@@ -84,15 +84,15 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔍 Type checking
-        run: npm run typecheck
-        # Uses tsgo for faster type checking (configured in package.json)
+      - name: 🔧 Setup GitHub CLI with CodeQL extension
+        run: |
+          gh extension install github/gh-codeql || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🧹 Lint code
-        run: npm run lint
-
-      - name: 🎨 Prettier check
-        run: npx --yes prettier --check .
+      - name: ✅ Run quality checks
+        run: npm run validate:ci
+        # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
 
       - name: 🧪 Run tests
         run: npm run test

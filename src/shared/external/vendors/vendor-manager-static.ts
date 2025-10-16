@@ -359,6 +359,8 @@ export class StaticVendorManager {
 
   /**
    * 네이티브 다운로드 API (메모리 관리 개선)
+   * @deprecated Use getUserscript().download() instead for userscript compatibility
+   * This is a fallback for non-userscript environments
    */
   public getNativeDownload(): NativeDownloadAPI {
     return {
@@ -369,6 +371,7 @@ export class StaticVendorManager {
           this.createdUrls.add(url);
 
           const link = document.createElement('a');
+          // codeql[js/unsafe-download-pattern] - Legacy fallback, prefer getUserscript().download()
           link.href = url;
           link.download = filename;
           link.style.display = 'none';

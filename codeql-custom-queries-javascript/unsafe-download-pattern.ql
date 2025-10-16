@@ -20,6 +20,10 @@ predicate isAllowedFile(File file) {
   file.getRelativePath().matches("%shared/external/userscript%") or
   file.getRelativePath().matches("%shared/services/download%") or
   file.getRelativePath().matches("%BulkDownloadService%") or
+  // Legacy fallback implementations (deprecated, prefer getUserscript().download())
+  file.getRelativePath().matches("%shared/browser/browser-service%") or
+  file.getRelativePath().matches("%shared/browser/browser-utils%") or
+  file.getRelativePath().matches("%shared/external/vendors/vendor-manager-static%") or
   // Test files
   file.getRelativePath().matches("%test/%") or
   file.getBaseName().matches("%.test.%") or

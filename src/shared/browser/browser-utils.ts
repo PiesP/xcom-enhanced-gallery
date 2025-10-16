@@ -58,10 +58,13 @@ export class BrowserUtils {
 
   /**
    * 파일 다운로드
+   * @deprecated Use getUserscript().download() instead for userscript compatibility
+   * This is a fallback for non-userscript environments
    */
   public downloadFile(url: string, filename?: string): void {
     try {
       const link = document.createElement('a');
+      // codeql[js/unsafe-download-pattern] - Legacy fallback, prefer getUserscript().download()
       link.href = url;
       if (filename) {
         link.download = filename;

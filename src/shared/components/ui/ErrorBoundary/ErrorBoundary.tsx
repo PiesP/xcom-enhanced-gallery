@@ -7,6 +7,7 @@
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
 import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
+import styles from './ErrorBoundary.module.css';
 
 type Props = {
   children?: ComponentChildren;
@@ -40,7 +41,7 @@ export function ErrorBoundary({ children }: Props): JSXElement {
         return (
           <>
             {reset && typeof reset === 'function' && (
-              <span style='display: none' data-xeg-error-boundary-reset />
+              <span class={styles.hiddenReset} data-xeg-error-boundary-reset />
             )}
           </>
         );

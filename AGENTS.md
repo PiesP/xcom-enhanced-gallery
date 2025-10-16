@@ -279,6 +279,18 @@ CI
 - 워크플로: `.github/workflows/security.yml`
 - `npm audit`와 라이선스 보고서 업로드를 자동화
 
+CodeQL (로컬 정적 분석)
+
+- 스크립트: `node scripts/check-codeql.js`
+- 지원 도구: `gh codeql` (GitHub CLI 확장) 또는 `codeql` (직접 설치 CLI)
+- 커스텀 쿼리: `codeql-custom-queries-javascript/*.ql` (8개 정책)
+- 성능 최적화 (Phase 85.1):
+  - 도구 감지 결과 캐싱 (0.3초 절약)
+  - CI 환경에서 즉시 종료 (30-60초 절약)
+  - 증분 데이터베이스 업데이트 (2회차 이후 30-40초 절약)
+  - 강제 재생성: `CODEQL_FORCE_REBUILD=true node scripts/check-codeql.js`
+- 상세 가이드: `codeql-custom-queries-javascript/README.md`
+
 유지보수
 
 - 워크플로: `.github/workflows/maintenance.yml`
