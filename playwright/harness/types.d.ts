@@ -87,6 +87,13 @@ export type MemoryMetrics = {
   jsHeapSizeLimit: number;
 };
 
+export type DebugInfo = {
+  isOpen: boolean;
+  currentIndex: number;
+  mediaCount: number;
+  checkGalleryOpenResult: boolean;
+};
+
 export interface XegHarness {
   errorBoundaryScenario(): Promise<ErrorBoundaryResult>;
   mountToolbar(props: ToolbarMountProps): Promise<ToolbarMountResult>;
@@ -130,6 +137,8 @@ export interface XegHarness {
   simulateKeyPress(key: string, options?: KeyboardSimulationOptions): Promise<void>;
   measureKeyboardPerformance(action: () => Promise<void>): Promise<PerformanceMetrics>;
   getMemoryUsage(): Promise<MemoryMetrics>;
+  // Debug function
+  getDebugInfo(): Promise<DebugInfo>;
 }
 
 declare global {

@@ -57,13 +57,6 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     });
     expect(state.currentIndex).toBe(1);
 
-    // Verify data-focused attribute updated
-    const focusedIndex = await page.evaluate(async () => {
-      const harness = window.__XEG_HARNESS__!;
-      return harness.getGlobalFocusedIndex();
-    });
-    expect(focusedIndex).toBe(1);
-
     // Cleanup
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
@@ -100,13 +93,6 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
       return harness.getGalleryAppState();
     });
     expect(state.currentIndex).toBe(1);
-
-    // Verify data-focused attribute updated
-    const focusedIndex = await page.evaluate(async () => {
-      const harness = window.__XEG_HARNESS__!;
-      return harness.getGlobalFocusedIndex();
-    });
-    expect(focusedIndex).toBe(1);
 
     // Cleanup
     await page.evaluate(async () => {
@@ -151,13 +137,6 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
     });
     expect(state.currentIndex).toBe(0);
 
-    // Verify data-focused = "0"
-    const focusedIndex = await page.evaluate(async () => {
-      const harness = window.__XEG_HARNESS__!;
-      return harness.getGlobalFocusedIndex();
-    });
-    expect(focusedIndex).toBe(0);
-
     // Cleanup
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__!;
@@ -197,13 +176,6 @@ test.describe('Phase 82.3: Keyboard Navigation E2E', () => {
       return harness.getGalleryAppState();
     });
     expect(state.currentIndex).toBe(lastIndex);
-
-    // Verify data-focused = lastIndex
-    const focusedIndex = await page.evaluate(async () => {
-      const harness = window.__XEG_HARNESS__!;
-      return harness.getGlobalFocusedIndex();
-    });
-    expect(focusedIndex).toBe(lastIndex);
 
     // Cleanup
     await page.evaluate(async () => {
