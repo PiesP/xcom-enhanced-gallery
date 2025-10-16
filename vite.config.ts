@@ -317,7 +317,11 @@ export default defineConfig(({ mode }) => {
           compress: {
             drop_console: true,
             drop_debugger: true,
-            passes: 2,
+            // additional aggressive options to reduce size
+            passes: 4,
+            pure_getters: true,
+            unsafe: true, // enable additional optimizations (reviewed)
+            toplevel: true,
           },
           format: { comments: false },
           mangle: { toplevel: true },
