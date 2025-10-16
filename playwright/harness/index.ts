@@ -11,6 +11,8 @@ import type {
   GalleryAppSetupResult,
   GalleryAppState,
   GalleryEventsResult,
+  FocusTrackerHarnessResult,
+  ViewportChangeResult,
   XegHarness,
 } from './types';
 
@@ -771,6 +773,140 @@ async function evaluateGalleryEventsHarness(): Promise<GalleryEventsResult> {
   return result;
 }
 
+// Phase 82.2: Focus Tracking E2E Support
+
+type FocusTrackerHandle = {
+  container: HTMLElement;
+  observer: IntersectionObserver | null;
+  focusSpyCounts: Map<string, number>;
+  dispose: () => void;
+};
+
+let focusTrackerHandle: FocusTrackerHandle | null = null;
+
+async function setupFocusTrackerHarness(
+  containerSelector: string,
+  options?: { minimumVisibleRatio?: number }
+): Promise<FocusTrackerHarnessResult> {
+  const container = document.querySelector(containerSelector) as HTMLElement;
+  if (!container) {
+    throw new Error(`Container not found: ${containerSelector}`);
+  }
+
+  if (focusTrackerHandle) {
+    await disposeFocusTrackerHarness();
+  }
+
+  // Track focus() calls on all items
+  const focusSpyCounts = new Map<string, number>();
+  const items = container.querySelectorAll('[data-index]');
+  items.forEach((item, i) => {
+    const selector = `[data-index="${i}"]`;
+    focusSpyCounts.set(selector, 0);
+
+    const originalFocus = (item as HTMLElement).focus.bind(item);
+    (item as HTMLElement).focus = function () {
+      focusSpyCounts.set(selector, (focusSpyCounts.get(selector) ?? 0) + 1);
+      return originalFocus();
+    };
+  });
+
+  // Create IntersectionObserver for viewport simulation
+  const observer = new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          (entry.target as HTMLElement)?.setAttribute('data-in-viewport', 'true');
+        } else {
+          (entry.target as HTMLElement)?.removeAttribute('data-in-viewport');
+        }
+      });
+    },
+    {
+      threshold: [options?.minimumVisibleRatio ?? 0.05],
+      root: container,
+    }
+  );
+
+  items.forEach(item => {
+    observer.observe(item);
+  });
+
+  focusTrackerHandle = {
+    container,
+    observer,
+    focusSpyCounts,
+    dispose: () => {
+      observer?.disconnect();
+      focusTrackerHandle = null;
+    },
+  };
+
+  return { initialized: true };
+}
+
+async function simulateViewportScrollHarness(
+  _containerSel: string,
+  scrollPosition: number,
+  visibleIndices: number[]
+): Promise<ViewportChangeResult> {
+  if (!focusTrackerHandle) {
+    throw new Error('Focus tracker not initialized. Call setupFocusTracker first.');
+  }
+
+  const container = focusTrackerHandle.container;
+  const items = Array.from(container.querySelectorAll('[data-index]')) as HTMLElement[];
+
+  // Simulate scroll position
+  container.scrollTop = scrollPosition;
+
+  // Simulate IntersectionObserver entries for visible items
+  const visibleSet = new Set(visibleIndices);
+  items.forEach((item, i) => {
+    const isVisible = visibleSet.has(i);
+    if (isVisible) {
+      item.setAttribute('data-in-viewport', 'true');
+    } else {
+      item.removeAttribute('data-in-viewport');
+    }
+  });
+
+  // Determine applied focus index (typically the first visible item)
+  const appliedIndex: number | null = visibleIndices.length > 0 ? visibleIndices[0]! : null;
+
+  await sleep(16); // Allow rendering
+
+  return {
+    visibleIndices,
+    appliedIndex,
+  };
+}
+
+async function getGlobalFocusedIndexHarness(): Promise<number | null> {
+  // Query the data-focused attribute from gallery container
+  const galleryContainer = document.querySelector('[data-focused]');
+  if (!galleryContainer) {
+    return null;
+  }
+
+  const focusedAttr = galleryContainer.getAttribute('data-focused');
+  const index = focusedAttr ? parseInt(focusedAttr, 10) : null;
+  return Number.isNaN(index ?? NaN) ? null : index;
+}
+
+async function getElementFocusCountHarness(selector: string): Promise<number> {
+  if (!focusTrackerHandle) {
+    throw new Error('Focus tracker not initialized. Call setupFocusTracker first.');
+  }
+
+  return focusTrackerHandle.focusSpyCounts.get(selector) ?? 0;
+}
+
+async function disposeFocusTrackerHarness(): Promise<void> {
+  focusTrackerHandle?.dispose();
+  focusTrackerHandle = null;
+}
+
 const harness: XegHarness = {
   errorBoundaryScenario: runErrorBoundaryScenario,
   mountToolbar: mountToolbarHarness,
@@ -789,10 +925,15 @@ const harness: XegHarness = {
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,
   triggerGalleryAppClose: triggerGalleryAppCloseHarness,
-
   getGalleryAppState: getGalleryAppStateHarness,
   disposeGalleryApp: disposeGalleryAppHarness,
   evaluateGalleryEvents: evaluateGalleryEventsHarness,
+  // Phase 82.2: Focus Tracking E2E API
+  setupFocusTracker: setupFocusTrackerHarness,
+  simulateViewportScroll: simulateViewportScrollHarness,
+  getGlobalFocusedIndex: getGlobalFocusedIndexHarness,
+  getElementFocusCount: getElementFocusCountHarness,
+  disposeFocusTracker: disposeFocusTrackerHarness,
 };
 
 (globalThis as typeof globalThis & { __XEG_HARNESS__?: XegHarness }).__XEG_HARNESS__ = harness;

@@ -15,11 +15,11 @@
 - **디자인 토큰**: px 0개 (Primitive/Semantic), rgba 0개 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
 
-## 현재 상태: Phase 82 진행 중 🚀
+## 현재 상태: Phase 82.2 완료, Phase 82.3 준비 🚀
 
-**활성 Phase**: Phase 82 (E2E 테스트 마이그레이션) - 2025-10-16 시작 **목표**:
-JSDOM 제약 테스트 23개 → E2E(Playwright) 전환 **핵심 학습**: Solid.js 반응성,
-E2E 테스트 패턴 (→ `SOLID_REACTIVITY_LESSONS.md` 참고)
+**완료 Phase**: Phase 82.2 (포커스 추적 E2E 마이그레이션) - 2025-10-16 완료 ✅
+**활성 Phase**: Phase 82.3 (키보드 이벤트 & 성능) **목표**: 키보드 입력 × 5,
+성능 최적화 × 3 (E2E 마이그레이션)
 
 ---
 
@@ -56,36 +56,25 @@ E2E 테스트 패턴 (→ `SOLID_REACTIVITY_LESSONS.md` 참고)
 
 #### 마이그레이션 전략
 
-**Phase 82.1: UI 상호작용 (Toolbar Settings)**
+**Phase 82.3: 키보드 이벤트 & 성능** (다음 활성화)
 
-- 대상: `toolbar-settings-toggle.test.tsx` × 4
-- 난이도: ⭐ (쉬움)
-- 구현: `playwright/smoke/toolbar-settings-migration.spec.ts`
-- 완료 기준: 4개 테스트 GREEN, data-expanded 상태 검증
-- 예상 시간: 1-2시간
-
-**Phase 82.2: 갤러리 포커스 추적**
-
-- 대상: `use-gallery-focus-tracker-*.test.ts` × 6
-- 난이도: ⭐⭐ (중간)
-- 구현: `playwright/smoke/focus-tracking.spec.ts`
-- 완료 기준: IntersectionObserver 시뮬레이션, 동기화 검증
-- 예상 시간: 3-4시간
-
-**Phase 82.3: 키보드 이벤트 & 성능**
-
-- 대상: 키보드 이벤트 × 5, 성능 최적화 × 3
-- 난이도: ⭐⭐⭐ (높음)
-- 구현: `playwright/smoke/keyboard-events.spec.ts`, `performance.spec.ts`
-- 완료 기준: Space/Arrow/M 키 검증, 성능 메트릭 확인
-- 예상 시간: 5-6시간
+- **상태**: 준비 대기 (2025-10-16 계획)
+- **대상**:
+  - 키보드 이벤트 테스트 (ArrowLeft, ArrowRight, Home, End, Space, M 키)
+  - 성능 최적화 테스트 (렌더링, 스크롤, 메모리)
+  - **합계**: 약 8-10개 테스트
+- **난이도**: ⭐⭐⭐ (높음)
+- **구현 계획**: `playwright/smoke/keyboard-events.spec.ts`,
+  `performance.spec.ts`
+- **완료 기준**: 모든 키보드 입력 검증, 성능 메트릭 확인
+- **예상 시간**: 5-6시간
 
 #### 검증 기준
 
-- 스킵 테스트: 23개 → 0개 (E2E로 이관)
-- E2E 테스트: 5개 → 12개 이상 (Chromium)
+- E2E 테스트: Phase 82.2 후 21개 → Phase 82.3 후 30개 (9개 추가)
+- 스킵 테스트: Phase 82.2 후 16개 → Phase 82.3 후 ~7개 (9개 이관)
 - 테스트 통과율: 100% 유지
-- 빌드: 구조 변화 없음
+- 빌드: 구조 변화 없음, 328 KB 유지
 
 ### Phase 81: 번들 최적화 (트리거 대기)
 

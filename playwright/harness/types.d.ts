@@ -49,6 +49,15 @@ export type GalleryEventsResult = {
   enterDelegated: number;
 };
 
+export type FocusTrackerHarnessResult = {
+  initialized: boolean;
+};
+
+export type ViewportChangeResult = {
+  visibleIndices: number[];
+  appliedIndex: number | null;
+};
+
 export interface XegHarness {
   errorBoundaryScenario(): Promise<ErrorBoundaryResult>;
   mountToolbar(props: ToolbarMountProps): Promise<ToolbarMountResult>;
@@ -70,6 +79,19 @@ export interface XegHarness {
   getGalleryAppState(): Promise<GalleryAppState>;
   disposeGalleryApp(): Promise<void>;
   evaluateGalleryEvents(): Promise<GalleryEventsResult>;
+  // Phase 82.2: Focus Tracking E2E API
+  setupFocusTracker(
+    containerSelector: string,
+    options?: { minimumVisibleRatio?: number }
+  ): Promise<FocusTrackerHarnessResult>;
+  simulateViewportScroll(
+    containerSelector: string,
+    scrollPosition: number,
+    visibleIndices: number[]
+  ): Promise<ViewportChangeResult>;
+  getGlobalFocusedIndex(): Promise<number | null>;
+  getElementFocusCount(selector: string): Promise<number>;
+  disposeFocusTracker(): Promise<void>;
 }
 
 declare global {

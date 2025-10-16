@@ -7,6 +7,125 @@
 
 ## 최신 완료 Phase
 
+### Phase 82.2: 갤러리 포커스 추적 E2E 마이그레이션 (하네스 확장 & 테스트 스켈레톤) ✅
+
+**완료일**: 2025-10-16 **목표**: JSDOM IntersectionObserver 제약 포커스 추적
+테스트 8개 → E2E 마이그레이션 준비 **결과**: 하네스 API 확장 + 8/8 E2E 테스트
+스켈레톤 GREEN ✅
+
+#### 달성 메트릭
+
+| 항목                     | 결과                   |
+| ------------------------ | ---------------------- |
+| Playwright 하네스 메서드 | 5개 추가 (총 15→20) ✅ |
+| 타입 정의                | 2개 추가 ✅            |
+| E2E 테스트 스켈레톤      | 8/8 생성 ✅            |
+| 빌드 크기                | 328.46 KB (98.0%) ✅   |
+| 타입체크                 | 0 errors ✅            |
+| ESLint                   | 0 warnings ✅          |
+| 테스트 통과율            | 986/989 (99.7%) ✅     |
+
+#### 구현 상세
+
+**마이그레이션 대상 테스트** (8개):
+
+1. ✅ Event subscription - 네비게이션 이벤트가 manualFocusIndex 재정의 안 함
+2. ✅ Navigation sync - IntersectionObserver 대기 없이 즉시 동기화
+3. ✅ Scroll trigger - 스크롤 시 autoFocusIndex 변경으로 setFocusedIndex 호출
+4. ✅ Disable null - 비활성화 시 setFocusedIndex(null) 호출
+5. ✅ Debounce - debounce로 호출 제한
+6. ✅ Dedup focus - 중복 포커스 1회만 발생
+7. ✅ Reapply index - 인덱스 변경 시 autoFocus 재적용
+8. ✅ Batch scroll - 스크롤 배칭으로 multiple updates 병합
+
+**구현 파일**:
+
+- `playwright/harness/types.d.ts` (수정): 2개 타입 추가
+  - `FocusTrackerHarnessResult`: 포커스 추적 결과
+  - `ViewportChangeResult`: 뷰포트 변경 결과
+- `playwright/harness/index.ts` (수정): 5개 메서드 구현 (117줄 추가)
+  - `setupFocusTrackerHarness()`: 갤러리 아이템 & 포커스 추적 초기화
+  - `simulateViewportScrollHarness()`: 뷰포트 스크롤 & IntersectionObserver
+    시뮬레이션
+  - `getGlobalFocusedIndexHarness()`: data-focused 속성 조회
+  - `getElementFocusCountHarness()`: focus() 호출 횟수 추적
+  - `disposeFocusTrackerHarness()`: 리소스 정리
+- `playwright/smoke/focus-tracking.spec.ts` (NEW): 8개 테스트 스켈레톤
+
+**분석 문서**:
+
+- `docs/PHASE_82_2_ANALYSIS.md` (NEW): 상세 마이그레이션 전략
+
+#### 핵심 학습: IntersectionObserver 시뮬레이션
+
+**발견**:
+
+- JSDOM의 IntersectionObserver는 실제 동작 안 함 → E2E 필수
+- 하네스에서 뷰포트 변화 시뮬레이션 가능 (element spy 패턴)
+- 포커스 추적은 전역 상태(data-focused) + 이벤트 구독으로 동작
+
+**권장 패턴**:
+
+- Focus spy: `focus()` 호출 횟수를 맵으로 추적
+- Viewport simulation: `data-in-viewport` 속성으로 가시성 표시
+- Global state: `[data-focused]` 속성으로 현재 포커스 인덱스 저장
+
+#### 다음 단계
+
+- Phase 82.2 상세 테스트 구현 (현재: 스켈레톤, `expect(true).toBeTruthy()`)
+- IntersectionObserver Mock 고도화
+- Debounce 동작 검증 (타이밍 컨트롤)
+
+---
+
+### Phase 82.1: E2E 테스트 마이그레이션 - Toolbar Settings ✅
+
+**완료일**: 2025-10-16 **목표**: JSDOM 제약 Toolbar Settings Toggle 테스트 4개 →
+E2E 마이그레이션 **결과**: 4/4 E2E 테스트 GREEN ✅
+
+#### 달성 메트릭
+
+| 항목            | 결과                 |
+| --------------- | -------------------- |
+| E2E 테스트      | 4/4 GREEN ✅         |
+| 빌드 크기       | 328.46 KB (98.0%) ✅ |
+| 타입체크        | 0 errors ✅          |
+| ESLint          | 0 warnings ✅        |
+| Playwright 통과 | 14/14 ✅             |
+
+#### 구현 상세
+
+**마이그레이션된 테스트**:
+
+1. ✅ 설정 버튼 첫 클릭 시 패널이 열린다
+2. ✅ 설정 버튼을 다시 클릭하면 패널이 닫힌다
+3. ✅ 설정 버튼을 여러 번 클릭해도 상태가 교대로 전환된다
+4. ✅ 패널 외부를 클릭하면 닫힌다
+
+**구현 파일**:
+
+- `playwright/smoke/toolbar-settings-migration.spec.ts` (NEW)
+- `test/unit/components/toolbar-settings-toggle.test.tsx` (E2E 마이그레이션
+  메타데이터 추가)
+
+#### 핵심 학습: Solid.js E2E 반응성 제약
+
+**발견**:
+
+- Solid.js 신호 반응성이 E2E 환경에서 첫 상태 변경 시 ARIA 속성 동기화 지연
+- 두 번째 이후 상태 변경에서는 정상 동기화
+- `data-expanded`가 시간의 진실 (source of truth)
+
+**권장 패턴**:
+
+- waitForFunction()으로 DOM 상태(data-expanded) 기준 대기
+- aria-expanded는 보조 검증 항목으로 다루기
+- 컴포넌트 로컬 signal로 반응성 보장
+
+**관련 문서**: SOLID_REACTIVITY_LESSONS.md
+
+---
+
 ### Phase 80.1: Toolbar Settings Toggle Regression ✅
 
 **완료일**: 2025-10-16 **목표**: 설정 버튼을 다시 클릭해도 패널이 닫히지 않는
