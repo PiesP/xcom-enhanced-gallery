@@ -13,9 +13,10 @@
 **X.com Enhanced Gallery**는 현대적인 웹 기술로 구축된 경량 유저스크립트입니다:
 
 - **UI 프레임워크**: Solid.js 1.9.9 - 반응형 UI, 고성능
-- **번들 크기**: 730KB (dev), 325KB (prod, gzip: ~88KB)
-- **브라우저 호환**: Chrome 88+, Firefox 78+, Safari 14+, Edge 88+
+- **번들 크기**: 730KB (dev), 328KB (prod, gzip: ~89KB)
+- **브라우저 호환**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
 - **PC 전용 설계**: 마우스/키보드 최적화, 터치 이벤트 미지원
+- **품질 보증**: TypeScript strict, 987 passing tests (100%), 0 lint warnings
 
 **X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질
 원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC

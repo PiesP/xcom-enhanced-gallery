@@ -370,5 +370,41 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
 
 ---
 
+## 참고 문서 및 가이드
+
+### 핵심 개발 가이드
+
+- **[CODING_GUIDELINES.md](docs/CODING_GUIDELINES.md)**: 코딩 규칙, 디자인 토큰,
+  PC 전용 이벤트, 벤더 getter 규칙
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)**: 3계층 구조 (Features → Shared →
+  External), 의존성 규칙
+- **[DEPENDENCY-GOVERNANCE.md](docs/DEPENDENCY-GOVERNANCE.md)**: 의존성 관리
+  정책, dependency-cruiser 규칙
+
+### TDD 및 리팩토링
+
+- **[TDD_REFACTORING_PLAN.md](docs/TDD_REFACTORING_PLAN.md)**: 활성 리팩토링
+  계획, Phase 추적
+- **[TDD_REFACTORING_PLAN_COMPLETED.md](docs/TDD_REFACTORING_PLAN_COMPLETED.md)**:
+  완료된 Phase 기록 보관소
+- **[SOLID_REACTIVITY_LESSONS.md](docs/SOLID_REACTIVITY_LESSONS.md)**: Solid.js
+  반응성 시스템 핵심 교훈 (Phase 80.1 경험 기반)
+
+### 운영 및 유지보수
+
+- **[MAINTENANCE.md](docs/MAINTENANCE.md)**: 유지보수 체크리스트, 정기 점검 항목
+- **[CI-OPTIMIZATION.md](docs/CI-OPTIMIZATION.md)**: CI/CD 파이프라인 최적화
+  전략
+
+### 스크립트 및 도구
+
+- **scripts/maintenance-check.js**: 프로젝트 건강 상태 점검 (백업 파일, 큰 문서,
+  Git 상태)
+- **scripts/validate-build.js**: 빌드 산출물 검증 (크기, 무결성, 메타데이터)
+- **scripts/generate-dep-graph.cjs**: 의존성 그래프 생성 (GraphViz)
+- **scripts/check-codeql.js**: CodeQL SARIF 결과 검증
+
+---
+
 추가 세부 가이드는 `docs/` 폴더와 각 스크립트(`scripts/`)를 참고하세요. 변경
 시에는 관련 테스트와 문서를 함께 업데이트해 주세요.
