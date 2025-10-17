@@ -300,7 +300,7 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('original');
-    setSetting('gallery.imageFitMode' as unknown as string, 'original').catch(() => {});
+    setSetting('gallery.imageFitMode', 'original').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
   };
 
@@ -311,7 +311,7 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitWidth');
-    setSetting('gallery.imageFitMode' as unknown as string, 'fitWidth').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitWidth').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
   };
 
@@ -322,7 +322,7 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitHeight');
-    setSetting('gallery.imageFitMode' as unknown as string, 'fitHeight').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitHeight').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
   };
 
@@ -333,7 +333,7 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitContainer');
-    setSetting('gallery.imageFitMode' as unknown as string, 'fitContainer').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitContainer').catch(() => {});
     logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
   };
 

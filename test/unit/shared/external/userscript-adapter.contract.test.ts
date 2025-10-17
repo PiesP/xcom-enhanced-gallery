@@ -76,6 +76,10 @@ describe('Userscript Adapter – 경계 가드', () => {
     const gmDownloadMock = vi.fn(() => {
       // simulate GM_download success – do nothing
     });
+    // Phase 101: hasGMInfo() 타입 가드가 GM_info를 확인하므로 mock 추가
+    (globalThis as unknown as Record<string, unknown>).GM_info = {
+      script: { name: 'test', version: '1.0' },
+    };
     (globalThis as unknown as Record<string, unknown>).GM_download = gmDownloadMock;
 
     const { default: getUserscript } = await import(
@@ -146,6 +150,10 @@ describe('Userscript Adapter – 경계 가드', () => {
 
   it('xhr: GM_xmlhttpRequest가 존재하면 해당 API를 사용한다', async () => {
     const gmXhrMock = vi.fn(() => ({ abort: vi.fn() }));
+    // Phase 101: hasGMInfo() 타입 가드가 GM_info를 확인하므로 mock 추가
+    (globalThis as unknown as Record<string, unknown>).GM_info = {
+      script: { name: 'test', version: '1.0' },
+    };
     (globalThis as unknown as Record<string, unknown>).GM_xmlhttpRequest =
       gmXhrMock as unknown as typeof globalThis.GM_xmlhttpRequest;
 
