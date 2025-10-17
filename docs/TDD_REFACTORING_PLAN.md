@@ -65,7 +65,7 @@
   - 번들 크기 유지 (329.86 KB, 트리 셰이킹 효과)
   - 코드 품질 개선, 유지보수성 향상 ✅
 
-**활성 Phase**: 없음 (다음 Phase 선택 대기 중)
+**활성 Phase**: Phase 88: 번들 분석 리포트 생성 ✅ (2025-10-17 완료)
 
 **다음 작업 후보**:
 
@@ -126,6 +126,124 @@
 ---
 
 ## 다음 Phase 계획
+
+### Phase 88: 번들 분석 리포트 생성 및 최적화 전략 수립 ✅ (2025-10-17 완료)
+
+**시작일**: 2025-10-17  
+**목표**: Phase 73 교훈 적용, 실제 큰 모듈 식별  
+**도구**: rollup-plugin-visualizer
+
+#### 배경
+
+- **Phase 73 실패**: Lazy loading 시도 → +360 bytes 증가
+- **교훈**: 최적화 전 번들 분석 필수, 실제 큰 모듈 식별 후 전략 수립
+- **현재 상황**: 330.24 KB / 335 KB (98.6%, 여유 4.76 KB) ⚠️
+
+#### 실행 단계
+
+1. ✅ **번들 분석 도구 확인**: rollup-plugin-visualizer 이미 설정됨
+   (vite.config.ts)
+2. ✅ **프로덕션 빌드 실행**: `npm run build:prod`
+3. ✅ **분석 리포트 생성**: `docs/bundle-analysis.html` (4950줄 interactive
+   treemap)
+4. ✅ **큰 모듈 식별**: `scripts/analyze-bundle.py` 작성하여 데이터 분석
+5. ✅ **최적화 전략 수립**: 우선순위 모듈 및 절감 목표 산정
+6. ✅ **문서화**: 분석 결과 및 권장사항 기록
+
+#### 분석 결과
+
+**전체 번들 크기**:
+
+- Total modules: 140
+- Rendered: 512,425 bytes (500.42 KB)
+- Gzip: 146,859 bytes (143.42 KB)
+- Brotli: 124,723 bytes (121.80 KB)
+
+**Top 10 큰 모듈** (160.50 KB, 전체의 32.07%):
+
+| 순위 | 모듈                                                                        | 크기 (렌더링) | Gzip    | Brotli  | 비고                          |
+| ---- | --------------------------------------------------------------------------- | ------------- | ------- | ------- | ----------------------------- |
+| 1    | node_modules/solid-js/dist/solid.js                                         | 33.72 KB      | 8.07 KB | 7.30 KB | 외부 라이브러리 (최적화 불가) |
+| 2    | node_modules/solid-js/web/dist/web.js                                       | 21.08 KB      | 5.63 KB | 4.97 KB | 외부 라이브러리 (최적화 불가) |
+| 3    | src/shared/services/media-service.ts                                        | 17.53 KB      | 3.85 KB | 3.31 KB | ⚠️ 최적화 대상                |
+| 4    | src/shared/utils/events.ts                                                  | 16.21 KB      | 3.55 KB | 3.08 KB | ⚠️ 우선순위 1                 |
+| 5    | src/features/gallery/hooks/useGalleryFocusTracker.ts                        | 12.86 KB      | 2.85 KB | 2.51 KB | ⚠️ 우선순위 2                 |
+| 6    | src/shared/services/media/twitter-video-extractor.ts                        | 12.73 KB      | 3.60 KB | 3.10 KB | 최적화 검토                   |
+| 7    | src/shared/components/ui/Toolbar/ToolbarView.tsx                            | 11.88 KB      | 2.63 KB | 2.15 KB | 검토 필요                     |
+| 8    | src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx | 11.66 KB      | 3.03 KB | 2.58 KB | 검토 필요                     |
+| 9    | src/features/settings/services/settings-service.ts                          | 11.63 KB      | 3.23 KB | 2.68 KB | 최적화 검토                   |
+| 10   | src/shared/services/bulk-download-service.ts                                | 11.20 KB      | 2.58 KB | 2.26 KB | 최적화 검토                   |
+
+**카테고리별 분석** (>10 KB 모듈만):
+
+| 카테고리   | 모듈 수 | 크기     | % 전체 | 비고                          |
+| ---------- | ------- | -------- | ------ | ----------------------------- |
+| Features   | 5       | 58.06 KB | 11.60% | 갤러리 UI, 훅                 |
+| Solid.js   | 2       | 54.80 KB | 10.95% | 외부 라이브러리 (최적화 불가) |
+| Services   | 3       | 41.45 KB | 8.28%  | 미디어, 다운로드, 설정        |
+| Utils      | 1       | 16.21 KB | 3.24%  | events.ts                     |
+| Components | 1       | 11.88 KB | 2.37%  | ToolbarView.tsx               |
+
+#### 최적화 전략
+
+**우선순위 1: events.ts (16.21 KB)** → **예상 절감 2-3 KB**
+
+- 이벤트 처리 로직 통합 파일
+- 사용되지 않는 유틸리티 함수 제거
+- 이벤트 핸들러 중복 코드 제거
+- 갤러리/도구바 간 공통 이벤트 로직 추출
+
+**우선순위 2: useGalleryFocusTracker.ts (12.86 KB)** → **예상 절감 1-2 KB**
+
+- Focus 추적 로직 알고리즘 최적화
+- 불필요한 상태 업데이트 제거
+- Intersection Observer 로직 간소화
+
+**우선순위 3: media-service.ts (17.53 KB)** → **예상 절감 2-4 KB**
+
+- 미디어 추출 로직 복잡도 검토
+- Strategy 패턴으로 이미 세분화되어 있으나, 추가 분할 가능성 검토
+- Tree-shaking 기회 탐색 (사용되지 않는 extractors)
+
+**우선순위 4: twitter-video-extractor.ts (12.73 KB)** → **예상 절감 1-2 KB**
+
+- Twitter API 응답 파싱 로직
+- 정규식/파서 최적화
+- 불필요한 fallback 로직 제거
+
+#### 권장 조치
+
+1. **즉시 (Phase 89)**: events.ts 리팩토링 (예상 절감: 2-3 KB)
+2. **단기 (Phase 90)**: useGalleryFocusTracker.ts 알고리즘 최적화 (예상 절감:
+   1-2 KB)
+3. **중기**: media-service.ts 세분화 검토 (예상 절감: 2-4 KB)
+
+**Phase 73 교훈 적용**:
+
+- ❌ Lazy loading: 단일 파일 번들에서 비효율적 (+360 bytes)
+- ✅ 큰 모듈 우선: >10 KB 모듈에 집중
+- ✅ Tree-shaking: 사용되지 않는 코드 제거
+- ✅ 코드 분할: 조건부 import 대신 직접 최적화
+
+#### 산출물
+
+- `docs/bundle-analysis.html`: Interactive treemap 리포트 (4950줄)
+- `docs/bundle-data.json`: 번들 메타데이터 (rollup-plugin-visualizer 출력)
+- `docs/bundle-analysis-summary.json`: 상위 10개 모듈 및 카테고리 통계
+- `scripts/analyze-bundle.py`: 번들 데이터 분석 스크립트 (Python, 149줄)
+
+**다음 Phase**: Phase 89 - events.ts 리팩토링 (2-3 KB 절감 목표)
+
+---
+
+### Phase 89: events.ts 리팩토링 (예정)
+
+**목표**: events.ts (16.21 KB) → 13-14 KB (2-3 KB 절감)  
+**접근**: 사용되지 않는 함수 제거, 이벤트 핸들러 중복 코드 제거, 공통 로직 추출
+
+---
+
+---
 
 ### Phase 84: 로깅 일관성 & CSS 토큰 통일 (완료) ✅
 
