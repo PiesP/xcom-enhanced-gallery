@@ -245,7 +245,7 @@ enableLegacyAdapter 제거
   - **결론**: 현재 E2E 마이그레이션 가능한 케이스 대부분 완료, 나머지는 기술적
     제약으로 보류
 
----
+##
 
 ## 주요 개선 영역 검토 완료 ✅
 
@@ -284,7 +284,7 @@ enableLegacyAdapter 제거
 - ✅ **Phase 89**: events.ts 리팩토링 (2025-10-17, 소스 708 bytes 절감, 코드
   품질 향상)
 
----
+##
 
 ## 다음 Phase 계획
 
@@ -352,7 +352,7 @@ enableLegacyAdapter 제거
 - Phase 91 (번들 최적화): Phase 89 교훈으로 효과 불확실, 필요시 재검토
 - Phase 82.9+ (E2E 완료): 기술적 제약, 별도 연구 필요
 
----
+##
 
 ### Phase 84: 로깅 일관성 & CSS 토큰 통일 (완료) ✅
 
@@ -361,7 +361,7 @@ enableLegacyAdapter 제거
 - ✅ **Phase 88**: 번들 분석 완료 (2025-10-17, 최적화 전략 수립)
 - ⏳ **Phase 89**: events.ts 리팩토링 (시작 예정)
 
----
+##
 
 ## 다음 Phase 계획
 
@@ -377,17 +377,17 @@ enableLegacyAdapter 제거
    - 전체 번들의 3.24% 차지
    - 갤러리/도구바 이벤트 처리 로직 포함
 
-2. **최적화 영역 식별**
+1. **최적화 영역 식별**
    - 사용되지 않는 유틸리티 함수 검색
    - 이벤트 핸들러 중복 코드 탐지
    - 갤러리/도구바 간 공통 로직 추출 가능성
 
-3. **리팩토링 실행**
+1. **리팩토링 실행**
    - Tree-shaking 기회: 미사용 exports 제거
    - 중복 제거: 동일 패턴 핸들러 통합
    - 공통 로직 분리: 재사용 가능한 헬퍼 함수 생성
 
-4. **검증**
+1. **검증**
    - 빌드 크기 검증: 330.24 KB → 327-328 KB 목표
    - 테스트 통과: 1018 passing 유지
    - E2E 테스트: 28/29 유지
@@ -403,18 +403,22 @@ enableLegacyAdapter 제거
 **Phase 90**: useGalleryFocusTracker.ts 알고리즘 최적화 (12.86 KB → 11 KB, 1-2
 KB 절감)
 
----
+##
 
 ### Phase 84: 로깅 일관성 & CSS 토큰 통일 (완료) ✅
 
-console.error(`[EventEmitter] Listener error for event "${String(event)}":`,
-error);
+```javascript
+console.error(
+  `[EventEmitter] Listener error for event "${String(event)}":`,
+  error
+);
 
 // ✅ 변경 후
-logger.error(`[EventEmitter] Listener error for event "${String(event)}":`,
-error);
-
-````
+logger.error(
+  `[EventEmitter] Listener error for event "${String(event)}":`,
+  error
+);
+```
 
 **2단계: CSS 토큰 통일** (1.5시간 예상)
 
@@ -437,7 +441,7 @@ error);
 --xeg-surface-glass-bg: oklch(1 0 0 / 0.1);
 --xeg-surface-glass-border: oklch(1 0 0 / 0.2);
 --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
-````
+```
 
 ```css
 /* src/shared/styles/design-tokens.primitive.css */
@@ -448,29 +452,37 @@ error);
 **3단계: 검증** (30분 예상)
 
 ```pwsh
+
 # 타입 체크
+
 npm run typecheck
 
 # 린트
+
 npm run lint:fix
 
 # CSS 린트
+
 npm run lint:css
 
 # 테스트
+
 npm test
 
 # 빌드
+
 npm run build
 
 # console 사용 검색 (logger.ts 제외)
+
 rg "console\.(log|info|warn|error)" src/ --glob "!**/logging/**"
 
 # rgba 사용 검색 (주석 제외)
+
 rg "rgba?\(" src/**/*.css --glob "!**/*.md"
 ```
 
-### 검증 기준
+## 검증 기준
 
 - ✅ console 직접 사용: 0건 (logger.ts 내부 제외)
 - ✅ CSS rgba 사용: 0건 (primitive 주석 제외, @supports 폴백 제외)
@@ -522,7 +534,7 @@ rg "rgba?\(" src/**/*.css --glob "!**/*.md"
 - 테스트 통과율: 96.6% → 97% 유지
 - 빌드: 구조 변화 없음, 330 KB 유지
 
----
+##
 
 ## 향후 개선 영역 후보
 
@@ -561,7 +573,7 @@ rg "rgba?\(" src/**/*.css --glob "!**/*.md"
 **현황**: 빌드 크기, 테스트 실행 시간만 추적 **제안**: 런타임 성능 메트릭 수집
 (렌더링, 스크롤, 다운로드) **우선순위**: 중 (사용자 경험 개선 기회)
 
----
+##
 
 ## 완료된 Phase 기록
 
@@ -579,7 +591,7 @@ rg "rgba?\(" src/**/*.css --glob "!**/*.md"
 - **Phase 74.6** (2025-10-14): 테스트 구조 개선 ✅
 - **Phase 74.5** (2025-10-13): 중복 제거 및 통합 ✅
 
----
+##
 
 ## 모니터링 지표
 
@@ -597,7 +609,7 @@ rg "rgba?\(" src/**/*.css --glob "!**/*.md"
 - **월간**: 의존성 업데이트, 문서 최신성, 보안 취약점
 - **분기**: 아키텍처 리뷰, 성능 벤치마크
 
----
+##
 
 ## 참고 문서
 

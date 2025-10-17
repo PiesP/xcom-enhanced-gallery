@@ -1,14 +1,11 @@
 # TDD 리팩토링 완료 기록# TDD 리팩토링 완료 기록
 
 > **목적**: 완료된 Phase들의 핵심 메트릭과 교훈 보관 > **목적**: 완료된
-> Phase들의 핵심 메트릭과 교훈 보관
+> Phase들의 핵심 메트릭과 교훈 보관 **최종 업데이트**: 2025-10-17 > **최종
+> 업데이트**: 2025-10-17 **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약
+> 테이블 유지> **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
 
-> **최종 업데이트**: 2025-10-17 > **최종 업데이트**: 2025-10-17
-
-> **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지> **정책**:
-> 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
-
----
+##
 
 ## 최근 완료 Phase (상세)## 최근 완료 Phase (상세)
 
@@ -46,17 +43,17 @@
   validate-build.js, generate-dep-graph.cjs)4. ✅ **문서 간소화**:
   TDD_REFACTORING_PLAN.md (479줄 → 180줄, 62% 절감)
 
-5. ✅ **참조 업데이트**: DOCUMENTATION.md, AGENTS.md 참조 제거
+1. ✅ **참조 업데이트**: DOCUMENTATION.md, AGENTS.md 참조 제거
 
 **교훈**:6. ✅ **.gitignore 업데이트**: 생성 파일 패턴 추가
 
 1. 정기적 문서 정리 필요 (Phase 90 후 1주일 만에 추가 정리)#### 실제 결과
 
-2. 임시 파일은 .gitignore 추가, 필요 시 재생성
+1. 임시 파일은 .gitignore 추가, 필요 시 재생성
 
-3. 중복 제거로 유지보수성 향상**제거된 파일 (7개)**:
+1. 중복 제거로 유지보수성 향상**제거된 파일 (7개)**:
 
-4. 일회용 스크립트는 Phase 완료 후 즉시 제거- docs/SKIP_TESTS_ANALYSIS.md
+1. 일회용 스크립트는 Phase 완료 후 즉시 제거- docs/SKIP_TESTS_ANALYSIS.md
    (177줄) - Phase 82.4 임시 분석, TDD_REFACTORING_PLAN.md에 통합됨
 
 - docs/CI-OPTIMIZATION.md (293줄) - AGENTS.md와 중복
@@ -99,7 +96,7 @@ maintenance-check.js - 프로젝트 건강 상태 점검 (필수)
 **완료일**: 2025-10-17 | **소요 시간**: 2시간 | **빌드**: 330.24 KB (변화
 없음)2. **임시 파일 관리**: 생성 파일은 .gitignore에 추가, 필요 시 재생성
 
-3. **중복 제거**: 동일 내용이 여러 문서에 분산되면 유지보수성 저하
+1. **중복 제거**: 동일 내용이 여러 문서에 분산되면 유지보수성 저하
 
 **목표**: 중복 코드 제거 및 헬퍼 함수 추출로 가독성 향상4. **일회용 스크립트
 정리**: Phase 완료 후 불필요한 스크립트는 즉시 제거
@@ -120,12 +117,12 @@ maintenance-check.js - 프로젝트 건강 상태 점검 (필수)
 
 1. Terser 압축기는 이미 중복 코드를 효과적으로 제거---
 
-2. 소스 레벨 최적화는 빌드 크기 효과 제한적
+1. 소스 레벨 최적화는 빌드 크기 효과 제한적
 
-3. 코드 품질 개선(가독성/유지보수성)은 여전히 가치 있음### Phase 90: 문서 간소화
+1. 코드 품질 개선(가독성/유지보수성)은 여전히 가치 있음### Phase 90: 문서 간소화
    ✅
 
-4. 작은 모듈 리팩토링보다 큰 모듈(>12 KB) 타겟 필요
+1. 작은 모듈 리팩토링보다 큰 모듈(>12 KB) 타겟 필요
 
 **완료일**: 2025-10-17
 
@@ -282,20 +279,21 @@ Testing Trophy 확립 | 2025-10-12 |
 
 - 코드 품질: 린트 정책 위반 0건
 
-- 교훈: 단일 번들에서 lazy loading 비효율 (Phase 73)#### 달성 메트릭
+- 교훈: 단일 번들에서 lazy loading 비효율 (Phase 73)
 
----| 항목 | 시작 | 최종 | 개선 |
+### 달성 메트릭
 
-| ------------------ | -------------------- | --------- |
--------------------------------------------------------------------------------------
-|
+| 항목               | 시작 | 최종   | 개선                                                                                  |
+| ------------------ | ---- | ------ | ------------------------------------------------------------------------------------- |
+| 제거된 소스 코드   | -    | ~170줄 | Button 3곳, galleryState 5줄, app-container 1줄, zip-creator ~150줄, zip/index 1줄 ✅ |
+| 제거된 테스트 코드 | -    | 249줄  | Button-icon-variant.test.tsx 전체 ✅                                                  |
+| 총 제거 코드       | -    | ~420줄 | 소스 + 테스트 ✅                                                                      |
 
-## Phase 60-69 요약 테이블| 제거된 소스 코드 | - | ~170줄 | Button 3곳, galleryState 5줄, app-container 1줄, zip-creator ~150줄, zip/index 1줄 ✅ |
+---
 
-| 제거된 테스트 코드 | - | 249줄 | Button-icon-variant.test.tsx 전체 ✅ |
+## Phase 60-69 요약 테이블
 
-| Phase 범위 | 주요 목표 | 핵심 성과 | 기간 || 총 제거 코드 | - | ~420줄 |
-소스 + 테스트 ✅ |
+| Phase 범위 | 주요 목표 | 핵심 성과 | 기간 |
 
 | ---------- | ----------------------------------- |
 --------------------------------------------------- | ---------- || 타입 에러 |
@@ -365,8 +363,8 @@ const resolvedIntent = () => local.intent ?? local.iconVariant;
 
 | 항목 | 시작 | 최종 | 개선 |
 
----| -------------------------- | --------- | --------- |
------------------------------- |
+| --- | -------------------------- | --------- | --------- |
+| --- | -------------------------- | --------- | --------- |
 
 | CodeQL 쿼리 실행 시간 | 90-100초 | 29.5초 | 60-70초 절약 (~70% 개선) ✅ |
 
@@ -524,7 +522,7 @@ function printResults(queryName, results) {
 }
 ```
 
-#### 핵심 교훈
+### 핵심 교훈
 
 **1. 병렬화 패턴 선택**
 
@@ -566,7 +564,7 @@ function printResults(queryName, results) {
 - ⏭️ Phase 82.3: E2E 테스트 마이그레이션 (10개 스켈레톤 구현 예정)
 - ⏭️ Phase 81: 번들 크기 최적화 (330 KB 도달 시)
 
----
+##
 
 ### Phase 86: Deprecated 코드 안전 제거 ✅
 
@@ -684,20 +682,23 @@ export { createZipBytesFromFileMap } from './zip-creator';
 **제거 5: deprecated 기능 테스트 파일 제거** (완료 시간: 0.5시간)
 
 ```pwsh
+
 # test/unit/shared/components/ui/Button-icon-variant.test.tsx 전체 삭제 (249줄)
+
 # iconVariant prop 제거로 인해 테스트 5개 실패 → 파일 전체 제거
+
 Remove-Item test/unit/shared/components/ui/Button-icon-variant.test.tsx
 ```
 
-#### 조건부 제거 분석 결과
+## 조건부 제거 분석 결과
 
 **제거 불가 항목** (실사용 확인)
 
 1. **Toast 별칭**: `ToastService`, `toastService`, `toastController` (20+
    사용처)
-2. **getNativeDownload**: BulkDownloadService 등에서 실사용 2곳
+1. **getNativeDownload**: BulkDownloadService 등에서 실사용 2곳
 
-#### 검증 결과
+### 검증 결과
 
 - ✅ 타입 체크: 0 errors (2회 검증, tsgo 사용)
 - ✅ 린트: 0 warnings (ESLint)
@@ -712,21 +713,21 @@ Remove-Item test/unit/shared/components/ui/Button-icon-variant.test.tsx
 1. **트리 셰이킹 효과**: deprecated 코드가 이미 번들에서 제거되어 있어 번들 크기
    변화 없음
    - 코드 제거의 주요 효과는 유지보수성 향상 (0.5-1 KB 목표 미달성)
-2. **연쇄 의존성 처리**: 함수 제거 시 미사용 의존성(헬퍼, 상수, import) 순차
+1. **연쇄 의존성 처리**: 함수 제거 시 미사용 의존성(헬퍼, 상수, import) 순차
    정리 필요
    - createZipFromItems → downloadFilesForZip → safeParseInt →
      DEFAULT_ZIP_CONFIG (5단계 연쇄)
-3. **테스트 동기화**: deprecated 기능 제거 시 관련 테스트도 함께 제거
+1. **테스트 동기화**: deprecated 기능 제거 시 관련 테스트도 함께 제거
    - Button-icon-variant.test.tsx (249줄) 전체 삭제로 테스트 5개 감소
-4. **사용처 분석 중요성**: grep으로 철저히 확인 후 제거 가능 여부 판단
+1. **사용처 분석 중요성**: grep으로 철저히 확인 후 제거 가능 여부 판단
    - Toast 별칭 (20+ 사용처) → 제거 불가
    - createZipFromItems (정의/export만) → 제거 가능
    - getNativeDownload (실사용 2곳) → 제거 불가
-5. **replace_string_in_file의 한계**: 큰 함수 제거 시 oldString 범위 부족으로
+1. **replace_string_in_file의 한계**: 큰 함수 제거 시 oldString 범위 부족으로
    문법 오류 발생 가능
    - 해결: 전체 파일 읽고 정확한 범위 지정
 
----
+##
 
 ### Phase 87: Toolbar SolidJS 최적화 ✅
 
@@ -827,15 +828,15 @@ undefined 가능성으로 타입 에러 발생)
    - 매 렌더링마다 함수 재생성 방지
    - Closure 의존성(props.disabled 등)은 memo 내부에서 추출
 
-2. **ToolbarView는 props 직접 접근 필수**
+1. **ToolbarView는 props 직접 접근 필수**
    - 구조 분해(`const x = props.x`)는 반응성 손실 위험
    - `props.propName()` 형태로 직접 호출하여 반응성 보장
 
-3. **파생 상태는 명시적 반환 타입 선언**
+1. **파생 상태는 명시적 반환 타입 선언**
    - TypeScript가 추론하지 못하는 경우 방지
    - `: number`, `: string` 등 명시로 타입 안정성 향상
 
-4. **on() 헬퍼 사용 시 타입 주의**
+1. **on() 헬퍼 사용 시 타입 주의**
    - `defer: true` 옵션 사용 시 초기값 undefined 가능성
    - 간단한 createMemo가 더 안전할 수 있음
 
@@ -852,7 +853,7 @@ undefined 가능성으로 타입 에러 발생)
 - Phase 83: 포커스 안정성 개선 (StabilityDetector 서비스)
 - Phase 85.1: CodeQL 성능 최적화 (증분 DB 업데이트)
 
----
+##
 
 ### Phase 85.1: CodeQL 성능 최적화 ✅
 
@@ -950,7 +951,7 @@ function createDatabase() {
 - Phase 85.2: 병렬 쿼리 실행 (10-15초 추가 절약 예상)
 - Git 상태 기반 캐싱 (더 정확한 변경 감지)
 
----
+##
 
 ### Phase 84: 로깅 일관성 & CSS 토큰 통일 ✅
 
@@ -982,12 +983,12 @@ function createDatabase() {
 
 1. **조건부 로깅**: 성능 민감 영역에서 `if (debug && import.meta.env.DEV)`
    가드로 프로덕션 오버헤드 제거
-2. **색상 근사치**: Slate 700 `rgb(15 23 42)` → `oklch(22% 0.02 250deg)` (Chroma
+1. **색상 근사치**: Slate 700 `rgb(15 23 42)` → `oklch(22% 0.02 250deg)` (Chroma
    0.02로 채도 보존)
-3. **빌드 크기 영향**: logger import 추가로 +0.93 KB, 프로덕션 품질 향상 대비
+1. **빌드 크기 영향**: logger import 추가로 +0.93 KB, 프로덕션 품질 향상 대비
    합리적 트레이드오프
 
----
+##
 
 ### Phase 83: 포커스 안정성 개선 (Focus Stability Detector) ✅
 
@@ -1018,10 +1019,10 @@ function createDatabase() {
 #### 교훈
 
 1. **근본 원인**: IntersectionObserver 이벤트마다 포커스 갱신 → 경쟁 발생
-2. **솔루션**: Settling 상태 감지로 스크롤 종료 후 한 번만 갱신
-3. **성능**: 불필요한 DOM 접근 80-90% 감소, UX 개선
+1. **솔루션**: Settling 상태 감지로 스크롤 종료 후 한 번만 갱신
+1. **성능**: 불필요한 DOM 접근 80-90% 감소, UX 개선
 
----
+##
 
 ### Phase 82 시리즈: E2E 테스트 마이그레이션 (2025-10-16~17)
 
@@ -1049,11 +1050,11 @@ function createDatabase() {
 
 1. **Activity 기반 Settling 감지**: 다양한 활동
    유형(scroll/focus/layout/programmatic)을 통합 추적하여 시스템 안정성 판단
-2. **큐 기반 지연 실행**: 스크롤 중 요청을 큐에 저장하고 settling 후 최신 요청만
+1. **큐 기반 지연 실행**: 스크롤 중 요청을 큐에 저장하고 settling 후 최신 요청만
    처리하여 불필요한 연산 제거
-3. **Signal 기반 상태 전파**: `isScrolling` 신호로 여러 컴포넌트 간 상태 동기화
+1. **Signal 기반 상태 전파**: `isScrolling` 신호로 여러 컴포넌트 간 상태 동기화
    (useGalleryScroll → useGalleryFocusTracker)
-4. **사용자 경험 우선**: 기술적 정확성보다 시각적 안정성을 우선하여 인디케이터
+1. **사용자 경험 우선**: 기술적 정확성보다 시각적 안정성을 우선하여 인디케이터
    깜빡임 완전 제거
 
 ### Phase 82.3 스켈레톤: 키보드 이벤트 & 성능 E2E 테스트 스켈레톤 ✅
@@ -1103,7 +1104,7 @@ function createDatabase() {
 - Harness API 확장: 키보드 이벤트 시뮬레이션, 성능 메트릭 수집
 - 11개 스킵 JSDOM 테스트 E2E 전환
 
----
+##
 
 ### Phase 82.2: 갤러리 포커스 추적 E2E 마이그레이션 ✅
 
@@ -1137,7 +1138,7 @@ function createDatabase() {
 - Viewport simulation: `data-in-viewport` 속성으로 가시성 표시
 - Global state: `[data-focused]` 속성으로 현재 포커스 인덱스 저장
 
----
+##
 
 ### Phase 82.1: E2E 테스트 마이그레이션 - Toolbar Settings ✅
 
@@ -1170,7 +1171,7 @@ E2E 마이그레이션 **결과**: 4/4 E2E 테스트 GREEN ✅
 
 **관련 문서**: SOLID_REACTIVITY_LESSONS.md
 
----
+##
 
 ### Phase 80.1: Toolbar Settings Toggle Regression ✅
 
@@ -1210,7 +1211,7 @@ E2E 마이그레이션 **결과**: 4/4 E2E 테스트 GREEN ✅
 
 **관련 문서**: SOLID_REACTIVITY_LESSONS.md
 
----
+##
 
 ### Phase 78.9: stylelint error 강화 완료 ✅
 
@@ -1224,7 +1225,7 @@ E2E 마이그레이션 **결과**: 4/4 E2E 테스트 GREEN ✅
 | stylelint 경고 | 0개 ✅ |
 | stylelint 오류 | 0개 ✅ |
 
----
+##
 
 ## 완료 Phase 요약 테이블
 
@@ -1264,7 +1265,7 @@ color-no-hex 정책 (oklch 토큰만)
 감소 **결과**: Tree-shaking 개선으로 1.5-2 KB 절감, `MediaClickDetector`와
 `gallerySignals` 의존성 최소화 ✅
 
----
+##
 
 ## 프로젝트 현황 스냅샷
 
@@ -1282,7 +1283,7 @@ color-no-hex 정책 (oklch 토큰만)
 | 디자인 토큰   | px 0개, rgba 0개 ✅                     |
 | 브라우저 지원 | Safari 14+, Chrome 110+ (OKLCH) ✅      |
 
----
+##
 
 ## 핵심 교훈 아카이브
 
@@ -1318,7 +1319,7 @@ color-no-hex 정책 (oklch 토큰만)
 - 구조 검증 테스트: props 패턴 강제 (lint-like guard test)
 - 관련 문서: **TDD_REFACTORING_PLAN.md**
 
----
+##
 
 ## 참고 문서
 
