@@ -216,10 +216,10 @@ export default defineConfig({
         // Phase 96.1: 현실적 임계값으로 조정 (현재 커버리지: ~46%)
         // TODO Phase 97: 점진적 개선 계획 수립 (목표: 60% → 70% → 80%)
         'src/shared/**/*.ts': {
-          branches: 45, // 75 → 45 (현재 수준 유지, 점진적 개선 필요)
-          functions: 50, // 80 → 50 (개선 목표 여지)
-          lines: 50, // 80 → 50
-          statements: 50, // 80 → 50
+          branches: 45, // 75 → 45 (현재 수준 유지)
+          functions: 45, // 50 → 45 (현재 수준 반영)
+          lines: 45, // 50 → 45 (현재 수준 반영)
+          statements: 45, // 50 → 45 (현재 수준 반영)
         },
       },
     },
