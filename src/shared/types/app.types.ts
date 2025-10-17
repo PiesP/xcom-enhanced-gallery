@@ -16,13 +16,10 @@ import type { JSXElement } from '@shared/external/vendors';
 // ================================
 
 /**
- * 기본 서비스 인터페이스
+ * 기본 서비스 인터페이스를 core-types에서 re-export
+ * @see {@link ./core/core-types.ts} - 단일 진실 소스 (Single Source of Truth)
  */
-export interface BaseService {
-  destroy?(): void;
-  initialize?(): Promise<void> | void;
-  isInitialized?(): boolean;
-}
+export type { BaseService } from './core/core-types';
 
 /**
  * 정리 가능한 리소스 인터페이스
@@ -55,76 +52,24 @@ export interface AppConfig {
 // ================================
 
 /**
- * Result 타입 (성공/실패 패턴)
+ * Result 패턴 관련 타입 및 함수들을 core-types에서 re-export
+ * @see {@link ./core/core-types.ts} - 단일 진실 소스 (Single Source of Truth)
  */
-export type Result<T, E = Error> = Success<T> | Failure<E>;
-
-interface Success<T> {
-  readonly success: true;
-  readonly data: T;
-}
-
-interface Failure<E> {
-  readonly success: false;
-  readonly error: E;
-}
-
-/**
- * 비동기 Result 타입
- */
-export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
-
-/**
- * Option 타입 (null 안전성)
- */
+export type { Result, AsyncResult } from './core/core-types';
 export type Option<T> = T | null;
 
-// Result 유틸리티 함수들
-export function success<T>(data: T): Result<T, never> {
-  return { success: true, data };
-}
-
-export function failure<E>(error: E): Result<never, E> {
-  return { success: false, error };
-}
-
-export function isSuccess<T, E>(result: Result<T, E>): result is Success<T> {
-  return result.success;
-}
-
-export function isFailure<T, E>(result: Result<T, E>): result is Failure<E> {
-  return !result.success;
-}
-
-export function unwrapOr<T>(result: Result<T, unknown>, defaultValue: T): T {
-  return isSuccess(result) ? result.data : defaultValue;
-}
-
-export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
-  return isSuccess(result) ? success(fn(result.data)) : result;
-}
-
-export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {
-  return isSuccess(result) ? fn(result.data) : result;
-}
-
-export async function safeAsync<T>(operation: () => Promise<T>): Promise<Result<T, Error>> {
-  try {
-    const data = await operation();
-    return success(data);
-  } catch (error) {
-    return failure(error instanceof Error ? error : new Error(String(error)));
-  }
-}
-
-export function safe<T>(operation: () => T): Result<T, Error> {
-  try {
-    const data = operation();
-    return success(data);
-  } catch (error) {
-    return failure(error instanceof Error ? error : new Error(String(error)));
-  }
-}
+// Result 유틸리티 함수들 re-export
+export {
+  success,
+  failure,
+  isSuccess,
+  isFailure,
+  unwrapOr,
+  map,
+  chain,
+  safe,
+  safeAsync,
+} from './core/core-types';
 
 // ================================
 // 서비스 관련 타입들

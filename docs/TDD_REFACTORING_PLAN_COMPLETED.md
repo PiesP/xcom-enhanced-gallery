@@ -5,6 +5,311 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 98: Icon Registry 타입 안전성 - 타입 단언 제거 ✅
+
+**완료일**: 2025-10-17 **소요 시간**: 1시간 **빌드**: 330.23 KB (유지)
+
+#### 목표
+
+- Icon 컴포넌트 타입 단언 5개 제거 (`as unknown as IconComponent`)
+- IconComponent 타입 정의 개선 (VNode → JSXElement)
+- IconProps 활용으로 타입 안전성 향상
+- 전체 Icon 사용처(Toolbar, Gallery) 정상 동작 검증
+
+#### 달성 메트릭
+
+| 항목            | 시작               | 최종                         | 개선                        |
+| --------------- | ------------------ | ---------------------------- | --------------------------- |
+| 타입 단언       | 5개                | **0개**                      | 완전 제거 ✅                |
+| IconComponent   | `VNode \| unknown` | **`JSXElement`**             | Solid.js 타입 명확화 ✅     |
+| IconProps 활용  | ❌                 | **✅**                       | 컴포넌트 시그니처 명시 ✅   |
+| 타입 에러       | 0개 (은닉된 위험)  | **0개**                      | 명시적 타입으로 전환 ✅     |
+| 빌드 크기       | 330.23 KB          | **330.23 KB**                | 유지 ✅                     |
+| 테스트 커버리지 | N/A                | **14개 (7×2 suites, GREEN)** | icon-registry-types.test.ts |
+| 전체 테스트     | 1117 passing       | **1131 passing (+14)**       | Phase 98 테스트 추가 ✅     |
+| E2E 테스트      | 28 passed          | **28 passed**                | 영향 없음 ✅                |
+| CodeQL 쿼리     | 5개 통과           | **5개 통과**                 | 정책 준수 ✅                |
+
+#### 주요 작업
+
+**Phase 98.1 (RED)**: 테스트 작성
+
+- `test/unit/services/icon-registry-types.test.ts` 생성
+- 7개 테스트 케이스:
+  1. IconComponent 타입 정의 검증 (`JSXElement` 반환)
+  2. `dynamicImport()` 안전성 (모킹)
+  3. `registerIcon()` 정상 등록
+  4. `getIcon()` 정상 반환
+  5. 통합 테스트 (등록 → 조회 → 호출)
+  6. 소스 코드 검증 (타입 단언 부재)
+  7. IconProps 활용 검증 (props 전달)
+- 첫 실행: 1 failing (의도적 RED - 타입 단언 검출)
+
+**Phase 98.2 (GREEN)**: IconComponent 타입 수정
+
+- **타입 정의 변경**:
+
+  ```typescript
+  // BEFORE
+  type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
+
+  // AFTER
+  import type { IconProps } from '../components/ui/Icon/Icon';
+  type IconComponent = (props: IconProps) => JSXElement;
+  ```
+
+- **타입 단언 5개 제거**:
+
+  ```typescript
+  // BEFORE
+  m => m.HeroDownload as unknown as IconComponent;
+
+  // AFTER
+  m => m.HeroDownload; // 타입 단언 불필요
+  ```
+
+- 영향 범위: `icon-registry.ts` 단일 파일
+- 타입 에러: 0개 (자동 추론 성공)
+
+**Phase 98.3 (REFACTOR)**: 전체 검증
+
+- **빌드 검증**: dev + prod 성공 (330.23 KB 유지)
+- **CodeQL**: 5개 쿼리 통과 (71.75초)
+- **E2E 테스트**: 28 passed, 1 skipped (22.0초)
+- **validate-build.js**: ✅ 통과
+- **Icon 사용처 영향**: 없음 (Toolbar, Gallery 정상 동작)
+
+#### 핵심 교훈
+
+**1. IconProps 활용의 중요성**
+
+- Icon 컴포넌트의 실제 시그니처(`IconProps`)를 타입 정의에 반영
+- `Record<string, unknown>` 같은 느슨한 타입 대신 구조화된 인터페이스 사용
+- 타입 안전성 향상: props 전달 시 자동 완성 및 타입 체크
+
+**2. JSXElement vs VNode**
+
+- Solid.js 공식 타입은 `JSXElement` (반응성 포함)
+- `VNode`는 내부 구현체로, 타입 정의에 직접 노출하지 않음
+- `unknown`과 결합하면 타입 안전성이 완전히 상실됨
+
+**3. 타입 단언의 은닉된 위험**
+
+- `as unknown as T`는 컴파일러를 속이는 패턴으로, 런타임 에러 위험 증가
+- icon-registry.ts의 5개 단언은 모두 불필요했음 (올바른 타입으로 자동 추론)
+- 타입 단언 제거 시 빌드 크기 영향 없음 (Terser 최적화 효과)
+
+**4. 테스트 주도 리팩토링의 효과**
+
+- 소스 코드 검증 테스트로 타입 단언 부재 보장
+- IconProps 전달 테스트로 타입 시스템 정합성 확인
+- 전체 테스트 GREEN 유지로 시스템 안정성 보장
+
+**5. 영향 범위 최소화**
+
+- 단일 파일(`icon-registry.ts`) 수정으로 완료
+- Icon 사용처(Toolbar, Gallery) 변경 불필요
+- 타입 정의 개선이 전체 시스템에 긍정적 영향 (자동 추론 개선)
+
+---
+
+### Phase 97: Result 패턴 통합 - 타입 시스템 간결화 ✅
+
+**완료일**: 2025-10-17 **소요 시간**: 1.5시간 **빌드**: 330.23 KB (유지)
+
+#### 목표
+
+- Result 패턴 중복 코드 제거 (3개 파일 → 1개 단일 소스)
+- `core-types.ts`를 진실의 소스로 확립
+- `app.types.ts`를 re-export로 전환
+- `error-handler.ts`의 특수 래퍼를 core-types 기반으로 리팩토링
+
+#### 달성 메트릭
+
+| 항목             | 시작                 | 최종             | 개선                                    |
+| ---------------- | -------------------- | ---------------- | --------------------------------------- |
+| 중복 코드 라인   | ~60줄                | **0줄**          | 완전 제거 ✅                            |
+| Result 소스 파일 | 3개                  | **1개**          | core-types.ts 통합 ✅                   |
+| import 일관성    | 혼재                 | **단일**         | app.types → core-types ✅               |
+| 빌드 크기        | 330.23 KB            | **330.23 KB**    | 유지 (Terser 압축 효과) ✅              |
+| 타입 에러        | 5개 (TS1205, TS2304) | **0개**          | 순환 의존성 해결 ✅                     |
+| 테스트 커버리지  | N/A                  | **15개 (GREEN)** | result-pattern-consolidation.test.ts ✅ |
+
+#### 주요 작업
+
+**Phase 97.1 (RED)**: 테스트 작성
+
+- `test/unit/types/result-pattern-consolidation.test.ts` 생성
+- 15개 테스트 케이스: core-types 함수, re-export 검증, 래퍼 동작 확인
+- 첫 실행: 1 failing (의도적 RED)
+
+**Phase 97.2 (GREEN)**: app.types.ts 리팩토링
+
+- ~60줄 중복 구현 제거 → re-export로 전환
+- `export { success, failure, ... } from './core/core-types'`
+- API 호환성 유지 (breaking change 없음)
+
+**Phase 97.3 (GREEN)**: error-handler.ts 래퍼 변환
+
+- `safeAsync`를 core-types 기반 래퍼로 변환
+- context/defaultValue 매개변수 보존
+- 동작 변경 없이 내부 구현만 최적화
+
+**Phase 97.4 (REFACTOR)**: 순환 의존성 해결
+
+- 문제: `toast-controller.ts` ↔ `core-types.ts` ↔ `app.types.ts`
+- 해결: `base-service.types.ts` 분리 + core-types에 BaseService 중복 정의
+- 검증:
+  - `npm run deps:check`: ✔ No violations
+  - `npm run typecheck`: 0 errors
+  - `npm test`: 1117 passing
+  - `npm run build`: 성공
+  - E2E: 28 passed / 1 skipped
+
+#### 기술적 과제 및 해결
+
+**순환 의존성 이슈**:
+
+```
+toast-controller.ts → app.types.ts (BaseService)
+app.types.ts → core-types.ts (Result 패턴)
+core-types.ts → app.types.ts (잠재적 순환)
+```
+
+**시도한 방법**:
+
+1. ❌ `export type { BaseService }` → TS1205 오류 (isolatedModules)
+2. ❌ re-export 패턴 → TS2304 오류 (extends 절에서 타입 인식 실패)
+3. ✅ 분리 + 중복 정의:
+   - `base-service.types.ts` 생성 (toast-controller 전용)
+   - `core-types.ts`에 BaseService 인라인 정의 (extends 절 호환)
+
+**교훈**:
+
+- TypeScript `isolatedModules`에서 `export type` re-export는 interface
+  extends에서 보이지 않음
+- 순환 의존성 해결 시 **실용적 중복**이 **이론적 순수성**보다 나을 수 있음
+- dependency-cruiser와 TypeScript 컴파일러는 서로 다른 기준으로 순환 검증
+
+#### 예상 효과 vs 실제 결과
+
+**예상**:
+
+- 번들 크기 감소 (~2-3 KB)
+- 타입 추론 성능 향상
+- 코드 유지보수성 향상
+
+**실제**:
+
+- ✅ 번들 크기: 유지 (Terser가 이미 최적화, Phase 89 교훈 재확인)
+- ✅ 타입 추론: 주관적으로 개선 (컴파일 시간 측정 불필요)
+- ✅ 유지보수성: 단일 소스로 대폭 개선
+- ✅ 순환 의존성 회피 패턴 학습
+
+**Phase 89 교훈 재확인**:
+
+- 소스 수준 중복 제거가 번들 크기에 미치는 영향은 미미
+- Terser 압축이 이미 동등 코드를 효율적으로 병합
+- 리팩토링의 가치는 **유지보수성**과 **가독성**에 있음
+
+#### 검증 결과
+
+```pwsh
+# 타입 체크
+npm run typecheck  # 0 errors ✅
+
+# 테스트
+npm test           # 1117 passing ✅
+# Result 패턴 테스트 15개 모두 GREEN
+
+# 의존성 검증
+npm run deps:check # 0 violations ✅
+
+# 빌드
+npm run build      # 330.23 KB ✅
+# CodeQL: 5/5 쿼리 통과
+# E2E: 28 passed / 1 skipped
+```
+
+#### 코드 변경 요약
+
+**`core-types.ts`**:
+
+```typescript
+// BaseService를 인라인 정의로 추가 (순환 의존성 회피)
+export interface BaseService {
+  destroy?(): void;
+  initialize?(): Promise<void> | void;
+  isInitialized?(): boolean;
+}
+// Result 패턴 함수들은 기존 그대로 유지
+```
+
+**`base-service.types.ts`** (신규):
+
+```typescript
+// toast-controller 전용 (순환 의존성 방지)
+export interface BaseService {
+  destroy?(): void;
+  initialize?(): Promise<void> | void;
+  isInitialized?(): boolean;
+}
+```
+
+**`app.types.ts`**:
+
+```typescript
+// BEFORE: ~60줄 중복 구현
+export function success<T>(data: T): Result<T, never> { ... }
+// ...
+
+// AFTER: 단일 라인 re-export
+export {
+  success, failure, isSuccess, isFailure, unwrapOr,
+  safe, safeAsync, chain,
+  type Result, type AsyncResult,
+} from './core/core-types';
+```
+
+**`error-handler.ts`**:
+
+```typescript
+// BEFORE: 독자 구현
+export async function safeAsync<T>(...) {
+  try { return await operation(); }
+  catch (error) { ... }
+}
+
+// AFTER: core-types 래퍼
+import { safeAsync as coreSafeAsync } from '../types/core/core-types';
+export async function safeAsync<T>(...) {
+  const result = await coreSafeAsync(operation);
+  if (!result.success) {
+    await errorHandler.handleAsync(result.error, context);
+    return defaultValue;
+  }
+  return result.data;
+}
+```
+
+**`toast-controller.ts`**:
+
+```typescript
+// BEFORE: app.types에서 import
+import type { BaseService } from '@shared/types/app.types';
+
+// AFTER: base-service.types에서 import
+import type { BaseService } from '@shared/types/core/base-service.types';
+```
+
+#### 후속 작업
+
+- ✅ Phase 97 완료, 문서 이동
+- 🔄 Phase 96 보류 (CI 환경 테스트 안정화는 우선순위 낮음)
+- 🔄 추가 타입 시스템 간결화 기회 탐색 (`as unknown as` 33곳)
+
+##
+
 ### Phase 96.1: CI 테스트 안정화 및 커버리지 기준선 ✅
 
 **완료일**: 2025-10-17 **소요 시간**: 2.5시간 **빌드**: 330.23 KB (유지)

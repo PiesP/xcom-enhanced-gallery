@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-17 | **상태**: Phase 96.1 완료 ✅
+> **최종 업데이트**: 2025-10-17 | **상태**: Phase 99 계획 수립 완료 📋
 
 ## 프로젝트 현황
 
@@ -15,7 +15,7 @@
 
 ### 테스트 현황
 
-- **단위 테스트**: 1117 passing / 13 skipped (98.9% 통과율) ✅
+- **단위 테스트**: 1131 passing / 13 skipped (98.9% 통과율) ✅
 - **E2E 테스트**: 28 passed / 1 skipped (96.6% 통과율) ✅
 - **커버리지**: v8로 통일 완료, 45% 기준선 설정 ✅
 
@@ -24,10 +24,383 @@
 - **로깅 일관성**: console 직접 사용 0건 (logger.ts 경유) ✅
 - **디자인 토큰**: px 하드코딩 0개, rgba 0개, oklch 전용 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
+- **타입 단언**: 38개 → 33개 (Phase 98: Icon Registry 5개 제거) ⏳
+
+## 진행 현황
+
+### 완료된 Phase
+
+- **Phase 97**: Result 패턴 통합 ✅ (중복 코드 60줄 제거)
+- **Phase 98**: Icon Registry 타입 안전성 ✅ (타입 단언 5개 제거)
+
+---
+
+## Phase 99: Signal 타입 단언 제거 (우선순위: 높음) 📋
+
+**우선순위**: 높음 | **위험도**: 중간 | **예상 소요**: 1-1.5시간
+
+### 목표
+
+Solid.js `useSelector`에서 사용되는 7개의 Signal 타입
+단언(`as unknown as { value: T }`)을 제거하여 반응성 시스템의 타입 안전성을
+향상합니다.
+
+### 문제 분석
+
+**현재 상황** (3개 파일, 7개 타입 단언):
+
+```typescript
+// ToastContainer.tsx (1개)
+const currentToasts = useSelector(
+  manager.signal as unknown as { value: ToastItem[] }, // ❌ Signal 타입 단언
+  state => state
+);
+
+// useGalleryScroll.ts (1개)
+const isGalleryOpen = useSelector<GalleryState, boolean>(
+  galleryState as unknown as { value: GalleryState }, // ❌ Signal 타입 단언
+  (state: GalleryState) => state.isOpen
+);
+
+// VerticalGalleryView.tsx (5개)
+const isOpen = useSelector<GalleryState, boolean>(
+  galleryState as unknown as { value: GalleryState }, // ❌ Signal 타입 단언
+  (state: GalleryState) => state.isOpen
+);
+// ... 4개 추가 (downloadState 포함)
+```
+
+**useSelector 타입 시그니처** (`@shared/utils/signalSelector.ts`):
+
+```typescript
+export function useSelector<T, R>(
+  signal: Accessor<T> | Signal<T>, // Signal 또는 Accessor 허용
+  selector: (state: T) => R,
+  options?: SelectorOptions<T>
+): Accessor<R>;
+```
+
+**문제점**:
+
+1. **타입 불일치**: `galleryState`는 `Signal<GalleryState>`지만, `{ value: T }`
+   구조체로 단언
+2. **반복 패턴**: VerticalGalleryView.tsx에서만 5개 반복 (중복)
+3. **Solid.js 규약 위반**: Signal은 `Accessor<T>` 타입으로 사용되어야 함
+4. **런타임 위험**: 타입 단언으로 인해 Signal 반응성 추적 실패 가능성
+
+### 솔루션 설계
+
+#### Option 1: Signal → Accessor 래퍼 함수 (권장)
+
+```typescript
+// BEFORE (src/shared/state/gallery-state.ts)
+export const galleryState: Signal<GalleryState> = ...;
+
+// AFTER: Accessor로 변환하는 헬퍼 추가
+import { from } from 'solid-js';
+
+export const galleryState: Signal<GalleryState> = ...;
+export const galleryStateAccessor = from(galleryState);  // Signal → Accessor 변환
+```
+
+**사용처 수정**:
+
+```typescript
+// BEFORE
+const isOpen = useSelector<GalleryState, boolean>(
+  galleryState as unknown as { value: GalleryState },
+  (state: GalleryState) => state.isOpen
+);
+
+// AFTER
+const isOpen = useSelector<GalleryState, boolean>(
+  galleryStateAccessor, // 타입 단언 제거
+  (state: GalleryState) => state.isOpen
+);
+```
+
+**장점**:
+
+- 타입 단언 완전 제거 (7개 → 0개)
+- Solid.js `from()` 유틸리티 활용 (공식 패턴)
+- Signal 반응성 유지 (from은 Signal을 Accessor로 래핑)
+- 기존 Signal 사용처 영향 없음
+
+**단점**:
+
+- gallery-state.ts, download-state.ts 수정 필요
+- export 증가 (기존 Signal + 새로운 Accessor)
+
+#### Option 2: useSelector 타입 가드 강화 (검토 중)
+
+```typescript
+// useSelector 내부에서 Signal 타입 자동 처리
+export function useSelector<T, R>(
+  signal: Accessor<T> | Signal<T>,
+  selector: (state: T) => R,
+  options?: SelectorOptions<T>
+): Accessor<R> {
+  const accessor = typeof signal === 'function' ? signal : from(signal);
+  // ...
+}
+```
+
+**장점**:
+
+- 사용처 수정 불필요 (투명한 처리)
+
+**단점**:
+
+- useSelector 내부 복잡도 증가
+- Signal vs Accessor 런타임 판별 필요
+- 타입 단언은 여전히 남음 (컴파일러 만족 용도)
+
+### 실행 계획 (TDD)
+
+#### Phase 99.1 (RED): 테스트 작성
+
+**위치**: `test/unit/utils/signal-accessor-wrapper.test.ts`
+
+```typescript
+describe('Phase 99: Signal Accessor Wrapper', () => {
+  it('galleryStateAccessor는 from() 래핑된 Accessor여야 한다', () => {
+    expect(typeof galleryStateAccessor).toBe('function');
+    expect(galleryStateAccessor()).toMatchObject({ isOpen: false });
+  });
+
+  it('downloadStateAccessor는 from() 래핑된 Accessor여야 한다', () => {
+    expect(typeof downloadStateAccessor).toBe('function');
+  });
+
+  it('useSelector는 타입 단언 없이 Accessor를 받을 수 있다', () => {
+    const isOpen = useSelector(
+      galleryStateAccessor, // 타입 에러 없어야 함
+      state => state.isOpen
+    );
+    expect(isOpen()).toBe(false);
+  });
+
+  it('ToastContainer.tsx는 타입 단언 없이 컴파일되어야 한다', async () => {
+    const source = await fs.readFile('src/.../ToastContainer.tsx', 'utf-8');
+    expect(source).not.toContain('as unknown as');
+  });
+
+  it('useGalleryScroll.ts는 타입 단언 없이 컴파일되어야 한다', async () => {
+    const source = await fs.readFile('src/.../useGalleryScroll.ts', 'utf-8');
+    expect(source).not.toContain('as unknown as');
+  });
+
+  it('VerticalGalleryView.tsx는 타입 단언 없이 컴파일되어야 한다', async () => {
+    const source = await fs.readFile(
+      'src/.../VerticalGalleryView.tsx',
+      'utf-8'
+    );
+    const matches = source.match(/as unknown as/g);
+    // 설정 경로 단언 4개는 허용, Signal 단언 5개는 제거되어야 함
+    expect(matches?.length ?? 0).toBeLessThanOrEqual(4);
+  });
+});
+```
+
+**예상 실패**: 첫 실행 시 galleryStateAccessor 미정의 에러
+
+#### Phase 99.2 (GREEN): Accessor 래퍼 추가
+
+**수정 파일**: `src/shared/state/gallery-state.ts`, `download-state.ts`
+
+```typescript
+// BEFORE
+export const galleryState: Signal<GalleryState> = createSignal(...);
+
+// AFTER
+import { from } from '../external/vendors';
+
+export const galleryState: Signal<GalleryState> = createSignal(...);
+export const galleryStateAccessor = from(galleryState);  // ✅ Accessor 래퍼
+```
+
+#### Phase 99.3 (GREEN): 타입 단언 제거
+
+**수정 파일**:
+
+1. `src/shared/components/ui/Toast/ToastContainer.tsx` (1개)
+2. `src/features/gallery/hooks/useGalleryScroll.ts` (1개)
+3. `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+   (5개)
+
+**변경 예시**:
+
+```typescript
+// BEFORE
+import { galleryState } from '@shared/state/gallery-state';
+const isOpen = useSelector(
+  galleryState as unknown as { value: GalleryState },
+  state => state.isOpen
+);
+
+// AFTER
+import { galleryStateAccessor } from '@shared/state/gallery-state';
+const isOpen = useSelector(
+  galleryStateAccessor, // 타입 단언 제거
+  state => state.isOpen
+);
+```
+
+#### Phase 99.4 (REFACTOR): 전체 검증
+
+1. `npm run typecheck` → 0 errors
+2. `npm run lint:fix` → 0 warnings
+3. `npm test` → 1131+ passing (Phase 99 테스트 추가)
+4. `npm run build` → 330.23 KB (크기 유지)
+5. `npm run e2e:smoke` → 28 passed
+6. `node scripts/validate-build.js` → ✅
+
+### 성공 기준
+
+- [ ] galleryStateAccessor, downloadStateAccessor export 추가
+- [ ] Signal 타입 단언 7개 → 0개
+- [ ] 타입 에러 0개 (strict mode 유지)
+- [ ] 테스트 GREEN (Phase 99 테스트 6개 통과)
+- [ ] 빌드 크기 영향 없음 (from() 런타임 오버헤드 미미)
+- [ ] E2E 테스트 통과 (Gallery/Toast 정상 동작)
+
+### 위험 요소 및 대응
+
+**위험 1: from() 반응성 차이**
+
+- **증상**: Signal → Accessor 변환 시 반응성 추적 손실
+- **대응**: `from(signal)`은 공식 Solid.js 유틸리티로, 반응성 보존 보장
+- **검증**: E2E 테스트로 Gallery 상태 변화 추적 확인
+
+**위험 2: 순환 의존성**
+
+- **증상**: gallery-state.ts에서 from() import 시 TDZ 발생 가능
+- **대응**: vendors getter 사용 (`getSolid().from`)
+- **검증**: `npm run deps:check` + Bundle 검증
+
+**위험 3: 설정 경로 단언 혼동**
+
+- **증상**: VerticalGalleryView.tsx의 setSetting 단언 4개를 실수로 수정
+- **대응**: 소스 코드 검증 테스트에서 4개 허용 (galleryState 단언만 제거)
+- **검증**: grep 패턴으로 setSetting vs galleryState 구분
+
+### 후속 작업
+
+- **Phase 100**: EventListener 타입 단언 제거 (4개)
+- **Phase 101**: 전역 객체 타입 정의 (logger.ts, schedulers.ts 5개)
+
+---
+
+- 없음 (Icon 컴포넌트들이 이미 JSXElement 반환)
+
+#### Option 2: satisfies 연산자 사용
+
+```typescript
+return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
+  m => m.HeroDownload satisfies IconComponent
+);
+```
+
+**장점**:
+
+- 타입 체크 유지
+- 타입 추론 보존
+
+**단점**:
+
+- 근본적인 타입 불일치 해결 못함
+- 여전히 각 import마다 표기 필요
+
+**최종 선택**: Option 1 (타입 정의 수정)
+
+### 영향 범위 분석
+
+**변경 파일**:
+
+- `src/shared/services/icon-registry.ts`: 타입 정의 + 5개 단언 제거
+
+**검증 필요**:
+
+- Icon 사용처 모두 정상 동작 확인
+- 타입 체크 통과 확인
+
+**위험도**: 낮음
+
+- Icon 컴포넌트는 이미 올바른 타입 사용 중
+- 단순 타입 정의 수정
+
+### TDD 실행 계획
+
+#### Phase 98.1: 테스트 작성 (RED)
+
+- [ ] `test/unit/services/icon-registry-types.test.ts` 생성
+  - IconComponent 타입이 JSXElement 반환 함수임을 검증
+  - dynamicImport가 올바른 타입 반환 검증
+  - 타입 단언 없이 컴파일 가능한지 검증
+
+#### Phase 98.2: IconComponent 타입 수정 (GREEN)
+
+- [ ] `IconComponent` 타입 정의를 `JSXElement` 반환으로 수정
+- [ ] 5개 `as unknown as IconComponent` 단언 제거
+- [ ] 타입 체크 통과 확인 (`npm run typecheck`)
+
+#### Phase 98.3: 전체 검증 (REFACTOR)
+
+- [ ] 전체 테스트 스위트 실행 (`npm test`)
+- [ ] Icon 사용처 수동 확인 (Toolbar, Gallery 등)
+- [ ] 빌드 크기 비교 (현재: 330.23 KB, 예상: 변화 없음)
+
+### 예상 효과
+
+**즉시 효과**:
+
+- ✅ 타입 단언 5개 제거 (코드 간결성)
+- ✅ 타입 안전성 향상 (IconComponent 시그니처 체크 가능)
+- ✅ 코드 가독성 개선
+
+**장기 효과**:
+
+- 🔄 Icon 컴포넌트 변경 시 타입 에러로 조기 발견
+- 🔄 다른 타입 단언 패턴 개선의 선례
+
+### 위험 관리
+
+**위험도**: 낮음
+
+- 타입 정의만 수정, 런타임 동작 변경 없음
+- Icon 컴포넌트는 이미 JSXElement 반환 중
+
+**롤백 계획**:
+
+- Git commit 단위로 즉시 롤백 가능
+
+### 참고 문서
+
+- Phase 97: Result 패턴 통합 (타입 시스템 개선 선례)
+- CODING_GUIDELINES.md: 타입 안전성 원칙
 
 ##
 
-## 현재 상태: Phase 96.1 완료 ✅
+## 현재 상태: Phase 97 완료 ✅ (Result 패턴 통합)
+
+**Phase 97 완료**: Result 패턴 중복 코드 제거 (~60줄 감소, 단일 소스 확립)
+
+**달성 사항**:
+
+- ✅ `core-types.ts`를 진실의 소스로 확립
+- ✅ `app.types.ts`를 re-export로 전환 (API 호환성 유지)
+- ✅ `error-handler.ts` 래퍼를 core-types 기반으로 리팩토링
+- ✅ 순환 의존성 해결 (`base-service.types.ts` 분리)
+- ✅ 테스트 15개 작성 (result-pattern-consolidation.test.ts)
+- ✅ 빌드 크기 유지 (330.23 KB, Terser 압축 효과)
+
+**커밋**:
+
+- Phase 97.1-97.4 완료, TDD_REFACTORING_PLAN_COMPLETED.md로 이동
+
+**다음 단계**: Phase 96 보류 (우선순위 낮음)
+
+##
 
 **Phase 96.1 완료**: CI 환경 테스트 안정화 + 커버리지 기준선 설정
 
