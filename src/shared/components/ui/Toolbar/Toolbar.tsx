@@ -151,7 +151,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
       toolbarActions.setCurrentFitMode(mode);
       if (!disabled) {
-        getFitHandler(mode)?.(event as unknown as Event);
+        getFitHandler(mode)?.(event);
       }
     };
   });

@@ -21,7 +21,7 @@ export interface ButtonProps
   readonly size?: 'sm' | 'md' | 'lg';
   readonly disabled?: boolean;
   readonly type?: 'button' | 'submit' | 'reset';
-  readonly onClick?: (event: MouseEvent) => void;
+  readonly onClick?: (event: MouseEvent | KeyboardEvent) => void;
   readonly onKeyDown?: (event: KeyboardEvent) => void;
   readonly intent?: 'primary' | 'success' | 'danger' | 'neutral';
   readonly selected?: boolean;
@@ -67,7 +67,7 @@ export function Button(props: ButtonProps): JSX.Element {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       if (!local.disabled && !local.loading) {
-        local.onClick?.(event as unknown as MouseEvent);
+        local.onClick?.(event);
       }
     }
     local.onKeyDown?.(event);

@@ -1,29 +1,23 @@
 {
+	"inputs": [
+		{
+			"id": "brave-api-key",
+			"type": "promptString",
+			"description": "Brave Search API Key",
+			"password": true
+		}
+	],
 	"servers": {
-		"MCP_DOCKER": {
-			"command": "docker",
-			"args": [
-				"mcp",
-				"gateway",
-				"run"
-			],
-			"env": {
-				"LOCALAPPDATA": "C:\\Users\\ohgre\\AppData\\Local",
-				"ProgramData": "C:\\ProgramData",
-				"ProgramFiles": "C:\\Program Files"
-			},
-			"type": "stdio"
-		},
-		"local-history-mcp": {
+		"brave-search-mcp-server": {
 			"command": "npx",
 			"args": [
 				"-y",
-				"local-history-mcp"
+				"@brave/brave-search-mcp-server",
+				"--transport",
+				"stdio"
 			],
-			"type": "stdio",
 			"env": {
-				"GIT_DIR": "c:\\git\\xcom-enhanced-gallery\\.git",
-				"GIT_WORK_TREE": "c:\\git\\xcom-enhanced-gallery"
+				"BRAVE_API_KEY": "${input:brave-api-key}"
 			}
 		}
 	}
