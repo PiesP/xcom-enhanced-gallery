@@ -74,107 +74,117 @@ describe('Gallery video keyboard controls (Space/ArrowUp/ArrowDown/M)', () => {
     (globalThis as any).document.body.innerHTML = '';
   });
 
-  it('Space toggles play/pause for current gallery video and prevents default when open (E2E 이관 완료: Phase 82.7 K4)', async () => {
-    const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
+  // Phase 96.1: CI 환경에서는 JSDOM 비디오 이벤트 처리 불안정으로 Skip
+  // E2E 테스트로 기능 검증 완료 (Phase 82.7 K4)
+  it.skipIf(process.env.CI === 'true')(
+    'Space toggles play/pause for current gallery video and prevents default when open (E2E 이관 완료: Phase 82.7 K4)',
+    async () => {
+      const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
 
-    const handled: string[] = [];
-    await initializeGalleryEvents(
-      {
-        onMediaClick: vi.fn(async () => {}),
-        onGalleryClose: vi.fn(() => handled.push('close')),
-        onKeyboardEvent: vi.fn((e: any) => handled.push((e && (e as any).key) as string)),
-      },
-      { enableKeyboard: true, enableMediaDetection: false }
-    );
-
-    const { video } = mountGalleryWithVideo(0);
-
-    // Open gallery with a video item
-    openGallery(
-      [
+      const handled: string[] = [];
+      await initializeGalleryEvents(
         {
-          id: 'v1',
-          url: 'https://video.twimg.com/video/abc.mp4',
-          originalUrl: 'https://video.twimg.com/video/abc.mp4',
-          type: 'video',
-          filename: 'abc.mp4',
+          onMediaClick: vi.fn(async () => {}),
+          onGalleryClose: vi.fn(() => handled.push('close')),
+          onKeyboardEvent: vi.fn((e: any) => handled.push((e && (e as any).key) as string)),
         },
-      ],
-      0
-    );
+        { enableKeyboard: true, enableMediaDetection: false }
+      );
 
-    function dispatchKey(key: string) {
-      const EvCtor: any = (globalThis as any).KeyboardEvent;
-      const ev = new EvCtor('keydown', { key, bubbles: true, cancelable: true });
-      const ok = (globalThis as any).document.dispatchEvent(ev);
-      return { defaultPrevented: ev.defaultPrevented, dispatched: ok };
+      const { video } = mountGalleryWithVideo(0);
+
+      // Open gallery with a video item
+      openGallery(
+        [
+          {
+            id: 'v1',
+            url: 'https://video.twimg.com/video/abc.mp4',
+            originalUrl: 'https://video.twimg.com/video/abc.mp4',
+            type: 'video',
+            filename: 'abc.mp4',
+          },
+        ],
+        0
+      );
+
+      function dispatchKey(key: string) {
+        const EvCtor: any = (globalThis as any).KeyboardEvent;
+        const ev = new EvCtor('keydown', { key, bubbles: true, cancelable: true });
+        const ok = (globalThis as any).document.dispatchEvent(ev);
+        return { defaultPrevented: ev.defaultPrevented, dispatched: ok };
+      }
+
+      // First press → play()
+      let r = dispatchKey(' ');
+      expect(r.defaultPrevented).toBe(true);
+      expect((video as unknown as { play: () => Promise<void> }).play).toHaveBeenCalledTimes(1);
+
+      // Second press → pause()
+      r = dispatchKey(' ');
+      expect(r.defaultPrevented).toBe(true);
+      expect((video as unknown as { pause: () => void }).pause).toHaveBeenCalledTimes(1);
+
+      cleanupGalleryEvents();
     }
+  );
 
-    // First press → play()
-    let r = dispatchKey(' ');
-    expect(r.defaultPrevented).toBe(true);
-    expect((video as unknown as { play: () => Promise<void> }).play).toHaveBeenCalledTimes(1);
+  // Phase 96.1: CI 환경에서는 JSDOM 비디오 이벤트 처리 불안정으로 Skip
+  // E2E 테스트로 기능 검증 완료 (Phase 82.7 K5)
+  it.skipIf(process.env.CI === 'true')(
+    'ArrowUp/ArrowDown adjust volume and prevent default; M toggles mute (E2E 이관 완료: Phase 82.7 K5)',
+    async () => {
+      const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
 
-    // Second press → pause()
-    r = dispatchKey(' ');
-    expect(r.defaultPrevented).toBe(true);
-    expect((video as unknown as { pause: () => void }).pause).toHaveBeenCalledTimes(1);
-
-    cleanupGalleryEvents();
-  });
-
-  it('ArrowUp/ArrowDown adjust volume and prevent default; M toggles mute (E2E 이관 완료: Phase 82.7 K5)', async () => {
-    const { initializeGalleryEvents, cleanupGalleryEvents, openGallery } = await setup();
-
-    await initializeGalleryEvents(
-      {
-        onMediaClick: vi.fn(async () => {}),
-        onGalleryClose: vi.fn(() => {}),
-        onKeyboardEvent: vi.fn(() => {}),
-      },
-      { enableKeyboard: true, enableMediaDetection: false }
-    );
-
-    const { video } = mountGalleryWithVideo(0);
-
-    openGallery(
-      [
+      await initializeGalleryEvents(
         {
-          id: 'v1',
-          url: 'https://video.twimg.com/video/abc.mp4',
-          originalUrl: 'https://video.twimg.com/video/abc.mp4',
-          type: 'video',
-          filename: 'abc.mp4',
+          onMediaClick: vi.fn(async () => {}),
+          onGalleryClose: vi.fn(() => {}),
+          onKeyboardEvent: vi.fn(() => {}),
         },
-      ],
-      0
-    );
+        { enableKeyboard: true, enableMediaDetection: false }
+      );
 
-    function dispatchKey(key: string) {
-      const EvCtor: any = (globalThis as any).KeyboardEvent;
-      const ev = new EvCtor('keydown', { key, bubbles: true, cancelable: true });
-      const ok = (globalThis as any).document.dispatchEvent(ev);
-      return { defaultPrevented: ev.defaultPrevented, dispatched: ok };
+      const { video } = mountGalleryWithVideo(0);
+
+      openGallery(
+        [
+          {
+            id: 'v1',
+            url: 'https://video.twimg.com/video/abc.mp4',
+            originalUrl: 'https://video.twimg.com/video/abc.mp4',
+            type: 'video',
+            filename: 'abc.mp4',
+          },
+        ],
+        0
+      );
+
+      function dispatchKey(key: string) {
+        const EvCtor: any = (globalThis as any).KeyboardEvent;
+        const ev = new EvCtor('keydown', { key, bubbles: true, cancelable: true });
+        const ok = (globalThis as any).document.dispatchEvent(ev);
+        return { defaultPrevented: ev.defaultPrevented, dispatched: ok };
+      }
+
+      const initialVolume = video.volume;
+      let r = dispatchKey('ArrowUp');
+      expect(r.defaultPrevented).toBe(true);
+      expect(video.volume).toBeGreaterThan(initialVolume);
+
+      r = dispatchKey('ArrowDown');
+      expect(r.defaultPrevented).toBe(true);
+      expect(video.volume).toBeLessThanOrEqual(initialVolume);
+
+      const prevMuted = video.muted;
+      r = dispatchKey('m');
+      expect(r.defaultPrevented).toBe(true);
+      expect(video.muted).toBe(!prevMuted);
+
+      r = dispatchKey('M');
+      expect(r.defaultPrevented).toBe(true);
+      expect(video.muted).toBe(prevMuted);
+
+      cleanupGalleryEvents();
     }
-
-    const initialVolume = video.volume;
-    let r = dispatchKey('ArrowUp');
-    expect(r.defaultPrevented).toBe(true);
-    expect(video.volume).toBeGreaterThan(initialVolume);
-
-    r = dispatchKey('ArrowDown');
-    expect(r.defaultPrevented).toBe(true);
-    expect(video.volume).toBeLessThanOrEqual(initialVolume);
-
-    const prevMuted = video.muted;
-    r = dispatchKey('m');
-    expect(r.defaultPrevented).toBe(true);
-    expect(video.muted).toBe(!prevMuted);
-
-    r = dispatchKey('M');
-    expect(r.defaultPrevented).toBe(true);
-    expect(video.muted).toBe(prevMuted);
-
-    cleanupGalleryEvents();
-  });
+  );
 });
