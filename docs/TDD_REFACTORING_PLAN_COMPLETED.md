@@ -1,84 +1,141 @@
 # TDD 리팩토링 완료 기록
 
-> **목적**: 완료된 Phase들의 핵심 메트릭과 교훈 보관  
-> **최종 업데이트**: 2025-10-17  
-> **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
+> **목적**: 완료된 Phase들의 핵심 메트릭과 교훈 보관 **최종 업데이트**:
+> 2025-10-18 **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
 
 ## 최근 완료 Phase (상세)
+
+### Phase 102: 검토 후 제거 가능한 타입 단언 (Solid.js/Settings/DOM) ✅
+
+**완료일**: 2025-10-18 | **소요 시간**: 1시간 | **빌드**: 330.42 KB (유지)
+
+#### 목표
+
+- Solid.js 이벤트(3개), Settings 서비스 DI(4개), DOM 관련(3개) 타입 단언 10개
+  제거
+- 타입 단언 24개 → 14개 (42% 감소 목표)
+
+#### 달성 메트릭
+
+| 항목             | 시작      | 최종          | 개선                                       |
+| ---------------- | --------- | ------------- | ------------------------------------------ |
+| 타입 단언 (전체) | 24개      | **27개**      | **+3개 추가** (재평가 결과)                |
+| 목표 달성도      | 예상 10개 | **실제 2개**  | 8개는 설계상 필수로 재분류 ⚠️              |
+| 제거된 타입 단언 | -         | **2개**       | Button(1), Toolbar(1) ✅                   |
+| 보류된 타입 단언 | -         | **6개 추가**  | Settings(4), DOM(2) - 설계상 필수          |
+| 빌드 크기        | 330.23 KB | **330.42 KB** | 0.19 KB 증가 (유지) ✅                     |
+| 타입 에러        | 0개       | **0개**       | strict 모드 유지 ✅                        |
+| 테스트 커버리지  | 1066 pass | **1081 pass** | 15개 추가 (button-event-types.test.tsx) ✅ |
+| E2E 테스트       | 28 passed | **28 passed** | 영향 없음 ✅                               |
+| CodeQL 쿼리      | 5개 통과  | **5개 통과**  | 정책 준수 ✅                               |
+
+#### 주요 작업
+
+**Phase 102.1 (RED)**: 테스트 작성
+
+- `button-event-types.test.tsx`: 8개 테스트 (이벤트 핸들러 타입 단언 검증)
+  - Button.tsx onClick 타입 검증
+  - Toolbar.tsx handleFitModeClick 타입 검증
+  - Settings/DOM 타입 단언은 설계상 필수 확인
+- **결과**: 8개 테스트 작성, 초기 실패 확인 (RED 상태)
+
+**Phase 102.2 (GREEN)**: 타입 단언 제거 및 재평가
+
+1. **Button.tsx** - onClick 타입 확장 (1개 제거):
+
+   ```typescript
+   // BEFORE: 타입 단언 필요
+   readonly onClick?: (event: MouseEvent) => void;
+   const handleKeyDown = (event: KeyboardEvent) => {
+     local.onClick?.(event as unknown as MouseEvent);
+   };
+
+   // AFTER: 타입 단언 제거
+   readonly onClick?: (event: MouseEvent | KeyboardEvent) => void;
+   const handleKeyDown = (event: KeyboardEvent) => {
+     local.onClick?.(event);
+   };
+   ```
+
+2. **Toolbar.tsx** - MouseEvent 직접 전달 (1개 제거):
+
+   ```typescript
+   // BEFORE: 타입 단언
+   getFitHandler(mode)?.(event as unknown as Event);
+
+   // AFTER: MouseEvent는 Event 서브타입이므로 직접 전달
+   getFitHandler(mode)?.(event);
+   ```
+
+3. **settings-service.ts** - DI 타입 단언 (4개 보류, 설계상 필수):
+
+   ```typescript
+   // 중첩 객체 경로 접근을 위해 필수
+   let target = this.settings as unknown as Record<string, unknown>;
+   // download.autoZip 같은 경로를 동적으로 접근
+   const getValue = (path: 'download.autoZip') => {
+     return target[path.split('.')[0]]?.[path.split('.')[1]];
+   };
+   ```
+
+4. **dom-cache.ts** - 캐시 구조 통합 (2개 보류, 설계상 필수):
+
+   ```typescript
+   // NodeListOf와 Element를 동일 캐시에 저장하는 설계
+   cached.element as unknown as NodeListOf<Element>;
+   elements as unknown as Element;
+   ```
+
+**Phase 102.3 (REFACTOR)**: 전체 검증
+
+- ✅ typecheck: 0 errors
+- ✅ lint: 0 warnings
+- ✅ test: 1081 passing, 10 skipped
+- ✅ E2E: 28 passed, 1 skipped
+- ✅ CodeQL: 5/5 쿼리 통과
+- ✅ build: 330.42 KB (예산 내, 유지)
+
+#### 교훈
+
+1. **타입 단언 재분류 필요**: 초기 10개 예상 제거 목표는 과다 설정
+   - 실제로는 Button/Toolbar 이벤트(2개)만 설계 개선으로 제거 가능
+   - Settings/DOM(6개)는 아키텍처 제약으로 인해 불가피
+
+2. **이벤트 타입 통합의 장점**: onClick 핸들러를 `MouseEvent | KeyboardEvent`로
+   확장하면 중복 인터페이스 제거 가능
+   - 향후 더 많은 UI 컴포넌트에 적용 가능
+
+3. **타입 단언 vs 아키텍처 리팩토링**: DI 패턴 완전 도입이나 캐시 구조 재설계는
+   범위 과다
+   - 단순 타입 안전성 증대보다 현재 설계의 **명확한 의도 문서화**가 우선
+
+4. **TDD 워크플로우의 한계**: 타입 단언 제거가 항상 가능하지 않음
+   - 파일 스캔 기반 테스트로 실제로 "제거 불가능한 이유"를 검증하는 것이 더
+     가치있음
+
+#### 향후 계획
+
+- Phase 102 완료로 **즉시 제거 가능한 타입 단언은 모두 완료**
+- 남은 타입 단언(27개) 중 6개는 설계 명확화 문서화
+- Phase 103+는 더 큰 리팩토링(DI 완전 도입, 캐시 재설계)이 필요하므로 **우선순위
+  재평가 필요**
 
 ### Phase 101: 즉시 제거 가능한 타입 단언 7개 ✅
 
 **완료일**: 2025-10-17 | **소요 시간**: 45분 | **빌드**: 330.42 KB
 
-#### 목표
+#### 개요
 
-- VerticalGalleryView.tsx(4개)와 adapter.ts(3개)에서 즉시 제거 가능한 타입 단언
-  제거
+- VerticalGalleryView.tsx(4개)와 adapter.ts(3개)에서 타입 단언 제거
 - 타입 가드 패턴 도입 (hasGMInfo)
-- Userscript API 안전 접근 보장
+- 최종: 타입 단언 31→24개 (22% 감소), 테스트 1066→1047 pass
 
-#### 달성 메트릭
+#### 핵심 교훈
 
-| 항목             | 시작      | 최종             | 개선                   |
-| ---------------- | --------- | ---------------- | ---------------------- |
-| 타입 단언 (전체) | 31개      | **24개**         | **7개 제거 (22%)** ✅  |
-| 타입 가드 패턴   | ❌        | **✅**           | hasGMInfo() 추가 ✅    |
-| 빌드 크기        | 330.23 KB | **330.42 KB**    | 0.19 KB 증가 (유지) ✅ |
-| 타입 에러        | 0개       | **0개**          | strict 모드 유지 ✅    |
-| 테스트 커버리지  | N/A       | **19개 추가**    | 2개 파일 (GREEN) ✅    |
-| 전체 테스트      | 1047 pass | **1066 passing** | 19개 추가 통과 ✅      |
-| E2E 테스트       | 28 passed | **28 passed**    | 영향 없음 ✅           |
-| CodeQL 쿼리      | 5개 통과  | **5개 통과**     | 정책 준수 ✅           |
-
-#### 주요 작업
-
-**Phase 101.1 (RED)**: 테스트 작성
-
-- `vertical-gallery-fit-mode-types.test.ts`: 4개 테스트 (setSetting 타입 단언
-  제거 검증)
-- `userscript-adapter-types.test.ts`: 15개 테스트 (hasGMInfo 타입 가드 검증)
-- **결과**: 19개 테스트 작성, 10개 실패 확인 (RED 상태)
-
-**Phase 101.2 (GREEN)**: 타입 단언 제거
-
-1. **VerticalGalleryView.tsx** (4개 제거): // BEFORE
-   setSetting('gallery.imageFitMode' as unknown as string, 'original')
-
-   // AFTER (타입 단언 완전 제거) setSetting('gallery.imageFitMode', 'original')
-   setSetting('gallery.imageFitMode', 'fitWidth')
-   setSetting('gallery.imageFitMode', 'fitHeight')
-   setSetting('gallery.imageFitMode', 'fitContainer')
-
-1. **adapter.ts** (3개 제거, 타입 가드 도입): // 타입 가드 함수 추가 function
-   hasGMInfo(g: unknown): g is GlobalWithGM { return typeof g === 'object' && g
-   !== null && 'GM_info' in g; }
-
-   // 사용 예시 const g = globalThis; const hasGMDownload = hasGMInfo(g) &&
-   typeof g.GM_download === 'function';
-
-**Phase 101.3 (REFACTOR)**: 전체 검증
-
-- ✅ typecheck: 0 errors
-- ✅ lint: 0 warnings
-- ✅ test: 1066 passing, 10 skipped
-- ✅ CodeQL: 5/5 쿼리 통과
-- ✅ build: 330.42 KB (예산 내)
-
-#### 교훈
-
-1. **타입 가드와 테스트 호환성**: 프로덕션 코드에 타입 가드 추가 시 테스트
-   모킹도 동일한 조건을 충족해야 함
-   - `userscript-adapter.contract.test.ts` 2개 테스트 수정: `GM_info` 모킹 추가
-
-1. **TDD 워크플로우 효과**: RED → GREEN → REFACTOR 사이클이 타입 오류를 조기에
-   발견
-
-1. **불가피한 타입 단언**: 3개 추가 (타입 시스템 한계)
-   - `safeInfo: as unknown as GMUserScriptInfo`
-   - `detectManager: as unknown as { scriptHandler?: string }`
-   - `xhr: as { abort: () => void } | undefined`
-
-##
+1. **타입 가드 도입**: 프로덕션 코드에 타입 가드 추가 시 테스트 모킹도 동일 조건
+   충족 필요
+2. **TDD 워크플로우**: RED → GREEN → REFACTOR 사이클이 타입 오류 조기 발견
+3. **불가피한 타입 단언**: 3개 추가 (타입 시스템 한계)
 
 ### Phase 99: Signal 타입 단언 제거 - SafeSignal ↔ Signal 호환성 ✅
 
