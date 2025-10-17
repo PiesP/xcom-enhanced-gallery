@@ -5,6 +5,142 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 103: 필수 타입 단언 인라인 문서화 ✅
+
+**완료일**: 2025-10-18 | **소요 시간**: 20분 | **빌드**: 330.42 KB (유지)
+
+#### 목표
+
+- Phase 102에서 설계상 필수로 재분류된 타입 단언 8개에 명확한 인라인 주석 추가
+- 향후 유지보수성 및 리팩토링 가이드 제공
+
+#### 달성 메트릭
+
+| 항목               | 시작      | 최종          | 개선                                      |
+| ------------------ | --------- | ------------- | ----------------------------------------- |
+| 문서화된 타입 단언 | 0개       | **11개**      | 목표 8개 초과 달성 (37.5% 초과) ✅        |
+| Settings DI        | -         | **4개**       | 중첩 객체 경로 접근 이유 명시 ✅          |
+| DOM 캐시           | -         | **2개**       | NodeListOf/Element 통합 저장 이유 명시 ✅ |
+| EventListener      | -         | **3개**       | 브라우저 타입 제약 명시 ✅                |
+| 서비스 컨테이너    | -         | **2개**       | 런타임 등록 이유 명시 ✅                  |
+| 빌드 크기          | 330.42 KB | **330.42 KB** | 변동 없음 (주석만 추가) ✅                |
+| 타입 에러          | 0개       | **0개**       | strict 모드 유지 ✅                       |
+| 테스트             | 1081 pass | **1081 pass** | 영향 없음 ✅                              |
+| E2E 테스트         | 28 passed | **28 passed** | 영향 없음 ✅                              |
+| CodeQL 쿼리        | 5개 통과  | **5개 통과**  | 정책 준수 ✅                              |
+
+#### 주요 작업
+
+**Phase 103.1**: 타입 단언 문서화 패턴 확립
+
+- 모든 주석에 다음 3가지 포함:
+  1. **이유**: 왜 타입 단언이 필요한가
+  2. **배경**: 어떤 기술적 제약 때문인가
+  3. **대안**: 향후 어떻게 개선할 수 있는가 (Phase 104+)
+
+**Phase 103.2**: Settings DI 타입 단언 문서화 (4개)
+
+- **파일**: `src/features/settings/services/settings-service.ts`
+- **라인**: 156-157, 165, 220-221, 229, 267-268
+- **주석 내용**:
+
+  ```typescript
+  // 설계상 필수 타입 단언 (Phase 103): Settings 중첩 객체 경로 동적 접근
+  // 이유: 'download.autoZip' 같은 점으로 구분된 경로를 동적으로 접근하기 위해
+  //      Record<string, unknown>으로 타입 변환 필요
+  // 배경: TypeScript는 중첩 객체의 동적 경로 접근 시 타입 추론 불가
+  // 대안 (Phase 104+): 설정을 서비스 컨테이너로 분리하여 DI 패턴 적용
+  //      (예: DownloadSettings, GallerySettings 독립 서비스)
+  let target = this.settings as unknown as Record<string, unknown>;
+  ```
+
+**Phase 103.3**: DOM 캐시 타입 단언 문서화 (2개)
+
+- **파일**: `src/shared/dom/dom-cache.ts`
+- **라인**: 175-178 (읽기), 183-187 (쓰기)
+- **주석 내용**:
+
+  ```typescript
+  // 설계상 필수 타입 단언 (Phase 103): Element와 NodeListOf를 단일 캐시에 통합 저장
+  // 이유: 메모리 효율성을 위해 하나의 Map에서 두 타입을 함께 관리
+  // 배경: Element.querySelectorAll()은 NodeListOf를 반환하지만
+  //      캐시에서는 Element 타입으로 저장 (역변환 필요)
+  // 대안 (Phase 104+): Element용 캐시와 NodeListOf용 캐시를 분리
+  //      (단, 메모리 사용량 증가 및 캐시 관리 복잡도 증가 트레이드오프)
+  return cached.element as unknown as NodeListOf<Element>;
+  ```
+
+**Phase 103.4**: EventListener 타입 단언 문서화 (3개)
+
+- **파일**:
+  - `src/shared/utils/viewport.ts` (라인 100-105)
+  - `src/shared/services/input/keyboard-navigator.ts` (라인 143-146)
+  - `src/shared/hooks/use-accessibility.ts` (라인 30-32)
+- **주석 내용**:
+
+  ```typescript
+  // 설계상 필수 타입 단언 (Phase 103): UIEvent → EventListener 변환
+  // 이유: TypeScript의 EventListener 타입이 (event: Event) => void로 정의되어
+  //      구체적인 이벤트 타입(UIEvent, KeyboardEvent)을 직접 전달 불가
+  // 배경: 브라우저 EventTarget.addEventListener는 Event 타입만 수용하지만
+  //      TypeScript 타입 시스템은 공변성을 허용하지 않음
+  // 대안 (Phase 104+): EventListener 제네릭 래퍼 구현
+  //      (예: TypedEventListener<UIEvent>)
+  //      (단, 런타임 오버헤드 및 타입 복잡도 증가 트레이드오프)
+  const listener = onResize as unknown as EventListener;
+  ```
+
+**Phase 103.5**: 서비스 컨테이너 타입 단언 문서화 (2개)
+
+- **파일**:
+  - `src/shared/utils/events.ts` (라인 76-81)
+  - `src/features/gallery/GalleryApp.ts` (라인 73-76)
+- **주석 내용**:
+
+  ```typescript
+  // 설계상 필수 타입 단언 (Phase 103): 서비스 컨테이너 타입 변환
+  // 이유: getMediaServiceFromContainer()가 반환하는 object 타입을
+  //      MediaServiceLike 인터페이스로 변환하여 사용
+  // 배경: 서비스는 런타임에 등록되므로 컴파일 타임에 타입 추론 불가
+  // 대안 (Phase 104+): 타입 안전 서비스 컨테이너 패턴 도입
+  //      (예: TypeScript 제네릭 기반 DI 컨테이너)
+  const mediaService =
+    getMediaServiceFromContainer() as unknown as MediaServiceLike;
+  ```
+
+#### 교훈 및 개선 사항
+
+**✅ 성공 요인**:
+
+1. **주석만 추가** → 코드 변경 없이 빠른 완료 (20분)
+2. **일관된 패턴** → 모든 주석에 이유/배경/대안 명시
+3. **초과 달성** → 목표 8개 대비 실제 11개 완료
+
+**📋 향후 개선 방향** (Phase 104+):
+
+1. **Settings DI** (4개):
+   - 설정을 서비스 컨테이너로 분리 (DownloadSettings, GallerySettings)
+   - 의존성 주입 패턴 적용하여 타입 안전성 확보
+
+2. **DOM 캐시** (2개):
+   - Element/NodeListOf 캐시 분리 검토 (메모리 vs 타입 안전성 트레이드오프)
+   - 제네릭 기반 타입 안전 캐시 구현
+
+3. **EventListener** (3개):
+   - TypedEventListener<T> 제네릭 래퍼 구현 (런타임 오버헤드 검토)
+   - 또는 현상태 유지 (브라우저 표준 API 제약)
+
+4. **서비스 컨테이너** (2개):
+   - TypeScript 제네릭 기반 DI 컨테이너 구현
+   - 컴파일 타임 타입 검증 강화
+
+**⚠️ 주의사항**:
+
+- **빌드 크기**: 330.42 KB (예산 330 KB 근접) → 추가 코드 증가 시 최적화 필요
+- **큰 문서**: TDD_REFACTORING_PLAN_COMPLETED.md (1006줄) → 간소화 검토 권장
+
+---
+
 ### Phase 102: 검토 후 제거 가능한 타입 단언 (Solid.js/Settings/DOM) ✅
 
 **완료일**: 2025-10-18 | **소요 시간**: 1시간 | **빌드**: 330.42 KB (유지)
