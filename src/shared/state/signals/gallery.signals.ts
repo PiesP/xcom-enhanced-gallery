@@ -172,6 +172,11 @@ export const galleryState = {
   },
 };
 
+// Phase 99: Signal 타입 단언 제거 완료
+// galleryState는 이미 { value: GalleryState } getter 구조를 구현하고 있어
+// useSelector의 Signal<T> 타입 요구사항과 호환됩니다.
+// 별도 Accessor 래퍼나 from() 변환이 불필요합니다.
+
 // Action Functions
 // =============================================================================
 

@@ -60,22 +60,19 @@ function VerticalGalleryViewCore({
   const { createSignal, createMemo, createEffect, onCleanup, on } = solidAPI;
 
   const mediaItems = useSelector<GalleryState, readonly MediaInfo[]>(
-    galleryState as unknown as { value: GalleryState },
+    galleryState,
     state => state.mediaItems,
     { dependencies: state => [state.mediaItems] }
   );
 
   const currentIndex = useSelector<GalleryState, number>(
-    galleryState as unknown as { value: GalleryState },
+    galleryState,
     state => state.currentIndex,
     { dependencies: state => [state.currentIndex] }
   );
 
   const isDownloading = useCombinedSelector(
-    [
-      galleryState as unknown as { value: GalleryState },
-      downloadState as unknown as { value: typeof downloadState.value },
-    ] as const,
+    [galleryState, downloadState] as const,
     (g, d) => Boolean(g.isLoading || d.isProcessing),
     (g, d) => [g.isLoading, d.isProcessing]
   );

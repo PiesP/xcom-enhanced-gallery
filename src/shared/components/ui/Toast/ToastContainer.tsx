@@ -4,7 +4,7 @@
 
 import { getSolid, type JSXElement } from '@shared/external/vendors';
 import { useSelector } from '@shared/utils/signal-selector';
-import { UnifiedToastManager, type ToastItem } from '@/shared/services/unified-toast-manager';
+import { UnifiedToastManager } from '@/shared/services/unified-toast-manager';
 import { ComponentStandards } from '../StandardProps';
 import type { StandardToastContainerProps } from '../StandardProps';
 import type { BaseComponentProps } from '../../base/BaseComponentProps';
@@ -43,10 +43,7 @@ export function ToastContainer(rawProps: ToastContainerProps = {}): JSXElement {
   ]);
 
   const manager = UnifiedToastManager.getInstance();
-  const currentToasts = useSelector(
-    manager.signal as unknown as { value: ToastItem[] },
-    state => state
-  );
+  const currentToasts = useSelector(manager.signal, state => state);
 
   const limitedToasts = createMemo(() => currentToasts().slice(0, local.maxToasts));
 

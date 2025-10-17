@@ -76,7 +76,7 @@ export function useGalleryScroll({
   const enableScrollDirectionAccessor = toAccessor(enableScrollDirection);
 
   const isGalleryOpen = useSelector<GalleryState, boolean>(
-    galleryState as unknown as { value: GalleryState },
+    galleryState,
     (state: GalleryState) => state.isOpen,
     { dependencies: state => [state.isOpen] }
   );
