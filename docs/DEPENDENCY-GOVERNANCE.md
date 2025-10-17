@@ -30,9 +30,9 @@ npm run deps:graph
 npm run deps:all
 ```
 
-## CI 실패 조건
+-## CI 실패 조건
 
-- 빌드 훅: `prebuild:dev`/`prebuild:prod`에서 의존성 검사 실행
+- 빌드 훅: `prebuild`에서 의존성 검사 실행
 - CI: Lint/Typecheck 이후 deps 검사 실행
 - 위반 발생 시 빌드 실패
 

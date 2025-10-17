@@ -160,11 +160,11 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔨 Development build
-        run: npm run build:dev
+      - name: 🔨 Development build (direct)
+        run: npx vite build --mode development
 
-      - name: 🚀 Production build
-        run: npm run build:prod
+      - name: 🚀 Production build (direct)
+        run: npx vite build --mode production
 
       - name: ✅ Validate build outputs
         run: node ./scripts/validate-build.js

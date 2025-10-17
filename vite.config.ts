@@ -98,7 +98,7 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @noframes\n` +
-    `// ==/UserScript==\n\n`
+    `// ==/UserScript==\n`
   );
 }
 

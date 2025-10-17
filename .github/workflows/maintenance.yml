@@ -72,7 +72,7 @@ jobs:
         run: |
           echo "## 빌드 크기" >> report.md
           echo "" >> report.md
-          npm run build:prod 2>&1 || true
+          npx vite build --mode production 2>&1 || true
           if [ -f dist/xcom-enhanced-gallery.user.js ]; then
             size=$(wc -c < dist/xcom-enhanced-gallery.user.js)
             size_kb=$((size / 1024))

@@ -120,13 +120,13 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🔨 Development build
-        run: npm run build:dev
+      - name: 🔨 Development build (direct)
+        run: npx vite build --mode development
 
-      - name: 🏗️ Build production
+      - name: 🏗️ Build production (direct)
         run: |
           echo "🚀 Building production version..."
-          npm run build:prod
+          npx vite build --mode production
 
       - name: ✅ Validate build outputs
         run: node ./scripts/validate-build.js
