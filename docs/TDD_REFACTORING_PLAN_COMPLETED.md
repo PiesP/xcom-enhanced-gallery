@@ -1,13 +1,88 @@
 # TDD 리팩토링 완료 기록
 
-> **목적**: 완료된 Phase들의 핵심 메트릭과 교훈 보관 **최종 업데이트**:
-> 2025-10-17 **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
+> **목적**: 완료된 Phase들의 핵심 메트릭과 교훈 보관  
+> **최종 업데이트**: 2025-10-17  
+> **정책**: 최근 3개 Phase만 상세 보관, 나머지는 요약 테이블 유지
 
 ## 최근 완료 Phase (상세)
 
+### Phase 101: 즉시 제거 가능한 타입 단언 7개 ✅
+
+**완료일**: 2025-10-17 | **소요 시간**: 45분 | **빌드**: 330.42 KB
+
+#### 목표
+
+- VerticalGalleryView.tsx(4개)와 adapter.ts(3개)에서 즉시 제거 가능한 타입 단언
+  제거
+- 타입 가드 패턴 도입 (hasGMInfo)
+- Userscript API 안전 접근 보장
+
+#### 달성 메트릭
+
+| 항목             | 시작      | 최종             | 개선                   |
+| ---------------- | --------- | ---------------- | ---------------------- |
+| 타입 단언 (전체) | 31개      | **24개**         | **7개 제거 (22%)** ✅  |
+| 타입 가드 패턴   | ❌        | **✅**           | hasGMInfo() 추가 ✅    |
+| 빌드 크기        | 330.23 KB | **330.42 KB**    | 0.19 KB 증가 (유지) ✅ |
+| 타입 에러        | 0개       | **0개**          | strict 모드 유지 ✅    |
+| 테스트 커버리지  | N/A       | **19개 추가**    | 2개 파일 (GREEN) ✅    |
+| 전체 테스트      | 1047 pass | **1066 passing** | 19개 추가 통과 ✅      |
+| E2E 테스트       | 28 passed | **28 passed**    | 영향 없음 ✅           |
+| CodeQL 쿼리      | 5개 통과  | **5개 통과**     | 정책 준수 ✅           |
+
+#### 주요 작업
+
+**Phase 101.1 (RED)**: 테스트 작성
+
+- `vertical-gallery-fit-mode-types.test.ts`: 4개 테스트 (setSetting 타입 단언
+  제거 검증)
+- `userscript-adapter-types.test.ts`: 15개 테스트 (hasGMInfo 타입 가드 검증)
+- **결과**: 19개 테스트 작성, 10개 실패 확인 (RED 상태)
+
+**Phase 101.2 (GREEN)**: 타입 단언 제거
+
+1. **VerticalGalleryView.tsx** (4개 제거): // BEFORE
+   setSetting('gallery.imageFitMode' as unknown as string, 'original')
+
+   // AFTER (타입 단언 완전 제거) setSetting('gallery.imageFitMode', 'original')
+   setSetting('gallery.imageFitMode', 'fitWidth')
+   setSetting('gallery.imageFitMode', 'fitHeight')
+   setSetting('gallery.imageFitMode', 'fitContainer')
+
+1. **adapter.ts** (3개 제거, 타입 가드 도입): // 타입 가드 함수 추가 function
+   hasGMInfo(g: unknown): g is GlobalWithGM { return typeof g === 'object' && g
+   !== null && 'GM_info' in g; }
+
+   // 사용 예시 const g = globalThis; const hasGMDownload = hasGMInfo(g) &&
+   typeof g.GM_download === 'function';
+
+**Phase 101.3 (REFACTOR)**: 전체 검증
+
+- ✅ typecheck: 0 errors
+- ✅ lint: 0 warnings
+- ✅ test: 1066 passing, 10 skipped
+- ✅ CodeQL: 5/5 쿼리 통과
+- ✅ build: 330.42 KB (예산 내)
+
+#### 교훈
+
+1. **타입 가드와 테스트 호환성**: 프로덕션 코드에 타입 가드 추가 시 테스트
+   모킹도 동일한 조건을 충족해야 함
+   - `userscript-adapter.contract.test.ts` 2개 테스트 수정: `GM_info` 모킹 추가
+
+1. **TDD 워크플로우 효과**: RED → GREEN → REFACTOR 사이클이 타입 오류를 조기에
+   발견
+
+1. **불가피한 타입 단언**: 3개 추가 (타입 시스템 한계)
+   - `safeInfo: as unknown as GMUserScriptInfo`
+   - `detectManager: as unknown as { scriptHandler?: string }`
+   - `xhr: as { abort: () => void } | undefined`
+
+##
+
 ### Phase 99: Signal 타입 단언 제거 - SafeSignal ↔ Signal 호환성 ✅
 
-**완료일**: 2025-10-17 **소요 시간**: 1시간 **빌드**: 330.23 KB (유지)
+**완료일**: 2025-10-17 | **소요 시간**: 1시간 | **빌드**: 330.23 KB (유지)
 
 #### 목표
 
@@ -73,7 +148,7 @@
    );
    ```
 
-2. **useGalleryScroll.ts** (1개 제거):
+1. **useGalleryScroll.ts** (1개 제거):
 
    ```typescript
    // BEFORE
@@ -89,7 +164,7 @@
    );
    ```
 
-3. **VerticalGalleryView.tsx** (4개 제거):
+1. **VerticalGalleryView.tsx** (4개 제거):
    - `galleryState as unknown as { value: GalleryState }` 3곳 제거
    - `downloadState as unknown as { value: typeof downloadState.value }` 1곳
      제거
@@ -112,12 +187,12 @@
    - 이미 Signal 타입을 가진 경우 불필요
    - SafeSignal은 이미 Signal 인터페이스를 구현하고 있음
 
-2. **인터페이스 호환성**:
+1. **인터페이스 호환성**:
    - `SafeSignal<T>`: `{ value: T, subscribe: (callback) => unsubscribe }`
    - `Signal<T>`: `{ value: T }` (useSelector 요구사항)
    - TypeScript의 구조적 타이핑으로 자동 호환 (서브타입 관계)
 
-3. **타입 단언 제거 패턴**:
+1. **타입 단언 제거 패턴**:
 
    ```typescript
    // ❌ 잘못된 접근: 불필요한 래퍼
@@ -128,7 +203,7 @@
    useSelector(signal, ...);  // Signal 인터페이스 자동 구현
    ```
 
-4. **타입 시스템 이해**:
+1. **타입 시스템 이해**:
    - 타입 단언은 "나중에 생각하기" 패턴 (기술 부채)
    - 실제로는 이미 타입이 호환되는 경우가 많음
    - 명시적 타입 정의 > 암묵적 타입 단언
@@ -140,7 +215,7 @@
   - 브라우저 API 관련 단언 (필요성 검토)
   - 기타 남은 단언 (개별 검토)
 
----
+##
 
 ### Phase 98: Icon Registry 타입 안전성 - 타입 단언 제거 ✅
 
@@ -248,7 +323,7 @@
 - Icon 사용처(Toolbar, Gallery) 변경 불필요
 - 타입 정의 개선이 전체 시스템에 긍정적 영향 (자동 추론 개선)
 
----
+##
 
 ### Phase 97: Result 패턴 통합 - 타입 시스템 간결화 ✅
 
@@ -316,8 +391,8 @@ core-types.ts → app.types.ts (잠재적 순환)
 **시도한 방법**:
 
 1. ❌ `export type { BaseService }` → TS1205 오류 (isolatedModules)
-2. ❌ re-export 패턴 → TS2304 오류 (extends 절에서 타입 인식 실패)
-3. ✅ 분리 + 중복 정의:
+1. ❌ re-export 패턴 → TS2304 오류 (extends 절에서 타입 인식 실패)
+1. ✅ 분리 + 중복 정의:
    - `base-service.types.ts` 생성 (toast-controller 전용)
    - `core-types.ts`에 BaseService 인라인 정의 (extends 절 호환)
 
@@ -352,23 +427,32 @@ core-types.ts → app.types.ts (잠재적 순환)
 #### 검증 결과
 
 ```pwsh
+
 # 타입 체크
+
 npm run typecheck  # 0 errors ✅
 
 # 테스트
+
 npm test           # 1117 passing ✅
+
 # Result 패턴 테스트 15개 모두 GREEN
 
 # 의존성 검증
+
 npm run deps:check # 0 violations ✅
 
 # 빌드
+
 npm run build      # 330.23 KB ✅
+
 # CodeQL: 5/5 쿼리 통과
+
 # E2E: 28 passed / 1 skipped
+
 ```
 
-#### 코드 변경 요약
+## 코드 변경 요약
 
 **`core-types.ts`**:
 
@@ -439,7 +523,7 @@ import type { BaseService } from '@shared/types/app.types';
 import type { BaseService } from '@shared/types/core/base-service.types';
 ```
 
-#### 후속 작업
+### 후속 작업
 
 - ✅ Phase 97 완료, 문서 이동
 - 🔄 Phase 96 보류 (CI 환경 테스트 안정화는 우선순위 낮음)
