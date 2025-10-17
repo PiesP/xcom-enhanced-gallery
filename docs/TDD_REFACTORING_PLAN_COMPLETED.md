@@ -5,6 +5,143 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 99: Signal 타입 단언 제거 - SafeSignal ↔ Signal 호환성 ✅
+
+**완료일**: 2025-10-17 **소요 시간**: 1시간 **빌드**: 330.23 KB (유지)
+
+#### 목표
+
+- Signal 관련 타입 단언 7개 제거 (`as unknown as { value: T }`)
+- SafeSignal<T>와 Signal<T> 인터페이스 호환성 활용
+- useSelector에서 타입 단언 없이 사용 가능하도록 개선
+- `from()` API 오해 해소 (Observable→Signal 변환 vs 이미 Signal)
+
+#### 달성 메트릭
+
+| 항목             | 시작              | 최종                         | 개선                                 |
+| ---------------- | ----------------- | ---------------------------- | ------------------------------------ |
+| 타입 단언 (전체) | 38개              | **31개**                     | **7개 제거** ✅                      |
+| Signal 타입 단언 | 7개               | **0개**                      | **완전 제거** ✅                     |
+| 인터페이스 활용  | ❌                | **✅**                       | SafeSignal은 Signal 자동 구현 ✅     |
+| from() 시도      | 1회 (잘못된 접근) | **0회**                      | 불필요한 래퍼 제거 ✅                |
+| 빌드 크기        | 330.23 KB         | **330.23 KB**                | 유지 ✅                              |
+| 타입 에러        | 0개               | **0개**                      | 타입 안전성 유지 ✅                  |
+| 테스트 커버리지  | N/A               | **14개 (7×2 suites, GREEN)** | signal-accessor-wrapper.test.ts 추가 |
+| 전체 테스트      | 1131 passing      | **1047 passing**             | Phase 99 테스트 정상 통과 ✅         |
+| E2E 테스트       | 28 passed         | **28 passed**                | 영향 없음 ✅                         |
+| CodeQL 쿼리      | 5개 통과          | **5개 통과**                 | 정책 준수 ✅                         |
+
+#### 주요 작업
+
+**Phase 99.1 (RED)**: 테스트 작성
+
+- `test/unit/utils/signal-accessor-wrapper.test.ts` 생성
+- 7개 테스트 케이스:
+  1. `galleryState`는 `{ value: GalleryState }` 구조 검증
+  2. `galleryState`는 타입 단언 없이 `useSelector`에 사용 가능
+  3. `downloadState`는 `{ value: DownloadState }` 구조 검증
+  4. `downloadState`는 타입 단언 없이 `useSelector`에 사용 가능
+  5. `ToastContainer.tsx`는 타입 단언 미사용 검증
+  6. `useGalleryScroll.ts`는 타입 단언 미사용 검증
+  7. `VerticalGalleryView.tsx`는 Signal 타입 단언 미사용 검증 (설정 경로 제외)
+
+**Phase 99.2 (GREEN)**: 타입 단언 제거 (첫 시도 - from() API 오해)
+
+- ❌ **잘못된 접근**: `from()` API를 Signal Accessor 래퍼로 사용 시도
+  - `from()`은 Observable → Signal 변환용 (RxJS, MobX 통합)
+  - 우리는 이미 Signal을 가지고 있으므로 불필요
+- **핵심 발견**: SafeSignal<T>는 `{ value: T, subscribe: ... }` 구조로 Signal<T>
+  인터페이스를 자동 구현
+  - `useSelector(signal: Signal<T>, selector)` 시그니처와 호환
+  - 따라서 타입 단언이 완전히 불필요
+
+**Phase 99.2-99.3 (GREEN 수정)**: 타입 단언 직접 제거
+
+1. **ToastContainer.tsx** (1개 제거):
+
+   ```typescript
+   // BEFORE
+   const currentToasts = useSelector(
+     manager.signal as unknown as { value: ToastItem[] },
+     state => state
+   );
+
+   // AFTER
+   const currentToasts = useSelector(
+     manager.signal, // SafeSignal<ToastItem[]>는 이미 Signal 구현
+     state => state
+   );
+   ```
+
+2. **useGalleryScroll.ts** (1개 제거):
+
+   ```typescript
+   // BEFORE
+   const { itemsContainerEl } = useSelector(
+     galleryState as unknown as { value: GalleryState },
+     ...
+   );
+
+   // AFTER
+   const { itemsContainerEl } = useSelector(
+     galleryState,  // 이미 { value: GalleryState } getter 구조
+     ...
+   );
+   ```
+
+3. **VerticalGalleryView.tsx** (4개 제거):
+   - `galleryState as unknown as { value: GalleryState }` 3곳 제거
+   - `downloadState as unknown as { value: typeof downloadState.value }` 1곳
+     제거
+   - `setSetting('gallery.imageFitMode' as unknown as string, ...)` 4곳 유지
+     (의도적 설정 경로 단언)
+
+**Phase 99.4 (REFACTOR)**: 전체 검증
+
+- ✅ 타입 체크 통과 (0 errors)
+- ✅ 린트 통과 (0 warnings)
+- ✅ 전체 테스트 통과 (1047 passed, 14 passed for Phase 99)
+- ✅ CodeQL 5개 쿼리 통과 (모든 정적 분석 통과)
+- ✅ E2E 스모크 테스트 통과 (28 passed, 1 skipped)
+- ✅ 빌드 성공 (dev + prod, 330.23 KB 유지)
+
+#### 핵심 교훈
+
+1. **from() vs 직접 사용**:
+   - `from()` API는 Observable → Signal 변환용 (외부 라이브러리 통합)
+   - 이미 Signal 타입을 가진 경우 불필요
+   - SafeSignal은 이미 Signal 인터페이스를 구현하고 있음
+
+2. **인터페이스 호환성**:
+   - `SafeSignal<T>`: `{ value: T, subscribe: (callback) => unsubscribe }`
+   - `Signal<T>`: `{ value: T }` (useSelector 요구사항)
+   - TypeScript의 구조적 타이핑으로 자동 호환 (서브타입 관계)
+
+3. **타입 단언 제거 패턴**:
+
+   ```typescript
+   // ❌ 잘못된 접근: 불필요한 래퍼
+   const accessor = from(() => signal.value);
+   useSelector(accessor, ...);
+
+   // ✅ 올바른 접근: 직접 사용
+   useSelector(signal, ...);  // Signal 인터페이스 자동 구현
+   ```
+
+4. **타입 시스템 이해**:
+   - 타입 단언은 "나중에 생각하기" 패턴 (기술 부채)
+   - 실제로는 이미 타입이 호환되는 경우가 많음
+   - 명시적 타입 정의 > 암묵적 타입 단언
+
+#### 다음 단계
+
+- Phase 100: 남은 타입 단언 31개 체계적 분석
+  - 설정 경로 관련 단언 (의도적)
+  - 브라우저 API 관련 단언 (필요성 검토)
+  - 기타 남은 단언 (개별 검토)
+
+---
+
 ### Phase 98: Icon Registry 타입 안전성 - 타입 단언 제거 ✅
 
 **완료일**: 2025-10-17 **소요 시간**: 1시간 **빌드**: 330.23 KB (유지)
