@@ -47,6 +47,70 @@ function generateListenerId(context?: string): string {
 }
 
 /**
+ * 현재 갤러리 비디오 요소 가져오기 (공통 헬퍼)
+ */
+function getCurrentGalleryVideo(): HTMLVideoElement | null {
+  try {
+    const doc = (
+      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document
+    ) as Document | undefined;
+    if (!doc) return null;
+    const root = doc.querySelector('#xeg-gallery-root');
+    const items = root?.querySelector('[data-xeg-role="items-container"]');
+    if (!items) return null;
+    const index = gallerySignals.currentIndex.value;
+    const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
+    if (!target) return null;
+    const v = target.querySelector('video');
+    return v instanceof HTMLVideoElement ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * MediaService 인스턴스 가져오기 (공통 헬퍼)
+ */
+function getMediaService(): MediaServiceLike | null {
+  try {
+    return getMediaServiceFromContainer() as unknown as MediaServiceLike;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 안전한 함수 실행 래퍼 (에러 로깅 포함)
+ */
+function safeExecute(fn: () => void, errorContext: string): void {
+  try {
+    fn();
+  } catch (err) {
+    logger.debug(`${errorContext} failed`, err);
+  }
+}
+
+/**
+ * 비디오 볼륨 조절 (공통 로직)
+ */
+function adjustVideoVolume(delta: number): void {
+  const svc = getMediaService();
+  if (svc) {
+    delta > 0 ? svc.volumeUpCurrent() : svc.volumeDownCurrent();
+  } else {
+    const v = getCurrentGalleryVideo();
+    if (v) {
+      const next =
+        delta > 0
+          ? Math.min(1, Math.round((v.volume + 0.1) * 100) / 100)
+          : Math.max(0, Math.round((v.volume - 0.1) * 100) / 100);
+      v.volume = next;
+      if (next > 0 && v.muted) v.muted = false;
+    }
+  }
+}
+
+/**
  * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
  */
 function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
@@ -613,40 +677,11 @@ function handleKeyboardEvent(
         event.preventDefault();
         event.stopPropagation();
 
-        const getCurrentGalleryVideo = (): HTMLVideoElement | null => {
-          try {
-            const doc = (
-              typeof document !== 'undefined'
-                ? document
-                : (globalThis as { document?: Document }).document
-            ) as Document | undefined;
-            if (!doc) return null;
-            const root = doc.querySelector('#xeg-gallery-root');
-            const items = root?.querySelector('[data-xeg-role="items-container"]');
-            if (!items) return null;
-            const index = gallerySignals.currentIndex.value;
-            const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
-            if (!target) return null;
-            const v = target.querySelector('video');
-            return v instanceof HTMLVideoElement ? v : null;
-          } catch {
-            return null;
-          }
-        };
-
-        const getService = (): MediaServiceLike | null => {
-          try {
-            return getMediaServiceFromContainer() as unknown as MediaServiceLike;
-          } catch {
-            return null;
-          }
-        };
-
         switch (key) {
           case ' ':
           case 'Space':
-            try {
-              const svc = getService();
+            safeExecute(() => {
+              const svc = getMediaService();
               if (svc) {
                 svc.togglePlayPauseCurrent();
               } else {
@@ -660,106 +695,57 @@ function handleKeyboardEvent(
                   __videoPlaybackState.set(v, { playing: next });
                 }
               }
-            } catch (err) {
-              logger.debug('togglePlayPauseCurrent failed', err);
-            }
+            }, 'togglePlayPauseCurrent');
             break;
           case 'ArrowLeft':
-            try {
-              navigatePrevious('keyboard');
-            } catch (err) {
-              logger.debug('navigatePrevious failed', err);
-            }
+            safeExecute(() => navigatePrevious('keyboard'), 'navigatePrevious');
             break;
           case 'ArrowRight':
-            try {
-              navigateNext('keyboard');
-            } catch (err) {
-              logger.debug('navigateNext failed', err);
-            }
+            safeExecute(() => navigateNext('keyboard'), 'navigateNext');
             break;
           case 'Home':
-            try {
-              navigateToItem(0, 'keyboard');
-            } catch (err) {
-              logger.debug('navigateToItem(Home) failed', err);
-            }
+            safeExecute(() => navigateToItem(0, 'keyboard'), 'navigateToItem(Home)');
             break;
           case 'End':
-            try {
+            safeExecute(() => {
               const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
               navigateToItem(lastIndex, 'keyboard');
-            } catch (err) {
-              logger.debug('navigateToItem(End) failed', err);
-            }
+            }, 'navigateToItem(End)');
             break;
           case 'PageDown':
-            try {
+            safeExecute(() => {
               // Page Down: +5 items
               const nextIndex = Math.min(
                 gallerySignals.mediaItems.value.length - 1,
                 gallerySignals.currentIndex.value + 5
               );
               navigateToItem(nextIndex, 'keyboard');
-            } catch (err) {
-              logger.debug('navigateToItem(PageDown) failed', err);
-            }
+            }, 'navigateToItem(PageDown)');
             break;
           case 'PageUp':
-            try {
+            safeExecute(() => {
               // Page Up: -5 items
               const prevIndex = Math.max(0, gallerySignals.currentIndex.value - 5);
               navigateToItem(prevIndex, 'keyboard');
-            } catch (err) {
-              logger.debug('navigateToItem(PageUp) failed', err);
-            }
+            }, 'navigateToItem(PageUp)');
             break;
           case 'ArrowUp':
-            try {
-              const svc = getService();
-              if (svc) {
-                svc.volumeUpCurrent();
-              } else {
-                const v = getCurrentGalleryVideo();
-                if (v) {
-                  const next = Math.min(1, Math.round((v.volume + 0.1) * 100) / 100);
-                  v.volume = next;
-                  if (next > 0 && v.muted) v.muted = false;
-                }
-              }
-            } catch (err) {
-              logger.debug('volumeUpCurrent failed', err);
-            }
+            safeExecute(() => adjustVideoVolume(+0.1), 'volumeUpCurrent');
             break;
           case 'ArrowDown':
-            try {
-              const svc = getService();
-              if (svc) {
-                svc.volumeDownCurrent();
-              } else {
-                const v = getCurrentGalleryVideo();
-                if (v) {
-                  const next = Math.max(0, Math.round((v.volume - 0.1) * 100) / 100);
-                  v.volume = next;
-                }
-              }
-            } catch (err) {
-              logger.debug('volumeDownCurrent failed', err);
-            }
+            safeExecute(() => adjustVideoVolume(-0.1), 'volumeDownCurrent');
             break;
           case 'm':
           case 'M':
-            try {
-              const svc = getService();
+            safeExecute(() => {
+              const svc = getMediaService();
               if (svc) {
                 svc.toggleMuteCurrent();
               } else {
                 const v = getCurrentGalleryVideo();
                 if (v) v.muted = !v.muted;
               }
-            } catch (err) {
-              logger.debug('toggleMuteCurrent failed', err);
-            }
+            }, 'toggleMuteCurrent');
             break;
         }
 
