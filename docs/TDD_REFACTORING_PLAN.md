@@ -27,16 +27,136 @@
 
 ##
 
-## 현재 상태: Phase 95 완료 ✅
+## 현재 상태: Phase 96 계획 수립 📋
 
-**최근 완료**: Phase 95 - CI Pipeline 테스트 실패 수정 (2025-10-17)
+**Phase 96 계획**: CI 환경 전용 테스트 안정화 (우선순위: 낮음)
+
+**배경**:
+
+- Phase 95 완료 후 새로운 CI 실패 3건 발견
+- 로컬 환경에서는 모두 통과 (환경 의존적 문제)
+- E2E 테스트로 기능 검증 완료 (Phase 82.7)
+
+**실패 테스트**:
+
+1. `gallery-keyboard.navigation.red.test.ts` - Vendor 초기화 타이밍 이슈
+1. `gallery-video.keyboard.red.test.ts` (2건) - JSDOM 비디오 이벤트 처리 불안정
+
+**Phase 95 완료 사항**:
 
 - ✅ GitHub Actions 3회 연속 실패 해결 (master 브랜치 블로커 제거)
 - ✅ 절대 경로 하드코딩 → `process.cwd()` 기반 상대 경로 전환
 - ✅ 구식 문서 구조 참조 → Phase 93/94 간소화 반영
-- ✅ 전체 빌드/테스트 통과 (CodeQL, E2E, 단위 테스트)
+- ✅ 로컬 전체 빌드/테스트 통과 (CodeQL, E2E, 단위 테스트 99.0%)
 
-**Phase 93 완료** (2025-10-17):
+##
+
+## Phase 96: CI 환경 전용 테스트 안정화 (보류)
+
+**우선순위**: 낮음 (로컬 GREEN, E2E 검증 완료)  
+**상태**: 계획 수립 완료, 실행 보류 중
+
+### 문제 분석
+
+**CI 환경 실패 3건** (Node 20 환경):
+
+1. **gallery-keyboard.navigation.red.test.ts**
+   - 오류: `TypeError: createSignal is not a function`
+   - 원인: Vendor 초기화 타이밍 이슈 (CI 환경 특화)
+   - 로컬 상태: PASS ✅
+
+1. **gallery-video.keyboard.red.test.ts** (2건)
+   - 오류 1:
+     `AssertionError: expected "spy" to be called 1 times, but got 0 times`
+   - 오류 2: `AssertionError: expected 0.5 to be greater than 0.5`
+   - 원인: JSDOM 환경의 비디오 이벤트 처리 불안정
+   - 로컬 상태: PASS ✅
+
+**공통 특징**:
+
+- 로컬 환경(Windows + PowerShell + Node 22)에서는 통과
+- CI 환경(Ubuntu + Bash + Node 20/22)에서만 실패
+- E2E 테스트로 기능 검증 완료 (Phase 82.7)
+
+### 솔루션 옵션
+
+#### Option 1: 테스트 환경 모킹 강화 (권장)
+
+**접근**:
+
+- Vendor getter의 초기화 타이밍 보장
+- JSDOM 비디오 요소 이벤트 루프 보완
+- CI 환경 감지 후 타임아웃 조정
+
+**장점**:
+
+- 근본 원인 해결
+- CI/로컬 환경 일관성 확보
+
+**단점**:
+
+- 구현 복잡도 높음
+- 시간 소요 예상 (2-3시간)
+
+#### Option 2: RED 테스트 제거 (빠른 해결)
+
+**접근**:
+
+- E2E로 검증 완료된 기능이므로 JSDOM 테스트 제거
+- Phase 82.7 참조 (동일 기능 E2E 이관 완료)
+
+**장점**:
+
+- 즉시 CI GREEN 복구
+- 중복 테스트 제거 (E2E와 중복)
+
+**단점**:
+
+- 빠른 피드백 루프 손실
+- JSDOM 레벨 회귀 검출 불가
+
+#### Option 3: CI 전용 Skip (임시 조치)
+
+**접근**:
+
+- `process.env.CI === 'true'` 조건으로 Skip
+- 로컬에서는 계속 실행
+
+**장점**:
+
+- 빠른 조치
+- 로컬 테스트 유지
+
+**단점**:
+
+- 근본 해결 아님
+- CI 커버리지 감소
+
+### 권장 방안
+
+**현재**: Option 3 (CI 전용 Skip) → 장기적으로 Option 1 연구
+
+**근거**:
+
+1. 긴급도 낮음 (로컬 GREEN, E2E 검증 완료)
+1. Option 1은 환경별 차이 심층 분석 필요
+1. 현재 다른 우선순위 작업 없음 (유지보수 모드)
+
+### 실행 계획 (보류 중)
+
+**Phase 96.1** (즉시 조치):
+
+- [ ] CI 환경 감지 로직 추가
+- [ ] 3개 테스트에 `it.skipIf(process.env.CI)` 적용
+- [ ] CI 실행 확인
+
+**Phase 96.2** (장기 연구):
+
+- [ ] CI/로컬 환경 차이 심층 분석
+- [ ] Vendor 초기화 타이밍 안정화 방안 연구
+- [ ] JSDOM 비디오 이벤트 루프 개선 방안 탐색
+
+##
 
 - ✅ 문서 간소화: 1334줄 → 242줄 (81.9% 감소)
 - ✅ 중복 헤더 제거 (20줄)
