@@ -102,7 +102,7 @@ for m in large_modules:
 
     if category not in categories:
         categories[category] = {'count': 0, 'rendered': 0, 'gzip': 0, 'brotli': 0}
-    
+
     categories[category]['count'] += 1
     categories[category]['rendered'] += m['rendered']
     categories[category]['gzip'] += m['gzip']
