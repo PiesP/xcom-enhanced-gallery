@@ -95,21 +95,6 @@
 - **관련 문서**: [AGENTS.md](../AGENTS.md),
   [TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)
 
-#### [CI-OPTIMIZATION.md](./CI-OPTIMIZATION.md)
-
-- **대상**: CI/CD 파이프라인 관리자
-- **내용**: `.npmrc` 설정, lint-staged 개선, CI 전용 스크립트
-- **참조 빈도**: ⭐⭐
-- **관련 문서**: [AGENTS.md](../AGENTS.md),
-  [.github/workflows/](../.github/workflows/)
-
-#### [VSCODE_SETUP.md](./VSCODE_SETUP.md)
-
-- **대상**: VS Code 사용자
-- **내용**: 탐색기 제외 설정, 검색 최적화, 언어 서버 설정
-- **참조 빈도**: ⭐⭐
-- **관련 문서**: [.vscode/settings.json](../.vscode/settings.json)
-
 ---
 
 ### 레벨 4: 리팩토링 및 교훈 (docs/)
@@ -234,9 +219,7 @@ AGENTS.md (개발자 허브) ⭐
     ├─→ DEPENDENCY-GOVERNANCE.md
     ├─→ TDD_REFACTORING_PLAN.md
     ├─→ SOLID_REACTIVITY_LESSONS.md
-    ├─→ MAINTENANCE.md
-    ├─→ CI-OPTIMIZATION.md
-    └─→ VSCODE_SETUP.md
+    └─→ MAINTENANCE.md
 
 .github/copilot-instructions.md (AI 허브)
     ├─→ AGENTS.md

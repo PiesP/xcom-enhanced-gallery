@@ -16,7 +16,7 @@
     "postbuild": "node ./scripts/validate-build.js",
     "// === Quality Checks ===": "",
     "validate": "npm run typecheck && npm run lint:fix && npm run lint:css && npm run lint:md:fix && npm run codeql:check && npm run format",
-    "validate:build": "npm run typecheck && npm run lint && npm run lint:css && npm run deps:check && npm run codeql:check",
+    "validate:build": "npm run typecheck && npm run lint && npm run lint:css && npm run deps:check && npm run deps:graph && npm run codeql:check && npm run e2e:smoke",
     "validate:ci": "npm run typecheck && npm run lint && npm run lint:css && npm run lint:md && npm run format:check",
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
     "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",

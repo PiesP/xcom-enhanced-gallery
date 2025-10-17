@@ -35,6 +35,11 @@ codeql-db/
 codeql-results/
 codeql-custom-queries-javascript/test-samples/
 
+# Generated documentation files
+docs/bundle-*.html
+docs/bundle-*.json
+docs/dependency-graph.dot
+
 # Logs
 logs/
 *.log

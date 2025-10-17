@@ -427,10 +427,6 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
 ### 운영 및 유지보수
 
 - **[MAINTENANCE.md](docs/MAINTENANCE.md)**: 유지보수 체크리스트, 정기 점검 항목
-- **[CI-OPTIMIZATION.md](docs/CI-OPTIMIZATION.md)**: CI/CD 파이프라인 최적화
-  전략
-- **[VSCODE_SETUP.md](docs/VSCODE_SETUP.md)**: VS Code 프로젝트 설정 가이드
-  (빌드 파일 제외, 성능 최적화) 전략
 
 ### 스크립트 및 도구
 
