@@ -93,8 +93,11 @@ describe('VerticalGalleryView - isVisible Derived Signal', () => {
     // 이 테스트는 실제 구현 후 GREEN이 될 것임
     // 현재는 VerticalGalleryView가 createSignal + createEffect를 사용 → RED
 
-    const verticalGalleryViewPath =
-      'c:/git/xcom-enhanced-gallery/src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx';
+    const { resolve } = await import('path');
+    const verticalGalleryViewPath = resolve(
+      process.cwd(),
+      'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+    );
 
     const fs = await import('fs/promises');
     const content = await fs.readFile(verticalGalleryViewPath, 'utf-8');
