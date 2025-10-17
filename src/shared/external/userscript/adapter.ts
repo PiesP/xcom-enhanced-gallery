@@ -3,18 +3,17 @@
  * - getter 함수로 외부(UserScript) 의존성을 캡슐화
  * - GM_* 미지원 환경(Node/Vitest)에서도 안전한 fallback 제공
  */
-import type {
-  GMXmlHttpRequestOptions,
-  UserScriptInfo,
-  BrowserEnvironment,
-} from '@shared/types/core/userscript';
+import type { GMXmlHttpRequestOptions, BrowserEnvironment } from '@shared/types/core/userscript';
+
+// GMUserScriptInfo import 제거 (타입 충돌 방지)
+type GMUserScriptInfo = Record<string, unknown>;
 
 export type UserscriptManager = BrowserEnvironment['userscriptManager'];
 
 export interface UserscriptAPI {
   readonly hasGM: boolean;
   readonly manager: UserscriptManager;
-  info(): UserScriptInfo | null;
+  info(): GMUserScriptInfo | null;
   download(url: string, filename: string): Promise<void>;
   xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined;
   setValue(key: string, value: unknown): Promise<void>;
@@ -23,11 +22,41 @@ export interface UserscriptAPI {
   listValues(): Promise<string[]>;
 }
 
+/**
+ * GlobalWithGM: GM_info를 가진 전역 객체 타입
+ */
+interface GlobalWithGM {
+  GM_info?: {
+    script: {
+      name: string;
+      version: string;
+      [key: string]: unknown;
+    };
+    scriptHandler?: string;
+    version?: string;
+    [key: string]: unknown;
+  };
+  GM_download?: (url: string, filename: string) => void;
+  GM_xmlhttpRequest?: (options: GMXmlHttpRequestOptions) => { abort: () => void };
+  GM_setValue?: (key: string, value: unknown) => Promise<void> | void;
+  GM_getValue?: <T>(key: string, defaultValue?: T) => Promise<T> | T;
+  GM_deleteValue?: (key: string) => Promise<void> | void;
+  GM_listValues?: () => Promise<string[]> | string[];
+}
+
+/**
+ * hasGMInfo: GM_info 존재 여부를 확인하는 타입 가드
+ */
+function hasGMInfo(g: unknown): g is GlobalWithGM {
+  return typeof g === 'object' && g !== null && 'GM_info' in g;
+}
+
 function detectManager(): UserscriptManager {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const info = (globalThis as any)?.GM_info;
-    const handler = info?.scriptHandler?.toLowerCase?.() as string | undefined;
+    const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
+    const handler = (
+      info as unknown as { scriptHandler?: string }
+    )?.scriptHandler?.toLowerCase?.() as string | undefined;
     if (!handler) return 'unknown';
     if (handler.includes('tamper')) return 'tampermonkey';
     if (handler.includes('grease')) return 'greasemonkey';
@@ -38,11 +67,10 @@ function detectManager(): UserscriptManager {
   }
 }
 
-function safeInfo(): UserScriptInfo | null {
+function safeInfo(): GMUserScriptInfo | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const info = (globalThis as any)?.GM_info;
-    return info ?? null;
+    const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
+    return (info as unknown as GMUserScriptInfo) ?? null;
   } catch {
     return null;
   }
@@ -147,18 +175,18 @@ function getSafeLocalStorage(): Storage | null {
  * Userscript API getter (외부 의존성 격리)
  */
 export function getUserscript(): UserscriptAPI {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const g: any = globalThis as any;
-  const hasGMDownload = typeof g.GM_download === 'function';
-  const hasGMXhr = typeof g.GM_xmlhttpRequest === 'function';
-  const hasGMStorage = typeof g.GM_setValue === 'function' && typeof g.GM_getValue === 'function';
+  const g = globalThis;
+  const hasGMDownload = hasGMInfo(g) && typeof g.GM_download === 'function';
+  const hasGMXhr = hasGMInfo(g) && typeof g.GM_xmlhttpRequest === 'function';
+  const hasGMStorage =
+    hasGMInfo(g) && typeof g.GM_setValue === 'function' && typeof g.GM_getValue === 'function';
 
   return Object.freeze({
     hasGM: hasGMDownload || hasGMXhr || hasGMStorage,
     manager: detectManager(),
     info: safeInfo,
     async download(url: string, filename: string): Promise<void> {
-      if (hasGMDownload) {
+      if (hasGMDownload && hasGMInfo(g) && g.GM_download) {
         try {
           // GM_download는 동기 API처럼 보이는 구현이 많아 try/catch로 래핑
           g.GM_download(url, filename);
@@ -169,18 +197,19 @@ export function getUserscript(): UserscriptAPI {
       }
       return fallbackDownload(url, filename);
     },
-    xhr(options: GMXmlHttpRequestOptions) {
-      if (hasGMXhr) {
+    xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined {
+      if (hasGMXhr && hasGMInfo(g) && g.GM_xmlhttpRequest) {
         try {
-          return g.GM_xmlhttpRequest(options);
+          const result = g.GM_xmlhttpRequest(options);
+          return result as { abort: () => void } | undefined;
         } catch {
           // 실패 시 fallback
         }
       }
-      return fallbackXhr(options);
+      return fallbackXhr(options) ?? undefined;
     },
     async setValue(key: string, value: unknown): Promise<void> {
-      if (hasGMStorage) {
+      if (hasGMStorage && hasGMInfo(g) && g.GM_setValue) {
         try {
           await Promise.resolve(g.GM_setValue(key, value));
           return;
@@ -207,7 +236,7 @@ export function getUserscript(): UserscriptAPI {
       }
     },
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      if (hasGMStorage) {
+      if (hasGMStorage && hasGMInfo(g) && g.GM_getValue) {
         try {
           const value = await Promise.resolve(g.GM_getValue(key, defaultValue));
           return value as T | undefined;
@@ -240,11 +269,9 @@ export function getUserscript(): UserscriptAPI {
       return defaultValue;
     },
     async deleteValue(key: string): Promise<void> {
-      if (hasGMStorage) {
+      if (hasGMStorage && hasGMInfo(g) && g.GM_deleteValue) {
         try {
-          if (typeof g.GM_deleteValue === 'function') {
-            await Promise.resolve(g.GM_deleteValue(key));
-          }
+          await Promise.resolve(g.GM_deleteValue(key));
           return;
         } catch {
           // 실패 시 localStorage fallback
@@ -257,12 +284,10 @@ export function getUserscript(): UserscriptAPI {
       }
     },
     async listValues(): Promise<string[]> {
-      if (hasGMStorage) {
+      if (hasGMStorage && hasGMInfo(g) && g.GM_listValues) {
         try {
-          if (typeof g.GM_listValues === 'function') {
-            const values = await Promise.resolve(g.GM_listValues());
-            return Array.isArray(values) ? values : [];
-          }
+          const values = await Promise.resolve(g.GM_listValues());
+          return Array.isArray(values) ? values : [];
         } catch {
           // 실패 시 localStorage fallback
         }

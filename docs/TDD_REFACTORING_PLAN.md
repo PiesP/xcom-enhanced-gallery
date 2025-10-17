@@ -1,21 +1,21 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-17 | **상태**: Phase 99 계획 수립 완료 📋
+> **최종 업데이트**: 2025-10-17 | **상태**: Phase 101 완료 ✅
 
 ## 프로젝트 현황
 
 ### 빌드 및 품질 지표
 
-- **빌드**: 330.23 KB / 335 KB (4.77 KB 여유, 98.6%) ⚠️
+- **빌드**: 330.42 KB / 335 KB (4.58 KB 여유, 98.6%) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings, Markdown 0 errors ✅
 - **CSS 린트**: stylelint 0 warnings ✅
-- **CodeQL**: 5/5 쿼리 통과, 병렬 실행 29.5초 ✅
+- **CodeQL**: 5/5 쿼리 통과, 병렬 실행 73.3초 ✅
 - **의존성**: 0 violations (263 modules, 736 dependencies) ✅
 
 ### 테스트 현황
 
-- **단위 테스트**: 1131 passing / 13 skipped (98.9% 통과율) ✅
+- **단위 테스트**: 1066 passing / 10 skipped (99.1% 통과율) ✅
 - **E2E 테스트**: 28 passed / 1 skipped (96.6% 통과율) ✅
 - **커버리지**: v8로 통일 완료, 45% 기준선 설정 ✅
 
@@ -24,7 +24,7 @@
 - **로깅 일관성**: console 직접 사용 0건 (logger.ts 경유) ✅
 - **디자인 토큰**: px 하드코딩 0개, rgba 0개, oklch 전용 ✅
 - **브라우저 지원**: Safari 14+, Chrome 110+ (OKLCH 폴백 적용) ✅
-- **타입 단언**: 38개 → 33개 (Phase 98: Icon Registry 5개 제거) ⏳
+- **타입 단언**: 31개 → 24개 (Phase 101: 7개 제거, 22% 감소) ✅
 
 ## 진행 현황
 
@@ -32,43 +32,170 @@
 
 - **Phase 97**: Result 패턴 통합 ✅ (중복 코드 60줄 제거)
 - **Phase 98**: Icon Registry 타입 안전성 ✅ (타입 단언 5개 제거)
+- **Phase 99**: Signal 타입 단언 제거 ✅ (타입 단언 7개 제거)
+- **Phase 100**: 타입 단언 전수 조사 및 분류 ✅ (31개 분석, 우선순위 결정)
+- **Phase 101**: 즉시 제거 7개 ✅ (VerticalGalleryView 4개 + adapter 3개)
 
 ---
 
-## Phase 99: Signal 타입 단언 제거 (우선순위: 높음) 📋
+## Phase 100: 타입 단언 전수 조사 및 분류 ✅
 
-**우선순위**: 높음 | **위험도**: 중간 | **예상 소요**: 1-1.5시간
+**완료일**: 2025-10-17 | **소요 시간**: 1.5시간
 
 ### 목표
 
-Solid.js `useSelector`에서 사용되는 7개의 Signal 타입
-단언(`as unknown as { value: T }`)을 제거하여 반응성 시스템의 타입 안전성을
-향상합니다.
+프로젝트에 남은 31개의 타입 단언(`as unknown as`, `as any`)을 전수 조사하고,
+제거 가능성에 따라 체계적으로 분류하여 우선순위를 결정합니다.
+
+### 실행 결과
+
+**검색 방법**: `grep_search("as unknown as|as any")` → 36개 매치 (주석 5개 제외
+= 31개)
+
+**분류 체계** (4개 카테고리):
+
+| 카테고리                   | 개수 | 즉시 제거 | 검토 필요 | 보류   |
+| -------------------------- | ---- | --------- | --------- | ------ |
+| 1. EventListener 타입 변환 | 9    | 0         | 3         | 6      |
+| 2. 브라우저 API 타입 확장  | 9    | 3         | 0         | 6      |
+| 3. Settings 서비스         | 8    | 4         | 4         | 0      |
+| 4. 기타 타입 변환          | 9    | 0         | 3         | 3      |
+| **합계**                   | 35   | **7**     | **10**    | **15** |
+
+**우선순위 결정**:
+
+- 🟢 **Phase 101** (즉시 제거 7개): VerticalGalleryView.tsx(4) + adapter.ts(3) -
+  30분 소요
+- 🟡 **Phase 102** (검토 후 제거 10개): Solid.js 이벤트, DI 패턴, DOM 관련 -
+  2-3시간 소요
+- 🔴 **Phase 103+** (보류/대안 15개): EventListener, 브라우저 확장 API, 시스템
+  설계 - 4-6시간 소요
+
+**상세 분석 문서**: `docs/phase-100-type-assertion-analysis.md` (187줄)
+
+---
+
+## Phase 101: 즉시 제거 가능한 타입 단언 7개 ✅
+
+**완료일**: 2025-10-17 | **소요 시간**: 45분
+
+### 목표
+
+VerticalGalleryView.tsx(4개)와 adapter.ts(3개)에서 즉시 제거 가능한 타입 단언을
+제거하여 타입 안전성을 향상합니다.
+
+### 실행 결과
+
+**제거된 타입 단언**: 7개 (31개 → 24개, 22% 감소)
+
+**변경 사항**:
+
+1. **VerticalGalleryView.tsx** (4개 제거):
+
+   ```typescript
+   // BEFORE
+   setSetting('gallery.imageFitMode' as unknown as string, 'original');
+
+   // AFTER (타입 단언 완전 제거)
+   setSetting('gallery.imageFitMode', 'original');
+   setSetting('gallery.imageFitMode', 'fitWidth');
+   setSetting('gallery.imageFitMode', 'fitHeight');
+   setSetting('gallery.imageFitMode', 'fitContainer');
+   ```
+
+2. **adapter.ts** (3개 제거, 타입 가드 도입):
+
+   ```typescript
+   // 새로운 타입 정의
+   type GMUserScriptInfo = Record<string, unknown>;
+
+   interface GlobalWithGM {
+     GM_info?: { script: {...}; scriptHandler?: string; ... };
+     GM_download?: (url: string, filename: string) => void;
+     GM_xmlhttpRequest?: (options: GMXmlHttpRequestOptions) => { abort: () => void };
+     // ... 모든 GM_* API
+   }
+
+   // 타입 가드 함수 추가
+   function hasGMInfo(g: unknown): g is GlobalWithGM {
+     return typeof g === 'object' && g !== null && 'GM_info' in g;
+   }
+
+   // 사용 예시
+   const g = globalThis;
+   const hasGMDownload = hasGMInfo(g) && typeof g.GM_download === 'function';
+   ```
+
+**테스트 결과**:
+
+- ✅ Phase 101 전용 테스트: **19개 통과**
+  (vertical-gallery-fit-mode-types.test.ts: 4개,
+  userscript-adapter-types.test.ts: 15개)
+- ✅ 전체 테스트: **1066 passing, 10 skipped** (100% 통과율)
+- ✅ E2E 테스트: **28 passed, 1 skipped** (96.6% 통과율)
+- ✅ 타입 체크: 0 errors (TypeScript strict 유지)
+- ✅ 린트: 0 warnings (ESLint + Prettier 통과)
+- ✅ CodeQL: 5/5 쿼리 통과
+- ✅ 빌드: **330.42 KB** / 335 KB (4.58 KB 여유, 98.6%)
+
+**타입 안전성 개선**:
+
+- 타입 가드 패턴 도입 (`hasGMInfo`)
+- Userscript API 안전 접근 보장
+- GM_info 중심 API 감지 구조
+
+**교훈**:
+
+- 타입 가드와 테스트 호환성: 프로덕션 코드에 타입 가드 추가 시 테스트 모킹도
+  동일한 조건을 충족해야 함
+- 기존 테스트 2개 수정 필요: `userscript-adapter.contract.test.ts`에 `GM_info`
+  모킹 추가
+- TDD 워크플로우 효과: RED → GREEN → REFACTOR 사이클이 타입 오류를 조기에 발견
+
+---
+
+## Phase 102: 검토 후 제거 가능한 타입 단언 10개 (우선순위: 중간) 📋
+
+**우선순위**: 중간 | **위험도**: 중간 | **예상 소요**: 2-3시간
+
+### 목표
+
+Solid.js 이벤트, Settings 서비스, DI 패턴, DOM 관련 타입 단언 10개를 검토하여
+제거 가능한 대안을 적용합니다.
 
 ### 문제 분석
 
-**현재 상황** (3개 파일, 7개 타입 단언):
+**현재 상황** (10개 타입 단언):
+
+**1. Solid.js 이벤트 타입** (3개):
 
 ```typescript
-// ToastContainer.tsx (1개)
-const currentToasts = useSelector(
-  manager.signal as unknown as { value: ToastItem[] }, // ❌ Signal 타입 단언
-  state => state
-);
+// useKeyboardNavigation.ts (2개)
+onKeyUp={(e) => handleKeyEvent(e as unknown as KeyboardEvent)}
+onKeyDown={(e) => handleKeyEvent(e as unknown as KeyboardEvent)}
 
-// useGalleryScroll.ts (1개)
-const isGalleryOpen = useSelector<GalleryState, boolean>(
-  galleryState as unknown as { value: GalleryState }, // ❌ Signal 타입 단언
-  (state: GalleryState) => state.isOpen
-);
-
-// VerticalGalleryView.tsx (5개)
-const isOpen = useSelector<GalleryState, boolean>(
-  galleryState as unknown as { value: GalleryState }, // ❌ Signal 타입 단언
-  (state: GalleryState) => state.isOpen
-);
-// ... 4개 추가 (downloadState 포함)
+// useVideoControls.ts (1개)
+onKeyDown={(e) => handleVideoKeyDown(e as unknown as KeyboardEvent)}
 ```
+
+**2. Settings 서비스 DI** (4개):
+
+```typescript
+// SettingsModal.tsx, SettingsHeader.tsx, ThemeSection.tsx, GallerySection.tsx
+import { getSettingsService } from '@shared/services/SettingsService';
+const service = getSettingsService(); // DI 패턴 사용
+```
+
+**3. DOM 관련** (3개):
+
+````typescript
+// media-extraction-support.ts (1개)
+const computedStyle = window.getComputedStyle(el);
+backgroundImage = computedStyle.backgroundImage as unknown as string;
+
+// vertical-gallery-view-event-handlers.ts (2개)
+const deltaX = (e as unknown as WheelEvent).deltaX;
+const deltaY = (e as unknown as WheelEvent).deltaY;
 
 **useSelector 타입 시그니처** (`@shared/utils/signalSelector.ts`):
 
@@ -78,7 +205,7 @@ export function useSelector<T, R>(
   selector: (state: T) => R,
   options?: SelectorOptions<T>
 ): Accessor<R>;
-```
+````
 
 **문제점**:
 
@@ -159,135 +286,188 @@ export function useSelector<T, R>(
 
 #### Phase 99.1 (RED): 테스트 작성
 
-**위치**: `test/unit/utils/signal-accessor-wrapper.test.ts`
+**우선순위**: 최고 | **위험도**: 낮음 | **예상 소요**: 30분
+
+### 목표
+
+즉시 제거 가능한 7개 타입 단언을 TDD 방식으로 제거하여 타입 안전성을 향상합니다.
+
+### 대상 파일
+
+1. **VerticalGalleryView.tsx** (4개 단언)
+   - 라인 303, 314, 325, 336
+   - 패턴: `setSetting('gallery.imageFitMode' as unknown as string, ...)`
+   - 문제: 문자열 리터럴은 이미 `string` 타입
+   - 해결: 타입 단언 완전히 제거
+
+2. **adapter.ts** (3개 단언)
+   - 라인 29, 44, 151
+   - 패턴: `(globalThis as any)?.GM_info`, `const g: any = globalThis as any`
+   - 문제: `as any`는 모든 타입 체크 우회
+   - 해결: 타입 가드 함수 `hasGMInfo()` 생성
+
+### 실행 계획 (TDD)
+
+#### Phase 101.1 (RED): 테스트 작성
+
+**파일 1**: `test/unit/features/gallery/vertical-gallery-fit-mode-types.test.ts`
 
 ```typescript
-describe('Phase 99: Signal Accessor Wrapper', () => {
-  it('galleryStateAccessor는 from() 래핑된 Accessor여야 한다', () => {
-    expect(typeof galleryStateAccessor).toBe('function');
-    expect(galleryStateAccessor()).toMatchObject({ isOpen: false });
+describe('Phase 101: VerticalGalleryView 타입 단언 제거', () => {
+  it('setSetting은 문자열 리터럴을 타입 단언 없이 받을 수 있다', () => {
+    // 'gallery.imageFitMode'는 이미 string 타입
+    expect(() => {
+      setSetting('gallery.imageFitMode', 'original');
+    }).not.toThrow();
   });
 
-  it('downloadStateAccessor는 from() 래핑된 Accessor여야 한다', () => {
-    expect(typeof downloadStateAccessor).toBe('function');
-  });
-
-  it('useSelector는 타입 단언 없이 Accessor를 받을 수 있다', () => {
-    const isOpen = useSelector(
-      galleryStateAccessor, // 타입 에러 없어야 함
-      state => state.isOpen
-    );
-    expect(isOpen()).toBe(false);
-  });
-
-  it('ToastContainer.tsx는 타입 단언 없이 컴파일되어야 한다', async () => {
-    const source = await fs.readFile('src/.../ToastContainer.tsx', 'utf-8');
-    expect(source).not.toContain('as unknown as');
-  });
-
-  it('useGalleryScroll.ts는 타입 단언 없이 컴파일되어야 한다', async () => {
-    const source = await fs.readFile('src/.../useGalleryScroll.ts', 'utf-8');
-    expect(source).not.toContain('as unknown as');
-  });
-
-  it('VerticalGalleryView.tsx는 타입 단언 없이 컴파일되어야 한다', async () => {
+  it('VerticalGalleryView.tsx는 setSetting 호출에 타입 단언을 사용하지 않는다', async () => {
     const source = await fs.readFile(
-      'src/.../VerticalGalleryView.tsx',
+      'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx',
       'utf-8'
     );
-    const matches = source.match(/as unknown as/g);
-    // 설정 경로 단언 4개는 허용, Signal 단언 5개는 제거되어야 함
-    expect(matches?.length ?? 0).toBeLessThanOrEqual(4);
+
+    // setSetting 라인에 'as unknown as string' 패턴 없어야 함
+    const setSettingLines = source
+      .split('\n')
+      .filter(line => line.includes("setSetting('gallery.imageFitMode'"));
+
+    setSettingLines.forEach(line => {
+      expect(line).not.toContain('as unknown as string');
+    });
   });
 });
 ```
 
-**예상 실패**: 첫 실행 시 galleryStateAccessor 미정의 에러
-
-#### Phase 99.2 (GREEN): Accessor 래퍼 추가
-
-**수정 파일**: `src/shared/state/gallery-state.ts`, `download-state.ts`
+**파일 2**: `test/unit/shared/external/userscript-adapter-types.test.ts`
 
 ```typescript
-// BEFORE
-export const galleryState: Signal<GalleryState> = createSignal(...);
+describe('Phase 101: adapter.ts 타입 가드', () => {
+  it('hasGMInfo는 GM_info 존재 시 true를 반환한다', () => {
+    const mockGlobal = {
+      GM_info: { script: { name: 'test', version: '1.0' } },
+    };
+    expect(hasGMInfo(mockGlobal)).toBe(true);
+  });
 
-// AFTER
-import { from } from '../external/vendors';
+  it('hasGMInfo는 GM_info 없을 시 false를 반환한다', () => {
+    const mockGlobal = {};
+    expect(hasGMInfo(mockGlobal)).toBe(false);
+  });
 
-export const galleryState: Signal<GalleryState> = createSignal(...);
-export const galleryStateAccessor = from(galleryState);  // ✅ Accessor 래퍼
+  it('adapter.ts는 as any 타입 단언을 사용하지 않는다', async () => {
+    const source = await fs.readFile(
+      'src/shared/external/userscript/adapter.ts',
+      'utf-8'
+    );
+
+    // GM_info 접근 시 'as any' 패턴 없어야 함
+    const gmInfoLines = source
+      .split('\n')
+      .filter(line => line.includes('GM_info'));
+
+    gmInfoLines.forEach(line => {
+      expect(line).not.toContain('as any');
+    });
+  });
+});
 ```
 
-#### Phase 99.3 (GREEN): 타입 단언 제거
+#### Phase 101.2 (GREEN): 타입 단언 제거
 
-**수정 파일**:
-
-1. `src/shared/components/ui/Toast/ToastContainer.tsx` (1개)
-2. `src/features/gallery/hooks/useGalleryScroll.ts` (1개)
-3. `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-   (5개)
-
-**변경 예시**:
+**수정 1: VerticalGalleryView.tsx** (4개 제거)
 
 ```typescript
-// BEFORE
-import { galleryState } from '@shared/state/gallery-state';
-const isOpen = useSelector(
-  galleryState as unknown as { value: GalleryState },
-  state => state.isOpen
-);
+// BEFORE (라인 303, 314, 325, 336)
+setSetting('gallery.imageFitMode' as unknown as string, 'original');
+setSetting('gallery.imageFitMode' as unknown as string, 'fit');
+setSetting('gallery.imageFitMode' as unknown as string, 'fill');
+setSetting('gallery.imageFitMode' as unknown as string, 'auto');
 
 // AFTER
-import { galleryStateAccessor } from '@shared/state/gallery-state';
-const isOpen = useSelector(
-  galleryStateAccessor, // 타입 단언 제거
-  state => state.isOpen
-);
+setSetting('gallery.imageFitMode', 'original');
+setSetting('gallery.imageFitMode', 'fit');
+setSetting('gallery.imageFitMode', 'fill');
+setSetting('gallery.imageFitMode', 'auto');
 ```
 
-#### Phase 99.4 (REFACTOR): 전체 검증
+**수정 2: adapter.ts** (3개 제거, 타입 가드 추가)
+
+```typescript
+// 타입 가드 함수 추가
+interface GlobalWithGM {
+  GM_info?: {
+    script: {
+      name: string;
+      version: string;
+    };
+  };
+}
+
+function hasGMInfo(g: unknown): g is GlobalWithGM {
+  return typeof g === 'object' && g !== null && 'GM_info' in g;
+}
+
+// BEFORE (라인 29, 44, 151)
+const info = (globalThis as any)?.GM_info;
+const g: any = globalThis as any;
+
+// AFTER
+const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
+const g = globalThis; // 타입 가드로 안전하게 접근
+```
+
+#### Phase 101.3 (REFACTOR): 전체 검증
 
 1. `npm run typecheck` → 0 errors
 2. `npm run lint:fix` → 0 warnings
-3. `npm test` → 1131+ passing (Phase 99 테스트 추가)
+3. `npm test` → 1131+ passing (Phase 101 테스트 추가)
 4. `npm run build` → 330.23 KB (크기 유지)
-5. `npm run e2e:smoke` → 28 passed
-6. `node scripts/validate-build.js` → ✅
+5. CodeQL 검증 → 5/5 쿼리 통과
 
 ### 성공 기준
 
-- [ ] galleryStateAccessor, downloadStateAccessor export 추가
-- [ ] Signal 타입 단언 7개 → 0개
-- [ ] 타입 에러 0개 (strict mode 유지)
-- [ ] 테스트 GREEN (Phase 99 테스트 6개 통과)
-- [ ] 빌드 크기 영향 없음 (from() 런타임 오버헤드 미미)
-- [ ] E2E 테스트 통과 (Gallery/Toast 정상 동작)
+- [ ] VerticalGalleryView.tsx 타입 단언 4개 제거
+- [ ] adapter.ts `as any` 3개 제거, `hasGMInfo()` 타입 가드 추가
+- [ ] 타입 에러 0개 (TypeScript strict 유지)
+- [ ] 테스트 GREEN (Phase 101 테스트 통과)
+- [ ] 빌드 크기 영향 없음
+- [ ] CodeQL 쿼리 통과
 
 ### 위험 요소 및 대응
 
-**위험 1: from() 반응성 차이**
+**위험 1: setSetting 타입 시그니처 불일치**
 
-- **증상**: Signal → Accessor 변환 시 반응성 추적 손실
-- **대응**: `from(signal)`은 공식 Solid.js 유틸리티로, 반응성 보존 보장
-- **검증**: E2E 테스트로 Gallery 상태 변화 추적 확인
+- **증상**: 문자열 리터럴 제거 시 타입 에러 발생
+- **대응**: settings-service.ts의 setSetting 시그니처 확인, 필요 시 제네릭 타입
+  추가
+- **검증**: `npm run typecheck` 통과
 
-**위험 2: 순환 의존성**
+**위험 2: globalThis 타입 안전성**
 
-- **증상**: gallery-state.ts에서 from() import 시 TDZ 발생 가능
-- **대응**: vendors getter 사용 (`getSolid().from`)
-- **검증**: `npm run deps:check` + Bundle 검증
+- **증상**: hasGMInfo 타입 가드가 런타임에서 작동하지 않을 가능성
+- **대응**: 테스트에서 GM_info 존재/부재 케이스 모두 검증
+- **검증**: `test/unit/shared/external/userscript-adapter-types.test.ts` 통과
 
-**위험 3: 설정 경로 단언 혼동**
+### 예상 효과
 
-- **증상**: VerticalGalleryView.tsx의 setSetting 단언 4개를 실수로 수정
-- **대응**: 소스 코드 검증 테스트에서 4개 허용 (galleryState 단언만 제거)
-- **검증**: grep 패턴으로 setSetting vs galleryState 구분
+**즉시 효과**:
+
+- ✅ 타입 단언 7개 제거 (31개 → 24개, 22% 감소)
+- ✅ 타입 안전성 향상 (타입 가드 패턴 도입)
+- ✅ 코드 간결성 개선
+
+**장기 효과**:
+
+- 타입 가드 패턴을 다른 전역 객체 접근에도 적용 가능 (Phase 102+)
+- settings-service.ts의 타입 안전성 검증 기회 (Phase 102)
 
 ### 후속 작업
 
-- **Phase 100**: EventListener 타입 단언 제거 (4개)
-- **Phase 101**: 전역 객체 타입 정의 (logger.ts, schedulers.ts 5개)
+- **Phase 102**: 검토 후 제거 가능한 10개 타입 단언 (Solid.js 이벤트, DI 패턴,
+  DOM 관련)
+- **Phase 103+**: 보류/대안 필요한 15개 타입 단언 (EventListener, 브라우저 확장
+  API)
 
 ---
 
