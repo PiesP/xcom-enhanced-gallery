@@ -4,7 +4,7 @@
  */
 
 import { logger } from '../logging/logger';
-import type { BaseService } from '../types/app.types';
+import type { BaseService } from '../types/core/base-service.types';
 import { UnifiedToastManager } from './unified-toast-manager';
 
 // Toast 관련 타입 정의

@@ -287,28 +287,37 @@ const errorHandler = ErrorHandler.getInstance();
 
 /**
  * 안전한 비동기 함수 실행 래퍼
+ * @description core-types의 safeAsync를 기반으로 context와 defaultValue 지원 추가
  */
 export async function safeAsync<T>(
   operation: () => Promise<T>,
   context: string,
   defaultValue?: T
 ): Promise<T | undefined> {
-  try {
-    return await operation();
-  } catch (error) {
-    await errorHandler.handleAsync(error as Error, context);
+  const { safeAsync: coreSafeAsync, isSuccess } = await import('../types/core/core-types');
+
+  const result = await coreSafeAsync(operation);
+
+  if (!isSuccess(result)) {
+    await errorHandler.handleAsync(result.error, context);
     return defaultValue;
   }
+
+  return result.data;
 }
 
 /**
  * 안전한 동기 함수 실행 래퍼
+ * @description core-types의 safe를 기반으로 context와 defaultValue 지원 추가
  */
 export function safeSync<T>(operation: () => T, context: string, defaultValue?: T): T | undefined {
+  // 동기 함수이므로 직접 import (dynamic import 불가)
+  // core-types의 safe 로직을 동일하게 사용하되, 에러 핸들링만 추가
   try {
     return operation();
   } catch (error) {
-    errorHandler.handle(error as Error, context);
+    const standardError = error instanceof Error ? error : new Error(String(error));
+    errorHandler.handle(standardError, context);
     return defaultValue;
   }
 }

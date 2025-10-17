@@ -1,4 +1,5 @@
-import type { VNode } from '../external/vendors';
+import type { JSXElement } from '../external/vendors';
+import type { IconProps } from '../components/ui/Icon/Icon';
 
 export type IconName =
   | 'Download'
@@ -8,7 +9,7 @@ export type IconName =
   | 'ChevronRight'
   | (string & {});
 
-type IconComponent = (props?: Record<string, unknown>) => VNode | unknown;
+type IconComponent = (props: IconProps) => JSXElement;
 
 export interface IconRegistry {
   loadIcon: (name: IconName) => Promise<IconComponent>;
@@ -30,24 +31,18 @@ let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
 function dynamicImport(name: IconName): Promise<IconComponent> {
   switch (name) {
     case 'Download':
-      return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(
-        m => m.HeroDownload as unknown as IconComponent
-      );
+      return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(m => m.HeroDownload);
     case 'Settings':
-      return import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(
-        m => m.HeroSettings as unknown as IconComponent
-      );
+      return import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(m => m.HeroSettings);
     case 'X':
-      return import('@shared/components/ui/Icon/hero/HeroX.tsx').then(
-        m => m.HeroX as unknown as IconComponent
-      );
+      return import('@shared/components/ui/Icon/hero/HeroX.tsx').then(m => m.HeroX);
     case 'ChevronLeft':
       return import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
-        m => m.HeroChevronLeft as unknown as IconComponent
+        m => m.HeroChevronLeft
       );
     case 'ChevronRight':
       return import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
-        m => m.HeroChevronRight as unknown as IconComponent
+        m => m.HeroChevronRight
       );
     default:
       if (_fallback) return Promise.resolve(_fallback);
