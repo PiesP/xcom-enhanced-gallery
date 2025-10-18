@@ -448,6 +448,41 @@ export default defineConfig({
           transformMode: solidTransformMode,
         },
       },
+      // Browser 모드: Solid.js 반응성 제약 해결 및 실제 브라우저 API 테스트
+      // @vitest/browser를 사용하여 Playwright로 실제 브라우저에서 테스트 실행
+      {
+        resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
+        define: {
+          'import.meta.env.SSR': false,
+          'import.meta.env.DEV': true,
+          __BROWSER__: true,
+          __DEV__: true,
+        },
+        test: {
+          name: 'browser',
+          globals: true,
+          testTimeout: 30000, // 브라우저 시작 시간 고려
+          hookTimeout: 35000,
+          // browser 모드는 실제 브라우저 환경 사용
+          browser: {
+            enabled: true,
+            name: 'chromium', // playwright의 chromium 사용
+            provider: 'playwright',
+            headless: true,
+            // 브라우저 컨텍스트 설정
+            providerOptions: {
+              launch: {
+                args: ['--disable-web-security'], // CORS 이슈 방지 (테스트 환경)
+              },
+            },
+          },
+          setupFiles: ['./test/setup-browser.ts'], // 브라우저 전용 setup
+          include: ['test/browser/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
+        },
+      },
     ],
   },
 });

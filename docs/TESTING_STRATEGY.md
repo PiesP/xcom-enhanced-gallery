@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 테스트 책임 분리 및 실행 전략
 
-**최종 업데이트**: 2025-10-16
+**최종 업데이트**: 2025-10-18
 
 ---
 
@@ -12,19 +12,31 @@ Kent C. Dodds의 Testing Trophy 모델을 기반으로, 프로젝트는 다음�
 분포를 목표로 합니다:
 
 ```
-        /\
-       /E2E\          ← 적음: 핵심 사용자 시나리오만
-      /------\
-     /Integ-  \       ← 중간: 서비스 간 상호작용
-    /----------\
-   / Unit Tests \     ← 많음: 순수 로직, 유틸리티
-  /--------------\
- / Static Analysis \  ← 가장 많음: TypeScript, ESLint, stylelint
-/------------------\
+          /\
+         /A11y\        ← 최소: 접근성 자동 검증
+        /------\
+       /  E2E  \       ← 적음: 핵심 사용자 시나리오
+      /----------\
+     / Browser    \    ← 소량: Solid.js 반응성, 실제 API
+    /--------------\
+   /  Integration  \   ← 중간: 서비스 간 상호작용
+  /------------------\
+ /    Unit Tests     \ ← 많음: 순수 로직, 유틸리티
+/----------------------\
+/  Static Analysis     \  ← 가장 많음: TypeScript, ESLint, stylelint
 ```
 
 **원칙**: 낮은 계층에서 빠르게 많이 테스트하고, 높은 계층에서 느리지만 신뢰도
 높은 테스트를 선별적으로 실행합니다.
+
+**테스트 계층 요약**:
+
+1. **Static Analysis** (수초): 타입, 린트, 코딩 규칙
+2. **Unit Tests** (1-2분): JSDOM, 순수 함수, 단일 컴포넌트
+3. **Browser Tests** (2-5분): 실제 브라우저, Solid.js 반응성
+4. **Integration Tests** (2-5분): 다중 서비스 협업
+5. **E2E Tests** (5-15분): 전체 사용자 시나리오
+6. **Accessibility Tests** (3-8분): WCAG 준수, axe-core 스캔
 
 ---
 
@@ -126,7 +138,82 @@ const MyComponent = () => {
 
 ---
 
-### 3. Integration Tests (JSDOM + 모킹 - 중간 속도)
+### 3. Browser Tests (@vitest/browser - 중간 속도)
+
+**환경**: Vitest Browser Mode + Playwright Chromium, `test/browser/**`
+
+**테스트 수**: **44 tests** (Phase 1 완료: 6 → 44, 7.3x 증가)
+
+**책임**:
+
+- **Solid.js 반응성 완전 검증**
+  - JSDOM 제약 극복: fine-grained reactivity 완전 작동
+  - Signal/Store 변경 → DOM 업데이트 즉시 반영
+  - **Store Reactivity** (5 tests): 중첩 속성, 배열 변경, batching, fine-grained
+    추적
+- **실제 브라우저 API 테스트**
+  - CSS 레이아웃 계산 (`getBoundingClientRect()`, `offsetWidth/Height`)
+  - IntersectionObserver, ResizeObserver, requestAnimationFrame
+  - **Layout Calculation** (8 tests): 크기, 경계 사각형, 스크롤, 뷰포트, 이미지
+    종횡비
+- **시각적 동작 검증**
+  - 포커스 인디케이터, 애니메이션, 트랜지션
+  - 스크롤 동작, 뷰포트 상호작용
+  - **Focus Management** (8 tests): Tab 내비게이션, 모달 트랩, 반응형 추적, 복원
+  - **Animation & Transitions** (9 tests): CSS 트랜지션, animationend,
+    requestAnimationFrame, 트랜스폼
+- **이벤트 시스템 검증**
+  - **Event Handling** (8 tests): 클릭, 키보드+수정자, 위임, 커스텀 이벤트, 휠,
+    마우스 enter/leave
+
+**실행 방법**:
+
+```pwsh
+npm run test:browser     # 브라우저 모드 테스트 실행 (44 tests)
+npm run test:browser:ui  # UI 모드로 실행 (디버깅)
+```
+
+**장점**:
+
+- Solid.js 반응성 완전 작동 (JSDOM 제약 없음)
+- 실제 브라우저 환경에서 검증 (CSS, 레이아웃, API)
+- E2E보다 빠른 피드백 (컴포넌트 단위 테스트)
+
+**단점**:
+
+- JSDOM보다 느림 (브라우저 시작 오버헤드)
+- 리소스 사용량 증가 (Chromium 프로세스)
+- CI 환경에서 추가 설정 필요 (headless 모드)
+
+**사용 가이드**:
+
+```typescript
+// JSDOM에서 실패하는 반응성 테스트를 Browser 모드로 이동
+import { describe, it, expect } from 'vitest';
+import { getSolid } from '@shared/external/vendors';
+
+const { createSignal, createEffect } = getSolid();
+
+describe('Solid Reactivity in Browser', () => {
+  it('should update DOM when signal changes', async () => {
+    const [count, setCount] = createSignal(0);
+    const div = document.createElement('div');
+
+    createEffect(() => {
+      div.textContent = String(count());
+    });
+
+    expect(div.textContent).toBe('0');
+    setCount(1);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(div.textContent).toBe('1'); // ✅ Browser 모드에서 성공
+  });
+});
+```
+
+---
+
+### 4. Integration Tests (JSDOM + 모킹 - 중간 속도)
 
 **환경**: Vitest + JSDOM, `test/integration/**`
 
@@ -204,6 +291,7 @@ describe('Media Download Integration', () => {
 
 ```pwsh
 npm run e2e:smoke        # 스모크 테스트 (약 10-15개, 5-10분)
+npm run e2e:a11y         # 접근성 테스트 (axe-core 자동 스캔)
 npx playwright test --headed   # 헤드풀 모드 (브라우저 UI 표시)
 npx playwright test --debug    # 디버그 모드 (단계별 실행)
 ```
@@ -213,6 +301,7 @@ npx playwright test --debug    # 디버그 모드 (단계별 실행)
 - 실제 브라우저에서 실행 → 프로덕션 환경과 동일한 신뢰도
 - JSDOM 제약사항 없음 (모든 브라우저 API 사용 가능)
 - 사용자 관점에서 전체 흐름 검증
+- **접근성 자동 검증**: @axe-core/playwright로 WCAG 준수 확인
 
 **단점**:
 
@@ -247,6 +336,130 @@ test('should toggle settings panel', async ({ page }) => {
   await expect(page.locator('[data-testid="settings-panel"]')).toBeHidden();
 });
 ```
+
+---
+
+### 5. Accessibility Tests (Playwright + axe-core - E2E의 하위 집합)
+
+**환경**: Playwright + @axe-core/playwright, `playwright/accessibility/**`
+
+**테스트 수**: **14 tests** (Phase 1 완료: 6 → 14, 2.3x 증가)
+
+**책임**:
+
+- **WCAG 2.1 Level AA 준수 자동 검증**
+  - 색상 대비 (Contrast)
+  - 키보드 탐색 가능성 (Keyboard Navigation)
+  - ARIA 레이블 적절성 (ARIA Labels)
+  - 제목 계층 구조 (Heading Hierarchy)
+  - 포커스 인디케이터 (Focus Indicators)
+- **스크린 리더 지원**
+  - `aria-live` 영역 존재 확인 (**Toast**: 4 tests)
+  - 장식용 이미지 `aria-hidden` 처리
+  - 버튼/링크의 접근 가능한 이름 (**KeyboardHelpOverlay**: 4 tests)
+  - 다이얼로그 역할 및 속성 (`role="dialog"`, `aria-modal="true"`)
+- **자동화된 규칙 검증**
+  - axe-core의 50+ 규칙 자동 실행
+  - 위반사항 발견 시 상세 리포트 (**Gallery**: 4 tests, **Toolbar**: 6 tests)
+
+**실행 방법**:
+
+```pwsh
+npm run e2e:a11y         # 접근성 테스트 실행 (14 tests)
+npx playwright test playwright/accessibility --headed  # UI 모드로 실행
+```
+
+**장점**:
+
+- **자동화된 접근성 검증**: 수동 점검 불필요
+- **WCAG 준수 보장**: 법적 요구사항 충족
+- **CI 통합 가능**: PR마다 접근성 회귀 방지
+- **상세한 리포트**: 위반사항의 위치, 영향도, 수정 방법 제공
+
+**단점**:
+
+- 자동 검증의 한계: axe-core는 약 57%의 접근성 이슈만 감지
+- 수동 테스트 필요: 키보드 전용 사용, 스크린 리더 실제 테스트는 별도 필요
+- E2E 오버헤드: 브라우저 실행 시간 추가
+
+**접근성 테스트 작성 예시**:
+
+```typescript
+// playwright/accessibility/gallery-a11y.spec.ts
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+
+test('should have no accessibility violations', async ({ page }) => {
+  await page.goto('http://localhost:5173/test-harness.html');
+
+  // Gallery 컴포넌트 마운트
+  await page.evaluate(() => {
+    return window.__XEG_HARNESS__?.setupGalleryApp?.({
+      mediaItems: [{ url: 'https://example.com/image1.jpg', type: 'image' }],
+    });
+  });
+
+  await page.waitForSelector('[role="region"]');
+
+  // axe-core 스캔 실행 (WCAG 2.1 Level AA)
+  const accessibilityScanResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze();
+
+  // 위반사항이 있으면 테스트 실패
+  expect(accessibilityScanResults.violations).toEqual([]);
+});
+
+test('should have proper keyboard navigation', async ({ page }) => {
+  await page.goto('http://localhost:5173/test-harness.html');
+
+  await page.evaluate(() => {
+    return window.__XEG_HARNESS__?.setupGalleryApp?.({
+      mediaItems: [
+        { url: 'https://example.com/image1.jpg', type: 'image' },
+        { url: 'https://example.com/image2.jpg', type: 'image' },
+      ],
+    });
+  });
+
+  const gallery = await page.locator('[role="region"]');
+  await gallery.focus();
+
+  // Tab 키로 포커스 이동
+  await page.keyboard.press('Tab');
+
+  // 포커스된 요소 확인
+  const focusedElement = await page.evaluate(
+    () => document.activeElement?.tagName
+  );
+  expect(focusedElement).toBeTruthy();
+
+  // 키보드 접근성 검증
+  const accessibilityScanResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa'])
+    .analyze();
+
+  expect(accessibilityScanResults.violations).toEqual([]);
+});
+```
+
+**axe-core 태그 종류**:
+
+- `wcag2a`: WCAG 2.0 Level A
+- `wcag2aa`: WCAG 2.0 Level AA
+- `wcag21a`: WCAG 2.1 Level A
+- `wcag21aa`: WCAG 2.1 Level AA
+- `best-practice`: 모범 사례
+- `cat.color`: 색상 관련 규칙
+- `cat.semantics`: 의미론적 HTML 규칙
+- `cat.keyboard`: 키보드 접근성 규칙
+
+**접근성 테스트 권장 범위**:
+
+- ✅ **모든 사용자 대면 컴포넌트**: Toolbar, Gallery, SettingsPanel, Modals
+- ✅ **인터랙티브 요소**: 버튼, 링크, 폼 컨트롤
+- ✅ **동적 콘텐츠**: Toast, Tooltip, Dropdown
+- ⚠️ **수동 검증 필요**: 스크린 리더 실제 테스트, 고대비 모드, 확대/축소
 
 ---
 

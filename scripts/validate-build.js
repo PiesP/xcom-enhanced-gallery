@@ -214,6 +214,15 @@ function validateUserScript() {
   console.log(`📄 Files: \n  - ${prodPath}\n  - ${devPath}`);
   console.log(`📏 Size (raw): ${(rawBytes / 1024).toFixed(2)} KB`);
   console.log(`📦 Size (gzip): ${(gzBytes / 1024).toFixed(2)} KB`);
+  console.log('');
+  console.log('ℹ️  Build validation includes:');
+  console.log('  - Type checking (tsgo)');
+  console.log('  - Linting (ESLint, stylelint)');
+  console.log('  - Dependency validation (dependency-cruiser)');
+  console.log('  - Security analysis (CodeQL)');
+  console.log('  - Browser tests (Vitest + Chromium)');
+  console.log('  - E2E smoke tests (Playwright)');
+  console.log('  - Accessibility tests (axe-core)');
 
   return true;
 }

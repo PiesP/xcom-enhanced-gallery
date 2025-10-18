@@ -193,9 +193,9 @@ npm test
 #### 테스트 실행 안내
 
 이 저장소의 테스트는 Vitest Projects로 분할되어 있어 목적별로 빠르게 실행할 수
-있습니다(예: smoke/fast/unit/styles/performance/phases/refactor). 구체적인 사용
-방법과 스크립트는 `AGENTS.md`의 "테스트 가이드 (Vitest) > 분할 실행(Projects)"
-섹션을 참고하세요.
+있습니다(예: smoke/fast/unit/browser/styles/performance/phases/refactor).
+구체적인 사용 방법과 스크립트는 `AGENTS.md`의 "테스트 가이드 (Vitest) > 분할
+실행(Projects)" 섹션을 참고하세요.
 
 추가로, 로컬 개발 속도를 위해 다음 기본 명령을 제공합니다:
 
@@ -203,11 +203,15 @@ npm test
 - 전체 스위트: `npm run test:full`
 - 워치 모드: `npm run test:watch` (fast 프로젝트)
 - 커버리지(로컬): `npm run test:coverage` (unit 프로젝트)
+- **브라우저 테스트**: `npm run test:browser` (Vitest + Chromium, Solid.js
+  반응성)
+- **접근성 테스트**: `npm run e2e:a11y` (Playwright + axe-core, WCAG 2.1)
 
 참고: CI에서는 dot 리포터와 v8 커버리지로 속도를 최적화했고, Node 22/24
 매트릭스로 호환성을 검증합니다. 로컬 기본 테스트 전에 사전 빌드는 수행하지 않아
 빠르게 시작되며, 커버리지 작업은 안정성을 위해 사전(production) 빌드를
-수행합니다.
+수행합니다. 빌드 전 검증(`validate:build`)은 브라우저 테스트와 접근성 테스트를
+포함합니다.
 
 ## 📞 지원 및 피드백
 

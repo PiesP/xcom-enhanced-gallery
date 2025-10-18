@@ -7,7 +7,8 @@ import type {
   ErrorBoundaryResult,
   ToolbarMountResult,
   KeyboardOverlayResult,
-  // SettingsModalState, // TODO Phase 49: Remove after migrating tests to Toolbar expandable panel
+  ToastMountResult,
+  ToastState,
   GalleryAppSetupResult,
   GalleryAppState,
   GalleryEventsResult,
@@ -444,6 +445,102 @@ async function disposeKeyboardOverlayHarness(): Promise<void> {
     return;
   }
   keyboardOverlayHandle.dispose();
+}
+
+// ========================================================================
+// Toast Harness Functions
+// ========================================================================
+
+type ToastHandle = {
+  container: HTMLElement;
+  manager: ToastManager;
+  dispose: () => void;
+};
+
+let toastHandle: ToastHandle | null = null;
+
+async function mountToastHarness(): Promise<ToastMountResult> {
+  await ensureVendorsReady();
+
+  if (toastHandle) {
+    await disposeToastHarness();
+  }
+
+  const container = createContainer('xeg-toast-container');
+  const manager = ToastManager.getInstance();
+
+  toastHandle = {
+    container,
+    manager,
+    dispose: () => {
+      manager.clear();
+      container.remove();
+      toastHandle = null;
+    },
+  };
+
+  await sleep();
+  return {
+    containerId: container.id,
+    toastCount: manager.getToasts().length,
+  };
+}
+
+async function showToastHarness(
+  message: string,
+  type: 'info' | 'success' | 'warning' | 'error' = 'info'
+): Promise<void> {
+  if (!toastHandle) {
+    throw new Error('Toast is not mounted.');
+  }
+
+  switch (type) {
+    case 'info':
+      toastHandle.manager.info('Test Toast', message);
+      break;
+    case 'success':
+      toastHandle.manager.success('Success', message);
+      break;
+    case 'warning':
+      toastHandle.manager.warning('Warning', message);
+      break;
+    case 'error':
+      toastHandle.manager.error('Error', message);
+      break;
+  }
+
+  await sleep(50);
+}
+
+async function getToastStateHarness(): Promise<ToastState> {
+  if (!toastHandle) {
+    throw new Error('Toast is not mounted.');
+  }
+
+  const toasts = toastHandle.manager.getToasts();
+  return {
+    messages: toasts.map(toast => ({
+      id: toast.id,
+      message: toast.message,
+      type: toast.type,
+    })),
+  };
+}
+
+async function clearAllToastsHarness(): Promise<void> {
+  if (!toastHandle) {
+    throw new Error('Toast is not mounted.');
+  }
+
+  toastHandle.manager.clear();
+  await sleep(50);
+}
+
+async function disposeToastHarness(): Promise<void> {
+  if (!toastHandle) {
+    return;
+  }
+  toastHandle.dispose();
 }
 
 // TODO Phase 49: Remove SettingsModal harness functions after migrating E2E tests to Toolbar expandable panel
@@ -1075,11 +1172,11 @@ const harness: XegHarness = {
   openKeyboardOverlay: openKeyboardOverlayHarness,
   closeKeyboardOverlay: closeKeyboardOverlayHarness,
   disposeKeyboardOverlay: disposeKeyboardOverlayHarness,
-  // TODO Phase 49: Restore settings panel testing with Toolbar expandable panel
-  // mountSettingsModal: mountSettingsModalHarness,
-  // setSettingsModalOpen: setSettingsModalOpenHarness,
-  // getSettingsModalState: getSettingsModalStateHarness,
-  // disposeSettingsModal: disposeSettingsModalHarness,
+  mountToast: mountToastHarness,
+  showToast: showToastHarness,
+  getToastState: getToastStateHarness,
+  clearAllToasts: clearAllToastsHarness,
+  disposeToast: disposeToastHarness,
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,
   triggerGalleryAppClose: triggerGalleryAppCloseHarness,

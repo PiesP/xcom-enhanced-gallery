@@ -6,9 +6,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const testDir = path.resolve(__dirname, 'playwright');
 
+// 환경 변수로 테스트 디렉터리 선택 가능
+const testSubDir = process.env.PLAYWRIGHT_TEST_DIR || 'smoke';
+const testMatch = new RegExp(`${testSubDir.replace(/\//g, '/')}/.*\\.spec\\.ts$`);
+
 export default defineConfig({
   testDir,
-  testMatch: /smoke\/.*\.spec\.ts$/,
+  testMatch,
   timeout: 60_000,
   expect: {
     timeout: 5_000,

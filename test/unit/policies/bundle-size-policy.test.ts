@@ -140,7 +140,7 @@ describe('Bundle Size Policy', () => {
     });
 
     it('should document optimization strategy in TDD_REFACTORING_PLAN_COMPLETED.md', () => {
-      const planPath = resolve(process.cwd(), 'docs/TDD_REFACTORING_PLAN_COMPLETED.md');
+      const planPath = resolve(process.cwd(), 'docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md');
       const plan = readFileSync(planPath, 'utf-8');
 
       // Phase 93/94에서 문서가 간소화됨

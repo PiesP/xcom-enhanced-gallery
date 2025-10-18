@@ -67,8 +67,10 @@ Unit(많음) → Integration(중간) → E2E(적음)
 
 - **Static Analysis**: TypeScript, ESLint, stylelint, CodeQL (타입/린트/보안)
 - **Unit Tests** (JSDOM): 순수 함수, 단일 서비스, 컴포넌트 렌더링 (1-2분)
+- **Browser Tests** (Vitest + Chromium): Solid.js 반응성, 실제 DOM 동작 (1-2분)
 - **Integration Tests** (JSDOM): 다중 서비스 협업, 상태 동기화 (2-5분)
 - **E2E Tests** (Playwright): 핵심 사용자 시나리오, 브라우저 전용 API (5-15분)
+- **Accessibility Tests** (axe-core): WCAG 2.1 Level AA 자동 검증 (1-3분)
 
 **상세 가이드**: [`docs/TESTING_STRATEGY.md`](docs/TESTING_STRATEGY.md) 참고
 (JSDOM 제약사항, 선택 기준, 패턴 등)
@@ -256,10 +258,13 @@ Playwright 브라우저 환경에서 Solid.js의 fine-grained reactivity는 제�
 # 타입/린트/포맷 일괄
 npm run validate
 
-# 개발/프로덕션 빌드 및 산출물 검증
+# 개발/프로덕션 빌드 및 산출물 검증 (전체 검증 포함)
 npm run build:dev
 npm run build:prod
 node ./scripts/validate-build.js
+
+# 빌드 전 전체 검증 (prebuild hook)
+npm run validate:build  # typecheck + lint + deps + codeql + browser + e2e + a11y
 
 # 유지보수 점검 (작업 종료 시)
 npm run maintenance:check
@@ -268,11 +273,19 @@ npm run maintenance:check
 CI
 
 - 워크플로: `.github/workflows/ci.yml`
-- Node 22/24 매트릭스에서 다음을 수행:
-  - typecheck → lint → prettier check → 테스트(22에서는 커버리지)
-  - **E2E 테스트**: Playwright 브라우저 자동 설치 및 스모크 테스트 실행
-  - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
+- Node 22 단일 환경에서 다음을 수행:
+  - **품질 검증**: typecheck → lint → prettier check
+  - **단위 테스트**: JSDOM 기반 (커버리지 포함)
+  - **브라우저 테스트**: Vitest + Chromium (2개 샤드로 병렬 실행)
+  - **E2E 테스트**: Playwright 스모크 테스트
+  - **접근성 테스트**: axe-core WCAG 2.1 Level AA 검증
+  - **빌드 검증**: dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
   - 커버리지/빌드/E2E 실패 아티팩트 업로드
+- **성능 최적화** (Phase 1.1):
+  - Node 24 매트릭스 제거 → 단일 Node 22 환경 (10-15분 절약)
+  - 브라우저 테스트 샤딩 (2개 shard) → 병렬 실행 (5분 절약)
+  - Playwright 브라우저 캐싱 (30-60초 절약)
+  - 예상 총 CI 시간: ~15분 → ~8-10분 (40-50% 단축)
 
 보안/라이선스
 

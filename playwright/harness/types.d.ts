@@ -18,6 +18,15 @@ export type KeyboardOverlayResult = {
   containerId: string;
 };
 
+export type ToastMountResult = {
+  containerId: string;
+  toastCount: number;
+};
+
+export type ToastState = {
+  messages: Array<{ id: string; message: string; type: string }>;
+};
+
 export type ToolbarHeadlessResult = {
   items: Array<{ type: string; group: string; disabled: boolean; loading: boolean }>;
   downloadButtonsLoading: boolean;
@@ -104,11 +113,11 @@ export interface XegHarness {
   openKeyboardOverlay(): Promise<void>;
   closeKeyboardOverlay(): Promise<void>;
   disposeKeyboardOverlay(): Promise<void>;
-  // TODO Phase 49: Restore settings panel testing with Toolbar expandable panel harness
-  // mountSettingsModal(initialOpen?: boolean): Promise<{ containerId: string }>;
-  // setSettingsModalOpen(isOpen: boolean): Promise<void>;
-  // getSettingsModalState(): Promise<SettingsModalState>;
-  // disposeSettingsModal(): Promise<void>;
+  mountToast(): Promise<ToastMountResult>;
+  showToast(message: string, type?: 'info' | 'success' | 'warning' | 'error'): Promise<void>;
+  getToastState(): Promise<ToastState>;
+  clearAllToasts(): Promise<void>;
+  disposeToast(): Promise<void>;
   setupGalleryApp(): Promise<GalleryAppSetupResult>;
   triggerGalleryAppMediaClick(): Promise<void>;
   triggerGalleryAppClose(): Promise<void>;
