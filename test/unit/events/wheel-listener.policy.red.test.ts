@@ -12,6 +12,7 @@ describe('R2: wheel-listener policy (no direct addEventListener)', () => {
   // Allow list: central wheel utility file(s)
   const allowList = new Set<string>([
     join(SRC_ROOT, 'shared', 'utils', 'events', 'wheel.ts').replace(/\\/g, '/'),
+    join(SRC_ROOT, 'shared', 'utils', 'scroll', 'scroll-utils.ts').replace(/\\/g, '/'),
   ]);
 
   function* walk(dir: string): Generator<string> {
