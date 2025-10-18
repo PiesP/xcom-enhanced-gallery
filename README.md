@@ -16,7 +16,12 @@
 - **번들 크기**: 730KB (dev), 328KB (prod, gzip: ~89KB)
 - **브라우저 호환**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
 - **PC 전용 설계**: 마우스/키보드 최적화, 터치 이벤트 미지원
-- **품질 보증**: TypeScript strict, 1081 passing tests (99.1%), 0 lint warnings
+- **품질 보증**: TypeScript strict, 1115+ passing tests, 0 lint warnings
+  - **단위 테스트**: Vitest + JSDOM (900+ tests)
+  - **브라우저 테스트**: Vitest + Chromium (62 tests)
+  - **통합 테스트**: 서비스 라이프사이클 (8 tests)
+  - **E2E 테스트**: Playwright (45 tests)
+  - **접근성 테스트**: axe-core WCAG 2.1 (14 tests)
 
 **X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질
 원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC
