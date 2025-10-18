@@ -2,7 +2,7 @@ name: 🔍 CI Pipeline
 
 on:
   push:
-    branches: [master, develop, feature/*, fix/*, chore/*]
+    branches: [master]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -10,14 +10,6 @@ on:
       - "**/*.txt"
       - "**/*.svg"
       - ".vscode/**"
-  pull_request:
-    branches: [master, develop]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.MD"
-      - "**/*.txt"
-      - "**/*.svg"
       - ".vscode/**"
   workflow_dispatch:
 
@@ -79,16 +71,16 @@ jobs:
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🧪 Run tests (Node ${{ matrix.node-version }})
-        if: ${{ matrix.node-version != 20 }}
+        if: ${{ matrix.node-version != 22 }}
         run: npm test
 
-      - name: 🧪 Run tests with coverage (Node 20)
-        if: ${{ matrix.node-version == 20 }}
+      - name: 🧪 Run tests with coverage (Node 22)
+        if: ${{ matrix.node-version == 22 }}
         run: npm run test:coverage
 
       - name: 📊 Upload coverage reports
         uses: actions/upload-artifact@v4
-        if: ${{ success() && matrix.node-version == 20 }}
+        if: ${{ success() && matrix.node-version == 22 }}
         with:
           name: coverage-report-${{ github.sha }}
           path: coverage/

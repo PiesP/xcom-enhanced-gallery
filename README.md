@@ -163,16 +163,10 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 모든 라이센스 전문은 [`LICENSES/`](LICENSES/) 디렉토리에서 확인할 수 있습니다.
 
-## 🤝 기여하기
+## 🤝 개발에 참여하기
 
-프로젝트에 기여하고 싶으시다면:
-
-1. **Fork**: 이 저장소를 포크하세요
-2. **Branch**: 새로운 기능 브랜치를 생성하세요
-   (`git checkout -b feature/amazing-feature`)
-3. **Commit**: 변경사항을 커밋하세요 (`git commit -m 'Add amazing feature'`)
-4. **Push**: 브랜치에 푸시하세요 (`git push origin feature/amazing-feature`)
-5. **Pull Request**: Pull Request를 생성하세요
+프로젝트 개선 아이디어가 있으신가요? 개발 환경 설정과 상세한 가이드는
+[`AGENTS.md`](AGENTS.md)를 참고하세요.
 
 ### 개발 환경 설정
 

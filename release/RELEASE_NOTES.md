@@ -82,7 +82,7 @@ X.com Enhanced Gallery는 X.com(구 Twitter)의 미디어 보기 경험을 향�
 
 ## 🤝 Contributing
 
-기여를 환영합니다! [CONTRIBUTING.md](../.github/CONTRIBUTING.md)를 참고해주세요.
+개발에 참여하고 싶으시다면 [개발자 가이드](../AGENTS.md)를 참고해주세요.
 
 ## 📄 License
 

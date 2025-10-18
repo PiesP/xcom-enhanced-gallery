@@ -13,7 +13,13 @@ const ROOT = resolve(process.cwd());
 
 function checkBackupDirectories() {
   console.log('\n📁 백업/임시 디렉터리 검사...');
-  const patterns = ['backup', 'tmp', 'old', 'archive', 'deprecated'];
+  const patterns = ['backup', 'tmp', 'old', 'deprecated'];
+  // 의도적으로 무시할 디렉터리 (docs/archive, docs/temp, scripts/temp는 정상)
+  const ignorePaths = [
+    join(ROOT, 'docs', 'archive'),
+    join(ROOT, 'docs', 'temp'),
+    join(ROOT, 'scripts', 'temp'),
+  ];
   const found = [];
 
   function scan(dir) {
@@ -22,6 +28,10 @@ function checkBackupDirectories() {
       for (const entry of entries) {
         if (entry === 'node_modules' || entry === '.git') continue;
         const fullPath = join(dir, entry);
+
+        // 의도된 디렉터리는 건너뛰기
+        if (ignorePaths.some(p => fullPath === p)) continue;
+
         const stat = statSync(fullPath);
         if (stat.isDirectory()) {
           if (patterns.some(p => entry.toLowerCase().includes(p))) {

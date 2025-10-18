@@ -367,4 +367,4 @@ git commit -m "fix: resolve memory leak in media loader"
 
 ---
 
-**💻 일관된 코드 스타일은 팀 생산성을 높입니다.**
+**💻 일관된 코드 스타일은 개발 생산성을 높입니다.**

@@ -2,9 +2,7 @@ name: 🔒 Security Audit
 
 on:
   push:
-    branches: [master, develop]
-  pull_request:
-    branches: [master, develop]
+    branches: [master]
   schedule:
     # 매주 월요일 오전 9시 (UTC)
     - cron: "0 9 * * 1"

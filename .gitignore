@@ -40,6 +40,10 @@ docs/bundle-*.html
 docs/bundle-*.json
 docs/dependency-graph.dot
 
+# Temporary & archived documentation
+docs/temp/
+docs/archive/
+
 # Logs
 logs/
 *.log
@@ -88,6 +92,9 @@ archived/
 temp.js
 temp.css
 vitest-transform-*.js
+
+# Temporary scripts (for ad-hoc tasks)
+scripts/temp/
 
 # Automation & Build artifacts
 build-metrics.json
@@ -163,7 +170,7 @@ personal.config.*
 dev.config.*
 *.local.json
 .local/
-.editorconfig
+# .editorconfig는 프로젝트 전체 스타일이므로 Git에 포함
 *.code-workspace
 
 # 임시 개발 파일 및 실험

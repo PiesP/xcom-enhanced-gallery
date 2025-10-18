@@ -46,7 +46,6 @@
     "test:perf": "vitest --project performance run",
     "test:phases": "vitest --project phases run",
     "test:refactor": "vitest --project refactor run",
-    "test:ci": "cross-env CI=true vitest --project unit --project styles run --coverage --reporter=dot",
     "// === E2E ===": "",
     "e2e:smoke": "playwright test playwright/smoke --config=playwright.config.ts",
     "// === Dependencies ===": "",
@@ -135,5 +134,8 @@
       "stylelint --fix",
       "prettier --write"
     ]
+  },
+  "volta": {
+    "node": "22.20.0"
   }
 }

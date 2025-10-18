@@ -22,8 +22,8 @@
 
 **결과 해석**:
 
-- **Error**: 즉시 수정 필요 (PR 머지 차단)
-- **Warning**: 리뷰 후 수정 권장
+- **Error**: 즉시 수정 필요 (커밋 전 수정)
+- **Warning**: 수정 권장
 
 **관련 파일**:
 
@@ -160,11 +160,11 @@
 **실행 시점**:
 
 - **로컬**: `npm run e2e:smoke`
-- **CI**: master 브랜치 머지 전
+- **CI**: master 브랜치 push 시
 
 **결과 해석**:
 
-- 스모크 테스트 실패 시 PR 차단
+- 스모크 테스트 실패 시 즉시 수정
 - 스크린샷 diff 검토
 
 **관련 파일**:
@@ -287,7 +287,7 @@ npm run maintenance:check # 프로젝트 정리 점검
 
 ```mermaid
 graph TD
-    A[PR 생성] --> B{CI Checks}
+    A[master Push] --> B{CI Checks}
     B --> C[TypeScript]
     B --> D[ESLint]
     B --> E[Stylelint]
@@ -301,13 +301,13 @@ graph TD
     G --> H
 
     H -->|Yes| I[Build]
-    H -->|No| J[❌ PR 차단]
+    H -->|No| J[❌ 빌드 실패]
 
     I --> K[validate-build]
     K -->|Pass| L[E2E Smoke Tests]
     K -->|Fail| J
 
-    L -->|Pass| M[✅ Merge 가능]
+    L -->|Pass| M[✅ 배포 준비]
     L -->|Fail| J
 ```
 
@@ -351,14 +351,14 @@ graph TD
 - 의존성 규칙 위반
 - 빌드 검증 실패
 
-### 우선순위 2 (PR 머지 전 수정)
+### 우선순위 2 (커밋 전 수정)
 
 - ESLint/Stylelint 경고
 - CodeQL Warning 레벨
 - 빌드 크기 90% 초과
 - 보안 취약점 (moderate+)
 
-### 우선순위 3 (리뷰 후 판단)
+### 우선순위 3 (검토 후 판단)
 
 - Maintenance-check 경고
 - 큰 문서 파일

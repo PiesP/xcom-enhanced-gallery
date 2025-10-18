@@ -268,8 +268,8 @@ npm run maintenance:check
 CI
 
 - 워크플로: `.github/workflows/ci.yml`
-- Node 20/22 매트릭스에서 다음을 수행:
-  - typecheck → lint → prettier check → 테스트(20에서는 커버리지)
+- Node 22/24 매트릭스에서 다음을 수행:
+  - typecheck → lint → prettier check → 테스트(22에서는 커버리지)
   - **E2E 테스트**: Playwright 브라우저 자동 설치 및 스모크 테스트 실행
   - dev/prod 빌드 후 `scripts/validate-build.js`로 산출물 검증
   - 커버리지/빌드/E2E 실패 아티팩트 업로드
@@ -334,24 +334,23 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
   `@shared/utils/signalSelector` 사용. PC 전용 이벤트만, CSS Modules + 디자인
   토큰만.”
 
-요청/PR 최소 컨텍스트 패키지
+요청 시 최소 컨텍스트 패키지
 
 - 파일 경로 목록(3–7개)
 - 관련 타입/시그니처(입력/출력/에러 모드) 2–4줄 요약
 - 제약 요약: vendors getter, PC-only, 디자인 토큰, TDD
 - 수용 기준(3–5줄): 어떤 테스트가 추가/수정되고 무엇이 GREEN이어야 하는지
 
-## PR 규칙
+## 커밋 규칙
 
-- 제목: `[xcom-enhanced-gallery] <Title>`
-- 머지 전 필수: `npm run typecheck` / `npm run lint` / `npm test`
+- 커밋 전 필수: `npm run typecheck` / `npm run lint:fix` / `npm test`
 - 스타일/토큰/접근성은 `docs/CODING_GUIDELINES.md`와 테스트 스위트 기준을
   따릅니다.
-  - PR 설명에 다음 확인 사항을 포함해 주세요:
-    - 최소 컨텍스트 제공(파일 경로/타입/제약/수용 기준)
-    - “한 줄 구조 리팩토링”/최소 diff 원칙 적용 여부
-    - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
-    - RED→GREEN 테스트 링크 또는 요약
+- AI 협업 시 확인사항:
+  - 최소 컨텍스트 제공(파일 경로/타입/제약/수용 기준)
+  - "한 줄 구조 리팩토링"/최소 diff 원칙 적용 여부
+  - vendors/Userscript getter 사용, PC 전용 이벤트, 디자인 토큰 준수 여부
+  - RED→GREEN 테스트 링크 또는 요약
 
 ## 트러블슈팅 팁
 
@@ -424,8 +423,6 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
 
 - **[TDD_REFACTORING_PLAN.md](docs/TDD_REFACTORING_PLAN.md)**: 활성 리팩토링
   계획, Phase 추적
-- **[TDD_REFACTORING_PLAN_COMPLETED.md](docs/TDD_REFACTORING_PLAN_COMPLETED.md)**:
-  완료된 Phase 기록 보관소
 - **[SOLID_REACTIVITY_LESSONS.md](docs/SOLID_REACTIVITY_LESSONS.md)**: Solid.js
   반응성 시스템 핵심 교훈 (Phase 80.1 경험 기반)
 
@@ -440,6 +437,36 @@ ModGo 실험에서 확인된 “구조가 좋을수록 동일 지시에서도 �
 - **scripts/validate-build.js**: 빌드 산출물 검증 (크기, 무결성, 메타데이터)
 - **scripts/generate-dep-graph.cjs**: 의존성 그래프 생성 (GraphViz)
 - **scripts/check-codeql.js**: CodeQL SARIF 결과 검증
+
+---
+
+## 📂 문서 및 스크립트 관리 규칙
+
+### 문서 디렉터리 구조
+
+```
+docs/
+  ├── *.md              # 핵심 가이드 문서 (Git 추적)
+  ├── archive/          # 완료된 Phase 등 (Git 무시, 로컬 보관)
+  └── temp/             # 작업 중인 초안 (Git 무시)
+```
+
+### 스크립트 디렉터리 구조
+
+```
+scripts/
+  ├── *.js              # 항구적 스크립트 (Git 추적)
+  └── temp/             # 임시 실험 스크립트 (Git 무시)
+```
+
+### 사용 지침
+
+- **초안 작성**: `docs/temp/` 또는 `scripts/temp/`에서 시작
+- **확정**: `docs/` 또는 `scripts/` 루트로 이동 (Git 추적 시작)
+- **완료**: Phase 완료 시 `docs/archive/`로 이동 (Git 추적 종료)
+
+상세 가이드: [MAINTENANCE.md](docs/MAINTENANCE.md) "문서 및 스크립트 관리 정책"
+섹션
 
 ---
 

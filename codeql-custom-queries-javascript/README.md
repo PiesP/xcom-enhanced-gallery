@@ -129,8 +129,7 @@ npm run codeql:check
 
 GitHub Actions Security 워크플로우가 자동 실행됩니다:
 
-- PR 생성/업데이트
-- master/develop 브랜치 push
+- master 브랜치 push
 - 매주 월요일 오전 9시 (UTC)
 
 ## 쿼리 추가 가이드
