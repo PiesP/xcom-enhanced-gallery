@@ -66,7 +66,20 @@ export function Toast({
   };
 
   // Toast 타입에 따른 아이콘 선택
-  const getToastIcon = (): string => '🔔';
+  const getToastIcon = (): string => {
+    switch (toast.type) {
+      case 'info':
+        return 'ℹ️';
+      case 'success':
+        return '✅';
+      case 'warning':
+        return '⚠️';
+      case 'error':
+        return '❌';
+      default:
+        return '🔔';
+    }
+  };
 
   // 표준화된 클래스명 생성
   const toastClass = ComponentStandards.createClassName(

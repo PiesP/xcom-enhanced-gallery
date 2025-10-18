@@ -295,7 +295,6 @@
   --xeg-settings-select-padding: var(--space-sm) var(--space-md);
   --xeg-settings-select-bg: var(--xeg-bg-toolbar);
   --xeg-settings-select-border: var(--xeg-toolbar-border);
-  --xeg-settings-select-focus-ring: 0 0 0 0.1875rem oklch(0.676 0.151 237.8); /* 3px */
 
   /* Modal Component Tokens */
   /* NOTE: Modal component tokens now defer to semantic tokens to avoid
@@ -305,18 +304,20 @@
   --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
   --xeg-comp-toolbar-border: var(--xeg-toolbar-border);
 
-  /* Toast Component Tokens */
-  --xeg-toast-bg-info: oklch(0.95 0.05 237.8);
-  --xeg-toast-border-info: oklch(0.676 0.151 237.8);
-  --xeg-toast-bg-success: oklch(0.95 0.08 142);
-  --xeg-toast-border-success: oklch(0.725 0.17 142.5);
-  --xeg-toast-bg-warning: oklch(0.988 0.029 86.7);
-  --xeg-toast-border-warning: oklch(0.761 0.16 70.7);
-  --xeg-toast-bg-error: oklch(0.971 0.013 17.4);
-  --xeg-toast-border-error: oklch(0.628 0.257 27.3);
-  --xeg-toast-bg-neutral: oklch(0.943 0.006 206.2);
-  --xeg-toast-shadow-info: 0 0.125rem 0.5rem oklch(0.676 0.151 237.8 / 0.15); /* 0 2px 8px */
-  --xeg-toast-shadow-focus: 0 0.25rem 1rem oklch(0.676 0.151 237.8 / 0.25); /* 0 4px 16px */
+  /* Toast Component Tokens (Phase 111.1: Monochrome Unification) */
+  /* All Toast types now use the same gray-based colors for consistency.
+   * Visual distinction is provided by icons (Phase 110.2) and text content. */
+  --xeg-toast-bg-info: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-info: var(--color-gray-300);
+  --xeg-toast-bg-success: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-success: var(--color-gray-300);
+  --xeg-toast-bg-warning: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-warning: var(--color-gray-300);
+  --xeg-toast-bg-error: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-error: var(--color-gray-300);
+  --xeg-toast-bg-neutral: var(--xeg-surface-glass-bg);
+  --xeg-toast-shadow-info: var(--xeg-shadow-md); /* 0 2px 8px */
+  --xeg-toast-shadow-focus: var(--xeg-shadow-lg); /* 0 4px 16px */
 
   /* Toast Layout Tokens (Phase 52) */
   --xeg-toast-margin-bottom: var(--space-md); /* 16px - 4px grid normalized */
@@ -333,7 +334,7 @@
   --xeg-toast-message-font-size: 0.8125rem; /* 13px */
 
   /* Focus Ring Utilities */
-  --xeg-focus-ring: 0.125rem solid oklch(0.676 0.151 237.8); /* 2px */
+  --xeg-focus-ring: 0.125rem solid var(--color-gray-500); /* 2px */
   --xeg-focus-ring-offset: 0.125rem; /* 2px */
 } /* ===== 유틸리티 클래스 ===== */
 

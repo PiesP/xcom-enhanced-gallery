@@ -50,7 +50,6 @@
   border-color: var(--xeg-color-border-hover);
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
-  box-shadow: var(--xeg-settings-select-focus-ring);
 }
 
 .select option {

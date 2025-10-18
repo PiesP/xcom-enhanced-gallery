@@ -46,6 +46,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id='theme-select'
           class={`${toolbarStyles.toolbarButton} ${styles.select}`}
           onChange={props.onThemeChange}
+          aria-label={languageService.getString('settings.theme')}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
           <option value='auto' selected={props.currentTheme === 'auto'}>
@@ -69,6 +70,7 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id='language-select'
           class={`${toolbarStyles.toolbarButton} ${styles.select}`}
           onChange={props.onLanguageChange}
+          aria-label={languageService.getString('settings.language')}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
           <option value='auto' selected={props.currentLanguage === 'auto'}>

@@ -27,7 +27,11 @@ predicate isAllowedFile(File file) {
   // Test files
   file.getRelativePath().matches("%test/%") or
   file.getBaseName().matches("%.test.%") or
-  file.getBaseName().matches("%.spec.%")
+  file.getBaseName().matches("%.spec.%") or
+  // Documentation files (not part of userscript bundle)
+  file.getRelativePath().matches("%docs/%") or
+  file.getRelativePath().matches("%scripts/%") or
+  file.getBaseName() = "dependency-graph-viewer.html"
 }
 
 from CallExpr call
