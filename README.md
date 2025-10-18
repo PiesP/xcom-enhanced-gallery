@@ -4,7 +4,7 @@
 > 유저스크립트**
 
 [![설치하기](https://img.shields.io/badge/설치하기-클릭-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![버전](https://img.shields.io/badge/버전-v0.3.1-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
+[![버전](https://img.shields.io/badge/버전-v0.4.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
 [![라이센스](https://img.shields.io/badge/라이센스-MIT-green.svg)](LICENSE)
 [![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
 [![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
@@ -16,7 +16,7 @@
 - **번들 크기**: 730KB (dev), 328KB (prod, gzip: ~89KB)
 - **브라우저 호환**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
 - **PC 전용 설계**: 마우스/키보드 최적화, 터치 이벤트 미지원
-- **품질 보증**: TypeScript strict, 987 passing tests (100%), 0 lint warnings
+- **품질 보증**: TypeScript strict, 1081 passing tests (99.1%), 0 lint warnings
 
 **X.com Enhanced Gallery**는 X.com(구 Twitter)에서 이미지와 동영상을 **고화질
 원본**으로 다운로드하고, **직관적인 세로 스크롤 갤러리**로 탐색할 수 있는 **PC
