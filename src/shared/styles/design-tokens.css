@@ -25,12 +25,12 @@
   --xeg-surface-glass-blur: none;
 
   /* Focus 토큰 - 테스트 요구사항 */
-  --xeg-focus-outline: 0.125em solid var(--xeg-color-primary);
-  --xeg-focus-outline-color: var(--xeg-color-primary);
+  --xeg-focus-outline: 0.125em solid var(--xeg-color-neutral-500);
+  --xeg-focus-outline-color: var(--xeg-color-neutral-500);
   --xeg-focus-outline-width: 0.125em;
   --xeg-focus-outline-style: solid;
   --xeg-focus-offset: 0.125em;
-  --xeg-focus-ring: 0.125em solid var(--xeg-color-primary);
+  --xeg-focus-ring: 0.125em solid var(--xeg-color-neutral-500);
   --xeg-focus-ring-offset: 0.125em;
 
   /* Font Size 토큰 - 테스트 요구사항 */

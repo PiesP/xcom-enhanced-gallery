@@ -12,16 +12,31 @@
   padding: var(--xeg-settings-padding);
 }
 
+.bodyCompact {
+  gap: var(--space-sm);
+}
+
 .setting {
   display: flex;
   flex-direction: column;
   gap: var(--xeg-settings-control-gap);
 }
 
+.settingCompact {
+  gap: var(--space-xs);
+}
+
 .label {
   font-size: var(--xeg-settings-label-font-size);
   font-weight: var(--xeg-settings-label-font-weight);
   color: var(--xeg-color-text-primary);
+}
+
+.compactLabel {
+  font-size: var(--font-size-xs);
+  color: var(--xeg-color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .select {

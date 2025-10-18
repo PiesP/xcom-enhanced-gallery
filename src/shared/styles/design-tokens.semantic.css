@@ -145,7 +145,7 @@
   --xeg-shadow-inset-border: var(--shadow-inset-border);
 
   /* Focus & Accessibility (rem for absolute outline width) */
-  --xeg-focus-outline: 0.125rem solid var(--color-primary); /* 2px */
+  --xeg-focus-outline: 0.125rem solid var(--color-gray-500); /* 2px */
   --xeg-focus-offset: 0.125rem; /* 2px */
 
   /* Animation Timing - Semantic Roles */
@@ -262,7 +262,7 @@
 
 @media (prefers-contrast: high) {
   :root {
-    --xeg-focus-outline: 0.1875rem solid var(--color-primary); /* 3px */
+    --xeg-focus-outline: 0.1875rem solid var(--color-base-black); /* 3px */
     --color-border-emphasis: var(--color-base-black);
   }
 }

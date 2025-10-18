@@ -2,7 +2,7 @@
  * @fileoverview SettingsControls - Extracted settings UI component (Phase 45)
  * @description Reusable theme and language selection controls extracted from SettingsModal
  */
-import { getSolid, type JSXElement } from '../../../external/vendors';
+import { type JSXElement } from '../../../external/vendors';
 import { LanguageService } from '../../../services/language-service';
 import toolbarStyles from '../Toolbar/Toolbar.module.css';
 import styles from './SettingsControls.module.css';
@@ -31,22 +31,31 @@ export interface SettingsControlsProps {
  * @returns JSX element containing theme and language controls
  */
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
-  const { Show } = getSolid();
   const languageService = new LanguageService();
+  const containerClass = [styles.body, props.compact ? styles.bodyCompact : '']
+    .filter(Boolean)
+    .join(' ');
+  const settingClass = [styles.setting, props.compact ? styles.settingCompact : '']
+    .filter(Boolean)
+    .join(' ');
+  const labelClass = [styles.label, props.compact ? styles.compactLabel : '']
+    .filter(Boolean)
+    .join(' ');
+  const themeTitle = languageService.getString('settings.theme');
+  const languageTitle = languageService.getString('settings.language');
 
   return (
-    <div class={styles.body} data-testid={props['data-testid']}>
-      <div class={styles.setting}>
-        <Show when={!props.compact}>
-          <label for='theme-select' class={styles.label}>
-            {languageService.getString('settings.theme')}
-          </label>
-        </Show>
+    <div class={containerClass} data-testid={props['data-testid']}>
+      <div class={settingClass}>
+        <label for='theme-select' class={labelClass}>
+          {themeTitle}
+        </label>
         <select
           id='theme-select'
           class={`${toolbarStyles.toolbarButton} ${styles.select}`}
           onChange={props.onThemeChange}
-          aria-label={languageService.getString('settings.theme')}
+          aria-label={themeTitle}
+          title={themeTitle}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
           <option value='auto' selected={props.currentTheme === 'auto'}>
@@ -60,17 +69,16 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           </option>
         </select>
       </div>
-      <div class={styles.setting}>
-        <Show when={!props.compact}>
-          <label for='language-select' class={styles.label}>
-            {languageService.getString('settings.language')}
-          </label>
-        </Show>
+      <div class={settingClass}>
+        <label for='language-select' class={labelClass}>
+          {languageTitle}
+        </label>
         <select
           id='language-select'
           class={`${toolbarStyles.toolbarButton} ${styles.select}`}
           onChange={props.onLanguageChange}
-          aria-label={languageService.getString('settings.language')}
+          aria-label={languageTitle}
+          title={languageTitle}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
           <option value='auto' selected={props.currentLanguage === 'auto'}>

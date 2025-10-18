@@ -51,9 +51,22 @@
 
 ## 활성 Phase
 
-**현재 상태**: 유지 관리 모드 (Phase 112 완료, Phase 111.2 보류)
+### 진행 중 Phase
+
+현재 진행 중 Phase 없음 (유지 관리 모드).
+
+**현재 상태**: 유지 관리 모드 (Phase 113 완료, Phase 111.2 보류)
 
 ### 최근 완료된 작업
+
+**Phase 113: Settings compact 라벨 & Focus Ring 단일톤** ✅ (2025-10-19)
+
+- compact 모드에서도 라벨을 시각적으로 노출하도록 `SettingsControls` 구조 개선
+- `design-tokens.css` / semantic/component 토큰에서 focus alias를 gray 기반으로
+  재정의
+- 테스트: `settings-controls.compact-labels.test.tsx`(2) ·
+  `phase-113-focus-ring-alias.test.ts`(4) → 6 GREEN
+- 실제 툴바 설정 패널에서 포커스 테두리 회색, 라벨 가시성 확인
 
 **Phase 112: Settings 드롭다운 흑백 통일 검증** ✅ (2025-10-19)
 
@@ -75,8 +88,6 @@
 
 **검토 대상**: `--color-primary`, `--color-success/error/warning/info`,
 `--xeg-color-primary`
-
-**보류 사유**:
 
 1. 실제 사용처 확인 필요 (grep 검색으로 범위 파악)
 2. 접근성 영향 평가 필요 (WCAG 2.1 준수 확인)
@@ -155,16 +166,12 @@
 
 1. **실제 문제 발생**
    - 사용자 버그 리포트
-   - 성능 문제 발견
-   - 보안 취약점 발견
 
 1. **품질 지표 저하**
-   - 테스트 통과율 < 95%
    - 빌드 크기 > 333 KB (경고 기준 1 KB 초과)
    - 의존성 위반 발생
 
 1. **새로운 기능 추가**
-   - 사용자 요청 기능
    - 필수 기능 개선
    - 플랫폼 업데이트 대응
 
