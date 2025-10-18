@@ -376,14 +376,14 @@ export function useToolbarSettingsController(
     themeService.setTheme(theme);
   };
 
-  const handleLanguageChange = (event: Event) => {
+  const handleLanguageChange = async (event: Event) => {
     const select = event.target as HTMLSelectElement | null;
     if (!select) {
       return;
     }
     const language = (select.value as LanguageOption) || 'auto';
     setCurrentLanguage(language);
-    languageService.setLanguage(language);
+    await languageService.setLanguage(language);
   };
 
   return {

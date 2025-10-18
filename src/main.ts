@@ -52,6 +52,11 @@ async function initializeInfrastructure(): Promise<void> {
   try {
     await initializeEnvironment();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
+
+    // Phase 117: LanguageService 초기화
+    const { languageService } = await import('@shared/services/language-service');
+    await languageService.initialize();
+    logger.debug('✅ LanguageService 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;
