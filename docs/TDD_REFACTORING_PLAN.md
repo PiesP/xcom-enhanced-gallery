@@ -42,6 +42,7 @@
 | 109     | 설정 UI 디자인 개선              | 2025-10-18 | 흑백 통일, 접근성 개선       |
 | 110     | UI 일관성 개선 (접근성 강화)     | 2025-10-18 | 포커스 링 색상, Toast 아이콘 |
 | 111.1   | Toast 색상 토큰 흑백 통일        | 2025-10-18 | 11/11 tests, 빌드 -1.59 KB   |
+| 112     | Settings 드롭다운 흑백 통일 검증 | 2025-10-19 | 9/9 tests, 검증 완료         |
 
 > 상세 내용:
 > [`TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
@@ -50,9 +51,16 @@
 
 ## 활성 Phase
 
-**현재 상태**: 유지 관리 모드 (Phase 111.1 완료, Phase 111.2 보류)
+**현재 상태**: 유지 관리 모드 (Phase 112 완료, Phase 111.2 보류)
 
 ### 최근 완료된 작업
+
+**Phase 112: Settings 드롭다운 흑백 통일 검증** ✅ (2025-10-19)
+
+- 사용자 보고에 따른 검증 작업
+- 9개 테스트 추가: 모두 GREEN (Phase 109에서 이미 완료된 상태 확인)
+- 결과: hover/focus 상태가 이미 gray 기반, 라벨 가시성 정상
+- 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참고
 
 **Phase 111.1: Toast 색상 토큰 흑백 통일** ✅ (2025-10-18)
 
