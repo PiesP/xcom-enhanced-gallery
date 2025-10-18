@@ -64,9 +64,6 @@ export {
 // === 이벤트 (1개) ===
 export { addListener } from './events';
 
-// === Wheel Event utilities (R2) ===
-export { addWheelListener } from './events/wheel';
-
 // === 미디어 (3개) ===
 export { imageFilter, getHighQualityMediaUrl, MediaClickDetector } from './media';
 

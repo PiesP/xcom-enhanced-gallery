@@ -185,12 +185,12 @@ describe('Phase 76: Native Scroll Behavior (RED Phase)', () => {
       expect(scrollUtils).not.toHaveProperty('preventScrollPropagation');
     });
 
-    it('should NOT have ensureWheelLock in wheel utils', async () => {
-      // RED: wheel.ts에서 ensureWheelLock 제거 확인
-      const wheelUtils = await import('../../../src/shared/utils/events/wheel');
+    it('should NOT have ensureWheelLock exported from utils', async () => {
+      // RED: utils에서 ensureWheelLock 제거 확인 (events/wheel 파일 자체가 삭제됨)
+      const utils = await import('../../../src/utils');
 
       // ensureWheelLock 함수가 존재하지 않아야 함
-      expect(wheelUtils).not.toHaveProperty('ensureWheelLock');
+      expect(utils).not.toHaveProperty('ensureWheelLock');
     });
   });
 
