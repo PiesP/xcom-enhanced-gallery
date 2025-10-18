@@ -55,8 +55,32 @@ npm install -g @typescript/tsgo
 
 의존성 그래프/검증 (dependency-cruiser)
 
-- JSON/그래프/검증 일괄: `npm run deps:all`
-- 산출물 위치: `docs/dependency-graph.(json|dot|svg)`
+- **빠른 검증**: `npm run deps:json` (JSON만, ~1-2초, 캐싱 지원)
+- **DOT 생성**: `npm run deps:dot` (JSON + DOT, ~2-3초)
+- **전체 그래프**: `npm run deps:graph` (JSON + DOT + SVG, ~3-8초, Graphviz
+  필요)
+- **검증 + 전체**: `npm run deps:all` (deps:check + 전체 그래프)
+- **강제 재생성**: `--force` 플래그 추가 (예:
+  `node ./scripts/generate-dep-graph.cjs --force`)
+- **캐싱**: src/ 디렉터리 변경 시만 재생성 (미변경 시 즉시 스킵)
+- **산출물 위치**: `docs/dependency-graph.(json|dot|svg)`
+- **시각화**: `docs/dependency-graph-viewer.html` (브라우저에서 확인)
+
+**성능 최적화**:
+
+- 캐시 히트 시 즉시 스킵 (~0.1초)
+- JSON만 생성 시 1-2초 (빌드 후 검증에 사용)
+- 전체 생성 시 3-8초 (개발 중 필요 시에만)
+- Graphviz 미설치 시 placeholder SVG 생성 (CI 실패 방지)
+
+**SVG 렌더링 옵션**:
+
+- 레이아웃 엔진: dot (계층적) > fdp (force-directed) > sfdp (확장 가능)
+- 최적화 옵션: 직교 엣지, 겹침 제거, 반응형 뷰포트
+- 대화형 뷰어: 줌, 패닝, 다운로드 기능 포함
+
+**주의**: SVG 파일은 Git에서 추적되지 않습니다. 처음 클론 후 또는 src/ 변경 후
+`npm run deps:graph`를 실행하여 생성하세요.
 
 ## 테스트 전략 개요
 

@@ -39,6 +39,9 @@ codeql-custom-queries-javascript/test-samples/
 docs/bundle-*.html
 docs/bundle-*.json
 docs/dependency-graph.dot
+docs/dependency-graph.json
+docs/dependency-graph.svg
+docs/.dep-graph-cache.json
 
 # Temporary & archived documentation
 docs/temp/
