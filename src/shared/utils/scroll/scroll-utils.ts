@@ -4,7 +4,6 @@
 
 import { logger } from '../../logging/logger';
 import { Debouncer } from '../performance/performance-utils';
-import { addWheelListener } from '../events/wheel';
 
 /** Twitter 스크롤 컨테이너 찾기 */
 export { findTwitterScrollContainer } from '../core-utils';
@@ -70,7 +69,7 @@ export function createScrollHandler(
   const targetElement = captureOnDocument ? document : element;
 
   try {
-    const cleanup = addWheelListener(targetElement, wheelHandler, { passive: true });
+    targetElement.addEventListener('wheel', wheelHandler, { passive: true });
     logger.debug('Wheel event listener registered', {
       target: captureOnDocument ? 'document' : 'element',
       threshold,
@@ -78,10 +77,10 @@ export function createScrollHandler(
 
     return () => {
       try {
-        cleanup();
+        targetElement.removeEventListener('wheel', wheelHandler);
         logger.debug('Wheel event listener removed');
       } catch (error) {
-        logger.warn('Event listener removal failed', error);
+        logger.error('Failed to remove wheel event listener', error);
       }
     };
   } catch (error) {

@@ -7,12 +7,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Import modules to be tested
-import { createFocusTrap as legacyCreateFocusTrap } from '@shared/utils/accessibility/accessibility-utils';
-import * as focusTrapModule from '@shared/utils/focus-trap';
+import { createFocusTrap as legacyCreateFocusTrap } from '@/shared/utils/accessibility/keyboard-navigation';
+import * as focusTrapModule from '@/shared/utils/focus-trap';
 
-describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () => {
+describe('Focus Trap 표준화 (keyboard-navigation → unified focusTrap)', () => {
   let container: HTMLElement;
   let createFocusTrapSpy: ReturnType<typeof vi.spyOn>;
+  let trapInstance: ReturnType<typeof focusTrapModule.createFocusTrap>;
 
   beforeEach(() => {
     container = globalThis.document.createElement('div');
@@ -23,12 +24,13 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
     globalThis.document.body.appendChild(container);
 
     // Set up spy on the unified createFocusTrap
-    createFocusTrapSpy = vi.spyOn(focusTrapModule, 'createFocusTrap').mockReturnValue({
+    trapInstance = {
       isActive: false,
       activate: vi.fn(),
       deactivate: vi.fn(),
       destroy: vi.fn(),
-    });
+    };
+    createFocusTrapSpy = vi.spyOn(focusTrapModule, 'createFocusTrap').mockReturnValue(trapInstance);
   });
 
   afterEach(() => {
@@ -37,7 +39,7 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
     vi.restoreAllMocks();
   });
 
-  it('accessibility-utils.createFocusTrap은 unified.createFocusTrap으로 위임해야 한다', () => {
+  it('keyboard-navigation.createFocusTrap은 unified.createFocusTrap으로 위임해야 한다', () => {
     // when
     legacyCreateFocusTrap(container);
 
@@ -52,5 +54,7 @@ describe('Focus Trap 표준화 (accessibility-utils → unified focusTrap)', () 
 
     // The unified createFocusTrap should have been called
     expect(createFocusTrapSpy).toHaveBeenCalledTimes(1);
+    // The trap instance should have been activated
+    expect(trapInstance.activate).toHaveBeenCalledTimes(1);
   });
 });
