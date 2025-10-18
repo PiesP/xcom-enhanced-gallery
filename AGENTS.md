@@ -6,7 +6,7 @@
 ## 개발 환경
 
 - 패키지 매니저: npm (단일 패키지)
-- Node.js: 20 권장 (CI는 20/22에서 검증)
+- Node.js: 22 권장 (CI는 22/24에서 검증)
 - 번들러: Vite 7, 프레임워크: Solid.js 1.9.9, 테스트: Vitest 3 + JSDOM
 - 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
 - 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,

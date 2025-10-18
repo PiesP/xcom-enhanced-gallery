@@ -288,15 +288,15 @@ jobs:
   test:
     - npm run typecheck
     - npm run lint
-    - npm test # 전체 JSDOM 테스트 (Node 20: 커버리지 포함)
+    - npm test # 전체 JSDOM 테스트 (Node 22: 커버리지 포함)
     - npm run e2e:smoke # E2E 스모크 테스트 (Chromium 설치)
     - npm run build # dev + prod 빌드 검증
 ```
 
 **CI 최적화 전략**:
 
-- Node 20/22 매트릭스로 호환성 검증
-- 커버리지는 Node 20에서만 실행 (중복 방지)
+- Node 22/24 매트릭스로 호환성 검증
+- 커버리지는 Node 22에서만 실행 (중복 방지)
 - E2E는 Chromium만 실행 (Firefox/WebKit 제외로 시간 단축)
 - 캐시: npm modules, Playwright 브라우저
 

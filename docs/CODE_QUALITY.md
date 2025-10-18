@@ -132,7 +132,7 @@
 **실행 시점**:
 
 - **로컬**: `npm test` (fast), `npm run test:coverage` (커버리지)
-- **CI**: Node 20/22에서 각각 실행
+- **CI**: Node 22/24에서 각각 실행
 
 **결과 해석**:
 

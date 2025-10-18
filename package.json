@@ -4,6 +4,10 @@
   "description": "Media viewer and download functionality for X.com",
   "license": "MIT",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "// === Build ===": "",
     "build": "npm run clean && vite build --mode development && vite build --mode production",
