@@ -18,17 +18,8 @@
  * @author X.com Enhanced Gallery Team
  */
 
-/**
- * Modern CSS Variables and Color System
- * OKLCH 색상 공간과 최신 CSS 기능 활용
- */
+/* Container Query 관련 변수 */
 :root {
-  /* OKLCH 색상 시스템 - 더 자연스러운 색상 보간 */
-  --xeg-gallery-bg-oklch: oklch(15% 0.02 220deg / 95%);
-  --xeg-gallery-surface-oklch: oklch(98% 0.01 220deg / 90%);
-  --xeg-gallery-overlay-oklch: oklch(10% 0.02 220deg / 80%);
-
-  /* Container Query 관련 변수 */
   --xeg-gallery-container-inline-size: 100vw;
   --xeg-gallery-container-block-size: 100vh;
 
@@ -310,8 +301,8 @@
     transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
 
     &:hover {
-      background: var(--xeg-gallery-surface-oklch);
-      border-color: oklch(from var(--xeg-gallery-surface-oklch) l c h / 20%);
+      background: var(--xeg-color-neutral-200);
+      border-color: var(--color-border-muted);
       transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
     }
   }

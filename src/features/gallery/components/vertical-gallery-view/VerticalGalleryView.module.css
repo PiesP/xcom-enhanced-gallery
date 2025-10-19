@@ -27,14 +27,7 @@
 }
 
 @layer base {
-  /* OKLCH ?�상 변???�의 */
   :root {
-    /* ?�직 갤러�??�용 OKLCH ?�상 */
-    --xeg-vertical-bg-oklch: oklch(15% 0.02 220deg / 95%);
-    --xeg-vertical-surface-oklch: oklch(25% 0.03 220deg / 90%);
-    --xeg-vertical-text-oklch: oklch(95% 0.01 220deg);
-    --xeg-vertical-border-oklch: oklch(35% 0.05 220deg / 30%);
-
     /* ?�능 최적??변?? */
     --xeg-vertical-gpu-acceleration: translateZ(0);
 

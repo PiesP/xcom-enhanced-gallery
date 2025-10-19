@@ -6,259 +6,30 @@
 import { logger } from '../logging/logger';
 import type { StorageAdapter } from './storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
+import {
+  LANGUAGE_CODES,
+  isBaseLanguageCode,
+  type BaseLanguageCode,
+  type SupportedLanguage,
+  type LanguageStrings,
+} from '@shared/i18n/language-types';
+import {
+  DEFAULT_LANGUAGE,
+  TRANSLATION_REGISTRY,
+  getLanguageStrings,
+} from '@shared/i18n/translation-registry';
 
-export type SupportedLanguage = 'auto' | 'ko' | 'en' | 'ja';
-
-export interface LanguageStrings {
-  readonly toolbar: {
-    readonly previous: string;
-    readonly next: string;
-    readonly download: string;
-    readonly downloadAll: string;
-    readonly settings: string;
-    readonly close: string;
-  };
-  readonly settings: {
-    readonly title: string;
-    readonly theme: string;
-    readonly language: string;
-    readonly themeAuto: string;
-    readonly themeLight: string;
-    readonly themeDark: string;
-    readonly languageAuto: string;
-    readonly languageKo: string;
-    readonly languageEn: string;
-    readonly languageJa: string;
-    readonly close: string;
-    readonly gallery: {
-      readonly sectionTitle: string;
-    };
-  };
-  readonly messages: {
-    readonly errorBoundary: {
-      readonly title: string;
-      readonly body: string; // {error}
-    };
-    readonly keyboardHelp: {
-      readonly title: string;
-      readonly navPrevious: string;
-      readonly navNext: string;
-      readonly close: string;
-      readonly toggleHelp: string;
-    };
-    readonly download: {
-      readonly single: {
-        readonly error: {
-          readonly title: string;
-          readonly body: string; // {error}
-        };
-      };
-      readonly allFailed: {
-        readonly title: string;
-        readonly body: string;
-      };
-      readonly partial: {
-        readonly title: string;
-        readonly body: string; // {count}
-      };
-      readonly retry: {
-        readonly action: string;
-        readonly success: {
-          readonly title: string;
-          readonly body: string;
-        };
-      };
-      readonly cancelled: {
-        readonly title: string;
-        readonly body: string;
-      };
-    };
-    readonly gallery: {
-      readonly emptyTitle: string;
-      readonly emptyDescription: string;
-      readonly failedToLoadImage: string; // {type}
-    };
-  };
-}
-
-const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrings> = {
-  ko: {
-    toolbar: {
-      previous: '이전',
-      next: '다음',
-      download: '다운로드',
-      downloadAll: 'ZIP 다운로드',
-      settings: '설정',
-      close: '닫기',
-    },
-    settings: {
-      title: '설정',
-      theme: '테마',
-      language: '언어',
-      themeAuto: '자동',
-      themeLight: '라이트',
-      themeDark: '다크',
-      languageAuto: '자동 / Auto / 自動',
-      languageKo: '한국어',
-      languageEn: 'English',
-      languageJa: '日本語',
-      close: '닫기',
-      gallery: {
-        sectionTitle: '갤러리',
-      },
-    },
-    messages: {
-      errorBoundary: { title: '오류 발생', body: '예기치 않은 오류가 발생했습니다: {error}' },
-      keyboardHelp: {
-        title: '키보드 단축키',
-        navPrevious: 'ArrowLeft: 이전 미디어',
-        navNext: 'ArrowRight: 다음 미디어',
-        close: 'Escape: 갤러리 닫기',
-        toggleHelp: '?: 이 도움말 표시',
-      },
-      download: {
-        // NOTE: i18n literal 스캐너 예외: 이미 리소스 테이블 내이므로 허용
-        single: { error: { title: '다운로드 실패', body: '파일을 받을 수 없습니다: {error}' } },
-        allFailed: { title: '다운로드 실패', body: '모든 항목을 다운로드하지 못했습니다.' },
-        partial: { title: '일부 실패', body: '{count}개 항목을 받지 못했습니다.' },
-        retry: {
-          action: '재시도',
-          success: { title: '재시도 성공', body: '실패했던 항목을 모두 받았습니다.' },
-        },
-        cancelled: { title: '다운로드 취소됨', body: '요청한 다운로드가 취소되었습니다.' },
-      },
-      gallery: {
-        emptyTitle: '미디어가 없습니다',
-        emptyDescription: '표시할 이미지나 비디오가 없습니다.',
-        failedToLoadImage: '{type} 로드에 실패했습니다',
-      },
-    },
-  },
-  en: {
-    toolbar: {
-      previous: 'Previous',
-      next: 'Next',
-      download: 'Download',
-      downloadAll: 'Download ZIP',
-      settings: 'Settings',
-      close: 'Close',
-    },
-    settings: {
-      title: 'Settings',
-      theme: 'Theme',
-      language: 'Language',
-      themeAuto: 'Auto',
-      themeLight: 'Light',
-      themeDark: 'Dark',
-      languageAuto: 'Auto / 자동 / 自動',
-      languageKo: '한국어',
-      languageEn: 'English',
-      languageJa: '日本語',
-      close: 'Close',
-      gallery: {
-        sectionTitle: 'Gallery',
-      },
-    },
-    messages: {
-      errorBoundary: { title: 'An error occurred', body: 'An unexpected error occurred: {error}' },
-      keyboardHelp: {
-        title: 'Keyboard shortcuts',
-        navPrevious: 'ArrowLeft: Previous media',
-        navNext: 'ArrowRight: Next media',
-        close: 'Escape: Close gallery',
-        toggleHelp: '?: Show this help',
-      },
-      download: {
-        single: {
-          error: { title: 'Download Failed', body: 'Could not download the file: {error}' },
-        },
-        allFailed: { title: 'Download Failed', body: 'Failed to download all items.' },
-        partial: { title: 'Partial Failure', body: 'Failed to download {count} items.' },
-        retry: {
-          action: 'Retry',
-          success: {
-            title: 'Retry Successful',
-            body: 'Successfully downloaded all previously failed items.',
-          },
-        },
-        cancelled: { title: 'Download Cancelled', body: 'The requested download was cancelled.' },
-      },
-      gallery: {
-        emptyTitle: 'No media available',
-        emptyDescription: 'There are no images or videos to display.',
-        failedToLoadImage: 'Failed to load {type}',
-      },
-    },
-  },
-  ja: {
-    toolbar: {
-      previous: '前へ',
-      next: '次へ',
-      download: 'ダウンロード',
-      downloadAll: 'ZIPダウンロード',
-      settings: '設定',
-      close: '閉じる',
-    },
-    settings: {
-      title: '設定',
-      theme: 'テーマ',
-      language: '言語',
-      themeAuto: '自動',
-      themeLight: 'ライト',
-      themeDark: 'ダーク',
-      languageAuto: '自動 / Auto / 자동',
-      languageKo: '한국어',
-      languageEn: 'English',
-      languageJa: '日本語',
-      close: '閉じる',
-      gallery: {
-        sectionTitle: 'ギャラリー',
-      },
-    },
-    messages: {
-      errorBoundary: {
-        title: 'エラーが発生しました',
-        body: '予期しないエラーが発生しました: {error}',
-      },
-      keyboardHelp: {
-        title: 'キーボードショートカット',
-        navPrevious: 'ArrowLeft: 前のメディア',
-        navNext: 'ArrowRight: 次のメディア',
-        close: 'Escape: ギャラリーを閉じる',
-        toggleHelp: '?: このヘルプを表示',
-      },
-      download: {
-        single: { error: { title: 'ダウンロード失敗', body: 'ファイルを取得できません: {error}' } },
-        allFailed: {
-          title: 'ダウンロード失敗',
-          body: 'すべての項目をダウンロードできませんでした。',
-        },
-        partial: { title: '一部失敗', body: '{count}個の項目を取得できませんでした。' },
-        retry: {
-          action: '再試行',
-          success: { title: '再試行成功', body: '失敗していた項目をすべて取得しました。' },
-        },
-        cancelled: {
-          title: 'ダウンロードがキャンセルされました',
-          body: '要求したダウンロードはキャンセルされました。',
-        },
-      },
-      gallery: {
-        emptyTitle: 'メディアがありません',
-        emptyDescription: '表示する画像や動画がありません。',
-        failedToLoadImage: '{type} の読み込みに失敗しました',
-      },
-    },
-  },
-};
+export type {
+  SupportedLanguage,
+  LanguageStrings,
+  BaseLanguageCode,
+} from '@shared/i18n/language-types';
 
 export class LanguageService {
   private static readonly STORAGE_KEY = 'xeg-language';
   private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
     'auto',
-    'ko',
-    'en',
-    'ja',
+    ...LANGUAGE_CODES,
   ]);
 
   private currentLanguage: SupportedLanguage = 'auto';
@@ -276,11 +47,11 @@ export class LanguageService {
    * extra: 기준(en)에는 없지만 다른 로케일에 존재하는 키 목록
    */
   getIntegrityReport(): {
-    missing: Record<Exclude<SupportedLanguage, 'auto'>, string[]>;
-    extra: Record<Exclude<SupportedLanguage, 'auto'>, string[]>;
+    missing: Record<BaseLanguageCode, string[]>;
+    extra: Record<BaseLanguageCode, string[]>;
   } {
-    const locales: Array<Exclude<SupportedLanguage, 'auto'>> = ['en', 'ko', 'ja'];
-    const base: LanguageStrings = LANGUAGE_STRINGS.en;
+    const locales: readonly BaseLanguageCode[] = LANGUAGE_CODES;
+    const base: LanguageStrings = TRANSLATION_REGISTRY[DEFAULT_LANGUAGE];
 
     const flatten = (obj: unknown, prefix = '', acc: string[] = []): string[] => {
       if (obj && typeof obj === 'object') {
@@ -295,19 +66,19 @@ export class LanguageService {
     };
 
     const baseKeys = new Set(flatten(base));
-    const missing: Record<Exclude<SupportedLanguage, 'auto'>, string[]> = {
+    const missing: Record<BaseLanguageCode, string[]> = {
       en: [],
       ko: [],
       ja: [],
     };
-    const extra: Record<Exclude<SupportedLanguage, 'auto'>, string[]> = {
+    const extra: Record<BaseLanguageCode, string[]> = {
       en: [],
       ko: [],
       ja: [],
     };
 
     for (const locale of locales) {
-      const localeStrings: LanguageStrings = LANGUAGE_STRINGS[locale];
+      const localeStrings: LanguageStrings = TRANSLATION_REGISTRY[locale];
       const keys = new Set(flatten(localeStrings));
       // missing (base 존재, locale 없음)
       for (const k of baseKeys) if (!keys.has(k)) missing[locale].push(k);
@@ -318,18 +89,18 @@ export class LanguageService {
     return { missing, extra };
   }
 
-  detectLanguage(): Exclude<SupportedLanguage, 'auto'> {
+  detectLanguage(): BaseLanguageCode {
     // 안전한 navigator.language 접근
     const browserLang =
       typeof navigator !== 'undefined' && navigator.language
         ? navigator.language.slice(0, 2)
-        : 'en';
+        : DEFAULT_LANGUAGE;
 
-    if (browserLang in LANGUAGE_STRINGS) {
-      return browserLang as Exclude<SupportedLanguage, 'auto'>;
+    if (isBaseLanguageCode(browserLang)) {
+      return browserLang;
     }
 
-    return 'en';
+    return DEFAULT_LANGUAGE;
   }
 
   getCurrentLanguage(): SupportedLanguage {
@@ -387,18 +158,20 @@ export class LanguageService {
   }
 
   getString(path: string): string {
-    const effectiveLanguage =
+    const effectiveLanguage: BaseLanguageCode =
       this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
 
     const keys = path.split('.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let value: any = LANGUAGE_STRINGS[effectiveLanguage];
+    let value: unknown = getLanguageStrings(effectiveLanguage);
 
     for (const key of keys) {
-      value = value?.[key];
+      if (!value || typeof value !== 'object') {
+        return path;
+      }
+      value = (value as Record<string, unknown>)[key];
     }
 
-    return value || path;
+    return typeof value === 'string' ? value : path;
   }
 
   /**
@@ -426,7 +199,7 @@ export class LanguageService {
       return language as SupportedLanguage;
     }
 
-    return 'en';
+    return DEFAULT_LANGUAGE;
   }
 
   private notifyListeners(language: SupportedLanguage): void {

@@ -59,7 +59,7 @@ describe('테마 대응성 강화 (TDD Phase 2)', () => {
     const galleryFiles = [
       'src/shared/styles/isolated-gallery.css',
       'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css',
-      'src/shared/components/ui/SettingsModal/SettingsModal.module.css',
+      'src/shared/components/ui/Settings/SettingsControls.module.css',
     ];
 
     galleryFiles.forEach(filePath => {

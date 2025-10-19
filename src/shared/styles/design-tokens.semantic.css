@@ -17,8 +17,10 @@
   /* Gallery Image Item Background Tokens */
   --xeg-color-bg-secondary: var(--color-bg-secondary);
 
-  /* Gallery Background - 기본값(라이트) */
-  --xeg-gallery-bg: var(--color-bg-primary);
+  /* Gallery Background - 라이트/다크 변형 */
+  --xeg-gallery-bg-light: var(--color-bg-primary);
+  --xeg-gallery-bg-dark: var(--color-gray-900);
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
 
   /* Text Colors - Semantic Roles */
   --color-text-primary: var(--color-base-black);
@@ -45,15 +47,27 @@
   --xeg-button-bg-hover: var(--color-bg-secondary);
   --xeg-button-border-hover: var(--color-border-hover);
 
-  /* Modal Background/Border Tokens - 기본값(라이트) */
-  --xeg-modal-bg: var(--color-bg-elevated);
-  --xeg-modal-border: var(--color-border-default);
+  /* Modal Background/Border Tokens */
+  --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
 
-  /* Toolbar High Contrast Tokens (Phase 56) - 기본값(라이트) */
-  --xeg-toolbar-bg-high-contrast: var(--xeg-color-neutral-100);
-  --xeg-toolbar-border-high-contrast: var(--xeg-color-overlay-medium);
-  --xeg-toolbar-button-bg-high-contrast: var(--xeg-glass-bg);
-  --xeg-toolbar-button-border-high-contrast: var(--xeg-color-overlay-light);
+  /* Toolbar High Contrast Tokens (Phase 56) */
+  --xeg-toolbar-bg-high-contrast-light: var(--xeg-color-neutral-100);
+  --xeg-toolbar-border-high-contrast-light: var(--xeg-color-overlay-medium);
+  --xeg-toolbar-button-bg-high-contrast-light: var(--xeg-glass-bg);
+  --xeg-toolbar-button-border-high-contrast-light: var(--xeg-color-overlay-light);
+  --xeg-toolbar-bg-high-contrast-dark: var(--color-gray-900);
+  --xeg-toolbar-border-high-contrast-dark: var(--color-border-emphasis);
+  --xeg-toolbar-button-bg-high-contrast-dark: var(--xeg-color-neutral-700);
+  --xeg-toolbar-button-border-high-contrast-dark: var(--xeg-glass-border);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
   /* State Colors - Semantic Roles */
   --color-success: var(--color-green-500);
@@ -84,6 +98,7 @@
   --xeg-color-neutral-500: var(--color-gray-500);
   --xeg-color-neutral-700: var(--color-gray-700);
   --xeg-color-neutral-800: var(--color-gray-800);
+  --xeg-color-neutral-900: var(--color-gray-900);
 
   /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
   --color-overlay-light: oklch(0 0 0 / var(--opacity-overlay-light));
@@ -134,7 +149,10 @@
   --shadow-xl: 0 0.25rem 1.25rem oklch(0 0 0 / 30%); /* 0 4px 20px, black 30% */
   --shadow-inset-border: 0 0 0 0.0625rem oklch(0 0 0 / 5%); /* 0 0 0 1px, black 5% */
   --shadow-gallery-image: var(--shadow-xl);
-  --shadow-gallery-nav: var(--shadow-md);
+  --shadow-gallery-counter: var(--shadow-sm);
+  --shadow-gallery-nav: 0 0.25rem 1rem oklch(0 0 0 / 12%), 0 0.125rem 0.5rem oklch(0 0 0 / 8%);
+  --shadow-gallery-nav-hover:
+    0 0.5rem 1.5rem oklch(0 0 0 / 18%), 0 0.25rem 0.75rem oklch(0 0 0 / 12%);
   --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0.006 277.8 / 8%); /* 0 2px 8px, slate-900 8% */
   --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0.006 277.8 / 12%); /* 0 4px 16px, slate-900 12% */
 
@@ -195,6 +213,13 @@
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
   --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 }
 
 [data-theme='dark'] {
@@ -210,7 +235,7 @@
   --xeg-color-bg-secondary: var(--color-gray-800);
 
   /* Gallery Background - 다크 모드 */
-  --xeg-gallery-bg: var(--color-gray-900);
+  --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
 
   /* Button Tokens - Dark Mode */
   --xeg-button-bg: var(--color-gray-800);
@@ -220,14 +245,14 @@
   --xeg-button-border-hover: var(--color-border-emphasis);
 
   /* Modal Background/Border Tokens - Dark Mode */
-  --xeg-modal-bg: var(--color-gray-800);
-  --xeg-modal-border: var(--color-border-emphasis);
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 
   /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
-  --xeg-toolbar-bg-high-contrast: var(--xeg-color-neutral-900);
-  --xeg-toolbar-border-high-contrast: var(--xeg-glass-border);
-  --xeg-toolbar-button-bg-high-contrast: var(--xeg-color-neutral-700);
-  --xeg-toolbar-button-border-high-contrast: var(--xeg-glass-border);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -245,7 +270,7 @@
     --xeg-color-bg-secondary: var(--color-gray-800);
 
     /* Gallery Background */
-    --xeg-gallery-bg: var(--color-gray-900);
+    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
 
     /* Button Tokens - System Dark Mode */
     --xeg-button-bg: var(--color-gray-800);
@@ -255,8 +280,33 @@
     --xeg-button-border-hover: var(--color-border-emphasis);
 
     /* Modal Background/Border Tokens - System Dark Mode */
-    --xeg-modal-bg: var(--color-gray-800);
-    --xeg-modal-border: var(--color-border-emphasis);
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+    --xeg-modal-border: var(--xeg-modal-border-dark);
+
+    /* High Contrast Toolbar Tokens - System Dark Mode */
+    --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+    --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
+    --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
+    --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-bg-primary: var(--color-base-white);
+    --color-text-primary: var(--color-base-black);
+    --color-glass-bg: oklch(1 0 0 / var(--opacity-glass));
+
+    --xeg-bg-toolbar: var(--color-bg-surface);
+    --xeg-toolbar-border: var(--color-border-default);
+    --xeg-color-bg-secondary: var(--color-bg-secondary);
+    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+    --xeg-modal-bg: var(--xeg-modal-bg-light);
+    --xeg-modal-border: var(--xeg-modal-border-light);
+    --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+    --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+    --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+    --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
   }
 }
 
@@ -303,6 +353,10 @@
   --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
   --xeg-comp-toolbar-bg: var(--xeg-bg-toolbar);
   --xeg-comp-toolbar-border: var(--xeg-toolbar-border);
+  --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
 
   /* Toast Component Tokens (Phase 111.1: Monochrome Unification) */
   /* All Toast types now use the same gray-based colors for consistency.

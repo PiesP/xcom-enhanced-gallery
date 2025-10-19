@@ -110,6 +110,9 @@
   /* Semantic Colors */
   --xeg-color-text-primary: var(--color-text-primary);
   --xeg-color-text-secondary: var(--color-text-secondary);
+  --xeg-color-text-muted: var(--color-text-muted);
+  --xeg-color-text-inverse: var(--color-text-inverse);
+  --xeg-color-text-tertiary: var(--color-text-muted); /* alias for muted */
   --xeg-color-border-primary: var(--color-border-default);
 
   /* Legacy Glass System - 호환성 보장 */
