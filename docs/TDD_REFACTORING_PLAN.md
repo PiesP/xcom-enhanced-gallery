@@ -63,7 +63,8 @@ Components 50%+
 - ✅ **Step 1: logger.ts** (0% → 83.69%) - 18 tests, 초과 달성 🎉
 - ✅ **Step 2: twitter-token-extractor.ts** (0% → 58.26%) - 8 tests, 실용적
   접근으로 안정성 확보
-- 🔄 **Step 3: useProgressiveImage.ts** (0% → 60%) - 10 tests 예정
+- ✅ **Step 3: useProgressiveImage.ts** (0% → 60.78%) - 14 tests, 목표 달성! 🎉
+  (Functions: 80%, Branches: 65.38%)
 
 **현재 커버리지 분석**:
 
@@ -87,10 +88,13 @@ Components 50%+
    - ✅ 에러 핸들링 테스트
    - ⏳ 캐싱 로직 테스트 (JSDOM 제약)
 
-3. **useProgressiveImage.ts** (0% → 60%) - 10 tests 🔄 **진행 중**
-   - IntersectionObserver 모킹
-   - 로딩 상태 전환 테스트
-   - 에러 처리 테스트
+3. ~~**useProgressiveImage.ts** (0% → 60%) - 10 tests~~ ✅ **완료: 60.78% (14
+   tests)**
+   - ✅ 초기 상태 및 기본 기능 (3 tests)
+   - ✅ 상태 제어 메서드 (2 tests)
+   - ✅ 이미지 Props 동작 (3 tests)
+   - ✅ 옵션 처리 (4 tests)
+   - ✅ 타입 및 인터페이스 (2 tests)
 
 **우선순위 2: UI Components** (0-20% → 50%+)
 
