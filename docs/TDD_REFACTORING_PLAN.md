@@ -65,6 +65,8 @@ Components 50%+
   접근으로 안정성 확보
 - ✅ **Step 3: useProgressiveImage.ts** (0% → 60.78%) - 14 tests, 목표 달성! 🎉
   (Functions: 80%, Branches: 65.38%)
+- ✅ **Step 4: media-mapping** (0% → 92-95%) - 27 tests, 대폭 초과 달성! 🎉
+  (service 92%, strategy 94.91%)
 
 **현재 커버리지 분석**:
 
@@ -96,6 +98,12 @@ Components 50%+
    - ✅ 옵션 처리 (4 tests)
    - ✅ 타입 및 인터페이스 (2 tests)
 
+4. ~~**media-mapping** (0% → 70%) - 6 tests~~ ✅ **완료: 92-95% (27 tests)**
+   - ✅ media-mapping-service.ts: 92% (10 tests)
+     - 초기화, mapMedia 동작, 전략 통합, 타입 검증
+   - ✅ media-tab-url-direct-strategy.ts: 94.91% (17 tests)
+     - URL 파싱, 미디어 추출(img/video), 인덱스 처리, 에러 핸들링
+
 **우선순위 2: UI Components** (0-20% → 50%+)
 
 1. **ErrorBoundary.tsx** (17% → 80%) - 6 tests
@@ -118,13 +126,8 @@ Components 50%+
 1. **base-service-impl.ts** (12% → 60%) - 8 tests
 2. **toast-controller.ts** (32% → 65%) - 10 tests
 3. **initialize-theme.ts** (7% → 60%) - 8 tests
-4. **media-mapping-service.ts** (0% → 70%) - 6 tests
 
-**예상 일정**: 18-26시간 (약 3-4일)
-
-**상세 계획**: `docs/temp/phase-124-coverage-expansion-plan.md` 참조
-
-**다음 단계**: Step 1 - logger.ts 테스트 작성 (RED → GREEN → REFACTOR)
+**예상 일정**: Phase 124 Step 1-4 완료 ✅
 
 ### 최근 완료된 작업
 
