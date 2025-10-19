@@ -64,21 +64,22 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
   it('드롭다운이 의미 있는 aria-label 텍스트를 가져야 함', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // 테마 드롭다운: aria-label={themeTitle} 형식 확인 (themeTitle은 i18n.getString('settings.theme')의 결과)
-    const themeAriaLabelPattern = /id=['"]theme-select['"][\s\S]*?aria-label=\{themeTitle\}/;
+    // Phase 118 업데이트: themeTitle()과 languageTitle()은 createMemo로 생성된 getter 함수
+    // 테마 드롭다운: aria-label={themeTitle()} 형식 확인
+    const themeAriaLabelPattern = /id=['"]theme-select['"][\s\S]*?aria-label=\{themeTitle\(\)\}/;
 
     expect(
       themeAriaLabelPattern.test(controlsTSX),
-      '❌ 테마 드롭다운의 aria-label이 themeTitle을 통해 제공되지 않습니다'
+      '❌ 테마 드롭다운의 aria-label이 themeTitle()을 통해 제공되지 않습니다'
     ).toBe(true);
 
-    // 언어 드롭다운: aria-label={languageTitle} 형식 확인 (languageTitle은 i18n.getString('settings.language')의 결과)
+    // 언어 드롭다운: aria-label={languageTitle()} 형식 확인
     const languageAriaLabelPattern =
-      /id=['"]language-select['"][\s\S]*?aria-label=\{languageTitle\}/;
+      /id=['"]language-select['"][\s\S]*?aria-label=\{languageTitle\(\)\}/;
 
     expect(
       languageAriaLabelPattern.test(controlsTSX),
-      '❌ 언어 드롭다운의 aria-label이 languageTitle을 통해 제공되지 않습니다'
+      '❌ 언어 드롭다운의 aria-label이 languageTitle()을 통해 제공되지 않습니다'
     ).toBe(true);
   });
 });

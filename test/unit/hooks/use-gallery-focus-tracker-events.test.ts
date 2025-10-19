@@ -178,8 +178,6 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
     });
   });
 
-  describe('기본 이벤트 통합', () => {});
-
   describe('동기화 타이밍', () => {
     it('should batch state updates for autoFocusIndex and container attribute', async () => {
       const getCurrentIndex = vi.fn(() => 0);
