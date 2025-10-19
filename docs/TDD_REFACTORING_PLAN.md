@@ -52,7 +52,20 @@
 
 ## 활성 Phase
 
-**현재 상태**: 모든 우선순위 작업 완료, 유지보수 모드 진입 ✅
+### Phase 128: 로깅 환경 감지 단순화 (소규모 리팩터링)
+
+- 목적: `@shared/logging/logger.ts`의 환경 감지 로직을 단순화하여 dead-code 제거
+  효과를 높이고 유지보수성을 개선합니다.
+- 변경 요지:
+  - dev/prod 판별은 전역 플래그 `__DEV__`만 사용 (`vite.config.ts`에서 정의)
+  - `import.meta.env` / `process.env` 의존 제거 (테스트 스텁 부담, 번들 부피
+    완화)
+  - Userscript(Tampermonkey) 환경에서는 기본 로그 레벨을 `info`로 유지
+- 수용 기준(AC):
+  - 단위/브라우저/E2E 테스트 GREEN, CodeQL/ESLint/stylelint PASS
+  - 빌드 크기 동등 또는 소폭 개선(±3KB 이내)
+  - Public API 변화 없음(`logger`, `createLogger`, `createScopedLogger*`,
+    `logError`)
 
 ##
 

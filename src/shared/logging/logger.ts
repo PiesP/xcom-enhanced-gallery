@@ -80,6 +80,7 @@ let createScopedLoggerWithCorrelationImpl: ScopedCorrelationFactory;
 
 if (isDev) {
   const getEnvironmentLogLevel = (): LogLevel => {
+    // Userscript(Tampermonkey) 환경에서는 콘솔 노이즈를 줄이기 위해 기본을 info로 유지
     try {
       if (typeof window !== 'undefined') {
         const gmInfo = (window as unknown as Record<string, unknown>)['GM_info'];
@@ -92,24 +93,8 @@ if (isDev) {
       // ignore access errors
     }
 
-    try {
-      const env = import.meta?.env;
-      if (env?.DEV || env?.MODE === 'development' || env?.MODE === 'test') {
-        return 'debug';
-      }
-    } catch {
-      // ignore
-    }
-
-    try {
-      if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production') {
-        return 'info';
-      }
-    } catch {
-      // ignore
-    }
-
-    return 'info';
+    // 번들 정의 플래그만 사용하여 dead-code 제거를 극대화
+    return isDev ? 'debug' : 'info';
   };
 
   const DEFAULT_CONFIG: LoggerConfig = {
@@ -267,13 +252,10 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   return createLoggerImpl(config);
 }
 
-const devLikeMode =
-  import.meta.env.MODE === 'development' || import.meta.env.MODE === 'test' || import.meta.env.DEV;
-
 export const logger: Logger = createLogger({
-  level: devLikeMode ? 'debug' : 'warn',
-  includeTimestamp: devLikeMode,
-  includeStackTrace: devLikeMode,
+  level: isDev ? 'debug' : 'warn',
+  includeTimestamp: isDev,
+  includeStackTrace: isDev,
 });
 
 export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
