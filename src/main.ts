@@ -52,11 +52,6 @@ async function initializeInfrastructure(): Promise<void> {
   try {
     await initializeEnvironment();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
-
-    // Phase 117: LanguageService 초기화
-    const { languageService } = await import('@shared/services/language-service');
-    await languageService.initialize();
-    logger.debug('✅ LanguageService 초기화 완료');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;
@@ -91,6 +86,18 @@ async function initializeCriticalSystems(): Promise<void> {
   } catch (error) {
     logger.error('❌ Critical Path 초기화 실패:', error);
     throw error;
+  }
+}
+
+async function initializeLanguageService(): Promise<void> {
+  try {
+    const { languageService: sharedLanguageService } = await import(
+      '@shared/services/language-service'
+    );
+    await sharedLanguageService.initialize();
+    logger.debug('✅ LanguageService 초기화 완료');
+  } catch (error) {
+    logger.warn('LanguageService 초기화 실패:', error);
   }
 }
 
@@ -379,6 +386,8 @@ async function startApplication(): Promise<void> {
 
     // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
     await initializeCriticalSystems();
+
+    await initializeLanguageService();
 
     // 3단계: Feature Services 지연 등록
     await registerFeatureServicesLazy();

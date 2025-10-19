@@ -36,17 +36,22 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
     ).toBe(true);
   });
 
-  it('compact 모드일 때 시각적 레이블은 숨겨지지만 aria-label은 항상 제공되어야 함', () => {
+  it('compact 모드일 때도 라벨이 표시되어야 함 (Phase 113에서 변경)', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // Show when={!props.compact} 패턴 확인 (label 숨김)
-    const hasConditionalLabel = /<Show when=\{!props\.compact\}>\s*<label/.test(controlsTSX);
-
-    expect(hasConditionalLabel, '✅ compact 모드에서 시각적 레이블은 조건부로 숨겨집니다').toBe(
-      true
+    // Phase 113: compact 모드에서도 라벨이 항상 표시됨
+    // <label for='theme-select' class={labelClass}> 패턴 확인
+    const themeLabel = /<label for=['"]theme-select['"] class=\{labelClass\}>/.test(controlsTSX);
+    const languageLabel = /<label for=['"]language-select['"] class=\{labelClass\}>/.test(
+      controlsTSX
     );
 
-    // 하지만 select에는 항상 aria-label이 있어야 함
+    expect(
+      themeLabel && languageLabel,
+      '✅ Phase 113: compact 모드에서도 라벨이 항상 표시됩니다'
+    ).toBe(true);
+
+    // select에는 항상 aria-label이 있어야 함
     const themeHasAriaLabel = /id=['"]theme-select['"][\s\S]*?aria-label=/.test(controlsTSX);
     const languageHasAriaLabel = /id=['"]language-select['"][\s\S]*?aria-label=/.test(controlsTSX);
 
@@ -59,22 +64,21 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
   it('드롭다운이 의미 있는 aria-label 텍스트를 가져야 함', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // 테마 드롭다운: languageService를 통해 aria-label 제공 확인
-    const themeAriaLabelPattern =
-      /id=['"]theme-select['"][\s\S]*?aria-label=\{languageService\.getString\(['"]settings\.theme['"]\)\}/;
+    // 테마 드롭다운: aria-label={themeTitle} 형식 확인 (themeTitle은 i18n.getString('settings.theme')의 결과)
+    const themeAriaLabelPattern = /id=['"]theme-select['"][\s\S]*?aria-label=\{themeTitle\}/;
 
     expect(
       themeAriaLabelPattern.test(controlsTSX),
-      '❌ 테마 드롭다운의 aria-label이 languageService를 통해 제공되지 않습니다'
+      '❌ 테마 드롭다운의 aria-label이 themeTitle을 통해 제공되지 않습니다'
     ).toBe(true);
 
-    // 언어 드롭다운: languageService를 통해 aria-label 제공 확인
+    // 언어 드롭다운: aria-label={languageTitle} 형식 확인 (languageTitle은 i18n.getString('settings.language')의 결과)
     const languageAriaLabelPattern =
-      /id=['"]language-select['"][\s\S]*?aria-label=\{languageService\.getString\(['"]settings\.language['"]\)\}/;
+      /id=['"]language-select['"][\s\S]*?aria-label=\{languageTitle\}/;
 
     expect(
       languageAriaLabelPattern.test(controlsTSX),
-      '❌ 언어 드롭다운의 aria-label이 languageService를 통해 제공되지 않습니다'
+      '❌ 언어 드롭다운의 aria-label이 languageTitle을 통해 제공되지 않습니다'
     ).toBe(true);
   });
 });

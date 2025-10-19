@@ -1,119 +1,175 @@
-/**
- * @fileoverview Phase 117: Language Service Storage Integration Tests (RED)
- * @description TDD for language settings persistence
- */
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { LanguageService, type SupportedLanguage } from '@shared/services/language-service';
+import { InMemoryStorageAdapter } from '../../../__mocks__/in-memory-storage-adapter';
+import { getSolid } from '@shared/external/vendors';
+import { useToolbarSettingsController } from '@shared/hooks/toolbar/use-toolbar-settings-controller';
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LanguageService } from '@shared/services/language-service';
-import { InMemoryStorageAdapter } from '../../../../test/__mocks__/in-memory-storage-adapter';
-import type { SupportedLanguage } from '@shared/services/language-service';
-
-describe('Phase 117: LanguageService Storage Integration (RED)', () => {
-  let languageService: LanguageService;
-  let storage: InMemoryStorageAdapter;
+describe('Phase 117: LanguageService persistence flow (RED)', () => {
+  const STORAGE_KEY = 'xeg-language';
 
   beforeEach(() => {
-    storage = new InMemoryStorageAdapter();
-    languageService = new LanguageService(storage);
+    vi.restoreAllMocks();
   });
 
-  afterEach(() => {
-    storage.clear();
+  it('restores saved language and notifies listeners during initialize', async () => {
+    const storage = new InMemoryStorageAdapter();
+    await storage.setItem(STORAGE_KEY, 'ko');
+    const getSpy = vi.spyOn(storage, 'getItem');
+    const service = new LanguageService(storage);
+    const events: SupportedLanguage[] = [];
+    service.onLanguageChange(language => {
+      events.push(language);
+    });
+
+    await service.initialize();
+
+    expect(service.getCurrentLanguage()).toBe('ko');
+    expect(events).toEqual(['ko']);
+    expect(getSpy).toHaveBeenCalledWith(STORAGE_KEY);
   });
 
-  describe('Language persistence', () => {
-    it('should save language setting to storage when setLanguage is called', async () => {
-      await languageService.setLanguage('ko');
-
-      const saved = await storage.getItem('xeg-language');
-      expect(saved).toBe('ko');
+  it('persists language changes and notifies listeners synchronously', async () => {
+    const storage = new InMemoryStorageAdapter();
+    const setSpy = vi.spyOn(storage, 'setItem');
+    const service = new LanguageService(storage);
+    const events: SupportedLanguage[] = [];
+    service.onLanguageChange(language => {
+      events.push(language);
     });
 
-    it('should load saved language setting on initialize', async () => {
-      await storage.setItem('xeg-language', 'ja');
+    service.setLanguage('ja');
 
-      await languageService.initialize();
+    expect(events).toEqual(['ja']);
+    expect(service.getCurrentLanguage()).toBe('ja');
+    expect(setSpy).toHaveBeenLastCalledWith(STORAGE_KEY, 'ja');
+  });
 
-      expect(languageService.getCurrentLanguage()).toBe('ja');
-    });
+  it('synchronizes toolbar controller state when service language updates externally', async () => {
+    const storage = new InMemoryStorageAdapter();
+    const service = new LanguageService(storage);
+    await service.initialize();
 
-    it('should fallback to auto if no saved language exists', async () => {
-      await languageService.initialize();
+    const solid = getSolid();
+    const { createRoot } = solid;
 
-      expect(languageService.getCurrentLanguage()).toBe('auto');
-    });
+    await new Promise<void>(resolve => {
+      createRoot(dispose => {
+        const controller = useToolbarSettingsController({
+          setNeedsHighContrast: () => undefined,
+          isSettingsExpanded: () => false,
+          setSettingsExpanded: () => undefined,
+          toggleSettingsExpanded: () => undefined,
+          documentRef: undefined,
+          windowRef: undefined,
+          eventManager: {
+            addListener: vi.fn().mockReturnValue('listener-id'),
+            removeListener: vi.fn().mockReturnValue(true),
+          } as unknown as { addListener: () => unknown; removeListener: () => boolean },
+          languageService: service,
+          scrollThrottle: <T extends (...args: never[]) => void>(fn: T): T => fn,
+        });
 
-    it('should ignore invalid saved language and fallback to auto', async () => {
-      await storage.setItem('xeg-language', 'invalid-language');
+        expect(controller.currentLanguage()).toBe('auto');
 
-      await languageService.initialize();
+        // Solid.js의 createEffect가 완전히 실행되도록 microtask 대기
+        Promise.resolve().then(() => {
+          service.setLanguage('en');
+          expect(controller.currentLanguage()).toBe('en');
 
-      expect(languageService.getCurrentLanguage()).toBe('auto');
-    });
-
-    it('should update storage when language changes', async () => {
-      await languageService.setLanguage('en');
-      expect(await storage.getItem('xeg-language')).toBe('en');
-
-      await languageService.setLanguage('ko');
-      expect(await storage.getItem('xeg-language')).toBe('ko');
+          dispose();
+          resolve();
+        });
+      });
     });
   });
 
-  describe('Listener notification', () => {
-    it('should notify listeners after setLanguage', async () => {
+  describe('Phase 117.1: 중복 저장 방지', () => {
+    it('동일한 값으로 setLanguage() 호출 시 스토리지에 저장하지 않음', async () => {
+      // Given: 초기 언어가 'auto'
+      const storage = new InMemoryStorageAdapter();
+      const setSpy = vi.spyOn(storage, 'setItem');
+      const service = new LanguageService(storage);
+      await service.initialize();
+      expect(service.getCurrentLanguage()).toBe('auto');
+      setSpy.mockClear(); // 초기화 시 저장 호출 제거
+
+      // When: 동일한 'auto'로 설정
+      service.setLanguage('auto');
+
+      // 비동기 저장 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Then: 스토리지 저장 호출 안 됨
+      expect(setSpy).not.toHaveBeenCalled();
+    });
+
+    it('다른 값으로 setLanguage() 호출 시 스토리지에 저장됨', async () => {
+      // Given: 초기 언어가 'auto'
+      const storage = new InMemoryStorageAdapter();
+      const setSpy = vi.spyOn(storage, 'setItem');
+      const service = new LanguageService(storage);
+      await service.initialize();
+      setSpy.mockClear();
+
+      // When: 'ko'로 변경
+      service.setLanguage('ko');
+
+      // 비동기 저장 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Then: 스토리지 저장 호출됨
+      expect(setSpy).toHaveBeenCalledWith(STORAGE_KEY, 'ko');
+    });
+
+    it('정규화된 값이 현재 값과 같으면 스토리지에 저장하지 않음', async () => {
+      // Given: 언어가 'en'으로 설정됨
+      const storage = new InMemoryStorageAdapter();
+      const setSpy = vi.spyOn(storage, 'setItem');
+      const service = new LanguageService(storage);
+      await service.initialize();
+      service.setLanguage('en');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      setSpy.mockClear();
+
+      // When: 동일한 'en'으로 재설정
+      service.setLanguage('en');
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Then: 스토리지 저장 호출 안 됨
+      expect(setSpy).not.toHaveBeenCalled();
+    });
+
+    it('값이 변경되지 않으면 리스너에게 알림 안 함', () => {
+      // Given: 리스너 등록
+      const storage = new InMemoryStorageAdapter();
+      const service = new LanguageService(storage);
       const listener = vi.fn();
-      languageService.onLanguageChange(listener);
+      service.onLanguageChange(listener);
 
-      await languageService.setLanguage('ja');
+      // When: 동일한 값으로 설정 ('auto' → 'auto')
+      service.setLanguage('auto');
 
-      expect(listener).toHaveBeenCalledWith('ja');
-      expect(listener).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not notify listeners during initialize', async () => {
-      await storage.setItem('xeg-language', 'ko');
-      const listener = vi.fn();
-
-      languageService.onLanguageChange(listener);
-      await languageService.initialize();
-
+      // Then: 리스너 호출 안 됨
       expect(listener).not.toHaveBeenCalled();
     });
-  });
 
-  describe('Validation', () => {
-    it('should validate supported languages', async () => {
-      const validLanguages: SupportedLanguage[] = ['auto', 'ko', 'en', 'ja'];
+    it('지원하지 않는 언어를 설정하면 정규화되고, 현재 값과 다르면 저장됨', async () => {
+      // Given: 초기 언어가 'auto'
+      const storage = new InMemoryStorageAdapter();
+      const setSpy = vi.spyOn(storage, 'setItem');
+      const service = new LanguageService(storage);
+      await service.initialize();
+      setSpy.mockClear();
 
-      for (const lang of validLanguages) {
-        await languageService.setLanguage(lang);
-        expect(languageService.getCurrentLanguage()).toBe(lang);
-      }
-    });
+      // When: 지원하지 않는 'fr' 설정 (정규화 → 'en')
+      service.setLanguage('fr' as SupportedLanguage);
 
-    it('should fallback to en for invalid language', async () => {
-      // @ts-expect-error Testing invalid input
-      await languageService.setLanguage('invalid');
+      // 비동기 저장 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
 
-      expect(languageService.getCurrentLanguage()).toBe('en');
-    });
-  });
-
-  describe('Integration with existing functionality', () => {
-    it('should preserve getString functionality after persistence', async () => {
-      await languageService.setLanguage('ko');
-
-      const greeting = languageService.getString('settings.theme');
-      expect(greeting).toBe('테마');
-    });
-
-    it('should preserve auto-detection when language is auto', async () => {
-      await languageService.setLanguage('auto');
-
-      // The language should be detected from browser
-      const language = languageService.getCurrentLanguage();
-      expect(language).toBe('auto');
+      // Then: 'en'으로 정규화되어 저장됨
+      expect(setSpy).toHaveBeenCalledWith(STORAGE_KEY, 'en');
+      expect(service.getCurrentLanguage()).toBe('en');
     });
   });
 });

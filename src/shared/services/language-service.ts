@@ -254,49 +254,22 @@ const LANGUAGE_STRINGS: Record<Exclude<SupportedLanguage, 'auto'>, LanguageStrin
 
 export class LanguageService {
   private static readonly STORAGE_KEY = 'xeg-language';
-  private static readonly SUPPORTED_LANGUAGES: Set<string> = new Set(['en', 'ko', 'ja', 'auto']);
+  private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
+    'auto',
+    'ko',
+    'en',
+    'ja',
+  ]);
 
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
+  private readonly storage: StorageAdapter;
+  private isInitialized = false;
+  private initializationPromise: Promise<void> | null = null;
 
-  constructor(private readonly storage: StorageAdapter = new UserscriptStorageAdapter()) {}
-
-  /**
-   * Phase 117: 저장된 언어 설정 로드
-   */
-  async initialize(): Promise<void> {
-    try {
-      const saved = await this.storage.getItem(LanguageService.STORAGE_KEY);
-      if (saved && this.isValidLanguage(saved)) {
-        this.currentLanguage = saved as SupportedLanguage;
-        logger.debug(`Loaded saved language: ${saved}`);
-      } else if (saved) {
-        logger.warn(`Invalid saved language: ${saved}, using 'auto'`);
-      }
-    } catch (error) {
-      logger.error('Failed to load language setting', { error });
-    }
+  constructor(storage: StorageAdapter = new UserscriptStorageAdapter()) {
+    this.storage = storage;
   }
-
-  /**
-   * Phase 117: 언어 유효성 검증
-   */
-  private isValidLanguage(lang: string): boolean {
-    return LanguageService.SUPPORTED_LANGUAGES.has(lang);
-  }
-
-  /**
-   * Phase 117: 언어 설정 저장
-   */
-  private async saveLanguage(language: SupportedLanguage): Promise<void> {
-    try {
-      await this.storage.setItem(LanguageService.STORAGE_KEY, language);
-      logger.debug(`Saved language: ${language}`);
-    } catch (error) {
-      logger.error('Failed to save language setting', { error });
-    }
-  }
-
   /**
    * (Phase 4) 다국어 리소스 정합성 보고
    * missing: 기준(en) 대비 누락된 키 목록
@@ -363,20 +336,54 @@ export class LanguageService {
     return this.currentLanguage;
   }
 
-  /**
-   * Phase 117: 언어 설정 변경 및 저장
-   */
-  async setLanguage(language: SupportedLanguage): Promise<void> {
-    if (language !== 'auto' && !(language in LANGUAGE_STRINGS)) {
-      logger.warn(`Unsupported language: ${language}, falling back to 'en'`);
-      language = 'en';
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
     }
 
-    this.currentLanguage = language;
-    await this.saveLanguage(language);
-    this.listeners.forEach(listener => listener(language));
+    if (this.initializationPromise) {
+      await this.initializationPromise;
+      return;
+    }
 
-    logger.debug(`Language changed to: ${language}`);
+    this.initializationPromise = (async () => {
+      try {
+        const saved = await this.storage.getItem(LanguageService.STORAGE_KEY);
+        const normalized = this.normalizeLanguage(saved);
+
+        if (normalized !== this.currentLanguage) {
+          this.currentLanguage = normalized;
+          this.notifyListeners(normalized);
+          logger.debug(`Language restored from storage: ${normalized}`);
+        }
+      } catch (error) {
+        logger.warn('Failed to restore language setting from storage:', error);
+      } finally {
+        this.isInitialized = true;
+        this.initializationPromise = null;
+      }
+    })();
+
+    await this.initializationPromise;
+  }
+
+  setLanguage(language: SupportedLanguage): void {
+    const normalized = this.normalizeLanguage(language);
+
+    if (language !== normalized && language !== 'auto') {
+      logger.warn(`Unsupported language: ${language}, falling back to '${normalized}'`);
+    }
+
+    // Phase 117.1: 값이 변경되지 않았을 때 중복 저장 방지
+    if (this.currentLanguage === normalized) {
+      return;
+    }
+
+    this.currentLanguage = normalized;
+    this.notifyListeners(normalized);
+    void this.persistLanguage(normalized);
+
+    logger.debug(`Language changed to: ${normalized}`);
   }
 
   getString(path: string): string {
@@ -406,6 +413,38 @@ export class LanguageService {
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
     this.listeners.add(callback);
     return () => this.listeners.delete(callback);
+  }
+
+  private normalizeLanguage(
+    language: SupportedLanguage | string | null | undefined
+  ): SupportedLanguage {
+    if (!language) {
+      return 'auto';
+    }
+
+    if (LanguageService.SUPPORTED_LANGUAGES.has(language as SupportedLanguage)) {
+      return language as SupportedLanguage;
+    }
+
+    return 'en';
+  }
+
+  private notifyListeners(language: SupportedLanguage): void {
+    this.listeners.forEach(listener => {
+      try {
+        listener(language);
+      } catch (error) {
+        logger.warn('Language change listener error:', error);
+      }
+    });
+  }
+
+  private async persistLanguage(language: SupportedLanguage): Promise<void> {
+    try {
+      await this.storage.setItem(LanguageService.STORAGE_KEY, language);
+    } catch (error) {
+      logger.warn('Failed to persist language setting:', error);
+    }
   }
 }
 

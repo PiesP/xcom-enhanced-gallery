@@ -1,6 +1,7 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-19 | **상태**: Phase 117 완료 ✅
+> **최종 업데이트**: 2025-10-19 | **상태**: 유지보수 모드 (모든 활성 Phase 완료)
+> ✅
 
 ## 프로젝트 현황
 
@@ -16,7 +17,7 @@
 
 ### 테스트 현황
 
-- **단위 테스트**: 1133 total (11 passed Phase 117) ✅
+- **단위 테스트**: 1081 passing / 10 skipped (99.1% 통과율) ✅
 - **E2E 테스트**: 28 passed / 1 skipped (96.6% 통과율) ✅
 - **커버리지**: v8로 통일 완료, 45% 기준선 설정 ✅
 
@@ -29,18 +30,18 @@
 
 ### 완료된 Phase (최근 10개)
 
-| Phase   | 주제                              | 완료일     | 결과                         |
-| ------- | --------------------------------- | ---------- | ---------------------------- |
-| 117     | 언어 설정 실시간 적용 및 저장     | 2025-10-19 | StorageAdapter 통합 완료     |
-| 116     | Settings 드롭다운 라벨 문자 정리  | 2025-10-19 | 장식 제거 · 라벨 텍스트 검증 |
-| 115     | Settings 드롭다운 인디케이터 정렬 | 2025-10-19 | 툴바 패턴 적용 · aria-hidden |
-| 114     | 아이콘 기반 시각적 단서 강화      | 2025-10-19 | ChevronDown/Photo 추가       |
-| 113     | Settings compact & Focus Ring     | 2025-10-19 | 라벨 가시성 · 흑백 통일      |
-| 112     | Settings 드롭다운 흑백 통일 검증  | 2025-10-19 | 9/9 tests, 검증 완료         |
-| 111.1   | Toast 색상 토큰 흑백 통일         | 2025-10-18 | 11/11 tests, 빌드 -1.59 KB   |
-| 110     | UI 일관성 개선 (접근성 강화)      | 2025-10-18 | 포커스 링 색상, Toast 아이콘 |
-| 109     | 설정 UI 디자인 개선               | 2025-10-18 | 흑백 통일, 접근성 개선       |
-| 107-108 | TypeScript 현대화 및 코드 간소화  | 2025-10-18 | 재평가 후 종료               |
+| Phase   | 주제                              | 완료일     | 결과                          |
+| ------- | --------------------------------- | ---------- | ----------------------------- |
+| 118     | SettingsControls 언어 실시간 반영 | 2025-10-19 | 8 tests, Solid.js 반응성 완료 |
+| 117     | Language 설정 실시간 적용 & 저장  | 2025-10-19 | 8 tests, 영속성 확보, 동기화  |
+| 116     | Settings 드롭다운 라벨 문자 정리  | 2025-10-19 | 장식 제거 · 라벨 텍스트 검증  |
+| 100     | 타입 단언 전수 조사               | 2025-10-17 | 31개 분석, 우선순위 결정      |
+| 101     | 즉시 제거 7개                     | 2025-10-17 | 타입 단언 7개 제거 (31→24)    |
+| 102     | 검토 후 제거 가능 타입 단언 10개  | 2025-10-18 | 실제 2개 제거 (24→27)         |
+| 104     | 큰 파일 재평가                    | 2025-10-18 | 순환 참조 위험으로 현상 유지  |
+| 104.5   | 빌드 크기 최적화 시도             | 2025-10-18 | 효과 없음, 종료됨             |
+| 106     | 빌드 크기 경고 기준 조정          | 2025-10-18 | 경고 기준 330KB → 332KB 상향  |
+| 107-108 | TypeScript 현대화 및 코드 간소화  | 2025-10-18 | 재평가 후 종료                |
 
 > 상세 내용:
 > [`TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
@@ -49,7 +50,71 @@
 
 ## 활성 Phase
 
-**현재 활성 Phase 없음** ✅
+### 진행 중 Phase
+
+_현재 진행 중인 활성 Phase 없음._ 모든 계획된 작업이 완료되었습니다.
+
+### 최근 완료된 작업
+
+**Phase 118: SettingsControls 언어 변경 실시간 반영** ✅ (2025-10-19)
+
+- 언어 설정 변경 시 SettingsControls 컴포넌트의 UI 텍스트가 즉시 반영되지 않는
+  문제 해결
+- `createSignal` + `createEffect` + `createMemo` 패턴으로 Solid.js 반응성 구현
+- `languageService.onLanguageChange` 이벤트를 구독하여 언어 변경 시 자동으로 UI
+  업데이트
+- 신규 테스트 8개 (unit + fast 환경)로 Solid.js 반응성 패턴 검증 (GREEN)
+- 메모리 누수 방지를 위해 `onCleanup`으로 이벤트 리스너 정리
+- 빌드 검증: 330.70 KB (임계값 332 KB 이내), 모든 테스트 통과
+
+**Phase 117: Language 설정 실시간 적용 & 저장** ✅ (2025-10-19)
+
+- 사용자 언어 선택이 즉시 UI에 반영되고 재접속 시에도 복원되도록 LanguageService
+  개선
+- 저장소 어댑터 통합으로 영속성 확보, 중복 저장 방지
+- Toolbar settings 컨트롤과 동기화하여 외부 변경에도 즉시 업데이트
+- 신규 테스트 8개로 저장/복원/리스너 알림/동기화 검증 완료 (GREEN)
+- Solid.js 반응성 테스트 패턴 확립 (microtask 대기)
+
+**Phase 116: Settings 드롭다운 라벨 문자 정리** ✅ (2025-10-19)
+
+- 사용자 피드백을 반영해 SettingsControls 라벨에서 `/` 및 `▾` 장식 문자를
+  제거하고 순수 텍스트만 노출하도록 JSX 구조를 단순화
+- 관련 CSS 모듈에서 인디케이터 전용 클래스 삭제로 불필요한 스타일 정리 및
+  compact 모드 영향 점검
+- 신규 테스트
+  `test/unit/shared/components/ui/phase-116-settings-dropdown-text-only.test.tsx`로
+  장식 span 유무와 라벨 텍스트 일치 여부를 검증 (GREEN)
+
+**Phase 113: Settings compact 라벨 & Focus Ring 단일톤** ✅ (2025-10-19)
+
+- compact 모드에서도 라벨을 시각적으로 노출하도록 `SettingsControls` 구조 개선
+- `design-tokens.css` / semantic/component 토큰에서 focus alias를 gray 기반으로
+  재정의
+- 테스트: `settings-controls.compact-labels.test.tsx`(2) ·
+  `phase-113-focus-ring-alias.test.ts`(4) → 6 GREEN
+- 실제 툴바 설정 패널에서 포커스 테두리 회색, 라벨 가시성 확인
+
+**Phase 112: Settings 드롭다운 흑백 통일 검증** ✅ (2025-10-19)
+
+- 사용자 보고에 따른 검증 작업
+- 9개 테스트 추가: 모두 GREEN (Phase 109에서 이미 완료된 상태 확인)
+- 결과: hover/focus 상태가 이미 gray 기반, 라벨 가시성 정상
+- 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참고
+
+**Phase 111.1: Toast 색상 토큰 흑백 통일** ✅ (2025-10-18)
+
+- 8개 Toast 색상 토큰 + 2개 shadow → gray 기반 통일
+- TDD: 11/11 tests PASSED (155ms)
+- 빌드: 328.83 KB (-1.59 KB)
+- 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참고
+
+### 보류된 Phase
+
+**Phase 111.2: 다른 색상 토큰 검토** (보류)
+
+**검토 대상**: `--color-primary`, `--color-success/error/warning/info`,
+`--xeg-color-primary`
 
 1. 실제 사용처 확인 필요 (grep 검색으로 범위 파악)
 2. 접근성 영향 평가 필요 (WCAG 2.1 준수 확인)

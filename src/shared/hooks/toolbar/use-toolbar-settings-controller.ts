@@ -6,7 +6,10 @@
 import { logger } from '../../logging/logger';
 import { getSolid } from '../../external/vendors';
 import { ThemeService } from '../../services/theme-service';
-import { LanguageService } from '../../services/language-service';
+import {
+  LanguageService,
+  languageService as sharedLanguageService,
+} from '../../services/language-service';
 import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
@@ -123,7 +126,7 @@ export function useToolbarSettingsController(
     windowRef = typeof window !== 'undefined' ? window : undefined,
     eventManager = EventManager.getInstance(),
     themeService = new ThemeService(),
-    languageService = new LanguageService(),
+    languageService = sharedLanguageService,
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
     selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
     highContrastOffsets = DEFAULT_HIGH_CONTRAST_OFFSETS,
@@ -142,7 +145,19 @@ export function useToolbarSettingsController(
   );
 
   const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
-  const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>('auto');
+  const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
+    languageService.getCurrentLanguage() as LanguageOption
+  );
+
+  createEffect(() => {
+    const unsubscribe = languageService.onLanguageChange(next => {
+      setCurrentLanguage(next);
+    });
+
+    onCleanup(() => {
+      unsubscribe();
+    });
+  });
 
   const evaluateHighContrast = () => {
     const toolbarElement = toolbarRef();
@@ -376,14 +391,14 @@ export function useToolbarSettingsController(
     themeService.setTheme(theme);
   };
 
-  const handleLanguageChange = async (event: Event) => {
+  const handleLanguageChange = (event: Event) => {
     const select = event.target as HTMLSelectElement | null;
     if (!select) {
       return;
     }
     const language = (select.value as LanguageOption) || 'auto';
     setCurrentLanguage(language);
-    await languageService.setLanguage(language);
+    languageService.setLanguage(language);
   };
 
   return {
