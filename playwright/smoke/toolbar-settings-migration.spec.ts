@@ -230,9 +230,29 @@ test.describe('Phase 82.1: Toolbar Settings Toggle (E2E Migration)', () => {
     });
     expect(panelState).toBe('true');
 
-    // Click outside the panel in body area (far from toolbar)
-    // The mousedown event on document body will trigger outside click detection
-    await page.click('body', { position: { x: 50, y: 50 }, force: true });
+    // Wait for Solid.js createEffect to register the outside click handler
+    // The handler is set up asynchronously after panel expansion
+    await page.waitForTimeout(200);
+
+    // Blur the focused select element to deactivate the select guard
+    // When the panel opens, the first select element is automatically focused,
+    // which activates isSelectActive flag that blocks outside click detection
+    await page.evaluate(() => {
+      const activeElement = document.activeElement as HTMLElement | null;
+      if (activeElement && activeElement.tagName === 'SELECT') {
+        activeElement.blur();
+      }
+    });
+
+    // Wait for select blur guard to release (100ms from handleSelectBlur)
+    await page.waitForTimeout(150);
+
+    // Dispatch mousedown event on body to trigger outside click handler
+    // Using evaluate() ensures the event targets the body element directly
+    await page.evaluate(() => {
+      const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+      document.body.dispatchEvent(event);
+    });
 
     // Wait for panel to close (mousedown triggers outside click handler)
     await page.waitForFunction(
