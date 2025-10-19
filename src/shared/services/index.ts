@@ -47,8 +47,8 @@ export type { Theme } from './theme-service';
 export { LanguageService } from './language-service';
 export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './language-service';
 
-// 4. 토스트 서비스 - UnifiedToastManager 사용
-export { UnifiedToastManager } from './unified-toast-manager';
+// 4. 토스트 서비스 - ToastManager 인스턴스 사용 권장
+export { toastManager, ToastManager } from './unified-toast-manager';
 export { ToastController } from './toast-controller';
 export type { ToastOptions } from './unified-toast-manager';
 

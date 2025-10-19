@@ -5,7 +5,7 @@
 
 import { logger } from '../logging/logger';
 import type { BaseService } from '../types/core/base-service.types';
-import { UnifiedToastManager } from './unified-toast-manager';
+import { ToastManager } from './unified-toast-manager';
 
 // Toast 관련 타입 정의
 export interface ToastItem {
@@ -60,7 +60,7 @@ export class ToastController implements BaseService {
    */
   async cleanup(): Promise<void> {
     // 모든 토스트 제거 (통합 관리자 위임)
-    UnifiedToastManager.getInstance().clear();
+    ToastManager.getInstance().clear();
     this.initialized = false;
     logger.debug('ToastController 정리 완료');
   }
@@ -104,7 +104,7 @@ export class ToastController implements BaseService {
    * ```
    */
   show(options: ToastOptions): string {
-    const id = UnifiedToastManager.getInstance().show(options);
+    const id = ToastManager.getInstance().show(options);
     logger.debug(`토스트 표시(위임): ${options.title} - ${options.message}`);
     return id;
   }
@@ -161,14 +161,14 @@ export class ToastController implements BaseService {
    * 특정 토스트 제거
    */
   remove(id: string): void {
-    UnifiedToastManager.getInstance().remove(id);
+    ToastManager.getInstance().remove(id);
   }
 
   /**
    * 모든 토스트 제거
    */
   clear(): void {
-    UnifiedToastManager.getInstance().clear();
+    ToastManager.getInstance().clear();
   }
 }
 

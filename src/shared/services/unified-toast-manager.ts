@@ -274,48 +274,9 @@ export class ToastManager {
 }
 
 /**
- * 전역 인스턴스 (기존 toastController와의 호환성)
+ * 전역 인스턴스
  */
 export const toastManager = ToastManager.getInstance();
-
-/**
- * 기존 코드와의 호환성을 위한 별칭
- * 점진적 마이그레이션을 위해 제공
- */
-/**
- * 주요 exports (표준화된 이름)
- */
-export const ToastService = toastManager;
-export const toastService = toastManager;
-export const toastController = toastManager;
-
-/**
- * @deprecated 이전 이름들 (하위 호환성 유지)
- */
-export const UnifiedToastManager = ToastManager;
-
-/**
- * 편의 함수들 (기존 Toast.tsx의 함수들을 대체)
- */
-export function addToast(toast: Omit<ToastItem, 'id'>): string {
-  const options: ToastOptions = {
-    title: toast.title,
-    message: toast.message,
-    type: toast.type,
-    ...(toast.duration !== undefined && { duration: toast.duration }),
-    ...(toast.actionText && { actionText: toast.actionText }),
-    ...(toast.onAction && { onAction: toast.onAction }),
-  };
-  return toastManager.show(options);
-}
-
-export function removeToast(id: string): void {
-  toastManager.remove(id);
-}
-
-export function clearAllToasts(): void {
-  toastManager.clear();
-}
 
 /**
  * Preact 컴포넌트에서 사용할 수 있는 signals 기반 상태
@@ -336,15 +297,28 @@ export const toasts = {
 /**
  * 마이그레이션 가이드:
  *
- * 기존 ToastController.ts 사용 → ToastManager로 교체
- * - toastController.show() → toastManager.show() (또는 기존 toastController 별칭 사용)
- * - toastController.success() → toastManager.success()
+ * === 표준화된 공식 API ===
+ * - toastManager.show(options) - 모든 유형의 토스트 표시
+ * - toastManager.success(title, message, options)
+ * - toastManager.info(title, message, options)
+ * - toastManager.warning(title, message, options)
+ * - toastManager.error(title, message, options)
+ * - toastManager.remove(id) - 특정 토스트 제거
+ * - toastManager.clear() - 모든 토스트 제거
+ * - toastManager.getToasts() - 현재 토스트 목록 조회
+ * - toastManager.subscribe(callback) - 상태 변화 구독
  *
- * 기존 Toast.tsx의 addToast/removeToast → 통합된 함수 사용
- * - addToast() → addToast() (동일하지만 내부적으로 통합된 관리자 사용)
- * - removeToast() → removeToast() (동일하지만 내부적으로 통합된 관리자 사용)
+ * === 레거시 코드 마이그레이션 ===
+ * 기존 코드에서 별칭을 사용하던 부분:
+ * - toastController → toastManager로 변경
+ * - ToastService → toastManager로 변경
+ * - toastService → toastManager로 변경
  *
- * 기존 Toast 컴포넌트의 signals → 통합된 signals 사용
- * - toasts.value → toastManager.getToasts() 또는 toasts.value
- * - toasts.subscribe() → toastManager.subscribe() 또는 toasts.subscribe()
+ * 기존 편의 함수 제거:
+ * - addToast(...) → toastManager.show(...)
+ * - removeToast(id) → toastManager.remove(id)
+ * - clearAllToasts() → toastManager.clear()
+ *
+ * 라이브 리전 지원:
+ * - route 옵션으로 접근성 공지 제어: 'live-only' | 'toast-only' | 'both'
  */
