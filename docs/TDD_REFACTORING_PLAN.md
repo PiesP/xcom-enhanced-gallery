@@ -37,6 +37,7 @@
 | 121   | 툴바/설정 메뉴 텍스트 색상 토큰    | 2025-10-19 | 3 tokens, 9 tests GREEN                     |
 | 119   | Gallery 디자인 단일화              | 2025-10-19 | 토큰 재사용 · 스타일 테스트                 |
 | 118   | SettingsControls 언어 실시간 반영  | 2025-10-19 | 8 tests, Solid.js 반응성 완료               |
+| 124   | Test Coverage Expansion            | 2025-01-19 | 67 tests, 5 files, 58-95% 범위              |
 | 117   | Language 설정 실시간 적용 & 저장   | 2025-10-19 | 8 tests, 영속성 확보, 동기화                |
 | 116   | Settings 드롭다운 라벨 문자 정리   | 2025-10-19 | 장식 제거 · 라벨 텍스트 검증                |
 | 100   | 타입 단언 전수 조사                | 2025-10-17 | 31개 분석, 우선순위 결정                    |
@@ -50,59 +51,12 @@
 
 ## 활성 Phase
 
-### 진행 중 Phase
+### 우선순위 Phase
 
-**Phase 124: Test Coverage Expansion - Critical Infrastructure & UI** 🔄
-(2025-01-19)
+**Phase 124: Test Coverage Expansion - 남은 우선순위**
 
-**목표**: 테스트 커버리지 64.17% → 70%+ 달성, Critical Services 60%+, UI
-Components 50%+
-
-**진행 상황**:
-
-- ✅ **Step 1: logger.ts** (0% → 83.69%) - 18 tests, 초과 달성 🎉
-- ✅ **Step 2: twitter-token-extractor.ts** (0% → 58.26%) - 8 tests, 실용적
-  접근으로 안정성 확보
-- ✅ **Step 3: useProgressiveImage.ts** (0% → 60.78%) - 14 tests, 목표 달성! 🎉
-  (Functions: 80%, Branches: 65.38%)
-- ✅ **Step 4: media-mapping** (0% → 92-95%) - 27 tests, 대폭 초과 달성! 🎉
-  (service 92%, strategy 94.91%)
-
-**현재 커버리지 분석**:
-
-- **Overall**: 64.17% statements, 73.48% branches, 50.71% functions
-- **Critical 0% Coverage**: ~~logger.ts~~ ✅, useProgressiveImage.ts (299 lines)
-- **Low Coverage (<20%)**: GalleryApp 3%, ErrorBoundary 17%, Toast 7-20%, media
-  extraction 7-50%
-- **High Coverage (90-100%)**: Gallery components, Settings, i18n (유지)
-
-**우선순위 1: Critical Services** (0-20% → 60%+)
-
-1. ~~**logger.ts** (0% → 80%) - 15 tests~~ ✅ **완료: 83.69% (18 tests)**
-   - ✅ 로그 레벨 필터링 테스트
-   - ✅ 포맷팅 함수 테스트
-   - ✅ 출력 채널 테스트
-   - ✅ 성능 최적화 검증
-
-2. ~~**twitter-token-extractor.ts** (10% → 70%) - 12 tests~~ ✅ **완료: 58.26%
-   (8 tests)**
-   - ✅ 토큰 추출 로직 테스트
-   - ✅ 에러 핸들링 테스트
-   - ⏳ 캐싱 로직 테스트 (JSDOM 제약)
-
-3. ~~**useProgressiveImage.ts** (0% → 60%) - 10 tests~~ ✅ **완료: 60.78% (14
-   tests)**
-   - ✅ 초기 상태 및 기본 기능 (3 tests)
-   - ✅ 상태 제어 메서드 (2 tests)
-   - ✅ 이미지 Props 동작 (3 tests)
-   - ✅ 옵션 처리 (4 tests)
-   - ✅ 타입 및 인터페이스 (2 tests)
-
-4. ~~**media-mapping** (0% → 70%) - 6 tests~~ ✅ **완료: 92-95% (27 tests)**
-   - ✅ media-mapping-service.ts: 92% (10 tests)
-     - 초기화, mapMedia 동작, 전략 통합, 타입 검증
-   - ✅ media-tab-url-direct-strategy.ts: 94.91% (17 tests)
-     - URL 파싱, 미디어 추출(img/video), 인덱스 처리, 에러 핸들링
+Phase 124 Step 1-4 완료 (logger, twitter-token-extractor, useProgressiveImage,
+media-mapping)로 Critical Services 목표 달성. 남은 우선순위:
 
 **우선순위 2: UI Components** (0-20% → 50%+)
 
@@ -126,8 +80,6 @@ Components 50%+
 1. **base-service-impl.ts** (12% → 60%) - 8 tests
 2. **toast-controller.ts** (32% → 65%) - 10 tests
 3. **initialize-theme.ts** (7% → 60%) - 8 tests
-
-**예상 일정**: Phase 124 Step 1-4 완료 ✅
 
 ### 최근 완료된 작업
 
