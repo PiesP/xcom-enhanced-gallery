@@ -12,4 +12,9 @@ export {
 export { getHighQualityMediaUrl, getMediaUrlsFromTweet, isValidMediaUrl } from './media-url.util';
 
 // Media Click Detection utilities
-export { MediaClickDetector } from './media-click-detector';
+export {
+  detectMediaFromClick,
+  findMediaAtCoordinates,
+  isProcessableMedia,
+  shouldBlockMediaTrigger,
+} from './media-click-detector';

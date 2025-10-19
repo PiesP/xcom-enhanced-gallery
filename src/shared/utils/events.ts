@@ -5,7 +5,7 @@
 import { logger } from '../logging/logger';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
-import { MediaClickDetector } from './media/media-click-detector';
+import { detectMediaFromClick as detectMediaElement } from './media/media-click-detector';
 import {
   gallerySignals,
   navigateToItem,
@@ -319,13 +319,12 @@ function checkInsideGallery(element: HTMLElement | null): boolean {
   }
 }
 
-async function detectMediaFromClick(event: MouseEvent): Promise<MediaInfo | null> {
+async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
   try {
     const target = event.target as HTMLElement;
     if (!target) return null;
 
-    const detector = MediaClickDetector.getInstance();
-    const result = detector.detectMediaFromClick(target);
+    const result = detectMediaElement(target);
 
     if (result?.type !== 'none' && result.mediaUrl) {
       const mediaInfo: MediaInfo = {
@@ -607,7 +606,7 @@ async function handleMediaClick(
 
       // 미디어 감지 후 우리의 갤러리 열기 시도
       if (options.enableMediaDetection) {
-        const mediaInfo = await detectMediaFromClick(event);
+        const mediaInfo = await detectMediaFromEvent(event);
         if (mediaInfo) {
           await handlers.onMediaClick(mediaInfo, target, event);
           logger.debug('Twitter gallery blocked, our gallery opened instead');
@@ -625,7 +624,7 @@ async function handleMediaClick(
 
     // **우선순위 2: 일반 미디어 감지 (트위터 요소가 아닌 경우)**
     if (options.enableMediaDetection) {
-      const mediaInfo = await detectMediaFromClick(event);
+      const mediaInfo = await detectMediaFromEvent(event);
       if (mediaInfo) {
         await handlers.onMediaClick(mediaInfo, target, event);
         return {

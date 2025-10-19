@@ -64,8 +64,15 @@ export {
 // === 이벤트 (1개) ===
 export { addListener } from './events';
 
-// === 미디어 (3개) ===
-export { imageFilter, getHighQualityMediaUrl, MediaClickDetector } from './media';
+// === 미디어 (6개) ===
+export {
+  imageFilter,
+  getHighQualityMediaUrl,
+  detectMediaFromClick,
+  findMediaAtCoordinates,
+  isProcessableMedia,
+  shouldBlockMediaTrigger,
+} from './media';
 
 // === DOM 배처 (2개) ===
 export { DOMBatcher, globalDOMBatcher } from './dom/index';
