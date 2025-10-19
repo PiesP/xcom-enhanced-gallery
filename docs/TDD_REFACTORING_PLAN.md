@@ -34,6 +34,7 @@
 
 | Phase | 주제                               | 완료일     | 결과                                                       |
 | ----- | ---------------------------------- | ---------- | ---------------------------------------------------------- |
+| 125.4 | base-service-impl.ts 커버리지 개선 | 2025-10-19 | 12.9% → 100% (+87.1%p), 42 tests GREEN                     |
 | 125.3 | error-handling.ts 커버리지 개선    | 2025-10-19 | 8.73% → 100% (+91.27%p), 54 tests GREEN                    |
 | 125.2 | 테마 & 엔트리 커버리지 개선        | 2025-10-19 | initialize-theme.ts 89.47%, main.ts 55.65%, 39 tests GREEN |
 | 125.1 | GalleryApp 커버리지 개선           | 2025-10-19 | 3.34% → 56.93% (+53.59%p), 18 tests GREEN                  |
@@ -43,7 +44,6 @@
 | 119   | Gallery 디자인 단일화              | 2025-10-19 | 토큰 재사용 · 스타일 테스트                                |
 | 118   | SettingsControls 언어 실시간 반영  | 2025-10-19 | 8 tests, Solid.js 반응성 완료                              |
 | 124   | Test Coverage Expansion            | 2025-01-19 | 67 tests, 5 files, 58-95% 범위                             |
-| 117   | Language 설정 실시간 적용 & 저장   | 2025-10-19 | 8 tests, 영속성 확보, 동기화                               |
 
 > 상세 내용:
 > [`TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
@@ -66,14 +66,14 @@
 
 **우선순위별 개선 대상**:
 
-#### 우선순위 1: 핵심 기능 (높음)
+#### 우선순위 1: 핵심 기능 (완료)
 
 | 파일                   | 현재   | 목표 | 중요도  | 비고                                |
 | ---------------------- | ------ | ---- | ------- | ----------------------------------- |
 | `GalleryApp.ts`        | 56.93% | 50%  | ✅ 완료 | Phase 125.1 완료 (+53.59%p)         |
 | `initialize-theme.ts`  | 89.47% | 40%  | ✅ 완료 | Phase 125.2-A 완료 (+82.11%p)       |
 | `main.ts`              | 55.65% | 75%  | ⚠️ 제한 | Phase 125.2-B 완료 (test mode 제약) |
-| `base-service-impl.ts` | 12.9%  | 60%  | 🔴 높음 | 기본 서비스 구현                    |
+| `base-service-impl.ts` | 100%   | 60%  | ✅ 완료 | Phase 125.4 완료 (+87.1%p)          |
 
 #### 우선순위 2: 로깅 및 에러 처리 (완료)
 
@@ -111,16 +111,16 @@
 2. ~~Phase 125.2-A: initialize-theme.ts~~ ✅ 완료 (7.36% → 89.47%)
 3. ~~Phase 125.2-B: main.ts~~ ⚠️ 부분 완료 (55.65%, test mode 제약)
 4. ~~Phase 125.3: error-handling.ts~~ ✅ 완료 (8.73% → 100%)
+5. ~~Phase 125.4: base-service-impl.ts~~ ✅ 완료 (12.9% → 100%)
 
 **남은 우선순위 작업**:
 
-1. **Phase 125.4**: base-service-impl.ts (기본 서비스 강화, 12.9% → 60%)
-2. **Phase 125.5**: 미디어 추출 서비스 (fallback-extractor,
-   media-extraction-service)
+1. **Phase 125.5**: 미디어 추출 서비스 (fallback-extractor 18.64% → 50%,
+   media-extraction-service 24.76% → 60%)
 
-**예상 효과**: 64.99% → 70%+ (Phase 125.4-125.5 완료 시)
+**예상 효과**: 64.99% → 70%+ (Phase 125.5 완료 시)
 
-**현재 상태**: Phase 125.3 완료, 다음은 Phase 125.4 진행 권장
+**현재 상태**: Phase 125.4 완료, 다음은 Phase 125.5 진행 권장
 
 ---
 
@@ -133,6 +133,33 @@
 - 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ### 최근 완료된 작업
+
+**Phase 125.4: base-service-impl.ts 커버리지 개선** ✅ (2025-10-19)
+
+- **목표**: 12.9% → 60% (+47.1%p)
+- **실제 달성**: 12.9% → 100% (+87.1%p, 목표 대비 +45%)
+- **테스트 작성**: 42개 테스트 (2개 클래스별 그룹)
+  - BaseServiceImpl: 18 tests (initialize, destroy, isInitialized, lifecycle)
+    - 초기화 성공/실패 처리
+    - 중복 초기화 방지
+    - 비동기 초기화 지원
+    - destroy 성공/실패 처리 (에러 시 상태 유지)
+    - 초기화되지 않은 서비스 destroy 방지
+    - 전체 라이프사이클 (init → destroy → init 재초기화)
+  - SingletonServiceImpl: 6 tests (싱글톤 패턴, resetSingleton)
+    - 동일 인스턴스 반환 검증
+    - 싱글톤 상태 유지 확인
+    - 테스트용 리셋 기능 (destroy 호출 확인)
+    - 비존재 인스턴스 리셋 안전성
+  - 엣지 케이스: 2 tests (serviceName 특수문자, 빈 문자열 처리)
+- **테스트 전략**:
+  - 추상 클래스 테스트: 구체적인 구현체(TestService, AsyncTestService,
+    TestSingletonService) 생성
+  - 라이프사이클 검증: 초기화/정리/상태 확인의 전체 흐름 테스트
+  - 에러 핸들링: logger.error 호출 확인, 에러 throw 여부 검증
+  - 싱글톤 패턴: 인스턴스 재사용 및 상태 공유 확인
+- **커버리지 결과**: Statements 100%, Branches 100%, Functions 100%, Lines 100%
+- **전체 테스트**: 1322 passed (100% 통과율), TypeScript 0 errors
 
 **Phase 125.3: error-handling.ts 커버리지 개선** ✅ (2025-10-19)
 
