@@ -1,10 +1,10 @@
 /**
  * @fileoverview Phase H: Memory utilities
- * @description Direct function exports for better tree-shaking
- * @version 4.0.0 - Phase H: Final cleanup
+ * @description Direct function exports for better tree-shaking (총 8개 export)
+ * @version 4.1.0 - Phase 132: 하위 호환성 별칭 제거
  */
 
-// ResourceManager 클래스와 편의 함수들
+// === Core Resource Management (6개) ===
 export {
   ResourceManager,
   globalResourceManager,
@@ -14,26 +14,13 @@ export {
   type ResourceType,
 } from './resource-manager';
 
-// 하위 호환성을 위한 별칭들
-export {
-  releaseAllResources as cleanupAllResources,
-  globalResourceManager as createManagedController,
-  registerResource as registerManagedMemoryResource,
-  releaseResource as releaseResourcesByContext,
-  releaseResource as releaseResourcesByType,
-  globalResourceManager as createTimer,
-  globalResourceManager as createManagedInterval,
-  globalResourceManager as addManagedEventListener,
-  globalResourceManager as createManagedObserver,
-  globalResourceManager as createManagedObjectURL,
-} from './resource-manager';
-
-// 편의 함수들
+// === Convenience Functions (2개) ===
 import { globalResourceManager } from './resource-manager';
+
 export const getResourceCount = () => globalResourceManager.getResourceCount();
 export const hasResource = (id: string) => globalResourceManager.hasResource(id);
 
-// Memory profiler (lightweight, optional)
+// === Memory Profiling & Diagnostics (5개) ===
 export {
   isMemoryProfilingSupported,
   takeMemorySnapshot,
