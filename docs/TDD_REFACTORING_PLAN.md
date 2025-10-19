@@ -7,18 +7,18 @@
 
 ### 빌드 및 품질 지표
 
-- **빌드**: 328.88 KB / 335 KB (98.1%, 여유 6.12 KB) ✅
-- **경고 기준**: 332 KB (Phase 106에서 상향 조정) ✅
+- **빌드**: 333.54 KB / 335 KB (99.5%, 여유 1.46 KB) ✅
+- **경고 기준**: 332 KB (경고 기준 초과 +1.54 KB) ⚠️
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings, Markdown 0 errors ✅
 - **CSS 린트**: stylelint 0 warnings ✅
 - **CodeQL**: 5/5 쿼리 통과 ✅
-- **의존성**: 0 violations (264 modules, 737 dependencies) ✅
+- **의존성**: 0 violations (273 modules, 755 dependencies) ✅
 
 ### 테스트 현황
 
-- **단위 테스트**: 1081 passing / 10 skipped (99.1% 통과율) ✅
-- **E2E 테스트**: 28 passed / 1 skipped (96.6% 통과율) ✅
+- **단위 테스트**: 1130 passing / 0 skipped (100% 통과율) ✅
+- **E2E 테스트**: 44 passed / 1 skipped (97.8% 통과율) ✅
 - **커버리지**: v8로 통일 완료, 45% 기준선 설정 ✅
 
 ### 코드 품질
@@ -30,18 +30,18 @@
 
 ### 완료된 Phase (최근 10개)
 
-| Phase   | 주제                              | 완료일     | 결과                          |
-| ------- | --------------------------------- | ---------- | ----------------------------- |
-| 118     | SettingsControls 언어 실시간 반영 | 2025-10-19 | 8 tests, Solid.js 반응성 완료 |
-| 117     | Language 설정 실시간 적용 & 저장  | 2025-10-19 | 8 tests, 영속성 확보, 동기화  |
-| 116     | Settings 드롭다운 라벨 문자 정리  | 2025-10-19 | 장식 제거 · 라벨 텍스트 검증  |
-| 100     | 타입 단언 전수 조사               | 2025-10-17 | 31개 분석, 우선순위 결정      |
-| 101     | 즉시 제거 7개                     | 2025-10-17 | 타입 단언 7개 제거 (31→24)    |
-| 102     | 검토 후 제거 가능 타입 단언 10개  | 2025-10-18 | 실제 2개 제거 (24→27)         |
-| 104     | 큰 파일 재평가                    | 2025-10-18 | 순환 참조 위험으로 현상 유지  |
-| 104.5   | 빌드 크기 최적화 시도             | 2025-10-18 | 효과 없음, 종료됨             |
-| 106     | 빌드 크기 경고 기준 조정          | 2025-10-18 | 경고 기준 330KB → 332KB 상향  |
-| 107-108 | TypeScript 현대화 및 코드 간소화  | 2025-10-18 | 재평가 후 종료                |
+| Phase | 주제                               | 완료일     | 결과                                        |
+| ----- | ---------------------------------- | ---------- | ------------------------------------------- |
+| 123   | Skipped Tests 완전 제거 & E2E 검증 | 2025-10-19 | 1개 제거, E2E 커버리지 갭 분석, 100% 통과율 |
+| 122   | Skipped Tests 최적화 및 정리       | 2025-10-19 | 16개 제거, 테스트 파일 2개 삭제, 90% 개선   |
+| 121   | 툴바/설정 메뉴 텍스트 색상 토큰    | 2025-10-19 | 3 tokens, 9 tests GREEN                     |
+| 119   | Gallery 디자인 단일화              | 2025-10-19 | 토큰 재사용 · 스타일 테스트                 |
+| 118   | SettingsControls 언어 실시간 반영  | 2025-10-19 | 8 tests, Solid.js 반응성 완료               |
+| 117   | Language 설정 실시간 적용 & 저장   | 2025-10-19 | 8 tests, 영속성 확보, 동기화                |
+| 116   | Settings 드롭다운 라벨 문자 정리   | 2025-10-19 | 장식 제거 · 라벨 텍스트 검증                |
+| 100   | 타입 단언 전수 조사                | 2025-10-17 | 31개 분석, 우선순위 결정                    |
+| 101   | 즉시 제거 7개                      | 2025-10-17 | 타입 단언 7개 제거 (31→24)                  |
+| 102   | 검토 후 제거 가능 타입 단언 10개   | 2025-10-18 | 실제 2개 제거 (24→27)                       |
 
 > 상세 내용:
 > [`TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
@@ -52,9 +52,38 @@
 
 ### 진행 중 Phase
 
-_현재 진행 중인 활성 Phase 없음._ 모든 계획된 작업이 완료되었습니다.
+현재 진행 중인 Phase 없음. 유지보수 모드 유지.
 
 ### 최근 완료된 작업
+
+**Phase 121: 툴바/설정 메뉴 텍스트 색상 토큰 완성** ✅ (2025-10-19)
+
+- 누락된 3개 xeg 텍스트 토큰 추가: `--xeg-color-text-muted`,
+  `--xeg-color-text-inverse`, `--xeg-color-text-tertiary`
+- `design-tokens.css`에서 semantic 토큰을 xeg 접두사로 re-export하여 프로젝트
+  네이밍 일관성 유지
+- 신규 테스트 9개 (token definitions, light/dark themes, inversion) 모두 GREEN
+- TDD 방식으로 RED→GREEN 달성, 빌드 검증 통과 (333.54 KB, 경고 기준 초과 +1.54
+  KB)
+
+**Phase 120: 언어 모듈 리패키징 & 버전 가드** ✅ (2025-10-19)
+
+- 번역 문자열 정의를 `src/shared/i18n`으로 분리하고 `language-service`는
+  레지스트리 의존으로 단순화
+- `module-versions.ts`와 `module.autoupdate.js`로 번역 모듈 버전 관리 자동화, 키
+  누락 가드 추가
+- 신규 Vitest(`language-module-registry.test.ts`)로 번역 레지스트리/버전 맵
+  일관성 검증
+- Phase 117 회귀 테스트 및 lint/typecheck 모두 GREEN 유지
+
+**Phase 119: Gallery 디자인 단일화** ✅ (2025-10-19)
+
+- Gallery 및 Vertical view CSS에서 블루 계열 OKLCH 값을 제거하고 시맨틱/컴포넌트
+  토큰으로 통일
+- `design-tokens.semantic.css`에 라이트/다크 변형 및 고대비 토큰을 보강하여
+  `token-definition-guard` GREEN 유지
+- `theme-responsiveness`, `token-definition-guard`, `gallery-design-uniformity`
+  테스트를 통해 모노톤 정책 회귀 방지
 
 **Phase 118: SettingsControls 언어 변경 실시간 반영** ✅ (2025-10-19)
 

@@ -61,47 +61,4 @@ describe('Toolbar focus indicator (preview removed)', () => {
     expect(counter?.getAttribute('aria-live')).toBe('polite');
     expect(counter?.textContent?.replace(/\s+/g, '')).toBe('1/5');
   });
-
-  it.skip('syncs counter and progress with focused index even when it diverges from current index', async () => {
-    // Skip: Solid.js doesn't support React-style rerender pattern
-    // Reactivity in Solid.js works through signals, not rerenders
-    // This test requires Playwright E2E or complete signal-based rewrite
-    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
-
-    const { container, rerender } = render(
-      h(
-        Toolbar,
-        createToolbarProps({
-          currentIndex: 0,
-          focusedIndex: 0,
-          totalCount: 5,
-        })
-      )
-    );
-
-    const counter = container.querySelector('[data-gallery-element="counter"]');
-    expect(counter).not.toBeNull();
-    expect(counter?.textContent).toContain('1/5');
-    expect(counter?.getAttribute('data-focused-index')).toBe('0');
-
-    rerender(
-      h(
-        Toolbar,
-        createToolbarProps({
-          currentIndex: 0,
-          focusedIndex: 3,
-          totalCount: 5,
-        })
-      )
-    );
-
-    const updatedCounter = container.querySelector('[data-gallery-element="counter"]');
-    expect(updatedCounter).not.toBeNull();
-    expect(updatedCounter?.textContent).toContain('4/5');
-    expect(updatedCounter?.getAttribute('data-focused-index')).toBe('3');
-
-    const progressFill = updatedCounter?.parentElement?.querySelector('div[class*="progressFill"]');
-    expect(progressFill).not.toBeNull();
-    expect((progressFill as HTMLElement).style.width).toBe('80%');
-  });
 });

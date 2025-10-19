@@ -57,85 +57,6 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
     vi.useRealTimers();
   });
 
-  describe('RED: autoFocusIndex 업데이트 시 전역 setFocusedIndex 호출', () => {
-    // Phase 74.7: E2E 이관 권장 (IntersectionObserver entries 필요, signal 반응성 불안정)
-    it.skip('스크롤로 autoFocusIndex가 변경되면 전역 setFocusedIndex를 호출해야 함 (E2E 이관 권장)', async () => {
-      // Given: useGalleryFocusTracker가 활성화되고 3개 아이템이 등록됨
-      const { useGalleryFocusTracker } = await import(
-        '../../../src/features/gallery/hooks/useGalleryFocusTracker'
-      );
-      const [currentIndex, setCurrentIndex] = createSignal(0);
-      let registerItem: ((index: number, element: HTMLElement | null) => void) | undefined;
-
-      await new Promise<void>(resolve => {
-        dispose = createRoot(innerDispose => {
-          const result = useGalleryFocusTracker({
-            container: mockContainer,
-            isEnabled: true,
-            getCurrentIndex: currentIndex,
-            minimumVisibleRatio: 0.5,
-          });
-
-          registerItem = result.registerItem;
-          resolve();
-          return innerDispose;
-        });
-      });
-
-      // 3개 아이템 등록
-      for (let i = 0; i < 3; i++) {
-        const item = document.createElement('div');
-        item.setAttribute('data-index', String(i));
-        item.style.height = '300px';
-        mockContainer.appendChild(item);
-        registerItem?.(i, item);
-      }
-
-      // Phase 69: debouncedScheduleSync (100ms) 대기
-      await vi.advanceTimersByTimeAsync(150);
-
-      // When: IntersectionObserver 시뮬레이션 (2번 아이템이 가시화)
-      // 실제로는 스크롤 시 IntersectionObserver가 자동으로 트리거됨
-      // 여기서는 직접 테스트하기 어려우므로 forceSync를 통해 간접 검증
-
-      // Phase 69: debouncedScheduleSync (100ms) 대기
-      await vi.advanceTimersByTimeAsync(150);
-
-      // Then: setFocusedIndex가 호출되어야 함 (아직 구현 안 됨 - RED)
-      expect(setFocusedIndexSpy).toHaveBeenCalled();
-    });
-
-    // Phase 74.7: E2E 이관 권장 (signal 반응성 타이밍 불안정, JSDOM 제약)
-    it.skip('autoFocusIndex가 null로 변경되면 setFocusedIndex(null)을 호출해야 함 (E2E 이관 권장)', async () => {
-      // Given: useGalleryFocusTracker가 비활성화 상태
-      const { useGalleryFocusTracker } = await import(
-        '../../../src/features/gallery/hooks/useGalleryFocusTracker'
-      );
-      const [currentIndex] = createSignal(0);
-      const [isEnabled, setIsEnabled] = createSignal(true);
-
-      await new Promise<void>(resolve => {
-        dispose = createRoot(innerDispose => {
-          useGalleryFocusTracker({
-            container: mockContainer,
-            isEnabled,
-            getCurrentIndex: currentIndex,
-          });
-
-          resolve();
-          return innerDispose;
-        });
-      });
-
-      // When: 비활성화
-      setIsEnabled(false);
-      await vi.advanceTimersByTimeAsync(150);
-
-      // Then: setFocusedIndex(null)이 호출되어야 함 (아직 구현 안 됨 - RED)
-      expect(setFocusedIndexSpy).toHaveBeenCalledWith(null);
-    });
-  });
-
   describe('RED: 명시적 네비게이션 시 동기화 검증', () => {
     it('아이템 등록 시 setFocusedIndex가 호출되어야 함', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
@@ -268,46 +189,6 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
         ([value]) => value === null
       );
       expect(hasNullCallAfterRestore).toBe(false);
-    });
-  });
-
-  describe('REFACTOR: 성능 최적화 검증', () => {
-    // Phase 74.7: E2E 이관 권장 (debounce 타이밍과 signal 반응성 조합이 복잡)
-    it.skip('짧은 시간 내 여러 번 autoFocusIndex 변경 시 debounce로 한 번만 호출 (E2E 이관 권장)', async () => {
-      // Given: useGalleryFocusTracker가 활성화됨
-      const { useGalleryFocusTracker } = await import(
-        '../../../src/features/gallery/hooks/useGalleryFocusTracker'
-      );
-      const [currentIndex] = createSignal(0);
-      let forceSync: (() => void) | undefined;
-
-      await new Promise<void>(resolve => {
-        dispose = createRoot(innerDispose => {
-          const result = useGalleryFocusTracker({
-            container: mockContainer,
-            isEnabled: true,
-            getCurrentIndex: currentIndex,
-          });
-
-          forceSync = result.forceSync;
-          resolve();
-          return innerDispose;
-        });
-      });
-
-      setFocusedIndexSpy.mockClear();
-
-      // When: 연속으로 forceSync 호출 (debounce 테스트)
-      forceSync?.();
-      forceSync?.();
-      forceSync?.();
-
-      await vi.advanceTimersByTimeAsync(150); // debounce 대기
-
-      // Then: debounce로 인해 호출 횟수가 제한되어야 함
-      // (정확한 횟수는 debounce 구현에 따라 다를 수 있음)
-      const callCount = setFocusedIndexSpy.mock.calls.length;
-      expect(callCount).toBeLessThanOrEqual(2); // 연속 호출이 병합됨
     });
   });
 });

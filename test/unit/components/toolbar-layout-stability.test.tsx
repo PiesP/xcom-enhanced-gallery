@@ -72,31 +72,4 @@ describe('Toolbar Layout Stability (Phase 49)', () => {
       // playwright/smoke/toolbar-layout-stability.spec.ts
     });
   });
-
-  describe('Settings Panel Animation', () => {
-    // Phase 49: E2E로 이관 필요
-    // JSDOM 환경에서는 Solid.js Signal 기반 data-expanded 속성 업데이트가 제대로 작동하지 않음
-    // playwright/smoke/toolbar-settings.spec.ts에서 검증
-    it.skip('설정 패널 확장/축소 상태를 data-expanded로 추적해야 함 (E2E 이관)', () => {
-      const { container } = render(h(Toolbar, defaultProps));
-
-      const settingsPanel = container.querySelector(
-        '[data-gallery-element="settings-panel"]'
-      ) as HTMLElement;
-
-      // Assert: 초기 상태 (축소)
-      expect(settingsPanel.getAttribute('data-expanded')).toBe('false');
-
-      // Act: 설정 버튼 클릭 (패널 확장)
-      const allButtons = container.querySelectorAll('button');
-      const settingsButton = Array.from(allButtons).find(
-        btn => btn.getAttribute('data-gallery-element') === 'settings'
-      );
-
-      settingsButton?.click();
-
-      // Note: JSDOM에서는 data-expanded 업데이트가 동기적으로 반영되지 않음
-      // E2E 테스트로 검증 필요
-    });
-  });
 });

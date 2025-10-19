@@ -170,76 +170,17 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       dispose = null;
 
       galleryIndexEvents.emit('navigate:complete', { index: 2, trigger: 'button' });
+      dispose = null;
+
+      galleryIndexEvents.emit('navigate:complete', { index: 2, trigger: 'button' });
       // focusedIndex는 여전히 1이어야 함 (업데이트되지 않음)
       expect(focusedIndexGetter?.()).toBe(1);
     });
   });
 
-  describe('manualFocusIndex 우선순위', () => {
-    // Phase 74.7: E2E 이관 권장 (Solid.js signal 반응성 타이밍이 JSDOM에서 불안정)
-    it.skip('should not override manualFocusIndex with navigation events (E2E 이관 권장)', async () => {
-      const getCurrentIndex = vi.fn(() => 0);
-      let focusedIndexGetter: (() => number | null) | null = null;
-      let handleItemFocus: ((index: number) => void) | null = null;
-
-      dispose = createRoot(disposeRoot => {
-        const tracker = useGalleryFocusTracker({
-          container,
-          isEnabled: true,
-          getCurrentIndex,
-          shouldAutoFocus: true,
-        });
-
-        focusedIndexGetter = tracker.focusedIndex;
-        handleItemFocus = tracker.handleItemFocus;
-        return disposeRoot;
-      });
-
-      // 수동 포커스 설정
-      handleItemFocus?.(3);
-
-      // Phase 74: microtask batching 대기
-      await Promise.resolve();
-
-      expect(focusedIndexGetter?.()).toBe(3);
-
-      // 네비게이션 이벤트 발생해도 manualFocusIndex가 우선
-      galleryIndexEvents.emit('navigate:complete', { index: 5, trigger: 'button' });
-
-      // Phase 74: debouncedUpdateContainerFocusAttribute 대기
-      await vi.advanceTimersByTimeAsync(60);
-
-      expect(focusedIndexGetter?.()).toBe(3); // 여전히 3
-    });
-  });
+  describe('기본 이벤트 통합', () => {});
 
   describe('동기화 타이밍', () => {
-    // Phase 74.7: E2E 이관 권장 (IntersectionObserver entries 없음, signal 반응성 타이밍 불안정)
-    it.skip('should synchronize immediately without waiting for IntersectionObserver (E2E 이관 권장)', async () => {
-      const getCurrentIndex = vi.fn(() => 0);
-      let focusedIndexGetter: (() => number | null) | null = null;
-
-      dispose = createRoot(disposeRoot => {
-        const tracker = useGalleryFocusTracker({
-          container,
-          isEnabled: true,
-          getCurrentIndex,
-          shouldAutoFocus: true,
-        });
-
-        focusedIndexGetter = tracker.focusedIndex;
-        return disposeRoot;
-      });
-
-      // IntersectionObserver 콜백이 호출되기 전에도 즉시 동기화
-      galleryIndexEvents.emit('navigate:complete', { index: 7, trigger: 'button' });
-
-      // Phase 74: debouncedUpdateContainerFocusAttribute 대기
-      await vi.advanceTimersByTimeAsync(60);
-
-      expect(focusedIndexGetter?.()).toBe(7);
-    });
-
     it('should batch state updates for autoFocusIndex and container attribute', async () => {
       const getCurrentIndex = vi.fn(() => 0);
 

@@ -216,17 +216,6 @@ describe('P7: Performance Optimization Unit Tests', () => {
       resetIconRegistry();
     });
 
-    test.skip('아이콘을 지연 로딩해야 함 (E2E 이관 권장)', async () => {
-      // NOTE: JSX 변환 시점 문제로 인해 단위 테스트에서 구조 검증 불가
-      // Playwright E2E 테스트로 이관 필요
-      const result = toVNode(LazyIcon({ name: 'Download' }));
-
-      expect(result.tag).toBe('div');
-      expect(result.props).toBeDefined();
-      expect(result.props['data-testid']).toBe('lazy-icon-loading');
-      expect(result.props['aria-label']).toBe('아이콘 로딩 중');
-    });
-
     test('커스텀 fallback을 지원해야 함', () => {
       const customFallback = {
         tag: 'div',
@@ -237,44 +226,6 @@ describe('P7: Performance Optimization Unit Tests', () => {
       const result = LazyIcon({ name: 'Settings', fallback: customFallback });
 
       expect(result).toBe(customFallback);
-    });
-
-    test.skip('에러 상태를 처리해야 함 (E2E 이관 권장)', () => {
-      // NOTE: JSX 변환 시점 문제로 인해 단위 테스트에서 구조 검증 불가
-      // Playwright E2E 테스트로 이관 필요
-      const customErrorFallback = {
-        tag: 'div',
-        props: { 'data-testid': 'custom-error' },
-        children: ['Icon not found'],
-      };
-
-      const result = toVNode(LazyIcon({ name: 'X', errorFallback: customErrorFallback }));
-
-      expect(result.tag).toBe('div');
-      expect(result.props).toBeDefined();
-      expect(result.props['data-testid']).toBe('lazy-icon-loading');
-    });
-
-    test.skip('아이콘 props를 전달해야 함 (E2E 이관 권장)', () => {
-      // NOTE: JSX 변환 시점 문제로 인해 단위 테스트에서 구조 검증 불가
-      // Playwright E2E 테스트로 이관 필요
-      const result = toVNode(
-        LazyIcon({
-          name: 'ChevronLeft',
-          size: 32,
-          stroke: 3,
-          color: 'red',
-          className: 'test-class',
-        })
-      );
-
-      expect(result.tag).toBe('div');
-      expect(result.props).toBeDefined();
-      expect(result.props['className']).toContain('lazy-icon-loading');
-      expect(result.props['className']).toContain('test-class');
-      expect(result.props['aria-label']).toBe('아이콘 로딩 중');
-      expect(result.props['data-testid']).toBe('lazy-icon-loading');
-      expect(result.props['style']).toBeDefined();
     });
   });
 
