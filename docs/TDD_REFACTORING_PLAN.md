@@ -18,6 +18,7 @@
 ### 테스트 현황
 
 - **단위 테스트**: 1389 passing / 0 skipped (100% 통과율) ✅
+- **Unhandled Errors**: 0 (Phase 130 완료로 해결) ✅
 - **브라우저 테스트**: 60 passed (Chromium) ✅
 - **E2E 테스트**: 44 passed / 1 skipped (97.8% 통과율) ✅
 - **접근성 테스트**: 14 passed (axe-core, WCAG 2.1 Level AA) ✅
@@ -34,6 +35,7 @@
 
 | Phase | 주제                               | 완료일     | 결과                                                        |
 | ----- | ---------------------------------- | ---------- | ----------------------------------------------------------- |
+| 130   | 테스트 Unhandled Error 수정        | 2025-10-19 | 1 unhandled error → 0, withRetry 테스트 타이밍 개선          |
 | 128   | 로깅 환경 감지 단순화              | 2025-10-19 | `__DEV__` 플래그 전용, import.meta.env 제거, 빌드 크기 유지 |
 | 125.6 | video-control-service 커버리지     | 2025-10-19 | 17.79% → 82.62% (+64.83%p), 39 tests GREEN                  |
 | 125.5 | 미디어 추출 커버리지 개선          | 2025-10-19 | fallback-extractor 100%, media-extraction-service 96.19%    |
@@ -52,7 +54,7 @@
 
 ## 활성 Phase
 
-### Phase 129: 빌드 크기 최적화 (우선순위: 높음 ⭐)
+### Phase 129: 빌드 크기 최적화 (우선순위: 중간)
 
 **목표**: 333.54 KB → 330 KB 이하 (-3.54 KB 이상)
 
@@ -318,6 +320,22 @@
 - 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ### 최근 완료된 작업
+
+**Phase 130: 테스트 Unhandled Error 수정** ✅ (2025-10-19)
+
+- **목표**: withRetry 테스트에서 발생하는 unhandled promise rejection 제거
+- **문제**: `test/unit/shared/utils/phase-125.3-error-handling.test.ts:362`에서 "should throw after max retries exceeded" 테스트 실행 중 unhandled rejection 발생
+- **원인**: `vi.advanceTimersByTimeAsync()` 호출 중 promise rejection이 발생하지만, `await expect(...).rejects`가 타이머 진행 후에 설정되어 일시적으로 unhandled 상태 발생
+- **해결책**: 
+  - `expect(promise).rejects` 호출을 타이머 진행 **전에** 실행하도록 순서 변경
+  - rejection handler를 미리 연결하여 unhandled rejection 방지
+  - 코드 변경: expectPromise 변수에 먼저 할당 후 타이머 진행, 마지막에 await
+- **결과**: 
+  - Unhandled errors: 1 → 0 (100% 해결)
+  - 모든 테스트 통과: 1389 passed, 0 errors
+  - 테스트 안정성 향상, CI/CD 안정화
+- **변경 범위**: 테스트 파일 1개, 1개 테스트 케이스 수정
+- **작업 시간**: 약 30분
 
 **Phase 125.4: base-service-impl.ts 커버리지 개선** ✅ (2025-10-19)
 

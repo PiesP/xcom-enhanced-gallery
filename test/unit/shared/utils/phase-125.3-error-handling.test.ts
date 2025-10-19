@@ -363,17 +363,20 @@ describe('Phase 125.3: error-handling.ts', () => {
 
       const promise = withRetry(operation, 2, 100, { operation: 'maxRetryOp' });
 
-      // Fast-forward through all retry delays
-      await vi.advanceTimersByTimeAsync(100); // 1st retry (100ms)
-      await vi.advanceTimersByTimeAsync(200); // 2nd retry (200ms)
-
-      await expect(promise).rejects.toMatchObject({
+      // Attach rejection handler BEFORE advancing timers to prevent unhandled rejection
+      const expectPromise = expect(promise).rejects.toMatchObject({
         message: 'Network error',
         context: {
           operation: 'maxRetryOp',
           metadata: { maxRetries: 2, finalAttempt: true },
         },
       });
+
+      // Fast-forward through all retry delays
+      await vi.advanceTimersByTimeAsync(100); // 1st retry (100ms)
+      await vi.advanceTimersByTimeAsync(200); // 2nd retry (200ms)
+
+      await expectPromise;
 
       expect(operation).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
