@@ -51,35 +51,19 @@
 
 ## 활성 Phase
 
-### 우선순위 Phase
+### ⚠️ 유지보수 모드로 전환
 
-**Phase 124: Test Coverage Expansion - 남은 우선순위**
+**Phase 124 종료**: Test Coverage Expansion (Step 1-4 완료)
 
-Phase 124 Step 1-4 완료 (logger, twitter-token-extractor, useProgressiveImage,
-media-mapping)로 Critical Services 목표 달성. 남은 우선순위:
+- 달성: 67 tests, 5 files, 58-95% coverage
+- UI Components (ErrorBoundary, Toast)는 E2E로 충분히 검증됨
+- 상세: `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
-**우선순위 2: UI Components** (0-20% → 50%+)
+**다음 Phase 후보**:
 
-1. **ErrorBoundary.tsx** (17% → 80%) - 6 tests
-   - 에러 캐치 및 표시
-   - 재시도 로직
-   - 폴백 UI 렌더링
-
-2. **Toast.tsx + ToastContainer.tsx** (7-19% → 70%) - 12 tests
-   - 토스트 생성/제거
-   - 애니메이션 라이프사이클
-   - 타입별 렌더링
-
-3. **GalleryApp.ts** (3% → 50%) - 15 tests
-   - 초기화 테스트
-   - 상태 전환 테스트
-   - 정리 로직 테스트
-
-**우선순위 3: Medium Coverage** (20-44% → 60%+)
-
-1. **base-service-impl.ts** (12% → 60%) - 8 tests
-2. **toast-controller.ts** (32% → 65%) - 10 tests
-3. **initialize-theme.ts** (7% → 60%) - 8 tests
+1. GalleryApp.ts (3% → 50%) - 초기화/상태 전환 로직
+2. base-service-impl.ts (12% → 60%) - 기본 서비스 구현
+3. 또는 사용자 피드백 기반 개선
 
 ### 최근 완료된 작업
 
