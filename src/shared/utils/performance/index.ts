@@ -8,6 +8,3 @@ export * from './preload';
 export * from './idle-scheduler';
 export * from './schedulers';
 export * from './prefetch-bench';
-
-// Component Memoization
-export { memo, useCallback, createMemo } from './memoization';
