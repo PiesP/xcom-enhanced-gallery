@@ -10,13 +10,11 @@
 
 ## 활성 과제(우선순위 순)
 
-1. PostCSS 상대 색상 경고 제거 (P0)
+~1.~ PostCSS 상대 색상 경고 제거 (P0) — 완료
 
-- 배경: OKLCH + relative color syntax로 인해 prod/dev 빌드 로그에 경고
-  출력(비치명).
-- 실행: postcss 플러그인/옵션 최신화로 파서 경고 제거 → 필요 시 prod만 파생
-  토큰을 수치형 OKLCH로 프리컴파일, dev에서는 상대 색상 유지.
-- 수용 기준: prod 빌드 시 PostCSS 경고 0.
+- 해결: 상대 색상 구문(RCS) 사용을 color-mix로 대체하고, RCS 플러그인을 제거.
+  OKLCH 함수 플러그인만 유지하여 수치형 폴백을 생성. prod/dev 빌드 모두 경고 0.
+  세부 내역은 COMPLETED 문서에 기록.
 
 1. 레거시 토큰 alias 단계적 제거 (P1)
 
@@ -33,7 +31,7 @@
 
 ## 현재 상태
 
-- Build: prod 332.29 KB / 335 KB, gzip 89.03 KB (검증 스크립트 PASS)
+- Build: prod 326.99 KB / 335 KB, gzip 88.19 KB (검증 스크립트 PASS)
 - Tests: unit + browser + E2E + a11y 전체 GREEN
 - 정적 분석: Typecheck / ESLint / Stylelint / CodeQL 모두 PASS
 

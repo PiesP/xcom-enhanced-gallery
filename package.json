@@ -47,6 +47,7 @@
     "test:phases": "vitest --project phases run",
     "test:refactor": "vitest --project refactor run",
     "test:browser": "vitest --project browser run",
+    "pretest:browser": "rimraf node_modules/.vite/vitest",
     "test:browser:ui": "vitest --project browser --ui",
     "// === E2E ===": "",
     "e2e:smoke": "playwright test playwright/smoke --config=playwright.config.ts",

@@ -14,7 +14,7 @@ const config = {
   plugins: [
     // OKLCH 색상 폴백 자동 생성 (구형 브라우저 지원)
     postcssOKLCHFunction({
-      preserve: true, // 최신 브라우저를 위해 OKLCH 유지
+      preserve: !isProd, // dev에선 유지, prod에선 수치형으로 방출
       enableProgressiveCustomProperties: true, // CSS 변수 내부도 변환
     }),
     // CSS 변수 폴백 생성 (IE11 부분 지원)

@@ -21,9 +21,9 @@
     color-mix(in oklch, var(--xeg-color-primary-oklch) 80%, white)
   );
 
-  /* 상대적 색상 구문 (Relative Color Syntax) */
-  --xeg-color-primary-light: oklch(from var(--xeg-color-primary-oklch) calc(l + 0.2) c h);
-  --xeg-color-primary-dark: oklch(from var(--xeg-color-primary-oklch) calc(l - 0.2) c h);
+  /* 상대적 색상: color-mix를 사용해 밝기 변형을 생성 (RCS 파서 호환성 문제 회피) */
+  --xeg-color-primary-light: color-mix(in oklch, var(--xeg-color-primary-oklch) 85%, white);
+  --xeg-color-primary-dark: color-mix(in oklch, var(--xeg-color-primary-oklch) 85%, black);
 }
 
 /**
