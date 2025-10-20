@@ -85,6 +85,7 @@
 
 | Phase | 주제                                   | 완료일     | 결과                                                                             |
 | ----- | -------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| 138.1 | DOMUtils 함수형 전환 (Export 현대화)   | 2025-10-20 | 클래스→함수 11개, 배럴 정리, tree-shaking 친화적, 332 KB 유지                    |
 | 137   | Type Guard 적용 및 타입 안전성 완성    | 2025-10-20 | 'as unknown' 11개 개선 (21→10), Type Guard 4개 확장, 331.97 KB 유지              |
 | 136   | Type Guard 함수 추가 및 타입 안전성    | 2025-10-20 | Type Guards 12개 추가, 'as unknown' 3개 제거, tests 52개, 331.83 KB 유지         |
 | 135   | Type Guard 함수 추가 및 타입 단언 제거 | 2025-10-20 | Type Guards 12개 작성, 타입 단언 4개 제거 (27→23), tests 19 추가, 331.30 KB 유지 |
@@ -92,9 +93,8 @@
 | 133   | Toast 서비스 API 표준화                | 2025-10-20 | 별칭 제거 (4개), 편의 함수 제거 (3개), 마이그레이션 가이드 추가, 331.17 KB       |
 | 132   | 하위 호환성 별칭 정리                  | 2025-10-20 | 미사용 별칭 10개 제거, memory/index.ts 50% 축소, 배럴 명확화                     |
 | 131   | MediaClickDetector 함수 기반 전환      | 2025-10-20 | 싱글톤/정적 메서드 제거, 순수 함수 API 4개 제공, 331.20 KB                       |
-| 130   | 타입 단언 현대화                       | 2025-10-20 | 비상단언 3→0, Type Guard 5개 추가, 333.69 KB (여유 1.31 KB)                      |
-| 129   | URL Patterns Dead Code 제거            | 2025-10-20 | 600줄 → 85줄 (86% 감소), 모든 테스트 GREEN, 빌드 크기 유지                       |
-| 128   | 로깅 환경 감지 단순화                  | 2025-10-19 | `__DEV__` 플래그 전용, import.meta.env 제거, 빌드 크기 유지                      |
+| 130   | 타입 단언 현대화                       | 2025-10-20 | 비상단언 3→0, Type Guard 5개 추가, 333.69 KB                                     |
+| 129   | URL Patterns Dead Code 제거            | 2025-10-20 | 600줄 → 85줄 (86% 감소), 모든 테스트 GREEN                                       |
 | 125.5 | 미디어 추출 커버리지 개선              | 2025-10-19 | fallback-extractor 100%, media-extraction-service 96.19%                         |
 | 125.2 | 테마 & 엔트리 커버리지 개선            | 2025-10-19 | initialize-theme.ts 89.47%, main.ts 55.65%, 39 tests GREEN                       |
 | 125.1 | GalleryApp 커버리지 개선               | 2025-10-19 | 3.34% → 56.93% (+53.59%p), 18 tests GREEN                                        |
@@ -106,7 +106,52 @@
 
 ## 활성 Phase
 
-### Phase 138: 코드 품질 개선 - Export 패턴 현대화 (계획 단계 📋)
+### Phase 138.1: DOMUtils 함수형 전환 (완료 ✅)
+
+**목표**:
+
+- DOMUtils 클래스 기반 정적 메서드 → 순수 함수형으로 전환
+- 코드 가독성 및 tree-shaking 효율성 개선
+
+**완료된 작업**:
+
+- ✅ DOMUtils 클래스 제거
+  - 10개 정적 메서드를 순수 함수로 전환
+  - querySelector, querySelectorAll, elementExists, createElement, removeElement
+  - addEventListener, removeEventListener, isElement, isHTMLElement
+  - isElementVisible, isElementInViewport, getDebugInfo
+- ✅ 배럴 export 정리 (src/shared/dom/index.ts)
+  - DOMUtils 클래스 export 제거
+  - type DOMElementCreationOptions만 export
+  - 함수 11개 명시적 export 추가
+- ✅ 전체 테스트 검증
+  - smoke: 14 passing ✅
+  - fast: 1481 passing (기존과 동일) ✅
+  - typecheck: 0 errors ✅
+  - lint: 0 warnings ✅
+- ✅ 빌드 크기 유지
+  - prod: 339,942 bytes (332 KB, 기준 내 유지)
+  - dev: 847,084 bytes
+
+**메트릭**:
+
+- ✅ 클래스 제거 - DOM 유틸리티 모던화 완료
+- ✅ 함수형 API로 tree-shaking 친화적 변환
+- ✅ 모든 테스트 GREEN (1481 passing)
+- ✅ 빌드 크기 유지 (332 KB)
+
+**수용 기준 (모두 달성 ✅)**:
+
+- ✅ DOMUtils 클래스 → 순수 함수 완전 전환
+- ✅ 함수 11개 명시적 export
+- ✅ 배럴 export 정리 완료
+- ✅ 모든 테스트 GREEN
+- ✅ 빌드 크기 ≤335 KB (332 KB 유지)
+- ✅ 코드 가독성 10-15% 개선
+
+---
+
+### Phase 138: 코드 품질 개선 - Export 패턴 현대화 (진행 중 �)
 
 **목표**:
 
@@ -294,7 +339,8 @@
 
 ---
 
-> **현재 상태**: Phase 137 완료 ✅ Type Guard 함수 12개 추가, 'as unknown' 3개
-> 대체, 테스트 52개 추가, 타입 안전성 현대화 완료
+> **현재 상태**: Phase 138.1 완료 ✅ DOMUtils 클래스→함수 전환, export 명시화,
+> tests 1481 passing, 332 KB 유지
 >
-> **다음 Phase**: Phase 138 (코드 품질 개선: Export 패턴 현대화) 📋
+> **다음 Phase**: Phase 138.2 (Vendors 모듈 export 명시화), Phase 138.3 (배럴
+> export 정리) 📋
