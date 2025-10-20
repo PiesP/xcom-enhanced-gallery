@@ -1,6 +1,6 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-14
+> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-20
 > 코딩 규칙/스타일/토큰/테스트 정책은 `docs/CODING_GUIDELINES.md`를 단일
 > 기준으로 참조하세요.
 
@@ -8,10 +8,10 @@
 구조와 계층 간 경계를 설명합니다. 구현 규칙/토큰/스타일은
 `docs/CODING_GUIDELINES.md`를 참고하세요.
 
-## 프로젝트 현황 (2025-10-14)
+## 프로젝트 현황 (2025-10-20)
 
-- **빌드**: prod 316.71 KB / 325 KB (8.29 KB 여유) ✅
-- **테스트**: 662 passing, 1 skipped ✅
+- **빌드**: prod 332.29 KB / 335 KB (2.71 KB 여유) ✅
+- **테스트**: Browser 103, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
 

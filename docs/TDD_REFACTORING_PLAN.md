@@ -11,6 +11,16 @@
 
 ## 활성 과제(우선순위 순)
 
+1. CSS 요소 토큰화/통합 검증 (P0)
+
+- 목표: CSS Modules/글로벌 스타일 전반에 걸쳐 색상/크기/그림자 등 하드코딩 제거
+  및 디자인 토큰 일원화 유지
+- 체크:
+  - CodeQL(custom): hardcoded-color-values, hardcoded-size-values 위반 0
+  - 테스트/스타일 가드: styles/\*.test.ts, stylelint 정책 GREEN
+  - UI 기준: Toolbar 카운터/Settings 레이블·셀렉트가 동일 의미 토큰 사용
+- 수용 기준: 하드코딩 0, 정책 가드 전부 GREEN, 회귀 없음
+
 1. PostCSS 상대 색상 경고 정리 (P0)
 
 - 배경: OKLCH 상대 색상 구문에서 빌드 로그 경고 발생(비치명, 산출물 OK)
