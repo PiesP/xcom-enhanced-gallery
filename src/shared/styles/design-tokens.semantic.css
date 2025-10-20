@@ -346,6 +346,21 @@
   --xeg-settings-select-bg: var(--xeg-bg-toolbar);
   --xeg-settings-select-border: var(--xeg-toolbar-border);
 
+  /* Toolbar/Counter Typography Tokens */
+  /* 미디어 카운터 기본 텍스트 톤을 공용 토큰으로 정의 (일관성 확보) */
+  --xeg-text-counter: var(--xeg-color-text-secondary);
+
+  /* Legacy/Global Gallery aliases (Phase: design-unification) */
+  /* NOTE: gallery-global.css에서 사용하는 레거시 토큰명을 최신 semantic 토큰으로 연결 */
+  --xeg-text-button: var(--xeg-color-text-primary);
+  --xeg-text-button-navigation: var(--xeg-color-text-primary);
+  --xeg-shadow-toolbar: var(--xeg-shadow-md);
+  /* Neutral color aliases */
+  --xeg-neutral-100: var(--xeg-color-neutral-100);
+  --xeg-neutral-200: var(--xeg-color-neutral-200);
+  --xeg-neutral-300: var(--xeg-color-neutral-300);
+  --xeg-neutral-400: var(--xeg-color-neutral-400);
+
   /* Modal Component Tokens */
   /* NOTE: Modal component tokens now defer to semantic tokens to avoid
     cascading alias overwrite issues that previously caused dark mode

@@ -13,6 +13,9 @@ import '@shared/styles/design-tokens.css';
 // 디자인 토큰 - 애니메이션 시스템
 import '@assets/styles/tokens/animation.css';
 
+// 최신 CSS 기능/상대 색상 토큰 (primary-light 등) - Toolbar 등에서 사용
+import '@shared/styles/modern-features.css';
+
 // 브라우저 스타일 초기화 (갤러리 컨테이너 내부에만 적용)
 import '@assets/styles/base/reset.css';
 

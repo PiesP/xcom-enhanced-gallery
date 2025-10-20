@@ -230,7 +230,9 @@ function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
                 if (
                   t.isMemberExpression(callee) &&
                   !callee.computed &&
-                  t.isIdentifier(callee.property, { name: 'debug' })
+                  // prod 번들 크기 절감을 위해 debug/info 로그 호출 제거
+                  (t.isIdentifier(callee.property, { name: 'debug' }) ||
+                    t.isIdentifier(callee.property, { name: 'info' }))
                 ) {
                   if (path.parentPath?.isExpressionStatement()) {
                     path.parentPath.remove();
