@@ -57,10 +57,10 @@ function getCurrentGalleryVideo(): HTMLVideoElement | null {
     if (!doc) return null;
     const root = doc.querySelector('#xeg-gallery-root');
     const items = root?.querySelector('[data-xeg-role="items-container"]');
-    if (!items) return null;
+    if (!items || !(items instanceof HTMLElement)) return null;
     const index = gallerySignals.currentIndex.value;
-    const target = (items as HTMLElement).children?.[index] as HTMLElement | undefined;
-    if (!target) return null;
+    const target = items.children?.[index];
+    if (!target || !(target instanceof HTMLElement)) return null;
     const v = target.querySelector('video');
     return v instanceof HTMLVideoElement ? v : null;
   } catch {
@@ -321,8 +321,8 @@ function checkInsideGallery(element: HTMLElement | null): boolean {
 
 async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
   try {
-    const target = event.target as HTMLElement;
-    if (!target) return null;
+    const target = event.target;
+    if (!target || !(target instanceof HTMLElement)) return null;
 
     const result = detectMediaElement(target);
 

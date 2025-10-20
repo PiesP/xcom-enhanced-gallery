@@ -85,3 +85,22 @@ export function isArray<T>(value: unknown): value is T[] {
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
+
+/**
+ * AbortSignal 타입 가드
+ */
+export function isAbortSignal(value: unknown): value is AbortSignal {
+  return value instanceof AbortSignal;
+}
+
+/**
+ * AddEventListenerOptions 객체 생성 헬퍼
+ */
+export function createAddEventListenerOptions(options?: {
+  capture?: boolean;
+  once?: boolean;
+  passive?: boolean;
+  signal?: AbortSignal;
+}): AddEventListenerOptions {
+  return (options || {}) as AddEventListenerOptions;
+}

@@ -50,6 +50,8 @@ export {
   hasElement,
   isArray,
   isRecord,
+  isAbortSignal,
+  createAddEventListenerOptions,
 } from './type-guards';
 
 // === 핵심 유틸리티 (10개) ===
