@@ -12,6 +12,17 @@
  * - 이벤트 전파 체인 실제 추적
  * - overscroll-behavior CSS 속성 적용 확인
  *
+ * **실제 구현 방식**:
+ * - useGalleryScroll.ts는 CSS `overscroll-behavior: none`에 의존
+ * - 이벤트는 `passive: true`로 등록 (브라우저 네이티브 동작)
+ * - 이 테스트는 두 접근법(CSS + 이벤트)을 모두 검증하여 견고성 보장
+ *
+ * **테스트 가치**:
+ * - JSDOM에서는 불가능한 실제 브라우저 렌더링 엔진 검증
+ * - CSS 속성이 실제로 스크롤 전파를 차단하는지 확인
+ * - 이벤트 기반 접근법의 동작도 함께 검증 (fallback 패턴 참조용)
+ *
+ * @see src/features/gallery/hooks/useGalleryScroll.ts - 실제 구현
  * @see docs/TESTING_STRATEGY.md - 브라우저 테스트 가이드
  * @see test/unit/features/scroll-chaining-*.test.ts - 단위 테스트 (JSDOM)
  */
