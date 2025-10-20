@@ -1,12 +1,12 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-20 | **상태**: Phase 143.1-143.2 완료 ✅
+> **최종 업데이트**: 2025-10-20 | **상태**: Phase 144 완료 ✅
 
 ## 프로젝트 현황 (최종 상태)
 
 ### 빌드 및 품질 지표
 
-- **빌드**: 332.12 KB / 335 KB (99.1%, 여유 2.88 KB) ✅ **[Phase 143.2 갱신]**
+- **빌드**: 332.12 KB / 335 KB (99.1%, 여유 2.88 KB) ✅ **[Phase 144.2 갱신]**
 - **경고 기준**: 332 KB (정상 범위) ✅
 - **타입**: TypeScript strict, 0 errors ✅
 - **린트**: ESLint 0 warnings, Markdown 0 errors ✅
@@ -18,13 +18,14 @@
 
 - **단위 테스트**: 1730 passing / 5 skipped (99.7% 통과율) ✅ **[Phase 143.1
   +14]**
-- **브라우저 테스트**: 87 passed (Chromium, 2 shards) ✅ **[Phase 143.2 +16]**
+- **브라우저 테스트**: 103 passed (Chromium, 2 shards) ✅ **[Phase 144.1/144.2
+  +16]**
 - **E2E 테스트**: 60 passed / 1 skipped (98.4% 통과율) ✅ **[Phase 140.5 +16]**
 - **접근성 테스트**: 34 passed (axe-core, WCAG 2.1 Level AA) ✅ **[Phase 139
   +143%]**
 - **Type Guard 테스트**: 52 passed (Phase 136 신규: 19 + 33) ✅
-- **전체 테스트**: 1890 tests (1730 unit + 87 browser + 60 E2E + 34 a11y) ✅
-  **[Phase 143.1/143.2 +30]**
+- **전체 테스트**: 1906 tests (1730 unit + 103 browser + 60 E2E + 34 a11y) ✅
+  **[Phase 143/144 +46]**
 - **커버리지**: **68.47%** (lines), **62.15%** (functions), **76.17%**
   (branches) **[Phase 140.4 갱신]**
 
@@ -32,7 +33,7 @@
 
 - **CI 예상 시간**: ~10-12분 (Unit 테스트 샤딩 2개 적용) ✅ **[Phase 139.1
   -33%]**
-- **Unit 테스트 샤딩**: 2개 (샤드당 ~813 tests) ✅ **[Phase 140.2 갱신]**
+- **Unit 테스트 샤딩**: 2개 (샤드당 ~865 tests) ✅ **[Phase 144 갱신]**
 - **Browser 테스트 샤딩**: 2개 (기존 유지) ✅
 - **병렬 실행**: quality → [tests, browser-tests, e2e, accessibility] ✅
 - **로컬 테스트**: smoke 2초, fast 25초 (충분히 빠름) ✅
@@ -45,12 +46,12 @@
 - **타입 단언**: ~20개 (설계상 필수 15개, 추가 개선 가능 5개) ✅
 - **Type Guard**: 12개 고급 Type Guard 함수 (Phase 136 신규) ✅
 - **접근성**: WCAG 2.1 Level AA 100% 준수, 34 tests ✅ **[Phase 139.3/139.4]**
-- **스크롤 체이닝 방지**: CSS 기반 접근 (overscroll-behavior: none) + 74 tests
-  ✅ **[Phase 143.1/143.2 확장 완료]**
+- **스크롤 체이닝 방지**: CSS 기반 접근 (overscroll-behavior: none) + 90 tests
+  ✅ **[Phase 143/144 완료]**
 
 ## 활성 Phase
 
-### Phase 144: 스크롤 애니메이션 & 리사이즈 테스트 🚀 **진행 중** (2025-10-20)
+### Phase 144: 스크롤 애니메이션 & 리사이즈 테스트 ✅ **2순위 완료** (2025-10-20)
 
 **선택 이유**:
 
@@ -66,58 +67,70 @@
 - 현재 구현의 충분성 검증 (구현 변경 최소화)
 - 빌드 크기 유지 (≤335 KB)
 
-**계획된 시나리오**:
+**최종 달성**:
 
-**Phase 144.1 - 스크롤 애니메이션 상호작용** (8+ tests):
+✅ **Phase 144.1 - 스크롤 애니메이션 상호작용 테스트** (2025-10-20):
 
-1. **smooth scroll 진행 중 추가 입력** (3 tests):
-   - smooth scroll 중 wheel 이벤트 처리
-   - smooth scroll 중 키보드 입력 처리
-   - 연속된 smooth scroll 요청 처리
+- 8개 browser tests 작성
+  (test/browser/scroll-chaining-animation-interaction.test.ts)
+- 시나리오: smooth scroll 중 추가 입력 (3), 애니메이션 취소/재시작 (3), 브라우저
+  네이티브 동작 (2)
+- **결과**: 8/8 tests GREEN (2.40s, Chromium)
+- **핵심 발견**: `scrollIntoView({behavior: 'smooth'})`가 wheel/keyboard 입력과
+  자연스럽게 공존
+- **구현 변경**: 없음 (브라우저 네이티브 동작 충분)
 
-2. **애니메이션 취소 및 재시작** (3 tests):
-   - 진행 중인 smooth scroll 중단
-   - 새로운 인덱스로 즉시 스크롤
-   - 애니메이션 완료 후 다음 스크롤
+✅ **Phase 144.2 - 갤러리 크기 변화 테스트** (2025-10-20):
 
-3. **브라우저 네이티브 동작 검증** (2 tests):
-   - `scrollIntoView({behavior: 'smooth'})` 정상 작동
-   - `prefers-reduced-motion: reduce` 처리
+- 8개 browser tests 작성 (test/browser/scroll-chaining-gallery-resize.test.ts)
+- 시나리오: 브라우저 리사이즈 (3), 풀스크린 전환 (3), viewport 크기 변화 (2)
+- **결과**: 8/8 tests GREEN (1.64s, Chromium)
+- **핵심 발견**: CSS `overscroll-behavior: none`이 리사이즈 중에도 유지됨,
+  ResizeObserver가 정확히 동작
+- **구현 변경**: 없음 (현재 CSS + ResizeObserver 충분)
 
-**Phase 144.2 - 갤러리 크기 변화** (8+ tests):
+**전체 검증**:
 
-1. **브라우저 리사이즈** (3 tests):
-   - 리사이즈 중 스크롤 체이닝 방지 유지
-   - 리사이즈 후 스크롤 경계 재계산
-   - 빠른 연속 리사이즈 처리
+- ✅ typecheck + lint + CodeQL (5/5) → 정적 검증 통과
+- ✅ browser tests (103/103) → 기존 87 + 신규 16 모두 GREEN
+- ✅ E2E smoke (60/60) → 회귀 없음
+- ✅ a11y tests (34/34) → WCAG 2.1 Level AA 유지
+- ✅ build size (332.12 KB) → 변화 없음
 
-2. **풀스크린 전환** (3 tests):
-   - 풀스크린 진입 시 레이아웃 재계산
-   - 풀스크린 종료 시 원래 상태 복원
-   - 풀스크린 중 스크롤 동작
+**달성 지표**:
 
-3. **DevTools/UI 변화** (2 tests):
-   - DevTools 열기/닫기 시 레이아웃 변화
-   - viewport 크기 변화 감지
+- **테스트 추가**: 16 tests (8 animation + 8 resize)
+- **전체 스크롤 체이닝 테스트**: 90 tests (Phase 143: 74 + Phase 144: 16)
+- **통과율**: 100% (90/90 tests GREEN)
+- **빌드 크기**: 332.12 KB / 335 KB (99.1%, 변화 없음)
+- **구현 변경**: 0 (브라우저 네이티브 동작 충분)
 
-**수용 기준**:
+**핵심 교훈**:
 
-- [ ] Phase 144.1: 8+ tests 작성 (스크롤 애니메이션 상호작용)
-- [ ] Phase 144.2: 8+ tests 작성 (갤러리 크기 변화)
-- [ ] 모든 테스트 GREEN (기존 + 신규 16+)
-- [ ] 필요 시 최소한의 구현 개선 (CSS 기반 유지)
-- [ ] 빌드 크기 ≤335 KB 유지
-- [ ] CodeQL 통과, 전체 테스트 스위트 GREEN
+1. **브라우저 네이티브 동작의 견고함**:
+   - `scrollIntoView({behavior: 'smooth'})`가 동시 입력과 자연스럽게 공존
+   - 브라우저가 애니메이션 충돌을 자동으로 해결
+   - `prefers-reduced-motion` 설정 자동 처리
 
-**진행 상황**:
+2. **CSS + ResizeObserver 충분성**:
+   - CSS `overscroll-behavior: none`이 리사이즈 중에도 유지됨
+   - ResizeObserver가 viewport 크기 변화를 정확히 감지
+   - 풀스크린 전환 시에도 레이아웃 정상 작동
 
-- [ ] Phase 144 계획 작성 (현재)
-- [ ] 스크롤 애니메이션 상호작용 테스트 (TDD RED)
-- [ ] 필요 시 구현 개선 (TDD GREEN)
-- [ ] 갤러리 크기 변화 테스트 (TDD RED)
-- [ ] 필요 시 구현 개선 (TDD GREEN)
-- [ ] 전체 빌드 및 검증
-- [ ] 문서 업데이트
+3. **JavaScript 최소 개입 원칙**:
+   - 브라우저 네이티브 기능 최대 활용
+   - 추가 JavaScript 로직 불필요
+   - 성능/유지보수성/접근성 모두 향상
+
+**Phase 144 결론**:
+
+- ✅ 2순위 시나리오(애니메이션 + 리사이즈) 완료
+- ✅ 브라우저 네이티브 동작이 충분히 견고함을 검증
+- ✅ 16개 신규 테스트로 커버리지 추가 향상 (74 → 90 tests, +22%)
+- ✅ 빌드 크기/성능 영향 없음
+- 🎯 **Phase 144 완료** - 3순위 시나리오는 필요 시 별도 Phase로 진행
+
+---
 
 ---
 
