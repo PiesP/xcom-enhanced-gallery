@@ -224,11 +224,8 @@ test.describe('Focus Management Accessibility', () => {
 
   test('should not focus on hidden elements', async ({ page }) => {
     const hiddenBtn = page.locator('#hidden-btn');
-    const ariaHiddenBtn = page.locator('#aria-hidden-btn');
-    const visibleBtn = page.locator('#visible-btn');
 
     // 숨겨진 버튼은 DOM에 존재하지만 display:none이므로 포커스 불가
-    // aria-hidden 버튼은 보이지만 보조 기술에서 숨김
 
     // 직접 포커스 시도 (실패해야 함)
     const isFocusable = await hiddenBtn.evaluate(el => {
@@ -242,7 +239,6 @@ test.describe('Focus Management Accessibility', () => {
 
     expect(isFocusable).toBe(false);
   });
-
   test('should have sufficient focus indicator contrast', async ({ page }) => {
     // 버튼에 포커스하고 일반 접근성 스캔
     await page.locator('#btn1').focus();
