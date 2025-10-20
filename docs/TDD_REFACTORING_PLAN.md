@@ -1,9 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-20 | **상태**: Phase 140.4 완료 ✅, Phase 140.5
-> 완료 ✅
-
----
+> **최종 업데이트**: 2025-10-20 | **상태**: Phase 141 진행 중 🚀
 
 ## 프로젝트 현황 (최종 상태)
 
@@ -49,9 +46,54 @@
 - **Type Guard**: 12개 고급 Type Guard 함수 (Phase 136 신규) ✅
 - **접근성**: WCAG 2.1 Level AA 100% 준수, 34 tests ✅ **[Phase 139.3/139.4]**
 
----
-
 ## 활성 Phase
+
+### Phase 141: 리팩토링 (코드 품질 개선) ✅ **완료**
+
+**선택 이유**:
+
+- Phase 140 완료 후 코드 품질 개선 집중
+- 타입 단언 50+ 발견 (Settings 서비스 60%+ 집중)
+- 이중 단언 안티패턴 4+ 발견 (`as unknown as Type`)
+- 타입 안전성 향상 및 유지보수성 개선 필요
+
+**목표**:
+
+- 타입 단언 50% 감소 (50+ → 25 이하)
+- 이중 단언 완전 제거 (4+ → 0)
+- 타입 가드 함수 도입 (isRecord, toAccessor 등)
+- 테스트 GREEN 유지 (1716 passing, 0 regressions)
+
+**최종 달성**:
+
+- **이중 단언 제거**: 4개 → 0개 (100% 제거) ✅
+- **타입 가드 함수**: 5개 추가 (isRecord, toRecord, toAccessor, isAccessor,
+  isHTMLElement) ✅
+- **코드 개선**: settings-service.ts, settings-migration.ts,
+  useGalleryScroll.ts, useGalleryItemScroll.ts
+- **테스트 상태**: 1716 passing, 0 regressions ✅
+- **빌드 크기**: 332.12 KB / 335 KB (99.1%, +0.15 KB from 331.97 KB) ✅
+
+**전략**: TDD 리팩토링 (GREEN → REFACTOR → GREEN)
+
+1. ✅ 타입 가드 함수 도입
+1. ✅ 이중 단언 완전 제거
+1. ✅ 헬퍼 함수 추출로 중복 제거
+1. ✅ 기존 테스트 유지하며 코드 개선
+
+**완료 Phase**:
+
+- ✅ Phase 141.1: settings-service.ts 리팩토링 (이중 단언 4개 제거)
+- ✅ Phase 141.2: settings-migration.ts 리팩토링 (타입 가드 개선)
+- ✅ Phase 141.3: Accessor 헬퍼 공통화 (solid-helpers.ts 신규 생성)
+- ✅ Phase 141.4: 테스트 검증 및 문서화
+
+**완료 Phase**:
+
+- 📋 Phase 141.1: settings-service.ts 리팩토링 (계획)
+- 📋 Phase 141.2: settings-migration.ts 리팩토링 (계획)
+- 📋 Phase 141.3: Accessor 헬퍼 공통화 (계획)
+- 📋 Phase 141.4: 테스트 검증 및 문서화 (계획)
 
 ### Phase 140: 테스트 커버리지 체계적 개선 ✅ **완료**
 
@@ -72,9 +114,9 @@
 
 1. ✅ 통합 테스트 추가 (Phase 140.3 media extraction, Phase 140.5 scroll
    chaining)
-2. ✅ 저커버리지 파일 개선 (Phase 140.4: events, keyboard-navigation,
+1. ✅ 저커버리지 파일 개선 (Phase 140.4: events, keyboard-navigation,
    scroll-utils)
-3. ✅ 코드 검증 방식 테스트 확대 (83 tests 추가)
+1. ✅ 코드 검증 방식 테스트 확대 (83 tests 추가)
 
 **완료 Phase**:
 
@@ -84,9 +126,7 @@
 - ✅ Phase 140.4: 저커버리지 파일 (83 tests, Functions 62%+ 달성)
 - ✅ Phase 140.5: 스크롤 체이닝 (60 tests)
 
----
-
-#### Phase 140.1: 핵심 기능 파일 (22% ~ 70% → 87%+) ✅ **완료**
+### Phase 140.1: 핵심 기능 파일 (22% ~ 70% → 87%+) ✅ **완료**
 
 **우선순위 P0 (높음)**:
 
@@ -121,9 +161,7 @@
 
 **완료일**: 2025-10-20
 
----
-
-#### Phase 140.2: 미사용 코드 정리 ✅ **완료**
+### Phase 140.2: 미사용 코드 정리 ✅ **완료**
 
 **목표**:
 
@@ -166,9 +204,7 @@
 
 **완료일**: 2025-10-20
 
----
-
-#### Phase 140.3: 통합 테스트 시도 (부분 완료 ⚠️)
+### Phase 140.3: 통합 테스트 시도 (부분 완료 ⚠️)
 
 **시작 커버리지 (2025-10-20)**:
 
@@ -212,12 +248,12 @@
    - ✅ Service-to-service integration은 가능 (media extraction 성공)
    - ❌ UI component reactivity integration 불가능 (lifecycle 실패)
 
-2. **통합 테스트 효과 제한적**:
+1. **통합 테스트 효과 제한적**:
    - Media extraction test는 기존 unit test와 커버리지 중복
    - 새로운 라인 커버 없이 테스트만 추가됨
    - 커버리지 소폭 감소는 빈 배럴 파일 삭제로 인한 분모 감소
 
-3. **전략 전환 필요**:
+1. **전략 전환 필요**:
    - Integration test 접근법은 한계 명확
    - 저커버리지 파일 직접 타겟팅 필요
    - <30% 파일에 집중하는 것이 더 효과적
@@ -231,9 +267,7 @@
 
 **완료일**: 2025-10-20
 
----
-
-#### Phase 140.4: 저커버리지 파일 직접 개선 ✅ **완료**
+### Phase 140.4: 저커버리지 파일 직접 개선 ✅ **완료**
 
 **시작 커버리지 (2025-10-20)**:
 
@@ -250,9 +284,9 @@
 **전략**:
 
 1. 커버리지 리포트에서 <30% 파일 식별
-2. 각 파일의 미커버 라인 분석 (TDD: RED → GREEN)
-3. 핵심 로직에 대한 unit test 추가
-4. P0 파일 우선 완료 후 평가
+1. 각 파일의 미커버 라인 분석 (TDD: RED → GREEN)
+1. 핵심 로직에 대한 unit test 추가
+1. P0 파일 우선 완료 후 평가
 
 **우선순위 P0 파일 (완료)**:
 
@@ -263,14 +297,14 @@
    - 상태: 47/47 passing, 커밋 aec8e5dd
    - 미커버: 에러 케이스는 integration-level에서 다룸
 
-2. ✅ **`keyboard-navigation.ts`** (137 lines, 18.9% → **94.59%**, +75.69%p)
+1. ✅ **`keyboard-navigation.ts`** (137 lines, 18.9% → **94.59%**, +75.69%p)
    - **21 tests 작성** (목표 15+ 대비 140% 달성)
    - 검증: Keyboard Navigation (6), Focus Management (5), Structure (6), Trap
      (4)
    - 상태: 21/21 passing, 커밋 0e84ad90
    - Branch: 95.23%, Functions: 100%
 
-3. ✅ **`scroll-utils.ts`** (125 lines, 10.6% → **89.39%**, +78.79%p)
+1. ✅ **`scroll-utils.ts`** (125 lines, 10.6% → **89.39%**, +78.79%p)
    - **15 tests 작성** (목표 15+ 달성)
    - 검증: Gallery Element Detection (5), Debouncer (3), Scroll Handler (7)
    - 상태: 15/15 passing, 커밋 ef62602c
@@ -300,9 +334,9 @@
 **교훈**:
 
 1. **작은 파일의 한계**: 100~200 lines 파일은 전체 커버리지에 미미한 영향
-2. **큰 파일 필요**: 200+ lines 파일(twitter-video-extractor 331줄,
+1. **큰 파일 필요**: 200+ lines 파일(twitter-video-extractor 331줄,
    fallback-strategy 228줄)이 더 효과적
-3. **목표 조정**: 현실적으로 Lines 70~71% 목표가 적절 (72%는 과도한 작업량)
+1. **목표 조정**: 현실적으로 Lines 70~71% 목표가 적절 (72%는 과도한 작업량)
 
 **완료 결정**:
 
@@ -313,9 +347,7 @@
 
 **완료일**: 2025-10-20
 
----
-
-#### Phase 140.5: 스크롤 체이닝 방지 테스트 ✅ **완료**
+### Phase 140.5: 스크롤 체이닝 방지 테스트 ✅ **완료**
 
 **목표**:
 
@@ -342,10 +374,10 @@
 있습니다:
 
 1. **CSS 수준**: `overscroll-behavior: none` (VerticalGalleryView.module.css)
-2. **JavaScript 수준**:
+1. **JavaScript 수준**:
    - `useGalleryScroll` 훅에서 갤러리 휠 이벤트를 passive로 처리
    - `preventTwitterScroll` 함수에서 트위터 스크롤 차단 (passive: false)
-3. **이벤트 처리**:
+1. **이벤트 처리**:
    - `events.ts`의 키보드 네비게이션에서 `preventDefault()`로 기본 스크롤 차단
    - ArrowLeft/Right, Home/End, Space, PageUp/Down 등의 네비게이션 키 처리
 
@@ -359,14 +391,14 @@
    - ✅ CSS 우선순위 및 상속 규칙 검증
    - ✅ 브라우저 호환성 폴백 테스트
 
-2. **이벤트 핸들러 검증** (`scroll-chaining-events.test.ts` - 12 tests)
+1. **이벤트 핸들러 검증** (`scroll-chaining-events.test.ts` - 12 tests)
    - ✅ Wheel 이벤트 `preventDefault()` 호출 검증
    - ✅ 키보드 네비게이션 키 차단 (Space, PageDown, Home, End, ArrowKeys)
    - ✅ 트위터 페이지 스크롤 차단 (`stopPropagation()`)
    - ✅ 갤러리 열린 상태에서만 차단 동작 확인
    - ✅ Passive/non-passive 리스너 옵션 검증
 
-3. **경계 조건 테스트** (`scroll-chaining-boundary.test.ts` - 12 tests)
+1. **경계 조건 테스트** (`scroll-chaining-boundary.test.ts` - 12 tests)
    - ✅ 상단 경계 (`scrollTop === 0`) 감지 및 추가 스크롤 방지
    - ✅ 하단 경계 (`scrollTop + offsetHeight >= contentHeight`) 감지
    - ✅ 중간 위치에서 스크롤 정상 허용
@@ -387,7 +419,7 @@
    - ✅ 동적 콘텐츠 변경 후 `overscroll-behavior` 유지
    - ✅ 수평/수직 오버플로우 동시 처리
 
-2. **Passive vs Non-passive 리스너** (`scroll-chaining-propagation.test.ts` - 3
+1. **Passive vs Non-passive 리스너** (`scroll-chaining-propagation.test.ts` - 3
    tests)
    - ✅ Non-passive 리스너에서 `preventDefault()` 허용 검증
    - ✅ Passive 리스너에서 `preventDefault()` 무시 확인
@@ -403,7 +435,7 @@
    - ✅ 빠른 연속 wheel 이벤트에서 페이지 스크롤 위치 유지
    - ✅ 수평/수직 오버플로우 동시 처리
 
-2. **키보드 네비게이션 페이지 스크롤 차단**
+1. **키보드 네비게이션 페이지 스크롤 차단**
    (`scroll-chaining-keyboard.spec.ts` - 10 tests)
    - ✅ Space 키 입력 시 페이지 스크롤 차단
    - ✅ PageDown/PageUp 키 차단
@@ -435,8 +467,6 @@
 
 **완료일**: 2025-10-20
 
----
-
 ### Phase 139 완료: 성능 최적화 + 접근성 강화 (A+C) ✅
 
 **완료 내역**:
@@ -446,8 +476,6 @@
 - ✅ WCAG 2.1 Level AA 100% 준수 검증
 - ✅ 키보드 네비게이션: 포커스 트랩, ARIA, 인디케이터
 
----
-
 ## 백로그 (우선순위별)
 
 ### 🔴 높음 (P0 - 즉시)
@@ -456,8 +484,6 @@
 
 - GalleryRenderer.ts (22.95% → 70%+)
 - useGalleryCleanup.ts (30.3% → 70%+)
-
----
 
 ## 백로그 (우선순위별)
 
@@ -490,8 +516,6 @@
 ### � 높음 (P0 - 즉시)
 
 현재 높은 우선순위 백로그 없음 ✅
-
----
 
 ### 🟡 중간 (P1 - 다음 Phase)
 
@@ -530,16 +554,12 @@
 - Dead code 제거
 - 목표: 100% 타입 안전
 
----
-
 ### � 낮음 (P2 - 백로그)
 
 - 문서 추가 개선 (현재 충분)
 - 개발 도구 추가 (디버깅 패널 등)
 - 로깅 시스템 개선
 - 추가 E2E 시나리오
-
----
 
 ## 완료된 Phase 요약
 
@@ -563,8 +583,6 @@
 상세:
 [`docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
 
----
-
 ## 참고 문서
 
 - **[docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)**:
@@ -576,8 +594,6 @@
   패턴
 - **[MAINTENANCE.md](./MAINTENANCE.md)**: 유지보수 체크리스트
 
----
-
 > **현재 상태**: Phase 140.2 완료 ✅ (미사용 코드 정리, +0.36%p 커버리지)
 >
 > **다음 Phase**: Phase 140.3 (통합 테스트, 저커버리지 파일 개선) 📋
@@ -585,8 +601,6 @@
 - ✅ 모든 테스트 GREEN (1626+ passing)
 - ✅ 빌드 크기 유지 (331.97 KB)
 - ✅ ESLint 0 warnings, TypeScript 0 errors
-
----
 
 ## 과거 완료 Phase (요약만)
 
@@ -610,8 +624,6 @@
 
 > 상세 내용:
 > [`docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md`](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)
-
----
 
 ## 활성 Phase
 
@@ -657,8 +669,6 @@
 - ✅ 모든 테스트 GREEN
 - ✅ 빌드 크기 ≤335 KB (332 KB 유지)
 - ✅ 코드 가독성 10-15% 개선
-
----
 
 ### Phase 138: 코드 품질 개선 - Export 패턴 현대화 (진행 중 🚀)
 
@@ -706,8 +716,6 @@
 - ✅ 모든 테스트 GREEN (1481+ passing)
 - ✅ ESLint 0 warnings, TypeScript 0 errors
 
----
-
 ### Phase 137: 남은 Type Guard 적용 및 타입 안전성 완전 정리 (완료 ✅)
 
 **목표**:
@@ -747,8 +755,6 @@
 - `events.ts`: 1개 (Type Guard 완료 후 캐스트, 안전함)
 - `adapter.ts`: 2개 (GM API 검증 후 캐스트, 안전함)
 - 기타 6개 (이미 Type Guard 보호됨)
-
----
 
 ### Phase 136: 타입 단언 현대화 및 Type Guard 강화 (완료 ✅)
 
@@ -796,8 +802,6 @@
 - ✅ 빌드 크기 ≤335 KB (331.83 KB, 달성)
 - ✅ 테스트 1400+ passing (1481, 달성)
 
----
-
 ## 현재 상태: 계획 수립 단계 (Phase 138 준비) 📋
 
 **최신 달성**:
@@ -814,8 +818,6 @@
 - Vendors 모듈 export 명시화
 - 배럴 export 명시성 개선
 
----
-
 ## 참고 문서
 
 - **[docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md](./archive/TDD_REFACTORING_PLAN_COMPLETED.md)**:
@@ -826,8 +828,6 @@
 - **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)**: Testing Trophy, E2E 하네스
   패턴
 - **[MAINTENANCE.md](./MAINTENANCE.md)**: 유지보수 체크리스트
-
----
 
 > **현재 상태**: Phase 140.5 완료 ✅ 스크롤 체이닝 테스트 60개 추가 (unit 33 +
 > browser 11 + E2E 16), tests 1777 passing, 331.97 KB 유지

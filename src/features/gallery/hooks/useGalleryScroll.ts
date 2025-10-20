@@ -14,6 +14,7 @@ import type { StabilityDetector } from '../../../shared/services/stability-detec
 import { galleryState } from '../../../shared/state/signals/gallery.signals';
 import type { GalleryState } from '../../../shared/state/signals/gallery.signals';
 import { useSelector } from '../../../shared/utils/signal-selector';
+import { toAccessor, isHTMLElement } from '../../../shared/utils/solid-helpers';
 import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 
@@ -21,9 +22,6 @@ const { createSignal, createEffect, batch, onCleanup } = getSolid();
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
-
-const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
-  typeof value === 'function' ? (value as Accessor<T>) : () => value;
 
 type ScrollDirection = 'up' | 'down' | 'idle';
 
@@ -174,11 +172,13 @@ export function useGalleryScroll({
 
     handleScrollEnd();
 
+    // Phase 141.3: 타입 가드로 타입 단언 제거
+    const target = event.target;
     logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
       delta,
       isGalleryOpen: isGalleryOpen(),
-      targetElement: (event.target as HTMLElement)?.tagName || 'unknown',
-      targetClass: (event.target as HTMLElement)?.className || 'none',
+      targetElement: isHTMLElement(target) ? target.tagName : 'unknown',
+      targetClass: isHTMLElement(target) ? target.className : 'none',
       timestamp: Date.now(),
     });
   };

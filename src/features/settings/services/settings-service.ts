@@ -27,6 +27,25 @@ const STORAGE_KEY = 'xeg-app-settings';
 type SettingChangeListener = (event: SettingChangeEvent) => void;
 
 /**
+ * Type Guard: Record<string, unknown> 타입 검증
+ * Phase 141.1: 이중 단언 제거를 위한 타입 가드
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * AppSettings를 Record로 안전하게 변환
+ * Phase 141.1: 타입 안전성 개선
+ */
+function toRecord(settings: AppSettings): Record<string, unknown> {
+  if (!isRecord(settings)) {
+    throw new Error('Invalid settings object: expected Record type');
+  }
+  return settings;
+}
+
+/**
  * 설정 관리 서비스
  *
  * 기능:
@@ -154,8 +173,8 @@ export class SettingsService {
     const oldValue = this.get(key);
     const keys = key.split('.');
 
-    // Phase 137: Type Guard 기반 안전한 중첩 객체 접근
-    let target: Record<string, unknown> = this.settings as unknown as Record<string, unknown>;
+    // Phase 141.1: Type Guard 기반 안전한 중첩 객체 접근 (이중 단언 제거)
+    let target: Record<string, unknown> = toRecord(this.settings);
 
     for (let i = 0; i < keys.length - 1; i++) {
       const currentKey = keys[i];
@@ -219,8 +238,8 @@ export class SettingsService {
     for (const [key, value] of Object.entries(updates)) {
       const oldValue = this.get(key as NestedSettingKey);
       const keys = key.split('.');
-      // Phase 137: Type Guard 기반 안전한 중첩 객체 접근
-      let target: Record<string, unknown> = this.settings as unknown as Record<string, unknown>;
+      // Phase 141.1: Type Guard 기반 안전한 중첩 객체 접근 (이중 단언 제거)
+      let target: Record<string, unknown> = toRecord(this.settings);
 
       for (let i = 0; i < keys.length - 1; i++) {
         const currentKey = keys[i];
@@ -266,13 +285,13 @@ export class SettingsService {
     const oldSettings = { ...this.settings };
 
     if (category) {
-      // Phase 137: Type Guard 기반 안전한 카테고리별 재설정
-      const defaultsRecord = defaultSettings as unknown as Record<string, unknown>;
+      // Phase 141.1: Type Guard 기반 안전한 카테고리별 재설정 (이중 단언 제거)
+      const defaultsRecord = toRecord(defaultSettings);
       const categoryDefaults = defaultsRecord[category as string];
 
-      if (categoryDefaults && typeof categoryDefaults === 'object') {
-        const cloned = { ...(categoryDefaults as Record<string, unknown>) };
-        const settingsRecord = this.settings as unknown as Record<string, unknown>;
+      if (isRecord(categoryDefaults)) {
+        const cloned = { ...categoryDefaults };
+        const settingsRecord = toRecord(this.settings);
         settingsRecord[category] = cloned;
       }
     } else {

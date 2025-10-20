@@ -16,25 +16,35 @@ const migrations: Partial<Record<string, Migration>> = {
 };
 
 /**
+ * Type Guard: Record<string, unknown> 타입 검증
+ * Phase 141.2: 타입 안전성 개선
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
  * Recursively prune unknown fields from input using the provided template as the allowed shape.
  * Only keys present in the template are retained; nested objects are pruned likewise.
+ * Phase 141.2: 타입 가드 활용으로 타입 안전성 개선
  */
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
   template: T
 ): Partial<T> {
-  if (input == null || typeof input !== 'object') return {} as Partial<T>;
+  // Phase 141.2: Type Guard로 타입 검증
+  if (!isRecord(input)) return {} as Partial<T>;
 
   const out: Record<string, unknown> = {};
-  const inputRec = input as Record<string, unknown>;
 
   for (const key of Object.keys(template) as Array<keyof T>) {
     const tplVal = template[key];
-    const inVal = inputRec[key as string];
+    const inVal = input[key as string];
     if (inVal === undefined) continue;
 
-    if (tplVal !== null && typeof tplVal === 'object' && !Array.isArray(tplVal)) {
-      out[key as string] = pruneWithTemplate(inVal, tplVal as Record<string, unknown>);
+    // Phase 141.2: 중첩 객체는 재귀적으로 타입 가드 적용
+    if (isRecord(tplVal) && !Array.isArray(tplVal)) {
+      out[key as string] = pruneWithTemplate(inVal, tplVal);
     } else {
       out[key as string] = inVal;
     }

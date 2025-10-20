@@ -9,15 +9,13 @@
 import { getSolid } from '../../../shared/external/vendors';
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../../../shared/logging/logger';
+import { toAccessor } from '../../../shared/utils/solid-helpers';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 const { onCleanup, createEffect } = getSolid();
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
-
-const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
-  typeof value === 'function' ? (value as Accessor<T>) : () => value;
 
 const INDEX_WATCH_INTERVAL = 32; // ~30fps 폴링으로 signal 비연동 환경에서도 안정 지원
 
@@ -51,10 +49,9 @@ export function useGalleryItemScroll(
   totalItems: MaybeAccessor<number>,
   options: UseGalleryItemScrollOptions = {}
 ): UseGalleryItemScrollReturn {
+  // Phase 141.3: toAccessor 헬퍼로 타입 단언 제거
   const containerAccessor: Accessor<HTMLElement | null> =
-    typeof containerRef === 'function'
-      ? (containerRef as Accessor<HTMLElement | null>)
-      : () => containerRef.current;
+    typeof containerRef === 'function' ? containerRef : () => containerRef.current;
 
   const enabled = toAccessor(options.enabled ?? true);
   const behavior = toAccessor(options.behavior ?? 'smooth');
