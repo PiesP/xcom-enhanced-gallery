@@ -437,3 +437,95 @@ export function isMediaServiceLike(obj: unknown): obj is {
     typeof objRecord.toggleMuteCurrent === 'function'
   );
 }
+
+// ========== 동적 객체 접근 Type Guard ==========
+
+/**
+ * 객체가 Record<string, unknown> 형태의 동적 객체인지 확인
+ */
+export function isRecord(obj: unknown): obj is Record<string, unknown> {
+  return obj !== null && typeof obj === 'object';
+}
+
+/**
+ * 중첩 객체에서 안전하게 값 접근
+ * @param obj 접근할 객체
+ * @param path 점 표기법 경로 (예: "theme.colors.primary")
+ * @returns 찾은 값 또는 undefined
+ */
+export function getNestedValue<T = unknown>(
+  obj: Record<string, unknown> | undefined | null,
+  path: string
+): T | undefined {
+  if (!obj || typeof obj !== 'object') {
+    return undefined;
+  }
+
+  const keys = path.split('.');
+  let current: unknown = obj;
+
+  for (const key of keys) {
+    if (current === null || typeof current !== 'object') {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+
+  return current as T | undefined;
+}
+
+/**
+ * 중첩 객체에 안전하게 값 설정
+ * @param obj 설정할 객체
+ * @param path 점 표기법 경로 (예: "theme.colors.primary")
+ * @param value 설정할 값
+ */
+export function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
+  const keys = path.split('.');
+  let current: Record<string, unknown> | unknown = obj;
+
+  // 마지막 키를 제외한 경로 순회
+  for (let i = 0; i < keys.length - 1; i++) {
+    const key = keys[i];
+    if (!key) continue;
+
+    const currentRecord = current as Record<string, unknown>;
+    if (!isRecord(currentRecord[key])) {
+      currentRecord[key] = {};
+    }
+    current = currentRecord[key];
+  }
+
+  // 마지막 키에 값 설정
+  const finalKey = keys[keys.length - 1];
+  if (finalKey && isRecord(current)) {
+    current[finalKey] = value;
+  }
+}
+
+/**
+ * 객체가 특정 경로의 값을 가지고 있는지 확인
+ */
+export function hasNestedValue(
+  obj: Record<string, unknown> | undefined | null,
+  path: string
+): boolean {
+  if (!obj || typeof obj !== 'object') {
+    return false;
+  }
+
+  const keys = path.split('.');
+  let current: unknown = obj;
+
+  for (const key of keys) {
+    if (!isRecord(current)) {
+      return false;
+    }
+    if (!(key in current)) {
+      return false;
+    }
+    current = current[key];
+  }
+
+  return true;
+}

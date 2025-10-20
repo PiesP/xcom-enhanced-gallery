@@ -15,6 +15,7 @@ import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
 } from '../../shared/container/service-accessors';
+import { isMediaServiceLike } from '../../shared/utils/type-safety-helpers';
 import {
   galleryState,
   gallerySignals,
@@ -70,10 +71,13 @@ export class GalleryApp {
    */
   private async getMediaService(): Promise<MediaService> {
     if (!this.mediaService) {
-      // 설계상 필수 타입 단언 (Phase 103): 서비스 컨테이너 반환값을 구체적 타입으로 변환
-      // 이유: getMediaServiceFromContainer()는 범용 object 타입 반환, MediaService 인터페이스 필요
-      // 배경: 서비스 컨테이너는 런타임 등록으로 컴파일 타임 타입 추론 불가
-      this.mediaService = getMediaServiceFromContainer() as unknown as MediaService;
+      // Phase 137: Type Guard를 사용하여 타입 안전성 확보
+      const service = getMediaServiceFromContainer();
+      if (isMediaServiceLike(service)) {
+        this.mediaService = service as unknown as MediaService;
+      } else {
+        throw new Error('MediaService not available from container');
+      }
     }
     return this.mediaService;
   }

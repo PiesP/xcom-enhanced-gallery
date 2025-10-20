@@ -6,6 +6,7 @@
 
 // Internal imports use relative paths to avoid alias issues in Vitest
 import { logger } from '../../logging/logger';
+import { createEventListener } from '../../utils/type-safety-helpers';
 import { EventManager } from '../event-manager';
 
 export interface KeyboardNavigatorHandlers {
@@ -139,13 +140,11 @@ export class KeyboardNavigator {
       }
     };
 
-    // 설계상 필수 타입 단언 (Phase 103): KeyboardEvent 핸들러를 EventListener로 변환
-    // 이유: addEventListener는 EventListener 타입만 허용, 구체적인 KeyboardEvent 타입 전달 불가
-    // 배경: EventManager.addListener의 제네릭은 이벤트 타입을 추론하지 못함
+    // Phase 137: Type Guard 래퍼로 EventListener 타입 변환
     const id = EventManager.getInstance().addListener(
       document,
       'keydown',
-      handleKeyDown as unknown as EventListener,
+      createEventListener(handleKeyDown),
       { capture },
       context
     );

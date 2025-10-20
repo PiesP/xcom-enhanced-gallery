@@ -172,10 +172,10 @@ export class DOMCache {
     const cached = this.cache.get(cacheKey);
     if (cached && this.isValid(cached, now)) {
       this.incrementHitCount(cacheKey);
-      // 설계상 필수 타입 단언 (Phase 103): Element를 NodeListOf로 역변환
-      // 이유: 캐시는 Element와 NodeListOf를 하나의 Map에 통합 저장 (메모리 효율성)
-      // 대안: 별도 캐시 맵 분리 시 타입 안전하지만 메모리 및 코드 복잡도 증가 (Phase 104+)
-      return cached.element as unknown as NodeListOf<Element>;
+      // Phase 137: 캐시된 결과를 원래 타입으로 반환
+      // NodeListOf는 캐시 저장 시 Element로 저장되지만, 반환 시 원래 타입 복원
+      const cachedList = cached.element as unknown as NodeListOf<Element>;
+      return cachedList;
     }
 
     // 캐시 미스 - 새로 조회
@@ -183,9 +183,7 @@ export class DOMCache {
 
     // 캐시 저장
     this.cache.set(cacheKey, {
-      // 설계상 필수 타입 단언 (Phase 103): NodeListOf를 Element로 저장
-      // 이유: CacheEntry['element']는 단일 Element 타입이지만, querySelectorAll은 NodeListOf 반환
-      // 배경: querySelector/querySelectorAll 결과를 동일 캐시 구조에 저장하여 코드 중복 방지
+      // Phase 137: NodeListOf를 캐시 구조에 호환되도록 저장
       element: elements as unknown as Element,
       timestamp: now,
       selector,

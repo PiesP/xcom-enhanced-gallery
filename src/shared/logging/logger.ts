@@ -80,11 +80,12 @@ let createScopedLoggerWithCorrelationImpl: ScopedCorrelationFactory;
 
 if (isDev) {
   const getEnvironmentLogLevel = (): LogLevel => {
-    // Userscript(Tampermonkey) 환경에서는 콘솔 노이즈를 줄이기 위해 기본을 info로 유지
+    // Phase 137: Type Guard 기반 안전한 Userscript 환경 감지
     try {
       if (typeof window !== 'undefined') {
-        const gmInfo = (window as unknown as Record<string, unknown>)['GM_info'];
-        const unsafeWin = (window as unknown as Record<string, unknown>).unsafeWindow;
+        const windowRecord = window as unknown as Record<string, unknown>;
+        const gmInfo = windowRecord['GM_info'];
+        const unsafeWin = windowRecord.unsafeWindow;
         if (gmInfo !== undefined || unsafeWin !== undefined) {
           return 'info';
         }

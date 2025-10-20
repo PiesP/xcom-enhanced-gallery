@@ -9,6 +9,8 @@
  * - ARIA 상태 관리
  */
 
+import { createEventListener } from '../utils/type-safety-helpers';
+
 import { getSolid } from '../external/vendors';
 import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
@@ -27,12 +29,11 @@ export function useKeyboardNavigation(handlers: { onEscape?: () => void } = {}):
     };
 
     const { EventManager } = require('../services/EventManager');
-    // 설계상 필수 타입 단언 (Phase 103): KeyboardEvent 핸들러를 EventListener로 변환
-    // 이유: addEventListener는 EventListener 타입만 허용, 구체적인 KeyboardEvent 타입 전달 불가
+    // Phase 137: Type Guard 래퍼로 EventListener 타입 변환
     EventManager.getInstance().addListener(
       document,
       'keydown',
-      handleKeyDown as unknown as EventListener,
+      createEventListener(handleKeyDown),
       { capture: false },
       'use-accessibility'
     );

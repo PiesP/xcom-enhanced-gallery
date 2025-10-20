@@ -48,6 +48,7 @@ export class MemoryTracker {
    */
   public getMemoryInfo(): MemoryInfo | null {
     try {
+      // Phase 137: 확장 인터페이스 타입 캐스트로 안전하게 메모리 API 접근
       const performanceWithMemory = performance as unknown as Performance & {
         memory?: MemoryInfo;
       };

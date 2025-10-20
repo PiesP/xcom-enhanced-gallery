@@ -233,8 +233,9 @@ export function registerServiceFactory<T>(key: string, factory: () => T): void {
   CoreService.getInstance().registerFactory<T>(key, factory);
 }
 
-// 테스트 호환: 전역 네임스페이스에 노출 (개발/테스트 환경에서만)
+// Phase 137: 테스트 호환 - 전역 네임스페이스에 노출 (개발/테스트 환경에서만)
 if (import.meta.env.DEV || import.meta.env.MODE === 'test') {
   const kRegister = 'registerService' + 'Factory';
-  (globalThis as Record<string, unknown>)[kRegister] = registerServiceFactory as unknown as object;
+  const globalRecord = globalThis as Record<string, unknown>;
+  globalRecord[kRegister] = registerServiceFactory as unknown as object;
 }

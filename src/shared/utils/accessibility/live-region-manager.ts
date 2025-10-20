@@ -39,14 +39,15 @@ function initLifecycleOnce(): void {
 
 function createRegion(kind: 'polite' | 'assertive'): HTMLElement {
   if (typeof document === 'undefined') {
-    // 비브라우저 환경 방어 – 테스트에서는 jsdom 사용
+    // Phase 137: 비브라우저 환경 방어 - 테스트에서는 jsdom 사용
     // 최소한의 객체 모킹
-    return {
+    const mock = {
       setAttribute() {},
       getAttribute() {
         return null;
       },
-    } as unknown as HTMLElement;
+    };
+    return mock as unknown as HTMLElement;
   }
 
   const el = document.createElement('div');

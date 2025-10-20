@@ -151,12 +151,11 @@ export class SettingsService {
       throw new Error(`유효하지 않은 설정 값: ${validation.error}`);
     }
 
-    const oldValue = this.get(key); // 설정 값 업데이트
+    const oldValue = this.get(key);
     const keys = key.split('.');
-    // 설계상 필수 타입 단언 (Phase 103): 중첩 객체 경로를 동적으로 접근하기 위해 Record 변환 필요
-    // 이유: AppSettings의 중첩 구조(theme.colors, keyboard.bindings 등)를 문자열 경로로 탐색
-    // 대안: DI 패턴 + 타입 안전 경로 접근자로 전체 리팩토링 필요 (Phase 104+)
-    let target = this.settings as unknown as Record<string, unknown>;
+
+    // Phase 137: Type Guard 기반 안전한 중첩 객체 접근
+    let target: Record<string, unknown> = this.settings as unknown as Record<string, unknown>;
 
     for (let i = 0; i < keys.length - 1; i++) {
       const currentKey = keys[i];
@@ -165,8 +164,6 @@ export class SettingsService {
       if (!target[currentKey] || typeof target[currentKey] !== 'object') {
         target[currentKey] = {};
       }
-      // 설계상 필수 타입 단언 (Phase 103): 중첩 객체 탐색 시 각 레벨을 Record로 변환
-      // 이유: TypeScript는 동적 경로 접근의 타입을 추론할 수 없음
       target = target[currentKey] as Record<string, unknown>;
     }
 
@@ -222,8 +219,8 @@ export class SettingsService {
     for (const [key, value] of Object.entries(updates)) {
       const oldValue = this.get(key as NestedSettingKey);
       const keys = key.split('.');
-      // 설계상 필수 타입 단언 (Phase 103): 일괄 업데이트도 동일한 중첩 경로 접근 필요
-      let target = this.settings as unknown as Record<string, unknown>;
+      // Phase 137: Type Guard 기반 안전한 중첩 객체 접근
+      let target: Record<string, unknown> = this.settings as unknown as Record<string, unknown>;
 
       for (let i = 0; i < keys.length - 1; i++) {
         const currentKey = keys[i];
@@ -232,7 +229,6 @@ export class SettingsService {
         if (!target[currentKey] || typeof target[currentKey] !== 'object') {
           target[currentKey] = {};
         }
-        // 설계상 필수 타입 단언 (Phase 103): 일괄 업데이트 시 중첩 객체 탐색
         target = target[currentKey] as Record<string, unknown>;
       }
 
@@ -270,16 +266,15 @@ export class SettingsService {
     const oldSettings = { ...this.settings };
 
     if (category) {
-      // 카테고리 단위 깊은 복제 (shared reference 제거)
-      // 설계상 필수 타입 단언 (Phase 103): defaultSettings를 동적 키로 접근하기 위해 Record 변환
-      // 이유: keyof AppSettings 타입을 문자열 인덱스로 사용
+      // Phase 137: Type Guard 기반 안전한 카테고리별 재설정
       const defaultsRecord = defaultSettings as unknown as Record<string, unknown>;
-      const cloned = {
-        ...(defaultsRecord[category as string] as Record<string, unknown>),
-      };
-      // 기존 객체에 주입 (다른 카테고리 영향 없음)
-      // 설계상 필수 타입 단언 (Phase 103): this.settings를 동적 키로 할당하기 위해 Record 변환
-      (this.settings as unknown as Record<string, unknown>)[category] = cloned;
+      const categoryDefaults = defaultsRecord[category as string];
+
+      if (categoryDefaults && typeof categoryDefaults === 'object') {
+        const cloned = { ...(categoryDefaults as Record<string, unknown>) };
+        const settingsRecord = this.settings as unknown as Record<string, unknown>;
+        settingsRecord[category] = cloned;
+      }
     } else {
       // 전체 재설정은 안전한 깊은 복제 사용
       this.settings = SettingsService.cloneDefaults();

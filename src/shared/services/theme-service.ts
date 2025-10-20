@@ -98,14 +98,14 @@ export class ThemeService {
     try {
       this.mediaQueryList.addEventListener('change', this.onMediaQueryChange);
     } catch {
-      // older APIs fallback
+      // Phase 137: 레거시 API (addListener) 지원
+      // 구 브라우저에서 MediaQueryList.addListener 사용
       try {
-        this.mediaQueryList.addListener(
-          this.onMediaQueryChange as unknown as (
-            this: MediaQueryList,
-            ev: MediaQueryListEvent
-          ) => void
-        );
+        const legacyHandler = this.onMediaQueryChange as unknown as (
+          this: MediaQueryList,
+          ev: MediaQueryListEvent
+        ) => void;
+        this.mediaQueryList.addListener(legacyHandler);
       } catch {
         // ignore
       }
@@ -231,12 +231,12 @@ export class ThemeService {
       try {
         if (this.onMediaQueryChange) {
           this.mediaQueryList.removeEventListener('change', this.onMediaQueryChange);
-          this.mediaQueryList.removeListener?.(
-            this.onMediaQueryChange as unknown as (
-              this: MediaQueryList,
-              ev: MediaQueryListEvent
-            ) => void
-          );
+          // Phase 137: 레거시 API (removeListener) 제거
+          const legacyHandler = this.onMediaQueryChange as unknown as (
+            this: MediaQueryList,
+            ev: MediaQueryListEvent
+          ) => void;
+          this.mediaQueryList.removeListener?.(legacyHandler);
         }
       } catch {
         // ignore
