@@ -2,6 +2,7 @@
  * Shared Hooks - 공통 커스텀 훅 모듈
  *
  * Phase 2B Step 2: 공통 커스텀 훅들을 단순화하여 export
+ * Phase 140.2: 미사용 훅 제거 (use-dom-ready, use-accessibility, use-focus-scope)
  */
 
 // Core hooks
@@ -21,8 +22,10 @@ export {
 //   type UseScrollDirectionReturn,
 // } from './useScrollDirection';
 
-export { useDOMReady } from './use-dom-ready';
-export { useKeyboardNavigation } from './use-accessibility';
+// Removed in Phase 140.2 (unused code cleanup):
+// - useDOMReady
+// - useKeyboardNavigation (from use-accessibility)
+// - useFocusScope
 
 // Related scroll types (moved to individual hook files) - useScrollDirection 제거됨
 // export type { ScrollDirection } from './useScrollDirection';

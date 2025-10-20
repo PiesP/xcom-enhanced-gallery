@@ -2,7 +2,7 @@
  * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (54개)
  */
 
-// === 기본 유틸리티 (13개) ===
+// === 기본 유틸리티 (12개) - galleryDebugUtils removed in Phase 140.2 ===
 export {
   combineClasses,
   toggleClass,
@@ -15,7 +15,6 @@ export {
   rafThrottle,
   measurePerformance,
   throttleScroll,
-  galleryDebugUtils,
   parseColor,
 } from './utils';
 

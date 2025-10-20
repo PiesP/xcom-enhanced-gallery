@@ -315,12 +315,12 @@ describe('Phase 140.1: useGalleryCleanup 핵심 기능', () => {
           themeCleanup,
         });
 
-        // performFullCleanup() 호출 시 isCleanedUp = true 설정 후 cleanupMediaElements() 호출
-        // → cleanupMediaElements()는 early return으로 인해 실제로 실행되지 않음
+        // performFullCleanup() 호출 시 cleanup 함수들이 실행된 후 isCleanedUp = true 설정됨
+        // → cleanupMediaElements()가 정상적으로 실행되어 비디오가 pause됨
         cleanup.performFullCleanup();
 
-        // 비디오는 pause되지 않음 (isCleanedUp 플래그로 인해 스킵됨)
-        expect(pauseSpy).not.toHaveBeenCalled();
+        // 비디오가 pause됨 (버그 수정 후)
+        expect(pauseSpy).toHaveBeenCalled();
 
         if (dispose) {
           dispose();
@@ -519,9 +519,9 @@ describe('Phase 140.1: useGalleryCleanup 핵심 기능', () => {
 
         cleanup.performFullCleanup();
 
-        // performFullCleanup()은 is CleanedUp = true 설정 후 restorePageState()를 호출
-        // restorePageState() 내부에서 isCleanedUp 체크로 early return되어 실제로는 복원되지 않음
-        expect(document.body.style.pointerEvents).toBe('none');
+        // performFullCleanup()이 cleanup 함수들을 실행한 후 isCleanedUp = true 설정
+        // restorePageState()가 정상적으로 실행되어 pointer-events가 복원됨 (버그 수정 후)
+        expect(document.body.style.pointerEvents).not.toBe('none');
 
         if (dispose) {
           dispose();
@@ -614,12 +614,12 @@ describe('Phase 140.1: useGalleryCleanup 핵심 기능', () => {
 
         cleanup.performFullCleanup();
 
-        // isCleanedUp 플래그가 설정되어 cleanupMediaElements가 스킵됨
-        expect(pauseSpy).not.toHaveBeenCalled();
+        // performFullCleanup()이 cleanupMediaElements()를 호출하므로 비디오가 pause됨 (버그 수정 후)
+        expect(pauseSpy).toHaveBeenCalledTimes(1);
 
-        // 직접 호출해도 스킵됨
+        // isCleanedUp 플래그가 설정되었으므로 직접 호출 시에는 스킵됨
         cleanup.cleanupMediaElements();
-        expect(pauseSpy).not.toHaveBeenCalled();
+        expect(pauseSpy).toHaveBeenCalledTimes(1); // 여전히 1번만 호출됨 (증가하지 않음)
 
         if (dispose) {
           dispose();

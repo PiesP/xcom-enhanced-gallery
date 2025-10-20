@@ -129,7 +129,6 @@ export function useGalleryCleanup({
       return;
     }
 
-    isCleanedUp = true;
     logger.info('Starting full gallery cleanup');
 
     cleanupTimers();
@@ -137,6 +136,7 @@ export function useGalleryCleanup({
     themeCleanup();
     restorePageState();
 
+    isCleanedUp = true;
     logger.info('Gallery cleanup completed');
   };
 

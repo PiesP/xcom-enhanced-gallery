@@ -36,8 +36,7 @@ export { ensureGalleryScrollAvailable, removeDuplicateStrings } from './core-uti
 // Deduplication utilities
 export { removeDuplicates, removeDuplicateMediaItems } from './deduplication';
 
-// Debug utilities
-export { galleryDebugUtils } from './debug/gallery-debug';
+// Debug utilities (removed in Phase 140.2 - unused code cleanup)
 
 // Accessibility utilities
 export {

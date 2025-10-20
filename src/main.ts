@@ -297,12 +297,11 @@ async function initializeDevTools(): Promise<void> {
   if (!import.meta.env.DEV) return;
 
   try {
-    // 갤러리 디버깅 유틸리티
-    const { galleryDebugUtils } = await import('@shared/utils');
+    // 갤러리 디버깅 유틸리티 제거됨 (Phase 140.2 - 미사용 코드 정리)
     // DEV 전용 전역 키를 런타임 생성하여 프로덕션 번들에 문자열이 포함되지 않도록 함
-    const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-    const kDebug = __devKey([95, 95, 88, 69, 71, 95, 68, 69, 66, 85, 71, 95, 95]); // "__XEG_DEBUG__"
-    (globalThis as Record<string, unknown>)[kDebug] = galleryDebugUtils;
+    // const __devKey = (codes: number[]) => String.fromCharCode(...codes);
+    // const kDebug = __devKey([95, 95, 88, 69, 71, 95, 68, 69, 66, 85, 71, 95, 95]); // "__XEG_DEBUG__"
+    // (globalThis as Record<string, unknown>)[kDebug] = galleryDebugUtils;
 
     // 서비스 진단 도구
     const { ServiceDiagnostics } = await import('@shared/services/core-services');

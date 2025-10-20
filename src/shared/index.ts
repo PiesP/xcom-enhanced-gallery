@@ -25,8 +25,8 @@ export * from './state';
 // 로깅 시스템 (기존 Core에서 이동)
 export * from './logging';
 
-// 메모리 관리 (기존 Core에서 이동)
-export * from './memory';
+// 메모리 관리 모듈 제거됨 (Phase 140.2 - 미사용 코드 정리)
+// export * from './memory';
 
 // 핵심 유틸리티들 (주요 기능만)
 export {

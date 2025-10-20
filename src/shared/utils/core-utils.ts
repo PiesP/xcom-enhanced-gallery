@@ -315,10 +315,8 @@ export { measurePerformance, measureAsyncPerformance } from './performance/perfo
 // ================================
 // 디버그 유틸리티
 // ================================
-// Debug utilities re-export
+// Debug utilities re-export (removed in Phase 140.2 - unused code cleanup)
 // ================================
-
-export { galleryDebugUtils } from './debug/gallery-debug';
 
 // ================================
 // Performance utilities re-export
