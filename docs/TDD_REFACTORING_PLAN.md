@@ -58,16 +58,39 @@
 
 ## 활성 Phase
 
-```
-현재 상태: 유지보수 모드 ✅
+### Phase 136: 타입 단언 현대화 및 에러 처리 강화 (진행 중 🚀)
 
-활성 작업 없음. 모든 제안된 리팩토링이 완료되었습니다.
+**목표**:
 
-다음 주기에서 고려할 사항:
-1. Memory 별칭 정리: Phase 132 완료, 추가 작업 불필요
-2. Performance measure* 함수 용도 확인 (미사용 확인됨)
-3. Signal optimization 디버그 함수 정리 (선택사항)
-```
+- "as unknown" 패턴 9개를 Type Guard 또는 Conditional Types로 대체
+- try-catch 무음 처리 3-5개 검증 및 로깅 추가
+- 성능 디버그 함수 정리 (signal-optimization.ts)
+- GlobalLike, EventListener 타입 정의 검증
+
+**발견 사항 (코드 전수조사)**:
+
+- **타입 단언**: "as unknown" 29개 발견 → 9개 대체 가능 (viewport.ts,
+  signal-selector.ts, schedulers.ts, events.ts, adapter.ts 등)
+- **에러 처리**: try-catch 50개 이상 분석 → 대부분 적절한 처리 (로깅/리턴), 무음
+  처리 3-5개 발견
+- **배럴 파일**: \* export 44개 (조직적 구조 유지)
+- **임포트**: \* 임포트 0개 (현재 명시적 임포트 정책 준수)
+
+**진행 상황**:
+
+- [ ] "as unknown" 타입 분석 → Type Guard 정의 (9개)
+- [ ] Unit 테스트 12-15개 작성
+- [ ] 타입 단언 제거 (23→14 목표)
+- [ ] 에러 처리 강화 (로깅 추가)
+- [ ] 빌드/테스트 검증 (331.30 KB, 1434+ tests)
+
+**수용 기준**:
+
+- ✅ 타입 단언 ≤14개 (23→14, 39% 감소)
+- ✅ as unknown 9개+ Type Guard/Conditional Type 대체
+- ✅ 테스트 1434+ passing 유지
+- ✅ 빌드 크기 ≤335 KB
+- ✅ ESLint/TypeScript 0 warnings/errors
 
 ---
 
