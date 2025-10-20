@@ -16,8 +16,8 @@
   min-height: 2.5em; /* 40px → 2.5em */
   padding: 0.5em; /* 8px → 0.5em */
 
-  /* 텍스트 및 커서 */
-  color: var(--xeg-color-text-primary);
+  /* 텍스트 및 커서 - 통일된 전경색 토큰 상속 */
+  color: var(--xeg-toolbar-fg);
   cursor: pointer;
 
   /* 레이아웃 */
@@ -35,14 +35,14 @@
 [data-theme='dark'] .toolbarButton {
   background: var(--xeg-color-neutral-700);
   border: var(--border-width-thin) solid var(--xeg-color-neutral-100); /* 1px → var(--border-width-thin) */
-  color: var(--xeg-color-neutral-100);
+  /* color는 상위 var(--xeg-toolbar-fg) 상속 */
 }
 
 /* 고대비 모드 버튼 스타일 */
 .highContrast .toolbarButton {
   background: var(--xeg-toolbar-button-bg-high-contrast);
   border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast); /* 1px → var(--border-width-thin) */
-  color: var(--xeg-color-overlay-strong);
+  color: var(--xeg-toolbar-fg);
 }
 
 /* 포커스 상태 - 접근성 */
@@ -60,7 +60,7 @@
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+  background: var(--xeg-bg-toolbar);
   border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
   border-radius: var(--xeg-radius-lg);
 
@@ -99,12 +99,8 @@
   box-shadow: var(--xeg-shadow-lg);
 }
 
-/* 감소된 모션 지원 강화 */
-@media (prefers-reduced-motion: reduce) {
-  .galleryToolbar {
-    transition: none;
-  }
-}
+/* 감소된 모션 지원 강화 — 전역 유틸리티/토큰에 위임 (중복 제거) */
+/* 개별 .galleryToolbar 전환 해제는 전역 정책으로 통합 */
 
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
 .galleryToolbar[data-state='idle'],
@@ -194,8 +190,8 @@
 }
 
 .separator {
-  /* 구분자('/')를 인디케이터 숫자와 동일 톤(Primary)으로 통일 */
-  color: var(--xeg-color-text-primary);
+  /* 구분자('/')는 툴바 전경색을 상속 */
+  color: var(--xeg-toolbar-fg);
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
@@ -203,7 +199,7 @@
 .toolbarButton[data-active='true'] {
   background: var(--xeg-color-primary);
 
-  --button-color: white;
+  --button-color: var(--color-text-inverse);
 
   box-shadow:
     0 0 0 0.125em var(--xeg-color-primary-alpha-30),
@@ -212,7 +208,7 @@
 
 .toolbarButton[data-selected='true'] {
   --button-bg: var(--xeg-color-primary);
-  --button-color: white;
+  --button-color: var(--color-text-inverse);
 
   border-color: var(--xeg-color-primary);
 }
@@ -276,7 +272,21 @@
   gap: 0.5em; /* 8px → 0.5em */
 }
 
-/* 네비게이션 버튼 - 기본 스타일 상속 */
+/* 네비게이션 버튼 포커스 가시성 */
+.navButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/* 네비게이션 버튼 호버 - 단순하고 일관된 효과 적용 */
+.navButton:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+/* 네비게이션 버튼 - 기본/활성 상태 */
 .navButton:active:not(:disabled),
 .navButton.active {
   background: var(--xeg-color-primary);
@@ -314,7 +324,7 @@
 }
 
 .currentIndex {
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-fg);
   font-weight: 700;
 }
 
@@ -326,12 +336,7 @@
 .totalCount {
   color: var(--xeg-color-neutral-600);
 }
-/* 고대비 모드에서 구분자 시인성 강화 */
-@media (prefers-contrast: more), (prefers-contrast: high) {
-  .separator {
-    color: var(--xeg-color-text-primary);
-  }
-}
+/* 고대비 모드 개별 오버라이드는 전역 토큰으로 통합 */
 /* 진행률 바 */
 .progressBar {
   /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
@@ -460,6 +465,16 @@ button.fitButton {
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
+/* 설정/닫기 버튼 호버 - 단순 효과 적용 */
+.settingsButton:hover:not(:disabled),
+.closeButton:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-hover);
+  /* 복잡한 transform 효과 제거 */
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
 /* 반응형 디자인 */
 @media (width <= 48em) {
   /* 768px → 48em */
@@ -548,67 +563,12 @@ button.fitButton {
   /* 작은 화면에서도 separator 표시 유지 */
 }
 /* 고대비 모드 - 시인성 개선 */
-@media (prefers-contrast: high) {
-  .galleryToolbar {
-    background: var(--color-base-white);
-    border: var(--border-width-sm) solid var(--color-base-black); /* 2px → var(--border-width-sm) */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: 0 0.25rem 1.25rem var(--xeg-color-overlay-medium); /* 4px 20px → 0.25rem 1.25rem */
-  }
-
-  .toolbarButton {
-    background: var(--xeg-color-neutral-100);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-900);
-  }
-
-  .toolbarButton:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-200);
-    border: var(--border-width-sm) solid var(--xeg-color-neutral-900); /* 2px → var(--border-width-sm) */
-  }
-
-  .navButton {
-    background: var(--xeg-color-primary-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-
-  .navButton:focus-visible {
-    outline: var(--xeg-focus-ring);
-    outline-offset: var(--xeg-focus-ring-offset);
-  }
-
-  .downloadButton {
-    background: var(--xeg-color-success-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-
-  .closeButton {
-    background: var(--xeg-color-error-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-}
-
-@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
-  .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
-    border: var(--border-width-sm) solid var(--xeg-comp-toolbar-border); /* 2px → var(--border-width-sm) */
-  }
-
-  .toolbarButton {
-    background: var(--xeg-color-neutral-700);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-100); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-}
+/* 고대비/다크 조합 오버라이드는 design-tokens.semantic.css에서 관리 */
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
@@ -617,7 +577,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
   }
 }
 
@@ -625,7 +585,7 @@ button.fitButton {
 @media (width <= 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
@@ -633,7 +593,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
   }
 }
 
@@ -649,25 +609,7 @@ button.fitButton {
   }
 }
 
-/* 감소된 모션 */
-@media (prefers-reduced-motion: reduce) {
-  .toolbarButton,
-  .progressFill,
-  .downloadSpinner {
-    transition: none;
-    animation: none;
-  }
-
-  /* 모든 버튼에서 transform 효과 제거 */
-  .toolbarButton:hover:not(:disabled),
-  .navButton:hover:not(:disabled),
-  .downloadButton:hover:not(:disabled),
-  .settingsButton:hover:not(:disabled),
-  .closeButton:hover:not(:disabled),
-  .fitButton:hover {
-    transform: none !important;
-  }
-}
+/* 감소된 모션 전역 정책 사용 (utilities/animations.css) */
 
 /* ===== 동적 시인성 조정 ===== */
 
@@ -680,6 +622,23 @@ button.fitButton {
   box-shadow:
     0 0.25rem 1.25rem var(--xeg-color-overlay-medium),
     /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light) !important; /* 2px 8px → 0.125rem 0.5rem */
+}
+
+/* 고대비 모드 지원 (최소 오버라이드) */
+@media (prefers-contrast: high) {
+  .galleryToolbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--xeg-bg-toolbar);
+    border: var(--border-width-sm) solid var(--xeg-toolbar-border);
+    box-shadow: 0 0.25rem 1.25rem var(--xeg-color-overlay-medium);
+  }
+
+  .toolbarButton {
+    background: var(--xeg-color-neutral-100);
+    border: var(--border-width-thin) solid var(--xeg-color-neutral-900);
+    color: var(--xeg-color-neutral-900);
+  }
 }
 
 [data-theme='dark'] .galleryToolbar.highContrast {
@@ -722,7 +681,10 @@ button.fitButton {
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-md); /* Phase 49: 항상 패딩 유지 */
-  max-height: 31.25rem; /* 500px = 31.25rem - Phase 49: 항상 max-height 유지 */
+  /* 패널 높이/최대 높이/오버플로우는 토큰 기반 제어 */
+  height: var(--xeg-toolbar-panel-height);
+  max-height: var(--xeg-toolbar-panel-max-height); /* 500px = 31.25rem */
+  overflow: hidden;
 
   /* Phase 49: 애니메이션 개선 - height → opacity + transform */
   /* 초기 상태 (축소) */
@@ -730,13 +692,11 @@ button.fitButton {
   transform: translateY(-0.5em); /* 위로 살짝 이동 */
   visibility: hidden;
   pointer-events: none;
-  transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s var(--xeg-duration-normal); /* transition 후 숨김 */
+  /* 토큰화된 패널 전환 프리셋 사용 */
+  transition: var(--xeg-toolbar-panel-transition); /* transition 후 숨김 */
 
   /* Visual */
-  background: var(--xeg-comp-toolbar-bg);
+  background: var(--xeg-bg-toolbar);
   border-top: var(--border-width-thin) solid transparent; /* 1px → var(--border-width-thin) */
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
 }
@@ -747,11 +707,9 @@ button.fitButton {
   transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
-  border-top-color: var(--xeg-comp-toolbar-border);
-  transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s 0s; /* 즉시 표시 */
+  height: auto;
+  border-top-color: var(--xeg-toolbar-border);
+  transition: var(--xeg-toolbar-panel-transition); /* 즉시 표시 */
 }
 
 /* Reduced Motion Support */

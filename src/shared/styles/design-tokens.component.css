@@ -68,6 +68,16 @@
   --glass-backdrop-filter: none;
   --glass-shadow: var(--shadow-lg);
 
+  /* Media Glass Aliases (component-scoped) */
+  --xeg-media-glass-bg: var(--glass-bg);
+  --xeg-media-glass-border: var(--glass-border);
+  --xeg-media-glass-blur: var(--glass-backdrop-filter);
+  --xeg-media-glass-shadow: var(--glass-shadow);
+
+  /* Glass hover affordance */
+  --xeg-glass-border-medium: var(--glass-border);
+  --xeg-glass-shadow-medium: var(--glass-shadow);
+
   /* Media/Image Component */
   --media-border-radius: var(--xeg-radius-md);
   --media-loading-bg: var(--color-bg-secondary);
@@ -95,7 +105,13 @@
   --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
   --xeg-icon-size: var(--size-icon-md);
   --xeg-icon-line-height: 1;
+  /* 기본은 currentColor, 툴바에서는 var(--xeg-toolbar-fg) 상속됨 */
   --xeg-icon-color: currentColor;
+
+  /* Common interaction presets */
+  --xeg-focus-shadow: var(--shadow-md);
+  --xeg-active-shadow: var(--shadow-lg);
+  --xeg-hover-lift: translateY(-0.125rem);
 
   /* Icon Size Variants */
   --xeg-icon-size-sm: var(--size-icon-sm);
@@ -173,15 +189,7 @@
 /* Accessibility Media Queries */
 /* ======================================= */
 
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  :root {
-    --xeg-focus-outline: 0.1875rem solid var(--color-base-black); /* 3px = 0.1875rem */
-    --color-border-emphasis: var(--color-base-black);
-    --glass-bg: var(--color-bg-primary);
-    --glass-border: var(--color-border-emphasis);
-  }
-}
+/* 고대비 모드 지원은 semantic 레이어에서 처리합니다. */
 
 /* 투명도 감소 선호 지원 */
 @media (prefers-reduced-transparency: reduce) {
@@ -193,18 +201,7 @@
   }
 }
 
-/* 애니메이션 감소 선호 지원 */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --xeg-duration: 0ms;
-    --animation-fade-in: none;
-    --animation-fade-out: none;
-    --animation-slide-in: none;
-    --animation-slide-out: none;
-    --animation-toolbar-show: none;
-    --animation-toolbar-hide: none;
-  }
-}
+/* 애니메이션 감소 선호는 semantic 레이어에서 처리합니다. */
 
 @keyframes xeg-fade-in {
   from {

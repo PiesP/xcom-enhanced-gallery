@@ -201,14 +201,7 @@
 /**
  * 반응형 최적화
  */
-@media (prefers-reduced-motion: reduce) {
-  .xeg-optimized {
-    /* 모션 감소 선호 시 애니메이션 제거 */
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-  }
-}
+/* reduced-motion 처리는 중앙 토큰/유틸리티에서 일괄 제어합니다. */
 
 @media (prefers-reduced-data: reduce) {
   .xeg-optimized-image {
@@ -240,28 +233,9 @@
   opacity: 0;
 }
 
-/**
- * 다크 모드 성능 최적화
- */
-@media (prefers-color-scheme: dark) {
-  .xeg-optimized {
-    /* 다크 모드에서 GPU 메모리 절약 */
-    backdrop-filter: none;
-    filter: none;
-  }
-}
+/* 다크 모드 성능 최적화는 개별 컴포넌트/토큰에서 조정합니다. */
 
-/**
- * 고대비 모드 최적화
- */
-@media (prefers-contrast: high) {
-  .xeg-optimized {
-    /* 고대비 모드에서 불필요한 효과 제거 */
-    box-shadow: none;
-    text-shadow: none;
-    backdrop-filter: none;
-  }
-}
+/* 고대비 모드 최적화는 semantic 레이어에서 처리합니다. */
 
 /**
  * 프린트 최적화
@@ -272,6 +246,6 @@
     background: none !important;
     box-shadow: none !important;
     text-shadow: none !important;
-    color: black !important;
+    color: var(--color-text-primary) !important;
   }
 }

@@ -125,22 +125,7 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .modal-backdrop {
-    background: var(--xeg-comp-modal-backdrop);
-  }
-
-  .modal-surface-glass {
-    background: var(--xeg-modal-bg);
-    border-color: var(--xeg-modal-border);
-  }
-
-  .modal-surface-solid {
-    background: var(--xeg-modal-bg);
-    border-color: var(--xeg-modal-border);
-  }
-}
+/* 다크 모드 대응은 semantic 토큰으로 처리됩니다. */
 
 /* ===== 접근성 강화 ===== */
 .modal-shell:focus {
@@ -148,16 +133,7 @@
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .modal-backdrop,
-  .modal-shell {
-    transition: none;
-  }
-
-  .modal-shell {
-    transform: none;
-  }
-}
+/* reduced-motion은 중앙 유틸리티/토큰에서 처리됩니다. */
 
 .modal-shell::-webkit-scrollbar {
   width: 0.375rem; /* 6px */

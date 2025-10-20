@@ -363,7 +363,7 @@
   height: 0.5rem; /* 8px = 0.5rem */
   background: var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
-  border: var(--border-width-sm) solid white; /* 2px */
+  border: var(--border-width-sm) solid var(--color-base-white); /* 2px */
 }
 
 .xeg-thumbnail:focus,
@@ -469,90 +469,9 @@
   }
 }
 
-/* 다크 테마 지원 */
-@media (prefers-color-scheme: light) {
-  .xeg-gallery-overlay {
-    background: var(--color-overlay-light-bg);
-  }
+/* 접근성 개선: reduced-motion/contrast 처리는 design tokens에서 일원화합니다. */
 
-  .xeg-gallery-toolbar {
-    background: var(--color-overlay-light-bg);
-    color: var(--color-text-primary);
-  }
-
-  .xeg-toolbar-button {
-    background: var(--color-overlay-button-light);
-    color: var(--color-text-primary);
-  }
-
-  .xeg-toolbar-button:hover {
-    background: var(--color-overlay-button-light-hover);
-  }
-
-  .xeg-gallery-counter {
-    color: var(--color-text-on-overlay);
-  }
-
-  .xeg-progress-text {
-    color: var(--color-text-on-overlay);
-  }
-
-  .xeg-gallery-error {
-    color: var(--color-text-secondary);
-  }
-
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right {
-    background: var(--color-overlay-button-light);
-    color: var(--color-text-primary);
-  }
-
-  .xeg-gallery-nav-left:hover,
-  .xeg-gallery-nav-right:hover {
-    background: var(--color-overlay-button-light-hover);
-  }
-
-  .xeg-thumbnails-container {
-    background: var(--color-overlay-light-bg);
-  }
-}
-
-/* 접근성 개선 */
-@media (prefers-reduced-motion: reduce) {
-  .xeg-gallery-overlay,
-  .xeg-toolbar-button,
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right,
-  .xeg-thumbnail,
-  .xeg-progress-fill {
-    transition: none;
-  }
-}
-
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  .xeg-gallery-overlay {
-    background: black;
-  }
-
-  .xeg-gallery-toolbar {
-    background: black;
-    border-bottom: var(--border-width-sm) solid white; /* 2px */
-  }
-
-  .xeg-toolbar-button {
-    background: white;
-    color: black;
-    border: var(--border-width-sm) solid black; /* 2px */
-  }
-
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right {
-    background: white;
-    color: black;
-    border: var(--border-width-sm) solid black; /* 2px */
-  }
-}
+/* 고대비 모드 지원: high-contrast 스타일은 semantic 토큰 오버라이드에 위임합니다. */
 
 /* ================================ */
 /* UI 유틸리티 클래스                 */

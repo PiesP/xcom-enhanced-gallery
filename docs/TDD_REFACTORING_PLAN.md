@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-최종 업데이트: 2025-10-20
+최종 업데이트: 2025-10-21
 
 요약
 
@@ -25,6 +25,10 @@
 
 1. 번들 여유 확보 ≥ 3 KB (P2)
 
+### Toolbar/Settings 전경색 통일 (P1.2) — 완료 → COMPLETED로 이관
+
+1. 번들 여유 확보 후속 상세 (참고)
+
 - 실행: dead exports/미사용 코드 제거, logger 레벨 추가 정리, terser 옵션
   재점검.
 - 수용 기준: userscript raw ≤ 332.0 KB 또는 여유 ≥ 3.0 KB.
@@ -41,9 +45,37 @@
 - 완료 시: 본 문서에서 해당 항목 제거, 세부 내역은 COMPLETED 문서로 이관
 - 보고: `AGENTS.md`의 작업 종료 프로토콜에 따라 build/maintenance 요약 보고
 
+### Monochrome Baseline Audit (P1.1) — 완료
+
+- 범위: 흑백(그레이스케일) 기반 컬러/타이포 일관성 점검 및 수정
+- 변경:
+  - VerticalGalleryView 그라디언트에서 `color-mix(in sRGB, …)`를
+    `color-mix(in oklch, …)`로 교체, OKLCH 표기 규칙 적용(`0% 0 0deg` 등)
+  - 하드코딩된 `white`/`black` 사용을 토큰으로 치환
+    - `Gallery.module.css`: 로딩 텍스트 색상 → `var(--color-text-inverse)`
+    - `gallery-global.css`: 썸네일 인디케이터 보더 → `var(--color-base-white)`
+    - `Toolbar.module.css`: 활성/선택 상태 버튼 전경색 →
+      `var(--color-text-inverse)`
+    - `performance.css`: 프린트 색상 → `var(--color-text-primary)`
+- 검증: `npm run validate` + `npm run build` 전체 GREEN
+  (CodeQL/Stylelint/Vitest/Playwright/a11y/예산 통과)
+
+추가 후속 (소규모):
+
+1. 스타일 가드 강화(권장)
+
+- color-mix는 `in oklch`만 허용하는 룰 추가 검토
+- raw color 키워드(white/black) 금지 룰을 “토큰 또는 OKLCH만 허용”으로 명확화
+
+1. 문서 보강(권장)
+
+- `CODING_GUIDELINES.md`에 “monochrome baseline 예시” 1-2개 추가
+
+현 시점에 기능적 변경 필요 없음. 테스트/문서 수준 보강만 제안.
+
 ## 참고 문서
 
 - 완료 기록: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`
 - 개발 워크플로: `AGENTS.md`
 - 아키텍처: `docs/ARCHITECTURE.md`
-- 코딩 규칙/디자인 토큰: `docs/CODING_GUIDELINES.md` \*\*\* End Patch
+- 코딩 규칙/디자인 토큰: `docs/CODING_GUIDELINES.md`

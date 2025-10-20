@@ -128,24 +128,7 @@
 /*       접근성 고려사항         */
 /* ============================= */
 
-/* prefers-reduced-motion 지원 */
-@media (prefers-reduced-motion: reduce) {
-  .xeg-fade-in,
-  .xeg-slide-up,
-  .xeg-scale-in {
-    animation: none;
-  }
-
-  .xeg-transition,
-  .xeg-transition-hover,
-  .xeg-transition-focus {
-    transition: none;
-  }
-
-  .xeg-transition-hover:hover {
-    transform: none;
-  }
-}
+/* prefers-reduced-motion 대응은 semantic 토큰에서 duration/transition 값을 0ms로 처리합니다. */
 
 /* 애니메이션 비활성화 클래스 */
 .xeg-no-animation,

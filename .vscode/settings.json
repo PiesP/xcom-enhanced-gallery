@@ -1,8 +1,9 @@
 {
     "chat.mcp.serverSampling": {
-        "xcom-enhanced-gallery/.vscode/mcp.json: MCP_DOCKER": {
+        "xcom-enhanced-gallery/.vscode/mcp.json: brave-search-mcp-server": {
             "allowedModels": [
-                "copilot/gpt-4.1",
+                "copilot/gpt-5-mini",
+                "copilot/claude-haiku-4.5",
                 "copilot/claude-opus-4",
                 "copilot/claude-opus-41",
                 "copilot/claude-3.5-sonnet",
@@ -12,9 +13,9 @@
                 "copilot/claude-sonnet-4.5",
                 "copilot/gemini-2.0-flash-001",
                 "copilot/gemini-2.5-pro",
+                "copilot/gpt-4.1",
                 "copilot/gpt-4o",
                 "copilot/gpt-5",
-                "copilot/gpt-5-mini",
                 "copilot/gpt-5-codex",
                 "copilot/grok-code-fast-1",
                 "copilot/o3",
@@ -60,5 +61,10 @@
     "problems.decorations.enabled": true,
     // JavaScript/TypeScript 언어 서버 최적화
     "js/ts.implicitProjectConfig.checkJs": false,
-    "javascript.validate.enable": false
+    "javascript.validate.enable": false,
+
+    "[javascript][javascriptreact][typescript][typescriptreact]": {
+  "editor.maxTokenizationLineLength": 500000
+},
+    "editor.tokenizeAsync": true
 }

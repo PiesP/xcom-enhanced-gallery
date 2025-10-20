@@ -7,6 +7,47 @@
 
 ---
 
+## Phase P1.2: Toolbar/Settings 전경색 통일 ✅ 완료 (2025-10-21)
+
+### 선택 이유
+
+- Toolbar와 Settings UI의 텍스트/아이콘 전경색이 분산 정의되어 유지보수 비용
+  증가
+- 디자인 토큰 관점에서 단일 소스로 통일하여 테마 일관성과 테스트 용이성 확보
+
+### 목표
+
+- 단일 semantic 토큰 `--xeg-toolbar-fg`로 Toolbar/Settings 전경색 통일
+- Icon 컴포넌트는 기본 `currentColor`를 유지하여 컨텍스트 상속을 통한 색상
+  동기화
+
+### 구현
+
+- semantic 토큰 추가: `src/shared/styles/design-tokens.semantic.css`
+  - `--xeg-toolbar-fg: var(--xeg-color-text-primary)`
+- 소비처 리팩토링
+  - `Toolbar.module.css`: 버튼/구분자/인덱스 전경색을 `--xeg-toolbar-fg`로 통일
+  - `SettingsControls.module.css`: 툴바 컨텍스트 내 전경색 상속
+  - `Button.module.css`(variant-toolbar): 전경색을 `--xeg-toolbar-fg`로 통일
+  - `Icon.tsx`: `stroke="var(--xeg-icon-color, currentColor)"` 유지로 상위
+    컨텍스트 색상 상속, 테스트 호환성 유지
+
+### 검증 결과
+
+- 타입/린트/스타일/CodeQL: 모두 PASS
+- 테스트: Unit + Browser + E2E + a11y 전체 GREEN
+- 빌드: dev/prod 산출물 생성, validate-build PASS (gzip 87.07 KB)
+
+### 교훈
+
+1. 전경색 통일은 semantic 토큰 한 개로 충분하며, Icon은 currentColor 상속 패턴이
+   가장 호환성이 높음
+2. CSS Modules에서 색상 일관성은 상속 기반이 유지보수에 유리
+3. 디자인 토큰 변경 시 테스트는 Icon의 기본 폴백(currentColor)에 맞춰 유지하는
+   것이 회귀 최소화에 도움
+
+---
+
 ## Phase 144: 스크롤 애니메이션 & 리사이즈 테스트 ✅ **2순위 완료** (2025-10-20)
 
 ### 선택 이유

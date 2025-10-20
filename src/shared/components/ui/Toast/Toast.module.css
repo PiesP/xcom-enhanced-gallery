@@ -1,9 +1,7 @@
 /**
  * Toast Component Styles for X.com Enhanced Gallery
  *
- * @description
- * Defines styles for toast notification components supporting
- * 4 types: info, success, warning, error with design system.
+ * 애니메이션 감소 모드 지원은 중앙 유틸리티/토큰에서 처리됩니다.
  *
  * @features
  * - Color system from design-tokens.css
@@ -255,19 +253,4 @@
   box-shadow: var(--xeg-toast-shadow-focus);
 }
 
-/**
- * 애니메이션 감소 모드 지원
- */
-@media (prefers-reduced-motion: reduce) {
-  .toast {
-    animation: none;
-  }
-
-  .actionButton {
-    transition: none;
-  }
-
-  .actionButton:hover {
-    transform: none;
-  }
-}
+/* 애니메이션 감소 모드는 중앙 유틸리티/토큰에서 처리됩니다. */

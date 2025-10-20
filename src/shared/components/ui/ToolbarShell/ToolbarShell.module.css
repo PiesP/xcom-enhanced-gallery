@@ -80,27 +80,10 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .toolbar-surface-glass {
-    background: var(--xeg-toolbar-bg);
-    border-color: var(--xeg-toolbar-border);
-  }
-
-  .toolbar-surface-solid {
-    background: var(--xeg-toolbar-bg, var(--color-bg-surface));
-    border-color: var(--xeg-toolbar-border, var(--color-border-subtle));
-  }
-}
-
 /* ===== 접근성 강화 ===== */
 .toolbar-shell:focus-within {
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .toolbar-shell {
-    transition: none;
-  }
-}
+/* 다크 모드/애니메이션 감소 처리는 중앙 토큰/유틸리티에서 일괄 제어합니다. */

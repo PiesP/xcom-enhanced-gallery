@@ -216,30 +216,7 @@
    접근성 및 반응형 지원
    ======================================== */
 
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  .xeg-root {
-    background: var(--color-base-black) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  .xeg-root .button {
-    border-width: var(--border-width-medium) !important;
-  }
-}
-
-/* 모션 감소 선호도 지원 */
-@media (prefers-reduced-motion: reduce) {
-  .xeg-root *,
-  .xeg-root *::before,
-  .xeg-root *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
+/* 접근성 미디어 쿼리는 design tokens 레이어에서 일원화 처리합니다. */
 
 /* 터치 친화적 크기 */
 @media (hover: none) and (pointer: coarse) {

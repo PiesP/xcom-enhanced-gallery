@@ -55,10 +55,3 @@
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .dialog {
-    transition: none;
-    animation: none;
-  }
-}
