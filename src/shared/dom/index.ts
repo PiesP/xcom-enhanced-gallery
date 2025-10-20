@@ -4,8 +4,8 @@
  * Internal modules should import from './dom-event-manager' via relative path when necessary.
  */
 
-// Core DOM utilities (moved from Infrastructure)
-export { DOMUtils, type DOMElementCreationOptions } from './utils/dom-utils';
+// Core DOM utilities - 함수형 API (Phase 138.1)
+export type { DOMElementCreationOptions } from './utils/dom-utils';
 
 // DOM 캐싱 시스템
 export {
@@ -25,10 +25,12 @@ export {
   type QueryContainer,
 } from './selector-registry';
 
-// Named exports for convenience
+// Named exports - 함수형 API (Phase 138.1)
 export {
   addEventListener,
   createElement,
+  elementExists,
+  getDebugInfo,
   isElement,
   isElementInViewport,
   isElementVisible,
