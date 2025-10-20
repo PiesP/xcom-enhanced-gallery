@@ -19,6 +19,7 @@ import {
 import { CoreService } from '@shared/services/service-manager';
 import { cleanupVendors, getSolid } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { isHTMLElement } from '@shared/utils/type-guards';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -147,8 +148,9 @@ async function initializeToastContainer(): Promise<void> {
     }
 
     toastContainerDispose?.();
-    const host = toastContainer as HTMLElement;
-    toastContainerDispose = render(() => createComponent(ToastContainer, {}), host);
+    if (isHTMLElement(toastContainer)) {
+      toastContainerDispose = render(() => createComponent(ToastContainer, {}), toastContainer);
+    }
     logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
   } catch (error) {
     logger.warn('Toast 컨테이너 초기화 실패:', error);

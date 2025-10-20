@@ -1,5 +1,5 @@
 /**
- * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (44개)
+ * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (54개)
  */
 
 // === 기본 유틸리티 (13개) ===
@@ -36,6 +36,21 @@ export {
   safeElementCheck,
   safeTweetId,
 } from './type-safety-helpers';
+
+// === Type Guard 함수 (10개) ===
+export {
+  createEventListener,
+  isHTMLElement,
+  isHTMLImageElement,
+  isHTMLVideoElement,
+  isHTMLAnchorElement,
+  isWheelEvent,
+  isKeyboardEvent,
+  isMouseEvent,
+  hasElement,
+  isArray,
+  isRecord,
+} from './type-guards';
 
 // === 핵심 유틸리티 (10개) ===
 export {
