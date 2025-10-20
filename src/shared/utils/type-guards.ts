@@ -12,10 +12,10 @@
  * @description DOM 이벤트 리스너 등록 시 타입 안전성 확보
  * @example
  * ```typescript
- * const wheelListener = createEventListener<WheelEvent>(e => {
- *   console.log(e.deltaY); // 타입 안전
+ * const clickListener = createEventListener<MouseEvent>(e => {
+ *   console.log(e.clientX, e.clientY); // 타입 안전
  * });
- * element.addEventListener('wheel', wheelListener);
+ * element.addEventListener('click', clickListener);
  * ```
  */
 export function createEventListener<T extends Event = Event>(
@@ -75,11 +75,11 @@ export function isHTMLAnchorElement(element: unknown): element is HTMLAnchorElem
  * @returns event가 WheelEvent이면 true (타입 좁히기)
  * @example
  * ```typescript
- * window.addEventListener('wheel', (e) => {
+ * function handleScroll(e: Event) {
  *   if (isWheelEvent(e)) {
  *     console.log(e.deltaY, e.deltaX); // 타입 안전
  *   }
- * });
+ * }
  * ```
  */
 export function isWheelEvent(event: Event): event is WheelEvent {
