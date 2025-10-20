@@ -4,6 +4,7 @@
  */
 import { globalTimerManager } from './timer-management';
 import { addListener, removeEventListenerManaged } from './events';
+import { createEventListener } from './type-guards';
 
 export interface ChromeOffsets {
   readonly toolbarHeight?: number; // px
@@ -94,14 +95,11 @@ export function observeViewportCssVars(
   let resizeListenerId: string | null = null;
   if (typeof window !== 'undefined') {
     // 통합 이벤트 유틸로 등록하여 추적/정리가 용이하도록 함
-    // 설계상 필수 타입 단언 (Phase 103): UIEvent 핸들러를 EventListener로 변환
-    // 이유: addEventListener는 EventListener 타입만 허용하지만, 핸들러는 구체적인 UIEvent 타입
-    // 배경: TypeScript의 EventListener 정의는 모든 이벤트 타입을 커버하지 못함
-    // 대안: 제네릭 래퍼 함수 추가 시 복잡도/성능 오버헤드 증가 (Phase 105+)
+    // Type Guard 래퍼로 타입 단언 제거 (Phase 135)
     resizeListenerId = addListener(
       window,
       'resize',
-      onResize as unknown as EventListener,
+      createEventListener(onResize),
       { passive: true },
       'viewport:resize'
     );
