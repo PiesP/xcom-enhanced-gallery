@@ -51,15 +51,6 @@ interface SelectorStats {
 }
 
 /**
- * 디버그 정보가 포함된 셀렉터
- */
-interface DebugSelector<T, R> {
-  select: SelectorFn<T, R>;
-  getStats: () => SelectorStats;
-  clearStats: () => void;
-}
-
-/**
  * 글로벌 디버그 설정
  */
 let isDebugMode = false;
@@ -148,9 +139,9 @@ export function createSelector<T, R>(
 
   // 디버그 정보 추가
   if (debug) {
-    const debugSelector = optimizedSelector as unknown as DebugSelector<T, R>;
-    debugSelector.getStats = () => ({ ...stats });
-    debugSelector.clearStats = () => {
+    const selector = optimizedSelector as unknown as Record<string, unknown>;
+    selector.getStats = () => ({ ...stats });
+    selector.clearStats = () => {
       stats.computeCount = 0;
       stats.cacheHits = 0;
       stats.cacheMisses = 0;

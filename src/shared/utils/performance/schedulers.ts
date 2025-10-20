@@ -4,6 +4,7 @@
  */
 
 import { globalTimerManager } from '../timer-management';
+import { isGlobalLike } from '../core';
 
 export type SchedulerHandle = { cancel: () => void };
 
@@ -19,12 +20,11 @@ type GlobalLike = {
  */
 export function scheduleRaf(task: () => void): SchedulerHandle {
   try {
-    const g: GlobalLike | undefined =
-      typeof globalThis !== 'undefined'
-        ? (globalThis as unknown as GlobalLike)
-        : typeof window !== 'undefined'
-          ? (window as unknown as GlobalLike)
-          : undefined;
+    const g: GlobalLike | undefined = isGlobalLike(globalThis)
+      ? (globalThis as GlobalLike)
+      : typeof window !== 'undefined' && isGlobalLike(window)
+        ? (window as GlobalLike)
+        : undefined;
     const raf: ((cb: FrameRequestCallback) => number) | undefined = g?.requestAnimationFrame;
     const caf: ((h: number) => void) | undefined = g?.cancelAnimationFrame;
     if (typeof raf === 'function') {
@@ -88,7 +88,9 @@ export function scheduleRaf(task: () => void): SchedulerHandle {
  */
 export function scheduleMicrotask(task: () => void): SchedulerHandle {
   try {
-    const g: GlobalLike | undefined = globalThis as unknown as GlobalLike;
+    const g: GlobalLike | undefined = isGlobalLike(globalThis)
+      ? (globalThis as GlobalLike)
+      : undefined;
     const qm: ((cb: () => void) => void) | undefined = g?.queueMicrotask;
     if (typeof qm === 'function') {
       qm(() => {

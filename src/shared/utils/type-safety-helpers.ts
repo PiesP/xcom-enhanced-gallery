@@ -297,3 +297,143 @@ export function removeUndefinedProperties<T extends Record<string, unknown>>(obj
   }
   return result;
 }
+
+// ========== DOM/Event 타입 가드 ==========
+
+/**
+ * EventListener 호환 함수 래퍼 (TypeScript strict 모드용)
+ * addEventListener는 EventListener 타입만 허용하지만,
+ * 실제 핸들러는 구체적인 이벤트 타입(e.g., UIEvent)을 받습니다.
+ */
+export function createEventListener<T extends Event = Event>(
+  handler: (this: EventTarget, event: T) => void
+): EventListener {
+  return handler as unknown as EventListener;
+}
+
+/**
+ * 글로벌 객체가 필요한 속성을 가지고 있는지 검증
+ * (requestIdleCallback, requestAnimationFrame 등)
+ */
+export function isGlobalLike(obj: unknown): obj is typeof globalThis {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return (
+    typeof objRecord.requestIdleCallback === 'function' ||
+    typeof objRecord.setTimeout === 'function'
+  );
+}
+
+/**
+ * window 객체가 EventTarget인지 확인
+ */
+export function isWindowLike(obj: unknown): obj is Window & EventTarget {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return (
+    typeof objRecord.addEventListener === 'function' &&
+    typeof objRecord.removeEventListener === 'function' &&
+    typeof objRecord.dispatchEvent === 'function'
+  );
+}
+
+/**
+ * 객체가 이벤트를 발행할 수 있는지 확인 (EventTarget 호환)
+ */
+export function isEventTargetLike(obj: unknown): obj is EventTarget {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return (
+    typeof objRecord.addEventListener === 'function' &&
+    typeof objRecord.removeEventListener === 'function' &&
+    typeof objRecord.dispatchEvent === 'function'
+  );
+}
+
+// ========== 서비스/객체 타입 가드 ==========
+
+/**
+ * 객체가 지정된 메서드를 가지고 있는지 확인
+ */
+export function hasAllMethods(obj: unknown, methods: string[]): obj is Record<string, unknown> {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return methods.every(method => typeof objRecord[method] === 'function');
+}
+
+/**
+ * 객체가 지정된 속성을 가지고 있는지 확인
+ */
+export function hasAllProperties(obj: unknown, props: string[]): obj is Record<string, unknown> {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return props.every(prop => prop in objRecord);
+}
+
+/**
+ * 실행 가능한 함수인지 확인
+ */
+export function isCallable(value: unknown): value is (...args: unknown[]) => unknown {
+  return typeof value === 'function';
+}
+
+/**
+ * GM_info 객체가 유효한 스크립트 정보를 가지고 있는지 확인
+ */
+export function isGMUserScriptInfo(obj: unknown): obj is { scriptHandler?: string } {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return 'scriptHandler' in objRecord || Object.keys(objRecord).length > 0;
+}
+
+/**
+ * ProgressEvent 호환 객체인지 확인
+ */
+export function isProgressEventLike(obj: unknown): obj is { type: string } {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return typeof objRecord.type === 'string';
+}
+
+/**
+ * MediaService 호환 객체인지 확인
+ */
+export function isMediaServiceLike(obj: unknown): obj is {
+  togglePlayPauseCurrent: () => void;
+  volumeUpCurrent: () => void;
+  volumeDownCurrent: () => void;
+  toggleMuteCurrent: () => void;
+} {
+  if (obj === null || typeof obj !== 'object') {
+    return false;
+  }
+
+  const objRecord = obj as Record<string, unknown>;
+  return (
+    typeof objRecord.togglePlayPauseCurrent === 'function' &&
+    typeof objRecord.volumeUpCurrent === 'function' &&
+    typeof objRecord.volumeDownCurrent === 'function' &&
+    typeof objRecord.toggleMuteCurrent === 'function'
+  );
+}

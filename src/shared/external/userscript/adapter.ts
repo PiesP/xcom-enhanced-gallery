@@ -4,6 +4,7 @@
  * - GM_* 미지원 환경(Node/Vitest)에서도 안전한 fallback 제공
  */
 import type { GMXmlHttpRequestOptions, BrowserEnvironment } from '@shared/types/core/userscript';
+import { isGMUserScriptInfo, isProgressEventLike } from '@shared/utils/core';
 
 // GMUserScriptInfo import 제거 (타입 충돌 방지)
 type GMUserScriptInfo = Record<string, unknown>;
@@ -54,9 +55,9 @@ function hasGMInfo(g: unknown): g is GlobalWithGM {
 function detectManager(): UserscriptManager {
   try {
     const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
-    const handler = (
-      info as unknown as { scriptHandler?: string }
-    )?.scriptHandler?.toLowerCase?.() as string | undefined;
+    const handler = isGMUserScriptInfo(info)
+      ? (info as { scriptHandler?: string }).scriptHandler?.toLowerCase?.()
+      : undefined;
     if (!handler) return 'unknown';
     if (handler.includes('tamper')) return 'tampermonkey';
     if (handler.includes('grease')) return 'greasemonkey';
@@ -70,7 +71,7 @@ function detectManager(): UserscriptManager {
 function safeInfo(): GMUserScriptInfo | null {
   try {
     const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
-    return (info as unknown as GMUserScriptInfo) ?? null;
+    return isGMUserScriptInfo(info) ? (info as unknown as GMUserScriptInfo) : null;
   } catch {
     return null;
   }
@@ -151,7 +152,10 @@ function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | 
       })
       .finally(() => {
         // JSDOM/Node 환경에서는 ProgressEvent가 없을 수 있으므로 안전한 스텁 객체 사용
-        options.onloadend?.({ type: 'loadend' } as unknown as ProgressEvent);
+        const event = { type: 'loadend' };
+        if (isProgressEventLike(event)) {
+          options.onloadend?.(event as unknown as ProgressEvent);
+        }
       });
 
     return { abort: () => controller.abort() };

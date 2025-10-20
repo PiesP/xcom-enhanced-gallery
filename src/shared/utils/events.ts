@@ -6,6 +6,7 @@ import { logger } from '../logging/logger';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
 import { detectMediaFromClick as detectMediaElement } from './media/media-click-detector';
+import { isMediaServiceLike } from './type-safety-helpers';
 import {
   gallerySignals,
   navigateToItem,
@@ -73,11 +74,12 @@ function getCurrentGalleryVideo(): HTMLVideoElement | null {
  */
 function getMediaService(): MediaServiceLike | null {
   try {
-    // 설계상 필수 타입 단언 (Phase 103): 서비스 컨테이너 반환값을 구체적 타입으로 변환
-    // 이유: getMediaServiceFromContainer()는 범용 object 타입 반환, 구체적 인터페이스 필요
-    // 배경: 서비스 컨테이너는 런타임 등록 방식으로 컴파일 타임 타입 추론 불가
-    // 대안: 타입 안전 컨테이너 (서비스 키 타입 맵핑) 도입 시 타입 단언 제거 가능 (Phase 104+)
-    return getMediaServiceFromContainer() as unknown as MediaServiceLike;
+    const service = getMediaServiceFromContainer();
+    // Type Guard를 사용하여 타입 안전성 확보
+    if (isMediaServiceLike(service)) {
+      return service as unknown as MediaServiceLike;
+    }
+    return null;
   } catch {
     return null;
   }
