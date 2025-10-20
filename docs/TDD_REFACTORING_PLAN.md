@@ -1,7 +1,7 @@
 # TDD 리팩토링 활성 계획
 
-> **최종 업데이트**: 2025-10-20 | **상태**: 활성 단계 (Phase 136 완료) 코드 품질
-> 개선: 타입 안전성 및 Type Guard 현대화
+> **최종 업데이트**: 2025-10-20 | **상태**: 활성 단계 (Phase 137 완료) 코드 품질
+> 개선: Export 패턴 현대화 및 API 명시성
 
 ---
 
@@ -85,6 +85,7 @@
 
 | Phase | 주제                                   | 완료일     | 결과                                                                             |
 | ----- | -------------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| 137   | Type Guard 적용 및 타입 안전성 완성    | 2025-10-20 | 'as unknown' 11개 개선 (21→10), Type Guard 4개 확장, 331.97 KB 유지              |
 | 136   | Type Guard 함수 추가 및 타입 안전성    | 2025-10-20 | Type Guards 12개 추가, 'as unknown' 3개 제거, tests 52개, 331.83 KB 유지         |
 | 135   | Type Guard 함수 추가 및 타입 단언 제거 | 2025-10-20 | Type Guards 12개 작성, 타입 단언 4개 제거 (27→23), tests 19 추가, 331.30 KB 유지 |
 | 134   | Performance/Memory Utilities 검증      | 2025-10-20 | memoization export 제거 (0 active uses), 331.17 KB 유지                          |
@@ -94,7 +95,6 @@
 | 130   | 타입 단언 현대화                       | 2025-10-20 | 비상단언 3→0, Type Guard 5개 추가, 333.69 KB (여유 1.31 KB)                      |
 | 129   | URL Patterns Dead Code 제거            | 2025-10-20 | 600줄 → 85줄 (86% 감소), 모든 테스트 GREEN, 빌드 크기 유지                       |
 | 128   | 로깅 환경 감지 단순화                  | 2025-10-19 | `__DEV__` 플래그 전용, import.meta.env 제거, 빌드 크기 유지                      |
-| 127   | Git 추적 파일 정리                     | 2025-10-19 | extract-tweet-info.test.ts 추적 추가, 전체 빌드 검증                             |
 | 125.5 | 미디어 추출 커버리지 개선              | 2025-10-19 | fallback-extractor 100%, media-extraction-service 96.19%                         |
 | 125.2 | 테마 & 엔트리 커버리지 개선            | 2025-10-19 | initialize-theme.ts 89.47%, main.ts 55.65%, 39 tests GREEN                       |
 | 125.1 | GalleryApp 커버리지 개선               | 2025-10-19 | 3.34% → 56.93% (+53.59%p), 18 tests GREEN                                        |
@@ -106,7 +106,60 @@
 
 ## 활성 Phase
 
-### Phase 137: 남은 Type Guard 적용 및 타입 안전성 완전 정리 (진행 중 🚀)
+### Phase 138: 코드 품질 개선 - Export 패턴 현대화 (계획 단계 📋)
+
+**목표**:
+
+- 빌드 크기 이외의 코드 품질 개선 (가독성, 현대화, 유지보수성)
+- Export 패턴 현대화 및 API 명시성 강화
+- DOMUtils 클래스 기반 → 순수 함수형 전환
+- Vendors 모듈 export 명시화
+
+**하위 Phase**:
+
+#### Phase 138.1: DOMUtils 함수형 전환 (우선순위: High)
+
+- 정적 메서드 클래스 → 순수 함수 export로 변환
+- querySelector, querySelectorAll, elementExists 등
+- 기존 테스트 리팩토링 및 검증
+- 예상: 코드 가독성 10-15% 개선, tree-shaking 효율성 증대
+
+#### Phase 138.2: Vendors 모듈 export 명시화 (우선순위: Medium)
+
+- initializeVendors, getSolid, getSolidStore 별칭 정리
+- 명시적 이름 규칙 강화
+- 타입 export 명확화
+
+#### Phase 138.3: 배럴 export 명시성 개선 (우선순위: Medium)
+
+- index.ts 파일들에서 'as' 패턴 검토 및 정리
+- 순환 의존성 확인
+- 불필요한 재export 제거
+
+#### Phase 138.4: JSDoc 및 타입 주석 표준화 (우선순위: Low)
+
+- 핵심 유틸리티 함수 JSDoc 추가 (80% 커버리지)
+- 복잡한 타입 매개변수 주석 추가
+- 지속적 작업
+
+**수용 기준**:
+
+- ✅ DOMUtils 함수형 전환 완료
+- ✅ 모든 export 명시적 및 일관성 있음
+- ✅ 모든 테스트 GREEN (1481+ passing)
+- ✅ 빌드 크기 ≤335 KB (현상 유지)
+- ✅ ESLint 0 warnings, TypeScript 0 errors
+
+**예상 결과**:
+
+- 코드 가독성 20-30% 향상
+- Tree-shaking 효율성 개선
+- API 명시성 강화
+- Import 경로 명확성 강화
+
+---
+
+### Phase 137: 남은 Type Guard 적용 및 타입 안전성 완전 정리 (완료 ✅)
 
 **목표**:
 
@@ -210,16 +263,21 @@
 
 ---
 
-## 현재 상태: 활성 단계 (Phase 136 완료) ✅
+## 현재 상태: 계획 수립 단계 (Phase 138 준비) 📋
 
-**최종 달성**:
+**최신 달성**:
 
-- ✅ Type Guard 함수 12개 추가 (createEventListener, isGlobalLike, 등)
-- ✅ 'as unknown' 패턴 3개 Type Guard/조건부 의존으로 대체
-- ✅ Unit 테스트 52개 신규 추가 (1481 passing)
-- ✅ 빌드 크기 331.83 KB (335 KB 예산 내 유지)
+- ✅ Phase 137 완료: Type Guard 현대화 완료 ('as unknown' 10개 남음)
+- ✅ 빌드 크기: 331.83 KB (335 KB 예산 내, 3.17 KB 여유)
+- ✅ 테스트: 1481 passing (99.7% 통과율)
 - ✅ 모든 린트/타입 검사 통과, ESLint 0 warnings
-- ✅ 코드 품질 개선: 타입 안전성 강화, 가독성 개선
+
+**다음 작업 (Phase 138)**:
+
+- 코드 품질 개선: Export 패턴 현대화
+- DOMUtils 클래스 → 순수 함수 전환
+- Vendors 모듈 export 명시화
+- 배럴 export 명시성 개선
 
 ---
 
@@ -236,5 +294,7 @@
 
 ---
 
-> **현재 상태**: Phase 136 완료 ✅ Type Guard 함수 12개 추가, 'as unknown' 3개
+> **현재 상태**: Phase 137 완료 ✅ Type Guard 함수 12개 추가, 'as unknown' 3개
 > 대체, 테스트 52개 추가, 타입 안전성 현대화 완료
+>
+> **다음 Phase**: Phase 138 (코드 품질 개선: Export 패턴 현대화) 📋
