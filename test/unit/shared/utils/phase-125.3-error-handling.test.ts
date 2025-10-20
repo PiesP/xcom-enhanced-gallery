@@ -361,19 +361,24 @@ describe('Phase 125.3: error-handling.ts', () => {
     it('should throw after max retries exceeded', async () => {
       const operation = vi.fn().mockRejectedValue(new Error('Network error'));
 
+      // Start the promise and immediately attach rejection handler
       const promise = withRetry(operation, 2, 100, { operation: 'maxRetryOp' });
 
-      // Fast-forward through all retry delays
-      await vi.advanceTimersByTimeAsync(100); // 1st retry (100ms)
-      await vi.advanceTimersByTimeAsync(200); // 2nd retry (200ms)
-
-      await expect(promise).rejects.toMatchObject({
+      // Attach rejection handler to prevent unhandled rejection warning
+      const resultPromise = expect(promise).rejects.toMatchObject({
         message: 'Network error',
         context: {
           operation: 'maxRetryOp',
           metadata: { maxRetries: 2, finalAttempt: true },
         },
       });
+
+      // Now fast-forward through all retry delays
+      await vi.advanceTimersByTimeAsync(100); // 1st retry (100ms)
+      await vi.advanceTimersByTimeAsync(200); // 2nd retry (200ms)
+
+      // Wait for assertion
+      await resultPromise;
 
       expect(operation).toHaveBeenCalledTimes(3); // Initial + 2 retries
     });
