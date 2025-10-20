@@ -12,8 +12,18 @@ import { logger } from '../logging/logger';
 
 /**
  * 안전한 querySelector 실행
- * 1개 인자: document에서 검색 (기존 API 호환)
- * 2개 인자: 지정된 root에서 검색
+ * @template T - 반환할 요소 타입 (기본값: Element)
+ * @param selectorOrRoot - CSS 선택자 또는 검색 범위 (ParentNode)
+ * @param selector - CSS 선택자 (selector 파라미터일 때만 사용)
+ * @returns 찾은 요소 또는 null (실패 안전)
+ * @description
+ * - 1개 파라미터: document에서 검색 (기존 API 호환)
+ * - 2개 파라미터: 지정된 root에서 검색
+ * @example
+ * ```typescript
+ * const btn1 = safeQuerySelector<HTMLButtonElement>('button');
+ * const btn2 = safeQuerySelector(container, 'button');
+ * ```
  */
 export function safeQuerySelector<T extends Element = Element>(
   selectorOrRoot: string | ParentNode,
@@ -35,7 +45,15 @@ export function safeQuerySelector<T extends Element = Element>(
 }
 
 /**
- * 갤러리 내부 요소인지 확인
+ * 갤러리 내부 요소 여부 확인
+ * @param element - 검사할 요소 (null 안전)
+ * @returns element가 갤러리 내부이면 true
+ * @example
+ * ```typescript
+ * if (isInsideGallery(target)) {
+ *   return; // 갤러리 내부 이벤트 무시
+ * }
+ * ```
  */
 export function isInsideGallery(element: Element | null): boolean {
   if (!element) return false;
@@ -50,6 +68,8 @@ export function isInsideGallery(element: Element | null): boolean {
 
 /**
  * 요소가 갤러리 컨테이너인지 확인
+ * @param element - 검사할 요소 (null 안전)
+ * @returns element가 갤러리 컨테이너이면 true
  */
 export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
@@ -66,6 +86,8 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
 
 /**
  * 이벤트가 갤러리 내부 이벤트인지 확인
+ * @param event - 검사할 이벤트
+ * @returns 이벤트의 target이 갤러리 내부이면 true
  */
 export function isGalleryInternalEvent(event: Event): boolean {
   const target = event.target as HTMLElement;
@@ -74,6 +96,8 @@ export function isGalleryInternalEvent(event: Event): boolean {
 
 /**
  * 갤러리 이벤트를 블록해야 하는지 확인
+ * @param event - 검사할 이벤트
+ * @returns 갤러리 이벤트이면 true (블록해야 함)
  */
 export function shouldBlockGalleryEvent(event: Event): boolean {
   return isGalleryInternalEvent(event);
