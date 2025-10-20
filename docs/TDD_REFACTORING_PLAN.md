@@ -221,7 +221,7 @@
 
 ---
 
-#### Phase 140.4: 저커버리지 파일 직접 개선 (계획 중 📋)
+#### Phase 140.4: 저커버리지 파일 직접 개선 (진행 중 �)
 
 **현재 커버리지 (2025-10-20)**:
 
@@ -244,19 +244,105 @@
 
 **우선순위 타겟 파일**:
 
-1. **`core-utils.ts`** (25.14% → 70%+): 핵심 유틸리티
+1. ✅ **`core-utils.ts`** (25.14% → 92.57%): 핵심 유틸리티
 2. **`events.ts`** (19.73% → 70%+): 이벤트 시스템
 3. **`keyboard-navigation.ts`** (18.91% → 70%+): 키보드 네비게이션
 4. **`css-utilities.ts`** (18.18% → 60%+): CSS 유틸리티
 5. **`scroll-utils.ts`** (10.6% → 60%+): 스크롤 유틸리티
 6. **`image-filter.ts`** (4.71% → 50%+): 이미지 필터링
 
-**다음 작업**:
+**진행 중 작업**:
 
-- [ ] 통합 테스트 시나리오 설계
-- [ ] 저커버리지 파일 테스트 추가
-- [ ] 코드 검증 테스트 템플릿 작성
-- [ ] Phase 140.3 실행 및 커버리지 측정
+- [x] core-utils.ts 테스트 완료 (592 tests)
+- [ ] Phase 140.5로 스크롤 체이닝 테스트 분리
+
+---
+
+#### Phase 140.5: 스크롤 체이닝 방지 테스트 (계획 중 📋)
+
+**목표**:
+
+- 스크롤 체이닝(scroll chaining) 방지 메커니즘의 다양한 시나리오 검증
+- 단위/브라우저/E2E 테스트를 통한 포괄적 커버리지 확보
+- scroll-utils.ts, events.ts, useGalleryScroll.ts 커버리지 개선
+
+**배경**:
+
+스크롤 체이닝은 갤러리 스크롤이 경계에 도달했을 때 부모(트위터 페이지)로
+스크롤이 전파되는 현상입니다. 현재 다음과 같은 방지 메커니즘이 구현되어
+있습니다:
+
+1. **CSS 수준**: `overscroll-behavior: none` (VerticalGalleryView.module.css)
+2. **JavaScript 수준**:
+   - `useGalleryScroll` 훅에서 갤러리 휠 이벤트를 passive로 처리
+   - `preventTwitterScroll` 함수에서 트위터 스크롤 차단 (passive: false)
+3. **이벤트 처리**:
+   - `events.ts`의 키보드 네비게이션에서 `preventDefault()`로 기본 스크롤 차단
+   - ArrowLeft/Right, Home/End, Space, PageUp/Down 등의 네비게이션 키 처리
+
+**테스트 시나리오**:
+
+**A. 단위 테스트 (JSDOM)**:
+
+1. **CSS 속성 검증** (scroll-chaining-css.test.ts)
+   - `overscroll-behavior: none` 속성이 갤러리 컨테이너에 적용되었는지 확인
+   - CSS 모듈이 올바르게 로드되는지 검증
+
+2. **이벤트 핸들러 검증** (scroll-chaining-events.test.ts)
+   - `preventDefault()` 호출 검증 (키보드 네비게이션 키)
+   - `stopPropagation()` 호출 검증 (이벤트 버블링 차단)
+   - 갤러리 열린 상태에서만 차단 동작 확인
+
+3. **경계 조건 테스트** (scroll-chaining-boundary.test.ts)
+   - 갤러리 맨 위/맨 아래에서 추가 스크롤 시도
+   - 트위터 페이지 스크롤이 발생하지 않는지 확인
+   - `preventTwitterScroll` 함수 호출 검증
+
+**B. 브라우저 테스트 (Chromium)**:
+
+1. **실제 이벤트 전파 테스트** (scroll-chaining-propagation.test.ts)
+   - 실제 DOM에서 wheel 이벤트 디스패치
+   - 부모 요소로 이벤트가 전파되지 않는지 확인
+   - `overscroll-behavior` CSS 속성의 실제 동작 검증
+
+2. **중첩 스크롤 컨테이너** (scroll-chaining-nested.test.ts)
+   - 갤러리(자식)와 트위터 페이지(부모) 중첩 스크롤
+   - 갤러리 스크롤이 끝에 도달해도 부모 스크롤 미발생 검증
+
+**C. E2E 테스트 (Playwright)**:
+
+1. **갤러리 경계 스크롤** (scroll-chaining-boundary.spec.ts)
+   - 갤러리를 맨 위까지 스크롤
+   - 추가 위쪽 스크롤 시 페이지 스크롤 미발생 검증
+   - 맨 아래까지 스크롤 후 아래쪽 스크롤 시도
+   - 페이지 스크롤 위치 변화 없음 확인
+
+2. **키보드 네비게이션 페이지 스크롤 차단** (scroll-chaining-keyboard.spec.ts)
+   - 갤러리 열린 상태에서 Space, PageUp/Down 키 입력
+   - 페이지 스크롤이 발생하지 않는지 확인
+   - ArrowUp/Down 키로 비디오 볼륨 조절 시 페이지 스크롤 미발생
+
+3. **실제 사용자 시나리오** (scroll-chaining-user-scenario.spec.ts)
+   - 갤러리 열기 → 빠른 스크롤 → 경계 도달 → 페이지 정지 상태 유지
+   - 갤러리 닫기 → 트위터 페이지 스크롤 정상 동작
+
+**예상 커버리지 개선**:
+
+- `scroll-utils.ts`: 10.6% → 60%+ (+49.4%p)
+- `events.ts`: 19.73% → 40%+ (+20.27%p)
+- `useGalleryScroll.ts`: 기존 커버리지 유지 + 엣지 케이스 추가
+
+**수용 기준**:
+
+- [ ] 단위 테스트 15+ (CSS, 이벤트 핸들러, 경계 조건)
+- [ ] 브라우저 테스트 8+ (실제 전파, 중첩 스크롤)
+- [ ] E2E 테스트 6+ (경계 스크롤, 키보드, 사용자 시나리오)
+- [ ] scroll-utils.ts 커버리지 ≥60%
+- [ ] events.ts 커버리지 ≥40%
+- [ ] 모든 테스트 GREEN
+- [ ] 빌드 크기 ≤335 KB 유지
+
+**완료일**: TBD
 
 ---
 
