@@ -13,8 +13,8 @@ describe('Announce routing hardening (RED)', () => {
     const polite = ensurePoliteLiveRegion();
     const assertive = ensureAssertiveLiveRegion();
 
-    const { UnifiedToastManager } = await import('@/shared/services');
-    const tm = UnifiedToastManager.getInstance();
+    const { ToastManager } = await import('@/shared/services');
+    const tm = ToastManager.getInstance();
 
     // Spy on DOM mutations inside live regions
     const setText = vi.spyOn(polite, 'appendChild');
