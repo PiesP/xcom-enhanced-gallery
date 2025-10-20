@@ -38,6 +38,57 @@
 
 ## 활성 Phase
 
+### Phase 138.4: JSDoc 표준화 및 IDE 자동완성 개선 (진행 중 🚀)
+
+**목표**:
+
+- 핵심 유틸리티 함수들의 JSDoc 표준화 (80% 커버리지)
+- IDE 자동완성 및 개발자 경험 개선
+- 복잡한 함수의 파라미터/리턴값 명확화
+
+**현재 상태**:
+
+- ✅ Type Guard 함수: 완전한 JSDoc (12개, 100%)
+- ✅ Type Safety Helper: 대부분 JSDoc 있음 (safeParseInt, safeParseFloat 등)
+- ✅ DOM Utils: 기본 JSDoc 있음 (querySelector, createElement 등)
+- ⚠️ 개선 필요: 일부 보조 함수, 엣지 케이스 처리 미설명
+- ⏳ 목표: 35-40개 함수에 @param, @returns, @example 추가
+
+**대상 파일 (우선순위)**:
+
+1. **Query/Selection 함수** (High)
+   - `dom-utils.ts`: querySelector, querySelectorAll, elementExists
+   - `style-utils.ts`: combineClasses, toggleClass, setCSSVariable
+   - Accessibility helpers
+
+2. **Type Guards & Validators** (Medium)
+   - `type-guards.ts`: 기존 JSDoc 확인 및 보강
+   - `type-safety-helpers.ts`: safeParseInt, safeArrayGet 등
+
+3. **State & Signal 관련** (Medium)
+   - Signal selector helpers
+   - Nested value helpers (getNestedValue, setNestedValue)
+
+4. **Performance Utilities** (Low)
+   - createDebouncer, rafThrottle, measurePerformance
+
+**수용 기준**:
+
+- ✅ 모든 exported 함수 JSDoc 확인 (최소: @fileoverview, function description)
+- ✅ 복잡한 함수 @param, @returns 추가 (20-25개)
+- ✅ @example 추가 (5-10개 핵심 함수)
+- ✅ 모든 테스트 GREEN (1481+ passing)
+- ✅ 빌드 크기 유지 (≤335 KB)
+- ✅ ESLint 0 warnings, TypeScript 0 errors
+
+**예상 결과**:
+
+- JSDoc 커버리지: ~80% (35-40개 함수)
+- IDE 자동완성: 개선율 40-50%
+- 개발자 온보딩: 시간 절감
+
+---
+
 ### Phase 138.2: Vendors 모듈 export 명시화 (완료 ✅)
 
 **목표**:

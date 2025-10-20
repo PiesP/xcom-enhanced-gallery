@@ -23,7 +23,16 @@ export interface DOMElementCreationOptions {
 // ========== 요소 선택 및 검증 ==========
 
 /**
- * 안전한 요소 선택
+ * 안전한 요소 선택 (CSS 선택자)
+ * @template T - 반환할 요소 타입 (기본값: Element)
+ * @param selector - CSS 선택자 문자열
+ * @param container - 검색 범위 (기본값: document)
+ * @returns 찾은 첫 번째 요소 또는 null (잘못된 선택자도 null 반환)
+ * @example
+ * ```typescript
+ * const button = querySelector<HTMLButtonElement>('button.primary');
+ * const container = querySelector('#gallery', document.body);
+ * ```
  */
 export function querySelector<T extends Element = Element>(
   selector: string,
@@ -38,7 +47,16 @@ export function querySelector<T extends Element = Element>(
 }
 
 /**
- * 안전한 모든 요소 선택
+ * 안전한 모든 요소 선택 (CSS 선택자)
+ * @template T - 반환할 요소 타입 (기본값: Element)
+ * @param selector - CSS 선택자 문자열
+ * @param container - 검색 범위 (기본값: document)
+ * @returns NodeList (요소 없으면 빈 NodeList, 잘못된 선택자도 빈 NodeList)
+ * @example
+ * ```typescript
+ * const buttons = querySelectorAll<HTMLButtonElement>('.btn');
+ * buttons.forEach(btn => btn.disabled = true);
+ * ```
  */
 export function querySelectorAll<T extends Element = Element>(
   selector: string,
@@ -54,6 +72,15 @@ export function querySelectorAll<T extends Element = Element>(
 
 /**
  * 요소 존재 여부 확인
+ * @param selector - CSS 선택자 문자열
+ * @param container - 검색 범위 (기본값: document)
+ * @returns 요소가 존재하면 true, 없거나 선택자가 잘못되면 false
+ * @example
+ * ```typescript
+ * if (elementExists('.modal.open')) {
+ *   closeModal();
+ * }
+ * ```
  */
 export function elementExists(selector: string, container: ParentNode = document): boolean {
   return querySelector(selector, container) !== null;
@@ -63,6 +90,18 @@ export function elementExists(selector: string, container: ParentNode = document
 
 /**
  * 안전한 요소 생성
+ * @template K - HTML 요소 태그명 타입
+ * @param tagName - 생성할 HTML 요소 태그명 (예: 'div', 'button')
+ * @param options - 요소 생성 옵션 (속성, 클래스, 스타일 등)
+ * @returns 생성된 요소 또는 null (생성 실패 시)
+ * @example
+ * ```typescript
+ * const btn = createElement('button', {
+ *   classes: ['btn', 'btn-primary'],
+ *   attributes: { type: 'button', 'aria-label': 'Close' },
+ *   textContent: 'Click me'
+ * });
+ * ```
  */
 export function createElement<K extends keyof HTMLElementTagNameMap>(
   tagName: K,
@@ -104,6 +143,13 @@ export function createElement<K extends keyof HTMLElementTagNameMap>(
 
 /**
  * 안전한 요소 제거
+ * @param element - 제거할 요소 (null 시 무시)
+ * @returns 제거 성공 여부
+ * @example
+ * ```typescript
+ * const removed = removeElement(element);
+ * if (removed) console.log('Element removed');
+ * ```
  */
 export function removeElement(element: Element | null): boolean {
   try {
@@ -122,6 +168,16 @@ export function removeElement(element: Element | null): boolean {
 
 /**
  * 안전한 이벤트 리스너 추가
+ * @param element - 대상 요소 (null 시 무시)
+ * @param type - 이벤트 타입 (예: 'click', 'keydown')
+ * @param listener - 이벤트 핸들러 함수
+ * @param options - 리스너 옵션 (capture, once 등)
+ * @returns 등록 성공 여부
+ * @example
+ * ```typescript
+ * const success = addEventListener(button, 'click', handleClick);
+ * addEventListener(document, 'scroll', handleScroll, { capture: true });
+ * ```
  */
 export function addEventListener(
   element: Element | null,
@@ -143,6 +199,15 @@ export function addEventListener(
 
 /**
  * 안전한 이벤트 리스너 제거
+ * @param element - 대상 요소 (null 시 무시)
+ * @param type - 이벤트 타입 (추가할 때와 동일)
+ * @param listener - 이벤트 핸들러 함수 (추가할 때와 동일)
+ * @param options - 리스너 옵션 (추가할 때와 동일)
+ * @returns 제거 성공 여부
+ * @example
+ * ```typescript
+ * removeEventListener(button, 'click', handleClick);
+ * ```
  */
 export function removeEventListener(
   element: Element | null,
