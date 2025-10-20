@@ -59,7 +59,7 @@
   /* 스크롤 성능 최적화 */
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
 
   /* 스크롤 스냅 */
   scroll-snap-type: y mandatory;
@@ -177,7 +177,7 @@
   grid-template-rows: min-content 1fr min-content;
 
   /* 오버플로우 최적화 */
-  overflow: hidden;
+  overflow: clip;
   overflow-y: auto;
 }
 

@@ -39,7 +39,7 @@
   background: var(--xeg-modal-bg);
   border-radius: var(--xeg-radius-lg);
   border: 0.0625rem solid var(--xeg-modal-border); /* 1px */
-  overflow: hidden;
+  overflow: clip;
 
   /* 시작 상태 */
   transform: scale(0.95) translateY(-0.625rem); /* -10px */

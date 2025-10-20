@@ -245,7 +245,7 @@
   font-weight: var(--xeg-font-weight-medium);
   color: var(--xeg-color-text-primary);
   margin-bottom: var(--xeg-spacing-xs);
-  overflow: hidden;
+  overflow: clip;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -392,7 +392,7 @@
   width: 100%;
   height: auto;
   border-radius: var(--xeg-radius-md);
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* Video fit modes */

@@ -27,7 +27,7 @@
   font-size: 0.875em; /* 14px → 0.875em */
   font-weight: 500;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   border-radius: var(--xeg-radius-md);
 }
 
@@ -343,7 +343,7 @@
   height: 0.125em; /* 2px → 0.125em */
   background: var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-sm);
-  overflow: hidden;
+  overflow: clip;
 }
 
 .progressFill {

@@ -62,7 +62,7 @@
 
   .xeg-gallery-content {
     grid-area: content;
-    overflow: hidden;
+    overflow: clip;
   }
 
   .xeg-gallery-controls {
@@ -144,7 +144,7 @@
     height: 0.0625rem !important; /* 1px */
     padding: 0 !important;
     margin: -0.0625rem !important; /* -1px */
-    overflow: hidden !important;
+    overflow: clip !important;
     clip: rect(0, 0, 0, 0) !important;
     white-space: nowrap !important;
     border: 0 !important;
@@ -154,7 +154,7 @@
     clip: rect(0 0 0 0);
     clip-path: inset(50%);
     height: 0.0625rem; /* 1px */
-    overflow: hidden;
+    overflow: clip;
     position: absolute;
     white-space: nowrap;
     width: 0.0625rem; /* 1px */
