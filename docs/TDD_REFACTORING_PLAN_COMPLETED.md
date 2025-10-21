@@ -7,6 +7,45 @@
 
 ---
 
+## Phase 146: 레거시 토큰 alias 단계적 제거(P1) ✅ (2025-10-21)
+
+### 배경/목표
+
+- features 범위(`src/features/**`)에 남아있던 레거시 디자인 토큰 alias를
+  canonical semantic tokens로 통일
+- 정책 테스트로 회귀 방지 및 일관성 유지
+
+### 변경 내역(최소 diff)
+
+- test: `test/unit/styles/legacy-alias-elimination.test.ts` 추가 — 레거시 alias
+  문자열 탐지 테스트(RED → GREEN)
+- css: `src/features/gallery/styles/gallery-global.css`
+  - `--xeg-text-button`/`--xeg-text-button-navigation` →
+    `--xeg-color-text-primary`
+  - `--xeg-shadow-toolbar` → `--xeg-shadow-md`
+  - `--xeg-neutral-100/200/400` → `--xeg-color-neutral-100/200/400`
+- css:
+  `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css`
+  - `--xeg-neutral-300/400` → `--xeg-color-neutral-300/400`
+
+### 테스트(TDD)
+
+- 신규 정책 테스트 추가로 RED 유도 → 대상 파일 치환 → 전체 테스트 GREEN 확인
+- 전체 통합: unit + browser + E2E + a11y 모두 PASS
+
+### 결과
+
+- Build: prod 326.97 KB / 335 KB, gzip 88.18 KB — 변화 없음, 검증 스크립트 PASS
+- CodeQL/정적분석: 모두 PASS (벤더 getter/PC 전용 이벤트/디자인 토큰 정책 준수)
+
+### 교훈/메모
+
+- 정책 기반 테스트로 레거시 토큰 회귀 방지 효과 큼. 유사 alias가 발견되면 목록을
+  확장하여 가드 강화 권장
+- 시각적 변화 없이 의미적 토큰으로 통일하여 a11y/일관성/유지보수성 향상
+
+---
+
 ## Phase 145: 툴바 인디케이터 텍스트 색상 통일 ✅ (2025-10-21)
 
 ### 배경/목표

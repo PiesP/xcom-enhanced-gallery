@@ -16,11 +16,11 @@
   OKLCH 함수 플러그인만 유지하여 수치형 폴백을 생성. prod/dev 빌드 모두 경고 0.
   세부 내역은 COMPLETED 문서에 기록.
 
-1. 레거시 토큰 alias 단계적 제거 (P1)
+~1.~ 레거시 토큰 alias 단계적 제거 (P1) — 완료
 
-- 실행: 소스 전수 검색/치환으로 canonical semantic tokens 사용으로 이관, 테스트
-  GREEN 유지.
-- 수용 기준: `src/features/**` 내 alias 참조 0. 브리지 파일은 하위 호환을 위해
+- 해결: 소스 전수 검색/치환으로 canonical semantic tokens 사용으로 이관, 정책
+  테스트 GREEN 유지.
+- 수용 기준: `src/features/**` 내 alias 참조 0. 브리짓 파일은 하위 호환을 위해
   유지.
 
 1. 번들 여유 확보 ≥ 3 KB (P2)
@@ -34,11 +34,12 @@
 - Build: prod 326.97 KB / 335 KB, gzip 88.18 KB (검증 스크립트 PASS)
 - Tests: unit + browser + E2E + a11y 전체 GREEN
 - 정적 분석: Typecheck / ESLint / Stylelint / CodeQL 모두 PASS
+- P1 완료: features 범위에서 레거시 alias 0건(정책 테스트로 보장)
 
 ## 다음 단계
 
-- 브랜치: `feature/docs-token-uniformity-followups`에서 P0 → P1 → P2 순으로 처리
-- 완료 시: 본 문서에서 해당 항목 제거, 세부 내역은 COMPLETED 문서로 이관
+- 브랜치: `feature/docs-token-uniformity-followups`에서 P0 → P1 종료, P2로 진행
+- 완료 시: 본 문서에서 해당 항목 제거, 세부 내역은 COMPLETED 문서로 이관(완료됨)
 - 보고: `AGENTS.md`의 작업 종료 프로토콜에 따라 build/maintenance 요약 보고
 
 ### 참고 메모 (2025-10-21)
