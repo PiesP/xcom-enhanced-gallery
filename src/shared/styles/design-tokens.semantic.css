@@ -338,7 +338,9 @@
 
   /* Typography */
   --xeg-settings-label-font-size: var(--font-size-sm);
-  --xeg-settings-label-font-weight: var(--font-weight-medium);
+  --xeg-settings-label-font-weight: var(
+    --font-weight-bold
+  ); /* Phase D2: 인디케이터(currentIndex)와 통일하여 700으로 변경 */
   --xeg-settings-select-font-size: var(--font-size-sm);
 
   /* Input */

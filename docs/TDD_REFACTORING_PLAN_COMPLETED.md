@@ -5,6 +5,49 @@
 
 ---
 
+## Phase D2: 설정 라벨 타이포그래피 통일 ✅ (2025-10-21)
+
+### 목표
+
+- 설정 라벨의 폰트 웨이트를 툴바 인디케이터의 currentIndex와 일관되게 통일하여
+  시각적 일관성 강화
+
+### 문제점
+
+- 툴바 인디케이터 currentIndex: `font-weight: 700` (bold) 사용
+- 설정 라벨: `--xeg-settings-label-font-weight: var(--font-weight-medium)` (500)
+  사용
+- 시각적 위계 불일치로 디자인 시스템의 일관성 부족
+
+### 구현
+
+- `design-tokens.semantic.css` 토큰 변경:
+  `--xeg-settings-label-font-weight: var(--font-weight-bold)` (700)
+- 영향 범위: 설정 모달의 Theme/Language 라벨 및 툴바 내 인라인 설정 패널 라벨
+- 변경 파일: `src/shared/styles/design-tokens.semantic.css`
+
+### 테스트
+
+- Unit Tests: 2349 passed + 5 skipped (GREEN)
+- Browser Tests: 111 passed (Vitest + Chromium, GREEN)
+- E2E Tests: 60 passed (Playwright smoke tests, GREEN)
+- Accessibility Tests: 34 passed (axe-core WCAG 2.1 Level AA, GREEN)
+- CodeQL: 5개 커스텀 쿼리 모두 PASS
+- 빌드 검증: dev (721.96 KB) + prod (327.44 KB, gzip 88.18 KB) 성공
+
+### 결과
+
+- 디자인 토큰 규칙 준수: 하드코딩 없음, 토큰 기반 접근
+- 시각적 일관성 확보: 인디케이터와 설정 라벨 모두 bold(700) 사용
+- 기능 회귀 없음: 모든 테스트 스위트 GREEN 유지
+
+### 교훈
+
+- 디자인 토큰을 활용한 일관성 개선은 최소 변경으로 높은 효과를 얻을 수 있다
+- 토큰 기반 타이포그래피 통일은 유지보수성과 확장성을 향상시킨다
+
+---
+
 ## Phase M1: 클릭한 트윗 특정 로직 개선 + 인용 트윗 미디어 순서 개선 ✅ (2025-10-21)
 
 ### 목표
