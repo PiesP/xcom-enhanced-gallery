@@ -42,11 +42,21 @@
   - 빌드: prod 329.20 KB (목표 335 KB) ✓
   - 테스트: 2457 passed + 5 skipped ✓
   - E2E/a11y: 94 tests passed ✓
-- 🔄 **Phase A5.3 계획 중**: State Management 패턴 통일
-  - **목표**: Signal 생성 패턴 표준화, State Machine 확대 적용
-  - **대상 파일**: 상태 관리 16-20개 파일
-  - **예상 소요**: 3-4시간
-  - **우선순위**: B2 (중간)
+- 🔄 **Phase A5.3 진행 중**: State Management 패턴 통일
+  - **목표**: Signal 생성 패턴 표준화, State Machine 확대 적용, signalSelector
+    일관 적용
+  - **분석 완료**: docs/temp/A5_3_STATE_MANAGEMENT_ANALYSIS.md
+  - **Step 1 (P1)**: Signal 패턴 표준화 (createSignalSafe 통일)
+    - 대상: 16개 파일 (direct createSignal → createSignalSafe)
+    - 소요: 1-2시간
+  - **Step 2 (P2)**: State Machine 확대 (3개 추가)
+    - Download: idle → queued → processing → complete|error
+    - Toast: idle → showing → waiting → hidden
+    - Settings: closed → opening → open → closing
+    - 소요: 2-3시간
+  - **Step 3 (P3 선택)**: signalSelector 일관 적용 (파생값 캐싱)
+    - 소요: 1시간
+  - **예상 총 소요**: 4-6시간
 
 **분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 
