@@ -12,7 +12,7 @@ import { gzipSync } from 'zlib';
 
 function validateOne(
   scriptPath,
-  { requireNoVitePreload = false, assertNoLegacyGlobals = false } = {}
+  { requireNoVitePreload = false, assertNoLegacyGlobals = false, requireSourcemap = true } = {}
 ) {
   const content = readFileSync(scriptPath, 'utf8');
 
@@ -43,51 +43,56 @@ function validateOne(
     process.exit(1);
   }
 
-  // R5: sourceMappingURL 주석 확인 및 .map 파일 무결성 검사
-  const scriptFileName = basename(scriptPath);
-  const expectedMapName = `${scriptFileName}.map`;
-  const sourceMapUrlPattern = /#\s*sourceMappingURL\s*=\s*(.+)$/m;
-  const match = content.match(sourceMapUrlPattern);
-  if (!match) {
-    console.error('❌ Missing sourceMappingURL comment in userscript');
-    process.exit(1);
-  }
-  const mapFileFromComment = match[1].trim();
-  if (mapFileFromComment !== expectedMapName) {
-    console.error(
-      `❌ sourceMappingURL mismatch. Expected '${expectedMapName}', got '${mapFileFromComment}'`
-    );
-    process.exit(1);
-  }
+  // R5: sourceMappingURL 주석 확인 및 .map 파일 무결성 검사 (선택적)
+  // 프로덕션 빌드는 소스맵을 생성하지 않으므로 검증 스킵
+  let map = null;
+  let mapPath = null;
 
-  const mapPath = resolve(resolve(scriptPath, '..'), mapFileFromComment);
-  if (!existsSync(mapPath)) {
-    console.error('❌ Sourcemap file not found:', mapPath);
-    process.exit(1);
-  }
-  let map;
-  try {
-    map = JSON.parse(readFileSync(mapPath, 'utf8'));
-  } catch (e) {
-    console.error('❌ Failed to parse sourcemap JSON:', e.message);
-    process.exit(1);
-  }
-  if (!map || !Array.isArray(map.sources) || map.sources.length === 0) {
-    console.error('❌ Sourcemap missing non-empty sources array');
-    process.exit(1);
-  }
-  if (!Array.isArray(map.sourcesContent) || map.sourcesContent.length === 0) {
-    console.error('❌ Sourcemap missing non-empty sourcesContent array');
-    process.exit(1);
-  }
-  if (map.sources.length !== map.sourcesContent.length) {
-    console.error('❌ Sourcemap sources and sourcesContent length mismatch');
-    process.exit(1);
-  }
-  // 경고: 절대 경로 포함 여부 체크 (Windows/Unix)
-  const hasAbsolute = map.sources.some(s => /^(?:[A-Za-z]:\\|\/)/.test(s));
-  if (hasAbsolute) {
-    console.warn('⚠️ Sourcemap sources include absolute paths. Consider making them relative.');
+  if (requireSourcemap) {
+    const scriptFileName = basename(scriptPath);
+    const expectedMapName = `${scriptFileName}.map`;
+    const sourceMapUrlPattern = /#\s*sourceMappingURL\s*=\s*(.+)$/m;
+    const match = content.match(sourceMapUrlPattern);
+    if (!match) {
+      console.error('❌ Missing sourceMappingURL comment in userscript');
+      process.exit(1);
+    }
+    const mapFileFromComment = match[1].trim();
+    if (mapFileFromComment !== expectedMapName) {
+      console.error(
+        `❌ sourceMappingURL mismatch. Expected '${expectedMapName}', got '${mapFileFromComment}'`
+      );
+      process.exit(1);
+    }
+
+    mapPath = resolve(resolve(scriptPath, '..'), mapFileFromComment);
+    if (!existsSync(mapPath)) {
+      console.error('❌ Sourcemap file not found:', mapPath);
+      process.exit(1);
+    }
+    try {
+      map = JSON.parse(readFileSync(mapPath, 'utf8'));
+    } catch (e) {
+      console.error('❌ Failed to parse sourcemap JSON:', e.message);
+      process.exit(1);
+    }
+    if (!map || !Array.isArray(map.sources) || map.sources.length === 0) {
+      console.error('❌ Sourcemap missing non-empty sources array');
+      process.exit(1);
+    }
+    if (!Array.isArray(map.sourcesContent) || map.sourcesContent.length === 0) {
+      console.error('❌ Sourcemap missing non-empty sourcesContent array');
+      process.exit(1);
+    }
+    if (map.sources.length !== map.sourcesContent.length) {
+      console.error('❌ Sourcemap sources and sourcesContent length mismatch');
+      process.exit(1);
+    }
+    // 경고: 절대 경로 포함 여부 체크 (Windows/Unix)
+    const hasAbsolute = map.sources.some(s => /^(?:[A-Za-z]:\\|\/)/.test(s));
+    if (hasAbsolute) {
+      console.warn('⚠️ Sourcemap sources include absolute paths. Consider making them relative.');
+    }
   }
 
   // R5: 프로덕션 번들에서 __vitePreload 등 dead-preload 브랜치가 제거되었는지 검사
@@ -143,11 +148,12 @@ function validateUserScript() {
     process.exit(1);
   }
 
-  // 상세 검증: dev (소스맵 포함), prod (소스맵 + dead code 제거)
-  validateOne(devPath, { requireNoVitePreload: false });
+  // 상세 검증: dev (소스맵 포함), prod (소스맵 제외, dead code 제거)
+  validateOne(devPath, { requireNoVitePreload: false, requireSourcemap: true });
   const prodInfo = validateOne(prodPath, {
     requireNoVitePreload: true,
     assertNoLegacyGlobals: true,
+    requireSourcemap: false, // 프로덕션은 소스맵 생성하지 않음
   });
 
   // L2: Logging gate v2 — prod bundle must not contain development-only stack trace marker

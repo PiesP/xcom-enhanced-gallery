@@ -1,8 +1,8 @@
 /**
- * Vite configuration (TypeScript + strict typing)
- * - Dev: sourcemap + unminified
- * - Prod: terser + drop console
- * - Output: single userscript file
+ * Vite 설정 파일 — 단일 userscript 번들 생성. dev/prod 공통으로 소스맵 생성(디버그/검증용).
+ * - Dev 빌드: 사람이 읽기 쉬운 버전 태그(타임스탬프) + 비압축(디버깅 편의).
+ * - Prod 빌드: terser 압축(콘솔/디버거 제거), 라이선스 노티스 주입, 번들 크기 최적화.
+ * - 결과물: 최종 userscript 파일(및 sourcemap)을 dist/에 기록하고 임시/자산 파일 정리.
  */
 import { defineConfig, Plugin, UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
@@ -26,14 +26,15 @@ interface PackageJsonMeta {
 
 function resolveFlags(mode: string): BuildFlags {
   const isDev = mode === 'development';
-  // R5: dev/prod 모두 소스맵 생성 (추적/디버그용). prod는 validate-build에서 무결성 가드.
-  return { mode, isDev, isProd: !isDev, sourcemap: true };
+  // 정책: 개발 빌드만 소스맵을 생성하여 디버깅 지원. 프로덕션은 파일 크기 최소화 우선.
+  return { mode, isDev, isProd: !isDev, sourcemap: isDev };
 }
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 /**
- * 외부 라이브러리 라이선스 정보 생성
+ * 외부 라이브러리 라이선스 텍스트를 LICENSES/에서 읽어 userscript 상단에 주석으로 삽입.
+ * 없거나 읽기 실패 시 경고를 남기고 진행(빌드 중단하지 않음).
  */
 function generateLicenseNotices(): string {
   const licenseFiles = [
@@ -41,7 +42,7 @@ function generateLicenseNotices(): string {
     { path: './LICENSES/heroicons-MIT.txt', name: 'Heroicons' },
   ];
 
-  let notices = '\n/*\n * Third-Party Licenses\n * ====================\n';
+  let notices = '/*\n * Third-Party Licenses\n * ====================\n';
 
   for (const { path: licensePath, name } of licenseFiles) {
     try {
@@ -64,6 +65,9 @@ function generateLicenseNotices(): string {
 }
 
 function userscriptHeader(flags: BuildFlags): string {
+  // 개발용 버전 태그: YYYY.MMDD.HHmmss.SSS (빌드 식별 편의)
+  // production에서는 package.json의 버전 사용.
+  // userscript 메타 필드(권한, match, update/download URL 등)를 포함.
   // 개발 빌드용 사람이 읽기 쉬운 버전 형식: YYYY.MMDD.HHmmss.SSS
   const devTimestamp = (() => {
     const now = new Date();
@@ -107,6 +111,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
     name: 'xeg-userscript-wrapper',
     apply: 'build',
     writeBundle(options: NormalizedOutputOptions, bundle: OutputBundle) {
+      // outDir 결정 및 번들 항목 집계 (CSS, entry chunk, sourcemap)
       const outDir = options.dir ?? 'dist';
       let cssConcat = '';
       let entryChunk: OutputChunk | undefined;
@@ -141,29 +146,34 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       }
 
       const styleInjector = cssConcat.trim().length
-        ? `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
+        ? // CSS 모듈/전역 스타일을 하나의 <style id="xeg-styles">로 인라인 삽입.
+          // userscript가 실행될 때 즉시 DOM에 추가되며 기존 id가 있으면 덮어씌움.
+          `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
         : '';
 
-      // 내부 엔트리 코드에 남아 있을 수 있는 sourceMappingURL 주석 제거
+      // 엔트리 코드 내에 남아 있을 수 있는 sourceMappingURL 주석을 제거하여
+      // userscript 파일에 중복 주석이 남지 않도록 함.
       const cleanedCode = entryChunk.code
         .replace(/\/\/#\s*sourceMappingURL\s*=.*$/gm, '')
         .replace(/\/\*#\s*sourceMappingURL\s*=.*?\*\//gs, '');
 
-      // 라이선스 정보 추가 (프로덕션 빌드에만)
+      // production 빌드에 한해 외부 라이선스 텍스트를 상단에 주석으로 삽입.
       const licenseNotices = flags.isProd ? generateLicenseNotices() : '';
 
-      const wrapped = `${userscriptHeader(flags)}${licenseNotices}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
+      // 전체 userscript 래핑: 메타 블록 + (선택적)라이선스 + 스타일 인젝터 + 코드
+      // 프로덕션 빌드는 개행 최소화, 개발 빌드는 가독성을 위해 개행 유지
+      const wrapped = flags.isProd
+        ? `${userscriptHeader(flags)}${licenseNotices}(function(){'use strict';${styleInjector}${cleanedCode}})();`
+        : `${userscriptHeader(flags)}${licenseNotices}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';
 
       fs.writeFileSync(path.join(outDir, finalName), wrapped, 'utf8');
 
-      // dev/prod 모두 sourcemap 파일 기록 (R5)
-      if (sourcemapContent) {
-        const mapName = flags.isDev
-          ? 'xcom-enhanced-gallery.dev.user.js.map'
-          : 'xcom-enhanced-gallery.user.js.map';
+      // 개발 빌드에서만 sourcemap 파일을 별도 기록(디버깅 목적).
+      if (flags.isDev && sourcemapContent) {
+        const mapName = 'xcom-enhanced-gallery.dev.user.js.map';
         fs.writeFileSync(path.join(outDir, mapName), sourcemapContent, 'utf8');
         // 파일 끝에 sourceMappingURL 주석 추가 (디버깅 편의)
         try {
@@ -175,7 +185,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
 
       console.log(`✅ Userscript 생성: ${finalName}`);
 
-      // assets 폴더와 그 내용, 기타 불필요한 파일들을 삭제
+      // dist/assets 같은 임시 자산 디렉터리 제거(단일 userscript 산출을 목표).
       const assetsDir = path.join(outDir, 'assets');
       if (fs.existsSync(assetsDir)) {
         fs.rmSync(assetsDir, { recursive: true, force: true });
@@ -204,14 +214,17 @@ function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
     name: 'xeg-strip-logger-debug',
     enforce: 'pre',
     transform(code, id) {
+      // node_modules는 건드리지 않음
       if (id.includes('node_modules')) {
         return null;
       }
-
+      // 타입스크립트/JS 소스만 처리
       if (!/\.(ts|tsx|js|jsx)$/.test(id)) {
         return null;
       }
-
+      // Babel 변환을 통해 형태가 보존되는 범위에서 logger.debug / logger.info 호출을 제거.
+      // 목적: 프로덕션 번들 크기 및 노출 로그 최소화. 부작용이 우려되는 복잡한 표현식은
+      // undefined 대체로 안전하게 처리.
       const result = transformSync(code, {
         filename: id,
         babelrc: false,
@@ -319,10 +332,10 @@ export default defineConfig(({ mode }) => {
         output: {
           format: 'iife',
           name: 'XEG',
-          inlineDynamicImports: true, // 단일 번들 보장
-          // R5: 소스맵에 sourcesContent 포함
+          inlineDynamicImports: true, // 단일 iife 번들 보장(Userscript 용)
+          // Sourcemap 생성 시 sourcesContent 포함을 허용하여 원본 추적성 보장
           sourcemapExcludeSources: false,
-          // 실제 산출 파일명은 plugin에서 생성
+          // 실제 최종 파일명/포맷은 userscriptPlugin에서 결정
         },
         treeshake: flags.isProd,
       },

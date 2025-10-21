@@ -1,7 +1,7 @@
 # TDD 리팩토링 완료 Phase 기록
 
-> **목적**: 완료된 Phase의 핵심 요약 (상세 기록은 Git 커밋 히스토리 참조)  
-> **최종 업데이트**: 2025-10-21
+> **목적**: 완료된 Phase의 핵심 요약 (상세 기록은 Git 커밋 히스토리 참조) **최종
+> 업데이트**: 2025-10-21
 
 ---
 
@@ -41,6 +41,34 @@ beforeEach(() => {
 - 통합 클래스는 **통합 테스트가 효율적** (GalleryApp 실증)
 - 실제 서비스 인스턴스 사용이 모킹보다 유지보수성 우수
 - `CoreService` 패턴이 테스트 격리에 효과적
+
+---
+
+## Phase B2: Services Coverage Improvement ✅ (2025-10-21)
+
+### 목표
+
+- shared/services 영역 커버리지 80%+ 달성 및 전략/오케스트레이터 결함 탐지
+
+### 결과 요약
+
+- 80% 미만 파일: 20개 → 13개 (-35%)
+- 신규 테스트: 619개 추가 (총 2443 passed, 6 skipped)
+- 커버리지: Stmts 69.99%, Branch 79.26%, Funcs 67.25%, Lines 69.99%
+- 실결함 2건 수정 (username 추출, URL 파싱 경계)
+
+### 핵심 변경
+
+- 전략군 보강: clicked-element/data-attribute/url-based/dom-structure
+- 오케스트레이터/통합: tweet-info-extractor, username-extraction-service,
+  dom-direct-extractor
+- 코어/UX: unified-toast-manager, toast-controller, keyboard-navigator,
+  core-services
+
+### 교훈
+
+- Strategy/Factory로 경계를 명확히 하면 테스트 설계·유지보수성이 향상
+- "getter 경유 + 싱글톤 리셋" 패턴이 테스트 격리에 효과적
 
 ---
 
