@@ -12,6 +12,7 @@
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 266 modules, 747 deps, 순환 0
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (B1/B2/A1 등)
+- C1.1 P0 1차 삭제(외부/ZIP 배럴, 백업 CSS) 완료 — GREEN 유지
 
 ---
 
@@ -120,6 +121,14 @@ P0 1차(무관성·테스트 비참조·배럴/백업 파일 중심) — 안전 
 - metrics: `metrics/potentially-unused-modules.json`
 - 정책: `docs/CODING_GUIDELINES.md`(Vendor getter/PC 전용 이벤트/토큰)
 - 구조: `docs/ARCHITECTURE.md`(3계층/벤더 위치)
+
+진행 상태: 완료(2025-10-21)
+
+- 삭제 파일: `src/shared/external/index.ts`, `src/shared/external/zip/index.ts`,
+  `src/shared/components/ui/ModalShell/ModalShell.module.css.bak`
+- 검증: CodeQL/dep-cruiser 0 위반, Unit/Browser/E2E/a11y 전부 GREEN, prod 326.70
+  KB, gzip 88.08 KB 유지
+- 상세: `docs/TDD_REFACTORING_PLAN_COMPLETED.md`의 “Phase C1.1” 섹션 참조
 
 ---
 

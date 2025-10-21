@@ -72,6 +72,34 @@ beforeEach(() => {
 
 ---
 
+## Phase C1.1: Dead code/배럴 1차 정리 ✅ (2025-10-21)
+
+### 목표
+
+- Userscript 단일 번들 특성에서 무가치한 배럴/백업 파일 제거(P0)
+- 의존성 그래프 단순화 및 트리셰이킹 저해 요소 축소
+
+### 변경 사항
+
+- 삭제: `src/shared/external/index.ts` (외부 배럴, 미사용)
+- 삭제: `src/shared/external/zip/index.ts` (ZIP 배럴, 미사용)
+- 삭제: `src/shared/components/ui/ModalShell/ModalShell.module.css.bak` (백업
+  CSS)
+
+### 검증 결과
+
+- CodeQL: 5/5 커스텀 쿼리 PASS (위반 0)
+- Dependency-cruiser: 순환/규칙 위반 0
+- Tests: Unit/Browser/E2E/a11y 전부 GREEN (스모크·전체 기준)
+- Build: prod 326.70 KB, gzip 88.08 KB (증가 없음)
+
+### 교훈
+
+- 배럴은 import 경로 단축 이점보다 트리셰이킹/거버넌스 관점에서 비용이 큼
+- “벤더 getter 경유” 원칙을 전면 적용하면 외부 레이어 단순화가 수월함
+
+---
+
 ## Phase A1: 의존성 그래프 최적화 ✅ (2025-10-21)
 
 ### 목표
