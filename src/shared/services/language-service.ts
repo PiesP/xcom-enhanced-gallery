@@ -1,11 +1,13 @@
 /**
  * @fileoverview 다국어 지원 서비스
  * @description TDD 기반으로 구현된 간단한 i18n 시스템
+ * @version 2.1.0 - Phase A5.1: BaseServiceImpl 패턴 적용
  */
 
 import { logger } from '../logging/logger';
 import type { StorageAdapter } from './storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
+import { BaseServiceImpl } from './base-service-impl';
 import {
   LANGUAGE_CODES,
   isBaseLanguageCode,
@@ -25,7 +27,14 @@ export type {
   BaseLanguageCode,
 } from '@shared/i18n/language-types';
 
-export class LanguageService {
+/**
+ * 다국어 서비스 (Phase A5.1: BaseServiceImpl 패턴)
+ * - onInitialize(): storage에서 언어 설정 복원
+ * - onDestroy(): 리스너 정리
+ *
+ * Note: 전역 싱글톤 export는 main.ts에서 initialize() 호출 필요
+ */
+export class LanguageService extends BaseServiceImpl {
   private static readonly STORAGE_KEY = 'xeg-language';
   private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
     'auto',
@@ -35,11 +44,36 @@ export class LanguageService {
   private currentLanguage: SupportedLanguage = 'auto';
   private readonly listeners: Set<(language: SupportedLanguage) => void> = new Set();
   private readonly storage: StorageAdapter;
-  private isInitialized = false;
-  private initializationPromise: Promise<void> | null = null;
 
   constructor(storage: StorageAdapter = new UserscriptStorageAdapter()) {
+    super('LanguageService');
     this.storage = storage;
+  }
+
+  /**
+   * 서비스 초기화 (BaseServiceImpl 템플릿 메서드 구현)
+   * storage에서 언어 설정 복원
+   */
+  protected async onInitialize(): Promise<void> {
+    try {
+      const saved = await this.storage.getItem(LanguageService.STORAGE_KEY);
+      const normalized = this.normalizeLanguage(saved);
+
+      if (normalized !== this.currentLanguage) {
+        this.currentLanguage = normalized;
+        this.notifyListeners(normalized);
+      }
+    } catch (error) {
+      logger.warn('Failed to restore language setting from storage:', error);
+    }
+  }
+
+  /**
+   * 서비스 정리 (BaseServiceImpl 템플릿 메서드 구현)
+   * 리스너 정리
+   */
+  protected onDestroy(): void {
+    this.listeners.clear();
   }
   /**
    * (Phase 4) 다국어 리소스 정합성 보고
@@ -105,37 +139,6 @@ export class LanguageService {
 
   getCurrentLanguage(): SupportedLanguage {
     return this.currentLanguage;
-  }
-
-  async initialize(): Promise<void> {
-    if (this.isInitialized) {
-      return;
-    }
-
-    if (this.initializationPromise) {
-      await this.initializationPromise;
-      return;
-    }
-
-    this.initializationPromise = (async () => {
-      try {
-        const saved = await this.storage.getItem(LanguageService.STORAGE_KEY);
-        const normalized = this.normalizeLanguage(saved);
-
-        if (normalized !== this.currentLanguage) {
-          this.currentLanguage = normalized;
-          this.notifyListeners(normalized);
-          logger.debug(`Language restored from storage: ${normalized}`);
-        }
-      } catch (error) {
-        logger.warn('Failed to restore language setting from storage:', error);
-      } finally {
-        this.isInitialized = true;
-        this.initializationPromise = null;
-      }
-    })();
-
-    await this.initializationPromise;
   }
 
   setLanguage(language: SupportedLanguage): void {

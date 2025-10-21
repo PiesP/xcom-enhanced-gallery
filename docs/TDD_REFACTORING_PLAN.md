@@ -35,8 +35,11 @@
   8169949a)
   - onInitialize/onDestroy 템플릿 메서드 구현
   - 모든 테스트 PASS (2457 passed + 5 skipped)
-- 🔄 **Step 1.3 연기**: LanguageService, IconRegistry (전역 싱글톤 종속성으로
-  나중 단계 연기)
+- 🔄 **Step 1.3 진행 중**: LanguageService, IconRegistry (BaseServiceImpl 패턴
+  적용)
+  - 전략: 기존 전역 싱글톤 유지하며 BaseServiceImpl 상속 추가
+  - LanguageService: 9개 파일에서 사용 중, initialize() 호출 타이밍 조정 필요
+  - IconRegistry: factory pattern → Service class 변환
 - 🔄 **Step 2 대기**: State Management 패턴 통일 (signal-factory, State Machine
   확대)
 - 🔄 **Step 3 대기**: Error Handling 전략 (AppError 사용 70%+, 에러 경로
