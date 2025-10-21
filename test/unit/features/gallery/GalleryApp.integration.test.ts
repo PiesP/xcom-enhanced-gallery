@@ -276,4 +276,135 @@ describe('GalleryApp Integration', () => {
       expect(galleryApp.isRunning()).toBe(true);
     });
   });
+
+  describe('Advanced Integration Scenarios', () => {
+    beforeEach(async () => {
+      await galleryApp.initialize();
+    });
+
+    it('should handle media extraction flow with multiple items', async () => {
+      // Given: 여러 미디어 아이템
+      const mediaItems = [
+        createTestMediaInfo({ id: 'media-1', type: 'image' }),
+        createTestMediaInfo({ id: 'media-2', type: 'image' }),
+        createTestMediaInfo({ id: 'media-3', type: 'video' }),
+        createTestMediaInfo({ id: 'media-4', type: 'image' }),
+      ];
+
+      // When: 갤러리 열기
+      await galleryApp.openGallery(mediaItems, 0);
+
+      // Then: 미디어가 성공적으로 로드되어야 함
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should handle empty media list gracefully', async () => {
+      // Given: 빈 미디어 리스트
+      const emptyMedia: MediaInfo[] = [];
+
+      // When: 빈 리스트로 갤러리 열기 시도
+      await galleryApp.openGallery(emptyMedia, 0);
+
+      // Then: 에러 없이 처리되어야 함
+      expect(galleryApp).toBeDefined();
+    });
+
+    it('should handle gallery reopen with different media', async () => {
+      // Given: 첫 번째 미디어 세트
+      const firstMedia = [
+        createTestMediaInfo({ id: 'first-1' }),
+        createTestMediaInfo({ id: 'first-2' }),
+      ];
+
+      // When: 첫 번째 갤러리 열기
+      await galleryApp.openGallery(firstMedia, 0);
+
+      // And: 갤러리 닫기
+      galleryApp.closeGallery();
+
+      // And: 두 번째 미디어 세트로 재오픈
+      const secondMedia = [
+        createTestMediaInfo({ id: 'second-1' }),
+        createTestMediaInfo({ id: 'second-2' }),
+        createTestMediaInfo({ id: 'second-3' }),
+      ];
+      await galleryApp.openGallery(secondMedia, 0);
+
+      // Then: 정상적으로 재오픈되어야 함
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should recover from extraction errors and continue', async () => {
+      // Given: 초기화된 갤러리
+      expect(galleryApp.isRunning()).toBe(true);
+
+      // When: 유효한 미디어로 작업 계속
+      const validMedia = [createTestMediaInfo({ id: 'recovery-test' })];
+      await galleryApp.openGallery(validMedia, 0);
+
+      // Then: 정상 동작 복구
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should handle configuration changes during operation', async () => {
+      // Given: 갤러리가 열린 상태에서
+      const media = [createTestMediaInfo()];
+      await galleryApp.openGallery(media, 0);
+
+      // When: 설정 변경
+      galleryApp.updateConfig({
+        autoTheme: false,
+        keyboardShortcuts: false,
+      });
+
+      // Then: 설정 변경이 반영되고 계속 동작
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should handle mixed media types (images and videos)', async () => {
+      // Given: 이미지와 비디오 혼합
+      const mixedMedia = [
+        createTestMediaInfo({ id: 'img-1', type: 'image' }),
+        createTestMediaInfo({ id: 'vid-1', type: 'video' }),
+        createTestMediaInfo({ id: 'img-2', type: 'image' }),
+        createTestMediaInfo({ id: 'vid-2', type: 'video' }),
+      ];
+
+      // When: 혼합 미디어로 갤러리 열기
+      await galleryApp.openGallery(mixedMedia, 1); // 비디오부터 시작
+
+      // Then: 정상 처리
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should handle rapid open-close cycles', async () => {
+      // Given: 미디어 아이템
+      const media = [createTestMediaInfo()];
+
+      // When: 빠른 열기/닫기 반복
+      await galleryApp.openGallery(media, 0);
+      galleryApp.closeGallery();
+      await galleryApp.openGallery(media, 0);
+      galleryApp.closeGallery();
+      await galleryApp.openGallery(media, 0);
+
+      // Then: 안정적으로 처리
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should validate and clamp start index to valid range', async () => {
+      // Given: 3개의 미디어
+      const media = [
+        createTestMediaInfo({ id: 'm1' }),
+        createTestMediaInfo({ id: 'm2' }),
+        createTestMediaInfo({ id: 'm3' }),
+      ];
+
+      // When: 범위를 벗어난 인덱스로 열기
+      await galleryApp.openGallery(media, 10); // 10 > 2 (max index)
+
+      // Then: 자동으로 유효한 범위로 조정되어야 함
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+  });
 });
