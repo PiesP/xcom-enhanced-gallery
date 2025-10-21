@@ -31,9 +31,68 @@
 
 ---
 
-## 다음 단계
+## 활성 Phase
 
-새로운 개선 과제가 필요한 경우 아래 영역에서 선정하세요:
+### Phase A1: 의존성 그래프 최적화 (아키텍처 개선)
+
+**목표**: 순환 참조 제거 및 고아 모듈 정리
+
+**배경**:
+
+- dependency-cruiser 분석 결과, 3-way 순환 참조 발견
+- 고아 모듈(orphan) 5개 발견 (1개는 valid: false)
+- 0 errors이지만 구조적 개선 필요
+
+**발견된 문제**:
+
+1. **순환 참조** (HIGH Priority)
+
+   ```
+   service-factories.ts ↔ media-service.ts ↔ service-accessors.ts
+   ```
+
+   - `service-accessors.ts:33` - `getBulkDownloadServiceFromContainer()`에서
+     동적 import로 `service-factories` 호출
+   - 이는 DI 컨테이너 패턴의 설계 문제
+   - 해결: Factory를 컨테이너에서 분리하거나, Lazy Registration 패턴 적용
+
+2. **고아 모듈** (MEDIUM Priority)
+   - `src/shared/utils/performance/memoization.ts` (**valid: false**, 사용되지
+     않음)
+   - `src/shared/loader/progressive-loader.ts` (미사용)
+   - `src/shared/styles/tokens/button.ts` (미사용, 토큰 통일 과정에서 제거됨)
+   - `src/shared/i18n/module.autoupdate.d.ts` (타입 정의, OK)
+   - `src/types/solid-js-client.d.ts` (타입 정의, OK)
+
+**작업 계획**:
+
+1. **순환 참조 해결**
+   - [ ] RED: 순환 참조 감지 테스트 추가
+         (`test/refactoring/circular-dependency.test.ts`)
+   - [ ] GREEN: `service-accessors.ts`의 fallback 로직을 제거하고 컨테이너
+         등록을 명시적으로 bootstrap에서 수행
+   - [ ] REFACTOR: Factory와 Accessor 역할 명확히 분리
+
+2. **고아 모듈 제거**
+   - [ ] `memoization.ts` 삭제 (Solid.js는 자체 반응성 최적화 제공)
+   - [ ] `progressive-loader.ts` 삭제 또는 실제 사용처 추가
+   - [ ] `button.ts` 삭제 (디자인 토큰 통일 완료로 불필요)
+
+3. **검증**
+   - [ ] `npm run deps:check` 0 violations 확인
+   - [ ] `npm run build` 성공
+   - [ ] 전체 테스트 통과
+
+**수용 기준**:
+
+- ✅ dependency-cruiser에서 circular dependency 0건
+- ✅ orphan 모듈 중 valid: false 제거
+- ✅ 전체 테스트 GREEN
+- ✅ 빌드 크기 유지 또는 감소
+
+---
+
+## 백로그 (우선순위 낮음)
 
 1. **테스트 개선**
    - TESTING_STRATEGY.md에 따른 테스트 커버리지 분석
@@ -49,11 +108,6 @@
    - WCAG 2.1 Level AA 수동 검증
    - 키보드 네비게이션 개선
    - 스크린 리더 호환성
-
-4. **아키텍처 개선**
-   - ARCHITECTURE.md 기반 경계 점검
-   - 의존성 그래프 최적화 (dependency-cruiser)
-   - 서비스 레이어 리팩토링
 
 ---
 
