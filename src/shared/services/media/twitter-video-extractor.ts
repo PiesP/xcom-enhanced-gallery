@@ -343,7 +343,8 @@ export class TwitterAPI {
             quotedUser.name = quotedUser.legacy.name;
           }
         }
-        result = [...result, ...this.extractMediaFromTweet(quotedTweet, quotedUser)];
+        // 인용 트윗의 미디어를 먼저 배치
+        result = [...this.extractMediaFromTweet(quotedTweet, quotedUser), ...result];
       }
     }
     return result;

@@ -5,6 +5,41 @@
 
 ---
 
+## Phase M1: 클릭한 트윗 특정 로직 개선 + 인용 트윗 미디어 순서 개선 ✅ (2025-10-21)
+
+### 목표
+
+- 트윗 퍼마링크 페이지에서 멘션/인용 트윗 내부 미디어를 클릭했을 때, 현재 URL의
+  트윗이 아니라 “클릭된” 트윗 컨테이너의 트윗 ID를 사용해 미디어를 추출한다.
+
+### 구현
+
+- 전략 보강: ClickedElementTweetStrategy에 조상 컨테이너(기사/article 또는
+  [data-testid="tweet"])를 우선 탐색하는 로직 추가
+  - 새 메서드: extractTweetIdFromAncestorContainer(element)
+  - 헬퍼: findTweetIdInContainer(container)로 내부 status 링크(/status/<id>)
+    우선 파싱
+- 우선순위 유지: data-attributes → aria-labelledby → href →
+  ancestor-container(신규) → URL 기반/글로벌 폴백
+
+### 테스트
+
+- 단위 테스트 추가: 클릭된 멘션 트윗 시나리오에서 조상 컨테이너의 트윗 ID를
+  선호하는지 검증
+  - 파일:
+    test/unit/shared/services/media-extraction/clicked-element-tweet-strategy.test.ts
+
+### 결과
+
+- Unit/Browser/E2E/a11y 전체 GREEN (2346 passed, 5-6 skipped 범위)
+- 빌드 검증 및 CodeQL 커스텀 쿼리 5종 모두 PASS
+
+### 교훈
+
+- 최고 우선 전략(ClickedElementTweetStrategy)에 “문맥(ancestor container)”을
+  도입하면 permalink 환경의 모호성을 해소할 수 있다.
+- 기존 전략 순서와 STABLE_SELECTORS 재사용이 회귀를 방지한다.
+
 ## Phase B1: 테스트 & 접근성 통합 개선 ✅ (2025-10-21)
 
 ### 목표

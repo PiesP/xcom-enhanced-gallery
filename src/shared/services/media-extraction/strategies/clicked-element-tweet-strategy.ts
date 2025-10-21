@@ -15,6 +15,7 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
 
   async extract(element: HTMLElement): Promise<TweetInfo | null> {
     try {
+      if (!element) return null;
       // 1. 데이터 속성에서 직접 추출
       const directTweetId = this.extractFromDataAttributes(element);
       if (directTweetId) {
@@ -40,6 +41,18 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
           const tweetInfo = await this.buildTweetInfo(tweetId, element, 'href-attribute');
           if (tweetInfo) return tweetInfo;
         }
+      }
+
+      // 4. 상위 트윗 컨테이너 기반 추출 (URL 기반 전략보다 우선)
+      //    트윗 상세 페이지에서 멘션/인용 트윗 내 이미지를 클릭한 경우를 정확히 처리
+      const containerTweetId = this.extractTweetIdFromAncestorContainer(element);
+      if (containerTweetId) {
+        const tweetInfo = await this.buildTweetInfo(
+          containerTweetId,
+          element,
+          'ancestor-container'
+        );
+        if (tweetInfo) return tweetInfo;
       }
 
       return null;
@@ -90,6 +103,50 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
       if (urlTweetId) return urlTweetId;
     }
 
+    return null;
+  }
+
+  /**
+   * 상위 트윗 컨테이너에서 트윗 ID 추출
+   * [data-testid="tweet"] 또는 article을 컨테이너로 간주하고,
+   * 해당 컨테이너 내부의 status 링크에서 ID를 찾습니다.
+   *
+   * 멘션/인용 트윗 영역 클릭 시 현재 페이지 URL이 아닌 실제 클릭된 컨테이너의
+   * 트윗 ID를 우선하도록 합니다.
+   */
+  private extractTweetIdFromAncestorContainer(element: HTMLElement): string | null {
+    // 가장 가까운 안정적인 트윗 컨테이너 탐색 (최대 10레벨 방어)
+    let current: HTMLElement | null = element;
+    for (let i = 0; i < 10 && current; i++) {
+      const container = current.closest('[data-testid="tweet"], article') as HTMLElement | null;
+      if (container) {
+        const id = this.findTweetIdInContainer(container);
+        if (id) return id;
+      }
+      current = current.parentElement;
+    }
+    return null;
+  }
+
+  /** 컨테이너 내부에서 /status/ 링크로 트윗 ID 찾기 */
+  private findTweetIdInContainer(container: HTMLElement): string | null {
+    const links = container.querySelectorAll('a[href*="/status/"]');
+    for (const link of links) {
+      const href = link.getAttribute('href');
+      if (!href) continue;
+      const match = href.match(/\/status\/(\d+)/);
+      if (match?.[1]) return match[1];
+    }
+    // time>parent a[href*="/status/"] 패턴 보조 처리
+    const times = container.querySelectorAll('time');
+    for (const time of times) {
+      const parentLink = time.closest('a[href*="/status/"]');
+      const href = parentLink?.getAttribute('href');
+      if (href) {
+        const match = href.match(/\/status\/(\d+)/);
+        if (match?.[1]) return match[1];
+      }
+    }
     return null;
   }
 

@@ -375,4 +375,188 @@ describe('twitter-video-extractor', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('TwitterAPI.getTweetMedias - Quoted Tweet Media Order', () => {
+    beforeEach(() => {
+      // Reset mocks
+      vi.restoreAllMocks();
+    });
+
+    it('should extract quoted tweet media before original tweet media', async () => {
+      // Mock API 응답 구성: 인용 트윗이 포함된 경우
+      const mockApiResponse = {
+        data: {
+          tweetResult: {
+            result: {
+              rest_id: '1234567890123456789',
+              core: {
+                user_results: {
+                  result: {
+                    screen_name: 'original_user',
+                  },
+                },
+              },
+              extended_entities: {
+                media: [
+                  {
+                    type: 'photo',
+                    id_str: 'original_media_1',
+                    media_url_https: 'https://pbs.twimg.com/media/original1.jpg',
+                  },
+                ],
+              },
+              quoted_status_result: {
+                result: {
+                  rest_id: '9876543210987654321',
+                  core: {
+                    user_results: {
+                      result: {
+                        screen_name: 'quoted_user',
+                      },
+                    },
+                  },
+                  extended_entities: {
+                    media: [
+                      {
+                        type: 'photo',
+                        id_str: 'quoted_media_1',
+                        media_url_https: 'https://pbs.twimg.com/media/quoted1.jpg',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      vi.spyOn(TwitterAPI as any, 'apiRequest').mockResolvedValue(mockApiResponse);
+
+      const result = await TwitterAPI.getTweetMedias('1234567890123456789');
+
+      // 검증: 인용 트윗의 미디어가 먼저 와야 함
+      expect(result).toHaveLength(2);
+      expect(result[0].tweet_id).toBe('9876543210987654321'); // 인용 트윗이 먼저
+      expect(result[0].screen_name).toBe('quoted_user');
+      expect(result[0].media_id).toBe('quoted_media_1');
+      expect(result[1].tweet_id).toBe('1234567890123456789'); // 원본 트윗이 나중
+      expect(result[1].screen_name).toBe('original_user');
+      expect(result[1].media_id).toBe('original_media_1');
+    });
+
+    it('should handle multiple medias in both original and quoted tweets', async () => {
+      const mockApiResponse = {
+        data: {
+          tweetResult: {
+            result: {
+              rest_id: '1111111111111111111',
+              core: {
+                user_results: {
+                  result: {
+                    screen_name: 'user_a',
+                  },
+                },
+              },
+              extended_entities: {
+                media: [
+                  {
+                    type: 'photo',
+                    id_str: 'orig_1',
+                    media_url_https: 'https://pbs.twimg.com/media/orig1.jpg',
+                  },
+                  {
+                    type: 'photo',
+                    id_str: 'orig_2',
+                    media_url_https: 'https://pbs.twimg.com/media/orig2.jpg',
+                  },
+                ],
+              },
+              quoted_status_result: {
+                result: {
+                  rest_id: '2222222222222222222',
+                  core: {
+                    user_results: {
+                      result: {
+                        screen_name: 'user_b',
+                      },
+                    },
+                  },
+                  extended_entities: {
+                    media: [
+                      {
+                        type: 'photo',
+                        id_str: 'quot_1',
+                        media_url_https: 'https://pbs.twimg.com/media/quot1.jpg',
+                      },
+                      {
+                        type: 'photo',
+                        id_str: 'quot_2',
+                        media_url_https: 'https://pbs.twimg.com/media/quot2.jpg',
+                      },
+                    ],
+                  },
+                },
+              },
+            },
+          },
+        },
+      };
+
+      vi.spyOn(TwitterAPI as any, 'apiRequest').mockResolvedValue(mockApiResponse);
+
+      const result = await TwitterAPI.getTweetMedias('1111111111111111111');
+
+      expect(result).toHaveLength(4);
+
+      // 첫 2개는 인용 트윗 미디어
+      expect(result[0].tweet_id).toBe('2222222222222222222');
+      expect(result[0].media_id).toBe('quot_1');
+      expect(result[1].tweet_id).toBe('2222222222222222222');
+      expect(result[1].media_id).toBe('quot_2');
+
+      // 나중 2개는 원본 트윗 미디어
+      expect(result[2].tweet_id).toBe('1111111111111111111');
+      expect(result[2].media_id).toBe('orig_1');
+      expect(result[3].tweet_id).toBe('1111111111111111111');
+      expect(result[3].media_id).toBe('orig_2');
+    });
+
+    it('should only return original tweet media when no quoted tweet exists', async () => {
+      const mockApiResponse = {
+        data: {
+          tweetResult: {
+            result: {
+              rest_id: '3333333333333333333',
+              core: {
+                user_results: {
+                  result: {
+                    screen_name: 'solo_user',
+                  },
+                },
+              },
+              extended_entities: {
+                media: [
+                  {
+                    type: 'photo',
+                    id_str: 'solo_media',
+                    media_url_https: 'https://pbs.twimg.com/media/solo.jpg',
+                  },
+                ],
+              },
+            },
+          },
+        },
+      };
+
+      vi.spyOn(TwitterAPI as any, 'apiRequest').mockResolvedValue(mockApiResponse);
+
+      const result = await TwitterAPI.getTweetMedias('3333333333333333333');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].tweet_id).toBe('3333333333333333333');
+      expect(result[0].screen_name).toBe('solo_user');
+      expect(result[0].media_id).toBe('solo_media');
+    });
+  });
 });

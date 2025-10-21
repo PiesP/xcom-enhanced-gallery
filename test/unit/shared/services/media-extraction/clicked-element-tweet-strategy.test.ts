@@ -362,6 +362,41 @@ describe('ClickedElementTweetStrategy', () => {
   });
 
   describe('edge cases', () => {
+    it('should prefer ancestor tweet container ID over current URL when clicking media in mentioned tweet', async () => {
+      // 현재 페이지는 다른 트윗의 permalink
+      (window as any).location = {
+        href: 'https://x.com/mainuser/status/5555555555',
+        pathname: '/mainuser/status/5555555555',
+      };
+
+      // 멘션된 트윗(인용/리플라이 등) 컨테이너를 구성하고 내부에 이미지 클릭
+      const outerArticle = document.createElement('article');
+      outerArticle.setAttribute('data-testid', 'tweet');
+
+      // 외부 트윗의 본문과 별개로, 내부에 또 다른 트윗(멘션/인용)을 둔다
+      const mentioned = document.createElement('article');
+      mentioned.setAttribute('data-testid', 'tweet');
+
+      const mentionedLink = document.createElement('a');
+      mentionedLink.setAttribute('href', '/quoteduser/status/9999999999');
+      mentioned.appendChild(mentionedLink);
+
+      const clickedImg = document.createElement('img');
+      clickedImg.src = 'https://pbs.twimg.com/media/quoted.jpg:large';
+      mentioned.appendChild(clickedImg);
+
+      outerArticle.appendChild(mentioned);
+      document.body.appendChild(outerArticle);
+
+      const result: TweetInfo | null = await strategy.extract(clickedImg);
+
+      expect(result).not.toBeNull();
+      // 현재 URL(5555..)이 아니라, 클릭된 컨테이너의 링크(9999..)를 사용해야 함
+      expect(result?.tweetId).toBe('9999999999');
+      expect(result?.extractionMethod).toContain('ancestor-container');
+
+      document.body.removeChild(outerArticle);
+    });
     it('should handle empty data attributes', async () => {
       const element = document.createElement('div');
       element.setAttribute('data-tweet-id', '');

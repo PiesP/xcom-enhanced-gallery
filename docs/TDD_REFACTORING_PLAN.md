@@ -8,10 +8,12 @@
 
 - Build: prod 326.71 KB / 335 KB (여유 8.29 KB), gzip 88.08 KB
 - 최적화: 프로덕션 소스맵 제거 완료 (파일 크기 최소화)
-- Tests: 2443 passed + 6 skipped (unit+browser+E2E+a11y) GREEN
+- Tests: **2349 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
+- Note: **Phase M1 완전 완료** — 클릭한 트윗 특정 + **인용 트윗 미디어 순서
+  개선** 완료. 인용 트윗 미디어가 원본 트윗보다 먼저 표시됨.
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
-- 의존성: 266 modules, 747 deps, 순환 0
-- 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (B1/B2/A1 등)
+- 의존성: 265 modules, 746 deps, 순환 0
+- 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조 (M1/B1/B2/A1 등)
 
 ---
 

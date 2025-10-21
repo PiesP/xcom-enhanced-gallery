@@ -61,4 +61,5 @@
     // JavaScript/TypeScript 언어 서버 최적화
     "js/ts.implicitProjectConfig.checkJs": false,
     "javascript.validate.enable": false
+    "editor.maxTokenizationLineLength": 200000
 }
