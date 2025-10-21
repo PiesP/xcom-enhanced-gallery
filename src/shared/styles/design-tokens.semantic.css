@@ -348,7 +348,8 @@
 
   /* Toolbar/Counter Typography Tokens */
   /* 미디어 카운터 기본 텍스트 톤을 공용 토큰으로 정의 (일관성 확보) */
-  --xeg-text-counter: var(--xeg-color-text-secondary);
+  /* 2025-10-21: 툴바 인디케이터 색상 통일에 따라 기본 텍스트(primary)로 승격 */
+  --xeg-text-counter: var(--xeg-color-text-primary);
 
   /* Legacy/Global Gallery aliases (Phase: design-unification) */
   /* NOTE: gallery-global.css에서 사용하는 레거시 토큰명을 최신 semantic 토큰으로 연결 */

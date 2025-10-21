@@ -7,7 +7,52 @@
 
 ---
 
-## Phase 144: 스크롤 애니메이션 & 리사이즈 테스트 ✅ **2순위 완료** (2025-10-20)
+## Phase 145: 툴바 인디케이터 텍스트 색상 통일 ✅ (2025-10-21)
+
+### 배경/목표
+
+- 툴바의 미디어 인디케이터에서 현재 인덱스와 전체 개수의 텍스트 색상이 서로 다른
+  토큰을 사용해 시각적 불일치가 발생
+- 요구사항: 두 값의 텍스트 색상을 동일한 토큰으로 통일하고, 동일한 기준을 설정
+  메뉴의 레이블(테마/언어 등) 텍스트에도 일관되게 적용
+
+### 변경 내역(최소 diff)
+
+- Toolbar 스타일(`src/shared/components/ui/Toolbar/Toolbar.module.css`)
+  - `.mediaCounter` 색상을 `var(--xeg-color-text-primary)`로 통일
+  - `.totalCount` 색상을 `var(--xeg-color-text-primary)`로 통일 (이전:
+    `--xeg-color-neutral-600`)
+  - `.currentIndex`는 기존대로 `var(--xeg-color-text-primary)` 유지
+- 디자인 토큰(`src/shared/styles/design-tokens.semantic.css`)
+  - `--xeg-text-counter`를 `var(--xeg-color-text-primary)`로 승격하여 의미론적
+    일관성 확보
+- Settings 스타일
+  확인(`src/shared/components/ui/Settings/SettingsControls.module.css`)
+  - `.label`이 이미 `var(--xeg-color-text-primary)`를 사용함을 확인(변경 없음).
+    `.compactLabel`은 보조 텍스트(secondary) 유지
+
+### 테스트(TDD)
+
+- 신규 테스트 추가:
+  `test/unit/styles/toolbar-indicator-text-color-unify.test.ts`
+  - `.mediaCounter`가 `var(--xeg-color-text-primary)`를 사용함을 검증
+  - `.currentIndex`/`.totalCount` 색상 토큰 불일치 및 `--xeg-color-neutral-600`
+    회귀 방지 가드
+  - Settings `.label`이 동일한 primary 텍스트 토큰을 사용함을 검증
+
+### 결과
+
+- 전체 테스트 GREEN (unit + browser + e2e + a11y)
+- 빌드 검증 PASS. 산출물 크기: raw 326.97 KB / gzip 88.18 KB
+- 유지보수 점검에서 빌드 크기 예산(325 KB) 경고는 정보성 경고로 유지(기준 문서
+  상 한도 335 KB는 충족). 추후 번들 여유 확보(P2) 과제로 지속 관리
+
+### 교훈/메모
+
+- 인디케이터 전용 토큰을 primary로 연결하여 컴포넌트/문서 간 색상 일관성과
+  유지보수성을 향상
+- 설정 메뉴는 기존 정책(모노크롬/보조 텍스트)은 유지하면서 기본 레이블 색상
+  기준을 인디케이터와 동일하게 고정해 회귀를 방지
 
 ### 선택 이유
 

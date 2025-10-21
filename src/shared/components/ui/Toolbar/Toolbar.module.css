@@ -298,7 +298,8 @@
 }
 
 .mediaCounter {
-  color: var(--xeg-text-counter);
+  /* 인디케이터 텍스트는 기본 텍스트 톤으로 통일 */
+  color: var(--xeg-color-text-primary);
   font-size: var(--xeg-font-size-md);
   font-weight: 600;
   text-align: center;
@@ -324,7 +325,8 @@
 }
 
 .totalCount {
-  color: var(--xeg-color-neutral-600);
+  /* 현재/전체 모두 동일한 텍스트 톤 사용 */
+  color: var(--xeg-color-text-primary);
 }
 /* 고대비 모드에서 구분자 시인성 강화 */
 @media (prefers-contrast: more), (prefers-contrast: high) {

@@ -1,6 +1,6 @@
 # TDD 리팩토링 활성 계획
 
-최종 업데이트: 2025-10-20
+최종 업데이트: 2025-10-21
 
 요약
 
@@ -31,7 +31,7 @@
 
 ## 현재 상태
 
-- Build: prod 326.99 KB / 335 KB, gzip 88.19 KB (검증 스크립트 PASS)
+- Build: prod 326.97 KB / 335 KB, gzip 88.18 KB (검증 스크립트 PASS)
 - Tests: unit + browser + E2E + a11y 전체 GREEN
 - 정적 분석: Typecheck / ESLint / Stylelint / CodeQL 모두 PASS
 
@@ -40,6 +40,11 @@
 - 브랜치: `feature/docs-token-uniformity-followups`에서 P0 → P1 → P2 순으로 처리
 - 완료 시: 본 문서에서 해당 항목 제거, 세부 내역은 COMPLETED 문서로 이관
 - 보고: `AGENTS.md`의 작업 종료 프로토콜에 따라 build/maintenance 요약 보고
+
+### 참고 메모 (2025-10-21)
+
+- Phase 145(툴바 인디케이터 텍스트 색상 통일) 완료. 상세 기록은
+  `TDD_REFACTORING_PLAN_COMPLETED.md`에 추가됨.
 
 ## 참고 문서
 
