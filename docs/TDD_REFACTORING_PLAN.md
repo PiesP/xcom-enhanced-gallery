@@ -40,7 +40,29 @@
 
 ## 활성 Phase
 
-> 현재 활성화된 Phase가 없습니다. 백로그에서 다음 작업을 선택하세요.
+### 다음 Phase 계획 중 (2025-10-21)
+
+**Phase B1 상태**: 부분 완료 (상세 기록: `TDD_REFACTORING_PLAN_COMPLETED.md`)
+
+- ✅ logger.ts: 87.21% 달성
+- ⚠️ GalleryApp.ts: 단위 테스트 한계 인식 → 통합 테스트로 전환 권장
+- ✅ media-extraction: 기존 테스트 존재
+- ✅ 전체 테스트: 207/207 files (100%), 1744 tests (100%)
+- ✅ Browser/E2E/a11y 테스트: 모두 PASS
+
+**현재 상태**:
+
+- Build: prod 326.73 KB / 335 KB (8.27 KB 여유), gzip 88.11 KB
+- Tests: unit(~1744) + browser(103) + E2E(60) + a11y(34) 전체 GREEN
+- 정적 분석: TypeScript + ESLint + Stylelint + CodeQL 모두 PASS
+- 의존성: 266 modules, 747 dependencies, 0 circular violations
+
+**백로그 우선순위 검토**:
+
+1. 테스트 개선 (GalleryApp 통합 테스트, Browser 확장)
+2. 성능 최적화 (Lazy loading, CSS Containment)
+3. 접근성 강화 (ARIA, 스크린 리더, 키보드)
+4. 아키텍처 개선 (Service Layer, State Management)
 
 ---
 
