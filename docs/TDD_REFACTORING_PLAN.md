@@ -42,18 +42,22 @@
 
 ### 다음 Phase 계획 중 (2025-10-21)
 
-**Phase B1 상태**: 부분 완료 (상세 기록: `TDD_REFACTORING_PLAN_COMPLETED.md`)
+**Phase B1 상태**: ✅ **옵션 1 완료** (GalleryApp 통합 테스트 작성)
 
 - ✅ logger.ts: 87.21% 달성
-- ⚠️ GalleryApp.ts: 단위 테스트 한계 인식 → 통합 테스트로 전환 권장
+- ✅ **GalleryApp.ts: 통합 테스트 15개 작성 완료** (100% 통과)
+  - 테스트 파일: `test/unit/features/gallery/GalleryApp.integration.test.ts`
+  - 커버리지: 초기화, open/close, config, diagnostics, cleanup, errors, signals
+  - 서비스 등록 패턴 확립 (GalleryRenderer)
+  - fast + unit 프로젝트에서 총 30회 실행 (15개 × 2)
 - ✅ media-extraction: 기존 테스트 존재
-- ✅ 전체 테스트: 207/207 files (100%), 1744 tests (100%)
+- ✅ 전체 테스트: 208/208 files (100%), 1748 tests (100%)
 - ✅ Browser/E2E/a11y 테스트: 모두 PASS
 
 **현재 상태**:
 
 - Build: prod 326.73 KB / 335 KB (8.27 KB 여유), gzip 88.11 KB
-- Tests: unit(~1744) + browser(103) + E2E(60) + a11y(34) 전체 GREEN
+- Tests: unit(~1748) + browser(103) + E2E(60) + a11y(34) 전체 GREEN
 - 정적 분석: TypeScript + ESLint + Stylelint + CodeQL 모두 PASS
 - 의존성: 266 modules, 747 dependencies, 0 circular violations
 

@@ -7,7 +7,7 @@
 
 ---
 
-## Phase B1: 테스트 & 접근성 통합 개선 (부분 완료) ✅ (2025-10-21)
+## Phase B1: 테스트 & 접근성 통합 개선 ✅ (2025-10-21)
 
 ### 배경/목표
 
@@ -23,14 +23,42 @@
    - 전체 실행: 0% 보고 (Vitest v8 dynamic import 순서 문제)
    - 판단: 실제 87.21%로 확인, 목표 달성
 
-2. **GalleryApp.ts 기반 테스트 작성** ⚠️
-   - 파일 생성: `test/unit/features/gallery/GalleryApp.test.ts` (405 lines)
-   - 테스트: 42개 작성 (14개 통과, 28개 실패)
-   - 통과: 생성자, updateConfig 기본 기능
-   - 실패: DOM 생성, 이벤트 시스템 모킹 복잡도
-   - **판단**: GalleryApp은 복잡한 통합 클래스로 **단위 테스트 한계** 인식
-   - **권장**: 나머지 28개는 통합/E2E 테스트로 커버 필요
-   - **조치**: 파일 제거하여 전체 테스트 GREEN 유지 (207/207 pass)
+2. **GalleryApp.ts 통합 테스트 작성** ✅ (2025-10-21)
+   - **배경**: 단위 테스트 시도(42개) → 28개 실패 (DOM/이벤트 모킹 복잡도)
+   - **전략 전환**: 통합 테스트로 접근 (실제 서비스 인스턴스 사용)
+   - **파일**: `test/unit/features/gallery/GalleryApp.integration.test.ts` (237
+     lines)
+   - **테스트**: 15개 (8 describe 블록)
+     - 초기화 플로우 (3개)
+     - 갤러리 열기/닫기 (2개)
+     - 설정 관리 (2개)
+     - 진단/디버그 (3개)
+     - 정리/리소스 관리 (2개)
+     - 에러 핸들링 (2개)
+     - Signal 통합 (1개)
+   - **결과**: ✅ 100% 통과 (fast + unit 프로젝트에서 총 30회 실행)
+   - **커밋**: 3aed0bbc "test: Add GalleryApp integration tests (15 tests, 100%
+     passing)"
+
+   **핵심 패턴 확립**:
+
+   ```typescript
+   beforeEach(() => {
+     initializeVendors(); // SolidJS 벤더 초기화
+     CoreService.resetInstance(); // 서비스 컨테이너 리셋
+     const renderer = new GalleryRenderer(); // 렌더러 인스턴스 생성
+     registerGalleryRenderer(renderer); // 서비스 등록
+     galleryApp = new GalleryApp(); // 테스트 대상 생성
+     document.body.innerHTML = ''; // DOM 클린업
+     vi.clearAllMocks(); // 모의 객체 초기화
+   });
+   ```
+
+   **파일 위치 결정**:
+   - 초기 계획: `test/integration/features/gallery/`
+   - 문제: `vitest.config.ts`에 integration 프로젝트 없음
+   - 해결: `test/unit/features/gallery/`로 이동 (pragmatic 접근)
+   - 장점: fast + unit 프로젝트에서 자동 실행
 
 3. **media-extraction 확인** ✅
    - 기존 테스트 존재:
@@ -39,34 +67,50 @@
 
 ### 결과
 
-- **전체 테스트**: 207/207 files pass (100%), 1744 tests pass (100%)
+- **전체 테스트**: 208/208 files pass (100%), 1748 tests pass (100%)
 - **빌드 크기**: 326.73 KB / 335 KB (8.27 KB 여유)
 - **정적 분석**: TypeScript + ESLint + CodeQL 모두 PASS
 - **Browser 테스트**: 103 passed (Chromium)
 - **E2E 테스트**: 60 passed (Playwright)
 - **a11y 테스트**: 34 passed (axe-core)
+- **GalleryApp 통합 테스트**: 15 passed (30회 실행: fast + unit)
 
 ### 교훈
 
-1. **통합 클래스 테스트 전략**
-   - GalleryApp 같은 복잡한 통합 클래스는 단위 테스트보다 **통합/E2E 테스트가 더
-     효율적**
-   - DOM 생성, 이벤트 시스템 등 브라우저 환경 의존성이 높은 경우 JSDOM 한계 존재
-   - 기반 구조 검증(생성자, 설정 등)만 단위 테스트로 커버하고 나머지는 E2E로
-     전환 권장
+1. **통합 클래스 테스트 전략** (성공적으로 적용됨 ✅)
+   - GalleryApp 같은 복잡한 통합 클래스는 **통합 테스트가 효율적**임을 실증
+   - 실제 서비스 인스턴스를 사용하는 통합 테스트로 15개 테스트 100% 통과 달성
+   - 서비스 등록 패턴 (`initializeVendors` + `CoreService.resetInstance` +
+     `registerGalleryRenderer`) 확립
 
-2. **커버리지 측정 제약**
+2. **Vitest 프로젝트 구성 이해**
+   - `test/integration/` 디렉터리는 vitest.config.ts에 정의되지 않음 발견
+   - 실용적 해결: `test/unit/`로 이동하여 fast + unit 프로젝트에서 자동 실행
+   - 파일 위치는 semantic보다 pragmatic 접근이 더 효과적
+
+3. **서비스 의존성 관리**
+   - 통합 테스트는 실제 서비스 인스턴스가 필요함
+   - `CoreService`를 통한 서비스 등록/초기화 패턴이 테스트 격리에 효과적
+   - `beforeEach`에서 `resetInstance()` + 명시적 등록으로 깨끗한 상태 보장
+
+4. **API 검증 방법**
+   - 테스트 실패 시 소스 코드를 직접 읽어 실제 API 확인
+   - 예: `getDiagnostics()` 반환값이 예상과 다를 때 소스 확인으로 즉시 해결
+   - Assumption보다 Verification이 중요
+
+5. **커버리지 측정 제약**
    - Vitest v8 dynamic import 순서 문제로 전체 실행 시 일부 파일이 0%로 보고됨
    - **해결**: 단독 실행으로 실제 커버리지 확인 필요 (`npx vitest run <file>`)
 
-3. **실용적 접근**
+6. **실용적 접근**
    - 순수 함수/서비스 계층 → 단위 테스트 우선
-   - 복잡한 통합 클래스 → E2E/통합 테스트 우선
-   - 테스트 유지보수 비용 > 커버리지 목표 달성 시 전략 재검토 필요
+   - 복잡한 통합 클래스 → 통합 테스트 우선 (실증됨)
+   - 테스트 유지보수 비용 고려한 전략 선택
 
 ### 다음 단계
 
-- [ ] GalleryApp 통합 테스트 작성 (test/integration/features/gallery/)
+- [x] ✅ GalleryApp 통합 테스트 작성 (완료: 15개 테스트, 100% 통과)
+- [ ] 추가 통합 시나리오 고려 (원래 28개 실패한 케이스 중 중요도 높은 것들)
 - [ ] Browser 테스트 확장 (Solid.js 반응성 검증)
 - [ ] 접근성 체크리스트 작성 (docs/ACCESSIBILITY_CHECKLIST.md)
 - [ ] Phase B2 계획 수립
