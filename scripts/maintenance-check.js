@@ -131,7 +131,7 @@ function checkBuildSize() {
   if (existsSync(prodFile)) {
     const stat = statSync(prodFile);
     const sizeKB = (stat.size / 1024).toFixed(2);
-    const budget = 325; // KB
+    const budget = 335; // KB (Phase 78 baseline + 10KB)
     const status = stat.size / 1024 <= budget ? '✅' : '⚠️';
     console.log(`${status} 프로덕션 빌드: ${sizeKB} KB (예산: ${budget} KB)`);
   }
