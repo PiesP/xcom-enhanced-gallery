@@ -58,12 +58,11 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
   }
 
   private findUsernameInContainer(container: HTMLElement): string | null {
-    const usernameLinks = container.querySelectorAll(
-      'a[href^="/"][href*="@"]:not([href*="/status/"])'
-    );
+    // 상대 경로 사용자 링크에서 사용자명 찾기 (status 링크 제외)
+    const usernameLinks = container.querySelectorAll('a[href^="/"]');
     for (const link of usernameLinks) {
       const href = link.getAttribute('href');
-      if (href) {
+      if (href && !href.includes('/status/')) {
         const match = href.match(/^\/([^/]+)$/);
         if (match) return match[1] ?? null;
       }

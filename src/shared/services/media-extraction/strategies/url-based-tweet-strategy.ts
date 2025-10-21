@@ -52,7 +52,15 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
   }
 
   private extractUsernameFromUrl(url: string): string | null {
-    const match = url.match(/twitter\.com\/([^/]+)\//);
-    return match ? (match[1] ?? null) : null;
+    // 포트 번호 지원 및 "status" 경로 제외
+    const match = url.match(/(?:twitter|x)\.com(?::\d+)?\/([^/]+)\//);
+    const username = match ? (match[1] ?? null) : null;
+
+    // "status"는 경로 세그먼트이므로 username으로 간주하지 않음
+    if (username === 'status') {
+      return null;
+    }
+
+    return username;
   }
 }

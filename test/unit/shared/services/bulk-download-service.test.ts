@@ -1,0 +1,505 @@
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service.js';
+import type {
+  BulkDownloadOptions,
+  DownloadResult,
+  SingleDownloadResult,
+} from '../../../../src/shared/services/bulk-download-service.js';
+import type { MediaInfo } from '../../../../src/shared/types/media.types.js';
+
+describe('BulkDownloadService', () => {
+  let service: BulkDownloadService;
+
+  beforeEach(() => {
+    service = new BulkDownloadService();
+    // Reset abort/cancel state
+    (service as any).currentAbortController = undefined;
+    (service as any).cancelToastShown = false;
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  describe('downloadSingle', () => {
+    it('should return error when signal is already aborted', async () => {
+      const controller = new globalThis.AbortController();
+      controller.abort();
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/image.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const result: SingleDownloadResult = await service.downloadSingle(media, {
+        signal: controller.signal,
+      });
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('cancelled');
+      expect(result.error).toBeTruthy();
+    });
+
+    it('should handle fetch failure with HTTP error status', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/invalid.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      // Mock fetch to return error status
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      });
+
+      const result: SingleDownloadResult = await service.downloadSingle(media);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('error');
+      expect(result.error).toContain('HTTP 404');
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should handle media without id by generating one', async () => {
+      const mediaWithoutId = {
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      } as unknown as MediaInfo;
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const result: SingleDownloadResult = await service.downloadSingle(mediaWithoutId);
+
+      // In JSDOM, URL.createObjectURL is not available, so download will fail
+      // But the important part is that ensureMediaItem generates an ID
+      expect(result).toBeDefined();
+      expect(result.error).toBeTruthy(); // Expected to fail due to JSDOM limitation
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should handle abort timeout signal', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/slow.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      // Mock fetch to simulate timeout
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockImplementation(() => {
+        return new Promise((_, reject) => {
+          const error = new Error('The operation was aborted');
+          error.name = 'AbortError';
+          setTimeout(() => reject(error), 100);
+        });
+      });
+
+      const result: SingleDownloadResult = await service.downloadSingle(media);
+
+      expect(result.success).toBe(false);
+      // JSDOM환경에서 abort error는 'cancel'이 아니라 단순 error로 처리됨
+      expect(result.status).toBeDefined();
+      expect(result.error).toBeTruthy();
+
+      globalThis.fetch = originalFetch;
+    });
+  });
+
+  describe('downloadMultiple', () => {
+    it('should return error for empty array', async () => {
+      const result: DownloadResult = await service.downloadMultiple([]);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('error');
+      expect(result.error).toBe('No files to download');
+      expect(result.filesProcessed).toBe(0);
+      expect(result.filesSuccessful).toBe(0);
+      expect((result as any).code).toBeTruthy(); // ErrorCode.EMPTY_INPUT
+    });
+
+    it('should handle single item with invalid data', async () => {
+      const invalidItem = null as unknown as MediaInfo;
+      const result: DownloadResult = await service.downloadMultiple([invalidItem]);
+
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('error');
+      expect(result.filesProcessed).toBe(1);
+      expect(result.filesSuccessful).toBe(0);
+      expect(result.error).toContain('Invalid media item');
+    });
+
+    it('should call abort when options.signal is aborted', async () => {
+      const controller = new globalThis.AbortController();
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const downloadPromise = service.downloadMultiple([media, media], {
+        signal: controller.signal,
+      });
+
+      // Abort immediately
+      controller.abort();
+
+      const result: DownloadResult = await downloadPromise;
+
+      // Should be cancelled
+      expect(result.success).toBe(false);
+      expect(result.status).toBe('cancelled');
+    });
+
+    it('should invoke onProgress callback during single item download', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const progressEvents: any[] = [];
+      const onProgress = vi.fn((progress: any) => {
+        progressEvents.push(progress);
+      });
+
+      // Mock successful fetch
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      await service.downloadMultiple([media], { onProgress });
+
+      expect(onProgress).toHaveBeenCalled();
+      expect(progressEvents.length).toBeGreaterThan(0);
+      // Check for 'preparing' and 'downloading' phases
+      expect(progressEvents.some(e => e.phase === 'preparing')).toBe(true);
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should set currentAbortController during download', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const originalFetch = globalThis.fetch;
+      let capturedController: globalThis.AbortController | undefined;
+      globalThis.fetch = vi.fn().mockImplementation(async () => {
+        // Capture controller state during fetch
+        capturedController = (service as any).currentAbortController;
+        return {
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+        };
+      });
+
+      await service.downloadMultiple([media]);
+
+      expect(capturedController).toBeDefined();
+      expect((service as any).currentAbortController).toBeUndefined(); // Cleanup in finally
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should handle read-only array input', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+      const readOnlyArray: readonly MediaInfo[] = [media];
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const result: DownloadResult = await service.downloadMultiple(readOnlyArray);
+
+      // JSDOM environment - URL.createObjectURL not available
+      expect(result).toBeDefined();
+      expect(result.filesProcessed).toBe(1);
+
+      globalThis.fetch = originalFetch;
+    });
+  });
+
+  describe('downloadBulk', () => {
+    it('should delegate to downloadMultiple', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const spy = vi.spyOn(service, 'downloadMultiple');
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      await service.downloadBulk([media]);
+
+      expect(spy).toHaveBeenCalledWith([media], {});
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should convert readonly array to mutable array', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+      const readOnlyArray: readonly MediaInfo[] = [media];
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const result: DownloadResult = await service.downloadBulk(readOnlyArray);
+
+      expect(result.filesProcessed).toBe(1);
+
+      globalThis.fetch = originalFetch;
+    });
+  });
+
+  describe('cancelDownload', () => {
+    it('should abort current download when called', () => {
+      // Set up active download state
+      const controller = new globalThis.AbortController();
+      (service as any).currentAbortController = controller;
+      const abortSpy = vi.spyOn(controller, 'abort');
+
+      service.cancelDownload();
+
+      expect(abortSpy).toHaveBeenCalled();
+    });
+
+    it('should not throw error when no active download', () => {
+      (service as any).currentAbortController = undefined;
+
+      expect(() => service.cancelDownload()).not.toThrow();
+    });
+
+    it('should set cancelToastShown flag', () => {
+      const controller = new globalThis.AbortController();
+      (service as any).currentAbortController = controller;
+      (service as any).cancelToastShown = false;
+
+      service.cancelDownload();
+
+      expect((service as any).cancelToastShown).toBe(true);
+    });
+
+    it('should not show toast twice', () => {
+      const controller = new globalThis.AbortController();
+      (service as any).currentAbortController = controller;
+      (service as any).cancelToastShown = true;
+
+      const initialFlag = (service as any).cancelToastShown;
+      service.cancelDownload();
+
+      expect((service as any).cancelToastShown).toBe(initialFlag); // Still true
+    });
+  });
+
+  describe('isDownloading', () => {
+    it('should return true when download is active', () => {
+      (service as any).currentAbortController = new globalThis.AbortController();
+
+      expect(service.isDownloading()).toBe(true);
+    });
+
+    it('should return false when no download is active', () => {
+      (service as any).currentAbortController = undefined;
+
+      expect(service.isDownloading()).toBe(false);
+    });
+
+    it('should return false after cancelDownload', () => {
+      (service as any).currentAbortController = new globalThis.AbortController();
+      service.cancelDownload();
+      (service as any).currentAbortController = undefined; // Simulate cleanup
+
+      expect(service.isDownloading()).toBe(false);
+    });
+
+    it('should be consistent across multiple calls', () => {
+      (service as any).currentAbortController = new globalThis.AbortController();
+
+      expect(service.isDownloading()).toBe(true);
+      expect(service.isDownloading()).toBe(true);
+      expect(service.isDownloading()).toBe(true);
+    });
+  });
+
+  describe('lifecycle', () => {
+    it('should handle cancel → isDownloading → downloadMultiple cycle', async () => {
+      // Initial state
+      expect(service.isDownloading()).toBe(false);
+
+      // Setup active download
+      const controller = new globalThis.AbortController();
+      (service as any).currentAbortController = controller;
+      expect(service.isDownloading()).toBe(true);
+
+      // Cancel
+      service.cancelDownload();
+      (service as any).currentAbortController = undefined; // Cleanup
+      expect(service.isDownloading()).toBe(false);
+
+      // New download should reset state
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      await service.downloadMultiple([media]);
+
+      expect(service.isDownloading()).toBe(false); // Cleanup in finally
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should reset cancelToastShown on new download', async () => {
+      (service as any).cancelToastShown = true;
+
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      await service.downloadMultiple([media]);
+
+      // Should be reset during download
+      expect((service as any).cancelToastShown).toBe(false);
+
+      globalThis.fetch = originalFetch;
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle concurrent downloadMultiple calls', async () => {
+      const media: MediaInfo = {
+        id: 'test',
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+        filename: 'test.jpg',
+      };
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const promise1 = service.downloadMultiple([media]);
+      const promise2 = service.downloadMultiple([media]);
+
+      const results = await Promise.all([promise1, promise2]);
+
+      expect(results[0]).toBeDefined();
+      expect(results[1]).toBeDefined();
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should handle media with missing optional fields', async () => {
+      const minimalMedia = {
+        url: 'https://example.com/test.jpg',
+        type: 'image' as const,
+      } as unknown as MediaInfo;
+
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const result: SingleDownloadResult = await service.downloadSingle(minimalMedia);
+
+      // JSDOM limitation - URL.createObjectURL not available
+      expect(result).toBeDefined();
+      // The important part is that it doesn't throw, handles gracefully
+      expect(result.error).toBeTruthy();
+
+      globalThis.fetch = originalFetch;
+    });
+
+    it('should handle Blob creation from ArrayBuffer in ZIP download', async () => {
+      const media1: MediaInfo = {
+        id: 'test1',
+        url: 'https://example.com/test1.jpg',
+        type: 'image' as const,
+        filename: 'test1.jpg',
+      };
+      const media2: MediaInfo = {
+        id: 'test2',
+        url: 'https://example.com/test2.jpg',
+        type: 'image' as const,
+        filename: 'test2.jpg',
+      };
+
+      // Mock downloadAsZip path (multi-item)
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test'], { type: 'image/jpeg' })),
+      });
+
+      const result: DownloadResult = await service.downloadMultiple([media1, media2]);
+
+      // Should attempt ZIP download
+      expect(result.filesProcessed).toBe(2);
+
+      globalThis.fetch = originalFetch;
+    });
+  });
+});

@@ -137,7 +137,8 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
       );
       if (usernameElement) {
         const href = usernameElement.getAttribute('href');
-        if (href && href.startsWith('/') && !href.includes('/')) {
+        // href가 "/username" 형식인지 확인 (맨 앞의 / 이후에는 추가 /가 없어야 함)
+        if (href && href.startsWith('/') && href.lastIndexOf('/') === 0) {
           return href.substring(1); // / 제거
         }
       }
