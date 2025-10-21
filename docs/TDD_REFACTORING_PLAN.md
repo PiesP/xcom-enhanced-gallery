@@ -45,10 +45,16 @@
 - 🔄 **Phase A5.3 진행 중**: State Management 패턴 통일
   - **목표**: Signal 생성 패턴 표준화, State Machine 확대 적용, signalSelector
     일관 적용
-  - **분석 완료**: docs/temp/A5_3_STATE_MANAGEMENT_ANALYSIS.md
-  - **Step 1 (P1)**: Signal 패턴 표준화 (createSignalSafe 통일)
-    - 대상: 16개 파일 (direct createSignal → createSignalSafe)
-    - 소요: 1-2시간
+  - **분석 완료**: docs/temp/A5_3_STATE_MANAGEMENT_ANALYSIS.md ✓
+  - **Step 1 (P1) 진행 중**: Signal 패턴 표준화 (createSignalSafe 통일)
+    - ✅ toolbar.signals.ts (commit c9d5e222)
+      - lazy initialization → immediate initialization
+      - createSignal → createSignalSafe
+      - 에러 처리 개선
+      - 테스트 21개 추가, 모두 통과
+      - 기존 2478개 테스트 통과
+    - 🔄 다음 16개 파일 (use-gallery-toolbar-logic.ts, stability-detector.ts 등)
+    - 예상: 1-2시간 (총 1시간 남음)
   - **Step 2 (P2)**: State Machine 확대 (3개 추가)
     - Download: idle → queued → processing → complete|error
     - Toast: idle → showing → waiting → hidden
@@ -56,7 +62,7 @@
     - 소요: 2-3시간
   - **Step 3 (P3 선택)**: signalSelector 일관 적용 (파생값 캐싱)
     - 소요: 1시간
-  - **예상 총 소요**: 4-6시간
+  - **예상 남은 소요**: 3-6시간 (Step 1 마무리 + Step 2/3)
 
 **분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 
