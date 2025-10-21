@@ -210,13 +210,13 @@
 }
 
 .itemsContainer::-webkit-scrollbar-thumb {
-  background: var(--xeg-neutral-300);
+  background: var(--xeg-color-neutral-300);
   border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
   transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .itemsContainer::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-neutral-400);
+  background: var(--xeg-color-neutral-400);
 }
 
 .container.uiHidden .toolbarWrapper,
