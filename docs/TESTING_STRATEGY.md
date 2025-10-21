@@ -30,6 +30,85 @@ Kent C. Dodds의 Testing Trophy 모델 기반 테스트 분포:
 
 ---
 
+## 🧩 유저 스크립트 특화 테스트 피라미드 (X.com)
+
+> 유저 스크립트는 일반 웹앱과 달리 “외부 DOM/브라우저 API 의존 + 실제 환경
+> 중요성”이 크므로, 아래 가이드를 기본 테스트 전략 위에 얹어 적용합니다.
+
+### 고려사항
+
+- 외부 DOM 의존성: X.com DOM 구조 변경에 취약 → 선택자 추상화와 Fail-fast 필요
+- 브라우저 API 의존성: GM\_\*, localStorage, fetch 등 → Userscript/Vendor
+  getter로 주입
+- 사용자 인터랙션 중심: 클릭, 키보드 입력 위주 → PC 전용 이벤트 정책 준수
+- 실제 환경 중요성: 프로덕션에서만 드러나는 이슈 존재 → 최소한의 E2E 스모크 유지
+
+### 권장 분포(가이드라인)
+
+```
+           ┌─────────────┐
+           │   E2E (5%)   │  ← 실제 X.com 환경 (Playwright 스모크)
+           └─────────────┘
+         ┌───────────────────┐
+         │ Integration (15%) │  ← 브라우저/DOM 상호작용 중심(브라우저 모드 포함)
+         └───────────────────┘
+       ┌───────────────────────┐
+       │    Unit (60%)         │  ← 순수 로직/서비스/유틸리티
+       └───────────────────────┘
+     ┌─────────────────────────────┐
+     │  Static Analysis (20%)      │  ← 타입/린트/보안
+     └─────────────────────────────┘
+```
+
+이 분포는 “테스트 비용/신뢰도/유지보수성” 균형을 위한 목표치입니다. 실제 비율은
+시점별로 달라질 수 있으나, 상위 레이어(E2E) 의존도 증가는 가급적 피하고 하위
+레이어(Unit/Static)을 두텁게 유지합니다.
+
+### 레이어별 메모(유저 스크립트 관점)
+
+- Static Analysis: `npm run typecheck` / `npm run lint` / `npm run codeql:check`
+  - DOM/벤더/GM API를 직접 import하지 않고 getter 경유하는지 규칙 검증(CodeQL
+    포함)
+- Unit: `npm run test:unit` (JSDOM)
+  - 서비스/유틸/파일명/파서 등 순수 로직에 집중, 브라우저/GM API는 반드시 모킹
+- Integration: `npm run test:browser`(브라우저 모드) 또는 JSDOM 통합
+  - Solid 반응성·레이아웃·포커스·애니메이션 등 JSDOM 한계를 브라우저 모드로 보완
+- E2E: `npm run e2e:smoke` (+ 접근성: `npm run e2e:a11y`)
+  - 핵심 경로만 유지, X.com DOM 변경에 취약하므로 스모크 수준으로 관리
+
+### 유저 스크립트 특화 Do & Don’t
+
+✅ Do
+
+- 선택자 상수화/추상화: `src/constants.ts`의 `SELECTORS`/`STABLE_SELECTORS` 사용
+- 브라우저/GM API 추상화:
+  `@shared/external/vendors`/`@shared/external/userscript/adapter`의 getter 사용
+  - 예: `const us = getUserscript(); await us.download(url, name)`
+- Fail-fast: 외부 DOM 변경 감지 시 조기 예외 + 폴백 경로, 로깅/토스트로 가시화
+- PC 전용 이벤트만 사용: 키다운/클릭/휠 등 허용 목록 준수 (Touch/Pointer 금지)
+
+❌ Don’t
+
+- X.com 내부 DOM 셀렉터를 테스트 전반에 하드코딩(중복)하지 말 것 → 상수/헬퍼
+  경유
+- GM\_\*를 코드/테스트에서 직접 호출하지 말 것 → `getUserscript()` 경유
+- E2E 범위를 불필요하게 확장하지 말 것 → 스모크로 핵심 경로만 유지
+- 실제 다운로드를 테스트에서 수행하지 말 것 → Blob 생성/ZIP 작성까지로 한정
+
+### 참고: 테스트 예시 매핑
+
+- 파일명/정규화/파서/CRC/포맷팅 → Unit (모킹 100%)
+- 미디어 추출 플로우/컴포넌트 렌더링/키 이벤트 → Integration(JSDOM) 또는 Browser
+  모드
+- 갤러리 오픈/네비게이션/툴바 표시 → E2E 스모크(실제 X.com 환경, 하네스 API
+  참조)
+- 접근성(ARIA/대비/포커스) → Playwright + axe-core (`e2e:a11y`)
+
+> 자세한 하네스/반응성 제한/Remount 패턴은 `AGENTS.md`의 E2E 테스트 가이드와
+> `playwright/harness/*`를 참고하세요.
+
+---
+
 ## 🎯 테스트 타입별 책임 분리
 
 ### 1. Static Analysis (가장 빠름, 수초)
@@ -204,6 +283,5 @@ git push
 ---
 
 > **테스트 정책**: 새 기능은 반드시 테스트와 함께 제출. TDD 권장 (RED → GREEN →
-> REFACTOR).  
-> **현재 상태**: 1389 단위 테스트, 60 브라우저 테스트, 44 E2E 테스트, 14 접근성
-> 테스트 (100% 통과율) ✅
+> REFACTOR). **현재 상태**: 1389 단위 테스트, 60 브라우저 테스트, 44 E2E 테스트,
+> 14 접근성 테스트 (100% 통과율) ✅

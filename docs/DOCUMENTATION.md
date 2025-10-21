@@ -20,7 +20,8 @@
   PC 전용 이벤트, 디자인 토큰)
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: 3계층 구조, 의존성 규칙
 - **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)**: Testing Trophy, JSDOM, E2E
-  하네스
+  하네스 ·
+  [유저 스크립트 특화 피라미드](./TESTING_STRATEGY.md#유저-스크립트-특화-테스트-피라미드-xcom)
 
 ### 품질 및 유지보수
 
