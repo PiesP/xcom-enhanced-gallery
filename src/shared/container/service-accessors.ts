@@ -24,20 +24,8 @@ export function getMediaFilenameService(): FilenameService {
   return bridgeGetService<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
-export async function getBulkDownloadServiceFromContainer(): Promise<BulkDownloadService> {
-  try {
-    return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
-  } catch {
-    // Lazy fallback: register factory instance if not present
-    // This keeps tests green even when core service registration hasn't run yet.
-    // Use dynamic import to avoid circular dependency with service-factories
-    const { getBulkDownloadService } = await import('../services/service-factories');
-    const bulkDownloadService = await getBulkDownloadService();
-    bridgeRegister(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
-    // Also provide gallery alias for compatibility
-    bridgeRegister(SERVICE_KEYS.GALLERY_DOWNLOAD, bulkDownloadService);
-    return bulkDownloadService;
-  }
+export function getBulkDownloadServiceFromContainer(): BulkDownloadService {
+  return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
 }
 
 export function getGalleryDownloadService(): BulkDownloadService {

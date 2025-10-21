@@ -627,7 +627,7 @@ export class MediaService {
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
-    const bulk = await getBulkDownloadServiceFromContainer();
+    const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadSingle(media);
   }
 
@@ -638,7 +638,7 @@ export class MediaService {
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
-    const bulk = await getBulkDownloadServiceFromContainer();
+    const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadMultiple(mediaItems, options);
   }
 
