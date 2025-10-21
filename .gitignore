@@ -26,6 +26,8 @@ playwright-report/
 playwright/.cache/
 *.lcov
 .vitest-cache/
+**/__screenshots__/
+test-output.txt
 
 # CodeQL
 codeql-db/
