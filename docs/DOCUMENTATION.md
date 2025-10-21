@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 문서 목록
 
-**최종 업데이트**: 2025-10-18
+**최종 업데이트**: 2025-10-21
 
 ---
 
@@ -29,6 +29,8 @@
   규칙
 - **[CODE_QUALITY.md](./CODE_QUALITY.md)**: CodeQL, ESLint, stylelint
 - **[MAINTENANCE.md](./MAINTENANCE.md)**: 유지보수 체크리스트
+- **[ACCESSIBILITY_CHECKLIST.md](./ACCESSIBILITY_CHECKLIST.md)**: WCAG 2.1 Level
+  AA 준수 체크리스트 (a11y)
 
 ### 리팩토링 및 학습
 
