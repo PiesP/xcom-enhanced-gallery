@@ -1,7 +1,7 @@
 /**
  * @fileoverview 간소화된 애니메이션 서비스
  * @description 유저스크립트에 적합한 기본 CSS 애니메이션 기능
- * @version 3.0.0 - Phase B: 간소화
+ * @version 3.1.0 - Phase A5: 생명주기 관리 표준화
  */
 
 import { logger } from '@shared/logging';
@@ -20,13 +20,16 @@ export interface AnimationConfig {
  * - 기본 CSS 트랜지션
  * - 간단한 페이드 인/아웃
  * - 유저스크립트 최적화
+ *
+ * Phase A5 개선: 명시적 initialize/destroy 메서드 추가, 생명주기 관리 표준화
  */
 export class AnimationService {
   private static instance: AnimationService | null = null;
   private stylesInjected = false;
+  private _isInitialized = false;
 
   private constructor() {
-    this.ensureStylesInjected();
+    // Styles injected lazily on first use
   }
 
   /**
@@ -37,6 +40,48 @@ export class AnimationService {
       AnimationService.instance = new AnimationService();
     }
     return AnimationService.instance;
+  }
+
+  /**
+   * 서비스 초기화 (BaseService 인터페이스 준수)
+   */
+  public async initialize(): Promise<void> {
+    if (this._isInitialized) {
+      return;
+    }
+    logger.info('AnimationService initializing...');
+    try {
+      this.ensureStylesInjected();
+      this._isInitialized = true;
+      logger.info('AnimationService initialized');
+    } catch (error) {
+      logger.error('AnimationService initialization failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 서비스 정리 (BaseService 인터페이스 준수)
+   */
+  public destroy(): void {
+    if (!this._isInitialized) {
+      return;
+    }
+    logger.info('AnimationService destroying...');
+    try {
+      this.cleanup();
+      this._isInitialized = false;
+      logger.info('AnimationService destroyed');
+    } catch (error) {
+      logger.error('AnimationService destroy failed:', error);
+    }
+  }
+
+  /**
+   * 초기화 상태 확인 (BaseService 인터페이스 준수)
+   */
+  public isInitialized(): boolean {
+    return this._isInitialized;
   }
 
   /**
