@@ -77,6 +77,34 @@
 3. P1 트리셰이킹: hero 아이콘/배럴 정리 → GREEN 확인, 사이즈 측정
 4. 문서/가드 업데이트: ARCHITECTURE의 vendor 섹션 정리, 완성 후 COMPLETED에 이동
 
+### C1.1 실행 계획 (2025-10-21)
+
+P0 1차(무관성·테스트 비참조·배럴/백업 파일 중심) — 안전 삭제 후 GREEN 유지 확인:
+
+- 외부 배럴 제거: `src/shared/external/index.ts` (직접 참조 없음,
+  `@shared/external/vendors`만 사용)
+- ZIP 배럴 제거: `src/shared/external/zip/index.ts` (직접 참조 없음,
+  `zip-creator`만 사용)
+- 백업 CSS 제거: `src/shared/components/ui/ModalShell/ModalShell.module.css.bak`
+  (백업 산출물)
+
+검증(AC):
+
+- AC1: `npm run deps:json` → 순환/의존 위반 0 유지
+- AC2: `npm run build` GREEN (dev+prod) · 번들 크기 증가 없음
+- AC3: Unit/Browser/E2E/a11y 전체 GREEN 유지
+
+근거:
+
+- 코드 전역 검색 결과 `@shared/external` 직접 import 부재, zip 배럴 미사용, 백업
+  CSS는 스타일 규칙 위반 항목
+- tests는 `@shared/external/vendors`와 `@shared/external/zip/store-zip-writer`만
+  참조 (배럴 불필요)
+
+메모(범위 밖): `@shared/components/ui/primitive/**`, `ToolbarShell`,
+`ModalShell` 등은 테스트에서 참조됨 → 삭제 대상 제외(후속 정리 시 문서만
+업데이트)
+
 리스크/롤백:
 
 - 삭제로 인한 사일런트 회귀 방지: Browser/E2E/a11y 스위트로 즉시 탐지
