@@ -8,9 +8,8 @@
 
 - Build: prod 327.44 KB / 335 KB (여유 7.56 KB), gzip 88.18 KB
 - 최적화: 프로덕션 소스맵 제거 완료
-- Tests: **2349 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
-- Note: **Phase D3 완료** — 디자인 토큰 명명 규칙 검사 완료 (규칙 완벽 준수,
-  리팩토링 불필요)
+- Tests: **2457 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
+- Note: **Phase B3 완료** — 상위 3개 파일 커버리지 100% 달성 (108개 테스트 추가)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 265 modules, 746 deps, 순환 0
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -19,55 +18,45 @@
 
 ## 활성 작업
 
-### Phase A5: 아키텍처 개선 (계획 단계)
+### Phase A5: 아키텍처 개선 (진행 중 🔄)
 
 **목표**: Service Layer 정리, State Management 패턴 통일, Error Handling 전략
 개선
 
-**분석 결과**:
+**진행 상황**:
+
+- ✅ **분석 완료**: Service Layer (23개 서비스), State Management (Signal 패턴),
+  Error Handling (AppError 30-40% 사용)
+- ✅ **Step 1.1 완료**: AnimationService 리팩토링 (initialize/destroy 생명주기
+  추가, commit 46563f19)
+  - `_isInitialized` 상태 추적 명확화
+  - 모든 테스트 PASS (2457 passed + 5 skipped)
+- 🔄 **Step 1.2 ~ 1.3 진행**: ThemeService, LanguageService, IconRegistry
+  리팩토링 대기
+- 🔄 **Step 2 대기**: State Management 패턴 통일 (signal-factory, State Machine
+  확대)
+- 🔄 **Step 3 대기**: Error Handling 전략 (AppError 사용 70%+, 에러 경로
+  커버리지 75%+)
+
+**분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 
 1. **Service Layer 현황**
-   - 현황: 23개 서비스 파일 (services/, media/, download/, input/, storage/ 등)
-   - 문제: 서비스 간 책임 분리 불명확, 중복된 초기화/cleanup 로직
-   - 개선점:
-     - BaseServiceImpl 패턴 확대 (현재 일부만 사용)
-     - Service Registry 중앙화 (현재 service-manager, service-factories 분산)
-     - 생명주기 관리 표준화 (initialize/destroy 일관성)
+   - 23개 서비스 파일 (services/, media/, download/, input/, storage/ 등)
+   - BaseServiceImpl 패턴 사용률: 30% (목표: 90%+)
+   - Service Registry 현황: service-manager, service-factories 분산 (목표:
+     중앙화)
 
 2. **State Management 현황**
-   - 현황: Solid.js Signals 사용 (gallery.signals, navigation-state-machine)
-   - 문제: 상태 생성 패턴 다양 (createSignal, createStore 혼용)
-   - 개선점:
-     - signal-factory 패턴 확대 (createSignalSafe, effectSafe 일관성)
-     - State Machine 활용도 증대 (현재 navigation만 사용)
-     - 파생값 메모이제이션 규칙화 (signalSelector 일관 적용)
+   - Signal 생성 패턴: createSignal, createSignalSafe 혼용
+   - State Machine 활용: navigation만 사용 (목표: 확대 적용)
+   - 파생값 메모이제이션: 규칙 없음 (목표: signalSelector 일관 적용)
 
 3. **Error Handling 현황**
-   - 현황: AppError, ErrorCode, ErrorSeverity 정의됨
-   - 문제: 전체 서비스에 일관되지 않은 에러 처리 (try-catch 혼용)
-   - 개선점:
-     - 에러 전파 일관성 (AppError vs throw string vs console.error)
-     - 에러 복구 전략 문서화 (fail-fast vs graceful-degrade)
-     - 테스트 커버리지 (에러 경로 70% 미만)
+   - AppError 사용률: 30-40% (목표: 70%+)
+   - 에러 경로 커버리지: 60-70% (목표: 75%+)
+   - 에러 복구 전략: 미정의 (목표: fail-fast vs graceful-degrade 문서화)
 
-**계획**:
-
-- **Step 1**: Service Layer 리팩토링 (6-8시간)
-  - BaseServiceImpl 패턴 확대 (3-5개 서비스 마이그레이션)
-  - Service Registry 중앙화 (service-manager 강화)
-  - 테스트 추가 (service-initialization, service-manager)
-
-- **Step 2**: State Management 통일 (4-6시간)
-  - signal-factory 패턴 적용 (모든 State 신호)
-  - Navigation State Machine 활용 확대
-  - 파생값 메모이제이션 규칙화
-
-- **Step 3**: Error Handling 전략 (4-6시간)
-  - AppError 사용 비율 증대 (70%+ 대상)
-  - 에러 복구 시나리오 문서화
-  - 에러 경로 테스트 추가 (coverage 75%+)
-
-**예상 결과**:
+**예상 결과** (완료 시):
 
 - 서비스 코드 복잡도 감소: 20-30%
 - State 관리 일관성 증대: 90%+

@@ -2,11 +2,13 @@
  * Core Layer - Theme Service
  *
  * 시스템 테마 감지 및 적용 서비스
+ * @version 3.1.0
  */
 
 import { logger } from '../logging/logger';
 import type { StorageAdapter } from './storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
+import { BaseServiceImpl } from './base-service-impl';
 
 /**
  * 테마 타입
@@ -25,15 +27,19 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
 
 /**
  * 시스템 테마 서비스 - Phase 4 간소화 + 수동 설정 지원
+ *
+ * Phase A5.1: BaseServiceImpl 패턴 적용 (생명주기 관리 표준화)
+ * - onInitialize(): storage 복원, 시스템 감지 설정, 초기 테마 적용
+ * - onDestroy(): MediaQueryList 리스너, 상태 정리
+ * - isInitialized(): 상태 쿼리 메서드
  */
-export class ThemeService {
+export class ThemeService extends BaseServiceImpl {
   private static readonly STORAGE_KEY = 'xeg-theme';
 
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
-  private isInitialized = false;
   private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
     null;
 
@@ -41,18 +47,18 @@ export class ThemeService {
    * @param storage 저장소 어댑터 (기본값: UserscriptStorageAdapter)
    */
   constructor(private readonly storage: StorageAdapter = new UserscriptStorageAdapter()) {
+    super('ThemeService');
+
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
-      this.initialize();
     }
   }
 
   /**
-   * 서비스 초기화 (storage에서 설정 복원 및 시스템 감지 설정)
+   * 서비스 초기화 (BaseServiceImpl 템플릿 메서드 구현)
+   * storage에서 설정 복원 및 시스템 감지 설정
    */
-  public async initialize(): Promise<void> {
-    if (this.isInitialized) return;
-
+  protected async onInitialize(): Promise<void> {
     // storage에서 설정 복원
     await this.restoreThemeSetting();
 
@@ -61,9 +67,6 @@ export class ThemeService {
 
     // 초기 테마 적용
     this.applyCurrentTheme();
-
-    this.isInitialized = true;
-    logger.info('ThemeService initialized');
   }
 
   /**
@@ -224,9 +227,10 @@ export class ThemeService {
   }
 
   /**
-   * 서비스 종료
+   * 서비스 종료 (BaseServiceImpl 템플릿 메서드 구현)
+   * MediaQueryList 리스너 제거 및 상태 정리
    */
-  public destroy(): void {
+  protected onDestroy(): void {
     if (this.mediaQueryList) {
       try {
         if (this.onMediaQueryChange) {
@@ -245,17 +249,7 @@ export class ThemeService {
     }
 
     this.listeners.clear();
-    this.isInitialized = false;
     this.onMediaQueryChange = null;
-
-    logger.info('ThemeService destroyed');
-  }
-
-  /**
-   * 서비스 정리 (cleanup과 destroy 호환성)
-   */
-  public async cleanup(): Promise<void> {
-    this.destroy();
   }
 }
 
