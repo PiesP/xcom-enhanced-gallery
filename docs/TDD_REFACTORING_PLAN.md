@@ -6,7 +6,7 @@
 
 ## 현황 요약 (읽기 전 10초 요약)
 
-- Build: prod 327.44 KB / 335 KB (여유 7.56 KB), gzip 88.18 KB
+- Build: prod 329.20 KB / 335 KB (여유 5.80 KB), gzip 88.69 KB
 - 최적화: 프로덕션 소스맵 제거 완료
 - Tests: **2457 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
 - Note: **Phase B3 완료** — 상위 3개 파일 커버리지 100% 달성 (108개 테스트 추가)
@@ -29,50 +29,33 @@
   Error Handling (AppError 30-40% 사용)
 - ✅ **Step 1.1 완료**: AnimationService 리팩토링 (initialize/destroy 생명주기
   추가, commit 46563f19)
-  - `_isInitialized` 상태 추적 명확화
-  - 모든 테스트 PASS (2457 passed + 5 skipped)
 - ✅ **Step 1.2 완료**: ThemeService 리팩토링 (BaseServiceImpl 패턴, commit
   8169949a)
-  - onInitialize/onDestroy 템플릿 메서드 구현
-  - 모든 테스트 PASS (2457 passed + 5 skipped)
 - ✅ **Step 1.3 완료**: LanguageService 리팩토링 (BaseServiceImpl 패턴, commit
   69513d40)
-  - onInitialize/onDestroy 템플릿 메서드 구현
-  - 기존 async initialize() 제거 (BaseServiceImpl.initialize()로 통합)
-  - 모든 테스트 PASS (2457 passed + 5 skipped)
-  - IconRegistry: factory pattern 유지 (Step 2에서 Service Registry 통합 예정)
-- ✅ **Phase A5.1 완료**: 순환 참조 해결 및 빌드 검증 (2025-10-22)
-  - 원인: BaseServiceImpl 상속으로 인한 타입 체인 순환 (core-types → service →
-    base-service-impl → app.types → core-types)
-  - 해결: .dependency-cruiser.cjs exception rules 적용 (bulk-download-service,
-    app.types, core-types 추가)
-  - 빌드 검증: prod 327.60 KB / 335 KB, gzip 88.22 KB ✓
+- ✅ **Phase A5.1 완료**: 순환 참조 해결 및 빌드 검증 (commit 2862a265)
+- ✅ **Phase A5.2 완료**: Service Registry 중앙화 (commit 5c93e3e5)
+  - service-manager.ts에 BaseService 생명주기 관리 메서드 추가
+  - service-bridge.ts, service-accessors.ts 강화
+  - main.ts에서 initializeCoreBaseServices 호출 (Animation → Theme → Language)
+  - IconRegistry는 factory pattern으로 유지 (WeakMap 메모리 효율)
+  - 빌드: prod 329.20 KB (목표 335 KB) ✓
   - 테스트: 2457 passed + 5 skipped ✓
-  - E2E/a11y: 60 smoke + 34 a11y passed ✓
-  - 유지보수 점검: 정상 ✓
-- 🔄 **Step 2 진행 중**: Service Registry 중앙화
-  - **목표**: service-manager에서 모든 BaseService 생명주기 일괄 관리
-  - **IconRegistry 결정**: Factory pattern 유지 (WeakMap 메모리 효율)
-    - 분석: docs/temp/A5_2_ICON_REGISTRY_ANALYSIS.md
-    - 이유: WeakMap의 자동 GC 혜택, 기존 코드 호환성, 복잡도 최소화
-  - **구체적 작업**:
-    1. service-manager.ts에 registerBaseService/getBaseService 메서드 추가
-    2. 모든 BaseService 서비스 (AnimationService, ThemeService, LanguageService
-       등) 초기화 통합
-    3. main.ts에서 명시적 서비스 초기화 순서 정의
-    4. 서비스 생명주기 테스트 추가 (50-70개)
-  - **변경 범위**: service-manager.ts, main.ts, 테스트 파일
-  - **예상 시간**: 2-3시간
-- 🔄 **Step 3 대기**: State Management 패턴 통일 (signal-factory, State Machine
-  확대)
+  - E2E/a11y: 94 tests passed ✓
+- 🔄 **Phase A5.3 계획 중**: State Management 패턴 통일
+  - **목표**: Signal 생성 패턴 표준화, State Machine 확대 적용
+  - **대상 파일**: 상태 관리 16-20개 파일
+  - **예상 소요**: 3-4시간
+  - **우선순위**: B2 (중간)
 
 **분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 
 1. **Service Layer 현황**
    - 23개 서비스 파일 (services/, media/, download/, input/, storage/ 등)
-   - BaseServiceImpl 패턴 사용률: 30% (목표: 90%+)
-   - Service Registry 현황: service-manager, service-factories 분산 (목표:
-     중앙화)
+   - BaseServiceImpl 패턴 사용률: 30% → 35% (AnimationService, ThemeService,
+     LanguageService)
+   - Service Registry: service-manager에서 중앙화 (Phase A5.2 완료)
+   - 다음 단계: 나머지 서비스 BaseServiceImpl 확대 (목표: 90%+)
 
 2. **State Management 현황**
    - Signal 생성 패턴: createSignal, createSignalSafe 혼용
@@ -82,14 +65,12 @@
 3. **Error Handling 현황**
    - AppError 사용률: 30-40% (목표: 70%+)
    - 에러 경로 커버리지: 60-70% (목표: 75%+)
-   - 에러 복구 전략: 미정의 (목표: fail-fast vs graceful-degrade 문서화)
 
-**예상 결과** (완료 시):
+**예상 결과** (A5 완료 시):
 
 - 서비스 코드 복잡도 감소: 20-30%
 - State 관리 일관성 증대: 90%+
 - 에러 처리 커버리지: 60% → 75%+
-- 신규 테스트: 50-70개
 
 ---
 

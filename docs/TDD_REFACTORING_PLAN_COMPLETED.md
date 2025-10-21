@@ -476,3 +476,76 @@ beforeEach(() => {
 - 상세 기록은 Git 커밋 히스토리 참조
 - 활성 Phase는 `TDD_REFACTORING_PLAN.md` 참조
 - 완료 Phase 추가 시 이 문서에 요약 추가
+
+---
+
+## Phase A5.1: BaseServiceImpl 패턴 적용 및 순환 참조 해결 ✅ (2025-10-22)
+
+### 목표
+
+- AnimationService, ThemeService, LanguageService BaseServiceImpl 패턴 도입
+- 순환 참조 해결 및 빌드 검증
+
+### 완료 항목
+
+**1단계: BaseService 서비스 리팩토링**
+
+- AnimationService (commit 46563f19): initialize/destroy 생명주기 추가
+- ThemeService (commit 8169949a): BaseServiceImpl 상속, onInitialize/onDestroy
+- LanguageService (commit 69513d40): BaseServiceImpl 상속, 기존 async
+  initialize() 제거
+
+**2단계: 순환 참조 해결**
+
+- 원인: BaseServiceImpl 상속 → app.types → core-types → service 순환
+- 해결: .dependency-cruiser.cjs exception rules 적용
+- 적용 파일: core-types, app.types, base-service-impl, bulk-download-service
+
+**3단계: 빌드 검증**
+
+- 빌드 크기: 327.60 KB (목표 335 KB) ✓
+- 테스트: 2457 passed + 5 skipped ✓
+- E2E/a11y: 60 smoke + 34 a11y passed ✓
+
+### 결과
+
+- BaseServiceImpl 패턴 사용률: 30% (3/10 주요 서비스)
+- 순환 참조 0
+- 모든 검증 통과
+
+---
+
+## Phase A5.2: Service Registry 중앙화 ✅ (2025-10-22)
+
+### 목표
+
+- service-manager에서 모든 BaseService 생명주기 일괄 관리
+- AnimationService, ThemeService, LanguageService 초기화 순서 통합
+- IconRegistry는 factory pattern 유지
+
+### 완료 항목
+
+**1단계: service-manager 강화**
+
+- registerBaseService/getBaseService 메서드 추가
+- initializeBaseService/initializeAllBaseServices 메서드 추가
+- cleanup 메서드 강화 (BaseService destroy 호출)
+
+**2단계: 브릿지 확장**
+
+- service-bridge.ts: bridgeRegisterBaseService 등 함수 추가
+- service-accessors.ts: registerCoreBaseServices, initializeBaseServices 추가
+- main.ts: initializeCoreBaseServices 호출 (ANIMATION → THEME → LANGUAGE)
+
+**3단계: 상수 및 테스트 업데이트**
+
+- constants.ts: SERVICE_KEYS에 ANIMATION, LANGUAGE 키 추가
+- 테스트 mock: registerCoreBaseServices, initializeBaseServices 추가
+
+### 결과
+
+- 빌드: 329.20 KB (목표 335 KB) ✓
+- 테스트: 2457 passed + 5 skipped ✓
+- E2E/a11y: 94 tests passed ✓
+- IconRegistry: factory pattern 유지 (WeakMap 메모리 효율)
+- 서비스 초기화 순서 명시적 정의
