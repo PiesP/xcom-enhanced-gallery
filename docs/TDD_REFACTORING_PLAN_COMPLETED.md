@@ -7,6 +7,68 @@
 
 ---
 
+## Phase A1: 의존성 그래프 최적화 ✅ (2025-10-21)
+
+### 배경/목표
+
+- **dependency-cruiser 분석 결과**: 3-way 순환 참조 및 고아 모듈 5개 발견
+- **목표**: 순환 참조 제거 및 구조적 개선
+
+### 문제 진단
+
+1. **순환 참조** (HIGH Priority)
+
+   ```
+   service-factories.ts ↔ media-service.ts ↔ service-accessors.ts
+   ```
+
+   - 원인: `service-accessors.ts`의 `getBulkDownloadServiceFromContainer()`가
+     fallback 로직으로 `service-factories` 동적 import
+   - DI 컨테이너 패턴의 설계 문제
+
+2. **고아 모듈** (MEDIUM Priority)
+   - `memoization.ts` (valid: false, 미사용)
+   - `progressive-loader.ts` (미사용)
+   - `button.ts` (토큰 통일로 불필요)
+
+### 해결 방법
+
+1. **순환 참조 제거**
+   - `getBulkDownloadServiceFromContainer()`의 fallback 로직 제거
+   - 동기적 반환으로 변경 (Promise 제거)
+   - `service-initialization.ts`에서 bootstrap 시점에 이미 등록되므로 fallback
+     불필요
+
+2. **media-service.ts 수정**
+   - `downloadSingle()`, `downloadMultiple()`에서 await 제거
+   - 서비스는 이미 컨테이너에 등록되어 있음
+
+3. **고아 모듈 제거** (커밋 44df9f96)
+   - `memoization.ts`, `progressive-loader.ts`, `button.ts` 삭제
+   - `progressive-loader.test.ts` 삭제
+
+### 결과
+
+- **모듈 수**: 269 → 266 (고아 3개 제거)
+- **의존성**: 748 → 747
+- **순환 참조**: ✅ 0 violations (`deps:check` 통과)
+- **테스트**: 1733 passed (JSDOM + Browser + E2E + a11y)
+- **빌드**: dev 326.73 KB, prod 326.73 KB, gzip 88.11 KB
+
+### 커밋
+
+- **고아 모듈 제거**: `44df9f96` (2025-10-20)
+- **순환 참조 제거**: `d59288f8` (2025-10-21)
+
+### 교훈/메모
+
+- Fallback 패턴은 편리하지만 순환 참조의 원인이 될 수 있음
+- Bootstrap 단계에서 명시적으로 서비스를 등록하는 것이 더 명확한 설계
+- 단일 등록 지점(service-initialization.ts) 패턴이 Lazy Registration보다 추적
+  용이
+
+---
+
 ## P2: 번들 여유 확보 ≥ 3 KB ✅ (2025-10-21)
 
 ### 배경/목표
