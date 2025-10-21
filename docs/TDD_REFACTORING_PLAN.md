@@ -31,8 +31,12 @@
   추가, commit 46563f19)
   - `_isInitialized` 상태 추적 명확화
   - 모든 테스트 PASS (2457 passed + 5 skipped)
-- 🔄 **Step 1.2 ~ 1.3 진행**: ThemeService, LanguageService, IconRegistry
-  리팩토링 대기
+- ✅ **Step 1.2 완료**: ThemeService 리팩토링 (BaseServiceImpl 패턴, commit
+  8169949a)
+  - onInitialize/onDestroy 템플릿 메서드 구현
+  - 모든 테스트 PASS (2457 passed + 5 skipped)
+- 🔄 **Step 1.3 연기**: LanguageService, IconRegistry (전역 싱글톤 종속성으로
+  나중 단계 연기)
 - 🔄 **Step 2 대기**: State Management 패턴 통일 (signal-factory, State Machine
   확대)
 - 🔄 **Step 3 대기**: Error Handling 전략 (AppError 사용 70%+, 에러 경로
