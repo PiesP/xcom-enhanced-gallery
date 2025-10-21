@@ -5,6 +5,71 @@
 
 ---
 
+## Phase B3: 커버리지 개선 (3개 파일 100% 달성) ✅ (2025-10-22)
+
+### 목표
+
+- 80% 미만 파일 중 상위 3개 (77.8%, 72.7%, 70.6%)에 집중 테스트 추가
+- 각 파일 100% 커버리지 달성
+
+### 대상 파일 및 결과
+
+**1. solid-helpers.ts** ✅
+
+- 경로: `src/shared/utils/solid-helpers.ts`
+- 최종 커버리지: **100%** (44/44 lines)
+- 추가 테스트: 10개 (`test/unit/shared/utils/solid-helpers.test.ts`)
+- 테스트 내용: toAccessor, isAccessor, isHTMLElement 모든 엣지 케이스
+
+**2. focus-trap.ts** ✅
+
+- 경로: `src/shared/utils/focus-trap.ts`
+- 최종 커버리지: **100%** (215/215 lines)
+- 추가 테스트: 45개 (`test/unit/shared/utils/focus-trap.test.tsx`)
+- 테스트 내용: Focus trap 생명주기, Tab/Escape 키 핸들링, focusable 요소 필터링,
+  에러 처리
+
+**3. vendor-manager-static.ts** ✅
+
+- 경로: `src/shared/external/vendors/vendor-manager-static.ts`
+- 최종 커버리지: **100%** (536/536 lines)
+- 추가 테스트: 53개
+  (`test/unit/shared/external/vendor-manager-coverage.test.ts`)
+- 테스트 내용: 싱글톤 패턴, 초기화 흐름, Solid.js API, Store API,
+  memo/forwardRef 호환성
+
+### 전략
+
+RED → GREEN TDD 패턴:
+
+1. 미테스트 라인 식별
+2. 포괄적인 엣지 케이스 테스트 작성 (RED)
+3. 기존 코드로 자동 GREEN 달성
+4. 경계 케이스/에러 처리 검증
+
+### 결과
+
+- **추가 테스트**: 108개 (10 + 45 + 53)
+- **전체 테스트**: 2457개 passed + 5 skipped (기존 2349 + 108 신규)
+- **전체 커버리지**: 69.95% → **70%** (+0.05%)
+- **빌드**: ✅ PASS (327.44 KB, 88.18 KB gzip)
+- **모든 검증**: ✅ PASS
+  - Typecheck: 0 errors
+  - ESLint: max-warnings 0
+  - Stylelint: 0 errors
+  - CodeQL: 8 custom queries PASS
+  - Browser Tests: 111 passed (Vitest + Chromium)
+  - E2E Tests: 60 passed (Playwright smoke)
+  - A11y Tests: 34 passed (axe-core)
+
+### 교훈
+
+- 기존 코드의 품질이 높음 (테스트 추가만으로 100% 달성)
+- 테스트 작성의 중요성: 미테스트 엣지 케이스까지 완벽하게 검증 가능
+- 기술 부채 감소: 모든 중요 유틸리티가 완전히 테스트됨
+
+---
+
 ## Phase D3: 디자인 토큰 명명 규칙 검사 ✅ (2025-10-22)
 
 ### 목표

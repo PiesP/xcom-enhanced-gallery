@@ -17,10 +17,37 @@
 
 ---
 
-## 활성 작업 없음
+## 활성 작업
 
-번들이 이미 최적화되어 있고, 디자인 토큰 명명 규칙도 완벽하게 준수 중. 다음
-우선순위 작업은 백로그에서 선택 권장.
+### Phase B3: 커버리지 개선 (완료 ✅)
+
+**완성 상태**: 3개 파일 모두 **100% 커버리지** 달성
+
+**완료 파일** (실제 결과):
+
+1. **solid-helpers.ts** ✅
+   - 최종 커버리지: **100%** (44/44 lines)
+   - 추가 테스트: 10개 (`solid-helpers.test.ts`)
+   - 내용: toAccessor, isAccessor, isHTMLElement 모든 케이스 테스트
+
+2. **focus-trap.ts** ✅
+   - 최종 커버리지: **100%** (215/215 lines)
+   - 추가 테스트: 45개 (`focus-trap.test.tsx`)
+   - 내용: Focus trap 초기화, Tab/Escape 핸들링, focusable 요소 필터링, 에러
+     처리
+
+3. **vendor-manager-static.ts** ✅
+   - 최종 커버리지: **100%** (536/536 lines)
+   - 추가 테스트: 53개 (`vendor-manager-coverage.test.ts`)
+   - 내용: 싱글톤 패턴, 초기화, Solid.js API, Store API, 호환성 함수
+
+**결과 요약**:
+
+- 추가 테스트: **108개** (10 + 45 + 53)
+- 전체 테스트: **2457개** (기존 2349 + 108 신규, 5 skipped)
+- 전체 커버리지: **69.95% → 70%** (+0.05%)
+- 빌드 상태: ✅ PASS (327.44 KB, 88.18 KB gzip)
+- 모든 검증: ✅ PASS (typecheck, lint, CodeQL, E2E, a11y)
 
 ---
 
