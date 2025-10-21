@@ -31,6 +31,9 @@ vi.mock('@shared/container/service-accessors', () => ({
   warmupCriticalServices: vi.fn(),
   warmupNonCriticalServices: vi.fn(),
   registerGalleryRenderer: vi.fn(),
+  // Phase A5.2: BaseService 생명주기 중앙화
+  registerCoreBaseServices: vi.fn(),
+  initializeBaseServices: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@shared/services/service-manager', () => ({
@@ -198,12 +201,15 @@ describe('Phase 125.2-B: main.ts', () => {
       expect(warmupCriticalServices).toHaveBeenCalled();
     });
 
-    it('should initialize language service', async () => {
-      const { languageService } = await import('@shared/services/language-service');
+    it('should initialize core base services', async () => {
+      // Phase A5.2: BaseService 생명주기 중앙화
+      // animationService, themeService, languageService는 initializeCoreBaseServices에서 관리됨
+      const { registerCoreBaseServices } = await import('@shared/container/service-accessors');
 
       await mainModule.start();
 
-      expect(languageService.initialize).toHaveBeenCalled();
+      // registerCoreBaseServices는 service-manager에 서비스 등록
+      expect(registerCoreBaseServices).toHaveBeenCalled();
     });
 
     it('should register feature services lazily', async () => {

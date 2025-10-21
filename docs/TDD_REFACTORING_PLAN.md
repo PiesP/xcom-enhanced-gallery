@@ -51,10 +51,18 @@
   - E2E/a11y: 60 smoke + 34 a11y passed ✓
   - 유지보수 점검: 정상 ✓
 - 🔄 **Step 2 진행 중**: Service Registry 중앙화
-  - 목표: service-manager에서 모든 서비스 생명주기 관리
-  - 작업: AnimationService/ThemeService/LanguageService 초기화 타이밍 통합
-  - IconRegistry: factory pattern 유지 또는 Service class 변환 (검토 중)
-  - 예상: 2-3시간
+  - **목표**: service-manager에서 모든 BaseService 생명주기 일괄 관리
+  - **IconRegistry 결정**: Factory pattern 유지 (WeakMap 메모리 효율)
+    - 분석: docs/temp/A5_2_ICON_REGISTRY_ANALYSIS.md
+    - 이유: WeakMap의 자동 GC 혜택, 기존 코드 호환성, 복잡도 최소화
+  - **구체적 작업**:
+    1. service-manager.ts에 registerBaseService/getBaseService 메서드 추가
+    2. 모든 BaseService 서비스 (AnimationService, ThemeService, LanguageService
+       등) 초기화 통합
+    3. main.ts에서 명시적 서비스 초기화 순서 정의
+    4. 서비스 생명주기 테스트 추가 (50-70개)
+  - **변경 범위**: service-manager.ts, main.ts, 테스트 파일
+  - **예상 시간**: 2-3시간
 - 🔄 **Step 3 대기**: State Management 패턴 통일 (signal-factory, State Machine
   확대)
 

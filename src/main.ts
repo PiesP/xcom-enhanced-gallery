@@ -15,6 +15,8 @@ import {
   warmupCriticalServices,
   warmupNonCriticalServices,
   registerGalleryRenderer,
+  registerCoreBaseServices,
+  initializeBaseServices,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/service-manager';
 import { cleanupVendors, getSolid } from './shared/external/vendors';
@@ -90,22 +92,23 @@ async function initializeCriticalSystems(): Promise<void> {
   }
 }
 
-async function initializeLanguageService(): Promise<void> {
+/**
+ * Phase A5.2: BaseService 생명주기 중앙화 초기화
+ * service-manager에서 AnimationService, ThemeService, LanguageService 관리
+ */
+async function initializeCoreBaseServices(): Promise<void> {
   try {
-    const { languageService: sharedLanguageService } = await import(
-      '@shared/services/language-service'
-    );
-    await sharedLanguageService.initialize();
-    logger.debug('✅ LanguageService 초기화 완료');
+    logger.debug('🔄 BaseService 레지스트리 등록 중...');
+    registerCoreBaseServices();
+
+    logger.debug('🔄 BaseService 초기화 중...');
+    await initializeBaseServices();
+
+    logger.debug('✅ BaseService 초기화 완료');
   } catch (error) {
-    logger.warn('LanguageService 초기화 실패:', error);
+    logger.warn('BaseService 초기화 실패 (계속 진행):', error);
   }
 }
-
-/**
- * 갤러리 앱 시작은 파일 하단의 DOM 준비 상태에서 한 번만 트리거됩니다.
- * 중복 호출은 startPromise로 병합되어 단일 초기화만 수행됩니다.
- */
 
 /**
  * Non-Critical 시스템 백그라운드 초기화
@@ -388,7 +391,8 @@ async function startApplication(): Promise<void> {
     // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
     await initializeCriticalSystems();
 
-    await initializeLanguageService();
+    // Phase A5.2: BaseService 생명주기 중앙화 (이전: initializeLanguageService)
+    await initializeCoreBaseServices();
 
     // 3단계: Feature Services 지연 등록
     await registerFeatureServicesLazy();

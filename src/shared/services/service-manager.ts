@@ -1,10 +1,11 @@
 /**
  * @fileoverview 단순화된 서비스 관리자
  * @description 유저스크립트에 적합한 간단한 서비스 저장소
- * @version 1.0.0 - Phase 5: 서비스 레이어 단순화
+ * @version 1.1.0 - Phase A5.2: BaseService 생명주기 중앙화
  */
 
 import { logger } from '../logging/logger';
+import type { BaseService } from '../types/core/base-service.types';
 
 /**
  * 단순화된 서비스 저장소
@@ -19,6 +20,9 @@ export class CoreService {
   private readonly services = new Map<string, unknown>();
   private readonly factories = new Map<string, () => unknown>();
   private readonly factoryCache = new Map<string, unknown>();
+  // Phase A5.2: BaseService 생명주기 중앙화
+  private readonly baseServices = new Map<string, BaseService>();
+  private readonly initializedServices = new Set<string>();
 
   private constructor() {
     logger.debug('[CoreService] 초기화됨');
@@ -126,6 +130,102 @@ export class CoreService {
   }
 
   /**
+   * Phase A5.2: BaseService 등록 및 생명주기 관리
+   * @param key 서비스 식별자
+   * @param service BaseService 구현체
+   */
+  public registerBaseService(key: string, service: BaseService): void {
+    if (this.baseServices.has(key)) {
+      logger.warn(`[CoreService] BaseService 덮어쓰기: ${key}`);
+    }
+    this.baseServices.set(key, service);
+    logger.debug(`[CoreService] BaseService 등록: ${key}`);
+  }
+
+  /**
+   * BaseService 조회
+   * @param key 서비스 식별자
+   * @returns BaseService 구현체
+   * @throws Error 서비스를 찾을 수 없을 때
+   */
+  public getBaseService(key: string): BaseService {
+    const service = this.baseServices.get(key);
+    if (!service) {
+      throw new Error(`BaseService를 찾을 수 없습니다: ${key}`);
+    }
+    return service;
+  }
+
+  /**
+   * BaseService 조회 (안전)
+   * @param key 서비스 식별자
+   * @returns BaseService 구현체 또는 null
+   */
+  public tryGetBaseService(key: string): BaseService | null {
+    return this.baseServices.get(key) ?? null;
+  }
+
+  /**
+   * BaseService 초기화
+   * @param key 서비스 식별자
+   */
+  public async initializeBaseService(key: string): Promise<void> {
+    const service = this.getBaseService(key);
+    if (this.initializedServices.has(key)) {
+      logger.debug(`[CoreService] 이미 초기화됨: ${key}`);
+      return;
+    }
+
+    try {
+      logger.debug(`[CoreService] BaseService 초기화 중: ${key}`);
+      if (service.initialize) {
+        await service.initialize();
+      }
+      this.initializedServices.add(key);
+      logger.debug(`[CoreService] BaseService 초기화 완료: ${key}`);
+    } catch (error) {
+      logger.error(`[CoreService] BaseService 초기화 실패 (${key}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 모든 BaseService 초기화
+   * @param keys 초기화할 서비스 키 배열 (순서대로 초기화)
+   */
+  public async initializeAllBaseServices(keys?: string[]): Promise<void> {
+    const serviceKeys = keys || Array.from(this.baseServices.keys());
+    logger.debug(`[CoreService] ${serviceKeys.length}개 BaseService 초기화 중...`);
+
+    for (const key of serviceKeys) {
+      try {
+        await this.initializeBaseService(key);
+      } catch (error) {
+        logger.error(`[CoreService] BaseService 초기화 실패 (${key}), 계속 진행:`, error);
+      }
+    }
+
+    logger.debug(`[CoreService] 모든 BaseService 초기화 완료`);
+  }
+
+  /**
+   * BaseService 상태 조회
+   * @param key 서비스 식별자
+   * @returns 초기화 여부
+   */
+  public isBaseServiceInitialized(key: string): boolean {
+    return this.initializedServices.has(key);
+  }
+
+  /**
+   * 등록된 BaseService 목록
+   * @returns 등록된 BaseService 키 배열
+   */
+  public getRegisteredBaseServices(): string[] {
+    return Array.from(this.baseServices.keys());
+  }
+
+  /**
    * 진단 정보 조회
    * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요
    */
@@ -155,6 +255,20 @@ export class CoreService {
    */
   public cleanup(): void {
     logger.debug('[ServiceManager] cleanup 시작');
+
+    // Phase A5.2: BaseService destroy
+    for (const [key, service] of this.baseServices) {
+      if (this.initializedServices.has(key)) {
+        try {
+          if (service.destroy) {
+            service.destroy();
+            logger.debug(`[ServiceManager] BaseService destroy 완료: ${key}`);
+          }
+        } catch (error) {
+          logger.warn(`[ServiceManager] BaseService destroy 실패 (${key}):`, error);
+        }
+      }
+    }
 
     // 인스턴스들 중 cleanup 메서드가 있으면 호출
     for (const [key, instance] of this.services) {
@@ -192,6 +306,9 @@ export class CoreService {
     this.services.clear();
     this.factories.clear();
     this.factoryCache.clear();
+    // Phase A5.2: BaseService 리셋
+    this.baseServices.clear();
+    this.initializedServices.clear();
     logger.debug('[ServiceManager] 모든 서비스 초기화됨');
   }
 

@@ -163,6 +163,9 @@ export const SERVICE_KEYS = {
   TWITTER_TOKEN_EXTRACTOR: 'settings.tokenExtractor',
   VIDEO_STATE: 'video.state',
   VIDEO_CONTROL: 'video.control',
+  // Phase A5.2: BaseService 키
+  ANIMATION: 'animation.service',
+  LANGUAGE: 'language.service',
 } as const;
 
 export const TWITTER_API_CONFIG = {
