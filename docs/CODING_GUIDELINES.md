@@ -65,11 +65,55 @@ background: rgba(0, 0, 0, 0.1); /* oklch 사용 */
 /* 2. Semantic (design-tokens.semantic.css) */
 --color-bg-elevated: var(--color-base-white);
 --size-button-md: 2.5em; /* 40px @ 16px - em */
-
-/* 3. Component (design-tokens.semantic.css) */
---xeg-modal-bg-light: var(--color-bg-elevated);
+/* Semantic 레벨은 --xeg- 접두사 사용 (역할 기반 토큰) */
 --xeg-modal-bg: var(--xeg-modal-bg-light);
+--xeg-button-bg: var(--color-bg-surface);
+
+/* 3. Component (design-tokens.component.css) */
+/* Component 레벨은 컴포넌트별 접두사 또는 --xeg- 접두사 혼용 가능 */
+--toolbar-bg: var(--xeg-bg-toolbar);
+--button-border: var(--color-border-default);
+--xeg-icon-size-md: var(--size-icon-md); /* 일부 component 토큰도 --xeg- 사용 */
 ```
+
+### 접두사 규칙 (Prefix Rules)
+
+**Semantic 레벨** (`design-tokens.semantic.css`):
+
+**Component 레벨** (`design-tokens.component.css`):
+
+### 업데이트된 가이드 (프로젝트 규칙 정리)
+
+프로젝트는 이미 `--xeg-` 접두사를 광범위하게 사용하고 있으므로, 한 번에 대규모
+리네이밍을 수행하지 않습니다. 대신 아래 가이드를 명확히 합니다:
+
+- Semantic 레벨(`design-tokens.semantic.css`)의 권장 접두사는 `--xeg-` 입니다.
+  주로 색상, 배경, 텍스트 컬러 등 전역 의미론적 토큰에 사용합니다. 예:
+  `--xeg-modal-bg`, `--xeg-color-primary`.
+- Component 레벨(`design-tokens.component.css`)에서는 컴포넌트 고유
+  토큰(`--toolbar-`, `--button-` 등)을 권장합니다. 다만 기존 코드베이스와의
+  호환성 때문에 `--xeg-` 접두사를 사용하는 component 토큰도 허용합니다. 예:
+  `--xeg-icon-size-md`(허용), `--toolbar-bg`(권장).
+- 우선순위 규칙: 컴포넌트에서 동일 이름의 토큰이 존재할 경우 더 좁은(scope)인
+  Component 토큰이 우선합니다. (CSS cascade/사용 컨텍스트에 따름.)
+
+실무 규칙 요약:
+
+1. 신규 Semantic 토큰은 `--xeg-` 접두사 사용.
+2. 신규 Component 토큰은 `--component-` 스타일(예: `--toolbar-`) 사용 권장. 단,
+   컴포넌트에서 글로벌한 의미를 갖는 토큰이 필요하면 `--xeg-` 사용 가능.
+3. 기존 토큰은 호환성을 위해 현상 유지. 리팩토링은 점진적으로,
+   테스트(RED→GREEN)를 통해 수행.
+
+이 변경은 문서화 강화로, 대규모 코드 리네임 없이 규칙을 명확히 하는 것이
+목적입니다.
+
+**신규 토큰 추가 가이드라인**:
+
+- Semantic 레벨: 항상 `--xeg-` 접두사 사용
+- Component 레벨: 기존 컴포넌트 패턴을 따를 것
+  - 새로운 컴포넌트: 컴포넌트명 접두사 권장 (`--mycomponent-*`)
+  - 범용 속성: `--xeg-` 접두사 사용 가능
 
 ### 크기 단위 규칙 (Size Units)
 
@@ -156,21 +200,76 @@ oklch(0.5 0 0)    /* 중간 회색 */
 
 ### 버튼 컴포넌트
 
+```css
+/* Button.module.css */
+.button {
+  /* Semantic 레벨 토큰 사용 */
+  background: var(--xeg-button-bg);
+  border: 1px solid var(--xeg-button-border);
+  color: var(--xeg-button-text);
+
+  /* Component 레벨 토큰 사용 */
+  border-radius: var(--button-radius);
+  padding: var(--button-padding-y) var(--button-padding-x);
+  height: var(--button-height);
+
+  /* 또는 xeg 접두사 component 토큰 */
+  font-size: var(--xeg-text-base);
+}
+
+.button:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-button-border-hover);
+}
+```
+
+### 아이콘 컴포넌트
+
+```css
+/* Icon.module.css */
+.icon {
+  /* Component 레벨 토큰 (xeg 접두사 사용) */
+  width: var(--xeg-icon-size-md);
+  height: var(--xeg-icon-size-md);
+  color: var(--xeg-icon-color);
+  stroke-width: var(--xeg-icon-stroke-width);
+}
+
+.iconLarge {
+  width: var(--xeg-icon-size-lg);
+  height: var(--xeg-icon-size-lg);
+}
+```
+
 ### 컴포넌트 토큰 규칙
 
-**필수**: 모든 `--xeg-*` 토큰은 `design-tokens.semantic.css`에 정의
+**필수**: 계층에 따른 토큰 참조
 
 ```css
 :root {
+  /* Semantic 레벨 (design-tokens.semantic.css) */
   /* Light defaults */
   --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
   --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+
+  /* Component 레벨 (design-tokens.component.css) */
+  /* 컴포넌트별 접두사 */
+  --toolbar-bg: var(--xeg-bg-toolbar);
+  --button-border: var(--color-border-default);
+
+  /* 또는 xeg 접두사 (범용 속성) */
+  --xeg-icon-size-md: var(--size-icon-md);
+  --xeg-text-base: var(--font-size-base);
 }
 
 [data-theme='dark'] {
   /* Dark overrides */
   --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
   --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
 }
 ```
 
