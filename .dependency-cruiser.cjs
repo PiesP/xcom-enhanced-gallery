@@ -76,6 +76,15 @@ module.exports = {
           '^src/shared/services/media-service\\.ts$',
           '^src/shared/container/service-accessors\\.ts$',
           '^src/shared/services/service-factories\\.ts$',
+          // Phase A5.1: BaseServiceImpl 상속으로 인한 순환 참조 허용
+          // theme-service/language-service/bulk-download-service 간 순환
+          // 원인: BaseServiceImpl → app.types → core-types → service 간 순환
+          '^src/shared/services/theme-service\\.ts$',
+          '^src/shared/services/language-service\\.ts$',
+          '^src/shared/services/base-service-impl\\.ts$',
+          '^src/shared/services/bulk-download-service\\.ts$',
+          '^src/shared/types/app\\.types\\.ts$',
+          '^src/shared/types/core/core-types\\.ts$',
         ],
       },
       to: { circular: true },

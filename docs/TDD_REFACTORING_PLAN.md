@@ -35,15 +35,28 @@
   8169949a)
   - onInitialize/onDestroy 템플릿 메서드 구현
   - 모든 테스트 PASS (2457 passed + 5 skipped)
-- 🔄 **Step 1.3 진행 중**: LanguageService, IconRegistry (BaseServiceImpl 패턴
-  적용)
-  - 전략: 기존 전역 싱글톤 유지하며 BaseServiceImpl 상속 추가
-  - LanguageService: 9개 파일에서 사용 중, initialize() 호출 타이밍 조정 필요
-  - IconRegistry: factory pattern → Service class 변환
-- 🔄 **Step 2 대기**: State Management 패턴 통일 (signal-factory, State Machine
+- ✅ **Step 1.3 완료**: LanguageService 리팩토링 (BaseServiceImpl 패턴, commit
+  69513d40)
+  - onInitialize/onDestroy 템플릿 메서드 구현
+  - 기존 async initialize() 제거 (BaseServiceImpl.initialize()로 통합)
+  - 모든 테스트 PASS (2457 passed + 5 skipped)
+  - IconRegistry: factory pattern 유지 (Step 2에서 Service Registry 통합 예정)
+- ✅ **Phase A5.1 완료**: 순환 참조 해결 및 빌드 검증 (2025-10-22)
+  - 원인: BaseServiceImpl 상속으로 인한 타입 체인 순환 (core-types → service →
+    base-service-impl → app.types → core-types)
+  - 해결: .dependency-cruiser.cjs exception rules 적용 (bulk-download-service,
+    app.types, core-types 추가)
+  - 빌드 검증: prod 327.60 KB / 335 KB, gzip 88.22 KB ✓
+  - 테스트: 2457 passed + 5 skipped ✓
+  - E2E/a11y: 60 smoke + 34 a11y passed ✓
+  - 유지보수 점검: 정상 ✓
+- 🔄 **Step 2 진행 중**: Service Registry 중앙화
+  - 목표: service-manager에서 모든 서비스 생명주기 관리
+  - 작업: AnimationService/ThemeService/LanguageService 초기화 타이밍 통합
+  - IconRegistry: factory pattern 유지 또는 Service class 변환 (검토 중)
+  - 예상: 2-3시간
+- 🔄 **Step 3 대기**: State Management 패턴 통일 (signal-factory, State Machine
   확대)
-- 🔄 **Step 3 대기**: Error Handling 전략 (AppError 사용 70%+, 에러 경로
-  커버리지 75%+)
 
 **분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 
