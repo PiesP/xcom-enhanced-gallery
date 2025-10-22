@@ -35,9 +35,12 @@
 ### 리팩토링 및 학습
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획
-  (진행 중 항목들, 완료 시 `archive/`로 이동)
+  (완료된 13개 Phase, 722개 누적 테스트)
 - **[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)**:
-  완료된 Phase 기록 (누적 706 테스트, 70%+ 커버리지)
+  완료된 Phase 기록 (누적 722개 테스트, 70%+ 커버리지)
+- **[PHASE_B3_5_SUMMARY.md](./PHASE_B3_5_SUMMARY.md)**: Phase B3.5 E2E 성능 검증
+- **[PHASE_B3_6_FINAL_SUMMARY.md](./PHASE_B3_6_FINAL_SUMMARY.md)**: Phase B3.6
+  최종 통합 & 성능 요약
 - **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js
   반응성 시스템 교훈
 
