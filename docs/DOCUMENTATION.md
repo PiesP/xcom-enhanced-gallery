@@ -36,6 +36,8 @@
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획,
   남은 백로그 (완료 시 `archive/`로 이동)
+- **[TDD_REFACTORING_PLAN_B3_3.md](./TDD_REFACTORING_PLAN_B3_3.md)**: Phase B3.3
+  서비스 간 통합 시나리오 (준비 중)
 - **[PHASE_145_LOADING_TIMING.md](./PHASE_145_LOADING_TIMING.md)**: Phase 145
   갤러리 로딩 타이밍 개선 분석 (완료 Phase 145.1-3, MutationObserver + E2E 검증)
 - **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js
