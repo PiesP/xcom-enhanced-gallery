@@ -7,9 +7,9 @@
 ## 현황 요약 (읽기 전 10초 요약)
 
 - Build: prod 330.47 KB / 335 KB (여유 4.53 KB), gzip ~88.9 KB
-- Tests: **2880 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
-- Note: **Phase B3.1 Step 1-3 완료! 🎉** — 125개 신규 테스트 추가 (dom-utils
-  48 + Toast 61 + browser-utils 16)
+- Tests: **2922 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
+- Note: **Phase B3.1 Step 1-4 완료! 🎉** — 167개 신규 테스트 추가 (dom-utils
+  48 + Toast 61 + browser-utils 16 + GalleryContainer 42)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 269 modules, 758 deps, **순환 0** ✅ (Phase A5.1 완료)
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -84,7 +84,7 @@
 | 1    | dom-utils.ts          | 80%  | ✅   | 48     | 9.55%→91.17% |
 | 2    | Toast.tsx             | 80%  | ✅   | 61     | 6.97%→?      |
 | 3    | browser-utils.ts      | 80%  | ✅   | 16     | 9.09%→?      |
-| 4    | GalleryContainer.tsx  | 70%  | ⏳   | 30-40  | 36.66%       |
+| 4    | GalleryContainer.tsx  | 70%  | ✅   | 42     | 36.66%→?     |
 | 5    | userscript/adapter.ts | 70%  | ⏳   | 40-50  | 55.21%       |
 
 **완료 사항**:
@@ -110,24 +110,27 @@
   - 오류 처리 및 안전성: missing window, error graceful handling (3 테스트)
   - 브라우저 정보 구조: 모든 프로퍼티 검증 (1 테스트)
   - 결과: 모든 16 테스트 PASS ✅
-  - 진행률: 125개 누적 / 300+ 목표 (42% 진행)
+- Step 4 (GalleryContainer.tsx): 42 테스트 작성, Master 병합 ✅
+  - 파일: src/shared/components/isolation/GalleryContainer.tsx (104 lines)
+  - mountGallery 함수: 8 테스트 (렌더링, 오류 처리)
+  - unmountGallery 함수: 7 테스트 (정리, 오류 처리)
+  - GalleryContainer 컴포넌트: 18 테스트 (렌더링, props, 이벤트)
+  - Props 인터페이스: 6 테스트 (타입 검증)
+  - Event Management: 3 테스트 (이벤트 등록)
+  - 결과: 모든 42 테스트 PASS ✅
+  - 진행률: 167개 누적 / 300+ 목표 (56% 진행)
 
-**후속 계획** (Phase B3.1 Step 4-5):
+**후속 계획** (Phase B3.1 Step 5):
 
-1. **Step 4: GalleryContainer.tsx** (36.66% → 70%)
-   - 파일: src/shared/components/isolation/GalleryContainer.tsx (104 lines)
-   - 기능: mountGallery, unmountGallery, GalleryContainer 컴포넌트
-   - 목표: 30-40 테스트 추가
-
-2. **Step 5: userscript/adapter.ts** (55.21% → 70%)
+1. **Step 5: userscript/adapter.ts** (55.21% → 70%)
    - 파일: src/shared/external/userscript/adapter.ts
    - 기능: Userscript API 래핑
    - 목표: 40-50 테스트 추가
 
 **예상 결과**:
 
-- 누적 테스트: 2880 → 2950+ (Phase B3.1 완료)
-- 누적 커버리지: 70% → 73-74% 목표
+- 누적 테스트: 2922 → 2960+ (Phase B3.1 완료)
+- 누적 커버리지: 70% → 73-75% 목표
 
 ---
 
