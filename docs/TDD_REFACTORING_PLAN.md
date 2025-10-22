@@ -75,6 +75,50 @@
 
 ## 활성 작업
 
+### 🔄 Phase B3.2.5: 샘플 기반 Playwright E2E 미디어 추출 검증 (신규)
+
+**목표**: X.com 실제 HTML 샘플을 기반으로 미디어 추출 E2E 검증
+
+**상태**: Phase B3.2.5 진행 중 🔄
+
+**구현 내용**:
+
+- **테스트 파일**: `playwright/smoke/sample-based-media-extraction.spec.ts`
+- **테스트 케이스**: 12/12 PASS ✅
+  - 다중 미디어 (Sample 1): 갤러리 설정 검증, URL 추출, 클릭 인덱스 0-3 (6
+    테스트)
+  - 단일 미디어 (Sample 2): 추출 및 클릭 처리 (2 테스트)
+  - Edge Cases: URL 정규화, URL 구조 검증 (2 테스트)
+  - 메타데이터: 타임스탬프, 성공률 (2 테스트)
+
+**샘플 데이터**:
+
+- Sample 1: 4개 이미지 다중 미디어 트윗
+  - `G32HHpGWoAAly7r.jpg` (인덱스 0)
+  - `G32NPv3WYAAmtHq.jpg` (인덱스 1)
+  - `G32VJkOW4AAVBVL.jpg` (인덱스 2)
+  - `G32VJkWWEAADOmr.jpg` (인덱스 3)
+- Sample 2: 단일 이미지 트윗
+
+**기술 스택**:
+
+- Playwright + Chromium (실제 브라우저 환경)
+- 하네스 패턴 (setupGalleryApp 사용)
+- 타입 정의: `playwright/harness/types.d.ts` (XegHarness)
+
+**검증 결과**: ✅ 모든 검사 통과
+
+- `npm run typecheck`: ✅
+- `npx playwright test`: 12/12 PASS
+- `npm run build:dev`: ✅
+
+**다음 단계**:
+
+- [ ] Phase 145 E2E 시나리오와 통합 검토
+- [ ] 문서 완료 이관
+
+---
+
 ### 🔄 Phase 145: 갤러리 로딩 타이밍 개선
 
 **목표**: 미디어 로딩 속도에 관계없이 안정적인 스크롤 네비게이션 (성공률 25% →
