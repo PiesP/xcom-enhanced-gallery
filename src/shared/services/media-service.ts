@@ -1,4 +1,10 @@
 // Media Service - Optimized for bundle size
+/**
+ * @fileoverview 미디어 서비스
+ * @description 미디어 추출, 로딩, 프리페치 기능 제공
+ * @version 2.0.0 - Phase A5.5: BaseServiceImpl 패턴 적용
+ */
+
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
@@ -8,6 +14,7 @@ import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { BaseServiceImpl } from './base-service-impl';
 
 export interface MediaLoadingState {
   isLoading: boolean;
@@ -64,7 +71,7 @@ import {
 } from './media/username-extraction-service';
 import type { UsernameExtractionResult } from './media/username-extraction-service';
 
-export class MediaService {
+export class MediaService extends BaseServiceImpl {
   private static instance: MediaService | null = null;
 
   private readonly mediaExtraction: MediaExtractionService;
@@ -85,25 +92,33 @@ export class MediaService {
   private readonly currentAbortController?: AbortController;
 
   constructor() {
+    super('MediaService');
     this.mediaExtraction = new MediaExtractionService();
     this.fallbackExtractor = new FallbackExtractor();
     this.videoControl = new VideoControlService();
     this.usernameParser = new UsernameParser();
+  }
 
-    this.detectWebPSupport().catch(error => {
-      logger.warn('[MediaService] WebP detection initialization failed:', error);
-    });
+  /**
+   * 서비스 초기화 (BaseServiceImpl 템플릿 메서드 구현)
+   */
+  protected async onInitialize(): Promise<void> {
+    await this.detectWebPSupport();
+  }
+
+  /**
+   * 서비스 정리 (BaseServiceImpl 템플릿 메서드 구현)
+   */
+  protected onDestroy(): void {
+    this.prefetchCache.clear();
+    this.mediaLoadingStates.clear();
+    this.activePrefetchRequests.forEach(controller => controller.abort());
+    this.activePrefetchRequests.clear();
   }
 
   public static getInstance(): MediaService {
     MediaService.instance ??= new MediaService();
     return MediaService.instance;
-  }
-
-  protected async onInitialize(): Promise<void> {}
-
-  protected onDestroy(): void {
-    this.videoControl.destroy();
   }
 
   async extractFromClickedElement(
