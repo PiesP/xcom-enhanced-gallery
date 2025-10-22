@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 문서 목록
 
-**최종 업데이트**: 2025-10-21
+**최종 업데이트**: 2025-10-22
 
 ---
 
@@ -36,6 +36,8 @@
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획,
   남은 백로그 (완료 시 `archive/`로 이동)
+- **[PHASE_145_LOADING_TIMING.md](./PHASE_145_LOADING_TIMING.md)**: Phase 145
+  갤러리 로딩 타이밍 개선 분석 (완료 Phase 145.1-3, MutationObserver + E2E 검증)
 - **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js
   반응성 시스템 교훈
 

@@ -24,7 +24,7 @@ import {
 } from '../../../../shared/utils/animations';
 import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryScroll, SCROLL_IDLE_TIMEOUT } from '../../hooks/useGalleryScroll';
+import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
 import { useGalleryFocusTracker } from '../../hooks/useGalleryFocusTracker';
 import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
@@ -243,8 +243,10 @@ function VerticalGalleryViewCore({
     getCurrentIndex: currentIndex,
     // 사용자/자동 스크롤 중에는 자동 포커스를 억제
     shouldAutoFocus: () => !isScrolling(),
-    // idle 판정 + 안정성 마진(100ms)
-    autoFocusDebounce: SCROLL_IDLE_TIMEOUT + 100,
+    // ✅ Step 4: Idle timeout 튜닝 - 중복 지연 제거
+    // 기존: SCROLL_IDLE_TIMEOUT (350ms) + 100ms margin = 500ms
+    // 개선: 매우 짧은 debounce (50ms)로 키 입력과의 race 방지하면서 반응성 개선
+    autoFocusDebounce: 50,
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 

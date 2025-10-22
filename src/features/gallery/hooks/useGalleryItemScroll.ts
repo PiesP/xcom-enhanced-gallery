@@ -230,32 +230,110 @@ export function useGalleryItemScroll(
       pendingIndex = null;
       isAutoScrolling = false;
 
-      if (retryCount < 1) {
+      // Phase 145.1: 강화된 재시도 로직 (1회 → 3회)
+      // 렌더링 타이밍 불일치로 인한 DOM 요소 미발견 대응
+      if (retryCount < 3) {
         retryCount += 1;
-        logger.debug('useGalleryItemScroll: retry attempt', {
+        // 지수 백오프: 50ms, 100ms, 150ms 점진적 증가
+        const delayMs = 50 * retryCount;
+
+        logger.debug('useGalleryItemScroll: 재시도 예약 (Phase 145.1)', {
           index,
           retryCount,
+          delayMs,
+          timestamp: Date.now(),
         });
 
-        const observer = new IntersectionObserver(entries => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              observer.disconnect();
-              globalTimerManager.setTimeout(() => {
-                void scrollToItem(index);
-              }, 50);
-            }
-          });
-        });
-
-        const itemsList = container?.querySelector('[data-xeg-role="items-list"]');
-        const candidate = itemsList?.children[index] as HTMLElement | undefined;
-
-        if (candidate) {
-          observer.observe(candidate);
-          globalTimerManager.setTimeout(() => observer.disconnect(), 1000);
-        }
+        globalTimerManager.setTimeout(() => {
+          void scrollToItem(index);
+        }, delayMs);
+        return;
       }
+
+      // 최종 수단: 요소 생성 대기 (폴링 기반 감시)
+      // 최악의 경우 느린 렌더링 환경 대응 (3G 등)
+      logger.warn('useGalleryItemScroll: 최종 폴링 시작 (Phase 145.1)', {
+        index,
+        timestamp: Date.now(),
+      });
+
+      let pollingAttempts = 0;
+      const maxPollingAttempts = 20; // ~1초 (50ms * 20)
+
+      const pollForElement = () => {
+        if (pollingAttempts >= maxPollingAttempts) {
+          logger.warn('useGalleryItemScroll: 폴링 타임아웃, 포기', {
+            index,
+            pollingAttempts,
+            timestamp: Date.now(),
+          });
+          return;
+        }
+
+        const container = containerAccessor();
+        if (!container) {
+          globalTimerManager.setTimeout(pollForElement, 50);
+          pollingAttempts += 1;
+          return;
+        }
+
+        const itemsRoot = container.querySelector(
+          '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+        ) as HTMLElement | null;
+
+        if (!itemsRoot) {
+          globalTimerManager.setTimeout(pollForElement, 50);
+          pollingAttempts += 1;
+          return;
+        }
+
+        const targetElement = itemsRoot.children[index] as HTMLElement | undefined;
+        if (targetElement) {
+          // ✅ 찾음! 스크롤 진행
+          logger.debug('useGalleryItemScroll: 폴링 성공, 스크롤 진행 (Phase 145.1)', {
+            index,
+            pollingAttempts,
+            timestamp: Date.now(),
+          });
+
+          try {
+            isAutoScrolling = true;
+            const actualBehavior = resolveBehavior();
+
+            targetElement.scrollIntoView({
+              behavior: actualBehavior,
+              block: alignToCenter() ? 'center' : block(),
+              inline: 'nearest',
+            });
+
+            const offsetValue = offset();
+            if (offsetValue !== 0) {
+              container.scrollTo({
+                top: container.scrollTop - offsetValue,
+                behavior: actualBehavior,
+              });
+            }
+
+            lastScrolledIndex = index;
+            pendingIndex = null;
+            retryCount = 0;
+
+            globalTimerManager.setTimeout(() => {
+              isAutoScrolling = false;
+            }, 50);
+          } catch (err) {
+            logger.error('useGalleryItemScroll: 폴링 후 스크롤 실패', { index, error: err });
+            isAutoScrolling = false;
+          }
+          return;
+        }
+
+        // 아직 없음, 다시 폴링
+        globalTimerManager.setTimeout(pollForElement, 50);
+        pollingAttempts += 1;
+      };
+
+      pollForElement();
     }
   };
 

@@ -23,6 +23,7 @@ import type {
 } from './types';
 
 import { initializeVendors, getSolid } from '@shared/external/vendors';
+import { logger } from '@shared/logging/logger';
 import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
@@ -801,6 +802,47 @@ async function triggerGalleryAppMediaClickHarness(): Promise<void> {
   await sleep();
 }
 
+/**
+ * Phase 85.2: 실제 미디어 요소에서 클릭 이벤트 트리거
+ * 테스트에서 clickedIndex 계산 로직 검증용
+ * @param mediaIndex - 클릭할 미디어의 인덱스 (기본값: 0)
+ */
+async function triggerMediaClickWithIndexHarness(mediaIndex: number = 0): Promise<void> {
+  if (!galleryHandle) {
+    throw new Error('Gallery app is not initialized.');
+  }
+
+  // 테스트용 미디어 요소 생성 및 DOM에 추가 (필요시)
+  const mediaContainers = document.querySelectorAll('[data-xeg-test-media]');
+
+  if (mediaContainers.length === 0) {
+    logger.warn('[E2E Harness] No test media containers found. Using direct openGallery.');
+    await galleryHandle.app.openGallery(SAMPLE_MEDIA_ARRAY, mediaIndex);
+    await sleep();
+    return;
+  }
+
+  // 유효한 인덱스 범위 확인
+  const validIndex = Math.max(0, Math.min(mediaIndex, mediaContainers.length - 1));
+  const clickedElement = mediaContainers[validIndex] as HTMLElement;
+
+  // 실제 클릭 이벤트 트리거 (extractFromClickedElement 호출)
+  const clickEvent = new MouseEvent('click', {
+    bubbles: true,
+    cancelable: true,
+    view: window,
+  });
+
+  logger.debug(`[E2E Harness] Triggering click on media index ${validIndex}`, {
+    elementTag: clickedElement.tagName,
+    elementId: clickedElement.id,
+    elementClass: clickedElement.className,
+  });
+
+  clickedElement.dispatchEvent(clickEvent);
+  await sleep(100);
+}
+
 async function triggerGalleryAppCloseHarness(): Promise<void> {
   if (!galleryHandle) {
     throw new Error('Gallery app is not initialized.');
@@ -1179,6 +1221,7 @@ const harness: XegHarness = {
   disposeToast: disposeToastHarness,
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,
+  triggerMediaClickWithIndex: triggerMediaClickWithIndexHarness,
   triggerGalleryAppClose: triggerGalleryAppCloseHarness,
   getGalleryAppState: getGalleryAppStateHarness,
   disposeGalleryApp: disposeGalleryAppHarness,

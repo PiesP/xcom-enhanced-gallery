@@ -527,5 +527,108 @@ describe('Phase 125.5: media-extraction-service.ts', () => {
       expect(mockAPIExtractor.extract).toHaveBeenCalled();
       expect(mockDOMExtractor.extract).toHaveBeenCalled();
     });
+
+    /**
+     * Phase 85.2: 다중 미디어 시나리오 테스트
+     * 실제 환경에서 다중 미디어 트윗의 2번째/3번째 미디어 클릭 시
+     * 올바른 인덱스가 계산되는지 검증
+     */
+    describe('다중 미디어 인덱스 계산', () => {
+      it('should correctly calculate index for 2nd media in multi-media tweet (API success)', async () => {
+        const mockTweetInfo = { tweetId: 'multi-tweet-id', userId: 'user123' };
+        const multiMediaItems = [
+          { url: 'https://pbs.twimg.com/media/img1.jpg', type: 'image', index: 0 },
+          { url: 'https://pbs.twimg.com/media/img2.jpg', type: 'image', index: 1 },
+          { url: 'https://pbs.twimg.com/media/img3.jpg', type: 'image', index: 2 },
+        ];
+
+        mockTweetInfoExtractor.extract.mockResolvedValue(mockTweetInfo);
+        mockAPIExtractor.extract.mockResolvedValue({
+          success: true,
+          mediaItems: multiMediaItems,
+          clickedIndex: 1, // ← 2번째 미디어 (인덱스 1)
+          tweetInfo: mockTweetInfo,
+        });
+
+        const result = await service.extractFromClickedElement(mockElement);
+
+        expect(result.success).toBe(true);
+        expect(result.mediaItems.length).toBe(3);
+        expect(result.clickedIndex).toBe(1); // ← 2번째 미디어 인덱스 확인
+      });
+
+      it('should correctly calculate index for 3rd media with query string URL', async () => {
+        const mockTweetInfo = { tweetId: 'multi-tweet-id', userId: 'user123' };
+        const multiMediaItems = [
+          { url: 'https://pbs.twimg.com/media/img1.jpg', type: 'image', index: 0 },
+          { url: 'https://pbs.twimg.com/media/img2.jpg', type: 'image', index: 1 },
+          { url: 'https://pbs.twimg.com/media/img3.jpg', type: 'image', index: 2 },
+        ];
+
+        mockTweetInfoExtractor.extract.mockResolvedValue(mockTweetInfo);
+        mockAPIExtractor.extract.mockResolvedValue({
+          success: true,
+          mediaItems: multiMediaItems,
+          clickedIndex: 2, // ← 3번째 미디어 (인덱스 2)
+          tweetInfo: mockTweetInfo,
+        });
+
+        const result = await service.extractFromClickedElement(mockElement);
+
+        expect(result.success).toBe(true);
+        expect(result.mediaItems.length).toBe(3);
+        expect(result.clickedIndex).toBe(2); // ← 3번째 미디어 인덱스 확인
+      });
+
+      it('should handle API failure and fall back to DOM extraction for multi-media', async () => {
+        const mockTweetInfo = { tweetId: 'multi-tweet-id', userId: 'user123' };
+        const multiMediaItems = [
+          { url: 'https://example.com/media1.jpg', type: 'image', index: 0 },
+          { url: 'https://example.com/media2.jpg', type: 'image', index: 1 },
+        ];
+
+        mockTweetInfoExtractor.extract.mockResolvedValue(mockTweetInfo);
+        mockAPIExtractor.extract.mockResolvedValue({
+          success: false,
+          mediaItems: [],
+          clickedIndex: 0,
+          tweetInfo: mockTweetInfo,
+        });
+        mockDOMExtractor.extract.mockResolvedValue({
+          success: true,
+          mediaItems: multiMediaItems,
+          clickedIndex: 1, // ← DOM 폴백에서 계산한 인덱스
+          tweetInfo: mockTweetInfo,
+        });
+
+        const result = await service.extractFromClickedElement(mockElement);
+
+        expect(result.success).toBe(true);
+        expect(result.mediaItems.length).toBe(2);
+        expect(result.clickedIndex).toBe(1); // ← DOM 폴백 인덱스 유지
+        expect(mockDOMExtractor.extract).toHaveBeenCalled();
+      });
+
+      it('should preserve clicked index from API extraction', async () => {
+        const mockTweetInfo = { tweetId: 'test-tweet-id', userId: 'user123' };
+        const clickedIndex = 2;
+
+        mockTweetInfoExtractor.extract.mockResolvedValue(mockTweetInfo);
+        mockAPIExtractor.extract.mockResolvedValue({
+          success: true,
+          mediaItems: [
+            { url: 'https://pbs.twimg.com/media/1.jpg', type: 'image', index: 0 },
+            { url: 'https://pbs.twimg.com/media/2.jpg', type: 'image', index: 1 },
+            { url: 'https://pbs.twimg.com/media/3.jpg', type: 'image', index: 2 },
+          ],
+          clickedIndex,
+          tweetInfo: mockTweetInfo,
+        });
+
+        const result = await service.extractFromClickedElement(mockElement);
+
+        expect(result.clickedIndex).toBe(clickedIndex);
+      });
+    });
   });
 });

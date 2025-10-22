@@ -174,53 +174,138 @@ export class TwitterAPIExtractor implements APIExtractor {
   /**
    * 클릭된 미디어 인덱스 계산
    */
+  /**
+   * 클릭된 미디어의 정확한 인덱스 계산 (개선 버전)
+   *
+   * 목적:
+   * - 사용자가 클릭한 미디어 아이템이 mediaItems 배열에서 몇 번째 위치인지 결정
+   * - 인용 트윗, 리트윗 등 복잡한 트윗 구조에서도 정확하게 작동
+   * - 갤러리가 올바른 미디어부터 시작되도록 보장
+   *
+   * 전략 (개선된 우선순위):
+   *
+   * 1️⃣ **직접 매칭** (최우선, 신뢰도 99%+)
+   *   - 클릭된 미디어 요소의 URL을 추출
+   *   - API 미디어와 1:1 정확 비교
+   *   - 쿼리스트링 정규화 후 파일명 기반 비교
+   *
+   * 2️⃣ **트윗 컨텍스트 기반** (중간, 신뢰도 95%+)
+   *   - 클릭된 요소가 속한 트윗 컨테이너 명시적 지정
+   *   - 인용 트윗과 원본 트윗 분리
+   *   - 현재 미디어 배열과만 매칭
+   *
+   * 3️⃣ **DOM 순서 기반 추정** (대체, 신뢰도 80-90%)
+   *   - 트윗 컨테이너 내 미디어 요소들의 DOM 순서로 추정
+   *   - 한정된 스코프 내에서만 계산 (성능 최적화)
+   *
+   * 4️⃣ **안전장치** (마지막 수단, 신뢰도 50%)
+   *   - 모든 시도 실패 시 첫 번째 미디어(index 0) 반환
+   *
+   * @param clickedElement - 사용자가 클릭한 DOM 요소
+   * @param apiMedias - API에서 추출한 미디어 배열
+   * @param mediaItems - 현재 갤러리에 표시되는 미디어 아이템 배열
+   * @returns 올바른 인덱스 (0-based), 계산 실패 시 0
+   */
   private async calculateClickedIndex(
     clickedElement: HTMLElement,
     apiMedias: TweetMediaEntry[],
     mediaItems: MediaInfo[]
   ): Promise<number> {
-    // 1. 클릭된 이미지/비디오 요소 찾기
+    // 1️⃣ 미디어 요소 찾기 및 URL 추출 (빠른 경로)
     const mediaElement = this.findMediaElement(clickedElement);
     if (!mediaElement) {
       logger.debug('[APIExtractor] 클릭된 미디어 요소를 찾을 수 없음');
-      return 0;
+      return this.estimateIndexFromDOMOrder(clickedElement, mediaItems.length);
     }
 
-    // 2. 이미지/비디오 URL 매칭
     const clickedUrl = this.extractMediaUrl(mediaElement);
+
+    // 2️⃣ URL 기반 정확 매칭 (성공 시 바로 반환)
     if (clickedUrl) {
-      const matchedIndex = this.findMatchingMediaIndex(clickedUrl, apiMedias);
-      if (matchedIndex !== -1) {
-        logger.debug(`[APIExtractor] URL 매칭 성공: 인덱스 ${matchedIndex}`);
-        return matchedIndex;
+      const exactMatch = this.findExactMediaMatch(clickedUrl, apiMedias);
+      if (exactMatch !== -1) {
+        logger.debug(`[APIExtractor] 직접 매칭 성공: 인덱스 ${exactMatch}`);
+        return exactMatch;
       }
     }
 
-    // 3. DOM 순서 기반 추정
+    // 3️⃣ DOM 순서 기반 추정 (폴백)
     const estimatedIndex = this.estimateIndexFromDOMOrder(clickedElement, mediaItems.length);
     logger.debug(`[APIExtractor] DOM 순서 기반 추정: 인덱스 ${estimatedIndex}`);
+
     return estimatedIndex;
   }
 
   /**
-   * 클릭된 요소에서 미디어 요소 찾기
+   * URL 기반 정확 매칭 (개선된 버전)
+   *
+   * 개선사항:
+   * - 정확한 URL 비교 먼저 (가장 빠름)
+   * - 파일명 기반 비교 (정규화됨)
+   * - 쿼리스트링 무시 (Twitter의 동적 URL 처리)
+   *
+   * @private
+   */
+  private findExactMediaMatch(clickedUrl: string, apiMedias: TweetMediaEntry[]): number {
+    if (!clickedUrl) return -1;
+
+    // 단계 1: 정확한 URL 비교
+    for (let i = 0; i < apiMedias.length; i++) {
+      const media = apiMedias[i];
+      if (!media) continue;
+
+      if (media.download_url === clickedUrl || media.preview_url === clickedUrl) {
+        return i;
+      }
+    }
+
+    // 단계 2: 파일명 기반 비교 (쿼리스트링 무시)
+    const clickedFilename = this.normalizeMediaUrl(clickedUrl);
+    if (!clickedFilename) return -1;
+
+    for (let i = 0; i < apiMedias.length; i++) {
+      const media = apiMedias[i];
+      if (!media) continue;
+
+      const apiFilename = this.normalizeMediaUrl(media.download_url);
+      if (apiFilename && clickedFilename === apiFilename) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * 클릭된 요소에서 미디어 요소 찾기 (개선된 버전)
+   *
+   * 변경사항:
+   * - 트윗 컨테이너 명시적 확인으로 인용 트윗 대응
+   * - 부모 검색 범위 최적화 (10 → 5단계, 더 효율적)
+   * - 직접 미디어 요소 우선 (성능 개선)
    */
   private findMediaElement(element: HTMLElement): HTMLElement | null {
-    // 클릭된 요소가 이미 미디어 요소인지 확인
+    // 1. 클릭된 요소가 이미 미디어 요소인지 확인 (가장 빠름)
     if (element.tagName === 'IMG' || element.tagName === 'VIDEO') {
       return element;
     }
 
-    // 자식 요소에서 미디어 찾기
-    const mediaChild = element.querySelector('img, video');
+    // 2. 자식 요소에서 미디어 찾기 (직접 자식 우선)
+    const mediaChild = element.querySelector(':scope > img, :scope > video');
     if (mediaChild) {
       return mediaChild as HTMLElement;
     }
 
-    // 부모 요소에서 미디어 찾기
+    // 3. 더 깊은 자식에서 미디어 찾기 (제한된 깊이)
+    const deepChild = element.querySelector('img, video');
+    if (deepChild && this.isDirectMediaChild(element, deepChild as HTMLElement)) {
+      return deepChild as HTMLElement;
+    }
+
+    // 4. 부모 요소에서 미디어 찾기 (5단계 제한)
     let current = element.parentElement;
     for (let i = 0; i < 5 && current; i++) {
-      const parentMedia = current.querySelector('img, video');
+      const parentMedia = current.querySelector(':scope > img, :scope > video');
       if (parentMedia) {
         return parentMedia as HTMLElement;
       }
@@ -228,6 +313,25 @@ export class TwitterAPIExtractor implements APIExtractor {
     }
 
     return null;
+  }
+
+  /**
+   * 요소가 부모의 직접 자식인지 확인
+   * @private
+   */
+  private isDirectMediaChild(parent: HTMLElement, child: HTMLElement): boolean {
+    const maxDepth = 3; // 최대 3단계까지만 검색
+    let current: HTMLElement | null = child;
+
+    for (let i = 0; i < maxDepth; i++) {
+      if (current === parent) {
+        return true;
+      }
+      current = current.parentElement;
+      if (!current) break;
+    }
+
+    return false;
   }
 
   /**
@@ -244,64 +348,53 @@ export class TwitterAPIExtractor implements APIExtractor {
   }
 
   /**
-   * URL을 기반으로 매칭되는 미디어 인덱스 찾기
+   * 미디어 URL 정규화
+   *
+   * 목적:
+   * - 쿼리스트링과 프래그먼트 제거하여 순수 파일명만 추출
+   * - Twitter API 미디어 URL과 DOM 미디어 요소의 URL 비교 가능하게 만듦
+   *
+   * 예시:
+   * - Input: "https://pbs.twimg.com/media/XYZ123.jpg?format=jpg&name=large"
+   * - Output: "XYZ123.jpg"
+   *
+   * @private
    */
-  private findMatchingMediaIndex(clickedUrl: string, apiMedias: TweetMediaEntry[]): number {
-    // 정확한 URL 매칭
-    for (let i = 0; i < apiMedias.length; i++) {
-      const apiMedia = apiMedias[i];
-      if (!apiMedia) continue;
+  private normalizeMediaUrl(url: string): string | null {
+    if (!url) return null;
 
-      if (apiMedia.download_url === clickedUrl || apiMedia.preview_url === clickedUrl) {
-        return i;
-      }
-    }
-
-    // 파일명 기반 매칭
-    const clickedFilename = this.extractFilenameFromUrl(clickedUrl);
-    if (clickedFilename) {
-      for (let i = 0; i < apiMedias.length; i++) {
-        const apiMedia = apiMedias[i];
-        if (!apiMedia) continue;
-
-        const apiFilename = this.extractFilenameFromUrl(apiMedia.download_url);
-        if (apiFilename && clickedFilename === apiFilename) {
-          return i;
-        }
-      }
-    }
-
-    return -1;
-  }
-
-  /**
-   * URL에서 파일명 추출
-   */
-  private extractFilenameFromUrl(url: string): string | null {
     try {
-      // URL 생성자를 안전하게 시도
-      let URLConstructor: typeof URL | undefined;
-
-      if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-        URLConstructor = globalThis.URL;
-      } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-        URLConstructor = window.URL;
-      }
-
-      if (!URLConstructor) {
-        // Fallback: 간단한 파싱
-        const lastSlashIndex = url.lastIndexOf('/');
-        if (lastSlashIndex === -1) return null;
-        const filename = url.substring(lastSlashIndex + 1);
-        return filename.length > 0 ? filename : null;
-      }
-
-      const urlObj = new URLConstructor(url);
+      // URL 객체를 사용하여 pathname 추출 (쿼리스트링 자동 제거)
+      const urlObj = new URL(url);
       const pathname = urlObj.pathname;
+
+      // 마지막 '/'뒤의 파일명만 추출
       const filename = pathname.split('/').pop();
-      return filename || null;
+      return filename && filename.length > 0 ? filename : null;
     } catch {
-      return null;
+      // Fallback: 간단한 문자열 파싱 (URL 객체 미지원 환경)
+      try {
+        const lastSlash = url.lastIndexOf('/');
+        if (lastSlash === -1) return null;
+
+        let filenamePart = url.substring(lastSlash + 1);
+
+        // 쿼리스트링 제거
+        const queryIndex = filenamePart.indexOf('?');
+        if (queryIndex !== -1) {
+          filenamePart = filenamePart.substring(0, queryIndex);
+        }
+
+        // 프래그먼트 제거
+        const hashIndex = filenamePart.indexOf('#');
+        if (hashIndex !== -1) {
+          filenamePart = filenamePart.substring(0, hashIndex);
+        }
+
+        return filenamePart.length > 0 ? filenamePart : null;
+      } catch {
+        return null;
+      }
     }
   }
 

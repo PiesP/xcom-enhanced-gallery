@@ -42,6 +42,8 @@ export interface UseGalleryFocusTrackerReturn {
   handleItemBlur: (index: number) => void;
   /** 외부 강제 동기화 */
   forceSync: () => void;
+  /** ✅ Step 2: 수동 포커스 명시적 설정 (auto-focus 타이머 취소 포함) */
+  setManualFocus: (index: number | null) => void;
 }
 
 interface CandidateScore {
@@ -492,6 +494,24 @@ export function useGalleryFocusTracker({
     });
   };
 
+  // ✅ Step 2: 수동 포커스 명시적 설정
+  // auto-focus 타이머를 취소하고 manualFocusIndex 업데이트
+  const setManualFocus = (index: number | null) => {
+    clearAutoFocusTimer();
+    setManualFocusIndex(index);
+
+    if (index !== null) {
+      logger.debug('useGalleryFocusTracker: manual focus set', { index });
+      updateContainerFocusAttribute(index);
+      lastAutoFocusedIndex = index;
+      lastAppliedIndex = index;
+    } else {
+      logger.debug('useGalleryFocusTracker: manual focus cleared');
+      scheduleSync();
+      evaluateAutoFocus('manual-focus-cleared');
+    }
+  };
+
   // ✅ Phase 21.1: on()으로 명시적 의존성 지정 (evaluateAutoFocus는 직접 signal 읽지 않음)
   createEffect(
     on(
@@ -521,6 +541,10 @@ export function useGalleryFocusTracker({
         index,
         trigger,
       });
+
+      // ✅ Step 1: 네비게이션 발생 시 pending auto-focus 타이머 즉시 취소
+      // 자동 포커스와 네비게이션이 동시에 실행되지 않도록 방지
+      clearAutoFocusTimer();
 
       // manualFocusIndex를 우회하고 autoFocusIndex를 즉시 업데이트
       const { batch: solidBatch } = getSolid();
@@ -631,5 +655,6 @@ export function useGalleryFocusTracker({
     handleItemFocus,
     handleItemBlur,
     forceSync,
+    setManualFocus, // ✅ Step 2: 수동 포커스 명시적 설정 export
   };
 }

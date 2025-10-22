@@ -120,6 +120,7 @@ export interface XegHarness {
   disposeToast(): Promise<void>;
   setupGalleryApp(): Promise<GalleryAppSetupResult>;
   triggerGalleryAppMediaClick(): Promise<void>;
+  triggerMediaClickWithIndex(mediaIndex?: number): Promise<void>;
   triggerGalleryAppClose(): Promise<void>;
   getGalleryAppState(): Promise<GalleryAppState>;
   disposeGalleryApp(): Promise<void>;
