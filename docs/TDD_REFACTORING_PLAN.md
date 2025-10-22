@@ -18,10 +18,71 @@
 
 ---
 
-## 📝 Phase 147: Settings Menu Hover Bug Fix (진행 중 🔧)
+## 📝 Phase 148: Advanced Settings Management & Coverage (예정 📅)
 
-**기간**: 2025-10-23  
-**상태**: 구현 완료, E2E 테스트 추가됨
+**기간**: TBD **상태**: 계획 단계
+
+### 개요
+
+Settings Panel의 고급 기능 확장 및 테스트 커버리지 개선. 현재 settings 영역
+커버리지(~70%)를 90%+로 개선하면서 사용자 맞춤화 기능을 강화합니다.
+
+### 목표
+
+Settings Panel의 고급 기능 커버리지 100% 달성:
+
+- Theme Persistence (Dark/Light/Auto)
+- High Contrast Mode
+- Settings Validation
+- Storage Key Migration
+
+### 구현 범위
+
+**파일**:
+
+- `src/shared/hooks/toolbar/use-toolbar-settings-controller.ts`
+- `src/features/settings/SettingsPanel.tsx`
+- `src/shared/services/theme-service.ts`
+
+**신규 테스트**:
+
+- `test/unit/shared/hooks/toolbar/use-toolbar-settings-advanced.test.ts` (20개)
+
+### TDD 플로우
+
+1. **RED**: 미테스트 엣지 케이스
+   - Theme Persistence across sessions
+   - Invalid storage data recovery
+   - High Contrast Mode toggle
+   - Settings validation rules
+
+2. **GREEN**: 기존 구현으로 통과
+   - 대부분의 로직이 이미 구현됨
+   - 테스트만 추가
+
+3. **REFACTOR**: 코드 정리
+   - 에러 처리 개선
+   - 유틸리티 함수 추출
+
+### 검증 기준
+
+- ✅ 20개 신규 테스트 ALL GREEN
+- ✅ 커버리지 70% 유지 또는 개선
+- ✅ 빌드 크기 335 KB 내
+- ✅ E2E 97/97 통과
+
+### 선택 이유
+
+1. **빠른 구현**: 기존 코드 기반, 컨텍스트 전환 최소
+2. **커버리지 개선**: 현재 settings 영역 70% → 90%+
+3. **사용자 가치**: 다크 모드, 고대비 모드 등 실제 사용 기능
+4. **리스크 최소**: 기존 아키텍처 내 완전한 구현
+
+---
+
+## 📝 Phase 147: Settings Menu Hover Bug Fix (완료 ✅)
+
+**기간**: 2025-10-23 **상태**: 완료
 
 ### 버그 개요
 
@@ -78,8 +139,7 @@
 
 ## 📝 Phase 146: Toolbar Initial Display (완료 ✅)
 
-**기간**: 2025-10-22 ~ 2025-10-23  
-**상태**: 완료
+**기간**: 2025-10-22 ~ 2025-10-23 **상태**: 완료
 
 ### 구현 내용
 
