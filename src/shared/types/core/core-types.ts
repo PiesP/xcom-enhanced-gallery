@@ -52,14 +52,16 @@ export type ServiceFactory<T> = () => T | Promise<T>;
 
 /**
  * 서비스 타입 매핑 (Infrastructure 서비스들)
+ * @note Dynamic imports removed to prevent circular dependencies
+ * BulkDownloadService, FilenameService 등은 구체적 사용 시점에 import
  */
-export type BulkDownloadServiceType =
-  import('../../services/bulk-download-service').BulkDownloadService;
-export type FilenameServiceType = import('../../media').FilenameService;
-export type ThemeServiceType = import('../../services/theme-service').ThemeService;
-export type VideoControlServiceType =
-  import('../../services/media/video-control-service').VideoControlService;
-export type ToastControllerType = import('../../services/toast-controller').ToastController;
+// Circular dependency prevention: defer service type imports to point of use
+// See: DownloadOrchestrator -> BaseServiceImpl -> app.types -> core-types -> BulkDownloadService
+export type BulkDownloadServiceType = unknown; // Defer to service/bulk-download-service.ts
+export type FilenameServiceType = unknown;
+export type ThemeServiceType = unknown;
+export type VideoControlServiceType = unknown;
+export type ToastControllerType = unknown;
 
 /**
  * 갤러리 렌더러 서비스 타입
