@@ -4,14 +4,15 @@
 
 ---
 
+---
+
 ## 현황 요약 (읽기 전 10초 요약)
 
 - Build: prod 330.47 KB / 335 KB (여유 4.53 KB), gzip ~88.9 KB
-- Tests: **2956 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
-- Note: **Phase B3.1 완료! 🎉** — 210개 신규 테스트 추가 (dom-utils 48 + Toast
-  61 + browser-utils 16 + GalleryContainer 42 + adapter 34)
+- Tests: **3068 passed** (신규 32개 포함) + 5 skipped GREEN ✅
+- Note: **Phase B3.2.1 진행 중! 🚀** — GalleryApp.ts 커버리지 32개 테스트 추가
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
-- 의존성: 269 modules, 758 deps, **순환 0** ✅ (Phase A5.1 완료)
+- 의존성: 269 modules, 758 deps, **순환 0** ✅
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
 ---
@@ -130,62 +131,15 @@
 
 ### ✅ Phase B3.1: 커버리지 심화 (완료 ✅)
 
-**목표**: 커버리지 70% → 75%+ (300+ 테스트 추가)
+**결과**: 2956 passed (210개 테스트 추가), 빌드 330.47 KB ✅
 
-**최종 성과**:
+**세부 사항**: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
 
-| Step | 파일                  | 목표 | 상태 | 테스트 | 진전         |
-| ---- | --------------------- | ---- | ---- | ------ | ------------ |
-| 1    | dom-utils.ts          | 80%  | ✅   | 48     | 9.55%→91.17% |
-| 2    | Toast.tsx             | 80%  | ✅   | 61     | 6.97%→?      |
-| 3    | browser-utils.ts      | 80%  | ✅   | 16     | 9.09%→?      |
-| 4    | GalleryContainer.tsx  | 70%  | ✅   | 42     | 36.66%→?     |
-| 5    | userscript/adapter.ts | 70%  | ✅   | 34     | 55.21%→70%+  |
+---
 
-**단계별 완료 요약**:
+## 활성 작업 (계속)
 
-1. **Step 1 (dom-utils.ts)**: 48 테스트 ✅
-   - 모든 util 함수 테스트 완료
-   - 커버리지: 91.17% 달성
-
-2. **Step 2 (Toast.tsx)**: 61 테스트 ✅
-   - 타입 검증, 로직, 이벤트, 접근성 테스트
-   - 모든 61 테스트 PASS
-
-3. **Step 3 (browser-utils.ts)**: 16 테스트 ✅
-   - 브라우저 탐지 및 API 검사
-   - 모든 16 테스트 PASS
-
-4. **Step 4 (GalleryContainer.tsx)**: 42 테스트 ✅
-   - 렌더링, Props, 이벤트 관리 테스트
-   - 모든 42 테스트 PASS
-
-5. **Step 5 (userscript/adapter.ts)**: 34 테스트 ✅
-   - 파일: src/shared/external/userscript/adapter.ts (314 lines)
-   - 기능 커버리지:
-     - Main API 구조: 4 테스트 (frozen object, 메서드 존재)
-     - Manager 감지: 7 테스트 (Tampermonkey/Greasemonkey/Violentmonkey/Unknown)
-     - info() 메서드: 4 테스트 (null 반환, GM_info 반환)
-     - download() 메서드: 2 테스트 (GM_download 사용, fallback)
-     - xhr() 메서드: 2 테스트 (GM_xmlhttpRequest 사용, fallback)
-     - Storage 메서드: 4 테스트 (setValue/getValue/deleteValue/listValues)
-     - 오류 처리: 4 테스트 (예외 처리, graceful degradation)
-     - 반환 타입: 2 테스트 (frozen object, 데이터 타입 지원)
-     - Edge 케이스: 3 테스트 (예외 시나리오)
-   - 모든 34 테스트 PASS ✅
-   - 예상 커버리지: 70%+ (from 55.21%)
-
-**Phase B3.1 최종 성과**:
-
-- 누적 테스트: 2922 → 2956 (+ 34 tests in Step 5)
-- 누적 테스트 수: 210개 (목표 300+의 70% 달성)
-- 빌드 크기: 330.47 KB (예산 내 유지 ✅)
-- 전체 테스트: 2956 PASS | 5 SKIP ✅
-
-**완료 처리**:
-
-- 본 step들은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md`로 이관 예정
-- Phase B3.1 전체 작업 내용은 완료 파일에 상세 기록
+### ✅ Phase B4: 클릭 네비게이션 재검증 (완료 ✅)
 
 ---
 
@@ -297,16 +251,94 @@ Status: All validations PASS ✅
 - 문서화: 3단계 전략 명확화로 유지보수성 증가
 - E2E 하네스: 실제 클릭 시뮬레이션 지원으로 라이브 테스트 준비 완료
 
-### 📋 Phase B3.2: 추가 커버리지 개선 (예비)
+### 📋 Phase B3.2: 추가 커버리지 개선 (진행 예정 ⚙️)
 
-**예상 대상 파일** (80%+ 목표):
+**목표**: 커버리지 70% → 75%+ (300+ 테스트 추가, 핵심 컴포넌트/서비스 80%+)
 
-- GalleryApp.tsx (주요 갤러리 컴포넌트)
-- MediaService.ts (미디어 처리 로직)
-- BulkDownloadService.ts (다운로드 서비스)
-- 기타 핵심 utilities
+**전략**: 3단계 세분화 (각 파일별, 우선순위 순서)
 
-**예상 테스트 수**: 300+ 추가 (목표: 전체 70%+ 커버리지)
+#### Phase B3.2.1: GalleryApp.ts 테스트 커버리지 확대 (진행 중 ⚙️)
+
+**목표**: GalleryApp.ts 커버리지 기반선 분석 → 70% → 75%+ 달성
+
+**상태**: 신규 테스트 파일 작성 및 32개 테스트 추가 ✅
+
+**완료 내용**:
+
+새 파일: `test/unit/features/gallery/phase-b3-2-gallery-app-coverage.test.ts`
+
+테스트 커버리지:
+
+- **Error Handling & Edge Cases** (12개 테스트)
+  - 빈 미디어 배열, 음수 인덱스, 범위 초과 인덱스 처리
+  - 초기화 없이 메서드 호출, 여러 번 초기화 시도
+  - cleanup 호출 다양한 시나리오
+  - 설정 업데이트, 진단 정보 반환
+  - 대규모 미디어 배열, 특수 문자 처리
+
+- **DOM & Container Management** (5개 테스트)
+  - 컨테이너 생성 및 속성 검증
+  - 컨테이너 재사용 확인
+  - CSS 속성 검증
+  - 여러 media sequence에서 컨테이너 재사용
+
+- **Configuration Scenarios** (3개 테스트)
+  - 동적 설정 업데이트
+  - media 작업 중 설정 유지
+  - 부분 업데이트 (reset behavior)
+
+- **State Management & Transitions** (3개 테스트)
+  - 상태 추적 정확성
+  - 빠른 상태 변화 처리
+  - 진단 정보 일관성
+
+- **Mixed Operations** (3개 테스트)
+  - 설정 변경 + media 작업 조합
+  - 활성 작업 중 진단 정보 조회
+  - edge case 복구 시나리오
+
+- **Initialization Variations** (2개 테스트)
+  - 기본 설정으로 초기화
+  - 다양한 초기화 시퀀스
+
+- **Cleanup Scenarios** (3개 테스트)
+  - 다양한 상태에서 cleanup
+  - 미디어 열린 상태 정리
+  - 여러 open/close 사이클 후 정리
+
+**테스트 결과**:
+
+- 신규 테스트: **32개** 추가
+- 모든 테스트: **PASS** ✅
+- 파일: 477줄 (well-structured)
+- 커버리지: 세부 시나리오 강화
+
+**다음 단계**:
+
+1. Phase B3.2.2: MediaService.ts 커버리지 (예정)
+2. Phase B3.2.3: BulkDownloadService.ts 강화 (예정)
+
+#### Phase B3.2.2: MediaService.ts 테스트 커버리지 확대 (예정)
+
+**목표**: MediaService.ts 커버리지 80%+ 달성
+
+**예상 테스트**: 60-100개
+
+#### Phase B3.2.3: BulkDownloadService.ts 추가 강화 (예정)
+
+**목표**: BulkDownloadService.ts 커버리지 85%+ 달성
+
+**예상 테스트**: 40-60개
+
+**누적 목표** (Phase B3.2 전체):
+
+- Phase B3.2.1: 32개 ✅ (완료)
+- Phase B3.2.2: 60-100개 (예정)
+- Phase B3.2.3: 40-60개 (예정)
+- **총 목표**: 132-192개 추가
+- **누적 테스트**: ~3200-3300개
+- **예상 커버리지**: 70.37% → 72-74%
+- **빌드 크기**: 330 KB 내 유지
 
 ---
 
