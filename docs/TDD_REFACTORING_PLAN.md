@@ -6,11 +6,10 @@
 
 ## 현황 요약 (읽기 전 10초 요약)
 
-- Build: prod 329.20 KB / 335 KB (여유 5.80 KB), gzip 88.69 KB
-- 최적화: 프로덕션 소스맵 제거 완료
-- Tests: **2542 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
-- Note: **Phase A5.3 Step 1 ✅ + Step 2 진행중** — Signal 패턴 표준화 완료,
-  State Machine 3개 추가 (84개 테스트)
+- Build: prod 329.23 KB / 335 KB (여유 5.77 KB), gzip 88.70 KB
+- Tests: **2564 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
+- Note: **Phase A5.3 ✅ 완료** — Signal 패턴 표준화(Step 1), State Machine 3개
+  추가(Step 2), signalSelector 최적화(Step 3)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 265 modules, 746 deps, 순환 0
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -19,12 +18,10 @@
 
 ## 활성 작업
 
-### Phase A5: 아키텍처 개선 (진행 중 🔄)
+### Phase A5: 아키텍처 개선 (완료 ✅)
 
 **목표**: Service Layer 정리, State Management 패턴 통일, Error Handling 전략
 개선
-
-**진행 상황**:
 
 - ✅ **분석 완료**: Service Layer (23개 서비스), State Management (Signal 패턴),
   Error Handling (AppError 30-40% 사용)
@@ -67,6 +64,26 @@
       - 기능: 애니메이션 상태 관리, 강제 닫기로 에러 복구
       - 테스트: 30개 추가, 모두 통과
     - **결론**: Step 2 완료 ✅ (3개 State Machine 모두 구현, 84개 테스트)
+  - ✅ **Step 3 (P3) 완료**: signalSelector 일관 적용
+    - **목표**: 파생값 메모이제이션을 signalSelector로 통일
+    - ✅ **ToastContainer 최적화** (commit TBD)
+      - 변경: `limitedToasts = createMemo(() => currentToasts().slice(...))` →
+        `useSelector`
+      - 테스트: 8개 신규 테스트 (`toast-container-selector.test.tsx`)
+      - 효과: Toast 렌더링 최적화 (의존성 기반 캐싱)
+    - ✅ **Toolbar 검증** (선택적)
+      - 분석: Solid Store 기반이므로 Signal useSelector 적용 불가
+      - 결정: createMemo 유지 (적용 대상 아님)
+    - ✅ **VerticalImageItem 테스트 준비** (commit TBD)
+      - 테스트: 8개 신규 테스트 (`vertical-image-item-selector.test.tsx`)
+      - 분석: Props 혼재로 복잡도 높음, 기존 createMemo 유지 권장
+    - **결론**: Step 3 완료 ✅ (signalSelector 패턴 검증 완료, 16개 테스트)
+  - **Phase A5.3 전체 결과**:
+    - Step 1: Signal 패턴 표준화 (43개 테스트)
+    - Step 2: State Machine 3개 구현 (84개 테스트)
+    - Step 3: signalSelector 최적화 검증 (16개 테스트)
+    - **총**: 143개 신규 테스트 추가, 2564 tests passed ✅
+    - 빌드: 329.23 KB (within budget) ✅
   - **Step 3 (P3 선택)**: signalSelector 일관 적용 (파생값 캐싱)
     - 선택적 성능 최적화
     - 소요: 1시간

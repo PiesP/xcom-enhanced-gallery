@@ -19,7 +19,7 @@ export interface ToastContainerProps extends Partial<StandardToastContainerProps
 }
 
 const solid = getSolid();
-const { mergeProps, splitProps, createMemo, For } = solid;
+const { mergeProps, splitProps, For } = solid;
 
 const defaults: Required<Pick<ToastContainerProps, 'position' | 'maxToasts'>> = {
   position: 'top-right',
@@ -42,9 +42,12 @@ export function ToastContainer(rawProps: ToastContainerProps = {}): JSXElement {
     'onKeyDown',
   ]);
 
-  const currentToasts = useSelector(toastManager.signal, state => state);
-
-  const limitedToasts = createMemo(() => currentToasts().slice(0, local.maxToasts));
+  // Phase A5.3 Step 3: signalSelector 최적화로 파생값 메모이제이션
+  // createMemo 대신 useSelector 적용 (의존성 기반 캐싱)
+  const limitedToasts = useSelector(toastManager.signal, state => state.slice(0, local.maxToasts), {
+    dependencies: state => [state.length, local.maxToasts],
+    name: 'limitedToasts',
+  });
 
   const containerClass = () =>
     ComponentStandards.createClassName(
