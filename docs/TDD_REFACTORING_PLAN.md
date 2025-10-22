@@ -7,8 +7,9 @@
 ## 현황 요약 (읽기 전 10초 요약)
 
 - Build: prod 329.83 KB / 335 KB (여유 5.17 KB), gzip ~88.8 KB
-- Tests: **2695 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
-- Note: **Phase A5.5 Step 1 🔄 진행 중** — BaseServiceImpl 확대 (72 신규 테스트)
+- Tests: **2741 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
+- Note: **Phase A5.5 Step 1 확대 🔄 진행 중** — 118 신규 테스트 추가 (목표
+  100-120 달성! 🎯)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 265 modules, 746 deps, 순환 0
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -21,25 +22,29 @@
 
 **목표**: BaseServiceImpl 패턴 사용률 35% → 90%+ (18개 서비스 마이그레이션)
 
-**현황**:
+**현황** (실시간 업데이트):
 
 - BaseServiceImpl 도입 완료: AnimationService, ThemeService, LanguageService,
-  BulkDownloadService, MediaService, EventManager (6개 = 30%)
+  BulkDownloadService, MediaService, EventManager, KeyboardNavigator,
+  DownloadOrchestrator (8개 = 35%)
 - Service Registry 중앙화: ✅ Phase A5.2 완료
 - 에러 처리 개선: ✅ Phase A5.4 완료
-- 남은 서비스: ~18개
+- 남은 서비스: ~16개
 
-**진행 상황**:
+**진행 상황** (상세):
 
-- ✅ **Step 1 (진행 중)**: 고우선순위 서비스 리팩토링 **72 테스트 추가**
+- ✅ **Step 1 Main** (완료 ✅): 고우선순위 서비스 리팩토링 **72 테스트 추가**
   - ✅ BulkDownloadService (21 테스트)
   - ✅ MediaService (20 테스트)
   - ✅ EventManager (31 테스트)
-  - 목표 50-70 달성 완료 ✅
-  - 남은 대상 (선택):
-    - StabilityDetectorService (8-10 테스트 예상)
-    - DownloadOrchestrator (5-7 테스트 예상)
-    - KeyboardNavigator (3-5 테스트 예상)
+
+- 🔄 **Step 1 Expansion** (진행 중): 추가 서비스 리팩토링 **46 테스트 추가**
+  (목표 30-50)
+  - ✅ KeyboardNavigator (25 테스트) - 싱글톤 + 이벤트 구독 관리
+  - ✅ DownloadOrchestrator (21 테스트) - 동시성 제어 + 타이머 정리
+  - 다음 대상:
+    - StabilityDetectorService (factory → class, 8-10 테스트 예상)
+    - 기타 우선순위 낮은 서비스들
 
 - 📋 **Step 2 (계획)**: 중우선순위 서비스 리팩토링
   - ToastServices (UI 상태)
@@ -53,14 +58,24 @@
   - 빌드 및 전체 테스트 검증
   - 예상 테스트: 20-30개 추가
 
+**누적 성과**:
+
+| 항목                     | 값            | 상태              |
+| ------------------------ | ------------- | ----------------- |
+| Phase A5.5 Main (Step 1) | 72 tests      | ✅ Complete       |
+| KeyboardNavigator        | 25 tests      | ✅ Complete       |
+| DownloadOrchestrator     | 21 tests      | ✅ Complete       |
+| **총 누적**              | **118 tests** | **🎯 목표 달성!** |
+| Step 1 Expansion 목표    | 30-50 tests   | ✅ 46 achieved    |
+| Phase A5.5 목표          | 100-120 tests | ✅ 118 achieved   |
+| BaseServiceImpl 사용률   | 8/23 = 35%    | 📈 증가 중        |
+
 **예상 성과**:
 
 - BaseServiceImpl 사용률: 35% → 70%+ (Step 1 완료 시)
-- 누적 신규 테스트: 72 (목표 50-70 달성)
+- 누적 신규 테스트: 118 (목표 100-120 달성 ✅)
 - 코드 복잡도 감소: 10-15%
-- 빌드 영향: +0.3 KB (예산 내)
-- 코드 복잡도 감소: 15-25%
-- 빌드 영향: <1 KB 추가 (현재 여유 5.47 KB)
+- 빌드 영향: +0 KB (현재 여유 5.17 KB)
 - 예상 소요 시간: 4-5시간 (TDD 기반)
 
 **성공 조건**:
