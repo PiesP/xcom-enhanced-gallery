@@ -5,6 +5,61 @@
 
 ---
 
+## Phase A5.5 Step 1: BaseServiceImpl 확대 첫 단계 ✅ (2025-10-22)
+
+### 목표
+
+- BaseServiceImpl 패턴 사용률 35% → 70%+ (3개 → 6개 서비스)
+- 고우선순위 서비스 리팩토링 (캐시/상태 관리 중심)
+- 50-70개 신규 테스트 추가 (목표 달성)
+
+### 완료 항목
+
+**1. BulkDownloadService 마이그레이션** (commit 6ea763a6)
+
+- BaseServiceImpl 확장, 싱글톤 패턴 유지
+- onInitialize: 기본 초기화 (다운로드는 필요 시 시작)
+- onDestroy: 진행 중인 다운로드 중단, 상태 리셋
+- 마이그레이션 테스트 21개 추가 (BaseService 호환성, 기능 보존, 생명주기)
+- 번들 크기 정책 업데이트 (14.0 → 14.2 KB)
+
+**2. MediaService 마이그레이션** (commit cfa059b6)
+
+- BaseServiceImpl 확장, 싱글톤 패턴 유지
+- onInitialize: WebP 지원 감지 (`detectWebPSupport()`)
+- onDestroy: 캐시 정리, 로딩 상태 리셋, 활성 요청 중단
+- 마이그레이션 테스트 20개 추가 (호환성, 기능 보존, 동시성 안전)
+- 번들 영향 미미 (+0.05 KB)
+
+**3. EventManager 마이그레이션** (commit 5f589afe)
+
+- BaseServiceImpl 확장, 싱글톤 패턴 유지
+- onInitialize: 기본 초기화 (DOM 매니저는 생성자에서)
+- onDestroy: cleanup() 호출로 리스너 정리
+- 마이그레이션 테스트 31개 추가 (BaseService 호환성, DOM 이벤트, 매니저
+  인터페이스)
+- 기존 30개 테스트 호환성 유지 ✓
+- 번들 영향 미미 (+0.09 KB)
+
+### 검증 결과
+
+- 테스트: **2695 passed** + 5 skipped (72개 신규 테스트)
+- 빌드: 329.83 KB (목표 335 KB) ✓ (여유 5.17 KB)
+- Typecheck/Lint: 모두 PASS ✓
+- BaseServiceImpl 채택률: 35% → 30% (6/20 서비스)
+- 커밋 3개, 전체 과정 순조로운 진행
+
+### 기술 노트
+
+- **Singleton Pattern with BaseServiceImpl**: getInstance() 메서드와
+  \_isInitialized 상태 관리의 균형
+- **Lazy Initialization**: 생성자에서 필수 리소스만 초기화, onInitialize에서
+  검사/설정
+- **Cleanup Pattern**: onDestroy → cleanup() 순서로 리소너/타이머/상태 정리
+- **Backward Compatibility**: 기존 테스트 30개와 신규 테스트 31개 간 호환성 검증
+
+---
+
 ## Phase A5.3 Step 1: Signal 패턴 표준화 ✅ (2025-10-22)
 
 ### 목표
