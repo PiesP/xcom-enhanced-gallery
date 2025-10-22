@@ -36,6 +36,7 @@ import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay'
 import { useSelector, useCombinedSelector } from '../../../../shared/utils/signal-selector';
 import type { MediaInfo } from '../../../../shared/types';
 import { observeViewportCssVars } from '../../../../shared/utils/viewport';
+import { globalTimerManager } from '../../../../shared/utils/timer-management';
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
@@ -93,6 +94,44 @@ function VerticalGalleryViewCore({
     logger.debug('VerticalGalleryView: 가시성 계산', {
       visible,
       mediaCount: mediaItems().length,
+    });
+  });
+
+  // Phase 146: 툴바 초기 표시 및 자동 숨김
+  const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(false);
+
+  // 툴바 자동 숨김 타이머 effect
+  createEffect(() => {
+    if (!isVisible() || mediaItems().length === 0) {
+      // 갤러리가 보이지 않으면 초기 표시 상태도 false
+      setIsInitialToolbarVisible(false);
+      return;
+    }
+
+    // 갤러리가 열리면 툴바를 초기에 표시
+    setIsInitialToolbarVisible(true);
+
+    // 자동 숨김 시간 가져오기 (기본 3초)
+    const autoHideDelay = getSetting<number>('toolbar.autoHideDelay', 3000);
+
+    // autoHideDelay가 0이면 즉시 숨김
+    if (autoHideDelay === 0) {
+      setIsInitialToolbarVisible(false);
+      return;
+    }
+
+    // 타이머 설정
+    const timer = globalTimerManager.setTimeout(() => {
+      setIsInitialToolbarVisible(false);
+      logger.debug('VerticalGalleryView: 툴바 자동 숨김 실행', {
+        delay: autoHideDelay,
+      });
+    }, autoHideDelay);
+
+    // cleanup에서 타이머 정리
+    onCleanup(() => {
+      globalTimerManager.clearTimeout(timer);
+      logger.debug('VerticalGalleryView: 툴바 자동 숨김 타이머 정리');
     });
   });
 
@@ -397,7 +436,7 @@ function VerticalGalleryViewCore({
   return (
     <div
       ref={el => setContainerEl(el ?? null)}
-      class={`${styles.container} ${stringWithDefault(className, '')}`}
+      class={`${styles.container} ${isInitialToolbarVisible() ? styles.initialToolbarVisible : ''} ${stringWithDefault(className, '')}`}
       onClick={handleBackgroundClick}
       data-xeg-gallery='true'
       data-xeg-role='gallery'

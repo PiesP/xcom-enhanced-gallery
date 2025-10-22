@@ -174,7 +174,7 @@ AGENTS.md
 .github/workflows/ai-*.yml
 
 # 로컬 VS Code 설정 (개인 환경 맞춤화)
-.vscode/
+.vscode
 
 # 개발자 개인 설정
 .env.personal
