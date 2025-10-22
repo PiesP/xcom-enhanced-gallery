@@ -95,4 +95,5 @@ export { DOMBatcher, globalDOMBatcher } from './dom/index';
 
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
-export type { StandardError, ErrorContext } from './error-handling';
+export type { StandardError, ErrorContext, ErrorFactoryContext } from './error-handling';
+export { ErrorSeverity, ErrorCategory, ErrorFactory } from './error-handling';

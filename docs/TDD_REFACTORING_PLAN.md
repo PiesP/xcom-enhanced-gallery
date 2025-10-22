@@ -18,7 +18,42 @@
 
 ## 활성 작업
 
-### Phase A5: 아키텍처 개선 (완료 ✅)
+### Phase A5.4: Error Handling 개선 (진행 중 🔄)
+
+**목표**: AppError 사용률 30-40% → 70%+, 에러 경로 커버리지 60% → 75%+
+
+**현황**:
+
+- StandardError 인터페이스 존재 (src/shared/utils/error-handling.ts)
+- ApiError 타입 정의 (src/shared/types/app.types.ts)
+- 무음 처리 (silent catch) 8개 발견:
+  - `.catch(() => {})` 5개 (VerticalGalleryView)
+  - `/* ignore */` 3개 (VerticalImageItem)
+- Try-catch 블록: 11개+ (명시적 에러 처리 미흡)
+
+**계획**:
+
+- 🔄 **Step 1 (진행 중)**: Error Handling 라이브러리 강화 (30분)
+  - StandardError 확장 (에러 코드, 심각도 레벨)
+  - 에러 카테고리 분류 (Network, Validation, Processing, System)
+  - Error factory 패턴 도입 (Type-safe 에러 생성)
+- ⏳ **Step 2**: 무음 처리 제거 및 로깅 추가 (45분)
+  - VerticalGalleryView 설정 저장 에러 처리
+  - VerticalImageItem 비디오 처리 에러 처리
+  - GalleryContainer 에러 바운더리 향상
+  - lazy-icon 로딩 에러 로깅
+- ⏳ **Step 3**: 에러 처리 테스트 (45분)
+  - 25-35개 신규 테스트 (에러 시나리오)
+  - 컴포넌트별 에러 처리 검증
+- ⏳ **Step 4**: 최종 검증 (15분)
+  - 빌드 및 테스트 검증
+  - 커버리지 확인
+
+**예상 성과**: StandardError 사용 +20%, 무음 처리 0개, 테스트 +30개
+
+---
+
+### Phase A5 (계속)
 
 **목표**: Service Layer 정리, State Management 패턴 통일, Error Handling 전략
 개선
