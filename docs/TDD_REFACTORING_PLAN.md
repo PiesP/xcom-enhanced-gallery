@@ -7,8 +7,9 @@
 ## 현황 요약 (읽기 전 10초 요약)
 
 - Build: prod 330.47 KB / 335 KB (여유 4.53 KB), gzip ~88.9 KB
-- Tests: **2755 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
-- Note: **Phase A5.5 완료! 🎉** — 132개 신규 테스트 추가 (목표 100-150 달성!)
+- Tests: **2880 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN ✅
+- Note: **Phase B3.1 Step 1-3 완료! 🎉** — 125개 신규 테스트 추가 (dom-utils
+  48 + Toast 61 + browser-utils 16)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 269 modules, 758 deps, **순환 0** ✅ (Phase A5.1 완료)
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -72,49 +73,61 @@
 
 ## 활성 작업
 
-### 🔄 Phase B3 후속: 커버리지 심화 (진행 중)
+### 🔄 Phase B3.1: 커버리지 심화 (진행 중)
 
 **목표**: 커버리지 70% → 75%+ (300+ 테스트 추가)
 
-**현황**:
+**진행 상황**:
 
-- 전체 커버리지: 70.02% (lines: 45104/64413)
-- 100% 달성 파일: 3개 (solid-helpers, focus-trap, vendor-manager-static)
-- 80% 미만 파일: 65개
+| Step | 파일                  | 목표 | 상태 | 테스트 | 진전         |
+| ---- | --------------------- | ---- | ---- | ------ | ------------ |
+| 1    | dom-utils.ts          | 80%  | ✅   | 48     | 9.55%→91.17% |
+| 2    | Toast.tsx             | 80%  | ✅   | 61     | 6.97%→?      |
+| 3    | browser-utils.ts      | 80%  | ✅   | 16     | 9.09%→?      |
+| 4    | GalleryContainer.tsx  | 70%  | ⏳   | 30-40  | 36.66%       |
+| 5    | userscript/adapter.ts | 70%  | ⏳   | 40-50  | 55.21%       |
 
-**우선순위 전략** (높은 영향도 순서):
+**완료 사항**:
 
-1. **고우선순위 (높은 복잡도 + 낮은 커버리지)** - 30-50 테스트 예상
-   - `src/shared/utils/dom/utils/dom-utils.ts`: 9.55% (13/136)
-   - `src/shared/components/ui/Toast/Toast.tsx`: 6.97% (6/86)
-   - `src/shared/browser/utils/browser-utils.ts`: 9.09% (19/209)
-   - `src/shared/components/ui/Toast/ToastContainer.tsx`: 19.4% (13/67)
-   - `src/shared/components/isolation/GalleryContainer.tsx`: 36.66% (22/60)
+- Step 1 (dom-utils.ts): 48 테스트 작성, 91.17% 커버리지 달성 ✅
+  - 모든 util 함수 테스트 완료
+  - 빌드 크기 유지 (330.47 KB)
+  - Master 병합 완료
+- Step 2 (Toast.tsx): 61 테스트 작성, Master 병합 ✅
+  - 타입 검증 테스트: ToastItem/ToastProps 인터페이스, 모든 type 지원
+  - 로직 검증: 아이콘 선택, 타이머 로직, aria-label 생성, 조건부 렌더링
+  - 이벤트 처리: onRemove 콜백, onAction 콜백, stopPropagation
+  - Props 검증: 에러 처리, CSS 클래스 병합, 필수 props 검증
+  - 콘텐츠 렌더링: 일반 텍스트, 특수 문자, 긴 콘텐츠 처리
+  - 접근성: ARIA 속성, 시맨틱 HTML, aria-hidden
+  - 고급: 다중 유형, 엣지 케이스 처리
+  - 결과: 모든 61 테스트 PASS ✅
+  - 주석: JSDOM 렌더링 제약으로 커버리지는 조건부로 증가
+- Step 3 (browser-utils.ts): 16 테스트 작성, Master 병합 ✅
+  - 파일: src/shared/browser/utils/browser-utils.ts (329 lines)
+  - 브라우저 타입 감지: Chrome, Firefox, Safari, Unknown (8 테스트)
+  - Extension API 감지: Chrome runtime, Firefox runtime (4 테스트)
+  - 오류 처리 및 안전성: missing window, error graceful handling (3 테스트)
+  - 브라우저 정보 구조: 모든 프로퍼티 검증 (1 테스트)
+  - 결과: 모든 16 테스트 PASS ✅
+  - 진행률: 125개 누적 / 300+ 목표 (42% 진행)
 
-2. **중우선순위 (높은 사용도 + 중간 커버리지)** - 50-100 테스트 예상
-   - `src/shared/external/userscript/adapter.ts`: 55.21% (127/230)
-   - `src/shared/external/vendors/vendor-api-safe.ts`: 46.61% (62/133)
-   - `src/shared/dom/dom-cache.ts`: 54.26% (140/258)
-   - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx`:
-     58.06% (198/341)
+**후속 계획** (Phase B3.1 Step 4-5):
 
-3. **저우선순위 (낮은 사용도 또는 UI 요소)** - 100-150 테스트 예상
-   - `src/features/gallery/hooks/useGalleryItemScroll.ts`: 63.7% (158/248)
-   - `src/features/settings/services/twitter-token-extractor.ts`: 58.26%
-     (201/345)
-   - 기타 utility 함수들
+1. **Step 4: GalleryContainer.tsx** (36.66% → 70%)
+   - 파일: src/shared/components/isolation/GalleryContainer.tsx (104 lines)
+   - 기능: mountGallery, unmountGallery, GalleryContainer 컴포넌트
+   - 목표: 30-40 테스트 추가
 
-**Step 1 계획** (Phase B3.1):
+2. **Step 5: userscript/adapter.ts** (55.21% → 70%)
+   - 파일: src/shared/external/userscript/adapter.ts
+   - 기능: Userscript API 래핑
+   - 목표: 40-50 테스트 추가
 
-- 대상: dom-utils, Toast 컴포넌트 (5-10개 파일)
-- 목표: 50-100 테스트 추가
-- 예상 소요: 3-4시간
+**예상 결과**:
 
-**성공 조건**:
-
-- 모든 추가 테스트 GREEN ✅
-- 빌드 크기 유지 (≤335 KB)
-- 커버리지 2-3% 향상 (70% → 72-73%)
+- 누적 테스트: 2880 → 2950+ (Phase B3.1 완료)
+- 누적 커버리지: 70% → 73-74% 목표
 
 ---
 
