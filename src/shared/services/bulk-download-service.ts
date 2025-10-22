@@ -67,7 +67,6 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 export class BulkDownloadService extends BaseServiceImpl {
   private currentAbortController: AbortController | undefined;
   private cancelToastShown = false;
-  private readonly orchestrator = new DownloadOrchestrator();
 
   constructor() {
     super('BulkDownloadService');
@@ -244,7 +243,7 @@ export class BulkDownloadService extends BaseServiceImpl {
         filesSuccessful: successful,
         failures,
         zipData,
-      } = await this.orchestrator.zipMediaItems(itemsForZip, orchOptions);
+      } = await DownloadOrchestrator.getInstance().zipMediaItems(itemsForZip, orchOptions);
       if (successful === 0) {
         toastManager.error(
           languageService.getString('messages.download.allFailed.title'),
@@ -315,7 +314,7 @@ export class BulkDownloadService extends BaseServiceImpl {
                       concurrency: 1,
                       ...(abortSignal ? { signal: abortSignal } : {}),
                     } as const;
-                    await this.orchestrator.zipMediaItems(
+                    await DownloadOrchestrator.getInstance().zipMediaItems(
                       [{ url: item.url, desiredName: item.filename ?? 'file.bin' }],
                       retryOptions
                     );

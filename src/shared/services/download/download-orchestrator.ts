@@ -3,6 +3,7 @@
  * - Centralizes concurrency, retry, and ZIP assembly for media downloads
  * - Pure service with no UI side-effects. Vendors accessed only via getters.
  */
+import { BaseServiceImpl } from '../base-service-impl';
 import { getErrorMessage } from '../../utils/error-handling';
 import { globalTimerManager } from '../../utils/timer-management';
 
@@ -32,8 +33,33 @@ export interface ZipResult {
   usedFilenames: string[]; // in order of completion
 }
 
-export class DownloadOrchestrator {
+export class DownloadOrchestrator extends BaseServiceImpl {
   static readonly DEFAULT_BACKOFF_BASE_MS = 200;
+  private static instance: DownloadOrchestrator | null = null;
+  private activeTimers: ReturnType<typeof globalTimerManager.setTimeout>[] = [];
+
+  private constructor() {
+    super('DownloadOrchestrator');
+  }
+
+  public static getInstance(): DownloadOrchestrator {
+    if (!DownloadOrchestrator.instance) {
+      DownloadOrchestrator.instance = new DownloadOrchestrator();
+    }
+    return DownloadOrchestrator.instance;
+  }
+
+  protected async onInitialize(): Promise<void> {
+    // No special initialization needed
+  }
+
+  protected onDestroy(): void {
+    // Clean up any lingering timers
+    this.activeTimers.forEach(timer => {
+      globalTimerManager.clearTimeout(timer);
+    });
+    this.activeTimers = [];
+  }
 
   private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (ms <= 0) return;
@@ -42,12 +68,15 @@ export class DownloadOrchestrator {
         cleanup();
         resolve();
       }, ms);
+      this.activeTimers.push(timer);
+
       const onAbort = () => {
         cleanup();
         reject(new Error('Download cancelled by user'));
       };
       const cleanup = () => {
         globalTimerManager.clearTimeout(timer);
+        this.activeTimers = this.activeTimers.filter(t => t !== timer);
         signal?.removeEventListener('abort', onAbort);
       };
       if (signal) signal.addEventListener('abort', onAbort);
