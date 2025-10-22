@@ -6,6 +6,7 @@
 
 // Internal imports use relative paths to avoid alias issues in Vitest
 import { logger } from '../../logging/logger';
+import { BaseServiceImpl } from '../base-service-impl';
 import { createEventListener } from '../../utils/type-safety-helpers';
 import { EventManager } from '../event-manager';
 
@@ -30,12 +31,42 @@ export interface KeyboardNavigatorOptions {
   guardEditable?: boolean; // default true
 }
 
-export class KeyboardNavigator {
+export class KeyboardNavigator extends BaseServiceImpl {
   private static instance: KeyboardNavigator | null = null;
+  private activeSubscriptions: string[] = [];
+
+  private constructor() {
+    super('KeyboardNavigator');
+  }
 
   public static getInstance(): KeyboardNavigator {
-    if (!this.instance) this.instance = new KeyboardNavigator();
-    return this.instance;
+    if (!KeyboardNavigator.instance) {
+      KeyboardNavigator.instance = new KeyboardNavigator();
+    }
+    return KeyboardNavigator.instance;
+  }
+
+  /**
+   * 생명주기: 초기화
+   */
+  protected async onInitialize(): Promise<void> {
+    logger.debug('KeyboardNavigator 초기화 완료');
+  }
+
+  /**
+   * 생명주기: 정리
+   */
+  protected onDestroy(): void {
+    // 모든 활성 구독 정리
+    this.activeSubscriptions.forEach(id => {
+      try {
+        EventManager.getInstance().removeListener(id);
+      } catch {
+        /* no-op */
+      }
+    });
+    this.activeSubscriptions = [];
+    logger.debug('KeyboardNavigator 파괴 완료');
   }
 
   /** Subscribe to document keydown. Returns unsubscribe function. */
@@ -149,9 +180,13 @@ export class KeyboardNavigator {
       context
     );
 
+    // 구독 ID 추적 (생명주기 관리)
+    this.activeSubscriptions.push(id);
+
     return () => {
       try {
         EventManager.getInstance().removeListener(id);
+        this.activeSubscriptions = this.activeSubscriptions.filter(sid => sid !== id);
       } catch {
         /* no-op */
       }
