@@ -300,7 +300,9 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('original');
-    setSetting('gallery.imageFitMode', 'original').catch(() => {});
+    setSetting('gallery.imageFitMode', 'original').catch(err => {
+      logger.warn('Failed to save fit mode', { error: err });
+    });
     logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
   };
 
@@ -311,7 +313,9 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitWidth');
-    setSetting('gallery.imageFitMode', 'fitWidth').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitWidth').catch(err => {
+      logger.warn('Failed to save fit mode', { error: err });
+    });
     logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
   };
 
@@ -322,7 +326,9 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitHeight');
-    setSetting('gallery.imageFitMode', 'fitHeight').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitHeight').catch(err => {
+      logger.warn('Failed to save fit mode', { error: err });
+    });
     logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
   };
 
@@ -333,7 +339,9 @@ function VerticalGalleryViewCore({
     }
 
     setImageFitMode('fitContainer');
-    setSetting('gallery.imageFitMode', 'fitContainer').catch(() => {});
+    setSetting('gallery.imageFitMode', 'fitContainer').catch(err => {
+      logger.warn('Failed to save fit mode', { error: err });
+    });
     logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
   };
 

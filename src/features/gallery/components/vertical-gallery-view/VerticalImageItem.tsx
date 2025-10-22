@@ -17,6 +17,7 @@ import { withGallery } from '../../../../shared/components/hoc';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
 import { getSolid } from '../../../../shared/external/vendors';
 import { languageService } from '../../../../shared/services/language-service';
+import { logger } from '../../../../shared/logging';
 import styles from './VerticalImageItem.module.css';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
@@ -236,8 +237,8 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
           if (!video.paused) {
             video.pause();
           }
-        } catch {
-          /* ignore */
+        } catch (err) {
+          logger.warn('Failed to pause video', { error: err });
         }
       } else {
         try {
@@ -247,8 +248,8 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
           if (wasPlayingBeforeHidden) {
             void video.play?.();
           }
-        } catch {
-          /* ignore */
+        } catch (err) {
+          logger.warn('Failed to resume video', { error: err });
         } finally {
           wasPlayingBeforeHidden = false;
           wasMutedBeforeHidden = null;
@@ -266,8 +267,8 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (video && typeof video.muted === 'boolean') {
       try {
         video.muted = true;
-      } catch {
-        /* ignore */
+      } catch (err) {
+        logger.warn('Failed to mute video', { error: err });
       }
     }
   });
