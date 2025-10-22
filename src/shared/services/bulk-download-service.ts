@@ -1,4 +1,9 @@
-// Bulk Download Service - Optimized for bundle size
+/**
+ * @fileoverview 일괄 다운로드 서비스
+ * @description ZIP 및 개별 다운로드 기능 제공
+ * @version 2.0.0 - Phase A5.5: BaseServiceImpl 패턴 적용
+ */
+
 import type { MediaInfo, MediaItem } from '../types/media.types';
 import type { MediaItemForFilename } from '../types/media.types';
 import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '../logging/logger';
@@ -11,6 +16,7 @@ import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
 import { DownloadOrchestrator } from './download/download-orchestrator';
 import type { DownloadProgress } from './download/types';
+import { BaseServiceImpl } from './base-service-impl';
 
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;
@@ -58,10 +64,30 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
   };
 }
 
-export class BulkDownloadService {
+export class BulkDownloadService extends BaseServiceImpl {
   private currentAbortController: AbortController | undefined;
   private cancelToastShown = false;
   private readonly orchestrator = new DownloadOrchestrator();
+
+  constructor() {
+    super('BulkDownloadService');
+  }
+
+  /**
+   * 서비스 초기화 (BaseServiceImpl 템플릿 메서드 구현)
+   */
+  protected async onInitialize(): Promise<void> {
+    // No initialization needed for bulk download service
+    // Orchestrator is created lazily on first use
+  }
+
+  /**
+   * 서비스 정리 (BaseServiceImpl 템플릿 메서드 구현)
+   */
+  protected onDestroy(): void {
+    this.currentAbortController?.abort();
+    this.cancelToastShown = false;
+  }
 
   public async downloadSingle(
     media: MediaInfo | MediaItem,
@@ -359,4 +385,5 @@ export class BulkDownloadService {
 }
 
 // Singleton instance for testing and direct usage
-export const bulkDownloadService = new BulkDownloadService();
+const _instance = new BulkDownloadService();
+export const bulkDownloadService = _instance;

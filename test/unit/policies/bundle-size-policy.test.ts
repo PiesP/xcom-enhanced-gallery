@@ -109,8 +109,8 @@ describe('Bundle Size Policy', () => {
       {
         path: 'shared/services/bulk-download-service.ts',
         maxLines: 400,
-        maxKB: 14.0,
-        context: 'Simplify retry logic',
+        maxKB: 14.2,
+        context: 'Phase A5.5: BaseServiceImpl 패턴 적용',
       },
       {
         path: 'shared/services/media/twitter-video-extractor.ts',
