@@ -8,8 +8,9 @@
 
 - Build: prod 329.20 KB / 335 KB (여유 5.80 KB), gzip 88.69 KB
 - 최적화: 프로덕션 소스맵 제거 완료
-- Tests: **2457 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
-- Note: **Phase B3 완료** — 상위 3개 파일 커버리지 100% 달성 (108개 테스트 추가)
+- Tests: **2542 passed** + 5 skipped (unit+browser+E2E+a11y) GREEN
+- Note: **Phase A5.3 Step 1 ✅ + Step 2 진행중** — Signal 패턴 표준화 완료,
+  State Machine 3개 추가 (84개 테스트)
 - 정적 분석: Typecheck/ESLint/Stylelint/CodeQL 모두 PASS
 - 의존성: 265 modules, 746 deps, 순환 0
 - 완료 이력은 `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
@@ -53,18 +54,19 @@
     - 상세: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
   - 🔄 **Step 2 (P2) 진행 중**: State Machine 확대 적용
     - **목표**: 3개 State Machine 추가 구현 (Download, Toast, Settings)
-    - **분석**: NavigationStateMachine 패턴 분석 완료
-    - Download State Machine:
-      - 상태: idle → queued → processing → complete | error
-      - 위치: `src/shared/state/download-state-machine.ts` (신규)
-      - 현재 진행: TDD 테스트 작성 (RED)
-    - Toast State Machine:
-      - 상태: idle → showing → waiting → hidden
-      - 위치: `src/shared/services/unified-toast-manager.ts` 리팩토링
-    - Settings State Machine:
-      - 상태: closed → opening → open → closing
-      - 위치: `src/shared/state/settings-state-machine.ts` (신규)
-    - 예상: 2-3시간 (전체 Step 2)
+    - ✅ **Download State Machine** (commit ac0a1cfa)
+      - 상태: idle ↔ queued → processing → complete | error → idle
+      - 기능: FIFO 큐 기반 순차 처리, 자동 다음 작업 시작
+      - 테스트: 32개 추가, 모두 통과
+    - ✅ **Toast State Machine** (commit b5352fd0)
+      - 상태: idle → showing → waiting → hidden → idle
+      - 기능: 토스트 큐 관리, 순차 표시, 자동 다음 토스트 표시
+      - 테스트: 22개 추가, 모두 통과
+    - ✅ **Settings State Machine** (commit 18ec6bb4)
+      - 상태: closed ↔ opening → open → closing → closed
+      - 기능: 애니메이션 상태 관리, 강제 닫기로 에러 복구
+      - 테스트: 30개 추가, 모두 통과
+    - **결론**: Step 2 완료 ✅ (3개 State Machine 모두 구현, 84개 테스트)
   - **Step 3 (P3 선택)**: signalSelector 일관 적용 (파생값 캐싱)
     - 선택적 성능 최적화
     - 소요: 1시간
