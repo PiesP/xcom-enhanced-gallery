@@ -5,12 +5,18 @@
 
 ## 개발 환경
 
-- 패키지 매니저: npm (단일 패키지)
-- Node.js: 22 권장 (CI는 22/24에서 검증)
-- 번들러: Vite 7, 프레임워크: Solid.js 1.9.9, 테스트: Vitest 3 + JSDOM
-- 타입 경로 별칭(ts/vite): `@`, `@features`, `@shared`, `@assets`
-- 코딩 규칙: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더 getter,
-  PC 전용 이벤트, TDD 우선)
+### 로컬 개발 환경 (Local)
+
+- **운영 체제**: Windows 11 (권장)
+- **에디터**: Visual Studio Code (권장)
+- **셸/터미널**: Windows PowerShell (pwsh) — 모든 명령어는 PowerShell 기준으로
+  작성됩니다
+- **패키지 매니저**: npm (단일 패키지)
+- **Node.js**: 22 권장 (로컬), CI는 22/24에서 검증
+- **번들러**: Vite 7, 프레임워크: Solid.js 1.9.9, 테스트: Vitest 3 + JSDOM
+- **타입 경로 별칭(ts/vite)**: `@`, `@features`, `@shared`, `@assets`
+- **코딩 규칙**: `docs/CODING_GUIDELINES.md`를 항상 준수 (디자인 토큰, 벤더
+  getter, PC 전용 이벤트, TDD 우선)
 
 설치
 
@@ -33,6 +39,9 @@ npm install -g @typescript/tsgo
 ```
 
 ## 자주 쓰는 스크립트
+
+> 💡 **모든 명령어는 Windows PowerShell 기준입니다.** Linux/macOS를 사용
+> 중이라면 문법을 필요에 따라 조정하세요.
 
 - 타입 체크: `npm run typecheck` (tsgo 사용, `src/` 및 구성 파일 대상으로 실행)
 - 테스트 타입 체크(WIP): `npm run typecheck:tests` (테스트 디렉터리의 잔여 타입
@@ -60,7 +69,7 @@ npm install -g @typescript/tsgo
 - **전체 그래프**: `npm run deps:graph` (JSON + DOT + SVG, ~3-8초, Graphviz
   필요)
 - **검증 + 전체**: `npm run deps:all` (deps:check + 전체 그래프)
-- **강제 재생성**: `--force` 플래그 추가 (예:
+- **강제 재생성**: `--force` 플래그 추가 (PowerShell 예시:
   `node ./scripts/generate-dep-graph.cjs --force`)
 - **캐싱**: src/ 디렉터리 변경 시만 재생성 (미변경 시 즉시 스킵)
 - **산출물 위치**: `docs/dependency-graph.(json|dot|svg)`
@@ -152,17 +161,26 @@ npx vitest run test/path/to/file.test.ts
 
 ```pwsh
 # Pre-push 훅은 기본으로 'smoke' 프로젝트만 실행합니다. 아래처럼 스코프를 바꿀 수 있습니다.
-# PowerShell
-$env:XEG_PREPUSH_SCOPE = 'full'   # 전체 스위트 실행 예시
+
+# Windows PowerShell에서 환경 변수 설정
+$env:XEG_PREPUSH_SCOPE = 'full'   # 전체 스위트 실행
 git push
 
-# Bash/Zsh
-export XEG_PREPUSH_SCOPE=smoke    # 기본 smoke 유지 예시
-git push
+# 또는 한 줄로
+$env:XEG_PREPUSH_SCOPE = 'smoke'; git push
 
-# 사용 가능한 값: smoke | fast | unit | styles | performance | phases | refactor | full(all)
-# 기본은 smoke 입니다. 전체 스위트를 실행하려면 'full' 또는 'all'을 사용하세요.
+# 또는 임시로 설정 후 복원
+$originalScope = $env:XEG_PREPUSH_SCOPE
+$env:XEG_PREPUSH_SCOPE = 'full'
+git push
+$env:XEG_PREPUSH_SCOPE = $originalScope
 ```
+
+사용 가능한 값: `smoke` | `fast` | `unit` | `styles` | `performance` | `phases`
+| `refactor` | `full`(all)
+
+- 기본값: `smoke`
+- 전체 스위트를 실행하려면 `'full'` 또는 `'all'`을 사용하세요.
 
 주의
 
@@ -276,7 +294,7 @@ Playwright 브라우저 환경에서 Solid.js의 fine-grained reactivity는 제�
 
 ## 빌드/검증 플로우
 
-로컬
+로컬 (Windows PowerShell)
 
 ```pwsh
 # 타입/린트/포맷 일괄
@@ -293,6 +311,10 @@ npm run validate:build  # typecheck + lint + deps + codeql + browser + e2e + a11
 # 유지보수 점검 (작업 종료 시)
 npm run maintenance:check
 ```
+
+> **참고**: 모든 npm 명령어는 Windows PowerShell에서 표준적으로 작동합니다.
+> 크로스 플랫폼 지원이 필요한 경우
+> [Node.js 공식 문서](https://nodejs.org/en/docs/)를 참고하세요.
 
 CI
 

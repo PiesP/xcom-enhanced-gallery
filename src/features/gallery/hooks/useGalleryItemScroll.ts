@@ -230,14 +230,14 @@ export function useGalleryItemScroll(
       pendingIndex = null;
       isAutoScrolling = false;
 
-      // Phase 145.1: 강화된 재시도 로직 (1회 → 3회)
-      // 렌더링 타이밍 불일치로 인한 DOM 요소 미발견 대응
+      // Phase 145.1: Enhanced retry logic (1x → 3x)
+      // Handles DOM element not found due to rendering timing mismatch
       if (retryCount < 3) {
         retryCount += 1;
         // 지수 백오프: 50ms, 100ms, 150ms 점진적 증가
         const delayMs = 50 * retryCount;
 
-        logger.debug('useGalleryItemScroll: 재시도 예약 (Phase 145.1)', {
+        logger.debug('useGalleryItemScroll: retry scheduled (Phase 145.1)', {
           index,
           retryCount,
           delayMs,

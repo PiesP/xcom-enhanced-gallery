@@ -7,6 +7,17 @@
 
 ## 핵심 스택/워크플로
 
+### 로컬 개발 환경 (Local)
+
+- **운영 체제**: Windows 11 (권장)
+- **에디터**: Visual Studio Code (권장)
+- **셸/터미널**: Windows PowerShell (pwsh)
+  - ⚠️ **중요**: 모든 npm 명령어와 터미널 명령은 Windows PowerShell 기준으로
+    작성됩니다
+  - Linux/macOS에서 사용할 경우 문법을 필요에 따라 조정하세요
+
+### 핵심 기술 스택
+
 - Stack: TypeScript(strict) + Vite 7 + Solid.js 1.9.9 + Vitest 3(JSDOM)
 - Userscript 번들: `vite.config.ts`의 userscript 플러그인이 단일
   파일(`dist/xcom-enhanced-gallery*.user.js`) 생성, Dev는 sourcemap 포함
