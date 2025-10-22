@@ -297,9 +297,9 @@
   z-index: calc(var(--xeg-z-modal) - 1);
 }
 
-/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 */
-.container.initialToolbarVisible .toolbarHoverZone,
-.container:has(.toolbarWrapper:hover) .toolbarHoverZone {
+/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
+.container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
   pointer-events: none;
 }
 

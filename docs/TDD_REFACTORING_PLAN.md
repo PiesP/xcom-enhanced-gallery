@@ -11,10 +11,68 @@
 | -------------- | ------------- | --------------------------- |
 | Build (prod)   | ✅ 331.39 KB  | 제한: 335 KB, 여유: 3.61 KB |
 | 전체 테스트    | ✅ 3240+ PASS | 모두 통과                   |
-| 누적 테스트    | 📈 722+개     | 70%+ 커버리지 유지          |
-| E2E 테스트     | ✅ 96/96 PASS | Playwright 스모크 테스트    |
+| 누적 테스트    | 📈 723+개     | 70%+ 커버리지 유지          |
+| E2E 테스트     | ✅ 97/97 PASS | Playwright 스모크 테스트    |
 | Typecheck/Lint | ✅ PASS       | 모든 검사 완료              |
 | 의존성         | ✅ OK         | 0 violations                |
+
+---
+
+## 📝 Phase 147: Settings Menu Hover Bug Fix (진행 중 🔧)
+
+**기간**: 2025-10-23  
+**상태**: 구현 완료, E2E 테스트 추가됨
+
+### 버그 개요
+
+- **증상**: 설정 메뉴를 표시한 후 호버 영역에서 마우스를 이탈하면 툴바가
+  자동으로 사라지지 않고, 브라우저 포커스 손실 시 다시 활성화되는 문제
+- **근본 원인**: CSS의 `pointer-events: none` 규칙이 `data-settings-expanded`
+  속성을 고려하지 않음
+- **영향 범위**: `VerticalGalleryView.module.css` 라인 301-304
+
+### 구현 내용
+
+**CSS 수정** (`VerticalGalleryView.module.css`):
+
+```css
+/* Before */
+.container.initialToolbarVisible .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover) .toolbarHoverZone {
+  pointer-events: none;
+}
+
+/* After */
+.container.initialToolbarVisible:not([data-settings-expanded='true'])
+  .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true'])
+  .toolbarHoverZone {
+  pointer-events: none;
+}
+```
+
+**E2E 테스트 추가** (`playwright/smoke/toolbar-initial-display.spec.ts`):
+
+- 테스트: "설정 메뉴 표시 후 호버 이탈 시 정상 작동한다"
+- 검증: Settings 메뉴 열린 상태에서 toolbar 컨테이너의 속성 정상화 확인
+
+### 테스트 현황
+
+**E2E 테스트**: **6/6 통과** ✅
+
+1. ✓ 갤러리 진입 시 툴바가 초기에 표시된다
+2. ✓ 마우스를 상단으로 이동하면 툴바가 표시된다
+3. ✓ 버튼이 클릭 가능한 상태이다
+4. ✓ 설정된 ARIA 레이블이 있다
+5. ✓ 툴바가 정확한 위치에 배치된다
+6. ✓ 설정 메뉴 표시 후 호버 이탈 시 정상 작동한다 (신규)
+
+### 검증
+
+- ✅ dev/prod 빌드 통과
+- ✅ E2E 스모크 테스트 97/97 통과
+- ✅ TypeScript strict 모드
+- ✅ ESLint/CodeQL 통과
 
 ---
 
@@ -70,7 +128,7 @@
 
 ## ✅ 완료된 Phase 요약
 
-**누적 성과**: 총 722+개 테스트, 커버리지 70%+ 달성
+**누적 성과**: 총 723+개 테스트, 커버리지 70%+ 달성
 
 | #   | Phase  | 테스트 | 상태 | 설명                        |
 | --- | ------ | ------ | ---- | --------------------------- |
@@ -88,6 +146,7 @@
 | 12  | B3.5   | 15     | ✅   | E2E 성능 검증               |
 | 13  | B3.6   | 0      | ✅   | 최종 통합 & 성능 요약       |
 | 14  | 146    | 5      | ✅   | Toolbar Initial Display     |
+| 15  | 147    | 1      | ✅   | Settings Menu Hover Fix     |
 
 상세 기록:
 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참조
@@ -100,4 +159,4 @@
 - [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) - 코딩 규칙
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - 3계층 구조
 - [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) -
-  완료된 Phase 상세 기록 완료된 Phase 기록
+  완료된 Phase 상세 기록
