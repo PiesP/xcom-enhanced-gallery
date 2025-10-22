@@ -273,4 +273,204 @@ describe('StabilityDetector', () => {
       expect(detector.lastActivityTime()).toBe(1500);
     });
   });
+
+  describe('확장 테스트 - Adaptive Threshold (Phase A5.5)', () => {
+    it('should use userScrollThreshold for scroll-only activity', () => {
+      const customDetector = createStabilityDetector({ userScrollThreshold: 100 });
+      vi.setSystemTime(0);
+
+      customDetector.recordActivity('scroll');
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(99);
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(1);
+      expect(customDetector.checkStability()).toBe(true);
+
+      customDetector.clear();
+    });
+
+    it('should use programmaticThreshold for programmatic activity', () => {
+      const customDetector = createStabilityDetector({
+        programmaticThreshold: 150,
+      });
+      vi.setSystemTime(0);
+
+      customDetector.recordActivity('programmatic');
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(149);
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(1);
+      expect(customDetector.checkStability()).toBe(true);
+
+      customDetector.clear();
+    });
+
+    it('should use mixedThreshold when multiple activity types present', () => {
+      const customDetector = createStabilityDetector({ mixedThreshold: 200 });
+      vi.setSystemTime(0);
+
+      customDetector.recordActivity('scroll');
+      customDetector.recordActivity('focus');
+
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(199);
+      expect(customDetector.checkStability()).toBe(false);
+
+      vi.advanceTimersByTime(1);
+      expect(customDetector.checkStability()).toBe(true);
+
+      customDetector.clear();
+    });
+  });
+
+  describe('확장 테스트 - 상태 변화 알림', () => {
+    it('should notify listeners on stability state change', () => {
+      const listener = vi.fn();
+      const unsubscribe = detector.onStabilityChange(listener);
+
+      detector.recordActivity('scroll');
+      expect(listener).toHaveBeenCalledWith(false);
+
+      vi.advanceTimersByTime(300);
+      detector.checkStability();
+      expect(listener).toHaveBeenCalledWith(true);
+
+      unsubscribe();
+    });
+
+    it('should support multiple listeners', () => {
+      const listener1 = vi.fn();
+      const listener2 = vi.fn();
+
+      detector.onStabilityChange(listener1);
+      detector.onStabilityChange(listener2);
+
+      detector.recordActivity('scroll');
+      expect(listener1).toHaveBeenCalledWith(false);
+      expect(listener2).toHaveBeenCalledWith(false);
+    });
+
+    it('should not notify after unsubscribe', () => {
+      const listener = vi.fn();
+      const unsubscribe = detector.onStabilityChange(listener);
+
+      unsubscribe();
+      detector.recordActivity('scroll');
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('should handle listener errors gracefully', () => {
+      const errorListener = vi.fn(() => {
+        throw new Error('Test error');
+      });
+
+      const safeListener = vi.fn();
+      detector.onStabilityChange(errorListener);
+      detector.onStabilityChange(safeListener);
+
+      expect(() => {
+        detector.recordActivity('scroll');
+      }).not.toThrow();
+
+      expect(errorListener).toHaveBeenCalled();
+      expect(safeListener).toHaveBeenCalled();
+    });
+  });
+
+  describe('확장 테스트 - 독립적 인스턴스 (Factory Pattern)', () => {
+    it('should create independent instances', () => {
+      const detector1 = createStabilityDetector();
+      const detector2 = createStabilityDetector();
+
+      detector1.recordActivity('scroll');
+      detector2.recordActivity('focus');
+
+      expect(detector1.getMetrics().lastActivityType).toBe('scroll');
+      expect(detector2.getMetrics().lastActivityType).toBe('focus');
+
+      detector1.clear();
+      detector2.clear();
+    });
+
+    it('should not affect other instances on state change', () => {
+      const detector1 = createStabilityDetector();
+      const detector2 = createStabilityDetector();
+
+      detector1.recordActivity('scroll');
+      expect(detector1.isStable()).toBe(false);
+      expect(detector2.isStable()).toBe(true);
+
+      detector1.clear();
+      detector2.clear();
+    });
+  });
+
+  describe('확장 테스트 - 타이머 관리', () => {
+    it('should clean up timers on clear', () => {
+      detector.recordActivity('scroll');
+      const timerCountBefore = vi.getTimerCount();
+      expect(timerCountBefore).toBeGreaterThan(0);
+
+      detector.clear();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('should not leak timers on rapid activity', () => {
+      for (let i = 0; i < 50; i++) {
+        detector.recordActivity('scroll');
+      }
+
+      detector.clear();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
+
+  describe('확장 테스트 - Edge Cases', () => {
+    it('should handle zero-time threshold', () => {
+      vi.setSystemTime(0);
+      detector.recordActivity('scroll');
+
+      // With 0ms threshold, should be stable immediately
+      expect(detector.checkStability(0)).toBe(true);
+    });
+
+    it('should handle rapid state changes', () => {
+      const listener = vi.fn();
+      detector.onStabilityChange(listener);
+
+      detector.recordActivity('scroll');
+      expect(listener).toHaveBeenCalledWith(false);
+
+      vi.advanceTimersByTime(300);
+      detector.checkStability();
+      expect(listener).toHaveBeenCalledWith(true);
+
+      detector.recordActivity('focus');
+      expect(listener).toHaveBeenCalledWith(false);
+
+      vi.advanceTimersByTime(300);
+      detector.checkStability();
+      expect(listener).toHaveBeenCalledWith(true);
+
+      expect(listener).toHaveBeenCalledTimes(4);
+    });
+
+    it('should handle large activity counts', () => {
+      for (let i = 0; i < 100; i++) {
+        detector.recordActivity('scroll');
+      }
+
+      const metrics = detector.getMetrics();
+      expect(metrics.totalActivities).toBe(100);
+      expect(metrics.activityByType.scroll).toBe(100);
+
+      detector.clear();
+    });
+  });
 });
