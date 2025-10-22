@@ -187,11 +187,7 @@
 
 .xeg-progress-fill {
   height: 100%;
-  background: linear-gradient(
-    to right,
-    var(--xeg-color-primary) 0%,
-    var(--xeg-color-primary-hover) 100%
-  );
+  background: var(--xeg-color-text-primary);
   transition: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 

@@ -130,14 +130,14 @@
   transform: translateZ(0); /* GPU 가???�성?? */
   backface-visibility: hidden; /* ?�더�?최적?? */
 
-  /* ?�바 ?�체????�� ?�릭 가?�하?�록 ?�정 */
+  /* 툴바 전체에서 클릭 가능하도록 설정 */
   pointer-events: var(--toolbar-pointer-events, none);
 
-  /* 그라?�언??배경 */
+  /* 그라디언트 배경 - oklch 기반 */
   background: linear-gradient(
     to bottom,
-    color-mix(in sRGB, black 80%, transparent) 0%,
-    color-mix(in sRGB, black 40%, transparent) 70%,
+    oklch(0% 0 0deg / 80%) 0%,
+    oklch(0% 0 0deg / 40%) 70%,
     transparent 100%
   );
   padding-block-end: var(--xeg-spacing-gallery);
