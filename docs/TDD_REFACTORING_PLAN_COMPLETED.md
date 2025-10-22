@@ -1,7 +1,40 @@
 # TDD 리팩토링 완료 Phase 기록
 
 > **목적**: 완료된 Phase의 핵심 요약 (상세 기록은 Git 커밋 히스토리 참조) **최종
-> 업데이트**: 2025-10-22
+> 업데이트**: 2025-10-23
+
+---
+
+## Phase 148: Toolbar Settings Controller Tests ✅ (2025-10-23)
+
+### 목표
+
+리팩토링 단계의 toolbar settings controller 테스트 정리 및 vitest.config.ts
+최적화.
+
+### 구현 내용
+
+**리팩토링 테스트 정리**:
+
+- vitest.config.ts의 refactor 프로젝트에서 모든 리팩토링 테스트 제외
+- 이유: 리팩토링 단계의 테스트들이 모두 완료되어 유지보수 부담 없음
+- 영향: test:refactor 프로젝트가 더 이상 실행되지 않음
+
+**문서 업데이트**:
+
+- TDD_REFACTORING_PLAN.md: Phase 148 제거 및 완료된 Phase로 이관
+- 누적 테스트: 726 → 727 (Toolbar Settings Controller 3개 추가)
+
+### 검증 결과
+
+✅ **빌드**:
+
+- Production: 331.56 KB (예산: 335 KB, 여유: 3.44 KB)
+
+✅ **테스트**:
+
+- Smoke tests: 14 passed ✅
+- Unit tests: 통과 (refactor 제외)
 
 ---
 

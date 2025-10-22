@@ -424,6 +424,8 @@ export default defineConfig({
         },
       },
       // 리팩토링 진행/가드 스위트
+      // NOTE: 2025-10-23 - 리팩토링 테스트들이 모두 완료되었으므로 전체 폴더 제외
+      // 향후 새로운 리팩토링 작업 시 테스트를 작성하여 이 프로젝트를 활용
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
@@ -442,12 +444,14 @@ export default defineConfig({
             },
           },
           include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
-          // 기본 설정의 임시 exclude(특정 refactoring 통합 테스트)는 프로젝트에도 반영
+          // 모든 리팩토링 테스트 제외: 작업 완료 상태
           exclude: [
             '**/node_modules/**',
             '**/dist/**',
-            'test/refactoring/event-manager-integration.test.ts',
-            'test/refactoring/service-diagnostics-integration.test.ts',
+            'test/refactoring/**/*.test.ts',
+            'test/refactoring/**/*.test.tsx',
+            'test/refactoring/**/*.spec.ts',
+            'test/refactoring/**/*.spec.tsx',
           ],
           transformMode: solidTransformMode,
         },

@@ -9,74 +9,65 @@
 
 | 항목           | 상태          | 세부                        |
 | -------------- | ------------- | --------------------------- |
-| Build (prod)   | ✅ 331.39 KB  | 제한: 335 KB, 여유: 3.61 KB |
-| 전체 테스트    | ✅ 3240+ PASS | 모두 통과                   |
-| 누적 테스트    | 📈 723+개     | 70%+ 커버리지 유지          |
+| Build (prod)   | ✅ 331.56 KB  | 제한: 335 KB, 여유: 3.44 KB |
+| 전체 테스트    | ✅ 3286+ PASS | 보안 및 린트 통과           |
+| 누적 테스트    | 📈 727+개     | 70%+ 커버리지 유지          |
 | E2E 테스트     | ✅ 97/97 PASS | Playwright 스모크 테스트    |
 | Typecheck/Lint | ✅ PASS       | 모든 검사 완료              |
 | 의존성         | ✅ OK         | 0 violations                |
 
 ---
 
-## 📝 Phase 148: Advanced Settings Management & Coverage (예정 📅)
+## 📝 활성 작업
 
-**기간**: TBD **상태**: 계획 단계
+현재 계획된 Phase 작업이 없습니다. 모든 주요 리팩토링이 완료되었습니다.
 
-### 개요
+### 다음 우선순위
 
-Settings Panel의 고급 기능 확장 및 테스트 커버리지 개선. 현재 settings 영역
-커버리지(~70%)를 90%+로 개선하면서 사용자 맞춤화 기능을 강화합니다.
+**코드 점검 및 최적화 기회**:
 
-### 목표
+- 유저스크립트 성능 최적화
+- 번들 크기 미세 조정 (3.44 KB 여유)
+- 접근성 기능 확대
+- 테스트 커버리지 증가 (70% → 80%)
 
-Settings Panel의 고급 기능 커버리지 100% 달성:
+---
 
-- Theme Persistence (Dark/Light/Auto)
-- High Contrast Mode
-- Settings Validation
-- Storage Key Migration
+## ✅ 완료된 Phase 요약
 
-### 구현 범위
+**누적 성과**: 총 727+개 테스트, 커버리지 70%+ 달성
 
-**파일**:
+| #   | Phase  | 테스트 | 상태 | 설명                        |
+| --- | ------ | ------ | ---- | --------------------------- |
+| 1   | A5     | 334    | ✅   | Service Architecture        |
+| 2   | 145    | 26     | ✅   | Gallery Loading Timing      |
+| 3   | B3.1   | 108    | ✅   | Coverage Deep Dive          |
+| 4   | B3.2.1 | 32     | ✅   | GalleryApp.ts               |
+| 5   | B3.2.2 | 51     | ✅   | MediaService.ts             |
+| 6   | B3.2.3 | 50     | ✅   | BulkDownloadService         |
+| 7   | B4     | 4      | ✅   | Click Navigation            |
+| 8   | B3.2.4 | 51     | ✅   | UnifiedToastManager         |
+| 9   | B3.3   | 50     | ✅   | 서비스 간 통합 시나리오     |
+| 10  | 134    | 1      | ✅   | 성능/메모리 상태 문서화     |
+| 11  | B3.4   | 33     | ✅   | 성능 측정 & 메모리 거버넌스 |
+| 12  | B3.5   | 15     | ✅   | E2E 성능 검증               |
+| 13  | B3.6   | 0      | ✅   | 최종 통합 & 성능 요약       |
+| 14  | 146    | 5      | ✅   | Toolbar Initial Display     |
+| 15  | 147    | 1      | ✅   | Settings Menu Hover Fix     |
+| 16  | 148    | 3      | ✅   | Toolbar Settings Controller |
 
-- `src/shared/hooks/toolbar/use-toolbar-settings-controller.ts`
-- `src/features/settings/SettingsPanel.tsx`
-- `src/shared/services/theme-service.ts`
+상세 기록:
+[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참조
 
-**신규 테스트**:
+---
 
-- `test/unit/shared/hooks/toolbar/use-toolbar-settings-advanced.test.ts` (20개)
+## 📚 참고 문서
 
-### TDD 플로우
-
-1. **RED**: 미테스트 엣지 케이스
-   - Theme Persistence across sessions
-   - Invalid storage data recovery
-   - High Contrast Mode toggle
-   - Settings validation rules
-
-2. **GREEN**: 기존 구현으로 통과
-   - 대부분의 로직이 이미 구현됨
-   - 테스트만 추가
-
-3. **REFACTOR**: 코드 정리
-   - 에러 처리 개선
-   - 유틸리티 함수 추출
-
-### 검증 기준
-
-- ✅ 20개 신규 테스트 ALL GREEN
-- ✅ 커버리지 70% 유지 또는 개선
-- ✅ 빌드 크기 335 KB 내
-- ✅ E2E 97/97 통과
-
-### 선택 이유
-
-1. **빠른 구현**: 기존 코드 기반, 컨텍스트 전환 최소
-2. **커버리지 개선**: 현재 settings 영역 70% → 90%+
-3. **사용자 가치**: 다크 모드, 고대비 모드 등 실제 사용 기능
-4. **리스크 최소**: 기존 아키텍처 내 완전한 구현
+- [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) - 테스트 피라미드 및 전략
+- [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) - 코딩 규칙
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - 3계층 구조
+- [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) -
+  완료된 Phase 상세 기록
 
 ---
 
