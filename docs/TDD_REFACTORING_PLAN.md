@@ -70,24 +70,51 @@
 
 ---
 
-## 다음 단계 (백로그)
+## 활성 작업
 
-### Phase C1: 번들 최적화 (계획)
+### 🔄 Phase B3 후속: 커버리지 심화 (진행 중)
 
-- Hero 아이콘 배럴 파일 제거
-- Tree-shaking 개선
-- 조건부 컴파일 (FEATURE 플래그)
+**목표**: 커버리지 70% → 75%+ (300+ 테스트 추가)
 
-### Phase B3 후속: 커버리지 심화 (계획)
+**현황**:
 
-- 80% 미만 파일: 13개 남음
-- 예상: 300-400 테스트 추가
+- 전체 커버리지: 70.02% (lines: 45104/64413)
+- 100% 달성 파일: 3개 (solid-helpers, focus-trap, vendor-manager-static)
+- 80% 미만 파일: 65개
 
-### Phase C2: 성능 개선 (계획)
+**우선순위 전략** (높은 영향도 순서):
 
-- Virtual scrolling (무한 스크롤)
-- Bundle 분석 및 최적화
-- 렌더링 벤치마크
+1. **고우선순위 (높은 복잡도 + 낮은 커버리지)** - 30-50 테스트 예상
+   - `src/shared/utils/dom/utils/dom-utils.ts`: 9.55% (13/136)
+   - `src/shared/components/ui/Toast/Toast.tsx`: 6.97% (6/86)
+   - `src/shared/browser/utils/browser-utils.ts`: 9.09% (19/209)
+   - `src/shared/components/ui/Toast/ToastContainer.tsx`: 19.4% (13/67)
+   - `src/shared/components/isolation/GalleryContainer.tsx`: 36.66% (22/60)
+
+2. **중우선순위 (높은 사용도 + 중간 커버리지)** - 50-100 테스트 예상
+   - `src/shared/external/userscript/adapter.ts`: 55.21% (127/230)
+   - `src/shared/external/vendors/vendor-api-safe.ts`: 46.61% (62/133)
+   - `src/shared/dom/dom-cache.ts`: 54.26% (140/258)
+   - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx`:
+     58.06% (198/341)
+
+3. **저우선순위 (낮은 사용도 또는 UI 요소)** - 100-150 테스트 예상
+   - `src/features/gallery/hooks/useGalleryItemScroll.ts`: 63.7% (158/248)
+   - `src/features/settings/services/twitter-token-extractor.ts`: 58.26%
+     (201/345)
+   - 기타 utility 함수들
+
+**Step 1 계획** (Phase B3.1):
+
+- 대상: dom-utils, Toast 컴포넌트 (5-10개 파일)
+- 목표: 50-100 테스트 추가
+- 예상 소요: 3-4시간
+
+**성공 조건**:
+
+- 모든 추가 테스트 GREEN ✅
+- 빌드 크기 유지 (≤335 KB)
+- 커버리지 2-3% 향상 (70% → 72-73%)
 
 ---
 
