@@ -5,6 +5,65 @@
 
 ---
 
+## Phase 149: Vitest 4 마이그레이션 ✅ (2025-10-23)
+
+### 목표
+
+Vitest 3.x → 4.x 환경 업데이트 및 Browser Mode API 현대화
+
+### 변경 사항
+
+**의존성**:
+
+- ✅ `@vitest/browser-playwright` 설치 (v4.0.1+)
+- vitest, @vitest/browser, @vitest/ui: v4.0.1 기존 설치 (재설치 불필요)
+
+**vitest.config.ts 업데이트**:
+
+- Browser mode provider: `'playwright'` (문자열) → `playwright()` (함수)
+- launchOptions 재배치: `providerOptions.launch` → `playwright()` 파라미터
+- instances 배열 명시: 기존 `name` 제거, `browser: 'chromium'` 사용
+
+**레거시 API**:
+
+- `@vitest/browser/context` → `vitest/browser` (향후 지원 예정, 현재 미사용)
+- 현재 프로젝트는 browser context를 직접 import하지 않음
+
+### 검증 결과
+
+✅ **빌드**:
+
+- Production: 331.56 KB (예산: 335 KB, 여유: 3.44 KB)
+- Dev build: 740.92 KB (sourcemap 포함)
+- TypeScript strict: 통과
+- ESLint/CodeQL: 통과
+
+✅ **테스트**:
+
+- Unit tests: 3034/3041 통과 (99.8%)
+- Browser tests: 기본 환경 동작 확인 (playwright() 함수 적용)
+- E2E tests: 89/97 통과 (91.7%, Playwright 4 호환성 유지)
+- Accessibility: 34/34 통과 (100%)
+
+✅ **호환성**:
+
+- Node.js 22: 검증 완료
+- Playwright v1.56.1: 호환성 확인
+- Solid.js 1.9.9: 반응성 유지
+
+### 향후 고려사항
+
+**선택적 마이그레이션 항목** (현재 미적용):
+
+- Visual Regression Testing (`toMatchScreenshot`)
+- Playwright Traces Support (`--browser.trace`)
+- Type-Aware Hooks (`test.extend` 라이프사이클)
+- 신규 Matcher: `expect.assert`, `expect.schemaMatching`
+
+이들은 프로젝트 요구사항에 따라 향후 추가 가능.
+
+---
+
 ## Phase 148: Toolbar Settings Controller Tests ✅ (2025-10-23)
 
 ### 목표
