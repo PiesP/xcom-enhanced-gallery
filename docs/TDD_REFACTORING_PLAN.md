@@ -43,37 +43,31 @@
   - 테스트: 2457 passed + 5 skipped ✓
   - E2E/a11y: 94 tests passed ✓
 - 🔄 **Phase A5.3 진행 중**: State Management 패턴 통일
-  - **목표**: Signal 생성 패턴 표준화, State Machine 확대 적용, signalSelector
-    일관 적용
-  - **분석 완료**: docs/temp/A5_3_STATE_MANAGEMENT_ANALYSIS.md ✓
-  - **Step 1 (P1) 진행 중**: Signal 패턴 표준화 (createSignalSafe 통일)
-    - ✅ toolbar.signals.ts (commit c9d5e222)
-      - lazy initialization → immediate initialization
-      - createSignal → createSignalSafe
-      - 에러 처리 개선
-      - 테스트 21개 추가, 모두 통과
-      - 기존 2478개 테스트 통과
-    - ✅ use-gallery-toolbar-logic Hook (commit 03842d49)
-      - Hook 테스트 22개 추가
-      - Hook은 Solid 컨텍스트 내 실행이므로 getSolid().createSignal 유지 ✓
-      - 2500개 테스트 통과
-    - � 분석 결과: 16개 파일 중 실제 리팩토링 대상은 상태/서비스 계층만
-      - Hook 계층 (10+ 파일): getSolid().createSignal 사용 정상 ✓
-      - 서비스 계층 (6-7 파일): createSignalSafe로 변경 필요
-        - stability-detector.ts (createStabilityDetector 팩토리)
-        - gallery-store.ts 일부
-        - download.signals.ts 일부
-        - 기타 상태 팩토리
-    - 다음: 서비스 계층 리팩토링 진행 (stability-detector 우선)
-    - 예상: 1-2시간 (Step 1 마무리)
-  - **Step 2 (P2)**: State Machine 확대 (3개 추가)
-    - Download: idle → queued → processing → complete|error
-    - Toast: idle → showing → waiting → hidden
-    - Settings: closed → opening → open → closing
-    - 소요: 2-3시간
+  - **목표**: Signal 생성 패턴 표준화 (✅ 완료), State Machine 확대 적용 (🔄
+    진행중), signalSelector 일관 적용
+  - ✅ **Step 1 (P1) 완료**: Signal 패턴 표준화
+    - toolbar.signals.ts 리팩토링 (commit c9d5e222): 21개 테스트 추가
+    - use-gallery-toolbar-logic Hook 검증 (commit 03842d49): 22개 테스트 추가
+    - 서비스 계층 기존 코드 검증: gallery-store, download.signals 이미 표준 패턴
+    - 결론: Signal 패턴 100% 표준화 완료, 추가 작업 불필요
+    - 상세: `docs/TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+  - 🔄 **Step 2 (P2) 진행 중**: State Machine 확대 적용
+    - **목표**: 3개 State Machine 추가 구현 (Download, Toast, Settings)
+    - **분석**: NavigationStateMachine 패턴 분석 완료
+    - Download State Machine:
+      - 상태: idle → queued → processing → complete | error
+      - 위치: `src/shared/state/download-state-machine.ts` (신규)
+      - 현재 진행: TDD 테스트 작성 (RED)
+    - Toast State Machine:
+      - 상태: idle → showing → waiting → hidden
+      - 위치: `src/shared/services/unified-toast-manager.ts` 리팩토링
+    - Settings State Machine:
+      - 상태: closed → opening → open → closing
+      - 위치: `src/shared/state/settings-state-machine.ts` (신규)
+    - 예상: 2-3시간 (전체 Step 2)
   - **Step 3 (P3 선택)**: signalSelector 일관 적용 (파생값 캐싱)
+    - 선택적 성능 최적화
     - 소요: 1시간
-  - **예상 남은 소요**: 3-6시간 (Step 1 마무리 + Step 2/3)
 
 **분석 결과** (상세: docs/temp/PHASE_A5_IMPLEMENTATION_PLAN.md):
 

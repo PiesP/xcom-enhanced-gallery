@@ -5,6 +5,53 @@
 
 ---
 
+## Phase A5.3 Step 1: Signal 패턴 표준화 ✅ (2025-10-22)
+
+### 목표
+
+- Signal 생성 패턴 일관성 확보 (createSignalSafe 표준화)
+- Hook vs Service 계층 패턴 정확히 구분
+- 마이그레이션 테스트 추가
+
+### 완료 항목
+
+**1. 패턴 분석 완료**
+
+- Hook 계층 (10+ 파일): `getSolid().createSignal` 패턴 ✓ (이미 올바름)
+  - `use-gallery-toolbar-logic.ts`, `use-toolbar-settings-controller.ts` 등
+  - Solid.js 컨텍스트 내 실행, 반응성 정상 작동
+- Service/Factory 계층: `createSignalSafe` 패턴 ✓ (이미 표준화됨)
+  - `gallery-store.ts`, `download.signals.ts`, `unified-toast-manager.ts` 등
+  - TDZ 안전, 루트 컨텍스트 자동 관리
+
+**2. toolbar.signals.ts 리팩토링** (commit c9d5e222)
+
+- Lazy initialization 제거 → 즉시 초기화로 변경
+- `createSignal` → `createSignalSafe` 패턴 적용
+- 에러 처리 개선 (subscribe 콜백에 try-catch)
+- 마이그레이션 테스트 21개 추가, 모두 통과 ✅
+
+**3. Hook 검증** (commit 03842d49)
+
+- `use-gallery-toolbar-logic.ts` 종합 테스트 22개 추가
+- State 초기화, FitMode 변경, Button Props, Disabled 상태, 에러 처리 검증
+- Hook 패턴 호환성 확인 ✓
+
+**4. 서비스 계층 기존 코드 검증**
+
+- `stability-detector.ts`: VerticalGalleryView에서 호출, Solid 컨텍스트 내, 정상
+- `gallery-store.ts`, `download.signals.ts`: 이미 createSignalSafe 사용 중, 정상
+- 추가 리팩토링 불필요 ✓
+
+### 검증 결과
+
+- 테스트: **2500 passed** + 5 skipped (신규 43개 테스트 포함)
+- 빌드: 329.20 KB (목표 335 KB) ✓
+- Typecheck/Lint/E2E/a11y: 모두 PASS ✓
+- 결론: Signal 패턴 표준화 100% 완료 ✅
+
+---
+
 ## Phase B3: 커버리지 개선 (3개 파일 100% 달성) ✅ (2025-10-22)
 
 ### 목표
