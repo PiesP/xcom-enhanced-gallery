@@ -35,7 +35,7 @@ codeql-db/
 *.sarif
 .codeql/
 codeql-results/
-codeql-custom-queries-javascript/test-samples/
+codeql-custom-queries-javascript/
 
 # Generated documentation files
 docs/bundle-*.html
