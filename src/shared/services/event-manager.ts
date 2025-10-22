@@ -1,10 +1,11 @@
 /**
- * @fileoverview 통합 이벤트 관리자 (TDD GREEN 단계)
+ * @fileoverview 통합 이벤트 관리자 (BaseServiceImpl 패턴 적용)
  * @description DOM 이벤트 매니저(DOM EM)와 events 유틸리티를 통합한 단일 인터페이스
  */
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '../logging/logger';
+import { BaseServiceImpl } from './base-service-impl';
 import { DomEventManager, createDomEventManager } from '../dom/dom-event-manager';
 import {
   addListener as registerManagedListener,
@@ -20,15 +21,14 @@ import type { EventHandlers, GalleryEventOptions } from '../utils/events';
  * 이벤트 관리자
  * DOM 이벤트 매니저와 GalleryEventManager의 기능을 통합
  */
-export class EventManager {
+export class EventManager extends BaseServiceImpl {
   private static instance: EventManager | null = null;
   private readonly domManager: DomEventManager;
   private isDestroyed = false;
 
   constructor() {
+    super('EventManager');
     this.domManager = createDomEventManager();
-
-    logger.debug('EventManager 초기화 완료');
   }
 
   /**
@@ -39,6 +39,22 @@ export class EventManager {
       EventManager.instance = new EventManager();
     }
     return EventManager.instance;
+  }
+
+  /**
+   * 생명주기: 초기화
+   */
+  protected async onInitialize(): Promise<void> {
+    // DOM 매니저는 생성자에서 이미 초기화됨
+    logger.debug('EventManager 초기화 완료');
+  }
+
+  /**
+   * 생명주기: 정리
+   */
+  protected onDestroy(): void {
+    this.cleanup();
+    logger.debug('EventManager 파괴 완료');
   }
 
   // ================================
@@ -99,8 +115,8 @@ export class EventManager {
    * DOM 이벤트 정리
    */
   public cleanup(): void {
-    this.domManager.cleanup();
     this.isDestroyed = true;
+    this.domManager.cleanup();
     logger.debug('EventManager DOM 이벤트 정리 완료');
   }
 
@@ -205,7 +221,9 @@ export class EventManager {
    */
   public cleanupAll(): void {
     this.cleanupGallery();
-    this.cleanup();
+    if (!this.isDestroyed) {
+      this.cleanup();
+    }
     logger.debug('EventManager 전체 정리 완료');
   }
 }
