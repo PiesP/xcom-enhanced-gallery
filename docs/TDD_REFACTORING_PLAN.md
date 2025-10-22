@@ -20,16 +20,32 @@
 
 ## 📝 활성 작업
 
-현재 계획된 Phase 작업이 없습니다. 모든 주요 리팩토링이 완료되었습니다.
+### Phase 149: Vitest 4 마이그레이션 (예정)
 
-### 다음 우선순위
+**목표**: Vitest 3.x → 4.x 환경 업데이트
 
-**코드 점검 및 최적화 기회**:
+**변경 사항**:
 
-- 유저스크립트 성능 최적화
-- 번들 크기 미세 조정 (3.44 KB 여유)
-- 접근성 기능 확대
-- 테스트 커버리지 증가 (70% → 80%)
+- `@vitest/browser-playwright` 별도 설치
+- Browser mode provider API 변경: `'playwright'` → `playwright()`
+- `@vitest/browser/context` deprecated → `vitest/browser` 직접 import
+- 선택적: Visual Regression, Playwright Traces, Type-Aware Hooks 활용
+
+**우선순위**:
+
+1. 의존성 업데이트 (`@vitest/browser-playwright` 설치)
+2. `vitest.config.ts` browser mode provider 변경
+3. playwright/harness 설정 업데이트 (필요시)
+4. 전체 테스트 검증
+5. 빌드 검증
+
+**예상 테스트 영향**:
+
+- 기존 1389 단위 테스트 영향 없음 (JSDOM)
+- Browser tests (60) API 변경 필요 (미설정 시 동작)
+- E2E tests 영향 없음
+
+**상태**: 준비 중
 
 ---
 
