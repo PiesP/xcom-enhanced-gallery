@@ -64,16 +64,49 @@
 
 ## 📋 다음 단계
 
-### Phase B3.4: 성능 최적화 및 메모리 관리 (예정)
+### Phase 134: Performance/Memory Utilities 정리 (우선)
 
-**목표**: 서비스 간 통합 시나리오의 성능 측정 및 최적화
+**상태**: 분석 완료, RED 테스트 존재 → GREEN 전환 필요
 
-- 메모리 프로파일링 (1000+ 이미지 처리)
-- 성능 벤치마크 설정
-- 병목 지점 식별 및 최적화
-- 예정 테스트: 30개+
+**목표**: 미사용 export 제거 및 API 명확성 개선
 
-**다음**: B3.5 (엔드-투-엔드 시나리오), B3.6 (최종 통합)
+| 항목             | 상태    | 작업                                                                             |
+| ---------------- | ------- | -------------------------------------------------------------------------------- |
+| Memoization 모듈 | RED     | `memo`, `useCallback`, `createMemo` 제거 (vendors getter 사용)                   |
+| Performance 정리 | RED     | `measurePerformance`, `scheduleIdle` 등 미사용 함수 제거                         |
+| Memory Profiling | 검증 중 | `isMemoryProfilingSupported`, `takeMemorySnapshot`, `MemoryProfiler` 활용도 검사 |
+| 번들 효과        | 예상    | ~2-5 KB 감소 가능                                                                |
+
+**RED 테스트 파일**:
+`test/unit/refactoring/phase-134-performance-memory-validation.test.ts`
+
+**예상 결과**:
+
+- 번들 크기: 331.39 KB → 329.39 KB (2 KB 절약)
+- 테스트: 모두 PASS (미사용 코드 제거로 인한 영향 없음)
+
+---
+
+### Phase B3.4: 성능 측정 및 메모리 거버넌스
+
+**상태**: 계획 수립
+
+**목표**: 서비스 간 통합 시나리오의 성능 검증 및 메모리 거버넌스 체계 구축
+
+**포함 항목**:
+
+| 항목              | 설명                                                         | 테스트 |
+| ----------------- | ------------------------------------------------------------ | ------ |
+| 메모리 프로파일링 | MemoryProfiler 활용한 1000+ 이미지 처리 시 메모리 변화 추적  | 5개    |
+| DOMCache 성능     | TTL/LRU/적응형 정리 효과 검증                                | 5개    |
+| Signal 최적화     | createSelector 메모이제이션 효과 검증                        | 5개    |
+| 벤더 성능         | getSolid()/getSolidStore() 캐싱 효율 검증                    | 5개    |
+| 리소스 관리       | ResourceManager 리소스 누수 방지 검증                        | 5개    |
+| 통합 성능         | Gallery + MediaService + BulkDownload 흐름에서의 메모리/성능 | 8개    |
+
+**예상 테스트**: 33개
+
+**다음**: B3.5 (E2E 성능 검증), B3.6 (최종 통합)
 
 ---
 

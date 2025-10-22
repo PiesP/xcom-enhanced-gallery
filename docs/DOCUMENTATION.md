@@ -34,12 +34,10 @@
 
 ### 리팩토링 및 학습
 
-- **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획,
-  남은 백로그 (완료 시 `archive/`로 이동)
-- **[TDD_REFACTORING_PLAN_B3_3.md](./TDD_REFACTORING_PLAN_B3_3.md)**: Phase B3.3
-  서비스 간 통합 시나리오 (준비 중)
-- **[PHASE_145_LOADING_TIMING.md](./PHASE_145_LOADING_TIMING.md)**: Phase 145
-  갤러리 로딩 타이밍 개선 분석 (완료 Phase 145.1-3, MutationObserver + E2E 검증)
+- **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획
+  (진행 중 항목들, 완료 시 `archive/`로 이동)
+- **[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)**:
+  완료된 Phase 기록 (누적 706 테스트, 70%+ 커버리지)
 - **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js
   반응성 시스템 교훈
 
