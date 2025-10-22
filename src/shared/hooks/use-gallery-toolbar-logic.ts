@@ -1,6 +1,11 @@
 /**
  * @fileoverview useGalleryToolbarLogic Hook (TDD Phase T2)
  * @description Toolbar 컴포넌트의 헤드리스 로직 분리
+ * @version 2.0.0 - Phase A5.3 Step 1: createSignal 직접 사용 (Hook 패턴)
+ *
+ * 참고: Hook 함수에서는 getSolid().createSignal을 직접 사용합니다.
+ * 이는 Hook이 Solid.js 반응성 컨텍스트 내에서 실행되기 때문입니다.
+ * 서비스/상태 계층의 모듈 상태와는 다릅니다 (→ createSignalSafe).
  */
 
 import type { Accessor } from 'solid-js';
