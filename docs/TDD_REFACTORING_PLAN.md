@@ -21,7 +21,56 @@
 
 ## 📝 다음 작업 계획
 
-현재 계획된 활성 작업이 없습니다.
+### Phase 150.2: 자동 포커스 상태 정규화 🔄 진행 중
+
+**분석 결과** (`useGalleryFocusTracker.ts`, 560줄):
+
+**상태 변수 분석** (18개 상태 선언):
+
+- Solid.js Signals: 2개 (manualFocusIndex, autoFocusIndex)
+- 타이머/ID: 3개 (observer, autoFocusTimerId, pendingFocusIndex)
+- 캐시/맵: 3개 (itemElements Map, elementToIndex WeakMap, entryCache Map)
+- 추적 변수: 4개 (lastAutoFocusedIndex, lastAppliedIndex, hasPendingRecompute,
+  ...)
+- createEffect/Memo: 9개 (리렌더링 로직, 옵저버 관리, 동기화)
+
+**리팩토링 기회**:
+
+1. **Signal 통합** (manualFocusIndex + autoFocusIndex)
+   - 단일 `focusState` Signal로 통합
+   - 소스 메타데이터 포함 (auto/manual/external)
+   - 예상 감소: 2 → 1 Signal
+
+2. **타이머 관리 추상화** (globalTimerManager 활용)
+   - autoFocusTimerId 중앙 관리
+   - debouncer 인스턴스 통합
+   - 예상 감소: 2-3개 타이머 제어 변수
+
+3. **캐시 레이어 통합** (itemElements/elementToIndex/entryCache)
+   - 단일 ItemEntry 객체로 통합
+   - Map<number, ItemEntry> 단순화
+   - 예상 감소: 3 → 1 캐시 구조
+
+4. **추적 상태 정규화**
+   (lastAutoFocusedIndex/lastAppliedIndex/hasPendingRecompute)
+   - 통합 추적 객체로 관리
+   - 예상 감소: 4 → 1-2 변수
+
+**목표**:
+
+- 상태 변수 18 → 8-10개 (55% 감소)
+- 파일 크기: 560줄 → 420줄 (25% 감소)
+- 복잡도: Cyclomatic complexity ↓
+
+**테스트 전략**:
+
+- 기존 단위 테스트: 호환성 검증
+- 신규 단위 테스트: +5-8개 (상태 통합 검증)
+- E2E 테스트: 포커스 추적 동작 검증
+
+**예상 작업 시간**: 2-4시간
+
+---
 
 ### 권장 우선순위
 
@@ -35,11 +84,12 @@
    - ✅ 테스트 커버리지 증대: +18 새 단위 테스트
    - **커밋**: `22d67066`
 
-2. **Phase 150.2**: 자동 포커스 상태 정규화
-   - useGalleryFocusTracker.ts 상태 변수 정규화
-   - 불필요한 상태 통합 (40→25 변수)
-   - 타이머/debounce 관리 통합
-   - E2E 테스트 검증
+2. **Phase 150.2**: 자동 포커스 상태 정규화 🔄 **진행 중**
+   - 상태 변수 통합: 18 → 8-10개 (55% 예상 감소)
+   - Signal 통합: manualFocusIndex + autoFocusIndex → focusState
+   - 타이머 관리 추상화: 중앙 관리화
+   - 캐시 레이어 통합: 3개 구조 → 1개 ItemEntry 맵
+   - E2E 테스트: 포커스 추적 동작 검증
 
 3. **Phase 150.3**: 최종 검증
    - 빌드 및 번들 크기 확인
