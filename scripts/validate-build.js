@@ -201,9 +201,10 @@ function validateUserScript() {
 
   // Phase 78.4: OKLCH 폴백 자동 생성으로 인한 번들 크기 증가
   // Phase 106: 경고 기준 상향 조정 (330KB → 332KB)
+  // Phase 152: 링크 미리보기 이미지 감지 기능 추가 (+0.93 KB)
   // 이유: 0.42 KB 초과는 실질적 문제가 아니며, 무리한 최적화는 코드 품질을 해칠 수 있음
-  const RAW_FAIL_BUDGET = 335 * 1024; // 335KB (+10KB from Phase 78 baseline)
-  const RAW_WARN_BUDGET = 332 * 1024; // 332KB (1.5 KB 여유 추가)
+  const RAW_FAIL_BUDGET = 336 * 1024; // 336KB (+11KB from Phase 78 baseline)
+  const RAW_WARN_BUDGET = 333 * 1024; // 333KB (1.5 KB 여유 추가)
 
   if (rawBytes > RAW_FAIL_BUDGET) {
     console.error(

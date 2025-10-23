@@ -132,13 +132,8 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   return false;
 }
 
-/**
- * 갤러리 트리거를 차단해야 하는 요소인지 확인
- */
 export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
-  if (!target) {
-    return false;
-  }
+  if (!target) return false;
 
   if (isVideoControlElement(target)) {
     logger.debug('MediaClickDetector: 비디오 제어 요소 클릭 - 기본 동작 허용');
@@ -159,25 +154,31 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
     }
   }
 
-  const statusLink = target.closest('a[href*="/status/"]') as HTMLAnchorElement;
-  if (statusLink) {
-    const isInMediaContainer = target.closest(STABLE_SELECTORS.MEDIA_CONTAINERS.join(', '));
-    if (isInMediaContainer) {
-      logger.debug('MediaClickDetector: 미디어 컨테이너 내 링크 - 갤러리 허용');
-      return false;
-    }
+  const mcSel = STABLE_SELECTORS.MEDIA_CONTAINERS.join(', ');
 
-    const hasMedia = cachedQuerySelector(MEDIA_IN_LINK_SELECTORS.join(', '), statusLink, 2000);
-    if (hasMedia) {
-      logger.debug('MediaClickDetector: 미디어 포함 링크 - 갤러리 허용');
-      return false;
+  // 외부 링크 내 이미지: 미디어 컨테이너 제외
+  if (target.tagName === 'IMG') {
+    const parentLink = target.closest('a');
+    if (parentLink && !parentLink.href.includes('/status/') && !target.closest(mcSel)) {
+      return true;
     }
-
-    logger.debug('MediaClickDetector: 순수 텍스트 링크 클릭 차단');
-    return true;
   }
 
-  return false;
+  const statusLink = target.closest('a[href*="/status/"]');
+  if (!statusLink) return false;
+
+  if (target.closest(mcSel)) {
+    logger.debug('MediaClickDetector: 미디어 컨테이너 내 링크 - 갤러리 허용');
+    return false;
+  }
+
+  if (cachedQuerySelector(MEDIA_IN_LINK_SELECTORS.join(', '), statusLink, 2000)) {
+    logger.debug('MediaClickDetector: 미디어 포함 링크 - 갤러리 허용');
+    return false;
+  }
+
+  logger.debug('MediaClickDetector: 순수 텍스트 링크 클릭 차단');
+  return true;
 }
 
 /**
