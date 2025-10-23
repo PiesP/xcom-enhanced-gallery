@@ -28,11 +28,12 @@
 **Phase 150의 실행 계획** (상세 기록은 `TDD_REFACTORING_PLAN_COMPLETED.md`
 참조):
 
-1. **Phase 150.1**: 미디어 추출 Strategy 리팩토링
-   - TwitterAPIExtractor의 `calculateClickedIndex()` Strategy 패턴 적용
-   - 4가지 매칭 전략을 독립 클래스로 분리
-   - 복잡도 단순화 (60줄 → 30줄 예상)
-   - 테스트 커버리지 증대 (80% → 90%+)
+1. **Phase 150.1**: 미디어 추출 Strategy 리팩토링 ✅ **완료**
+   - ✅ TwitterAPIExtractor의 `calculateClickedIndex()` Strategy 패턴 적용
+   - ✅ 4가지 매칭 전략을 독립 클래스로 분리
+   - ✅ 복잡도 단순화: 60줄 → 20줄 (67% 감소)
+   - ✅ 테스트 커버리지 증대: +18 새 단위 테스트
+   - **커밋**: `22d67066`
 
 2. **Phase 150.2**: 자동 포커스 상태 정규화
    - useGalleryFocusTracker.ts 상태 변수 정규화
