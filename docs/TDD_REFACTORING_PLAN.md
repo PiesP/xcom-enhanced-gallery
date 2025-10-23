@@ -35,11 +35,19 @@
    - ✅ 테스트 커버리지 증대: +18 새 단위 테스트
    - **커밋**: `22d67066`
 
-2. **Phase 150.2**: 자동 포커스 상태 정규화
-   - useGalleryFocusTracker.ts 상태 변수 정규화
-   - 불필요한 상태 통합 (40→25 변수)
-   - 타이머/debounce 관리 통합
-   - E2E 테스트 검증
+2. **Phase 150.2**: 자동 포커스 상태 정규화 🔄 **진행 중**
+   - **분석**: useGalleryFocusTracker.ts (560줄, 18개 상태 변수)
+   - **목표**: 상태 변수 18 → 8-10개 (55% 감소)
+   - **전략**:
+     1. Signal 통합: manualFocusIndex + autoFocusIndex → focusState (소스 메타
+        포함)
+     2. 캐시 통합: itemElements/elementToIndex/entryCache → Map<number,
+        ItemEntry>
+     3. 타이머 추상화: FocusTimerManager 클래스로 캡슐화
+     4. 추적 상태 정규화: 4개 변수 → FocusTracking 객체
+   - **테스트**: TDD (RED→GREEN), +5-8 신규 테스트
+   - **E2E**: 포커스 추적 동작 검증
+   - **예상**: 2-4시간 소요
 
 3. **Phase 150.3**: 최종 검증
    - 빌드 및 번들 크기 확인
