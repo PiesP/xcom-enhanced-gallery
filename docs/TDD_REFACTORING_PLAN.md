@@ -19,114 +19,74 @@
 
 ---
 
-## 📝 활성 작업
+## 📝 다음 작업 계획
 
-**Phase 150: Media Extraction & Auto Focus/Navigation Refactoring** 🔄
+현재 계획된 활성 작업이 없습니다.
 
-**기간**: 2025-10-23 ~ (진행 중) | **상태**: 분석 단계
+### 권장 우선순위
 
-### 작업 목표
+**Phase 150의 실행 계획** (상세 기록은 `TDD_REFACTORING_PLAN_COMPLETED.md`
+참조):
 
-사용자 요청에 따라 다음 두 기능의 리팩토링 기회를 탐색합니다:
+1. **Phase 150.1**: 미디어 추출 Strategy 리팩토링
+   - TwitterAPIExtractor의 `calculateClickedIndex()` Strategy 패턴 적용
+   - 4가지 매칭 전략을 독립 클래스로 분리
+   - 복잡도 단순화 (60줄 → 30줄 예상)
+   - 테스트 커버리지 증대 (80% → 90%+)
 
-1. **미디어 추출 기능** - 클릭한 미디어 기반 트윗/미디어 추출
-2. **자동 포커스/이동 기능** - 자동 감지 포커스 추적 및 네비게이션
+2. **Phase 150.2**: 자동 포커스 상태 정규화
+   - useGalleryFocusTracker.ts 상태 변수 정규화
+   - 불필요한 상태 통합 (40→25 변수)
+   - 타이머/debounce 관리 통합
+   - E2E 테스트 검증
 
-### 분석 결과
-
-#### A. 미디어 추출 기능
-
-**구조**:
-
-- `MediaExtractionService`: 2단계 조율 (트윗 정보 추출 → API/DOM 추출)
-- `TwitterAPIExtractor`: API 미디어 추출 + 복잡한 인덱스 계산
-- `media-click-detector.ts`: 클릭 좌표 기반 미디어 감지
-- `media-url.util.ts`: DOM 미디어 URL 추출
-
-**복잡도 핵심** - `calculateClickedIndex()` (라인 182~240):
-
-```
-1. 직접 매칭 (URL 비교) → 신뢰도 99%
-2. 트윗 컨텍스트 기반 → 신뢰도 95%
-3. DOM 순서 기반 추정 → 신뢰도 80-90%
-4. 안전장치 (폴백) → 신뢰도 50%
-```
-
-**리팩토링 기회**:
-
-- [ ] **Strategy 패턴**: 4개 매칭 전략을 독립 클래스로 분리
-- [ ] **함수 분해**: `calculateClickedIndex()` 단순화 (라인 수 60→30)
-- [ ] **테스트 확대**: 현재 제외된 엣지 케이스 추가
-- [ ] **타입 강화**: 반환 값 명확화
-
-**개선 효과**:
-
-- 코드 가독성 ↑ (전략별 단일 책임)
-- 유지보수 ↑ (각 전략 독립 테스트)
-- 성능 ↓ (선택적 실행 가능)
-
-#### B. 자동 포커스/이동 기능
-
-**구조**:
-
-- `useGalleryFocusTracker.ts` (650+ 줄): 포커스 추적 핵심
-- `gallery.signals.ts`: 네비게이션 신호 (navigateToItem, setFocusedIndex)
-- `VerticalGalleryView.tsx`: UI 통합
-
-**복잡도 핵심** - 다중 상태 관리:
-
-```
-상태 변수:
-  - autoFocusIndex, manualFocusIndex
-  - lastAutoFocusedIndex, lastAppliedIndex
-  - focusBatchScheduled, hasPendingRecompute
-
-타이머/Debounce:
-  - autoFocusTimerId
-  - debouncedSetAutoFocusIndex (50ms)
-  - debouncedUpdateContainerFocusAttribute (50ms)
-```
-
-**리팩토링 기회**:
-
-- [ ] **상태 정규화**: 불필요한 상태 변수 제거 (3-4개 통합 가능)
-- [ ] **타이머 통합**: 단일 타이머 관리 구조로 개선
-- [ ] **이벤트 핸들링**: 핸들러 로직 분리 (registerItem 등)
-- [ ] **테스트 개선**: 복잡한 시나리오 추가 (현재 placeholder)
-
-**개선 효과**:
-
-- 코드 가독성 ↑ (상태 변수 40→25개)
-- 버그 위험 ↓ (상태 관리 단순화)
-- 성능 ↑ (불필요한 effect 제거)
-- 테스트 커버리지 ↑
-
-### 실행 계획
-
-**Phase 150.1: 미디어 추출 Strategy 리팩토링**
-
-1. 현재 테스트 검증 (`npm test:unit`)
-2. Strategy 클래스 설계 (테스트 우선)
-3. 구현 + 통합 테스트
-4. 번들 크기 확인
-
-**Phase 150.2: 자동 포커스 상태 정규화**
-
-1. 현재 테스트 검증
-2. 상태 정규화 설계 (테스트 우선)
-3. 구현 + E2E 테스트 검증
-4. 성능 비교
-
-**Phase 150.3: 최종 검증**
-
-1. `npm run build` 검증
-2. 전체 테스트 통과 확인
-3. 번들 크기 유지 확인
-4. 문서 업데이트
+3. **Phase 150.3**: 최종 검증
+   - 빌드 및 번들 크기 확인
+   - 전체 테스트 통과 확인
+   - 문서 업데이트
 
 ### 완료된 Phase
 
-**Phase 149: Vitest 4 마이그레이션** ✅
+**Phase 150: Media Extraction & Auto Focus/Navigation 분석 및 계획 수립** ✅
+
+**분석 내용**:
+
+1. **미디어 추출 기능 분석**:
+   - TwitterAPIExtractor의 `calculateClickedIndex()` 메서드 (라인 182~240, 60줄)
+   - 4가지 매칭 전략 식별 (직접 매칭 → 컨텍스트 → DOM순서 → 폴백)
+   - Strategy 패턴으로 리팩토링 가능 (복잡도 단순화 가능)
+
+2. **자동 포커스/이동 기능 분석**:
+   - useGalleryFocusTracker.ts (650+ 줄) - 포커스 추적 핵심
+   - 다중 상태 관리 식별 (autoFocusIndex, manualFocusIndex 등)
+   - 다중 타이머/debounce 관리 (globalTimerManager, 2개 debounce)
+   - 상태 정규화를 통한 단순화 가능
+
+3. **예상 개선 효과**:
+   - 미디어 추출: 코드 가독성 ↑, 유지보수 ↑, 테스트 커버리지 증대 가능
+   - 자동 포커스: 상태 변수 40→25개 감소, 버그 위험 ↓, 성능 개선
+
+**산출물**:
+
+- 상세 리팩토링 기회 분석 문서 (TDD_REFACTORING_PLAN.md에 추가)
+- 3단계 실행 계획 (150.1, 150.2, 150.3) 정의
+- 다음 Phase 우선순위 설정
+
+**다음 우선순위**:
+
+1. **Phase 150.1 (권장)**: 미디어 추출 Strategy 리팩토링
+   - TDD 기반 Strategy 클래스 추출
+   - 테스트 커버리지 확대
+   - 번들 크기 유지 확인
+
+2. **Phase 150.2**: 자동 포커스 상태 정규화
+   - 상태 변수 통합
+   - 타이머 관리 통합
+   - E2E 테스트 검증
+
+---
+
+### 완료된 Phase (이전)
 
 **변경 사항**:
 
@@ -178,6 +138,7 @@
 | 15  | 147    | 1      | ✅   | Settings Menu Hover Fix     |
 | 16  | 148    | 3      | ✅   | Toolbar Settings Controller |
 | 17  | 149    | 0      | ✅   | Vitest 4 마이그레이션       |
+| 18  | 150    | 0      | ✅   | 미디어 추출/포커스 분석     |
 
 상세 기록:
 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참조

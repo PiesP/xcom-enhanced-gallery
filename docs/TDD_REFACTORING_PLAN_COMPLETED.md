@@ -5,6 +5,56 @@
 
 ---
 
+## Phase 150: Media Extraction & Auto Focus/Navigation 분석 ✅ (2025-10-23)
+
+### 목표
+
+사용자 요청에 따라 프로젝트의 두 핵심 기능(미디어 추출, 자동 포커스/이동)의
+리팩토링 기회 탐색 및 계획 수립
+
+### 분석 결과
+
+**A. 미디어 추출 기능** (`src/shared/services/media-extraction/**`):
+
+- 핵심 복잡도: `TwitterAPIExtractor.calculateClickedIndex()` (라인 182~240,
+  60줄)
+- 4가지 매칭 전략 식별: 직접 매칭 → 컨텍스트 기반 → DOM순서 기반 → 폴백
+- **리팩토링 기회**: Strategy 패턴으로 분리 (복잡도 단순화 가능, 각 전략 독립
+  테스트)
+
+**B. 자동 포커스/이동 기능**
+(`src/features/gallery/hooks/useGalleryFocusTracker.ts`):
+
+- 파일 규모: 650+ 줄, 다중 상태 관리 (autoFocusIndex, manualFocusIndex 등)
+- 다중 타이머/debounce 관리: globalTimerManager, 2개 debounce 핸들러
+- **리팩토링 기회**: 상태 정규화 (40→25 변수 감소 가능, 버그 위험 ↓)
+
+### 예상 개선 효과
+
+- 미디어 추출: 코드 가독성 ↑, 유지보수성 ↑, 테스트 커버리지 증대 가능
+- 자동 포커스: 상태 변수 감소, 버그 위험 ↓, 성능 개선
+
+### 산출물
+
+- 상세 리팩토링 분석 문서 (`TDD_REFACTORING_PLAN.md` 활성 작업 섹션)
+- 3단계 실행 계획 (150.1 미디어 추출 Strategy, 150.2 자동 포커스 상태 정규화,
+  150.3 최종 검증)
+
+### 다음 우선순위
+
+1. **Phase 150.1** (권장): 미디어 추출 Strategy 리팩토링 (TDD 기반)
+2. **Phase 150.2**: 자동 포커스 상태 정규화
+3. **Phase 150.3**: 최종 검증 및 통합
+
+---
+
+## 이전 Phase 기록 (146-148)
+
+**요약**: Phase 146-148 상세 기록은 아래 참고. 이 문서는 가장 최근 Phase를
+우선적으로 보여주기 위해 Phase 150, 149만 상단에 배치했습니다.
+
+---
+
 ## Phase 149: Vitest 4 마이그레이션 ✅ (2025-10-23)
 
 ### 목표
