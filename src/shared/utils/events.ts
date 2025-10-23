@@ -5,7 +5,10 @@
 import { logger } from '../logging/logger';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
-import { detectMediaFromClick as detectMediaElement } from './media/media-click-detector';
+import {
+  detectMediaFromClick as detectMediaElement,
+  isProcessableMedia,
+} from './media/media-click-detector';
 import { isMediaServiceLike } from './type-safety-helpers';
 import {
   gallerySignals,
@@ -598,6 +601,14 @@ async function handleMediaClick(
     // 비디오 컨트롤 클릭인지 확인
     if (isVideoControlElement(target)) {
       return { handled: false, reason: 'Video control element' };
+    }
+
+    if (!isProcessableMedia(target)) {
+      logger.debug('Media click skipped: non-processable target', {
+        tagName: target.tagName,
+        className: target.className,
+      });
+      return { handled: false, reason: 'Non-processable media target' };
     }
 
     // **우선순위 1: 트위터 네이티브 갤러리 요소 확인 및 차단 (중복 실행 방지)**
