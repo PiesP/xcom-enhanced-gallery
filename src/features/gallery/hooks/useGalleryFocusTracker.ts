@@ -4,23 +4,13 @@ import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
-import type { FocusState } from '../../../shared/state/focus/focus-state';
-import {
-  INITIAL_FOCUS_STATE,
-  createFocusState,
-  isSameFocusState,
-} from '../../../shared/state/focus/focus-state';
-import { createItemCache, type ItemCache } from '../../../shared/state/focus/focus-cache';
-import {
-  createFocusTimerManager,
-  type FocusTimerManager,
-} from '../../../shared/state/focus/focus-timer-manager';
-import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
-import {
-  createFocusTracking,
-  isSameFocusTracking,
-  updateFocusTracking,
-} from '../../../shared/state/focus/focus-tracking';
+// ✅ Phase 150.3: Phase 150.2 모듈들 (Step 5 구현 시 사용)
+// import type { FocusState } from '../../../shared/state/focus/focus-state';
+// import { INITIAL_FOCUS_STATE, createFocusState, isSameFocusState } from '../../../shared/state/focus/focus-state';
+// import { createItemCache, type ItemCache } from '../../../shared/state/focus/focus-cache';
+// import { createFocusTimerManager, type FocusTimerManager } from '../../../shared/state/focus/focus-timer-manager';
+// import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
+// import { createFocusTracking, isSameFocusTracking, updateFocusTracking } from '../../../shared/state/focus/focus-tracking';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
