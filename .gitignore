@@ -48,6 +48,7 @@ docs/.dep-graph-cache.json
 # Temporary & archived documentation
 docs/temp/
 docs/archive/
+sample_pages
 
 # Logs
 logs/
