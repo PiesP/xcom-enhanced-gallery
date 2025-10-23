@@ -1,6 +1,8 @@
 /**
- * Typed service accessors wrapping the service-bridge and centralizing SERVICE_KEYS usage.
+ * Typed service accessors wrapping the CoreServiceRegistry and centralizing SERVICE_KEYS usage.
  * Use these helpers instead of referring to SERVICE_KEYS directly in features/bootstrap.
+ *
+ * Phase 151: Refactored to use CoreServiceRegistry for centralized service access and caching.
  */
 import type { BulkDownloadService } from '../services/bulk-download-service';
 import type { FilenameService } from '../media/filename-service';
@@ -8,61 +10,56 @@ import type { ThemeService } from '../services/theme-service';
 import type { ToastController } from '../services/toast-controller';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
-import {
-  bridgeGetService,
-  bridgeRegister,
-  bridgeTryGet,
-  bridgeRegisterBaseService,
-  bridgeInitializeAllBaseServices,
-} from './service-bridge';
+import { CoreServiceRegistry } from './core-service-registry';
+import { bridgeRegisterBaseService, bridgeInitializeAllBaseServices } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
 
-// Getters (from container)
+// Getters (from container) - using CoreServiceRegistry for centralized access and caching
 export function getToastController(): ToastController {
-  return bridgeGetService<ToastController>(SERVICE_KEYS.TOAST);
+  return CoreServiceRegistry.get<ToastController>(SERVICE_KEYS.TOAST);
 }
 
 export function getThemeService(): ThemeService {
-  return bridgeGetService<ThemeService>(SERVICE_KEYS.THEME);
+  return CoreServiceRegistry.get<ThemeService>(SERVICE_KEYS.THEME);
 }
 
 export function getMediaFilenameService(): FilenameService {
-  return bridgeGetService<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
+  return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
 export function getBulkDownloadServiceFromContainer(): BulkDownloadService {
-  return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
+  return CoreServiceRegistry.get<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
 }
 
 export function getGalleryDownloadService(): BulkDownloadService {
-  return bridgeGetService<BulkDownloadService>(SERVICE_KEYS.GALLERY_DOWNLOAD);
+  return CoreServiceRegistry.get<BulkDownloadService>(SERVICE_KEYS.GALLERY_DOWNLOAD);
 }
 
 export function getMediaServiceFromContainer(): unknown {
   // Return unknown to avoid type-level import and potential circular deps with MediaService
-  return bridgeGetService<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
+  return CoreServiceRegistry.get<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
 }
 
 export function getGalleryRenderer(): GalleryRenderer {
-  return bridgeGetService<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
+  return CoreServiceRegistry.get<GalleryRenderer>(SERVICE_KEYS.GALLERY_RENDERER);
 }
 
-// Registrations (to container)
+// Registrations (to container) - using CoreServiceRegistry
 export function registerGalleryRenderer(renderer: unknown): void {
-  bridgeRegister(SERVICE_KEYS.GALLERY_RENDERER, renderer);
+  CoreServiceRegistry.register(SERVICE_KEYS.GALLERY_RENDERER, renderer);
 }
 
 export function registerSettingsManager(settings: unknown): void {
-  bridgeRegister(SERVICE_KEYS.SETTINGS, settings);
+  CoreServiceRegistry.register(SERVICE_KEYS.SETTINGS, settings);
 }
 
 // Optional getter (no-throw) for Settings service; avoids exposing SERVICE_KEYS at call sites
 export function tryGetSettingsManager<T = unknown>(): T | null {
-  return bridgeTryGet<T>(SERVICE_KEYS.SETTINGS);
+  return CoreServiceRegistry.tryGet<T>(SERVICE_KEYS.SETTINGS);
 }
 
 export function registerTwitterTokenExtractor(instance: unknown): void {
-  bridgeRegister(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, instance);
+  CoreServiceRegistry.register(SERVICE_KEYS.TWITTER_TOKEN_EXTRACTOR, instance);
 }
 
 /**
