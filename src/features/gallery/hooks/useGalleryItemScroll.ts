@@ -11,6 +11,7 @@ import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '../../../shared/logging/logger';
 import { toAccessor } from '../../../shared/utils/solid-helpers';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { createItemScrollStateSignal, updateStateSignal } from '@shared/state/item-scroll';
 
 const { onCleanup, createEffect } = getSolid();
 
@@ -64,47 +65,47 @@ export function useGalleryItemScroll(
   const currentIndexAccessor = toAccessor(currentIndex);
   const totalItemsAccessor = toAccessor(totalItems);
 
-  let lastScrolledIndex = -1;
-  let pendingIndex: number | null = null;
-  let scrollTimeoutId: number | null = null;
-  let indexWatcherId: number | null = null;
+  // Phase 159b: ItemScrollStateSignal로 상태 관리 정규화
+  const stateSignal = createItemScrollStateSignal();
+  const getState = stateSignal.getState;
+  const setState = stateSignal.setState;
+
   let retryCount = 0;
 
-  // Phase 28: 사용자 스크롤 감지 플래그
-  let userScrollDetected = false;
-  let userScrollTimeoutId: number | null = null;
-  let isAutoScrolling = false;
-
   const clearScrollTimeout = () => {
-    if (scrollTimeoutId !== null) {
-      globalTimerManager.clearTimeout(scrollTimeoutId);
-      scrollTimeoutId = null;
+    const state = getState();
+    if (state.scrollTimeoutId !== null) {
+      globalTimerManager.clearTimeout(state.scrollTimeoutId);
+      updateStateSignal(setState, { scrollTimeoutId: null });
     }
   };
 
   const stopIndexWatcher = () => {
-    if (indexWatcherId !== null) {
-      globalTimerManager.clearInterval(indexWatcherId);
-      indexWatcherId = null;
+    const state = getState();
+    if (state.indexWatcherId !== null) {
+      globalTimerManager.clearInterval(state.indexWatcherId);
+      updateStateSignal(setState, { indexWatcherId: null });
     }
   };
 
   // Phase 28: 사용자 스크롤 타임아웃 정리
   const clearUserScrollTimeout = () => {
-    if (userScrollTimeoutId !== null) {
-      globalTimerManager.clearTimeout(userScrollTimeoutId);
-      userScrollTimeoutId = null;
+    const state = getState();
+    if (state.userScrollTimeoutId !== null) {
+      globalTimerManager.clearTimeout(state.userScrollTimeoutId);
+      updateStateSignal(setState, { userScrollTimeoutId: null });
     }
   };
 
   // Phase 28: 사용자 스크롤 감지 핸들러
   const handleUserScroll = () => {
+    const state = getState();
     // 자동 스크롤 중에 발생한 스크롤 이벤트는 무시
-    if (isAutoScrolling) {
+    if (state.isAutoScrolling) {
       return;
     }
 
-    userScrollDetected = true;
+    updateStateSignal(setState, { userScrollDetected: true });
     logger.debug('useGalleryItemScroll: 사용자 스크롤 감지', {
       timestamp: Date.now(),
     });
@@ -114,12 +115,14 @@ export function useGalleryItemScroll(
     clearScrollTimeout();
 
     // 500ms 후 사용자 스크롤 플래그 해제
-    userScrollTimeoutId = globalTimerManager.setTimeout(() => {
-      userScrollDetected = false;
+    const timeoutId = globalTimerManager.setTimeout(() => {
+      updateStateSignal(setState, { userScrollDetected: false });
       logger.debug('useGalleryItemScroll: 사용자 스크롤 종료, 자동 스크롤 재개', {
         timestamp: Date.now(),
       });
     }, 500);
+
+    updateStateSignal(setState, { userScrollTimeoutId: timeoutId });
   };
 
   const resolveBehavior = (): ScrollBehavior => {
@@ -153,13 +156,13 @@ export function useGalleryItemScroll(
         index,
         totalItems: total,
       });
-      pendingIndex = null;
+      updateStateSignal(setState, { pendingIndex: null });
       return;
     }
 
     try {
       // Phase 28: 자동 스크롤 플래그 설정
-      isAutoScrolling = true;
+      updateStateSignal(setState, { isAutoScrolling: true });
 
       const itemsRoot = container.querySelector(
         '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
@@ -169,8 +172,7 @@ export function useGalleryItemScroll(
         logger.warn('useGalleryItemScroll: 아이템 컨테이너를 찾을 수 없음', {
           selectors: '[data-xeg-role="items-list"], [data-xeg-role="items-container"]',
         });
-        pendingIndex = null;
-        isAutoScrolling = false;
+        updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
         return;
       }
 
@@ -181,8 +183,7 @@ export function useGalleryItemScroll(
           totalItems: total,
           itemsContainerChildrenCount: itemsRoot.children.length,
         });
-        pendingIndex = null;
-        isAutoScrolling = false;
+        updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
         return;
       }
 
@@ -202,8 +203,10 @@ export function useGalleryItemScroll(
         });
       }
 
-      lastScrolledIndex = index;
-      pendingIndex = null;
+      updateStateSignal(setState, {
+        lastScrolledIndex: index,
+        pendingIndex: null,
+      });
       retryCount = 0;
 
       logger.debug('useGalleryItemScroll: 스크롤 완료', {
@@ -223,12 +226,11 @@ export function useGalleryItemScroll(
       // Phase 28: 자동 스크롤 완료 후 플래그 해제
       // 다음 틱에서 해제하여 스크롤 이벤트가 완전히 처리되도록 함
       globalTimerManager.setTimeout(() => {
-        isAutoScrolling = false;
+        updateStateSignal(setState, { isAutoScrolling: false });
       }, 50);
     } catch (error) {
       logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
-      pendingIndex = null;
-      isAutoScrolling = false;
+      updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
 
       // Phase 145.1: Enhanced retry logic (1x → 3x)
       // Handles DOM element not found due to rendering timing mismatch
@@ -297,7 +299,7 @@ export function useGalleryItemScroll(
           });
 
           try {
-            isAutoScrolling = true;
+            updateStateSignal(setState, { isAutoScrolling: true });
             const actualBehavior = resolveBehavior();
 
             targetElement.scrollIntoView({
@@ -314,16 +316,18 @@ export function useGalleryItemScroll(
               });
             }
 
-            lastScrolledIndex = index;
-            pendingIndex = null;
+            updateStateSignal(setState, {
+              lastScrolledIndex: index,
+              pendingIndex: null,
+            });
             retryCount = 0;
 
             globalTimerManager.setTimeout(() => {
-              isAutoScrolling = false;
+              updateStateSignal(setState, { isAutoScrolling: false });
             }, 50);
           } catch (err) {
             logger.error('useGalleryItemScroll: 폴링 후 스크롤 실패', { index, error: err });
-            isAutoScrolling = false;
+            updateStateSignal(setState, { isAutoScrolling: false });
           }
           return;
         }
@@ -341,21 +345,25 @@ export function useGalleryItemScroll(
     clearScrollTimeout();
 
     const delay = debounceDelay();
-    pendingIndex = index;
+    updateStateSignal(setState, { pendingIndex: index });
+    const state = getState();
 
     logger.debug('useGalleryItemScroll: 자동 스크롤 예약', {
       currentIndex: index,
-      lastScrolledIndex,
+      lastScrolledIndex: state.lastScrolledIndex,
       delay,
     });
 
-    scrollTimeoutId = globalTimerManager.setTimeout(() => {
+    const timeoutId = globalTimerManager.setTimeout(() => {
+      const currentState = getState();
       logger.debug('useGalleryItemScroll: 자동 스크롤 실행', {
         currentIndex: index,
-        lastScrolledIndex,
+        lastScrolledIndex: currentState.lastScrolledIndex,
       });
       void scrollToItem(index);
     }, delay);
+
+    updateStateSignal(setState, { scrollTimeoutId: timeoutId });
   };
 
   const checkIndexChanges = () => {
@@ -363,30 +371,33 @@ export function useGalleryItemScroll(
     const isEnabled = enabled();
 
     if (!isEnabled || !container) {
-      lastScrolledIndex = -1;
-      pendingIndex = null;
+      updateStateSignal(setState, {
+        lastScrolledIndex: -1,
+        pendingIndex: null,
+      });
       clearScrollTimeout();
       return;
     }
 
     const index = currentIndexAccessor();
     const total = totalItemsAccessor();
+    const state = getState();
 
     if (index < 0 || index >= total) {
-      pendingIndex = null;
+      updateStateSignal(setState, { pendingIndex: null });
       clearScrollTimeout();
       return;
     }
 
-    if (index === lastScrolledIndex || index === pendingIndex) {
+    if (index === state.lastScrolledIndex || index === state.pendingIndex) {
       return;
     }
 
     // Phase 28: 사용자 스크롤 중에는 자동 스크롤 차단
-    if (userScrollDetected) {
+    if (state.userScrollDetected) {
       logger.debug('useGalleryItemScroll: 사용자 스크롤 중 - 자동 스크롤 차단', {
         currentIndex: index,
-        userScrollDetected,
+        userScrollDetected: state.userScrollDetected,
       });
       return;
     }
@@ -394,7 +405,9 @@ export function useGalleryItemScroll(
     scheduleScrollToIndex(index);
   };
 
-  indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
+  // Phase 159b: 인덱스 폴링 타이머 시작 및 Signal에 저장
+  const indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
+  updateStateSignal(setState, { indexWatcherId });
 
   // Phase 28: 컨테이너 스크롤 이벤트 리스너 등록 (createEffect로 안전하게)
   createEffect(() => {
@@ -418,6 +431,7 @@ export function useGalleryItemScroll(
     clearScrollTimeout();
     stopIndexWatcher();
     clearUserScrollTimeout();
+    stateSignal.reset();
   });
 
   return {

@@ -76,17 +76,17 @@ describe('Bundle Size Policy', () => {
   describe('Event Utilities Size Guard', () => {
     const eventsPath = resolveSrc('shared/utils/events.ts');
 
-    it('events.ts should not exceed 26 KB (Phase 82.3/82.7: 키보드 핸들러 추가)', () => {
+    it('events.ts should not exceed 28 KB (Phase 158: 키보드 debounce 추가)', () => {
       const sizeKB = toKB(statSync(eventsPath).size);
-      logMetrics('events.ts size', sizeKB, 'KB', 26);
-      expect(sizeKB).toBeLessThanOrEqual(26);
+      logMetrics('events.ts size', sizeKB, 'KB', 28);
+      expect(sizeKB).toBeLessThanOrEqual(28);
     });
 
-    it('events.ts should not exceed 850 lines', () => {
+    it('events.ts should not exceed 940 lines (Phase 158: 키보드 debounce 추가)', () => {
       const content = readFileSync(eventsPath, 'utf-8');
       const lineCount = content.split('\n').length;
-      logMetrics('events.ts lines', lineCount, 'lines', 850);
-      expect(lineCount).toBeLessThanOrEqual(850);
+      logMetrics('events.ts lines', lineCount, 'lines', 940);
+      expect(lineCount).toBeLessThanOrEqual(940);
     });
 
     it('events.ts should have 12 or fewer exports', () => {

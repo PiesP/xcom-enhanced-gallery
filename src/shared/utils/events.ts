@@ -1,5 +1,9 @@
 /**
  * @fileoverview 통합 이벤트 관리 시스템
+ * PC-only 이벤트 정책 (MANDATORY):
+ * - 허용: click, keydown/keyup, wheel, contextmenu, mouse*
+ * - 금지: touchstart/move/end/cancel, pointerdown/up/move/enter/leave/cancel
+ * - 검증: CodeQL `forbidden-touch-events.ql` 및 타입 검사
  */
 
 import { logger } from '../logging/logger';
@@ -18,6 +22,11 @@ import {
 } from '../state/signals/gallery.signals';
 import { getMediaServiceFromContainer } from '../container/service-accessors';
 import { globalTimerManager } from './timer-management';
+import {
+  shouldExecuteVideoControlKey,
+  shouldExecutePlayPauseKey,
+  resetKeyboardDebounceState,
+} from './keyboard-debounce';
 import type { MediaInfo } from '../types/media.types';
 
 interface EventContext {
@@ -460,6 +469,10 @@ export async function initializeGalleryEvents(
       return;
     }
 
+    // PC-only: Touch/Pointer 이벤트 명시적 차단
+    // (외부 코드가 실수로 터치 이벤트를 추가하는 것 방지)
+    blockTouchAndPointerEvents(documentElement);
+
     // 클릭 이벤트 처리
     const clickHandler: EventListener = async (evt: Event) => {
       const event = evt as MouseEvent;
@@ -696,22 +709,25 @@ function handleKeyboardEvent(
         switch (key) {
           case ' ':
           case 'Space':
-            safeExecute(() => {
-              const svc = getMediaService();
-              if (svc) {
-                svc.togglePlayPauseCurrent();
-              } else {
-                const v = getCurrentGalleryVideo();
-                if (v) {
-                  const current = __videoPlaybackState.get(v)?.playing ?? false;
-                  const next = !current;
-                  next
-                    ? (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.()
-                    : (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
-                  __videoPlaybackState.set(v, { playing: next });
+            // Keyboard debounce: Space 반복 입력 시 재생/일시정지 중복 호출 방지 (150ms 간격)
+            if (shouldExecutePlayPauseKey(event.key)) {
+              safeExecute(() => {
+                const svc = getMediaService();
+                if (svc) {
+                  svc.togglePlayPauseCurrent();
+                } else {
+                  const v = getCurrentGalleryVideo();
+                  if (v) {
+                    const current = __videoPlaybackState.get(v)?.playing ?? false;
+                    const next = !current;
+                    next
+                      ? (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.()
+                      : (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
+                    __videoPlaybackState.set(v, { playing: next });
+                  }
                 }
-              }
-            }, 'togglePlayPauseCurrent');
+              }, 'togglePlayPauseCurrent');
+            }
             break;
           case 'ArrowLeft':
             safeExecute(() => navigatePrevious('keyboard'), 'navigatePrevious');
@@ -746,22 +762,31 @@ function handleKeyboardEvent(
             }, 'navigateToItem(PageUp)');
             break;
           case 'ArrowUp':
-            safeExecute(() => adjustVideoVolume(+0.1), 'volumeUpCurrent');
+            // Keyboard debounce: ArrowUp 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
+            if (shouldExecuteVideoControlKey(event.key)) {
+              safeExecute(() => adjustVideoVolume(+0.1), 'volumeUpCurrent');
+            }
             break;
           case 'ArrowDown':
-            safeExecute(() => adjustVideoVolume(-0.1), 'volumeDownCurrent');
+            // Keyboard debounce: ArrowDown 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
+            if (shouldExecuteVideoControlKey(event.key)) {
+              safeExecute(() => adjustVideoVolume(-0.1), 'volumeDownCurrent');
+            }
             break;
           case 'm':
           case 'M':
-            safeExecute(() => {
-              const svc = getMediaService();
-              if (svc) {
-                svc.toggleMuteCurrent();
-              } else {
-                const v = getCurrentGalleryVideo();
-                if (v) v.muted = !v.muted;
-              }
-            }, 'toggleMuteCurrent');
+            // Keyboard debounce: M 키 반복 입력 시 음소거 토글 중복 호출 방지 (100ms 간격)
+            if (shouldExecuteVideoControlKey(event.key)) {
+              safeExecute(() => {
+                const svc = getMediaService();
+                if (svc) {
+                  svc.toggleMuteCurrent();
+                } else {
+                  const v = getCurrentGalleryVideo();
+                  if (v) v.muted = !v.muted;
+                }
+              }, 'toggleMuteCurrent');
+            }
             break;
         }
 
@@ -811,6 +836,9 @@ export function cleanupGalleryEvents(): void {
       globalTimerManager.clearInterval(galleryEventState.priorityInterval);
     }
 
+    // 키보드 debounce 상태 초기화
+    resetKeyboardDebounceState();
+
     galleryEventState = {
       initialized: false,
       listenerIds: [],
@@ -845,6 +873,57 @@ export function getGalleryEventSnapshot() {
     hasHandlers: Boolean(galleryEventState.handlers),
     hasPriorityInterval: Boolean(galleryEventState.priorityInterval),
   };
+}
+
+/**
+ * PC-only 정책: Touch/Pointer 이벤트 명시적 차단
+ * CodeQL `forbidden-touch-events.ql` 검증 대상
+ *
+ * 터치 이벤트: touchstart, touchmove, touchend, touchcancel
+ * 포인터 이벤트: pointerdown, pointermove, pointerup, pointercancel, pointerenter, pointerleave
+ */
+function blockTouchAndPointerEvents(element: Document | EventTarget): void {
+  // 터치 이벤트 명시적 차단
+  const touchEvents = ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
+
+  // 포인터 이벤트 명시적 차단
+  const pointerEvents = [
+    'pointerdown',
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+    'pointerenter',
+    'pointerleave',
+  ];
+
+  // 모든 차단 대상 이벤트
+  const allBlockedEvents = [...touchEvents, ...pointerEvents];
+
+  for (const eventType of allBlockedEvents) {
+    try {
+      const blocker = (evt: Event) => {
+        // PC-only 정책에 따라 이 이벤트는 발생하면 안 됨
+        // 하지만 외부 라이브러리 호환성을 위해 silent하게 처리
+        logger.debug(`[PC-only policy] Blocked ${eventType} event`, {
+          target: (evt.target as Element)?.tagName,
+          currentTarget: (evt.currentTarget as Element)?.tagName,
+        });
+        evt.preventDefault?.();
+        evt.stopPropagation?.();
+        evt.stopImmediatePropagation?.();
+      };
+
+      if (typeof element.addEventListener === 'function') {
+        (element as EventTarget).addEventListener(eventType, blocker, {
+          passive: false,
+          capture: true,
+        });
+        logger.debug(`[PC-only policy] Registered blocker for ${eventType}`);
+      }
+    } catch (error) {
+      logger.debug(`[PC-only policy] Failed to register blocker for ${eventType}`, error);
+    }
+  }
 }
 
 // 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.
