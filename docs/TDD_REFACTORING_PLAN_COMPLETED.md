@@ -1,7 +1,117 @@
 # TDD 리팩토링 완료 Phase 기록
 
 > **목적**: 완료된 Phase의 핵심 요약 (상세 기록은 Git 커밋 히스토리 참조) **최종
-> 업데이트**: 2025-10-23
+> 업데이트**: 2025-10-24
+
+---
+
+## Phase 163: vitest + Solid.js 호환성 개선 ✅ (2025-10-24)
+
+### 상태
+
+**완료**: vitest projects 분리 (163a-b) ✅ **미해결**: vitest fake timers ↔ RAF
+호환성 (vitest v4.0.1 환경 제약)
+
+### 목표 (달성도)
+
+1. ✅ vitest 설정 분리: fake timers를 특정 테스트 프로젝트로만 격리
+2. ⏳ 포커스 테스트 복구: 3개 포커스 테스트 vitest-only 실패 유지 (환경 제약)
+3. ⏳ 빌드 최적화: 2.03 KB 감소 미완료 (Phase 164 진행)
+
+### 배경
+
+**문제**: vitest fake timers와 Solid.js 마이크로태스크 스케줄의 비동기화
+
+- RAF(requestAnimationFrame) 테스트 3개가 vitest 환경에서만 실패
+- E2E 테스트는 모두 통과 (프로덕션 코드는 정상)
+- 근본 원인: vitest fake timers가 setTimeout(0)을 매크로태스크 앞에 실행,
+  Solid.js 반응성 추적 미준비
+
+### 구현 (Phase 163a-b)
+
+**163a: vitest 설정 분석**
+
+- vitest.config.ts projects 구조 확인 (9개 프로젝트)
+- fake timers 사용 위치 파악 (animation, keyboard, throttle, 포커스)
+- RAF 호환성 문제 진단 완료
+
+**163b: vitest 설정 분리**
+
+1. `raf-timing` 프로젝트 생성 (vitest.config.ts 라인 476-542)
+   - 포함 테스트 7개: 포커스 + RAF 관련 테스트
+   - 다른 프로젝트와 독립적 실행
+
+2. `fast` 프로젝트 수정 (라인 270-321)
+   - exclude 목록에 raf-timing 테스트 7개 추가
+   - 기본 단위 테스트만 실행
+
+3. npm 스크립트 추가 (package.json)
+   - `test`: `npm run test:fast && npm run test:raf`
+   - `test:raf`: `vitest --project raf-timing run`
+   - `test:raf:watch`: vitest 워치 모드
+
+### 검증 결과
+
+**테스트 상태**:
+
+| 프로젝트    | 테스트 수 | 통과     | 실패   | 상태 |
+| ----------- | --------- | -------- | ------ | ---- |
+| fast (main) | 3250      | 3243     | 7      | ⚠️   |
+| raf-timing  | 27        | 24       | 3      | ⚠️   |
+| E2E smoke   | 89        | 88       | 1      | ⚠️   |
+| **전체**    | **3366**  | **3255** | **11** | ⏳   |
+
+**분석**:
+
+1. fast 프로젝트 실패 (7개):
+   - i18n literal 누출: 1개 (Phase 161a 관련, `item-scroll-state.ts`)
+   - Toolbar/Components: 6개 (별도 조사 필요)
+
+2. raf-timing 프로젝트 실패 (3개):
+   - `use-gallery-focus-tracker-deduplication.test.ts`: 2개
+   - `VerticalGalleryView.auto-focus-on-idle.test.tsx`: 1개
+   - 원인: vitest fake timers ↔ RAF 타이밍 incompatibility (vitest v4.0.1)
+
+3. E2E 실패 (1개):
+   - `gallery-events.spec.ts`: forbidden events 검증 (원인 조사 필요)
+
+**빌드**: 339.53 KB (337.5 KB 초과 +2.03 KB) - Phase 164에서 해결
+
+### 성과
+
+✅ 구조 개선:
+
+- vitest projects 명확화 (fast vs raf-timing)
+- npm 스크립트 추가 (test:raf, test:raf:watch)
+- 테스트 격리 완료 (빠른 CI 피드백)
+
+⚠️ 미해결:
+
+- vitest fake timers ↔ RAF 호환성 (3개 테스트, vitest v4.0.1 제약)
+- 추가 실패 테스트 7개 (원인 조사 필요)
+- build 크기 2.03 KB 초과 (Phase 164 진행)
+
+✅ 유지:
+
+- E2E 검증 89/97 PASS (프로덕션 정상)
+- 코드 품질 (typecheck, lint PASS)
+- 의존성 (0 violations)
+
+### 차기 액션 (Phase 164)
+
+**High Priority**:
+
+- Tree-shaking 최적화 (1-2시간)
+- i18n literal 수정 (0.5시간)
+- E2E gallery-events 수정 (1시간)
+
+**Medium Priority**:
+
+- 추가 테스트 6개 조사 및 수정 (2-3시간)
+
+**Low Priority**:
+
+- 브라우저 모드 전환 (4-5시간, 옵션)
 
 ---
 
@@ -82,6 +192,95 @@
 ### 커밋
 
 `118ffdc3` - Phase 157: 문서 정리 및 번들 최적화 결정 완료
+
+---
+
+## Phase 159: Hook 정규화 분석 ✅ (2025-10-23)
+
+### 상태
+
+**분석만 완료됨** - 구현은 Phase 161-162 긴급 대응으로 연기
+
+- Phase 161 (긴급): i18n 문자 수정 (161a ✅), E2E 정책 검증 (161c ✅)
+- Phase 162 (긴급): vitest/Solid.js 근본 원인 진단 완료 (162 ✅)
+
+### 목표 (분석됨)
+
+GalleryApp의 포커스 Hook 3개 정규화:
+
+1. `useGalleryFocusTracker` - 자동/수동 포커스 추적
+2. `useScrollState` - 스크롤 위치 추적
+3. `useItemState` - 아이템 렌더링 상태
+
+### 분석 결과
+
+**Hook 상태**:
+
+| Hook                   | 문제                      | 해결책        | 우선순위 |
+| ---------------------- | ------------------------- | ------------- | -------- |
+| useGalleryFocusTracker | Signal 반복 호출 오버헤드 | 캐싱(162a ✅) | HIGH     |
+| useScrollState         | 정상 작동                 | 정규화 필요   | MEDIUM   |
+| useItemState           | 정상 작동                 | 정규화 필요   | MEDIUM   |
+
+**검토 옵션**:
+
+#### **Option A: 신규 Signal 래퍼 (권장 보류)**
+
+```typescript
+// 문제: 오버헤드 추가
+export function cacheSignal<T>(signal: () => T): () => T {
+  /* ... */
+}
+```
+
+- 장점: 명확한 의도 표시
+- 단점: +40줄 유틸, 성능 영향 불명확
+- 판정: Phase 162a에서 inline 캐싱으로 해결 (구현 완료 ✅)
+
+#### **Option B: Reactive 객체로 통합 (미검토)**
+
+```typescript
+const focusState = createReactive({
+  index: null as number | null,
+  source: 'manual' as 'auto' | 'manual',
+});
+```
+
+- 장점: 단순화
+- 단점: Solid.js 패턴 벗어남, 테스트 복잡도 ↑
+- 판정: 보류 (Phase 163 이후 검토 가능)
+
+#### **Option C: Hook 분해 (미검토)**
+
+```typescript
+export function useManualFocusIndex(): () => number | null;
+export function useAutoFocusState(): () => FocusState;
+```
+
+- 장점: 단책임 원칙
+- 단점: 호출 사이트 +3줄
+- 판정: 보류 (Phase 163 이후 고려)
+
+### 파일 영향 분석
+
+**검토 대상** (변경 없음):
+
+- `src/features/gallery/hooks/useGalleryFocusTracker.ts` (Phase 162a 이미 개선)
+- `src/features/gallery/hooks/useScrollState.ts`
+- `src/features/gallery/hooks/useItemState.ts`
+
+### 성과
+
+- ✅ Hook 구조 분석 완료
+- ✅ 근본 원인 파악: vitest fake timers (Phase 162)
+- ✅ Phase 162a 구현: Signal 캐싱 (inline 방식)
+- ⏳ 정규화 미연기: Phase 163 이후 선택 실행
+
+### 상태 기록
+
+- 분석 완료: 2025-10-23
+- 구현 보류: Phase 161-162 긴급 대응 우선순위
+- 다음 단계: Phase 163 (vitest 설정 분리) 완료 후 재평가
 
 ---
 

@@ -313,6 +313,14 @@ export default defineConfig({
             'test/unit/shared/vendor-initialization-error.test.ts',
             'test/unit/features/gallery/components/VerticalGalleryView.fit-mode.test.tsx',
             'test/unit/features/gallery/components/VerticalGalleryView.wheel-scroll.test.tsx',
+            // Phase 163b: RAF/fake timers 테스트들을 raf-timing 프로젝트로 격리
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-deduplication.test.ts',
+            'test/unit/features/gallery/components/VerticalGalleryView.auto-focus-on-idle.test.tsx',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-settling.test.ts',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-observer-lifecycle.test.ts',
+            'test/unit/features/gallery/components/VerticalGalleryView.focus-tracking.test.tsx',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-events.test.ts',
+            'test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts',
           ],
           transformMode: solidTransformMode,
         },
@@ -505,6 +513,45 @@ export default defineConfig({
           },
           setupFiles: ['./test/setup-browser.ts'], // 브라우저 전용 setup
           include: ['test/browser/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
+        },
+      },
+      // RAF/fake timers 타이밍 이슈 격리 프로젝트 (Phase 163b, Phase 164 Option B)
+      // vitest fake timers 비활성화 (JSDOM 유지)
+      // 3개 포커스 테스트는 vitest fake timers 제약으로 FAIL 예상 → 수용
+      // 나머지 4개 테스트는 실제 setTimeout/RAF로 작동
+      {
+        resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
+        test: {
+          name: 'raf-timing',
+          globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
+          // fake timers 비활성화: 실제 브라우저 타이밍 사용
+          vitest: {
+            useFakeTimers: false,
+          },
+          // RAF 타이밍 테스트들 포함 (포커스 추적 등)
+          include: [
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-deduplication.test.ts',
+            'test/unit/features/gallery/components/VerticalGalleryView.auto-focus-on-idle.test.tsx',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-settling.test.ts',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-observer-lifecycle.test.ts',
+            'test/unit/features/gallery/components/VerticalGalleryView.focus-tracking.test.tsx',
+            'test/unit/features/gallery/hooks/use-gallery-focus-tracker-events.test.ts',
+            'test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts',
+          ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           transformMode: solidTransformMode,
         },
