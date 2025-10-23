@@ -6,21 +6,13 @@ import { createDebouncer } from '../../../shared/utils/performance/performance-u
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
 // ✅ Phase 150.3: Phase 150.2 모듈들 (Step 1-7 통합)
 import type { FocusState } from '../../../shared/state/focus/focus-state';
-import {
-  INITIAL_FOCUS_STATE,
-  createFocusState,
-  isSameFocusState,
-} from '../../../shared/state/focus/focus-state';
-import { createItemCache, type ItemCache } from '../../../shared/state/focus/focus-cache';
-import {
-  createFocusTimerManager,
-  type FocusTimerManager,
-} from '../../../shared/state/focus/focus-timer-manager';
+import { INITIAL_FOCUS_STATE, createFocusState } from '../../../shared/state/focus/focus-state';
+import { createItemCache } from '../../../shared/state/focus/focus-cache';
+import { createFocusTimerManager } from '../../../shared/state/focus/focus-timer-manager';
 import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
 import {
   createFocusTracking,
   INITIAL_FOCUS_TRACKING,
-  isSameFocusTracking,
   updateFocusTracking,
 } from '../../../shared/state/focus/focus-tracking';
 
@@ -118,10 +110,6 @@ export function useGalleryFocusTracker({
 
   // ✅ Step 5: FocusTracking Signal 생성
   const [focusTracking, setFocusTracking] = createSignal<FocusTracking>(INITIAL_FOCUS_TRACKING);
-  const lastAutoFocusedIndex = (): number | null => focusTracking().lastAutoFocusedIndex;
-  const lastAppliedIndex = (): number | null => focusTracking().lastAppliedIndex;
-  const hasPendingRecompute = (): boolean => focusTracking().hasPendingRecompute;
-
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
   // ✅ Phase 77: setFocusedIndex 호출 시 'auto-focus' source 전달
@@ -135,7 +123,7 @@ export function useGalleryFocusTracker({
         const fallbackIndex =
           (currentState.source === 'auto' ? currentState.index : null) ??
           (currentState.source === 'manual' ? currentState.index : null) ??
-          lastAutoFocusedIndex() ??
+          focusTracking().lastAutoFocusedIndex ??
           getCurrentIndex();
 
         if (fallbackIndex === null || Number.isNaN(fallbackIndex)) {
@@ -183,7 +171,7 @@ export function useGalleryFocusTracker({
       const fallbackCandidates: Array<number | null> = [
         autoFocusIndex(),
         manualFocusIndex(),
-        lastAutoFocusedIndex(),
+        focusTracking().lastAutoFocusedIndex,
         getCurrentIndex(),
       ];
       finalValue = fallbackCandidates.find(resolveCandidate) ?? null;
@@ -305,17 +293,19 @@ export function useGalleryFocusTracker({
     if (targetIndex === null || Number.isNaN(targetIndex)) {
       return;
     }
+
     const targetItem = itemCache.getItem(targetIndex);
     const targetElement = targetItem?.element;
     if (!targetElement?.isConnected) {
       return;
     }
 
-    if (document.activeElement === targetElement && lastAutoFocusedIndex() === targetIndex) {
+    if (
+      document.activeElement === targetElement &&
+      focusTracking().lastAutoFocusedIndex === targetIndex
+    ) {
       return;
-    }
-
-    // ✅ Phase 74.6: 인덱스가 변경되면 lastAppliedIndex 리셋
+    } // ✅ Phase 74.6: 인덱스가 변경되면 lastAppliedIndex 리셋
     // 다른 인덱스로의 autoFocus를 허용
     const current = focusTracking();
     if (current.lastAppliedIndex !== null && current.lastAppliedIndex !== targetIndex) {
