@@ -4,13 +4,25 @@ import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
-// ✅ Phase 150.3: Phase 150.2 모듈들 (Step 5 구현 시 사용)
-// import type { FocusState } from '../../../shared/state/focus/focus-state';
-// import { INITIAL_FOCUS_STATE, createFocusState, isSameFocusState } from '../../../shared/state/focus/focus-state';
-// import { createItemCache, type ItemCache } from '../../../shared/state/focus/focus-cache';
-// import { createFocusTimerManager, type FocusTimerManager } from '../../../shared/state/focus/focus-timer-manager';
-// import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
-// import { createFocusTracking, isSameFocusTracking, updateFocusTracking } from '../../../shared/state/focus/focus-tracking';
+// ✅ Phase 150.3: Phase 150.2 모듈들 (Step 1-7 통합)
+import type { FocusState } from '../../../shared/state/focus/focus-state';
+import {
+  INITIAL_FOCUS_STATE,
+  createFocusState,
+  isSameFocusState,
+} from '../../../shared/state/focus/focus-state';
+import { createItemCache, type ItemCache } from '../../../shared/state/focus/focus-cache';
+import {
+  createFocusTimerManager,
+  type FocusTimerManager,
+} from '../../../shared/state/focus/focus-timer-manager';
+import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
+import {
+  createFocusTracking,
+  INITIAL_FOCUS_TRACKING,
+  isSameFocusTracking,
+  updateFocusTracking,
+} from '../../../shared/state/focus/focus-tracking';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -84,42 +96,60 @@ export function useGalleryFocusTracker({
   const shouldAutoFocusAccessor = toAccessor(shouldAutoFocus);
   const autoFocusDelayAccessor = toAccessor(autoFocusDebounce);
 
-  const [manualFocusIndex, setManualFocusIndex] = createSignal<number | null>(null);
-  const [autoFocusIndex, setAutoFocusIndex] = createSignal<number | null>(null);
+  // ✅ Phase 150.3 Step 1-2: FocusState Signal 도입
+  // manualFocusIndex + autoFocusIndex → 단일 focusState Signal로 통합
+  // source로 포커스 출처(auto/manual/external) 추적
+  const [focusState, setFocusState] = createSignal<FocusState>(INITIAL_FOCUS_STATE);
 
-  const itemElements = new Map<number, HTMLElement>();
-  const elementToIndex = new WeakMap<HTMLElement, number>();
-  const entryCache = new Map<number, IntersectionObserverEntry>();
+  // Backward compat: getter 헬퍼 (기존 코드 호환성)
+  const manualFocusIndex = (): number | null =>
+    focusState().source === 'manual' ? focusState().index : null;
+  const autoFocusIndex = (): number | null =>
+    focusState().source === 'auto' ? focusState().index : null;
+
+  // ✅ Phase 150.3 Step 2: ItemCache 도입
+  // itemElements + elementToIndex + entryCache → 단일 itemCache로 통합
+  const itemCache = createItemCache();
 
   let observer: IntersectionObserver | null = null;
-  let autoFocusTimerId: number | null = null;
-  let lastAutoFocusedIndex: number | null = null;
-  let lastAppliedIndex: number | null = null; // Phase 69.2: 중복 applyAutoFocus 방지
-  let hasPendingRecompute = false; // Phase 83.4: 포커스 갱신 큐 (Boolean 플래그로 단순화)
+
+  // ✅ Step 4: FocusTimerManager 인스턴스 생성
+  const focusTimerManager = createFocusTimerManager();
+
+  // ✅ Step 5: FocusTracking Signal 생성
+  const [focusTracking, setFocusTracking] = createSignal<FocusTracking>(INITIAL_FOCUS_TRACKING);
+  const lastAutoFocusedIndex = (): number | null => focusTracking().lastAutoFocusedIndex;
+  const lastAppliedIndex = (): number | null => focusTracking().lastAppliedIndex;
+  const hasPendingRecompute = (): boolean => focusTracking().hasPendingRecompute;
 
   // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
   // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
   // ✅ Phase 77: setFocusedIndex 호출 시 'auto-focus' source 전달
+  // ✅ Phase 150.3: focusState 기반으로 리팩토링
   const debouncedSetAutoFocusIndex = createDebouncer<[number | null, { forceClear?: boolean }?]>(
     (index, options) => {
       const shouldForceClear = options?.forceClear ?? false;
 
       if (index === null && !shouldForceClear) {
+        const currentState = focusState();
         const fallbackIndex =
-          autoFocusIndex() ?? manualFocusIndex() ?? lastAutoFocusedIndex ?? getCurrentIndex();
+          (currentState.source === 'auto' ? currentState.index : null) ??
+          (currentState.source === 'manual' ? currentState.index : null) ??
+          lastAutoFocusedIndex() ??
+          getCurrentIndex();
 
         if (fallbackIndex === null || Number.isNaN(fallbackIndex)) {
-          setAutoFocusIndex(null);
+          setFocusState(createFocusState(null, 'auto'));
           setFocusedIndex(null);
           return;
         }
 
-        setAutoFocusIndex(fallbackIndex);
+        setFocusState(createFocusState(fallbackIndex, 'auto'));
         setFocusedIndex(fallbackIndex, 'auto-focus');
         return;
       }
 
-      setAutoFocusIndex(index);
+      setFocusState(createFocusState(index, 'auto'));
       setFocusedIndex(index, 'auto-focus'); // Phase 77: auto-focus source 전달
     },
     50
@@ -153,7 +183,7 @@ export function useGalleryFocusTracker({
       const fallbackCandidates: Array<number | null> = [
         autoFocusIndex(),
         manualFocusIndex(),
-        lastAutoFocusedIndex,
+        lastAutoFocusedIndex(),
         getCurrentIndex(),
       ];
       finalValue = fallbackCandidates.find(resolveCandidate) ?? null;
@@ -178,13 +208,15 @@ export function useGalleryFocusTracker({
   const debouncedScheduleSync = createDebouncer<[]>(() => {
     // 스크롤 중이면 큐에만 플래그 설정
     if (isScrollingAccessor()) {
-      hasPendingRecompute = true;
+      const current = focusTracking();
+      setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: true }));
       return;
     }
 
     // Settling 상태이거나 스크롤 중이 아니면 즉시 처리
     recomputeFocus();
-    hasPendingRecompute = false;
+    const current = focusTracking();
+    setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: false }));
   }, 100);
 
   const scheduleSync = () => {
@@ -196,50 +228,53 @@ export function useGalleryFocusTracker({
   // isScrolling이 false로 전환될 때 보류된 recompute 요청을 처리
   createEffect(() => {
     const scrolling = isScrollingAccessor();
+    const current = focusTracking();
 
-    if (!scrolling && hasPendingRecompute) {
+    if (!scrolling && current.hasPendingRecompute) {
       logger.debug('useGalleryFocusTracker: processing deferred recompute after settling');
 
       recomputeFocus();
-      hasPendingRecompute = false;
+      setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: false }));
     }
   });
 
   const clearAutoFocusTimer = () => {
-    if (autoFocusTimerId !== null) {
-      globalTimerManager.clearTimeout(autoFocusTimerId);
-      autoFocusTimerId = null;
-    }
+    focusTimerManager.clearTimer('auto-focus');
   };
 
   const applyAutoFocus = (index: number, reason: string) => {
     // ✅ Phase 69.2: lastAppliedIndex guard로 동일 인덱스 중복 방지
     // 동일한 인덱스에 대해 이미 포커스가 적용되었다면 스킵
-    if (lastAppliedIndex === index) {
+    const current = focusTracking();
+    if (current.lastAppliedIndex === index) {
       return;
     }
 
-    const element = itemElements.get(index);
+    const item = itemCache.getItem(index);
+    const element = item?.element;
     if (!element?.isConnected) {
       return;
     }
 
     if (document.activeElement === element) {
-      lastAutoFocusedIndex = index;
-      lastAppliedIndex = index;
+      setFocusTracking(
+        updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
+      );
       return;
     }
 
     try {
       element.focus({ preventScroll: true });
-      lastAutoFocusedIndex = index;
-      lastAppliedIndex = index;
+      setFocusTracking(
+        updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
+      );
       logger.debug('useGalleryFocusTracker: auto focus applied', { index, reason });
     } catch (error) {
       try {
         element.focus();
-        lastAutoFocusedIndex = index;
-        lastAppliedIndex = index;
+        setFocusTracking(
+          updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
+        );
         logger.debug('useGalleryFocusTracker: auto focus applied (fallback)', {
           index,
           reason,
@@ -270,46 +305,45 @@ export function useGalleryFocusTracker({
     if (targetIndex === null || Number.isNaN(targetIndex)) {
       return;
     }
-
-    const targetElement = itemElements.get(targetIndex);
+    const targetItem = itemCache.getItem(targetIndex);
+    const targetElement = targetItem?.element;
     if (!targetElement?.isConnected) {
       return;
     }
 
-    if (document.activeElement === targetElement && lastAutoFocusedIndex === targetIndex) {
+    if (document.activeElement === targetElement && lastAutoFocusedIndex() === targetIndex) {
       return;
     }
 
     // ✅ Phase 74.6: 인덱스가 변경되면 lastAppliedIndex 리셋
     // 다른 인덱스로의 autoFocus를 허용
-    if (lastAppliedIndex !== null && lastAppliedIndex !== targetIndex) {
-      lastAppliedIndex = null;
+    const current = focusTracking();
+    if (current.lastAppliedIndex !== null && current.lastAppliedIndex !== targetIndex) {
+      setFocusTracking(updateFocusTracking(current, { lastAppliedIndex: null }));
     }
 
     const delay = Math.max(0, autoFocusDelayAccessor());
 
-    autoFocusTimerId = globalTimerManager.setTimeout(() => {
-      applyAutoFocus(targetIndex, reason);
-      autoFocusTimerId = null;
-    }, delay);
+    focusTimerManager.setTimer(
+      'auto-focus',
+      () => {
+        applyAutoFocus(targetIndex, reason);
+      },
+      delay
+    );
   };
 
   const cleanupObserver = () => {
     observer?.disconnect();
     observer = null;
-    entryCache.clear();
+    itemCache.clear();
   };
 
   const handleEntries: IntersectionObserverCallback = entries => {
     // ✅ Phase 21.1: untrack으로 반응성 체인 끊기
     untrack(() => {
       entries.forEach(entry => {
-        const targetIndex = elementToIndex.get(entry.target as HTMLElement);
-        if (typeof targetIndex !== 'number') {
-          return;
-        }
-
-        entryCache.set(targetIndex, entry);
+        itemCache.setEntry(entry.target as HTMLElement, entry);
       });
 
       scheduleSync();
@@ -337,12 +371,12 @@ export function useGalleryFocusTracker({
     const candidates: CandidateScore[] = [];
     const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
 
-    itemElements.forEach((element, index) => {
+    itemCache.forEach(item => {
+      const { element, index, entry } = item;
       if (!element?.isConnected) {
         return;
       }
 
-      const entry = entryCache.get(index);
       const ratio = entry?.intersectionRatio ?? 0;
 
       if (ratio < minimumVisibleRatio) {
@@ -362,13 +396,13 @@ export function useGalleryFocusTracker({
     });
 
     if (candidates.length === 0) {
-      if (entryCache.size === 0) {
-        // ✅ Phase 74.6: entryCache가 비어있을 때도 getCurrentIndex()를 autoFocusIndex로 설정
+      if (itemCache.size === 0) {
+        // ✅ Phase 74.6: itemCache가 비어있을 때도 getCurrentIndex()를 autoFocusIndex로 설정
         // 테스트나 초기 상태에서 IntersectionObserver entries가 없을 때 대응
         const fallbackIndex = getCurrentIndex();
         debouncedSetAutoFocusIndex.execute(fallbackIndex);
         updateContainerFocusAttribute(fallbackIndex);
-        evaluateAutoFocus('entryCache-empty');
+        evaluateAutoFocus('itemCache-empty');
         return;
       }
 
@@ -398,29 +432,22 @@ export function useGalleryFocusTracker({
   };
 
   const registerItem = (index: number, element: HTMLElement | null) => {
-    const prev = itemElements.get(index);
-    if (prev && observer) {
-      observer.unobserve(prev);
-    }
-
-    if (prev && prev !== element) {
-      elementToIndex.delete(prev);
+    const prev = itemCache.getItem(index);
+    if (prev?.element && observer) {
+      observer.unobserve(prev.element);
     }
 
     if (!element) {
-      if (prev) {
-        elementToIndex.delete(prev);
+      if (prev?.element) {
+        // 요소 제거 시 캐시에서만 삭제 (WeakMap은 자동 정리)
       }
-      itemElements.delete(index);
-      entryCache.delete(index);
+      itemCache.deleteItem(index);
       scheduleSync();
       evaluateAutoFocus('register-remove');
       return;
     }
 
-    itemElements.set(index, element);
-    elementToIndex.set(element, index);
-    entryCache.delete(index);
+    itemCache.setItem(index, element);
 
     if (observer) {
       observer.observe(element);
@@ -442,19 +469,21 @@ export function useGalleryFocusTracker({
     if (pendingFocusIndex !== null) {
       const index = pendingFocusIndex;
       pendingFocusIndex = null;
-      setManualFocusIndex(index);
+      setFocusState(createFocusState(index, 'manual'));
       logger.debug('useGalleryFocusTracker: manual focus applied', { index });
       updateContainerFocusAttribute(index);
       clearAutoFocusTimer();
-      lastAutoFocusedIndex = index;
-      lastAppliedIndex = index;
+      const current1 = focusTracking();
+      setFocusTracking(
+        updateFocusTracking(current1, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
+      );
     }
 
     if (pendingBlurIndex !== null) {
       const index = pendingBlurIndex;
       pendingBlurIndex = null;
       if (manualFocusIndex() === index) {
-        setManualFocusIndex(null);
+        setFocusState(createFocusState(null, 'manual'));
         logger.debug('useGalleryFocusTracker: manual focus cleared', { index });
         scheduleSync();
         evaluateAutoFocus('manual-blur');
@@ -502,16 +531,18 @@ export function useGalleryFocusTracker({
   };
 
   // ✅ Step 2: 수동 포커스 명시적 설정
-  // auto-focus 타이머를 취소하고 manualFocusIndex 업데이트
+  // auto-focus 타이머를 취소하고 focusState 업데이트
   const setManualFocus = (index: number | null) => {
     clearAutoFocusTimer();
-    setManualFocusIndex(index);
+    setFocusState(createFocusState(index, 'manual'));
 
     if (index !== null) {
       logger.debug('useGalleryFocusTracker: manual focus set', { index });
       updateContainerFocusAttribute(index);
-      lastAutoFocusedIndex = index;
-      lastAppliedIndex = index;
+      const current2 = focusTracking();
+      setFocusTracking(
+        updateFocusTracking(current2, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
+      );
     } else {
       logger.debug('useGalleryFocusTracker: manual focus cleared');
       scheduleSync();
@@ -553,10 +584,10 @@ export function useGalleryFocusTracker({
       // 자동 포커스와 네비게이션이 동시에 실행되지 않도록 방지
       clearAutoFocusTimer();
 
-      // manualFocusIndex를 우회하고 autoFocusIndex를 즉시 업데이트
+      // focusState를 'auto' 소스로 즉시 업데이트
       const { batch: solidBatch } = getSolid();
       solidBatch(() => {
-        setAutoFocusIndex(index);
+        setFocusState(createFocusState(index, 'auto'));
         updateContainerFocusAttribute(index);
       });
 
@@ -615,15 +646,15 @@ export function useGalleryFocusTracker({
         rootMargin,
       });
 
-      itemElements.forEach(element => {
-        if (!element) {
+      itemCache.forEach(item => {
+        if (!item?.element) {
           return;
         }
-        observer?.observe(element);
+        observer?.observe(item.element);
       });
 
       logger.debug('useGalleryFocusTracker: observer initialized', {
-        itemCount: itemElements.size,
+        itemCount: itemCache.size,
         threshold,
         rootMargin,
       });
@@ -635,7 +666,7 @@ export function useGalleryFocusTracker({
       onCleanup(() => {
         cleanupObserver();
         clearAutoFocusTimer();
-        lastAutoFocusedIndex = null;
+        setFocusTracking(updateFocusTracking(focusTracking(), { lastAutoFocusedIndex: null }));
       });
     })
   );
@@ -646,14 +677,13 @@ export function useGalleryFocusTracker({
     debouncedScheduleSync.cancel(); // Phase 69.2
     debouncedUpdateContainerFocusAttribute.cancel(); // Phase 69.2
     batch(() => {
-      setManualFocusIndex(null);
+      setFocusState(createFocusState(null, 'manual'));
       debouncedSetAutoFocusIndex.flush(); // 대기 중인 업데이트를 즉시 실행
-      setAutoFocusIndex(null);
+      setFocusState(createFocusState(null, 'auto'));
     });
-    itemElements.clear();
-    clearAutoFocusTimer();
-    lastAutoFocusedIndex = null;
-    lastAppliedIndex = null; // Phase 69.2
+    itemCache.clear();
+    focusTimerManager.clearAll();
+    setFocusTracking(createFocusTracking()); // 추적 상태 리셋
   });
 
   return {
