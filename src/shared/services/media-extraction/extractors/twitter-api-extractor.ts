@@ -1,7 +1,7 @@
 /**
  * @fileoverview Twitter API 기반 미디어 추출기
  * @description 트윗 정보가 확보된 후 API를 통한 정확한 미디어 추출
- * @version 2.0.0 - Clean Architecture
+ * @version 2.0.0 - Clean Architecture (Strategy Pattern)
  */
 
 import { logger } from '@shared/logging/logger';
@@ -9,6 +9,12 @@ import { globalTimerManager } from '@shared/utils/timer-management';
 import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/twitter-video-extractor';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
+import {
+  DirectMediaMatchingStrategy,
+  DOMOrderEstimationStrategy,
+  FallbackStrategy,
+  type MediaClickIndexStrategy,
+} from '../strategies/media-click-index-strategy';
 
 /**
  * Twitter API 기반 추출기
@@ -172,117 +178,59 @@ export class TwitterAPIExtractor implements APIExtractor {
   }
 
   /**
-   * 클릭된 미디어 인덱스 계산
-   */
-  /**
-   * 클릭된 미디어의 정확한 인덱스 계산 (개선 버전)
+   * 클릭된 미디어 인덱스 계산 (Strategy 패턴 적용)
    *
    * 목적:
    * - 사용자가 클릭한 미디어 아이템이 mediaItems 배열에서 몇 번째 위치인지 결정
-   * - 인용 트윗, 리트윗 등 복잡한 트윗 구조에서도 정확하게 작동
-   * - 갤러리가 올바른 미디어부터 시작되도록 보장
+   * - 다양한 Strategy를 통해 신뢰도 높은 인덱스 계산
    *
-   * 전략 (개선된 우선순위):
-   *
-   * 1️⃣ **직접 매칭** (최우선, 신뢰도 99%+)
-   *   - 클릭된 미디어 요소의 URL을 추출
-   *   - API 미디어와 1:1 정확 비교
-   *   - 쿼리스트링 정규화 후 파일명 기반 비교
-   *
-   * 2️⃣ **트윗 컨텍스트 기반** (중간, 신뢰도 95%+)
-   *   - 클릭된 요소가 속한 트윗 컨테이너 명시적 지정
-   *   - 인용 트윗과 원본 트윗 분리
-   *   - 현재 미디어 배열과만 매칭
-   *
-   * 3️⃣ **DOM 순서 기반 추정** (대체, 신뢰도 80-90%)
-   *   - 트윗 컨테이너 내 미디어 요소들의 DOM 순서로 추정
-   *   - 한정된 스코프 내에서만 계산 (성능 최적화)
-   *
-   * 4️⃣ **안전장치** (마지막 수단, 신뢰도 50%)
-   *   - 모든 시도 실패 시 첫 번째 미디어(index 0) 반환
+   * 전략 순서 (우선순위):
+   * 1️⃣ DirectMediaMatchingStrategy (99% 신뢰도)
+   * 2️⃣ DOMOrderEstimationStrategy (85% 신뢰도)
+   * 3️⃣ FallbackStrategy (50% 신뢰도)
    *
    * @param clickedElement - 사용자가 클릭한 DOM 요소
    * @param apiMedias - API에서 추출한 미디어 배열
    * @param mediaItems - 현재 갤러리에 표시되는 미디어 아이템 배열
-   * @returns 올바른 인덱스 (0-based), 계산 실패 시 0
+   * @returns 올바른 인덱스 (0-based)
    */
   private async calculateClickedIndex(
     clickedElement: HTMLElement,
     apiMedias: TweetMediaEntry[],
     mediaItems: MediaInfo[]
   ): Promise<number> {
-    // 1️⃣ 미디어 요소 찾기 및 URL 추출 (빠른 경로)
-    const mediaElement = this.findMediaElement(clickedElement);
-    if (!mediaElement) {
-      logger.debug('[APIExtractor] 클릭된 미디어 요소를 찾을 수 없음');
-      return this.estimateIndexFromDOMOrder(clickedElement, mediaItems.length);
-    }
+    // Strategy 인스턴스 생성
+    const strategies: MediaClickIndexStrategy[] = [
+      new DirectMediaMatchingStrategy(
+        this.findMediaElement.bind(this),
+        el => this.extractMediaUrl(el) ?? '',
+        this.normalizeMediaUrl.bind(this)
+      ),
+      new DOMOrderEstimationStrategy(
+        container => Array.from(container.querySelectorAll('img, video')),
+        this.isDirectMediaChild.bind(this)
+      ),
+      new FallbackStrategy(),
+    ];
 
-    const clickedUrl = this.extractMediaUrl(mediaElement);
-
-    // 2️⃣ URL 기반 정확 매칭 (성공 시 바로 반환)
-    if (clickedUrl) {
-      const exactMatch = this.findExactMediaMatch(clickedUrl, apiMedias);
-      if (exactMatch !== -1) {
-        logger.debug(`[APIExtractor] 직접 매칭 성공: 인덱스 ${exactMatch}`);
-        return exactMatch;
+    // 각 Strategy 순차 실행
+    for (const strategy of strategies) {
+      const index = strategy.calculate(clickedElement, apiMedias, mediaItems);
+      if (index !== -1) {
+        logger.debug(
+          `[APIExtractor] Strategy 성공: ${strategy.name} (신뢰도 ${strategy.confidence}%), 인덱스 ${index}`
+        );
+        return index;
       }
     }
 
-    // 3️⃣ DOM 순서 기반 추정 (폴백)
-    const estimatedIndex = this.estimateIndexFromDOMOrder(clickedElement, mediaItems.length);
-    logger.debug(`[APIExtractor] DOM 순서 기반 추정: 인덱스 ${estimatedIndex}`);
-
-    return estimatedIndex;
+    // 모든 Strategy 실패 시 0 반환
+    logger.warn('[APIExtractor] 모든 Strategy 실패, 기본값 0 반환');
+    return 0;
   }
 
   /**
-   * URL 기반 정확 매칭 (개선된 버전)
-   *
-   * 개선사항:
-   * - 정확한 URL 비교 먼저 (가장 빠름)
-   * - 파일명 기반 비교 (정규화됨)
-   * - 쿼리스트링 무시 (Twitter의 동적 URL 처리)
-   *
-   * @private
-   */
-  private findExactMediaMatch(clickedUrl: string, apiMedias: TweetMediaEntry[]): number {
-    if (!clickedUrl) return -1;
-
-    // 단계 1: 정확한 URL 비교
-    for (let i = 0; i < apiMedias.length; i++) {
-      const media = apiMedias[i];
-      if (!media) continue;
-
-      if (media.download_url === clickedUrl || media.preview_url === clickedUrl) {
-        return i;
-      }
-    }
-
-    // 단계 2: 파일명 기반 비교 (쿼리스트링 무시)
-    const clickedFilename = this.normalizeMediaUrl(clickedUrl);
-    if (!clickedFilename) return -1;
-
-    for (let i = 0; i < apiMedias.length; i++) {
-      const media = apiMedias[i];
-      if (!media) continue;
-
-      const apiFilename = this.normalizeMediaUrl(media.download_url);
-      if (apiFilename && clickedFilename === apiFilename) {
-        return i;
-      }
-    }
-
-    return -1;
-  }
-
-  /**
-   * 클릭된 요소에서 미디어 요소 찾기 (개선된 버전)
-   *
-   * 변경사항:
-   * - 트윗 컨테이너 명시적 확인으로 인용 트윗 대응
-   * - 부모 검색 범위 최적화 (10 → 5단계, 더 효율적)
-   * - 직접 미디어 요소 우선 (성능 개선)
+   * 클릭된 요소에서 미디어 요소 찾기
    */
   private findMediaElement(element: HTMLElement): HTMLElement | null {
     // 1. 클릭된 요소가 이미 미디어 요소인지 확인 (가장 빠름)
@@ -396,30 +344,6 @@ export class TwitterAPIExtractor implements APIExtractor {
         return null;
       }
     }
-  }
-
-  /**
-   * DOM 순서 기반 인덱스 추정
-   */
-  private estimateIndexFromDOMOrder(element: HTMLElement, mediaCount: number): number {
-    // 트윗 컨테이너 찾기
-    const tweetContainer = element.closest('[data-testid="tweet"], article');
-    if (!tweetContainer) return 0;
-
-    // 컨테이너 내 모든 미디어 요소 찾기
-    const allMediaElements = tweetContainer.querySelectorAll('img, video');
-    const mediaArray = Array.from(allMediaElements);
-
-    // 클릭된 요소의 인덱스 찾기
-    const clickedMedia = this.findMediaElement(element);
-    if (clickedMedia) {
-      const index = mediaArray.indexOf(clickedMedia);
-      if (index !== -1 && index < mediaCount) {
-        return index;
-      }
-    }
-
-    return 0;
   }
 
   /**
