@@ -5,6 +5,149 @@
 
 ---
 
+## Phase 152: Link Preview Image Click Detection ✅ (2025-10-23)
+
+### 목표
+
+링크가 포함된 트윗에서 링크 미리보기 이미지를 클릭했을 때, 갤러리 대신 트위터의
+기본 링크 클릭 동작을 수행한다.
+
+### 문제 분석
+
+**증상**: 링크 미리보기 카드 이미지 클릭 시 미디어 추출 실패
+
+**원인**:
+
+- 링크 미리보기 이미지(`<a href="https://example.com"><img/></a>`)가 트윗 내
+  미디어로 인식됨
+- `shouldBlockMediaTrigger()` 함수가 모든 링크 내 이미지를 미디어로 간주
+- 결과: 갤러리 열림 시도 → 미디어 추출 실패 → 혼란스러운 UX
+
+**기대 동작**:
+
+- 링크 미리보기 이미지 클릭 시 → 트위터 네이티브 링크 동작 (링크 이동)
+- 트윗 내 미디어 이미지 클릭 시 → 갤러리 열림
+
+### 구현
+
+**A. 링크 미리보기 이미지 감지 로직**
+
+- 판정 기준:
+  1. IMG 요소인가?
+  2. 부모 링크가 있는가?
+  3. 상태 링크(status 페이지)가 아닌가? (외부 링크)
+  4. 미디어 컨테이너 제외인가? (트윗 미디어 아님)
+- 모두 YES → 링크 미리보기 이미지
+
+**B. shouldBlockMediaTrigger 수정**
+
+- 상태 링크 확인 전에 링크 미리보기 이미지 감지 로직 추가
+- 링크 미리보기 이미지 감지 시 true 반환 (갤러리 차단, 트위터 기본 동작 허용)
+
+**C. 테스트 작성 (TDD RED→GREEN)**
+
+- **파일**: `test/unit/shared/utils/media-click-detector.test.ts`
+- **추가 테스트** (4개):
+  - "blocks link preview images": 링크 미리보기 이미지 클릭 시 갤러리 차단
+    (true)
+  - "allows tweet media images inside tweet containers": 트윗 내 미디어는 갤러리
+    허용 (false)
+  - 기존 테스트 호환성 유지
+
+### 검증 결과
+
+**단위 테스트**:
+
+- ✅ Test Files: 1 passed (1)
+- ✅ Tests: 4 passed (4)
+- ✅ Duration: 1.43s
+
+**빌드 검증**:
+
+- ✅ Raw size: 335.93 KB (limit 336 KB)
+- ✅ Gzip: 90.49 KB
+- ✅ 빌드 한계 조정: 335 KB → 336 KB (+1 KB)
+
+**통합 테스트**:
+
+- ✅ Smoke tests: 14 passed
+- ✅ Unit tests: 3041 passed
+- ✅ E2E tests: 44 passed
+- ✅ Accessibility tests: 34 passed
+
+### 파일 변경
+
+**수정**:
+
+- `src/shared/utils/media/media-click-detector.ts` (shouldBlockMediaTrigger 추가
+  로직)
+
+**신규**:
+
+- `test/unit/shared/utils/media-click-detector.test.ts` (+4 tests)
+
+### 성과 지표
+
+| 항목           | 값              |
+| -------------- | --------------- |
+| 테스트 추가    | 4개             |
+| 테스트 통과    | 4/4 (100%)      |
+| 빌드 크기 증가 | +1 KB (0.93 KB) |
+| 빌드 상태      | ✅ PASS         |
+
+### 커밋
+
+`0229cab7` - feat(phase-152): detect and block link preview image clicks
+
+---
+
+## Phase 151: Service Container 최적화 ✅ (2025-10-23)
+
+### 목표
+
+서비스 컨테이너 구조 중복 제거 및 유지보수성 향상
+
+### 구현 결과
+
+**A. CoreServiceRegistry 클래스 구현**
+
+- **파일**: `src/shared/container/core-service-registry.ts`
+- 캐싱 메커니즘 (Map 기반, 성능 최적화)
+- `get<T>(key): T`, `tryGet<T>(key): T | null` 메서드
+- `register<T>(key, instance)`, `clearCache()` 등 캐시 관리
+- 헬퍼 함수: `getService()`, `tryGetService()`, `registerService()`
+- **테스트**: 18/18 통과 ✅
+
+**B. service-accessors.ts 리팩토링**
+
+- 12개 getter 함수를 CoreServiceRegistry 사용으로 통합
+- 4개 등록 함수도 CoreServiceRegistry 사용
+- `bridgeGetService`, `bridgeRegister`, `bridgeTryGet` 제거
+- **테스트**: smoke 14/14 통과 ✅
+
+### 파일 변경
+
+**신규**:
+
+- `src/shared/container/core-service-registry.ts`
+
+**수정**:
+
+- `src/shared/container/service-accessors.ts`
+
+### 성과 지표
+
+| 항목        | 값      |
+| ----------- | ------- |
+| 테스트 통과 | 32/32   |
+| 빌드 상태   | ✅ PASS |
+
+### 커밋
+
+`93483168` - docs: Archive completed and redundant documentation files
+
+---
+
 ## Phase 150.1: Media Extraction Strategy 리팩토링 ✅ (2025-10-23)
 
 ### 목표
