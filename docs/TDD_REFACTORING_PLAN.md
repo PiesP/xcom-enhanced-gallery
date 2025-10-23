@@ -21,29 +21,53 @@
 
 ## 📝 현재 진행 중인 작업
 
-### Phase 151: Service Container 최적화 (🔄 Step 1 구현)
+### Phase 151: Service Container 최적화 (✅ Step 1-2 완료 / Step 3 진행)
 
-**상태**: Step 1 구현 진행 중 | **우선순위**: 🔴 HIGH | **예상 난이도**: 중상
+**상태**: Step 2 완료, Step 3 진행 중 | **우선순위**: 🔴 HIGH | **예상 난이도**:
+중상
 
 **목표**: 서비스 컨테이너 구조 중복 제거 및 유지보수성 향상
 
-**현재 작업** (Step 1):
+**완료된 작업**:
 
-**CoreServiceRegistry 클래스 작성**
+**✅ Step 1: CoreServiceRegistry 클래스 구현**
 
 - **파일**: `src/shared/container/core-service-registry.ts` (신규)
 - **목적**: 중앙화된 서비스 접근 인터페이스 + 캐싱 레이어
-- **예상 코드**:
-  - 캐싱 메커니즘 (Map 기반)
-  - get<T>(key: string): T 메서드
-  - register<T>(key: string, instance: T) 메서드
-  - 타입 안전성 보장
-- **테스트**: 6-8개 단위 테스트 추가
+- **구현**:
+  - 캐싱 메커니즘 (Map 기반, 성능 최적화)
+  - `get<T>(key): T` 메서드
+  - `tryGet<T>(key): T | null` 안전 메서드
+  - `register<T>(key, instance)` 등록 메서드
+  - `clearCache()` / `invalidateCache(key)` 캐시 관리
+  - 헬퍼 함수: `getService()`, `tryGetService()`, `registerService()`
+- **테스트**: 18/18 통과 ✅
+  - 캐싱 동작 검증
+  - 타입 안전성 확인
+  - 다중 서비스 관리
+  - 성능 개선 검증 (spy 기반 중복 호출 방지)
 
-**완료 후 다음 단계**:
+**✅ Step 2: service-accessors.ts 리팩토링**
 
-- Step 2: service-accessors.ts 리팩토링 (모든 getter 통합)
-- Step 3: 최종 검증 및 테스트
+- **변경 사항**:
+  - 12개 getter 함수를 CoreServiceRegistry 사용으로 통합
+  - `getToastController`, `getThemeService`, `getMediaFilenameService` 등
+  - `getBulkDownloadServiceFromContainer`, `getGalleryDownloadService`
+  - `getMediaServiceFromContainer`, `getGalleryRenderer`
+  - 4개 등록 함수도 CoreServiceRegistry 사용
+  - `bridgeGetService`, `bridgeRegister`, `bridgeTryGet` 제거
+- **테스트**: smoke 14/14 통과 ✅
+- **코드 개선**: 불필요한 service-bridge 호출 제거
+
+**진행 중인 작업** (Step 3):
+
+**최종 검증 및 문서화**
+
+- 빠른 테스트 추가
+- E2E 스모크 테스트 검증
+- 의존성 그래프 재검증 (circular deps 없음)
+- TDD_REFACTORING_PLAN_COMPLETED.md로 완료 항목 이동
+- 최종 커밋 및 마스터 병합 준비
 
 ---
 
