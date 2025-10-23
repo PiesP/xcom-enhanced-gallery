@@ -163,6 +163,38 @@ xcom-enhanced-gallery의 핵심 포커스 추적 시스템을 4단계로 정규�
 
 ---
 
+### Phase 150.3: useGalleryFocusTracker 통합 (Step 5) 🔄 계획 수립 완료
+
+**상태**: 설계 완료, 구현 대기 중 | **기간**: 2025-10-23 ~ | **예상**: 7-8시간
+
+**목표**: Phase 150.2의 4개 모듈을 useGalleryFocusTracker.ts에 통합
+
+**구현 계획**:
+
+1. ✅ 분석 & 설계 (661줄 코드 분석, 상태 18개 파악)
+2. ✅ 계획 문서 작성
+   ([PHASE_150_3_INTEGRATION_PLAN.md](./PHASE_150_3_INTEGRATION_PLAN.md))
+3. 🔄 Step 1-2: FocusState Signal 도입 (manualFocusIndex + autoFocusIndex →
+   focusState)
+4. 🔄 Step 3: ItemCache 도입 (3개 Map → itemCache)
+5. 🔄 Step 4: FocusTimerManager 도입 (autoFocusTimerId → timerManager)
+6. 🔄 Step 5: FocusTracking Signal 도입 (4개 변수 → tracking Signal)
+7. 🔄 Step 6: 메서드 리팩토링 (모든 참조 업데이트)
+8. 🔄 Step 7: Cleanup & 테스트 (기존 73개 PASS + 새로운 3-5개 추가)
+
+**예상 결과**:
+
+- 상태 변수: 18개 → 8-10개 (55% 감소)
+- 코드 라인: 661줄 → ~500줄 (23% 감소)
+- 번들 크기: 331.56 KB → 331-333 KB (유지)
+- 테스트: 기존 73개 모두 PASS + 새로운 3-5개
+
+**참고 문서**:
+[PHASE_150_3_INTEGRATION_PLAN.md](./PHASE_150_3_INTEGRATION_PLAN.md) (7단계 상세
+계획, 551줄)
+
+---
+
 ### 완료된 Phase (이전)
 
 **변경 사항**:
