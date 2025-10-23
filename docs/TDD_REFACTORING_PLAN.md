@@ -70,6 +70,49 @@
 
 ---
 
+## 📝 현재 진행 중인 작업
+
+### Phase 152: 링크 미리보기 이미지 클릭 처리 (🚀 시작 예정)
+
+**상태**: 🚀 시작 예정 | **기간**: 2025-10-23 시작
+
+**목표**: 링크가 포함된 트윗에서 링크 미리보기 이미지를 클릭했을 때, 갤러리 대신
+트위터의 기본 링크 클릭 동작 수행
+
+**문제 분석**:
+
+- 현재: 링크 내 이미지(카드 미리보기)를 클릭하면 미디어 추출 시도 → 실패
+- 원인: `shouldBlockMediaTrigger`가 링크 내 모든 이미지를 미디어로 인식
+- 기대: 링크 미리보기 이미지 클릭 시 트위터 네이티브 링크 클릭 동작 수행
+
+**구현 계획**:
+
+**✅ Step 1: 링크 미리보기 이미지 감지 로직 추가**
+
+- `detectLinkPreviewImage()` 함수 추가 (media-click-detector.ts)
+- 링크 미리보기 카드 DOM 구조 판단: `a[href*="/status/"] + 단순 이미지` 패턴
+- 미리보기 이미지 vs 트윗 내 미디어 구분
+
+**✅ Step 2: 링크 미리보기 차단 로직**
+
+- `shouldBlockMediaTrigger` 수정: 링크 미리보기 이미지는 갤러리 차단 (true 반환)
+- 이벤트 핸들러에서 링크 미리보기 감지 시 `preventDefault()` 중단
+- 트위터 네이티브 링크 클릭 동작 보존
+
+**✅ Step 3: 테스트 작성 (TDD RED→GREEN→REFACTOR)**
+
+- 링크 미리보기 이미지 감지 단위 테스트
+- 끝-끝 동작 통합 테스트
+- E2E 스모크 테스트 (필요시)
+
+**영향 파일**:
+
+- `src/shared/utils/media/media-click-detector.ts`
+- `src/shared/utils/events.ts`
+- `test/unit/shared/utils/media-click-detector.test.ts`
+
+---
+
 ## 📝 다음 작업 계획
 
 ### 🎯 우선순위 분석
