@@ -46,7 +46,7 @@
 
 ### Step 1: useGalleryScroll 상태 정규화 (완료 ✅)
 
-**커밋**: 9dd6f5ef
+**커밋**: 9dd6f5ef + 51f0e444 (master로 merge 완료)
 
 **변경사항**:
 
@@ -59,23 +59,27 @@
 
 - ✅ 타입 체크 PASS
 - ✅ 스모크 테스트 14/14 PASS
-- ✅ 빌드 크기 유지 (335.93 KB)
+- ⚠️ 빌드 크기: 336.22 KB (초과 0.22 KB) → Phase 155에서 처리
 
-**효과**:
+### Step 2: useGalleryItemScroll 상태 최적화 (예정)
 
-- Signal 개수: 3개 → 1개 (67% 감소)
-- 상태 업데이트 일관성 향상
-- 타입 안전성 증대
+**분석**:
 
-### Step 2-4: 나머지 Hook 최적화 (예정)
+- 현재: 분산 상태 변수 7개 (lastScrolledIndex, pendingIndex, retryCount,
+  userScrollDetected 등)
+- 목표: 통합 State 구조 도입으로 복잡도 감소
 
-**대상**:
+\*\*Step 3: useGalleryFocusTracker 리뷰 (예정)
 
-- `useProgressiveImage`: 타이머 중앙화
-- `useGalleryCleanup`: Ref → Signal 전환
-- 신규 테스트 5-10개 추가
+**분석**:
 
-**예상 기간**: 2-3시간
+- Phase 150.2에서 이미 상당히 정규화됨
+- 추가 최적화 여부 평가
+
+**Step 4-5: 테스트 및 정리 (예정)**
+
+- 신규 테스트 추가/수정
+- 문서화 및 최종 검증
 
 ---
 
