@@ -21,8 +21,108 @@
 
 ## 📝 활성 작업
 
-현재 계획된 Phase 작업이 없습니다. Phase 149 (Vitest 4 마이그레이션)가
-완료되었습니다.
+**Phase 150: Media Extraction & Auto Focus/Navigation Refactoring** 🔄
+
+**기간**: 2025-10-23 ~ (진행 중) | **상태**: 분석 단계
+
+### 작업 목표
+
+사용자 요청에 따라 다음 두 기능의 리팩토링 기회를 탐색합니다:
+
+1. **미디어 추출 기능** - 클릭한 미디어 기반 트윗/미디어 추출
+2. **자동 포커스/이동 기능** - 자동 감지 포커스 추적 및 네비게이션
+
+### 분석 결과
+
+#### A. 미디어 추출 기능
+
+**구조**:
+
+- `MediaExtractionService`: 2단계 조율 (트윗 정보 추출 → API/DOM 추출)
+- `TwitterAPIExtractor`: API 미디어 추출 + 복잡한 인덱스 계산
+- `media-click-detector.ts`: 클릭 좌표 기반 미디어 감지
+- `media-url.util.ts`: DOM 미디어 URL 추출
+
+**복잡도 핵심** - `calculateClickedIndex()` (라인 182~240):
+
+```
+1. 직접 매칭 (URL 비교) → 신뢰도 99%
+2. 트윗 컨텍스트 기반 → 신뢰도 95%
+3. DOM 순서 기반 추정 → 신뢰도 80-90%
+4. 안전장치 (폴백) → 신뢰도 50%
+```
+
+**리팩토링 기회**:
+
+- [ ] **Strategy 패턴**: 4개 매칭 전략을 독립 클래스로 분리
+- [ ] **함수 분해**: `calculateClickedIndex()` 단순화 (라인 수 60→30)
+- [ ] **테스트 확대**: 현재 제외된 엣지 케이스 추가
+- [ ] **타입 강화**: 반환 값 명확화
+
+**개선 효과**:
+
+- 코드 가독성 ↑ (전략별 단일 책임)
+- 유지보수 ↑ (각 전략 독립 테스트)
+- 성능 ↓ (선택적 실행 가능)
+
+#### B. 자동 포커스/이동 기능
+
+**구조**:
+
+- `useGalleryFocusTracker.ts` (650+ 줄): 포커스 추적 핵심
+- `gallery.signals.ts`: 네비게이션 신호 (navigateToItem, setFocusedIndex)
+- `VerticalGalleryView.tsx`: UI 통합
+
+**복잡도 핵심** - 다중 상태 관리:
+
+```
+상태 변수:
+  - autoFocusIndex, manualFocusIndex
+  - lastAutoFocusedIndex, lastAppliedIndex
+  - focusBatchScheduled, hasPendingRecompute
+
+타이머/Debounce:
+  - autoFocusTimerId
+  - debouncedSetAutoFocusIndex (50ms)
+  - debouncedUpdateContainerFocusAttribute (50ms)
+```
+
+**리팩토링 기회**:
+
+- [ ] **상태 정규화**: 불필요한 상태 변수 제거 (3-4개 통합 가능)
+- [ ] **타이머 통합**: 단일 타이머 관리 구조로 개선
+- [ ] **이벤트 핸들링**: 핸들러 로직 분리 (registerItem 등)
+- [ ] **테스트 개선**: 복잡한 시나리오 추가 (현재 placeholder)
+
+**개선 효과**:
+
+- 코드 가독성 ↑ (상태 변수 40→25개)
+- 버그 위험 ↓ (상태 관리 단순화)
+- 성능 ↑ (불필요한 effect 제거)
+- 테스트 커버리지 ↑
+
+### 실행 계획
+
+**Phase 150.1: 미디어 추출 Strategy 리팩토링**
+
+1. 현재 테스트 검증 (`npm test:unit`)
+2. Strategy 클래스 설계 (테스트 우선)
+3. 구현 + 통합 테스트
+4. 번들 크기 확인
+
+**Phase 150.2: 자동 포커스 상태 정규화**
+
+1. 현재 테스트 검증
+2. 상태 정규화 설계 (테스트 우선)
+3. 구현 + E2E 테스트 검증
+4. 성능 비교
+
+**Phase 150.3: 최종 검증**
+
+1. `npm run build` 검증
+2. 전체 테스트 통과 확인
+3. 번들 크기 유지 확인
+4. 문서 업데이트
 
 ### 완료된 Phase
 
