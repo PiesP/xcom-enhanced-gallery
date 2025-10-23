@@ -298,8 +298,10 @@ export function findMediaAtCoordinates(x: number, y: number): MediaDetectionResu
 
 function isTwitterMediaElement(element: HTMLElement): boolean {
   if (element.tagName === 'IMG') {
-    const img = element as HTMLImageElement;
-    return img.src.includes('pbs.twimg.com') || img.src.includes('twimg.com');
+    // Phase 153: 링크 미리보기 이미지 지원
+    // IMG 요소는 모두 처리 가능으로 간주. 이후 STABLE_SELECTORS 필터링과
+    // DOM 백업 전략의 추가 검증 계층에서 유효한 미디어만 선별됨.
+    return true;
   }
 
   if (element.tagName === 'VIDEO') {
