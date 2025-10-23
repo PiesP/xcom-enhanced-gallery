@@ -61,25 +61,46 @@
 - ✅ 스모크 테스트 14/14 PASS
 - ⚠️ 빌드 크기: 336.22 KB (초과 0.22 KB) → Phase 155에서 처리
 
-### Step 2: useGalleryItemScroll 상태 최적화 (예정)
+### Step 2: useGalleryItemScroll 상태 최적화 (평가 완료 ⏸️)
 
-**분석**:
+**결론**: 현재 상태 변수 구조가 명확한 용도를 가짐. 강제 정규화 비추천.
 
-- 현재: 분산 상태 변수 7개 (lastScrolledIndex, pendingIndex, retryCount,
-  userScrollDetected 등)
-- 목표: 통합 State 구조 도입으로 복잡도 감소
+\*\*Step 3: useGalleryFocusTracker 평가 (평가 완료 ✅)
 
-\*\*Step 3: useGalleryFocusTracker 리뷰 (예정)
+**결론**: Phase 150.2에서 이미 충분히 정규화됨. 추가 작업 불필요.
 
-**분석**:
+**최종 결정**: Phase 153은 Step 1로 마무리. Phase 155 번들 최적화로 전환.
 
-- Phase 150.2에서 이미 상당히 정규화됨
-- 추가 최적화 여부 평가
+---
 
-**Step 4-5: 테스트 및 정리 (예정)**
+## 📝 Phase 155: 번들 크기 최적화 (예정 🎯)
 
-- 신규 테스트 추가/수정
-- 문서화 및 최종 검증
+### 목표
+
+현재 336.22 KB → 336 KB 이하로 감소 (-0.22 KB 이상)
+
+### 가능한 솔루션
+
+1. **ScrollState 코드 축소** (-0.05 KB)
+   - `scroll-state.ts` 주석 최소화
+   - 타입 정의 간결화
+
+2. **Unused Exports 제거** (-0.1 ~ -0.2 KB)
+   - 사용되지 않는 내보내기 검토
+   - tree-shaking 최적화
+
+3. **Polyfill 검토** (-0.2 ~ -0.5 KB)
+   - 불필요한 polyfill 제거
+   - 타겟 브라우저 재평가
+
+### 구현 단계
+
+1. **분석**: 빌드 크기 breakdown 파악
+2. **최적화**: 솔루션별 적용
+3. **검증**: 빌드 크기 확인
+4. **테스트**: 전체 테스트 통과 확인
+
+**예상 기간**: 1-2시간
 
 ---
 
