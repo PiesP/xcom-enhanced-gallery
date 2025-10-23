@@ -21,10 +21,9 @@
 
 ## 📝 현재 진행 중인 작업
 
-### Phase 151: Service Container 최적화 (✅ Step 1-2 완료 / Step 3 진행)
+### Phase 151: Service Container 최적화 (✅ 완료)
 
-**상태**: Step 2 완료, Step 3 진행 중 | **우선순위**: 🔴 HIGH | **예상 난이도**:
-중상
+**상태**: ✅ 완료 및 마스터 반영 | **기간**: 2025-10-23
 
 **목표**: 서비스 컨테이너 구조 중복 제거 및 유지보수성 향상
 
@@ -73,67 +72,42 @@
 
 ## 📝 다음 작업 계획
 
-### Phase 150.2: 자동 포커스 상태 정규화 ✅ 완료
+### 🎯 우선순위 분석
 
-**기간**: 2025-10-23 **상태**: 완료
+현재 codebase에서 식별된 리팩토링 기회 (우선순위 순):
+
+1. **번들 크기 최적화** (낮은 복잡도, 즉시 효과)
+   - 현재: 331 KB / 제한: 335 KB (여유: 4 KB)
+   - 검토 대상: 불필요한 폴리필, tree-shaking 최적화
+   - 예상 효과: -1~3 KB
+
+2. **추가 상태 정규화** (중간 복잡도, 높은 영향)
+   - Phase 150.3 완료 후 useSettings, useMediaLoader 등 다른 hook 검토
+   - 예상 효과: 유지보수성 ↑, 버그 위험 ↓
+
+3. **이벤트 핸들링 개선** (중간 복잡도, UX 개선)
+   - PC 전용 이벤트 정책 강화
+   - 키보드 네비게이션 최적화
+   - 예상 효과: 반응성 ↑
 
 **구현 개요**:
 
-xcom-enhanced-gallery의 핵심 포커스 추적 시스템을 4단계로 정규화하여 18개 상태
-변수를 8-10개로 통합(55% 감소)
+---
 
-**4단계 구현 현황**:
+## ✅ 완료된 작업
 
-#### Step 1: Signal 통합 - FocusState (20/20 테스트 ✅)
+### Phase 150: Media Extraction & Auto Focus (완료)
 
-- **파일**: `src/shared/state/focus/focus-state.ts` (83줄)
-- **내용**:
-  - `manualFocusIndex` + `autoFocusIndex` → 단일 `FocusState` Signal
-  - 소스 메타데이터 (`source: 'auto' | 'manual' | 'external'`)
-  - 헬퍼 함수: createFocusState, isSameFocusState, updateFocusState
-- **감소**: 2개 Signal → 1개 Signal
+- **Phase 150.1**: TwitterAPIExtractor Strategy 패턴 리팩토링 ✅
+- **Phase 150.2**: 자동 포커스 상태 정규화 (78/78 테스트) ✅
+- **Phase 150.3**: useGalleryFocusTracker 통합 (상태 18→8-10개 감소) ✅
 
-#### Step 2: 캐시 레이어 - ItemCache (17/17 테스트 ✅)
+### Phase 151: Service Container 최적화 (완료)
 
-- **파일**: `src/shared/state/focus/focus-cache.ts` (175줄)
-- **내용**:
-  - 3개 캐시 구조 → 단일 `ItemCache` 클래스
-  - `ItemEntry`: `{ element, index }`
-  - WeakMap/Map 기반 양방향 매핑 (element ↔ index)
-  - 헬퍼: createItemCache, ItemCache.set/get/has/delete
-- **감소**: 3개 맵 → 1개 ItemEntry 구조
-
-#### Step 3: 타이머 관리 - FocusTimerManager (24/24 테스트 ✅)
-
-- **파일**: `src/shared/state/focus/focus-timer-manager.ts` (237줄)
-- **내용**:
-  - 타이머/ID 관리 → 역할 기반 `FocusTimerManager` 클래스
-  - 역할 구분 (auto-focus, recompute, flush-batch, debounce)
-  - 라이프사이클 안전: dispose() 패턴
-  - 메서드: setTimer, clearTimer, clearAll, dispose
-- **감소**: 3개 타이머 변수 → 1개 클래스
-
-#### Step 4: 추적 상태 정규화 - FocusTracking (17/17 테스트 ✅)
-
-- **파일**: `src/shared/state/focus/focus-tracking.ts` (78줄)
-- **내용**:
-  - 4개 추적 변수 → 단일 `FocusTracking` 객체
-  - 필드: lastAutoFocusedIndex, lastAppliedIndex, hasPendingRecompute,
-    lastUpdateTime
-  - 헬퍼: createFocusTracking, isSameFocusTracking, resetFocusTracking,
-    updateFocusTracking
-  - 타임스탐프 비교 시 무시 (안정성)
-- **감소**: 4개 변수 → 1개 객체
-
-**테스트 현황**:
-
-- ✅ Step 1 (FocusState): 20/20 테스트 PASSED
-- ✅ Step 2 (ItemCache): 17/17 테스트 PASSED
-- ✅ Step 3 (FocusTimerManager): 24/24 테스트 PASSED
-- ✅ Step 4 (FocusTracking): 17/17 테스트 PASSED
-- **총합: 78/78 테스트 통과** (100% 성공률)
-
-**검증 항목**:
+- **Step 1**: CoreServiceRegistry 구현 (18/18 테스트 통과) ✅
+- **Step 2**: service-accessors.ts 리팩토링 (smoke 14/14 통과) ✅
+- **성과**: 12개+ getter 함수 중앙화, 캐싱 레이어 추가, CoreService 중복 호출
+  방지
 
 - ✅ 타입 안정성: TypeScript strict 모드
 - ✅ 호환성: 기존 useGalleryFocusTracker 통합 준비
@@ -185,65 +159,15 @@ xcom-enhanced-gallery의 핵심 포커스 추적 시스템을 4단계로 정규�
    - 4가지 매칭 전략 식별 (직접 매칭 → 컨텍스트 → DOM순서 → 폴백)
    - Strategy 패턴으로 리팩토링 가능 (복잡도 단순화 가능)
 
-2. **자동 포커스/이동 기능 분석**:
-   - useGalleryFocusTracker.ts (650+ 줄) - 포커스 추적 핵심
-   - 다중 상태 관리 식별 (autoFocusIndex, manualFocusIndex 등)
-   - 다중 타이머/debounce 관리 (globalTimerManager, 2개 debounce)
-   - 상태 정규화를 통한 단순화 가능
-
-3. **예상 개선 효과**:
-   - 미디어 추출: 코드 가독성 ↑, 유지보수 ↑, 테스트 커버리지 증대 가능
-   - 자동 포커스: 상태 변수 40→25개 감소, 버그 위험 ↓, 성능 개선
-
-**산출물**:
-
-- 상세 리팩토링 기회 분석 문서 (TDD_REFACTORING_PLAN.md에 추가)
-- 3단계 실행 계획 (150.1, 150.2, 150.3) 정의
-- 다음 Phase 우선순위 설정
-
-**다음 우선순위**:
-
-1. **Phase 150.1 (권장)**: 미디어 추출 Strategy 리팩토링
-   - TDD 기반 Strategy 클래스 추출
-   - 테스트 커버리지 확대
-   - 번들 크기 유지 확인
-
-2. **Phase 150.2**: 자동 포커스 상태 정규화
-   - 상태 변수 통합
-   - 타이머 관리 통합
-   - E2E 테스트 검증
-
 ---
 
-### Phase 150.3: useGalleryFocusTracker 통합 (Step 5) 🔄 계획 수립 완료
+## 📚 참고 문서
 
-**상태**: 설계 완료, 구현 대기 중 | **기간**: 2025-10-23 ~ | **예상**: 7-8시간
-
-**목표**: Phase 150.2의 4개 모듈을 useGalleryFocusTracker.ts에 통합
-
-**구현 계획**:
-
-1. ✅ 분석 & 설계 (661줄 코드 분석, 상태 18개 파악)
-2. ✅ 계획 문서 작성
-   ([PHASE_150_3_INTEGRATION_PLAN.md](./PHASE_150_3_INTEGRATION_PLAN.md))
-3. 🔄 Step 1-2: FocusState Signal 도입 (manualFocusIndex + autoFocusIndex →
-   focusState)
-4. 🔄 Step 3: ItemCache 도입 (3개 Map → itemCache)
-5. 🔄 Step 4: FocusTimerManager 도입 (autoFocusTimerId → timerManager)
-6. 🔄 Step 5: FocusTracking Signal 도입 (4개 변수 → tracking Signal)
-7. 🔄 Step 6: 메서드 리팩토링 (모든 참조 업데이트)
-8. 🔄 Step 7: Cleanup & 테스트 (기존 73개 PASS + 새로운 3-5개 추가)
-
-**예상 결과**:
-
-- 상태 변수: 18개 → 8-10개 (55% 감소)
-- 코드 라인: 661줄 → ~500줄 (23% 감소)
-- 번들 크기: 331.56 KB → 331-333 KB (유지)
-- 테스트: 기존 73개 모두 PASS + 새로운 3-5개
-
-**참고 문서**:
-[PHASE_150_3_INTEGRATION_PLAN.md](./PHASE_150_3_INTEGRATION_PLAN.md) (7단계 상세
-계획, 551줄)
+- [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) - 테스트 피라미드 및 전략
+- [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) - 코딩 규칙 및 디자인 토큰
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - 3계층 구조
+- [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) -
+  완료된 Phase 상세 기록
 
 ---
 
