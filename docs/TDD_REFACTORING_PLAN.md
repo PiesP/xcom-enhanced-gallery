@@ -19,6 +19,34 @@
 
 ---
 
+## 📝 현재 진행 중인 작업
+
+### Phase 151: Service Container 최적화 (🔄 Step 1 구현)
+
+**상태**: Step 1 구현 진행 중 | **우선순위**: 🔴 HIGH | **예상 난이도**: 중상
+
+**목표**: 서비스 컨테이너 구조 중복 제거 및 유지보수성 향상
+
+**현재 작업** (Step 1):
+
+**CoreServiceRegistry 클래스 작성**
+
+- **파일**: `src/shared/container/core-service-registry.ts` (신규)
+- **목적**: 중앙화된 서비스 접근 인터페이스 + 캐싱 레이어
+- **예상 코드**:
+  - 캐싱 메커니즘 (Map 기반)
+  - get<T>(key: string): T 메서드
+  - register<T>(key: string, instance: T) 메서드
+  - 타입 안전성 보장
+- **테스트**: 6-8개 단위 테스트 추가
+
+**완료 후 다음 단계**:
+
+- Step 2: service-accessors.ts 리팩토링 (모든 getter 통합)
+- Step 3: 최종 검증 및 테스트
+
+---
+
 ## 📝 다음 작업 계획
 
 ### Phase 150.2: 자동 포커스 상태 정규화 ✅ 완료
