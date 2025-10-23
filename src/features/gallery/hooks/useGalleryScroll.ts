@@ -13,6 +13,8 @@ import { EventManager } from '../../../shared/services/event-manager';
 import type { StabilityDetector } from '../../../shared/services/stability-detector';
 import { galleryState } from '../../../shared/state/signals/gallery.signals';
 import type { GalleryState } from '../../../shared/state/signals/gallery.signals';
+import type { ScrollState, ScrollDirection } from '../../../shared/state/hooks/scroll-state';
+import { INITIAL_SCROLL_STATE } from '../../../shared/state/hooks/scroll-state';
 import { useSelector } from '../../../shared/utils/signal-selector';
 import { toAccessor, isHTMLElement } from '../../../shared/utils/solid-helpers';
 import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
@@ -22,8 +24,6 @@ const { createSignal, createEffect, batch, onCleanup } = getSolid();
 
 type Accessor<T> = () => T;
 type MaybeAccessor<T> = T | Accessor<T>;
-
-type ScrollDirection = 'up' | 'down' | 'idle';
 
 interface UseGalleryScrollOptions {
   /** 갤러리 컨테이너 참조 */
@@ -79,9 +79,8 @@ export function useGalleryScroll({
     { dependencies: state => [state.isOpen] }
   );
 
-  const [isScrolling, setIsScrolling] = createSignal(false);
-  const [lastScrollTime, setLastScrollTime] = createSignal(0);
-  const [scrollDirection, setScrollDirection] = createSignal<ScrollDirection>('idle');
+  // Phase 153: 통합 스크롤 상태 Signal
+  const [scrollState, setScrollState] = createSignal<ScrollState>(INITIAL_SCROLL_STATE);
 
   let scrollTimeoutId: number | null = null;
   let directionTimeoutId: number | null = null;
@@ -102,10 +101,11 @@ export function useGalleryScroll({
 
   const updateScrollState = (scrolling: boolean) => {
     batch(() => {
-      setIsScrolling(scrolling);
-      if (scrolling) {
-        setLastScrollTime(Date.now());
-      }
+      setScrollState(prev => ({
+        ...prev,
+        isScrolling: scrolling,
+        lastScrollTime: scrolling ? Date.now() : prev.lastScrollTime,
+      }));
     });
   };
 
@@ -116,8 +116,11 @@ export function useGalleryScroll({
 
     const newDirection: ScrollDirection = delta > 0 ? 'down' : 'up';
 
-    if (scrollDirection() !== newDirection) {
-      setScrollDirection(newDirection);
+    if (scrollState().direction !== newDirection) {
+      setScrollState(prev => ({
+        ...prev,
+        direction: newDirection,
+      }));
       onScrollDirectionChange?.(newDirection);
 
       logger.debug('useGalleryScroll: 스크롤 방향 변경', {
@@ -128,8 +131,11 @@ export function useGalleryScroll({
 
     clearDirectionTimeout();
     directionTimeoutId = globalTimerManager.setTimeout(() => {
-      if (scrollDirection() !== 'idle') {
-        setScrollDirection('idle');
+      if (scrollState().direction !== 'idle') {
+        setScrollState(prev => ({
+          ...prev,
+          direction: 'idle',
+        }));
         onScrollDirectionChange?.('idle');
       }
     }, SCROLL_IDLE_TIMEOUT);
@@ -144,7 +150,7 @@ export function useGalleryScroll({
   };
 
   const preventTwitterScroll = (event: Event) => {
-    if (isScrolling() && blockTwitterScrollAccessor()) {
+    if (scrollState().isScrolling && blockTwitterScrollAccessor()) {
       event.preventDefault();
       event.stopPropagation();
       logger.debug('useGalleryScroll: 트위터 스크롤 차단');
@@ -192,7 +198,10 @@ export function useGalleryScroll({
       updateScrollState(false);
       clearScrollTimeout();
       clearDirectionTimeout();
-      setScrollDirection('idle');
+      setScrollState(prev => ({
+        ...prev,
+        direction: 'idle',
+      }));
       return;
     }
 
@@ -223,8 +232,14 @@ export function useGalleryScroll({
       eventManager.cleanup();
       clearScrollTimeout();
       clearDirectionTimeout();
-      setScrollDirection('idle');
-      setIsScrolling(false);
+      setScrollState(prev => ({
+        ...prev,
+        direction: 'idle',
+      }));
+      setScrollState(prev => ({
+        ...prev,
+        isScrolling: false,
+      }));
       logger.debug('useGalleryScroll: 정리 완료');
     });
   });
@@ -234,9 +249,10 @@ export function useGalleryScroll({
     clearDirectionTimeout();
   });
 
+  // Phase 153: 통합 State로부터 개별 Accessors 생성
   return {
-    lastScrollTime,
-    isScrolling,
-    scrollDirection,
+    lastScrollTime: () => scrollState().lastScrollTime,
+    isScrolling: () => scrollState().isScrolling,
+    scrollDirection: () => scrollState().direction,
   };
 }
