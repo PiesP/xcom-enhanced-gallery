@@ -42,26 +42,40 @@
 
 ---
 
-## 📝 Phase 153 계획 (진행 예정)
+## 📝 Phase 153 계획 (진행 중 🚀)
 
-### 목표
+### Step 1: useGalleryScroll 상태 정규화 (완료 ✅)
 
-Gallery Hook들의 상태 변수를 정규화하여 복잡도 감소 및 테스트 용이성 향상
+**커밋**: 9dd6f5ef
 
-**대상 Hook**:
+**변경사항**:
 
-- `useGalleryScroll`: 분산된 스크롤 상태 변수 → 통합 Signal
-- `useProgressiveImage`: 이미지 로딩 상태 정규화
-- `useGalleryKeyboard`: 입력 상태 관리
-- `useGalleryCleanup`: 정리 작업 상태
+- 3개 분산 Signal → 1개 통합 ScrollState Signal
+- `src/shared/state/hooks/scroll-state.ts` 신규 생성
+- 배치 업데이트 적용으로 성능 개선
+- API 역호환성 100% 유지
 
-**기대 효과**:
+**검증**:
 
-- 상태 변수 15~20개 감소 예상
-- 테스트 커버리지 향상
-- 버그 위험 감소
+- ✅ 타입 체크 PASS
+- ✅ 스모크 테스트 14/14 PASS
+- ✅ 빌드 크기 유지 (335.93 KB)
 
-**예상 기간**: 3-4시간
+**효과**:
+
+- Signal 개수: 3개 → 1개 (67% 감소)
+- 상태 업데이트 일관성 향상
+- 타입 안전성 증대
+
+### Step 2-4: 나머지 Hook 최적화 (예정)
+
+**대상**:
+
+- `useProgressiveImage`: 타이머 중앙화
+- `useGalleryCleanup`: Ref → Signal 전환
+- 신규 테스트 5-10개 추가
+
+**예상 기간**: 2-3시간
 
 ---
 
