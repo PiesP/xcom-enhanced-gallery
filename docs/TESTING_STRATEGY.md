@@ -271,6 +271,127 @@ git push
 
 ---
 
+## 🎯 npm run build vs npm test: 우선순위 가이드 (2025-10-24 추가)
+
+### 📌 개요
+
+프로젝트는 **2가지 검증 방식**을 제공합니다:
+
+1. **`npm run build`** (권장 ⭐): 프로덕션 검증 파이프라인
+2. **`npm test`** (개발 편의용): Vitest projects 분리 실행
+
+### 📊 상세 비교
+
+| 항목          | npm run build                                     | npm test                   | 권장 상황 |
+| ------------- | ------------------------------------------------- | -------------------------- | --------- |
+| **실행 범위** | 전체 검증 파이프라인                              | vitest projects 분리       |           |
+| **포함 내용** | typecheck, lint, deps, CodeQL, browser, E2E, a11y | fast + raf-timing projects |           |
+| **신뢰도**    | ✅ 높음 (프로덕션 준비)                           | ⚠️ 낮음 (프로젝트 격리)    |           |
+| **실행 시간** | ~8-10분                                           | ~1-2분 (fast만 시)         |           |
+| **용도**      | CI, 릴리즈 검증                                   | 로컬 개발 피드백           |           |
+| **실패 영향** | 배포 차단                                         | 개발 속도 영향             |           |
+
+### 🔍 상세 설명
+
+#### **npm run build** (권장 - 신뢰도 최우선)
+
+**포함 검증**:
+
+- ✅ TypeScript strict mode (`npm run typecheck`)
+- ✅ ESLint, stylelint (`npm run lint`)
+- ✅ 의존성 검증 (`dependency-cruiser` - 0 violations)
+- ✅ 보안 분석 (`CodeQL` - 5개 custom queries)
+- ✅ 브라우저 테스트 (Vitest + Chromium, 14 파일 111 테스트)
+- ✅ E2E 스모크 테스트 (Playwright, 97 테스트 중 89 통과 권장)
+- ✅ 접근성 테스트 (axe-core, 34 테스트)
+
+**결과**:
+
+- 빌드 크기 검증: 339.65 KB (제한: 420 KB)
+- 산출물 무결성 검증
+- 프로덕션 준비 완료 판정
+
+**사용 시나리오**:
+
+- ✅ CI/CD 파이프라인 (GitHub Actions)
+- ✅ 배포 전 최종 검증
+- ✅ 주요 기능 완료 후 품질 보장
+- ✅ 빌드 크기 추적
+
+#### **npm test** (개발 편의 - 빠른 피드백)
+
+**실행 방식**:
+
+```bash
+npm test  # = vitest --project fast run && npm run test:raf
+```
+
+**특징**:
+
+- fast 프로젝트: 주요 단위 테스트 (빠름, ~30-60초)
+- raf-timing 프로젝트: RAF/포커스 테스트 (격리)
+- vitest projects 분리로 인한 환경 단편화
+
+**제약사항**:
+
+- ⚠️ 프로덕션 E2E 검증 미포함 (하네스 기반만)
+- ⚠️ 접근성 자동 검증 미포함
+- ⚠️ 빌드 크기 검증 미포함
+- ⚠️ 일부 테스트는 프로젝트 격리로 인해 상태 이상 가능
+
+**사용 시나리오**:
+
+- ✅ 개발 중 신속한 피드백 (단위 테스트만)
+- ✅ 특정 기능 검증 (빠른 반복)
+- ✅ 로컬 개발 사이클
+
+### 💡 개발자 가이드 (추천 워크플로우)
+
+#### **일반적인 개발**
+
+```bash
+# 1단계: 기능 개발 중 신속한 피드백
+npm run test:watch -- -t "기능명"  # 1-2초 피드백
+
+# 2단계: PR/리뷰 전 최종 검증
+npm run build  # 8-10분, 모든 검증 포함
+
+# 3단계: 커밋 준비
+git push  # pre-push hook: npm run test:smoke만 자동 실행
+```
+
+#### **버그 수정**
+
+```bash
+# 빠른 검증 → 전체 검증
+npm run test:fast  # 30-60초
+npm run build      # 최종 확인
+```
+
+#### **주요 기능 추가**
+
+```bash
+# 철저한 검증 필요
+npm run build    # 반드시 통과해야 함
+git push -u origin feature/...
+```
+
+### ⚠️ 주의사항
+
+1. **npm test 실패 ≠ 배포 불가**
+   - npm run build 통과면 프로덕션 준비 완료
+   - npm test는 개발 편의용으로만 취급
+
+2. **CI 정책**
+   - CI에서는 `npm run build` 통과 필수
+   - 모든 검증(E2E, a11y)을 자동화
+
+3. **로컬 개발**
+   - npm test로 빠른 피드백
+   - 최종 커밋 전 `npm run build` 확인 권장
+
+---
+
 ## 📚 참고 문서
 
 - **[AGENTS.md](../AGENTS.md)**: E2E 하네스 패턴, Solid.js 반응성 제약사항
