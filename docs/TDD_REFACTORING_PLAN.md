@@ -1,237 +1,186 @@
 # TDD 리팩토링 계획
 
-> xcom-enhanced-gallery 프로젝트의 활성 리팩토링 진행 상황 **현재 Phase**: 163
-> (vitest/Solid.js 호환성) **마지막 업데이트**: 2025-10-24
+> xcom-enhanced-gallery 프로젝트의 활성 리팩토링 진행 상황 **현재 Phase**: 164
+> (테스트 안정화 및 빌드 최적화) **마지막 업데이트**: 2025-10-24
 
 ---
 
 ## 📊 현황 요약
 
-| 항목           | 상태          | 세부                                  |
-| -------------- | ------------- | ------------------------------------- |
-| Build (prod)   | ⚠️ 339.53 KB  | 제한: 337.5 KB (초과 +2.03 KB)        |
-| 전체 테스트    | ✅ 3256/3261  | 포커스 테스트 3개 vitest만 실패       |
-| E2E 테스트     | ✅ 89/97 PASS | Playwright 스모크 통과                |
-| Typecheck/Lint | ✅ PASS       | 모든 검사 완료, CodeQL 통과           |
-| 의존성         | ✅ OK         | 0 violations                          |
-| **현재 Phase** | � 163 계획중  | vitest/Solid.js 호환성 개선 (4-6시간) |
+| 항목           | 상태           | 세부                                           |
+| -------------- | -------------- | ---------------------------------------------- |
+| Build (prod)   | ⚠️ 미빌드      | 빌드 필요 (제한: 337.5 KB)                     |
+| 전체 테스트    | ⚠️ 3209/3234   | 25개 실패 (bundle/signal/service/event policy) |
+| E2E 테스트     | ❓ 미확인      | Playwright 스모크 테스트 실행 필요             |
+| Typecheck/Lint | ✅ PASS        | 모든 검사 완료, CodeQL 통과                    |
+| 의존성         | ✅ OK          | 0 violations                                   |
+| **현재 Phase** | 🔄 164 진행 중 | 테스트 안정화 우선 (2-4시간)                   |
 
 ---
 
-## 📝 Phase 163: vitest + Solid.js 호환성 개선 (계획 중 �)
+## � Phase 164: 테스트 안정화 및 빌드 최적화 (진행 중)
 
 ### 목표
 
-1. **vitest 설정 분리**: fake timers를 특정 테스트 프로젝트로만 격리
-2. **포커스 테스트 복구**: 3개 포커스 테스트 (vitest-only 실패 → PASS)
-3. **빌드 최적화**: 2.03 KB 감소 (339.53 KB → 337.5 KB 이하)
+1. **테스트 안정화**: 25개 실패 테스트 → 0개 (우선순위별 해결)
+2. **빌드 최적화**: 프로덕션 빌드 생성 및 337.5 KB 이하 달성
+3. **E2E 검증**: Playwright 스모크 테스트 전체 통과
 
-### 배경
+### 현재 테스트 상태 (2025-10-24)
 
-**문제**: vitest fake timers와 Solid.js 마이크로태스크 스케줄의 비동기화
+**전체**: 3209 passed / 3234 total (25 failed)
 
-- RAF(requestAnimationFrame) 테스트 3개가 vitest 환경에서만 실패
-- E2E 테스트는 모두 통과 (프로덕션 코드는 정상)
-- 근본 원인: vitest fake timers가 setTimeout(0)을 매크로태스크 앞에 실행,
-  Solid.js 반응성 추적 미준비
+**실패 분류**:
 
-**현황**:
+1. **Bundle Size Policy** (2개) - events.ts 크기 초과
+   - `events.ts` 크기: 29.43 KB (제한 28 KB 초과)
+   - `events.ts` 라인: 962줄 (제한 940줄 초과)
+   - 원인: Phase 158 debounce 추가 후 미조정
 
-- ✅ 프로덕션 코드: E2E 통과 (89/97 PASS)
-- ❌ 테스트 환경: 3개 포커스 테스트 실패 (vitest JSDOM)
-- ⚠️ 빌드 크기: 337.5 KB 한계 초과 (+2.03 KB)
+2. **Signal Accessor Wrapper** (2개) - galleryState Signal 인터페이스
+   - `galleryState` 구조 검증 실패
+   - `useSelector` 직접 선언 검증 실패
+   - 원인: `getSolid()` getter 모킹 누락
+
+3. **CoreService** (11개) - ServiceManager 전체 기능
+   - getInstance/resetInstance 실패
+   - 서비스 등록/조회 실패
+   - 진단/정리 작업 실패
+   - 원인: `CoreService` 클래스 import 누락 또는 리팩토링 반영 안됨
+
+4. **Event Policy** (10개) - Touch/Pointer 이벤트 차단
+   - Touch 이벤트 4개 (touchstart/move/end/cancel)
+   - Pointer 이벤트 6개 (pointerdown/move/up/cancel/enter/leave)
+   - 원인: 이벤트 차단 로직 미구현 또는 테스트 환경 설정 오류
 
 ### 🎯 해결 방안 (우선순위)
 
-#### **High Priority: vitest 설정 분리** (2시간 예상)
+#### **Priority 1: CoreService 테스트 수정** (30분, High Impact)
 
-**목표**: fake timers를 필요한 테스트만으로 격리
+**문제**: ServiceManager 리팩토링 후 테스트 미업데이트
 
-**세부 작업**:
+**조치**:
 
-1. vitest.config.ts projects 검토
+1. `CoreService` import 경로 확인 및 수정
+2. `resetInstance()` 메서드 존재 확인
+3. 테스트 모킹 구조 갱신
 
-   ### Summary of completed work (moved to COMPLETED archive)
-
-   The following Phase 163 items were implemented and verified:
-   - vitest projects refactor: added `raf-timing` project and updated `fast`
-     exclusions
-   - npm scripts: `test:raf`, `test:raf:watch` added
-   - Isolated RAF/focus tests into `raf-timing` project (7 tests)
-   - Verified `fast` and `raf-timing` runs; identified remaining failures (fast:
-     7, raf-timing: 3)
-   - Confirmed E2E smoke passes for production verification (89/97)
-
-   These completed items have been moved to `TDD_REFACTORING_PLAN_COMPLETED.md`.
-
-   ***
-
-   ## Phase 164: Build optimization and test stabilization (next actions)
-
-   Short actionable items to proceed from current state:
-   1. High priority
-      - Fix remaining `fast` test failures (7 tests): investigate
-        Toolbar/Components failures
-      - Fix E2E failure `gallery-events.spec.ts` (forbidden events validation)
-
-   2. Medium priority
-      - Consider migrating RAF tests to browser mode if vitest fake timer
-        incompatibility blocks progress (Option B in previous plan)
-      - Implement `test/utils/raf-test-helpers.ts` to simplify RAF tests
-
-   3. Low priority
-      - Explore build size savings via tree-shaking and dead-code elimination
-        (target ≤ 337.5 KB)
-
-   We will now move the detailed completed logs into the COMPLETED artifact and
-   keep this plan concise. | ----------- | --------- | -------- | ------ | ----
-   | | fast (main) | 3250 | 3243 | 7 | ⚠️ | | raf-timing | 27 | 24 | 3 | ⚠️ | |
-   E2E smoke | 89 | 88 | 1 | ⚠️ | | **전체** | **3366** | **3255** | **11** | ⚠️
-   |
-
-**실패 분석**:
-
-1. fast 프로젝트 실패 (7개):
-   - i18n literal 누출: 1개 (Phase 161a 관련)
-   - 기타 Toolbar/Components: 6개 (미분류)
-
-2. raf-timing 프로젝트 실패 (3개):
-   - useGalleryFocusTracker 중복 방지: 2개
-   - VerticalGalleryView auto-focus: 1개
-   - 원인: vitest fake timers ↔ RAF 타이밍 incompatibility
-
-3. E2E 실패 (1개):
-   - gallery-events.spec.ts: 1개 (forbidden events 검증)
-
-**차기 액션 (Phase 163c+)**:
-
-**High Priority**:
-
-- i18n literal 문제 수정 (1개, 빠름)
-- gallery-events E2E 수정 (1개, 가능성 있음)
-
-**Medium Priority**:
-
-- Toolbar/Components 실패 6개 조사 (원인 파악 필요)
-
-**Low Priority**:
-
-- RAF 테스트 3개: vitest 환경 제약 (장기 프로젝트)
-  - Option: browser 모드 전환 (2-3시간)
-  - Option: fake timers 우회 (1시간, 임시)
-
-**성과 요약**:
-
-✅ 구조 개선:
-
-- vitest projects 명확화 (fast vs raf-timing)
-- npm 스크립트 추가 (test:raf, test:raf:watch)
-- 테스트 격리 완료 (빠른 CI 피드백)
-
-⚠️ 미해결:
-
-- vitest fake timers ↔ RAF 호환성 (3개 테스트, vitest v4.0.1 제약)
-- 추가 실패 테스트 7개 (원인 조사 필요)
-
-✅ 유지:
-
-- 빌드 크기 339.53 KB (동일)
-- E2E 검증 89/97 PASS
-- 코드 품질 (typecheck, lint PASS)
+**예상 결과**: 11개 테스트 복구
 
 ---
 
-## � Phase 164: Build 최적화 및 테스트 안정화 (계획)
+#### **Priority 2: Signal Accessor Wrapper 수정** (20분, Medium Impact)
 
-### 현황
+**문제**: `getSolid()` getter 모킹 누락
 
-- ✅ Phase 163: vitest projects 분리 완료
-- ⚠️ 문제: build 크기 339.53 KB (337.5 KB 초과 +2.03 KB)
-- ⚠️ 문제: vitest 환경 11개 테스트 FAIL (포커스 3개, 기타 7개, E2E 1개)
-- ✅ E2E 기본: 89/97 PASS (production 코드 정상)
+**조치**:
 
-### 목표
+1. `test/setup.ts`에서 `getSolid()` 모킹 추가
+2. `createSignal()` 반환값 정의
+3. Signal 인터페이스 검증 로직 재확인
 
-1. **Build 크기 2.03 KB 감소** (339.53 KB → 337.5 KB 이하)
-2. **테스트 안정화**: vitest 환경 문제 해결 또는 우회
-3. **CI 정상화**: npm test 성공 (exit code 0)
-
-### 해결 방안 (우선순위)
-
-#### **High Priority: Tree-shaking 최적화** (1-2시간)
-
-**전략**: Signal 캐싱 및 unused 코드 제거
-
-1. Phase 162a Signal 캐싱 오버헤드 재검토
-   - `src/features/gallery/hooks/useGalleryFocusTracker.ts` 확인
-   - 불필요한 wrapper 제거
-
-2. Bundle 분석 및 dead code 정리
-   - `npm run build:prod` 크기 재측정
-   - vite 최적화 옵션 검토
-
-3. 검증
-   - build 크기 2+ KB 감소 달성 시 → Phase 163 COMPLETED
-   - 실패 시 → Option B, C 평가
-
-**예상 결과**: 0.5-2 KB 감소 (성공 가능성 중간)
-
-#### **Medium Priority: vitest 환경 문제 우회** (1시간)
-
-**전략**: npm test 성공 처리 (expected fail 허용)
-
-1. package.json test 스크립트 수정
-
-```json
-"test": "vitest --project fast run; npm run test:raf || true"
-```
-
-1. CI에서 raf-timing 실패 무시
-   - fast 프로젝트만 성공 기준
-   - raf-timing은 separate 테스트 (선택)
-
-**평가**: 빠르지만 테스트 신뢰도 저하 (임시 방편)
-
-#### **Low Priority: 브라우저 모드 전환** (4-5시간 장기)
-
-**전략**: 포커스 테스트 7개 → Playwright 브라우저 모드 이동
-
-- JSDOM/vitest fake timers 제약 완전 우회
-- RAF 실제 타이밍 사용
-- 근본 해결
-
-**평가**: 시간 소요 크지만 최고 신뢰도
-
-### 우선 실행 계획
-
-**즉시** (30분):
-
-1. Tree-shaking 최적화 시도
-2. build 크기 재측정
-3. 성공/실패 판정
-
-**성공 시** (30분):
-
-- Phase 163 COMPLETED로 이동
-- npm run build 검증
-- 마무리
-
-**실패 시** (선택):
-
-- Option B 실행 (1시간) - 빠른 CI 복구
-- Option C 계획 (4시간 이상) - 근본 해결
+**예상 결과**: 2개 테스트 복구
 
 ---
 
-## �📈 성공 기준
+#### **Priority 3: Event Policy 구현 확인** (1-2시간, Critical Feature)
 
-| 항목          | 목표               | 현재       | 상태 |
-| ------------- | ------------------ | ---------- | ---- |
-| 테스트 통과율 | 99.9%+ (3259/3261) | 3255/3366  | ⏳   |
-| 빌드 크기     | ≤337.5 KB          | 339.53 KB  | ⚠️   |
-| E2E 테스트    | ≥89/97 PASS        | 88/89 PASS | ✅   |
-| 타입 에러     | 0                  | 0          | ✅   |
-| 린트 에러     | 0                  | 0          | ✅   |
+**문제**: Touch/Pointer 이벤트 차단 정책 미작동
+
+**조치**:
+
+1. `src/shared/utils/event-policy.ts` 구현 확인
+2. `addEventListener` wrapper 검증
+3. 테스트 환경 이벤트 리스너 추적 설정
+
+**예상 결과**: 10개 테스트 복구
+
+---
+
+#### **Priority 4: Bundle Size Policy 조정** (15분, Policy Update)
+
+**문제**: Phase 158 debounce 추가 후 정책 미조정
+
+**조치**:
+
+1. `test/unit/policies/bundle-size-policy.test.ts` 제한값 갱신
+   - 28 KB → 30 KB (또는 events.ts 코드 정리)
+   - 940줄 → 970줄 (또는 리팩토링)
+2. Phase 158 변경사항 문서화
+
+**예상 결과**: 2개 테스트 복구 (정책 조정) 또는 코드 리팩토링 (근본 해결)
+
+---
+
+#### **Priority 5: 빌드 및 E2E 검증** (30분, Final Check)
+
+**조치**:
+
+1. `npm run build:prod` 실행
+2. 빌드 크기 확인 (≤ 337.5 KB 목표)
+3. `npm run e2e:smoke` 실행
+4. 모든 검증 통과 확인
+
+**예상 결과**: 프로덕션 준비 완료
+
+---
+
+### 📅 실행 계획 (총 3-4시간)
+
+**즉시 실행** (1.5시간):
+
+1. CoreService 테스트 수정 (30분)
+2. Signal Accessor Wrapper 수정 (20분)
+3. Bundle Size Policy 조정 (15분)
+4. 중간 검증: `npm test` (5분)
+
+**후속 작업** (1.5-2시간):
+
+1. Event Policy 구현 확인 및 수정 (1-2시간)
+2. 최종 검증: `npm test` + `npm run build` + `npm run e2e:smoke` (30분)
+
+**성공 조건**:
+
+- ✅ 전체 테스트 3234/3234 PASS (100%)
+- ✅ 프로덕션 빌드 ≤ 337.5 KB
+- ✅ E2E 스모크 테스트 전체 통과
+
+---
+
+## 📋 Phase 163: vitest Projects 분리 (완료됨 ✅)
+
+**완료 항목**:
+
+- vitest.config.ts에 `raf-timing` 프로젝트 추가
+- npm scripts 추가: `test:raf`, `test:raf:watch`
+- RAF/포커스 테스트 격리 (7개 테스트)
+- 빠른 CI 피드백을 위한 테스트 분할 구조 확립
+
+**미해결**:
+
+- vitest fake timers ↔ Solid.js 반응성 호환성 (장기 과제)
+- 일부 테스트 실패는 Phase 164에서 해결 예정
+
+**상세 기록**: `TDD_REFACTORING_PLAN_COMPLETED.md` 참조
+
+---
+
+## 📈 성공 기준 (Phase 164)
+
+| 항목          | 목표             | 현재      | 상태 |
+| ------------- | ---------------- | --------- | ---- |
+| 테스트 통과율 | 100% (3234/3234) | 3209/3234 | ⚠️   |
+| 빌드 크기     | ≤337.5 KB        | 미빌드    | ⚠️   |
+| E2E 테스트    | 전체 PASS        | 미확인    | ❓   |
+| 타입 에러     | 0                | 0         | ✅   |
+| 린트 에러     | 0                | 0         | ✅   |
+
+**실패 테스트 상세**:
+
+- Bundle Size Policy: 2개 (events.ts 크기/라인 초과)
+- Signal Accessor: 2개 (getSolid 모킹 누락)
+- CoreService: 11개 (ServiceManager 테스트 전체)
+- Event Policy: 10개 (Touch/Pointer 차단 검증)
 
 ---
 
@@ -246,4 +195,23 @@
 
 ---
 
-**다음 단계**: Phase 164 실행 (Build 최적화)
+## 🎯 다음 단계
+
+**즉시 실행 권장** (Priority 1-2, 총 50분):
+
+1. CoreService 테스트 수정 → 11개 복구
+2. Signal Accessor Wrapper 수정 → 2개 복구
+3. Bundle Size Policy 조정 → 2개 복구
+
+**목표**: 15/25개 테스트 복구하여 95%+ 통과율 달성
+
+**후속 작업** (Priority 3-5):
+
+- Event Policy 구현 확인 (Critical Feature, 1-2시간)
+- 빌드 및 E2E 최종 검증 (30분)
+
+**Phase 164 완료 기준**:
+
+- ✅ 전체 테스트 100% PASS (3234/3234)
+- ✅ 프로덕션 빌드 생성 및 크기 검증 (≤ 337.5 KB)
+- ✅ E2E 스모크 테스트 전체 통과
