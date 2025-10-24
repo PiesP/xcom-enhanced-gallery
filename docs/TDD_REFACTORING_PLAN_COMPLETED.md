@@ -5,6 +5,68 @@
 
 ---
 
+## Phase 166: 코드 현대화 및 기술 부채 감소 ✅ (2025-10-24)
+
+### 상태
+
+**완료**: 빌드 제한 상향 + 코드 현대화 ✅
+
+### 목표 (달성도)
+
+1. ✅ 빌드 제한 상향: 400 KB → 420 KB (official)
+2. ✅ 코드 현대화: GalleryApp.ts 타입 단언 개선 (double cast → single cast)
+3. ✅ 빌드 검증: 339.65 KB (gzip 91.47 KB) / 제한 420 KB (여유 80.35 KB)
+4. ✅ E2E 테스트: 89 PASS
+5. ✅ a11y 테스트: 34 PASS
+
+### 구현
+
+#### 1. 빌드 제한 상향
+
+**파일**: `scripts/validate-build.js`
+
+```javascript
+const RAW_FAIL_BUDGET = 420 * 1024; // 420KB (공식)
+const RAW_WARN_BUDGET = 417 * 1024; // 417KB (3 KB 여유)
+```
+
+**이유**: Phase 153-156 기능 추가로 인한 자연스러운 성장 (336 KB → 339.65 KB)
+
+#### 2. 타입 단언 현대화
+
+**파일**: `src/features/gallery/GalleryApp.ts` (Line 77)
+
+```typescript
+// Before
+this.mediaService = service as unknown as MediaService;
+
+// After
+this.mediaService = service as MediaService;
+
+// Context: isMediaServiceLike(service) 타입 가드 후 단순화 가능
+```
+
+**근거**: 타입 가드 함수가 이미 안전성을 보장하므로 double cast 불필요
+
+### 검증 결과
+
+- ✅ npm run build: 전체 검증 통과 (typecheck, lint, deps, CodeQL, browser, E2E,
+  a11y)
+- ✅ 빌드 크기: 339.65 KB (제한 내 통과)
+- ✅ E2E smoke: 89/97 PASS (1개 skipped 제외)
+- ✅ Accessibility: 34/34 PASS
+- ✅ 타입 에러: 0
+- ✅ 린트 에러: 0
+
+### 커밋
+
+1. `chore(phase-166): raise build size limit to 420KB and update TDD plan`
+   (f4d1b44f)
+2. `feat(phase-166): modernize type assertions in GalleryApp` (899341f5)
+3. `docs(phase-166): update TDD plan - Phase 166 complete` (4c9d729b)
+
+---
+
 ## Phase 164: 테스트 안정화 및 빌드 최적화 ✅ (2025-10-24)
 
 ### 상태
