@@ -108,11 +108,11 @@ export class BulkDownloadService extends BaseServiceImpl {
       if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       const blob = await response.blob();
       download.downloadBlob(blob, filename);
-      logger.debug(`Downloaded: ${filename}`);
+      logger.debug(`[BulkDownloadService] Downloaded: ${filename}`);
       return { success: true, status: 'success', filename };
     } catch (error) {
       const message = getErrorMessage(error);
-      logger.error(`Download failed: ${message}`);
+      logger.error(`[BulkDownloadService] Download failed: ${message}`);
       const status: BaseResultStatus = message.toLowerCase().includes('cancel')
         ? 'cancelled'
         : 'error';
@@ -338,7 +338,7 @@ export class BulkDownloadService extends BaseServiceImpl {
       return result;
     } catch (error) {
       const message = getErrorMessage(error);
-      logger.error(`ZIP download failed: ${message}`);
+      logger.error(`[BulkDownloadService] ZIP download failed: ${message}`);
       const lowered = message.toLowerCase();
       const status: BaseResultStatus = lowered.includes('cancel') ? 'cancelled' : 'error';
       return {
@@ -369,7 +369,7 @@ export class BulkDownloadService extends BaseServiceImpl {
       return;
     }
     this.currentAbortController.abort();
-    logger.debug('Current download cancelled');
+    logger.debug('[BulkDownloadService] Current download cancelled');
     toastManager.info(
       languageService.getString('messages.download.cancelled.title'),
       languageService.getString('messages.download.cancelled.body')

@@ -666,7 +666,7 @@ export class MediaService extends BaseServiceImpl {
 
   public cancelDownload(): void {
     this.currentAbortController?.abort();
-    logger.debug('Current download cancelled');
+    logger.debug('[MediaService] Current download cancelled');
   }
 
   public isDownloading(): boolean {
