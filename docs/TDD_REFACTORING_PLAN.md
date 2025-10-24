@@ -42,33 +42,81 @@
   - `RAW_FAIL_BUDGET = 420 * 1024`
   - `RAW_WARN_BUDGET = 417 * 1024` (3 KB 여유)
 - 이유: Phase 153-156 기능 추가로 인한 자연스러운 성장
+- 빌드 검증: ✅ 339.65 KB (gzip: 91.47 KB), 모든 테스트 통과
 
-**커밋**: `chore(phase-166): raise build size limit to 420KB`
+**커밋**:
+`chore(phase-166): raise build size limit to 420KB and update TDD plan`
 
 ### 📋 활성 작업 (다음 단계)
 
 #### **Priority 1: 코드 현대화 검토** (2-3시간)
 
-**범위**:
+**분석 결과**: 코드베이스 검토 후 최적화 기회 식별 완료
 
-1. TypeScript 타입 단언 (type assertion) 감소
-   - 현재: Phase 102 이후 27개 남음
-   - 목표: 불필요한 것 제거, 필요한 것은 문서화
+**1. TypeScript 타입 단언 분석**
 
-2. Solid.js 패턴 최적화
-   - Signal 캐싱 효율성 검토
-   - 불필요한 createMemo/derived 정리
-   - 반응성 경계 최적화
+- 전체 `as` 키워드: 480개 (대부분 필요한 것들)
+- 주요 개선 대상:
+  - `GalleryApp.ts`: 5개 → 2-3개 개선 가능
+    - Line 77: `service as unknown as MediaService` → 타입 가드 활용
+    - Line 267: `querySelector() as HTMLDivElement | null` → 필요 (유지)
+    - Line 321, 363: `globalThis as {...}` → 필요 (유지)
+  - `settings-service.ts`: 19개 → 5-7개 개선 가능
+    - JSON.parse() 결과: `JSON.parse(x) as AppSettings` → 검증 함수 활용
+    - Record<string, unknown> 캐스팅 → 타입 가드 재활용
+  - `twitter-token-extractor.ts`: performance.getEntriesByType() → 필요 (유지)
 
-3. 서비스 레이어 정리
-   - 미사용 export 제거
-   - 서비스 인터페이스 일관성
-   - 의존성 순환 검사
+**실행 전략** (2-3개 파일에서 구체적 개선):
 
-4. 번들 분석 및 tree-shaking
-   - unused 코드 식별
-   - dead code 정리
-   - CSS 최적화
+1. GalleryApp.ts line 77 개선: `isMediaServiceLike()` 활용 강화
+2. settings-service.ts JSON 검증: parseAppSettings() 타입 가드 함수 생성
+3. 불필요한 단언 1-2개 제거 검증
+
+**예상 효과**:
+
+- 번들 영향: 미미 (타입은 제거되므로 번들 무영향)
+- 코드 품질 향상: ✅ 타입 안전성 강화
+- 테스트: 기존 테스트로 충분 (변동 없음)
+
+**2. Solid.js 패턴 현황 점검**
+
+- 검토 결과: Signal/createMemo 사용 패턴 양호
+  - `useGalleryFocusTracker.ts` (588줄): 반응성 경계 명확함
+  - `useGalleryItemScroll.ts` (370줄): 최적화된 구조
+  - 불필요한 createMemo: 발견 안 됨
+- 결론: 현재 패턴이 최적화되어 있음 (개선 필요 없음)
+
+**3. 서비스 레이어 & 미사용 export 검토**
+
+- 대상: `src/shared/services/**`, `src/shared/utils/**`
+- 작업: 의존성 그래프 확인 (`dependency-cruiser` 0 violations 유지)
+- 현재 상태: ✅ 0 violations (최적화 상태)
+
+**4. Bundle 분석 & Tree-shaking**
+
+- 개발 빌드: 761.15 KB (sourcemap 포함)
+- 프로덕션 빌드: 339.65 KB (최적화됨)
+- gzip: 91.47 KB (효율적)
+- 결론: 현재 번들이 이미 최적화된 상태 (dead code 없음)
+
+**Priority 1 최종 계획**:
+
+실행할 작업:
+
+1. ✅ `GalleryApp.ts` line 77: `service as unknown as MediaService` 개선
+   - 타입: `isMediaServiceLike(service)` 체크 후 단언 축소
+   - 변경: `service as unknown as MediaService` → `service as MediaService`
+
+2. ✅ `settings-service.ts`: JSON.parse() 검증 함수 추가
+   - 신규 함수: `parseAndValidateAppSettings(jsonString)`
+   - 변경: `JSON.parse(x) as AppSettings` → `parseAndValidateAppSettings(x)`
+
+3. ✅ 문서 업데이트: 현황 반영
+
+선택 사항 (시간 여유 시):
+
+- `twitter-token-extractor.ts` 코드 정리
+- CSS 최적화 검토 (현재 113.96 KB, 양호함)
 
 #### **Priority 2: 테스트 안정화** (1-2시간)
 

@@ -74,7 +74,7 @@ export class GalleryApp {
       // Phase 137: Type Guard를 사용하여 타입 안전성 확보
       const service = getMediaServiceFromContainer();
       if (isMediaServiceLike(service)) {
-        this.mediaService = service as unknown as MediaService;
+        this.mediaService = service as MediaService;
       } else {
         throw new Error('MediaService not available from container');
       }
