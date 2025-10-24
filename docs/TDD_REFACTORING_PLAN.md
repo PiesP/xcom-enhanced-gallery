@@ -1,20 +1,20 @@
 # TDD 리팩토링 계획
 
-> xcom-enhanced-gallery 프로젝트의 활성 리팩토링 진행 상황 **현재 Phase**: 168
-> (번들 최적화 평가) **마지막 업데이트**: 2025-10-24
+> xcom-enhanced-gallery 프로젝트의 활성 리팩토링 진행 상황 **현재 Phase**: 169
+> (성능 유틸리티 정리) **마지막 업데이트**: 2025-10-24
 
 ---
 
 ## 📊 현황 요약
 
-| 항목           | 상태         | 세부                                  |
-| -------------- | ------------ | ------------------------------------- |
-| Build (prod)   | ✅ 339.65 KB | 빌드 성공, 제한(420 KB) 여유 80.35 KB |
-| npm run build  | ✅ PASS      | E2E 89/97 PASS, a11y 34/34 PASS       |
-| npm test       | ✅ PASS      | fast + raf-timing 프로젝트 분리 운영  |
-| Typecheck/Lint | ✅ PASS      | 모든 검사 완료, CodeQL 통과           |
-| 의존성         | ✅ OK        | 0 violations                          |
-| **현재 Phase** | � 168 준비중 | 번들 최적화 및 내보내기 정책 평가     |
+| 항목           | 상태          | 세부                                  |
+| -------------- | ------------- | ------------------------------------- |
+| Build (prod)   | ✅ 339.65 KB  | 빌드 성공, 제한(420 KB) 여유 80.35 KB |
+| npm run build  | ✅ PASS       | E2E 89/97 PASS, a11y 34/34 PASS       |
+| npm test       | ✅ PASS       | fast + raf-timing 프로젝트 분리 운영  |
+| Typecheck/Lint | ✅ PASS       | 모든 검사 완료, CodeQL 통과           |
+| 의존성         | ✅ OK         | 0 violations                          |
+| **현재 Phase** | 📋 169 준비중 | 성능 유틸리티 정리 (3-4 KB 절감)      |
 
 ---
 
@@ -65,30 +65,77 @@
 
 ---
 
+## ✅ Phase 168: 번들 최적화 분석 (완료 2025-10-24)
+
+**상태**: ✅ 분석 완료 → Phase 169로 이관
+
+**분석 결과**:
+
+1. ✅ 배럴 파일 분석 완료
+2. ✅ 미사용 export 식별 (3-4 KB 절감 기회)
+3. ✅ Tree-shaking 기회 평가
+4. ✅ Phase 169 계획 수립
+
+**식별된 미사용 Export**:
+
+- `measurePerformance` (0.5 KB)
+- `measureAsyncPerformance` (0.6 KB)
+- `idle-scheduler.ts` 전체 (1-2 KB) - 유저스크립트에 부적합
+- `getCSSVariable` / `applyTheme` (0.7 KB)
+
+**예상 절감**: 3-4 KB (339.65 KB → 335-336 KB)
+
+**세부 분석**: `docs/temp/phase-169-bundle-optimization-analysis.md` 참고
+
+---
+
+## 📋 Phase 169: 성능 유틸리티 정리 (준비 단계)
+
+---
+
 ## � Phase 168: 번들 최적화 및 내보내기 정책 평가 (준비 단계)
 
-**상태**: 📋 계획 수립 (2025-10-24)
+## 📋 Phase 169: 성능 유틸리티 정리 (준비 단계)
+
+**상태**: 🎯 계획 수립 (2025-10-24)
 
 **목표**:
 
-1. 번들 여유도 분석 (420 KB 대 339.65 KB = 80.35 KB 여유)
-2. 미사용 export 정책 수립 (배럴 표면 축소)
-3. Tree-shaking 기회 평가
-4. 다음 우선순위 결정
+1. 미사용 유틸리티 제거 (measurePerformance, idle-scheduler)
+2. 번들 크기 3-4 KB 추가 절감
+3. 코드 명확성 개선 (배럴 표면 축소)
 
-**고려 사항**:
+**TDD 액션**:
 
-- 현재 빌드: 339.65 KB (제한: 420 KB)
-- Phase 166/167 완료로 80.35 KB의 충분한 여유 확보
-- 메인테넌스 모드 vs 추가 최적화 선택 시점
-- 번들 크기 정책 재평가 가능 (425-430 KB 상향 여부)
+- [ ] RED: 미사용 함수 제거 테스트 작성
+- [ ] GREEN: 함수 정의 삭제 + 배럴 정리
+- [ ] REFACTOR: 테스트 업데이트 + 문서화
 
-**차기 액션**:
+**예상 효과**:
 
-- [ ] 배럴 파일(`index.ts`) 분석 (미사용 export 검사)
-- [ ] Tree-shaking 가능성 평가 (vendor 조건부 import)
-- [ ] 성능/메모리 유틸리티 재검토 (Phase 134 후속)
-- [ ] 문서/커뮤니티 피드백 수집
+- 절감: 3-4 KB (339.65 KB → 335-336 KB)
+- 신뢰도: 높음 (0 사용처 검증됨)
+- 난이도: 낮음
+- 비용: 1-2시간
+
+**대상 파일**:
+
+- `src/shared/utils/performance/idle-scheduler.ts` (제거)
+- `src/shared/utils/performance/performance-utils.ts` (함수 제거)
+- `src/shared/utils/styles/style-utils.ts` (함수 제거)
+- `src/shared/utils/performance/index.ts` (import 정리)
+
+---
+
+## 📚 참고 문서
+
+- [AGENTS.md](../AGENTS.md) - 프로젝트 개발 환경, 테스트 전략
+- [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) - Testing Trophy, vitest
+  projects, npm run build vs npm test
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - 3계층 구조
+- [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) - 코딩 규칙 & 정책
+- [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) -
+  Phase 159-168 완료 기록
 
 ---
 
