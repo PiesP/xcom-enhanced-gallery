@@ -10,6 +10,13 @@
  */
 
 import type { JSXElement } from '@shared/external/vendors';
+import type {
+  BulkDownloadServiceType,
+  FilenameServiceType,
+  ThemeServiceType,
+  VideoControlServiceType,
+  ToastControllerType,
+} from './core/core-types';
 
 // ================================
 // 기본 서비스 인터페이스
@@ -92,13 +99,9 @@ export interface ServiceConfig<T = unknown> {
 export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
 
-// 서비스 타입 매핑
-export type BulkDownloadServiceType = unknown;
-export type FilenameServiceType = unknown;
-export type ThemeServiceType = unknown;
-export type VideoControlServiceType = unknown;
-export type ToastControllerType = unknown;
-
+/**
+ * 서비스 타입 매핑 (상세 타입은 core-types.ts 참조)
+ */
 export interface ServiceTypeMapping {
   'core.bulkDownload': BulkDownloadServiceType;
   'media.filename': FilenameServiceType;

@@ -51,13 +51,47 @@ export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
 
 /**
- * 서비스 타입 매핑 (Infrastructure 서비스들)
- * @note Dynamic imports removed to prevent circular dependencies
- * BulkDownloadService, FilenameService 등은 구체적 사용 시점에 import
+ * BulkDownloadService 타입 (순환 의존성 방지)
  */
-// Circular dependency prevention: defer service type imports to point of use
-// See: DownloadOrchestrator -> BaseServiceImpl -> app.types -> core-types -> BulkDownloadService
-export type BulkDownloadServiceType = unknown; // Defer to service/bulk-download-service.ts
+export interface BulkDownloadServiceType extends BaseService {
+  downloadSingle(
+    media: MediaInfo,
+    options?: { signal?: AbortSignal }
+  ): Promise<{
+    success: boolean;
+    status: 'success' | 'error' | 'cancelled';
+    filename?: string;
+    error?: string;
+  }>;
+
+  downloadMultiple(
+    mediaItems: readonly MediaInfo[],
+    options?: {
+      onProgress?: (progress: {
+        phase: string;
+        current: number;
+        total: number;
+        percentage: number;
+      }) => void;
+      signal?: AbortSignal;
+      zipFilename?: string;
+      concurrency?: number;
+      retries?: number;
+    }
+  ): Promise<{
+    success: boolean;
+    status: 'success' | 'error' | 'cancelled';
+    filesProcessed: number;
+    filesSuccessful: number;
+    error?: string;
+    filename?: string;
+  }>;
+}
+
+/**
+ * 서비스 타입 매핑 (Infrastructure 서비스들)
+ * @note 순환 의존성 방지를 위해 미사용 타입은 제거됨
+ */
 export type FilenameServiceType = unknown;
 export type ThemeServiceType = unknown;
 export type VideoControlServiceType = unknown;
