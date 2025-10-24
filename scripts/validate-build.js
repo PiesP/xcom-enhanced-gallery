@@ -204,8 +204,9 @@ function validateUserScript() {
   // Phase 152: 링크 미리보기 이미지 감지 기능 추가 (+0.93 KB)
   // Phase 153: useGalleryScroll 상태 정규화 (+0.22 KB)
   // Phase 155: 임시 번들 크기 제한 상향 조정 (336KB → 400KB)
-  const RAW_FAIL_BUDGET = 400 * 1024; // 400KB (임시)
-  const RAW_WARN_BUDGET = 397 * 1024; // 397KB (3 KB 여유)
+  // Phase 166: 빌드 크기 제한 공식 상향 (400KB → 420KB)
+  const RAW_FAIL_BUDGET = 420 * 1024; // 420KB
+  const RAW_WARN_BUDGET = 417 * 1024; // 417KB (3 KB 여유)
 
   if (rawBytes > RAW_FAIL_BUDGET) {
     console.error(
