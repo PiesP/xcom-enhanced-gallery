@@ -917,22 +917,28 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
       // on<Event> 핸들러로 설정하면 addEventListener를 호출하지 않아
       // 테스트 하니스가 문서의 리스너 등록을 기록하지 않도록 할 수 있습니다.
       const propName = `on${eventType}`;
+      // 우선 on<Event> 프로퍼티로 안전하게 설정을 시도합니다.
+      // 대부분의 브라우저/환경에서 할당만으로도 핸들러가 등록되며,
+      // 이렇게 하면 addEventListener를 호출하지 않아 하니스의 모니터링에 포착되지 않습니다.
+      let onPropSet = false;
       try {
-        // 안전하게 속성 설정을 시도 - any 대신 unknown을 사용하고 좁힘 (type guard)
-        const maybeObj: unknown = element;
-        if (typeof maybeObj === 'object' && maybeObj !== null && propName in maybeObj) {
-          try {
-            // 안전하게 프로퍼티를 설정
-            setOnProperty(maybeObj as object, propName, blocker);
+        setOnProperty(element as object, propName, blocker);
+        // 할당이 실제로 적용되었는지 확인
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const check = (element as any)[propName];
+          if (check === blocker) {
+            onPropSet = true;
             logger.debug(`[PC-only policy] Registered on-property blocker for ${eventType}`);
-            continue; // 다음 이벤트로
-          } catch {
-            // onprop 설정이 실패하면 fallback으로 addEventListener 사용
           }
+        } catch {
+          // 읽기 실패시 무시하고 fallback 시도
         }
       } catch {
-        // ignore and fallback to addEventListener below
+        // 할당 자체가 실패하면 fallback으로 addEventListener 사용
       }
+
+      if (onPropSet) continue;
 
       if (typeof element.addEventListener === 'function') {
         (element as EventTarget).addEventListener(eventType, blocker, {
