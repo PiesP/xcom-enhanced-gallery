@@ -5,6 +5,97 @@
 
 ---
 
+## Phase 170A: 비즈니스 로직 단순화 - Part 1 ✅ (2025-10-24)
+
+### 상태
+
+**완료**: 코드 명확성 개선 및 상태 관리 단순화 ✅
+
+### 목표 (달성도)
+
+1. ✅ 타입 추상화 제거: `BulkDownloadServiceType = unknown` → 구체적 인터페이스
+2. ✅ 상태 변수 최소화: `cancelToastShown` 플래그 제거
+3. ✅ 빌드 크기 유지: 339.51 KB (전: 339.65 KB)
+4. ✅ 모든 테스트 GREEN (smoke 통과, build 통과)
+
+### 구현 사항
+
+#### 1. 타입 추상화 제거 (Quick Win)
+
+**파일**: `src/shared/types/core/core-types.ts`
+
+```typescript
+// Before
+export type BulkDownloadServiceType = unknown; // Defer to service/bulk-download-service.ts
+
+// After
+export interface BulkDownloadServiceType extends BaseService {
+  downloadSingle(media: MediaInfo, options?: { signal?: AbortSignal }): Promise<...>;
+  downloadMultiple(mediaItems: readonly MediaInfo[], options?: {...}): Promise<...>;
+}
+```
+
+**효과**:
+
+- IDE 타입 추론 개선
+- 서비스 호출자가 명확한 메서드 시그니처 확인
+- 순환 의존성 방지 유지
+
+#### 2. BulkDownloadService 상태 단순화
+
+**파일**: `src/shared/services/bulk-download-service.ts`
+
+```typescript
+// Before
+private currentAbortController: AbortController | undefined;
+private cancelToastShown = false; // ← 제거됨
+
+// After: abort listener에 { once: true } 옵션 추가
+options.signal.addEventListener('abort', () => {
+  this.currentAbortController?.abort();
+  toastManager.info(...); // 한 번만 실행됨
+}, { once: true });
+```
+
+**효과**:
+
+- 상태 변수 1개 제거
+- 코드 복잡도 감소
+- 부수 효과(side effect) 명확화
+
+### 테스트 갱신
+
+- `bulk-download-service.test.ts`: cancelToastShown 관련 테스트 제거 및 abort
+  동작 테스트 추가
+- `phase-b3-2-3-bulk-download-service-coverage.test.ts`: 비효과적 테스트 3개
+  제거
+
+### 검증 결과
+
+- ✅ npm run typecheck: 통과
+- ✅ npm run lint: 통과
+- ✅ npm run test:smoke: 통과
+- ✅ npm run build: 339.51 KB (gzip 91.44 KB) → 빌드 크기 증가 없음
+- ✅ E2E 테스트: 모두 통과
+- ✅ a11y 테스트: 34 PASS
+
+### 커밋
+
+1. `refactor(phase-170a): replace abstract type unknowns with concrete BulkDownloadServiceType interface`
+   (6096b588)
+2. `refactor(phase-170a): simplify BulkDownloadService state management`
+   (9ae9835f)
+
+### 향후 계획
+
+Phase 170A 계속:
+
+- 로깅 중복 제거 및 단순화
+- 비동기 에러 처리 패턴 통일
+- 상태 신호 스코프 명확화
+
+---
+
 ## Phase 167: 테스트 정책 재평가 및 최적화 ✅ (2025-10-24)
 
 ### 상태
