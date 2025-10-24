@@ -50,291 +50,44 @@
 **세부 작업**:
 
 1. vitest.config.ts projects 검토
-   - 기본 프로젝트: fake timers 비활성화
-   - RAF 테스트만 별도 프로젝트 생성 (e.g., `raf-timing`)
-2. 3개 포커스 테스트를 RAF 프로젝트로 이동
-   - `use-gallery-focus-tracker-deduplication.test.ts`
-   - `VerticalGalleryView.auto-focus-on-idle.test.tsx`
-3. 테스트 검증
-   - `npm run test` (기본): fake timers 없음 → 더 빠름
-   - `npm run test:raf` (선택): fake timers 활성화 → RAF 테스트 전용
 
-**예상 효과**:
-
-- ✅ 3개 포커스 테스트 PASS (vitest 환경도 통과)
-- ✅ 일반 테스트 성능 ↑ (fake timers 오버헤드 제거)
-- ✅ 빌드 크기 1-2 KB 감소 (최적화 여지 발생)
-
-**난이도**: 낮음-중간#### **Medium Priority: 테스트 유틸 개발** (2-3시간)
-
-**목표**: RAF 환경 테스트 작성 간소화
-
-**세부 작업**:
-
-1. `test/utils/raf-test-helpers.ts` 생성
-
-   ```typescript
-   // Solid.js Signal 업데이트 대기
-   export async function waitForSignal<T>(
-     signal: () => T,
-     predicate: (val: T) => boolean
-   );
-
-   // RAF 테스트 매크로
-   export function defineRafTest(name: string, fn: () => Promise<void>);
-   ```
-
-2. 포커스 테스트 리팩토링
-   - 반복되는 RAF/Signal 동기화 패턴 제거
-   - 테스트 코드 가독성 ↑
-
-3. E2E 하네스 문서화
-   - `playwright/harness/` Remount 패턴 명확화
-
-**예상 효과**:
-
-- ✅ 향후 RAF 테스트 작성 시간 50% 단축
-- ✅ 테스트 코드 유지보수성 ↑
-
-**난이도**: 중간
-
-#### **Low Priority: E2E 포커스 확대** (1-2시간 선택)
-
-**목표**: Playwright 포커스 시나리오 강화 (필요시)
-
-**세부 작업**:
-
-- Playwright 포커스 검증 추가
-- E2E를 Integration 테스트 일부 대체
-
----
-
-## 📋 실행 계획 (이번 세션)
-
-### **163a: vitest 설정 분석** (완료 ✅)
-
-**체크리스트**:
-
-- [x] vitest.config.ts 현재 projects 구조 확인
-- [x] fake timers 사용 위치 파악
-- [x] RAF 관련 테스트 3개 식별 및 검증
-
-**분석 결과**:
-
-**현재 vitest projects 구조** (vitest.config.ts, 라인 245-515):
-
-- `smoke`: 초고속 스모크 (4개 테스트)
-- `fast`: 빠른 단위 테스트 (RED 제외, 3252 테스트, **3 실패**)
-- `unit`: 전체 단위 테스트
-- `features`: Features 레이어 테스트
-- `styles`: 스타일/토큰 테스트
-- `performance`: 성능/벤치마크 테스트
-- `phases`: 단계별(phase-\*) 테스트
-- `refactor`: 리팩토링 테스트
-- `browser`: Playwright 브라우저 테스트 (Solid.js 반응성 수정용)
-
-**fake timers 사용 위치** (현재 조사 결과):
-
-기본 test 설정 (전체 환경)에서 **fake timers 설정 없음**. 개별 테스트 파일에서만
-`vi.useFakeTimers()` 호출:
-
-- `animation-service.test.ts` (16개 케이스)
-- `keyboard-debounce.test.ts`
-- `media-prefetch.raf-schedule.test.ts`
-- `throttle.test.ts`
-- **포커스 테스트들** (3개 파일):
-  - `use-gallery-focus-tracker-deduplication.test.ts` (라인 20)
-  - `VerticalGalleryView.auto-focus-on-idle.test.tsx` (라인 26)
-  - `use-gallery-focus-tracker-settling.test.ts` (라인 16)
-  - `use-gallery-focus-tracker-observer-lifecycle.test.ts` (라인 19)
-  - `use-gallery-focus-tracker-events.test.ts` (라인 19)
-  - `use-gallery-focus-tracker-global-sync.test.ts` (라인 40)
-  - `VerticalGalleryView.focus-tracking.test.tsx` (라인 20)
-
-**RAF 호환성 문제** (Phase 162 진단 결과):
-
-vitest fake timers는 RAF(requestAnimationFrame) 콜백을 적절한 마이크로태스크
-타이밍 **이전에** 실행:
-
-```
-vitest fake timers timeline:
-1. setTimeout(0) → 즉시 실행
-2. RAF callback → 호출됨
-3. Microtask queue (Promise, queueMicrotask) → 나중에 처리
-```
-
-문제: Solid.js는 RAF 배칭 내 Signal 업데이트를 다음 마이크로태스크에서 처리
-예상:
-
-```
-Solid.js expected:
-1. RAF callback 등록 (batching 시작)
-2. Microtask queue 처리 (Signal 업데이트 flush)
-3. 다음 프레임
-```
-
-결과: **vitest 환경에서만 3개 포커스 테스트 FAIL** (E2E 환경에서는 PASS)
-
-**현재 테스트 상태** (npm run test:fast 결과):
-
-```
-Test Files  3 failed | 259 passed (262)
-      Tests  4 failed | 3252 passed | 5 skipped (3261)
-```
-
-실패 테스트:
-
-1. ❌ `use-gallery-focus-tracker-deduplication.test.ts`: manual focus 동기화 2개
-   케이스 실패
-   - "1 tick 이후 handleItemFocus 호출" (라인 80)
-   - "handleItemBlur와 handleItemFocus 비동기 처리" (라인 107)
-
-2. ❌ `VerticalGalleryView.auto-focus-on-idle.test.tsx`: 자동 포커스 동기화 1개
-   케이스 실패
-   - "아이템 1이 보이고 선택 해제되면 자동 포커스 item 2로 이동" (라인 235)
-
-3. ❌ `i18n.message-keys.test.ts`: 리터럴 누출 1개 케이스 실패 (Phase 161a 관련)
-   - `item-scroll-state.ts`에서 발견
-
-**근본 원인 확인** (Phase 162 완료):
-
-- ✅ Production 코드 정상: E2E smoke 테스트 89/97 PASS
-- ✅ vitest fake timers 제약: Solid.js 마이크로태스크 호환성 문제
-- ✅ Phase 162a 시도 (Promise.resolve() 추가): 실패 (환경 제약)
-- ✅ 해결책: fake timers를 별도 프로젝트로 격리 (Phase 163b)
-
-### **163b: vitest 설정 분리** (진행 중 → 완료 ✅)
-
-**체크리스트**:
-
-- [x] 새로운 `raf-timing` 프로젝트 생성
-- [x] 3개 포커스 테스트 이동 (7개 RAF 관련 테스트 포함)
-- [x] npm run test 및 npm run test:raf 검증
-- [x] 빌드 크기 측정
-
-**구현 결과**:
-
-**vitest.config.ts 수정** (라인 476-542):
-
-- `raf-timing` 프로젝트 추가 (포커스/RAF 타이밍 테스트 전용)
-- 포함 테스트 경로 7개:
-  - `use-gallery-focus-tracker-deduplication.test.ts`
-  - `VerticalGalleryView.auto-focus-on-idle.test.tsx`
-  - `use-gallery-focus-tracker-settling.test.ts`
-  - `use-gallery-focus-tracker-observer-lifecycle.test.ts`
-  - `VerticalGalleryView.focus-tracking.test.tsx`
-  - `use-gallery-focus-tracker-events.test.ts`
-  - `use-gallery-focus-tracker-global-sync.test.ts`
-
-**fast 프로젝트 수정** (라인 270-321):
-
-- exclude 목록에 raf-timing 테스트 7개 추가
-- 결과: 3257 테스트 → 3250 테스트로 감소 (7개 제외)
-
-**package.json npm 스크립트 추가**:
-
-```json
-"test": "vitest --project fast run && npm run test:raf",
-"test:fast": "vitest --project fast run",
-"test:raf": "vitest --project raf-timing run",
-"test:raf:watch": "vitest --project raf-timing",
-```
-
-**테스트 상태 (npm run test:fast + npm run test:raf)**:
-
-**fast 프로젝트**:
-
-- 포커스 테스트 7개 제외 ✅
-- 테스트 수: 3250 (기존 3257에서 7개 감소)
-- 실패: 7개 (기존 4개 + 추가 3개)
-- 상태: ⚠️ 진행 중 (i18n literal 1개, 기타 6개 수정 필요)
-
-**raf-timing 프로젝트**:
-
-- 포커스/RAF 테스트 7개 포함 ✅
-- 테스트 수: 27개 (포커스 로직 중심)
-- 실패: 3개 (예상됨, vitest fake timers 환경)
-- 상태: ⚠️ 진행 중 (Phase 162 근본 원인 미해결)
-
-**현재 상황 분석**:
-
-vitest fake timers + RAF 호환성 문제는 **vitest 환경 제약**으로 즉시 해결 불가:
-
-1. ✅ 격리 완료: 포커스 테스트 별도 프로젝트 생성
-2. ⏳ 미해결: vitest fake timers → RAF 타이밍 문제 (vitest v4.0.1)
-3. ✅ 대체 검증: E2E 스모크 테스트 89/97 PASS (production 코드 정상)
-
-**권장 차기 액션** (Phase 163c 선택):
-
-1. **Option A: 현재 상태 유지 (권장, 단기)**
-   - fast 프로젝트 계속 사용 (3250 테스트)
-   - raf-timing 별도 실행 (27 테스트, 3 FAIL)
-   - E2E smoke에서 검증 (89/97 PASS)
-   - 문제: npm test 실패 시 CI 실패
-
-2. **Option B: 브라우저 모드 전환 (중기, 더 효과적)**
-   - 포커스 테스트 7개 → `test/browser/focus/` 이동
-   - vitest browser 모드로 Playwright 실제 환경 사용
-   - RAF 타이밍 자연 해결 (실제 브라우저)
-   - 시간: 2-3시간 (테스트 리팩토링)
-
-3. **Option C: fake timers 우회 (단기, 임시)**
-   - raf-timing 프로젝트에서 `vi.useRealTimers()` 강제
-   - 또는 특정 신호만 mock 처리
-   - 문제: 테스트 의도 변경 (타이밍 검증 불가)
-
-**다음 Phase (163c) 계획**:
-
-- **High Priority**: i18n literal 문제 수정 (Phase 161a 관련, 1개 케이스)
-- **Medium Priority**: 추가 실패 테스트 6개 조사 및 수정
-- **Low Priority**: Option B 평가 (브라우저 모드 전환)
-
-**예상 효과** (현재 단계):
-
-- ✅ 테스트 격리 완료 (빠른 CI 피드백)
-- ✅ E2E 검증 (production 정상)
-- ⏳ 3개 포커스 테스트 여전히 FAIL (vitest 환경 제약)
-
-**성과 지표**:
-
-| 항목                 | 이전       | 현재          | 상태 |
-| -------------------- | ---------- | ------------- | ---- |
-| fast 테스트          | 3257       | 3250          | -7   |
-| raf-timing 테스트    | -          | 27            | +27  |
-| fast 실패            | 4개        | 7개           | +3   |
-| raf-timing 실패      | -          | 3개           | +3   |
-| **전체 포커스 상태** | 3개 FAIL   | **변화 없음** | ⏳   |
-| E2E 검증             | 89/97 PASS | 89/97 PASS    | ✅   |
-| 빌드 크기            | 339.53 KB  | 측정 예정     | TBD  |
-
-### **163c: 최종 상태 정리** (완료 ✅)
-
-**체크리스트**:
-
-- [ ] `test/utils/raf-test-helpers.ts` 작성
-- [ ] 포커스 테스트 리팩토링 (반복 패턴 제거)
-- [ ] 문서화 (`test/README.md` 업데이트)
-
----### **163c: 최종 상태 정리** (완료 ✅)
-
-**세션 완료 현황**:
-
-- ✅ Phase 159 COMPLETED 기록 완료
-- ✅ Phase 163a: vitest 설정 분석 완료
-- ✅ Phase 163b: vitest 설정 분리 완료
-  - raf-timing 프로젝트 생성 ✅
-  - 7개 포커스/RAF 테스트 격리 ✅
-  - npm 스크립트 추가 ✅
-  - 빌드 크기 유지 (339.53 KB) ✅
-
-**최종 테스트 상태**:
-
-| 프로젝트    | 테스트 수 | 통과     | 실패   | 상태 |
-| ----------- | --------- | -------- | ------ | ---- |
-| fast (main) | 3250      | 3243     | 7      | ⚠️   |
-| raf-timing  | 27        | 24       | 3      | ⚠️   |
-| E2E smoke   | 89        | 88       | 1      | ⚠️   |
-| **전체**    | **3366**  | **3255** | **11** | ⚠️   |
+   ### Summary of completed work (moved to COMPLETED archive)
+
+   The following Phase 163 items were implemented and verified:
+   - vitest projects refactor: added `raf-timing` project and updated `fast`
+     exclusions
+   - npm scripts: `test:raf`, `test:raf:watch` added
+   - Isolated RAF/focus tests into `raf-timing` project (7 tests)
+   - Verified `fast` and `raf-timing` runs; identified remaining failures (fast:
+     7, raf-timing: 3)
+   - Confirmed E2E smoke passes for production verification (89/97)
+
+   These completed items have been moved to `TDD_REFACTORING_PLAN_COMPLETED.md`.
+
+   ***
+
+   ## Phase 164: Build optimization and test stabilization (next actions)
+
+   Short actionable items to proceed from current state:
+   1. High priority
+      - Fix remaining `fast` test failures (7 tests): investigate
+        Toolbar/Components failures
+      - Fix E2E failure `gallery-events.spec.ts` (forbidden events validation)
+
+   2. Medium priority
+      - Consider migrating RAF tests to browser mode if vitest fake timer
+        incompatibility blocks progress (Option B in previous plan)
+      - Implement `test/utils/raf-test-helpers.ts` to simplify RAF tests
+
+   3. Low priority
+      - Explore build size savings via tree-shaking and dead-code elimination
+        (target ≤ 337.5 KB)
+
+   We will now move the detailed completed logs into the COMPLETED artifact and
+   keep this plan concise. | ----------- | --------- | -------- | ------ | ----
+   | | fast (main) | 3250 | 3243 | 7 | ⚠️ | | raf-timing | 27 | 24 | 3 | ⚠️ | |
+   E2E smoke | 89 | 88 | 1 | ⚠️ | | **전체** | **3366** | **3255** | **11** | ⚠️
+   |
 
 **실패 분석**:
 

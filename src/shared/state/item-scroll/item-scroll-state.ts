@@ -22,7 +22,7 @@ export interface ItemScrollState {
   lastScrollTime: number;
   /** 마지막 사용자 스크롤 시간 */
   lastUserScrollTime: number;
-  /** 재시도 횟수 (스크롤 실패 시) */
+  /** Retry count (on scroll failure) */
   retryCount: number;
   /** 스크롤 타임아웃 ID */
   scrollTimeoutId: number | null;
