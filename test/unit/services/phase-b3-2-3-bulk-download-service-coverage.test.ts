@@ -90,13 +90,6 @@ describe('Phase B3.2.3: BulkDownloadService 추가 커버리지', () => {
       expect(abortSpy).toHaveBeenCalled();
     });
 
-    it('should reset cancelToastShown on destroy', async () => {
-      await service.initialize();
-      (service as any).cancelToastShown = true;
-      service.destroy();
-      expect((service as any).cancelToastShown).toBe(false);
-    });
-
     it('should support multiple initialize/destroy cycles', async () => {
       for (let i = 0; i < 3; i++) {
         expect(service.isInitialized()).toBe(false);
@@ -195,10 +188,6 @@ describe('Phase B3.2.3: BulkDownloadService 추가 커버리지', () => {
 
     it('should initialize AbortController with null', () => {
       expect((service as any).currentAbortController).toBeUndefined();
-    });
-
-    it('should not have cancelToastShown initially', () => {
-      expect((service as any).cancelToastShown).toBe(false);
     });
 
     it('should preserve download context across operations', async () => {
@@ -438,19 +427,6 @@ describe('Phase B3.2.3: BulkDownloadService 추가 커버리지', () => {
 
     it('should not throw when cancelling non-existent download', () => {
       expect(() => service.cancelDownload()).not.toThrow();
-    });
-
-    it('should show cancel toast only once', () => {
-      (service as any).currentAbortController = new globalThis.AbortController();
-      expect((service as any).cancelToastShown).toBe(false);
-
-      service.cancelDownload();
-      const firstShow = (service as any).cancelToastShown;
-
-      service.cancelDownload();
-      const secondShow = (service as any).cancelToastShown;
-
-      expect(firstShow).toBe(secondShow);
     });
 
     it('should track isDownloading state correctly', async () => {

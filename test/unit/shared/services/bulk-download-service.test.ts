@@ -12,9 +12,8 @@ describe('BulkDownloadService', () => {
 
   beforeEach(() => {
     service = new BulkDownloadService();
-    // Reset abort/cancel state
+    // Reset abort state
     (service as any).currentAbortController = undefined;
-    (service as any).cancelToastShown = false;
     vi.clearAllMocks();
   });
 
@@ -312,25 +311,16 @@ describe('BulkDownloadService', () => {
       expect(() => service.cancelDownload()).not.toThrow();
     });
 
-    it('should set cancelToastShown flag', () => {
-      const controller = new globalThis.AbortController();
-      (service as any).currentAbortController = controller;
-      (service as any).cancelToastShown = false;
+    it('should call abort on currentAbortController when canceling', () => {
+      const abortSpy = vi.fn();
+      const mockController = {
+        abort: abortSpy,
+      } as any;
+      (service as any).currentAbortController = mockController;
 
       service.cancelDownload();
 
-      expect((service as any).cancelToastShown).toBe(true);
-    });
-
-    it('should not show toast twice', () => {
-      const controller = new globalThis.AbortController();
-      (service as any).currentAbortController = controller;
-      (service as any).cancelToastShown = true;
-
-      const initialFlag = (service as any).cancelToastShown;
-      service.cancelDownload();
-
-      expect((service as any).cancelToastShown).toBe(initialFlag); // Still true
+      expect(abortSpy).toHaveBeenCalled();
     });
   });
 

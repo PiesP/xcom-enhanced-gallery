@@ -66,7 +66,6 @@ function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilenam
 
 export class BulkDownloadService extends BaseServiceImpl {
   private currentAbortController: AbortController | undefined;
-  private cancelToastShown = false;
 
   constructor() {
     super('BulkDownloadService');
@@ -85,7 +84,6 @@ export class BulkDownloadService extends BaseServiceImpl {
    */
   protected onDestroy(): void {
     this.currentAbortController?.abort();
-    this.cancelToastShown = false;
   }
 
   public async downloadSingle(
@@ -140,21 +138,21 @@ export class BulkDownloadService extends BaseServiceImpl {
       } as DownloadResult & { code: ErrorCode };
     }
     try {
-      this.cancelToastShown = false;
       this.currentAbortController = new AbortController();
       slog.info('Download session started', { count: items.length });
       if (options.signal) {
-        options.signal.addEventListener('abort', () => {
-          this.currentAbortController?.abort();
-          slog.warn('Abort signal received');
-          if (!this.cancelToastShown) {
+        options.signal.addEventListener(
+          'abort',
+          () => {
+            this.currentAbortController?.abort();
+            slog.warn('Abort signal received');
             toastManager.info(
               languageService.getString('messages.download.cancelled.title'),
               languageService.getString('messages.download.cancelled.body')
             );
-            this.cancelToastShown = true;
-          }
-        });
+          },
+          { once: true }
+        );
       }
       if (items.length === 1) {
         const firstItem = items[0];
@@ -367,15 +365,15 @@ export class BulkDownloadService extends BaseServiceImpl {
   }
 
   public cancelDownload(): void {
-    this.currentAbortController?.abort();
-    logger.debug('Current download cancelled');
-    if (!this.cancelToastShown) {
-      toastManager.info(
-        languageService.getString('messages.download.cancelled.title'),
-        languageService.getString('messages.download.cancelled.body')
-      );
-      this.cancelToastShown = true;
+    if (!this.currentAbortController) {
+      return;
     }
+    this.currentAbortController.abort();
+    logger.debug('Current download cancelled');
+    toastManager.info(
+      languageService.getString('messages.download.cancelled.title'),
+      languageService.getString('messages.download.cancelled.body')
+    );
   }
 
   public isDownloading(): boolean {
