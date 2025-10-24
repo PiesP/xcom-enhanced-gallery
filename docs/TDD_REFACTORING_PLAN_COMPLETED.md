@@ -5,6 +5,71 @@
 
 ---
 
+## Phase 167: 테스트 정책 재평가 및 최적화 ✅ (2025-10-24)
+
+### 상태
+
+**완료**: 테스트 정책 문서화 및 개발자 가이드 완성 ✅
+
+### 목표 (달성도)
+
+1. ✅ TESTING_STRATEGY.md 갱신: npm run build vs npm test 구분 명시
+2. ✅ 개발자 워크플로우 가이드: 일반/버그/기능별 추천 명령어
+3. ✅ 주의사항 문서화: npm test 실패는 배포 불가를 의미하지 않음
+4. ✅ CI 정책 명확화: npm run build 통과 필수 (E2E, a11y 포함)
+
+### 배경
+
+Phase 164-166 동안 vitest projects 분리로 인해 테스트 환경이 단편화됨:
+
+- npm run build: ✅ 전체 검증 (E2E, a11y, typecheck, lint, deps, CodeQL)
+- npm test: ⚠️ 프로젝트별 격리 (fast + raf-timing)
+
+개발팀 혼동 방지 및 명확한 정책 필요 → Option B 선택
+
+### 구현
+
+#### TESTING_STRATEGY.md 갱신
+
+**추가 섹션**: "npm run build vs npm test: 우선순위 가이드"
+
+**내용**:
+
+1. 상세 비교 테이블
+   - npm run build: 신뢰도 높음, ~8-10분, 프로덕션 검증
+   - npm test: 신뢰도 낮음, ~1-2분, 개발 편의용
+
+2. 개발자 워크플로우
+
+```bash
+# 일반 개발
+npm run test:watch -- -t "기능명"  # 1-2초 피드백
+npm run build                      # 최종 검증 (8-10분)
+git push
+
+# 버그 수정
+npm run test:fast                  # 30-60초
+npm run build                      # 최종 확인
+```
+
+1. 주의사항
+   - npm test 실패 ≠ 배포 불가
+   - CI는 npm run build 통과 필수
+   - 로컬은 npm test로 빠른 피드백 → npm run build로 최종 확인
+
+### 검증 결과
+
+- ✅ TESTING_STRATEGY.md 업데이트 완료
+- ✅ npm run validate 통과
+- ✅ 마크다운 린트 통과
+- ✅ 커밋 성공 (0648ec6e)
+
+### 커밋
+
+1. `docs(phase-167): add npm run build vs npm test policy guidance` (0648ec6e)
+
+---
+
 ## Phase 166: 코드 현대화 및 기술 부채 감소 ✅ (2025-10-24)
 
 ### 상태
