@@ -5,6 +5,94 @@
 
 ---
 
+## Phase 170B: 비즈니스 로직 단순화 - Part 2 ✅ (2025-10-24)
+
+### 상태
+
+**완료**: 로깅 표준화 및 코드 일관성 개선 ✅
+
+### 목표 (달성도)
+
+1. ✅ 로깅 접두사 표준화: `[BulkDownloadService]` 및 `[MediaService]` 일관성
+2. ✅ 에러 처리 검증: `getErrorMessage()` 유틸 일관성 확인
+3. ✅ 상태 신호 구조 검증: `app-state.ts` 구조 확인
+4. ✅ 빌드 크기 유지: 339.55 KB (Phase 170A: 339.51 KB, 증가 0.04 KB)
+5. ✅ 모든 테스트 GREEN
+
+### 구현 사항
+
+#### 1. 로깅 접두사 표준화 (170B-1)
+
+**파일**:
+
+- `src/shared/services/bulk-download-service.ts`
+- `src/shared/services/media-service.ts`
+
+**변경 사항**:
+
+```typescript
+// Before (BulkDownloadService)
+logger.debug(`Downloaded: ${filename}`);
+logger.error(`Download failed: ${message}`);
+logger.debug('Current download cancelled');
+
+// After
+logger.debug(`[BulkDownloadService] Downloaded: ${filename}`);
+logger.error(`[BulkDownloadService] Download failed: ${message}`);
+logger.debug('[BulkDownloadService] Current download cancelled');
+```
+
+**효과**:
+
+- 모든 서비스 로그가 `[ServiceName]` 접두사로 표준화
+- 로그 추적 및 디버깅 용이성 향상
+- 서비스별 로그 필터링 가능
+
+#### 2. 에러 처리 일관성 검증 (170B-2)
+
+**파일**:
+
+- `src/shared/services/bulk-download-service.ts`
+- `src/shared/services/download/download-orchestrator.ts`
+
+**검증 결과**:
+
+- ✅ 모든 에러 처리에서 `getErrorMessage()` 유틸 사용
+- ✅ try-catch 패턴 일관성 있음
+- ✅ 에러 전파 및 로깅 체계적
+
+#### 3. 상태 신호 스코프 검증 (170B-3)
+
+**파일**: `src/shared/state/app-state.ts`
+
+**검증 결과**:
+
+- ✅ Gallery signals 명확히 구조화
+- ✅ Download signals 명확히 구조화
+- ✅ Toolbar signals 명확히 구조화
+- ✅ Settings signals 명확히 구조화
+- ✅ 글로벌/로컬 신호 경계 명확
+
+### 테스트 갱신
+
+- `bulk-download-service.test.ts`: `cancelToastShown` 테스트 수정
+
+### 검증 결과
+
+- ✅ npm run typecheck: 통과
+- ✅ npm run lint: 통과
+- ✅ npm run test:fast: 3219 passed
+- ✅ npm run build: 339.55 KB (gzip 91.45 KB) → 0.04 KB 증가
+- ✅ E2E 테스트: 34/34 PASS
+- ✅ a11y 테스트: 모두 통과
+
+### 커밋
+
+- `feat: Phase 170B-1 - Add logging prefix standardization to BulkDownloadService`
+  (87bbf3ad)
+
+---
+
 ## Phase 170A: 비즈니스 로직 단순화 - Part 1 ✅ (2025-10-24)
 
 ### 상태
