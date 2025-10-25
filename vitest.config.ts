@@ -37,6 +37,16 @@ try {
 appendDebug('[vitest-config] loaded');
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
+
+// Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
+const sharedPoolOptions = {
+  threads: {
+    singleThread: forceSingleThread,
+    memoryLimit: forceSingleThread ? 1024 : 2048,
+    minThreads: 1,
+    maxThreads: forceSingleThread ? 1 : 4,
+  },
+};
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
 // helpers kept minimal for lint cleanliness
@@ -245,6 +255,8 @@ export default defineConfig({
         // 개별 프로젝트에도 동일한 resolve를 명시적으로 주입 (Windows vite-node 호환)
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'smoke',
           globals: true,
@@ -273,6 +285,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'fast',
           globals: true,
@@ -330,6 +344,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'unit',
           globals: true,
@@ -353,6 +369,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'features',
           globals: true,
@@ -376,6 +394,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'styles',
           globals: true,
@@ -403,6 +423,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'performance',
           globals: true,
@@ -426,6 +448,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'phases',
           globals: true,
@@ -451,6 +475,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'refactor',
           globals: true,
@@ -486,6 +512,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'guards',
           globals: true,
@@ -549,6 +577,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         test: {
           name: 'raf-timing',
           globals: true,
