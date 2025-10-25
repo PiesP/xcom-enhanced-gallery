@@ -371,6 +371,21 @@ automation-temp/
 setup-*.backup
 config-*.backup
 settings-*.backup
-.github/copilot-instructions.md
-test*.txt
-.github/copilot-instructions.md
+
+# === 루트 경로 임시 파일 ===
+# 빌드 및 테스트 로그 (루트에만 위치)
+build-*.txt
+test-*.txt
+validate-*.txt
+vitest-*.log
+x.com-*.log
+*.log
+test-results-*.log
+
+# TypeScript 빌드 캐시
+.tsbuildinfo
+
+# 모든 임시 작업은 반드시 tmp/ 또는 docs/temp/, scripts/temp/에만 위치
+# 루트 경로에 임시 파일을 생성하지 않음 (위의 패턴으로 보호)
+
+```
