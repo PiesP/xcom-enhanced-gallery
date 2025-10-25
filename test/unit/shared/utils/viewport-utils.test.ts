@@ -5,7 +5,7 @@ import {
   computeViewportConstraints,
   applyViewportCssVars,
   observeViewportCssVars,
-} from '../../src/shared/utils/viewport';
+} from '@shared/utils/viewport';
 
 function makeRect(width: number, height: number) {
   return { width, height };

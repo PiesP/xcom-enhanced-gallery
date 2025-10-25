@@ -357,6 +357,7 @@ export default defineConfig(({ mode }) => {
     },
     optimizeDeps: {
       include: ['solid-js', 'solid-js/web', 'solid-js/store'],
+      exclude: ['test', 'test/**'],
       force: flags.isDev,
     },
     server: { port: 3000, hmr: flags.isDev },
