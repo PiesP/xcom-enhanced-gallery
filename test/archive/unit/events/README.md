@@ -3,7 +3,6 @@
 <<<<<<< Updated upstream
 **이벤트 시스템 테스트 아카이브** (Phase 181 통합)
 =======
-
 **이벤트 시스템 테스트 아카이브** (Phase 186 완료)
 >>>>>>> Stashed changes
 
@@ -16,7 +15,6 @@
 <<<<<<< Updated upstream
 **상태**: 🔴 DEPRECATED (중복)
 =======
-
 **상태**: 🔴 DEPRECATED (중복, Phase 186에서 원본도 제거됨)
 >>>>>>> Stashed changes
 
@@ -32,9 +30,7 @@
 - Phase 181: 이 deprecated 버전을 archive로 이동
 - Phase 186: 원본 `test/unit/events/event-lifecycle.abort-signal.integration.test.ts`도 제거
   (중복 확인됨)
-
 >>>>>>> Stashed changes
-
 - 테스트 수 감소 및 중앙화로 유지보수 부담 경감
 
 **활성 버전**
@@ -44,7 +40,6 @@
 ---
 
 <<<<<<< Updated upstream
-
 ## 마이그레이션 가이드
 
 이 테스트를 다시 활성화하고 싶다면
@@ -53,7 +48,6 @@
 2. `test/unit/events/` 디렉토리 재생성
 3. 파일 이름 정규화: `event-lifecycle.abort-signal.integration.test.ts`
 =======
-
 ## 정책 통합 사항 (Phase 186)
 
 ### Wheel Listener 정책
@@ -98,9 +92,7 @@
 1. `test/unit/shared/utils/events-coverage.test.ts`에서 필요한 부분을 복사
 2. `test/unit/events/` 디렉토리 재생성 (필요시)
 3. 새 테스트 파일 작성
-
 >>>>>>> Stashed changes
-
 4. vitest.config.ts에 경로 추가
 
 ## 통합된 기능
@@ -115,13 +107,11 @@ describe('addListener', () => {
   it('should skip adding listener if signal is pre-aborted', () => { ... });
 });
 ```
-
 =======
 모든 기능이 아래 파일에 포함되어 있습니다:
 
 - **AbortSignal 테스트**: `test/unit/shared/utils/events-coverage.test.ts` (line 81-117)
 - **Wheel 이벤트 정책**: `test/unit/lint/wheel-listener-direct-use.policy.red.test.ts`
-
 >>>>>>> Stashed changes
 
 ---

@@ -1,0 +1,24 @@
+{
+	"inputs": [
+		{
+			"id": "brave-api-key",
+			"type": "promptString",
+			"description": "Brave Search API Key",
+			"password": true
+		}
+	],
+	"servers": {
+		"brave-search-mcp-server": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@brave/brave-search-mcp-server",
+				"--transport",
+				"stdio"
+			],
+			"env": {
+				"BRAVE_API_KEY": "${input:brave-api-key}"
+			}
+		}
+	}
+}

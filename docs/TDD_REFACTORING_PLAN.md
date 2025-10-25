@@ -36,14 +36,14 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **단계 2: 파일 이동** ✅
 
 1. ✅ `test/unit/alias/alias-resolution.test.ts` → `test/unit/policies/`
-1. ✅ `test/unit/hooks/use-gallery-focus-tracker-events.test.ts` → `test/unit/features/gallery/`
-1. ✅ `test/unit/loader/*.red.test.ts` → `test/archive/unit/policies/`
-1. ✅ `test/unit/main/main-*.test.ts` → `test/archive/unit/bootstrap/`
-1. ✅ `test/unit/i18n/i18n.message-keys.test.ts` → `test/unit/policies/`
-1. ✅ `test/unit/i18n/i18n.missing-keys.test.ts` → `test/unit/policies/`
-1. ✅ `test/unit/i18n/i18n.message-keys.red.test.ts` → `test/archive/unit/policies/`
-1. ✅ `test/unit/__factories__/mock-utils.factory.ts` → `test/unit/shared/factories/`
-1. ✅ `test/unit/components/*.test.ts*` → `test/unit/shared/components/`
+2. ✅ `test/unit/hooks/use-gallery-focus-tracker-events.test.ts` → `test/unit/features/gallery/`
+3. ✅ `test/unit/loader/*.red.test.ts` → `test/archive/unit/policies/`
+4. ✅ `test/unit/main/main-*.test.ts` → `test/archive/unit/bootstrap/`
+5. ✅ `test/unit/i18n/i18n.message-keys.test.ts` → `test/unit/policies/`
+6. ✅ `test/unit/i18n/i18n.missing-keys.test.ts` → `test/unit/policies/`
+7. ✅ `test/unit/i18n/i18n.message-keys.red.test.ts` → `test/archive/unit/policies/`
+8. ✅ `test/unit/__factories__/mock-utils.factory.ts` → `test/unit/shared/factories/`
+9. ✅ `test/unit/components/*.test.ts*` → `test/unit/shared/components/`
 
 **단계 3: 디렉토리 정리** ✅
 
@@ -52,18 +52,18 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **단계 4: vitest.config.ts 업데이트** ✅
 
 1. ✅ smoke 프로젝트: `test/unit/main/main-initialization.test.ts` 제거
-1. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-scroll.test.ts` 제거
-1. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts` 제거
-1. ✅ raf-timing 프로젝트: 동일 파일 참조 제거
+2. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-scroll.test.ts` 제거
+3. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts` 제거
+4. ✅ raf-timing 프로젝트: 동일 파일 참조 제거
 
 **단계 5: 문서 작성 및 업데이트** ✅
 
 1. ✅ `test/archive/unit/policies/README.md` (신규)
-1. ✅ `test/archive/unit/bootstrap/README.md` (신규)
-1. ✅ `test/unit/shared/factories/README.md` (신규)
-1. ✅ `test/unit/shared/components/README.md` (신규)
-1. ✅ `test/unit/policies/README.md` (전체 재작성)
-1. 🔄 `test/README.md` (구조 업데이트 진행 중)
+2. ✅ `test/archive/unit/bootstrap/README.md` (신규)
+3. ✅ `test/unit/shared/factories/README.md` (신규)
+4. ✅ `test/unit/shared/components/README.md` (신규)
+5. ✅ `test/unit/policies/README.md` (전체 재작성)
+6. 🔄 `test/README.md` (구조 업데이트 진행 중)
 
 **결과**:
 
@@ -80,7 +80,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 
 **다음**: npm run validate / test:smoke / build / maintenance:check
 
-##
+---
 
 **Phase 187** ✅ (2025-10-25 **완료**):
 
@@ -103,13 +103,13 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **단계 2: 파일 이동** ✅
 
 1. ✅ `test/unit/patterns` → `test/archive/unit/patterns/` (1개 파일)
-1. ✅ `test/unit/lifecycle` → `test/archive/unit/lifecycle/` (1개 파일)
-1. ✅ `test/unit/vendors` → `test/unit/shared/external/vendors/` (1개 파일)
-1. ✅ `test/unit/setup` → `test/unit/shared/setup/` (1개 파일)
-1. ✅ `test/unit/types` → `test/unit/shared/types/` (1개 파일)
-1. ✅ `test/unit/integration` → `test/unit/shared/integration/` (1개 파일)
-1. ✅ `test/unit/accessibility` → `test/unit/shared/components/accessibility/` (3개 파일)
-1. ✅ `test/unit/ui` → `test/unit/features/toolbar/` (1개 파일)
+2. ✅ `test/unit/lifecycle` → `test/archive/unit/lifecycle/` (1개 파일)
+3. ✅ `test/unit/vendors` → `test/unit/shared/external/vendors/` (1개 파일)
+4. ✅ `test/unit/setup` → `test/unit/shared/setup/` (1개 파일)
+5. ✅ `test/unit/types` → `test/unit/shared/types/` (1개 파일)
+6. ✅ `test/unit/integration` → `test/unit/shared/integration/` (1개 파일)
+7. ✅ `test/unit/accessibility` → `test/unit/shared/components/accessibility/` (3개 파일)
+8. ✅ `test/unit/ui` → `test/unit/features/toolbar/` (1개 파일)
 
 **결과**:
 
@@ -120,10 +120,10 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **단계 3: 문서 업데이트** 🟡 진행 중
 
 1. ✅ test/archive/unit/patterns/README.md 생성
-1. ✅ test/archive/unit/lifecycle/README.md 생성
-1. 🔄 test/unit/shared/components/README.md 업데이트 (accessibility 추가)
-1. 🔄 test/README.md 업데이트
-1. 🔄 TDD_REFACTORING_PLAN.md 기록
+2. ✅ test/archive/unit/lifecycle/README.md 생성
+3. 🔄 test/unit/shared/components/README.md 업데이트 (accessibility 추가)
+4. 🔄 test/README.md 업데이트
+5. 🔄 TDD_REFACTORING_PLAN.md 기록
 
 **단계 4: vitest.config.ts 업데이트** ✅
 
@@ -141,7 +141,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 
 **다음**: 문서 업데이트 완료 → npm run validate / build / maintenance:check
 
-##
+---
 
 **Phase 186** ✅ (2025-10-25 **완료**):
 
@@ -159,7 +159,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
    - 상태: 중복 (test/unit/shared/utils/events-coverage.test.ts에 동일 테스트 존재)
    - 조치: test/archive/unit/events/event-lifecycle.abort-signal.deprecated.test.ts로 이동
 
-1. `wheel-listener.policy.red.test.ts`
+2. `wheel-listener.policy.red.test.ts`
    - 상태: 중복 (test/unit/lint/wheel-listener-direct-use.policy.red.test.ts와 동일)
    - 조치: lint 폴더의 파일로 통합
 
@@ -175,7 +175,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 
 **다음**: npm run validate / test / build / maintenance:check
 
-##
+---
 
 **Phase 185** ✅ (2025-10-25 **완료**):
 
@@ -193,7 +193,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
    - 총 5개 파일 분석 (295-309줄)
    - 상태: 활성 1개, RED 3개, 정책 1개
 
-1. **파일 분류 결정**:
+2. **파일 분류 결정**:
    - **활성 (유지)**: 1개
      - use-gallery-focus-tracker-events.test.ts (295줄, Phase 63)
    - **RED 테스트 (아카이브)**: 3개
@@ -210,7 +210,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
    - ✅ 정책 파일 → `test/unit/policies/gallery-toolbar-logic-pattern.test.ts`
      (통합)
 
-1. 파일 이동:
+2. 파일 이동:
    - ✅ 3개 RED 파일 → `test/archive/unit/hooks/`
    - ✅ 1개 정책 파일 → `test/unit/policies/` (통합)
    - ✅ 원본 파일 삭제 (4개)
@@ -228,7 +228,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
    - ✅ `test/unit/hooks/README.md` (활성 테스트 가이드, 105줄)
    - ✅ `test/archive/unit/hooks/README.md` (RED 테스트 정책, 160줄)
 
-1. 업데이트 문서:
+2. 업데이트 문서:
    - ⏳ `test/README.md` (features/hooks 섹션 추가, 예정)
    - ⏳ `TDD_REFACTORING_PLAN.md` Phase 185 기록 (이 문서, 진행 중)
 
@@ -246,7 +246,7 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **다음**: test/README.md 업데이트 → npm run validate / test / build /
 maintenance:check
 
-##
+---
 
 **Phase 184** ✅ (2025-10-25 **완료**):
 
@@ -270,7 +270,7 @@ maintenance:check
    - 파일명 패턴: kebab-case 준수
    - 상태: GREEN 테스트 (모든 검증 통과)
 
-1. **파일 분류 결정**:
+2. **파일 분류 결정**:
    - **활성 (유지)**: 1개
      - `toolbar-effect-cleanup.test.tsx` (70줄): Toolbar effect cleanup 검증
        - 배경 밝기 감지 effect cleanup
@@ -296,7 +296,7 @@ maintenance:check
      - 테스트 유형, 검증 항목, 실행 방법
      - 주의사항 및 성능 정보
 
-1. 업데이트 문서:
+2. 업데이트 문서:
    - ✅ `test/README.md` (features/toolbar 섹션 추가)
    - ⏳ `TDD_REFACTORING_PLAN.md` Phase 184 기록 (이 문서)
 
@@ -312,7 +312,7 @@ maintenance:check
 
 **다음**: README.md 작성 → npm run validate / test / build / maintenance:check
 
-## 
+---
 
 **Phase 183** ✅ (2025-10-25 **완료**):
 
@@ -333,7 +333,7 @@ maintenance:check
    - 파일명 패턴: kebab-case 준수
    - 모두 활성 테스트 상태
 
-1. **파일 분류 결정**:
+2. **파일 분류 결정**:
    - **활성 (유지)**: 3개 모두
      - `settings-migration.schema-hash.test.ts` (71줄): 설정 마이그레이션 해시
        검증
@@ -348,7 +348,7 @@ maintenance:check
      and error handling, token validation)
    - 전체 구조 현대적 유지
 
-1. settings-migration 두 파일:
+2. settings-migration 두 파일:
    - 이미 현대적 구조 유지
    - 추가 개선 불필요
 
@@ -360,7 +360,7 @@ maintenance:check
      - 테스트 유형, 검증 항목, 실행 방법
      - 주의사항 및 성능 정보
 
-1. 업데이트 문서:
+2. 업데이트 문서:
    - ✅ `test/README.md` (features/settings 섹션 추가)
    - ⏳ `TDD_REFACTORING_PLAN.md` Phase 183 기록 (이 문서)
 
@@ -376,7 +376,7 @@ maintenance:check
 
 **다음**: npm run validate / test / build / maintenance:check
 
-## 
+---
 
 **Phase 182** ✅ (2025-10-25 **완료**):
 
@@ -399,7 +399,7 @@ maintenance:check
    - 라인 수: 26~411줄 범위
    - 파일명 패턴: kebab-case 준수
 
-1. **파일 분류 결정**:
+2. **파일 분류 결정**:
    - **RED 테스트 (아카이브 이동)**: 1개
      (focus-tracker-infinite-loop.red.test.ts)
    - **정책 검증 (policies 이동)**: 3개 (video-item.cls, inline-style-policy
@@ -414,12 +414,12 @@ maintenance:check
    - ✅ `test/archive/unit/features/gallery/` 생성
    - ✅ `test/unit/policies/` 생성 (기존 정책 테스트 10개 통합)
 
-1. 파일 이동:
+2. 파일 이동:
    - ✅ 8개 파일 → `test/archive/unit/features/gallery/`
    - ✅ 3개 파일 → `test/unit/policies/`
    - ✅ 원본 파일 삭제 (11개)
 
-1. vitest.config.ts 업데이트:
+3. vitest.config.ts 업데이트:
    - ✅ `test/unit/policies/**/*.{test,spec}.{ts,tsx}` → styles 프로젝트에 추가
    - ✅ `test/archive/**` → fast 프로젝트 exclude에 추가
 
@@ -429,7 +429,7 @@ maintenance:check
    - ✅ `test/unit/features/gallery/README.md` (활성 테스트 가이드, 320줄)
    - ✅ `test/archive/unit/features/gallery/README.md` (아카이브 정책 설명)
 
-1. 업데이트 문서:
+2. 업데이트 문서:
    - ✅ `test/README.md` (features/gallery, archive/unit/features/gallery 추가)
    - ⏳ `TDD_REFACTORING_PLAN.md` Phase 182 기록 (이 문서)
 
@@ -453,7 +453,7 @@ maintenance:check
 
 **다음**: npm run validate / test / build / maintenance:check
 
-## 
+---
 
 ## 진행 중인 작업 (Phase 181 완료로 기록)
 
@@ -478,7 +478,7 @@ maintenance:check
      - 성격: 정책 검증 테스트 (lint 범주)
      - 결정: test/unit/lint로 이동 + 이름 개선
 
-1. 분류 결정
+2. 분류 결정
    - `wheel-listener` →
      `test/unit/lint/wheel-listener-direct-use.policy.red.test.ts` (정책)
    - `event-lifecycle` →
@@ -491,13 +491,13 @@ maintenance:check
    - 명확한 주석 + allowList 업데이트
    - 파일 수: 27개 → 28개
 
-1. test/archive/unit/events 작업
+2. test/archive/unit/events 작업
    - 디렉토리 신규 생성
    - `event-lifecycle.abort-signal.deprecated.test.ts` 신규 생성
    - 중복 이유 명시 + 활성 버전 링크 추가
    - README.md 작성 (아카이브 정책 설명)
 
-1. 원본 파일 삭제
+3. 원본 파일 삭제
    - `test/unit/events/` 디렉토리 완전 제거
    - 이유: 정책은 lint로 중앙화, 통합은 events-coverage.test.ts에 포함
 
@@ -509,18 +509,18 @@ maintenance:check
    - Input/Event 정책 섹션 확대
    - 마지막 업데이트: Phase 181
 
-1. test/unit/README.md
+2. test/unit/README.md
    - Phase 181 변경사항 기록 (최상단)
    - lint 파일 수 업데이트 (28), 아카이브 +1 업데이트
    - events 디렉토리 제거 (구조표)
    - archive/unit/events 링크 추가
 
-1. test/archive/unit/events/README.md
+3. test/archive/unit/events/README.md
    - 신규 파일 생성
    - event-lifecycle 중복 이유 상세 설명
    - 마이그레이션 가이드 제시
 
-1. TDD_REFACTORING_PLAN.md (이 파일)
+4. TDD_REFACTORING_PLAN.md (이 파일)
    - Phase 181 기록 (진행 중 → 완료)
 
 **결과**:
@@ -536,7 +536,7 @@ maintenance:check
 
 **다음**: Phase 182 (모듈 현대화 또는 성능 최적화)
 
-## 
+---
 
 **Phase 180** ✅ (2025-10-25 **완료**):
 
@@ -549,7 +549,7 @@ maintenance:check
 - `test/unit/deps` 디렉토리 삭제 (범주 불명확)
 - 문서 업데이트
 
-## 
+---
 
 **Phase 179** ✅ (2025-10-25 **완료**):
 
@@ -569,18 +569,18 @@ maintenance:check
    - `test/archive/unit/components/` 생성
    - `test/unit/policies/` 생성
 
-1. RED 테스트 아카이브 이동
+2. RED 테스트 아카이브 이동
    - `toolbar-circular-navigation.test.tsx` → archive (Phase 66)
    - `toolbar-focused-index-display.test.tsx` → archive (Phase 64)
 
-1. 정책 검증 테스트 이동 및 통합
+3. 정책 검증 테스트 이동 및 통합
    - `lazy-icon-memo.test.tsx` → `policies/reactive-evaluation.test.ts`
    - `toolbar-memo.test.tsx` → `policies/direct-comparison.test.ts`
    - `toast-container-selector.test.tsx`, `toolbar-selector.test.tsx`,
      `vertical-image-item-selector.test.tsx` →
      `policies/signal-selector-validation.test.ts` (통합)
 
-1. 결과
+4. 결과
    - test/unit/components: 14개 → 7개 (50% 감소)
    - test/unit/policies: 신규 생성 (3개 파일)
    - test/archive/unit/components: 신규 생성 (2개 파일)
@@ -594,7 +594,7 @@ maintenance:check
    - 벤더 getter 적용: `getSolid()` 사용
    - 테스트: 12개 → 11개 (불가능한 event handler 제거)
 
-1. 정책 검증 테스트 모더니제이션
+2. 정책 검증 테스트 모더니제이션
    - 명확한 주석 및 구조
    - 신규 기능 통합 (signal-selector 3개 파일)
 
@@ -605,7 +605,7 @@ maintenance:check
    - `test/unit/policies/README.md`: 정책 검증 테스트 가이드
    - `test/archive/unit/components/README.md`: 아카이브 정책
 
-1. TDD_REFACTORING_PLAN.md 업데이트 (이 문서)
+2. TDD_REFACTORING_PLAN.md 업데이트 (이 문서)
    - Phase 178 기록 (이 섹션)
    - 파일 구조 변경 사항 정리
 
@@ -622,7 +622,7 @@ maintenance:check
 
 **다음**: Phase 177 완료
 
-## 
+---
 
 ### test/unit/core 디렉토리 리팩토링 및 정리
 
@@ -641,19 +641,19 @@ maintenance:check
    - 이유: 프로젝트는 Userscript (Browser Extension 아님)
    - 결정: `test/archive/unit/core/browser-compatibility.deprecated.test.ts`
 
-1. **result-error-model.red.test.ts (16줄)**
+2. **result-error-model.red.test.ts (16줄)**
    - 상태: RED 테스트 (ErrorCode 미구현)
    - 결정: `test/archive/unit/core/result-error-model.red.test.ts`
 
-1. **service-keys-validation.test.ts (45줄)**
+3. **service-keys-validation.test.ts (45줄)**
    - 상태: 정책 검증 → lint로 이동
    - 결정: `test/unit/lint/service-keys.naming.scan.test.ts` (개선)
 
-1. **STABLE_SELECTORS.test.ts (269줄)**
+4. **STABLE_SELECTORS.test.ts (269줄)**
    - 상태: 상수 정책 → guards로 이동
    - 결정: `test/guards/stable-selectors.scan.test.ts`
 
-1. **ServiceManager.integration.test.ts (324줄)**
+5. **ServiceManager.integration.test.ts (324줄)**
    - 상태: Mock 기반, 실제 구현 미검증
    - 결정: `test/archive/unit/core/service-manager.test.integration.ts`
 
@@ -668,7 +668,7 @@ maintenance:check
 
 **다음**: Phase 180 (모듈 현대화)
 
-## 
+---
 
 **Phase 176** ✅ (2025-10-25 **완료**):
 
@@ -681,16 +681,16 @@ maintenance:check
    - 1개 Phase 통합 파일 (`integration-phase-140.3`) → 아카이브
    - 총 28개 파일 이동 완료
 
-1. 중복 파일 제거 ✅
+2. 중복 파일 제거 ✅
    - `test/unit/shared/services/bulk-download.*.test.js` (2개 제거)
    - 총 파일 수: 272개 → 244개 (28개 감소)
 
-1. 경로 통합 ✅
+3. 경로 통합 ✅
    - `test/unit/services/` (6개) → `test/unit/shared/services/impl/` 통합
    - `test/unit/utils/` (7개) → `test/unit/shared/utils/` 통합
    - 구조 명확화: 3계층 (shared/services/utils/external → impl/media/storage 등)
 
-1. 문서화 ✅
+4. 문서화 ✅
    - `test/archive/unit/README.md` 작성 (27개 Phase 파일 명시)
    - `test/unit/shared/services/impl/README.md` 작성 (기본 구현 테스트 가이드)
    - `test/unit/README.md` 작성 (전체 구조 및 가이드)
@@ -700,7 +700,7 @@ maintenance:check
 
 **결과**: 파일 28개 감소, 3계층 구조 확립, 경로 명확화
 
-## 
+---
 
 **Phase 174** ✅ (2025-10-25 **완료**):
 
@@ -713,7 +713,7 @@ maintenance:check
    - 5개 Phase 파일 확인 (phase-109, 110, 111, 113, 121)
    - 14개 기능 파일 확인 (색상, 토큰, 테마, UI 스타일 등)
 
-1. Phase 파일 아카이브화 ✅
+2. Phase 파일 아카이브화 ✅
    - test/archive/styles 디렉토리 생성
    - 5개 Phase 파일 이동:
      - phase-109-settings-focus-ring.test.ts (77줄)
@@ -723,12 +723,12 @@ maintenance:check
      - phase-121-text-color-tokens.test.ts (202줄)
    - test/archive/styles/README.md 작성
 
-1. 기능 파일 최적화 계획
+3. 기능 파일 최적화 계획
    - 14개 기능 파일 유지 (모두 유효하고 현재 정책 준수)
    - 가능한 통합 항목 검토 (예: hardcoded-color-\* 2개 파일)
    - 모든 파일이 kebab-case, 목적 명확, 프로젝트 규칙 준수
 
-1. 문서 업데이트 ✅
+4. 문서 업데이트 ✅
    - test/README.md: test/styles 섹션 추가 (14개 파일 나열 + 가이드)
    - test/README.md: archive/styles 섹션 추가
    - test/archive/styles/README.md: 아카이브 정책 작성
@@ -742,7 +742,7 @@ maintenance:check
 - [ ] npm run validate / build / maintenance:check 최종 검증
 - [ ] 커밋 및 문서 마무리
 
-## 
+---
 
 ## 완료된 Phase (Phase 173, 171B+, 171A, 170)
 
@@ -793,16 +793,16 @@ maintenance:check
 ### test/integration 현대화 및 경로 정리
 
 1. 아카이브 이동 (4개 파일) ✅
-1. 파일 제거 (1개 파일) ✅
+2. 파일 제거 (1개 파일) ✅
 
-1. 남은 파일 현대화 (5개 파일)
+3. 남은 파일 현대화 (5개 파일)
    - `color-token-consistency.test.ts`: 간결화 및 주석 정리
    - `full-workflow.test.ts`: Mock helper 의존성 제거, 간소화
    - `gallery-activation.test.ts`: 팩토리 패턴 적용
    - `service-lifecycle.test.ts`: 헤더 개선
    - `utils.integration.test.ts`: Mock 팩토리 패턴 적용, ~60% 축소
 
-1. infrastructure 폴더 검증
+4. infrastructure 폴더 검증
    - `browser-utils.test.ts`: Phase 170B+에서 이미 개선됨 (문제 없음)
 
 **개선 결과**:
@@ -844,14 +844,14 @@ maintenance:check
    - `browser-utils.comprehensive.test.ts` 제거 (368줄, 구식 패턴, ~90% 중복)
    - 이유: browser-utils.test.ts와 거의 동일, 명확한 목적 분리 없음
 
-1. 남은 파일 현대화
+2. 남은 파일 현대화
    - `browser-utils.test.ts` 개선 (428줄 → 227줄, ~47% 축소, 201줄 감소)
    - Mock 객체 팩토리 패턴 도입: `createMockWindow()`
    - 반복되는 setup/teardown 제거 (수동 restore 제거)
    - 불필요한 edge cases 정리 (부분 window 객체, 복잡한 에러 핸들링 등)
    - 의미 있는 테스트만 유지 (17개 test suites → 8개 describe 그룹으로 정리)
 
-1. 현대적 패턴 적용
+3. 현대적 패턴 적용
    - JSDOM 환경에서 효율적인 테스트 구조
    - 컨텍스트별 focused 테스트
    - 단순명료한 테스트 케이스 이름 (한국어, 한 줄 설명)
@@ -903,7 +903,7 @@ maintenance:check
    - `alias-resolution.test.ts` (27줄): Vite 경로 별칭 동적 import 검증
    - `alias-static-import.test.ts` (38줄): 플랫폼별 `/@fs/` 프리픽스 경로 검증
 
-1. 파일 정리 ✅
+2. 파일 정리 ✅
    - `alias-resolution.test.ts` 모더니제이션:
      - 간결한 테스트 케이스 (3개)
      - @features, @shared, @assets alias 검증
@@ -913,17 +913,17 @@ maintenance:check
      - 이유: 개발 서버 전용 기능(/@fs/), 빌드시 alias로 해석, 복잡성 대비 가치
        낮음
 
-1. 경로 이동 ✅
+3. 경로 이동 ✅
    - test/unit/alias → 유지 (현재 위치가 최적)
    - 이유: 경로 검증은 lint 성격이 아닌 기능 테스트
 
-1. 문서화 ✅
+4. 문서화 ✅
    - `test/unit/alias/README.md`: 경로 별칭 테스트 가이드
    - `test/archive/unit/alias/README.md`: 아카이브 정책 설명
    - `test/archive/unit/README.md`: Phase 176 항목 추가
    - `test/README.md`: unit/alias 섹션 추가, archive/unit/alias 섹션 추가
 
-1. 설정 업데이트 ✅
+5. 설정 업데이트 ✅
    - `vitest.config.ts`: alias-resolution.test.ts 제외 목록 제거
 
 **상태**: ✅ **완료, 모든 검증 통과**
@@ -938,7 +938,7 @@ maintenance:check
 
 **결과**: 경로 별칭 검증 간결화, 불필요한 복잡성 제거, 문서 일관성 확보
 
-## 
+---
 
 ## 진행 예정 작업
 
@@ -964,7 +964,7 @@ maintenance:check
      - 테스트 케이스 명확화 (한국어 설명, given-when-then)
    - 예상 효과: 30~40% 코드 축소 (120줄 → 70~80줄)
 
-1. **test/unit/features** (13개 파일)
+2. **test/unit/features** (13개 파일)
    - 현황: UI/컴포넌트 테스트, 평균 110줄
    - 대상: 반복되는 렌더링/마운트 로직
    - 작업:
@@ -973,7 +973,7 @@ maintenance:check
      - 이벤트 모킹 표준화
    - 예상 효과: 20~30% 축소
 
-1. **test/unit/shared** (12개 파일)
+3. **test/unit/shared** (12개 파일)
    - 현황: 상태/신호 테스트, 평균 95줄
    - 대상: 신호 구성 반복 제거
    - 작업:
@@ -981,12 +981,12 @@ maintenance:check
      - Store 생성 헬퍼 (`createMockStore()`)
    - 예상 효과: 10~20% 축소
 
-1. **test/unit/lint** (25개 파일)
+4. **test/unit/lint** (25개 파일)
    - 현황: 정책 검증 테스트, 평균 95줄 (안정적)
    - 상태: 현대적 구조 유지, 추가 개선 불필요
    - 작업: (선택) 일부 통합 가능성 검토
 
-1. **test/unit/styles** (12개 파일)
+5. **test/unit/styles** (12개 파일)
    - 현황: 디자인 토큰/색상 검증, 평균 100줄
    - 상태: 현재 구조 양호
    - 작업: (선택) 토큰 검증 헬퍼 추상화 검토
@@ -1034,7 +1034,7 @@ maintenance:check
 - [ ] 번들 최적화 검토 (Phase 177)
 - [ ] E2E 테스트 확대 (Phase 178)
 
-## 
+---
 
 ## 향후 계획 (우선순위 대기 목록)
 
@@ -1043,24 +1043,24 @@ maintenance:check
 **대상**:
 
 1. 번들 크기 최적화 추진 (현재 339.55 KB → 320 KB 목표 평가)
-1. Tree-shaking 검증 및 dead code 제거
-1. 의존성 번들 분석 (Rollup Bundle Analyzer)
+2. Tree-shaking 검증 및 dead code 제거
+3. 의존성 번들 분석 (Rollup Bundle Analyzer)
 
 ### Phase 178 (제안) - E2E 테스트 확대
 
 **대상**:
 
 1. E2E 테스트 확대 (현재 smoke 수준 → 통합 시나리오)
-1. Playwright 하네스 패턴 추가 (새 시나리오)
-1. 사용자 여정 확대 (갤러리 열기 → 이미지 다운로드)
+2. Playwright 하네스 패턴 추가 (새 시나리오)
+3. 사용자 여정 확대 (갤러리 열기 → 이미지 다운로드)
 
 ### Phase 179 (제안) - 브라우저 및 접근성 개선
 
 **대상**:
 
 1. test/browser 시리즈 최적화 (111개 테스트 통합 검토)
-1. 접근성 개선 (WCAG Level AAA 추진 검토)
-1. 키보드 네비게이션 E2E 확장
+2. 접근성 개선 (WCAG Level AAA 추진 검토)
+3. 키보드 네비게이션 E2E 확장
 
 ### Phase 169 (보류) - 번들 최적화 재검토
 
@@ -1124,7 +1124,7 @@ maintenance:check
 - **docs/TDD_REFACTORING_PLAN.md**: 최근 작업 기록 (이 섹션)
   - docs/TDD_REFACTORING_PLAN.md: 최근 작업 기록
 
-## 
+---
 
 ## Phase 189: 빌드 크기 최적화 및 문서 정리 (진행 중)
 
@@ -1150,12 +1150,12 @@ maintenance:check
    - Dead code 제거
    - 번들 분석 및 최적화
 
-1. **문서 정리 및 최적화**
+2. **문서 정리 및 최적화**
    - 큰 문서 (>500줄) 간소화
    - COMPLETED 파일 통합 정리
    - 실행 계획 위주로 축약
 
-1. **추적되지 않는 파일 정리**
+3. **추적되지 않는 파일 정리**
    - 빌드 로그 파일 제거
    - 아카이브 파일 정리
 
