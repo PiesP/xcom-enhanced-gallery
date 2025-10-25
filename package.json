@@ -83,19 +83,11 @@
     "@types/tampermonkey": "^5.0.5",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
-<<<<<<< Updated upstream
-    "@typescript/native-preview": "^7.0.0-dev.20251024.1",
-    "@vitest/browser": "^4.0.2",
-    "@vitest/browser-playwright": "^4.0.2",
-    "@vitest/coverage-v8": "^4.0.2",
-    "@vitest/ui": "^4.0.2",
-=======
     "@typescript/native-preview": "^7.0.0-dev.20251025.1",
     "@vitest/browser": "^4.0.3",
     "@vitest/browser-playwright": "^4.0.3",
     "@vitest/coverage-v8": "^4.0.3",
     "@vitest/ui": "^4.0.3",
->>>>>>> Stashed changes
     "autoprefixer": "^10.4.21",
     "babel-preset-solid": "^1.9.9",
     "cross-env": "^10.1.0",
@@ -124,11 +116,7 @@
     "vite": "^7.1.12",
     "vite-plugin-solid": "^2.11.10",
     "vite-tsconfig-paths": "^5.1.4",
-<<<<<<< Updated upstream
-    "vitest": "^4.0.2"
-=======
     "vitest": "^4.0.3"
->>>>>>> Stashed changes
   },
   "lint-staged": {
     "*.{ts,tsx}": [
