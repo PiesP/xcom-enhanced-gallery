@@ -28,6 +28,7 @@
     "lint:css:fix": "stylelint \"src/**/*.css\" --fix",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#coverage\"",
     "lint:md:fix": "markdownlint-cli2 --fix \"**/*.md\" \"#node_modules\" \"#coverage\"",
+    "fix-markdown": "node ./scripts/fix-markdown.js",
     "lint:staged": "lint-staged",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

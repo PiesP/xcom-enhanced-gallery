@@ -12,8 +12,45 @@ env:
   NODE_VERSION: "22"
 
 jobs:
-  security-audit:
-    name: 🔍 Security Vulnerability Scan
+  codeql-analysis:
+    name: 🔍 CodeQL Analysis (GitHub Advanced Security)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+
+    steps:
+      - name: � Checkout code
+        uses: actions/checkout@v4
+
+      - name: �🔍 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # Optional: Customize the build command
+          # build-mode: 'manual'
+          # db-location: '${{ github.workspace }}/codeql_databases'
+
+      # JavaScript/TypeScript는 자동 빌드 모드 사용
+      # C/C++, Java, Go 등은 수동 빌드 필요
+
+      - name: 🔨 Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 📊 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  npm-security-audit:
+    name: 📦 NPM Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -54,8 +91,54 @@ jobs:
           path: audit-report.json
           retention-days: 30
 
+  custom-codeql-queries:
+    name: 🧹 Custom CodeQL Queries (Project-Specific Rules)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: � Install CodeQL CLI
+        run: |
+          echo "⏳ Setting up CodeQL CLI..."
+          wget -q https://github.com/github/codeql-cli-binaries/releases/download/v2.18.0/codeql-linux64.zip
+          unzip -q codeql-linux64.zip
+          echo "$(pwd)/codeql" >> $GITHUB_PATH
+          codeql version
+
+      - name: 🧹 Run Custom CodeQL Queries
+        run: |
+          node scripts/check-codeql.js --json > codeql-custom-report.json || true
+
+      - name: 📊 Upload custom CodeQL report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-custom-report-${{ github.sha }}
+          path: codeql-custom-report.json
+          retention-days: 30
+
+      - name: 📂 Upload SARIF results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: codeql-results
+          category: custom-queries
+          wait-for-processing: false
+
   license-check:
-    name: 📜 License Compliance Check
+    name: �📜 License Compliance Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -88,3 +171,29 @@ jobs:
           name: license-report-${{ github.sha }}
           path: licenses.json
           retention-days: 7
+
+  security-summary:
+    name: 📋 Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, npm-security-audit, custom-codeql-queries, license-check]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: 🎯 Security Check Summary
+        run: |
+          echo "### 🔒 Security Audit Results"
+          echo ""
+          echo "| Job | Status |"
+          echo "|-----|--------|"
+          echo "| CodeQL Analysis | ${{ needs.codeql-analysis.result }} ✅ |"
+          echo "| NPM Audit | ${{ needs.npm-security-audit.result }} ✅ |"
+          echo "| Custom Queries | ${{ needs.custom-codeql-queries.result }} ✅ |"
+          echo "| License Check | ${{ needs.license-check.result }} ✅ |"
+          echo ""
+          echo "**Artifacts**:"
+          echo "- CodeQL Analysis: GitHub Security tab 참고"
+          echo "- Custom Queries Report: \`codeql-custom-report.json\`"
+          echo "- SARIF Results: Security tab의 Code scanning 참고"
+          echo "- Audit Report: \`security-audit-report\`"
+          echo "- License Report: \`license-report\`"

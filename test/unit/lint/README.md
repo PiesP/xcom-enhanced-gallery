@@ -7,6 +7,7 @@
 <<<<<<< Updated upstream
 **28개 테스트 파일** | 정책 검증 전담 | CI/pre-commit 자동화
 =======
+
 **29개 테스트 파일** | 정책 검증 전담 | CI/pre-commit 자동화
 
 **최근 통합** (Phase 186): wheel-listener-direct-use.policy 추가
@@ -21,7 +22,9 @@
 - ✅ **Event 정책**: wheel 리스너 직접 등록 금지
 =======
 - ✅ **Event 정책**: wheel 리스너 직접 등록 금지 (중앙화된 유틸만 허용)
+
 >>>>>>> Stashed changes
+
 - ✅ **import 순서**: 타입 → 외부 → 내부 → 스타일
 - ✅ **배럴 export**: 심볼 재export만 허용
 - ✅ **직접 import 금지**: 안전 getter 경유 필수
@@ -43,6 +46,7 @@
 ### Input/Event 정책
 
 <<<<<<< Updated upstream
+
 | 파일                                      | 역할                      |
 | ----------------------------------------- | ------------------------- |
 | forbidden-touch-events.test.ts            | Touch 이벤트 금지 검증    |
@@ -52,6 +56,7 @@
 | ----------------------------------------------- | ------------------------------------- |
 | forbidden-touch-events.test.ts                  | Touch 이벤트 금지 검증                |
 | **wheel-listener-direct-use.policy.red.test.ts** | wheel 이벤트 직접 등록 금지 (Phase 186) |
+
 >>>>>>> Stashed changes
 
 ### Import/Export 정책

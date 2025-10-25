@@ -1,9 +1,0 @@
-{
-  "chatgpt.runCodexInWindowsSubsystemForLinux": true,
-  // ESLint 작업 디렉터리 설정
-  "eslint.workingDirectories": [
-    {
-      "mode": "auto"
-    }
-  ]
-}

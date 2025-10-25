@@ -169,13 +169,13 @@ ehthumbs_vista.db
 # === 개발 환경 구성 관련 ===
 
 # 로컬 설정 (개인 프로젝트 - 원격 추적 불필요)
-# .github/copilot-instructions.md 는 제외 (프로젝트 표준)
+.github/copilot-instructions.md
 AGENTS.md
 .github/ai-*.md
 .github/workflows/ai-*.yml
 
 # 로컬 VS Code 설정 (개인 환경 맞춤화)
-.vscode
+.vscode/
 
 # 개발자 개인 설정
 .env.personal
