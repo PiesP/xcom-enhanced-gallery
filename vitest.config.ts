@@ -10,7 +10,6 @@ import { appendFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import type { ResolveOptions } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
-import os from 'node:os';
 import { fileURLToPath, URL } from 'node:url';
 import { playwright } from '@vitest/browser-playwright';
 
@@ -36,7 +35,6 @@ try {
 }
 
 appendDebug('[vitest-config] loaded');
-const CPU_COUNT = Math.max(1, (os.cpus?.() || []).length || 4);
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
@@ -225,15 +223,17 @@ export default defineConfig({
     },
 
     // 성능 최적화
+    // 주의: multi-threaded pool은 광범위한 메모리 누수 문제 발생
+    // (로컬 + CI 모두에서 단 1테스트만으로도 2GB+ 메모리 소비)
+    // singleThread + memoryLimit으로 강제 격리
     pool: 'threads',
     poolOptions: {
       threads: {
-        singleThread: false,
-        // 로컬: CPU-1(최대 8), CI: 메모리 절약을 위해 2-3 workers로 제한 (OOM 방지)
+        // 로컬: 멀티스레드 (빠른 개발), CI: 단일스레드 (메모리 안정성)
+        singleThread: isCI,
+        memoryLimit: isCI ? 1024 : 2048, // CI: 1GB, 로컬: 2GB per worker
         minThreads: 1,
-        maxThreads: isCI
-          ? Math.min(3, Math.max(1, CPU_COUNT - 1))
-          : Math.max(2, Math.min(8, Math.max(1, CPU_COUNT - 1))),
+        maxThreads: isCI ? 1 : Math.max(2, Math.min(4, 8 - 4)), // CI: 1, 로컬: 최대 4
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
