@@ -81,10 +81,9 @@ jobs:
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 🧪 Run tests with coverage (Shard ${{ matrix.shard }}/2)
-        run: npm run test:unit -- --shard=${{ matrix.shard }}/2
+        run: npm run test:unit -- --threads=1 --shard=${{ matrix.shard }}/2
         env:
           NODE_OPTIONS: --max-old-space-size=3072
-          VITEST_SINGLE_THREAD: "true"
 
       - name: 📊 Upload coverage reports
         uses: actions/upload-artifact@v4
