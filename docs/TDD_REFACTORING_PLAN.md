@@ -1,25 +1,12 @@
 # TDD 리팩토링 계획
 
-<<<<<<< Updated upstream
-현재 상태: 안정 단계 (Phase 183 진행 중) | 마지막 업데이트: 2025-10-25
-=======
 현재 상태: 안정 단계 (Phase 188 완료, Phase 189 예정) | 마지막 업데이트: 2025-10-25
->>>>>>> Stashed changes
 
 ## 현황 요약
 
 Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 (전체 검증 통과) ✅ 의존성: 0 violations (dependency-cruiser) ✅
 
-<<<<<<< Updated upstream
-**최근 완료 (Phase 182)**: test/unit/features/gallery 디렉토리 정리 및 현대화
-**현재 진행 (Phase 183)**: test/unit/features/settings 디렉토리 분석 및 최적화
-
-## 진행 중인 작업
-
-**Phase 183** 🔵 (2025-10-25 **진행 중**):
-
-=======
 **최근 완료 (Phase 188)**: test/unit 2단계 디렉토리 정리 및 통합 완료 ✅
 **현재 진행**: Phase 189 다음 단계 계획 (예정)
 
@@ -329,7 +316,6 @@ maintenance:check
 
 **Phase 183** ✅ (2025-10-25 **완료**):
 
->>>>>>> Stashed changes
 ### test/unit/features/settings 디렉토리 분석, 현대화 및 문서화
 
 **작업 개요**:
@@ -1139,75 +1125,3 @@ maintenance:check
   - docs/TDD_REFACTORING_PLAN.md: 최근 작업 기록
 
 ---
-<<<<<<< Updated upstream
-=======
-
-## Phase 187 (완료) - test/unit 디렉토리 정리 및 현대화
-
-**목표**: test/unit 루트 디렉토리 구조 최적화 및 비사용 모듈 제거
-
-**주요 성과**:
-
-1. **디렉토리 구조 정리** (17개 → 16개)
-   - 빈 디렉토리 제거: `test/unit/accessibility/` (완료된 모듈 이동으로 공)
-   - 파일 재정렬: `viewport-utils.test.ts` → `test/unit/shared/utils/`
-
-2. **새로운 테스트 파일 추가** (Phase A5.5/104 마이그레이션)
-   - **shared/services/impl/** (6개 파일):
-     - `bulk-download-service-base-impl.test.ts` (194줄): BaseServiceImpl 패턴 검증
-     - `download-orchestrator-base-impl.test.ts` (277줄): 싱글톤 및 생명주기
-     - `event-manager-base-impl.test.ts` (307줄): 이벤트 매니저 기반 구현
-     - `icon-registry-types.test.ts` (115줄): 아이콘 레지스트리 타입 안전성
-     - `keyboard-navigator-base-impl.test.ts` (308줄): PC 전용 키보드 네비게이션
-     - `media-service-base-impl.test.ts` (182줄): 미디어 서비스 기반 구현
-   - **shared/utils/** (8개 신규 파일):
-     - `accessibility-module-structure.test.ts` (172줄): Phase 104 접근성 모듈 검증
-     - `error-handling-enhanced.test.ts` (302줄): Phase A5.4 에러 핸들링 팩토리
-     - `error-handling-integrated.test.ts` (378줄): Phase A5.4 통합 시나리오
-     - `event-emitter.test.ts` (204줄): Phase 63 경량 이벤트 시스템
-     - `memory-profiler.test.ts` (122줄): 메모리 프로파일링 유틸리티
-     - `signal-accessor-wrapper.test.ts` (122줄): Phase 99 Signal 타입 안전성
-     - `type-guards.test.ts` (166줄): Phase 135 타입 가드 함수
-     - `viewport-utils.test.ts` (이동): 뷰포트 유틸리티
-
-3. **vitest.config.ts 업데이트**:
-   - 라인 263: `test/unit/viewport-utils.test.ts` → `test/unit/shared/utils/viewport-utils.test.ts`
-   - 새 guards 프로젝트 추가: 프로젝트 상태 및 정책 검증
-
-4. **문서 작업**:
-   - test/README.md: 16개 디렉토리 구조 반영, 새 파일 추가 설명
-   - test/unit/shared/services/impl/README.md: BaseServiceImpl 패턴 설명 (신규)
-
-**완료 상태**: ✅ 100% (모든 항목 완료)
-
----
-
-## Phase 188 (진행 중) - test/unit 모듈 현대화 및 검증
-
-**목표**: Phase 187 완료 후 test/unit 모듈 구조의 일관성, 타입 안전성, 문서화 개선
-
-**현재 진행 사항**:
-
-1. **Phase 187 검증 완료** ✅
-   - npm run validate: 모든 품질 검사 통과
-   - vitest.config.ts 최종 검증: 새 경로 및 guards 프로젝트 정상 작동
-   - test/README.md 업데이트: 16개 루트 디렉토리 정확히 반영
-   - 총 270개 테스트 파일 안정적 유지
-
-2. **다음 단계 (예정)**:
-   - [ ] 추가 Phase 참고 주석 제거 (features, shared 디렉토리 현대화)
-   - [ ] 경로 별칭 최적화 검증 (alias/, loader/, main/ 디렉토리 검토)
-   - [ ] RED 테스트 통합 재평가 및 마이그레이션 계획
-   - [ ] 성능 테스트 통합 (test/performance → test/unit/performance)
-   - [ ] 폐기된 컴포넌트/훅 테스트 재평가 (components/, hooks/ 최종 정리)
-
-**기대 효과**:
-- 더욱 일관된 테스트 구조 및 네이밍 규칙
-- 강화된 타입 안전성 (Phase 98+ 기반)
-- 포괄적인 에러 처리 및 복구 시나리오
-- 개선된 개발자 경험 (명확한 테스트 위계)
-
----
-
-```
->>>>>>> Stashed changes
