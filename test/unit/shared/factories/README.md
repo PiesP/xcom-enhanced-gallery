@@ -1,7 +1,6 @@
 # Factories & Test Utilities (Shared)
 
-> 테스트 헬퍼 및 팩토리 함수 모음
-> 최종 업데이트: 2025-10-25 (Phase 188)
+> 테스트 헬퍼 및 팩토리 함수 모음 최종 업데이트: 2025-10-25 (Phase 188)
 
 ## 📋 파일 목록
 
@@ -9,9 +8,8 @@
 
 - `mock-utils.factory.ts`: 테스트 모킹 유틸리티 (mock 생성, 스파이 설정 등)
 
-**상태**: 활성 (유지)
-**용도**: 테스트 전반에서 재사용 가능한 팩토리 함수
-**적용 범위**: test/unit/shared, test/unit/features
+**상태**: 활성 (유지) **용도**: 테스트 전반에서 재사용 가능한 팩토리 함수 **적용
+범위**: test/unit/shared, test/unit/features
 
 ## 🔄 구조
 
@@ -38,7 +36,10 @@ test/unit/shared/
 ## 📖 사용 패턴
 
 ```typescript
-import { createMockService, createSpyEvent } from '@test/unit/shared/factories/mock-utils.factory';
+import {
+  createMockService,
+  createSpyEvent,
+} from '@test/unit/shared/factories/mock-utils.factory';
 
 describe('MyTest', () => {
   it('should work', () => {

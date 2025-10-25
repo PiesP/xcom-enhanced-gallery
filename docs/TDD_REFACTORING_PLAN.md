@@ -1,14 +1,15 @@
 # TDD 리팩토링 계획
 
-현재 상태: 안정 단계 (Phase 188 완료, Phase 189 예정) | 마지막 업데이트: 2025-10-25
+현재 상태: 안정 단계 (Phase 188 완료, Phase 189 예정) | 마지막 업데이트:
+2025-10-25
 
 ## 현황 요약
 
 Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 (전체 검증 통과) ✅ 의존성: 0 violations (dependency-cruiser) ✅
 
-**최근 완료 (Phase 188)**: test/unit 2단계 디렉토리 정리 및 통합 완료 ✅
-**현재 진행**: Phase 189 다음 단계 계획 (예정)
+**최근 완료 (Phase 188)**: test/unit 2단계 디렉토리 정리 및 통합 완료 ✅ **현재
+진행**: Phase 189 다음 단계 계획 (예정)
 
 ## 진행 중인 작업
 
@@ -18,7 +19,8 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 
 **작업 개요**:
 
-- 소규모 루트 디렉토리 정리: alias, hooks, loader, main, i18n, `__factories__`, components
+- 소규모 루트 디렉토리 정리: alias, hooks, loader, main, i18n, `__factories__`,
+  components
 - 활성 파일과 정책 테스트의 명확한 구분
 - test/unit 루트 1단계 디렉토리: 17개 → 10개 (41% 감소)
 
@@ -31,29 +33,35 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
    - `main` (2개): 부트스트랩 테스트 → archive/unit/bootstrap로 이동
    - `i18n` (3개): RED 1개 + 활성 2개 → 1개 archive, 2개 policies로 이동
    - `__factories__` (1개): 모킹 유틸 팩토리 → shared/factories로 이동
-   - `components` (7개): UI 컴포넌트 테스트 → shared/components로 이동 (Phase 187 미완료)
+   - `components` (7개): UI 컴포넌트 테스트 → shared/components로 이동 (Phase
+     187 미완료)
 
 **단계 2: 파일 이동** ✅
 
 1. ✅ `test/unit/alias/alias-resolution.test.ts` → `test/unit/policies/`
-2. ✅ `test/unit/hooks/use-gallery-focus-tracker-events.test.ts` → `test/unit/features/gallery/`
+2. ✅ `test/unit/hooks/use-gallery-focus-tracker-events.test.ts` →
+   `test/unit/features/gallery/`
 3. ✅ `test/unit/loader/*.red.test.ts` → `test/archive/unit/policies/`
 4. ✅ `test/unit/main/main-*.test.ts` → `test/archive/unit/bootstrap/`
 5. ✅ `test/unit/i18n/i18n.message-keys.test.ts` → `test/unit/policies/`
 6. ✅ `test/unit/i18n/i18n.missing-keys.test.ts` → `test/unit/policies/`
-7. ✅ `test/unit/i18n/i18n.message-keys.red.test.ts` → `test/archive/unit/policies/`
-8. ✅ `test/unit/__factories__/mock-utils.factory.ts` → `test/unit/shared/factories/`
+7. ✅ `test/unit/i18n/i18n.message-keys.red.test.ts` →
+   `test/archive/unit/policies/`
+8. ✅ `test/unit/__factories__/mock-utils.factory.ts` →
+   `test/unit/shared/factories/`
 9. ✅ `test/unit/components/*.test.ts*` → `test/unit/shared/components/`
 
 **단계 3: 디렉토리 정리** ✅
 
-1. ✅ 비어있는 디렉토리 8개 제거: alias, hooks, loader, main, i18n, `__factories__` (선택적)
+1. ✅ 비어있는 디렉토리 8개 제거: alias, hooks, loader, main, i18n,
+   `__factories__` (선택적)
 
 **단계 4: vitest.config.ts 업데이트** ✅
 
 1. ✅ smoke 프로젝트: `test/unit/main/main-initialization.test.ts` 제거
 2. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-scroll.test.ts` 제거
-3. ✅ fast 프로젝트: `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts` 제거
+3. ✅ fast 프로젝트:
+   `test/unit/hooks/use-gallery-focus-tracker-global-sync.test.ts` 제거
 4. ✅ raf-timing 프로젝트: 동일 파일 참조 제거
 
 **단계 5: 문서 작성 및 업데이트** ✅
@@ -108,7 +116,8 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 4. ✅ `test/unit/setup` → `test/unit/shared/setup/` (1개 파일)
 5. ✅ `test/unit/types` → `test/unit/shared/types/` (1개 파일)
 6. ✅ `test/unit/integration` → `test/unit/shared/integration/` (1개 파일)
-7. ✅ `test/unit/accessibility` → `test/unit/shared/components/accessibility/` (3개 파일)
+7. ✅ `test/unit/accessibility` → `test/unit/shared/components/accessibility/`
+   (3개 파일)
 8. ✅ `test/unit/ui` → `test/unit/features/toolbar/` (1개 파일)
 
 **결과**:
@@ -127,7 +136,8 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 
 **단계 4: vitest.config.ts 업데이트** ✅
 
-1. ✅ `test/unit/ui/toolbar.focus-indicator.test.tsx` → `test/unit/features/toolbar/toolbar.focus-indicator.test.tsx`
+1. ✅ `test/unit/ui/toolbar.focus-indicator.test.tsx` →
+   `test/unit/features/toolbar/toolbar.focus-indicator.test.tsx`
 
 **상태**: 🟢 **90% 완료, 문서 업데이트 및 검증 단계**
 
@@ -156,11 +166,15 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 **파일 분류** ✅:
 
 1. `event-lifecycle.abort-signal.integration.test.ts`
-   - 상태: 중복 (test/unit/shared/utils/events-coverage.test.ts에 동일 테스트 존재)
-   - 조치: test/archive/unit/events/event-lifecycle.abort-signal.deprecated.test.ts로 이동
+   - 상태: 중복 (test/unit/shared/utils/events-coverage.test.ts에 동일 테스트
+     존재)
+   - 조치:
+     test/archive/unit/events/event-lifecycle.abort-signal.deprecated.test.ts로
+     이동
 
 2. `wheel-listener.policy.red.test.ts`
-   - 상태: 중복 (test/unit/lint/wheel-listener-direct-use.policy.red.test.ts와 동일)
+   - 상태: 중복 (test/unit/lint/wheel-listener-direct-use.policy.red.test.ts와
+     동일)
    - 조치: lint 폴더의 파일로 통합
 
 **결과** ✅:
@@ -169,7 +183,8 @@ Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run build: PASS
 - 정책 통합: lint 폴더에서 중앙화
 - 디렉토리 정리: test/unit/events 완전 삭제
 - 문서: 3개 파일 업데이트 완료
-- 검증: npm run validate, test:smoke, test:styles, build, maintenance:check ✅ 모두 통과
+- 검증: npm run validate, test:smoke, test:styles, build, maintenance:check ✅
+  모두 통과
 - 빌드 크기: 339.55 KB (유지)
 - 테스트: 모두 활성 (중복 제거)
 
@@ -1180,3 +1195,4 @@ maintenance:check
 - Phase 189 완료 후 npm run build로 검증
 - 빌드 크기 335 KB 이하 달성 시 완료
 - 문서 정리 완료 시 커밋
+```

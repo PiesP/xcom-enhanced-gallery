@@ -1,14 +1,14 @@
 # 컴포넌트 테스트 (Shared/Components)
 
-> UI 컴포넌트 및 UI primitive 테스트
-> 최종 업데이트: 2025-10-25 (Phase 188)
+> UI 컴포넌트 및 UI primitive 테스트 최종 업데이트: 2025-10-25 (Phase 188)
 
 ## 📋 테스트 목록
 
 ### UI Primitive
 
 - `ui-primitive.test.tsx`: 기본 UI 기본 요소 렌더링 및 동작
-- `button-primitive-enhancement.test.ts`: Button primitive 확장 기능 (intent, selected, loading)
+- `button-primitive-enhancement.test.ts`: Button primitive 확장 기능 (intent,
+  selected, loading)
 
 ### Toolbar Components
 
@@ -26,8 +26,7 @@
 - `button-event-types.test.tsx`: 버튼 이벤트 타입 검증
 - Phase 187에서 `test/unit/accessibility/` 파일들이 여기로 이동됨
 
-**상태**: 모두 활성 (유지)
-**용도**: 컴포넌트 렌더링, 상호작용, 접근성 검증
+**상태**: 모두 활성 (유지) **용도**: 컴포넌트 렌더링, 상호작용, 접근성 검증
 **범위**: Solid.js 컴포넌트 단위 테스트
 
 ## 🏗️ 구조

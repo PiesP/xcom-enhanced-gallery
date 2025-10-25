@@ -13,11 +13,8 @@
 
 ## 실행 방법
 
-<<<<<<< Updated upstream
-```pwsh
-=======
+````pwsh
 ```bash
->>>>>>> Stashed changes
 # 전체 테스트
 npm run test:browser
 
@@ -26,7 +23,7 @@ npx vitest --project browser run test/browser/solid-reactivity.test.ts
 
 # 디버깅 UI
 npm run test:browser:ui
-```
+````
 
 ## 테스트 스위트
 

@@ -39,7 +39,6 @@ test/
 │   ├── testing-library.ts       # @solidjs/testing-library re-export
 │   └── helpers/
 │       └── mock-action-simulator.ts # DOM 이벤트 스뮬레이션 (click, keypress)
-<<<<<<< Updated upstream
 ├── unit/                        # 단위 테스트 (순수 로직, 팩토리 패턴)
 │   ├── alias/                   # 경로 별칭 검증 (1개 파일)
 │   │   ├── alias-resolution.test.ts # Vite 경로 별칭(@features, @shared) 동적 import 검증
@@ -82,7 +81,6 @@ test/
 │       ├── VerticalGalleryView.inline-style.policy.test.ts
 │       ├── VerticalImageItem.inline-style.policy.test.ts
 │       └── README.md            # 정책 검증 가이드
-=======
 ├── unit/                        # 단위 테스트 (순수 로직, 팩토리 패턴) — Phase 188 정리 완료
 │   ├── features/                # 기능별 테스트 (Gallery, Settings, Toolbar, Scroll)
 │   ├── shared/                  # 공유 계층 테스트 (Services, Components, Utils, External)
@@ -166,7 +164,6 @@ test/
 │   │   └── toolbar/             # Toolbar 기능 테스트 (1개 파일, Phase 184, Phase 187)
 │   │       ├── toolbar.focus-indicator.test.tsx (70줄) - Toolbar 포커스 인디케이터 (Phase 187에서 이동)
 │   │       └── README.md        # Toolbar 테스트 가이드 (Phase 184)
->>>>>>> Stashed changes
 ├── integration/                 # 통합 테스트 (다중 서비스 협업)
 │   ├── infrastructure/          # 브라우저/기반시설 서비스 테스트 (JSDOM)
 │   │   └── browser-utils.test.ts
@@ -207,8 +204,6 @@ test/
 │   │   │   ├── service-manager.test.integration.ts # Mock만 포함
 │   │   │   ├── browser-compatibility.deprecated.test.ts # 폐기 (Extension only)
 │   │   │   └── README.md        # 아카이브 정책 설명
-<<<<<<< Updated upstream
-=======
 │   │   ├── patterns/            # 패턴 테스트 아카이브 (Phase 187)
 │   │   │   ├── result-pattern.test.ts (65줄, Phase 5 OLD, GREEN)
 │   │   │   └── README.md        # Phase 187에서 이동
@@ -218,7 +213,6 @@ test/
 │   │   ├── events/              # 이벤트 테스트 아카이브 (Phase 186)
 │   │   │   ├── event-lifecycle.abort-signal.deprecated.test.ts
 │   │   │   └── README.md        # Phase 186 정리 기록
->>>>>>> Stashed changes
 │   │   ├── features/
 │   │   │   └── gallery/         # Gallery Phase 테스트 아카이브 (Phase 182)
 │   │   │       ├── focus-tracker-infinite-loop.red.test.ts (201줄, RED)

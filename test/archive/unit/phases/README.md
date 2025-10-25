@@ -6,7 +6,8 @@
 
 ## 개요
 
-이 디렉토리는 프로젝트의 **Phase 완료 검증 테스트**와 **리팩토링 가드 테스트**를 보관합니다.
+이 디렉토리는 프로젝트의 **Phase 완료 검증 테스트**와 **리팩토링 가드 테스트**를
+보관합니다.
 
 - **PHASE**: 각 Phase 완료 시점에 작성된 통합/커버리지 검증 테스트 (14개)
 - **REFACTOR_GUARD**: Phase B3.3 리팩토링 진행 중 작성된 가드 테스트 (5개)
@@ -19,35 +20,35 @@
 
 ### PHASE Validation Tests (14개)
 
-| 파일 | Phase | 검증 대상 | 상태 |
-|------|-------|----------|------|
+| 파일                                                    | Phase | 검증 대상               | 상태    |
+| ------------------------------------------------------- | ----- | ----------------------- | ------- |
 | `integration-phase-140.3-media-extraction-flow.test.ts` | 140.3 | 미디어 추출 플로우 통합 | Archive |
-| `phase-125.1-gallery-app.test.ts` | 125.1 | GalleryApp 핵심 기능 | Archive |
-| `phase-125.2-initialize-theme.test.ts` | 125.2 | 테마 초기화 | Archive |
-| `phase-125.2-main.test.ts` | 125.2 | main.ts 부트스트랩 | Archive |
-| `phase-125.3-error-handling.test.ts` | 125.3 | 에러 처리 | Archive |
-| `phase-125.4-base-service-impl.test.ts` | 125.4 | 기본 서비스 구현 | Archive |
-| `phase-125.5-fallback-extractor.test.ts` | 125.5 | Fallback 추출기 | Archive |
-| `phase-125.5-media-extraction-service.test.ts` | 125.5 | 미디어 추출 서비스 | Archive |
-| `phase-125.6-video-control-service.test.ts` | 125.6 | 비디오 제어 서비스 | Archive |
-| `phase-132-compatibility-aliases.test.ts` | 132 | 호환성 별칭 | Archive |
-| `phase-133-toast-api-standardization.test.ts` | 133 | Toast API 표준화 | Archive |
-| `phase-134-performance-memory-validation.test.ts` | 134 | 성능/메모리 검증 | Archive |
-| `phase-136-type-guards-advanced.test.ts` | 136 | 타입 가드 | Archive |
-| `phase-140.1-gallery-renderer.test.ts` | 140.1 | 갤러리 렌더러 | Archive |
+| `phase-125.1-gallery-app.test.ts`                       | 125.1 | GalleryApp 핵심 기능    | Archive |
+| `phase-125.2-initialize-theme.test.ts`                  | 125.2 | 테마 초기화             | Archive |
+| `phase-125.2-main.test.ts`                              | 125.2 | main.ts 부트스트랩      | Archive |
+| `phase-125.3-error-handling.test.ts`                    | 125.3 | 에러 처리               | Archive |
+| `phase-125.4-base-service-impl.test.ts`                 | 125.4 | 기본 서비스 구현        | Archive |
+| `phase-125.5-fallback-extractor.test.ts`                | 125.5 | Fallback 추출기         | Archive |
+| `phase-125.5-media-extraction-service.test.ts`          | 125.5 | 미디어 추출 서비스      | Archive |
+| `phase-125.6-video-control-service.test.ts`             | 125.6 | 비디오 제어 서비스      | Archive |
+| `phase-132-compatibility-aliases.test.ts`               | 132   | 호환성 별칭             | Archive |
+| `phase-133-toast-api-standardization.test.ts`           | 133   | Toast API 표준화        | Archive |
+| `phase-134-performance-memory-validation.test.ts`       | 134   | 성능/메모리 검증        | Archive |
+| `phase-136-type-guards-advanced.test.ts`                | 136   | 타입 가드               | Archive |
+| `phase-140.1-gallery-renderer.test.ts`                  | 140.1 | 갤러리 렌더러           | Archive |
 
 ### REFACTOR_GUARD Tests (5개 - Phase B3.3)
 
-| 파일 | 검증 대상 | 상태 |
-|------|----------|------|
-| `phase-140.1-use-gallery-cleanup.test.ts` | 갤러리 정리 훅 | Archive |
-| `phase-145-1-scroll-retry.test.ts` | 스크롤 재시도 | Archive |
-| `phase-145-2-render-ready.test.ts` | 렌더 준비 | Archive |
-| `phase-b3-3-e2e-scenarios.test.ts` | E2E 시나리오 | Archive |
-| `phase-b3-3-event-routing.test.ts` | 이벤트 라우팅 | Archive |
-| `phase-b3-3-gallery-initialization.test.ts` | 갤러리 초기화 | Archive |
+| 파일                                           | 검증 대상            | 상태    |
+| ---------------------------------------------- | -------------------- | ------- |
+| `phase-140.1-use-gallery-cleanup.test.ts`      | 갤러리 정리 훅       | Archive |
+| `phase-145-1-scroll-retry.test.ts`             | 스크롤 재시도        | Archive |
+| `phase-145-2-render-ready.test.ts`             | 렌더 준비            | Archive |
+| `phase-b3-3-e2e-scenarios.test.ts`             | E2E 시나리오         | Archive |
+| `phase-b3-3-event-routing.test.ts`             | 이벤트 라우팅        | Archive |
+| `phase-b3-3-gallery-initialization.test.ts`    | 갤러리 초기화        | Archive |
 | `phase-b3-3-media-extraction-download.test.ts` | 미디어 추출/다운로드 | Archive |
-| `phase-b3-3-settings-config.test.ts` | 설정 구성 | Archive |
+| `phase-b3-3-settings-config.test.ts`           | 설정 구성            | Archive |
 
 ---
 
@@ -99,6 +100,8 @@ npx vitest run test/archive/unit/phases/
 
 ## 참고 문서
 
-- [`docs/TDD_REFACTORING_PLAN.md`](../../../../docs/TDD_REFACTORING_PLAN.md): Phase별 진행 상황
-- [`docs/TESTING_STRATEGY.md`](../../../../docs/TESTING_STRATEGY.md): 테스트 전략
+- [`docs/TDD_REFACTORING_PLAN.md`](../../../../docs/TDD_REFACTORING_PLAN.md):
+  Phase별 진행 상황
+- [`docs/TESTING_STRATEGY.md`](../../../../docs/TESTING_STRATEGY.md): 테스트
+  전략
 - [`test/README.md`](../../README.md): 테스트 구조 개요

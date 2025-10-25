@@ -1,22 +1,15 @@
-<<<<<<< Updated upstream
 # test/unit/policies
-
-정책 검증 테스트 모음
-=======
-# Policies Tests (test/unit/policies)
 
 정책 검증 및 코딩 규칙 테스트 모음
 
-> 최종 업데이트: 2025-10-25 (Phase 188)
-> 이 디렉토리는 단순 테스트가 아니라 코드베이스 정책/규칙 검증에 초점을 맞춥니다.
->>>>>>> Stashed changes
+> 최종 업데이트: 2025-10-25 (Phase 188) 이 디렉토리는 단순 테스트가 아니라
+> 코드베이스 정책/규칙 검증에 초점을 맞춥니다.
 
 ## 목적
 
 코드베이스 내 일관된 패턴과 정책 준수를 자동으로 검증합니다. 파일 내용을
 분석하여 anti-pattern을 감지하고 권장 패턴 준수 여부를 검증합니다.
 
-<<<<<<< Updated upstream
 ## 파일 구성
 
 ### 1. reactive-evaluation.test.ts
@@ -81,12 +74,13 @@
 - 관련 정책을 한 곳에서 관리
 
 ## 실행 방법
-=======
+
 ## 📋 파일 구성
 
 ### 경로 & 별칭
 
-- `alias-resolution.test.ts`: Vite 경로 별칭 (@features, @shared, @assets) 해석 검증
+- `alias-resolution.test.ts`: Vite 경로 별칭 (@features, @shared, @assets) 해석
+  검증
   - **정책**: 경로 별칭을 일관되게 사용하고, 정확히 해석되는지 확인
 
 ### Solid.js 반응성 & 최적화
@@ -99,7 +93,8 @@
 2. **direct-comparison.test.ts**: Solid.js 최적화 정책
    - Toolbar가 간단한 비교식을 JSX에서 직접 사용하는지 확인
    - 불필요한 `createMemo` 사용 감지
-   - **정책**: 간단한 비교식(`props.x > 0`)은 `createMemo` 없이 JSX에서 직접 사용 가능
+   - **정책**: 간단한 비교식(`props.x > 0`)은 `createMemo` 없이 JSX에서 직접
+     사용 가능
 
 3. **signal-selector-validation.test.ts**: 신호 선택자 메모이제이션 (통합)
    - Toast, Toolbar, VerticalImageItem의 selector 사용 패턴 검증
@@ -117,11 +112,13 @@
 ### 입력 이벤트
 
 - **pc-only-events-policy.test.ts**: PC 전용 이벤트 정책 검증
-- **정책**: Touch/Pointer 이벤트 금지, PC 이벤트만 사용 (click, keydown, wheel 등)
+- **정책**: Touch/Pointer 이벤트 금지, PC 이벤트만 사용 (click, keydown, wheel
+  등)
 
 ### Toolbar 로직 & i18n
 
-- **gallery-toolbar-logic-pattern.test.ts**: Toolbar 로직 패턴 검증 (props 전달 방식)
+- **gallery-toolbar-logic-pattern.test.ts**: Toolbar 로직 패턴 검증 (props 전달
+  방식)
 - **i18n.message-keys.test.ts**: i18n 메시지 키 사용 검증
 - **i18n.missing-keys.test.ts**: i18n 누락 키 감지 검증
 - **정책**: 모든 사용자 대면 텍스트는 i18n 키로 관리, 하드코딩 금지
@@ -144,44 +141,42 @@
 - 활성 파일과 정책 테스트의 명확한 구분
 
 ## ✅ 실행 방법
->>>>>>> Stashed changes
+
+> > > > > > >
 
 ```bash
 # 개별 정책 테스트 실행
 npm run test:unit -- test/unit/policies/reactive-evaluation.test.ts
-<<<<<<< Updated upstream
 npm run test:unit -- test/unit/policies/direct-comparison.test.ts
 npm run test:unit -- test/unit/policies/signal-selector-validation.test.ts
-=======
->>>>>>> Stashed changes
 
 # 모든 정책 테스트
 npm run test:unit test/unit/policies
 
-<<<<<<< Updated upstream
 # 린트 프로젝트에 포함
 npm run test:lint
 ```
 
 ## 추가 정책 테스트 작성 가이드
 
-새로운 정책 검증 테스트를 추가할 때:
-=======
-# 스타일/정책 프로젝트
+새로운 정책 검증 테스트를 추가할 때
+
+## 스타일/정책 프로젝트
+
 npm run test:styles
 
-# lint 프로젝트에 포함
+## lint 프로젝트에 포함
+
 npm run test:lint
-```
+
+````
 
 ## 📖 새로운 정책 테스트 작성 가이드
->>>>>>> Stashed changes
 
 1. **파일명**: `<policy-name>.test.ts` (kebab-case)
 2. **위치**: `test/unit/policies/`
 3. **구조**:
 
-<<<<<<< Updated upstream
    ```typescript
    import { describe, it, expect } from 'vitest';
    import { readFileSync } from 'node:fs';
@@ -194,14 +189,14 @@ npm run test:lint
        // 정책 검증 로직
      });
    });
-   ```
+````
 
 ## 참고
 
 - `CODING_GUIDELINES.md`: 일반 코딩 규칙
 - `ARCHITECTURE.md`: 구조 및 계층 규칙
 - `TESTING_STRATEGY.md`: 테스트 전략
-=======
+
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -226,4 +221,3 @@ describe('<Policy Name> Policy', () => {
 ---
 
 **최종 상태**: Phase 188 완료, 모든 정책 테스트 통합 및 중앙화
->>>>>>> Stashed changes
