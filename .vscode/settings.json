@@ -1,60 +1,9 @@
 {
-  "terminal.integrated.defaultProfile.windows": "Debian (WSL)",
   "chatgpt.runCodexInWindowsSubsystemForLinux": true,
-  "terminal.integrated.profiles.windows": {
-    "Debian (WSL)": {
-      "path": [
-        "C:/Program Files/PowerShell/7/pwsh.exe"
-      ],
-      "args": [
-        "-NoProfile",
-        "-Command ",
-        "wsl",
-        "--distribution",
-        "Debian",
-        "bash"
-      ],
-      "icon": "terminal-debian"
-    },
-    "PowerShell": {
-      "source": "PowerShell",
-      "icon": "terminal-powershell"
-    },
-    "Command Prompt": {
-      "path": [
-        "${env:windir}\\Sysnative\\cmd.exe",
-        "${env:windir}\\System32\\cmd.exe"
-      ],
-      "args": [],
-      "icon": "terminal-cmd"
-    },
-<<<<<<< Updated upstream
-    // TypeScript 검사에서 제외
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.validate.enable": true,
-    "typescript.preferences.includePackageJsonAutoImports": "on",
-    // ESLint 검사에서 제외 (이미 eslint.config.js에 있지만 명시)
-    "eslint.workingDirectories": [
-        {
-            "mode": "auto"
-        }
-    ],
-    // 문제 패널 필터링
-    "problems.decorations.enabled": true,
-    // JavaScript/TypeScript 언어 서버 최적화
-    "js/ts.implicitProjectConfig.checkJs": false,
-    "javascript.validate.enable": false,
-    "editor.maxTokenizationLineLength": 200000,
-    "terminal.integrated.windowsUseConptyDll": true,
-    "terminal.integrated.suggest.enabled": true,
-    "terminal.integrated.shellIntegration.environmentReporting": true,
-    "terminal.integrated.fontLigatures.enabled": true,
-    "terminal.integrated.enableImages": true,
-    "terminal.integrated.defaultProfile.windows": "Debian (WSL)"
-=======
-    "Git Bash": {
-      "source": "Git Bash"
+  // ESLint 작업 디렉터리 설정
+  "eslint.workingDirectories": [
+    {
+      "mode": "auto"
     }
-  }
->>>>>>> Stashed changes
+  ]
 }
