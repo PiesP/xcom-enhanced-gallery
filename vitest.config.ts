@@ -36,6 +36,7 @@ try {
 
 appendDebug('[vitest-config] loaded');
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
 // helpers kept minimal for lint cleanliness
@@ -230,10 +231,10 @@ export default defineConfig({
     poolOptions: {
       threads: {
         // 로컬: 멀티스레드 (빠른 개발), CI: 단일스레드 (메모리 안정성)
-        singleThread: isCI,
-        memoryLimit: isCI ? 1024 : 2048, // CI: 1GB, 로컬: 2GB per worker
+        singleThread: forceSingleThread,
+        memoryLimit: forceSingleThread ? 1024 : 2048, // CI: 1GB, 로컬: 2GB per worker
         minThreads: 1,
-        maxThreads: isCI ? 1 : Math.max(2, Math.min(4, 8 - 4)), // CI: 1, 로컬: 최대 4
+        maxThreads: forceSingleThread ? 1 : 4, // CI: 1, 로컬: 최대 4
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
