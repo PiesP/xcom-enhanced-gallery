@@ -31,18 +31,18 @@ Deque Systems의 axe-core 엔진이 50+ 접근성 규칙을 실시간으로 스�
 
 ## 🚀 실행 방법
 
-```pwsh
+```bash
 # 접근성 테스트 실행
 npm run e2e:a11y
 
 # 특정 파일만 실행
 npx playwright test playwright/accessibility/gallery-a11y.spec.ts
 
-# 헤드풀 모드 (브라우저 UI 표시)
-npx playwright test playwright/accessibility --headed
+# 헤드풀 모드 (UI 표시)
+npx playwright test --headed playwright/accessibility/
 
-# 디버그 모드 (단계별 실행)
-npx playwright test playwright/accessibility --debug
+# 디버그 모드
+npx playwright test --debug
 ```
 
 ## 📁 파일 구조

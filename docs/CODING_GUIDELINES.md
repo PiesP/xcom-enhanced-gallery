@@ -371,7 +371,7 @@ External (어댑터/벤더)
 
 ## 🚀 빌드 & 검증
 
-```powershell
+```bash
 # 빠른 검증
 npm run validate      # typecheck + lint + format
 

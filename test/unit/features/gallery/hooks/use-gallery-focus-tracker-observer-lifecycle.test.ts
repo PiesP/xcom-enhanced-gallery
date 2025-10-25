@@ -1,6 +1,6 @@
 /**
- * @file Phase 68.1 RED: Observer 생명주기 최적화 테스트
- * @description IntersectionObserver 인스턴스가 불필요하게 재생성되지 않도록 검증
+ * @description IntersectionObserver 인스턴스 생명주기 최적화 검증
+ * @note 인스턴스가 불필요하게 재생성되지 않도록 검증합니다.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -9,7 +9,7 @@ import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusT
 
 const { createRoot, createSignal } = getSolid();
 
-describe('Phase 68.1: Observer Lifecycle Optimization', () => {
+describe('Observer Lifecycle Optimization', () => {
   let dispose: (() => void) | null = null;
   let container: globalThis.HTMLDivElement;
   let observerInstances: globalThis.IntersectionObserver[] = [];

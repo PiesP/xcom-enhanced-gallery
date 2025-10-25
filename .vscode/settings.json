@@ -1,51 +1,34 @@
 {
-    "chat.mcp.serverSampling": {
-        "xcom-enhanced-gallery/.vscode/mcp.json: MCP_DOCKER": {
-            "allowedModels": [
-                "copilot/gpt-4.1",
-                "copilot/claude-opus-4",
-                "copilot/claude-opus-41",
-                "copilot/claude-3.5-sonnet",
-                "copilot/claude-3.7-sonnet",
-                "copilot/claude-3.7-sonnet-thought",
-                "copilot/claude-sonnet-4",
-                "copilot/claude-sonnet-4.5",
-                "copilot/gemini-2.0-flash-001",
-                "copilot/gemini-2.5-pro",
-                "copilot/gpt-4o",
-                "copilot/gpt-5",
-                "copilot/gpt-5-mini",
-                "copilot/gpt-5-codex",
-                "copilot/grok-code-fast-1",
-                "copilot/o3",
-                "copilot/o3-mini",
-                "copilot/o4-mini"
-            ]
-        }
+  "terminal.integrated.defaultProfile.windows": "Debian (WSL)",
+  "chatgpt.runCodexInWindowsSubsystemForLinux": true,
+  "terminal.integrated.profiles.windows": {
+    "Debian (WSL)": {
+      "path": [
+        "C:/Program Files/PowerShell/7/pwsh.exe"
+      ],
+      "args": [
+        "-NoProfile",
+        "-Command ",
+        "wsl",
+        "--distribution",
+        "Debian",
+        "bash"
+      ],
+      "icon": "terminal-debian"
     },
-    "codeQL.createQuery.qlPackLocation": "c:\\git\\xcom-enhanced-gallery",
-    // 파일 탐색기 및 검색에서 제외
-    "files.exclude": {
-        "**/node_modules": true,
-        "**/dist": true,
-        "**/build": true,
-        "**/coverage": true,
-        "**/.tsbuildinfo": true,
-        "**/test-results": true,
-        "**/playwright-report": true,
-        "**/.nyc_output": true
+    "PowerShell": {
+      "source": "PowerShell",
+      "icon": "terminal-powershell"
     },
-    "search.exclude": {
-        "**/node_modules": true,
-        "**/dist": true,
-        "**/build": true,
-        "**/coverage": true,
-        "**/test-results": true,
-        "**/playwright-report": true,
-        "**/.tsbuildinfo": true,
-        "**/*.lock": true,
-        "**/*.log": true
+    "Command Prompt": {
+      "path": [
+        "${env:windir}\\Sysnative\\cmd.exe",
+        "${env:windir}\\System32\\cmd.exe"
+      ],
+      "args": [],
+      "icon": "terminal-cmd"
     },
+<<<<<<< Updated upstream
     // TypeScript 검사에서 제외
     "typescript.tsdk": "node_modules/typescript/lib",
     "typescript.validate.enable": true,
@@ -68,4 +51,10 @@
     "terminal.integrated.fontLigatures.enabled": true,
     "terminal.integrated.enableImages": true,
     "terminal.integrated.defaultProfile.windows": "Debian (WSL)"
+=======
+    "Git Bash": {
+      "source": "Git Bash"
+    }
+  }
+>>>>>>> Stashed changes
 }

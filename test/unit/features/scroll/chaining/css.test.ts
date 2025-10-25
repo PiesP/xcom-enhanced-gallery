@@ -1,32 +1,11 @@
 /**
- * @fileoverview Phase 140.5: 스크롤 체이닝 CSS 속성 검증
- * @description overscroll-behavior CSS 속성이 갤러리 컨테이너에 올바르게 적용되었는지 검증
- *
- * **테스트 목적**:
- * 실제 프로젝트에서 사용하는 CSS 기반 스크롤 체이닝 방지 메커니즘 검증
- *
- * **실제 구현 위치**:
- * - VerticalGalleryView.module.css: line 105 (`overscroll-behavior: none`)
- * - performance.css: line 62 (`.xeg-optimized-scroll`)
- *
- * **CSS 접근의 장점**:
- * - 선언적이고 간결함 (JavaScript 불필요)
- * - 브라우저 네이티브 최적화 활용
- * - 접근성 자동 보장 (스크린 리더 등)
- * - 성능 우수 (메인 스레드 부하 없음)
- *
- * **테스트 범위**:
- * - CSS 속성 적용 검증
- * - 브라우저 호환성 폴백 테스트
- * - CSS 우선순위 및 상속 규칙 확인
- *
- * @see src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css
- * @see src/shared/styles/performance.css
+ * @description CSS overscroll-behavior 속성 적용 검증
+ * @note 갤러리 컨테이너에 올바른 CSS가 적용되어 스크롤 체이닝을 방지하는지 검증
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-describe('Phase 140.5: Scroll Chaining CSS Prevention', () => {
+describe('Scroll Chaining CSS Prevention', () => {
   let container: HTMLElement;
 
   beforeEach(() => {

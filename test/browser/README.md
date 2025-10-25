@@ -13,7 +13,11 @@
 
 ## 실행 방법
 
+<<<<<<< Updated upstream
 ```pwsh
+=======
+```bash
+>>>>>>> Stashed changes
 # 전체 테스트
 npm run test:browser
 

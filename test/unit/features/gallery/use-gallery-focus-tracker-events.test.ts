@@ -1,6 +1,7 @@
 /**
- * @file Phase 63 - Step 3: useGalleryFocusTracker 이벤트 구독 테스트
+ * @file useGalleryFocusTracker 이벤트 구독 테스트
  * @description galleryIndexEvents를 구독하여 명시적 네비게이션 시 autoFocusIndex를 즉시 동기화
+ * @scope 활성 통합 테스트 (Solid.js 반응성 + 이벤트 시스템 검증)
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -10,12 +11,12 @@ import { galleryIndexEvents } from '@shared/state/signals/gallery.signals';
 
 const { createRoot } = getSolid();
 
-describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
+describe('useGalleryFocusTracker: 이벤트 구독 및 동기화', () => {
   let dispose: (() => void) | null = null;
   let container: HTMLElement;
 
   beforeEach(() => {
-    // Phase 69: fake timers 설정 (debounce 테스트용)
+    // fake timers 설정 (debounce 테스트용)
     vi.useFakeTimers();
 
     container = document.createElement('div');
@@ -136,7 +137,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
 
       galleryIndexEvents.emit('navigate:complete', { index: 5, trigger: 'button' });
 
-      // Phase 69: debouncedUpdateContainerFocusAttribute로 인해 50ms 대기 필요
+      // debounce 대기 (debouncedUpdateContainerFocusAttribute: 50ms)
       await vi.advanceTimersByTimeAsync(60);
 
       expect(container.getAttribute('data-focused')).toBe('5');
@@ -204,7 +205,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
   });
 
   describe('자동 포커스 적용', () => {
-    // Phase 74: debounce 타이밍 수정 (fake timers 사용)
+    // debounce 타이밍 대기 (debouncedScheduleSync: 100ms, 스크롤: 100ms)
     it('should schedule auto focus with delay after navigation', async () => {
       const getCurrentIndex = vi.fn(() => 0);
       const mockElement = document.createElement('div');
@@ -234,7 +235,7 @@ describe('Phase 63 - Step 3: useGalleryFocusTracker Event Subscription', () => {
       // 즉시는 포커스되지 않음
       expect(document.activeElement).not.toBe(mockElement);
 
-      // Phase 74: delay(100) + 스크롤 대기(100) + margin
+      // delay(100) + 스크롤 대기(100) + margin
       await vi.advanceTimersByTimeAsync(250);
 
       expect(document.activeElement).toBe(mockElement);

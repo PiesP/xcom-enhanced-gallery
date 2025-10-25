@@ -5,12 +5,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'solid-js';
-import { getSolid } from '../../../src/shared/external/vendors';
+import { getSolid } from '../../../../src/shared/external/vendors';
 
 const { createSignal } = getSolid();
 
 // Mock 설정
-vi.mock('../../../src/shared/logging/logger', () => ({
+vi.mock('../../../../src/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('../../../src/shared/logging/logger', () => ({
   },
 }));
 
-vi.mock('../../../src/shared/state/signals/gallery.signals', () => {
+vi.mock('../../../../src/shared/state/signals/gallery.signals', () => {
   const { createSignal } = getSolid();
   const [isOpen, setIsOpen] = createSignal(true);
 
@@ -34,7 +34,7 @@ vi.mock('../../../src/shared/state/signals/gallery.signals', () => {
   };
 });
 
-vi.mock('../../../src/shared/utils/core-utils', () => ({
+vi.mock('../../../../src/shared/utils/core-utils', () => ({
   findTwitterScrollContainer: vi.fn(() => null),
 }));
 
@@ -76,7 +76,7 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
     it('휠 이벤트 발생 시 onScroll 콜백이 scrollBy를 호출하지 않아야 함', async () => {
       // Given: useGalleryScroll 훅이 활성화된 상태
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
       const onScrollSpy = vi.fn();
 
@@ -115,7 +115,7 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
     it('onScroll 콜백에서 scrollBy 대신 브라우저 네이티브 스크롤을 사용해야 함', async () => {
       // Given: useGalleryScroll 훅이 활성화된 상태
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
       let capturedCallback: ((delta: number, target: HTMLElement | null) => void) | undefined;
 
@@ -159,7 +159,7 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
     it('휠 이벤트 발생 시 스크롤 방향을 감지해야 함', async () => {
       // Given: 방향 감지가 활성화된 useGalleryScroll
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
       const onDirectionChangeSpy = vi.fn();
 
@@ -195,7 +195,7 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
     it('음수 deltaY는 "up" 방향으로 감지해야 함', async () => {
       // Given: 방향 감지가 활성화된 useGalleryScroll
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
       const onDirectionChangeSpy = vi.fn();
 
@@ -232,14 +232,16 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
   describe('GREEN: 트위터 스크롤 차단 기능 유지', () => {
     it('blockTwitterScroll이 true일 때 트위터 스크롤을 차단해야 함', async () => {
       // Given: 트위터 컨테이너가 존재하는 환경
-      const { findTwitterScrollContainer } = await import('../../../src/shared/utils/core-utils');
+      const { findTwitterScrollContainer } = await import(
+        '../../../../src/shared/utils/core-utils'
+      );
       const mockTwitterContainer = document.createElement('div');
       mockTwitterContainer.className = 'twitter-container';
       document.body.appendChild(mockTwitterContainer);
       vi.mocked(findTwitterScrollContainer).mockReturnValue(mockTwitterContainer);
 
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
 
       await new Promise<void>(resolve => {
@@ -279,7 +281,7 @@ describe('Phase 61: useGalleryScroll - 스크롤 동작 정리', () => {
     it('useGalleryScroll은 오직 감지(detect)만 수행하고, 실행(execute)은 하지 않아야 함', async () => {
       // Given: useGalleryScroll의 책임 범위
       const { useGalleryScroll } = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
+        '../../../../src/features/gallery/hooks/useGalleryScroll'
       );
 
       await new Promise<void>(resolve => {

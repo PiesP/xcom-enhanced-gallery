@@ -1,28 +1,11 @@
 /**
- * @fileoverview Phase 140.5: 스크롤 체이닝 경계 조건 검증
- * @description 갤러리 스크롤 경계에서의 페이지 스크롤 방지 검증
- *
- * **테스트 목적**:
- * 스크롤 경계 감지 로직 및 경계에서의 스크롤 체이닝 방지 패턴 검증
- *
- * **실제 구현 방식**:
- * - CSS `overscroll-behavior: none`이 자동으로 경계 처리
- * - 브라우저가 네이티브로 "더 이상 스크롤할 수 없음"을 인식하고 전파 차단
- * - 명시적인 경계 감지 코드 불필요 (브라우저가 처리)
- *
- * **테스트-구현 관계**:
- * - 이 테스트는 "수동으로 경계를 감지해야 한다면" 어떻게 구현할지 보여줌
- * - 실제로는 CSS가 브라우저 레벨에서 자동 처리
- * - 경계 감지 알고리즘의 정확성 검증 (향후 필요시 참조)
- *
- * @see src/features/gallery/hooks/useGalleryScroll.ts - 실제 구현
- * @see test/unit/features/scroll-chaining-css.test.ts - CSS 기반 테스트
- * @see test/browser/scroll-chaining-propagation.test.ts - 브라우저 실제 동작 검증
+ * @description 스크롤 체이닝 경계 조건 검증 (overscroll-behavior 기반)
+ * @note 갤러리 경계에서 페이지 스크롤 방지, CSS 및 경계 감지 로직 검증
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-describe('Phase 140.5: Scroll Chaining Boundary Conditions', () => {
+describe('Scroll Chaining Boundary Conditions', () => {
   let galleryContainer: HTMLElement;
   let scrollableContent: HTMLElement;
 

@@ -1,7 +1,6 @@
 /**
- * @file useGalleryFocusTracker 중복 호출 방지 테스트
- * @description Phase 69.1: autoFocus/manualFocus 중복 방지, RAF 배칭 검증
- * @note Phase 82.6: E2E Migration Complete - 3개 스킵 테스트 제거됨
+ * @description useGalleryFocusTracker 중복 호출 방지 및 RAF 배칭 검증
+ * @note 3개 E2E 마이그레이션 스킵 테스트 제거됨 (Phase 82.6에서 처리됨)
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

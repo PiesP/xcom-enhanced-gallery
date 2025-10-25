@@ -1,6 +1,6 @@
 /**
- * @fileoverview Toolbar focus indicator regression tests (preview rollback).
- * @description Confirms the toolbar renders accessibility cues without the Phase 29 preview UI.
+ * @description Toolbar 포커스 표시기 회귀 테스트
+ * @note 접근성 큐가 올바르게 렌더링되는지 검증합니다.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';

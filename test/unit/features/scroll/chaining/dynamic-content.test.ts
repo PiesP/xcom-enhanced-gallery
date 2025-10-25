@@ -1,33 +1,11 @@
 /**
- * @fileoverview Phase 143: 스크롤 체이닝 - 동적 콘텐츠 로딩 시나리오
- * @description 갤러리 콘텐츠가 동적으로 추가/제거될 때 스크롤 체이닝 방지 메커니즘 검증
- *
- * **테스트 목적**:
- * - 무한 스크롤 등 동적 콘텐츠 추가 시 스크롤 경계 재계산
- * - 아이템 제거 시 경계 업데이트 및 스크롤 체이닝 방지 유지
- * - 이미지 지연 로딩 중 스크롤 동작 안정성
- * - 비동기 콘텐츠 로딩 중 스크롤 체이닝 방지
- *
- * **실제 구현 고려사항**:
- * - CSS `overscroll-behavior: none`은 자동으로 콘텐츠 크기 변화 감지
- * - 명시적 경계 재계산이 필요한지 검증
- * - ResizeObserver 또는 MutationObserver 필요 여부 확인
- *
- * **테스트 범위**:
- * - 무한 스크롤 (아이템 추가)
- * - 아이템 제거 및 경계 재계산
- * - 이미지 로딩 중 스크롤
- * - 비동기 콘텐츠 로딩
- * - 대량 아이템 추가/제거 성능
- *
- * @see src/features/gallery/hooks/useGalleryScroll.ts
- * @see test/unit/features/scroll-chaining-css.test.ts
- * @see test/unit/features/scroll-chaining-boundary.test.ts
+ * @description 동적 콘텐츠 로딩 중 스크롤 체이닝 방지 메커니즘 검증
+ * @note 무한 스크롤, 아이템 제거, 이미지 지연 로딩 등 동적 시나리오 테스트
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-describe('Phase 143: Scroll Chaining - Dynamic Content Loading', () => {
+describe('Scroll Chaining - Dynamic Content Loading', () => {
   let galleryContainer: HTMLElement;
   let scrollableContent: HTMLElement;
   let itemCount = 0;

@@ -48,10 +48,6 @@ max_line_length = 100
 [*.sh]
 end_of_line = lf
 
-# PowerShell 스크립트
-[*.ps1]
-indent_size = 4
-
 # Makefile
 [Makefile]
 indent_style = tab

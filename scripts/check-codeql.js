@@ -189,12 +189,14 @@ function createDatabase() {
     `${colors.bright}1. CodeQL 데이터베이스 생성 중...${forceRebuild ? ' (강제 재생성)' : ''}${colors.reset}`
   );
 
-  // 기존 데이터베이스 삭제
+  /**
+   * 기존 데이터베이스 삭제
+   */
   try {
     if (existsSync(dbDir)) {
-      execSync(`${process.platform === 'win32' ? 'rmdir /s /q' : 'rm -rf'} "${dbDir}"`, {
-        stdio: 'pipe',
-      });
+      // Debian/Linux 환경에 최적화
+      const rmCommand = `rm -rf "${dbDir}"`;
+      execSync(rmCommand, { stdio: 'pipe' });
     }
   } catch {
     console.log(`${colors.yellow}⚠️  기존 데이터베이스 정리 실패 (무시)${colors.reset}`);

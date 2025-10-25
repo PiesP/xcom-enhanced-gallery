@@ -1,23 +1,7 @@
 /**
- * @fileoverview Phase 140.5: 스크롤 체이닝 이벤트 핸들러 검증
- * @description preventDefault/stopPropagation 호출을 통한 스크롤 체이닝 방지 검증
- *
- * **테스트 목적**:
- * 이 테스트는 이벤트 핸들링을 통한 스크롤 체이닝 방지 **패턴**을 검증합니다.
- *
- * **실제 구현 방식**:
- * - useGalleryScroll.ts는 CSS `overscroll-behavior: none`에 의존
- * - 갤러리 휠 이벤트는 `passive: true`로 등록하여 브라우저 네이티브 동작 사용
- * - preventDefault/stopPropagation은 제거됨 (더 효율적인 CSS 기반 접근)
- * - Twitter 스크롤 차단만 preventTwitterScroll 함수로 별도 처리
- *
- * **테스트-구현 관계**:
- * - 이 테스트는 "이벤트 기반으로 구현할 경우" 어떻게 해야 하는지 패턴을 보여줌
- * - 실제로는 CSS가 더 선언적이고 성능이 좋아 CSS 방식 사용
- * - 두 접근법 모두 테스트하여 견고성 보장 (CSS 테스트 + 이벤트 패턴 테스트)
- *
- * @see src/features/gallery/hooks/useGalleryScroll.ts - 실제 구현
- * @see test/unit/features/scroll-chaining-css.test.ts - CSS 기반 테스트
+ * @description 스크롤 체이닝 이벤트 핸들러 패턴 검증
+ * @note preventDefault/stopPropagation을 통한 스크롤 체이닝 방지 패턴 테스트
+ * @see CSS overscroll-behavior 기반 실제 구현은 css.test.ts 참고
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

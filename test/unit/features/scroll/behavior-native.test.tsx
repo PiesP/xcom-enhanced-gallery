@@ -1,10 +1,6 @@
 /**
- * Phase 76: 브라우저 네이티브 스크롤 전환 테스트
- *
- * 목표:
- * - VerticalGalleryView에서 scrollBy 수동 호출 제거
- * - 브라우저 네이티브 스크롤로 전환 (CSS overflow:auto)
- * - passive 이벤트 리스너 사용
+ * @description 브라우저 네이티브 스크롤 전환 검증
+ * @note 수동 scrollBy 호출 제거, CSS overflow:auto로 전환
  */
 
 import { describe, it, expect } from 'vitest';
@@ -12,7 +8,7 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-describe('Phase 76: Native Browser Scroll', () => {
+describe('Native Browser Scroll', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const verticalGalleryViewPath = resolve(
     currentDir,

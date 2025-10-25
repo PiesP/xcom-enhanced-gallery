@@ -39,6 +39,7 @@ test/
 │   ├── testing-library.ts       # @solidjs/testing-library re-export
 │   └── helpers/
 │       └── mock-action-simulator.ts # DOM 이벤트 스뮬레이션 (click, keypress)
+<<<<<<< Updated upstream
 ├── unit/                        # 단위 테스트 (순수 로직, 팩토리 패턴)
 │   ├── alias/                   # 경로 별칭 검증 (1개 파일)
 │   │   ├── alias-resolution.test.ts # Vite 경로 별칭(@features, @shared) 동적 import 검증
@@ -81,6 +82,91 @@ test/
 │       ├── VerticalGalleryView.inline-style.policy.test.ts
 │       ├── VerticalImageItem.inline-style.policy.test.ts
 │       └── README.md            # 정책 검증 가이드
+=======
+├── unit/                        # 단위 테스트 (순수 로직, 팩토리 패턴) — Phase 188 정리 완료
+│   ├── features/                # 기능별 테스트 (Gallery, Settings, Toolbar, Scroll)
+│   ├── shared/                  # 공유 계층 테스트 (Services, Components, Utils, External)
+│   │   ├── factories/           # 테스트 팩토리 (Phase 188에서 이동)
+│   │   │   ├── mock-utils.factory.ts
+│   │   │   └── README.md
+│   │   ├── components/          # UI 컴포넌트 테스트 (Phase 188에서 통합)
+│   │   │   ├── accessibility/   # 접근성 컴포넌트 테스트
+│   │   │   ├── button-*.test.ts
+│   │   │   ├── toolbar-*.test.tsx
+│   │   │   ├── settings-*.test.tsx
+│   │   │   └── README.md
+│   │   ├── services/
+│   │   ├── utils/
+│   │   ├── external/
+│   │   ├── setup/
+│   │   ├── types/
+│   │   ├── integration/
+│   │   ├── media/
+│   │   ├── state/
+│   │   ├── hooks/
+│   │   ├── logging/
+│   │   ├── dom/
+│   │   ├── container/
+│   │   ├── browser/
+│   │   ├── i18n/
+│   │   └── README.md
+│   ├── lint/                    # 정책 검증 테스트 (ESLint 규칙)
+│   ├── styles/                  # 스타일 정책 테스트
+│   ├── policies/                # 정책 검증 테스트 (Phase 188에서 통합)
+│   │   ├── alias-resolution.test.ts
+│   │   ├── reactive-evaluation.test.ts
+│   │   ├── direct-comparison.test.ts
+│   │   ├── signal-selector-validation.test.ts
+│   │   ├── design-token-policy.test.ts
+│   │   ├── bundle-size-policy.test.ts
+│   │   ├── pc-only-events-policy.test.ts
+│   │   ├── gallery-toolbar-logic-pattern.test.ts
+│   │   ├── i18n.message-keys.test.ts
+│   │   ├── i18n.missing-keys.test.ts
+│   │   ├── VerticalGalleryView.inline-style.policy.test.ts
+│   │   ├── VerticalImageItem.inline-style.policy.test.ts
+│   │   ├── video-item.cls.test.ts
+│   │   └── README.md
+│   ├── performance/             # 성능 테스트 (벤치마크)
+│   ├── media/                   # 미디어 서비스 테스트
+│   ├── state/                   # 상태 관리 테스트
+│   ├── refactoring/             # 리팩토링 테스트 (가드)
+│   └── README.md
+├── browser/                     # 브라우저 모드 테스트 (Vitest + Chromium)
+│   │       └── viewport-utils.test.ts # 뷰포트 유틸리티 (Phase 187에서 이동)
+│   ├── state/                   # 상태 테스트 (폐기, Phase 187)
+│   ├── styles/                  # 스타일 테스트 (폐기 후 test/styles로 통합됨, Phase 187)
+│   ├── features/
+│   │   ├── gallery/             # Gallery 기능 테스트 (12개 파일, Phase 182 정리)
+│   │   │   ├── GalleryApp.integration.test.ts (411줄) - GalleryApp 전체 플로우
+│   │   │   ├── keyboard-help.aria.test.tsx (55줄) - KeyboardHelpOverlay ARIA
+│   │   │   ├── components/      # 컴포넌트 회귀 테스트
+│   │   │   │   ├── VerticalGalleryView.auto-focus-on-idle.test.tsx (206줄, Browser 모드)
+│   │   │   │   ├── VerticalGalleryView.fit-mode.test.tsx (154줄)
+│   │   │   │   ├── VerticalGalleryView.focus-tracking.test.tsx (232줄, Browser 모드)
+│   │   │   │   ├── VerticalGalleryView.wheel-scroll.test.tsx (157줄)
+│   │   │   │   ├── vertical-gallery-view/
+│   │   │   │   │   └── useProgressiveImage.test.ts (151줄)
+│   │   │   │   └── __screenshots__/
+│   │   │   ├── hooks/           # 훅 테스트 (6개)
+│   │   │   │   ├── conflict-resolution.test.ts (152줄)
+│   │   │   │   ├── use-gallery-focus-tracker-deduplication.test.ts (164줄, RAF)
+│   │   │   │   ├── use-gallery-focus-tracker-settling.test.ts (195줄, RAF)
+│   │   │   │   ├── use-gallery-focus-tracker-observer-lifecycle.test.ts (201줄, RAF)
+│   │   │   │   ├── use-gallery-scroll-stability.test.ts (194줄)
+│   │   │   │   ├── useGalleryItemScroll.test.ts (138줄)
+│   │   │   │   └── __screenshots__/
+│   │   │   └── README.md        # Gallery 테스트 가이드 (Phase 182)
+│   │   ├── settings/            # Settings 기능 테스트 (3개 파일, Phase 183)
+│   │   │   ├── settings-migration.schema-hash.test.ts (71줄) - 설정 마이그레이션 해시
+│   │   │   ├── settings-migration.behavior.test.ts (47줄) - 마이그레이션 동작
+│   │   │   ├── services/
+│   │   │   │   └── twitter-token-extractor.test.ts (115줄) - 토큰 추출
+│   │   │   └── README.md        # Settings 테스트 가이드 (Phase 183)
+│   │   └── toolbar/             # Toolbar 기능 테스트 (1개 파일, Phase 184, Phase 187)
+│   │       ├── toolbar.focus-indicator.test.tsx (70줄) - Toolbar 포커스 인디케이터 (Phase 187에서 이동)
+│   │       └── README.md        # Toolbar 테스트 가이드 (Phase 184)
+>>>>>>> Stashed changes
 ├── integration/                 # 통합 테스트 (다중 서비스 협업)
 │   ├── infrastructure/          # 브라우저/기반시설 서비스 테스트 (JSDOM)
 │   │   └── browser-utils.test.ts
@@ -121,6 +207,18 @@ test/
 │   │   │   ├── service-manager.test.integration.ts # Mock만 포함
 │   │   │   ├── browser-compatibility.deprecated.test.ts # 폐기 (Extension only)
 │   │   │   └── README.md        # 아카이브 정책 설명
+<<<<<<< Updated upstream
+=======
+│   │   ├── patterns/            # 패턴 테스트 아카이브 (Phase 187)
+│   │   │   ├── result-pattern.test.ts (65줄, Phase 5 OLD, GREEN)
+│   │   │   └── README.md        # Phase 187에서 이동
+│   │   ├── lifecycle/           # 라이프사이클 테스트 아카이브 (Phase 187)
+│   │   │   ├── lifecycle.cleanup.leak-scan.red.test.ts (152줄, RED R4)
+│   │   │   └── README.md        # Phase 187에서 이동
+│   │   ├── events/              # 이벤트 테스트 아카이브 (Phase 186)
+│   │   │   ├── event-lifecycle.abort-signal.deprecated.test.ts
+│   │   │   └── README.md        # Phase 186 정리 기록
+>>>>>>> Stashed changes
 │   │   ├── features/
 │   │   │   └── gallery/         # Gallery Phase 테스트 아카이브 (Phase 182)
 │   │   │       ├── focus-tracker-infinite-loop.red.test.ts (201줄, RED)

@@ -1,6 +1,6 @@
 /**
- * @fileoverview Phase 76: 스크롤 로직 단순화 테스트 (RED → GREEN)
  * @description 네이티브 스크롤 동작 보장 및 불필요한 개입 제거 검증
+ * @note 스크롤 로직을 단순화하고 브라우저 기본 동작을 활용합니다.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -15,7 +15,7 @@ function createWheelEvent(deltaY = 100): globalThis.Event {
   return event;
 }
 
-describe('Phase 76: Native Scroll Behavior (RED Phase)', () => {
+describe('Native Scroll Behavior', () => {
   let container: HTMLElement;
 
   beforeEach(() => {

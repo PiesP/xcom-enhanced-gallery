@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { useGalleryToolbarLogic } from '../../../src/shared/hooks/use-gallery-toolbar-logic';
+import { useGalleryToolbarLogic } from '../../../../src/shared/hooks/use-gallery-toolbar-logic';
 
 describe('Phase 62: Toolbar Buttons Always Enabled (Circular Navigation)', () => {
   describe('RED: canGoPrevious() - 항상 활성화 (totalCount > 1)', () => {

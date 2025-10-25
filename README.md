@@ -226,7 +226,9 @@ npm test
   [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
 - **📚 문서**: [문서 가이드](docs/DOCUMENTATION.md) · [개발자 가이드](AGENTS.md)
   · [전체 docs/](docs/)
-- **📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
+- **� CodeQL 설정** (로컬 정적 분석):
+  [CodeQL Debian 설정 가이드](docs/temp/CODEQL_DEBIAN_SETUP.md)
+- **�📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
 
 ---
 

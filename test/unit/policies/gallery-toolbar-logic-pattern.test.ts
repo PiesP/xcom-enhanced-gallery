@@ -1,6 +1,8 @@
 /**
- * @fileoverview Props 접근 패턴 검증 테스트 (Phase 14.2 - TDD RED)
+ * @fileoverview Props 접근 패턴 검증 테스트 (Phase 14.2 - TDD RED) - 이동됨
  * @description useGalleryToolbarLogic에서 props를 getter 함수로 일관되게 접근하는지 검증
+ * @location 원본: test/unit/hooks/use-gallery-toolbar-logic-props.test.ts
+ * @movedFrom Phase 14.2 정책 검증을 위해 test/unit/policies로 통합
  */
 
 import { describe, it, expect } from 'vitest';
@@ -10,7 +12,7 @@ import { join } from 'node:path';
 const filePath = join(process.cwd(), 'src/shared/hooks/use-gallery-toolbar-logic.ts');
 const fileContent = readFileSync(filePath, 'utf-8');
 
-describe('Phase 14.2: useGalleryToolbarLogic Props 접근 패턴', () => {
+describe('Policy: useGalleryToolbarLogic Props 접근 패턴 (Phase 14.2)', () => {
   describe('canGoPrevious/canGoNext - Getter 함수 패턴', () => {
     it('canGoPrevious는 getter 함수여야 함 (const canGoPrevious = () => ...)', () => {
       // Phase 62: 순환 네비게이션 - totalCount > 1 패턴

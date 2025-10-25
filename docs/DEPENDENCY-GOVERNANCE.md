@@ -19,7 +19,7 @@
 
 ## 실행 방법
 
-```powershell
+```bash
 # 규칙 검증 (위반 시 빌드 실패)
 npm run deps:check
 

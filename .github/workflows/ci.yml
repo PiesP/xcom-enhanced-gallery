@@ -39,15 +39,25 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: � Setup GitHub CLI with CodeQL extension
+      - name: 🔐 Setup GitHub CLI with CodeQL extension
         run: |
+          # GitHub CLI는 ubuntu-latest에 기본 설치되어 있음
+          gh --version
+
+          # CodeQL 확장 설치 (실패해도 계속 진행)
           gh extension install github/gh-codeql || true
+
+          # 설치 확인
+          gh codeql version || echo "CodeQL extension not available, will use codeql CLI"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ✅ Run quality checks
         run: npm run validate:ci
         # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   tests:
     name: 🧪 Unit & Integration Tests (Shard ${{ matrix.shard }}/2)

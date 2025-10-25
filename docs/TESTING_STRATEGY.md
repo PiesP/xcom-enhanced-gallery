@@ -221,12 +221,12 @@ Remount 패턴 사용 (자세한 내용: `AGENTS.md` E2E 가이드)
 
 ### Pre-Push (Git Hook)
 
-```pwsh
+```bash
 # Husky 자동 실행 (기본: smoke 프로젝트, 10-20초)
 git push
 
 # 전체 스위트 (5-10분)
- = 'full'
+export XEG_PREPUSH_SCOPE='full'
 git push
 ```
 

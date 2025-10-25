@@ -96,9 +96,15 @@ Optimizations, Bundle Optimization 통합 테스트
 
 만약 파일을 복구하려면:
 
+<<<<<<< Updated upstream
 ```powershell
 # 1. 파일 복사
 Copy-Item -Path test/archive/performance -Destination test/performance -Recurse -Force
+=======
+```bash
+# 1. 파일 복사
+cp -r test/archive/performance test/performance
+>>>>>>> Stashed changes
 
 # 2. vitest.config.ts 업데이트
 # include에 'test/performance/**/*.{test,spec}.{ts,tsx}' 추가
