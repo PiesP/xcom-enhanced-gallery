@@ -82,6 +82,8 @@ jobs:
 
       - name: 🧪 Run tests with coverage (Shard ${{ matrix.shard }}/2)
         run: npm run test:coverage -- --shard=${{ matrix.shard }}/2
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: 📊 Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -131,6 +133,8 @@ jobs:
 
       - name: 🧪 Run browser tests (Shard ${{ matrix.shard }}/2)
         run: npm run test:browser -- --shard=${{ matrix.shard }}/2
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4
@@ -177,6 +181,8 @@ jobs:
 
       - name: 🧪 Run E2E smoke tests
         run: npm run e2e:smoke
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4
@@ -223,6 +229,8 @@ jobs:
 
       - name: ♿ Run accessibility tests
         run: npm run e2e:a11y
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4

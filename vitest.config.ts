@@ -229,9 +229,11 @@ export default defineConfig({
     poolOptions: {
       threads: {
         singleThread: false,
-        // 로컬: CPU-1(최대 8), CI: CPU-1(최대 6)로 제한하여 컨텍스트 스위칭 과도 방지
+        // 로컬: CPU-1(최대 8), CI: 메모리 절약을 위해 2-3 workers로 제한 (OOM 방지)
         minThreads: 1,
-        maxThreads: Math.max(2, Math.min(isCI ? 6 : 8, Math.max(1, CPU_COUNT - 1))),
+        maxThreads: isCI
+          ? Math.min(3, Math.max(1, CPU_COUNT - 1))
+          : Math.max(2, Math.min(8, Math.max(1, CPU_COUNT - 1))),
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
