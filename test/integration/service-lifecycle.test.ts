@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-
 /**
- * @fileoverview Service Lifecycle Integration Tests
+ * @fileoverview Service Lifecycle 통합 테스트
+ * @description 서비스 초기화, 이벤트 전달, 리소스 정리 검증
  *
- * 목적: 서비스 초기화 및 라이프사이클 통합 검증
- * - 서비스 초기화 순서
- * - 서비스 간 이벤트 전달
- * - 리소스 정리
+ * Phase 171A: 현대화
+ * - 서비스 라이프사이클 패턴 검증
+ * - 의존성 관리 및 조합
+ * - 에러 처리 및 정리
  */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('Service Lifecycle Integration', () => {
   beforeEach(() => {

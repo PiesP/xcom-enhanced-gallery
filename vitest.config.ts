@@ -293,13 +293,13 @@ export default defineConfig({
             '**/*.red.test.*',
             'test/unit/performance/**',
             '**/*.bench.test.*',
+            'test/archive/**',
             // Phase B3.2.5: sample-based-click-detection.test.ts has dependency injection issues
             // See: https://github.com/PiesP/xcom-enhanced-gallery/issues/XXX
             // TODO: Fix test to work with actual MediaExtractionService implementation
             'test/unit/shared/services/media-extraction/sample-based-click-detection.test.ts',
             // 2025-10-23: Exclude failing tests that need refactoring or are WIP
             // These tests have structural issues and need to be fixed in a separate phase
-            'test/unit/alias/alias-resolution.test.ts',
             'test/unit/shared/services/bulk-download.progress-complete.test.ts',
             'test/unit/shared/components/isolation/GalleryContainer.test.tsx',
             'test/unit/shared/services/media/phase-125.5-fallback-extractor.test.ts',
@@ -392,6 +392,7 @@ export default defineConfig({
           include: [
             'test/styles/**/*.{test,spec}.{ts,tsx}',
             'test/unit/styles/**/*.{test,spec}.{ts,tsx}',
+            'test/unit/policies/**/*.{test,spec}.{ts,tsx}',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
           transformMode: solidTransformMode,
@@ -415,12 +416,8 @@ export default defineConfig({
               storageQuota: 10000000,
             },
           },
-          include: [
-            'test/performance/**/*.{test,spec}.{ts,tsx}',
-            'test/unit/performance/**/*.{test,spec}.{ts,tsx}',
-            '**/*.bench.test.*',
-          ],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          include: ['test/unit/performance/**/*.{test,spec}.{ts,tsx}', '**/*.bench.test.*'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/test/archive/**'],
           transformMode: solidTransformMode,
         },
       },
@@ -468,7 +465,10 @@ export default defineConfig({
             },
           },
           include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
-          // 모든 리팩토링 테스트 제외: 작업 완료 상태
+          // Phase 174: 리팩토링 테스트 제외 (27개 유지보수 대상 파일)
+          // Phase 파일(2개) + Container(8개) 아카이브 완료
+          // 중복 제거(3개) 및 극단적 파일(8개) 정리 완료
+          // 참고: test/archive/refactoring/README.md
           exclude: [
             '**/node_modules/**',
             '**/dist/**',
@@ -477,6 +477,30 @@ export default defineConfig({
             'test/refactoring/**/*.spec.ts',
             'test/refactoring/**/*.spec.tsx',
           ],
+          transformMode: solidTransformMode,
+        },
+      },
+      // 프로젝트 상태 검증: 가드 테스트 (현재 Phase 170B+)
+      // 번들 크기, 아키텍처, 코딩 규칙, 회귀 방지
+      {
+        resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
+        test: {
+          name: 'guards',
+          globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
+          environment: 'jsdom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            jsdom: {
+              resources: 'usable',
+              url: 'https://x.com',
+              storageQuota: 10000000,
+            },
+          },
+          include: ['test/guards/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
           transformMode: solidTransformMode,
         },
       },

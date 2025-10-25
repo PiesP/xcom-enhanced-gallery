@@ -60,6 +60,12 @@
     "problems.decorations.enabled": true,
     // JavaScript/TypeScript 언어 서버 최적화
     "js/ts.implicitProjectConfig.checkJs": false,
-    "javascript.validate.enable": false
-    "editor.maxTokenizationLineLength": 200000
+    "javascript.validate.enable": false,
+    "editor.maxTokenizationLineLength": 200000,
+    "terminal.integrated.windowsUseConptyDll": true,
+    "terminal.integrated.suggest.enabled": true,
+    "terminal.integrated.shellIntegration.environmentReporting": true,
+    "terminal.integrated.fontLigatures.enabled": true,
+    "terminal.integrated.enableImages": true,
+    "terminal.integrated.defaultProfile.windows": "Debian (WSL)"
 }

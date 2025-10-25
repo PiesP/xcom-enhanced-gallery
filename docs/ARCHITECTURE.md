@@ -1,6 +1,6 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-20
+> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-25
 > 코딩 규칙/스타일/토큰/테스트 정책은 `docs/CODING_GUIDELINES.md`를 단일
 > 기준으로 참조하세요.
 
@@ -8,10 +8,10 @@
 구조와 계층 간 경계를 설명합니다. 구현 규칙/토큰/스타일은
 `docs/CODING_GUIDELINES.md`를 참고하세요.
 
-## 프로젝트 현황 (2025-10-20)
+## 프로젝트 현황 (2025-10-25)
 
-- **빌드**: prod 332.29 KB / 335 KB (2.71 KB 여유) ✅
-- **테스트**: Browser 103, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
+- **빌드**: prod 339.55 KB / 420 KB (80.45 KB 여유) ✅
+- **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
 
@@ -54,10 +54,26 @@ Component). **상세 규칙**: `docs/CODING_GUIDELINES.md`의 "디자인 토큰 
 
 ## 테스트 전략 개요
 
+**레이어**:
+
+- **Static Analysis**: TypeScript, ESLint, stylelint, CodeQL
+- **Unit Tests**: Vitest + JSDOM (순수 함수, 서비스 로직)
+- **Browser Tests**: Vitest + Chromium (Solid.js 반응성, 실제 DOM)
+- **E2E Tests**: Playwright (사용자 시나리오, 하네스 패턴)
+- **Guards**: test/guards/project-health.test.ts (현재 상태 검증)
+
+**원칙**:
+
 - **Vitest + JSDOM**, 기본 URL <https://x.com>
 - **외부 의존은 getter를 통해 모킹** 가능해야 함
 - **TDD 원칙**: 실패 테스트 → 최소 구현 → 리팩토링(RED→GREEN→REFACTOR)
-- **커버리지**: 단위/통합/E2E(Playwright) 포함
+- **커버리지**: 단위/통합/E2E(Playwright)/접근성(axe-core) 포함
+
+**아카이브 정책**:
+
+- 완료된 Phase 및 비효율적 패턴의 테스트는 `test/archive/`로 이동
+- CI/로컬 테스트에서 제외, 참고용 보관
+- 상세: `test/archive/README.md` / `docs/TESTING_STRATEGY.md`
 
 ## 의존성 정책과 가드(개요)
 
@@ -68,4 +84,5 @@ Component). **상세 규칙**: `docs/CODING_GUIDELINES.md`의 "디자인 토큰 
 ---
 
 **문서 역할 분리**: 이 파일은 구조/경계/지도에 집중합니다. 세부 코딩 규칙,
-디자인 토큰, 테스트 정책은 `CODING_GUIDELINES.md`로 분리되어 있습니다.
+디자인 토큰, 테스트 정책은 `CODING_GUIDELINES.md`와 `TESTING_STRATEGY.md`로
+분리되어 있습니다.

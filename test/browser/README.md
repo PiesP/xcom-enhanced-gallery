@@ -1,106 +1,136 @@
 # Browser Tests (@vitest/browser)
 
-> Vitest Browser 모드를 사용한 실제 브라우저 환경 테스트
+> Chromium 브라우저 환경에서 실행되는 통합 테스트 스위트
 
-## 📖 개요
+## 개요
 
-이 디렉터리는 **@vitest/browser**를 사용하여 실제 브라우저(Chromium) 환경에서
-실행되는 테스트를 포함합니다.
+**목적**: JSDOM 제약사항을 극복하고 실제 브라우저 기능을 검증하는 테스트
 
-JSDOM의 제약사항(Solid.js 반응성 제한, 레이아웃 계산 불가)을 극복하기 위해
-도입되었습니다.
+- Solid.js fine-grained reactivity (Signal/Store 변경 → DOM 즉시 반영)
+- 브라우저 API (IntersectionObserver, ResizeObserver, Layout)
+- 실제 이벤트 처리 (click, keydown, wheel, delegation, preventDefault)
+- 포커스 관리, 애니메이션/트랜지션, 스크롤 체이닝
 
-## 🎯 사용 목적
-
-### JSDOM에서 실패하는 케이스
-
-- ✅ **Solid.js fine-grained reactivity**: Signal/Store 변경 → DOM 즉시 업데이트
-- ✅ **실제 브라우저 API**: IntersectionObserver, ResizeObserver, PointerEvent
-- ✅ **CSS 레이아웃 계산**: `getBoundingClientRect()`, `offsetWidth/Height` 실제
-  값
-- ✅ **포커스/애니메이션**: 실제 포커스 이동, CSS 트랜지션 검증
-
-### JSDOM로 충분한 케이스
-
-- ⚠️ **순수 함수**: 데이터 변환, 유틸리티 함수 → `test/unit/` 사용
-- ⚠️ **조건부 렌더링**: props 변경 → 요소 표시/숨김 → JSDOM으로 충분
-- ⚠️ **이벤트 핸들러 호출**: `vi.fn()` 모킹 검증 → JSDOM으로 충분
-
-## 🚀 실행 방법
+## 실행 방법
 
 ```pwsh
-# Browser 모드 테스트 실행
+# 전체 테스트
 npm run test:browser
 
-# UI 모드로 실행 (디버깅)
-npm run test:browser:ui
-
-# 특정 파일만 실행
+# 특정 파일만
 npx vitest --project browser run test/browser/solid-reactivity.test.ts
+
+# 디버깅 UI
+npm run test:browser:ui
 ```
 
-## 📁 파일 구조
+## 테스트 스위트
 
+| 파일                                              | 테스트 수 | 목적                                          |
+| ------------------------------------------------- | --------- | --------------------------------------------- |
+| **solid-reactivity.test.ts**                      | 3         | Solid.js Signal 반응성                        |
+| **store-reactivity.test.ts**                      | 5         | Solid.js Store 반응성 및 배치                 |
+| **solid-reactivity-advanced.test.tsx**            | 8         | 고급 반응성 패턴 (JSX)                        |
+| **event-handling.test.ts**                        | 8         | PC 이벤트 (click, keydown, wheel, delegation) |
+| **focus-management.test.ts**                      | 8         | 포커스 관리, 트래핑, 포커스 복원              |
+| **layout-calculation.test.ts**                    | 8         | 레이아웃 API (getBoundingClientRect, 크기)    |
+| **animation-transitions.test.ts**                 | 9         | CSS 애니메이션, 트랜지션, RAF                 |
+| **mutation-observer.test.ts**                     | 9         | MutationObserver API                          |
+| **resize-observer.test.ts**                       | 7         | ResizeObserver API                            |
+| **vertical-gallery-fit-mode.test.ts**             | 3         | 이미지 핏 모드                                |
+| **scroll-chaining-propagation.test.ts**           | 11        | 스크롤 체이닝 방지                            |
+| **scroll-chaining-concurrent-input.test.ts**      | 16        | 동시 입력 처리                                |
+| **scroll-chaining-gallery-resize.test.ts**        | 8         | 리사이즈 중 스크롤                            |
+| **scroll-chaining-animation-interaction.test.ts** | 8         | 애니메이션 중 입력 처리                       |
+
+**합계**: 111 tests ✅
+
+## 핵심 기능별 테스트
+
+### Solid.js Reactivity
+
+```typescript
+// solid-reactivity.test.ts
+- Signal 변경 → DOM 자동 업데이트
+- Store 중첩 속성 추적
+- 배치 업데이트 (다중 업데이트 1회 렌더링)
+- 조건부 렌더링
+- Fine-grained 트래킹 (불필요한 업데이트 차단)
 ```
-test/browser/
-├── solid-reactivity.test.ts         # Solid.js 반응성 검증
-├── store-reactivity.test.ts         # Store 반응성 (5 tests)
-├── event-handling.test.ts           # 이벤트 처리 (8 tests)
-├── focus-management.test.ts         # 포커스 관리 (8 tests)
-├── layout-calculation.test.ts       # 레이아웃 계산 (8 tests)
-├── animation-transitions.test.ts    # 애니메이션/트랜지션 (9 tests)
-├── vertical-gallery-fit-mode.test.ts # 이미지 핏 모드 (JSDOM 마이그레이션)
-└── README.md                         # 이 파일
+
+### Event Handling (PC-Only)
+
+```typescript
+// event-handling.test.ts
+- Click 이벤트 및 전파
+- Keyboard 이벤트 (modifiers: Ctrl/Shift/Alt)
+- Event delegation (이벤트 위임)
+- preventDefault() / stopPropagation()
+- 커스텀 이벤트
+- Wheel 이벤트 (스크롤)
+- MouseEnter/MouseLeave
 ```
 
-### 새로 추가된 테스트 스위트 (Phase 1 완료)
+**주의**: Touch/Pointer 이벤트는 금지됨 (프로젝트 정책)
 
-#### 1. Store Reactivity (`store-reactivity.test.ts`)
+### Browser APIs
 
-Solid.js Store의 fine-grained reactivity 시스템 검증:
+```typescript
+// layout-calculation.test.ts
+- getBoundingClientRect() (정확한 위치/크기)
+- offsetWidth/Height (스크롤 포함)
+- Scroll dimensions
+- IntersectionObserver (가시성 감지)
 
-- ✅ 중첩 속성 추적 (nested property tracking)
-- ✅ 배열 변경 및 batching (array mutations and batching)
-- ✅ 조건부 렌더링 (conditional rendering with reactive stores)
-- ✅ Fine-grained 업데이트 (only affected components re-render)
-- ✅ Store batching (multiple updates in one tick)
+// mutation-observer.test.ts
+- Attribute 변경 감지
+- Child node 추가/제거
+- Text content 변경
+- Subtree 변경 (재귀)
 
-**왜 브라우저 전용인가**: JSDOM은 Solid.js의 fine-grained reactivity를 Store
-변경에 대해 제대로 추적하지 못합니다.
+// resize-observer.test.ts
+- Element 크기 변경 감지
+- contentBoxSize / borderBoxSize
+- display:none, visibility:hidden 처리
+```
 
-#### 2. Event Handling (`event-handling.test.ts`)
+## JSDOM vs Browser 선택 가이드
 
-실제 브라우저 이벤트 시스템 검증:
+| 테스트                    | 환경        | 이유                         |
+| ------------------------- | ----------- | ---------------------------- |
+| 순수 함수, 유틸리티       | JSDOM       | 빠름, 불필요한 복잡성 없음   |
+| 조건부 렌더링             | JSDOM       | DOM 존재 여부만 검증 필요    |
+| 이벤트 핸들러 호출 (모킹) | JSDOM       | 함수 호출 검증만 필요        |
+| **Signal/Store 반응성**   | **Browser** | JSDOM은 추적 미지원          |
+| **레이아웃 계산**         | **Browser** | JSDOM은 0 반환               |
+| **포커스 이동**           | **Browser** | JSDOM은 activeElement 미지원 |
+| **CSS 애니메이션**        | **Browser** | JSDOM은 트랜지션 없음        |
+| **실제 이벤트 전파**      | **Browser** | JSDOM은 불완전               |
 
-- ✅ 클릭 이벤트 전파 (click event propagation)
-- ✅ 수정자 키가 있는 키보드 이벤트 (keyboard events with modifiers:
-  Ctrl/Shift/Alt/Meta)
-- ✅ 이벤트 위임 패턴 (event delegation patterns)
-- ✅ preventDefault() 및 stopPropagation()
-- ✅ 커스텀 이벤트 및 디스패치 (custom events and dispatching)
-- ✅ 휠 이벤트 (wheel events)
-- ✅ 마우스 enter/leave 이벤트
+## 파일 구조 및 개선 사항
 
-**왜 브라우저 전용인가**: JSDOM의 이벤트 시스템은 불완전합니다 (적절한 버블링,
-위임, 수정자 키 처리 없음).
+### 현대화 진행 상황
 
-#### 3. Focus Management (`focus-management.test.ts`)
+- ✅ solid-reactivity.test.ts: 간결한 JSDoc, afterEach 추가
+- ✅ store-reactivity.test.ts: 명확한 코멘트, 나열식 명명
+- ✅ event-handling.test.ts: PC-only 정책 명시, 중복 코드 제거
+- 🔄 나머지 파일: 자동화 가능한 구조 (큰 파일부터 우선순위)
 
-실제 브라우저에서 포커스 관리 검증:
+### 향후 계획
 
-- ✅ 프로그래밍 방식 포커스 호출 (programmatic focus calls)
-- ✅ Tab 키 내비게이션
-- ✅ 모달 포커스 트랩 (modal focus trap)
-- ✅ Signal을 사용한 반응형 포커스 추적 (reactive focus tracking)
-- ✅ 모달 닫힌 후 포커스 복원 (focus restoration after modal close)
-- ✅ 포커스 표시기 위치 계산 (focus indicator position calculation)
-- ✅ 포커스 가능 vs 불가능 요소 (focusable vs non-focusable elements)
-- ✅ 비활성화된 요소 처리 (disabled element handling)
+1. **코드 통합**: 공통 헬퍼 함수 추출 (e.g., createTestContainer)
+2. **문서**: 반응성 제약사항과 해결책 명시
+3. **CI 최적화**: 병렬 실행으로 테스트 시간 단축
 
-**왜 브라우저 전용인가**: JSDOM은 `document.activeElement` 추적이나 실제 Tab
-내비게이션을 지원하지 않습니다.
+## 참고 문서
 
-#### 4. Layout Calculation (`layout-calculation.test.ts`)
+- **[TESTING_STRATEGY.md](../docs/TESTING_STRATEGY.md)**: 테스트 전략 및 선택
+  기준
+- **[AGENTS.md](../AGENTS.md)**: E2E 하네스 패턴
+- **[CODING_GUIDELINES.md](../docs/CODING_GUIDELINES.md)**: PC-only 이벤트 정책
+  내비게이션을 지원하지 않습니다.
+
+### 4. Layout Calculation (`layout-calculation.test.ts`)
 
 CSS 레이아웃 계산 검증:
 

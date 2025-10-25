@@ -1,46 +1,61 @@
 /**
- * @fileoverview 테스트용 인메모리 저장소 어댑터
- * @description 테스트 환경에서 사용하는 간단한 저장소 구현
+ * 테스트용 인메모리 저장소 어댑터
+ * @fileoverview 격리된 테스트 환경에서 사용하는 저장소 구현
  */
 
-import type { StorageAdapter } from '@shared/services/storage/storage-adapter.interface';
+import type { StorageAdapter } from '../../src/shared/services/storage/storage-adapter.interface';
 
 /**
- * 테스트용 인메모리 저장소 어댑터
- *
- * 실제 저장소 없이 메모리에만 데이터를 저장합니다.
- * 테스트 시 격리된 환경을 제공합니다.
+ * 인메모리 저장소 어댑터
+ * - 메모리 기반 데이터 저장소
+ * - 테스트 격리 보장
+ * - 비동기 API 준수
  *
  * @example
  * ```typescript
  * const storage = new InMemoryStorageAdapter();
  * await storage.setItem('key', 'value');
  * const value = await storage.getItem('key'); // 'value'
+ * await storage.clear(); // 모두 초기화
  * ```
  */
 export class InMemoryStorageAdapter implements StorageAdapter {
-  private readonly storage = new Map<string, string>();
+  private readonly data = new Map<string, string>();
 
   async getItem(key: string): Promise<string | null> {
-    return this.storage.get(key) ?? null;
+    return this.data.get(key) ?? null;
   }
 
   async setItem(key: string, value: string): Promise<void> {
-    this.storage.set(key, value);
+    this.data.set(key, value);
   }
 
   async removeItem(key: string): Promise<void> {
-    this.storage.delete(key);
+    this.data.delete(key);
   }
 
   async clear(): Promise<void> {
-    this.storage.clear();
+    this.data.clear();
   }
 
   /**
    * 테스트 헬퍼: 모든 저장된 항목 조회
    */
   getAll(): Map<string, string> {
-    return new Map(this.storage);
+    return new Map(this.data);
+  }
+
+  /**
+   * 테스트 헬퍼: 현재 크기 반환
+   */
+  size(): number {
+    return this.data.size;
+  }
+
+  /**
+   * 테스트 헬퍼: 특정 키 존재 여부
+   */
+  has(key: string): boolean {
+    return this.data.has(key);
   }
 }

@@ -1,19 +1,25 @@
 /**
- * Solid.js 반응성 테스트 (Browser 모드)
+ * Solid.js Reactivity (Browser Mode)
  *
- * JSDOM에서는 Solid.js의 fine-grained reactivity가 제한적이지만,
- * 실제 브라우저에서는 완전히 작동합니다.
+ * **Purpose**: Verify Solid.js fine-grained reactivity in actual browser.
+ * JSDOM has limited support for signal tracking and DOM updates.
+ *
+ * **Why Browser Mode**: @vitest/browser with Chromium allows:
+ * - Complete Solid.js reactivity system validation
+ * - Actual DOM microtask scheduling
+ * - Real browser event loop
  *
  * @see docs/SOLID_REACTIVITY_LESSONS.md
+ * @see TESTING_STRATEGY.md#browser-tests
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { getSolid, getSolidStore } from '@shared/external/vendors';
 
 const { createSignal, createEffect } = getSolid();
 const { createStore } = getSolidStore();
 
-describe('Solid.js Reactivity in Browser', () => {
+describe('Solid.js Reactivity (Browser)', () => {
   let container: HTMLDivElement;
 
   beforeEach(() => {
@@ -21,33 +27,30 @@ describe('Solid.js Reactivity in Browser', () => {
     document.body.appendChild(container);
   });
 
+  afterEach(() => {
+    container.remove();
+  });
+
   it('should reactively update DOM when signal changes', async () => {
     const [count, setCount] = createSignal(0);
-
-    // DOM에 렌더링
     const button = document.createElement('button');
-    button.textContent = String(count());
+    button.textContent = `count: ${count()}`;
     container.appendChild(button);
 
-    // Effect로 자동 업데이트 연결
     createEffect(() => {
-      button.textContent = String(count());
+      button.textContent = `count: ${count()}`;
     });
 
-    expect(button.textContent).toBe('0');
+    expect(button.textContent).toBe('count: 0');
 
-    // Signal 업데이트
     setCount(1);
+    await new Promise(resolve => setTimeout(resolve, 0)); // microtask
 
-    // 브라우저 환경에서는 즉시 반영됨 (microtask)
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    expect(button.textContent).toBe('1');
+    expect(button.textContent).toBe('count: 1');
   });
 
   it('should reactively update with store changes', async () => {
     const [state, setState] = createStore({ count: 0, text: 'Hello' });
-
     const display = document.createElement('div');
     container.appendChild(display);
 
@@ -57,23 +60,18 @@ describe('Solid.js Reactivity in Browser', () => {
 
     expect(display.textContent).toBe('Hello: 0');
 
-    // Store 업데이트
     setState('count', c => c + 1);
     await new Promise(resolve => setTimeout(resolve, 0));
-
     expect(display.textContent).toBe('Hello: 1');
 
-    // 다중 속성 업데이트
     setState({ text: 'World', count: 10 });
     await new Promise(resolve => setTimeout(resolve, 0));
-
     expect(display.textContent).toBe('World: 10');
   });
 
   it('should handle nested effects correctly', async () => {
     const [outer, setOuter] = createSignal(1);
     const [inner, setInner] = createSignal(10);
-
     const results: number[] = [];
 
     createEffect(() => {

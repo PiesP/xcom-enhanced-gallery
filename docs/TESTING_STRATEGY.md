@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 테스트 책임 분리 및 실행 전략
 
-**최종 업데이트**: 2025-10-20
+**최종 업데이트**: 2025-10-25 (Phase 170B+ 테스트 통합)
 
 ---
 
@@ -134,15 +134,42 @@ Kent C. Dodds의 Testing Trophy 모델 기반 테스트 분포:
 - ❌ IntersectionObserver, ResizeObserver (부분 모킹 필요)
 - ✅ 적합: 순수 함수, 데이터 변환, 조건부 렌더링, 이벤트 핸들러
 
-### 3. Browser Tests (Vitest + Chromium, 2-5분)
+### 3. Browser Tests (Vitest + Chromium, 5-10분)
 
 - **환경**: `@vitest/browser` + Playwright Chromium, `test/browser/**`
-- **테스트 수**: **60 tests** (Store 반응성 5, 레이아웃 8, 포커스 8, 애니메이션
-  9, 이벤트 8 등)
-- **책임**: Solid.js 반응성 완전 검증, 실제 브라우저 API, 시각적 동작
-- **실행**: `npm run test:browser`
-- **장점**: JSDOM 제약 없음, 실제 브라우저 환경, E2E보다 빠름
-- **단점**: JSDOM보다 느림, 리소스 사용량 증가
+- **테스트 수**: **111 tests** (현재 상태)
+  - Solid.js Reactivity: 16 tests (Signal + Store + Advanced)
+  - Events: 8 tests (click, keyboard, delegation, preventDefault)
+  - Focus Management: 8 tests (포커스 이동, 트래핑, 복원)
+  - Layout APIs: 8 tests (getBoundingClientRect, 크기, 가시성)
+  - Animations: 9 tests (CSS 트랜지션, 애니메이션, RAF)
+  - Observers: 16 tests (MutationObserver 9 + ResizeObserver 7)
+  - Scroll Chaining: 43 tests (체이닝 방지, 동시 입력, 리사이즈, 애니메이션)
+  - Gallery Features: 3 tests (이미지 핏 모드)
+
+- **책임**:
+  - Solid.js fine-grained reactivity 완전 검증
+  - 실제 브라우저 API 동작 (레이아웃, Observers, 포커스)
+  - PC 전용 이벤트 정책 검증 (click, keydown, wheel만 사용)
+  - 브라우저 특화 기능 (스크롤, 애니메이션, 포커스 관리)
+
+- **실행**:
+
+  ```bash
+  npm run test:browser        # 전체 (111 tests, ~8-10초)
+  npm run test:browser:ui     # 디버깅 UI
+  ```
+
+- **장점**:
+  - JSDOM 제약 없음 (완전한 Solid.js 반응성)
+  - 실제 브라우저 환경 (레이아웃, 이벤트, 포커스)
+  - E2E보다 빠르고 유지보수 용이
+
+- **단점**:
+  - JSDOM보다 느림 (~8-10초 vs ~1-2초)
+  - 시스템 리소스 사용
+
+- **파일 구조**: `test/browser/` 참고
 
 ### 4. Integration Tests (JSDOM + 모킹, 2-5분)
 
@@ -400,9 +427,78 @@ git push -u origin feature/...
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: 3계층 구조 (Features → Shared →
   External)
 - **[test/README.md](../test/README.md)**: Vitest 사용법, DOM 시뮬레이션
+- **[test/archive/README.md](../test/archive/README.md)**: 아카이브 정책 및 과거
+  Phase 기록
+
+---
+
+## 🛡️ 프로젝트 상태 검증 (Phase 170B+)
+
+### 가드 테스트 (test/guards/project-health.test.ts)
+
+현재 프로젝트 상태를 검증하는 최소 가드 테스트입니다:
+
+```bash
+# 실행 방법
+npx vitest run test/guards/
+
+# 또는 전체 테스트의 일부로
+npm test
+```
+
+**검증 항목**:
+
+1. **빌드 상태**: 번들 크기 339.55 KB (제한 420 KB) ✅
+2. **아키텍처**: 3계층 구조 (Features → Shared → External) ✅
+3. **코딩 규칙**: Vendor getter, PC 이벤트, 디자인 토큰 ✅
+4. **테스트 구조**: 필수 폴더 및 파일 존재 확인 ✅
+5. **서비스 표준화**: 로깅 접두사 [ServiceName] ✅
+6. **회귀 방지**: 갑작스러운 번들 크기 증가 감지 ✅
+
+### 테스트 아카이브 (test/archive/)
+
+**정책**: 완료된 Phase 및 과거 개발 단계의 테스트는 test/archive에서 일괄 관리
+
+**폴더 구조**:
+
+```
+test/archive/
+  ├── cleanup-phases/           # Phase 1~7 정리 테스트
+  ├── integration-behavioral/   # 과거 행위 검증 테스트
+  └── integration/              # test/integration 아카이브 (Phase 171B)
+```
+
+**포함 항목**:
+
+- **cleanup-phases/**: Phase 1~7 정리 테스트
+  - 사용하지 않는 코드 제거, 네이밍 정리 등 과거 단계
+- **integration-behavioral/**: 과거 행위 검증 테스트
+  - `user-interactions-fixed.test.ts`: Mock 기반 사용자 상호작용 (비효율적 패턴)
+  - `toolbar-visibility-fix.test.ts`: 문자열 기반 CSS 검증 (실제 적용 미검증)
+- **integration/**: test/integration 구식 테스트 (Phase 171B 이동)
+  - `bundle-vendor-tdz.test.ts`: TDD RED 단계 (Phase 170B+ 해결)
+  - `extension.integration.test.ts`: Placeholder 테스트
+  - `master-test-suite.test.ts`: Phase 4 완료 마커
+  - `vendor-tdz-resolution.test.ts`: TDD GREEN 단계 (Phase 170B 해결)
+
+**이유**:
+
+- 현재 Phase 170B+ 상태에 비효율적 또는 불필요함
+- 유지보수 부담 감소, 프로젝트 구조 간결화
+- CI 부하 최소화 (불필요한 테스트 제외)
+- 참고용 자료로 활용 (과거 이슈 추적, 테스트 패턴 개선 영감)
+
+**상태**: CI/로컬 테스트에서 제외, 각 폴더 README.md와 함께 참고용 보관
+
+**복원**: 필요시 [test/archive/README.md](../test/archive/README.md) 참고
 
 ---
 
 > **테스트 정책**: 새 기능은 반드시 테스트와 함께 제출. TDD 권장 (RED → GREEN →
 > REFACTOR). **현재 상태**: 1389 단위 테스트, 60 브라우저 테스트, 44 E2E 테스트,
-> 14 접근성 테스트 (100% 통과율) ✅
+> 14 접근성 테스트 (100% 통과율) ✅ **마지막 업데이트**: 2025-10-25 (가드
+> 테스트, 아카이브 정책, 행위 테스트 아카이브화, performance 아카이브 추가)
+
+```
+
+```

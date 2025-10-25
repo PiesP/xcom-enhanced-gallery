@@ -1,12 +1,29 @@
 /**
- * @fileoverview Twitter(X.com) DOM 구조 모의 구현
- * @description 실제 X.com 페이지의 HTML 구조를 모방하여 테스트 환경에서 사용
+ * X.com DOM 구조 모의 구현
+ * @fileoverview X.com 페이지의 DOM 구조를 모방하여 갤러리 추출 테스트에 사용
+ *
+ * @description
+ * - 실제 X.com 페이지의 구조를 상세히 모사
+ * - 트윗, 이미지, 비디오, 인용 트윗 등 다양한 미디어 타입 지원
+ * - 테스트 환경에서 안전한 DOM 조작
+ * - PC 전용 이벤트 테스트 지원
+ *
+ * @example
+ * ```typescript
+ * import { createMockTweet, createGalleryWithImages } from '../__mocks__/twitter-dom.mock';
+ *
+ * it('should extract images', () => {
+ *   const element = createMockTweet({ imageCount: 3 });
+ *   const images = element.querySelectorAll('img');
+ *   expect(images).toHaveLength(3);
+ * });
+ * ```
  */
 
 import { vi } from 'vitest';
 
 // mock-action-simulator에서 함수들을 import
-import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator.js';
+import { simulateClick, simulateKeypress } from '../utils/helpers/mock-action-simulator';
 
 // Mock functions for DOM interaction
 export const mockClickHandler = vi.fn();
@@ -16,7 +33,7 @@ export const mockKeyboardHandler = vi.fn();
 export { simulateClick, simulateKeypress };
 
 // ================================
-// Twitter DOM 템플릿들
+// X.com DOM 템플릿 모음
 // ================================
 
 /**
@@ -457,94 +474,4 @@ export function setupImageClickHandlers() {
       createDownloadProgress();
     }
   });
-}
-
-// ================================
-// Mock DOM 생성 유틸리티
-// ================================
-
-/**
- * 테스트용 트윗 DOM 요소 생성
- * 갤러리 활성화 테스트를 위한 함수
- */
-export function createMockTweet(): HTMLElement {
-  const tweetElement = document.createElement('article');
-  tweetElement.setAttribute('data-testid', 'tweet');
-  tweetElement.setAttribute('role', 'article');
-  tweetElement.className =
-    'css-1dbjc4n r-1loqt21 r-18u37iz r-1ny4l3l r-1j3t67a r-o7ynqc r-6416eg r-13qz1uu';
-
-  tweetElement.innerHTML = `
-    <div class="css-1dbjc4n r-1iusvr4 r-16y2uox r-1777fci r-kzbkwu">
-      <div class="css-1dbjc4n r-1awozwy r-18u37iz r-1h0z5md">
-        <!-- 프로필 영역 -->
-        <div class="css-1dbjc4n r-1wbh5a2 r-dnmrzs">
-          <a href="/testuser" role="link" tabindex="-1">
-            <img src="https://pbs.twimg.com/profile_images/123/avatar.jpg"
-                 class="css-9pa8cd" draggable="true" alt="Profile">
-          </a>
-        </div>
-
-        <!-- 트윗 내용 -->
-        <div class="css-1dbjc4n r-1iusvr4 r-16y2uox r-1777fci r-1h8ys4a">
-          <div class="css-1dbjc4n r-18u37iz r-1q142lx">
-            <div class="css-1dbjc4n r-1s2bzr4">
-              <!-- 텍스트 내용 -->
-              <div data-testid="tweetText" class="css-901oao r-18jsvk2 r-37j5jr r-a023e6 r-16dba41 r-rjixqe r-bcqeeo r-bnwqim r-qvutc0">
-                <span class="css-901oao css-16my406 r-poiln3 r-bcqeeo r-qvutc0">Test tweet with image</span>
-              </div>
-
-              <!-- 미디어 컨테이너 -->
-              <div class="css-1dbjc4n r-1p0dtai r-18u37iz r-1d2f490 r-1ny4l3l r-u8s1d r-zchlnj r-ipm5af">
-                <div data-testid="tweetPhoto" class="css-1dbjc4n r-1p0dtai r-1mlwlqe r-1d2f490 r-1udh08x r-u8s1d r-417010 r-1ny4l3l">
-                  <div class="css-1dbjc4n r-1niwhzg r-vvn7in" style="padding-bottom: 75%;">
-                    <div class="css-1dbjc4n r-1p0dtai r-1mlwlqe r-1d2f490 r-1udh08x r-u8s1d r-417010 r-1ny4l3l">
-                      <div class="css-1dbjc4n">
-                        <img src="https://pbs.twimg.com/media/test123.jpg?format=jpg&name=large"
-                             alt="Test image"
-                             draggable="true"
-                             class="css-9pa8cd">
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  return tweetElement;
-}
-
-/**
- * 비디오가 포함된 테스트용 트윗 DOM 요소 생성
- */
-export function createMockTweetWithVideo(): HTMLElement {
-  const tweetElement = document.createElement('article');
-  tweetElement.setAttribute('data-testid', 'tweet');
-  tweetElement.setAttribute('role', 'article');
-  tweetElement.className =
-    'css-1dbjc4n r-1loqt21 r-18u37iz r-1ny4l3l r-1j3t67a r-o7ynqc r-6416eg r-13qz1uu';
-
-  tweetElement.innerHTML = `
-    <div class="css-1dbjc4n r-1iusvr4 r-16y2uox r-1777fci r-kzbkwu">
-      <div class="css-1dbjc4n r-1awozwy r-18u37iz r-1h0z5md">
-        <!-- 비디오 컨테이너 -->
-        <div class="css-1dbjc4n r-1p0dtai r-18u37iz r-1d2f490 r-1ny4l3l r-u8s1d r-zchlnj r-ipm5af">
-          <div data-testid="videoPlayer" class="css-1dbjc4n">
-            <video src="https://video.twimg.com/test-video.mp4"
-                   poster="https://pbs.twimg.com/video_thumb/test-thumb.jpg"
-                   class="css-1dbjc4n"
-                   preload="metadata">
-            </video>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  return tweetElement;
 }

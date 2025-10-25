@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type TwitterTokenExtractorModule =
-  typeof import('@features/settings/services/twitter-token-extractor');
+  typeof import('@/features/settings/services/twitter-token-extractor');
 
 async function importModule(): Promise<TwitterTokenExtractorModule> {
   vi.resetModules();
-  return await import('@features/settings/services/twitter-token-extractor');
+  return await import('@/features/settings/services/twitter-token-extractor');
 }
 
 describe('TwitterTokenExtractor', () => {
@@ -25,7 +25,7 @@ describe('TwitterTokenExtractor', () => {
     vi.unstubAllGlobals();
   });
 
-  describe('Phase 124: initialization', () => {
+  describe('initialization', () => {
     it('should initialize successfully', async () => {
       const { TwitterTokenExtractor } = await importModule();
       const extractor = new TwitterTokenExtractor();
@@ -55,7 +55,7 @@ describe('TwitterTokenExtractor', () => {
     });
   });
 
-  describe('Phase 124: token extraction priority', () => {
+  describe('token extraction priority', () => {
     it('should extract token from script tag (priority 1)', async () => {
       const scriptToken = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ScriptTokenExample';
       document.body.innerHTML = `<script>{"Bearer": "${scriptToken}"}</script>`;
@@ -78,7 +78,7 @@ describe('TwitterTokenExtractor', () => {
     });
   });
 
-  describe('Phase 124: fallback and error handling', () => {
+  describe('fallback and error handling', () => {
     it('should handle malformed cookie data gracefully', async () => {
       document.cookie = 'auth_token=invalid';
       const { TwitterTokenExtractor } = await importModule();
@@ -89,7 +89,7 @@ describe('TwitterTokenExtractor', () => {
     });
   });
 
-  describe('Phase 124: token validation', () => {
+  describe('token validation', () => {
     it('should validate token format correctly', async () => {
       const validToken = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ValidTokenExample';
       document.cookie = `auth_token=${validToken}`;
