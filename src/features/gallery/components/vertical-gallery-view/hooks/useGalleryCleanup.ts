@@ -6,7 +6,7 @@
  * @description 갤러리 정리 작업을 담당하는 커스텀 훅 (Solid.js 기반)
  */
 
-import { logger } from '../../../../../shared/logging/logger';
+import { logger } from '@shared/logging';
 import { getSolid } from '../../../../../shared/external/vendors';
 import { globalTimerManager } from '../../../../../shared/utils/timer-management';
 

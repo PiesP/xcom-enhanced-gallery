@@ -3,12 +3,16 @@
  * Licensed under the MIT License
  *
  * @fileoverview DOM 이벤트 관리 유틸리티
+ * @version 2.1.0 - Phase 195: 구조 최적화
  * @description 이벤트 리스너의 등록, 관리, 정리를 담당하는 클래스
- * @version 2.0.0 - Core layer migration
+ *
+ * 현황: 내부용 (index.ts에서 의도적으로 제외)
+ * 사용: 상대 경로로 직접 import 필요
+ * 또는 BrowserService의 이벤트 관리 기능 사용 권장
  */
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 
 type EventCleanup = () => void;
 

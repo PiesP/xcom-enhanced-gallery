@@ -1,11 +1,10 @@
 /**
- * Core Logging System
+ * Centralized logging infrastructure
  *
- * Centralized logging infrastructure for the X.com Enhanced Gallery application.
- * Provides consistent logging interface with different log levels and formatting.
+ * Barrel export for all logging utilities and types.
  *
- * @fileoverview Core logging barrel export
- * @version 1.0.0
+ * @fileoverview Logging system barrel export
+ * @version 1.2.0
  */
 
 export * from './logger';

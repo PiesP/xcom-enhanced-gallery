@@ -5,7 +5,7 @@
  */
 
 import { CoreService } from './service-manager';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { getMediaService, getBulkDownloadService } from './service-factories';
 
 /**

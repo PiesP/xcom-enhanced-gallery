@@ -5,7 +5,7 @@
  * @version 2.0.0 - Core layer
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
 import type { MediaInfoForFilename, MediaItemForFilename } from '../types/media.types';
 

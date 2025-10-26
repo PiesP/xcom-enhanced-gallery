@@ -1,6 +1,9 @@
 /**
  * @fileoverview SelectorRegistry — STABLE_SELECTORS 기반 DOM 접근 추상화
- * 테스트 가능한 구조(TDD)와 캐시 연동을 위한 경량 래퍼
+ * @version 2.0.0 - Phase 195: 구조 최적화
+ * @description 테스트 가능한 구조(TDD)와 캐시 연동을 위한 경량 래퍼
+ *
+ * 현황: dom-direct-extractor.ts에서 주로 사용 (미디어 추출 로직)
  */
 
 import { STABLE_SELECTORS } from '../../constants';

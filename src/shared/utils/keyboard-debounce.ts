@@ -4,7 +4,7 @@
  * 특히 ArrowUp/Down(볼륨), M(음소거) 같은 비디오 제어 키에서 효과적
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 
 interface DebounceState {
   lastExecutionTime: number;

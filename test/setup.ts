@@ -436,7 +436,7 @@ beforeEach(async () => {
 
   // Vendor 초기화 - 모든 테스트에서 사용할 수 있도록
   try {
-    const { initializeVendors } = await import('../src/shared/external/vendors/vendor-api.js');
+    const { initializeVendors } = await import('../src/shared/external/vendors/index.js');
     await initializeVendors();
   } catch (error) {
     // vendor 초기화 실패는 무시하고 계속 진행
@@ -448,13 +448,23 @@ beforeEach(async () => {
 
 /**
  * 각 테스트 후에 환경 정리
- * 메모리 누수 방지 및 테스트 격리 보장
+ * 메모리 누수 방지 및 테스트 격리 보장 (Phase 200: 강화)
  */
 afterEach(async () => {
   // Mock API 상태 초기화
   resetMockApiState();
 
   await cleanupTestEnvironment();
+
+  // Phase 200: 추가 메모리 정리
+  // 테스트 후 가비지 컬렉션 힌트 제공
+  if (typeof gc !== 'undefined') {
+    try {
+      gc();
+    } catch {
+      // gc() 호출 실패해도 무시
+    }
+  }
 });
 
 // ================================

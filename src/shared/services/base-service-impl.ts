@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase 2: 중복 통합
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { BaseService } from '@shared/types/app.types';
 
 /**

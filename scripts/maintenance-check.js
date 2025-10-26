@@ -1,8 +1,25 @@
 #!/usr/bin/env node
 
 /**
- * 프로젝트 유지보수 점검 스크립트
- * 정기적으로 실행하여 정리가 필요한 항목을 찾습니다.
+ * Project Maintenance Checker
+ *
+ * Performs regular health checks on the project:
+ * - Identifies backup/temp directories that should be cleaned
+ * - Checks document sizes for potential simplification
+ * - Scans for security vulnerabilities and unused dependencies
+ * - Validates build size against budget
+ * - Verifies Git state (staged changes, untracked files)
+ * - Reports on infrastructure health
+ *
+ * Usage:
+ *   node maintenance-check.js
+ *
+ * Output:
+ *   Structured report with ✅ (OK), ⚠️ (needs action), 💡 (recommendations)
+ *   Generated as part of 'npm run maintenance:check'
+ *
+ * Context:
+ *   Part of project end-of-work protocol (also run: validate & build)
  */
 
 import { readdirSync, statSync, readFileSync, existsSync } from 'fs';

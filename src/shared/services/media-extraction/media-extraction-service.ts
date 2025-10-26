@@ -1,13 +1,14 @@
 /**
  * @fileoverview 미디어 추출기
  * @description API 우선 + DOM 백업 2단계 전략을 사용하는 통합 추출기
- * @version 3.0.0 - Core 서비스로 이동 - Clean Architecture
+ * @version 3.1.0 - Phase 195: ErrorCode 통합
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import { ExtractionError, ExtractionErrorCode } from '@shared/types/media.types';
+import { ExtractionError } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/result.types';
 import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
 import { DOMDirectExtractor } from './extractors/dom-direct-extractor';
@@ -78,10 +79,7 @@ export class MediaExtractionService implements MediaExtractor {
             },
             tweetInfo: domResult.tweetInfo,
             errors: [
-              new ExtractionError(
-                ExtractionErrorCode.NO_MEDIA_FOUND,
-                '트윗에서 미디어를 찾을 수 없습니다.'
-              ),
+              new ExtractionError(ErrorCode.NO_MEDIA_FOUND, '트윗에서 미디어를 찾을 수 없습니다.'),
             ],
           };
         }
@@ -158,10 +156,7 @@ export class MediaExtractionService implements MediaExtractor {
           },
           tweetInfo: domResult.tweetInfo,
           errors: [
-            new ExtractionError(
-              ExtractionErrorCode.NO_MEDIA_FOUND,
-              'API 및 DOM 추출 모두 실패하였습니다.'
-            ),
+            new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'API 및 DOM 추출 모두 실패하였습니다.'),
           ],
         };
       }
@@ -264,7 +259,7 @@ export class MediaExtractionService implements MediaExtractor {
       tweetInfo: null,
       errors: [
         new ExtractionError(
-          ExtractionErrorCode.UNKNOWN_ERROR,
+          ErrorCode.UNKNOWN,
           `미디어 추출 중 오류가 발생했습니다: ${errorMessage}`,
           error instanceof Error ? error : undefined
         ),

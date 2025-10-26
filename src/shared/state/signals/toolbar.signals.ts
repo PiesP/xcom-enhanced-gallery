@@ -9,7 +9,7 @@
  * - Phase A5.3: createSignalSafe 패턴으로 표준화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { createSignalSafe, type SafeSignal } from '@shared/state/signals/signal-factory';
 
 /**

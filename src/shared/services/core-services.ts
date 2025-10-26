@@ -24,7 +24,7 @@ export { getService } from './service-manager';
 // Logger Interface & Implementation
 // ================================
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 // ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
 // 직접적인 서비스 키 타입 사용

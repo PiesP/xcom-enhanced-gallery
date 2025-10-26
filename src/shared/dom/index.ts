@@ -1,7 +1,9 @@
 /**
  * @fileoverview Core DOM Utilities Barrel Export
+ * @version 2.2.0 - Phase 195: Event management separation
+ *
  * Note: DOMEventManager is intentionally NOT re-exported to prevent external runtime imports.
- * Internal modules should import from './dom-event-manager' via relative path when necessary.
+ * Event management should use BrowserService or DomEventManager (relative import only).
  */
 
 // Core DOM utilities - 함수형 API (Phase 138.1)
@@ -26,8 +28,9 @@ export {
 } from './selector-registry';
 
 // Named exports - 함수형 API (Phase 138.1)
+// Note: Event management functions (addEventListener, removeEventListener) have been removed
+// Use BrowserService or DomEventManager for event handling instead
 export {
-  addEventListener,
   createElement,
   elementExists,
   getDebugInfo,
@@ -38,5 +41,4 @@ export {
   querySelector,
   querySelectorAll,
   removeElement,
-  removeEventListener,
 } from './utils/dom-utils';

@@ -1,12 +1,13 @@
 /**
  * @fileoverview Vendor API 타입 정의
- * @description Phase C: vendor-api.ts의 any 타입 대체를 위한 구체적인 타입들
+ * @description 외부 라이브러리(Solid.js, fflate 등)의 타입 안전성 정의
+ * @version 11.0.0 - Phase 200: 주석 명확화, 불필요한 타입 제거
  */
 
 type SolidJSXElement = import('solid-js').JSX.Element;
 
 /**
- * Preact 컴포넌트 타입 (범용)
+ * 제네릭 컴포넌트 타입 (범용)
  */
 export type PreactComponent<P = Record<string, unknown>> = ((
   props: P
@@ -15,7 +16,7 @@ export type PreactComponent<P = Record<string, unknown>> = ((
 };
 
 /**
- * Memo 비교 함수 타입
+ * Memo 비교 함수: 이전 props와 다음 props를 비교하여 재렌더링 필요 여부 결정
  */
 export type MemoCompareFunction<P = Record<string, unknown>> = (
   prevProps: P,
@@ -23,7 +24,7 @@ export type MemoCompareFunction<P = Record<string, unknown>> = (
 ) => boolean;
 
 /**
- * ForwardRef 컴포넌트 타입 (범용)
+ * ForwardRef 컴포넌트: ref 전달을 지원하는 컴포넌트 타입
  */
 export type ForwardRefComponent<P = Record<string, unknown>> = (
   props: P,
@@ -31,7 +32,7 @@ export type ForwardRefComponent<P = Record<string, unknown>> = (
 ) => SolidJSXElement | null;
 
 /**
- * Vendor 초기화 상태
+ * Vendor 초기화 상태 추적
  */
 export interface VendorInitState {
   preact: boolean;
@@ -41,7 +42,7 @@ export interface VendorInitState {
 }
 
 /**
- * Vendor API 에러 타입
+ * Vendor 초기화 오류 정보
  */
 export interface VendorError {
   vendor: keyof VendorInitState;

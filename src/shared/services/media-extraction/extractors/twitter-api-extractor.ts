@@ -4,7 +4,7 @@
  * @version 2.0.0 - Clean Architecture (Strategy Pattern)
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { TwitterAPI, type TweetMediaEntry } from '@shared/services/media/twitter-video-extractor';
 import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';

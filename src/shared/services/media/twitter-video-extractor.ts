@@ -1,5 +1,5 @@
 // Twitter Video Extractor - Optimized for bundle size
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
 
 interface TwitterAPIResponse {

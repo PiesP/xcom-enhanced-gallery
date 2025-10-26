@@ -4,7 +4,7 @@
  * @version 1.0.0 - Phase C2: 단순화
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 리소스 타입

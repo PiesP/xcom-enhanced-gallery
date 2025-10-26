@@ -8,7 +8,7 @@
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import type { BaseResultStatus } from '@shared/types/result.types';
 import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';

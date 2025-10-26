@@ -4,7 +4,7 @@
  * TDZ 상황에서도 동작하도록 폴백을 제공합니다.
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
 
 // 공통 시그널 타입 (subscribe 지원)

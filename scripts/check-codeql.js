@@ -1,8 +1,27 @@
 #!/usr/bin/env node
 
 /**
- * CodeQL 쿼리 실행 스크립트
- * gh codeql 확장 또는 CodeQL CLI가 설치되어 있으면 커스텀 쿼리를 실행하고, 없으면 안내 메시지 출력
+ * CodeQL Security Analysis Runner
+ *
+ * Executes custom CodeQL security queries if available (gh codeql or codeql CLI).
+ * In CI environments, skips local checks (GitHub Actions handles CodeQL separately).
+ *
+ * Usage:
+ *   node check-codeql.js
+ *
+ * Environment:
+ *   CI, GITHUB_ACTIONS - Detects CI environment, skips local checks
+ *   CODEQL_FORCE_REBUILD - Force database rebuild (default: incremental update)
+ *
+ * Supported tools:
+ *   1. gh codeql (GitHub CLI extension, recommended)
+ *   2. codeql (CodeQL CLI direct install)
+ *   3. Neither (graceful degradation with installation guide)
+ *
+ * Output:
+ *   SARIF results in codeql-results/ directory
+ *   Summary report to stdout
+ *   Exit code: 0 (pass) or 1 (failures found)
  */
 
 import { execSync } from 'node:child_process';

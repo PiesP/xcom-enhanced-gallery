@@ -4,7 +4,7 @@
  * @version 2.0.0 - Complexity Reduction & Modularization
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { gallerySignals } from '../state/signals/gallery.signals';
 import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '../../constants';
 

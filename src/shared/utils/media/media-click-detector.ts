@@ -5,7 +5,7 @@
 
 import { STABLE_SELECTORS, CSS } from '../../../constants';
 import { isVideoControlElement } from '../utils';
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import { cachedQuerySelector } from '../../dom';
 
 /**

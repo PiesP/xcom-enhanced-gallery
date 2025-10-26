@@ -39,12 +39,15 @@ const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 
 // Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
+// Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
+// Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
 const sharedPoolOptions = {
   threads: {
     singleThread: forceSingleThread,
+    // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
     memoryLimit: forceSingleThread ? 1024 : 2048,
     minThreads: 1,
-    maxThreads: forceSingleThread ? 1 : 4,
+    maxThreads: forceSingleThread ? 1 : 2, // 병렬도 감소 (메모리 절약)
   },
 };
 // Helpers
@@ -231,18 +234,20 @@ export default defineConfig({
       },
     },
 
-    // 성능 최적화
+    // 성능 최적화 (Phase 200: 메모리 누수 해결)
     // 주의: multi-threaded pool은 광범위한 메모리 누수 문제 발생
     // (로컬 + CI 모두에서 단 1테스트만으로도 2GB+ 메모리 소비)
-    // singleThread + memoryLimit으로 강제 격리
+    // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정
+    // singleThread + 적절한 memoryLimit으로 강제 격리 + 안정성 확보
     pool: 'threads',
     poolOptions: {
       threads: {
-        // 로컬: 멀티스레드 (빠른 개발), CI: 단일스레드 (메모리 안정성)
+        // 로컬: 제한된 멀티스레드 (메모리 안정성 우선), CI: 단일스레드
         singleThread: forceSingleThread,
-        memoryLimit: forceSingleThread ? 1024 : 2048, // CI: 1GB, 로컬: 2GB per worker
+        // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
+        memoryLimit: forceSingleThread ? 1024 : 2048,
         minThreads: 1,
-        maxThreads: forceSingleThread ? 1 : 4, // CI: 1, 로컬: 최대 4
+        maxThreads: forceSingleThread ? 1 : 2, // 병렬도 감소 (4 → 2)
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)

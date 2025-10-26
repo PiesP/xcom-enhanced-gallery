@@ -7,7 +7,7 @@
  */
 
 import type { JSX } from 'solid-js';
-import { logger } from '../../../../shared/logging/logger';
+import { logger } from '@shared/logging';
 import { Toolbar } from '../../../../shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '../../../../shared/types';
 import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';

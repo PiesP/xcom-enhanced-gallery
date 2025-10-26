@@ -178,7 +178,10 @@ export function isVendorInitializedSafe(vendorName: string): boolean {
   }
 }
 
-// 정리 핸들러 등록 (명시적 호출로 변경하여 import 시 부작용 제거)
+/**
+ * 정리 핸들러 등록 (beforeunload/pagehide 이벤트에서 자동 정리)
+ * @param target 리스너 등록 대상 (기본값: window)
+ */
 export function registerVendorCleanupOnUnloadSafe(
   target: Window | undefined = typeof window !== 'undefined' ? window : undefined
 ): void {
@@ -188,57 +191,22 @@ export function registerVendorCleanupOnUnloadSafe(
       try {
         cleanupVendorsSafe();
       } catch {
-        // ignore
+        // 정리 중 발생한 에러는 무시 (이미 언로드 중)
       }
     };
     target.addEventListener('beforeunload', handler);
+    target.addEventListener('pagehide', handler);
   } catch {
-    // ignore
+    // 이벤트 리스너 등록 실패 무시
   }
 }
 
-// 인스턴스 리셋 (테스트용)
+/**
+ * Vendor Manager 인스턴스 리셋 (테스트용)
+ * @internal 테스트 환경에서만 사용
+ */
 export const resetVendorManagerInstance = (): void => {
   StaticVendorManager.resetInstance();
   isInitializing = false;
   initializationPromise = null;
 };
-
-// ================================
-// Solid.js 함수들 직접 export (UI 컴포넌트/테스트 편의용)
-// ================================
-
-/**
- * Solid.js render 함수
- */
-export const render = getSolidSafe().render;
-
-/**
- * Solid.js createSignal
- */
-export const createSignal = getSolidSafe().createSignal;
-
-/**
- * Solid.js createEffect
- */
-export const createEffect = getSolidSafe().createEffect;
-
-/**
- * Solid.js createMemo
- */
-export const createMemo = getSolidSafe().createMemo;
-
-/**
- * Solid.js Show 컴포넌트
- */
-export const Show = getSolidSafe().Show;
-
-/**
- * Solid.js For 컴포넌트
- */
-export const For = getSolidSafe().For;
-
-/**
- * Solid.js batch 함수
- */
-export const batch = getSolidSafe().batch;

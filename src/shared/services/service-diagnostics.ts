@@ -5,7 +5,7 @@
  * to keep the dependency graph acyclic. It uses dynamic imports inside methods.
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 export class ServiceDiagnostics {
   /**

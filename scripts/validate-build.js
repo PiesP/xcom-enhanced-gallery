@@ -2,8 +2,23 @@
 /* eslint-env node */
 
 /**
- * 빌드 검증 스크립트
- * UserScript의 기본적인 유효성을 검사합니다.
+ * Build Validation Script
+ *
+ * Validates UserScript build integrity before deployment:
+ * - UserScript metadata (headers, required fields)
+ * - Encoding and syntax compliance
+ * - PC-only policy enforcement (no Touch/Pointer events)
+ * - Source map integrity (for dev build)
+ * - Legacy API leak detection (for prod build)
+ *
+ * Checks both development (with source maps) and production (optimized) outputs.
+ *
+ * Usage:
+ *   node validate-build.js
+ *
+ * Exit:
+ *   0 - All validations passed
+ *   1 - One or more validations failed
  */
 
 import { readFileSync, existsSync } from 'fs';

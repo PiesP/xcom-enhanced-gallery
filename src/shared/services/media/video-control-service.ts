@@ -6,7 +6,7 @@
  * 미디어 클릭 즉시 배경 비디오를 정지시켜 사용자 경험을 개선합니다.
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { STABLE_SELECTORS } from '@/constants';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { getCurrentIndex } from '@shared/state/signals/gallery.signals';

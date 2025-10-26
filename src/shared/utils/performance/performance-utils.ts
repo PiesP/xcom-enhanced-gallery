@@ -6,7 +6,7 @@
  * Tree-shaking 최적화를 위해 독립적인 모듈로 분리
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 디바운서 클래스 - 중복 실행 방지

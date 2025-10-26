@@ -4,7 +4,7 @@
  * @version 3.0.0 - Clean Architecture
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';

@@ -12,7 +12,7 @@
  */
 
 import { getSolid } from '../external/vendors';
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '../utils/timer-management';
 
 export type ActivityType = 'scroll' | 'focus' | 'layout' | 'programmatic';

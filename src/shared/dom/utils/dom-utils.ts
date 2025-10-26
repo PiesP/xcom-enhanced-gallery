@@ -1,11 +1,13 @@
 /**
  * @fileoverview Basic DOM Utilities - 함수형 API
- * @version 2.1.0 - Phase 138.1: 함수형 전환 (클래스 제거)
+ * @version 2.2.0 - Phase 195: Event management separation
  *
- * Tree-shaking 친화적인 순수 함수형 유틸리티
+ * Tree-shaking 친화적인 순수 함수형 유틸리티.
+ * Event management (addEventListener, removeEventListener)는 제거되었습니다.
+ * → BrowserService 또는 DomEventManager 사용
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 
 // ========== 타입 정의 ==========
 
@@ -160,69 +162,6 @@ export function removeElement(element: Element | null): boolean {
     return false;
   } catch (error) {
     logger.error('[DOM] Failed to remove element:', error);
-    return false;
-  }
-}
-
-// ========== 이벤트 관리 ==========
-
-/**
- * 안전한 이벤트 리스너 추가
- * @param element - 대상 요소 (null 시 무시)
- * @param type - 이벤트 타입 (예: 'click', 'keydown')
- * @param listener - 이벤트 핸들러 함수
- * @param options - 리스너 옵션 (capture, once 등)
- * @returns 등록 성공 여부
- * @example
- * ```typescript
- * const success = addEventListener(button, 'click', handleClick);
- * addEventListener(document, 'scroll', handleScroll, { capture: true });
- * ```
- */
-export function addEventListener(
-  element: Element | null,
-  type: string,
-  listener: EventListener,
-  options?: AddEventListenerOptions
-): boolean {
-  try {
-    if (element) {
-      element.addEventListener(type, listener, options);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    logger.error('[DOM] Failed to add event listener:', error);
-    return false;
-  }
-}
-
-/**
- * 안전한 이벤트 리스너 제거
- * @param element - 대상 요소 (null 시 무시)
- * @param type - 이벤트 타입 (추가할 때와 동일)
- * @param listener - 이벤트 핸들러 함수 (추가할 때와 동일)
- * @param options - 리스너 옵션 (추가할 때와 동일)
- * @returns 제거 성공 여부
- * @example
- * ```typescript
- * removeEventListener(button, 'click', handleClick);
- * ```
- */
-export function removeEventListener(
-  element: Element | null,
-  type: string,
-  listener: EventListener,
-  options?: EventListenerOptions
-): boolean {
-  try {
-    if (element) {
-      element.removeEventListener(type, listener, options);
-      return true;
-    }
-    return false;
-  } catch (error) {
-    logger.error('[DOM] Failed to remove event listener:', error);
     return false;
   }
 }

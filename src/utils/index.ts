@@ -12,4 +12,4 @@
 export { CoreService } from '../shared/services/service-manager';
 
 // 로거 (경량 유틸리티)
-export { logger } from '../shared/logging/logger';
+export { logger } from '@shared/logging';

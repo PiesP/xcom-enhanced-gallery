@@ -8,7 +8,7 @@
 
 import { getSolid } from '../../../shared/external/vendors';
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
-import { logger } from '../../../shared/logging/logger';
+import { logger } from '@shared/logging';
 import { EventManager } from '../../../shared/services/event-manager';
 import type { StabilityDetector } from '../../../shared/services/stability-detector';
 import { galleryState } from '../../../shared/state/signals/gallery.signals';

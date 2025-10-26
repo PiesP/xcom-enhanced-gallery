@@ -4,7 +4,7 @@
  * @version 3.0.0 - GalleryMarker 기능 통합
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import type { ComponentType } from '../../types/app.types';
 import { getSolid } from '../../external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';

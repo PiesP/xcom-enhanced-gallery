@@ -27,7 +27,7 @@ import { VerticalGalleryView } from './components/vertical-gallery-view';
 import { GalleryContainer } from '../../shared/components/isolation';
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
-import { logger } from '../../shared/logging/logger';
+import { logger } from '@shared/logging';
 import { getSolid } from '../../shared/external/vendors';
 
 /**

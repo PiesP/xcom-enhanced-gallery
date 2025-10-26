@@ -1,22 +1,20 @@
 /**
  * @fileoverview Gallery Core Interfaces
- * @version 1.0.0
+ * @version 2.0.0 - Phase 200: 타입 계층 통합
  *
- * Features 간 의존성을 제거하기 위한 공통 인터페이스 정의
+ * Features 계층의 GalleryRenderer 계약을 정의
  * 의존성 규칙: features → shared → core → infrastructure
+ *
+ * 마이그레이션 노트:
+ * - GalleryRenderOptions는 @shared/types/media.types.ts로 통합됨
+ * - 일관성을 위해 이 파일에서도 re-export
  */
 
-import type { MediaInfo } from '@shared/types/media.types';
-import type { ViewMode } from '@shared/types/app.types';
-import type { MediaExtractionOptions, MediaExtractor, TweetInfo } from '@shared/types/media.types';
-import type { MediaExtractionResult } from '@shared/types/media.types';
-
-// Re-export extraction types for backward compatibility
-export type { MediaExtractionOptions, MediaExtractionResult, MediaExtractor, TweetInfo };
+import type { MediaInfo, GalleryRenderOptions } from '@shared/types/media.types';
 
 /**
  * 갤러리 렌더러 인터페이스
- * Features 계층의 GalleryRenderer를 추상화
+ * Features 계층의 GalleryRenderer를 추상화하는 계약
  */
 export interface GalleryRenderer {
   /**
@@ -48,16 +46,5 @@ export interface GalleryRenderer {
   setOnCloseCallback(onClose: () => void): void;
 }
 
-/**
- * 갤러리 렌더링 옵션
- */
-export interface GalleryRenderOptions {
-  /** 시작 인덱스 */
-  startIndex?: number | undefined;
-  /** 뷰 모드 */
-  viewMode?: ViewMode | undefined;
-  /** 클래스명 */
-  className?: string | undefined;
-  /** 트윗 ID */
-  tweetId?: string | undefined;
-}
+// 하위 호환성을 위한 re-export (types/media.types.ts가 기준)
+export type { GalleryRenderOptions };

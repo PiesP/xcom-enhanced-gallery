@@ -5,7 +5,7 @@
  * Phase 129 optimized: removed unused methods to reduce bundle size.
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * URL 패턴 매칭 및 추출을 위한 유틸리티 클래스

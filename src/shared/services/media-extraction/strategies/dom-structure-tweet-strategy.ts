@@ -2,7 +2,7 @@
  * @fileoverview DOM 구조 기반 트윗 정보 추출 전략
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 

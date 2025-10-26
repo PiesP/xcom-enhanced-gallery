@@ -5,7 +5,7 @@
 
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { StorageAdapter } from './storage-adapter.interface';
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * Userscript 기반 저장소 어댑터

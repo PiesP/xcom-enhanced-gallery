@@ -4,7 +4,7 @@
  * @version 2.1.0 - Phase A5.1: BaseServiceImpl 패턴 적용
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import type { StorageAdapter } from './storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
 import { BaseServiceImpl } from './base-service-impl';
@@ -14,18 +14,18 @@ import {
   type BaseLanguageCode,
   type SupportedLanguage,
   type LanguageStrings,
-} from '@shared/i18n/language-types';
+} from '@shared/constants/i18n/language-types';
 import {
   DEFAULT_LANGUAGE,
   TRANSLATION_REGISTRY,
   getLanguageStrings,
-} from '@shared/i18n/translation-registry';
+} from '@shared/constants/i18n/translation-registry';
 
 export type {
   SupportedLanguage,
   LanguageStrings,
   BaseLanguageCode,
-} from '@shared/i18n/language-types';
+} from '@shared/constants/i18n/language-types';
 
 /**
  * 다국어 서비스 (Phase A5.1: BaseServiceImpl 패턴)

@@ -4,7 +4,7 @@
  * @version 1.0.0 - TDD 기반 중복 제거 구현
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
 import { createSignalSafe } from '../state/signals/signal-factory';
 

@@ -6,7 +6,7 @@
  * - 검증: CodeQL `forbidden-touch-events.ql` 및 타입 검사
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
 import {

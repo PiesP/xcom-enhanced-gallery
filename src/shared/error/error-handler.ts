@@ -1,102 +1,29 @@
 /**
- * @fileoverview Error Handling System
- * @version 2.0.0
+ * @fileoverview Global Error Handler
+ * @version 2.1.0 - Phase 196: 전역 에러 처리 전용
  *
- * Clean Architecture error handling system
- * Provides consistent error handling patterns across all layers
+ * Window error 및 unhandledrejection 이벤트를 처리하는 전역 핸들러.
+ *
+ * @note 애플리케이션 로직의 에러 처리는 @shared/utils/error-handling.ts 사용.
+ * 이 모듈은 브라우저 글로벌 에러만 처리합니다.
  */
 
-import { logger } from '@shared/logging/logger';
-
-// ================================
-// Core Error Types
-// ================================
-
-export enum ErrorCode {
-  // System Errors (1000~1999)
-  SYSTEM_ERROR = 1000,
-  INITIALIZATION_ERROR = 1001,
-  CONFIGURATION_ERROR = 1002,
-
-  // Service Errors (2000~2999)
-  SERVICE_UNAVAILABLE = 2000,
-  SERVICE_TIMEOUT = 2001,
-  DEPENDENCY_ERROR = 2002,
-
-  // Media Errors (3000~3999)
-  MEDIA_EXTRACTION_ERROR = 3000,
-  MEDIA_DOWNLOAD_ERROR = 3001,
-  MEDIA_PROCESSING_ERROR = 3002,
-
-  // Network Errors (4000~4999)
-  NETWORK_ERROR = 4000,
-  HTTP_ERROR = 4001,
-  CORS_ERROR = 4002,
-
-  // Validation Errors (5000~5999)
-  VALIDATION_ERROR = 5000,
-  INVALID_INPUT = 5001,
-  MISSING_PARAMETER = 5002,
-}
-
-export enum ErrorSeverity {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical',
-}
+import { logger } from '@shared/logging';
 
 /**
- * 표준화된 애플리케이션 에러 클래스
+ * 전역 에러 핸들러 (싱글톤)
+ * Window 레벨의 uncaught error 및 unhandled promise rejection 처리
  */
-export class AppError extends Error {
-  public readonly code: ErrorCode;
-  public readonly severity: ErrorSeverity;
-  public readonly context: Record<string, unknown> | undefined;
-  public readonly timestamp: number;
-  public override readonly stack?: string;
+export class GlobalErrorHandler {
+  private static instance: GlobalErrorHandler | null = null;
+  private isInitialized = false;
+  private boundErrorListener: ((event: ErrorEvent) => void) | null = null;
+  private boundRejectionListener: ((event: PromiseRejectionEvent) => void) | null = null;
 
-  constructor(
-    code: ErrorCode,
-    message: string,
-    severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-    context?: Record<string, unknown>,
-    originalError?: Error
-  ) {
-    super(message);
-    this.name = 'AppError';
-    this.code = code;
-    this.severity = severity;
-    this.context = context;
-    this.timestamp = Date.now();
-
-    if (originalError?.stack) {
-      this.stack = originalError.stack;
+  public static getInstance(): GlobalErrorHandler {
+    if (!this.instance) {
+      this.instance = new GlobalErrorHandler();
     }
-  }
-}
-
-// ================================
-// Error Handler Interface
-// ================================
-
-export interface ErrorHandlerInterface {
-  handle(error: Error | AppError, context?: string): void;
-  handleAsync(error: Error | AppError, context?: string): Promise<void>;
-}
-
-/**
- * 에러 핸들러 구현
- */
-export class ErrorHandler implements ErrorHandlerInterface {
-  private static instance: ErrorHandler | null = null;
-  private isGlobalHandlerInitialized = false;
-  // Store bound listeners to ensure removeEventListener uses the same references
-  private boundGlobalErrorListener: ((event: ErrorEvent) => void) | null = null;
-  private boundUnhandledRejectionListener: ((event: PromiseRejectionEvent) => void) | null = null;
-
-  public static getInstance(): ErrorHandler {
-    this.instance ??= new ErrorHandler();
     return this.instance;
   }
 
@@ -104,294 +31,130 @@ export class ErrorHandler implements ErrorHandlerInterface {
 
   /**
    * 전역 에러 핸들러 초기화
+   * Window 이벤트 리스너 등록
    */
-  public initializeGlobalHandlers(): void {
-    if (this.isGlobalHandlerInitialized) {
-      logger.debug('[ErrorHandler] Global handlers already initialized');
+  public initialize(): void {
+    if (this.isInitialized) {
+      logger.debug('[GlobalErrorHandler] Already initialized');
       return;
     }
 
-    // 전역 에러 핸들링
-    if (!this.boundGlobalErrorListener) {
-      this.boundGlobalErrorListener = this.handleGlobalError.bind(this);
+    // Bound listeners 생성 (removeEventListener에서 동일 참조 필요)
+    if (!this.boundErrorListener) {
+      this.boundErrorListener = this.handleUncaughtError.bind(this);
     }
-    if (!this.boundUnhandledRejectionListener) {
-      this.boundUnhandledRejectionListener = this.handleUnhandledRejection.bind(this);
+    if (!this.boundRejectionListener) {
+      this.boundRejectionListener = this.handleUnhandledRejection.bind(this);
     }
 
-    window.addEventListener('error', this.boundGlobalErrorListener);
-    window.addEventListener('unhandledrejection', this.boundUnhandledRejectionListener);
+    // Window 이벤트 리스너 등록
+    window.addEventListener('error', this.boundErrorListener);
+    window.addEventListener('unhandledrejection', this.boundRejectionListener);
 
-    this.isGlobalHandlerInitialized = true;
-    logger.debug('[ErrorHandler] Global error handlers initialized');
+    this.isInitialized = true;
+    logger.debug('[GlobalErrorHandler] Global error handlers registered');
   }
 
   /**
    * 전역 에러 핸들러 정리
+   * Window 이벤트 리스너 제거
    */
-  public destroyGlobalHandlers(): void {
-    if (!this.isGlobalHandlerInitialized) {
+  public destroy(): void {
+    if (!this.isInitialized) {
       return;
     }
 
-    if (this.boundGlobalErrorListener) {
-      window.removeEventListener('error', this.boundGlobalErrorListener);
+    // 리스너 제거
+    if (this.boundErrorListener) {
+      window.removeEventListener('error', this.boundErrorListener);
     }
-    if (this.boundUnhandledRejectionListener) {
-      window.removeEventListener('unhandledrejection', this.boundUnhandledRejectionListener);
+    if (this.boundRejectionListener) {
+      window.removeEventListener('unhandledrejection', this.boundRejectionListener);
     }
 
-    this.isGlobalHandlerInitialized = false;
-    this.boundGlobalErrorListener = null;
-    this.boundUnhandledRejectionListener = null;
-    logger.debug('[ErrorHandler] Global error handlers destroyed');
+    this.isInitialized = false;
+    this.boundErrorListener = null;
+    this.boundRejectionListener = null;
+    logger.debug('[GlobalErrorHandler] Global error handlers unregistered');
   }
 
   /**
-   * 전역 에러 처리
+   * Uncaught 에러 처리
+   * @private
    */
-  private handleGlobalError(event: ErrorEvent): void {
+  private handleUncaughtError(event: ErrorEvent): void {
+    const message = event.message || 'Unknown error occurred';
     const context = {
       location: `${event.filename}:${event.lineno}:${event.colno}`,
-      message: event.message,
-      source: event.filename,
-      line: event.lineno,
-      column: event.colno,
-      timestamp: Date.now(),
+      type: 'uncaught-error',
     };
 
-    const error = new AppError(
-      ErrorCode.SYSTEM_ERROR,
-      event.message || 'Global error occurred',
-      ErrorSeverity.HIGH,
-      context,
-      event.error
-    );
+    logger.error(`[UncaughtError] ${message}`, context);
 
-    this.handle(error, 'GlobalError');
-  }
-
-  /**
-   * 처리되지 않은 Promise 거부 처리
-   */
-  private handleUnhandledRejection(event: PromiseRejectionEvent): void {
-    const context = {
-      reason: event.reason,
-      timestamp: Date.now(),
-    };
-
-    const error = new AppError(
-      ErrorCode.SYSTEM_ERROR,
-      `Unhandled promise rejection: ${String(event.reason)}`,
-      ErrorSeverity.HIGH,
-      context,
-      event.reason instanceof Error ? event.reason : undefined
-    );
-
-    this.handle(error, 'UnhandledPromiseRejection');
-
-    // 기본 처리 방지 (개발 모드에서만)
+    // 기본 동작 방지 (개발 모드에서만)
     if (import.meta.env.DEV) {
       event.preventDefault();
     }
   }
 
   /**
-   * 동기적 에러 처리
+   * Unhandled Promise Rejection 처리
+   * @private
    */
-  public handle(error: Error | AppError, context = 'Unknown'): void {
-    const normalizedError = this.normalizeError(error);
-    this.logError(normalizedError, context);
-    this.reportError(normalizedError, context);
-  }
+  private handleUnhandledRejection(event: PromiseRejectionEvent): void {
+    const reason = event.reason;
+    const message =
+      reason instanceof Error
+        ? reason.message
+        : typeof reason === 'string'
+          ? reason
+          : `Unhandled rejection: ${String(reason)}`;
 
-  /**
-   * 비동기적 에러 처리
-   */
-  public async handleAsync(error: Error | AppError, context = 'Unknown'): Promise<void> {
-    const normalizedError = this.normalizeError(error);
-    this.logError(normalizedError, context);
-    await this.reportErrorAsync(normalizedError, context);
-  }
+    logger.error(`[UnhandledRejection] ${message}`, {
+      type: 'unhandled-rejection',
+      reason: typeof reason === 'object' ? reason : String(reason),
+    });
 
-  /**
-   * 에러를 AppError로 정규화
-   */
-  private normalizeError(error: Error | AppError): AppError {
-    if (error instanceof AppError) {
-      return error;
+    // 기본 동작 방지 (개발 모드에서만)
+    if (import.meta.env.DEV) {
+      event.preventDefault();
     }
-
-    // 일반 Error를 AppError로 변환
-    return new AppError(
-      ErrorCode.SYSTEM_ERROR,
-      error.message,
-      ErrorSeverity.MEDIUM,
-      { originalName: error.name },
-      error
-    );
-  }
-
-  /**
-   * 에러 로깅
-   */
-  private logError(error: AppError, context: string): void {
-    const logData = {
-      code: error.code,
-      severity: error.severity,
-      context,
-      message: error.message,
-      timestamp: error.timestamp,
-      ...(error.context && { errorContext: error.context }),
-    };
-
-    switch (error.severity) {
-      case ErrorSeverity.LOW:
-        logger.info(`[Error] ${context}:`, logData);
-        break;
-      case ErrorSeverity.MEDIUM:
-        logger.warn(`[Error] ${context}:`, logData);
-        break;
-      case ErrorSeverity.HIGH:
-      case ErrorSeverity.CRITICAL:
-        logger.error(`[Error] ${context}:`, logData);
-        break;
-    }
-  }
-
-  /**
-   * 동기적 에러 리포팅 (필요시 확장)
-   */
-  private reportError(error: AppError, context: string): void {
-    // 향후 에러 리포팅 서비스 연동 시 구현
-    if (error.severity === ErrorSeverity.CRITICAL) {
-      logger.error(`🚨 Critical Error in ${context}:`, error);
-    }
-  }
-
-  /**
-   * 비동기적 에러 리포팅 (필요시 확장)
-   */
-  private async reportErrorAsync(error: AppError, context: string): Promise<void> {
-    // 향후 원격 에러 리포팅 서비스 연동 시 구현
-    await Promise.resolve();
-    this.reportError(error, context);
-  }
-}
-
-// ================================
-// Convenience Functions
-// ================================
-
-const errorHandler = ErrorHandler.getInstance();
-
-/**
- * 안전한 비동기 함수 실행 래퍼
- * @description core-types의 safeAsync를 기반으로 context와 defaultValue 지원 추가
- */
-export async function safeAsync<T>(
-  operation: () => Promise<T>,
-  context: string,
-  defaultValue?: T
-): Promise<T | undefined> {
-  const { safeAsync: coreSafeAsync, isSuccess } = await import('../types/core/core-types');
-
-  const result = await coreSafeAsync(operation);
-
-  if (!isSuccess(result)) {
-    await errorHandler.handleAsync(result.error, context);
-    return defaultValue;
-  }
-
-  return result.data;
-}
-
-/**
- * 안전한 동기 함수 실행 래퍼
- * @description core-types의 safe를 기반으로 context와 defaultValue 지원 추가
- */
-export function safeSync<T>(operation: () => T, context: string, defaultValue?: T): T | undefined {
-  // 동기 함수이므로 직접 import (dynamic import 불가)
-  // core-types의 safe 로직을 동일하게 사용하되, 에러 핸들링만 추가
-  try {
-    return operation();
-  } catch (error) {
-    const standardError = error instanceof Error ? error : new Error(String(error));
-    errorHandler.handle(standardError, context);
-    return defaultValue;
   }
 }
 
 /**
- * 에러 생성 헬퍼 함수들
- */
-export const createError = {
-  system: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.SYSTEM_ERROR, message, ErrorSeverity.HIGH, context),
-
-  service: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.SERVICE_UNAVAILABLE, message, ErrorSeverity.MEDIUM, context),
-
-  media: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.MEDIA_EXTRACTION_ERROR, message, ErrorSeverity.MEDIUM, context),
-
-  network: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.NETWORK_ERROR, message, ErrorSeverity.MEDIUM, context),
-
-  validation: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.VALIDATION_ERROR, message, ErrorSeverity.LOW, context),
-
-  critical: (message: string, context?: Record<string, unknown>) =>
-    new AppError(ErrorCode.SYSTEM_ERROR, message, ErrorSeverity.CRITICAL, context),
-};
-
-/**
- * 전역 에러 핸들러 인스턴스
- */
-export const globalErrorHandler = errorHandler;
-
-/**
- * AppErrorHandler 호환성 클래스 (Infrastructure 레이어 호환성)
+ * @deprecated AppErrorHandler는 GlobalErrorHandler로 변경됨
+ * 호환성 유지를 위한 별칭
  */
 export class AppErrorHandler {
   private static instance: AppErrorHandler | null = null;
-  private readonly errorHandler = ErrorHandler.getInstance();
+  private readonly handler = GlobalErrorHandler.getInstance();
 
   public static getInstance(): AppErrorHandler {
-    this.instance ??= new AppErrorHandler();
+    if (!this.instance) {
+      this.instance = new AppErrorHandler();
+    }
     return this.instance;
   }
 
   private constructor() {}
 
   /**
-   * 에러 핸들러 초기화
+   * @deprecated initialize() 사용 권장
    */
   public initialize(): void {
-    this.errorHandler.initializeGlobalHandlers();
+    this.handler.initialize();
   }
 
   /**
-   * 정리
+   * @deprecated destroy() 사용 권장
    */
   public destroy(): void {
-    this.errorHandler.destroyGlobalHandlers();
+    this.handler.destroy();
   }
 }
 
 /**
- * 편의 함수: 에러 처리
+ * 전역 에러 핸들러 인스턴스
  */
-export function handleError(error: Error | AppError, context?: string): void {
-  errorHandler.handle(error, context);
-}
-
-/**
- * 편의 함수: 비동기 에러 처리
- */
-export async function handleErrorAsync(error: Error | AppError, context?: string): Promise<void> {
-  await errorHandler.handleAsync(error, context);
-}
-
-// 하위 호환성을 위한 별칭
-export type IErrorHandler = ErrorHandlerInterface;
+export const globalErrorHandler = GlobalErrorHandler.getInstance();

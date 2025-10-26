@@ -1,21 +1,37 @@
 /**
- * Logger utility for X.com Enhanced Gallery
+ * Centralized logging infrastructure
  *
  * Provides consistent logging interface with different log levels and formatting.
  * All logs are prefixed with [XEG] for easy identification in browser console.
  *
- * @fileoverview Centralized logging utility
- * @version 1.1.0
+ * Supports development and production modes with automatic tree-shaking for debug
+ * code elimination in production builds via __DEV__ global.
+ *
+ * @fileoverview Centralized logging system
+ * @version 1.2.0
  */
 
 /**
- * Log levels for filtering and controlling output.
+ * Supported log levels with priority ordering
+ *
+ * @const {readonly string[]}
+ * @public
  */
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
+
+/**
+ * Log level type
+ *
+ * @public
+ */
 export type LogLevel = (typeof LOG_LEVELS)[number];
 
 /**
- * Loggable data types - supports any serializable data including unknown types
+ * Type representing any loggable data
+ *
+ * Supports primitives, errors, objects, arrays, and any serializable values.
+ *
+ * @public
  */
 export type LoggableData =
   | string
@@ -29,20 +45,48 @@ export type LoggableData =
   | undefined;
 
 /**
- * Logger interface for consistent logging across the application
+ * Logger interface providing logging methods
+ *
+ * Defines the public API for logging at different levels with optional performance timing.
+ *
+ * @interface Logger
+ * @public
  */
 export interface Logger {
-  /** Log informational messages */
+  /**
+   * Log informational messages
+   * @param {...LoggableData[]} args - Data to log
+   */
   info: (...args: LoggableData[]) => void;
-  /** Log warning messages */
+
+  /**
+   * Log warning messages
+   * @param {...LoggableData[]} args - Data to log
+   */
   warn: (...args: LoggableData[]) => void;
-  /** Log error messages */
+
+  /**
+   * Log error messages
+   * @param {...LoggableData[]} args - Data to log
+   */
   error: (...args: LoggableData[]) => void;
-  /** Log debug messages (development only) */
+
+  /**
+   * Log debug messages (development only)
+   * @param {...LoggableData[]} args - Data to log
+   */
   debug: (...args: LoggableData[]) => void;
-  /** Start performance timer */
+
+  /**
+   * Start a performance timer
+   * @param {string} label - Timer identifier
+   */
   time: (label: string) => void;
-  /** End performance timer */
+
+  /**
+   * End a performance timer and log duration
+   * @param {string} label - Timer identifier (must match previous time() call)
+   */
   timeEnd: (label: string) => void;
 }
 
@@ -253,16 +297,60 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
   return createLoggerImpl(config);
 }
 
+/**
+ * Global default logger instance
+ *
+ * Automatically configured for development (debug level with timestamps)
+ * or production (warn level, minimal output).
+ *
+ * @const {Logger}
+ * @public
+ */
 export const logger: Logger = createLogger({
   level: isDev ? 'debug' : 'warn',
   includeTimestamp: isDev,
   includeStackTrace: isDev,
 });
 
+/**
+ * Creates a scoped logger instance with a given scope name
+ *
+ * The scope is added to the prefix for easy identification of log sources.
+ *
+ * @param {string} scope - Scope identifier (e.g., 'MediaService', 'BulkDownload')
+ * @param {Partial<LoggerConfig>} [config] - Configuration override
+ * @returns {Logger} - Logger instance with scope
+ *
+ * @example
+ * const slog = createScopedLogger('MediaExtractor');
+ * slog.info('Processing media...');
+ * // Output: [XEG] [MediaExtractor] [INFO] Processing media...
+ *
+ * @public
+ */
 export function createScopedLogger(scope: string, config: Partial<LoggerConfig> = {}): Logger {
   return createScopedLoggerImpl(scope, config);
 }
 
+/**
+ * Creates a scoped logger with correlation ID for request tracing
+ *
+ * Combines scope and correlation ID for comprehensive log tracing across
+ * asynchronous operations and multiple services.
+ *
+ * @param {string} scope - Scope identifier
+ * @param {string} correlationId - Unique correlation ID (e.g., from createCorrelationId())
+ * @param {Partial<LoggerConfig>} [config] - Configuration override
+ * @returns {Logger} - Logger instance with scope and correlation ID
+ *
+ * @example
+ * const cid = createCorrelationId();
+ * const slog = createScopedLoggerWithCorrelation('BulkDownload', cid);
+ * slog.info('Download started');
+ * // Output: [XEG] [BulkDownload] [cid:abc123def] [INFO] Download started
+ *
+ * @public
+ */
 export function createScopedLoggerWithCorrelation(
   scope: string,
   correlationId: string,
@@ -271,6 +359,20 @@ export function createScopedLoggerWithCorrelation(
   return createScopedLoggerWithCorrelationImpl(scope, correlationId, config);
 }
 
+/**
+ * Generates a unique correlation ID for request tracing
+ *
+ * Uses cryptographic random values if available, falls back to Math.random().
+ * Correlation IDs help track related log entries across multiple operations.
+ *
+ * @returns {string} - Unique correlation ID (base36 encoded)
+ *
+ * @example
+ * const correlationId = createCorrelationId();
+ * // Result: "3a7f8e2b" or similar
+ *
+ * @public
+ */
 export function createCorrelationId(): string {
   try {
     if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
@@ -280,11 +382,29 @@ export function createCorrelationId(): string {
       return num.toString(36);
     }
   } catch {
-    // ignore
+    // Fallback to Math.random if crypto fails
   }
   return Math.random().toString(36).slice(2, 10);
 }
 
+/**
+ * Measures performance of a synchronous or asynchronous function
+ *
+ * Logs execution time in milliseconds. Timing is only collected in development mode;
+ * in production, the function executes without timing overhead.
+ *
+ * @template T - Return type of the function
+ * @param {string} label - Human-readable label for the timer
+ * @param {() => T | Promise<T>} fn - Synchronous or asynchronous function to measure
+ * @returns {Promise<T>} - Result of the function
+ *
+ * @example
+ * const result = await measurePerformance('extract-media', async () => {
+ *   return await extractMediaData();
+ * });
+ *
+ * @public
+ */
 export async function measurePerformance<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
   if (isDev) {
     logger.time(label);
@@ -298,6 +418,25 @@ export async function measurePerformance<T>(label: string, fn: () => T | Promise
   return await fn();
 }
 
+/**
+ * Logs an error with structured context information
+ *
+ * Formats error messages consistently with optional context and source information.
+ * Includes stack trace logging in development mode.
+ *
+ * @param {Error | string} error - Error object or error message string
+ * @param {Record<string, string | number | boolean>} [context] - Additional context data
+ * @param {string} [source] - Source identifier (e.g., component or service name)
+ *
+ * @example
+ * try {
+ *   await downloadMedia();
+ * } catch (error) {
+ *   logError(error, { mediaId: '12345', retryCount: 2 }, 'BulkDownloader');
+ * }
+ *
+ * @public
+ */
 export function logError(
   error: Error | string,
   context: Record<string, string | number | boolean> = {},

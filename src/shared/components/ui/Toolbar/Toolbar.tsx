@@ -5,11 +5,8 @@
 
 import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
-import {
-  useToolbarState,
-  getToolbarDataState,
-  getToolbarClassName,
-} from '../../../hooks/use-toolbar-state';
+import { useToolbarState } from '../../../hooks/use-toolbar-state';
+import { getToolbarDataState, getToolbarClassName } from '../../../utils/toolbar-utils';
 import { ComponentStandards } from '../StandardProps';
 import { ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize } from '../Icon';
 import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
@@ -109,7 +106,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   const settingsController = useToolbarSettingsController({
-    setNeedsHighContrast: toolbarActions.setNeedsHighContrast,
+    setNeedsHighContrast: toolbarActions.setHighContrast,
     isSettingsExpanded,
     setSettingsExpanded: setIsSettingsExpanded,
     toggleSettingsExpanded,
@@ -149,7 +146,6 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       event.preventDefault();
       event.stopPropagation();
       (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
-      toolbarActions.setCurrentFitMode(mode);
       if (!disabled) {
         getFitHandler(mode)?.(event);
       }

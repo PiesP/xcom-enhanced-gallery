@@ -1,12 +1,9 @@
 /**
- * @fileoverview Core Error Handler Index
- * @version 2.0.0
+ * @fileoverview Global Error Handler Index
+ * @version 2.1.0 - Phase 196: 전역 에러 처리만 제공
  *
- * 통합 에러 처리 시스템의 진입점
- * Infrastructure AppErrorHandler 호환성 포함
+ * @deprecated 애플리케이션 로직의 에러 처리는 @shared/utils/error-handling.ts 사용
+ * 이 모듈은 Window 레벨의 에러만 처리 (uncaught errors, unhandled rejections)
  */
 
-export * from './error-handler';
-
-// Infrastructure 호환성 re-exports
-export { AppErrorHandler, ErrorHandler as CoreErrorHandler } from './error-handler';
+export { GlobalErrorHandler, AppErrorHandler, globalErrorHandler } from './error-handler';

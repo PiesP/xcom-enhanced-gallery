@@ -1,6 +1,6 @@
 /**
  * @fileoverview 통합 미디어 타입 정의
- * @version 3.0.0 - Phase 3: 파일 통합
+ * @version 3.1.0 - Phase 195: ExtractionErrorCode -> ErrorCode 통합
  *
  * 모든 미디어 관련 타입을 하나로 통합:
  * - media.types.ts (핵심 미디어 타입)
@@ -14,6 +14,8 @@
 
 // Constants에서 re-export
 import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '@/constants';
+// ErrorCode 통합을 위해 import (ExtractionErrorCode 별칭으로 제공)
+import type { ErrorCode } from './result.types';
 
 export type MediaType = BaseMediaType;
 export type MediaQuality = BaseMediaQuality;
@@ -108,25 +110,17 @@ export interface MediaExtractionOptions {
 }
 
 /**
- * 추출 에러 코드
+ * 추출 에러 코드 (Phase 195: ErrorCode로 통합)
+ * @deprecated ErrorCode를 사용하세요. 호환성을 위해 별칭으로 유지됩니다.
  */
-export enum ExtractionErrorCode {
-  ELEMENT_NOT_FOUND = 'ELEMENT_NOT_FOUND',
-  INVALID_ELEMENT = 'INVALID_ELEMENT',
-  NO_MEDIA_FOUND = 'NO_MEDIA_FOUND',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  TIMEOUT = 'TIMEOUT',
-  INVALID_URL = 'INVALID_URL',
-  PERMISSION_DENIED = 'PERMISSION_DENIED',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
-}
+export { ErrorCode as ExtractionErrorCode } from './result.types';
 
 /**
  * 추출 에러 클래스
  */
 export class ExtractionError extends Error {
   constructor(
-    public readonly code: ExtractionErrorCode,
+    public readonly code: ErrorCode,
     message: string,
     public readonly originalError?: Error
   ) {
@@ -263,12 +257,27 @@ export interface BulkDownloadOptions {
 
 /**
  * 갤러리 렌더링 옵션
+ *
+ * Features 계층의 GalleryRenderer에 전달되는 옵션
+ * 참고: GalleryRenderOptions는 이전에 interfaces/gallery.interfaces.ts에도
+ * 정의되었으나, Phase 200에서 이곳으로 통합됨
  */
 export interface GalleryRenderOptions {
-  viewMode: 'horizontal' | 'vertical';
+  /** 시작 인덱스 (gallery.interfaces.ts에서 마이그레이션) */
+  startIndex?: number | undefined;
+  /** 뷰 모드 */
+  viewMode?: 'horizontal' | 'vertical' | undefined;
+  /** 클래스명 (gallery.interfaces.ts에서 마이그레이션) */
+  className?: string | undefined;
+  /** 트윗 ID (gallery.interfaces.ts에서 마이그레이션) */
+  tweetId?: string | undefined;
+  /** 키보드 네비게이션 활성화 */
   enableKeyboardNavigation?: boolean;
+  /** 다운로드 버튼 표시 */
   showDownloadButton?: boolean;
+  /** 파일명 표시 */
   showFilenames?: boolean;
+  /** 자동 재생 */
   autoPlay?: boolean;
 }
 

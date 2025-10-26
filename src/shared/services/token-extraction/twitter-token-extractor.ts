@@ -7,7 +7,7 @@
  *         원래 위치: src/features/settings/services/ (Phase 192 리팩토링)
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '../../utils/timer-management';
 
 /**

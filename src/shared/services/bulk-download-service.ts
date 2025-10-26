@@ -6,7 +6,7 @@
 
 import type { MediaInfo, MediaItem } from '../types/media.types';
 import type { MediaItemForFilename } from '../types/media.types';
-import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '../logging/logger';
+import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '@shared/logging';
 import { getNativeDownload } from '../external/vendors';
 import { getErrorMessage } from '../utils/error-handling';
 import { generateMediaFilename } from '../media/filename-service';

@@ -7,7 +7,7 @@
  * - 용도: 비동기 렌더링 환경에서 특정 요소의 DOM 준비 대기
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from './timer-management';
 
 /**

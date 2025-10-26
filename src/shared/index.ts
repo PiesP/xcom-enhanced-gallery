@@ -58,9 +58,14 @@ export {
 } from './utils/signal-selector';
 export { createFocusTrap } from './utils/focus-trap';
 export type { FocusTrapOptions, FocusTrap } from './utils/focus-trap';
+export {
+  getToolbarDataState,
+  getToolbarClassName,
+  type ToolbarDataState,
+} from './utils/toolbar-utils';
 
 // 새로운 P4-P7 훅들
-export { useGalleryToolbarLogic } from './hooks/use-gallery-toolbar-logic';
+// NOTE: useGalleryToolbarLogic 제거 (Phase 140.2 미사용 코드 정리, 2025-10-26)
 export { useFocusTrap } from './hooks/use-focus-trap';
 
 // 새로운 P6 스타일 토큰들

@@ -10,7 +10,7 @@
  * - BrowserService: 기본적인 DOM 및 CSS 관리
  */
 
-import { logger } from '@shared/logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 브라우저 서비스

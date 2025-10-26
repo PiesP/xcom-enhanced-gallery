@@ -1,6 +1,6 @@
 import type { Accessor } from 'solid-js';
 import { getSolid } from '../../../shared/external/vendors';
-import { logger } from '../../../shared/logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';

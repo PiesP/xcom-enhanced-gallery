@@ -1,9 +1,10 @@
 /**
  * @fileoverview DOM 캐싱 유틸리티
+ * @version 3.0.0 - Phase 195: 구조 최적화 및 주석 정규화
  * @description 반복적인 DOM 쿼리 최적화를 위한 캐싱 시스템
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import { globalTimerManager } from '../utils/timer-management';
 
 /**

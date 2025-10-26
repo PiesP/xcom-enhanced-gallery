@@ -283,6 +283,172 @@ oklch(0.5 0 0)    /* 중간 회색 */
 
 ---
 
+## 🔧 에러 처리 패턴 (Phase 196)
+
+### 개요
+
+프로젝트의 에러 처리는 **3단계 계층**으로 분리됩니다:
+
+1. **전역 브라우저 에러** (`@shared/error`): 처리하지 않은 예외, 거부된 Promise
+2. **애플리케이션 로직 에러** (`@shared/utils/error-handling`): 함수 반환값,
+   복구 전략
+3. **Result 타입 기반** (`@shared/types/result.types.ts`): 주요 에러 흐름
+
+### 1. Result<T> 패턴 (주요 흐름)
+
+**모든 함수는 성공/실패를 명시적으로 반환해야 합니다**:
+
+```typescript
+// ✅ Result 타입으로 성공/실패 구분 (PRIMARY PATTERN)
+import type { Result } from '@shared/types';
+
+async function extractMediaMetadata(url: string): Promise<Result<Media[]>> {
+  if (!url) {
+    return { success: false, error: { code: 'invalid-url' } };
+  }
+  try {
+    const data = await fetchMetadata(url);
+    return { success: true, data };
+  } catch (error) {
+    return {
+      success: false,
+      error: { code: 'extraction-failed', details: error },
+    };
+  }
+}
+
+// 호출처: 명시적 타입 검사
+const result = await extractMediaMetadata(url);
+if (result.success) {
+  console.log(result.data); // Media[]
+} else {
+  console.error(result.error); // ErrorCode
+}
+```
+
+### 2. 표준화된 에러 (ErrorFactory)
+
+**특정 도메인에서 발생하는 에러는 ErrorFactory로 표준화**:
+
+```typescript
+import { ErrorFactory } from '@shared/utils/error-handling';
+
+// 네트워크 에러
+try {
+  const res = await fetch(url);
+} catch (error) {
+  const standardized = ErrorFactory.createNetworkError(error, {
+    url,
+    method: 'GET',
+    timeout: 5000,
+  });
+  // standardized: { type: 'network', severity: 'error', message, code }
+}
+
+// 검증 에러
+if (!isValidUrl(url)) {
+  const standardized = ErrorFactory.createValidationError('Invalid URL', {
+    field: 'url',
+    value: url,
+  });
+}
+
+// 처리 에러
+try {
+  processMedia(item);
+} catch (error) {
+  const standardized = ErrorFactory.createProcessingError(error, {
+    operation: 'media-processing',
+    item: item.id,
+  });
+}
+```
+
+### 3. 에러 복구 전략
+
+**에러 복구 패턴 (withRetry, withFallback)**:
+
+```typescript
+import { withRetry, withFallback } from '@shared/utils/error-handling';
+
+// Retry: 지수 백오프 (50ms, 100ms, 150ms)
+const data = await withRetry(() => fetchMediaMetadata(url), {
+  maxAttempts: 3,
+  delayMs: 50,
+  backoffMultiplier: 1,
+});
+
+// Fallback: 기본값 제공
+const settings = await withFallback(
+  () => loadUserSettings(),
+  () => DEFAULT_SETTINGS // 폴백 함수
+);
+
+// 조합
+const robust = await withRetry(
+  () =>
+    withFallback(
+      () => fetchData(url),
+      () => getCachedData(url)
+    ),
+  { maxAttempts: 2, delayMs: 100 }
+);
+```
+
+### 4. 에러 직렬화 (Logging/Telemetry)
+
+**에러를 로그/원격 서버로 전송할 때 표준화**:
+
+```typescript
+import { serializeError, getErrorMessage } from '@shared/utils/error-handling';
+
+try {
+  await criticalOperation();
+} catch (error) {
+  // 사용자 메시지 (ui)
+  const userMessage = getErrorMessage(error);
+  toast.show(userMessage);
+
+  // 로그 직렬화 (debugging)
+  const serialized = serializeError(error);
+  logger.error('Critical failure', {
+    category: 'processing',
+    error: serialized,
+    context: { userId, operationId },
+  });
+}
+```
+
+### 5. 전역 에러 핸들러 (GlobalErrorHandler)
+
+**처리하지 않은 예외와 거부된 Promise 인터셉트** (window 레벨):
+
+```typescript
+import { GlobalErrorHandler } from '@shared/error';
+
+// main.ts에서 앱 시작 시
+const errorHandler = GlobalErrorHandler.getInstance();
+errorHandler.initialize(); // uncaught error/unhandled rejection 리스너 등록
+
+// 앱 종료 시
+errorHandler.destroy(); // 리스너 제거
+
+// ❌ 금지: AppErrorHandler (deprecated, 호환성만 유지)
+// import { AppErrorHandler } from '@shared/error';
+```
+
+### 가이드 요약
+
+| 상황                | 패턴                    | 위치                                |
+| ------------------- | ----------------------- | ----------------------------------- |
+| **함수 성공/실패**  | Result<T> 반환          | 모든 async/sync 함수                |
+| **도메인별 표준화** | ErrorFactory            | 네트워크/검증/처리 로직             |
+| **재시도/폴백**     | withRetry, withFallback | 네트워크 요청, 데이터 로드          |
+| **로깅/디버깅**     | serializeError          | catch 블록, 원격 로깅 서비스        |
+| **처리 안 된 예외** | GlobalErrorHandler      | main.ts (initialize/destroy만 호출) |
+
+---
+
 ## 🌐 Browser Utilities 사용 가이드 (Phase 194)
 
 ### 개요
@@ -425,6 +591,198 @@ import { isTwitterSite } from '@shared/utils/browser';
 
 ---
 
+## 🔧 DOM Utilities 사용 가이드 (Phase 195)
+
+### 개요
+
+프로젝트는 DOM 쿼리 최적화, 선택자 추상화, 기본 DOM 조작을 위한 계층화된
+유틸리티를 제공합니다.
+
+### 계층 분리
+
+- **`@shared/dom/dom-cache`**: DOM 쿼리 캐싱 (성능 최적화)
+  - TTL 기반 자동 만료, 적응형 정리
+- **`@shared/dom/selector-registry`**: 선택자 추상화 (STABLE_SELECTORS 기반)
+  - 우선순위 관리, 테스트 가능한 구조
+- **`@shared/dom/utils`**: 기본 DOM 함수형 유틸리티
+  - 요소 선택, 생성, 제거, 타입 가드
+
+### 사용 예제
+
+#### 캐시된 DOM 쿼리
+
+```typescript
+// ✅ 반복 쿼리에 캐시 사용 (성능 향상)
+import {
+  cachedQuerySelector,
+  cachedQuerySelectorAll,
+  cachedStableQuery,
+} from '@shared/dom';
+
+// 기본 쿼리 (캐시 20초)
+const button = cachedQuerySelector('.action-button');
+
+// 모든 요소 선택 (캐시 적용)
+const items = cachedQuerySelectorAll('.list-item');
+
+// STABLE_SELECTORS 기반 우선순위 쿼리
+const tweets = cachedStableQuery(STABLE_SELECTORS.TWEET_CONTAINERS);
+```
+
+#### 선택자 레지스트리
+
+```typescript
+// ✅ 선택자 추상화로 테스트 가능한 구조
+import { createSelectorRegistry } from '@shared/dom';
+import { STABLE_SELECTORS } from '@/constants';
+
+const selectors = createSelectorRegistry();
+
+// 첫 번째 일치 요소 (캐시 연동)
+const first = selectors.findFirst(STABLE_SELECTORS.TWEET_CONTAINERS);
+
+// 모든 일치 요소
+const all = selectors.findAll(STABLE_SELECTORS.MEDIA_CONTAINERS);
+
+// 상위 컨테이너 찾기
+const parent = selectors.findClosest(
+  STABLE_SELECTORS.TWEET_CONTAINERS,
+  element
+);
+
+// 도메인 특화 메서드
+const tweet = selectors.findTweetContainer();
+const media = selectors.findMediaPlayer();
+```
+
+#### 기본 DOM 유틸리티
+
+```typescript
+// ✅ 안전한 요소 선택
+import {
+  querySelector,
+  querySelectorAll,
+  elementExists,
+  createElement,
+  removeElement,
+  isElement,
+  isElementVisible,
+} from '@shared/dom';
+
+// 요소 선택 (invalid 선택자도 null 반환)
+const elem = querySelector<HTMLButtonElement>('.btn-primary');
+const allItems = querySelectorAll('.item');
+
+// 요소 존재 확인
+if (elementExists('.modal')) {
+  closeModal();
+}
+
+// 안전한 요소 생성
+const div = createElement('div', {
+  classes: ['container', 'active'],
+  attributes: { 'data-id': '123', 'aria-label': 'Gallery' },
+  textContent: 'Hello World',
+  styles: { paddingTop: 'var(--space-md)' },
+});
+
+// 요소 제거
+removeElement(elem);
+
+// 타입 가드
+if (isElement(obj)) {
+  // Element 타입 안전성
+}
+
+// 요소 가시성 확인
+if (isElementVisible(elem)) {
+  // 요소가 뷰포트 내에 표시됨
+}
+```
+
+#### 이벤트 관리
+
+```typescript
+// ✅ 이벤트는 BrowserService 또는 DomEventManager 사용
+import { BrowserService } from '@shared/browser';
+
+const browserService = new BrowserService();
+
+// CSS 주입 (DOM 레벨)
+browserService.injectCSS(
+  'my-styles',
+  `
+  .custom-class { color: red; }
+`
+);
+
+// CSS 제거
+browserService.removeCSS('my-styles');
+
+// ❌ 직접 addEventListener 금지 (이전 패턴)
+// import { addEventListener } from '@shared/dom'; // 제거됨
+
+// ✅ 권장: 클래스 기반 관리
+import { DomEventManager } from './dom-event-manager'; // 상대 경로
+
+const eventManager = new DomEventManager();
+eventManager.addEventListener(button, 'click', handleClick);
+// 정리 (자동)
+eventManager.dispose();
+```
+
+### 캐시 성능
+
+```typescript
+// 캐시 통계 확인
+import { globalDOMCache } from '@shared/dom';
+
+const stats = globalDOMCache.getStats();
+console.log(`Hit rate: ${(stats.hitRate * 100).toFixed(2)}%`);
+// Output: Hit rate: 85.50%
+
+// 캐시 무효화 (필요시)
+globalDOMCache.invalidate('*'); // 전체 무효화
+globalDOMCache.invalidate('.item'); // 특정 선택자 무효화
+```
+
+### 주의사항
+
+- ❌ 이벤트 관리: 직접 `addEventListener` 금지 → BrowserService 또는
+  DomEventManager 사용
+- ❌ 선택자 하드코딩: STABLE_SELECTORS 또는 SelectorRegistry 사용
+- ✅ 캐시 활용: 반복 쿼리에는 `cachedQuerySelector()` 사용
+- ✅ 타입 안전: 모든 함수는 null-safe이며 invalid 선택자도 처리
+
+---
+
+## 📂 스타일 파일 구조
+
+프로젝트의 CSS 파일은 계층별로 정리되어 있습니다.
+
+### 파일 구조 개요
+
+```
+src/
+├── assets/styles/
+│   ├── base/
+│   │   └── reset.css (v4.1)        ← 브라우저 리셋
+│   ├── tokens/
+│   │   ├── animation-tokens.css    ← 애니메이션 토큰 (duration/easing/delay/perf)
+│   │   └── animation.css           ← deprecated (호환성 유지, 리다이렉트)
+│   └── utilities/
+│       ├── animations.css (v2.1)   ← @keyframes + 유틸 클래스
+│       └── layout.css (v2.0)       ← Flexbox + Gap + Size 유틸
+├── shared/styles/
+│   ├── design-tokens.primitive.css ← 기본 토큰 (색상/크기/간격)
+│   ├── design-tokens.semantic.css  ← 의미 토큰 (역할 기반)
+│   ├── design-tokens.component.css ← 컴포넌트 토큰
+│   ├── design-tokens.css           ← 3계층 통합 임포트
+│   ├── isolated-gallery.css        ← 격리된 갤러리 스타일
+```
+
+---
+
 ## 📂 스타일 파일 구조
 
 프로젝트의 CSS 파일은 계층별로 정리되어 있습니다.
@@ -492,7 +850,193 @@ import '@assets/styles/utilities/animations.css';
 
 ---
 
-## 🚀 Bootstrap 패턴 (초기화)
+## � 로깅 시스템 가이드
+
+### 개요
+
+Centralized logging infrastructure (`@shared/logging`)는 일관된 로깅 인터페이스,
+환경별 최적화, 상관관계 추적을 제공합니다.
+
+**원칙**:
+
+- **항상 사용**: 디버깅/에러/성능 측정 필요시 logger 사용
+- **정규 Import**: `import { logger } from '@shared/logging'` (축약형)
+- **범위별 로거**: 여러 서비스에서는 `createScopedLogger()` 사용
+- **tree-shaking**: 프로덕션 빌드에서 debug 호출 자동 제거
+
+### 기본 사용
+
+```typescript
+import { logger } from '@shared/logging';
+
+// ✅ 정보 메시지
+logger.info('User action:', { userId: 123, action: 'download' });
+
+// ✅ 경고
+logger.warn('High memory usage detected', { usage: 512, limit: 1024 });
+
+// ✅ 에러 (with context)
+logger.error('Failed to extract media', { code: 500, mediaId: '123' });
+
+// ✅ 디버그 (개발 모드만)
+logger.debug('Processing media...');
+```
+
+### 범위별 로거
+
+**여러 메서드를 가진 서비스에서 사용**:
+
+```typescript
+import { createScopedLogger } from '@shared/logging';
+
+class MediaExtractor {
+  private log = createScopedLogger('MediaExtractor');
+
+  async extract(url: string) {
+    this.log.info('Extracting from:', url);
+    try {
+      const media = await this.fetchMedia(url);
+      this.log.debug('Media fetched:', { count: media.length });
+      return media;
+    } catch (error) {
+      this.log.error('Extraction failed', { url, error });
+      throw error;
+    }
+  }
+}
+
+// 출력: [XEG] [MediaExtractor] [INFO] Extracting from: ...
+// 출력: [XEG] [MediaExtractor] [ERROR] Extraction failed ...
+```
+
+### 상관관계 ID로 요청 추적
+
+**비동기 작업 체인에서 관련 로그 연결** (BulkDownload 등):
+
+```typescript
+import {
+  createScopedLoggerWithCorrelation,
+  createCorrelationId,
+} from '@shared/logging';
+
+async function bulkDownload(items: string[]) {
+  const correlationId = createCorrelationId();
+  const log = createScopedLoggerWithCorrelation('BulkDownload', correlationId);
+
+  log.info('Download started', { itemCount: items.length });
+
+  for (const item of items) {
+    try {
+      log.info('Processing:', { item });
+      await downloadFile(item);
+      log.info('Completed:', { item });
+    } catch (error) {
+      log.error('Failed:', { item, error });
+    }
+  }
+
+  log.info('Download finished');
+}
+
+// 출력 예시:
+// [XEG] [BulkDownload] [cid:abc123] [INFO] Download started ...
+// [XEG] [BulkDownload] [cid:abc123] [INFO] Processing: ...
+// [XEG] [BulkDownload] [cid:abc123] [ERROR] Failed: ...
+// [XEG] [BulkDownload] [cid:abc123] [INFO] Download finished
+```
+
+### 성능 측정
+
+**함수 실행 시간 측정** (개발 모드에서만):
+
+```typescript
+import { measurePerformance } from '@shared/logging';
+
+// ✅ 비동기 함수
+const results = await measurePerformance('extract-all-media', async () => {
+  return await extractMediaFromPage();
+});
+// 출력 (dev): [XEG] [debug] extract-all-media: 245ms
+
+// ✅ 동기 함수
+const parsed = await measurePerformance('parse-dom', () => {
+  return parsePageDOM();
+});
+```
+
+### 구조화된 에러 로깅
+
+**에러와 컨텍스트를 표준화하여 로깅**:
+
+```typescript
+import { logError } from '@shared/logging';
+
+try {
+  await downloadFile(url);
+} catch (error) {
+  // 구조화된 로깅 (Error 객체 + context + source)
+  logError(error, { fileId: '123', retryCount: 2, url }, 'FileDownloader');
+}
+
+// 또는 logger.error() 직접 사용
+logger.error('Download failed', {
+  error: error instanceof Error ? error.message : String(error),
+  fileId: '123',
+  retry: 2,
+});
+
+// 출력 (dev 모드):
+// [XEG] [ERROR] Error in FileDownloader: Network timeout
+// Stack trace: Error: Network timeout
+//     at downloadFile (file.ts:123)
+```
+
+### 로깅 레벨 정책
+
+| 레벨  | 사용 시점   | Dev | Prod | 예시                       |
+| ----- | ----------- | --- | ---- | -------------------------- |
+| debug | 상세 추적   | ✅  | ❌   | 함수 진입, 변수값, 루프    |
+| info  | 주요 이벤트 | ✅  | ✅   | 초기화 완료, 다운로드 시작 |
+| warn  | 경고 상황   | ✅  | ✅   | 메모리 부족, 폴백 사용     |
+| error | 에러 발생   | ✅  | ✅   | 네트워크 실패, 파싱 오류   |
+
+### ❌ 금지 사항
+
+```typescript
+// ❌ console 직접 사용 금지
+console.log('Debug info'); // 금지
+console.debug('Info'); // 금지
+
+// ❌ 직접 경로로 import 금지
+import { logger } from '@shared/logging/logger'; // 금지
+
+// ✅ 올바른 사용
+import { logger } from '@shared/logging';
+
+// ❌ 상관관계 ID 없이 수동으로 prefix 추가 금지
+logger.info('[BulkDownload]' + message); // 금지
+
+// ✅ 올바른 사용
+const log = createScopedLoggerWithCorrelation('BulkDownload', cid);
+log.info(message);
+```
+
+### 개발/프로덕션 자동 분기
+
+```typescript
+import { logger } from '@shared/logging';
+
+// 자동으로 개발/프로덕션 모드 분기
+// 개발: logger.debug(...) → console에 출력
+// 프로덕션: logger.debug(...) → noop (코드 제거됨)
+
+logger.debug('Detailed info'); // dev만
+logger.info('Important event'); // dev + prod
+```
+
+---
+
+## �🚀 Bootstrap 패턴 (초기화)
 
 ### 개요
 

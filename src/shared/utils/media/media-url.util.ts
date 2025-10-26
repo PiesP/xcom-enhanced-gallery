@@ -8,7 +8,7 @@
  * BackgroundTweetLoader와 함께 사용되어 정확한 미디어 정보를 제공합니다.
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 // FilenameService는 shared/media 레이어에 있으므로 직접 import 허용(services 아님)
 import { generateMediaFilename } from '../../media/filename-service';
 import type { FilenameOptions } from '../../media/filename-service';

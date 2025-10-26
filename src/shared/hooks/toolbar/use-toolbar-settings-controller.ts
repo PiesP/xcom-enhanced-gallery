@@ -1,9 +1,11 @@
 /**
  * @fileoverview Toolbar settings controller hook
  * @description Encapsulates settings panel toggling, outside click handling, and high contrast detection.
+ *
+ * Phase 3: 고대비 감지 로직을 high-contrast-detection 서비스로 분리
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import { getSolid } from '../../external/vendors';
 import { ThemeService } from '../../services/theme-service';
 import {
@@ -13,6 +15,7 @@ import {
 import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
+import { evaluateHighContrast } from '../../services/high-contrast-detection';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -20,15 +23,6 @@ const DEFAULT_HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
 
 type ThemeOption = 'auto' | 'light' | 'dark';
 type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
-
-type HighContrastEvaluatorInput = {
-  readonly toolbar: HTMLElement;
-  readonly documentRef: Document;
-  readonly windowRef: Window;
-  readonly offsets: ReadonlyArray<number>;
-};
-
-type HighContrastEvaluator = (input: HighContrastEvaluatorInput) => boolean;
 
 type EventManagerLike = Pick<EventManager, 'addListener' | 'removeListener'>;
 
@@ -45,7 +39,6 @@ export interface UseToolbarSettingsControllerOptions {
   readonly focusDelayMs?: number;
   readonly selectChangeGuardMs?: number;
   readonly highContrastOffsets?: ReadonlyArray<number>;
-  readonly highContrastEvaluator?: HighContrastEvaluator;
   readonly scrollThrottle?: <T extends (...args: never[]) => void>(fn: T) => T;
 }
 
@@ -86,31 +79,6 @@ function createTimeoutControls(_windowRef: Window | undefined): TimeoutControls 
   };
 }
 
-function defaultHighContrastEvaluator(input: HighContrastEvaluatorInput): boolean {
-  const { toolbar, documentRef, windowRef, offsets } = input;
-
-  if (typeof documentRef.elementsFromPoint !== 'function') {
-    return false;
-  }
-
-  const rect = toolbar.getBoundingClientRect();
-  if (!rect.width || !rect.height) {
-    return false;
-  }
-
-  const lightHits = offsets.filter(offset => {
-    const x = rect.left + rect.width * offset;
-    const y = rect.top + rect.height * 0.5;
-    const elements = documentRef.elementsFromPoint(x, y);
-    return elements.some(element => {
-      const bg = windowRef.getComputedStyle(element).backgroundColor || '';
-      return /(?:white|255)/i.test(bg);
-    });
-  }).length;
-
-  return lightHits >= 2;
-}
-
 export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
 ): ToolbarSettingsControllerResult {
@@ -130,7 +98,6 @@ export function useToolbarSettingsController(
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
     selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
     highContrastOffsets = DEFAULT_HIGH_CONTRAST_OFFSETS,
-    highContrastEvaluator = undefined,
     scrollThrottle = throttleScroll,
   } = options;
 
@@ -159,29 +126,19 @@ export function useToolbarSettingsController(
     });
   });
 
-  const evaluateHighContrast = () => {
+  const checkHighContrast = () => {
     const toolbarElement = toolbarRef();
     if (!toolbarElement || !documentRef || !windowRef) {
       setNeedsHighContrast(false);
       return;
     }
 
-    const shouldEnable =
-      typeof highContrastEvaluator === 'function'
-        ? Boolean(
-            highContrastEvaluator({
-              toolbar: toolbarElement,
-              documentRef,
-              windowRef,
-              offsets: highContrastOffsets,
-            })
-          )
-        : defaultHighContrastEvaluator({
-            toolbar: toolbarElement,
-            documentRef,
-            windowRef,
-            offsets: highContrastOffsets,
-          });
+    const shouldEnable = evaluateHighContrast({
+      toolbar: toolbarElement,
+      documentRef,
+      windowRef,
+      offsets: highContrastOffsets,
+    });
 
     setNeedsHighContrast(shouldEnable);
   };
@@ -192,13 +149,13 @@ export function useToolbarSettingsController(
       return;
     }
 
-    evaluateHighContrast();
+    checkHighContrast();
 
     const detect = scrollThrottle(() => {
       if (typeof windowRef.requestAnimationFrame === 'function') {
-        windowRef.requestAnimationFrame(evaluateHighContrast);
+        windowRef.requestAnimationFrame(() => checkHighContrast());
       } else {
-        evaluateHighContrast();
+        checkHighContrast();
       }
     });
 

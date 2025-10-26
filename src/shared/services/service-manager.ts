@@ -4,7 +4,7 @@
  * @version 1.1.0 - Phase A5.2: BaseService 생명주기 중앙화
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import type { BaseService } from '../types/core/base-service.types';
 
 /**

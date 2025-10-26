@@ -1,6 +1,6 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-26
+> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-27
 > 코딩 규칙/스타일/토큰/테스트 정책은 `docs/CODING_GUIDELINES.md`를 단일
 > 기준으로 참조하세요.
 
@@ -8,14 +8,14 @@
 구조와 계층 간 경계를 설명합니다. 구현 규칙/토큰/스타일은
 `docs/CODING_GUIDELINES.md`를 참고하세요.
 
-## 프로젝트 현황 (2025-10-26)
+## 프로젝트 현황 (2025-10-27)
 
 - **빌드**: prod 339.55 KB / 420 KB (80.45 KB 여유) ✅
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
-- **최근 개선**: Phase 191 Gallery 레이어 개선 완료 (GalleryApp 371→264줄,
-  GalleryRenderer 295→178줄)
+- **최근 개선**: Phase 201 service-interfaces.ts 제거 (사용처 0건), 타입 계층
+  최적화 완료
 
 ## 계층 구조와 단방향 의존
 
@@ -84,6 +84,24 @@
       - 책임: 네트워크/스크립트/설정에서 토큰 추출, 유효성 검증
       - Phase 192: features/settings/services → shared/services로 이동 (공유
         유틸)
+- `src/shared/hooks/*`: Solid.js 반응성 기반 재사용 로직 (Phase 2025-10-26 정리)
+  - **목적**: Signal/effect 활용한 UI 상태 관리 및 이벤트 조율
+  - **구조**:
+    - `use-toolbar-state.ts` (189줄): 툴바 상태 관리 훅
+      - 책임: 다운로드/로딩/에러/고대비 상태 관리
+      - 내보내기: `useToolbarState()` 훅, `ToolbarState`/`ToolbarActions` 타입
+      - 헬퍼 함수 분리됨 (→ `toolbar-utils.ts`)
+    - `toolbar/use-toolbar-settings-controller.ts` (376줄): 설정 패널 제어 훅
+      - 책임: 설정 패널 토글, outside-click 감지, 테마/언어 선택, 고대비 감지
+      - 개선: 고대비 감지 로직 분리 (→ `high-contrast-detection.ts`)
+      - 복잡도: 감소 (고대비 로직 제거로 약 30줄 절감)
+    - `use-focus-trap.ts` (119줄): 포커스 트래핑 훅
+      - 책임: 모달/오버레이의 포커스 제한 관리
+      - 사용: KeyboardHelpOverlay 컴포넌트
+      - 통합: `shared/utils/focus-trap` 유틸에 위임
+  - **제거됨**:
+    - `use-gallery-toolbar-logic.ts` (Phase 140.2 미사용 코드 정리, 2025-10-26
+      제거)
 - `src/shared/container/*`: **의존성 주입 및 서비스 접근 제어** (Phase 194 정리
   완료)
   - **목적**: Features 레이어의 ServiceManager 직접 import 금지 정책 강제
@@ -155,12 +173,232 @@
     - import:
       `import { isTwitterSite, safeWindow, ... } from '@shared/utils/browser'`
   - **배럴 export**: `src/shared/utils/index.ts`에서 17개 함수 재익스포트
+- `src/shared/dom/*`: DOM 쿼리 캐싱, 선택자 추상화, 기본 DOM 유틸리티
+  (Infrastructure 계층, Phase 195 정규화)
+  - **dom-cache.ts** (452줄): DOM 쿼리 캐싱 시스템
+    - 클래스: `DOMCache` (TTL 기반 캐시, 적응형 정리)
+    - 전역 인스턴스: `globalDOMCache` (기본값: TTL 20s, size 150)
+    - 헬퍼: `cachedQuerySelector()`, `cachedQuerySelectorAll()`,
+      `cachedStableQuery()`
+    - 책임: 반복 DOM 쿼리 최적화, 성능 메트릭 수집
+  - **selector-registry.ts** (109줄): STABLE_SELECTORS 기반 DOM 접근 추상화
+    - 인터페이스: `ISelectorRegistry`
+    - 클래스: `SelectorRegistry` (findFirst, findAll, findClosest, 도메인
+      메서드)
+    - 팩토리: `createSelectorRegistry()`
+    - 책임: 선택자 우선순위 관리, TDD 친화적 설계
+    - 사용처: `dom-direct-extractor.ts` (미디어 추출)
+  - **dom-event-manager.ts** (150줄): 이벤트 리스너 관리 (내부용)
+    - 클래스: `DomEventManager` (등록, 정리 자동화)
+    - 책임: 이벤트 리스너 생명주기 관리
+    - 정책: 외부 노출 제외 (barrel export에 미포함), 상대 경로로만 import
+  - **utils/dom-utils.ts** (292줄): 기본 DOM 함수형 유틸리티
+    - 함수: `querySelector()`, `querySelectorAll()`, `elementExists()`
+    - 함수: `createElement()`, `removeElement()`
+    - 가드: `isElement()`, `isHTMLElement()`
+    - 상태: `isElementVisible()`, `isElementInViewport()`
+    - 디버그: `getDebugInfo()`
+    - 책임: DOM 조작 기본 작업
+    - 정책: 이벤트 관리 함수는 제거됨 (BrowserService/DomEventManager로 위임)
+  - **배럴 export**: `src/shared/dom/index.ts`에서 캐싱/선택자/기본 유틸
+    재익스포트
+- `src/shared/constants/*`: 정적 데이터 및 설정 (2025-10-26 정규화)
+  - **목적**: 불변 데이터, 설정값, 열거형 모음 (서비스가 아닌 데이터만)
+  - **구조**:
+    - `i18n/` (3파일, 380줄): 다국어 시스템
+      - **language-types.ts** (55줄): 타입 정의 및 런타임 검증
+        - 타입: `BaseLanguageCode` ('en'|'ko'|'ja'), `SupportedLanguage`
+          ('auto'|기본)
+        - 인터페이스: `LanguageStrings` (toolbar/settings/messages 스키마)
+        - 함수: `isBaseLanguageCode()` (타입 가드)
+        - 상수: `LANGUAGE_CODES` readonly 튜플
+      - **translation-registry.ts** (24줄): 중앙 번역 레지스트리
+        - 상수: `TRANSLATION_REGISTRY` (en/ko/ja 객체 맵)
+        - 상수: `DEFAULT_LANGUAGE` ('en')
+        - 함수: `getLanguageStrings()`, `listBaseLanguages()`
+      - **languages/\*.ts** (en.ts/ko.ts/ja.ts, 각 50줄): 언어별 번역
+        - 내보내기: `export const {lang}: LanguageStrings`
+        - 특징: 모두 readonly, 스키마 구속 (타입 체크)
+    - **index.ts** (배럴): constants 계층 공개 API
+      - 내보내기: `export * from './i18n'`
+    - **정책**:
+      - 데이터/설정값만 포함 (logic 제외)
+      - 모든 상수는 readonly/frozen (불변성)
+      - 언어 파일은 TypeScript 스키마 기반 (type safety)
+  - **사용 패턴**:
+
+    ```typescript
+    // ✅ 권장: constants에서 import
+    import {
+      TRANSLATION_REGISTRY,
+      getLanguageStrings,
+    } from '@shared/constants';
+    const strings = getLanguageStrings('ko');
+
+    // ✅ 개별 import 가능
+    import { en, ko, ja } from '@shared/constants/i18n/languages';
+    ```
+
+  - **특징**:
+    - 번들 포함: 모든 언어 파일이 기본 번들에 포함 (다운로드/런타임 선택 미지원)
+    - 정합성: LanguageService의 `getIntegrityReport()`로 누락/중복 검증
+
 - `src/shared/state/*`: Signals 상태 및 파생값(`signalSelector`)
 - `src/shared/types/*`: 도메인 비즈니스 타입 정의 (**.types.ts 패턴**)
   - `app.types.ts`, `media.types.ts`, `result.types.ts`
   - `core/`: 핵심 타입 (extraction.types.ts, media.types.ts)
-- `src/shared/utils/*`: 순수 유틸리티, DOM 헬퍼(서비스 직접 참조 금지)
-- `src/shared/external/*`: 벤더/Userscript 어댑터, ZIP 생성기 등 외부 연동
+  - **Phase 200**: GalleryRenderOptions 통합 완료 (gallery.interfaces →
+    media.types로 단일화)
+- `src/shared/interfaces/*`: Features 계층 계약 정의 (Phase 201 정리 완료)
+  - `gallery.interfaces.ts`: GalleryRenderer 인터페이스 + GalleryRenderOptions
+    re-export
+    - 책임: Features의 GalleryRenderer 구현체 계약 정의
+    - 의존성: @shared/types/media.types에서 GalleryRenderOptions import
+    - 정책: 실제 타입 정의는 @shared/types가 기준, interfaces는 계약만 정의
+  - **Phase 201**: service-interfaces.ts 제거 완료 (사용처 0건, 안전 제거)
+- `src/shared/utils/*`: 순pure 유틸리티, DOM 헬퍼(서비스 직접 참조 금지)
+  - **error-handling.ts** (376줄): 애플리케이션 로직 에러 처리 유틸
+    - 함수: `standardizeError()`, `getErrorMessage()`, `isRetryableError()`,
+      `isFatalError()`, `serializeError()`
+    - 헬퍼: `withRetry()`, `withFallback()` (에러 복구 패턴)
+    - 팩토리: `ErrorFactory` (network, validation, processing, system 도메인별
+      표준화)
+    - 책임: 에러를 일관성 있는 StandardError 인터페이스로 정규화, 복구 전략 제공
+    - 사용처: 미디어 추출, 토큰 추출, 다운로드 등 로직 계층
+    - 정책: 이 유틸리티는 **애플리케이션 로직에서의 에러** 처리 전담
+- `src/shared/error/*`: 브라우저 전역 에러 핸들러 (140줄, Phase 196)
+  - **GlobalErrorHandler** (버전 2.1.0): 전역 윈도우 에러 핸들러
+    - 책임: 예상치 못한 런타임 에러와 프로미스 거부 캡처
+    - 기능: 에러 표준화, 토스트 알림, 디버그 로깅 (개발 모드)
+- `src/shared/logging/*`: 중앙화된 로깅 시스템 (Infrastructure 계층)
+  - **목적**: 일관된 로깅 인터페이스, 환경별 최적화, 상관관계 추적
+  - **파일 구조** (2파일):
+    - `logger.ts` (주요 구현, ~290줄):
+      - **타입**: `LogLevel` (debug/info/warn/error), `LoggableData`, `Logger`
+        인터페이스
+      - **상수**: `LOG_LEVELS`, `LOG_LEVEL_PRIORITY`, `BASE_PREFIX` ('[XEG]')
+      - **팩토리 함수**:
+        - `createLogger(config?)`: 설정 가능한 로거 생성
+        - `createScopedLogger(scope, config?)`: 범위별 로거 (prefix에 scope
+          추가)
+        - `createScopedLoggerWithCorrelation(scope, cid, config?)`: 상관관계 ID
+          포함
+      - **API**:
+        - `logger`: 전역 기본 인스턴스 (자동 구성: dev=debug, prod=warn)
+        - `createCorrelationId()`: 고유 상관관계 ID 생성 (crypto 기반, fallback
+          포함)
+        - `measurePerformance<T>(label, fn)`: 성능 측정 유틸 (dev 모드만)
+        - `logError(error, context, source)`: 구조화된 에러 로깅
+      - **동작**:
+        - **개발 모드** (**DEV**=true): 상세 로깅 (타임스탬프, 스택 트레이스,
+          타이머)
+        - **프로덕션** (**DEV**=false): 최소 로깅 (warn 이상만, prefix만)
+        - tree-shaking: debug 코드는 프로덕션 빌드에서 완전히 제거됨
+    - `index.ts` (배럴 export):
+      - 공개 API: logger, createLogger, createScopedLogger, createCorrelationId,
+        measurePerformance, logError + 타입
+  - **사용 패턴**:
+
+    ```typescript
+    // ✅ 기본 사용
+    import { logger } from '@shared/logging';
+    logger.info('User action:', { userId: 123 });
+    logger.error('Failed to download', { code: 500 });
+
+    // ✅ 범위별 로거
+    import { createScopedLogger } from '@shared/logging';
+    const slog = createScopedLogger('MediaExtractor');
+    slog.debug('Extracting media...');
+
+    // ✅ 상관관계 ID로 요청 추적
+    import {
+      createScopedLoggerWithCorrelation,
+      createCorrelationId,
+    } from '@shared/logging';
+    const cid = createCorrelationId();
+    const slog = createScopedLoggerWithCorrelation('BulkDownload', cid);
+    slog.info('Starting bulk download');
+
+    // ✅ 성능 측정
+    import { measurePerformance } from '@shared/logging';
+    const data = await measurePerformance('extract-media', async () => {
+      return await extractMediaData();
+    });
+
+    // ✅ 구조화된 에러 로깅
+    import { logError } from '@shared/logging';
+    try {
+      await downloadFile();
+    } catch (error) {
+      logError(error, { fileId: '123', retryCount: 2 }, 'Downloader');
+    }
+    ```
+
+  - **특징**:
+    - **모드 최적화**: 개발/프로덕션 모드 자동 분기 (**DEV** 플래그)
+    - **Tree-shaking**: debug 함수는 프로덕션에서 완전 제거 (noop로 변경)
+    - **상관관계 추적**: cid로 여러 서비스 간 로그 연결 (BulkDownload 등에서
+      사용)
+    - **타이머**: 시간 측정 자동화 (micro-benchmark 용이)
+    - **에러 표준화**: Error 객체와 문자열 모두 지원, 자동 스택 트레이스 포함
+  - **정책**:
+    - 모든 로거는 @shared/logging 도 축약으로 import (직접 경로 금지)
+    - 타입과 API: logger.ts에서 일원화 (분리 불필요)
+    - 프로덕션 빌드는 자동으로 debug 호출 제거 (성능 영향 0)
+    - 메서드: `initialize()` (uncaught error/unhandled rejection 리스너 등록),
+      `destroy()` (리스너 제거)
+    - 책임: 사용자가 처리하지 않은 예외와 거부된 Promise를 브라우저 레벨에서
+      인터셉트
+    - 사용처: main.ts에서 앱 생명주기 시작/종료 시 호출
+    - 정책: **전역 브라우저 이벤트만 처리**, 애플리케이션 로직 에러는 Result
+      타입 기반으로 처리
+  - **AppErrorHandler** (`@deprecated`): GlobalErrorHandler 호환성 래퍼
+    - 역할: 기존 코드 호환성 유지
+    - 권장: 신규 코드는 GlobalErrorHandler 직접 사용
+  - 배럴 export: `src/shared/error/index.ts` (명시적 export)
+
+- `src/shared/external/*`: 외부 라이브러리 어댑터 계층 (Phase 200 최적화)
+  - **목적**: 외부 의존성(Solid.js, Userscript GM_API, fflate 등)을 캡슐화하고
+    getter 패턴으로 제공
+  - **구조**:
+    - `vendors/`: Solid.js 및 기타 라이브러리 어댑터 (TDZ-safe 정적 API)
+      - `index.ts`: 공개 API 진입점 - getSolid(), getSolidStore() getter 및 타입
+        내보내기
+      - `vendor-api-safe.ts` (245줄): TDZ 안전 wrapper, 초기화 로직, 정리 기능
+      - `vendor-manager-static.ts` (500+줄): 정적 싱글톤 매니저, 캐싱, 검증
+      - `vendor-types.ts` (50줄): 타입 정의 (SolidAPI, SolidStoreAPI,
+        NativeDownloadAPI 등)
+      - 패턴: 모든 vendor는 static import 기반, TDZ 회피 보장
+    - `userscript/adapter.ts` (325줄): Userscript API (GM\_\*) 어댑터
+      - 함수: `getUserscript()` getter - 외부 Userscript 의존성 캡슐화
+      - 기능: download, xhr (XMLHttpRequest), storage (setValue/getValue),
+        스크립트 info
+      - Fallback: GM_API 미지원 환경(Node/Vitest)에서 localStorage/fetch 기반
+        fallback 제공
+      - 특징: 비브라우저 환경 안전성, 에러 처리 강화
+    - `zip/`: ZIP 생성 유틸리티
+      - `zip-creator.ts` (79줄): 메모리 파일 맵으로부터 ZIP Uint8Array 생성
+      - `store-zip-writer.ts`: STORE method (압축 미적용) 구현, 의존성 없음
+      - `index.ts`: 공개 API (createZipBytesFromFileMap)
+  - **사용 패턴** (getter 반드시 사용):
+
+    ```typescript
+    // ✅ 권장: getter 경유
+    import { getSolid, getUserscript } from '@shared/external/vendors';
+    const { createSignal } = getSolid();
+    const us = getUserscript();
+
+    // ❌ 금지: 직접 import
+    import solid from 'solid-js'; // ❌
+    const GM_info = window.GM_info; // ❌
+    ```
+
+  - **타입 외보내기**:
+    - `JSXElement`, `SolidAPI`, `SolidStoreAPI`, `NativeDownloadAPI` 등은 공개
+      타입
+    - 내부 구현 타입(예: 'Safe' suffix)은 비공개
+  - **정책**: 외부 라이브러리 버전 업그레이드/변경은 이 계층에서만 처리
+
 - `src/assets/*`: 정적 자원, CSS Modules, 디자인 토큰(3계층)
   - `styles/`
     - `base/`: 리셋 (reset.css)
@@ -253,6 +491,62 @@ Component). **상세 규칙**: `docs/CODING_GUIDELINES.md`의 "디자인 토큰 
 - direct vendor import 금지, 순환 의존 금지, 내부 배럴 역참조 금지
 - 모든 정책은 **dependency-cruiser**와 정적 테스트로 강제됩니다.
 - 상세 정책은 `docs/DEPENDENCY-GOVERNANCE.md`를 참고하세요.
+
+---
+
+## 타입/인터페이스 계층 정책 (Phase 200-201)
+
+### 계층별 역할 명확화
+
+| 계층           | 위치                     | 역할                        | 예시                                             |
+| -------------- | ------------------------ | --------------------------- | ------------------------------------------------ |
+| **Interfaces** | `src/shared/interfaces/` | Features 계약 정의          | GalleryRenderer                                  |
+| **Types**      | `src/shared/types/`      | 비즈니스 타입 + 서비스 계약 | MediaExtractor, GalleryRenderOptions             |
+| **Services**   | `src/shared/services/`   | 계약 구현                   | MediaExtractionService implements MediaExtractor |
+
+### Best Practices
+
+✅ **권장 패턴**:
+
+```typescript
+// 1. 명확한 계약이 있는 경우 (media.types.ts)
+export interface MediaExtractor {
+  extractFromClickedElement(...): Promise<MediaExtractionResult>;
+  extractAllFromContainer(...): Promise<MediaExtractionResult>;
+}
+
+// 구현체 (media-extraction-service.ts)
+export class MediaExtractionService implements MediaExtractor { }
+```
+
+```typescript
+// 2. 단순 유틸리티의 경우 (filename-service.ts)
+export class FilenameService {
+  generateFilename(...): string { }
+}
+```
+
+❌ **피해야 할 패턴**:
+
+```typescript
+// 1. 불명확한 레거시 타입 (core-types.ts 제거 대상)
+export interface MediaExtractionServiceType extends BaseService {
+  extractMediaFromElement?(element: Element): Promise<unknown>; // unknown ❌
+  getInstance?(): MediaExtractionServiceType; // 싱글톤 관례 ❌
+}
+
+// 2. types 정의가 services에만 있는 경우
+// services/my-service.ts
+export interface MyInterface {} // 검색 어려움 ❌
+```
+
+### 타입 검색 가이드
+
+타입이 필요할 때:
+
+1. **Features 계약**: `@shared/interfaces/` 확인
+2. **비즈니스 타입**: `@shared/types/` 확인 (media.types, app.types 등)
+3. **서비스 계약**: `@shared/types/media.types` 확인
 
 ---
 

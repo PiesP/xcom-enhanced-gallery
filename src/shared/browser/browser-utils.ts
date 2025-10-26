@@ -6,7 +6,7 @@
  * DOM 조작, CSS 주입, 브라우저 API 래핑 등 브라우저 기능 제공
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 브라우저 유틸리티

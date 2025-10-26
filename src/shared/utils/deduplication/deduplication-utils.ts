@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import type { MediaInfo } from '../../types';
 
 /**

@@ -3,7 +3,7 @@
  * @description 스크롤 이벤트 및 갤러리 요소 검사 유틸리티
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import { Debouncer } from '../performance/performance-utils';
 
 /** Twitter 스크롤 컨테이너 찾기 */

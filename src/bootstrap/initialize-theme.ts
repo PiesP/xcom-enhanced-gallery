@@ -4,7 +4,7 @@
  * @module bootstrap/initialize-theme
  */
 
-import { logger } from '../shared/logging/logger';
+import { logger } from '@shared/logging';
 
 function getSafeLocalStorage(): Storage | null {
   try {

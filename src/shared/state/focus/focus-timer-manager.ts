@@ -7,7 +7,7 @@
 
 import { getSolid } from '../../external/vendors';
 import { globalTimerManager } from '../../utils/timer-management';
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 
 /**
  * 타이머 역할 구분

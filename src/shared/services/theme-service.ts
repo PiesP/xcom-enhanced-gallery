@@ -5,7 +5,7 @@
  * @version 3.1.0
  */
 
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging';
 import type { StorageAdapter } from './storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
 import { BaseServiceImpl } from './base-service-impl';
