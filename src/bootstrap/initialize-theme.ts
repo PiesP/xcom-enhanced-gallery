@@ -1,13 +1,7 @@
 /**
- * @fileoverview Theme Initialization Utility
- * @description 갤러리 초기화 전 테마를 동기적으로 설정하는 유틸리티
- *
- * Phase 35 Step 1-B: GREEN 단계
- *
- * 목표:
- * - 컴포넌트 렌더링 전에 테마 설정
- * - 동기적 테마 감지 및 적용
- * - 저장된 테마 preference 복원
+ * @fileoverview Theme Initialization
+ * @description 테마 초기화: 시스템 감지 → localStorage 복원 → DOM 적용
+ * @module bootstrap/initialize-theme
  */
 
 import { logger } from '../shared/logging/logger';
@@ -37,7 +31,7 @@ export function detectSystemTheme(): ThemeMode {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     return prefersDark ? 'dark' : 'light';
   } catch (error) {
-    logger.warn('[initializeTheme] Failed to detect system theme:', error);
+    logger.warn('[theme] Failed to detect system theme:', error);
     return 'light';
   }
 }
@@ -56,7 +50,7 @@ export function getSavedThemeSetting(): ThemeSetting | null {
       return saved;
     }
   } catch (error) {
-    logger.warn('[initializeTheme] Failed to read saved theme:', error);
+    logger.warn('[theme] Failed to read saved theme:', error);
   }
 
   return null;
@@ -72,9 +66,9 @@ export function applyThemeToDOM(theme: ThemeMode): void {
 
   try {
     document.documentElement.setAttribute('data-theme', theme);
-    logger.debug(`[initializeTheme] Applied theme: ${theme}`);
+    logger.debug(`[theme] Applied: ${theme}`);
   } catch (error) {
-    logger.error('[initializeTheme] Failed to apply theme to DOM:', error);
+    logger.error('[theme] Failed to apply theme to DOM:', error);
   }
 }
 
@@ -86,10 +80,10 @@ export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
 
   if (setting === 'auto') {
     resolvedTheme = detectSystemTheme();
-    logger.debug(`[initializeTheme] Auto theme resolved to: ${resolvedTheme}`);
+    logger.debug(`[theme] Auto resolved to: ${resolvedTheme}`);
   } else {
     resolvedTheme = setting;
-    logger.debug(`[initializeTheme] Using explicit theme: ${resolvedTheme}`);
+    logger.debug(`[theme] Using explicit: ${resolvedTheme}`);
   }
 
   applyThemeToDOM(resolvedTheme);
@@ -114,18 +108,18 @@ export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
  * ```
  */
 export function initializeTheme(): ThemeMode {
-  logger.info('[initializeTheme] Starting theme initialization');
+  logger.info('[theme] Initializing theme');
 
   // 1. 저장된 설정 복원
   const savedSetting = getSavedThemeSetting();
   const setting: ThemeSetting = savedSetting ?? 'auto';
 
-  logger.debug(`[initializeTheme] Theme setting: ${setting}`);
+  logger.debug(`[theme] Setting: ${setting}`);
 
   // 2. 테마 결정 및 적용
   const appliedTheme = resolveAndApplyTheme(setting);
 
-  logger.info(`[initializeTheme] Theme initialization complete: ${appliedTheme}`);
+  logger.info(`[theme] ✅ Theme initialized: ${appliedTheme}`);
 
   return appliedTheme;
 }
@@ -151,20 +145,20 @@ export function setupThemeChangeListener(onThemeChange: (theme: ThemeMode) => vo
       const newTheme = event.matches ? 'dark' : 'light';
       applyThemeToDOM(newTheme);
       onThemeChange(newTheme);
-      logger.debug(`[initializeTheme] System theme changed to: ${newTheme}`);
+      logger.debug(`[theme] System theme changed to: ${newTheme}`);
     }
   };
 
   try {
     mediaQuery.addEventListener('change', handler);
-    logger.debug('[initializeTheme] Theme change listener registered');
+    logger.debug('[theme] Change listener registered');
 
     return () => {
       mediaQuery.removeEventListener('change', handler);
-      logger.debug('[initializeTheme] Theme change listener removed');
+      logger.debug('[theme] Change listener removed');
     };
   } catch (error) {
-    logger.warn('[initializeTheme] Failed to setup theme change listener:', error);
+    logger.warn('[theme] Failed to setup change listener:', error);
     return () => void 0;
   }
 }

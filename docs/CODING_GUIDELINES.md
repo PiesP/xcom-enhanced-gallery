@@ -350,6 +350,111 @@ import '@assets/styles/utilities/animations.css';
 
 ---
 
+## 🚀 Bootstrap 패턴 (초기화)
+
+### 개요
+
+Bootstrap 파일들은 애플리케이션 시작 시 한 번만 실행되는 초기화 로직을 담습니다.
+
+**원칙**:
+
+- 동적 import 사용 (트리셰이킹 최적화)
+- 사이드이펙트 최소화 (호출 시에만 실행)
+- 에러 처리 필수 (실패해도 앱 작동)
+- 구조화된 로깅 (`[module-name]` 패턴)
+
+### 파일 구조
+
+```
+src/bootstrap/
+├── environment.ts          ← Vendor 라이브러리 초기화
+├── events.ts              ← 전역 이벤트 (beforeunload/pagehide)
+├── features.ts            ← Features 레이어 서비스 지연 등록
+└── initialize-theme.ts    ← 테마 초기화 (시스템/localStorage/DOM)
+```
+
+### 사용 방법
+
+```typescript
+// src/main.ts에서 호출
+import { initializeEnvironment } from '@/bootstrap/environment';
+import { wireGlobalEvents } from '@/bootstrap/events';
+import { registerFeatureServicesLazy } from '@/bootstrap/features';
+import { initializeTheme } from '@/bootstrap/initialize-theme';
+
+async function startApplication() {
+  // 1. 환경 초기화 (Vendor 설정)
+  await initializeEnvironment();
+
+  // 2. 테마 초기화 (동기, 렌더링 전)
+  initializeTheme();
+
+  // 3. 글로벌 이벤트 (정리 핸들러)
+  const unregisterEvents = wireGlobalEvents(() => {
+    // 페이지 언로드 시 정리
+  });
+
+  // 4. Features 서비스 등록 (지연)
+  await registerFeatureServicesLazy();
+}
+```
+
+### 패턴: 동적 Import + Async/Await
+
+**이유**: 프로덕션 번들 크기 최소화
+
+```typescript
+// ✅ 올바른 방식 (동적 import)
+export async function initializeFeatures(): Promise<void> {
+  const { setupFeatures } = await import('@features/setup');
+  await setupFeatures();
+}
+
+// ❌ 피해야 할 방식 (정적 import)
+// import { setupFeatures } from '@features/setup';
+```
+
+### 패턴: 정리 함수 반환
+
+**이유**: 메모리 누수 방지, 테스트 정리
+
+```typescript
+// ✅ 올바른 방식 (정리 함수 반환)
+export function wireGlobalEvents(onCleanup: () => void): () => void {
+  window.addEventListener('beforeunload', onCleanup);
+
+  return () => {
+    window.removeEventListener('beforeunload', onCleanup);
+  };
+}
+
+// 사용
+const cleanup = wireGlobalEvents(() => {
+  // 정리 로직
+});
+
+// 테스트/언마운트 시
+cleanup();
+```
+
+### 로깅 패턴
+
+**규칙**: `[module-name] 메시지`
+
+```typescript
+// ✅ 올바른 패턴
+logger.debug('[environment] ✅ Vendors initialized');
+logger.debug('[events] 🧩 Global events wired');
+logger.debug('[features] Feature services registered');
+logger.info('[theme] ✅ Theme initialized: dark');
+
+// ❌ 피해야 할 패턴
+logger.debug('✅ 초기화 완료'); // 모듈 불명확
+logger.debug('[initializeModule] 메시지'); // 너무 길음
+```
+
+---
+
 ## 🧪 TDD 워크플로
 
 ```typescript

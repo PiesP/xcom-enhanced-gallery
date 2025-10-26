@@ -13,13 +13,12 @@ import {
  * Features 레이어 서비스를 지연 등록합니다
  * - SettingsManager: 사용자 설정 관리
  * - TwitterTokenExtractor: 트위터 토큰 추출
- * - DOMCache 초기화: 설정 변경 구독 (DOMCache 자율성)
  *
  * @returns {Promise<void>}
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    logger.debug('Features 서비스 지연 등록 시작');
+    logger.debug('[features] Registering feature services');
 
     // Settings Manager - Features 레이어
     const { getSettingsService } = await import('@features/settings/services/settings-factory');
@@ -40,9 +39,9 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     );
     registerTwitterTokenExtractor(new TwitterTokenExtractor());
 
-    logger.debug('✅ Features 서비스 지연 등록 완료');
+    logger.debug('[features] ✅ Feature services registered');
   } catch (error) {
     // Features 레이어 서비스 로딩 실패는 치명적이지 않음
-    logger.warn('⚠️ Features 서비스 지연 로딩 실패:', error);
+    logger.warn('[features] ⚠️ Feature service registration failed:', error);
   }
 }

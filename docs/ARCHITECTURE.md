@@ -30,6 +30,11 @@
 - `src/features/*`: UI/도메인 기능, 신호 구독과 사용자 인터랙션 처리
   - `gallery/`: 메인 갤러리 UI, 키보드 네비게이션, 수직 스크롤
   - `settings/`: 설정 UI, 스토리지 어댑터, 마이그레이션
+- `src/bootstrap/*`: 애플리케이션 초기화 (동적 임포트, 트리셰이킹 최적화)
+  - `environment.ts`: Vendor 라이브러리 초기화
+  - `events.ts`: 전역 이벤트 (beforeunload/pagehide) 핸들러
+  - `features.ts`: Features 레이어 서비스 지연 등록
+  - `initialize-theme.ts`: 테마 초기화 (시스템/localStorage/DOM)
 - `src/shared/services/*`: 순수 로직 API
   - 미디어: `MediaService`, `BulkDownloadService`, `media-extraction/`,
     `media-mapping/`

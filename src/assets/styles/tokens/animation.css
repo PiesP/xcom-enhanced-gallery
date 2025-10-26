@@ -1,7 +1,0 @@
-/**
- * @fileoverview DEPRECATED: Use animation-tokens.css instead
- * @description 호환성 유지용 파일 (animation-tokens.css로 이동됨)
- * @deprecated v2.0 - animation-tokens.css 사용 권장
- */
-
-@import url('./animation-tokens.css');
