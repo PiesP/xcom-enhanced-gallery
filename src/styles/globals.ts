@@ -10,8 +10,8 @@ import '@shared/styles/isolated-gallery.css';
 // 통합된 디자인 토큰 CSS 변수 (모든 글래스모피즘 스타일 포함)
 import '@shared/styles/design-tokens.css';
 
-// 디자인 토큰 - 애니메이션 시스템
-import '@assets/styles/tokens/animation.css';
+// 디자인 토큰 - 애니메이션 시스템 (Duration/Easing/Delay/Performance)
+import '@assets/styles/tokens/animation-tokens.css';
 
 // 최신 CSS 기능/상대 색상 토큰 (primary-light 등) - Toolbar 등에서 사용
 import '@shared/styles/modern-features.css';

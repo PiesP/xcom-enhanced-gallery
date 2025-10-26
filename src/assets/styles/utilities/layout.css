@@ -1,7 +1,8 @@
 /**
- * @fileoverview Layout Utilities
- * @description 정렬, 간격, 크기를 위한 토큰 기반 유틸리티 클래스
- * @scope 격리된 갤러리 컨테이너 내부 요소에 적용
+ * @fileoverview Layout Utilities (v2.0)
+ * @description Flexbox 정렬 + Gap + 크기 유틸 (토큰 기반)
+ * @version 2.0
+ * @note Gap/크기 토큰: src/shared/styles/design-tokens.semantic.css 참조
  */
 
 /* ============================= */

@@ -1,6 +1,7 @@
 /**
- * @fileoverview Animation & Transition Utilities
- * @description 공통 애니메이션과 트랜지션 클래스들
+ * @fileoverview Animation & Transition Utilities (v2.1)
+ * @description @keyframes 정의 + 유틸 클래스 (animation-duration/easing은 animation-tokens.css 참조)
+ * @version 2.1
  */
 
 /* ============================= */

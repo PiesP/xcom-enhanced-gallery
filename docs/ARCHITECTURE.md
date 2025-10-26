@@ -41,6 +41,13 @@
 - `src/shared/utils/*`: 순수 유틸리티, DOM 헬퍼(서비스 직접 참조 금지)
 - `src/shared/external/*`: 벤더/Userscript 어댑터, ZIP 생성기 등 외부 연동
 - `src/assets/*`: 정적 자원, CSS Modules, 디자인 토큰(3계층)
+  - `styles/`
+    - `base/`: 리셋 (reset.css)
+    - `tokens/`: 디자인 토큰 (animation-tokens.css — duration/easing/delay)
+    - `utilities/`: 유틸 클래스 (animations.css, layout.css)
+  - 임포트 진입점: `src/styles/globals.ts`
+- `src/shared/styles/*`: 통합 토큰 및 글래스모피즘 (design-tokens.\*.css,
+  modern-features.css 등)
 - `types/`: 전역 빌드 환경 변수 (env.d.ts) — 상세: `types/README.md`
 
 ## 컴포넌트/서비스 경계 원칙
