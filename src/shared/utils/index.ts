@@ -1,5 +1,5 @@
 /**
- * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (54개)
+ * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (54개 + component utils)
  */
 
 // === 기본 유틸리티 (12개) - galleryDebugUtils removed in Phase 140.2 ===
@@ -113,6 +113,18 @@ export {
   isExtensionContext,
   isExtensionEnvironment,
 } from './browser';
+
+// === 컴포넌트 유틸리티 (8개) - Phase 2-3A: 추가 ===
+export {
+  createClassName,
+  createAriaProps,
+  createTestProps,
+  handleLoadingState,
+  mergeProps,
+  validateProps,
+  ComponentStandards,
+  type ValidationResult,
+} from './component-utils';
 
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';

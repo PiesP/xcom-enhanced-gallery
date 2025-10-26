@@ -254,11 +254,89 @@ export interface CSSProperties {
   [key: string]: string | number | undefined;
 }
 
+/**
+ * 모든 컴포넌트의 최상위 기본 Props (Phase 2-3A: 통합)
+ * @description 이전 base/BaseComponentProps.ts에서 마이그레이션
+ */
 export interface BaseComponentProps {
   children?: ComponentChildren;
   className?: string;
   style?: CSSProperties;
+  'data-testid'?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-expanded'?: boolean;
+  'aria-hidden'?: boolean;
+  'aria-disabled'?: boolean | 'true' | 'false';
+  'aria-busy'?: boolean | 'true' | 'false';
+  'aria-pressed'?: boolean | 'true' | 'false';
+  'aria-haspopup'?: boolean | 'true' | 'false' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
+  role?: string;
+  tabIndex?: number;
+  onClick?: (event: MouseEvent) => void;
+  onKeyDown?: (event: KeyboardEvent) => void;
+  onFocus?: (event: FocusEvent) => void;
+  onBlur?: (event: FocusEvent) => void;
   [key: `data-${string}`]: string | number | boolean | undefined;
+}
+
+/**
+ * 상호작용 가능한 컴포넌트 Props
+ */
+export interface InteractiveComponentProps extends BaseComponentProps {
+  disabled?: boolean;
+  onMouseEnter?: (event: MouseEvent) => void;
+  onMouseLeave?: (event: MouseEvent) => void;
+}
+
+/**
+ * 로딩 상태를 가진 컴포넌트 Props
+ */
+export interface LoadingComponentProps extends BaseComponentProps {
+  loading?: boolean;
+  loadingText?: string;
+}
+
+/**
+ * 크기 변형을 가진 컴포넌트 Props
+ */
+export interface SizedComponentProps extends BaseComponentProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+}
+
+/**
+ * 색상 변형을 가한 컴포넌트 Props
+ */
+export interface VariantComponentProps extends BaseComponentProps {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'icon';
+}
+
+/**
+ * 폼 요소 컴포넌트 Props
+ */
+export interface FormComponentProps extends InteractiveComponentProps {
+  type?: 'button' | 'submit' | 'reset';
+  form?: string;
+  autoFocus?: boolean;
+}
+
+/**
+ * 컨테이너 컴포넌트 Props
+ */
+export interface ContainerComponentProps extends BaseComponentProps {
+  onClose?: () => void;
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
+  maxItems?: number;
+}
+
+/**
+ * 갤러리 전용 컴포넌트 Props
+ */
+export interface GalleryComponentProps extends InteractiveComponentProps {
+  galleryType?: 'container' | 'item' | 'control' | 'overlay' | 'viewer';
+  'data-xeg-gallery'?: string;
+  'data-xeg-gallery-type'?: string;
+  'data-xeg-gallery-version'?: string;
 }
 
 // ================================

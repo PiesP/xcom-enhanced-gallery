@@ -84,6 +84,56 @@
       - 책임: 네트워크/스크립트/설정에서 토큰 추출, 유효성 검증
       - Phase 192: features/settings/services → shared/services로 이동 (공유
         유틸)
+- `src/shared/container/*`: **의존성 주입 및 서비스 접근 제어** (Phase 194 정리
+  완료)
+  - **목적**: Features 레이어의 ServiceManager 직접 import 금지 정책 강제
+  - **구조**:
+    - `core-service-registry.ts` (180줄): 중앙화된 서비스 레지스트리 + 캐싱
+      - 내부 전용 (`@internal`), 접근자를 통해서만 사용
+      - 메서드: `get<T>(key)`, `tryGet<T>(key)`, `register<T>(key, instance)`
+    - `service-accessors.ts` (250줄): 타입 안전 접근자 (공개 API)
+      - Getter: `getToastController()`, `getThemeService()`,
+        `getMediaFilenameService()` 등
+      - Registrations: `registerGalleryRenderer()`, `registerSettingsManager()`
+        등
+      - Optional: `tryGetSettingsManager()` (null 반환)
+      - BaseService: `initializeBaseServices()`, `registerBaseService()` 등
+      - Warmup: `warmupCriticalServices()`, `warmupNonCriticalServices()` (lazy
+        초기화)
+    - `service-bridge.ts` (120줄): Features ← ServiceManager 접근 경계
+      - 내부 전용, service-accessors 내부에서만 사용
+      - 메서드: `bridgeGetService()`, `bridgeTryGet()`, `bridgeRegister()` 등
+    - `harness.ts` (70줄): 테스트 하네스 (테스트 전용)
+      - 클래스: `TestHarness` (서비스 초기화/접근/리셋)
+      - 팩토리: `createTestHarness()`
+      - 호환성: 레거시 이름 `ServiceHarness`, `createServiceHarness()` 유지
+    - `settings-access.ts` (120줄): 설정 서비스 추상화
+      - 함수: `getSetting<T>(key, defaultValue)`, `setSetting<T>(key, value)`
+      - Optional: `tryGetSettingsService()` (null 반환)
+      - 특징: 서비스 미사용 시 안전 처리, 순환 의존성 회피
+    - `index.ts` (배럴 export): 공개 API 통합
+      - 공개: service-accessors, settings-access, harness, service-bridge
+      - 비공개: CoreServiceRegistry (내부용)
+  - **사용 패턴**:
+
+    ```typescript
+    // ✅ Features에서 (접근자 사용)
+    import { getToastController, getSetting } from '@shared/container';
+    const toast = getToastController();
+    const autoDownload = getSetting('autoDownload', false);
+
+    // ✅ 테스트에서
+    import { createTestHarness } from '@shared/container';
+    const harness = createTestHarness();
+    await harness.initCoreServices();
+
+    // ❌ 금지: ServiceManager 직접 import
+    import { CoreService } from '@shared/services/service-manager'; // ❌
+    ```
+
+  - **정책**: SERVICE_KEYS를 features 레이어로부터 숨기고, 명확한 타입 안전
+    접근자만 제공
+
 - `src/shared/browser/*`: DOM/CSS 관리 서비스 (Core 계층)
   - **BrowserService**: DOM 조작, CSS 주입/제거, 파일 다운로드, 페이지 가시성
     확인

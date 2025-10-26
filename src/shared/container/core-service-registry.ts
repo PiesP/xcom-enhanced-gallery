@@ -4,12 +4,15 @@
  * 모든 서비스 접근을 단일 진입점으로 통합하고,
  * 캐싱 레이어를 통해 성능을 개선합니다.
  *
- * 사용 패턴:
+ * **내부 전용**: 일반 코드는 service-accessors.ts의 typed getter를 사용하세요.
+ *
+ * @example
  * ```typescript
- * // 등록
- * CoreServiceRegistry.register<ToastController>(SERVICE_KEYS.TOAST, controller);
- * // 조회
- * const controller = CoreServiceRegistry.get<ToastController>(SERVICE_KEYS.TOAST);
+ * // ❌ 직접 사용 금지 (내부용)
+ * CoreServiceRegistry.get<ToastController>(SERVICE_KEYS.TOAST);
+ *
+ * // ✅ 접근자 사용
+ * getToastController();
  * ```
  */
 
