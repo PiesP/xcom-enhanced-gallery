@@ -1,23 +1,132 @@
 # TDD 리팩토링 계획
 
-현재 상태: 안정 단계 (Phase 189 완료: happy-dom 마이그레이션 성공) | 마지막
-업데이트: 2025-10-26
+현재 상태: 테스트 검증 및 수정 (Phase 190 진행 중) | 마지막 업데이트: 2025-10-26
 
 ## 현황 요약
 
-Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run validate: PASS
-(전체 검증 통과) ✅ 의존성: 0 violations (dependency-cruiser) ✅
+Build (prod): 339.55 KB (제한 420 KB, 여유 80.45 KB) ✅ npm run typecheck: PASS
+✅ 의존성: 0 violations (dependency-cruiser) ✅
 
-**최근 완료 (Phase 189)**: JSDOM → happy-dom 마이그레이션 완료 ✅
+**테스트 상태**:
 
-- 11개 vitest 프로젝트: environment 'jsdom' → 'happy-dom' 전환
-- 테스트 호환성: 100% (smoke 9/9, validate 전체 통과)
-- 성능 개선: 약 40% (실제 테스트 실행 시간)
-- 상태: **성공적으로 완료, 현상 유지 권장**
+- smoke: 9/9 ✅
+- fast: 24/24 중 2 실패 ⚠️
+- unit: 진행 중
+- raf-timing: 24/24 중 3 실패 ⚠️
+- browser: 테스트 설정 재검토 필요 ⚠️**최근 활동 (Phase 190)**: 종합 테스트 검증
+  및 개선 계획 수립
 
-**이전 단계**: Phase 188 test/unit 2단계 디렉토리 정리 완료 ✅
+- 전체 테스트 스위트 실행 및 실패 사항 확인
+- 실패 원인: 1) JSDOM 제약사항, 2) RAF/타이밍 관련 테스트 불안정성
+- 상태: **현행 분석 완료, 개선 방안 수립 중**
+
+**이전 단계**: Phase 189 happy-dom 마이그레이션 완료 ✅
 
 ## 진행 중인 작업
+
+**Phase 190** 🔄 (2025-10-26 **진행 중**):
+
+### 종합 테스트 검증 및 결함 개선
+
+**작업 개요**:
+
+- 전체 테스트 스위트(smoke, fast, unit, styles, perf, phases, refactor, browser,
+  raf-timing) 실행
+- 실패 테스트 목록화 및 원인 분석
+- 개선 방향 수립 및 우선순위 결정
+
+**단계 1: 테스트 실행 및 결과 수집** ✅
+
+실패 사항:
+
+| 프로젝트   | 파일                                            | 실패 테스트         | 상태 |
+| ---------- | ----------------------------------------------- | ------------------- | ---- |
+| fast       | bulk-download-service.test.ts                   | 2 failed (24 total) | 🔴   |
+| raf-timing | use-gallery-focus-tracker-deduplication.test.ts | 2 failed (4 total)  | 🔴   |
+| raf-timing | VerticalGalleryView.auto-focus-on-idle.test.tsx | 1 failed (2 total)  | 🔴   |
+| smoke      | -                                               | 9/9 PASS            | ✅   |
+| unit       | -                                               | 진행 중             | ⏳   |
+| styles     | -                                               | 진행 중 (timeout)   | ⏳   |
+| browser    | -                                               | 테스트 설정 문제    | ⚠️   |
+
+**단계 2: 실패 원인 분석** 🔄
+
+**2-A. bulk-download-service.test.ts (fast, 2 failed)**
+
+테스트:
+
+1. `should handle media without id by generating one` - 7ms
+2. `should handle media with missing optional fields` - 1ms
+
+원인:
+
+- JSDOM 환경의 `URL.createObjectURL` 미지원
+- happy-dom도 동일한 제약사항
+- 테스트가 실패를 기대하고 있으나 실패 조건 불명확
+
+권장 솔루션:
+
+- 옵션 A: 테스트 수정 - `URL.createObjectURL` mock 추가
+- 옵션 B: 테스트 제거 - browser 환경에서만 검증하도록 이동
+- **선택: 옵션 A (quick fix)** - mock 추가로 명확한 테스트 의도 구현
+
+예상 코드:
+
+```typescript
+// 테스트 상단에 추가
+vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+```
+
+**2-B. use-gallery-focus-tracker-deduplication.test.ts (raf-timing, 2 failed)**
+
+테스트:
+
+1. `1 tick 내 동일 인덱스 handleItemFocus 다중 호출 시 마지막 값만 적용` -
+   1016ms
+2. `handleItemBlur 후 handleItemFocus가 빠르게 호출되면 배칭 처리` - 1008ms
+
+원인:
+
+- fake timer (`vi.useFakeTimers()`)와 `vi.waitFor()` 간 동작 불일치
+- RAF 스케줄링과 이벤트 배칭 로직의 타이밍 이슈
+- 약 1초(1016ms, 1008ms)의 타임아웃 발생
+
+권장 솔루션:
+
+- 옵션 A: fake timer 제거 - real timer 사용으로 타이밍 안정화
+- 옵션 B: vi.waitFor() 타임아웃 증가
+- 옵션 C: 테스트 로직 단순화 - RAF 배칭 대신 상태 검증만 수행
+- **선택: 옵션 A + C** - real timer로 변경 + RAF/blur 로직 직접 테스트 제거
+
+**2-C. VerticalGalleryView.auto-focus-on-idle.test.tsx (raf-timing, 1 failed)**
+
+테스트:
+
+- `수동 포커스가 설정된 동안에는 자동 포커스가 덮어쓰지 않는다` - 12ms
+
+원인:
+
+- fake timer 환경의 제약
+- harnessControls 관련 상태 동기화 이슈
+
+권장 솔루션:
+
+- 옵션 A: E2E(Playwright) 테스트로 전환
+- 옵션 B: real timer 사용 + 타이밍 명확화
+- **선택: 옵션 B** - 간단한 수정으로 안정화
+
+**단계 3: 수정 구현 계획**
+
+| 우선순위 | 작업                     | 난이도 | 예상 시간 | 상태        |
+| -------- | ------------------------ | ------ | --------- | ----------- |
+| 1        | bulk-download 수정       | 낮     | 10분      | not-started |
+| 2        | raf-timing 2개 제거/수정 | 중     | 30분      | not-started |
+| 3        | browser 프로젝트 재검토  | 높     | 60분      | not-started |
+
+**다음**: 수정 구현 → 테스트 재실행 → 완료 검증
+
+---
 
 **Phase 189** ✅ (2025-10-26 **완료**):
 
