@@ -1,13 +1,13 @@
 /**
  * Copyright (c) 2024 X.com Enhanced Gallery Team
  * Licensed under the MIT License
- * @fileoverview 미디어 파일명 생성 서비스 - Core layer migration
- * @version 2.0.0 - Core layer
+ * @fileoverview 미디어 파일명 생성 서비스
+ * @version 2.1.0 - File Naming Services
  */
 
-import { logger } from '@shared/logging';
-import { safeParseInt, undefinedToNull } from '../utils/type-safety-helpers';
-import type { MediaInfoForFilename, MediaItemForFilename } from '../types/media.types';
+import { logger } from '../../logging';
+import { safeParseInt, undefinedToNull } from '../../utils/type-safety-helpers';
+import type { MediaInfoForFilename, MediaItemForFilename } from '../../types/media.types';
 
 /**
  * 파일명 생성 옵션
@@ -30,6 +30,7 @@ export interface ZipFilenameOptions {
  * 파일명 생성 서비스
  *
  * 트위터 미디어에 대한 일관된 파일명 생성 및 검증을 담당합니다.
+ * Windows 호환성, 유니코드 정규화, 보안 검증을 포함합니다.
  *
  * @example
  * ```typescript
@@ -40,21 +41,13 @@ export interface ZipFilenameOptions {
  */
 export class FilenameService {
   /**
-   * 미디어 파일명을 생성합니다
+   * 미디어 파일명 생성
    *
-   * 트윗 정보(사용자명, 트윗 ID)를 기반으로 일관된 형식의 파일명을 생성합니다.
-   * 형식: {유저ID}_{트윗ID}_{인덱스}.{확장자}
+   * 형식: `{username}_{tweetId}_{index}.{extension}`
    *
-   * @param media - 미디어 아이템 또는 미디어 정보 객체
-   * @param options - 파일명 생성 옵션
-   * @returns 생성된 파일명 문자열
-   *
-   * @example
-   * ```typescript
-   * const service = MediaFilenameService.getInstance();
-   * const filename = service.generateMediaFilename(media, { index: 1, extension: 'jpg' });
-   * // 결과: "username_123456789_1.jpg"
-   * ```
+   * @param media - 미디어 정보
+   * @param options - 생성 옵션
+   * @returns 생성된 파일명
    */
   generateMediaFilename(
     media: MediaItemForFilename | MediaInfoForFilename,
@@ -66,7 +59,7 @@ export class FilenameService {
         return this.sanitizeForWindows(media.filename);
       }
 
-      // 사용자명과 트윗ID가 모두 유효한 경우에만 표준 형식 사용
+      // 사용자명과 트윗ID가 모두 유효한 경우 표준 형식
       if (media.tweetUsername && media.tweetUsername !== 'unknown' && media.tweetId) {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
@@ -89,7 +82,7 @@ export class FilenameService {
         );
       }
 
-      // 옵션에서 제공된 사용자명 사용
+      // 폴백 사용자명 사용
       if (options.fallbackUsername && media.tweetId) {
         const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
         const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
@@ -107,21 +100,13 @@ export class FilenameService {
   }
 
   /**
-   * ZIP 파일명을 생성합니다
+   * ZIP 파일명 생성
    *
-   * 트윗 작성자와 트윗 ID를 기반으로 ZIP 파일명을 생성합니다.
-   * 형식: {authorHandle}_{tweetId}.zip
+   * 형식: `{username}_{tweetId}.zip` 또는 `{fallbackPrefix}_{timestamp}.zip`
    *
-   * @param mediaItems - 미디어 아이템들의 읽기 전용 배열
-   * @param options - ZIP 파일명 생성 옵션
-   * @returns 생성된 ZIP 파일명 문자열
-   *
-   * @example
-   * ```typescript
-   * const service = MediaFilenameService.getInstance();
-   * const zipName = service.generateZipFilename(mediaItems);
-   * // 결과: "username_123456789.zip"
-   * ```
+   * @param mediaItems - 미디어 아이템 배열
+   * @param options - 생성 옵션
+   * @returns 생성된 ZIP 파일명
    */
   generateZipFilename(
     mediaItems: readonly (MediaItemForFilename | MediaInfoForFilename)[],
@@ -130,7 +115,6 @@ export class FilenameService {
     try {
       const firstItem = mediaItems[0];
       if (firstItem?.tweetUsername && firstItem?.tweetId) {
-        // 요구사항: {authorHandle}_{tweetId}.zip 형식
         return this.sanitizeForWindows(`${firstItem.tweetUsername}_${firstItem.tweetId}.zip`);
       }
 
@@ -145,50 +129,41 @@ export class FilenameService {
   }
 
   /**
-   * 파일명이 유효한 미디어 파일명 형식인지 검증합니다
+   * 미디어 파일명 유효성 검증
    *
-   * 새로운 형식: {유저ID}_{트윗ID}_{인덱스}.{확장자}에 맞는지 확인합니다.
+   * 형식: `{name}_{id}_{index}.{ext}`
    *
-   * @param filename - 검증할 파일명 문자열
-   * @returns 유효한 형식인지 여부
-   *
-   * @example
-   * ```typescript
-   * const service = MediaFilenameService.getInstance();
-   * const isValid = service.isValidMediaFilename("username_123456789_1.jpg");
-   * // 결과: true
-   * ```
+   * @param filename - 검증할 파일명
+   * @returns 유효 여부
    */
   isValidMediaFilename(filename: string): boolean {
-    // 새로운 형식: {유저ID}_{트윗ID}_{인덱스}.{확장자}
     const pattern = /^[^_\s]+_\d+_\d+\.\w+$/;
     return pattern.test(filename);
   }
 
+  /**
+   * ZIP 파일명 유효성 검증
+   *
+   * @param filename - 검증할 파일명
+   * @returns 유효 여부
+   */
   isValidZipFilename(filename: string): boolean {
     const pattern = /^[^_]+_\d+\.zip$/;
     return pattern.test(filename);
   }
 
-  /**
-   * 미디어 ID에서 인덱스 추출
-   * 형식: {tweetId}_media_{0-based-index} -> 1-based index 반환
-   */
+  // ===== Private Helpers =====
+
   private extractIndexFromMediaId(mediaId?: string): string | null {
-    if (!mediaId) {
-      return null;
-    }
+    if (!mediaId) return null;
 
     try {
-      // {tweetId}_media_{index} 형식에서 마지막 인덱스 추출
       const match = mediaId.match(/_media_(\d+)$/);
       if (match) {
         const zeroBasedIndex = safeParseInt(match[1], 10);
-        // 0-based를 1-based로 변환
         return (zeroBasedIndex + 1).toString();
       }
 
-      // 이전 형식 지원: {tweetId}_{index} 또는 {tweetId}_video_{index}
       const previousMatch = mediaId.match(/_(\d+)$/);
       if (previousMatch) {
         return undefinedToNull(previousMatch[1]);
@@ -202,7 +177,6 @@ export class FilenameService {
 
   private extractExtensionFromUrl(url: string): string {
     try {
-      // URL 생성자를 안전하게 시도
       let URLConstructor: typeof URL | undefined;
 
       if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
@@ -212,7 +186,6 @@ export class FilenameService {
       }
 
       if (!URLConstructor) {
-        // Fallback: 간단한 파싱
         const lastSlashIndex = url.lastIndexOf('/');
         const pathname = lastSlashIndex >= 0 ? url.substring(lastSlashIndex) : url;
         const lastDot = pathname.lastIndexOf('.');
@@ -240,29 +213,14 @@ export class FilenameService {
     return 'jpg';
   }
 
-  /**
-   * 인덱스를 1-based 숫자로 정규화
-   * @param index - 정규화할 인덱스 (string | number | undefined)
-   * @returns 1-based 인덱스 문자열 (최소값: "1")
-   */
   private normalizeIndex(index?: string | number): string {
-    if (index === undefined || index === null) {
-      return '1';
-    }
+    if (index === undefined || index === null) return '1';
 
     const numIndex = typeof index === 'string' ? safeParseInt(index, 10) : index;
 
-    // 유효하지 않은 숫자인 경우 기본값 반환
-    if (isNaN(numIndex)) {
-      return '1';
-    }
+    if (isNaN(numIndex)) return '1';
+    if (numIndex >= 1) return numIndex.toString();
 
-    // 이미 1-based이거나 그보다 큰 경우 그대로 사용
-    if (numIndex >= 1) {
-      return numIndex.toString();
-    }
-
-    // 0-based를 1-based로 변환 (0 -> 1, -1 -> 1)
     return Math.max(numIndex + 1, 1).toString();
   }
 
@@ -278,29 +236,27 @@ export class FilenameService {
   }
 
   /**
-   * Windows 파일 시스템 호환 보정
-   * - 예약어(CON, PRN, AUX, NUL, COM1-9, LPT1-9) 단독 이름 방지
-   * - 선행/후행 공백 및 마침표 제거
-   * - 금지 문자(<>:"/\|?*)를 '_'로 치환 (추가 방어)
+   * Windows 파일시스템 호환 정규화
+   * - 유니코드 정규화 (NFKC)
+   * - 제어 문자 및 BiDi 마커 제거
+   * - 금지 문자 치환
+   * - 예약어 방지
    */
   private sanitizeForWindows(name: string): string {
     try {
       if (!name) return 'media';
       let base = String(name);
 
-      // 1) 유니코드 정규화(NFKC)로 호환 문자/조합 문자 표준화
-      try {
-        if (typeof base.normalize === 'function') {
+      // 유니코드 정규화
+      if (typeof base.normalize === 'function') {
+        try {
           base = base.normalize('NFKC');
+        } catch {
+          // ignore
         }
-      } catch {
-        // ignore normalize failures
       }
 
-      // 2) 보이지 않는 제어/서식 문자 및 BiDi 마커 제거
-      // - C0 제어문자: U+0000–U+001F, DEL/제어 확장: U+007F–U+009F
-      // - Zero-width: ZWSP(200B), ZWNJ(200C), ZWJ(200D), WJ(2060)
-      // - BiDi marks: LRM(200E), RLM(200F), LRE/RLE/PDF/LRO/RLO(202A–202E), LRI/RLI/FSI/PDI(2066–2069)
+      // 제어 문자 및 BiDi 마커 제거
       base = Array.from(base)
         .filter(ch => {
           const cp = ch.codePointAt(0) ?? 0;
@@ -314,7 +270,7 @@ export class FilenameService {
         })
         .join('');
 
-      // 분리: 파일명과 확장자
+      // 파일명과 확장자 분리
       const lastDot = base.lastIndexOf('.');
       const hasExt = lastDot > 0 && lastDot < base.length - 1;
       const pure = hasExt ? base.slice(0, lastDot) : base;
@@ -327,7 +283,7 @@ export class FilenameService {
       safe = safe.replace(/[\s.]+$/g, '');
       safe = safe.replace(/^[\s.]+/g, '');
 
-      // 예약어 방지 (대소문자 무시)
+      // 예약어 방지
       const reserved = new Set([
         'con',
         'prn',
@@ -353,13 +309,12 @@ export class FilenameService {
         'lpt9',
       ]);
       if (reserved.has(safe.toLowerCase())) {
-        safe = `_${safe}`; // 접두어로 회피
+        safe = `_${safe}`;
       }
 
-      // 빈 문자열 방지
       if (!safe) safe = 'media';
 
-      // 최종 길이 제한 (255자 내)
+      // 길이 제한 (255자)
       const result = (safe + ext).slice(0, 255);
       return result;
     } catch {
@@ -367,17 +322,14 @@ export class FilenameService {
     }
   }
 
-  /**
-   * URL에서 사용자명 추출
-   */
   private extractUsernameFromUrl(url: string): string | null {
     try {
       const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
       if (match?.[1]) {
         const username = match[1];
 
-        // 예약된 경로들 제외
-        const reservedPaths = [
+        // 예약된 경로 제외
+        const reserved = [
           'i',
           'home',
           'explore',
@@ -402,11 +354,9 @@ export class FilenameService {
           'tos',
         ];
 
-        if (reservedPaths.includes(username.toLowerCase())) {
-          return null;
-        }
+        if (reserved.includes(username.toLowerCase())) return null;
 
-        // 유효한 사용자명 패턴 확인
+        // 유효한 사용자명 패턴
         if (/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
           return username;
         }
@@ -418,18 +368,19 @@ export class FilenameService {
   }
 }
 
-// 편의 함수들
+// ===== Public Convenience Functions =====
+
 /**
  * 미디어 파일명 생성 편의 함수
  *
- * @param media - 미디어 정보 객체
- * @param options - 파일명 생성 옵션
+ * @param media - 미디어 정보
+ * @param options - 생성 옵션
  * @returns 생성된 파일명
  *
  * @example
  * ```typescript
- * const filename = generateMediaFilename(mediaItem, { index: 2, extension: 'png' });
- * // 결과: "username_1234567890_2.png"
+ * const filename = generateMediaFilename(mediaItem, { index: 2 });
+ * // "username_1234567890_2.jpg"
  * ```
  */
 export function generateMediaFilename(
@@ -444,14 +395,8 @@ export function generateMediaFilename(
  * ZIP 파일명 생성 편의 함수
  *
  * @param mediaItems - 미디어 아이템 배열
- * @param options - ZIP 파일명 생성 옵션
+ * @param options - 생성 옵션
  * @returns 생성된 ZIP 파일명
- *
- * @example
- * ```typescript
- * const zipName = generateZipFilename(mediaItems);
- * // 결과: "username_1234567890.zip"
- * ```
  */
 export function generateZipFilename(
   mediaItems: readonly (MediaItemForFilename | MediaInfoForFilename)[],
@@ -462,16 +407,10 @@ export function generateZipFilename(
 }
 
 /**
- * 미디어 파일명 유효성 검증 편의 함수
+ * 미디어 파일명 유효성 검증
  *
  * @param filename - 검증할 파일명
- * @returns 유효성 검증 결과
- *
- * @example
- * ```typescript
- * const isValid = isValidMediaFilename("username_1234567890_1.jpg");
- * // 결과: true
- * ```
+ * @returns 유효 여부
  */
 export function isValidMediaFilename(filename: string): boolean {
   const service = new FilenameService();
@@ -479,16 +418,10 @@ export function isValidMediaFilename(filename: string): boolean {
 }
 
 /**
- * ZIP 파일명 유효성 검증 편의 함수
+ * ZIP 파일명 유효성 검증
  *
- * @param filename - 검증할 ZIP 파일명
- * @returns 유효성 검증 결과
- *
- * @example
- * ```typescript
- * const isValid = isValidZipFilename("username_1234567890.zip");
- * // 결과: true
- * ```
+ * @param filename - 검증할 파일명
+ * @returns 유효 여부
  */
 export function isValidZipFilename(filename: string): boolean {
   const service = new FilenameService();

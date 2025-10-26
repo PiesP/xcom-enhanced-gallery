@@ -74,7 +74,7 @@ describe('Phase 98: IconComponent 타입 안전성', () => {
 
     beforeEach(async () => {
       const { getIconRegistry: importedGetter } = await import(
-        '../../../src/shared/services/icon-registry'
+        '../../../src/shared/components/ui/Icon/icon-registry'
       );
       getIconRegistry = importedGetter;
     });
@@ -103,7 +103,10 @@ describe('Phase 98: IconComponent 타입 안전성', () => {
       const fs = await import('node:fs');
       const path = await import('node:path');
 
-      const iconRegistryPath = path.resolve(process.cwd(), 'src/shared/services/icon-registry.ts');
+      const iconRegistryPath = path.resolve(
+        process.cwd(),
+        'src/shared/components/ui/Icon/icon-registry.ts'
+      );
       const source = fs.readFileSync(iconRegistryPath, 'utf-8');
 
       // ❌ RED: 현재는 5개의 'as unknown as IconComponent' 존재

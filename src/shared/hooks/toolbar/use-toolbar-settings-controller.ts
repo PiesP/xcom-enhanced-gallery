@@ -15,7 +15,7 @@ import {
 import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
-import { evaluateHighContrast } from '../../services/high-contrast-detection';
+import { evaluateHighContrast } from '../../utils/high-contrast';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;

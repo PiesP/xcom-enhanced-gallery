@@ -1,7 +1,7 @@
 /**
- * @fileoverview StabilityDetector 서비스
+ * @fileoverview Stability Detector Utility
  * @description Activity 기반 settling 상태 감지 메커니즘
- * @module shared/services/stability-detector
+ * @version 2.0.0 - services에서 utils로 이동 (Signal 기반 유틸리티)
  *
  * 책임:
  * - Activity 이벤트 기록 (scroll, focus, layout, programmatic)
@@ -12,8 +12,8 @@
  */
 
 import { getSolid } from '../external/vendors';
-import { logger } from '@shared/logging';
-import { globalTimerManager } from '../utils/timer-management';
+import { logger } from '../logging';
+import { globalTimerManager } from './timer-management';
 
 export type ActivityType = 'scroll' | 'focus' | 'layout' | 'programmatic';
 

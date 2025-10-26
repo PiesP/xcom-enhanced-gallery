@@ -6,7 +6,7 @@
 
 // Internal imports use relative paths to avoid alias issues in Vitest
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from '../base-service-impl';
+import { BaseServiceImpl } from '../base-service';
 import { createEventListener } from '../../utils/type-safety-helpers';
 import { EventManager } from '../event-manager';
 

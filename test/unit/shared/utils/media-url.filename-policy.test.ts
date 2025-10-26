@@ -3,7 +3,7 @@ import {
   createMediaInfoFromImage,
   createMediaInfoFromVideo,
 } from '@shared/utils/media/media-url.util';
-import { isValidMediaFilename } from '@shared/media/filename-service';
+import { isValidMediaFilename } from '@shared/services/file-naming';
 
 // Mock the username source helper (used by media-url.util via getUsernameSafe)
 vi.mock('@shared/media/username-source', () => ({

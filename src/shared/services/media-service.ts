@@ -14,7 +14,7 @@ import type { DownloadProgress } from './download/types';
 import { ErrorCode } from '@shared/types/result.types';
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { BaseServiceImpl } from './base-service-impl';
+import { BaseServiceImpl } from './base-service';
 
 export interface MediaLoadingState {
   isLoading: boolean;

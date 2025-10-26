@@ -9,14 +9,14 @@ import type { MediaItemForFilename } from '../types/media.types';
 import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '@shared/logging';
 import { getNativeDownload } from '../external/vendors';
 import { getErrorMessage } from '../utils/error-handling';
-import { generateMediaFilename } from '../media/filename-service';
+import { generateMediaFilename } from './file-naming';
 import { toastManager } from './unified-toast-manager';
 import { languageService } from './language-service';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
 import { DownloadOrchestrator } from './download/download-orchestrator';
 import type { DownloadProgress } from './download/types';
-import { BaseServiceImpl } from './base-service-impl';
+import { BaseServiceImpl } from './base-service';
 
 export interface BulkDownloadOptions {
   onProgress?: (progress: DownloadProgress) => void;

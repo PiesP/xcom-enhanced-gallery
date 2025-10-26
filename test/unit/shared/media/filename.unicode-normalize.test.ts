@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FilenameService } from '@shared/media/filename-service';
+import { FilenameService } from '@shared/services/file-naming';
 
 describe('FilenameService - Unicode normalization and sanitization (NFKC)', () => {
   const svc = new FilenameService();

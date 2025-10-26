@@ -1,5 +1,6 @@
 /**
- * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (54개 + component utils)
+ * @fileoverview 핵심 유틸리티 export - 성능 최적화 완료 (57개 + component utils)
+ * @version 2.1.0 - services에서 이동된 유틸리티 추가
  */
 
 // === 기본 유틸리티 (12개) - galleryDebugUtils removed in Phase 140.2 ===
@@ -125,6 +126,22 @@ export {
   ComponentStandards,
   type ValidationResult,
 } from './component-utils';
+
+// === UI 유틸리티 (3개) - services에서 이동 ===
+export {
+  evaluateHighContrast,
+  HighContrastDetector,
+  type HighContrastDetectionInput,
+} from './high-contrast';
+
+export {
+  createStabilityDetector,
+  type StabilityDetector,
+  type StabilityConfig,
+  type StabilityMetrics,
+  type ActivityType,
+  type IStabilityDetector,
+} from './stability';
 
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';

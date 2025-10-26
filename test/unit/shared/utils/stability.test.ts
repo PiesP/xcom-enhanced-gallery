@@ -1,6 +1,7 @@
 /**
- * @fileoverview StabilityDetector 서비스 테스트
+ * @fileoverview StabilityDetector 유틸리티 테스트
  * @description Activity 기반 settling 상태 감지 메커니즘 검증
+ * @version 2.0.0 - services에서 utils로 이동
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -8,7 +9,7 @@ import {
   createStabilityDetector,
   type ActivityType,
   type IStabilityDetector,
-} from '@shared/services/stability-detector';
+} from '@shared/utils/stability';
 
 describe('StabilityDetector', () => {
   let detector: IStabilityDetector;

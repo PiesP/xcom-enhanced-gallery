@@ -1,8 +1,7 @@
 /**
- * @fileoverview High Contrast Detection Service
- * @description 툴바의 고대비 모드 필요 여부를 감지하는 서비스
- *
- * Phase 3: use-toolbar-settings-controller에서 분리된 로직
+ * @fileoverview High Contrast Detection Utility
+ * @description 툴바의 고대비 모드 필요 여부를 감지하는 유틸리티
+ * @version 2.0.0 - services에서 utils로 이동 (순수 함수)
  */
 
 export interface HighContrastDetectionInput {

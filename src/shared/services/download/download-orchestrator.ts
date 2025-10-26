@@ -2,8 +2,10 @@
  * DownloadOrchestrator
  * - Centralizes concurrency, retry, and ZIP assembly for media downloads
  * - Pure service with no UI side-effects. Vendors accessed only via getters.
+ * @version 2.0.0 - Phase 2025-10-27: base-service로 마이그레이션, 구현 완성
  */
-import { BaseServiceImpl } from '../base-service-impl';
+
+import { BaseServiceImpl } from '../base-service';
 import { getErrorMessage } from '../../utils/error-handling';
 import { globalTimerManager } from '../../utils/timer-management';
 

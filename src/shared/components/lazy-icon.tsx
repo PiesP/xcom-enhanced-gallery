@@ -4,7 +4,7 @@ import {
   preloadCommonIcons,
   type IconName,
   type IconRegistry,
-} from '@shared/services/icon-registry';
+} from './ui/Icon/icon-registry';
 
 export interface LazyIconProps {
   readonly name: IconName;

@@ -11,9 +11,9 @@ import { logger } from '@shared/logging/logger';
 import { bridgeGetService } from '@shared/container/service-bridge';
 import { registerGalleryRenderer } from '@shared/container/service-accessors';
 import { SERVICE_KEYS } from '@/constants';
-import { FilenameService } from '@shared/media/filename-service';
+import { FilenameService } from '@shared/services/file-naming';
 import type { MediaItemForFilename, MediaInfoForFilename } from '@shared/types/media.types';
-import type { FilenameOptions } from '@shared/media/filename-service';
+import type { FilenameOptions } from '@shared/services/file-naming';
 import type {
   AppContainer,
   CreateContainerOptions,

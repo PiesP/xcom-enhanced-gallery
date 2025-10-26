@@ -8,8 +8,8 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { getSolid } from '../../../../../src/shared/external/vendors';
-import { createStabilityDetector } from '../../../../../src/shared/services/stability-detector';
-import type { StabilityDetector } from '../../../../../src/shared/services/stability-detector';
+import { createStabilityDetector } from '../../../../../src/shared/utils/stability';
+import type { StabilityDetector } from '../../../../../src/shared/utils/stability';
 
 const { createSignal } = getSolid();
 

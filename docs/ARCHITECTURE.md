@@ -75,15 +75,27 @@
   - `events.ts`: 전역 이벤트 (beforeunload/pagehide) 핸들러
   - `features.ts`: Features 레이어 서비스 지연 등록
   - `initialize-theme.ts`: 테마 초기화 (시스템/localStorage/DOM)
-- `src/shared/services/*`: 순수 로직 API
-  - 미디어: `MediaService`, `BulkDownloadService`, `media-extraction/`,
-    `media-mapping/`
-  - UX: `UnifiedToastManager`, `ThemeService`, `AnimationService`
-  - 토큰: `token-extraction/` (Phase 192: TwitterTokenExtractor 이동)
-    - **TwitterTokenExtractor** (520줄): Twitter Bearer 토큰 추출 유틸리티
+- `src/shared/services/*`: 순수 로직 API (Phase 2025-10-27: 구조 최적화)
+  - **핵심 서비스**:
+    - `MediaService`, `BulkDownloadService`: 미디어 추출/다운로드
+    - `media-extraction/`, `media-mapping/`: 미디어 처리 전략
+    - `UnifiedToastManager`, `ToastController`: 토스트 알림
+    - `ThemeService`, `LanguageService`: 테마/언어 관리
+    - `AnimationService`: 애니메이션 관리
+    - `EventManager`: DOM 이벤트 관리
+  - **토큰 추출**: `token-extraction/` (Phase 192)
+    - **TwitterTokenExtractor** (520줄): Twitter Bearer 토큰 추출
       - 책임: 네트워크/스크립트/설정에서 토큰 추출, 유효성 검증
-      - Phase 192: features/settings/services → shared/services로 이동 (공유
-        유틸)
+      - Phase 192: features/settings/services → shared/services로 이동
+  - **재배치 완료** (Phase 2025-10-27):
+    - HighContrastDetection → `@shared/utils/high-contrast` (순수 함수)
+    - StabilityDetector → `@shared/utils/stability` (Signal 기반 유틸)
+    - IconRegistry → `@shared/components/ui/Icon/icon-registry` (컴포넌트 관련)
+- `src/shared/utils/*`: 순수 유틸리티 함수 (Phase 2025-10-27: 확장)
+  - **UI 유틸리티**: `high-contrast.ts`, `stability.ts` (services에서 이동)
+  - **브라우저 환경**: `browser.ts` (안전한 window/document 접근)
+  - **성능**: `timer-management.ts`, `performance/`
+  - **타입 안전**: `type-guards.ts`, `type-safety-helpers.ts`
 - `src/shared/hooks/*`: Solid.js 반응성 기반 재사용 로직 (Phase 2025-10-26 정리)
   - **목적**: Signal/effect 활용한 UI 상태 관리 및 이벤트 조율
   - **구조**:
@@ -93,8 +105,8 @@
       - 헬퍼 함수 분리됨 (→ `toolbar-utils.ts`)
     - `toolbar/use-toolbar-settings-controller.ts` (376줄): 설정 패널 제어 훅
       - 책임: 설정 패널 토글, outside-click 감지, 테마/언어 선택, 고대비 감지
-      - 개선: 고대비 감지 로직 분리 (→ `high-contrast-detection.ts`)
-      - 복잡도: 감소 (고대비 로직 제거로 약 30줄 절감)
+      - Phase 2025-10-27: 고대비 감지 유틸 import 경로 변경 (→
+        `@shared/utils/high-contrast`)
     - `use-focus-trap.ts` (119줄): 포커스 트래핑 훅
       - 책임: 모달/오버레이의 포커스 제한 관리
       - 사용: KeyboardHelpOverlay 컴포넌트

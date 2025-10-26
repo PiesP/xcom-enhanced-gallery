@@ -5,7 +5,7 @@
 
 // NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
 import { logger } from '@shared/logging';
-import { BaseServiceImpl } from './base-service-impl';
+import { BaseServiceImpl } from './base-service';
 import { DomEventManager, createDomEventManager } from '../dom/dom-event-manager';
 import {
   addListener as registerManagedListener,

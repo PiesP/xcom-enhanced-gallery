@@ -11,7 +11,7 @@ import {
   resetIconRegistry,
   preloadCommonIcons,
   type IconName,
-} from '../../../src/shared/services/icon-registry.ts';
+} from '../../../src/shared/components/ui/Icon/icon-registry.ts';
 import {
   LazyIcon,
   useIconPreload,

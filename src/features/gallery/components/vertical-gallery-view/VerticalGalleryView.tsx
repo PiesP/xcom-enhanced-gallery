@@ -14,7 +14,7 @@ import { galleryState, navigateToItem } from '../../../../shared/state/signals/g
 import type { GalleryState } from '../../../../shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../shared/state/signals/download.signals';
 import { getSolid } from '../../../../shared/external/vendors';
-import { createStabilityDetector } from '../../../../shared/services/stability-detector';
+import { createStabilityDetector } from '../../../../shared/utils/stability';
 import { languageService } from '../../../../shared/services/language-service';
 import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
 import {

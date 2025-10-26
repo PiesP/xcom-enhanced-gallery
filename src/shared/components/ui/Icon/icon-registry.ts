@@ -1,5 +1,11 @@
-import type { JSXElement } from '../external/vendors';
-import type { IconProps } from '../components/ui/Icon/Icon';
+/**
+ * @fileoverview Icon Registry
+ * @description 아이콘 동적 로딩 및 캐싱 레지스트리
+ * @version 2.0.0 - services에서 components/ui/Icon로 이동
+ */
+
+import type { JSXElement } from '../../../external/vendors';
+import type { IconProps } from './Icon';
 
 export type IconName =
   | 'Download'
@@ -31,19 +37,15 @@ let _caches: WeakMap<object, Map<IconName, IconComponent>> = new WeakMap();
 function dynamicImport(name: IconName): Promise<IconComponent> {
   switch (name) {
     case 'Download':
-      return import('@shared/components/ui/Icon/hero/HeroDownload.tsx').then(m => m.HeroDownload);
+      return import('./hero/HeroDownload.tsx').then(m => m.HeroDownload);
     case 'Settings':
-      return import('@shared/components/ui/Icon/hero/HeroSettings.tsx').then(m => m.HeroSettings);
+      return import('./hero/HeroSettings.tsx').then(m => m.HeroSettings);
     case 'X':
-      return import('@shared/components/ui/Icon/hero/HeroX.tsx').then(m => m.HeroX);
+      return import('./hero/HeroX.tsx').then(m => m.HeroX);
     case 'ChevronLeft':
-      return import('@shared/components/ui/Icon/hero/HeroChevronLeft.tsx').then(
-        m => m.HeroChevronLeft
-      );
+      return import('./hero/HeroChevronLeft.tsx').then(m => m.HeroChevronLeft);
     case 'ChevronRight':
-      return import('@shared/components/ui/Icon/hero/HeroChevronRight.tsx').then(
-        m => m.HeroChevronRight
-      );
+      return import('./hero/HeroChevronRight.tsx').then(m => m.HeroChevronRight);
     default:
       if (_fallback) return Promise.resolve(_fallback);
       return Promise.reject(new Error(`Icon not found: ${name}`));
@@ -119,7 +121,6 @@ export async function preloadCommonIcons(): Promise<void> {
     registry.loadIcon('Settings'),
     registry.loadIcon('X'),
     registry.loadIcon('ChevronLeft'),
+    registry.loadIcon('ChevronRight'),
   ]);
 }
-
-export { type IconComponent };

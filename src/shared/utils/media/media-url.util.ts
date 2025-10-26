@@ -9,9 +9,9 @@
  */
 
 import { logger } from '@shared/logging';
-// FilenameService는 shared/media 레이어에 있으므로 직접 import 허용(services 아님)
-import { generateMediaFilename } from '../../media/filename-service';
-import type { FilenameOptions } from '../../media/filename-service';
+// FilenameService는 이제 shared/services/file-naming 레이어에 있음
+import { generateMediaFilename } from '@shared/services/file-naming';
+import type { FilenameOptions } from '@shared/services/file-naming';
 // Username은 shared/media/username-source 헬퍼를 통해 제공
 import { getPreferredUsername } from '../../media/username-source';
 export type { FilenameOptions };

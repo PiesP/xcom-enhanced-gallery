@@ -1,22 +1,27 @@
 /**
  * Core Services Export - Phase 3: Service Optimization
+ * @version 2.1.0 - 유틸리티성 서비스 재배치 완료
  *
- * 최적화된 핵심 서비스들 (8개):
+ * 최적화된 핵심 서비스들:
  * - AnimationService: 애니메이션 관리
  * - MediaService: 모든 미디어 관련 기능 통합 (MediaLoading, Prefetching, WebP, BulkDownload 포함)
  * - ThemeService: 테마 관리
  * - ToastService: 토스트 알림
- * - BrowserService: 브라우저 유틸리티
- * - GalleryService: 갤러리 핵심 기능
- * - LazyLoadingService: 지연 로딩 관리
+ * - LanguageService: 다국어 지원
+ * - EventManager: DOM 이벤트 관리
  * - ServiceManager: 서비스 관리 + 레지스트리 통합
+ *
+ * 재배치된 서비스:
+ * - HighContrastDetection → @shared/utils/high-contrast
+ * - StabilityDetector → @shared/utils/stability
+ * - IconRegistry → @shared/components/ui/Icon/icon-registry
  */
 
 // ====================================
 // 베이스 서비스 클래스
 // ====================================
 
-export { SingletonServiceImpl as BaseService } from './base-service-impl';
+export { SingletonServiceImpl as BaseService } from './base-service';
 
 // ====================================
 // 핵심 서비스들 (8개)
@@ -51,6 +56,17 @@ export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './lan
 export { toastManager, ToastManager } from './unified-toast-manager';
 export { ToastController } from './toast-controller';
 export type { ToastOptions } from './unified-toast-manager';
+
+// File Naming Service
+export {
+  FilenameService,
+  generateMediaFilename,
+  generateZipFilename,
+  isValidMediaFilename,
+  isValidZipFilename,
+  type FilenameOptions,
+  type ZipFilenameOptions,
+} from './file-naming';
 
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';
