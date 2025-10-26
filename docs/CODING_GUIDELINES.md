@@ -334,7 +334,58 @@ mediaProcessor.ts        # camelCase 금지
 
 ---
 
-## 📂 Import 순서
+## � 타입 정의 (Type Definitions)
+
+### 파일 위치 규칙
+
+**전역 빌드 환경 변수**: `types/` 루트
+
+```typescript
+// types/env.d.ts - Vite define 플러그인으로 주입되는 전역 변수
+declare const __DEV__: boolean; // 개발 모드
+declare const __PROD__: boolean; // 프로덕션 모드
+declare const __VERSION__: string; // 패키지 버전
+```
+
+**도메인 비즈니스 타입**: `src/shared/types/` (패턴: `*.types.ts`)
+
+```typescript
+// ✅ 올바른 배치
+src / shared / types / app.types.ts; // 앱 전역 타입
+src / shared / types / media.types.ts; // 미디어 관련
+src / shared / types / core / extraction.types.ts; // 핵심 추출 로직
+
+// ✅ Features 특화 타입도 shared로 중앙화 가능
+src / shared / types / settings.types.ts; // Settings 기능 타입
+
+// ❌ 피해야 할 패턴
+src / features / gallery / types.ts; // gallery 내부 타입 정의 (shared로 이동)
+```
+
+### 타입 정의 원칙
+
+- **도메인별 분리**: 기능이 명확히 분리된 타입은 separate 파일 생성
+  (`media.types.ts` ≠ `app.types.ts`)
+- **Core 타입 세분화**: 코어 로직(추출, 매핑, 서비스)은 `core/` 하위 구조화
+- **재사용성 우선**: 여러 파일에서 사용하는 타입은 shared로, 단일 파일만
+  사용하면 파일 내 정의 검토
+- **명시적 export**: 배럴 export 최소화, 필요한 타입만 명시 export
+
+```typescript
+// ✅ 좋은 예: 명시적 정의, 단일 책임
+// src/shared/types/media.types.ts
+export interface MediaItem {
+  url: string;
+  type: 'image' | 'video';
+  dimensions?: { width: number; height: number };
+}
+
+export type MediaList = MediaItem[];
+```
+
+---
+
+## �📂 Import 순서
 
 ```typescript
 // 1. 타입

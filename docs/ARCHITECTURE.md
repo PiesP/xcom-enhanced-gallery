@@ -35,9 +35,13 @@
     `media-mapping/`
   - UX: `UnifiedToastManager`, `ThemeService`, `AnimationService`
 - `src/shared/state/*`: Signals 상태 및 파생값(`signalSelector`)
+- `src/shared/types/*`: 도메인 비즈니스 타입 정의 (**.types.ts 패턴**)
+  - `app.types.ts`, `media.types.ts`, `result.types.ts`
+  - `core/`: 핵심 타입 (extraction.types.ts, media.types.ts)
 - `src/shared/utils/*`: 순수 유틸리티, DOM 헬퍼(서비스 직접 참조 금지)
 - `src/shared/external/*`: 벤더/Userscript 어댑터, ZIP 생성기 등 외부 연동
 - `src/assets/*`: 정적 자원, CSS Modules, 디자인 토큰(3계층)
+- `types/`: 전역 빌드 환경 변수 (env.d.ts) — 상세: `types/README.md`
 
 ## 컴포넌트/서비스 경계 원칙
 
@@ -45,6 +49,30 @@
   이동
 - **서비스는 테스트 친화**: 외부 의존은 adapter getter로 주입 가능해야 함
 - **이벤트는 PC 전용**: 세부 사항은 `docs/CODING_GUIDELINES.md` 참조
+
+## 타입 관리 정책
+
+프로젝트의 TypeScript 타입은 다음과 같이 분리됩니다:
+
+### 타입 정의 위치
+
+| 위치                       | 용도                        | 예시                         |
+| -------------------------- | --------------------------- | ---------------------------- |
+| **types/env.d.ts**         | 빌드 환경 전역 변수         | `__DEV__`, `__VERSION__`     |
+| **src/shared/types/**      | 도메인 비즈니스 타입        | app.types.ts, media.types.ts |
+| **src/shared/types/core/** | 핵심 로직 타입              | extraction.types.ts          |
+| **src/features/\*/types**  | Features 특화 타입 (필요시) | settings.types.ts            |
+
+### 타입 정의 원칙
+
+- **공유 타입 → src/shared/types/**: 여러 모듈에서 사용하는 도메인 타입
+- **전역 환경 → types/env.d.ts**: 빌드 타임 상수 (Vite define 플러그인)
+- **명시적 export**: 배럴 export 최소화, 명확한 타입 이름과 책임
+
+### 참고
+
+자세한 타입 정의 가이드와 예제: `docs/CODING_GUIDELINES.md`의 "📝 타입 정의"
+섹션
 
 ## 디자인 토큰
 
