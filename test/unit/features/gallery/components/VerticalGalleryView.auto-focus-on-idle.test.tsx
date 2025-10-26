@@ -23,7 +23,8 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
   let harnessControls: HarnessControls | null = null;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    // Phase 190: real timers 사용 (fake timers의 타이밍 이슈 해결)
+    vi.useRealTimers();
     observers = [];
     harnessControls = null;
 
@@ -65,7 +66,6 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
 
   afterEach(() => {
     cleanup();
-    vi.runOnlyPendingTimers();
     vi.useRealTimers();
     observers = [];
     harnessControls = null;
@@ -220,17 +220,18 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
     if (!harnessControls) return;
 
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await vi.runAllTimersAsync();
+    // real timers 사용 시 상태 업데이트 대기
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     harnessControls.setShouldAutoFocus(true);
-    await vi.runAllTimersAsync();
+    await new Promise(resolve => setTimeout(resolve, 50));
     expect(document.activeElement).toBe(items[1]);
 
     items[2].focus();
     harnessControls.focusIndex(2);
 
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await vi.runAllTimersAsync();
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     expect(document.activeElement).toBe(items[2]);
 
@@ -238,7 +239,7 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
     harnessControls.blurIndex(2);
     harnessControls.forceSync();
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await vi.runAllTimersAsync();
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     expect(document.activeElement).toBe(items[1]);
   });
