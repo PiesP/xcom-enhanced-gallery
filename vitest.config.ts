@@ -152,7 +152,7 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'jsdom',
+    environment: 'happy-dom',
     setupFiles: ['./test/setup.ts'],
     isolate: true, // 테스트 파일 간 격리
     testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
@@ -180,12 +180,10 @@ export default defineConfig({
       },
     },
 
-    // JSDOM 환경 설정
+    // happy-dom 환경 설정
     environmentOptions: {
-      jsdom: {
-        resources: 'usable',
+      happyDom: {
         url: 'https://x.com',
-        storageQuota: 10000000,
       },
     },
 
@@ -263,13 +261,11 @@ export default defineConfig({
           // 상위 testTimeout/hookTimeout이 projects에 상속되지 않아 명시적으로 지정
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           transformMode: solidTransformMode,
@@ -293,13 +289,11 @@ export default defineConfig({
           // 타임아웃을 명시적으로 설정하여 Windows/transform 지연으로 인한 플래키 방지
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
@@ -351,13 +345,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
@@ -376,13 +368,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/features/**/*.{test,spec}.{ts,tsx}'],
@@ -401,13 +391,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: [
@@ -430,13 +418,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/unit/performance/**/*.{test,spec}.{ts,tsx}', '**/*.bench.test.*'],
@@ -455,13 +441,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/phase-*.*', 'test/final/**/*.{test,spec}.{ts,tsx}'],
@@ -482,13 +466,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
@@ -519,13 +501,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           include: ['test/guards/**/*.{test,spec}.{ts,tsx}'],
@@ -584,13 +564,11 @@ export default defineConfig({
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
-          environment: 'jsdom',
+          environment: 'happy-dom',
           setupFiles: ['./test/setup.ts'],
           environmentOptions: {
-            jsdom: {
-              resources: 'usable',
+            happyDom: {
               url: 'https://x.com',
-              storageQuota: 10000000,
             },
           },
           // fake timers 비활성화: 실제 브라우저 타이밍 사용
