@@ -118,13 +118,40 @@ vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
 **단계 3: 수정 구현 계획**
 
-| 우선순위 | 작업                     | 난이도 | 예상 시간 | 상태        |
-| -------- | ------------------------ | ------ | --------- | ----------- |
-| 1        | bulk-download 수정       | 낮     | 10분      | not-started |
-| 2        | raf-timing 2개 제거/수정 | 중     | 30분      | not-started |
-| 3        | browser 프로젝트 재검토  | 높     | 60분      | not-started |
+| 우선순위 | 작업                     | 난이도 | 예상 시간 | 상태    |
+| -------- | ------------------------ | ------ | --------- | ------- |
+| 1        | bulk-download 수정       | 낮     | 10분      | ✅ 완료 |
+| 2        | raf-timing 2개 제거/수정 | 중     | 30분      | ✅ 완료 |
+| 3        | browser 프로젝트 재검토  | 높     | 60분      | ⏳ 대기 |
 
-**다음**: 수정 구현 → 테스트 재실행 → 완료 검증
+**단계 4: 수정 구현 완료** ✅
+
+1. **bulk-download-service.test.ts**
+   - `beforeEach()`에 `URL.createObjectURL` 및 `URL.revokeObjectURL` mock 추가
+   - 두 실패 테스트 수정: 다운로드 로직 정상 작동 확인
+   - 커밋:
+     `test(Phase 190): Fix bulk-download-service URL.createObjectURL failures`
+
+2. **use-gallery-focus-tracker-deduplication.test.ts**
+   - `vi.useFakeTimers()` → `vi.useRealTimers()` 변경
+   - `vi.runAllTimers()` 제거, `requestAnimationFrame` 기반 대기로 변경
+   - RAF 배칭 테스트 단순화
+   - 커밋: `test(Phase 190): Fix raf-timing tests by replacing fake timers...`
+
+3. **VerticalGalleryView.auto-focus-on-idle.test.tsx**
+   - `vi.useFakeTimers()` → `vi.useRealTimers()` 변경
+   - `vi.runAllTimersAsync()` → `setTimeout` 기반 대기로 변경
+   - 포커스 동기화 테스트 안정화
+   - 동일 커밋에 포함
+
+**결과**:
+
+- ✅ 3개 실패 테스트 모두 수정 완료
+- ✅ 테스트 환경: real timers로 안정화
+- ⏳ 최종 검증: npm run build 필요
+- ⏳ browser 프로젝트: 별도 검토 필요 (테스트 설정 문제)
+
+**다음**: npm run build로 최종 검증
 
 ---
 
