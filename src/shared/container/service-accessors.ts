@@ -24,7 +24,7 @@
 import type { BulkDownloadService } from '../services/bulk-download-service';
 import type { FilenameService } from '../services/file-naming';
 import type { ThemeService } from '../services/theme-service';
-import type { ToastController } from '../services/toast-controller';
+import type { ToastController } from '../services/unified-toast-manager';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 import { CoreServiceRegistry } from './core-service-registry';

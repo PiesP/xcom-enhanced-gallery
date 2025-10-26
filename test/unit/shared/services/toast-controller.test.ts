@@ -4,8 +4,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ToastController, toastController } from '../../../../src/shared/services/toast-controller';
-import type { ToastOptions } from '../../../../src/shared/services/toast-controller';
+import {
+  ToastController,
+  toastController,
+} from '../../../../src/shared/services/unified-toast-manager';
+import type { ToastOptions } from '../../../../src/shared/services/unified-toast-manager';
 
 // Mock logger
 vi.mock('../../../../src/shared/logging/logger', () => ({
@@ -43,26 +46,26 @@ describe('ToastController', () => {
       await controller.initialize();
 
       expect(controller.isInitialized()).toBe(true);
-      expect(controller.isReady()).toBe(true);
+      expect(controller.isInitialized()).toBe(true);
     });
 
     it('should start as not initialized', () => {
       expect(controller.isInitialized()).toBe(false);
-      expect(controller.isReady()).toBe(false);
+      expect(controller.isInitialized()).toBe(false);
     });
   });
 
   describe('cleanup', () => {
     it('should clear all toasts and reset state', async () => {
       await controller.initialize();
-      await controller.cleanup();
+      await controller.destroy();
 
       expect(mockToastManagerInstance.clear).toHaveBeenCalledTimes(1);
       expect(controller.isInitialized()).toBe(false);
     });
 
     it('should work even if not initialized', async () => {
-      await controller.cleanup();
+      await controller.destroy();
 
       expect(mockToastManagerInstance.clear).toHaveBeenCalled();
       expect(controller.isInitialized()).toBe(false);
@@ -333,7 +336,7 @@ describe('ToastController', () => {
       await toastController.initialize();
       expect(toastController.isInitialized()).toBe(true);
 
-      await toastController.cleanup();
+      await toastController.destroy();
       expect(toastController.isInitialized()).toBe(false);
     });
   });
@@ -367,14 +370,14 @@ describe('ToastController', () => {
 
     it('should handle lifecycle: initialize → show → cleanup', async () => {
       await controller.initialize();
-      expect(controller.isReady()).toBe(true);
+      expect(controller.isInitialized()).toBe(true);
 
       controller.show({ title: 'Test', message: 'Message' });
       expect(mockToastManagerInstance.show).toHaveBeenCalled();
 
-      await controller.cleanup();
+      await controller.destroy();
       expect(mockToastManagerInstance.clear).toHaveBeenCalled();
-      expect(controller.isReady()).toBe(false);
+      expect(controller.isInitialized()).toBe(false);
     });
 
     it('should allow removing specific toast after showing', () => {

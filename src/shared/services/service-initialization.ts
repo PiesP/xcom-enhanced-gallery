@@ -32,7 +32,7 @@ export async function registerCoreServices(): Promise<void> {
 
   // 개별 UI 서비스들
   const { ThemeService } = await import('./theme-service');
-  const { ToastController } = await import('./toast-controller');
+  const { ToastController } = await import('./unified-toast-manager');
 
   const themeService = new ThemeService();
   const toastController = new ToastController();

@@ -3,12 +3,12 @@
  * @version 1.0.0 - Phase 1 Step 3
  *
  * 작은 서비스 파일들의 통합
- * - Logger Interface & ConsoleLogger
  * - ServiceDiagnostics
  * - ServiceRegistry (통합됨)
  * - CoreService (구 ServiceManager) export 추가
  *
  * Phase 1 Step 3: 파일 통합을 통한 복잡도 감소
+ * Phase 2025-10-27: Logger 재정의 제거 (→ @shared/logging 사용)
  */
 
 // ================================
@@ -21,53 +21,16 @@ export { serviceManager } from './service-manager';
 export { getService } from './service-manager';
 
 // ================================
-// Logger Interface & Implementation
+// Logger & Type Aliases
 // ================================
 
-import { logger } from '@shared/logging';
+// @shared/logging에서 직접 사용하도록 유도
+export { logger, type Logger } from '@shared/logging';
+export type { Logger as ILogger } from '@shared/logging';
 
 // ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
 // 직접적인 서비스 키 타입 사용
 export type ServiceKey = string;
-
-/**
- * 로거 인터페이스
- */
-export interface Logger {
-  debug(message: string, ...args: unknown[]): void;
-  info(message: string, ...args: unknown[]): void;
-  warn(message: string, ...args: unknown[]): void;
-  error(message: string, ...args: unknown[]): void;
-}
-
-// 호환성을 위한 ILogger 별칭
-export interface ILogger extends Logger {}
-
-/**
- * 기존 ILogger 인터페이스를 logger로 리다이렉트하는 어댑터
- */
-export class ConsoleLogger implements Logger {
-  debug(message: string, ...args: unknown[]): void {
-    logger.debug(message, ...args);
-  }
-
-  info(message: string, ...args: unknown[]): void {
-    logger.info(message, ...args);
-  }
-
-  warn(message: string, ...args: unknown[]): void {
-    logger.warn(message, ...args);
-  }
-
-  error(message: string, ...args: unknown[]): void {
-    logger.error(message, ...args);
-  }
-}
-
-/**
- * 기본 로거 인스턴스
- */
-export const defaultLogger = new ConsoleLogger();
 
 // ================================
 // Service Diagnostics

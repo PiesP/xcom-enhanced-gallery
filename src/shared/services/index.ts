@@ -53,8 +53,12 @@ export { LanguageService } from './language-service';
 export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './language-service';
 
 // 4. 토스트 서비스 - ToastManager 인스턴스 사용 권장
-export { toastManager, ToastManager } from './unified-toast-manager';
-export { ToastController } from './toast-controller';
+export {
+  toastManager,
+  ToastManager,
+  ToastController,
+  toastController,
+} from './unified-toast-manager';
 export type { ToastOptions } from './unified-toast-manager';
 
 // File Naming Service
@@ -90,9 +94,7 @@ export { CoreService } from './service-manager';
 // ====================================
 
 // 로거 (서비스가 아닌 유틸리티)
-export { type ILogger, ConsoleLogger, defaultLogger } from './core-services';
+export { logger, type ILogger, type Logger } from './core-services';
 
 // 서비스 관리 유틸리티
 // Note: Service key constants are not re-exported here to reduce direct usage pathways.
-
-// ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
