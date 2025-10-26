@@ -4,7 +4,6 @@ import { logger } from '../../../shared/logging/logger';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
 import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
-// ✅ Phase 150.3: Phase 150.2 모듈들 (Step 1-7 통합)
 import type { FocusState } from '../../../shared/state/focus/focus-state';
 import { INITIAL_FOCUS_STATE, createFocusState } from '../../../shared/state/focus/focus-state';
 import { createItemCache } from '../../../shared/state/focus/focus-cache';
@@ -53,7 +52,7 @@ export interface UseGalleryFocusTrackerReturn {
   handleItemBlur: (index: number) => void;
   /** 외부 강제 동기화 */
   forceSync: () => void;
-  /** ✅ Step 2: 수동 포커스 명시적 설정 (auto-focus 타이머 취소 포함) */
+  /** 수동 포커스 명시적 설정 */
   setManualFocus: (index: number | null) => void;
 }
 
@@ -88,32 +87,21 @@ export function useGalleryFocusTracker({
   const shouldAutoFocusAccessor = toAccessor(shouldAutoFocus);
   const autoFocusDelayAccessor = toAccessor(autoFocusDebounce);
 
-  // ✅ Phase 150.3 Step 1-2: FocusState Signal 도입
-  // manualFocusIndex + autoFocusIndex → 단일 focusState Signal로 통합
-  // source로 포커스 출처(auto/manual/external) 추적
   const [focusState, setFocusState] = createSignal<FocusState>(INITIAL_FOCUS_STATE);
 
-  // Backward compat: getter 헬퍼 (기존 코드 호환성)
+  // Backward compat: getter 헬퍼
   const manualFocusIndex = (): number | null =>
     focusState().source === 'manual' ? focusState().index : null;
   const autoFocusIndex = (): number | null =>
     focusState().source === 'auto' ? focusState().index : null;
 
-  // ✅ Phase 150.3 Step 2: ItemCache 도입
-  // itemElements + elementToIndex + entryCache → 단일 itemCache로 통합
   const itemCache = createItemCache();
 
   let observer: IntersectionObserver | null = null;
 
-  // ✅ Step 4: FocusTimerManager 인스턴스 생성
   const focusTimerManager = createFocusTimerManager();
 
-  // ✅ Step 5: FocusTracking Signal 생성
   const [focusTracking, setFocusTracking] = createSignal<FocusTracking>(INITIAL_FOCUS_TRACKING);
-  // ✅ Phase 21.1: debounced setAutoFocusIndex로 signal 업데이트 제한
-  // ✅ Phase 64 Step 3: 전역 setFocusedIndex도 함께 호출하여 버튼 네비게이션과 동기화
-  // ✅ Phase 77: setFocusedIndex 호출 시 'auto-focus' source 전달
-  // ✅ Phase 150.3: focusState 기반으로 리팩토링
   const debouncedSetAutoFocusIndex = createDebouncer<[number | null, { forceClear?: boolean }?]>(
     (index, options) => {
       const shouldForceClear = options?.forceClear ?? false;
@@ -138,13 +126,12 @@ export function useGalleryFocusTracker({
       }
 
       setFocusState(createFocusState(index, 'auto'));
-      setFocusedIndex(index, 'auto-focus'); // Phase 77: auto-focus source 전달
+      setFocusedIndex(index, 'auto-focus');
     },
     50
   );
 
-  // ✅ Phase 69.2: updateContainerFocusAttribute를 50ms debounce
-  // DOM 업데이트 빈도를 제한하여 렌더링 최적화
+  // Debouncer for updating container focus attribute
   const debouncedUpdateContainerFocusAttribute = createDebouncer<
     [number | null, { forceClear?: boolean }?]
   >((value, options) => {
@@ -159,15 +146,11 @@ export function useGalleryFocusTracker({
       return candidate !== null && !Number.isNaN(candidate);
     };
 
-    // ✅ Phase 68.1: 명시적 값이 주어진 경우 즉시 사용
-    // fallback은 value가 invalid한 경우에만 사용
     let finalValue: number | null = null;
 
     if (resolveCandidate(value)) {
-      // 명시적으로 전달된 유효한 값 사용
       finalValue = value;
     } else if (!shouldForceClear) {
-      // value가 invalid하고 forceClear가 아닌 경우 fallback 시도
       const fallbackCandidates: Array<number | null> = [
         autoFocusIndex(),
         manualFocusIndex(),
@@ -189,19 +172,16 @@ export function useGalleryFocusTracker({
     debouncedUpdateContainerFocusAttribute.execute(value, options);
   };
 
-  // ✅ Phase 69.2: scheduleSync를 100ms debounce하여 호출 빈도 제한
-  // 빠른 연속 호출(아이템 등록/해제)을 배칭하여 불필요한 recompute 방지
-  // ✅ Phase 83.3: 스크롤 중에는 큐에만 추가, settling 후 처리
-  // ✅ Phase 83.4: Boolean 플래그로 단순화 (timestamp/reason은 로깅용으로만 사용됨)
+  // Debouncer for scheduling focus sync
   const debouncedScheduleSync = createDebouncer<[]>(() => {
-    // 스크롤 중이면 큐에만 플래그 설정
+    // Skip recompute if scrolling; defer until settled
     if (isScrollingAccessor()) {
       const current = focusTracking();
       setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: true }));
       return;
     }
 
-    // Settling 상태이거나 스크롤 중이 아니면 즉시 처리
+    // Perform recompute when settled
     recomputeFocus();
     const current = focusTracking();
     setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: false }));
@@ -211,9 +191,7 @@ export function useGalleryFocusTracker({
     debouncedScheduleSync.execute();
   };
 
-  // ✅ Phase 83.3: settling 후 큐 처리
-  // ✅ Phase 83.4: Boolean 플래그로 단순화
-  // isScrolling이 false로 전환될 때 보류된 recompute 요청을 처리
+  // Process deferred recompute after scroll settles
   createEffect(() => {
     const scrolling = isScrollingAccessor();
     const current = focusTracking();
@@ -231,8 +209,7 @@ export function useGalleryFocusTracker({
   };
 
   const applyAutoFocus = (index: number, reason: string) => {
-    // ✅ Phase 69.2: lastAppliedIndex guard로 동일 인덱스 중복 방지
-    // 동일한 인덱스에 대해 이미 포커스가 적용되었다면 스킵
+    // Guard against duplicate focus application
     const current = focusTracking();
     if (current.lastAppliedIndex === index) {
       return;
@@ -305,8 +282,8 @@ export function useGalleryFocusTracker({
       focusTracking().lastAutoFocusedIndex === targetIndex
     ) {
       return;
-    } // ✅ Phase 74.6: 인덱스가 변경되면 lastAppliedIndex 리셋
-    // 다른 인덱스로의 autoFocus를 허용
+    }
+    // Reset lastAppliedIndex when target index changes
     const current = focusTracking();
     if (current.lastAppliedIndex !== null && current.lastAppliedIndex !== targetIndex) {
       setFocusTracking(updateFocusTracking(current, { lastAppliedIndex: null }));
@@ -330,7 +307,7 @@ export function useGalleryFocusTracker({
   };
 
   const handleEntries: IntersectionObserverCallback = entries => {
-    // ✅ Phase 21.1: untrack으로 반응성 체인 끊기
+    // Break reactivity chain to avoid signal dependency tracking issues
     untrack(() => {
       entries.forEach(entry => {
         itemCache.setEntry(entry.target as HTMLElement, entry);
@@ -387,8 +364,7 @@ export function useGalleryFocusTracker({
 
     if (candidates.length === 0) {
       if (itemCache.size === 0) {
-        // ✅ Phase 74.6: itemCache가 비어있을 때도 getCurrentIndex()를 autoFocusIndex로 설정
-        // 테스트나 초기 상태에서 IntersectionObserver entries가 없을 때 대응
+        // Use fallback when itemCache is empty (initial state or during tests)
         const fallbackIndex = getCurrentIndex();
         debouncedSetAutoFocusIndex.execute(fallbackIndex);
         updateContainerFocusAttribute(fallbackIndex);
@@ -447,8 +423,7 @@ export function useGalleryFocusTracker({
     evaluateAutoFocus('register');
   };
 
-  // ✅ Phase 69.2: handleItemFocus/Blur microtask 배칭
-  // 빠른 연속 포커스 변경을 microtask로 배칭하여 불필요한 업데이트 방지
+  // Batch focus/blur operations to prevent rapid state updates
   let pendingFocusIndex: number | null = null;
   let pendingBlurIndex: number | null = null;
   let focusBatchScheduled = false;
@@ -510,18 +485,15 @@ export function useGalleryFocusTracker({
 
   const forceSync = () => {
     recomputeFocus();
-    // ✅ Phase 74.6: forceSync는 즉시 적용을 위해 debouncer flush
     debouncedSetAutoFocusIndex.flush();
     debouncedUpdateContainerFocusAttribute.flush();
-    // Phase 74.6: flush 후 evaluateAutoFocus를 다음 microtask에서 호출하여
-    // autoFocusIndex가 업데이트된 상태에서 실행되도록 보장
+    // Ensure evaluateAutoFocus runs after state updates
     Promise.resolve().then(() => {
       evaluateAutoFocus('force');
     });
   };
 
-  // ✅ Step 2: 수동 포커스 명시적 설정
-  // auto-focus 타이머를 취소하고 focusState 업데이트
+  // Explicit manual focus setting (clears auto-focus timer)
   const setManualFocus = (index: number | null) => {
     clearAutoFocusTimer();
     setFocusState(createFocusState(index, 'manual'));
@@ -540,7 +512,7 @@ export function useGalleryFocusTracker({
     }
   };
 
-  // ✅ Phase 21.1: on()으로 명시적 의존성 지정 (evaluateAutoFocus는 직접 signal 읽지 않음)
+  // Track auto-focus and manual focus state with explicit dependencies
   createEffect(
     on(
       [shouldAutoFocusAccessor, manualFocusIndex, autoFocusIndex],
@@ -551,7 +523,7 @@ export function useGalleryFocusTracker({
     )
   );
 
-  // ✅ Phase 63: galleryIndexEvents 구독 - 명시적 네비게이션 시 즉시 동기화
+  // Subscribe to gallery navigation events for immediate focus sync
   createEffect(() => {
     const enabled = isEnabledAccessor();
 
@@ -560,7 +532,7 @@ export function useGalleryFocusTracker({
     }
 
     const unsubNavigate = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
-      // 버튼/클릭/키보드 네비게이션은 즉시 동기화
+      // Only sync focus on intentional navigation
       if (trigger !== 'button' && trigger !== 'click' && trigger !== 'keyboard') {
         return;
       }
@@ -570,22 +542,21 @@ export function useGalleryFocusTracker({
         trigger,
       });
 
-      // ✅ Step 1: 네비게이션 발생 시 pending auto-focus 타이머 즉시 취소
-      // 자동 포커스와 네비게이션이 동시에 실행되지 않도록 방지
+      // Cancel pending auto-focus timer to prevent conflicts
       clearAutoFocusTimer();
 
-      // focusState를 'auto' 소스로 즉시 업데이트
+      // Update focus state immediately
       const { batch: solidBatch } = getSolid();
       solidBatch(() => {
         setFocusState(createFocusState(index, 'auto'));
         updateContainerFocusAttribute(index);
       });
 
-      // 포커스 적용 (스크롤 완료 후)
+      // Apply focus after scroll completes
       const delay = autoFocusDelayAccessor();
       globalTimerManager.setTimeout(() => {
         applyAutoFocus(index, `navigation:${trigger}`);
-      }, delay + 100); // 스크롤 완료 대기
+      }, delay + 100);
     });
 
     onCleanup(() => {
@@ -593,13 +564,12 @@ export function useGalleryFocusTracker({
     });
   });
 
-  // ✅ Phase 21.1: currentIndex 동기화 effect - on()으로 필요한 의존성만 추적
-  // ✅ Phase 68.1: updateContainerFocusAttribute 제거 - 이벤트 핸들러가 처리
+  // Sync currentIndex with autoFocusIndex when they diverge
   createEffect(
     on(
       [getCurrentIndex, autoFocusIndex, manualFocusIndex],
       ([currentIdx, autoIdx, manualIdx]) => {
-        // 수동 포커스가 없고, autoFocusIndex가 currentIndex와 크게 차이나는 경우 동기화
+        // Resync if autoFocusIndex drifts too far from currentIndex
         if (manualIdx === null && autoIdx !== null && Math.abs(autoIdx - currentIdx) > 1) {
           logger.debug('useGalleryFocusTracker: syncing autoFocusIndex with currentIndex', {
             autoIdx,
@@ -607,16 +577,13 @@ export function useGalleryFocusTracker({
             diff: Math.abs(autoIdx - currentIdx),
           });
           debouncedSetAutoFocusIndex.execute(currentIdx);
-          // updateContainerFocusAttribute는 이벤트 핸들러에서 이미 처리됨
         }
       },
       { defer: true }
     )
   );
 
-  // ✅ Phase 68.1: Observer 생명주기 최적화
-  // Effect는 enabled/container 변경 시에만 실행되도록 명시적 의존성 지정
-  // scheduleSync() 제거로 순환 의존성 방지
+  // Manage IntersectionObserver lifecycle with explicit dependencies
   createEffect(
     on([isEnabledAccessor, containerAccessor], ([enabled, containerElement]) => {
       cleanupObserver();
@@ -649,10 +616,6 @@ export function useGalleryFocusTracker({
         rootMargin,
       });
 
-      // ✅ Phase 68.1: scheduleSync() 제거 - observer 초기화와 focus 계산 분리
-      // 초기 동기화는 불필요 - IntersectionObserver가 자동으로 entries를 발생시키고
-      // galleryIndexEvents 구독이 이벤트 기반 동기화를 처리함
-
       onCleanup(() => {
         cleanupObserver();
         clearAutoFocusTimer();
@@ -682,6 +645,6 @@ export function useGalleryFocusTracker({
     handleItemFocus,
     handleItemBlur,
     forceSync,
-    setManualFocus, // ✅ Step 2: 수동 포커스 명시적 설정 export
+    setManualFocus,
   };
 }

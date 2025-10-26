@@ -138,7 +138,11 @@ export interface SettingValidationResult {
 }
 
 /**
- * 기본 설정 값들
+ * @note DEFAULT_SETTINGS는 @/constants에서 직접 임포트하세요.
+ * 이 타입 파일은 순수 타입 정의만 담담합니다.
+ * @example
+ * ```typescript
+ * import { DEFAULT_SETTINGS } from '@/constants';
+ * import type { AppSettings } from '@/features/settings/types/settings.types';
+ * ```
  */
-// Re-export from constants for consistency
-export { DEFAULT_SETTINGS } from '@/constants';

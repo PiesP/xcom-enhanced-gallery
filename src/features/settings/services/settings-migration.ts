@@ -4,8 +4,9 @@
  * and applies rename/transform steps between versions. Keep it pure for easy unit testing.
  */
 
+import { isRecord } from '@shared/utils/type-guards';
 import type { AppSettings } from '../types/settings.types';
-import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
+import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
 
 type Migration = (input: AppSettings) => AppSettings;
 
@@ -16,23 +17,13 @@ const migrations: Partial<Record<string, Migration>> = {
 };
 
 /**
- * Type Guard: Record<string, unknown> 타입 검증
- * Phase 141.2: 타입 안전성 개선
- */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
  * Recursively prune unknown fields from input using the provided template as the allowed shape.
  * Only keys present in the template are retained; nested objects are pruned likewise.
- * Phase 141.2: 타입 가드 활용으로 타입 안전성 개선
  */
 function pruneWithTemplate<T extends Record<string, unknown>>(
   input: unknown,
   template: T
 ): Partial<T> {
-  // Phase 141.2: Type Guard로 타입 검증
   if (!isRecord(input)) return {} as Partial<T>;
 
   const out: Record<string, unknown> = {};
@@ -42,7 +33,6 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
     const inVal = input[key as string];
     if (inVal === undefined) continue;
 
-    // Phase 141.2: 중첩 객체는 재귀적으로 타입 가드 적용
     if (isRecord(tplVal) && !Array.isArray(tplVal)) {
       out[key as string] = pruneWithTemplate(inVal, tplVal);
     } else {
@@ -59,36 +49,23 @@ function pruneWithTemplate<T extends Record<string, unknown>>(
 function fillWithDefaults(settings: AppSettings): AppSettings {
   const pruned = pruneWithTemplate(settings, defaultSettings) as Partial<AppSettings>;
 
-  const gallery = {
-    ...defaultSettings.gallery,
-    ...(pruned.gallery ?? {}),
-  };
-  const download = {
-    ...defaultSettings.download,
-    ...(pruned.download ?? {}),
-  };
-  const tokens = {
-    ...defaultSettings.tokens,
-    ...(pruned.tokens ?? {}),
-  };
-  const performance = {
-    ...defaultSettings.performance,
-    ...(pruned.performance ?? {}),
-  };
-  const accessibility = {
-    ...defaultSettings.accessibility,
-    ...(pruned.accessibility ?? {}),
-  };
+  // 카테고리별 기본값 병합
+  const categories = {
+    gallery: defaultSettings.gallery,
+    download: defaultSettings.download,
+    tokens: defaultSettings.tokens,
+    performance: defaultSettings.performance,
+    accessibility: defaultSettings.accessibility,
+  } as const;
+
+  const merged: Record<string, unknown> = { ...defaultSettings, ...pruned };
+  for (const [key, defaults] of Object.entries(categories)) {
+    merged[key] = { ...defaults, ...(pruned[key as keyof typeof categories] ?? {}) };
+  }
 
   return {
-    ...defaultSettings,
-    ...pruned,
-    gallery,
-    download,
-    tokens,
-    performance,
-    accessibility,
-    version: defaultSettings.version, // always bump to latest
+    ...merged,
+    version: defaultSettings.version,
     lastModified: Date.now(),
   } as AppSettings;
 }

@@ -1,7 +1,13 @@
 /**
- * Gallery component styles - Modern CSS Integration
+ * Gallery component styles - Modern CSS Integration (UNUSED - TEST TARGET)
  * CSS Modules implementation for X.com Enhanced Gallery
  * @version 3.0.0 - Phase 2: 최신 CSS 기능 완전 통합
+ * @status ⚠️ WIP: 이 파일은 현재 코드에서 사용되지 않습니다.
+ *         테스트 정책 검증 대상으로만 활용됩니다.
+ *         - test/unit/styles/gallery-hardcoding.test.ts (Phase 37)
+ *         - test/refactoring/cross-component-consistency.test.ts
+ *         향후 VerticalGalleryView CSS Modules 마이그레이션 시 사용 예정이거나,
+ *         또는 불필요시 삭제할 파일입니다.
  *
  * @description
  * X.com Enhanced Gallery의 갤러리 뷰어 컴포넌트를 위한 현대적 스타일 정의입니다.

@@ -1,10 +1,14 @@
 /**
  * @fileoverview Twitter Bearer 토큰 동적 추출 서비스
  * @description 실행 시점에 Twitter 페이지에서 Bearer 토큰을 동적으로 추출
+ *
+ * @location src/shared/services/token-extraction/
+ * @reason 토큰 추출은 여러 기능에서 공유되는 유틸리티로, shared/services로 이동
+ *         원래 위치: src/features/settings/services/ (Phase 192 리팩토링)
  */
 
-import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
+import { logger } from '../../logging/logger';
+import { globalTimerManager } from '../../utils/timer-management';
 
 /**
  * 토큰 추출 결과

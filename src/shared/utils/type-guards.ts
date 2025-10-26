@@ -166,3 +166,24 @@ export function createAddEventListenerOptions(options?: {
 }): AddEventListenerOptions {
   return (options || {}) as AddEventListenerOptions;
 }
+
+/**
+ * Record로 안전하게 변환 (Type Guard와 함께 사용)
+ * @description 타입 단언 대신 사용하여 타입 안전성 확보
+ * @param value - 변환할 값
+ * @returns Record<string, unknown>으로 변환된 값
+ * @throws Error if value is not a valid Record
+ * @example
+ * ```typescript
+ * if (isRecord(value)) {
+ *   const record = toRecord(value); // 타입 안전
+ * }
+ * ```
+ * @version 1.0.0 - Phase 192: 타입 안전성 강화
+ */
+export function toRecord(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) {
+    throw new Error('Value is not a valid Record<string, unknown>');
+  }
+  return value;
+}

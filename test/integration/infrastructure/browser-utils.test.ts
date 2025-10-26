@@ -5,6 +5,8 @@
  * - Mock 객체 단순화 및 일관성 확보
  * - JSDOM 환경에서 안전하고 효율적인 테스트
  * - 불필요한 edge cases 정리
+ *
+ * Phase 194: import 경로 유지 (utils/browser-utils.ts 계속 사용, 이후 완전 마이그레이션 예정)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

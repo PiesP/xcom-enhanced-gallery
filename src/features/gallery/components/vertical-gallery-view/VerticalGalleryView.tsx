@@ -138,7 +138,6 @@ function VerticalGalleryViewCore({
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
 
   const hideTimeoutRef = { current: null as number | null };
-  const forceVisibleItems = new Set<number>();
 
   const getInitialFitMode = (): ImageFitMode => {
     const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
@@ -488,7 +487,7 @@ function VerticalGalleryViewCore({
                 index={actualIndex}
                 isActive={actualIndex === currentIndex()}
                 isFocused={actualIndex === focusedIndex()}
-                forceVisible={forceVisibleItems.has(actualIndex) || forcePreload}
+                forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
                 onMediaLoad={handleMediaLoad}

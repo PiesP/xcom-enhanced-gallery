@@ -21,22 +21,22 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     logger.debug('[features] Registering feature services');
 
     // Settings Manager - Features 레이어
-    const { getSettingsService } = await import('@features/settings/services/settings-factory');
-    const settingsService = await getSettingsService();
+    const { SettingsService } = await import('@features/settings/services/settings-service');
+    const settingsService = new SettingsService();
+    await settingsService.initialize();
     registerSettingsManager(settingsService);
 
     // DOMCache 초기화 - Shared 레이어의 자율적 설정 구독
     try {
       const { globalDOMCache } = await import('@shared/dom/dom-cache');
-      await globalDOMCache.initializeDOMCache(settingsService);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await globalDOMCache.initializeDOMCache(settingsService as any);
     } catch {
       // DOMCache가 없거나 초기화 전이면 무시
     }
 
-    // Twitter Token Extractor - Features 레이어
-    const { TwitterTokenExtractor } = await import(
-      '@features/settings/services/twitter-token-extractor'
-    );
+    // Twitter Token Extractor - Shared 레이어로 이동 (Phase 192)
+    const { TwitterTokenExtractor } = await import('@shared/services/token-extraction');
     registerTwitterTokenExtractor(new TwitterTokenExtractor());
 
     logger.debug('[features] ✅ Feature services registered');

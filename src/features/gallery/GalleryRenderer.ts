@@ -1,11 +1,11 @@
 /**
  * @fileoverview Gallery Renderer
- * @version 2.0.0 - Clean Architecture 적용
+ * @version 3.0.0 - Simplified architecture
  *
- * 단일 책임 원칙에 따른 갤러리 렌더러
- * - 렌더링만 담당
- * - 상태 관리는 signals에 위임
- * - 간결한 생명주기 관리
+ * 갤러리 렌더러 - 렌더링 및 생명주기만 담당
+ * - Solid.js 컴포넌트 렌더링
+ * - DOM 생명주기 관리
+ * - 상태 변경은 signal 구독으로 처리
  */
 
 import type {
@@ -14,7 +14,6 @@ import type {
 } from '@shared/interfaces/gallery.interfaces';
 import {
   closeGallery,
-  galleryState,
   gallerySignals,
   setError,
   setLoading,
@@ -32,34 +31,11 @@ import { logger } from '../../shared/logging/logger';
 import { getSolid } from '../../shared/external/vendors';
 
 /**
- * 갤러리 정리 관리자
- */
-class GalleryCleanupManager {
-  private cleanupTasks: (() => void)[] = [];
-
-  addTask(task: () => void): void {
-    this.cleanupTasks.push(task);
-  }
-
-  executeAll(): void {
-    this.cleanupTasks.forEach(task => {
-      try {
-        task();
-      } catch (error) {
-        logger.warn('[CleanupManager] 정리 작업 실패:', error);
-      }
-    });
-    this.cleanupTasks = [];
-  }
-}
-
-/**
- * 간소화된 갤러리 렌더러
+ * 갤러리 렌더러 - DOM 렌더링 및 생명주기 관리
  */
 export class GalleryRenderer implements GalleryRendererInterface {
   private container: HTMLDivElement | null = null;
   private isRenderingFlag = false;
-  private readonly cleanupManager = new GalleryCleanupManager();
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
@@ -69,80 +45,73 @@ export class GalleryRenderer implements GalleryRendererInterface {
   }
 
   /**
-   * 갤러리 닫기 콜백 설정 (인터페이스 구현)
+   * 갤러리 닫기 콜백 설정
    */
   setOnCloseCallback(onClose: () => void): void {
     this.onCloseCallback = onClose;
   }
 
   /**
-   * 상태 구독 설정
+   * 상태 구독 설정 - signal 변경 감지
    */
   private setupStateSubscription(): void {
-    this.stateUnsubscribe = galleryState.subscribe(state => {
-      if (state.isOpen && !this.container) {
-        // 갤러리가 열렸고 컨테이너가 없을 때만 최초 렌더링
+    // gallerySignals.isOpen 변경 감지하여 자동 렌더링/정리
+    this.stateUnsubscribe = gallerySignals.isOpen.subscribe(isOpen => {
+      if (isOpen && !this.container) {
         this.renderGallery();
-      } else if (!state.isOpen && this.container) {
-        // 갤러리가 닫혔을 때만 정리
+      } else if (!isOpen && this.container) {
         this.cleanupGallery();
       }
-      // 이미 렌더링된 상태에서는 컴포넌트가 signal을 직접 구독하므로 재렌더링하지 않음
     });
   }
 
   /**
-   * 갤러리 렌더링 - 한 번만 실행
+   * 갤러리 렌더링 - 처음 한 번만 실행
    */
   private renderGallery(): void {
     if (this.isRenderingFlag || this.container) {
-      // 이미 렌더링 중이거나 컨테이너가 존재하면 중복 렌더링 방지
       return;
     }
 
-    // Phase 21.5: Fine-grained signals 사용
     const isOpen = gallerySignals.isOpen.value;
     const mediaItems = gallerySignals.mediaItems.value;
-    if (!isOpen || mediaItems.length === 0) return;
+    if (!isOpen || mediaItems.length === 0) {
+      return;
+    }
 
     this.isRenderingFlag = true;
-    logger.info('[GalleryRenderer] 최초 렌더링 시작 - Signal 기반 반응형 컴포넌트');
+    logger.info('[GalleryRenderer] 렌더링 시작');
 
     try {
       this.createContainer();
       this.renderComponent();
-      logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료 - 이후 Signal로 자동 업데이트');
+      logger.debug('[GalleryRenderer] 컴포넌트 렌더링 완료');
     } catch (error) {
       logger.error('[GalleryRenderer] 렌더링 실패:', error);
-      setError('갤러리 렌더링에 실패했습니다.');
+      setError('갤러리 렌더링 실패');
     } finally {
       this.isRenderingFlag = false;
     }
   }
 
   /**
-   * 컨테이너 생성 - 갤러리 컨테이너 생성
+   * 컨테이너 생성
    */
   private createContainer(): void {
     this.cleanupContainer();
-
     this.container = document.createElement('div');
     this.container.className = 'xeg-gallery-renderer';
     this.container.setAttribute('data-renderer', 'gallery');
-
     document.body.appendChild(this.container);
-
-    // 정리 작업 등록
-    this.cleanupManager.addTask(() => {
-      // 컨테이너 정리는 cleanupContainer에서 처리
-    });
   }
 
   /**
-   * 컴포넌트 렌더링 - 갤러리 컴포넌트 렌더링
+   * 컴포넌트 렌더링
    */
   private renderComponent(): void {
-    if (!this.container) return;
+    if (!this.container) {
+      return;
+    }
 
     const { render, createComponent } = getSolid();
     const self = this;
@@ -150,10 +119,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       closeGallery();
       self.onCloseCallback?.();
     };
-    const handleNavigate = (direction: 'previous' | 'next') => {
-      self.handleNavigation(direction);
-    };
-    const handleDownload = (type: 'current' | 'all') => self.handleDownload(type);
 
     const elementFactory = () =>
       createComponent(GalleryContainer, {
@@ -164,10 +129,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
             get children() {
               return createComponent(VerticalGalleryView, {
                 onClose: handleClose,
-                onPrevious: () => handleNavigate('previous'),
-                onNext: () => handleNavigate('next'),
-                onDownloadCurrent: () => handleDownload('current'),
-                onDownloadAll: () => handleDownload('all'),
+                onPrevious: () => navigatePrevious('button'),
+                onNext: () => navigateNext('button'),
+                onDownloadCurrent: () => self.handleDownload('current'),
+                onDownloadAll: () => self.handleDownload('all'),
                 className: 'xeg-vertical-gallery',
               });
             },
@@ -176,18 +141,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       });
 
     this.disposeApp = render(elementFactory, this.container);
-    logger.info('[GalleryRenderer] 갤러리 컴포넌트 렌더링 완료');
-  }
-
-  /**
-   * 네비게이션 처리
-   */
-  private handleNavigation(direction: 'previous' | 'next'): void {
-    if (direction === 'previous') {
-      navigatePrevious('button');
-    } else {
-      navigateNext('button');
-    }
   }
 
   /**
@@ -225,13 +178,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * 갤러리 정리
    */
   private cleanupGallery(): void {
-    logger.info('[GalleryRenderer] 정리 시작');
-
+    logger.debug('[GalleryRenderer] 정리 시작');
     this.isRenderingFlag = false;
     this.cleanupContainer();
-    this.cleanupManager.executeAll();
-
-    logger.debug('[GalleryRenderer] 정리 완료');
   }
 
   /**
@@ -242,7 +191,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       try {
         this.disposeApp?.();
         this.disposeApp = null;
-
         if (document.contains(this.container)) {
           this.container.remove();
         }
@@ -262,14 +210,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
     renderOptions?: GalleryRenderOptions
   ): Promise<void> {
     openGallery(mediaItems, renderOptions?.startIndex ?? 0);
-
     if (renderOptions?.viewMode) {
-      // ViewMode를 setViewMode에서 허용하는 타입으로 변환
       const mode = renderOptions.viewMode === 'horizontal' ? 'horizontal' : 'vertical';
       setViewMode(mode);
     }
-
-    logger.info(`[GalleryRenderer] ${mediaItems.length}개 미디어로 갤러리 렌더링`);
   }
 
   close(): void {
@@ -282,11 +226,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
   destroy(): void {
     logger.info('[GalleryRenderer] 완전 정리 시작');
-
     this.stateUnsubscribe?.();
     this.cleanupGallery();
-
-    logger.info('[GalleryRenderer] 완전 정리 완료');
+    logger.debug('[GalleryRenderer] 완전 정리 완료');
   }
 }
 

@@ -55,6 +55,10 @@ export type { ToastOptions } from './unified-toast-manager';
 // 5. 브라우저 서비스
 export { BrowserService } from '@shared/browser';
 
+// 6. 토큰 추출 서비스 (Phase 192.4: shared/services로 이동)
+export { TwitterTokenExtractor } from './token-extraction';
+export type { TokenExtractionResult, TokenValidationResult } from './token-extraction';
+
 // 6. 갤러리 서비스 - GalleryService 제거됨
 // export { GalleryService } from './gallery';
 // export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';

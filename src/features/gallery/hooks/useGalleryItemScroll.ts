@@ -50,7 +50,7 @@ export function useGalleryItemScroll(
   totalItems: MaybeAccessor<number>,
   options: UseGalleryItemScrollOptions = {}
 ): UseGalleryItemScrollReturn {
-  // Phase 141.3: toAccessor 헬퍼로 타입 단언 제거
+  // Convert containerRef to accessor for consistent handling
   const containerAccessor: Accessor<HTMLElement | null> =
     typeof containerRef === 'function' ? containerRef : () => containerRef.current;
 
@@ -65,7 +65,7 @@ export function useGalleryItemScroll(
   const currentIndexAccessor = toAccessor(currentIndex);
   const totalItemsAccessor = toAccessor(totalItems);
 
-  // Phase 159b: ItemScrollStateSignal로 상태 관리 정규화
+  // Manage scroll state (pendingIndex, lastScrolledIndex, auto-scroll flag, etc.)
   const stateSignal = createItemScrollStateSignal();
   const getState = stateSignal.getState;
   const setState = stateSignal.setState;
@@ -88,7 +88,7 @@ export function useGalleryItemScroll(
     }
   };
 
-  // Phase 28: 사용자 스크롤 타임아웃 정리
+  // Clear user scroll timeout
   const clearUserScrollTimeout = () => {
     const state = getState();
     if (state.userScrollTimeoutId !== null) {
@@ -97,10 +97,10 @@ export function useGalleryItemScroll(
     }
   };
 
-  // Phase 28: 사용자 스크롤 감지 핸들러
+  // Detect user scroll activity
   const handleUserScroll = () => {
     const state = getState();
-    // 자동 스크롤 중에 발생한 스크롤 이벤트는 무시
+    // Ignore scroll events during auto-scroll
     if (state.isAutoScrolling) {
       return;
     }
@@ -110,11 +110,11 @@ export function useGalleryItemScroll(
       timestamp: Date.now(),
     });
 
-    // 기존 타이머 정리
+    // Clean up existing timers
     clearUserScrollTimeout();
     clearScrollTimeout();
 
-    // 500ms 후 사용자 스크롤 플래그 해제
+    // Clear user scroll flag after 500ms
     const timeoutId = globalTimerManager.setTimeout(() => {
       updateStateSignal(setState, { userScrollDetected: false });
       logger.debug('useGalleryItemScroll: 사용자 스크롤 종료, 자동 스크롤 재개', {
@@ -161,7 +161,7 @@ export function useGalleryItemScroll(
     }
 
     try {
-      // Phase 28: 자동 스크롤 플래그 설정
+      // Set auto-scroll flag to ignore user scroll events
       updateStateSignal(setState, { isAutoScrolling: true });
 
       const itemsRoot = container.querySelector(
@@ -223,8 +223,7 @@ export function useGalleryItemScroll(
         });
       }
 
-      // Phase 28: 자동 스크롤 완료 후 플래그 해제
-      // 다음 틱에서 해제하여 스크롤 이벤트가 완전히 처리되도록 함
+      // Clear auto-scroll flag on next tick to allow scroll event processing
       globalTimerManager.setTimeout(() => {
         updateStateSignal(setState, { isAutoScrolling: false });
       }, 50);
@@ -232,14 +231,12 @@ export function useGalleryItemScroll(
       logger.error('useGalleryItemScroll: 스크롤 실패', { index, error });
       updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
 
-      // Phase 145.1: Enhanced retry logic (1x → 3x)
-      // Handles DOM element not found due to rendering timing mismatch
+      // Exponential backoff retry: 50ms, 100ms, 150ms
       if (retryCount < 3) {
         retryCount += 1;
-        // 지수 백오프: 50ms, 100ms, 150ms 점진적 증가
         const delayMs = 50 * retryCount;
 
-        logger.debug('useGalleryItemScroll: retry scheduled (Phase 145.1)', {
+        logger.debug('useGalleryItemScroll: retry scheduled', {
           index,
           retryCount,
           delayMs,
@@ -252,19 +249,18 @@ export function useGalleryItemScroll(
         return;
       }
 
-      // 최종 수단: 요소 생성 대기 (폴링 기반 감시)
-      // 최악의 경우 느린 렌더링 환경 대응 (3G 등)
-      logger.warn('useGalleryItemScroll: 최종 폴링 시작 (Phase 145.1)', {
+      // Polling fallback: wait for element to render (slow network, etc.)
+      logger.warn('useGalleryItemScroll: starting polling fallback', {
         index,
         timestamp: Date.now(),
       });
 
       let pollingAttempts = 0;
-      const maxPollingAttempts = 20; // ~1초 (50ms * 20)
+      const maxPollingAttempts = 20; // ~1 second (50ms * 20)
 
       const pollForElement = () => {
         if (pollingAttempts >= maxPollingAttempts) {
-          logger.warn('useGalleryItemScroll: 폴링 타임아웃, 포기', {
+          logger.warn('useGalleryItemScroll: polling timeout exceeded', {
             index,
             pollingAttempts,
             timestamp: Date.now(),
@@ -291,8 +287,8 @@ export function useGalleryItemScroll(
 
         const targetElement = itemsRoot.children[index] as HTMLElement | undefined;
         if (targetElement) {
-          // ✅ 찾음! 스크롤 진행
-          logger.debug('useGalleryItemScroll: 폴링 성공, 스크롤 진행 (Phase 145.1)', {
+          // Element found, proceed with scroll
+          logger.debug('useGalleryItemScroll: element found, proceeding with scroll', {
             index,
             pollingAttempts,
             timestamp: Date.now(),
@@ -393,9 +389,9 @@ export function useGalleryItemScroll(
       return;
     }
 
-    // Phase 28: 사용자 스크롤 중에는 자동 스크롤 차단
+    // Suppress auto-scroll if user is actively scrolling
     if (state.userScrollDetected) {
-      logger.debug('useGalleryItemScroll: 사용자 스크롤 중 - 자동 스크롤 차단', {
+      logger.debug('useGalleryItemScroll: user scroll detected - suppressing auto-scroll', {
         currentIndex: index,
         userScrollDetected: state.userScrollDetected,
       });
@@ -405,11 +401,11 @@ export function useGalleryItemScroll(
     scheduleScrollToIndex(index);
   };
 
-  // Phase 159b: 인덱스 폴링 타이머 시작 및 Signal에 저장
+  // Start polling index changes and store watcher ID
   const indexWatcherId = globalTimerManager.setInterval(checkIndexChanges, INDEX_WATCH_INTERVAL);
   updateStateSignal(setState, { indexWatcherId });
 
-  // Phase 28: 컨테이너 스크롤 이벤트 리스너 등록 (createEffect로 안전하게)
+  // Listen for container scroll events
   createEffect(() => {
     const container = containerAccessor();
     if (!container) {

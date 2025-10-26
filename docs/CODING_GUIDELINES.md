@@ -283,6 +283,148 @@ oklch(0.5 0 0)    /* 중간 회색 */
 
 ---
 
+## 🌐 Browser Utilities 사용 가이드 (Phase 194)
+
+### 개요
+
+프로젝트는 브라우저 글로벌 객체 (Window, Location, Navigator 등)에 대한 타입
+안전한 접근을 제공합니다. 서버사이드 환경, 테스트 환경에서도 안전하게 작동하도록
+설계되었습니다.
+
+### 계층 분리
+
+- **`@shared/browser`**: DOM/CSS 관리 서비스 (BrowserService)
+  - CSS 주입/제거, 파일 다운로드, 페이지 가시성 확인
+- **`@shared/utils/browser`**: 타입 안전 글로벌 접근 (17개 유틸리티)
+  - 브라우저 환경 체크, 안전한 Window/Location/Navigator 접근
+
+### 사용 예제
+
+#### 환경 체크
+
+```typescript
+// ✅ 브라우저 환경 여부 확인 (SSR, Test 안전)
+import { isBrowserEnvironment, isTwitterSite } from '@shared/utils/browser';
+
+if (isBrowserEnvironment()) {
+  const isTwitter = isTwitterSite();
+  if (isTwitter) {
+    // Twitter/X.com 환경에서만 실행
+    setupGallery();
+  }
+}
+```
+
+#### 안전한 글로벌 접근
+
+```typescript
+// ✅ 안전한 Window 접근 (null-safe)
+import { safeWindow, safeLocation, safeNavigator } from '@shared/utils/browser';
+
+const win = safeWindow();
+if (win) {
+  const url = win.location.href;
+  const viewport = win.innerWidth;
+}
+
+// ✅ Location 정보 추출
+const info = getCurrentUrlInfo();
+// { href: '...', pathname: '...', hostname: '...', search: '...' }
+
+// ✅ 네비게이터 정보
+const browserInfo = getBrowserInfo();
+// { name: 'Chrome', version: '..', isChrome: true, ... }
+```
+
+#### 미디어 쿼리 & 접근성
+
+```typescript
+// ✅ 시스템 설정 감지
+import {
+  isDarkMode,
+  prefersReducedMotion,
+  matchesMediaQuery,
+} from '@shared/utils/browser';
+
+const darkMode = isDarkMode(); // prefers-color-scheme: dark
+const reduceMotion = prefersReducedMotion(); // prefers-reduced-motion: reduce
+const tablet = matchesMediaQuery('(max-width: 768px)');
+```
+
+#### 뷰포트 & 타이머
+
+```typescript
+// ✅ 뷰포트 크기 (레이아웃 계산용)
+import { getViewportSize, getDevicePixelRatio } from '@shared/utils/browser';
+
+const { width, height } = getViewportSize();
+const dpr = getDevicePixelRatio(); // e.g., 2 on Retina
+
+// ✅ 안전한 타이머 (메모리 관리 연동)
+import { safeSetTimeout, safeClearTimeout } from '@shared/utils/browser';
+
+const timerId = safeSetTimeout(() => {
+  console.log('Delayed action');
+}, 1000);
+
+// 나중에 정리
+safeClearTimeout(timerId);
+```
+
+#### DOM/CSS 관리 (BrowserService)
+
+```typescript
+// ✅ CSS 주입/제거
+import { BrowserService } from '@shared/browser';
+
+const service = new BrowserService();
+
+// CSS 주입
+service.injectCSS(
+  'my-styles',
+  `
+  .my-class {
+    color: var(--xeg-color-primary);
+  }
+`
+);
+
+// 페이지 가시성 확인
+if (service.isPageVisible()) {
+  // 페이지가 활성 상태
+}
+
+// 정리 (언마운트 시)
+service.cleanup();
+```
+
+### 주의사항
+
+- ❌ 직접 `window` 접근 금지 → `safeWindow()` 사용
+- ❌ `location.href` 하드코딩 금지 → `getCurrentUrlInfo()` 또는 `safeLocation()`
+  사용
+- ❌ 타이머 직접 생성 금지 → `safeSetTimeout()`/`safeClearTimeout()` 사용
+- ✅ 타입 안전성 확보 (모든 함수 null-safe)
+- ✅ 테스트 친화적 (Mock 가능)
+- ✅ 서버사이드 안전 (Node.js 환경에서도 작동)
+
+### 호환성 경로
+
+레거시 코드에서 이전 경로를 사용하는 경우:
+
+```typescript
+// ⚠️ 이전 경로 (계속 작동하지만 권장 X)
+import { isTwitterSite } from '@shared/browser/utils/browser-utils';
+
+// ✅ 권장 새 경로
+import { isTwitterSite } from '@shared/utils/browser';
+```
+
+원본 경로는 재내보내기로 유지되므로 기존 코드는 영향 없습니다 (점진적
+마이그레이션 가능).
+
+---
+
 ## 📂 스타일 파일 구조
 
 프로젝트의 CSS 파일은 계층별로 정리되어 있습니다.
@@ -664,6 +806,72 @@ git commit -m "fix: resolve memory leak in media loader"
 - [ ] 테스트 추가/수정 (TDD)
 - [ ] 린트/포맷 통과
 - [ ] 빌드 성공
+
+---
+
+## 📌 사례 연구: Gallery Hooks 정책 적용
+
+### 배경
+
+`src/features/gallery/hooks/` 디렉터리는 Solid.js 반응성을 활용한 갤러리
+스크롤/포커스 관리 훅 세트입니다. 2025년 초반 개발 단계에서 누적된 Phase 주석을
+정리하여 현재 코드 품질 정책을 적용하는 사례입니다.
+
+### 적용 과정 (Phase 19A)
+
+**전**:
+
+- Phase 주석 15+ 개 (Phase 150.3, 21.1, 64 등) → 혼란스러운 코드 유지보수성
+- 한글/영문 섞인 주석 → 일관성 부족
+- 실제 동작 설명 주석 부재 → 신규 기여자 온보딩 어려움
+
+**정책 적용**:
+
+1. **Phase 주석 제거**: 개발 역사 기록은 Git history에 남김
+
+```typescript
+// ❌ 제거 대상
+// Phase 150.3: 포커스 추적 중단 검사
+
+// ✅ 교체됨
+// Abort focus tracking if another tracking is already in progress
+```
+
+1. **주석 영문화**: 팀 협업 및 코드 일관성
+
+```typescript
+// ❌ 혼합 (한글 Phase + 영문 코드)
+// Phase 21.1: 폴링 재시도 메커니즘
+
+// ✅ 통일
+// Retry mechanism with exponential backoff (50ms, 100ms, 150ms)
+```
+
+1. **기능 설명 강화**: 코드 의도 명확화
+
+- 왜 이 로직이 필요한가?
+- 언제 실패할 수 있는가?
+- 어떤 제약사항이 있는가?
+
+### 결과
+
+| 파일                      | 전    | 후    | 변화 | 상태    |
+| ------------------------- | ----- | ----- | ---- | ------- |
+| useGalleryFocusTracker.ts | 688줄 | 680줄 | -8줄 | ✅ 완료 |
+| useGalleryItemScroll.ts   | 442줄 | 438줄 | -4줄 | ✅ 완료 |
+| useGalleryScroll.ts       | 259줄 | 259줄 | -    | ✅ 양호 |
+
+**검증**:
+
+- ✅ `npm run typecheck`: 0 errors
+- ✅ `npm run lint:fix`: 0 warnings
+- ✅ `npm run test:smoke`: 9/9 passing
+
+### 교훈
+
+1. **정기적 정리**: Phase 주석은 개발 임시 마크로, 최종 배포 전 정리 필수
+2. **주석 표준화**: 팀 규모 확대 시 일관된 주석 정책이 중요
+3. **Git History**: 상세 개발 기록은 커밋 메시지에 남겨 코드는 간결 유지
 
 ---
 

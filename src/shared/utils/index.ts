@@ -93,6 +93,27 @@ export {
 // === DOM 배처 (2개) ===
 export { DOMBatcher, globalDOMBatcher } from './dom/index';
 
+// === 브라우저 환경 안전 접근 (11개) - Phase 194: 추가 ===
+export {
+  isBrowserEnvironment,
+  safeWindow,
+  safeLocation,
+  safeNavigator,
+  isTwitterSite,
+  getCurrentUrlInfo,
+  setScrollPosition,
+  safeSetTimeout,
+  safeClearTimeout,
+  getViewportSize,
+  getDevicePixelRatio,
+  matchesMediaQuery,
+  isDarkMode,
+  prefersReducedMotion,
+  getBrowserInfo,
+  isExtensionContext,
+  isExtensionEnvironment,
+} from './browser';
+
 // === 핵심 타입 (총 44개 export) ===
 export type { DOMUpdate as DOMUpdateTask } from './dom/index';
 export type { StandardError, ErrorContext, ErrorFactoryContext } from './error-handling';

@@ -1,6 +1,6 @@
 # 🏗️ 아키텍처 개요 (xcom-enhanced-gallery)
 
-> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-25
+> Solid.js 기반 Userscript의 3계층 구조와 의존성 경계 최종 업데이트: 2025-10-26
 > 코딩 규칙/스타일/토큰/테스트 정책은 `docs/CODING_GUIDELINES.md`를 단일
 > 기준으로 참조하세요.
 
@@ -8,12 +8,14 @@
 구조와 계층 간 경계를 설명합니다. 구현 규칙/토큰/스타일은
 `docs/CODING_GUIDELINES.md`를 참고하세요.
 
-## 프로젝트 현황 (2025-10-25)
+## 프로젝트 현황 (2025-10-26)
 
 - **빌드**: prod 339.55 KB / 420 KB (80.45 KB 여유) ✅
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
+- **최근 개선**: Phase 191 Gallery 레이어 개선 완료 (GalleryApp 371→264줄,
+  GalleryRenderer 295→178줄)
 
 ## 계층 구조와 단방향 의존
 
@@ -28,8 +30,46 @@
 ## 디렉터리 지도(요약)
 
 - `src/features/*`: UI/도메인 기능, 신호 구독과 사용자 인터랙션 처리
-  - `gallery/`: 메인 갤러리 UI, 키보드 네비게이션, 수직 스크롤
-  - `settings/`: 설정 UI, 스토리지 어댑터, 마이그레이션
+  - `gallery/`: 갤러리 UI 시스템 - 렌더러 + 조율기 + 컴포넌트 아키텍처
+    - **GalleryApp** (264줄): 갤러리 앱 조율기 - 초기화, 이벤트 연결, 생명주기
+      관리
+      - 책임: 초기화 오케스트레이션, 이벤트 핸들러 등록, 미디어 서비스 지연
+        초기화
+      - 상태 관리는 shared/state 신호에 위임
+    - **GalleryRenderer** (178줄): 갤러리 렌더러 - DOM 렌더링 및 생명주기
+      - 책임: Solid.js 컴포넌트 렌더링, signal 구독으로 자동 업데이트, 컨테이너
+        관리
+      - Signal 기반 반응형 아키텍처 (gallerySignals.isOpen 구독)
+    - `components/`:
+      - **VerticalGalleryView** (517줄): 메인 갤러리 뷰 컴포넌트
+      - **VerticalImageItem** (419줄): 이미지 항목 컴포넌트 (FitMode 로직)
+      - **KeyboardHelpOverlay**: 키보드 도움말 오버레이
+    - `hooks/`: 상태 관리 및 이벤트 처리
+      - **useGalleryScroll** (259줄): 휠 이벤트 기반 갤러리 스크롤 처리 ✅ 양호
+      - **useGalleryFocusTracker** (680줄): 자동 포커스 추적 및
+        IntersectionObserver 관리 (Phase 19A 정리)
+      - **useGalleryItemScroll** (438줄): 특정 item으로의 스크롤 조율 (Phase 19A
+        정리)
+    - `types/`: 갤러리 특화 타입 (현재 미사용 - index.ts barrel만 export)
+    - `styles/`: 갤러리 스타일
+      - **gallery-global.css**: 갤러리 전역 스타일 (558줄)
+      - **Gallery.module.css**: CSS Modules (878줄, WIP/TEST TARGET)
+  - `settings/`: 설정 UI, 스토리지 어댑터 (Phase 193: 타입-값 분리 강화)
+    - **SettingsService** (524줄): 설정 상태 관리 및 지속성 ✅ 간결화
+      - 책임: 설정 로드/저장, 마이그레이션, 스키마 해싱
+      - Phase 192: setNestedValue 헬퍼로 중복 제거 (-31줄)
+    - **settings-migration.ts** (94줄): 설정 업그레이드 로직 ✅ 최적화
+      - 책임: 버전 관리, 카테고리별 기본값 병합, 유효성 검증
+      - Phase 192: 루프 기반 일반화로 간결화 (-24줄)
+      - Phase 193: DEFAULT_SETTINGS import 경로 @/constants로 정규화
+    - **settings-schema.ts** (42줄): 스키마 해싱 및 버전 관리 ✅ 현대화
+      - 책임: 스키마 변경 감지, JSON 기반 해시 (DJB2 → 간단 해시)
+      - Phase 192: 해시 알고리즘 단순화 (-21줄)
+      - Phase 193: DEFAULT_SETTINGS import 경로 @/constants로 정규화
+    - **settings.types.ts** (151줄): Settings 도메인 타입 정의 ✅ 타입-값 분리
+      - 책임: AppSettings, GallerySettings, DownloadSettings 등 타입 정의
+      - Phase 193: DEFAULT_SETTINGS 재익스포트 제거 (타입 파일 역할 강화)
+      - 기본값은 @/constants에서 직접 import
 - `src/bootstrap/*`: 애플리케이션 초기화 (동적 임포트, 트리셰이킹 최적화)
   - `environment.ts`: Vendor 라이브러리 초기화
   - `events.ts`: 전역 이벤트 (beforeunload/pagehide) 핸들러
@@ -39,6 +79,32 @@
   - 미디어: `MediaService`, `BulkDownloadService`, `media-extraction/`,
     `media-mapping/`
   - UX: `UnifiedToastManager`, `ThemeService`, `AnimationService`
+  - 토큰: `token-extraction/` (Phase 192: TwitterTokenExtractor 이동)
+    - **TwitterTokenExtractor** (520줄): Twitter Bearer 토큰 추출 유틸리티
+      - 책임: 네트워크/스크립트/설정에서 토큰 추출, 유효성 검증
+      - Phase 192: features/settings/services → shared/services로 이동 (공유
+        유틸)
+- `src/shared/browser/*`: DOM/CSS 관리 서비스 (Core 계층)
+  - **BrowserService**: DOM 조작, CSS 주입/제거, 파일 다운로드, 페이지 가시성
+    확인
+    - 책임: 브라우저 기본 기능 제공 (DOM 레벨 작업)
+    - 내보내기: `@shared/browser`에서 `BrowserService` + `browserAPI` (편의
+      함수)
+  - **관련 호환성**: 원본 경로 `@shared/browser/utils/browser-utils` 계속 작동
+    (재내보내기)
+- `src/shared/utils/browser/*`: 타입 안전 브라우저 글로벌 접근 (Infrastructure
+  계층, Phase 194 추가)
+  - **safe-browser.ts** (329줄): Window, Location, Navigator 타입 안전 접근
+    - 함수: `isBrowserEnvironment()`, `safeWindow()`, `safeLocation()`,
+      `safeNavigator()`, `isTwitterSite()`, `getCurrentUrlInfo()`,
+      `setScrollPosition()`, `safeSetTimeout()`/`safeClearTimeout()`,
+      `getViewportSize()`, `getDevicePixelRatio()`, `matchesMediaQuery()`,
+      `isDarkMode()`, `prefersReducedMotion()`, `getBrowserInfo()`,
+      `isExtensionContext()`, `isExtensionEnvironment()`
+    - 책임: 서버사이드/테스트 환경에서도 안전한 글로벌 객체 접근 제공
+    - import:
+      `import { isTwitterSite, safeWindow, ... } from '@shared/utils/browser'`
+  - **배럴 export**: `src/shared/utils/index.ts`에서 17개 함수 재익스포트
 - `src/shared/state/*`: Signals 상태 및 파생값(`signalSelector`)
 - `src/shared/types/*`: 도메인 비즈니스 타입 정의 (**.types.ts 패턴**)
   - `app.types.ts`, `media.types.ts`, `result.types.ts`
@@ -79,7 +145,24 @@
 
 - **공유 타입 → src/shared/types/**: 여러 모듈에서 사용하는 도메인 타입
 - **전역 환경 → types/env.d.ts**: 빌드 타임 상수 (Vite define 플러그인)
+- **Features 특화 타입 → src/features/\*/types/**: Feature 내부 도메인 타입 (예:
+  AppSettings)
 - **명시적 export**: 배럴 export 최소화, 명확한 타입 이름과 책임
+- **타입-값 분리**: 타입 파일에서는 순수 타입만 정의, 상수값은 @/constants에서
+  import
+
+#### Settings 타입 정책 (Phase 193)
+
+**settings.types.ts**:
+
+- 역할: AppSettings, GallerySettings 등 Settings 도메인 타입 정의만
+- 타입-값 분리: DEFAULT_SETTINGS 재익스포트 제거 ✅
+- 기본값 사용: `import { DEFAULT_SETTINGS } from '@/constants'` (필요한 곳에서)
+
+**서비스 import**:
+
+- settings-service.ts, settings-migration.ts, settings-schema.ts
+  - Phase 193: `DEFAULT_SETTINGS`를 `@/constants`에서 직접 import
 
 ### 참고
 

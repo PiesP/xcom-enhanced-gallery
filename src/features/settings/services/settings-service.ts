@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
+import { isRecord, toRecord } from '@shared/utils/type-guards';
 import type { StorageAdapter } from '@shared/services/storage/storage-adapter.interface';
 import { UserscriptStorageAdapter } from '@shared/services/storage/userscript-storage-adapter';
 import type {
@@ -12,7 +13,7 @@ import type {
   SettingChangeEvent,
   SettingValidationResult,
 } from '../types/settings.types';
-import { DEFAULT_SETTINGS as defaultSettings } from '../types/settings.types';
+import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
 
@@ -27,22 +28,23 @@ const STORAGE_KEY = 'xeg-app-settings';
 type SettingChangeListener = (event: SettingChangeEvent) => void;
 
 /**
- * Type Guard: Record<string, unknown> 타입 검증
- * Phase 141.1: 이중 단언 제거를 위한 타입 가드
+ * 중첩 경로에서 값 설정 헬퍼
  */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+function setNestedValue(target: Record<string, unknown>, keys: string[], value: unknown): void {
+  for (let i = 0; i < keys.length - 1; i++) {
+    const currentKey = keys[i];
+    if (!currentKey) continue;
 
-/**
- * AppSettings를 Record로 안전하게 변환
- * Phase 141.1: 타입 안전성 개선
- */
-function toRecord(settings: AppSettings): Record<string, unknown> {
-  if (!isRecord(settings)) {
-    throw new Error('Invalid settings object: expected Record type');
+    if (!target[currentKey] || typeof target[currentKey] !== 'object') {
+      target[currentKey] = {};
+    }
+    target = target[currentKey] as Record<string, unknown>;
   }
-  return settings;
+
+  const finalKey = keys[keys.length - 1];
+  if (finalKey) {
+    target[finalKey] = value;
+  }
 }
 
 /**
@@ -173,23 +175,7 @@ export class SettingsService {
     const oldValue = this.get(key);
     const keys = key.split('.');
 
-    // Phase 141.1: Type Guard 기반 안전한 중첩 객체 접근 (이중 단언 제거)
-    let target: Record<string, unknown> = toRecord(this.settings);
-
-    for (let i = 0; i < keys.length - 1; i++) {
-      const currentKey = keys[i];
-      if (!currentKey) continue;
-
-      if (!target[currentKey] || typeof target[currentKey] !== 'object') {
-        target[currentKey] = {};
-      }
-      target = target[currentKey] as Record<string, unknown>;
-    }
-
-    const finalKey = keys[keys.length - 1];
-    if (finalKey) {
-      target[finalKey] = value;
-    }
+    setNestedValue(toRecord(this.settings), keys, value);
     this.settings.lastModified = Date.now();
 
     // 변경 이벤트 발생
@@ -238,23 +224,7 @@ export class SettingsService {
     for (const [key, value] of Object.entries(updates)) {
       const oldValue = this.get(key as NestedSettingKey);
       const keys = key.split('.');
-      // Phase 141.1: Type Guard 기반 안전한 중첩 객체 접근 (이중 단언 제거)
-      let target: Record<string, unknown> = toRecord(this.settings);
-
-      for (let i = 0; i < keys.length - 1; i++) {
-        const currentKey = keys[i];
-        if (!currentKey) continue;
-
-        if (!target[currentKey] || typeof target[currentKey] !== 'object') {
-          target[currentKey] = {};
-        }
-        target = target[currentKey] as Record<string, unknown>;
-      }
-
-      const finalKey = keys[keys.length - 1];
-      if (finalKey) {
-        target[finalKey] = value;
-      }
+      setNestedValue(toRecord(this.settings), keys, value);
 
       changes.push({
         key: key as NestedSettingKey,

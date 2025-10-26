@@ -11,9 +11,6 @@ import type { ImageFitMode } from '@shared/types';
 import type { JSX } from 'solid-js';
 
 import { withGallery } from '../../../../shared/components/hoc';
-// Phase 58: 다운로드 버튼 제거로 인한 미사용 import 주석 처리
-// import { Button } from '../../../../shared/components/ui/Button/Button';
-// import type { ButtonProps } from '../../../../shared/components/ui/Button/Button';
 import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
 import { getSolid } from '../../../../shared/external/vendors';
 import { languageService } from '../../../../shared/services/language-service';
@@ -24,9 +21,6 @@ import type { VerticalImageItemProps } from './VerticalImageItem.types';
 
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
-
-// Phase 58: 다운로드 버튼 제거로 인한 미사용 변수 주석 처리
-// const ButtonCompat = Button as unknown as (props: ButtonProps) => JSX.Element;
 
 function getFitModeClass(fitMode?: ImageFitMode): string {
   switch (fitMode) {
@@ -80,8 +74,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     isFocused = false,
     forceVisible = false,
     onClick,
-    // Phase 58: 다운로드 버튼 제거로 인한 미사용 prop 제거
-    // onDownload,
     onImageContextMenu,
     className = '',
     onMediaLoad,
@@ -107,11 +99,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
 
-  const handleClick = (event: MouseEvent) => {
-    if ((event.target as HTMLElement).closest(`.${styles.downloadButton}`)) {
-      return;
-    }
-
+  const handleClick = () => {
     const container = containerRef();
     container?.focus?.({ preventScroll: true });
     onClick?.();
@@ -129,15 +117,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     setIsError(true);
     setIsLoaded(false);
   };
-
-  // Phase 58: 다운로드 버튼 제거로 인한 미사용 핸들러 주석 처리
-  /*
-  const handleDownloadClick = (event?: Event) => {
-    event?.preventDefault();
-    (event as MouseEvent | undefined)?.stopPropagation();
-    onDownload?.();
-  };
-  */
 
   const handleVideoLoadedMetadata = () => {
     setIsLoaded(true);

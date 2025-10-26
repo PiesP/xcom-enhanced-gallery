@@ -7,12 +7,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { STABLE_SELECTORS } from '@/constants';
+import { STABLE_SELECTORS } from '../../src/constants';
 import {
   isValidCSSSelector,
   calculateSelectorComplexity,
   hasPerformanceIssues,
-} from '@shared/utils/browser-utils';
+} from '@shared/utils/dom';
 
 describe('STABLE_SELECTORS', () => {
   let testContainer;

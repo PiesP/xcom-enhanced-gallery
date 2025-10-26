@@ -1,53 +1,12 @@
 /**
- * @fileoverview Gallery Types
- * @description 갤러리 기능 관련 타입 정의
+ * @fileoverview Gallery Feature Types
+ * @description 갤러리 기능 관련 타입 정의 (현재 미사용)
  * @module features/gallery/types
+ *
+ * ⚠️ 주의: 현재 프로젝트에서는 대부분의 갤러리 타입이 다른 위치에 정의되어 있습니다.
+ * 이 파일은 barrel export의 진입점으로만 유지됩니다.
  */
 
-import type { BaseComponentProps } from '@shared/types';
-
-/**
- * 갤러리 앱 설정
- */
-export interface GalleryAppConfig {
-  /** 자동 테마 활성화 */
-  autoTheme: boolean;
-  /** 성능 모니터링 활성화 */
-  performanceMonitoring: boolean;
-}
-
-/**
- * 갤러리 앱 인터페이스
- */
-export interface GalleryApp extends BaseComponentProps {
-  /** 갤러리 열기 */
-  openGallery(mediaItems: unknown[]): Promise<void>;
-  /** 갤러리 닫기 */
-  closeGallery(): void;
-  /** 설정 업데이트 */
-  updateConfig(config: Partial<GalleryAppConfig>): void;
-}
-
-/**
- * 미디어 추출 결과
- */
-export interface MediaExtractionResult {
-  /** 추출된 미디어 아이템 */
-  mediaItems: unknown[];
-  /** 추출 성공 여부 */
-  success: boolean;
-  /** 오류 메시지 */
-  error?: string;
-  /** 추출 시간 (ms) */
-  extractionTime: number;
-  /** 클릭된 미디어의 인덱스 */
-  clickedIndex?: number;
-  /** 추출 메타데이터 */
-  metadata?: {
-    strategy?: string;
-    sourceType?: string;
-  };
-}
-
-// 하위 호환성을 위한 별칭
-export type IGalleryApp = GalleryApp;
+// 이 파일은 현재 export가 없습니다. (미사용 타입 정리 완료)
+// Barrel export를 위해 빈 namespace 추가
+export namespace Gallery {}

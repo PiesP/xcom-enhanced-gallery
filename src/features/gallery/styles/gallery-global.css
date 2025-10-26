@@ -129,10 +129,10 @@
   justify-content: center;
 }
 
-/* 툴바 버튼 - ToolbarButton.module.css로 통합됨 */
-/* @deprecated - ToolbarButton.module.css 사용 권장 */
+/* Toolbar button styles moved to VerticalGalleryView.module.css / ToolbarButton.module.css */
+/* Previously defined toolbar button styles are now component-scoped */
 
-/* 갤러리 카운터 - 현대적 디자인 */
+/* Gallery counter - Modern design */
 .xeg-gallery-counter {
   font-size: var(--font-size-sm); /* 0.875rem = 14px */
   font-weight: 600;

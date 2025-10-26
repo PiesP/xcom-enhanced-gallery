@@ -1,29 +1,34 @@
 /**
- * @fileoverview Browser Service
- * @version 2.0.0 - Core layer migration
+ * @fileoverview Browser Service (Core Layer)
+ * @version 2.1.0 - Phase 194: browser-utils 통합, 구조 최적화
  *
- * 브라우저 관련 유틸리티를 관리하는 Core 레이어 서비스
- * DOM 조작, CSS 주입, 브라우저 API 래핑 등 브라우저 기능 제공
+ * DOM 조작, CSS 주입, 다운로드, 애니메이션 관리를 담당하는 통합 서비스.
+ * 이전의 browser-utils.ts와 browser-service.ts를 통합하여 단일 책임 원칙 준수.
+ *
+ * @note AnimationService (shared/services/animation-service.ts)와 역할 분담:
+ * - AnimationService: 복잡한 애니메이션 및 재사용 가능한 애니메이션 제공
+ * - BrowserService: 기본적인 DOM 및 CSS 관리
  */
 
 import { logger } from '@shared/logging/logger';
-import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * 브라우저 서비스
- * Core 레이어의 브라우저 API 래핑 서비스
- * AnimationService 기능 통합됨
- * Phase 4 Step 4: 싱글톤에서 직접 클래스로 변환
+ * DOM 조작, CSS 주입, 다운로드, 브라우저 상태 확인 등을 담당하는 통합 서비스.
+ *
+ * @responsibility
+ * - CSS 주입/제거 관리
+ * - 파일 다운로드 (기본 구현, Userscript 사용 권장)
+ * - 페이지 가시성 및 DOM 준비 상태 확인
+ * - 진단 정보 제공
+ *
+ * @note Phase 194: browser-utils.ts의 기능을 통합하여 단일 서비스로 통일
  */
 export class BrowserService {
   private readonly injectedStyles = new Set<string>();
 
-  // AnimationService 통합 (CSS 애니메이션 기본 스타일)
-  private animationStylesInjected = false;
-
   constructor() {
     logger.debug('[BrowserService] Initialized');
-    this.ensureAnimationStylesInjected();
   }
 
   /**
@@ -118,84 +123,11 @@ export class BrowserService {
     this.injectedStyles.clear();
     logger.debug('[BrowserService] Cleanup complete');
   }
-
-  // ====================================
-  // Animation API (통합됨)
-  // ====================================
-
-  /**
-   * 기본 애니메이션 스타일 주입
-   */
-  private ensureAnimationStylesInjected(): void {
-    if (this.animationStylesInjected) return;
-
-    const styles = `
-      .xeg-fade-in {
-        opacity: 0;
-  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
-      }
-      .xeg-fade-in.active {
-        opacity: 1;
-      }
-      .xeg-fade-out {
-        opacity: 1;
-  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
-      }
-      .xeg-fade-out.active {
-        opacity: 0;
-      }
-    `;
-
-    this.injectCSS('xeg-animation-base', styles);
-    this.animationStylesInjected = true;
-  }
-
-  /**
-   * 요소에 페이드 인 애니메이션 적용
-   */
-  public fadeIn(element: HTMLElement, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms var(--xeg-ease-standard)`;
-      element.style.opacity = '0';
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '1';
-        globalTimerManager.setTimeout(resolve, duration);
-      });
-    });
-  }
-
-  /**
-   * 요소에 페이드 아웃 애니메이션 적용
-   */
-  public fadeOut(element: HTMLElement, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.style.transition = `opacity ${duration}ms var(--xeg-ease-standard)`;
-      element.style.opacity = '1';
-
-      requestAnimationFrame(() => {
-        element.style.opacity = '0';
-        globalTimerManager.setTimeout(resolve, duration);
-      });
-    });
-  }
-
-  /**
-   * CSS 클래스 기반 애니메이션
-   */
-  public animate(element: HTMLElement, className: string, duration = 300): Promise<void> {
-    return new Promise(resolve => {
-      element.classList.add(className);
-      globalTimerManager.setTimeout(() => {
-        element.classList.remove(className);
-        resolve();
-      }, duration);
-    });
-  }
 }
 
 // 편의 함수들
 // Export utility functions - Phase 4 Step 4: 직접 인스턴스 사용
+// Phase 194: AnimationService와 역할 분담으로 animation 관련 함수 제거
 const defaultBrowserService = new BrowserService();
 
 export const browserAPI = {
@@ -207,12 +139,4 @@ export const browserAPI = {
   isDOMReady: () => defaultBrowserService.isDOMReady(),
   getDiagnostics: () => defaultBrowserService.getDiagnostics(),
   cleanup: () => defaultBrowserService.cleanup(),
-
-  // Animation utilities (통합됨)
-  fadeIn: (element: HTMLElement, duration?: number) =>
-    defaultBrowserService.fadeIn(element, duration),
-  fadeOut: (element: HTMLElement, duration?: number) =>
-    defaultBrowserService.fadeOut(element, duration),
-  animate: (element: HTMLElement, className: string, duration?: number) =>
-    defaultBrowserService.animate(element, className, duration),
 };
