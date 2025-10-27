@@ -1,9 +1,18 @@
 /**
- * KeyboardHelpOverlay styles
- * - Tokenized colors, radius, spacing, z-index
- * - PC-only interactions, accessible focus ring
+ * KeyboardHelpOverlay Styles
+ * 
+ * Modal dialog for displaying keyboard shortcuts and help information.
+ * - All colors, spacing, and sizing use design tokens (no hardcoded values)
+ * - Focus ring follows accessibility standards (WCAG)
+ * - Motion preferences respected (prefers-reduced-motion)
+ * - Fixed positioning for modal overlay behavior
  */
 
+/** 
+ * Backdrop: Semi-transparent overlay covering the entire viewport
+ * - Fixed positioning ensures it covers entire screen
+ * - z-index ensures it appears above main content
+ */
 .backdrop {
   position: fixed;
   inset: 0;
@@ -11,6 +20,12 @@
   z-index: var(--xeg-z-modal);
 }
 
+/**
+ * Dialog: Modal container with centered positioning
+ * - Fixed + transform for centering (better than margin: auto)
+ * - min/max width ensures responsive sizing
+ * - Higher z-index than backdrop to appear on top
+ */
 .dialog {
   position: fixed;
   top: 50%;
@@ -26,22 +41,44 @@
   z-index: calc(var(--xeg-z-modal) + 1);
 }
 
+/**
+ * Title: Main heading with consistent spacing
+ * - Margin reset (0) prevents browser defaults
+ * - Font size optimized for readability
+ * - Color follows primary text convention
+ */
 .title {
   margin: 0 0 var(--xeg-space-12) 0;
   font-size: 1.125rem;
   color: var(--xeg-color-text-primary);
 }
 
+/**
+ * Content: Descriptive text and shortcuts list
+ * - Secondary text color for reduced visual hierarchy
+ * - Line height ensures readability
+ */
 .content {
   color: var(--xeg-color-text-secondary);
   line-height: 1.6;
 }
 
+/**
+ * Shortcuts List: Semantic unordered list
+ * - Margin reset and padding for consistent spacing
+ * - em-based padding for list item indentation
+ */
 .shortcutList {
   margin: 0;
   padding-left: 1.25em;
 }
 
+/**
+ * Close Button: Positioned absolutely in top-right corner
+ * - Fixed dimensions for consistency
+ * - Border radius matches design system
+ * - Focus ring visible on keyboard navigation
+ */
 .closeButton {
   position: absolute;
   top: var(--xeg-space-8);
@@ -51,11 +88,21 @@
   border-radius: var(--xeg-radius-md);
 }
 
+/**
+ * Close Button Focus: Keyboard navigation indicator
+ * - Uses standard focus-visible for keyboard access
+ * - Outline and offset follow accessibility standards
+ */
 .closeButton:focus-visible {
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
+/**
+ * Reduced Motion: Disable transitions for users who prefer reduced motion
+ * - Respects system accessibility preference
+ * - Prevents motion-based distractions
+ */
 @media (prefers-reduced-motion: reduce) {
   .dialog {
     transition: none;

@@ -1,33 +1,74 @@
 /**
- * @fileoverview KeyboardHelpOverlay - Solid.js implementation
- * @description Provides keyboard shortcuts help overlay with focus management.
+ * @fileoverview Keyboard Help Overlay Component
+ * @description Modal dialog displaying keyboard shortcuts with full accessibility and focus management.
+ * @module features/gallery/components/KeyboardHelpOverlay
  */
-import { getSolid, type JSXElement } from '../../../../shared/external/vendors';
-import { useFocusTrap } from '../../../../shared/hooks/use-focus-trap';
-import { globalTimerManager } from '../../../../shared/utils/timer-management';
-import styles from './KeyboardHelpOverlay.module.css';
-import { IconButton } from '../../../../shared/components/ui/Button/IconButton';
-import { languageService } from '../../../../shared/services/language-service';
 
+import { getSolid, type JSXElement } from '@shared/external/vendors';
+import { useFocusTrap } from '@shared/hooks/use-focus-trap';
+import { globalTimerManager } from '@shared/utils/timer-management';
+import { IconButton } from '@shared/components/ui/Button/IconButton';
+import { languageService } from '@shared/services/language-service';
+import styles from './KeyboardHelpOverlay.module.css';
+
+/**
+ * Props for KeyboardHelpOverlay component
+ */
 export interface KeyboardHelpOverlayProps {
+  /** Whether the overlay is displayed */
   open: boolean;
+  /** Callback invoked when user closes the overlay (Escape key or close button) */
   onClose: () => void;
 }
 
+/**
+ * Keyboard Help Overlay Component
+ *
+ * A fully accessible modal dialog that displays keyboard shortcuts and navigation help.
+ * Features:
+ * - Focus trapping: Focus stays within the dialog while open
+ * - Focus restoration: Returns focus to previously focused element when closed
+ * - Keyboard support: Escape key and close button close the dialog
+ * - Accessibility: Complete ARIA attributes (role, labelledby, describedby, modal)
+ * - Internationalization: Uses languageService for localized strings
+ * - Motion preferences: Respects prefers-reduced-motion
+ *
+ * @param props - Component props
+ * @param props.open - Controls visibility of the overlay
+ * @param props.onClose - Callback when user closes the overlay
+ * @returns JSX element or null if not open
+ *
+ * @example
+ * ```tsx
+ * const [isOpen, setIsOpen] = createSignal(false);
+ *
+ * return (
+ *   <>
+ *     <button onClick={() => setIsOpen(true)}>Show Help</button>
+ *     <KeyboardHelpOverlay open={isOpen()} onClose={() => setIsOpen(false)} />
+ *   </>
+ * );
+ * ```
+ */
 export function KeyboardHelpOverlay({
   open,
   onClose,
 }: KeyboardHelpOverlayProps): JSXElement | null {
   const { createEffect, onCleanup } = getSolid();
 
+  // Dialog and button element references
   let dialogElement: HTMLDivElement | null = null;
   let closeButtonElement: HTMLButtonElement | null = null;
+
+  // Track previously focused element for restoration
   let previouslyFocusedElement: HTMLElement | null = null;
   let focusTimerId: number | null = null;
 
+  // Accessibility IDs
   const titleId = 'xeg-kho-title';
   const descId = 'xeg-kho-desc';
 
+  // Setup focus trapping (Escape key support)
   useFocusTrap(
     () => dialogElement,
     () => open,
@@ -37,8 +78,10 @@ export function KeyboardHelpOverlay({
     }
   );
 
+  // Handle dialog opening: save focus and transfer to close button
   createEffect(() => {
     if (!open) {
+      // Clean up timer on close
       if (focusTimerId) {
         globalTimerManager.clearTimeout(focusTimerId);
         focusTimerId = null;
@@ -46,6 +89,7 @@ export function KeyboardHelpOverlay({
       return;
     }
 
+    // Save currently focused element to restore later
     if (typeof document !== 'undefined') {
       previouslyFocusedElement = document.activeElement as HTMLElement | null;
     }
@@ -53,25 +97,16 @@ export function KeyboardHelpOverlay({
     const dialog = dialogElement;
     if (!dialog) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      }
-    };
-
-    dialog.addEventListener('keydown', handleKeyDown);
-
+    // Focus close button after dialog renders (async to ensure DOM is ready)
     focusTimerId = globalTimerManager.setTimeout(() => {
       try {
         closeButtonElement?.focus();
       } catch {
-        /* ignore focus errors */
+        // Ignore focus errors in edge cases
       }
     }, 0);
 
     onCleanup(() => {
-      dialog.removeEventListener('keydown', handleKeyDown);
       if (focusTimerId) {
         globalTimerManager.clearTimeout(focusTimerId);
         focusTimerId = null;
@@ -79,17 +114,19 @@ export function KeyboardHelpOverlay({
     });
   });
 
+  // Handle dialog closing: restore focus to previously focused element
   createEffect(() => {
     if (open) return;
 
     const previous = previouslyFocusedElement;
     if (!previous) return;
 
+    // Restore focus asynchronously
     globalTimerManager.setTimeout(() => {
       try {
         previous.focus();
       } catch {
-        /* ignore focus errors */
+        // Ignore focus errors in edge cases
       }
     }, 0);
     previouslyFocusedElement = null;
@@ -104,6 +141,7 @@ export function KeyboardHelpOverlay({
       class={styles.backdrop}
       role='presentation'
       onClick={event => {
+        // Close when clicking outside the dialog (on backdrop)
         if (event.target === event.currentTarget) {
           onClose();
         }
@@ -145,5 +183,3 @@ export function KeyboardHelpOverlay({
     </div>
   );
 }
-
-export default KeyboardHelpOverlay;
