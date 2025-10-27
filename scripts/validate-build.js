@@ -13,18 +13,29 @@
  *
  * Checks both development (with source maps) and production (optimized) outputs.
  *
- * Usage:
+ * @usage
  *   node validate-build.js
  *
- * Exit:
+ * @exit
  *   0 - All validations passed
  *   1 - One or more validations failed
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { resolve, basename } from 'path';
-import { gzipSync } from 'zlib';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, basename } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
+/**
+ * Validates a single UserScript file
+ *
+ * @param {string} scriptPath - Path to the userscript file
+ * @param {object} options - Validation options
+ * @param {boolean} [options.requireNoVitePreload=false] - Check for Vite preload dead code
+ * @param {boolean} [options.assertNoLegacyGlobals=false] - Check for legacy global leaks
+ * @param {boolean} [options.requireSourcemap=true] - Require sourcemap presence
+ * @returns {{content: string, map: object|null, mapPath: string|null}} Validation result
+ * @throws {never} Exits process with code 1 on validation failure
+ */
 function validateOne(
   scriptPath,
   { requireNoVitePreload = false, assertNoLegacyGlobals = false, requireSourcemap = true } = {}
@@ -147,6 +158,12 @@ function validateOne(
   return { content, map, mapPath };
 }
 
+/**
+ * Validates both production and development UserScript builds
+ *
+ * @returns {boolean} True if all validations pass
+ * @throws {never} Exits process with code 1 on validation failure
+ */
 function validateUserScript() {
   console.log('🔍 Validating UserScript build...');
 

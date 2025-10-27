@@ -11,23 +11,28 @@
  * - Verifies Git state (staged changes, untracked files)
  * - Reports on infrastructure health
  *
- * Usage:
+ * @usage
  *   node maintenance-check.js
  *
- * Output:
+ * @output
  *   Structured report with ✅ (OK), ⚠️ (needs action), 💡 (recommendations)
  *   Generated as part of 'npm run maintenance:check'
  *
- * Context:
+ * @context
  *   Part of project end-of-work protocol (also run: validate & build)
  */
 
-import { readdirSync, statSync, readFileSync, existsSync } from 'fs';
-import { resolve, join } from 'path';
-import { execSync } from 'child_process';
+import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { execSync } from 'node:child_process';
 
 const ROOT = resolve(process.cwd());
 
+/**
+ * Checks for backup/temporary directories that should be cleaned
+ *
+ * @returns {Array<{path: string, files: number}>} Found backup directories
+ */
 function checkBackupDirectories() {
   console.log('\n📁 백업/임시 디렉터리 검사...');
   const patterns = ['backup', 'tmp', 'old', 'deprecated'];
@@ -81,6 +86,11 @@ function checkBackupDirectories() {
   return found;
 }
 
+/**
+ * Checks for large documentation files that may need simplification
+ *
+ * @returns {Array<{name: string, lines: number, path: string}>} Documents over 500 lines
+ */
 function checkOldDocuments() {
   console.log('\n📄 문서 최신성 검사...');
   const docsDir = resolve(ROOT, 'docs');
@@ -109,6 +119,11 @@ function checkOldDocuments() {
   return large;
 }
 
+/**
+ * Checks for security vulnerabilities and unused dependencies
+ *
+ * @returns {void}
+ */
 function checkUnusedDependencies() {
   console.log('\n📦 의존성 검사...');
 
@@ -136,6 +151,11 @@ function checkUnusedDependencies() {
   }
 }
 
+/**
+ * Checks production build size against budget
+ *
+ * @returns {void}
+ */
 function checkBuildSize() {
   console.log('\n📏 빌드 크기 검사...');
   const distDir = resolve(ROOT, 'dist');
@@ -154,6 +174,11 @@ function checkBuildSize() {
   }
 }
 
+/**
+ * Checks Git repository status for untracked files
+ *
+ * @returns {void}
+ */
 function checkGitStatus() {
   console.log('\n🔍 Git 상태 검사...');
 
@@ -179,6 +204,11 @@ function checkGitStatus() {
   }
 }
 
+/**
+ * Generates comprehensive maintenance report
+ *
+ * @returns {void}
+ */
 function generateReport() {
   console.log('\n' + '='.repeat(60));
   console.log('🔧 프로젝트 유지보수 점검 리포트');

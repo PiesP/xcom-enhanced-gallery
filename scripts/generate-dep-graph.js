@@ -1,25 +1,26 @@
 #!/usr/bin/env node
+
 /**
  * Dependency Graph Generator
  *
  * Generates dependency graphs in multiple formats (JSON/DOT/SVG) with intelligent caching.
  *
- * Usage:
+ * @usage
  *   node generate-dep-graph.js [--format=json|dot|svg|all] [--force] [--verbose]
  *
- * Options:
+ * @options
  *   --format=<type>  Output format: json (fast), dot (medium), svg (complete)
  *                    Default: all
  *   --force          Regenerate all outputs, bypass cache
  *   --verbose        Show detailed timing and debug info
  *
- * Performance Targets:
+ * @performance
  *   - JSON only: ~1-2s (dependency-cruiser analysis)
  *   - + DOT: ~0.5s additional (text generation)
  *   - + SVG: ~2-5s additional (Graphviz rendering, if available)
  *   - Cache hit: ~0.1s (no regeneration needed)
  *
- * Caching:
+ * @caching
  *   - Automatically skips regeneration if src/ directory unchanged
  *   - Force via CODEQL_FORCE_REBUILD env var or --force flag
  *   - Cache metadata stored in docs/.dep-graph-cache.json
@@ -54,7 +55,8 @@ const FORMATS = {
 const requestedFormats = FORMATS[formatArg] || FORMATS.all;
 
 /**
- * Check if a command exists in PATH
+ * Checks if a command exists in PATH
+ *
  * @param {string} cmd - Command name to check
  * @returns {boolean} True if command is available
  */
@@ -66,7 +68,8 @@ function commandExists(cmd) {
 }
 
 /**
- * Get latest modification time for all source files in a directory (recursive)
+ * Gets latest modification time for all source files in a directory (recursive)
+ *
  * @param {string} dir - Directory to scan
  * @returns {number} Latest modification time in milliseconds
  */
@@ -94,7 +97,8 @@ function getLatestModificationTime(dir) {
 }
 
 /**
- * Check if cached output is still valid
+ * Checks if cached output is still valid
+ *
  * @returns {boolean} True if regeneration needed
  */
 function needsRegeneration() {
@@ -130,7 +134,9 @@ function needsRegeneration() {
 }
 
 /**
- * Update cache metadata with current src/ modification time
+ * Updates cache metadata with current src/ modification time
+ *
+ * @returns {void}
  */
 function updateCache() {
   try {
@@ -154,10 +160,11 @@ function updateCache() {
 }
 
 /**
- * Generate specific output format using dependency-cruiser
+ * Generates specific output format using dependency-cruiser
+ *
  * @param {string} format - Format to generate (json, dot, svg, etc.)
  * @returns {string} Generated output
- * @throws Error if generation fails
+ * @throws {Error} If generation fails
  */
 function generateFormat(format) {
   const config = resolve(ROOT, '.dependency-cruiser.cjs');
@@ -181,7 +188,8 @@ function generateFormat(format) {
 }
 
 /**
- * Render SVG from DOT using available Graphviz engine
+ * Renders SVG from DOT using available Graphviz engine
+ *
  * @param {number} startTime - Start time for timing calculation
  * @returns {string} SVG content
  */
@@ -239,6 +247,8 @@ function renderSVG(startTime) {
 
 /**
  * Main execution function
+ *
+ * @returns {void}
  */
 function main() {
   // Ensure output directory exists

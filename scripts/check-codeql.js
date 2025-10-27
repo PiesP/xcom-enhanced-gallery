@@ -6,19 +6,19 @@
  * Executes custom CodeQL security queries if available (gh codeql or codeql CLI).
  * In CI environments, skips local checks (GitHub Actions handles CodeQL separately).
  *
- * Usage:
+ * @usage
  *   node check-codeql.js
  *
- * Environment:
+ * @environment
  *   CI, GITHUB_ACTIONS - Detects CI environment, skips local checks
  *   CODEQL_FORCE_REBUILD - Force database rebuild (default: incremental update)
  *
- * Supported tools:
+ * @tools
  *   1. gh codeql (GitHub CLI extension, recommended)
  *   2. codeql (CodeQL CLI direct install)
  *   3. Neither (graceful degradation with installation guide)
  *
- * Output:
+ * @output
  *   SARIF results in codeql-results/ directory
  *   Summary report to stdout
  *   Exit code: 0 (pass) or 1 (failures found)
@@ -62,8 +62,9 @@ const colors = isCI
     };
 
 /**
- * 사용 가능한 CodeQL 도구 확인 (캐싱 적용)
- * @returns {'gh-codeql' | 'codeql' | null}
+ * Detects available CodeQL tool (cached for performance)
+ *
+ * @returns {'gh-codeql' | 'codeql' | null} Available tool name or null
  */
 function detectCodeQLTool() {
   // 캐시된 결과 반환 (성능 최적화)
@@ -92,7 +93,12 @@ function detectCodeQLTool() {
 }
 
 /**
- * CodeQL 명령 실행
+ * Executes a CodeQL command using available tool
+ *
+ * @param {string} command - CodeQL command to execute (without 'codeql' prefix)
+ * @param {object} [options={}] - execSync options
+ * @returns {string} Command output
+ * @throws {Error} If no CodeQL tool is available
  */
 function execCodeQL(command, options = {}) {
   const tool = detectCodeQLTool();
@@ -105,7 +111,9 @@ function execCodeQL(command, options = {}) {
 }
 
 /**
- * 안내 메시지 출력
+ * Prints info banner for CodeQL check
+ *
+ * @returns {void}
  */
 function printInfo() {
   if (isCI) {
@@ -117,7 +125,9 @@ function printInfo() {
 }
 
 /**
- * CodeQL CLI 설치 안내
+ * Prints installation guide for CodeQL CLI
+ *
+ * @returns {void}
  */
 function printInstallGuide() {
   if (isCI) {
@@ -144,7 +154,10 @@ function printInstallGuide() {
 }
 
 /**
- * 디렉터리의 최신 수정 시간 가져오기 (재귀)
+ * Gets latest modification time of directory (recursive)
+ *
+ * @param {string} dirPath - Directory path to scan
+ * @returns {number} Latest modification timestamp in milliseconds
  */
 function getLatestModificationTime(dirPath) {
   if (!existsSync(dirPath)) return 0;
@@ -175,7 +188,9 @@ function getLatestModificationTime(dirPath) {
 }
 
 /**
- * 데이터베이스 캐시 유효성 검사
+ * Checks if CodeQL database cache is still valid
+ *
+ * @returns {boolean} True if database is up-to-date
  */
 function isDatabaseValid() {
   if (!existsSync(dbDir)) return false;
@@ -193,7 +208,9 @@ function isDatabaseValid() {
 }
 
 /**
- * CodeQL 데이터베이스 생성 (증분 업데이트 지원)
+ * Creates CodeQL database with incremental update support
+ *
+ * @returns {boolean} True if database creation succeeded
  */
 function createDatabase() {
   // 환경변수로 강제 재생성 가능
@@ -236,7 +253,10 @@ function createDatabase() {
 }
 
 /**
- * CodeQL 쿼리 실행 (비동기)
+ * Runs a single CodeQL query asynchronously
+ *
+ * @param {string} queryFile - Query filename (e.g., 'direct-vendor-imports.ql')
+ * @returns {Promise<{queryFile: string, resultFile: string|null, success: boolean}>} Query result
  */
 async function runQuery(queryFile) {
   const queryPath = resolve(queriesDir, queryFile);
@@ -262,7 +282,10 @@ async function runQuery(queryFile) {
 }
 
 /**
- * SARIF 결과 파싱
+ * Parses SARIF results file
+ *
+ * @param {string} sarifFile - Path to SARIF file
+ * @returns {{total: number, results: Array<{ruleId: string, message: string, locations: Array}>}} Parsed results
  */
 function parseSarifResults(sarifFile) {
   if (!existsSync(sarifFile)) {
@@ -293,7 +316,11 @@ function parseSarifResults(sarifFile) {
 }
 
 /**
- * 결과 출력 (test-samples 제외)
+ * Prints query results (excludes test-samples directory)
+ *
+ * @param {string} queryName - Query name for display
+ * @param {{total: number, results: Array}} results - Parsed SARIF results
+ * @returns {boolean} True if no issues found
  */
 function printResults(queryName, results) {
   // test-samples 디렉토리의 결과 필터링 (의도적 위반 예시)
@@ -321,7 +348,9 @@ function printResults(queryName, results) {
 }
 
 /**
- * CodeQL 쿼리 실행 (병렬)
+ * Runs all CodeQL queries in parallel
+ *
+ * @returns {Promise<boolean>} True if all queries passed
  */
 async function runCodeQLQueries() {
   const tool = detectCodeQLTool();
@@ -397,7 +426,9 @@ async function runCodeQLQueries() {
 }
 
 /**
- * 메인 함수
+ * Main entry point
+ *
+ * @returns {Promise<void>}
  */
 async function main() {
   // CI 환경에서는 즉시 종료 (성능 최적화)
