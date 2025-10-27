@@ -597,6 +597,10 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
 
 /**
  * 미디어 클릭 처리
+ *
+ * Phase 228.1: 이벤트 캡처 최적화
+ * - 빠른 경로 체크: 미디어 컨테이너 범위 확인 먼저
+ * - 비처리 가능한 요소는 조기 종료 (불필요한 오버헤드 감소)
  */
 async function handleMediaClick(
   event: MouseEvent,
@@ -606,6 +610,12 @@ async function handleMediaClick(
   try {
     const target = event.target as HTMLElement;
 
+    // **Phase 228.1: 빠른 경로 체크 (조기 종료)**
+    // 미디어 컨테이너 범위 확인 - 가장 먼저 검사하여 불필요한 처리 제거
+    if (!options.enableMediaDetection) {
+      return { handled: false, reason: 'Media detection disabled' };
+    }
+
     // 갤러리 내부 클릭인지 확인
     if (checkGalleryOpen() && checkInsideGallery(target)) {
       return { handled: false, reason: 'Gallery internal event' };
@@ -614,6 +624,23 @@ async function handleMediaClick(
     // 비디오 컨트롤 클릭인지 확인
     if (isVideoControlElement(target)) {
       return { handled: false, reason: 'Video control element' };
+    }
+
+    // **빠른 범위 체크: 미디어 컨테이너 범위 밖이면 조기 종료**
+    // 이 체크는 isProcessableMedia()보다 먼저 실행되어 성능 개선
+    const mediaContainerSelectors = [
+      ...STABLE_SELECTORS.IMAGE_CONTAINERS,
+      ...STABLE_SELECTORS.MEDIA_PLAYERS,
+      ...STABLE_SELECTORS.MEDIA_LINKS,
+    ].join(', ');
+
+    const isInMediaContainer = target.closest(mediaContainerSelectors);
+    if (!isInMediaContainer) {
+      logger.debug('Click outside media container - fast path early exit', {
+        tagName: target.tagName,
+        className: target.className,
+      });
+      return { handled: false, reason: 'Outside media container' };
     }
 
     if (!isProcessableMedia(target)) {
