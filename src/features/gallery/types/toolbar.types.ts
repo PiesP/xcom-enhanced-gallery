@@ -1,21 +1,18 @@
 /**
- * @fileoverview Toolbar Types (Gallery Features - Re-export Layer)
- * @version 3.0.0 - Phase 197.1: Backward Compatibility
- * @description 타입이 @shared/types/toolbar.types.ts로 이동되었습니다.
- * 이 파일은 backward compatibility를 위해 재-export만 수행합니다.
+ * @fileoverview Toolbar Types - Backward Compatibility Re-export
+ * @version 3.0.0 - Phase 219
+ * @description @shared/types/toolbar.types로 이동된 타입들의 재-export
  *
- * **이동 이유**:
- * - @shared/utils/toolbar-utils.ts와 @shared/hooks/use-toolbar-state.ts가 의존
- * - 의존성 역행 해결 필요
- * - ToolbarState/ToolbarActions는 UI 상태 타입으로 충분히 일반적
- *
- * **마이그레이션**:
+ * **마이그레이션 안내**:
  * - 기존: `import { ToolbarState } from '@features/gallery/types'`
  * - 신규: `import type { ToolbarState } from '@shared/types'` (권장)
- * - 둘 다 작동 (이 파일에서 재-export)
+ * - 둘 다 현재 작동하지만, 신규 경로 사용 권장
+ *
+ * **유지 이유**:
+ * - 구 코드베이스와의 호환성 보장
+ * - 외부 스크립트 의존성 호환성
  */
 
-// Re-export from @shared/types for backward compatibility
 export type {
   ToolbarDataState,
   FitMode,
