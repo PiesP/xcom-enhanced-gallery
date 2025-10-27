@@ -21,28 +21,30 @@
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)**: 3계층 구조, 의존성 규칙
 - **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)**: Testing Trophy, JSDOM, E2E
   하네스 패턴
+- **[HOOKS_GUIDELINES.md](./HOOKS_GUIDELINES.md)**: Solid.js 훅 작성 규칙 및
+  패턴 (350줄, 현대화 완료)
 
 ### 품질 및 유지보수
 
+- **[CODE_QUALITY.md](./CODE_QUALITY.md)**: 점검 도구 가이드 (CodeQL, ESLint,
+  Vitest 등) (250줄, 간결화 완료)
 - **[DEPENDENCY-GOVERNANCE.md](./DEPENDENCY-GOVERNANCE.md)**: dependency-cruiser
   규칙, 의존성 정책
-- **[CODE_QUALITY.md](./CODE_QUALITY.md)**: CodeQL, ESLint, stylelint
 - **[MAINTENANCE.md](./MAINTENANCE.md)**: 유지보수 체크리스트
 - **[ACCESSIBILITY_CHECKLIST.md](./ACCESSIBILITY_CHECKLIST.md)**: WCAG 2.1 Level
-  AA 준수 체크리스트 (a11y)
+  AA 준수 체크리스트
 
-### 리팩토링 및 학습
+### 리팩토링 및 계획
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획
-  (현재: Phase 196)
+  (템플릿 기반, 모든 Phase 완료)
 - **[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)**:
-  완료된 Phase 기록 (Phase 195-186 요약)
+  완료된 Phase 기록 (Phase 207-186 요약)
 
 ### 특수 디렉터리
 
-- **[archive/](./archive/)**: 완료된 Phase 계획서 및 세션 보고서 (Git 추적 안
-  함)
-- **[temp/](./temp/)**: 임시 작업 문서 (Git 추적 안 함)
+- **[archive/](./archive/)**: 완료된 Phase 상세 보고서 (Git 추적 안 함)
+- **[temp/](./temp/)**: 임시 작업 문서 (Git 추적 안 함, 현재 비어있음)
 
 ---
 

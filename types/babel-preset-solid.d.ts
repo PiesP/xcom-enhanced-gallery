@@ -4,6 +4,8 @@
  */
 
 declare module 'babel-preset-solid' {
-  const preset: unknown;
-  export default preset;
+  import type { PluginItem } from '@babel/core';
+
+  const solidPreset: PluginItem;
+  export default solidPreset;
 }
