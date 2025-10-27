@@ -1,6 +1,6 @@
 /**
  * KeyboardHelpOverlay Styles
- * 
+ *
  * Modal dialog for displaying keyboard shortcuts and help information.
  * - All colors, spacing, and sizing use design tokens (no hardcoded values)
  * - Focus ring follows accessibility standards (WCAG)
@@ -8,7 +8,7 @@
  * - Fixed positioning for modal overlay behavior
  */
 
-/** 
+/**
  * Backdrop: Semi-transparent overlay covering the entire viewport
  * - Fixed positioning ensures it covers entire screen
  * - z-index ensures it appears above main content
