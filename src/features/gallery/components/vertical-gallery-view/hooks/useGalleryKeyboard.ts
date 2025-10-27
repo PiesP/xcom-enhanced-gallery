@@ -27,11 +27,7 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
     const unsubscribe = keyboardNavigator.subscribe(
       {
         onEscape: () => {
-          try {
-            logger.debug('Gallery: Esc key pressed, closing gallery');
-          } catch {
-            /* no-op */
-          }
+          logger.debug('Gallery: Esc key pressed, closing gallery');
           onClose();
         },
         onHelp: () => {

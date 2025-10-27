@@ -6,6 +6,62 @@
 
 ---
 
+## 🎯 최근 완료 Phase (213-212)
+
+### Phase 213 ✅ (2025-10-27) - Vertical Gallery View Hooks 정리 및 최적화
+
+**목표**: `src/features/gallery/components/vertical-gallery-view/hooks` 디렉터리
+정리 및 최신화
+
+**배경**:
+
+- 3개의 커스텀 훅 존재 (useGalleryCleanup, useGalleryKeyboard,
+  useProgressiveImage)
+- useGalleryCleanup: 복잡한 정리 로직, Solid.js 신호 미사용
+- useProgressiveImage: 완전 미사용 코드 (0건 import)
+- 구조 개선 및 번들 크기 최적화 필요
+
+**완료 항목**:
+
+1. **useGalleryKeyboard.ts 정리**:
+   - 불필요한 try-catch 제거 (logger.debug 항상 안전)
+   - 코드 간결화 (8줄 감소)
+   - 기능 유지, 복잡도 감소
+
+2. **useGalleryCleanup.ts 제거**:
+   - VerticalGalleryView에서 import 제거
+   - 훅 호출 제거 (hideTimeoutRef도 함께 제거)
+   - 정리 로직이 VerticalGalleryView의 기존 effect에서 이미 처리 중
+   - 불필요한 추상화 계층 제거
+
+3. **useProgressiveImage.ts 제거**:
+   - 미사용 코드 (소스 전체에서 import 0건)
+   - 점진적 이미지 로딩 기능은 현재 갤러리에서 불필요
+   - 300줄 미사용 코드 제거로 유지비 절감
+
+4. **hooks/index.ts 업데이트**:
+   - 배럴 export에서 useGalleryCleanup, useProgressiveImage 제거
+   - useGalleryKeyboard만 export 유지
+
+5. **검증**:
+   - TypeScript typecheck ✅ (0 errors)
+   - ESLint lint ✅ (0 errors)
+   - Smoke tests ✅ (2 files, 9 tests)
+   - Browser tests ✅ (14 files, 111 tests)
+   - Build success ✅ (prod: 340.04 KB, 예산 내 ✅)
+   - All tests GREEN ✅
+
+**영향 분석**:
+
+| 항목           | 변화                                                                  | 영향         |
+| -------------- | --------------------------------------------------------------------- | ------------ |
+| 소스 파일 제거 | useGalleryCleanup.ts (174줄) + useProgressiveImage.ts (300줄) = 474줄 | 유지비 ⬇️    |
+| 번들 크기      | 340.04 KB (이전 대비 미미)                                            | 내 예산 ✅   |
+| 타입 안정성    | 불필요한 타입 제거 (UseProgressiveImageOptions 등)                    | 유지성 ⬆️    |
+| 테스트         | 모든 기존 테스트 통과                                                 | 기능 보존 ✅ |
+
+---
+
 ## 🎯 최근 완료 Phase (212-211)
 
 ### Phase 212 ✅ (2025-10-27) - KeyboardHelpOverlay 컴포넌트 현대화

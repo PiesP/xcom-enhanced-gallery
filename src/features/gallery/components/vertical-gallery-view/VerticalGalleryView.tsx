@@ -22,7 +22,6 @@ import {
   animateGalleryExit,
   setupScrollAnimation,
 } from '../../../../shared/utils/animations';
-import { useGalleryCleanup } from './hooks/useGalleryCleanup';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '../../hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
@@ -136,8 +135,6 @@ function VerticalGalleryViewCore({
   });
 
   const [isHelpOpen, setIsHelpOpen] = createSignal(false);
-
-  const hideTimeoutRef = { current: null as number | null };
 
   const getInitialFitMode = (): ImageFitMode => {
     const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
@@ -305,14 +302,6 @@ function VerticalGalleryViewCore({
       debounceDelay: 100,
     }
   );
-
-  useGalleryCleanup({
-    isVisible,
-    hideTimeoutRef,
-    themeCleanup: () => {
-      logger.debug('Theme cleanup called');
-    },
-  });
 
   useGalleryKeyboard({
     onClose: onClose || (() => {}),

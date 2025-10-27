@@ -10,12 +10,12 @@
 
 ## 프로젝트 현황 (2025-10-27)
 
-- **빌드**: prod 339.55 KB / 420 KB (80.45 KB 여유) ✅
+- **빌드**: prod 340.04 KB / 420 KB (79.96 KB 여유) ✅
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
-- **최근 개선**: Phase 201 service-interfaces.ts 제거 (사용처 0건), 타입 계층
-  최적화 완료
+- **최근 개선**: Phase 213 Vertical Gallery View Hooks 정리 (useGalleryCleanup,
+  useProgressiveImage 제거)
 
 ## 계층 구조와 단방향 의존
 
@@ -143,6 +143,11 @@
   - **제거됨**:
     - `use-gallery-toolbar-logic.ts` (Phase 140.2 미사용 코드 정리, 2025-10-26
       제거)
+    - 컴포넌트 레벨 훅 (Phase 213: 2025-10-27)
+      - `VerticalGalleryView/hooks/useGalleryCleanup.ts` (174줄) → 제거
+        (불필요한 추상화)
+      - `VerticalGalleryView/hooks/useProgressiveImage.ts` (300줄) → 제거
+        (미사용, 0 import)
 - `src/shared/container/*`: **의존성 주입 및 서비스 접근 제어** (Phase 194 정리
   완료)
   - **목적**: Features 레이어의 ServiceManager 직접 import 금지 정책 강제
