@@ -6,6 +6,61 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-10-27
+
+### 🚀 빌드 성능 및 안정성 개선
+
+이 릴리즈는 로컬 개발 환경의 메모리 안정성과 빌드 성능을 크게 개선합니다.
+
+### Added
+
+#### 병렬 빌드 검증 (Phase 203.1)
+
+- npm-run-all 도입으로 멀티코어 CPU 활용
+- 병렬화 스크립트 추가:
+  - `validate:quality`: typecheck + lint + lint:css 병렬 실행
+  - `validate:deps`: deps:check → deps:graph 순차 실행
+  - `validate:tests`: test:browser + e2e:smoke 병렬 실행
+  - `validate:build:local`: 통합 병렬 검증 (6GB 메모리)
+
+### Changed
+
+#### 빌드 성능 최적화
+
+- 빌드 검증 시간: 49.5초 → 33.1초 (33.3% 향상, 16.4초 단축)
+- 메모리 설정 일관성: 모든 test 스크립트 4096MB로 통일
+- 스크립트 재구성:
+  - `validate:build:local`: 병렬 실행이 기본
+  - `validate:build:sequential`: 순차 실행 (레거시 호환)
+
+#### 메모리 안정성 (Phase 203)
+
+- OOM(Out of Memory) 에러 완전 제거
+- validate:build:local 경량화 (codeql, deps:graph SVG, e2e:a11y 제외)
+- test:browser 메모리 제한 추가 (4096MB)
+
+#### 코드 정리 (Phase 202)
+
+- Deprecated API 제거:
+  - `service-harness.ts` 삭제
+  - `createServiceHarness()`, `ServiceHarness` 제거
+  - `createTestHarness()` 통합
+
+### Performance
+
+- 빌드 검증 시간: 33.1초 (Phase 203 대비 27% 추가 단축)
+- 메모리 사용: 안정적 (28GB 여유 중 6GB 제한)
+- CPU 활용: 멀티코어 병렬 처리 (22 threads)
+- 빌드 크기: 340.54 KB / 345 KB (98.7% 사용, 4.46 KB 여유)
+
+### System Requirements
+
+- CPU: 멀티코어 권장 (병렬 처리 최적화)
+- Memory: 8GB 이상 권장 (로컬 빌드 6GB 제한)
+- Node.js: 22.20.0 (Volta 관리)
+
+---
+
 ## [0.4.0] - 2025-10-18
 
 ### 🎉 프로젝트 안정화 마일스톤
