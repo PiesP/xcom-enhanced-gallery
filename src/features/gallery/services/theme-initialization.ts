@@ -17,7 +17,27 @@ export type ThemeMode = 'light' | 'dark';
 export type ThemeSetting = 'auto' | ThemeMode;
 
 /**
+ * 스토리지 키 - 테마 설정 저장 위치
+ */
+const THEME_STORAGE_KEY = 'xeg-theme';
+
+/**
+ * DOM 속성명 - 테마 적용 대상
+ */
+const THEME_DOM_ATTRIBUTE = 'data-theme';
+
+/**
+ * 유효한 테마 설정값 목록
+ */
+const VALID_THEME_VALUES: readonly ThemeSetting[] = ['auto', 'light', 'dark'];
+
+/**
  * 안전한 localStorage 접근
+ *
+ * globalThis.localStorage에 안전하게 접근합니다.
+ * 접근 불가능한 환경이거나 오류 발생 시 null을 반환합니다.
+ *
+ * @returns localStorage 객체 또는 null
  */
 function getSafeLocalStorage(): Storage | null {
   try {
@@ -33,8 +53,9 @@ function getSafeLocalStorage(): Storage | null {
  * 시스템 테마 감지
  *
  * `prefers-color-scheme` 미디어 쿼리를 통해 시스템 다크모드 설정을 감지합니다.
+ * 초기화 실패 시 기본값 'light'를 반환합니다.
  *
- * @returns 감지된 테마 모드 ('light' | 'dark')
+ * @returns 감지된 테마 모드: 'dark' (시스템 다크모드) 또는 'light' (기본값)
  */
 export function detectSystemTheme(): ThemeMode {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -53,9 +74,10 @@ export function detectSystemTheme(): ThemeMode {
 /**
  * 저장된 테마 설정 복원
  *
- * localStorage에서 'xeg-theme' 키로 저장된 테마 설정을 가져옵니다.
+ * localStorage에서 저장된 테마 설정을 가져옵니다.
+ * 저장된 값이 유효하지 않거나 접근 불가능하면 null을 반환합니다.
  *
- * @returns 저장된 테마 설정 또는 null
+ * @returns 저장된 테마 설정 ('auto' | 'light' | 'dark') 또는 null
  */
 export function getSavedThemeSetting(): ThemeSetting | null {
   try {
@@ -63,12 +85,12 @@ export function getSavedThemeSetting(): ThemeSetting | null {
     if (!storage) {
       return null;
     }
-    const saved = storage.getItem('xeg-theme') as ThemeSetting | null;
-    if (saved && ['auto', 'light', 'dark'].includes(saved)) {
+    const saved = storage.getItem(THEME_STORAGE_KEY) as ThemeSetting | null;
+    if (saved && VALID_THEME_VALUES.includes(saved)) {
       return saved;
     }
   } catch (error) {
-    logger.warn('[theme] Failed to read saved theme:', error);
+    logger.debug('[theme] Failed to read saved theme (using default):', error);
   }
 
   return null;
@@ -77,9 +99,9 @@ export function getSavedThemeSetting(): ThemeSetting | null {
 /**
  * 테마를 DOM에 적용
  *
- * `document.documentElement`에 `data-theme` 속성을 설정합니다.
+ * `document.documentElement`에 `data-theme` 속성을 설정하여 CSS에서 테마를 선택할 수 있도록 합니다.
  *
- * @param theme - 적용할 테마 모드
+ * @param theme - 적용할 테마 모드 ('light' | 'dark')
  */
 export function applyThemeToDOM(theme: ThemeMode): void {
   if (typeof document === 'undefined') {
@@ -87,7 +109,7 @@ export function applyThemeToDOM(theme: ThemeMode): void {
   }
 
   try {
-    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
     logger.debug(`[theme] Applied: ${theme}`);
   } catch (error) {
     logger.error('[theme] Failed to apply theme to DOM:', error);
@@ -97,11 +119,11 @@ export function applyThemeToDOM(theme: ThemeMode): void {
 /**
  * 테마 설정 결정 및 적용
  *
- * 'auto' 설정이면 시스템 테마를 감지하여 적용하고,
- * 명시적 설정이면 그 설정값을 적용합니다.
+ * - 'auto' 설정: 시스템 테마를 감지하여 적용
+ * - 명시적 설정 ('light' | 'dark'): 그 설정값을 직접 적용
  *
- * @param setting - 테마 설정
- * @returns 최종 적용된 테마 모드
+ * @param setting - 테마 설정 ('auto' | 'light' | 'dark')
+ * @returns 최종 적용된 테마 모드 ('light' | 'dark')
  */
 export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
   let resolvedTheme: ThemeMode;
@@ -121,17 +143,20 @@ export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
 /**
  * 테마 동기 초기화
  *
- * 갤러리 렌더링 전에 호출되어야 합니다.
- * 저장된 설정을 복원하거나, auto인 경우 시스템 테마를 감지하여 적용합니다.
+ * 갤러리 렌더링 전에 호출되어야 합니다 (FOUC 방지).
  *
- * @returns 적용된 테마 모드
+ * 프로세스:
+ * 1. localStorage에서 저장된 설정 복원
+ * 2. 설정이 없으면 'auto' 사용
+ * 3. 설정에 따라 테마 결정 및 DOM 적용
+ *
+ * @returns 적용된 테마 모드 ('light' | 'dark')
  *
  * @example
  * ```typescript
- * // 갤러리 초기화 전에 호출
+ * // GalleryApp 초기화 시 가장 먼저 호출
  * const theme = initializeTheme();
- *
- * // 이제 툴바가 렌더링될 때 올바른 배경색이 적용됨
+ * // 이제 DOM의 data-theme 속성이 설정되어 있음
  * ```
  */
 export function initializeTheme(): ThemeMode {
@@ -154,11 +179,22 @@ export function initializeTheme(): ThemeMode {
 /**
  * 시스템 테마 변경 리스너 등록
  *
- * 시스템 테마 변경을 감지하여 auto 모드일 때 자동으로 업데이트합니다.
- * 반환된 함수를 호출하여 리스너를 제거할 수 있습니다.
+ * 시스템 테마 변경을 감지하여 'auto' 모드일 때 자동으로 업데이트합니다.
+ * 반환된 함수를 호출하여 리스너를 제거할 수 있습니다 (cleanup).
  *
- * @param onThemeChange - 테마 변경 시 실행할 콜백
- * @returns 리스너 제거 함수
+ * @param onThemeChange - 테마 변경 시 실행할 콜백 함수
+ * @returns 리스너 제거 함수 (사용 후 호출 권장)
+ *
+ * @example
+ * ```typescript
+ * // 리스너 등록
+ * const cleanup = setupThemeChangeListener((newTheme) => {
+ *   console.log('Theme changed to:', newTheme);
+ * });
+ *
+ * // 정리 (컴포넌트 언마운트 시 등)
+ * cleanup();
+ * ```
  */
 export function setupThemeChangeListener(onThemeChange: (theme: ThemeMode) => void): () => void {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
