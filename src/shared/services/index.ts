@@ -100,6 +100,12 @@ export type { TokenExtractionResult, TokenValidationResult } from './token-extra
 export { CoreService } from './service-manager';
 
 // ====================================
+// Storage 어댑터 (인터페이스 + 구현)
+// ====================================
+
+export { type StorageAdapter, UserscriptStorageAdapter } from './storage';
+
+// ====================================
 // 유틸리티 및 타입들
 // ====================================
 
