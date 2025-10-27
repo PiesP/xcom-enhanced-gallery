@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 222 완료 ✅ |
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 224 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -12,6 +12,94 @@
 ---
 
 ## ✅ 최근 완료 작업
+
+### Phase 224: Components 디렉터리 경로 최적화 및 구조 정리 (완료 ✅)
+
+**목표**: `src/shared/components/` 경로 파일들의 경로 최적화, JSDoc 강화
+
+**배경**:
+
+- Phase 223 (Browser 통합) 완료 후 components 모듈 구조 점검
+- `lazy-icon.tsx`가 루트 수준 배치됨 (논리적 응집도 저하)
+- Icon 시스템과 분산됨 (LazyIcon, Icon 같은 계층인데 다른 폴더)
+- JSDoc 문서화 일부 미흡
+
+**발견된 문제**:
+
+1. **경로 분산**:
+   - `lazy-icon.tsx` (루트) vs `ui/Icon/` (lazy loading 아이콘)
+   - 논리적 응집도 저하 (같은 계층인데 다른 폴더)
+
+2. **구조 명확성**:
+   - ✅ 대부분의 컴포넌트 정상 (Button, Toast, Toolbar 등)
+   - ✅ HOC/isolation/base 구조 양호
+   - ⚠️ lazy-icon.tsx 위치만 최적화 필요
+
+3. **문서화**:
+   - ✅ base/BaseComponentProps.ts: Phase 2-3A JSDoc 완료
+   - ✅ ui/StandardProps.ts: Phase 2-3A JSDoc 완료
+   - ⚠️ lazy-icon.tsx: 파일 레벨 JSDoc 미흡
+
+**대상 파일 (45개, 주요 파일)**:
+
+1. `src/shared/components/lazy-icon.tsx` (62줄) → 제거됨
+2. `src/shared/components/ui/Icon/lazy-icon.tsx` (170줄) - 신규 생성
+3. `src/shared/components/index.ts` - 배럴 export 수정
+4. `src/shared/components/ui/Icon/index.ts` - Icon 배럴 export 수정
+5. `src/shared/components/ui/index.ts` - UI 배럴 export 수정
+6. `test/unit/performance/icon-optimization.test.tsx` - import 경로 수정
+
+**완료 사항**:
+
+1. **파일 이동 및 JSDoc 강화** ✅
+   - `lazy-icon.tsx` 루트에서 `ui/Icon/lazy-icon.tsx`로 이동
+   - 파일 레벨 JSDoc 추가 (목적, 기능, 예시, @see 링크)
+   - 각 함수에 JSDoc 추가 (LazyIcon, useIconPreload, useCommonIconPreload)
+   - 상세한 사용 예시 추가
+
+2. **배럴 export 정리** ✅
+   - `ui/Icon/index.ts`: LazyIcon 관련 export 추가 (v2.2.0)
+   - `ui/index.ts`: LazyIcon 관련 export 추가 (v2.2.0)
+   - `components/index.ts`: Icon/LazyIcon 명시적 export 추가 (v3.2.0)
+
+3. **Import 경로 수정** ✅
+   - `test/unit/performance/icon-optimization.test.tsx`: import 경로 수정
+   - 루트 `lazy-icon.tsx` 파일 제거
+
+4. **구조 개선** ✅
+   - 논리적 응집도 향상 (Icon 시스템 통합)
+   - 배럴 export 단순화
+   - 관련 파일들 한곳으로 정리
+
+**검증 결과**:
+
+- ✅ typecheck: 0 errors
+- ✅ lint: 0 errors/warnings
+- ✅ test:smoke: 9/9 PASS
+- ✅ build:dev: success (767.13 KB JS, 114.83 KB CSS)
+- ✅ build:prod: success (339.62 KB 번들)
+- ✅ validate-build: passed
+- ✅ import 경로: @shared/components/ui/Icon 사용 가능
+
+**기술 개선**:
+
+- **경로 최적화**: lazy-icon.tsx 논리적 위치로 이동
+- **응집도 개선**: Icon 시스템과 통합 (LazyIcon + Icon)
+- **문서화 강화**: 파일/함수 레벨 JSDoc 추가
+- **배럴 정리**: 명시적 export로 API 명확화
+- **버전 관리**: Icon(v2.2.0), UI(v2.2.0), Components(v3.2.0) 업그레이드
+
+**총 변경**:
+
+- 파일 이동: 1개 (lazy-icon.tsx 루트 → ui/Icon/)
+- 배럴 수정: 3개 (Icon, UI, Components)
+- 테스트 수정: 1개 (import 경로)
+- JSDoc 추가: +110줄 (LazyIcon 파일)
+- 코드 제거: -62줄 (루트 lazy-icon.tsx 제거)
+
+**커밋**: feat(components): Phase 224 - Components 경로 최적화 및 LazyIcon 통합
+
+---
 
 ### Phase 223: Browser Module 통합 및 현대화 (완료 ✅)
 

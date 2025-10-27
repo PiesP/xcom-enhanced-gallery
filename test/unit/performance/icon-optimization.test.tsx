@@ -16,7 +16,7 @@ import {
   LazyIcon,
   useIconPreload,
   useCommonIconPreload,
-} from '../../../src/shared/components/lazy-icon.tsx';
+} from '../../../src/shared/components/ui/Icon/lazy-icon.tsx';
 
 type TestVNode = {
   tag?: string;

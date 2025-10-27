@@ -1,6 +1,6 @@
 /**
  * @fileoverview Shared Components Exports
- * @version 3.1.0 - Phase 2-3A: BaseComponentProps 타입 통합
+ * @version 3.2.0 - Phase 224: LazyIcon 경로 최적화 및 통합
  * @description 공통 컴포넌트들의 정리된 export
  */
 
@@ -13,6 +13,10 @@ export { Toast } from './ui/Toast/Toast';
 export { ToastContainer } from './ui/Toast/ToastContainer';
 export { ErrorBoundary } from './ui/ErrorBoundary/ErrorBoundary';
 export { Toolbar } from './ui/Toolbar/Toolbar';
+
+// 아이콘 컴포넌트들 (Phase 224: 경로 최적화)
+export { Icon, LazyIcon, useIconPreload, useCommonIconPreload } from './ui/Icon';
+export type { IconProps, LazyIconProps } from './ui/Icon';
 
 // 갤러리 컴포넌트들 (간소화된 명명)
 export { GalleryContainer } from './isolation/GalleryContainer';

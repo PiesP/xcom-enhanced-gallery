@@ -14,6 +14,10 @@ export * from './constants';
 export { Icon } from './Icon/Icon';
 export type { IconProps } from './Icon/Icon';
 
+// 지연 로딩 아이콘 (Phase 224)
+export { LazyIcon, useIconPreload, useCommonIconPreload } from './Icon/lazy-icon';
+export type { LazyIconProps } from './Icon/lazy-icon';
+
 // Button 컴포넌트
 export { default as Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';
