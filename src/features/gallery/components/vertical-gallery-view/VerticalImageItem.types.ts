@@ -2,9 +2,9 @@
  * @file VerticalImageItem 타입 정의
  */
 
-import type { GalleryComponentProps } from '../../../../shared/components/hoc';
-import type { ImageFitMode } from '../../../../shared/types';
-import type { MediaInfo } from '../../../../shared/types/media.types';
+import type { GalleryComponentProps } from '@shared/components/hoc';
+import type { ImageFitMode } from '@shared/types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 export type FitModeProp = ImageFitMode | (() => ImageFitMode | undefined);
 

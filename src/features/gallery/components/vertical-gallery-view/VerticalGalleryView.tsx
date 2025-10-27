@@ -2,40 +2,70 @@
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
  *
- * @fileoverview Vertical Gallery View Component
- * @version 6.0 - 통합 툴바 상태 관리 시스템 (Solid.js)
+ * @fileoverview Vertical Gallery View Component (Solid.js)
+ * @description Main gallery view component that renders media items in vertical layout
+ *
+ * **Responsibilities**:
+ * - Render media items collection with vertical scrolling
+ * - Manage gallery state (current index, loading, etc.)
+ * - Coordinate scroll behavior and focus tracking
+ * - Handle keyboard navigation (Escape, Help)
+ * - Manage toolbar visibility and auto-hide behavior
+ * - Implement animations (enter/exit)
+ * - Support image fit modes (original, fitWidth, fitHeight, fitContainer)
+ * - Provide download UI and interactions
+ *
+ * **Dependencies**:
+ * - Solid.js signals for reactive state management
+ * - Gallery signals (@shared/state/signals/gallery.signals)
+ * - Multiple custom hooks for scroll, focus, and keyboard handling
+ * - Toolbar and KeyboardHelpOverlay components
+ * - Language service for i18n
+ *
+ * **API**:
+ * - Props: {@link VerticalGalleryViewProps}
+ * - Emits gallery close, previous/next navigation, download events via callbacks
+ *
+ * **Architecture**:
+ * - Follows PC-only event policy (click, keydown/keyup, wheel, mouse*)
+ * - Uses design tokens for all colors and sizes (no hardcoding)
+ * - Vendor APIs accessed via getSolid() getter pattern
+ * - Component-level hooks for keyboard handling
+ *
+ * @module features/gallery/components/vertical-gallery-view
+ * @version 6.0 - Integrated toolbar state management system
  */
 
 import type { JSX } from 'solid-js';
 import { logger } from '@shared/logging';
-import { Toolbar } from '../../../../shared/components/ui/Toolbar/Toolbar';
-import type { ImageFitMode } from '../../../../shared/types';
-import { galleryState, navigateToItem } from '../../../../shared/state/signals/gallery.signals';
-import type { GalleryState } from '../../../../shared/state/signals/gallery.signals';
-import { downloadState } from '../../../../shared/state/signals/download.signals';
-import { getSolid } from '../../../../shared/external/vendors';
-import { createStabilityDetector } from '../../../../shared/utils/stability';
-import { languageService } from '../../../../shared/services/language-service';
-import { stringWithDefault } from '../../../../shared/utils/type-safety-helpers';
+import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import type { ImageFitMode } from '@shared/types';
+import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import type { GalleryState } from '@shared/state/signals/gallery.signals';
+import { downloadState } from '@shared/state/signals/download.signals';
+import { getSolid } from '@shared/external/vendors';
+import { createStabilityDetector } from '@shared/utils/stability';
+import { languageService } from '@shared/services/language-service';
+import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import {
   animateGalleryEnter,
   animateGalleryExit,
   setupScrollAnimation,
-} from '../../../../shared/utils/animations';
+} from '@shared/utils/animations';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
-import { useGalleryScroll } from '../../hooks/useGalleryScroll';
-import { useGalleryItemScroll } from '../../hooks/useGalleryItemScroll';
-import { useGalleryFocusTracker } from '../../hooks/useGalleryFocusTracker';
-import { ensureGalleryScrollAvailable } from '../../../../shared/utils/core-utils';
+import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
+import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
+import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
+import { ensureGalleryScrollAvailable } from '@shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
-import { computePreloadIndices } from '../../../../shared/utils/performance';
-import { getSetting, setSetting } from '../../../../shared/container/settings-access';
+import { computePreloadIndices } from '@shared/utils/performance';
+import { getSetting, setSetting } from '@shared/container/settings-access';
 import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
-import { useSelector, useCombinedSelector } from '../../../../shared/utils/signal-selector';
-import type { MediaInfo } from '../../../../shared/types';
-import { observeViewportCssVars } from '../../../../shared/utils/viewport';
-import { globalTimerManager } from '../../../../shared/utils/timer-management';
+import { useSelector, useCombinedSelector } from '@shared/utils/signal-selector';
+import type { MediaInfo } from '@shared/types';
+import { observeViewportCssVars } from '@shared/utils/viewport';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 const solidAPI = getSolid();
 const { For } = solidAPI;

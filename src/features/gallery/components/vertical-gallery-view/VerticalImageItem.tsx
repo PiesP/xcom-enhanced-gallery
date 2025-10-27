@@ -2,19 +2,51 @@
  * Copyright (c) 2024 X.com Enhanced Gallery
  * Licensed under the MIT License
  *
- * @fileoverview Vertical Image Item Component (Solid.js)
- * @description 통합된 수직 이미지 아이템 컴포넌트 - StandardProps 표준화 완료
+ * @fileoverview Vertical Image/Video Item Component (Solid.js)
+ * @description Individual media item component for displaying images and videos in gallery
+ *
+ * **Responsibilities**:
+ * - Render image or video element based on media type
+ * - Manage fit mode (original, fitWidth, fitHeight, fitContainer)
+ * - Handle loading, error, and visibility states
+ * - Auto-pause videos when item becomes invisible
+ * - Preserve video playback state through visibility changes
+ * - Support context menu for additional actions
+ * - Provide focus/blur event handling for accessibility
+ * - Sync fit mode with DOM attributes and CSS classes
+ *
+ * **Features**:
+ * - Video detection via extension and URL patterns
+ * - Automatic filename cleanup for display
+ * - Memoization for performance optimization
+ * - HOC wrapper for gallery-specific functionality
+ * - Multiple state signals for reactive updates
+ * - Frame-accurate media loading
+ *
+ * **Properties**:
+ * - Props: {@link VerticalImageItemProps}
+ * - Uses memo wrapper to prevent unnecessary re-renders
+ * - Supports forceVisible for preloading optimization
+ *
+ * **Event Handling**:
+ * - PC-only events: click, focus, blur, context menu, keyboard
+ * - Callback-based event propagation (onClick, onMediaLoad, etc.)
+ * - No touch or pointer events (PC-only policy)
+ *
+ * @module features/gallery/components/vertical-gallery-view
+ * @see VerticalImageItem.helpers for utility functions
+ * @see VerticalImageItem.types for type definitions
  */
 
 import type { ComponentType } from '@shared/types/app.types';
 import type { ImageFitMode } from '@shared/types';
 import type { JSX } from 'solid-js';
 
-import { withGallery } from '../../../../shared/components/hoc';
-import { ComponentStandards } from '../../../../shared/components/ui/StandardProps';
-import { getSolid } from '../../../../shared/external/vendors';
-import { languageService } from '../../../../shared/services/language-service';
-import { logger } from '../../../../shared/logging';
+import { withGallery } from '@shared/components/hoc';
+import { ComponentStandards } from '@shared/components/ui/StandardProps';
+import { getSolid } from '@shared/external/vendors';
+import { languageService } from '@shared/services/language-service';
+import { logger } from '@shared/logging';
 import styles from './VerticalImageItem.module.css';
 import { cleanFilename, isVideoMedia } from './VerticalImageItem.helpers';
 import type { VerticalImageItemProps } from './VerticalImageItem.types';
