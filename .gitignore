@@ -25,15 +25,19 @@ playwright/.cache/
 # === CodeQL & Security ===
 codeql-db/
 codeql-results/
+codeql-custom-queries-javascript/
 *.sarif
 
 # === Documentation (Generated) ===
 docs/bundle-*.{html,json}
+docs/bundle-analysis.html
 docs/dependency-graph.*
 docs/.dep-graph-cache.json
 docs/temp/
 docs/archive/
 sample_pages/
+.github/copilot-instructions.md
+AGENTS.md
 
 # === Logs ===
 logs/
@@ -101,6 +105,7 @@ scratch/
 playground/
 experiments/
 sandbox/
+metrics/
 
 # === Generated Files ===
 *.js.map
