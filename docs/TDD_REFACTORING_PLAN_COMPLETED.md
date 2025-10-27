@@ -9,41 +9,36 @@
 
 ### Phase 196 ✅ (2025-10-27)
 
-**다음 단계 평가 및 Phase 196 계획 수립**
+**Gallery Hooks 코드 품질 평가 및 재조정**
 
 #### 완료 항목
 
-| 항목        | 결과             | 상세                                     |
-| ----------- | ---------------- | ---------------------------------------- |
-| 옵션 평가   | ✅ 3개 옵션 분석 | A(빌드최적), B(Hooks), C(Components)     |
-| 최적 선택   | ✅ Option B 선택 | 기술부채 높음, 유지보수성 우선           |
-| Phase 계획  | ✅ 구체적 로드맵 | 1-3 단계, 수용 기준 명시                 |
-| 문서 정합성 | ✅ 마크다운 검증 | 모든 문서 린트 통과                      |
-| 검증 상태   | ✅ 현상 유지     | 341KB, E2E 92/94 (pre-existing 2개 제외) |
+| 항목           | 결과         | 상세                                                         |
+| -------------- | ------------ | ------------------------------------------------------------ |
+| 코드 정적 분석 | ✅ 완료      | useGalleryFocusTracker (516줄), useGalleryItemScroll (438줄) |
+| 타입 체크      | ✅ 0 errors  | 모든 파일 통과                                               |
+| 린트 검증      | ✅ 0 errors  | ESLint + Prettier 모두 통과                                  |
+| 테스트         | ✅ 9/9 GREEN | 스모크 테스트 전부 통과                                      |
+| 빌드           | ✅ 341 KB    | ≤346 KB 범위 내 유지                                         |
 
-#### 세부 내용
+#### 의사결정
 
-**선택 근거**:
+**원래 계획**: Gallery Hooks 3-파일 분할 (Option B)
 
-- 기술부채 높음: Phase 주석 7개, 복잡도 688줄
-- 구조 개선: 유지보수성 향상으로 향후 작업 가속
-- 안정성 유지: 기존 코드 품질 보존하며 구조만 개선
+**재평가 결론**: Service 계층이 이미 명확하게 분리됨 (itemCache,
+focusTimerManager, observerManager, applicator, stateManager), createEffect가
+논리적으로 분리됨, 불필요한 분할은 오버엔지니어링
 
-**Phase 196 계획 (활성)**:
+**최종 결정**: **Option D (검증과 상태 기록)** - 현재 코드 품질 양호, 추가 분할
+없음, 향후 Phase (197+)에서 필요시 개선 계획
 
-1. **useGalleryFocusTracker 분할** (4-6시간)
-   - State/Helper/Core 분리
-   - 각 파일 <350줄 (권장)
+#### 상태 기록
 
-2. **useGalleryItemScroll 검토** (2-3시간)
-   - Event handler, 유틸 함수 분리
+**문서 작성**: `docs/temp/PHASE_196_EVALUATION.md` (상세 평가 보고서),
+`docs/TDD_REFACTORING_PLAN.md` (계획 업데이트)
 
-3. **테스트 검증** (1-2시간)
-   - 기존 테스트 GREEN 유지
-   - 새 모듈 단위 테스트 추가
-
-**상세 분석**: `docs/temp/GALLERY_HOOKS_AUDIT_REPORT.md` 및
-`docs/temp/GALLERY_COMPONENTS_OPTIONS_REVIEW.md` 참고
+**차기 Phase 권장**: Phase 197: E2E 테스트 안정화 (현재 2개 fail), Phase 198:
+Settings Components 리팩토링 (선택)
 
 ---
 
