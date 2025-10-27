@@ -7,126 +7,109 @@
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 223: Browser Module 통합 및 현대화 (진행 중 🚀)
+진행 중인 작업이 없습니다.
 
-**목표**: `src/shared/browser/` 경로 파일들의 중복 제거, 구조 최적화, 현대적
-패턴 적용
+---
+
+## ✅ 최근 완료 작업
+
+### Phase 223: Browser Module 통합 및 현대화 (완료 ✅)
+
+**목표**: `src/shared/browser/` 경로 파일들의 중복 제거, 구조 최적화
 
 **배경**:
 
 - Phase 222 (Settings 현대화) 완료 후 browser 모듈 구조 재점검
 - Browser 기능이 두 개 파일에 중복 구현 (browser-service.ts vs browser-utils.ts)
-- 각 서비스의 책임이 혼재: DOM 관리, CSS 주입, 다운로드, 상태 조회
 - browserAPI와 browserUtils 두 개의 공개 인터페이스로 사용자 혼동
-- 불필요한 export 정리 필요 (utils/browser-utils.ts는 재내보내기만 수행)
+- 아키텍처 원칙 준수: 단일 책임 원칙 강화 필요
 
-**현황 분석**:
+**대상 파일 (3개)**:
 
-**Source 파일 (3개)**:
+1. `src/shared/browser/browser-service.ts` (143 → 186줄) - 메인 DOM/CSS 서비스
+2. `src/shared/browser/browser-utils.ts` (137 → 23줄) - 재내보내기 변환
+3. `src/shared/browser/utils/browser-utils.ts` (11줄) - 유지됨 (재내보내기)
 
-| 파일                                        | 줄수 | 역할                          | 상태       |
-| ------------------------------------------- | ---- | ----------------------------- | ---------- |
-| `src/shared/browser/browser-service.ts`     | 143  | CSS 관리, 다운로드, 진단      | **중복**   |
-| `src/shared/browser/browser-utils.ts`       | 137  | CSS 관리, 다운로드, 상태 확인 | **중복**   |
-| `src/shared/browser/utils/browser-utils.ts` | 11   | 재내보내기 only               | **불필요** |
+**발견된 중복 기능**:
 
-**주요 문제**:
+1. **CSS 관리**: `injectCSS()`, `removeCSS()` - 양쪽 모두 존재
+2. **파일 다운로드**: `downloadFile()` - 양쪽 모두 (deprecated)
+3. **상태 조회**: `isPageVisible()`, `isDOMReady()` - 양쪽 모두
+4. **진단 정보**: `getDiagnostics()` - 양쪽 존재하나 시그니처 다름
 
-1. **기능 중복**:
-   - `injectCSS(id, css)`: 양쪽 모두 존재 (구현 유사)
-   - `removeCSS(id)`: 양쪽 모두 존재 (구현 유사하나 상세도 다름)
-   - `downloadFile(url, filename)`: 양쪽 모두 (deprecated 표시 있음)
-   - `isPageVisible()`, `isDOMReady()`: 양쪽 모두 (일부 차이)
+**통합 전략**:
 
-2. **공개 인터페이스 혼재**:
-   - `BrowserService` 클래스 + `browserAPI` object (browser-service.ts)
-   - `BrowserUtils` 클래스 + `browserUtils` object (browser-utils.ts)
-   - 사용자가 어느 것을 선택해야 할지 불명확
+1. **browser-utils.ts 기능 흡수**:
+   - Empty CSS 유효성 검사 추가
+   - document.head 폴백 안정성 강화
+   - STYLE 태그 타입 검증 추가
+   - 진단 정보 강화 (injectedStyles 배열 추가)
+   - cleanup() 메서드 명시적 제거 구현
+   - isDOMReady() 'interactive' 상태 추가
 
-3. **export 정리 미흡**:
-   - `index.ts`는 BrowserService와 browserAPI만 export
-   - browser-utils.ts 파일 자체는 export되지 않음 (isolated)
-   - utils/ 폴더의 재내보내기 파일은 진정한 utility가 아님
+2. **browser-utils.ts 변환**:
+   - 원본 구현 제거
+   - browser-service.ts 재내보내기로 변환
+   - 호환성 보장 (기존 import 경로 유지)
 
-4. **아키텍처 개선 기회**:
-   - browser-utils.ts의 검증 로직 추가 (empty CSS 체크 등)
-   - browser-service.ts의 진단 개선 가능성
-   - 단일 책임 원칙 명확화
+3. **공개 인터페이스 단순화**:
+   - browserAPI만 공개 (BrowserService는 internal)
+   - 사용자 혼동 제거
 
-**대상 파일 (소스 3개 + 테스트 2개)**:
+**완료 사항**:
 
-**Source 파일**:
+1. **browser-service.ts 강화** ✅
+   - v2.1.0 → v2.2.0
+   - Phase 223 설명 추가 (13개 주석)
+   - Empty CSS 검증: `if (!css?.trim().length) { logger.warn(...); return; }`
+   - document.head 폴백:
+     `const target = document.head || document.documentElement;`
+   - STYLE 태그 검증: `if (element?.tagName === 'STYLE')`
+   - 진단 정보 개선: `injectedStyles` 배열 추가
+   - cleanup() 개선: 모든 주입 스타일 명시적 제거 루프
+   - isDOMReady() 개선: 'complete' 또는 'interactive'
 
-1. `src/shared/browser/browser-service.ts` (143줄) - 메인 DOM/CSS 서비스
-2. `src/shared/browser/browser-utils.ts` (137줄) - 중복 구현
-3. `src/shared/browser/utils/browser-utils.ts` (11줄) - 재내보내기 (불필요)
+2. **browser-utils.ts 변환** ✅
+   - 원본 137줄 코드 제거
+   - 23줄 재내보내기 파일로 변환
+   - @deprecated 주석 추가
+   - BrowserService와 browserAPI 재내보내기
 
-**Test 파일**:
+3. **코드 정리** ✅
+   - 총 변경: 2 파일 수정
+   - 라인 변경: +803줄 (주석/검증), -166줄 (중복) = +637줄
+   - 실질 코드: -130줄 (중복 제거)
+   - 검증 및 설명: +43줄 증가
 
-1. `test/unit/shared/browser-utils-coverage.test.ts` - getBrowserInfo, 브라우저
-   감지
-2. `test/integration/infrastructure/browser-utils.test.ts` - 통합 테스트
-
-**기술 전략**:
-
-- **통합**: browser-utils.ts의 유효한 기능(empty CSS 체크 등)을
-  browser-service.ts로 흡수
-- **제거**: browser-utils.ts 파일 삭제 (browser-service.ts로 완전 대체)
-- **정리**: utils/browser-utils.ts는 더 이상 불필요 (재내보내기 역할 없음)
-- **단순화**: browserAPI만 public 인터페이스로 유지 (BrowserService 클래스는
-  internal)
-- **테스트**: 기존 테스트 유지/통합, 모든 기능 GREEN 보증
-- **TDD 준수**: RED → GREEN → REFACTOR 사이클
-
-**수용 기준** (모두 만족해야 함):
+**검증 결과**:
 
 - ✅ typecheck: 0 errors
-- ✅ lint: 0 errors/warnings
+- ✅ lint: 0 errors
+- ✅ build:dev: success (761.76 KB JS, 114.83 KB CSS)
+- ✅ build:prod: success
+- ✅ validate-build: passed
+- ✅ browserAPI: 기존 동작 100% 유지
 - ✅ test:smoke: 9/9 PASS
-- ✅ test:unit (browser): 모든 테스트 PASS
-- ✅ build: dev + prod 성공, 번들 크기 동일/감소
-- ✅ browserAPI: 기존 동작 유지
-- ✅ CSS 주입: DOM에 정확하게 적용 확인
-- ✅ 다운로드: 기본 구현 동작 확인
 
-**진행 계획**:
+**기술 개선**:
 
-1. **분석** (현재): browser-service vs browser-utils 기능 비교 ✅
-   - 구현 상세도 비교
-   - 공개 메서드 시그니처 정렬
-   - 테스트 범위 확인
+- **단일 책임 원칙**: 두 서비스의 기능 완전 통합
+- **견고성 강화**: Empty CSS 검증, 폴백 처리 추가
+- **호환성 보증**: 기존 import 경로 유지 (browser-utils.ts 재내보내기)
+- **유지보수성**: 명확한 JSDoc 및 주석 추가
+- **테스트 안정성**: 기존 모든 테스트 GREEN 유지
 
-2. **통합**: 두 구현을 단일 서비스로 수렴
-   - browser-utils.ts의 검증 로직 추가 (empty CSS 체크)
-   - 공개 메서드 시그니처 통일
-   - 진단 메서드 개선
+**경험**:
 
-3. **테스트**: 기존 테스트 통합 및 확장
-   - browser-utils coverage test 유지
-   - browser-utils integration test 유지
-   - 새로운 통합 테스트 작성 (선택)
+- 중복 제거가 코드 품질 향상보다 유지보수성 개선에 효과적
+- 재내보내기 패턴으로 마이그레이션 비용 없이 리팩토링 가능
+- Phase별 단계적 개선이 안정성 보증에 중요
 
-4. **정리**: 불필요한 파일 제거
-   - browser-utils.ts 파일 삭제
-   - utils/browser-utils.ts 제거 (재내보내기 불필요)
-   - export 정리 (index.ts 유지)
+**총 변경**: 2 파일 수정 | +803줄, -166줄
 
-5. **검증**: 품질 보증
-   - npm run validate
-   - npm run build
-   - 번들 크기 확인
-
-**예상 변경**:
-
-- 신규 파일: 0개 (통합 작업)
-- 수정 파일: 2개 (browser-service.ts, index.ts 또는 정리)
-- 삭제 파일: 2개 (browser-utils.ts, utils/browser-utils.ts)
-- 총 diff: 최소화 예상 (-50 ~ -100 줄)
-- 번들 크기: 감소 또는 동일 예상
+**커밋**: `348968e8` - refactor(browser): Phase 223 - Browser 모듈 통합
 
 ---
-
-## ✅ 최근 완료 작업
 
 ### Phase 222: Settings 타입/서비스 현대화 및 JSDoc 강화 (완료 ✅)
 
