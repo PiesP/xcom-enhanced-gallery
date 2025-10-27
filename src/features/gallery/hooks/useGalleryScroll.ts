@@ -6,19 +6,18 @@
  * @description 마우스 움직임에 의존하지 않는 안정적인 스크롤 처리를 제공
  */
 
-import { getSolid } from '../../../shared/external/vendors';
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { EventManager } from '../../../shared/services/event-manager';
-import type { StabilityDetector } from '../../../shared/utils/stability';
-import { galleryState } from '../../../shared/state/signals/gallery.signals';
-import type { GalleryState } from '../../../shared/state/signals/gallery.signals';
-import type { ScrollState, ScrollDirection } from '../../../shared/state/signals/scroll.signals';
-import { INITIAL_SCROLL_STATE } from '../../../shared/state/signals/scroll.signals';
-import { useSelector } from '../../../shared/utils/signal-selector';
-import { toAccessor, isHTMLElement } from '../../../shared/utils/solid-helpers';
-import { findTwitterScrollContainer } from '../../../shared/utils/core-utils';
-import { globalTimerManager } from '../../../shared/utils/timer-management';
+import { EventManager } from '@shared/services/event-manager';
+import type { StabilityDetector } from '@shared/utils/stability';
+import { galleryState } from '@shared/state/signals/gallery.signals';
+import type { GalleryState } from '@shared/state/signals/gallery.signals';
+import type { ScrollState, ScrollDirection } from '@shared/state/signals/scroll.signals';
+import { INITIAL_SCROLL_STATE } from '@shared/state/signals/scroll.signals';
+import { useSelector } from '@shared/utils/signal-selector';
+import { toAccessor } from '@shared/utils/solid-helpers';
+import { findTwitterScrollContainer } from '@shared/utils/core-utils';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();
 
@@ -53,8 +52,10 @@ export interface UseGalleryScrollReturn {
   scrollDirection: Accessor<ScrollDirection>;
 }
 
-// Focus Stability Quick Reference 제안에 따라 idle 판정을 완화
-// 기존 150ms → 250ms 로 상향하여 스크롤 중 포커스 흔들림을 줄임
+/**
+ * 유휴 상태로 판정하기까지의 대기 시간 (ms)
+ * Phase 153: 250ms로 설정하여 스크롤 중 포커스 흔들림 완화
+ */
 export const SCROLL_IDLE_TIMEOUT = 250;
 
 export function useGalleryScroll({
@@ -153,13 +154,11 @@ export function useGalleryScroll({
     if (scrollState().isScrolling && blockTwitterScrollAccessor()) {
       event.preventDefault();
       event.stopPropagation();
-      logger.debug('useGalleryScroll: 트위터 스크롤 차단');
     }
   };
 
   const handleGalleryWheel = (event: WheelEvent) => {
     if (!isGalleryOpen()) {
-      logger.debug('useGalleryScroll: 갤러리가 열려있지 않음 - 휠 이벤트 무시');
       return;
     }
 
@@ -173,20 +172,7 @@ export function useGalleryScroll({
 
     onScroll?.(delta, targetElement);
 
-    // Note: preventDefault/stopPropagation 제거 - 브라우저/OS 네이티브 스크롤 동작 사용
-    // 트위터 페이지와의 충돌은 preventTwitterScroll 함수에서 별도 처리
-
     handleScrollEnd();
-
-    // Phase 141.3: 타입 가드로 타입 단언 제거
-    const target = event.target;
-    logger.debug('useGalleryScroll: 휠 이벤트 처리 완료', {
-      delta,
-      isGalleryOpen: isGalleryOpen(),
-      targetElement: isHTMLElement(target) ? target.tagName : 'unknown',
-      targetClass: isHTMLElement(target) ? target.className : 'none',
-      timestamp: Date.now(),
-    });
   };
 
   createEffect(() => {
@@ -207,10 +193,9 @@ export function useGalleryScroll({
 
     const eventManager = new EventManager();
 
-    // 갤러리 휠 이벤트는 passive 리스너로 등록 (브라우저 네이티브 스크롤 동작 사용)
     eventManager.addEventListener(document, 'wheel', handleGalleryWheel, {
       capture: true,
-      passive: true, // 브라우저/OS 네이티브 스크롤 속도 설정 준수
+      passive: true,
     });
 
     if (shouldBlockTwitterScroll) {
@@ -240,7 +225,6 @@ export function useGalleryScroll({
         ...prev,
         isScrolling: false,
       }));
-      logger.debug('useGalleryScroll: 정리 완료');
     });
   });
 

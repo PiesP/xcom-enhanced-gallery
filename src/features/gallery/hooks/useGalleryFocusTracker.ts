@@ -1,8 +1,8 @@
 import type { Accessor } from 'solid-js';
-import { getSolid } from '../../../shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '../../../shared/utils/timer-management';
-import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
+import { globalTimerManager } from '@shared/utils/timer-management';
+import { galleryIndexEvents, setFocusedIndex } from '@shared/state/signals/gallery.signals';
 import {
   type FocusState,
   type FocusTracking,
@@ -13,7 +13,7 @@ import {
   updateFocusTracking,
   createItemCache,
   createFocusTimerManager,
-} from '../../../shared/state/focus';
+} from '@shared/state/focus';
 import {
   createFocusObserverManager,
   createFocusApplicatorService,
@@ -25,6 +25,11 @@ type MaybeAccessor<T> = T | Accessor<T>;
 const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
   typeof value === 'function' ? (value as Accessor<T>) : () => value;
 
+/**
+ * useGalleryFocusTracker 훅의 옵션 인터페이스
+ *
+ * IntersectionObserver를 이용한 자동 포커스 추적과 수동 포커스 관리를 지원합니다.
+ */
 export interface UseGalleryFocusTrackerOptions {
   /** 갤러리 컨테이너 요소 */
   container: MaybeAccessor<HTMLElement | null>;
@@ -46,6 +51,11 @@ export interface UseGalleryFocusTrackerOptions {
   autoFocusDebounce?: MaybeAccessor<number>;
 }
 
+/**
+ * useGalleryFocusTracker 훅의 반환 값 인터페이스
+ *
+ * 자동 감지 및 수동 조정 가능한 포커스 관리 API를 제공합니다.
+ */
 export interface UseGalleryFocusTrackerReturn {
   /** 자동/수동 감지된 포커스 인덱스 */
   focusedIndex: Accessor<number | null>;
@@ -192,7 +202,16 @@ export function useGalleryFocusTracker({
     }
   };
 
-  // Recompute focus based on visible items
+  /**
+   * 현재 가시적인 아이템들 중 가장 중앙에 위치한 아이템의 인덱스를 재계산합니다.
+   *
+   * IntersectionObserver로부터 수집된 데이터를 기반으로:
+   * 1. 중앙으로부터의 거리 순서로 정렬
+   * 2. 가시 비율로 2차 정렬
+   * 3. 시간 순서로 3차 정렬
+   *
+   * 아이템 없음 시 현재 인덱스(currentIndex)로 fallback합니다.
+   */
   const recomputeFocus = () => {
     const enabled = isEnabledAccessor();
     if (!enabled) {
@@ -276,6 +295,14 @@ export function useGalleryFocusTracker({
     });
   };
 
+  /**
+   * 갤러리 아이템 요소를 포커스 추적 대상으로 등록하거나 해제합니다.
+   *
+   * @param index 갤러리 아이템의 인덱스
+   * @param element 등록할 DOM 요소 (null인 경우 해제)
+   *
+   * 호출 시마다 recomputeFocus()를 수행하여 현재 포커스를 재평가합니다.
+   */
   const registerItem = (index: number, element: HTMLElement | null) => {
     const prev = itemCache.getItem(index);
     if (prev?.element) {
@@ -283,9 +310,6 @@ export function useGalleryFocusTracker({
     }
 
     if (!element) {
-      if (prev?.element) {
-        // 요소 제거 시 캐시에서만 삭제 (WeakMap은 자동 정리)
-      }
       itemCache.deleteItem(index);
       recomputeFocus();
       evaluateAutoFocus('register-remove');

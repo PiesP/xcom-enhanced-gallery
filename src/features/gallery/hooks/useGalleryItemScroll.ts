@@ -6,10 +6,9 @@
  * @description Solid.js 기반으로 갤러리 아이템 간 스크롤을 안정적으로 관리하는 훅
  */
 
-import { getSolid } from '../../../shared/external/vendors';
-// NOTE: Vitest(vite-node) Windows alias 해석 이슈 회피 — 내부 의존성은 상대 경로 사용
+import { getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
-import { toAccessor } from '../../../shared/utils/solid-helpers';
+import { toAccessor } from '@shared/utils/solid-helpers';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { createItemScrollStateSignal, updateStateSignal } from '@shared/state/item-scroll';
 
