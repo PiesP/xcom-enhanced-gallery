@@ -1,20 +1,20 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 204 완료 ✅
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 206 완료 ✅
 
 ## 📊 현황 요약
 
-| 항목          | 상태              | 비고                        |
-| ------------- | ----------------- | --------------------------- |
-| 빌드          | ✅ 안정           | 병렬화 + 메모리 최적화 완료 |
-| 성능          | ✅ 14.7% 향상     | 병렬 실행으로 7.3초 단축    |
-| 테스트        | ✅ 94/94 E2E      | 모두 통과                   |
-| 접근성 테스트 | ✅ 33/33 통과     | 3개 파일 통합 완료          |
-| 타입/린트     | ✅ 0 errors       | 모두 통과                   |
-| 의존성        | ✅ 0 violations   | 정책 준수                   |
-| 로컬 빌드     | ✅ 최적화         | 순차 49.5초 → 병렬 42.2초   |
-| 번들 크기     | ✅ 340.54 KB      | 목표 ≤345 KB (4.46 KB 여유) |
-| 상태          | ✅ Phase 204 완료 | 대기 중                     |
+| 항목          | 상태              | 비고                          |
+| ------------- | ----------------- | ----------------------------- |
+| 빌드          | ✅ 안정           | 병렬화 + 메모리 최적화 완료   |
+| 성능          | ✅ 14.7% 향상     | 병렬 실행으로 7.3초 단축      |
+| 테스트        | ✅ 82/82 E2E      | 모두 통과 (5 skipped)         |
+| 접근성 테스트 | ✅ 33/33 통과     | 3개 파일 통합 완료            |
+| 타입/린트     | ✅ 0 errors       | 모두 통과                     |
+| 의존성        | ✅ 0 violations   | 정책 준수                     |
+| 로컬 빌드     | ✅ 최적화         | 순차 49.5초 → 병렬 42.2초     |
+| 번들 크기     | ✅ 341 KB         | 목표 ≤345 KB (4 KB 여유)      |
+| 상태          | ✅ Phase 206 완료 | Playwright 스모크 테스트 통합 |
 
 ---
 
@@ -29,7 +29,69 @@
 
 ## ✅ 최근 완료
 
-### Phase 204 ✅ (2025-10-27) - Playwright 접근성 테스트 통합 및 최적화
+### Phase 206 ✅ (2025-10-27) - Playwright Smoke 테스트 통합 및 최적화
+
+**목표**: `playwright/smoke` 디렉터리 테스트 파일 통합 및 현대화
+
+**완료 항목**:
+
+1. **파일 통합** ✅
+   - Phase 특화 파일 정리:
+     - phase-145-3-loading-timing-e2e.spec.ts 제거 (SKIP 상태, 네트워크 테스트)
+     - phase-b3-5-e2e-performance.spec.ts → performance.spec.ts 리네임
+   - Keyboard 테스트 통합 (5개 → 2개):
+     - keyboard-navigation.spec.ts + keyboard-video.spec.ts → keyboard.spec.ts
+       (통합)
+     - keyboard-interaction.spec.ts (성능 테스트만 유지)
+   - Gallery 테스트 통합 (2개 → 1개):
+     - gallery-app.spec.ts + gallery-events.spec.ts → gallery.spec.ts
+   - Scroll Chaining 테스트 통합 (2개 → 1개):
+     - scroll-chaining-boundary.spec.ts + scroll-chaining-keyboard.spec.ts →
+       scroll-chaining.spec.ts
+
+2. **파일 수 감소** ✅
+   - 통합 전: 23개 파일
+   - 통합 후: 18개 파일 (21.7% 감소)
+   - 제거된 파일: 5개
+
+3. **현대화 및 문서화** ✅
+   - 각 통합 파일에 명확한 JSDoc 추가
+   - "Consolidated from" 섹션으로 원본 파일 명시
+   - 테스트 범위 및 목적 명확화
+   - kebab-case 명명 규칙 준수
+
+4. **검증** ✅
+   - E2E 스모크 테스트: 82/82 통과 (5 skipped)
+   - 타입 체크: 0 errors
+   - 린트: 0 warnings
+   - 테스트 실행 시간: ~19.7초 (안정적)
+
+**효과**:
+
+- 파일 수 21.7% 감소 (23개 → 18개)
+- 관련 테스트 논리적 그룹화로 유지보수성 향상
+- 중복 setup/teardown 로직 제거
+- 명확한 테스트 범위 문서화
+
+**세부사항**:
+
+- 통합 파일:
+  - `keyboard.spec.ts`: 네비게이션(ArrowLeft/Right, Home/End, Escape) + 비디오
+    제어(Space, M)
+  - `keyboard-interaction.spec.ts`: 성능 테스트 (렌더링 < 50ms, 메모리 < 10MB)
+  - `gallery.spec.ts`: 초기화, 이벤트 정책, 열기/닫기 플로우
+  - `scroll-chaining.spec.ts`: Wheel 경계 + Keyboard 네비게이션 차단
+  - `performance.spec.ts`: Phase B3.5 성능 측정 (프레임율, 메모리, 네트워크)
+
+- Toolbar 파일 (6개) 유지:
+  - toolbar.spec.ts, toolbar-headless.spec.ts, toolbar-initial-display.spec.ts
+  - toolbar-settings.spec.ts, toolbar-settings-panel-e2e.spec.ts,
+    toolbar-settings-migration.spec.ts
+  - 각각 명확한 Phase와 기능 목적이 있어 유지
+
+---
+
+### Phase 205 ✅ (2025-10-27) - Playwright Harness 코드 정리 및 최적화
 
 **목표**: playwright/accessibility 테스트 스위트 리팩토링 및 간소화
 
