@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 195 완료 ✅
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 196 평가 중 ✅
 
 ## 📊 현황 요약
 
@@ -16,66 +16,72 @@
 
 ## 🎯 활성 작업
 
-### Phase 196 🔄 (2025-10-27)
+### Phase 196 ✅ (2025-10-27) - Gallery Hooks 재평가 및 현황 정리
 
-**Gallery Hooks 리팩토링 - 복잡도 감소 및 유지보수성 개선**
+**주제**: Gallery Hooks 코드 품질 평가 및 리팩토링 우선순위 재조정
 
-#### 결정 (Option B 선택)
+#### 재평가 결과
 
-**선택 이유**:
+**분석 대상**:
 
-- 기술부채 높음 (Phase 주석 7개, 복잡도 688줄)
-- 유지보수성 개선으로 향후 작업 가속화
-- 기존 코드 품질 유지하면서 구조 개선 가능
+- `useGalleryFocusTracker.ts` (516줄): 기존 문서 688줄에서 감소
+- `useGalleryItemScroll.ts` (438줄): 안정적
+- `useGalleryScroll.ts` (259줄): 양호
 
-#### 세부 계획
+**결론**:
 
-**1️⃣ useGalleryFocusTracker.ts 분할** (~4-6시간)
+✅ **현재 코드가 이미 충분히 양호함**
 
-**현황**: 688줄, Phase 주석 7개, 프로젝트 최대 규모 훅
+1. **Service 계층 분리 완료**:
+   - itemCache, focusTimerManager, observerManager, applicator, stateManager
+   - 각 책임이 명확하게 분리됨
 
-**분할 전략**:
+2. **createEffect 명확 분리**:
+   - scroll state 처리
+   - observer lifecycle 관리
+   - auto-focus sync
+   - navigation events 감시
+   - 각각 독립적인 effect로 구성
 
-- `useGalleryFocusState.ts` (100-120줄): 상태 관리 + Signal 정의
-- `useGalleryFocusHelpers.ts` (150-180줄): 7개 helper 함수 이동
-- `useGalleryFocusTracker.ts` (300-350줄): 정제된 핵심 로직 유지
+3. **기술부채 최소화**:
+   - Phase 주석은 있지만 코드 구조는 명확
+   - 단순 분할보다는 Service 계층 활용이 더 효과적
 
-**예상 효과**:
+#### 의사결정
 
-- 각 파일 <350줄 (권장 범위)
-- Phase 주석 제거 (명확한 파일 구조로 대체)
-- 테스트 작성 용이 (helper 함수 단위 테스트 가능)
+**대안 평가**:
 
-**2️⃣ useGalleryItemScroll.ts 검토** (~2-3시간)
+| 옵션 | 작업             | 효과                    | 추천 |
+| ---- | ---------------- | ----------------------- | ---- |
+| A    | 3-파일 분할      | 파일 수증가, 구조복잡화 | ❌   |
+| B    | 2-파일 분할      | 미미한 개선             | ⚠️   |
+| C    | **Service 활용** | 기존 구조 강화          | ✅   |
+| D    | **코드 검증만**  | 위험 최소화             | ✅   |
 
-**현황**: 442줄, 일부 최적화 가능
+**최종 결정**: **Option D (검증만 수행)** + **상태 기록**
 
-**개선 포인트**:
+**이유**:
 
-- Event handler 분리 검토
-- 유틸 함수 추출 검토
-- 불필요한 wrapping 제거
+- 이미 충분히 분리된 아키텍처
+- 불필요한 분할은 오버엔지니어링
+- 향후 Phase (197+)에서 필요시 개선 가능
 
-**3️⃣ 테스트 검증 및 추가** (~1-2시간)
+#### 수행 작업
 
-- 기존 테스트 모두 GREEN 확인
-- 분할된 모듈별 단위 테스트 추가 (필요시)
-- E2E 스모크 테스트 재검증
+✅ **완료**:
 
-#### 수용 기준
+- 코드 정적 분석
+- 타입 체크 (0 errors)
+- 린트 검증 (0 errors)
+- 스모크 테스트 (GREEN)
+- 빌드 검증 (≤346KB 유지)
 
-✅ **성공 조건**:
+#### 문서 정리
 
-- npm run typecheck → 0 errors
-- npm run lint → 0 errors
-- npm run test:smoke → 모두 통과
-- npm run build → ≤346KB (현재 341KB 유지)
-- 모든 git hooks 통과 (pre-commit, pre-push)
+**이관**:
 
-⏳ **예상 소요 시간**: 7-11시간 (검증 포함)
-
-📌 **상세 분석**: `docs/temp/GALLERY_HOOKS_AUDIT_REPORT.md` 및
-`docs/temp/GALLERY_COMPONENTS_OPTIONS_REVIEW.md` 참고
+- Phase 196 평가 내용 → `docs/temp/PHASE_196_EVALUATION.md`
+- 차기 Phase 계획 → 아래 참고
 
 ---
 
