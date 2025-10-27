@@ -2,11 +2,61 @@
 
 **목적**: 완료된 Phase의 핵심 요약
 
-**최종 업데이트**: 2025-10-27 | **활성 계획**: Phase 214 ✅ 완료
+**최종 업데이트**: 2025-10-27 | **활성 계획**: Phase 215 ✅ 완료
 
 ---
 
-## 🎯 최근 완료 Phase (214-213)
+## 🎯 최근 완료 Phase (215-213)
+
+### Phase 215 ✅ (2025-10-27) - Components Optimization & KeyboardHelpOverlay 재구성
+
+**목표**: Gallery 컴포넌트 구조 최적화 및 컴포넌트 문서화 강화
+
+**배경**:
+
+- KeyboardHelpOverlay가 VerticalGalleryView의 내부 구현 상세인데 별도 디렉토리에
+  위치
+- components/index.ts의 JSDoc 문서화 부족
+- 컴포넌트 export 명확성 부족 (KeyboardHelpOverlay 비공개 여부 불명확)
+
+**완료 항목**:
+
+1. **KeyboardHelpOverlay 위치 최적화**:
+   - 파일 이동: `components/KeyboardHelpOverlay/` →
+     `components/vertical-gallery-view/KeyboardHelpOverlay/`
+   - VerticalGalleryView.tsx의 import 경로 업데이트 (`../` → `./`)
+   - 논리적 응집도 향상 (VerticalGalleryView의 내부 구현)
+
+2. **Import 경로 업데이트**:
+   - VerticalGalleryView.tsx: 상대 경로 `../KeyboardHelpOverlay/` →
+     `./KeyboardHelpOverlay/`
+   - playwright/harness/index.ts:
+     `@features/gallery/components/KeyboardHelpOverlay/` →
+     `@features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/`
+
+3. **JSDoc 문서화 강화**:
+   - **components/index.ts**:
+     - @fileoverview, @description 추가 (25+ 줄)
+     - 공개 API 명확화 (exported components & utilities)
+     - 아키텍처 노트: KeyboardHelpOverlay는 VerticalGalleryView 보조
+     - 설계 패턴 명시 (PC-only events, design tokens, vendor getter)
+     - 모듈 버전 업데이트 (v6.0 with restructuring note)
+
+   - **vertical-gallery-view/index.ts**:
+     - @fileoverview, @description 추가 (15+ 줄)
+     - 모듈 구조 및 내부 조직 기술
+     - @internal 마킹으로 내부 모듈임을 명시
+
+4. **공개 API 업데이트**:
+   - KeyboardHelpOverlay 및 KeyboardHelpOverlayProps export 추가
+   - 컴포넌트 사용처 명확화
+
+5. **검증**:
+   - TypeScript typecheck ✅ (0 errors)
+   - ESLint lint ✅ (0 errors)
+   - E2E smoke tests ✅ (82/82 tests)
+   - Production build ✅ (340.05 KB, 91.31 KB gzip)
+   - All validations ✅ (type/lint/lint-md/deps/CodeQL/browser/E2E/a11y)
 
 ### Phase 214 ✅ (2025-10-27) - VerticalGalleryView 컴포넌트 현대화
 
