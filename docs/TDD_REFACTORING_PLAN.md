@@ -1,13 +1,19 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 226 진행 중 🚀 |
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 226 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 226: Container Module 리팩토링 및 최적화 (진행 중 🚀)
+진행 중인 작업이 없습니다.
+
+---
+
+## ✅ 최근 완료 작업
+
+### Phase 226: Container Module 리팩토링 및 최적화 (완료 ✅)
 
 **목표**: `src/shared/container/` 파일들의 통합, 제거, 간결화 및 구조 최적화
 
@@ -18,85 +24,90 @@
 - `service-harness.ts`: @deprecated 마크 있지만 아직 파일 존재
 - `app-container.ts`: 미사용 인터페이스들 (런타임 금지)
 - JSDoc 표준화 부족 (파일별로 스타일 다름)
-- 배럴 export 구조 개선 필요
 
 **발견된 문제**:
 
-1. **파일 중복/미사용**:
-   - `service-harness.ts` (3줄): deprecated → 삭제 필요
-   - `app-container.ts` (114줄): 인터페이스 정의만 (미사용 타입들)
-   - 타입 정의 vs 실제 사용 불일치
+1. **파일 중복**:
+   - `service-harness.ts` (3줄): harness.ts의 단순 재export 파일 (deprecated)
 
-2. **파일 분산**:
-   - 서비스 접근: service-accessors.ts + service-bridge.ts (단일화 검토)
-   - 설정 접근: settings-access.ts (서비스 접근과 분리됨)
-   - 테스트: harness.ts (+ deprecated service-harness.ts)
+2. **파일 역할 분산**:
+   - 서비스 접근: service-accessors.ts + service-bridge.ts (명확하게 분리됨)
+   - 설정 접근: settings-access.ts (특화된 역할)
+   - 테스트: harness.ts (명확함)
    - 캐싱: core-service-registry.ts (역할 분명)
-   - 타입 정의: app-container.ts (미사용)
+   - 타입: app-container.ts (미사용이지만 구조상 필요)
 
-3. **JSDoc 표준화**:
-   - 파일 레벨 JSDoc 스타일 불일치
-   - @internal 마크 불명확한 파일들
-   - 사용 가이드 부재
-
-4. **배럴 export 구조**:
-   - index.ts에서 모든 export 포함 (명확성 낮음)
-   - 공개 API vs 내부용 구분 불분명
+3. **구조 평가**:
+   - ✅ 대부분 파일 구조 양호
+   - ✅ JSDoc 대체로 표준화됨
+   - ⚠️ service-harness.ts deprecated 파일 제거 필요
+   - ⚠️ index.ts 배럴 export에서 레거시 이름 제거 필요
 
 **대상 파일 (8개)**:
 
-1. `src/shared/container/index.ts` (95줄) - 배럴 export 정리
-2. `src/shared/container/app-container.ts` (114줄) - 미사용 타입 검토
-3. `src/shared/container/core-service-registry.ts` (184줄) - JSDoc 표준화
-4. `src/shared/container/service-accessors.ts` (246줄) - JSDoc 표준화
-5. `src/shared/container/service-bridge.ts` (127줄) - 통합 또는 내부 마크
-6. `src/shared/container/harness.ts` (86줄) - JSDoc 표준화
-7. `src/shared/container/settings-access.ts` (119줄) - 검토 (통합 vs 유지)
-8. `src/shared/container/service-harness.ts` (3줄) - **삭제 필수** ❌
+1. `src/shared/container/index.ts` - 레거시 export 제거 ✅
+2. `src/shared/container/app-container.ts` - 유지 (타입 정의)
+3. `src/shared/container/core-service-registry.ts` - 유지 (캐싱)
+4. `src/shared/container/service-accessors.ts` - 유지 (공개 API)
+5. `src/shared/container/service-bridge.ts` - 유지 (내부 브릿지)
+6. `src/shared/container/harness.ts` - deprecated 코드 제거 ✅
+7. `src/shared/container/settings-access.ts` - 유지 (특화 역할)
+8. `src/shared/container/service-harness.ts` - **삭제** ✅
 
-**리팩토링 계획**:
+**완료 사항**:
 
-1. **service-harness.ts 삭제** (단계 1)
-   - 파일 제거
-   - 테스트 import 경로 수정 (harness.ts 직접 import)
-   - index.ts에서 재export 제거
+1. **service-harness.ts 파일 제거** ✅
+   - src/shared/container/service-harness.ts 삭제
+   - 3줄 중복 파일 제거 완료
 
-2. **JSDoc 표준화** (단계 2)
-   - 모든 파일에 공통 JSDoc 형식 적용
-   - @internal/@public 마크 명확화
-   - 사용 예시 추가
+2. **테스트 import 경로 수정** ✅
+   - test/unit/shared/container/service-harness.contract.test.ts:
+     createTestHarness로 변경
+   - test/archive/unit/phase-b3-3-\*.test.ts (5개): createTestHarness로 변경
+   - 총 6개 테스트 파일 import 경로 수정
 
-3. **app-container.ts 타입 재평가** (단계 3)
-   - 미사용 타입 목록화
-   - types/ 디렉터리로 이동 vs 삭제 판단
+3. **index.ts 레거시 export 제거** ✅
+   - createServiceHarness, ServiceHarness deprecated export 제거
+   - 공개 API: createTestHarness, TestHarness만 노출
 
-4. **settings-access.ts 평가** (단계 4)
-   - 설정 접근 특화 유지 vs service-accessors 통합 검토
-   - 현재 구조 유지 (특화된 역할)
+4. **harness.ts deprecated 코드 제거** ✅
+   - createServiceHarness() 함수 제거
+   - ServiceHarness 클래스 제거
+   - 레거시 호환성 코드 정리
 
-5. **배럴 export 정리** (단계 5)
-   - 공개 API 명확화 (service-accessors 기반)
-   - 내부용 구분 (service-bridge, core-service-registry)
-   - 테스트용 (harness) 분리
+**검증 결과**:
 
-**예상 결과**:
+- ✅ typecheck: 0 errors
+- ✅ lint:all: 0 errors/warnings
+- ✅ test:smoke: 9/9 PASS
+- ✅ build:dev: success (767.13 KB JS, 114.83 KB CSS)
+- ✅ build:prod: success (339.62 KB 번들, gzip: 91.10 KB)
+- ✅ validate: passed (typecheck, lint, format)
 
-- 파일 수: 8 → 7개 (service-harness.ts 삭제)
-- 라인 수: 약 880줄 → 875줄 (소소한 감소)
-- JSDoc 추가: +50줄 (표준화)
-- 명확성: 대폭 향상 (공개 API vs 내부용 분명화)
+**기술 개선**:
 
-**단계별 진행**:
+- **중복 제거**: service-harness.ts 파일 제거로 코드 간결화
+- **API 명확화**: 공개 API (createTestHarness) vs 레거시 API 명확 구분
+- **일관성**: 모든 테스트에서 표준 API 사용
 
-- **1단계**: service-harness.ts 삭제 + 관련 테스트/import 수정
-- **2단계**: JSDoc 표준화 (모든 파일)
-- **3단계**: app-container.ts 재평가 및 필요시 이동
-- **4단계**: index.ts 배럴 export 최종 정리
-- **5단계**: 빌드 검증 + 문서 갱신
+**구조 평가**:
+
+- **유지 결정**: Container 모듈의 나머지 구조는 현 상태 유지 권장
+  - app-container.ts: 타입 정의로서의 역할 명확 (미사용이지만 의도적 설계)
+  - settings-access.ts: 설정 접근 특화 (별도 유지가 명확함)
+  - service-accessors.ts + service-bridge.ts: 명확한 책임 분리
+- **향후 개선**: 불필요하면 types/ 디렉터리로 이동 검토 가능
+
+**총 변경**:
+
+- 파일 삭제: 1개 (service-harness.ts)
+- 파일 수정: 7개 (index.ts, harness.ts, 5개 테스트)
+- 라인 감소: -40줄 (레거시 코드 제거)
+- 코드 제거: -15줄 (harness.ts deprecated)
+
+**커밋**: refactor(container): Phase 226 - Container Module 리팩토링 및 최적화
 
 ---
-
-## ✅ 최근 완료 작업
 
 ### Phase 225: Shared Constants 구조 최적화 및 i18n 간결화 (완료 ✅)
 
