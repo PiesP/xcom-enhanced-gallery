@@ -80,12 +80,3 @@ export class TestHarness {
 export function createTestHarness(): TestHarness {
   return new TestHarness();
 }
-
-// 호환성: 레거시 이름 유지 (기존 테스트 코드 호환)
-/** @deprecated createTestHarness() 사용하세요 */
-export function createServiceHarness(): TestHarness {
-  return createTestHarness();
-}
-
-/** @deprecated TestHarness 사용하세요 */
-export class ServiceHarness extends TestHarness {}

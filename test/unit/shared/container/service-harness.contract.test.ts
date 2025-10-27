@@ -1,16 +1,17 @@
 /**
  * ServiceHarness Contract Test
  * - 목적: AppContainer 없이 테스트용 DI/초기화가 가능한지 검증
+ * - Phase 226: service-harness.ts 제거로 인한 import 경로 변경
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createServiceHarness } from '@/shared/container/service-harness';
+import { createTestHarness } from '@shared/container';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('ServiceHarness — 경량 테스트 하네스', () => {
-  let harness: ReturnType<typeof createServiceHarness>;
+  let harness: ReturnType<typeof createTestHarness>;
 
   beforeEach(() => {
-    harness = createServiceHarness();
+    harness = createTestHarness();
   });
 
   afterEach(() => {

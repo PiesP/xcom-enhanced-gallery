@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createServiceHarness } from '@/shared/container/service-harness';
+import { createTestHarness } from '@/shared/container';
 import { SERVICE_KEYS } from '@/constants';
 import type {
   MediaInfo,
@@ -8,10 +8,10 @@ import type {
 } from '@/shared/services/media-service';
 
 describe('Phase B3.3-2: Media extraction -> download 통합 (2단계)', () => {
-  let harness: ReturnType<typeof createServiceHarness>;
+  let harness: ReturnType<typeof createTestHarness>;
 
   beforeEach(() => {
-    harness = createServiceHarness();
+    harness = createTestHarness();
   });
 
   afterEach(() => {

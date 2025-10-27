@@ -85,10 +85,4 @@ export { tryGetSettingsService, getSetting, setSetting } from './settings-access
 // ============================================================================
 // Test Harness (테스트 전용)
 // ============================================================================
-export {
-  createTestHarness,
-  TestHarness,
-  // 호환성: 레거시 이름
-  createServiceHarness,
-  ServiceHarness,
-} from './harness';
+export { createTestHarness, TestHarness } from './harness';

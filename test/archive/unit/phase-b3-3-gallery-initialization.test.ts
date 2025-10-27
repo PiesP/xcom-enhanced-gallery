@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createServiceHarness } from '@/shared/container/service-harness';
+import { createTestHarness } from '@/shared/container';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase B3.3-1: Gallery 초기화 흐름 통합 (1단계 - 기본)', () => {
-  let harness: ReturnType<typeof createServiceHarness>;
+  let harness: ReturnType<typeof createTestHarness>;
 
   beforeEach(() => {
-    harness = createServiceHarness();
+    harness = createTestHarness();
   });
 
   afterEach(() => {
