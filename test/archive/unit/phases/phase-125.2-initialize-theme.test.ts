@@ -18,7 +18,7 @@ import {
   setupThemeChangeListener,
   type ThemeMode,
   type ThemeSetting,
-} from '../../../src/bootstrap/initialize-theme';
+} from '../../../src/features/gallery/services/theme-initialization';
 
 describe('Phase 125.2-A: initialize-theme.ts', () => {
   beforeEach(() => {

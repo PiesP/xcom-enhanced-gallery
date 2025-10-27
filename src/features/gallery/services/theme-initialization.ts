@@ -1,11 +1,24 @@
 /**
- * @fileoverview Theme Initialization
+ * @fileoverview Theme Initialization Service
  * @description 테마 초기화: 시스템 감지 → localStorage 복원 → DOM 적용
- * @module bootstrap/initialize-theme
+ * @module features/gallery/services/theme-initialization
  */
 
-import { logger } from '@shared/logging';
+import { logger } from '../../../shared/logging';
 
+/**
+ * 테마 모드 타입
+ */
+export type ThemeMode = 'light' | 'dark';
+
+/**
+ * 테마 설정 타입 (자동 또는 명시적 설정)
+ */
+export type ThemeSetting = 'auto' | ThemeMode;
+
+/**
+ * 안전한 localStorage 접근
+ */
 function getSafeLocalStorage(): Storage | null {
   try {
     const storage = globalThis.localStorage;
@@ -16,11 +29,12 @@ function getSafeLocalStorage(): Storage | null {
   }
 }
 
-export type ThemeMode = 'light' | 'dark';
-export type ThemeSetting = 'auto' | ThemeMode;
-
 /**
- * 시스템 테마를 감지합니다
+ * 시스템 테마 감지
+ *
+ * `prefers-color-scheme` 미디어 쿼리를 통해 시스템 다크모드 설정을 감지합니다.
+ *
+ * @returns 감지된 테마 모드 ('light' | 'dark')
  */
 export function detectSystemTheme(): ThemeMode {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -37,7 +51,11 @@ export function detectSystemTheme(): ThemeMode {
 }
 
 /**
- * 저장된 테마 설정을 가져옵니다
+ * 저장된 테마 설정 복원
+ *
+ * localStorage에서 'xeg-theme' 키로 저장된 테마 설정을 가져옵니다.
+ *
+ * @returns 저장된 테마 설정 또는 null
  */
 export function getSavedThemeSetting(): ThemeSetting | null {
   try {
@@ -57,7 +75,11 @@ export function getSavedThemeSetting(): ThemeSetting | null {
 }
 
 /**
- * 테마를 DOM에 적용합니다
+ * 테마를 DOM에 적용
+ *
+ * `document.documentElement`에 `data-theme` 속성을 설정합니다.
+ *
+ * @param theme - 적용할 테마 모드
  */
 export function applyThemeToDOM(theme: ThemeMode): void {
   if (typeof document === 'undefined') {
@@ -73,7 +95,13 @@ export function applyThemeToDOM(theme: ThemeMode): void {
 }
 
 /**
- * 테마를 결정하고 적용합니다
+ * 테마 설정 결정 및 적용
+ *
+ * 'auto' 설정이면 시스템 테마를 감지하여 적용하고,
+ * 명시적 설정이면 그 설정값을 적용합니다.
+ *
+ * @param setting - 테마 설정
+ * @returns 최종 적용된 테마 모드
  */
 export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
   let resolvedTheme: ThemeMode;
@@ -91,18 +119,17 @@ export function resolveAndApplyTheme(setting: ThemeSetting): ThemeMode {
 }
 
 /**
- * 테마를 동기적으로 초기화합니다
+ * 테마 동기 초기화
  *
- * @description
- * 이 함수는 갤러리 컴포넌트가 렌더링되기 전에 호출되어야 합니다.
- * 저장된 테마 설정을 복원하거나, auto인 경우 시스템 테마를 감지하여 적용합니다.
+ * 갤러리 렌더링 전에 호출되어야 합니다.
+ * 저장된 설정을 복원하거나, auto인 경우 시스템 테마를 감지하여 적용합니다.
  *
- * @returns {ThemeMode} 적용된 테마 모드
+ * @returns 적용된 테마 모드
  *
  * @example
  * ```typescript
  * // 갤러리 초기화 전에 호출
- * initializeTheme();
+ * const theme = initializeTheme();
  *
  * // 이제 툴바가 렌더링될 때 올바른 배경색이 적용됨
  * ```
@@ -125,12 +152,13 @@ export function initializeTheme(): ThemeMode {
 }
 
 /**
- * 테마 변경 이벤트 리스너를 등록합니다
+ * 시스템 테마 변경 리스너 등록
  *
- * @description
  * 시스템 테마 변경을 감지하여 auto 모드일 때 자동으로 업데이트합니다.
+ * 반환된 함수를 호출하여 리스너를 제거할 수 있습니다.
  *
- * @returns {() => void} 리스너 제거 함수
+ * @param onThemeChange - 테마 변경 시 실행할 콜백
+ * @returns 리스너 제거 함수
  */
 export function setupThemeChangeListener(onThemeChange: (theme: ThemeMode) => void): () => void {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {

@@ -13,10 +13,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   initializeTheme,
+  setupThemeChangeListener,
   detectSystemTheme,
-  getSavedThemeSetting,
   applyThemeToDOM,
-} from '../../src/bootstrap/initialize-theme';
+  getSavedThemeSetting,
+  resolveAndApplyTheme,
+  type ThemeMode,
+  type ThemeSetting,
+} from '../../src/features/gallery/services/theme-initialization';
 
 describe('Toolbar Initial Transparency', () => {
   let originalDataTheme: string | null = null;

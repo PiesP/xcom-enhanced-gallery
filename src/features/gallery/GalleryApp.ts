@@ -25,7 +25,7 @@ import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
 import { ToastController } from '../../shared/services/unified-toast-manager';
-import { initializeTheme } from '../../bootstrap/initialize-theme';
+import { initializeTheme } from './services/theme-initialization';
 
 /**
  * 갤러리 앱 설정 인터페이스

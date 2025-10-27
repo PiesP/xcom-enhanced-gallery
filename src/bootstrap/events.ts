@@ -1,9 +1,10 @@
 /**
- * @fileoverview Bootstrap - Global Events Wiring
- * @description 전역 이벤트 핸들러 연결 및 해제
+ * @fileoverview Global Events Wiring
+ * @description 전역 이벤트 핸들러 연결 및 해제 (beforeunload, pagehide)
  * @module bootstrap/events
  */
-import { logger } from '@/shared/logging';
+
+import { logger } from '../shared/logging';
 
 /**
  * 이벤트 핸들러 해제 함수 타입
@@ -11,12 +12,13 @@ import { logger } from '@/shared/logging';
 export type Unregister = () => void;
 
 /**
- * 전역 이벤트 핸들러를 연결합니다
- * - beforeunload, pagehide 이벤트를 구독하여 정리 작업 수행
- * - 호출 시에만 등록 (사이드이펙트 최소화)
+ * 전역 이벤트 핸들러 연결
  *
- * @param {() => void} onBeforeUnload - 페이지 언로드 시 실행할 콜백
- * @returns {Unregister} 이벤트 핸들러 해제 함수
+ * beforeunload, pagehide 이벤트를 구독하여 페이지 언로드 시 정리 작업 수행합니다.
+ * 호출 시에만 등록하며, 반환된 함수로 언제든지 해제 가능합니다.
+ *
+ * @param onBeforeUnload - 페이지 언로드 시 실행할 콜백
+ * @returns 이벤트 핸들러 해제 함수
  */
 export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
   const beforeUnloadHandler = (): void => {
