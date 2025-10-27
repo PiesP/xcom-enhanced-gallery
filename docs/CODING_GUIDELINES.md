@@ -764,21 +764,20 @@ globalDOMCache.invalidate('.item'); // 특정 선택자 무효화
 
 ```
 src/
-├── assets/styles/
-│   ├── base/
-│   │   └── reset.css (v4.1)        ← 브라우저 리셋
-│   ├── tokens/
-│   │   ├── animation-tokens.css    ← 애니메이션 토큰 (duration/easing/delay/perf)
-│   │   └── animation.css           ← deprecated (호환성 유지, 리다이렉트)
-│   └── utilities/
-│       ├── animations.css (v2.1)   ← @keyframes + 유틸 클래스
-│       └── layout.css (v2.0)       ← Flexbox + Gap + Size 유틸
 ├── shared/styles/
+│   ├── base/reset.css              ← 브라우저 리셋 (토큰 fallback 포함)
+│   ├── tokens/animation.css        ← 애니메이션 토큰 확장(duration/easing/delay)
+│   ├── utilities/animations.css    ← @keyframes + 유틸 클래스
+│   ├── utilities/layout.css        ← Flexbox + Gap + Size 유틸
 │   ├── design-tokens.primitive.css ← 기본 토큰 (색상/크기/간격)
 │   ├── design-tokens.semantic.css  ← 의미 토큰 (역할 기반)
 │   ├── design-tokens.component.css ← 컴포넌트 토큰
 │   ├── design-tokens.css           ← 3계층 통합 임포트
 │   ├── isolated-gallery.css        ← 격리된 갤러리 스타일
+│   └── modern-features.css         ← 모던 CSS 기능
+├── styles/
+│   └── globals.ts                  ← CSS 임포트 진입점
+└── assets/                         ← 정적 자원 (아이콘, 이미지 등)
 ```
 
 ---
@@ -791,61 +790,55 @@ src/
 
 ```
 src/
-├── assets/styles/
-│   ├── base/
-│   │   └── reset.css (v4.1)        ← 브라우저 리셋
-│   ├── tokens/
-│   │   ├── animation-tokens.css    ← 애니메이션 토큰 (duration/easing/delay/perf)
-│   │   └── animation.css           ← deprecated (호환성 유지, 리다이렉트)
-│   └── utilities/
-│       ├── animations.css (v2.1)   ← @keyframes + 유틸 클래스
-│       └── layout.css (v2.0)       ← Flexbox + Gap + Size 유틸
 ├── shared/styles/
+│   ├── base/reset.css              ← 브라우저 리셋 (토큰 fallback 포함)
+│   ├── tokens/animation.css        ← 애니메이션 토큰 확장(duration/easing/delay)
+│   ├── utilities/animations.css    ← @keyframes + 유틸 클래스
+│   ├── utilities/layout.css        ← Flexbox + Gap + Size 유틸
 │   ├── design-tokens.primitive.css ← 기본 토큰 (색상/크기/간격)
 │   ├── design-tokens.semantic.css  ← 의미 토큰 (역할 기반)
 │   ├── design-tokens.component.css ← 컴포넌트 토큰
 │   ├── design-tokens.css           ← 3계층 통합 임포트
 │   ├── isolated-gallery.css        ← 격리된 갤러리 스타일
-│   ├── modern-features.css         ← 모던 CSS 기능
-│   └── (기타 로직/테마)
+│   └── modern-features.css         ← 모던 CSS 기능
 └── styles/
-    └── globals.ts                  ← CSS 임포트 진입점
+  └── globals.ts                  ← CSS 임포트 진입점
 ```
 
 ### 파일별 책임
 
-| 파일                    | 책임                                   | 사용 위치         |
-| ----------------------- | -------------------------------------- | ----------------- |
-| base/reset.css          | 브라우저 기본 스타일 초기화            | 항상 로드         |
-| tokens/animation-tokens | @keyframes 없는 토큰만 (duration/ease) | 토큰 참조         |
-| utilities/animations    | @keyframes + 유틸 클래스               | 클래스 적용 (+JS) |
-| utilities/layout        | Flexbox + Gap + Size 유틸 클래스       | 클래스 적용       |
-| shared/design-tokens.\* | 색상/크기/간격 토큰 (3계층)            | 토큰 참조         |
-| shared/isolated-gallery | X.com과 격리된 갤러리 스타일           | 항상 로드         |
+| 파일                            | 책임                                        | 사용 위치         |
+| ------------------------------- | ------------------------------------------- | ----------------- |
+| shared/base/reset.css           | 브라우저 기본 스타일 초기화 + 토큰 fallback | 항상 로드         |
+| shared/tokens/animation.css     | @keyframes 없는 모션 토큰 확장              | 토큰 참조         |
+| shared/utilities/animations.css | @keyframes + 모션 유틸 클래스               | 클래스 적용 (+JS) |
+| shared/utilities/layout.css     | Flexbox + Gap + Size 유틸 클래스            | 클래스 적용       |
+| shared/design-tokens.\*         | 색상/크기/간격 토큰 (3계층)                 | 토큰 참조         |
+| shared/isolated-gallery.css     | X.com과 격리된 갤러리 스타일                | 항상 로드         |
 
 ### 임포트 순서 (src/styles/globals.ts)
 
 ```typescript
-// 1. 글로벌 격리 스타일
-import '@shared/styles/isolated-gallery.css';
-
-// 2. 통합 디자인 토큰 (Primitive → Semantic → Component)
+// 1. 통합 디자인 토큰 (Primitive → Semantic → Component)
 import '@shared/styles/design-tokens.css';
 
-// 3. 애니메이션 토큰 (duration/easing/delay/perf)
-import '@assets/styles/tokens/animation-tokens.css';
+// 2. 애니메이션 토큰 (duration/easing/delay/perf)
+import '@shared/styles/tokens/animation.css';
 
-// 4. 모던 CSS 기능 (상대 색상 등)
+// 3. 브라우저 리셋
+import '@shared/styles/base/reset.css';
+
+// 4. 레이아웃 유틸 클래스 (정렬/간격/크기)
+import '@shared/styles/utilities/layout.css';
+
+// 5. 모션 유틸 클래스 (@keyframes + 애니메이션)
+import '@shared/styles/utilities/animations.css';
+
+// 6. 모던 CSS 기능 (상대 색상 등)
 import '@shared/styles/modern-features.css';
 
-// 5. 브라우저 리셋
-import '@assets/styles/base/reset.css';
-
-// 6. 유틸 클래스 (정렬/간격/크기)
-import '@assets/styles/utilities/layout.css';
-
-// 7. 유틸 클래스 (@keyframes + 애니메이션)
-import '@assets/styles/utilities/animations.css';
+// 7. 글로벌 격리 스타일
+import '@shared/styles/isolated-gallery.css';
 ```
 
 ---

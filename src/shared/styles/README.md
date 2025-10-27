@@ -448,7 +448,7 @@ padding: var(--xeg-spacing-md);
 | 간격          | ~8   | primitive            |
 | Border Radius | ~6   | primitive            |
 | Z-index       | ~8   | semantic             |
-| 애니메이션    | ~5   | animation-tokens.css |
+| 애니메이션    | ~5   | tokens/animation.css |
 
 ---
 

@@ -1,0 +1,39 @@
+/**
+ * @fileoverview Layout utilities (flex alignment, spacing, hit targets).
+ * @description Token-driven helpers shared by Toolbar/Overlay modules.
+ */
+
+@layer xeg.utilities {
+  /* Flex alignment */
+  .xeg-row-center {
+    display: flex;
+    align-items: center;
+  }
+
+  .xeg-center-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Gap presets */
+  .xeg-gap-sm {
+    gap: var(--xeg-spacing-sm, var(--space-sm));
+  }
+
+  .xeg-gap-md {
+    gap: var(--xeg-spacing-md, var(--space-md));
+  }
+
+  .xeg-gap-lg {
+    gap: var(--xeg-spacing-lg, var(--space-lg));
+  }
+
+  /* Minimum hit target (keyboard + pointer) */
+  .xeg-size-toolbar {
+    min-inline-size: var(--xeg-size-button-md, 2.5em);
+    min-block-size: var(--xeg-size-button-md, 2.5em);
+    inline-size: var(--xeg-size-button-md, 2.5em);
+    block-size: var(--xeg-size-button-md, 2.5em);
+  }
+}

@@ -23,10 +23,37 @@
 
 ## 🎯 활성 작업
 
-**현재 활성 작업 없음**
+### Phase 210 🔄 (2025-10-27) - Global Style Tokens Modernization
 
-모든 Phase가 완료되었습니다. 새로운 리팩토링 작업이 필요한 경우 아래 템플릿을
-사용하여 추가하세요.
+**목표**: (구) `src/assets/styles` 하위 전역 CSS를 `src/shared/styles` 체계로
+편입하고 토큰 일관성을 회복한다.
+
+**배경**:
+
+- 애니메이션 토큰이 `design-tokens` 계층과 중복 정의되어 일관성이 깨짐
+- `layout.css` 등에서 정의되지 않은 토큰(`--xeg-space-*`)이 사용되고 있어
+  안전하지 않음
+- 전역 CSS가 `@assets`에 남아 있어 SSOT(`@shared/styles`) 구조와 어긋남
+
+**계획**:
+
+1. [x] (과거) `src/assets/styles/**/*` 사용 현황을 점검하고 토큰/유틸 중복 및
+       불필요 항목을 기록한다.
+2. [x] 애니메이션/레이아웃 유틸을 `src/shared/styles` 구조로 재배치하고, 기존
+       토큰 체계(primitive → semantic → component)를 활용하도록 갱신한다.
+3. [x] `globals.ts`, 문서(`ARCHITECTURE.md`, `CODING_GUIDELINES.md`)와 관련
+       테스트/스냅샷을 업데이트하고, 제거된 파일은 정리한다.
+
+**수용 기준**:
+
+- [ ] `npm run lint:css`, `npm run test:styles`, `npm run test:smoke`가 모두
+      GREEN이다.
+- [ ] `npm run build`가 통과한다.
+- [ ] 새/기존 토큰 정의가 단일 소스로 정리되어 중복 정의나 미정의 토큰이 없다.
+- [ ] 관련 문서가 최신 구조를 설명하며, 완료 후 계획은
+      `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관한다.
+
+**예상 시간**: 4h
 
 ---
 

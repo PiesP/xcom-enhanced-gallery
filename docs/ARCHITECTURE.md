@@ -567,16 +567,14 @@ Component)** 를 따릅니다.
 
 ```
 src/
-├─ assets/styles/              # 전역 기본 스타일
-│  ├─ base/reset.css           # 브라우저 리셋
-│  ├─ tokens/animation-tokens.css
-│  └─ utilities/
-│     ├─ animations.css
-│     └─ layout.css
-├─ styles/
-│  └─ globals.ts               # 임포트 진입점 & 오케스트레이션
-├─ shared/styles/              # 토큰 시스템 (SSOT)
-│  ├─ design-tokens.css        # 3계층 토큰 통합 진입점
+├─ shared/styles/              # 전역 스타일 및 토큰 SSOT
+│  ├─ base/reset.css           # 브라우저 리셋 (design token fallback 포함)
+│  ├─ tokens/
+│  │  └─ animation.css        # 지속 시간/이징/지연 토큰 확장
+│  ├─ utilities/
+│  │  ├─ animations.css       # 전역 애니메이션 유틸리티
+│  │  └─ layout.css           # 정렬/간격/접근성 유틸리티
+│  ├─ design-tokens.css       # 3계층 토큰 통합 진입점
 │  ├─ design-tokens.primitive.css
 │  ├─ design-tokens.semantic.css
 │  ├─ design-tokens.component.css
@@ -585,9 +583,11 @@ src/
 │  ├─ tokens.ts               # JS 토큰 (IDE 지원용)
 │  ├─ theme-utils.ts          # CSS 변수 헬퍼
 │  └─ index.ts                # Export 중앙화
+├─ styles/
+│  └─ globals.ts               # 임포트 진입점 & 오케스트레이션
 └─ features/gallery/styles/   # 갤러리 컴포넌트 스타일
-   ├─ gallery-global.css
-   └─ Gallery.module.css
+  ├─ gallery-global.css
+  └─ Gallery.module.css
 ```
 
 ### 계층별 역할
@@ -625,18 +625,20 @@ src/
 // 1. 3계층 토큰 (SSOT)
 import '@shared/styles/design-tokens.css';
 
-// 2. 전역 기본 스타일
-import '@assets/styles/base/reset.css';
-import '@assets/styles/tokens/animation-tokens.css';
+// 2. 애니메이션 토큰 확장
+import '@shared/styles/tokens/animation.css';
 
-// 3. 유틸리티 클래스
-import '@assets/styles/utilities/animations.css';
-import '@assets/styles/utilities/layout.css';
+// 3. 전역 기본 스타일
+import '@shared/styles/base/reset.css';
 
-// 4. 모던 CSS 기능
+// 4. 유틸리티 클래스
+import '@shared/styles/utilities/layout.css';
+import '@shared/styles/utilities/animations.css';
+
+// 5. 모던 CSS 기능
 import '@shared/styles/modern-features.css';
 
-// 5. 격리된 갤러리 스타일
+// 6. 격리된 갤러리 스타일
 import '@shared/styles/isolated-gallery.css';
 ```
 
@@ -656,15 +658,10 @@ import '@shared/styles/isolated-gallery.css';
 - **상세 가이드**: `src/shared/styles/README.md`
 - **코딩 규칙**: `docs/CODING_GUIDELINES.md` "디자인 토큰 체계" 섹션
 - **추가 정보**: `docs/CODING_GUIDELINES.md` "📂 스타일 파일 구조" 섹션
-
-- `src/assets/*`: 정적 자원, CSS Modules
-  - `styles/`
-    - `base/`: 리셋 (reset.css)
-    - `tokens/`: 디자인 토큰 (animation-tokens.css — duration/easing/delay)
-    - `utilities/`: 유틸 클래스 (animations.css, layout.css)
-  - 임포트 진입점: `src/styles/globals.ts`
-- `src/shared/styles/*`: 통합 토큰 및 글래스모피즘 (design-tokens.\*.css,
-  modern-features.css 등)
+- `src/assets/*`: 정적 자원 (아이콘, 이미지 등) 저장소
+- `src/shared/styles/*`: 통합 토큰/전역 CSS (design-tokens.\*.css,
+  base/reset.css, tokens/animation.css, utilities/animations.css 등)
+- 임포트 진입점: `src/styles/globals.ts`
 - `types/`: 전역 빌드 환경 변수 (env.d.ts) — 상세: `types/README.md`
 
 ## 컴포넌트/서비스 경계 원칙
