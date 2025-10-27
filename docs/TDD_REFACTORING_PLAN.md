@@ -1,21 +1,86 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-26 | **상태**: Phase 194 완료 → Phase 193 진행 중 →
-Phase 189 예정
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 195 진행 중 → Phase 194 완료 →
+Phase 193 완료
 
 ## 현황 요약
 
-| 항목        | 상태            | 목표          |
-| ----------- | --------------- | ------------- |
-| 빌드 (prod) | 337.61 KB       | 335 KB ↓ 필요 |
-| 테스트 전체 | ✅ 모두 GREEN   | 유지          |
-| 타입 체크   | ✅ 0 errors     | 유지          |
-| 의존성      | ✅ 0 violations | 유지          |
-| 문서 최적화 | ✅ 진행 중      | <500줄 단위   |
+| 항목        | 상태             | 목표              |
+| ----------- | ---------------- | ----------------- |
+| 빌드 (prod) | 341 KB           | 335 KB ↓ 6KB 필요 |
+| 테스트 전체 | ✅ 모두 GREEN    | 유지              |
+| 타입 체크   | ✅ 0 errors      | 유지              |
+| 의존성      | ✅ 0 violations  | 유지              |
+| 백업파일    | ✅ 6개 제거 완료 | 제거 완료         |
+| 문서 최적화 | 🔄 진행 중       | <500줄 단위       |
 
 ---
 
 ## 진행 중인 작업
+
+### Phase 195 🔄 (2025-10-27 진행 중)
+
+**프로젝트 소스 코드 정리 및 문서 최적화**
+
+#### 목표
+
+1. src 경로 파일 통합/제거/최신화
+2. 중복/미사용 파일 정제
+3. 경로/이름 적절성 검토
+4. 문서 갱신 및 간결화 (목표: <500줄 단위)
+
+#### 진행 상황
+
+**1️⃣ 백업 파일 제거** ✅
+
+- `src/features/gallery/hooks/useGalleryItemScroll.backup.ts` 삭제
+- `src/shared/utils/patterns/url-patterns.ts.backup` 삭제
+- `docs/CODING_GUIDELINES.md.backup{,2,3}` 삭제 (3개)
+- `docs/temp/performance.css.backup` 삭제
+- **결과**: 6개 파일 정리, 프로젝트 정결성 ↑
+
+**2️⃣ 상태 머신 구조 정규화** ✅
+
+- `src/shared/state/machines/` 폴더 신규 생성
+  - `download-state-machine.ts` (6.3 KB) 이동
+  - `navigation-state-machine.ts` (3.8 KB) 이동
+  - `settings-state-machine.ts` (4.4 KB) 이동
+  - `toast-state-machine.ts` (5.0 KB) 이동
+  - `index.ts` (배럴 export) 생성
+- `src/shared/state/signals/index.ts` 생성 (신호 배럴 export)
+- **결과**: 상태 계층 명확화, 의존성 정렬
+
+**3️⃣ 코드 품질 검증** ✅
+
+- ✅ `npm run typecheck` → 0 errors
+- ✅ `npm run lint` → 0 errors
+- ✅ `npm run format` → 모두 정렬됨
+- ✅ `npm run build:dev` → 862K (성공)
+- ✅ `npm run build:prod` → 341K (성공, 목표 335K 대비 6KB 초과)
+- ✅ `npm run test:smoke` → 9/9 통과
+
+**4️⃣ 빌드 크기 분석** 📊
+
+| 항목               | 크기     | 비고               |
+| ------------------ | -------- | ------------------ |
+| dev 빌드           | 862K     | 정상 범위          |
+| prod 빌드          | 341K     | 목표 대비 6KB 초과 |
+| 여유               | -6KB     | 추가 최적화 필요   |
+| 테스트/타입/의존성 | ✅ GREEN | 품질 지표 우수     |
+
+#### 다음 단계
+
+**Phase 195 계속** (선택사항):
+
+- 빌드 크기 최적화 (341KB → 335KB)
+  - 옵션 A: 사용하지 않는 헬퍼 함수 분석 및 제거
+  - 옵션 B: 중복 타입 정의 통합
+  - 옵션 C: CSS 토큰/유틸리티 최적화
+- 문서 최종 정리 및 간결화
+
+---
+
+## 이전 진행 중인 작업
 
 ### Phase 150.2 ✅ (2025-10-26 완료)
 
