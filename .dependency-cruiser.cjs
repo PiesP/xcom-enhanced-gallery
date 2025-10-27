@@ -1,44 +1,37 @@
 /**
  * @file .dependency-cruiser.cjs
  * @description 의존성 검증 및 시각화 설정
- * 
+ *
  * 주요 규칙:
- * - Clean Architecture 계층 분리 (features → shared → core → infrastructure)
+ * - 3계층 구조 강제 (features → shared → external)
  * - Vendor getter 강제 (직접 import 금지)
  * - 순환 참조 방지
- * - Barrel import 제한
+ * - 내부 barrel import 제한
+ *
+ * @see docs/ARCHITECTURE.md - 아키텍처 계층 구조
+ * @see docs/DEPENDENCY-GOVERNANCE.md - 의존성 거버넌스 정책
  */
 
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
-    // === Clean Architecture 계층 규칙 ===
+    // === 3계층 구조 강제 ===
     {
-      name: 'no-infrastructure-upward-deps',
-      comment: 'Infrastructure는 자체 완결형 (다른 레이어 의존 불가)',
+      name: 'no-external-upward-deps',
+      comment:
+        'External 레이어는 shared의 logging/utils/types만 허용 (features/services/components/state 금지)',
       severity: 'error',
-      from: { path: '^src/infrastructure' },
-      to: { path: '^src/(core|shared|features|app)' },
+      from: { path: '^src/shared/external' },
+      to: {
+        path: '^src/shared/(services|components|state|hooks|container|browser|media)',
+      },
     },
     {
-      name: 'no-core-upward-deps',
-      comment: 'Core는 infrastructure에만 의존 가능',
+      name: 'no-shared-to-features-deps',
+      comment: 'Shared는 Features 레이어를 참조할 수 없음 (단방향 의존)',
       severity: 'error',
-      from: {
-        path: '^src/core',
-        pathNot: ['^src/core/services/ServiceRegistry.ts'],
-      },
-      to: { path: '^src/(shared|features|app)' },
-    },
-    {
-      name: 'no-shared-upward-deps',
-      comment: 'Shared는 core, infrastructure에만 의존 가능',
-      severity: 'error',
-      from: {
-        path: '^src/shared',
-        pathNot: ['^src/shared/container/createAppContainer.ts'],
-      },
-      to: { path: '^src/(features|app)' },
+      from: { path: '^src/shared' },
+      to: { path: '^src/features' },
     },
 
     // === Vendor getter 강제 ===
@@ -50,7 +43,7 @@ module.exports = {
         path: '^src',
         pathNot: [
           '^src/shared/external/vendors',
-          '^src/shared/types/vendor.types.ts',
+          '^src/shared/types/vendor\\.types\\.ts$',
           '^src/types/',
         ],
       },
@@ -64,16 +57,10 @@ module.exports = {
       severity: 'error',
       from: {
         pathNot: [
-          // 알려진 순환 (리팩토링 예정)
-          '^src/shared/services/media-service\\.ts$',
-          '^src/shared/container/service-accessors\\.ts$',
-          '^src/shared/services/service-factories\\.ts$',
-          '^src/shared/services/theme-service\\.ts$',
-          '^src/shared/services/language-service\\.ts$',
-          '^src/shared/services/base-service-impl\\.ts$',
-          '^src/shared/services/bulk-download-service\\.ts$',
-          '^src/shared/types/app\\.types\\.ts$',
-          '^src/shared/types/core/core-types\\.ts$',
+          // 서비스/컨테이너 패턴 예외
+          '^src/shared/(services|container|state)/.*\\.(ts|tsx)$',
+          // 타입 정의 파일 예외
+          '^src/shared/types/.*\\.ts$',
         ],
       },
       to: { circular: true },
@@ -87,57 +74,45 @@ module.exports = {
       from: {
         orphan: true,
         pathNot: [
-          '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$',
-          '[.]d[.]ts$',
-          '(^|/)tsconfig[.]json$',
-          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$',
-          '^src/main[.]ts$',
-          '^src/.*/index[.]ts$',
-          '^src/features/.*/types[.]ts$',
-          '^src/shared/types/.*[.]ts$',
-          '^src/.*[.]module[.]css$',
+          // 설정 파일 및 진입점
+          '(^|/)[.][^/]+\\.(js|cjs|mjs|ts|cts|mts|json)$',
+          '\\.d\\.ts$',
+          '(^|/)tsconfig\\.json$',
+          '(^|/)(babel|webpack)\\.config\\.(js|cjs|mjs|ts|json)$',
+          '^src/main\\.ts$',
+          // 인덱스 및 타입 파일
+          '^src/.*/index\\.ts$',
+          '^src/features/.*/types\\.ts$',
+          '^src/shared/types/.*\\.ts$',
+          // 스타일 파일
+          '^src/.*\\.module\\.css$',
           '^src/assets/',
-          '^src/core/state/base/.*[.]ts$',
-          '^src/.*[.]interface[.]ts$',
-          '^src/.*[.]abstract[.]ts$',
-          // 실험적/보류 파일
-          '^src/shared/components/LazyIcon[.]tsx$',
-          '^src/features/gallery/hooks/useToolbarPositionBased[.]ts$',
-          '^src/shared/hooks/useSettingsModal[.]ts$',
-          '^src/shared/hooks/useFocusScope[.]ts$',
-          '^src/shared/external/userscript/adapter[.]ts$',
-          '^src/shared/state/gallery-store[.]ts$',
-          '^src/shared/services/iconRegistry[.]ts$',
-          '^src/shared/styles/tokens/button[.]ts$',
-          '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)[.]tsx$',
-          '^src/shared/components/ui/Toolbar/toolbarConfig[.]ts$',
-          '^src/shared/loader/progressive-loader[.]ts$',
+          // 실험적 파일
+          '^src/shared/components/LazyIcon\\.tsx$',
+          '^src/features/gallery/hooks/useToolbarPositionBased\\.ts$',
+          '^src/shared/hooks/(useSettingsModal|useFocusScope)\\.ts$',
+          '^src/shared/external/userscript/adapter\\.ts$',
+          '^src/shared/state/gallery-store\\.ts$',
+          '^src/shared/services/iconRegistry\\.ts$',
+          '^src/shared/components/ui/Toolbar/(UnifiedToolbar|ToolbarHeadless|ConfigurableToolbar)\\.tsx$',
+          '^src/shared/components/ui/Toolbar/toolbarConfig\\.ts$',
+          '^src/shared/loader/progressive-loader\\.ts$',
         ],
       },
       to: {},
     },
 
-    // === Barrel import 제한 ===
+    // === 내부 barrel import 제한 ===
     {
-      name: 'no-internal-barrel-imports-ui',
-      comment: 'UI 패키지 내부에서는 상대 경로로 import',
+      name: 'no-internal-barrel-imports',
+      comment: '동일 패키지 내부에서는 상대 경로로 import (barrel 재수입 금지)',
       severity: 'error',
-      from: { path: '^src/shared/components/ui/(?!index[.])' },
-      to: { path: '^src/shared/components/ui/index[.]ts$' },
-    },
-    {
-      name: 'no-internal-barrel-imports-utils',
-      comment: 'utils 패키지 내부에서는 상대 경로로 import',
-      severity: 'error',
-      from: { path: '^src/shared/utils/(?!index[.]).+' },
-      to: { path: '^src/shared/utils/index[.]ts$' },
-    },
-    {
-      name: 'no-internal-barrel-imports-media',
-      comment: 'media 패키지 내부에서는 상대 경로로 import',
-      severity: 'error',
-      from: { path: '^src/shared/media/(?!index[.]).+' },
-      to: { path: '^src/shared/media/index[.]ts$' },
+      from: {
+        path: '^src/shared/(components/ui|utils|media)/(?!index\\.).+',
+      },
+      to: {
+        path: '^src/shared/(components/ui|utils|media)/index\\.ts$',
+      },
     },
   ],
 
@@ -151,18 +126,19 @@ module.exports = {
       dot: {
         theme: {
           graph: {
-            splines: 'polyline',
+            splines: 'ortho',
             rankdir: 'TB',
-            nodesep: 0.6,
-            ranksep: 1.2,
+            nodesep: 0.8,
+            ranksep: 1.5,
             concentrate: true,
             overlap: false,
             compound: true,
             bgcolor: 'white',
             fontname: 'Arial',
-            fontsize: 12,
+            fontsize: 14,
             label: 'X.com Enhanced Gallery\\nDependency Graph',
             labelloc: 't',
+            labeljust: 'c',
           },
           node: {
             shape: 'box',
@@ -170,36 +146,61 @@ module.exports = {
             color: '#333',
             fillcolor: '#FAFAFA',
             fontname: 'Arial',
-            fontsize: 10,
+            fontsize: 11,
             fontcolor: '#333',
-            penwidth: 1,
-            margin: 0.1,
+            penwidth: 1.5,
+            margin: '0.15,0.1',
           },
           edge: {
-            arrowhead: 'normal',
-            arrowsize: 0.8,
+            arrowhead: 'vee',
+            arrowsize: 0.9,
             color: '#666',
             fontname: 'Arial',
-            fontsize: 8,
-            fontcolor: '#333',
-            penwidth: 1,
+            fontsize: 9,
+            fontcolor: '#555',
+            penwidth: 1.2,
           },
           modules: [
             {
-              criteria: { source: '^src/app' },
-              attributes: { fillcolor: '#E8F4FD', color: '#1E40AF', fontcolor: '#1E40AF' },
+              criteria: { source: '^src/main\\.ts$' },
+              attributes: {
+                fillcolor: '#E0E7FF',
+                color: '#4338CA',
+                fontcolor: '#4338CA',
+                penwidth: 2,
+              },
+            },
+            {
+              criteria: { source: '^src/bootstrap' },
+              attributes: {
+                fillcolor: '#DBEAFE',
+                color: '#1E40AF',
+                fontcolor: '#1E40AF',
+              },
             },
             {
               criteria: { source: '^src/features' },
-              attributes: { fillcolor: '#F0FDF4', color: '#15803D', fontcolor: '#15803D' },
+              attributes: {
+                fillcolor: '#D1FAE5',
+                color: '#059669',
+                fontcolor: '#059669',
+              },
             },
             {
               criteria: { source: '^src/shared' },
-              attributes: { fillcolor: '#FFFBEB', color: '#B45309', fontcolor: '#B45309' },
+              attributes: {
+                fillcolor: '#FEF3C7',
+                color: '#D97706',
+                fontcolor: '#D97706',
+              },
             },
             {
-              criteria: { source: '^src/core' },
-              attributes: { fillcolor: '#FEF2F2', color: '#B91C1C', fontcolor: '#B91C1C' },
+              criteria: { source: '^src/shared/external' },
+              attributes: {
+                fillcolor: '#FEE2E2',
+                color: '#DC2626',
+                fontcolor: '#DC2626',
+              },
             },
           ],
         },
