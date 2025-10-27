@@ -253,7 +253,8 @@ export class ThemeService extends BaseServiceImpl {
   }
 }
 
-// Note: 전역 싱글턴 인스턴스 생성은 import 시점 부작용을 유발하여
-// 테스트/런타임에서 이벤트 리스너가 남을 수 있습니다. R4 누수 방지를 위해
-// 이 파일에서는 인스턴스를 생성/export하지 않습니다. 필요한 곳에서
-// 서비스 매니저를 통해 생성/주입하세요.
+/**
+ * 전역 싱글톤 인스턴스
+ * Phase 230: BaseService 초기화를 위해 export 추가
+ */
+export const themeService = new ThemeService();

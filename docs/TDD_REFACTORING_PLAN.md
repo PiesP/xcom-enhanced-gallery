@@ -1,11 +1,46 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-28 | **상태**: Phase 229 계획 중 � |
-**[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
+**마지막 업데이트**: 2025-10-28 | **상태**: Phase 230 완료 ✅, Phase 229 계획 중
+📝 | **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
+
+### Phase 230: BaseService 초기화 실패 수정 (완료 ✅)
+
+**목표**: ThemeService 싱글톤 export 누락으로 인한 초기화 실패 해결
+
+**배경**:
+
+- 로그 분석 (x.com-1761596698833.log): BaseService 초기화 실패 ERROR 3건 발견
+- `animation.service`, `theme.auto`, `language.service` 모두 "찾을 수 없음" 에러
+
+**발견된 문제**:
+
+1. **ThemeService 싱글톤 export 누락**:
+   - `AnimationService`: `getInstance()` static 메서드 있음 ✅
+   - `languageService`: singleton export 있음 ✅
+   - `themeService`: **export 없음** ❌
+
+2. **`registerCoreBaseServices()` try-catch 문제**:
+   - 에러를 조용히 무시 (`catch { // noop }`)
+   - 등록 실패를 알 수 없어 디버깅 어려움
+
+**해결 완료**:
+
+- `theme-service.ts`: `export const themeService = new ThemeService()` 추가
+- `service-accessors.ts`: try-catch에 `logger.error()` 추가로 에러 가시성 확보
+
+**검증**:
+
+- ✅ typecheck 통과
+- ✅ lint 통과
+- ✅ 빌드 성공 (dev + prod)
+
+**관련 커밋**: (다음 커밋)
+
+---
 
 ### Phase 229: PC-only 정책 부작용 수정 - 텍스트 선택 복원 (계획 📝)
 

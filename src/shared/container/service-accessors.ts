@@ -30,6 +30,7 @@ import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 import { CoreServiceRegistry } from './core-service-registry';
 import { bridgeRegisterBaseService, bridgeInitializeAllBaseServices } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
+import { logger } from '../logging';
 
 // ============================================================================
 // Service Getters (조회) - CoreServiceRegistry를 통한 캐싱
@@ -225,21 +226,21 @@ export function registerCoreBaseServices(): void {
     const { AnimationService } = require('../services/animation-service');
     const animationService = AnimationService.getInstance();
     registerBaseService(SERVICE_KEYS.ANIMATION, animationService);
-  } catch {
-    // noop
+  } catch (error) {
+    logger.error(`[registerCoreBaseServices] AnimationService 등록 실패:`, error);
   }
 
   try {
     const { themeService } = require('../services/theme-service');
     registerBaseService(SERVICE_KEYS.THEME, themeService);
-  } catch {
-    // noop
+  } catch (error) {
+    logger.error(`[registerCoreBaseServices] ThemeService 등록 실패:`, error);
   }
 
   try {
     const { languageService } = require('../services/language-service');
     registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
-  } catch {
-    // noop
+  } catch (error) {
+    logger.error(`[registerCoreBaseServices] LanguageService 등록 실패:`, error);
   }
 }
