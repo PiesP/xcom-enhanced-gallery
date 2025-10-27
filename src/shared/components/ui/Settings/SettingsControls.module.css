@@ -48,7 +48,9 @@
   border: var(--border-width-thin) solid var(--xeg-settings-select-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
-  appearance: none;
+  /* Phase 198: appearance: none 제거 - 브라우저 네이티브 드롭다운 사용
+     appearance: none이 설정되면 CSS Modules에서 .select option 선택자가 작동하지 않음
+     브라우저 기본 렌더링을 사용하여 드롭다운 옵션이 올바르게 표시됨 */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -68,6 +70,9 @@
 }
 
 .select option {
-  background-color: var(--xeg-color-bg-primary);
-  color: var(--xeg-color-text-primary);
+  /* Phase 198: 브라우저 네이티브 드롭다운 옵션 스타일
+     CSS Modules 스코핑 제약으로 인해 option 요소 스타일이 제한됨
+     브라우저 기본값 사용하여 모든 옵션이 올바르게 렌더링되도록 함 */
+  padding: 0.5em 0.75em;
+  line-height: 1.5;
 }
