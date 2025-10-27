@@ -10,12 +10,12 @@
 
 ## 프로젝트 현황 (2025-10-27)
 
-- **빌드**: prod 340.04 KB / 420 KB (79.96 KB 여유) ✅
+- **빌드**: prod 340.31 KB / 420 KB (79.69 KB 여유) ✅
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
-- **최근 개선**: Phase 218 Gallery Styles 최적화 (gallery-global.css 3.4% 감소,
-  토큰 통일)
+- **최근 개선**: Phase 219 타입 시스템 정리 (ToolbarState 네이밍 충돌 해결,
+  FitMode 중복 제거)
 
 ## 계층 구조와 단방향 의존
 
@@ -399,7 +399,7 @@
     - 직접 구현: 100% → ~30% (70% 외부화)
     - 서비스 책임: 단일 역할 (observer/applicator/state-sync)
 - `src/shared/types/*`: 공유 도메인 타입 정의 (**.types.ts 패턴**)
-  - **구조** (Phase 197 개선):
+  - **구조** (Phase 219 타입 시스템 정리 완료):
 
     ```
     types/
@@ -410,6 +410,7 @@
     ├── media.types.ts (558줄) - 미디어 추출 & 도메인
     ├── result.types.ts - Result 패턴 & ErrorCode
     ├── navigation.types.ts - 네비게이션 타입
+    ├── toolbar.types.ts ⭐ - Toolbar UI 상태 (Phase 219 명확화)
     └── core/
         ├── core-types.ts (617줄) - Result/Service/갤러리/미디어전략
         ├── base-service.types.ts - BaseService (순환 의존성 방지)
@@ -422,10 +423,27 @@
     - 역할: 앱 레벨 타입 정의 + 하위 파일들의 재-export 허브
     - 변경: 350줄 → 205줄 (-41% 감소)
     - 개선: Brand 타입, 유틸리티 타입 명확화
-  - **Phase 195-197 통합 완료**:
+
+  - **toolbar.types.ts** (Phase 219 타입 시스템 정리):
+    - 역할: Toolbar UI 상태 및 관련 타입 정의
+    - ToolbarState: "UI 상태" (isDownloading, isLoading, hasError,
+      currentFitMode, needsHighContrast)
+    - ToolbarDataState: 비즈니스 로직 상태
+      ('idle'|'loading'|'downloading'|'error')
+    - FitMode: 이미지 렌더링 모드
+      ('original'|'fitWidth'|'fitHeight'|'fitContainer')
+    - ToolbarActions: 상태 변경 액션 인터페이스
+    - **⚠️ 주의**: 전역 "모드 상태"는 @shared/state/signals/toolbar.signals.ts의
+      ToolbarModeStateData
+    - 개선: JSDoc 강화로 "UI 상태" vs "모드 상태" 명확한 구분 및 cross-reference
+    - Backward compatibility: @features/gallery/types에서 재-export
+
+  - **Phase 195-197-219 통합 완료**:
     - media.types.ts (core/) → media.types.ts (root) ✓
     - BaseService 중복 제거 (core-types에서 base-service.types 재-export) ✓
     - extraction.types.ts는 backward compatibility만 유지 ✓
+    - ToolbarState 네이밍 충돌 해결 (UI 상태 vs 모드 상태) ✓ [Phase 219]
+    - FitMode 중복 정의 제거 (단일 소스 오브 트루스 통일) ✓ [Phase 219]
 
 - `src/shared/interfaces/*`: Features 계층 계약 정의 (Phase 201 정리 완료)
   - `gallery.interfaces.ts`: GalleryRenderer 인터페이스 + GalleryRenderOptions
