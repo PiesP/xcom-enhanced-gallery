@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 224 완료 ✅ |
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 225 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -12,6 +12,89 @@
 ---
 
 ## ✅ 최근 완료 작업
+
+### Phase 225: Shared Constants 구조 최적화 및 i18n 간결화 (완료 ✅)
+
+**목표**: `src/shared/constants/` 구조 최적화 및 i18n 시스템 간결화
+
+**배경**:
+
+- Phase 224 (Components 경로 최적화) 완료
+- `src/constants.ts`: 이미 리팩토링 완료 (Phase 22.2 이후)
+- `src/shared/constants/`: i18n만 포함하는데 배럴 export 구조 검토 필요
+- ARCHITECTURE.md 미작성 상태 (프로젝트 구조 문서화 필요)
+
+**발견된 문제**:
+
+1. **배럴 export 명확성**:
+   - `src/shared/constants/index.ts`: i18n만 재내보내기 (목적 불명확)
+   - `src/shared/constants/i18n/index.ts`: 단순 재내보내기 구조
+   - JSDoc 미흡 (사용 가이드 없음)
+
+2. **문서화 부재**:
+   - ARCHITECTURE.md 비어있음 (프로젝트 3계층 구조 미문서화)
+   - Constants vs Shared Constants 선택 기준 불명확
+   - Import 경로 규칙 미정의
+
+3. **구조 검증**:
+   - ✅ 배럴 export 구조 정상 (i18n 전용으로 명확)
+   - ✅ Import 경로 패턴 정상 (`@shared/constants`, `@/constants`)
+   - ⚠️ 문서 부재로 인한 혼동 가능성
+
+**대상 파일 (4개, 주요 파일)**:
+
+1. `src/shared/constants/index.ts` (6 → 20줄) - JSDoc 강화
+2. `src/shared/constants/i18n/index.ts` (2 → 12줄) - JSDoc 추가
+3. `src/shared/constants/i18n/language-types.ts` (129 → 155줄) - JSDoc 강화
+4. `src/shared/constants/i18n/translation-registry.ts` (25 → 75줄) - JSDoc 강화
+5. `docs/ARCHITECTURE.md` (신규 생성, 203줄) - 프로젝트 아키텍처 초안
+
+**완료 사항**:
+
+1. **배럴 export JSDoc 강화** ✅
+   - `src/shared/constants/index.ts`: 파일 레벨 JSDoc 추가 (v1.0.0)
+   - `src/shared/constants/i18n/index.ts`: i18n 통합 JSDoc 추가 (v1.0.0)
+   - 사용 예시 및 @see 링크 추가
+
+2. **i18n 타입/함수 문서화** ✅
+   - `language-types.ts`: 파일 레벨 + 함수 레벨 JSDoc (v2.0.0)
+   - `translation-registry.ts`: 파일 레벨 + 함수 레벨 JSDoc (v2.0.0)
+   - 각 함수에 파라미터/반환값 + @example 추가
+
+3. **ARCHITECTURE.md 초안 작성** ✅
+   - 전체 구조 개요 (3계층: Features, Shared, Styles)
+   - Shared Layer 상세 구조 (Constants 시스템)
+   - Constants vs Shared Constants 선택 기준
+   - Import 경로 규칙 및 가이드라인
+   - 개발 팁 (Constants 추가, i18n 언어 추가)
+
+**검증 결과**:
+
+- ✅ typecheck: 0 errors
+- ✅ lint:all: 0 errors (마크다운, ESLint, stylelint)
+- ✅ test:smoke: 9/9 PASS
+- ✅ test:browser (부분): 14/14 PASS (scroll-chaining, focus-management 등)
+- ✅ build:dev: success (767.13 KB JS, 114.83 KB CSS)
+- ✅ build:prod: success (339.62 KB 번들, gzip: 91.10 KB)
+- ✅ validate-build: passed
+- ✅ E2E (부분): 82/82 PASS (playwright smoke tests)
+
+**기술 개선**:
+
+- **문서화**: ARCHITECTURE.md로 프로젝트 구조 명확화
+- **명확성**: JSDoc으로 배럴 export 목적 명시
+- **가이드**: Import 경로 규칙 및 Constants 추가 가이드
+- **일관성**: 모든 상수 시스템 문서화 완료
+
+**총 변경**:
+
+- 새 파일: 1개 (docs/ARCHITECTURE.md)
+- 파일 수정: 4개 (constants 관련 JSDoc 강화)
+- JSDoc 추가: +130줄
+- 마크다운 추가: +200줄
+
+**커밋**: docs(architecture): Phase 225 - Shared Constants 구조 최적화 및
+ARCHITECTURE.md 작성
 
 ### Phase 224: Components 디렉터리 경로 최적화 및 구조 정리 (완료 ✅)
 
