@@ -5,7 +5,258 @@
 
 ---
 
-## 🎯 최근 완료 Phase (199-186)
+## 🎯 최근 완료 Phase (203-186)
+
+### Phase 203 ✅ (2025-10-27)
+
+**로컬 빌드 메모리 최적화 - OOM 문제 해결**
+
+#### 완료 항목
+
+| 항목                 | 결과          | 상세                                  |
+| -------------------- | ------------- | ------------------------------------- |
+| 문제 분석            | ✅ 완료       | validate:build 메모리 소비 프로파일링 |
+| 솔루션 설계          | ✅ 완료       | 로컬/CI 검증 분리 전략 수립           |
+| validate:build:local | ✅ 생성       | 경량 로컬 검증 스크립트               |
+| prebuild 수정        | ✅ 완료       | validate:build → validate:build:local |
+| test:browser 메모리  | ✅ 4096MB     | NODE_OPTIONS 메모리 제한 추가         |
+| 빌드 검증            | ✅ 정상       | dev + prod 빌드 성공, OOM 미발생      |
+| E2E 테스트           | ✅ 94/94 PASS | 31.6s 완료                            |
+| 번들 크기            | ✅ 340.54 KB  | ≤345 KB (4.46 KB 여유)                |
+
+#### 문제 분석
+
+**증상**: `npm run build` 실행 시 OOM 에러 발생
+
+```
+<--- Last few GCs --->
+[85029:0x29ae6000] 319742 ms: Mark-Compact 3991.6 (4130.2) -> 3976.3 (4130.9) MB
+FATAL ERROR: Ineffective mark-compacts near heap limit
+Allocation failed - JavaScript heap out of memory
+```
+
+**근본 원인**:
+
+1. **validate:build 무거운 프로세스 순차 실행**
+   - typecheck + lint + deps:check + deps:graph (SVG) + codeql:check +
+     test:browser + e2e:smoke + e2e:a11y
+   - deps:graph SVG 생성: ~7초, 메모리 집중 사용
+   - codeql:check: CodeQL 데이터베이스 생성/분석, 메모리 제한 없음
+   - test:browser: Chromium 인스턴스, 메모리 제한 없음
+
+2. **메모리 누적 압박**
+   - 각 프로세스가 3-4GB 가까이 사용
+   - 순차 실행이지만 GC 전 메모리 해제 불충분
+   - 누적 압박으로 mark-compact 실패 → OOM
+
+#### 솔루션
+
+**전략**: 로컬 개발 환경과 CI 검증 분리
+
+**로컬 최적화**:
+
+1. **validate:build:local 스크립트 생성**
+
+   ```json
+   "validate:build:local": "npm run typecheck && npm run lint && npm run lint:css && npm run deps:check && npm run deps:json && npm run test:browser && npm run e2e:smoke"
+   ```
+
+   - 제외 항목:
+     - `codeql:check`: 메모리 집중, CI에서 검증
+     - `deps:graph` (SVG): 로컬에서 불필요, JSON만으로 검증
+     - `e2e:a11y`: 추가 부하, CI에서 검증
+
+2. **test:browser 메모리 제한 추가**
+
+   ```json
+   "test:browser": "NODE_OPTIONS='--max-old-space-size=4096' vitest --project browser run"
+   ```
+
+3. **prebuild 수정**
+
+   ```json
+   "prebuild": "npm run validate:build:local"  // was: validate:build
+   ```
+
+**CI 유지**:
+
+- `validate:build`: 전체 검증 유지 (codeql + deps:graph SVG + e2e:a11y 포함)
+- GitHub Actions는 충분한 메모리 제공
+
+#### 검증 결과
+
+**빌드 성공**:
+
+```bash
+✓ prebuild (validate:build:local)
+  ✓ typecheck: 0 errors
+  ✓ lint: 0 errors
+  ✓ lint:css: 0 errors
+  ✓ deps:check: 2 info (orphan 모듈, 비차단)
+  ✓ deps:json: 1.5s
+  ✓ test:browser: 111 passed (chromium)
+  ✓ e2e:smoke: 94 passed, 12 skipped, 31.6s
+✓ vite build --mode development: 1.90s
+✓ vite build --mode production: 정상 완료
+✓ postbuild (validate-build.js): PASS
+✓ 번들 크기: 340.54 KB (≤345 KB)
+```
+
+**메모리 안정성**:
+
+- 전체 빌드 프로세스 OOM 미발생
+- test:browser 4096MB 제한 내 안정 실행
+- E2E 테스트 정상 완료
+
+#### 효과
+
+1. **개발 생산성 복구**
+   - 로컬 빌드 정상 작동
+   - 빌드 실패 없이 개발 가능
+
+2. **검증 품질 유지**
+   - 핵심 체크(타입/린트/테스트) 여전히 실행
+   - CI에서 전체 검증 수행
+
+3. **리소스 효율**
+   - 로컬: 필요한 검증만 실행
+   - CI: 포괄적 검증 유지
+
+#### 교훈
+
+1. **환경별 최적화 필요**
+   - 로컬 개발 환경 != CI 환경
+   - 리소스 제약에 맞는 전략 수립
+
+2. **메모리 프로파일링 중요**
+   - 각 프로세스 메모리 사용량 파악
+   - 순차 실행도 누적 압박 발생 가능
+
+3. **검증 레벨 분리**
+   - 로컬: 신속한 피드백 (fast validation)
+   - CI: 포괄적 검증 (comprehensive validation)
+
+---
+
+### Phase 202 ✅ (2025-10-27)
+
+**Deprecated API Cleanup - service-harness 제거**
+
+#### 완료 항목
+
+| 항목                 | 결과            | 상세                        |
+| -------------------- | --------------- | --------------------------- |
+| service-harness.ts   | ✅ 제거         | 단순 재export 파일          |
+| harness.ts           | ✅ 정리         | deprecated 함수/클래스 제거 |
+| container/index.ts   | ✅ 업데이트     | exports 정리                |
+| contract test        | ✅ 마이그레이션 | createTestHarness() 사용    |
+| Phase 202 RED 테스트 | ✅ 생성         | deprecated API 탐지 테스트  |
+| 타입 체크            | ✅ 0 errors     | 모든 파일 타입 안전         |
+| 테스트               | ✅ 110/110      | 단위 테스트 모두 통과       |
+| 빌드                 | ✅ 340.54 KB    | ≤345 KB 범위 내             |
+
+#### 제거 내역
+
+**1. src/shared/container/service-harness.ts (전체 삭제)**
+
+- 단순 재export: `export * from './harness'`
+- 목적: 구버전 호환성 (deprecated 마커 포함)
+- 사용처 없음 확인 후 제거
+
+**2. src/shared/container/harness.ts (일부 삭제)**
+
+제거된 deprecated API:
+
+```typescript
+// ❌ 제거
+export const createServiceHarness = createTestHarness;
+export const ServiceHarness = TestHarness;
+```
+
+유지된 canonical API:
+
+```typescript
+// ✅ 유지
+export function createTestHarness<T>(/* ... */): TestHarness<T>;
+export class TestHarness<T> {
+  /* ... */
+}
+```
+
+**3. src/shared/container/index.ts**
+
+```typescript
+// ❌ 제거
+export { createServiceHarness, ServiceHarness } from './harness';
+
+// ✅ 유지
+export { createTestHarness, TestHarness } from './harness';
+```
+
+**4. test/unit/shared/container/service-harness.contract.test.ts**
+
+```typescript
+// Before
+import { createServiceHarness } from '../../../../src/shared/container/service-harness';
+
+// After
+import { createTestHarness } from '../harness';
+```
+
+#### 검증
+
+**타입 체크**: 0 errors ✅
+
+```bash
+$ npm run typecheck
+Running type check with tsgo...
+✓ Type check completed successfully
+```
+
+**단위 테스트**: 110/110 PASS ✅
+
+```bash
+$ npm test
+✓ test/unit/shared/container/service-harness.contract.test.ts (4)
+✓ ... (106 more tests)
+```
+
+**Phase 202 RED 테스트**: 생성 ✅
+
+```typescript
+// test/unit/refactoring/phase-202-deprecated-cleanup.test.ts
+describe('Phase 202: Deprecated API Cleanup', () => {
+  it('should not have service-harness.ts file', async () => {
+    // 파일 존재 확인
+  });
+
+  it('should not export deprecated APIs from harness.ts', () => {
+    // export 확인
+  });
+
+  it('should not have service-harness imports', () => {
+    // import 확인
+  });
+});
+```
+
+#### 교훈
+
+1. **의존성 분석 주의**
+   - grep/semantic search는 불완전
+   - 타입 체크로 실제 사용 확인 필수
+
+2. **점진적 제거**
+   - 파일 제거 → 즉시 타입 체크
+   - 문제 발견 시 즉시 복구
+
+3. **테스트 우선**
+   - RED 테스트 먼저 작성
+   - 리팩토링 후 GREEN 확인
+
+---
+
+### Phase 199 ✅ (2025-10-27)
 
 ### Phase 199 ✅ (2025-10-27)
 
