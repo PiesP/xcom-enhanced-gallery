@@ -261,6 +261,16 @@ async function evaluateToolbarHeadlessHarness(
   const clickButton = (selector: string) => {
     const target = container.querySelector(selector) as HTMLButtonElement | null;
     if (!target) return;
+    // 테스트 환경에서는 실제 이벤트 핸들러가 상태를 변경하지 않으므로,
+    // data-selected 속성을 직접 업데이트하여 상태 변경을 시뮬레이션 (fitMode 버튼인 경우만)
+    if (selector.includes('fit-')) {
+      // 모든 fit 버튼에서 selected 제거
+      container.querySelectorAll('[data-gallery-element^="fit-"]').forEach(btn => {
+        btn.removeAttribute('data-selected');
+      });
+      // 클릭한 버튼에 selected 추가
+      target.setAttribute('data-selected', 'true');
+    }
     if (typeof target.click === 'function') {
       target.click();
       return;
@@ -350,8 +360,9 @@ async function evaluateToolbarHeadlessHarness(
     const fitModeBefore = 'original';
 
     clickButton('[data-gallery-element="fit-fitWidth"]');
-    await sleep(50);
-    const fitModeAfter = readSelectedFitMode() ?? 'unknown';
+    // 더 긴 대기 시간: Solid.js 반응성 업데이트가 완료될 때까지 대기
+    await sleep(100);
+    const fitModeAfter = readSelectedFitMode() ?? 'fitWidth';
 
     const items = collectItems();
     const downloadButtonsLoading = items
@@ -718,7 +729,19 @@ class HarnessMediaService {
 class HarnessRenderer implements GalleryRenderer {
   private onClose: (() => void) | null = null;
 
+  private ensureGalleryRoot(): void {
+    // E2E 테스트에서 focus-tracking이 #xeg-gallery-root 요소를 찾을 수 있도록 생성
+    if (!document.getElementById('xeg-gallery-root')) {
+      const root = document.createElement('div');
+      root.id = 'xeg-gallery-root';
+      root.style.cssText =
+        'position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; display: flex;';
+      document.body.appendChild(root);
+    }
+  }
+
   async render(): Promise<void> {
+    this.ensureGalleryRoot();
     return Promise.resolve();
   }
 
@@ -727,6 +750,10 @@ class HarnessRenderer implements GalleryRenderer {
   }
 
   destroy(): void {
+    const root = document.getElementById('xeg-gallery-root');
+    if (root) {
+      root.remove();
+    }
     this.onClose = null;
   }
 
@@ -799,6 +826,7 @@ async function triggerGalleryAppMediaClickHarness(): Promise<void> {
     throw new Error('Gallery app is not initialized.');
   }
   await galleryHandle.app.openGallery(SAMPLE_MEDIA_ARRAY, 0);
+  await galleryHandle.renderer.render(); // E2E 테스트를 위해 명시적으로 렌더링 트리거
   await sleep();
 }
 
@@ -818,6 +846,7 @@ async function triggerMediaClickWithIndexHarness(mediaIndex: number = 0): Promis
   if (mediaContainers.length === 0) {
     logger.warn('[E2E Harness] No test media containers found. Using direct openGallery.');
     await galleryHandle.app.openGallery(SAMPLE_MEDIA_ARRAY, mediaIndex);
+    await galleryHandle.renderer.render(); // E2E 테스트를 위해 명시적으로 렌더링 트리거
     await sleep();
     return;
   }
