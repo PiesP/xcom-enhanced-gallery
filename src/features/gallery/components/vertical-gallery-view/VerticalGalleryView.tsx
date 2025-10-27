@@ -61,7 +61,7 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import { KeyboardHelpOverlay } from '../KeyboardHelpOverlay/KeyboardHelpOverlay';
+import { KeyboardHelpOverlay } from './KeyboardHelpOverlay/KeyboardHelpOverlay';
 import { useSelector, useCombinedSelector } from '@shared/utils/signal-selector';
 import type { MediaInfo } from '@shared/types';
 import { observeViewportCssVars } from '@shared/utils/viewport';

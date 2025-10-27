@@ -28,7 +28,7 @@ import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
-import { KeyboardHelpOverlay } from '@features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
+import { KeyboardHelpOverlay } from '@features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
 // import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal'; // TODO Phase 49: Migrate to Toolbar expandable settings
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { SERVICE_KEYS } from '@/constants';
