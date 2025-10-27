@@ -95,7 +95,9 @@ jobs:
         # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
 
       - name: 🧪 Run tests
-        run: npm run test
+        run: npm run test:smoke
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
