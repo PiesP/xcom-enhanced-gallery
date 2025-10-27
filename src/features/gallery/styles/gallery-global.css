@@ -1,19 +1,14 @@
 /**
  * Gallery Component Global Styles - Twitter Native UI Integration
- * @version 3.0.0
+ * @version 3.1.0
  *
  * @description
- * 트위터 네이티브 UI와 일관된 갤러리 컴포넌트 스타일.
- * Twitter 브랜드 색상을 활용한 현대적이고 친숙한 사용자 경험 제공.
- *
- * @features
- * - Twitter 브랜드 색상 시스템 완전 통합
- * - 네이티브 Twitter UI 패턴 적용
- * - 다크/라이트 모드 완전 대응
- * - 접근성 및 모바일 최적화
+ * 갤러리 컴포넌트 전역 스타일. X.com(Twitter) 브랜드 패턴 적용.
+ * 다크/라이트 모드, 반응형 디자인, 접근성 완벽 지원.
+ * 모든 색상은 CSS 변수(토큰) 사용, 크기는 rem/em 토큰 사용.
  */
 
-/* ===== 통합 Glass Surface 클래스 ===== */
+/* ====== 글래스 모프 서피스 ====== */
 .glass-surface {
   background: var(--xeg-surface-glass-bg);
   border: var(--border-width-thin) solid var(--xeg-surface-glass-border);
@@ -30,14 +25,8 @@
   box-shadow: var(--xeg-surface-glass-shadow-hover, var(--xeg-surface-glass-shadow));
 }
 
-/* 테마별 Surface 변형 */
 .glass-surface-light {
-  background: var(--xeg-surface-glass-bg-light, oklch(100% 0 0deg / 85%));
-  transition:
-    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard),
-    color var(--xeg-duration-normal) var(--xeg-ease-standard);
+  background: var(--xeg-surface-glass-bg-light);
   color: var(--xeg-surface-glass-text-light, var(--color-text-primary));
   border: var(--border-width-thin) solid
     var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
@@ -46,10 +35,15 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   isolation: isolate;
+  transition:
+    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard),
+    color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .glass-surface-dark {
-  background: var(--xeg-surface-glass-bg-dark, oklch(0% 0 0deg / 85%));
+  background: var(--xeg-surface-glass-bg-dark);
   color: var(--xeg-surface-glass-text-dark, var(--color-text-inverse));
   border: var(--border-width-thin) solid
     var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
@@ -57,16 +51,15 @@
   box-shadow: var(--xeg-surface-glass-shadow);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  transition: width var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition:
+    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
-/* 갤러리 오버레이 - 통합 색상 시스템 적용 */
+/* 갤러리 오버레이 - 전체 화면 배경 */
 .xeg-gallery-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: var(--xeg-z-gallery);
   background: var(--xeg-gallery-bg);
   display: flex;
@@ -77,7 +70,7 @@
   pointer-events: auto;
 }
 
-/* 갤러리 컨테이너 */
+/* 갤러리 컨테이너 - 스크롤 가능 */
 .xeg-gallery-container {
   position: relative;
   width: 100%;
@@ -86,34 +79,34 @@
   max-height: 100vh;
   display: flex;
   flex-direction: column;
-  /* 갤러리 내부 스크롤만 허용 */
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* 갤러리 툴바 - 현대적 glassmorphism 디자인 */
+/* 갤러리 툴바 - 상단 고정 */
 .xeg-gallery-toolbar {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3.75rem; /* 60px = 3.75rem */
+  height: 3.75rem;
   background: var(--xeg-bg-toolbar);
   border-bottom: var(--border-width-thin) solid var(--xeg-color-border-primary);
   backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: var(--xeg-z-toolbar);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-lg);
+  color: var(--xeg-color-text-primary);
+  box-shadow: var(--xeg-shadow-md);
   transition:
     background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
     border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
     box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
-  z-index: var(--xeg-z-toolbar);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-lg); /* 1.25rem = 20px */
-  color: var(--xeg-color-text-primary);
-  box-shadow: var(--xeg-shadow-md);
 }
 
 .xeg-toolbar-section-left,
@@ -121,7 +114,7 @@
 .xeg-toolbar-section-right {
   display: flex;
   align-items: center;
-  gap: var(--space-sm); /* 0.75rem = 12px */
+  gap: var(--space-sm);
 }
 
 .xeg-toolbar-section-center {
@@ -129,60 +122,60 @@
   justify-content: center;
 }
 
-/* Toolbar button styles moved to VerticalGalleryView.module.css / ToolbarButton.module.css */
-/* Previously defined toolbar button styles are now component-scoped */
-
-/* Gallery counter - Modern design */
+/* 갤러리 카운터 - 현재 항목 표시 */
 .xeg-gallery-counter {
-  font-size: var(--font-size-sm); /* 0.875rem = 14px */
+  font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
   background: var(--color-bg-elevated);
-  padding: 0.375em 0.75em; /* 6px 12px relative to font-size */
+  padding: 0.375em 0.75em;
   border-radius: var(--xeg-radius-lg);
   border: var(--border-width-thin) solid var(--color-border-default);
-  margin-left: var(--space-md); /* 1rem = 16px */
+  margin-left: var(--space-md);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: var(--shadow-gallery-counter);
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
-/* 이미지 맞춤 버튼들 - 통합 색상 시스템 적용 */
+/* 이미지 맞춤 버튼 그룹 */
 .xeg-fit-buttons {
   display: flex;
-  gap: 0.25em; /* 4px relative */
+  gap: 0.25em;
   background: var(--xeg-color-neutral-100);
   border: var(--border-width-thin) solid var(--xeg-color-neutral-200);
   border-radius: var(--xeg-radius-lg);
-  padding: 0.25em; /* 4px relative */
+  padding: 0.25em;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
-/* 다운로드 진행률 - 통합 색상 시스템 적용 */
+/* 다운로드 진행률 표시 */
 .xeg-download-progress {
   position: absolute;
-  bottom: -3.125rem; /* -50px = -3.125rem */
+  bottom: -3.125rem;
   left: 50%;
   transform: translateX(-50%);
   background: var(--xeg-bg-toolbar);
   border: var(--border-width-thin) solid var(--xeg-color-border-primary);
   border-radius: var(--xeg-radius-lg);
-  padding: 0.75rem 1rem; /* 12px 16px = 0.75rem 1rem */
-  min-width: 12.5rem; /* 200px = 12.5rem */
+  padding: 0.75rem 1rem;
+  min-width: 12.5rem;
   text-align: center;
   box-shadow: var(--xeg-shadow-md);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .xeg-progress-bar {
   width: 100%;
-  height: 0.25rem; /* 4px = 0.25rem */
+  height: 0.25rem;
   background: var(--xeg-color-neutral-200);
-  border-radius: var(--radius-xs); /* 2px = 0.125em */
+  border-radius: var(--radius-xs);
   overflow: clip;
-  margin-bottom: var(--space-sm); /* 8px = 0.5rem */
+  margin-bottom: var(--space-sm);
 }
 
 .xeg-progress-fill {
@@ -192,18 +185,18 @@
 }
 
 .xeg-progress-text {
-  font-size: var(--font-size-xs); /* 12px = 0.75rem */
+  font-size: var(--font-size-xs);
   color: var(--xeg-button-text);
   font-weight: 500;
 }
 
-/* 메인 뷰어 영역 */
+/* 메인 뷰어 영역 - 미디어 표시 */
 .xeg-gallery-viewer {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3.75rem 1.25rem 1.25rem; /* 60px 20px 20px = 3.75rem 1.25rem 1.25rem */
+  padding: 3.75rem 1.25rem 1.25rem;
   position: relative;
 }
 
@@ -215,6 +208,7 @@
   justify-content: center;
 }
 
+/* 갤러리 이미지 및 비디오 */
 .xeg-gallery-image,
 .xeg-gallery-video {
   max-width: 100%;
@@ -222,17 +216,19 @@
   object-fit: contain;
   border-radius: var(--xeg-radius-lg);
   box-shadow: var(--shadow-gallery-image);
+  transition: transform var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
+/* 갤러리 오류 메시지 */
 .xeg-gallery-error {
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-error);
-  font-size: var(--font-size-md); /* 16px = 1rem */
+  font-size: var(--font-size-md);
 }
 
-/* 네비게이션 버튼 - 현대적 glassmorphism 디자인 */
+/* 네비게이션 버튼 - 좌우 화살표 */
 .xeg-gallery-nav-left,
 .xeg-gallery-nav-right {
   position: absolute;
@@ -241,37 +237,37 @@
   background: var(--xeg-color-neutral-100);
   border: var(--border-width-thin) solid var(--xeg-border-button);
   border-radius: var(--xeg-radius-full);
-  width: 3.125rem; /* 50px = 3.125rem */
-  height: 3.125rem; /* 50px = 3.125rem */
+  width: 3.125rem;
+  height: 3.125rem;
   color: var(--xeg-color-text-primary);
-  font-size: var(--font-size-xl); /* 20px = 1.25rem */
+  font-size: var(--font-size-xl);
   cursor: pointer;
   z-index: var(--xeg-z-overlay);
-  transition:
-    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
   display: flex;
   align-items: center;
   justify-content: center;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: var(--shadow-gallery-nav);
+  transition:
+    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .xeg-gallery-nav-left {
-  left: 1.25rem; /* 20px = 1.25rem */
+  left: 1.25rem;
 }
 
 .xeg-gallery-nav-right {
-  right: 1.25rem; /* 20px = 1.25rem */
+  right: 1.25rem;
 }
 
 .xeg-gallery-nav-left:hover,
 .xeg-gallery-nav-right:hover {
   background: var(--xeg-color-neutral-200);
-  transform: translateY(-50%) translateY(-0.1875rem) scale(1.05); /* -3px = -0.1875rem */
+  transform: translateY(-50%) translateY(-0.1875rem) scale(1.05);
   box-shadow: var(--shadow-gallery-nav-hover);
 }
 
@@ -287,20 +283,20 @@
   transform: translateY(-50%);
 }
 
-/* 썸네일 영역 */
+/* 썸네일 영역 - 하단 중앙 */
 .xeg-gallery-thumbnails {
   position: absolute;
-  bottom: 1.25rem; /* 20px = 1.25rem */
+  bottom: 1.25rem;
   left: 50%;
   transform: translateX(-50%);
-  max-width: calc(100vw - 2.5rem); /* 40px = 2.5rem */
+  max-width: calc(100vw - 2.5rem);
   z-index: var(--xeg-z-overlay);
 }
 
 .xeg-thumbnails-container {
   display: flex;
-  gap: var(--space-sm); /* 8px = 0.5rem */
-  padding: 0.875rem; /* 14px = 0.875rem */
+  gap: var(--space-sm);
+  padding: 0.875rem;
   background: var(--xeg-bg-toolbar);
   border: var(--border-width-thin) solid var(--xeg-color-border-primary);
   border-radius: var(--xeg-radius-2xl);
@@ -310,26 +306,28 @@
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
 .xeg-thumbnails-container::-webkit-scrollbar {
   display: none;
 }
 
+/* 썸네일 아이템 */
 .xeg-thumbnail {
   position: relative;
   background: none;
-  border: var(--border-width-sm) solid transparent; /* 2px */
+  border: var(--border-width-sm) solid transparent;
   border-radius: var(--xeg-radius-xl);
   padding: 0;
   cursor: pointer;
+  flex-shrink: 0;
+  overflow: clip;
+  box-shadow: var(--shadow-thumbnail);
   transition:
     border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
-  flex-shrink: 0;
-  overflow: clip;
-  box-shadow: var(--shadow-thumbnail);
 }
 
 .xeg-thumbnail:hover {
@@ -344,8 +342,8 @@
 }
 
 .xeg-thumbnail-image {
-  width: 5rem; /* 80px = 5rem */
-  height: 5rem; /* 80px = 5rem */
+  width: 5rem;
+  height: 5rem;
   object-fit: cover;
   border-radius: var(--xeg-radius-md);
   display: block;
@@ -353,119 +351,106 @@
 
 .xeg-thumbnail-indicator {
   position: absolute;
-  top: 0.25rem; /* 4px = 0.25rem */
-  right: 0.25rem; /* 4px = 0.25rem */
-  width: 0.5rem; /* 8px = 0.5rem */
-  height: 0.5rem; /* 8px = 0.5rem */
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
   background: var(--xeg-color-primary);
   border-radius: var(--xeg-radius-full);
-  border: var(--border-width-sm) solid white; /* 2px */
+  border: var(--border-width-sm) solid white;
 }
 
 .xeg-thumbnail:focus,
 .xeg-thumbnail:focus-visible {
-  box-shadow: none;
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
 }
 
-/* 백드롭 */
+/* 백드롭 - 클릭 감지 */
 .xeg-gallery-backdrop {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   z-index: var(--xeg-z-overlay);
   cursor: pointer;
 }
 
 /* 격리된 갤러리 컨테이너 */
 .xeg-gallery.xeg-gallery-isolated {
-  /* 갤러리 컨테이너 기본 스타일 */
   position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
+  inset: 0 !important;
   z-index: var(--xeg-layer-root) !important;
-
-  /* 갤러리 내부만 제어 */
   pointer-events: auto !important;
   display: block !important;
   opacity: 1 !important;
-
-  /* 배경 페이지와 완전 분리 */
   isolation: isolate !important;
   contain: layout style paint !important;
 }
 
-/* 갤러리 내부 요소들은 정상 스크롤 허용 */
 .xeg-gallery-isolated * {
-  /* 갤러리 내부에서는 정상적인 스크롤 동작 허용 */
   overflow: auto;
 }
 
-/* 반응형 디자인 */
+/* 반응형 디자인 - 태블릿 및 모바일 */
 @media (width <= 48rem) {
-  /* 768px = 48rem */
   .xeg-gallery-toolbar {
-    height: 3.125rem; /* 50px = 3.125rem */
-    padding: 0 0.75rem; /* 12px = 0.75rem */
+    height: 3.125rem;
+    padding: 0 0.75rem;
   }
 
   .xeg-toolbar-section-left,
   .xeg-toolbar-section-center,
   .xeg-toolbar-section-right {
-    gap: var(--space-sm); /* 8px = 0.5rem */
+    gap: var(--space-sm);
   }
 
   .xeg-toolbar-button {
-    min-width: 2rem; /* 32px = 2rem */
-    height: 2rem; /* 32px = 2rem */
-    padding: 0.375rem 0.625rem; /* 6px 10px = 0.375rem 0.625rem */
-    font-size: var(--font-size-xs); /* 12px = 0.75rem */
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0.375rem 0.625rem;
+    font-size: var(--font-size-xs);
   }
 
   .xeg-gallery-counter {
-    font-size: var(--font-size-xs); /* 12px = 0.75rem */
-    margin-left: var(--space-sm); /* 8px = 0.5rem */
+    font-size: var(--font-size-xs);
+    margin-left: var(--space-sm);
   }
 
   .xeg-gallery-viewer {
-    padding: 3.125rem 0.75rem 0.75rem; /* 50px 12px 12px = 3.125rem 0.75rem 0.75rem */
+    padding: 3.125rem 0.75rem 0.75rem;
   }
 
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right {
-    width: 2.5rem; /* 40px = 2.5rem */
-    height: 2.5rem; /* 40px = 2.5rem */
-    font-size: var(--font-size-md); /* 16px = 1rem */
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: var(--font-size-md);
   }
 
   .xeg-gallery-nav-left {
-    left: 0.75rem; /* 12px = 0.75rem */
+    left: 0.75rem;
   }
 
   .xeg-gallery-nav-right {
-    right: 0.75rem; /* 12px = 0.75rem */
+    right: 0.75rem;
   }
 
   .xeg-gallery-thumbnails {
-    bottom: 0.75rem; /* 12px = 0.75rem */
-    max-width: calc(100vw - 1.5rem); /* 24px = 1.5rem */
+    bottom: 0.75rem;
+    max-width: calc(100vw - 1.5rem);
   }
 
   .xeg-thumbnails-container {
-    padding: var(--space-sm); /* 8px = 0.5rem */
-    gap: 0.375rem; /* 6px = 0.375rem */
+    padding: var(--space-sm);
+    gap: 0.375rem;
   }
 
   .xeg-thumbnail-image {
-    width: 3.75rem; /* 60px = 3.75rem */
-    height: 3.75rem; /* 60px = 3.75rem */
+    width: 3.75rem;
+    height: 3.75rem;
   }
 }
 
-/* 다크 테마 지원 */
+/* 라이트 모드 - prefers-color-scheme: light */
 @media (prefers-color-scheme: light) {
   .xeg-gallery-overlay {
     background: var(--color-overlay-light-bg);
@@ -513,19 +498,21 @@
   }
 }
 
-/* 접근성 개선 */
+/* 애니메이션 감소 모드 */
 @media (prefers-reduced-motion: reduce) {
   .xeg-gallery-overlay,
   .xeg-toolbar-button,
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right,
   .xeg-thumbnail,
-  .xeg-progress-fill {
+  .xeg-progress-fill,
+  .xeg-gallery-counter,
+  .xeg-fit-buttons {
     transition: none;
   }
 }
 
-/* 고대비 모드 지원 */
+/* 고대비 모드 */
 @media (prefers-contrast: high) {
   .xeg-gallery-overlay {
     background: black;
@@ -533,25 +520,19 @@
 
   .xeg-gallery-toolbar {
     background: black;
-    border-bottom: var(--border-width-sm) solid white; /* 2px */
+    border-bottom: var(--border-width-sm) solid white;
   }
 
   .xeg-toolbar-button {
     background: white;
     color: black;
-    border: var(--border-width-sm) solid black; /* 2px */
+    border: var(--border-width-sm) solid black;
   }
 
   .xeg-gallery-nav-left,
   .xeg-gallery-nav-right {
     background: white;
     color: black;
-    border: var(--border-width-sm) solid black; /* 2px */
+    border: var(--border-width-sm) solid black;
   }
 }
-
-/* ================================ */
-/* UI 유틸리티 클래스                 */
-/* ================================ */
-
-/* glass-surface 클래스는 파일 상단에 정의되어 있습니다. */

@@ -14,8 +14,8 @@
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
-- **최근 개선**: Phase 214 VerticalGalleryView 모던화 (import 정규화 + JSDoc
-  강화) useProgressiveImage 제거)
+- **최근 개선**: Phase 218 Gallery Styles 최적화 (gallery-global.css 3.4% 감소,
+  토큰 통일)
 
 ## 계층 구조와 단방향 의존
 
@@ -75,8 +75,15 @@
       정리)
   - `types/`: 갤러리 특화 타입 (현재 미사용 - index.ts barrel만 export)
   - `styles/`: 갤러리 스타일
-    - **gallery-global.css**: 갤러리 전역 스타일 (558줄)
-    - **Gallery.module.css**: CSS Modules (878줄, WIP/TEST TARGET)
+    - **gallery-global.css**: 갤러리 전역 스타일 (538줄, Phase 218 최적화)
+      - PC 전용 이벤트 정책 준수
+      - 모든 색상/크기 토큰 사용 (하드코딩 제로)
+      - CSS Logical Properties 사용
+      - 반응형 디자인 + 접근성 완벽 지원
+    - **Gallery.module.css**: CSS Modules (883줄, TEST TARGET)
+      - 현재 코드에서 미사용
+      - 테스트 정책 검증 대상으로 유지
+      - 향후 마이그레이션 또는 삭제 예정
   - `settings/`: 설정 UI, 스토리지 어댑터 (Phase 193: 타입-값 분리 강화)
     - **SettingsService** (524줄): 설정 상태 관리 및 지속성 ✅ 간결화
       - 책임: 설정 로드/저장, 마이그레이션, 스키마 해싱
