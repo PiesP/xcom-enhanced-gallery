@@ -1,8 +1,8 @@
 /**
- * Phase 150.2 Step 3: Timer 관리 추상화
+ * Focus Timer Management
  *
- * 목표: autoFocusTimerId, recomputeTimerId 등 다양한 타이머 상태 → FocusTimerManager로 통합
- * 타이머 로직 단순화 및 재사용성 향상
+ * 포커스 추적 관련 타이머를 중앙에서 관리.
+ * auto-focus, recompute, flush-batch, auto-focus-debounce 등의 타이머 역할별 관리.
  */
 
 import { getSolid } from '../../external/vendors';
@@ -10,14 +10,14 @@ import { globalTimerManager } from '../../utils/timer-management';
 import { logger } from '@shared/logging';
 
 /**
- * 타이머 역할 구분
+ * 타이머 역할 타입
  */
 export type FocusTimerRole = 'auto-focus' | 'recompute' | 'flush-batch' | 'auto-focus-debounce';
 
 /**
- * 타이머 콜백 타입
+ * 타이머 콜백
  */
-export type FocusTimerCallback = () => void;
+type FocusTimerCallback = () => void;
 
 /**
  * 타이머 메타데이터
@@ -31,15 +31,8 @@ interface TimerRecord {
 }
 
 /**
- * FocusTimerManager: 포커스 추적 관련 타이머를 중앙에서 관리
- *
- * 기존 상태:
- * - autoFocusTimerId: number | null
- * - recomputeTimerId?: number | null
- * - flushBatchTimerId?: number | null
- *
- * 통합 후:
- * - timers: Map<FocusTimerRole, TimerRecord>
+ * 포커스 타이머 관리자
+ * 역할별 타이머를 중앙에서 설정/정리/조회
  */
 export class FocusTimerManager {
   /** 역할별 타이머 레코드 관리 */

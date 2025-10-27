@@ -255,7 +255,92 @@
     - 번들 포함: 모든 언어 파일이 기본 번들에 포함 (다운로드/런타임 선택 미지원)
     - 정합성: LanguageService의 `getIntegrityReport()`로 누락/중복 검증
 
-- `src/shared/state/*`: Signals 상태 및 파생값(`signalSelector`)
+- `src/shared/state/*`: Signals 상태 및 파생값
+  - **계층 분류**:
+    1. **Signal Factory** (기반 인프라):
+       - `signals/signal-factory.ts`: Solid.js 안전 팩토리 (150줄)
+         - `createSignalSafe<T>()`: Signal 생성 + 폴백 지원 (테스트/Node 환경)
+         - `effectSafe()`: Effect 생성 + 폴백 처리
+         - `computedSafe<T>()`: Computed 생성 + 폴백 처리
+         - 특징: Solid.js 미사용 환경에서도 안전하게 동작
+    2. **Domain Signals** (도메인별 상태):
+       - `signals/gallery.signals.ts` (334줄): 갤러리 상태 + 네비게이션 로직
+         - 세밀한 신호: isOpen, mediaItems, currentIndex, isLoading, error,
+           viewMode, focusedIndex
+         - 후방 호환성: galleryState (gallerySignals 조합)
+         - 액션: openGallery, closeGallery, navigateToItem,
+           navigatePrevious/Next, setFocusedIndex
+         - 선택자: getCurrentMediaItem, hasMediaItems, isGalleryOpen,
+           getCurrentIndex 등
+         - 네비게이션 이벤트: galleryIndexEvents (navigate:start/complete)
+       - `signals/download.signals.ts` (411줄): 다운로드 상태 + 작업 관리
+         - 타입: DownloadTask, DownloadState, DownloadStatus
+         - downloadState 액세서 (구독 지원)
+         - 액션: createDownloadTask, startDownload, updateDownloadProgress,
+           completeDownload, failDownload, removeTask, clearCompletedTasks
+         - 선택자: getDownloadTask, getDownloadInfo
+         - 이벤트: download:started/progress/completed/failed/queue-updated
+       - `signals/toolbar.signals.ts` (215줄): 툴바 상태 + 설정 패널
+         - 타입: ToolbarState, ToolbarExpandableState, ToolbarEvents
+         - 신호: toolbarStateSignal, expandableStateSignal
+         - 액션: updateToolbarMode, setHighContrast, toggleSettingsExpanded,
+           setSettingsExpanded
+         - 선택자: getCurrentToolbarMode, getToolbarInfo,
+           getToolbarExpandableState, getSettingsExpanded
+         - 이벤트 리스너 API: addEventListener
+       - `signals/scroll.signals.ts` (20줄): 스크롤 상태 타입만 정의
+         - ScrollState 인터페이스, ScrollDirection 타입, INITIAL_SCROLL_STATE
+           상수
+         - 주의: 실제 ScrollState Signal은 useGalleryScroll Hook에서 로컬 생성
+         - 용도: 타입 공유 및 상수 정의
+    3. **Domain Modules** (통합 상태 관리):
+       - `focus/` (Phase 150.2): 포커스 추적 상태
+         - focus-types.ts, focus-state.ts, focus-tracking.ts, focus-cache.ts,
+           focus-timer-manager.ts
+       - `item-scroll/` (Phase 150.2): 아이템 스크롤 상태
+         - item-scroll-state.ts, item-scroll-signal.ts
+    4. **State Machines** (상태 전환):
+       - `navigation-state-machine.ts`, `settings-state-machine.ts`,
+         `download-state-machine.ts`, `toast-state-machine.ts`
+    5. **기타**:
+       - `gallery-store.ts`, `app-state.ts`: 통합 상태 저장소
+       - `types/`: 공유 상태 타입
+  - **개선 사항** (2025-10-27):
+    - **간결화**: signal-factory.ts 주석 최소화 (30% 단축), 모든 signal 파일에서
+      불필요한 phase 주석 제거
+    - **구조 정렬**: gallery/download/toolbar signals에서 섹션 표준화 (Types →
+      Initial State → Signals → State Accessors → Event Dispatcher → Actions →
+      Selectors)
+    - **scroll.signals.ts 명확화**: 타입-신호 분리 (실제 Signal은
+      useGalleryScroll에서 로컬 생성)
+    - **크기**: 총 1130줄 (이전 1308줄, -14% 최적화)
+      - 스크롤 방향 감지 (up/down/idle 자동 추적)
+
+- `src/shared/services/focus/*` (Phase 150.3 ✅): 포커스 추적 서비스 계층 분리
+  - **목적**: useGalleryFocusTracker(651줄) → 515줄(21% 감소)로 단순화
+  - **아키텍처**: DI 기반 서비스 패턴, 순수 비즈니스 로직 외부화
+  - **주요 서비스**:
+    - `focus-observer-manager.ts` (204줄): **FocusObserverManager**
+      - 책임: IntersectionObserver 생명주기 관리
+      - 메서드: setupObserver(), handleEntries(), observeItem(),
+        unobserveItem(), cleanupObserver()
+      - 특징: 후보 점수 계산(centerDistance, intersectionRatio 기반)
+    - `focus-applicator-service.ts` (195줄): **FocusApplicatorService**
+      - 책임: 자동 포커스 적용 및 평가 로직
+      - 메서드: applyAutoFocus(), evaluateAndScheduleAutoFocus(),
+        clearAutoFocusTimer()
+      - 특징: 중복 방지, 요소 연결 확인, preventScroll 폴백
+    - `focus-state-manager-service.ts` (145줄): **FocusStateManagerService**
+      - 책임: 상태 동기화 및 debouncer 관리
+      - 메서드: setupAutoFocusSync(), setupContainerSync(), handleScrollState(),
+        deferSync()
+      - 특징: 2개 debouncer(autoFocus, container) 중앙화, scroll settling 처리
+  - **의존성 흐름**: Hook(조율) → 3 Services(비즈니스) → State/Utils(순수)
+  - **테스트 용이성**: 각 서비스 독립 테스트 가능, Mock 주입 간편
+  - **메트릭스**:
+    - Hook 크기: 651줄 → 515줄 (-21%)
+    - 직접 구현: 100% → ~30% (70% 외부화)
+    - 서비스 책임: 단일 역할 (observer/applicator/state-sync)
 - `src/shared/types/*`: 도메인 비즈니스 타입 정의 (**.types.ts 패턴**)
   - `app.types.ts`, `media.types.ts`, `result.types.ts`
   - `core/`: 핵심 타입 (extraction.types.ts, media.types.ts)
@@ -506,15 +591,32 @@ Component). **상세 규칙**: `docs/CODING_GUIDELINES.md`의 "디자인 토큰 
 
 ---
 
-## 타입/인터페이스 계층 정책 (Phase 200-201)
+## 타입/인터페이스 계층 정책 (Phase 196-201)
 
-### 계층별 역할 명확화
+### 타입 계층 구조 (Phase 196 최신화)
 
-| 계층           | 위치                     | 역할                        | 예시                                             |
-| -------------- | ------------------------ | --------------------------- | ------------------------------------------------ |
-| **Interfaces** | `src/shared/interfaces/` | Features 계약 정의          | GalleryRenderer                                  |
-| **Types**      | `src/shared/types/`      | 비즈니스 타입 + 서비스 계약 | MediaExtractor, GalleryRenderOptions             |
-| **Services**   | `src/shared/services/`   | 계약 구현                   | MediaExtractionService implements MediaExtractor |
+```
+External (어댑터 타입, 의존성 제거)
+    ↑
+Shared (공유 도메인 타입)
+    ├─ @shared/types/ (외부 공유)
+    ├─ @shared/interfaces/ (Features 계약)
+    └─ @shared/types/core/ (핵심 기초 타입)
+    ↑
+Features (기능 특화 타입)
+    └─ @features/{name}/types/ (기능 고유 타입)
+```
+
+### 계층별 역할 명확화 (Phase 196 갱신)
+
+| 계층           | 위치                      | 역할                                | 예시                                             |
+| -------------- | ------------------------- | ----------------------------------- | ------------------------------------------------ |
+| **External**   | `src/shared/external/`    | 벤더/외부 어댑터 타입 (의존성 역전) | Solid JSXElement                                 |
+| **Shared**     | `src/shared/types/`       | 앱 전역 도메인 타입 (8개 파일)      | MediaItem, AppConfig, GalleryState, UITheme      |
+| **Core Types** | `src/shared/types/core/`  | 기초 인터페이스 (추상화 객체)       | BaseService, Cleanupable, Result pattern         |
+| **Interfaces** | `src/shared/interfaces/`  | Features 계약 정의                  | GalleryRenderer                                  |
+| **Feature**    | `@features/{name}/types/` | 기능 고유 타입 (Phase 196 신규)     | ToolbarState, ToolbarActions (gallery/types/)    |
+| **Services**   | `src/shared/services/`    | 계약 구현                           | MediaExtractionService implements MediaExtractor |
 
 ### Best Practices
 

@@ -1,32 +1,27 @@
 /**
- * Phase 150.2 Step 2: Cache layer 통합
+ * Item Cache Management
  *
- * 목표: visibleIndices, itemIndexToKey, keyToItemIndex 3개 상태 → 1개 구조로 통합
- * 67% 상태 감소 목표
+ * 갤러리 아이템의 인덱스, DOM 요소, IntersectionObserver 상태를 통합 관리.
+ * 메모리 효율을 위해 WeakMap을 활용한 양방향 매핑 제공.
  */
 
 /**
- * ItemEntry: Item 별 캐시 정보를 통합하는 구조
- * - index: 아이템의 인덱스 (Map key)
- * - element: 아이템 DOM 요소 참조
- * - entry: IntersectionObserver 진입 정보 캐시
- * - isVisible: 현재 가시 여부
+ * 캐시 엔트리: Item 별 정보를 통합하는 구조
  */
 export interface ItemEntry {
   /** 아이템 인덱스 */
   index: number;
   /** DOM 요소 참조 */
   element: HTMLElement | null;
-  /** IntersectionObserver 진입 정보 (최신) */
+  /** IntersectionObserver 진입 정보 */
   entry: IntersectionObserverEntry | null;
-  /** 현재 가시 여부 (derived) */
+  /** 현재 가시 여부 */
   isVisible: boolean;
 }
 
 /**
- * ItemCache: Map 기반 캐시 관리
- * - index -> ItemEntry 단일 Map으로 통합
- * - 역 매핑(element -> index)은 WeakMap 유지 (GC 효율성)
+ * 아이템 캐시 관리자 클래스
+ * index -> ItemEntry 맵 및 element -> index 역 매핑(WeakMap) 제공
  */
 export class ItemCache {
   /** index -> ItemEntry 맵 */

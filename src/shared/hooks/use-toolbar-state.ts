@@ -18,7 +18,7 @@
 
 import { getSolid, getSolidStore } from '../external/vendors';
 import { globalTimerManager } from '../utils/timer-management';
-import type { ToolbarState, ToolbarActions } from '../types/toolbar-types';
+import type { ToolbarState, ToolbarActions } from '@features/gallery/types/toolbar.types';
 
 // Phase 2: 헬퍼 함수 분리 (toolbar-utils로 이동)
 export {
@@ -27,8 +27,8 @@ export {
   type ToolbarDataState,
 } from '../utils/toolbar-utils';
 
-// Phase 2: 타입 정의를 toolbar-types로 분리 (순환 의존성 제거)
-export type { ToolbarState, ToolbarActions, FitMode } from '../types/toolbar-types';
+// Phase 2: 타입 정의를 gallery/types로 이동
+export type { ToolbarState, ToolbarActions, FitMode } from '@features/gallery/types/toolbar.types';
 
 /**
  * 초기 상태 정의

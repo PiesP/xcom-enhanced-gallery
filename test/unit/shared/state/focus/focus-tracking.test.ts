@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
-  FocusTracking,
+  type FocusTracking,
   INITIAL_FOCUS_TRACKING,
   createFocusTracking,
   isSameFocusTracking,
   resetFocusTracking,
   updateFocusTracking,
-} from '@shared/state/focus/focus-tracking';
+} from '@shared/state/focus/focus-types';
 
 describe('Focus Tracking (Phase 150.2 Step 4)', () => {
   describe('FocusTracking Interface', () => {

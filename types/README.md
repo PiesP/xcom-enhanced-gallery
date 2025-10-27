@@ -65,8 +65,32 @@ define: {
 ### ✅ src/shared/types/ 에 배치하는 경우
 
 - 도메인 비즈니스 타입 (app.types.ts, media.types.ts)
+- UI/컴포넌트 타입 (ui.types.ts, component.types.ts) — **Phase 196 신규**
 - 핵심 타입 (core/extraction.types.ts, core/media.types.ts)
-- Features 특화 타입 (settings/types/, gallery/types/)
+- 설정 타입 (settings/types/)
+
+### ✅ src/features/{name}/types/ 에 배치하는 경우 (Phase 196)
+
+- 기능 특화 상태/액션 타입 (예: gallery/types/toolbar.types.ts)
+- 다른 공유 타입으로 표현 불가능한 기능 고유 타입
+- 예시:
+  - `@features/gallery/types/toolbar.types.ts`: ToolbarState, ToolbarActions
+  - `@features/settings/types/settings-form.types.ts` (향후 가능)
+
+### Phase 196 마이그레이션 요약
+
+**신규 파일**:
+
+- `src/shared/types/ui.types.ts` (162줄) — 테마, 애니메이션, UI 컴포넌트 타입
+- `src/shared/types/component.types.ts` (281줄) — BaseComponentProps 및 이벤트
+  핸들러
+- `src/features/gallery/types/toolbar.types.ts` (75줄) — 갤러리 전용 상태 타입
+
+**개선 효과**:
+
+- `app.types.ts`: 482줄 → 268줄 (56% 축소)
+- 단일 책임 원칙 강화: 각 파일이 명확한 도메인 담당
+- 레이어 분리 명확화: Shared vs. Features 타입 구분
 
 ### 자세한 내용
 
@@ -85,4 +109,4 @@ define: {
 
 ---
 
-**최종 업데이트**: 2025-10-26 (Phase 190: types/ 정리 및 현대화)
+**최종 업데이트**: 2025-10-27 (Phase 196: 타입 파일 통합 및 레이어 분리)

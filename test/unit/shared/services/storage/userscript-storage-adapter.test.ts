@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UserscriptStorageAdapter } from '@shared/services/storage/userscript-storage-adapter';
+import { UserscriptStorageAdapter } from '@features/settings/services/storage/userscript-storage-adapter';
 import type { UserscriptAPI } from '@shared/external/userscript/adapter';
 
 describe('UserscriptStorageAdapter', () => {

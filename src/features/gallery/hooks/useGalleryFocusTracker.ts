@@ -2,18 +2,23 @@ import type { Accessor } from 'solid-js';
 import { getSolid } from '../../../shared/external/vendors';
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '../../../shared/utils/timer-management';
-import { createDebouncer } from '../../../shared/utils/performance/performance-utils';
 import { galleryIndexEvents, setFocusedIndex } from '../../../shared/state/signals/gallery.signals';
-import type { FocusState } from '../../../shared/state/focus/focus-state';
-import { INITIAL_FOCUS_STATE, createFocusState } from '../../../shared/state/focus/focus-state';
-import { createItemCache } from '../../../shared/state/focus/focus-cache';
-import { createFocusTimerManager } from '../../../shared/state/focus/focus-timer-manager';
-import type { FocusTracking } from '../../../shared/state/focus/focus-tracking';
 import {
-  createFocusTracking,
+  type FocusState,
+  type FocusTracking,
+  INITIAL_FOCUS_STATE,
   INITIAL_FOCUS_TRACKING,
+  createFocusState,
+  createFocusTracking,
   updateFocusTracking,
-} from '../../../shared/state/focus/focus-tracking';
+  createItemCache,
+  createFocusTimerManager,
+} from '../../../shared/state/focus';
+import {
+  createFocusObserverManager,
+  createFocusApplicatorService,
+  createFocusStateManagerService,
+} from '@shared/services/focus';
 
 type MaybeAccessor<T> = T | Accessor<T>;
 
@@ -56,13 +61,6 @@ export interface UseGalleryFocusTrackerReturn {
   setManualFocus: (index: number | null) => void;
 }
 
-interface CandidateScore {
-  index: number;
-  centerDistance: number;
-  intersectionRatio: number;
-  time: number;
-}
-
 const DEFAULT_THRESHOLD = [0.25, 0.5, 0.75];
 const DEFAULT_MIN_VISIBLE_RATIO = 0.05;
 const DEFAULT_AUTO_FOCUS_DELAY = 150;
@@ -88,6 +86,7 @@ export function useGalleryFocusTracker({
   const autoFocusDelayAccessor = toAccessor(autoFocusDebounce);
 
   const [focusState, setFocusState] = createSignal<FocusState>(INITIAL_FOCUS_STATE);
+  const [focusTracking, setFocusTracking] = createSignal<FocusTracking>(INITIAL_FOCUS_TRACKING);
 
   // Backward compat: getter 헬퍼
   const manualFocusIndex = (): number | null =>
@@ -95,53 +94,41 @@ export function useGalleryFocusTracker({
   const autoFocusIndex = (): number | null =>
     focusState().source === 'auto' ? focusState().index : null;
 
+  // Service instances
   const itemCache = createItemCache();
-
-  let observer: IntersectionObserver | null = null;
-
   const focusTimerManager = createFocusTimerManager();
+  const observerManager = createFocusObserverManager();
+  const applicator = createFocusApplicatorService();
+  const stateManager = createFocusStateManagerService();
 
-  const [focusTracking, setFocusTracking] = createSignal<FocusTracking>(INITIAL_FOCUS_TRACKING);
-  const debouncedSetAutoFocusIndex = createDebouncer<[number | null, { forceClear?: boolean }?]>(
-    (index, options) => {
-      const shouldForceClear = options?.forceClear ?? false;
+  // Setup state sync debouncer
+  stateManager.setupAutoFocusSync((index, source) => {
+    const currentState = focusState();
+    const fallbackIndex =
+      (currentState.source === 'auto' ? currentState.index : null) ??
+      (currentState.source === 'manual' ? currentState.index : null) ??
+      focusTracking().lastAutoFocusedIndex ??
+      getCurrentIndex();
 
-      if (index === null && !shouldForceClear) {
-        const currentState = focusState();
-        const fallbackIndex =
-          (currentState.source === 'auto' ? currentState.index : null) ??
-          (currentState.source === 'manual' ? currentState.index : null) ??
-          focusTracking().lastAutoFocusedIndex ??
-          getCurrentIndex();
+    if (index === null && (fallbackIndex === null || Number.isNaN(fallbackIndex))) {
+      setFocusState(createFocusState(null, source));
+      setFocusedIndex(null);
+      return;
+    }
 
-        if (fallbackIndex === null || Number.isNaN(fallbackIndex)) {
-          setFocusState(createFocusState(null, 'auto'));
-          setFocusedIndex(null);
-          return;
-        }
+    const targetIndex = index ?? fallbackIndex;
+    setFocusState(createFocusState(targetIndex, source));
+    setFocusedIndex(targetIndex, 'auto-focus');
+  }, 50);
 
-        setFocusState(createFocusState(fallbackIndex, 'auto'));
-        setFocusedIndex(fallbackIndex, 'auto-focus');
-        return;
-      }
-
-      setFocusState(createFocusState(index, 'auto'));
-      setFocusedIndex(index, 'auto-focus');
-    },
-    50
-  );
-
-  // Debouncer for updating container focus attribute
-  const debouncedUpdateContainerFocusAttribute = createDebouncer<
-    [number | null, { forceClear?: boolean }?]
-  >((value, options) => {
+  // Setup container sync debouncer
+  stateManager.setupContainerSync((value, options) => {
     const containerElement = containerAccessor();
     if (!containerElement) {
       return;
     }
 
     const shouldForceClear = options?.forceClear ?? false;
-
     const resolveCandidate = (candidate: number | null): candidate is number => {
       return candidate !== null && !Number.isNaN(candidate);
     };
@@ -165,178 +152,71 @@ export function useGalleryFocusTracker({
     containerElement.setAttribute('data-focused-index', String(normalized));
   }, 50);
 
-  const updateContainerFocusAttribute = (
-    value: number | null,
-    options?: { forceClear?: boolean }
-  ) => {
-    debouncedUpdateContainerFocusAttribute.execute(value, options);
-  };
-
-  // Debouncer for scheduling focus sync
-  const debouncedScheduleSync = createDebouncer<[]>(() => {
-    // Skip recompute if scrolling; defer until settled
-    if (isScrollingAccessor()) {
-      const current = focusTracking();
-      setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: true }));
-      return;
-    }
-
-    // Perform recompute when settled
-    recomputeFocus();
-    const current = focusTracking();
-    setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: false }));
-  }, 100);
-
-  const scheduleSync = () => {
-    debouncedScheduleSync.execute();
-  };
-
-  // Process deferred recompute after scroll settles
+  // Handle scroll settling and deferred sync
   createEffect(() => {
     const scrolling = isScrollingAccessor();
     const current = focusTracking();
 
-    if (!scrolling && current.hasPendingRecompute) {
-      logger.debug('useGalleryFocusTracker: processing deferred recompute after settling');
-
-      recomputeFocus();
-      setFocusTracking(updateFocusTracking(current, { hasPendingRecompute: false }));
+    const updated = stateManager.handleScrollState(scrolling, current, recomputeFocus);
+    if (updated !== current) {
+      setFocusTracking(updated);
     }
   });
 
-  const clearAutoFocusTimer = () => {
-    focusTimerManager.clearTimer('auto-focus');
-  };
-
+  // Apply auto focus with service
   const applyAutoFocus = (index: number, reason: string) => {
-    // Guard against duplicate focus application
     const current = focusTracking();
-    if (current.lastAppliedIndex === index) {
-      return;
-    }
-
-    const item = itemCache.getItem(index);
-    const element = item?.element;
-    if (!element?.isConnected) {
-      return;
-    }
-
-    if (document.activeElement === element) {
-      setFocusTracking(
-        updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
-      );
-      return;
-    }
-
-    try {
-      element.focus({ preventScroll: true });
-      setFocusTracking(
-        updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
-      );
-      logger.debug('useGalleryFocusTracker: auto focus applied', { index, reason });
-    } catch (error) {
-      try {
-        element.focus();
-        setFocusTracking(
-          updateFocusTracking(current, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
-        );
-        logger.debug('useGalleryFocusTracker: auto focus applied (fallback)', {
-          index,
-          reason,
-        });
-      } catch (fallbackError) {
-        logger.warn('useGalleryFocusTracker: auto focus failed', {
-          index,
-          reason,
-          error,
-          fallbackError,
-        });
-      }
+    const updated = applicator.applyAutoFocus(index, itemCache, current, reason);
+    if (updated) {
+      setFocusTracking(updated);
     }
   };
 
+  // Evaluate and schedule auto focus with service
   const evaluateAutoFocus = (reason: string) => {
-    clearAutoFocusTimer();
-
-    if (!shouldAutoFocusAccessor()) {
-      return;
-    }
-
-    if (manualFocusIndex() !== null) {
-      return;
-    }
-
     const targetIndex = autoFocusIndex();
-    if (targetIndex === null || Number.isNaN(targetIndex)) {
-      return;
-    }
-
-    const targetItem = itemCache.getItem(targetIndex);
-    const targetElement = targetItem?.element;
-    if (!targetElement?.isConnected) {
-      return;
-    }
-
-    if (
-      document.activeElement === targetElement &&
-      focusTracking().lastAutoFocusedIndex === targetIndex
-    ) {
-      return;
-    }
-    // Reset lastAppliedIndex when target index changes
     const current = focusTracking();
-    if (current.lastAppliedIndex !== null && current.lastAppliedIndex !== targetIndex) {
-      setFocusTracking(updateFocusTracking(current, { lastAppliedIndex: null }));
-    }
-
-    const delay = Math.max(0, autoFocusDelayAccessor());
-
-    focusTimerManager.setTimer(
-      'auto-focus',
-      () => {
-        applyAutoFocus(targetIndex, reason);
-      },
-      delay
+    const updated = applicator.evaluateAndScheduleAutoFocus(
+      targetIndex,
+      manualFocusIndex(),
+      itemCache,
+      current,
+      focusTimerManager,
+      shouldAutoFocusAccessor(),
+      Math.max(0, autoFocusDelayAccessor()),
+      applyAutoFocus,
+      reason
     );
+    if (updated !== current) {
+      setFocusTracking(updated);
+    }
   };
 
-  const cleanupObserver = () => {
-    observer?.disconnect();
-    observer = null;
-    itemCache.clear();
-  };
-
-  const handleEntries: IntersectionObserverCallback = entries => {
-    // Break reactivity chain to avoid signal dependency tracking issues
-    untrack(() => {
-      entries.forEach(entry => {
-        itemCache.setEntry(entry.target as HTMLElement, entry);
-      });
-
-      scheduleSync();
-    });
-  };
-
+  // Recompute focus based on visible items
   const recomputeFocus = () => {
     const enabled = isEnabledAccessor();
     if (!enabled) {
-      debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
-      updateContainerFocusAttribute(null, { forceClear: true });
+      stateManager.syncAutoFocus(null, { forceClear: true });
+      stateManager.syncContainer(null, { forceClear: true });
       evaluateAutoFocus('disabled');
       return;
     }
 
     const containerElement = containerAccessor();
     if (!containerElement) {
-      updateContainerFocusAttribute(autoFocusIndex());
+      stateManager.syncContainer(autoFocusIndex());
       return;
     }
 
     const containerRect = containerElement.getBoundingClientRect();
     const containerCenter = containerRect.top + containerRect.height / 2;
 
-    const candidates: CandidateScore[] = [];
-    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const candidates: Array<{
+      index: number;
+      centerDistance: number;
+      intersectionRatio: number;
+      time: number;
+    }> = [];
 
     itemCache.forEach(item => {
       const { element, index, entry } = item;
@@ -358,24 +238,15 @@ export function useGalleryFocusTracker({
         index,
         centerDistance: distance,
         intersectionRatio: ratio,
-        time: entry?.time ?? now,
+        time: entry?.time ?? Date.now(),
       });
     });
 
     if (candidates.length === 0) {
-      if (itemCache.size === 0) {
-        // Use fallback when itemCache is empty (initial state or during tests)
-        const fallbackIndex = getCurrentIndex();
-        debouncedSetAutoFocusIndex.execute(fallbackIndex);
-        updateContainerFocusAttribute(fallbackIndex);
-        evaluateAutoFocus('itemCache-empty');
-        return;
-      }
-
       const fallbackIndex = getCurrentIndex();
-      debouncedSetAutoFocusIndex.execute(fallbackIndex);
-      updateContainerFocusAttribute(fallbackIndex);
-      evaluateAutoFocus('fallback');
+      stateManager.syncAutoFocus(fallbackIndex);
+      stateManager.syncContainer(fallbackIndex);
+      evaluateAutoFocus(itemCache.size === 0 ? 'itemCache-empty' : 'fallback');
       return;
     }
 
@@ -392,15 +263,23 @@ export function useGalleryFocusTracker({
     });
 
     const nextIndex = candidates[0]?.index ?? null;
-    debouncedSetAutoFocusIndex.execute(nextIndex);
-    updateContainerFocusAttribute(nextIndex);
+    stateManager.syncAutoFocus(nextIndex);
+    stateManager.syncContainer(nextIndex);
     evaluateAutoFocus('recompute');
+  };
+
+  // Observer entry handler
+  const handleEntries = (_candidates: Array<{ index: number }>) => {
+    untrack(() => {
+      // Schedule recompute after entries are processed
+      recomputeFocus();
+    });
   };
 
   const registerItem = (index: number, element: HTMLElement | null) => {
     const prev = itemCache.getItem(index);
-    if (prev?.element && observer) {
-      observer.unobserve(prev.element);
+    if (prev?.element) {
+      observerManager.unobserveItem(prev.element);
     }
 
     if (!element) {
@@ -408,18 +287,14 @@ export function useGalleryFocusTracker({
         // 요소 제거 시 캐시에서만 삭제 (WeakMap은 자동 정리)
       }
       itemCache.deleteItem(index);
-      scheduleSync();
+      recomputeFocus();
       evaluateAutoFocus('register-remove');
       return;
     }
 
     itemCache.setItem(index, element);
-
-    if (observer) {
-      observer.observe(element);
-    }
-
-    scheduleSync();
+    observerManager.observeItem(element);
+    recomputeFocus();
     evaluateAutoFocus('register');
   };
 
@@ -436,8 +311,8 @@ export function useGalleryFocusTracker({
       pendingFocusIndex = null;
       setFocusState(createFocusState(index, 'manual'));
       logger.debug('useGalleryFocusTracker: manual focus applied', { index });
-      updateContainerFocusAttribute(index);
-      clearAutoFocusTimer();
+      stateManager.syncContainer(index);
+      applicator.clearAutoFocusTimer(focusTimerManager);
       const current1 = focusTracking();
       setFocusTracking(
         updateFocusTracking(current1, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
@@ -450,7 +325,7 @@ export function useGalleryFocusTracker({
       if (manualFocusIndex() === index) {
         setFocusState(createFocusState(null, 'manual'));
         logger.debug('useGalleryFocusTracker: manual focus cleared', { index });
-        scheduleSync();
+        recomputeFocus();
         evaluateAutoFocus('manual-blur');
       }
     }
@@ -485,8 +360,6 @@ export function useGalleryFocusTracker({
 
   const forceSync = () => {
     recomputeFocus();
-    debouncedSetAutoFocusIndex.flush();
-    debouncedUpdateContainerFocusAttribute.flush();
     // Ensure evaluateAutoFocus runs after state updates
     Promise.resolve().then(() => {
       evaluateAutoFocus('force');
@@ -495,19 +368,19 @@ export function useGalleryFocusTracker({
 
   // Explicit manual focus setting (clears auto-focus timer)
   const setManualFocus = (index: number | null) => {
-    clearAutoFocusTimer();
+    applicator.clearAutoFocusTimer(focusTimerManager);
     setFocusState(createFocusState(index, 'manual'));
 
     if (index !== null) {
       logger.debug('useGalleryFocusTracker: manual focus set', { index });
-      updateContainerFocusAttribute(index);
+      stateManager.syncContainer(index);
       const current2 = focusTracking();
       setFocusTracking(
         updateFocusTracking(current2, { lastAutoFocusedIndex: index, lastAppliedIndex: index })
       );
     } else {
       logger.debug('useGalleryFocusTracker: manual focus cleared');
-      scheduleSync();
+      recomputeFocus();
       evaluateAutoFocus('manual-focus-cleared');
     }
   };
@@ -543,13 +416,13 @@ export function useGalleryFocusTracker({
       });
 
       // Cancel pending auto-focus timer to prevent conflicts
-      clearAutoFocusTimer();
+      applicator.clearAutoFocusTimer(focusTimerManager);
 
       // Update focus state immediately
       const { batch: solidBatch } = getSolid();
       solidBatch(() => {
         setFocusState(createFocusState(index, 'auto'));
-        updateContainerFocusAttribute(index);
+        stateManager.syncContainer(index);
       });
 
       // Apply focus after scroll completes
@@ -576,7 +449,7 @@ export function useGalleryFocusTracker({
             currentIdx,
             diff: Math.abs(autoIdx - currentIdx),
           });
-          debouncedSetAutoFocusIndex.execute(currentIdx);
+          stateManager.syncAutoFocus(currentIdx);
         }
       },
       { defer: true }
@@ -586,10 +459,10 @@ export function useGalleryFocusTracker({
   // Manage IntersectionObserver lifecycle with explicit dependencies
   createEffect(
     on([isEnabledAccessor, containerAccessor], ([enabled, containerElement]) => {
-      cleanupObserver();
+      observerManager.cleanupObserver();
 
       if (!enabled) {
-        debouncedSetAutoFocusIndex.execute(null, { forceClear: true });
+        stateManager.syncAutoFocus(null, { forceClear: true });
         return;
       }
 
@@ -597,18 +470,13 @@ export function useGalleryFocusTracker({
         return;
       }
 
-      observer = new IntersectionObserver(handleEntries, {
-        root: containerElement,
-        threshold,
-        rootMargin,
-      });
-
-      itemCache.forEach(item => {
-        if (!item?.element) {
-          return;
-        }
-        observer?.observe(item.element);
-      });
+      observerManager.setupObserver(
+        containerElement,
+        itemCache,
+        handleEntries,
+        threshold as number | number[],
+        rootMargin
+      );
 
       logger.debug('useGalleryFocusTracker: observer initialized', {
         itemCount: itemCache.size,
@@ -617,21 +485,18 @@ export function useGalleryFocusTracker({
       });
 
       onCleanup(() => {
-        cleanupObserver();
-        clearAutoFocusTimer();
+        observerManager.cleanupObserver();
+        applicator.clearAutoFocusTimer(focusTimerManager);
         setFocusTracking(updateFocusTracking(focusTracking(), { lastAutoFocusedIndex: null }));
       });
     })
   );
 
   onCleanup(() => {
-    cleanupObserver();
-    debouncedSetAutoFocusIndex.cancel();
-    debouncedScheduleSync.cancel(); // Phase 69.2
-    debouncedUpdateContainerFocusAttribute.cancel(); // Phase 69.2
+    observerManager.cleanupObserver();
+    stateManager.dispose();
     batch(() => {
       setFocusState(createFocusState(null, 'manual'));
-      debouncedSetAutoFocusIndex.flush(); // 대기 중인 업데이트를 즉시 실행
       setFocusState(createFocusState(null, 'auto'));
     });
     itemCache.clear();

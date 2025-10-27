@@ -5,8 +5,8 @@
 
 import { logger } from '@shared/logging';
 import { isRecord, toRecord } from '@shared/utils/type-guards';
-import type { StorageAdapter } from '@shared/services/storage/storage-adapter.interface';
-import { UserscriptStorageAdapter } from '@shared/services/storage/userscript-storage-adapter';
+import type { StorageAdapter } from './storage/storage-adapter.interface';
+import { UserscriptStorageAdapter } from './storage/userscript-storage-adapter';
 import type {
   AppSettings,
   NestedSettingKey,

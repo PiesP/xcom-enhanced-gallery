@@ -52,7 +52,17 @@ export type { Theme } from './theme-service';
 export { LanguageService } from './language-service';
 export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './language-service';
 
-// 4. 토스트 서비스 - ToastManager 인스턴스 사용 권장
+// 5. 포커스 서비스 (Phase 150.3)
+export {
+  FocusObserverManager,
+  createFocusObserverManager,
+  FocusApplicatorService,
+  createFocusApplicatorService,
+  FocusStateManagerService,
+  createFocusStateManagerService,
+} from './focus';
+
+// 6. 토스트 서비스 - ToastManager 인스턴스 사용 권장
 export {
   toastManager,
   ToastManager,

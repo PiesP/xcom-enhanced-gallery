@@ -1,11 +1,11 @@
 /**
  * Navigation State Machine for Gallery
+ *
  * @description 갤러리 네비게이션 상태 전환을 명시적으로 관리하는 상태 머신
- * @version 1.0.0
- * @phase Phase 77
+ * @version 2.0.0 - Phase 195: 타입 import 경로 통합
  */
 
-import type { NavigationSource } from './types/navigation-types';
+import type { NavigationSource } from '../types/navigation.types';
 
 // ============================================================================
 // State Types

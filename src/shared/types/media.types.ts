@@ -1,11 +1,11 @@
 /**
  * @fileoverview 통합 미디어 타입 정의
- * @version 3.1.0 - Phase 195: ExtractionErrorCode -> ErrorCode 통합
+ * @version 4.0.0 - Phase 195: 최종 통합 (core/media.types.ts 병합)
  *
  * 모든 미디어 관련 타입을 하나로 통합:
  * - media.types.ts (핵심 미디어 타입)
- * - media-entity.types.ts (엔티티 + 유틸리티)
- * - extraction.types.ts (추출 관련)
+ * - core/media.types.ts (추출 및 갤러리 관련) ← 병합 완료
+ * - extraction.types.ts (추출 전략 및 옵션) ← 병합 예정
  */
 
 // ================================
@@ -69,8 +69,22 @@ export type MediaItem = MediaInfo;
 export type MediaInfoForFilename = MediaInfo;
 export type MediaItemForFilename = MediaInfo;
 
+/**
+ * MediaInfoWithFilename - 파일명이 포함된 미디어 정보 (다운로드용)
+ *
+ * MediaInfo에서 필수 필드들을 required로 만든 버전
+ */
+export interface MediaInfoWithFilename extends MediaInfo {
+  /** 미디어 고유 식별자 (필수) */
+  id: string;
+  /** 원본 페이지 URL (필수) */
+  originalUrl: string;
+  /** 저장할 파일명 (필수) */
+  filename: string;
+}
+
 // ================================
-// 추출 관련 타입들 (extraction.types.ts 통합)
+// 추출 관련 타입들
 // ================================
 
 /**
@@ -110,8 +124,129 @@ export interface MediaExtractionOptions {
 }
 
 /**
- * 추출 에러 코드 (Phase 195: ErrorCode로 통합)
- * @deprecated ErrorCode를 사용하세요. 호환성을 위해 별칭으로 유지됩니다.
+ * 페이지 타입 정의 (Core에서 병합)
+ */
+export enum PageType {
+  TIMELINE = 'timeline',
+  SINGLE_TWEET = 'single_tweet',
+  MEDIA_TAB = 'media_tab',
+  SINGLE_MEDIA = 'single_media',
+  PROFILE = 'profile',
+  UNKNOWN = 'unknown',
+}
+
+/**
+ * 추출 소스 타입 (Core에서 병합)
+ */
+export enum ExtractionSource {
+  CURRENT_PAGE = 'current_page',
+  BACKGROUND_LOAD = 'background_load',
+  CACHE = 'cache',
+  API = 'api',
+}
+
+/**
+ * 트윗 URL 정보 (Core에서 병합)
+ */
+export interface TweetUrl {
+  readonly url: string;
+  readonly tweetId: string;
+  readonly userId: string;
+  readonly mediaIndex?: number | undefined;
+  readonly isValid: boolean;
+}
+
+/**
+ * 추출 옵션 상세 (Core에서 병합)
+ */
+export interface ExtractionOptions {
+  readonly enableBackgroundLoading: boolean;
+  readonly enableCache: boolean;
+  readonly maxRetries: number;
+  readonly timeout: number;
+  readonly fallbackStrategies: boolean;
+  readonly debugMode: boolean;
+}
+
+/**
+ * 추출 메타데이터 (Core에서 병합)
+ */
+export interface ExtractionMetadata {
+  readonly extractionTime?: number;
+  readonly extractedAt?: number;
+  readonly strategiesUsed?: string[];
+  readonly sourceCount?: number;
+  readonly cacheHits?: number;
+  readonly retryCount?: number;
+  readonly sourceType?: string;
+  readonly strategy?: string;
+  readonly error?: string;
+  readonly performance?: {
+    readonly totalTime: number;
+    readonly backgroundLoadTime?: number;
+    readonly parseTime: number;
+  };
+  readonly [key: string]: unknown;
+}
+
+/**
+ * 추출 컨텍스트 (Core에서 병합)
+ */
+export interface ExtractionContext {
+  readonly clickedElement?: HTMLElement;
+  readonly currentUrl: string;
+  readonly pageType: PageType;
+  readonly options: ExtractionOptions;
+  readonly timestamp: number;
+}
+
+/**
+ * 추출 신뢰도 점수 (Core에서 병합)
+ */
+export interface ExtractionConfidence {
+  /** 전체 신뢰도 (0-1) */
+  overall: number;
+  /** URL 매칭 신뢰도 */
+  urlMatching: number;
+  /** DOM 구조 신뢰도 */
+  domStructure: number;
+  /** 메타데이터 신뢰도 */
+  metadata: number;
+  /** API 데이터 신뢰도 */
+  apiData?: number;
+}
+
+/**
+ * 미디어 추출 결과
+ */
+export interface MediaExtractionResult {
+  mediaItems: MediaInfo[];
+  success: boolean;
+  errors?: ExtractionError[];
+  clickedIndex?: number | undefined;
+  tweetInfo?: TweetInfo | null | undefined;
+  // Backward compatibility with core version
+  source?: ExtractionSource;
+  sourceType?: string;
+  metadata?:
+    | ExtractionMetadata
+    | {
+        extractionMethod?: string;
+        extractionTime?: number;
+        source?: string;
+        extractionId?: string;
+        extractedAt?: number;
+        sourceType?: string;
+        error?: string;
+        [key: string]: unknown;
+      };
+}
+
+/**
+ * 추출 에러 코드
+ *
+ * @deprecated ErrorCode를 사용하세요 (Phase 195에서 ErrorCode로 통합)
+ * 호환성을 위해 별칭으로 유지됩니다.
  */
 export { ErrorCode as ExtractionErrorCode } from './result.types';
 
@@ -127,27 +262,6 @@ export class ExtractionError extends Error {
     super(message);
     this.name = 'ExtractionError';
   }
-}
-
-/**
- * 미디어 추출 결과
- */
-export interface MediaExtractionResult {
-  mediaItems: MediaInfo[];
-  success: boolean;
-  errors?: ExtractionError[];
-  clickedIndex?: number | undefined; // 갤러리에서 사용되는 클릭된 인덱스
-  tweetInfo?: TweetInfo | null | undefined; // 추출된 트윗 정보
-  metadata?: {
-    extractionMethod?: string;
-    extractionTime?: number;
-    source?: string;
-    extractionId?: string;
-    extractedAt?: number; // 추출 시간
-    sourceType?: string; // 소스 타입
-    error?: string; // 에러 메시지
-    [key: string]: unknown; // 추가 메타데이터 허용
-  };
 }
 
 /**
@@ -259,17 +373,15 @@ export interface BulkDownloadOptions {
  * 갤러리 렌더링 옵션
  *
  * Features 계층의 GalleryRenderer에 전달되는 옵션
- * 참고: GalleryRenderOptions는 이전에 interfaces/gallery.interfaces.ts에도
- * 정의되었으나, Phase 200에서 이곳으로 통합됨
  */
 export interface GalleryRenderOptions {
-  /** 시작 인덱스 (gallery.interfaces.ts에서 마이그레이션) */
+  /** 시작 인덱스 */
   startIndex?: number | undefined;
   /** 뷰 모드 */
   viewMode?: 'horizontal' | 'vertical' | undefined;
-  /** 클래스명 (gallery.interfaces.ts에서 마이그레이션) */
+  /** 클래스명 */
   className?: string | undefined;
-  /** 트윗 ID (gallery.interfaces.ts에서 마이그레이션) */
+  /** 트윗 ID */
   tweetId?: string | undefined;
   /** 키보드 네비게이션 활성화 */
   enableKeyboardNavigation?: boolean;
@@ -280,6 +392,67 @@ export interface GalleryRenderOptions {
   /** 자동 재생 */
   autoPlay?: boolean;
 }
+
+/**
+ * 갤러리 열기 이벤트 세부 정보 (Core에서 병합)
+ */
+export interface GalleryOpenEventDetail {
+  /** 미디어 아이템 목록 */
+  media: MediaItem[];
+  /** 시작 인덱스 */
+  startIndex: number;
+}
+
+/**
+ * 갤러리 열기 커스텀 이벤트 (Core에서 병합)
+ */
+export interface GalleryOpenEvent extends CustomEvent<GalleryOpenEventDetail> {
+  type: 'xeg:gallery:open' | 'xeg:openGallery';
+}
+
+/**
+ * 갤러리 닫기 커스텀 이벤트 (Core에서 병합)
+ */
+export interface GalleryCloseEvent extends CustomEvent<void> {
+  type: 'xeg:gallery:close';
+}
+
+/**
+ * 미디어 컬렉션 인터페이스 (Core에서 병합)
+ */
+export interface MediaCollection {
+  items: MediaItem[];
+  totalCount: number;
+  currentIndex: number;
+}
+
+/**
+ * 미디어 페이지 타입 (Core 버전 - 더 세분화됨)
+ *
+ * Root 버전: 'photo' | 'video' | 'gif' | 'mixed' | 'photoDetail' | 'videoDetail'
+ * Core 버전: 'mediaGrid' | 'photoDetail' | 'videoDetail' | 'mediaTimeline' | 'unknown'
+ * → 통합: union 타입으로 모두 허용
+ */
+export type MediaPageType =
+  | 'photo'
+  | 'video'
+  | 'gif'
+  | 'mixed'
+  | 'photoDetail'
+  | 'videoDetail'
+  | 'mediaGrid'
+  | 'mediaTimeline'
+  | 'unknown';
+
+/**
+ * 미디어 추출 전략
+ */
+export type ExtractionStrategy =
+  | 'api-first'
+  | 'dom-only'
+  | 'hybrid'
+  | 'multi-strategy'
+  | 'conservative';
 
 /**
  * 미디어 매핑 정보 (통합 버전)
@@ -294,17 +467,12 @@ export interface MediaMapping {
   /** 미디어 인덱스 (기존 호환성) */
   mediaIndex?: number | undefined;
   /** 신뢰도 점수 (기존 호환성) */
-  confidence?: number;
+  confidence?: ExtractionConfidence | number;
   /** 매핑 방법 (기존 호환성) */
   method?: string;
   /** 메타데이터 */
   metadata?: Record<string, unknown>;
 }
-
-/**
- * 미디어 페이지 타입
- */
-export type MediaPageType = 'photo' | 'video' | 'gif' | 'mixed' | 'photoDetail' | 'videoDetail';
 
 /**
  * 미디어 매핑 전략 인터페이스
@@ -318,25 +486,54 @@ export interface MediaMappingStrategy {
 
   /**
    * 미디어 매핑 실행
-   * @param clickedElement 클릭된 요소
-   * @param pageType 페이지 타입
-   * @returns 매핑 결과 또는 null
    */
   execute(clickedElement: HTMLElement, pageType: MediaPageType): Promise<MediaMapping | null>;
 }
 
 // ================================
-// 유틸리티 타입들
+// 검증 관련 타입들
 // ================================
 
 /**
- * 미디어 검증 결과
+ * 검증 이슈 (Core에서 병합)
+ */
+export interface ValidationIssue {
+  /** 문제 타입 */
+  type: 'url' | 'metadata' | 'content' | 'structure';
+  /** 심각도 */
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  /** 문제 설명 */
+  message: string;
+  /** 영향받는 필드 */
+  field?: string;
+}
+
+/**
+ * 검증 결과 (Core에서 병합)
+ */
+export interface ValidationResult {
+  /** 유효성 */
+  isValid: boolean;
+  /** 전체 점수 (0-1) */
+  score: number;
+  /** 발견된 문제들 */
+  issues: ValidationIssue[];
+  /** 개선 제안 */
+  suggestions: string[];
+}
+
+/**
+ * 미디어 검증 결과 (기존 버전 - 간단함)
  */
 export interface MediaValidationResult {
   isValid: boolean;
   errors: string[];
   warnings?: string[];
 }
+
+// ================================
+// 메타데이터 타입들
+// ================================
 
 /**
  * 미디어 메타데이터

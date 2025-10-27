@@ -1,35 +1,23 @@
 /**
  * @fileoverview 통합 앱 전역 타입 정의
- * @version 3.0.0 - Phase 3: 파일 통합
+ * @version 4.0.0 - Phase 196: 타입 파일 분할
  *
- * 모든 앱 전역 타입을 하나로 통합:
- * - core-types.ts (서비스, Result 타입)
- * - common.types.ts (공통 기본 타입)
- * - global.types.ts (글로벌 타입)
- * - app.types.ts (앱 특화 타입)
+ * 타입 파일 구조 (Phase 196):
+ * - app.types.ts (현재): 핵심 앱 타입, 서비스, Result 패턴
+ * - ui.types.ts: 테마, UI 상태, 애니메이션 (신규)
+ * - component.types.ts: 컴포넌트 Props, 이벤트 핸들러 (신규)
+ *
+ * 이 파일은 Re-export 중심으로 구성하여 단일 import 지점을 제공합니다.
  */
 
-import type { JSXElement } from '@shared/external/vendors';
-import type {
-  BulkDownloadServiceType,
-  FilenameServiceType,
-  ThemeServiceType,
-  VideoControlServiceType,
-  ToastControllerType,
-} from './core/core-types';
-
 // ================================
-// 기본 서비스 인터페이스
+// 기본 앱 타입 정의
 // ================================
-
-/**
- * 기본 서비스 인터페이스를 core-types에서 re-export
- * @see {@link ./core/core-types.ts} - 단일 진실 소스 (Single Source of Truth)
- */
-export type { BaseService } from './core/core-types';
 
 /**
  * 정리 가능한 리소스 인터페이스
+ *
+ * @description 메모리/리소스 정리가 필요한 객체의 계약
  */
 export interface Cleanupable {
   /**
@@ -55,7 +43,7 @@ export interface AppConfig {
 }
 
 // ================================
-// Result 패턴 타입들
+// Result 패턴 타입들 (core-types에서 re-export)
 // ================================
 
 /**
@@ -63,7 +51,7 @@ export interface AppConfig {
  * @see {@link ./core/core-types.ts} - 단일 진실 소스 (Single Source of Truth)
  */
 export type { Result, AsyncResult } from './core/core-types';
-export type Option<T> = T | null;
+export type { BaseService } from './core/core-types';
 
 // Result 유틸리티 함수들 re-export
 export {
@@ -77,6 +65,11 @@ export {
   safe,
   safeAsync,
 } from './core/core-types';
+
+/**
+ * Option 타입 (T 또는 null)
+ */
+export type Option<T> = T | null;
 
 // ================================
 // 서비스 관련 타입들
@@ -100,16 +93,188 @@ export type ServiceDependency = string;
 export type ServiceFactory<T> = () => T | Promise<T>;
 
 /**
- * 서비스 타입 매핑 (상세 타입은 core-types.ts 참조)
+ * 기본 이벤트
  */
-export interface ServiceTypeMapping {
-  'core.bulkDownload': BulkDownloadServiceType;
-  'media.filename': FilenameServiceType;
-  'theme.auto': ThemeServiceType;
-  'toast.controller': ToastControllerType;
-  'video.control': VideoControlServiceType;
-  [key: string]: unknown;
+export interface BaseEvent {
+  type: string;
+  timestamp: number;
 }
+
+/**
+ * 기본 설정 인터페이스
+ */
+export interface BaseConfig {
+  enabled: boolean;
+  version?: string;
+}
+
+/**
+ * 라이프사이클 관리 인터페이스
+ */
+export interface Lifecycle {
+  cleanup(): void;
+  destroy(): void;
+}
+
+// ================================
+// 공통 유틸리티 타입들
+// ================================
+
+/**
+ * 위치/좌표
+ */
+export interface Position {
+  x: number;
+  y: number;
+}
+
+/**
+ * 크기
+ */
+export interface Size {
+  width: number;
+  height: number;
+}
+
+/**
+ * 사각형 (위치 + 크기)
+ */
+export interface Rect extends Position, Size {}
+
+/**
+ * 타임스탬프가 있는 엔티티
+ */
+export interface TimestampedEntity {
+  timestamp: number;
+}
+
+/**
+ * ID가 있는 엔티티
+ */
+export interface IdentifiableEntity {
+  id: string;
+}
+
+// ================================
+// Brand 타입 정의들
+// ================================
+
+/**
+ * 브랜드 타입 기본 구조
+ *
+ * @template T 원본 타입
+ * @template B 브랜드명
+ * @description 컴파일 타임에만 존재하며, 런타임에는 string/number/etc.로 동작
+ * @example
+ * ```typescript
+ * type UserId = Brand<string, 'UserId'>;
+ * const userId = '123' as UserId;
+ * ```
+ */
+type Brand<T, B> = T & { readonly __brand: B };
+
+// Brand 타입들 (도메인별로 구분)
+
+/** 사용자 ID */
+export type UserId = Brand<string, 'UserId'>;
+/** 트윗 ID */
+export type TweetId = Brand<string, 'TweetId'>;
+/** 서비스 키 */
+export type ServiceKey = Brand<string, 'ServiceKey'>;
+/** 요소 ID */
+export type ElementId = Brand<string, 'ElementId'>;
+/** 미디어 URL */
+export type MediaUrl = Brand<string, 'MediaUrl'>;
+/** 썸네일 URL */
+export type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
+/** 원본 URL */
+export type OriginalUrl = Brand<string, 'OriginalUrl'>;
+/** 파일명 */
+export type FileName = Brand<string, 'FileName'>;
+/** 파일 확장자 */
+export type FileExtension = Brand<string, 'FileExtension'>;
+
+// ================================
+// 일반 유틸리티 타입들
+// ================================
+
+/**
+ * Nullable 타입 (T 또는 null)
+ *
+ * @template T 기본 타입
+ */
+export type Nullable<T> = T | null;
+
+/**
+ * Optional 타입 (T 또는 undefined)
+ *
+ * @template T 기본 타입
+ */
+export type Optional<T> = T | undefined;
+
+/**
+ * 깊은 Partial (모든 중첩 속성을 선택사항으로)
+ *
+ * @template T 객체 타입
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+// ================================
+// UI/UX 관련 타입들 (ui.types.ts re-export)
+// ================================
+
+export type {
+  Theme,
+  GalleryTheme,
+  ToastType,
+  ButtonVariant,
+  ButtonSize,
+  ColorVariant,
+  LoadingState,
+  AsyncState,
+  AnimationConfig,
+  ImageFitMode,
+  ImageFitOptions,
+  ImageFitCallbacks,
+  FilenameStrategy,
+  MediaFileExtension,
+  GlobalConfig,
+} from './ui.types';
+
+// ================================
+// 컴포넌트 관련 타입들 (component.types.ts re-export)
+// ================================
+
+export type {
+  VNode,
+  ComponentType,
+  ComponentChildren,
+  CSSProperties,
+  BaseComponentProps,
+  InteractiveComponentProps,
+  LoadingComponentProps,
+  SizedComponentProps,
+  VariantComponentProps,
+  FormComponentProps,
+  ContainerComponentProps,
+  GalleryComponentProps,
+  EventHandler,
+  MouseEventHandler,
+  KeyboardEventHandler,
+  AsyncFunction,
+  AsyncCallback,
+  OptionalCallback,
+  ErrorHandler,
+  AsyncErrorHandler,
+  ProgressCallback,
+  ApiResponse,
+  ApiError,
+  RequestOptions,
+  PaginationInfo,
+  FileInfo,
+} from './component.types';
 
 // ================================
 // 갤러리 관련 타입들
@@ -121,15 +286,21 @@ export interface ServiceTypeMapping {
 export type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
 
 /**
- * 뷰 모드 상수
+ * 뷰 모드 (horizontal/vertical)
  */
 export const VIEW_MODES = ['horizontal', 'vertical'] as const;
 export type ViewMode = (typeof VIEW_MODES)[number];
 
+/**
+ * ViewMode 유효성 검사
+ */
 export function isValidViewMode(mode: unknown): mode is ViewMode {
   return typeof mode === 'string' && VIEW_MODES.includes(mode as ViewMode);
 }
 
+/**
+ * ViewMode 정규화 (기본값: horizontal)
+ */
 export function normalizeViewMode(mode: string | undefined): ViewMode {
   return isValidViewMode(mode) ? mode : 'horizontal';
 }
@@ -168,312 +339,9 @@ export type GalleryEvents = {
   'gallery:error': { error: string };
 };
 
-// ================================
-// 공통 기본 타입들
-// ================================
-
 /**
- * 위치/크기 타입
+ * 신호 관련 타입들
  */
-export interface Position {
-  x: number;
-  y: number;
-}
-
-export interface Size {
-  width: number;
-  height: number;
-}
-
-export interface Rect extends Position, Size {}
-
-/**
- * 엔티티 기본 타입
- */
-export interface TimestampedEntity {
-  timestamp: number;
-}
-
-export interface IdentifiableEntity {
-  id: string;
-}
-
-/**
- * 라이프사이클 관리
- */
-export interface Lifecycle {
-  cleanup(): void;
-  destroy(): void;
-}
-
-/**
- * 상태 관련 타입
- */
-export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-export interface AsyncState<T> {
-  data: T | null;
-  loading: boolean;
-  error: string | null;
-}
-
-/**
- * 이벤트 관련 타입
- */
-export interface BaseEvent {
-  type: string;
-  timestamp: number;
-}
-
-/**
- * 설정 관련 타입
- */
-export interface BaseConfig {
-  enabled: boolean;
-  version?: string;
-}
-
-// ================================
-// Preact/React 타입들
-// ================================
-
-export type VNode = JSXElement;
-
-export type ComponentType<P = Record<string, unknown>> = (props: P) => JSXElement | null;
-
-export type ComponentChildren =
-  | JSXElement
-  | string
-  | number
-  | boolean
-  | null
-  | undefined
-  | ComponentChildren[];
-
-export interface CSSProperties {
-  [key: string]: string | number | undefined;
-}
-
-/**
- * 모든 컴포넌트의 최상위 기본 Props (Phase 2-3A: 통합)
- * @description 이전 base/BaseComponentProps.ts에서 마이그레이션
- */
-export interface BaseComponentProps {
-  children?: ComponentChildren;
-  className?: string;
-  style?: CSSProperties;
-  'data-testid'?: string;
-  'aria-label'?: string;
-  'aria-describedby'?: string;
-  'aria-expanded'?: boolean;
-  'aria-hidden'?: boolean;
-  'aria-disabled'?: boolean | 'true' | 'false';
-  'aria-busy'?: boolean | 'true' | 'false';
-  'aria-pressed'?: boolean | 'true' | 'false';
-  'aria-haspopup'?: boolean | 'true' | 'false' | 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
-  role?: string;
-  tabIndex?: number;
-  onClick?: (event: MouseEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
-  onFocus?: (event: FocusEvent) => void;
-  onBlur?: (event: FocusEvent) => void;
-  [key: `data-${string}`]: string | number | boolean | undefined;
-}
-
-/**
- * 상호작용 가능한 컴포넌트 Props
- */
-export interface InteractiveComponentProps extends BaseComponentProps {
-  disabled?: boolean;
-  onMouseEnter?: (event: MouseEvent) => void;
-  onMouseLeave?: (event: MouseEvent) => void;
-}
-
-/**
- * 로딩 상태를 가진 컴포넌트 Props
- */
-export interface LoadingComponentProps extends BaseComponentProps {
-  loading?: boolean;
-  loadingText?: string;
-}
-
-/**
- * 크기 변형을 가진 컴포넌트 Props
- */
-export interface SizedComponentProps extends BaseComponentProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-}
-
-/**
- * 색상 변형을 가한 컴포넌트 Props
- */
-export interface VariantComponentProps extends BaseComponentProps {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'success' | 'warning' | 'icon';
-}
-
-/**
- * 폼 요소 컴포넌트 Props
- */
-export interface FormComponentProps extends InteractiveComponentProps {
-  type?: 'button' | 'submit' | 'reset';
-  form?: string;
-  autoFocus?: boolean;
-}
-
-/**
- * 컨테이너 컴포넌트 Props
- */
-export interface ContainerComponentProps extends BaseComponentProps {
-  onClose?: () => void;
-  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
-  maxItems?: number;
-}
-
-/**
- * 갤러리 전용 컴포넌트 Props
- */
-export interface GalleryComponentProps extends InteractiveComponentProps {
-  galleryType?: 'container' | 'item' | 'control' | 'overlay' | 'viewer';
-  'data-xeg-gallery'?: string;
-  'data-xeg-gallery-type'?: string;
-  'data-xeg-gallery-version'?: string;
-}
-
-// ================================
-// 이벤트 핸들러 타입들
-// ================================
-
-export type EventHandler<T = Event> = (event: T) => void;
-export type MouseEventHandler = EventHandler<MouseEvent>;
-export type KeyboardEventHandler = EventHandler<KeyboardEvent>;
-export type AsyncFunction<T = void> = () => Promise<T>;
-export type AsyncCallback<T = void, R = void> = (arg: T) => Promise<R>;
-export type OptionalCallback<T = void> = ((arg: T) => void) | undefined;
-export type ErrorHandler = (error: Error | ApiError) => void;
-export type AsyncErrorHandler = (error: Error | ApiError) => Promise<void>;
-export type ProgressCallback = (progress: number) => void;
-
-// ================================
-// API 관련 타입들
-// ================================
-
-export interface ApiResponse<T = Record<string, unknown>> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
-}
-
-export interface ApiError {
-  code: string;
-  message: string;
-  details?: unknown;
-}
-
-export interface RequestOptions {
-  timeout?: number;
-  retries?: number;
-  headers?: Record<string, string>;
-}
-
-export interface PaginationInfo {
-  page: number;
-  limit: number;
-  total: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
-
-export interface FileInfo {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-}
-
-// ================================
-// 유틸리티 타입들
-// ================================
-
-export type Nullable<T> = T | null;
-export type Optional<T> = T | undefined;
-
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
-export type Brand<T, B> = T & { __brand: B };
-
-// 브랜드 타입들 (MediaId는 media.types.ts에서 정의되므로 제외)
-export type UserId = Brand<string, 'UserId'>;
-export type TweetId = Brand<string, 'TweetId'>;
-export type ServiceKey = Brand<string, 'ServiceKey'>;
-export type ElementId = Brand<string, 'ElementId'>;
-export type MediaUrl = Brand<string, 'MediaUrl'>;
-export type ThumbnailUrl = Brand<string, 'ThumbnailUrl'>;
-export type OriginalUrl = Brand<string, 'OriginalUrl'>;
-export type FileName = Brand<string, 'FileName'>;
-export type FileExtension = Brand<string, 'FileExtension'>;
-
-// ================================
-// UI/UX 관련 타입들
-// ================================
-
-export type Theme = 'light' | 'dark' | 'auto';
-export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
-export type ToastType = 'info' | 'warning' | 'error' | 'success';
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-export type ButtonSize = 'sm' | 'md' | 'lg';
-export type ColorVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-
-export interface AnimationConfig {
-  duration?: number;
-  easing?: string;
-  delay?: number;
-}
-
-export type ImageFitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
-
-export interface ImageFitOptions {
-  mode: ImageFitMode;
-  maxWidth?: number;
-  maxHeight?: number;
-  quality?: number;
-  callbacks?: ImageFitCallbacks;
-}
-
-export interface ImageFitCallbacks {
-  onResize?: (size: Size) => void;
-  onError?: (error: Error) => void;
-}
-
-// ================================
-// 파일명 관련 타입들
-// ================================
-
-export type MediaFileExtension = 'jpg' | 'jpeg' | 'png' | 'gif' | 'webp' | 'mp4' | 'mov';
-export type FilenameStrategy = 'simple' | 'detailed' | 'timestamp' | 'custom';
-
-export interface FilenameValidationResult {
-  isValid: boolean;
-  errors: string[];
-  suggestions?: string[];
-}
-
-// ================================
-// 글로벌 설정
-// ================================
-
-export interface GlobalConfig {
-  theme: Theme;
-  language: string;
-  debug: boolean;
-  performance: {
-    enableMetrics: boolean;
-    maxCacheSize: number;
-  };
-}
-
 export interface GallerySignals {
   gallery: unknown;
   download: unknown;

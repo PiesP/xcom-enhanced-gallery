@@ -1,18 +1,15 @@
 /**
  * Core Types - Integrated Types for Userscript Simplification
  *
- * @version 1.1.0 - Phase 1 Type Integration
- * @description Core 레이어의 모든 타입 파일들을 통합하여 복잡성을 줄입니다.
+ * @version 2.0.0 - Phase 195: media.types.ts 통합 (root로 이동)
+ * @description Core 레이어의 타입 파일들을 통합하여 복잡성을 줄입니다.
  *
- * 통합된 타입들:
- * - core.types.ts (기본 Core 타입들)
- * - services.types.ts (서비스 관련 타입들)
- * - gallery.types.ts (갤러리 도메인 타입들)
- * - view-mode.types.ts (뷰 모드 관련)
- * - app.types.ts (애플리케이션 타입들)
+ * 타입 위치 변경:
+ * - media.types.ts (core/) → media.types.ts (root) ✓ Phase 195
+ * - extraction.types.ts → 유지 (re-export layer)
  */
 
-import type { MediaInfo } from './media.types';
+import type { MediaInfo, MediaMapping, MediaPageType } from '@shared/types/media.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
@@ -237,15 +234,13 @@ export function isValidViewMode(mode: string): mode is (typeof VIEW_MODES)[numbe
 // ========================================
 
 /**
- * Re-export utility types from core.types.ts to avoid duplication
+ * Re-export utility types from root media.types (Phase 195)
  */
-export type { MediaItem } from './media.types';
+export type { MediaItem } from '@shared/types/media.types';
 
 // ========================================
 // MEDIA MAPPING TYPES (from media-mapping/types.ts)
 // ========================================
-
-import type { MediaMapping, MediaPageType } from './media.types';
 
 /**
  * 미디어 매핑 전략 인터페이스

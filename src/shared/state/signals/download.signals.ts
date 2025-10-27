@@ -1,30 +1,21 @@
 /**
- * @fileoverview Download State Management with Signals
- * @version 1.0.0 - Clean Architecture 적용
- *
- * Result 타입 패턴과 브랜드 타입을 활용한 타입 안전한 다운로드 상태 관리
+ * Download state management with signals
  */
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/core/core-types';
 import { createSignalSafe, effectSafe } from './signal-factory';
-// Remove runtime dependency on services to avoid cycles; use logging directly
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 
-// Signal 타입 정의
+// Signal type
 type Signal<T> = {
   value: T;
   subscribe?: (callback: (value: T) => void) => () => void;
 };
 
-/**
- * 다운로드 작업 상태
- */
+// Download status
 export type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
 
-/**
- * 다운로드 작업 정보
- */
 export interface DownloadTask {
   readonly id: string;
   readonly mediaId: MediaId;
@@ -37,9 +28,6 @@ export interface DownloadTask {
   readonly completedAt?: number;
 }
 
-/**
- * 다운로드 상태 인터페이스
- */
 export interface DownloadState {
   readonly activeTasks: ReadonlyMap<string, DownloadTask>;
   readonly queue: readonly string[];
@@ -47,9 +35,7 @@ export interface DownloadState {
   readonly globalProgress: number;
 }
 
-/**
- * 초기 다운로드 상태
- */
+// Initial state
 const INITIAL_STATE: DownloadState = {
   activeTasks: new Map(),
   queue: [],
@@ -57,9 +43,7 @@ const INITIAL_STATE: DownloadState = {
   globalProgress: 0,
 };
 
-/**
- * 다운로드 이벤트 타입
- */
+// Event types
 export type DownloadEvents = {
   'download:started': { taskId: string; mediaId: MediaId };
   'download:progress': { taskId: string; progress: number };
@@ -68,10 +52,10 @@ export type DownloadEvents = {
   'download:queue-updated': { queueLength: number };
 };
 
-// Preact Signals 지연 초기화
+// Lazy-initialized signal
 let downloadStateSignal: Signal<DownloadState> | null = null;
 
-// 로거 인스턴스 (services-free)
+// Logger instance
 const logger: ILogger = rootLogger;
 
 function getDownloadState(): Signal<DownloadState> {
@@ -81,8 +65,12 @@ function getDownloadState(): Signal<DownloadState> {
   return downloadStateSignal!;
 }
 
+// ============================================================================
+// Download State Accessor
+// ============================================================================
+
 /**
- * 다운로드 상태 접근자
+ * Download state accessor with subscription support
  */
 export const downloadState = {
   get value(): DownloadState {
@@ -93,9 +81,6 @@ export const downloadState = {
     getDownloadState().value = newState;
   },
 
-  /**
-   * 상태 변경 구독
-   */
   subscribe(callback: (state: DownloadState) => void): () => void {
     return effectSafe(() => {
       callback(this.value);
@@ -103,23 +88,24 @@ export const downloadState = {
   },
 };
 
-/**
- * 이벤트 디스패처
- */
+// ============================================================================
+// Event Dispatcher
+// ============================================================================
+
 function dispatchEvent<K extends keyof DownloadEvents>(event: K, data: DownloadEvents[K]): void {
   const customEvent = new CustomEvent(`xeg:${event}`, {
     detail: { ...data, timestamp: Date.now() },
   });
   document.dispatchEvent(customEvent);
-  logger.debug(`[Download] ${event} 이벤트 발생`, data);
+  logger.debug(`[Download] ${event} emitted`, data);
 }
 
-// =============================================================================
-// 액션 함수들
-// =============================================================================
+// ============================================================================
+// Actions
+// ============================================================================
 
 /**
- * 다운로드 작업 생성
+ * Create a download task
  */
 export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string, Error> {
   try {
@@ -159,7 +145,7 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
 }
 
 /**
- * 다운로드 시작
+ * Start download
  */
 export function startDownload(taskId: string): Result<void, Error> {
   const currentState = downloadState.value;
@@ -199,7 +185,7 @@ export function startDownload(taskId: string): Result<void, Error> {
 }
 
 /**
- * 다운로드 진행률 업데이트
+ * Update download progress
  */
 export function updateDownloadProgress(taskId: string, progress: number): Result<void, Error> {
   const currentState = downloadState.value;
@@ -235,7 +221,7 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
 }
 
 /**
- * 다운로드 완료
+ * Mark download as completed
  */
 export function completeDownload(taskId: string): Result<void, Error> {
   const currentState = downloadState.value;
@@ -309,7 +295,7 @@ export function failDownload(taskId: string, error: string): Result<void, Error>
 }
 
 /**
- * 작업 제거 (완료/실패한 작업 정리)
+ * Remove a task (must be completed or failed)
  */
 export function removeTask(taskId: string): Result<void, Error> {
   const currentState = downloadState.value;
@@ -339,7 +325,7 @@ export function removeTask(taskId: string): Result<void, Error> {
 }
 
 /**
- * 모든 완료된 작업 정리
+ * Clear completed tasks
  */
 export function clearCompletedTasks(): void {
   const currentState = downloadState.value;
@@ -359,19 +345,19 @@ export function clearCompletedTasks(): void {
   logger.info('[Download] 완료된 작업들 정리');
 }
 
-// =============================================================================
-// 선택자 함수들
-// =============================================================================
+// ============================================================================
+// Selectors
+// ============================================================================
 
 /**
- * 특정 작업 가져오기
+ * Get task by ID
  */
 export function getDownloadTask(taskId: string): DownloadTask | null {
   return downloadState.value.activeTasks.get(taskId) ?? null;
 }
 
 /**
- * 다운로드 정보 요약
+ * Get download status summary
  */
 export function getDownloadInfo(): {
   isAnyDownloading: boolean;
@@ -405,7 +391,7 @@ export function getDownloadInfo(): {
 }
 
 /**
- * 이벤트 리스너 등록
+ * Register event listener
  */
 export function addEventListener<K extends keyof DownloadEvents>(
   event: K,

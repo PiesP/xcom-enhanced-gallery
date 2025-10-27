@@ -1194,7 +1194,7 @@ mediaProcessor.ts        # camelCase 금지
 
 ## � 타입 정의 (Type Definitions)
 
-### 파일 위치 규칙
+### 파일 위치 규칙 (Phase 196 업데이트)
 
 **전역 빌드 환경 변수**: `types/` 루트
 
@@ -1205,29 +1205,63 @@ declare const __PROD__: boolean; // 프로덕션 모드
 declare const __VERSION__: string; // 패키지 버전
 ```
 
-**도메인 비즈니스 타입**: `src/shared/types/` (패턴: `*.types.ts`)
+**공유 도메인 비즈니스 타입**: `src/shared/types/` (패턴: `*.types.ts`)
 
 ```typescript
-// ✅ 올바른 배치
-src / shared / types / app.types.ts; // 앱 전역 타입
-src / shared / types / media.types.ts; // 미디어 관련
-src / shared / types / core / extraction.types.ts; // 핵심 추출 로직
-
-// ✅ Features 특화 타입도 shared로 중앙화 가능
-src / shared / types / settings.types.ts; // Settings 기능 타입
-
-// ❌ 피해야 할 패턴
-src / features / gallery / types.ts; // gallery 내부 타입 정의 (shared로 이동)
+// ✅ 올바른 배치 (Phase 196 현황)
+src/shared/types/app.types.ts              // 핵심 앱 타입, 서비스, Result 패턴
+src/shared/types/ui.types.ts               // 테마, UI 상태, 애니메이션 (신규)
+src/shared/types/component.types.ts        // 컴포넌트 Props 타입 (신규)
+src/shared/types/media.types.ts            // 미디어 관련 통합 타입
+src/shared/types/navigation.types.ts       // 네비게이션 상태
+src/shared/types/result.types.ts           // Result 패턴, ErrorCode enum
+src/shared/types/core/                     // 핵심 추출/서비스 타입
+  ├── core-types.ts                        // 기본 서비스 인터페이스
+  ├── extraction.types.ts                  // 추출 전략 (re-export layer)
+  └── media.types.ts                       // 핵심 미디어 타입
 ```
 
-### 타입 정의 원칙
+**기능 특화 타입**: `src/features/{feature}/types/` (Phase 196 신규)
 
-- **도메인별 분리**: 기능이 명확히 분리된 타입은 separate 파일 생성
-  (`media.types.ts` ≠ `app.types.ts`)
-- **Core 타입 세분화**: 코어 로직(추출, 매핑, 서비스)은 `core/` 하위 구조화
-- **재사용성 우선**: 여러 파일에서 사용하는 타입은 shared로, 단일 파일만
-  사용하면 파일 내 정의 검토
-- **명시적 export**: 배럴 export 최소화, 필요한 타입만 명시 export
+```typescript
+// ✅ 기능 특화 타입 배치 (Phase 196에서 추가)
+src / features / gallery / types / toolbar.types.ts; // Toolbar 상태 (moved from shared)
+src / features / gallery / types / index.ts; // Barrel export
+
+// 패턴:
+// ├─ 해당 기능에서만 사용하는 타입
+// ├─ 도메인 특화 타입 (Gallery, Settings, etc.)
+// └─ 공유 타입과의 경계 명확
+```
+
+### 타입 정의 원칙 (Phase 196 적용)
+
+**1. 도메인별 분리**
+
+- 기능이 명확히 분리된 타입은 separate 파일 생성
+- `media.types.ts` (미디어 통합) ≠ `ui.types.ts` (UI/테마) ≠ `app.types.ts` (앱
+  기본)
+
+**2. 파일 크기 기준**
+
+- 최적 크기: 200-280줄 (가독성/유지보수 균형)
+- 초과 시: 도메인 분할 검토 (예: app.types 482줄 → ui.types 162줄 +
+  component.types 281줄)
+
+**3. 계층 분리**
+
+- **Shared Types** (`@shared/types`): 앱 전역 기본 타입, 서비스, 도메인 타입
+- **Feature Types** (`@features/{name}/types`): 기능 특화 타입 (Gallery,
+  Settings)
+- **Core Types** (`@shared/types/core`): 추출, 매핑, 서비스 핵심 인터페이스
+
+**4. 재사용성 우선**
+
+- 여러 파일/기능에서 사용 → `@shared/types`
+- 단일 기능에서만 사용 → `@features/{name}/types`
+- Re-export 최소화 (필요한 타입만 명시 export)
+
+**5. 명시적 export**
 
 ```typescript
 // ✅ 좋은 예: 명시적 정의, 단일 책임
@@ -1239,26 +1273,41 @@ export interface MediaItem {
 }
 
 export type MediaList = MediaItem[];
+
+// ✅ 기능 특화 타입
+// src/features/gallery/types/toolbar.types.ts
+export interface ToolbarState {
+  readonly isDownloading: boolean;
+  readonly currentFitMode: FitMode;
+  readonly needsHighContrast: boolean;
+}
 ```
 
 ---
 
-## �📂 Import 순서
+## 📂 Import 순서
 
 ```typescript
-// 1. 타입
+// 1. 타입 (공유 타입)
 import type { MediaItem, GalleryState } from '@shared/types';
 
-// 2. 외부 라이브러리 (Vendor getter)
+// 2. 기능 특화 타입 (필요시)
+import type { ToolbarState, FitMode } from '@features/gallery/types';
+
+// 3. 외부 라이브러리 (Vendor getter)
 import { getSolid } from '@shared/external/vendors';
 
-// 3. 내부 모듈 (경로 별칭 사용)
+// 4. 내부 모듈 (경로 별칭 사용)
 import { MediaService } from '@shared/services';
 import { GalleryApp } from '@features/gallery';
 
-// 4. 스타일
+// 5. 스타일 (CSS Modules + 토큰만)
 import styles from './Component.module.css';
 ```
+
+**주의**: Phase 196부터는 기능 특화 타입(`@features/*/types`)을 필요시
+명시적으로 import합니다. 공유 타입(`@shared/types`)만으로 부족한 경우에 한해
+사용합니다.
 
 ---
 
@@ -1438,6 +1487,450 @@ git commit -m "fix: resolve memory leak in media loader"
 - **커버리지**: 주요 경로 >80%
 - **타임아웃**: 테스트 20s, 훅 25s
 - **격리**: 각 테스트는 독립 실행
+
+---
+
+## 🎛️ 상태 관리 (State Layer)
+
+### 구조 원칙
+
+**`@shared/state/*`**: Solid.js Signals 기반 상태 관리
+
+상태는 4개 계층으로 분류:
+
+1. **Signal Factory** (`signal-factory.ts`)
+   - `createSignalSafe<T>()`: Solid.js Signal 생성 + 폴백 지원
+   - `effectSafe()`: Effect 생성 + 폴백 처리
+   - `computedSafe<T>()`: Computed 생성 + 폴백 처리
+   - 테스트/Node 환경에서도 안전하게 동작
+
+2. **Domain Signals** (gallery.signals.ts, download.signals.ts,
+   toolbar.signals.ts)
+   - 전역 애플리케이션 상태
+   - 세밀한 신호 + 후방 호환성 계층
+   - 액션 함수 + 선택자 + 이벤트 API
+   - 예: `galleryState`, `downloadState`, `toolbarState`
+
+3. **Type-only Signals** (scroll.signals.ts)
+   - 타입 + 상수만 정의 (Signal 객체 없음)
+   - Hook에서 로컬 Signal 생성 시 사용
+   - 예: `ScrollState`, `ScrollDirection`, `INITIAL_SCROLL_STATE`
+
+4. **Dedicated State Modules** (`focus/`, `item-scroll/` 등)
+   - 특정 기능의 상태 타입 + 헬퍼 + 로직 통합
+   - 캐시, 타이머, 추적 데이터 통합 관리
+   - 예: FocusState, ItemCache, FocusTimerManager
+
+5. **Hook-local State** (컴포넌트 내부)
+   - 컴포넌트 고유 상태
+   - `createSignal()`, `createMemo()` 직접 사용
+
+### 사례 1: Global Signal (gallery.signals.ts) - 도메인 신호
+
+```typescript
+// ✅ 세밀한 신호 + 후방 호환성
+import { gallerySignals, galleryState } from '@shared/state';
+
+// ✅ 세밀한 반응성: 필요한 신호만 구독
+const isOpen = useSelector(gallerySignals.isOpen, v => v);
+
+// ✅ 액션 함수 사용
+import { openGallery, navigateToItem } from '@shared/state';
+openGallery(items, 0);
+
+// ✅ 이벤트 구독
+import { galleryIndexEvents } from '@shared/state';
+galleryIndexEvents.on('navigate:complete', ({ index }) => {
+  console.log('Navigated to', index);
+});
+```
+
+### 사례 2: Type-only Signal (scroll.signals.ts)
+
+```typescript
+// ✅ 타입 + 상수만 제공 (Signal은 Hook에서 생성)
+import type { ScrollState, ScrollDirection } from '@shared/state';
+import { INITIAL_SCROLL_STATE } from '@shared/state';
+
+// ✅ 구조: 타입만 정의
+// src/shared/state/signals/
+// └── scroll.signals.ts (타입 + 상수 + 헬퍼 함수)
+
+// ✅ Hook에서 로컬 Signal 생성
+export function useGalleryScroll({ container, ... }) {
+  const [scrollState, setScrollState] = createSignal<ScrollState>(INITIAL_SCROLL_STATE);
+
+  const updateDirection = (delta: number) => {
+    const newDirection: ScrollDirection = delta > 0 ? 'down' : 'up';
+    setScrollState(prev => ({ ...prev, direction: newDirection }));
+  };
+}
+```
+
+### 사례 3: Download Signal (download.signals.ts)
+
+```typescript
+// ✅ 작업 관리 액션 + 이벤트
+import {
+  downloadState,
+  createDownloadTask,
+  addEventListener,
+} from '@shared/state';
+
+// ✅ 작업 생성
+const result = createDownloadTask(mediaInfo, 'filename.jpg');
+if (result.success) {
+  console.log('Task ID:', result.data);
+}
+
+// ✅ 진행률 업데이트
+updateDownloadProgress(taskId, 50);
+
+// ✅ 완료/실패 처리
+completeDownload(taskId);
+failDownload(taskId, 'Network error');
+
+// ✅ 이벤트 수신
+addEventListener('download:progress', ({ taskId, progress }) => {
+  console.log(`${taskId}: ${progress}%`);
+});
+```
+
+### 사례 4: Focus State (Phase 150.2) - Dedicated Module
+
+```typescript
+// ✅ 상태 타입 + 헬퍼 + 클래스 통합
+import {
+  type FocusState,
+  type FocusTracking,
+  createFocusState,
+  INITIAL_FOCUS_STATE,
+  ItemCache,
+  FocusTimerManager,
+} from '@shared/state/focus';
+
+// ✅ 구조: 타입 + 유틸리티 + 클래스
+// src/shared/state/focus/
+// ├── focus-types.ts              (타입 정의 + 헬퍼 함수)
+// ├── focus-state.ts              (FocusState Signal)
+// ├── focus-tracking.ts           (FocusTracking Signal)
+// ├── focus-cache.ts              (ItemCache 클래스)
+// ├── focus-timer-manager.ts      (FocusTimerManager 클래스)
+// └── index.ts                    (모든 export 중앙화)
+
+// ✅ 사용: 단일 import 경로
+const cache = new ItemCache();
+const state = createFocusState(0, 'auto');
+
+// ❌ 금지: 개별 파일 import
+// import { FocusState } from '@shared/state/focus/focus-state';
+// import { ItemCache } from '@shared/state/focus/focus-cache';
+```
+
+### 설계 원칙
+
+1. **Export 중앙화**: 모든 상태 모듈은 `index.ts` 제공
+   - 사용자는 폴더 경로만 알면 됨
+   - 내부 파일 이동 시 호환성 유지
+
+2. **타입 + 구현 분리**
+   - 타입/헬퍼: `*-types.ts`
+   - 클래스/서비스: `*-manager.ts`
+   - 캐시/저장소: `*-cache.ts`
+
+3. **응집도 높이기**
+   - 관련 타입 + 함수 같은 파일에
+   - 4개 파일이 2개 파일로 통합 가능한 구조 지향
+
+4. **테스트 용이성**
+   - 모든 상태는 순수 함수 기반
+   - 클래스도 외부 의존성 최소화
+   - Signals는 test setup에서 mocking 가능
+
+### 금지 사항
+
+```typescript
+// ❌ 상태를 직접 컴포넌트 내부에 정의
+export function MyComponent() {
+  const [focusedIndex, setFocusedIndex] = createSignal(0);
+  const [focusState, setFocusState] = createSignal({ ... });
+  // → 이 상태가 다른 컴포넌트에서 필요하면 @shared/state로 이동
+}
+
+// ❌ 상태 파일에서 DOM 조작
+// src/shared/state/focus/focus-state.ts
+export function createFocusState() {
+  document.getElementById('...'); // ❌ DOM 접근 금지
+  // → @shared/utils 헬퍼로 분리
+}
+
+// ❌ 상태에서 컴포넌트 import
+// src/shared/state/focus/focus-cache.ts
+import { MyComponent } from '@features/...'; // ❌ 순환 의존성 위험
+```
+
+---
+
+## 🎯 서비스 계층 (Service Layer)
+
+### 목적
+
+복잡한 로직을 **독립적인 서비스로 분리**하여:
+
+- 테스트 용이성 향상
+- 코드 재사용성 증대
+- 책임 분산 (SRP)
+- Hook 복잡도 감소
+
+### 구조 원칙
+
+**`@shared/services/*`**: 비즈니스 로직 + DI 패턴
+
+서비스는 다음 특성을 가짐:
+
+1. **순수 로직**: Side effect 최소화
+2. **DI 기반**: 의존성을 매개변수로 받음 (테스트/모킹 용이)
+3. **팩토리 함수**: `createServiceName()` 패턴으로 인스턴스 생성
+4. **명확한 책임**: 단일 역할 수행
+
+### 사례: Focus Service (Phase 150.3)
+
+#### 설계
+
+```typescript
+// 기존 (Hook: 651줄, 모든 로직 직접 구현)
+export function useGalleryFocusTracker(options) {
+  const observer = new IntersectionObserver(...); // 관찰
+  const debouncedSetAutoFocusIndex = createDebouncer(...); // 상태 동기화
+  // ... 300줄+ 포커스 적용, 평가, 캐시 관리 직접 구현
+}
+
+// 신규 (Hook: 515줄, 서비스 위임 + 조율)
+export function useGalleryFocusTracker(options) {
+  // 서비스 인스턴스 생성
+  const observerManager = createFocusObserverManager();
+  const applicator = createFocusApplicatorService();
+  const stateManager = createFocusStateManagerService();
+
+  // 서비스 활용 (간결한 조율)
+  observerManager.setupObserver(...);
+  stateManager.setupAutoFocusSync(...);
+  // Hook은 orchestration만 수행
+}
+```
+
+#### 구현 패턴
+
+**1. ObserverManager** (IntersectionObserver 관리)
+
+```typescript
+// src/shared/services/focus/focus-observer-manager.ts
+
+export class FocusObserverManager {
+  private observer: IntersectionObserver | null = null;
+
+  // 모든 메서드는 parameter injection (DI 패턴)
+  setupObserver(
+    container: HTMLElement,
+    itemCache: ItemCache,
+    onEntries: (candidates: CandidateScore[]) => void,
+    threshold?: number | number[],
+    rootMargin?: string
+  ): void {
+    this.observer = new IntersectionObserver(
+      entries => {
+        this.handleEntries(entries, itemCache, onEntries);
+      },
+      { root: null, threshold, rootMargin }
+    );
+  }
+
+  observeItem(element: HTMLElement): void {
+    this.observer?.observe(element);
+  }
+
+  cleanupObserver(): void {
+    this.observer?.disconnect();
+  }
+}
+
+// ✅ 팩토리 함수
+export function createFocusObserverManager(): FocusObserverManager {
+  return new FocusObserverManager();
+}
+```
+
+**2. ApplicatorService** (포커스 적용)
+
+```typescript
+// src/shared/services/focus/focus-applicator-service.ts
+
+export class FocusApplicatorService {
+  // 순수 메서드: 반환값 = 매개변수의 순수 함수
+  applyAutoFocus(
+    index: number,
+    itemCache: ItemCache,
+    focusTracking: FocusTracking,
+    reason: string
+  ): FocusTracking | null {
+    // 중복 방지, 요소 검증, 실제 포커스
+    if (focusTracking.lastAppliedIndex === index) return null;
+
+    const item = itemCache.getItem(index);
+    if (!item?.element?.isConnected) return null;
+
+    try {
+      item.element.focus({ preventScroll: true });
+      return updateFocusTracking(focusTracking, {
+        lastAutoFocusedIndex: index,
+        lastAppliedIndex: index,
+      });
+    } catch (error) {
+      // Fallback...
+    }
+  }
+}
+
+export function createFocusApplicatorService(): FocusApplicatorService {
+  return new FocusApplicatorService();
+}
+```
+
+**3. StateManagerService** (상태 동기화)
+
+```typescript
+// src/shared/services/focus/focus-state-manager-service.ts
+
+export class FocusStateManagerService {
+  private debouncedSetAutoFocus: ReturnType<typeof createDebouncer> | null =
+    null;
+  private debouncedUpdateContainer: ReturnType<typeof createDebouncer> | null =
+    null;
+
+  // Debouncer 중앙화: service 내부에서 생명주기 관리
+  setupAutoFocusSync(
+    onUpdate: (index: number | null, source: FocusState['source']) => void,
+    delay: number = 50
+  ): void {
+    this.debouncedSetAutoFocus = createDebouncer((index, options) => {
+      onUpdate(index, 'auto');
+    }, delay);
+  }
+
+  syncAutoFocus(
+    index: number | null,
+    options?: { forceClear?: boolean }
+  ): void {
+    this.debouncedSetAutoFocus?.execute(index, options);
+  }
+
+  // Service dispose: 리소스 정리
+  dispose(): void {
+    this.debouncedSetAutoFocus = null;
+    this.debouncedUpdateContainer = null;
+  }
+}
+
+export function createFocusStateManagerService(): FocusStateManagerService {
+  return new FocusStateManagerService();
+}
+```
+
+#### Hook에서의 사용
+
+```typescript
+// src/features/gallery/hooks/useGalleryFocusTracker.ts
+
+export function useGalleryFocusTracker(options) {
+  // 서비스 인스턴스 (Hook 생명주기와 일치)
+  const observerManager = createFocusObserverManager();
+  const applicator = createFocusApplicatorService();
+  const stateManager = createFocusStateManagerService();
+
+  // 서비스 설정
+  stateManager.setupAutoFocusSync((index, source) => {
+    setFocusState(createFocusState(index, source));
+  }, 50);
+
+  stateManager.setupContainerSync((value) => {
+    containerElement.setAttribute('data-focused', String(value ?? -1));
+  }, 50);
+
+  // 서비스 활용
+  const applyAutoFocus = (index: number, reason: string) => {
+    const updated = applicator.applyAutoFocus(
+      index,
+      itemCache,
+      focusTracking(),
+      reason
+    );
+    if (updated) setFocusTracking(updated);
+  };
+
+  const recomputeFocus = () => {
+    // ... 계산 로직
+    stateManager.syncAutoFocus(nextIndex);
+  };
+
+  // Cleanup
+  onCleanup(() => {
+    observerManager.cleanupObserver();
+    stateManager.dispose();
+  });
+
+  return { focusedIndex, registerItem, ... };
+}
+```
+
+### 설계 체크리스트
+
+```typescript
+// ✅ 좋은 서비스
+class MyService {
+  // 1. 순수 메서드: 반환값이 매개변수에만 의존
+  procesData(input: Data): ProcessedData {
+    return transform(input);
+  }
+
+  // 2. DI: 의존성은 메서드 매개변수로 받음
+  execute(logger: Logger, cache: Cache): void {
+    logger.info('Running...');
+    cache.set('key', 'value');
+  }
+
+  // 3. 명확한 책임: 한 가지만
+  doOneThing(): Result {
+    return this.specificLogic();
+  }
+}
+
+// ❌ 안좋은 서비스
+class BadService {
+  // 1. Side effect: logger 직접 참조 (테스트 불가)
+  processData(input: Data) {
+    logger.info('...'); // ❌ 전역 logger 직접 사용
+  }
+
+  // 2. 의존성이 명시적이지 않음
+  private logger = logger; // ❌ 멤버로 저장 (모킹 불가)
+
+  // 3. 책임 혼재: 여러 역할
+  processAndLog(input: Data): Result {
+    const result = this.process(input);
+    this.log(result); // ❌ 처리 + 로깅
+    this.save(result); // ❌ 저장까지
+  }
+}
+```
+
+### 메트릭스 (Focus Service 예시)
+
+| 지표           | 이전  | 이후  | 개선            |
+| -------------- | ----- | ----- | --------------- |
+| Hook 파일 크기 | 651줄 | 515줄 | **-21%**        |
+| 직접 구현 로직 | 100%  | 30%   | **-70% 외부화** |
+| 테스트 용이성  | 중간  | 높음  | **⬆️**          |
+| 재사용성       | 낮음  | 높음  | **⬆️**          |
 
 ---
 

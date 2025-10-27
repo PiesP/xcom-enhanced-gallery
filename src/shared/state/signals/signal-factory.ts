@@ -1,13 +1,10 @@
 /**
- * @fileoverview Signals Safe Factory
- * @description Preact Signals 의존을 안전하게 감싸는 팩토리. 테스트/Node 환경과
- * TDZ 상황에서도 동작하도록 폴백을 제공합니다.
+ * Safe signal factory with Solid.js fallback support for tests/Node environments
  */
 
 import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
 
-// 공통 시그널 타입 (subscribe 지원)
 export type SafeSignal<T> = {
   value: T;
   subscribe: (callback: (value: T) => void) => () => void;
@@ -16,14 +13,14 @@ export type SafeSignal<T> = {
 function getSolidOrNull(): ReturnType<typeof getSolid> | null {
   try {
     return getSolid();
-  } catch (error) {
-    logger.warn('Solid.js 미사용 환경 감지 - 안전 폴백 사용', { error });
+  } catch {
+    logger.warn('Solid.js not available, using fallback');
     return null;
   }
 }
 
 /**
- * 안전한 시그널 생성기. Preact Signals이 없으면 경량 폴백을 제공합니다.
+ * Create a reactive signal with Solid.js or fallback observer pattern
  */
 export function createSignalSafe<T>(initial: T): SafeSignal<T> {
   const solid = getSolidOrNull();
@@ -36,13 +33,11 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       subscribe(callback: (value: T) => void): () => void {
         try {
           return createRoot(dispose => {
-            createEffect(() => {
-              callback(read());
-            });
+            createEffect(() => callback(read()));
             return dispose;
           });
         } catch (error) {
-          logger.warn('Solid signal 구독 실패 - noop 처리', { error });
+          logger.warn('Solid subscribe failed', { error });
           return () => {};
         }
       },
@@ -50,11 +45,11 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
 
     Object.defineProperty(signalObject, 'value', {
       get: () => read(),
-      set: (value: T) => {
+      set: (v: T) => {
         try {
-          write(() => value);
+          write(() => v);
         } catch (error) {
-          logger.warn('Solid signal 값 설정 실패 - 기존 값 유지', { error });
+          logger.warn('Solid write failed', { error });
         }
       },
       enumerable: true,
@@ -63,11 +58,11 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
     return signalObject;
   }
 
-  // 폴백: 간단한 옵저버 패턴 구현
+  // Fallback: simple observer pattern
   let _value = initial;
   const listeners = new Set<(v: T) => void>();
 
-  const fallback: SafeSignal<T> = {
+  return {
     get value() {
       return _value;
     },
@@ -76,11 +71,10 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       try {
         listeners.forEach(l => l(_value));
       } catch (error) {
-        logger.warn('Fallback Signal notify 실패', { error });
+        logger.warn('Notify failed', { error });
       }
     },
     subscribe(callback: (value: T) => void): () => void {
-      // 즉시 현재값 전달 후 구독 등록
       try {
         callback(_value);
       } catch {
@@ -90,12 +84,10 @@ export function createSignalSafe<T>(initial: T): SafeSignal<T> {
       return () => listeners.delete(callback);
     },
   } as SafeSignal<T>;
-
-  return fallback;
 }
 
 /**
- * 안전한 effect. Signals이 없으면 콜백을 1회 실행하고 noop을 반환합니다.
+ * Create a reactive effect with Solid.js or single execution fallback
  */
 export function effectSafe(fn: () => void): () => void {
   const solid = getSolidOrNull();
@@ -107,7 +99,7 @@ export function effectSafe(fn: () => void): () => void {
         return dispose;
       });
     } catch (error) {
-      logger.warn('Solid effect 실행 실패 - noop 처리', { error });
+      logger.warn('Solid effect failed', { error });
     }
   }
   try {
@@ -119,7 +111,7 @@ export function effectSafe(fn: () => void): () => void {
 }
 
 /**
- * 안전한 computed. Signals이 없으면 접근 시 계산되는 getter를 제공합니다.
+ * Create a memoized computed value with Solid.js or lazy evaluation fallback
  */
 export function computedSafe<T>(compute: () => T): { readonly value: T } {
   const solid = getSolidOrNull();
@@ -141,13 +133,13 @@ export function computedSafe<T>(compute: () => T): { readonly value: T } {
           try {
             return memoAccessor ? memoAccessor() : compute();
           } catch (error) {
-            logger.warn('Solid memo 접근 실패 - 즉시 계산으로 대체', { error });
+            logger.warn('Solid memo access failed', { error });
             return compute();
           }
         },
       } as const;
     } catch (error) {
-      logger.warn('Solid computed 생성 실패 - fallback으로 진행', { error });
+      logger.warn('Solid computed failed', { error });
     }
   }
   return {

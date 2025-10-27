@@ -1,20 +1,11 @@
-/**
- * Phase 150.2 Step 1: FocusState 타입 및 헬퍼 테스트
- *
- * RED → GREEN → REFACTOR 프로세스:
- * 1. RED: 새로운 FocusState 타입과 헬퍼 함수의 실패 테스트 작성
- * 2. GREEN: 최소 구현 (FocusState 인터페이스, 유효성 검증)
- * 3. REFACTOR: 기존 manualFocusIndex + autoFocusIndex 로직 통합
- */
-
 import { describe, it, expect } from 'vitest';
 import {
-  FocusState,
+  type FocusState,
   INITIAL_FOCUS_STATE,
   isValidFocusState,
   createFocusState,
   isSameFocusState,
-} from '@shared/state/focus/focus-state';
+} from '@shared/state/focus/focus-types';
 
 describe('FocusState Integration (Phase 150.2 Step 1)', () => {
   describe('FocusState Interface', () => {

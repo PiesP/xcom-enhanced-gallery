@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
+import type { BaseService } from '../types/core/base-service.types';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 export interface AnimationConfig {
@@ -22,8 +23,9 @@ export interface AnimationConfig {
  * - 유저스크립트 최적화
  *
  * Phase A5 개선: 명시적 initialize/destroy 메서드 추가, 생명주기 관리 표준화
+ * Phase 2025-10-27 개선: BaseService 인터페이스 구현으로 표준화
  */
-export class AnimationService {
+export class AnimationService implements BaseService {
   private static instance: AnimationService | null = null;
   private stylesInjected = false;
   private _isInitialized = false;
@@ -43,7 +45,7 @@ export class AnimationService {
   }
 
   /**
-   * 서비스 초기화 (BaseService 인터페이스 준수)
+   * 서비스 초기화 (BaseService 인터페이스)
    */
   public async initialize(): Promise<void> {
     if (this._isInitialized) {
@@ -61,7 +63,7 @@ export class AnimationService {
   }
 
   /**
-   * 서비스 정리 (BaseService 인터페이스 준수)
+   * 서비스 정리 (BaseService 인터페이스)
    */
   public destroy(): void {
     if (!this._isInitialized) {
@@ -78,7 +80,7 @@ export class AnimationService {
   }
 
   /**
-   * 초기화 상태 확인 (BaseService 인터페이스 준수)
+   * 초기화 상태 확인 (BaseService 인터페이스)
    */
   public isInitialized(): boolean {
     return this._isInitialized;
