@@ -93,11 +93,17 @@
       - 책임: AppSettings, GallerySettings, DownloadSettings 등 타입 정의
       - Phase 193: DEFAULT_SETTINGS 재익스포트 제거 (타입 파일 역할 강화)
       - 기본값은 @/constants에서 직접 import
+  - `services/`: 갤러리 기능 서비스 (Phase 211: 구조 정리)
+    - **theme-initialization.ts** (170줄): 테마 초기화 서비스 ✅ 현대화
+      - 책임: 시스템 감지 → localStorage 복원 → DOM 적용
+      - 함수: `initializeTheme()`, `detectSystemTheme()`,
+        `getSavedThemeSetting()`, `applyThemeToDOM()`, `resolveAndApplyTheme()`,
+        `setupThemeChangeListener()`
+      - Phase 211: bootstrap/initialize-theme.ts에서 이동 (계층 준수)
 - `src/bootstrap/*`: 애플리케이션 초기화 (동적 임포트, 트리셰이킹 최적화)
-  - `environment.ts`: Vendor 라이브러리 초기화
-  - `events.ts`: 전역 이벤트 (beforeunload/pagehide) 핸들러
-  - `features.ts`: Features 레이어 서비스 지연 등록
-  - `initialize-theme.ts`: 테마 초기화 (시스템/localStorage/DOM)
+  - `environment.ts` (24줄): Vendor 라이브러리 초기화 (Solid.js 등) ✅ 현대화
+  - `events.ts` (33줄): 전역 이벤트 (beforeunload/pagehide) 핸들러 ✅ 현대화
+  - `features.ts` (52줄): Features 레이어 서비스 지연 등록 ✅ 현대화
 - `src/shared/services/*`: 순수 로직 API (Phase 2025-10-27: 구조 최적화)
   - **핵심 서비스**:
     - `MediaService`, `BulkDownloadService`: 미디어 추출/다운로드
