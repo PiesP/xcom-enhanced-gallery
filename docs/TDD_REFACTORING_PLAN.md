@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-27 | **상태**: Phase 206 완료 ✅
+**마지막 업데이트**: 2025-10-27 | **상태**: Phase 207 완료 ✅
 
 ## 📊 현황 요약
 
@@ -14,7 +14,7 @@
 | 의존성        | ✅ 0 violations   | 정책 준수                     |
 | 로컬 빌드     | ✅ 최적화         | 순차 49.5초 → 병렬 42.2초     |
 | 번들 크기     | ✅ 341 KB         | 목표 ≤345 KB (4 KB 여유)      |
-| 상태          | ✅ Phase 206 완료 | Playwright 스모크 테스트 통합 |
+| 상태          | ✅ Phase 207 완료 | Global Setup 현대화 및 최적화 |
 
 ---
 
@@ -32,6 +32,58 @@
 ### Phase 206 ✅ (2025-10-27) - Playwright Smoke 테스트 통합 및 최적화
 
 **목표**: `playwright/smoke` 디렉터리 테스트 파일 통합 및 현대화
+
+**완료 항목**:
+
+1. **JSDoc 문서화** ✅
+   - 역할 및 책임: E2E 테스트 하네스 빌드 파이프라인
+   - 처리 흐름: JSX 변환 → 번들링 → IIFE 생성
+   - 의존성: esbuild, @babel/core, babel-preset-solid
+   - 산출물: `.cache/harness.js` (window.\_\_XEG_HARNESS\_\_ 노출)
+
+2. **타입 안정성 개선** ✅
+   - `types/babel-preset-solid.d.ts` 생성 (untyped 패키지 선언)
+   - `@ts-expect-error` 제거 (동적 import로 대체)
+   - TypeScript strict mode 통과
+
+3. **에러 핸들링 추가** ✅
+   - Babel 변환: try-catch로 JSX 변환 실패 감지
+   - 빌드 함수: top-level try-catch로 예외 전파
+   - 상세 에러 메시지: 스택 트레이스 및 컨텍스트 정보
+
+4. **CI/Verbose 로깅** ✅
+   - 환경 감지: `process.env.CI` 및 `process.env.VERBOSE`
+   - 조건부 출력: CI/verbose 환경에서만 상세 로그
+   - 빌드 산출물 경로 명시
+
+5. **검증** ✅
+   - E2E 스모크 테스트: 82/82 통과 (5 skipped)
+   - 타입 체크: 0 errors
+   - 린트: 0 warnings
+   - 빌드 파이프라인: 정상 작동
+
+**효과**:
+
+- 타입 안정성 향상 (@ts-expect-error 제거)
+- 디버깅 용이성 개선 (상세 에러 로깅)
+- CI 환경 최적화 (환경별 로그 레벨)
+- 코드 가독성 향상 (명확한 JSDoc)
+
+**세부사항**:
+
+- `types/babel-preset-solid.d.ts`:
+  - babel-preset-solid 모듈 선언 (unknown 타입)
+  - TypeScript 컴파일러가 untyped 패키지 인식
+- `playwright/global-setup.ts`:
+  - 37줄 → 125줄 (JSDoc, 에러 핸들링, 로깅 추가)
+  - 동적 import로 babel-preset-solid 로드
+  - 환경별 로그 레벨 자동 조정
+
+---
+
+### Phase 206 ✅ (2025-10-27) - Playwright 스모크 테스트 통합 및 최신화
+
+**목표**: playwright/smoke 디렉터리의 중복 테스트 통합 및 논리적 그룹화
 
 **완료 항목**:
 
