@@ -881,6 +881,8 @@ export function getGalleryEventSnapshot() {
  *
  * 터치 이벤트: touchstart, touchmove, touchend, touchcancel
  * 포인터 이벤트: pointerdown, pointermove, pointerup, pointercancel, pointerenter, pointerleave
+ *
+ * Phase 199: form 요소는 브라우저 네이티브 동작을 위해 예외 처리
  */
 function blockTouchAndPointerEvents(element: Document | EventTarget): void {
   // 터치 이벤트 명시적 차단
@@ -896,14 +898,69 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
     'pointerleave',
   ];
 
-  // 모든 차단 대상 이벤트
-  const allBlockedEvents = [...touchEvents, ...pointerEvents];
+  // Phase 199: 브라우저 네이티브 동작이 필요한 form 요소
+  const formElementTags = ['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON', 'OPTION'];
 
-  for (const eventType of allBlockedEvents) {
+  // Touch 이벤트 차단 (모든 요소에서 strict)
+  for (const eventType of touchEvents) {
     try {
       const blocker = (evt: Event) => {
-        // PC-only 정책에 따라 이 이벤트는 발생하면 안 됨
-        // 외부 라이브러리 호환성을 위해 silent하게 처리
+        // Touch 이벤트는 PC-only 정책에 따라 모든 요소에서 차단
+        logger.debug(`[PC-only policy] Blocked ${eventType} event`, {
+          target: (evt.target as Element)?.tagName,
+          currentTarget: (evt.currentTarget as Element)?.tagName,
+        });
+        evt.preventDefault?.();
+        evt.stopPropagation?.();
+        evt.stopImmediatePropagation?.();
+      };
+
+      const propName = `on${eventType}`;
+      let onPropSet = false;
+      try {
+        setOnProperty(element as object, propName, blocker);
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const check = (element as any)[propName];
+          if (check === blocker) {
+            onPropSet = true;
+            logger.debug(`[PC-only policy] Registered on-property blocker for ${eventType}`);
+          }
+        } catch {
+          // 읽기 실패시 무시하고 fallback 시도
+        }
+      } catch {
+        // 할당 자체가 실패하면 fallback으로 addEventListener 사용
+      }
+
+      if (onPropSet) continue;
+
+      if (typeof element.addEventListener === 'function') {
+        (element as EventTarget).addEventListener(eventType, blocker, {
+          passive: false,
+          capture: true,
+        });
+        logger.debug(`[PC-only policy] Registered blocker for ${eventType}`);
+      }
+    } catch (error) {
+      logger.debug(`[PC-only policy] Failed to register blocker for ${eventType}`, error);
+    }
+  }
+
+  // Pointer 이벤트 차단 (form 요소 예외)
+  for (const eventType of pointerEvents) {
+    try {
+      const blocker = (evt: Event) => {
+        // Phase 199: form 요소는 pointer 이벤트만 허용 (네이티브 동작 필요)
+        const targetElement = evt.target as Element | null;
+        if (targetElement && formElementTags.includes(targetElement.tagName)) {
+          logger.debug(`[PC-only policy] Allowed ${eventType} on form element`, {
+            target: targetElement.tagName,
+          });
+          return;
+        }
+
+        // 일반 요소는 pointer 이벤트 차단
         logger.debug(`[PC-only policy] Blocked ${eventType} event`, {
           target: (evt.target as Element)?.tagName,
           currentTarget: (evt.currentTarget as Element)?.tagName,

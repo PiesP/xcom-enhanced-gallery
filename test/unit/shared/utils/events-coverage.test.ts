@@ -711,3 +711,193 @@ describe('events.ts - Helper Functions', () => {
     });
   });
 });
+
+describe('events.ts - PC-only Policy (Phase 199)', () => {
+  let mockHandlers: EventHandlers;
+
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    removeAllEventListeners();
+    cleanupGalleryEvents();
+
+    mockHandlers = {
+      onMediaClick: vi.fn(),
+      onKeyboardEvent: vi.fn(),
+      onGalleryClose: vi.fn(),
+    };
+  });
+
+  afterEach(() => {
+    cleanupGalleryEvents();
+    removeAllEventListeners();
+    vi.clearAllMocks();
+  });
+
+  describe('Pointer event blocking on regular elements', () => {
+    it('should block pointerdown on DIV element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const div = document.createElement('div');
+      document.body.appendChild(div);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !div.dispatchEvent(pointerEvent);
+
+      // DIV 요소는 pointer 이벤트가 차단되어야 함
+      expect(prevented).toBe(true);
+    });
+
+    it('should block pointerup on SPAN element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const span = document.createElement('span');
+      document.body.appendChild(span);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !span.dispatchEvent(pointerEvent);
+
+      // SPAN 요소는 pointer 이벤트가 차단되어야 함
+      expect(prevented).toBe(true);
+    });
+  });
+
+  describe('Form element exception (Phase 199)', () => {
+    it('should allow pointerdown on SELECT element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const select = document.createElement('select');
+      const option = document.createElement('option');
+      option.value = 'test';
+      option.textContent = 'Test Option';
+      select.appendChild(option);
+      document.body.appendChild(select);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !select.dispatchEvent(pointerEvent);
+
+      // SELECT 요소는 pointer 이벤트가 허용되어야 함
+      expect(prevented).toBe(false);
+    });
+
+    it('should allow pointerup on INPUT element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      document.body.appendChild(input);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerup', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !input.dispatchEvent(pointerEvent);
+
+      // INPUT 요소는 pointer 이벤트가 허용되어야 함
+      expect(prevented).toBe(false);
+    });
+
+    it('should allow pointermove on TEXTAREA element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const textarea = document.createElement('textarea');
+      document.body.appendChild(textarea);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointermove', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !textarea.dispatchEvent(pointerEvent);
+
+      // TEXTAREA 요소는 pointer 이벤트가 허용되어야 함
+      expect(prevented).toBe(false);
+    });
+
+    it('should allow pointerdown on BUTTON element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const button = document.createElement('button');
+      button.textContent = 'Click me';
+      document.body.appendChild(button);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !button.dispatchEvent(pointerEvent);
+
+      // BUTTON 요소는 pointer 이벤트가 허용되어야 함
+      expect(prevented).toBe(false);
+    });
+
+    it('should allow pointerdown on OPTION element', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const select = document.createElement('select');
+      const option = document.createElement('option');
+      option.value = 'test';
+      option.textContent = 'Test Option';
+      select.appendChild(option);
+      document.body.appendChild(select);
+
+      const pointerEvent = new (
+        globalThis as typeof globalThis & { PointerEvent: typeof Event }
+      ).PointerEvent('pointerdown', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !option.dispatchEvent(pointerEvent);
+
+      // OPTION 요소는 pointer 이벤트가 허용되어야 함
+      expect(prevented).toBe(false);
+    });
+  });
+
+  describe('Touch event blocking (remains strict)', () => {
+    it('should block touchstart on all elements including SELECT', async () => {
+      await initializeGalleryEvents(mockHandlers, {});
+
+      const select = document.createElement('select');
+      document.body.appendChild(select);
+
+      const touchEvent = new (
+        globalThis as typeof globalThis & { TouchEvent: typeof Event }
+      ).TouchEvent('touchstart', {
+        bubbles: true,
+        cancelable: true,
+      });
+
+      const prevented = !select.dispatchEvent(touchEvent);
+
+      // Touch 이벤트는 form 요소에서도 차단되어야 함 (PC-only 정책)
+      expect(prevented).toBe(true);
+    });
+  });
+});
