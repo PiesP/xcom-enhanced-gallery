@@ -14,8 +14,8 @@
 - **테스트**: Browser 111, E2E 60/61(1 skipped), a11y 34, 단위 전체 GREEN ✅
 - **아키텍처**: 3계층 구조, 0 dependency violations ✅
 - **번들러**: Vite 7 + Solid.js 1.9.9 + TypeScript strict
-- **최근 개선**: Phase 213 Vertical Gallery View Hooks 정리 (useGalleryCleanup,
-  useProgressiveImage 제거)
+- **최근 개선**: Phase 214 VerticalGalleryView 모던화 (import 정규화 + JSDoc
+  강화) useProgressiveImage 제거)
 
 ## 계층 구조와 단방향 의존
 
