@@ -359,6 +359,19 @@ async function initializeGalleryApp(): Promise<void> {
 
 /**
  * 애플리케이션 메인 진입점
+ *
+ * 📋 7단계 부트스트랩 프로세스:
+ * 1️⃣  인프라 초기화 (Vendor 로드) - src/bootstrap/environment.ts
+ * 2️⃣  핵심 시스템 (Core 서비스 + Toast) - src/shared/services/core-services.ts
+ * 3️⃣  기본 서비스 (Animation/Theme/Language) - src/shared/services/service-manager.ts
+ * 4️⃣  기능 서비스 등록 (지연 로드) - src/bootstrap/features.ts
+ * 5️⃣  전역 이벤트 핸들러 설정 - src/bootstrap/events.ts
+ * 6️⃣  갤러리 앱 초기화 - src/features/gallery/GalleryApp.ts
+ * 7️⃣  백그라운드 시스템 초기화 (비필수 서비스)
+ *
+ * 💡 Critical vs Non-Critical:
+ * - Critical: 페이지 로드 후 즉시 필요 (인프라, 핵심, 갤러리)
+ * - Non-Critical: 사용자 상호작용 후에도 괜찮음 (백그라운드 타이머)
  */
 async function startApplication(): Promise<void> {
   if (isStarted) {

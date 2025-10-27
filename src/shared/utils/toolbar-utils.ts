@@ -7,10 +7,10 @@
  * - Toolbar 클래스명을 생성
  */
 
-import type { ToolbarState, ToolbarDataState } from '@features/gallery/types/toolbar.types';
+import type { ToolbarState, ToolbarDataState } from '@shared/types/toolbar.types';
 
 // Phase 2: Re-export types for backward compatibility
-export type { ToolbarDataState } from '@features/gallery/types/toolbar.types';
+export type { ToolbarDataState } from '@shared/types/toolbar.types';
 
 export function getToolbarDataState(state: ToolbarState): ToolbarDataState {
   if (state.hasError) return 'error';

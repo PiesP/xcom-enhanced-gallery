@@ -51,10 +51,6 @@ export const MEDIA = {
   } as const,
 } as const;
 
-// URL 패턴 (단일 소스 재노출)
-import { URL_PATTERNS as SHARED_URL_PATTERNS } from './shared/utils/patterns/url-patterns';
-export const URL_PATTERNS = SHARED_URL_PATTERNS;
-
 // CSS 클래스 및 스타일
 export const CSS = {
   CLASSES: {

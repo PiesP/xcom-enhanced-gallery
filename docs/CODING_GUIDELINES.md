@@ -1250,10 +1250,16 @@ src / features / gallery / types / index.ts; // Barrel export
 
 **3. 계층 분리**
 
-- **Shared Types** (`@shared/types`): 앱 전역 기본 타입, 서비스, 도메인 타입
-- **Feature Types** (`@features/{name}/types`): 기능 특화 타입 (Gallery,
-  Settings)
-- **Core Types** (`@shared/types/core`): 추출, 매핑, 서비스 핵심 인터페이스
+- **Shared Types** (`@shared/types`): 앱 전역 기본 타입
+  - Phase 197부터 단일 import 지점 (배럴 export)
+  - 포함: Result 패턴, BaseService, MediaInfo, UI 타입, 유틸리티 (Brand 타입 등)
+- **Feature Types** (`@features/{name}/types`): 기능 특화 타입만
+  - Gallery, Settings 등 특정 기능에만 필요한 타입
+  - 부작용: 현재 @shared 코드가 @features 타입을 import하는 경우 있음 (개선 진행
+    중)
+- **Core Types** (`@shared/types/core`): 인프라 & 도메인 핵심
+  - 공개 API: core-types.ts (Result, Service, 갤러리 도메인)
+  - 내부 사용: base-service.types.ts, extraction.types.ts (backward compat)
 
 **4. 재사용성 우선**
 
@@ -1288,26 +1294,32 @@ export interface ToolbarState {
 ## 📂 Import 순서
 
 ```typescript
-// 1. 타입 (공유 타입)
-import type { MediaItem, GalleryState } from '@shared/types';
+// 1. 타입 (공유 타입 - 배럴 export 권장)
+import type { MediaItem, Result, BaseService } from '@shared/types';
 
-// 2. 기능 특화 타입 (필요시)
-import type { ToolbarState, FitMode } from '@features/gallery/types';
+// 2. 세부 타입이 필요한 경우 (선택사항)
+import type { MediaExtractionOptions } from '@shared/types/media.types';
 
-// 3. 외부 라이브러리 (Vendor getter)
+// 3. 기능 특화 타입 (필요시만)
+import type { ToolbarState } from '@features/gallery/types';
+
+// 4. 외부 라이브러리 (Vendor getter)
 import { getSolid } from '@shared/external/vendors';
 
-// 4. 내부 모듈 (경로 별칭 사용)
+// 5. 내부 모듈 (경로 별칭 사용)
 import { MediaService } from '@shared/services';
 import { GalleryApp } from '@features/gallery';
 
-// 5. 스타일 (CSS Modules + 토큰만)
+// 6. 스타일 (CSS Modules + 토큰만)
 import styles from './Component.module.css';
 ```
 
-**주의**: Phase 196부터는 기능 특화 타입(`@features/*/types`)을 필요시
-명시적으로 import합니다. 공유 타입(`@shared/types`)만으로 부족한 경우에 한해
-사용합니다.
+**주의** (Phase 197):
+
+- 공유 타입은 `@shared/types`에서 배럴 export로 import (권장)
+- 세부 타입 (media.types, ui.types 등)은 필요시에만 직접 import
+- 기능 특화 타입은 필요시 명시적으로 import
+- @shared 코드에서 @features 타입을 import하는 것은 피하세요 (의존성 역행)
 
 ---
 
@@ -1492,16 +1504,15 @@ git commit -m "fix: resolve memory leak in media loader"
 
 ## 🎛️ 상태 관리 (State Layer)
 
-### 구조 원칙
+### 구조 원칙 (Phase 2025-10-27 ✅)
 
-**`@shared/state/*`**: Solid.js Signals 기반 상태 관리
+**`@shared/state/*`**: Solid.js Signals 기반 상태 관리 + 순수 상태 머신
 
-상태는 4개 계층으로 분류:
+상태는 5개 계층으로 분류:
 
-1. **Signal Factory** (`signal-factory.ts`)
+1. **Signal Factory** (`signals/signal-factory.ts`)
    - `createSignalSafe<T>()`: Solid.js Signal 생성 + 폴백 지원
-   - `effectSafe()`: Effect 생성 + 폴백 처리
-   - `computedSafe<T>()`: Computed 생성 + 폴백 처리
+   - `effectSafe()`, `computedSafe<T>()`: 안전한 이팩트/컴퓨티드
    - 테스트/Node 환경에서도 안전하게 동작
 
 2. **Domain Signals** (gallery.signals.ts, download.signals.ts,
@@ -1516,12 +1527,18 @@ git commit -m "fix: resolve memory leak in media loader"
    - Hook에서 로컬 Signal 생성 시 사용
    - 예: `ScrollState`, `ScrollDirection`, `INITIAL_SCROLL_STATE`
 
-4. **Dedicated State Modules** (`focus/`, `item-scroll/` 등)
+4. **State Machines** (`machines/` 폴더)
+   - 순수 함수 기반 상태 전환 로직
+   - 불변 상태 객체, 명확한 액션 타입
+   - 예: `NavigationStateMachine`, `DownloadStateMachine`
+   - 특징: side-effect 없음, 테스트 용이, 결정적(deterministic)
+
+5. **Dedicated State Modules** (`focus/`, `item-scroll/`)
    - 특정 기능의 상태 타입 + 헬퍼 + 로직 통합
    - 캐시, 타이머, 추적 데이터 통합 관리
    - 예: FocusState, ItemCache, FocusTimerManager
 
-5. **Hook-local State** (컴포넌트 내부)
+6. **Hook-local State** (컴포넌트 내부)
    - 컴포넌트 고유 상태
    - `createSignal()`, `createMemo()` 직접 사용
 
@@ -1627,25 +1644,88 @@ const state = createFocusState(0, 'auto');
 // import { ItemCache } from '@shared/state/focus/focus-cache';
 ```
 
+### 사례 5: State Machines (Phase 2025-10-27) - 순수 상태 전환
+
+```typescript
+// ✅ 상태 머신: 순수 함수 기반 상태 전환
+import {
+  NavigationStateMachine,
+  type NavigationState,
+  type NavigationAction,
+  DownloadStateMachine,
+  ToastStateMachine,
+} from '@shared/state';
+
+// ✅ 초기 상태 생성
+const initialState: NavigationState =
+  NavigationStateMachine.createInitialState();
+// { currentIndex: 0, focusedIndex: null, lastSource: 'auto-focus', lastTimestamp: ... }
+
+// ✅ 상태 전환 (순수 함수, side-effect 없음)
+const action: NavigationAction = {
+  type: 'NAVIGATE',
+  payload: {
+    targetIndex: 5,
+    source: 'keyboard',
+    trigger: 'keyboard',
+  },
+};
+
+const result = NavigationStateMachine.transition(initialState, action);
+// result.newState: 새로운 상태 (불변)
+// result.shouldSync: Signal 업데이트 필요 여부
+// result.isDuplicate: 중복 액션 여부
+
+// ✅ 구조: 간결한 상태 머신 폴더
+// src/shared/state/machines/
+// ├── navigation-state-machine.ts    (네비게이션 상태)
+// ├── download-state-machine.ts      (다운로드 상태)
+// ├── settings-state-machine.ts      (설정 패널 상태)
+// ├── toast-state-machine.ts         (토스트 알림 상태)
+// └── index.ts                       (중앙화 export)
+
+// ✅ 특징: 테스트 용이성
+const newState = DownloadStateMachine.transition(currentState, {
+  type: 'ENQUEUE',
+  payload: {
+    taskId: '1',
+    mediaId: 'abc',
+    filename: 'photo.jpg',
+    mediaUrl: '...',
+  },
+});
+
+// Pure function: 입력 → 출력 (부작용 없음)
+// 결정적(deterministic): 같은 입력 → 항상 같은 출력
+```
+
 ### 설계 원칙
 
 1. **Export 중앙화**: 모든 상태 모듈은 `index.ts` 제공
    - 사용자는 폴더 경로만 알면 됨
    - 내부 파일 이동 시 호환성 유지
+   - 예: `from '@shared/state'` 또는 `from '@shared/state/focus'`
 
 2. **타입 + 구현 분리**
    - 타입/헬퍼: `*-types.ts`
    - 클래스/서비스: `*-manager.ts`
    - 캐시/저장소: `*-cache.ts`
+   - 상태 머신: `*-state-machine.ts` (순수 로직)
 
 3. **응집도 높이기**
    - 관련 타입 + 함수 같은 파일에
-   - 4개 파일이 2개 파일로 통합 가능한 구조 지향
+   - 내부 파일 이동은 index.ts로 추상화
 
 4. **테스트 용이성**
    - 모든 상태는 순수 함수 기반
-   - 클래스도 외부 의존성 최소화
-   - Signals는 test setup에서 mocking 가능
+   - 상태 머신: 결정적(deterministic), mocking 불필요
+   - Signals: test setup에서 mocking 가능
+
+5. **Phase 2025-10-27 개선사항**
+   - ✅ `machines/` 폴더 추가 (상태 머신 그룹화)
+   - ✅ `signals/index.ts` 생성 (신호 export 중앙화)
+   - ✅ 불필요한 Phase 주석 제거 (코드 간결화)
+   - ✅ app-state.ts, gallery-store.ts 제거 (중복 제거)
 
 ### 금지 사항
 

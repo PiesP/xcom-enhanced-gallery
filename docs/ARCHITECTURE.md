@@ -29,31 +29,54 @@
 
 ## 디렉터리 지도(요약)
 
+### Root Layer (`src/` 계층) — 애플리케이션 진입점 및 전역 설정
+
+| 파일/폴더               | 책임                                                 |    현황     |
+| :---------------------- | :--------------------------------------------------- | :---------: |
+| `src/main.ts`           | 7단계 부트스트랩 + 생명주기 조율                     |  ✅ 체계적  |
+| `src/constants.ts`      | 전역 상수 (APP/TIMING/DOM/MEDIA/EVENTS/SERVICE_KEYS) |   ✅ 통합   |
+| `src/styles/globals.ts` | CSS import 배럴 (토큰/리셋/유틸리티)                 |   ✅ 간결   |
+| `src/types/index.ts`    | 타입 배럴 export → shared/types/core                 |  ✅ 미니멀  |
+| `src/utils/index.ts`    | 경량 재export (CoreService/logger)                   | ✅ 성능최적 |
+| `src/bootstrap/*`       | 초기화 로직 (environment/events/features)            |  ✅ 분리됨  |
+
+**설계 원칙:**
+
+- `main.ts`: 7단계 명확 분리 + 각 단계별 외부 파일 참조 (src/bootstrap/_,
+  src/shared/_)
+- `constants.ts`: 도메인별 상수
+  (APP/TIMING/SELECTORS/MEDIA/CSS/HOTKEYS/EVENTS/SERVICE_KEYS)
+  - ⚠️ 과거 URL_PATTERNS 중복 제거됨 (Phase 2025-10-27)
+  - 📝 STABLE_SELECTORS/VIDEO_CONTROL_SELECTORS는 분산되었지만 명확한 도메인
+    구분
+- `styles/globals.ts`: CSS import만 관리 (사이드이펙트 안전성)
+- `types/index.ts`: shared/types/core 재export (배럴 패턴)
+- `utils/index.ts`: 최소 표면적 (CoreService/logger만) — 과거
+  `export * from '../shared'` 제거로 성능 최적화
+
 - `src/features/*`: UI/도메인 기능, 신호 구독과 사용자 인터랙션 처리
-  - `gallery/`: 갤러리 UI 시스템 - 렌더러 + 조율기 + 컴포넌트 아키텍처
-    - **GalleryApp** (264줄): 갤러리 앱 조율기 - 초기화, 이벤트 연결, 생명주기
+  - **GalleryApp** (264줄): 갤러리 앱 조율기 - 초기화, 이벤트 연결, 생명주기
+    관리
+    - 책임: 초기화 오케스트레이션, 이벤트 핸들러 등록, 미디어 서비스 지연 초기화
+    - 상태 관리는 shared/state 신호에 위임
+  - **GalleryRenderer** (178줄): 갤러리 렌더러 - DOM 렌더링 및 생명주기
+    - 책임: Solid.js 컴포넌트 렌더링, signal 구독으로 자동 업데이트, 컨테이너
       관리
-      - 책임: 초기화 오케스트레이션, 이벤트 핸들러 등록, 미디어 서비스 지연
-        초기화
-      - 상태 관리는 shared/state 신호에 위임
-    - **GalleryRenderer** (178줄): 갤러리 렌더러 - DOM 렌더링 및 생명주기
-      - 책임: Solid.js 컴포넌트 렌더링, signal 구독으로 자동 업데이트, 컨테이너
-        관리
-      - Signal 기반 반응형 아키텍처 (gallerySignals.isOpen 구독)
-    - `components/`:
-      - **VerticalGalleryView** (517줄): 메인 갤러리 뷰 컴포넌트
-      - **VerticalImageItem** (419줄): 이미지 항목 컴포넌트 (FitMode 로직)
-      - **KeyboardHelpOverlay**: 키보드 도움말 오버레이
-    - `hooks/`: 상태 관리 및 이벤트 처리
-      - **useGalleryScroll** (259줄): 휠 이벤트 기반 갤러리 스크롤 처리 ✅ 양호
-      - **useGalleryFocusTracker** (680줄): 자동 포커스 추적 및
-        IntersectionObserver 관리 (Phase 19A 정리)
-      - **useGalleryItemScroll** (438줄): 특정 item으로의 스크롤 조율 (Phase 19A
-        정리)
-    - `types/`: 갤러리 특화 타입 (현재 미사용 - index.ts barrel만 export)
-    - `styles/`: 갤러리 스타일
-      - **gallery-global.css**: 갤러리 전역 스타일 (558줄)
-      - **Gallery.module.css**: CSS Modules (878줄, WIP/TEST TARGET)
+    - Signal 기반 반응형 아키텍처 (gallerySignals.isOpen 구독)
+  - `components/`:
+    - **VerticalGalleryView** (517줄): 메인 갤러리 뷰 컴포넌트
+    - **VerticalImageItem** (419줄): 이미지 항목 컴포넌트 (FitMode 로직)
+    - **KeyboardHelpOverlay**: 키보드 도움말 오버레이
+  - `hooks/`: 상태 관리 및 이벤트 처리
+    - **useGalleryScroll** (259줄): 휠 이벤트 기반 갤러리 스크롤 처리 ✅ 양호
+    - **useGalleryFocusTracker** (680줄): 자동 포커스 추적 및
+      IntersectionObserver 관리 (Phase 19A 정리)
+    - **useGalleryItemScroll** (438줄): 특정 item으로의 스크롤 조율 (Phase 19A
+      정리)
+  - `types/`: 갤러리 특화 타입 (현재 미사용 - index.ts barrel만 export)
+  - `styles/`: 갤러리 스타일
+    - **gallery-global.css**: 갤러리 전역 스타일 (558줄)
+    - **Gallery.module.css**: CSS Modules (878줄, WIP/TEST TARGET)
   - `settings/`: 설정 UI, 스토리지 어댑터 (Phase 193: 타입-값 분리 강화)
     - **SettingsService** (524줄): 설정 상태 관리 및 지속성 ✅ 간결화
       - 책임: 설정 로드/저장, 마이그레이션, 스키마 해싱
@@ -300,21 +323,34 @@
        - `item-scroll/` (Phase 150.2): 아이템 스크롤 상태
          - item-scroll-state.ts, item-scroll-signal.ts
     4. **State Machines** (상태 전환):
-       - `navigation-state-machine.ts`, `settings-state-machine.ts`,
-         `download-state-machine.ts`, `toast-state-machine.ts`
+       - `machines/` 폴더 (Phase 2025-10-27 ✅):
+         - navigation-state-machine.ts, settings-state-machine.ts,
+           download-state-machine.ts, toast-state-machine.ts
+         - 순수 함수 기반 (transition 메서드는 side-effect 없음)
+         - 상태는 불변 객체, 명확한 액션 타입 정의
     5. **기타**:
-       - `gallery-store.ts`, `app-state.ts`: 통합 상태 저장소
        - `types/`: 공유 상태 타입
-  - **개선 사항** (2025-10-27):
-    - **간결화**: signal-factory.ts 주석 최소화 (30% 단축), 모든 signal 파일에서
-      불필요한 phase 주석 제거
-    - **구조 정렬**: gallery/download/toolbar signals에서 섹션 표준화 (Types →
-      Initial State → Signals → State Accessors → Event Dispatcher → Actions →
-      Selectors)
-    - **scroll.signals.ts 명확화**: 타입-신호 분리 (실제 Signal은
-      useGalleryScroll에서 로컬 생성)
-    - **크기**: 총 1130줄 (이전 1308줄, -14% 최적화)
-      - 스크롤 방향 감지 (up/down/idle 자동 추적)
+  - **개선 사항** (Phase 2025-10-27 상태 계층 현대화 ✅):
+    - **구조 정렬** (명확한 계층 분리):
+      - ✅ `signals/` 폴더: 신호 기반 상태 + 중앙화 export
+      - ✅ `machines/` 폴더 (NEW): 상태 머신 + 중앙화 export
+      - ✅ `focus/`, `item-scroll/`: 전문화 모듈 (이미 분리됨)
+    - **제거된 파일**:
+      - ❌ app-state.ts (중복: root index.ts가 모든 export 담당)
+      - ❌ gallery-store.ts (미사용, 과거 구현 방식)
+      - ✅ 백업: docs/temp/state-refactor-backup/
+    - **코드 간결화**:
+      - Phase 정보 제거 (프로젝트 추적 완료)
+      - Decorator 주석 정리 (필수만 유지)
+      - 신호 파일들: 이미 현대적 스타일
+    - **Export 정책** (충돌 방지):
+      - `signals/index.ts`: 도메인 신호 중앙화
+      - `machines/index.ts`: 상태 머신 + 타입 별칭 (DownloadState 타입 →
+        MachineDownloadState)
+      - Root `state/index.ts`: 4계층 통합 export
+    - **Import 변경**:
+      - Before: `from '../navigation-state-machine'`
+      - After: `from '../machines'` (배럴 export 사용)
 
 - `src/shared/services/focus/*` (Phase 150.3 ✅): 포커스 추적 서비스 계층 분리
   - **목적**: useGalleryFocusTracker(651줄) → 515줄(21% 감소)로 단순화
@@ -341,11 +377,35 @@
     - Hook 크기: 651줄 → 515줄 (-21%)
     - 직접 구현: 100% → ~30% (70% 외부화)
     - 서비스 책임: 단일 역할 (observer/applicator/state-sync)
-- `src/shared/types/*`: 도메인 비즈니스 타입 정의 (**.types.ts 패턴**)
-  - `app.types.ts`, `media.types.ts`, `result.types.ts`
-  - `core/`: 핵심 타입 (extraction.types.ts, media.types.ts)
-  - **Phase 200**: GalleryRenderOptions 통합 완료 (gallery.interfaces →
-    media.types로 단일화)
+- `src/shared/types/*`: 공유 도메인 타입 정의 (**.types.ts 패턴**)
+  - **구조** (Phase 197 개선):
+
+    ```
+    types/
+    ├── index.ts (배럴 export) - 단일 import 지점
+    ├── app.types.ts (205줄) - 앱 전역 타입 + 재-export 허브
+    ├── ui.types.ts - UI/테마 관련
+    ├── component.types.ts - 컴포넌트 Props/이벤트
+    ├── media.types.ts (558줄) - 미디어 추출 & 도메인
+    ├── result.types.ts - Result 패턴 & ErrorCode
+    ├── navigation.types.ts - 네비게이션 타입
+    └── core/
+        ├── core-types.ts (617줄) - Result/Service/갤러리/미디어전략
+        ├── base-service.types.ts - BaseService (순환 의존성 방지)
+        ├── extraction.types.ts - 추출 타입 (backward compat)
+        ├── userscript.d.ts (205줄) - UserScript API
+        └── index.ts - core 배럴
+    ```
+
+  - **app.types.ts** (Phase 197):
+    - 역할: 앱 레벨 타입 정의 + 하위 파일들의 재-export 허브
+    - 변경: 350줄 → 205줄 (-41% 감소)
+    - 개선: Brand 타입, 유틸리티 타입 명확화
+  - **Phase 195-197 통합 완료**:
+    - media.types.ts (core/) → media.types.ts (root) ✓
+    - BaseService 중복 제거 (core-types에서 base-service.types 재-export) ✓
+    - extraction.types.ts는 backward compatibility만 유지 ✓
+
 - `src/shared/interfaces/*`: Features 계층 계약 정의 (Phase 201 정리 완료)
   - `gallery.interfaces.ts`: GalleryRenderer 인터페이스 + GalleryRenderOptions
     re-export
@@ -353,6 +413,8 @@
     - 의존성: @shared/types/media.types에서 GalleryRenderOptions import
     - 정책: 실제 타입 정의는 @shared/types가 기준, interfaces는 계약만 정의
   - **Phase 201**: service-interfaces.ts 제거 완료 (사용처 0건, 안전 제거)
+  - **경고**: @shared의 코드가 @features/gallery/types를 import하는 것은 의존성
+    역행 (현재 toolbar.types 관련 - Phase 197.1에서 해결 예정)
 - `src/shared/utils/*`: 순pure 유틸리티, DOM 헬퍼(서비스 직접 참조 금지)
   - **error-handling.ts** (376줄): 애플리케이션 로직 에러 처리 유틸
     - 함수: `standardizeError()`, `getErrorMessage()`, `isRetryableError()`,
@@ -496,7 +558,106 @@
     - 내부 구현 타입(예: 'Safe' suffix)은 비공개
   - **정책**: 외부 라이브러리 버전 업그레이드/변경은 이 계층에서만 처리
 
-- `src/assets/*`: 정적 자원, CSS Modules, 디자인 토큰(3계층)
+## 🎨 스타일 계층 구조
+
+프로젝트의 스타일 시스템은 **3계층 CSS 토큰 체계 (Primitive → Semantic →
+Component)** 를 따릅니다.
+
+### 디렉터리 구조
+
+```
+src/
+├─ assets/styles/              # 전역 기본 스타일
+│  ├─ base/reset.css           # 브라우저 리셋
+│  ├─ tokens/animation-tokens.css
+│  └─ utilities/
+│     ├─ animations.css
+│     └─ layout.css
+├─ styles/
+│  └─ globals.ts               # 임포트 진입점 & 오케스트레이션
+├─ shared/styles/              # 토큰 시스템 (SSOT)
+│  ├─ design-tokens.css        # 3계층 토큰 통합 진입점
+│  ├─ design-tokens.primitive.css
+│  ├─ design-tokens.semantic.css
+│  ├─ design-tokens.component.css
+│  ├─ isolated-gallery.css     # 갤러리 격리 스타일
+│  ├─ modern-features.css      # OKLCH, Grid Subgrid 등
+│  ├─ tokens.ts               # JS 토큰 (IDE 지원용)
+│  ├─ theme-utils.ts          # CSS 변수 헬퍼
+│  └─ index.ts                # Export 중앙화
+└─ features/gallery/styles/   # 갤러리 컴포넌트 스타일
+   ├─ gallery-global.css
+   └─ Gallery.module.css
+```
+
+### 계층별 역할
+
+**1. Primitive (기본 토큰)**
+
+- CSS 변수 정의: `--color-*`, `--space-*`, `--radius-*`
+- 색상은 oklch, 크기는 rem/em만 사용
+- 파일: `design-tokens.primitive.css`
+
+**2. Semantic (의미 토큰)**
+
+- 역할 기반 이름: `--xeg-color-primary`, `--xeg-spacing-md`
+- Primitive 토큰에 대한 래퍼
+- 테마/모드별 변경 가능 (light/dark)
+- 파일: `design-tokens.semantic.css`
+
+**3. Component (컴포넌트 토큰)**
+
+- 컴포넌트 특화: `--button-bg`, `--modal-padding`
+- Semantic 토큰 참조
+- 파일: `design-tokens.component.css` + 컴포넌트 내부
+
+### SSOT (Single Source of Truth)
+
+**CSS 변수가 최고 권한입니다:**
+
+- 모든 토큰은 CSS 변수로 정의 (`--xeg-*`, `--space-*`)
+- JS 토큰(`tokens.ts`)은 IDE 자동완성/타입 체크용 보조 역할
+- **반드시 동기화 필수**: CSS 변수와 JS 토큰 값 일치
+
+### 임포트 순서 (src/styles/globals.ts)
+
+```typescript
+// 1. 3계층 토큰 (SSOT)
+import '@shared/styles/design-tokens.css';
+
+// 2. 전역 기본 스타일
+import '@assets/styles/base/reset.css';
+import '@assets/styles/tokens/animation-tokens.css';
+
+// 3. 유틸리티 클래스
+import '@assets/styles/utilities/animations.css';
+import '@assets/styles/utilities/layout.css';
+
+// 4. 모던 CSS 기능
+import '@shared/styles/modern-features.css';
+
+// 5. 격리된 갤러리 스타일
+import '@shared/styles/isolated-gallery.css';
+```
+
+이 순서는 **우선순위 (Cascade)** 를 결정합니다: 나중에 로드된 스타일이 우선.
+
+### 사용 원칙
+
+| 시나리오     | 사용처                                            |
+| ------------ | ------------------------------------------------- |
+| 새 토큰 추가 | `design-tokens.primitive.css` 또는 `semantic.css` |
+| 색상 변경    | Primitive 또는 Semantic 레벨 (한 곳만 수정)       |
+| 테마 전환    | Semantic 토큰 미디어 쿼리 사용                    |
+| JS에서 접근  | `tokens.ts` 헬퍼 또는 `theme-utils.ts`            |
+
+### 참고
+
+- **상세 가이드**: `src/shared/styles/README.md`
+- **코딩 규칙**: `docs/CODING_GUIDELINES.md` "디자인 토큰 체계" 섹션
+- **추가 정보**: `docs/CODING_GUIDELINES.md` "📂 스타일 파일 구조" 섹션
+
+- `src/assets/*`: 정적 자원, CSS Modules
   - `styles/`
     - `base/`: 리셋 (reset.css)
     - `tokens/`: 디자인 토큰 (animation-tokens.css — duration/easing/delay)

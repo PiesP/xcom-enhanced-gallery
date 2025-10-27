@@ -1,30 +1,41 @@
 /**
- * Core Types - Integrated Types for Userscript Simplification
+ * @fileoverview Core Types - 통합 도메인 타입 및 인프라 타입
+ * @version 3.0.0 - Phase 197.1: 구조 명확화
  *
- * @version 2.0.0 - Phase 195: media.types.ts 통합 (root로 이동)
- * @description Core 레이어의 타입 파일들을 통합하여 복잡성을 줄입니다.
+ * **역할**:
+ * 이 파일은 여러 도메인과 인프라 타입을 통합하여 관리합니다.
+ * app.types.ts가 이 타입들을 재-export하므로, 직접 import하는 경우는 거의 없습니다.
  *
- * 타입 위치 변경:
- * - media.types.ts (core/) → media.types.ts (root) ✓ Phase 195
- * - extraction.types.ts → 유지 (re-export layer)
+ * **구성** (섹션별):
+ * 1. SERVICE TYPES - 서비스 기본 인터페이스
+ * 2. GALLERY TYPES - 갤러리 도메인 (상태, 액션, 이벤트)
+ * 3. MEDIA MAPPING TYPES - 미디어 매핑 전략 패턴
+ * 4. CORE FOUNDATION TYPES - 앱 설정 & 생명주기
+ * 5. RESULT TYPES - 성공/실패 명시적 표현
+ *
+ * **사용 권장**:
+ * - 일반적: `import type { Result, BaseService } from '@shared/types'` (app.types.ts 거경)
+ * - 세부: `import type { GalleryState } from '@shared/types/core/core-types'`
+ *
+ * **Phase 197 개선**:
+ * - BaseService 중복 제거 (base-service.types.ts 재-export)
+ * - Result 패턴 통합
+ * - JSDoc 강화 & 섹션 명확화
+ *
+ * @see {@link ../app.types.ts} - 재-export 허브
+ * @see {@link ./base-service.types.ts} - BaseService 정의
+ * @see {@link ../result.types.ts} - Result 패턴 & ErrorCode
  */
 
-import type { MediaInfo, MediaMapping, MediaPageType } from '@shared/types/media.types';
+import type { MediaInfo, MediaMapping } from '@shared/types/media.types';
+import type { BaseService } from './base-service.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
 // ========================================
 
-/**
- * 기본 서비스 인터페이스
- * @description base-service.types와 동기화 필요 (순환 의존성 방지를 위해 별도 파일 유지)
- * @see {@link ./base-service.types.ts} - 단일 진실 소스
- */
-export interface BaseService {
-  destroy?(): void;
-  initialize?(): Promise<void> | void;
-  isInitialized?(): boolean;
-}
+// Export BaseService from dedicated file (avoid duplication)
+export type { BaseService };
 
 /**
  * 서비스 생명주기 상태
@@ -239,27 +250,14 @@ export function isValidViewMode(mode: string): mode is (typeof VIEW_MODES)[numbe
 export type { MediaItem } from '@shared/types/media.types';
 
 // ========================================
-// MEDIA MAPPING TYPES (from media-mapping/types.ts)
+// MEDIA MAPPING TYPES (from media.types.ts)
 // ========================================
 
 /**
- * 미디어 매핑 전략 인터페이스
+ * Re-export MediaMappingStrategy from media.types
+ * (actual definition is in @shared/types/media.types)
  */
-export interface MediaMappingStrategy {
-  /** 전략의 고유 이름 */
-  readonly name: string;
-
-  /** 우선순위 (낮을수록 먼저 실행) */
-  readonly priority: number;
-
-  /**
-   * 미디어 매핑 실행
-   * @param clickedElement 클릭된 요소
-   * @param pageType 페이지 타입
-   * @returns 매핑 결과 또는 null
-   */
-  execute(clickedElement: HTMLElement, pageType: MediaPageType): Promise<MediaMapping | null>;
-}
+export type { MediaMappingStrategy } from '@shared/types/media.types';
 
 /**
  * 전략 메트릭스

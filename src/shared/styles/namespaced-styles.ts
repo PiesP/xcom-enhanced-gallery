@@ -1,7 +1,11 @@
 /**
  * @fileoverview 단순화된 네임스페이스 스타일 시스템
- * @description 복잡한 클래스 기반 NamespacedDesignSystem을 단순 함수로 대체
- * @version 2.0.0 - Phase 1 단순화
+ * @description Light DOM 격리를 위한 네임스페이싱 유틸리티
+ * @version 2.1.0 (현대화: JSDoc, 에러 처리)
+ *
+ * ⚠️ **참고**: 현재 이 파일의 함수들은 직접 호출되지 않습니다.
+ * 향후 Light DOM 격리가 필요한 경우 재활성화될 가능성이 있습니다.
+ * CSS Modules와 Shadow DOM이 현재 주요 격리 방식입니다.
  */
 
 import { logger } from '../logging';
@@ -13,6 +17,8 @@ let isInitialized = false;
 
 /**
  * 네임스페이스된 CSS 생성
+ * @internal
+ * @returns 생성된 CSS 문자열
  */
 function generateNamespacedCSS(): string {
   return `
@@ -118,6 +124,13 @@ function generateNamespacedCSS(): string {
 
 /**
  * 네임스페이스된 디자인 시스템 초기화
+ *
+ * ⚠️ **현재 미사용**: 향후 Light DOM 격리가 필요한 경우 활성화
+ * @example
+ * ```ts
+ * // Light DOM 격리가 필요한 경우만 호출
+ * initializeNamespacedStyles();
+ * ```
  */
 export function initializeNamespacedStyles(): void {
   if (isInitialized) {
@@ -125,36 +138,60 @@ export function initializeNamespacedStyles(): void {
     return;
   }
 
-  const existingStyle = document.getElementById(STYLE_ID);
-  if (existingStyle) {
-    logger.debug('[NamespacedStyles] Style already exists, removing old');
-    existingStyle.remove();
+  try {
+    const existingStyle = document.getElementById(STYLE_ID);
+    if (existingStyle) {
+      logger.debug('[NamespacedStyles] Style already exists, removing old');
+      existingStyle.remove();
+    }
+
+    const styleElement = document.createElement('style');
+    styleElement.id = STYLE_ID;
+    styleElement.textContent = generateNamespacedCSS();
+
+    document.head.appendChild(styleElement);
+    isInitialized = true;
+
+    logger.debug('[NamespacedStyles] Initialized successfully');
+  } catch (error) {
+    logger.error('[NamespacedStyles] Initialization failed:', error);
   }
-
-  const styleElement = document.createElement('style');
-  styleElement.id = STYLE_ID;
-  styleElement.textContent = generateNamespacedCSS();
-
-  document.head.appendChild(styleElement);
-  isInitialized = true;
-
-  logger.debug('[NamespacedStyles] Initialized successfully');
 }
 
 /**
  * 스타일 시스템 정리
+ *
+ * ⚠️ **현재 미사용**: initializeNamespacedStyles 미사용에 따른 쌍 함수
+ * @example
+ * ```ts
+ * // 컴포넌트 언마운트 시
+ * cleanupNamespacedStyles();
+ * ```
  */
 export function cleanupNamespacedStyles(): void {
-  const styleElement = document.getElementById(STYLE_ID);
-  if (styleElement) {
-    styleElement.remove();
-    logger.debug('[NamespacedStyles] Cleaned up');
+  try {
+    const styleElement = document.getElementById(STYLE_ID);
+    if (styleElement) {
+      styleElement.remove();
+      logger.debug('[NamespacedStyles] Cleaned up');
+    }
+  } catch (error) {
+    logger.error('[NamespacedStyles] Cleanup failed:', error);
   }
   isInitialized = false;
 }
 
 /**
  * 네임스페이스 클래스명 생성
+ *
+ * ⚠️ **현재 미사용**: CSS Modules 권장
+ * @param className - 클래스명
+ * @returns 네임스페이스가 추가된 클래스명
+ * @example
+ * ```ts
+ * const cls = createNamespacedClass('button');
+ * // 반환: 'xeg-gallery-button'
+ * ```
  */
 export function createNamespacedClass(className: string): string {
   return `${NAMESPACE}-${className}`;
@@ -162,6 +199,15 @@ export function createNamespacedClass(className: string): string {
 
 /**
  * 네임스페이스 셀렉터 생성
+ *
+ * ⚠️ **현재 미사용**: CSS Modules 권장
+ * @param selector - CSS 셀렉터
+ * @returns 네임스페이스가 추가된 셀렉터
+ * @example
+ * ```ts
+ * const sel = createNamespacedSelector('button:hover');
+ * // 반환: '.xeg-gallery button:hover'
+ * ```
  */
 export function createNamespacedSelector(selector: string): string {
   return `.${NAMESPACE} ${selector}`;

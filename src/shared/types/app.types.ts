@@ -1,59 +1,53 @@
 /**
- * @fileoverview 통합 앱 전역 타입 정의
- * @version 4.0.0 - Phase 196: 타입 파일 분할
+ * @fileoverview 앱 전역 타입 - 통합 배럴 export 및 앱 레벨 타입 정의
+ * @version 4.1.0 - Phase 197: 명확한 구조 개선
  *
- * 타입 파일 구조 (Phase 196):
- * - app.types.ts (현재): 핵심 앱 타입, 서비스, Result 패턴
- * - ui.types.ts: 테마, UI 상태, 애니메이션 (신규)
- * - component.types.ts: 컴포넌트 Props, 이벤트 핸들러 (신규)
+ * **역할**:
+ * - 전체 타입 생태계의 단일 import 지점 (`@shared/types`)
+ * - 앱 레벨의 직접 정의 타입 (AppConfig, Brand 타입 등)
+ * - 하위 타입 파일들의 재-export
  *
- * 이 파일은 Re-export 중심으로 구성하여 단일 import 지점을 제공합니다.
+ * **포함 타입**:
+ * - 코어 타입: Result, BaseService (core-types.ts 재-export)
+ * - UI 타입: 테마, 버튼, 로딩 상태 (ui.types.ts 재-export)
+ * - 컴포넌트 타입: Props, 이벤트 핸들러 (component.types.ts 재-export)
+ * - 미디어 타입: MediaInfo, MediaItem (media.types.ts 재-export)
+ * - 유틸리티: Brand 타입, Nullable, DeepPartial 등 (여기서 정의)
+ *
+ * **다른 import 지점**:
+ * - 세부 타입이 필요하면: `@shared/types/media.types`, `@shared/types/ui.types` 등 직접 import
  */
 
 // ================================
-// 기본 앱 타입 정의
+// 앱 레벨 기본 타입 정의
 // ================================
-
-/**
- * 정리 가능한 리소스 인터페이스
- *
- * @description 메모리/리소스 정리가 필요한 객체의 계약
- */
-export interface Cleanupable {
-  /**
-   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
-   */
-  cleanup(): void;
-}
 
 /**
  * 애플리케이션 설정
+ * @description 앱 초기화 시 필요한 전역 설정
  */
 export interface AppConfig {
-  /** 애플리케이션 버전 */
-  version: string;
-  /** 개발 모드 여부 */
-  isDevelopment: boolean;
-  /** 디버그 모드 여부 */
-  debug: boolean;
-  /** 자동 시작 여부 */
-  autoStart: boolean;
-  /** 성능 모니터링 활성화 여부 */
-  performanceMonitoring?: boolean;
+  readonly version: string;
+  readonly isDevelopment: boolean;
+  readonly debug: boolean;
+  readonly autoStart: boolean;
+  readonly performanceMonitoring?: boolean;
+}
+
+/**
+ * 동기 정리 가능한 리소스 인터페이스
+ * @description 메모리/리소스 정리가 필요한 객체의 계약
+ */
+export interface Cleanupable {
+  cleanup(): void;
 }
 
 // ================================
-// Result 패턴 타입들 (core-types에서 re-export)
+// 핵심 타입 및 패턴 (재-export)
 // ================================
 
-/**
- * Result 패턴 관련 타입 및 함수들을 core-types에서 re-export
- * @see {@link ./core/core-types.ts} - 단일 진실 소스 (Single Source of Truth)
- */
+// Result 패턴 - core-types에서 재-export
 export type { Result, AsyncResult } from './core/core-types';
-export type { BaseService } from './core/core-types';
-
-// Result 유틸리티 함수들 re-export
 export {
   success,
   failure,
@@ -66,114 +60,47 @@ export {
   safeAsync,
 } from './core/core-types';
 
+// BaseService 및 서비스 타입들
+export type { BaseService } from './core/core-types';
+export type { ServiceLifecycle } from './core/core-types';
+
 /**
- * Option 타입 (T 또는 null)
+ * Option 타입 - T 또는 null
  */
 export type Option<T> = T | null;
 
 // ================================
-// 서비스 관련 타입들
+// 유틸리티 타입
 // ================================
 
 /**
- * 서비스 생명주기 상태
+ * Nullable - T 또는 null
  */
-export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
+export type Nullable<T> = T | null;
 
 /**
- * 서비스 설정
+ * Optional - T 또는 undefined
  */
-export interface ServiceConfig<T = unknown> {
-  enabled: boolean;
-  options?: T;
-  dependencies?: ServiceDependency[];
-}
-
-export type ServiceDependency = string;
-export type ServiceFactory<T> = () => T | Promise<T>;
+export type Optional<T> = T | undefined;
 
 /**
- * 기본 이벤트
+ * 깊은 Partial - 모든 중첩 속성을 선택사항으로
  */
-export interface BaseEvent {
-  type: string;
-  timestamp: number;
-}
-
-/**
- * 기본 설정 인터페이스
- */
-export interface BaseConfig {
-  enabled: boolean;
-  version?: string;
-}
-
-/**
- * 라이프사이클 관리 인터페이스
- */
-export interface Lifecycle {
-  cleanup(): void;
-  destroy(): void;
-}
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
 
 // ================================
-// 공통 유틸리티 타입들
+// Brand 타입 (도메인별 타입 안정성)
 // ================================
 
 /**
- * 위치/좌표
- */
-export interface Position {
-  x: number;
-  y: number;
-}
-
-/**
- * 크기
- */
-export interface Size {
-  width: number;
-  height: number;
-}
-
-/**
- * 사각형 (위치 + 크기)
- */
-export interface Rect extends Position, Size {}
-
-/**
- * 타임스탬프가 있는 엔티티
- */
-export interface TimestampedEntity {
-  timestamp: number;
-}
-
-/**
- * ID가 있는 엔티티
- */
-export interface IdentifiableEntity {
-  id: string;
-}
-
-// ================================
-// Brand 타입 정의들
-// ================================
-
-/**
- * 브랜드 타입 기본 구조
- *
+ * Brand 타입 기본 구조
  * @template T 원본 타입
  * @template B 브랜드명
- * @description 컴파일 타임에만 존재하며, 런타임에는 string/number/etc.로 동작
- * @example
- * ```typescript
- * type UserId = Brand<string, 'UserId'>;
- * const userId = '123' as UserId;
- * ```
+ * @description 컴파일 타임에만 존재, 런타입에는 T로 동작
  */
 type Brand<T, B> = T & { readonly __brand: B };
-
-// Brand 타입들 (도메인별로 구분)
 
 /** 사용자 ID */
 export type UserId = Brand<string, 'UserId'>;
@@ -195,36 +122,10 @@ export type FileName = Brand<string, 'FileName'>;
 export type FileExtension = Brand<string, 'FileExtension'>;
 
 // ================================
-// 일반 유틸리티 타입들
+// 하위 타입 파일 재-export
 // ================================
 
-/**
- * Nullable 타입 (T 또는 null)
- *
- * @template T 기본 타입
- */
-export type Nullable<T> = T | null;
-
-/**
- * Optional 타입 (T 또는 undefined)
- *
- * @template T 기본 타입
- */
-export type Optional<T> = T | undefined;
-
-/**
- * 깊은 Partial (모든 중첩 속성을 선택사항으로)
- *
- * @template T 객체 타입
- */
-export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
-// ================================
-// UI/UX 관련 타입들 (ui.types.ts re-export)
-// ================================
-
+// UI/테마 타입
 export type {
   Theme,
   GalleryTheme,
@@ -243,10 +144,7 @@ export type {
   GlobalConfig,
 } from './ui.types';
 
-// ================================
-// 컴포넌트 관련 타입들 (component.types.ts re-export)
-// ================================
-
+// 컴포넌트 타입
 export type {
   VNode,
   ComponentType,
@@ -276,74 +174,38 @@ export type {
   FileInfo,
 } from './component.types';
 
-// ================================
-// 갤러리 관련 타입들
-// ================================
+// 미디어 타입
+export type {
+  MediaType,
+  MediaQuality,
+  MediaId,
+  MediaInfo,
+  MediaEntity,
+  MediaItem,
+  MediaInfoForFilename,
+  MediaItemForFilename,
+  MediaInfoWithFilename,
+  TweetInfo,
+  MediaExtractionOptions,
+  MediaExtractionResult,
+  TweetInfoExtractionStrategy,
+  MediaExtractor,
+  PageType,
+  ExtractionSource,
+} from './media.types';
 
-/**
- * 갤러리 뷰 모드
- */
-export type GalleryViewMode = 'grid' | 'carousel' | 'slideshow';
+export { ExtractionError } from './media.types';
 
-/**
- * 뷰 모드 (horizontal/vertical)
- */
-export const VIEW_MODES = ['horizontal', 'vertical'] as const;
-export type ViewMode = (typeof VIEW_MODES)[number];
+// 네비게이션 타입
+export type { NavigationSource } from './navigation.types';
 
-/**
- * ViewMode 유효성 검사
- */
-export function isValidViewMode(mode: unknown): mode is ViewMode {
-  return typeof mode === 'string' && VIEW_MODES.includes(mode as ViewMode);
-}
+// 툴바 UI 상태 타입
+export type { ToolbarDataState, FitMode, ToolbarState, ToolbarActions } from './toolbar.types';
 
-/**
- * ViewMode 정규화 (기본값: horizontal)
- */
-export function normalizeViewMode(mode: string | undefined): ViewMode {
-  return isValidViewMode(mode) ? mode : 'horizontal';
-}
+// Result 및 에러 코드
+export type { BaseResultStatus, BaseResult, ResultSuccess, ResultError } from './result.types';
+export { ErrorCode } from './result.types';
 
-/**
- * 갤러리 상태
- */
-export interface GalleryState {
-  readonly isOpen: boolean;
-  readonly mediaItems: readonly unknown[];
-  readonly currentIndex: number;
-  readonly isLoading: boolean;
-  readonly error: string | null;
-  readonly viewMode: ViewMode;
-}
-
-/**
- * 갤러리 액션들
- */
-export interface GalleryActions {
-  openGallery(items: unknown[], startIndex?: number): void;
-  closeGallery(): void;
-  navigateToItem(index: number): void;
-  setViewMode(mode: ViewMode): void;
-}
-
-/**
- * 갤러리 이벤트들
- */
-export type GalleryEvents = {
-  'gallery:open': { items: unknown[]; startIndex: number };
-  'gallery:close': Record<string, never>;
-  'gallery:navigate': { index: number; item: unknown };
-  'gallery:viewModeChange': { mode: GalleryViewMode };
-  'gallery:fullscreenToggle': { isFullscreen: boolean };
-  'gallery:error': { error: string };
-};
-
-/**
- * 신호 관련 타입들
- */
-export interface GallerySignals {
-  gallery: unknown;
-  download: unknown;
-  toolbar: unknown;
-}
+// 갤러리 타입 (core-types에서 재-export)
+export type { GalleryViewMode } from './core/core-types';
+export { VIEW_MODES, type ViewMode, isValidViewMode } from './core/core-types';
