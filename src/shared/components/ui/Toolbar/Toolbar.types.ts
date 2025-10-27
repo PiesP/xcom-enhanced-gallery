@@ -2,9 +2,10 @@
  * @file Toolbar 타입 정의
  */
 
-import type { ViewMode } from '../../../types';
+import type { ViewMode, FitMode } from '../../../types';
 
-export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
+// Re-export FitMode for component convenience
+export type { FitMode };
 
 export interface ToolbarProps {
   currentIndex: number;

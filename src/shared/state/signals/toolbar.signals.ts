@@ -9,17 +9,47 @@ import { createSignalSafe, type SafeSignal } from '@shared/state/signals/signal-
 // Types
 // ============================================================================
 
-export interface ToolbarState {
-  readonly currentMode: 'gallery' | 'settings' | 'download';
+/**
+ * 툴바 모드 상태
+ *
+ * @description 툴바가 표시되는 모드 상태를 정의합니다.
+ * UI 상태(ToolbarState in toolbar.types.ts)와는 다릅니다.
+ *
+ * - 'gallery': 갤러리 모드
+ * - 'settings': 설정 모드
+ * - 'download': 다운로드 모드
+ */
+export type ToolbarModeState = 'gallery' | 'settings' | 'download';
+
+/**
+ * 이전 네이밍 호환성 (backward compatibility)
+ * @deprecated ToolbarModeState 사용 권장
+ */
+export type ToolbarMode = ToolbarModeState;
+
+/**
+ * 툴바 상태 (모드 관리용)
+ *
+ * @description 툴바의 현재 모드와 접근성 설정을 관리합니다.
+ * @note UI 상태는 @shared/types/toolbar.types.ts의 ToolbarState 참조
+ */
+export interface ToolbarModeStateData {
+  readonly currentMode: ToolbarModeState;
   readonly needsHighContrast: boolean;
 }
+
+/**
+ * 이전 네이밍 호환성 (backward compatibility)
+ * @deprecated ToolbarModeStateData 사용 권장
+ */
+export interface ToolbarState extends ToolbarModeStateData {}
 
 export interface ToolbarExpandableState {
   readonly isSettingsExpanded: boolean;
 }
 
 export type ToolbarEvents = {
-  'toolbar:mode-change': { mode: ToolbarState['currentMode'] };
+  'toolbar:mode-change': { mode: ToolbarModeState };
   'toolbar:settings-expanded': { expanded: boolean };
 };
 
@@ -27,7 +57,7 @@ export type ToolbarEvents = {
 // Initial State
 // ============================================================================
 
-const INITIAL_TOOLBAR_STATE: ToolbarState = {
+const INITIAL_TOOLBAR_STATE: ToolbarModeStateData = {
   currentMode: 'gallery',
   needsHighContrast: false,
 };
@@ -40,7 +70,8 @@ const INITIAL_EXPANDABLE_STATE: ToolbarExpandableState = {
 // Signals
 // ============================================================================
 
-const toolbarStateSignal: SafeSignal<ToolbarState> = createSignalSafe(INITIAL_TOOLBAR_STATE);
+const toolbarStateSignal: SafeSignal<ToolbarModeStateData> =
+  createSignalSafe(INITIAL_TOOLBAR_STATE);
 const expandableStateSignal: SafeSignal<ToolbarExpandableState> =
   createSignalSafe(INITIAL_EXPANDABLE_STATE);
 
@@ -52,15 +83,15 @@ const expandableStateSignal: SafeSignal<ToolbarExpandableState> =
  * Toolbar state with subscription support
  */
 export const toolbarState = {
-  get value(): ToolbarState {
+  get value(): ToolbarModeStateData {
     return toolbarStateSignal.value;
   },
 
-  set value(newState: ToolbarState) {
+  set value(newState: ToolbarModeStateData) {
     toolbarStateSignal.value = newState;
   },
 
-  subscribe(callback: (state: ToolbarState) => void): () => void {
+  subscribe(callback: (state: ToolbarModeStateData) => void): () => void {
     try {
       return toolbarStateSignal.subscribe(state => {
         try {
@@ -97,7 +128,7 @@ function dispatchEvent<K extends keyof ToolbarEvents>(event: K, data: ToolbarEve
 /**
  * Change toolbar mode
  */
-export function updateToolbarMode(mode: ToolbarState['currentMode']): void {
+export function updateToolbarMode(mode: ToolbarModeState): void {
   const currentState = toolbarStateSignal.value;
 
   if (currentState.currentMode !== mode) {
@@ -126,7 +157,7 @@ export function setHighContrast(enabled: boolean): void {
 /**
  * Get current toolbar mode
  */
-export function getCurrentToolbarMode(): ToolbarState['currentMode'] {
+export function getCurrentToolbarMode(): ToolbarModeState {
   return toolbarStateSignal.value.currentMode;
 }
 
