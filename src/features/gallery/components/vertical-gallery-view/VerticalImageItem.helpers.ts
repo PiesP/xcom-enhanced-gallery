@@ -40,11 +40,13 @@ export function isVideoMedia(media: MediaInfo): boolean {
   }
 
   // URL 호스트 검증으로 보안 강화
+  // URL 객체로 파싱 가능한 경우 hostname 검증
   try {
     const url = new URL(media.url);
-    return url.hostname === 'video.twimg.com' || urlLowerCase.includes('/video/');
+    return url.hostname === 'video.twimg.com';
   } catch {
-    // URL 파싱 실패 시 폴백 (상대 경로 등)
-    return urlLowerCase.includes('video.twimg.com') || urlLowerCase.includes('/video/');
+    // URL 파싱 실패 시 (상대 경로, data: URL 등)
+    // 비디오 확장자로만 판단 (이미 위에서 검사했으므로 여기서는 false 반환)
+    return false;
   }
 }

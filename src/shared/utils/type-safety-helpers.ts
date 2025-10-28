@@ -512,6 +512,7 @@ export function setNestedValue(obj: Record<string, unknown>, path: string, value
 
   // 마지막 키에 값 설정
   const finalKey = keys[keys.length - 1];
+  // codeql[js/prototype-pollution-utility] - 모든 키는 위에서 DANGEROUS_KEYS 검증을 거침
   if (finalKey && isRecord(current)) {
     current[finalKey] = value;
   }
