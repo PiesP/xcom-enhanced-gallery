@@ -54,10 +54,10 @@ function generateNamespacedCSS(): string {
   --xeg-radius-md: 8px;
   --xeg-radius-lg: 16px;
 
-  /* Shadows */
-  --xeg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --xeg-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --xeg-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  /* Shadows - Using oklch for consistent theming */
+  --xeg-shadow-sm: 0 1px 3px oklch(0 0 0 / 0.3);
+  --xeg-shadow-md: 0 4px 6px oklch(0 0 0 / 0.3);
+  --xeg-shadow-lg: 0 10px 15px oklch(0 0 0 / 0.3);
 
   /* Z-index Scale */
   --xeg-z-dropdown: 1000;
