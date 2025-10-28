@@ -68,7 +68,8 @@ describe('useGalleryFocusTracker - Deduplication', () => {
       tracker.handleItemFocus(1);
       tracker.handleItemFocus(1);
 
-      // real timers 사용 시 RAF 대기
+      // real timers 사용 시 setTimeout(0) 대기 + RAF 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       expect(tracker.focusedIndex()).toBe(1);
@@ -92,18 +93,25 @@ describe('useGalleryFocusTracker - Deduplication', () => {
       });
 
       tracker.handleItemFocus(1);
+      // real timers 사용 시 setTimeout(0) 대기 + RAF 대기
+      await new Promise(resolve => setTimeout(resolve, 10));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       expect(tracker.focusedIndex()).toBe(1);
 
       // 빠르게 blur → focus 반복
       tracker.handleItemBlur(1);
+      await new Promise(resolve => setTimeout(resolve, 10));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
+      // blur 후에는 manual focus가 clear되므로 auto focus로 전환됨
+      // (auto focus가 없으면 null이거나 getCurrentIndex()의 반환값인 0)
       const afterBlur = tracker.focusedIndex();
-      expect(afterBlur).toBeDefined();
+      // blur 후 상태 확인 (null 또는 0 모두 가능)
+      expect(afterBlur === null || afterBlur === 0).toBe(true);
 
       tracker.handleItemFocus(2);
+      await new Promise(resolve => setTimeout(resolve, 10));
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
       expect(tracker.focusedIndex()).toBe(2);

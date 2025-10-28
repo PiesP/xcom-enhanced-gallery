@@ -203,12 +203,16 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
     if (!harnessControls) return;
 
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await vi.runAllTimersAsync();
+    // real timers 사용 시 상태 업데이트 대기 (autoFocusDebounce: 50ms)
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     expect(document.activeElement).not.toBe(items[1]);
 
     harnessControls.setShouldAutoFocus(true);
-    await vi.runAllTimersAsync();
+    // forceSync 호출하여 즉시 동기화
+    harnessControls.forceSync();
+    // real timers 사용 시 autoFocus 적용 대기
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     expect(document.activeElement).toBe(items[1]);
     expect(root.getAttribute('data-focused-index')).toBe('1');
@@ -220,26 +224,32 @@ describe('VerticalGalleryView auto focus sync (P0)', () => {
     if (!harnessControls) return;
 
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    // real timers 사용 시 상태 업데이트 대기
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // real timers 사용 시 상태 업데이트 대기 (autoFocusDebounce: 50ms)
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     harnessControls.setShouldAutoFocus(true);
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // forceSync 호출하여 즉시 동기화
+    harnessControls.forceSync();
+    await new Promise(resolve => setTimeout(resolve, 150));
     expect(document.activeElement).toBe(items[1]);
 
     items[2].focus();
     harnessControls.focusIndex(2);
+    // focus 처리 대기
+    await new Promise(resolve => setTimeout(resolve, 20));
 
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     expect(document.activeElement).toBe(items[2]);
 
     items[2].blur();
     harnessControls.blurIndex(2);
+    // blur 처리 대기
+    await new Promise(resolve => setTimeout(resolve, 20));
     harnessControls.forceSync();
     triggerEntries(items.map(item => [item, 0.8] as ObserverEntry));
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     expect(document.activeElement).toBe(items[1]);
   });

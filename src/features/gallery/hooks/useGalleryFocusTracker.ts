@@ -162,17 +162,6 @@ export function useGalleryFocusTracker({
     containerElement.setAttribute('data-focused-index', String(normalized));
   }, 50);
 
-  // Handle scroll settling and deferred sync
-  createEffect(() => {
-    const scrolling = isScrollingAccessor();
-    const current = focusTracking();
-
-    const updated = stateManager.handleScrollState(scrolling, current, recomputeFocus);
-    if (updated !== current) {
-      setFocusTracking(updated);
-    }
-  });
-
   // Apply auto focus with service
   const applyAutoFocus = (index: number, reason: string) => {
     const current = focusTracking();
@@ -286,6 +275,17 @@ export function useGalleryFocusTracker({
     stateManager.syncContainer(nextIndex);
     evaluateAutoFocus('recompute');
   };
+
+  // Handle scroll settling and deferred sync
+  createEffect(() => {
+    const scrolling = isScrollingAccessor();
+    const current = focusTracking();
+
+    const updated = stateManager.handleScrollState(scrolling, current, recomputeFocus);
+    if (updated !== current) {
+      setFocusTracking(updated);
+    }
+  });
 
   // Observer entry handler
   const handleEntries = (_candidates: Array<{ index: number }>) => {
