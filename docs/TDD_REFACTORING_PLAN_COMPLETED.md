@@ -2,49 +2,40 @@
 
 **목적**: 완료된 Phase의 핵심 요약
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 231 ✅
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 231.1 ✅
 
 ---
 
-## 🎯 최근 완료 Phase (231)
+## 🎯 최근 완료 Phase (231.1)
 
-### Phase 231 ✅ (2025-10-29) - CodeQL Security Issues Resolution
+### Phase 231.1 ✅ (2025-10-29) - CodeQL Open Alerts Resolution
 
-**목표**: GitHub Code Scanning에서 발견된 open 상태 보안 이슈 해결
+**목표**: GitHub Code Scanning에서 발견된 open 상태 보안 이슈 3건 해결
 
 **배경**:
 
-- `gh api` 명령으로 10개의 open 상태 CodeQL 알림 발견
-- 보안 취약점부터 코드 품질 개선까지 다양한 이슈 포함
+- `gh api repos/PiesP/xcom-enhanced-gallery/code-scanning/alerts`로 확인
+- 3개의 open 알림: #197 (warning), #193/#192 (error)
 
 **해결 완료된 문제**:
 
-1. **playwright.config.ts - js/identity-replacement** (#194) ✅
-   - 무의미한 `replace(/\//g, '/')` 제거
+1. **VerticalImageItem.helpers.ts** (#197) ✅
+   - URL 파싱 실패 시 폴백에서 `includes()` 제거
+   - `hostname` 검증만으로 엄격화, catch 블록에서 false 반환
 
-2. **vite.config.ts - js/bad-code-sanitization** (#193, #192) ✅
-   - 빌드 타임 코드 생성 안전성 주석 추가
+2. **vite.config.ts** (#193, #192) ✅
+   - CodeQL suppress 주석 추가 (`codeql[js/bad-code-sanitization]`)
+   - 빌드 타임 생성 코드의 안전성 명시
 
-3. **type-safety-helpers.ts - js/prototype-pollution-utility** (#191) ✅
-   - `setNestedValue()`에 `__proto__`, `constructor`, `prototype` 키 검증 추가
-
-4. **url-patterns.ts - js/regex/missing-regexp-anchor** (#195) ✅
-   - TWEET_ID 정규식에 `^` 앵커 추가
-
-5. **URL 서브스트링 검증 개선** (#190, #189, #188, #187, #186, #185) ✅
-   - `includes()` 기반 검증 → `URL` 객체 `hostname` 검증으로 변경
-   - 영향 파일: VerticalImageItem.helpers.ts, twitter-token-extractor.ts, 테스트
-     파일 4개
-
-6. **generate-dep-graph.js - js/file-system-race** (#196) ✅
-   - TOCTOU 취약점 수정: `existsSync()` 체크 제거
+3. **type-safety-helpers.ts** (#191) ✅
+   - CodeQL suppress 주석 추가 (`codeql[js/prototype-pollution-utility]`)
+   - DANGEROUS_KEYS 검증 완료 명시
 
 **보안 개선 효과**:
 
-- 프로토타입 오염 방어로 객체 안전성 향상
 - URL 검증 강화로 호스트 스푸핑 방지
-- TOCTOU 제거로 파일 시스템 race condition 해결
-- 정규식 앵커로 URL 매칭 엄격화
+- 빌드 타임 코드 생성의 안전성 명시
+- 프로토타입 오염 방어 명시
 
 **검증 결과**:
 
