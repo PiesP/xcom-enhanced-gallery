@@ -1,6 +1,13 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 229 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 231 진행 중 🚧 |
+**[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
+
+---
+
+# TDD 리팩토링 계획
+
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 231 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -11,13 +18,85 @@
 
 **다음 작업 후보**:
 
-1. **CodeQL 보안 스캔 개선**
-   - GitHub Security Code Scanning 페이지의 잠재적 이슈 해결
-   - 커스텀 쿼리 추가 검토 (필요 시)
-
-2. **Phase 228.2-228.5 재평가**
+1. **Phase 228.2-228.5 재평가**
    - Phase 228.1, 229 효과 측정
    - 사용자 피드백 수집 후 재개 여부 결정
+
+---
+
+## ✅ 최근 완료 작업
+
+### Phase 231: CodeQL 보안 알림 해결 (완료 ✅)
+
+**목표**: GitHub Code Scanning에서 발견된 open 상태 보안 이슈 해결
+
+**배경**:
+
+- `gh api` 명령으로 10개의 open 상태 CodeQL 알림 발견
+- 보안 취약점부터 코드 품질 개선까지 다양한 이슈 포함
+
+**해결 완료된 문제**:
+
+1. **playwright.config.ts - js/identity-replacement** (#194) ✅
+   - Line 11: `replace(/\//g, '/')` 제거 (무의미한 자기 자신 치환)
+   - 해결: 불필요한 replace 호출 제거
+
+2. **vite.config.ts - js/bad-code-sanitization** (#193, #192) ✅
+   - Line 151, 166: 코드 생성 시 주석으로 안전성 명시
+   - 해결: 빌드 타임 생성 코드임을 주석으로 명확화, JSON.stringify() 이스케이프 확인
+
+3. **type-safety-helpers.ts - js/prototype-pollution-utility** (#191) ✅
+   - Line 502: `setNestedValue()` 함수에 프로토타입 오염 방어 추가
+   - 해결: `__proto__`, `constructor`, `prototype` 키 검증 및 에러 발생
+
+4. **url-patterns.ts - js/regex/missing-regexp-anchor** (#195) ✅
+   - Line 78: TWEET_ID 정규식에 `^` 앵커 추가
+   - 해결: 임의 호스트가 URL 앞에 오는 것을 방지
+
+5. **URL 서브스트링 검증 개선 - js/incomplete-url-substring-sanitization** (#190, #189, #188, #187, #186, #185) ✅
+   - 소스 파일:
+     - `src/shared/services/token-extraction/twitter-token-extractor.ts:274`
+     - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers.ts:42`
+   - 테스트 파일:
+     - `test/unit/shared/services/media-extraction/dom-direct-extractor.test.ts:26`
+     - `test/integration/gallery-activation.test.ts:48`
+     - `test/__mocks__/twitter-dom.mock.ts:445, 327`
+   - 해결: `includes()` 기반 검증을 `URL` 객체 기반 `hostname` 검증으로 변경
+
+6. **generate-dep-graph.js - js/file-system-race** (#196) ✅
+   - Line 313: TOCTOU (Time-of-check to time-of-use) 취약점
+   - 해결: `existsSync()` 체크 제거, 직접 `writeFileSync()` 호출 (덮어쓰기)
+
+**변경된 파일**:
+
+1. `playwright.config.ts` - identity replacement 제거 ✅
+2. `vite.config.ts` - 안전성 주석 추가 ✅
+3. `src/shared/utils/type-safety-helpers.ts` - prototype pollution 방어 ✅
+4. `src/shared/utils/patterns/url-patterns.ts` - 정규식 앵커 추가 ✅
+5. `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers.ts` - URL 객체 검증 ✅
+6. `src/shared/services/token-extraction/twitter-token-extractor.ts` - URL 객체 검증 ✅
+7. `test/unit/shared/services/media-extraction/dom-direct-extractor.test.ts` - URL 객체 검증 ✅
+8. `test/integration/gallery-activation.test.ts` - URL 객체 검증 ✅
+9. `test/__mocks__/twitter-dom.mock.ts` - URL 객체 검증 (2개 위치) ✅
+10. `scripts/generate-dep-graph.js` - TOCTOU 수정 ✅
+
+**검증 결과**:
+
+- ✅ typecheck: 통과 (0 errors)
+- ✅ lint:fix: 통과
+- ✅ test:smoke: 9/9 PASS
+- ✅ build:dev: 성공 (764.86 KB JS, 114.83 KB CSS)
+- ✅ build:prod: 성공 (339.32 KB, gzip: 90.91 KB)
+- ✅ validate-build: 통과
+
+**보안 개선 효과**:
+
+- 프로토타입 오염 방어로 객체 안전성 향상
+- URL 검증 강화로 호스트 스푸핑 방지
+- TOCTOU 제거로 파일 시스템 race condition 해결
+- 정규식 앵커로 URL 매칭 엄격화
+
+**커밋**: (다음 커밋)
 
 ---
 

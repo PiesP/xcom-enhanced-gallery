@@ -475,13 +475,27 @@ export function getNestedValue<T = unknown>(
 }
 
 /**
+ * 프로토타입 오염 방지를 위한 위험한 키 목록
+ */
+const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+
+/**
  * 중첩 객체에 안전하게 값 설정
  * @param obj 설정할 객체
  * @param path 점 표기법 경로 (예: "theme.colors.primary")
  * @param value 설정할 값
+ * @throws {Error} 프로토타입 오염 시도 시 에러 발생
  */
 export function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split('.');
+
+  // 프로토타입 오염 방지: 위험한 키 체크
+  for (const key of keys) {
+    if (DANGEROUS_KEYS.includes(key)) {
+      throw new Error(`[XEG] Prototype pollution attempt detected: "${key}" in path "${path}"`);
+    }
+  }
+
   let current: Record<string, unknown> | unknown = obj;
 
   // 마지막 키를 제외한 경로 순회

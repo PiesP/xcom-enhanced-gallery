@@ -302,7 +302,9 @@ function main() {
 
     // Graceful degradation: write placeholder SVG if rendering failed
     try {
-      if (requestedFormats.includes('svg') && !existsSync(SVG_PATH)) {
+      if (requestedFormats.includes('svg')) {
+        // TOCTOU 방지: existsSync 체크 없이 직접 writeFileSync 시도
+        // 파일이 이미 존재하면 덮어쓰고, 없으면 생성
         const placeholder = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="120">
   <rect width="100%" height="100%" fill="#ffffff"/>

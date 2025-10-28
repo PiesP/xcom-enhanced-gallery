@@ -271,13 +271,24 @@ export class TwitterTokenExtractor {
 
       for (const entry of entries.slice(-50)) {
         // 최근 50개 요청만 확인
-        if (entry.name.includes('api.twitter.com') || entry.name.includes('x.com/i/api')) {
-          // 실제 요청의 Authorization 헤더는 보안상 접근 불가
-          // 대신 URL 패턴으로 토큰 추출 가능한 요청인지 확인
-          if (this.isTokenRelevantRequest(entry.name)) {
-            logger.debug(`토큰 관련 요청 감지: ${entry.name}`);
-            // 여기서는 실제 토큰 추출이 어려우므로 다른 방법으로 전환
+        // URL 호스트 검증으로 보안 강화
+        try {
+          const url = new URL(entry.name);
+          const isTwitterAPI =
+            url.hostname === 'api.twitter.com' ||
+            (url.hostname === 'x.com' && url.pathname.startsWith('/i/api'));
+
+          if (isTwitterAPI) {
+            // 실제 요청의 Authorization 헤더는 보안상 접근 불가
+            // 대신 URL 패턴으로 토큰 추출 가능한 요청인지 확인
+            if (this.isTokenRelevantRequest(entry.name)) {
+              logger.debug(`토큰 관련 요청 감지: ${entry.name}`);
+              // 여기서는 실제 토큰 추출이 어려우므로 다른 방법으로 전환
+            }
           }
+        } catch {
+          // URL 파싱 실패 시 스킵
+          continue;
         }
       }
 

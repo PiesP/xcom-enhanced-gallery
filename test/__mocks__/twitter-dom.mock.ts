@@ -324,10 +324,17 @@ export function simulateTweetImageClick(): void {
     const target = event.target as HTMLElement | null;
     if (target && 'tagName' in target && target.tagName === 'IMG') {
       const imgTarget = target as HTMLImageElement;
-      if (imgTarget.src && imgTarget.src.includes('pbs.twimg.com')) {
-        const galleryModal = createGalleryModal(imgTarget.src);
-        // Modal created but not returned in event handler
-        void galleryModal;
+      if (imgTarget.src) {
+        try {
+          const url = new URL(imgTarget.src);
+          if (url.hostname === 'pbs.twimg.com') {
+            const galleryModal = createGalleryModal(imgTarget.src);
+            // Modal created but not returned in event handler
+            void galleryModal;
+          }
+        } catch {
+          // URL 파싱 실패 시 무시
+        }
       }
     }
   });
@@ -442,13 +449,20 @@ export function setupImageClickHandlers() {
     // 트위터 이미지 클릭 처리
     if ('tagName' in target && target.tagName === 'IMG') {
       const imgTarget = target as HTMLImageElement;
-      if (imgTarget.src && imgTarget.src.includes('pbs.twimg.com')) {
-        // Ctrl+클릭 시 대량 다운로드 모드
-        if (event.ctrlKey) {
-          createBulkDownloadMode();
-        } else {
-          // 일반 클릭 시 갤러리 모달
-          createGalleryModal(imgTarget.src);
+      if (imgTarget.src) {
+        try {
+          const url = new URL(imgTarget.src);
+          if (url.hostname === 'pbs.twimg.com') {
+            // Ctrl+클릭 시 대량 다운로드 모드
+            if (event.ctrlKey) {
+              createBulkDownloadMode();
+            } else {
+              // 일반 클릭 시 갤러리 모달
+              createGalleryModal(imgTarget.src);
+            }
+          }
+        } catch {
+          // URL 파싱 실패 시 무시
         }
       }
     }

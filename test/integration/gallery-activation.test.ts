@@ -45,11 +45,18 @@ describe('갤러리 활성화 통합 테스트', () => {
     // 테스트용 click 이벤트 리스너
     document.addEventListener('click', (event: Event) => {
       const target = event.target as HTMLElement;
-      if (target instanceof HTMLImageElement && target.src.includes('pbs.twimg.com')) {
-        const modal = document.createElement('div');
-        modal.setAttribute('data-testid', 'photoModal');
-        modal.className = 'gallery-modal';
-        document.body.appendChild(modal);
+      if (target instanceof HTMLImageElement) {
+        try {
+          const url = new URL(target.src);
+          if (url.hostname === 'pbs.twimg.com') {
+            const modal = document.createElement('div');
+            modal.setAttribute('data-testid', 'photoModal');
+            modal.className = 'gallery-modal';
+            document.body.appendChild(modal);
+          }
+        } catch {
+          // URL 파싱 실패 시 무시
+        }
       }
     });
   });
