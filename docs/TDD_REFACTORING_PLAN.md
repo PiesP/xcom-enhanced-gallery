@@ -1,13 +1,28 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 229.1 완료 ✅, Phase 229.2
-계획 중 📝 | **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 229 완료 ✅ | **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 229: PC-only 정책 부작용 수정 - 텍스트 선택 복원 (진행 중 �)
+현재 진행 중인 작업이 없습니다.
+
+**다음 작업 후보**:
+
+1. **CodeQL 보안 스캔 개선**
+   - GitHub Security Code Scanning 페이지의 잠재적 이슈 해결
+   - 커스텀 쿼리 추가 검토 (필요 시)
+
+2. **Phase 228.2-228.5 재평가**
+   - Phase 228.1, 229 효과 측정
+   - 사용자 피드백 수집 후 재개 여부 결정
+
+---
+
+## ✅ 최근 완료 작업
+
+### Phase 229: PC-only 정책 부작용 수정 - 텍스트 선택 복원 (완료 ✅)
 
 **목표**: Pointer 이벤트 차단으로 인한 텍스트 선택 불가 문제 해결
 
@@ -38,9 +53,9 @@
 **대상 파일**:
 
 1. `src/shared/utils/events.ts` - `blockTouchAndPointerEvents()` 함수 ✅
-2. 관련 테스트 추가 (Phase 229.2)
+2. `test/unit/shared/utils/events-pointer-policy.test.ts` - 테스트 추가 ✅
 
-**해결 방안 (Option 4 + 갤러리 내부 차단)**:
+**해결 완료 (Option 4 + 갤러리 내부 차단)**:
 
 1. **전역 Pointer 이벤트**: 로깅만 (차단 안 함) ✅
    - 텍스트 선택, 링크 클릭 등 네이티브 동작 보존
@@ -53,7 +68,7 @@
 3. **Touch 이벤트**: 전역 strict 차단 유지 ✅
    - PC-only 정책의 핵심 유지
 
-**단계별 진행**:
+**완료된 단계**:
 
 1. **Phase 229.1: Pointer 이벤트 차단 로직 수정** (완료 ✅)
    - 구현:
@@ -62,36 +77,38 @@
      - Touch: strict 차단 유지
    - 변경: `blockTouchAndPointerEvents()` 함수 수정
    - 결과: 텍스트 선택 복원, 브라우저 네이티브 동작 보존
-   - 커밋: (다음 커밋)
 
-2. **Phase 229.2: 테스트 추가** (계획 📝)
-   - 텍스트 선택 가능 여부 검증
-   - 갤러리 내 Pointer 차단 여부 검증
-   - Touch strict 차단 유지 검증
+2. **Phase 229.2: 테스트 추가** (완료 ✅)
+   - 파일: `test/unit/shared/utils/events-pointer-policy.test.ts` 생성
+   - 테스트 커버리지:
+     - Phase 229 정책 문서화 및 계약 테스트
+     - `isGalleryInternalElement` 헬퍼 검증
+     - Touch 이벤트 전역 차단 검증
+     - Pointer 이벤트 조건부 차단 검증 (갤러리 내부 vs 외부)
+     - 텍스트 선택 보존 검증
+     - PC-only 정책 일관성 검증
+   - 결과: 20개 테스트 모두 통과 ✅
 
-**검증 결과 (Phase 229.1)**:
+**검증 결과**:
 
 - ✅ typecheck: 통과 (0 errors)
 - ✅ lint:fix: 통과
 - ✅ test:smoke: 9/9 PASS
+- ✅ test (pointer policy): 20/20 PASS
 - ✅ build:dev: 성공 (767.88 KB JS, 114.83 KB CSS)
-- ✅ build:prod: 성공
+- ✅ build:prod: 성공 (339.17 KB, gzip: 90.85 KB)
 
-**예상 결과**:
+**달성 결과**:
 
 - ✅ 트윗 텍스트 선택 가능
 - ✅ 링크 클릭 등 네이티브 브라우저 동작 보존
 - ✅ Touch 이벤트 차단으로 PC-only 정책 유지
 - ✅ 갤러리 내부는 Pointer 이벤트 차단 유지
+- ✅ 테스트 커버리지 추가로 회귀 방지
 
-**다음 단계**:
-
-1. Phase 229.2: 테스트 추가 및 검증
-2. TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 229 이관
+**커밋**: (다음 커밋)
 
 ---
-
-## ✅ 최근 완료 작업
 
 ### Phase 230: BaseService 초기화 실패 수정 (완료 ✅)
 
