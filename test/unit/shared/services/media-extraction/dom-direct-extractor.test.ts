@@ -23,7 +23,14 @@ vi.mock('../../../../../src/shared/logging/logger', () => ({
 
 vi.mock('../../../../../src/shared/utils/media/media-url.util', () => ({
   extractOriginalImageUrl: vi.fn((url: string) => url.split('?')[0]),
-  isValidMediaUrl: vi.fn((url: string) => url.includes('pbs.twimg.com')),
+  isValidMediaUrl: vi.fn((url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname === 'pbs.twimg.com';
+    } catch {
+      return false;
+    }
+  }),
 }));
 
 // Mock createSelectorRegistry

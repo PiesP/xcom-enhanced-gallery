@@ -74,8 +74,8 @@ export const URL_PATTERNS = Object.freeze({
   VIDEO_THUMB_ID:
     /\/(?:(?:ext_tw_video_thumb|video_thumb)\/\d+(?:\/pu)?\/img\/([\w-]+)(?:\.[a-z0-9]+)?|tweet_video_thumb\/([\w-]+)(?:\.[a-z0-9]+)?)(?=[?/]|$)/,
 
-  /** 트윗 ID 추출 (constants.ts 호환) */
-  TWEET_ID: /https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
+  /** 트윗 ID 추출 (constants.ts 호환) - 정규식 앵커로 보안 강화 */
+  TWEET_ID: /^https?:\/\/(?:twitter\.com|x\.com)\/([^/]+)\/status\/(\d+)/,
 } as const) as {
   MEDIA: RegExp;
   GALLERY_MEDIA: RegExp;

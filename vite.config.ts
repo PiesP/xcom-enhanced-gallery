@@ -145,6 +145,9 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         return;
       }
 
+      // CSS 인젝션 코드 생성
+      // 참고: cssConcat은 빌드 시점에 Vite가 생성한 CSS 문자열이며,
+      // 외부 입력이 아니므로 인젝션 위험이 없음. JSON.stringify()로 안전하게 이스케이프됨.
       const styleInjector = cssConcat.trim().length
         ? // CSS 모듈/전역 스타일을 하나의 <style id="xeg-styles">로 인라인 삽입.
           // userscript가 실행될 때 즉시 DOM에 추가되며 기존 id가 있으면 덮어씌움.
@@ -162,6 +165,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
 
       // 전체 userscript 래핑: 메타 블록 + (선택적)라이선스 + 스타일 인젝터 + 코드
       // 프로덕션 빌드는 개행 최소화, 개발 빌드는 가독성을 위해 개행 유지
+      // 참고: 모든 코드는 빌드 타임에 생성되며 런타임 입력을 받지 않음.
       const wrapped = flags.isProd
         ? `${userscriptHeader(flags)}${licenseNotices}(function(){'use strict';${styleInjector}${cleanedCode}})();`
         : `${userscriptHeader(flags)}${licenseNotices}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;

@@ -39,5 +39,12 @@ export function isVideoMedia(media: MediaInfo): boolean {
     }
   }
 
-  return urlLowerCase.includes('video.twimg.com') || urlLowerCase.includes('/video/');
+  // URL 호스트 검증으로 보안 강화
+  try {
+    const url = new URL(media.url);
+    return url.hostname === 'video.twimg.com' || urlLowerCase.includes('/video/');
+  } catch {
+    // URL 파싱 실패 시 폴백 (상대 경로 등)
+    return urlLowerCase.includes('video.twimg.com') || urlLowerCase.includes('/video/');
+  }
 }

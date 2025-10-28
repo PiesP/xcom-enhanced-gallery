@@ -8,7 +8,7 @@ const testDir = path.resolve(__dirname, 'playwright');
 
 // 환경 변수로 테스트 디렉터리 선택 가능
 const testSubDir = process.env.PLAYWRIGHT_TEST_DIR || 'smoke';
-const testMatch = new RegExp(`${testSubDir.replace(/\//g, '/')}/.*\\.spec\\.ts$`);
+const testMatch = new RegExp(`${testSubDir}/.*\\.spec\\.ts$`);
 
 export default defineConfig({
   testDir,
