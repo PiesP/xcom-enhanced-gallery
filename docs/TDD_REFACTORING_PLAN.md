@@ -1,12 +1,5 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 231 진행 중 🚧 |
-**[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
-
----
-
-# TDD 리팩토링 계획
-
 **마지막 업데이트**: 2025-10-29 | **상태**: Phase 231 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
