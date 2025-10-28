@@ -33,7 +33,8 @@
 
 5. **URL 서브스트링 검증 개선** (#190, #189, #188, #187, #186, #185) ✅
    - `includes()` 기반 검증 → `URL` 객체 `hostname` 검증으로 변경
-   - 영향 파일: VerticalImageItem.helpers.ts, twitter-token-extractor.ts, 테스트 파일 4개
+   - 영향 파일: VerticalImageItem.helpers.ts, twitter-token-extractor.ts, 테스트
+     파일 4개
 
 6. **generate-dep-graph.js - js/file-system-race** (#196) ✅
    - TOCTOU 취약점 수정: `existsSync()` 체크 제거

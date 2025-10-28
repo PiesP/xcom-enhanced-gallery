@@ -43,7 +43,8 @@
 
 2. **vite.config.ts - js/bad-code-sanitization** (#193, #192) ✅
    - Line 151, 166: 코드 생성 시 주석으로 안전성 명시
-   - 해결: 빌드 타임 생성 코드임을 주석으로 명확화, JSON.stringify() 이스케이프 확인
+   - 해결: 빌드 타임 생성 코드임을 주석으로 명확화, JSON.stringify() 이스케이프
+     확인
 
 3. **type-safety-helpers.ts - js/prototype-pollution-utility** (#191) ✅
    - Line 502: `setNestedValue()` 함수에 프로토타입 오염 방어 추가
@@ -53,7 +54,8 @@
    - Line 78: TWEET_ID 정규식에 `^` 앵커 추가
    - 해결: 임의 호스트가 URL 앞에 오는 것을 방지
 
-5. **URL 서브스트링 검증 개선 - js/incomplete-url-substring-sanitization** (#190, #189, #188, #187, #186, #185) ✅
+5. **URL 서브스트링 검증 개선 - js/incomplete-url-substring-sanitization**
+   (#190, #189, #188, #187, #186, #185) ✅
    - 소스 파일:
      - `src/shared/services/token-extraction/twitter-token-extractor.ts:274`
      - `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers.ts:42`
@@ -73,9 +75,12 @@
 2. `vite.config.ts` - 안전성 주석 추가 ✅
 3. `src/shared/utils/type-safety-helpers.ts` - prototype pollution 방어 ✅
 4. `src/shared/utils/patterns/url-patterns.ts` - 정규식 앵커 추가 ✅
-5. `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers.ts` - URL 객체 검증 ✅
-6. `src/shared/services/token-extraction/twitter-token-extractor.ts` - URL 객체 검증 ✅
-7. `test/unit/shared/services/media-extraction/dom-direct-extractor.test.ts` - URL 객체 검증 ✅
+5. `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.helpers.ts` -
+   URL 객체 검증 ✅
+6. `src/shared/services/token-extraction/twitter-token-extractor.ts` - URL 객체
+   검증 ✅
+7. `test/unit/shared/services/media-extraction/dom-direct-extractor.test.ts` -
+   URL 객체 검증 ✅
 8. `test/integration/gallery-activation.test.ts` - URL 객체 검증 ✅
 9. `test/__mocks__/twitter-dom.mock.ts` - URL 객체 검증 (2개 위치) ✅
 10. `scripts/generate-dep-graph.js` - TOCTOU 수정 ✅
