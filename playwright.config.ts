@@ -17,7 +17,8 @@ export default defineConfig({
   expect: {
     timeout: 5_000,
   },
-  fullyParallel: false,
+  fullyParallel: true, // 병렬 실행 활성화 (12 코어 활용)
+  workers: process.env.CI ? 4 : 10, // 로컬: 10 워커, CI: 4 워커
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: [['list']],

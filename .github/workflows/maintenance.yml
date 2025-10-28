@@ -1,5 +1,13 @@
 name: Monthly Maintenance Check
 
+# Responsibility: Proactive project health monitoring (monthly schedule)
+# - Maintenance checks: backups, large docs, dependencies
+# - Security audit: npm audit
+# - Outdated dependencies: npm outdated
+# - Test coverage validation
+# - Build size monitoring
+# - Automatic GitHub Issue creation with checklist
+
 on:
   schedule:
     # 매월 1일 09:00 UTC (18:00 KST)
@@ -29,7 +37,7 @@ jobs:
           cache: "npm"
 
       - name: 의존성 설치
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 유지보수 점검 실행
         id: maintenance

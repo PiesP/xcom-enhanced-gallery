@@ -300,6 +300,12 @@ export default defineConfig(({ mode }) => {
     esbuild: {
       jsx: 'preserve',
       jsxImportSource: 'solid-js',
+      // Phase 230: esbuild 병렬 처리 최적화
+      tsconfigRaw: {
+        compilerOptions: {
+          useDefineForClassFields: false, // Solid.js 호환성
+        },
+      },
     },
     resolve: {
       extensions: ['.mjs', '.js', '.ts', '.tsx', '.jsx', '.json'],
@@ -327,6 +333,8 @@ export default defineConfig(({ mode }) => {
       sourcemap: flags.sourcemap,
       minify: flags.isProd ? 'terser' : false,
       reportCompressedSize: flags.isProd,
+      // Phase 230: 머신 최적화 - 병렬 처리 설정
+      chunkSizeWarningLimit: 1000, // 번들 크기 경고 임계값 증가
       rollupOptions: {
         input: 'src/main.ts',
         output: {
@@ -338,6 +346,8 @@ export default defineConfig(({ mode }) => {
           // 실제 최종 파일명/포맷은 userscriptPlugin에서 결정
         },
         treeshake: flags.isProd,
+        // Phase 230: 병렬 처리 최적화
+        maxParallelFileOps: 10, // 12 코어 활용
       },
       ...(flags.isProd && {
         terserOptions: {
@@ -352,6 +362,8 @@ export default defineConfig(({ mode }) => {
           },
           format: { comments: false },
           mangle: { toplevel: true },
+          // Phase 230: 병렬 압축 활성화
+          maxWorkers: 8, // 12 코어 중 8개 활용
         },
       }),
     },

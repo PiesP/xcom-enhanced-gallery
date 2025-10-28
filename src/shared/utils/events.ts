@@ -909,13 +909,17 @@ export function getGalleryEventSnapshot() {
  * 터치 이벤트: touchstart, touchmove, touchend, touchcancel
  * 포인터 이벤트: pointerdown, pointermove, pointerup, pointercancel, pointerenter, pointerleave
  *
- * Phase 199: form 요소는 브라우저 네이티브 동작을 위해 예외 처리
+ * Phase 229: Pointer 이벤트 정책 변경
+ * - Touch 이벤트: 전역 strict 차단 (PC-only 정책 핵심)
+ * - Pointer 이벤트:
+ *   - 전역: 로깅만 (텍스트 선택, 링크 클릭 등 네이티브 동작 보존)
+ *   - 갤러리 내부: 차단 (갤러리 전용 Mouse 이벤트 사용)
  */
 function blockTouchAndPointerEvents(element: Document | EventTarget): void {
   // 터치 이벤트 명시적 차단
   const touchEvents = ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
 
-  // 포인터 이벤트 명시적 차단
+  // 포인터 이벤트 로깅 (차단은 갤러리 내부만)
   const pointerEvents = [
     'pointerdown',
     'pointermove',
@@ -924,9 +928,6 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
     'pointerenter',
     'pointerleave',
   ];
-
-  // Phase 199: 브라우저 네이티브 동작이 필요한 form 요소
-  const formElementTags = ['SELECT', 'INPUT', 'TEXTAREA', 'BUTTON', 'OPTION'];
 
   // Touch 이벤트 차단 (모든 요소에서 strict)
   for (const eventType of touchEvents) {
@@ -974,27 +975,26 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
     }
   }
 
-  // Pointer 이벤트 차단 (form 요소 예외)
+  // Phase 229: Pointer 이벤트 - 갤러리 내부만 차단, 전역은 로깅만
   for (const eventType of pointerEvents) {
     try {
       const blocker = (evt: Event) => {
-        // Phase 199: form 요소는 pointer 이벤트만 허용 (네이티브 동작 필요)
-        const targetElement = evt.target as Element | null;
-        if (targetElement && formElementTags.includes(targetElement.tagName)) {
-          logger.debug(`[PC-only policy] Allowed ${eventType} on form element`, {
+        const targetElement = evt.target as HTMLElement | null;
+
+        // 갤러리 내부 요소인 경우에만 차단
+        if (targetElement && isGalleryInternalElement(targetElement)) {
+          logger.debug(`[PC-only policy] Blocked ${eventType} in gallery`, {
             target: targetElement.tagName,
           });
-          return;
+          evt.preventDefault?.();
+          evt.stopPropagation?.();
+          evt.stopImmediatePropagation?.();
+        } else {
+          // 갤러리 외부는 로깅만 (네이티브 동작 보존: 텍스트 선택, 링크 클릭 등)
+          logger.debug(`[PC-only policy] Logged ${eventType} (allowed)`, {
+            target: targetElement?.tagName,
+          });
         }
-
-        // 일반 요소는 pointer 이벤트 차단
-        logger.debug(`[PC-only policy] Blocked ${eventType} event`, {
-          target: (evt.target as Element)?.tagName,
-          currentTarget: (evt.currentTarget as Element)?.tagName,
-        });
-        evt.preventDefault?.();
-        evt.stopPropagation?.();
-        evt.stopImmediatePropagation?.();
       };
 
       // 대부분의 환경에서 document/element는 on<Event> 속성을 지원합니다.

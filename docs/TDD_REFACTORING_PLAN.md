@@ -1,11 +1,97 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-28 | **상태**: Phase 230 완료 ✅, Phase 229 계획 중
-📝 | **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 229.1 완료 ✅, Phase 229.2
+계획 중 📝 | **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
+
+### Phase 229: PC-only 정책 부작용 수정 - 텍스트 선택 복원 (진행 중 �)
+
+**목표**: Pointer 이벤트 차단으로 인한 텍스트 선택 불가 문제 해결
+
+**배경**:
+
+- Phase 228.1 (이벤트 캡처 최적화) 완료 후 테스트 중 발견
+- 로그 분석 (x.com-1761596133649.log): 트윗 텍스트 선택 시도 시 Pointer 이벤트
+  모두 차단됨
+- Phase 199 (PC-only 정책): Touch/Pointer 이벤트 전역 차단으로 의도하지 않은
+  부작용 발생
+
+**발견된 문제**:
+
+1. **텍스트 선택 불가**:
+   - 트윗 텍스트 (`SPAN` 요소) 드래그 시 `pointerdown/pointermove/pointerup`
+     모두 차단
+   - `preventDefault()`, `stopPropagation()`, `stopImmediatePropagation()` 호출
+   - 브라우저 네이티브 텍스트 선택이 작동하지 않음
+
+2. **과도한 Pointer 이벤트 차단**:
+   - 현재: form 요소 제외하고 **모든 요소**에서 Pointer 이벤트 차단
+   - 문제: 텍스트 선택, 링크 클릭 등 네이티브 브라우저 동작까지 영향
+
+3. **PC-only 정책의 실제 필요성**:
+   - Touch 이벤트만으로도 터치 장치 구분 충분
+   - Pointer 이벤트는 마우스/터치 모두에서 발생하므로 차단이 불필요
+
+**대상 파일**:
+
+1. `src/shared/utils/events.ts` - `blockTouchAndPointerEvents()` 함수 ✅
+2. 관련 테스트 추가 (Phase 229.2)
+
+**해결 방안 (Option 4 + 갤러리 내부 차단)**:
+
+1. **전역 Pointer 이벤트**: 로깅만 (차단 안 함) ✅
+   - 텍스트 선택, 링크 클릭 등 네이티브 동작 보존
+   - Touch 이벤트만으로 터치 장치 충분히 구분 가능
+
+2. **갤러리 내부 Pointer 이벤트**: 차단 ✅
+   - 갤러리 컨테이너 범위 내에서만 pointer 차단
+   - `isGalleryInternalElement()` 활용
+
+3. **Touch 이벤트**: 전역 strict 차단 유지 ✅
+   - PC-only 정책의 핵심 유지
+
+**단계별 진행**:
+
+1. **Phase 229.1: Pointer 이벤트 차단 로직 수정** (완료 ✅)
+   - 구현:
+     - 전역 Pointer 이벤트: 로깅만 (preventDefault/stopPropagation 제거)
+     - 갤러리 내부: Pointer 차단 로직 유지 (`isGalleryInternalElement()` 사용)
+     - Touch: strict 차단 유지
+   - 변경: `blockTouchAndPointerEvents()` 함수 수정
+   - 결과: 텍스트 선택 복원, 브라우저 네이티브 동작 보존
+   - 커밋: (다음 커밋)
+
+2. **Phase 229.2: 테스트 추가** (계획 📝)
+   - 텍스트 선택 가능 여부 검증
+   - 갤러리 내 Pointer 차단 여부 검증
+   - Touch strict 차단 유지 검증
+
+**검증 결과 (Phase 229.1)**:
+
+- ✅ typecheck: 통과 (0 errors)
+- ✅ lint:fix: 통과
+- ✅ test:smoke: 9/9 PASS
+- ✅ build:dev: 성공 (767.88 KB JS, 114.83 KB CSS)
+- ✅ build:prod: 성공
+
+**예상 결과**:
+
+- ✅ 트윗 텍스트 선택 가능
+- ✅ 링크 클릭 등 네이티브 브라우저 동작 보존
+- ✅ Touch 이벤트 차단으로 PC-only 정책 유지
+- ✅ 갤러리 내부는 Pointer 이벤트 차단 유지
+
+**다음 단계**:
+
+1. Phase 229.2: 테스트 추가 및 검증
+2. TDD_REFACTORING_PLAN_COMPLETED.md로 Phase 229 이관
+
+---
+
+## ✅ 최근 완료 작업
 
 ### Phase 230: BaseService 초기화 실패 수정 (완료 ✅)
 
@@ -37,84 +123,6 @@
 - ✅ typecheck 통과
 - ✅ lint 통과
 - ✅ 빌드 성공 (dev + prod)
-
-**관련 커밋**: (다음 커밋)
-
----
-
-### Phase 229: PC-only 정책 부작용 수정 - 텍스트 선택 복원 (계획 📝)
-
-**목표**: Pointer 이벤트 차단으로 인한 텍스트 선택 불가 문제 해결
-
-**배경**:
-
-- Phase 228.1 (이벤트 캡처 최적화) 완료 후 테스트 중 발견
-- 로그 분석 (x.com-1761596133649.log): 트윗 텍스트 선택 시도 시 Pointer 이벤트
-  모두 차단됨
-- Phase 199 (PC-only 정책): Touch/Pointer 이벤트 전역 차단으로 의도하지 않은
-  부작용 발생
-
-**발견된 문제**:
-
-1. **텍스트 선택 불가**:
-   - 트윗 텍스트 (`SPAN` 요소) 드래그 시 `pointerdown/pointermove/pointerup`
-     모두 차단
-   - `preventDefault()`, `stopPropagation()`, `stopImmediatePropagation()` 호출
-   - 브라우저 네이티브 텍스트 선택이 작동하지 않음
-
-2. **과도한 Pointer 이벤트 차단**:
-   - 현재: form 요소 제외하고 **모든 요소**에서 Pointer 이벤트 차단
-   - 문제: 텍스트 선택, 링크 클릭 등 네이티브 브라우저 동작까지 영향
-
-3. **PC-only 정책의 실제 필요성**:
-   - Touch 이벤트만으로도 터치 장치 구분 충분
-   - Pointer 이벤트는 마우스/터치 모두에서 발생하므로 차단이 불필요
-
-**대상 파일**:
-
-1. `src/shared/utils/events.ts` - `blockTouchAndPointerEvents()` 함수
-2. 관련 테스트 추가
-
-**해결 방안 (Option 4 + 갤러리 내부 차단)**:
-
-1. **전역 Pointer 이벤트**: 로깅만 (차단 안 함)
-   - 텍스트 선택, 링크 클릭 등 네이티브 동작 보존
-   - Touch 이벤트만으로 터치 장치 충분히 구분 가능
-
-2. **갤러리 내부 Pointer 이벤트**: 차단
-   - 갤러리 컨테이너 범위 내에서만 pointer 차단
-   - `isGalleryInternalElement()` 활용
-
-3. **Touch 이벤트**: 전역 strict 차단 유지
-   - PC-only 정책의 핵심 유지
-
-**단계별 계획**:
-
-1. **Phase 229.1: Pointer 이벤트 차단 로직 수정** (계획)
-   - 구현:
-     - 전역 Pointer 이벤트: 로깅만 (preventDefault/stopPropagation 제거)
-     - 갤러리 내부: Pointer 차단 로직 유지
-     - Touch: strict 차단 유지
-   - 변경: `blockTouchAndPointerEvents()` 함수 수정
-   - 예상 영향: 텍스트 선택 복원, 브라우저 네이티브 동작 보존
-
-2. **Phase 229.2: 테스트 추가** (계획)
-   - 텍스트 선택 가능 여부 검증
-   - 갤러리 내 Pointer 차단 여부 검증
-   - Touch strict 차단 유지 검증
-
-**예상 결과**:
-
-- ✅ 트윗 텍스트 선택 가능
-- ✅ 링크 클릭 등 네이티브 브라우저 동작 보존
-- ✅ Touch 이벤트 차단으로 PC-only 정책 유지
-- ✅ 갤러리 내부는 Pointer 이벤트 차단 유지
-
-**다음 단계**:
-
-1. 로그 파일 정리 (x.com-1761596133649.log 삭제)
-2. Phase 229.1 구현
-3. 테스트 추가 및 검증
 
 ---
 

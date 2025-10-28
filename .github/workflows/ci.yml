@@ -1,5 +1,12 @@
 name: 🔍 CI Pipeline
 
+# Responsibility: Complete validation for all code changes
+# - Quality checks: typecheck, lint, format, dependencies, security (CodeQL)
+# - Testing: unit, browser, E2E, accessibility
+# - Build validation: dev + prod builds
+# Other workflows depend on CI success:
+# - release.yml assumes all checks passed and only runs smoke + prod build
+
 on:
   push:
     branches: [master]
@@ -39,25 +46,34 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔐 Setup GitHub CLI with CodeQL extension
-        run: |
-          # GitHub CLI는 ubuntu-latest에 기본 설치되어 있음
-          gh --version
+      - name: 🔐 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: +security-extended
 
-          # CodeQL 확장 설치 (실패해도 계속 진행)
-          gh extension install github/gh-codeql || true
+      - name: 📝 Type check
+        run: npx tsgo --project ./tsconfig.json --noEmit
 
-          # 설치 확인
-          gh codeql version || echo "CodeQL extension not available, will use codeql CLI"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🔍 Lint JavaScript
+        run: npx eslint ./src --report-unused-disable-directives --max-warnings 0
 
-      - name: ✅ Run quality checks
-        run: npm run validate:ci
-        # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
-        env:
-          CI: "true"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🎨 Lint CSS
+        run: npx stylelint "src/**/*.css"
+
+      - name: 📄 Lint Markdown
+        run: npx markdownlint-cli2 "**/*.md" "#node_modules" "#coverage"
+
+      - name: ✨ Format check
+        run: npx prettier --check .
+
+      - name: 🔗 Dependency check
+        run: npx depcruise src --validate
+
+      - name: 🔒 Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript"
 
   # tests:
   #   name: 🧪 Fast Unit Tests (Safe config)
@@ -129,9 +145,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: 🧪 Run browser tests (Shard ${{ matrix.shard }}/2)
-        run: npm run test:browser -- --shard=${{ matrix.shard }}/2
-        env:
-          NODE_OPTIONS: --max-old-space-size=2048
+        run: npx vitest --project browser run --reporter=verbose --shard=${{ matrix.shard }}/2
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4
@@ -177,9 +191,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: 🧪 Run E2E smoke tests
-        run: npm run e2e:smoke
-        env:
-          NODE_OPTIONS: --max-old-space-size=2048
+        run: npx playwright test playwright/smoke --reporter=list
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4
@@ -225,9 +237,9 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: ♿ Run accessibility tests
-        run: npm run e2e:a11y
+        run: npx playwright test playwright/accessibility --reporter=list
         env:
-          NODE_OPTIONS: --max-old-space-size=2048
+          PLAYWRIGHT_TEST_DIR: accessibility
 
       - name: 📸 Upload test screenshots on failure
         uses: actions/upload-artifact@v4

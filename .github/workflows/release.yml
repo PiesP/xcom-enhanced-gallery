@@ -1,5 +1,12 @@
 name: 🚀 Release
 
+# Responsibility: Release artifact creation only
+# - Version detection: package.json changes or manual trigger
+# - Minimal validation: smoke tests only (full checks in ci.yml)
+# - Production build: userscript + checksums + metadata
+# - GitHub Release: automated creation with assets
+# Assumes ci.yml has validated all quality checks
+
 on:
   push:
     branches: [master]
@@ -67,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-changes
     if: needs.check-changes.outputs.should_release == 'true'
-    timeout-minutes: 15
+    timeout-minutes: 8
 
     steps:
       - name: 📥 Checkout code
@@ -84,20 +91,11 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔧 Setup GitHub CLI with CodeQL extension
-        run: |
-          gh extension install github/gh-codeql || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Note: Full quality checks (typecheck, lint, CodeQL, etc.) are handled by ci.yml
+      # Release workflow focuses only on smoke tests and production build
 
-      - name: ✅ Run quality checks
-        run: npm run validate:ci
-        # Runs: typecheck + lint + lint:css + lint:md + format:check + deps:check + codeql:check
-
-      - name: 🧪 Run tests
-        run: npm run test:smoke
-        env:
-          NODE_OPTIONS: --max-old-space-size=2048
+      - name: 🧪 Run smoke tests
+        run: npx vitest --project smoke run --reporter=verbose
 
       - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'

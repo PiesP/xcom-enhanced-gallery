@@ -1,5 +1,10 @@
 name: 🔒 Security Audit
 
+# Responsibility: Dedicated security monitoring (weekly schedule + on-demand)
+# - npm audit: dependency vulnerabilities
+# - license-checker: license compliance
+# Separate from ci.yml to avoid blocking PRs with security alerts
+
 on:
   push:
     branches: [master]

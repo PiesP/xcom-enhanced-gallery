@@ -41,13 +41,14 @@ const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 // Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
 // Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
 // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
+// Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용
 const sharedPoolOptions = {
   threads: {
     singleThread: forceSingleThread,
-    // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
-    memoryLimit: forceSingleThread ? 1024 : 2048,
-    minThreads: 1,
-    maxThreads: forceSingleThread ? 1 : 2, // 병렬도 감소 (메모리 절약)
+    // CI: 1GB, 로컬: 3GB per worker (31GB RAM 활용)
+    memoryLimit: forceSingleThread ? 1024 : 3072,
+    minThreads: 2,
+    maxThreads: forceSingleThread ? 1 : 8, // 12 코어 중 8개 활용 (OS용 4코어 예약)
   },
 };
 // Helpers
@@ -150,6 +151,7 @@ export default defineConfig({
   define: {
     'import.meta.env.SSR': false,
     'import.meta.env.DEV': true,
+    'import.meta.env.TEST_ENV': true, // Vitest 환경 감지용
     __BROWSER__: true,
     __DEV__: true,
   },
