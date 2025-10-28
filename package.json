@@ -73,7 +73,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "solid-js": "1.9.9"
+    "solid-js": "1.9.10"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
@@ -89,13 +89,13 @@
     "@types/tampermonkey": "^5.0.5",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
-    "@typescript/native-preview": "^7.0.0-dev.20251026.1",
-    "@vitest/browser": "^4.0.3",
-    "@vitest/browser-playwright": "^4.0.3",
-    "@vitest/coverage-v8": "^4.0.3",
-    "@vitest/ui": "^4.0.3",
+    "@typescript/native-preview": "^7.0.0-dev.20251027.1",
+    "@vitest/browser": "^4.0.4",
+    "@vitest/browser-playwright": "^4.0.4",
+    "@vitest/coverage-v8": "^4.0.4",
+    "@vitest/ui": "^4.0.4",
     "autoprefixer": "^10.4.21",
-    "babel-preset-solid": "^1.9.9",
+    "babel-preset-solid": "^1.9.10",
     "cross-env": "^10.1.0",
     "cssnano": "^7.1.1",
     "dependency-cruiser": "^17.1.0",
@@ -124,7 +124,7 @@
     "vite": "^7.1.12",
     "vite-plugin-solid": "^2.11.10",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^4.0.3"
+    "vitest": "^4.0.4"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -148,6 +148,6 @@
     ]
   },
   "volta": {
-    "node": "22.20.0"
+    "node": "22.21.0"
   }
 }
