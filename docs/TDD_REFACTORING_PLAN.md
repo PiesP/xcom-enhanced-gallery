@@ -24,8 +24,8 @@
 **3개 open 알림 해결**: #197 (URL 검증), #193/#192 (코드 생성 안전성), #191
 (프로토타입 오염)
 
-**상세 내용**: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-참고
+**상세 내용**:
+[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참고
 
 ---
 
