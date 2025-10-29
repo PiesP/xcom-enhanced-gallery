@@ -401,11 +401,16 @@ function shouldIgnorePath(uri, ignorePatterns) {
   const normalizedUri = uri.startsWith('/') ? uri.substring(1) : uri;
 
   return ignorePatterns.some(pattern => {
-    // Simple glob matching (supports * wildcards and exact matches)
+    // Exact match or glob pattern matching
+    if (pattern === normalizedUri) {
+      return true;
+    }
+
+    // Simple glob matching (supports * wildcards)
     const regexPattern = pattern
-      .replace(/\./g, '\\.')
-      .replace(/\*/g, '.*')
-      .replace(/\?/g, '.');
+      .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
+      .replace(/\*/g, '.*')                  // * matches any characters
+      .replace(/\?/g, '.');                  // ? matches single character
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(normalizedUri);
   });
