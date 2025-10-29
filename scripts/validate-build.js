@@ -2,9 +2,24 @@
 /* eslint-env node */
 
 /**
- * Build Validation Script
+ * Build Validation Script (CI + Local)
  *
- * Validates UserScript build integrity before deployment:
+ * Validates UserScript build integrity before deployment.
+ *
+ * **Usage Context**:
+ * - **CI/CD**: Used in GitHub Actions (ci.yml, release.yml) for automated build validation
+ * - **Local**: Can be run manually via `node scripts/validate-build.js`
+ *
+ * **Why CI needs this**:
+ * - UserScript-specific validation (not covered by standard build tools):
+ *   * Tampermonkey/Violentmonkey metadata headers
+ *   * @grant permissions verification
+ *   * PC-only policy enforcement (Touch/Pointer event detection)
+ *   * Source map integrity for debugging
+ *   * Legacy API leak detection
+ * - Cannot be replaced by standard linters/validators
+ *
+ * **Validations**:
  * - UserScript metadata (headers, required fields)
  * - Encoding and syntax compliance
  * - PC-only policy enforcement (no Touch/Pointer events)

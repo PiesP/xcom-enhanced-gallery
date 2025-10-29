@@ -1,25 +1,40 @@
 #!/usr/bin/env node
 
 /**
- * Project Maintenance Checker
+ * Project Maintenance Checker (Local Environment Only)
  *
- * Performs regular health checks on the project:
- * - Identifies backup/temp directories that should be cleaned
- * - Checks document sizes for potential simplification
- * - Scans for security vulnerabilities and unused dependencies
- * - Validates build size against budget
- * - Verifies Git state (staged changes, untracked files)
- * - Reports on infrastructure health
+ * @description
+ * Local-only script for comprehensive project health checks.
+ * Performs regular maintenance audits and generates actionable reports.
+ *
+ * **Usage Context:**
+ * - Local Development: End-of-work protocol checks
+ * - Scheduled: Monthly via GitHub Actions (maintenance.yml)
+ * - Manual: npm run maintenance:check
+ *
+ * **Why not in CI:**
+ * - Focus on local cleanup recommendations (backup files, temp directories)
+ * - CI has separate security.yml workflow for security/license checks
+ * - CI build validation uses validate-build.js instead
+ * - This script generates GitHub issues for scheduled runs (maintenance.yml)
+ *
+ * **Checks Performed:**
+ * - Backup/temp directory identification
+ * - Document size analysis
+ * - Build size budget validation
+ * - Git state verification
+ * - Infrastructure health reporting
  *
  * @usage
  *   node maintenance-check.js
+ *   npm run maintenance:check
  *
  * @output
  *   Structured report with ✅ (OK), ⚠️ (needs action), 💡 (recommendations)
- *   Generated as part of 'npm run maintenance:check'
+ *   Exit code: 0 (pass) or 1 (action required)
  *
- * @context
- *   Part of project end-of-work protocol (also run: validate & build)
+ * @see
+ *   .github/workflows/maintenance.yml - Monthly scheduled runs
  */
 
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';

@@ -1,13 +1,25 @@
 #!/usr/bin/env node
 
 /**
- * CodeQL Security Analysis Runner
+ * CodeQL Security Analysis Runner (Local Environment Only)
  *
- * Executes standard CodeQL security-extended queries (same as CI).
- * In CI environments, skips local checks (GitHub Actions handles CodeQL separately).
+ * @description
+ * Local-only script for running CodeQL security analysis with custom filtering.
+ * Executes security-extended queries and applies project-specific exclusions.
+ *
+ * **Usage Context:**
+ * - Local Development: Quick security feedback during development
+ * - CI Environment: Uses github/codeql-action@v3 (GitHub official action)
+ * - This script auto-detects CI and skips local checks
+ *
+ * **Why not in CI:**
+ * - CI uses GitHub's official CodeQL action (more integrated, native SARIF upload)
+ * - This script is for local developer convenience only
+ * - Supports custom YAML config filtering (same rules as CI)
  *
  * @usage
  *   node check-codeql.js [options]
+ *   npm run codeql:check [-- options]
  *
  * @options
  *   --json          Output results in JSON format

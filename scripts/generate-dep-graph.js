@@ -1,12 +1,33 @@
 #!/usr/bin/env node
 
 /**
- * Dependency Graph Generator
+ * Dependency Graph Generator (Local Environment Only)
  *
- * Generates dependency graphs in multiple formats (JSON/DOT/SVG) with intelligent caching.
+ * @description
+ * Local-only script for generating visual dependency graphs.
+ * Creates JSON/DOT/SVG outputs with intelligent caching for developer reference.
+ *
+ * **Usage Context:**
+ * - Local Development: Visualize module dependencies during refactoring
+ * - Documentation: Generate up-to-date architecture diagrams
+ * - Analysis: Review dependency violations before commit
+ *
+ * **Why not in CI:**
+ * - CI uses lightweight `npx depcruise src --validate` for validation only
+ * - Graph generation (SVG) requires Graphviz (extra dependency)
+ * - Visual outputs are for developer reference, not CI artifacts
+ * - CI focuses on pass/fail validation, not visualization
+ *
+ * **Features:**
+ * - Multiple output formats (JSON/DOT/SVG)
+ * - Intelligent caching (skips unchanged src/)
+ * - Interactive viewer (docs/dependency-graph-viewer.html)
+ * - Dependency violation detection
  *
  * @usage
  *   node generate-dep-graph.js [--format=json|dot|svg|all] [--force] [--verbose]
+ *   npm run deps:json     # Fast validation (JSON only)
+ *   npm run deps:graph    # Full visualization (JSON + DOT + SVG)
  *
  * @options
  *   --format=<type>  Output format: json (fast), dot (medium), svg (complete)
@@ -24,6 +45,10 @@
  *   - Automatically skips regeneration if src/ directory unchanged
  *   - Force via CODEQL_FORCE_REBUILD env var or --force flag
  *   - Cache metadata stored in docs/.dep-graph-cache.json
+ *
+ * @see
+ *   docs/DEPENDENCY-GOVERNANCE.md - Dependency rules and policies
+ *   docs/dependency-graph-viewer.html - Interactive browser viewer
  */
 
 import { spawnSync } from 'node:child_process';
