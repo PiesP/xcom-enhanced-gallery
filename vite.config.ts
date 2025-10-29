@@ -108,10 +108,10 @@ function userscriptHeader(flags: BuildFlags): string {
 
 /**
  * 빌드 타임에 CSS를 DOM에 주입하는 안전한 코드 생성
- * 
+ *
  * @param css - 빌드 시점에 Vite가 생성한 CSS 문자열 (신뢰할 수 있는 입력)
  * @returns 스타일 인젝션 JavaScript 코드
- * 
+ *
  * @security 이 함수는 빌드 타임에만 실행되며, 런타임 사용자 입력을 받지 않습니다.
  *           CSS는 JSON.stringify()로 이스케이프되어 안전하게 삽입됩니다.
  */
@@ -122,7 +122,7 @@ function createStyleInjector(css: string): string {
 
   // CSS를 JSON.stringify로 안전하게 이스케이프
   const escapedCss = JSON.stringify(css);
-  
+
   // IIFE로 감싸진 스타일 인젝션 코드 생성
   return (
     `(function(){` +
@@ -140,7 +140,7 @@ function createStyleInjector(css: string): string {
 
 /**
  * 빌드 타임에 UserScript 래퍼 코드 생성
- * 
+ *
  * @param options - 래퍼 생성 옵션
  * @param options.header - UserScript 메타 블록
  * @param options.license - 라이선스 텍스트 (선택적)
@@ -148,7 +148,7 @@ function createStyleInjector(css: string): string {
  * @param options.code - 번들된 애플리케이션 코드
  * @param options.isProd - 프로덕션 빌드 여부
  * @returns 완전한 UserScript 코드
- * 
+ *
  * @security 이 함수는 빌드 타임에만 실행되며, 모든 입력은 빌드 프로세스에서
  *           생성된 신뢰할 수 있는 문자열입니다. 런타임 사용자 입력을 포함하지 않습니다.
  */
@@ -160,7 +160,7 @@ function createUserscriptWrapper(options: {
   isProd: boolean;
 }): string {
   const { header, license, styleInjector, code, isProd } = options;
-  
+
   if (isProd) {
     // 프로덕션: 최소화된 형태
     return `${header}${license}(function(){'use strict';${styleInjector}${code}})();`;
@@ -227,9 +227,9 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         license: licenseNotices,
         styleInjector: styleInjector,
         code: cleanedCode,
-        isProd: flags.isProd
+        isProd: flags.isProd,
       });
-      
+
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';

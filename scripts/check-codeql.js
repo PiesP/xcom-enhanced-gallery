@@ -366,25 +366,25 @@ function loadPathsIgnore() {
 
   try {
     const content = readFileSync(configFile, 'utf8');
-    
+
     // Find paths-ignore section
     const lines = content.split('\n');
     const pathsIgnoreIndex = lines.findIndex(line => line.includes('paths-ignore:'));
-    
+
     if (pathsIgnoreIndex === -1) {
       return [];
     }
-    
+
     // Extract paths (lines starting with '  -')
     const paths = [];
     for (let i = pathsIgnoreIndex + 1; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Stop if we hit another top-level key (no leading spaces before key)
       if (line.match(/^[a-zA-Z]/) && line.includes(':')) {
         break;
       }
-      
+
       // Extract path from list item
       if (line.trim().startsWith('-')) {
         const path = line.trim().substring(1).trim();
@@ -393,7 +393,7 @@ function loadPathsIgnore() {
         }
       }
     }
-    
+
     return paths;
   } catch (error) {
     console.error(`${colors.yellow}⚠️  설정 파일 로드 실패:${colors.reset}`, error.message);
@@ -425,8 +425,8 @@ function shouldIgnorePath(uri, ignorePatterns) {
     // Simple glob matching (supports * wildcards)
     const regexPattern = pattern
       .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
-      .replace(/\*/g, '.*')                  // * matches any characters
-      .replace(/\?/g, '.');                  // ? matches single character
+      .replace(/\*/g, '.*') // * matches any characters
+      .replace(/\?/g, '.'); // ? matches single character
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(normalizedUri);
   });

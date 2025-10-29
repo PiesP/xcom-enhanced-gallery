@@ -169,7 +169,7 @@ describe('MediaService', () => {
         'https://evil.com?fake=pbs.twimg.com',
         'https://pbs.twimg.com.evil.com/media/abc',
         'https://evil-pbs.twimg.com/media/abc',
-        'https://notpbs.twimg.com/media/abc'
+        'https://notpbs.twimg.com/media/abc',
       ];
 
       spoofedUrls.forEach(url => {
