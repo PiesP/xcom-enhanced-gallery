@@ -16,7 +16,7 @@ import type { ScrollState, ScrollDirection } from '@shared/state/signals/scroll.
 import { INITIAL_SCROLL_STATE } from '@shared/state/signals/scroll.signals';
 import { useSelector } from '@shared/utils/signal-selector';
 import { toAccessor } from '@shared/utils/solid-helpers';
-import { findTwitterScrollContainer } from '@shared/utils/core-utils';
+import { findTwitterScrollContainer, isGalleryInternalEvent } from '@shared/utils/core-utils';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();
@@ -50,6 +50,8 @@ export interface UseGalleryScrollReturn {
   isScrolling: Accessor<boolean>;
   /** 현재 스크롤 방향 (옵션) */
   scrollDirection: Accessor<ScrollDirection>;
+  /** 전체 스크롤 상태 스냅샷 */
+  state: Accessor<ScrollState>;
 }
 
 /**
@@ -57,6 +59,34 @@ export interface UseGalleryScrollReturn {
  * Phase 153: 250ms로 설정하여 스크롤 중 포커스 흔들림 완화
  */
 export const SCROLL_IDLE_TIMEOUT = 250;
+
+const TWITTER_WHEEL_CAPTURE = true;
+
+const describeEventTarget = (target: EventTarget | null): string => {
+  if (target instanceof HTMLElement) {
+    return (
+      target.dataset.galleryElement ??
+      target.getAttribute('data-testid') ??
+      target.id ??
+      target.tagName.toLowerCase()
+    );
+  }
+
+  if (target instanceof Element) {
+    return target.tagName.toLowerCase();
+  }
+
+  return 'unknown';
+};
+
+const extractWheelDelta = (event: Event): number => {
+  if (event instanceof WheelEvent) {
+    return typeof event.deltaY === 'number' ? event.deltaY : 0;
+  }
+
+  const maybeDelta = (event as { deltaY?: number }).deltaY;
+  return typeof maybeDelta === 'number' ? maybeDelta : 0;
+};
 
 export function useGalleryScroll({
   container,
@@ -100,12 +130,14 @@ export function useGalleryScroll({
     }
   };
 
-  const updateScrollState = (scrolling: boolean) => {
+  const updateScrollState = (scrolling: boolean, delta?: number) => {
+    const hasDelta = typeof delta === 'number';
     batch(() => {
       setScrollState(prev => ({
         ...prev,
         isScrolling: scrolling,
         lastScrollTime: scrolling ? Date.now() : prev.lastScrollTime,
+        lastDelta: hasDelta ? (delta as number) : prev.lastDelta,
       }));
     });
   };
@@ -151,10 +183,35 @@ export function useGalleryScroll({
   };
 
   const preventTwitterScroll = (event: Event) => {
-    if (scrollState().isScrolling && blockTwitterScrollAccessor()) {
-      event.preventDefault();
-      event.stopPropagation();
+    if (!blockTwitterScrollAccessor()) {
+      return;
     }
+
+    if (!scrollState().isScrolling) {
+      return;
+    }
+
+    if (isGalleryInternalEvent(event)) {
+      return;
+    }
+
+    const preventedDelta = extractWheelDelta(event);
+    const preventedTarget = describeEventTarget(event.target ?? null);
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    setScrollState(prev => ({
+      ...prev,
+      lastPreventedAt: Date.now(),
+      lastPreventedTarget: preventedTarget,
+      lastPreventedDelta: preventedDelta,
+    }));
+
+    logger.debug('useGalleryScroll: 외부 스크롤 체이닝 차단', {
+      preventedDelta,
+      preventedTarget,
+    });
   };
 
   const handleGalleryWheel = (event: WheelEvent) => {
@@ -162,9 +219,13 @@ export function useGalleryScroll({
       return;
     }
 
-    const delta = event.deltaY;
+    if (!isGalleryInternalEvent(event)) {
+      return;
+    }
+
+    const delta = extractWheelDelta(event);
     const targetElement = scrollTargetAccessor();
-    updateScrollState(true);
+    updateScrollState(true, delta);
     updateScrollDirection(delta);
 
     // StabilityDetector에 스크롤 활동 기록
@@ -187,6 +248,9 @@ export function useGalleryScroll({
       setScrollState(prev => ({
         ...prev,
         direction: 'idle',
+        lastPreventedAt: 0,
+        lastPreventedDelta: 0,
+        lastPreventedTarget: null,
       }));
       return;
     }
@@ -198,32 +262,82 @@ export function useGalleryScroll({
       passive: true,
     });
 
+    let twitterContainer: HTMLElement | null = null;
+    let mutationObserver: MutationObserver | null = null;
+
+    const detachTwitterListener = () => {
+      if (!twitterContainer) {
+        return;
+      }
+
+      twitterContainer.removeEventListener(
+        'wheel',
+        preventTwitterScroll as EventListener,
+        TWITTER_WHEEL_CAPTURE
+      );
+      twitterContainer = null;
+    };
+
+    const attachTwitterListener = (candidate: HTMLElement | null) => {
+      if (!candidate) {
+        detachTwitterListener();
+        return;
+      }
+
+      if (twitterContainer === candidate) {
+        return;
+      }
+
+      detachTwitterListener();
+
+      twitterContainer = candidate;
+      twitterContainer.addEventListener('wheel', preventTwitterScroll as EventListener, {
+        capture: TWITTER_WHEEL_CAPTURE,
+        passive: false,
+      });
+
+      logger.debug('useGalleryScroll: Twitter 컨테이너 wheel 차단 등록', {
+        container: describeEventTarget(candidate),
+      });
+    };
+
+    const refreshTwitterListener = () => {
+      const candidate = findTwitterScrollContainer();
+      attachTwitterListener(candidate);
+    };
+
     if (shouldBlockTwitterScroll) {
-      const twitterContainer = findTwitterScrollContainer();
-      if (twitterContainer) {
-        eventManager.addEventListener(twitterContainer, 'wheel', preventTwitterScroll, {
-          capture: true,
-          passive: false,
+      refreshTwitterListener();
+
+      const body = document.body;
+      if (body && typeof MutationObserver !== 'undefined') {
+        mutationObserver = new MutationObserver(() => {
+          refreshTwitterListener();
+        });
+
+        mutationObserver.observe(body, {
+          childList: true,
+          subtree: true,
         });
       }
+    } else {
+      detachTwitterListener();
     }
 
     logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
       hasContainer: !!containerElement,
       blockTwitterScroll: shouldBlockTwitterScroll,
+      twitterTarget: describeEventTarget(twitterContainer),
     });
 
     onCleanup(() => {
+      mutationObserver?.disconnect();
+      detachTwitterListener();
       eventManager.cleanup();
       clearScrollTimeout();
       clearDirectionTimeout();
-      setScrollState(prev => ({
-        ...prev,
-        direction: 'idle',
-      }));
-      setScrollState(prev => ({
-        ...prev,
-        isScrolling: false,
+      setScrollState(() => ({
+        ...INITIAL_SCROLL_STATE,
       }));
     });
   });
@@ -238,5 +352,6 @@ export function useGalleryScroll({
     lastScrollTime: () => scrollState().lastScrollTime,
     isScrolling: () => scrollState().isScrolling,
     scrollDirection: () => scrollState().direction,
+    state: () => scrollState(),
   };
 }

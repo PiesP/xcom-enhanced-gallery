@@ -10,6 +10,9 @@ export interface ScrollState {
   lastScrollTime: number;
   direction: ScrollDirection;
   lastDelta: number;
+  lastPreventedAt: number;
+  lastPreventedTarget: string | null;
+  lastPreventedDelta: number;
 }
 
 export const INITIAL_SCROLL_STATE: ScrollState = {
@@ -17,4 +20,7 @@ export const INITIAL_SCROLL_STATE: ScrollState = {
   lastScrollTime: 0,
   direction: 'idle',
   lastDelta: 0,
+  lastPreventedAt: 0,
+  lastPreventedTarget: null,
+  lastPreventedDelta: 0,
 };

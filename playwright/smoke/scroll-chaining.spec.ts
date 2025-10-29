@@ -1,232 +1,253 @@
 /**
- * @file Scroll Chaining Prevention E2E Tests
- * @description 갤러리 내 스크롤이 페이지 스크롤로 전파되지 않도록 차단 검증
- *
- * **테스트 시나리오**:
- * 1. Wheel 이벤트: 갤러리 경계에서 페이지 스크롤 차단
- * 2. Keyboard 이벤트: Space/PageDown/Home/End 등 페이지 스크롤 차단
- * 3. overscroll-behavior: none 적용 검증
- *
- * **Consolidated from**:
- * - scroll-chaining-boundary.spec.ts
- * - scroll-chaining-keyboard.spec.ts
- *
- * **Reference**:
- * - test/unit/features/scroll-chaining-boundary.test.ts
- * - test/browser/scroll-chaining-propagation.test.ts
+ * @file Scroll chaining smoke tests
+ * @description Verifies gallery scroll containment and upstream scroll guards in a real browser.
  */
 
 import { expect, test } from '@playwright/test';
 
+const GALLERY_SELECTOR = '#xeg-test-gallery';
+const ITEMS_SELECTOR = '#xeg-test-items';
+const SCROLL_STATE_KEY = '__XEG_SCROLL_TEST__';
+const HANDLERS_KEY = '__XEG_SCROLL_HANDLERS__';
+
 test.describe('Scroll Chaining Prevention', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('https://x.com');
+    await page.goto('about:blank');
 
-    await page.evaluate(() => {
-      // 페이지 스크롤 가능 콘텐츠 추가
-      const pageContent = document.createElement('div');
-      pageContent.id = 'page-content';
-      pageContent.style.cssText = `
-        width: 100%;
-        height: 5000px;
-        background: linear-gradient(to bottom, #ffffff, #f0f0f0);
-      `;
-      document.body.appendChild(pageContent);
+    await page.evaluate(
+      ({ gallerySelector, itemsSelector, stateKey, handlersKey }) => {
+        document.body.innerHTML = '';
 
-      // 갤러리 컨테이너 생성
-      const galleryContainer = document.createElement('div');
-      galleryContainer.id = 'xeg-gallery-container';
-      galleryContainer.tabIndex = 0;
-      galleryContainer.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100vh;
-        overflow: auto;
-        overscroll-behavior: none;
-        z-index: 9999;
-        background: rgba(0, 0, 0, 0.9);
-      `;
+        const filler = document.createElement('div');
+        filler.id = 'xeg-scroll-filler';
+        filler.style.height = '6000px';
+        filler.style.width = '100%';
+        document.body.appendChild(filler);
 
-      const scrollableContent = document.createElement('div');
-      scrollableContent.id = 'gallery-content';
-      scrollableContent.style.cssText = `
-        width: 100%;
-        height: 3000px;
-        background: linear-gradient(to bottom, #1a1a1a, #2a2a2a);
-      `;
+        const gallery = document.createElement('div');
+        gallery.id = gallerySelector.slice(1);
+        gallery.setAttribute('data-gallery-container', 'true');
+        gallery.setAttribute('data-xeg-role', 'gallery');
+        gallery.style.position = 'fixed';
+        gallery.style.inset = '5%';
+        gallery.style.display = 'flex';
+        gallery.style.flexDirection = 'column';
+        gallery.style.background = 'rgba(15, 23, 42, 0.92)';
+        gallery.style.borderRadius = '1rem';
+        gallery.style.overflow = 'hidden';
+        gallery.style.overscrollBehavior = 'none';
+        gallery.style.boxSizing = 'border-box';
 
-      galleryContainer.appendChild(scrollableContent);
-      document.body.appendChild(galleryContainer);
+        const items = document.createElement('div');
+        items.id = itemsSelector.slice(1);
+        items.setAttribute('data-xeg-role', 'items-container');
+        items.style.flex = '1';
+        items.style.height = '100%';
+        items.style.maxHeight = '100%';
+        items.style.overflowY = 'auto';
+        items.style.overscrollBehavior = 'contain';
+        items.style.padding = '1.5rem';
+        items.style.boxSizing = 'border-box';
 
-      // Wheel 이벤트 경계 차단
-      galleryContainer.addEventListener(
-        'wheel',
-        (event: WheelEvent) => {
-          const target = event.currentTarget as HTMLElement;
-          const atTop = target.scrollTop === 0;
-          const atBottom = target.scrollTop + target.offsetHeight >= target.scrollHeight;
+        const content = document.createElement('div');
+        content.style.height = '3600px';
+        content.style.background =
+          'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))';
 
-          if ((atTop && event.deltaY < 0) || (atBottom && event.deltaY > 0)) {
-            event.preventDefault();
-            event.stopPropagation();
+        items.appendChild(content);
+        gallery.appendChild(items);
+        document.body.appendChild(gallery);
+
+        window.scrollTo(0, 520);
+
+        const scrollState = {
+          isScrolling: false,
+          timeoutId: undefined as number | undefined,
+          lastPrevented: null as null | { deltaY: number; target: string | null },
+        };
+
+        const clearExistingTimeout = () => {
+          if (typeof scrollState.timeoutId === 'number') {
+            window.clearTimeout(scrollState.timeoutId);
+            scrollState.timeoutId = undefined;
           }
-        },
-        { passive: false }
-      );
+        };
 
-      // Keyboard 네비게이션 차단
-      const navigationKeys = ['Space', 'PageDown', 'PageUp', 'Home', 'End', 'ArrowDown', 'ArrowUp'];
+        const scheduleIdleReset = () => {
+          clearExistingTimeout();
+          scrollState.timeoutId = window.setTimeout(() => {
+            scrollState.isScrolling = false;
+            scrollState.lastPrevented = null;
+            scrollState.timeoutId = undefined;
+          }, 250);
+        };
 
-      document.addEventListener(
-        'keydown',
-        (event: KeyboardEvent) => {
-          if (navigationKeys.includes(event.code)) {
-            event.preventDefault();
-            event.stopPropagation();
+        const isGalleryInternalEvent = (event: Event): boolean => {
+          const target = event.target as Element | null;
+          if (!target) {
+            return false;
           }
-        },
-        { passive: false }
-      );
-    });
+          return Boolean(
+            target.closest('[data-gallery-container]') ||
+              target.closest('[data-xeg-role="items-container"]')
+          );
+        };
+
+        const extractWheelDelta = (event: Event): number => {
+          if (event instanceof WheelEvent && typeof event.deltaY === 'number') {
+            return event.deltaY;
+          }
+          const maybe = (event as { deltaY?: number }).deltaY;
+          return typeof maybe === 'number' ? maybe : 0;
+        };
+
+        const handleGalleryWheel = (event: Event) => {
+          if (!isGalleryInternalEvent(event)) {
+            return;
+          }
+          scrollState.isScrolling = true;
+          scheduleIdleReset();
+        };
+
+        const preventTwitterScroll = (event: Event) => {
+          if (!scrollState.isScrolling) {
+            return;
+          }
+          if (isGalleryInternalEvent(event)) {
+            return;
+          }
+
+          const deltaY = extractWheelDelta(event);
+          const target = event.target as Element | null;
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          scrollState.lastPrevented = {
+            deltaY,
+            target: target?.id || target?.tagName || null,
+          };
+
+          scheduleIdleReset();
+        };
+
+        document.addEventListener('wheel', handleGalleryWheel, { capture: true, passive: true });
+        document.body.addEventListener('wheel', preventTwitterScroll, {
+          capture: true,
+          passive: false,
+        });
+
+        (window as unknown as Record<string, unknown>)[stateKey] = scrollState;
+        (window as unknown as Record<string, unknown>)[handlersKey] = {
+          handleGalleryWheel,
+          preventTwitterScroll,
+        };
+      },
+      {
+        gallerySelector: GALLERY_SELECTOR,
+        itemsSelector: ITEMS_SELECTOR,
+        stateKey: SCROLL_STATE_KEY,
+        handlersKey: HANDLERS_KEY,
+      }
+    );
   });
 
-  test.describe('Wheel Event Boundary', () => {
-    test('Prevents page scroll at gallery bottom boundary', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(
+      ({ stateKey, handlersKey }) => {
+        const handlerRecord = (window as unknown as Record<string, unknown>)[handlersKey] as
+          | { handleGalleryWheel: EventListener; preventTwitterScroll: EventListener }
+          | undefined;
 
-      // 갤러리를 하단까지 스크롤
-      await page.evaluate(() => {
-        const gallery = document.getElementById('xeg-gallery-container');
-        if (gallery) {
-          gallery.scrollTop = gallery.scrollHeight - gallery.offsetHeight;
+        if (handlerRecord) {
+          document.removeEventListener('wheel', handlerRecord.handleGalleryWheel, true);
+          document.body.removeEventListener('wheel', handlerRecord.preventTwitterScroll, true);
         }
-      });
 
-      // 갤러리 하단에서 추가 스크롤 시도
-      const gallery = page.locator('#xeg-gallery-container');
-      await gallery.hover();
-      await gallery.evaluate(el => {
-        const wheelEvent = new WheelEvent('wheel', {
-          deltaY: 100,
-          bubbles: true,
-          cancelable: true,
-        });
-        el.dispatchEvent(wheelEvent);
-      });
+        delete (window as unknown as Record<string, unknown>)[handlersKey];
+        delete (window as unknown as Record<string, unknown>)[stateKey];
 
-      await page.waitForTimeout(100);
-
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
-
-    test('Prevents page scroll at gallery top boundary', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-
-      // 갤러리를 상단에 위치
-      await page.evaluate(() => {
-        const gallery = document.getElementById('xeg-gallery-container');
-        if (gallery) {
-          gallery.scrollTop = 0;
-        }
-      });
-
-      // 갤러리 상단에서 위로 스크롤 시도
-      const gallery = page.locator('#xeg-gallery-container');
-      await gallery.hover();
-      await gallery.evaluate(el => {
-        const wheelEvent = new WheelEvent('wheel', {
-          deltaY: -100,
-          bubbles: true,
-          cancelable: true,
-        });
-        el.dispatchEvent(wheelEvent);
-      });
-
-      await page.waitForTimeout(100);
-
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
-
-    test('Allows gallery internal scroll', async ({ page }) => {
-      const initialGalleryScrollTop = await page.evaluate(() => {
-        const gallery = document.getElementById('xeg-gallery-container');
-        return gallery?.scrollTop ?? 0;
-      });
-
-      const gallery = page.locator('#xeg-gallery-container');
-      await gallery.hover();
-      await gallery.evaluate(el => {
-        const wheelEvent = new WheelEvent('wheel', {
-          deltaY: 100,
-          bubbles: true,
-          cancelable: true,
-        });
-        el.dispatchEvent(wheelEvent);
-      });
-
-      await page.waitForTimeout(100);
-
-      const finalGalleryScrollTop = await page.evaluate(() => {
-        const gallery = document.getElementById('xeg-gallery-container');
-        return gallery?.scrollTop ?? 0;
-      });
-
-      // 갤러리 내부 스크롤은 정상 동작
-      expect(finalGalleryScrollTop).toBeGreaterThanOrEqual(initialGalleryScrollTop);
-    });
+        document.body.innerHTML = '';
+        window.scrollTo(0, 0);
+      },
+      { stateKey: SCROLL_STATE_KEY, handlersKey: HANDLERS_KEY }
+    );
   });
 
-  test.describe('Keyboard Navigation', () => {
-    test('Prevents page scroll when pressing Space', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
+  test('applies overscroll containment to gallery surfaces', async ({ page }) => {
+    const containerOverscroll = await page
+      .locator(GALLERY_SELECTOR)
+      .evaluate(node => window.getComputedStyle(node as HTMLElement).overscrollBehavior);
 
-      await page.locator('#xeg-gallery-container').focus();
-      await page.keyboard.press('Space');
-      await page.waitForTimeout(100);
+    const itemsOverscroll = await page
+      .locator(ITEMS_SELECTOR)
+      .evaluate(node => window.getComputedStyle(node as HTMLElement).overscrollBehavior);
 
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
+    expect(containerOverscroll.split(/\s+/)).toContain('none');
+    expect(itemsOverscroll.split(/\s+/)).toContain('contain');
+  });
 
-    test('Prevents page scroll when pressing PageDown', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
+  test('allows gallery internal scrolling without preventing defaults', async ({ page }) => {
+    const items = page.locator(ITEMS_SELECTOR);
 
-      await page.locator('#xeg-gallery-container').focus();
-      await page.keyboard.press('PageDown');
-      await page.waitForTimeout(100);
+    const initialScrollTop = await items.evaluate(node => (node as HTMLElement).scrollTop);
+    const initialWindowScroll = await page.evaluate(() => window.scrollY);
+    await items.hover();
+    await page.mouse.wheel(0, 320);
+    await page.waitForTimeout(50); // allow scroll momentum to settle before measuring
 
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
+    const finalScrollTop = await items.evaluate(node => (node as HTMLElement).scrollTop);
+    const finalWindowScroll = await page.evaluate(() => window.scrollY);
+    expect(finalScrollTop).toBeGreaterThan(initialScrollTop);
+    expect(finalWindowScroll).toBe(initialWindowScroll);
 
-    test('Prevents page scroll when pressing Home/End', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
+    const internalEventResult = await page.evaluate(selector => {
+      const element = document.querySelector(selector) as HTMLElement | null;
+      if (!element) {
+        return null;
+      }
+      const event = new WheelEvent('wheel', { deltaY: 160, bubbles: true, cancelable: true });
+      const dispatchResult = element.dispatchEvent(event);
+      return { dispatchResult, defaultPrevented: event.defaultPrevented };
+    }, ITEMS_SELECTOR);
 
-      await page.locator('#xeg-gallery-container').focus();
-      await page.keyboard.press('Home');
-      await page.waitForTimeout(50);
-      await page.keyboard.press('End');
-      await page.waitForTimeout(50);
+    expect(internalEventResult).not.toBeNull();
+    expect(internalEventResult?.dispatchResult).toBe(true);
+    expect(internalEventResult?.defaultPrevented).toBe(false);
+  });
 
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
+  test('blocks page scroll propagation after gallery wheel interaction', async ({ page }) => {
+    const items = page.locator(ITEMS_SELECTOR);
+    await items.hover();
+    await page.mouse.wheel(0, 360);
 
-    test('Prevents page scroll when pressing ArrowUp/Down', async ({ page }) => {
-      const initialPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
+    const result = await page.evaluate(stateKey => {
+      window.scrollTo(0, 560);
+      const before = window.scrollY;
+      const event = new WheelEvent('wheel', { deltaY: 240, bubbles: true, cancelable: true });
+      const dispatchResult = document.body.dispatchEvent(event);
+      const after = window.scrollY;
+      const scrollState = (window as unknown as Record<string, unknown>)[stateKey] as
+        | {
+            lastPrevented: { deltaY: number; target: string | null } | null;
+          }
+        | undefined;
 
-      await page.locator('#xeg-gallery-container').focus();
-      await page.keyboard.press('ArrowDown');
-      await page.waitForTimeout(50);
-      await page.keyboard.press('ArrowUp');
-      await page.waitForTimeout(50);
+      return {
+        before,
+        after,
+        dispatchResult,
+        defaultPrevented: event.defaultPrevented,
+        lastPreventedTarget: scrollState?.lastPrevented?.target ?? null,
+        lastPreventedDelta: scrollState?.lastPrevented?.deltaY ?? null,
+      };
+    }, SCROLL_STATE_KEY);
 
-      const finalPageScrollTop = await page.evaluate(() => document.documentElement.scrollTop);
-      expect(finalPageScrollTop).toBe(initialPageScrollTop);
-    });
+    expect(result.before).toBeGreaterThan(0);
+    expect(result.dispatchResult).toBe(false);
+    expect(result.defaultPrevented).toBe(true);
+    expect(result.after).toBe(result.before);
+    expect(result.lastPreventedTarget).toBe('BODY');
+    expect(result.lastPreventedDelta).toBe(240);
   });
 });

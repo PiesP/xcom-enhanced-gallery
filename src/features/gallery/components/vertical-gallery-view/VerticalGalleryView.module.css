@@ -205,6 +205,7 @@
   /* ?�능 최적?? */
   contain: layout style;
   transform: translateZ(0);
+  overscroll-behavior: contain; /* 체이닝 방지: 내부 스크롤만 허용 */
 
   /* ?�크�??�벤?? */
   scrollbar-gutter: stable;

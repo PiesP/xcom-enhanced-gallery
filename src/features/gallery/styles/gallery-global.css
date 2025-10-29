@@ -384,10 +384,12 @@
   opacity: 1 !important;
   isolation: isolate !important;
   contain: layout style paint !important;
+  overscroll-behavior: contain !important;
 }
 
 .xeg-gallery-isolated * {
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 /* 반응형 디자인 - 태블릿 및 모바일 */
