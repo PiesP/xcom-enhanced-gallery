@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 236 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 237 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -23,6 +23,15 @@
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 237: 서비스 등록 require 제거 및 타입 가드 강화 (2025-10-29)
+
+- **문제**: 브라우저 환경에서 `require is not defined` 오류로 ThemeService, LanguageService 등록 실패
+- **해결**: `registerCoreBaseServices`에서 require를 static import로 변경
+- **타입 안전성 향상**: `isGalleryInternalElement`에 `element.matches` 함수 존재 여부 체크 추가
+- **테스트**: Phase 237 회귀 방지 테스트 9개 추가 (모두 통과)
+- 번들 크기 유지: 341.78 KB
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 236: DOMContentLoaded 리스너 제거 - 유저스크립트 격리 완성 (2025-10-29)
 

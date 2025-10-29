@@ -106,9 +106,16 @@ export function shouldBlockGalleryTrigger(target: HTMLElement | null): boolean {
 
 /**
  * 갤러리 내부 요소인지 확인
+ * Phase 237: element.matches 타입 가드 강화
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!element) return false;
+
+  // Phase 237: matches 메서드 존재 여부 확인 (타입 가드 강화)
+  if (typeof element.matches !== 'function') {
+    logger.warn('Invalid element: matches is not a function', element);
+    return false;
+  }
 
   return GALLERY_SELECTORS.some(selector => {
     try {

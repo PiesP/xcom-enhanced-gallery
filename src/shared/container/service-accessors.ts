@@ -27,6 +27,11 @@ import type { ThemeService } from '../services/theme-service';
 import type { ToastController } from '../services/unified-toast-manager';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
+// Phase 237: Core Base 서비스들을 static import로 변경 (require 제거)
+import { AnimationService } from '../services/animation-service';
+import { themeService } from '../services/theme-service';
+import { languageService } from '../services/language-service';
+
 import { CoreServiceRegistry } from './core-service-registry';
 import { bridgeRegisterBaseService, bridgeInitializeAllBaseServices } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
@@ -219,11 +224,11 @@ export function warmupNonCriticalServices(): void {
 
 /**
  * Core Base 서비스들을 등록합니다 (AnimationService, ThemeService, LanguageService).
+ * Phase 237: require를 static import로 변경하여 브라우저 환경에서 ReferenceError 방지
  * @internal
  */
 export function registerCoreBaseServices(): void {
   try {
-    const { AnimationService } = require('../services/animation-service');
     const animationService = AnimationService.getInstance();
     registerBaseService(SERVICE_KEYS.ANIMATION, animationService);
   } catch (error) {
@@ -231,14 +236,12 @@ export function registerCoreBaseServices(): void {
   }
 
   try {
-    const { themeService } = require('../services/theme-service');
     registerBaseService(SERVICE_KEYS.THEME, themeService);
   } catch (error) {
     logger.error(`[registerCoreBaseServices] ThemeService 등록 실패:`, error);
   }
 
   try {
-    const { languageService } = require('../services/language-service');
     registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
   } catch (error) {
     logger.error(`[registerCoreBaseServices] LanguageService 등록 실패:`, error);

@@ -27,21 +27,22 @@ Kent C. Dodds의 Testing Trophy 모델 기반:
 /  Security Analysis    \  ← 기반: CodeQL (보안 취약점 검증)
 ```
 
-**원칙**: 낮은 계층에서 빠르게 많이 테스트, 높은 계층에서 느리지만 신뢰도 높은 테스트를 선별적으로 실행
+**원칙**: 낮은 계층에서 빠르게 많이 테스트, 높은 계층에서 느리지만 신뢰도 높은
+테스트를 선별적으로 실행
 
 ---
 
 ## 🎯 테스트 타입별 책임 분리
 
-| 타입 | 환경 | 책임 | 실행 시간 | 명령어 |
-|------|------|------|-----------|--------|
-| **Security Analysis** | CodeQL | 보안 취약점 (XSS, 인젝션, prototype pollution) | 수초 | `npm run codeql:check` (로컬, 선택) |
-| **Static Analysis** | TS, ESLint | 타입 안정성, 코딩 규칙 위반 | 수초 | `npm run validate` |
-| **Unit Tests** | JSDOM | 순수 함수, 서비스, 컴포넌트 렌더링 | 1-2분 | `npm run test:unit` |
-| **Browser Tests** | Vitest + Chromium | Solid.js 반응성, 레이아웃, Observers, 포커스 | 8-10초 | `npm run test:browser` |
-| **Integration Tests** | JSDOM + 모킹 | 다중 서비스 협업, 상태 동기화 | 2-5분 | `npm run test:unit` (포함) |
-| **E2E Tests** | Playwright | 핵심 사용자 시나리오, 브라우저 전용 API | 5-15분 | `npm run e2e:smoke` |
-| **Accessibility Tests** | Playwright + axe-core | WCAG 2.1 AA 준수, 색상 대비, 키보드 탐색 | 3-8분 | `npm run e2e:a11y` |
+| 타입                    | 환경                  | 책임                                           | 실행 시간 | 명령어                              |
+| ----------------------- | --------------------- | ---------------------------------------------- | --------- | ----------------------------------- |
+| **Security Analysis**   | CodeQL                | 보안 취약점 (XSS, 인젝션, prototype pollution) | 수초      | `npm run codeql:check` (로컬, 선택) |
+| **Static Analysis**     | TS, ESLint            | 타입 안정성, 코딩 규칙 위반                    | 수초      | `npm run validate`                  |
+| **Unit Tests**          | JSDOM                 | 순수 함수, 서비스, 컴포넌트 렌더링             | 1-2분     | `npm run test:unit`                 |
+| **Browser Tests**       | Vitest + Chromium     | Solid.js 반응성, 레이아웃, Observers, 포커스   | 8-10초    | `npm run test:browser`              |
+| **Integration Tests**   | JSDOM + 모킹          | 다중 서비스 협업, 상태 동기화                  | 2-5분     | `npm run test:unit` (포함)          |
+| **E2E Tests**           | Playwright            | 핵심 사용자 시나리오, 브라우저 전용 API        | 5-15분    | `npm run e2e:smoke`                 |
+| **Accessibility Tests** | Playwright + axe-core | WCAG 2.1 AA 준수, 색상 대비, 키보드 탐색       | 3-8분     | `npm run e2e:a11y`                  |
 
 ### 주요 특징 및 제약사항
 
@@ -65,23 +66,24 @@ Kent C. Dodds의 Testing Trophy 모델 기반:
 
 **E2E Tests 현황**: 82 passed / 5 skipped (94.3% 통과율)
 
-**Accessibility Tests 현황**: 14 tests (Gallery, Toolbar, KeyboardHelpOverlay, Toast)
+**Accessibility Tests 현황**: 14 tests (Gallery, Toolbar, KeyboardHelpOverlay,
+Toast)
 
 ---
 
 ## 🔍 테스트 선택 기준
 
-| 상황 | 추천 테스트 타입 |
-|------|-----------------|
-| 순수 함수, 유틸리티, 서비스 로직 | **Unit (JSDOM)** |
-| Solid.js 반응성 (Signal/Store → DOM) | **Browser** |
-| 레이아웃 계산, 크기, 위치 | **Browser** |
-| 브라우저 API (Observers, 포커스) | **Browser** |
-| 애니메이션/트랜지션 | **Browser** |
-| 다중 서비스 협업, 상태 동기화 | **Integration (JSDOM)** |
-| 핵심 사용자 여정 | **E2E** |
-| 브라우저 간 호환성 | **E2E** |
-| 접근성 (ARIA, 대비, 키보드) | **Accessibility** |
+| 상황                                 | 추천 테스트 타입        |
+| ------------------------------------ | ----------------------- |
+| 순수 함수, 유틸리티, 서비스 로직     | **Unit (JSDOM)**        |
+| Solid.js 반응성 (Signal/Store → DOM) | **Browser**             |
+| 레이아웃 계산, 크기, 위치            | **Browser**             |
+| 브라우저 API (Observers, 포커스)     | **Browser**             |
+| 애니메이션/트랜지션                  | **Browser**             |
+| 다중 서비스 협업, 상태 동기화        | **Integration (JSDOM)** |
+| 핵심 사용자 여정                     | **E2E**                 |
+| 브라우저 간 호환성                   | **E2E**                 |
+| 접근성 (ARIA, 대비, 키보드)          | **Accessibility**       |
 
 ---
 
@@ -89,12 +91,12 @@ Kent C. Dodds의 Testing Trophy 모델 기반:
 
 ### 개발 중 (로컬)
 
-| 단계 | 명령어 | 소요 시간 | 목적 |
-|------|--------|-----------|------|
-| 1 | `npm run typecheck` | 수초 | 타입 검증 |
-| 2 | `npm run test:watch -- -t "테스트명"` | 즉시 | 관련 테스트만 워치 |
-| 3 | `npm run test:unit` | 1-2분 | 전체 단위+통합 |
-| 4 | `npm run test:fast` | 30초 | 빠른 단위+스모크 |
+| 단계 | 명령어                                | 소요 시간 | 목적               |
+| ---- | ------------------------------------- | --------- | ------------------ |
+| 1    | `npm run typecheck`                   | 수초      | 타입 검증          |
+| 2    | `npm run test:watch -- -t "테스트명"` | 즉시      | 관련 테스트만 워치 |
+| 3    | `npm run test:unit`                   | 1-2분     | 전체 단위+통합     |
+| 4    | `npm run test:fast`                   | 30초      | 빠른 단위+스모크   |
 
 ### Pre-Push (Git Hook)
 
@@ -109,12 +111,12 @@ git push
 
 **범위 선택**:
 
-| 범위 | 용도 | 시간 |
-|------|------|------|
-| `smoke` | 기본값, 빠른 검증 | 20-30초 |
-| `fast` | 주요 단위 테스트 | 30-60초 |
-| `unit` | 전체 단위 테스트 | 1-2분 |
-| `full` | 모든 검증 (PR 권장) | 5-10분 |
+| 범위    | 용도                | 시간    |
+| ------- | ------------------- | ------- |
+| `smoke` | 기본값, 빠른 검증   | 20-30초 |
+| `fast`  | 주요 단위 테스트    | 30-60초 |
+| `unit`  | 전체 단위 테스트    | 1-2분   |
+| `full`  | 모든 검증 (PR 권장) | 5-10분  |
 
 ### CI (GitHub Actions)
 
@@ -139,28 +141,28 @@ git push
 
 `vitest.config.ts`에서 projects로 테스트 분할:
 
-| Project | 범위 | 실행 시간 | 명령어 |
-|---------|------|-----------|--------|
-| **smoke** | 구성/토큰 가드 | 10-20초 | `npm run test:smoke` |
-| **fast** | 빠른 단위 (RED/벤치 제외) | 30-60초 | `npm run test:fast` |
-| **unit** | 전체 단위 | 1-2분 | `npm run test:unit` |
-| **browser** | 브라우저 모드 | 2-5분 | `npm run test:browser` |
-| **styles** | 스타일/토큰/정책 | 20-40초 | `npm run test:styles` |
-| **performance** | 성능/벤치마크 | 40-80초 | `npm run test:perf` |
-| **phases** | 단계별(phase-*) | 1-2분 | `npm run test:phases` |
-| **refactor** | 리팩토링 가드 | 1-2분 | `npm run test:refactor` |
+| Project         | 범위                      | 실행 시간 | 명령어                  |
+| --------------- | ------------------------- | --------- | ----------------------- |
+| **smoke**       | 구성/토큰 가드            | 10-20초   | `npm run test:smoke`    |
+| **fast**        | 빠른 단위 (RED/벤치 제외) | 30-60초   | `npm run test:fast`     |
+| **unit**        | 전체 단위                 | 1-2분     | `npm run test:unit`     |
+| **browser**     | 브라우저 모드             | 2-5분     | `npm run test:browser`  |
+| **styles**      | 스타일/토큰/정책          | 20-40초   | `npm run test:styles`   |
+| **performance** | 성능/벤치마크             | 40-80초   | `npm run test:perf`     |
+| **phases**      | 단계별(phase-\*)          | 1-2분     | `npm run test:phases`   |
+| **refactor**    | 리팩토링 가드             | 1-2분     | `npm run test:refactor` |
 
 ---
 
 ## 🎯 npm run build vs npm test
 
-| 항목 | npm run build (권장 ⭐) | npm test (개발용) |
-|------|-------------------------|-------------------|
-| **실행 범위** | 전체 검증 파이프라인 | vitest projects 분리 |
+| 항목          | npm run build (권장 ⭐)                           | npm test (개발용)          |
+| ------------- | ------------------------------------------------- | -------------------------- |
+| **실행 범위** | 전체 검증 파이프라인                              | vitest projects 분리       |
 | **포함 내용** | typecheck, lint, deps, CodeQL, browser, E2E, a11y | fast + raf-timing projects |
-| **신뢰도** | ✅ 높음 (프로덕션 준비) | ⚠️ 낮음 (프로젝트 격리) |
-| **실행 시간** | ~8-10분 | ~1-2분 |
-| **용도** | CI, 릴리즈 검증 | 로컬 개발 피드백 |
+| **신뢰도**    | ✅ 높음 (프로덕션 준비)                           | ⚠️ 낮음 (프로젝트 격리)    |
+| **실행 시간** | ~8-10분                                           | ~1-2분                     |
+| **용도**      | CI, 릴리즈 검증                                   | 로컬 개발 피드백           |
 
 ### 권장 워크플로우
 
@@ -216,14 +218,16 @@ npm run build    # 반드시 통과해야 함
 ✅ **Do**:
 
 - 선택자 상수화: `src/constants.ts`의 `SELECTORS`/`STABLE_SELECTORS` 사용
-- 브라우저/GM API 추상화: `@shared/external/vendors`, `@shared/external/userscript/adapter` getter 사용
+- 브라우저/GM API 추상화: `@shared/external/vendors`,
+  `@shared/external/userscript/adapter` getter 사용
 - Fail-fast: 외부 DOM 변경 감지 시 조기 예외 + 폴백 경로
-- PC 전용 이벤트만 사용: click, keydown/keyup, wheel, contextmenu (Touch/Pointer 금지)
+- PC 전용 이벤트만 사용: click, keydown/keyup, wheel, contextmenu (Touch/Pointer
+  금지)
 
 ❌ **Don't**:
 
 - X.com DOM 셀렉터를 테스트에 하드코딩 (중복)
-- GM_* 직접 호출 → `getUserscript()` 경유
+- GM\_\* 직접 호출 → `getUserscript()` 경유
 - E2E 범위 불필요하게 확장 → 스모크로 핵심만 유지
 - 실제 다운로드 테스트 → Blob/ZIP 생성까지만
 
@@ -231,11 +235,15 @@ npm run build    # 반드시 통과해야 함
 
 ## 📚 참고 문서
 
-- **[AGENTS.md](../AGENTS.md)**: E2E 하네스 패턴, Solid.js 반응성 제약사항, Pre-push hook 범위 설정
-- **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js 반응성 시스템 교훈
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)**: 3계층 구조 (Features → Shared → External)
+- **[AGENTS.md](../AGENTS.md)**: E2E 하네스 패턴, Solid.js 반응성 제약사항,
+  Pre-push hook 범위 설정
+- **[SOLID_REACTIVITY_LESSONS.md](./SOLID_REACTIVITY_LESSONS.md)**: Solid.js
+  반응성 시스템 교훈
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)**: 3계층 구조 (Features → Shared →
+  External)
 - **[test/README.md](../test/README.md)**: Vitest 사용법, DOM 시뮬레이션
-- **[test/archive/README.md](../test/archive/README.md)**: 아카이브 정책 및 과거 Phase 기록
+- **[test/archive/README.md](../test/archive/README.md)**: 아카이브 정책 및 과거
+  Phase 기록
 
 ---
 
@@ -264,8 +272,10 @@ npm run build    # 반드시 통과해야 함
 
 ---
 
-> **테스트 정책**: 새 기능은 반드시 테스트와 함께 제출. TDD 권장 (RED → GREEN → REFACTOR).
+> **테스트 정책**: 새 기능은 반드시 테스트와 함께 제출. TDD 권장 (RED → GREEN →
+> REFACTOR).
 >
-> **현재 상태**: 1389 단위 테스트, 111 브라우저 테스트, 82 E2E 테스트, 14 접근성 테스트 (100% 통과율) ✅
+> **현재 상태**: 1389 단위 테스트, 111 브라우저 테스트, 82 E2E 테스트, 14 접근성
+> 테스트 (100% 통과율) ✅
 >
 > **마지막 업데이트**: 2025-10-29 (Phase 234 간소화: 517줄 → 192줄, 63% 감소)
