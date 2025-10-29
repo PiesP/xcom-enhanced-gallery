@@ -56,7 +56,8 @@
 - Phase 226: Container Module 리팩토링
 - Phase 225: Shared Constants 최적화
 
-**이전 Phase**: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참고
+**이전 Phase**:
+[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참고
 
 ---
 
@@ -94,7 +95,8 @@
 
 ## 📚 참고 문서
 
-- **완료 기록**: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+- **완료 기록**:
+  [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 - **아키텍처**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **코딩 규칙**: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md)
 - **테스트 전략**: [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
