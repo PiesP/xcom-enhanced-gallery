@@ -366,18 +366,34 @@ function loadPathsIgnore() {
 
   try {
     const content = readFileSync(configFile, 'utf8');
-    // Simple YAML parsing for paths-ignore section
-    const pathsIgnoreMatch = content.match(/paths-ignore:\s*\n((?:\s+-\s+.+\n?)+)/);
-    if (!pathsIgnoreMatch) {
+    
+    // Find paths-ignore section
+    const lines = content.split('\n');
+    const pathsIgnoreIndex = lines.findIndex(line => line.includes('paths-ignore:'));
+    
+    if (pathsIgnoreIndex === -1) {
       return [];
     }
-
-    // Extract paths from YAML list
-    const paths = pathsIgnoreMatch[1]
-      .split('\n')
-      .filter(line => line.trim().startsWith('-'))
-      .map(line => line.trim().substring(1).trim());
-
+    
+    // Extract paths (lines starting with '  -')
+    const paths = [];
+    for (let i = pathsIgnoreIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Stop if we hit another top-level key (no leading spaces before key)
+      if (line.match(/^[a-zA-Z]/) && line.includes(':')) {
+        break;
+      }
+      
+      // Extract path from list item
+      if (line.trim().startsWith('-')) {
+        const path = line.trim().substring(1).trim();
+        if (path.length > 0 && !path.startsWith('#')) {
+          paths.push(path);
+        }
+      }
+    }
+    
     return paths;
   } catch (error) {
     console.error(`${colors.yellow}⚠️  설정 파일 로드 실패:${colors.reset}`, error.message);
