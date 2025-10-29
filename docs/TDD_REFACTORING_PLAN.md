@@ -9,17 +9,6 @@
 
 현재 진행 중인 작업이 없습니다.
 
-### Next Minor: 설정 스키마에 toolbar 추가 (로그 노이즈 감소)
-
-- 배경: x.com 로그에 `설정 키를 찾을 수 없음: toolbar.autoHideDelay` 경고 발생
-- 조치: DEFAULT_SETTINGS에 `toolbar.autoHideDelay`(기본 3000ms) 추가,
-  타입/마이그레이션 반영
-- 영향: SettingsService 스키마 해시 갱신, 마이그레이션 시 `toolbar` 카테고리
-  병합
-- 수용 기준:
-  - 단위 테스트 settings-migration.\* GREEN 유지 (shape 비교 통과)
-  - 빌드 및 userscript 검증 통과, 런타임 경고 사라짐
-
 ## ✅ 최근 완료 작업 (간략)
 
 ### Phase 240: 설정 드롭다운 클릭 시 펼치기 문제 수정 (2025-10-29)
