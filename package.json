@@ -73,7 +73,7 @@
     "deps:graph": "node ./scripts/generate-dep-graph.js --format=svg",
     "deps:all": "npm run deps:check && node ./scripts/generate-dep-graph.js --format=all",
     "// ===== Maintenance ===== ": "",
-    "// ===== NOTE: CI uses separate workflows (maintenance.yml for schedule, security.yml for security) ===== ": "",
+    "// ===== NOTE: All maintenance scripts are local-only (removed maintenance.yml workflow) ===== ": "",
     "maintenance:check": "node ./scripts/maintenance-check.js",
     "maintenance:scan": "run-s maintenance:check && run-p audit outdated",
     "audit": "npm audit",

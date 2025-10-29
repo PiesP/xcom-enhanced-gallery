@@ -9,14 +9,14 @@
  *
  * **Usage Context:**
  * - Local Development: End-of-work protocol checks
- * - Scheduled: Monthly via GitHub Actions (maintenance.yml)
- * - Manual: npm run maintenance:check
+ * - Manual Execution: npm run maintenance:check
  *
  * **Why not in CI:**
  * - Focus on local cleanup recommendations (backup files, temp directories)
- * - CI has separate security.yml workflow for security/license checks
- * - CI build validation uses validate-build.js instead
- * - This script generates GitHub issues for scheduled runs (maintenance.yml)
+ * - CI workflows handle their own specific checks:
+ *   - ci.yml: Build validation, tests, quality checks
+ *   - security.yml: npm audit, license checks (weekly)
+ * - Removed maintenance.yml workflow (2025-10-29) to enforce local-only principle
  *
  * **Checks Performed:**
  * - Backup/temp directory identification
@@ -32,9 +32,6 @@
  * @output
  *   Structured report with ✅ (OK), ⚠️ (needs action), 💡 (recommendations)
  *   Exit code: 0 (pass) or 1 (action required)
- *
- * @see
- *   .github/workflows/maintenance.yml - Monthly scheduled runs
  */
 
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
