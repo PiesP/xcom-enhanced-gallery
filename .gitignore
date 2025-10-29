@@ -103,6 +103,7 @@ yarn.lock.backup
 pnpm-lock.yaml.backup
 
 # === Development ===
+scripts/
 scratch/
 playground/
 experiments/

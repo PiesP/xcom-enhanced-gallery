@@ -378,7 +378,8 @@ export class SettingsService {
       const currentHash = this.schemaHash;
 
       if (!storedHash || storedHash !== currentHash) {
-        logger.warn('설정 스키마 해시 불일치 감지 — 마이그레이션 실행');
+        // Phase 241: 정상적인 마이그레이션 동작이므로 INFO 레벨로 변경
+        logger.info('설정 스키마 해시 불일치 감지 — 마이그레이션 실행');
         this.settings = runMigration(parsedSettings);
         await this.saveSettings();
       } else {

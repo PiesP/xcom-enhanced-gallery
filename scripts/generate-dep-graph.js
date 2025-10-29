@@ -150,6 +150,17 @@ function needsRegeneration() {
       return true;
     }
 
+    // Check if requested formats were generated in last run
+    const cachedFormats = cache.generatedFormats || [];
+    const missingFormats = requestedFormats.filter(f => !cachedFormats.includes(f));
+    if (missingFormats.length > 0) {
+      if (verboseArg)
+        console.log(
+          `[verbose] Missing formats in cache: ${missingFormats.join(', ')}, regenerating`
+        );
+      return true;
+    }
+
     if (verboseArg) console.log('[verbose] Cache valid, skipping regeneration');
     return false;
   } catch {
@@ -172,7 +183,8 @@ function updateCache() {
         {
           srcModTime: srcMod,
           timestamp: Date.now(),
-          generator: 'generate-dep-graph.js v1.0',
+          generatedFormats: requestedFormats, // Track which formats were generated
+          generator: 'generate-dep-graph.js v1.1',
         },
         null,
         2
@@ -219,6 +231,11 @@ function generateFormat(format) {
  * @returns {string} SVG content
  */
 function renderSVG(startTime) {
+  // Verify DOT file exists before rendering
+  if (!existsSync(DOT_PATH)) {
+    throw new Error('DOT file not found. Generate DOT format first before SVG.');
+  }
+
   const engines = ['dot', 'fdp', 'sfdp'];
   const availableEngine = engines.find(e => commandExists(e));
 
@@ -323,13 +340,14 @@ function main() {
     updateCache();
     console.log(`✓ Complete (${Math.round(Date.now() - startTime)}ms)`);
   } catch (err) {
-    console.warn('[error]', err?.message || err);
+    console.error('[error]', err?.message || err);
+    if (verboseArg && err?.stack) {
+      console.error('[stack]', err.stack);
+    }
 
     // Graceful degradation: write placeholder SVG if rendering failed
     try {
-      if (requestedFormats.includes('svg')) {
-        // TOCTOU 방지: existsSync 체크 없이 직접 writeFileSync 시도
-        // 파일이 이미 존재하면 덮어쓰고, 없으면 생성
+      if (requestedFormats.includes('svg') && !existsSync(SVG_PATH)) {
         const placeholder = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="600" height="120">
   <rect width="100%" height="100%" fill="#ffffff"/>
@@ -338,9 +356,10 @@ function main() {
   </text>
 </svg>`;
         writeFileSync(SVG_PATH, placeholder, 'utf-8');
+        console.log('⚠ Placeholder SVG created due to rendering failure');
       }
-    } catch {
-      // Ignore write errors
+    } catch (writeErr) {
+      if (verboseArg) console.error('[error] Failed to write placeholder SVG:', writeErr.message);
     }
     process.exit(0); // Graceful degradation - allow build to continue
   }

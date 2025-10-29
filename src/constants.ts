@@ -236,6 +236,9 @@ export const DEFAULT_SETTINGS = {
     animations: true,
     enableKeyboardNav: false,
   },
+  toolbar: {
+    autoHideDelay: 3000, // 툴바 자동 숨김 지연 시간 (밀리초), 0이면 비활성화
+  },
   download: {
     filenamePattern: 'original' as const,
     imageQuality: 'original' as const,

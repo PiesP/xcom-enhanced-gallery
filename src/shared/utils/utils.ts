@@ -107,9 +107,18 @@ export function shouldBlockGalleryTrigger(target: HTMLElement | null): boolean {
 /**
  * 갤러리 내부 요소인지 확인
  * Phase 237: element.matches 타입 가드 강화
+ * Phase 240: Element 인스턴스 체크 추가 (Document 노드 제외)
+ * Phase 241: 로그 레벨 조정 (DEBUG)
  */
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!element) return false;
+
+  // Phase 240: Element 인스턴스인지 확인 (Document, Window 등 제외)
+  // Phase 241: 정상적인 필터링 동작이므로 DEBUG 레벨로 변경
+  if (!(element instanceof Element)) {
+    logger.debug('Invalid element: not an Element instance', element);
+    return false;
+  }
 
   // Phase 237: matches 메서드 존재 여부 확인 (타입 가드 강화)
   if (typeof element.matches !== 'function') {

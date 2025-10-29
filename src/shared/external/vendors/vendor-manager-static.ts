@@ -318,11 +318,7 @@ export class StaticVendorManager {
    */
   public getSolid(): SolidAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;
@@ -340,11 +336,7 @@ export class StaticVendorManager {
    */
   public getSolidStore(): SolidStoreAPI {
     if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      } else {
-        logger.warn('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
-      }
+      logger.debug('StaticVendorManager가 초기화되지 않았습니다. 자동 초기화를 시도합니다.');
       this.validateStaticImports();
       this.cacheAPIs();
       this.isInitialized = true;

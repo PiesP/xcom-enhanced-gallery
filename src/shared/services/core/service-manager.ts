@@ -44,9 +44,12 @@ export class CoreService {
 
   /**
    * 서비스 등록 (직접 인스턴스)
+   * @param key 서비스 키
+   * @param instance 서비스 인스턴스
+   * @param options.allowOverwrite 의도적인 덮어쓰기 허용 (경고 억제)
    */
-  public register<T>(key: string, instance: T): void {
-    this.registry.register<T>(key, instance);
+  public register<T>(key: string, instance: T, options?: { allowOverwrite?: boolean }): void {
+    this.registry.register<T>(key, instance, options);
   }
 
   /**

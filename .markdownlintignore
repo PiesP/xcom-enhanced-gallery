@@ -9,3 +9,6 @@ docs/archive/
 scripts/temp/
 *.tmp
 *.log
+
+# WSL 최적화 가이드 (기술 문서 - 포맷 예외)
+**/.vscode/WSL_OPTIMIZATION.md

@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 238 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 242 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -8,6 +8,9 @@
 ## 🔄 현재 진행 중인 작업
 
 현재 진행 중인 작업이 없습니다.
+
+> Note: Phase 243(설정 드롭다운 클릭 이슈 해결)은 즉시성/안정성 이슈로 TDD
+> 계획에 추가 후 곧바로 이관되었습니다. 자세한 내용은 완료 기록을 참고하세요.
 
 **다음 작업 후보**:
 
@@ -26,6 +29,52 @@
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 242: StaticVendorManager 자동 초기화 로그 레벨 조정 (2025-10-29)
+
+- **목적**: 브라우저 로그에서 StaticVendorManager 자동 초기화 WARN 로그 제거
+- **배경**: vendor getter 호출 시 자동 초기화는 의도된 정상 동작이지만, WARN
+  레벨 로그가 콘솔 노이즈를 유발
+- **변경사항**:
+  - `getSolid()`, `getSolidStore()` 메서드의 자동 초기화 로그를 DEBUG로 변경
+  - 테스트 모드 분기 제거 (MODE === 'test' 조건 삭제)
+  - Phase 241과 동일한 로그 레벨 조정 패턴 적용
+- **효과**: 브라우저 콘솔에서 WARN 로그 제거, 디버깅 효율성 향상
+- **번들 크기**: 341.62 KB (341.78 KB에서 0.16 KB 감소)
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+
+### Phase 241: 로그 레벨 조정 (2025-10-29)
+
+- **목적**: Phase 240 이후 로그 분석 결과에 따른 로그 레벨 최적화
+- **배경**: Phase 240의 수정이 정상 작동하지만, 정상적인 필터링 동작에 대한 WARN
+  로그가 과도하게 발생
+- **변경사항**:
+  1. **Element instanceof 경고를 DEBUG로 변경**:
+     - `isGalleryInternalElement`에서 Document 노드 필터링은 정상 동작
+     - WARN → DEBUG로 변경하여 콘솔 노이즈 감소
+  2. **설정 스키마 해시 불일치를 INFO로 변경**:
+     - 스키마 변경 시 마이그레이션은 정상 동작
+     - WARN → INFO로 변경하여 사용자 혼란 방지
+- **효과**: 브라우저 콘솔 경고가 대폭 감소, 디버깅 효율성 향상
+- 번들 크기 유지: 341.82 KB
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+
+### Phase 240: 로그 분석 및 경고 해결 (2025-10-29)
+
+- **목적**: 브라우저 로그에서 발견된 경고 및 오류 해결
+- **변경사항**:
+  1. **isGalleryInternalElement 타입 가드 강화**:
+     - `element instanceof Element` 체크 추가로 Document/Window 노드 제외
+     - 반복되던 "matches is not a function" 경고 제거
+  2. **toolbar.autoHideDelay 설정 추가**:
+     - `DEFAULT_SETTINGS`에 `toolbar.autoHideDelay: 3000` 추가
+     - "설정 키를 찾을 수 없음" 경고 제거
+  3. **ServiceRegistry allowOverwrite 옵션 추가**:
+     - 의도적인 서비스 중복 등록 시 경고 억제
+     - `serviceManager.register(..., { allowOverwrite: true })` 지원
+- **효과**: 브라우저 콘솔 경고 5건 → 0건, 사용자 경험 개선
+- 번들 크기 유지: 341.95 KB
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 239: 문서 정리 (2025-10-29)
 

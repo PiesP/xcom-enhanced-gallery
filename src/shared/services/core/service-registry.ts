@@ -21,10 +21,15 @@ export class ServiceRegistry {
 
   /**
    * 서비스 등록 (직접 인스턴스)
+   * @param key 서비스 키
+   * @param instance 서비스 인스턴스
+   * @param options.allowOverwrite 의도적인 덮어쓰기 허용 (경고 억제)
    */
-  public register<T>(key: string, instance: T): void {
+  public register<T>(key: string, instance: T, options?: { allowOverwrite?: boolean }): void {
     if (this.services.has(key)) {
-      logger.warn(`[ServiceRegistry] 서비스 덮어쓰기: ${key}`);
+      if (!options?.allowOverwrite) {
+        logger.warn(`[ServiceRegistry] 서비스 덮어쓰기: ${key}`);
+      }
       const prev = this.services.get(key);
       // 기존 인스턴스가 리스너/타이머를 보유하고 있을 수 있으므로 안전하게 정리
       if (prev && typeof prev === 'object') {

@@ -297,6 +297,15 @@
   z-index: calc(var(--xeg-z-modal) - 1);
 }
 
+/* Settings panel expanded: prevent hover zone from intercepting clicks
+   - When the toolbar settings are expanded ([data-settings-expanded='true'] on Toolbar),
+     the fixed hover zone could overlay the panel and block clicks.
+   - Use :has() to detect expanded state within the container and disable pointer events.
+*/
+.container:has([data-settings-expanded='true']) .toolbarHoverZone {
+  pointer-events: none;
+}
+
 /* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
 .container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
 .container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {

@@ -42,13 +42,15 @@ const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 // Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
 // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
 // Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용
+// Phase 230.1: 워커 프로세스 자동 정리 - isolate: false, maxWorkers 감소
 const sharedPoolOptions = {
   threads: {
     singleThread: forceSingleThread,
-    // CI: 1GB, 로컬: 3GB per worker (31GB RAM 활용)
-    memoryLimit: forceSingleThread ? 1024 : 3072,
-    minThreads: 2,
-    maxThreads: forceSingleThread ? 1 : 8, // 12 코어 중 8개 활용 (OS용 4코어 예약)
+    // CI: 1GB, 로컬: 2.5GB per worker (메모리 사용량 감소)
+    memoryLimit: forceSingleThread ? 1024 : 2560,
+    minThreads: 1, // 최소 워커 감소 (메모리 절약)
+    maxThreads: forceSingleThread ? 1 : 6, // 최대 워커 감소 (8→6, 메모리 안정성)
+    isolate: false, // 워커 재사용으로 프로세스 수 감소
   },
 };
 // Helpers

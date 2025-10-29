@@ -42,8 +42,9 @@ export async function registerCoreServices(): Promise<void> {
 
   // 하위 호환성을 위한 추가 키 등록 (Phase 68.3: 중복 제거)
   // 'theme.service'와 'toast.controller'는 테스트 전용 키
-  serviceManager.register('theme.service', themeService);
-  serviceManager.register('toast.controller', toastController);
+  // Phase 240: allowOverwrite로 의도적인 중복 등록임을 명시
+  serviceManager.register('theme.service', themeService, { allowOverwrite: true });
+  serviceManager.register('toast.controller', toastController, { allowOverwrite: true });
 
   // ====================================
   // 독립 유지 서비스들
