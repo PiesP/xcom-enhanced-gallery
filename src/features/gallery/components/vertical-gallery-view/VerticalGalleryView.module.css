@@ -166,6 +166,22 @@
   pointer-events: inherit;
 }
 
+/* FIX: Ensure settings panel remains interactive when expanded, even if wrapper loses hover
+   Rationale: .toolbarWrapper sets all descendants to pointer-events: inherit. When the wrapper
+   resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,
+   which prevents native <select> dropdowns from opening inside the settings panel.
+   This rule explicitly restores pointer-events:auto for the expanded panel so its children inherit 'auto'. */
+.toolbarWrapper [data-gallery-element='settings-panel'][data-expanded='true'] {
+  pointer-events: auto;
+}
+
+/* When settings panel is expanded, keep the toolbar wrapper interactive regardless of hover state */
+.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true']) {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+}
+
 /* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
 .container.uiHidden {
   /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */

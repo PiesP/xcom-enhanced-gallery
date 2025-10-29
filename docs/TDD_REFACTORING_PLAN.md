@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 238 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 240 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -9,23 +9,18 @@
 
 현재 진행 중인 작업이 없습니다.
 
-**다음 작업 후보**:
-
-1. **Phase 228.2-228.5 재평가** (보류 중)
-   - Phase 228.1, 229 효과 측정 후 재개 여부 결정
-
-2. **성능 프로파일링**
-   - bundlesize 모니터링, 번들 분석
-   - 빌드 최적화 기회 탐색
-
-3. **접근성 개선**
-   - ARIA 속성 강화
-   - 키보드 네비게이션 개선
-   - 스크린 리더 지원 강화
-
----
-
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 240: 설정 드롭다운 클릭 시 펼치기 문제 수정 (2025-10-29)
+
+- 원인: `.toolbarWrapper * { pointer-events: inherit; }`로 인해 hover 해제 시
+  패널 내부까지 비상호작용 상태가 되는 CSS 상속 문제
+- 조치: `VerticalGalleryView.module.css`에 확장 상태 전용 오버라이드 추가
+  - `[data-gallery-element='settings-panel'][data-expanded='true'] { pointer-events: auto; }`
+  - `.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true'])`에서
+    툴바 가시성/포인터 이벤트 유지
+- 결과: E2E 스모크 82/82 통과, 브라우저 테스트 통과, dev/prod 빌드 성공
+- 회귀 없음: outside-click, Escape 닫기, PC-only 정책/디자인 토큰 규칙 준수 확인
 
 ### Phase 239: 문서 정리 (2025-10-29)
 
