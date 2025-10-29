@@ -51,6 +51,7 @@ function fillWithDefaults(settings: AppSettings): AppSettings {
 
   // 카테고리별 기본값 병합
   const categories = {
+    toolbar: defaultSettings.toolbar,
     gallery: defaultSettings.gallery,
     download: defaultSettings.download,
     tokens: defaultSettings.tokens,

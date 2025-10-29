@@ -24,6 +24,14 @@ export interface GallerySettings {
 }
 
 /**
+ * 툴바 설정
+ */
+export interface ToolbarSettings {
+  /** 자동 숨김 지연(ms). 0이면 비활성화 */
+  autoHideDelay: number;
+}
+
+/**
  * 다운로드 설정
  */
 export interface DownloadSettings {
@@ -89,6 +97,7 @@ export interface AccessibilitySettings {
  * 전체 애플리케이션 설정
  */
 export interface AppSettings {
+  toolbar: ToolbarSettings;
   gallery: GallerySettings;
   download: DownloadSettings;
   tokens: TokenSettings;

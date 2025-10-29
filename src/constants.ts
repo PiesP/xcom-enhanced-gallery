@@ -227,6 +227,11 @@ export const VIEW_MODES = ['verticalList'] as const;
 // ================================
 
 export const DEFAULT_SETTINGS = {
+  // Toolbar 관련 기본 설정 (로그 노이즈 감소 및 일관성 확보)
+  toolbar: {
+    /** 툴바 자동 숨김 지연(ms). 0이면 비활성화 */
+    autoHideDelay: 3000,
+  },
   gallery: {
     autoScrollSpeed: 5,
     infiniteScroll: true,

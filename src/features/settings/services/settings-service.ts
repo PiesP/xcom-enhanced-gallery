@@ -460,6 +460,7 @@ export class SettingsService {
     const settingsObj = settings as Record<string, unknown>;
 
     return (
+      'toolbar' in settingsObj &&
       'gallery' in settingsObj &&
       'download' in settingsObj &&
       'tokens' in settingsObj &&
