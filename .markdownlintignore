@@ -1,0 +1,7 @@
+test-results/
+codeql-reports/
+node_modules/
+coverage/
+dist/
+*.tmp
+*.log
