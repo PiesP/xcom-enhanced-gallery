@@ -321,7 +321,7 @@ function VerticalGalleryViewCore({
     })
   );
 
-  useGalleryItemScroll(
+  const { scrollToCurrentItem } = useGalleryItemScroll(
     () => containerEl(),
     currentIndex,
     () => mediaItems().length,
@@ -332,6 +332,10 @@ function VerticalGalleryViewCore({
       debounceDelay: 100,
     }
   );
+
+  const autoScrollToCurrentItem = () => {
+    void scrollToCurrentItem();
+  };
 
   useGalleryKeyboard({
     onClose: onClose || (() => {}),
@@ -363,6 +367,7 @@ function VerticalGalleryViewCore({
       logger.warn('Failed to save fit mode', { error: err });
     });
     logger.debug('VerticalGalleryView: 이미지 크기를 원본으로 설정');
+    autoScrollToCurrentItem();
   };
 
   const handleFitWidth = (event?: Event) => {
@@ -376,6 +381,7 @@ function VerticalGalleryViewCore({
       logger.warn('Failed to save fit mode', { error: err });
     });
     logger.debug('VerticalGalleryView: 이미지 크기를 가로 맞춤으로 설정');
+    autoScrollToCurrentItem();
   };
 
   const handleFitHeight = (event?: Event) => {
@@ -389,6 +395,7 @@ function VerticalGalleryViewCore({
       logger.warn('Failed to save fit mode', { error: err });
     });
     logger.debug('VerticalGalleryView: 이미지 크기를 세로 맞춤으로 설정');
+    autoScrollToCurrentItem();
   };
 
   const handleFitContainer = (event?: Event) => {
@@ -402,6 +409,7 @@ function VerticalGalleryViewCore({
       logger.warn('Failed to save fit mode', { error: err });
     });
     logger.debug('VerticalGalleryView: 이미지 크기를 창 맞춤으로 설정');
+    autoScrollToCurrentItem();
   };
 
   const handleBackgroundClick = (event: MouseEvent) => {

@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 247
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 249
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
@@ -10,6 +10,8 @@
 
 | Phase       | 날짜       | 제목                                       | 핵심 내용                                         |
 | ----------- | ---------- | ------------------------------------------ | ------------------------------------------------- |
+| **249**     | 2025-10-29 | 자동 스크롤 트리거 일관화                  | 핏 모드 버튼이 scrollToCurrentItem 호출           |
+| **248**     | 2025-10-29 | 미디어 로드 이후 예약 영역 수축            | 로드 상태 속성 노출, 예약 폭/높이 조건부 해제     |
 | **247**     | 2025-10-29 | Fit 모드 × Intrinsic 연동                  | CSS 변수로 툴바 크기 조절과 자리 예약을 동기화    |
 | **246**     | 2025-10-29 | 갤러리 초기 스크롤 레이아웃 안정화         | 메타데이터 기반 자리 확보 + 자동 스크롤 순서 보정 |
 | **245**     | 2025-10-29 | 갤러리 스크롤 체이닝 가드 보완             | 내부 이벤트 가드 추가, 체이닝 회귀 테스트 강화    |
@@ -57,6 +59,52 @@
 | **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                                 |
 
 ---
+
+## 📋 Phase 249 상세 (자동 스크롤 트리거 일관화)
+
+- **문제 인식**: 갤러리 자동 스크롤은 갤러리 초기 진입 및 이전/다음
+  네비게이션에만 연결되어 있었고, 이미지 크기 조정(핏 모드) 버튼은 별도로 현재
+  아이템 재정렬을 요청하지 않아, 사용자가 뷰를 수동 조정한 뒤 핏 모드를 바꾸면
+  포커스된 항목이 화면 밖에 머무를 가능성이 있었다.
+- **핵심 조치**:
+  - `useGalleryItemScroll` 반환 객체를 `VerticalGalleryView` 내에 보존하고, 네
+    개의 핏 모드 핸들러(`handleFitOriginal`/`Width`/`Height`/`Container`)에서
+    `scrollToCurrentItem()`을 명시적으로 호출해 동일 경로로 자동 스크롤이
+    수행되도록 정리.
+  - 단위 테스트에서 훅을 모킹하여 핏 모드 핸들러가 호출될 때마다
+    `scrollToCurrentItem`이 실행되는지 검증하고, 기존 회귀 테스트가 상태 속성
+    변화에 집중하도록 유지.
+  - `docs/TDD_REFACTORING_PLAN.md` 업데이트로 Phase 249 계획을 완료 섹션으로
+    이전.
+- **검증**:
+  - `npx vitest run test/unit/features/gallery/components/VerticalGalleryView.fit-mode.test.tsx test/unit/features/gallery/hooks/useGalleryItemScroll.test.ts`
+  - `npm run build`
+- **결과**: 핏 모드 전환이 기존 자동 스크롤 경로와 일관되게 동작해, 사용자가
+  모드 변경 시 현재 아이템이 즉시 재정렬된다. 자동 스크롤 로직은 이미 이전/다음
+  이동 및 초기 진입과 동일한 경로를 사용하므로, 전체 사용자 흐름이 하나의 훅
+  구현 아래에서 통일되었다.
+
+## 📋 Phase 248 상세 (미디어 로드 이후 예약 영역 수축)
+
+- **문제 인식**: 이미지 로딩이 완료된 뒤에도 placeholder용 예약 높이·종횡비가
+  유지돼, Fit 모드 전환 이후에도 미디어가 여백 한가운데 뜨는 현상이 남아있음.
+- **핵심 조치**:
+  - `VerticalImageItem` 컨테이너에 `data-media-loaded` 속성을 추가해 CSS가 로드
+    완료 여부를 판별하도록 개선.
+  - `VerticalImageItem.module.css`에서 min-height·aspect-ratio·intrinsic 폭/높이
+    계산을 `data-media-loaded='false'` 조건으로 한정해, 미디어가 로드되면 예약
+    공간이 즉시 해제되도록 조정.
+  - Fit 모드 CSS가 동일한 조건부 토큰을 사용하도록 재구성해 Original/FitHeight/
+    FitContainer가 로드 전후에 일관되게 동작하도록 정리.
+  - 단위 테스트를 업데이트해 로드 이전 intrinsic 토큰 유지와 로드 상태 데이터
+    속성 노출을 검증.`VerticalImageItem.intrinsic-size.test.tsx`는 초기 토큰
+    유지만 확인하고, `VerticalGalleryView.fit-mode.test.tsx`는 핏 모드 전환 시
+    상태가 유지되는지 확인하도록 조정.
+- **검증**:
+  - `npx vitest run test/unit/features/gallery/components/VerticalImageItem.intrinsic-size.test.tsx test/unit/features/gallery/components/VerticalGalleryView.fit-mode.test.tsx`
+- **결과**: 미디어가 로드되면 placeholder 예약 공간이 해제되어 Fit 모드 전환
+  이후에도 컨테이너 크기가 실제 미디어에 정확히 수렴함. 로드 이전에는 기존 토큰
+  기반 예약이 유지되어 CLS를 방지하며, 테스트 스위트가 새 조건을 보장함.
 
 ## 📋 Phase 247 상세 (Fit 모드 × Intrinsic Sizing 연동)
 

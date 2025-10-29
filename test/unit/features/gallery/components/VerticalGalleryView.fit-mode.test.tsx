@@ -22,6 +22,11 @@ const setSettingMock = vi.fn(() => Promise.resolve());
 const unsubscribeMock = vi.fn();
 const subscribeMock = vi.fn(() => unsubscribeMock);
 const scrollIntoViewMock = vi.fn();
+const scrollToCurrentItemMock = vi.fn();
+const useGalleryItemScrollMock = vi.fn(() => ({
+  scrollToItem: vi.fn(),
+  scrollToCurrentItem: scrollToCurrentItemMock,
+}));
 
 beforeAll(() => {
   Object.defineProperty(globalThis.HTMLElement.prototype, 'scrollIntoView', {
@@ -41,6 +46,10 @@ vi.mock('../../../../../src/shared/components/ui/Toolbar/Toolbar', () => ({
     };
     return null;
   },
+}));
+
+vi.mock('../../../../../src/features/gallery/hooks/useGalleryItemScroll', () => ({
+  useGalleryItemScroll: useGalleryItemScrollMock,
 }));
 
 vi.mock('../../../../../src/shared/container/settings-access', () => ({
@@ -89,6 +98,8 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     setSettingMock.mockClear();
     subscribeMock.mockClear();
     unsubscribeMock.mockClear();
+    scrollToCurrentItemMock.mockClear();
+    useGalleryItemScrollMock.mockClear();
     resetGalleryState();
     resetDownloadState();
   });
@@ -146,6 +157,8 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
       capturedFitHandlers?.onFitOriginal?.();
     });
 
+    expect(scrollToCurrentItemMock).toHaveBeenCalledTimes(1);
+
     await waitFor(() => {
       expect(setSettingMock).toHaveBeenCalledWith('gallery.imageFitMode', 'original');
     });
@@ -174,6 +187,8 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     act(() => {
       capturedFitHandlers?.onFitContainer?.();
     });
+
+    expect(scrollToCurrentItemMock).toHaveBeenCalledTimes(2);
 
     await waitFor(() => {
       expect(setSettingMock).toHaveBeenCalledWith('gallery.imageFitMode', 'fitContainer');
