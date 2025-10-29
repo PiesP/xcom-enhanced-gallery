@@ -1,19 +1,49 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 232 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 232.3 진행 중 🔄 |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-현재 진행 중인 작업이 없습니다.
+### Phase 232.3: Vite 빌드 코드 생성 안전성 개선 (진행 중 🔄)
 
-**다음 작업 후보**:
+**배경**:
 
-1. **Phase 228.2-228.5 재평가**
-   - Phase 228.1, 229 효과 측정
-   - 사용자 피드백 수집 후 재개 여부 결정
+- CodeQL suppress 주석이 작동하지 않음
+- `vite.config.ts:156, 173`에서 js/bad-code-sanitization 경고 지속
+- 빌드 타임 코드 생성이므로 실제 보안 위험 없음
+
+**문제 분석**:
+
+- 템플릿 리터럴 내에서 `cssConcat`, `cleanedCode` 사용
+- CodeQL이 taint 추적을 통해 외부 입력으로 오인
+- 주석만으로는 taint flow 차단 불가
+
+**해결 전략**:
+
+**옵션 1: 함수 분리** (선택 ✅)
+
+- 장점: 코드 가독성 개선, 테스트 가능, 명확한 경계
+- 단점: 리팩토링 필요
+- 방법:
+  1. `createStyleInjector(css: string): string` 함수 생성
+  2. `createUserscriptWrapper(options): string` 함수 생성
+  3. 빌드 타임 입력임을 명시하는 JSDoc 추가
+
+**옵션 2: CodeQL 설정 파일** (필요시 적용)
+
+- `.github/codeql/javascript-config.yml` 생성
+- `vite.config.ts` 경로 제외
+- 장점: 빠른 해결
+- 단점: 실제 문제 숨김
+
+**구현 계획**:
+
+1. Phase 232.3.1: 함수 분리 및 JSDoc 추가
+2. Phase 232.3.2: CodeQL 재실행 확인
+3. Phase 232.3.3: (필요시) 설정 파일 추가
 
 ---
 

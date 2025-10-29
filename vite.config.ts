@@ -106,6 +106,70 @@ function userscriptHeader(flags: BuildFlags): string {
   );
 }
 
+/**
+ * 빌드 타임에 CSS를 DOM에 주입하는 안전한 코드 생성
+ * 
+ * @param css - 빌드 시점에 Vite가 생성한 CSS 문자열 (신뢰할 수 있는 입력)
+ * @returns 스타일 인젝션 JavaScript 코드
+ * 
+ * @security 이 함수는 빌드 타임에만 실행되며, 런타임 사용자 입력을 받지 않습니다.
+ *           CSS는 JSON.stringify()로 이스케이프되어 안전하게 삽입됩니다.
+ */
+function createStyleInjector(css: string): string {
+  if (!css.trim()) {
+    return '';
+  }
+
+  // CSS를 JSON.stringify로 안전하게 이스케이프
+  const escapedCss = JSON.stringify(css);
+  
+  // IIFE로 감싸진 스타일 인젝션 코드 생성
+  return (
+    `(function(){` +
+    `try{` +
+    `var s=document.getElementById('xeg-styles');` +
+    `if(s) s.remove();` +
+    `s=document.createElement('style');` +
+    `s.id='xeg-styles';` +
+    `s.textContent=${escapedCss};` +
+    `(document.head||document.documentElement).appendChild(s);` +
+    `}catch(e){console.error('[XEG] style inject fail',e);}` +
+    `})();\n`
+  );
+}
+
+/**
+ * 빌드 타임에 UserScript 래퍼 코드 생성
+ * 
+ * @param options - 래퍼 생성 옵션
+ * @param options.header - UserScript 메타 블록
+ * @param options.license - 라이선스 텍스트 (선택적)
+ * @param options.styleInjector - 스타일 인젝션 코드
+ * @param options.code - 번들된 애플리케이션 코드
+ * @param options.isProd - 프로덕션 빌드 여부
+ * @returns 완전한 UserScript 코드
+ * 
+ * @security 이 함수는 빌드 타임에만 실행되며, 모든 입력은 빌드 프로세스에서
+ *           생성된 신뢰할 수 있는 문자열입니다. 런타임 사용자 입력을 포함하지 않습니다.
+ */
+function createUserscriptWrapper(options: {
+  header: string;
+  license: string;
+  styleInjector: string;
+  code: string;
+  isProd: boolean;
+}): string {
+  const { header, license, styleInjector, code, isProd } = options;
+  
+  if (isProd) {
+    // 프로덕션: 최소화된 형태
+    return `${header}${license}(function(){'use strict';${styleInjector}${code}})();`;
+  } else {
+    // 개발: 가독성을 위한 개행 포함
+    return `${header}${license}(function(){\n'use strict';\n${styleInjector}${code}\n})();`;
+  }
+}
+
 function userscriptPlugin(flags: BuildFlags): Plugin {
   return {
     name: 'xeg-userscript-wrapper',
@@ -145,16 +209,8 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         return;
       }
 
-      // CSS 인젝션 코드 생성
-      // 참고: cssConcat은 빌드 시점에 Vite가 생성한 CSS 문자열이며,
-      // 외부 입력이 아니므로 인젝션 위험이 없음. JSON.stringify()로 안전하게 이스케이프됨.
-      // lgtm[js/bad-code-sanitization]
-      const styleInjector = cssConcat.trim().length
-        ? // CSS 모듈/전역 스타일을 하나의 <style id="xeg-styles">로 인라인 삽입.
-          // userscript가 실행될 때 즉시 DOM에 추가되며 기존 id가 있으면 덮어씌움.
-          // codeql[js/bad-code-sanitization] - 빌드 타임에 생성된 신뢰할 수 있는 CSS 문자열
-          `(function(){try{var s=document.getElementById('xeg-styles');if(s) s.remove();s=document.createElement('style');s.id='xeg-styles';s.textContent=${JSON.stringify(cssConcat)};(document.head||document.documentElement).appendChild(s);}catch(e){console.error('[XEG] style inject fail',e);}})();\n`
-        : '';
+      // 스타일 인젝션 코드 생성 (빌드 타임)
+      const styleInjector = createStyleInjector(cssConcat);
 
       // 엔트리 코드 내에 남아 있을 수 있는 sourceMappingURL 주석을 제거하여
       // userscript 파일에 중복 주석이 남지 않도록 함.
@@ -165,13 +221,15 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       // production 빌드에 한해 외부 라이선스 텍스트를 상단에 주석으로 삽입.
       const licenseNotices = flags.isProd ? generateLicenseNotices() : '';
 
-      // 전체 userscript 래핑: 메타 블록 + (선택적)라이선스 + 스타일 인젝터 + 코드
-      // 프로덕션 빌드는 개행 최소화, 개발 빌드는 가독성을 위해 개행 유지
-      // 참고: 모든 코드는 빌드 타임에 생성되며 런타임 입력을 받지 않음.
-      // codeql[js/bad-code-sanitization] - 빌드 타임에 생성된 신뢰할 수 있는 코드 조합
-      const wrapped = flags.isProd
-        ? `${userscriptHeader(flags)}${licenseNotices}(function(){'use strict';${styleInjector}${cleanedCode}})();`
-        : `${userscriptHeader(flags)}${licenseNotices}(function(){\n'use strict';\n${styleInjector}${cleanedCode}\n})();`;
+      // 전체 userscript 래퍼 생성 (빌드 타임)
+      const wrapped = createUserscriptWrapper({
+        header: userscriptHeader(flags),
+        license: licenseNotices,
+        styleInjector: styleInjector,
+        code: cleanedCode,
+        isProd: flags.isProd
+      });
+      
       const finalName = flags.isDev
         ? 'xcom-enhanced-gallery.dev.user.js'
         : 'xcom-enhanced-gallery.user.js';
