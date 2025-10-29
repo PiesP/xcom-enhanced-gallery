@@ -19,9 +19,8 @@ import {
   initializeBaseServices,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/service-manager';
-import { cleanupVendors, getSolid } from './shared/external/vendors';
+import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { isHTMLElement } from '@shared/utils/type-guards';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -32,7 +31,6 @@ import { isHTMLElement } from '@shared/utils/type-guards';
 let isStarted = false;
 let startPromise: Promise<void> | null = null;
 let galleryApp: unknown = null; // Features GalleryApp 인스턴스
-let toastContainerDispose: (() => void) | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
 /**
@@ -75,15 +73,6 @@ async function initializeCriticalSystems(): Promise<void> {
     // Critical Services만 즉시 초기화
     // 강제 로드 (팩토리/서비스 즉시 활성화)
     warmupCriticalServices();
-
-    // Toast 컨테이너 초기화 (동적 import)
-    // 테스트 모드에서는 Preact의 전역 이벤트 위임 리스너가 남아
-    // 누수 스캔에 영향을 줄 수 있으므로 생략한다.
-    if (import.meta.env.MODE !== 'test') {
-      await initializeToastContainer();
-    } else {
-      logger.debug('Toast 컨테이너 초기화 생략 (test mode)');
-    }
 
     logger.info('✅ Critical Path 초기화 완료');
   } catch (error) {
@@ -134,33 +123,6 @@ function initializeNonCriticalSystems(): void {
 }
 
 /**
- * Toast 컨테이너 지연 초기화
- */
-async function initializeToastContainer(): Promise<void> {
-  try {
-    logger.debug('Toast 컨테이너 지연 로딩 시작');
-
-    // UI 컴포넌트를 지연 로딩
-    const { ToastContainer } = await import('@shared/components/ui');
-    const { render, createComponent } = getSolid();
-    let toastContainer = document.getElementById('xeg-toast-container');
-    if (!toastContainer) {
-      toastContainer = document.createElement('div');
-      toastContainer.id = 'xeg-toast-container';
-      document.body.appendChild(toastContainer);
-    }
-
-    toastContainerDispose?.();
-    if (isHTMLElement(toastContainer)) {
-      toastContainerDispose = render(() => createComponent(ToastContainer, {}), toastContainer);
-    }
-    logger.debug('✅ Toast 컨테이너 지연 초기화 완료');
-  } catch (error) {
-    logger.warn('Toast 컨테이너 초기화 실패:', error);
-  }
-}
-
-/**
  * 전역 이벤트 핸들러 설정
  */
 function setupGlobalEventHandlers(): void {
@@ -204,21 +166,6 @@ async function cleanup(): Promise<void> {
 
     // CoreService 인스턴스 정리 (features 레이어에서 접근 금지이므로 여기서만 수행)
     CoreService.getInstance().cleanup();
-
-    // Toast 컨테이너 언마운트 및 DOM 제거
-    try {
-      // 테스트 모드에서는 초기화 자체를 건너뛰므로 언마운트도 생략
-      if (import.meta.env.MODE !== 'test') {
-        const container = document.getElementById('xeg-toast-container');
-        if (container) {
-          toastContainerDispose?.();
-          toastContainerDispose = null;
-          container.remove();
-        }
-      }
-    } catch (e) {
-      logger.warn('Toast 컨테이너 정리 중 경고:', e);
-    }
 
     // Vendor 리소스 정리 (명시적 호출; import 시점 부작용 없음)
     try {

@@ -39,6 +39,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
+  private disposeToast: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -141,6 +142,36 @@ export class GalleryRenderer implements GalleryRendererInterface {
       });
 
     this.disposeApp = render(elementFactory, this.container);
+
+    // Toast 컨테이너를 갤러리 내부에 마운트
+    this.renderToastContainer();
+  }
+
+  /**
+   * Toast 컨테이너 렌더링
+   */
+  private async renderToastContainer(): Promise<void> {
+    if (!this.container) {
+      return;
+    }
+
+    try {
+      const { ToastContainer } = await import('@shared/components/ui');
+      const { render, createComponent } = getSolid();
+
+      // Toast 컨테이너 DOM 생성
+      const toastContainer = document.createElement('div');
+      toastContainer.id = 'xeg-toast-container';
+      toastContainer.setAttribute('data-gallery-toast', 'true');
+      this.container.appendChild(toastContainer);
+
+      // Toast 컴포넌트 마운트
+      this.disposeToast = render(() => createComponent(ToastContainer, {}), toastContainer);
+
+      logger.debug('[GalleryRenderer] Toast 컨테이너 렌더링 완료');
+    } catch (error) {
+      logger.warn('[GalleryRenderer] Toast 컨테이너 렌더링 실패:', error);
+    }
   }
 
   /**
@@ -189,8 +220,15 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
+        // Toast 정리
+        this.disposeToast?.();
+        this.disposeToast = null;
+
+        // 갤러리 앱 정리
         this.disposeApp?.();
         this.disposeApp = null;
+
+        // DOM 제거
         if (document.contains(this.container)) {
           this.container.remove();
         }
