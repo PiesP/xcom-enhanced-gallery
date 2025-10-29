@@ -16,13 +16,28 @@
 
 2. **성능 프로파일링**
    - bundlesize 모니터링, 번들 분석
+   - 빌드 최적화 기회 탐색
 
 3. **접근성 개선**
-   - ARIA 속성 강화, 키보드 네비게이션 개선
+   - ARIA 속성 강화
+   - 키보드 네비게이션 개선
+   - 스크린 리더 지원 강화
 
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 239: 문서 정리 (2025-10-29)
+
+- **목적**: 중복 문서 제거 및 docs/temp/ 정리
+- **변경사항**:
+  - CODE_QUALITY.md 삭제 (AGENTS.md와 중복)
+  - DOCUMENTATION.md 업데이트 (CODE_QUALITY.md 참조 제거)
+  - docs/temp/ 정리:
+    - PHASE_210_ANALYSIS.md 삭제 (빈 파일)
+    - phase-227-\*.md 파일들 archive로 이동
+- **효과**: 문서 중복 제거, 유지보수 부담 감소
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 238: 린터 ignore 설정 개선 (2025-10-29)
 

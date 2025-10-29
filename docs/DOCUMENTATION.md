@@ -26,13 +26,14 @@
 
 ### 품질 및 유지보수
 
-- **[CODE_QUALITY.md](./CODE_QUALITY.md)**: 점검 도구 가이드 (CodeQL, ESLint,
-  Vitest 등) (250줄, 간결화 완료)
 - **[DEPENDENCY-GOVERNANCE.md](./DEPENDENCY-GOVERNANCE.md)**: dependency-cruiser
   규칙, 의존성 정책
 - **[MAINTENANCE.md](./MAINTENANCE.md)**: 유지보수 체크리스트
 - **[ACCESSIBILITY_CHECKLIST.md](./ACCESSIBILITY_CHECKLIST.md)**: WCAG 2.1 Level
   AA 준수 체크리스트
+
+**참고**: 점검 도구 가이드 (CodeQL, ESLint, Vitest 등)는
+[AGENTS.md](../AGENTS.md)의 해당 섹션 참조
 
 ### 리팩토링 및 계획
 
@@ -127,8 +128,7 @@
 3. [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) - 핵심 규칙
 4. [ARCHITECTURE.md](./ARCHITECTURE.md) - 구조 이해
 5. [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) - 테스트 작성법
-6. [DEPENDENCY-GOVERNANCE.md](./DEPENDENCY-GOVERNANCE.md)
-7. [CODE_QUALITY.md](./CODE_QUALITY.md)
+6. [DEPENDENCY-GOVERNANCE.md](./DEPENDENCY-GOVERNANCE.md) - 의존성 규칙
 
 ---
 

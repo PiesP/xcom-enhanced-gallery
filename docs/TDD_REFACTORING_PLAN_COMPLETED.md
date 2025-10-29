@@ -1,15 +1,16 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 238
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 239
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-238)
+## 📊 완료된 Phase 요약 (Phase 197-239)
 
 | Phase       | 날짜       | 제목                                       | 핵심 내용                                     |
 | ----------- | ---------- | ------------------------------------------ | --------------------------------------------- |
+| **239**     | 2025-10-29 | 문서 정리 및 중복 제거                     | CODE_QUALITY.md 삭제, temp/ 정리              |
 | **238**     | 2025-10-29 | 린터 ignore 설정 개선                      | 임시/생성/아카이브 파일 일관 제외             |
 | **237**     | 2025-10-29 | 서비스 등록 require 제거 및 타입 가드 강화 | require → static import, element.matches 체크 |
 | **236**     | 2025-10-29 | DOMContentLoaded 리스너 제거               | @run-at document-idle 활용, 격리 완성         |
@@ -46,6 +47,52 @@
 | **205**     | 2025-10-27 | Playwright Accessibility 통합              | WCAG 2.1 AA 자동 검증                         |
 | **200-204** | 2025-10-27 | 빌드 및 문서 최적화                        | 빌드 병렬화, 메모리 최적화                    |
 | **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                             |
+
+---
+
+## 📋 Phase 239 상세 (문서 정리 및 중복 제거)
+
+**목표**: 중복 문서 제거 및 임시 디렉터리 정리로 문서 유지보수 부담 감소
+
+**배경**:
+
+- CODE_QUALITY.md의 내용이 AGENTS.md에 대부분 포함되어 중복 발생
+- docs/temp/에 Phase 227 관련 작업 완료 문서 잔존
+- 빈 파일(PHASE_210_ANALYSIS.md) 존재
+
+**변경사항**:
+
+1. **CODE_QUALITY.md 삭제**:
+   - 이유: AGENTS.md의 "CodeQL 설정 및 사용" 섹션에 동일 내용 포함
+   - 효과: 문서 중복 제거, 단일 진실 공급원(AGENTS.md) 확립
+
+2. **DOCUMENTATION.md 업데이트**:
+   - "품질 및 유지보수" 섹션에서 CODE_QUALITY.md 참조 제거
+   - AGENTS.md 참조로 대체
+   - "학습 경로" 섹션에서 CODE_QUALITY.md 항목 제거
+
+3. **docs/temp/ 정리**:
+   - PHASE_210_ANALYSIS.md 삭제 (빈 파일)
+   - phase-227-completion-report.md → docs/archive/ 이동
+   - phase-227-dom-analysis.md → docs/archive/ 이동
+
+4. **TDD_REFACTORING_PLAN.md 업데이트**:
+   - Phase 239 완료 내역 추가
+   - "다음 작업 후보" 섹션 상세화
+
+**검증**:
+
+```bash
+npm run validate  # 모든 검증 통과
+npm run build     # 빌드 성공 (341.78 KB)
+```
+
+**효과**:
+
+- ✅ 문서 중복 제거 (CODE_QUALITY.md)
+- ✅ 임시 디렉터리 정리 (temp/ 비움)
+- ✅ 완료된 Phase 문서 아카이브
+- ✅ 문서 탐색 간소화
 
 ---
 
