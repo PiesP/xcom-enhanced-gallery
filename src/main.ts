@@ -201,11 +201,8 @@ async function cleanup(): Promise<void> {
     }
 
     // 모듈 레벨에서 등록된 DOMContentLoaded 핸들러 제거 (테스트 환경 안정화)
-    try {
-      document.removeEventListener('DOMContentLoaded', startApplication as EventListener);
-    } catch (e) {
-      logger.debug('DOMContentLoaded 핸들러 제거 스킵:', e);
-    }
+    // Phase 236: @run-at document-idle 보장으로 DOMContentLoaded 리스너 제거됨
+    // 더 이상 제거할 리스너가 없으므로 이 블록 자체를 제거
 
     // 전역 에러 핸들러 정리 (window:error/unhandledrejection 리스너 제거)
     // @shared/error는 GlobalErrorHandler의 호환성 래퍼인 AppErrorHandler 제공
@@ -430,18 +427,16 @@ async function initializeGalleryImmediately(): Promise<void> {
   }
 }
 
-// DOM 준비 시 애플리케이션 시작
-if (document.readyState === 'loading') {
-  // 테스트 모드에서는 DOMContentLoaded 리스너 등록을 건너뛰어
-  // 누수 스캔 테스트에서 전역 리스너 잔여가 발생하지 않도록 한다.
-  if (import.meta.env.MODE !== 'test') {
-    document.addEventListener('DOMContentLoaded', startApplication);
-  } else {
-    logger.debug('DOMContentLoaded wiring skipped (test mode)');
-  }
-} else {
-  startApplication();
-}
+/**
+ * 애플리케이션 즉시 시작
+ *
+ * @run-at document-idle 보장:
+ * 유저스크립트 엔진(Tampermonkey/Greasemonkey)이 DOM 준비 완료 후 실행하므로
+ * DOMContentLoaded 리스너가 불필요합니다. 즉시 startApplication을 호출합니다.
+ *
+ * Phase 236: DOMContentLoaded 리스너 제거로 트위터 네이티브 페이지 간섭 최소화
+ */
+startApplication();
 
 // 모듈 기본 export (외부에서 수동 시작 가능)
 export default {

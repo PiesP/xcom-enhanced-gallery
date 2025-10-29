@@ -1,15 +1,16 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 235
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 236
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-235)
+## 📊 완료된 Phase 요약 (Phase 197-236)
 
 | Phase       | 날짜       | 제목                                | 핵심 내용                                  |
 | ----------- | ---------- | ----------------------------------- | ------------------------------------------ |
+| **236**     | 2025-10-29 | DOMContentLoaded 리스너 제거        | @run-at document-idle 활용, 격리 완성      |
 | **235**     | 2025-10-29 | Toast 알림 GalleryRenderer 격리     | main.ts → GalleryRenderer, 책임 분리 명확화 |
 | **234**     | 2025-10-29 | TESTING_STRATEGY 간소화 (48% 감소)  | 517줄→271줄, 테이블 재구성, 링크 대체      |
 | **233**     | 2025-10-29 | 문서 간소화 및 정리 (90% 감소)      | 3개 문서 4667줄→444줄, 개발자 온보딩 개선  |
@@ -46,104 +47,69 @@
 
 ---
 
+## 📋 Phase 236 상세 (DOMContentLoaded 리스너 제거)
+
+**목표**: 클릭 이벤트 이외의 모든 유저스크립트 요소를 갤러리 앱 내부로 격리
+
+**문제**: main.ts에 DOMContentLoaded 리스너가 잔존하여 트위터 네이티브 페이지에 간섭
+
+**해결**:
+
+1. **핵심 인사이트**: @run-at document-idle 활용
+   - 유저스크립트 엔진(Tampermonkey/Greasemonkey)이 DOM 준비 완료 후 실행 보장
+   - DOMContentLoaded 리스너 불필요
+
+2. **변경 사항**:
+   - main.ts: DOMContentLoaded 리스너 제거 (line 422-426)
+   - main.ts: cleanup 함수에서 리스너 제거 로직 제거 (line 207-211)
+   - main.ts: 즉시 startApplication 호출 (line 422)
+
+3. **코드 변경**:
+
+```typescript
+// AS-IS (제거됨)
+if (document.readyState === 'loading') {
+  if (import.meta.env.MODE !== 'test') {
+    document.addEventListener('DOMContentLoaded', startApplication);
+  }
+} else {
+  startApplication();
+}
+
+// TO-BE
+/**
+ * @run-at document-idle 보장:
+ * 유저스크립트 엔진이 DOM 준비 완료 후 실행하므로
+ * DOMContentLoaded 리스너가 불필요합니다.
+ */
+startApplication();
+```
+
+**효과**:
+
+- ✅ 트위터 네이티브 페이지 간섭 최소화 (DOMContentLoaded 리스너 제거)
+- ✅ main.ts 역할 명확화 (설정 + cleanup만 담당)
+- ✅ 코드 단순화 (조건 분기 제거)
+- ✅ 테스트 안정성 향상 (리스너 누수 방지)
+
+**검증**:
+
+- ✅ 타입/린트: 0 errors
+- ✅ 단위 테스트: 82/82 통과
+- ✅ 브라우저 테스트: 111/111 통과
+- ✅ E2E 스모크: 87 통과 (5 skipped)
+- ✅ 번들 크기: 339.05 KB (변화 없음)
+
+**완료 조건 달성**:
+
+- [x] DOMContentLoaded 리스너 제거
+- [x] @run-at document-idle 주석 추가
+- [x] cleanup 로직 정리
+- [x] 모든 테스트 통과
+- [x] 빌드 검증 완료
+
+---
+
 ## 📋 Phase 235 상세 (Toast 알림 격리)
 
-**날짜**: 2025-10-29
-
-**목표**: Toast 알림 기능을 유저스크립트(main.ts)에서 제거하고 GalleryRenderer 내부로 격리
-
-**배경**:
-
-- 유저스크립트는 클릭 이벤트 위임만 담당해야 함
-- Toast는 갤러리 앱 내부 UI 요소로 격리 필요
-
-**구현 내용**:
-
-- **Phase 235.1**: main.ts에서 Toast 제거
-  - `initializeToastContainer()` 함수 제거
-  - `toastContainerDispose` 변수 제거
-  - `initializeCriticalSystems()`에서 Toast 초기화 제거
-  - `cleanup()`에서 Toast dispose 제거
-  - `getSolid`, `isHTMLElement` import 정리
-
-- **Phase 235.2**: GalleryRenderer에 Toast 통합
-  - `disposeToast` 속성 추가
-  - `renderToastContainer()` 메서드 추가
-  - `renderComponent()`에서 Toast 컨테이너 마운트
-  - `cleanupContainer()`에서 Toast 정리 추가
-
-**결과**:
-
-- ✅ 유저스크립트는 이벤트 위임만 담당
-- ✅ Toast는 갤러리 내부에서만 동작
-- ✅ 번들 크기 유지: 339.19 KB (변화 없음)
-- ✅ 모든 테스트 통과 (82 passed, 5 skipped)
-- ✅ 접근성 유지 (WCAG 2.1 live region)
-
-**커밋**:
-
-- `docs: Phase 235 리팩토링 계획 수립 - Toast 알림 격리` (6bf1e482)
-- `refactor: Phase 235.1-235.2 - Toast를 GalleryRenderer 내부로 격리` (92777a6f)
-
----
-
-## 📈 주요 성과
-
-### 보안 (Phase 232)
-
-- CodeQL 경고 6개 완벽 해결
-- URL 검증 강화 (도메인 스푸핑 방지)
-- Prototype pollution 명시적 가드 추가
-
-### 성능 (Phase 228, 200-204)
-
-- 비미디어 클릭 처리 10-20ms 개선
-- 빌드 시간 14.7% 단축 (병렬화)
-- 메모리 사용량 최적화 (8192MB 설정)
-
-### 코드 품질 (Phase 197-232)
-
-- 494줄 데드코드 제거
-- Import 경로 전면 정규화 (@shared/@features)
-- JSDoc 현대화 및 표준 준수
-- 3계층 의존성 규칙 강화
-
-### 테스트 (Phase 206, 205)
-
-- E2E 스모크 테스트 82개 (Playwright)
-- 접근성 자동 검증 (axe-core)
-- WCAG 2.1 Level AA 달성
-
-### 문서 (Phase 207, 233)
-
-- 문서 체계 현대화
-- 과도한 상세 내역 간소화
-- 개발자 온보딩 개선
-
----
-
-## 🏆 최종 상태
-
-| 항목          | 상태          | 비고                        |
-| ------------- | ------------- | --------------------------- |
-| 빌드          | ✅ 안정       | 병렬화 + 메모리 최적화 완료 |
-| 테스트        | ✅ 82/82 통과 | E2E 스모크 테스트 포함      |
-| 접근성        | ✅ 통과       | WCAG 2.1 Level AA 달성      |
-| 타입/린트     | ✅ 0 errors   | 모두 통과                   |
-| 의존성        | ✅ 0 위반     | 3계층 구조 강제             |
-| 번들 크기     | ✅ 340 KB     | 목표 ≤420 KB (여유 80 KB)   |
-| 보안 (CodeQL) | ✅ 0 경고     | Phase 232 완료              |
-
----
-
-## 📚 참고
-
-- **현재 계획**: [TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)
-- **아키텍처**: [ARCHITECTURE.md](./ARCHITECTURE.md)
-- **코딩 규칙**: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md)
-- **테스트 전략**: [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
-- **유지보수**: [MAINTENANCE.md](./MAINTENANCE.md)
-
----
-
-**참고**: 각 Phase의 상세 구현 내역은 git 커밋 히스토리를 참고하세요.
+```

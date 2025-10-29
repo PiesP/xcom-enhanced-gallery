@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 235 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 236 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -23,6 +23,15 @@
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 236: DOMContentLoaded 리스너 제거 - 유저스크립트 격리 완성 (2025-10-29)
+
+- DOMContentLoaded 리스너 제거 (@run-at document-idle 보장 활용)
+- main.ts 단순화 (즉시 startApplication 호출)
+- cleanup 로직 정리 (불필요한 리스너 제거 코드 삭제)
+- 트위터 네이티브 페이지 간섭 최소화 완료
+- 번들 크기 유지: 339.05 KB (변화 없음)
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 235: Toast 알림을 GalleryRenderer 내부로 격리 (2025-10-29)
 
