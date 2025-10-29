@@ -1,62 +1,30 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 232 진행 중 🔄 |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 232 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 232: CodeQL 보안 경고 해결 (진행 중 🔄)
+현재 진행 중인 작업이 없습니다.
 
-**배경**:
+**다음 작업 후보**:
 
-- CodeQL security-extended 스캔에서 6개 이슈 발견
-- 이전 Phase 231.1에서 해결했으나 새로운 이슈 발견
-- 런타임 보안 위험 제거 필요
+1. **Phase 228.2-228.5 재평가**
+   - Phase 228.1, 229 효과 측정
+   - 사용자 피드백 수집 후 재개 여부 결정
 
-**발견된 이슈**:
+---
 
-1. **URL 검증 취약점 (3건)** - `js/incomplete-url-substring-sanitization` ✅
-   - `media-service.ts:318` - `includes('pbs.twimg.com')`
-   - `media-url.util.ts:73` - `includes('pbs.twimg.com')`
-   - `media-url.util.ts:325` - `includes('ton.twimg.com')`
-   - 문제: `evil.com?fake=pbs.twimg.com` 같은 도메인 스푸핑 가능
-   - 해결: URL 객체로 정확한 호스트명 검증
+## ✅ 최근 완료 작업 (요약)
 
-2. **Prototype Pollution (1건)** - `js/prototype-pollution-utility` ✅
-   - `type-safety-helpers.ts:517` - `setNestedValue()` 함수
-   - 문제: DANGEROUS_KEYS 검증이 있지만 CodeQL이 인식 못함
-   - 해결: 최종 키에 명시적 가드 추가 + Object.hasOwn 사용
+### Phase 232: CodeQL 보안 경고 해결 (완료 ✅ - 2025-10-29)
 
-3. **코드 생성 안전성 (2건)** - `js/bad-code-sanitization` 🟡
-   - `vite.config.ts:156, 173` - 빌드 타임 코드 조합
-   - 실제 위험 없음 (빌드 타임 생성), 하지만 경고 지속
-   - 보류: 실제 보안 위험 없으므로 우선순위 낮음
+**6개 중 4개 이슈 해결**: URL 검증(3건), Prototype Pollution(1건)
 
-**완료된 단계**:
-
-- **Phase 232.1**: URL 검증 개선 (완료 ✅)
-  - 대상: media-service.ts, media-url.util.ts
-  - 변경:
-    - `getOptimizedImageUrl()`: URL 객체로 호스트명 정확히 검증
-    - `isTwitterMediaUrl()`: 헬퍼 함수 추가
-    - `isValidMediaUrlFallback()`: 정규식 개선 (`/^https?:\/\/([^/?#]+)/`)
-  - 테스트: media-service.test.ts에 보안 검증 테스트 추가
-  - 결과: 도메인 스푸핑 방지 강화
-
-- **Phase 232.2**: Prototype Pollution 명시적 가드 (완료 ✅)
-  - 대상: type-safety-helpers.ts
-  - 변경:
-    - `setNestedValue()`: 최종 키에 DANGEROUS_KEYS 재검증
-    - `Object.hasOwn()` 사용하여 프로토타입 체인 방지
-    - 상속된 속성 설정 시도 시 에러 발생
-  - 결과: CodeQL이 인식할 수 있는 명시적 보호
-
-**다음 단계**:
-
-- CodeQL 재실행하여 경고 해결 확인
-- 빌드 검증 완료 후 커밋
+**상세 내용**:
+[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참고
 
 ---
 

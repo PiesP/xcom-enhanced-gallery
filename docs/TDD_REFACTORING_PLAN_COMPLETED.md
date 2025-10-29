@@ -2,11 +2,70 @@
 
 **목적**: 완료된 Phase의 핵심 요약
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 231.1 ✅
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 232 ✅
 
 ---
 
-## 🎯 최근 완료 Phase (231.1)
+## 🎯 최근 완료 Phase (232)
+
+### Phase 232 ✅ (2025-10-29) - CodeQL Security Warnings Resolution
+
+**목표**: CodeQL security-extended 스캔에서 발견된 6개 보안 이슈 해결
+
+**배경**:
+
+- CodeQL security-extended 스캔에서 6개 이슈 발견
+- 런타임 보안 위험 (URL 검증, prototype pollution) 제거 필요
+
+**해결 완료된 문제**:
+
+1. **URL 검증 취약점 (3건)** - `js/incomplete-url-substring-sanitization` ✅
+   - `media-service.ts:318` - `includes('pbs.twimg.com')`
+   - `media-url.util.ts:73` - `includes('pbs.twimg.com')`
+   - `media-url.util.ts:325` - `includes('ton.twimg.com')`
+   - 문제: 도메인 스푸핑 가능 (`evil.com?fake=pbs.twimg.com`)
+   - 해결:
+     - `getOptimizedImageUrl()`: URL 객체로 호스트명 정확히 검증
+     - `isTwitterMediaUrl()`: 헬퍼 함수 추가 (hostname 정확 매칭)
+     - `isValidMediaUrlFallback()`: 정규식 개선 (`/^https?:\/\/([^/?#]+)/`)
+
+2. **Prototype Pollution (1건)** - `js/prototype-pollution-utility` ✅
+   - `type-safety-helpers.ts:517` - `setNestedValue()` 함수
+   - 문제: DANGEROUS_KEYS 검증이 있지만 CodeQL이 인식 못함
+   - 해결:
+     - 최종 키에 DANGEROUS_KEYS 재검증 추가
+     - `Object.hasOwn()` 사용하여 프로토타입 체인 방지
+     - 상속된 속성 설정 시도 시 에러 발생
+
+3. **코드 생성 안전성 (2건)** - `js/bad-code-sanitization` 🟡
+   - `vite.config.ts:156, 173` - 빌드 타임 코드 조합
+   - 실제 위험 없음 (빌드 타임 생성), 우선순위 낮음으로 보류
+
+**보안 개선 효과**:
+
+- URL 검증 강화로 도메인 스푸핑 방지
+- Prototype pollution 명시적 가드 추가
+- 런타임 보안 위험 제거
+
+**검증 결과**:
+
+- ✅ typecheck: 통과
+- ✅ lint:fix: 통과
+- ✅ test: 통과 (media-service 보안 테스트 추가)
+- ✅ build: 성공 (339.24 KB prod, 765.49 KB dev)
+
+**변경 파일**:
+
+- `src/shared/services/media-service.ts`
+- `src/shared/utils/media/media-url.util.ts`
+- `src/shared/utils/type-safety-helpers.ts`
+- `test/unit/shared/services/media-service.test.ts`
+
+**커밋**: `61ed0da1` - fix(security): Resolve CodeQL security warnings
+
+---
+
+## 🎯 이전 완료 Phase (231.1)
 
 ### Phase 231.1 ✅ (2025-10-29) - CodeQL Open Alerts Resolution
 
