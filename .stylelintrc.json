@@ -42,6 +42,12 @@
     "dist/**",
     "coverage/**",
     "node_modules/**",
+    "test-results/**",
+    "codeql-reports/**",
+    "codeql-results/**",
+    "docs/temp/**",
+    "docs/archive/**",
+    "scripts/temp/**",
     "**/design-tokens.primitive.css",
     "**/design-tokens.semantic.css",
     "**/design-tokens.css"

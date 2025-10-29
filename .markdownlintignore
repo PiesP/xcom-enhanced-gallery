@@ -1,7 +1,11 @@
 test-results/
 codeql-reports/
+codeql-results/
 node_modules/
 coverage/
 dist/
+docs/temp/
+docs/archive/
+scripts/temp/
 *.tmp
 *.log

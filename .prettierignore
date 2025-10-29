@@ -17,10 +17,20 @@ release/
 # Logs
 *.log
 
-# Documentation
+# Test & Security Reports
+test-results/
+codeql-reports/
+codeql-results/
+
+# Documentation (Generated & Archive)
 docs/dependency-*.html
 docs/dependency-*.svg
 docs/dependency-*.json
+docs/temp/
+docs/archive/
+
+# Scripts (Experimental)
+scripts/temp/
 
 # IDE
 .vscode/

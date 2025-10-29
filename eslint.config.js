@@ -29,6 +29,11 @@ export default [
       '**/*.d.ts',
       'release/**',
       'test-results/**',
+      'codeql-reports/**',
+      'codeql-results/**',
+      'docs/temp/**',
+      'docs/archive/**',
+      'scripts/temp/**',
       '*.config.js.backup',
       '*.backup.*',
       // Type definitions
