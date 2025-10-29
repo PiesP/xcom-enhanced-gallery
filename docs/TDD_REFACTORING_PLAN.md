@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 237 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 238 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -23,6 +23,23 @@
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 238: 린터 ignore 설정 개선 (2025-10-29)
+
+- **목적**: 임시/생성/아카이브 파일을 모든 린터에서 일관성 있게 제외
+- **변경사항**:
+  - ESLint: codeql-reports/**, codeql-results/**, docs/temp/**, docs/archive/**,
+    scripts/temp/\*\* 추가
+  - Stylelint: test-results/**, codeql-reports/**, codeql-results/**,
+    docs/temp/**, docs/archive/**, scripts/temp/** 추가
+  - Prettier: test-results/, codeql-reports/, codeql-results/, docs/temp/,
+    docs/archive/, scripts/temp/ 추가
+  - Markdownlint: codeql-results/, docs/temp/, docs/archive/, scripts/temp/\*\*
+    추가
+- **효과**: 린터가 불필요한 파일을 검사하지 않아 성능 개선 및 false positive
+  방지
+- 번들 크기 유지: 341.78 KB
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 237: 서비스 등록 require 제거 및 타입 가드 강화 (2025-10-29)
 

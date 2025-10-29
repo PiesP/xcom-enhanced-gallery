@@ -1,15 +1,16 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 237
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 238
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-237)
+## 📊 완료된 Phase 요약 (Phase 197-238)
 
 | Phase       | 날짜       | 제목                                       | 핵심 내용                                     |
 | ----------- | ---------- | ------------------------------------------ | --------------------------------------------- |
+| **238**     | 2025-10-29 | 린터 ignore 설정 개선                      | 임시/생성/아카이브 파일 일관 제외             |
 | **237**     | 2025-10-29 | 서비스 등록 require 제거 및 타입 가드 강화 | require → static import, element.matches 체크 |
 | **236**     | 2025-10-29 | DOMContentLoaded 리스너 제거               | @run-at document-idle 활용, 격리 완성         |
 | **235**     | 2025-10-29 | Toast 알림 GalleryRenderer 격리            | main.ts → GalleryRenderer, 책임 분리 명확화   |
@@ -45,6 +46,73 @@
 | **205**     | 2025-10-27 | Playwright Accessibility 통합              | WCAG 2.1 AA 자동 검증                         |
 | **200-204** | 2025-10-27 | 빌드 및 문서 최적화                        | 빌드 병렬화, 메모리 최적화                    |
 | **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                             |
+
+---
+
+## 📋 Phase 238 상세 (린터 ignore 설정 개선)
+
+**목표**: 임시/생성/아카이브 파일을 모든 린터에서 일관성 있게 제외하여 성능 개선
+및 false positive 방지
+
+**배경**: 이전에 markdownlint에서 test-results/, dist/ 제외 설정을 추가했으나,
+다른 린터들(ESLint, Stylelint, Prettier)에는 유사한 패턴이 누락되어 있었음
+
+**변경사항**:
+
+1. **ESLint** (`eslint.config.js`):
+   - 추가된 ignore 패턴:
+     - `codeql-reports/**`
+     - `codeql-results/**`
+     - `docs/temp/**`
+     - `docs/archive/**`
+     - `scripts/temp/**`
+
+2. **Stylelint** (`.stylelintrc.json`):
+   - 추가된 ignoreFiles 패턴:
+     - `test-results/**`
+     - `codeql-reports/**`
+     - `codeql-results/**`
+     - `docs/temp/**`
+     - `docs/archive/**`
+     - `scripts/temp/**`
+
+3. **Prettier** (`.prettierignore`):
+   - 추가된 패턴:
+     - `test-results/`
+     - `codeql-reports/`
+     - `codeql-results/`
+     - `docs/temp/`
+     - `docs/archive/`
+     - `scripts/temp/`
+   - 섹션 재구성 (Generated & Archive 구분)
+
+4. **Markdownlint** (`.markdownlintignore`):
+   - 추가된 패턴:
+     - `codeql-results/`
+     - `docs/temp/`
+     - `docs/archive/`
+     - `scripts/temp/`
+   - `package.json` 스크립트에도 동일 패턴 추가
+
+**검증**:
+
+```bash
+npm run lint:all      # 모든 린터 정상 실행 (0 errors)
+npm run typecheck     # 타입 체크 통과
+npm run build         # 빌드 성공 (341.78 KB)
+```
+
+**효과**:
+
+- ✅ 모든 린터가 임시/생성/아카이브 파일을 일관되게 무시
+- ✅ 린터 실행 속도 개선 (불필요한 파일 스캔 방지)
+- ✅ false positive 방지 (생성된 파일에 대한 오류 보고 제거)
+- ✅ 개발자 경험 개선 (일관된 ignore 규칙)
+
+**커밋**:
+
+- `chore: improve linter ignore configurations`
+- 브랜치: `chore/improve-linter-ignores`
 
 ---
 
