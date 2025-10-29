@@ -8,6 +8,7 @@ import { logger } from '@shared/logging';
 import type { ComponentType } from '../../types/app.types';
 import { getSolid } from '../../external/vendors';
 import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
+import { ComponentStandards } from '../../utils/component-utils';
 
 const solid = getSolid();
 const { mergeProps } = solid;
@@ -398,9 +399,6 @@ export function createHOCStandardProps<T extends GalleryComponentProps>(
   'data-xeg-gallery-version': string;
   className: string;
 } {
-  // ComponentStandards 동적 import
-  const { ComponentStandards } = require('../ui/StandardProps');
-
   // 마킹 속성 생성
   const markerAttributes = createMarkerAttributes(mergeOptionsWithDefaults(hocOptions));
 
