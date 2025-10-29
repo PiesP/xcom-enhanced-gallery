@@ -1,69 +1,15 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 234 완료 ✅ |
+**마지막 업데이트**: 2025-10-29 | **상태**: Phase 235 완료 ✅ |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 235: Toast 알림을 GalleryApp 내부로 격리 (2025-10-29)
+현재 진행 중인 작업이 없습니다.
 
-**목표**: 토스트 알림 기능을 유저스크립트(main.ts)에서 제거하고 GalleryApp 내부로 완전히 격리
-
-**배경**:
-
-- 현재 main.ts가 document.body에 Toast 컨테이너를 마운트
-- 유저스크립트는 클릭 이벤트 위임만 담당하고, 나머지 모든 UI는 갤러리 앱 내부로 격리해야 함
-
-**솔루션 선택**: 옵션 2 - 토스트를 GalleryApp 내부로 이동 (Recommended)
-
-**장점**:
-
-- ✅ 사용자 피드백 메커니즘 유지 (에러 알림)
-- ✅ 접근성 유지 (WCAG 2.1 live region)
-- ✅ 명확한 책임 분리 (main.ts는 이벤트 위임만)
-- ✅ 테스트 용이성 (GalleryApp 테스트에서 Toast 검증)
-
-**대안 검토**:
-
-- ❌ 옵션 1 (완전 제거): 사용자 피드백 상실, 접근성 저하
-- ⚠️  옵션 3 (GalleryRenderer로 이동): 렌더러 책임 과중
-
-**구현 단계**:
-
-#### Phase 235.1: main.ts에서 Toast 제거 ⏳
-
-- [ ] `initializeToastContainer()` 함수 제거
-- [ ] `toastContainerDispose` 변수 제거
-- [ ] `initializeCriticalSystems()`에서 Toast 초기화 코드 제거
-- [ ] `cleanup()`에서 Toast dispose 코드 제거
-- [ ] import 정리
-
-#### Phase 235.2: GalleryApp에 Toast 통합 ⏳
-
-- [ ] GalleryRenderer 또는 GalleryApp 내부에 Toast 컨테이너 마운트
-- [ ] 기존 `toastController` 로직 유지
-- [ ] 갤러리 닫힐 때 Toast 정리
-- [ ] 테스트 업데이트 (Toast가 갤러리 내부에서만 동작)
-
-#### Phase 235.3: 빌드 및 테스트 검증 ⏳
-
-- [ ] `npm run build` 성공 확인
-- [ ] 번들 크기 변화 확인 (Toast는 여전히 포함)
-- [ ] 단위 테스트 실행 (`npm test`)
-- [ ] 브라우저 테스트 (`npm run test:browser`)
-- [ ] E2E 스모크 테스트 (`npm run e2e:smoke`)
-- [ ] 접근성 테스트 (`npm run e2e:a11y`)
-
-#### Phase 235.4: 문서 업데이트 ⏳
-
-- [ ] ARCHITECTURE.md 업데이트 (Toast 위치 변경)
-- [ ] 완료 내용을 TDD_REFACTORING_PLAN_COMPLETED.md로 이관
-
----
-
-**다음 작업 후보** (Phase 235 완료 후):
+**다음 작업 후보**:
 
 1. **Phase 228.2-228.5 재평가** (보류 중)
    - Phase 228.1, 229 효과 측정 후 재개 여부 결정
@@ -77,6 +23,14 @@
 ---
 
 ## ✅ 최근 완료 작업 (간략)
+
+### Phase 235: Toast 알림을 GalleryRenderer 내부로 격리 (2025-10-29)
+
+- main.ts에서 Toast 관련 코드 제거 (함수, 변수, import)
+- GalleryRenderer에 Toast 컨테이너 통합 (renderToastContainer, cleanupContainer)
+- 유저스크립트는 이벤트 위임만 담당, Toast는 갤러리 내부에서만 동작
+- 번들 크기 유지: 339.19 KB (변화 없음)
+- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
 
 ### Phase 234: TESTING_STRATEGY.md 간소화 (2025-10-29)
 
