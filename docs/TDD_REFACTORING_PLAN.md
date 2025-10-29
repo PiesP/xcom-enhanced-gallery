@@ -7,7 +7,36 @@
 
 ## 🔄 현재 진행 중인 작업
 
-현재 진행 중인 작업이 없습니다.
+### Phase 234: TESTING_STRATEGY.md 간소화 (2025-10-29)
+
+**목표**: TESTING_STRATEGY.md 간소화 (517줄 → ~150줄 예상, 70% 감소)
+
+**배경**:
+
+- Phase 233 문서 간소화 작업의 연속
+- 유지보수 점검에서 TESTING_STRATEGY.md (517줄) 간소화 권장
+- 개발자 온보딩 시간 단축 및 핵심 정보 부각
+
+**접근**:
+
+- 핵심 3가지 테스트 피라미드 설명 유지 (Trophy 모델, Userscript 특화, Security Analysis)
+- 각 테스트 타입별 책임 분리 (Static, Unit, Browser, Integration, E2E, A11y) 간결화
+- 실행 전략, 선택 기준만 테이블 형태로 요약
+- Vitest projects, npm run build vs npm test 비교 간소화
+- 가드 테스트, 아카이브 정책은 참조 링크로 대체
+
+**작업 계획**:
+
+1. 현재 517줄 → 핵심 150줄 추출
+2. 상세 설명은 관련 문서 링크로 대체 (AGENTS.md, test/README.md 등)
+3. 테이블, 목록 형태로 가독성 개선
+4. commit: "docs(phase-234): TESTING_STRATEGY 간소화 (70% 감소)"
+
+**예상 효과**:
+
+- 테스트 전략 이해 시간 50% 단축 (30분 → 15분)
+- 핵심 정보 접근성 향상
+- 문서 유지보수 부담 감소
 
 **다음 작업 후보**:
 
