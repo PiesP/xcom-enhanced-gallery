@@ -7,7 +7,15 @@
 
 ## 🔄 현재 진행 중인 작업
 
-- 진행 중인 Phase 없음 (Phase 246 후보 검토 중)
+- **Phase 248: 미디어 로드 이후 예약 영역 수축 (착수 2025-10-29)**
+  - 목표: 툴바 Fit 모드 전환 후 실제 표시 크기에 맞춰 컨테이너가 수축되도록
+    조정하여 이미지가 중앙에 떠 있는 현상 제거
+  - 접근: `VerticalImageItem`에 로드 상태 데이터 속성을 노출하고, 로드 완료 시
+    예약 aspect/width/height 커스텀 프로퍼티를 해제하거나 재계산하며 CSS가
+    `data-media-loaded` 조건으로 min-height/width를 조정하도록 개선
+  - 테스트: `VerticalGalleryView.fit-mode.test.tsx`(로드 완료 후 사이즈 검증),
+    `VerticalImageItem.intrinsic-size.test.tsx`(토큰 해제/재적용),
+    `layout-stability.cls.red.test.ts`(예약 토큰 지속 여부) 업데이트
 
 ## ✅ 최근 완료 작업 (간략)
 

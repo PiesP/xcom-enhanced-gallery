@@ -126,6 +126,10 @@ describe('useGalleryItemScroll (Solid)', () => {
 
   it('debounces auto-scroll when current index changes', async () => {
     vi.useFakeTimers();
+    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
 
     const container = document.createElement('div');
     const containerRef = { current: container };
@@ -144,33 +148,40 @@ describe('useGalleryItemScroll (Solid)', () => {
     let setCurrentIndex!: (value: number) => number;
     let hookDispose: () => void = () => {};
 
-    createRoot(dispose => {
-      hookDispose = dispose;
-      const [currentIndex, setIndex] = createSignal(0);
-      setCurrentIndex = setIndex;
+    try {
+      createRoot(dispose => {
+        hookDispose = dispose;
+        const [currentIndex, setIndex] = createSignal(0);
+        setCurrentIndex = setIndex;
 
-      useGalleryItemScroll(containerRef, currentIndex, () => 2, {
-        behavior: 'auto',
-        debounceDelay: 75,
-        respectReducedMotion: false,
+        useGalleryItemScroll(containerRef, currentIndex, () => 2, {
+          behavior: 'auto',
+          debounceDelay: 75,
+          respectReducedMotion: false,
+        });
       });
-    });
 
-    setCurrentIndex(1);
+      setCurrentIndex(1);
 
-    // interval tick to detect index change
-    vi.advanceTimersByTime(32);
+      // interval tick to detect index change
+      vi.advanceTimersByTime(32);
 
-    vi.advanceTimersByTime(50);
-    expect(scrollSpy).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(50);
+      await Promise.resolve();
+      expect(scrollSpy).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(25);
-    expect(scrollSpy).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(25);
+      await Promise.resolve();
+      expect(scrollSpy).toHaveBeenCalledTimes(1);
 
-    setCurrentIndex(1);
-    vi.advanceTimersByTime(200);
-    expect(scrollSpy).toHaveBeenCalledTimes(1);
-
-    hookDispose();
+      setCurrentIndex(1);
+      vi.advanceTimersByTime(200);
+      await Promise.resolve();
+      expect(scrollSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      hookDispose();
+      rafMock.mockRestore();
+      vi.useRealTimers();
+    }
   });
 });

@@ -3,7 +3,7 @@
  */
 
 import { beforeAll, beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, h, waitFor, act } from '@test/utils/testing-library';
+import { cleanup, render, h, waitFor, act } from '../../../../utils/testing-library';
 import type { MediaInfo } from '../../../../../src/shared/types';
 import { galleryState } from '../../../../../src/shared/state/signals/gallery.signals';
 import { downloadState } from '../../../../../src/shared/state/signals/download.signals';
@@ -57,6 +57,8 @@ const mediaItems: MediaInfo[] = [
     url: 'https://example.com/1.jpg',
     type: 'image',
     filename: '1.jpg',
+    width: 1024,
+    height: 768,
   },
 ];
 
@@ -114,13 +116,29 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     const { container } = render(h(VerticalGalleryView));
 
     await waitFor(() => {
-      const initialItem = container.querySelector('[data-index="0"]');
+      const initialItem = container.querySelector('[data-index="0"]') as HTMLDivElement | null;
       expect(initialItem).not.toBeNull();
-      expect(initialItem?.getAttribute('data-fit-mode')).toBe('fitWidth');
+      if (!initialItem) {
+        throw new Error('expected gallery item');
+      }
+
+      expect(initialItem.getAttribute('data-fit-mode')).toBe('fitWidth');
+      const classList = Array.from(initialItem.classList);
+      expect(classList.some(className => className.includes('fitWidth'))).toBe(true);
+      expect(initialItem.getAttribute('data-has-intrinsic-size')).toBe('true');
       expect(
-        initialItem &&
-          Array.from(initialItem.classList).some(className => className.includes('fitWidth'))
+        initialItem.getAttribute('style')?.includes('--xeg-gallery-item-intrinsic-width')
       ).toBe(true);
+      expect(initialItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+        '64.0000rem'
+      );
+      expect(initialItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+        '48.0000rem'
+      );
+      expect(initialItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio').trim()).toBe(
+        '1.333333'
+      );
+      expect(initialItem.getAttribute('data-media-loaded')).toBe('false');
     });
 
     expect(capturedFitHandlers?.onFitOriginal).toBeTypeOf('function');
@@ -133,17 +151,23 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     });
 
     await waitFor(() => {
-      const updatedItem = container.querySelector('[data-index="0"]');
+      const updatedItem = container.querySelector('[data-index="0"]') as HTMLDivElement | null;
       expect(updatedItem).not.toBeNull();
-      expect(updatedItem?.getAttribute('data-fit-mode')).toBe('original');
-      expect(
-        updatedItem &&
-          Array.from(updatedItem.classList).some(className => className.includes('fitOriginal'))
-      ).toBe(true);
-      expect(
-        updatedItem &&
-          Array.from(updatedItem.classList).some(className => className.includes('fitWidth'))
-      ).toBe(false);
+      if (!updatedItem) {
+        throw new Error('expected gallery item after fit change');
+      }
+
+      expect(updatedItem.getAttribute('data-fit-mode')).toBe('original');
+      const classList = Array.from(updatedItem.classList);
+      expect(classList.some(className => className.includes('fitOriginal'))).toBe(true);
+      expect(classList.some(className => className.includes('fitWidth'))).toBe(false);
+      expect(updatedItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+        '64.0000rem'
+      );
+      expect(updatedItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+        '48.0000rem'
+      );
+      expect(updatedItem.getAttribute('data-media-loaded')).toBe('false');
     });
 
     expect(capturedFitHandlers?.onFitContainer).toBeTypeOf('function');
@@ -156,17 +180,23 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
     });
 
     await waitFor(() => {
-      const finalItem = container.querySelector('[data-index="0"]');
+      const finalItem = container.querySelector('[data-index="0"]') as HTMLDivElement | null;
       expect(finalItem).not.toBeNull();
-      expect(finalItem?.getAttribute('data-fit-mode')).toBe('fitContainer');
-      expect(
-        finalItem &&
-          Array.from(finalItem.classList).some(className => className.includes('fitContainer'))
-      ).toBe(true);
-      expect(
-        finalItem &&
-          Array.from(finalItem.classList).some(className => className.includes('fitOriginal'))
-      ).toBe(false);
+      if (!finalItem) {
+        throw new Error('expected gallery item after fitContainer');
+      }
+
+      expect(finalItem.getAttribute('data-fit-mode')).toBe('fitContainer');
+      const classList = Array.from(finalItem.classList);
+      expect(classList.some(className => className.includes('fitContainer'))).toBe(true);
+      expect(classList.some(className => className.includes('fitOriginal'))).toBe(false);
+      expect(finalItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+        '64.0000rem'
+      );
+      expect(finalItem.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+        '48.0000rem'
+      );
+      expect(finalItem.getAttribute('data-media-loaded')).toBe('false');
     });
 
     expect(setSettingMock).toHaveBeenCalledWith('gallery.imageFitMode', 'original');

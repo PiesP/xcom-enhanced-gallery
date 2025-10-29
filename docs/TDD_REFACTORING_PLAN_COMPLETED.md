@@ -1,60 +1,105 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 244
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 247
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-245)
+## 📊 완료된 Phase 요약 (Phase 197-246)
 
-| Phase       | 날짜       | 제목                                       | 핵심 내용                                      |
-| ----------- | ---------- | ------------------------------------------ | ---------------------------------------------- |
-| **245**     | 2025-10-29 | 갤러리 스크롤 체이닝 가드 보완             | 내부 이벤트 가드 추가, 체이닝 회귀 테스트 강화 |
-| **244**     | 2025-10-29 | 갤러리 스크롤 체이닝 점검                  | 스크롤 가드/overscroll 보강, Playwright 회귀   |
-| **243**     | 2025-10-29 | 포인터 정책 로직 간결화 및 재발 방지 강화  | 헬퍼 함수 분리, 상수 추출, 문서화              |
-| **242**     | 2025-10-29 | 설정 드롭다운 포인터 정책 조정             | 폼 컨트롤 허용, 비-HTMLElement 가드 추가       |
-| **241**     | 2025-10-29 | event.target 타입 가드 강화                | isHTMLElement 활용, Document/Window 안전처리   |
-| **240**     | 2025-10-29 | 설정 드롭다운 펼침 수정                    | CSS 상속 문제 수정, 오버라이드 추가            |
-| **239**     | 2025-10-29 | 문서 정리 및 중복 제거                     | CODE_QUALITY.md 삭제, temp/ 정리               |
-| **238**     | 2025-10-29 | 린터 ignore 설정 개선                      | 임시/생성/아카이브 파일 일관 제외              |
-| **237**     | 2025-10-29 | 서비스 등록 require 제거 및 타입 가드 강화 | require → static import, element.matches 체크  |
-| **236**     | 2025-10-29 | DOMContentLoaded 리스너 제거               | @run-at document-idle 활용, 격리 완성          |
-| **235**     | 2025-10-29 | Toast 알림 GalleryRenderer 격리            | main.ts → GalleryRenderer, 책임 분리 명확화    |
-| **234**     | 2025-10-29 | TESTING_STRATEGY 간소화 (48% 감소)         | 517줄→271줄, 테이블 재구성, 링크 대체          |
-| **233**     | 2025-10-29 | 문서 간소화 및 정리 (90% 감소)             | 3개 문서 4667줄→444줄, 개발자 온보딩 개선      |
-| **232**     | 2025-10-29 | CodeQL 보안 경고 해결 (6/6)                | URL 검증, Prototype Pollution, 빌드 안전성     |
-| **231**     | 2025-10-29 | Phase 199 중단 흔적 제거                   | 테스트 정리, 문서 정리                         |
-| **230**     | 2025-10-28 | BaseService 초기화 실패 수정               | ThemeService singleton export 추가             |
-| **229**     | 2025-10-28 | PC-only 정책 부작용 수정                   | 텍스트 선택 복원, Pointer 이벤트 조정          |
-| **228**     | 2025-10-28 | 이벤트 캡처 최적화                         | 미디어 컨테이너 fast-path 체크                 |
-| **227**     | 2025-10-27 | Testability 테스트 정리                    | Phase 80.1 테스트 재구성 및 이관               |
-| **226**     | 2025-10-27 | Container Module 리팩토링                  | service-harness 제거, 구조 최적화              |
-| **225**     | 2025-10-27 | Shared Constants 최적화                    | i18n 모듈 재구성                               |
-| **224**     | 2025-10-27 | Phase 80.1 의존성 피드백 적용              | 상태 동기화 개선                               |
-| **223**     | 2025-10-27 | Focus 서비스 TDD 완료                      | ObserverManager, Applicator, StateManager      |
-| **222**     | 2025-10-27 | Focus 프레임워크 Phase 3 완료              | 서비스 통합 검증                               |
-| **221**     | 2025-10-27 | Focus 프레임워크 Phase 2 완료              | Applicator/StateManager 통합                   |
-| **220**     | 2025-10-27 | Focus 프레임워크 Phase 1 완료              | ObserverManager 추출                           |
-| **219**     | 2025-10-27 | Phase 80.1 최종 검증                       | 테스트 통과, 문서화 완료                       |
-| **218**     | 2025-10-27 | Phase 80.1 E2E 검증                        | Playwright 테스트 추가                         |
-| **217**     | 2025-10-27 | Theme Initialization 최적화                | 매직 문자열 상수화, JSDoc 강화                 |
-| **216**     | 2025-10-27 | Gallery Hooks 점검                         | JSDoc, import 경로 정규화                      |
-| **215**     | 2025-10-27 | KeyboardHelpOverlay 재구성                 | 컴포넌트 최적화                                |
-| **214**     | 2025-10-27 | VerticalGalleryView 현대화                 | 29개 import 정규화                             |
-| **213**     | 2025-10-27 | Vertical Gallery View Hooks 정리           | 494줄 데드코드 제거                            |
-| **212**     | 2025-10-27 | KeyboardHelpOverlay 컴포넌트 현대화        | JSDoc, import 경로 정규화                      |
-| **211**     | 2025-10-27 | Bootstrap 최적화                           | 부트스트랩 구조 정리                           |
-| **210**     | 2025-10-27 | Global Style Tokens 현대화                 | CSS 토큰 체계 정리                             |
-| **209**     | 2025-10-27 | dependency-cruiser 설정 최적화             | 의존성 규칙 강화                               |
-| **208**     | 2025-10-27 | Scripts 디렉터리 현대화                    | JSDoc 표준화, 에러 처리 개선                   |
-| **207**     | 2025-10-27 | 문서 체계 현대화                           | 문서 구조 정리                                 |
-| **206**     | 2025-10-27 | Playwright 테스트 통합                     | E2E 스모크 테스트 추가                         |
-| **205**     | 2025-10-27 | Playwright Accessibility 통합              | WCAG 2.1 AA 자동 검증                          |
-| **200-204** | 2025-10-27 | 빌드 및 문서 최적화                        | 빌드 병렬화, 메모리 최적화                     |
-| **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                              |
+| Phase       | 날짜       | 제목                                       | 핵심 내용                                         |
+| ----------- | ---------- | ------------------------------------------ | ------------------------------------------------- |
+| **247**     | 2025-10-29 | Fit 모드 × Intrinsic 연동                  | CSS 변수로 툴바 크기 조절과 자리 예약을 동기화    |
+| **246**     | 2025-10-29 | 갤러리 초기 스크롤 레이아웃 안정화         | 메타데이터 기반 자리 확보 + 자동 스크롤 순서 보정 |
+| **245**     | 2025-10-29 | 갤러리 스크롤 체이닝 가드 보완             | 내부 이벤트 가드 추가, 체이닝 회귀 테스트 강화    |
+| **244**     | 2025-10-29 | 갤러리 스크롤 체이닝 점검                  | 스크롤 가드/overscroll 보강, Playwright 회귀      |
+| **243**     | 2025-10-29 | 포인터 정책 로직 간결화 및 재발 방지 강화  | 헬퍼 함수 분리, 상수 추출, 문서화                 |
+| **242**     | 2025-10-29 | 설정 드롭다운 포인터 정책 조정             | 폼 컨트롤 허용, 비-HTMLElement 가드 추가          |
+| **241**     | 2025-10-29 | event.target 타입 가드 강화                | isHTMLElement 활용, Document/Window 안전처리      |
+| **240**     | 2025-10-29 | 설정 드롭다운 펼침 수정                    | CSS 상속 문제 수정, 오버라이드 추가               |
+| **239**     | 2025-10-29 | 문서 정리 및 중복 제거                     | CODE_QUALITY.md 삭제, temp/ 정리                  |
+| **238**     | 2025-10-29 | 린터 ignore 설정 개선                      | 임시/생성/아카이브 파일 일관 제외                 |
+| **237**     | 2025-10-29 | 서비스 등록 require 제거 및 타입 가드 강화 | require → static import, element.matches 체크     |
+| **236**     | 2025-10-29 | DOMContentLoaded 리스너 제거               | @run-at document-idle 활용, 격리 완성             |
+| **235**     | 2025-10-29 | Toast 알림 GalleryRenderer 격리            | main.ts → GalleryRenderer, 책임 분리 명확화       |
+| **234**     | 2025-10-29 | TESTING_STRATEGY 간소화 (48% 감소)         | 517줄→271줄, 테이블 재구성, 링크 대체             |
+| **233**     | 2025-10-29 | 문서 간소화 및 정리 (90% 감소)             | 3개 문서 4667줄→444줄, 개발자 온보딩 개선         |
+| **232**     | 2025-10-29 | CodeQL 보안 경고 해결 (6/6)                | URL 검증, Prototype Pollution, 빌드 안전성        |
+| **231**     | 2025-10-29 | Phase 199 중단 흔적 제거                   | 테스트 정리, 문서 정리                            |
+| **230**     | 2025-10-28 | BaseService 초기화 실패 수정               | ThemeService singleton export 추가                |
+| **229**     | 2025-10-28 | PC-only 정책 부작용 수정                   | 텍스트 선택 복원, Pointer 이벤트 조정             |
+| **228**     | 2025-10-28 | 이벤트 캡처 최적화                         | 미디어 컨테이너 fast-path 체크                    |
+| **227**     | 2025-10-27 | Testability 테스트 정리                    | Phase 80.1 테스트 재구성 및 이관                  |
+| **226**     | 2025-10-27 | Container Module 리팩토링                  | service-harness 제거, 구조 최적화                 |
+| **225**     | 2025-10-27 | Shared Constants 최적화                    | i18n 모듈 재구성                                  |
+| **224**     | 2025-10-27 | Phase 80.1 의존성 피드백 적용              | 상태 동기화 개선                                  |
+| **223**     | 2025-10-27 | Focus 서비스 TDD 완료                      | ObserverManager, Applicator, StateManager         |
+| **222**     | 2025-10-27 | Focus 프레임워크 Phase 3 완료              | 서비스 통합 검증                                  |
+| **221**     | 2025-10-27 | Focus 프레임워크 Phase 2 완료              | Applicator/StateManager 통합                      |
+| **220**     | 2025-10-27 | Focus 프레임워크 Phase 1 완료              | ObserverManager 추출                              |
+| **219**     | 2025-10-27 | Phase 80.1 최종 검증                       | 테스트 통과, 문서화 완료                          |
+| **218**     | 2025-10-27 | Phase 80.1 E2E 검증                        | Playwright 테스트 추가                            |
+| **217**     | 2025-10-27 | Theme Initialization 최적화                | 매직 문자열 상수화, JSDoc 강화                    |
+| **216**     | 2025-10-27 | Gallery Hooks 점검                         | JSDoc, import 경로 정규화                         |
+| **215**     | 2025-10-27 | KeyboardHelpOverlay 재구성                 | 컴포넌트 최적화                                   |
+| **214**     | 2025-10-27 | VerticalGalleryView 현대화                 | 29개 import 정규화                                |
+| **213**     | 2025-10-27 | Vertical Gallery View Hooks 정리           | 494줄 데드코드 제거                               |
+| **212**     | 2025-10-27 | KeyboardHelpOverlay 컴포넌트 현대화        | JSDoc, import 경로 정규화                         |
+| **211**     | 2025-10-27 | Bootstrap 최적화                           | 부트스트랩 구조 정리                              |
+| **210**     | 2025-10-27 | Global Style Tokens 현대화                 | CSS 토큰 체계 정리                                |
+| **209**     | 2025-10-27 | dependency-cruiser 설정 최적화             | 의존성 규칙 강화                                  |
+| **208**     | 2025-10-27 | Scripts 디렉터리 현대화                    | JSDoc 표준화, 에러 처리 개선                      |
+| **207**     | 2025-10-27 | 문서 체계 현대화                           | 문서 구조 정리                                    |
+| **206**     | 2025-10-27 | Playwright 테스트 통합                     | E2E 스모크 테스트 추가                            |
+| **205**     | 2025-10-27 | Playwright Accessibility 통합              | WCAG 2.1 AA 자동 검증                             |
+| **200-204** | 2025-10-27 | 빌드 및 문서 최적화                        | 빌드 병렬화, 메모리 최적화                        |
+| **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                                 |
 
 ---
+
+## 📋 Phase 247 상세 (Fit 모드 × Intrinsic Sizing 연동)
+
+- **문제 인식**: 메타데이터로 예약한 자리와 툴바 Fit
+  모드(원본/가로맞춤/세로맞춤/창맞춤) 전환 후 실제 표시 크기가 어긋나면서
+  일시적인 빈 공간·폭 변경이 발생.
+- **핵심 조치**:
+  - `VerticalImageItem`에서 폭·높이를 `--xeg-gallery-item-intrinsic-*` 커스텀
+    프로퍼티로 주입하고 `data-has-intrinsic-size`를 기준으로 CSS가 조건부로 자리
+    계산을 수행하도록 변경.
+  - `VerticalImageItem.module.css`를 `data-fit-mode` 기반 규칙으로 재구성하여
+    원본/세로/창 맞춤 모드가 뷰포트 제약(`--xeg-viewport-height-constrained`)
+    하에서 동일한 자리 예약 로직을 공유하도록 조정.
+  - Intrinsic/fit 모드 테스트를 확장하고 CLS 레드 가드 테스트에 새 커스텀
+    프로퍼티를 검증하도록 업데이트.
+- **검증**:
+  - `npx vitest run test/unit/features/gallery/components/VerticalImageItem.intrinsic-size.test.tsx`
+  - `npx vitest run test/unit/features/gallery/components/VerticalGalleryView.fit-mode.test.tsx`
+  - `npx vitest run test/unit/styles/layout-stability.cls.red.test.ts`
+- **결과**: Fit 모드 전환 시에도 예약 폭·높이가 즉시 재계산되어 레이아웃 점프가
+  사라지고, 툴바 이미지 크기 조절과 실제 표시 영역이 일관성 있게 유지됨.
+  메타데이터가 없는 항목은 기존 토큰 기반 동작을 그대로 유지.
+
+## 📋 Phase 246 상세 (갤러리 초기 스크롤 레이아웃 안정화)
+
+- **문제 인식**: 클릭 직후 갤러리를 여는 시점에 이미지가 아직 로드되지 않아
+  아이템 높이가 축소되고, 자동 스크롤이 끝난 뒤 이미지가 로드되면서 뷰가 다시
+  이동하는 시각적 점프가 발생.
+- **핵심 조치**:
+  - `VerticalImageItem`에 미디어 메타데이터(폭·높이)를 활용하는 커스텀 CSS
+    변수를 주입해 렌더 직후 자리 확보 및 레이아웃 안정화.
+  - 기본 디자인 토큰에 종횡비 기본값을 정의하고, CSS 모듈이 `aspect-ratio`를
+    토큰 기반으로 적용하도록 갱신.
+  - `useGalleryItemScroll`이 예약된 프레임 이후에 자동 스크롤을 수행하도록
+    `requestAnimationFrame` 대기 로직을 추가하고, 폴링 경로도 동일한 순서를
+    사용하도록 정비.
+- **검증**:
+  - `npx vitest run test/unit/styles/layout-stability.cls.red.test.ts`
+  - `npx vitest run test/unit/features/gallery/components/VerticalImageItem.intrinsic-size.test.tsx`
+  - `npx vitest run test/unit/features/gallery/hooks/useGalleryItemScroll.test.ts`
+- **결과**: 초기 렌더 단계에서 갤러리 아이템 높이가 안정적으로 예약되어 클릭
+  원본과 갤러리 초점 간 시각적 불일치가 제거되었고, 자동 스크롤은 예약된
+  레이아웃이 적용된 이후에만 실행되어 연속적인 스크롤 체험을 제공.
 
 ## 📋 Phase 245 상세 (갤러리 스크롤 체이닝 가드 보완)
 

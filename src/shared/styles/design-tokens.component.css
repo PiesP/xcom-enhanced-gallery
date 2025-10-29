@@ -72,6 +72,7 @@
   --media-border-radius: var(--xeg-radius-md);
   --media-loading-bg: var(--color-bg-secondary);
   --media-placeholder-text: var(--color-text-muted);
+  --xeg-aspect-default: 4 / 3;
 
   /* Scrollbar Component */
   --scrollbar-width: 0.5rem; /* 8px = 0.5rem */

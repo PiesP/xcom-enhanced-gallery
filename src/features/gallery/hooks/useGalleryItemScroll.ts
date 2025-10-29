@@ -186,6 +186,12 @@ export function useGalleryItemScroll(
         return;
       }
 
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        await new Promise<void>(resolve => {
+          window.requestAnimationFrame(() => resolve());
+        });
+      }
+
       const actualBehavior = resolveBehavior();
 
       targetElement.scrollIntoView({
@@ -293,36 +299,44 @@ export function useGalleryItemScroll(
             timestamp: Date.now(),
           });
 
-          try {
-            updateStateSignal(setState, { isAutoScrolling: true });
-            const actualBehavior = resolveBehavior();
+          const executeAutoScroll = () => {
+            try {
+              updateStateSignal(setState, { isAutoScrolling: true });
+              const actualBehavior = resolveBehavior();
 
-            targetElement.scrollIntoView({
-              behavior: actualBehavior,
-              block: alignToCenter() ? 'center' : block(),
-              inline: 'nearest',
-            });
-
-            const offsetValue = offset();
-            if (offsetValue !== 0) {
-              container.scrollTo({
-                top: container.scrollTop - offsetValue,
+              targetElement.scrollIntoView({
                 behavior: actualBehavior,
+                block: alignToCenter() ? 'center' : block(),
+                inline: 'nearest',
               });
-            }
 
-            updateStateSignal(setState, {
-              lastScrolledIndex: index,
-              pendingIndex: null,
-            });
-            retryCount = 0;
+              const offsetValue = offset();
+              if (offsetValue !== 0) {
+                container.scrollTo({
+                  top: container.scrollTop - offsetValue,
+                  behavior: actualBehavior,
+                });
+              }
 
-            globalTimerManager.setTimeout(() => {
+              updateStateSignal(setState, {
+                lastScrolledIndex: index,
+                pendingIndex: null,
+              });
+              retryCount = 0;
+
+              globalTimerManager.setTimeout(() => {
+                updateStateSignal(setState, { isAutoScrolling: false });
+              }, 50);
+            } catch (err) {
+              logger.error('useGalleryItemScroll: 폴링 후 스크롤 실패', { index, error: err });
               updateStateSignal(setState, { isAutoScrolling: false });
-            }, 50);
-          } catch (err) {
-            logger.error('useGalleryItemScroll: 폴링 후 스크롤 실패', { index, error: err });
-            updateStateSignal(setState, { isAutoScrolling: false });
+            }
+          };
+
+          if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+            window.requestAnimationFrame(() => executeAutoScroll());
+          } else {
+            executeAutoScroll();
           }
           return;
         }

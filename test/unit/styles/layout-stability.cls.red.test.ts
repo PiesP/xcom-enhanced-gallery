@@ -15,6 +15,9 @@ describe('Layout Stability (CLS) — aspect-ratio reservation (RED)', () => {
     const css = readFileSync(cssPath, 'utf-8');
 
     // Expect aspect-ratio with a token var
-    expect(css).toMatch(/aspect-ratio:\s*var\(--xeg-aspect-default\)/);
+    expect(css).toMatch(/aspect-ratio:\s*var\(--xeg-aspect-default(?:,\s*[^)]+)?\)/);
+    expect(css).toContain('--xeg-gallery-item-intrinsic-width');
+    expect(css).toContain('--xeg-gallery-item-intrinsic-height');
+    expect(css).toContain('--xeg-gallery-item-intrinsic-ratio');
   });
 });

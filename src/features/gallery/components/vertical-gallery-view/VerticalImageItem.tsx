@@ -131,6 +131,43 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
 
+  const parseDimension = (value: unknown): number | null => {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) && value > 0 ? value : null;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+
+    return null;
+  };
+
+  const toRem = (value: number): string => `${(value / 16).toFixed(4)}rem`;
+
+  const intrinsicSizingStyle = createMemo<JSX.CSSProperties | undefined>(() => {
+    const width = parseDimension(media?.width);
+    const height = parseDimension(media?.height);
+
+    if (!width || !height) {
+      return undefined;
+    }
+
+    const ratio = width / height;
+
+    const style: Record<string, string> = {
+      '--xeg-aspect-default': `${width} / ${height}`,
+      '--xeg-gallery-item-intrinsic-width': toRem(width),
+      '--xeg-gallery-item-intrinsic-height': toRem(height),
+      '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
+    };
+
+    return style as unknown as JSX.CSSProperties;
+  });
+
+  const hasIntrinsicSizing = createMemo(() => Boolean(intrinsicSizingStyle()));
+
   const handleClick = () => {
     const container = containerRef();
     container?.focus?.({ preventScroll: true });
@@ -339,6 +376,9 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       class={containerClasses()}
       data-index={index}
       data-fit-mode={resolvedFitMode()}
+      data-media-loaded={isLoaded() ? 'true' : 'false'}
+      style={intrinsicSizingStyle()}
+      data-has-intrinsic-size={hasIntrinsicSizing() ? 'true' : 'false'}
       onClick={handleClick}
       onFocus={onFocus as (event: FocusEvent) => void}
       onBlur={onBlur as (event: FocusEvent) => void}

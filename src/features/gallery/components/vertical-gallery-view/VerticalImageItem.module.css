@@ -72,15 +72,18 @@
   position: relative;
   background: var(--xeg-color-bg-secondary);
   /* 이미지 크기에 맞는 컨테이너 */
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   margin: 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl);
   /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
-  aspect-ratio: var(--xeg-aspect-default);
+  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
 }
 
 .placeholder {
@@ -155,34 +158,65 @@
 
 /* 이미지 크기 조정 모드별 스타일 */
 .image.fitOriginal {
-  width: auto !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
   object-fit: none;
 }
 
 .image.fitWidth {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: 100%;
   object-fit: contain;
 }
 
 .image.fitHeight {
-  width: auto;
-  height: auto;
-  /* 뷰포트 제약(훅에서 계산) - 툴바/패딩 보정 포함 */
-  max-height: var(--xeg-viewport-height-constrained);
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: var(--xeg-viewport-height-constrained);
   object-fit: contain;
 }
 
 .image.fitContainer {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
-  /* 뷰포트 제약(훅에서 계산) - 툴바/패딩 보정 포함 */
-  max-height: var(--xeg-viewport-height-constrained);
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: var(--xeg-viewport-height-constrained);
+  object-fit: contain;
+}
+
+/* 비디오 크기 조정 모드 - 이미지 규칙과 동기화 */
+.video {
+  inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--xeg-radius-md);
+  overflow: clip;
+}
+
+.video.fitOriginal {
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+  object-fit: none;
+}
+
+.video.fitWidth {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: 100%;
+  object-fit: contain;
+}
+
+.video.fitHeight,
+.video.fitContainer {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: var(--xeg-viewport-height-constrained);
   object-fit: contain;
 }
 
@@ -314,58 +348,98 @@
   border: 0.0625rem solid var(--xeg-color-error); /* 1px = 0.0625rem */
 }
 
-/* 원본 크기 모드의 컨테이너별 조정 */
-.container.fitOriginal .imageWrapper {
-  width: fit-content;
-  max-width: 100vw;
-  max-height: var(--xeg-viewport-height-constrained);
-  overflow: auto; /* 필요 시에만 스크롤 */
-  overscroll-behavior: contain; /* 체이닝 방지 */
-  /* 스크롤바 스타일링 */
+/* Fit 모드별 컨테이너 조정 (intrinsic sizing 연동) */
+.container[data-fit-mode='original'] {
+  overflow: auto;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--xeg-color-overlay-light) transparent;
 }
 
-.container.fitWidth .imageWrapper {
-  width: 100%;
+.container[data-media-loaded='false'][data-fit-mode='original'] {
+  inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-block-size: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
 }
 
-.container.fitHeight .imageWrapper {
-  width: fit-content;
-  max-width: 100%;
-}
-
-.container.fitContainer .imageWrapper {
-  width: 100%;
-}
-
-.container.fitOriginal .imageWrapper::-webkit-scrollbar {
+.container[data-fit-mode='original']::-webkit-scrollbar {
   width: 0.5rem; /* 8px = 0.5rem */
   height: 0.5rem; /* 8px = 0.5rem */
 }
 
-.container.fitOriginal .imageWrapper::-webkit-scrollbar-track {
+.container[data-fit-mode='original']::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.container.fitOriginal .imageWrapper::-webkit-scrollbar-thumb {
+.container[data-fit-mode='original']::-webkit-scrollbar-thumb {
   background: var(--xeg-color-overlay-light);
   border-radius: var(--xeg-radius-sm);
   transition: var(--xeg-transition-normal);
 }
 
-.container.fitOriginal .imageWrapper::-webkit-scrollbar-thumb:hover {
+.container[data-fit-mode='original']::-webkit-scrollbar-thumb:hover {
   background: var(--xeg-color-overlay-medium);
 }
 
-.container.fitOriginal .image {
-  cursor: grab; /* 드래그 가능함을 표시 */
-  min-width: auto;
-  min-height: auto;
+.container[data-fit-mode='original'] .image,
+.container[data-fit-mode='original'] .video {
+  cursor: grab;
 }
 
-.container.fitOriginal .image:active {
+.container[data-media-loaded='false'][data-fit-mode='original'] .image,
+.container[data-media-loaded='false'][data-fit-mode='original'] .video {
+  inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-block-size: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
+}
+
+.container[data-fit-mode='original'] .image:active,
+.container[data-fit-mode='original'] .video:active {
   cursor: grabbing;
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight'],
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer'] {
+  --xeg-gallery-fit-height-target: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
+
+  max-block-size: var(--xeg-gallery-fit-height-target);
+  inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+  max-inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
+  .image,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
+  .video,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
+  .image,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
+  .video {
+  max-block-size: var(--xeg-gallery-fit-height-target);
+  max-inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+}
+
+.container:not([data-fit-mode='original']) {
+  inline-size: 100%;
+  max-inline-size: 100%;
 }
 
 /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
@@ -386,55 +460,6 @@
 .container ~ .r-1p0dtai {
   pointer-events: none !important;
   z-index: var(--xeg-z-tooltip) !important;
-}
-
-/* Video wrapper styling */
-.video {
-  width: 100%;
-  height: auto;
-  border-radius: var(--xeg-radius-md);
-  overflow: clip;
-}
-
-/* Video fit modes */
-.video.fitOriginal {
-  width: auto !important;
-  height: auto !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: none;
-}
-
-/* Video fit modes aligned with image */
-.video.fitHeight,
-.video.fitContainer {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
-  max-height: var(--xeg-viewport-height-constrained);
-  object-fit: contain;
-}
-
-.video.fitWidth {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
-  object-fit: contain;
-}
-
-.video.fitHeight {
-  width: auto;
-  height: auto;
-  max-height: var(--xeg-viewport-height-constrained);
-  object-fit: contain;
-}
-
-.video.fitContainer {
-  width: 100%;
-  height: auto;
-  max-width: 100vw;
-  max-height: var(--xeg-viewport-height-constrained);
-  object-fit: contain;
 }
 
 /* === 접근성 향상 === */
