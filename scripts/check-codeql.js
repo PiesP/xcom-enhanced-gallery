@@ -45,6 +45,7 @@ const rootDir = resolve(__dirname, '..');
 const dbDir = resolve(rootDir, '.codeql-db');
 const resultsDir = resolve(rootDir, 'codeql-results');
 const reportsDir = resolve(rootDir, 'codeql-reports');
+const configFile = resolve(rootDir, '.github/codeql/codeql-config.yml');
 
 // 명령줄 옵션 파싱
 const args = process.argv.slice(2);
@@ -354,6 +355,63 @@ function createDatabase() {
 }
 
 /**
+ * Loads CodeQL configuration and extracts paths-ignore patterns
+ *
+ * @returns {Array<string>} Array of glob patterns to ignore
+ */
+function loadPathsIgnore() {
+  if (!existsSync(configFile)) {
+    return [];
+  }
+
+  try {
+    const content = readFileSync(configFile, 'utf8');
+    // Simple YAML parsing for paths-ignore section
+    const pathsIgnoreMatch = content.match(/paths-ignore:\s*\n((?:\s+-\s+.+\n?)+)/);
+    if (!pathsIgnoreMatch) {
+      return [];
+    }
+
+    // Extract paths from YAML list
+    const paths = pathsIgnoreMatch[1]
+      .split('\n')
+      .filter(line => line.trim().startsWith('-'))
+      .map(line => line.trim().substring(1).trim());
+
+    return paths;
+  } catch (error) {
+    console.error(`${colors.yellow}⚠️  설정 파일 로드 실패:${colors.reset}`, error.message);
+    return [];
+  }
+}
+
+/**
+ * Checks if a file path should be ignored based on patterns
+ *
+ * @param {string} uri - File URI from SARIF result
+ * @param {Array<string>} ignorePatterns - Array of glob patterns
+ * @returns {boolean} True if path should be ignored
+ */
+function shouldIgnorePath(uri, ignorePatterns) {
+  if (!uri || ignorePatterns.length === 0) {
+    return false;
+  }
+
+  // Normalize path (remove leading /)
+  const normalizedUri = uri.startsWith('/') ? uri.substring(1) : uri;
+
+  return ignorePatterns.some(pattern => {
+    // Simple glob matching (supports * wildcards and exact matches)
+    const regexPattern = pattern
+      .replace(/\./g, '\\.')
+      .replace(/\*/g, '.*')
+      .replace(/\?/g, '.');
+    const regex = new RegExp(`^${regexPattern}$`);
+    return regex.test(normalizedUri);
+  });
+}
+
+/**
  * Parses SARIF results file
  *
  * @param {string} sarifFile - Path to SARIF file
@@ -367,11 +425,25 @@ function parseSarifResults(sarifFile) {
   try {
     const content = readFileSync(sarifFile, 'utf8');
     const sarif = JSON.parse(content);
-    const results = sarif.runs?.[0]?.results || [];
+    const rawResults = sarif.runs?.[0]?.results || [];
+
+    // Load ignore patterns from config
+    const ignorePatterns = loadPathsIgnore();
+
+    // Filter results based on paths-ignore configuration
+    const filteredResults = rawResults.filter(r => {
+      const locations = r.locations || [];
+      // Ignore if ALL locations match ignore patterns
+      const allIgnored = locations.every(loc => {
+        const uri = loc.physicalLocation?.artifactLocation?.uri;
+        return shouldIgnorePath(uri, ignorePatterns);
+      });
+      return !allIgnored;
+    });
 
     return {
-      total: results.length,
-      results: results.map(r => ({
+      total: filteredResults.length,
+      results: filteredResults.map(r => ({
         ruleId: r.ruleId,
         message: r.message?.text || 'No message',
         locations: r.locations?.map(loc => ({

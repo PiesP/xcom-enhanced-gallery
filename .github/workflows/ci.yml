@@ -51,6 +51,7 @@ jobs:
         with:
           languages: javascript
           queries: +security-extended
+          config-file: ./.github/codeql/codeql-config.yml
 
       - name: 📝 Type check
         run: npx tsgo --project ./tsconfig.json --noEmit
