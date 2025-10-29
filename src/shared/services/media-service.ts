@@ -315,9 +315,24 @@ export class MediaService extends BaseServiceImpl {
       return originalUrl;
     }
 
-    if (originalUrl.includes('pbs.twimg.com') && !originalUrl.includes('format=webp')) {
-      const separator = originalUrl.includes('?') ? '&' : '?';
-      return `${originalUrl}${separator}format=webp`;
+    // URL 검증 - 호스트명을 정확히 확인하여 도메인 스푸핑 방지
+    try {
+      const url = new URL(originalUrl);
+
+      // pbs.twimg.com 호스트만 최적화 (정확한 호스트명 매칭)
+      if (url.hostname === 'pbs.twimg.com') {
+        // 이미 webp 형식이면 그대로 반환
+        if (url.searchParams.get('format') === 'webp') {
+          return originalUrl;
+        }
+
+        // format 파라미터를 webp로 설정
+        url.searchParams.set('format', 'webp');
+        return url.toString();
+      }
+    } catch {
+      // URL 파싱 실패 시 원본 반환
+      return originalUrl;
     }
 
     return originalUrl;

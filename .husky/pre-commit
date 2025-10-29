@@ -1,23 +1,8 @@
 #!/usr/bin/env sh
+# Pre-commit: Lint and format staged files
+# CI: Skipped (full validation in GitHub Actions)
 
-# Pre-commit: 스테이징된 파일에 대한 린터/포매터 실행 (경량 버전)
-#
-# 역할: 커밋 전 스테이징된 파일만 린트 및 포매팅
-# CI 스킵: 전체 검증은 GitHub Actions에서 실행
-#
-# 참고: AGENTS.md의 "작업 종료 체크리스트" 섹션 참고
+[ "$CI" = "true" ] && exit 0
 
-if [ "$CI" = "true" ]; then
-  echo "⏭️  Pre-commit: CI 환경에서 스킵됨 (GitHub Actions에서 검증)"
-  exit 0
-fi
-
-echo "🧹 린트-스테이징 실행 중..."
-
-npm run lint:staged || {
-  echo "❌ Pre-commit 실패 (lint-staged 오류)"
-  echo "💡 팁: git diff --cached로 스테이징된 변경사항을 확인하세요"
-  exit 1
-}
-
-echo "✅ Pre-commit 통과"
+echo "🧹 Running lint-staged..."
+npm run lint:staged

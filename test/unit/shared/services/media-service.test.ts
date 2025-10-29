@@ -149,4 +149,46 @@ describe('MediaService', () => {
       expect(service.isDownloading()).toBe(false);
     });
   });
+
+  describe('getOptimizedImageUrl - 보안 검증', () => {
+    beforeEach(() => {
+      // WebP 지원 활성화 (테스트 목적)
+      // @ts-expect-error - private property access for testing
+      service.webpSupported = true;
+    });
+
+    it('should only optimize valid pbs.twimg.com URLs', () => {
+      const validUrl = 'https://pbs.twimg.com/media/abc123?format=jpg';
+      const result = service.getOptimizedImageUrl(validUrl);
+      expect(result).toContain('format=webp');
+      expect(result).toContain('pbs.twimg.com');
+    });
+
+    it('should reject domain spoofing attempts', () => {
+      const spoofedUrls = [
+        'https://evil.com?fake=pbs.twimg.com',
+        'https://pbs.twimg.com.evil.com/media/abc',
+        'https://evil-pbs.twimg.com/media/abc',
+        'https://notpbs.twimg.com/media/abc'
+      ];
+
+      spoofedUrls.forEach(url => {
+        const result = service.getOptimizedImageUrl(url);
+        // 스푸핑된 URL은 최적화되지 않아야 함 (원본 URL 그대로 반환)
+        expect(result).toBe(url);
+      });
+    });
+
+    it('should handle URLs without pbs.twimg.com', () => {
+      const otherUrl = 'https://example.com/image.jpg';
+      const result = service.getOptimizedImageUrl(otherUrl);
+      expect(result).toBe(otherUrl);
+    });
+
+    it('should not optimize already webp URLs', () => {
+      const webpUrl = 'https://pbs.twimg.com/media/abc?format=webp';
+      const result = service.getOptimizedImageUrl(webpUrl);
+      expect(result).toBe(webpUrl);
+    });
+  });
 });

@@ -512,9 +512,20 @@ export function setNestedValue(obj: Record<string, unknown>, path: string, value
 
   // 마지막 키에 값 설정
   const finalKey = keys[keys.length - 1];
-  // codeql[js/prototype-pollution-utility] - 모든 키는 위에서 DANGEROUS_KEYS 검증을 거침
   if (finalKey && isRecord(current)) {
-    current[finalKey] = value;
+    // CodeQL 명시적 검증: 최종 키가 prototype을 오염시키지 않도록 재확인
+    if (DANGEROUS_KEYS.includes(finalKey)) {
+      throw new Error(
+        `[XEG] Prototype pollution attempt detected: "${finalKey}" in path "${path}"`
+      );
+    }
+
+    // Object.hasOwn으로 프로토타입 체인 방지
+    if (Object.hasOwn(current, finalKey) || !(finalKey in Object.prototype)) {
+      current[finalKey] = value;
+    } else {
+      throw new Error(`[XEG] Cannot set inherited property: "${finalKey}" in path "${path}"`);
+    }
   }
 }
 

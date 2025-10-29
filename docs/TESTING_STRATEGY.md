@@ -23,10 +23,20 @@ Kent C. Dodds의 Testing Trophy 모델 기반 테스트 분포:
  /    Unit Tests     \ ← 많음: 순수 로직, 유틸리티
 /----------------------\
 /  Static Analysis     \  ← 가장 많음: TypeScript, ESLint, stylelint
+/------------------------\
+/  Security Analysis    \  ← 기반: CodeQL (보안 취약점 검증)
 ```
 
 **원칙**: 낮은 계층에서 빠르게 많이 테스트하고, 높은 계층에서 느리지만 신뢰도
 높은 테스트를 선별적으로 실행합니다.
+
+**Security Analysis (CodeQL)**:
+
+- **목적**: 보안 취약점 정적 분석 (XSS, 코드 인젝션, Prototype pollution 등)
+- **실행 환경**:
+  - CI (필수): GitHub Actions에서 `github/codeql-action` 자동 실행
+  - 로컬 (선택): `npm run codeql:check` (CI와 동일한 security-extended 쿼리)
+- **책임**: CI에서 전체 보안 검증, 로컬은 빠른 피드백용 (선택사항)
 
 ---
 
@@ -66,9 +76,11 @@ Kent C. Dodds의 Testing Trophy 모델 기반 테스트 분포:
 
 ### 레이어별 메모(유저 스크립트 관점)
 
-- Static Analysis: `npm run typecheck` / `npm run lint` / `npm run codeql:check`
-  - DOM/벤더/GM API를 직접 import하지 않고 getter 경유하는지 규칙 검증(CodeQL
-    포함)
+- Security Analysis: `npm run codeql:check` (로컬, 선택사항)
+  - 보안 취약점 조기 발견 (XSS, 인젝션, prototype pollution 등)
+  - CI에서 필수 실행, 로컬은 빠른 피드백용
+- Static Analysis: `npm run typecheck` / `npm run lint`
+  - DOM/벤더/GM API를 직접 import하지 않고 getter 경유하는지 규칙 검증
 - Unit: `npm run test:unit` (JSDOM)
   - 서비스/유틸/파일명/파서 등 순수 로직에 집중, 브라우저/GM API는 반드시 모킹
 - Integration: `npm run test:browser`(브라우저 모드) 또는 JSDOM 통합

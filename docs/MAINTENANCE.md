@@ -11,11 +11,15 @@ npm run maintenance:check
 **점검 항목**:
 
 - 보안 취약점 (`npm audit`)
+- 보안 정적 분석 (CodeQL, 선택사항)
 - Git 추적되지 않는 파일
 - 백업 디렉터리 (`.backup-*`, `tmp/`)
 - 큰 문서 (500줄 이상)
 - 빌드 크기 예산 (325 KB)
 - 테스트 통과율
+
+**참고**: CodeQL은 로컬에서 선택사항입니다. CI에서 필수로 실행되므로 로컬 점검은
+빠른 피드백용입니다.
 
 ---
 
@@ -23,7 +27,8 @@ npm run maintenance:check
 
 ### 필수
 
-- [ ] `npm audit` - 보안 취약점
+- [ ] `npm audit` - 보안 취약점 (npm 패키지)
+- [ ] `npm run codeql:check` - 보안 정적 분석 (선택사항, CI에서 필수 실행)
 - [ ] `npm test` - 테스트 통과
 - [ ] `npm run build` - 빌드 크기
 - [ ] 임시 디렉터리 정리: `docs/temp/`, `scripts/temp/`

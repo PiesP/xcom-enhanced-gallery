@@ -23,8 +23,10 @@ playwright/.cache/
 **/__screenshots__/
 
 # === CodeQL & Security ===
+.codeql-db
 codeql-db/
 codeql-results/
+codeql-reports/
 codeql-custom-queries-javascript/
 *.sarif
 

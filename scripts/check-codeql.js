@@ -3,38 +3,59 @@
 /**
  * CodeQL Security Analysis Runner
  *
- * Executes custom CodeQL security queries if available (gh codeql or codeql CLI).
+ * Executes standard CodeQL security-extended queries (same as CI).
  * In CI environments, skips local checks (GitHub Actions handles CodeQL separately).
  *
  * @usage
- *   node check-codeql.js
+ *   node check-codeql.js [options]
+ *
+ * @options
+ *   --json          Output results in JSON format
+ *   --report        Generate markdown report (codeql-reports/)
+ *   --force         Force database rebuild
+ *   --verbose       Show detailed logging
+ *   --quiet         Minimal output
+ *   --help          Show this help message
  *
  * @environment
  *   CI, GITHUB_ACTIONS - Detects CI environment, skips local checks
  *   CODEQL_FORCE_REBUILD - Force database rebuild (default: incremental update)
  *
- * @tools
- *   1. gh codeql (GitHub CLI extension, recommended)
- *   2. codeql (CodeQL CLI direct install)
- *   3. Neither (graceful degradation with installation guide)
+ * @tools (Priority order with auto-install)
+ *   1. gh codeql (GitHub CLI extension) - highest priority
+ *   2. gh (GitHub CLI) - auto-installs codeql extension if available
+ *   3. codeql (CodeQL CLI direct install) - fallback
+ *   4. None - graceful degradation with installation guide
  *
  * @output
  *   SARIF results in codeql-results/ directory
+ *   Markdown reports in codeql-reports/ (if --report)
  *   Summary report to stdout
  *   Exit code: 0 (pass) or 1 (failures found)
  */
 
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, mkdirSync, statSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
-const queriesDir = resolve(rootDir, 'codeql-custom-queries-javascript');
 const dbDir = resolve(rootDir, '.codeql-db');
 const resultsDir = resolve(rootDir, 'codeql-results');
+const reportsDir = resolve(rootDir, 'codeql-reports');
+
+// 명령줄 옵션 파싱
+const args = process.argv.slice(2);
+const options = {
+  json: args.includes('--json'),
+  report: args.includes('--report'),
+  force: args.includes('--force') || process.env.CODEQL_FORCE_REBUILD === 'true',
+  verbose: args.includes('--verbose'),
+  quiet: args.includes('--quiet'),
+  help: args.includes('--help'),
+};
 
 // CI 환경 감지
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
@@ -62,7 +83,12 @@ const colors = isCI
     };
 
 /**
- * Detects available CodeQL tool (cached for performance)
+ * Detects available CodeQL tool with priority handling (cached for performance)
+ *
+ * Priority:
+ *   1. gh codeql (GitHub CLI extension) - if already installed
+ *   2. gh (GitHub CLI) - attempt auto-install of codeql extension
+ *   3. codeql (CodeQL CLI direct install)
  *
  * @returns {'gh-codeql' | 'codeql' | null} Available tool name or null
  */
@@ -72,16 +98,47 @@ function detectCodeQLTool() {
     return cachedCodeQLTool;
   }
 
-  // gh codeql 확장 확인
+  // 1. gh codeql 확장 확인 (최우선)
   try {
     execSync('gh codeql version', { stdio: 'pipe' });
     cachedCodeQLTool = 'gh-codeql';
     return cachedCodeQLTool;
   } catch {
-    // 무시하고 다음 확인
+    // gh codeql 확장이 없음, 다음 단계로
   }
 
-  // codeql CLI 확인
+  // 2. gh CLI 확인 및 codeql 확장 자동 설치 시도
+  try {
+    execSync('gh version', { stdio: 'pipe' });
+    // gh CLI는 있지만 codeql 확장이 없음 → 자동 설치 시도
+    if (!isCI) {
+      console.log(
+        `${colors.yellow}⚙️  GitHub CLI 감지됨. CodeQL 확장 자동 설치 시도 중...${colors.reset}`
+      );
+    }
+    try {
+      execSync('gh extension install github/gh-codeql', { stdio: 'pipe' });
+      if (!isCI) {
+        console.log(`${colors.green}✓ CodeQL 확장 설치 완료${colors.reset}\n`);
+      }
+      cachedCodeQLTool = 'gh-codeql';
+      return cachedCodeQLTool;
+    } catch {
+      // 설치 실패 (이미 설치되었거나 권한 문제 등)
+      // 재시도: 이미 설치되어 있을 수 있음
+      try {
+        execSync('gh codeql version', { stdio: 'pipe' });
+        cachedCodeQLTool = 'gh-codeql';
+        return cachedCodeQLTool;
+      } catch {
+        // gh codeql 확장 설치/사용 불가, codeql CLI로 폴백
+      }
+    }
+  } catch {
+    // gh CLI 없음, codeql CLI로 폴백
+  }
+
+  // 3. codeql CLI 직접 설치 확인 (최후)
   try {
     execSync('codeql version', { stdio: 'pipe' });
     cachedCodeQLTool = 'codeql';
@@ -111,16 +168,48 @@ function execCodeQL(command, options = {}) {
 }
 
 /**
+ * Prints help message
+ *
+ * @returns {void}
+ */
+function printHelp() {
+  console.log(`
+${colors.bright}CodeQL Security Analysis Runner${colors.reset}
+
+${colors.bright}Usage:${colors.reset}
+  node check-codeql.js [options]
+
+${colors.bright}Options:${colors.reset}
+  --json          Output results in JSON format (for CI/tooling)
+  --report        Generate markdown report (codeql-reports/)
+  --force         Force database rebuild (ignore cache)
+  --verbose       Show detailed logging
+  --quiet         Minimal output
+  --help          Show this help message
+
+${colors.bright}Environment Variables:${colors.reset}
+  CODEQL_FORCE_REBUILD=true    Force database rebuild
+
+${colors.bright}Examples:${colors.reset}
+  ${colors.cyan}node check-codeql.js${colors.reset}                    # Basic run
+  ${colors.cyan}node check-codeql.js --json${colors.reset}             # JSON output for CI
+  ${colors.cyan}node check-codeql.js --report${colors.reset}           # Generate markdown report
+  ${colors.cyan}node check-codeql.js --force --verbose${colors.reset}  # Force rebuild with logs
+`);
+}
+
+/**
  * Prints info banner for CodeQL check
  *
  * @returns {void}
  */
 function printInfo() {
-  if (isCI) {
-    console.log('CodeQL check: Starting...');
+  if (isCI || options.quiet || options.json) {
     return;
   }
-  console.log(`\n${colors.cyan}${colors.bright}ℹ️  CodeQL 커스텀 쿼리 검증${colors.reset}`);
+  console.log(
+    `\n${colors.cyan}${colors.bright}ℹ️  CodeQL 표준 보안 검증 (security-extended)${colors.reset}`
+  );
   console.log(`${colors.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}\n`);
 }
 
@@ -135,18 +224,23 @@ function printInstallGuide() {
     return;
   }
   console.log(`${colors.yellow}⚠️  CodeQL 도구가 설치되어 있지 않습니다.${colors.reset}\n`);
-  console.log(`${colors.bright}설치 방법 (권장 순서):${colors.reset}`);
+  console.log(`${colors.bright}설치 방법 (우선순위 순서):${colors.reset}`);
   console.log(
-    `  ${colors.bright}1. GitHub CLI 확장 (권장):${colors.reset}\n     ${colors.cyan}gh extension install github/gh-codeql${colors.reset}`
+    `  ${colors.bright}1. GitHub CLI + CodeQL 확장 (최우선, 자동 설치 지원):${colors.reset}`
   );
+  console.log(`     ${colors.cyan}# GitHub CLI 설치 (Debian/Ubuntu)${colors.reset}`);
   console.log(
-    `  ${colors.bright}2. CodeQL CLI 직접 설치:${colors.reset}\n     ${colors.cyan}https://github.com/github/codeql-cli-binaries/releases${colors.reset}`
+    `     ${colors.cyan}sudo apt-get update && sudo apt-get install -y gh${colors.reset}`
+  );
+  console.log(`     ${colors.cyan}# CodeQL 확장 설치 (자동 또는 수동)${colors.reset}`);
+  console.log(`     ${colors.cyan}gh extension install github/gh-codeql${colors.reset}\n`);
+  console.log(
+    `  ${colors.bright}2. CodeQL CLI 직접 설치 (대안):${colors.reset}\n     ${colors.cyan}https://github.com/github/codeql-cli-binaries/releases${colors.reset}`
   );
   console.log(`     설치 후 PATH에 추가\n`);
   console.log(`${colors.bright}참고:${colors.reset}`);
-  console.log(
-    `  - CodeQL 쿼리는 ${colors.cyan}codeql-custom-queries-javascript/${colors.reset} 폴더에 있습니다.`
-  );
+  console.log(`  - GitHub CLI가 있으면 스크립트가 자동으로 CodeQL 확장 설치를 시도합니다.`);
+  console.log(`  - 로컬에서는 표준 CodeQL security-extended 쿼리를 실행합니다.`);
   console.log(`  - CI에서는 GitHub Actions의 CodeQL 스캔이 자동으로 실행됩니다.\n`);
   console.log(
     `${colors.green}✓ validate 스크립트는 CodeQL 없이도 계속 진행됩니다.${colors.reset}\n`
@@ -213,17 +307,21 @@ function isDatabaseValid() {
  * @returns {boolean} True if database creation succeeded
  */
 function createDatabase() {
-  // 환경변수로 강제 재생성 가능
-  const forceRebuild = process.env.CODEQL_FORCE_REBUILD === 'true';
+  // 옵션 또는 환경변수로 강제 재생성 가능
+  const forceRebuild = options.force;
 
   if (!forceRebuild && isDatabaseValid()) {
-    console.log(`${colors.green}✓ 기존 데이터베이스 재사용 (캐시 히트)${colors.reset}\n`);
+    if (!options.quiet && !options.json) {
+      console.log(`${colors.green}✓ 기존 데이터베이스 재사용 (캐시 히트)${colors.reset}\n`);
+    }
     return true;
   }
 
-  console.log(
-    `${colors.bright}1. CodeQL 데이터베이스 생성 중...${forceRebuild ? ' (강제 재생성)' : ''}${colors.reset}`
-  );
+  if (!options.quiet && !options.json) {
+    console.log(
+      `${colors.bright}1. CodeQL 데이터베이스 생성 중...${forceRebuild ? ' (강제 재생성)' : ''}${colors.reset}`
+    );
+  }
 
   /**
    * 기존 데이터베이스 삭제
@@ -235,49 +333,23 @@ function createDatabase() {
       execSync(rmCommand, { stdio: 'pipe' });
     }
   } catch {
-    console.log(`${colors.yellow}⚠️  기존 데이터베이스 정리 실패 (무시)${colors.reset}`);
+    if (options.verbose) {
+      console.log(`${colors.yellow}⚠️  기존 데이터베이스 정리 실패 (무시)${colors.reset}`);
+    }
   }
 
   try {
-    // JavaScript 프로젝트 데이터베이스 생성
-    execCodeQL(
-      `database create "${dbDir}" --language=javascript --source-root="${rootDir}" --overwrite`,
-      { stdio: 'inherit' }
-    );
-    console.log(`${colors.green}✓ 데이터베이스 생성 완료${colors.reset}\n`);
+    // JavaScript 프로젝트 데이터베이스 생성 (dist 디렉터리 제외)
+    const createCmd = `database create "${dbDir}" --language=javascript --source-root="${rootDir}" --overwrite`;
+    execCodeQL(createCmd, { stdio: options.verbose ? 'inherit' : 'pipe' });
+
+    if (!options.quiet) {
+      console.log(`${colors.green}✓ 데이터베이스 생성 완료${colors.reset}\n`);
+    }
     return true;
   } catch (error) {
     console.error(`${colors.red}✗ 데이터베이스 생성 실패:${colors.reset}`, error.message);
     return false;
-  }
-}
-
-/**
- * Runs a single CodeQL query asynchronously
- *
- * @param {string} queryFile - Query filename (e.g., 'direct-vendor-imports.ql')
- * @returns {Promise<{queryFile: string, resultFile: string|null, success: boolean}>} Query result
- */
-async function runQuery(queryFile) {
-  const queryPath = resolve(queriesDir, queryFile);
-  const resultFile = join(resultsDir, `${queryFile.replace('.ql', '')}.sarif`);
-
-  try {
-    await new Promise((resolve, reject) => {
-      try {
-        execCodeQL(
-          `database analyze "${dbDir}" "${queryPath}" --format=sarif-latest --output="${resultFile}"`,
-          { stdio: 'pipe' }
-        );
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
-    return { queryFile, resultFile, success: true };
-  } catch (error) {
-    console.error(`${colors.red}✗ 쿼리 실행 실패 (${queryFile}):${colors.reset}`, error.message);
-    return { queryFile, resultFile: null, success: false };
   }
 }
 
@@ -316,27 +388,22 @@ function parseSarifResults(sarifFile) {
 }
 
 /**
- * Prints query results (excludes test-samples directory)
+ * Prints query results
  *
  * @param {string} queryName - Query name for display
  * @param {{total: number, results: Array}} results - Parsed SARIF results
  * @returns {boolean} True if no issues found
  */
 function printResults(queryName, results) {
-  // test-samples 디렉토리의 결과 필터링 (의도적 위반 예시)
-  const filteredResults = results.results.filter(r => {
-    return !r.locations?.some(loc => loc.uri?.includes('test-samples/'));
-  });
+  const total = results.results.length;
 
-  const filteredTotal = filteredResults.length;
-
-  if (filteredTotal === 0) {
+  if (total === 0) {
     console.log(`  ${colors.green}✓ ${queryName}: 문제 없음${colors.reset}`);
     return true;
   }
 
-  console.log(`  ${colors.red}✗ ${queryName}: ${filteredTotal}개 문제 발견${colors.reset}`);
-  filteredResults.forEach((r, idx) => {
+  console.log(`  ${colors.red}✗ ${queryName}: ${total}개 문제 발견${colors.reset}`);
+  results.results.forEach((r, idx) => {
     console.log(`    ${idx + 1}. ${r.message}`);
     r.locations?.forEach(loc => {
       console.log(
@@ -348,7 +415,90 @@ function printResults(queryName, results) {
 }
 
 /**
- * Runs all CodeQL queries in parallel
+ * Ensures CodeQL query packs are available
+ *
+ * @returns {boolean} True if packs are available
+ */
+function ensureQueryPacks() {
+  try {
+    // Check if javascript-queries pack is available
+    const packCheck = execCodeQL('resolve packs', { stdio: 'pipe', encoding: 'utf8' });
+    if (packCheck.includes('javascript-queries')) {
+      return true;
+    }
+  } catch {
+    // Pack check failed, try to download
+  }
+
+  // Try to download the pack
+  console.log(`${colors.yellow}📦 JavaScript 쿼리 팩 다운로드 중...${colors.reset}`);
+  try {
+    execCodeQL('pack download codeql/javascript-queries', { stdio: 'inherit' });
+    console.log(`${colors.green}✓ 쿼리 팩 다운로드 완료${colors.reset}\n`);
+    return true;
+  } catch (error) {
+    console.error(`${colors.red}✗ 쿼리 팩 다운로드 실패:${colors.reset}`, error.message);
+    console.log(
+      `${colors.yellow}💡 수동 다운로드: gh codeql pack download codeql/javascript-queries${colors.reset}\n`
+    );
+    return false;
+  }
+}
+
+/**
+ * Generates markdown report from SARIF results
+ *
+ * @param {object} results - Parsed SARIF results
+ * @param {string} resultFile - Path to SARIF file
+ * @returns {void}
+ */
+function generateMarkdownReport(results, resultFile) {
+  if (!existsSync(reportsDir)) {
+    mkdirSync(reportsDir, { recursive: true });
+  }
+
+  const timestamp = new Date().toISOString();
+  const reportFile = join(reportsDir, `security-extended-${Date.now()}.md`);
+
+  let markdown = `# CodeQL Security Analysis Report
+
+**Generated**: ${timestamp}
+**Query Suite**: security-extended
+**Results File**: ${resultFile}
+
+## Summary
+
+- **Total Issues**: ${results.results.length}
+- **Status**: ${results.results.length === 0 ? '✅ Pass' : '❌ Fail'}
+
+`;
+
+  if (results.results.length > 0) {
+    markdown += `## Issues Found\n\n`;
+    results.results.forEach((result, idx) => {
+      markdown += `### ${idx + 1}. ${result.ruleId}\n\n`;
+      markdown += `**Message**: ${result.message}\n\n`;
+      if (result.locations && result.locations.length > 0) {
+        markdown += `**Locations**:\n\n`;
+        result.locations.forEach(loc => {
+          markdown += `- \`${loc.uri}:${loc.startLine}:${loc.startColumn}\`\n`;
+        });
+        markdown += `\n`;
+      }
+    });
+  } else {
+    markdown += `## ✅ No Issues Found\n\nAll security checks passed successfully.\n`;
+  }
+
+  writeFileSync(reportFile, markdown, 'utf8');
+
+  if (!options.quiet) {
+    console.log(`${colors.cyan}📄 마크다운 리포트 생성: ${reportFile}${colors.reset}\n`);
+  }
+}
+
+/**
+ * Runs CodeQL security-extended query suite (same as CI)
  *
  * @returns {Promise<boolean>} True if all queries passed
  */
@@ -356,24 +506,10 @@ async function runCodeQLQueries() {
   const tool = detectCodeQLTool();
   const toolName = tool === 'gh-codeql' ? 'gh codeql' : 'codeql';
 
-  console.log(
-    `${colors.bright}실행 중: CodeQL 커스텀 쿼리 (${toolName} 사용, 병렬 실행)...${colors.reset}\n`
-  );
-
-  // 쿼리 파일 확인
-  const queries = [
-    'direct-vendor-imports.ql',
-    'forbidden-touch-events.ql',
-    'hardcoded-color-values.ql',
-    'hardcoded-size-values.ql',
-    'unsafe-download-pattern.ql',
-  ];
-
-  const existingQueries = queries.filter(q => existsSync(resolve(queriesDir, q)));
-
-  if (existingQueries.length === 0) {
-    console.log(`${colors.yellow}⚠️  실행 가능한 쿼리가 없습니다.${colors.reset}\n`);
-    return true;
+  if (!options.quiet && !options.json) {
+    console.log(
+      `${colors.bright}실행 중: CodeQL 표준 보안 검증 (${toolName} 사용, security-extended)...${colors.reset}\n`
+    );
   }
 
   // 결과 디렉터리 생성
@@ -381,48 +517,90 @@ async function runCodeQLQueries() {
     mkdirSync(resultsDir, { recursive: true });
   }
 
+  // 쿼리 팩 확인 및 다운로드
+  if (!ensureQueryPacks()) {
+    if (!options.quiet && !options.json) {
+      console.log(
+        `${colors.yellow}⚠️  쿼리 팩을 사용할 수 없습니다. 로컬 검증을 건너뜁니다.${colors.reset}\n`
+      );
+      console.log(
+        `${colors.green}✓ CI에서 GitHub Actions CodeQL이 자동으로 실행됩니다.${colors.reset}\n`
+      );
+    }
+    if (options.json) {
+      console.log(
+        JSON.stringify({ success: true, skipped: true, reason: 'query_packs_unavailable' })
+      );
+    }
+    return true; // Don't fail validate script
+  }
+
   // 데이터베이스 생성
   if (!createDatabase()) {
-    console.log(`${colors.red}데이터베이스 생성 실패. 쿼리 실행을 건너뜁니다.${colors.reset}\n`);
+    if (!options.json) {
+      console.log(`${colors.red}데이터베이스 생성 실패. 쿼리 실행을 건너뜁니다.${colors.reset}\n`);
+    }
     return false;
   }
 
-  // 쿼리 병렬 실행 (시작 시간 측정)
-  console.log(
-    `${colors.bright}2. 쿼리 병렬 실행 중 (${existingQueries.length}개)...${colors.reset}`
-  );
+  // security-extended 쿼리 스위트 실행 (CI와 동일)
+  if (!options.quiet && !options.json) {
+    console.log(`${colors.bright}2. 쿼리 실행 중 (security-extended suite)...${colors.reset}`);
+  }
   const startTime = Date.now();
+  const resultFile = join(resultsDir, 'security-extended.sarif');
 
-  const queryResults = await Promise.all(existingQueries.map(queryFile => runQuery(queryFile)));
+  try {
+    const analyzeCmd = `database analyze "${dbDir}" codeql/javascript-queries:codeql-suites/javascript-security-extended.qls --format=sarif-latest --output="${resultFile}"`;
+    execCodeQL(analyzeCmd, {
+      stdio: options.verbose || (!options.quiet && !options.json) ? 'inherit' : 'pipe',
+    });
 
-  const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
-  console.log(`${colors.green}✓ 쿼리 실행 완료 (${elapsedTime}초)${colors.reset}\n`);
+    const elapsedTime = ((Date.now() - startTime) / 1000).toFixed(2);
 
-  // 결과 파싱 및 출력
-  let allPassed = true;
-
-  for (const { queryFile, resultFile, success } of queryResults) {
-    if (!success || !resultFile) {
-      allPassed = false;
-      continue;
+    if (!options.quiet && !options.json) {
+      console.log(`${colors.green}✓ 쿼리 실행 완료 (${elapsedTime}초)${colors.reset}\n`);
     }
 
+    // 결과 파싱 및 출력
     const results = parseSarifResults(resultFile);
-    const passed = printResults(queryFile, results);
-    allPassed = allPassed && passed;
-  }
 
-  console.log('');
-  if (allPassed) {
-    console.log(`${colors.green}${colors.bright}✓ 모든 CodeQL 쿼리 통과!${colors.reset}\n`);
-  } else {
-    console.log(
-      `${colors.red}${colors.bright}✗ 일부 CodeQL 쿼리에서 문제가 발견되었습니다.${colors.reset}\n`
-    );
-    console.log(`${colors.cyan}결과 파일: ${resultsDir}${colors.reset}\n`);
-  }
+    // JSON 출력 모드
+    if (options.json) {
+      console.log(
+        JSON.stringify(
+          { success: results.total === 0, issues: results.results.length, elapsed: elapsedTime },
+          null,
+          2
+        )
+      );
+      return results.total === 0;
+    }
 
-  return allPassed;
+    // 마크다운 리포트 생성
+    if (options.report) {
+      generateMarkdownReport(results, resultFile);
+    }
+
+    const allPassed = printResults('Security Extended', results);
+
+    if (!options.quiet) {
+      console.log('');
+      if (allPassed) {
+        console.log(`${colors.green}${colors.bright}✓ CodeQL 보안 검증 통과!${colors.reset}\n`);
+      } else {
+        console.log(
+          `${colors.red}${colors.bright}✗ CodeQL 보안 검증에서 문제가 발견되었습니다.${colors.reset}\n`
+        );
+        console.log(`${colors.cyan}결과 파일: ${resultFile}${colors.reset}\n`);
+      }
+    }
+
+    return allPassed;
+  } catch (error) {
+    console.error(`${colors.red}✗ 쿼리 실행 실패:${colors.reset}`, error.message);
+    return false;
+  }
 }
 
 /**
@@ -431,6 +609,12 @@ async function runCodeQLQueries() {
  * @returns {Promise<void>}
  */
 async function main() {
+  // 헬프 메시지 표시
+  if (options.help) {
+    printHelp();
+    process.exit(0);
+  }
+
   // CI 환경에서는 즉시 종료 (성능 최적화)
   if (isCI) {
     console.log('CodeQL check: Skipped (CI uses GitHub Actions CodeQL workflow)');

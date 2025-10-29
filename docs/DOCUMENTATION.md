@@ -64,10 +64,19 @@
 
 ---
 
-## 🔍 CodeQL 문서
+## � 보안 분석 문서
 
-- **[codeql-custom-queries-javascript/README.md](../codeql-custom-queries-javascript/README.md)**:
-  커스텀 쿼리, 위반 예시, 테스트 샘플
+**CodeQL (보안 취약점 정적 분석)**:
+
+- **목적**: XSS, 코드 인젝션, Prototype pollution 등 보안 취약점 탐지
+- **실행 환경**:
+  - CI (필수): GitHub Actions에서 `github/codeql-action` 자동 실행
+  - 로컬 (선택): `scripts/check-codeql.js` (CI와 동일한 security-extended 쿼리)
+- **책임**: CI에서 전체 보안 검증, 로컬은 빠른 피드백용
+- **사용법**: `npm run codeql:check` (옵션: --json, --report, --force,
+  --verbose)
+- **결과**: SARIF 결과 (`codeql-results/`), 마크다운 리포트 (`codeql-reports/`)
+- **상세 가이드**: [AGENTS.md](../AGENTS.md) "CodeQL 설정 및 사용" 섹션
 
 ---
 

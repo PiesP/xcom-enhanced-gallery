@@ -70,7 +70,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
-        if (imgElement?.src?.includes('pbs.twimg.com')) {
+        // URL 검증: 호스트명을 정확히 확인하여 도메인 스푸핑 방지
+        if (imgElement?.src && isTwitterMediaUrl(imgElement.src)) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {
             mediaItems.push(mediaInfo);
@@ -246,6 +247,25 @@ export function extractOriginalImageUrl(url: string): string {
 }
 
 /**
+ * URL이 트위터 미디어 도메인에서 온 것인지 확인 (간단한 헬퍼)
+ *
+ * @param url - 검증할 URL
+ * @returns 트위터 미디어 도메인 여부
+ */
+function isTwitterMediaUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname === 'pbs.twimg.com' || urlObj.hostname === 'video.twimg.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * 미디어 URL이 유효한지 검증
  *
  * @param url - 검증할 URL
@@ -321,13 +341,8 @@ function isValidMediaUrlFallback(url: string): boolean {
     return false;
   }
 
-  // 지원하지 않는 트위터 서브도메인 명시적 거부
-  if (url.includes('ton.twimg.com')) {
-    return false;
-  }
-
   // 도메인 스푸핑 방지: 정확한 호스트명 매칭
-  const protocolRegex = /^https?:\/\/([^/]+)/;
+  const protocolRegex = /^https?:\/\/([^/?#]+)/;
   const match = url.match(protocolRegex);
   if (!match) {
     return false;
@@ -349,6 +364,7 @@ function isValidMediaUrlFallback(url: string): boolean {
     return true;
   }
 
+  // 지원하지 않는 도메인 명시적 거부
   return false;
 }
 

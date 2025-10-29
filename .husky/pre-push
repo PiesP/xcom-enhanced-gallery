@@ -1,62 +1,28 @@
 #!/usr/bin/env sh
-
-# Pre-push: 타입 체크 및 테스트 실행 (선택적 범위)
+# Pre-push: Typecheck + Tests (configurable scope)
+# CI: Skipped (full validation in GitHub Actions)
 #
-# 역할: push 전 코드 품질 검증 (typecheck + tests)
-# CI 스킵: 전체 검증은 GitHub Actions에서 실행
+# Scope priority: XEG_PREPUSH_SCOPE (env) > xeg.prepushScope (git config) > smoke (default)
 #
-# 범위 설정 우선순위:
-#   1. 환경 변수: XEG_PREPUSH_SCOPE (가장 높음)
-#   2. git config: xeg.prepushScope (중간)
-#   3. 기본값: smoke (가장 낮음, 가장 빠름)
-#
-# 사용 예시:
-#   export XEG_PREPUSH_SCOPE=full && git push    # 전체 스위트 실행
-#   git config xeg.prepushScope fast && git push # git config 저장
-#   git push                                      # 기본값(smoke) 실행
-#
-# 참고: AGENTS.md의 "분할 실행(Projects)" 섹션 참고
+# Examples:
+#   export XEG_PREPUSH_SCOPE=full && git push    # Full suite (one-time)
+#   git config xeg.prepushScope fast             # Save preference
+#   git push                                      # Use default (smoke)
 
-if [ "$CI" = "true" ]; then
-  echo "⏭️  Pre-push: CI 환경에서 스킵됨 (GitHub Actions에서 검증)"
-  exit 0
-fi
+[ "$CI" = "true" ] && exit 0
 
-# 범위 해석: 환경 변수 > git config > 기본값
-SCOPE="${XEG_PREPUSH_SCOPE:-}"
-if [ -z "$SCOPE" ]; then
-  CFG_SCOPE=$(git config --get xeg.prepushScope 2>/dev/null || true)
-  if [ -n "$CFG_SCOPE" ]; then
-    SCOPE="$CFG_SCOPE"
-  else
-    SCOPE="smoke"
-  fi
-fi
+# Determine scope
+SCOPE="${XEG_PREPUSH_SCOPE:-$(git config --get xeg.prepushScope 2>/dev/null || echo smoke)}"
 
-echo "🧪 Pre-push: 타입 체크 + 테스트 (범위: $SCOPE)"
+echo "🧪 Pre-push: typecheck + tests (scope: $SCOPE)"
 
-# 타입 체크 (tsgo - 빠른 TypeScript 체커)
-npm run typecheck || {
-  echo "❌ 타입 체크 실패"
-  exit 1
-}
+# Typecheck
+npm run typecheck || exit 1
 
-# 테스트 실행 (범위에 따라)
-if [ "$SCOPE" = "full" ] || [ "$SCOPE" = "all" ]; then
-  npm run test || {
-    echo "❌ 테스트 실패 (전체 스위트)"
-    exit 1
-  }
-else
-  npm run test:$SCOPE || {
-    echo "❌ 테스트 실패 (범위: $SCOPE)"
-    echo ""
-    echo "💡 팁:"
-    echo "   export XEG_PREPUSH_SCOPE=full && git push    # 전체 스위트 실행"
-    echo "   git config xeg.prepushScope fast && git push # git config 저장"
-    exit 1
-  }
-fi
+# Tests
+case "$SCOPE" in
+  full|all) npm test || exit 1 ;;
+  *) npm run "test:$SCOPE" || exit 1 ;;
+esac
 
-echo "✅ Pre-push 검증 통과"
-exit 0
+echo "✅ Pre-push passed"
