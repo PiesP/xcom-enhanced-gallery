@@ -17,6 +17,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 
+type PointerEventLike = Event & { pointerType?: string };
+
 describe('Phase 229.2: Pointer Event Policy', () => {
   describe('Policy Documentation and Contract', () => {
     it('should document the Phase 229 pointer event policy change', () => {
@@ -113,6 +115,22 @@ describe('Phase 229.2: Pointer Event Policy', () => {
       // Elements with data-gallery-element markers are considered internal
       expect(isGalleryInternalElement(dataElement)).toBe(true);
     });
+
+    it('should ignore non-HTMLElement inputs without warnings', async () => {
+      const [{ isGalleryInternalElement }, loggingModule] = await Promise.all([
+        import('../../../../src/shared/utils/utils'),
+        import('../../../../src/shared/logging'),
+      ]);
+
+      const warnSpy = vi.spyOn(loggingModule.logger, 'warn');
+
+      const result = isGalleryInternalElement(document as unknown as HTMLElement);
+
+      expect(result).toBe(false);
+      expect(warnSpy).not.toHaveBeenCalled();
+
+      warnSpy.mockRestore();
+    });
   });
 
   describe('Event Policy Implementation Verification', () => {
@@ -183,6 +201,116 @@ describe('Phase 229.2: Pointer Event Policy', () => {
 
       document.body.removeChild(galleryElement);
       document.body.removeChild(outsideElement);
+    });
+
+    it('should allow mouse pointer events on form controls inside the gallery', async () => {
+      const eventsModule = await import('../../../../src/shared/utils/events');
+
+      const handlers = {
+        onMediaClick: vi.fn().mockResolvedValue(undefined),
+        onGalleryClose: vi.fn(),
+        onKeyboardEvent: vi.fn(),
+      };
+
+      await eventsModule.initializeGalleryEvents(handlers, {
+        enableMediaDetection: false,
+        enableKeyboard: false,
+        preventBubbling: false,
+        context: 'test-pointer-policy',
+      });
+
+      const settingsPanel = document.createElement('div');
+      settingsPanel.setAttribute('data-gallery-element', 'settings-panel');
+
+      const select = document.createElement('select');
+      const option = document.createElement('option');
+      option.value = 'light';
+      option.textContent = 'Light';
+      select.appendChild(option);
+      settingsPanel.appendChild(select);
+
+      document.body.appendChild(settingsPanel);
+
+      try {
+        const pointerEvent = new Event('pointerdown', {
+          bubbles: true,
+          cancelable: true,
+        }) as PointerEventLike;
+        Object.defineProperty(pointerEvent, 'pointerType', {
+          value: 'mouse',
+          configurable: true,
+        });
+
+        const dispatchResult = select.dispatchEvent(pointerEvent);
+
+        expect(dispatchResult).toBe(true);
+        expect(pointerEvent.defaultPrevented).toBe(false);
+      } finally {
+        if (settingsPanel.parentNode) {
+          settingsPanel.parentNode.removeChild(settingsPanel);
+        }
+
+        eventsModule.cleanupGalleryEvents();
+        document.onpointerdown = null;
+        document.onpointermove = null;
+        document.onpointerup = null;
+        document.onpointercancel = null;
+        document.onpointerenter = null;
+        document.onpointerleave = null;
+      }
+    });
+
+    it('should continue to block pointer events on non-form gallery elements', async () => {
+      const eventsModule = await import('../../../../src/shared/utils/events');
+
+      const handlers = {
+        onMediaClick: vi.fn().mockResolvedValue(undefined),
+        onGalleryClose: vi.fn(),
+        onKeyboardEvent: vi.fn(),
+      };
+
+      await eventsModule.initializeGalleryEvents(handlers, {
+        enableMediaDetection: false,
+        enableKeyboard: false,
+        preventBubbling: false,
+        context: 'test-pointer-policy-block',
+      });
+
+      const galleryWrapper = document.createElement('div');
+      galleryWrapper.setAttribute('data-gallery-element', 'toolbar-wrapper');
+
+      const internalButton = document.createElement('div');
+      internalButton.setAttribute('data-gallery-element', 'toolbar-button');
+      galleryWrapper.appendChild(internalButton);
+
+      document.body.appendChild(galleryWrapper);
+
+      try {
+        const pointerEvent = new Event('pointerdown', {
+          bubbles: true,
+          cancelable: true,
+        }) as PointerEventLike;
+        Object.defineProperty(pointerEvent, 'pointerType', {
+          value: 'mouse',
+          configurable: true,
+        });
+
+        internalButton.dispatchEvent(pointerEvent);
+
+        expect(pointerEvent.defaultPrevented).toBe(true);
+      } finally {
+        if (galleryWrapper.parentNode) {
+          galleryWrapper.parentNode.removeChild(galleryWrapper);
+        }
+
+        eventsModule.cleanupGalleryEvents();
+        document.onpointerdown = null;
+        document.onpointermove = null;
+        document.onpointerup = null;
+        document.onpointercancel = null;
+        document.onpointerenter = null;
+        document.onpointerleave = null;
+      }
     });
   });
 

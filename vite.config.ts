@@ -124,6 +124,7 @@ function createStyleInjector(css: string): string {
   const escapedCss = JSON.stringify(css);
 
   // IIFE로 감싸진 스타일 인젝션 코드 생성
+  // 프로덕션: 세미콜론 없이 종료하여 다음 IIFE와 자동 병합되도록 함
   return (
     `(function(){` +
     `try{` +
@@ -134,7 +135,7 @@ function createStyleInjector(css: string): string {
     `s.textContent=${escapedCss};` +
     `(document.head||document.documentElement).appendChild(s);` +
     `}catch(e){console.error('[XEG] style inject fail',e);}` +
-    `})();\n`
+    `})();`
   );
 }
 
@@ -162,8 +163,8 @@ function createUserscriptWrapper(options: {
   const { header, license, styleInjector, code, isProd } = options;
 
   if (isProd) {
-    // 프로덕션: 최소화된 형태
-    return `${header}${license}(function(){'use strict';${styleInjector}${code}})();`;
+    // 프로덕션: 최소화된 1줄 형태 (메타 블록 제외)
+    return `${header}${license}${styleInjector}${code}`;
   } else {
     // 개발: 가독성을 위한 개행 포함
     return `${header}${license}(function(){\n'use strict';\n${styleInjector}${code}\n})();`;

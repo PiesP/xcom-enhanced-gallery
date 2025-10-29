@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { isHTMLElement } from './type-guards';
 
 // ================================
 // DOM 유틸리티
@@ -86,11 +87,13 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
 
 /**
  * 이벤트가 갤러리 내부 이벤트인지 확인
+ * Phase 241: event.target 타입 가드 적용
  * @param event - 검사할 이벤트
  * @returns 이벤트의 target이 갤러리 내부이면 true
  */
 export function isGalleryInternalEvent(event: Event): boolean {
-  const target = event.target as HTMLElement;
+  const target = event.target;
+  if (!isHTMLElement(target)) return false;
   return isInsideGallery(target);
 }
 

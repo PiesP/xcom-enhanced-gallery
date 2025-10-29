@@ -9,6 +9,7 @@
 import { logger } from '@shared/logging';
 import { STABLE_SELECTORS } from '../../constants';
 import { isGalleryInternalElement, isVideoControlElement } from './utils';
+import { isHTMLElement } from './type-guards';
 import {
   detectMediaFromClick as detectMediaElement,
   isProcessableMedia,
@@ -335,8 +336,9 @@ function checkInsideGallery(element: HTMLElement | null): boolean {
 
 async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
   try {
+    // Phase 241: event.target 타입 가드 적용
     const target = event.target;
-    if (!target || !(target instanceof HTMLElement)) return null;
+    if (!target || !isHTMLElement(target)) return null;
 
     const result = detectMediaElement(target);
 
@@ -599,6 +601,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
  * 미디어 클릭 처리
  *
  * Phase 228.1: 이벤트 캡처 최적화
+ * Phase 241: event.target 타입 가드 적용
  * - 빠른 경로 체크: 미디어 컨테이너 범위 확인 먼저
  * - 비처리 가능한 요소는 조기 종료 (불필요한 오버헤드 감소)
  */
@@ -608,7 +611,11 @@ async function handleMediaClick(
   options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
   try {
-    const target = event.target as HTMLElement;
+    // Phase 241: event.target 타입 가드 적용
+    const target = event.target;
+    if (!isHTMLElement(target)) {
+      return { handled: false, reason: 'Invalid target (not HTMLElement)' };
+    }
 
     // **Phase 228.1: 빠른 경로 체크 (조기 종료)**
     // 미디어 컨테이너 범위 확인 - 가장 먼저 검사하여 불필요한 처리 제거
@@ -914,7 +921,51 @@ export function getGalleryEventSnapshot() {
  * - Pointer 이벤트:
  *   - 전역: 로깅만 (텍스트 선택, 링크 클릭 등 네이티브 동작 보존)
  *   - 갤러리 내부: 차단 (갤러리 전용 Mouse 이벤트 사용)
+ * Phase 242: 폼 컨트롤 허용
+ * - 마우스 기반 폼 컨트롤(select, input, textarea 등)은 포인터 이벤트 차단에서 제외
+ * Phase 243: 재발 방지 및 로직 간결화
+ * - 폼 컨트롤 판단 로직을 별도 함수로 분리
+ * - 포인터 정책 결정 로직을 명확한 헬퍼 함수로 추출
  */
+
+// Phase 243: 폼 컨트롤 셀렉터 상수화
+const FORM_CONTROL_SELECTORS =
+  'select, input, textarea, button, [role="listbox"], [role="combobox"]';
+
+/**
+ * 요소가 폼 컨트롤인지 확인
+ * Phase 243: 재발 방지를 위한 명시적 함수 추출
+ */
+function isFormControlElement(element: HTMLElement): boolean {
+  return Boolean(
+    element.matches?.(FORM_CONTROL_SELECTORS) || element.closest?.(FORM_CONTROL_SELECTORS)
+  );
+}
+
+/**
+ * 포인터 이벤트 차단 여부 결정
+ * Phase 243: 정책 결정 로직을 명확한 함수로 분리
+ *
+ * @returns 'allow' | 'block' | 'log'
+ */
+function getPointerEventPolicy(
+  target: HTMLElement,
+  pointerType: string
+): 'allow' | 'block' | 'log' {
+  // 1. 마우스 + 폼 컨트롤 → 허용 (Phase 242)
+  if (pointerType === 'mouse' && isFormControlElement(target)) {
+    return 'allow';
+  }
+
+  // 2. 갤러리 내부 → 차단
+  if (isGalleryInternalElement(target)) {
+    return 'block';
+  }
+
+  // 3. 기타 → 로깅만
+  return 'log';
+}
+
 function blockTouchAndPointerEvents(element: Document | EventTarget): void {
   // 터치 이벤트 명시적 차단
   const touchEvents = ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
@@ -979,21 +1030,52 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
   for (const eventType of pointerEvents) {
     try {
       const blocker = (evt: Event) => {
-        const targetElement = evt.target as HTMLElement | null;
+        const pointerEvent = evt as PointerEvent;
+        const rawTarget = evt.target;
+        const pointerType =
+          typeof (pointerEvent as { pointerType?: string }).pointerType === 'string'
+            ? pointerEvent.pointerType
+            : 'mouse';
 
-        // 갤러리 내부 요소인 경우에만 차단
-        if (targetElement && isGalleryInternalElement(targetElement)) {
-          logger.debug(`[PC-only policy] Blocked ${eventType} in gallery`, {
-            target: targetElement.tagName,
+        // Phase 242: 비-HTMLElement 타깃 조기 반환
+        if (!(rawTarget instanceof HTMLElement)) {
+          const targetType =
+            rawTarget != null ? (rawTarget.constructor?.name ?? typeof rawTarget) : 'null';
+          logger.debug(`[PC-only policy] Skipped ${eventType} - non-HTMLElement target`, {
+            pointerType,
+            targetType,
           });
-          evt.preventDefault?.();
-          evt.stopPropagation?.();
-          evt.stopImmediatePropagation?.();
-        } else {
-          // 갤러리 외부는 로깅만 (네이티브 동작 보존: 텍스트 선택, 링크 클릭 등)
-          logger.debug(`[PC-only policy] Logged ${eventType} (allowed)`, {
-            target: targetElement?.tagName,
-          });
+          return;
+        }
+
+        // Phase 243: 정책 결정 로직을 명확한 함수로 분리
+        const policy = getPointerEventPolicy(rawTarget, pointerType);
+
+        switch (policy) {
+          case 'allow':
+            logger.debug(`[PC-only policy] Allowed ${eventType} on form control`, {
+              pointerType,
+              target: rawTarget.tagName,
+            });
+            return;
+
+          case 'block':
+            logger.debug(`[PC-only policy] Blocked ${eventType} in gallery`, {
+              pointerType,
+              target: rawTarget.tagName,
+            });
+            evt.preventDefault?.();
+            evt.stopPropagation?.();
+            evt.stopImmediatePropagation?.();
+            return;
+
+          case 'log':
+          default:
+            logger.debug(`[PC-only policy] Logged ${eventType} (allowed)`, {
+              pointerType,
+              target: rawTarget.tagName,
+            });
+            return;
         }
       };
 

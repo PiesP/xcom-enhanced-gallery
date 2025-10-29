@@ -7,6 +7,7 @@
 import { logger } from '@shared/logging';
 import { gallerySignals } from '../state/signals/gallery.signals';
 import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '../../constants';
+import { isHTMLElement } from './type-guards';
 
 // ================================
 // Re-exports from focused modules
@@ -111,6 +112,11 @@ export function shouldBlockGalleryTrigger(target: HTMLElement | null): boolean {
 export function isGalleryInternalElement(element: HTMLElement | null): boolean {
   if (!element) return false;
 
+  // Phase 242: guard against non-HTMLElement nodes (e.g., Document during capture phase)
+  if (!(element instanceof HTMLElement)) {
+    return false;
+  }
+
   // Phase 237: matches 메서드 존재 여부 확인 (타입 가드 강화)
   if (typeof element.matches !== 'function') {
     logger.warn('Invalid element: matches is not a function', element);
@@ -162,9 +168,12 @@ export function isVideoControlElement(element: HTMLElement | null): boolean {
 
 /**
  * 갤러리 내부 이벤트인지 확인
+ * Phase 241: event.target 타입 가드 적용
  */
 export function isGalleryInternalEvent(event: Event): boolean {
-  return isGalleryInternalElement(event.target as HTMLElement);
+  const target = event.target;
+  if (!isHTMLElement(target)) return false;
+  return isGalleryInternalElement(target);
 }
 
 /**

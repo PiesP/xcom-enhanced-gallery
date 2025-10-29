@@ -41,7 +41,7 @@ const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 // Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
 // Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
 // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
-// Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용
+// Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용 + 워커 격리 강화
 const sharedPoolOptions = {
   threads: {
     singleThread: forceSingleThread,
@@ -49,6 +49,7 @@ const sharedPoolOptions = {
     memoryLimit: forceSingleThread ? 1024 : 3072,
     minThreads: 2,
     maxThreads: forceSingleThread ? 1 : 8, // 12 코어 중 8개 활용 (OS용 4코어 예약)
+    reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
   },
 };
 // Helpers
@@ -159,6 +160,7 @@ export default defineConfig({
     globals: true,
     environment: 'happy-dom',
     setupFiles: ['./test/setup.ts'],
+    globalTeardown: './test/global-teardown.ts', // Phase 241: Vitest 워커 자동 정리
     isolate: true, // 테스트 파일 간 격리
     testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
     hookTimeout: 25000,
@@ -250,6 +252,7 @@ export default defineConfig({
         memoryLimit: forceSingleThread ? 1024 : 2048,
         minThreads: 1,
         maxThreads: forceSingleThread ? 1 : 2, // 병렬도 감소 (4 → 2)
+        reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
       },
     },
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)

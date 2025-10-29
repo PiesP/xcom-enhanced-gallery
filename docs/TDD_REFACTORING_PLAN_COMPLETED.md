@@ -1,15 +1,18 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 240
+**최종 업데이트**: 2025-10-29 | **최근 완료**: Phase 243
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-239)
+## 📊 완료된 Phase 요약 (Phase 197-243)
 
 | Phase       | 날짜       | 제목                                       | 핵심 내용                                     |
 | ----------- | ---------- | ------------------------------------------ | --------------------------------------------- |
+| **243**     | 2025-10-29 | 포인터 정책 로직 간결화 및 재발 방지 강화  | 헬퍼 함수 분리, 상수 추출, 문서화             |
+| **242**     | 2025-10-29 | 설정 드롭다운 포인터 정책 조정             | 폼 컨트롤 허용, 비-HTMLElement 가드 추가      |
+| **241**     | 2025-10-29 | event.target 타입 가드 강화                | isHTMLElement 활용, Document/Window 안전처리  |
 | **240**     | 2025-10-29 | 설정 드롭다운 펼침 수정                    | CSS 상속 문제 수정, 오버라이드 추가           |
 | **239**     | 2025-10-29 | 문서 정리 및 중복 제거                     | CODE_QUALITY.md 삭제, temp/ 정리              |
 | **238**     | 2025-10-29 | 린터 ignore 설정 개선                      | 임시/생성/아카이브 파일 일관 제외             |
@@ -48,6 +51,220 @@
 | **205**     | 2025-10-27 | Playwright Accessibility 통합              | WCAG 2.1 AA 자동 검증                         |
 | **200-204** | 2025-10-27 | 빌드 및 문서 최적화                        | 빌드 병렬화, 메모리 최적화                    |
 | **197-199** | 2025-10-27 | Settings 드롭다운 수정                     | PC-only 정책 적용                             |
+
+---
+
+## 📋 Phase 243 상세 (포인터 정책 로직 간결화 및 재발 방지 강화)
+
+**목표**: Phase 242 완료 후 코드 가독성 향상 및 재발 방지 조치 강화
+
+**배경**:
+
+- Phase 242에서 설정 드롭다운 문제를 해결했지만, 포인터 이벤트 차단 로직이
+  복잡하고 재발 가능성 존재
+- 폼 컨트롤 판별 로직이 인라인으로 중복되어 유지보수 어려움
+- 정책 결정 로직이 여러 if문으로 산재되어 의도 파악 어려움
+
+**솔루션**:
+
+1. **상수 추출**: `FORM_CONTROL_SELECTORS` 상수로 셀렉터 중복 제거
+2. **함수 분리**:
+   - `isFormControlElement(element)`: 폼 컨트롤 판별 로직 명시적 함수화
+   - `getPointerEventPolicy(target, pointerType)`: 정책 결정 로직을 명확한
+     3단계로 정리
+3. **문서화**: CODING_GUIDELINES.md에 포인터 정책 및 재발 방지 전략 명시
+4. **Git 추적**: test/global-teardown.ts를 추적에 추가 (Phase 241에서 생성됨)
+
+**구현 내용**:
+
+- `src/shared/utils/events.ts`
+  - `FORM_CONTROL_SELECTORS` 상수 추출
+  - `isFormControlElement()` 함수 추가 (재사용 가능)
+  - `getPointerEventPolicy()` 함수 추가 (정책 결정 로직 분리)
+  - `blockTouchAndPointerEvents()` 내 포인터 이벤트 처리 로직 switch문으로 개선
+- `docs/CODING_GUIDELINES.md`
+  - "PC 전용 이벤트" 섹션에 포인터 정책 상세 설명 추가
+  - 재발 방지 전략 명시 (명시적 함수, 테스트 커버리지)
+
+**검증 결과**:
+
+```bash
+npm run build
+# ✅ 타입 체크, 린트, 의존성, 브라우저 테스트, E2E, 접근성 모두 통과
+# ✅ 빌드 크기: 342.44 KB (Phase 242: 342.41 KB, 변화 +0.03 KB)
+```
+
+**효과**:
+
+- 코드 가독성 대폭 향상 (정책 결정 로직이 switch문으로 명확히 표현)
+- 유지보수성 개선 (폼 컨트롤 셀렉터 변경 시 한 곳만 수정)
+- 재발 방지 (명시적 함수 + 문서화로 향후 유사 이슈 예방)
+- 테스트 안정성 유지 (기존 테스트 모두 통과)
+
+---
+
+## 📋 Phase 242 상세 (설정 드롭다운 포인터 정책 조정)
+
+**목표**: 설정 패널의 테마/언어 드롭다운이 클릭으로 열리지 않는 회귀 해결 및
+관련 경고 제거
+
+**문제 분석** (로그: `x.com-1761727066991.log`):
+
+```log
+[XEG] [WARN] Invalid element: matches is not a function #document (https://x.com/home)
+```
+
+**근본 원인**:
+
+1. PC-only 포인터 정책(`blockTouchAndPointerEvents`)이 갤러리 내부 포인터
+   이벤트를 일괄 차단하면서 `<select>` 기본 동작까지 억제
+2. `isGalleryInternalElement`가 `Document` 등 비-HTMLElement 대상에도 `matches`
+   호출을 시도해 경고 발생
+
+**솔루션**:
+
+- 마우스 기반 폼 컨트롤(`select`, `input`, `textarea`, `button`,
+  listbox/combobox role)을 포인터 차단 예외로 허용
+- `isGalleryInternalElement` 앞단에 `HTMLElement` 인스턴스 가드 추가로 `matches`
+  호출 안전화
+- 포인터 정책 유닛 테스트에 회귀 케이스 추가 (폼 컨트롤 허용, 일반 요소 차단
+  지속)
+
+**구현 내용**:
+
+- `src/shared/utils/utils.ts`
+  - `isGalleryInternalElement`에 `instanceof HTMLElement` 검사 추가
+- `src/shared/utils/events.ts`
+  - 포인터 이벤트 차단 로직에 폼 컨트롤 허용 조건 및 포인터 타입 로깅 추가
+  - 비-HTMLElement 대상은 로깅 후 조기 반환
+- `test/unit/shared/utils/events-pointer-policy.test.ts`
+  - 비-HTMLElement 입력 시 경고가 발생하지 않는지 검증
+  - 폼 컨트롤의 포인터 이벤트는 허용, 일반 갤러리 요소는 계속 차단되는지 검증
+
+**검증 결과**:
+
+```bash
+npx vitest run test/unit/shared/utils/events-pointer-policy.test.ts
+npm run test:cleanup
+```
+
+- Vitest dual project(`unit`, `fast`)에서 총 26개 테스트 통과 (13/13 × 2)
+- `npm run test:cleanup`으로 Vitest 워커 정리 완료
+
+**효과**:
+
+- 설정 패널 드롭다운이 정상적으로 펼쳐짐
+- `Invalid element: matches is not a function` 경고 제거
+- PC-only 정책은 유지하면서 폼 컨트롤 사용성 확보
+
+---
+
+## 📋 Phase 241 상세 (event.target 타입 가드 강화)
+
+**목표**: `event.target`이 `Document` 객체일 때 발생하는
+`matches is not a function` 경고 제거
+
+**문제 분석** (로그: `x.com-1761725447858.log`):
+
+```log
+[XEG] [WARN] Invalid element: matches is not a function #document (https://x.com/home)
+```
+
+**근본 원인**:
+
+1. `event.target`을 `HTMLElement`로 강제 타입 캐스팅
+2. `Document`, `Window` 등 다른 `EventTarget` 타입 처리 미흡
+3. Phase 237의 `element.matches` 타입 가드가 타입 캐스팅 이후에만 동작
+
+**솔루션**: 기존 `isHTMLElement` 타입 가드 활용
+
+- 위치: `src/shared/utils/type-guards.ts` (Phase 135에서 이미 구현됨)
+- 타입: `(element: unknown): element is HTMLElement`
+- TypeScript narrowing 지원
+
+**구현 내용**:
+
+1. **타입 가드 적용** (`src/shared/utils/utils.ts`):
+
+   ```typescript
+   export function isGalleryInternalEvent(event: Event): boolean {
+     const target = event.target;
+     if (!isHTMLElement(target)) return false; // Phase 241
+     return isGalleryInternalElement(target);
+   }
+   ```
+
+2. **이벤트 핸들러 수정** (`src/shared/utils/events.ts`):
+
+   ```typescript
+   async function handleMediaClick(event: MouseEvent, ...): Promise<EventHandlingResult> {
+     const target = event.target;
+     if (!isHTMLElement(target)) {
+       return { handled: false, reason: 'Invalid target (not HTMLElement)' };
+     }
+     // target은 이제 HTMLElement로 타입 좁혀짐
+   }
+
+   async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
+     const target = event.target;
+     if (!target || !isHTMLElement(target)) return null;
+     // instanceof HTMLElement → isHTMLElement로 교체
+   }
+   ```
+
+3. **코어 유틸리티 수정** (`src/shared/utils/core-utils.ts`):
+
+   ```typescript
+   export function isGalleryInternalEvent(event: Event): boolean {
+     const target = event.target;
+     if (!isHTMLElement(target)) return false;
+     return isInsideGallery(target);
+   }
+   ```
+
+4. **테스트 추가** (`test/unit/shared/utils/element-type-guard.test.ts`):
+   - `isHTMLElement` 타입 가드 검증 (7개 테스트)
+   - `Document` 객체 → `false`
+   - `Window` 객체 → `false`
+   - `null`/`undefined` → `false`
+   - 일반 객체 → `false`
+   - 유효한 `HTMLElement` → `true`
+
+**검증 결과**:
+
+```bash
+# 테스트
+npx vitest --project fast run test/unit/shared/utils/element-type-guard.test.ts
+✓ Phase 237, 241: Element Type Guard (13 tests) 38ms
+  ✓ isHTMLElement (7 tests)
+  ✓ isGalleryInternalElement (6 tests)
+
+# 타입 체크
+npm run typecheck  # ✅ 통과
+
+# 전체 빌드
+npm run build  # ✅ 성공
+  - E2E: 82/82 통과
+  - Browser: 111/111 통과
+  - 번들 크기: 342.08 KB (↑0.3 KB, 목표 ≤420 KB)
+```
+
+**효과**:
+
+- ❌ `Invalid element: matches is not a function` 경고 제거
+- ✅ 타입 안전성 향상 (TypeScript narrowing)
+- ✅ 코드 가독성 개선 (의도 명확화)
+- ✅ 향후 유사 문제 예방 (`isHTMLElement` 재사용)
+
+**영향 범위**:
+
+- `src/shared/utils/utils.ts`: `isGalleryInternalEvent` 수정
+- `src/shared/utils/events.ts`: `handleMediaClick`, `detectMediaFromEvent` 수정
+- `src/shared/utils/core-utils.ts`: `isGalleryInternalEvent` 수정
+- `test/unit/shared/utils/element-type-guard.test.ts`: 테스트 7개 추가
+
+**참고**: Phase 135에서 이미 구현된 `isHTMLElement`를 활용하여 중복 코드 없이
+문제 해결
 
 ---
 

@@ -37,6 +37,21 @@ element.addEventListener('keydown', handler);
 
 **이유**: PC 전용 유저스크립트, 터치 장치 간섭 방지
 
+**포인터 이벤트 정책** (Phase 242-243):
+
+- Touch 이벤트: **전역 차단** (모든 타깃)
+- Pointer 이벤트:
+  - **갤러리 외부**: 로깅만 (네이티브 동작 보존: 텍스트 선택, 링크)
+  - **갤러리 내부**: 차단 (Mouse 이벤트만 사용)
+  - **예외**: 마우스 기반 폼 컨트롤(`select`, `input`, `textarea`, `button`)은
+    **항상 허용**
+
+**재발 방지**:
+
+- `isFormControlElement()`: 폼 컨트롤 판별 (명시적 함수)
+- `getPointerEventPolicy()`: 정책 결정 로직 분리
+- 테스트 커버리지: `test/unit/shared/utils/events-pointer-policy.test.ts`
+
 ### 3. CSS 디자인 토큰 (크기 + 색상)
 
 ```css
