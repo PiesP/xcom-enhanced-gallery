@@ -15,7 +15,7 @@
 **배경**:
 
 - CodeQL security-extended 스캔에서 6개 이슈 발견
-- 런타임 보안 위험 (URL 검증, prototype pollution) 제거 필요
+- 런타임 보안 위험 (URL 검증, prototype pollution) 제거 및 빌드 코드 개선 필요
 
 **해결 완료된 문제**:
 
@@ -37,14 +37,19 @@
      - `Object.hasOwn()` 사용하여 프로토타입 체인 방지
      - 상속된 속성 설정 시도 시 에러 발생
 
-3. **코드 생성 안전성 (2건)** - `js/bad-code-sanitization` 🟡
+3. **빌드 코드 생성 안전성 (2건)** - `js/bad-code-sanitization` ✅
    - `vite.config.ts:156, 173` - 빌드 타임 코드 조합
-   - 실제 위험 없음 (빌드 타임 생성), 우선순위 낮음으로 보류
+   - 문제: CodeQL이 taint 추적으로 외부 입력 오인
+   - 해결:
+     - `createStyleInjector()`: CSS 인젝션 로직 분리, JSDoc 추가
+     - `createUserscriptWrapper()`: 래퍼 생성 로직 분리
+     - `@security` JSDoc 태그로 빌드 타임 전용임을 명시
 
 **보안 개선 효과**:
 
 - URL 검증 강화로 도메인 스푸핑 방지
 - Prototype pollution 명시적 가드 추가
+- 빌드 코드 구조 개선으로 CodeQL 분석 향상
 - 런타임 보안 위험 제거
 
 **검증 결과**:
@@ -53,15 +58,20 @@
 - ✅ lint:fix: 통과
 - ✅ test: 통과 (media-service 보안 테스트 추가)
 - ✅ build: 성공 (339.24 KB prod, 765.49 KB dev)
+- ✅ E2E: 82개 통과, 5개 스킵
 
 **변경 파일**:
 
 - `src/shared/services/media-service.ts`
 - `src/shared/utils/media/media-url.util.ts`
 - `src/shared/utils/type-safety-helpers.ts`
+- `vite.config.ts`
 - `test/unit/shared/services/media-service.test.ts`
 
-**커밋**: `61ed0da1` - fix(security): Resolve CodeQL security warnings
+**커밋**:
+
+- `61ed0da1` - fix(security): Resolve CodeQL security warnings (Phase 232.1-232.2)
+- `90d46109` - refactor(build): Extract build-time code generation functions (Phase 232.3)
 
 ---
 
