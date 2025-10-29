@@ -118,6 +118,7 @@ export type SettingKey = keyof AppSettings;
  * 중첩된 설정 키 타입
  */
 export type NestedSettingKey =
+  | `toolbar.${keyof ToolbarSettings}`
   | `gallery.${keyof GallerySettings}`
   | `download.${keyof DownloadSettings}`
   | `tokens.${keyof TokenSettings}`
@@ -155,3 +156,7 @@ export interface SettingValidationResult {
  * import type { AppSettings } from '@/features/settings/types/settings.types';
  * ```
  */
+
+// 테스트 및 기존 호환성을 위해 DEFAULT_SETTINGS 재노출
+// (단, 실제 구현에서는 '@/constants'에서 직접 임포트를 권장)
+export { DEFAULT_SETTINGS } from '@/constants';

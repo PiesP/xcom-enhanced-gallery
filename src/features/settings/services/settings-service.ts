@@ -76,6 +76,7 @@ export class SettingsService {
   private static cloneDefaults(): AppSettings {
     return {
       ...defaultSettings,
+      toolbar: { ...defaultSettings.toolbar },
       gallery: { ...defaultSettings.gallery },
       download: { ...defaultSettings.download },
       tokens: { ...defaultSettings.tokens },
