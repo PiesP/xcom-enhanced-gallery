@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 281)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -21,7 +21,75 @@
 
 ---
 
-## 🎯 최근 완료 Phase (281)
+## 🎯 최근 완료 Phase (282)
+
+### Phase 282: Deprecated 코드 정리 Step 1 (Cleanup) ✅ 완료
+
+**완료 일시**: 2025-10-30
+
+**상태**: ✅ 일부 완료 (Step 1만 수행)
+
+**배경**:
+
+- 코드베이스에 다수의 `@deprecated` 마킹과 사용되지 않는 legacy 코드 존재
+- Phase 223에서 통합된 browser-utils.ts가 여전히 남아있음
+- 아카이브 디렉터리에 deprecated 테스트 파일 존재
+
+**문제**:
+
+1. **사용되지 않는 파일**:
+   - `src/shared/browser/browser-utils.ts` (Phase 223에서 browser-service.ts로 통합됨)
+   - src/에서 사용처 없음 확인됨
+
+2. **아카이브 deprecated 테스트**:
+   - `test/archive/unit/core/browser-compatibility.deprecated.test.ts`
+   - 이미 아카이브되어 있으나 정리되지 않음
+
+**솔루션 (Step 1만 수행)**:
+
+```typescript
+// REMOVED:
+// src/shared/browser/browser-utils.ts
+// - Phase 223에서 browser-service.ts로 완전 통합됨
+// - src/에서 사용처 없음 (주석에만 존재)
+// - 안전하게 제거 가능
+
+// test/archive/unit/core/browser-compatibility.deprecated.test.ts
+// - 이미 아카이브된 deprecated 테스트
+// - 안전하게 제거 가능
+
+// DEFERRED (보류):
+// - src/shared/browser/utils/browser-utils.ts (재내보내기, 테스트에서 사용 중)
+// - BaseComponentProps.ts (여전히 많은 사용처)
+// - DOMEventManager (migration 진행 중)
+// - Deprecated 메서드들 (사용처 분석 필요)
+```
+
+**변경 사항**:
+
+1. **파일 제거**: browser-utils.ts 제거 (사용처 없음)
+2. **테스트 정리**: deprecated 테스트 파일 제거
+3. **문서 업데이트**: TDD_REFACTORING_PLAN.md에 Phase 282 기록
+
+**테스트 검증**:
+
+- ✅ TypeScript: 0 에러
+- ✅ 빌드: 346.02 KB (gzip 93.62 KB) - 크기 변화 없음
+- ✅ E2E: 86/86 통과 (5 skipped)
+- ✅ 모든 검증 통과 (typecheck, lint, build, tests)
+
+**기대 효과**:
+
+- ✅ 코드베이스 정리 (사용하지 않는 파일 제거)
+- ✅ 아카이브 정리 (deprecated 테스트 제거)
+- ✅ 빌드 크기 유지 (변화 없음)
+- ✅ 코드 명확성 향상 (불필요한 파일 제거)
+
+**결정 사항**:
+
+Phase 282는 안전한 파일 제거만 수행하고 종료. 추가 deprecated 코드 정리는 사용처 마이그레이션이 선행되어야 하므로 별도 Phase로 분리 권장.
+
+---
 
 ### Phase 281: signal-optimization.ts React 패턴 제거 (Modernization) ✅ 완료
 
