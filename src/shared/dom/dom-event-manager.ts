@@ -145,8 +145,8 @@ export class DomEventManager {
 /**
  * DOM 이벤트 매니저 인스턴스 생성
  *
- * @deprecated UnifiedEventManager를 사용하세요
  * @returns 새로운 내부 DOM 이벤트 매니저 인스턴스
+ * @note EventManager (event-manager.ts)에서 내부적으로 사용됨
  */
 export function createDomEventManager(): DomEventManager {
   return new DomEventManager();
