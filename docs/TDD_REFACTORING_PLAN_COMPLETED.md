@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 전체)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 283 전체)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 345.87 KB (gzip: 93.55 KB) |
+| **번들 크기** | 345.62 KB (gzip: 93.51 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -21,7 +21,145 @@
 
 ---
 
-## 🎯 최근 완료 Phase (282)
+## 🎯 최근 완료 Phase (283)
+
+### Phase 283: 기타 Deprecated 타입 별칭 정리 ✅ 전체 완료
+
+**완료 일시**: 2025-10-30
+
+**상태**: ✅ **Step 1-3 전체 완료**
+
+**배경**:
+
+- Phase 282 완료 후 추가 deprecated 항목 발견
+- 타입 별칭(ToolbarMode, ToolbarState)이 외부 사용 없이 남아있음
+- AppErrorHandler가 호환성 래퍼로만 사용됨
+- getNativeDownload가 실제 사용 중인데 deprecated 표시됨
+
+**문제**:
+
+1. **Step 1 - 타입 별칭**:
+   - `ToolbarMode` → ToolbarModeState (외부 사용 없음)
+   - `ToolbarState` → ToolbarModeStateData (외부 사용 없음)
+
+2. **Step 2 - AppErrorHandler 래퍼 클래스**:
+   - main.ts에서만 사용 중
+   - GlobalErrorHandler의 단순 래퍼
+   - initialize(), destroy() 메서드도 deprecated
+
+3. **Step 3 - getNativeDownload deprecated 표시**:
+   - bulk-download-service.ts에서 실제 사용 중 (2곳)
+   - deprecated 표시가 혼란 야기
+
+**솔루션 (Step 1-3)**:
+
+```typescript
+// STEP 1 - REMOVED:
+// src/shared/state/signals/toolbar.signals.ts
+// - export type ToolbarMode = ToolbarModeState (Line 28)
+// - export interface ToolbarState extends ToolbarModeStateData {} (Line 45)
+// - index.ts re-export 업데이트: ToolbarState → ToolbarModeStateData
+
+// STEP 2 - REMOVED:
+// src/shared/error/error-handler.ts
+// - export class AppErrorHandler (32 lines removed)
+// - initialize() 메서드 (deprecated)
+// - destroy() 메서드 (deprecated)
+
+// main.ts 업데이트:
+// - import { AppErrorHandler } → import { GlobalErrorHandler }
+// - AppErrorHandler.getInstance().destroy() → GlobalErrorHandler.getInstance().destroy()
+
+// src/shared/error/index.ts:
+// - export { AppErrorHandler } 제거
+// - @deprecated 파일 주석 제거 (GlobalErrorHandler는 공식 API)
+
+// STEP 3 - UPDATED:
+// src/shared/external/vendors/vendor-manager-static.ts (Line 362)
+// - Removed: @deprecated Use getUserscript().download() instead
+// - Added: @note 일괄 다운로드 서비스(bulk-download-service.ts)에서 사용됨
+// - Reason: 실제로 사용 중 (bulk-download-service.ts Line 96, 228)
+```
+
+**변경 사항**:
+
+**Step 1**:
+
+1. **타입 별칭 제거**: toolbar.signals.ts에서 2개 타입 제거 (12줄)
+2. **Re-export 업데이트**: index.ts에서 ToolbarState → ToolbarModeStateData
+
+**Step 2**:
+
+1. **AppErrorHandler 제거**: 클래스 완전 제거 (32줄)
+2. **main.ts 업데이트**: GlobalErrorHandler 직접 사용
+3. **index.ts 정리**: AppErrorHandler export 제거, deprecated 표시 제거
+
+**Step 3**:
+
+1. **Deprecated 표시 제거**: getNativeDownload() 주석 업데이트
+2. **실제 사용처 명시**: bulk-download-service.ts 참조 추가
+
+**테스트 검증**:
+
+**Step 1**:
+
+- ✅ TypeScript: 0 에러
+- ✅ index.ts re-export 정상 작동
+- ✅ 외부 사용처 없음 확인
+
+**Step 2**:
+
+- ✅ TypeScript: 0 에러
+- ✅ main.ts: GlobalErrorHandler 정상 작동
+- ✅ 빌드 크기 감소 (32줄 제거)
+
+**Step 3**:
+
+- ✅ TypeScript: 0 에러
+- ✅ bulk-download-service.ts 정상 작동
+- ✅ 빌드: 345.62 KB (gzip 93.51 KB) - **-0.25 KB 감소**
+
+**기대 효과**:
+
+**전체 (Step 1-3)**:
+
+- ✅ **코드 정리**: 타입 별칭 2개 + AppErrorHandler 클래스 제거 (44줄 감소)
+- ✅ **혼란 제거**: deprecated 표시 정리 (1곳)
+- ✅ **번들 크기**: 345.62 KB (**-0.25 KB** 감소)
+- ✅ **유지보수성 향상**: 명확한 타입 구조, 공식 API 직접 사용
+
+**특이사항**:
+
+**Step 2 (AppErrorHandler 제거)**:
+
+- **패턴**: "호환성 래퍼 → 공식 API 직접 사용"
+- **이유**: GlobalErrorHandler가 공식 API, 단순 래퍼 불필요
+- **결과**: 32줄 감소, 간결한 코드 구조
+
+**Step 3 (getNativeDownload)**:
+
+- **패턴**: "실제 사용 중인 API → deprecated 표시 제거"
+- **이유**: bulk-download-service.ts에서 사용 중
+- **결과**: 혼란 제거, 실제 사용처 명시
+
+**커밋**:
+
+- `refactor(Phase 283 Step 1): Remove deprecated type aliases`
+- `refactor(Phase 283 Step 2): Remove deprecated AppErrorHandler class`
+- `refactor(Phase 283 Step 3): Remove deprecated tag from getNativeDownload`
+
+**보류 항목**:
+
+- ⏸️ **ComponentStandards** 객체 (component-utils.ts:155)
+  - 5개 컴포넌트에서 사용 중 (VerticalImageItem, Toast 2개, ToastContainer, Toolbar, GalleryHOC)
+  - Phase 284로 분리 권장: 개별 함수 import로 마이그레이션
+- ⏸️ **ExtractionErrorCode** (media.types.ts:251)
+  - 호환성 유지 필요 (core/index.ts에서 재내보내기)
+  - 재내보내기만 제거 가능, 별칭은 유지
+
+---
+
+## 🎯 이전 완료 Phase (282)
 
 ### Phase 282: Deprecated 코드 정리 (Cleanup) ✅ 전체 완료
 

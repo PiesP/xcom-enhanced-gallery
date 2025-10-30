@@ -24,11 +24,11 @@
 
 ### ✨ 완성된 최적화
 
-**번들 크기**: 346.02 KB (목표: ≤420 KB) → **18% 여유 공간**
+**번들 크기**: 345.62 KB (목표: ≤420 KB) → **18% 여유 공간**
 
 - dev 빌드: 875 KB (가독성 포맷팅 포함)
-- prod 빌드: 346 KB
-- gzip: 93.62 KB
+- prod 빌드: 345.62 KB
+- gzip: 93.51 KB
 
 **성능 개선**:
 
@@ -55,6 +55,8 @@
 - Phase 279: **갤러리 최초 기동 시 자동 스크롤** ✅ 완료
 - Phase 280: **Phase 279 코드 현대화 (Simplification)** ✅ 완료
 - Phase 281: **signal-optimization.ts React 패턴 제거** ✅ 완료
+- Phase 282: **Deprecated 코드 정리 (Step 1-6)** ✅ 완료
+- Phase 283: **기타 deprecated 타입 별칭 정리** ✅ 완료
 
 **테스트 상태**: ✅ 모두 GREEN
 
@@ -77,14 +79,39 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 282 완료 ✅)
+**현재 작업**: 없음 (Phase 283 완료 ✅)
 
 **다음 우선순위**:
 
 1. 사용자 피드백 수집 및 개선 사항 도출
 2. 성능 모니터링 및 최적화 기회 탐색
 3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
-4. Phase 283: 기타 deprecated 타입 별칭 정리 (선택사항)
+4. Phase 284: ComponentStandards 마이그레이션 (선택사항 - 5개 컴포넌트 영향)
+
+---
+
+## 📝 Phase 283: 기타 Deprecated 타입 별칭 정리 (✅ 완료)
+
+**상태**: ✅ **전체 완료** (Step 1-3)
+
+**완료 항목**:
+
+- ✅ **Step 1**: 타입 별칭 제거 (ToolbarMode, ToolbarState)
+- ✅ **Step 2**: AppErrorHandler 마이그레이션 및 제거
+- ✅ **Step 3**: getNativeDownload deprecated 표시 제거
+- ✅ 타입 체크, 빌드, 테스트 모두 통과 (345.62 KB, **-0.25 KB**)
+
+**주요 성과**:
+
+1. **타입 별칭 정리**: 2개 타입 제거 (12줄 감소)
+2. **AppErrorHandler 제거**: 클래스 완전 제거 (32줄 감소)
+3. **Deprecated 표시 정리**: 1곳 (getNativeDownload)
+
+**보류 항목**:
+
+- ⏸️ **ComponentStandards** 객체 (5개 컴포넌트에서 사용 중)
+  - Phase 284로 분리 권장: 개별 함수 import로 마이그레이션
+- ⏸️ **ExtractionErrorCode** (호환성 유지 필요, 재내보내기만 제거 가능)
 
 ---
 
