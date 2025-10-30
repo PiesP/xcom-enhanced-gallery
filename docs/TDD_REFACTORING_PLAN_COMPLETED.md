@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 Step 1-3)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 Step 1-4)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -168,9 +168,17 @@
 - ✅ 번들 크기 0.15 KB 감소
 - ✅ Step 1-2와 일관된 정리 패턴
 
+**Step 4**:
+
+- ✅ getDiagnostics 메서드 deprecated 표시 제거
+- ✅ 대체 API(UnifiedServiceDiagnostics) 미구현 확인
+- ✅ 공식 API로 유지 (ServiceDiagnostics에서 사용 중)
+- ✅ 혼란 제거 (deprecated이지만 대안 없음)
+- ✅ 번들 크기 유지 (345.87 KB)
+
 **결정 사항**:
 
-Phase 282는 Step 1-3에서 재내보내기 파일 제거 완료. 추가 deprecated 코드 정리 (getDiagnostics, DOMEventManager, downloadFile)는 사용처 분석이 필요하므로 별도 Step 4 또는 Phase 283으로 분리 권장.
+Phase 282 Step 1-4 완료. 추가 deprecated 코드 정리 (DOMEventManager, downloadFile)는 별도 Step 5-6 또는 Phase 283으로 분리 권장.
 
 ---
 
