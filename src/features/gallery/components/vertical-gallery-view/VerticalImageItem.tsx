@@ -54,27 +54,14 @@ import type { VerticalImageItemProps } from './VerticalImageItem.types';
 const solid = getSolid();
 const { createSignal, createEffect, onCleanup, createMemo } = solid;
 
-function getFitModeClass(fitMode?: ImageFitMode): string {
-  switch (fitMode) {
-    case 'original':
-      return styles.fitOriginal ?? '';
-    case 'fitHeight':
-      return styles.fitHeight ?? '';
-    case 'fitWidth':
-      return styles.fitWidth ?? '';
-    case 'fitContainer':
-      return styles.fitContainer ?? '';
-    default:
-      return '';
-  }
-}
+const fitModeMap: Record<string, string | undefined> = {
+  original: styles.fitOriginal,
+  fitHeight: styles.fitHeight,
+  fitWidth: styles.fitWidth,
+  fitContainer: styles.fitContainer,
+};
 
-const FIT_MODE_CLASSES: readonly string[] = [
-  styles.fitOriginal,
-  styles.fitWidth,
-  styles.fitHeight,
-  styles.fitContainer,
-].filter((className): className is string => Boolean(className));
+const FIT_MODE_CLASSES = Object.values(fitModeMap).filter(Boolean) as string[];
 
 type DimensionPair = { width: number; height: number };
 
@@ -100,25 +87,17 @@ const extractDimensionsFromUrl = (url?: string): DimensionPair | null => {
   return { width, height };
 };
 
-const scaleAspectRatio = (ratioWidth: number, ratioHeight: number): DimensionPair => {
-  const baseHeight = 720;
-  const height = baseHeight;
-  const width = Math.max(1, Math.round((ratioWidth / ratioHeight) * baseHeight));
-  return { width, height };
-};
+const scaleAspectRatio = (w: number, h: number): DimensionPair => ({
+  height: 720,
+  width: Math.max(1, Math.round((w / h) * 720)),
+});
 
 const parsePositiveNumber = (value: unknown): number | null => {
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return value;
-  }
-
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
   if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      return parsed;
-    }
+    const n = Number.parseFloat(value);
+    if (Number.isFinite(n) && n > 0) return n;
   }
-
   return null;
 };
 
@@ -127,21 +106,10 @@ const syncFitModeAttributes = (
   mode: ImageFitMode,
   className: string
 ): void => {
-  if (!element) {
-    return;
-  }
-
-  if (element.getAttribute('data-fit-mode') !== mode) {
-    element.setAttribute('data-fit-mode', mode);
-  }
-
-  if (FIT_MODE_CLASSES.length > 0) {
-    element.classList.remove(...FIT_MODE_CLASSES);
-  }
-
-  if (className) {
-    element.classList.add(className);
-  }
+  if (!element) return;
+  element.setAttribute('data-fit-mode', mode);
+  element.classList.remove(...FIT_MODE_CLASSES);
+  className && element.classList.add(className);
 };
 
 function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
@@ -176,175 +144,106 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
+  const toRem = (v: number) => `${(v / 16).toFixed(4)}rem`;
 
-  const parseDimension = (value: unknown): number | null => parsePositiveNumber(value);
-
-  const toRem = (value: number): string => `${(value / 16).toFixed(4)}rem`;
   const deriveDimensionsFromMetadata = (): DimensionPair | null => {
-    const metadata = media?.metadata as
-      | {
-          dimensions?: { width?: unknown; height?: unknown };
-          apiData?: Record<string, unknown>;
-        }
-      | undefined;
-
-    if (!metadata) {
-      return null;
+    const m = media?.metadata as any;
+    if (!m) return null;
+    const d = m.dimensions;
+    if (d) {
+      const w = parsePositiveNumber(d.width);
+      const h = parsePositiveNumber(d.height);
+      if (w && h) return { width: w, height: h };
     }
-
-    const metadataDimensions = metadata.dimensions;
-
-    if (metadataDimensions) {
-      const widthFromMetadata = parseDimension(
-        (metadataDimensions as Record<string, unknown>).width
-      );
-      const heightFromMetadata = parseDimension(
-        (metadataDimensions as Record<string, unknown>).height
-      );
-
-      if (widthFromMetadata && heightFromMetadata) {
-        return {
-          width: widthFromMetadata,
-          height: heightFromMetadata,
-        };
-      }
+    const a = m.apiData;
+    if (!a) return null;
+    const x = parsePositiveNumber(a['original_width'] ?? a['originalWidth']);
+    const y = parsePositiveNumber(a['original_height'] ?? a['originalHeight']);
+    if (x && y) return { width: x, height: y };
+    const dim =
+      extractDimensionsFromUrl(a['download_url']) || extractDimensionsFromUrl(a['preview_url']);
+    if (dim) return dim;
+    if (Array.isArray(a['aspect_ratio']) && a['aspect_ratio'].length >= 2) {
+      const r1 = parsePositiveNumber(a['aspect_ratio'][0]);
+      const r2 = parsePositiveNumber(a['aspect_ratio'][1]);
+      if (r1 && r2) return scaleAspectRatio(r1, r2);
     }
-
-    const apiData = metadata.apiData;
-
-    if (apiData && typeof apiData === 'object') {
-      const apiRecord = apiData as Record<string, unknown>;
-      const widthFromApi = parseDimension(
-        apiRecord['original_width'] ?? apiRecord['originalWidth']
-      );
-      const heightFromApi = parseDimension(
-        apiRecord['original_height'] ?? apiRecord['originalHeight']
-      );
-
-      if (widthFromApi && heightFromApi) {
-        return {
-          width: widthFromApi,
-          height: heightFromApi,
-        };
-      }
-
-      const downloadUrlDimensions = extractDimensionsFromUrl(
-        typeof apiRecord['download_url'] === 'string'
-          ? (apiRecord['download_url'] as string)
-          : undefined
-      );
-      const previewUrlDimensions = extractDimensionsFromUrl(
-        typeof apiRecord['preview_url'] === 'string'
-          ? (apiRecord['preview_url'] as string)
-          : undefined
-      );
-      const resolvedUrlDimensions = downloadUrlDimensions ?? previewUrlDimensions;
-
-      if (resolvedUrlDimensions) {
-        return resolvedUrlDimensions;
-      }
-
-      const aspectRatio = apiRecord['aspect_ratio'];
-      if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
-        const ratioWidth = parseDimension(aspectRatio[0]);
-        const ratioHeight = parseDimension(aspectRatio[1]);
-
-        if (ratioWidth && ratioHeight) {
-          return scaleAspectRatio(ratioWidth, ratioHeight);
-        }
-      }
-    }
-
     return null;
   };
 
   const resolvedDimensions = createMemo<DimensionPair | null>(() => {
-    const directWidth = parseDimension(media?.width);
-    const directHeight = parseDimension(media?.height);
+    const directWidth = parsePositiveNumber(media?.width);
+    const directHeight = parsePositiveNumber(media?.height);
 
     if (directWidth && directHeight) {
-      return {
-        width: directWidth,
-        height: directHeight,
-      };
+      return { width: directWidth, height: directHeight };
     }
-
     return deriveDimensionsFromMetadata();
   });
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties | undefined>(() => {
-    const dimensions = resolvedDimensions();
-
-    if (!dimensions) {
-      return undefined;
-    }
-
-    const { width, height } = dimensions;
-    const ratio = width / height;
-
-    const style: Record<string, string> = {
-      '--xeg-aspect-default': `${width} / ${height}`,
-      '--xeg-gallery-item-intrinsic-width': toRem(width),
-      '--xeg-gallery-item-intrinsic-height': toRem(height),
+    const dim = resolvedDimensions();
+    if (!dim) return undefined;
+    const ratio = dim.width / dim.height;
+    return {
+      '--xeg-aspect-default': `${dim.width} / ${dim.height}`,
+      '--xeg-gallery-item-intrinsic-width': toRem(dim.width),
+      '--xeg-gallery-item-intrinsic-height': toRem(dim.height),
       '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
-    };
-
-    return style as unknown as JSX.CSSProperties;
+    } as unknown as JSX.CSSProperties;
   });
-
-  const hasIntrinsicSizing = createMemo(() => Boolean(resolvedDimensions()));
-
+  const hasIntrinsicSizing = createMemo(() => !!resolvedDimensions());
   const handleClick = () => {
-    const container = containerRef();
-    container?.focus?.({ preventScroll: true });
+    containerRef()?.focus?.({ preventScroll: true });
     onClick?.();
   };
-
-  const handleImageLoad = () => {
+  const handleMediaLoad = () => {
     if (!isLoaded()) {
       setIsLoaded(true);
       setIsError(false);
       onMediaLoad?.(media.url, index);
     }
   };
-
-  const handleImageError = () => {
+  const handleMediaError = () => {
     setIsError(true);
     setIsLoaded(false);
   };
-
-  const handleVideoLoadedMetadata = () => {
-    setIsLoaded(true);
-    setIsError(false);
-    onMediaLoad?.(media.url, index);
-  };
-
-  const handleVideoLoaded = () => {
-    if (!isLoaded()) {
-      setIsLoaded(true);
-      setIsError(false);
-      onMediaLoad?.(media.url, index);
-    }
-  };
-
-  const handleVideoError = () => {
-    setIsError(true);
-    setIsLoaded(false);
-  };
-
   const handleImageContextMenuInternal = (event: MouseEvent) => {
     onImageContextMenu?.(event, media);
   };
 
-  const handleImageDragStart = (event: DragEvent) => {
-    event.preventDefault();
+  const setupVideoAutoPlayPause = (container: HTMLDivElement, video: HTMLVideoElement) => {
+    const observer = new IntersectionObserver(entries => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      if (!entry.isIntersecting) {
+        try {
+          wasPlayingBeforeHidden = !video.paused;
+          wasMutedBeforeHidden = video.muted;
+          video.muted = true;
+          if (!video.paused) video.pause();
+        } catch (err) {
+          logger.warn('Failed to pause video', { error: err });
+        }
+      } else {
+        try {
+          if (wasMutedBeforeHidden !== null) video.muted = wasMutedBeforeHidden;
+          if (wasPlayingBeforeHidden) void video.play?.();
+        } catch (err) {
+          logger.warn('Failed to resume video', { error: err });
+        } finally {
+          wasPlayingBeforeHidden = false;
+          wasMutedBeforeHidden = null;
+        }
+      }
+    });
+    observer.observe(container);
+    return () => observer.disconnect();
   };
 
-  // forceVisible props 변경에 반응 (Solid.js 반응성 원칙)
   createEffect(() => {
-    if (forceVisible && !isVisible()) {
-      setIsVisible(true);
-    }
+    if (forceVisible && !isVisible()) setIsVisible(true);
   });
 
   createEffect(() => {
@@ -379,62 +278,23 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (isVideo) {
       const video = videoRefSignal();
       if (video && video.readyState >= 1) {
-        handleVideoLoaded();
+        handleMediaLoad();
       }
     } else {
       const image = imageRef();
       if (image?.complete) {
-        handleImageLoad();
+        handleMediaLoad();
       }
     }
   });
 
   createEffect(() => {
     if (!isVideo) return;
-
     const container = containerRef();
     const video = videoRefSignal();
-
-    if (!container || !video || typeof IntersectionObserver === 'undefined') {
-      return;
-    }
-
-    const observer = new IntersectionObserver(entries => {
-      const entry = entries[0];
-      if (!entry) return;
-
-      if (!entry.isIntersecting) {
-        try {
-          wasPlayingBeforeHidden = !video.paused;
-          wasMutedBeforeHidden = video.muted;
-          video.muted = true;
-          if (!video.paused) {
-            video.pause();
-          }
-        } catch (err) {
-          logger.warn('Failed to pause video', { error: err });
-        }
-      } else {
-        try {
-          if (wasMutedBeforeHidden !== null) {
-            video.muted = wasMutedBeforeHidden;
-          }
-          if (wasPlayingBeforeHidden) {
-            void video.play?.();
-          }
-        } catch (err) {
-          logger.warn('Failed to resume video', { error: err });
-        } finally {
-          wasPlayingBeforeHidden = false;
-          wasMutedBeforeHidden = null;
-        }
-      }
-    });
-
-    observer.observe(container);
-    onCleanup(() => observer.disconnect());
+    if (!container || !video || typeof IntersectionObserver === 'undefined') return;
+    onCleanup(setupVideoAutoPlayPause(container, video));
   });
-
   createEffect(() => {
     if (!isVideo) return;
     const video = videoRefSignal();
@@ -456,7 +316,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
 
     return (value ?? 'fitWidth') as ImageFitMode;
   });
-  const fitModeClass = createMemo(() => getFitModeClass(resolvedFitMode()));
+  const fitModeClass = createMemo(() => fitModeMap[resolvedFitMode()] ?? '');
 
   const containerClasses = createMemo(() =>
     ComponentStandards.createClassName(
@@ -532,12 +392,12 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
                 isLoaded() ? styles.loaded : styles.loading
               )}
               data-fit-mode={resolvedFitMode()}
-              onLoadedMetadata={handleVideoLoadedMetadata}
-              onLoadedData={handleVideoLoaded}
-              onCanPlay={handleVideoLoaded}
-              onError={handleVideoError}
+              onLoadedMetadata={handleMediaLoad}
+              onLoadedData={handleMediaLoad}
+              onCanPlay={handleMediaLoad}
+              onError={handleMediaError}
               onContextMenu={handleImageContextMenuInternal}
-              onDragStart={handleImageDragStart}
+              onDragStart={(e: DragEvent) => e.preventDefault()}
             />
           ) : (
             <img
@@ -556,10 +416,10 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
                 isLoaded() ? styles.loaded : styles.loading
               )}
               data-fit-mode={resolvedFitMode()}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
+              onLoad={handleMediaLoad}
+              onError={handleMediaError}
               onContextMenu={handleImageContextMenuInternal}
-              onDragStart={handleImageDragStart}
+              onDragStart={(e: DragEvent) => e.preventDefault()}
             />
           )}
 
@@ -586,23 +446,13 @@ const BaseComponent = BaseVerticalImageItemCore as unknown as ComponentType<Vert
 const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
   type: 'item',
   className: 'vertical-item',
-  events: {
-    preventClick: false,
-    preventKeyboard: false,
-    blockTwitterNative: true,
-  },
-  customData: {
-    component: 'vertical-image-item',
-    role: 'gallery-item',
-  },
+  events: { preventClick: false, preventKeyboard: false, blockTwitterNative: true },
+  customData: { component: 'vertical-image-item', role: 'gallery-item' },
 });
 
 const VerticalImageItemMemo = solid.memo(WithGalleryVerticalImageItem);
-
 Object.defineProperty(VerticalImageItemMemo, 'displayName', {
   value: 'memo(VerticalImageItem)',
-  writable: false,
-  configurable: true,
 });
 
 export type { VerticalImageItemProps, FitModeProp } from './VerticalImageItem.types';

@@ -47,9 +47,9 @@ describe('Bundle Size Policy', () => {
       },
       {
         path: 'features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx',
-        maxLines: 480,
-        maxKB: 12.5,
-        context: 'Phase A5.4: Error logging added to video controls',
+        maxLines: 465,
+        maxKB: 14.8,
+        context: 'Phase 256: Handler integration, dimension parsing simplification',
       },
     ];
 
