@@ -162,7 +162,7 @@ export class CoreService {
 
   /**
    * 진단 정보 조회
-   * @deprecated v2.0.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요
+   * @returns 서비스 등록/활성화 상태 및 서비스 목록
    */
   public getDiagnostics(): {
     registeredServices: number;

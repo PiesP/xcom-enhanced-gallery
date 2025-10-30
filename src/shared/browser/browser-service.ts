@@ -137,8 +137,8 @@ export class BrowserService {
 
   /**
    * 진단 정보 조회
-   * @deprecated v1.1.0 - UnifiedServiceDiagnostics.getBrowserDiagnostics()를 사용하세요
    * @note Phase 223: injectedStyles 배열 추가 (browser-utils 호환성)
+   * @returns 주입된 스타일, 페이지 가시성, DOM 준비 상태 정보
    */
   public getDiagnostics(): {
     injectedStylesCount: number;
