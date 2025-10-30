@@ -583,3 +583,26 @@
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
+
+/* Theme Overrides - Glass System 변형 (라이트 모드) */
+[data-theme='light'] {
+  --xeg-surface-glass-bg: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
+}
+
+/* Theme Overrides - Glass System 변형 (다크 모드) */
+[data-theme='dark'] {
+  --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+}
+
+/* System Preference Fallback - 다크 모드 시스템 설정 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+    --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+    --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+  }
+}

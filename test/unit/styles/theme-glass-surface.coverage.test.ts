@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 
 const TOKENS_CSS = 'src/shared/styles/design-tokens.css';
+const SEMANTIC_CSS = 'src/shared/styles/design-tokens.semantic.css';
 
 function read(path) {
   return readFileSync(path, 'utf-8');
@@ -17,9 +18,12 @@ describe('Theme coverage: glass surface tokens', () => {
   });
 
   it('overrides glass tokens for [data-theme=light] and [data-theme=dark]', () => {
-    const css = read(TOKENS_CSS);
-    const light = css.match(/\[data-theme='light'\][\s\S]*?\}/)?.[0] || '';
-    const dark = css.match(/\[data-theme='dark'\][\s\S]*?\}/)?.[0] || '';
+    const css = read(SEMANTIC_CSS);
+    // 마지막 [data-theme] 블록 2개를 찾음 (glass tokens 정의에 해당)
+    const allLight = css.match(/\[data-theme='light'\][\s\S]*?\}/g);
+    const allDark = css.match(/\[data-theme='dark'\][\s\S]*?\}/g);
+    const light = allLight?.[allLight.length - 1] || '';
+    const dark = allDark?.[allDark.length - 1] || '';
     expect(light).toContain('--xeg-surface-glass-bg:');
     expect(light).toContain('--xeg-surface-glass-border:');
     expect(light).toContain('--xeg-surface-glass-shadow:');
@@ -29,8 +33,11 @@ describe('Theme coverage: glass surface tokens', () => {
   });
 
   it('provides system fallback via prefers-color-scheme: dark', () => {
-    const css = read(TOKENS_CSS);
-    const systemDark = css.match(/@media \(prefers-color-scheme: dark\)[\s\S]*?\}/)?.[0] || '';
+    const css = read(SEMANTIC_CSS);
+    // 마지막 @media(prefers-color-scheme: dark) 블록을 찾음
+    // (glass tokens 정의에 해당하는 것)
+    const matches = css.match(/@media \(prefers-color-scheme: dark\)[\s\S]*?\}/g);
+    const systemDark = matches?.[matches.length - 1] || '';
     expect(systemDark).toContain('--xeg-surface-glass-bg:');
     expect(systemDark).toContain('--xeg-surface-glass-border:');
     expect(systemDark).toContain('--xeg-surface-glass-shadow:');
