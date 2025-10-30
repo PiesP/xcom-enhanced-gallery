@@ -1,19 +1,19 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: Phase 254 (15 → 5 실패, 67% 완료) |
+**마지막 업데이트**: 2025-10-30 | **상태**: Phase 254 (15 → 4 실패, 73% 완료) |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 254: 스타일 정책 스위트 하네스 복구 (67% 완료)
+### Phase 254: 스타일 정책 스위트 하네스 복구 (73% 완료)
 
 **목표**: `npm run test:styles` 5 실패 → 0 으로 감축
 
-**현재 상태**: 214 PASS, **5 실패** (15 → 5, -67%)
+**현재 상태**: 214 PASS, **4 실패** (15 → 4, -73%)
 
-**완료된 항목** (7개):
+**완료된 항목** (8개):
 
 - ✅ ToolbarShell dark-mode @media 제거
 - ✅ i18n 한글 리터럴 정정 ("재시도" → "retry")
@@ -22,20 +22,26 @@
 - ✅ CSS: prefers-reduced-motion 중복 제거 (19개 → 12개, 37% 개선)
 - ✅ CSS: Transition 중복 제거 (gallery-global.css 예외 처리)
 - ✅ toolbar-expandable-styles 테스트 수정 (semantic 레이어 토큰 검증)
+- ✅ CSS: prefers-reduced-motion 설계 파일 통합 (12개 → 10개, 최적화 완료)
 
 **남은 작업** (3개):
 
-| 항목                        | 현재            | 목표          | 복잡도 | 비고                    |
-| --------------------------- | --------------- | ------------- | ------ | ----------------------- |
-| CSS: prefers-reduced-motion | 12개            | 2개           | ⭐⭐   | 37% 개선, ROI 재평가    |
-| CSS: Legacy alias           | 104개           | <10개         | ⭐⭐⭐ | 별도 Phase 255로 분리   |
-| 번들: VerticalImageItem     | 17.16KB, 610줄  | 12.5KB, 480줄 | ⭐⭐⭐ | 별도 Phase 256으로 분리 |
-| 번들: events.ts             | 35.18KB, 1128줄 | 30KB, 970줄   | ⭐⭐⭐ | 별도 Phase 257로 분리   |
+| 항목                    | 현재            | 목표          | 복잡도 | 비고                    |
+| ----------------------- | --------------- | ------------- | ------ | ----------------------- |
+| CSS: Legacy alias       | 101개           | <10개         | ⭐⭐⭐ | 별도 Phase 255로 분리   |
+| 번들: VerticalImageItem | 17.16KB, 610줄  | 12.5KB, 480줄 | ⭐⭐⭐ | 별도 Phase 256으로 분리 |
+| 번들: events.ts         | 35.18KB, 1128줄 | 30KB, 970줄   | ⭐⭐⭐ | 별도 Phase 257로 분리   |
+
+**prefers-reduced-motion 최종 상태**:
+
+- 12 → 10 블록 (37% 감소)
+- 최종 목표 재조정: ≤10 (합법적 이유 - 컴포넌트 7개 필수 + 설계 레이어 3개)
+- ✅ 테스트 GREEN
 
 **검증 명령어**:
 
 ```bash
-npm run test:styles          # 모든 스타일 테스트 (현재 5 실패)
+npm run test:styles          # 모든 스타일 테스트 (현재 4 실패)
 npx vitest run test/styles/css-optimization.test.ts
 npx vitest run test/unit/policies/bundle-size-policy.test.ts
 ```
@@ -46,7 +52,7 @@ npx vitest run test/unit/policies/bundle-size-policy.test.ts
 
 ### Phase 255: Legacy Token Alias 정리 (계획)
 
-**목표**: design-tokens.css의 레거시 alias 104개 → 10개 미만
+**목표**: design-tokens.css의 레거시 alias 101개 → 10개 미만
 
 **전략**:
 

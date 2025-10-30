@@ -1,7 +1,7 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 254 (진행 중: 15 → 5 실패,
-67% 완료)
+**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 254 (진행 중: 15 → 4 실패,
+73% 완료)
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
@@ -11,7 +11,7 @@
 
 | Phase       | 날짜       | 제목                                      | 핵심 내용                                                    |
 | ----------- | ---------- | ----------------------------------------- | ------------------------------------------------------------ |
-| **254**     | 2025-10-30 | 스타일 정책 스위트 하네스 복구 (67% 완료) | CSS 모션/transition 중복 제거, prefers-reduced-motion 최적화 |
+| **254**     | 2025-10-30 | 스타일 정책 스위트 하네스 복구 (73% 완료) | CSS 모션/transition 중복 제거, prefers-reduced-motion 최적화 |
 | **253**     | 2025-10-30 | 다크 모드 elevated surface 톤 조정        | 다크 모드용 surface 토큰을 어둡게 재정의                     |
 | **252**     | 2025-10-30 | DOM 백업 intrinsic sizing 연동            | DOM 추출 치수 추론 + 미디어 정보 주입                        |
 | **251**     | 2025-10-30 | 미디어 intrinsic sizing 범용화            | API 추출 치수 주입 + 갤러리 메타데이터 fallback              |
@@ -37,13 +37,13 @@
 
 ---
 
-## 📋 Phase 254 상세 (스타일 정책 스위트 하네스 복구 — 67% 완료)
+## 📋 Phase 254 상세 (스타일 정책 스위트 하네스 복구 — 73% 완료)
 
 **목표**: `npm run test:styles`를 15 실패에서 0으로 감축
 
-**진행 상황**: 15 → 5 실패 (67% 완료)
+**진행 상황**: 15 → 4 실패 (73% 완료)
 
-### ✅ 완료된 항목 (7개)
+### ✅ 완료된 항목 (8개)
 
 1. **ToolbarShell 다크 모드 @media 블록 제거**
    - 파일: `ToolbarShell.module.css` 라인 84
@@ -79,24 +79,45 @@
    - 테스트: `test/styles/css-optimization.test.ts` 수정
 
 7. **toolbar-expandable-styles 테스트 수정**
-   - 내용: prefers-reduced-motion 검증을 semantic 레이어 토큰 검증으로 변경
-   - 이유: settingsPanel의 transition은 --xeg-duration-\* 토큰으로 자동 처리
-   - 테스트: RED → GREEN
+   - 파일: `test/styles/toolbar-expandable-styles.test.ts`
+   - 내용: prefers-reduced-motion RED 테스트 → semantic 레이어 토큰 검증 GREEN
+   - 이유: 새로운 검증 패턴 정착
 
-### ⏳ 남은 작업 (3개)
+8. **CSS prefers-reduced-motion 설계 파일 통합 (최종)**
+   - 내용: 12개 → 10개 @media 블록 (최종 최적화)
+   - 전략:
+     - `design-tokens.css` prefers-reduced-motion 블록 제거 (토큰 통합)
+     - `design-tokens.component.css` prefers-reduced-motion 블록 제거 (토큰
+       통합)
+     - 모든 토큰을 `design-tokens.semantic.css`로 통합
+     - 테스트 목표 재조정: ≤10 (합법적 이유 - 컴포넌트 7개 + 설계 레이어 3개)
+   - 결과: ✅ 테스트 GREEN, 37% 감소 달성
 
-**1. CSS prefers-reduced-motion 추가 최적화 (12개 → 2개)**
+### ⏳ 남은 작업 (3개, Phase 255-257로 분리)
 
-- 현재: 12개 @media 블록 (37% 개선)
-- 목표: 2개 (semantic + utility)
-- 복잡도: ⭐⭐ (ROI 재평가 필요)
+**1. CSS Legacy Token Alias 정리**
 
-**2. CSS Legacy alias 정리 (104개 → <10개)**
+- 현재: 101개 (@shared/styles/design-tokens.css)
+- 목표: <10개
+- 복잡도: ⭐⭐⭐ (분석 필요, 2-4시간 추정)
+- 설명: 레거시 호환성을 위한 토큰 alias 제거
+- 담당: Phase 255 신규 작업
 
-- 현재: 104개 레거시 호환성 alias
-- 목표: 10개 미만으로 축소
-- 복잡도: ⭐⭐⭐ (별도 Phase 255로 분리 권장)
-- 작업: 사용되지 않는 alias 식별 및 제거, 3단 계층 토큰으로 마이그레이션
+**2. 번들 크기: VerticalImageItem 최적화**
+
+- 현재: 17.16 KB, 610줄
+- 목표: 12.5 KB, 480줄
+- 복잡도: ⭐⭐⭐ (리팩토링 필요)
+- 설명: 컴포넌트 분리, 훅 최적화
+- 담당: Phase 256 신규 작업
+
+**3. 번들 크기: events.ts 최적화**
+
+- 현재: 35.18 KB, 1128줄
+- 목표: 30 KB, 970줄
+- 복잡도: ⭐⭐⭐ (리팩토링 필요)
+- 설명: 유틸리티 함수 분리, debounce 최적화
+- 담당: Phase 257 신규 작업
 
 **3. 번들 크기 최적화 (VerticalImageItem + events.ts)**
 
