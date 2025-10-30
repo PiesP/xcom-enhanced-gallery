@@ -454,41 +454,4 @@
 
 /* Light mode colors managed by design-tokens.semantic.css */
 
-/* Reduced motion preference */
-@media (prefers-reduced-motion: reduce) {
-  .xeg-gallery-overlay,
-  .xeg-toolbar-button,
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right,
-  .xeg-thumbnail,
-  .xeg-progress-fill,
-  .xeg-gallery-counter,
-  .xeg-fit-buttons {
-    transition: none;
-  }
-}
-
-/* 고대비 모드 */
-@media (prefers-contrast: high) {
-  .xeg-gallery-overlay {
-    background: black;
-  }
-
-  .xeg-gallery-toolbar {
-    background: black;
-    border-bottom: var(--border-width-sm) solid white;
-  }
-
-  .xeg-toolbar-button {
-    background: white;
-    color: black;
-    border: var(--border-width-sm) solid black;
-  }
-
-  .xeg-gallery-nav-left,
-  .xeg-gallery-nav-right {
-    background: white;
-    color: black;
-    border: var(--border-width-sm) solid black;
-  }
-}
+/* Phase 254: 모션 감소는 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */

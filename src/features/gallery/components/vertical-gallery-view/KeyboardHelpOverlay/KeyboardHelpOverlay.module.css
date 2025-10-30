@@ -99,13 +99,6 @@
 }
 
 /**
- * Reduced Motion: Disable transitions for users who prefer reduced motion
- * - Respects system accessibility preference
- * - Prevents motion-based distractions
+ * Phase 254: 모션 감소는 semantic 레이어의 토큰으로 자동 처리
+ * dialog에 명시적인 transition/animation이 없으므로 블록 불필요
  */
-@media (prefers-reduced-motion: reduce) {
-  .dialog {
-    transition: none;
-    animation: none;
-  }
-}

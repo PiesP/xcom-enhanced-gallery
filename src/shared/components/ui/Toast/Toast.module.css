@@ -257,14 +257,12 @@
 
 /**
  * 애니메이션 감소 모드 지원
+ * Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리
+ * animation만 명시적으로 비활성화
  */
 @media (prefers-reduced-motion: reduce) {
   .toast {
     animation: none;
-  }
-
-  .actionButton {
-    transition: none;
   }
 
   .actionButton:hover {

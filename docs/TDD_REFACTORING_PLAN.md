@@ -1,47 +1,88 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: Phase 254 (15 → 9 실패, 40% 완료) |
+**마지막 업데이트**: 2025-10-30 | **상태**: Phase 254 (15 → 5 실패, 67% 완료) |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 254: 스타일 정책 스위트 하네스 복구 (40% 완료)
+### Phase 254: 스타일 정책 스위트 하네스 복구 (67% 완료)
 
-**목표**: `npm run test:styles` 9 실패 → 0 으로 감축
+**목표**: `npm run test:styles` 5 실패 → 0 으로 감축
 
-**현재 상태**: 219 PASS, **9 실패** (15 → 9)
+**현재 상태**: 214 PASS, **5 실패** (15 → 5, -67%)
 
-**완료된 항목** (3개):
+**완료된 항목** (7개):
 
 - ✅ ToolbarShell dark-mode @media 제거
 - ✅ i18n 한글 리터럴 정정 ("재시도" → "retry")
 - ✅ Twitter color mapping 테스트 재설계 (파일 기반 검증)
+- ✅ 고대비(prefers-contrast) 토큰을 semantic 레이어로 통합 (15개 → 2개)
+- ✅ CSS: prefers-reduced-motion 중복 제거 (19개 → 12개, 37% 개선)
+- ✅ CSS: Transition 중복 제거 (gallery-global.css 예외 처리)
+- ✅ toolbar-expandable-styles 테스트 수정 (semantic 레이어 토큰 검증)
 
-**남은 작업** (6개):
+**남은 작업** (3개):
 
-| 항목                        | 현재   | 목표  | 복잡도 |
-| --------------------------- | ------ | ----- | ------ |
-| CSS: prefers-reduced-motion | 19개   | 2개   | ⭐⭐   |
-| CSS: prefers-contrast       | 15개   | 2개   | ⭐⭐   |
-| CSS: prefers-color-scheme   | 5개    | 3개   | ⭐     |
-| CSS: Transition 중복        | 9개    | 0     | ⭐⭐   |
-| CSS: Legacy alias           | 104개  | <10개 | ⭐⭐⭐ |
-| 번들: events.ts             | 1128줄 | 970줄 | ⭐⭐⭐ |
-| 번들: VerticalImageItem     | 609줄  | 480줄 | ⭐⭐⭐ |
+| 항목                        | 현재            | 목표          | 복잡도 | 비고                    |
+| --------------------------- | --------------- | ------------- | ------ | ----------------------- |
+| CSS: prefers-reduced-motion | 12개            | 2개           | ⭐⭐   | 37% 개선, ROI 재평가    |
+| CSS: Legacy alias           | 104개           | <10개         | ⭐⭐⭐ | 별도 Phase 255로 분리   |
+| 번들: VerticalImageItem     | 17.16KB, 610줄  | 12.5KB, 480줄 | ⭐⭐⭐ | 별도 Phase 256으로 분리 |
+| 번들: events.ts             | 35.18KB, 1128줄 | 30KB, 970줄   | ⭐⭐⭐ | 별도 Phase 257로 분리   |
 
 **검증 명령어**:
 
 ```bash
-npm run test:styles          # 모든 스타일 테스트 (현재 9 실패)
+npm run test:styles          # 모든 스타일 테스트 (현재 5 실패)
 npx vitest run test/styles/css-optimization.test.ts
 npx vitest run test/unit/policies/bundle-size-policy.test.ts
 ```
 
 ---
 
-## ⏳ 보류된 작업
+## ⏳ 다음 작업 (Phase 255-257)
+
+### Phase 255: Legacy Token Alias 정리 (계획)
+
+**목표**: design-tokens.css의 레거시 alias 104개 → 10개 미만
+
+**전략**:
+
+1. 코드베이스에서 사용되지 않는 alias 식별
+2. 사용 중인 alias를 3단 계층 토큰으로 단계적 마이그레이션
+3. 테스트 업데이트 및 회귀 방지
+
+**예상 시간**: 2-4시간
+
+### Phase 256: VerticalImageItem 최적화 (계획)
+
+**목표**: 17.16 KB / 610줄 → 12.5 KB / 480줄
+
+**전략**:
+
+1. 중복 로직 제거 (로딩/에러 상태 통합)
+2. 조건부 렌더링 최적화
+3. 스타일 추출 (CSS Modules 활용)
+
+**예상 시간**: 3-5시간
+
+### Phase 257: events.ts 최적화 (계획)
+
+**목표**: 35.18 KB / 1128줄 → 30 KB / 970줄
+
+**전략**:
+
+1. 이벤트 핸들러 통합 (중복 로직 제거)
+2. 유틸리티 함수 분리
+3. 타입 정의 간소화
+
+**예상 시간**: 3-5시간
+
+---
+
+## ⏸️ 보류된 작업
 
 ### Phase 228.2-228.5: 트위터 페이지 간섭 최소화
 
@@ -56,79 +97,7 @@ npx vitest run test/unit/policies/bundle-size-policy.test.ts
 - **아키텍처**: [ARCHITECTURE.md](./ARCHITECTURE.md)
 - **코딩 규칙**: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md)
 - **테스트 전략**: [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
-- **유지보수**: [MAINTENANCE.md](./MAINTENANCE.md)
-  - ESLint: codeql-reports/**, codeql-results/**, docs/temp/**, docs/archive/**,
-    scripts/temp/\*\* 추가
-  - Stylelint: test-results/**, codeql-reports/**, codeql-results/**,
-    docs/temp/**, docs/archive/**, scripts/temp/** 추가
-  - Prettier: test-results/, codeql-reports/, codeql-results/, docs/temp/,
-    docs/archive/, scripts/temp/ 추가
-  - Markdownlint: codeql-results/, docs/temp/, docs/archive/, scripts/temp/\*\*
-    추가
-- **효과**: 린터가 불필요한 파일을 검사하지 않아 성능 개선 및 false positive
-  방지
-- 번들 크기 유지: 341.78 KB
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 237: 서비스 등록 require 제거 및 타입 가드 강화 (2025-10-29)
-
-- **문제**: 브라우저 환경에서 `require is not defined` 오류로 ThemeService,
-  LanguageService 등록 실패
-- **해결**: `registerCoreBaseServices`에서 require를 static import로 변경
-- **타입 안전성 향상**: `isGalleryInternalElement`에 `element.matches` 함수 존재
-  여부 체크 추가
-- **테스트**: Phase 237 회귀 방지 테스트 9개 추가 (모두 통과)
-- 번들 크기 유지: 341.78 KB
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 236: DOMContentLoaded 리스너 제거 - 유저스크립트 격리 완성 (2025-10-29)
-
-- DOMContentLoaded 리스너 제거 (@run-at document-idle 보장 활용)
-- main.ts 단순화 (즉시 startApplication 호출)
-- cleanup 로직 정리 (불필요한 리스너 제거 코드 삭제)
-- 트위터 네이티브 페이지 간섭 최소화 완료
-- 번들 크기 유지: 339.05 KB (변화 없음)
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 235: Toast 알림을 GalleryRenderer 내부로 격리 (2025-10-29)
-
-- main.ts에서 Toast 관련 코드 제거 (함수, 변수, import)
-- GalleryRenderer에 Toast 컨테이너 통합 (renderToastContainer, cleanupContainer)
-- 유저스크립트는 이벤트 위임만 담당, Toast는 갤러리 내부에서만 동작
-- 번들 크기 유지: 339.19 KB (변화 없음)
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 234: TESTING_STRATEGY.md 간소화 (2025-10-29)
-
-- TESTING_STRATEGY.md 517줄 → 271줄 (48% 감소)
-- 테이블 형태로 재구성, 핵심 정보 접근성 향상
-- 상세 내용은 참조 링크로 대체 (AGENTS.md, test/README.md 등)
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 233: 문서 간소화 및 정리 (2025-10-29)
-
-- 3개 문서 4667줄 → 444줄 (90% 감소)
-- 개발자 온보딩 시간 대폭 단축, 유지보수 부담 감소
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
-
-### Phase 232: CodeQL 보안 경고 해결 (2025-10-29)
-
-- 6개 보안 이슈 해결: URL 검증(3), Prototype Pollution(1), 빌드 안전성(2)
-
-### Phase 229-231 (2025-10-28)
-
-- Phase 231: Phase 199 중단 흔적 제거
-- Phase 230: BaseService 초기화 실패 수정 (ThemeService export)
-- Phase 229: PC-only 정책 부작용 수정 (텍스트 선택 복원)
-
-### Phase 228.1: 이벤트 캡처 최적화 (2025-10-28)
-
-- 미디어 컨테이너 fast-path 체크로 비미디어 클릭 10-20ms 개선
-
-**이전 Phase**:
-[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md) 참고
-
----
+- **유지보수**: [MAINTENANCE.md](./MAINTENANCE.md)---
 
 ## ⏸️ 보류된 작업
 

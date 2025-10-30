@@ -354,8 +354,65 @@
 
 @media (prefers-contrast: high) {
   :root {
-    --xeg-focus-outline: 0.1875rem solid var(--color-base-black); /* 3px */
-    --color-border-emphasis: var(--color-base-black);
+    /* Surface contrast adjustments */
+    --color-bg-primary: Canvas;
+    --color-bg-secondary: Canvas;
+    --color-bg-surface: Canvas;
+    --color-bg-elevated: Canvas;
+
+    /* Gallery specific backgrounds */
+    --xeg-gallery-bg-light: Canvas;
+    --xeg-gallery-bg-dark: Canvas;
+    --xeg-gallery-bg: Canvas;
+    --xeg-color-bg-secondary: Canvas;
+
+    /* Text contrast */
+    --color-text-primary: CanvasText;
+    --color-text-secondary: CanvasText;
+    --color-text-muted: CanvasText;
+    --color-text-inverse: Canvas;
+
+    /* Border emphasis */
+    --color-border-default: CanvasText;
+    --color-border-hover: CanvasText;
+    --color-border-emphasis: CanvasText;
+
+    /* Neutral palette remap */
+    --xeg-color-neutral-100: Canvas;
+    --xeg-color-neutral-200: Canvas;
+    --xeg-color-neutral-300: Canvas;
+    --xeg-color-neutral-400: Canvas;
+    --xeg-color-neutral-700: CanvasText;
+    --xeg-color-neutral-800: CanvasText;
+    --xeg-color-neutral-900: CanvasText;
+
+    /* Glass & media surfaces */
+    --color-glass-bg: Canvas;
+    --color-glass-border: CanvasText;
+    --xeg-surface-glass-bg: Canvas;
+    --xeg-surface-glass-border: CanvasText;
+    --xeg-surface-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-media-glass-border: CanvasText;
+    --xeg-media-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-media-glass-blur: none;
+
+    /* Toolbar high-contrast tokens */
+    --xeg-toolbar-bg-high-contrast: Canvas;
+    --xeg-toolbar-border-high-contrast: CanvasText;
+    --xeg-toolbar-button-bg-high-contrast: Canvas;
+    --xeg-toolbar-button-border-high-contrast: CanvasText;
+    --xeg-toolbar-wrapper-gradient-start: Canvas;
+    --xeg-toolbar-wrapper-gradient-mid: color-mix(in srgb, Canvas 80%, transparent);
+    --xeg-toolbar-wrapper-border: 0.125rem solid CanvasText;
+    --xeg-toolbar-wrapper-radius: var(--xeg-radius-md);
+    --xeg-toolbar-wrapper-margin: var(--space-xs);
+    --xeg-toolbar-hover-zone-bg: color-mix(in srgb, CanvasText 20%, transparent);
+
+    /* Focus styling */
+    --xeg-focus-outline: 0.1875rem solid CanvasText; /* 3px */
+    --xeg-focus-ring: 0.1875rem solid CanvasText;
+    --xeg-focus-offset: 0.1875rem;
+    --xeg-focus-ring-offset: 0.1875rem;
   }
 }
 
@@ -405,6 +462,15 @@
   --xeg-text-button: var(--xeg-color-text-primary);
   --xeg-text-button-navigation: var(--xeg-color-text-primary);
   --xeg-shadow-toolbar: var(--xeg-shadow-md);
+  --xeg-media-glass-border: var(--color-glass-border);
+  --xeg-media-glass-shadow: var(--shadow-md);
+  --xeg-media-glass-blur: none;
+  --xeg-toolbar-wrapper-gradient-start: oklch(0% 0 0deg / 80%);
+  --xeg-toolbar-wrapper-gradient-mid: oklch(0% 0 0deg / 40%);
+  --xeg-toolbar-wrapper-border: none;
+  --xeg-toolbar-wrapper-radius: 0;
+  --xeg-toolbar-wrapper-margin: 0;
+  --xeg-toolbar-hover-zone-bg: transparent;
   /* Neutral color aliases */
   --xeg-neutral-100: var(--xeg-color-neutral-100);
   --xeg-neutral-200: var(--xeg-color-neutral-200);

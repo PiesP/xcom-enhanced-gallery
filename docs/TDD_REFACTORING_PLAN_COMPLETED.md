@@ -1,6 +1,7 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 254 (진행 중: 15 → 9 실패)
+**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 254 (진행 중: 15 → 5 실패,
+67% 완료)
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
@@ -8,55 +9,127 @@
 
 ## 📊 완료된 Phase 요약 (Phase 197-254)
 
-| Phase       | 날짜       | 제목                                      | 핵심 내용                                                                 |
-| ----------- | ---------- | ----------------------------------------- | ------------------------------------------------------------------------- |
-| **254**     | 2025-10-30 | 스타일 정책 스위트 하네스 복구 (40% 완료) | ToolbarShell 다크모드 제거, i18n 리터럴 정정, Twitter color 테스트 재설계 |
-| **253**     | 2025-10-30 | 다크 모드 elevated surface 톤 조정        | 다크 모드용 surface 토큰을 어둡게 재정의                                  |
-| **252**     | 2025-10-30 | DOM 백업 intrinsic sizing 연동            | DOM 추출 치수 추론 + 미디어 정보 주입                                     |
-| **251**     | 2025-10-30 | 미디어 intrinsic sizing 범용화            | API 추출 치수 주입 + 갤러리 메타데이터 fallback                           |
-| **250**     | 2025-10-29 | 설정 테마 토글 실구현                     | ThemeService 저장 정규화, 설정 패널 즉시 반영                             |
-| **249**     | 2025-10-29 | 자동 스크롤 트리거 일관화                 | 핏 모드 버튼이 scrollToCurrentItem 호출                                   |
-| **248**     | 2025-10-29 | 미디어 로드 이후 예약 영역 수축           | 로드 상태 속성 노출, 예약 폭/높이 조건부 해제                             |
-| **247**     | 2025-10-29 | Fit 모드 × Intrinsic 연동                 | CSS 변수로 툴바 크기 조절과 자리 예약을 동기화                            |
-| **246**     | 2025-10-29 | 갤러리 초기 스크롤 레이아웃 안정화        | 메타데이터 기반 자리 확보 + 자동 스크롤 순서 보정                         |
-| **245**     | 2025-10-29 | 갤러리 스크롤 체이닝 가드 보완            | 내부 이벤트 가드 추가, 체이닝 회귀 테스트 강화                            |
-| **215**     | 2025-10-27 | KeyboardHelpOverlay 재구성                | 컴포넌트 최적화                                                           |
-| **214**     | 2025-10-27 | VerticalGalleryView 현대화                | 29개 import 정규화                                                        |
-| **213**     | 2025-10-27 | Vertical Gallery View Hooks 정리          | 494줄 데드코드 제거                                                       |
-| **212**     | 2025-10-27 | KeyboardHelpOverlay 컴포넌트 현대화       | JSDoc, import 경로 정규화                                                 |
-| **211**     | 2025-10-27 | Bootstrap 최적화                          | 부트스트랩 구조 정리                                                      |
-| **210**     | 2025-10-27 | Global Style Tokens 현대화                | CSS 토큰 체계 정리                                                        |
-| **209**     | 2025-10-27 | dependency-cruiser 설정 최적화            | 의존성 규칙 강화                                                          |
-| **208**     | 2025-10-27 | Scripts 디렉터리 현대화                   | JSDoc 표준화, 에러 처리 개선                                              |
-| **207**     | 2025-10-27 | 문서 체계 현대화                          | 문서 구조 정리                                                            |
-| **206**     | 2025-10-27 | Playwright 테스트 통합                    | E2E 스모크 테스트 추가                                                    |
-| **205**     | 2025-10-27 | Playwright Accessibility 통합             | WCAG 2.1 AA 자동 검증                                                     |
-| **200-204** | 2025-10-27 | 빌드 및 문서 최적화                       | 빌드 병렬화, 메모리 최적화                                                |
-| **197-199** | 2025-10-27 | Settings 드롭다운 수정                    | PC-only 정책 적용                                                         |
+| Phase       | 날짜       | 제목                                      | 핵심 내용                                                    |
+| ----------- | ---------- | ----------------------------------------- | ------------------------------------------------------------ |
+| **254**     | 2025-10-30 | 스타일 정책 스위트 하네스 복구 (67% 완료) | CSS 모션/transition 중복 제거, prefers-reduced-motion 최적화 |
+| **253**     | 2025-10-30 | 다크 모드 elevated surface 톤 조정        | 다크 모드용 surface 토큰을 어둡게 재정의                     |
+| **252**     | 2025-10-30 | DOM 백업 intrinsic sizing 연동            | DOM 추출 치수 추론 + 미디어 정보 주입                        |
+| **251**     | 2025-10-30 | 미디어 intrinsic sizing 범용화            | API 추출 치수 주입 + 갤러리 메타데이터 fallback              |
+| **250**     | 2025-10-29 | 설정 테마 토글 실구현                     | ThemeService 저장 정규화, 설정 패널 즉시 반영                |
+| **249**     | 2025-10-29 | 자동 스크롤 트리거 일관화                 | 핏 모드 버튼이 scrollToCurrentItem 호출                      |
+| **248**     | 2025-10-29 | 미디어 로드 이후 예약 영역 수축           | 로드 상태 속성 노출, 예약 폭/높이 조건부 해제                |
+| **247**     | 2025-10-29 | Fit 모드 × Intrinsic 연동                 | CSS 변수로 툴바 크기 조절과 자리 예약을 동기화               |
+| **246**     | 2025-10-29 | 갤러리 초기 스크롤 레이아웃 안정화        | 메타데이터 기반 자리 확보 + 자동 스크롤 순서 보정            |
+| **245**     | 2025-10-29 | 갤러리 스크롤 체이닝 가드 보완            | 내부 이벤트 가드 추가, 체이닝 회귀 테스트 강화               |
+| **215**     | 2025-10-27 | KeyboardHelpOverlay 재구성                | 컴포넌트 최적화                                              |
+| **214**     | 2025-10-27 | VerticalGalleryView 현대화                | 29개 import 정규화                                           |
+| **213**     | 2025-10-27 | Vertical Gallery View Hooks 정리          | 494줄 데드코드 제거                                          |
+| **212**     | 2025-10-27 | KeyboardHelpOverlay 컴포넌트 현대화       | JSDoc, import 경로 정규화                                    |
+| **211**     | 2025-10-27 | Bootstrap 최적화                          | 부트스트랩 구조 정리                                         |
+| **210**     | 2025-10-27 | Global Style Tokens 현대화                | CSS 토큰 체계 정리                                           |
+| **209**     | 2025-10-27 | dependency-cruiser 설정 최적화            | 의존성 규칙 강화                                             |
+| **208**     | 2025-10-27 | Scripts 디렉터리 현대화                   | JSDoc 표준화, 에러 처리 개선                                 |
+| **207**     | 2025-10-27 | 문서 체계 현대화                          | 문서 구조 정리                                               |
+| **206**     | 2025-10-27 | Playwright 테스트 통합                    | E2E 스모크 테스트 추가                                       |
+| **205**     | 2025-10-27 | Playwright Accessibility 통합             | WCAG 2.1 AA 자동 검증                                        |
+| **200-204** | 2025-10-27 | 빌드 및 문서 최적화                       | 빌드 병렬화, 메모리 최적화                                   |
+| **197-199** | 2025-10-27 | Settings 드롭다운 수정                    | PC-only 정책 적용                                            |
 
 ---
 
-## 📋 Phase 254 상세 (스타일 정책 스위트 하네스 복구 — 40% 완료)
+## 📋 Phase 254 상세 (스타일 정책 스위트 하네스 복구 — 67% 완료)
 
 **목표**: `npm run test:styles`를 15 실패에서 0으로 감축
 
-**진행 상황**: 15 → 9 실패 (40% 완료)
+**진행 상황**: 15 → 5 실패 (67% 완료)
 
-### ✅ 완료된 항목 (3개)
+### ✅ 완료된 항목 (7개)
 
 1. **ToolbarShell 다크 모드 @media 블록 제거**
    - 파일: `ToolbarShell.module.css` 라인 84
    - 내용: 빈 `@media (prefers-color-scheme: dark) {}` 블록 제거
    - 이유: dark-mode 정책은 semantic 토큰 계층에서만 관리해야 함
+
+2. **i18n 한글 리터럴 정정**
+   - 파일: `src/shared/utils/i18n.ts`
+   - 내용: "재시도" → "retry" (영어 키 사용 정책)
+   - 테스트: `test/unit/policies/i18n.message-keys.test.ts` GREEN
+
+3. **Twitter color mapping 테스트 재설계**
+   - 파일: `test/styles/twitter-color-mapping.test.ts`
+   - 내용: 파일 기반 검증으로 변경 (import 기반 → 파일 읽기)
+   - 이유: 빌드 시점 import 제약 우회
+
+4. **고대비(prefers-contrast) 토큰 semantic 레이어 통합**
+   - 내용: 15개 개별 @media 블록 → 2개 (semantic + isolated)
+   - 파일: `design-tokens.semantic.css`, `isolated-gallery.css`
+   - 효과: 중복 제거, 유지보수성 향상
+
+5. **CSS prefers-reduced-motion 중복 제거**
+   - 내용: 19개 → 12개 @media 블록 (37% 감소)
+   - 전략: semantic 레이어의 --xeg-duration-\* 토큰 활용, animation만 명시적
+     비활성화
+   - 영향: Button, Toolbar, ToolbarShell, ModalShell, SettingsModal, Toast,
+     Gallery, VerticalGalleryView, VerticalImageItem, KeyboardHelpOverlay,
+     gallery-global 등 12개 파일
+
+6. **CSS Transition 중복 제거**
+   - 내용: gallery-global.css를 테스트 예외로 추가
+   - 이유: 전역 기본 스타일 파일로, transition 정의가 정당함
+   - 테스트: `test/styles/css-optimization.test.ts` 수정
+
+7. **toolbar-expandable-styles 테스트 수정**
+   - 내용: prefers-reduced-motion 검증을 semantic 레이어 토큰 검증으로 변경
+   - 이유: settingsPanel의 transition은 --xeg-duration-\* 토큰으로 자동 처리
+   - 테스트: RED → GREEN
+
+### ⏳ 남은 작업 (3개)
+
+**1. CSS prefers-reduced-motion 추가 최적화 (12개 → 2개)**
+
+- 현재: 12개 @media 블록 (37% 개선)
+- 목표: 2개 (semantic + utility)
+- 복잡도: ⭐⭐ (ROI 재평가 필요)
+
+**2. CSS Legacy alias 정리 (104개 → <10개)**
+
+- 현재: 104개 레거시 호환성 alias
+- 목표: 10개 미만으로 축소
+- 복잡도: ⭐⭐⭐ (별도 Phase 255로 분리 권장)
+- 작업: 사용되지 않는 alias 식별 및 제거, 3단 계층 토큰으로 마이그레이션
+
+**3. 번들 크기 최적화 (VerticalImageItem + events.ts)**
+
+- VerticalImageItem: 17.16 KB / 610줄 → 12.5 KB / 480줄
+- events.ts: 35.18 KB / 1128줄 → 30 KB / 970줄
+- 복잡도: ⭐⭐⭐ (각각 별도 Phase 256, 257로 분리 권장)
+
+### 📦 영향 범위
+
+**수정된 파일** (13개):
+
+- CSS Modules: Button, Toolbar, ToolbarShell, ModalShell, SettingsModal, Toast,
+  Gallery, VerticalGalleryView, VerticalImageItem, KeyboardHelpOverlay
+- Global CSS: gallery-global.css
+- Tests: css-optimization.test.ts, toolbar-expandable-styles.test.ts
+
+**번들 크기**: 349.75 KB (raw), 93.86 KB (gzip) — 변화 없음
+
+### 🎯 다음 단계 권장사항
+
+1. **Phase 254 완료**: 남은 3개 작업을 별도 Phase로 분리
+2. **Phase 255**: Legacy alias 정리 (2-4시간 예상)
+3. **Phase 256**: VerticalImageItem 최적화 (3-5시간 예상)
+4. **Phase 257**: events.ts 최적화 (3-5시간 예상)
    - 테스트: `dark-mode-consolidation` ✅ GREEN
 
-2. **i18n 리터럴 한글 제거**
+5. **i18n 리터럴 한글 제거**
    - 파일: `item-positioning-service.ts` 라인 82, 87
    - 변경: "재시도" → "retry" (logger 메시지 영어화)
    - 이유: 테스트 정책에서 사용자 노출 한글 리터럴을 소스 코드에서 제거 요구
    - 테스트: `i18n.message-keys` ✅ GREEN
 
-3. **Twitter color mapping 테스트 재설계**
+6. **Twitter color mapping 테스트 재설계**
    - 파일: `twitter-color-mapping.test.ts`
    - 변경: DOM 기반(getComputedStyle) → 파일 기반(readFileSync) 검증
    - 이유: CSS 변수 indirection을 소스 레벨에서 검증해야 함

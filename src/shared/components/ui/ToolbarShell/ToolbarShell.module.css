@@ -88,8 +88,4 @@
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .toolbar-shell {
-    transition: none;
-  }
-}
+/* Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */

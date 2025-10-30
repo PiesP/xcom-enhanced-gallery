@@ -30,9 +30,4 @@
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .modal {
-    transition: none;
-    animation: none;
-  }
-}
+/* Phase 254: SettingsModal의 animation/transition은 semantic 레이어의 토큰으로 처리 */

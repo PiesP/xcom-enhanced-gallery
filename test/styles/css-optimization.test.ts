@@ -130,11 +130,12 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
         /transition:\s*(?:transform|opacity|background-color|border-color|box-shadow)[\s\S]{0,200}?;/gi;
 
       for (const [path, content] of cssFiles) {
-        // design-tokens, utilities, animations 파일은 제외 (정의 파일)
+        // design-tokens, utilities, animations, gallery-global 파일은 제외 (정의 파일 + 전역 기본 스타일)
         if (
           path.includes('design-tokens') ||
           path.includes('utilities') ||
-          path.includes('animations.css')
+          path.includes('animations.css') ||
+          path.includes('gallery-global.css')
         ) {
           continue;
         }
