@@ -452,7 +452,12 @@ export async function initializeGalleryEvents(
     // (외부 코드가 실수로 터치 이벤트를 추가하는 것 방지)
     blockTouchAndPointerEvents(documentElement);
 
-    // 클릭 이벤트 처리
+    // Phase 258.2: keydown → click 순서로 최적화 (CPU 캐시 효율성)
+    const keyHandler: EventListener = (evt: Event) => {
+      const event = evt as KeyboardEvent;
+      handleKeyboardEvent(event, handlers, finalOptions);
+    };
+
     const clickHandler: EventListener = async (evt: Event) => {
       const event = evt as MouseEvent;
       const result = await handleMediaClick(event, handlers, finalOptions);
@@ -462,21 +467,7 @@ export async function initializeGalleryEvents(
       }
     };
 
-    // ESC 키 처리
-    const keyHandler: EventListener = (evt: Event) => {
-      const event = evt as KeyboardEvent;
-      handleKeyboardEvent(event, handlers, finalOptions);
-    };
-
     // 이벤트 리스너 등록 (캡처 단계에서 처리하여 트위터보다 먼저 실행)
-    const clickId = addListener(
-      documentElement,
-      'click',
-      clickHandler,
-      { passive: false, capture: true },
-      finalOptions.context
-    );
-
     const keyId = addListener(
       documentElement,
       'keydown',
@@ -485,7 +476,15 @@ export async function initializeGalleryEvents(
       finalOptions.context
     );
 
-    galleryEventState.listenerIds = [clickId, keyId];
+    const clickId = addListener(
+      documentElement,
+      'click',
+      clickHandler,
+      { passive: false, capture: true },
+      finalOptions.context
+    );
+
+    galleryEventState.listenerIds = [keyId, clickId];
     galleryEventState.initialized = true;
 
     // 우선순위 강화 메커니즘 시작 (트위터가 동적으로 리스너를 추가할 경우 대비)
@@ -530,7 +529,12 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
       // 기존 리스너 제거
       galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
 
-      // 새로운 리스너 등록 (최신 우선순위로)
+      // 새로운 리스너 등록 (Phase 258.2: 최적화된 순서)
+      const keyHandler: EventListener = (evt: Event) => {
+        const event = evt as KeyboardEvent;
+        handleKeyboardEvent(event, handlers, options);
+      };
+
       const clickHandler: EventListener = async (evt: Event) => {
         const event = evt as MouseEvent;
         const result = await handleMediaClick(event, handlers, options);
@@ -540,10 +544,13 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         }
       };
 
-      const keyHandler: EventListener = (evt: Event) => {
-        const event = evt as KeyboardEvent;
-        handleKeyboardEvent(event, handlers, options);
-      };
+      const keyId = addListener(
+        documentElement,
+        'keydown',
+        keyHandler,
+        { passive: false, capture: true },
+        options.context
+      );
 
       const clickId = addListener(
         documentElement,
@@ -553,15 +560,7 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         options.context
       );
 
-      const keyId = addListener(
-        documentElement,
-        'keydown',
-        keyHandler,
-        { passive: false, capture: true },
-        options.context
-      );
-
-      galleryEventState.listenerIds = [clickId, keyId];
+      galleryEventState.listenerIds = [keyId, clickId];
     } catch (error) {
       logger.warn('Failed to reinforce gallery event priority:', error);
     }
