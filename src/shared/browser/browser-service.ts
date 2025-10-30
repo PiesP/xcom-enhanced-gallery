@@ -92,33 +92,6 @@ export class BrowserService {
   }
 
   /**
-   * 파일 다운로드
-   * @deprecated Use getUserscript().download() instead for userscript compatibility
-   * This is a fallback for non-userscript environments
-   */
-  public downloadFile(url: string, filename?: string): void {
-    try {
-      const link = document.createElement('a');
-      // codeql[js/unsafe-download-pattern] - Legacy fallback, prefer getUserscript().download()
-      link.href = url;
-      if (filename) {
-        link.download = filename;
-      }
-      link.style.display = 'none';
-
-      // 임시로 DOM에 추가하여 클릭 이벤트 트리거
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      logger.debug('[BrowserService] File download initiated', { url, filename });
-    } catch (error) {
-      logger.error('[BrowserService] File download failed', error);
-      throw error;
-    }
-  }
-
-  /**
    * 페이지 가시성 확인
    * @returns true if page is visible
    */
@@ -176,8 +149,6 @@ const defaultBrowserService = new BrowserService();
 export const browserAPI = {
   injectCSS: (id: string, css: string) => defaultBrowserService.injectCSS(id, css),
   removeCSS: (id: string) => defaultBrowserService.removeCSS(id),
-  downloadFile: (url: string, filename: string) =>
-    defaultBrowserService.downloadFile(url, filename),
   isPageVisible: () => defaultBrowserService.isPageVisible(),
   isDOMReady: () => defaultBrowserService.isDOMReady(),
   getDiagnostics: () => defaultBrowserService.getDiagnostics(),
