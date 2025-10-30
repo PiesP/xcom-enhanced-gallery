@@ -5,9 +5,11 @@
  */
 
 import { logger } from '@shared/logging';
-import type { ComponentType } from '../../types/app.types';
+import type {
+  ComponentType,
+  GalleryComponentProps as BaseGalleryComponentProps,
+} from '../../types/app.types'; // Phase 282 Step 3: 직접 경로 사용
 import { getSolid } from '../../external/vendors';
-import type { GalleryComponentProps as BaseGalleryComponentProps } from '../base/BaseComponentProps';
 import { ComponentStandards } from '../../utils/component-utils';
 
 const solid = getSolid();

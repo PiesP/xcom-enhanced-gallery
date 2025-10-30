@@ -5,9 +5,9 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
 import { useSelector } from '@shared/utils/signal-selector';
 import { toastManager } from '@/shared/services/unified-toast-manager';
-import { ComponentStandards } from '../StandardProps';
-import type { StandardToastContainerProps } from '../StandardProps';
-import type { BaseComponentProps } from '../../base/BaseComponentProps';
+import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import type { StandardToastContainerProps } from '../types'; // Phase 282 Step 3: 직접 경로 사용
+import type { BaseComponentProps } from '@shared/types/app.types'; // Phase 282 Step 3: 직접 경로 사용
 import { Toast } from './Toast';
 import styles from './ToastContainer.module.css';
 

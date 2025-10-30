@@ -3,10 +3,11 @@
  *
  * 모든 UI 컴포넌트를 중앙집중식으로 export합니다.
  * 이를 통해 import 경로를 단순화하고 코드 가독성을 향상시킵니다.
+ * @version 2.1.0 - Phase 282 Step 3: StandardProps 재내보내기 제거
  */
 
-// 표준화된 컴포넌트 Props 및 유틸리티
-export * from './StandardProps';
+// Phase 282 Step 3: StandardProps 재내보내기 제거
+// 이제 ./types, ./constants, @shared/utils/component-utils에서 직접 import 사용
 export * from './types';
 export * from './constants';
 

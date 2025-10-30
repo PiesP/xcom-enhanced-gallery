@@ -43,7 +43,7 @@ import type { ImageFitMode } from '@shared/types';
 import type { JSX } from 'solid-js';
 
 import { withGallery } from '@shared/components/hoc';
-import { ComponentStandards } from '@shared/components/ui/StandardProps';
+import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
 import { getSolid } from '@shared/external/vendors';
 import { languageService } from '@shared/services/language-service';
 import { logger } from '@shared/logging';

@@ -1,6 +1,6 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
-import { ComponentStandards } from '../StandardProps';
-import type { StandardToastProps } from '../StandardProps';
+import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import type { StandardToastProps } from '../types'; // Phase 282 Step 3: 직접 경로 사용
 import type { ToastItem as ServiceToastItem } from '@/shared/services/unified-toast-manager';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import styles from './Toast.module.css';
