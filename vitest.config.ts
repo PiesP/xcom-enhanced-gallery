@@ -165,6 +165,8 @@ export default defineConfig({
     testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
     hookTimeout: 25000,
     transformMode: solidTransformMode,
+    // Phase 275: EPIPE 에러 해결 - 워커 IPC 메시지 최소화
+    reporterVerbosity: 'verbose', // minimal로 설정하면 reporter 로그 감소 (IPC 메시지 감소)
 
     // Bare import로 인식되는 @features/@shared/@assets/@* 별칭을
     // 외부 의존성으로 최적화(deps optimize)하지 말고 Vitest(vite-node)
@@ -246,12 +248,12 @@ export default defineConfig({
     pool: 'threads',
     poolOptions: {
       threads: {
-        // 로컬: 제한된 멀티스레드 (메모리 안정성 우선), CI: 단일스레드
+        // 로컬: 극도로 제한된 멀티스레드 (EPIPE 방지 우선), CI: 단일스레드
         singleThread: forceSingleThread,
         // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
         memoryLimit: forceSingleThread ? 1024 : 2048,
         minThreads: 1,
-        maxThreads: forceSingleThread ? 1 : 2, // 병렬도 감소 (4 → 2)
+        maxThreads: 1, // 로컬도 단일 워커로 강제 (EPIPE 완전 방지)
         reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
       },
     },
@@ -536,6 +538,8 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
         define: {
           'import.meta.env.SSR': false,
           'import.meta.env.DEV': true,
