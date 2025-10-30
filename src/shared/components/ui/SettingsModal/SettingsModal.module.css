@@ -1,0 +1,38 @@
+/**
+ * SettingsModal Styles
+ * Semantic tokens only; no hardcoded colors.
+ */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-backdrop);
+  z-index: var(--xeg-z-modal);
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 20em;
+  max-width: 40em;
+  padding: var(--space-lg);
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-modal-bg);
+  border: var(--border-width-thin) solid var(--xeg-modal-border);
+  box-shadow: var(--xeg-shadow-lg);
+  z-index: calc(var(--xeg-z-modal) + 1);
+}
+
+.modal:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    transition: none;
+    animation: none;
+  }
+}

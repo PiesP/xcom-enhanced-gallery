@@ -46,14 +46,25 @@ describe('i18n.message-keys (Phase 4 완료 GREEN)', () => {
     const testDir = dirname(fileURLToPath(import.meta.url));
     const srcRoot = join(testDir, '..', '..', '..', 'src');
     const languageServiceFile = join(srcRoot, 'shared', 'services', 'language-service.ts');
-    const i18nDir = join(srcRoot, 'shared', 'i18n');
+    const i18nResourcesDir = join(srcRoot, 'shared', 'constants', 'i18n');
     const files = collectSourceFiles(srcRoot).filter(
-      f => f !== languageServiceFile && !f.startsWith(i18nDir)
+      f => f !== languageServiceFile && !f.startsWith(i18nResourcesDir)
     );
 
     const offenders: Array<{ file: string; literal: string }> = [];
     for (const file of files) {
-      const content = readFileSync(file, 'utf8');
+      let content = readFileSync(file, 'utf8');
+
+      // Remove all comments (JSDoc, multi-line, single-line)
+      // Multi-line and JSDoc comments: /* ... */
+      content = content.replace(/\/\*[\s\S]*?\*\//g, '');
+      // Single-line comments: // ...
+      const lines = content.split('\n').map(line => {
+        const commentIdx = line.indexOf('//');
+        return commentIdx >= 0 ? line.substring(0, commentIdx) : line;
+      });
+      content = lines.join('\n');
+
       for (const lit of PROHIBITED_LITERALS) {
         if (content.includes(lit)) {
           offenders.push({ file, literal: lit });

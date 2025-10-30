@@ -74,4 +74,85 @@ describe('VerticalImageItem – intrinsic sizing', () => {
     expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio')).toBe('');
     expect(item?.dataset.mediaLoaded).toBe('false');
   });
+
+  it('uses metadata dimensions when direct width/height are missing', () => {
+    const mediaWithMetadata: MediaInfo = {
+      ...baseMedia,
+      type: 'video',
+      width: undefined,
+      height: undefined,
+      metadata: {
+        dimensions: {
+          width: 960,
+          height: 540,
+        },
+      },
+    };
+
+    const { container } = render(
+      h(VerticalImageItem, {
+        media: mediaWithMetadata,
+        index: 1,
+        isActive: false,
+        forceVisible: true,
+        onClick: () => {},
+        fitMode: 'fitWidth',
+      })
+    );
+
+    const item = container.querySelector('[data-index="1"]') as HTMLDivElement | null;
+    expect(item).not.toBeNull();
+    expect(item?.dataset.hasIntrinsicSize).toBe('true');
+    expect(item?.style.getPropertyValue('--xeg-aspect-default').trim()).toBe('960 / 540');
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+      '60.0000rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+      '33.7500rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio').trim()).toBe(
+      '1.777778'
+    );
+  });
+
+  it('derives dimensions from apiData download URL when metadata is absent', () => {
+    const mediaWithApiData: MediaInfo = {
+      ...baseMedia,
+      type: 'video',
+      width: undefined,
+      height: undefined,
+      metadata: {
+        apiData: {
+          download_url:
+            'https://video.twimg.com/ext_tw_video/12345/pu/vid/1280x720/abcd1234.mp4?tag=12',
+          aspect_ratio: [16, 9],
+        },
+      },
+    } as MediaInfo;
+
+    const { container } = render(
+      h(VerticalImageItem, {
+        media: mediaWithApiData,
+        index: 2,
+        isActive: false,
+        forceVisible: true,
+        onClick: () => {},
+        fitMode: 'fitWidth',
+      })
+    );
+
+    const item = container.querySelector('[data-index="2"]') as HTMLDivElement | null;
+    expect(item).not.toBeNull();
+    expect(item?.dataset.hasIntrinsicSize).toBe('true');
+    expect(item?.style.getPropertyValue('--xeg-aspect-default').trim()).toBe('1280 / 720');
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+      '80.0000rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+      '45.0000rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio').trim()).toBe(
+      '1.777778'
+    );
+  });
 });

@@ -31,6 +31,27 @@ const THEME_DOM_ATTRIBUTE = 'data-theme';
  */
 const VALID_THEME_VALUES: readonly ThemeSetting[] = ['auto', 'light', 'dark'];
 
+function normalizeThemeSetting(value: string | null): ThemeSetting | null {
+  if (!value) {
+    return null;
+  }
+
+  if (VALID_THEME_VALUES.includes(value as ThemeSetting)) {
+    return value as ThemeSetting;
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (typeof parsed === 'string' && VALID_THEME_VALUES.includes(parsed as ThemeSetting)) {
+      return parsed as ThemeSetting;
+    }
+  } catch {
+    // value was not JSON encoded – fall through to null
+  }
+
+  return null;
+}
+
 /**
  * 안전한 localStorage 접근
  *
@@ -85,9 +106,10 @@ export function getSavedThemeSetting(): ThemeSetting | null {
     if (!storage) {
       return null;
     }
-    const saved = storage.getItem(THEME_STORAGE_KEY) as ThemeSetting | null;
-    if (saved && VALID_THEME_VALUES.includes(saved)) {
-      return saved;
+    const saved = storage.getItem(THEME_STORAGE_KEY);
+    const normalized = normalizeThemeSetting(saved);
+    if (normalized) {
+      return normalized;
     }
   } catch (error) {
     logger.debug('[theme] Failed to read saved theme (using default):', error);

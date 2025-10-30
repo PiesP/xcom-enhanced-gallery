@@ -12,7 +12,7 @@
  * - 마지막으로 스크롤된 아이템 인덱스
  * - 대기 중인 스크롤 요청 (pendingIndex)
  * - 사용자 vs 자동 스크롤 구분
- * - 스크롤 실패 재시도 횟수
+ * - 스크롤 실패 retry 횟수
  * - 타이머 ID (정리 목적)
  */
 
@@ -60,7 +60,7 @@ export interface ItemScrollState {
   lastUserScrollTime: number;
 
   /**
-   * 스크롤 실패 재시도 횟수
+   * 스크롤 실패 retry 횟수
    * scrollIntoView() 실패 시 증가, 일정 횟수 초과 시 포기
    */
   retryCount: number;
@@ -93,7 +93,7 @@ export interface ItemScrollState {
  * - 스크롤 이력 없음 (lastScrolledIndex: -1)
  * - 대기 요청 없음
  * - 사용자/자동 스크롤 미진행
- * - 재시도 횟수 0
+ * - retry 횟수 0
  * - 모든 타이머 ID 초기화
  */
 export const INITIAL_ITEM_SCROLL_STATE: ItemScrollState = {

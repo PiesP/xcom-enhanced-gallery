@@ -83,7 +83,7 @@
 .container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl);
   /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
-  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
+  aspect-ratio: var(--xeg-aspect-default);
 }
 
 .placeholder {

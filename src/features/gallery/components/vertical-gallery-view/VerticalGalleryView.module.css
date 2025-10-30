@@ -518,14 +518,9 @@
   }
 }
 
-/* ?�이??모드 ?�호??지?? */
-@media (prefers-color-scheme: light) {
-  .container {
-    background: color-mix(in sRGB, white 95%, transparent);
-  }
-}
+/* Light mode support deferred to design-tokens.semantic.css */
 
-/* �??�태 버튼 ?��??? */
+/* 비어있는 상태 버튼 스타일 */
 .emptyButton {
   margin-top: 1rem;
 }

@@ -11,7 +11,7 @@
   /* Toolbar Component */
   --toolbar-bg: var(--xeg-bg-toolbar);
   --toolbar-text: var(--color-text-inverse);
-  --toolbar-border: var(--color-border-default);
+  --toolbar-border: var(--xeg-color-border-primary);
   --toolbar-shadow: var(--shadow-md);
   --toolbar-height: 3.75rem; /* 60px = 3.75rem */
   --toolbar-padding: var(--spacing-component-padding);

@@ -35,6 +35,7 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
  */
 export class ThemeService extends BaseServiceImpl {
   private static readonly STORAGE_KEY = 'xeg-theme';
+  private static readonly VALID_SETTINGS: readonly ThemeSetting[] = ['auto', 'light', 'dark'];
 
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
@@ -74,15 +75,43 @@ export class ThemeService extends BaseServiceImpl {
    */
   private async restoreThemeSetting(): Promise<void> {
     try {
-      const savedSetting = (await this.storage.getItem(
-        ThemeService.STORAGE_KEY
-      )) as ThemeSetting | null;
-      if (savedSetting && ['auto', 'light', 'dark'].includes(savedSetting)) {
-        this.themeSetting = savedSetting;
+      const savedSetting = await this.storage.getItem(ThemeService.STORAGE_KEY);
+      const normalized = ThemeService.normalizeThemeSetting(savedSetting);
+      if (normalized) {
+        this.themeSetting = normalized;
       }
     } catch (error) {
       logger.warn('Failed to restore theme setting from storage:', error);
     }
+  }
+
+  private static normalizeThemeSetting(value: unknown): ThemeSetting | null {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (ThemeService.VALID_SETTINGS.includes(trimmed as ThemeSetting)) {
+        return trimmed as ThemeSetting;
+      }
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (
+          typeof parsed === 'string' &&
+          ThemeService.VALID_SETTINGS.includes(parsed as ThemeSetting)
+        ) {
+          return parsed as ThemeSetting;
+        }
+      } catch {
+        // ignore – value was not JSON encoded
+      }
+
+      return null;
+    }
+
+    if (ThemeService.VALID_SETTINGS.includes(value as ThemeSetting)) {
+      return value as ThemeSetting;
+    }
+
+    return null;
   }
 
   /**
@@ -120,7 +149,7 @@ export class ThemeService extends BaseServiceImpl {
   /**
    * 현재 설정에 따른 테마 적용
    */
-  private applyCurrentTheme(): void {
+  private applyCurrentTheme(): boolean {
     const effectiveTheme = this.getEffectiveTheme();
 
     if (this.currentTheme !== effectiveTheme) {
@@ -135,7 +164,11 @@ export class ThemeService extends BaseServiceImpl {
       this.notifyListeners();
 
       logger.debug(`Theme applied: ${this.currentTheme} (setting: ${this.themeSetting})`);
+
+      return true;
     }
+
+    return false;
   }
 
   /**
@@ -154,21 +187,23 @@ export class ThemeService extends BaseServiceImpl {
   /**
    * 테마 설정 (수동)
    */
-  public setTheme(setting: ThemeSetting): void {
-    // 유효하지 않은 값은 기본값으로 fallback
-    if (!['auto', 'light', 'dark'].includes(setting)) {
-      setting = 'light';
-    }
+  public setTheme(setting: ThemeSetting | string): void {
+    const normalized = ThemeService.normalizeThemeSetting(setting) ?? 'light';
+    const previousSetting = this.themeSetting;
 
-    this.themeSetting = setting;
+    this.themeSetting = normalized;
 
     // storage에 저장
     void this.saveThemeSetting();
 
     // 테마 적용
-    this.applyCurrentTheme();
+    const themeChanged = this.applyCurrentTheme();
 
-    logger.info(`Theme setting changed: ${setting}`);
+    if (!themeChanged && previousSetting !== this.themeSetting) {
+      this.notifyListeners();
+    }
+
+    logger.info(`Theme setting changed: ${this.themeSetting}`);
   }
 
   /**

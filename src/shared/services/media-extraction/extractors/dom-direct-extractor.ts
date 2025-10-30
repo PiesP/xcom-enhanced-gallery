@@ -11,6 +11,88 @@ import { STABLE_SELECTORS } from '@/constants';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
+type DimensionPair = { width: number; height: number };
+
+const DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
+
+const parsePositiveNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
+const extractDimensionsFromUrl = (url: string | null | undefined): DimensionPair | null => {
+  if (!url) {
+    return null;
+  }
+
+  const match = url.match(DIMENSION_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  const width = Number.parseInt(match[1] ?? '', 10);
+  const height = Number.parseInt(match[2] ?? '', 10);
+
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    return null;
+  }
+
+  return { width, height };
+};
+
+const resolveImageDimensions = (element: HTMLImageElement, url: string): DimensionPair | null => {
+  const naturalWidth = parsePositiveNumber(element.naturalWidth);
+  const naturalHeight = parsePositiveNumber(element.naturalHeight);
+
+  if (naturalWidth && naturalHeight) {
+    return { width: naturalWidth, height: naturalHeight };
+  }
+
+  const attributeWidth = parsePositiveNumber(element.getAttribute('width'));
+  const attributeHeight = parsePositiveNumber(element.getAttribute('height'));
+
+  if (attributeWidth && attributeHeight) {
+    return { width: attributeWidth, height: attributeHeight };
+  }
+
+  const styleWidth = parsePositiveNumber(element.style.width?.replace(/[^0-9.]/g, ''));
+  const styleHeight = parsePositiveNumber(element.style.height?.replace(/[^0-9.]/g, ''));
+
+  if (styleWidth && styleHeight) {
+    return { width: styleWidth, height: styleHeight };
+  }
+
+  return extractDimensionsFromUrl(url);
+};
+
+const resolveVideoDimensions = (element: HTMLVideoElement, url: string): DimensionPair | null => {
+  const videoWidth = parsePositiveNumber(element.videoWidth);
+  const videoHeight = parsePositiveNumber(element.videoHeight);
+
+  if (videoWidth && videoHeight) {
+    return { width: videoWidth, height: videoHeight };
+  }
+
+  const attributeWidth = parsePositiveNumber(element.getAttribute('width'));
+  const attributeHeight = parsePositiveNumber(element.getAttribute('height'));
+
+  if (attributeWidth && attributeHeight) {
+    return { width: attributeWidth, height: attributeHeight };
+  }
+
+  return extractDimensionsFromUrl(url);
+};
+
 /**
  * DOM 추출기 (백업 전략용)
  * 기본적인 DOM 파싱 수행
@@ -83,7 +165,7 @@ export class DOMDirectExtractor {
       if (this.isValidImageUrl(imgElement.src)) {
         const originalUrl = extractOriginalImageUrl(imgElement.src);
         if (originalUrl) {
-          mediaItems.push(this.createImageMediaInfo(originalUrl, index, tweetInfo));
+          mediaItems.push(this.createImageMediaInfo(imgElement, originalUrl, index, tweetInfo));
         }
       }
     });
@@ -93,7 +175,9 @@ export class DOMDirectExtractor {
     videos.forEach((video, _index) => {
       const videoElement = video as HTMLVideoElement;
       if (videoElement.src) {
-        mediaItems.push(this.createVideoMediaInfo(videoElement.src, mediaItems.length, tweetInfo));
+        mediaItems.push(
+          this.createVideoMediaInfo(videoElement, videoElement.src, mediaItems.length, tweetInfo)
+        );
       }
     });
 
@@ -103,7 +187,20 @@ export class DOMDirectExtractor {
   /**
    * 이미지 MediaInfo 생성
    */
-  private createImageMediaInfo(url: string, index: number, tweetInfo?: TweetInfo): MediaInfo {
+  private createImageMediaInfo(
+    element: HTMLImageElement,
+    url: string,
+    index: number,
+    tweetInfo?: TweetInfo
+  ): MediaInfo {
+    const dimensions = resolveImageDimensions(element, url);
+
+    const metadata = dimensions
+      ? {
+          dimensions,
+        }
+      : undefined;
+
     return {
       id: `img_${Date.now()}_${index}`,
       url,
@@ -112,13 +209,28 @@ export class DOMDirectExtractor {
       filename: this.generateFilename('image', index, tweetInfo),
       tweetId: tweetInfo?.tweetId,
       tweetUsername: tweetInfo?.username,
+      ...(dimensions && { width: dimensions.width, height: dimensions.height }),
+      ...(metadata && { metadata }),
     };
   }
 
   /**
    * 비디오 MediaInfo 생성
    */
-  private createVideoMediaInfo(url: string, index: number, tweetInfo?: TweetInfo): MediaInfo {
+  private createVideoMediaInfo(
+    element: HTMLVideoElement,
+    url: string,
+    index: number,
+    tweetInfo?: TweetInfo
+  ): MediaInfo {
+    const dimensions = resolveVideoDimensions(element, url);
+
+    const metadata = dimensions
+      ? {
+          dimensions,
+        }
+      : undefined;
+
     return {
       id: `vid_${Date.now()}_${index}`,
       url,
@@ -128,6 +240,8 @@ export class DOMDirectExtractor {
       thumbnailUrl: this.generateVideoThumbnail(url),
       tweetId: tweetInfo?.tweetId,
       tweetUsername: tweetInfo?.username,
+      ...(dimensions && { width: dimensions.width, height: dimensions.height }),
+      ...(metadata && { metadata }),
     };
   }
 

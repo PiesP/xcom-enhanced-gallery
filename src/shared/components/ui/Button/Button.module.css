@@ -374,49 +374,7 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .variant-secondary {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-secondary:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-700);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-outline {
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-outline:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-ghost {
-    color: var(--xeg-color-text-secondary);
-  }
-
-  .variant-ghost:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-  }
-
-  .variant-icon {
-    color: var(--xeg-color-text-secondary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-icon:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-hover);
-  }
-}
+/* ===== 다크 모드 지원 제거: semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
 
 /* ===== 고대비 모드 지원 ===== */
 @media (prefers-contrast: high) {

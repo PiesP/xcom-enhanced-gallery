@@ -143,6 +143,64 @@ export class TwitterAPIExtractor implements APIExtractor {
     return mediaItems;
   }
 
+  private resolveDimensionsFromApiMedia(
+    apiMedia: TweetMediaEntry
+  ): { width: number; height: number } | null {
+    const widthFromOriginal = this.toPositiveNumber(apiMedia.original_width);
+    const heightFromOriginal = this.toPositiveNumber(apiMedia.original_height);
+
+    if (widthFromOriginal && heightFromOriginal) {
+      return {
+        width: widthFromOriginal,
+        height: heightFromOriginal,
+      };
+    }
+
+    const urlDimensions = TwitterAPI.extractDimensionsFromUrl(apiMedia.download_url);
+    if (urlDimensions) {
+      return urlDimensions;
+    }
+
+    const previewDimensions = TwitterAPI.extractDimensionsFromUrl(apiMedia.preview_url);
+    if (previewDimensions) {
+      return previewDimensions;
+    }
+
+    const aspectRatio = Array.isArray(apiMedia.aspect_ratio) ? apiMedia.aspect_ratio : undefined;
+    if (aspectRatio && aspectRatio.length >= 2) {
+      const ratioWidth = this.toPositiveNumber(aspectRatio[0]);
+      const ratioHeight = this.toPositiveNumber(aspectRatio[1]);
+
+      if (ratioWidth && ratioHeight) {
+        const baseHeight = 720;
+        const height = baseHeight;
+        const width = Math.max(1, Math.round((ratioWidth / ratioHeight) * baseHeight));
+
+        return {
+          width,
+          height,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  private toPositiveNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
   /**
    * API 미디어에서 MediaInfo 생성
    */
@@ -154,6 +212,15 @@ export class TwitterAPIExtractor implements APIExtractor {
     try {
       // 타입 변환: photo -> image, video -> video
       const mediaType = apiMedia.type === 'photo' ? 'image' : 'video';
+      const dimensions = this.resolveDimensionsFromApiMedia(apiMedia);
+      const metadata: Record<string, unknown> = {
+        apiIndex: index,
+        apiData: apiMedia,
+      };
+
+      if (dimensions) {
+        metadata.dimensions = dimensions;
+      }
 
       return {
         id: `${tweetInfo.tweetId}_api_${index}`,
@@ -166,10 +233,11 @@ export class TwitterAPIExtractor implements APIExtractor {
         originalUrl: apiMedia.download_url,
         thumbnailUrl: apiMedia.preview_url,
         alt: `${mediaType} ${index + 1}`,
-        metadata: {
-          apiIndex: index,
-          apiData: apiMedia,
-        },
+        ...(dimensions && {
+          width: dimensions.width,
+          height: dimensions.height,
+        }),
+        metadata,
       };
     } catch (error) {
       logger.error('API MediaInfo 생성 실패:', error);

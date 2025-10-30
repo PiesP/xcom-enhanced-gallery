@@ -125,22 +125,7 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .modal-backdrop {
-    background: var(--xeg-comp-modal-backdrop);
-  }
-
-  .modal-surface-glass {
-    background: var(--xeg-modal-bg);
-    border-color: var(--xeg-modal-border);
-  }
-
-  .modal-surface-solid {
-    background: var(--xeg-modal-bg);
-    border-color: var(--xeg-modal-border);
-  }
-}
+/* 다크 모드 지원은 semantic 레이어 토큰으로 위임 (Phase 54.1) */
 
 /* ===== 접근성 강화 ===== */
 .modal-shell:focus {
