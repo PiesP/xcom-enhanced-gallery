@@ -258,7 +258,11 @@ export default defineConfig({
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
     // 각 프로젝트에 jsdom 환경/설정 파일을 명시하여 상속 이슈를 방지합니다.
     projects: [
-      // 최소 스모크: 빠르게 핵심 경계만 확인
+      // 최소 스모크: 빠르게 핵심 경계만 확인 (구성/토큰/계약 가드)
+      // Phase 272: smoke 프로젝트 정의 개선
+      // - 목적: 초고속 구성 및 토큰 가드 (10-20초 이내)
+      // - 전략: 존재하고 실패하지 않는 계약 테스트만 포함
+      // - 제외: 로거 테스트(환경 이슈), 환경 폴리필(happy-dom 제약)
       {
         // 개별 프로젝트에도 동일한 resolve를 명시적으로 주입 (Windows vite-node 호환)
         resolve: sharedResolve,
@@ -280,9 +284,13 @@ export default defineConfig({
           },
           transformMode: solidTransformMode,
           include: [
+            // 기본 유틸리티: viewport 계산 (반드시 성공해야 할 핵심 함수)
             'test/unit/shared/utils/viewport-utils.test.ts',
+            // 외부 API 계약 가드: userscript, toast, settings, service 컨테이너
             'test/unit/shared/external/userscript-adapter.contract.test.ts',
-            'test/unit/styles/animation-tokens-policy.test.ts',
+            'test/unit/shared/services/toast-manager.contract.test.ts',
+            'test/unit/shared/services/settings-service.contract.test.ts',
+            'test/unit/shared/container/service-harness.contract.test.ts',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
         },
