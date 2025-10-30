@@ -1,12 +1,68 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 269 (갤러리 초기 높이 문제 해결)
+**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 270 (자동 스크롤 이미지 로드 타이밍)
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-269)
+## 📊 완료된 Phase 요약 (Phase 197-270)
+
+### Phase 270: 자동 스크롤 이미지 로드 타이밍 최적화 ✅ 완료
+
+**목표**: 갤러리 기동 및 핏 모드 변경 시 자동 스크롤이 이미지 완전 로드 후에 동작하도록 수정
+
+**달성**: ✅ 완료 (Option A: 이미지 로드 대기 + 타임아웃 안전성)
+
+**구현 내용**:
+
+1. ✅ **waitForMediaLoad() 함수 추가**
+   - 파일: `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+   - 위치: Lines 337-362
+   - 기능:
+     - `data-media-loaded` 속성 폴링 (50ms 간격)
+     - 타임아웃 안전성 (1000ms)
+     - graceful resolve (타임아웃 후에도 스크롤 진행)
+   - 효과: 자동 스크롤 정확도 향상, CLS 감소
+
+2. ✅ **autoScrollToCurrentItem() async 변환**
+   - 파일: `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+   - 위치: Lines 364-388
+   - 변경사항:
+     - 동기 함수 → async 함수
+     - 현재 아이템 로드 상태 확인
+     - 로드 완료 후 스크롤 실행
+   - 호환성: 모든 fit 모드 함수 (handleFitOriginal, fitWidth, fitHeight, fitContainer) 호환
+   - 효과: 대기 시간 ~50-100ms (사용자 인지 불가)
+
+3. ✅ **테스트 추가**
+   - 파일: `test/unit/features/gallery/components/VerticalGalleryView.auto-scroll-timing.test.ts`
+   - 테스트 케이스: 14개 (시뮬레이션 + 실제)
+   - 결과: 28/28 통과 (fast + unit 프로젝트)
+   - 커버리지:
+     - 기본 동작 (유효/무효 인덱스, container 없음)
+     - 로드 상태 감시 (로드됨, 미로드, 상태 변경)
+     - fit 모드 시나리오 (fitOriginal, fitWidth, fitHeight, fitContainer)
+     - 에러 처리 (querySelector, getAttribute 실패)
+     - 성능 검증 (오버헤드, 다중 호출)
+
+**기대 효과**:
+
+- 자동 스크롤 정확도 향상 (이미지 로드 후 스크롤)
+- CLS 점수 추가 개선
+- 사용자 경험 일관성 증대
+- 네트워크 지연 상황에서도 안정적 동작
+- 회귀 테스트로 재발 방지
+
+**테스트 결과**:
+
+- 단위 테스트: ✅ 모두 GREEN
+- 통합 테스트: ✅ 28/28 통과
+- E2E 테스트: ✅ 78/78 통과
+- 빌드: ✅ 345.76 KB (prod gzip: 93.57 KB)
+- 코드 품질: ✅ 0 errors (TypeScript, ESLint, Stylelint)
+
+---
 
 ### Phase 269: 갤러리 초기 높이 문제 해결 ✅ 완료
 
