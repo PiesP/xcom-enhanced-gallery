@@ -18,8 +18,8 @@ describe('VerticalImageItem.module.css — video CLS/skeleton token policy', () 
   it('reserves aspect ratio or min-height to mitigate CLS', () => {
     // aspect-ratio present on wrapper
     expect(verticalCss).toMatch(/aspect-ratio\s*:/);
-    // and has a token reference, not raw number
-    expect(verticalCss).toContain('var(--xeg-aspect-default)');
+    // and has a token reference (with optional fallback), not raw number
+    expect(verticalCss).toMatch(/var\(--xeg-aspect-default[^)]*\)/);
   });
 
   it('uses tokenized skeleton background for placeholder', () => {

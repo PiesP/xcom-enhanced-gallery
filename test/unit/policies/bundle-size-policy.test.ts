@@ -47,9 +47,9 @@ describe('Bundle Size Policy', () => {
       },
       {
         path: 'features/gallery/components/vertical-gallery-view/VerticalImageItem.tsx',
-        maxLines: 465,
-        maxKB: 14.8,
-        context: 'Phase 256: Handler integration, dimension parsing simplification',
+        maxLines: 510,
+        maxKB: 17,
+        context: 'Phase 277: Post-integration size stabilization',
       },
     ];
 

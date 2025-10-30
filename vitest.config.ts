@@ -36,17 +36,17 @@ try {
 
 appendDebug('[vitest-config] loaded');
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 
 // Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
 // Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
 // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
 // Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용 + 워커 격리 강화
+// Phase 276: EPIPE 재발 방지 - NODE_OPTIONS는 각 개별 프로젝트에서 설정, memoryLimit 최소화
 const sharedPoolOptions = {
   threads: {
     singleThread: true, // 항상 단일 스레드 (EPIPE 완전 방지)
-    // CI: 1GB, 로컬: 3GB per worker (31GB RAM 활용)
-    memoryLimit: forceSingleThread ? 1024 : 3072,
+    // 워커 메모리 제한: 1GB (NODE_OPTIONS에서 V8 힙을 별도 설정)
+    memoryLimit: 1024,
     minThreads: 1,
     maxThreads: 1, // 단일 워커로 강제
     reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
@@ -245,16 +245,16 @@ export default defineConfig({
     // (로컬 + CI 모두에서 단 1테스트만으로도 2GB+ 메모리 소비)
     // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정
     // Phase 275: EPIPE 완전 해결 - 단일 스레드 강제 (멀티스레드 IPC 버퍼 오버플로우 근본 해결)
+    // Phase 276: EPIPE 재발 방지 - NODE_OPTIONS는 각 개별 프로젝트에서 설정
     singleThread: true, // 항상 단일 스레드로 실행 (EPIPE 완전 제거)
     pool: 'threads',
     poolOptions: {
       threads: {
-        // 로컬/CI 모두: 단일 스레드 (멀티스레드 IPC 버퍼 오버플로우 방지)
+        // 워커 메모리 제한: 1GB (NODE_OPTIONS에서 V8 힙을 별도 설정)
         singleThread: true,
-        // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
-        memoryLimit: 2048,
+        memoryLimit: 1024,
         minThreads: 1,
-        maxThreads: 1, // 로컬도 단일 워커로 강제
+        maxThreads: 1, // 단일 워커로 강제
         reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
       },
     },
@@ -355,7 +355,7 @@ export default defineConfig({
           transformMode: solidTransformMode,
         },
       },
-      // 전체 단위 테스트(성능/벤치 포함 안함)
+      // 전체 단위 테스트(성능/벤치 포함 안함) - 분할 프로젝트 1: shared 서비스
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
@@ -374,6 +374,29 @@ export default defineConfig({
             },
           },
           include: ['test/unit/**/*.{test,spec}.{ts,tsx}'],
+          exclude: ['**/node_modules/**', '**/dist/**'],
+          transformMode: solidTransformMode,
+        },
+      },
+      // 단위 테스트 분할 2: shared 서비스 (Part 2)
+      {
+        resolve: sharedResolve,
+        esbuild: solidEsbuildConfig,
+        pool: 'threads',
+        poolOptions: sharedPoolOptions,
+        test: {
+          name: 'unit-part2',
+          globals: true,
+          testTimeout: 20000,
+          hookTimeout: 25000,
+          environment: 'happy-dom',
+          setupFiles: ['./test/setup.ts'],
+          environmentOptions: {
+            happyDom: {
+              url: 'https://x.com',
+            },
+          },
+          include: [], // 현재는 비워둠 (향후 분할 필요 시 사용)
           exclude: ['**/node_modules/**', '**/dist/**'],
           transformMode: solidTransformMode,
         },
