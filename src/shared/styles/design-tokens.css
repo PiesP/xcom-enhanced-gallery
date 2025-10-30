@@ -255,15 +255,6 @@
     box-shadow var(--xeg-duration-slow) var(--xeg-ease-standard);
 }
 
-/* 접근성 미디어 쿼리 - 테스트 요구사항 */
-@media (prefers-contrast: high) {
-  :root {
-    /* 고대비 모드 토큰 */
-    --glass-bg: var(--color-base-white);
-    --glass-border: var(--color-base-black);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   :root {
     /* 감소된 모션 토큰 */

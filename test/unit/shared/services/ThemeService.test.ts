@@ -100,6 +100,15 @@ describe('ThemeService Extended', () => {
       expect(newThemeService.getCurrentTheme()).toBe('dark');
     });
 
+    it('JSON 문자열 형태로 저장된 테마도 복원해야 함', async () => {
+      await storage.setItem('xeg-theme', '"dark"');
+
+      const newThemeService = new ThemeService(storage);
+      await newThemeService.initialize();
+
+      expect(newThemeService.getCurrentTheme()).toBe('dark');
+    });
+
     it('저장된 테마가 없으면 auto를 기본값으로 사용해야 함', async () => {
       const newThemeService = new ThemeService(storage);
       await newThemeService.initialize();
@@ -140,6 +149,15 @@ describe('ThemeService Extended', () => {
       themeService.setTheme('dark');
 
       expect(mockListener).not.toHaveBeenCalled();
+    });
+
+    it('시각적 테마가 동일해도 설정 변경을 알림으로 전달해야 함', () => {
+      const mockListener = vi.fn();
+      themeService.onThemeChange(mockListener);
+
+      themeService.setTheme('light');
+
+      expect(mockListener).toHaveBeenCalledWith('light', 'light');
     });
   });
 

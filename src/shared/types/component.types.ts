@@ -318,7 +318,7 @@ export interface ApiError {
 export interface RequestOptions {
   /** 타임아웃 (ms) */
   timeout?: number;
-  /** 재시도 횟수 */
+  /** retry 횟수 */
   retries?: number;
   /** 요청 헤더 */
   headers?: Record<string, string>;

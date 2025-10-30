@@ -94,6 +94,21 @@ describe('Toolbar Initial Transparency', () => {
         window.localStorage.removeItem('xeg-theme');
       }
     });
+
+    it('should normalize JSON encoded theme values from storage', () => {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('xeg-theme', '"dark"');
+      }
+
+      const appliedTheme = initializeTheme();
+
+      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(appliedTheme).toBe('dark');
+
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('xeg-theme');
+      }
+    });
   });
 
   describe('Toolbar Background Color', () => {

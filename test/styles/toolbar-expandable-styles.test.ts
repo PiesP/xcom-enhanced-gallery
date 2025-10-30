@@ -155,18 +155,20 @@ describe('Toolbar Expandable Panel Styles (Phase 44 Step 3)', () => {
     });
   });
 
-  describe('RED: prefers-reduced-motion 지원', () => {
-    it('settingsPanel은 reduced-motion에서 transition이 제거되어야 함', () => {
-      const reducedMotionMatch = toolbarCss.match(
-        /@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{([^}]+\.settingsPanel[^}]+)\}/s
-      );
-      if (reducedMotionMatch) {
-        const reducedMotionStyles = reducedMotionMatch[1];
-        expect(reducedMotionStyles).toMatch(/transition:\s*none/);
-      } else {
-        // RED: 아직 정의되지 않음
-        expect(reducedMotionMatch).toBeTruthy();
-      }
+  describe('GREEN: prefers-reduced-motion 지원', () => {
+    it('settingsPanel의 transition은 semantic 레이어 토큰으로 자동 처리됨 (Phase 254)', () => {
+      // settingsPanel은 var(--xeg-duration-*)를 사용하므로
+      // design-tokens.semantic.css의 @media (prefers-reduced-motion)에서
+      // duration이 0ms로 설정되어 자동 처리됨
+      // 따라서 컴포넌트 레벨의 개별 @media 블록은 불필요함
+
+      // settingsPanel이 duration 토큰을 사용하는지 확인
+      const settingsPanelMatch = toolbarCss.match(/\.settingsPanel\s*\{([^}]+)\}/s);
+      expect(settingsPanelMatch).toBeTruthy();
+
+      const styles = settingsPanelMatch![1];
+      // transition에 --xeg-duration-* 토큰 사용 확인
+      expect(styles).toMatch(/transition:[^;]*var\(--xeg-/);
     });
   });
 });

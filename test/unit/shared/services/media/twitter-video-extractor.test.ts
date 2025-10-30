@@ -20,6 +20,20 @@ import {
 import { STABLE_SELECTORS } from '../../../../../src/constants';
 
 describe('twitter-video-extractor', () => {
+  describe('TwitterAPI.extractDimensionsFromUrl', () => {
+    it('parses width and height from standard video URL', () => {
+      const url =
+        'https://video.twimg.com/ext_tw_video/123456789/pu/vid/1280x720/abcdef.mp4?tag=12';
+      const result = TwitterAPI.extractDimensionsFromUrl(url);
+      expect(result).toEqual({ width: 1280, height: 720 });
+    });
+
+    it('returns null when dimensions are not present', () => {
+      const url = 'https://video.twimg.com/ext_tw_video/123456789/pu/vid/abcdef.mp4?tag=12';
+      expect(TwitterAPI.extractDimensionsFromUrl(url)).toBeNull();
+    });
+  });
+
   describe('isVideoThumbnail', () => {
     let mockImg: HTMLImageElement;
 

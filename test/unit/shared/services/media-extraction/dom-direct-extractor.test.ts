@@ -250,8 +250,13 @@ describe('DOMDirectExtractor', () => {
 
   describe('createImageMediaInfo', () => {
     it('should create image media info with all properties', () => {
+      const img = document.createElement('img');
+      img.src = 'https://test.jpg';
+      Object.defineProperty(img, 'naturalWidth', { configurable: true, value: 800 });
+      Object.defineProperty(img, 'naturalHeight', { configurable: true, value: 600 });
+
       // @ts-expect-error - private method 테스트
-      const result = extractor.createImageMediaInfo('https://test.jpg', 0, mockTweetInfo);
+      const result = extractor.createImageMediaInfo(img, 'https://test.jpg', 0, mockTweetInfo);
 
       expect(result.type).toBe('image');
       expect(result.url).toBe('https://test.jpg');
@@ -260,23 +265,51 @@ describe('DOMDirectExtractor', () => {
       expect(result.tweetId).toBe('1234567890');
       expect(result.tweetUsername).toBe('testuser');
       expect(result.id).toContain('img_');
+      expect(result.width).toBe(800);
+      expect(result.height).toBe(600);
+      expect(result.metadata?.dimensions).toEqual({ width: 800, height: 600 });
     });
 
     it('should create image media info without tweetInfo', () => {
+      const img = document.createElement('img');
+      img.src = 'https://test.jpg';
+
       // @ts-expect-error - private method 테스트
-      const result = extractor.createImageMediaInfo('https://test.jpg', 0);
+      const result = extractor.createImageMediaInfo(img, 'https://test.jpg', 0);
 
       expect(result.type).toBe('image');
       expect(result.filename).toBe('media_1.jpg');
       expect(result.tweetId).toBeUndefined();
       expect(result.tweetUsername).toBeUndefined();
     });
+
+    it('should derive dimensions from URL when available', () => {
+      const img = document.createElement('img');
+      img.src = 'https://pbs.twimg.com/media/EXAMPLE123/720x1280/image.jpg';
+
+      // @ts-expect-error - private method 테스트
+      const result = extractor.createImageMediaInfo(
+        img,
+        'https://pbs.twimg.com/media/EXAMPLE123/720x1280/image.jpg',
+        0
+      );
+
+      expect(result.width).toBe(720);
+      expect(result.height).toBe(1280);
+      expect(result.metadata?.dimensions).toEqual({ width: 720, height: 1280 });
+    });
   });
 
   describe('createVideoMediaInfo', () => {
     it('should create video media info with all properties', () => {
+      const video = document.createElement('video');
+      video.src = 'https://video.twimg.com/video.mp4';
+      Object.defineProperty(video, 'videoWidth', { configurable: true, value: 1024 });
+      Object.defineProperty(video, 'videoHeight', { configurable: true, value: 576 });
+
       // @ts-expect-error - private method 테스트
       const result = extractor.createVideoMediaInfo(
+        video,
         'https://video.twimg.com/video.mp4',
         0,
         mockTweetInfo
@@ -290,16 +323,38 @@ describe('DOMDirectExtractor', () => {
       expect(result.tweetId).toBe('1234567890');
       expect(result.tweetUsername).toBe('testuser');
       expect(result.id).toContain('vid_');
+      expect(result.width).toBe(1024);
+      expect(result.height).toBe(576);
+      expect(result.metadata?.dimensions).toEqual({ width: 1024, height: 576 });
     });
 
     it('should create video media info without tweetInfo', () => {
+      const video = document.createElement('video');
+      video.src = 'https://video.twimg.com/video.mp4';
+
       // @ts-expect-error - private method 테스트
-      const result = extractor.createVideoMediaInfo('https://video.twimg.com/video.mp4', 0);
+      const result = extractor.createVideoMediaInfo(video, 'https://video.twimg.com/video.mp4', 0);
 
       expect(result.type).toBe('video');
       expect(result.filename).toBe('media_1.mp4');
       expect(result.tweetId).toBeUndefined();
       expect(result.tweetUsername).toBeUndefined();
+    });
+
+    it('should fallback to URL-based dimensions when element lacks intrinsic size', () => {
+      const video = document.createElement('video');
+      video.src = 'https://video.twimg.com/ext_tw_video/12345678/720x720/video.mp4';
+
+      // @ts-expect-error - private method 테스트
+      const result = extractor.createVideoMediaInfo(
+        video,
+        'https://video.twimg.com/ext_tw_video/12345678/720x720/video.mp4',
+        0
+      );
+
+      expect(result.width).toBe(720);
+      expect(result.height).toBe(720);
+      expect(result.metadata?.dimensions).toEqual({ width: 720, height: 720 });
     });
   });
 

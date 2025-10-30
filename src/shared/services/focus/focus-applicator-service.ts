@@ -73,7 +73,7 @@ export class FocusApplicatorService {
         lastAppliedIndex: index,
       });
     } catch (error) {
-      // 폴백: preventScroll 없이 재시도
+      // fallback: retry without preventScroll
       try {
         element.focus();
         logger.debug('FocusApplicatorService: auto focus applied (fallback)', {

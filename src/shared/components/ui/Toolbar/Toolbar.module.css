@@ -60,7 +60,7 @@
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+  background: var(--xeg-bg-toolbar);
   border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
   border-radius: var(--xeg-radius-lg);
 
@@ -99,12 +99,7 @@
   box-shadow: var(--xeg-shadow-lg);
 }
 
-/* 감소된 모션 지원 강화 */
-@media (prefers-reduced-motion: reduce) {
-  .galleryToolbar {
-    transition: none;
-  }
-}
+/* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
 
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
 .galleryToolbar[data-state='idle'],
@@ -328,12 +323,7 @@
   /* 현재/전체 모두 동일한 텍스트 톤 사용 */
   color: var(--xeg-color-text-primary);
 }
-/* 고대비 모드에서 구분자 시인성 강화 */
-@media (prefers-contrast: more), (prefers-contrast: high) {
-  .separator {
-    color: var(--xeg-color-text-primary);
-  }
-}
+/* 고대비 환경은 design-tokens.semantic.css에서 토큰으로 관리 */
 /* 진행률 바 */
 .progressBar {
   /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
@@ -545,68 +535,12 @@ button.fitButton {
 
   /* 작은 화면에서도 separator 표시 유지 */
 }
-/* 고대비 모드 - 시인성 개선 */
-@media (prefers-contrast: high) {
-  .galleryToolbar {
-    background: var(--color-base-white);
-    border: var(--border-width-sm) solid var(--color-base-black); /* 2px → var(--border-width-sm) */
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: 0 0.25rem 1.25rem var(--xeg-color-overlay-medium); /* 4px 20px → 0.25rem 1.25rem */
-  }
-
-  .toolbarButton {
-    background: var(--xeg-color-neutral-100);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-900);
-  }
-
-  .toolbarButton:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-200);
-    border: var(--border-width-sm) solid var(--xeg-color-neutral-900); /* 2px → var(--border-width-sm) */
-  }
-
-  .navButton {
-    background: var(--xeg-color-primary-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-
-  .navButton:focus-visible {
-    outline: var(--xeg-focus-ring);
-    outline-offset: var(--xeg-focus-ring-offset);
-  }
-
-  .downloadButton {
-    background: var(--xeg-color-success-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-
-  .closeButton {
-    background: var(--xeg-color-error-500);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-900); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-}
-
-@media (prefers-color-scheme: dark) and (prefers-contrast: high) {
-  .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
-    border: var(--border-width-sm) solid var(--xeg-comp-toolbar-border); /* 2px → var(--border-width-sm) */
-  }
-
-  .toolbarButton {
-    background: var(--xeg-color-neutral-700);
-    border: var(--border-width-thin) solid var(--xeg-color-neutral-100); /* 1px → var(--border-width-thin) */
-    color: var(--xeg-color-neutral-100);
-  }
-}
+/* 다크 모드 + 고대비 조합은 semantic 토큰으로 위임 (Phase 54.1) */
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
@@ -615,7 +549,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
   }
 }
 
@@ -623,7 +557,7 @@ button.fitButton {
 @media (width <= 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
@@ -631,7 +565,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--toolbar-bg, var(--xeg-comp-toolbar-bg));
+    background: var(--xeg-bg-toolbar);
   }
 }
 
@@ -647,12 +581,10 @@ button.fitButton {
   }
 }
 
-/* 감소된 모션 */
+/* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+/* animation을 사용하는 요소만 명시적으로 비활성화 */
 @media (prefers-reduced-motion: reduce) {
-  .toolbarButton,
-  .progressFill,
   .downloadSpinner {
-    transition: none;
     animation: none;
   }
 
@@ -720,7 +652,9 @@ button.fitButton {
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-md); /* Phase 49: 항상 패딩 유지 */
-  max-height: 31.25rem; /* 500px = 31.25rem - Phase 49: 항상 max-height 유지 */
+  height: var(--xeg-toolbar-panel-height);
+  max-height: var(--xeg-toolbar-panel-max-height);
+  overflow: hidden;
 
   /* Phase 49: 애니메이션 개선 - height → opacity + transform */
   /* 초기 상태 (축소) */
@@ -729,32 +663,30 @@ button.fitButton {
   visibility: hidden;
   pointer-events: none;
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s var(--xeg-duration-normal); /* transition 후 숨김 */
+    visibility 0s var(--xeg-duration-normal);
 
   /* Visual */
-  background: var(--xeg-comp-toolbar-bg);
-  border-top: var(--border-width-thin) solid transparent; /* 1px → var(--border-width-thin) */
+  background: var(--xeg-toolbar-panel-bg);
+  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border); /* 1px → var(--border-width-thin) */
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
+  box-shadow: var(--xeg-toolbar-panel-shadow);
 }
 
 /* Expanded State - Phase 49: 간소화된 확장 상태 */
 .settingsPanel[data-expanded='true'] {
+  height: auto;
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
-  border-top-color: var(--xeg-comp-toolbar-border);
+  border-top-color: var(--xeg-toolbar-panel-border);
+  box-shadow: var(--xeg-toolbar-panel-shadow);
   transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s 0s; /* 즉시 표시 */
+    visibility 0s 0s;
 }
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-  .settingsPanel {
-    transition: none;
-  }
-}
+/* Phase 254: settingsPanel의 transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */

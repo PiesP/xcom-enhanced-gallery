@@ -83,7 +83,7 @@
 .container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl);
   /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
-  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
+  aspect-ratio: var(--xeg-aspect-default);
 }
 
 .placeholder {
@@ -462,63 +462,15 @@
   z-index: var(--xeg-z-tooltip) !important;
 }
 
-/* === 접근성 향상 === */
-
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  .container {
-    border: 0.125rem solid HighlightText; /* 2px = 0.125rem */
-    background: Canvas;
-    color: CanvasText;
-  }
-
-  .container:focus-visible,
-  .container.active,
-  .container.focused {
-    border-color: Highlight;
-    box-shadow: var(--shadow-md);
-  }
-
-  /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
-  /*
-  .downloadButton {
-    background: ButtonFace;
-    color: ButtonText;
-    border: 1px solid ButtonText;
-  }
-  */
-
-  .error {
-    background: Canvas;
-    color: CanvasText;
-    border: 0.0625rem solid CanvasText; /* 1px = 0.0625rem */
-  }
-}
-
-/* 모션 감소 모드 지원 */
+/* Phase 254: 모션 감소는 semantic 레이어의 --xeg-transition-* 토큰으로 자동 처리 */
+/* will-change는 성능 최적화이므로 auto로 변경 유지 */
 @media (prefers-reduced-motion: reduce) {
   .container {
-    transition: none;
     will-change: auto;
   }
 
   .container:hover {
     transform: none;
-  }
-
-  .image,
-  .video {
-    transition: none;
-  }
-
-  .loadingSpinner {
-    animation: none;
-  }
-
-  /* 정적 로딩 표시 */
-  .loadingSpinner::after {
-    content: '⏳';
-    font-size: 2rem;
   }
 }
 

@@ -34,19 +34,19 @@
 /* ===== Surface 변형 ===== */
 .toolbar-surface-glass {
   background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--color-border-default); /* 1px = 0.0625rem */
+  border: 0.0625rem solid var(--xeg-toolbar-panel-border); /* 1px = 0.0625rem */
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
 .toolbar-surface-solid {
   background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--color-border-default); /* 1px = 0.0625rem */
+  border: 0.0625rem solid var(--xeg-toolbar-panel-border); /* 1px = 0.0625rem */
 }
 
 .toolbar-surface-overlay {
   background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--color-border-default); /* 1px = 0.0625rem */
+  border: 0.0625rem solid var(--xeg-toolbar-panel-border); /* 1px = 0.0625rem */
 }
 
 /* ===== Position 변형 ===== */
@@ -80,18 +80,7 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .toolbar-surface-glass {
-    background: var(--xeg-toolbar-bg);
-    border-color: var(--xeg-toolbar-border);
-  }
-
-  .toolbar-surface-solid {
-    background: var(--xeg-toolbar-bg, var(--color-bg-surface));
-    border-color: var(--xeg-toolbar-border, var(--color-border-subtle));
-  }
-}
+/* ===== 다크 모드는 semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
 
 /* ===== 접근성 강화 ===== */
 .toolbar-shell:focus-within {
@@ -99,8 +88,4 @@
   outline-offset: var(--xeg-focus-ring-offset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .toolbar-shell {
-    transition: none;
-  }
-}
+/* Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */

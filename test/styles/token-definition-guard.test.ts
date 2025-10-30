@@ -86,7 +86,7 @@ describe('token-definition-guard (Phase 55.2)', () => {
       join(projectRoot, 'src/shared/components/ui/ModalShell/ModalShell.module.css'),
       join(
         projectRoot,
-        'src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css'
+        'src/features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css'
       ),
     ];
 

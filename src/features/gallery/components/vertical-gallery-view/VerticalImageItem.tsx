@@ -76,6 +76,52 @@ const FIT_MODE_CLASSES: readonly string[] = [
   styles.fitContainer,
 ].filter((className): className is string => Boolean(className));
 
+type DimensionPair = { width: number; height: number };
+
+const VIDEO_DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
+
+const extractDimensionsFromUrl = (url?: string): DimensionPair | null => {
+  if (!url) {
+    return null;
+  }
+
+  const match = url.match(VIDEO_DIMENSION_PATTERN);
+  if (!match) {
+    return null;
+  }
+
+  const width = Number.parseInt(match[1] ?? '', 10);
+  const height = Number.parseInt(match[2] ?? '', 10);
+
+  if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+    return null;
+  }
+
+  return { width, height };
+};
+
+const scaleAspectRatio = (ratioWidth: number, ratioHeight: number): DimensionPair => {
+  const baseHeight = 720;
+  const height = baseHeight;
+  const width = Math.max(1, Math.round((ratioWidth / ratioHeight) * baseHeight));
+  return { width, height };
+};
+
+const parsePositiveNumber = (value: unknown): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+
+  return null;
+};
+
 const syncFitModeAttributes = (
   element: HTMLElement | null,
   mode: ImageFitMode,
@@ -131,29 +177,109 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   let wasPlayingBeforeHidden = false;
   let wasMutedBeforeHidden: boolean | null = null;
 
-  const parseDimension = (value: unknown): number | null => {
-    if (typeof value === 'number') {
-      return Number.isFinite(value) && value > 0 ? value : null;
+  const parseDimension = (value: unknown): number | null => parsePositiveNumber(value);
+
+  const toRem = (value: number): string => `${(value / 16).toFixed(4)}rem`;
+  const deriveDimensionsFromMetadata = (): DimensionPair | null => {
+    const metadata = media?.metadata as
+      | {
+          dimensions?: { width?: unknown; height?: unknown };
+          apiData?: Record<string, unknown>;
+        }
+      | undefined;
+
+    if (!metadata) {
+      return null;
     }
 
-    if (typeof value === 'string') {
-      const parsed = Number.parseFloat(value);
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    const metadataDimensions = metadata.dimensions;
+
+    if (metadataDimensions) {
+      const widthFromMetadata = parseDimension(
+        (metadataDimensions as Record<string, unknown>).width
+      );
+      const heightFromMetadata = parseDimension(
+        (metadataDimensions as Record<string, unknown>).height
+      );
+
+      if (widthFromMetadata && heightFromMetadata) {
+        return {
+          width: widthFromMetadata,
+          height: heightFromMetadata,
+        };
+      }
+    }
+
+    const apiData = metadata.apiData;
+
+    if (apiData && typeof apiData === 'object') {
+      const apiRecord = apiData as Record<string, unknown>;
+      const widthFromApi = parseDimension(
+        apiRecord['original_width'] ?? apiRecord['originalWidth']
+      );
+      const heightFromApi = parseDimension(
+        apiRecord['original_height'] ?? apiRecord['originalHeight']
+      );
+
+      if (widthFromApi && heightFromApi) {
+        return {
+          width: widthFromApi,
+          height: heightFromApi,
+        };
+      }
+
+      const downloadUrlDimensions = extractDimensionsFromUrl(
+        typeof apiRecord['download_url'] === 'string'
+          ? (apiRecord['download_url'] as string)
+          : undefined
+      );
+      const previewUrlDimensions = extractDimensionsFromUrl(
+        typeof apiRecord['preview_url'] === 'string'
+          ? (apiRecord['preview_url'] as string)
+          : undefined
+      );
+      const resolvedUrlDimensions = downloadUrlDimensions ?? previewUrlDimensions;
+
+      if (resolvedUrlDimensions) {
+        return resolvedUrlDimensions;
+      }
+
+      const aspectRatio = apiRecord['aspect_ratio'];
+      if (Array.isArray(aspectRatio) && aspectRatio.length >= 2) {
+        const ratioWidth = parseDimension(aspectRatio[0]);
+        const ratioHeight = parseDimension(aspectRatio[1]);
+
+        if (ratioWidth && ratioHeight) {
+          return scaleAspectRatio(ratioWidth, ratioHeight);
+        }
+      }
     }
 
     return null;
   };
 
-  const toRem = (value: number): string => `${(value / 16).toFixed(4)}rem`;
+  const resolvedDimensions = createMemo<DimensionPair | null>(() => {
+    const directWidth = parseDimension(media?.width);
+    const directHeight = parseDimension(media?.height);
+
+    if (directWidth && directHeight) {
+      return {
+        width: directWidth,
+        height: directHeight,
+      };
+    }
+
+    return deriveDimensionsFromMetadata();
+  });
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties | undefined>(() => {
-    const width = parseDimension(media?.width);
-    const height = parseDimension(media?.height);
+    const dimensions = resolvedDimensions();
 
-    if (!width || !height) {
+    if (!dimensions) {
       return undefined;
     }
 
+    const { width, height } = dimensions;
     const ratio = width / height;
 
     const style: Record<string, string> = {
@@ -166,7 +292,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     return style as unknown as JSX.CSSProperties;
   });
 
-  const hasIntrinsicSizing = createMemo(() => Boolean(intrinsicSizingStyle()));
+  const hasIntrinsicSizing = createMemo(() => Boolean(resolvedDimensions()));
 
   const handleClick = () => {
     const container = containerRef();

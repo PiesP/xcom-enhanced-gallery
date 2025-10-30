@@ -16,6 +16,7 @@ import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
 import { evaluateHighContrast } from '../../utils/high-contrast';
+import { getThemeService } from '../../container/service-accessors';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -79,6 +80,19 @@ function createTimeoutControls(_windowRef: Window | undefined): TimeoutControls 
   };
 }
 
+function resolveThemeService(override?: ThemeService): ThemeService {
+  if (override) {
+    return override;
+  }
+
+  try {
+    return getThemeService();
+  } catch (error) {
+    logger.warn('[ToolbarSettingsController] Falling back to direct ThemeService instance', error);
+    return new ThemeService();
+  }
+}
+
 export function useToolbarSettingsController(
   options: UseToolbarSettingsControllerOptions
 ): ToolbarSettingsControllerResult {
@@ -93,7 +107,7 @@ export function useToolbarSettingsController(
     documentRef = typeof document !== 'undefined' ? document : undefined,
     windowRef = typeof window !== 'undefined' ? window : undefined,
     eventManager = EventManager.getInstance(),
-    themeService = new ThemeService(),
+    themeService: providedThemeService,
     languageService = sharedLanguageService,
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
     selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
@@ -101,6 +115,7 @@ export function useToolbarSettingsController(
     scrollThrottle = throttleScroll,
   } = options;
 
+  const themeManager = resolveThemeService(providedThemeService);
   const timeoutControls = createTimeoutControls(windowRef);
 
   const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
@@ -115,6 +130,40 @@ export function useToolbarSettingsController(
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
     languageService.getCurrentLanguage() as LanguageOption
   );
+
+  const toThemeOption = (value: unknown): ThemeOption => {
+    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
+  };
+
+  const syncThemeFromService = () => {
+    try {
+      const setting = themeManager.getCurrentTheme();
+      setCurrentTheme(toThemeOption(setting));
+    } catch (error) {
+      logger.debug('[ToolbarSettingsController] Failed to read theme from service', error);
+    }
+  };
+
+  syncThemeFromService();
+
+  if (typeof themeManager.isInitialized === 'function' && !themeManager.isInitialized()) {
+    void themeManager
+      .initialize()
+      .then(syncThemeFromService)
+      .catch(error => {
+        logger.warn('[ToolbarSettingsController] ThemeService initialization failed', error);
+      });
+  }
+
+  createEffect(() => {
+    const unsubscribe = themeManager.onThemeChange((_, setting) => {
+      setCurrentTheme(toThemeOption(setting));
+    });
+
+    onCleanup(() => {
+      unsubscribe?.();
+    });
+  });
 
   createEffect(() => {
     const unsubscribe = languageService.onLanguageChange(next => {
@@ -343,9 +392,9 @@ export function useToolbarSettingsController(
     if (!select) {
       return;
     }
-    const theme = (select.value as ThemeOption) || 'auto';
+    const theme = toThemeOption(select.value);
     setCurrentTheme(theme);
-    themeService.setTheme(theme);
+    themeManager.setTheme(theme);
   };
 
   const handleLanguageChange = (event: Event) => {

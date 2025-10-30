@@ -374,81 +374,12 @@
   }
 }
 
-/* ===== 다크 모드 지원 ===== */
-@media (prefers-color-scheme: dark) {
-  .variant-secondary {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-secondary:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-700);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-outline {
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-outline:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    border-color: var(--xeg-color-border-hover);
-  }
-
-  .variant-ghost {
-    color: var(--xeg-color-text-secondary);
-  }
-
-  .variant-ghost:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-  }
-
-  .variant-icon {
-    color: var(--xeg-color-text-secondary);
-    border-color: var(--xeg-color-border-primary);
-  }
-
-  .variant-icon:hover:not(:disabled) {
-    background: var(--xeg-color-neutral-800);
-    color: var(--xeg-color-text-primary);
-    border-color: var(--xeg-color-border-hover);
-  }
-}
-
-/* ===== 고대비 모드 지원 ===== */
-@media (prefers-contrast: high) {
-  .unifiedButton {
-    border-width: 0.125rem; /* 2px */
-  }
-
-  .variant-secondary,
-  .variant-outline,
-  .variant-ghost,
-  .variant-icon {
-    background: var(--color-base-white);
-    color: var(--color-base-black);
-    border-color: var(--color-base-black);
-  }
-
-  .variant-secondary:hover:not(:disabled),
-  .variant-outline:hover:not(:disabled),
-  .variant-ghost:hover:not(:disabled),
-  .variant-icon:hover:not(:disabled) {
-    background: var(--color-base-black);
-    color: var(--color-base-white);
-    border-color: var(--color-base-white);
-  }
-}
+/* ===== 다크 모드 지원 제거: semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
 
 /* ===== 애니메이션 감소 지원 ===== */
+/* Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+/* spinner animation만 명시적으로 비활성화 (animation-duration: 0s는 1프레임 실행) */
 @media (prefers-reduced-motion: reduce) {
-  .unifiedButton {
-    transition: none;
-  }
-
   .spinner {
     animation: none;
   }

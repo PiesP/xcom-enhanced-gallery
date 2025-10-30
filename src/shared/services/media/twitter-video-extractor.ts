@@ -51,11 +51,16 @@ interface TwitterMedia {
   display_url?: string;
   url?: string;
   video_info?: {
+    aspect_ratio?: [number, number];
     variants: Array<{
       bitrate?: number;
       url: string;
       content_type: string;
     }>;
+  };
+  original_info?: {
+    height?: number;
+    width?: number;
   };
 }
 
@@ -75,6 +80,9 @@ export interface TweetMediaEntry {
   short_expanded_url: string;
   short_tweet_url: string;
   tweet_text: string;
+  original_width?: number;
+  original_height?: number;
+  aspect_ratio?: [number, number];
 }
 
 export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
@@ -247,7 +255,22 @@ export class TwitterAPI {
         const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
         typeIndex[mediaType] = (typeIndex[mediaType] ?? -1) + 1;
         const tweetText = (tweetResult.full_text ?? '').replace(` ${media.url}`, '').trim();
-        mediaItems.push({
+
+        const dimensionsFromUrl = this.extractDimensionsFromUrl(mediaUrl);
+        const widthFromOriginal = this.normalizeDimension(media.original_info?.width);
+        const heightFromOriginal = this.normalizeDimension(media.original_info?.height);
+        const widthFromUrl = this.normalizeDimension(dimensionsFromUrl?.width);
+        const heightFromUrl = this.normalizeDimension(dimensionsFromUrl?.height);
+        const resolvedWidth = widthFromOriginal ?? widthFromUrl;
+        const resolvedHeight = heightFromOriginal ?? heightFromUrl;
+
+        const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
+          ? media.video_info?.aspect_ratio
+          : undefined;
+        const aspectRatioWidth = this.normalizeDimension(aspectRatioValues?.[0]);
+        const aspectRatioHeight = this.normalizeDimension(aspectRatioValues?.[1]);
+
+        const entry: TweetMediaEntry = {
           screen_name: screenName,
           tweet_id: tweetId,
           download_url: mediaUrl,
@@ -263,7 +286,23 @@ export class TwitterAPI {
           short_expanded_url: media.display_url ?? '',
           short_tweet_url: media.url ?? '',
           tweet_text: tweetText,
-        });
+        };
+
+        if (resolvedWidth) {
+          entry.original_width = resolvedWidth;
+        }
+
+        if (resolvedHeight) {
+          entry.original_height = resolvedHeight;
+        }
+
+        if (aspectRatioWidth && aspectRatioHeight) {
+          entry.aspect_ratio = [aspectRatioWidth, aspectRatioHeight];
+        } else if (resolvedWidth && resolvedHeight) {
+          entry.aspect_ratio = [resolvedWidth, resolvedHeight];
+        }
+
+        mediaItems.push(entry);
       } catch (error) {
         logger.warn(`Failed to process media ${media.id_str}:`, error);
       }
@@ -289,6 +328,44 @@ export class TwitterAPI {
       return bestVariant.url;
     }
     return null;
+  }
+
+  public static extractDimensionsFromUrl(url: string): { width: number; height: number } | null {
+    if (!url) {
+      return null;
+    }
+
+    const match = url.match(/\/(\d{2,6})x(\d{2,6})\//);
+    if (!match) {
+      return null;
+    }
+
+    const width = Number.parseInt(match[1] ?? '', 10);
+    const height = Number.parseInt(match[2] ?? '', 10);
+
+    if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
+      return null;
+    }
+
+    return {
+      width,
+      height,
+    };
+  }
+
+  private static normalizeDimension(value: unknown): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+      return Math.round(value);
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        return Math.round(parsed);
+      }
+    }
+
+    return undefined;
   }
 
   public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {

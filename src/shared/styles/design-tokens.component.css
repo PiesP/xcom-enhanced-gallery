@@ -11,7 +11,7 @@
   /* Toolbar Component */
   --toolbar-bg: var(--xeg-bg-toolbar);
   --toolbar-text: var(--color-text-inverse);
-  --toolbar-border: var(--color-border-default);
+  --toolbar-border: var(--xeg-color-border-primary);
   --toolbar-shadow: var(--shadow-md);
   --toolbar-height: 3.75rem; /* 60px = 3.75rem */
   --toolbar-padding: var(--spacing-component-padding);
@@ -173,16 +173,6 @@
 /* ======================================= */
 /* Accessibility Media Queries */
 /* ======================================= */
-
-/* 고대비 모드 지원 */
-@media (prefers-contrast: high) {
-  :root {
-    --xeg-focus-outline: 0.1875rem solid var(--color-base-black); /* 3px = 0.1875rem */
-    --color-border-emphasis: var(--color-base-black);
-    --glass-bg: var(--color-bg-primary);
-    --glass-border: var(--color-border-emphasis);
-  }
-}
 
 /* 투명도 감소 선호 지원 */
 @media (prefers-reduced-transparency: reduce) {

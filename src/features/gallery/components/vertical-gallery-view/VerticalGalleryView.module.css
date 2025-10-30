@@ -136,10 +136,13 @@
   /* 그라디언트 배경 - oklch 기반 */
   background: linear-gradient(
     to bottom,
-    oklch(0% 0 0deg / 80%) 0%,
-    oklch(0% 0 0deg / 40%) 70%,
+    var(--xeg-toolbar-wrapper-gradient-start, oklch(0% 0 0deg / 80%)) 0%,
+    var(--xeg-toolbar-wrapper-gradient-mid, oklch(0% 0 0deg / 40%)) 70%,
     transparent 100%
   );
+  border: var(--xeg-toolbar-wrapper-border, none);
+  border-radius: var(--xeg-toolbar-wrapper-radius, 0);
+  margin: var(--xeg-toolbar-wrapper-margin, 0);
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
@@ -312,6 +315,7 @@
 .toolbarHoverZone:hover {
   /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
   z-index: calc(var(--xeg-z-modal) - 1);
+  background: var(--xeg-toolbar-hover-zone-bg, transparent);
 }
 
 /* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
@@ -487,29 +491,8 @@
     gap: var(--xeg-spacing-compact);
   }
 }
-/* ?�근??- 고�?�?모드 지?? */
-@media (prefers-contrast: high) {
-  .itemActive::before {
-    border-color: HighlightText;
-    box-shadow: var(--shadow-md);
-  }
-
-  .container {
-    background: Canvas;
-    color: CanvasText;
-  }
-
-  .toolbarWrapper {
-    background: linear-gradient(
-      to bottom,
-      Canvas 0%,
-      color-mix(in sRGB, Canvas 80%, transparent) 70%,
-      transparent 100%
-    );
-  }
-}
-
-/* 접근성 - 모션 감소 지원 */
+/* Phase 254: 접근성 - 모션 감소 지원 */
+/* scroll-behavior와 will-change는 명시적으로 제어 */
 @media (prefers-reduced-motion: reduce) {
   .itemsContainer {
     scroll-behavior: auto;
@@ -518,56 +501,26 @@
   }
 }
 
-/* ?�이??모드 ?�호??지?? */
-@media (prefers-color-scheme: light) {
-  .container {
-    background: color-mix(in sRGB, white 95%, transparent);
-  }
-}
+/* Light mode support deferred to design-tokens.semantic.css */
 
-/* �??�태 버튼 ?��??? */
+/* 비어있는 상태 버튼 스타일 */
 .emptyButton {
   margin-top: 1rem;
 }
 
-/* N1: ?�합 ToastContainer ?�용?�로 로컬 toastContainer ?�거?? */
+/* N1: 통합 ToastContainer 사용으로 로컬 toastContainer 제거 */
 
-/* 감소??모션 ?�용?��? ?�한 지??- 개선???�근?? */
+/* Phase 254: 감소된 모션은 semantic 레이어의 토큰으로 자동 처리 */
+/* animation만 명시적으로 비활성화 */
 @media (prefers-reduced-motion: reduce) {
-  .toolbarWrapper {
-    transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-    transform: translateY(-100%); /* Y�??�동�??�거 */
-  }
-
-  .toolbarWrapper:hover,
-  .toolbarWrapper:focus-within {
-    transform: translateY(0); /* ?�순??Y�??�동�? */
-    transition: opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out);
-  }
-
-  /* 컨테?�너 ?�벨?�서??모션 감소 */
-  .container {
-    transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
-  }
-
-  /* 모든 ?�니메이???�거 */
   .fadeInOut {
     animation: none;
   }
-}
 
-/* 고�?�?모드 지??- ?�상??가?�성 */
-@media (prefers-contrast: high) {
-  .toolbarWrapper {
-    background: var(--xeg-color-overlay-dark); /* var(--color-overlay-backdrop)�??�큰?�로 교체 */
-    border: 0.125rem solid white;
-    border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
-    margin: var(--xeg-gap-xs); /* 0.25rem�??�큰?�로 교체 */
-  }
-
-  /* 고�?�?모드?�서 ?�버 ?�역 ?�각?? */
-  .toolbarHoverZone:hover {
-    background: var(--xeg-color-overlay-subtle); /* var(--color-overlay-light)�??�큰?�로 교체 */
+  /* transform은 hover 상태에서 제거 */
+  .toolbarWrapper:hover,
+  .toolbarWrapper:focus-within {
+    transform: none;
   }
 }
 
