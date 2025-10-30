@@ -44,11 +44,11 @@ const forceSingleThread = isCI || process.env.VITEST_SINGLE_THREAD === 'true';
 // Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용 + 워커 격리 강화
 const sharedPoolOptions = {
   threads: {
-    singleThread: forceSingleThread,
+    singleThread: true, // 항상 단일 스레드 (EPIPE 완전 방지)
     // CI: 1GB, 로컬: 3GB per worker (31GB RAM 활용)
     memoryLimit: forceSingleThread ? 1024 : 3072,
-    minThreads: 2,
-    maxThreads: forceSingleThread ? 1 : 8, // 12 코어 중 8개 활용 (OS용 4코어 예약)
+    minThreads: 1,
+    maxThreads: 1, // 단일 워커로 강제
     reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
   },
 };
@@ -244,16 +244,17 @@ export default defineConfig({
     // 주의: multi-threaded pool은 광범위한 메모리 누수 문제 발생
     // (로컬 + CI 모두에서 단 1테스트만으로도 2GB+ 메모리 소비)
     // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정
-    // singleThread + 적절한 memoryLimit으로 강제 격리 + 안정성 확보
+    // Phase 275: EPIPE 완전 해결 - 단일 스레드 강제 (멀티스레드 IPC 버퍼 오버플로우 근본 해결)
+    singleThread: true, // 항상 단일 스레드로 실행 (EPIPE 완전 제거)
     pool: 'threads',
     poolOptions: {
       threads: {
-        // 로컬: 극도로 제한된 멀티스레드 (EPIPE 방지 우선), CI: 단일스레드
-        singleThread: forceSingleThread,
+        // 로컬/CI 모두: 단일 스레드 (멀티스레드 IPC 버퍼 오버플로우 방지)
+        singleThread: true,
         // CI: 1GB, 로컬: 2GB per worker (worker spawn 안정성 우선)
-        memoryLimit: forceSingleThread ? 1024 : 2048,
+        memoryLimit: 2048,
         minThreads: 1,
-        maxThreads: 1, // 로컬도 단일 워커로 강제 (EPIPE 완전 방지)
+        maxThreads: 1, // 로컬도 단일 워커로 강제
         reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
       },
     },
