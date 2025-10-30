@@ -77,22 +77,23 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 282 Step 1-2 완료)
+**현재 작업**: 없음 (Phase 282 Step 1-3 완료)
 
 **다음 우선순위**:
 
-1. **Phase 282 Step 3**: 추가 deprecated 코드 정리 (선택사항)
-   - BaseComponentProps, StandardProps 마이그레이션 검토
-   - deprecated 메서드 사용처 분석 및 제거 계획
+1. **Phase 282 Step 4**: 추가 deprecated 코드 정리 (선택사항)
+   - getDiagnostics 메서드 마이그레이션 (UnifiedServiceDiagnostics 사용)
+   - DOMEventManager deprecated 표시 제거 (UnifiedEventManager 이미 통합됨)
+   - downloadFile 메서드 사용처 마이그레이션 (getUserscript().download() 사용)
 2. 사용자 피드백 수집 및 개선 사항 도출
 3. 성능 모니터링 및 최적화 기회 탐색
 4. 접근성 개선 (현재 WCAG 2.1 AA 준수)
 
 ---
 
-## 📝 Phase 282: Deprecated 코드 정리 (✅ Step 1-2 완료)
+## 📝 Phase 282: Deprecated 코드 정리 (✅ Step 1-3 완료)
 
-**상태**: ✅ Step 1-2 완료
+**상태**: ✅ Step 1-3 완료
 
 **완료 항목**:
 
@@ -101,6 +102,9 @@
 - ✅ **Step 2**: `src/shared/browser/utils/browser-utils.ts` 재내보내기 파일 제거
 - ✅ **Step 2**: 테스트 import 경로 수정 (`@shared/utils/browser/safe-browser` 직접 사용)
 - ✅ **Step 2**: 빈 `utils/` 디렉터리 정리
+- ✅ **Step 3**: `src/shared/components/base/BaseComponentProps.ts` 재내보내기 파일 제거
+- ✅ **Step 3**: `src/shared/components/ui/StandardProps.ts` 재내보내기 파일 제거
+- ✅ **Step 3**: 5개 컴포넌트 import 경로 직접 경로로 변경
 - ✅ 타입 체크, 빌드, 테스트 모두 통과 (346.02 KB, 크기 변화 없음)
 
 **보류 항목** (추가 분석 필요):

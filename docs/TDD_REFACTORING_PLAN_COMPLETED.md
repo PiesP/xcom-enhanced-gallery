@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 Step 1-2)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 Step 1-3)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 346.02 KB (gzip: 93.62 KB) |
+| **번들 크기** | 345.87 KB (gzip: 93.55 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -23,11 +23,11 @@
 
 ## 🎯 최근 완료 Phase (282)
 
-### Phase 282: Deprecated 코드 정리 (Cleanup) ✅ Step 1-2 완료
+### Phase 282: Deprecated 코드 정리 (Cleanup) ✅ Step 1-3 완료
 
 **완료 일시**: 2025-10-30
 
-**상태**: ✅ Step 1-2 완료
+**상태**: ✅ Step 1-3 완료
 
 **배경**:
 
@@ -73,10 +73,21 @@
 // src/shared/browser/utils/ (directory)
 // - 빈 디렉터리 정리
 
+// STEP 3 - REMOVED:
+// src/shared/components/base/BaseComponentProps.ts
+// - 단순 재내보내기 파일: export type { ... } from '../../types/app.types'
+// - Phase 2-3A에서 deprecated 마킹됨
+// - 5개 파일에서 직접 import로 변경
+
+// src/shared/components/ui/StandardProps.ts
+// - 단순 재내보내기 파일: types, constants, utils 재내보내기
+// - Phase 2-3A에서 deprecated 마킹됨
+// - 5개 파일에서 직접 import로 변경
+
 // DEFERRED (보류):
-// - BaseComponentProps.ts (여전히 많은 사용처)
-// - DOMEventManager (migration 진행 중)
-// - Deprecated 메서드들 (사용처 분석 필요)
+// - getDiagnostics 메서드 (UnifiedServiceDiagnostics 사용 권장)
+// - DOMEventManager (UnifiedEventManager로 이미 통합됨)
+// - downloadFile 메서드 (getUserscript().download() 사용 권장)
 ```
 
 **변경 사항**:
@@ -95,6 +106,19 @@
    - After: `@shared/utils/browser/safe-browser` (직접 경로)
 3. **디렉터리 정리**: 빈 `utils/` 디렉터리 제거
 
+**Step 3**:
+
+1. **재내보내기 제거**:
+   - `src/shared/components/base/BaseComponentProps.ts` 제거
+   - `src/shared/components/ui/StandardProps.ts` 제거
+2. **Import 경로 수정**: 5개 파일 업데이트
+   - `VerticalImageItem.tsx`: ComponentStandards → `@shared/utils/component-utils`
+   - `GalleryHOC.tsx`: GalleryComponentProps → `@shared/types/app.types`
+   - `Toast.tsx`: ComponentStandards + StandardToastProps → 직접 경로
+   - `ToastContainer.tsx`: ComponentStandards + types → 직접 경로
+   - `Toolbar.tsx`: ComponentStandards → `@shared/utils/component-utils`
+3. **Index 파일 정리**: base/index.ts와 ui/index.ts에서 재내보내기 제거
+
 **테스트 검증**:
 
 **Step 1**:
@@ -109,6 +133,14 @@
 - ✅ TypeScript: 0 에러
 - ✅ Import 경로: 정상 작동 (@shared/* 별칭)
 - ✅ 빌드: 346.02 KB (gzip 93.62 KB) - 크기 변화 없음
+- ✅ E2E: 86/86 통과 (5 skipped)
+- ✅ 모든 검증 통과 (npm run build)
+
+**Step 3**:
+
+- ✅ TypeScript: 0 에러
+- ✅ Import 경로: 정상 작동 (직접 경로 사용)
+- ✅ 빌드: 345.87 KB (gzip 93.55 KB) - **0.15 KB 감소**
 - ✅ E2E: 86/86 통과 (5 skipped)
 - ✅ 모든 검증 통과 (npm run build)
 
@@ -128,9 +160,17 @@
 - ✅ deprecated 경로 완전 제거
 - ✅ Step 1과 일관된 정리 패턴
 
+**Step 3**:
+
+- ✅ 재내보내기 파일 제거로 import 경로 명확화
+- ✅ 직접 경로 사용으로 의존성 추적 개선
+- ✅ deprecated 경로 완전 제거 (4개 파일)
+- ✅ 번들 크기 0.15 KB 감소
+- ✅ Step 1-2와 일관된 정리 패턴
+
 **결정 사항**:
 
-Phase 282는 Step 1-2에서 안전한 파일 제거만 수행하고 완료. 추가 deprecated 코드 정리는 사용처 마이그레이션이 선행되어야 하므로 별도 Phase (Step 3 또는 Phase 283)로 분리 권장.
+Phase 282는 Step 1-3에서 재내보내기 파일 제거 완료. 추가 deprecated 코드 정리 (getDiagnostics, DOMEventManager, downloadFile)는 사용처 분석이 필요하므로 별도 Step 4 또는 Phase 283으로 분리 권장.
 
 ---
 
