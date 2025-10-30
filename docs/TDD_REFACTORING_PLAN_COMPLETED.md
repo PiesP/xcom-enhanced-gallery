@@ -1,13 +1,41 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 258.2 (이벤트 핸들러 순서
-최적화)
+**최종 업데이트**: 2025-10-30 | **최근 완료**: Phase 260 (미사용 의존성 정리)
 
 **목적**: 완료된 Phase의 요약 기록 (상세 내역은 필요 시 git 히스토리 참고)
 
 ---
 
-## 📊 완료된 Phase 요약 (Phase 197-258)
+## 📊 완료된 Phase 요약 (Phase 197-260)
+
+### Phase 260: 미사용 의존성 정리 ✅ 완료
+
+**목표**: 미사용 의존성 제거로 번들 최적화
+
+**달성**: ✅ 완료 (3개 패키지 제거)
+
+**제거된 패키지**:
+
+1. ✅ @byjohann/toon (1KB, dependencies)
+2. ✅ @testing-library/dom (1KB, devDependencies)
+3. ✅ @types/tampermonkey (< 1KB, devDependencies)
+
+**유지된 패키지**:
+
+- @babel/preset-typescript: Playwright E2E 하네스 빌드에 필수
+
+**결과**:
+
+- 번들 크기: 344.33KB → 344.41KB (트리 셰이킹 최적)
+- 의존성 정리: 3개 미사용 패키지 정리
+- 테스트: 78/78 E2E 통과
+
+**설계 결정**:
+
+- Tree-shaking이 잘 작동하여 번들 크기 변화 미미
+- devDependencies 정리가 주 목표 (빌드 속도, 유지보수성)
+
+---
 
 ### Phase 258.2: 이벤트 핸들러 순서 최적화 ✅ 완료
 
