@@ -31,6 +31,7 @@ codeql-custom-queries-javascript/
 *.sarif
 
 # === Documentation (Generated) ===
+docs/
 docs/bundle-*.{html,json}
 docs/bundle-analysis.html
 docs/dependency-graph.*
@@ -87,6 +88,7 @@ $RECYCLE.BIN/
 # === Temporary & Backup ===
 temp/
 tmp/
+scripts/
 scripts/temp/
 backup*/
 *.backup

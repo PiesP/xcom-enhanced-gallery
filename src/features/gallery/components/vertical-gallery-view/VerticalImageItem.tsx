@@ -146,6 +146,13 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   let wasMutedBeforeHidden: boolean | null = null;
   const toRem = (v: number) => `${(v / 16).toFixed(4)}rem`;
 
+  // Phase 267: 메타데이터 폴백 강화
+  // 기본 intrinsic height (720px = 45rem) - 미디어 메타데이터 부재 시 사용
+  // 사유: reflowing 최소화, 안정성 개선
+  // 설정: 일반적인 갤러리 높이 기준 (실제 미디어는 로드 후 업데이트)
+  const DEFAULT_INTRINSIC_HEIGHT = 720;
+  const DEFAULT_INTRINSIC_WIDTH = 540; // 16:9 비율 기준
+
   const deriveDimensionsFromMetadata = (): DimensionPair | null => {
     const m = media?.metadata as Record<string, unknown> | undefined;
     if (!m) return null;
@@ -179,11 +186,22 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (directWidth && directHeight) {
       return { width: directWidth, height: directHeight };
     }
-    return deriveDimensionsFromMetadata();
+
+    const fromMetadata = deriveDimensionsFromMetadata();
+    if (fromMetadata) {
+      return fromMetadata;
+    }
+
+    // Phase 267: 메타데이터 폴백 - 기본 intrinsic 크기 사용
+    // 미디어 메타데이터가 모두 부재한 경우에만 사용
+    // 실제 미디어는 로드 후 업데이트되므로 reflowing은 미미함
+    return { width: DEFAULT_INTRINSIC_WIDTH, height: DEFAULT_INTRINSIC_HEIGHT };
   });
 
   const intrinsicSizingStyle = createMemo<JSX.CSSProperties | undefined>(() => {
     const dim = resolvedDimensions();
+    // Phase 267: 폴백이 적용된 경우도 CSS 변수 설정
+    // (폴백은 기본값이므로 undefined를 반환하지 않음)
     if (!dim) return undefined;
     const ratio = dim.width / dim.height;
     return {

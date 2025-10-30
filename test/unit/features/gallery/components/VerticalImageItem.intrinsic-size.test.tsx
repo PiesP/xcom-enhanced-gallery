@@ -67,11 +67,19 @@ describe('VerticalImageItem – intrinsic sizing', () => {
 
     const item = container.querySelector('[data-index="0"]') as HTMLDivElement | null;
     expect(item).not.toBeNull();
-    expect(item?.dataset.hasIntrinsicSize).toBe('false');
-    expect(item?.style.getPropertyValue('--xeg-aspect-default')).toBe('');
-    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-width')).toBe('');
-    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-height')).toBe('');
-    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio')).toBe('');
+    // Phase 267: 메타데이터 폴백 강화
+    // 메타데이터 부재 시에도 기본 크기(540x720)를 사용하므로 hasIntrinsicSize는 true
+    expect(item?.dataset.hasIntrinsicSize).toBe('true');
+    expect(item?.style.getPropertyValue('--xeg-aspect-default').trim()).toBe('540 / 720');
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-width').trim()).toBe(
+      '33.7500rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-height').trim()).toBe(
+      '45.0000rem'
+    );
+    expect(item?.style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio').trim()).toBe(
+      '0.750000'
+    );
     expect(item?.dataset.mediaLoaded).toBe('false');
   });
 
