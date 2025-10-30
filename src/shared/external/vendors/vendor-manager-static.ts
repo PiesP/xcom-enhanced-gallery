@@ -359,8 +359,7 @@ export class StaticVendorManager {
 
   /**
    * 네이티브 다운로드 API (메모리 관리 개선)
-   * @deprecated Use getUserscript().download() instead for userscript compatibility
-   * This is a fallback for non-userscript environments
+   * @note 일괄 다운로드 서비스(bulk-download-service.ts)에서 사용됨
    */
   public getNativeDownload(): NativeDownloadAPI {
     return {
