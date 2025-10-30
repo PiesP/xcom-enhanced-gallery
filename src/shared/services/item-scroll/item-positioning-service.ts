@@ -5,7 +5,7 @@
  * - 타겟 요소 선택
  * - scrollIntoView 옵션 결정
  * - 오프셋 적용
- * - 에러 처리 및 재시도 로직
+ * - 에러 처리 및 retry 로직 (retry logic)
  */
 
 import { logger } from '../../logging';
@@ -79,12 +79,12 @@ export class ItemPositioningService {
     } catch (error) {
       logger.error('ItemPositioningService: 스크롤 실패', { itemIndex, error });
 
-      // 재시도 로직 (exponential backoff)
+      // Retry logic (exponential backoff)
       if (this.retryCount < this.maxRetries) {
         this.retryCount += 1;
         const delayMs = 50 * this.retryCount;
 
-        logger.debug('ItemPositioningService: 재시도 스케줄', {
+        logger.debug('ItemPositioningService: retry scheduled', {
           itemIndex,
           retryCount: this.retryCount,
           delayMs,
