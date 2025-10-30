@@ -126,6 +126,11 @@
   --xeg-spacing-lg: var(--space-lg);
   --xeg-spacing-xl: var(--space-xl);
   --xeg-spacing-2xl: var(--space-2xl);
+
+  /* Phase 269: Gallery Initial Height Fallbacks */
+  --xeg-spacing-3xl: 3rem; /* 48px = 3 × 1rem */
+  --xeg-spacing-5xl: 5rem; /* 80px = 5 × 1rem */
+  --xeg-viewport-height-constrained: 90vh; /* 반응형 제약 높이 */
 }
 
 /* ======================================= */

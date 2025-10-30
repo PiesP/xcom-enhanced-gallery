@@ -81,9 +81,9 @@
 }
 
 .container[data-media-loaded='false'] .imageWrapper {
-  min-height: var(--xeg-spacing-3xl);
+  min-height: var(--xeg-spacing-3xl, 3rem);
   /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
-  aspect-ratio: var(--xeg-aspect-default);
+  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
 }
 
 .placeholder {
@@ -97,7 +97,7 @@
   justify-content: center;
   /* Skeleton: 토큰화된 배경/모션 사용 */
   background: var(--xeg-skeleton-bg);
-  min-height: var(--xeg-spacing-3xl);
+  min-height: var(--xeg-spacing-3xl, 3rem);
 }
 
 .loadingSpinner {
@@ -176,7 +176,7 @@
   inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
-  max-block-size: var(--xeg-viewport-height-constrained);
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
   object-fit: contain;
 }
 
@@ -184,7 +184,7 @@
   inline-size: 100%;
   block-size: auto;
   max-inline-size: 100%;
-  max-block-size: var(--xeg-viewport-height-constrained);
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
   object-fit: contain;
 }
 
@@ -216,7 +216,7 @@
   inline-size: 100%;
   block-size: auto;
   max-inline-size: 100%;
-  max-block-size: var(--xeg-viewport-height-constrained);
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
   object-fit: contain;
 }
 
@@ -225,10 +225,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--xeg-spacing-3xl) var(--xeg-spacing-lg);
+  padding: var(--xeg-spacing-3xl, 3rem) var(--xeg-spacing-lg);
   background: var(--xeg-color-bg-secondary);
   color: var(--xeg-color-text-secondary);
-  min-height: var(--xeg-spacing-3xl);
+  min-height: var(--xeg-spacing-3xl, 3rem);
 }
 
 .errorIcon {

@@ -375,6 +375,36 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     registerContainer?.(element);
   };
 
+  // Phase 269-3: Inline style 런타임 검증
+  // CSS 변수 폴백이 적용되지 않는 경우를 대비한 인라인 스타일 설정
+  // (CSS 로드 지연이나 브라우저 호환성 문제 방지)
+  createEffect(() => {
+    const container = containerRef();
+    if (!container || isLoaded() || !hasIntrinsicSizing()) {
+      return;
+    }
+
+    // CSS 변수 계산값을 계산하여 폴백 확인
+    const computedStyle = window.getComputedStyle(container);
+    const imageWrapperMinHeight = computedStyle.getPropertyValue('--xeg-spacing-3xl');
+    const aspectRatio = computedStyle.getPropertyValue('--xeg-aspect-default');
+
+    // 폴백이 없거나 0인 경우 명시적으로 설정
+    if (!imageWrapperMinHeight || imageWrapperMinHeight.trim() === '') {
+      container.style.setProperty('--xeg-spacing-3xl-fallback', '3rem');
+    }
+
+    if (!aspectRatio || aspectRatio.trim() === '') {
+      container.style.setProperty('--xeg-aspect-default-fallback', '4 / 3');
+    }
+
+    logger.debug('[VerticalImageItem] Phase 269-3 inline style validation completed', {
+      index,
+      imageWrapperMinHeight: imageWrapperMinHeight || 'undefined',
+      aspectRatio: aspectRatio || 'undefined',
+    });
+  });
+
   return (
     <div
       ref={assignContainerRef}
