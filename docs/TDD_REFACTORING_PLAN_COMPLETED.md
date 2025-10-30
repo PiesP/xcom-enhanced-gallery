@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 278)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 279)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 345.68 KB (gzip: 93.56 KB) |
+| **번들 크기** | 346.05 KB (gzip: 93.63 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -21,7 +21,101 @@
 
 ---
 
-## 🎯 최근 완료 Phase (278-277)
+## 🎯 최근 완료 Phase (279-278)
+
+### Phase 279: 갤러리 최초 기동 시 자동 스크롤 누락 수정 ✅ 완료
+
+**상태**: ✅ 완료
+
+**문제**:
+
+1. **증상**
+   - 새로운 트윗에서 갤러리 최초 기동 시 자동 스크롤 미작동
+   - 같은 트윗 재오픈 시에는 정상 작동
+   - 첫 번째 열기에서만 1회 발생
+
+2. **근본 원인**
+   - `useGalleryItemScroll` 훅이 갤러리 컴포넌트와 동시에 초기화
+   - DOM 렌더링보다 먼저 스크롤 시도 (0ms 즉시 실행)
+   - VerticalGalleryView의 아이템들이 아직 렌더링되지 않은 상태
+   - 같은 트윗 재오픈 시에는 컴포넌트가 이미 마운트되어 있어 정상 작동
+
+3. **현재 메커니즘의 한계**
+   - Phase 263 MutationObserver: 아이템 렌더링 후에만 작동
+   - 폴링 메커니즘: 재시도 3회, 폴링 20회 제한으로 타이밍 이슈 존재
+
+**솔루션 (Option A: onMount 기반)**:
+
+**1. VerticalGalleryView.tsx 수정**:
+
+- 초기 렌더링 완료 감지 Effect 추가
+- `hasPerformedInitialScroll` 플래그로 중복 실행 방지
+- requestAnimationFrame으로 레이아웃 완료 대기
+- 갤러리 닫힐 때 플래그 자동 리셋
+
+```typescript
+// Phase 279: 갤러리 최초 열기 시 초기 스크롤 보장
+const hasPerformedInitialScroll = { current: false };
+
+createEffect(() => {
+  const container = containerEl();
+  const items = mediaItems();
+  const visible = isVisible();
+
+  // 갤러리 닫히면 플래그 리셋
+  if (!visible) {
+    hasPerformedInitialScroll.current = false;
+    return;
+  }
+
+  // 아이템 컨테이너 렌더링 확인
+  const itemsContainer = container?.querySelector('[data-xeg-role="items-list"]');
+  if (!container || !itemsContainer || itemsContainer.children.length === 0) {
+    return;
+  }
+
+  // 첫 렌더링 시 한 번만 실행
+  if (!hasPerformedInitialScroll.current) {
+    hasPerformedInitialScroll.current = true;
+
+    requestAnimationFrame(() => {
+      void scrollToCurrentItem();
+    });
+  }
+});
+```
+
+**2. 테스트 추가**:
+
+- `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts` 신규 작성
+- 5가지 시나리오 커버:
+  - 첫 번째 갤러리 열기 시 자동 스크롤
+  - 아이템 렌더링 대기 후 스크롤 실행
+  - 갤러리 닫기 후 재오픈 시 플래그 리셋
+  - 빈 갤러리는 스크롤 시도하지 않음
+  - 잘못된 인덱스 처리
+
+**성과**:
+
+- ✅ 새 트윗에서 갤러리 최초 열기 시 자동 스크롤 정상 작동
+- ✅ 같은 트윗 재오픈 시 기존 동작 유지
+- ✅ 모든 기존 테스트 통과 (1007/1007)
+- ✅ 새로운 테스트 케이스 6개 GREEN
+- ✅ 빌드 성공 (346.05 KB, 18% 여유 공간)
+
+**영향 범위**:
+
+- `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+- `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts` (신규)
+
+**메타데이터**:
+
+- 완료 일시: 2025-10-30
+- 소요 시간: 약 2시간
+- 추가 코드: ~60줄 (컴포넌트 + 테스트)
+- 테스트 추가: 6개 (모두 통과)
+
+---
 
 ### Phase 278: Logger 테스트 환경 감지 로직 개선 ✅ 완료
 

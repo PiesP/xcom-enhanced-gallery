@@ -333,6 +333,63 @@ function VerticalGalleryViewCore({
     }
   );
 
+  // Phase 279: 갤러리 최초 열기 시 초기 스크롤 보장
+  // 플래그를 객체로 관리하여 createEffect 내에서도 참조 가능
+  const hasPerformedInitialScroll = { current: false };
+
+  // Phase 279: 초기 렌더링 완료 후 자동 스크롤 실행
+  createEffect(() => {
+    const container = containerEl();
+    const items = mediaItems();
+    const index = currentIndex();
+    const visible = isVisible();
+
+    // 갤러리가 닫히면 플래그 리셋
+    if (!visible) {
+      hasPerformedInitialScroll.current = false;
+      return;
+    }
+
+    // 기본 조건 체크
+    if (!container || items.length === 0) {
+      return;
+    }
+
+    // 아이템 컨테이너 렌더링 확인
+    const itemsContainer = container.querySelector(
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+    );
+    if (!itemsContainer || itemsContainer.children.length === 0) {
+      return;
+    }
+
+    // 첫 렌더링 시 한 번만 실행
+    if (!hasPerformedInitialScroll.current) {
+      hasPerformedInitialScroll.current = true;
+
+      logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 279)', {
+        currentIndex: index,
+        itemsRendered: itemsContainer.children.length,
+        mediaCount: items.length,
+        timestamp: Date.now(),
+      });
+
+      // requestAnimationFrame으로 레이아웃 완료 대기
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          void scrollToCurrentItem();
+          logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 279)', {
+            currentIndex: index,
+            timestamp: Date.now(),
+          });
+        });
+      } else {
+        // requestAnimationFrame이 없는 환경에서는 즉시 실행
+        void scrollToCurrentItem();
+      }
+    }
+  });
+
   // Phase 270: 이미지 로드 완료 후 자동 스크롤 (타이밍 최적화)
   const waitForMediaLoad = (element: Element, timeoutMs: number = 1000): Promise<void> => {
     return new Promise(resolve => {
