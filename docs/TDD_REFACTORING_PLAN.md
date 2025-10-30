@@ -1,36 +1,37 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: Phase 257 완료, Phase 258 진행 중 |
-**[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
+**마지막 업데이트**: 2025-10-30 | **상태**: Phase 257 완료, Phase 258 분석 완료
+| **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 258: 초기화 순서 최적화 (진행 중)
+### Phase 258: 초기화 순서 최적화 (분석 완료, 구현 예정)
 
-**목표**: 앱 시작 시간 30-50ms 단축 및 갤러리 반응성 향상
+**목표**: 앱 시작 시간 30-50% 개선 (~30-50ms 단축)
 
-**상태**: 분석 완료 ([상세 분석](./temp/PHASE_258_INITIALIZATION_ANALYSIS.md))
+**상태**: ✅ 분석 완료
 
-**개요**:
+**핵심 발견**:
 
 - 현재 부트스트랩: 7단계 순차 실행 (~70-100ms)
-- 주요 문제: SettingsService 불필요한 조기 로드 (~30-50ms)
-- 최적화 전략:
-  1. SettingsService 지연 로드 (Step 4 제거)
-  2. 이벤트 핸들러 순서 조정 (Step 5,6 변경)
-  3. 성능 측정 및 검증
+- **주요 병목**: Step 4 SettingsService 조기 로드 (~30-50ms)
+- **최적화 기회**: 지연 로드로 변경 → 30-50% 개선 예상
 
-**구현 계획**:
+**구현 로드맵** (다음 단계):
 
-- [ ] registerFeatureServicesLazy() 분리
-- [ ] SettingsService 지연 로드 메커니즘 구현
-- [ ] main.ts 부트스트랩 순서 변경
-- [ ] 테스트 검증 (GREEN 확보)
-- [ ] 번들 크기 검증 (≤420KB)
+1. SettingsService 지연 로드 (필수)
+   - `src/bootstrap/features.ts`: SettingsService 제거
+   - `src/features/gallery/GalleryApp.ts`: 필요 시 로드
+2. 이벤트 핸들러 순서 조정 (선택)
+   - `src/main.ts`: Step 5,6 순서 변경
+3. 성능 측정 및 검증
+   - 부트스트랩 시간 측정
+   - 테스트 GREEN 확보
 
-**예상 효과**: 앱 시작 시간 30-50% 개선
+**상세 분석**:
+[docs/temp/PHASE_258_FINAL_REPORT.md](./temp/PHASE_258_FINAL_REPORT.md)
 
 ---
 

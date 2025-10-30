@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 문서 구조와 네비게이션
 
-**최종 업데이트**: 2025-10-27 | **상태**: 모든 문서 최신화 ✅
+**최종 업데이트**: 2025-10-30 | **상태**: 모든 문서 최신화 ✅
 
 ---
 
@@ -22,7 +22,7 @@
 - **[TESTING_STRATEGY.md](./TESTING_STRATEGY.md)**: Testing Trophy, JSDOM, E2E
   하네스 패턴
 - **[HOOKS_GUIDELINES.md](./HOOKS_GUIDELINES.md)**: Solid.js 훅 작성 규칙 및
-  패턴 (350줄, 현대화 완료)
+  패턴
 
 ### 품질 및 유지보수
 
@@ -38,14 +38,14 @@
 ### 리팩토링 및 계획
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획
-  (템플릿 기반, 모든 Phase 완료)
+  (현재: Phase 258 분석 완료)
 - **[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)**:
-  완료된 Phase 기록 (Phase 207-186 요약)
+  완료된 Phase 기록 (Phase 197-257)
 
 ### 특수 디렉터리
 
 - **[archive/](./archive/)**: 완료된 Phase 상세 보고서 (Git 추적 안 함)
-- **[temp/](./temp/)**: 임시 작업 문서 (Git 추적 안 함, 현재 비어있음)
+- **[temp/](./temp/)**: 임시 작업 문서 (Git 추적 안 함)
 
 ---
 
