@@ -109,11 +109,6 @@ const noop = (): void => {};
 // Use __DEV__ global (defined in vite.config.ts) instead of import.meta.env.DEV
 // to ensure proper tree-shaking in production builds
 const isDev = __DEV__;
-// Vitest 환경에서는 대량 로그 출력을 방지하여 EPIPE 에러 회피
-// Vitest는 전역 describe/test/expect를 제공하므로 이를 통해 감지
-const isTestEnv =
-  typeof globalThis !== 'undefined' &&
-  ('describe' in globalThis || 'test' in globalThis || 'expect' in globalThis);
 
 type LoggerFactory = (config?: Partial<LoggerConfig>) => Logger;
 type ScopedFactory = (scope: string, config?: Partial<LoggerConfig>) => Logger;
@@ -129,11 +124,6 @@ let createScopedLoggerWithCorrelationImpl: ScopedCorrelationFactory;
 
 if (isDev) {
   const getEnvironmentLogLevel = (): LogLevel => {
-    // Vitest 환경에서는 에러만 출력 (EPIPE 방지)
-    if (isTestEnv) {
-      return 'error';
-    }
-
     // Phase 137: Type Guard 기반 안전한 Userscript 환경 감지
     try {
       if (typeof window !== 'undefined') {
@@ -174,17 +164,6 @@ if (isDev) {
   };
 
   const shouldLog = (level: LogLevel, config: LoggerConfig): boolean => {
-    // Vitest 환경에서는 실행 시점에 동적으로 감지 (EPIPE 방지)
-    // Vitest는 전역 describe/test/expect를 제공하므로 이를 통해 감지
-    const isInTest =
-      typeof globalThis !== 'undefined' &&
-      ('describe' in globalThis || 'test' in globalThis || 'expect' in globalThis);
-
-    if (isInTest) {
-      // 테스트 환경에서는 에러만 출력
-      return level === 'error';
-    }
-
     return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[config.level];
   };
 

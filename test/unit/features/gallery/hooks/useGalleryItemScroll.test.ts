@@ -227,7 +227,7 @@ describe('useGalleryItemScroll (Solid)', () => {
     }
   });
 
-  it('applies normal debounce on subsequent scroll requests', async () => {
+  it('applies immediate scroll on subsequent requests (Phase 266: 0ms debounce)', async () => {
     vi.useFakeTimers();
 
     const container = document.createElement('div');
@@ -267,21 +267,17 @@ describe('useGalleryItemScroll (Solid)', () => {
         });
       });
 
-      // First index change: 0ms debounce (Phase 266)
+      // First index change: immediate (0ms debounce, Phase 266)
       setCurrentIndex(1);
       vi.advanceTimersByTime(32);
       vi.advanceTimersByTime(1);
       await Promise.resolve();
       expect(scrollSpy1).toHaveBeenCalledTimes(1);
 
-      // Second index change: 100ms debounce
+      // Second index change: also immediate (Phase 266: removed debounce)
       setCurrentIndex(2);
       vi.advanceTimersByTime(32);
-      await Promise.resolve();
-
-      expect(scrollSpy2).not.toHaveBeenCalled();
-
-      vi.advanceTimersByTime(100);
+      vi.advanceTimersByTime(1);
       await Promise.resolve();
 
       expect(scrollSpy2).toHaveBeenCalledTimes(1);
@@ -398,7 +394,7 @@ describe('useGalleryItemScroll (Solid)', () => {
     vi.useRealTimers();
   });
 
-  it('Phase 266: uses immediate (0ms) debounce for responsive scrolling', async () => {
+  it('Phase 266: uses immediate (0ms) scroll for all requests', async () => {
     vi.useFakeTimers();
 
     const container = document.createElement('div');
@@ -421,38 +417,41 @@ describe('useGalleryItemScroll (Solid)', () => {
     itemsRoot.append(item1, item2, item3);
     container.append(itemsRoot);
 
+    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+
     let dispose: () => void = () => {};
-    let hook: ReturnType<typeof useGalleryItemScroll> | null = null;
+    let setCurrentIndex!: (value: number) => number;
 
     createRoot(disposeFn => {
       dispose = disposeFn;
-      const [currentIndex, setCurrentIndex] = createSignal(0);
+      const [currentIndex, setIndex] = createSignal(0);
+      setCurrentIndex = setIndex;
 
-      hook = useGalleryItemScroll(containerRef, currentIndex, () => 3, {
+      useGalleryItemScroll(containerRef, currentIndex, () => 3, {
         behavior: 'auto',
         respectReducedMotion: false,
       });
-
-      // Phase 266 test: Simulate rapid button clicks
-      // Click 1: index 0 → 1
-      globalTimerManager.setTimeout(() => setCurrentIndex(1), 0);
-      // Click 2: index 1 → 2 (should scroll immediately, not debounced)
-      globalTimerManager.setTimeout(() => setCurrentIndex(2), 5);
-      // Click 3: index 2 → 3 (should also scroll immediately)
-      globalTimerManager.setTimeout(() => setCurrentIndex(3), 10);
     });
 
-    // Advance through all scheduled timeouts
-    vi.advanceTimersByTime(50);
+    // Phase 266: All scrolls should execute immediately (0ms)
+    // Simulate rapid button clicks with immediate execution
+    setCurrentIndex(1);
+    vi.advanceTimersByTime(32); // interval tick
+    vi.advanceTimersByTime(1); // immediate setTimeout(0)
     await Promise.resolve();
+    expect(scrollSpy2).toHaveBeenCalled();
 
-    // Verify that scrolls were scheduled and executed immediately
-    // without debounce delays
-    expect(scrollSpy1.mock.calls.length).toBeGreaterThanOrEqual(0);
-    expect(scrollSpy2.mock.calls.length).toBeGreaterThanOrEqual(1); // item 2 should be scrolled
-    expect(scrollSpy3.mock.calls.length).toBeGreaterThanOrEqual(1); // item 3 should be scrolled
+    setCurrentIndex(2);
+    vi.advanceTimersByTime(32);
+    vi.advanceTimersByTime(1);
+    await Promise.resolve();
+    expect(scrollSpy3).toHaveBeenCalled();
 
     dispose();
+    rafMock.mockRestore();
     vi.useRealTimers();
   });
 });
