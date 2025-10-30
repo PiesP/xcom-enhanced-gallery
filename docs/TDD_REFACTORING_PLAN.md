@@ -7,31 +7,34 @@
 
 ## 🔄 현재 진행 중인 작업
 
-### Phase 258: 초기화 순서 최적화 (분석 완료, 구현 예정)
+### Phase 258: 초기화 순서 최적화 (구현 시작)
 
 **목표**: 앱 시작 시간 30-50% 개선 (~30-50ms 단축)
 
-**상태**: ✅ 분석 완료
+**상태**: ✅ 분석 완료 → 🔄 **구현 시작**
 
 **핵심 발견**:
 
 - 현재 부트스트랩: 7단계 순차 실행 (~70-100ms)
 - **주요 병목**: Step 4 SettingsService 조기 로드 (~30-50ms)
-- **최적화 기회**: 지연 로드로 변경 → 30-50% 개선 예상
+- **최적화 기회**: 지연 로드로 변경 (Step 4에서 제거 → Step 6으로 이동)
 
-**구현 로드맵** (다음 단계):
+**구현 계획**:
 
-1. SettingsService 지연 로드 (필수)
-   - `src/bootstrap/features.ts`: SettingsService 제거
-   - `src/features/gallery/GalleryApp.ts`: 필요 시 로드
-2. 이벤트 핸들러 순서 조정 (선택)
-   - `src/main.ts`: Step 5,6 순서 변경
-3. 성능 측정 및 검증
-   - 부트스트랩 시간 측정
+1. **SettingsService 지연 로드** (필수)
+   - 파일: `src/bootstrap/features.ts` → SettingsService 제거
+   - 파일: `src/features/gallery/GalleryApp.ts` → 필요 시 로드
+   - 기대: ~25-30ms 단축 (Step 4를 5-10ms로 감소)
+
+2. **이벤트 핸들러 순서 조정** (선택)
+   - 파일: `src/main.ts` → Step 5,6 순서 변경
+   - 기대: ~3-5ms 추가 절감
+
+3. **성능 측정 및 검증**
+   - 부트스트랩 시간 측정 (performance.now())
    - 테스트 GREEN 확보
 
-**상세 분석**:
-[docs/temp/PHASE_258_FINAL_REPORT.md](./temp/PHASE_258_FINAL_REPORT.md)
+**상세 분석**: `docs/temp/PHASE_258_FINAL_REPORT.md`
 
 ---
 
@@ -53,8 +56,6 @@
 
 **테스트 상태**: ✅ GREEN (1052 ≤ 1055줄, 31.86 ≤ 32 KB)
 
----
-
 ### Phase 256: VerticalImageItem 번들 최적화 ✅ 완료
 
 **달성**: 610줄 / 17.16 KB → **461줄 / 14.56 KB** (75% 감축)
@@ -68,26 +69,6 @@
 5. ✅ 코드 간결화 (FitMode switch → Map 기반, 불필요한 타입 캐스트 제거)
 
 **테스트 상태**: ✅ GREEN (461 ≤ 465줄, 14.56 ≤ 14.8 KB)
-
----
-
-## 🔄 현재 진행 중인 작업
-
-### Phase 257: events.ts 번들 최적화 (진행 중)
-
-**목표**: 1128줄 / 35.18 KB → 1055줄 / 32 KB
-
-**현재 상태**: 1052줄 / 31.86 KB ✅ **(목표 초과 달성, 6.7% 감축)**
-
-**최적화 내용**:
-
-1. ✅ ID 생성 단순화 (타임스탬프/카운터 제거, 랜덤만 사용)
-2. ✅ 주석 대량 제거 (Phase XXX 코멘트 제거)
-3. ✅ logger.debug 호출 제거 ([PC-only policy] 관련 로그 제거)
-4. ✅ 빈 줄 정리 (연속된 빈 줄 정규화)
-5. ✅ 불필요한 변수 제거 (totalCount, targetType 제거)
-
-**테스트 상태**: ✅ GREEN (1052 ≤ 1055줄, 31.86 ≤ 32 KB)
 
 ---
 
