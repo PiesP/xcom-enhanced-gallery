@@ -327,9 +327,9 @@ function VerticalGalleryViewCore({
     () => mediaItems().length,
     {
       enabled: true,
-      behavior: 'smooth',
+      // Phase 264: behavior 옵션 제거 (기본값 'auto' 사용 - 모션 없음)
+      // Phase 266: debounceDelay 제거 (항상 0ms 즉시 실행)
       block: 'start',
-      debounceDelay: 100,
     }
   );
 

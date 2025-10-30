@@ -26,8 +26,6 @@ export interface UseGalleryItemScrollOptions {
   behavior?: MaybeAccessor<ScrollBehavior>;
   /** 스크롤 블록 위치 */
   block?: MaybeAccessor<ScrollLogicalPosition>;
-  /** 디바운스 지연 시간 (ms) */
-  debounceDelay?: MaybeAccessor<number>;
   /** 스크롤 오프셋 (px) */
   offset?: MaybeAccessor<number>;
   /** 중앙 정렬 여부 */
@@ -54,9 +52,11 @@ export function useGalleryItemScroll(
     typeof containerRef === 'function' ? containerRef : () => containerRef.current;
 
   const enabled = toAccessor(options.enabled ?? true);
-  const behavior = toAccessor(options.behavior ?? 'smooth');
+  // Phase 264: 자동 스크롤 기본값을 'auto'로 변경 (모션 없음)
+  // 수동 스크롤은 여전히 옵션으로 'smooth' 선택 가능
+  const behavior = toAccessor(options.behavior ?? 'auto');
   const block = toAccessor(options.block ?? 'start');
-  const debounceDelay = toAccessor(options.debounceDelay ?? 100);
+  // Phase 266: debounce 제거 (항상 0ms 즉시 실행)
   const offset = toAccessor(options.offset ?? 0);
   const alignToCenter = toAccessor(options.alignToCenter ?? false);
   const respectReducedMotion = toAccessor(options.respectReducedMotion ?? true);
@@ -70,8 +70,8 @@ export function useGalleryItemScroll(
   const setState = stateSignal.setState;
 
   let retryCount = 0;
-  let hasPerformedInitialScroll = false; // Track if component has performed first scroll attempt
   let renderMutationObserver: MutationObserver | null = null; // Phase 263: Solution 1 - Initial render detection
+  // Phase 266: removed hasPerformedInitialScroll - always use 0ms debounce (immediate scroll)
 
   const clearScrollTimeout = () => {
     const state = getState();
@@ -115,13 +115,13 @@ export function useGalleryItemScroll(
     clearUserScrollTimeout();
     clearScrollTimeout();
 
-    // Clear user scroll flag after 500ms
+    // Clear user scroll flag after 150ms (reduced from 500ms to fix scroll skip bug)
     const timeoutId = globalTimerManager.setTimeout(() => {
       updateStateSignal(setState, { userScrollDetected: false });
       logger.debug('useGalleryItemScroll: 사용자 스크롤 종료, 자동 스크롤 재개', {
         timestamp: Date.now(),
       });
-    }, 500);
+    }, 150);
 
     updateStateSignal(setState, { userScrollTimeoutId: timeoutId });
   };
@@ -423,27 +423,20 @@ export function useGalleryItemScroll(
   const scheduleScrollToIndex = (index: number): void => {
     clearScrollTimeout();
 
-    // Phase 263: Solution 2 - Skip debouncing on first scroll if no scroll has been attempted yet
-    const delay = hasPerformedInitialScroll ? debounceDelay() : 0;
-    if (!hasPerformedInitialScroll) {
-      hasPerformedInitialScroll = true;
-      logger.debug('useGalleryItemScroll: 초기 스크롤 시도 - 디바운싱 건너뛰기', {
-        currentIndex: index,
-        delay: 0,
-      });
+    // Phase 266: Always use immediate (0ms) debounce for responsive scrolling
+    // This is safe because checkIndexChanges() ensures no duplicate scheduling
+    // via pendingIndex check and userScrollDetected suppression
+    const delay = 0;
 
-      // Phase 263: Solution 1 - Setup MutationObserver to detect initial render
-      setupInitialRenderMonitor(index);
-    }
-
-    updateStateSignal(setState, { pendingIndex: index });
-    const state = getState();
-
-    logger.debug('useGalleryItemScroll: 자동 스크롤 예약', {
+    logger.debug('useGalleryItemScroll: 자동 스크롤 예약 (Phase 266: 즉시 실행)', {
       currentIndex: index,
-      lastScrolledIndex: state.lastScrolledIndex,
       delay,
     });
+
+    // Phase 263: Solution 1 - Setup MutationObserver to detect initial render
+    setupInitialRenderMonitor(index);
+
+    updateStateSignal(setState, { pendingIndex: index });
 
     const timeoutId = globalTimerManager.setTimeout(() => {
       const currentState = getState();
