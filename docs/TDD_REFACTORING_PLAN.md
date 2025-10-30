@@ -1,22 +1,22 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: ✅ 안정화 완료 (Phase 279) |
+**마지막 업데이트**: 2025-10-30 | **상태**: ✅ 코드 현대화 완료 (Phase 281) |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 📊 프로젝트 현황
 
-### ✨ 최근 완성 (Phase 279)
+### ✨ 최근 완성 (Phase 281)
 
-**갤러리 초기 스크롤 안정화**: ✅ **완료**
+**signal-optimization.ts React 패턴 제거**: ✅ **완료**
 
-- 새 트윗에서 갤러리 최초 열기 시 자동 스크롤 정상 작동
-- CSS `aspect-ratio`로 이미지 공간 사전 확보 (CLS 방지)
-- Skeleton UI + Loading Spinner로 시각적 피드백
-- 6개 테스트 케이스 모두 GREEN ✅
+- `useRef` → `let` 변수로 변경 (Solid.js idiomatic)
+- 불필요한 `.current` 접근 7곳 제거
+- 34/34 signal-optimization 테스트 통과
+- Phase 280과 일관된 패턴 적용
 
-상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-279) 참고
+상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-281) 참고
 
 ---
 
@@ -24,11 +24,11 @@
 
 ### ✨ 완성된 최적화
 
-**번들 크기**: 345.68 KB (목표: ≤420 KB) → **18% 여유 공간**
+**번들 크기**: 346.02 KB (목표: ≤420 KB) → **18% 여유 공간**
 
 - dev 빌드: 875 KB (가독성 포맷팅 포함)
-- prod 빌드: 345 KB
-- gzip: 93.56 KB
+- prod 빌드: 346 KB
+- gzip: 93.62 KB
 
 **성능 개선**:
 
@@ -53,6 +53,8 @@
 - Phase 277: **테스트 크기 정책 정규화** ✅ 완료
 - Phase 278: **Logger 테스트 환경 감지 로직 개선** ✅ 완료
 - Phase 279: **갤러리 최초 기동 시 자동 스크롤** ✅ 완료
+- Phase 280: **Phase 279 코드 현대화 (Simplification)** ✅ 완료
+- Phase 281: **signal-optimization.ts React 패턴 제거** ✅ 완료
 
 **테스트 상태**: ✅ 모두 GREEN
 
@@ -69,19 +71,20 @@
 - ESLint: 0 에러
 - Stylelint: 0 에러
 - CodeQL 보안: 0 경고
-- 빌드: ✅ 성공 (345.68 KB)
+- 빌드: ✅ 성공 (346.02 KB)
 
 ---
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (안정화 완료)
+**현재 작업**: 없음 (Phase 281 완료)
 
 **다음 우선순위**:
 
 1. 사용자 피드백 수집 및 개선 사항 도출
 2. 성능 모니터링 및 최적화 기회 탐색
 3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+4. 추가 코드 현대화 기회 검토
 
 ---
 
@@ -97,6 +100,8 @@
 
 | Phase | 상태    | 주요 작업                                |
 | ----- | ------- | ---------------------------------------- |
+| 281   | ✅ 완료 | signal-optimization.ts React 패턴 제거   |
+| 280   | ✅ 완료 | Phase 279 코드 현대화 (Simplification)   |
 | 279   | ✅ 완료 | 갤러리 최초 기동 시 자동 스크롤 안정화   |
 | 278   | ✅ 완료 | Logger 테스트 환경 감지 로직 개선        |
 | 277   | ✅ 완료 | 테스트 크기 정책 정규화                  |

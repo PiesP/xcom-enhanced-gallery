@@ -79,7 +79,7 @@ export function useAsyncSelector<T, R>(
   defaultValue: R,
   debounceMs = 300
 ): () => AsyncSelectorResult<R> {
-  const { createSignal, createEffect, onCleanup, useRef } = getSolid();
+  const { createSignal, createEffect, onCleanup } = getSolid();
 
   const [result, setResult] = createSignal<AsyncSelectorResult<R>>({
     value: defaultValue,
@@ -87,30 +87,31 @@ export function useAsyncSelector<T, R>(
     error: null,
   });
 
-  const mountedRef = useRef<boolean>(true);
-  const currentGenerationRef = useRef<number>(0);
+  // Phase 281: useRef → let 변수 (Solid.js idiomatic)
+  let mounted = true;
+  let currentGeneration = 0;
 
   createEffect(() => {
     const sourceValue =
       (state as { value?: T })?.value !== undefined ? (state as { value: T }).value : (state as T);
 
-    currentGenerationRef.current = (currentGenerationRef.current ?? 0) + 1;
-    const generation = currentGenerationRef.current;
+    currentGeneration = (currentGeneration ?? 0) + 1;
+    const generation = currentGeneration;
 
     setResult(prev => ({ ...prev, loading: true, error: null }));
 
     const timeoutId = globalTimerManager.setTimeout(async () => {
-      if (!mountedRef.current || generation !== currentGenerationRef.current) {
+      if (!mounted || generation !== currentGeneration) {
         return;
       }
 
       try {
         const value = await selector(sourceValue);
-        if (mountedRef.current && generation === currentGenerationRef.current) {
+        if (mounted && generation === currentGeneration) {
           setResult({ value, loading: false, error: null });
         }
       } catch (error) {
-        if (mountedRef.current && generation === currentGenerationRef.current) {
+        if (mounted && generation === currentGeneration) {
           setResult({
             value: defaultValue,
             loading: false,
@@ -127,7 +128,7 @@ export function useAsyncSelector<T, R>(
 
   createEffect(() => {
     onCleanup(() => {
-      mountedRef.current = false;
+      mounted = false;
     });
   });
 

@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 280)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 281)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -21,7 +21,90 @@
 
 ---
 
-## 🎯 최근 완료 Phase (280)
+## 🎯 최근 완료 Phase (281)
+
+### Phase 281: signal-optimization.ts React 패턴 제거 (Modernization) ✅ 완료
+
+**완료 일시**: 2025-10-30
+
+**상태**: ✅ 완료
+
+**배경**:
+
+- Phase 280에서 VerticalGalleryView.tsx의 React ref 패턴 제거 완료
+- 추가 React 패턴 검색 시 signal-optimization.ts에서 `useRef` 발견
+- `useAsyncSelector` 함수 내부에서 React hook 패턴 사용 중
+
+**문제**:
+
+1. **React Hook in Solid.js**:
+   - `const { createSignal, createEffect, onCleanup, useRef } = getSolid()`
+   - `mountedRef = useRef<boolean>(true)` (React 패턴)
+   - `currentGenerationRef = useRef<number>(0)` (React 패턴)
+
+2. **불필요한 .current 접근**:
+   - 7곳에서 `.current` 프로퍼티 접근
+   - Solid.js에서는 let 변수로 충분함
+
+**솔루션**:
+
+```typescript
+// BEFORE (Phase 281 이전):
+const { createSignal, createEffect, onCleanup, useRef } = getSolid();
+const mountedRef = useRef<boolean>(true);
+const currentGenerationRef = useRef<number>(0);
+
+if (!mountedRef.current || generation !== currentGenerationRef.current) {
+  return;
+}
+
+currentGenerationRef.current = (currentGenerationRef.current ?? 0) + 1;
+mountedRef.current = false;
+
+// AFTER (Phase 281):
+const { createSignal, createEffect, onCleanup } = getSolid(); // useRef 제거
+// Phase 281: useRef → let 변수 (Solid.js idiomatic)
+let mounted = true;
+let currentGeneration = 0;
+
+if (!mounted || generation !== currentGeneration) {
+  return;
+}
+
+currentGeneration = (currentGeneration ?? 0) + 1;
+mounted = false;
+```
+
+**변경 사항**:
+
+1. **useRef Import 제거**: getSolid()에서 useRef 제거
+2. **Ref Objects → Let Variables**:
+   - `mountedRef` → `mounted` (boolean)
+   - `currentGenerationRef` → `currentGeneration` (number)
+3. **.current 접근 제거**: 7곳의 `.current` 접근 제거
+4. **주석 추가**: "Phase 281: useRef → let 변수 (Solid.js idiomatic)"
+
+**테스트 검증**:
+
+- ✅ 34/34 signal-optimization 테스트 모두 통과 (1.02s)
+  - useAsyncSelector 비동기 처리 정상 작동 (53ms)
+  - 에러 처리 정상 작동 (53ms)
+  - 디바운싱 정상 작동 (105ms)
+- ✅ 111/111 브라우저 테스트 통과
+- ✅ 86/86 E2E 테스트 통과
+- ✅ 빌드 크기 동일: 346.02 KB (gzip 93.62 KB)
+
+**기대 효과**:
+
+- ✅ Solid.js idiomatic 코드 (React 패턴 완전 제거)
+- ✅ 코드 가독성 향상 (불필요한 .current 제거)
+- ✅ Phase 280과 일관된 패턴 적용
+- ✅ 유지보수성 향상 (명확한 변수 사용)
+- ✅ 100% 테스트 커버리지 유지
+
+---
+
+### Phase 280: Phase 279 구현 코드 현대화 (Simplification) ✅ 완료
 
 ### Phase 280: Phase 279 구현 코드 현대화 (Simplification) ✅ 완료
 
