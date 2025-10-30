@@ -116,6 +116,17 @@ export class GalleryApp {
     try {
       logger.info('[GalleryApp] 초기화 시작');
 
+      // Phase 268-2: StaticVendorManager 명시적 초기화
+      // getSolid() 호출로 vendor 라이브러리를 미리 캐시하여 경고 방지
+      try {
+        const { getSolid } = await import('@shared/external/vendors');
+        getSolid();
+        logger.debug('[GalleryApp] StaticVendorManager 초기화 완료 (Phase 268-2)');
+      } catch (vendorError) {
+        logger.warn('[GalleryApp] StaticVendorManager 초기화 중 오류:', vendorError);
+        // 오류가 발생하더라도 진행 계속 (폴백 처리됨)
+      }
+
       // Phase 258: SettingsService 지연 로드 (부트스트랩 최적화)
       // bootstrap/features.ts에서 제거되었으므로 여기서 로드
       await this.ensureSettingsServiceInitialized();

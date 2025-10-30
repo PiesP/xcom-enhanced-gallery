@@ -236,6 +236,10 @@ export const DEFAULT_SETTINGS = {
     animations: true,
     enableKeyboardNav: false,
   },
+  toolbar: {
+    // Phase 268: 런타임 경고 제거 - toolbar 설정 스키마
+    autoHideDelay: 3000, // ms, 툴바 자동 숨김 지연 시간 (기본 3초)
+  },
   download: {
     filenamePattern: 'original' as const,
     imageQuality: 'original' as const,

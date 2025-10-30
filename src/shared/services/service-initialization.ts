@@ -40,10 +40,13 @@ export async function registerCoreServices(): Promise<void> {
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
   serviceManager.register(SERVICE_KEYS.TOAST, toastController);
 
-  // 하위 호환성을 위한 추가 키 등록 (Phase 68.3: 중복 제거)
-  // 'theme.service'와 'toast.controller'는 테스트 전용 키
-  serviceManager.register('theme.service', themeService);
-  serviceManager.register('toast.controller', toastController);
+  // Phase 268-3: 하위 호환성 키 조건부 등록
+  // 테스트 환경에서만 등록하여 프로덕션 경고 제거
+  if (import.meta.env.MODE === 'test') {
+    // 테스트 전용 키 (하위 호환성)
+    serviceManager.register('theme.service', themeService);
+    serviceManager.register('toast.controller', toastController);
+  }
 
   // ====================================
   // 독립 유지 서비스들
