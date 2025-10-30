@@ -124,12 +124,8 @@ describe('useGalleryItemScroll (Solid)', () => {
     hookDispose();
   });
 
-  it('debounces auto-scroll when current index changes', async () => {
+  it('applies initial zero-debounce on first scroll request (Phase 263: Solution 2)', async () => {
     vi.useFakeTimers();
-    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
-      callback(0);
-      return 1;
-    });
 
     const container = document.createElement('div');
     const containerRef = { current: container };
@@ -145,6 +141,11 @@ describe('useGalleryItemScroll (Solid)', () => {
     itemsRoot.append(first, second);
     container.append(itemsRoot);
 
+    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+
     let setCurrentIndex!: (value: number) => number;
     let hookDispose: () => void = () => {};
 
@@ -156,28 +157,160 @@ describe('useGalleryItemScroll (Solid)', () => {
 
         useGalleryItemScroll(containerRef, currentIndex, () => 2, {
           behavior: 'auto',
-          debounceDelay: 75,
+          debounceDelay: 100,
           respectReducedMotion: false,
         });
       });
 
+      // First index change: should get 0ms debounce (skipped)
       setCurrentIndex(1);
-
-      // interval tick to detect index change
-      vi.advanceTimersByTime(32);
-
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(32); // interval tick
       await Promise.resolve();
+
+      // Should NOT have scrolled yet - waiting for setTimeout(0) to execute
       expect(scrollSpy).not.toHaveBeenCalled();
 
-      vi.advanceTimersByTime(25);
+      // Advance time to let setTimeout(0) execute
+      vi.advanceTimersByTime(1);
       await Promise.resolve();
+
+      // Now it should have scrolled
       expect(scrollSpy).toHaveBeenCalledTimes(1);
 
+      expect(scrollSpy).toHaveBeenCalledWith({
+        behavior: 'auto',
+        block: 'start',
+        inline: 'nearest',
+      });
+    } finally {
+      hookDispose();
+      rafMock.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('applies normal debounce on subsequent scroll requests', async () => {
+    vi.useFakeTimers();
+
+    const container = document.createElement('div');
+    const containerRef = { current: container };
+    const itemsRoot = document.createElement('div');
+    itemsRoot.setAttribute('data-xeg-role', 'items-container');
+
+    const first = document.createElement('div');
+    const second = document.createElement('div');
+    const third = document.createElement('div');
+
+    const scrollSpy1 = vi.fn();
+    const scrollSpy2 = vi.fn();
+    second.scrollIntoView = scrollSpy1 as unknown as (options?: unknown) => void;
+    third.scrollIntoView = scrollSpy2 as unknown as (options?: unknown) => void;
+
+    itemsRoot.append(first, second, third);
+    container.append(itemsRoot);
+
+    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+
+    let setCurrentIndex!: (value: number) => number;
+    let hookDispose: () => void = () => {};
+
+    try {
+      createRoot(dispose => {
+        hookDispose = dispose;
+        const [currentIndex, setIndex] = createSignal(0);
+        setCurrentIndex = setIndex;
+
+        useGalleryItemScroll(containerRef, currentIndex, () => 3, {
+          behavior: 'auto',
+          debounceDelay: 100,
+          respectReducedMotion: false,
+        });
+      });
+
+      // First index change: 0ms debounce
       setCurrentIndex(1);
-      vi.advanceTimersByTime(200);
+      vi.advanceTimersByTime(32);
+      vi.advanceTimersByTime(1);
       await Promise.resolve();
+      expect(scrollSpy1).toHaveBeenCalledTimes(1);
+
+      // Second index change: 100ms debounce
+      setCurrentIndex(2);
+      vi.advanceTimersByTime(32);
+      await Promise.resolve();
+
+      expect(scrollSpy2).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+
+      expect(scrollSpy2).toHaveBeenCalledTimes(1);
+    } finally {
+      hookDispose();
+      rafMock.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('uses MutationObserver to detect initial render for faster scroll (Phase 263: Solution 1)', async () => {
+    vi.useFakeTimers();
+
+    const container = document.createElement('div');
+    const containerRef = { current: container };
+    const itemsRoot = document.createElement('div');
+    itemsRoot.setAttribute('data-xeg-role', 'items-container');
+
+    // Initially empty - items added during "render"
+    container.append(itemsRoot);
+
+    const rafMock = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+
+    let setCurrentIndex!: (value: number) => number;
+    let hookDispose: () => void = () => {};
+
+    try {
+      createRoot(dispose => {
+        hookDispose = dispose;
+        const [currentIndex, setIndex] = createSignal(0);
+        setCurrentIndex = setIndex;
+
+        useGalleryItemScroll(containerRef, currentIndex, () => 2, {
+          behavior: 'auto',
+          debounceDelay: 100,
+          respectReducedMotion: false,
+        });
+      });
+
+      // First index change triggers MutationObserver setup
+      setCurrentIndex(1);
+      vi.advanceTimersByTime(32); // interval tick
+      await Promise.resolve();
+
+      // Simulate rendering: add items to DOM (triggers MutationObserver)
+      const first = document.createElement('div');
+      const second = document.createElement('div');
+      const scrollSpy = vi.fn();
+      second.scrollIntoView = scrollSpy as unknown as (options?: unknown) => void;
+
+      itemsRoot.append(first, second);
+
+      // Wait for MutationObserver callback to fire
+      vi.advanceTimersByTime(1);
+      await Promise.resolve();
+
+      // MutationObserver should trigger immediate scroll (setTimeout(0))
       expect(scrollSpy).toHaveBeenCalledTimes(1);
+      expect(scrollSpy).toHaveBeenCalledWith({
+        behavior: 'auto',
+        block: 'start',
+        inline: 'nearest',
+      });
     } finally {
       hookDispose();
       rafMock.mockRestore();

@@ -70,6 +70,8 @@ export function useGalleryItemScroll(
   const setState = stateSignal.setState;
 
   let retryCount = 0;
+  let hasPerformedInitialScroll = false; // Track if component has performed first scroll attempt
+  let renderMutationObserver: MutationObserver | null = null; // Phase 263: Solution 1 - Initial render detection
 
   const clearScrollTimeout = () => {
     const state = getState();
@@ -350,10 +352,90 @@ export function useGalleryItemScroll(
     }
   };
 
+  // Phase 263: Solution 1 - Monitor initial DOM rendering to trigger scroll immediately
+  const setupInitialRenderMonitor = (targetIndex: number): void => {
+    // Clean up any existing observer
+    if (renderMutationObserver) {
+      renderMutationObserver.disconnect();
+      renderMutationObserver = null;
+    }
+
+    const container = containerAccessor();
+    if (!container) return;
+
+    const itemsRoot = container.querySelector(
+      '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
+    ) as HTMLElement | null;
+
+    if (!itemsRoot) return;
+
+    // Check if target element already exists
+    const targetElement = itemsRoot.children[targetIndex] as HTMLElement | undefined;
+    if (targetElement) {
+      logger.debug(
+        'useGalleryItemScroll: target element already rendered, skipping MutationObserver',
+        {
+          targetIndex,
+        }
+      );
+      return;
+    }
+
+    // Phase 263: Solution 1 - Watch for DOM mutations (additions) to detect rendering
+    renderMutationObserver = new MutationObserver(() => {
+      const currentTargetElement = itemsRoot.children[targetIndex] as HTMLElement | undefined;
+      if (currentTargetElement) {
+        logger.debug('useGalleryItemScroll: target element detected by MutationObserver', {
+          targetIndex,
+          delay: 'immediate (~0ms)',
+        });
+
+        // Disconnect observer before scrolling
+        if (renderMutationObserver) {
+          renderMutationObserver.disconnect();
+          renderMutationObserver = null;
+        }
+
+        // Trigger scroll immediately (bypass scheduled timeout if still pending)
+        globalTimerManager.setTimeout(() => {
+          void scrollToItem(targetIndex);
+        }, 0);
+      }
+    });
+
+    try {
+      renderMutationObserver.observe(itemsRoot, {
+        childList: true, // Watch for added/removed nodes
+        subtree: false, // Only direct children
+      });
+
+      logger.debug('useGalleryItemScroll: MutationObserver activated for initial render', {
+        targetIndex,
+      });
+    } catch (err) {
+      logger.debug('useGalleryItemScroll: MutationObserver setup failed, falling back to polling', {
+        error: err,
+      });
+      renderMutationObserver = null;
+    }
+  };
+
   const scheduleScrollToIndex = (index: number): void => {
     clearScrollTimeout();
 
-    const delay = debounceDelay();
+    // Phase 263: Solution 2 - Skip debouncing on first scroll if no scroll has been attempted yet
+    const delay = hasPerformedInitialScroll ? debounceDelay() : 0;
+    if (!hasPerformedInitialScroll) {
+      hasPerformedInitialScroll = true;
+      logger.debug('useGalleryItemScroll: 초기 스크롤 시도 - 디바운싱 건너뛰기', {
+        currentIndex: index,
+        delay: 0,
+      });
+
+      // Phase 263: Solution 1 - Setup MutationObserver to detect initial render
+      setupInitialRenderMonitor(index);
+    }
+
     updateStateSignal(setState, { pendingIndex: index });
     const state = getState();
 
@@ -440,6 +522,11 @@ export function useGalleryItemScroll(
     clearScrollTimeout();
     stopIndexWatcher();
     clearUserScrollTimeout();
+    // Phase 263: Solution 1 - Clean up MutationObserver
+    if (renderMutationObserver) {
+      renderMutationObserver.disconnect();
+      renderMutationObserver = null;
+    }
     stateSignal.reset();
   });
 
