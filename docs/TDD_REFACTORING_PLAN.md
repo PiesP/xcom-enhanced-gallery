@@ -47,7 +47,39 @@
 
 ## 🔄 활성 리팩토링
 
-*현재 활성 작업 없음 — 모든 단계 완료* ✅
+### Phase 270: 자동 스크롤 이미지 로드 타이밍 최적화
+
+**목표**: 갤러리 기동 및 핏 모드 변경 시 자동 스크롤이 이미지 **완전 로드 후**에 동작하도록 수정
+
+**상태**: 🔍 **분석 완료, 솔루션 설계 중**
+
+**문제 분석**:
+
+- 자동 스크롤이 이미지 로드 완료 전에 호출됨
+- 높이 정보 불완전 → 스크롤 위치 부정확
+- Phase 269 CSS 기반 높이는 정적이므로 실제 미디어 크기 미반영
+
+**추천 솔루션 (Option A)**:
+
+1. **이미지 로드 대기**: `waitForMediaLoad()` 함수 추가
+   - 파일: `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+   - 목적: 현재 아이템의 `data-media-loaded` 속성 모니터링
+   - 타임아웃: 1000ms (네트워크 지연 대비)
+
+2. **조건부 스크롤**: `autoScrollToCurrentItem()` 수정
+   - 로드 완료 확인 후 스크롤 실행
+   - 부분 로드 상태에서도 타임아웃으로 진행
+
+3. **테스트 추가**: RAF timing, E2E 네트워크 시뮬레이션
+
+**기대 효과**:
+
+- 자동 스크롤 정확도 향상
+- CLS 점수 추가 개선
+- 사용자 경험 일관성 증대
+- 대기 시간 ~50-100ms (사용자 인지 불가)
+
+**상세 분석**: [PHASE_270_AUTO_SCROLL_IMAGE_LOADING_TIMING.md](./PHASE_270_AUTO_SCROLL_IMAGE_LOADING_TIMING.md)
 
 ---
 

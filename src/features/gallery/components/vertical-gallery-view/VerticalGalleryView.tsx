@@ -333,7 +333,51 @@ function VerticalGalleryViewCore({
     }
   );
 
-  const autoScrollToCurrentItem = () => {
+  // Phase 270: 이미지 로드 완료 후 자동 스크롤 (타이밍 최적화)
+  const waitForMediaLoad = (element: Element, timeoutMs: number = 1000): Promise<void> => {
+    return new Promise(resolve => {
+      // 이미 로드된 경우 즉시 반환
+      if (element.getAttribute('data-media-loaded') === 'true') {
+        resolve();
+        return;
+      }
+
+      const checkInterval = setInterval(() => {
+        if (element.getAttribute('data-media-loaded') === 'true') {
+          clearInterval(checkInterval);
+          clearTimeout(timeoutId);
+          resolve();
+        }
+      }, 50);
+
+      // 타임아웃 처리 (네트워크 지연 시에도 스크롤 진행)
+      const timeoutId = setTimeout(() => {
+        clearInterval(checkInterval);
+        logger.debug(
+          'VerticalGalleryView: 이미지 로드 타임아웃 (1000ms) - 부분 로드 상태에서 스크롤 진행'
+        );
+        resolve();
+      }, timeoutMs);
+    });
+  };
+
+  const autoScrollToCurrentItem = async () => {
+    const currentIdx = currentIndex();
+    const container = containerEl();
+
+    if (!container || currentIdx < 0 || currentIdx >= mediaItems().length) {
+      logger.debug('VerticalGalleryView: autoScrollToCurrentItem 건너뜀 (유효한 아이템 없음)');
+      return;
+    }
+
+    // Phase 270: 현재 아이템의 이미지 로드 완료 대기
+    const itemElement = container.querySelector(`[data-item-index="${currentIdx}"]`);
+
+    if (itemElement) {
+      await waitForMediaLoad(itemElement);
+    }
+
+    // 로드 완료 후 스크롤 실행
     void scrollToCurrentItem();
   };
 
