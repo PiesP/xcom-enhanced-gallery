@@ -6,7 +6,7 @@
  * - JSDOM 환경에서 안전하고 효율적인 테스트
  * - 불필요한 edge cases 정리
  *
- * Phase 194: import 경로 유지 (utils/browser-utils.ts 계속 사용, 이후 완전 마이그레이션 예정)
+ * Phase 282 Step 2: import 경로 수정 (utils/browser/safe-browser 직접 사용)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,7 +25,7 @@ import {
   safeSetTimeout,
   safeWindow,
   setScrollPosition,
-} from '@shared/browser/utils/browser-utils';
+} from '@shared/utils/browser/safe-browser';
 
 /** 테스트용 window 모킹 팩토리 */
 const createMockWindow = (overrides: Record<string, any> = {}) =>
