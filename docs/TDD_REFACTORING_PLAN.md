@@ -77,11 +77,11 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 282 Step 1 완료)
+**현재 작업**: 없음 (Phase 282 Step 1-2 완료)
 
 **다음 우선순위**:
 
-1. **Phase 282 Step 2**: 추가 deprecated 코드 정리 (선택사항)
+1. **Phase 282 Step 3**: 추가 deprecated 코드 정리 (선택사항)
    - BaseComponentProps, StandardProps 마이그레이션 검토
    - deprecated 메서드 사용처 분석 및 제거 계획
 2. 사용자 피드백 수집 및 개선 사항 도출
@@ -90,14 +90,17 @@
 
 ---
 
-## 📝 Phase 282: Deprecated 코드 정리 (✅ 일부 완료)
+## 📝 Phase 282: Deprecated 코드 정리 (✅ Step 1-2 완료)
 
-**상태**: ✅ Step 1 완료
+**상태**: ✅ Step 1-2 완료
 
 **완료 항목**:
 
-- ✅ `src/shared/browser/browser-utils.ts` 제거 (Phase 223에서 통합됨, 사용처 없음)
-- ✅ `test/archive/unit/core/browser-compatibility.deprecated.test.ts` 제거 (아카이브 정리)
+- ✅ **Step 1**: `src/shared/browser/browser-utils.ts` 제거 (Phase 223에서 통합됨, 사용처 없음)
+- ✅ **Step 1**: `test/archive/unit/core/browser-compatibility.deprecated.test.ts` 제거 (아카이브 정리)
+- ✅ **Step 2**: `src/shared/browser/utils/browser-utils.ts` 재내보내기 파일 제거
+- ✅ **Step 2**: 테스트 import 경로 수정 (`@shared/utils/browser/safe-browser` 직접 사용)
+- ✅ **Step 2**: 빈 `utils/` 디렉터리 정리
 - ✅ 타입 체크, 빌드, 테스트 모두 통과 (346.02 KB, 크기 변화 없음)
 
 **보류 항목** (추가 분석 필요):
