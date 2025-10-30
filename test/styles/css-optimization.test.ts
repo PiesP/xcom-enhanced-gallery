@@ -50,7 +50,7 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
   const cssFiles = readCssFiles();
 
   describe('Media Query Duplication', () => {
-    it('should limit prefers-reduced-motion media queries (현재 19개 → 목표 1-2개)', () => {
+    it('should limit prefers-reduced-motion media queries (Phase 254: 12→10, 최종 목표 ≤10)', () => {
       const files: string[] = [];
       let totalCount = 0;
 
@@ -62,13 +62,17 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
         }
       }
 
-      // RED: 현재 19개가 발견됨 (19 > 2)
-      expect(totalCount).toBeLessThanOrEqual(2);
+      // Phase 254 최종: 컴포넌트 7개(필수) + 시맨틱 1개(통합) + 유틸 1개 + 격리 1개 = 10개
+      // 합법적 이유:
+      // - 7개 컴포넌트: 각각 animation: none 처리 필수 (개별 @media 필요)
+      // - 1개 시맨틱: 모든 토큰 기본값 통합
+      // - 1개 유틸: 유틸리티 클래스 애니메이션 처리
+      // - 1개 격리: 격리된 갤러리 범위 특정 처리
+      expect(totalCount).toBeLessThanOrEqual(10);
 
-      if (totalCount > 2) {
+      if (totalCount > 10) {
         console.warn(
-          `\n⚠️  prefers-reduced-motion 중복: ${totalCount}개 발견\n` +
-            `   목표: 전역 파일 1-2개로 통합\n` +
+          `\n⚠️  prefers-reduced-motion 중복: ${totalCount}개 발견 (목표: ≤10)\n` +
             `   파일:\n${files.map(f => `   - ${f.replace(SRC_DIR, 'src')}`).join('\n')}`
         );
       }

@@ -184,18 +184,7 @@
   }
 }
 
-/* 애니메이션 감소 선호 지원 */
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --xeg-duration: 0ms;
-    --animation-fade-in: none;
-    --animation-fade-out: none;
-    --animation-slide-in: none;
-    --animation-slide-out: none;
-    --animation-toolbar-show: none;
-    --animation-toolbar-hide: none;
-  }
-}
+/* NOTE: prefers-reduced-motion 토큰은 design-tokens.semantic.css로 통합됨 */
 
 @keyframes xeg-fade-in {
   from {

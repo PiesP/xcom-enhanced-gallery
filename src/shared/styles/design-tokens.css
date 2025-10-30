@@ -255,14 +255,7 @@
     box-shadow var(--xeg-duration-slow) var(--xeg-ease-standard);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    /* 감소된 모션 토큰 */
-    --xeg-transition-fast: none;
-    --xeg-transition-normal: none;
-    --xeg-transition-slow: none;
-  }
-}
+/* NOTE: prefers-reduced-motion 토큰은 design-tokens.semantic.css로 통합됨 */
 
 /* 공통 애니메이션 - 테스트 요구사항 */
 @keyframes xeg-spin {

@@ -418,12 +418,26 @@
 
 @media (prefers-reduced-motion: reduce) {
   :root {
+    /* Durations (design-tokens.semantic.css) */
     --xeg-duration: 0ms;
     --xeg-duration-fast: 0ms;
     --xeg-duration-slow: 0ms;
     --transition-fast: 0ms;
     --transition-normal: 0ms;
     --transition-slow: 0ms;
+
+    /* Transitions (design-tokens.css) */
+    --xeg-transition-fast: none;
+    --xeg-transition-normal: none;
+    --xeg-transition-slow: none;
+
+    /* Animations (design-tokens.component.css) */
+    --animation-fade-in: none;
+    --animation-fade-out: none;
+    --animation-slide-in: none;
+    --animation-slide-out: none;
+    --animation-toolbar-show: none;
+    --animation-toolbar-hide: none;
   }
 }
 
