@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 279)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 280)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 345.68 KB (gzip: 93.56 KB) |
+| **번들 크기** | 346.02 KB (gzip: 93.62 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -21,7 +21,98 @@
 
 ---
 
-## 🎯 최근 완료 Phase (279)
+## 🎯 최근 완료 Phase (280)
+
+### Phase 280: Phase 279 구현 코드 현대화 (Simplification) ✅ 완료
+
+**완료 일시**: 2025-10-30
+
+**상태**: ✅ 완료
+
+**배경**:
+
+- Phase 279에서 갤러리 최초 기동 시 자동 스크롤 기능 구현
+- 기능은 완벽히 작동하지만 React-style ref pattern(`{ current: false }`) 사용
+- Solid.js 환경에서 더 idiomatic한 코드로 개선 필요
+
+**문제**:
+
+1. **React Pattern in Solid.js**:
+   - `const hasPerformedInitialScroll = { current: false }` (React useRef 패턴)
+   - Solid.js에서는 단순 let 변수로 충분함
+
+2. **Early Return 부재**:
+   - 플래그 체크 후 불필요한 로직 계속 실행
+   - `if (hasPerformedInitialScroll.current) { /* 계속 진행 */ }`
+
+3. **변수 추출 불필요**:
+   - Effect 상단에서 모든 변수 추출 (container, items, index)
+   - 실제로는 이후 조건 분기에서만 사용
+
+**솔루션 (Option C: 최소 변경)**:
+
+```typescript
+// BEFORE (Phase 279):
+const hasPerformedInitialScroll = { current: false };
+
+createEffect(() => {
+  const container = containerEl();
+  const items = mediaItems();
+  const index = currentIndex();
+  const visible = isVisible();
+
+  if (!visible) {
+    hasPerformedInitialScroll.current = false;
+    return;
+  }
+
+  if (hasPerformedInitialScroll.current) {
+    // 아무것도 안 함, but 계속 진행
+  }
+  // ... 스크롤 로직
+});
+
+// AFTER (Phase 280):
+let hasPerformedInitialScroll = false;
+
+createEffect(() => {
+  const visible = isVisible();
+  if (!visible) {
+    hasPerformedInitialScroll = false;
+    return;
+  }
+  if (hasPerformedInitialScroll) return; // Early return ✨
+
+  const container = containerEl();
+  const items = mediaItems();
+  if (!container || items.length === 0) return;
+  // ... 스크롤 로직
+});
+```
+
+**변경 사항**:
+
+1. **Object Ref → Let Variable**: `{ current: false }` → `false`
+2. **Early Return 추가**: 플래그 체크 후 즉시 return
+3. **변수 추출 최적화**: 필요한 시점에만 getter 호출
+4. **로거 메시지 업데이트**: "Phase 279/280" 명시
+
+**테스트 검증**:
+
+- ✅ 12/12 Phase 279/280 테스트 모두 통과
+- ✅ 111/111 브라우저 테스트 통과
+- ✅ 86/86 E2E 테스트 통과
+- ✅ 빌드 크기 동일: 346.02 KB (gzip 93.62 KB)
+
+**기대 효과**:
+
+- ✅ Solid.js idiomatic 코드 (React 패턴 제거)
+- ✅ 코드 가독성 향상 (early return)
+- ✅ 성능 미세 개선 (불필요한 getter 호출 제거)
+- ✅ 유지보수성 향상 (간결한 로직 흐름)
+- ✅ 100% 테스트 커버리지 유지
+
+---
 
 ### Phase 279: 갤러리 최초 기동 시 자동 스크롤 완전 안정화 ✅ 완료
 
