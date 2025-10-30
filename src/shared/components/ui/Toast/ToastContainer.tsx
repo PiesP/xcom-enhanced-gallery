@@ -5,7 +5,7 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
 import { useSelector } from '@shared/utils/signal-selector';
 import { toastManager } from '@/shared/services/unified-toast-manager';
-import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import { createClassName, createAriaProps, createTestProps } from '@shared/utils/component-utils'; // Phase 284: 개별 함수 직접 import
 import type { StandardToastContainerProps } from '../types'; // Phase 282 Step 3: 직접 경로 사용
 import type { BaseComponentProps } from '@shared/types/app.types'; // Phase 282 Step 3: 직접 경로 사용
 import { Toast } from './Toast';
@@ -50,7 +50,7 @@ export function ToastContainer(rawProps: ToastContainerProps = {}): JSXElement {
   });
 
   const containerClass = () =>
-    ComponentStandards.createClassName(
+    createClassName(
       styles.container,
       styles[local.position] || styles['top-right'],
       local.className
@@ -69,8 +69,8 @@ export function ToastContainer(rawProps: ToastContainerProps = {}): JSXElement {
     ariaData.tabIndex = local.tabIndex;
   }
 
-  const ariaProps = ComponentStandards.createAriaProps(ariaData);
-  const testProps = ComponentStandards.createTestProps(local['data-testid'] ?? 'toast-container');
+  const ariaProps = createAriaProps(ariaData);
+  const testProps = createTestProps(local['data-testid'] ?? 'toast-container');
 
   return (
     <div

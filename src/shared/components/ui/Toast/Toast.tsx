@@ -1,5 +1,5 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
-import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import { createClassName, createTestProps } from '@shared/utils/component-utils'; // Phase 284: 개별 함수 직접 import
 import type { StandardToastProps } from '../types'; // Phase 282 Step 3: 직접 경로 사용
 import type { ToastItem as ServiceToastItem } from '@/shared/services/unified-toast-manager';
 import { globalTimerManager } from '@shared/utils/timer-management';
@@ -82,14 +82,10 @@ export function Toast({
   };
 
   // 표준화된 클래스명 생성
-  const toastClass = ComponentStandards.createClassName(
-    styles.toast,
-    styles[toast.type],
-    className
-  );
+  const toastClass = createClassName(styles.toast, styles[toast.type], className);
 
   // 표준화된 테스트 속성 생성
-  const testProps = ComponentStandards.createTestProps(testId);
+  const testProps = createTestProps(testId);
 
   return (
     <div

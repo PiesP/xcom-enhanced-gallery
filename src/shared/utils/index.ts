@@ -123,7 +123,6 @@ export {
   handleLoadingState,
   mergeProps,
   validateProps,
-  ComponentStandards,
   type ValidationResult,
 } from './component-utils';
 

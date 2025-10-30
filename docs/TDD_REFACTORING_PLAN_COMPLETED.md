@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 283 전체)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 284 전체)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 345.62 KB (gzip: 93.51 KB) |
+| **번들 크기** | 344.54 KB (gzip: 93.16 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -21,7 +21,88 @@
 
 ---
 
-## 🎯 최근 완료 Phase (283)
+## 🎯 최근 완료 Phase (284)
+
+### Phase 284: ComponentStandards 마이그레이션 ✅ 전체 완료
+
+**완료 일시**: 2025-10-30
+
+**상태**: ✅ **Step 1-4 전체 완료**
+
+**배경**:
+
+- Phase 283 완료 후 보류 항목 중 ComponentStandards 마이그레이션 우선 처리
+- ComponentStandards 객체가 5개 컴포넌트에서 사용 중
+- 개별 함수 direct import로 변경하여 tree-shaking 최적화
+- 명확한 의존성 파악 및 코드 현대화
+
+**작업 내용**:
+
+**Step 1 - 사용처 분석**:
+
+- VerticalImageItem.tsx: createClassName 4회, createAriaProps 1회, createTestProps 1회
+- Toast.tsx: createClassName 1회, createTestProps 1회
+- ToastContainer.tsx: createClassName 1회, createAriaProps 1회, createTestProps 1회
+- Toolbar.tsx: createClassName 1회
+- GalleryHOC.tsx: createClassName 1회, createAriaProps 1회
+
+**Step 2 - 컴포넌트 업데이트**:
+
+1. **VerticalImageItem.tsx**:
+
+   ```typescript
+   // Before
+   import { ComponentStandards } from '@shared/utils/component-utils';
+   ComponentStandards.createClassName(...);
+
+   // After
+   import { createClassName, createAriaProps, createTestProps } from '@shared/utils/component-utils';
+   createClassName(...);
+   ```
+
+2. **Toast.tsx, ToastContainer.tsx, Toolbar.tsx**: 동일 패턴 적용
+
+3. **GalleryHOC.tsx (충돌 해결)**:
+
+   ```typescript
+   // Before
+   import { ComponentStandards } from '../../utils/component-utils';
+   ComponentStandards.createClassName(...);
+
+   // After (별칭 사용)
+   import { createClassName as createComponentClassName, createAriaProps } from '../../utils/component-utils';
+   createComponentClassName(...); // 로컬 createClassName과 충돌 방지
+   ```
+
+**Step 3 - ComponentStandards 객체 제거**:
+
+- `src/shared/utils/component-utils.ts`: ComponentStandards 객체 제거 (18줄)
+- `src/shared/utils/index.ts`: ComponentStandards 재내보내기 제거
+
+**Step 4 - 빌드 검증**:
+
+- TypeScript: 0 에러 ✅
+- E2E 테스트: 86/86 통과 ✅
+- Prettier 포맷 자동 수정 ✅
+- 빌드: 성공 (344.54 KB) ✅
+
+**결과**:
+
+- ✅ 코드 감소: 18줄 (ComponentStandards 객체)
+- ✅ Tree-shaking 최적화 가능 (미사용 함수 제거)
+- ✅ 명확한 의존성 파악 (개별 함수 import)
+- ✅ 충돌 해결 패턴 확립 (GalleryHOC 별칭 사용)
+- ✅ 번들 크기: 344.54 KB (-1.08 KB from Phase 283)
+- ✅ 테스트: 모두 GREEN (1007/1007 unit + 86/86 E2E)
+
+**교훈**:
+
+1. **sed 명령 활용**: 일괄 변경 시 효율적 (5개 컴포넌트)
+2. **별칭 사용**: 로컬 함수와 import 충돌 시 `as` 별칭 활용
+3. **순차 검증**: import 변경 → sed 일괄 변경 → TypeScript 검증 → 빌드
+4. **Prettier 후처리**: 수동 수정 후 `npm run format` 자동 포맷 적용
+
+---
 
 ### Phase 283: 기타 Deprecated 타입 별칭 정리 ✅ 전체 완료
 

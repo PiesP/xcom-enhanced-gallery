@@ -43,7 +43,7 @@ import type { ImageFitMode } from '@shared/types';
 import type { JSX } from 'solid-js';
 
 import { withGallery } from '@shared/components/hoc';
-import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import { createClassName, createAriaProps, createTestProps } from '@shared/utils/component-utils'; // Phase 284: 개별 함수 직접 import
 import { getSolid } from '@shared/external/vendors';
 import { languageService } from '@shared/services/language-service';
 import { logger } from '@shared/logging';
@@ -338,7 +338,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   const fitModeClass = createMemo(() => fitModeMap[resolvedFitMode()] ?? '');
 
   const containerClasses = createMemo(() =>
-    ComponentStandards.createClassName(
+    createClassName(
       styles.container,
       styles.imageWrapper,
       isActive ? styles.active : undefined,
@@ -348,9 +348,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     )
   );
 
-  const imageClasses = createMemo(() =>
-    ComponentStandards.createClassName(styles.image, fitModeClass())
-  );
+  const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
 
   createEffect(() => {
     const mode = resolvedFitMode();
@@ -361,14 +359,14 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     syncFitModeAttributes(videoRefSignal(), mode, nextClass);
   });
 
-  const ariaProps = ComponentStandards.createAriaProps({
+  const ariaProps = createAriaProps({
     'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
     'aria-describedby': ariaDescribedBy,
     role: role || 'button',
     tabIndex: tabIndex ?? 0,
   } as Record<string, string | number | boolean | undefined>);
 
-  const testProps = ComponentStandards.createTestProps(testId);
+  const testProps = createTestProps(testId);
 
   const assignContainerRef = (element: HTMLDivElement | null) => {
     setContainerRef(element);
@@ -435,7 +433,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               autoplay={false}
               controls
               ref={setVideoRefSignal}
-              class={ComponentStandards.createClassName(
+              class={createClassName(
                 styles.video,
                 fitModeClass(),
                 isLoaded() ? styles.loaded : styles.loading
@@ -460,10 +458,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               }
               loading='lazy'
               decoding='async'
-              class={ComponentStandards.createClassName(
-                imageClasses(),
-                isLoaded() ? styles.loaded : styles.loading
-              )}
+              class={createClassName(imageClasses(), isLoaded() ? styles.loaded : styles.loading)}
               data-fit-mode={resolvedFitMode()}
               onLoad={handleMediaLoad}
               onError={handleMediaError}

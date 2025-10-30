@@ -24,11 +24,11 @@
 
 ### ✨ 완성된 최적화
 
-**번들 크기**: 345.62 KB (목표: ≤420 KB) → **18% 여유 공간**
+**번들 크기**: 344.54 KB (목표: ≤420 KB) → **18% 여유 공간**
 
 - dev 빌드: 875 KB (가독성 포맷팅 포함)
-- prod 빌드: 345.62 KB
-- gzip: 93.51 KB
+- prod 빌드: 344.54 KB
+- gzip: 93.16 KB
 
 **성능 개선**:
 
@@ -57,6 +57,7 @@
 - Phase 281: **signal-optimization.ts React 패턴 제거** ✅ 완료
 - Phase 282: **Deprecated 코드 정리 (Step 1-6)** ✅ 완료
 - Phase 283: **기타 deprecated 타입 별칭 정리** ✅ 완료
+- Phase 284: **ComponentStandards 마이그레이션** ✅ 완료
 
 **테스트 상태**: ✅ 모두 GREEN
 
@@ -79,14 +80,55 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 283 완료 ✅)
+**현재 작업**: 없음 (Phase 284 완료 ✅)
 
 **다음 우선순위**:
 
 1. 사용자 피드백 수집 및 개선 사항 도출
 2. 성능 모니터링 및 최적화 기회 탐색
 3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
-4. Phase 284: ComponentStandards 마이그레이션 (선택사항 - 5개 컴포넌트 영향)
+
+---
+
+## 📝 Phase 284: ComponentStandards 마이그레이션 (✅ 완료)
+
+**상태**: ✅ **전체 완료** (Step 1-3)
+
+**목표**: ComponentStandards 객체를 개별 함수 import로 마이그레이션
+
+**완료 항목**:
+
+- ✅ **Step 1**: 사용처 분석 (5개 컴포넌트)
+- ✅ **Step 2**: 컴포넌트 업데이트 (개별 함수 import)
+  - VerticalImageItem.tsx: 3개 함수 (createClassName, createAriaProps, createTestProps)
+  - Toast.tsx: 2개 함수 (createClassName, createTestProps)
+  - ToastContainer.tsx: 3개 함수 (모든 함수)
+  - Toolbar.tsx: 1개 함수 (createClassName)
+  - GalleryHOC.tsx: 2개 함수 (충돌 해결: createComponentClassName 별칭)
+- ✅ **Step 3**: ComponentStandards 객체 제거 (18줄 감소)
+- ✅ **Step 4**: 빌드 검증 (TypeScript 0 에러, E2E 86/86 통과)
+
+**패턴 변경**:
+
+```typescript
+// Before: 객체 접근 패턴
+import { ComponentStandards } from '@shared/utils/component-utils';
+ComponentStandards.createClassName(...);
+
+// After: 개별 함수 직접 import
+import { createClassName, createAriaProps } from '@shared/utils/component-utils';
+createClassName(...);
+```
+
+**충돌 해결**: GalleryHOC에서 로컬 `createClassName` 함수와 충돌 → 별칭 사용
+(`createComponentClassName`)
+
+**결과**:
+
+- 코드 감소: 18줄 (ComponentStandards 객체)
+- Tree-shaking 최적화 가능
+- 명확한 의존성 파악
+- 번들 크기: 344.54 KB (-1.08 KB from Phase 283)
 
 ---
 

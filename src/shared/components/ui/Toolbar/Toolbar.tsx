@@ -7,7 +7,7 @@ import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
 import { useToolbarState } from '../../../hooks/use-toolbar-state';
 import { getToolbarDataState, getToolbarClassName } from '../../../utils/toolbar-utils';
-import { ComponentStandards } from '@shared/utils/component-utils'; // Phase 282 Step 3: 직접 경로 사용
+import { createClassName } from '@shared/utils/component-utils'; // Phase 284: 개별 함수 직접 import
 import { ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize } from '../Icon';
 import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarSettingsController } from '../../../hooks/toolbar/use-toolbar-settings-controller';
@@ -62,7 +62,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const toggleSettingsExpanded = () => setIsSettingsExpanded(prev => !prev);
 
   const toolbarClass = createMemo(() =>
-    ComponentStandards.createClassName(
+    createClassName(
       styles.toolbar,
       getToolbarClassName(toolbarState, styles.galleryToolbar || ''),
       props.className ?? ''

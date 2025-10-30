@@ -10,7 +10,10 @@ import type {
   GalleryComponentProps as BaseGalleryComponentProps,
 } from '../../types/app.types'; // Phase 282 Step 3: 직접 경로 사용
 import { getSolid } from '../../external/vendors';
-import { ComponentStandards } from '../../utils/component-utils';
+import {
+  createClassName as createComponentClassName,
+  createAriaProps,
+} from '../../utils/component-utils'; // Phase 284: 개별 함수 직접 import (로컬 createClassName과 충돌 방지)
 
 const solid = getSolid();
 const { mergeProps } = solid;
@@ -405,14 +408,14 @@ export function createHOCStandardProps<T extends GalleryComponentProps>(
   const markerAttributes = createMarkerAttributes(mergeOptionsWithDefaults(hocOptions));
 
   // 표준화된 클래스명 생성
-  const standardClassName = ComponentStandards.createClassName(
+  const standardClassName = createComponentClassName(
     baseProps.className,
     hocOptions.className,
     `xeg-gallery-${hocOptions.type}`
   );
 
   // ARIA 속성 생성
-  const ariaProps = ComponentStandards.createAriaProps(baseProps);
+  const ariaProps = createAriaProps(baseProps);
 
   return {
     ...baseProps,

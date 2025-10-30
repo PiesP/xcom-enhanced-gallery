@@ -142,21 +142,3 @@ export function validateProps<T extends BaseComponentProps>(
     errors,
   };
 }
-
-/**
- * @deprecated 하위 호환성을 위한 객체 형태 (개별 함수 사용 권장)
- * @see {@link createClassName}
- * @see {@link createAriaProps}
- * @see {@link createTestProps}
- * @see {@link handleLoadingState}
- * @see {@link mergeProps}
- * @see {@link validateProps}
- */
-export const ComponentStandards = {
-  createClassName,
-  createAriaProps,
-  createTestProps,
-  handleLoadingState,
-  mergeProps,
-  validateProps,
-} as const;
