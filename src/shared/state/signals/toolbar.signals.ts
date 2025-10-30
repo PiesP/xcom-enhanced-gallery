@@ -22,12 +22,6 @@ import { createSignalSafe, type SafeSignal } from '@shared/state/signals/signal-
 export type ToolbarModeState = 'gallery' | 'settings' | 'download';
 
 /**
- * 이전 네이밍 호환성 (backward compatibility)
- * @deprecated ToolbarModeState 사용 권장
- */
-export type ToolbarMode = ToolbarModeState;
-
-/**
  * 툴바 상태 (모드 관리용)
  *
  * @description 툴바의 현재 모드와 접근성 설정을 관리합니다.
@@ -37,12 +31,6 @@ export interface ToolbarModeStateData {
   readonly currentMode: ToolbarModeState;
   readonly needsHighContrast: boolean;
 }
-
-/**
- * 이전 네이밍 호환성 (backward compatibility)
- * @deprecated ToolbarModeStateData 사용 권장
- */
-export interface ToolbarState extends ToolbarModeStateData {}
 
 export interface ToolbarExpandableState {
   readonly isSettingsExpanded: boolean;

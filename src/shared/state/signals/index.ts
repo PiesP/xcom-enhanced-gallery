@@ -55,7 +55,7 @@ export {
 export { type ScrollState, type ScrollDirection, INITIAL_SCROLL_STATE } from './scroll.signals';
 
 export {
-  type ToolbarState,
+  type ToolbarModeStateData,
   type ToolbarEvents,
   toolbarState,
   updateToolbarMode,
