@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 Step 1-4)
+**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 282 전체)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -23,18 +23,19 @@
 
 ## 🎯 최근 완료 Phase (282)
 
-### Phase 282: Deprecated 코드 정리 (Cleanup) ✅ Step 1-3 완료
+### Phase 282: Deprecated 코드 정리 (Cleanup) ✅ 전체 완료
 
 **완료 일시**: 2025-10-30
 
-**상태**: ✅ Step 1-3 완료
+**상태**: ✅ **Step 1-6 전체 완료**
 
 **배경**:
 
 - 코드베이스에 다수의 `@deprecated` 마킹과 사용되지 않는 legacy 코드 존재
 - Phase 223에서 통합된 browser-utils.ts가 여전히 남아있음
 - 재내보내기 파일로 인한 import 경로 혼란
-- 아카이브 디렉터리에 deprecated 테스트 파일 존재
+- 대체 API 미구현 상태에서 deprecated 표시가 혼란 야기
+- 사용되지 않는 deprecated 메서드 존재
 
 **문제**:
 
@@ -51,7 +52,22 @@
    - Phase 194에서 deprecated 마킹됨
    - 테스트 1개 파일에서만 사용 중
 
-**솔루션 (Step 1-2)**:
+4. **Step 4 - 대체 API 미구현 상태의 deprecated**:
+   - `ServiceManager.getDiagnostics()` - UnifiedServiceDiagnostics 미구현
+   - `BrowserService.getDiagnostics()` - UnifiedServiceDiagnostics 미구현
+   - 실제로는 공식 API로 사용 중인데 deprecated 표시로 혼란
+
+5. **Step 5 - DOMEventManager deprecated**:
+   - `createDomEventManager()` - UnifiedEventManager 미구현
+   - EventManager에서 실제 사용 중
+
+6. **Step 6 - 사용되지 않는 메서드**:
+   - `BrowserService.downloadFile()` - deprecated, 외부 사용처 없음
+   - `getNativeDownload()`가 실제 다운로드에 사용됨
+   - Phase 194에서 deprecated 마킹됨
+   - 테스트 1개 파일에서만 사용 중
+
+**솔루션 (Step 1-6)**:
 
 ```typescript
 // STEP 1 - REMOVED:
@@ -84,10 +100,28 @@
 // - Phase 2-3A에서 deprecated 마킹됨
 // - 5개 파일에서 직접 import로 변경
 
-// DEFERRED (보류):
-// - getDiagnostics 메서드 (UnifiedServiceDiagnostics 사용 권장)
-// - DOMEventManager (UnifiedEventManager로 이미 통합됨)
-// - downloadFile 메서드 (getUserscript().download() 사용 권장)
+// STEP 4 - UPDATED:
+// ServiceManager.getDiagnostics() (Line 165)
+// - Removed: @deprecated v2.0.0 - UnifiedServiceDiagnostics.getServiceStatus()를 사용하세요
+// - Added: @returns 서비스 등록/활성화 상태 및 서비스 목록
+// - Reason: UnifiedServiceDiagnostics 미구현, 실제 사용 중
+
+// BrowserService.getDiagnostics() (Line 140)
+// - Removed: @deprecated v1.1.0 - UnifiedServiceDiagnostics.getBrowserDiagnostics()를 사용하세요
+// - Added: @returns 주입된 스타일, 페이지 가시성, DOM 준비 상태 정보
+// - Reason: UnifiedServiceDiagnostics 미구현, 실제 사용 중
+
+// STEP 5 - UPDATED:
+// DomEventManager.createDomEventManager() (Line 148)
+// - Removed: @deprecated UnifiedEventManager를 사용하세요
+// - Added: @note EventManager (event-manager.ts)에서 내부적으로 사용됨
+// - Reason: UnifiedEventManager 미구현, EventManager에서 사용 중
+
+// STEP 6 - REMOVED:
+// BrowserService.downloadFile() (Line 90-122)
+// - deprecated 메서드 완전 제거 (외부 사용처 없음)
+// - browserAPI.downloadFile export 제거 (Line 153-154)
+// - Reason: getNativeDownload()가 실제 다운로드에 사용됨 (bulk-download-service.ts)
 ```
 
 **변경 사항**:
@@ -119,6 +153,27 @@
    - `Toolbar.tsx`: ComponentStandards → `@shared/utils/component-utils`
 3. **Index 파일 정리**: base/index.ts와 ui/index.ts에서 재내보내기 제거
 
+**Step 4**:
+
+1. **Deprecated 표시 제거**: 2곳
+   - `src/shared/services/core/service-manager.ts` (Line 165): getDiagnostics()
+   - `src/shared/browser/browser-service.ts` (Line 140): getDiagnostics()
+2. **주석 명확화**: 실제 반환값 설명으로 대체
+3. **이유**: UnifiedServiceDiagnostics 미구현, 공식 API로 사용 중
+
+**Step 5**:
+
+1. **Deprecated 표시 제거**: 1곳
+   - `src/shared/dom/dom-event-manager.ts` (Line 148): createDomEventManager()
+2. **주석 명확화**: EventManager에서 내부적으로 사용됨 명시
+3. **이유**: UnifiedEventManager 미구현, 실제 사용 중
+
+**Step 6**:
+
+1. **메서드 제거**: BrowserService.downloadFile() 완전 제거 (29줄 감소)
+2. **Export 제거**: browserAPI.downloadFile 제거
+3. **이유**: 외부 사용처 없음, getNativeDownload()가 실제 다운로드에 사용됨
+
 **테스트 검증**:
 
 **Step 1**:
@@ -144,9 +199,62 @@
 - ✅ E2E: 86/86 통과 (5 skipped)
 - ✅ 모든 검증 통과 (npm run build)
 
+**Step 4**:
+
+- ✅ TypeScript: 0 에러
+- ✅ Deprecated 표시 제거: 2곳 (ServiceManager, BrowserService)
+- ✅ 빌드: 345.87 KB (gzip 93.55 KB) - 크기 유지
+- ✅ E2E: 86/86 통과 (5 skipped)
+- ✅ 모든 검증 통과 (npm run build)
+
+**Step 5**:
+
+- ✅ TypeScript: 0 에러
+- ✅ Deprecated 표시 제거: 1곳 (DomEventManager)
+- ✅ 빌드: 345.87 KB (gzip 93.55 KB) - 크기 유지
+- ✅ E2E: 86/86 통과 (5 skipped)
+- ✅ 모든 검증 통과 (npm run build)
+
+**Step 6**:
+
+- ✅ TypeScript: 0 에러
+- ✅ 메서드 제거: downloadFile() 완전 제거 (29줄 감소)
+- ✅ 빌드: 345.87 KB (gzip 93.55 KB) - **크기 유지** (불필요한 코드 제거)
+- ✅ E2E: 86/86 통과 (5 skipped)
+- ✅ 모든 검증 통과 (npm run build)
+
 **기대 효과**:
 
-**Step 1**:
+**전체 (Step 1-6)**:
+
+- ✅ **코드 정리**: 사용되지 않는 파일/메서드 제거 (4개 파일 + 29줄)
+- ✅ **Import 경로 명확화**: 재내보내기 제거, 직접 경로 사용
+- ✅ **Deprecated 표시 정리**: 혼란 제거 (3곳 - getDiagnostics 2곳 + DomEventManager 1곳)
+- ✅ **번들 크기**: 345.87 KB (0.15 KB 감소, 크기 유지)
+- ✅ **유지보수성 향상**: 명확한 코드 구조, deprecated 혼란 제거
+
+**특이사항**:
+
+**Step 4-5 (Deprecated 표시 제거)**:
+
+- **패턴**: "대체 API 미구현 → 공식 API로 유지"
+- **이유**: UnifiedServiceDiagnostics, UnifiedEventManager 구현되지 않음
+- **결과**: 혼란스러운 deprecated 표시 제거, 실제 사용 중임을 명시
+
+**Step 6 (메서드 제거)**:
+
+- **패턴**: "사용되지 않는 deprecated 메서드 → 완전 제거"
+- **이유**: `getNativeDownload()`가 실제 다운로드에 사용됨
+- **결과**: 불필요한 코드 제거 (29줄 감소)
+
+**커밋**:
+
+- `refactor(Phase 282 Step 1): Remove unused browser-utils.ts`
+- `refactor(Phase 282 Step 2): Remove browser-utils re-export file`
+- `refactor(Phase 282 Step 3): Remove component re-export files`
+- `refactor(Phase 282 Step 4): Remove deprecated tags from getDiagnostics`
+- `refactor(Phase 282 Step 5): Remove deprecated tag from createDomEventManager`
+- `refactor(Phase 282 Step 6): Remove unused downloadFile method`
 
 - ✅ 코드베이스 정리 (사용하지 않는 파일 제거)
 - ✅ 아카이브 정리 (deprecated 테스트 제거)

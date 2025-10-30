@@ -77,23 +77,20 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 282 Step 1-4 완료)
+**현재 작업**: 없음 (Phase 282 완료 ✅)
 
 **다음 우선순위**:
 
-1. **Phase 282 Step 5**: DOMEventManager deprecated 정리 (선택사항)
-   - deprecated 표시 명확화 (UnifiedEventManager로 이미 통합됨)
-2. **Phase 282 Step 6**: downloadFile 메서드 마이그레이션 (선택사항)
-   - getUserscript().download() 사용 권장 (2개 위치)
-3. 사용자 피드백 수집 및 개선 사항 도출
-4. 성능 모니터링 및 최적화 기회 탐색
-5. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+1. 사용자 피드백 수집 및 개선 사항 도출
+2. 성능 모니터링 및 최적화 기회 탐색
+3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+4. Phase 283: 기타 deprecated 타입 별칭 정리 (선택사항)
 
 ---
 
-## 📝 Phase 282: Deprecated 코드 정리 (✅ Step 1-4 완료)
+## 📝 Phase 282: Deprecated 코드 정리 (✅ 완료)
 
-**상태**: ✅ Step 1-4 완료
+**상태**: ✅ **전체 완료** (Step 1-6)
 
 **완료 항목**:
 
@@ -105,17 +102,18 @@
 - ✅ **Step 3**: `src/shared/components/base/BaseComponentProps.ts` 재내보내기 파일 제거
 - ✅ **Step 3**: `src/shared/components/ui/StandardProps.ts` 재내보내기 파일 제거
 - ✅ **Step 3**: 5개 컴포넌트 import 경로 직접 경로로 변경
-- ✅ **Step 4**: getDiagnostics 메서드 deprecated 표시 제거 (대체 API 미구현, 공식 API로 유지)
-- ✅ 타입 체크, 빌드, 테스트 모두 통과 (346.02 KB, 크기 변화 없음)
+- ✅ **Step 4**: getDiagnostics 메서드 deprecated 표시 제거 (2곳 - ServiceManager, BrowserService)
+- ✅ **Step 5**: createDomEventManager deprecated 표시 제거 (UnifiedEventManager 미구현)
+- ✅ **Step 6**: BrowserService.downloadFile() 메서드 제거 (deprecated, 외부 사용처 없음)
+- ✅ 타입 체크, 빌드, 테스트 모두 통과 (345.87 KB, 크기 유지)
 
-**보류 항목** (추가 분석 필요):
+**주요 성과**:
 
-- ⏸️ `src/shared/browser/utils/browser-utils.ts` (재내보내기, 테스트에서 사용 중)
-- ⏸️ `BaseComponentProps.ts` (여전히 많은 곳에서 사용 중)
-- ⏸️ `DOMEventManager` (UnifiedEventManager로 migration 진행 중)
-- ⏸️ Deprecated 메서드들 (getDiagnostics 등 아직 사용 중)
+1. **재내보내기 파일 정리**: 3개 파일 제거, import 경로 직접 사용
+2. **혼란스러운 deprecated 표시 제거**: 대체 API 미구현 시 공식 API로 유지
+3. **사용되지 않는 메서드 제거**: downloadFile() 완전 제거 (getNativeDownload() 사용 중)
 
-**결정 사항**: Phase 282는 안전한 파일 제거만 수행하고 종료. 추가 deprecated 코드 정리는 사용처 마이그레이션이 선행되어야 하므로 별도 Phase로 분리 권장.
+**결정 사항**: Phase 282는 안전한 코드 정리를 완료하고 종료. deprecated 타입 별칭 등 추가 정리는 Phase 283으로 분리.
 
 ---
 
