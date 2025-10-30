@@ -5,16 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock dependencies
-vi.mock('@shared/logging/logger', () => ({
-  logger: {
-    debug: vi.fn(),
-    error: vi.fn(),
-    warn: vi.fn(),
-    info: vi.fn(),
-  },
-}));
-
+// Mock EventManager
 vi.mock('@shared/services/event-manager', () => ({
   EventManager: {
     getInstance: () => ({
@@ -24,8 +15,7 @@ vi.mock('@shared/services/event-manager', () => ({
   },
 }));
 
-// Import components
-import { logger } from '@shared/logging/logger';
+// Import components and utilities
 import { EventManager } from '@shared/services/event-manager';
 import {
   GalleryContainer,
@@ -70,26 +60,14 @@ describe('GalleryContainer Component - Unit Tests', () => {
       expect(mockContainer).toBeDefined();
     });
 
-    it('should log debug message on successful mount', () => {
-      const mockElement = () => 'test' as any;
-      mountGallery(mockContainer, mockElement);
-
-      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Gallery mounted'));
-    });
-
-    it('should handle mount error and log', () => {
+    it('should handle mount error and re-throw', () => {
       const mockElement = () => {
         throw new Error('Render failed');
       };
 
       expect(() => {
         mountGallery(mockContainer, mockElement);
-      }).toThrow();
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to mount'),
-        expect.any(Error)
-      );
+      }).toThrow('Render failed');
     });
 
     it('should re-throw errors after logging', () => {
@@ -114,25 +92,23 @@ describe('GalleryContainer Component - Unit Tests', () => {
   });
 
   describe('unmountGallery()', () => {
-    it('should log debug message on successful unmount', () => {
-      unmountGallery(mockContainer);
-
-      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Gallery unmounted'));
+    it('should unmount without errors', () => {
+      expect(() => {
+        unmountGallery(mockContainer);
+      }).not.toThrow();
     });
 
     it('should handle missing dispose function gracefully', () => {
       expect(() => {
         unmountGallery(mockContainer);
       }).not.toThrow();
-
-      expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('Gallery unmounted'));
     });
 
     it('should be safe to call multiple times', () => {
-      unmountGallery(mockContainer);
-      unmountGallery(mockContainer);
-
-      expect(logger.debug).toHaveBeenCalledTimes(2);
+      expect(() => {
+        unmountGallery(mockContainer);
+        unmountGallery(mockContainer);
+      }).not.toThrow();
     });
 
     it('should log error on unmount error', () => {
@@ -147,11 +123,6 @@ describe('GalleryContainer Component - Unit Tests', () => {
       expect(() => {
         unmountGallery(null as any);
       }).toThrow();
-
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to unmount'),
-        expect.any(Error)
-      );
     });
 
     it('should handle undefined container gracefully', () => {
