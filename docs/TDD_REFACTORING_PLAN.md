@@ -1,87 +1,62 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-29 | **상태**: Phase 249 완료 ✅ |
+**마지막 업데이트**: 2025-10-30 | **상태**: Phase 254 (15 → 9 실패, 40% 완료) |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 🔄 현재 진행 중인 작업
 
-- 현재 진행 중인 Phase 없음 — 다음 우선순위는 “다음 작업 후보” 섹션 참고
+### Phase 254: 스타일 정책 스위트 하네스 복구 (40% 완료)
 
-## ✅ 최근 완료 작업 (간략)
+**목표**: `npm run test:styles` 9 실패 → 0 으로 감축
 
-### Phase 245: 갤러리 스크롤 체이닝 가드 보완 (2025-10-29)
+**현재 상태**: 219 PASS, **9 실패** (15 → 9)
 
-- 증상: 갤러리 상호작용 이전 외부 휠 이벤트도 체이닝 차단 상태로 진입하는 회귀
-  가능성 확인.
-- 조치: `useGalleryScroll`의 휠 핸들러에 내부 이벤트 가드를 추가하고, 체이닝
-  차단이 올바른 순서에서만 트리거되는지 Vitest 회귀 테스트 보강.
-- 테스트:
-  `npx vitest run test/unit/features/gallery/hooks/use-gallery-scroll-chain.test.ts`
+**완료된 항목** (3개):
 
-### Phase 243: 포인터 이벤트 정책 로직 간결화 및 재발 방지 강화 (2025-10-29)
+- ✅ ToolbarShell dark-mode @media 제거
+- ✅ i18n 한글 리터럴 정정 ("재시도" → "retry")
+- ✅ Twitter color mapping 테스트 재설계 (파일 기반 검증)
 
-- 목표: Phase 242 완료 후 코드 가독성 향상 및 재발 방지 조치 강화
-- 조치:
-  - `FORM_CONTROL_SELECTORS` 상수 추출로 중복 제거
-  - `isFormControlElement()` 명시적 함수로 폼 컨트롤 판별 로직 분리
-  - `getPointerEventPolicy()` 정책 결정 로직을 명확한 3단계로 정리
-    (allow/block/log)
-  - CODING_GUIDELINES.md에 포인터 정책 및 재발 방지 전략 문서화
-  - test/global-teardown.ts를 Git 추적 추가
-- 결과: 빌드 성공 (342.44 KB), 전체 테스트 통과 (Browser 111/111, E2E 82/82)
-- 효과: 정책 로직 명확화로 유지보수성 향상, 문서화로 향후 유사 이슈 예방
+**남은 작업** (6개):
 
-### Phase 242: 설정 드롭다운 포인터 정책 조정 (2025-10-29)
+| 항목                        | 현재   | 목표  | 복잡도 |
+| --------------------------- | ------ | ----- | ------ |
+| CSS: prefers-reduced-motion | 19개   | 2개   | ⭐⭐   |
+| CSS: prefers-contrast       | 15개   | 2개   | ⭐⭐   |
+| CSS: prefers-color-scheme   | 5개    | 3개   | ⭐     |
+| CSS: Transition 중복        | 9개    | 0     | ⭐⭐   |
+| CSS: Legacy alias           | 104개  | <10개 | ⭐⭐⭐ |
+| 번들: events.ts             | 1128줄 | 970줄 | ⭐⭐⭐ |
+| 번들: VerticalImageItem     | 609줄  | 480줄 | ⭐⭐⭐ |
 
-- 원인: PC-only 포인터 차단 로직이 `select` 폼 컨트롤의 기본 동작을 막고,
-  Document 타깃을 `isGalleryInternalElement`에 전달해 경고 발생
-- 조치: `isGalleryInternalElement`에 `HTMLElement` 가드 추가,
-  `blockTouchAndPointerEvents`가 마우스 기반 폼 컨트롤을 통과시키도록 조정,
-  포인터 정책 회귀 테스트 추가
-- 결과: Vitest 포인터 정책 스위트 13/13 통과(dual project), 로그 경고 제거 확인,
-  설정 드롭다운 정상 동작
-- 회귀 없음: 갤러리 내부 일반 요소는 계속 차단되며, PC-only 정책/디자인 토큰
-  규칙 유지
+**검증 명령어**:
 
-### Phase 241: event.target 타입 가드 강화 (2025-10-29)
+```bash
+npm run test:styles          # 모든 스타일 테스트 (현재 9 실패)
+npx vitest run test/styles/css-optimization.test.ts
+npx vitest run test/unit/policies/bundle-size-policy.test.ts
+```
 
-- 원인: `event.target`을 `HTMLElement`로 강제 캐스팅하여 `Document` 객체 전달 시
-  `matches is not a function` 경고 발생
-- 조치: 기존 `isHTMLElement` 타입 가드 활용 (Phase 135에서 이미 구현)
-  - `isGalleryInternalEvent` (utils.ts, core-utils.ts)
-  - `handleMediaClick`, `detectMediaFromEvent` (events.ts)
-- 결과: 테스트 13/13 통과, E2E 82/82 통과, 번들 342.08 KB
-- 효과: 타입 안전성 향상, 경고 제거, 코드 가독성 개선
+---
 
-### Phase 240: 설정 드롭다운 클릭 시 펼치기 문제 수정 (2025-10-29)
+## ⏳ 보류된 작업
 
-- 원인: `.toolbarWrapper * { pointer-events: inherit; }`로 인해 hover 해제 시
-  패널 내부까지 비상호작용 상태가 되는 CSS 상속 문제
-- 조치: `VerticalGalleryView.module.css`에 확장 상태 전용 오버라이드 추가
-  - `[data-gallery-element='settings-panel'][data-expanded='true'] { pointer-events: auto; }`
-  - `.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true'])`에서
-    툴바 가시성/포인터 이벤트 유지
-- 결과: E2E 스모크 82/82 통과, 브라우저 테스트 통과, dev/prod 빌드 성공
-- 회귀 없음: outside-click, Escape 닫기, PC-only 정책/디자인 토큰 규칙 준수 확인
+### Phase 228.2-228.5: 트위터 페이지 간섭 최소화
 
-### Phase 239: 문서 정리 (2025-10-29)
+**보류 이유**: ROI 재평가 필요
 
-- **목적**: 중복 문서 제거 및 docs/temp/ 정리
-- **변경사항**:
-  - CODE_QUALITY.md 삭제 (AGENTS.md와 중복)
-  - DOCUMENTATION.md 업데이트 (CODE_QUALITY.md 참조 제거)
-  - docs/temp/ 정리:
-    - PHASE_210_ANALYSIS.md 삭제 (빈 파일)
-    - phase-227-\*.md 파일들 archive로 이동
-- **효과**: 문서 중복 제거, 유지보수 부담 감소
-- 상세: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+---
 
-### Phase 238: 린터 ignore 설정 개선 (2025-10-29)
+## 📚 참고 문서
 
-- **목적**: 임시/생성/아카이브 파일을 모든 린터에서 일관성 있게 제외
-- **변경사항**:
+- **완료 기록**:
+  [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+- **아키텍처**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **코딩 규칙**: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md)
+- **테스트 전략**: [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
+- **유지보수**: [MAINTENANCE.md](./MAINTENANCE.md)
   - ESLint: codeql-reports/**, codeql-results/**, docs/temp/**, docs/archive/**,
     scripts/temp/\*\* 추가
   - Stylelint: test-results/**, codeql-reports/**, codeql-results/**,
