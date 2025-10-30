@@ -110,12 +110,13 @@ function userscriptHeader(flags: BuildFlags): string {
  * 빌드 타임에 CSS를 DOM에 주입하는 안전한 코드 생성
  *
  * @param css - 빌드 시점에 Vite가 생성한 CSS 문자열 (신뢰할 수 있는 입력)
+ * @param isDev - 개발 빌드 여부 (가독성 포맷팅 결정)
  * @returns 스타일 인젝션 JavaScript 코드
  *
  * @security 이 함수는 빌드 타임에만 실행되며, 런타임 사용자 입력을 받지 않습니다.
  *           CSS는 JSON.stringify()로 이스케이프되어 안전하게 삽입됩니다.
  */
-function createStyleInjector(css: string): string {
+function createStyleInjector(css: string, isDev: boolean = false): string {
   if (!css.trim()) {
     return '';
   }
@@ -123,20 +124,36 @@ function createStyleInjector(css: string): string {
   // CSS를 JSON.stringify로 안전하게 이스케이프
   const escapedCss = JSON.stringify(css);
 
-  // IIFE로 감싸진 스타일 인젝션 코드 생성
-  // 프로덕션: 세미콜론 없이 종료하여 다음 IIFE와 자동 병합되도록 함
-  return (
-    `(function(){` +
-    `try{` +
-    `var s=document.getElementById('xeg-styles');` +
-    `if(s) s.remove();` +
-    `s=document.createElement('style');` +
-    `s.id='xeg-styles';` +
-    `s.textContent=${escapedCss};` +
-    `(document.head||document.documentElement).appendChild(s);` +
-    `}catch(e){console.error('[XEG] style inject fail',e);}` +
-    `})();`
-  );
+  // 개발 빌드: 가독성을 위해 개행과 들여쓰기 추가
+  // 프로덕션: 최소화된 형태
+  if (isDev) {
+    return `(function() {
+  try {
+    var s = document.getElementById('xeg-styles');
+    if (s) s.remove();
+    s = document.createElement('style');
+    s.id = 'xeg-styles';
+    s.textContent = ${escapedCss};
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) {
+    console.error('[XEG] style inject fail', e);
+  }
+})();`;
+  } else {
+    // 프로덕션: 세미콜론 없이 종료하여 다음 IIFE와 자동 병합되도록 함
+    return (
+      `(function(){` +
+      `try{` +
+      `var s=document.getElementById('xeg-styles');` +
+      `if(s) s.remove();` +
+      `s=document.createElement('style');` +
+      `s.id='xeg-styles';` +
+      `s.textContent=${escapedCss};` +
+      `(document.head||document.documentElement).appendChild(s);` +
+      `}catch(e){console.error('[XEG] style inject fail',e);}` +
+      `})();`
+    );
+  }
 }
 
 /**
@@ -166,8 +183,19 @@ function createUserscriptWrapper(options: {
     // 프로덕션: 최소화된 1줄 형태 (메타 블록 제외)
     return `${header}${license}${styleInjector}${code}`;
   } else {
-    // 개발: 가독성을 위한 개행 포함
-    return `${header}${license}(function(){\n'use strict';\n${styleInjector}${code}\n})();`;
+    // 개발: 가독성을 위한 개행과 들여쓰기 포함
+    // - 라이선스: 그대로 유지 (여러 줄)
+    // - 스타일 인젝터: 개행 추가
+    // - 애플리케이션 코드: IIFE 래퍼로 감싸고 개행 추가
+    return (
+      `${header}` +
+      `${license}` +
+      `${styleInjector}\n` +
+      `(function() {\n` +
+      `'use strict';\n` +
+      `${code}\n` +
+      `})();`
+    );
   }
 }
 
@@ -211,7 +239,9 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       }
 
       // 스타일 인젝션 코드 생성 (빌드 타임)
-      const styleInjector = createStyleInjector(cssConcat);
+      // 개발 빌드: 가독성을 위해 CSS를 여러 줄로 포맷
+      // 프로덕션 빌드: 최소화된 한 줄로 포맷
+      const styleInjector = createStyleInjector(cssConcat, flags.isDev);
 
       // 엔트리 코드 내에 남아 있을 수 있는 sourceMappingURL 주석을 제거하여
       // userscript 파일에 중복 주석이 남지 않도록 함.
