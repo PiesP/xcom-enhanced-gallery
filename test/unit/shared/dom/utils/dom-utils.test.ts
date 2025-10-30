@@ -1,17 +1,18 @@
 /**
  * @fileoverview DOM Utilities 테스트
- * @description querySelector, createElement, 이벤트 관리 등 테스트
+ * @description querySelector, createElement 등 DOM 조작 유틸리티 테스트
+ *
+ * Note: addEventListener/removeEventListener는 Phase 195에서 제거됨
+ * → BrowserService 또는 DomEventManager 사용
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   querySelector,
   querySelectorAll,
   elementExists,
   createElement,
   removeElement,
-  addEventListener,
-  removeEventListener,
   isElement,
   isHTMLElement,
   isElementVisible,
@@ -238,97 +239,6 @@ describe('DOM Utilities', () => {
       removeElement(button);
       const removed = removeElement(button);
       expect(removed).toBe(false); // 두 번째는 이미 부모가 없으므로 false
-    });
-  });
-
-  // ========== addEventListener 테스트 ==========
-  describe('addEventListener', () => {
-    it('should add event listener', () => {
-      const button = document.createElement('button');
-      testContainer.appendChild(button);
-
-      const handler = vi.fn();
-      const success = addEventListener(button, 'click', handler);
-
-      expect(success).toBe(true);
-      button.click();
-      expect(handler).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return false if element is null', () => {
-      const handler = vi.fn();
-      const success = addEventListener(null, 'click', handler);
-      expect(success).toBe(false);
-    });
-
-    it('should support event listener options', () => {
-      const button = document.createElement('button');
-      testContainer.appendChild(button);
-
-      const handler = vi.fn();
-      addEventListener(button, 'click', handler, { once: true });
-
-      button.click();
-      button.click();
-      expect(handler).toHaveBeenCalledTimes(1); // once 옵션으로 한 번만 호출
-    });
-
-    it('should support capture option', () => {
-      const parent = document.createElement('div');
-      const child = document.createElement('button');
-      parent.appendChild(child);
-      testContainer.appendChild(parent);
-
-      const parentHandler = vi.fn();
-      const childHandler = vi.fn();
-
-      addEventListener(parent, 'click', parentHandler, { capture: true });
-      addEventListener(child, 'click', childHandler, { capture: false });
-
-      child.click();
-      expect(parentHandler).toHaveBeenCalled();
-      expect(childHandler).toHaveBeenCalled();
-    });
-  });
-
-  // ========== removeEventListener 테스트 ==========
-  describe('removeEventListener', () => {
-    it('should remove event listener', () => {
-      const button = document.createElement('button');
-      testContainer.appendChild(button);
-
-      const handler = vi.fn();
-      addEventListener(button, 'click', handler);
-      removeEventListener(button, 'click', handler);
-
-      button.click();
-      expect(handler).not.toHaveBeenCalled();
-    });
-
-    it('should return true on success', () => {
-      const button = document.createElement('button');
-      testContainer.appendChild(button);
-
-      const handler = vi.fn();
-      addEventListener(button, 'click', handler);
-      const removed = removeEventListener(button, 'click', handler);
-
-      expect(removed).toBe(true);
-    });
-
-    it('should return false if element is null', () => {
-      const handler = vi.fn();
-      const removed = removeEventListener(null, 'click', handler);
-      expect(removed).toBe(false);
-    });
-
-    it('should handle removing non-existent listener', () => {
-      const button = document.createElement('button');
-      testContainer.appendChild(button);
-
-      const handler = vi.fn();
-      const removed = removeEventListener(button, 'click', handler);
-      expect(removed).toBe(true); // removeEventListener는 항상 성공으로 간주
     });
   });
 
