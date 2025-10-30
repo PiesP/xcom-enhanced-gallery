@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
-import { JSDOM } from 'jsdom';
 import MediaProcessor, { type MediaProcessStageEvent } from '@/shared/media/media-processor';
 
 function makeDom(html: string) {
-  const dom = new JSDOM(`<div id="root">${html}</div>`);
-  return dom.window.document.getElementById('root') as any;
+  const container = document.createElement('div');
+  container.id = 'root';
+  container.innerHTML = html;
+  return container;
 }
 
 describe('MediaProcessor stage metrics', () => {
