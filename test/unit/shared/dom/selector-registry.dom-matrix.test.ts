@@ -1,6 +1,5 @@
 /* eslint-env browser */
 
-/* @vitest-environment jsdom */
 // @ts-nocheck
 /**
  * SelectorRegistry — DOM matrix tests

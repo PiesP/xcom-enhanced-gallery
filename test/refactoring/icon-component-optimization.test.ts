@@ -12,7 +12,6 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { JSDOM } from 'jsdom';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -24,19 +23,11 @@ const currentDir = path.dirname(currentFilePath);
 
 /**
  * 테스트 환경 설정
+ * happy-dom 환경에서 직접 실행 (JSDOM 제거)
  */
 const setupTestEnvironment = () => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-    url: 'http://localhost',
-    pretendToBeVisual: true,
-    resources: 'usable',
-  });
-
-  // @ts-expect-error - JSDOM window 설정을 위한 타입 캐스팅
-  globalThis.window = dom.window;
-  globalThis.document = dom.window.document;
-  globalThis.HTMLElement = dom.window.HTMLElement;
-  globalThis.SVGElement = dom.window.SVGElement;
+  // happy-dom이 기본 제공하므로 추가 설정 불필요
+  // globalThis.window, document, HTMLElement 모두 자동으로 설정됨
 };
 
 beforeEach(() => {

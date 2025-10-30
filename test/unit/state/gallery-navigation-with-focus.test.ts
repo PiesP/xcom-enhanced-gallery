@@ -1,6 +1,3 @@
-/**
- * @vitest-environment jsdom
- */
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { MediaInfo } from '../../../src/shared/types/media.types';
 import {

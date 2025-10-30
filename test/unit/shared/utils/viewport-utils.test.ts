@@ -1,4 +1,3 @@
-/* @vitest-environment jsdom */
 /* eslint-env browser, es2021 */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {

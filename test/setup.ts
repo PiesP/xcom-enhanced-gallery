@@ -61,8 +61,8 @@ import { URL as NodeURL } from 'node:url';
 
 // URL 생성자 폴백 - Node.js URL 직접 사용
 function createURLPolyfill() {
-  // Node.js ESM 환경에서 URL 생성자 확보
-  // jsdom이 제공하는 URL이 있으면 우선 사용, 없으면 Node URL 사용
+  // ESM 환경에서 URL 생성자 확보
+  // happy-dom이 제공하는 URL이 있으면 우선 사용, 없으면 Node URL 사용
   if (typeof globalThis.URL === 'function') return globalThis.URL as unknown as typeof URL;
   return NodeURL as unknown as typeof URL;
 }
@@ -110,9 +110,9 @@ const vendorInitializationPromise = (async () => {
   }
 })();
 
-// jsdom 환경 호환성 향상을 위한 polyfill 설정
-function setupJsdomPolyfills() {
-  // window.scrollTo polyfill (jsdom에서 지원하지 않음)
+// happy-dom 환경 호환성 향상을 위한 polyfill 설정
+function setupTestEnvironmentPolyfills() {
+  // window.scrollTo polyfill (happy-dom에서 부분 지원)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.scrollTo) {
     globalThis.window.scrollTo = function (
       optionsOrX?: ScrollToOptions | number,
@@ -128,7 +128,7 @@ function setupJsdomPolyfills() {
     };
   }
 
-  // navigation API polyfill (jsdom limitation)
+  // navigation API polyfill (happy-dom 테스트 환경 호환성)
   if (typeof globalThis.window !== 'undefined') {
     (globalThis.window as any).navigation = {
       navigate: () => Promise.resolve(),
@@ -137,7 +137,7 @@ function setupJsdomPolyfills() {
     };
   }
 
-  // document.elementsFromPoint polyfill (jsdom limitation)
+  // document.elementsFromPoint polyfill (happy-dom 테스트 환경 호환성)
   if (typeof globalThis.document !== 'undefined' && !globalThis.document.elementsFromPoint) {
     globalThis.document.elementsFromPoint = function (_x: number, _y: number): Element[] {
       // 테스트 환경에서는 빈 배열 반환
@@ -160,7 +160,7 @@ function setupJsdomPolyfills() {
       }) as MediaQueryList;
   }
 
-  // IntersectionObserver polyfill (jsdom limitation)
+  // IntersectionObserver polyfill (happy-dom 테스트 환경 호환성)
   if (typeof globalThis.window !== 'undefined' && !globalThis.window.IntersectionObserver) {
     const createDomRectReadOnly = (size: number): DOMRectReadOnly =>
       ({
@@ -319,7 +319,7 @@ function setupJsdomPolyfills() {
     // 무시: 테스트 환경에서만 사용되는 폴리필
   }
 
-  // jsdom navigation not implemented 경고 억제: assign/replace를 안전 스텁으로
+  // 네비게이션 기능 안전 처리: assign/replace를 안전 스텁으로
   try {
     if (typeof globalThis.window !== 'undefined' && globalThis.window.location) {
       const loc = globalThis.window.location as any;
@@ -391,10 +391,10 @@ if (typeof globalThis !== 'undefined') {
     } as unknown as Location;
   }
 
-  // jsdom polyfill 적용
-  setupJsdomPolyfills();
+  // happy-dom polyfill 적용
+  setupTestEnvironmentPolyfills();
 
-  // 공용 콘솔 필터: jsdom의 알려진 Not implemented 노이즈를 억제
+  // 콘솔 필터: 테스트 환경의 알려진 경고를 억제
   try {
     const originalError = console.error.bind(console);
     const originalWarn = console.warn.bind(console);
