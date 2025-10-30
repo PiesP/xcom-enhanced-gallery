@@ -17,6 +17,7 @@ import {
   type SelectorFn,
 } from '../../../src/shared/utils/signal-selector.ts';
 import { act, renderHook, waitFor } from '../../utils/testing-library';
+import { logger } from '../../../src/shared/logging';
 
 describe('P7: Signal Selector Optimization Unit Tests', () => {
   beforeEach(() => {
@@ -82,7 +83,9 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     test('디버그 모드에서 성능 통계를 제공해야 함', () => {
       setDebugMode(true);
 
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      // logger.debug를 spy하여 호출 여부 확인
+      // (테스트 환경에서는 logger.debug가 조용히 무시되므로, spy로 실제 호출을 감지)
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       const selector = createSelector((state: { value: number }) => state.value * 2, {
         debug: true,
@@ -92,9 +95,10 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
       selector({ value: 5 });
       selector({ value: 5 }); // 같은 값으로 재호출
 
-      expect(consoleSpy).toHaveBeenCalled();
+      // logger.debug가 최소한 한 번 호출되어야 함
+      expect(debugSpy).toHaveBeenCalled();
 
-      consoleSpy.mockRestore();
+      debugSpy.mockRestore();
     });
 
     test('Object.is를 사용한 참조 동일성 검사를 수행해야 함', () => {
@@ -332,7 +336,8 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
     test('디버그 모드를 전역으로 설정할 수 있어야 함', () => {
       setDebugMode(true);
 
-      const consoleSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+      // logger.debug를 spy하여 호출 여부 확인
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       const selector = createSelector((state: { value: number }) => state.value, {
         name: 'GlobalDebugTest',
@@ -340,9 +345,10 @@ describe('P7: Signal Selector Optimization Unit Tests', () => {
 
       selector({ value: 42 });
 
-      expect(consoleSpy).toHaveBeenCalled();
+      // 전역 디버그 모드가 활성화되었으므로 logger.debug가 호출되어야 함
+      expect(debugSpy).toHaveBeenCalled();
 
-      consoleSpy.mockRestore();
+      debugSpy.mockRestore();
     });
   });
 

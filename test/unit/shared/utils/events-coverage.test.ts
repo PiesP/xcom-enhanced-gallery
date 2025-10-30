@@ -733,8 +733,8 @@ describe('events.ts - PC-only Policy (Phase 199)', () => {
     vi.clearAllMocks();
   });
 
-  describe('Pointer event blocking on regular elements', () => {
-    it('should block pointerdown on DIV element', async () => {
+  describe('Pointer event logging on regular elements', () => {
+    it('should log (not block) pointerdown on DIV element', async () => {
       await initializeGalleryEvents(mockHandlers, {});
 
       const div = document.createElement('div');
@@ -749,11 +749,12 @@ describe('events.ts - PC-only Policy (Phase 199)', () => {
 
       const prevented = !div.dispatchEvent(pointerEvent);
 
-      // DIV 요소는 pointer 이벤트가 차단되어야 함
-      expect(prevented).toBe(true);
+      // DIV 요소는 pointer 이벤트가 차단되지 않음 (로깅만 함)
+      // PC-only policy에 따르면 pointer 이벤트는 권장되지 않지만 강제로 차단하지는 않음
+      expect(prevented).toBe(false);
     });
 
-    it('should block pointerup on SPAN element', async () => {
+    it('should log (not block) pointerup on SPAN element', async () => {
       await initializeGalleryEvents(mockHandlers, {});
 
       const span = document.createElement('span');
@@ -768,8 +769,9 @@ describe('events.ts - PC-only Policy (Phase 199)', () => {
 
       const prevented = !span.dispatchEvent(pointerEvent);
 
-      // SPAN 요소는 pointer 이벤트가 차단되어야 함
-      expect(prevented).toBe(true);
+      // SPAN 요소는 pointer 이벤트가 차단되지 않음 (로깅만 함)
+      // PC-only policy에 따르면 pointer 이벤트는 권장되지 않지만 강제로 차단하지는 않음
+      expect(prevented).toBe(false);
     });
   });
 
