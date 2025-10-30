@@ -11,7 +11,7 @@
 | 항목 | 결과 |
 |------|------|
 | **테스트 커버리지** | 100% (모든 프로젝트 통과) ✅ |
-| **번들 크기** | 346.05 KB (gzip: 93.63 KB) |
+| **번들 크기** | 345.68 KB (gzip: 93.56 KB) |
 | **여유 공간** | 18% (목표: ≤420 KB) |
 | **코드 품질** | TypeScript/ESLint/Stylelint 0 에러 |
 | **E2E 테스트** | 86/86 통과 + 5 skipped (100%) |
@@ -21,9 +21,11 @@
 
 ---
 
-## 🎯 최근 완료 Phase (279-278)
+## 🎯 최근 완료 Phase (279)
 
-### Phase 279: 갤러리 최초 기동 시 자동 스크롤 누락 수정 ✅ 완료
+### Phase 279: 갤러리 최초 기동 시 자동 스크롤 완전 안정화 ✅ 완료
+
+**완료 일시**: 2025-10-30
 
 **상태**: ✅ 완료
 
@@ -38,11 +40,10 @@
    - `useGalleryItemScroll` 훅이 갤러리 컴포넌트와 동시에 초기화
    - DOM 렌더링보다 먼저 스크롤 시도 (0ms 즉시 실행)
    - VerticalGalleryView의 아이템들이 아직 렌더링되지 않은 상태
-   - 같은 트윗 재오픈 시에는 컴포넌트가 이미 마운트되어 있어 정상 작동
 
 3. **현재 메커니즘의 한계**
    - Phase 263 MutationObserver: 아이템 렌더링 후에만 작동
-   - 폴링 메커니즘: 재시도 3회, 폴링 20회 제한으로 타이밍 이슈 존재
+   - 폴링 메커니즘: 재시도 3회, 폴링 20회 제한으로 타이밍 이슈
 
 **솔루션 (Option A: onMount 기반)**:
 
@@ -80,44 +81,57 @@ createEffect(() => {
 
     requestAnimationFrame(() => {
       void scrollToCurrentItem();
+      logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 279)');
     });
   }
 });
 ```
 
-**2. 테스트 추가**:
+**2. 이미지 공간 사전 확보 (CSS)**:
+
+- 이미 구현되어 있음: `aspect-ratio: var(--xeg-aspect-default, 4 / 3)`
+- `min-height: var(--xeg-spacing-3xl, 3rem)` 기본 높이 예약
+- Skeleton UI + Loading Spinner로 시각적 피드백
+- CLS (Cumulative Layout Shift) 방지 완료 ✅
+
+**3. 테스트 추가**:
 
 - `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts` 신규 작성
-- 5가지 시나리오 커버:
-  - 첫 번째 갤러리 열기 시 자동 스크롤
-  - 아이템 렌더링 대기 후 스크롤 실행
-  - 갤러리 닫기 후 재오픈 시 플래그 리셋
-  - 빈 갤러리는 스크롤 시도하지 않음
-  - 잘못된 인덱스 처리
+- 6가지 시나리오 커버:
+  1. 첫 번째 갤러리 열기 시 자동 스크롤
+  2. 아이템 렌더링 대기 후 스크롤 실행
+  3. 갤러리 닫기 후 재오픈 시 플래그 리셋
+  4. 빈 갤러리는 스크롤 시도하지 않음
+  5. 잘못된 인덱스 처리
+  6. 통합 시나리오 (재오픈 정상 작동)
 
 **성과**:
 
 - ✅ 새 트윗에서 갤러리 최초 열기 시 자동 스크롤 정상 작동
+- ✅ CSS `aspect-ratio`로 이미지 공간 사전 확보 (CLS 방지)
+- ✅ Skeleton UI로 로딩 중 시각적 피드백
 - ✅ 같은 트윗 재오픈 시 기존 동작 유지
 - ✅ 모든 기존 테스트 통과 (1007/1007)
 - ✅ 새로운 테스트 케이스 6개 GREEN
-- ✅ 빌드 성공 (346.05 KB, 18% 여유 공간)
+- ✅ 빌드 성공 (345.68 KB, 18% 여유 공간)
 
 **영향 범위**:
 
 - `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+- `src/features/gallery/components/vertical-gallery-view/VerticalImageItem.module.css` (이미 구현됨)
 - `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts` (신규)
 
 **메타데이터**:
 
 - 완료 일시: 2025-10-30
 - 소요 시간: 약 2시간
-- 추가 코드: ~60줄 (컴포넌트 + 테스트)
+- 추가 코드: ~60줄 (컴포넌트) + ~315줄 (테스트)
 - 테스트 추가: 6개 (모두 통과)
+- CSS 공간 확보: 이미 구현됨 (aspect-ratio + min-height + Skeleton UI)
 
 ---
 
-### Phase 278: Logger 테스트 환경 감지 로직 개선 ✅ 완료
+## 🎯 이전 완료 Phase (278-255)
 
 **상태**: ✅ 완료
 

@@ -1,212 +1,22 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: ✅ Phase 279 완료 |
+**마지막 업데이트**: 2025-10-30 | **상태**: ✅ 안정화 완료 (Phase 279) |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
-## � 프로젝트 최종 상태
+## 📊 프로젝트 현황
 
-**목표**: 새로운 트윗에서 갤러리를 처음 열 때 자동 스크롤이 작동하지 않는 문제 해결
+### ✨ 최근 완성 (Phase 279)
 
-**상태**: 🚧 **진행 중**
+**갤러리 초기 스크롤 안정화**: ✅ **완료**
 
-**문제 분석**:
+- 새 트윗에서 갤러리 최초 열기 시 자동 스크롤 정상 작동
+- CSS `aspect-ratio`로 이미지 공간 사전 확보 (CLS 방지)
+- Skeleton UI + Loading Spinner로 시각적 피드백
+- 6개 테스트 케이스 모두 GREEN ✅
 
-1. **증상**
-   - 새로운 트윗에서 갤러리 최초 기동 시 자동 스크롤 미작동
-   - 같은 트윗을 다시 열었을 때는 정상 작동
-   - 첫 번째 열기에서만 1회 발생
-
-2. **근본 원인**
-   - `useGalleryItemScroll` 훅이 갤러리 컴포넌트와 동시에 초기화
-   - DOM 렌더링보다 먼저 스크롤 시도 (0ms 즉시 실행)
-   - VerticalGalleryView의 아이템들이 아직 렌더링되지 않은 상태
-   - 같은 트윗 재오픈 시에는 컴포넌트가 이미 마운트되어 있어 정상 작동
-
-3. **현재 메커니즘의 한계**
-   - Phase 263 MutationObserver: 아이템 렌더링 후에만 작동
-   - 폴링 메커니즘: 재시도 3회, 폴링 20회 제한으로 타이밍 이슈 존재
-   - 첫 렌더링 완료 전 스크롤 시도로 인한 실패
-
-**솔루션 설계**:
-
-### Option A: onMount 기반 초기 스크롤 (선택됨)
-
-**접근법**:
-
-- VerticalGalleryView에서 컴포넌트 완전 마운트 후 초기 스크롤 트리거
-- `createEffect` + `onMount`로 DOM 렌더링 완료 보장
-- 명확한 타이밍 제어와 간단한 구현
-
-**장점**:
-
-- ✅ 타이밍 보장 (DOM 렌더링 완료 후 실행)
-- ✅ 구현 단순성 (컴포넌트 레벨에서 제어)
-- ✅ 기존 훅 로직 유지 (백업 메커니즘으로 활용)
-
-**단점**:
-
-- ⚠️ 컴포넌트 코드 수정 필요
-
-### Option B: useGalleryItemScroll 내부 강화 (대안)
-
-**접근법**:
-
-- requestAnimationFrame 중첩으로 레이아웃 완료 대기
-- 훅 내부에서 렌더링 감지 로직 강화
-
-**장점**:
-
-- ✅ 훅 내부에서 완결
-- ✅ 재사용성 향상
-
-**단점**:
-
-- ⚠️ 복잡도 증가
-- ⚠️ 타이밍 보장 불완전
-
-### Option C: 전역 상태 플래그 (비권장)
-
-**접근법**:
-
-- gallery.signals에 `isInitialRenderComplete` 플래그 추가
-- 전역 상태로 렌더링 완료 신호
-
-**단점**:
-
-- ❌ 상태 관리 복잡도 증가
-- ❌ 불필요한 전역 상태 추가
-
-**구현 계획**:
-
-### Phase 279.1: RED - 실패 테스트 작성
-
-**테스트 시나리오**:
-
-```typescript
-describe('Phase 279: 갤러리 최초 기동 시 자동 스크롤', () => {
-  it('첫 번째 갤러리 열기 시 currentIndex에 자동 스크롤', async () => {
-    // Given: 갤러리가 처음 열림 (DOM 미렌더링 상태)
-    // When: 컴포넌트 마운트 완료
-    // Then: currentIndex 아이템으로 자동 스크롤 실행
-  });
-
-  it('아이템 렌더링 대기 후 스크롤 실행', async () => {
-    // Given: 초기 상태에서 아이템 미렌더링
-    // When: 아이템 렌더링 완료 감지
-    // Then: 스크롤 실행
-  });
-});
-```
-
-**파일**: `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts`
-
-### Phase 279.2: GREEN - 솔루션 구현
-
-**VerticalGalleryView.tsx 수정**:
-
-**1. 초기 스크롤 트리거 추가**:
-
-```typescript
-// 컴포넌트 마운트 완료 시 초기 스크롤 실행
-createEffect(() => {
-  const container = containerEl();
-  const items = mediaItems();
-  const index = currentIndex();
-
-  if (!container || items.length === 0) return;
-
-  // 아이템 컨테이너 렌더링 확인
-  const itemsContainer = container.querySelector('[data-xeg-role="items-list"]');
-  if (!itemsContainer || itemsContainer.children.length === 0) return;
-
-  // 첫 렌더링 시 한 번만 실행
-  if (!hasPerformedInitialScroll.current) {
-    hasPerformedInitialScroll.current = true;
-
-    // requestAnimationFrame으로 레이아웃 완료 대기
-    requestAnimationFrame(() => {
-      void scrollToCurrentItem();
-      logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 279)');
-    });
-  }
-});
-```
-
-**2. 플래그 관리**:
-
-```typescript
-let hasPerformedInitialScroll = { current: false };
-
-// 갤러리 닫힐 때 플래그 리셋
-createEffect(() => {
-  if (!isVisible()) {
-    hasPerformedInitialScroll.current = false;
-  }
-});
-```
-
-**useGalleryItemScroll.ts 개선** (백업 메커니즘):
-
-**1. MutationObserver 개선**:
-
-```typescript
-// 더 공격적인 초기 렌더링 감지
-renderMutationObserver.observe(itemsRoot, {
-  childList: true,
-  subtree: true, // 하위 DOM 변경도 감지
-  attributes: true, // 속성 변경도 감지
-  attributeFilter: ['data-media-loaded'],
-});
-```
-
-**2. 폴링 메커니즘 강화**:
-
-```typescript
-// 폴링 시도 횟수 증가 (20 → 40)
-// 대기 시간 감소 (50ms → 25ms)
-const maxPollingAttempts = 40; // ~1 second
-const pollForElement = () => {
-  // ... 기존 로직
-  setTimeout(pollForElement, 25); // 더 빠른 폴링
-};
-```
-
-### Phase 279.3: REFACTOR - 코드 정리
-
-**1. 로깅 개선**:
-
-```typescript
-logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 279)', {
-  currentIndex: index,
-  itemsRendered: itemsContainer.children.length,
-  timestamp: Date.now(),
-});
-```
-
-**2. 중복 코드 제거**:
-
-- autoScrollToCurrentItem과 초기 스크롤 로직 통합 검토
-- 타이밍 관련 상수 정리
-
-**3. 테스트 커버리지 확인**:
-
-- 초기 스크롤 시나리오 완전 커버
-- 엣지 케이스 (빈 갤러리, 잘못된 인덱스 등) 검증
-
-**영향 범위**:
-
-- `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
-- `src/features/gallery/hooks/useGalleryItemScroll.ts` (선택적)
-- `test/unit/features/gallery/components/VerticalGalleryView.initial-scroll.test.ts` (신규)
-
-**수용 기준**:
-
-- ✅ 새 트윗에서 갤러리 최초 열기 시 자동 스크롤 정상 작동
-- ✅ 같은 트윗 재오픈 시 기존 동작 유지
-- ✅ 모든 기존 테스트 통과
-- ✅ 새로운 테스트 케이스 GREEN
+상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-279) 참고
 
 ---
 
@@ -242,11 +52,13 @@ logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 279)', {
 - Phase 276: **EPIPE 에러 근본 해결** ✅ 완료
 - Phase 277: **테스트 크기 정책 정규화** ✅ 완료
 - Phase 278: **Logger 테스트 환경 감지 로직 개선** ✅ 완료
+- Phase 279: **갤러리 최초 기동 시 자동 스크롤** ✅ 완료
 
 **테스트 상태**: ✅ 모두 GREEN
 
 - 단위 테스트: 1007/1007 통과 (100%)
 - CSS 정책: 219/219 통과
+- E2E 스모크: 86/86 통과
 - E2E 스모크: 86/86 통과
 - 접근성: WCAG 2.1 Level AA 통과
 - **npm test**: ✅ 모두 통과
@@ -260,6 +72,69 @@ logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 279)', {
 - 빌드: ✅ 성공 (345.68 KB)
 
 ---
+
+## 🎯 진행 중인 작업
+
+**현재 작업**: 없음 (안정화 완료)
+
+**다음 우선순위**:
+
+1. 사용자 피드백 수집 및 개선 사항 도출
+2. 성능 모니터링 및 최적화 기회 탐색
+3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+
+---
+
+## 📝 보류 중인 Phase
+
+### Phase 255: CSS 레거시 토큰 정리 (⏸️ 보류)
+
+**보류 사유**: 현재 디자인 토큰 시스템이 안정적으로 작동하고 있으며, 레거시 토큰 제거가 즉각적인 가치를 제공하지 않음. 향후 대규모 디자인 시스템 개편 시 재검토.
+
+---
+
+## 📊 Phase 완료 요약
+
+| Phase | 상태    | 주요 작업                                |
+| ----- | ------- | ---------------------------------------- |
+| 279   | ✅ 완료 | 갤러리 최초 기동 시 자동 스크롤 안정화   |
+| 278   | ✅ 완료 | Logger 테스트 환경 감지 로직 개선        |
+| 277   | ✅ 완료 | 테스트 크기 정책 정규화                  |
+| 276   | ✅ 완료 | EPIPE 에러 근본 해결                     |
+| 275   | ✅ 완료 | EPIPE 에러 첫 시도 (재발생)              |
+| 274   | ✅ 완료 | 테스트 실패 수정                         |
+| 273   | ✅ 완료 | jsdom 아티팩트 제거                      |
+| 272   | ✅ 완료 | smoke 테스트 명확화                      |
+| 271   | ✅ 완료 | 테스트 커버리지 개선                     |
+| 270   | ✅ 완료 | 이미지 로드 타이밍                       |
+| 269   | ✅ 완료 | 갤러리 초기 높이 문제                    |
+| 268   | ✅ 완료 | 런타임 경고 제거                         |
+| 267   | ✅ 완료 | 메타데이터 폴백 강화                     |
+| 266   | ✅ 완료 | 자동 스크롤 debounce                     |
+| 265   | ✅ 완료 | 스크롤 누락 버그 수정                    |
+| 264   | ✅ 완료 | 스크롤 모션 제거                         |
+| 263   | ✅ 완료 | 기동 스크롤 개선                         |
+| 262   | ✅ 완료 | 자동 스크롤 분석                         |
+| 261   | ✅ 완료 | dev 빌드 가독성                          |
+| 260   | ✅ 완료 | 의존성 정리                              |
+| 258   | ✅ 완료 | 부트스트랩 최적화                        |
+| 257   | ✅ 완료 | events.ts 최적화                         |
+| 256   | ✅ 완료 | VerticalImageItem 최적화                 |
+| 255   | ⏸️ 보류 | CSS 레거시 토큰 정리                     |
+
+---
+
+## 📚 관련 문서
+
+- **완료 기록**: [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)
+- **개발 가이드**: [AGENTS.md](../AGENTS.md)
+- **아키텍처**: [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **코딩 규칙**: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md)
+- **테스트 전략**: [TESTING_STRATEGY.md](./TESTING_STRATEGY.md)
+
+---
+
+🎉 **프로젝트 안정화 완료!** Phase 279 갤러리 초기 스크롤 문제 해결로 모든 핵심 작업이 완료되었습니다.
 
 ## ✅ Phase 277: 테스트 크기 정책 정규화 완료
 
