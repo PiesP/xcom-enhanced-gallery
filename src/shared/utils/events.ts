@@ -48,16 +48,11 @@ type MediaServiceLike = {
 };
 
 const listeners = new Map<string, EventContext>();
-let listenerIdCounter = 0;
 const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
-function generateListenerId(context?: string): string {
-  const timestamp = Date.now();
-  const counter = ++listenerIdCounter;
-  const random = Math.random().toString(36).substr(2, 6);
-  return context
-    ? `${context}:${timestamp}_${counter}_${random}`
-    : `event_${timestamp}_${counter}_${random}`;
+function generateListenerId(ctx?: string): string {
+  const r = Math.random().toString(36).substr(2, 9);
+  return ctx ? `${ctx}:${r}` : r;
 }
 
 /**
@@ -65,18 +60,16 @@ function generateListenerId(context?: string): string {
  */
 function getCurrentGalleryVideo(): HTMLVideoElement | null {
   try {
-    const doc = (
-      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document
-    ) as Document | undefined;
-    if (!doc) return null;
-    const root = doc.querySelector('#xeg-gallery-root');
-    const items = root?.querySelector('[data-xeg-role="items-container"]');
-    if (!items || !(items instanceof HTMLElement)) return null;
-    const index = gallerySignals.currentIndex.value;
-    const target = items.children?.[index];
-    if (!target || !(target instanceof HTMLElement)) return null;
-    const v = target.querySelector('video');
-    return v instanceof HTMLVideoElement ? v : null;
+    const d =
+      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
+    if (!(d instanceof Document)) return null;
+    const sel = '#xeg-gallery-root';
+    const isel = '[data-xeg-role="items-container"]';
+    const it = d.querySelector(sel)?.querySelector(isel) as HTMLElement | null;
+    if (!it) return null;
+    const idx = gallerySignals.currentIndex.value;
+    const itm = it.children?.[idx] as HTMLElement | null;
+    return itm?.querySelector('video') as HTMLVideoElement | null;
   } catch {
     return null;
   }
@@ -101,11 +94,11 @@ function getMediaService(): MediaServiceLike | null {
 /**
  * 안전한 함수 실행 래퍼 (에러 로깅 포함)
  */
-function safeExecute(fn: () => void, errorContext: string): void {
+function safeExecute(fn: () => void, _ctx: string): void {
   try {
     fn();
-  } catch (err) {
-    logger.debug(`${errorContext} failed`, err);
+  } catch {
+    // 무시
   }
 }
 
@@ -274,7 +267,6 @@ export function removeEventListenersByContext(context: string): number {
       if (removeEventListenerManaged(id)) removedCount++;
     }
   }
-  logger.debug(`Removed ${removedCount} event listeners for context: ${context}`);
   return removedCount;
 }
 
@@ -282,11 +274,9 @@ export function removeEventListenersByContext(context: string): number {
  * 모든 리스너 제거
  */
 export function removeAllEventListeners(): void {
-  const totalCount = listeners.size;
   for (const id of Array.from(listeners.keys())) {
     removeEventListenerManaged(id);
   }
-  logger.debug(`Removed all ${totalCount} event listeners`);
 }
 
 /**
@@ -313,10 +303,7 @@ export function getEventListenerStatus() {
       created: ctx.created,
     })),
   };
-}
-
-// Phase 21.6: gallerySignals 사용으로 마이그레이션
-// Helper 함수들
+} // Helper 함수들
 function checkGalleryOpen(): boolean {
   try {
     return gallerySignals.isOpen.value;
@@ -336,7 +323,6 @@ function checkInsideGallery(element: HTMLElement | null): boolean {
 
 async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
   try {
-    // Phase 241: event.target 타입 가드 적용
     const target = event.target;
     if (!target || !isHTMLElement(target)) return null;
 
@@ -351,17 +337,8 @@ async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null
         filename: extractFilenameFromUrl(result.mediaUrl) || 'untitled',
       };
 
-      logger.debug('Media detected and converted:', {
-        detectionResult: result,
-        mediaInfo,
-        confidence: result.confidence,
-        method: result.method,
-      });
-
       return mediaInfo;
     }
-
-    logger.debug('No media detected or invalid result:', result);
     return null;
   } catch (error) {
     logger.warn('Failed to detect media from click:', error);
@@ -513,8 +490,6 @@ export async function initializeGalleryEvents(
 
     // 우선순위 강화 메커니즘 시작 (트위터가 동적으로 리스너를 추가할 경우 대비)
     startPriorityEnforcement(handlers, finalOptions);
-
-    logger.debug('Gallery events initialized', { options: finalOptions });
   } catch (error) {
     logger.error('Failed to initialize gallery events:', error);
     throw error;
@@ -534,7 +509,6 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
 
       // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
       if (checkGalleryOpen()) {
-        logger.debug('Gallery is open, skipping priority enforcement');
         return;
       }
 
@@ -545,13 +519,11 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
         null;
 
       if (!documentElement) {
-        logger.debug('Document not available, skipping priority enforcement');
         return;
       }
 
       // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
       if (documentElement.hidden) {
-        logger.debug('Page is hidden, skipping priority enforcement');
         return;
       }
 
@@ -590,7 +562,6 @@ function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEvent
       );
 
       galleryEventState.listenerIds = [clickId, keyId];
-      logger.debug('Gallery event priority reinforced');
     } catch (error) {
       logger.warn('Failed to reinforce gallery event priority:', error);
     }
@@ -611,7 +582,6 @@ async function handleMediaClick(
   options: GalleryEventOptions
 ): Promise<EventHandlingResult> {
   try {
-    // Phase 241: event.target 타입 가드 적용
     const target = event.target;
     if (!isHTMLElement(target)) {
       return { handled: false, reason: 'Invalid target (not HTMLElement)' };
@@ -643,18 +613,10 @@ async function handleMediaClick(
 
     const isInMediaContainer = target.closest(mediaContainerSelectors);
     if (!isInMediaContainer) {
-      logger.debug('Click outside media container - fast path early exit', {
-        tagName: target.tagName,
-        className: target.className,
-      });
       return { handled: false, reason: 'Outside media container' };
     }
 
     if (!isProcessableMedia(target)) {
-      logger.debug('Media click skipped: non-processable target', {
-        tagName: target.tagName,
-        className: target.className,
-      });
       return { handled: false, reason: 'Non-processable media target' };
     }
 
@@ -669,7 +631,6 @@ async function handleMediaClick(
         const mediaInfo = await detectMediaFromEvent(event);
         if (mediaInfo) {
           await handlers.onMediaClick(mediaInfo, target, event);
-          logger.debug('Twitter gallery blocked, our gallery opened instead');
           return {
             handled: true,
             reason: 'Twitter blocked, our gallery opened',
@@ -677,8 +638,6 @@ async function handleMediaClick(
           };
         }
       }
-
-      logger.debug('Twitter native gallery event blocked');
       return { handled: true, reason: 'Twitter native gallery blocked' };
     }
 
@@ -880,8 +839,6 @@ export function cleanupGalleryEvents(): void {
       handlers: null,
       priorityInterval: null,
     };
-
-    logger.debug('Gallery events cleaned up');
   } catch (error) {
     logger.error('Error cleaning up gallery events:', error);
   }
@@ -893,7 +850,6 @@ export function cleanupGalleryEvents(): void {
 export function updateGalleryEventOptions(newOptions: Partial<GalleryEventOptions>): void {
   if (galleryEventState.options) {
     galleryEventState.options = { ...galleryEventState.options, ...newOptions };
-    logger.debug('Gallery event options updated', newOptions);
   }
 }
 /**
@@ -926,10 +882,7 @@ export function getGalleryEventSnapshot() {
  * Phase 243: 재발 방지 및 로직 간결화
  * - 폼 컨트롤 판단 로직을 별도 함수로 분리
  * - 포인터 정책 결정 로직을 명확한 헬퍼 함수로 추출
- */
-
-// Phase 243: 폼 컨트롤 셀렉터 상수화
-const FORM_CONTROL_SELECTORS =
+ */ const FORM_CONTROL_SELECTORS =
   'select, input, textarea, button, [role="listbox"], [role="combobox"]';
 
 /**
@@ -1003,7 +956,6 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
           const check = (element as any)[propName];
           if (check === blocker) {
             onPropSet = true;
-            logger.debug(`[PC-only policy] Registered on-property blocker for ${eventType}`);
           }
         } catch {
           // 읽기 실패시 무시하고 fallback 시도
@@ -1019,14 +971,11 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
           passive: false,
           capture: true,
         });
-        logger.debug(`[PC-only policy] Registered blocker for ${eventType}`);
       }
-    } catch (error) {
-      logger.debug(`[PC-only policy] Failed to register blocker for ${eventType}`, error);
+    } catch {
+      // 무시
     }
   }
-
-  // Phase 229: Pointer 이벤트 - 갤러리 내부만 차단, 전역은 로깅만
   for (const eventType of pointerEvents) {
     try {
       const blocker = (evt: Event) => {
@@ -1036,34 +985,16 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
           typeof (pointerEvent as { pointerType?: string }).pointerType === 'string'
             ? pointerEvent.pointerType
             : 'mouse';
-
-        // Phase 242: 비-HTMLElement 타깃 조기 반환
         if (!(rawTarget instanceof HTMLElement)) {
-          const targetType =
-            rawTarget != null ? (rawTarget.constructor?.name ?? typeof rawTarget) : 'null';
-          logger.debug(`[PC-only policy] Skipped ${eventType} - non-HTMLElement target`, {
-            pointerType,
-            targetType,
-          });
           return;
         }
-
-        // Phase 243: 정책 결정 로직을 명확한 함수로 분리
         const policy = getPointerEventPolicy(rawTarget, pointerType);
 
         switch (policy) {
           case 'allow':
-            logger.debug(`[PC-only policy] Allowed ${eventType} on form control`, {
-              pointerType,
-              target: rawTarget.tagName,
-            });
             return;
 
           case 'block':
-            logger.debug(`[PC-only policy] Blocked ${eventType} in gallery`, {
-              pointerType,
-              target: rawTarget.tagName,
-            });
             evt.preventDefault?.();
             evt.stopPropagation?.();
             evt.stopImmediatePropagation?.();
@@ -1071,10 +1002,6 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
 
           case 'log':
           default:
-            logger.debug(`[PC-only policy] Logged ${eventType} (allowed)`, {
-              pointerType,
-              target: rawTarget.tagName,
-            });
             return;
         }
       };
@@ -1095,7 +1022,6 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
           const check = (element as any)[propName];
           if (check === blocker) {
             onPropSet = true;
-            logger.debug(`[PC-only policy] Registered on-property blocker for ${eventType}`);
           }
         } catch {
           // 읽기 실패시 무시하고 fallback 시도
@@ -1111,10 +1037,9 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
           passive: false,
           capture: true,
         });
-        logger.debug(`[PC-only policy] Registered blocker for ${eventType}`);
       }
-    } catch (error) {
-      logger.debug(`[PC-only policy] Failed to register blocker for ${eventType}`, error);
+    } catch {
+      // 무시
     }
   }
 }
