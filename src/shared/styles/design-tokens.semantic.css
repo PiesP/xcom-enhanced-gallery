@@ -170,10 +170,22 @@
   --xeg-focus-outline: 0.125rem solid var(--color-gray-500); /* 2px */
   --xeg-focus-offset: 0.125rem; /* 2px */
 
+  /* Button Component Typography - Required by Button.module.css */
+  --xeg-font-size-sm: 0.875rem;
+  --xeg-font-size-base: 1rem;
+  --xeg-font-size-lg: 1.125rem;
+  --xeg-font-weight-medium: 500;
+
+  /* Button Component Text Colors - Required by Button.module.css */
+  --xeg-color-text-primary: var(--color-text-primary);
+  --xeg-color-text-secondary: var(--color-text-secondary);
+
   /* Animation Timing - Semantic Roles */
   --xeg-duration: var(--duration-normal);
   --xeg-duration-fast: var(--duration-fast);
   --xeg-duration-slow: var(--duration-slow);
+  --xeg-duration-normal: var(--duration-normal);
+  --xeg-easing-linear: linear;
 
   /* Surface Glass - Unified Tokens */
   --xeg-surface-glass-bg: var(--color-glass-bg);
