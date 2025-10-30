@@ -77,14 +77,73 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 281 완료)
+**현재 작업**: Phase 282 - Deprecated 코드 정리
 
 **다음 우선순위**:
 
-1. 사용자 피드백 수집 및 개선 사항 도출
-2. 성능 모니터링 및 최적화 기회 탐색
-3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
-4. 추가 코드 현대화 기회 검토
+1. **Phase 282**: Deprecated 코드 및 파일 제거
+2. 사용자 피드백 수집 및 개선 사항 도출
+3. 성능 모니터링 및 최적화 기회 탐색
+4. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+
+---
+
+## 🔄 Phase 282: Deprecated 코드 정리
+
+**상태**: 🔄 진행 중
+
+**목표**: `@deprecated` 마킹된 코드와 사용되지 않는 legacy 코드 제거
+
+**문제**:
+
+코드베이스에 다수의 `@deprecated` 마킹과 legacy 참조가 존재:
+
+1. **Deprecated 파일들**:
+   - `src/shared/browser/browser-utils.ts` (Phase 223에서 통합됨)
+   - `src/shared/browser/utils/browser-utils.ts` (경로 변경됨)
+   - `src/shared/components/base/BaseComponentProps.ts` (타입 통합됨)
+   - `src/shared/components/ui/StandardProps.ts` (직접 import 권장)
+   - `src/shared/error/index.ts`, `src/shared/error/error-handler.ts` (대체 API 존재)
+
+2. **Deprecated 메서드/타입**:
+   - `service-manager.ts`: `getServiceStatus()` (v2.0.0)
+   - `browser-service.ts`: `download()`, `getDiagnostics()`
+   - `vendor-manager-static.ts`: `download()`
+   - `toolbar.signals.ts`: `ToolbarMode`, `ToolbarModeData`
+   - `component-utils.ts`: 객체 형태 export
+
+3. **유지해야 할 항목**:
+   - Twitter API의 `legacy` 필드 (외부 API 데이터 구조)
+   - `theme-service.ts`의 `addListener/removeListener` (브라우저 호환성)
+
+**솔루션**:
+
+```typescript
+// Step 1: 사용처 없는 deprecated 파일 제거
+// - browser-utils.ts (사용처 없음 확인됨)
+// - BaseComponentProps.ts는 아직 사용 중 → 단계적 마이그레이션 필요
+
+// Step 2: Deprecated 메서드 제거
+// 각 파일에서 @deprecated 마킹된 메서드 제거 후 테스트
+
+// Step 3: 테스트 아카이브 정리
+// test/archive/**/*.deprecated.test.ts 확인 및 정리
+```
+
+**진행 단계**:
+
+1. ✅ Deprecated 항목 전체 검색 및 분류
+2. ⏳ 사용처 없는 파일 제거 시작
+3. ⏳ Deprecated 메서드 제거
+4. ⏳ 테스트 실행 및 검증
+5. ⏳ 문서 업데이트
+
+**기대 효과**:
+
+- ✅ 코드베이스 정리 및 유지보수성 향상
+- ✅ 번들 크기 감소 가능성
+- ✅ 코드 명확성 향상 (deprecated 경고 제거)
+- ✅ 개발자 혼란 최소화
 
 ---
 
