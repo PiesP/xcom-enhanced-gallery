@@ -147,21 +147,22 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   const toRem = (v: number) => `${(v / 16).toFixed(4)}rem`;
 
   const deriveDimensionsFromMetadata = (): DimensionPair | null => {
-    const m = media?.metadata as any;
+    const m = media?.metadata as Record<string, unknown> | undefined;
     if (!m) return null;
-    const d = m.dimensions;
+    const d = m.dimensions as Record<string, unknown> | undefined;
     if (d) {
       const w = parsePositiveNumber(d.width);
       const h = parsePositiveNumber(d.height);
       if (w && h) return { width: w, height: h };
     }
-    const a = m.apiData;
+    const a = m.apiData as Record<string, unknown> | undefined;
     if (!a) return null;
     const x = parsePositiveNumber(a['original_width'] ?? a['originalWidth']);
     const y = parsePositiveNumber(a['original_height'] ?? a['originalHeight']);
     if (x && y) return { width: x, height: y };
     const dim =
-      extractDimensionsFromUrl(a['download_url']) || extractDimensionsFromUrl(a['preview_url']);
+      extractDimensionsFromUrl(a['download_url'] as string | undefined) ||
+      extractDimensionsFromUrl(a['preview_url'] as string | undefined);
     if (dim) return dim;
     if (Array.isArray(a['aspect_ratio']) && a['aspect_ratio'].length >= 2) {
       const r1 = parsePositiveNumber(a['aspect_ratio'][0]);
