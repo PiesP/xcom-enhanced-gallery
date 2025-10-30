@@ -123,38 +123,6 @@ export class GlobalErrorHandler {
 }
 
 /**
- * @deprecated AppErrorHandler는 GlobalErrorHandler로 변경됨
- * 호환성 유지를 위한 별칭
- */
-export class AppErrorHandler {
-  private static instance: AppErrorHandler | null = null;
-  private readonly handler = GlobalErrorHandler.getInstance();
-
-  public static getInstance(): AppErrorHandler {
-    if (!this.instance) {
-      this.instance = new AppErrorHandler();
-    }
-    return this.instance;
-  }
-
-  private constructor() {}
-
-  /**
-   * @deprecated initialize() 사용 권장
-   */
-  public initialize(): void {
-    this.handler.initialize();
-  }
-
-  /**
-   * @deprecated destroy() 사용 권장
-   */
-  public destroy(): void {
-    this.handler.destroy();
-  }
-}
-
-/**
  * 전역 에러 핸들러 인스턴스
  */
 export const globalErrorHandler = GlobalErrorHandler.getInstance();

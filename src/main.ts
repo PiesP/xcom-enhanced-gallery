@@ -205,10 +205,9 @@ async function cleanup(): Promise<void> {
     // 더 이상 제거할 리스너가 없으므로 이 블록 자체를 제거
 
     // 전역 에러 핸들러 정리 (window:error/unhandledrejection 리스너 제거)
-    // @shared/error는 GlobalErrorHandler의 호환성 래퍼인 AppErrorHandler 제공
     try {
-      const { AppErrorHandler } = await import('@shared/error');
-      AppErrorHandler.getInstance().destroy();
+      const { GlobalErrorHandler } = await import('@shared/error');
+      GlobalErrorHandler.getInstance().destroy();
     } catch (e) {
       logger.debug('Global error handlers cleanup skipped or failed:', e);
     }
