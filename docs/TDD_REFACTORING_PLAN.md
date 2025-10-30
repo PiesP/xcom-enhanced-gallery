@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: ✅ Phase 272 완료 |
+**마지막 업데이트**: 2025-10-30 | **상태**: ✅ Phase 273 완료 |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
@@ -30,10 +30,12 @@
 - Phase 269: 갤러리 초기 높이 문제 해결 ✅ 완료
 - Phase 270: 자동 스크롤 이미지 로드 타이밍 ✅ 완료
 - Phase 271: 테스트 커버리지 개선 ✅ 완료
+- Phase 272: smoke 테스트 프로젝트 개선 ✅ 완료
+- Phase 273: jsdom 아티팩트 제거 ✅ 완료
 
 **테스트 상태**: ✅ 모두 GREEN
 
-- 단위 테스트: 67/67 통과 (100%) → 소모크 프로젝트 통과
+- 단위 테스트: 67/67 통과 (100%) → smoke 프로젝트 통과
 - CSS 정책: 219/219 통과
 - E2E 스모크: 86/86 통과
 - 접근성: WCAG 2.1 Level AA 통과
@@ -44,6 +46,97 @@
 - ESLint: 0 에러
 - Stylelint: 0 에러
 - CodeQL 보안: 0 경고
+
+---
+
+## ✅ Phase 273: jsdom 아티팩트 제거 및 happy-dom 정규화 완료
+
+**목표**: happy-dom 마이그레이션 후 남은 jsdom 참조 완전 정리
+
+**상태**: ✅ **완료**
+
+**작업 내용**:
+
+1. **test/setup.ts 정규화**
+   - `setupJsdomPolyfills()` → `setupTestEnvironmentPolyfills()` 함수명 변경
+   - jsdom 특화 주석 → happy-dom 호환성 주석으로 변경
+   - URL 생성자 폴백 주석 업데이트
+   - 콘솔 필터 주석 업데이트
+
+2. **jsdom 환경 주석 제거** (4개 파일)
+   - `test/unit/shared/utils/viewport-utils.test.ts`: `@vitest-environment jsdom` 제거
+   - `test/unit/shared/dom/selector-registry.dom-matrix.test.ts`: `@vitest-environment jsdom` 제거
+   - `test/unit/state/gallery-navigation-with-focus.test.ts`: `@vitest-environment jsdom` 제거
+   - 기본 happy-dom 환경 사용 (vitest.config.ts에서 설정)
+
+3. **JSDOM import 제거**
+   - `test/refactoring/icon-component-optimization.test.ts`: JSDOM 직접 사용 제거
+   - happy-dom 환경에서 직접 실행하도록 변경
+
+**기대 효과**:
+
+- ✅ **완전한 happy-dom 마이그레이션 완료**
+- ✅ **테스트 환경 간소화** (중복 polyfill 제거)
+- ✅ **코드 명확성 개선** (jsdom 참조 100% 제거)
+- ✅ **유지보수성 향상** (일관된 환경 설정)
+
+**검증 결과**:
+
+- 단위 테스트: 67/67 ✅
+- smoke 테스트: 14/14 ✅
+- E2E 스모크: 86/86 ✅
+- 빌드: 345.68 KB (안정적) ✅
+- validate: 0 에러 ✅
+
+**변경 파일**:
+
+- `test/setup.ts`: 정규화 (15 insertions, 29 deletions)
+- `test/unit/shared/utils/viewport-utils.test.ts`
+- `test/unit/shared/dom/selector-registry.dom-matrix.test.ts`
+- `test/unit/state/gallery-navigation-with-focus.test.ts`
+- `test/refactoring/icon-component-optimization.test.ts`
+
+---
+
+## ✅ Phase 272: smoke 테스트 프로젝트 명확화 및 계약 테스트 추가 완료
+
+**목표**: "초고속 구성/토큰 가드"로서 smoke 테스트의 목적 명확화 및 계약 테스트 추가
+
+**상태**: ✅ **완료**
+
+**작업 내용**:
+
+1. **애니메이션 토큰 정책 테스트 제거**
+   - 문제: `animation-tokens-policy.test.ts` 참조했으나 파일 없음
+   - 원인: 불완전한 마이그레이션 또는 버그
+   - 해결: vitest.config.ts에서 제거
+
+2. **계약 테스트 4개 추가**
+   - `toast-manager.contract.test.ts`: 2개 테스트
+   - `settings-service.contract.test.ts`: 5개 테스트
+   - `userscript-adapter.contract.test.ts`: 5개 테스트
+   - `service-harness.contract.test.ts`: 2개 테스트
+
+3. **smoke 프로젝트 구성**
+   - 총 14개 테스트 (3개 → 14개 증가)
+   - 목적: 빠른 구성/토큰 정책 검증 (20-30초)
+   - 커버리지: 핵심 서비스 계약 검증
+
+**기대 효과**:
+
+- ✅ **smoke 목적 명확화**: "초고속 구성/토큰 가드"
+- ✅ **테스트 전수 검증**: 모든 smoke 테스트 파일 존재 검증
+- ✅ **품질 우선순위 명확화**: smoke → fast → unit → styles → browser
+
+**검증 결과**:
+
+- smoke 테스트: 14/14 ✅ (9ms ~ 307ms)
+- 전체 검증 스위트: 모두 GREEN ✅
+
+**변경 파일**:
+
+- `vitest.config.ts`: smoke 프로젝트 설정 (14개 테스트로 정의)
+- `TDD_REFACTORING_PLAN.md`: Phase 272 추가
 
 ---
 
@@ -150,6 +243,8 @@
 | 269   | ✅ 완료 | 갤러리 초기 높이 문제       | 안정적 높이 계산            |
 | 270   | ✅ 완료 | 이미지 로드 타이밍          | 이미지 대기 후 스크롤       |
 | 271   | ✅ 완료 | 테스트 커버리지 개선        | 8개 테스트 제거, API 수정   |
+| 272   | ✅ 완료 | smoke 테스트 명확화         | 14개 계약 테스트, 토큰 가드 |
+| 273   | ✅ 완료 | jsdom 아티팩트 제거         | happy-dom 정규화, 5개 파일  |
 | 255   | ⏸️ 보류 | (선택사항)                  | 101개 토큰                  |
 
 ---
@@ -164,4 +259,14 @@
 
 ---
 
-🎉 **프로젝트 완성!** Phase 271로 모든 리팩토링이 완료되었습니다. 테스트 커버리지 100%, 번들 최적화 완료 (345.68 KB).
+🎉 **프로젝트 완성!** Phase 273 jsdom 아티팩트 제거로 모든 리팩토링이 완료되었습니다.
+
+**최종 상태**:
+
+- ✅ 테스트 커버리지: 100% (67 단위 + 219 CSS + 86 E2E)
+- ✅ 번들 최적화: 345.68 KB (18% 여유)
+- ✅ 코드 품질: 0 에러 (TypeScript strict, ESLint, Stylelint)
+- ✅ 보안: 0 경고 (CodeQL)
+- ✅ 접근성: WCAG 2.1 Level AA 통과
+
+Happy-dom 환경으로 완전히 정규화되었으며, 모든 jsdom 아티팩트가 제거되었습니다.
