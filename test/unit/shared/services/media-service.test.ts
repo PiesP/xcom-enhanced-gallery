@@ -71,14 +71,14 @@ describe('MediaService', () => {
     });
   });
 
-  describe('prepareForGallery', () => {
-    it('should prepare for gallery without errors', async () => {
-      await expect(service.prepareForGallery()).resolves.not.toThrow();
+  describe('pauseAllBackgroundVideos', () => {
+    it('should pause background videos without errors', () => {
+      expect(() => service.pauseAllBackgroundVideos()).not.toThrow();
     });
 
-    it('should be callable multiple times', async () => {
-      await service.prepareForGallery();
-      await expect(service.prepareForGallery()).resolves.not.toThrow();
+    it('should be callable multiple times', () => {
+      service.pauseAllBackgroundVideos();
+      expect(() => service.pauseAllBackgroundVideos()).not.toThrow();
     });
   });
 
@@ -92,8 +92,8 @@ describe('MediaService', () => {
       await expect(service.cleanupAfterGallery()).resolves.not.toThrow();
     });
 
-    it('should work after prepare', async () => {
-      await service.prepareForGallery();
+    it('should work after pausing videos', async () => {
+      service.pauseAllBackgroundVideos();
       await expect(service.cleanupAfterGallery()).resolves.not.toThrow();
     });
   });
@@ -127,8 +127,8 @@ describe('MediaService', () => {
   });
 
   describe('라이프사이클', () => {
-    it('should support full lifecycle: prepare -> cleanup -> cancel', async () => {
-      await service.prepareForGallery();
+    it('should support full lifecycle: pause -> cleanup -> cancel', async () => {
+      service.pauseAllBackgroundVideos();
       await service.cleanupAfterGallery();
       service.cancelDownload();
       await service.cleanup();
@@ -136,7 +136,7 @@ describe('MediaService', () => {
       expect(service.isDownloading()).toBe(false);
     });
 
-    it('should handle cleanup without prepare', async () => {
+    it('should handle cleanup without pause', async () => {
       await service.cleanupAfterGallery();
       await service.cleanup();
 

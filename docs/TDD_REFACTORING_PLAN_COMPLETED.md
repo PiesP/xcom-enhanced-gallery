@@ -1,14 +1,73 @@
 <!-- markdownlint-disable MD025 MD022 MD032 MD031 -->
 # TDD 리팩토링 완료 기록 (요약본)
 
-최종 업데이트: 2025-10-31
+최종 업데이트: 2025-11-01
 
 이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
 
 ## 최근 완료
 
+- **Phase 292**: MediaService 단순화 및 모듈 테스트 추가 — 완료 (2025-11-01)
+- **Phase 291**: 미디어 추출/인덱싱 서비스 리팩토링 — 완료 (2025-10-31)
+- Phase 289: 갤러리 렌더링을 로드 완료 이후로 지연 — 완료
 - Phase 286: 개발 전용 Flow Tracer — 완료
 - Phase 285: 개발 전용 고급 로깅 — 완료
+
+### 2025-11-01 — Phase 291 & 292: 미디어 서비스 모듈화 및 단순화
+
+#### Phase 291: TwitterVideoExtractor 모듈 분할
+
+**목표**: 미디어 추출 및 인덱싱 관련 코드를 일관되고 간결하며 현대적으로 리팩토링
+
+**수행 작업**:
+
+1. **TwitterVideoExtractor 분할** (573 lines → 4개 파일)
+   - `types.ts` (88 lines): Twitter API 타입 정의 (TwitterAPIResponse, TweetMediaEntry 등)
+   - `video-utils.ts` (140 lines): 비디오 관련 유틸리티 함수 (isVideoThumbnail, getTweetIdFromContainer 등)
+   - `media-sorting.ts` (59 lines): Phase 290 미디어 정렬 로직 (extractVisualIndexFromUrl, sortMediaByVisualOrder)
+   - `twitter-video-extractor.ts` (384 lines): TwitterAPI 클래스 + re-exports
+
+2. **코드 구조 개선**
+   - 타입 정의 중앙화 (단일 소스)
+   - 유틸리티 함수 모듈화 (독립 테스트 가능)
+   - 정렬 로직 독립 모듈로 분리
+   - Re-export 패턴으로 기존 API 호환성 유지
+
+**검증 결과**:
+- ✅ 테스트: 2706 passed, 2 skipped
+- ✅ 빌드: 347.50 KB (gzip 94.13 KB)
+- ✅ 번들 크기: ±0.6% (유지)
+
+#### Phase 292: MediaService 단순화
+
+**목표**: MediaService의 사용되지 않는 래퍼 제거 및 파일 크기 감소
+
+**수행 작업**:
+
+1. **TwitterVideoUtils getter 제거** (42줄)
+   - 동적 import 래퍼 패턴 완전 제거
+   - 필요 시 직접 import 권장
+
+2. **사용되지 않는 래퍼 메서드 제거** (29줄)
+   - extractMedia, downloadMedia, extractMediaWithUsername, prepareForGallery 제거
+
+3. **모듈별 단위 테스트 추가** (29개 신규)
+   - video-utils.test.ts: 비디오 유틸리티 검증 (19개)
+   - media-sorting.test.ts: 정렬 로직 검증 (10개)
+
+**검증 결과**:
+- ✅ 파일 크기: 750 lines → 679 lines (-71 lines, -9.5%)
+- ✅ 테스트: 2735 passed, 2 skipped (+29개 신규)
+- ✅ 빌드: 343.68 KB (gzip 93.27 KB)
+- ✅ 번들 크기 감소: -3.82 KB raw (-1.1%), -0.86 KB gzip (-0.9%)
+
+**종합 영향**:
+- ✅ 코드 가독성 대폭 개선 (타입/유틸/정렬 분리)
+- ✅ 번들 크기 최적화 (347.50 → 343.68 KB)
+- ✅ 테스트 커버리지 증가 (2706 → 2735)
+- ✅ Breaking change 없음
+
+---
 
 ### 2025-10-31 — Flow Timing Review & Fixes (Phase 290 & 290.1)
 
