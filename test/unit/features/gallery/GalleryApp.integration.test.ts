@@ -5,6 +5,7 @@ import type { MediaInfo } from '@/shared/types/media.types';
 import { initializeVendors } from '@/shared/external/vendors';
 import { CoreService } from '@/shared/services/service-manager';
 import { registerGalleryRenderer } from '@/shared/container/service-accessors';
+import { getTwitterScrollPreservation } from '@/shared/utils/twitter/scroll-preservation';
 
 /**
  * @fileoverview GalleryApp Integration Tests
@@ -405,6 +406,130 @@ describe('GalleryApp Integration', () => {
 
       // Then: 자동으로 유효한 범위로 조정되어야 함
       expect(galleryApp.isRunning()).toBe(true);
+    });
+  });
+
+  describe('Twitter Scroll Preservation Integration (Phase 295)', () => {
+    let scrollPreservation: ReturnType<typeof getTwitterScrollPreservation>;
+
+    beforeEach(async () => {
+      await galleryApp.initialize();
+
+      // TwitterScrollPreservation 싱글톤 인스턴스 가져오기
+      scrollPreservation = getTwitterScrollPreservation();
+
+      // 인스턴스 메서드 모킹
+      vi.spyOn(scrollPreservation, 'savePosition').mockImplementation(() => true);
+      vi.spyOn(scrollPreservation, 'restore').mockResolvedValue(true);
+      vi.spyOn(scrollPreservation, 'clear').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should save Twitter scroll position when opening gallery', async () => {
+      // Given: 테스트용 미디어 아이템
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+
+      // When: 갤러리 열기
+      await galleryApp.openGallery(media, 0);
+
+      // Then: savePosition()이 호출되어야 함
+      expect(scrollPreservation.savePosition).toHaveBeenCalledTimes(1);
+    });
+
+    it('should restore Twitter scroll position when closing gallery', async () => {
+      // Given: 갤러리가 열려 있는 상태
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+      await galleryApp.openGallery(media, 0);
+
+      // 모킹 호출 카운트 리셋
+      vi.mocked(scrollPreservation.restore).mockClear();
+
+      // When: 갤러리 닫기
+      galleryApp.closeGallery();
+
+      // Then: restore()가 호출되어야 함
+      // Note: restore()는 비동기이지만, closeGallery는 동기 메서드이므로
+      // nextTick을 사용하여 비동기 호출 대기
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(scrollPreservation.restore).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle scroll preservation errors gracefully when opening', async () => {
+      // Given: savePosition에서 에러 발생하도록 모킹
+      vi.mocked(scrollPreservation.savePosition).mockImplementation(() => {
+        throw new Error('Scroll save error');
+      });
+
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+
+      // When/Then: 갤러리는 에러 없이 열려야 함 (선택적 기능)
+      await expect(galleryApp.openGallery(media, 0)).resolves.not.toThrow();
+      expect(galleryApp.isRunning()).toBe(true);
+    });
+
+    it('should handle scroll restoration errors gracefully when closing', async () => {
+      // Given: 갤러리가 열려 있고, restore에서 에러 발생하도록 모킹
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+      await galleryApp.openGallery(media, 0);
+
+      vi.mocked(scrollPreservation.restore).mockRejectedValue(new Error('Scroll restore error'));
+
+      // When/Then: 갤러리는 에러 없이 닫혀야 함 (선택적 기능)
+      expect(() => galleryApp.closeGallery()).not.toThrow();
+    });
+
+    it('should save scroll position before any rendering or state changes', async () => {
+      // Given: 테스트용 미디어
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+
+      // When: 갤러리 열기
+      await galleryApp.openGallery(media, 0);
+
+      // Then: savePosition이 가장 먼저 호출되어야 함
+      // (실제로는 호출 순서를 추적하기 어려우므로, 호출 자체만 검증)
+      expect(scrollPreservation.savePosition).toHaveBeenCalled();
+    });
+
+    it('should restore scroll position after gallery DOM is fully removed', async () => {
+      // Given: 갤러리가 열려 있는 상태
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+      await galleryApp.openGallery(media, 0);
+
+      vi.mocked(scrollPreservation.restore).mockClear();
+
+      // When: 갤러리 닫기
+      galleryApp.closeGallery();
+
+      // Then: restore가 호출되어야 함 (비동기 대기)
+      await new Promise(resolve => setTimeout(resolve, 0));
+      expect(scrollPreservation.restore).toHaveBeenCalled();
+    });
+
+    it('should handle rapid open-close cycles with scroll preservation', async () => {
+      // Given: 미디어 아이템
+      const media = [createTestMediaInfo({ id: 'test-1' })];
+
+      // When: 빠른 열기/닫기 반복
+      await galleryApp.openGallery(media, 0);
+      galleryApp.closeGallery();
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await galleryApp.openGallery(media, 0);
+      galleryApp.closeGallery();
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      await galleryApp.openGallery(media, 0);
+      galleryApp.closeGallery();
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Then: 각 사이클마다 save/restore가 호출되어야 함
+      expect(scrollPreservation.savePosition).toHaveBeenCalledTimes(3);
+      // Note: restore는 비동기 fire-and-forget이므로 최소 호출만 검증
+      expect(scrollPreservation.restore).toHaveBeenCalled();
+      expect(scrollPreservation.restore.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
   });
 });

@@ -26,6 +26,7 @@ import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
 import { ToastController } from '../../shared/services/unified-toast-manager';
 import { initializeTheme } from './services/theme-initialization';
+import { getTwitterScrollPreservation } from '../../shared/utils/twitter/scroll-preservation';
 
 /**
  * 갤러리 앱 설정 인터페이스
@@ -221,6 +222,15 @@ export class GalleryApp {
     }
 
     try {
+      // Phase 295: Twitter 스크롤 위치 저장 (선택적 기능, 에러 발생 시에도 갤러리는 정상 동작)
+      try {
+        const scrollPreservation = getTwitterScrollPreservation();
+        scrollPreservation.savePosition();
+        logger.debug('[GalleryApp] Twitter 스크롤 위치 저장됨');
+      } catch (scrollError) {
+        logger.warn('[GalleryApp] Twitter 스크롤 위치 저장 실패 (계속 진행):', scrollError);
+      }
+
       const validIndex = Math.max(0, Math.min(startIndex, mediaItems.length - 1));
       logger.info('[GalleryApp] 갤러리 열기:', {
         mediaCount: mediaItems.length,
@@ -250,6 +260,24 @@ export class GalleryApp {
       }
       this.mediaService?.restoreBackgroundVideos();
       logger.debug('[GalleryApp] 갤러리 닫음');
+
+      // Phase 295: Twitter 스크롤 위치 복원 (선택적 기능, 에러 발생 시에도 갤러리 닫기는 정상 동작)
+      // Note: restore()는 비동기이지만, closeGallery는 동기 메서드이므로 fire-and-forget
+      try {
+        const scrollPreservation = getTwitterScrollPreservation();
+        void scrollPreservation
+          .restore()
+          .then(restored => {
+            if (restored) {
+              logger.debug('[GalleryApp] Twitter 스크롤 위치 복원됨');
+            }
+          })
+          .catch(scrollError => {
+            logger.warn('[GalleryApp] Twitter 스크롤 위치 복원 실패 (무시됨):', scrollError);
+          });
+      } catch (scrollError) {
+        logger.warn('[GalleryApp] Twitter 스크롤 위치 복원 초기화 실패 (무시됨):', scrollError);
+      }
     } catch (error) {
       logger.error('[GalleryApp] 갤러리 닫기 실패:', error);
     }

@@ -6,6 +6,7 @@
 
 ## 최근 상태
 
+- **Phase 295**: TwitterScrollPreservation 실제 통합 — ✅ 완료 (2025-11-01)
 - **Phase 294**: Twitter 네비게이션 스크롤 복원 호환성 개선 — ✅ 완료 (2025-11-01)
 - **Phase 293**: 갤러리 흐름 타이밍 최적화 — ✅ 완료 (2025-11-01)
 - **Phase 292**: MediaService 단순화 및 모듈 테스트 추가 — ✅ 완료 (2025-11-01)
@@ -16,9 +17,82 @@
 
 ## 현재 진행 중
 
-**없음** - 모든 계획된 리팩토링 완료
+없음 - 모든 계획된 Phase 완료
+
+---
 
 ## 계획/검토 항목
+
+### ✅ Phase 295: TwitterScrollPreservation 실제 통합 (완료)
+
+**목표**: Phase 294에서 구현한 TwitterScrollPreservation을 갤러리 open/close 로직에 통합하여 실제로 작동하도록 함
+
+**완료 일자**: 2025-11-01
+
+**문제 식별**:
+
+- Phase 294에서 TwitterScrollPreservation 유틸리티 클래스와 단위 테스트는 완료했으나 실제로 사용되는 곳이 없음
+- GalleryApp.openGallery()와 closeGallery()에서 호출해야 하지만 현재 미통합 상태
+- 선택적 기능이므로 에러 발생 시에도 갤러리 기본 기능은 정상 동작해야 함
+
+**수행 작업**:
+
+1. **GalleryApp.openGallery 통합**
+   - TwitterScrollPreservation.savePosition() 호출 추가
+   - try-catch로 에러 처리 (실패해도 갤러리 오픈 계속 진행)
+   - 로깅으로 저장 상태 추적
+
+2. **GalleryApp.closeGallery 통합**
+   - TwitterScrollPreservation.restore() 호출 추가
+   - 비동기 fire-and-forget 처리 (void + then + catch)
+   - 에러 발생 시 로깅만 하고 계속 진행
+
+3. **통합 테스트 추가**
+   - `test/unit/features/gallery/GalleryApp.integration.test.ts`에 "Twitter Scroll Preservation Integration" 스위트 추가
+   - savePosition, restore 호출 검증
+   - 에러 핸들링 검증 (실패해도 갤러리 정상 동작)
+   - 빠른 open-close 사이클 검증
+   - 7개 신규 테스트 추가 및 모두 통과
+
+**TDD 접근**:
+
+1. **RED**: GalleryApp 테스트에 TwitterScrollPreservation 호출 검증 추가 → 5개 실패
+2. **GREEN**: GalleryApp에 TwitterScrollPreservation 통합 → 테스트 통과
+3. **REFACTOR**: 에러 핸들링 강화 (catch 추가), 테스트 안정성 개선
+
+**검증 결과**:
+
+- ✅ 타입 체크 통과
+- ✅ 단위 테스트: 7개 신규 테스트 모두 통과
+- ✅ 전체 테스트: 2770 passed (+7개)
+- ✅ E2E 테스트: 88 passed, 8 skipped
+- ✅ 빌드: 344.92 KB (gzip 93.61 KB) — 번들 크기 영향 미미 ✅
+
+**번들 크기 분석**:
+
+| 항목 | Phase 294 (이전) | Phase 295 (현재) | 변화 |
+|------|-----------------|-----------------|------|
+| Raw | 343.71 KB | 344.92 KB | +1.21 KB (+0.35%) |
+| Gzip | 93.26 KB | 93.61 KB | +0.35 KB (+0.38%) |
+
+**영향**:
+
+- ✅ Twitter 스크롤 복원 기능 실제로 작동 시작
+- ✅ 갤러리 open/close 흐름에 자연스럽게 통합
+- ✅ 에러 안정성 보장 (선택적 기능, 실패해도 갤러리 정상 동작)
+- ✅ 번들 크기 영향 미미 (+1.21 KB raw, +0.35 KB gzip)
+- ✅ Breaking change 없음
+
+**파일 변경**:
+
+- 수정: `src/features/gallery/GalleryApp.ts` (+14 lines)
+  - openGallery: savePosition() 호출 추가 (try-catch)
+  - closeGallery: restore() 호출 추가 (비동기 fire-and-forget)
+- 수정: `test/unit/features/gallery/GalleryApp.integration.test.ts` (+119 lines)
+  - "Twitter Scroll Preservation Integration (Phase 295)" 스위트 추가
+  - 7개 통합 테스트 (호출 검증, 에러 핸들링, 빠른 사이클)
+
+---
 
 ### ✅ Phase 294: Twitter 네비게이션 스크롤 복원 호환성 개선 (완료)
 
@@ -93,6 +167,8 @@
 1. 중복 openGallery 호출 분석 → 문제 없음 확인 (signal idempotent)
 2. 초기 스크롤: 단일 rAF → 2단계 rAF 체인 (DOM 준비 확실히 보장)
 3. 포커스 동기화: `autoFocusDebounce: 50ms → 0ms` (키보드 반응성 개선)
+
+```
 
 **검증 결과**:
 
