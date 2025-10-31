@@ -1,121 +1,36 @@
 // Twitter Video Extractor - Optimized for bundle size
+/**
+ * @fileoverview Twitter Video Extractor (Main)
+ * @description TwitterAPI 클래스 및 관련 함수 통합
+ * @version 2.0.0 - Phase 291: 모듈 분할 완료
+ */
+
 import { logger } from '@shared/logging';
-import { STABLE_SELECTORS, TWITTER_API_CONFIG } from '@/constants';
+import { TWITTER_API_CONFIG } from '@/constants';
+import type {
+  TwitterAPIResponse,
+  TwitterTweet,
+  TwitterUser,
+  TwitterMedia,
+  TweetMediaEntry,
+} from './types';
+import { sortMediaByVisualOrder } from './media-sorting';
+import {
+  getVideoMediaEntry as getVideoMediaEntryBase,
+  getVideoUrlFromThumbnail as getVideoUrlFromThumbnailBase,
+} from './video-utils';
 
-interface TwitterAPIResponse {
-  data?: {
-    tweetResult?: {
-      result?: TwitterTweet;
-    };
-  };
-}
+// Re-export types
+export type { TweetMediaEntry } from './types';
 
-interface TwitterTweet {
-  __typename?: string;
-  tweet?: TwitterTweet;
-  rest_id?: string;
-  core?: {
-    user_results?: {
-      result?: TwitterUser;
-    };
-  };
-  extended_entities?: { media?: TwitterMedia[] } | undefined;
-  full_text?: string | undefined;
-  id_str?: string | undefined;
-  quoted_status_result?: {
-    result?: TwitterTweet;
-  };
-  legacy?: {
-    extended_entities?: { media?: TwitterMedia[] } | undefined;
-    full_text?: string | undefined;
-    id_str?: string | undefined;
-  };
-}
-
-interface TwitterUser {
-  rest_id?: string;
-  screen_name?: string;
-  name?: string;
-  legacy?: {
-    screen_name?: string;
-    name?: string;
-  };
-}
-
-interface TwitterMedia {
-  type: 'photo' | 'video' | 'animated_gif';
-  id_str: string;
-  media_key?: string;
-  media_url_https: string;
-  expanded_url?: string;
-  display_url?: string;
-  url?: string;
-  video_info?: {
-    aspect_ratio?: [number, number];
-    variants: Array<{
-      bitrate?: number;
-      url: string;
-      content_type: string;
-    }>;
-  };
-  original_info?: {
-    height?: number;
-    width?: number;
-  };
-}
-
-export interface TweetMediaEntry {
-  screen_name: string;
-  tweet_id: string;
-  download_url: string;
-  type: 'photo' | 'video';
-  typeOriginal: 'photo' | 'video' | 'animated_gif';
-  index: number;
-  typeIndex: number;
-  typeIndexOriginal: number;
-  preview_url: string;
-  media_id: string;
-  media_key: string;
-  expanded_url: string;
-  short_expanded_url: string;
-  short_tweet_url: string;
-  tweet_text: string;
-  original_width?: number;
-  original_height?: number;
-  aspect_ratio?: [number, number];
-}
-
-export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
-  const src = imgElement.src;
-  const alt = imgElement.alt;
-  return (
-    src.includes('ext_tw_video_thumb') ||
-    src.includes('amplify_video_thumb') ||
-    src.includes('tweet_video_thumb') ||
-    alt === 'Animated Text GIF' ||
-    alt === 'Embedded video' ||
-    imgElement.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
-    imgElement.closest('a[aria-label*="video"]') !== null ||
-    imgElement.closest('a[aria-label*="Video"]') !== null ||
-    imgElement.closest('a[aria-label="Embedded video"]') !== null
-  );
-}
-
-export function isVideoPlayer(element: HTMLElement): boolean {
-  return (
-    element.tagName === 'VIDEO' ||
-    element.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
-    element.closest('div[role="img"][aria-label*="video"]') !== null ||
-    element.closest('div[role="img"][aria-label*="Video"]') !== null
-  );
-}
-
-export function isVideoElement(element: HTMLElement): boolean {
-  if (element.tagName === 'IMG') {
-    return isVideoThumbnail(element as HTMLImageElement);
-  }
-  return isVideoPlayer(element);
-}
+// Re-export utilities (MediaService에서 사용하기 위해)
+export {
+  isVideoThumbnail,
+  isVideoPlayer,
+  isVideoElement,
+  extractTweetId,
+  getTweetIdFromContainer,
+} from './video-utils';
 
 function getCookie(name: string): string | undefined {
   if (typeof document === 'undefined' || !document.cookie) return undefined;
@@ -368,58 +283,6 @@ export class TwitterAPI {
     return undefined;
   }
 
-  /**
-   * Phase 290.1: Sort media by visual order
-   * Twitter API may return media in incorrect order (e.g., [0, 1, 3, 2] for 4-image grid)
-   * This method extracts the visual index from expanded_url (/photo/N or /video/N) and sorts accordingly
-   */
-  private static sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
-    if (mediaItems.length <= 1) {
-      return mediaItems;
-    }
-
-    // Extract visual order index from expanded_url
-    const withVisualIndex = mediaItems.map(media => {
-      const visualIndex = this.extractVisualIndexFromUrl(media.expanded_url);
-      return { media, visualIndex };
-    });
-
-    // Sort by visual index
-    withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
-
-    // Reassign index field to match sorted order
-    const sorted = withVisualIndex.map(({ media }, newIndex) => ({
-      ...media,
-      index: newIndex,
-    }));
-
-    return sorted;
-  }
-
-  /**
-   * Extract visual index from expanded_url
-   * Examples:
-   *   - "https://twitter.com/user/status/123/photo/1" -> 0
-   *   - "https://twitter.com/user/status/123/photo/4" -> 3
-   *   - "https://twitter.com/user/status/123/video/2" -> 1
-   */
-  private static extractVisualIndexFromUrl(url: string): number {
-    if (!url) {
-      return 0;
-    }
-
-    // Match /photo/N or /video/N pattern
-    const match = url.match(/\/(photo|video)\/(\d+)$/);
-    const visualNumberStr = match?.[2];
-    if (visualNumberStr) {
-      const visualNumber = Number.parseInt(visualNumberStr, 10);
-      // Convert to 0-based index (photo/1 -> index 0)
-      return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
-    }
-
-    return 0;
-  }
-
   public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
     const url = this.createTweetJsonEndpointUrlByRestId(tweetId);
     const json = await this.apiRequest(url);
@@ -451,7 +314,7 @@ export class TwitterAPI {
     let result = this.extractMediaFromTweet(tweetResult, tweetUser);
 
     // Phase 290.1: Fix media order - Sort by visual order (expanded_url photo/video number)
-    result = this.sortMediaByVisualOrder(result);
+    result = sortMediaByVisualOrder(result);
 
     if (tweetResult.quoted_status_result?.result) {
       const quotedTweet = tweetResult.quoted_status_result.result;
@@ -479,7 +342,7 @@ export class TwitterAPI {
         // 인용 트윗의 미디어를 먼저 배치
         const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser);
         // Phase 290.1: Sort quoted tweet media by visual order
-        const sortedQuotedMedia = this.sortMediaByVisualOrder(quotedMedia);
+        const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
         // Phase 290.2: Adjust original tweet indices to prevent overlap with quoted tweet
         // Quoted tweet: index 0, 1, 2, ...
@@ -496,78 +359,26 @@ export class TwitterAPI {
   }
 }
 
-export function extractTweetId(url: string): string | null {
-  const match = url.match(/(?<=\/status\/)\d+/);
-  return match?.[0] ?? null;
-}
-
-export function getTweetIdFromContainer(container: HTMLElement): string | null {
-  const links = container.querySelectorAll('a[href*="/status/"], time');
-  for (const element of links) {
-    let href: string | null = null;
-    if (element.tagName === 'A') {
-      href = (element as HTMLAnchorElement).href;
-    } else if (element.tagName === 'TIME') {
-      const parentLink = element.closest('a[href*="/status/"]');
-      if (parentLink) href = (parentLink as HTMLAnchorElement).href;
-    }
-    if (href) {
-      if (href.startsWith('/')) href = `https://x.com${href}`;
-      const tweetId = extractTweetId(href);
-      if (tweetId) return tweetId;
-    }
-  }
-  const dataElements = container.querySelectorAll('[data-tweet-id], [aria-label]');
-  for (const element of dataElements) {
-    const dataTweetId = element.getAttribute('data-tweet-id');
-    if (dataTweetId && /^\d{15,20}$/.test(dataTweetId)) return dataTweetId;
-    const ariaLabel = element.getAttribute('aria-label');
-    if (ariaLabel) {
-      const match = ariaLabel.match(/\b(\d{15,20})\b/);
-      if (match?.[1]) return match[1];
-    }
-  }
-  const textContent = container.textContent ?? '';
-  const textMatch = textContent.match(/\b(\d{15,20})\b/);
-  if (textMatch?.[1]) return textMatch[1];
-  if (window.location.pathname.includes('/status/')) {
-    return extractTweetId(window.location.href);
-  }
-  return null;
-}
-
+/**
+ * TwitterAPI와 결합된 버전 - 트윗 ID로 비디오 미디어 엔트리 가져오기
+ */
 export async function getVideoMediaEntry(
   tweetId: string,
   thumbnailUrl?: string
 ): Promise<TweetMediaEntry | null> {
-  try {
-    const medias = await TwitterAPI.getTweetMedias(tweetId);
-    const videoMedias = medias.filter(media => media.type === 'video');
-    if (videoMedias.length === 0) return null;
-    if (thumbnailUrl) {
-      const normalizedThumbnail = thumbnailUrl.replace(/\?.*$/, '');
-      const matchedVideo = videoMedias.find(media =>
-        media.preview_url.startsWith(normalizedThumbnail)
-      );
-      if (matchedVideo) return matchedVideo;
-    }
-    return videoMedias[0] ?? null;
-  } catch (error) {
-    logger.error('Failed to get video media entry:', error);
-    return null;
-  }
+  return getVideoMediaEntryBase(TwitterAPI.getTweetMedias.bind(TwitterAPI), tweetId, thumbnailUrl);
 }
 
+/**
+ * TwitterAPI와 결합된 버전 - 썸네일 이미지에서 비디오 URL 추출
+ */
 export async function getVideoUrlFromThumbnail(
   imgElement: HTMLImageElement,
   tweetContainer: HTMLElement
 ): Promise<string | null> {
-  if (!isVideoThumbnail(imgElement)) return null;
-  const tweetId = getTweetIdFromContainer(tweetContainer);
-  if (!tweetId) {
-    logger.warn('Cannot extract tweet ID from container');
-    return null;
-  }
-  const videoEntry = await getVideoMediaEntry(tweetId, imgElement.src);
-  return videoEntry?.download_url ?? null;
+  return getVideoUrlFromThumbnailBase(
+    TwitterAPI.getTweetMedias.bind(TwitterAPI),
+    imgElement,
+    tweetContainer
+  );
 }
