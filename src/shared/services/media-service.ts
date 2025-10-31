@@ -2,7 +2,7 @@
 /**
  * @fileoverview 미디어 서비스
  * @description 미디어 추출, 로딩, 프리페치 기능 제공
- * @version 2.0.0 - Phase A5.5: BaseServiceImpl 패턴 적용
+ * @version 3.0.0 - Phase 292: TwitterVideoUtils 래퍼 제거 및 단순화
  */
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
@@ -195,79 +195,9 @@ export class MediaService extends BaseServiceImpl {
     return parseUsernameFast(element);
   }
 
-  get TwitterVideoUtils() {
-    return {
-      // TwitterVideoExtractor에서 가져온 유틸리티들
-      isVideoThumbnail: async (imgElement: HTMLImageElement) => {
-        const { isVideoThumbnail } = await import('./media/twitter-video-extractor');
-        return isVideoThumbnail(imgElement);
-      },
-      isVideoPlayer: async (element: HTMLElement) => {
-        const { isVideoPlayer } = await import('./media/twitter-video-extractor');
-        return isVideoPlayer(element);
-      },
-      isVideoElement: async (element: HTMLElement) => {
-        const { isVideoElement } = await import('./media/twitter-video-extractor');
-        return isVideoElement(element);
-      },
-      extractTweetId: async (url: string) => {
-        const { extractTweetId } = await import('./media/twitter-video-extractor');
-        return extractTweetId(url);
-      },
-      getTweetIdFromContainer: async (container: HTMLElement) => {
-        const { getTweetIdFromContainer } = await import('./media/twitter-video-extractor');
-        return getTweetIdFromContainer(container);
-      },
-      getVideoMediaEntry: async (tweetId: string, thumbnailUrl?: string) => {
-        const { getVideoMediaEntry } = await import('./media/twitter-video-extractor');
-        return getVideoMediaEntry(tweetId, thumbnailUrl);
-      },
-      getVideoUrlFromThumbnail: async (
-        imgElement: HTMLImageElement,
-        tweetContainer: HTMLElement
-      ) => {
-        const { getVideoUrlFromThumbnail } = await import('./media/twitter-video-extractor');
-        return getVideoUrlFromThumbnail(imgElement, tweetContainer);
-      },
-    };
-  }
-
   // ====================================
-  // 간단한 래퍼 메서드들 (Step 4 호환성)
+  // 미디어 추출 메서드들
   // ====================================
-
-  /**
-   * 미디어 추출 (단순화된 인터페이스)
-   */
-  async extractMedia(
-    element: HTMLElement,
-    options: MediaExtractionOptions = {}
-  ): Promise<MediaExtractionResult> {
-    return this.extractFromClickedElement(element, options);
-  }
-
-  async downloadMedia(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    return this.downloadSingle(media);
-  }
-
-  async extractMediaWithUsername(
-    element: HTMLElement,
-    options: MediaExtractionOptions = {}
-  ): Promise<MediaExtractionResult & { username: string | null }> {
-    const [extractionResult, usernameResult] = await Promise.all([
-      this.extractFromClickedElement(element, options),
-      Promise.resolve(this.extractUsername(element)),
-    ]);
-
-    return {
-      ...extractionResult,
-      username: usernameResult.username,
-    };
-  }
-
-  async prepareForGallery(): Promise<void> {
-    this.pauseAllBackgroundVideos();
-  }
 
   async cleanupAfterGallery(): Promise<void> {
     this.restoreBackgroundVideos();

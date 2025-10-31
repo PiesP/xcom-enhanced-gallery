@@ -188,7 +188,7 @@ describe('Service Factories', () => {
       const service = await getMediaService();
 
       // MediaService 인터페이스 메서드 존재 확인
-      expect(service).toHaveProperty('extractMedia');
+      expect(service).toHaveProperty('extractFromClickedElement');
     });
 
     it('getBulkDownloadService는 BulkDownloadService 타입을 반환한다', async () => {

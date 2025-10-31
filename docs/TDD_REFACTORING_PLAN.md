@@ -13,6 +13,58 @@
 
 ## 계획/검토 항목
 
+### ⚙️ Phase 292: MediaService 단순화 (진행 중)
+
+**목표**: MediaService의 사용되지 않는 래퍼 제거 및 파일 크기 감소
+
+**현재 상태**: 🔄 리팩토링 중
+
+**문제 분석**:
+
+1. **TwitterVideoUtils getter** (198-239줄, 42줄)
+   - 동적 import 래퍼 패턴으로 모든 함수를 async로 감싸고 있음
+   - 사용처: 없음 (grep 검색 결과 0건)
+   - 문제: 불필요한 복잡도, 번들 크기 증가 없지만 코드 가독성 저하
+
+2. **사용되지 않는 래퍼 메서드들** (242-270줄, 29줄)
+   - `extractMedia`: `extractFromClickedElement` 단순 호출
+   - `downloadMedia`: `downloadSingle` 단순 호출
+   - `extractMediaWithUsername`: 조합 메서드
+   - `prepareForGallery`: `pauseAllBackgroundVideos` 단순 호출
+   - 사용처: 모두 없음 (외부에서 직접 호출 없음)
+
+**리팩토링 방향**:
+
+1. **TwitterVideoUtils getter 완전 제거** (우선순위: 높음)
+   - 필요시 직접 `import { isVideoThumbnail } from '@shared/services/media/twitter-video-extractor'` 사용 권장
+   - 동적 import 오버헤드 제거
+
+2. **사용되지 않는 래퍼 메서드 제거** (우선순위: 높음)
+   - extractMedia, downloadMedia, extractMediaWithUsername, prepareForGallery 제거
+   - 실제 구현 메서드(extractFromClickedElement, downloadSingle 등)는 유지
+
+3. **주석 및 문서 정리** (우선순위: 낮음)
+   - Step 4 호환성 주석 제거
+   - 파일 헤더 버전 업데이트
+
+**수용 기준**:
+
+- [ ] TwitterVideoUtils getter 제거 (42줄 감소)
+- [ ] 사용되지 않는 래퍼 메서드 제거 (29줄 감소)
+- [ ] MediaService 파일 크기: 750 lines → ~680 lines 이하
+- [ ] 기존 테스트 모두 통과 (2706/2708)
+- [ ] npm run validate, npm run build 성공
+- [ ] 번들 크기 유지 (±2% 이내)
+
+**예상 영향**:
+
+- ✅ 코드 가독성 개선 (불필요한 래퍼 제거)
+- ✅ 파일 크기 약 70줄 감소 (10% 감량)
+- ✅ 번들 크기 영향 없음 (미사용 코드이므로 tree-shaking 대상)
+- ⚠️ Breaking change 없음 (외부 사용처 없음 확인됨)
+
+---
+
 ### ✅ Phase 291: 미디어 추출/인덱싱 서비스 리팩토링 (완료)
 
 **목표**: 미디어 추출 및 인덱싱 관련 코드를 일관되고 간결하며 현대적으로 리팩토링
