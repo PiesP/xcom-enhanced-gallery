@@ -441,7 +441,14 @@ export default defineConfig(({ mode }) => {
           sourcemapExcludeSources: false,
           // 실제 최종 파일명/포맷은 userscriptPlugin에서 결정
         },
-        treeshake: flags.isProd,
+        // prod 번들에서 더 공격적인 tree-shaking으로 크기 절감
+        treeshake: flags.isProd
+          ? {
+              moduleSideEffects: false,
+              propertyReadSideEffects: false,
+              tryCatchDeoptimization: false,
+            }
+          : false,
         // Phase 230: 병렬 처리 최적화
         maxParallelFileOps: 10, // 12 코어 활용
       },
@@ -451,7 +458,7 @@ export default defineConfig(({ mode }) => {
             drop_console: true,
             drop_debugger: true,
             // additional aggressive options to reduce size
-            passes: 4,
+            passes: 3,
             pure_getters: true,
             unsafe: true, // enable additional optimizations (reviewed)
             toplevel: true,

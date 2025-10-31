@@ -20,48 +20,6 @@
 
 - 계획 요약: ./TDD_REFACTORING_PLAN.md
 - 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
-# TDD 리팩토링 완료 기록 (요약본)
-
-최종 업데이트: 2025-10-31
-
-이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
-
-## 최근 완료
-
-- Phase 286: 개발 전용 Flow Tracer — 완료
-- Phase 285: 개발 전용 고급 로깅 — 완료
-
-## 핵심 성과(요약)
-
-- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
-- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
-- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
-
-## 전체 기록
-
-- 계획 요약: ./TDD_REFACTORING_PLAN.md
-- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
-# TDD 리팩토링 완료 기록 (요약본)
-
-최종 업데이트: 2025-10-31
-
-이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
-
-## 최근 완료
-
-- Phase 286: 개발 전용 Flow Tracer — 완료
-- Phase 285: 개발 전용 고급 로깅 — 완료
-
-## 핵심 성과(요약)
-
-- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
-- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
-- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
-
-## 전체 기록
-
-- 계획 요약: ./TDD_REFACTORING_PLAN.md
-- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
 
 # TDD 리팩토링 완료 기록
 
