@@ -114,9 +114,9 @@ describe('Bundle Size Policy', () => {
       },
       {
         path: 'shared/services/media/twitter-video-extractor.ts',
-        maxLines: 550,
-        maxKB: 18.0,
-        context: 'Remove legacy normalizer',
+        maxLines: 580,
+        maxKB: 20.0,
+        context: 'Phase 290.1: Media order sorting by visual index',
       },
     ];
 

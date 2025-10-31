@@ -368,6 +368,58 @@ export class TwitterAPI {
     return undefined;
   }
 
+  /**
+   * Phase 290.1: Sort media by visual order
+   * Twitter API may return media in incorrect order (e.g., [0, 1, 3, 2] for 4-image grid)
+   * This method extracts the visual index from expanded_url (/photo/N or /video/N) and sorts accordingly
+   */
+  private static sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
+    if (mediaItems.length <= 1) {
+      return mediaItems;
+    }
+
+    // Extract visual order index from expanded_url
+    const withVisualIndex = mediaItems.map(media => {
+      const visualIndex = this.extractVisualIndexFromUrl(media.expanded_url);
+      return { media, visualIndex };
+    });
+
+    // Sort by visual index
+    withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
+
+    // Reassign index field to match sorted order
+    const sorted = withVisualIndex.map(({ media }, newIndex) => ({
+      ...media,
+      index: newIndex,
+    }));
+
+    return sorted;
+  }
+
+  /**
+   * Extract visual index from expanded_url
+   * Examples:
+   *   - "https://twitter.com/user/status/123/photo/1" -> 0
+   *   - "https://twitter.com/user/status/123/photo/4" -> 3
+   *   - "https://twitter.com/user/status/123/video/2" -> 1
+   */
+  private static extractVisualIndexFromUrl(url: string): number {
+    if (!url) {
+      return 0;
+    }
+
+    // Match /photo/N or /video/N pattern
+    const match = url.match(/\/(photo|video)\/(\d+)$/);
+    const visualNumberStr = match?.[2];
+    if (visualNumberStr) {
+      const visualNumber = Number.parseInt(visualNumberStr, 10);
+      // Convert to 0-based index (photo/1 -> index 0)
+      return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
+    }
+
+    return 0;
+  }
+
   public static async getTweetMedias(tweetId: string): Promise<TweetMediaEntry[]> {
     const url = this.createTweetJsonEndpointUrlByRestId(tweetId);
     const json = await this.apiRequest(url);
@@ -397,6 +449,10 @@ export class TwitterAPI {
       }
     }
     let result = this.extractMediaFromTweet(tweetResult, tweetUser);
+
+    // Phase 290.1: Fix media order - Sort by visual order (expanded_url photo/video number)
+    result = this.sortMediaByVisualOrder(result);
+
     if (tweetResult.quoted_status_result?.result) {
       const quotedTweet = tweetResult.quoted_status_result.result;
       const quotedUser = quotedTweet.core?.user_results?.result;
@@ -421,7 +477,19 @@ export class TwitterAPI {
           }
         }
         // 인용 트윗의 미디어를 먼저 배치
-        result = [...this.extractMediaFromTweet(quotedTweet, quotedUser), ...result];
+        const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser);
+        // Phase 290.1: Sort quoted tweet media by visual order
+        const sortedQuotedMedia = this.sortMediaByVisualOrder(quotedMedia);
+
+        // Phase 290.2: Adjust original tweet indices to prevent overlap with quoted tweet
+        // Quoted tweet: index 0, 1, 2, ...
+        // Original tweet: index (quotedLength), (quotedLength + 1), ...
+        const adjustedResult = result.map(media => ({
+          ...media,
+          index: media.index + sortedQuotedMedia.length,
+        }));
+
+        result = [...sortedQuotedMedia, ...adjustedResult];
       }
     }
     return result;
