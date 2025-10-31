@@ -6,6 +6,7 @@
 
 ## 최근 상태
 
+- **Phase 292**: MediaService 단순화 및 모듈 테스트 추가 — ✅ 완료 (2025-11-01)
 - **Phase 291**: 미디어 추출/인덱싱 서비스 리팩토링 — ✅ 완료 (2025-10-31)
 - **Phase 289**: 갤러리 렌더링을 로드 완료 이후로 지연 — ✅ 완료 (2025-10-31)
 - Phase 286: 개발 전용 Flow Tracer — 완료
@@ -13,55 +14,50 @@
 
 ## 계획/검토 항목
 
-### ⚙️ Phase 292: MediaService 단순화 (진행 중)
+### ✅ Phase 292: MediaService 단순화 (완료)
 
 **목표**: MediaService의 사용되지 않는 래퍼 제거 및 파일 크기 감소
 
-**현재 상태**: 🔄 리팩토링 중
+**완료 일자**: 2025-11-01
 
-**문제 분석**:
+**수행 작업**:
 
-1. **TwitterVideoUtils getter** (198-239줄, 42줄)
-   - 동적 import 래퍼 패턴으로 모든 함수를 async로 감싸고 있음
-   - 사용처: 없음 (grep 검색 결과 0건)
-   - 문제: 불필요한 복잡도, 번들 크기 증가 없지만 코드 가독성 저하
+1. **TwitterVideoUtils getter 제거** (42줄)
+   - 동적 import 래퍼 패턴 완전 제거
+   - 필요 시 직접 `import { isVideoThumbnail } from '@shared/services/media/twitter-video-extractor'` 사용 권장
 
-2. **사용되지 않는 래퍼 메서드들** (242-270줄, 29줄)
-   - `extractMedia`: `extractFromClickedElement` 단순 호출
-   - `downloadMedia`: `downloadSingle` 단순 호출
-   - `extractMediaWithUsername`: 조합 메서드
-   - `prepareForGallery`: `pauseAllBackgroundVideos` 단순 호출
-   - 사용처: 모두 없음 (외부에서 직접 호출 없음)
+2. **사용되지 않는 래퍼 메서드 제거** (29줄)
+   - `extractMedia`: 사용처 없음, 제거
+   - `downloadMedia`: 사용처 없음, 제거
+   - `extractMediaWithUsername`: 사용처 없음, 제거
+   - `prepareForGallery`: 사용처 없음, 제거
 
-**리팩토링 방향**:
+3. **모듈별 단위 테스트 추가** (29개 신규 테스트)
+   - `video-utils.test.ts`: 비디오 유틸리티 함수 검증 (19개 테스트)
+   - `media-sorting.test.ts`: 정렬 로직 검증 (10개 테스트)
 
-1. **TwitterVideoUtils getter 완전 제거** (우선순위: 높음)
-   - 필요시 직접 `import { isVideoThumbnail } from '@shared/services/media/twitter-video-extractor'` 사용 권장
-   - 동적 import 오버헤드 제거
+**검증 결과**:
 
-2. **사용되지 않는 래퍼 메서드 제거** (우선순위: 높음)
-   - extractMedia, downloadMedia, extractMediaWithUsername, prepareForGallery 제거
-   - 실제 구현 메서드(extractFromClickedElement, downloadSingle 등)는 유지
+- ✅ 타입 체크 통과
+- ✅ 테스트: 2735 passed, 2 skipped (29개 신규 추가)
+- ✅ E2E 테스트: 88 passed, 5 skipped
+- ✅ 빌드: 343.68 KB (gzip 93.27 KB)
+- ✅ 번들 크기 감소: -3.82 KB raw (-1.1%), -0.86 KB gzip (-0.9%)
 
-3. **주석 및 문서 정리** (우선순위: 낮음)
-   - Step 4 호환성 주석 제거
-   - 파일 헤더 버전 업데이트
+**파일 크기 비교**:
 
-**수용 기준**:
+| 항목 | 리팩토링 전 | 리팩토링 후 | 변화 |
+|------|------------|------------|------|
+| media-service.ts | 750 lines | 679 lines | -71 lines (-9.5%) |
+| 번들 (raw) | 347.50 KB | 343.68 KB | -3.82 KB (-1.1%) |
+| 번들 (gzip) | 94.13 KB | 93.27 KB | -0.86 KB (-0.9%) |
 
-- [ ] TwitterVideoUtils getter 제거 (42줄 감소)
-- [ ] 사용되지 않는 래퍼 메서드 제거 (29줄 감소)
-- [ ] MediaService 파일 크기: 750 lines → ~680 lines 이하
-- [ ] 기존 테스트 모두 통과 (2706/2708)
-- [ ] npm run validate, npm run build 성공
-- [ ] 번들 크기 유지 (±2% 이내)
-
-**예상 영향**:
+**영향**:
 
 - ✅ 코드 가독성 개선 (불필요한 래퍼 제거)
-- ✅ 파일 크기 약 70줄 감소 (10% 감량)
-- ✅ 번들 크기 영향 없음 (미사용 코드이므로 tree-shaking 대상)
-- ⚠️ Breaking change 없음 (외부 사용처 없음 확인됨)
+- ✅ 번들 크기 감소 (미사용 코드 tree-shaking)
+- ✅ 테스트 커버리지 증가 (Phase 291 모듈 검증)
+- ✅ Breaking change 없음 (외부 사용처 없음 확인됨)
 
 ---
 
@@ -122,14 +118,15 @@
 
 ## 다음 액션
 
-- **Phase 292**: MediaService 단순화 (TwitterVideoUtils 래퍼 제거 검토)
+- **Phase 293**: 추가 리팩토링 기회 탐색 (선택사항)
 - **Phase 287**: 개발 전용 로깅/Flow Tracer 정책 문서화 (보류)
 
 ## 메트릭(요약)
 
-- 번들 크기: 347.50 KB (gzip 94.13 KB)
-- 테스트: 단위 2706/2708(2 skipped, 99.9%), E2E 88/93(5 skipped), 접근성 AA
+- 번들 크기: 343.68 KB (gzip 93.27 KB)
+- 테스트: 단위 2735/2737(2 skipped, 99.9%), E2E 88/93(5 skipped), 접근성 AA
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
+- 리팩토링: Phase 291-292 완료 (TwitterVideoExtractor 모듈화, MediaService 단순화)
 
 ## 참고
 
