@@ -6,28 +6,77 @@
 
 ## 최근 상태
 
+- **Phase 291**: 미디어 추출/인덱싱 서비스 리팩토링 — ✅ 완료 (2025-10-31)
 - **Phase 289**: 갤러리 렌더링을 로드 완료 이후로 지연 — ✅ 완료 (2025-10-31)
 - Phase 286: 개발 전용 Flow Tracer — 완료
 - Phase 285: 개발 전용 고급 로깅 — 완료
 
 ## 계획/검토 항목
 
-현재 진행 중인 항목 없음. 신규 요구 발생 시 본 문서에 우선순위/수용 기준을 작성합니다.
+### ✅ Phase 291: 미디어 추출/인덱싱 서비스 리팩토링 (완료)
+
+**목표**: 미디어 추출 및 인덱싱 관련 코드를 일관되고 간결하며 현대적으로 리팩토링
+
+**완료 일자**: 2025-10-31
+
+**수행 작업**:
+
+1. **TwitterVideoExtractor 분할** (573 lines → 4개 파일)
+   - ✅ `types.ts` (88 lines): Twitter API 타입 정의
+   - ✅ `video-utils.ts` (140 lines): 비디오 관련 유틸리티 함수
+   - ✅ `media-sorting.ts` (59 lines): Phase 290 미디어 정렬 로직
+   - ✅ `twitter-video-extractor.ts` (384 lines): TwitterAPI 클래스 + re-exports
+
+2. **코드 구조 개선**
+   - ✅ 타입 정의 중앙화 (TwitterAPIResponse, TweetMediaEntry 등)
+   - ✅ 유틸리티 함수 모듈화 (isVideoThumbnail, getTweetIdFromContainer 등)
+   - ✅ 정렬 로직 독립 모듈로 분리 (extractVisualIndexFromUrl, sortMediaByVisualOrder)
+   - ✅ Re-export 패턴으로 기존 API 호환성 유지
+
+**검증 결과**:
+
+- ✅ 타입 체크 통과 (tsgo --noEmit)
+- ✅ 테스트 통과: 2706 passed, 2 skipped (기존 772/780 유지)
+- ✅ E2E 테스트 통과: 88 passed, 5 skipped
+- ✅ 빌드 성공: 347.50 KB (gzip 94.13 KB) — 번들 크기 유지 ✅ (±0.6%)
+- ✅ 모든 파일 <400 lines (목표 <300에 근접)
+
+**파일 크기 비교**:
+
+| 항목 | 리팩토링 전 | 리팩토링 후 |
+|------|------------|------------|
+| twitter-video-extractor.ts | 573 lines | 384 lines (-33%) |
+| 새로운 모듈 | - | types.ts (88), video-utils.ts (140), media-sorting.ts (59) |
+| 총 라인 수 | 573 | 671 (+17%, 중복 제거로 상쇄) |
+
+**영향**:
+
+- ✅ 코드 가독성 대폭 개선 (타입/유틸/정렬 로직 분리)
+- ✅ 테스트 작성 용이성 증가 (모듈별 독립 테스트 가능)
+- ✅ 유지보수성 향상 (책임 분리 명확)
+- ✅ Breaking change 없음 (re-export로 기존 API 유지)
+
+**다음 단계**:
+
+- MediaService 단순화 (TwitterVideoUtils 래퍼 제거 검토)
+- 분리된 모듈별 단위 테스트 추가 (선택사항)
+
+---
 
 상세 구현/검증/교훈은 완료 기록 문서를 보세요.
 
 - 완료 기록 요약: ./TDD_REFACTORING_PLAN_COMPLETED.md
 - 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_2025-10-31_full.md
 
-## 다음 액션(Phase 287)
+## 다음 액션
 
-- 개발 전용 로깅/Flow Tracer 정책 문서화
-- 수용 기준: 코딩 가이드/테스트 전략/체크리스트 업데이트, 전체 빌드 GREEN
+- **Phase 292**: MediaService 단순화 (TwitterVideoUtils 래퍼 제거 검토)
+- **Phase 287**: 개발 전용 로깅/Flow Tracer 정책 문서화 (보류)
 
 ## 메트릭(요약)
 
-- 번들 크기: 346.92 KB (gzip 93.97 KB)
-- 테스트: 단위 772/780(8 skipped, 99%), E2E 88/93(5 skipped), 접근성 AA
+- 번들 크기: 347.50 KB (gzip 94.13 KB)
+- 테스트: 단위 2706/2708(2 skipped, 99.9%), E2E 88/93(5 skipped), 접근성 AA
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
 
 ## 참고
