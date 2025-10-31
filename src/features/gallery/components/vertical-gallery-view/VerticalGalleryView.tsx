@@ -423,7 +423,10 @@ function VerticalGalleryViewCore({
     }
 
     // Phase 270: 현재 아이템의 이미지 로드 완료 대기
-    const itemElement = container.querySelector(`[data-item-index="${currentIdx}"]`);
+    // Support both new data-item-index and legacy data-index for robustness
+    const itemElement =
+      container.querySelector(`[data-item-index="${currentIdx}"]`) ||
+      container.querySelector(`[data-index="${currentIdx}"]`);
 
     if (itemElement) {
       await waitForMediaLoad(itemElement);

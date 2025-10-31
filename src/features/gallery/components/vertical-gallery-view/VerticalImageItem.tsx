@@ -408,6 +408,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
       ref={assignContainerRef}
       class={containerClasses()}
       data-index={index}
+      data-item-index={index}
       data-fit-mode={resolvedFitMode()}
       data-media-loaded={isLoaded() ? 'true' : 'false'}
       style={intrinsicSizingStyle()}

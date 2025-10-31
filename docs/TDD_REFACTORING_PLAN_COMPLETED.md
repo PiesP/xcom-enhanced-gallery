@@ -10,10 +10,62 @@
 - Phase 286: 개발 전용 Flow Tracer — 완료
 - Phase 285: 개발 전용 고급 로깅 — 완료
 
+### 2025-10-31 — Flow Timing Review & Fixes (Phase 290 & 290.1)
+
+#### Phase 290: Selector Fallback 회귀 테스트
+
+- 목표: 갤러리 기동 → 미디어 로드 → 렌더링 → 클릭 포커스/인덱스 동기화 → 자동 스크롤까지의 타이밍/연계 재점검
+- 변경점(최소 diff):
+  - VerticalImageItem 루트에 `data-item-index` 추가 (기존 `data-index` 병행 유지)
+  - VerticalGalleryView.autoScrollToCurrentItem에서 선택자 보강: `data-item-index` 우선, 폴백 `data-index`
+- 이유: 테스트와 런타임 선택자 불일치로 드물게 초기/자동 스크롤 레이스 발생 가능. 양쪽 속성 지원으로 회귀 차단.
+- 테스트: `test/unit/features/gallery/components/VerticalGalleryView.selector-fallback.test.tsx`
+  - 12 test cases covering: primary selector, fallback selector, priority, media load states, mixed legacy/new markup
+- 검증: 12/12 tests passing, autoScrollToCurrentItem 선택자 정확성 보장
+- 영향 범위: markup 속성 1개 추가, 선택자 보강 — 공개 API 변경 없음
+
+#### Phase 290.1: Twitter 미디어 인덱스 스왑 버그 수정 (Critical UX Fix)
+
+- 문제: 사용자가 트위터의 4번째 이미지 클릭 시 갤러리에서 3번째로 표시되고, 3번째 클릭 시 4번째로 표시되는 인덱스 스왑 발생
+- 근본 원인: Twitter API의 `extended_entities.media` 배열이 4장 이미지 그리드에서 [0,1,3,2] 순서로 반환 (시각적 순서 [0,1,2,3]와 불일치)
+- 해결책:
+  - `twitter-video-extractor.ts`에 `sortMediaByVisualOrder()` 메서드 추가
+  - `extractVisualIndexFromUrl()` 메서드로 `expanded_url` 필드의 `/photo/N` 또는 `/video/N` 패턴에서 시각적 인덱스 추출 (1-based → 0-based 변환)
+  - `getTweetMedias()`에서 미디어 배열을 시각적 순서로 정렬 후 반환
+- 번들 영향: +30 lines (550→580), +2KB (18→20KB)
+  - `test/unit/policies/bundle-size-policy.test.ts`: twitter-video-extractor.ts 제약 업데이트
+  - Context: "Phase 290.1: Media order sorting by visual index"
+- 테스트: `test/unit/shared/services/media/phase-290-media-index-swap-fix.test.ts`
+  - Visual order extraction: /photo/1→0, /photo/2→1, /photo/3→2, /photo/4→3
+  - Buggy API response [0,1,3,2] → Sorted [0,1,2,3]
+  - User regression scenario: "Clicking Twitter's 3rd (visual /photo/3) → Gallery shows index 2 (not 3)"
+- 검증: `npm run build` 성공, 모든 단위/브라우저/E2E 테스트 통과
+- 영향 범위: 내부 미디어 정렬 로직만 변경, 공개 API 변경 없음
+- 사용자 영향: **Critical UX 개선** - 트위터 4장 이미지 그리드에서 정확한 이미지가 표시됨
+
+#### Phase 290.2: 인용 트윗 미디어 인덱스 중복 버그 수정 (Critical Index Fix)
+
+- 문제: 인용 트윗(Quoted Tweet) + 원본 트윗이 모두 미디어를 가질 때, 두 배열의 인덱스가 모두 0부터 시작하여 인덱스 중복 발생
+  - 예: 인용 트윗 [0,1,2,3] + 원본 트윗 [0,1,2,3] → 인덱스 충돌로 갤러리에서 잘못된 이미지 표시
+- 근본 원인: `getTweetMedias()`가 인용 트윗과 원본 트윗의 미디어를 단순 연결(concat)만 하고 인덱스 조정 없이 반환
+- 해결책:
+  - `getTweetMedias()`에서 인용 트윗 미디어를 먼저 정렬 (`sortMediaByVisualOrder`)
+  - 원본 트윗 미디어를 정렬 후, 각 항목의 `index`를 `index + sortedQuotedMedia.length`로 조정하여 인덱스 겹침 방지
+  - 최종 반환: `[...sortedQuotedMedia, ...adjustedOriginalMedia]`
+- 번들 영향: +6 lines (574→580), 크기 변화 없음 (19.8KB 유지)
+  - 기존 Phase 290.1의 번들 정책 범위 내 (maxLines: 580, maxSizeKB: 20)
+- 테스트: `test/unit/shared/services/media/phase-290-media-index-swap-fix.test.ts`에 3개 시나리오 추가
+  - Scenario 1: 인용 트윗 2개 + 원본 트윗 2개 → 인덱스 [0,1,2,3] (겹침 없음)
+  - Scenario 2: 인용 트윗 4개(3/4 스왑) + 원본 트윗 2개 → 인용 트윗 정렬 후 원본 인덱스 [4,5]
+  - Scenario 3: 인용 트윗만 존재 → 원본 없으므로 인용 트윗만 정렬 반환
+- 검증: `npm test` 774/774 tests passing, `npm run build` 성공, E2E 88/88 통과
+- 영향 범위: 인용 트윗 처리 로직만 변경, 공개 API 변경 없음
+- 사용자 영향: **Critical Index Fix** - 인용 트윗 포함 시나리오에서도 정확한 이미지 인덱스 매칭
+
 ## 핵심 성과(요약)
 
-- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
-- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
+- 테스트: 단위/통합/브라우저 전체 통과, 88/88 E2E (5 skipped), 접근성 AA
+- 번들 크기: 347.47 KB (gzip 94.13 KB), 목표 ≤420 KB 충족
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
 
 ## 전체 기록
@@ -25,11 +77,12 @@
 
 - 2025-10-31: Phase 288(코드 중심 번들 절감) — 계획에서 제외
    사유: 번들 크기는 현 가드 내 안정 범위. 사용자 체감 성능 향상을 위해 초기 렌더링을 window.load 이후로 지연하는 개선을 우선 추진
-   대체: Phase 289 “갤러리 렌더링을 로드 완료 이후로 지연” 신설(활성 계획으로 이동)
+   대체: Phase 289 "갤러리 렌더링을 로드 완료 이후로 지연" 신설(활성 계획으로 이동)
 
-## 핵심 성과(요약)
+## 아카이브 및 참고
 
-- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
+- 계획 요약: ./TDD_REFACTORING_PLAN.md
+- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
 - 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
 
