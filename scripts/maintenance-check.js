@@ -40,6 +40,7 @@ import { execSync } from 'node:child_process';
 
 const ROOT = resolve(process.cwd());
 
+
 /**
  * Checks for backup/temporary directories that should be cleaned
  *
@@ -139,6 +140,7 @@ function checkOldDocuments() {
 function checkUnusedDependencies() {
   console.log('\n📦 의존성 검사...');
 
+  // npm audit availability varies by environment; skip on non-Linux if needed
   try {
     console.log('   npm audit 실행 중...');
     execSync('npm audit --audit-level=moderate', {
@@ -212,7 +214,7 @@ function checkGitStatus() {
       console.log('✅ 추적되지 않는 파일 없음');
     }
   } catch {
-    console.log('⚠️  Git 상태 확인 실패');
+    console.log('⚠️  Git 상태 확인 실패 (로컬 Git 미설치 또는 권한 문제)');
   }
 }
 

@@ -1,3 +1,68 @@
+<!-- markdownlint-disable MD025 MD022 MD032 MD031 -->
+# TDD 리팩토링 완료 기록 (요약본)
+
+최종 업데이트: 2025-10-31
+
+이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
+
+## 최근 완료
+
+- Phase 286: 개발 전용 Flow Tracer — 완료
+- Phase 285: 개발 전용 고급 로깅 — 완료
+
+## 핵심 성과(요약)
+
+- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
+- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
+- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
+
+## 전체 기록
+
+- 계획 요약: ./TDD_REFACTORING_PLAN.md
+- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
+# TDD 리팩토링 완료 기록 (요약본)
+
+최종 업데이트: 2025-10-31
+
+이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
+
+## 최근 완료
+
+- Phase 286: 개발 전용 Flow Tracer — 완료
+- Phase 285: 개발 전용 고급 로깅 — 완료
+
+## 핵심 성과(요약)
+
+- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
+- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
+- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
+
+## 전체 기록
+
+- 계획 요약: ./TDD_REFACTORING_PLAN.md
+- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
+# TDD 리팩토링 완료 기록 (요약본)
+
+최종 업데이트: 2025-10-31
+
+이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
+
+## 최근 완료
+
+- Phase 286: 개발 전용 Flow Tracer — 완료
+- Phase 285: 개발 전용 고급 로깅 — 완료
+
+## 핵심 성과(요약)
+
+- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
+- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
+- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
+
+## 전체 기록
+
+- 계획 요약: ./TDD_REFACTORING_PLAN.md
+- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
+
 # TDD 리팩토링 완료 기록
 
 **최종 업데이트**: 2025-10-31 | **프로젝트 상태**: ✅ 완료 (Phase 286 전체)
@@ -43,132 +108,27 @@
 - 이벤트 추적: `click`, `contextmenu`, `mousedown`, `mouseup`, `keydown`, `keyup`, `wheel`(스로틀)
 - jsdom 감지로 테스트 환경 자동 회피, 브라우저 전역 노출: `window.__XEG_TRACE_*`
 - 조건부 export 패턴: `let impl` → dev에서만 구현 대입 → `export const`로 노출
+# TDD 리팩토링 완료 기록 (요약본)
 
-1. 부트스트랩 계측: `src/main.ts`
+최종 업데이트: 2025-10-31
 
-- `app:start/ready/error`, `infra:init`, `critical:init`, `baseservice:*`, `noncritical:*`, `devtools:ready`, `gallery:init:*`, `features:register:*` 등 주요 포인트에 `tracePoint/traceAsync` 삽입
-- dev에서 자동 `startFlowTrace()` → finally에서 안전한 `stopFlowTrace()`
+이 문서는 완료된 작업의 핵심 성과만 유지합니다. 전체 세부 내용은 아카이브에서 확인하세요.
 
-1. 배럴 및 노출: `src/shared/logging/index.ts`에서 재노출
+## 최근 완료
 
-**빌드/테스트 검증**:
+- Phase 286: 개발 전용 Flow Tracer — 완료
+- Phase 285: 개발 전용 고급 로깅 — 완료
 
-- TypeScript/ESLint/Stylelint/markdownlint: 0 에러 ✅
-- Browser + E2E 스모크 + 접근성: 모두 GREEN ✅
-- 개발 빌드 동작 확인: dev 번들에서 `__XEG_TRACE_*`와 `tracePoint` 존재 ✅
-- 프로덕션 빌드 제로 오버헤드 확인: `grep -n "__XEG_TRACE_\|tracePoint\|flow-tracer" dist/xcom-enhanced-gallery.user.js` → 일치 0 ✅
+## 핵심 성과(요약)
 
-**결과**:
+- 테스트: 1007/1007 단위, 86/86 E2E, 접근성 AA
+- 번들 크기: 344.54 KB (gzip 93.16 KB), 목표 ≤420 KB 충족
+- 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
 
-- 개발 빌드에서 동작 타임라인과 입력 이벤트를 시간축으로 쉽게 파악 가능
-- 프로덕션 번들에 코드가 포함되지 않아 성능/크기 영향 0
-- PC 전용 이벤트 정책, 디자인 토큰 규칙, vendor getter 규칙 위반 없음
+## 전체 기록
 
-**브라우저 도구**:
-
-- `__XEG_TRACE_START(options?)` / `__XEG_TRACE_STOP()`
-- `__XEG_TRACE_POINT(label, data?)`
-- `__XEG_TRACE_STATUS()`
-
-**교훈**:
-
-1. 조건부 export 패턴은 dev-only 유틸 도입에 재사용 가능성이 높음
-2. 테스트 환경(jsdom) 감지로 자동 시작을 차단해 flakiness를 예방
-3. 프로덕션 제로 오버헤드는 실제 산출물 grep으로 검증해야 확실함
-
----
-
-### Phase 285: 개발 전용 고급 로깅 시스템 ✅ 전체 완료
-
-**완료 일시**: 2025-10-31
-
-**상태**: ✅ **Step 1-4 전체 완료**
-
-**배경**:
-
-- 1인 개발 프로젝트에서 디버깅 효율성 향상 필요
-- 개발 빌드에만 포함되는 프로파일링 및 시각화 도구 추가
-- `__DEV__` 플래그 기반 조건부 컴파일로 프로덕션 제로 오버헤드 보장
-- Tree-shaking으로 프로덕션 빌드에서 완전 제거
-
-**작업 내용**:
-
-**Step 1 - 메모리 프로파일링 기능**:
-
-```typescript
-// src/shared/logging/logger.ts
-let measureMemoryImpl: ((label: string) => MemorySnapshot | null) | undefined;
-
-if (isDev) {
-  measureMemoryImpl = (label: string): MemorySnapshot | null => {
-    if (!performance.memory) return null;
-
-    const { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit } = performance.memory;
-    const snapshot: MemorySnapshot = {
-      label,
-      timestamp: Date.now(),
-      usedJSHeapSize,
-      totalJSHeapSize,
-      jsHeapSizeLimit,
-      heapUsagePercent: (usedJSHeapSize / totalJSHeapSize) * 100
-    };
-
-    logger.debug(`Memory snapshot [${label}]`, snapshot);
-    return snapshot;
-  };
-
-  window.__XEG_MEASURE_MEMORY = measureMemoryImpl;
-}
-
-export const measureMemory = measureMemoryImpl;
-```
-
-**Step 2 - 로그 그룹화 기능**:
-
-```typescript
-let logGroupImpl: ((label: string, fn: () => void, collapsed?: boolean) => void) | undefined;
-
-if (isDev) {
-  logGroupImpl = (label: string, fn: () => void, collapsed = false): void => {
-    // eslint-disable-next-line no-console
-    collapsed ? console.groupCollapsed(label) : console.group(label);
-    fn();
-    // eslint-disable-next-line no-console
-    console.groupEnd();
-  };
-}
-
-export const logGroup = logGroupImpl;
-```
-
-**Step 3 - 테이블 출력 기능**:
-
-```typescript
-let logTableImpl: ((data: Record<string, unknown>[] | Record<string, unknown>) => void) | undefined;
-
-if (isDev) {
-  logTableImpl = (data: Record<string, unknown>[] | Record<string, unknown>): void => {
-    // eslint-disable-next-line no-console
-    console.table(data);
-  };
-}
-
-export const logTable = logTableImpl;
-```
-
-**Step 4 - 런타임 로그 레벨 변경**:
-
-```typescript
-let setLogLevelImpl: ((level: LogLevel) => void) | undefined;
-let getLogLevelImpl: (() => LogLevel) | undefined;
-
-if (isDev) {
-  setLogLevelImpl = (level: LogLevel): void => {
-    const globalStore = getGlobalStore();
-    setLogger(globalStore, (prev) => ({ ...prev, level }));
-    logger.debug('Log level changed', { oldLevel: getLogLevel(), newLevel: level });
-  };
-
+- 계획 요약: ./TDD_REFACTORING_PLAN.md
+- 전체 스냅샷(2025-10-31): ./archive/TDD_REFACTORING_PLAN_COMPLETED_2025-10-31_full.md
   getLogLevelImpl = (): LogLevel => {
     const globalStore = getGlobalStore();
     return globalStore().logger.level;

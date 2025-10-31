@@ -222,6 +222,11 @@ function checkMemoryUsage() {
  * 메인 실행 함수
  */
 function main() {
+  if (process.platform !== 'linux') {
+    log('ℹ️  VS Code Server protection is Linux-specific; skipping on this OS.', 'yellow');
+    return 0;
+  }
+
   log('=== VS Code Server Protection Script ===\n', 'cyan');
 
   try {

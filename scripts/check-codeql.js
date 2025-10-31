@@ -47,7 +47,7 @@
  */
 
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync, readdirSync, rmSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -341,9 +341,8 @@ function createDatabase() {
    */
   try {
     if (existsSync(dbDir)) {
-      // Debian/Linux 환경에 최적화
-      const rmCommand = `rm -rf "${dbDir}"`;
-      execSync(rmCommand, { stdio: 'pipe' });
+      // Cross-platform removal
+      rmSync(dbDir, { recursive: true, force: true });
     }
   } catch {
     if (options.verbose) {
@@ -353,7 +352,7 @@ function createDatabase() {
 
   try {
     // JavaScript 프로젝트 데이터베이스 생성 (dist 디렉터리 제외)
-    const createCmd = `database create "${dbDir}" --language=javascript --source-root="${rootDir}" --overwrite`;
+  const createCmd = `database create "${dbDir}" --language=javascript --source-root="${rootDir}" --overwrite`;
     execCodeQL(createCmd, { stdio: options.verbose ? 'inherit' : 'pipe' });
 
     if (!options.quiet) {
