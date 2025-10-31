@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getSolid } from '../../../../../src/shared/external/vendors';
-import { useGalleryFocusTracker } from '../../../../../src/features/gallery/hooks/useGalleryFocusTracker';
+import { getSolid } from '@/shared/external/vendors';
+import { useGalleryFocusTracker } from '@/features/gallery/hooks/useGalleryFocusTracker';
 
 const { createRoot } = getSolid();
 

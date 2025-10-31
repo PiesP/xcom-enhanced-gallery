@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { toAccessor, isAccessor, isHTMLElement } from '../../../../src/shared/utils/solid-helpers';
+import { toAccessor, isAccessor, isHTMLElement } from '@/shared/utils/solid-helpers';
 
 describe('solid-helpers: Solid.js 유틸리티', () => {
   describe('toAccessor', () => {

@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { render, h } from '@test/utils/testing-library';
 
 // TODO: UnifiedButton이 구현되면 이 import를 교체
-import { Button } from '../../../../../src/shared/components/ui/Button/Button';
+import { Button } from '@/shared/components/ui/Button/Button';
 
 describe('Variant Contract (v4.1 - RED)', () => {
   describe('Variant x Size Matrix', () => {

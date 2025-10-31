@@ -2,8 +2,8 @@
  * @fileoverview Phase E: MediaService 공개 계약(Interface-like) 가드 테스트
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { mediaService } from '../../../../src/shared/services/media-service';
-import * as accessors from '../../../../src/shared/container/service-accessors';
+import { mediaService } from '@/shared/services/media-service';
+import * as accessors from '@/shared/container/service-accessors';
 
 const PUBLIC_METHODS = [
   'extractFromClickedElement',

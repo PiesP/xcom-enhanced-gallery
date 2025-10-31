@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { initializeGalleryEvents, cleanupGalleryEvents } from '../../../../src/shared/utils/events';
-import type { EventHandlers } from '../../../../src/shared/utils/events';
+import { initializeGalleryEvents, cleanupGalleryEvents } from '@/shared/utils/events';
+import type { EventHandlers } from '@/shared/utils/events';
 
 /**
  * Mock EventHandlers

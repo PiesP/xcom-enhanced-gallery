@@ -5,12 +5,12 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoot } from 'solid-js';
-import { getSolid } from '../../../../src/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 
 const { createSignal } = getSolid();
 
 // Mock 설정
-vi.mock('../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -26,7 +26,7 @@ const galleryIndexEvents = {
   emit: vi.fn(),
 };
 
-vi.mock('../../../src/shared/state/signals/gallery.signals', () => ({
+vi.mock('@/shared/state/signals/gallery.signals', () => ({
   galleryIndexEvents,
   setFocusedIndex: setFocusedIndexSpy,
 }));
@@ -61,7 +61,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
     it('아이템 등록 시 setFocusedIndex가 호출되어야 함', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
       const { useGalleryFocusTracker } = await import(
-        '../../../../src/features/gallery/hooks/useGalleryFocusTracker'
+        '@/features/gallery/hooks/useGalleryFocusTracker'
       );
       const [currentIndex] = createSignal(0);
       let registerItem: ((index: number, element: HTMLElement | null) => void) | undefined;
@@ -101,7 +101,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
     it('handleItemFocus로 manualFocusIndex 설정 시 전역 setFocusedIndex 호출 안 함', async () => {
       // Given: useGalleryFocusTracker가 활성화됨
       const { useGalleryFocusTracker } = await import(
-        '../../../../src/features/gallery/hooks/useGalleryFocusTracker'
+        '@/features/gallery/hooks/useGalleryFocusTracker'
       );
       const [currentIndex] = createSignal(0);
       let handleItemFocus: ((index: number) => void) | undefined;
@@ -135,7 +135,7 @@ describe('Phase 64 Step 3: useGalleryFocusTracker - 전역 focusedIndex 연동',
     // Phase 74: debounce 타이밍 수정 (fake timers 사용)
     it('컨테이너 accessor가 일시적으로 null이어도 focusedIndex를 null로 초기화하지 않음', async () => {
       const { useGalleryFocusTracker } = await import(
-        '../../../../src/features/gallery/hooks/useGalleryFocusTracker'
+        '@/features/gallery/hooks/useGalleryFocusTracker'
       );
       const [currentIndex] = createSignal(0);
       const [containerRef, setContainerRef] = createSignal<globalThis.HTMLDivElement | null>(

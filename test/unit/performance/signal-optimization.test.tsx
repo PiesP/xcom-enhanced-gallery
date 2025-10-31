@@ -5,7 +5,7 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createSignalSafe } from '../../../src/shared/state/signals/signal-factory.ts';
+import { createSignalSafe } from '@/shared/state/signals/signal-factory.ts';
 import {
   createSelector,
   useSelector,
@@ -15,9 +15,9 @@ import {
   getGlobalSelectorStats,
   clearGlobalSelectorStats,
   type SelectorFn,
-} from '../../../src/shared/utils/signal-selector.ts';
+} from '@/shared/utils/signal-selector.ts';
 import { act, renderHook, waitFor } from '../../utils/testing-library';
-import { logger } from '../../../src/shared/logging';
+import { logger } from '@/shared/logging';
 
 describe('P7: Signal Selector Optimization Unit Tests', () => {
   beforeEach(() => {

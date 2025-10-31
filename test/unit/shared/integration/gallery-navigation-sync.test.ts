@@ -22,9 +22,9 @@ describe('Phase 63 - Step 4: Gallery Navigation Synchronization (Integration)', 
   beforeEach(() => {
     // 갤러리 초기화
     const mockMediaItems = [
-      { id: '1', url: 'https://example.com/1.jpg', type: 'photo' as const },
-      { id: '2', url: 'https://example.com/2.jpg', type: 'photo' as const },
-      { id: '3', url: 'https://example.com/3.jpg', type: 'photo' as const },
+      { id: '1', url: 'https://example.com/1.jpg', type: 'image' as const },
+      { id: '2', url: 'https://example.com/2.jpg', type: 'image' as const },
+      { id: '3', url: 'https://example.com/3.jpg', type: 'image' as const },
     ];
     openGallery(mockMediaItems, 0);
   });

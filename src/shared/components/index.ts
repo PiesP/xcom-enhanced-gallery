@@ -12,7 +12,7 @@ export { Button } from './ui/Button/Button';
 export { Toast } from './ui/Toast/Toast';
 export { ToastContainer } from './ui/Toast/ToastContainer';
 export { ErrorBoundary } from './ui/ErrorBoundary/ErrorBoundary';
-export { Toolbar } from './ui/Toolbar/Toolbar';
+export { Toolbar } from './ui/Toolbar/Toolbar.tsx';
 
 // 아이콘 컴포넌트들 (Phase 224: 경로 최적화)
 export { Icon, LazyIcon, useIconPreload, useCommonIconPreload } from './ui/Icon';
@@ -25,4 +25,4 @@ export { GalleryContainer } from './isolation/GalleryContainer';
 export type { GalleryContainerProps } from './isolation/GalleryContainer';
 export type { ButtonProps } from './ui/Button/Button';
 export type { ToastProps } from './ui/Toast/Toast';
-export type { ToolbarProps } from './ui/Toolbar/Toolbar';
+export type { ToolbarProps } from './ui/Toolbar/Toolbar.types';

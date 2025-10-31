@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mediaService } from '../../../src/shared/services/media-service';
-import { runPrefetchBench } from '../../../src/shared/utils/performance';
+import { mediaService } from '@/shared/services/media-service';
+import { runPrefetchBench } from '@/shared/utils/performance';
 
 /**
  * Prefetch bench harness

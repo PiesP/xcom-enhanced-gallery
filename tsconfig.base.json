@@ -24,12 +24,14 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
+      "*": ["./*"],
       "@/*": ["./src/*"],
       "@features/*": ["./src/features/*"],
-      "@shared/i18n": ["./src/shared/i18n/index.ts"],
-      "@shared/i18n/*": ["./src/shared/i18n/*"],
+      "@shared/i18n": ["./src/shared/constants/i18n/index.ts"],
+      "@shared/i18n/*": ["./src/shared/constants/i18n/*"],
       "@shared/*": ["./src/shared/*"],
-      "@assets/*": ["./src/assets/*"]
+      "@assets/*": ["./src/assets/*"],
+      "@test/*": ["./test/*"]
     },
     "types": ["vite/client", "vitest/globals"],
     "incremental": true,

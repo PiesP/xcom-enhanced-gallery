@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { beginFocusScope } from '../../../src/shared/utils/accessibility/focus-restore-manager';
+import { beginFocusScope } from '@/shared/utils/accessibility/focus-restore-manager';
 
 function createButton(id: string): HTMLButtonElement {
   const btn = document.createElement('button');

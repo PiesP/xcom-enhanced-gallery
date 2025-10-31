@@ -8,8 +8,8 @@ import { describe, it, expect } from 'vitest';
 describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
   describe('함수 제거 검증', () => {
     it('isValidMediaUrl은 constants.ts에서 제거되고 media-url.util.ts에만 존재해야 함', async () => {
-      const constants = await import('../../../src/constants');
-      const { isValidMediaUrl } = await import('../../../src/shared/utils/media/media-url.util');
+      const constants = await import('@/constants');
+      const { isValidMediaUrl } = await import('@/shared/utils/media/media-url.util');
 
       // constants.ts에서는 제거됨
       expect((constants as any).isValidMediaUrl).toBeUndefined();
@@ -18,31 +18,31 @@ describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
     });
 
     it('isVideoControlElement는 constants.ts에서 제거되고 utils.ts에만 존재해야 함', async () => {
-      const constants = await import('../../../src/constants');
-      const { isVideoControlElement } = await import('../../../src/shared/utils/utils');
+      const constants = await import('@/constants');
+      const { isVideoControlElement } = await import('@/shared/utils/utils');
 
       expect((constants as any).isVideoControlElement).toBeUndefined();
       expect(isVideoControlElement).toBeDefined();
     });
 
     it('extractTweetId는 constants.ts에서 제거되고 url-patterns.ts에만 존재해야 함', async () => {
-      const constants = await import('../../../src/constants');
-      const { URLPatterns } = await import('../../../src/shared/utils/patterns/url-patterns');
+      const constants = await import('@/constants');
+      const { URLPatterns } = await import('@/shared/utils/patterns/url-patterns');
 
       expect((constants as any).extractTweetId).toBeUndefined();
       expect(URLPatterns.extractTweetId).toBeDefined();
     });
 
     it('isValidViewMode는 constants.ts에서 제거되고 core-types.ts에만 존재해야 함', async () => {
-      const constants = await import('../../../src/constants');
-      const { isValidViewMode } = await import('../../../src/shared/types/core/core-types');
+      const constants = await import('@/constants');
+      const { isValidViewMode } = await import('@/shared/types/core/core-types');
 
       expect((constants as any).isValidViewMode).toBeUndefined();
       expect(isValidViewMode).toBeDefined();
     });
 
     it('사용되지 않는 함수들이 완전히 제거되었어야 함', async () => {
-      const constants = await import('../../../src/constants');
+      const constants = await import('@/constants');
 
       const removedFunctions = [
         'isValidGalleryUrl', // 사용처 없음
@@ -60,7 +60,7 @@ describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
   describe('함수 위치 검증', () => {
     it('generateOriginalUrl과 extractMediaId는 media-url.util.ts로 이동되었어야 함', async () => {
       const { generateOriginalUrl, extractMediaId } = await import(
-        '../../../src/shared/utils/media/media-url.util'
+        '@/shared/utils/media/media-url.util'
       );
 
       expect(generateOriginalUrl).toBeDefined();
@@ -73,7 +73,7 @@ describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
     });
 
     it('isTwitterNativeGalleryElement는 events.ts 내부로 이동되었어야 함', async () => {
-      const constants = await import('../../../src/constants');
+      const constants = await import('@/constants');
       // events.ts 내부 함수이므로 export되지 않음
       expect((constants as any).isTwitterNativeGalleryElement).toBeUndefined();
     });
@@ -98,9 +98,7 @@ describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
 
   describe('선택자 존재 검증', () => {
     it('constants.ts에 3가지 선택자 그룹이 존재해야 함', async () => {
-      const { SELECTORS, STABLE_SELECTORS, VIDEO_CONTROL_SELECTORS } = await import(
-        '../../../src/constants'
-      );
+      const { SELECTORS, STABLE_SELECTORS, VIDEO_CONTROL_SELECTORS } = await import('@/constants');
 
       expect(SELECTORS).toBeDefined();
       expect(STABLE_SELECTORS).toBeDefined();
@@ -115,9 +113,9 @@ describe('Phase 22.2: constants.ts 리팩토링 검증 (GREEN)', () => {
 
   describe('URL_PATTERNS 재export 검증', () => {
     it('constants.ts가 url-patterns.ts의 URL_PATTERNS를 재export하고 있어야 함', async () => {
-      const { URL_PATTERNS: constantsPatterns } = await import('../../../src/constants');
+      const { URL_PATTERNS: constantsPatterns } = await import('@/constants');
       const { URL_PATTERNS: originalPatterns } = await import(
-        '../../../src/shared/utils/patterns/url-patterns'
+        '@/shared/utils/patterns/url-patterns'
       );
 
       // 동일한 객체를 재export하고 있어야 함

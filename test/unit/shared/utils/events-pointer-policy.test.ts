@@ -55,7 +55,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
 
     it('should verify blockTouchAndPointerEvents exists in events.ts', async () => {
       // Verify the function signature and implementation exists
-      const eventsModule = await import('../../../../src/shared/utils/events');
+      const eventsModule = await import('@/shared/utils/events');
 
       // The function is internal but called by initializeGalleryEvents
       expect(eventsModule.initializeGalleryEvents).toBeDefined();
@@ -90,14 +90,14 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should correctly identify gallery internal elements', async () => {
-      const { isGalleryInternalElement } = await import('../../../../src/shared/utils/utils');
+      const { isGalleryInternalElement } = await import('@/shared/utils/utils');
 
       expect(isGalleryInternalElement(galleryContainer)).toBe(true);
       expect(isGalleryInternalElement(outsideElement)).toBe(false);
     });
 
     it('should identify nested gallery elements', async () => {
-      const { isGalleryInternalElement } = await import('../../../../src/shared/utils/utils');
+      const { isGalleryInternalElement } = await import('@/shared/utils/utils');
 
       const nestedElement = document.createElement('button');
       galleryContainer.appendChild(nestedElement);
@@ -106,7 +106,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should identify elements with data-gallery-element marker', async () => {
-      const { isGalleryInternalElement } = await import('../../../../src/shared/utils/utils');
+      const { isGalleryInternalElement } = await import('@/shared/utils/utils');
 
       const dataElement = document.createElement('div');
       dataElement.setAttribute('data-gallery-element', 'true');
@@ -118,8 +118,8 @@ describe('Phase 229.2: Pointer Event Policy', () => {
 
     it('should ignore non-HTMLElement inputs without warnings', async () => {
       const [{ isGalleryInternalElement }, loggingModule] = await Promise.all([
-        import('../../../../src/shared/utils/utils'),
-        import('../../../../src/shared/logging'),
+        import('@/shared/utils/utils'),
+        import('@/shared/logging'),
       ]);
 
       const warnSpy = vi.spyOn(loggingModule.logger, 'warn');
@@ -160,7 +160,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should conditionally block pointer events based on target', async () => {
-      const { isGalleryInternalElement } = await import('../../../../src/shared/utils/utils');
+      const { isGalleryInternalElement } = await import('@/shared/utils/utils');
 
       const galleryElement = document.createElement('div');
       galleryElement.className = 'xeg-gallery-container';
@@ -204,7 +204,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should allow mouse pointer events on form controls inside the gallery', async () => {
-      const eventsModule = await import('../../../../src/shared/utils/events');
+      const eventsModule = await import('@/shared/utils/events');
 
       const handlers = {
         onMediaClick: vi.fn().mockResolvedValue(undefined),
@@ -261,7 +261,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should continue to block pointer events on non-form gallery elements', async () => {
-      const eventsModule = await import('../../../../src/shared/utils/events');
+      const eventsModule = await import('@/shared/utils/events');
 
       const handlers = {
         onMediaClick: vi.fn().mockResolvedValue(undefined),

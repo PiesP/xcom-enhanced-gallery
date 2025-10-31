@@ -27,7 +27,7 @@ import {
   ensureGalleryScrollAvailable,
   extractTweetInfoFromUrl,
   removeDuplicateStrings,
-} from '../../../../src/shared/utils/core-utils';
+} from '@/shared/utils/core-utils';
 
 describe('core-utils: DOM 유틸리티', () => {
   describe('safeQuerySelector', () => {

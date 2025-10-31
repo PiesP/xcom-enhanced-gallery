@@ -39,6 +39,7 @@ test.describe('Toolbar Settings Button (E2E)', () => {
       const result = await harness.mountToolbar({
         currentIndex: 0,
         totalCount: 5,
+        isDownloading: false,
       });
       return result.containerId;
     });
@@ -65,6 +66,7 @@ test.describe('Toolbar Settings Button (E2E)', () => {
       const result = await harness.mountToolbar({
         currentIndex: 0,
         totalCount: 5,
+        isDownloading: false,
       });
       return result.containerId;
     });
@@ -101,6 +103,7 @@ test.describe('Toolbar Settings Button (E2E)', () => {
       const result = await harness.mountToolbar({
         currentIndex: 0,
         totalCount: 5,
+        isDownloading: false,
       });
       return result.containerId;
     });
@@ -139,6 +142,7 @@ test.describe('Toolbar Settings Button (E2E)', () => {
       const result = await harness.mountToolbar({
         currentIndex: 0,
         totalCount: 5,
+        isDownloading: false,
       });
       return result.containerId;
     });

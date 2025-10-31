@@ -133,15 +133,14 @@ describe('Phase 3: MediaProcessor 도입 (GREEN 테스트)', () => {
       // GREEN: 에러 처리 검증
       const { processMedia } = await import('@shared/media/media-processor');
 
-      // null을 전달하여 에러 유발
-      // TS 구문을 사용하지 않고 런타임에서 강제로 호출하기 위해 JSDoc 캐스트 사용
-      // @ts-expect-error - 의도적으로 잘못된 인수 전달 경로 테스트
-      const result = /** @type {any} */ processMedia(null);
+      // null을 전달하여 에러 유발 (런타임 null 유지)
+      const result = processMedia(null as unknown as HTMLElement);
 
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toBeTruthy();
-        expect(result.error).toBeInstanceOf(Error);
+        const errorResult = result as Extract<typeof result, { success: false }>;
+        expect(errorResult.error).toBeTruthy();
+        expect(errorResult.error).toBeInstanceOf(Error);
       }
     });
   });

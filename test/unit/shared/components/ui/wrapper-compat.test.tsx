@@ -7,12 +7,12 @@ import { describe, it, expect } from 'vitest';
 import { render, h } from '@test/utils/testing-library';
 
 // 기존 import 경로들 (현재 구현)
-import { Button as CurrentButton } from '../../../../../src/shared/components/ui/Button/Button';
+import { Button as CurrentButton } from '@/shared/components/ui/Button/Button';
 import { Button as CurrentIconButton } from '@shared/components/ui/Button';
 import { Button as CurrentToolbarButton } from '@shared/components/ui/Button';
 
 // TODO: UnifiedButton 구현 후 wrapper들과 비교
-// import { Button as UnifiedButton } from '../../../../../src/shared/components/ui/UnifiedButton/UnifiedButton';
+// import { Button as UnifiedButton } from '@/shared/components/ui/UnifiedButton/UnifiedButton';
 
 describe('Wrapper Compatibility (v4.1 - RED)', () => {
   describe('Current Implementation Baseline', () => {

@@ -94,11 +94,13 @@ describe('벤더 초기화 순서 에러 해결', () => {
 
       // 초기화 후에도 모든 컴포넌트가 정상 작동
       // displayName이 있는 경우에만 memo 래핑 검증
-      if (VerticalImageItem.displayName) {
-        expect(VerticalImageItem.displayName).toContain('memo');
+      const verticalImageItemMeta = VerticalImageItem as { displayName?: string };
+      if (verticalImageItemMeta.displayName) {
+        expect(verticalImageItemMeta.displayName).toContain('memo');
       }
-      if (Toolbar.displayName) {
-        expect(Toolbar.displayName).toContain('memo');
+      const toolbarMeta = Toolbar as { displayName?: string };
+      if (toolbarMeta.displayName) {
+        expect(toolbarMeta.displayName).toContain('memo');
       }
       // UnifiedGalleryContainer는 Phase 1에서 제거됨
     });

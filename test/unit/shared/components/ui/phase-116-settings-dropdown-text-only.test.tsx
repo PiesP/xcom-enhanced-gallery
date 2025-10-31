@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import { LanguageService } from '@shared/services/language-service';
 import type { ThemeOption, LanguageOption } from '@shared/components/ui/Settings/SettingsControls';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
@@ -30,6 +30,7 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
   }): void {
     const { compact = false, theme = 'auto', language = 'auto' } = options ?? {};
 
+    const { render } = getSolid();
     dispose = render(
       () => (
         <SettingsControls

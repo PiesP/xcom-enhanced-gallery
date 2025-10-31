@@ -10,38 +10,38 @@ import {
   gallerySignals,
   setFocusedIndex,
   navigateToItem,
-} from '../../../src/shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../../src/shared/types/media.types';
+} from '@/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types/media.types';
 
 describe('Phase 64: focusedIndex Signal', () => {
   const mockMediaItems: MediaInfo[] = [
     {
+      id: 'media-1',
       type: 'image',
       url: 'https://example.com/image1.jpg',
       filename: 'image1.jpg',
       originalUrl: 'https://example.com/image1.jpg',
-      downloadUrl: 'https://example.com/image1.jpg',
     },
     {
+      id: 'media-2',
       type: 'image',
       url: 'https://example.com/image2.jpg',
       filename: 'image2.jpg',
       originalUrl: 'https://example.com/image2.jpg',
-      downloadUrl: 'https://example.com/image2.jpg',
     },
     {
+      id: 'media-3',
       type: 'image',
       url: 'https://example.com/image3.jpg',
       filename: 'image3.jpg',
       originalUrl: 'https://example.com/image3.jpg',
-      downloadUrl: 'https://example.com/image3.jpg',
     },
     {
+      id: 'media-4',
       type: 'image',
       url: 'https://example.com/image4.jpg',
       filename: 'image4.jpg',
       originalUrl: 'https://example.com/image4.jpg',
-      downloadUrl: 'https://example.com/image4.jpg',
     },
   ];
 

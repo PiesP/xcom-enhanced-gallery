@@ -2,10 +2,10 @@
 // 목표: GalleryRenderer.ts 커버리지 22.95% → 70%+
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { MediaInfo } from '../../../../src/shared/types/media.types';
-import { GalleryRenderer } from '../../../../src/features/gallery/GalleryRenderer';
-import { initializeVendors } from '../../../../src/shared/external/vendors';
-import * as gallerySignals from '../../../../src/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types/media.types';
+import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
+import { initializeVendors } from '@/shared/external/vendors';
+import * as gallerySignals from '@/shared/state/signals/gallery.signals';
 
 const createTestMedia = (count: number): MediaInfo[] => {
   return Array.from({ length: count }, (_, i) => ({

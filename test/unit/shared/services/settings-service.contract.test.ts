@@ -4,7 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // SUT (경로: features/settings/services)
-import { SettingsService } from '../../../../src/features/settings/services/settings-service';
+import { SettingsService } from '@/features/settings/services/settings-service';
 
 const PUBLIC_METHODS = [
   'initialize',

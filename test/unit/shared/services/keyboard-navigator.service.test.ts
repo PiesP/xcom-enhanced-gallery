@@ -1,9 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 
-import {
-  KeyboardNavigator,
-  keyboardNavigator,
-} from '../../../../src/shared/services/input/keyboard-navigator';
+import { KeyboardNavigator, keyboardNavigator } from '@/shared/services/input/keyboard-navigator';
 
 // Basic contract tests for KeyboardNavigator service
 

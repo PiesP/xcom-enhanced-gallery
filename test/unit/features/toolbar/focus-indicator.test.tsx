@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, h } from '../../utils/testing-library';
+import { render, h } from '@test/utils/testing-library';
 
 interface ToolbarOverrides {
   readonly currentIndex?: number;
@@ -36,7 +36,7 @@ describe('Toolbar focus indicator (preview removed)', () => {
   });
 
   it('does not render the legacy focus preview container', async () => {
-    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+    const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
     const previewProps = {
       ...createToolbarProps(),
@@ -52,7 +52,7 @@ describe('Toolbar focus indicator (preview removed)', () => {
   });
 
   it('keeps the counter aria-live region without the preview', async () => {
-    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+    const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
     const { container } = render(h(Toolbar, createToolbarProps()));
 

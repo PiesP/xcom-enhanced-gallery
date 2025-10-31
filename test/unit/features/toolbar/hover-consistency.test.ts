@@ -22,7 +22,7 @@ describe('Toolbar Button Hover Consistency', () => {
     it('fitButton은 기본적인 hover 효과만 가져야 한다', () => {
       // fitButton CSS 선택자 찾기
       const fitButtonMatch = toolbarCSSContent.match(/\.fitButton\s*{[^}]*}/g);
-      expect(fitButtonMatch).toBeTruthy('fitButton 스타일이 정의되어야 함');
+      expect(fitButtonMatch).toBeTruthy();
 
       const fitButtonCSS = fitButtonMatch?.[0] || '';
 
@@ -37,7 +37,7 @@ describe('Toolbar Button Hover Consistency', () => {
       const hoverMatch = toolbarCSSContent.match(
         /\.toolbarButton:hover:not\(\[data-disabled='true'\]\)\s*{[^}]*}/g
       );
-      expect(hoverMatch).toBeTruthy('toolbarButton hover 스타일이 있어야 함');
+      expect(hoverMatch).toBeTruthy();
 
       const hoverCSS = hoverMatch?.[0] || '';
 
@@ -56,7 +56,7 @@ describe('Toolbar Button Hover Consistency', () => {
         if (buttonMatch) {
           const buttonCSS = buttonMatch[0];
           // 각 버튼이 서로 다른 호버 효과를 가지는지 확인
-          expect(buttonCSS).toBeTruthy(`${buttonType}에 호버 효과가 있어야 함`);
+          expect(buttonCSS).toBeTruthy();
         }
       });
     });
@@ -74,7 +74,7 @@ describe('Toolbar Button Hover Consistency', () => {
         'fitButton',
       ];
 
-      const inconsistentButtons = [];
+      const inconsistentButtons: string[] = [];
 
       buttonSelectors.forEach(selector => {
         const hoverMatch = toolbarCSSContent.match(new RegExp(`\\.${selector}:hover[^}]*}`, 'g'));
@@ -123,14 +123,14 @@ describe('Toolbar Button Hover Consistency', () => {
       // 현재는 없을 수 있지만, 향후 추가되어야 함
       if (!focusVisibleMatch) {
         // 아직 구현되지 않았음을 명시
-        expect(focusVisibleMatch).toBeFalsy('focus-visible이 아직 구현되지 않음 - 추후 구현 필요');
+        expect(focusVisibleMatch).toBeFalsy();
       }
     });
 
     it('reduced-motion 지원이 있어야 한다', () => {
       // prefers-reduced-motion 미디어 쿼리 확인
       const reducedMotionMatch = toolbarCSSContent.match(/@media.*prefers-reduced-motion.*reduce/g);
-      expect(reducedMotionMatch).toBeTruthy('reduced-motion 지원이 있어야 함');
+      expect(reducedMotionMatch).toBeTruthy();
     });
   });
 
@@ -141,7 +141,7 @@ describe('Toolbar Button Hover Consistency', () => {
       );
 
       // 복잡한 transform이 제거되었는지 확인
-      expect(complexTransformMatch).toBeFalsy('복잡한 transform 효과가 제거됨');
+      expect(complexTransformMatch).toBeFalsy();
     });
 
     it('각 버튼 타입별로 동일한 호버 효과를 가진다', () => {

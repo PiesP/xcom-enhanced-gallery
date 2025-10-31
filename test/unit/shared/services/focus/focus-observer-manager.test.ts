@@ -8,11 +8,8 @@
 /* eslint-disable no-undef */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  FocusObserverManager,
-  createFocusObserverManager,
-} from '../../../../../src/shared/services/focus';
-import { ItemCache } from '../../../../../src/shared/state/focus';
+import { FocusObserverManager, createFocusObserverManager } from '@/shared/services/focus';
+import { ItemCache } from '@/shared/state/focus';
 
 /**
  * Mock ItemCache
@@ -43,6 +40,7 @@ function createMockEntry(
     isIntersecting: options.isIntersecting ?? true,
     intersectionRatio: options.intersectionRatio ?? 0.5,
     boundingClientRect: rect,
+    intersectionRect: rect,
     rootBounds: options.rootBounds || new DOMRect(0, 0, 400, 300),
     time: Date.now(),
     toJSON: () => ({}),

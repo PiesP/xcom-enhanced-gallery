@@ -14,12 +14,12 @@ describe('에러 핸들링 통합', () => {
       expect(standardMessage).toBe('Test error message');
 
       // 비 Error 객체
-      const unknownError = 'string error';
+      const unknownError: unknown = 'string error';
       const unknownMessage = unknownError instanceof Error ? unknownError.message : 'Unknown error';
       expect(unknownMessage).toBe('Unknown error');
 
       // null/undefined
-      const nullError = null;
+      const nullError: unknown = null;
       const nullMessage = nullError instanceof Error ? nullError.message : 'Unknown error';
       expect(nullMessage).toBe('Unknown error');
     });

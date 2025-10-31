@@ -24,7 +24,8 @@ describe('갤러리 초기화 지연 문제 해결', () => {
     // 미디어 요소 모킹
     mockMediaElement = document.createElement('img');
     mockMediaElement.setAttribute('data-testid', 'tweetPhoto');
-    mockMediaElement.src = 'https://pbs.twimg.com/media/test.jpg';
+    const img = (mockMediaElement as any).asImage?.() ?? (mockMediaElement as HTMLImageElement);
+    img.src = 'https://pbs.twimg.com/media/test.jpg';
     document.body.appendChild(mockMediaElement);
   });
 

@@ -30,6 +30,9 @@ describe('Phase 97: Result 패턴 통합 (TDD)', () => {
 
       expect(isSuccess(result)).toBe(true);
       expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error('Expected success result from success() helper');
+      }
       expect(result.data).toBe(42);
     });
 
@@ -41,7 +44,12 @@ describe('Phase 97: Result 패턴 통합 (TDD)', () => {
 
       expect(isFailure(result)).toBe(true);
       expect(result.success).toBe(false);
-      expect(result.error).toBe(error);
+      if (!result.success) {
+        const failureResult = result as Extract<typeof result, { success: false }>;
+        expect(failureResult.error).toBe(error);
+      } else {
+        throw new Error('Expected failure result from failure() helper');
+      }
     });
 
     it('core-types의 safeAsync()가 올바르게 동작해야 함', async () => {
@@ -150,6 +158,9 @@ describe('Phase 97: Result 패턴 통합 (TDD)', () => {
       const result = success('from app.types');
       expect(isSuccess(result)).toBe(true);
       expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error('Expected success result from app.types success() helper');
+      }
       expect(result.data).toBe('from app.types');
     });
   });

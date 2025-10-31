@@ -61,7 +61,100 @@
 
 ---
 
-## 🎯 최근 완료 Phase (286)
+## 🎯 최근 완료 Phase (289)
+
+### Phase 289: 갤러리 렌더링을 로드 완료 이후로 지연 ✅ 전체 완료
+
+**완료 일시**: 2025-10-31
+
+**상태**: ✅ 전체 완료
+
+**배경**:
+
+- 갤러리 앱이 @run-at document-idle에서 실행되지만, 이미지/폰트 등 서브리소스 로딩 중에 초기화되어 FOUC 유사 현상 및 이미지 디코드 레이스 발생
+- window.load 이벤트 이후로 렌더링을 지연하여 레이아웃 안정성 향상 필요
+- 타임아웃 폴백(8s)으로 무한 대기 방지, 테스트 모드 제외 처리
+
+**작업 내용**:
+
+1. **유틸 추가**: `src/shared/utils/browser/wait-for-load.ts` (97 lines)
+   - 3가지 로드 상태 처리:
+     - 'already-loaded': `document.readyState === 'complete'` 즉시 반환
+     - 'loaded-after-wait': `window.addEventListener('load')` 이벤트 대기
+     - 'timeout': 8000ms 타임아웃 폴백
+   - 단위 테스트: 7/7 통과 ✅
+
+2. **AppConfig 확장**: `src/shared/types/app.types.ts`
+   - 플래그 추가: `renderAfterLoad?: boolean` (기본값: true)
+   - JSDoc 문서화 포함
+
+3. **Bootstrap 통합**: `src/main.ts` startApplication()
+   - 라인 395-403: 조건부 로드 대기 구현
+   - 테스트 모드(`MODE === 'test'`) 제외 처리
+   - Flow tracer 포인트: `window:load:wait:start`, `window:load:wait:done`
+
+4. **E2E 테스트**: `playwright/smoke/render-after-load.spec.ts`
+   - Test 1: "waits for window load event before initializing gallery" (497ms) ✅
+   - Test 2: "falls back after timeout and continues (returns false)" (463ms) ✅
+   - 하네스 노출: `window.__XEG_HARNESS__.waitForWindowLoad()` 사용
+
+**빌드 검증**:
+
+- TypeScript: 0 에러 ✅
+- ESLint: 0 에러 ✅
+- Stylelint: 0 에러 ✅
+- CodeQL: 0 경고 ✅
+- 단위 테스트: 772/780 통과, 8 skipped (99%) ✅
+- E2E 테스트: 88/93 통과, 5 skipped ✅
+- 개발 빌드: 804.66 KB (sourcemap: 1,635.47 KB) ✅
+- 프로덕션 빌드: 346.92 KB raw, 93.97 KB gzipped ✅
+- UserScript 검증: PASSED ✅
+
+**코드 예시** (src/main.ts):
+
+```typescript
+if (import.meta.env.MODE !== 'test') {
+  const appConfig = createAppConfig();
+  if (appConfig.renderAfterLoad !== false) {
+    if (__DEV__ && tracePoint) tracePoint('window:load:wait:start');
+    await waitForWindowLoad({ timeoutMs: 8000 });
+    if (__DEV__ && tracePoint) tracePoint('window:load:wait:done');
+  }
+  await initializeGalleryImmediately();
+} else {
+  logger.debug('Gallery initialization skipped (test mode)');
+}
+```
+
+**수용 기준 검증**:
+
+- ✅ 브라우저 테스트: load 전후 갤러리 동작 검증 (E2E 통과)
+- ✅ E2E 스모크: 초기 로드 후 UI 표시 확인 (2/2 통과)
+- ✅ 타임아웃 처리: 8s 경과 시 폴백 동작 검증 (단위 테스트 통과)
+- ✅ 전체 빌드: TypeScript/Lint/Security/Tests 모두 GREEN
+- ✅ 최소 diff: 영향 파일 4개, 신규 파일 3개 (유틸/테스트)
+- ✅ 정책 준수: Vendor getter, PC-only 이벤트, 디자인 토큰 규칙 유지
+
+**결과**:
+
+- ✅ window.load 이벤트 대기 구현 완료
+- ✅ 타임아웃 폴백(8s)으로 무한 대기 방지
+- ✅ 테스트 모드 제외 처리로 테스트 안정성 유지
+- ✅ 설정 가능한 플래그(`AppConfig.renderAfterLoad`)로 유연성 확보
+- ✅ Flow tracer 통합으로 개발 빌드 디버깅 지원
+- ✅ 번들 크기 목표 유지: 93.97 KB gzipped (≤100 KB 목표 충족)
+- ✅ 모든 테스트 통과, 프로덕션 준비 완료
+
+**교훈**:
+
+1. **JSDOM 제약 인식**: Solid.js 반응성은 Playwright 환경에서 제한적 → Remount 패턴 사용
+2. **테스트 환경 격리**: 테스트 모드에서 window.load 대기 스킵하여 이벤트 리스너 누수 방지
+3. **폴백 전략**: 타임아웃으로 열악한 네트워크 환경에서도 사용자 경험 보장
+4. **점진적 개선**: 기존 코드 변경 최소화하며 새 기능 통합
+
+---
+
+## 🎯 이전 완료 Phase (286)
 
 ### Phase 286: 개발 전용 Flow Tracer (동작 추적 로깅) ✅ 전체 완료
 

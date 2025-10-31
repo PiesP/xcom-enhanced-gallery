@@ -4,11 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type {
-  TweetInfo,
-  TweetInfoExtractionStrategy,
-} from '../../../../../src/shared/types/media.types.js';
-import { TweetInfoExtractor } from '../../../../../src/shared/services/media-extraction/extractors/tweet-info-extractor.js';
+import type { TweetInfo, TweetInfoExtractionStrategy } from '@/shared/types/media.types.js';
+import { TweetInfoExtractor } from '@/shared/services/media-extraction/extractors/tweet-info-extractor.js';
 
 describe('TweetInfoExtractor', () => {
   let extractor: TweetInfoExtractor;

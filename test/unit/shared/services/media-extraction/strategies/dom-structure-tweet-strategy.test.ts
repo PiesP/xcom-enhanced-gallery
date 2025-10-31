@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DomStructureTweetStrategy } from '../../../../../../src/shared/services/media-extraction/strategies/dom-structure-tweet-strategy';
-import type { TweetInfo } from '../../../../../../src/shared/types/media.types';
+import { DomStructureTweetStrategy } from '@/shared/services/media-extraction/strategies/dom-structure-tweet-strategy';
+import type { TweetInfo } from '@/shared/types/media.types';
 
 // Mock logger
-vi.mock('../../../../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -18,12 +18,12 @@ vi.mock('../../../../../../src/shared/logging/logger', () => ({
 }));
 
 // Mock username extraction service
-vi.mock('../../../../../../src/shared/services/media/username-extraction-service', () => ({
+vi.mock('@/shared/services/media/username-extraction-service', () => ({
   parseUsernameFast: vi.fn(),
 }));
 
 // Import after mocking
-import { parseUsernameFast as mockParseUsernameFast } from '../../../../../../src/shared/services/media/username-extraction-service';
+import { parseUsernameFast as mockParseUsernameFast } from '@/shared/services/media/username-extraction-service';
 
 describe('DomStructureTweetStrategy', () => {
   let strategy: DomStructureTweetStrategy;

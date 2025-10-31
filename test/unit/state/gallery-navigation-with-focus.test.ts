@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import type { MediaInfo } from '../../../src/shared/types/media.types';
+import type { MediaInfo } from '@/shared/types/media.types';
 import {
   closeGallery,
   gallerySignals,
@@ -7,7 +7,7 @@ import {
   navigatePrevious,
   openGallery,
   setFocusedIndex,
-} from '../../../src/shared/state/signals/gallery.signals';
+} from '@/shared/state/signals/gallery.signals';
 
 /**
  * Phase 64 Step 2: navigateNext/navigatePrevious를 focusedIndex 기준으로 변경

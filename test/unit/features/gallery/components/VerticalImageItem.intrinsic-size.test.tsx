@@ -4,8 +4,8 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, h } from '../../../../utils/testing-library';
-import type { MediaInfo } from '../../../../../src/shared/types';
-import { VerticalImageItem } from '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem';
+import type { MediaInfo } from '@/shared/types';
+import { VerticalImageItem } from '@/features/gallery/components/vertical-gallery-view/VerticalImageItem';
 
 const baseMedia: MediaInfo = {
   id: 'media-0',

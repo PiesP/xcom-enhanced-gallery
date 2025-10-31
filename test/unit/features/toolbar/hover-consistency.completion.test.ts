@@ -39,7 +39,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
         'closeButton',
       ];
 
-      const inconsistentButtons = [];
+      const inconsistentButtons: string[] = [];
 
       buttonSelectors.forEach(selector => {
         const hoverMatch = toolbarCSSContent.match(new RegExp(`\\.${selector}:hover[^}]*}`, 'g'));
@@ -60,12 +60,12 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
 
     it('focus-visible 지원이 추가되었다', () => {
       const focusVisibleMatch = toolbarCSSContent.match(/:focus-visible/g);
-      expect(focusVisibleMatch).toBeTruthy('focus-visible 지원이 추가됨');
+      expect(focusVisibleMatch).toBeTruthy();
 
       // 모든 버튼 타입에 focus-visible이 적용되었는지 확인
       const buttonTypes = [
         'toolbarButton',
-        'navButton',
+        // 'navButton', // navButton → toolbarButton 통합 (Phase 54)
         'downloadButton',
         // 'settingsButton', // IconButton 사용으로 별도 클래스 불필요 (toolbarButton 상속)
         'closeButton',
@@ -135,12 +135,15 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
   describe('접근성 및 호환성 검증', () => {
     it('reduced-motion 지원이 유지되었다', () => {
       const reducedMotionMatch = toolbarCSSContent.match(/@media.*prefers-reduced-motion.*reduce/g);
-      expect(reducedMotionMatch).toBeTruthy('reduced-motion 지원 유지');
+      expect(reducedMotionMatch).toBeTruthy();
     });
 
     it('고대비 모드 지원이 유지되었다', () => {
-      const highContrastMatch = toolbarCSSContent.match(/@media.*prefers-contrast.*high/g);
-      expect(highContrastMatch).toBeTruthy('고대비 모드 지원 유지');
+      // Phase 54: 고대비 모드는 data-high-contrast attribute로 전환됨
+      // prefers-contrast 미디어 쿼리 대신 .highContrast 클래스 사용
+      const highContrastMatch = toolbarCSSContent.match(/\.highContrast|data-high-contrast/g);
+      expect(highContrastMatch).toBeTruthy();
+      expect(highContrastMatch!.length).toBeGreaterThan(0);
     });
 
     it('모바일 반응형 지원이 유지되었다', () => {
@@ -148,7 +151,7 @@ describe('Toolbar Button Hover Consistency - Completion', () => {
       const mobileMatch = toolbarCSSContent.match(
         /@media.*(max-width.*(768px|48em)|width\s*<=\s*(768px|48em))/g
       );
-      expect(mobileMatch).toBeTruthy('모바일 반응형 지원 유지');
+      expect(mobileMatch).toBeTruthy();
     });
   });
 

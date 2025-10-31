@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createAppContainer } from '../../helpers/createAppContainer';
-import { SERVICE_KEYS } from '../../../../src/constants';
+import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 6 - Global Singleton Removal', () => {
   let container: any;

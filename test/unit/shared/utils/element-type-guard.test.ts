@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { isGalleryInternalElement } from '../../../../src/shared/utils/utils';
-import { isHTMLElement } from '../../../../src/shared/utils/type-guards';
+import { isGalleryInternalElement } from '@/shared/utils/utils';
+import { isHTMLElement } from '@/shared/utils/type-guards';
 
 describe('Phase 237, 241: Element Type Guard', () => {
   describe('isHTMLElement', () => {

@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { TweetInfo } from '../../../../../src/shared/types/media.types.js';
-import { DataAttributeTweetStrategy } from '../../../../../src/shared/services/media-extraction/strategies/data-attribute-tweet-strategy.js';
+import type { TweetInfo } from '@/shared/types/media.types.js';
+import { DataAttributeTweetStrategy } from '@/shared/services/media-extraction/strategies/data-attribute-tweet-strategy.js';
 
 describe('DataAttributeTweetStrategy', () => {
   let strategy: DataAttributeTweetStrategy;

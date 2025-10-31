@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { GalleryApp } from '../../../../src/features/gallery/GalleryApp';
-import { GalleryRenderer } from '../../../../src/features/gallery/GalleryRenderer';
-import type { MediaInfo } from '../../../../src/shared/types/media.types';
-import { initializeVendors } from '../../../../src/shared/external/vendors';
-import { CoreService } from '../../../../src/shared/services/service-manager';
-import { registerGalleryRenderer } from '../../../../src/shared/container/service-accessors';
+import { GalleryApp } from '@/features/gallery/GalleryApp';
+import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
+import type { MediaInfo } from '@/shared/types/media.types';
+import { initializeVendors } from '@/shared/external/vendors';
+import { CoreService } from '@/shared/services/service-manager';
+import { registerGalleryRenderer } from '@/shared/container/service-accessors';
 
 /**
  * @fileoverview Phase B3.2.1 - GalleryApp Coverage Expansion Tests

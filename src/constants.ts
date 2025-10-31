@@ -209,6 +209,12 @@ export const SYSTEM_PAGES = [
   'signup',
 ] as const;
 
+// DEFAULT_SETTINGS is defined below and should be imported from this module
+
+// ----- URL 패턴 재export (Phase 22.2 호환) -----
+// 기존 constants.ts 사용처 호환성을 위해 URL_PATTERNS를 재노출합니다.
+export { URL_PATTERNS } from './shared/utils/patterns/url-patterns';
+
 // ================================
 // 유틸리티 함수
 // ================================

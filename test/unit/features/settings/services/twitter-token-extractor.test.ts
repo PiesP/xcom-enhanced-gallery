@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type TwitterTokenExtractorModule =
-  typeof import('@/features/settings/services/twitter-token-extractor');
+  typeof import('@shared/services/token-extraction/twitter-token-extractor');
 
 async function importModule(): Promise<TwitterTokenExtractorModule> {
   vi.resetModules();
-  return await import('@/features/settings/services/twitter-token-extractor');
+  return await import('@shared/services/token-extraction/twitter-token-extractor');
 }
 
 describe('TwitterTokenExtractor', () => {

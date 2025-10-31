@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createFocusTrap, type FocusTrapOptions } from '../../../../src/shared/utils/focus-trap';
+import { createFocusTrap, type FocusTrapOptions } from '@/shared/utils/focus-trap';
 
 describe('focus-trap: 포커스 트래핑 유틸리티', () => {
   let container: HTMLElement;

@@ -1,8 +1,4 @@
-/**
- * @fileoverview 일괄 다운로드 서비스
- * @description ZIP 및 개별 다운로드 기능 제공
- * @version 2.0.0 - Phase A5.5: BaseServiceImpl 패턴 적용
- */
+/** Bulk download service - ZIP/individual download */
 
 import type { MediaInfo, MediaItem } from '../types/media.types';
 import type { MediaItemForFilename } from '../types/media.types';
@@ -53,15 +49,15 @@ function ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string
 
 function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilename {
   const ensured = ensureMediaItem(media);
-  return {
-    id: ensured.id,
-    url: ensured.url,
-    originalUrl: ensured.originalUrl || undefined,
-    type: ensured.type,
-    filename: ensured.filename,
-    tweetUsername: ensured.tweetUsername,
-    tweetId: ensured.tweetId,
-  };
+  const result: MediaItemForFilename = { id: ensured.id, url: ensured.url, type: ensured.type };
+
+  // Optional props assigned only when present (exactOptionalPropertyTypes)
+  if (ensured.originalUrl) result.originalUrl = ensured.originalUrl;
+  if (ensured.filename) result.filename = ensured.filename;
+  if (ensured.tweetUsername) result.tweetUsername = ensured.tweetUsername;
+  if (ensured.tweetId) result.tweetId = ensured.tweetId;
+
+  return result;
 }
 
 export class BulkDownloadService extends BaseServiceImpl {
@@ -71,17 +67,12 @@ export class BulkDownloadService extends BaseServiceImpl {
     super('BulkDownloadService');
   }
 
-  /**
-   * 서비스 초기화 (BaseServiceImpl 템플릿 메서드 구현)
-   */
-  protected async onInitialize(): Promise<void> {
-    // No initialization needed for bulk download service
-    // Orchestrator is created lazily on first use
+  /** Initialize service (BaseServiceImpl template method) */
+  protected onInitialize(): void {
+    // No initialization needed
   }
 
-  /**
-   * 서비스 정리 (BaseServiceImpl 템플릿 메서드 구현)
-   */
+  /** Cleanup service (BaseServiceImpl template method) */
   protected onDestroy(): void {
     this.currentAbortController?.abort();
   }

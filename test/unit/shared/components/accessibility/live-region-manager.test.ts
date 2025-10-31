@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
-} from '../../../src/shared/utils/accessibility/live-region-manager';
+} from '@/shared/utils/accessibility/live-region-manager';
 
 describe('[a11y] LiveRegionManager – 단일 인스턴스 & 속성', () => {
   beforeEach(() => {

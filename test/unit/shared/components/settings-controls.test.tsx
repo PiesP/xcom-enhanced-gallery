@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup } from '../../utils/testing-library';
-import { getSolid } from '../../../src/shared/external/vendors';
-import { SettingsControls } from '../../../src/shared/components/ui/Settings/SettingsControls';
+import { render, cleanup } from '@test/utils/testing-library';
+import { getSolid } from '@shared/external/vendors';
+import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 
 const { h } = getSolid();
 

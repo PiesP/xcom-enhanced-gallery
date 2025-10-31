@@ -15,12 +15,16 @@ import { playwright } from '@vitest/browser-playwright';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const debugLogPath = resolve(__dirname, './vitest-debug.log');
+// Disable config-time file logging by default to reduce I/O & IPC pressure.
+// Enable only when VITEST_VERBOSE_CONFIG=true is set.
+const configDebugEnabled = process.env.VITEST_VERBOSE_CONFIG === 'true';
 const appendDebug = (message: string) => {
+  if (!configDebugEnabled) return;
   try {
     const timestamp = new Date().toISOString();
     appendFileSync(debugLogPath, `[${timestamp}] ${message}\n`, { encoding: 'utf8' });
-  } catch (error) {
-    console.error('[vitest-config][appendDebug] failed', error);
+  } catch {
+    // silent on purpose
   }
 };
 
@@ -29,27 +33,25 @@ const logStage = (stage: string, payload: string) => {
 };
 
 try {
-  writeFileSync(debugLogPath, '', { encoding: 'utf8', flag: 'w' });
-} catch (error) {
-  console.error('[vitest-config] failed to initialize debug log', error);
+  if (configDebugEnabled) writeFileSync(debugLogPath, '', { encoding: 'utf8', flag: 'w' });
+} catch {
+  // silent on purpose
 }
 
 appendDebug('[vitest-config] loaded');
-const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
 // Shared poolOptions for all projects (explicitly set to avoid inheritance issues)
 // Phase 200 최적화: 메모리 제한 증가 (메모리 부족 해결)
 // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정 (worker spawn 실패 방지)
 // Phase 230: 머신 최적화 - 12 코어, 31GB RAM 활용 + 워커 격리 강화
 // Phase 276: EPIPE 재발 방지 - NODE_OPTIONS는 각 개별 프로젝트에서 설정, memoryLimit 최소화
+// Prefer a single forked worker to avoid threads incompatibility and IPC issues on Node 22
 const sharedPoolOptions = {
-  threads: {
-    singleThread: true, // 항상 단일 스레드 (EPIPE 완전 방지)
-    // 워커 메모리 제한: 1GB (NODE_OPTIONS에서 V8 힙을 별도 설정)
-    memoryLimit: 1024,
-    minThreads: 1,
-    maxThreads: 1, // 단일 워커로 강제
-    reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
+  forks: {
+    singleFork: true,
+    minForks: 1,
+    maxForks: 1,
+    reuseWorkers: false,
   },
 };
 // Helpers
@@ -120,18 +122,20 @@ export default defineConfig({
       const FEATURES = FEATURES_DIR;
       const SHARED = SHARED_DIR;
       const ASSETS = ASSETS_DIR;
-      console.log('[vitest.config] resolve.alias', {
-        '@': SRC,
-        '@features': FEATURES,
-        '@shared': SHARED,
-        '@assets': ASSETS,
-      });
+      if (configDebugEnabled) {
+        console.log('[vitest.config] resolve.alias', {
+          '@': SRC,
+          '@features': FEATURES,
+          '@shared': SHARED,
+          '@assets': ASSETS,
+        });
+      }
     } catch {}
     return undefined;
   })(),
   plugins: [
-    // CI에서는 로그를 줄여 I/O 오버헤드를 최소화
-    !isCI && {
+    // Optional verbose config logging, opt-in via env flag only
+    configDebugEnabled && {
       name: 'xeg-log-config',
       enforce: 'pre',
       configResolved(cfg) {
@@ -165,8 +169,19 @@ export default defineConfig({
     testTimeout: 20000, // 동적 import 및 멀티 프로젝트 실행 시 플래키 타임아웃 방지
     hookTimeout: 25000,
     transformMode: solidTransformMode,
+    silent: true,
     // Phase 275: EPIPE 에러 해결 - 워커 IPC 메시지 최소화
-    reporterVerbosity: 'verbose', // minimal로 설정하면 reporter 로그 감소 (IPC 메시지 감소)
+    // 최소한의 리포터 사용 및 낮은 자세한 로그 설정
+    reporters: 'dot',
+    reporterVerbosity: 'minimal',
+    // Drop almost all console logs from tests to reduce IPC pressure.
+    onConsoleLog() {
+      // Opt-in verbose via env
+      if (process.env.VITEST_VERBOSE_LOGS === 'true') return true;
+      // Always suppress debug/info noise; allow only vitest errors by default
+      // Block both stdout/stderr prints coming from app/test code
+      return false;
+    },
 
     // Bare import로 인식되는 @features/@shared/@assets/@* 별칭을
     // 외부 의존성으로 최적화(deps optimize)하지 말고 Vitest(vite-node)
@@ -246,18 +261,9 @@ export default defineConfig({
     // Phase 200.1: EPIPE 해결 - memoryLimit을 보수적으로 조정
     // Phase 275: EPIPE 완전 해결 - 단일 스레드 강제 (멀티스레드 IPC 버퍼 오버플로우 근본 해결)
     // Phase 276: EPIPE 재발 방지 - NODE_OPTIONS는 각 개별 프로젝트에서 설정
-    singleThread: true, // 항상 단일 스레드로 실행 (EPIPE 완전 제거)
-    pool: 'threads',
-    poolOptions: {
-      threads: {
-        // 워커 메모리 제한: 1GB (NODE_OPTIONS에서 V8 힙을 별도 설정)
-        singleThread: true,
-        memoryLimit: 1024,
-        minThreads: 1,
-        maxThreads: 1, // 단일 워커로 강제
-        reuseWorkers: false, // 워커 재사용 방지 (격리 강화, 메모리 안정성)
-      },
-    },
+    singleThread: true,
+    pool: 'forks',
+    poolOptions: sharedPoolOptions,
     // Vitest v3: test.projects로 분할 스위트 정의 (--project 필터 사용 가능)
     // 각 프로젝트에 jsdom 환경/설정 파일을 명시하여 상속 이슈를 방지합니다.
     projects: [
@@ -270,7 +276,7 @@ export default defineConfig({
         // 개별 프로젝트에도 동일한 resolve를 명시적으로 주입 (Windows vite-node 호환)
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'smoke',
@@ -302,7 +308,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'fast',
@@ -359,7 +365,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'unit',
@@ -382,7 +388,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'unit-part2',
@@ -405,7 +411,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'features',
@@ -428,7 +434,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'styles',
@@ -455,7 +461,7 @@ export default defineConfig({
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
-        pool: 'threads',
+        pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
           name: 'performance',

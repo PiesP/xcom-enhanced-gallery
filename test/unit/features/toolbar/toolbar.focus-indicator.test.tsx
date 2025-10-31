@@ -2,7 +2,7 @@
  * Toolbar focus indicator data attribute tests (UI-FCS-02)
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, h } from '../../utils/testing-library';
+import { render, screen, cleanup, h } from '@test/utils/testing-library';
 
 vi.mock('@shared/external/vendors', async () => {
   const actualVendors = await vi.importActual<typeof import('@shared/external/vendors')>(

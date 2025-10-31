@@ -1,10 +1,10 @@
 import { sharedConfig } from 'solid-js';
 import { describe, expect, it, vi } from 'vitest';
 import { render } from '@test/utils/testing-library';
-import { getSolid } from '../../../../src/shared/external/vendors';
-import { KeyboardHelpOverlay } from '../../../../src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay';
+import { getSolid } from '@/shared/external/vendors';
+import { KeyboardHelpOverlay } from '@/features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
-vi.mock('../../../../src/shared/hooks/useFocusTrap', () => ({
+vi.mock('@/shared/hooks/useFocusTrap', () => ({
   useFocusTrap: () => ({
     isActive: false,
     activate: vi.fn(),

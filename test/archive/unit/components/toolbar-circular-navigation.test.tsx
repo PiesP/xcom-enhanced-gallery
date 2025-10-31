@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { getSolid } from '../../../src/shared/external/vendors';
-import { Toolbar } from '../../../src/shared/components/ui/Toolbar/Toolbar';
+import { getSolid } from '@/shared/external/vendors';
+import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
 import { render, cleanup } from '../../utils/testing-library';
 
 const { h } = getSolid();

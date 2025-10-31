@@ -10,6 +10,9 @@ describe('타이머 관리 (단순화)', () => {
     it('타이머 기본 동작 - TimerManager 클래스가 올바르게 동작해야 한다', () => {
       // TimerManager 기본 구조 검증
       const TimerManagerClass = class {
+        public readonly timers: Set<number>;
+        public readonly intervals: Set<number>;
+
         constructor() {
           this.timers = new Set();
           this.intervals = new Set();
@@ -56,7 +59,7 @@ describe('타이머 관리 (단순화)', () => {
     it('디바운스 구현 - debounce 패턴이 구현되어야 한다', () => {
       // debounce 기본 구조만 검증
       function createDebounce() {
-        let timeoutId = null;
+        let timeoutId: number | null = null;
 
         return function debounce(fn) {
           return function (...args) {

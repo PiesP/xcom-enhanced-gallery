@@ -8,7 +8,7 @@ import {
   NavigationStateMachine,
   type NavigationState,
   type NavigationAction,
-} from '../../../src/shared/state/navigation-state-machine';
+} from '@shared/state/machines/navigation-state-machine';
 
 describe('NavigationStateMachine', () => {
   let initialState: NavigationState;

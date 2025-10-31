@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ServiceDiagnostics } from '../../../../src/shared/services/service-diagnostics';
+import { ServiceDiagnostics } from '@/shared/services/service-diagnostics';
 
 describe('ServiceDiagnostics', () => {
   beforeEach(() => {
@@ -26,14 +26,14 @@ describe('ServiceDiagnostics', () => {
 
     it('진단 중 발생한 에러를 재throw해야 함', async () => {
       // registerCoreServices를 모킹하여 에러 발생
-      vi.doMock('../../../../src/shared/services/service-initialization', () => ({
+      vi.doMock('@/shared/services/service-initialization', () => ({
         registerCoreServices: vi.fn().mockRejectedValue(new Error('Mock registration error')),
       }));
 
       // 에러가 발생하면 재throw되어야 함
       await expect(ServiceDiagnostics.diagnoseServiceManager()).rejects.toThrow();
 
-      vi.doUnmock('../../../../src/shared/services/service-initialization');
+      vi.doUnmock('@/shared/services/service-initialization');
     });
 
     it('ResourceManager가 없어도 진단은 계속되어야 함', async () => {

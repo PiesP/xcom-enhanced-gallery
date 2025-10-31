@@ -11,8 +11,8 @@ import {
   navigatePrevious,
   navigateNext,
   navigateToItem,
-} from '../../../src/shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../../src/shared/types/core/media.types';
+} from '@/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types/media.types';
 
 describe('Phase 62: Gallery Circular Navigation', () => {
   const mockMediaItems: MediaInfo[] = [

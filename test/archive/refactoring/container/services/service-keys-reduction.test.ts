@@ -10,18 +10,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SERVICE_KEYS } from '../../../../src/constants';
-import {
-  createServiceHarness,
-  ServiceHarness,
-} from '../../../../src/shared/container/ServiceHarness';
+import { SERVICE_KEYS } from '@/constants';
+import { createServiceHarness, ServiceHarness } from '@/shared/container/ServiceHarness';
 import {
   getMediaServiceFromContainer,
   getThemeService,
   getToastController,
   getBulkDownloadServiceFromContainer,
   getMediaFilenameService,
-} from '../../../../src/shared/container/service-accessors';
+} from '@/shared/container/service-accessors';
 
 describe('Phase 5 - SERVICE_KEYS Usage Reduction (ServiceHarness)', () => {
   let harness: ServiceHarness;

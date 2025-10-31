@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { useToolbarSettingsController } from '../../../../src/shared/hooks/toolbar/use-toolbar-settings-controller';
+import { useToolbarSettingsController } from '@/shared/hooks/toolbar/use-toolbar-settings-controller';
 
 describe.skip('useGalleryToolbarLogic legacy suite', () => {
   it('exports toolbar settings controller hook for future compatibility', () => {

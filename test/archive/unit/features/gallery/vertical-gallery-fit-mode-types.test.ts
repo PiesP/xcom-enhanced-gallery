@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 describe('Phase 101: VerticalGalleryView 타입 단언 제거', () => {
   const targetFile = resolve(
     __dirname,
-    '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+    '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
   );
 
   it('VerticalGalleryView.tsx 파일이 존재한다', async () => {

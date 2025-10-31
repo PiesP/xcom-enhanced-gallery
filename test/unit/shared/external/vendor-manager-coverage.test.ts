@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { StaticVendorManager } from '../../../../src/shared/external/vendors/vendor-manager-static';
+import { StaticVendorManager } from '@/shared/external/vendors/vendor-manager-static';
 
 describe('vendor-manager-static: 정적 벤더 관리자', () => {
   let manager: StaticVendorManager;

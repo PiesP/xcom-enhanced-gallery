@@ -4,14 +4,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  ToastController,
-  toastController,
-} from '../../../../src/shared/services/unified-toast-manager';
-import type { ToastOptions } from '../../../../src/shared/services/unified-toast-manager';
+import { ToastController, toastController } from '@shared/services/toast-controller';
+import type { ToastOptions } from '@shared/services/unified-toast-manager';
 
 // Mock logger
-vi.mock('../../../../src/shared/logging/logger', () => ({
+vi.mock('@shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -27,11 +24,17 @@ const mockToastManagerInstance = {
   clear: vi.fn(),
 };
 
-vi.mock('../../../../src/shared/services/unified-toast-manager', () => ({
-  ToastManager: {
-    getInstance: vi.fn(() => mockToastManagerInstance),
-  },
-}));
+vi.mock('@/shared/services/unified-toast-manager', async () => {
+  const original = await vi.importActual<typeof import('@/shared/services/unified-toast-manager')>(
+    '@/shared/services/unified-toast-manager'
+  );
+  return {
+    ...original,
+    ToastManager: {
+      getInstance: vi.fn(() => mockToastManagerInstance),
+    },
+  };
+});
 
 describe('ToastController', () => {
   let controller: ToastController;
@@ -58,14 +61,14 @@ describe('ToastController', () => {
   describe('cleanup', () => {
     it('should clear all toasts and reset state', async () => {
       await controller.initialize();
-      await controller.destroy();
+      await controller.cleanup();
 
       expect(mockToastManagerInstance.clear).toHaveBeenCalledTimes(1);
       expect(controller.isInitialized()).toBe(false);
     });
 
     it('should work even if not initialized', async () => {
-      await controller.destroy();
+      await controller.cleanup();
 
       expect(mockToastManagerInstance.clear).toHaveBeenCalled();
       expect(controller.isInitialized()).toBe(false);
@@ -336,7 +339,7 @@ describe('ToastController', () => {
       await toastController.initialize();
       expect(toastController.isInitialized()).toBe(true);
 
-      await toastController.destroy();
+      await toastController.cleanup();
       expect(toastController.isInitialized()).toBe(false);
     });
   });
@@ -375,7 +378,7 @@ describe('ToastController', () => {
       controller.show({ title: 'Test', message: 'Message' });
       expect(mockToastManagerInstance.show).toHaveBeenCalled();
 
-      await controller.destroy();
+      await controller.cleanup();
       expect(mockToastManagerInstance.clear).toHaveBeenCalled();
       expect(controller.isInitialized()).toBe(false);
     });

@@ -6,29 +6,22 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { JSXElement } from '../../../../../../src/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
+import type { JSXElement } from '@/shared/external/vendors';
 
 describe('Phase 98: IconComponent 타입 안전성', () => {
   describe('IconComponent 타입 정의', () => {
-    it('IconComponent는 JSXElement를 반환하는 함수여야 한다', () => {
-      // Type-level test: IconComponent should accept JSXElement return type
+    it('IconComponent는 JSXElement를 반환하는 함수여야 한다', async () => {
       type IconComponent = (props?: Record<string, unknown>) => JSXElement;
+      const { HeroDownload } = await import('@/shared/components/ui/Icon/hero/HeroDownload');
 
-      // This should compile without type assertion
-      const validIcon: IconComponent = () =>
-        ({
-          type: 'div',
-          props: {},
-        }) as JSXElement;
-
+      const validIcon: IconComponent = HeroDownload;
       expect(typeof validIcon).toBe('function');
     });
 
     it('실제 Icon 컴포넌트는 IconComponent 타입과 호환되어야 한다', async () => {
       // Dynamic import test
-      const { HeroDownload } = await import(
-        '../../../src/shared/components/ui/Icon/hero/HeroDownload'
-      );
+      const { HeroDownload } = await import('@/shared/components/ui/Icon/hero/HeroDownload');
 
       // Type assertion should not be needed
       type IconComponent = (props?: Record<string, unknown>) => JSXElement;
@@ -42,9 +35,7 @@ describe('Phase 98: IconComponent 타입 안전성', () => {
   describe('dynamicImport 타입 안전성', () => {
     it('icon import는 타입 단언 없이 IconComponent로 할당 가능해야 한다', async () => {
       // Test 'Download' icon
-      const downloadModule = await import(
-        '../../../src/shared/components/ui/Icon/hero/HeroDownload'
-      );
+      const downloadModule = await import('@/shared/components/ui/Icon/hero/HeroDownload');
 
       // This should compile without 'as unknown as IconComponent'
       type IconComponent = (props?: Record<string, unknown>) => JSXElement;
@@ -58,7 +49,7 @@ describe('Phase 98: IconComponent 타입 안전성', () => {
 
       // Simulate dynamicImport pattern
       const loadIcon = (): Promise<IconComponent> =>
-        import('../../../src/shared/components/ui/Icon/hero/HeroSettings').then(
+        import('@/shared/components/ui/Icon/hero/HeroSettings').then(
           m => m.HeroSettings // ❌ RED: 현재 코드에서는 'as unknown as' 필요
         );
 
@@ -74,7 +65,7 @@ describe('Phase 98: IconComponent 타입 안전성', () => {
 
     beforeEach(async () => {
       const { getIconRegistry: importedGetter } = await import(
-        '../../../src/shared/components/ui/Icon/icon-registry'
+        '@/shared/components/ui/Icon/icon-registry'
       );
       getIconRegistry = importedGetter;
     });

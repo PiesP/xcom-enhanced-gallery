@@ -8,7 +8,7 @@ import {
   shouldExecuteVideoControlKey,
   shouldExecutePlayPauseKey,
   resetKeyboardDebounceState,
-} from '../../../../src/shared/utils/keyboard-debounce';
+} from '@/shared/utils/keyboard-debounce';
 
 describe('Keyboard Debounce', () => {
   beforeEach(() => {

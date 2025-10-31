@@ -4,11 +4,11 @@
  * 공통 BaseResult 형태({ status: 'success'|'partial'|'error'|'cancelled'; failures?:[]; error?: string })를 노출
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
-import { mediaService } from '../../../../src/shared/services/media-service';
-import { SettingsService } from '../../../../src/features/settings/services/settings-service';
-import { serviceManager } from '../../../../src/shared/services/service-manager';
-import { getBulkDownloadService } from '../../../../src/shared/services/service-factories';
+import { BulkDownloadService } from '@/shared/services/bulk-download-service';
+import { mediaService } from '@/shared/services/media-service';
+import { SettingsService } from '@/features/settings/services/settings-service';
+import { serviceManager } from '@/shared/services/service-manager';
+import { getBulkDownloadService } from '@/shared/services/service-factories';
 
 describe('RED: 공통 Result 패턴 통일', () => {
   beforeEach(() => {

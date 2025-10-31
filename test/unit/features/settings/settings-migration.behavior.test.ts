@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { migrateSettings } from '@/features/settings/services/settings-migration';
-import { DEFAULT_SETTINGS } from '@/features/settings/types/settings.types';
+import { DEFAULT_SETTINGS } from '@/constants';
 
 function stripVolatile(s: any) {
   const { lastModified, ...rest } = s;

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { render } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import type { ThemeOption, LanguageOption } from '@shared/components/ui/Settings/SettingsControls';
 import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
 import styles from '@shared/components/ui/Settings/SettingsControls.module.css';
@@ -24,6 +24,7 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   ): void {
     const { theme = 'auto', language = 'auto' } = overrides ?? {};
 
+    const { render } = getSolid();
     dispose = render(
       () => (
         <SettingsControls

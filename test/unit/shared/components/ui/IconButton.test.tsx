@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen, h } from '@test/utils/testing-library';
-import { IconButton } from '../../../../../src/shared/components/ui/Button/IconButton';
+import { IconButton } from '@/shared/components/ui/Button/IconButton';
 
 describe('IconButton', () => {
   it('renders an icon-only button with required aria-label', () => {

@@ -15,7 +15,7 @@ import {
   getErrorMessage,
   isRetryableError,
   type StandardError,
-} from '../../../src/shared/utils/error-handling';
+} from '@/shared/utils/error-handling';
 
 describe('Phase A5.4 Step 3 - Integrated Error Handling', () => {
   describe('Network Error Scenarios', () => {

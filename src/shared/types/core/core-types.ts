@@ -377,6 +377,8 @@ export interface AppConfig {
   autoStart: boolean;
   /** 성능 모니터링 활성화 여부 */
   performanceMonitoring?: boolean;
+  /** 윈도우 load 이후에 갤러리 렌더링을 지연할지 여부 (기본 true, 테스트 모드 제외) */
+  renderAfterLoad?: boolean;
 }
 
 /**
@@ -603,12 +605,18 @@ export function isFailure<T, E>(result: Result<T, E>): result is { success: fals
  * Result 체이닝 (flatMap)
  */
 export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {
-  return result.success ? fn(result.data) : result;
+  if (!result.success) {
+    return failure<E>((result as { success: false; error: E }).error) as Result<U, E>;
+  }
+  return fn(result.data);
 }
 
 /**
  * Result 매핑 (map)
  */
 export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
-  return result.success ? success(fn(result.data)) : result;
+  if (!result.success) {
+    return failure<E>((result as { success: false; error: E }).error) as Result<U, E>;
+  }
+  return success(fn(result.data));
 }

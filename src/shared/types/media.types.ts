@@ -38,7 +38,7 @@ export interface MediaInfo {
   url: string;
   originalUrl?: string | undefined;
   type: 'image' | 'video' | 'gif';
-  filename: string;
+  filename?: string;
   fileSize?: number;
   width?: number;
   height?: number;
@@ -442,6 +442,7 @@ export type MediaPageType =
   | 'videoDetail'
   | 'mediaGrid'
   | 'mediaTimeline'
+  | 'timeline'
   | 'unknown';
 
 /**

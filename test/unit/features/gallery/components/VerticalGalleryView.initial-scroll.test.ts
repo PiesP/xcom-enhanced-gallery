@@ -20,12 +20,8 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createRoot } from 'solid-js';
-import type { MediaInfo } from '../../../../../src/shared/types';
-import {
-  galleryState,
-  openGallery,
-  closeGallery,
-} from '../../../../../src/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types';
+import { galleryState, openGallery, closeGallery } from '@/shared/state/signals/gallery.signals';
 
 describe('Phase 279: 갤러리 최초 기동 시 자동 스크롤', () => {
   let dispose: (() => void) | null = null;

@@ -7,9 +7,9 @@
  * - absolute positioning을 통한 레이아웃 안정성 확보
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, h, cleanup } from '../../../test/utils/testing-library';
-import { Toolbar } from '../../../src/shared/components/ui/Toolbar/Toolbar';
-import type { ToolbarProps } from '../../../src/shared/components/ui/Toolbar/Toolbar.types';
+import { render, h, cleanup } from '@test/utils/testing-library';
+import { Toolbar } from '@/shared/components/ui/Toolbar/Toolbar';
+import type { ToolbarProps } from '@/shared/components/ui/Toolbar/Toolbar.types';
 
 describe('Toolbar Layout Stability (Phase 49)', () => {
   beforeEach(() => {

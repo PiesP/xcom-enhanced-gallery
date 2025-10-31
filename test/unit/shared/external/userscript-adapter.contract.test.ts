@@ -35,9 +35,7 @@ describe('Userscript Adapter – 경계 가드', () => {
 
   it('GM_* 미존재 환경에서 안전한 기본 속성을 제공한다', async () => {
     // Dynamic import after GM_* reset
-    const { default: getUserscript } = await import(
-      '../../../../src/shared/external/userscript/adapter'
-    );
+    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     expect(api.hasGM).toBe(false);
     expect(['unknown', 'tampermonkey', 'greasemonkey', 'violentmonkey']).toContain(api.manager);
@@ -61,9 +59,7 @@ describe('Userscript Adapter – 경계 가드', () => {
     const revokeSpy = vi.spyOn(globalThis.URL, 'revokeObjectURL');
     const createObjSpy = vi.spyOn(globalThis.URL, 'createObjectURL').mockReturnValue(objectUrl);
 
-    const { default: getUserscript } = await import(
-      '../../../../src/shared/external/userscript/adapter'
-    );
+    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     await expect(api.download('https://example.com/foo.bin', 'foo.bin')).resolves.toBeUndefined();
 
@@ -82,9 +78,7 @@ describe('Userscript Adapter – 경계 가드', () => {
     };
     (globalThis as unknown as Record<string, unknown>).GM_download = gmDownloadMock;
 
-    const { default: getUserscript } = await import(
-      '../../../../src/shared/external/userscript/adapter'
-    );
+    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     await expect(api.download('https://example.com/img.jpg', 'img.jpg')).resolves.toBeUndefined();
     expect(gmDownloadMock).toHaveBeenCalledWith('https://example.com/img.jpg', 'img.jpg');
@@ -118,9 +112,7 @@ describe('Userscript Adapter – 경계 가드', () => {
         })
     ) as any;
 
-    const { default: getUserscript } = await import(
-      '../../../../src/shared/external/userscript/adapter'
-    );
+    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     const onload = vi.fn();
     const onerror = vi.fn();
@@ -157,9 +149,7 @@ describe('Userscript Adapter – 경계 가드', () => {
     (globalThis as unknown as Record<string, unknown>).GM_xmlhttpRequest =
       gmXhrMock as unknown as typeof globalThis.GM_xmlhttpRequest;
 
-    const { default: getUserscript } = await import(
-      '../../../../src/shared/external/userscript/adapter'
-    );
+    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     const handle = api.xhr({ url: 'https://example.com/x', method: 'HEAD' } as never);
     expect(handle).toBeDefined();

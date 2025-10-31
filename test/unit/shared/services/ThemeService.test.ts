@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { ThemeService } from '../../../../src/shared/services/theme-service';
+import { ThemeService } from '@/shared/services/theme-service';
 import { InMemoryStorageAdapter } from '../../../__mocks__/in-memory-storage-adapter';
 
 describe('ThemeService Extended', () => {

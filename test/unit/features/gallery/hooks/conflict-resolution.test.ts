@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getSolid } from '../../../../../src/shared/external/vendors';
-import { globalTimerManager } from '../../../../../src/shared/utils/timer-management';
-import { logger } from '../../../../../src/shared/logging/logger';
+import { getSolid } from '@/shared/external/vendors';
+import { globalTimerManager } from '@/shared/utils/timer-management';
+import { logger } from '@/shared/logging/logger';
 
 // Mock 설정
-vi.mock('../../../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('../../../../../src/shared/logging/logger', () => ({
   },
 }));
 
-vi.mock('../../../../../src/shared/utils/timer-management', () => ({
+vi.mock('@/shared/utils/timer-management', () => ({
   globalTimerManager: {
     setTimeout: vi.fn((cb, ms) => {
       // 동기 실행으로 테스트 빠르게 진행
@@ -50,11 +50,11 @@ describe('Auto-Focus vs Auto-Advance Conflict Resolution', () => {
         'utf-8'
       );
 
-      // Step 1 주석 확인
-      expect(content).toContain('Step 1: 네비게이션 발생 시 pending auto-focus 타이머 즉시 취소');
+      // navigate:complete 이벤트 핸들러가 있는지 확인
+      expect(content).toContain("galleryIndexEvents.on('navigate:complete'");
 
-      // clearAutoFocusTimer() 호출 확인
-      expect(content).toContain('clearAutoFocusTimer();');
+      // clearAutoFocusTimer() 호출 확인 (applicator 서비스 사용)
+      expect(content).toContain('applicator.clearAutoFocusTimer(focusTimerManager)');
     });
 
     it('✅ Step 1 검증: navigate:complete에서 clearAutoFocusTimer 호출', () => {
@@ -76,11 +76,11 @@ describe('Auto-Focus vs Auto-Advance Conflict Resolution', () => {
       // setManualFocus 함수 정의 확인
       expect(content).toContain('const setManualFocus = (index: number | null) => {');
 
-      // export 확인
-      expect(content).toContain('setManualFocus, // ✅ Step 2');
+      // return 객체에 setManualFocus가 포함되는지 확인
+      expect(content).toContain('setManualFocus');
 
-      // auto-focus 타이머 취소 확인
-      expect(content).toContain('clearAutoFocusTimer();');
+      // auto-focus 타이머 취소 확인 (applicator 서비스 사용)
+      expect(content).toContain('applicator.clearAutoFocusTimer(focusTimerManager)');
     });
 
     it('✅ Step 2 검증: setManualFocus에서 clearAutoFocusTimer 호출', () => {

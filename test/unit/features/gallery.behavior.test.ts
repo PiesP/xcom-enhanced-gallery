@@ -4,7 +4,14 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { createMockTweet } from '../../__mocks__/twitter-dom.mock';
+
+const createMockTweet = () => {
+  const article = document.createElement('article');
+  const image = document.createElement('img');
+  image.src = 'https://pbs.twimg.com/media/test.jpg';
+  article.appendChild(image);
+  return article;
+};
 
 describe('Gallery Feature Behavior', () => {
   beforeEach(() => {

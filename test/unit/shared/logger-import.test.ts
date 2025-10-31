@@ -7,7 +7,7 @@ describe('Logger Import Issue Debug', () => {
   it('should import logger correctly from @/utils', async () => {
     // 직접 logger import 테스트
     try {
-      const { logger } = await import('../../../src/utils/index');
+      const { logger } = await import('@/utils/index');
 
       expect(logger).toBeDefined();
       expect(typeof logger.error).toBe('function');
@@ -26,7 +26,7 @@ describe('Logger Import Issue Debug', () => {
 
   it('should import logger directly from shared/logging', async () => {
     try {
-      const { logger } = await import('../../../src/shared/logging/logger');
+      const { logger } = await import('@/shared/logging/logger');
 
       expect(logger).toBeDefined();
       expect(typeof logger.error).toBe('function');

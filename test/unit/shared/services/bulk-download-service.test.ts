@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service.js';
+import { BulkDownloadService } from '@/shared/services/bulk-download-service.js';
 import type {
   BulkDownloadOptions,
   DownloadResult,
   SingleDownloadResult,
-} from '../../../../src/shared/services/bulk-download-service.js';
-import type { MediaInfo } from '../../../../src/shared/types/media.types.js';
+} from '@/shared/services/bulk-download-service.js';
+import type { MediaInfo } from '@/shared/types/media.types.js';
 
 describe('BulkDownloadService', () => {
   let service: BulkDownloadService;

@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { computePreloadIndices } from '../../../src/shared/utils/performance/index';
+import { computePreloadIndices } from '@/shared/utils/performance/index';
 
 describe('computePreloadIndices', () => {
   it('returns empty when total is 0', () => {

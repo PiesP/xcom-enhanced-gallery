@@ -14,9 +14,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { getSolid, render, For, Show } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 
-const { createSignal, createEffect, createMemo, onCleanup, createRoot, batch } = getSolid();
+const { createSignal, createEffect, createMemo, onCleanup, createRoot, batch, render, For, Show } =
+  getSolid();
 
 describe('Solid.js Advanced Reactivity in Browser', () => {
   let container: HTMLDivElement;

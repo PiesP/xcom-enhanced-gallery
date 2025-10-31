@@ -9,7 +9,7 @@ import {
   type ToastState,
   type ToastAction,
   type ToastItem,
-} from '../../../src/shared/state/toast-state-machine';
+} from '@/shared/state/machines/toast-state-machine';
 
 describe('ToastStateMachine', () => {
   describe('createInitialState', () => {

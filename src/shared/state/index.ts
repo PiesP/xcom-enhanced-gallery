@@ -1,16 +1,34 @@
+export {
+  gallerySignals,
+  openGallery,
+  closeGallery,
+  navigateToItem,
+  navigatePrevious,
+  navigateNext,
+  setFocusedIndex,
+  setLoading,
+  setError,
+  setViewMode,
+  // selectors
+  getCurrentMediaItem,
+  getCurrentIndex,
+  getMediaItems,
+  getMediaItemsCount,
+  hasPreviousMedia,
+  hasNextMedia,
+  isGalleryOpen,
+  isLoading,
+  getError,
+  getViewMode,
+  // navigation helpers
+  galleryIndexEvents,
+  getNavigationState,
+  getLastNavigationSource,
+} from './signals/gallery.signals';
+export type { NavigationSource } from './signals/gallery.signals';
+export { toolbarState, setSettingsExpanded } from './signals/toolbar.signals';
+export { downloadState } from './signals/download.signals';
 /**
  * @fileoverview State Layer Exports
- * @description 상태 관리 관련 exports
+ * @description 상태 관리 관련 exports (명시적 내보내기만 허용)
  */
-
-// 신호 기반 상태 (Signals)
-export * from './signals';
-
-// 상태 머신 (State Machines)
-export * from './machines';
-
-// 포커스 추적 모듈 (Focus Tracking)
-export * from './focus';
-
-// 아이템 스크롤 모듈 (Item Scroll)
-export * from './item-scroll';

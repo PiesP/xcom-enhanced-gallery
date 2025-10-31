@@ -32,6 +32,8 @@ export interface AppConfig {
   readonly debug: boolean;
   readonly autoStart: boolean;
   readonly performanceMonitoring?: boolean;
+  /** 윈도우 load 이후에 갤러리 렌더링을 지연할지 여부 (기본 true, 테스트 모드 제외) */
+  readonly renderAfterLoad?: boolean;
 }
 
 /**

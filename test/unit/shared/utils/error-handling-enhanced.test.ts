@@ -18,7 +18,7 @@ import {
   type StandardError,
   type ErrorContext,
   type ErrorFactoryContext,
-} from '../../../src/shared/utils/error-handling';
+} from '@/shared/utils/error-handling';
 
 describe('Error Handling - Phase A5.4 Enhancement', () => {
   describe('ErrorSeverity enum', () => {

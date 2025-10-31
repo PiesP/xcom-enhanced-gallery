@@ -6,3 +6,4 @@
  */
 
 export * from './safe-browser';
+export * from './wait-for-load';

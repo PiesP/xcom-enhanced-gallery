@@ -7,8 +7,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createSelectorRegistry } from '../../../../src/shared/dom/selector-registry';
-import { STABLE_SELECTORS } from '../../../../src/constants';
+import { createSelectorRegistry } from '@/shared/dom/selector-registry';
+import { STABLE_SELECTORS } from '@/constants';
 
 describe('SelectorRegistry', () => {
   beforeEach(() => {
