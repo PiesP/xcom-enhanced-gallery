@@ -1,6 +1,6 @@
 # TDD 리팩토링 완료 기록
 
-**최종 업데이트**: 2025-10-30 | **프로젝트 상태**: ✅ 완료 (Phase 284 전체)
+**최종 업데이트**: 2025-10-31 | **프로젝트 상태**: ✅ 완료 (Phase 286 전체)
 
 **목적**: 완료된 Phase의 요약 기록 및 최종 성과 정리
 
@@ -21,7 +21,210 @@
 
 ---
 
-## 🎯 최근 완료 Phase (284)
+## 🎯 최근 완료 Phase (286)
+
+### Phase 286: 개발 전용 Flow Tracer (동작 추적 로깅) ✅ 전체 완료
+
+**완료 일시**: 2025-10-31
+
+**상태**: ✅ 전체 완료
+
+**배경**:
+
+- 오류가 발생하는 “정확한 타이밍”을 빠르게 파악하기 위해 동작을 따라가는 로그가 필요
+- 개발 빌드에서만 활성화되고, 프로덕션 번들에서는 완전히 제거되어야 함
+- PC 전용 입력 이벤트 정책을 준수해야 함 (touch/pointer 금지)
+
+**작업 내용**:
+
+1. 개발 전용 유틸 추가: `src/shared/logging/flow-tracer.ts`
+
+- 공개 API: `startFlowTrace(options?)`, `stopFlowTrace()`, `tracePoint(label, data?)`, `traceAsync(label, fn)`, `traceStatus()`
+- 이벤트 추적: `click`, `contextmenu`, `mousedown`, `mouseup`, `keydown`, `keyup`, `wheel`(스로틀)
+- jsdom 감지로 테스트 환경 자동 회피, 브라우저 전역 노출: `window.__XEG_TRACE_*`
+- 조건부 export 패턴: `let impl` → dev에서만 구현 대입 → `export const`로 노출
+
+1. 부트스트랩 계측: `src/main.ts`
+
+- `app:start/ready/error`, `infra:init`, `critical:init`, `baseservice:*`, `noncritical:*`, `devtools:ready`, `gallery:init:*`, `features:register:*` 등 주요 포인트에 `tracePoint/traceAsync` 삽입
+- dev에서 자동 `startFlowTrace()` → finally에서 안전한 `stopFlowTrace()`
+
+1. 배럴 및 노출: `src/shared/logging/index.ts`에서 재노출
+
+**빌드/테스트 검증**:
+
+- TypeScript/ESLint/Stylelint/markdownlint: 0 에러 ✅
+- Browser + E2E 스모크 + 접근성: 모두 GREEN ✅
+- 개발 빌드 동작 확인: dev 번들에서 `__XEG_TRACE_*`와 `tracePoint` 존재 ✅
+- 프로덕션 빌드 제로 오버헤드 확인: `grep -n "__XEG_TRACE_\|tracePoint\|flow-tracer" dist/xcom-enhanced-gallery.user.js` → 일치 0 ✅
+
+**결과**:
+
+- 개발 빌드에서 동작 타임라인과 입력 이벤트를 시간축으로 쉽게 파악 가능
+- 프로덕션 번들에 코드가 포함되지 않아 성능/크기 영향 0
+- PC 전용 이벤트 정책, 디자인 토큰 규칙, vendor getter 규칙 위반 없음
+
+**브라우저 도구**:
+
+- `__XEG_TRACE_START(options?)` / `__XEG_TRACE_STOP()`
+- `__XEG_TRACE_POINT(label, data?)`
+- `__XEG_TRACE_STATUS()`
+
+**교훈**:
+
+1. 조건부 export 패턴은 dev-only 유틸 도입에 재사용 가능성이 높음
+2. 테스트 환경(jsdom) 감지로 자동 시작을 차단해 flakiness를 예방
+3. 프로덕션 제로 오버헤드는 실제 산출물 grep으로 검증해야 확실함
+
+---
+
+### Phase 285: 개발 전용 고급 로깅 시스템 ✅ 전체 완료
+
+**완료 일시**: 2025-10-31
+
+**상태**: ✅ **Step 1-4 전체 완료**
+
+**배경**:
+
+- 1인 개발 프로젝트에서 디버깅 효율성 향상 필요
+- 개발 빌드에만 포함되는 프로파일링 및 시각화 도구 추가
+- `__DEV__` 플래그 기반 조건부 컴파일로 프로덕션 제로 오버헤드 보장
+- Tree-shaking으로 프로덕션 빌드에서 완전 제거
+
+**작업 내용**:
+
+**Step 1 - 메모리 프로파일링 기능**:
+
+```typescript
+// src/shared/logging/logger.ts
+let measureMemoryImpl: ((label: string) => MemorySnapshot | null) | undefined;
+
+if (isDev) {
+  measureMemoryImpl = (label: string): MemorySnapshot | null => {
+    if (!performance.memory) return null;
+
+    const { usedJSHeapSize, totalJSHeapSize, jsHeapSizeLimit } = performance.memory;
+    const snapshot: MemorySnapshot = {
+      label,
+      timestamp: Date.now(),
+      usedJSHeapSize,
+      totalJSHeapSize,
+      jsHeapSizeLimit,
+      heapUsagePercent: (usedJSHeapSize / totalJSHeapSize) * 100
+    };
+
+    logger.debug(`Memory snapshot [${label}]`, snapshot);
+    return snapshot;
+  };
+
+  window.__XEG_MEASURE_MEMORY = measureMemoryImpl;
+}
+
+export const measureMemory = measureMemoryImpl;
+```
+
+**Step 2 - 로그 그룹화 기능**:
+
+```typescript
+let logGroupImpl: ((label: string, fn: () => void, collapsed?: boolean) => void) | undefined;
+
+if (isDev) {
+  logGroupImpl = (label: string, fn: () => void, collapsed = false): void => {
+    // eslint-disable-next-line no-console
+    collapsed ? console.groupCollapsed(label) : console.group(label);
+    fn();
+    // eslint-disable-next-line no-console
+    console.groupEnd();
+  };
+}
+
+export const logGroup = logGroupImpl;
+```
+
+**Step 3 - 테이블 출력 기능**:
+
+```typescript
+let logTableImpl: ((data: Record<string, unknown>[] | Record<string, unknown>) => void) | undefined;
+
+if (isDev) {
+  logTableImpl = (data: Record<string, unknown>[] | Record<string, unknown>): void => {
+    // eslint-disable-next-line no-console
+    console.table(data);
+  };
+}
+
+export const logTable = logTableImpl;
+```
+
+**Step 4 - 런타임 로그 레벨 변경**:
+
+```typescript
+let setLogLevelImpl: ((level: LogLevel) => void) | undefined;
+let getLogLevelImpl: (() => LogLevel) | undefined;
+
+if (isDev) {
+  setLogLevelImpl = (level: LogLevel): void => {
+    const globalStore = getGlobalStore();
+    setLogger(globalStore, (prev) => ({ ...prev, level }));
+    logger.debug('Log level changed', { oldLevel: getLogLevel(), newLevel: level });
+  };
+
+  getLogLevelImpl = (): LogLevel => {
+    const globalStore = getGlobalStore();
+    return globalStore().logger.level;
+  };
+
+  window.__XEG_SET_LOG_LEVEL = setLogLevelImpl;
+  window.__XEG_GET_LOG_LEVEL = getLogLevelImpl;
+}
+
+export const setLogLevel = setLogLevelImpl;
+export const getLogLevel = getLogLevelImpl;
+```
+
+**빌드 검증**:
+
+- TypeScript: 0 에러 ✅
+- ESLint: 0 에러 (console API에 eslint-disable 주석 추가) ✅
+- 단위 테스트: 111/111 통과 ✅
+- E2E 테스트: 86/86 통과 ✅
+- 개발 빌드: 792.49 KB (`measureMemory` 4회 출현) ✅
+- 프로덕션 빌드: 344.54 KB (gzip: 93.16 KB, `measureMemory` 0회 출현) ✅
+
+**Tree-shaking 검증**:
+
+```bash
+# 프로덕션: 완전 제거
+grep -c "measureMemory" dist/xcom-enhanced-gallery.user.js
+# 결과: 0 ✅
+
+# 개발: 포함 확인
+grep -c "measureMemory" dist/xcom-enhanced-gallery.dev.user.js
+# 결과: 4 ✅
+```
+
+**결과**:
+
+- ✅ 메모리 프로파일링: `measureMemory()` - performance.memory 스냅샷
+- ✅ 로그 그룹화: `logGroup()` - console.group/groupCollapsed 래퍼
+- ✅ 테이블 출력: `logTable()` - console.table 래퍼
+- ✅ 런타임 레벨 변경: `setLogLevel()`, `getLogLevel()` - 실시간 로그 레벨 조정
+- ✅ 브라우저 노출: `window.__XEG_SET_LOG_LEVEL`, `window.__XEG_GET_LOG_LEVEL`, `window.__XEG_MEASURE_MEMORY`
+- ✅ 조건부 export 패턴 확립: `let impl: Type | undefined` → `if (isDev) { impl = ... }` → `export const = impl`
+- ✅ 프로덕션 제로 오버헤드: Tree-shaking으로 개발 전용 코드 완전 제거
+- ✅ 번들 크기: 344.54 KB (변화 없음, Phase 284와 동일)
+- ✅ 테스트: 모두 GREEN (111/111 unit + 86/86 E2E)
+
+**교훈**:
+
+1. **조건부 export 패턴**: TypeScript에서 `if` 블록 내 `export function` 불가 → 변수 기반 패턴 사용
+2. **ESLint 예외**: 개발 전용 console API는 `eslint-disable-next-line no-console` 주석 필요
+3. **Tree-shaking 검증**: `grep -c` 명령으로 빌드 산출물에서 코드 제거 확인
+4. **브라우저 도구 노출**: `window.__XEG_*` 패턴으로 개발자가 콘솔에서 직접 사용 가능
+
+---
+
+## 🎯 이전 완료 Phase (284)
 
 ### Phase 284: ComponentStandards 마이그레이션 ✅ 전체 완료
 

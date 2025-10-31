@@ -6,7 +6,7 @@
  * @version 4.0.0
  */
 
-import { logger } from '@/shared/logging';
+import { logger, tracePoint, traceAsync, startFlowTrace, stopFlowTrace } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import type { AppConfig } from '@/types';
@@ -51,8 +51,10 @@ function createAppConfig(): AppConfig {
  */
 async function initializeInfrastructure(): Promise<void> {
   try {
+    if (__DEV__ && tracePoint) tracePoint('infra:init:start');
     await initializeEnvironment();
     logger.debug('✅ Vendor 라이브러리 초기화 완료');
+    if (__DEV__ && tracePoint) tracePoint('infra:init:done');
   } catch (error) {
     logger.error('❌ 인프라 초기화 실패:', error);
     throw error;
@@ -65,6 +67,7 @@ async function initializeInfrastructure(): Promise<void> {
 async function initializeCriticalSystems(): Promise<void> {
   try {
     logger.info('Critical Path 초기화 시작');
+    if (__DEV__ && tracePoint) tracePoint('critical:init:start');
 
     // Core 서비스 등록 (동적 import)
     const { registerCoreServices } = await import('@shared/services/core-services');
@@ -75,6 +78,7 @@ async function initializeCriticalSystems(): Promise<void> {
     warmupCriticalServices();
 
     logger.info('✅ Critical Path 초기화 완료');
+    if (__DEV__ && tracePoint) tracePoint('critical:init:done');
   } catch (error) {
     logger.error('❌ Critical Path 초기화 실패:', error);
     throw error;
@@ -88,12 +92,15 @@ async function initializeCriticalSystems(): Promise<void> {
 async function initializeCoreBaseServices(): Promise<void> {
   try {
     logger.debug('🔄 BaseService 레지스트리 등록 중...');
+    if (__DEV__ && tracePoint) tracePoint('baseservice:register:start');
     registerCoreBaseServices();
 
     logger.debug('🔄 BaseService 초기화 중...');
+    if (__DEV__ && tracePoint) tracePoint('baseservice:init:start');
     await initializeBaseServices();
 
     logger.debug('✅ BaseService 초기화 완료');
+    if (__DEV__ && tracePoint) tracePoint('baseservice:init:done');
   } catch (error) {
     logger.warn('BaseService 초기화 실패 (계속 진행):', error);
   }
@@ -112,10 +119,12 @@ function initializeNonCriticalSystems(): void {
   globalTimerManager.setTimeout(async () => {
     try {
       logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
+      if (__DEV__ && tracePoint) tracePoint('noncritical:init:start');
 
       warmupNonCriticalServices();
 
       logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
+      if (__DEV__ && tracePoint) tracePoint('noncritical:init:done');
     } catch (error) {
       logger.warn('Non-Critical 시스템 초기화 중 오류 (앱 동작에는 영향 없음):', error);
     }
@@ -130,6 +139,7 @@ function setupGlobalEventHandlers(): void {
     cleanup().catch(error => logger.error('페이지 언로드 정리 중 오류:', error));
   });
   cleanupHandlers.push(unregister);
+  if (__DEV__ && tracePoint) tracePoint('global:events:registered');
 }
 
 /**
@@ -257,6 +267,7 @@ async function initializeDevTools(): Promise<void> {
     await ServiceDiagnostics.diagnoseServiceManager();
 
     logger.info('🛠️ 개발 도구 활성화됨');
+    if (__DEV__ && tracePoint) tracePoint('devtools:ready');
   } catch (error) {
     logger.warn('개발 도구 로드 실패:', error);
   }
@@ -273,6 +284,7 @@ async function initializeGalleryApp(): Promise<void> {
 
   try {
     logger.info('🎨 갤러리 앱 지연 초기화 시작');
+    if (__DEV__ && tracePoint) tracePoint('gallery:init:start');
 
     // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
     const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
@@ -285,6 +297,7 @@ async function initializeGalleryApp(): Promise<void> {
     // 갤러리 앱 초기화
     await (galleryApp as { initialize(): Promise<void> }).initialize();
     logger.info('✅ 갤러리 앱 초기화 완료');
+    if (__DEV__ && tracePoint) tracePoint('gallery:init:done');
 
     // 개발 환경에서만 디버깅용 전역 접근 허용 (R1)
     if (import.meta.env.DEV) {
@@ -296,6 +309,7 @@ async function initializeGalleryApp(): Promise<void> {
     }
   } catch (error) {
     logger.error('❌ 갤러리 앱 초기화 실패:', error);
+    if (__DEV__ && tracePoint) tracePoint('gallery:init:error', { error: String(error) });
     throw error;
   }
 }
@@ -329,30 +343,44 @@ async function startApplication(): Promise<void> {
 
   startPromise = (async () => {
     logger.info('🚀 X.com Enhanced Gallery 시작 중...');
+    if (__DEV__ && startFlowTrace) startFlowTrace();
+    if (__DEV__ && tracePoint) tracePoint('app:start');
 
     const startTime = performance.now();
 
     // 전역 스타일 로드 (사이드이펙트 import 방지)
-    await import('./styles/globals');
+    await (traceAsync
+      ? traceAsync('styles:load', () => import('./styles/globals'))
+      : import('./styles/globals'));
 
     // 개발 도구 초기화 (개발 환경만; 테스트 모드에서는 제외하여 누수 스캔 간섭 방지)
     if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
-      await initializeDevTools();
+      await (traceAsync
+        ? traceAsync('devtools:init', () => initializeDevTools())
+        : initializeDevTools());
     } else if (import.meta.env.DEV) {
       logger.debug('DevTools initialization skipped (test mode)');
     }
 
     // 1단계: 기본 인프라 초기화
-    await initializeInfrastructure();
+    await (traceAsync
+      ? traceAsync('infra:init', () => initializeInfrastructure())
+      : initializeInfrastructure());
 
     // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
-    await initializeCriticalSystems();
+    await (traceAsync
+      ? traceAsync('critical:init', () => initializeCriticalSystems())
+      : initializeCriticalSystems());
 
     // Phase A5.2: BaseService 생명주기 중앙화 (이전: initializeLanguageService)
-    await initializeCoreBaseServices();
+    await (traceAsync
+      ? traceAsync('baseservice:init', () => initializeCoreBaseServices())
+      : initializeCoreBaseServices());
 
     // 3단계: Feature Services 지연 등록
+    if (__DEV__ && tracePoint) tracePoint('features:register:start');
     await registerFeatureServicesLazy();
+    if (__DEV__ && tracePoint) tracePoint('features:register:done');
 
     // 4단계: 전역 이벤트 핸들러 설정
     setupGlobalEventHandlers();
@@ -361,7 +389,9 @@ async function startApplication(): Promise<void> {
     // 테스트 모드에서는 Preact의 전역 이벤트 위임 리스너가 등록되어
     // 누수 스캔 테스트(active EventTarget listeners)에 간섭할 수 있으므로 생략한다.
     if (import.meta.env.MODE !== 'test') {
-      await initializeGalleryImmediately();
+      await (traceAsync
+        ? traceAsync('gallery:immediate', () => initializeGalleryImmediately())
+        : initializeGalleryImmediately());
     } else {
       logger.debug('Gallery initialization skipped (test mode)');
     }
@@ -377,6 +407,7 @@ async function startApplication(): Promise<void> {
     logger.info('✅ 애플리케이션 초기화 완료', {
       startupTime: `${duration.toFixed(2)}ms`,
     });
+    if (__DEV__ && tracePoint) tracePoint('app:ready', { startupMs: duration.toFixed(2) });
 
     // 개발 환경에서 전역 접근 제공
     if (import.meta.env.DEV) {
@@ -392,6 +423,7 @@ async function startApplication(): Promise<void> {
   })()
     .catch(error => {
       logger.error('❌ 애플리케이션 초기화 실패:', error);
+      if (__DEV__ && tracePoint) tracePoint('app:error', { error: String(error) });
       // 에러 복구 시도
       // 전역 타이머 매니저를 통해 예약하여 cleanup 보장 (R4)
       globalTimerManager.setTimeout(() => {
@@ -404,6 +436,7 @@ async function startApplication(): Promise<void> {
     .finally(() => {
       // 다음 수동 호출을 위해 startPromise 해제(이미 시작된 경우 isStarted가 가드)
       startPromise = null;
+      if (__DEV__ && stopFlowTrace) stopFlowTrace();
     });
 
   return startPromise;

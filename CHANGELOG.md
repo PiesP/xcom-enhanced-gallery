@@ -6,6 +6,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+#### 개발 전용 고급 로깅 시스템 (Phase 285)
+
+- **메모리 프로파일링**: `measureMemory()` 함수 추가 - `performance.memory`
+  스냅샷
+- **로그 그룹화**: `logGroup()` 함수 추가 -
+  `console.group`/`console.groupCollapsed` 래퍼
+- **테이블 출력**: `logTable()` 함수 추가 - `console.table` 래퍼
+- **런타임 로그 레벨 변경**: `setLogLevel()`, `getLogLevel()` 함수 추가
+- **브라우저 개발 도구 노출**: `window.__XEG_SET_LOG_LEVEL`,
+  `window.__XEG_GET_LOG_LEVEL`, `window.__XEG_MEASURE_MEMORY`
+- **프로덕션 제로 오버헤드**: `__DEV__` 플래그 기반 조건부 컴파일,
+  Tree-shaking으로 프로덕션 빌드에서 완전 제거
+
+#### 개발 전용 Flow Tracer — 동작 추적 로깅 (Phase 286)
+
+- **Flow Tracer 유틸 추가**: `startFlowTrace(options?)`, `stopFlowTrace()`,
+  `tracePoint(label, data?)`, `traceAsync(label, fn)`, `traceStatus()`
+- **브라우저 개발 도구 노출**: `window.__XEG_TRACE_START/STOP/POINT/STATUS`
+- **부트스트랩 계측**: `src/main.ts` 전역에 주요 타임라인 포인트 삽입
+- **이벤트 추적(PC 전용)**: `click`, `contextmenu`, `mousedown`, `mouseup`,
+  `keydown`, `keyup`, `wheel`(스로틀)
+- **프로덕션 제로 오버헤드**: `__DEV__` + Tree-shaking으로 프로덕션 완전 제거
+
+### Performance
+
+- 개발 빌드: 792.49 KB (디버깅 도구 포함)
+- 프로덕션 빌드: 344.54 KB (gzip: 93.16 KB, 변화 없음)
+- Tree-shaking 검증: 프로덕션에서 개발 전용 코드 0바이트 오버헤드
+
 ## [0.4.1] - 2025-10-27
 
 ### 🚀 빌드 성능 및 안정성 개선

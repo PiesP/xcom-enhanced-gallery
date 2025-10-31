@@ -198,6 +198,17 @@ myLogger.error('Operation failed', { error });
 | warn  | 경고 (복구 가능) | 폴백 사용      |
 | error | 에러 (복구 불가) | API 호출 실패  |
 
+### 개발 전용 트레이싱(Flow Tracer) 정책
+
+> 목적: 문제의 "발생 타이밍"을 신속히 파악하기 위한 개발 전용 동작 추적. 프로덕션 번들에는 절대 포함되지 않아야 함.
+
+- 적용 범위: 개발 빌드(dev)에서만 활성화. 프로덕션(prod)에서는 Tree-shaking으로 완전 제거
+- 구현 규칙: `__DEV__` 조건부 분기 + 조건부 export 패턴(`let impl` → dev에서만 대입 → `export const`)
+- 이벤트 정책: PC 전용 이벤트만 추적(click, contextmenu, mousedown, mouseup, keydown, keyup, wheel[스로틀])
+- 테스트 간섭 방지: jsdom 환경에서는 자동 시작 금지(UA 체크/guard)
+- 브라우저 도구: `window.__XEG_TRACE_START/STOP/POINT/STATUS` (dev 전용 글로벌)
+- 사용 위치: 부트스트랩(`src/main.ts`) 및 주요 경계(app:init/ready, service init, feature mount 등) 포인트에 `tracePoint/traceAsync`
+
 ---
 
 ## 📂 파일 구조 규칙

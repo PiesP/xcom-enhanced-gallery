@@ -457,4 +457,218 @@ export function logError(
   }
 }
 
+// ============================================================================
+// Phase 285: 개발용 로깅 강화 (Development-only logging enhancements)
+// ============================================================================
+// 모든 기능은 __DEV__ 블록 내에서만 정의되며, 프로덕션 빌드에서 완전히 제거됩니다.
+
+/**
+ * Memory snapshot data structure
+ *
+ * @interface MemorySnapshot
+ * @public
+ */
+export interface MemorySnapshot {
+  /** Heap memory used in bytes */
+  heapUsed: number;
+  /** Total heap size in bytes */
+  heapTotal: number;
+  /** Heap size limit in bytes */
+  heapLimit: number;
+  /** Snapshot label */
+  label: string;
+  /** Timestamp when snapshot was taken */
+  timestamp: number;
+}
+
+// Internal implementations
+let measureMemoryImpl: ((label: string) => MemorySnapshot | null) | undefined;
+let logGroupImpl: ((label: string, fn: () => void, collapsed?: boolean) => void) | undefined;
+let logTableImpl: ((data: Record<string, unknown>[] | Record<string, unknown>) => void) | undefined;
+let setLogLevelImpl: ((level: LogLevel) => void) | undefined;
+let getLogLevelImpl: (() => LogLevel) | undefined;
+
+if (isDev) {
+  // Development-only implementations
+  let runtimeLogLevel: LogLevel = 'debug'; // Default to debug in development
+
+  measureMemoryImpl = (label: string): MemorySnapshot | null => {
+    if (
+      typeof performance !== 'undefined' &&
+      'memory' in performance &&
+      performance.memory !== null
+    ) {
+      const mem = performance.memory as {
+        usedJSHeapSize: number;
+        totalJSHeapSize: number;
+        jsHeapSizeLimit: number;
+      };
+
+      const snapshot: MemorySnapshot = {
+        heapUsed: mem.usedJSHeapSize,
+        heapTotal: mem.totalJSHeapSize,
+        heapLimit: mem.jsHeapSizeLimit,
+        label,
+        timestamp: Date.now(),
+      };
+
+      const formatBytes = (bytes: number): string => {
+        const mb = bytes / (1024 * 1024);
+        return `${mb.toFixed(2)} MB`;
+      };
+
+      logger.debug(
+        `Memory [${label}]: ${formatBytes(snapshot.heapUsed)} / ${formatBytes(snapshot.heapTotal)} (limit: ${formatBytes(snapshot.heapLimit)})`
+      );
+
+      return snapshot;
+    }
+
+    return null;
+  };
+
+  logGroupImpl = (label: string, fn: () => void, collapsed = false): void => {
+    // eslint-disable-next-line no-console
+    const method = collapsed ? console.groupCollapsed : console.group;
+    method(`${BASE_PREFIX} ${label}`);
+    try {
+      fn();
+    } finally {
+      // eslint-disable-next-line no-console
+      console.groupEnd();
+    }
+  };
+
+  logTableImpl = (data: Record<string, unknown>[] | Record<string, unknown>): void => {
+    // eslint-disable-next-line no-console
+    console.table(data);
+  };
+
+  setLogLevelImpl = (level: LogLevel): void => {
+    if (!LOG_LEVELS.includes(level)) {
+      logger.warn(`Invalid log level: ${level}. Valid levels:`, LOG_LEVELS);
+      return;
+    }
+
+    runtimeLogLevel = level;
+    logger.info(`Log level changed to: ${level}`);
+  };
+
+  getLogLevelImpl = (): LogLevel => {
+    return runtimeLogLevel;
+  };
+
+  // Expose to window for easy console access
+  if (typeof window !== 'undefined') {
+    interface WindowWithDevTools extends Window {
+      __XEG_SET_LOG_LEVEL?: typeof setLogLevelImpl;
+      __XEG_GET_LOG_LEVEL?: typeof getLogLevelImpl;
+      __XEG_MEASURE_MEMORY?: typeof measureMemoryImpl;
+    }
+
+    const win = window as WindowWithDevTools;
+    win.__XEG_SET_LOG_LEVEL = setLogLevelImpl;
+    win.__XEG_GET_LOG_LEVEL = getLogLevelImpl;
+    win.__XEG_MEASURE_MEMORY = measureMemoryImpl;
+
+    logger.debug(
+      'XEG Dev Tools available: window.__XEG_SET_LOG_LEVEL, window.__XEG_GET_LOG_LEVEL, window.__XEG_MEASURE_MEMORY'
+    );
+  }
+}
+
+// Public API exports (tree-shakable)
+/**
+ * Measures current memory usage and returns a snapshot
+ *
+ * Uses performance.memory API if available. Returns null if API is not supported.
+ * Automatically logs the heap usage in a human-readable format.
+ *
+ * **Development only** - Removed in production builds.
+ *
+ * @param {string} label - Identifier for this memory measurement
+ * @returns {MemorySnapshot | null} - Memory snapshot or null if unsupported
+ *
+ * @example
+ * const snapshot = measureMemory('before-render');
+ * // ... perform rendering
+ * const snapshot2 = measureMemory('after-render');
+ * // Calculate delta: snapshot2.heapUsed - snapshot.heapUsed
+ *
+ * @public
+ */
+export const measureMemory = measureMemoryImpl;
+
+/**
+ * Groups log messages with collapsible console group
+ *
+ * Automatically manages console.group()/groupEnd() lifecycle.
+ * Ensures groupEnd is called even if fn throws an error.
+ *
+ * **Development only** - Removed in production builds.
+ *
+ * @param {string} label - Group label
+ * @param {() => void} fn - Function containing logs to group
+ * @param {boolean} [collapsed=false] - Start group in collapsed state
+ *
+ * @example
+ * logGroup('Media Processing', () => {
+ *   logger.info('Step 1: Extract metadata');
+ *   logger.info('Step 2: Validate URLs');
+ *   logger.info('Step 3: Download');
+ * }, true); // collapsed by default
+ *
+ * @public
+ */
+export const logGroup = logGroupImpl;
+
+/**
+ * Logs structured data as a table in console
+ *
+ * Wrapper for console.table() with consistent formatting.
+ * Useful for inspecting arrays of objects or key-value pairs.
+ *
+ * **Development only** - Removed in production builds.
+ *
+ * @param {Record<string, unknown>[] | Record<string, unknown>} data - Data to display as table
+ *
+ * @example
+ * logTable([
+ *   { name: 'Image1', size: '1.2 MB', status: 'success' },
+ *   { name: 'Image2', size: '800 KB', status: 'pending' },
+ * ]);
+ *
+ * @public
+ */
+export const logTable = logTableImpl;
+
+/**
+ * Changes log level at runtime (development only)
+ *
+ * Allows dynamic adjustment of logging verbosity without page reload.
+ * Exposed globally via window.__XEG_SET_LOG_LEVEL for easy console access.
+ *
+ * **Development only** - Removed in production builds.
+ *
+ * @param {LogLevel} level - New log level (debug, info, warn, error)
+ *
+ * @example
+ * // In browser console:
+ * window.__XEG_SET_LOG_LEVEL('debug'); // Enable all logs
+ * window.__XEG_SET_LOG_LEVEL('error'); // Only errors
+ *
+ * @public
+ */
+export const setLogLevel = setLogLevelImpl;
+
+/**
+ * Gets current runtime log level
+ *
+ * **Development only** - Removed in production builds.
+ *
+ * @returns {LogLevel} - Current log level
+ * @public
+ */
+export const getLogLevel = getLogLevelImpl;
+
 export default logger;

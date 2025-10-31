@@ -1,22 +1,39 @@
 # TDD 리팩토링 계획
 
-**마지막 업데이트**: 2025-10-30 | **상태**: ✅ 코드 현대화 완료 (Phase 281) |
+**마지막 업데이트**: 2025-10-31 | **상태**: ✅ Phase 286 완료 |
 **[완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md)**
 
 ---
 
 ## 📊 프로젝트 현황
 
-### ✨ 최근 완성 (Phase 281)
+### ✨ 최근 완성 (Phase 286)
 
-**signal-optimization.ts React 패턴 제거**: ✅ **완료**
+**개발 전용 Flow Tracer (동작 추적 로깅)**: ✅ 완료
 
-- `useRef` → `let` 변수로 변경 (Solid.js idiomatic)
-- 불필요한 `.current` 접근 7곳 제거
-- 34/34 signal-optimization 테스트 통과
-- Phase 280과 일관된 패턴 적용
+- 개발 전용 추적 유틸: `startFlowTrace()`, `stopFlowTrace()`, `tracePoint()`, `traceAsync()`
+- 브라우저 전역 도구: `window.__XEG_TRACE_START/STOP/POINT/STATUS` (dev 전용)
+- 부트스트랩 단계에 세밀한 trace 포인트 삽입 (app:start/ready, infra/critical/base/noncritical, gallery:init 등)
+- 이벤트 추적(PC 전용): `click`, `contextmenu`, `mousedown`, `mouseup`, `keydown/keyup`, `wheel`(스로틀)
+- 테스트 간섭 방지: jsdom 환경 자동 감지로 자동 시작 방지
+- Tree-shaking 검증: 프로덕션 빌드에서 완전 제거 (0바이트 오버헤드)
 
-상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-281) 참고
+상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-286-개발-전용-flow-tracer-동작-추적-로깅--전체-완료) 참고
+
+---
+
+### ✨ 이전 최근 (Phase 285)
+
+**개발 전용 고급 로깅 시스템**: ✅ **완료**
+
+- 메모리 프로파일링: `measureMemory()` - performance.memory 스냅샷
+- 로그 그룹화: `logGroup()` - console.group 래퍼
+- 테이블 출력: `logTable()` - console.table 래퍼
+- 런타임 레벨 변경: `setLogLevel()`, `getLogLevel()`
+- 브라우저 도구: `window.__XEG_SET_LOG_LEVEL`, `window.__XEG_GET_LOG_LEVEL`, `window.__XEG_MEASURE_MEMORY`
+- Tree-shaking 검증: 프로덕션 빌드에서 완전 제거 (0 바이트 오버헤드)
+
+상세 내용은 [TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-285) 참고
 
 ---
 
@@ -80,13 +97,179 @@
 
 ## 🎯 진행 중인 작업
 
-**현재 작업**: 없음 (Phase 284 완료 ✅)
+**현재 작업**: Phase 287 — 개발 전용 로깅/Flow Tracer 정책 문서화
 
-**다음 우선순위**:
+**목표**: 새 기능/버그 수정 시 dev-only 트레이싱을 기본 원칙으로 적용하도록 코딩 가이드/운영 문서를 보강하고, PR/작업 체크리스트에 반영
 
-1. 사용자 피드백 수집 및 개선 사항 도출
-2. 성능 모니터링 및 최적화 기회 탐색
-3. 접근성 개선 (현재 WCAG 2.1 AA 준수)
+**제약**:
+
+- 프로덕션 제로 오버헤드(필수) — `__DEV__` 분기 + Tree-shaking
+- PC 전용 이벤트 정책 준수 — touch/pointer 금지, mouse/keyboard/wheel만
+- Vendor getter 규칙 영향 없음(문서 범위)
+
+**수용 기준**:
+
+- `docs/CODING_GUIDELINES.md`에 “개발 전용 트레이싱(Flow Tracer) 정책” 추가
+- `AGENTS.md` 작업 종료 체크리스트에 “dev-only trace 포인트 확인” 추가
+- `docs/TESTING_STRATEGY.md`에 jsdom 차단 및 dev/prod 스트립 관찰 가이드 1-2줄 추가
+- lint:md 및 전체 `npm run build` GREEN
+
+---
+
+## 📝 Phase 285: 개발용 로깅 강화 (✅ 완료 - 이관됨)
+
+> 이 섹션은 완료되어 기록이 `TDD_REFACTORING_PLAN_COMPLETED.md`로 이관되었습니다. 본 문서에서는 혼선을 피하기 위해 세부 내용 대신 요약/링크만 유지하며, 추후 정리 과정에서 본 섹션은 제거될 예정입니다. 자세한 구현/검증/교훈은 [완료 기록](./TDD_REFACTORING_PLAN_COMPLETED.md#phase-285-개발-전용-고급-로깅-시스템--전체-완료)을 참고하세요.
+
+**상태**: 🚧 **진행 중**
+
+**목표**: 개발 효율성 향상을 위한 고급 로깅 및 프로파일링 도구 추가
+
+**동기**:
+
+- 현재 로거는 기본적인 로깅, 타이머, 에러 추적 지원
+- 개발 중 성능 병목 지점 파악 및 디버깅 효율성 개선 필요
+- 프로덕션 빌드에서 완전히 제거되는 개발 전용 도구 구축
+
+**설계 원칙**:
+
+- `__DEV__` 플래그 기반 분기 (프로덕션 완전 제거)
+- Tree-shaking 보장
+- 기존 logger.ts 확장 (breaking change 없음)
+- 성능 오버헤드 최소화
+
+**계획 항목** (우선순위):
+
+### Step 1: 메모리 프로파일링 (High Priority)
+
+**기능**:
+
+- `measureMemory(label: string)`: 메모리 스냅샷 및 차이 측정
+- 반환값: `{ heapUsed: number, heapTotal: number, delta: number }`
+- 개발 환경 전용, 프로덕션에서는 noop
+
+**구현**:
+
+```typescript
+// Development only
+if (isDev) {
+  export function measureMemory(label: string): MemorySnapshot | null {
+    if (performance.memory) {
+      const snapshot = {
+        heapUsed: performance.memory.usedJSHeapSize,
+        heapTotal: performance.memory.totalJSHeapSize,
+        label,
+        timestamp: Date.now(),
+      };
+      logger.debug(`Memory [${label}]:`, formatBytes(snapshot.heapUsed));
+      return snapshot;
+    }
+    return null;
+  }
+}
+```
+
+**테스트**:
+
+- 메모리 API 가용성 검증
+- 스냅샷 반환값 검증
+- 프로덕션 빌드에서 제거 확인
+
+### Step 2: 로그 그룹화 (Medium Priority)
+
+**기능**:
+
+- `logGroup(label: string, fn: () => void)`: 콘솔 그룹으로 로그 묶기
+- 중첩 그룹 지원
+- 자동 collapse 옵션
+
+**구현**:
+
+```typescript
+if (isDev) {
+  export function logGroup(label: string, fn: () => void, collapsed = false): void {
+    const method = collapsed ? console.groupCollapsed : console.group;
+    method(`${BASE_PREFIX} ${label}`);
+    try {
+      fn();
+    } finally {
+      console.groupEnd();
+    }
+  }
+}
+```
+
+**테스트**:
+
+- 그룹 시작/종료 검증
+- 중첩 그룹 동작 확인
+- 예외 발생 시 groupEnd 호출 보장
+
+### Step 3: 테이블 로깅 (Medium Priority)
+
+**기능**:
+
+- `logTable(data: Record<string, unknown>[] | Record<string, unknown>)`: 구조화된 데이터 테이블 출력
+- 개발 환경 전용
+
+**구현**:
+
+```typescript
+if (isDev) {
+  export function logTable(data: Record<string, unknown>[] | Record<string, unknown>): void {
+    console.table(data);
+  }
+}
+```
+
+**테스트**:
+
+- 배열/객체 형식 지원 확인
+- 프로덕션 빌드에서 제거 확인
+
+### Step 4: 런타임 로그 레벨 변경 (Low Priority)
+
+**기능**:
+
+- `setLogLevel(level: LogLevel)`: 런타임에 로그 레벨 변경
+- 개발 환경 전용, window 객체에 노출 (`window.__XEG_SET_LOG_LEVEL`)
+
+**구현**:
+
+```typescript
+if (isDev) {
+  let runtimeLogLevel: LogLevel = DEFAULT_CONFIG.level;
+
+  export function setLogLevel(level: LogLevel): void {
+    runtimeLogLevel = level;
+    logger.info(`Log level changed to: ${level}`);
+  }
+
+  // 브라우저 콘솔에서 접근 가능
+  if (typeof window !== 'undefined') {
+    (window as any).__XEG_SET_LOG_LEVEL = setLogLevel;
+  }
+}
+```
+
+**테스트**:
+
+- 로그 레벨 변경 동작 확인
+- 변경 후 필터링 동작 검증
+- window 객체 노출 확인
+
+**예상 번들 크기 영향**:
+
+- Dev 빌드: +5-10 KB (압축 전)
+- Prod 빌드: 0 KB (완전 제거)
+
+**수용 기준**:
+
+- [ ] 모든 개선 기능이 `__DEV__` 블록 내에 구현됨
+- [ ] 프로덕션 빌드에서 완전히 제거됨 (번들 크기 증가 없음)
+- [ ] 기존 logger 인터페이스 호환성 유지
+- [ ] 단위 테스트 통과 (JSDOM 환경)
+- [ ] TypeScript 0 에러
+- [ ] ESLint 0 에러
 
 ---
 
