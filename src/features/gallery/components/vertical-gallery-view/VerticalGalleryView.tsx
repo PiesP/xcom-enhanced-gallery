@@ -308,10 +308,10 @@ function VerticalGalleryViewCore({
     getCurrentIndex: currentIndex,
     // 사용자/자동 스크롤 중에는 자동 포커스를 억제
     shouldAutoFocus: () => !isScrolling(),
-    // ✅ Step 4: Idle timeout 튜닝 - 중복 지연 제거
-    // 기존: SCROLL_IDLE_TIMEOUT (350ms) + 100ms margin = 500ms
-    // 개선: 매우 짧은 debounce (50ms)로 키 입력과의 race 방지하면서 반응성 개선
-    autoFocusDebounce: 50,
+    // Phase 293: autoFocusDebounce 50ms → 0ms (즉시 실행)
+    // isScrolling() 조건만으로 충분한 보호 제공
+    // 키보드 내비게이션 반응성 개선
+    autoFocusDebounce: 0,
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 
@@ -333,10 +333,10 @@ function VerticalGalleryViewCore({
     }
   );
 
-  // Phase 279/280: 갤러리 최초 열기 시 초기 스크롤 보장
+  // Phase 279/280/293: 갤러리 최초 열기 시 초기 스크롤 보장
   let hasPerformedInitialScroll = false;
 
-  // Phase 280: 초기 렌더링 완료 후 자동 스크롤 실행 (리팩토링)
+  // Phase 293: 초기 렌더링 완료 후 자동 스크롤 실행 (rAF 체인으로 DOM 준비 보장)
   createEffect(() => {
     const visible = isVisible();
 
@@ -363,20 +363,24 @@ function VerticalGalleryViewCore({
     // 첫 렌더링 시 한 번만 실행
     hasPerformedInitialScroll = true;
 
-    logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 279/280)', {
+    logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 293)', {
       currentIndex: currentIndex(),
       itemsRendered: itemsContainer.children.length,
       mediaCount: items.length,
       timestamp: Date.now(),
     });
 
-    // requestAnimationFrame으로 레이아웃 완료 대기
+    // Phase 293: rAF 체인으로 DOM 준비 완료 확실히 대기
+    // - 1st rAF: 현재 프레임 paint 완료
+    // - 2nd rAF: 다음 프레임 시작 (레이아웃 계산 완료 보장)
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       window.requestAnimationFrame(() => {
-        void scrollToCurrentItem();
-        logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 279/280)', {
-          currentIndex: currentIndex(),
-          timestamp: Date.now(),
+        window.requestAnimationFrame(() => {
+          void scrollToCurrentItem();
+          logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 293 - rAF chain)', {
+            currentIndex: currentIndex(),
+            timestamp: Date.now(),
+          });
         });
       });
     } else {

@@ -6,6 +6,7 @@
 
 ## 최근 상태
 
+- **Phase 294**: Twitter 네비게이션 스크롤 복원 호환성 개선 — ✅ 완료 (2025-11-01)
 - **Phase 293**: 갤러리 흐름 타이밍 최적화 — ✅ 완료 (2025-11-01)
 - **Phase 292**: MediaService 단순화 및 모듈 테스트 추가 — ✅ 완료 (2025-11-01)
 - **Phase 291**: 미디어 추출/인덱싱 서비스 리팩토링 — ✅ 완료 (2025-10-31)
@@ -18,6 +19,68 @@
 **없음** - 모든 계획된 리팩토링 완료
 
 ## 계획/검토 항목
+
+### ✅ Phase 294: Twitter 네비게이션 스크롤 복원 호환성 개선 (완료)
+
+**목표**: 갤러리 오버레이가 Twitter의 스크롤 위치 복원 메커니즘을 방해하지 않도록 개선
+
+**완료 일자**: 2025-11-01
+
+**수행 작업**:
+
+1. **TwitterScrollPreservation 유틸리티 클래스 구현**
+   - `src/shared/utils/twitter/scroll-preservation.ts` 생성
+   - 갤러리 열기 전 스크롤 위치 저장
+   - 갤러리 닫은 후 필요 시 보정 (requestAnimationFrame 활용)
+   - 28개 단위 테스트 추가 및 모두 통과
+
+2. **GalleryContainer unmount 개선**
+   - DOM 요소 완전 제거 (firstChild loop)
+   - Twitter 스크롤 컨테이너 참조 강제 리프레시 (reflow 트리거)
+   - 갤러리 정리 안정성 향상
+
+3. **CSS 격리 개선**
+   - `isolated-gallery.css`: `contain: layout style paint` → `contain: style paint`
+   - layout containment 제거로 Twitter 페이지 레이아웃 재계산 최소화
+
+4. **E2E 테스트 작성**
+   - `playwright/smoke/twitter-navigation.spec.ts` 생성
+   - Twitter 로그인 필요로 CI에서는 skip 처리
+   - 로컬 환경에서 수동 검증용
+
+**검증 결과**:
+
+- ✅ 타입 체크 통과
+- ✅ 단위 테스트: TwitterScrollPreservation 28개 테스트 모두 통과
+- ✅ 전체 테스트: 2763 passed (28개 신규 추가)
+- ✅ E2E 테스트: 88 passed, 8 skipped (Twitter 테스트 포함)
+- ✅ 빌드: 343.71 KB (gzip 93.26 KB) — 번들 크기 변화 없음 ✅
+
+**번들 크기 분석**:
+
+| 항목 | Phase 293 (이전) | Phase 294 (현재) | 변화 |
+|------|-----------------|-----------------|------|
+| Raw | 343.68 KB | 343.71 KB | +0.03 KB (+0.009%) |
+| Gzip | 93.27 KB | 93.26 KB | -0.01 KB (-0.011%) |
+
+**영향**:
+
+- ✅ Twitter 네비게이션 호환성 개선 (스크롤 복원 간섭 최소화)
+- ✅ 갤러리 unmount 안정성 향상
+- ✅ CSS containment 최적화
+- ✅ 번들 크기 영향 없음 (유틸리티 클래스 tree-shaking 효율적)
+- ✅ Breaking change 없음
+
+**파일 변경**:
+
+- 신규: `src/shared/utils/twitter/scroll-preservation.ts` (168 lines)
+- 신규: `src/shared/utils/twitter/index.ts` (배럴 export)
+- 신규: `test/unit/shared/utils/twitter-scroll-preservation.test.ts` (268 lines, 28 테스트)
+- 신규: `playwright/smoke/twitter-navigation.spec.ts` (127 lines, 3 테스트 - skip)
+- 수정: `src/shared/components/isolation/GalleryContainer.tsx` (unmount 개선)
+- 수정: `src/shared/styles/isolated-gallery.css` (contain 속성 조정)
+
+---
 
 ### ✅ Phase 293: 갤러리 흐름 타이밍 최적화 (완료)
 
@@ -149,10 +212,10 @@
 
 ## 메트릭(요약)
 
-- 번들 크기: 343.68 KB (gzip 93.27 KB)
-- 테스트: 단위 2735/2737(2 skipped, 99.9%), E2E 88/93(5 skipped), 접근성 AA
+- 번들 크기: 343.71 KB (gzip 93.26 KB)
+- 테스트: 단위 2763/2765(2 skipped, 99.9%), E2E 88/96(8 skipped), 접근성 AA
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
-- 리팩토링: Phase 291-292 완료 (TwitterVideoExtractor 모듈화, MediaService 단순화)
+- 리팩토링: Phase 291-294 완료 (TwitterVideoExtractor 모듈화, MediaService 단순화, 갤러리 흐름 최적화, Twitter 호환성)
 
 ## 참고
 

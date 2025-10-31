@@ -34,7 +34,8 @@
 
   /* 스타일 격리 */
   isolation: isolate !important;
-  contain: layout style paint !important;
+  /* Phase 294: contain layout 제거 - Twitter 페이지 레이아웃 재계산 최소화 */
+  contain: style paint !important;
 
   /* 배경 */
   background: var(--xeg-gallery-bg) !important;
