@@ -227,7 +227,8 @@ export function getUserscript(): UserscriptAPI {
       // GM_xmlhttpRequest 시도
       if (hasGMXhr && hasGMInfo(g) && g.GM_xmlhttpRequest) {
         try {
-          return g.GM_xmlhttpRequest(options) as { abort: () => void } | undefined;
+          // Cast through unknown to satisfy TS when underlying lib returns void in some managers
+          return g.GM_xmlhttpRequest(options) as unknown as { abort: () => void } | undefined;
         } catch {
           // Fallback으로 진행
         }

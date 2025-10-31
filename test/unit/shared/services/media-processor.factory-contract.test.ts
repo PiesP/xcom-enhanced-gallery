@@ -64,8 +64,11 @@ describe('Phase 6 GREEN: MediaProcessor 서비스 팩토리 계약', () => {
     expect(typeof instance.reset).toBe('function');
   });
 
-  it('동일 key 재등록 시 경고 후 무시한다', () => {
-    const warnSpy = vi.spyOn(globalThis.console, 'warn').mockImplementation(() => {});
+  it('동일 key 재등록 시 경고 후 무시한다', async () => {
+    // logger.warn()을 직접 스파이
+    const { logger } = await import('@shared/logging');
+    const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
     const factoryA = () => ({
       processHtml() {},
       extractMediaUrls() {
@@ -94,6 +97,7 @@ describe('Phase 6 GREEN: MediaProcessor 서비스 팩토리 계약', () => {
     getService<ExpectedMediaProcessor>('mediaProcessor');
 
     expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('팩토리 중복 등록 무시'));
     warnSpy.mockRestore();
   });
 });

@@ -5,11 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  CoreService,
-  serviceManager,
-  getService,
-} from '../../../../src/shared/services/core-services';
+import { CoreService, serviceManager, getService } from '@/shared/services/core-services';
 
 describe('CoreService', () => {
   let coreService: CoreService;

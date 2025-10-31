@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { BulkDownloadService } from '../../../src/shared/services/bulk-download-service';
-import { logger } from '../../../src/shared/logging/logger';
-import type { MediaInfo } from '../../../src/shared/types/media.types';
+import { BulkDownloadService } from '@/shared/services/bulk-download-service';
+import { logger } from '@/shared/logging/logger';
+import type { MediaInfo } from '@/shared/types/media.types';
 
 describe('Phase B3.2.3: BulkDownloadService 추가 커버리지', () => {
   let service: BulkDownloadService;

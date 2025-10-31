@@ -10,3 +10,6 @@ export { BrowserService, browserAPI } from './browser-service';
 
 // Browser environment utilities have moved to @shared/utils/browser
 // Example: import { isTwitterSite, safeWindow } from '@shared/utils/browser';
+
+// Backward-compat re-exports for tests expecting these under '@shared/browser'
+export { getBrowserInfo, isExtensionEnvironment, isExtensionContext } from '@shared/utils/browser';

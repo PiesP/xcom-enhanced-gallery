@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import type { EventHandlers, GalleryEventOptions } from '../../../../src/shared/utils/events';
+import type { EventHandlers, GalleryEventOptions } from '@/shared/utils/events';
 import {
   addListener,
   removeEventListenerManaged,
@@ -16,7 +16,7 @@ import {
   cleanupGalleryEvents,
   updateGalleryEventOptions,
   getGalleryEventSnapshot,
-} from '../../../../src/shared/utils/events';
+} from '@/shared/utils/events';
 
 describe('events.ts - Listener Management', () => {
   let mockElement: HTMLElement;
@@ -116,8 +116,8 @@ describe('events.ts - Listener Management', () => {
     });
 
     it('should handle invalid element gracefully', () => {
-      // @ts-expect-error: Testing invalid input
-      const id = addListener(null, 'click', mockListener);
+      const invalidElement = null as unknown as Parameters<typeof addListener>[0];
+      const id = addListener(invalidElement, 'click', mockListener);
 
       // 오류 없이 빈 ID 반환
       expect(id).toBeTruthy();
@@ -125,8 +125,8 @@ describe('events.ts - Listener Management', () => {
     });
 
     it('should handle element without addEventListener method', () => {
-      // @ts-expect-error: Testing invalid input
-      const id = addListener({}, 'click', mockListener);
+      const invalidObjectElement = {} as unknown as Parameters<typeof addListener>[0];
+      const id = addListener(invalidObjectElement, 'click', mockListener);
 
       expect(id).toBeTruthy();
       expect(getEventListenerStatus().total).toBe(0);
@@ -370,13 +370,12 @@ describe('events.ts - Gallery Event Lifecycle', () => {
     });
 
     it('should handle missing document gracefully', async () => {
-      const originalDocument = global.document;
-      // @ts-expect-error: Testing edge case
-      global.document = undefined;
+      const originalDocument = globalThis.document;
+      vi.stubGlobal('document', undefined);
 
       await expect(initializeGalleryEvents(mockHandlers)).resolves.not.toThrow();
 
-      global.document = originalDocument;
+      vi.stubGlobal('document', originalDocument);
     });
   });
 

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { getSolid } from '../../../../../src/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 
 const { createSignal } = getSolid();
 

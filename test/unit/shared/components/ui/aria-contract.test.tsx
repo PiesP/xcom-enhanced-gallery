@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { render, h } from '@test/utils/testing-library';
 
 // Phase S1 RED: UnifiedButton 통합 후 ARIA 표준 검증
-import { Button as UnifiedButton } from '../../../../../src/shared/components/ui/Button/Button';
+import { Button as UnifiedButton } from '@/shared/components/ui/Button/Button';
 
 describe('ARIA Contract (v4.1 - RED)', () => {
   describe('Basic ARIA Attributes', () => {

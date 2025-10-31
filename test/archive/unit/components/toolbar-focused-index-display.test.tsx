@@ -9,15 +9,15 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getSolid } from '../../../src/shared/external/vendors';
-import { useGalleryToolbarLogic } from '../../../src/shared/hooks/use-gallery-toolbar-logic';
+import { getSolid } from '@/shared/external/vendors';
+import { useGalleryToolbarLogic } from '@/shared/hooks/use-gallery-toolbar-logic';
 import {
   setFocusedIndex,
   gallerySignals,
   openGallery,
   closeGallery,
-} from '../../../src/shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../../src/shared/types/media.types';
+} from '@/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types/media.types';
 
 describe('Phase 64 Step 4: Toolbar focusedIndex 우선 표시', () => {
   const { createRoot } = getSolid();

@@ -17,7 +17,7 @@ export {
 } from '@solidjs/testing-library';
 
 // h (hyperscript) helper for JSX-free component creation
-import { getSolid } from '../../src/shared/external/vendors/index.js';
+import { getSolid } from '@shared/external/vendors';
 
 const solid = getSolid();
 export const h = solid.h;

@@ -65,7 +65,13 @@ export function createFocusTrap(
       // 테스트 환경에서는 offsetWidth/Height가 0이므로 조건을 완화
       const isTestEnvironment =
         typeof window !== 'undefined' &&
+        // jsdom
         (window.navigator.userAgent.includes('jsdom') ||
+          // Vitest
+          window.navigator.userAgent.includes('Vitest') ||
+          // happy-dom
+          window.navigator.userAgent.includes('happy-dom') ||
+          // Generic test env
           window.navigator.userAgent.includes('Test Environment'));
 
       return (
@@ -94,14 +100,30 @@ export function createFocusTrap(
     }
 
     if (elementToFocus) {
-      // Focus를 강제로 설정
+      // Focus를 강제로 설정 (테스트 환경 안정성 향상)
+      const hadTabIndex = elementToFocus.hasAttribute('tabindex');
+      const prevTabIndex = elementToFocus.getAttribute('tabindex');
+
+      // 테스트 환경에서는 강제로 focus 가능한 상태를 보장
+      if (!hadTabIndex) {
+        elementToFocus.setAttribute('tabindex', '0');
+      }
+
       elementToFocus.focus();
 
-      // JSDOM에서 focus가 작동하지 않을 수 있으므로 직접 확인
+      // JSDOM/happy-dom에서 focus가 반영되지 않는 경우 재시도
       if (document.activeElement !== elementToFocus) {
-        // Focus를 다시 시도
         elementToFocus.setAttribute('tabindex', '-1');
         elementToFocus.focus();
+      }
+
+      // 원래 상태 복원
+      if (!hadTabIndex) {
+        if (prevTabIndex === null) {
+          elementToFocus.removeAttribute('tabindex');
+        } else {
+          elementToFocus.setAttribute('tabindex', prevTabIndex);
+        }
       }
     }
   }

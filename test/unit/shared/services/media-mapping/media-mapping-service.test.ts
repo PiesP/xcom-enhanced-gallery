@@ -5,12 +5,11 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-type MediaMappingModule =
-  typeof import('../../../../../src/shared/services/media-mapping/media-mapping-service');
+type MediaMappingModule = typeof import('@/shared/services/media-mapping/media-mapping-service');
 
 async function importModule(): Promise<MediaMappingModule> {
   vi.resetModules();
-  return await import('../../../../../src/shared/services/media-mapping/media-mapping-service');
+  return await import('@/shared/services/media-mapping/media-mapping-service');
 }
 
 describe('MediaMappingService', () => {

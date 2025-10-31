@@ -13,45 +13,45 @@ import {
   navigateNext,
   navigatePrevious,
   getLastNavigationSource,
-} from '../../../src/shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../../src/shared/types/media.types';
+} from '@/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types/media.types';
 
 describe('Phase 77: NavigationSource Tracking', () => {
   const mockMediaItems: MediaInfo[] = [
     {
+      id: 'nav-media-1',
       type: 'image',
       url: 'https://example.com/image1.jpg',
       filename: 'image1.jpg',
       originalUrl: 'https://example.com/image1.jpg',
-      downloadUrl: 'https://example.com/image1.jpg',
     },
     {
+      id: 'nav-media-2',
       type: 'image',
       url: 'https://example.com/image2.jpg',
       filename: 'image2.jpg',
       originalUrl: 'https://example.com/image2.jpg',
-      downloadUrl: 'https://example.com/image2.jpg',
     },
     {
+      id: 'nav-media-3',
       type: 'image',
       url: 'https://example.com/image3.jpg',
       filename: 'image3.jpg',
       originalUrl: 'https://example.com/image3.jpg',
-      downloadUrl: 'https://example.com/image3.jpg',
     },
     {
+      id: 'nav-media-4',
       type: 'image',
       url: 'https://example.com/image4.jpg',
       filename: 'image4.jpg',
       originalUrl: 'https://example.com/image4.jpg',
-      downloadUrl: 'https://example.com/image4.jpg',
     },
     {
+      id: 'nav-media-5',
       type: 'image',
       url: 'https://example.com/image5.jpg',
       filename: 'image5.jpg',
       originalUrl: 'https://example.com/image5.jpg',
-      downloadUrl: 'https://example.com/image5.jpg',
     },
   ];
 

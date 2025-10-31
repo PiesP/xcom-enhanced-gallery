@@ -7,14 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { Mock } from 'vitest';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
-import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
-import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
-import { DOMDirectExtractor } from '@shared/services/media-extraction/extractors/dom-direct-extractor';
-
-// Mock extractors
-vi.mock('@shared/services/media-extraction/extractors/tweet-info-extractor');
-vi.mock('@shared/services/media-extraction/extractors/twitter-api-extractor');
-vi.mock('@shared/services/media-extraction/extractors/dom-direct-extractor');
+import type { MediaExtractionResult, MediaInfo, TweetInfo } from '@shared/types/media.types';
 
 /**
  * 실제 X.com 샘플에서 추출한 미디어 URL들
@@ -49,6 +42,61 @@ const SAMPLE_TWEETS = {
   },
 };
 
+class TestableMediaExtractionService extends MediaExtractionService {
+  constructor(
+    tweetInfoExtractor: { extract: Mock },
+    apiExtractor: { extract: Mock },
+    domExtractor: { extract: Mock }
+  ) {
+    super();
+    (this as unknown as { tweetInfoExtractor: { extract: Mock } }).tweetInfoExtractor =
+      tweetInfoExtractor;
+    (this as unknown as { apiExtractor: { extract: Mock } }).apiExtractor = apiExtractor;
+    (this as unknown as { domExtractor: { extract: Mock } }).domExtractor = domExtractor;
+  }
+}
+
+const createMediaInfos = (urls: readonly string[]): MediaInfo[] =>
+  urls.map((url, index) => ({
+    id: `media-${index}`,
+    url,
+    type: 'image',
+    filename: `media-${index}.jpg`,
+  }));
+
+const createSuccessResult = (
+  urls: readonly string[],
+  clickedIndex: number,
+  overrides: Partial<MediaExtractionResult> = {}
+): MediaExtractionResult => ({
+  success: true,
+  mediaItems: createMediaInfos(urls),
+  clickedIndex,
+  metadata: {
+    extractedAt: Date.now(),
+    sourceType: 'test-double',
+    strategy: 'unit-test',
+  },
+  tweetInfo: {
+    tweetId: 'mock-tweet',
+    username: 'tester',
+    tweetUrl: 'https://x.com/mock-tweet',
+    extractionMethod: 'mock',
+    confidence: 1,
+  },
+  ...overrides,
+});
+
+const createTweetInfo = (overrides: Partial<TweetInfo> = {}): TweetInfo => ({
+  tweetId: 'tweet_1',
+  username: 'user_1',
+  tweetUrl: 'https://x.com/user_1/status/tweet_1',
+  extractionMethod: 'unit-test',
+  confidence: 0.95,
+  metadata: overrides.metadata,
+  ...overrides,
+});
+
 describe('Sample-Based Click Media Extraction', () => {
   let service: MediaExtractionService;
   let mockTweetInfoExtractor: {
@@ -65,30 +113,18 @@ describe('Sample-Based Click Media Extraction', () => {
   beforeEach(() => {
     // Setup mock element
     mockElement = document.createElement('img');
-    mockElement.src = SAMPLE_TWEETS.sample1_media1.url;
+    const img = (mockElement as any).asImage?.() ?? (mockElement as HTMLImageElement);
+    img.src = SAMPLE_TWEETS.sample1_media1.url;
     document.body.appendChild(mockElement);
 
-    // Setup extractor mocks
-    mockTweetInfoExtractor = {
-      extract: vi.fn(),
-    };
-    mockAPIExtractor = {
-      extract: vi.fn(),
-    };
-    mockDOMExtractor = {
-      extract: vi.fn(),
-    };
+    mockTweetInfoExtractor = { extract: vi.fn() };
+    mockAPIExtractor = { extract: vi.fn() };
+    mockDOMExtractor = { extract: vi.fn() };
 
-    // Mock module references
-    vi.mocked(TweetInfoExtractor).mockReturnValue(mockTweetInfoExtractor as any);
-    vi.mocked(TwitterAPIExtractor).mockReturnValue(mockAPIExtractor as any);
-    vi.mocked(DOMDirectExtractor).mockReturnValue(mockDOMExtractor as any);
-
-    // Create service instance
-    service = new MediaExtractionService(
-      mockTweetInfoExtractor as any,
-      mockAPIExtractor as any,
-      mockDOMExtractor as any
+    service = new TestableMediaExtractionService(
+      mockTweetInfoExtractor,
+      mockAPIExtractor,
+      mockDOMExtractor
     );
   });
 
@@ -102,117 +138,117 @@ describe('Sample-Based Click Media Extraction', () => {
 
     it('should correctly identify clicked index 0 (first media)', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_1',
-        mediaUrls: allMediaUrls,
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo());
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls,
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult(allMediaUrls, 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.clickedIndex).toBe(0);
-      expect(result.value.mediaUrls).toContain(SAMPLE_TWEETS.sample1_media1.url);
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(0);
+      expect(result.mediaItems.map(item => item.url)).toContain(SAMPLE_TWEETS.sample1_media1.url);
     });
 
     it('should correctly identify clicked index 1 (second media)', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_1',
-        mediaUrls: allMediaUrls,
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo());
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 1,
-        allMediaUrls,
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult(allMediaUrls, 1, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.clickedIndex).toBe(1);
-      expect(result.value.mediaUrls[1]).toBe(SAMPLE_TWEETS.sample1_media2.url);
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(1);
+      expect(result.mediaItems[1]?.url).toBe(SAMPLE_TWEETS.sample1_media2.url);
     });
 
     it('should correctly identify clicked index 2 (third media)', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_1',
-        mediaUrls: allMediaUrls,
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo());
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 2,
-        allMediaUrls,
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult(allMediaUrls, 2, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.clickedIndex).toBe(2);
-      expect(result.value.mediaUrls[2]).toBe(SAMPLE_TWEETS.sample1_media3.url);
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(2);
+      expect(result.mediaItems[2]?.url).toBe(SAMPLE_TWEETS.sample1_media3.url);
     });
 
     it('should correctly identify clicked index 3 (fourth media)', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_1',
-        mediaUrls: allMediaUrls,
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo());
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 3,
-        allMediaUrls,
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult(allMediaUrls, 3, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.clickedIndex).toBe(3);
-      expect(result.value.mediaUrls[3]).toBe(SAMPLE_TWEETS.sample1_media4.url);
+      expect(result.success).toBe(true);
+      expect(result.clickedIndex).toBe(3);
+      expect(result.mediaItems[3]?.url).toBe(SAMPLE_TWEETS.sample1_media4.url);
     });
 
     it('should extract all 4 media URLs from multi-media tweet', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_1',
-        mediaUrls: allMediaUrls,
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo());
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls,
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult(allMediaUrls, 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.mediaUrls).toHaveLength(4);
-      expect(result.value.mediaUrls).toEqual(allMediaUrls);
+      expect(result.success).toBe(true);
+      expect(result.mediaItems).toHaveLength(4);
+      expect(result.mediaItems.map(item => item.url)).toEqual(allMediaUrls);
     });
   });
 
@@ -220,25 +256,25 @@ describe('Sample-Based Click Media Extraction', () => {
     it('should extract single media from single-media tweet', async () => {
       // Setup
       const singleMediaUrl = SAMPLE_TWEETS.sample2_media.url;
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_2',
-        mediaUrls: [singleMediaUrl],
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo({ tweetId: 'tweet_2' }));
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls: [singleMediaUrl],
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult([singleMediaUrl], 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.mediaUrls).toHaveLength(1);
-      expect(result.value.mediaUrls[0]).toBe(singleMediaUrl);
+      expect(result.success).toBe(true);
+      expect(result.mediaItems).toHaveLength(1);
+      expect(result.mediaItems[0]?.url).toBe(singleMediaUrl);
     });
   });
 
@@ -248,48 +284,48 @@ describe('Sample-Based Click Media Extraction', () => {
       const urlWithQuery = 'https://pbs.twimg.com/media/G32HHpGWoAAly7r.jpg?format=jpg&name=large';
       const normalizedUrl = 'https://pbs.twimg.com/media/G32HHpGWoAAly7r.jpg';
 
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_3',
-        mediaUrls: [normalizedUrl],
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo({ tweetId: 'tweet_3' }));
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls: [normalizedUrl],
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult([normalizedUrl], 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.mediaUrls[0]).toBe(normalizedUrl);
+      expect(result.success).toBe(true);
+      expect(result.mediaItems[0]?.url).toBe(normalizedUrl);
     });
 
     it('should fallback to DOM extraction when API fails', async () => {
       // Setup: API failure
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_4',
-        mediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo({ tweetId: 'tweet_4' }));
 
       mockAPIExtractor.extract.mockRejectedValue(new Error('API failed'));
 
-      mockDOMExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        source: 'dom-direct',
-      });
+      mockDOMExtractor.extract.mockResolvedValue(
+        createSuccessResult([SAMPLE_TWEETS.sample1_media1.url], 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'dom-direct',
+            strategy: 'dom-fallback',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.mediaUrls[0]).toBe(SAMPLE_TWEETS.sample1_media1.url);
+      expect(result.success).toBe(true);
+      expect(result.mediaItems[0]?.url).toBe(SAMPLE_TWEETS.sample1_media1.url);
       expect(mockDOMExtractor.extract).toHaveBeenCalled();
     });
   });
@@ -298,46 +334,51 @@ describe('Sample-Based Click Media Extraction', () => {
     it('should include timestamp in extracted metadata', async () => {
       // Setup
       const timestamp = new Date().toISOString();
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_5',
-        mediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        timestamp,
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(
+        createTweetInfo({
+          tweetId: 'tweet_5',
+          metadata: { timestamp },
+        })
+      );
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult([SAMPLE_TWEETS.sample1_media1.url], 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.timestamp).toBe(timestamp);
+      expect(result.success).toBe(true);
+      expect(result.tweetInfo?.metadata?.timestamp).toBe(timestamp);
     });
 
     it('should include source type in metadata', async () => {
       // Setup
-      mockTweetInfoExtractor.extract.mockResolvedValue({
-        tweetId: 'tweet_6',
-        mediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        timestamp: new Date().toISOString(),
-      });
+      mockTweetInfoExtractor.extract.mockResolvedValue(createTweetInfo({ tweetId: 'tweet_6' }));
 
-      mockAPIExtractor.extract.mockResolvedValue({
-        clickedIndex: 0,
-        allMediaUrls: [SAMPLE_TWEETS.sample1_media1.url],
-        source: 'twitter-api',
-      });
+      mockAPIExtractor.extract.mockResolvedValue(
+        createSuccessResult([SAMPLE_TWEETS.sample1_media1.url], 0, {
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'twitter-api',
+            strategy: 'api-extraction',
+          },
+        })
+      );
 
       // Execute
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.ok).toBe(true);
-      expect(result.value.sourceType).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBeDefined();
     });
   });
 });

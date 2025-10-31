@@ -4,7 +4,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
-import { AnimationService } from '../../../../src/shared/services/animation-service.js';
+import { AnimationService } from '@/shared/services/animation-service.js';
 
 describe('AnimationService', () => {
   let service: AnimationService;

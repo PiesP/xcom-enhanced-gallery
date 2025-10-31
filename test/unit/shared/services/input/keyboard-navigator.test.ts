@@ -4,17 +4,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  KeyboardNavigator,
-  keyboardNavigator,
-} from '../../../../../src/shared/services/input/keyboard-navigator';
+import { KeyboardNavigator, keyboardNavigator } from '@/shared/services/input/keyboard-navigator';
 import type {
   KeyboardNavigatorHandlers,
   KeyboardNavigatorOptions,
-} from '../../../../../src/shared/services/input/keyboard-navigator';
+} from '@/shared/services/input/keyboard-navigator';
 
 // Mock logger
-vi.mock('../../../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -30,7 +27,7 @@ const mockAddListener = vi.fn((target, type, handler, options, context) => {
 });
 const mockRemoveListener = vi.fn();
 
-vi.mock('../../../../../src/shared/services/event-manager', () => ({
+vi.mock('@/shared/services/event-manager', () => ({
   EventManager: {
     getInstance: vi.fn(() => ({
       addListener: mockAddListener,

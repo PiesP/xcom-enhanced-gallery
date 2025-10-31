@@ -9,7 +9,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getSolid } from '../../../../src/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,7 +31,7 @@ describe('VerticalGalleryView - Animation Effect Dependency (Phase 20.2)', () =>
       // VerticalGalleryView.tsx 파일을 읽어서 on() 사용 여부 확인
       const filePath = resolve(
         __dirname,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const fileContent = readFileSync(filePath, 'utf-8');
 
@@ -50,7 +50,7 @@ describe('VerticalGalleryView - Animation Effect Dependency (Phase 20.2)', () =>
     dispose = createRoot(disposeFn => {
       const filePath = resolve(
         __dirname,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const fileContent = readFileSync(filePath, 'utf-8');
 

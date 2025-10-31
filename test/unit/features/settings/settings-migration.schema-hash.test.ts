@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SettingsService } from '@/features/settings/services/settings-service';
-import { DEFAULT_SETTINGS } from '@/features/settings/types/settings.types';
+import { DEFAULT_SETTINGS } from '@/constants';
 import { InMemoryStorageAdapter } from '../../../__mocks__/in-memory-storage-adapter';
 
 const STORAGE_KEY = 'xeg-app-settings';

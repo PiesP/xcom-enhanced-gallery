@@ -3,10 +3,10 @@
  */
 
 import { beforeAll, beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, h, waitFor, act } from '../../../../utils/testing-library';
-import type { MediaInfo } from '../../../../../src/shared/types';
-import { galleryState } from '../../../../../src/shared/state/signals/gallery.signals';
-import { downloadState } from '../../../../../src/shared/state/signals/download.signals';
+import { cleanup, render, h, waitFor, act } from '@test/utils/testing-library';
+import type { MediaInfo } from '@/shared/types';
+import { galleryState } from '@/shared/state/signals/gallery.signals';
+import { downloadState } from '@/shared/state/signals/download.signals';
 
 let capturedFitHandlers:
   | {
@@ -36,7 +36,7 @@ beforeAll(() => {
   });
 });
 
-vi.mock('../../../../../src/shared/components/ui/Toolbar/Toolbar', () => ({
+vi.mock('@/shared/components/ui/Toolbar/Toolbar', () => ({
   Toolbar: (props: Record<string, unknown>) => {
     capturedFitHandlers = {
       onFitOriginal: props.onFitOriginal as (event?: globalThis.Event) => void,
@@ -48,11 +48,11 @@ vi.mock('../../../../../src/shared/components/ui/Toolbar/Toolbar', () => ({
   },
 }));
 
-vi.mock('../../../../../src/features/gallery/hooks/useGalleryItemScroll', () => ({
+vi.mock('@/features/gallery/hooks/useGalleryItemScroll', () => ({
   useGalleryItemScroll: useGalleryItemScrollMock,
 }));
 
-vi.mock('../../../../../src/shared/container/settings-access', () => ({
+vi.mock('@/shared/container/settings-access', () => ({
   getSetting: getSettingMock,
   setSetting: setSettingMock,
   tryGetSettingsService: () => ({
@@ -121,7 +121,7 @@ describe('VerticalGalleryView – 이미지 핏 모드 동기화', () => {
 
   it('툴바 버튼을 호출하면 현재 아이템 컨테이너의 fit 클래스와 data-fit-mode가 동기화되어야 함', async () => {
     const { VerticalGalleryView } = await import(
-      '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
+      '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const { container } = render(h(VerticalGalleryView));

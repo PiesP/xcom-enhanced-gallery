@@ -11,7 +11,7 @@ import {
   isGalleryElement,
   createScrollDebouncer,
   createScrollHandler,
-} from '../../../../src/shared/utils/scroll/scroll-utils';
+} from '@/shared/utils/scroll/scroll-utils';
 
 describe('Gallery Element Detection', () => {
   let container: HTMLElement;

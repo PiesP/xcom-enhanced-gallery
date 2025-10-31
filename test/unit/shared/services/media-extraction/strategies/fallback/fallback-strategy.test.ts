@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FallbackStrategy } from '../../../../../../../src/shared/services/media-extraction/strategies/fallback/fallback-strategy';
-import type { TweetInfo } from '../../../../../../../src/shared/types/media.types';
+import { FallbackStrategy } from '@/shared/services/media-extraction/strategies/fallback/fallback-strategy';
+import type { TweetInfo } from '@/shared/types/media.types';
 
 describe('FallbackStrategy', () => {
   let strategy: FallbackStrategy;

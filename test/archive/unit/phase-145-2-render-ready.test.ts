@@ -13,7 +13,7 @@ import {
   waitForItemsRendered,
   waitForMultipleItemsRendered,
   waitForMinimumItems,
-} from '../../../../src/shared/utils/render-ready';
+} from '@/shared/utils/render-ready';
 
 describe('Phase 145.2: render-ready 유틸리티', () => {
   let container: HTMLElement;

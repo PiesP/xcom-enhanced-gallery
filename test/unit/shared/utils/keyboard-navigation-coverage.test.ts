@@ -23,7 +23,7 @@ import {
   isFocusable,
   createFocusTrap,
   releaseKeyboardTrap,
-} from '../../../../src/shared/utils/accessibility/keyboard-navigation';
+} from '@/shared/utils/accessibility/keyboard-navigation';
 
 describe('keyboard-navigation.ts Coverage Tests', () => {
   let container: HTMLElement;

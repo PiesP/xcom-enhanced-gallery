@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { useGalleryItemScroll } from '../../../../../src/features/gallery/hooks/useGalleryItemScroll';
-import { getSolid } from '../../../../../src/shared/external/vendors';
-import { globalTimerManager } from '../../../../../src/shared/utils/timer-management';
+import { useGalleryItemScroll } from '@/features/gallery/hooks/useGalleryItemScroll';
+import { getSolid } from '@/shared/external/vendors';
+import { globalTimerManager } from '@/shared/utils/timer-management';
 
 const { createSignal, createRoot } = getSolid();
 

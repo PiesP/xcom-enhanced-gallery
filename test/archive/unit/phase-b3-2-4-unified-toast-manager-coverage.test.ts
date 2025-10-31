@@ -9,16 +9,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  ToastManager,
-  toastManager,
-  toasts,
-} from '../../../src/shared/services/unified-toast-manager';
-import type { ToastItem, ToastOptions } from '../../../src/shared/services/unified-toast-manager';
-import { logger } from '../../../src/shared/logging/logger';
+import { ToastManager, toastManager, toasts } from '@/shared/services/unified-toast-manager';
+import type { ToastItem, ToastOptions } from '@/shared/services/unified-toast-manager';
+import { logger } from '@/shared/logging/logger';
 
 // Mock logger
-vi.mock('../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -30,7 +26,7 @@ vi.mock('../../../src/shared/logging/logger', () => ({
 // Mock accessibility helpers
 const mockPoliteLiveRegion = document.createElement('div');
 const mockAssertiveLiveRegion = document.createElement('div');
-vi.mock('../../../src/shared/utils/accessibility/index', () => ({
+vi.mock('@/shared/utils/accessibility/index', () => ({
   ensurePoliteLiveRegion: vi.fn(() => mockPoliteLiveRegion),
   ensureAssertiveLiveRegion: vi.fn(() => mockAssertiveLiveRegion),
 }));

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ClickedElementTweetStrategy } from '../../../../../src/shared/services/media-extraction/strategies/clicked-element-tweet-strategy.js';
-import type { TweetInfo } from '../../../../../src/shared/types/media.types.js';
+import { ClickedElementTweetStrategy } from '@/shared/services/media-extraction/strategies/clicked-element-tweet-strategy.js';
+import type { TweetInfo } from '@/shared/types/media.types.js';
 
 describe('ClickedElementTweetStrategy', () => {
   let strategy: ClickedElementTweetStrategy;

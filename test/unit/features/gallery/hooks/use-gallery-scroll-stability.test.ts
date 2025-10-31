@@ -7,9 +7,9 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { getSolid } from '../../../../../src/shared/external/vendors';
-import { createStabilityDetector } from '../../../../../src/shared/utils/stability';
-import type { StabilityDetector } from '../../../../../src/shared/utils/stability';
+import { getSolid } from '@/shared/external/vendors';
+import { createStabilityDetector } from '@/shared/utils/stability';
+import type { StabilityDetector } from '@/shared/utils/stability';
 
 const { createSignal } = getSolid();
 

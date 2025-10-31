@@ -14,7 +14,7 @@ import {
   setupInViewAnimation,
   transformValue,
   animateCustom,
-} from '../../../../src/shared/utils/animations';
+} from '@/shared/utils/animations';
 
 // 모킹
 vi.mock('@shared/external/vendors', () => ({

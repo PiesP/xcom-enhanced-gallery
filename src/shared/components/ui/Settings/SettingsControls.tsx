@@ -103,6 +103,22 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     return i18n.getString('settings.languageJa');
   });
 
+  // Note: 테스트/SSR 환경에서는 select의 value 바인딩이 즉시 반영되지 않는 경우가 있어
+  // option의 selected 속성으로 초기 선택을 확정적으로 표시합니다.
+
+  // 옵션 렌더 순서를 현재 값이 먼저 오도록 재정렬하여 초기 선택을 보장합니다.
+  const themeOptions: ThemeOption[] = ['auto', 'light', 'dark'];
+  const languageOptions: LanguageOption[] = ['auto', 'ko', 'en', 'ja'];
+
+  const orderedThemeOptions = () => {
+    const cur = props.currentTheme;
+    return [cur, ...themeOptions.filter(v => v !== cur)];
+  };
+  const orderedLanguageOptions = () => {
+    const cur = props.currentLanguage;
+    return [cur, ...languageOptions.filter(v => v !== cur)];
+  };
+
   return (
     <div class={containerClass} data-testid={props['data-testid']}>
       <div class={settingClass}>
@@ -117,15 +133,15 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           title={themeTitle()}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
-          <option value='auto' selected={props.currentTheme === 'auto'}>
-            {themeAutoText()}
-          </option>
-          <option value='light' selected={props.currentTheme === 'light'}>
-            {themeLightText()}
-          </option>
-          <option value='dark' selected={props.currentTheme === 'dark'}>
-            {themeDarkText()}
-          </option>
+          {orderedThemeOptions().map(opt => (
+            <option value={opt} selected={opt === props.currentTheme}>
+              {opt === 'auto'
+                ? themeAutoText()
+                : opt === 'light'
+                  ? themeLightText()
+                  : themeDarkText()}
+            </option>
+          ))}
         </select>
       </div>
       <div class={settingClass}>
@@ -140,18 +156,17 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           title={languageTitle()}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
-          <option value='auto' selected={props.currentLanguage === 'auto'}>
-            {languageAutoText()}
-          </option>
-          <option value='ko' selected={props.currentLanguage === 'ko'}>
-            {languageKoText()}
-          </option>
-          <option value='en' selected={props.currentLanguage === 'en'}>
-            {languageEnText()}
-          </option>
-          <option value='ja' selected={props.currentLanguage === 'ja'}>
-            {languageJaText()}
-          </option>
+          {orderedLanguageOptions().map(opt => (
+            <option value={opt} selected={opt === props.currentLanguage}>
+              {opt === 'auto'
+                ? languageAutoText()
+                : opt === 'ko'
+                  ? languageKoText()
+                  : opt === 'en'
+                    ? languageEnText()
+                    : languageJaText()}
+            </option>
+          ))}
         </select>
       </div>
     </div>

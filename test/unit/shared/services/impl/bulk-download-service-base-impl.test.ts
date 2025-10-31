@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { BulkDownloadService } from '../../../../src/shared/services/bulk-download-service';
-import { logger } from '../../../../src/shared/logging/logger';
+import { BulkDownloadService } from '@/shared/services/bulk-download-service';
+import { logger } from '@/shared/logging/logger';
 
 describe('BulkDownloadService - BaseServiceImpl 패턴', () => {
   let service: BulkDownloadService;

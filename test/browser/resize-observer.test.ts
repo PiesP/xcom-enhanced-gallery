@@ -158,10 +158,11 @@ describe('ResizeObserver API', () => {
 
           // contentBoxSize와 borderBoxSize는 브라우저에 따라 지원 여부가 다름
           if (entry.contentBoxSize) {
-            const hasSize =
-              Array.isArray(entry.contentBoxSize) ||
-              (entry.contentBoxSize as ResizeObserverSize).inlineSize;
-            expect(hasSize).toBeDefined();
+            const size = Array.isArray(entry.contentBoxSize)
+              ? entry.contentBoxSize[0]
+              : (entry.contentBoxSize as unknown as ResizeObserverSize);
+            expect(size).toBeDefined();
+            expect(Number.isFinite(size.inlineSize)).toBe(true);
           }
 
           resolve();

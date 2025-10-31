@@ -6,26 +6,25 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createLogger } from '@/shared/logging/logger';
 
-type ConsoleSpyMap = {
-  info: ReturnType<typeof vi.spyOn>;
-  warn: ReturnType<typeof vi.spyOn>;
-  error: ReturnType<typeof vi.spyOn>;
-  debug: ReturnType<typeof vi.spyOn>;
-  log: ReturnType<typeof vi.spyOn>;
-};
-
 describe('Logger Output Channels', () => {
-  let consoleSpy: ConsoleSpyMap;
+  let infoSpy: ReturnType<typeof vi.spyOn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+  let debugSpy: ReturnType<typeof vi.spyOn>;
+  let logSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     // Console 메소드들을 spy로 모킹
-    consoleSpy = {
-      info: vi.spyOn(console, 'info').mockImplementation(() => {}),
-      warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-      error: vi.spyOn(console, 'error').mockImplementation(() => {}),
-      debug: vi.spyOn(console, 'debug').mockImplementation(() => {}),
-      log: vi.spyOn(console, 'log').mockImplementation(() => {}),
-    };
+    infoSpy = vi.spyOn(console, 'info') as unknown as ReturnType<typeof vi.spyOn>;
+    infoSpy.mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, 'warn') as unknown as ReturnType<typeof vi.spyOn>;
+    warnSpy.mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, 'error') as unknown as ReturnType<typeof vi.spyOn>;
+    errorSpy.mockImplementation(() => {});
+    debugSpy = vi.spyOn(console, 'debug') as unknown as ReturnType<typeof vi.spyOn>;
+    debugSpy.mockImplementation(() => {});
+    logSpy = vi.spyOn(console, 'log') as unknown as ReturnType<typeof vi.spyOn>;
+    logSpy.mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -38,8 +37,8 @@ describe('Logger Output Channels', () => {
 
     testLogger.info('Test info message');
 
-    expect(consoleSpy.info).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.warn).not.toHaveBeenCalled();
+    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('should use console.warn for warn level logs', () => {
@@ -47,8 +46,8 @@ describe('Logger Output Channels', () => {
 
     testLogger.warn('Test warning message');
 
-    expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.info).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(infoSpy).not.toHaveBeenCalled();
   });
 
   it('should use console.error for error level logs', () => {
@@ -56,8 +55,8 @@ describe('Logger Output Channels', () => {
 
     testLogger.error('Test error message');
 
-    expect(consoleSpy.error).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.warn).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('should use console.info for debug level logs (ESLint compliance)', () => {
@@ -65,8 +64,8 @@ describe('Logger Output Channels', () => {
 
     testLogger.debug('Test debug message');
 
-    expect(consoleSpy.info).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.warn).not.toHaveBeenCalled();
+    expect(infoSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('should use different output channels for different log levels', () => {
@@ -77,9 +76,9 @@ describe('Logger Output Channels', () => {
     testLogger.error('Error message');
     testLogger.debug('Debug message');
 
-    expect(consoleSpy.info).toHaveBeenCalledTimes(2); // info + debug
-    expect(consoleSpy.warn).toHaveBeenCalledTimes(1);
-    expect(consoleSpy.error).toHaveBeenCalledTimes(1);
+    expect(infoSpy).toHaveBeenCalledTimes(2); // info + debug
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
   });
 
   it('should format messages consistently across all levels', () => {
@@ -95,9 +94,9 @@ describe('Logger Output Channels', () => {
     testLogger.debug('Test message');
 
     // 모든 레벨에서 같은 형식의 메시지가 나와야 함
-    expect(consoleSpy.info).toHaveBeenNthCalledWith(1, '[TEST] [INFO]', 'Test message');
-    expect(consoleSpy.warn).toHaveBeenCalledWith('[TEST] [WARN]', 'Test message');
-    expect(consoleSpy.error).toHaveBeenCalledWith('[TEST] [ERROR]', 'Test message');
-    expect(consoleSpy.info).toHaveBeenNthCalledWith(2, '[TEST] [DEBUG]', 'Test message');
+    expect(infoSpy).toHaveBeenNthCalledWith(1, '[TEST] [INFO]', 'Test message');
+    expect(warnSpy).toHaveBeenCalledWith('[TEST] [WARN]', 'Test message');
+    expect(errorSpy).toHaveBeenCalledWith('[TEST] [ERROR]', 'Test message');
+    expect(infoSpy).toHaveBeenNthCalledWith(2, '[TEST] [DEBUG]', 'Test message');
   });
 });

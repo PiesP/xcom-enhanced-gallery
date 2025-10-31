@@ -3,7 +3,7 @@
  * - 규칙 유틸 통합 및 중복 제거
  */
 
-/* @vitest-environment jsdom */
+/* @vitest-environment happy-dom */
 /* eslint-env browser */
 
 import { describe, it, expect } from 'vitest';

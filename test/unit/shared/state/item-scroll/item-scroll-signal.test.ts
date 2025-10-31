@@ -39,7 +39,7 @@ describe('ItemScrollStateSignal', () => {
       const signal1 = createItemScrollStateSignal();
       const signal2 = createItemScrollStateSignal();
 
-      signal1.setState({ lastScrolledIndex: 10 });
+      signal1.setState(prev => ({ ...prev, lastScrolledIndex: 10 }));
       const state1 = signal1.getState();
       const state2 = signal2.getState();
 
@@ -120,11 +120,11 @@ describe('ItemScrollStateSignal', () => {
     it('should reset state for multiple calls', () => {
       const signal = createItemScrollStateSignal();
 
-      signal.setState({ lastScrolledIndex: 10 });
+      signal.setState(prev => ({ ...prev, lastScrolledIndex: 10 }));
       signal.reset();
       expect(signal.getState().lastScrolledIndex).toBe(-1);
 
-      signal.setState({ lastScrolledIndex: 20 });
+      signal.setState(prev => ({ ...prev, lastScrolledIndex: 20 }));
       signal.reset();
       expect(signal.getState().lastScrolledIndex).toBe(-1);
     });
@@ -308,7 +308,7 @@ describe('ItemScrollStateSignal', () => {
       const signal = createItemScrollStateSignal();
 
       // Update 1
-      signal.setState({ lastScrolledIndex: 1 });
+      signal.setState(prev => ({ ...prev, lastScrolledIndex: 1 }));
       expect(signal.getState().lastScrolledIndex).toBe(1);
 
       // Update 2

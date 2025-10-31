@@ -116,7 +116,7 @@ describe('Design Token Policy - Unified', () => {
     });
 
     it('css-animations inject uses only duration/easing tokens', async () => {
-      const { injectAnimationStyles } = await import('../../../src/shared/utils/css-animations');
+      const { injectAnimationStyles } = await import('@/shared/utils/css-animations');
       injectAnimationStyles();
 
       const doc = globalThis.document;
@@ -138,7 +138,7 @@ describe('Design Token Policy - Unified', () => {
     });
 
     it('AnimationService inject uses only duration/easing tokens', async () => {
-      const { AnimationService } = await import('../../../src/shared/services/animation-service');
+      const { AnimationService } = await import('@/shared/services/animation-service');
       const svc = AnimationService.getInstance();
       const doc = globalThis.document;
       await svc.fadeIn(doc.createElement('div'));

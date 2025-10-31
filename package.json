@@ -43,7 +43,7 @@
     "codeql:check": "node ./scripts/check-codeql.js",
     "// ===== NOTE: CI uses github/codeql-action@v3 (GitHub official), local only ===== ": "",
     "// ===== Test: Main ===== ": "",
-    "test": "NODE_OPTIONS=\"--max-old-space-size=6144 --preserve-symlinks\" VITEST_MAX_THREADS=1 vitest --project fast run --reporter=dot && npm run test:cleanup || npm run test:cleanup && exit 1 && npm run test:raf",
+    "test": "NODE_OPTIONS=\"--max-old-space-size=6144 --preserve-symlinks\" node ./scripts/run-fast-batched.js",
     "test:fast": "NODE_OPTIONS=\"--max-old-space-size=3072 --preserve-symlinks\" VITEST_MAX_THREADS=1 vitest --project fast run && npm run test:cleanup || npm run test:cleanup && exit 1",
     "test:full": "node ./scripts/run-all-tests.js",
     "test:all": "npm run test:full",

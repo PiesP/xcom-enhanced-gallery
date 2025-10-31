@@ -6,13 +6,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type StrategyModule =
-  typeof import('../../../../../src/shared/services/media-mapping/media-tab-url-direct-strategy');
+  typeof import('@/shared/services/media-mapping/media-tab-url-direct-strategy');
 
 async function importModule(): Promise<StrategyModule> {
   vi.resetModules();
-  return await import(
-    '../../../../../src/shared/services/media-mapping/media-tab-url-direct-strategy'
-  );
+  return await import('@/shared/services/media-mapping/media-tab-url-direct-strategy');
 }
 
 describe('MediaTabUrlDirectStrategy', () => {

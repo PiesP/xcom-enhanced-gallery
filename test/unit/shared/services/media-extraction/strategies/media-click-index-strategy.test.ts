@@ -9,8 +9,8 @@ import {
   DOMOrderEstimationStrategy,
   FallbackStrategy,
   type MediaClickIndexStrategy,
-} from '../../../../../../src/shared/services/media-extraction/strategies/media-click-index-strategy';
-import type { TweetMediaEntry } from '../../../../../../src/shared/services/media/twitter-video-extractor';
+} from '@/shared/services/media-extraction/strategies/media-click-index-strategy';
+import type { TweetMediaEntry } from '@/shared/services/media/twitter-video-extractor';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // Mock 데이터

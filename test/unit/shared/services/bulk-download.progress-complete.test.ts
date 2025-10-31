@@ -1,16 +1,28 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+let originalFetch: typeof globalThis.fetch | undefined;
+let originalCreateObjectURL: typeof URL.createObjectURL | undefined;
+
 describe('BulkDownloadService • PROGRESS-API-CONSISTENCY-01', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+    originalFetch = globalThis.fetch;
+    originalCreateObjectURL = globalThis.URL?.createObjectURL;
   });
 
   afterEach(() => {
-    // @ts-expect-error cleanup
-    globalThis.fetch = undefined;
-    // @ts-expect-error cleanup
-    globalThis.URL.createObjectURL = undefined;
+    if (originalFetch) {
+      globalThis.fetch = originalFetch;
+    } else {
+      delete (globalThis as { fetch?: typeof globalThis.fetch }).fetch;
+    }
+
+    if (originalCreateObjectURL) {
+      globalThis.URL.createObjectURL = originalCreateObjectURL;
+    } else {
+      delete (globalThis.URL as { createObjectURL?: typeof URL.createObjectURL }).createObjectURL;
+    }
   });
 
   it('emits exactly one final complete(100%) event for single-item flow', async () => {

@@ -12,7 +12,7 @@ describe('Native Browser Scroll', () => {
   const currentDir = dirname(fileURLToPath(import.meta.url));
   const verticalGalleryViewPath = resolve(
     currentDir,
-    '../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+    '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
   );
 
   describe('VerticalGalleryView scrollBy 제거', () => {
@@ -49,7 +49,7 @@ describe('Native Browser Scroll', () => {
   describe('useGalleryScroll 단순화', () => {
     const useGalleryScrollPath = resolve(
       currentDir,
-      '../../../src/features/gallery/hooks/useGalleryScroll.ts'
+      '../../../../src/features/gallery/hooks/useGalleryScroll.ts'
     );
 
     it('should use passive event listeners for wheel events', () => {
@@ -82,7 +82,7 @@ describe('Native Browser Scroll', () => {
   describe('CSS 기반 스크롤 설정', () => {
     const stylesPath = resolve(
       currentDir,
-      '../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css'
+      '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css'
     );
 
     it('should have overflow-y: auto for natural scrolling', () => {

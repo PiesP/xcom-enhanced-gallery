@@ -43,7 +43,8 @@ describe('Workflow Integration Tests', () => {
     it('여러 미디어를 포함한 트윗을 처리해야 한다', async () => {
       const medias = ['img', 'img', 'video'].map(tag => {
         const el = document.createElement(tag);
-        el.src =
+        const img = (el as any).asImage?.() ?? (el as HTMLImageElement);
+        img.src =
           tag === 'video'
             ? 'https://video.twimg.com/video.mp4'
             : 'https://pbs.twimg.com/media/test.jpg';

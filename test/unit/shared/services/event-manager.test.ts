@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { EventManager } from '../../../../src/shared/services/event-manager';
+import { EventManager } from '@/shared/services/event-manager';
 
 describe('EventManager', () => {
   let manager: EventManager;

@@ -17,28 +17,28 @@ import type { MediaInfo } from '@/shared/types/media.types';
 describe('Gallery Index Events (Phase 63 - Step 2)', () => {
   const mockMediaItems: MediaInfo[] = [
     {
+      id: 'index-event-1',
       url: 'https://example.com/image1.jpg',
       type: 'image',
       originalUrl: 'https://example.com/image1.jpg',
-      quality: 'large',
       tweetId: '1',
-      username: 'user',
+      tweetUsername: 'user',
     },
     {
+      id: 'index-event-2',
       url: 'https://example.com/image2.jpg',
       type: 'image',
       originalUrl: 'https://example.com/image2.jpg',
-      quality: 'large',
       tweetId: '2',
-      username: 'user',
+      tweetUsername: 'user',
     },
     {
+      id: 'index-event-3',
       url: 'https://example.com/image3.jpg',
       type: 'image',
       originalUrl: 'https://example.com/image3.jpg',
-      quality: 'large',
       tweetId: '3',
-      username: 'user',
+      tweetUsername: 'user',
     },
   ];
 

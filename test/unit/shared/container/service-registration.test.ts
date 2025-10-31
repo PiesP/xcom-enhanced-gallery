@@ -4,9 +4,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { registerCoreBaseServices } from '../../../../src/shared/container/service-accessors';
-import { CoreServiceRegistry } from '../../../../src/shared/container/core-service-registry';
-import { SERVICE_KEYS } from '../../../../src/constants';
+import { registerCoreBaseServices } from '@/shared/container/service-accessors';
+import { CoreServiceRegistry } from '@/shared/container/core-service-registry';
+import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 237: Service Registration', () => {
   describe('registerCoreBaseServices', () => {

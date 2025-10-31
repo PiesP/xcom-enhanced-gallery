@@ -6,6 +6,7 @@
 
 ## 최근 상태
 
+- **Phase 289**: 갤러리 렌더링을 로드 완료 이후로 지연 — ✅ 완료 (2025-10-31)
 - Phase 286: 개발 전용 Flow Tracer — 완료
 - Phase 285: 개발 전용 고급 로깅 — 완료
 
@@ -19,64 +20,10 @@
 - 개발 전용 로깅/Flow Tracer 정책 문서화
 - 수용 기준: 코딩 가이드/테스트 전략/체크리스트 업데이트, 전체 빌드 GREEN
 
-## 우선 과제(Phase 289): 갤러리 렌더링을 로드 완료 이후로 지연
-
-목표
-
-- 갤러리 앱 초기 렌더링을 문서 및 서브 리소스(이미지, 폰트 등)가 로드된 이후(window.load)로 이동해 최초 레이아웃 변동(FOUC 유사 현상)과 이미지 디코드 레이스를 줄임
-- Userscript 특성(@run-at document-idle)과 충돌 없이 적용, 테스트 모드 제외
-
-제약/정책 준수
-
-- Vendor getter만 사용(getSolid/getUserscript 등)
-- PC 전용 이벤트만 사용(click/keydown/keyup/wheel/contextmenu/mouse*)
-- 디자인 토큰 유지(관련 UI 변경 없음)
-
-검토한 대안과 판단
-
-- 대안 A: window load 이벤트 대기 후 갤러리 초기화(로드 완료 시 즉시 진행, 8s 타임아웃)
-  - 장점: 구현 단순, 예측 가능, 브라우저/Userscript 환경 광범위 호환
-  - 단점: 일부 환경에서 load 지연 시 초기 표시가 늦어질 수 있음(타임아웃으로 완화)
-- 대안 B: 주요 이미지 사전 디코드(decode()) + requestIdleCallback 연계 후 초기화
-  - 장점: 실제로 필요한 리소스 기준의 정밀한 타이밍
-  - 단점: 복잡도 증가, 브라우저 호환/모킹 비용 상승, 유지보수 부담 큼
-- 대안 C: IntersectionObserver 기반 지연 마운트(뷰포트 진입 시)
-  - 장점: 지연 로딩 패턴과 일관
-  - 단점: 초기 렌더링 지연 목적에는 부적합(초기 뷰 구성은 필요)
-- 대안 D: Skeleton/Placeholder UI로 전환(지연은 하지 않음)
-  - 장점: 체감 성능 향상
-  - 단점: 문제의 원인(이미지/리소스 로드 타이밍) 자체는 해소하지 않음
-
-선택안(권고)
-
-- 대안 A 채택: window load 대기 기반으로 초기화, 단 timeout(8s) 및 이미 로드된 상황 즉시 진행, 테스트 모드 제외. 설정 플래그로 토글 가능.
-
-작업 목록(우선순위)
-
-1) 유틸 추가: `@shared/utils/browser/waitForWindowLoad()`
-   - 동작: 이미 load 완료 → 즉시 resolve, 아니면 `window.addEventListener('load', once)`로 대기, 8s 타임아웃 시 resolve
-   - 테스트: 단위 테스트로 세 상태(완료/이벤트/타임아웃) 검증
-2) 설정 플래그: `AppConfig.renderAfterLoad: boolean` 추가(기본 true, 테스트/디버깅 시 false 허용)
-3) 부트스트랩 변경: `startApplication()`의 갤러리 초기화(현 5단계)를 `if (renderAfterLoad) await waitForWindowLoad();` 후 수행
-   - 테스트 모드(import.meta.env.MODE === 'test')에서는 기존처럼 즉시 초기화
-4) 트레이스 포인트 추가(DEV): `gallery:after-load:wait`, `gallery:after-load:init`
-5) 테스트 작성
-   - 단위: wait 유틸 동작 검증
-   - 브라우저: load 전후 갤러리 컨테이너 생성 여부 검증
-   - E2E: 페이지 로드 후 갤러리 핵심 UI 표시 스모크
-
-수용 기준
-
-- 브라우저 테스트: load 전 갤러리 컨테이너 미존재, load 후 생성(GREEN)
-- E2E 스모크: 초기 페이지 로드 후 갤러리 UI 표시(GREEN)
-- 타임아웃(8s) 경과 시에도 갤러리 초기화가 누락되지 않음(유틸 단위 테스트 GREEN)
-- 정적/보안/스타일/접근성/Userscript validator 포함 `npm run build` GREEN
-- 최소 diff, alias 규칙·경계, Vendor getter/PC-only/디자인 토큰 준수
-
 ## 메트릭(요약)
 
-- 번들 크기: 344.54 KB (gzip 93.16 KB)
-- 테스트: 단위 1007/1007, E2E 86/86, 접근성 AA
+- 번들 크기: 346.92 KB (gzip 93.97 KB)
+- 테스트: 단위 772/780(8 skipped, 99%), E2E 88/93(5 skipped), 접근성 AA
 - 품질: TS/ESLint/Stylelint 0 에러, CodeQL 0 경고
 
 ## 참고

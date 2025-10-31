@@ -14,8 +14,8 @@ import { createAppContainer } from '../../helpers/createAppContainer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SERVICE_KEYS } from '../../../../src/constants';
-import { CoreService } from '../../../../src/shared/services/service-manager';
+import { SERVICE_KEYS } from '@/constants';
+import { CoreService } from '@/shared/services/service-manager';
 
 describe('Phase 7 - Cleanup & Hard Removal', () => {
   let container: any;
@@ -37,10 +37,7 @@ describe('Phase 7 - Cleanup & Hard Removal', () => {
       // 파일 존재 여부를 직접 확인한다.
       const __filename = fileURLToPath(import.meta.url);
       const __dirnameLocal = path.dirname(__filename);
-      const legacyPath = path.resolve(
-        __dirnameLocal,
-        '../../../../src/shared/container/legacy/legacyAdapter.ts'
-      );
+      const legacyPath = path.resolve(__dirnameLocal, '@/shared/container/legacy/legacyAdapter.ts');
       const legacyJsPath = legacyPath.replace(/\.ts$/, '.js');
       const exists = fs.existsSync(legacyPath) || fs.existsSync(legacyJsPath);
       expect(exists).toBe(false);
@@ -48,7 +45,7 @@ describe('Phase 7 - Cleanup & Hard Removal', () => {
 
     test('CoreService 전역 설치가 제거되어야 함', async () => {
       // CoreService.getInstance 호출이 실패해야 함
-      const module = await import('../../../../src/shared/services/ServiceManager');
+      const module = await import('@/shared/services/ServiceManager');
       expect(() => {
         module.CoreService.getInstance();
       }).not.toThrow();

@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { UserscriptStorageAdapter } from '@features/settings/services/storage/userscript-storage-adapter';
+import { UserscriptStorageAdapter } from '@shared/services/storage';
 import type { UserscriptAPI } from '@shared/external/userscript/adapter';
 
 describe('UserscriptStorageAdapter', () => {
@@ -15,6 +15,13 @@ describe('UserscriptStorageAdapter', () => {
     // getUserscript() 모킹
     const storage = new Map<string, unknown>();
 
+    const getValueImpl: UserscriptAPI['getValue'] = async <T>(key: string, defaultValue?: T) => {
+      if (storage.has(key)) {
+        return storage.get(key) as T;
+      }
+      return defaultValue;
+    };
+
     mockUserscript = {
       hasGM: true,
       manager: 'tampermonkey',
@@ -24,9 +31,9 @@ describe('UserscriptStorageAdapter', () => {
       setValue: vi.fn(async (key: string, value: unknown) => {
         storage.set(key, value);
       }),
-      getValue: vi.fn(async <T>(key: string, defaultValue?: T) => {
-        return (storage.get(key) ?? defaultValue) as T | undefined;
-      }),
+      getValue: vi.fn(
+        getValueImpl as UserscriptAPI['getValue']
+      ) as unknown as UserscriptAPI['getValue'],
       deleteValue: vi.fn(async (key: string) => {
         storage.delete(key);
       }),

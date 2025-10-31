@@ -4,8 +4,8 @@
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, h } from '@test/utils/testing-library';
-import type { MediaInfo } from '../../../../../src/shared/types';
-import { galleryState } from '../../../../../src/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@/shared/types';
+import { galleryState } from '@/shared/state/signals/gallery.signals';
 
 let capturedOnScroll: ((delta: number, target: HTMLElement | null) => void) | undefined;
 
@@ -20,7 +20,7 @@ const useGalleryScrollMock = vi.fn(
   }
 );
 
-vi.mock('../../../../../src/features/gallery/hooks/useGalleryScroll', () => ({
+vi.mock('@/features/gallery/hooks/useGalleryScroll', () => ({
   useGalleryScroll: (options: unknown) =>
     useGalleryScrollMock(
       options as { onScroll?: (delta: number, target: HTMLElement | null) => void }
@@ -28,52 +28,40 @@ vi.mock('../../../../../src/features/gallery/hooks/useGalleryScroll', () => ({
   SCROLL_IDLE_TIMEOUT: 150,
 }));
 
-vi.mock(
-  '../../../../../src/features/gallery/components/vertical-gallery-view/hooks/useGalleryItemScroll',
-  () => ({
-    useGalleryItemScroll: vi.fn(),
-  })
-);
+vi.mock('@/features/gallery/components/vertical-gallery-view/hooks/useGalleryItemScroll', () => ({
+  useGalleryItemScroll: vi.fn(),
+}));
 
-vi.mock(
-  '../../../../../src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup',
-  () => ({
-    useGalleryCleanup: vi.fn(),
-  })
-);
+vi.mock('@/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup', () => ({
+  useGalleryCleanup: vi.fn(),
+}));
 
-vi.mock(
-  '../../../../../src/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard',
-  () => ({
-    useGalleryKeyboard: vi.fn(),
-  })
-);
+vi.mock('@/features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard', () => ({
+  useGalleryKeyboard: vi.fn(),
+}));
 
-vi.mock('../../../../../src/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings', () => ({
+vi.mock('@/shared/components/ui/ToolbarWithSettings/ToolbarWithSettings', () => ({
   ToolbarWithSettings: () => null,
 }));
 
-vi.mock(
-  '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalImageItem',
-  () => ({
-    VerticalImageItem: () => null,
-  })
-);
+vi.mock('@/features/gallery/components/vertical-gallery-view/VerticalImageItem', () => ({
+  VerticalImageItem: () => null,
+}));
 
 vi.mock(
-  '../../../../../src/features/gallery/components/KeyboardHelpOverlay/KeyboardHelpOverlay',
+  '@/features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay',
   () => ({
     KeyboardHelpOverlay: () => null,
   })
 );
 
-vi.mock('../../../../../src/shared/utils/animations', () => ({
+vi.mock('@/shared/utils/animations', () => ({
   animateGalleryEnter: vi.fn(),
   animateGalleryExit: vi.fn(),
   setupScrollAnimation: vi.fn().mockReturnValue(() => {}),
 }));
 
-vi.mock('../../../../../src/shared/utils/viewport', () => ({
+vi.mock('@/shared/utils/viewport', () => ({
   observeViewportCssVars: vi.fn().mockReturnValue(() => {}),
 }));
 
@@ -124,7 +112,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     // Phase 76: 브라우저 네이티브 스크롤로 전환 - scrollBy 제거됨
     // 이 테스트는 더 이상 유효하지 않음
     const { VerticalGalleryView } = await import(
-      '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
+      '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const { container } = render(h(VerticalGalleryView));
@@ -148,7 +136,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
 
   it('컨테이너가 최상단일 때 음수 델타는 무시되어야 함', async () => {
     const { VerticalGalleryView } = await import(
-      '../../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
+      '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
 
     const { container } = render(h(VerticalGalleryView));

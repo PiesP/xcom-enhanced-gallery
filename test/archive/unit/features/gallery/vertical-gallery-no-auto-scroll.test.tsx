@@ -39,7 +39,7 @@ describe('Phase 18: Vertical Gallery - No Auto Scroll on Media Load', () => {
       // Given: VerticalGalleryView 소스 코드 읽기
       const sourceFilePath = join(
         currentDir,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const sourceCode = readFileSync(sourceFilePath, 'utf-8');
 
@@ -52,7 +52,7 @@ describe('Phase 18: Vertical Gallery - No Auto Scroll on Media Load', () => {
       // Given: VerticalGalleryView 소스 코드 읽기
       const sourceFilePath = join(
         currentDir,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const sourceCode = readFileSync(sourceFilePath, 'utf-8');
 
@@ -67,7 +67,7 @@ describe('Phase 18: Vertical Gallery - No Auto Scroll on Media Load', () => {
       // Given: VerticalGalleryView 소스 코드 읽기
       const sourceFilePath = join(
         currentDir,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const sourceCode = readFileSync(sourceFilePath, 'utf-8');
 
@@ -83,7 +83,7 @@ describe('Phase 18: Vertical Gallery - No Auto Scroll on Media Load', () => {
       // Given: VerticalGalleryView 소스 코드 읽기
       const sourceFilePath = join(
         currentDir,
-        '../../../../src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
+        '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx'
       );
       const sourceCode = readFileSync(sourceFilePath, 'utf-8');
 

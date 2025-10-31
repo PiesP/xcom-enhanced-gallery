@@ -16,8 +16,8 @@ import {
   getVideoUrlFromThumbnail,
   TwitterAPI,
   type TweetMediaEntry,
-} from '../../../../../src/shared/services/media/twitter-video-extractor';
-import { STABLE_SELECTORS } from '../../../../../src/constants';
+} from '@/shared/services/media/twitter-video-extractor';
+import { STABLE_SELECTORS } from '@/constants';
 
 describe('twitter-video-extractor', () => {
   describe('TwitterAPI.extractDimensionsFromUrl', () => {

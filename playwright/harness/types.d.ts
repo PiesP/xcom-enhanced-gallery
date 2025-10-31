@@ -149,6 +149,8 @@ export interface XegHarness {
   getMemoryUsage(): Promise<MemoryMetrics>;
   // Debug function
   getDebugInfo(): Promise<DebugInfo>;
+  // Phase 289: window load deferral helper
+  waitForWindowLoad(options?: { timeoutMs?: number; forceEventPath?: boolean }): Promise<boolean>;
 }
 
 declare global {

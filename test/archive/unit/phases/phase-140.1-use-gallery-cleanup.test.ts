@@ -3,9 +3,9 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { useGalleryCleanup } from '../../../../../../src/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup';
-import { initializeVendors, getSolid } from '../../../../../../src/shared/external/vendors';
-import { globalTimerManager } from '../../../../../../src/shared/utils/timer-management';
+import { useGalleryCleanup } from '@/features/gallery/components/vertical-gallery-view/hooks/useGalleryCleanup';
+import { initializeVendors, getSolid } from '@/shared/external/vendors';
+import { globalTimerManager } from '@/shared/utils/timer-management';
 
 describe('Phase 140.1: useGalleryCleanup 핵심 기능', () => {
   beforeEach(() => {

@@ -14,9 +14,9 @@
  * ✅ Manual Browser Verification: Confirmed working in real browser environment (2025-10-16)
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, cleanup, waitFor } from '../../utils/testing-library';
-import type { ToolbarProps } from '../../../src/shared/components/ui/Toolbar/Toolbar.types';
-import { getSolid } from '../../../src/shared/external/vendors';
+import { render, cleanup, waitFor } from '@test/utils/testing-library';
+import type { ToolbarProps } from '@/shared/components/ui/Toolbar/Toolbar.types';
+import { getSolid } from '@shared/external/vendors';
 
 function createDefaultProps(): ToolbarProps {
   return {
@@ -43,7 +43,7 @@ describe('Phase 80.1: Toolbar Settings Toggle Regression', () => {
   });
 
   async function setup() {
-    const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+    const { Toolbar } = await import('@/shared/components/ui/Toolbar');
     const props = createDefaultProps();
     const { container } = render(() => solid.createComponent(Toolbar, props));
 

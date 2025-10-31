@@ -9,11 +9,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Import modules to be tested
 import { createFocusTrap as legacyCreateFocusTrap } from '@/shared/utils/accessibility/keyboard-navigation';
 import * as focusTrapModule from '@/shared/utils/focus-trap';
+import type { FocusTrap, FocusTrapOptions } from '@/shared/utils/focus-trap';
+
+type CreateFocusTrapFn = typeof focusTrapModule.createFocusTrap;
+type FocusTrapSpy = ReturnType<typeof vi.fn<CreateFocusTrapFn>>;
 
 describe('Focus Trap 표준화 (keyboard-navigation → unified focusTrap)', () => {
   let container: HTMLElement;
-  let createFocusTrapSpy: ReturnType<typeof vi.spyOn>;
-  let trapInstance: ReturnType<typeof focusTrapModule.createFocusTrap>;
+  let createFocusTrapSpy: FocusTrapSpy;
+  let trapInstance: FocusTrap;
 
   beforeEach(() => {
     container = globalThis.document.createElement('div');
@@ -30,7 +34,8 @@ describe('Focus Trap 표준화 (keyboard-navigation → unified focusTrap)', () 
       deactivate: vi.fn(),
       destroy: vi.fn(),
     };
-    createFocusTrapSpy = vi.spyOn(focusTrapModule, 'createFocusTrap').mockReturnValue(trapInstance);
+    createFocusTrapSpy = vi.fn<CreateFocusTrapFn>(() => trapInstance);
+    vi.spyOn(focusTrapModule, 'createFocusTrap').mockImplementation(createFocusTrapSpy);
   });
 
   afterEach(() => {

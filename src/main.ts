@@ -10,6 +10,7 @@ import { logger, tracePoint, traceAsync, startFlowTrace, stopFlowTrace } from '@
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import type { AppConfig } from '@/types';
+import { waitForWindowLoad } from '@shared/utils/window-load';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import {
   warmupCriticalServices,
@@ -43,6 +44,7 @@ function createAppConfig(): AppConfig {
     debug: import.meta.env.DEV,
     autoStart: true,
     performanceMonitoring: import.meta.env.DEV,
+    renderAfterLoad: true,
   };
 }
 
@@ -385,10 +387,19 @@ async function startApplication(): Promise<void> {
     // 4단계: 전역 이벤트 핸들러 설정
     setupGlobalEventHandlers();
 
-    // 5단계: 갤러리 앱을 즉시 초기화 (지연 없음)
+    // 5단계: 갤러리 앱 초기화 (옵션에 따라 window.load 이후로 지연)
     // 테스트 모드에서는 Preact의 전역 이벤트 위임 리스너가 등록되어
     // 누수 스캔 테스트(active EventTarget listeners)에 간섭할 수 있으므로 생략한다.
     if (import.meta.env.MODE !== 'test') {
+      const appConfig = createAppConfig();
+      if (appConfig.renderAfterLoad !== false) {
+        if (__DEV__ && tracePoint) tracePoint('window:load:wait:start');
+        await (traceAsync
+          ? traceAsync('window:load:wait', () => waitForWindowLoad({ timeoutMs: 8000 }))
+          : waitForWindowLoad({ timeoutMs: 8000 }));
+        if (__DEV__ && tracePoint) tracePoint('window:load:wait:done');
+      }
+
       await (traceAsync
         ? traceAsync('gallery:immediate', () => initializeGalleryImmediately())
         : initializeGalleryImmediately());

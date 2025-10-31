@@ -84,7 +84,7 @@ describe('Phase 19: 테스트 console.log 제거 (RED → GREEN)', () => {
 
   describe('19.4: logger 시스템 정상 작동 확인', () => {
     it('logger가 정상적으로 동작해야 함', async () => {
-      const { logger } = await import('../../../src/shared/logging/logger');
+      const { logger } = await import('@/shared/logging/logger');
 
       expect(logger).toBeDefined();
       expect(typeof logger.debug).toBe('function');

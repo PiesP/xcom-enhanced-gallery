@@ -8,7 +8,7 @@ import {
   SettingsStateMachine,
   type SettingsState,
   type SettingsAction,
-} from '../../../src/shared/state/settings-state-machine';
+} from '@/shared/state/machines/settings-state-machine';
 
 describe('SettingsStateMachine', () => {
   describe('createInitialState', () => {

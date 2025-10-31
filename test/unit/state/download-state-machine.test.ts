@@ -8,7 +8,7 @@ import {
   DownloadStateMachine,
   type DownloadState,
   type DownloadAction,
-} from '../../../src/shared/state/download-state-machine';
+} from '@shared/state/machines/download-state-machine';
 
 describe('DownloadStateMachine', () => {
   describe('createInitialState', () => {

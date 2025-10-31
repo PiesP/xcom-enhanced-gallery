@@ -15,13 +15,13 @@ describe('Phase 238: GalleryHOC require 제거 (회귀 방지)', () => {
     expect(typeof withGallery).toBe('function');
   });
 
-  it('should import ComponentStandards statically without require', async () => {
-    // ComponentStandards가 static import로 로드되는지 확인
-    const { ComponentStandards } = await import('@shared/utils/component-utils');
+  it('should import component utility helpers with static import', async () => {
+    const utilities = await import('@shared/utils/component-utils');
 
-    expect(ComponentStandards).toBeDefined();
-    expect(ComponentStandards.createClassName).toBeDefined();
-    expect(typeof ComponentStandards.createClassName).toBe('function');
+    expect(utilities.createClassName).toBeDefined();
+    expect(typeof utilities.createClassName).toBe('function');
+    expect(utilities.createAriaProps).toBeDefined();
+    expect(typeof utilities.createAriaProps).toBe('function');
   });
 
   it('should create HOC-wrapped component without require errors', async () => {
@@ -51,7 +51,7 @@ describe('Phase 238: GalleryHOC require 제거 (회귀 방지)', () => {
     const testCases = [
       { type: 'container' as const },
       { type: 'item' as const, className: 'custom' },
-      { type: 'control' as const, events: { stopPropagation: true } },
+      { type: 'control' as const, events: { preventClick: true } },
       { type: 'overlay' as const },
       { type: 'viewer' as const },
     ];

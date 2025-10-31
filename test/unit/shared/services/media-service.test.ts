@@ -6,7 +6,7 @@
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MediaService } from '../../../../src/shared/services/media-service.js';
+import { MediaService } from '@/shared/services/media-service.js';
 
 describe('MediaService', () => {
   let service: MediaService;

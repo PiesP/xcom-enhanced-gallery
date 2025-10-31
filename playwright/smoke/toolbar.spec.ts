@@ -23,7 +23,11 @@ test.describe('Toolbar accessibility', () => {
     const containerId = await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
-      const result = await harness.mountToolbar({ currentIndex: 0, totalCount: 3 });
+      const result = await harness.mountToolbar({
+        currentIndex: 0,
+        totalCount: 3,
+        isDownloading: false,
+      });
       return result.containerId;
     });
 
@@ -48,7 +52,11 @@ test.describe('Toolbar accessibility', () => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
-      await harness.mountToolbar({ currentIndex: 0, totalCount: 2 });
+      await harness.mountToolbar({
+        currentIndex: 0,
+        totalCount: 2,
+        isDownloading: false,
+      });
     });
 
     const prevButton = page.getByLabel('이전 미디어');
@@ -63,7 +71,11 @@ test.describe('Toolbar accessibility', () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
       await harness.disposeToolbar();
-      await harness.mountToolbar({ currentIndex: 1, totalCount: 2 });
+      await harness.mountToolbar({
+        currentIndex: 1,
+        totalCount: 2,
+        isDownloading: false,
+      });
     });
 
     // 재마운트 후 새로운 버튼 locator

@@ -1,4 +1,4 @@
-import type { ToolbarProps as SolidToolbarProps } from '@shared/components/ui/Toolbar/Toolbar';
+import type { ToolbarProps as SolidToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import type { EventHandlers } from '@shared/utils/events';
@@ -35,6 +35,7 @@ import { SERVICE_KEYS } from '@/constants';
 import { CoreService } from '@shared/services/service-manager';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import { initializeGalleryEvents, cleanupGalleryEvents } from '@shared/utils/events';
+import { waitForWindowLoad } from '@shared/utils/window-load';
 
 const SAMPLE_MEDIA: MediaInfo = {
   id: 'sample-media',
@@ -1255,6 +1256,7 @@ const harness: XegHarness = {
   getGalleryAppState: getGalleryAppStateHarness,
   disposeGalleryApp: disposeGalleryAppHarness,
   evaluateGalleryEvents: evaluateGalleryEventsHarness,
+  waitForWindowLoad: (opts: any) => waitForWindowLoad(opts),
   // Phase 82.2: Focus Tracking E2E API
   setupFocusTracker: setupFocusTrackerHarness,
   simulateViewportScroll: simulateViewportScrollHarness,

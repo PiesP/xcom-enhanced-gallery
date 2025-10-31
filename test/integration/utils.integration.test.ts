@@ -35,20 +35,20 @@ class MediaExtractor {
 
 /** Mock Gallery Manager */
 class GalleryManager {
-  private open = false;
+  private opened = false;
 
   async open(items: Array<{ type: string; url: string }>): Promise<boolean> {
     if (!items?.length) return false;
-    this.open = true;
+    this.opened = true;
     return true;
   }
 
   close(): void {
-    this.open = false;
+    this.opened = false;
   }
 
   isOpen(): boolean {
-    return this.open;
+    return this.opened;
   }
 }
 

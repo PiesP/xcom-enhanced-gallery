@@ -126,3 +126,62 @@ export class GlobalErrorHandler {
  * 전역 에러 핸들러 인스턴스
  */
 export const globalErrorHandler = GlobalErrorHandler.getInstance();
+
+// ---------------------------------------------
+// Utility wrappers for safe execution (testing)
+// ---------------------------------------------
+// 일부 테스트 스위트(result-pattern-consolidation 등)는 에러 핸들러 모듈에서
+// 안전 실행 유틸리티 제공을 기대합니다. 구현 중복을 피하기 위해 core-types의
+// Result 유틸을 위임 래퍼로 제공합니다.
+
+import {
+  safeAsync as coreSafeAsync,
+  safe as coreSafe,
+  isSuccess,
+} from '@shared/types/core/core-types';
+
+/**
+ * 비동기 안전 실행 래퍼
+ * 성공 시 결과값을 반환하고, 실패 시 defaultValue(제공된 경우)를 반환합니다.
+ * @param fn 실행할 비동기 함수
+ * @param context 로깅/디버깅 컨텍스트 식별자(옵션)
+ * @param defaultValue 실패 시 반환할 기본값(옵션)
+ */
+export async function safeAsync<T>(
+  fn: () => Promise<T>,
+  context?: string,
+  defaultValue?: T
+): Promise<T | undefined> {
+  try {
+    const result = await coreSafeAsync(fn);
+    if (isSuccess(result)) return result.data;
+    // 실패 시 기본값 반환(있다면)
+    if (typeof defaultValue !== 'undefined') return defaultValue;
+    return undefined;
+  } catch (e) {
+    // 예외 발생 시에도 동일 정책 적용
+    logger.error('[error-handler.safeAsync] execution failed', { context, error: e });
+    if (typeof defaultValue !== 'undefined') return defaultValue;
+    return undefined;
+  }
+}
+
+/**
+ * 동기 안전 실행 래퍼
+ * 성공 시 결과값을 반환하고, 실패 시 defaultValue(제공된 경우)를 반환합니다.
+ * @param fn 실행할 동기 함수
+ * @param context 로깅/디버깅 컨텍스트 식별자(옵션)
+ * @param defaultValue 실패 시 반환할 기본값(옵션)
+ */
+export function safeSync<T>(fn: () => T, context?: string, defaultValue?: T): T | undefined {
+  try {
+    const result = coreSafe(fn);
+    if (isSuccess(result)) return result.data as T;
+    if (typeof defaultValue !== 'undefined') return defaultValue;
+    return undefined;
+  } catch (e) {
+    logger.error('[error-handler.safeSync] execution failed', { context, error: e });
+    if (typeof defaultValue !== 'undefined') return defaultValue;
+    return undefined;
+  }
+}

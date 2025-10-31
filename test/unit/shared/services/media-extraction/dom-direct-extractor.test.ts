@@ -4,15 +4,15 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DOMDirectExtractor } from '../../../../../src/shared/services/media-extraction/extractors/dom-direct-extractor';
+import { DOMDirectExtractor } from '@/shared/services/media-extraction/extractors/dom-direct-extractor';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
   TweetInfo,
-} from '../../../../../src/shared/types/media.types';
+} from '@/shared/types/media.types';
 
 // Mock dependencies
-vi.mock('../../../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('../../../../../src/shared/logging/logger', () => ({
   },
 }));
 
-vi.mock('../../../../../src/shared/utils/media/media-url.util', () => ({
+vi.mock('@/shared/utils/media/media-url.util', () => ({
   extractOriginalImageUrl: vi.fn((url: string) => url.split('?')[0]),
   isValidMediaUrl: vi.fn((url: string) => {
     try {
@@ -39,7 +39,7 @@ const mockSelectorRegistry = {
   findTweetContainer: vi.fn(),
 };
 
-vi.mock('../../../../../src/shared/dom', () => ({
+vi.mock('@/shared/dom', () => ({
   createSelectorRegistry: vi.fn(() => mockSelectorRegistry),
 }));
 

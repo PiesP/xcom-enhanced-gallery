@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { LanguageService } from '../../../src/shared/services/language-service';
+import { LanguageService } from '@/shared/services/language-service';
 
 // 사용자-facing 한국어 literal (Phase 4 이전 코드에 존재) – 모두 키로 대체되어야 함
 const PROHIBITED_LITERALS = [

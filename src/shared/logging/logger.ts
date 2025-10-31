@@ -106,9 +106,54 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 const noop = (): void => {};
-// Use __DEV__ global (defined in vite.config.ts) instead of import.meta.env.DEV
-// to ensure proper tree-shaking in production builds
-const isDev = __DEV__;
+// Detect test environment (Vitest/Happydom)
+// Prefer explicit signals to avoid false positives.
+const isTest: boolean = (() => {
+  try {
+    // Vitest exposes import.meta.vitest
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const meta = (import.meta as any) || {};
+    if (typeof meta?.vitest !== 'undefined') return true;
+  } catch {
+    // ignore
+  }
+
+  try {
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.VITEST === 'true' || process.env.NODE_ENV === 'test') return true;
+    }
+  } catch {
+    // ignore
+  }
+
+  return false;
+})();
+
+// Use __DEV__ global (defined in vite/vitest config) when available.
+// In some Node/test initializations __DEV__ may be undefined – guard with fallbacks.
+// Fallback order: globalThis.__DEV__ → import.meta.env.DEV → NODE_ENV !== 'production' → true
+const isDev: boolean = (() => {
+  try {
+    type GlobalFlags = { __DEV__?: unknown };
+    const g = (globalThis as unknown as GlobalFlags) || {};
+    if (typeof g.__DEV__ !== 'undefined') return Boolean(g.__DEV__);
+  } catch {
+    // ignore
+  }
+
+  try {
+    type ImportMetaEnvLike = { env?: { DEV?: unknown } };
+    const meta = (import.meta as unknown as ImportMetaEnvLike) || {};
+    if (typeof meta.env?.DEV !== 'undefined') return Boolean(meta.env?.DEV);
+  } catch {
+    // ignore
+  }
+
+  if (typeof process !== 'undefined' && process.env && typeof process.env.NODE_ENV === 'string') {
+    return process.env.NODE_ENV !== 'production';
+  }
+  return true;
+})();
 
 type LoggerFactory = (config?: Partial<LoggerConfig>) => Logger;
 type ScopedFactory = (scope: string, config?: Partial<LoggerConfig>) => Logger;
@@ -124,6 +169,8 @@ let createScopedLoggerWithCorrelationImpl: ScopedCorrelationFactory;
 
 if (isDev) {
   const getEnvironmentLogLevel = (): LogLevel => {
+    // In test runs, keep logs minimal from import-time to avoid worker IPC pressure.
+    if (isTest) return 'error';
     // Phase 137: Type Guard 기반 안전한 Userscript 환경 감지
     try {
       if (typeof window !== 'undefined') {
@@ -308,9 +355,9 @@ export function createLogger(config: Partial<LoggerConfig> = {}): Logger {
  * @public
  */
 export const logger: Logger = createLogger({
-  level: isDev ? 'debug' : 'warn',
-  includeTimestamp: isDev,
-  includeStackTrace: isDev,
+  level: isTest ? 'error' : isDev ? 'debug' : 'warn',
+  includeTimestamp: isDev && !isTest,
+  includeStackTrace: isDev && !isTest,
 });
 
 /**

@@ -9,11 +9,11 @@ import {
   extractUsername,
   parseUsernameFast,
   type UsernameExtractionResult,
-} from '../../../../../src/shared/services/media/username-extraction-service';
-import { SYSTEM_PAGES } from '../../../../../src/constants';
+} from '@/shared/services/media/username-extraction-service';
+import { SYSTEM_PAGES } from '@/constants';
 
 // Mock logger
-vi.mock('../../../../../src/shared/logging/logger', () => ({
+vi.mock('@/shared/logging/logger', () => ({
   logger: {
     warn: vi.fn(),
     debug: vi.fn(),

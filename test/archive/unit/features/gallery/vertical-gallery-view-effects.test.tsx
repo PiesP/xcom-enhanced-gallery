@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getSolid } from '../../../../src/shared/external/vendors';
+import { getSolid } from '@/shared/external/vendors';
 
 const { createRoot, createSignal } = getSolid();
 

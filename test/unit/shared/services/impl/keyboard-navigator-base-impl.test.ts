@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { KeyboardNavigator } from '../../../../../../src/shared/services/input/keyboard-navigator';
+import { KeyboardNavigator } from '@/shared/services/input/keyboard-navigator';
 
 describe('KeyboardNavigator - BaseServiceImpl Pattern', () => {
   let navigator: KeyboardNavigator;
@@ -264,9 +264,7 @@ describe('KeyboardNavigator - BaseServiceImpl Pattern', () => {
   describe('Singleton Export', () => {
     it('should export keyboardNavigator singleton instance', async () => {
       // Import the exported instance
-      const { keyboardNavigator } = await import(
-        '../../../src/shared/services/input/keyboard-navigator'
-      );
+      const { keyboardNavigator } = await import('@/shared/services/input/keyboard-navigator');
       expect(keyboardNavigator).toBeInstanceOf(KeyboardNavigator);
     });
   });

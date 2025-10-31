@@ -91,7 +91,8 @@ export class MediaProcessor {
       if (result.success) {
         logger.info(`✅ MediaProcessor: ${result.data.length}개 미디어 처리 완료`);
       } else {
-        logger.error('❌ MediaProcessor: 검증 실패:', result.error);
+        // Avoid direct union property access; log a generic failure message
+        logger.error('❌ MediaProcessor: 검증 실패');
       }
 
       if (collectTelemetry) {

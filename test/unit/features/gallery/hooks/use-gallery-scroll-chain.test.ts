@@ -1,14 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { getSolid } from '../../../../../src/shared/external/vendors';
-import {
-  useGalleryScroll,
-  SCROLL_IDLE_TIMEOUT,
-} from '../../../../../src/features/gallery/hooks/useGalleryScroll';
-import {
-  galleryState,
-  type GalleryState,
-} from '../../../../../src/shared/state/signals/gallery.signals';
-import { globalTimerManager } from '../../../../../src/shared/utils/timer-management';
+import { getSolid } from '@/shared/external/vendors';
+import { useGalleryScroll, SCROLL_IDLE_TIMEOUT } from '@/features/gallery/hooks/useGalleryScroll';
+import { galleryState, type GalleryState } from '@/shared/state/signals/gallery.signals';
+import { globalTimerManager } from '@/shared/utils/timer-management';
 
 const { createRoot } = getSolid();
 

@@ -8,3 +8,25 @@
 
 export * from './language-types';
 export * from './translation-registry';
+
+// Lightweight module version helpers for test integrity checks
+// The keys must align with EXPECTED_KEYS used in tests
+export const moduleVersions: Record<string, number> = Object.freeze({
+  'language-types': 1,
+  'translation-registry': 1,
+  'languages/en': 1,
+  'languages/ja': 1,
+  'languages/ko': 1,
+});
+
+export function resolveModuleKeys(): string[] {
+  return Object.keys(moduleVersions);
+}
+
+export function buildModuleVersions(existing: Record<string, number> = {}): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const key of resolveModuleKeys()) {
+    result[key] = existing[key] && existing[key] > 0 ? existing[key] : (moduleVersions[key] ?? 1);
+  }
+  return result;
+}

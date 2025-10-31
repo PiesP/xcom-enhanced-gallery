@@ -255,6 +255,22 @@ export class GalleryApp {
     }
   }
 
+  // Legacy test compatibility APIs (no-op or derived) — Phase 289 test bridging
+  /**
+   * Returns whether the app is initialized and gallery renderer is ready.
+   * Kept for backward-compatible tests.
+   */
+  public isRunning(): boolean {
+    return this.isInitialized === true;
+  }
+
+  /**
+   * Shallow-merge new configuration. Kept for backward-compatible tests.
+   */
+  public updateConfig(partial: Partial<GalleryConfig>): void {
+    Object.assign(this.config, partial);
+  }
+
   /**
    * 진단 정보
    */

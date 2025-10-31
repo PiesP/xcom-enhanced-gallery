@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { MediaService } from '../../../../../../../src/shared/services/media-service.js';
-import { logger } from '../../../../../../../src/shared/logging/logger.js';
+import { MediaService } from '@/shared/services/media-service';
+import { logger } from '@/shared/logging/logger';
 
 describe('MediaService - BaseServiceImpl 패턴', () => {
   let service: MediaService;

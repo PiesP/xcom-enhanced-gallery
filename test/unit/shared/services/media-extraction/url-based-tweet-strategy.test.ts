@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { TweetInfo } from '../../../../../src/shared/types/media.types.js';
-import { UrlBasedTweetStrategy } from '../../../../../src/shared/services/media-extraction/strategies/url-based-tweet-strategy.js';
+import type { TweetInfo } from '@/shared/types/media.types.js';
+import { UrlBasedTweetStrategy } from '@/shared/services/media-extraction/strategies/url-based-tweet-strategy.js';
 
 // parseUsernameFast 모킹
-vi.mock('../../../../../src/shared/services/media/username-extraction-service.js', () => ({
+vi.mock('@/shared/services/media/username-extraction-service.js', () => ({
   parseUsernameFast: vi.fn(() => null),
 }));
 

@@ -33,5 +33,7 @@ export { ToastContainer } from './Toast/ToastContainer';
 export type { ToastContainerProps } from './Toast/ToastContainer';
 
 // Toolbar 컴포넌트
-export { Toolbar } from './Toolbar/Toolbar';
-export type { ToolbarProps } from './Toolbar/Toolbar';
+export { Toolbar } from './Toolbar/Toolbar.tsx';
+export type { ToolbarProps } from './Toolbar/Toolbar.types';
+// Re-export Toolbar and types for stable import path in tests
+export * from './Toolbar';

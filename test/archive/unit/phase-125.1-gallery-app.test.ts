@@ -2,9 +2,9 @@
 // 목표: GalleryApp.ts 커버리지 3.34% → 50%
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { MediaInfo } from '../../../../src/shared/types/media.types';
-import { GalleryApp } from '../../../../src/features/gallery/GalleryApp';
-import { initializeVendors } from '../../../../src/shared/external/vendors';
+import type { MediaInfo } from '@/shared/types/media.types';
+import { GalleryApp } from '@/features/gallery/GalleryApp';
+import { initializeVendors } from '@/shared/external/vendors';
 
 const createTestMedia = (count: number): MediaInfo[] => {
   return Array.from({ length: count }, (_, i) => ({

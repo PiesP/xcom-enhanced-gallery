@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { useSelector } from '../../../src/shared/utils/signal-selector';
+import { useSelector } from '@/shared/utils/signal-selector';
 
 describe('Signal Selector Memoization Policy', () => {
   describe('useSelector function signature and behavior', () => {

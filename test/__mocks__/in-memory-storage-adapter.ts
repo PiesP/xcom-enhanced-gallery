@@ -3,7 +3,7 @@
  * @fileoverview 격리된 테스트 환경에서 사용하는 저장소 구현
  */
 
-import type { StorageAdapter } from '../../src/features/settings/services/storage/storage-adapter.interface';
+import type { StorageAdapter } from '@shared/services/storage';
 
 /**
  * 인메모리 저장소 어댑터

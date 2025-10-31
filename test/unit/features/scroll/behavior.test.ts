@@ -163,9 +163,7 @@ describe('Native Scroll Behavior', () => {
   describe('5. 제거 대상 함수 검증', () => {
     it('should NOT have preventTwitterScroll function in useGalleryScroll', async () => {
       // RED: useGalleryScroll에서 preventTwitterScroll 제거 확인
-      const useGalleryScrollSource = await import(
-        '../../../src/features/gallery/hooks/useGalleryScroll'
-      );
+      const useGalleryScrollSource = await import('@/features/gallery/hooks/useGalleryScroll');
 
       // preventTwitterScroll 함수가 존재하지 않아야 함
       expect(useGalleryScrollSource).not.toHaveProperty('preventTwitterScroll');
@@ -179,7 +177,7 @@ describe('Native Scroll Behavior', () => {
 
     it('should NOT have preventScrollPropagation in scroll-utils', async () => {
       // RED: scroll-utils에서 preventScrollPropagation 제거 확인
-      const scrollUtils = await import('../../../src/shared/utils/scroll/scroll-utils');
+      const scrollUtils = await import('@/shared/utils/scroll/scroll-utils');
 
       // preventScrollPropagation 함수가 존재하지 않아야 함
       expect(scrollUtils).not.toHaveProperty('preventScrollPropagation');
@@ -187,7 +185,7 @@ describe('Native Scroll Behavior', () => {
 
     it('should NOT have ensureWheelLock exported from utils', async () => {
       // RED: utils에서 ensureWheelLock 제거 확인 (events/wheel 파일 자체가 삭제됨)
-      const utils = await import('../../../src/utils');
+      const utils = await import('@/utils');
 
       // ensureWheelLock 함수가 존재하지 않아야 함
       expect(utils).not.toHaveProperty('ensureWheelLock');

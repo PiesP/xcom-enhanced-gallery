@@ -9,11 +9,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { ToolbarProps } from '../../../src/shared/components/ui/Toolbar/Toolbar.types';
-import { setSettingsExpanded } from '../../../src/shared/state/signals/toolbar.signals';
-import { getSolid } from '../../../src/shared/external/vendors';
+import type { ToolbarProps } from '@/shared/components/ui/Toolbar/Toolbar.types';
+import { setSettingsExpanded } from '@/shared/state/signals/toolbar.signals';
+import { getSolid } from '@/shared/external/vendors';
 
-const { render, cleanup } = await import('../../utils/testing-library');
+const { render, cleanup } = await import('@test/utils/testing-library');
 
 describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
   const solid = getSolid();
@@ -25,7 +25,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
 
   describe('ARIA Collapse Pattern', () => {
     it('설정 버튼에 aria-expanded 속성이 false로 초기화되어야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
@@ -50,7 +50,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
     });
 
     it('설정 버튼에 aria-controls 속성이 패널 ID를 참조해야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
@@ -77,7 +77,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
     });
 
     it('설정 패널에 aria-labelledby 속성이 버튼 ID를 참조해야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
@@ -106,7 +106,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
 
   describe('Screen Reader Support', () => {
     it('설정 패널이 role="region"을 가져야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
@@ -127,7 +127,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
     });
 
     it('설정 패널이 aria-label을 가져야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
@@ -148,7 +148,7 @@ describe('Phase 47: Toolbar Expandable Panel Accessibility (ARIA)', () => {
     });
 
     it('설정 버튼이 적절한 aria-label을 가져야 함', async () => {
-      const { Toolbar } = await import('../../../src/shared/components/ui/Toolbar/Toolbar');
+      const { Toolbar } = await import('@/shared/components/ui/Toolbar/Toolbar');
 
       const props: ToolbarProps = {
         currentIndex: 0,
