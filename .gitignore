@@ -89,7 +89,6 @@ $RECYCLE.BIN/
 # === Temporary & Backup ===
 temp/
 tmp/
-scripts/
 scripts/temp/
 backup*/
 *.backup
