@@ -1,8 +1,0 @@
-#!/usr/bin/env sh
-# Pre-commit: Lint and format staged files
-# CI: Skipped (full validation in GitHub Actions)
-
-[ "$CI" = "true" ] && exit 0
-
-echo "🧹 Running lint-staged..."
-npm run lint:staged
