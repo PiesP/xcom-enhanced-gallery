@@ -31,7 +31,6 @@ codeql-custom-queries-javascript/
 *.sarif
 
 # === Documentation (Generated) ===
-docs/
 docs/bundle-*.{html,json}
 docs/bundle-analysis.html
 docs/dependency-graph.*
@@ -39,8 +38,10 @@ docs/.dep-graph-cache.json
 docs/temp/
 docs/archive/
 sample_pages/
-.github/copilot-instructions.md
-AGENTS.md
+
+# === Root-level documentation (tracked) ===
+# docs/*.md and AGENTS.md are tracked
+# Only generated/temp docs are ignored
 
 # === Logs ===
 logs/
