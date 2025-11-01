@@ -28,6 +28,7 @@ import {
   shouldExecutePlayPauseKey,
   resetKeyboardDebounceState,
 } from './keyboard-debounce';
+import { findTwitterScrollContainer } from './core-utils';
 import type { MediaInfo } from '../types/media.types';
 
 interface EventContext {
@@ -409,8 +410,97 @@ let galleryEventState = {
   listenerIds: [] as string[],
   options: null as GalleryEventOptions | null,
   handlers: null as EventHandlers | null,
-  priorityInterval: null as number | null,
+  scopeAbortController: null as AbortController | null,
+  scopeTarget: null as WeakRef<HTMLElement> | null,
+  scopeRefreshTimer: null as number | null,
+  keyListener: null as EventListener | null,
+  clickListener: null as EventListener | null,
 };
+
+function resolveTwitterEventScope(): HTMLElement | null {
+  const candidate = findTwitterScrollContainer();
+  if (!candidate) {
+    return null;
+  }
+  if (candidate === document.body) {
+    return null;
+  }
+  if (!(candidate instanceof HTMLElement)) {
+    return null;
+  }
+  return candidate;
+}
+
+function clearScopedListeners(): void {
+  galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
+  galleryEventState.listenerIds = [];
+  if (galleryEventState.scopeAbortController) {
+    galleryEventState.scopeAbortController.abort();
+    galleryEventState.scopeAbortController = null;
+  }
+  galleryEventState.scopeTarget = null;
+}
+
+function scheduleScopeRefresh(ensureScope: () => void, intervalMs: number = 1000): void {
+  if (galleryEventState.scopeRefreshTimer !== null) {
+    return;
+  }
+
+  galleryEventState.scopeRefreshTimer = globalTimerManager.setInterval(() => {
+    ensureScope();
+  }, intervalMs);
+}
+
+function cancelScopeRefresh(): void {
+  if (galleryEventState.scopeRefreshTimer !== null) {
+    globalTimerManager.clearInterval(galleryEventState.scopeRefreshTimer);
+    galleryEventState.scopeRefreshTimer = null;
+  }
+}
+
+function bindScopedListeners(
+  target: HTMLElement,
+  keyHandler: EventListener,
+  clickHandler: EventListener,
+  options: GalleryEventOptions
+): void {
+  clearScopedListeners();
+
+  const controller = new AbortController();
+  galleryEventState.scopeAbortController = controller;
+  galleryEventState.scopeTarget = new WeakRef(target);
+
+  const listenerOptions: AddEventListenerOptions = {
+    passive: false,
+    capture: true,
+    signal: controller.signal,
+  };
+
+  const keyId = addListener(target, 'keydown', keyHandler, listenerOptions, options.context);
+  const clickId = addListener(target, 'click', clickHandler, listenerOptions, options.context);
+
+  galleryEventState.listenerIds = [keyId, clickId];
+}
+
+function ensureScopedEventTarget(
+  keyHandler: EventListener,
+  clickHandler: EventListener,
+  options: GalleryEventOptions
+): void {
+  const existingTarget = galleryEventState.scopeTarget?.deref();
+  if (existingTarget?.isConnected) {
+    return;
+  }
+
+  const scope = resolveTwitterEventScope();
+  if (!scope) {
+    scheduleScopeRefresh(() => ensureScopedEventTarget(keyHandler, clickHandler, options));
+    return;
+  }
+
+  cancelScopeRefresh();
+  bindScopedListeners(scope, keyHandler, clickHandler, options);
+}
 
 /**
  * 갤러리 이벤트 초기화
@@ -420,7 +510,6 @@ export async function initializeGalleryEvents(
   options: Partial<GalleryEventOptions> = {}
 ): Promise<void> {
   try {
-    // 기존 이벤트 정리
     if (galleryEventState.initialized) {
       cleanupGalleryEvents();
     }
@@ -437,22 +526,6 @@ export async function initializeGalleryEvents(
     galleryEventState.options = finalOptions;
     galleryEventState.handlers = handlers;
 
-    // Document 객체 안전성 검사
-    const documentElement =
-      (typeof document !== 'undefined' && document) ||
-      (typeof globalThis !== 'undefined' && globalThis.document) ||
-      null;
-
-    if (!documentElement) {
-      logger.warn('Document is not available, skipping event registration');
-      return;
-    }
-
-    // PC-only: Touch/Pointer 이벤트 명시적 차단
-    // (외부 코드가 실수로 터치 이벤트를 추가하는 것 방지)
-    blockTouchAndPointerEvents(documentElement);
-
-    // Phase 258.2: keydown → click 순서로 최적화 (CPU 캐시 효율성)
     const keyHandler: EventListener = (evt: Event) => {
       const event = evt as KeyboardEvent;
       handleKeyboardEvent(event, handlers, finalOptions);
@@ -467,104 +540,16 @@ export async function initializeGalleryEvents(
       }
     };
 
-    // 이벤트 리스너 등록 (캡처 단계에서 처리하여 트위터보다 먼저 실행)
-    const keyId = addListener(
-      documentElement,
-      'keydown',
-      keyHandler,
-      { passive: false, capture: true },
-      finalOptions.context
-    );
+    galleryEventState.keyListener = keyHandler;
+    galleryEventState.clickListener = clickHandler;
 
-    const clickId = addListener(
-      documentElement,
-      'click',
-      clickHandler,
-      { passive: false, capture: true },
-      finalOptions.context
-    );
+    ensureScopedEventTarget(keyHandler, clickHandler, finalOptions);
 
-    galleryEventState.listenerIds = [keyId, clickId];
     galleryEventState.initialized = true;
-
-    // 우선순위 강화 메커니즘 시작 (트위터가 동적으로 리스너를 추가할 경우 대비)
-    startPriorityEnforcement(handlers, finalOptions);
   } catch (error) {
     logger.error('Failed to initialize gallery events:', error);
     throw error;
   }
-}
-
-function startPriorityEnforcement(handlers: EventHandlers, options: GalleryEventOptions): void {
-  // 기존 인터벌 정리
-  if (galleryEventState.priorityInterval) {
-    globalTimerManager.clearInterval(galleryEventState.priorityInterval);
-  }
-
-  // 15초마다 우선순위 재설정 (성능 최적화: 적응형 스케줄링)
-  galleryEventState.priorityInterval = globalTimerManager.setInterval(() => {
-    try {
-      if (!galleryEventState.initialized) return;
-
-      // 갤러리가 열린 상태에서는 우선순위 강화 중단 (메모리 최적화)
-      if (checkGalleryOpen()) {
-        return;
-      }
-
-      // Document 안전성 검사
-      const documentElement =
-        (typeof document !== 'undefined' && document) ||
-        (typeof globalThis !== 'undefined' && globalThis.document) ||
-        null;
-
-      if (!documentElement) {
-        return;
-      }
-
-      // 페이지가 비활성 상태일 때는 스케줄링 중단 (CPU 절약)
-      if (documentElement.hidden) {
-        return;
-      }
-
-      // 기존 리스너 제거
-      galleryEventState.listenerIds.forEach(id => removeEventListenerManaged(id));
-
-      // 새로운 리스너 등록 (Phase 258.2: 최적화된 순서)
-      const keyHandler: EventListener = (evt: Event) => {
-        const event = evt as KeyboardEvent;
-        handleKeyboardEvent(event, handlers, options);
-      };
-
-      const clickHandler: EventListener = async (evt: Event) => {
-        const event = evt as MouseEvent;
-        const result = await handleMediaClick(event, handlers, options);
-        if (result.handled && options.preventBubbling) {
-          event.stopPropagation();
-          event.preventDefault();
-        }
-      };
-
-      const keyId = addListener(
-        documentElement,
-        'keydown',
-        keyHandler,
-        { passive: false, capture: true },
-        options.context
-      );
-
-      const clickId = addListener(
-        documentElement,
-        'click',
-        clickHandler,
-        { passive: false, capture: true },
-        options.context
-      );
-
-      galleryEventState.listenerIds = [keyId, clickId];
-    } catch (error) {
-      logger.warn('Failed to reinforce gallery event priority:', error);
-    }
-  }, 15000);
 }
 
 /**
@@ -818,15 +803,12 @@ export function cleanupGalleryEvents(): void {
       });
     }
 
-    // 컨텍스트별 정리 (추가 안전장치)
     if (galleryEventState.options?.context) {
       removeEventListenersByContext(galleryEventState.options.context);
     }
 
-    // 우선순위 강화 인터벌 정리
-    if (galleryEventState.priorityInterval) {
-      globalTimerManager.clearInterval(galleryEventState.priorityInterval);
-    }
+    cancelScopeRefresh();
+    clearScopedListeners();
 
     // 키보드 debounce 상태 초기화
     resetKeyboardDebounceState();
@@ -836,7 +818,11 @@ export function cleanupGalleryEvents(): void {
       listenerIds: [],
       options: null,
       handlers: null,
-      priorityInterval: null,
+      scopeAbortController: null,
+      scopeTarget: null,
+      scopeRefreshTimer: null,
+      keyListener: null,
+      clickListener: null,
     };
   } catch (error) {
     logger.error('Error cleaning up gallery events:', error);
@@ -860,7 +846,7 @@ export function getGalleryEventSnapshot() {
     listenerCount: galleryEventState.listenerIds.length,
     options: galleryEventState.options,
     hasHandlers: Boolean(galleryEventState.handlers),
-    hasPriorityInterval: Boolean(galleryEventState.priorityInterval),
+    hasScopedTarget: Boolean(galleryEventState.scopeTarget?.deref()),
   };
 }
 
@@ -872,16 +858,12 @@ export function getGalleryEventSnapshot() {
  * 포인터 이벤트: pointerdown, pointermove, pointerup, pointercancel, pointerenter, pointerleave
  *
  * Phase 229: Pointer 이벤트 정책 변경
- * - Touch 이벤트: 전역 strict 차단 (PC-only 정책 핵심)
+ * - Touch 이벤트: 갤러리 루트 범위에서만 차단 (PC-only 정책 핵심)
  * - Pointer 이벤트:
- *   - 전역: 로깅만 (텍스트 선택, 링크 클릭 등 네이티브 동작 보존)
  *   - 갤러리 내부: 차단 (갤러리 전용 Mouse 이벤트 사용)
- * Phase 242: 폼 컨트롤 허용
- * - 마우스 기반 폼 컨트롤(select, input, textarea 등)은 포인터 이벤트 차단에서 제외
- * Phase 243: 재발 방지 및 로직 간결화
- * - 폼 컨트롤 판단 로직을 별도 함수로 분리
- * - 포인터 정책 결정 로직을 명확한 헬퍼 함수로 추출
- */ const FORM_CONTROL_SELECTORS =
+ *   - 폼 컨트롤: 허용 (select/input/textarea/button 등)
+ */
+const FORM_CONTROL_SELECTORS =
   'select, input, textarea, button, [role="listbox"], [role="combobox"]';
 
 /**
@@ -918,12 +900,18 @@ function getPointerEventPolicy(
   return 'log';
 }
 
-function blockTouchAndPointerEvents(element: Document | EventTarget): void {
-  // 터치 이벤트 명시적 차단
-  const touchEvents = ['touchstart', 'touchmove', 'touchend', 'touchcancel'];
+export function applyGalleryPointerPolicy(root: HTMLElement): () => void {
+  const controller = new AbortController();
+  const { signal } = controller;
 
-  // 포인터 이벤트 로깅 (차단은 갤러리 내부만)
-  const pointerEvents = [
+  const touchEvents: Array<keyof HTMLElementEventMap> = [
+    'touchstart',
+    'touchmove',
+    'touchend',
+    'touchcancel',
+  ];
+
+  const pointerEvents: Array<keyof HTMLElementEventMap> = [
     'pointerdown',
     'pointermove',
     'pointerup',
@@ -932,120 +920,71 @@ function blockTouchAndPointerEvents(element: Document | EventTarget): void {
     'pointerleave',
   ];
 
-  // Touch 이벤트 차단 (모든 요소에서 strict)
-  for (const eventType of touchEvents) {
-    try {
-      const blocker = (evt: Event) => {
-        // Touch 이벤트는 PC-only 정책에 따라 모든 요소에서 차단
-        logger.debug(`[PC-only policy] Blocked ${eventType} event`, {
-          target: (evt.target as Element)?.tagName,
-          currentTarget: (evt.currentTarget as Element)?.tagName,
-        });
-        evt.preventDefault?.();
-        evt.stopPropagation?.();
-        evt.stopImmediatePropagation?.();
-      };
+  const touchHandler = (evt: Event) => {
+    logger.debug('[PC-only policy] Blocked touch event', {
+      type: evt.type,
+      target: (evt.target as Element | null)?.tagName,
+    });
+    evt.preventDefault?.();
+    evt.stopPropagation?.();
+    evt.stopImmediatePropagation?.();
+  };
 
-      const propName = `on${eventType}`;
-      let onPropSet = false;
-      try {
-        setOnProperty(element as object, propName, blocker);
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const check = (element as any)[propName];
-          if (check === blocker) {
-            onPropSet = true;
-          }
-        } catch {
-          // 읽기 실패시 무시하고 fallback 시도
-        }
-      } catch {
-        // 할당 자체가 실패하면 fallback으로 addEventListener 사용
-      }
+  touchEvents.forEach(eventType => {
+    root.addEventListener(eventType, touchHandler, {
+      capture: true,
+      passive: false,
+      signal,
+    });
+  });
 
-      if (onPropSet) continue;
+  const pointerHandler = (evt: Event) => {
+    const pointerEvent = evt as PointerEvent;
+    const rawTarget = evt.target;
+    const pointerType =
+      typeof pointerEvent.pointerType === 'string' && pointerEvent.pointerType.length > 0
+        ? pointerEvent.pointerType
+        : 'mouse';
 
-      if (typeof element.addEventListener === 'function') {
-        (element as EventTarget).addEventListener(eventType, blocker, {
-          passive: false,
-          capture: true,
-        });
-      }
-    } catch {
-      // 무시
+    if (!(rawTarget instanceof HTMLElement)) {
+      return;
     }
-  }
-  for (const eventType of pointerEvents) {
-    try {
-      const blocker = (evt: Event) => {
-        const pointerEvent = evt as PointerEvent;
-        const rawTarget = evt.target;
-        const pointerType =
-          typeof (pointerEvent as { pointerType?: string }).pointerType === 'string'
-            ? pointerEvent.pointerType
-            : 'mouse';
-        if (!(rawTarget instanceof HTMLElement)) {
-          return;
-        }
-        const policy = getPointerEventPolicy(rawTarget, pointerType);
 
-        switch (policy) {
-          case 'allow':
-            return;
+    const policy = getPointerEventPolicy(rawTarget, pointerType);
 
-          case 'block':
-            evt.preventDefault?.();
-            evt.stopPropagation?.();
-            evt.stopImmediatePropagation?.();
-            return;
-
-          case 'log':
-          default:
-            return;
-        }
-      };
-
-      // 대부분의 환경에서 document/element는 on<Event> 속성을 지원합니다.
-      // on<Event> 핸들러로 설정하면 addEventListener를 호출하지 않아
-      // 테스트 하니스가 문서의 리스너 등록을 기록하지 않도록 할 수 있습니다.
-      const propName = `on${eventType}`;
-      // 우선 on<Event> 프로퍼티로 안전하게 설정을 시도합니다.
-      // 대부분의 브라우저/환경에서 할당만으로도 핸들러가 등록되며,
-      // 이렇게 하면 addEventListener를 호출하지 않아 하니스의 모니터링에 포착되지 않습니다.
-      let onPropSet = false;
-      try {
-        setOnProperty(element as object, propName, blocker);
-        // 할당이 실제로 적용되었는지 확인
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const check = (element as any)[propName];
-          if (check === blocker) {
-            onPropSet = true;
-          }
-        } catch {
-          // 읽기 실패시 무시하고 fallback 시도
-        }
-      } catch {
-        // 할당 자체가 실패하면 fallback으로 addEventListener 사용
-      }
-
-      if (onPropSet) continue;
-
-      if (typeof element.addEventListener === 'function') {
-        (element as EventTarget).addEventListener(eventType, blocker, {
-          passive: false,
-          capture: true,
-        });
-      }
-    } catch {
-      // 무시
+    if (policy === 'allow') {
+      return;
     }
-  }
-}
 
-function setOnProperty(target: object, prop: string, value: unknown): void {
-  // 인덱스 시그니처를 허용하는 방식으로 안전하게 설정
-  (target as Record<string, unknown>)[prop] = value;
-}
+    if (policy === 'block') {
+      evt.preventDefault?.();
+      evt.stopPropagation?.();
+      evt.stopImmediatePropagation?.();
+      logger.debug('[PC-only policy] Blocked pointer event in gallery', {
+        type: evt.type,
+        pointerType,
+        target: rawTarget.tagName,
+      });
+      return;
+    }
 
-// 별칭 제거됨: 이벤트 매니저 표면은 Service 레이어의 EventManager로 일원화됩니다.
+    // log only
+    logger.trace?.('[PC-only policy] Pointer event allowed (logged)', {
+      type: evt.type,
+      pointerType,
+      target: rawTarget.tagName,
+    });
+  };
+
+  pointerEvents.forEach(eventType => {
+    root.addEventListener(eventType, pointerHandler, {
+      capture: true,
+      passive: false,
+      signal,
+    });
+  });
+
+  return () => {
+    controller.abort();
+  };
+}

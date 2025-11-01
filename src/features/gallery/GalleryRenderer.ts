@@ -29,6 +29,7 @@ import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBou
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging';
 import { getSolid } from '../../shared/external/vendors';
+import { applyGalleryPointerPolicy } from '@shared/utils/events';
 
 /**
  * 갤러리 렌더러 - DOM 렌더링 및 생명주기 관리
@@ -40,6 +41,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
   private disposeToast: (() => void) | null = null;
+  private pointerPolicyCleanup: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -143,8 +145,30 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     this.disposeApp = render(elementFactory, this.container);
 
+    this.attachPointerPolicy();
+
     // Toast 컨테이너를 갤러리 내부에 마운트
     this.renderToastContainer();
+  }
+
+  private attachPointerPolicy(retryCount = 0): void {
+    if (!this.container) {
+      return;
+    }
+
+    const root = this.container.querySelector('#xeg-gallery-root') as HTMLElement | null;
+
+    if (!root) {
+      if (retryCount < 3) {
+        requestAnimationFrame(() => this.attachPointerPolicy(retryCount + 1));
+      } else {
+        logger.debug('[GalleryRenderer] Pointer policy root not found (giving up)');
+      }
+      return;
+    }
+
+    this.pointerPolicyCleanup?.();
+    this.pointerPolicyCleanup = applyGalleryPointerPolicy(root);
   }
 
   /**
@@ -220,6 +244,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
+        this.pointerPolicyCleanup?.();
+        this.pointerPolicyCleanup = null;
+
         // Toast 정리
         this.disposeToast?.();
         this.disposeToast = null;

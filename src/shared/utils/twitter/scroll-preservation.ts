@@ -27,6 +27,7 @@ import { findTwitterScrollContainer } from '../core-utils';
 export class TwitterScrollPreservation {
   private savedPosition: number | null = null;
   private savedTimestamp: number = 0;
+  private savedContainerRef: WeakRef<HTMLElement> | null = null;
 
   /**
    * 현재 Twitter 스크롤 위치 저장
@@ -43,6 +44,7 @@ export class TwitterScrollPreservation {
 
       this.savedPosition = twitterScroll.scrollTop;
       this.savedTimestamp = Date.now();
+      this.savedContainerRef = new WeakRef(twitterScroll);
 
       logger.debug('TwitterScrollPreservation: 스크롤 위치 저장', {
         position: this.savedPosition,
@@ -86,6 +88,17 @@ export class TwitterScrollPreservation {
 
             if (!twitterScroll) {
               logger.debug('TwitterScrollPreservation: Twitter 스크롤 컨테이너 없음 (복원 시)');
+              this.clear();
+              resolve(false);
+              return;
+            }
+
+            const savedContainer = this.savedContainerRef?.deref() ?? null;
+            if (!savedContainer || savedContainer !== twitterScroll) {
+              logger.debug('TwitterScrollPreservation: 컨테이너가 변경되어 복원 스킵', {
+                hasSaved: Boolean(savedContainer),
+                savedDetached: savedContainer ? !savedContainer.isConnected : true,
+              });
               this.clear();
               resolve(false);
               return;
@@ -138,6 +151,7 @@ export class TwitterScrollPreservation {
   public clear(): void {
     this.savedPosition = null;
     this.savedTimestamp = 0;
+    this.savedContainerRef = null;
     logger.debug('TwitterScrollPreservation: 저장 정보 초기화');
   }
 

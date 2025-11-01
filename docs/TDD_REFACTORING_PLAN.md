@@ -32,6 +32,62 @@ _상세 내용은
 
 ## 🔮 향후 고려사항
 
+### Phase 304: 트위터 네이티브 동작 영향 최소화 (신규)
+
+**문제 정의**
+
+- 전역 `document` 캡처 리스너(`keydown`, `click`, `wheel`)가 트위터의 기본
+  동작과 경쟁하며, 페이지 상태 변화 시 스크롤/키보드 복원을 방해할 가능성이 있음
+- `blockTouchAndPointerEvents()`가 `document.on*` 프로퍼티를 직접 덮어써 외부
+  스크립트 및 트위터 자체 제스처 처리에 영향을 줄 수 있음
+- `TwitterScrollPreservation.restore()`가 폴백으로 `document.body`를 사용해
+  타임라인 외 영역까지 스크롤을 복원할 수 있음
+
+**대안 비교**
+
+1. _소극적 완화_: 현 구조 유지 + 로깅 강화 (장점: 구현 간단, 리스크 낮음 / 단점:
+   근본 원인 미해결, 회귀 가능성 높음)
+2. _부분 격리_: 리스너를 타임라인 컨테이너로 한정, 포인터 차단을 갤러리 루트
+   범위로 축소 (장점: 영향 범위 감소, 구현 중간 난이도 / 단점: 컨테이너 탐색
+   실패 시 다시 전역으로 확산)
+3. **_완전 격리 (선택)_**: 갤러리 오픈 시에만 컨테이너 범위 리스너를
+   `AbortController`로 장착하고, 트위터 컨테이너 약한 참조를 보존해 복원이
+   안전하게 스킵되도록 개선 (장점: 트위터 네이티브 동작과 경합 최소화, 테스트
+   가능 / 단점: 초기 구현 복잡, 테스트 보강 필요)
+
+➡️ **선택**: 3번 완전 격리. 전역 영향 최소화가 목표이므로 TDD 기준으로 범위 기반
+리스너 전환 + 스크롤 복원 가드를 도입한다.
+
+**TDD 계획**
+
+1. 실패 테스트 추가
+   - `test/unit/shared/utils/events-pointer-policy.test.ts`: 포인터 정책이
+     갤러리 외부 요소에 영향을 주지 않는지 검증
+   - `test/unit/shared/utils/twitter-scroll-preservation.test.ts`: 저장 시
+     컨테이너 약한 참조/경로 비교가 없는 경우 실패하도록 RED 작성
+   - `test/unit/features/gallery/gallery-events.test.ts`(신규): 갤러리 미오픈
+     상태에서 문서 리스너 미등록, 오픈 시 한정 등록을 검증
+2. 최소 구현 (GREEN)
+   - `initializeGalleryEvents()`를 컨텍스트 컨트롤러 기반 구조로 리팩터링
+     (`AbortController`, 타깃 컨테이너 스코프)
+   - `blockTouchAndPointerEvents()` 제거 후 갤러리 루트 내 포인터 차단 로직으로
+     이동
+   - `TwitterScrollPreservation`에 `WeakRef<HTMLElement>` 저장 +
+     `location.pathname`·`visibilityState` 가드
+3. 리팩토링 & 회귀 테스트
+   - `useGalleryScroll`에서 MutationObserver 기반 전역 휠 차단 제거, 갤러리 루트
+     `wheel` 핸들러로 축소
+   - 로깅 수준/메시지 정리 (debug → trace)
+
+**수용 기준**
+
+- 갤러리 닫힌 상태에서 `document`/`window` 전역 리스너가 등록되지 않는다
+  (테스트로 보장)
+- 포인터 차단이 갤러리 루트에 한정되며, 외부 클릭/드래그 이벤트가 트위터 기본
+  동작과 충돌하지 않는다
+- 트위터 타임라인에서 갤러리 오픈 → 다른 페이지 이동 → 뒤로 가기 시 스크롤
+  위치가 깨지지 않는다 (Playwright 스모크 포함 수동 검증)
+
 ### Phase 296.1: 빌드 검증 로직 모듈화 (선택적)
 
 **현재**: validate-build.ts (467줄, 6개 검증기 통합)

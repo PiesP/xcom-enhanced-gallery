@@ -53,13 +53,11 @@ describe('Phase 229.2: Pointer Event Policy', () => {
       expect(policy.pointer.insideGallery).toBe('blocked');
     });
 
-    it('should verify blockTouchAndPointerEvents exists in events.ts', async () => {
-      // Verify the function signature and implementation exists
+    it('should expose applyGalleryPointerPolicy helper', async () => {
       const eventsModule = await import('@/shared/utils/events');
 
-      // The function is internal but called by initializeGalleryEvents
-      expect(eventsModule.initializeGalleryEvents).toBeDefined();
-      expect(typeof eventsModule.initializeGalleryEvents).toBe('function');
+      expect(eventsModule.applyGalleryPointerPolicy).toBeDefined();
+      expect(typeof eventsModule.applyGalleryPointerPolicy).toBe('function');
     });
   });
 
@@ -204,20 +202,13 @@ describe('Phase 229.2: Pointer Event Policy', () => {
     });
 
     it('should allow mouse pointer events on form controls inside the gallery', async () => {
-      const eventsModule = await import('@/shared/utils/events');
+      const { applyGalleryPointerPolicy } = await import('@/shared/utils/events');
 
-      const handlers = {
-        onMediaClick: vi.fn().mockResolvedValue(undefined),
-        onGalleryClose: vi.fn(),
-        onKeyboardEvent: vi.fn(),
-      };
+      const galleryRoot = document.createElement('div');
+      galleryRoot.setAttribute('data-xeg-gallery', 'true');
+      document.body.appendChild(galleryRoot);
 
-      await eventsModule.initializeGalleryEvents(handlers, {
-        enableMediaDetection: false,
-        enableKeyboard: false,
-        preventBubbling: false,
-        context: 'test-pointer-policy',
-      });
+      const cleanupPointerPolicy = applyGalleryPointerPolicy(galleryRoot);
 
       const settingsPanel = document.createElement('div');
       settingsPanel.setAttribute('data-gallery-element', 'settings-panel');
@@ -228,8 +219,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
       option.textContent = 'Light';
       select.appendChild(option);
       settingsPanel.appendChild(select);
-
-      document.body.appendChild(settingsPanel);
+      galleryRoot.appendChild(settingsPanel);
 
       try {
         const pointerEvent = new Event('pointerdown', {
@@ -246,21 +236,12 @@ describe('Phase 229.2: Pointer Event Policy', () => {
         expect(dispatchResult).toBe(true);
         expect(pointerEvent.defaultPrevented).toBe(false);
       } finally {
-        if (settingsPanel.parentNode) {
-          settingsPanel.parentNode.removeChild(settingsPanel);
-        }
-
-        eventsModule.cleanupGalleryEvents();
-        document.onpointerdown = null;
-        document.onpointermove = null;
-        document.onpointerup = null;
-        document.onpointercancel = null;
-        document.onpointerenter = null;
-        document.onpointerleave = null;
+        cleanupPointerPolicy();
+        galleryRoot.remove();
       }
     });
 
-    it('should continue to block pointer events on non-form gallery elements', async () => {
+    it('should not assign global pointer/touch handlers while gallery is closed', async () => {
       const eventsModule = await import('@/shared/utils/events');
 
       const handlers = {
@@ -269,12 +250,61 @@ describe('Phase 229.2: Pointer Event Policy', () => {
         onKeyboardEvent: vi.fn(),
       };
 
-      await eventsModule.initializeGalleryEvents(handlers, {
-        enableMediaDetection: false,
-        enableKeyboard: false,
-        preventBubbling: false,
-        context: 'test-pointer-policy-block',
-      });
+      const originalHandlers = {
+        ontouchstart: document.ontouchstart,
+        ontouchmove: document.ontouchmove,
+        ontouchend: document.ontouchend,
+        ontouchcancel: document.ontouchcancel,
+        onpointerdown: document.onpointerdown,
+        onpointermove: document.onpointermove,
+        onpointerup: document.onpointerup,
+        onpointercancel: document.onpointercancel,
+        onpointerenter: document.onpointerenter,
+        onpointerleave: document.onpointerleave,
+      };
+
+      try {
+        await eventsModule.initializeGalleryEvents(handlers, {
+          enableMediaDetection: false,
+          enableKeyboard: false,
+          preventBubbling: false,
+          context: 'test-pointer-policy-global-handlers',
+        });
+
+        expect(document.ontouchstart == null).toBe(true);
+        expect(document.ontouchmove == null).toBe(true);
+        expect(document.ontouchend == null).toBe(true);
+        expect(document.ontouchcancel == null).toBe(true);
+        expect(document.onpointerdown == null).toBe(true);
+        expect(document.onpointermove == null).toBe(true);
+        expect(document.onpointerup == null).toBe(true);
+        expect(document.onpointercancel == null).toBe(true);
+        expect(document.onpointerenter == null).toBe(true);
+        expect(document.onpointerleave == null).toBe(true);
+      } finally {
+        eventsModule.cleanupGalleryEvents();
+
+        document.ontouchstart = originalHandlers.ontouchstart;
+        document.ontouchmove = originalHandlers.ontouchmove;
+        document.ontouchend = originalHandlers.ontouchend;
+        document.ontouchcancel = originalHandlers.ontouchcancel;
+        document.onpointerdown = originalHandlers.onpointerdown;
+        document.onpointermove = originalHandlers.onpointermove;
+        document.onpointerup = originalHandlers.onpointerup;
+        document.onpointercancel = originalHandlers.onpointercancel;
+        document.onpointerenter = originalHandlers.onpointerenter;
+        document.onpointerleave = originalHandlers.onpointerleave;
+      }
+    });
+
+    it('should continue to block pointer events on non-form gallery elements', async () => {
+      const { applyGalleryPointerPolicy } = await import('@/shared/utils/events');
+
+      const galleryRoot = document.createElement('div');
+      galleryRoot.setAttribute('data-xeg-gallery', 'true');
+      document.body.appendChild(galleryRoot);
+
+      const cleanupPointerPolicy = applyGalleryPointerPolicy(galleryRoot);
 
       const galleryWrapper = document.createElement('div');
       galleryWrapper.setAttribute('data-gallery-element', 'toolbar-wrapper');
@@ -282,8 +312,7 @@ describe('Phase 229.2: Pointer Event Policy', () => {
       const internalButton = document.createElement('div');
       internalButton.setAttribute('data-gallery-element', 'toolbar-button');
       galleryWrapper.appendChild(internalButton);
-
-      document.body.appendChild(galleryWrapper);
+      galleryRoot.appendChild(galleryWrapper);
 
       try {
         const pointerEvent = new Event('pointerdown', {
@@ -299,17 +328,8 @@ describe('Phase 229.2: Pointer Event Policy', () => {
 
         expect(pointerEvent.defaultPrevented).toBe(true);
       } finally {
-        if (galleryWrapper.parentNode) {
-          galleryWrapper.parentNode.removeChild(galleryWrapper);
-        }
-
-        eventsModule.cleanupGalleryEvents();
-        document.onpointerdown = null;
-        document.onpointermove = null;
-        document.onpointerup = null;
-        document.onpointercancel = null;
-        document.onpointerenter = null;
-        document.onpointerleave = null;
+        cleanupPointerPolicy();
+        galleryRoot.remove();
       }
     });
   });

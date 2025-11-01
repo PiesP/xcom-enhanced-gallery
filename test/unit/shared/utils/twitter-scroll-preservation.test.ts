@@ -168,6 +168,36 @@ describe('TwitterScrollPreservation', () => {
       expect(mockScrollContainer.scrollTop).toBe(500);
     });
 
+    it('새로운 컨테이너 인스턴스에는 복원을 시도하지 않는다', async () => {
+      mockScrollContainer.scrollTop = 640;
+      preservation.savePosition();
+
+      // 기존 컨테이너 제거 (탭 이동/페이지 전환 시나리오)
+      if (mockScrollContainer.parentNode) {
+        document.body.removeChild(mockScrollContainer);
+      }
+
+      // 동일 selector를 가진 새로운 컨테이너가 생성된 상황을 시뮬레이션
+      const replacementContainer = document.createElement('div');
+      replacementContainer.setAttribute('data-testid', 'primaryColumn');
+      Object.defineProperty(replacementContainer, 'scrollTop', {
+        writable: true,
+        value: 120,
+      });
+      Object.defineProperty(replacementContainer, 'scrollHeight', {
+        writable: true,
+        value: 2200,
+      });
+      document.body.appendChild(replacementContainer);
+
+      const result = await preservation.restore(100);
+
+      expect(result).toBe(false);
+      expect(replacementContainer.scrollTop).toBe(120);
+
+      document.body.removeChild(replacementContainer);
+    });
+
     it('Phase 300.1: delay 파라미터로 복원 지연 시간 제어', async () => {
       // Timer mock 활성화
       vi.useFakeTimers();
