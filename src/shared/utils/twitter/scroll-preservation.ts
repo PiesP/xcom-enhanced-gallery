@@ -60,12 +60,17 @@ export class TwitterScrollPreservation {
 
   /**
    * 저장된 스크롤 위치로 복원
-   * Twitter의 자체 복원 로직과 충돌하지 않도록 다음 프레임까지 대기
+   * Phase 300.1: Twitter 네이티브 복원과의 경합 방지 개선
+   *
+   * Twitter의 자체 복원 로직이 완료된 후 실행되도록 충분한 지연을 추가합니다.
+   * - setTimeout(150ms): Twitter SPA 복원 로직 완료 대기
+   * - requestAnimationFrame: 브라우저 렌더링 사이클 동기화
    *
    * @param threshold - 복원을 트리거하는 최소 위치 차이 (기본값: 100px)
+   * @param delay - Twitter 복원 완료 대기 시간 (기본값: 150ms)
    * @returns 복원 실행 여부
    */
-  public restore(threshold: number = 100): Promise<boolean> {
+  public restore(threshold: number = 100, delay: number = 150): Promise<boolean> {
     return new Promise(resolve => {
       if (this.savedPosition === null) {
         logger.debug('TwitterScrollPreservation: 저장된 위치 없음');
@@ -73,54 +78,59 @@ export class TwitterScrollPreservation {
         return;
       }
 
-      // Twitter의 자체 복원 로직이 먼저 실행되도록 다음 프레임까지 대기
-      requestAnimationFrame(() => {
-        try {
-          const twitterScroll = document.querySelector(TWITTER_SCROLL_CONTAINER_SELECTOR);
+      // Phase 300.1: Twitter SPA 복원 로직 완료 대기
+      // Twitter의 scrollRestoration은 페이지 로드 후 100-200ms 내에 실행됨
+      setTimeout(() => {
+        // 추가 프레임 대기로 Twitter 복원과의 경합 최소화
+        requestAnimationFrame(() => {
+          try {
+            const twitterScroll = document.querySelector(TWITTER_SCROLL_CONTAINER_SELECTOR);
 
-          if (!twitterScroll) {
-            logger.debug('TwitterScrollPreservation: Twitter 스크롤 컨테이너 없음 (복원 시)');
+            if (!twitterScroll) {
+              logger.debug('TwitterScrollPreservation: Twitter 스크롤 컨테이너 없음 (복원 시)');
+              this.clear();
+              resolve(false);
+              return;
+            }
+
+            const currentPosition = twitterScroll.scrollTop;
+            const difference = Math.abs(currentPosition - this.savedPosition!);
+
+            // 위치가 크게 달라졌을 때만 보정
+            if (difference > threshold) {
+              twitterScroll.scrollTo({
+                top: this.savedPosition!,
+                behavior: 'auto', // 즉시 이동 (smooth는 UX 혼란 유발)
+              });
+
+              logger.debug('TwitterScrollPreservation: 스크롤 위치 복원', {
+                from: currentPosition,
+                to: this.savedPosition,
+                difference,
+                elapsed: Date.now() - this.savedTimestamp,
+                delay,
+              });
+
+              this.clear();
+              resolve(true);
+            } else {
+              logger.debug('TwitterScrollPreservation: 위치 차이 작아 복원 스킵', {
+                current: currentPosition,
+                saved: this.savedPosition,
+                difference,
+                threshold,
+              });
+
+              this.clear();
+              resolve(false);
+            }
+          } catch (error) {
+            logger.error('TwitterScrollPreservation: 복원 실패', error);
             this.clear();
             resolve(false);
-            return;
           }
-
-          const currentPosition = twitterScroll.scrollTop;
-          const difference = Math.abs(currentPosition - this.savedPosition!);
-
-          // 위치가 크게 달라졌을 때만 보정
-          if (difference > threshold) {
-            twitterScroll.scrollTo({
-              top: this.savedPosition!,
-              behavior: 'auto', // 즉시 이동 (smooth는 UX 혼란 유발)
-            });
-
-            logger.debug('TwitterScrollPreservation: 스크롤 위치 복원', {
-              from: currentPosition,
-              to: this.savedPosition,
-              difference,
-              elapsed: Date.now() - this.savedTimestamp,
-            });
-
-            this.clear();
-            resolve(true);
-          } else {
-            logger.debug('TwitterScrollPreservation: 위치 차이 작아 복원 스킵', {
-              current: currentPosition,
-              saved: this.savedPosition,
-              difference,
-              threshold,
-            });
-
-            this.clear();
-            resolve(false);
-          }
-        } catch (error) {
-          logger.error('TwitterScrollPreservation: 복원 실패', error);
-          this.clear();
-          resolve(false);
-        }
-      });
+        });
+      }, delay);
     });
   }
 

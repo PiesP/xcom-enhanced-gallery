@@ -171,8 +171,19 @@ async function cleanup(): Promise<void> {
     if (galleryApp) {
       await (galleryApp as { cleanup(): Promise<void> }).cleanup();
       galleryApp = null;
+      // Phase 290: 네임스페이스 격리 - 개발 환경에서만 정리
       if (import.meta.env.DEV) {
-        delete (globalThis as Record<string, unknown>).__XEG_GALLERY_APP__;
+        type WindowWithXEG = Window & {
+          __XEG__?: {
+            main?: {
+              galleryApp?: unknown;
+            };
+          };
+        };
+        const win = globalThis as unknown as WindowWithXEG;
+        if (win.__XEG__?.main) {
+          delete win.__XEG__.main.galleryApp;
+        }
       }
     }
 
@@ -420,11 +431,22 @@ async function startApplication(): Promise<void> {
     });
     if (__DEV__ && tracePoint) tracePoint('app:ready', { startupMs: duration.toFixed(2) });
 
-    // 개발 환경에서 전역 접근 제공
+    // Phase 290: 네임스페이스 격리 - 개발 환경에서만 단일 네임스페이스로 전역 접근 제공
     if (import.meta.env.DEV) {
-      const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-      const kMain = __devKey([95, 95, 88, 69, 71, 95, 77, 65, 73, 78, 95, 95]); // "__XEG_MAIN__"
-      (globalThis as Record<string, unknown>)[kMain] = {
+      type WindowWithXEG = Window & {
+        __XEG__?: {
+          main?: {
+            start: typeof startApplication;
+            createConfig: typeof createAppConfig;
+            cleanup: typeof cleanup;
+            galleryApp?: unknown;
+          };
+        };
+      };
+
+      const win = globalThis as unknown as WindowWithXEG;
+      win.__XEG__ = win.__XEG__ || {};
+      win.__XEG__.main = {
         start: startApplication,
         createConfig: createAppConfig,
         cleanup,
@@ -488,11 +510,21 @@ export default {
   cleanup,
 };
 
-// 개발 환경에서 전역 접근 허용
+// Phase 290: 네임스페이스 격리 - 개발 환경에서만 전역 접근 허용
 if (import.meta.env.DEV) {
-  const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-  const kMain = __devKey([95, 95, 88, 69, 71, 95, 77, 65, 73, 78, 95, 95]); // "__XEG_MAIN__"
-  (globalThis as Record<string, unknown>)[kMain] = {
+  type WindowWithXEG = Window & {
+    __XEG__?: {
+      main?: {
+        start: typeof startApplication;
+        createConfig: typeof createAppConfig;
+        cleanup: typeof cleanup;
+      };
+    };
+  };
+
+  const win = globalThis as unknown as WindowWithXEG;
+  win.__XEG__ = win.__XEG__ || {};
+  win.__XEG__.main = {
     start: startApplication,
     createConfig: createAppConfig,
     cleanup,

@@ -183,12 +183,28 @@ if (isDev) {
   };
 
   if (typeof window !== 'undefined') {
-    const w = window as unknown as Record<string, unknown>;
-    w.__XEG_TRACE_START = startFlowTraceImpl;
-    w.__XEG_TRACE_STOP = stopFlowTraceImpl;
-    w.__XEG_TRACE_POINT = tracePointImpl;
-    w.__XEG_TRACE_STATUS = statusFlowTraceImpl;
-    logger.debug('XEG Trace Tools available: __XEG_TRACE_START/STOP/POINT/STATUS');
+    // Phase 290: 네임스페이스 격리 - 모든 전역 변수를 단일 네임스페이스로 통합
+    type WindowWithXEG = Window & {
+      __XEG__?: {
+        tracing?: {
+          start: typeof startFlowTraceImpl;
+          stop: typeof stopFlowTraceImpl;
+          point: typeof tracePointImpl;
+          status: typeof statusFlowTraceImpl;
+        };
+      };
+    };
+
+    const win = window as WindowWithXEG;
+    win.__XEG__ = win.__XEG__ || {};
+    win.__XEG__.tracing = {
+      start: startFlowTraceImpl!,
+      stop: stopFlowTraceImpl!,
+      point: tracePointImpl!,
+      status: statusFlowTraceImpl!,
+    };
+
+    logger.debug('XEG Trace Tools available: window.__XEG__.tracing (start, stop, point, status)');
   }
 }
 

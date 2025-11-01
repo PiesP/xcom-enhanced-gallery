@@ -49,7 +49,10 @@ export function mountGallery(container: Element, element: unknown): Element {
 }
 
 /**
- * 갤러리 언마운트 함수 - Phase 294: Twitter 네비게이션 호환성 개선
+ * 갤러리 언마운트 함수
+ * Phase 294: Twitter 네비게이션 호환성 개선
+ * Phase 300.1: Reflow 최적화 - 조건부 실행으로 성능 영향 최소화
+ *
  * @param container - 언마운트할 DOM 컨테이너
  */
 export function unmountGallery(container: Element): void {
@@ -67,16 +70,22 @@ export function unmountGallery(container: Element): void {
       container.removeChild(container.firstChild);
     }
 
-    // 3. Phase 294: Twitter 스크롤 컨테이너 참조 강제 리프레시
-    // Twitter의 scrollRestoration 로직이 올바른 viewport를 계산하도록 reflow 트리거
-    const twitterScroll = document.querySelector('[data-testid="primaryColumn"]');
-    if (twitterScroll) {
-      // Force reflow to update scroll calculations
-      void twitterScroll.scrollHeight; // Read property to trigger layout recalculation
+    // 3. Phase 300.1: Twitter 스크롤 컨테이너 참조 최적화
+    // Twitter의 scrollRestoration 로직이 올바른 viewport를 계산하도록 지원
+    // 단, 성능 영향 최소화를 위해 Twitter 페이지에서만 실행
+    if (window.location.hostname === 'x.com' || window.location.hostname === 'twitter.com') {
+      const twitterScroll = document.querySelector('[data-testid="primaryColumn"]');
+      if (twitterScroll) {
+        // IntersectionObserver로 viewport 내에 있을 때만 reflow
+        // 단, 이미 언마운트 시점이므로 간단히 scrollHeight 읽기로 충분
+        void twitterScroll.scrollHeight; // Read property to trigger layout recalculation
+
+        logger.debug('Twitter scroll container refreshed for restoration compatibility');
+      }
     }
 
     logger.debug(
-      'Gallery unmounted successfully (Phase 294: DOM cleaned + Twitter scroll refreshed)'
+      'Gallery unmounted successfully (Phase 300.1: DOM cleaned + conditional Twitter scroll refresh)'
     );
   } catch (error) {
     logger.error('Failed to unmount gallery:', error);

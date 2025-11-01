@@ -606,20 +606,28 @@ if (isDev) {
   };
 
   // Expose to window for easy console access
+  // Phase 290: 네임스페이스 격리 - 모든 전역 변수를 단일 네임스페이스로 통합
   if (typeof window !== 'undefined') {
     interface WindowWithDevTools extends Window {
-      __XEG_SET_LOG_LEVEL?: typeof setLogLevelImpl;
-      __XEG_GET_LOG_LEVEL?: typeof getLogLevelImpl;
-      __XEG_MEASURE_MEMORY?: typeof measureMemoryImpl;
+      __XEG__?: {
+        logging?: {
+          setLogLevel: typeof setLogLevelImpl;
+          getLogLevel: typeof getLogLevelImpl;
+          measureMemory: typeof measureMemoryImpl;
+        };
+      };
     }
 
     const win = window as WindowWithDevTools;
-    win.__XEG_SET_LOG_LEVEL = setLogLevelImpl;
-    win.__XEG_GET_LOG_LEVEL = getLogLevelImpl;
-    win.__XEG_MEASURE_MEMORY = measureMemoryImpl;
+    win.__XEG__ = win.__XEG__ || {};
+    win.__XEG__.logging = {
+      setLogLevel: setLogLevelImpl!,
+      getLogLevel: getLogLevelImpl!,
+      measureMemory: measureMemoryImpl!,
+    };
 
     logger.debug(
-      'XEG Dev Tools available: window.__XEG_SET_LOG_LEVEL, window.__XEG_GET_LOG_LEVEL, window.__XEG_MEASURE_MEMORY'
+      'XEG Dev Tools available: window.__XEG__.logging (setLogLevel, getLogLevel, measureMemory)'
     );
   }
 }

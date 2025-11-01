@@ -158,6 +158,61 @@ describe('TwitterScrollPreservation', () => {
       // rAF 후 복원 완료
       expect(mockScrollContainer.scrollTop).toBe(500);
     });
+
+    it('Phase 300.1: delay 파라미터로 복원 지연 시간 제어', async () => {
+      // Timer mock 활성화
+      vi.useFakeTimers();
+
+      mockScrollContainer.scrollTop = 500;
+      preservation.savePosition();
+      mockScrollContainer.scrollTop = 100;
+
+      // 커스텀 delay 300ms로 복원 시작
+      const promise = preservation.restore(100, 300);
+
+      // 300ms 대기 전에는 복원되지 않음
+      expect(mockScrollContainer.scrollTop).toBe(100);
+
+      // 300ms 경과
+      vi.advanceTimersByTime(300);
+
+      // rAF 실행
+      await vi.runAllTimersAsync();
+      await promise;
+
+      // 복원 완료
+      expect(mockScrollContainer.scrollTop).toBe(500);
+
+      vi.useRealTimers();
+    });
+
+    it('Phase 300.1: 기본 delay 150ms 적용 확인', async () => {
+      // Timer mock 활성화
+      vi.useFakeTimers();
+
+      mockScrollContainer.scrollTop = 500;
+      preservation.savePosition();
+      mockScrollContainer.scrollTop = 100;
+
+      // delay 파라미터 생략 (기본값 150ms)
+      const promise = preservation.restore();
+
+      // 100ms 대기 후에는 아직 복원되지 않음
+      vi.advanceTimersByTime(100);
+      expect(mockScrollContainer.scrollTop).toBe(100);
+
+      // 150ms 경과
+      vi.advanceTimersByTime(50);
+
+      // rAF 실행
+      await vi.runAllTimersAsync();
+      await promise;
+
+      // 복원 완료
+      expect(mockScrollContainer.scrollTop).toBe(500);
+
+      vi.useRealTimers();
+    });
   });
 
   describe('clear', () => {

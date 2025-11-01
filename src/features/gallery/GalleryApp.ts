@@ -261,15 +261,20 @@ export class GalleryApp {
       this.mediaService?.restoreBackgroundVideos();
       logger.debug('[GalleryApp] 갤러리 닫음');
 
-      // Phase 295: Twitter 스크롤 위치 복원 (선택적 기능, 에러 발생 시에도 갤러리 닫기는 정상 동작)
+      // Phase 295 → Phase 300.1: Twitter 스크롤 위치 복원 (선택적 기능, 에러 발생 시에도 갤러리 닫기는 정상 동작)
       // Note: restore()는 비동기이지만, closeGallery는 동기 메서드이므로 fire-and-forget
+      // Phase 300.1 개선: restore()에 150ms 지연 추가로 Twitter 네이티브 복원과의 경합 방지
       try {
         const scrollPreservation = getTwitterScrollPreservation();
         void scrollPreservation
           .restore()
           .then(restored => {
             if (restored) {
-              logger.debug('[GalleryApp] Twitter 스크롤 위치 복원됨');
+              logger.debug('[GalleryApp] Twitter 스크롤 위치 복원 완료 (threshold 통과)');
+            } else {
+              logger.debug(
+                '[GalleryApp] Twitter 스크롤 위치 복원 스킵 (threshold 미만 또는 요소 없음)'
+              );
             }
           })
           .catch(scrollError => {

@@ -130,6 +130,56 @@ describe('GalleryContainer Component - Unit Tests', () => {
         unmountGallery(undefined as any);
       }).toThrow();
     });
+
+    it('Phase 300.1: Twitter 페이지에서만 조건부 reflow 실행', () => {
+      // Twitter 컨테이너 생성
+      const twitterScroll = document.createElement('div');
+      twitterScroll.setAttribute('data-testid', 'primaryColumn');
+      document.body.appendChild(twitterScroll);
+
+      // scrollHeight getter mock
+      const scrollHeightSpy = vi.spyOn(twitterScroll, 'scrollHeight', 'get');
+
+      // Twitter 페이지로 설정
+      Object.defineProperty(window.location, 'hostname', {
+        writable: true,
+        value: 'x.com',
+      });
+
+      // unmount 실행
+      unmountGallery(mockContainer);
+
+      // scrollHeight가 읽혔는지 확인 (reflow 트리거)
+      expect(scrollHeightSpy).toHaveBeenCalled();
+
+      // 정리
+      document.body.removeChild(twitterScroll);
+    });
+
+    it('Phase 300.1: 비-Twitter 페이지에서는 reflow 스킵', () => {
+      // Twitter 컨테이너 생성
+      const twitterScroll = document.createElement('div');
+      twitterScroll.setAttribute('data-testid', 'primaryColumn');
+      document.body.appendChild(twitterScroll);
+
+      // scrollHeight getter mock
+      const scrollHeightSpy = vi.spyOn(twitterScroll, 'scrollHeight', 'get');
+
+      // 비-Twitter 페이지로 설정
+      Object.defineProperty(window.location, 'hostname', {
+        writable: true,
+        value: 'example.com',
+      });
+
+      // unmount 실행
+      unmountGallery(mockContainer);
+
+      // scrollHeight가 읽히지 않았는지 확인 (reflow 미실행)
+      expect(scrollHeightSpy).not.toHaveBeenCalled();
+
+      // 정리
+      document.body.removeChild(twitterScroll);
+    });
   });
 
   describe('GalleryContainer Component', () => {
