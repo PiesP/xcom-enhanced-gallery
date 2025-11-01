@@ -7,7 +7,7 @@
  *
  * **Usage Context**:
  * - **CI/CD**: Used in GitHub Actions (ci.yml, release.yml) for automated build validation
- * - **Local**: Can be run manually via `tsx scripts/validate-build.ts`
+ * - **Local**: Can be run manually via `node scripts/validate-build.js`
  *
  * **Why CI needs this**:
  * - UserScript-specific validation (not covered by standard build tools):
@@ -28,7 +28,7 @@
  * Checks both development (with source maps) and production (optimized) outputs.
  *
  * @usage
- *   tsx validate-build.ts
+ *   node validate-build.js
  *
  * @exit
  *   0 - All validations passed
@@ -40,59 +40,47 @@ import { resolve, basename } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 /**
- * Validation options
+ * @typedef {Object} ValidationOptions
+ * @property {boolean} [requireNoVitePreload]
+ * @property {boolean} [assertNoLegacyGlobals]
+ * @property {boolean} [requireSourcemap]
  */
-interface ValidationOptions {
-  requireNoVitePreload?: boolean;
-  assertNoLegacyGlobals?: boolean;
-  requireSourcemap?: boolean;
-}
 
 /**
- * Validation result
+ * @typedef {Object} ValidationResult
+ * @property {string} content
+ * @property {SourceMap | null} map
+ * @property {string | null} mapPath
  */
-interface ValidationResult {
-  content: string;
-  map: SourceMap | null;
-  mapPath: string | null;
-}
 
 /**
- * Source map structure
+ * @typedef {Object} SourceMap
+ * @property {number} [version]
+ * @property {string[]} sources
+ * @property {string[]} sourcesContent
+ * @property {string[]} [names]
+ * @property {string} [mappings]
+ * @property {string} [file]
  */
-interface SourceMap {
-  version?: number;
-  sources: string[];
-  sourcesContent: string[];
-  names?: string[];
-  mappings?: string;
-  file?: string;
-}
 
 /**
- * Size budget configuration
+ * @typedef {Object} SizeBudget
+ * @property {number} warn
+ * @property {number} fail
  */
-interface SizeBudget {
-  warn: number;
-  fail: number;
-}
 
 /**
  * Validates a single UserScript file
  *
- * @param scriptPath - Path to the userscript file
- * @param options - Validation options
- * @returns Validation result
+ * @param {string} scriptPath - Path to the userscript file
+ * @param {ValidationOptions} [options] - Validation options
+ * @returns {ValidationResult} Validation result
  * @throws Process exits with code 1 on validation failure
  */
 function validateOne(
-  scriptPath: string,
-  {
-    requireNoVitePreload = false,
-    assertNoLegacyGlobals = false,
-    requireSourcemap = true,
-  }: ValidationOptions = {}
-): ValidationResult {
+  scriptPath,
+  { requireNoVitePreload = false, assertNoLegacyGlobals = false, requireSourcemap = true } = {}
+) {
   const content = readFileSync(scriptPath, 'utf8');
 
   // UserScript 헤더 검증
@@ -124,8 +112,10 @@ function validateOne(
 
   // R5: sourceMappingURL 주석 확인 및 .map 파일 무결성 검사 (선택적)
   // 프로덕션 빌드는 소스맵을 생성하지 않으므로 검증 스킵
-  let map: SourceMap | null = null;
-  let mapPath: string | null = null;
+  /** @type {SourceMap | null} */
+  let map = null;
+  /** @type {string | null} */
+  let mapPath = null;
 
   if (requireSourcemap) {
     const scriptFileName = basename(scriptPath);
@@ -150,9 +140,9 @@ function validateOne(
       process.exit(1);
     }
     try {
-      map = JSON.parse(readFileSync(mapPath, 'utf8')) as SourceMap;
+      map = JSON.parse(readFileSync(mapPath, 'utf8'));
     } catch (e) {
-      const error = e as Error;
+      const error = /** @type {Error} */ (e);
       console.error('❌ Failed to parse sourcemap JSON:', error.message);
       process.exit(1);
     }
@@ -215,10 +205,10 @@ function validateOne(
 /**
  * Validates both production and development UserScript builds
  *
- * @returns True if all validations pass
+ * @returns {boolean} True if all validations pass
  * @throws Process exits with code 1 on validation failure
  */
-function validateUserScript(): boolean {
+function validateUserScript() {
   console.log('🔍 Validating UserScript build...');
 
   const distPath = resolve(process.cwd(), 'dist');
@@ -260,7 +250,7 @@ function validateUserScript(): boolean {
       console.warn('⚠️ Potential runtime errors detected');
     }
   } catch (error) {
-    const err = error as Error;
+    const err = /** @type {Error} */ (error);
     console.error('❌ JavaScript syntax validation failed:', err.message);
     process.exit(1);
   }
@@ -272,7 +262,8 @@ function validateUserScript(): boolean {
 
   // B2: 사이즈 예산 강화 — 현재 gzip ~99KB 기준 보수적 상향
   // WARN은 120KB, FAIL은 160KB로 설정하여 회귀를 조기 감지(현 상태에서는 여유 유지)
-  const gzipBudget: SizeBudget = {
+  /** @type {SizeBudget} */
+  const gzipBudget = {
     warn: 120 * 1024, // 120KB
     fail: 160 * 1024, // 160KB
   };
@@ -294,7 +285,8 @@ function validateUserScript(): boolean {
   // Phase 153: useGalleryScroll 상태 정규화 (+0.22 KB)
   // Phase 155: 임시 번들 크기 제한 상향 조정 (336KB → 400KB)
   // Phase 166: 빌드 크기 제한 공식 상향 (400KB → 420KB)
-  const rawBudget: SizeBudget = {
+  /** @type {SizeBudget} */
+  const rawBudget = {
     warn: 417 * 1024, // 417KB (3 KB 여유)
     fail: 420 * 1024, // 420KB
   };
@@ -331,7 +323,7 @@ function validateUserScript(): boolean {
 try {
   validateUserScript();
 } catch (error) {
-  const err = error as Error;
+  const err = /** @type {Error} */ (error);
   console.error('❌ UserScript validation failed:', err.message);
   process.exit(1);
 }
