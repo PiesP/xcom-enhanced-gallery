@@ -36,6 +36,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     const rootElement = doc instanceof Document ? doc.documentElement : doc;
 
     // 이미지 미디어 추출 (캐시된 조회 사용)
+    // 1차 선택은 성능/범용성을 위해 substring 셀렉터를 사용하되,
+    // 반드시 isTwitterMediaUrl()로 호스트명을 재검증한다(도메인 스푸핑 방지).
     const images = cachedQuerySelectorAll('img[src*="pbs.twimg.com"]', rootElement, 3000);
     if (images && images.length > 0) {
       Array.from(images).forEach(img => {
@@ -43,7 +45,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         const src = imgElement.src;
 
         // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출
-        if (src.includes('/media/') && !src.includes('profile_images')) {
+        if (isTwitterMediaUrl(src) && src.includes('/media/') && !src.includes('profile_images')) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo) {
             mediaItems.push(mediaInfo);
@@ -53,7 +55,7 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
       });
     }
 
-    // 비디오 미디어 추출 (캐시된 조회 사용)
+    // 비디오 미디어 추출 (캐시된 조회 사용) — 호스트 검증 강화
     const videos = cachedQuerySelectorAll('video', rootElement, 2000);
     if (videos && videos.length > 0) {
       Array.from(videos).forEach(video => {
@@ -166,6 +168,12 @@ export function createMediaInfoFromVideo(
 
     // 유효한 비디오 URL이 있는지 확인
     if (!src && !poster) {
+      return null;
+    }
+
+    // 호스트 검증: video.twimg.com 또는 pbs.twimg.com(썸네일)만 허용
+    const primary = src || poster;
+    if (!isTwitterMediaUrl(primary)) {
       return null;
     }
 

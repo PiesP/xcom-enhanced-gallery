@@ -120,9 +120,8 @@ function createStyleInjector(css: string, isDev: boolean = false): string {
   if (!css.trim()) {
     return '';
   }
-
-  // CSS를 JSON.stringify로 안전하게 이스케이프
-  const escapedCss = JSON.stringify(css);
+  // CSS를 base64로 인코딩하여 텍스트 노드로 주입 (JSON.stringify 대체)
+  const b64 = Buffer.from(css, 'utf8').toString('base64');
 
   // 개발 빌드: 가독성을 위해 개행과 들여쓰기 추가
   // 프로덕션: 최소화된 형태
@@ -131,9 +130,9 @@ function createStyleInjector(css: string, isDev: boolean = false): string {
   try {
     var s = document.getElementById('xeg-styles');
     if (s) s.remove();
-    s = document.createElement('style');
-    s.id = 'xeg-styles';
-    s.textContent = ${escapedCss};
+  s = document.createElement('style');
+  s.id = 'xeg-styles';
+  s.textContent = atob('${b64}');
     (document.head || document.documentElement).appendChild(s);
   } catch (e) {
     console.error('[XEG] style inject fail', e);
@@ -148,7 +147,7 @@ function createStyleInjector(css: string, isDev: boolean = false): string {
       `if(s) s.remove();` +
       `s=document.createElement('style');` +
       `s.id='xeg-styles';` +
-      `s.textContent=${escapedCss};` +
+      `s.textContent=atob('${b64}');` +
       `(document.head||document.documentElement).appendChild(s);` +
       `}catch(e){console.error('[XEG] style inject fail',e);}` +
       `})();`

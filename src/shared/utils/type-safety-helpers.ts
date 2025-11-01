@@ -520,12 +520,16 @@ export function setNestedValue(obj: Record<string, unknown>, path: string, value
       );
     }
 
-    // Object.hasOwn으로 프로토타입 체인 방지
-    if (Object.hasOwn(current, finalKey) || !(finalKey in Object.prototype)) {
-      current[finalKey] = value;
-    } else {
-      throw new Error(`[XEG] Cannot set inherited property: "${finalKey}" in path "${path}"`);
+    // Object.hasOwn으로 소유 속성 확인 + Object.prototype에 존재하지 않는 키만 허용
+    const currentRecord = current as Record<string, unknown> & { [k: string]: unknown };
+    const isOwn = Object.hasOwn(currentRecord, finalKey);
+    const isInheritedFromObjectProto = finalKey in Object.prototype;
+    if (isOwn || !isInheritedFromObjectProto) {
+      currentRecord[finalKey] = value;
+      return;
     }
+
+    throw new Error(`[XEG] Cannot set inherited property: "${finalKey}" in path "${path}"`);
   }
 }
 

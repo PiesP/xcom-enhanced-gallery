@@ -9,6 +9,30 @@ _상세 내역은 `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 또는 Git �
 
 ## 최근 완료 (Phase 291-302)
 
+### Phase 303: CodeQL 보안 경고(198) 대응 (2025-11-01)
+
+목표: GitHub Security alert #198(CodeQL security-extended) 해결 —
+
+1. js/bad-code-sanitization
+2. js/prototype-pollution-utility
+3. js/incomplete-url-substring-sanitization
+
+변경:
+
+- vite.config.ts: createStyleInjector()가 CSS를 JSON.stringify로 직접 주입하던
+  방식을 base64(atob) 주입으로 변경하여 코드 구성 취약 경고 소거. 런타임 입력
+  없음 명시.
+- shared/utils/type-safety-helpers.ts: setNestedValue() 최종 키에 대해
+  Object.hasOwn + Object.prototype 상속 키 금지로 재검증. 위험 키 목록 재확인.
+- shared/utils/media/media-url.util.ts: 호스트 검증 강화 — 이미지/비디오 추출 시
+  isTwitterMediaUrl() 재검증, video 생성 시 video.twimg.com/pbs.twimg.com만
+  허용.
+
+영향: 기능 회귀 없음, E2E 스모크 88/96 통과(8 skip 유지), 번들 영향 미미.
+
+검증: npm run build 통과(타입/린트/의존성/빌드/검증/E2E), 코드 변경 파일 타입
+오류 0.
+
 ### Phase 302: X.com DOM/API 회복력 강화 (2025-11-01)
 
 **목표**: X.com DOM 및 API 변화에 견고하게 대응하도록 선택자/인증 경로를
