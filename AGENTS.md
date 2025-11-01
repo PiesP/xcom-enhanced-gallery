@@ -3,26 +3,80 @@
 개발자가 빠르게 온보딩하고, 로컬/CI에서 동일한 워크플로로 작업할 수 있도록
 정리한 프로젝트 실행 가이드입니다.
 
-## 🎯 프로젝트 구조: 로컬 vs. 원격 저장소
+## 🎯 프로젝트 구조: 로컬 vs. 원격 저장소 (화이트리스트 방식)
 
-### 원격 리포지토리에 포함 (Git Tracked)
+### 📋 핵심 원칙
 
-✅ **소스 코드**: `src/`, `types/`, `playwright/`, `scripts/`, `styles/` ✅
-**필수 빌드 설정**: `tsconfig.base.json`, `tsconfig.json`, `vite.config.ts`
-(기본값), `vitest.config.ts`, `eslint.config.js` (기본값) ✅ **의존성**:
-`package.json`, `package-lock.json`, `.npmrc` ✅ **핵심 가이드**: `docs/`,
-`AGENTS.md`, `.github/copilot-instructions.md` ✅ **CI/CD**:
-`.github/workflows/`, GitHub Actions 설정
+- **원격 저장소 역할**: 소스 코드 + 빌드된 배포 스크립트 + CI/CD 설정만
+- **로컬 처리**: 모든 캐시, 테스트 결과, 개발 설정, 임시 파일
+- **`.gitignore`**: 화이트리스트 방식 (모든 것 무시 → 필요한 것만 추적)
 
-### 로컬 개발 환경에만 (Git Ignored)
+### 원격 리포지토리에 포함 (Git Tracked) ✅
 
-❌ **개발자별 오버라이드**: `*.local.ts`, `*.local.js`, `config/local/*` (README
-제외) ❌ **캐시**: `.eslintcache`, `.prettiercache`, `.tscache`,
-`.vitest-cache`, `coverage/`, `test-results/` ❌ **환경**: `.env.local`, 보안
-인증서, 로컬 secrets
+**소스 코드**
 
-**자세한 가이드**: [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md)를
-참고하세요.
+- `src/` - 애플리케이션 소스
+- `types/` - TypeScript 타입 정의
+- `test/` - 단위/통합 테스트
+- `playwright/` - E2E/접근성 테스트
+
+**필수 빌드 설정**
+
+- `tsconfig.base.json`, `tsconfig.json`, `tsconfig.tests.json`
+- `vite.config.ts`, `vitest.config.ts`
+- `eslint.config.js`, `postcss.config.js`, `playwright.config.ts`
+
+**패키지 관리**
+
+- `package.json`, `package-lock.json`
+- `.npmrc` (글로벌 설정)
+
+**문서 및 가이드**
+
+- `README.md`, `LICENSE`, `CHANGELOG.md`
+- `AGENTS.md`, `CLAUDE.md`
+- `docs/` - 모든 가이드 문서
+
+**배포 및 CI/CD**
+
+- `dist/*.user.js` - 빌드된 배포 스크립트만 (중간산출물 제외)
+- `.github/` - GitHub Actions 워크플로우
+- `release/RELEASE_NOTES.md` - 릴리스 노트
+
+**라이선스 및 설정**
+
+- `LICENSES/` - 의존성 라이선스
+- `config/utils/` - 로컬 오버라이드 헬퍼
+- `config/local/README.md` - 로컬 설정 템플릿
+- `scripts/` - 공용 검증/빌드 스크립트
+
+### 로컬 개발 환경에만 (Git Ignored) ❌
+
+**개발 설정 (개발자별 다름)**
+
+- `*.local.ts`, `*.local.js`, `*.local.json` - 개발자 오버라이드
+- `.env.local`, `.env.*.local` - 환경 변수
+- `config/local/*` - 로컬 설정 (README.md 제외)
+
+**빌드 및 테스트 캐시 (로컬만)**
+
+- `.eslintcache`, `.prettiercache`, `.tscache`, `.vitest-cache`
+- `.dependency-cruiser-cache`, `.stylelintcache`, `.markdownlintcache`
+- `coverage/`, `test-results/`, `playwright-report/`
+- `dist-ssr/`, `build/`, `.vite/`, `.cache/`
+
+**로컬 보안 및 임시 파일**
+
+- `*.pem`, `*.p12`, `secret.key`, `ssl/`, `certs/`
+- `temp/`, `tmp/`, `backup*/`, `*.backup`
+- `logs/`, `*.log`, `*.cpuprofile`
+
+**IDE 및 OS**
+
+- `.vscode/`, `.idea/`, `.husky/`
+- `.DS_Store`, `Thumbs.db`
+
+**자세한 가이드**: [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md)
 
 ---
 

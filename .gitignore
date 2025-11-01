@@ -1,67 +1,145 @@
-# === Dependencies ===
+# Whitelist-based .gitignore for xcom-enhanced-gallery
+# 원격 저장소: 소스 코드 + 빌드된 스크립트 + CI/CD 설정만 추적
+# 로컬만 처리: 모든 캐시, 테스트 결과, 빌드 중간산출물, 개발 설정
+
+# ============================================================================
+# 기본 규칙: 모든 것을 무시하고 필요한 것만 추적
+# ============================================================================
+
+# 전체 무시
+*
+!*/
+
+# ============================================================================
+# TRACKED: 원격 저장소에 포함되는 파일들
+# ============================================================================
+
+# --- 소스 코드 (필수) ---
+!/src
+!/src/**
+
+# --- 타입 정의 (필수) ---
+!/types
+!/types/**
+
+# --- 테스트 코드 (필수) ---
+!/test
+!/test/**
+!/playwright
+!/playwright/**
+
+# --- 필수 빌드 설정 ---
+!/tsconfig.base.json
+!/tsconfig.json
+!/tsconfig.tests.json
+!/vite.config.ts
+!/vitest.config.ts
+!/eslint.config.js
+!/postcss.config.js
+!/playwright.config.ts
+
+# --- 패키지 관리 ---
+!/package.json
+!/package-lock.json
+!/.npmrc
+
+# --- 핵심 문서 ---
+!/README.md
+!/LICENSE
+!/CHANGELOG.md
+!/AGENTS.md
+!/CLAUDE.md
+
+# --- 문서 디렉토리 ---
+!/docs
+!/docs/**
+
+# --- 빌드된 배포 스크립트 (UserScript만) ---
+!/dist
+!/dist/*.user.js
+
+# --- 릴리스 정보 ---
+!/release
+!/release/RELEASE_NOTES.md
+
+# --- GitHub Actions & CI/CD ---
+!/.github
+!/.github/**
+
+# --- 라이선스 파일 ---
+!/LICENSES
+!/LICENSES/**
+
+# --- 설정 헬퍼 (로컬 오버라이드 시스템) ---
+!/config
+!/config/utils
+!/config/utils/load-local-config.js
+!/config/utils/load-local-config.d.ts
+!/config/local
+!/config/local/README.md
+
+# --- 공용 스크립트 ---
+!/scripts
+!/scripts/validate-build.js
+!/scripts/validate-build.ts
+!/scripts/check-codeql.js
+!/scripts/cleanup-vitest-workers.js
+!/scripts/generate-dep-graph.js
+!/scripts/maintenance-check.js
+!/scripts/protect-vscode.js
+!/scripts/run-all-tests.js
+!/scripts/run-fast-batched.js
+!/scripts/run-vitest-project.js
+
+# --- Git 설정 ---
+!/.git
+!/.gitignore
+!/.gitignore.whitelist
+!/.gitattributes
+
+# ============================================================================
+# IGNORED: 원격 저장소에 포함되지 않는 것들 (모두 로컬 처리)
+# ============================================================================
+
+# node_modules와 의존성 캐시
 node_modules/
 .pnp/
 .yarn/
 .pnpm-store/
 
-# === Build Outputs ===
-dist/
+# 빌드 관련 (배포용 UserScript 제외)
 dist-ssr/
-!dist/*.user.js
 build/
 .vite/
 .cache/
-*.min.js
-*.min.css
-*.meta.js
 
-# === Testing & Coverage ===
+# 테스트와 커버리지
 coverage/
 test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
-playwright/.auth/
 .vitest-cache/
 **/__screenshots__/
 
-# === CodeQL & Security ===
-.codeql-db
+# CodeQL 및 보안 (로컬 스캔 결과만)
+.codeql-db/
 codeql-db/
 codeql-results/
 codeql-reports/
-codeql-custom-queries-javascript/
-*.sarif
 
-# === Documentation (Generated) ===
-docs/bundle-*.{html,json}
-docs/bundle-analysis.html
-docs/dependency-graph.*
-docs/.dep-graph-cache.json
-docs/temp/
-docs/archive/
-sample_pages/
-
-# === Root-level documentation (tracked) ===
-# docs/*.md and AGENTS.md are tracked
-# Only generated/temp docs are ignored
-
-# === Logs ===
+# 로그 파일
 logs/
 *.log
 *.cpuprofile
 vitest-*.log
 
-# === Environment ===
+# 환경 변수 (로컬만)
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
-# === TypeScript ===
-*.tsbuildinfo
-.tscache/
-
-# === IDEs & Editors ===
+# IDE & 에디터
 .husky/
 .vscode/
 .idea/
@@ -73,27 +151,28 @@ vitest-*.log
 .fleet/
 *.code-workspace
 
-# === OS ===
-# macOS
+# 운영체제 파일
 .DS_Store
 .AppleDouble
 ._*
-# Windows
 Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 
-# === Cache ===
+# 도구 캐시 (모두 로컬)
 .dependency-cruiser-cache
 .stylelintcache
 .eslintcache
 .prettiercache
 .markdownlintcache
+.tscache/
 
-# === Temporary & Backup ===
+# TypeScript 중간 파일
+*.tsbuildinfo
+
+# 임시 파일
 temp/
 tmp/
-scripts/temp/
 backup*/
 *.backup
 *.backup.*
@@ -104,58 +183,41 @@ backup*/
 *.tmp
 *.temp
 
-# === Local Configuration Overrides (Developer-Only) ===
-# All local .local.* files and override configurations are development-only
-# CI/CD workflows are independent of these overrides via XEG_DISABLE_LOCAL_CONFIG
-config/local/*
-!config/local/README.md
-eslint.local.js
-eslint.local.mjs
-eslint.local.ts
-vite.local.ts
-vite.local.js
-vite.local.mjs
-vitest.local.ts
-vitest.local.js
-vitest.local.mjs
-postcss.local.js
-tsconfig.local.json
-.env.local
-.env.*.local
+# 개발자 로컬 설정 (오버라이드)
+*.local.js
+*.local.mjs
+*.local.ts
+*.local.json
 
-# === Package Managers ===
-package-lock.json.backup
-yarn.lock.backup
-pnpm-lock.yaml.backup
-
-# === Development ===
+# 개발 전용 폴더
 scratch/
 playground/
 experiments/
 sandbox/
 metrics/
 
-# === Generated Files ===
+# 생성된 맵 파일
 *.js.map
 *.css.map
 *.user.js.map
 
-# === Security (Local) ===
+# 보안 파일 (로컬만)
 *.pem
 *.p12
 secret.key
 ssl/
 certs/
 
-# === Release (Auto-generated) ===
+# 루트 임시 파일
+build-*.txt
+test-*.txt
+validate-*.txt
 release/checksums.txt
 release/metadata.json
 release/*.user.js
 
-# === Root Path Protection ===
-# 루트 경로의 임시 파일 방지
-build-*.txt
-test-*.txt
-validate-*.txt
+# 완료된 문서 아카이브
+docs/archive/**
+docs/temp/**
 
 ```
