@@ -2,10 +2,9 @@ name: 🚀 Release
 
 # Responsibility: Release artifact creation only
 # - Version detection: package.json changes or manual trigger
-# - Minimal validation: smoke tests only (full checks in ci.yml)
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with assets
-# Assumes ci.yml has validated all quality checks
+# All validation and testing is local only (via pre-push hook)
 
 on:
   push:
@@ -92,12 +91,6 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      # Note: Full quality checks (typecheck, lint, CodeQL, etc.) are handled by ci.yml
-      # Release workflow focuses only on smoke tests and production build
-
-      - name: 🧪 Run smoke tests
-        run: npx vitest --project smoke run --reporter=verbose
-
       - name: 📈 Bump version (if manual)
         if: github.event_name == 'workflow_dispatch'
         run: |
@@ -121,10 +114,10 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🔨 Development build (direct)
+      - name: 🔨 Development build
         run: npx vite build --mode development
 
-      - name: 🏗️ Build production (direct)
+      - name: 🏗️ Build production
         run: |
           echo "🚀 Building production version..."
           npx vite build --mode production
