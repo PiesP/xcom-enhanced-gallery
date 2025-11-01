@@ -8,6 +8,22 @@
     "node": ">=22.0.0",
     "npm": ">=10.0.0"
   },
+  "npm": {
+    "nodeOptions": "--max-old-space-size=8192",
+    "legacy-peer-deps": true,
+    "strict-peer-dependencies": false,
+    "package-lock": true,
+    "prefer-dedupe": true,
+    "maxsockets": 50,
+    "prefer-offline": true,
+    "progress": false,
+    "audit": false,
+    "loglevel": "error",
+    "fund": false,
+    "update-notifier": false,
+    "optional": true,
+    "fetch-timeout": 60000
+  },
   "scripts": {
     "// ===== QUICK REFERENCE: LOCAL vs REMOTE ===== ": "",
     "// Local Only: test:*, lint:*, format, deps:graph, maintenance:* ": "",
@@ -29,7 +45,7 @@
     "// ===== NOTE: 'check' = comprehensive quality + all tests (development/PR final validation) ===== ": "",
     "// ===== Typecheck ===== ": "",
     "typecheck": "tsgo --project ./tsconfig.json --noEmit",
-    "typecheck:tests": "tsgo --project ./tsconfig.tests.json --noEmit",
+    "typecheck:tests": "tsgo --project ./tsconfig.json --noEmit",
     "// ===== Lint ===== ": "",
     "lint": "eslint ./src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint ./src --fix",

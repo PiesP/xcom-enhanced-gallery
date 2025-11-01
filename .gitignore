@@ -30,7 +30,6 @@
 # --- 패키지 관리 ---
 !/package.json
 !/package-lock.json
-!/.npmrc
 
 # --- 핵심 문서 ---
 !/README.md
@@ -74,7 +73,7 @@
 /.env.*.local
 /config/local/*
 
-# TypeScript 테스트 설정 (CI만 사용)
+# TypeScript 테스트 설정 (테스트 검증 전용)
 /tsconfig.tests.json
 
 # 빌드 설정 (옵션)

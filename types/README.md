@@ -92,11 +92,6 @@ define: {
 - 단일 책임 원칙 강화: 각 파일이 명확한 도메인 담당
 - 레이어 분리 명확화: Shared vs. Features 타입 구분
 
-### 자세한 내용
-
-- 타입 정의 가이드: [`docs/CODING_GUIDELINES.md`](../docs/CODING_GUIDELINES.md)
-- 아키텍처: [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)
-
 ## TypeScript 설정
 
 `tsconfig.json`에서 `types/` 포함:

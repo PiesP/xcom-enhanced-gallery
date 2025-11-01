@@ -170,8 +170,7 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 ## 🤝 개발에 참여하기
 
-프로젝트 개선 아이디어가 있으신가요? 개발 환경 설정과 상세한 가이드는
-[`AGENTS.md`](AGENTS.md)를 참고하세요.
+프로젝트 개선 아이디어가 있으신가요?
 
 ### 개발 환경 설정
 
@@ -193,42 +192,14 @@ npm run build
 npm test
 ```
 
-더 자세한 개발 가이드는 [`docs/`](docs/) 디렉토리의 문서를 참고하세요.
-
-#### 테스트 실행 안내
-
-이 저장소의 테스트는 Vitest Projects로 분할되어 있어 목적별로 빠르게 실행할 수
-있습니다(예: smoke/fast/unit/browser/styles/performance/phases/refactor).
-구체적인 사용 방법과 스크립트는 `AGENTS.md`의 "테스트 가이드 (Vitest) > 분할
-실행(Projects)" 섹션을 참고하세요.
-
-추가로, 로컬 개발 속도를 위해 다음 기본 명령을 제공합니다:
-
-- 빠른 기본 스위트: `npm test` → fast 프로젝트만 실행(개발 루프 최적)
-- 전체 스위트: `npm run test:full`
-- 워치 모드: `npm run test:watch` (fast 프로젝트)
-- 커버리지(로컬): `npm run test:coverage` (unit 프로젝트)
-- **브라우저 테스트**: `npm run test:browser` (Vitest + Chromium, Solid.js
-  반응성)
-- **접근성 테스트**: `npm run e2e:a11y` (Playwright + axe-core, WCAG 2.1)
-
-참고: CI에서는 dot 리포터와 v8 커버리지로 속도를 최적화했고, Node 22/24
-매트릭스로 호환성을 검증합니다. 로컬 기본 테스트 전에 사전 빌드는 수행하지 않아
-빠르게 시작되며, 커버리지 작업은 안정성을 위해 사전(production) 빌드를
-수행합니다. 빌드 전 검증(`validate:build`)은 브라우저 테스트와 접근성 테스트를
-포함합니다.
-
 ## 📞 지원 및 피드백
 
 - **🐛 버그 신고**:
   [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
 - **💡 기능 제안**:
   [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
-- **📚 문서**: [문서 가이드](docs/DOCUMENTATION.md) · [개발자 가이드](AGENTS.md)
-  · [전체 docs/](docs/)
-- **� CodeQL 설정** (로컬 정적 분석):
-  [CodeQL Debian 설정 가이드](docs/temp/CODEQL_DEBIAN_SETUP.md)
-- **�📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
+- **📚 문서**: 로컬의 `docs/` 디렉토리 참고 (개발자 전용, 저장소 미추적)
+- **📝 변경사항**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
 
 ---
 
