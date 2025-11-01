@@ -13,7 +13,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 import { transformSync } from '@babel/core';
-import { loadLocalConfig } from './config/utils/load-local-config.js';
+
+// 로컬 설정 로더 (로컬 전용, CI에서는 건너뜀)
+// noinspection JSUnusedLocalSymbols
+async function loadLocalConfigSafe<T = unknown>(baseRef: any, basename: string): Promise<T | null> {
+  // CI 환경 또는 XEG_DISABLE_LOCAL_CONFIG가 설정되면 건너뜀
+  if (process.env.XEG_DISABLE_LOCAL_CONFIG === 'true' || process.env.CI === 'true') {
+    return null;
+  }
+
+  try {
+    // 동적 import로 파일 존재 시에만 로드 (CI에서 파일 부재 해결)
+    const { loadLocalConfig } = await import('./config/utils/load-local-config.js');
+    return (await loadLocalConfig<T>(baseRef, basename)) ?? null;
+  } catch {
+    // 파일 미존재 또는 다른 오류 시 null 반환 (빌드 진행)
+    return null;
+  }
+}
 
 interface BuildFlags {
   mode: string;
@@ -21,6 +38,7 @@ interface BuildFlags {
   isProd: boolean;
   sourcemap: boolean;
 }
+
 interface PackageJsonMeta {
   version: string;
   description?: string;
@@ -474,7 +492,7 @@ export default defineConfig(async ({ mode }) => {
     clearScreen: false,
   };
   const localOverrides =
-    (await loadLocalConfig<Partial<UserConfig>>(import.meta.url, 'vite.local')) ?? null;
+    (await loadLocalConfigSafe<Partial<UserConfig>>(import.meta.url, 'vite.local')) ?? null;
 
   return localOverrides ? mergeConfig(config, localOverrides) : config;
 });
