@@ -263,6 +263,11 @@ export default [
       sourceType: 'module',
       ecmaVersion: 2022,
       globals: {
+        // Vite build-time globals
+        __DEV__: 'readonly',
+        __PROD__: 'readonly',
+        __VERSION__: 'readonly',
+
         // Vitest globals
         vi: 'readonly',
         describe: 'readonly',
