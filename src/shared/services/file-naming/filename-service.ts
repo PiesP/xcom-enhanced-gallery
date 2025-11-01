@@ -17,7 +17,20 @@ export interface FilenameOptions {
   extension?: string;
   fallbackPrefix?: string;
   fallbackUsername?: string;
+  date?: Date;
 }
+
+/**
+ * 날짜를 YYYYMMDD 형식(예: "20250101")으로 변환합니다.
+ * @param date - 변환할 날짜 (기본값: 현재 시간)
+ * @returns YYYYMMDD 형식의 문자열
+ */
+const formatDateAsYYYYMMDD = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}${month}${day}`;
+};
 
 /**
  * ZIP 파일명 생성 옵션
@@ -26,24 +39,41 @@ export interface ZipFilenameOptions {
   fallbackPrefix?: string;
 }
 
+// ===== 검증 패턴 상수 =====
+
+/** 미디어 파일명 검증 패턴: {username}_{tweetId}_{YYYYMMDD}_{index}.{ext} */
+const MEDIA_FILENAME_PATTERN = /^[a-zA-Z0-9_]+_\d{10,19}_\d{8}_\d+\.[a-zA-Z0-9]+$/;
+
+/** ZIP 파일명 검증 패턴: {username}_{tweetId}_{YYYYMMDD}.zip */
+const ZIP_FILENAME_PATTERN = /^[a-zA-Z0-9_]+_\d{10,19}_\d{8}\.zip$/;
+
+/** 지원되는 파일 확장자 */
+const SUPPORTED_EXTENSIONS = /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i;
+
 /**
  * 파일명 생성 서비스
  *
  * 트위터 미디어에 대한 일관된 파일명 생성 및 검증을 담당합니다.
  * Windows 호환성, 유니코드 정규화, 보안 검증을 포함합니다.
  *
+ * 파일명 형식:
+ * - 미디어: `{username}_{tweetId}_{YYYYMMDD}_{index}.{extension}`
+ * - ZIP: `{username}_{tweetId}_{YYYYMMDD}.zip`
+ *
  * @example
  * ```typescript
  * const service = new FilenameService();
  * const filename = service.generateMediaFilename(mediaItem, { index: 1 });
- * // 결과: "username_1234567890_1.jpg"
+ * // 결과: "username_1234567890_20250101_1.jpg"
+ * const zipFilename = service.generateZipFilename([mediaItem]);
+ * // 결과: "username_1234567890_20250101.zip"
  * ```
  */
 export class FilenameService {
   /**
    * 미디어 파일명 생성
    *
-   * 형식: `{username}_{tweetId}_{index}.{extension}`
+   * 형식: `{username}_{tweetId}_{YYYYMMDD}_{index}.{extension}`
    *
    * @param media - 미디어 정보
    * @param options - 생성 옵션
@@ -59,39 +89,30 @@ export class FilenameService {
         return this.sanitizeForWindows(media.filename);
       }
 
-      // 사용자명과 트윗ID가 모두 유효한 경우 표준 형식
-      if (media.tweetUsername && media.tweetUsername !== 'unknown' && media.tweetId) {
-        const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-        const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
+      const yyyymmdd = formatDateAsYYYYMMDD(options.date);
+      const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
+      const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
+      // 사용자명 결정 (우선순위: tweetUsername > 추출된 사용자명 > fallbackUsername)
+      let username: string | null = null;
+
+      if (media.tweetUsername && media.tweetUsername !== 'unknown') {
+        username = media.tweetUsername;
+      } else {
+        const urlToCheck = ('originalUrl' in media ? media.originalUrl : null) || media.url;
+        username = typeof urlToCheck === 'string' ? this.extractUsernameFromUrl(urlToCheck) : null;
+      }
+
+      username ||= options.fallbackUsername || null;
+
+      // 사용자명과 트윗ID가 있으면 표준 형식으로 생성
+      if (username && media.tweetId) {
         return this.sanitizeForWindows(
-          `${media.tweetUsername}_${media.tweetId}_${index}.${extension}`
+          `${username}_${media.tweetId}_${yyyymmdd}_${index}.${extension}`
         );
       }
 
-      // URL에서 사용자명 추출 시도
-      const urlToCheck = ('originalUrl' in media ? media.originalUrl : null) || media.url;
-      const extractedUsername =
-        typeof urlToCheck === 'string' ? this.extractUsernameFromUrl(urlToCheck) : null;
-      if (extractedUsername && media.tweetId) {
-        const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-        const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
-
-        return this.sanitizeForWindows(
-          `${extractedUsername}_${media.tweetId}_${index}.${extension}`
-        );
-      }
-
-      // 폴백 사용자명 사용
-      if (options.fallbackUsername && media.tweetId) {
-        const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-        const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
-
-        return this.sanitizeForWindows(
-          `${options.fallbackUsername}_${media.tweetId}_${index}.${extension}`
-        );
-      }
-
+      // 폴백: 타임스탬프 기반 파일명
       return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
     } catch (error) {
       logger.warn('Failed to generate media filename:', error);
@@ -102,7 +123,7 @@ export class FilenameService {
   /**
    * ZIP 파일명 생성
    *
-   * 형식: `{username}_{tweetId}.zip` 또는 `{fallbackPrefix}_{timestamp}.zip`
+   * 형식: `{username}_{tweetId}_{YYYYMMDD}.zip` 또는 `{fallbackPrefix}_{timestamp}.zip`
    *
    * @param mediaItems - 미디어 아이템 배열
    * @param options - 생성 옵션
@@ -115,7 +136,10 @@ export class FilenameService {
     try {
       const firstItem = mediaItems[0];
       if (firstItem?.tweetUsername && firstItem?.tweetId) {
-        return this.sanitizeForWindows(`${firstItem.tweetUsername}_${firstItem.tweetId}.zip`);
+        const yyyymmdd = formatDateAsYYYYMMDD();
+        return this.sanitizeForWindows(
+          `${firstItem.tweetUsername}_${firstItem.tweetId}_${yyyymmdd}.zip`
+        );
       }
 
       const prefix = options.fallbackPrefix ?? 'xcom_gallery';
@@ -131,25 +155,27 @@ export class FilenameService {
   /**
    * 미디어 파일명 유효성 검증
    *
-   * 형식: `{name}_{id}_{index}.{ext}`
+   * 형식: `{name}_{id}_{YYYYMMDD}_{index}.{ext}`
+   * 예: piesp_1234567890_20250101_1.jpg
    *
    * @param filename - 검증할 파일명
    * @returns 유효 여부
    */
   isValidMediaFilename(filename: string): boolean {
-    const pattern = /^[^_\s]+_\d+_\d+\.\w+$/;
-    return pattern.test(filename);
+    return MEDIA_FILENAME_PATTERN.test(filename);
   }
 
   /**
    * ZIP 파일명 유효성 검증
    *
+   * 형식: `{name}_{id}_{YYYYMMDD}.zip`
+   * 예: piesp_1234567890_20250101.zip
+   *
    * @param filename - 검증할 파일명
    * @returns 유효 여부
    */
   isValidZipFilename(filename: string): boolean {
-    const pattern = /^[^_]+_\d+\.zip$/;
-    return pattern.test(filename);
+    return ZIP_FILENAME_PATTERN.test(filename);
   }
 
   // ===== Private Helpers =====
@@ -191,7 +217,7 @@ export class FilenameService {
         const lastDot = pathname.lastIndexOf('.');
         if (lastDot > 0) {
           const extension = pathname.substring(lastDot + 1);
-          if (/^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(extension)) {
+          if (SUPPORTED_EXTENSIONS.test(extension)) {
             return extension.toLowerCase();
           }
         }
@@ -203,7 +229,7 @@ export class FilenameService {
       const lastDot = pathname.lastIndexOf('.');
       if (lastDot > 0) {
         const extension = pathname.substring(lastDot + 1);
-        if (/^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(extension)) {
+        if (SUPPORTED_EXTENSIONS.test(extension)) {
           return extension.toLowerCase();
         }
       }
@@ -373,6 +399,8 @@ export class FilenameService {
 /**
  * 미디어 파일명 생성 편의 함수
  *
+ * 형식: `{username}_{tweetId}_{YYYYMMDD}_{index}.{extension}`
+ *
  * @param media - 미디어 정보
  * @param options - 생성 옵션
  * @returns 생성된 파일명
@@ -380,7 +408,7 @@ export class FilenameService {
  * @example
  * ```typescript
  * const filename = generateMediaFilename(mediaItem, { index: 2 });
- * // "username_1234567890_2.jpg"
+ * // "username_1234567890_20250101_2.jpg"
  * ```
  */
 export function generateMediaFilename(
