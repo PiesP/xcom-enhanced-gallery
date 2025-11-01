@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as CoreUtils from '../../../../src/shared/utils/core-utils';
 import {
   TwitterScrollPreservation,
   getTwitterScrollPreservation,
@@ -54,7 +55,11 @@ describe('TwitterScrollPreservation', () => {
     it('Twitter 컨테이너 없으면 false 반환', () => {
       document.body.removeChild(mockScrollContainer);
 
+      // Phase 302: findTwitterScrollContainer는 body 폴백을 갖기 때문에,
+      // "완전 부재" 케이스를 시뮬레이션하려면 유틸을 스텁하여 null을 반환시킨다.
+      const spy = vi.spyOn(CoreUtils, 'findTwitterScrollContainer').mockReturnValue(null as any);
       const result = preservation.savePosition();
+      spy.mockRestore();
 
       expect(result).toBe(false);
       expect(preservation.getSavedPosition()).toBeNull();
@@ -122,7 +127,11 @@ describe('TwitterScrollPreservation', () => {
 
       document.body.removeChild(mockScrollContainer);
 
+      // Phase 302: 폴백(body)으로 인해 실제 환경에서는 컨테이너가 항상 존재할 수 있으므로
+      // "부재" 케이스를 강제로 만들기 위해 finder를 스텁한다.
+      const spy = vi.spyOn(CoreUtils, 'findTwitterScrollContainer').mockReturnValue(null as any);
       const result = await preservation.restore();
+      spy.mockRestore();
 
       expect(result).toBe(false);
       expect(preservation.hasSavedPosition()).toBe(false);
@@ -212,6 +221,43 @@ describe('TwitterScrollPreservation', () => {
       expect(mockScrollContainer.scrollTop).toBe(500);
 
       vi.useRealTimers();
+    });
+  });
+
+  describe('Fallback selector behavior', () => {
+    it("works when primaryColumn is absent but main[role='main'] exists", async () => {
+      // Clean up primaryColumn container if present
+      if (mockScrollContainer.parentNode) {
+        document.body.removeChild(mockScrollContainer);
+      }
+
+      // Create fallback container: main[role="main"]
+      const main = document.createElement('main');
+      main.setAttribute('role', 'main');
+      Object.defineProperty(main, 'scrollTop', {
+        writable: true,
+        value: 0,
+      });
+      Object.defineProperty(main, 'scrollHeight', {
+        writable: true,
+        value: 3000,
+      });
+      document.body.appendChild(main);
+
+      // Save/restore using fallback
+      preservation = new TwitterScrollPreservation();
+      main.scrollTop = 420;
+      const saved = preservation.savePosition();
+      expect(saved).toBe(true);
+      expect(preservation.getSavedPosition()).toBe(420);
+
+      main.scrollTop = 50;
+      const restored = await preservation.restore(100);
+      expect(restored).toBe(true);
+      expect(main.scrollTop).toBe(420);
+
+      // Cleanup
+      document.body.removeChild(main);
     });
   });
 

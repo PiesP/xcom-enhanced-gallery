@@ -6,6 +6,7 @@
 import { getSolid, type ComponentChildren, type JSXElement } from '../../external/vendors';
 import { logger } from '../../logging';
 import { EventManager } from '../../services/event-manager';
+import { findTwitterScrollContainer } from '../../utils/core-utils';
 
 const DISPOSE_SYMBOL = Symbol('xeg-gallery-container-dispose');
 
@@ -74,7 +75,7 @@ export function unmountGallery(container: Element): void {
     // Twitter의 scrollRestoration 로직이 올바른 viewport를 계산하도록 지원
     // 단, 성능 영향 최소화를 위해 Twitter 페이지에서만 실행
     if (window.location.hostname === 'x.com' || window.location.hostname === 'twitter.com') {
-      const twitterScroll = document.querySelector('[data-testid="primaryColumn"]');
+      const twitterScroll = findTwitterScrollContainer();
       if (twitterScroll) {
         // IntersectionObserver로 viewport 내에 있을 때만 reflow
         // 단, 이미 언마운트 시점이므로 간단히 scrollHeight 읽기로 충분

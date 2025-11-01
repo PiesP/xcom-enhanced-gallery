@@ -6,11 +6,9 @@
  */
 
 import { logger } from '../../logging';
+import { findTwitterScrollContainer } from '../core-utils';
 
-/**
- * Twitter 타임라인 스크롤 컨테이너 선택자
- */
-const TWITTER_SCROLL_CONTAINER_SELECTOR = '[data-testid="primaryColumn"]';
+// Phase 302: selector 하드닝 — data-testid 고정값 대신 공용 유틸의 폴백 로직 사용
 
 /**
  * Twitter 스크롤 위치 보존 관리자
@@ -36,7 +34,7 @@ export class TwitterScrollPreservation {
    */
   public savePosition(): boolean {
     try {
-      const twitterScroll = document.querySelector(TWITTER_SCROLL_CONTAINER_SELECTOR);
+      const twitterScroll = findTwitterScrollContainer();
 
       if (!twitterScroll) {
         logger.debug('TwitterScrollPreservation: Twitter 스크롤 컨테이너 없음');
@@ -84,7 +82,7 @@ export class TwitterScrollPreservation {
         // 추가 프레임 대기로 Twitter 복원과의 경합 최소화
         requestAnimationFrame(() => {
           try {
-            const twitterScroll = document.querySelector(TWITTER_SCROLL_CONTAINER_SELECTOR);
+            const twitterScroll = findTwitterScrollContainer();
 
             if (!twitterScroll) {
               logger.debug('TwitterScrollPreservation: Twitter 스크롤 컨테이너 없음 (복원 시)');

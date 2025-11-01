@@ -7,7 +7,33 @@ _상세 내역은 `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 또는 Git �
 
 ---
 
-## 최근 완료 (Phase 291-301)
+## 최근 완료 (Phase 291-302)
+
+### Phase 302: X.com DOM/API 회복력 강화 (2025-11-01)
+
+**목표**: X.com DOM 및 API 변화에 견고하게 대응하도록 선택자/인증 경로를
+강화하고 이를 테스트/정책에 반영
+
+**변경**:
+
+- `shared/utils/twitter/scroll-preservation.ts`: 하드코딩된 `primaryColumn` 의존
+  제거 → `findTwitterScrollContainer()` 유틸 사용
+- `shared/components/isolation/GalleryContainer.tsx`: 언마운트 시 스크롤
+  컨테이너 접근도 동일 유틸 사용으로 통일
+- `shared/services/media/twitter-video-extractor.ts`:
+  `activateGuestTokenIfNeeded()` 추가 — `gt` 쿠키 부재 시 v1.1 `guest/activate`
+  호출로 게스트 토큰 확보(실패 시 fail-soft)
+- 요청 헤더 로직: `x-guest-token` 보유 시 자동 첨부, `ct0` 부재 허용(게스트
+  경로)
+- 문서: `docs/TESTING_STRATEGY.md`에 “X.com DOM/API 변화 반영 정책 — 2025-11”
+  섹션 추가(선택자 폴백/토큰 정책 명시)
+- 테스트: 단위 테스트 추가
+  - 게스트 토큰 활성화/헤더 형성 시나리오
+  - `primaryColumn` 부재 시 `main[role="main"]` 등 폴백 선택자 동작
+
+**영향**: X.com 변경에 대한 회복력 향상, 기능 회귀 없음
+
+**검증**: 단위/브라우저/E2E 스모크 통과, 빌드/검증 스크립트 PASS
 
 ### Phase 301: BFCache 호환성 강화 (2025-11-01)
 

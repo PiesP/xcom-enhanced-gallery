@@ -62,6 +62,32 @@ export class TwitterAPI {
     return this._csrfToken;
   }
 
+  private static async activateGuestTokenIfNeeded(): Promise<void> {
+    // If 'gt' cookie is missing and we don't have a cached guest token, try activation endpoint
+    if (this._guestToken) return;
+    this.initializeTokens();
+    if (this._guestToken) return;
+
+    try {
+      const headers = new Headers({
+        authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+        'content-type': 'application/json',
+      });
+      // Historically served from api.twitter.com; x.com may alias, but keep stable origin
+      const resp = await fetch('https://api.twitter.com/1.1/guest/activate.json', {
+        method: 'POST',
+        headers,
+      });
+      if (!resp.ok) return; // fail-soft
+      const data = (await resp.json()) as { guest_token?: string };
+      if (data?.guest_token) {
+        this._guestToken = data.guest_token;
+      }
+    } catch {
+      // ignore – proceed without explicit guest token
+    }
+  }
+
   private static async apiRequest(url: string): Promise<TwitterAPIResponse> {
     const _url = url.toString();
     if (this.requestCache.has(_url)) {
@@ -69,6 +95,9 @@ export class TwitterAPI {
       const cachedResult = this.requestCache.get(_url);
       if (cachedResult) return cachedResult;
     }
+    // Ensure we have best-effort guest token
+    await this.activateGuestTokenIfNeeded();
+
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
       'x-csrf-token': this.csrfToken ?? '',
