@@ -40,7 +40,6 @@ import { execSync } from 'node:child_process';
 
 const ROOT = resolve(process.cwd());
 
-
 /**
  * Checks for backup/temporary directories that should be cleaned
  *

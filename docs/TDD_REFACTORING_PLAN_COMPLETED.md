@@ -11,6 +11,103 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 298-2: 테스트 스크립트 패턴 통합 (2025-11-01)
+
+**목표**: 테스트 스크립트의 중복 패턴을 제거하여 DRY 원칙 준수 및 유지보수성
+향상
+
+**주요 작업**:
+
+1. **중복 패턴 식별**
+   - NODE_OPTIONS 중복 (9개 스크립트)
+   - VITEST_MAX_THREADS=1 중복
+   - 워커 정리 패턴 중복
+     (`&& npm run test:cleanup || npm run test:cleanup || exit 0`)
+
+2. **scripts/run-vitest-project.js 래퍼 스크립트 작성**
+   - ESM 문법 사용 (프로젝트 일관성)
+   - 인자: project, memory, vitest-args, --no-cleanup
+   - 자동 설정: NODE_OPTIONS, VITEST_MAX_THREADS=1
+   - 워커 정리 자동화 (성공/실패 상관없이)
+   - exit code 적절히 전달
+
+3. **package.json 스크립트 간소화**
+   - test:smoke ~ test:browser, test:coverage 간소화
+   - 기존:
+     `NODE_OPTIONS="..." VITEST_MAX_THREADS=1 vitest ... && npm run test:cleanup || npm run test:cleanup || exit 0`
+     (130자)
+   - 신규: `node ./scripts/run-vitest-project.js <project> <memory>` (55자)
+   - 감소: 58% 축소
+
+**검증 결과**:
+
+- ✅ npm run test:smoke: 18/18 통과
+- ✅ npm test: 2763/2765 통과 (2 skipped)
+- ✅ 워커 정리 자동화 확인
+- ✅ exit code 정상 전달
+
+**효과**:
+
+- ✅ DRY 원칙 준수 (중복 제거)
+- ✅ 중앙화된 워커 정리 로직
+- ✅ 유지보수성 향상 (스크립트 58% 축소)
+- ✅ 일관성 향상 (모든 test:\* 스크립트 통일)
+- ✅ Breaking change 없음
+
+**파일 변경**:
+
+- 신규: `scripts/run-vitest-project.js` (85 lines, ESM)
+- 수정: `package.json` (test:smoke ~ test:browser, test:coverage 9개 스크립트)
+
+---
+
+### Phase 298-1: prebuild 검증 간소화 (2025-11-01)
+
+**목표**: 빌드 전 검증에서 E2E와 브라우저 테스트를 제거하여 빌드 시간 단축 및
+논리적 순서 개선
+
+**주요 작업**:
+
+1. **prebuild 스크립트 간소화**
+   - AS-IS: `run-p typecheck lint:all deps:check test:browser e2e:smoke`
+   - TO-BE: `run-p typecheck lint:all deps:check`
+   - 제거: `test:browser`, `e2e:smoke` (정적 검증만 유지)
+
+2. **postbuild 스크립트 확장**
+   - AS-IS: `tsx ./scripts/validate-build.ts`
+   - TO-BE: `tsx ./scripts/validate-build.ts && npm run e2e:smoke`
+   - 추가: E2E 스모크 테스트 (빌드 산출물 검증)
+
+3. **validate:pre 업데이트**
+   - 다른 스크립트에서 재사용 가능하도록 prebuild와 동일하게 조정
+   - AS-IS: `run-p typecheck lint:all deps:check test:browser e2e:smoke`
+   - TO-BE: `run-p typecheck lint:all deps:check`
+
+**검증**:
+
+- ✅ `npm run build`: 40.5초 완료 (prebuild 빠름, postbuild E2E 포함 22.8초)
+- ✅ E2E 스모크: 88 passed, 8 skipped (정상 작동)
+- ✅ 타입/린트/의존성: 모두 통과
+
+**효과**:
+
+- ✅ **빌드 전 검증 시간 대폭 단축**: E2E와 브라우저 테스트 제거
+- ✅ **논리적 순서 개선**: 정적 검증(pre) → 빌드 → 동적 검증(post)
+- ✅ **E2E는 빌드 산출물 검증**: postbuild에서 실행하는 것이 적합
+- ✅ **CI 영향 없음**: CI는 별도로 모든 검증 실행
+
+**파일**:
+
+- 수정: `package.json` (prebuild, postbuild, validate:pre 스크립트)
+
+**추가 노트**:
+
+- CI 워크플로우는 영향받지 않음 (validate:pre를 사용하지 않음)
+- 로컬 개발 워크플로우 개선에 초점
+- 향후 Phase 298-2: 테스트 스크립트 패턴 통합 고려 가능
+
+---
+
 ### Phase 296: 빌드 검증 스크립트 현대화 (2025-11-01)
 
 **목표**: `scripts/validate-build.js`를 TypeScript로 마이그레이션하여 타입

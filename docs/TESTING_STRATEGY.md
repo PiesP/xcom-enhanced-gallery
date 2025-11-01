@@ -56,7 +56,8 @@ Kent C. Dodds의 Testing Trophy 모델 기반:
 **개발 전용 트레이싱(Flow Tracer) 테스트 가이드**:
 
 - jsdom 환경에서는 자동 시작되지 않도록 가드되어야 함(UA 검사 등)
-- dev 빌드에는 트레이싱 심볼이 존재, prod 빌드에서는 grep 기준 완전 제거가 확인되어야 함
+- dev 빌드에는 트레이싱 심볼이 존재, prod 빌드에서는 grep 기준 완전 제거가
+  확인되어야 함
 
 **Browser Tests 현황** (111 tests):
 
