@@ -3,6 +3,41 @@
 개발자가 빠르게 온보딩하고, 로컬/CI에서 동일한 워크플로로 작업할 수 있도록
 정리한 프로젝트 실행 가이드입니다.
 
+---
+
+## 📊 최소 저장소 구조 (Minimal Repository Structure)
+
+> **1인 개발 + AI 협업** 최적화. 원격 저장소는 **배포 필수 파일만**, 개발 도구는
+> **로컬에서만**.
+
+### 원격 저장소 추적 파일 (Git Tracked)
+
+```text
+✅ src/              # 소스 코드
+✅ types/            # 타입 정의
+✅ .github/          # GitHub Actions
+✅ LICENSES/         # 의존성 라이선스
+✅ package.json, package-lock.json, .npmrc
+✅ tsconfig.json, tsconfig.base.json, vite.config.ts
+✅ README.md, LICENSE, .gitignore
+```
+
+### 로컬만 처리 (Git Ignored)
+
+```text
+❌ docs/, test/, playwright/  # 개발 문서, 테스트
+❌ scripts/, config/local/    # 개발 스크립트, 로컬 설정
+❌ AGENTS.md, CLAUDE.md      # 개발 가이드
+❌ coverage/, .cache/, *.log  # 생성물, 캐시, 로그
+```
+
+**상세 가이드**:
+[REPOSITORY_STRUCTURE_IMPLEMENTATION_PLAN.md](docs/REPOSITORY_STRUCTURE_IMPLEMENTATION_PLAN.md)  
+**참고**:
+`.gitignore.minimal` (추천 최소 구조용 참조)
+
+---
+
 ## 🎯 프로젝트 구조: 로컬 vs. 원격 저장소 (화이트리스트 방식)
 
 ### 📋 핵심 원칙

@@ -9,6 +9,10 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
+    "// ===== QUICK REFERENCE: LOCAL vs REMOTE ===== ": "",
+    "// Local Only: test:*, lint:*, format, deps:graph, maintenance:* ": "",
+    "// Remote Only: GitHub Actions (.github/workflows/*.yml) ": "",
+    "// Shared: build*, validate*, typecheck (Local + CI) ": "",
     "// ===== Build ===== ": "",
     "build:only": "npm run clean && vite build --mode development && vite build --mode production",
     "build": "npm run build:only && tsx ./scripts/validate-build.ts && npm run e2e:smoke",
