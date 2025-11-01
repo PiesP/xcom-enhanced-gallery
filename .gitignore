@@ -65,17 +65,13 @@
 /scripts/
 /config/
 
-# 로컬 설정 및 설정 오버라이드
+# 로컬 설정
 /*.local.ts
 /*.local.js
 /*.local.json
 /.env.local
 /.env.*.local
 /config/local/*
-
-# --- 화이트리스트: 공용 유틸리티 스크립트 (필수, vite/vitest에서 참조) ---
-!/config/utils
-!/config/utils/**
 
 # TypeScript 테스트 설정 (CI만 사용)
 /tsconfig.tests.json

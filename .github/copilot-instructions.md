@@ -131,15 +131,6 @@ npm run validate  # typecheck + lint:fix + format
 npm test && npm run test:cleanup  # 전체 테스트 실행 후 워커 정리(필수)
 ```
 
-1. **보안 검증 (선택사항)**
-
-```bash
-npm run codeql:check  # 로컬 보안 정적 분석 (선택, CI에서 필수 실행)
-```
-
-**참고**: CodeQL은 CI에서 자동으로 실행됩니다. 로컬 실행은 빠른 피드백용이며,
-validate 스크립트는 CodeQL 없이도 통과합니다.
-
 1. **빌드 검증**
 
 ```bash
