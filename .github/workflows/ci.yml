@@ -5,6 +5,9 @@ name: 🏗️ Build Pipeline
 # - No testing (unit, browser, E2E, accessibility)
 # - All validation and testing happens locally before push
 # - This workflow only builds and validates build outputs
+#
+# NOTE: All local-only scripts (scripts/*.js) are NOT used in CI.
+# CI uses: npm scripts (package.json) + GitHub Actions native tasks only.
 
 on:
   push:
@@ -45,14 +48,8 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
-      - name: 🔨 Development build
-        run: npx vite build --mode development
-
-      - name: 🚀 Production build
-        run: npx vite build --mode production
-
-      - name: ✅ Validate build outputs
-        run: node ./scripts/validate-build.js
+      - name: 🏗️ Build (dev + prod)
+        run: npm run build:only
 
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v4
