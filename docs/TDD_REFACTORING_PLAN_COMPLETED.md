@@ -11,6 +11,50 @@
 
 ## 최근 완료 Phase (상세)
 
+### Phase 296: 빌드 검증 스크립트 현대화 (2025-11-01)
+
+**목표**: `scripts/validate-build.js`를 TypeScript로 마이그레이션하여 타입
+안전성 확보
+
+**주요 작업**:
+
+1. **TypeScript 마이그레이션**
+   - `validate-build.js` → `validate-build.ts` 변환
+   - 타입 정의 추가: `ValidationOptions`, `ValidationResult`, `SourceMap`,
+     `SizeBudget`
+   - 기존 검증 로직 100% 유지 (기능 변경 없음)
+
+2. **실행 환경 개선**
+   - `tsx` 의존성 추가 (빠른 TypeScript 실행)
+   - `package.json` postbuild 스크립트 업데이트: `node` → `tsx`
+   - `.gitignore` 수정: `scripts/` 디렉터리 추적 허용
+
+3. **검증 항목 유지**
+   - UserScript 헤더 검증
+   - 필수 메타데이터 검증 (@name, @version, @description, @match)
+   - PC-only 정책 (Touch/Pointer 이벤트 차단)
+   - 소스맵 무결성 검사 (dev 빌드)
+   - 레거시 API 누출 검증 (prod 빌드)
+   - 사이즈 예산 검증 (Raw: 420KB, Gzip: 160KB)
+
+**검증**: ✅ npm run build 통과, ✅ 88 E2E tests, ✅ 번들 크기 유지 (344.92 KB)
+
+**효과**:
+
+- ✅ 타입 안전성: 컴파일 타임 에러 검출 가능
+- ✅ 유지보수성: 인터페이스 명확화로 수정 지점 명확
+- ✅ Breaking Change 없음: CI/Local 모두 기존 방식 유지
+- ⚠️ 향후 개선: 모듈화 및 단위 테스트 추가 (Phase 296.1로 분리 가능)
+
+**파일**:
+
+- 신규: `scripts/validate-build.ts` (323 lines, 타입 정의 포함)
+- 제거: `scripts/validate-build.js` (293 lines)
+- 수정: `package.json` (postbuild 스크립트), `.gitignore` (scripts/ 추적)
+- 추가: `tsx` devDependency (3 packages)
+
+---
+
 ### Phase 295: TwitterScrollPreservation 실제 통합 (2025-11-01)
 
 **목표**: Phase 294에서 구현한 TwitterScrollPreservation을 GalleryApp에 실제

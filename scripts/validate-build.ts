@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-env node */
 
 /**
  * Build Validation Script (CI + Local)
@@ -8,7 +7,7 @@
  *
  * **Usage Context**:
  * - **CI/CD**: Used in GitHub Actions (ci.yml, release.yml) for automated build validation
- * - **Local**: Can be run manually via `node scripts/validate-build.js`
+ * - **Local**: Can be run manually via `tsx scripts/validate-build.ts`
  *
  * **Why CI needs this**:
  * - UserScript-specific validation (not covered by standard build tools):
@@ -29,7 +28,7 @@
  * Checks both development (with source maps) and production (optimized) outputs.
  *
  * @usage
- *   node validate-build.js
+ *   tsx validate-build.ts
  *
  * @exit
  *   0 - All validations passed
@@ -41,20 +40,59 @@ import { resolve, basename } from 'node:path';
 import { gzipSync } from 'node:zlib';
 
 /**
+ * Validation options
+ */
+interface ValidationOptions {
+  requireNoVitePreload?: boolean;
+  assertNoLegacyGlobals?: boolean;
+  requireSourcemap?: boolean;
+}
+
+/**
+ * Validation result
+ */
+interface ValidationResult {
+  content: string;
+  map: SourceMap | null;
+  mapPath: string | null;
+}
+
+/**
+ * Source map structure
+ */
+interface SourceMap {
+  version?: number;
+  sources: string[];
+  sourcesContent: string[];
+  names?: string[];
+  mappings?: string;
+  file?: string;
+}
+
+/**
+ * Size budget configuration
+ */
+interface SizeBudget {
+  warn: number;
+  fail: number;
+}
+
+/**
  * Validates a single UserScript file
  *
- * @param {string} scriptPath - Path to the userscript file
- * @param {object} options - Validation options
- * @param {boolean} [options.requireNoVitePreload=false] - Check for Vite preload dead code
- * @param {boolean} [options.assertNoLegacyGlobals=false] - Check for legacy global leaks
- * @param {boolean} [options.requireSourcemap=true] - Require sourcemap presence
- * @returns {{content: string, map: object|null, mapPath: string|null}} Validation result
- * @throws {never} Exits process with code 1 on validation failure
+ * @param scriptPath - Path to the userscript file
+ * @param options - Validation options
+ * @returns Validation result
+ * @throws Process exits with code 1 on validation failure
  */
 function validateOne(
-  scriptPath,
-  { requireNoVitePreload = false, assertNoLegacyGlobals = false, requireSourcemap = true } = {}
-) {
+  scriptPath: string,
+  {
+    requireNoVitePreload = false,
+    assertNoLegacyGlobals = false,
+    requireSourcemap = true,
+  }: ValidationOptions = {}
+): ValidationResult {
   const content = readFileSync(scriptPath, 'utf8');
 
   // UserScript 헤더 검증
@@ -86,8 +124,8 @@ function validateOne(
 
   // R5: sourceMappingURL 주석 확인 및 .map 파일 무결성 검사 (선택적)
   // 프로덕션 빌드는 소스맵을 생성하지 않으므로 검증 스킵
-  let map = null;
-  let mapPath = null;
+  let map: SourceMap | null = null;
+  let mapPath: string | null = null;
 
   if (requireSourcemap) {
     const scriptFileName = basename(scriptPath);
@@ -112,9 +150,10 @@ function validateOne(
       process.exit(1);
     }
     try {
-      map = JSON.parse(readFileSync(mapPath, 'utf8'));
+      map = JSON.parse(readFileSync(mapPath, 'utf8')) as SourceMap;
     } catch (e) {
-      console.error('❌ Failed to parse sourcemap JSON:', e.message);
+      const error = e as Error;
+      console.error('❌ Failed to parse sourcemap JSON:', error.message);
       process.exit(1);
     }
     if (!map || !Array.isArray(map.sources) || map.sources.length === 0) {
@@ -176,10 +215,10 @@ function validateOne(
 /**
  * Validates both production and development UserScript builds
  *
- * @returns {boolean} True if all validations pass
- * @throws {never} Exits process with code 1 on validation failure
+ * @returns True if all validations pass
+ * @throws Process exits with code 1 on validation failure
  */
-function validateUserScript() {
+function validateUserScript(): boolean {
   console.log('🔍 Validating UserScript build...');
 
   const distPath = resolve(process.cwd(), 'dist');
@@ -221,7 +260,8 @@ function validateUserScript() {
       console.warn('⚠️ Potential runtime errors detected');
     }
   } catch (error) {
-    console.error('❌ JavaScript syntax validation failed:', error.message);
+    const err = error as Error;
+    console.error('❌ JavaScript syntax validation failed:', err.message);
     process.exit(1);
   }
 
@@ -232,17 +272,19 @@ function validateUserScript() {
 
   // B2: 사이즈 예산 강화 — 현재 gzip ~99KB 기준 보수적 상향
   // WARN은 120KB, FAIL은 160KB로 설정하여 회귀를 조기 감지(현 상태에서는 여유 유지)
-  const WARN_BUDGET = 120 * 1024; // 120KB (경고)
-  const FAIL_BUDGET = 160 * 1024; // 160KB (실패)
+  const gzipBudget: SizeBudget = {
+    warn: 120 * 1024, // 120KB
+    fail: 160 * 1024, // 160KB
+  };
 
-  if (gzBytes > FAIL_BUDGET) {
+  if (gzBytes > gzipBudget.fail) {
     console.error(
-      `❌ Gzip size exceeds hard limit: ${(gzBytes / 1024).toFixed(2)} KB (limit ${(FAIL_BUDGET / 1024).toFixed(0)} KB)`
+      `❌ Gzip size exceeds hard limit: ${(gzBytes / 1024).toFixed(2)} KB (limit ${(gzipBudget.fail / 1024).toFixed(0)} KB)`
     );
     process.exit(1);
-  } else if (gzBytes > WARN_BUDGET) {
+  } else if (gzBytes > gzipBudget.warn) {
     console.warn(
-      `⚠️ Gzip size exceeds budget: ${(gzBytes / 1024).toFixed(2)} KB (budget ${(WARN_BUDGET / 1024).toFixed(0)} KB)`
+      `⚠️ Gzip size exceeds budget: ${(gzBytes / 1024).toFixed(2)} KB (budget ${(gzipBudget.warn / 1024).toFixed(0)} KB)`
     );
   }
 
@@ -252,17 +294,19 @@ function validateUserScript() {
   // Phase 153: useGalleryScroll 상태 정규화 (+0.22 KB)
   // Phase 155: 임시 번들 크기 제한 상향 조정 (336KB → 400KB)
   // Phase 166: 빌드 크기 제한 공식 상향 (400KB → 420KB)
-  const RAW_FAIL_BUDGET = 420 * 1024; // 420KB
-  const RAW_WARN_BUDGET = 417 * 1024; // 417KB (3 KB 여유)
+  const rawBudget: SizeBudget = {
+    warn: 417 * 1024, // 417KB (3 KB 여유)
+    fail: 420 * 1024, // 420KB
+  };
 
-  if (rawBytes > RAW_FAIL_BUDGET) {
+  if (rawBytes > rawBudget.fail) {
     console.error(
-      `❌ Raw size exceeds hard limit: ${(rawBytes / 1024).toFixed(2)} KB (limit ${(RAW_FAIL_BUDGET / 1024).toFixed(0)} KB)`
+      `❌ Raw size exceeds hard limit: ${(rawBytes / 1024).toFixed(2)} KB (limit ${(rawBudget.fail / 1024).toFixed(0)} KB)`
     );
     process.exit(1);
-  } else if (rawBytes > RAW_WARN_BUDGET) {
+  } else if (rawBytes > rawBudget.warn) {
     console.warn(
-      `⚠️ Raw size approaching limit: ${(rawBytes / 1024).toFixed(2)} KB (budget ${(RAW_WARN_BUDGET / 1024).toFixed(0)} KB)`
+      `⚠️ Raw size approaching limit: ${(rawBytes / 1024).toFixed(2)} KB (budget ${(rawBudget.warn / 1024).toFixed(0)} KB)`
     );
   }
 
@@ -287,6 +331,7 @@ function validateUserScript() {
 try {
   validateUserScript();
 } catch (error) {
-  console.error('❌ UserScript validation failed:', error.message);
+  const err = error as Error;
+  console.error('❌ UserScript validation failed:', err.message);
   process.exit(1);
 }
