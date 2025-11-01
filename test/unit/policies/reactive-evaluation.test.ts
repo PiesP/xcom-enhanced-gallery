@@ -14,7 +14,7 @@ import { join } from 'node:path';
 describe('Solid.js Reactive Evaluation Policy', () => {
   describe('LazyIcon - Props Reactivity', () => {
     it('should NOT statically evaluate className from props', () => {
-      const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
+      const filePath = join(process.cwd(), 'src/shared/components/ui/Icon/lazy-icon.tsx');
       const content = readFileSync(filePath, 'utf-8');
 
       // Anti-pattern: const className = [...props.className...];
@@ -25,7 +25,7 @@ describe('Solid.js Reactive Evaluation Policy', () => {
     });
 
     it('should NOT statically evaluate style from props', () => {
-      const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
+      const filePath = join(process.cwd(), 'src/shared/components/ui/Icon/lazy-icon.tsx');
       const content = readFileSync(filePath, 'utf-8');
 
       // Anti-pattern: const style = props.size ? {...} : undefined;
@@ -36,7 +36,7 @@ describe('Solid.js Reactive Evaluation Policy', () => {
     });
 
     it('should use getter functions for className and style', () => {
-      const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
+      const filePath = join(process.cwd(), 'src/shared/components/ui/Icon/lazy-icon.tsx');
       const content = readFileSync(filePath, 'utf-8');
 
       // Expected pattern: const className = () => ...
@@ -49,7 +49,7 @@ describe('Solid.js Reactive Evaluation Policy', () => {
     });
 
     it('should call getter functions in JSX', () => {
-      const filePath = join(process.cwd(), 'src/shared/components/lazy-icon.tsx');
+      const filePath = join(process.cwd(), 'src/shared/components/ui/Icon/lazy-icon.tsx');
       const content = readFileSync(filePath, 'utf-8');
 
       // Should use className() and style() in JSX

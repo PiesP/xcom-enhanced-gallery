@@ -150,14 +150,15 @@ describe('Bundle Size Policy', () => {
 
       const plan = readFileSync(planPath, 'utf-8');
 
-      // Phase 93/94에서 문서가 간소화됨
-      // Phase 60-89는 요약 테이블로 압축됨
-      expect(plan).toContain('## Phase 80-89 요약 테이블');
-      expect(plan).toContain('| **89**');
-      expect(plan).toContain('events.ts 리팩토링');
+      // 최근 Phase 완료 기록 확인 (문서 간소화 이후)
+      expect(plan).toContain('최근 완료 Phase');
+      expect(plan).toContain('빌드 스크립트 구조 개선');
 
-      // 최근 3개 Phase 상세 보관 정책 확인 (줄바꿈 고려)
-      expect(plan).toContain('**정책**: 최근 3개 Phase만 상세 보관');
+      // 기본 구조 확인
+      expect(plan).toContain('## 최근 완료 Phase');
+
+      // 상세 내역 참조 안내 확인 (문서 끝 부분)
+      expect(plan).toContain('archive/TDD_REFACTORING_PLAN_COMPLETED');
     });
   });
 
