@@ -9,13 +9,18 @@
  * - 실용적이고 현실적인 규칙 적용
  */
 
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 import eslint from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-plugin-prettier';
+import { loadLocalConfig } from './config/utils/load-local-config.js';
 
-export default [
+const tsconfigRootDir = dirname(fileURLToPath(import.meta.url));
+
+const baseConfig = [
   eslint.configs.recommended,
 
   // 전역 무시 패턴
@@ -51,7 +56,8 @@ export default [
       ecmaVersion: 2022,
       parserOptions: {
         ecmaFeatures: { jsx: true },
-        project: './tsconfig.json',
+        projectService: true,
+        tsconfigRootDir,
       },
       globals: {
         // Vite build-time globals
@@ -381,3 +387,13 @@ export default [
     },
   },
 ];
+
+const localConfig = (await loadLocalConfig(import.meta.url, 'eslint.local')) ?? [];
+
+const localConfigArray = Array.isArray(localConfig)
+  ? localConfig
+  : localConfig
+    ? [localConfig]
+    : [];
+
+export default [...baseConfig, ...localConfigArray];

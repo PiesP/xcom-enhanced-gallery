@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 /**
  * Centralized logging infrastructure
  *
@@ -76,6 +78,12 @@ export interface Logger {
    * @param {...LoggableData[]} args - Data to log
    */
   debug: (...args: LoggableData[]) => void;
+
+  /**
+   * Log trace messages (development only, lowest priority)
+   * @param {...LoggableData[]} args - Data to log
+   */
+  trace?: (...args: LoggableData[]) => void;
 
   /**
    * Start a performance timer
@@ -243,6 +251,11 @@ if (isDev) {
       debug: (...args: LoggableData[]): void => {
         if (shouldLog('debug', finalConfig)) {
           console.info(...formatMessage('debug', finalConfig, ...args));
+        }
+      },
+      trace: (...args: LoggableData[]): void => {
+        if (shouldLog('debug', finalConfig)) {
+          console.debug(...formatMessage('debug', finalConfig, ...args));
         }
       },
       time: (label: string): void => {
@@ -575,19 +588,16 @@ if (isDev) {
   };
 
   logGroupImpl = (label: string, fn: () => void, collapsed = false): void => {
-    // eslint-disable-next-line no-console
     const method = collapsed ? console.groupCollapsed : console.group;
     method(`${BASE_PREFIX} ${label}`);
     try {
       fn();
     } finally {
-      // eslint-disable-next-line no-console
       console.groupEnd();
     }
   };
 
   logTableImpl = (data: Record<string, unknown>[] | Record<string, unknown>): void => {
-    // eslint-disable-next-line no-console
     console.table(data);
   };
 

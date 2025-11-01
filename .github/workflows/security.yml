@@ -15,6 +15,7 @@ on:
 
 env:
   NODE_VERSION: "22"
+  XEG_DISABLE_LOCAL_CONFIG: "true"
 
 jobs:
   security-audit:

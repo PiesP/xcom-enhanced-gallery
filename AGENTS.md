@@ -3,6 +3,29 @@
 개발자가 빠르게 온보딩하고, 로컬/CI에서 동일한 워크플로로 작업할 수 있도록
 정리한 프로젝트 실행 가이드입니다.
 
+## 🎯 프로젝트 구조: 로컬 vs. 원격 저장소
+
+### 원격 리포지토리에 포함 (Git Tracked)
+
+✅ **소스 코드**: `src/`, `types/`, `playwright/`, `scripts/`, `styles/` ✅
+**필수 빌드 설정**: `tsconfig.base.json`, `tsconfig.json`, `vite.config.ts`
+(기본값), `vitest.config.ts`, `eslint.config.js` (기본값) ✅ **의존성**:
+`package.json`, `package-lock.json`, `.npmrc` ✅ **핵심 가이드**: `docs/`,
+`AGENTS.md`, `.github/copilot-instructions.md` ✅ **CI/CD**:
+`.github/workflows/`, GitHub Actions 설정
+
+### 로컬 개발 환경에만 (Git Ignored)
+
+❌ **개발자별 오버라이드**: `*.local.ts`, `*.local.js`, `config/local/*` (README
+제외) ❌ **캐시**: `.eslintcache`, `.prettiercache`, `.tscache`,
+`.vitest-cache`, `coverage/`, `test-results/` ❌ **환경**: `.env.local`, 보안
+인증서, 로컬 secrets
+
+**자세한 가이드**: [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md)를
+참고하세요.
+
+---
+
 ## 개발 환경
 
 ### 로컬 개발 환경 (Local)

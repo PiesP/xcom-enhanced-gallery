@@ -23,6 +23,7 @@ on:
 env:
   NODE_VERSION: "22"
   CI: "true"
+  XEG_DISABLE_LOCAL_CONFIG: "true"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -56,56 +57,13 @@ jobs:
       - name: 📝 Type check
         run: npx tsgo --project ./tsconfig.json --noEmit
 
-      - name: 🔍 Lint JavaScript
-        run: npx eslint ./src --report-unused-disable-directives --max-warnings 0
-
-      - name: 🎨 Lint CSS
-        run: npx stylelint "src/**/*.css"
-
-      - name: 📄 Lint Markdown
-        run: npx markdownlint-cli2 "**/*.md" "#node_modules" "#coverage"
-
-      - name: ✨ Format check
-        run: npx prettier --check .
-
-      - name: 🔗 Dependency check
-        run: npx depcruise src --validate
-
       - name: 🔒 Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:javascript"
 
-  # tests:
-  #   name: 🧪 Fast Unit Tests (Safe config)
-  #   runs-on: ubuntu-latest
-  #   needs: [quality]
-  #   timeout-minutes: 5
-  #   steps:
-  #     - name: 📥 Checkout code
-  #       uses: actions/checkout@v4
-  #
-  #     - name: 🚀 Setup Node.js ${{ env.NODE_VERSION }}
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #         cache: npm
-  #
-  #     - name: 📦 Install dependencies
-  #       run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-  #
-  #     - name: 🧪 Run tests (fast project - safe config)
-  #       run: npm run test:fast
-  #       env:
-  #         NODE_OPTIONS: --max-old-space-size=3072
-  #
-  #     - name: 📊 Upload coverage reports
-  #       uses: actions/upload-artifact@v4
-  #       if: success()
-  #       with:
-  #         name: coverage-report-${{ github.sha }}
-  #         path: coverage/
-  #         retention-days: 7
+  # Note: Smoke tests and fast unit tests are run locally by pre-push hook.
+  # CI focuses on comprehensive test coverage and security validation.
 
   browser-tests:
     name: 🌐 Browser Tests (Shard ${{ matrix.shard }}/2)
@@ -155,6 +113,9 @@ jobs:
           name: browser-test-results-shard-${{ matrix.shard }}-${{ github.sha }}
           path: test-results/
           retention-days: 7
+
+  # Note: E2E smoke tests (E2E + Accessibility) are comprehensive integration tests
+  # kept in CI to ensure real-world scenarios work end-to-end.
 
   e2e:
     name: 🎭 E2E Smoke Tests

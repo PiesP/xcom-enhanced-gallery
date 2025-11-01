@@ -4,7 +4,8 @@
  * - Prod 빌드: terser 압축(콘솔/디버거 제거), 라이선스 노티스 주입, 번들 크기 최적화.
  * - 결과물: 최종 userscript 파일(및 sourcemap)을 dist/에 기록하고 임시/자산 파일 정리.
  */
-import { defineConfig, Plugin, UserConfig } from 'vite';
+import { defineConfig, mergeConfig } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import solidPlugin from 'vite-plugin-solid';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -12,6 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 import { transformSync } from '@babel/core';
+import { loadLocalConfig } from './config/utils/load-local-config.js';
 
 interface BuildFlags {
   mode: string;
@@ -366,7 +368,7 @@ function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
   };
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(async ({ mode }) => {
   const flags = resolveFlags(mode);
   const config: UserConfig = {
     plugins: [
@@ -420,7 +422,7 @@ export default defineConfig(({ mode }) => {
       postcss: './postcss.config.js',
     },
     build: {
-      target: 'es2020',
+      target: 'baseline-widely-available',
       outDir: 'dist',
       emptyOutDir: flags.isDev, // dev 빌드 시에만 정리, prod는 추가
       cssCodeSplit: false,
@@ -471,5 +473,8 @@ export default defineConfig(({ mode }) => {
     logLevel: flags.isDev ? 'info' : 'warn',
     clearScreen: false,
   };
-  return config;
+  const localOverrides =
+    (await loadLocalConfig<Partial<UserConfig>>(import.meta.url, 'vite.local')) ?? null;
+
+  return localOverrides ? mergeConfig(config, localOverrides) : config;
 });

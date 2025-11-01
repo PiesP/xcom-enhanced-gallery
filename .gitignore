@@ -6,6 +6,7 @@ node_modules/
 
 # === Build Outputs ===
 dist/
+dist-ssr/
 !dist/*.user.js
 build/
 .vite/
@@ -18,7 +19,9 @@ build/
 coverage/
 test-results/
 playwright-report/
+blob-report/
 playwright/.cache/
+playwright/.auth/
 .vitest-cache/
 **/__screenshots__/
 
@@ -46,6 +49,7 @@ sample_pages/
 # === Logs ===
 logs/
 *.log
+*.cpuprofile
 vitest-*.log
 
 # === Environment ===
@@ -99,6 +103,25 @@ backup*/
 *~
 *.tmp
 *.temp
+
+# === Local Configuration Overrides (Developer-Only) ===
+# All local .local.* files and override configurations are development-only
+# CI/CD workflows are independent of these overrides via XEG_DISABLE_LOCAL_CONFIG
+config/local/*
+!config/local/README.md
+eslint.local.js
+eslint.local.mjs
+eslint.local.ts
+vite.local.ts
+vite.local.js
+vite.local.mjs
+vitest.local.ts
+vitest.local.js
+vitest.local.mjs
+postcss.local.js
+tsconfig.local.json
+.env.local
+.env.*.local
 
 # === Package Managers ===
 package-lock.json.backup

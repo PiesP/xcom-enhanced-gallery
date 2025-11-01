@@ -8,10 +8,12 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import { resolve } from 'node:path';
 import { appendFileSync, writeFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
-import type { ResolveOptions } from 'vite';
+import { mergeConfig } from 'vite';
+import type { ResolveOptions, InlineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 import { fileURLToPath, URL } from 'node:url';
 import { playwright } from '@vitest/browser-playwright';
+import { loadLocalConfig } from './config/utils/load-local-config.js';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const debugLogPath = resolve(__dirname, './vitest-debug.log');
@@ -113,7 +115,7 @@ const solidTransformMode = {
   ssr: [/\.[jt]sx?$/],
 } as const;
 
-export default defineConfig({
+const baseConfig = defineConfig({
   // DEBUG: 구성 로딩 및 alias 경로 확인
   // @ts-expect-error runtime debug
   _debug_alias: (() => {
@@ -643,3 +645,10 @@ export default defineConfig({
     ],
   },
 });
+
+const localVitestConfig =
+  (await loadLocalConfig<InlineConfig>(import.meta.url, 'vitest.local')) ?? null;
+
+export default localVitestConfig
+  ? mergeConfig(baseConfig as InlineConfig, localVitestConfig)
+  : baseConfig;

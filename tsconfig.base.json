@@ -7,6 +7,7 @@
     "skipLibCheck": true,
     "useDefineForClassFields": true,
     "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -23,6 +24,8 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
+    "customConditions": ["module"],
+    "verbatimModuleSyntax": true,
     "paths": {
       "*": ["./*"],
       "@/*": ["./src/*"],
