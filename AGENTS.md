@@ -224,10 +224,12 @@ npm run build
   - 워커 정리: `npm run test:cleanup` (Vitest 워커 프로세스 자동 종료, 실패
     시에도 진행)
 - 빌드:
-  - 개발: `npm run build:dev`
-  - 프로덕션: `npm run build:prod`
-  - 전체(클린 포함): `npm run build` → dev와 prod 연속 빌드 후 `postbuild` 검증
-    실행
+  - 빠른 빌드: `npm run build:only` → dev와 prod 빌드만 수행 (검증 없음, 빠른
+    개발용)
+  - 전체 빌드: `npm run build` → build:only + validate-build.ts + e2e:smoke
+    (CI/CD용)
+  - 개발: `npm run build:dev` (dev 모드만)
+  - 프로덕션: `npm run build:prod` (prod 모드만)
 - 종합 검증: `npm run validate` → typecheck + lint:fix + format
 
 의존성 그래프/검증 (dependency-cruiser)

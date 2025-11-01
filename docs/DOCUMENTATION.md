@@ -2,7 +2,7 @@
 
 > xcom-enhanced-gallery 프로젝트의 문서 구조와 네비게이션
 
-**최종 업데이트**: 2025-10-30 | **상태**: 모든 문서 최신화 ✅
+**최종 업데이트**: 2025-11-01 | **상태**: 모든 문서 최신화 ✅
 
 ---
 
@@ -38,9 +38,9 @@
 ### 리팩토링 및 계획
 
 - **[TDD_REFACTORING_PLAN.md](./TDD_REFACTORING_PLAN.md)**: 활성 Phase 계획
-  (현재: Phase 258 분석 완료)
+  (현재: Phase 300 실제 X.com 테스트 분석 완료)
 - **[TDD_REFACTORING_PLAN_COMPLETED.md](./TDD_REFACTORING_PLAN_COMPLETED.md)**:
-  완료된 Phase 기록 (Phase 197-257)
+  완료된 Phase 기록 (Phase 197-299)
 
 ### 특수 디렉터리
 
