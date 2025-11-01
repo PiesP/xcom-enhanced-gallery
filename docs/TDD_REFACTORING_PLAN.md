@@ -24,6 +24,11 @@
 
 ### 향후 고려사항
 
+- **Phase 297**: Vite Config 모듈화 (보류, 복잡도 높음)
+  - 현재 vite.config.ts (477줄)는 기능적으로 완성됨
+  - 모듈화의 이점보다 유지보수 비용이 더 클 수 있음
+  - 향후 필요 시 재검토
+
 - **Phase 296.1**: 빌드 검증 로직 모듈화 (선택적)
   - 6개 검증기 분리 (header, metadata, pc-policy, sourcemap, size-budget,
     legacy-api)
