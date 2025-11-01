@@ -162,6 +162,20 @@ npm run maintenance:check
 - [ ] PC 전용 이벤트/디자인 토큰 규칙을 지켰는가
 - [ ] 테스트를 추가/수정하고 GREEN인지 확인했는가
 - [ ] 종료 프로토콜(Validate/Build/Maintenance)을 수행했는가
+- [ ] **저장소 푸시 후 `gh run list`로 워크플로우 결과 확인했는가** ⭐
+
+**워크플로우 확인 명령어:**
+
+```bash
+# 최근 워크플로우 상태 (푸시 후 선택사항)
+gh run list --limit 10
+
+# 빌드 파이프라인만 확인
+gh run list --limit 5 | grep "Build Pipeline"
+
+# 실패 시 상세 로그 확인
+gh run view <RUN_ID> --log
+```
 
 —
 
