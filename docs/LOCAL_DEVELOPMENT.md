@@ -294,6 +294,26 @@ npm run validate
 
 ## Git 설정 확인
 
+### .gitignore 화이트리스트 검증
+
+```bash
+# 로컬 파일이 올바르게 무시되는지 확인
+git check-ignore -v coverage/
+git check-ignore -v test-results/
+git check-ignore -v .eslintcache
+git check-ignore -v vite.local.ts
+
+# 소스 코드가 추적되는지 확인
+git check-ignore -v src/main.ts          # 추적됨 (상태 코드 1)
+git check-ignore -v docs/LOCAL_DEVELOPMENT.md  # 추적됨
+git check-ignore -v package.json        # 추적됨
+```
+
+**결과 해석**:
+
+- 상태 코드 0 + 경로 출력 → 무시됨 ✅
+- 상태 코드 1 → 추적됨 ✅
+
 ### .gitignore 규칙 검증
 
 ```bash
