@@ -100,6 +100,30 @@ _상세 분석:
 
 ---
 
+### Phase 301: BFCache 호환성 강화 (진행/완료)
+
+**문제**: 전역 `beforeunload` 리스너가 브라우저 Back/Forward Cache(BFCache)
+탑재를 방해하여, X.com에서 뒤로 가기 시 타임라인 위치 복원이 지연/실패할 수
+있음.
+
+**해결**:
+
+- `src/bootstrap/events.ts`: beforeunload 제거, pagehide 전용으로 변경
+- `src/shared/external/vendors/vendor-api-safe.ts`: beforeunload 제거, pagehide
+  유지
+- `src/shared/utils/accessibility/live-region-manager.ts`: beforeunload →
+  pagehide로 전환
+
+**수용 기준**:
+
+- dist 번들에서 beforeunload 리스너가 제거되어야 한다
+- 기능 회귀 없음(정리는 pagehide에서 정상 수행)
+- 빌드/테스트 GREEN
+
+**상태**: 코드 반영 완료(2025-11-01) — 문서 이관 대기
+
+---
+
 ## 📚 관련 문서
 
 - **완료 기록**:

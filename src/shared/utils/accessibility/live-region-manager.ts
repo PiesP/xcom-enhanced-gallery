@@ -16,7 +16,7 @@ interface LiveRegionElements {
 const regions: LiveRegionElements = {};
 let initialized = false;
 // beforeunload 청소를 위한 핸들러 참조(순환 의존 방지를 위해 EventManager 미사용)
-let unloadHandler: ((this: Window, ev: BeforeUnloadEvent) => unknown) | null = null;
+let unloadHandler: ((this: Window, ev: PageTransitionEvent) => unknown) | null = null;
 
 function initLifecycleOnce(): void {
   if (initialized) return;
@@ -30,7 +30,8 @@ function initLifecycleOnce(): void {
           /* no-op */
         }
       };
-      window.addEventListener('beforeunload', unloadHandler, { capture: false });
+      // BFCache 호환성: beforeunload 대신 pagehide 사용
+      window.addEventListener('pagehide', unloadHandler as EventListener, { capture: false });
     }
   } catch {
     // 비브라우저/테스트 환경 폴백은 무시(정리는 각 테스트에서 body reset으로 처리)
@@ -115,7 +116,7 @@ export function cleanupLiveRegions(): void {
       typeof window.removeEventListener === 'function'
     ) {
       try {
-        window.removeEventListener('beforeunload', unloadHandler, false);
+        window.removeEventListener('pagehide', unloadHandler as EventListener, false);
       } catch {
         /* ignore */
       }

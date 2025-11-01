@@ -194,7 +194,7 @@ export function registerVendorCleanupOnUnloadSafe(
         // 정리 중 발생한 에러는 무시 (이미 언로드 중)
       }
     };
-    target.addEventListener('beforeunload', handler);
+    // BFCache 호환성: beforeunload는 등록하지 않는다.
     target.addEventListener('pagehide', handler);
   } catch {
     // 이벤트 리스너 등록 실패 무시

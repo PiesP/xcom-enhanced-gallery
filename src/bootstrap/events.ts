@@ -1,6 +1,6 @@
 /**
  * @fileoverview Global Events Wiring
- * @description 전역 이벤트 핸들러 연결 및 해제 (beforeunload, pagehide)
+ * @description 전역 이벤트 핸들러 연결 및 해제 (pagehide 전용)
  * @module bootstrap/events
  */
 
@@ -21,18 +21,18 @@ export type Unregister = () => void;
  * @returns 이벤트 핸들러 해제 함수
  */
 export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
-  const beforeUnloadHandler = (): void => {
+  // BFCache 호환성: beforeunload 등록은 브라우저의 페이지 스냅샷(BFCache) 탑재를 막을 수 있음
+  // 정리는 pagehide에서만 수행하여 뒤로가기 시 즉시 복원 품질을 보존한다.
+  const handler = (): void => {
     onBeforeUnload();
   };
 
-  window.addEventListener('beforeunload', beforeUnloadHandler);
-  window.addEventListener('pagehide', beforeUnloadHandler);
+  window.addEventListener('pagehide', handler);
 
-  logger.debug('[events] 🧩 Global events wired');
+  logger.debug('[events] 🧩 Global events wired (pagehide only)');
 
   return () => {
-    window.removeEventListener('beforeunload', beforeUnloadHandler);
-    window.removeEventListener('pagehide', beforeUnloadHandler);
+    window.removeEventListener('pagehide', handler);
     logger.debug('[events] 🧩 Global events unwired');
   };
 }

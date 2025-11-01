@@ -7,7 +7,20 @@ _상세 내역은 `docs/archive/TDD_REFACTORING_PLAN_COMPLETED.md` 또는 Git �
 
 ---
 
-## 최근 완료 (Phase 291-299)
+## 최근 완료 (Phase 291-301)
+
+### Phase 301: BFCache 호환성 강화 (2025-11-01)
+
+**목표**: 뒤로 가기 시 X.com 타임라인 위치 복원 품질 보존(BFCache 탑재 유지)
+
+**변경**:
+
+- `bootstrap/events.ts`: 전역 정리 이벤트를 pagehide 전용으로 변경
+- `shared/external/vendors/vendor-api-safe.ts`: beforeunload 제거
+- `shared/utils/accessibility/live-region-manager.ts`: beforeunload → pagehide
+  전환
+
+**영향**: BFCache 탑재 가능성 향상, 기능 회귀 없음(정리 동작은 동일)
 
 ### Phase 299: 빌드 스크립트 구조 개선 (2025-11-01)
 
