@@ -4,7 +4,11 @@ name: 🚀 Release
 # - Version detection: package.json changes or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with assets
-# All validation and testing is local only (via pre-push hook)
+# - Validation (typecheck, lint) + E2E smoke tests (fast)
+#
+# NOTE: All local-only scripts (scripts/*.js) are NOT used in CI.
+# CI uses: npm scripts (package.json) + GitHub Actions native tasks only.
+# Full validation (deps:check, codeql, coverage) is done locally before push.
 
 on:
   push:
@@ -13,6 +17,8 @@ on:
       - "src/**"
       - "package.json"
       - "vite.config.ts"
+      - "vite.config.ts"
+      - "playwright.config.ts"
   workflow_dispatch:
     inputs:
       version_type:
@@ -114,23 +120,18 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
 
-      - name: 🔨 Development build
-        run: npx vite build --mode development
+      - name: ✅ Quality checks (typecheck + lint)
+        run: npm run validate:pre
 
-      - name: 🏗️ Build production
-        run: |
-          echo "🚀 Building production version..."
-          npx vite build --mode production
-
-      - name: ✅ Validate build outputs
-        run: node ./scripts/validate-build.js
+      - name: 🏗️ Build and validate
+        run: npm run build
 
       - name: 📦 Create release package
         run: |
           echo "📦 Preparing release files..."
           mkdir -p release
 
-          # Copy userscript
+          # Copy userscript from production build
           cp dist/xcom-enhanced-gallery.user.js release/
 
           # Generate checksums

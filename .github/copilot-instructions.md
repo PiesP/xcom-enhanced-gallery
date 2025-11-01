@@ -36,15 +36,23 @@ npm run build             # dev + prod 빌드 및 산출물 검증
 npm run maintenance:check # 임시/백업/큰 문서 등 점검
 ```
 
-### 스크립트 통일 정책 (Node.js 전용)
+### 스크립트 통일 정책 (Node.js 전용, **로컬 전용**)
+
+**핵심**: `scripts/` 폴더의 모든 .js 파일은 **로컬 개발 전용**이며, CI/CD는 npm
+스크립트와 GitHub Actions만 사용합니다.
 
 - 모든 프로젝트 스크립트는 JS/Node로 통일합니다(셸 스크립트 금지).
 - OS 의존 작업은 사전 점검 후 미충족 시 "건너뜀"으로 처리하고 성공 코드(0)로
   종료합니다.
-- 테스트 전체 실행은 `scripts/run-all-tests.js`로 제공되며 `npm run test:full`이
-  이를 호출합니다.
-- CI는 GitHub Actions 네이티브 기능을 우선 사용하고, 로컬 전용
-  스크립트(`scripts/*.js`)는 개발 편의 기능만 제공합니다.
+- **로컬에서만**: `npm run test:full`, `npm run deps:graph`,
+  `npm run maintenance:check` 등 `scripts/*.js` 직접 호출
+- **CI에서는**: GitHub Actions 네이티브(Checkout, Setup Node, Cache, Run) + npm
+  스크립트만 사용
+  - 로컬 전용 스크립트(`scripts/run-*.js`, `scripts/generate-*.js` 등)는 CI에서
+    **절대 호출 금지**
+  - 예: 워크플로우에 `npm run deps:graph` ❌, npm 스크립트 내 호출만 ✅
+- 배포/Release 워크플로우: npm 스크립트로 필요한 검증만 수행, 로컬 전용 헬퍼
+  스크립트는 미사용
 
 ## 입력 이벤트 정책(PC 전용)
 
