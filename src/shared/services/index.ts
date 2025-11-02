@@ -40,7 +40,6 @@ export type {
   PrefetchOptions,
   BulkDownloadOptions,
   DownloadResult,
-  SingleDownloadResult,
 } from './media-service';
 export type { DownloadProgress } from './download/types';
 
@@ -110,6 +109,13 @@ export {
   getNotificationService,
   type NotificationOptions,
 } from './notification-service';
+export {
+  DownloadService,
+  downloadService,
+  type DownloadOptions,
+  type SingleDownloadResult,
+  type BulkDownloadResult,
+} from './download-service';
 
 // ====================================
 // 유틸리티 및 타입들
