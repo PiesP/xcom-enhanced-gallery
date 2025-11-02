@@ -23,6 +23,7 @@ export interface HttpRequestOptions {
   timeout?: number; // milliseconds, default: 10000
   responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   data?: unknown;
+  signal?: AbortSignal; // for cancellation
 }
 
 /**
@@ -164,6 +165,12 @@ export class HttpRequestService {
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return new Promise((resolve, reject) => {
+      // Check for abort signal before starting
+      if (options?.signal?.aborted) {
+        reject(new Error('Request was aborted'));
+        return;
+      }
+
       const gmXhr = getGMXmlHttpRequest();
       if (!gmXhr) {
         reject(
@@ -207,6 +214,16 @@ export class HttpRequestService {
           reject(new HttpError(`Request timeout after ${timeout}ms`, 0, 'Timeout'));
         },
       };
+
+      // Set up abort signal listener if provided
+      const onAbort = () => {
+        clearTimeout(timeoutHandle);
+        reject(new Error('Request was aborted'));
+      };
+
+      if (options?.signal) {
+        options.signal.addEventListener('abort', onAbort, { once: true });
+      }
 
       gmXhr(requestOptions);
     });
