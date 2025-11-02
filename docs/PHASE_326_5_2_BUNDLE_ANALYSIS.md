@@ -43,7 +43,7 @@ Required Features Total: 281.94 KB (69.3%)
 - Scroll management
 - Event handling
 
-**Dead Code Risk**: 
+**Dead Code Risk**:
 - Media URL extraction (when mediaExtraction=false)
 - Video processing (when mediaExtraction=false)
 
@@ -121,7 +121,7 @@ Required Features Total: 281.94 KB (69.3%)
 
 **Dead Code Risk**: MEDIUM - unused helpers
 
-**Optimization**: 
+**Optimization**:
 - Remove unused exports
 - Consolidate duplicates
 - Inline hot-path functions
@@ -144,7 +144,7 @@ rollupOptions: {
 }
 ```
 
-**Potential Savings**: 
+**Potential Savings**:
 - mediaExtraction disabled: 50 KB ✓
 - advancedFilters disabled: 40 KB ✓
 - Total: 90 KB (but not all users disable all)

@@ -1,0 +1,1511 @@
+{
+  "timestamp": "2025-11-02T22:52:03.322Z",
+  "phase": "326.5-2",
+  "sourceAnalysis": {
+    "features": {
+      "gallery": {
+        "files": 26,
+        "lines": 6579,
+        "size": 182929,
+        "modules": {
+          "GalleryApp.ts": {
+            "lines": 400,
+            "size": 12118
+          },
+          "GalleryRenderer.ts": {
+            "lines": 308,
+            "size": 8844
+          },
+          "components/index.ts": {
+            "lines": 37,
+            "size": 1559
+          },
+          "components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay.module.css": {
+            "lines": 105,
+            "size": 2739
+          },
+          "components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay.tsx": {
+            "lines": 186,
+            "size": 5524
+          },
+          "components/vertical-gallery-view/VerticalGalleryView.module.css": {
+            "lines": 552,
+            "size": 14370
+          },
+          "components/vertical-gallery-view/VerticalGalleryView.tsx": {
+            "lines": 679,
+            "size": 21551
+          },
+          "components/vertical-gallery-view/VerticalImageItem.helpers.ts": {
+            "lines": 53,
+            "size": 1264
+          },
+          "components/vertical-gallery-view/VerticalImageItem.module.css": {
+            "lines": 501,
+            "size": 12051
+          },
+          "components/vertical-gallery-view/VerticalImageItem.tsx": {
+            "lines": 505,
+            "size": 16614
+          },
+          "components/vertical-gallery-view/VerticalImageItem.types.ts": {
+            "lines": 34,
+            "size": 1228
+          },
+          "components/vertical-gallery-view/hooks/index.ts": {
+            "lines": 10,
+            "size": 297
+          },
+          "components/vertical-gallery-view/hooks/useGalleryKeyboard.ts": {
+            "lines": 43,
+            "size": 1168
+          },
+          "components/vertical-gallery-view/hooks/useProgressiveImage.ts": {
+            "lines": 92,
+            "size": 2191
+          },
+          "components/vertical-gallery-view/index.ts": {
+            "lines": 23,
+            "size": 850
+          },
+          "hooks/index.ts": {
+            "lines": 11,
+            "size": 277
+          },
+          "hooks/useGalleryFocusTracker.ts": {
+            "lines": 540,
+            "size": 16019
+          },
+          "hooks/useGalleryItemScroll.ts": {
+            "lines": 531,
+            "size": 16659
+          },
+          "hooks/useGalleryScroll.ts": {
+            "lines": 348,
+            "size": 9806
+          },
+          "index.ts": {
+            "lines": 9,
+            "size": 194
+          },
+          "services/theme-initialization.ts": {
+            "lines": 251,
+            "size": 5938
+          },
+          "styles/Gallery.module.css": {
+            "lines": 847,
+            "size": 18572
+          },
+          "styles/gallery-global.css": {
+            "lines": 458,
+            "size": 11646
+          },
+          "types/index.ts": {
+            "lines": 21,
+            "size": 600
+          },
+          "types/toolbar.types.ts": {
+            "lines": 22,
+            "size": 529
+          },
+          "types.ts": {
+            "lines": 13,
+            "size": 321
+          }
+        }
+      },
+      "settings": {
+        "files": 7,
+        "lines": 1207,
+        "size": 31305,
+        "modules": {
+          "index.ts": {
+            "lines": 60,
+            "size": 1612
+          },
+          "services/index.ts": {
+            "lines": 15,
+            "size": 486
+          },
+          "services/settings-migration.ts": {
+            "lines": 95,
+            "size": 3240
+          },
+          "services/settings-schema.ts": {
+            "lines": 42,
+            "size": 1127
+          },
+          "services/settings-service.ts": {
+            "lines": 525,
+            "size": 13214
+          },
+          "services/simple-settings-service.ts": {
+            "lines": 300,
+            "size": 8218
+          },
+          "types/settings.types.ts": {
+            "lines": 170,
+            "size": 3408
+          }
+        }
+      }
+    },
+    "shared": {
+      "files": 288,
+      "lines": 44455,
+      "size": 1174813,
+      "modules": {
+        "browser/browser-service.ts": {
+          "lines": 157,
+          "size": 4163
+        },
+        "browser/index.ts": {
+          "lines": 16,
+          "size": 574
+        },
+        "components/base/index.ts": {
+          "lines": 13,
+          "size": 352
+        },
+        "components/hoc/GalleryHOC.tsx": {
+          "lines": 432,
+          "size": 10639
+        },
+        "components/hoc/index.ts": {
+          "lines": 11,
+          "size": 243
+        },
+        "components/index.ts": {
+          "lines": 29,
+          "size": 1045
+        },
+        "components/isolation/GalleryContainer.tsx": {
+          "lines": 137,
+          "size": 3682
+        },
+        "components/isolation/index.ts": {
+          "lines": 14,
+          "size": 260
+        },
+        "components/ui/Button/Button.module.css": {
+          "lines": 588,
+          "size": 14188
+        },
+        "components/ui/Button/Button.tsx": {
+          "lines": 239,
+          "size": 6631
+        },
+        "components/ui/Button/IconButton.tsx": {
+          "lines": 32,
+          "size": 936
+        },
+        "components/ui/Button/index.ts": {
+          "lines": 8,
+          "size": 199
+        },
+        "components/ui/ErrorBoundary/ErrorBoundary.module.css": {
+          "lines": 9,
+          "size": 139
+        },
+        "components/ui/ErrorBoundary/ErrorBoundary.tsx": {
+          "lines": 56,
+          "size": 1578
+        },
+        "components/ui/Icon/Icon.tsx": {
+          "lines": 98,
+          "size": 1979
+        },
+        "components/ui/Icon/hero/HeroArrowAutofitHeight.tsx": {
+          "lines": 12,
+          "size": 384
+        },
+        "components/ui/Icon/hero/HeroArrowAutofitWidth.tsx": {
+          "lines": 12,
+          "size": 383
+        },
+        "components/ui/Icon/hero/HeroArrowsMaximize.tsx": {
+          "lines": 12,
+          "size": 455
+        },
+        "components/ui/Icon/hero/HeroChevronLeft.tsx": {
+          "lines": 12,
+          "size": 324
+        },
+        "components/ui/Icon/hero/HeroChevronRight.tsx": {
+          "lines": 12,
+          "size": 324
+        },
+        "components/ui/Icon/hero/HeroDownload.tsx": {
+          "lines": 12,
+          "size": 404
+        },
+        "components/ui/Icon/hero/HeroFileZip.tsx": {
+          "lines": 12,
+          "size": 573
+        },
+        "components/ui/Icon/hero/HeroSettings.tsx": {
+          "lines": 13,
+          "size": 1346
+        },
+        "components/ui/Icon/hero/HeroX.tsx": {
+          "lines": 11,
+          "size": 259
+        },
+        "components/ui/Icon/hero/HeroZoomIn.tsx": {
+          "lines": 12,
+          "size": 395
+        },
+        "components/ui/Icon/icon-registry.ts": {
+          "lines": 127,
+          "size": 3643
+        },
+        "components/ui/Icon/index.ts": {
+          "lines": 26,
+          "size": 1133
+        },
+        "components/ui/Icon/lazy-icon.tsx": {
+          "lines": 158,
+          "size": 3500
+        },
+        "components/ui/ModalShell/ModalShell.module.css": {
+          "lines": 155,
+          "size": 3231
+        },
+        "components/ui/ModalShell/ModalShell.tsx": {
+          "lines": 97,
+          "size": 2025
+        },
+        "components/ui/ModalShell/index.ts": {
+          "lines": 7,
+          "size": 166
+        },
+        "components/ui/Settings/SettingsControls.module.css": {
+          "lines": 79,
+          "size": 2074
+        },
+        "components/ui/Settings/SettingsControls.tsx": {
+          "lines": 175,
+          "size": 5836
+        },
+        "components/ui/Settings/SettingsControlsLazy.tsx": {
+          "lines": 47,
+          "size": 1379
+        },
+        "components/ui/SettingsModal/SettingsModal.module.css": {
+          "lines": 34,
+          "size": 760
+        },
+        "components/ui/Toast/Toast.module.css": {
+          "lines": 272,
+          "size": 6268
+        },
+        "components/ui/Toast/Toast.tsx": {
+          "lines": 126,
+          "size": 3304
+        },
+        "components/ui/Toast/ToastContainer.module.css": {
+          "lines": 26,
+          "size": 484
+        },
+        "components/ui/Toast/ToastContainer.tsx": {
+          "lines": 95,
+          "size": 2876
+        },
+        "components/ui/Toolbar/Toolbar.module.css": {
+          "lines": 693,
+          "size": 18223
+        },
+        "components/ui/Toolbar/Toolbar.ts": {
+          "lines": 2,
+          "size": 55
+        },
+        "components/ui/Toolbar/Toolbar.tsx": {
+          "lines": 225,
+          "size": 6896
+        },
+        "components/ui/Toolbar/Toolbar.types.ts": {
+          "lines": 41,
+          "size": 1104
+        },
+        "components/ui/Toolbar/ToolbarView.tsx": {
+          "lines": 259,
+          "size": 9770
+        },
+        "components/ui/Toolbar/index.ts": {
+          "lines": 3,
+          "size": 94
+        },
+        "components/ui/ToolbarShell/ToolbarShell.module.css": {
+          "lines": 92,
+          "size": 2140
+        },
+        "components/ui/ToolbarShell/ToolbarShell.tsx": {
+          "lines": 62,
+          "size": 1342
+        },
+        "components/ui/ToolbarShell/index.ts": {
+          "lines": 7,
+          "size": 178
+        },
+        "components/ui/constants.ts": {
+          "lines": 32,
+          "size": 573
+        },
+        "components/ui/index.ts": {
+          "lines": 40,
+          "size": 1427
+        },
+        "components/ui/primitive/Button.css": {
+          "lines": 93,
+          "size": 2058
+        },
+        "components/ui/primitive/Button.tsx": {
+          "lines": 110,
+          "size": 2995
+        },
+        "components/ui/primitive/Panel.css": {
+          "lines": 30,
+          "size": 631
+        },
+        "components/ui/primitive/Panel.tsx": {
+          "lines": 43,
+          "size": 1128
+        },
+        "components/ui/primitive/index.ts": {
+          "lines": 8,
+          "size": 203
+        },
+        "components/ui/types.ts": {
+          "lines": 69,
+          "size": 1506
+        },
+        "constants/i18n/index.ts": {
+          "lines": 33,
+          "size": 983
+        },
+        "constants/i18n/language-types.ts": {
+          "lines": 131,
+          "size": 3166
+        },
+        "constants/i18n/languages/en.ts": {
+          "lines": 59,
+          "size": 1731
+        },
+        "constants/i18n/languages/ja.ts": {
+          "lines": 63,
+          "size": 1504
+        },
+        "constants/i18n/languages/ko.ts": {
+          "lines": 54,
+          "size": 1405
+        },
+        "constants/i18n/translation-registry.ts": {
+          "lines": 78,
+          "size": 1679
+        },
+        "constants/index.ts": {
+          "lines": 20,
+          "size": 399
+        },
+        "container/app-container.ts": {
+          "lines": 114,
+          "size": 2211
+        },
+        "container/core-service-registry.ts": {
+          "lines": 184,
+          "size": 3822
+        },
+        "container/harness.ts": {
+          "lines": 83,
+          "size": 1707
+        },
+        "container/index.ts": {
+          "lines": 87,
+          "size": 2792
+        },
+        "container/service-accessors.ts": {
+          "lines": 221,
+          "size": 6357
+        },
+        "container/service-bridge.ts": {
+          "lines": 127,
+          "size": 3477
+        },
+        "container/settings-access.ts": {
+          "lines": 119,
+          "size": 2558
+        },
+        "dom/dom-cache.ts": {
+          "lines": 453,
+          "size": 11485
+        },
+        "dom/dom-event-manager.ts": {
+          "lines": 154,
+          "size": 3519
+        },
+        "dom/index.ts": {
+          "lines": 45,
+          "size": 1167
+        },
+        "dom/selector-registry.ts": {
+          "lines": 112,
+          "size": 3494
+        },
+        "dom/utils/dom-utils.ts": {
+          "lines": 231,
+          "size": 5533
+        },
+        "error/error-handler.ts": {
+          "lines": 188,
+          "size": 5165
+        },
+        "error/index.ts": {
+          "lines": 10,
+          "size": 303
+        },
+        "external/index.ts": {
+          "lines": 14,
+          "size": 302
+        },
+        "external/test/test-environment-config.ts": {
+          "lines": 191,
+          "size": 4444
+        },
+        "external/test/test-service-factory.ts": {
+          "lines": 209,
+          "size": 6100
+        },
+        "external/userscript/adapter.ts": {
+          "lines": 207,
+          "size": 6111
+        },
+        "external/userscript/environment-detector.ts": {
+          "lines": 193,
+          "size": 6245
+        },
+        "external/userscript/index.ts": {
+          "lines": 15,
+          "size": 393
+        },
+        "external/vendors/index.ts": {
+          "lines": 52,
+          "size": 1883
+        },
+        "external/vendors/vendor-api-safe.ts": {
+          "lines": 213,
+          "size": 4909
+        },
+        "external/vendors/vendor-manager-static.ts": {
+          "lines": 537,
+          "size": 14183
+        },
+        "external/vendors/vendor-types.ts": {
+          "lines": 73,
+          "size": 1469
+        },
+        "external/zip/index.ts": {
+          "lines": 6,
+          "size": 132
+        },
+        "external/zip/store-zip-writer.ts": {
+          "lines": 409,
+          "size": 9591
+        },
+        "external/zip/zip-creator.ts": {
+          "lines": 86,
+          "size": 2013
+        },
+        "hooks/index.ts": {
+          "lines": 35,
+          "size": 1068
+        },
+        "hooks/toolbar/use-toolbar-settings-controller.ts": {
+          "lines": 432,
+          "size": 13640
+        },
+        "hooks/use-focus-trap.ts": {
+          "lines": 119,
+          "size": 2953
+        },
+        "hooks/use-toolbar-state.ts": {
+          "lines": 149,
+          "size": 3366
+        },
+        "index.ts": {
+          "lines": 85,
+          "size": 1746
+        },
+        "interfaces/gallery.interfaces.ts": {
+          "lines": 51,
+          "size": 1044
+        },
+        "interfaces/index.ts": {
+          "lines": 12,
+          "size": 268
+        },
+        "logging/flow-tracer.ts": {
+          "lines": 216,
+          "size": 6770
+        },
+        "logging/index.ts": {
+          "lines": 12,
+          "size": 228
+        },
+        "logging/logger.ts": {
+          "lines": 740,
+          "size": 21791
+        },
+        "media/index.ts": {
+          "lines": 15,
+          "size": 515
+        },
+        "media/media-processor.ts": {
+          "lines": 154,
+          "size": 4788
+        },
+        "media/pipeline.ts": {
+          "lines": 335,
+          "size": 8686
+        },
+        "media/types.ts": {
+          "lines": 48,
+          "size": 935
+        },
+        "media/username-source.ts": {
+          "lines": 23,
+          "size": 598
+        },
+        "services/animation-service.ts": {
+          "lines": 282,
+          "size": 6596
+        },
+        "services/base-service.ts": {
+          "lines": 125,
+          "size": 2761
+        },
+        "services/bulk-download-service.ts": {
+          "lines": 560,
+          "size": 19345
+        },
+        "services/clipboard-service.ts": {
+          "lines": 178,
+          "size": 5213
+        },
+        "services/core/index.ts": {
+          "lines": 11,
+          "size": 429
+        },
+        "services/core/service-factory.ts": {
+          "lines": 81,
+          "size": 1799
+        },
+        "services/core/service-lifecycle.ts": {
+          "lines": 141,
+          "size": 3701
+        },
+        "services/core/service-manager.ts": {
+          "lines": 259,
+          "size": 6233
+        },
+        "services/core/service-registry.ts": {
+          "lines": 132,
+          "size": 3146
+        },
+        "services/core-services.ts": {
+          "lines": 63,
+          "size": 1686
+        },
+        "services/download/download-orchestrator.ts": {
+          "lines": 224,
+          "size": 7059
+        },
+        "services/download/types.ts": {
+          "lines": 13,
+          "size": 298
+        },
+        "services/download-service.ts": {
+          "lines": 414,
+          "size": 12997
+        },
+        "services/error-formatter.ts": {
+          "lines": 277,
+          "size": 8634
+        },
+        "services/event-manager.ts": {
+          "lines": 233,
+          "size": 5298
+        },
+        "services/file-naming/filename-service.ts": {
+          "lines": 458,
+          "size": 12362
+        },
+        "services/file-naming/index.ts": {
+          "lines": 14,
+          "size": 263
+        },
+        "services/focus/focus-applicator-service.ts": {
+          "lines": 195,
+          "size": 4642
+        },
+        "services/focus/focus-observer-manager.ts": {
+          "lines": 204,
+          "size": 4367
+        },
+        "services/focus/focus-state-manager-service.ts": {
+          "lines": 145,
+          "size": 3558
+        },
+        "services/focus/index.ts": {
+          "lines": 20,
+          "size": 522
+        },
+        "services/http-request-service.ts": {
+          "lines": 454,
+          "size": 13727
+        },
+        "services/index.ts": {
+          "lines": 159,
+          "size": 4552
+        },
+        "services/input/keyboard-navigator.ts": {
+          "lines": 198,
+          "size": 5206
+        },
+        "services/item-scroll/index.ts": {
+          "lines": 22,
+          "size": 695
+        },
+        "services/item-scroll/item-positioning-service.ts": {
+          "lines": 240,
+          "size": 5823
+        },
+        "services/item-scroll/item-scroll-state-manager.ts": {
+          "lines": 189,
+          "size": 4959
+        },
+        "services/item-scroll/scroll-behavior-configurator.ts": {
+          "lines": 168,
+          "size": 4706
+        },
+        "services/language-service.ts": {
+          "lines": 229,
+          "size": 6539
+        },
+        "services/lazy-service-registration.ts": {
+          "lines": 64,
+          "size": 2143
+        },
+        "services/media/fallback-extractor.ts": {
+          "lines": 91,
+          "size": 2388
+        },
+        "services/media/index.ts": {
+          "lines": 28,
+          "size": 737
+        },
+        "services/media/media-sorting.ts": {
+          "lines": 60,
+          "size": 1780
+        },
+        "services/media/twitter-video-extractor.ts": {
+          "lines": 419,
+          "size": 15583
+        },
+        "services/media/types.ts": {
+          "lines": 89,
+          "size": 1874
+        },
+        "services/media/username-extraction-service.ts": {
+          "lines": 242,
+          "size": 6064
+        },
+        "services/media/video-control-service.ts": {
+          "lines": 365,
+          "size": 9873
+        },
+        "services/media/video-utils.ts": {
+          "lines": 141,
+          "size": 4483
+        },
+        "services/media-extraction/extractors/dom-direct-extractor.ts": {
+          "lines": 312,
+          "size": 8845
+        },
+        "services/media-extraction/extractors/tweet-info-extractor.ts": {
+          "lines": 105,
+          "size": 3194
+        },
+        "services/media-extraction/extractors/twitter-api-extractor.ts": {
+          "lines": 437,
+          "size": 11944
+        },
+        "services/media-extraction/index.ts": {
+          "lines": 7,
+          "size": 139
+        },
+        "services/media-extraction/media-extraction-service.ts": {
+          "lines": 270,
+          "size": 8625
+        },
+        "services/media-extraction/strategies/clicked-element-tweet-strategy.ts": {
+          "lines": 214,
+          "size": 6289
+        },
+        "services/media-extraction/strategies/data-attribute-tweet-strategy.ts": {
+          "lines": 64,
+          "size": 1783
+        },
+        "services/media-extraction/strategies/dom-structure-tweet-strategy.ts": {
+          "lines": 73,
+          "size": 2267
+        },
+        "services/media-extraction/strategies/fallback/fallback-strategy.ts": {
+          "lines": 326,
+          "size": 8945
+        },
+        "services/media-extraction/strategies/fallback/index.ts": {
+          "lines": 8,
+          "size": 158
+        },
+        "services/media-extraction/strategies/index.ts": {
+          "lines": 16,
+          "size": 812
+        },
+        "services/media-extraction/strategies/media-click-index-strategy.ts": {
+          "lines": 170,
+          "size": 4263
+        },
+        "services/media-extraction/strategies/parent-traversal-tweet-strategy.ts": {
+          "lines": 68,
+          "size": 2003
+        },
+        "services/media-extraction/strategies/url-based-tweet-strategy.ts": {
+          "lines": 67,
+          "size": 1839
+        },
+        "services/media-mapping/index.ts": {
+          "lines": 18,
+          "size": 376
+        },
+        "services/media-mapping/media-mapping-service.ts": {
+          "lines": 44,
+          "size": 1074
+        },
+        "services/media-mapping/media-tab-url-direct-strategy.ts": {
+          "lines": 87,
+          "size": 2393
+        },
+        "services/media-service.ts": {
+          "lines": 878,
+          "size": 25445
+        },
+        "services/notification-service.ts": {
+          "lines": 287,
+          "size": 7990
+        },
+        "services/persistent-storage.ts": {
+          "lines": 190,
+          "size": 5327
+        },
+        "services/service-diagnostics.ts": {
+          "lines": 77,
+          "size": 2532
+        },
+        "services/service-factories.ts": {
+          "lines": 36,
+          "size": 1375
+        },
+        "services/service-initialization.ts": {
+          "lines": 63,
+          "size": 2144
+        },
+        "services/service-manager.ts": {
+          "lines": 16,
+          "size": 366
+        },
+        "services/storage/index.ts": {
+          "lines": 8,
+          "size": 217
+        },
+        "services/storage/storage-adapter.interface.ts": {
+          "lines": 51,
+          "size": 918
+        },
+        "services/storage/userscript-storage-adapter.ts": {
+          "lines": 89,
+          "size": 2199
+        },
+        "services/theme-service.ts": {
+          "lines": 296,
+          "size": 7274
+        },
+        "services/toast-controller.ts": {
+          "lines": 179,
+          "size": 3343
+        },
+        "services/token-extraction/index.ts": {
+          "lines": 8,
+          "size": 279
+        },
+        "services/token-extraction/twitter-token-extractor.ts": {
+          "lines": 542,
+          "size": 13947
+        },
+        "services/unified-download-service.ts": {
+          "lines": 624,
+          "size": 17866
+        },
+        "services/unified-toast-manager.ts": {
+          "lines": 382,
+          "size": 9712
+        },
+        "state/focus/focus-cache.ts": {
+          "lines": 170,
+          "size": 3630
+        },
+        "state/focus/focus-timer-manager.ts": {
+          "lines": 228,
+          "size": 4769
+        },
+        "state/focus/focus-types.ts": {
+          "lines": 256,
+          "size": 5844
+        },
+        "state/focus/index.ts": {
+          "lines": 54,
+          "size": 1369
+        },
+        "state/index.ts": {
+          "lines": 35,
+          "size": 791
+        },
+        "state/item-scroll/index.ts": {
+          "lines": 39,
+          "size": 1290
+        },
+        "state/item-scroll/item-scroll-signal.ts": {
+          "lines": 97,
+          "size": 2557
+        },
+        "state/item-scroll/item-scroll-state.ts": {
+          "lines": 223,
+          "size": 5017
+        },
+        "state/machines/download-state-machine.ts": {
+          "lines": 288,
+          "size": 6392
+        },
+        "state/machines/index.ts": {
+          "lines": 39,
+          "size": 922
+        },
+        "state/machines/navigation-state-machine.ts": {
+          "lines": 156,
+          "size": 3765
+        },
+        "state/machines/settings-state-machine.ts": {
+          "lines": 196,
+          "size": 4329
+        },
+        "state/machines/toast-state-machine.ts": {
+          "lines": 224,
+          "size": 4962
+        },
+        "state/signals/download.signals.ts": {
+          "lines": 412,
+          "size": 11391
+        },
+        "state/signals/gallery.signals.ts": {
+          "lines": 331,
+          "size": 10340
+        },
+        "state/signals/index.ts": {
+          "lines": 68,
+          "size": 1345
+        },
+        "state/signals/scroll.signals.ts": {
+          "lines": 27,
+          "size": 621
+        },
+        "state/signals/signal-factory.ts": {
+          "lines": 151,
+          "size": 3535
+        },
+        "state/signals/toolbar.signals.ts": {
+          "lines": 235,
+          "size": 6697
+        },
+        "styles/base/reset.css": {
+          "lines": 98,
+          "size": 1882
+        },
+        "styles/design-tokens.component.css": {
+          "lines": 235,
+          "size": 7302
+        },
+        "styles/design-tokens.css": {
+          "lines": 28,
+          "size": 803
+        },
+        "styles/design-tokens.primitive.css": {
+          "lines": 105,
+          "size": 3707
+        },
+        "styles/design-tokens.semantic.css": {
+          "lines": 621,
+          "size": 25279
+        },
+        "styles/index.ts": {
+          "lines": 22,
+          "size": 396
+        },
+        "styles/isolated-gallery.css": {
+          "lines": 301,
+          "size": 9097
+        },
+        "styles/modern-features.css": {
+          "lines": 222,
+          "size": 4957
+        },
+        "styles/namespaced-styles.ts": {
+          "lines": 215,
+          "size": 5026
+        },
+        "styles/theme-utils.ts": {
+          "lines": 83,
+          "size": 1943
+        },
+        "styles/tokens/animation.css": {
+          "lines": 44,
+          "size": 1415
+        },
+        "styles/tokens.ts": {
+          "lines": 104,
+          "size": 2122
+        },
+        "styles/utilities/animations.css": {
+          "lines": 140,
+          "size": 3126
+        },
+        "styles/utilities/layout.css": {
+          "lines": 40,
+          "size": 895
+        },
+        "testing/test-setup-helpers.ts": {
+          "lines": 286,
+          "size": 7268
+        },
+        "types/app.types.ts": {
+          "lines": 214,
+          "size": 4834
+        },
+        "types/component.types.ts": {
+          "lines": 356,
+          "size": 7158
+        },
+        "types/core/base-service.types.ts": {
+          "lines": 14,
+          "size": 234
+        },
+        "types/core/core-types.ts": {
+          "lines": 623,
+          "size": 13542
+        },
+        "types/core/extraction.types.ts": {
+          "lines": 30,
+          "size": 790
+        },
+        "types/core/index.ts": {
+          "lines": 34,
+          "size": 817
+        },
+        "types/core/userscript.d.ts": {
+          "lines": 158,
+          "size": 3783
+        },
+        "types/index.ts": {
+          "lines": 73,
+          "size": 1868
+        },
+        "types/media.types.ts": {
+          "lines": 559,
+          "size": 11065
+        },
+        "types/navigation.types.ts": {
+          "lines": 14,
+          "size": 287
+        },
+        "types/result.types.ts": {
+          "lines": 63,
+          "size": 1850
+        },
+        "types/toolbar.types.ts": {
+          "lines": 114,
+          "size": 2850
+        },
+        "types/ui.types.ts": {
+          "lines": 160,
+          "size": 3071
+        },
+        "utils/accessibility/aria-helpers.ts": {
+          "lines": 387,
+          "size": 11782
+        },
+        "utils/accessibility/color-contrast.ts": {
+          "lines": 283,
+          "size": 7530
+        },
+        "utils/accessibility/focus-restore-manager.ts": {
+          "lines": 67,
+          "size": 1827
+        },
+        "utils/accessibility/index.ts": {
+          "lines": 15,
+          "size": 451
+        },
+        "utils/accessibility/keyboard-navigation.ts": {
+          "lines": 137,
+          "size": 3662
+        },
+        "utils/accessibility/live-region-manager.ts": {
+          "lines": 142,
+          "size": 4031
+        },
+        "utils/accessibility.ts": {
+          "lines": 7,
+          "size": 200
+        },
+        "utils/animations.ts": {
+          "lines": 243,
+          "size": 6738
+        },
+        "utils/binary-utils.ts": {
+          "lines": 379,
+          "size": 10368
+        },
+        "utils/browser/index.ts": {
+          "lines": 10,
+          "size": 188
+        },
+        "utils/browser/safe-browser.ts": {
+          "lines": 329,
+          "size": 6994
+        },
+        "utils/browser/wait-for-load.ts": {
+          "lines": 97,
+          "size": 2418
+        },
+        "utils/component-utils.ts": {
+          "lines": 145,
+          "size": 4142
+        },
+        "utils/conditional-loading.ts": {
+          "lines": 366,
+          "size": 7922
+        },
+        "utils/core/index.ts": {
+          "lines": 7,
+          "size": 151
+        },
+        "utils/core-utils.ts": {
+          "lines": 361,
+          "size": 8339
+        },
+        "utils/css-animations.ts": {
+          "lines": 211,
+          "size": 6267
+        },
+        "utils/deduplication/deduplication-utils.ts": {
+          "lines": 83,
+          "size": 1887
+        },
+        "utils/deduplication/index.ts": {
+          "lines": 5,
+          "size": 81
+        },
+        "utils/dom/batch-dom-update-manager.ts": {
+          "lines": 8,
+          "size": 217
+        },
+        "utils/dom/css-validation.ts": {
+          "lines": 96,
+          "size": 2222
+        },
+        "utils/dom/dom-batcher.ts": {
+          "lines": 133,
+          "size": 2746
+        },
+        "utils/dom/index.ts": {
+          "lines": 21,
+          "size": 542
+        },
+        "utils/error-handling.ts": {
+          "lines": 376,
+          "size": 8451
+        },
+        "utils/event-emitter.ts": {
+          "lines": 78,
+          "size": 1826
+        },
+        "utils/events.ts": {
+          "lines": 1021,
+          "size": 28309
+        },
+        "utils/focus-trap.ts": {
+          "lines": 239,
+          "size": 5577
+        },
+        "utils/high-contrast.ts": {
+          "lines": 99,
+          "size": 2167
+        },
+        "utils/index.ts": {
+          "lines": 170,
+          "size": 3617
+        },
+        "utils/keyboard-debounce.ts": {
+          "lines": 76,
+          "size": 1957
+        },
+        "utils/lazy-compression.ts": {
+          "lines": 145,
+          "size": 3864
+        },
+        "utils/media/image-filter.ts": {
+          "lines": 253,
+          "size": 5650
+        },
+        "utils/media/index.ts": {
+          "lines": 21,
+          "size": 496
+        },
+        "utils/media/media-click-detector.ts": {
+          "lines": 313,
+          "size": 8646
+        },
+        "utils/media/media-url.util.ts": {
+          "lines": 566,
+          "size": 15786
+        },
+        "utils/memory/index.ts": {
+          "lines": 31,
+          "size": 848
+        },
+        "utils/memory/memory-profiler.ts": {
+          "lines": 138,
+          "size": 3601
+        },
+        "utils/memory/resource-manager.ts": {
+          "lines": 107,
+          "size": 2005
+        },
+        "utils/patterns/index.ts": {
+          "lines": 9,
+          "size": 277
+        },
+        "utils/patterns/url-patterns.ts": {
+          "lines": 86,
+          "size": 2398
+        },
+        "utils/performance/idle-scheduler.ts": {
+          "lines": 88,
+          "size": 2133
+        },
+        "utils/performance/index.ts": {
+          "lines": 11,
+          "size": 263
+        },
+        "utils/performance/performance-utils.ts": {
+          "lines": 221,
+          "size": 5122
+        },
+        "utils/performance/prefetch-bench.ts": {
+          "lines": 141,
+          "size": 3964
+        },
+        "utils/performance/preload.ts": {
+          "lines": 40,
+          "size": 1147
+        },
+        "utils/performance/schedulers.ts": {
+          "lines": 133,
+          "size": 3438
+        },
+        "utils/performance/signal-optimization.ts": {
+          "lines": 214,
+          "size": 4601
+        },
+        "utils/render-ready.ts": {
+          "lines": 192,
+          "size": 4950
+        },
+        "utils/scroll/index.ts": {
+          "lines": 5,
+          "size": 67
+        },
+        "utils/scroll/scroll-utils.ts": {
+          "lines": 126,
+          "size": 3301
+        },
+        "utils/signal-selector.ts": {
+          "lines": 331,
+          "size": 7421
+        },
+        "utils/solid-helpers.ts": {
+          "lines": 46,
+          "size": 1035
+        },
+        "utils/stability.ts": {
+          "lines": 240,
+          "size": 6993
+        },
+        "utils/styles/css-utilities.ts": {
+          "lines": 113,
+          "size": 3100
+        },
+        "utils/styles/index.ts": {
+          "lines": 12,
+          "size": 267
+        },
+        "utils/styles/style-utils.ts": {
+          "lines": 15,
+          "size": 309
+        },
+        "utils/timer-management.ts": {
+          "lines": 104,
+          "size": 2110
+        },
+        "utils/toolbar-utils.ts": {
+          "lines": 48,
+          "size": 1162
+        },
+        "utils/twitter/index.ts": {
+          "lines": 11,
+          "size": 204
+        },
+        "utils/twitter/scroll-preservation.ts": {
+          "lines": 202,
+          "size": 5523
+        },
+        "utils/type-guards.ts": {
+          "lines": 190,
+          "size": 4681
+        },
+        "utils/type-safety-helpers.ts": {
+          "lines": 562,
+          "size": 13271
+        },
+        "utils/utils.ts": {
+          "lines": 185,
+          "size": 4313
+        },
+        "utils/viewport.ts": {
+          "lines": 124,
+          "size": 3457
+        },
+        "utils/window-load.ts": {
+          "lines": 68,
+          "size": 1859
+        }
+      }
+    },
+    "bootstrap": {
+      "files": 6,
+      "lines": 512,
+      "size": 15180,
+      "modules": {
+        "bootstrap-info.ts": {
+          "lines": 174,
+          "size": 5369
+        },
+        "environment.ts": {
+          "lines": 47,
+          "size": 1321
+        },
+        "events.ts": {
+          "lines": 39,
+          "size": 937
+        },
+        "features.ts": {
+          "lines": 130,
+          "size": 4205
+        },
+        "index.ts": {
+          "lines": 15,
+          "size": 510
+        },
+        "preload.ts": {
+          "lines": 107,
+          "size": 2838
+        }
+      }
+    },
+    "styles": {
+      "files": 1,
+      "lines": 27,
+      "size": 728,
+      "modules": {
+        "globals.ts": {
+          "lines": 27,
+          "size": 728
+        }
+      }
+    },
+    "total": {
+      "files": 328,
+      "lines": 52780,
+      "size": 1404955
+    }
+  },
+  "optionalFeatures": {
+    "mediaExtraction": {
+      "files": [
+        "src/features/media-extraction/index.ts",
+        "src/features/media-extraction/media-extraction-service.ts",
+        "src/shared/external/twitter-token-extractor.ts",
+        "src/shared/external/twitter-video-extractor.ts"
+      ],
+      "description": "Media extraction and optimization",
+      "estimatedSize": 50,
+      "removable": true,
+      "actualFiles": [],
+      "actualSize": 0,
+      "fileCount": 0
+    },
+    "advancedFilters": {
+      "files": [
+        "src/features/advanced-filters/index.ts",
+        "src/features/advanced-filters/filter-panel.tsx",
+        "src/features/advanced-filters/filter-state.ts"
+      ],
+      "description": "Advanced filtering UI and logic",
+      "estimatedSize": 40,
+      "removable": true,
+      "actualFiles": [],
+      "actualSize": 0,
+      "fileCount": 0
+    },
+    "accessibility": {
+      "files": [
+        "src/features/accessibility/index.ts",
+        "src/features/accessibility/keyboard-help-overlay.tsx",
+        "src/features/accessibility/a11y-validation.ts"
+      ],
+      "description": "WCAG compliance and keyboard support",
+      "estimatedSize": 35,
+      "removable": false,
+      "actualFiles": [],
+      "actualSize": 0,
+      "fileCount": 0
+    }
+  },
+  "deadCode": {
+    "unusedUtils": [
+      {
+        "file": "animations.ts",
+        "exports": 8,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "binary-utils.ts",
+        "exports": 12,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "component-utils.ts",
+        "exports": 6,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "conditional-loading.ts",
+        "exports": 6,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "core-utils.ts",
+        "exports": 20,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "error-handling.ts",
+        "exports": 6,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "events.ts",
+        "exports": 9,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "signal-selector.ts",
+        "exports": 7,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "type-guards.ts",
+        "exports": 14,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "type-safety-helpers.ts",
+        "exports": 35,
+        "note": "Multiple exports, check for unused"
+      },
+      {
+        "file": "utils.ts",
+        "exports": 7,
+        "note": "Multiple exports, check for unused"
+      }
+    ],
+    "duplicatedLogic": [],
+    "unreachableCode": []
+  },
+  "treeshaking": {
+    "fullRemoval": [
+      {
+        "feature": "mediaExtraction",
+        "estimatedSize": 50,
+        "condition": "feature.mediaExtraction === false"
+      },
+      {
+        "feature": "advancedFilters",
+        "estimatedSize": 40,
+        "condition": "feature.advancedFilters === false"
+      }
+    ],
+    "partialRemoval": [
+      {
+        "feature": "accessibility",
+        "estimatedSize": 35,
+        "note": "Partial removable - analyze dependencies"
+      }
+    ],
+    "optimization": [
+      {
+        "area": "Shared Utils",
+        "saving": "3-5 KB",
+        "effort": "Medium"
+      },
+      {
+        "area": "CSS Unused Classes",
+        "saving": "2-4 KB",
+        "effort": "Low"
+      },
+      {
+        "area": "Dynamic Imports",
+        "saving": "1-3 KB",
+        "effort": "Low"
+      },
+      {
+        "area": "Export Optimization",
+        "saving": "0.5-1 KB",
+        "effort": "Low"
+      }
+    ]
+  },
+  "recommendations": {
+    "primary": "Implement feature-based tree-shaking in build config",
+    "secondary": "Consolidate utility functions in shared layer",
+    "tertiary": "CSS optimization and dead code removal"
+  }
+}

@@ -62,7 +62,9 @@ async function analyzeBundle() {
     const gzipHuman = formatBytes(gzipEstimate);
 
     // Read CSS file if exists
-    const cssFiles = fs.readdirSync(distDir).filter(f => f.startsWith('assets/style-') && f.endsWith('.css'));
+    const cssFiles = fs
+      .readdirSync(distDir)
+      .filter(f => f.startsWith('assets/style-') && f.endsWith('.css'));
     let cssSize = 0;
     let cssHuman = '0 B';
     if (cssFiles.length > 0) {
@@ -72,7 +74,9 @@ async function analyzeBundle() {
     }
 
     // Read JS asset file if exists
-    const jsFiles = fs.readdirSync(distDir).filter(f => f.startsWith('assets/main-') && f.endsWith('.js'));
+    const jsFiles = fs
+      .readdirSync(distDir)
+      .filter(f => f.startsWith('assets/main-') && f.endsWith('.js'));
     let jsAssetSize = 0;
     let jsAssetHuman = '0 B';
     if (jsFiles.length > 0) {
@@ -167,15 +171,21 @@ async function analyzeBundle() {
     console.log('\n📈 BUNDLE BASELINE REPORT\n');
 
     console.log('Core Metrics:');
-    console.log(`  Production Bundle:  ${report.baseline.bundleSize.human} (${report.baseline.bundleSize.bytes.toLocaleString()} bytes)`);
-    console.log(`  Gzip Estimate:      ${report.baseline.gzipEstimate.human} (${report.baseline.gzipEstimate.ratio})`);
+    console.log(
+      `  Production Bundle:  ${report.baseline.bundleSize.human} (${report.baseline.bundleSize.bytes.toLocaleString()} bytes)`
+    );
+    console.log(
+      `  Gzip Estimate:      ${report.baseline.gzipEstimate.human} (${report.baseline.gzipEstimate.ratio})`
+    );
     console.log(`  CSS Assets:         ${report.baseline.cssAsset.human}`);
     console.log(`  JS Assets:          ${report.baseline.jsAsset.human}`);
     console.log(`  Line Count:         ${report.baseline.lineCount.toLocaleString()} lines`);
 
     console.log('\nOptimization Target:');
     console.log(`  Target Size:        ${report.target.targetHuman}`);
-    console.log(`  Reduction Needed:   ${formatBytes(report.target.potentialReduction.bytes)} (${report.target.potentialReduction.percentage}%)`);
+    console.log(
+      `  Reduction Needed:   ${formatBytes(report.target.potentialReduction.bytes)} (${report.target.potentialReduction.percentage}%)`
+    );
 
     console.log('\nOptional Features (tree-shaking candidates):');
     console.log('  - mediaExtraction (50 KB)');
