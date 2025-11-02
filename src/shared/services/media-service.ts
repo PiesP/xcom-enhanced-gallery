@@ -585,28 +585,35 @@ export class MediaService extends BaseServiceImpl {
   }
 
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
-    const { ensureBulkDownloadServiceRegistered } = await import('./lazy-service-registration');
-    const { getBulkDownloadServiceFromContainer } = await import(
-      '@shared/container/service-accessors'
-    );
-    // Phase 308: Lazily register BulkDownloadService on first download
-    await ensureBulkDownloadServiceRegistered();
-    const bulk = getBulkDownloadServiceFromContainer();
-    return bulk.downloadSingle(media);
+    const { unifiedDownloadService } = await import('./unified-download-service');
+    const result = await unifiedDownloadService.downloadSingle(media);
+
+    // Convert UnifiedSingleDownloadResult to SingleDownloadResult (backwards compatibility)
+    return {
+      success: result.success,
+      status: result.success ? 'success' : 'error',
+      ...(result.filename && { filename: result.filename }),
+      ...(result.error && { error: result.error }),
+      code: result.success ? ErrorCode.NONE : ErrorCode.UNKNOWN,
+    };
   }
 
   async downloadMultiple(
     mediaItems: Array<MediaInfo | MediaItem>,
-    options: BulkDownloadOptions
+    _options?: BulkDownloadOptions
   ): Promise<DownloadResult> {
-    const { ensureBulkDownloadServiceRegistered } = await import('./lazy-service-registration');
-    const { getBulkDownloadServiceFromContainer } = await import(
-      '@shared/container/service-accessors'
-    );
-    // Phase 308: Lazily register BulkDownloadService on first download
-    await ensureBulkDownloadServiceRegistered();
-    const bulk = getBulkDownloadServiceFromContainer();
-    return bulk.downloadMultiple(mediaItems, options);
+    const { unifiedDownloadService } = await import('./unified-download-service');
+    const result = await unifiedDownloadService.downloadBulk(mediaItems);
+
+    // Convert UnifiedBulkDownloadResult to DownloadResult (backwards compatibility)
+    return {
+      success: result.success,
+      status: result.status,
+      filesProcessed: result.filesProcessed,
+      filesSuccessful: result.filesSuccessful,
+      ...(result.error && { error: result.error }),
+      ...(result.filename && { filename: result.filename }),
+    };
   }
 
   async downloadBulk(

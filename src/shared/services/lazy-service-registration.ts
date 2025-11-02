@@ -34,12 +34,12 @@ export async function ensureBulkDownloadServiceRegistered(): Promise<void> {
 
   try {
     // Dynamically import at first use
-    const { getBulkDownloadService } = await import('./service-factories');
+    const { BulkDownloadService } = await import('./bulk-download-service');
     const { CoreService } = await import('./service-manager');
     const { SERVICE_KEYS } = await import('../../constants');
 
     const serviceManager = CoreService.getInstance();
-    const bulkDownloadService = await getBulkDownloadService();
+    const bulkDownloadService = new BulkDownloadService();
 
     // Register under both keys for compatibility
     serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);

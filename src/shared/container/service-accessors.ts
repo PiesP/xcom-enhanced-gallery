@@ -21,7 +21,6 @@
  * const service = CoreService.get(SERVICE_KEYS.TOAST);
  * ```
  */
-import type { BulkDownloadService } from '../services/bulk-download-service';
 import type { FilenameService } from '../services/file-naming';
 import type { ThemeService } from '../services/theme-service';
 import type { ToastController } from '../services/unified-toast-manager';
@@ -66,24 +65,6 @@ export function getThemeService(): ThemeService {
  */
 export function getMediaFilenameService(): FilenameService {
   return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
-}
-
-/**
- * 대량 다운로드 서비스를 조회합니다.
- * @returns BulkDownloadService 인스턴스
- * @throws 서비스를 찾을 수 없으면 예외 발생
- */
-export function getBulkDownloadServiceFromContainer(): BulkDownloadService {
-  return CoreServiceRegistry.get<BulkDownloadService>(SERVICE_KEYS.BULK_DOWNLOAD);
-}
-
-/**
- * 갤러리 다운로드 서비스를 조회합니다.
- * @returns BulkDownloadService 인스턴스
- * @throws 서비스를 찾을 수 없으면 예외 발생
- */
-export function getGalleryDownloadService(): BulkDownloadService {
-  return CoreServiceRegistry.get<BulkDownloadService>(SERVICE_KEYS.GALLERY_DOWNLOAD);
 }
 
 /**
@@ -197,7 +178,7 @@ export function warmupCriticalServices(): void {
 
 /**
  * 비필수 서비스들을 미리 초기화합니다 (실패해도 무시).
- * ThemeService, BulkDownloadService 등 초기화 시도.
+ * ThemeService 등 초기화 시도.
  */
 export function warmupNonCriticalServices(): void {
   try {
@@ -206,17 +187,7 @@ export function warmupNonCriticalServices(): void {
     // noop
   }
   try {
-    void getBulkDownloadServiceFromContainer();
-  } catch {
-    // noop
-  }
-  try {
     void getMediaFilenameService();
-  } catch {
-    // noop
-  }
-  try {
-    void getGalleryDownloadService();
   } catch {
     // noop
   }

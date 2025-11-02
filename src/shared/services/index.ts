@@ -110,19 +110,22 @@ export {
   type NotificationOptions,
 } from './notification-service';
 export {
-  DownloadService,
-  downloadService,
-  type DownloadOptions,
-  type SingleDownloadResult,
-  type BulkDownloadResult,
-} from './download-service';
+  UnifiedDownloadService,
+  unifiedDownloadService,
+  type DownloadOptions as UnifiedDownloadOptions,
+  type SingleDownloadResult as UnifiedSingleDownloadResult,
+  type BulkDownloadResult as UnifiedBulkDownloadResult,
+} from './unified-download-service';
 export {
   HttpRequestService,
-  httpRequestService,
+  getHttpRequestService,
   type HttpRequestOptions,
   type HttpResponse,
   HttpError,
 } from './http-request-service';
+
+// 7. 클립보드 서비스 (Phase 311)
+export { ClipboardService, clipboardService, type ClipboardResult } from './clipboard-service';
 
 // ====================================
 // 유틸리티 및 타입들

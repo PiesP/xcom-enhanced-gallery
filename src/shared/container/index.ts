@@ -43,8 +43,6 @@ export {
   getToastController,
   getThemeService,
   getMediaFilenameService,
-  getBulkDownloadServiceFromContainer,
-  getGalleryDownloadService,
   getMediaServiceFromContainer,
   getGalleryRenderer,
   // Service Registrations

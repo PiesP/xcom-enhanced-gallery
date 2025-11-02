@@ -4,11 +4,9 @@
  * 테스트에서 direct instantiation 금지 규칙을 가드.
  */
 import type { MediaService } from './media-service';
-import type { BulkDownloadService } from './bulk-download-service';
 
 // Lazy singleton holders (Promise로 concurrency 안전 보장)
 let mediaServiceInstance: Promise<MediaService> | null = null;
-let bulkDownloadServiceInstance: Promise<BulkDownloadService> | null = null;
 
 export async function getMediaService(): Promise<MediaService> {
   if (!mediaServiceInstance) {
@@ -18,15 +16,6 @@ export async function getMediaService(): Promise<MediaService> {
     mediaServiceInstance = import('./media-service').then(m => m.MediaService.getInstance());
   }
   return mediaServiceInstance;
-}
-
-export async function getBulkDownloadService(): Promise<BulkDownloadService> {
-  if (!bulkDownloadServiceInstance) {
-    bulkDownloadServiceInstance = import('./bulk-download-service').then(
-      m => new m.BulkDownloadService()
-    );
-  }
-  return bulkDownloadServiceInstance;
 }
 
 // SettingsService 팩토리는 features 레이어로 이동 (shared -> features 직접 import 금지)
@@ -43,5 +32,4 @@ export async function getSettingsService(): Promise<never> {
  */
 export function __resetServiceFactories(): void {
   mediaServiceInstance = null;
-  bulkDownloadServiceInstance = null;
 }

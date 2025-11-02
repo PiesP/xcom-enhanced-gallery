@@ -278,6 +278,13 @@ export class HttpRequestService {
 }
 
 /**
- * Singleton instance export for convenience
+ * Singleton instance getter for convenience (lazy loading)
+ *
+ * Use this as an alternative to getInstance() if you prefer shorter syntax.
+ * Returns the singleton instance, creating it on first access.
+ *
+ * @returns HttpRequestService singleton instance
  */
-export const httpRequestService = HttpRequestService.getInstance();
+export function getHttpRequestService(): HttpRequestService {
+  return HttpRequestService.getInstance();
+}
