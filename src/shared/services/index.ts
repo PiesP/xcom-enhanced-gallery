@@ -104,6 +104,7 @@ export { CoreService } from './service-manager';
 // ====================================
 
 export { type StorageAdapter, UserscriptStorageAdapter } from './storage';
+export { PersistentStorage, getPersistentStorage, type StorageUsage } from './persistent-storage';
 
 // ====================================
 // 유틸리티 및 타입들
