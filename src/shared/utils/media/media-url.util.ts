@@ -9,8 +9,7 @@
  */
 
 import { logger } from '@shared/logging';
-// FilenameService는 이제 shared/services/file-naming 레이어에 있음
-import { generateMediaFilename } from '@shared/services/file-naming';
+import { getMediaFilenameService } from '@shared/container/service-accessors';
 import type { FilenameOptions } from '@shared/services/file-naming';
 // Username은 shared/media/username-source 헬퍼를 통해 제공
 import { getPreferredUsername } from '../../media/username-source';
@@ -478,7 +477,8 @@ function getUsernameSafe(): string | null {
 
 function getFilename(info: MediaInfo, options: FilenameOptions): string {
   try {
-    return generateMediaFilename(info, options);
+    const service = getMediaFilenameService();
+    return service.generateMediaFilename(info, options);
   } catch {
     // minimal fallback: synthesize simple filename
     const base = info.tweetId ? `${info.tweetId}` : 'media';

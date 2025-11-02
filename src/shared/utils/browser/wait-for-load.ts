@@ -8,6 +8,7 @@
 
 import { logger } from '../../logging';
 import { safeWindow } from './safe-browser';
+import { globalTimerManager } from '../timer-management';
 
 /**
  * Window load 이벤트 대기 타임아웃 (밀리초)
@@ -71,7 +72,7 @@ export async function waitForWindowLoad(
     const handleLoad = () => {
       if (resolved) return;
       resolved = true;
-      clearTimeout(timeoutId);
+      globalTimerManager.clearTimeout(timeoutId);
       logger.debug('[waitForWindowLoad] Load event received');
       resolve('waiting');
     };
@@ -90,6 +91,6 @@ export async function waitForWindowLoad(
     win.addEventListener('load', handleLoad, { once: true });
 
     // 타임아웃 설정
-    const timeoutId = setTimeout(handleTimeout, timeoutMs);
+    const timeoutId = globalTimerManager.setTimeout(handleTimeout, timeoutMs);
   });
 }

@@ -18,6 +18,7 @@ import { useSelector } from '@shared/utils/signal-selector';
 import { toAccessor } from '@shared/utils/solid-helpers';
 import { findTwitterScrollContainer, isGalleryInternalEvent } from '@shared/utils/core-utils';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { addListener, removeEventListenerManaged } from '@shared/utils/events';
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();
 
@@ -262,20 +263,14 @@ export function useGalleryScroll({
       passive: true,
     });
 
-    let twitterContainer: HTMLElement | null = null;
+    let twitterListenerId: string | null = null;
     let mutationObserver: MutationObserver | null = null;
 
     const detachTwitterListener = () => {
-      if (!twitterContainer) {
-        return;
+      if (twitterListenerId) {
+        removeEventListenerManaged(twitterListenerId);
+        twitterListenerId = null;
       }
-
-      twitterContainer.removeEventListener(
-        'wheel',
-        preventTwitterScroll as EventListener,
-        TWITTER_WHEEL_CAPTURE
-      );
-      twitterContainer = null;
     };
 
     const attachTwitterListener = (candidate: HTMLElement | null) => {
@@ -284,14 +279,9 @@ export function useGalleryScroll({
         return;
       }
 
-      if (twitterContainer === candidate) {
-        return;
-      }
-
       detachTwitterListener();
 
-      twitterContainer = candidate;
-      twitterContainer.addEventListener('wheel', preventTwitterScroll as EventListener, {
+      twitterListenerId = addListener(candidate, 'wheel', preventTwitterScroll as EventListener, {
         capture: TWITTER_WHEEL_CAPTURE,
         passive: false,
       });
@@ -327,7 +317,7 @@ export function useGalleryScroll({
     logger.debug('useGalleryScroll: 이벤트 리스너 등록 완료', {
       hasContainer: !!containerElement,
       blockTwitterScroll: shouldBlockTwitterScroll,
-      twitterTarget: describeEventTarget(twitterContainer),
+      twitterListenerActive: !!twitterListenerId,
     });
 
     onCleanup(() => {

@@ -7,6 +7,7 @@
 
 import { logger } from '../../logging';
 import { findTwitterScrollContainer } from '../core-utils';
+import { globalTimerManager } from '../timer-management';
 
 // Phase 302: selector 하드닝 — data-testid 고정값 대신 공용 유틸의 폴백 로직 사용
 
@@ -80,7 +81,7 @@ export class TwitterScrollPreservation {
 
       // Phase 300.1: Twitter SPA 복원 로직 완료 대기
       // Twitter의 scrollRestoration은 페이지 로드 후 100-200ms 내에 실행됨
-      setTimeout(() => {
+      globalTimerManager.setTimeout(() => {
         // 추가 프레임 대기로 Twitter 복원과의 경합 최소화
         requestAnimationFrame(() => {
           try {

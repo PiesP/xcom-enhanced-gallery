@@ -398,17 +398,17 @@ function VerticalGalleryViewCore({
         return;
       }
 
-      const checkInterval = setInterval(() => {
+      const checkInterval = globalTimerManager.setInterval(() => {
         if (element.getAttribute('data-media-loaded') === 'true') {
-          clearInterval(checkInterval);
-          clearTimeout(timeoutId);
+          globalTimerManager.clearInterval(checkInterval);
+          globalTimerManager.clearTimeout(timeoutId);
           resolve();
         }
       }, 50);
 
       // 타임아웃 처리 (네트워크 지연 시에도 스크롤 진행)
-      const timeoutId = setTimeout(() => {
-        clearInterval(checkInterval);
+      const timeoutId = globalTimerManager.setTimeout(() => {
+        globalTimerManager.clearInterval(checkInterval);
         logger.debug(
           'VerticalGalleryView: 이미지 로드 타임아웃 (1000ms) - 부분 로드 상태에서 스크롤 진행'
         );
