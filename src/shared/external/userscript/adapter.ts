@@ -5,7 +5,7 @@
  * @version 11.0.0 - Phase 200: 현대화, 에러 처리 강화, 주석 개선
  */
 import type { GMXmlHttpRequestOptions, BrowserEnvironment } from '@shared/types/core/userscript';
-import { isGMUserScriptInfo, isProgressEventLike } from '@shared/utils/core';
+import { isGMUserScriptInfo } from '@shared/utils/core';
 
 type GMUserScriptInfo = Record<string, unknown>;
 
@@ -78,104 +78,6 @@ function safeInfo(): GMUserScriptInfo | null {
 }
 
 /**
- * 다운로드 Fallback: fetch + Blob + a[href] (브라우저 환경용)
- * @throws 비브라우저 환경에서는 조용히 반환 (no-op)
- */
-async function fallbackDownload(url: string, filename: string): Promise<void> {
-  // 비브라우저 환경(Node/Vitest) 확인
-  if (typeof document === 'undefined' || !document.body) {
-    return; // 다운로드 불가능한 환경이므로 no-op
-  }
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-
-    try {
-      const link = document.createElement('a');
-      link.href = objectUrl;
-      link.download = filename || 'download';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  } catch {
-    throw new Error(`Fallback download failed for ${url}`);
-  }
-}
-
-/**
- * XMLHttpRequest Fallback: fetch 기반 구현
- * @note GM_xmlhttpRequest와 완벽한 호환성은 보장하지 않습니다.
- * 기본 onload/onerror 콜백과 responseType만 지원합니다.
- */
-function fallbackXhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined {
-  try {
-    const controller = new AbortController();
-    const { method = 'GET', url, headers, data, responseType } = options;
-
-    const init: RequestInit = {
-      method,
-      ...(headers ? { headers: headers as HeadersInit } : {}),
-      ...(typeof data === 'string' || data instanceof Blob ? { body: data as BodyInit } : {}),
-      signal: controller.signal,
-    };
-
-    fetch(url, init)
-      .then(async res => {
-        const text = await res.text();
-        options.onload?.({
-          responseText: text,
-          readyState: 4,
-          responseHeaders: '',
-          status: res.status,
-          statusText: res.statusText,
-          finalUrl: res.url,
-          response:
-            responseType === 'json'
-              ? (() => {
-                  try {
-                    return JSON.parse(text);
-                  } catch {
-                    return undefined;
-                  }
-                })()
-              : text,
-        } as never);
-      })
-      .catch(() => {
-        options.onerror?.({
-          responseText: '',
-          readyState: 4,
-          responseHeaders: '',
-          status: 0,
-          statusText: 'error',
-          finalUrl: options.url,
-        } as never);
-      })
-      .finally(() => {
-        // JSDOM/Node 환경에서 ProgressEvent가 없을 수 있으므로 안전 확인
-        const event = { type: 'loadend' };
-        if (isProgressEventLike(event)) {
-          options.onloadend?.(event as unknown as ProgressEvent);
-        }
-      });
-
-    return { abort: () => controller.abort() };
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * 안전한 localStorage 접근 (SecurityError 방지)
  */
 function getSafeLocalStorage(): Storage | null {
@@ -210,31 +112,24 @@ export function getUserscript(): UserscriptAPI {
     info: safeInfo,
 
     async download(url: string, filename: string): Promise<void> {
-      // GM_download 시도
-      if (hasGMDownload && hasGMInfo(g) && g.GM_download) {
-        try {
-          g.GM_download(url, filename);
-          return;
-        } catch {
-          // Fallback으로 진행
-        }
+      // GM API 필수 - fallback 없음
+      if (!hasGMDownload || !hasGMInfo(g) || !g.GM_download) {
+        throw new Error(
+          'GM_download not available - Tampermonkey/Greasemonkey environment required'
+        );
       }
-      // Fallback: fetch + Blob + a[href]
-      return fallbackDownload(url, filename);
+      g.GM_download(url, filename);
     },
 
     xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined {
-      // GM_xmlhttpRequest 시도
-      if (hasGMXhr && hasGMInfo(g) && g.GM_xmlhttpRequest) {
-        try {
-          // Cast through unknown to satisfy TS when underlying lib returns void in some managers
-          return g.GM_xmlhttpRequest(options) as unknown as { abort: () => void } | undefined;
-        } catch {
-          // Fallback으로 진행
-        }
+      // GM API 필수 - fallback 없음
+      if (!hasGMXhr || !hasGMInfo(g) || !g.GM_xmlhttpRequest) {
+        throw new Error(
+          'GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required'
+        );
       }
-      // Fallback: fetch 기반 구현
-      return fallbackXhr(options) ?? undefined;
+      // Cast through unknown to satisfy TS when underlying lib returns void in some managers
+      return g.GM_xmlhttpRequest(options) as unknown as { abort: () => void } | undefined;
     },
 
     async setValue(key: string, value: unknown): Promise<void> {
