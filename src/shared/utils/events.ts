@@ -508,21 +508,39 @@ function ensureScopedEventTarget(
  */
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
-  options: Partial<GalleryEventOptions> = {}
+  optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement
 ): Promise<() => void> {
   try {
     if (galleryEventState.initialized) {
       cleanupGalleryEvents();
     }
 
-    const finalOptions: GalleryEventOptions = {
-      enableKeyboard: true,
-      enableMediaDetection: true,
-      debugMode: false,
-      preventBubbling: true,
-      context: 'gallery',
-      ...options,
-    };
+    // Phase 305: galleryRoot 파라미터 지원 (선택적)
+    let finalOptions: GalleryEventOptions;
+    let explicitGalleryRoot: HTMLElement | null = null;
+
+    if (optionsOrRoot instanceof HTMLElement) {
+      // galleryRoot가 명시적으로 제공된 경우
+      explicitGalleryRoot = optionsOrRoot;
+      finalOptions = {
+        enableKeyboard: true,
+        enableMediaDetection: true,
+        debugMode: false,
+        preventBubbling: true,
+        context: 'gallery',
+      };
+    } else {
+      // 기존 options 객체 또는 undefined
+      const options = optionsOrRoot || {};
+      finalOptions = {
+        enableKeyboard: true,
+        enableMediaDetection: true,
+        debugMode: false,
+        preventBubbling: true,
+        context: 'gallery',
+        ...options,
+      };
+    }
 
     galleryEventState.options = finalOptions;
     galleryEventState.handlers = handlers;
@@ -544,7 +562,13 @@ export async function initializeGalleryEvents(
     galleryEventState.keyListener = keyHandler;
     galleryEventState.clickListener = clickHandler;
 
-    ensureScopedEventTarget(keyHandler, clickHandler, finalOptions);
+    // Phase 305: 명시적 galleryRoot가 있으면 직접 바인딩
+    if (explicitGalleryRoot) {
+      bindScopedListeners(explicitGalleryRoot, keyHandler, clickHandler, finalOptions);
+    } else {
+      // 기존 로직: Twitter 범위 자동 감지
+      ensureScopedEventTarget(keyHandler, clickHandler, finalOptions);
+    }
 
     galleryEventState.initialized = true;
 

@@ -108,8 +108,8 @@ export class TwitterScrollPreservation {
             const currentPosition = twitterScroll.scrollTop;
             const difference = Math.abs(currentPosition - this.savedPosition!);
 
-            // 위치가 크게 달라졌을 때만 보정
-            if (difference > threshold) {
+            // 위치가 크게 달라졌을 때만 보정 (>= 기본값 100px)
+            if (difference >= threshold) {
               twitterScroll.scrollTo({
                 top: this.savedPosition!,
                 behavior: 'auto', // 즉시 이동 (smooth는 UX 혼란 유발)
