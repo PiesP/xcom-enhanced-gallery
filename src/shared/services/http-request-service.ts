@@ -21,7 +21,7 @@
 export interface HttpRequestOptions {
   headers?: Record<string, string>;
   timeout?: number; // milliseconds, default: 10000
-  responseType?: 'json' | 'text' | 'blob';
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   data?: unknown;
 }
 
@@ -58,7 +58,7 @@ interface GMXmlHttpRequestOptions {
   url: string;
   headers?: Record<string, string>;
   data?: string;
-  responseType?: 'json' | 'text' | 'blob';
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
   timeout?: number;
   onload?: (response: GMXmlHttpRequestResponse) => void;
   onerror?: (error: unknown) => void;
@@ -104,7 +104,10 @@ function parseResponseHeaders(headersStr: string): Record<string, string> {
 /**
  * Parse response data based on content type
  */
-function parseResponseData(data: unknown, responseType?: 'json' | 'text' | 'blob'): unknown {
+function parseResponseData(
+  data: unknown,
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer'
+): unknown {
   if (responseType === 'json' || responseType === undefined) {
     if (typeof data === 'string') {
       try {
@@ -118,6 +121,10 @@ function parseResponseData(data: unknown, responseType?: 'json' | 'text' | 'blob
 
   if (responseType === 'text') {
     return String(data);
+  }
+
+  if (responseType === 'arraybuffer' && data instanceof ArrayBuffer) {
+    return new Uint8Array(data);
   }
 
   return data;

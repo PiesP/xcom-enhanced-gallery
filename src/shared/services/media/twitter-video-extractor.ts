@@ -7,6 +7,7 @@
 
 import { logger } from '@shared/logging';
 import { TWITTER_API_CONFIG } from '@/constants';
+import { HttpRequestService } from '@shared/services';
 import type {
   TwitterAPIResponse,
   TwitterTweet,
@@ -69,19 +70,20 @@ export class TwitterAPI {
     if (this._guestToken) return;
 
     try {
-      const headers = new Headers({
-        authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-        'content-type': 'application/json',
-      });
-      // Historically served from api.twitter.com; x.com may alias, but keep stable origin
-      const resp = await fetch('https://api.twitter.com/1.1/guest/activate.json', {
-        method: 'POST',
-        headers,
-      });
-      if (!resp.ok) return; // fail-soft
-      const data = (await resp.json()) as { guest_token?: string };
-      if (data?.guest_token) {
-        this._guestToken = data.guest_token;
+      const httpService = HttpRequestService.getInstance();
+      const response = await httpService.post<{ guest_token?: string }>(
+        'https://api.twitter.com/1.1/guest/activate.json',
+        undefined,
+        {
+          headers: {
+            authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
+            'content-type': 'application/json',
+          },
+        }
+      );
+      if (!response.ok) return; // fail-soft
+      if (response.data?.guest_token) {
+        this._guestToken = response.data.guest_token;
       }
     } catch {
       // ignore – proceed without explicit guest token
@@ -111,8 +113,11 @@ export class TwitterAPI {
       headers.append('x-twitter-auth-type', 'OAuth2Session');
     }
     try {
-      const response = await fetch(_url, { headers });
-      const json = (await response.json()) as TwitterAPIResponse;
+      const httpService = HttpRequestService.getInstance();
+      const response = await httpService.get<TwitterAPIResponse>(_url, {
+        headers: Object.fromEntries(headers.entries()),
+      });
+      const json = response.data;
       if (response.ok) {
         if (this.requestCache.size > 16) {
           const firstKey = this.requestCache.keys().next().value;

@@ -8,6 +8,7 @@
  */
 
 import { logger } from '@shared/logging';
+import { HttpRequestService } from '@shared/services';
 import { globalTimerManager } from '../../utils/timer-management';
 
 /**
@@ -502,17 +503,21 @@ export class TwitterTokenExtractor {
   private async verifyTokenWithAPI(token: string): Promise<TokenValidationResult> {
     try {
       // Twitter API의 간단한 인증 확인을 위한 guest token 요청
-      const response = await fetch('https://api.twitter.com/1.1/guest/activate.json', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const httpService = HttpRequestService.getInstance();
+      const response = await httpService.post<{ guest_token?: string }>(
+        'https://api.twitter.com/1.1/guest/activate.json',
+        undefined,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.guest_token) {
+        const data = response.data;
+        if (data?.guest_token) {
           return {
             valid: true,
             remainingTime: 3600000, // 1시간
