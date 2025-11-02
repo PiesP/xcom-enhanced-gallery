@@ -165,7 +165,7 @@ e2c963a6 - feat: add NotificationService
 ```typescript
 export class HttpRequestService {
   static getInstance(): HttpRequestService;
-  
+
   async get<T>(url: string, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   async post<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
   async put<T>(url: string, data?: unknown, options?: HttpRequestOptions): Promise<HttpResponse<T>>;
@@ -341,4 +341,3 @@ Services Created: 5개 (저장소, 알림, 다운로드, HTTP, 클립보드)
 ---
 
 **Status**: ✅ Phase 309 완료 | 🔄 Phase 310 준비 완료 | **Next**: HttpRequestService 구현
-

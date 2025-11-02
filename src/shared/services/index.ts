@@ -116,6 +116,13 @@ export {
   type SingleDownloadResult,
   type BulkDownloadResult,
 } from './download-service';
+export {
+  HttpRequestService,
+  httpRequestService,
+  type HttpRequestOptions,
+  type HttpResponse,
+  HttpError,
+} from './http-request-service';
 
 // ====================================
 // 유틸리티 및 타입들
