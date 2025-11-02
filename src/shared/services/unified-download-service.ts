@@ -238,7 +238,7 @@ export class UnifiedDownloadService {
 
       return new Promise(resolve => {
         const timer = setTimeout(() => {
-          resolve({ success: false, error: '다운로드 시간 초과 (30초)' });
+          resolve({ success: false, error: 'Download timeout (30s)' });
         }, 30000);
 
         try {
@@ -247,22 +247,22 @@ export class UnifiedDownloadService {
             name: filename,
             onload: () => {
               clearTimeout(timer);
-              this.notificationService.success(`다운로드 완료: ${filename}`);
+              this.notificationService.success(`Download complete: ${filename}`);
               logger.debug(`[UnifiedDownloadService] 단일 파일 다운로드 완료: ${filename}`);
               resolve({ success: true, filename });
             },
             onerror: (error: unknown) => {
               clearTimeout(timer);
               const errorMsg = this.extractErrorMessage(error);
-              this.notificationService.error(`다운로드 실패: ${errorMsg}`);
+              this.notificationService.error(`Download failed: ${errorMsg}`);
               logger.error(`[UnifiedDownloadService] 단일 파일 다운로드 실패:`, error);
               resolve({ success: false, error: errorMsg, filename });
             },
             ontimeout: () => {
               clearTimeout(timer);
-              this.notificationService.error('다운로드 시간 초과');
+              this.notificationService.error('Download timeout');
               logger.warn(`[UnifiedDownloadService] 다운로드 타임아웃`);
-              resolve({ success: false, error: '다운로드 시간 초과' });
+              resolve({ success: false, error: 'Download timeout' });
             },
           });
         } catch (error) {
@@ -423,7 +423,7 @@ export class UnifiedDownloadService {
     } catch (error) {
       const errorMsg = getErrorMessage(error);
       logger.error(`[UnifiedDownloadService] ZIP 다운로드 실패:`, error);
-      this.notificationService.error(`ZIP 다운로드 실패: ${errorMsg}`);
+      this.notificationService.error(`ZIP download failed: ${errorMsg}`);
 
       return {
         success: false,
@@ -545,7 +545,7 @@ export class UnifiedDownloadService {
   // ====================================
 
   /**
-   * 현재 다운로드 취소
+   * Cancel current download
    */
   cancelDownload(): void {
     if (!this.currentAbortController) {
@@ -554,7 +554,7 @@ export class UnifiedDownloadService {
     }
 
     this.currentAbortController.abort();
-    this.notificationService.info('다운로드가 취소되었습니다');
+    this.notificationService.info('Download cancelled');
     logger.info('[UnifiedDownloadService] 다운로드 취소됨');
   }
 

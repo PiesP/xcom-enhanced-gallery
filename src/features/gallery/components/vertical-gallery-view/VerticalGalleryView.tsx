@@ -370,21 +370,53 @@ function VerticalGalleryViewCore({
       timestamp: Date.now(),
     });
 
-    // Phase 293: rAF 체인으로 DOM 준비 완료 확실히 대기
+    // Phase 293+: rAF 체인 + 이미지 로드 대기로 초기 스크롤 안정성 개선
     // - 1st rAF: 현재 프레임 paint 완료
     // - 2nd rAF: 다음 프레임 시작 (레이아웃 계산 완료 보장)
+    // - waitForMediaLoad: 현재 아이템 이미지 로드 완료 대기 (높이 확정)
+    // - scrollToCurrentItem: 정확한 위치로 스크롤
     if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
       window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(async () => {
+          // Phase 319: 현재 아이템의 이미지 로드 대기 추가
+          // 이미지가 로드되어야 정확한 높이로 스크롤 가능
+          const currentIdx = currentIndex();
+          if (currentIdx >= 0 && currentIdx < items.length) {
+            const itemElement =
+              container.querySelector(`[data-item-index="${currentIdx}"]`) ||
+              container.querySelector(`[data-index="${currentIdx}"]`);
+
+            if (itemElement) {
+              await waitForMediaLoad(itemElement, 1000);
+              logger.debug('VerticalGalleryView: 초기 아이템 이미지 로드 완료 (Phase 319)', {
+                currentIndex: currentIdx,
+                timestamp: Date.now(),
+              });
+            }
+          }
+
           void scrollToCurrentItem();
-          logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 293 - rAF chain)', {
+          logger.debug('VerticalGalleryView: 초기 스크롤 완료 (Phase 319 - rAF + image load)', {
             currentIndex: currentIndex(),
             timestamp: Date.now(),
           });
         });
       });
     } else {
-      // requestAnimationFrame이 없는 환경에서는 즉시 실행
+      // requestAnimationFrame이 없는 환경에서는 이미지 로드만 대기
+      const currentIdx = currentIndex();
+      if (currentIdx >= 0 && currentIdx < items.length) {
+        const itemElement =
+          container.querySelector(`[data-item-index="${currentIdx}"]`) ||
+          container.querySelector(`[data-index="${currentIdx}"]`);
+
+        if (itemElement) {
+          void waitForMediaLoad(itemElement, 1000).then(() => {
+            void scrollToCurrentItem();
+          });
+          return;
+        }
+      }
       void scrollToCurrentItem();
     }
   });

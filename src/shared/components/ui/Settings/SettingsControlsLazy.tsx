@@ -28,9 +28,10 @@ const LazySettingsControls = lazy(() =>
 
 /**
  * Fallback component during lazy load
+ * Phase 320: Use rem instead of px for spacing consistency
  */
 const SettingsControlsFallback = (): JSXElement => {
-  return <div style={{ height: '120px' }} />;
+  return <div style={{ height: '7.5rem' }} />;
 };
 
 /**
