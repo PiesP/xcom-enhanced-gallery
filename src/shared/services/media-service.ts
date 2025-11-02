@@ -15,6 +15,7 @@ import { ErrorCode } from '@shared/types/result.types';
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { BaseServiceImpl } from './base-service';
+import { HttpRequestService } from './http-request-service';
 
 export interface MediaLoadingState {
   isLoading: boolean;
@@ -470,17 +471,17 @@ export class MediaService extends BaseServiceImpl {
     this.activePrefetchRequests.set(url, abortController);
 
     try {
-      const response = await fetch(url, {
+      const httpService = HttpRequestService.getInstance();
+      const response = await httpService.get<Blob>(url, {
         signal: abortController.signal,
-        mode: 'cors',
-        cache: 'force-cache',
+        responseType: 'blob',
       });
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const blob = await response.blob();
+      const blob = response.data;
 
       if (this.prefetchCache.size >= this.maxCacheEntries) {
         this.evictOldestPrefetchEntry();
