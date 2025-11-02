@@ -86,6 +86,24 @@ export interface AccessibilitySettings {
 }
 
 /**
+ * Phase 326.4: 기능 플래그 설정
+ */
+export interface FeatureFlags {
+  /** 갤러리 기능 활성화 (필수) */
+  gallery: boolean;
+  /** 설정 UI 활성화 */
+  settings: boolean;
+  /** 다운로드 기능 활성화 */
+  download: boolean;
+  /** 미디어 추출 활성화 */
+  mediaExtraction: boolean;
+  /** 고급 필터 활성화 (선택사항) */
+  advancedFilters: boolean;
+  /** 접근성 기능 활성화 */
+  accessibility: boolean;
+}
+
+/**
  * 전체 애플리케이션 설정
  */
 export interface AppSettings {
@@ -94,6 +112,8 @@ export interface AppSettings {
   tokens: TokenSettings;
   performance: PerformanceSettings;
   accessibility: AccessibilitySettings;
+  /** Phase 326.4: 기능 플래그 */
+  features: FeatureFlags;
   /** 설정 버전 (호환성 관리용) */
   version: string;
   /** 마지막 수정 시간 */
@@ -114,6 +134,7 @@ export type NestedSettingKey =
   | `tokens.${keyof TokenSettings}`
   | `performance.${keyof PerformanceSettings}`
   | `accessibility.${keyof AccessibilitySettings}`
+  | `features.${keyof FeatureFlags}`
   | SettingKey;
 
 /**
