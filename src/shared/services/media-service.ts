@@ -584,9 +584,12 @@ export class MediaService extends BaseServiceImpl {
   }
 
   async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
+    const { ensureBulkDownloadServiceRegistered } = await import('./lazy-service-registration');
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
+    // Phase 308: Lazily register BulkDownloadService on first download
+    await ensureBulkDownloadServiceRegistered();
     const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadSingle(media);
   }
@@ -595,9 +598,12 @@ export class MediaService extends BaseServiceImpl {
     mediaItems: Array<MediaInfo | MediaItem>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
+    const { ensureBulkDownloadServiceRegistered } = await import('./lazy-service-registration');
     const { getBulkDownloadServiceFromContainer } = await import(
       '@shared/container/service-accessors'
     );
+    // Phase 308: Lazily register BulkDownloadService on first download
+    await ensureBulkDownloadServiceRegistered();
     const bulk = getBulkDownloadServiceFromContainer();
     return bulk.downloadMultiple(mediaItems, options);
   }

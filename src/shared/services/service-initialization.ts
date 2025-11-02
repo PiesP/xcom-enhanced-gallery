@@ -6,7 +6,7 @@
 
 import { CoreService } from './service-manager';
 import { logger } from '@shared/logging';
-import { getMediaService, getBulkDownloadService } from './service-factories';
+import { getMediaService } from './service-factories';
 
 /**
  * Core 레이어 통합 서비스들을 등록합니다
@@ -52,11 +52,8 @@ export async function registerCoreServices(): Promise<void> {
   // 독립 유지 서비스들
   // ====================================
 
-  // 대량 다운로드 서비스 (복잡도로 인해 독립 유지)
-  const bulkDownloadService = await getBulkDownloadService();
-  serviceManager.register(SERVICE_KEYS.BULK_DOWNLOAD, bulkDownloadService);
-  serviceManager.register(SERVICE_KEYS.GALLERY_DOWNLOAD, bulkDownloadService); // 호환성
-
+  // Phase 308: BulkDownloadService를 lazy registration으로 이동
+  // 앱 시작 시 등록하지 않고, 첫 다운로드 시 동적 로드
   // 파일명 서비스 (구체 모듈로 import)
   const { FilenameService } = await import('./file-naming/filename-service');
   serviceManager.register(SERVICE_KEYS.MEDIA_FILENAME, new FilenameService());
