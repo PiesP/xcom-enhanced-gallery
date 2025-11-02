@@ -43,23 +43,27 @@ and this project adheres to
 
 ### ✨ 100% 테스트 통과 달성 - 안정성 및 품질 개선
 
-이 릴리즈는 모든 테스트를 통과시켜 프로젝트 안정화를 완료합니다.
-Phase 306-307 작업을 통해 **6개의 RED 테스트를 모두 해결**하고 **100% 테스트 통과율**을 달성했습니다.
+이 릴리즈는 모든 테스트를 통과시켜 프로젝트 안정화를 완료합니다. Phase 306-307
+작업을 통해 **6개의 RED 테스트를 모두 해결**하고 **100% 테스트 통과율**을
+달성했습니다.
 
 ### Added
 
 #### 미디어 파일명 서비스 강화 (Phase 307)
+
 - **FilenameService 테스트 커버리지**: 유효한 미디어 파일명 형식 검증
   - 형식: `{username}_{tweetId}_{YYYYMMDD}_{index}.{ext}`
   - 예제: `alice_1234567890_20251102_1.jpg`
 
 #### 갤러리 이벤트 리스너 범위 지정 (Phase 307, Phase 305)
-- **초기화 함수 개선**: `initializeGalleryEvents(handlers, galleryRoot?)` 
+
+- **초기화 함수 개선**: `initializeGalleryEvents(handlers, galleryRoot?)`
   - 명시적 `galleryRoot` 파라미터 지원 (선택적)
   - Gallery-scoped 이벤트 리스너 등록
   - AbortController 기반 정리 함수 반환
 
 #### Twitter 스크롤 복원 정확도 개선 (Phase 307, Phase 304)
+
 - **threshold 경계값 처리**: `difference >= threshold` 정확한 비교
   - 스크롤 변화가 threshold 값과 동일할 때도 복원
   - 스크롤 지터 방지 및 안정성 개선
