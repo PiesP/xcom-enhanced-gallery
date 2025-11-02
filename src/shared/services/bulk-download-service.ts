@@ -41,6 +41,48 @@ export interface SingleDownloadResult {
   error?: string;
 }
 
+/**
+ * Phase 313: BulkDownloadService 가용성 확인 결과
+ * HttpRequestService + DownloadService 의존성 포함
+ */
+export interface BulkDownloadAvailabilityResult {
+  /** 서비스 가용성 여부 */
+  available: boolean;
+
+  /** 감지된 환경 ('Tampermonkey', 'Test', 'Extension', 'Console') */
+  environment: string;
+
+  /** 사용자 친화적 메시지 */
+  message: string;
+
+  /** 시뮬레이션 가능 여부 */
+  canSimulate: boolean;
+
+  /** 의존 서비스 상태 */
+  dependencies: {
+    downloadService: {
+      available: boolean;
+      reason?: string;
+    };
+    httpService: {
+      available: boolean;
+      reason?: string;
+    };
+  };
+}
+
+/**
+ * Phase 313: 대량 다운로드 시뮬레이션 결과
+ */
+export interface SimulatedBulkDownloadResult {
+  success: boolean;
+  filesProcessed: number;
+  filesSimulated: number;
+  filenames: string[];
+  error?: string;
+  message: string;
+}
+
 function ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
   return {
     ...media,
@@ -376,6 +418,139 @@ export class BulkDownloadService extends BaseServiceImpl {
 
   public isDownloading(): boolean {
     return this.currentAbortController !== undefined;
+  }
+
+  /**
+   * Phase 313: BulkDownloadService 가용성 확인
+   *
+   * HttpRequestService와 DownloadService의 의존성을 확인합니다.
+   * 테스트 환경과 프로덕션 환경을 구분합니다.
+   *
+   * @returns {Promise<BulkDownloadAvailabilityResult>} 가용성 확인 결과
+   *
+   * @example
+   * const result = await service.validateAvailability();
+   * if (result.available) {
+   *   console.log(`✅ 대량 다운로드 가능: ${result.environment} 환경`);
+   * }
+   */
+  async validateAvailability(): Promise<BulkDownloadAvailabilityResult> {
+    const { detectEnvironment } = await import('@shared/external/userscript');
+    const env = detectEnvironment();
+
+    // HttpRequestService 가용성 확인
+    const httpService = HttpRequestService.getInstance();
+    const httpAvailability = await httpService.validateAvailability();
+
+    // DownloadService 의존성 확인 (GM_download)
+    const gmDownload = (globalThis as Record<string, unknown>).GM_download;
+    const downloadAvailable = !!gmDownload || env.isTestEnvironment;
+
+    const available = httpAvailability.available && downloadAvailable;
+    const canSimulate = env.isTestEnvironment || !gmDownload;
+
+    return {
+      available,
+      environment: env.environment,
+      message: available
+        ? `✅ 대량 다운로드 서비스 준비됨 (${env.environment} 환경, ${available ? '프로덕션' : '테스트'})`
+        : `⚠️ 대량 다운로드 서비스 불가용 (${env.environment} 환경)`,
+      canSimulate,
+      dependencies: {
+        httpService: {
+          available: httpAvailability.available,
+          reason: httpAvailability.message,
+        },
+        downloadService: {
+          available: downloadAvailable,
+          reason: gmDownload ? 'GM_download available' : 'Test environment',
+        },
+      },
+    };
+  }
+
+  /**
+   * Phase 313: 대량 다운로드 시뮬레이션
+   *
+   * 실제 다운로드 없이 여러 미디어 아이템의 다운로드를 시뮬레이션합니다.
+   * 각 아이템마다 100-300ms의 네트워크 지연을 포함합니다.
+   *
+   * @param mediaItems - 다운로드할 미디어 정보 배열
+   * @param options - 다운로드 옵션 (신호, 지연 등)
+   * @returns {Promise<SimulatedBulkDownloadResult>} 시뮬레이션 결과
+   *
+   * @example
+   * const media: MediaInfo[] = [
+   *   { id: '1', url: '...', type: 'image', tweetId: '123' },
+   *   { id: '2', url: '...', type: 'video', tweetId: '456' },
+   * ];
+   *
+   * const result = await service.simulateBulkDownload(media);
+   * // {
+   * //   success: true,
+   * //   filesProcessed: 2,
+   * //   filesSimulated: 2,
+   * //   filenames: ['user_123_image.jpg', 'user_456_video.mp4']
+   * // }
+   */
+  async simulateBulkDownload(
+    mediaItems: (MediaInfo | MediaItem)[],
+    options: BulkDownloadOptions = {}
+  ): Promise<SimulatedBulkDownloadResult> {
+    const filenames: string[] = [];
+    let filesSimulated = 0;
+
+    try {
+      // 취소 신호 확인
+      if (options.signal?.aborted) {
+        return {
+          success: false,
+          filesProcessed: 0,
+          filesSimulated: 0,
+          filenames: [],
+          error: '시뮬레이션 취소됨 (사용자 요청)',
+          message: '❌ 시뮬레이션이 취소되었습니다.',
+        };
+      }
+
+      // 각 미디어 아이템마다 시뮬레이션
+      for (const media of mediaItems) {
+        if (options.signal?.aborted) break;
+
+        try {
+          // 네트워크 지연 시뮬레이션 (100-300ms)
+          const delay = Math.random() * 200 + 100;
+          await new Promise(resolve => globalThis.setTimeout(resolve, delay));
+
+          // 파일명 생성
+          const converted = toFilenameCompatible(media);
+          const filename = generateMediaFilename(converted);
+          filenames.push(filename);
+          filesSimulated++;
+        } catch (itemError) {
+          logger.warn(
+            `시뮬레이션 아이템 실패: ${itemError instanceof Error ? itemError.message : '알 수 없음'}`
+          );
+        }
+      }
+
+      return {
+        success: filesSimulated > 0,
+        filesProcessed: mediaItems.length,
+        filesSimulated,
+        filenames,
+        message: `✅ ${filesSimulated}/${mediaItems.length} 아이템 시뮬레이션 완료`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        filesProcessed: mediaItems.length,
+        filesSimulated,
+        filenames,
+        error: error instanceof Error ? error.message : '시뮬레이션 실패',
+        message: '❌ 대량 다운로드 시뮬레이션 중 오류 발생',
+      };
+    }
   }
 }
 

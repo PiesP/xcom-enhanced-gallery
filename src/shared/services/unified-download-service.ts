@@ -53,6 +53,36 @@ export interface BulkDownloadResult {
   code?: ErrorCode;
 }
 
+export interface UnifiedDownloadAvailabilityResult {
+  available: boolean;
+  environment: string;
+  message: string;
+  canSimulate: boolean;
+  dependencies: {
+    downloadService: {
+      available: boolean;
+      reason?: string;
+    };
+    bulkDownloadService: {
+      available: boolean;
+      reason?: string;
+    };
+    orchestrator: {
+      available: boolean;
+      reason?: string;
+    };
+  };
+}
+
+export interface SimulatedUnifiedDownloadResult {
+  success: boolean;
+  itemsProcessed: number;
+  itemsSimulated: number;
+  filenames: string[];
+  error?: string;
+  message: string;
+}
+
 // ====================================
 // Getter: GM_download 안전 접근
 // ====================================
@@ -96,6 +126,85 @@ export class UnifiedDownloadService {
       this.instance = new UnifiedDownloadService();
     }
     return this.instance;
+  }
+
+  // ====================================
+  // Environment-Aware Methods (Phase 315-Extended)
+  // ====================================
+
+  /**
+   * UnifiedDownloadService 가용성 확인
+   * 세 가지 의존 서비스 상태 검증
+   *
+   * @returns 가용성 정보 및 의존성 상태
+   */
+  async validateAvailability(): Promise<UnifiedDownloadAvailabilityResult> {
+    try {
+      // 1. environment-detector 동적 import
+      const { detectEnvironment } = await import('@shared/external/userscript');
+      const env = detectEnvironment();
+
+      // 2. 의존 서비스 가용성 확인
+      // - DownloadService: GM_download 지원 여부
+      const gmDownload = getGMDownload();
+      const downloadAvailable = !!gmDownload;
+
+      // - BulkDownloadService: 별도로 구성된 서비스
+      const bulkAvailable = true; // 항상 사용 가능 (코드 기반)
+
+      // - DownloadOrchestrator: ZIP 조립 기능
+      const orchestratorAvailable = true; // 항상 사용 가능 (내부 서비스)
+
+      // 3. 전체 가용성 판단
+      const available = downloadAvailable && bulkAvailable && orchestratorAvailable;
+
+      return {
+        available,
+        environment: env.environment,
+        message: available
+          ? `✅ UnifiedDownloadService 준비 완료 (${env.environment})`
+          : `⚠️ UnifiedDownloadService 제한: ${!downloadAvailable ? 'GM_download 미지원' : '서비스 제한'}`,
+        canSimulate: env.isTestEnvironment || available,
+        dependencies: {
+          downloadService: {
+            available: downloadAvailable,
+            reason: downloadAvailable ? 'GM_download 사용 가능' : 'GM_download 미지원',
+          },
+          bulkDownloadService: {
+            available: bulkAvailable,
+            reason: '대량 다운로드 지원',
+          },
+          orchestrator: {
+            available: orchestratorAvailable,
+            reason: 'ZIP 조립 엔진 지원',
+          },
+        },
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '알 수 없는 오류';
+      logger.warn('[UnifiedDownloadService] validateAvailability 오류:', errorMsg);
+
+      return {
+        available: false,
+        environment: 'unknown',
+        message: `❌ 가용성 확인 실패: ${errorMsg}`,
+        canSimulate: false,
+        dependencies: {
+          downloadService: {
+            available: false,
+            reason: errorMsg,
+          },
+          bulkDownloadService: {
+            available: false,
+            reason: errorMsg,
+          },
+          orchestrator: {
+            available: false,
+            reason: errorMsg,
+          },
+        },
+      };
+    }
   }
 
   // ====================================
@@ -326,6 +435,108 @@ export class UnifiedDownloadService {
       };
     } finally {
       this.currentAbortController = undefined;
+    }
+  }
+
+  /**
+   * 통합 다운로드 시뮬레이션
+   * 단일 및 다중 파일 다운로드 시뮬레이션
+   *
+   * @param mediaItems 시뮬레이션할 미디어 아이템 배열
+   * @param options 시뮬레이션 옵션
+   * @returns 시뮬레이션 결과
+   */
+  async simulateUnifiedDownload(
+    mediaItems: Array<MediaInfo | MediaItem>,
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SimulatedUnifiedDownloadResult> {
+    try {
+      // 1. 취소 신호 확인
+      if (options.signal?.aborted) {
+        return {
+          success: false,
+          itemsProcessed: 0,
+          itemsSimulated: 0,
+          filenames: [],
+          error: 'Aborted',
+          message: '❌ 작업이 취소되었습니다',
+        };
+      }
+
+      // 2. 입력 유효성 확인
+      if (mediaItems.length === 0) {
+        return {
+          success: false,
+          itemsProcessed: 0,
+          itemsSimulated: 0,
+          filenames: [],
+          error: 'Empty input',
+          message: '❌ 다운로드할 아이템이 없습니다',
+        };
+      }
+
+      const filenames: string[] = [];
+      let itemsSimulated = 0;
+
+      // 3. 단일 파일과 다중 파일 경로 분기
+      if (mediaItems.length === 1) {
+        // 단일 파일: 빠른 시뮬레이션 (30-80ms)
+        const delay = Math.random() * 50 + 30;
+        await new Promise(resolve => globalThis.setTimeout(resolve, delay));
+
+        const media = mediaItems[0];
+        if (media) {
+          const filename = generateMediaFilename(this.toMediaItemForFilename(media));
+          filenames.push(filename);
+          itemsSimulated++;
+          logger.debug(`[UnifiedDownloadService] 단일 파일 시뮬레이션: ${filename}`);
+        }
+      } else {
+        // 다중 파일: ZIP 시뮬레이션 (200-500ms + 아이템별 50-100ms)
+        const baseDelay = Math.random() * 300 + 200;
+        await new Promise(resolve => globalThis.setTimeout(resolve, baseDelay));
+
+        for (const media of mediaItems) {
+          if (options.signal?.aborted) break;
+
+          // 아이템별 추가 지연
+          const itemDelay = Math.random() * 50 + 50;
+          await new Promise(resolve => globalThis.setTimeout(resolve, itemDelay));
+
+          try {
+            const filename = generateMediaFilename(this.toMediaItemForFilename(media));
+            filenames.push(filename);
+            itemsSimulated++;
+          } catch (itemError) {
+            logger.warn('[UnifiedDownloadService] 아이템 시뮬레이션 오류:', itemError);
+            continue;
+          }
+        }
+
+        // ZIP 파일명 생성
+        const zipFilename = `unified_download_${Date.now()}.zip`;
+        filenames.push(zipFilename);
+      }
+
+      return {
+        success: itemsSimulated > 0,
+        itemsProcessed: mediaItems.length,
+        itemsSimulated,
+        filenames,
+        message: `✅ ${itemsSimulated}/${mediaItems.length} 아이템 통합 다운로드 시뮬레이션 완료`,
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '알 수 없는 오류';
+      logger.error('[UnifiedDownloadService] simulateUnifiedDownload 오류:', errorMsg);
+
+      return {
+        success: false,
+        itemsProcessed: mediaItems.length,
+        itemsSimulated: 0,
+        filenames: [],
+        error: errorMsg,
+        message: `❌ 시뮬레이션 실패: ${errorMsg}`,
+      };
     }
   }
 

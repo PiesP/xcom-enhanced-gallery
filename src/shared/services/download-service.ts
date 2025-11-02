@@ -12,6 +12,16 @@ import { generateMediaFilename } from './file-naming';
 import { NotificationService } from './notification-service';
 import { logger } from '../logging/logger';
 
+/**
+ * Test mode detection result
+ */
+export interface TestModeDetectionResult {
+  isTestMode: boolean;
+  environment: string;
+  message: string;
+  canSimulate: boolean;
+}
+
 export interface DownloadOptions {
   signal?: AbortSignal;
   onProgress?: (progress: { current: number; total: number }) => void;
@@ -61,7 +71,80 @@ export class DownloadService {
   }
 
   /**
-   * Download single media file
+   * Detect if running in test mode and determine simulation capability
+   * Uses environment-detector (Phase 314-1) for 4-signal environment detection
+   *
+   * @returns Test mode detection result with environment context
+   */
+  async detectTestMode(): Promise<TestModeDetectionResult> {
+    const { detectEnvironment } = await import('@shared/external/userscript');
+
+    const env = detectEnvironment();
+    const gmDownload = (globalThis as Record<string, unknown>).GM_download;
+
+    const isTestMode = env.isTestEnvironment || !gmDownload;
+
+    return {
+      isTestMode,
+      environment: env.environment,
+      message: isTestMode
+        ? `✅ Test mode detected in ${env.environment} environment. Simulation will be used instead of GM_download.`
+        : `✅ Production mode in ${env.environment} environment. Real GM_download will be used.`,
+      canSimulate: true, // Always can simulate
+    };
+  }
+
+  /**
+   * Simulate download for testing purposes
+   * Does not make actual network requests, just simulates behavior
+   *
+   * @param media Media to simulate downloading
+   * @param options Download options (supports abort signal, progress callback)
+   * @returns Simulated download result
+   */
+  async simulateDownload(
+    media: MediaInfo,
+    options: DownloadOptions = {}
+  ): Promise<SingleDownloadResult> {
+    try {
+      if (options.signal?.aborted) {
+        return { success: false, error: 'Download cancelled' };
+      }
+
+      const filename = generateMediaFilename({
+        id: media.id,
+        url: media.url,
+        type: media.type,
+        ...(media.originalUrl && { originalUrl: media.originalUrl }),
+        ...(media.filename && { filename: media.filename }),
+        ...(media.tweetUsername && { tweetUsername: media.tweetUsername }),
+        ...(media.tweetId && { tweetId: media.tweetId }),
+      });
+
+      // Simulate network delay (100-300ms)
+      const delay = Math.random() * 200 + 100;
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+      if (options.signal?.aborted) {
+        return { success: false, error: 'Download cancelled' };
+      }
+
+      logger.debug(`[DownloadService] Simulated download: ${filename}`, {
+        url: media.url,
+        delay,
+      });
+
+      return { success: true, filename };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Simulation error';
+      logger.error(`[DownloadService] Simulation failed:`, error);
+      return { success: false, error: errorMsg };
+    }
+  }
+
+  /**
+   * Download single media file with test mode awareness
+   * Automatically uses simulation in test environments
    */
   async downloadSingle(
     media: MediaInfo,

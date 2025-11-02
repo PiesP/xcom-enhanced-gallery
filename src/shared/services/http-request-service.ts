@@ -132,10 +132,25 @@ function parseResponseData(
 }
 
 /**
+ * Validation result for HTTP request availability
+ */
+export interface AvailabilityCheckResult {
+  available: boolean;
+  environment: string;
+  message: string;
+  canFallback: boolean;
+}
+
+/**
  * Singleton HTTP Request Service
  *
  * Provides a type-safe wrapper around Tampermonkey's GM_xmlHttpRequest API.
  * Supports GET, POST, PUT, and DELETE methods with Promise-based interface.
+ *
+ * Features:
+ * - Phase 314: Environment-aware error messages
+ * - Detects Tampermonkey, test, extension, and console environments
+ * - Provides clear fallback suggestions in non-Tampermonkey environments
  */
 export class HttpRequestService {
   private static instance: HttpRequestService;
@@ -157,7 +172,43 @@ export class HttpRequestService {
   }
 
   /**
+   * Validate if GM_xmlHttpRequest is available and return environment info
+   *
+   * Phase 314-2: Environment-aware validation
+   *
+   * @returns Availability status with environment-specific guidance
+   *
+   * @example
+   * ```typescript
+   * const validation = await httpService.validateAvailability();
+   * if (!validation.available) {
+   *   console.warn(validation.message); // Details about why GM API is unavailable
+   * }
+   * ```
+   */
+  async validateAvailability(): Promise<AvailabilityCheckResult> {
+    // Dynamically import to avoid circular dependencies
+    const { detectEnvironment, getEnvironmentDescription } = await import(
+      '@shared/external/userscript'
+    );
+
+    const env = detectEnvironment();
+    const gmXhr = getGMXmlHttpRequest();
+
+    return {
+      available: !!gmXhr,
+      environment: env.environment,
+      message: gmXhr
+        ? `✅ GM_xmlHttpRequest available in ${env.environment} environment (${env.availableGMAPIs.length} APIs)`
+        : `⚠️ GM_xmlHttpRequest not available. ${getEnvironmentDescription(env)}. HttpRequestService requires Tampermonkey.`,
+      canFallback: env.isTestEnvironment || env.isBrowserConsole,
+    };
+  }
+
+  /**
    * Perform a generic HTTP request
+   *
+   * Phase 314-2: Environment-aware error handling
    */
   private request<T = unknown>(
     method: string,

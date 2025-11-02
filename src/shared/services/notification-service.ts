@@ -1,6 +1,7 @@
 /**
- * @fileoverview Notification Service
+ * @fileoverview Notification Service - Phase 315
  * @description Direct Tampermonkey GM_notification wrapper for system notifications
+ *              with environment-aware error handling
  */
 
 import { logger } from '@shared/logging';
@@ -14,6 +15,16 @@ export interface NotificationOptions {
   image?: string;
   timeout?: number;
   onclick?: () => void;
+}
+
+/**
+ * Availability check result for notifications - Phase 315
+ */
+export interface NotificationAvailabilityCheckResult {
+  available: boolean;
+  environment: string;
+  message: string;
+  canFallback: boolean;
 }
 
 /**
@@ -32,12 +43,21 @@ interface GlobalWithGMNotification {
 /**
  * Notification Service using Tampermonkey API
  *
- * Direct GM_notification usage for system notifications.
+ * Direct GM_notification usage for system notifications with environment awareness.
+ * Phase 315: Added validateAvailability() for environment-aware error handling.
  * No UI components, no state management - just simple notifications.
  *
  * @example
  * ```typescript
  * const notifier = NotificationService.getInstance();
+ *
+ * // Check availability before using
+ * const availability = await notifier.validateAvailability();
+ * if (!availability.available) {
+ *   console.log(availability.message);
+ * }
+ *
+ * // Show notifications
  * notifier.show({
  *   title: 'Download Started',
  *   text: 'Downloading 5 images...',
@@ -63,7 +83,44 @@ export class NotificationService {
   }
 
   /**
+   * Validate notification availability in current environment - Phase 315
+   *
+   * Checks if GM_notification is available and provides environment-specific guidance.
+   *
+   * @returns Availability check result with environment details
+   *
+   * @example
+   * ```typescript
+   * const result = await notifier.validateAvailability();
+   * console.log(result.available);   // boolean
+   * console.log(result.environment); // 'userscript' | 'test' | 'extension' | 'console'
+   * console.log(result.message);     // Environment-specific guidance
+   * console.log(result.canFallback); // Whether fallback is possible
+   * ```
+   */
+  async validateAvailability(): Promise<NotificationAvailabilityCheckResult> {
+    const { detectEnvironment, getEnvironmentDescription } = await import(
+      '@shared/external/userscript'
+    );
+
+    const env = detectEnvironment();
+    const gmNotif = (globalThis as GlobalWithGMNotification).GM_notification;
+
+    return {
+      available: !!gmNotif,
+      environment: env.environment,
+      message: gmNotif
+        ? `✅ GM_notification available in ${env.environment} environment. Notifications enabled.`
+        : `⚠️ GM_notification not available. ${getEnvironmentDescription(env)} Consider using toast/UI fallback.`,
+      canFallback: env.isTestEnvironment || env.isBrowserConsole || env.isBrowserExtension,
+    };
+  }
+
+  /**
    * Show notification
+   *
+   * Displays a notification using GM_notification if available.
+   * Phase 315: Logs environment-aware warnings when API is unavailable.
    *
    * @param options Notification options
    */
@@ -71,7 +128,11 @@ export class NotificationService {
     try {
       const gm = globalThis as GlobalWithGMNotification;
       if (!gm.GM_notification) {
-        logger.warn('GM_notification not available');
+        // Phase 315: Log environment context for debugging
+        const availability = await this.validateAvailability();
+        logger.warn(
+          `GM_notification not available in ${availability.environment} environment. ${availability.message}`
+        );
         return;
       }
 

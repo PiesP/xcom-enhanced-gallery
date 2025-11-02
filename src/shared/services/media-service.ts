@@ -62,6 +62,32 @@ export interface SingleDownloadResult {
   code?: ErrorCode;
 }
 
+export interface MediaAvailabilityResult {
+  available: boolean;
+  environment: string;
+  message: string;
+  canSimulate: boolean;
+  dependencies: {
+    httpService: {
+      available: boolean;
+      reason?: string;
+    };
+  };
+}
+
+export interface SimulatedMediaFetchResult {
+  success: boolean;
+  itemsProcessed: number;
+  itemsSimulated: number;
+  simulatedData: Array<{
+    url: string;
+    mimeType: string;
+    timestamp: number;
+  }>;
+  error?: string;
+  message: string;
+}
+
 import { MediaExtractionService } from './media-extraction/media-extraction-service';
 import { FallbackExtractor } from './media/fallback-extractor';
 import { VideoControlService } from './media/video-control-service';
@@ -194,6 +220,164 @@ export class MediaService extends BaseServiceImpl {
 
   parseUsernameFast(element?: HTMLElement | Document): string | null {
     return parseUsernameFast(element);
+  }
+
+  // ====================================
+  // Environment-Aware Methods (Phase 314-Extended)
+  // ====================================
+
+  /**
+   * MediaService 가용성 확인
+   * HttpRequestService 의존성 및 환경 상태 검증
+   *
+   * @returns 가용성 정보 및 의존성 상태
+   */
+  async validateAvailability(): Promise<MediaAvailabilityResult> {
+    try {
+      // 1. environment-detector 동적 import
+      const { detectEnvironment } = await import('@shared/external/userscript');
+      const env = detectEnvironment();
+
+      // 2. HttpRequestService 가용성 확인
+      const httpService = HttpRequestService.getInstance();
+      const httpAvailability = await httpService.validateAvailability();
+
+      // 3. 메인 기능 (미디어 추출 + 페치)은 HttpService 의존
+      const available = httpAvailability.available;
+
+      return {
+        available,
+        environment: env.environment,
+        message: available
+          ? `✅ MediaService 준비 완료 (${env.environment})`
+          : `⚠️ MediaService 제한: ${httpAvailability.message}`,
+        canSimulate: env.isTestEnvironment || available,
+        dependencies: {
+          httpService: {
+            available: httpAvailability.available,
+            reason: httpAvailability.message,
+          },
+        },
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '알 수 없는 오류';
+      logger.warn('[MediaService] validateAvailability 오류:', errorMsg);
+
+      return {
+        available: false,
+        environment: 'unknown',
+        message: `❌ 가용성 확인 실패: ${errorMsg}`,
+        canSimulate: false,
+        dependencies: {
+          httpService: {
+            available: false,
+            reason: errorMsg,
+          },
+        },
+      };
+    }
+  }
+
+  /**
+   * 미디어 fetch 시뮬레이션
+   * 여러 미디어 아이템의 fetch 작업을 시뮬레이션합니다.
+   *
+   * @param mediaItems fetch할 미디어 아이템 배열
+   * @param options 시뮬레이션 옵션
+   * @returns 시뮬레이션 결과
+   */
+  async simulateMediaFetch(
+    mediaItems: (MediaInfo | MediaItem)[],
+    options: { signal?: AbortSignal } = {}
+  ): Promise<SimulatedMediaFetchResult> {
+    try {
+      // 1. 취소 신호 확인
+      if (options.signal?.aborted) {
+        return {
+          success: false,
+          itemsProcessed: 0,
+          itemsSimulated: 0,
+          simulatedData: [],
+          error: 'Aborted',
+          message: '❌ 작업이 취소되었습니다',
+        };
+      }
+
+      const simulatedData: Array<{
+        url: string;
+        mimeType: string;
+        timestamp: number;
+      }> = [];
+      let itemsSimulated = 0;
+
+      // 2. 각 미디어 아이템 처리
+      for (const media of mediaItems) {
+        if (options.signal?.aborted) break;
+
+        try {
+          // 3. 네트워크 지연 시뮬레이션 (50-200ms)
+          const delay = Math.random() * 150 + 50;
+          await new Promise(resolve => globalThis.setTimeout(resolve, delay));
+
+          // 4. 미디어 정보 추출
+          const mediaObj = media as unknown as Record<string, unknown>;
+          const mediaUrl = (mediaObj.url || mediaObj.media_url || '') as string;
+          const mediaTypeValue = (mediaObj.media_type || mediaObj.type || 'media') as string;
+
+          // 5. 미디어 타입에 따른 MIME 타입 결정
+          const mimeType = this.getMimeTypeFromMediaType(mediaTypeValue);
+
+          // 6. 시뮬레이션된 데이터 추가
+          simulatedData.push({
+            url: mediaUrl,
+            mimeType,
+            timestamp: Date.now(),
+          });
+
+          itemsSimulated++;
+        } catch (itemError) {
+          logger.warn('[MediaService] 미디어 아이템 시뮬레이션 오류:', itemError);
+          // 개별 아이템 오류는 무시하고 계속 진행
+          continue;
+        }
+      }
+
+      return {
+        success: itemsSimulated > 0,
+        itemsProcessed: mediaItems.length,
+        itemsSimulated,
+        simulatedData,
+        message: `✅ ${itemsSimulated}/${mediaItems.length} 미디어 아이템 fetch 시뮬레이션 완료`,
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : '알 수 없는 오류';
+      logger.error('[MediaService] simulateMediaFetch 오류:', errorMsg);
+
+      return {
+        success: false,
+        itemsProcessed: 0,
+        itemsSimulated: 0,
+        simulatedData: [],
+        error: errorMsg,
+        message: `❌ 시뮬레이션 실패: ${errorMsg}`,
+      };
+    }
+  }
+
+  /**
+   * 미디어 타입에서 MIME 타입 추출
+   *
+   * @param mediaType 미디어 타입 (photo, video, animated_gif, media 등)
+   * @returns MIME 타입 문자열
+   */
+  private getMimeTypeFromMediaType(mediaType: string): string {
+    const typeMap: Record<string, string> = {
+      photo: 'image/jpeg',
+      video: 'video/mp4',
+      animated_gif: 'video/mp4',
+      media: 'application/octet-stream',
+    };
+    return typeMap[mediaType] || 'application/octet-stream';
   }
 
   // ====================================

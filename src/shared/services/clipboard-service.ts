@@ -20,6 +20,16 @@ export interface ClipboardResult {
 }
 
 /**
+ * Clipboard availability check result with environment context
+ */
+export interface ClipboardAvailabilityCheckResult {
+  available: boolean;
+  environment: string;
+  message: string;
+  canFallback: boolean;
+}
+
+/**
  * Interface for GM_setClipboard function
  */
 interface GlobalWithGMSetClipboard {
@@ -66,6 +76,30 @@ export class ClipboardService {
   }
 
   /**
+   * Check if GM_setClipboard is available in current environment
+   * Detects Tampermonkey, test, extension, and console environments
+   *
+   * @returns Availability check result with environment context
+   */
+  async validateAvailability(): Promise<ClipboardAvailabilityCheckResult> {
+    const { detectEnvironment, getEnvironmentDescription } = await import(
+      '@shared/external/userscript'
+    );
+
+    const env = detectEnvironment();
+    const gmSetClipboard = (globalThis as GlobalWithGMSetClipboard).GM_setClipboard;
+
+    return {
+      available: !!gmSetClipboard,
+      environment: env.environment,
+      message: gmSetClipboard
+        ? `✅ GM_setClipboard available in ${env.environment} environment.`
+        : `⚠️ GM_setClipboard not available. ${getEnvironmentDescription(env)}. Consider using DOM fallback or manual copy.`,
+      canFallback: env.isTestEnvironment || env.isBrowserConsole || env.isBrowserExtension,
+    };
+  }
+
+  /**
    * Copy text to clipboard
    *
    * @param text Text to copy
@@ -77,11 +111,12 @@ export class ClipboardService {
       const gmSetClipboard = getGMSetClipboard();
 
       if (!gmSetClipboard) {
-        const error = 'Tampermonkey GM_setClipboard not available';
+        const availability = await this.validateAvailability();
+        const error = availability.message;
         logger.warn('ClipboardService.copyText:', error);
 
         if (showNotification) {
-          await this.notificationService.error('복사 실패', 'Tampermonkey 필수');
+          await this.notificationService.error('Copy failed', 'Tampermonkey required');
         }
 
         return { success: false, error };
@@ -96,7 +131,7 @@ export class ClipboardService {
       });
 
       if (showNotification) {
-        await this.notificationService.success('복사 완료', `${text.length}자 복사됨`);
+        await this.notificationService.success('Copy complete', `${text.length} characters copied`);
       }
 
       return { success: true };
@@ -105,7 +140,7 @@ export class ClipboardService {
       logger.error('ClipboardService.copyText failed:', error);
 
       if (showNotification) {
-        await this.notificationService.error('복사 오류', msg);
+        await this.notificationService.error('Copy error', msg);
       }
 
       return { success: false, error: msg };
@@ -124,9 +159,12 @@ export class ClipboardService {
     const result = await this.copyText(url, false);
 
     if (result.success) {
-      await this.notificationService.success('URL 복사', displayLabel);
+      logger.debug('ClipboardService.copyURL: success', { label: displayLabel });
+      await this.notificationService.success('Copy URL', displayLabel);
     } else {
-      await this.notificationService.error('URL 복사 실패', displayLabel);
+      const availability = await this.validateAvailability();
+      logger.warn('ClipboardService.copyURL failed:', availability.message);
+      await this.notificationService.error('Copy URL failed', displayLabel);
     }
 
     return result;
