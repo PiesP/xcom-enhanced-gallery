@@ -7,7 +7,7 @@ import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
 import { IconButton } from '../Button/IconButton';
 import { ChevronLeft, ChevronRight, Download, FileZip, Settings, X } from '../Icon';
-import { SettingsControls } from '../Settings/SettingsControls';
+import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
 import styles from './Toolbar.module.css';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
 import type { ToolbarState } from '../../../hooks/use-toolbar-state';
@@ -243,7 +243,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         onClick={props.settingsController.handlePanelClick}
       >
         <solid.Show when={props.settingsController.isSettingsExpanded()}>
-          <SettingsControls
+          <SettingsControlsLazy
             currentTheme={props.settingsController.currentTheme() as ThemeOption}
             currentLanguage={props.settingsController.currentLanguage() as LanguageOption}
             onThemeChange={props.settingsController.handleThemeChange}
