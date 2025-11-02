@@ -19,27 +19,6 @@ export {
   parseColor,
 } from './utils';
 
-// === 바이너리 유틸리티 (18개) - Phase 320: 신규 추가 ===
-export {
-  stringToUint8Array,
-  uint8ArrayToString,
-  blobToUint8Array,
-  blobToArrayBuffer,
-  uint8ArrayToBlob,
-  arrayBufferToUint8Array,
-  uint8ArrayToArrayBuffer,
-  arrayBufferToBlob,
-  isValidBlobData,
-  isValidBinaryData,
-  getBinarySize,
-  concatenateUint8Arrays,
-  concatenateBlobs,
-  jsonToBlob,
-  blobToJson,
-  sha256,
-  md5,
-} from './binary-utils';
-
 // === 타이머 관리 (4개) ===
 export {
   TimerManager,
@@ -136,16 +115,8 @@ export {
   isExtensionEnvironment,
 } from './browser';
 
-// === 컴포넌트 유틸리티 (8개) - Phase 2-3A: 추가 ===
-export {
-  createClassName,
-  createAriaProps,
-  createTestProps,
-  handleLoadingState,
-  mergeProps,
-  validateProps,
-  type ValidationResult,
-} from './component-utils';
+// === 컴포넌트 유틸리티 (4개) - Phase 2-3A: 추가 ===
+export { createClassName, createAriaProps, createTestProps, mergeProps } from './component-utils';
 
 // === UI 유틸리티 (3개) - services에서 이동 ===
 export {

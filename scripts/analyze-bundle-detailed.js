@@ -42,9 +42,9 @@ function scanSourceFiles() {
   // Feature modules
   const featureDir = path.resolve(srcDir, 'features');
   if (fs.existsSync(featureDir)) {
-    const features = fs.readdirSync(featureDir).filter(f => 
-      fs.statSync(path.join(featureDir, f)).isDirectory()
-    );
+    const features = fs
+      .readdirSync(featureDir)
+      .filter(f => fs.statSync(path.join(featureDir, f)).isDirectory());
 
     features.forEach(feature => {
       const featurePath = path.join(featureDir, feature);
@@ -91,7 +91,7 @@ function scanDirectory(dirPath) {
   let stats = { files: 0, lines: 0, size: 0, modules: {} };
 
   try {
-    const walk = (dir) => {
+    const walk = dir => {
       const files = fs.readdirSync(dir);
       files.forEach(file => {
         const fullPath = path.join(dir, file);
@@ -209,7 +209,7 @@ function analyzeDeadCode() {
       if (file.endsWith('.ts') || file.endsWith('.tsx')) {
         const filePath = path.join(utilDir, file);
         const content = fs.readFileSync(filePath, 'utf8');
-        
+
         // Simple heuristic: count exported functions
         const exports = content.match(/export\s+(function|const|class)/g) || [];
         if (exports.length > 5) {
@@ -277,15 +277,25 @@ async function performDetailedAnalysis() {
 
     console.log('Feature Modules:');
     Object.entries(sourceStats.features).forEach(([name, stats]) => {
-      console.log(`  ${name.padEnd(25)}: ${stats.files.toString().padStart(3)} files | ${formatBytes(stats.size).padStart(12)} | ${stats.lines.toString().padStart(5)} lines`);
+      console.log(
+        `  ${name.padEnd(25)}: ${stats.files.toString().padStart(3)} files | ${formatBytes(stats.size).padStart(12)} | ${stats.lines.toString().padStart(5)} lines`
+      );
     });
 
     console.log('\nCore Modules:');
-    console.log(`  shared${' '.repeat(19)}: ${sourceStats.shared.files.toString().padStart(3)} files | ${formatBytes(sourceStats.shared.size).padStart(12)} | ${sourceStats.shared.lines.toString().padStart(5)} lines`);
-    console.log(`  bootstrap${' '.repeat(16)}: ${sourceStats.bootstrap.files.toString().padStart(3)} files | ${formatBytes(sourceStats.bootstrap.size).padStart(12)} | ${sourceStats.bootstrap.lines.toString().padStart(5)} lines`);
-    console.log(`  styles${' '.repeat(19)}: ${sourceStats.styles.files.toString().padStart(3)} files | ${formatBytes(sourceStats.styles.size).padStart(12)} | ${sourceStats.styles.lines.toString().padStart(5)} lines`);
+    console.log(
+      `  shared${' '.repeat(19)}: ${sourceStats.shared.files.toString().padStart(3)} files | ${formatBytes(sourceStats.shared.size).padStart(12)} | ${sourceStats.shared.lines.toString().padStart(5)} lines`
+    );
+    console.log(
+      `  bootstrap${' '.repeat(16)}: ${sourceStats.bootstrap.files.toString().padStart(3)} files | ${formatBytes(sourceStats.bootstrap.size).padStart(12)} | ${sourceStats.bootstrap.lines.toString().padStart(5)} lines`
+    );
+    console.log(
+      `  styles${' '.repeat(19)}: ${sourceStats.styles.files.toString().padStart(3)} files | ${formatBytes(sourceStats.styles.size).padStart(12)} | ${sourceStats.styles.lines.toString().padStart(5)} lines`
+    );
 
-    console.log(`\n  ${'TOTAL'.padEnd(25)}: ${sourceStats.total.files.toString().padStart(3)} files | ${formatBytes(sourceStats.total.size).padStart(12)} | ${sourceStats.total.lines.toString().padStart(5)} lines`);
+    console.log(
+      `\n  ${'TOTAL'.padEnd(25)}: ${sourceStats.total.files.toString().padStart(3)} files | ${formatBytes(sourceStats.total.size).padStart(12)} | ${sourceStats.total.lines.toString().padStart(5)} lines`
+    );
 
     // 2. Optional features analysis
     console.log('\n\n🎯 Optional Features Analysis:\n');
@@ -295,7 +305,9 @@ async function performDetailedAnalysis() {
     Object.entries(optionalFeatures).forEach(([name, feature]) => {
       const size = feature.actualSize || feature.estimatedSize * 1024; // Convert KB to bytes
       optionalTotalSize += size;
-      console.log(`  ${name.padEnd(20)}: ${formatBytes(size).padStart(12)} | ${feature.fileCount} files | ${feature.description}`);
+      console.log(
+        `  ${name.padEnd(20)}: ${formatBytes(size).padStart(12)} | ${feature.fileCount} files | ${feature.description}`
+      );
     });
     console.log(`  ${'TOTAL OPTIONAL'.padEnd(20)}: ${formatBytes(optionalTotalSize).padStart(12)}`);
 
@@ -320,7 +332,9 @@ async function performDetailedAnalysis() {
 
     console.log('\nOptimization Opportunities:');
     treeshaking.optimization.forEach(item => {
-      console.log(`  - ${item.area.padEnd(25)}: ${item.saving.padStart(10)} saving (${item.effort} effort)`);
+      console.log(
+        `  - ${item.area.padEnd(25)}: ${item.saving.padStart(10)} saving (${item.effort} effort)`
+      );
     });
 
     // 5. Summary
@@ -331,7 +345,9 @@ async function performDetailedAnalysis() {
     const potentialSavings = 30 + 5 + 3; // Tier 1-3 optimizations
 
     console.log(`Current Bundle:          ${bundleSize.toFixed(2)} KB`);
-    console.log(`Optional Features:       ${optionalKB.toFixed(2)} KB (${((optionalKB / bundleSize) * 100).toFixed(1)}%)`);
+    console.log(
+      `Optional Features:       ${optionalKB.toFixed(2)} KB (${((optionalKB / bundleSize) * 100).toFixed(1)}%)`
+    );
     console.log(`Tree-shaking Potential:  ~${potentialSavings} KB`);
     console.log(`Target Size:             310-315 KB`);
     console.log(`\nEstimated Achievable:    ${(bundleSize - potentialSavings).toFixed(2)} KB`);

@@ -86,19 +86,6 @@ export const animateCustom = async (
   });
 };
 
-export const animateParallel = async (
-  animations: Array<{
-    element: Element;
-    keyframes: Record<string, string | number>;
-    options?: { duration?: number; easing?: string; delay?: number };
-  }>
-): Promise<void> => {
-  const promises = animations.map(({ element, keyframes, options }) =>
-    animateCustom(element, keyframes, options)
-  );
-  await Promise.all(promises);
-};
-
 // Motion One 특수 기능들을 간소화된 버전으로 교체
 export const setupScrollAnimation = (
   onScroll: (info: { scrollY: number; progress: number }) => void,

@@ -43,13 +43,6 @@ export function createTestProps(testId?: string): Record<string, string | undefi
 }
 
 /**
- * 로딩 상태 처리
- */
-export function handleLoadingState(loading?: boolean, disabled?: boolean): boolean {
-  return Boolean(loading || disabled);
-}
-
-/**
  * Props 병합 유틸리티
  */
 export function mergeProps<T extends BaseComponentProps>(
@@ -91,54 +84,5 @@ export function mergeProps<T extends BaseComponentProps>(
     ...overrideProps,
     ...mergedEventHandlers,
     className: mergedClassName || undefined,
-  };
-}
-
-/**
- * Props 유효성 검증
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-export function validateProps<T extends BaseComponentProps>(
-  props: T,
-  requiredProps: (keyof T)[] = [],
-  validationRules: Partial<Record<keyof T, (value: unknown) => boolean>> = {}
-): ValidationResult {
-  const errors: string[] = [];
-
-  // 필수 props 검증
-  requiredProps.forEach(propName => {
-    if (props[propName] === undefined || props[propName] === null) {
-      errors.push(`Required prop '${String(propName)}' is missing`);
-    }
-  });
-
-  // 커스텀 유효성 규칙 검증
-  Object.entries(validationRules).forEach(([propName, validator]) => {
-    const value = props[propName as keyof T];
-    if (value !== undefined && validator && !validator(value)) {
-      errors.push(`Invalid value for prop '${propName}': ${value}`);
-    }
-  });
-
-  // ARIA 속성 검증
-  if (props['aria-label'] && typeof props['aria-label'] !== 'string') {
-    errors.push('aria-label must be a string');
-  }
-
-  if (props.role && typeof props.role !== 'string') {
-    errors.push('role must be a string');
-  }
-
-  if (props.tabIndex !== undefined && typeof props.tabIndex !== 'number') {
-    errors.push('tabIndex must be a number');
-  }
-
-  return {
-    isValid: errors.length === 0,
-    errors,
   };
 }
