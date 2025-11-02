@@ -11,6 +11,7 @@ import { languageService } from './language-service';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
 import { DownloadOrchestrator } from './download/download-orchestrator';
+import { HttpRequestService } from './http-request-service';
 import type { DownloadProgress } from './download/types';
 import { BaseServiceImpl } from './base-service';
 
@@ -82,6 +83,7 @@ export class BulkDownloadService extends BaseServiceImpl {
     options: { signal?: AbortSignal } = {}
   ): Promise<SingleDownloadResult> {
     try {
+      const httpService = HttpRequestService.getInstance();
       const converted = toFilenameCompatible(media);
       const filename = generateMediaFilename(converted);
       const download = getNativeDownload();
@@ -95,9 +97,14 @@ export class BulkDownloadService extends BaseServiceImpl {
         defaultTimeout.addEventListener('abort', onAbort, { once: true });
         signal = controller.signal;
       }
-      const response = await fetch(media.url, { ...(signal ? { signal } : {}) } as RequestInit);
-      if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      const blob = await response.blob();
+      const httpOptions = {
+        responseType: 'blob' as const,
+        timeout: 20000,
+        ...(signal ? { signal } : {}),
+      };
+      const response = await httpService.get<Blob>(media.url, httpOptions);
+      if (!response.ok) throw new Error(`HTTP ${response.status}: error`);
+      const blob = response.data;
       download.downloadBlob(blob, filename);
       logger.debug(`[BulkDownloadService] Downloaded: ${filename}`);
       return { success: true, status: 'success', filename };
