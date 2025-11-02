@@ -158,11 +158,12 @@ export class EventManager extends BaseServiceImpl {
 
   /**
    * 갤러리 이벤트 초기화
+   * Phase 305: cleanup 함수 반환
    */
   public async initializeGallery(
     handlers: EventHandlers,
     options?: Partial<GalleryEventOptions>
-  ): Promise<void> {
+  ): Promise<() => void> {
     return initializeGalleryEvents(handlers, options);
   }
 

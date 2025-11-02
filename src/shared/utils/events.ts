@@ -504,11 +504,12 @@ function ensureScopedEventTarget(
 
 /**
  * 갤러리 이벤트 초기화
+ * Phase 305: cleanup 함수를 반환
  */
 export async function initializeGalleryEvents(
   handlers: EventHandlers,
   options: Partial<GalleryEventOptions> = {}
-): Promise<void> {
+): Promise<() => void> {
   try {
     if (galleryEventState.initialized) {
       cleanupGalleryEvents();
@@ -546,6 +547,11 @@ export async function initializeGalleryEvents(
     ensureScopedEventTarget(keyHandler, clickHandler, finalOptions);
 
     galleryEventState.initialized = true;
+
+    // Phase 305: cleanup 함수 반환
+    return () => {
+      cleanupGalleryEvents();
+    };
   } catch (error) {
     logger.error('Failed to initialize gallery events:', error);
     throw error;
