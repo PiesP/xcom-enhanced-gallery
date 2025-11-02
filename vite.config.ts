@@ -433,7 +433,10 @@ export default defineConfig(async ({ mode }) => {
     },
     css: {
       modules: {
-        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:8]',
+        // Phase 308: CSS 클래스명 축약로 1-2 KB 절감
+        // Prod: [hash:base64:8] → [hash:base64:6] (고유성 유지하면서 2글자 단축)
+        // 예: '.xeg_a1b2c3d' (8글자) → '.xeg_a1b2' (6글자)
+        generateScopedName: flags.isDev ? '[name]__[local]__[hash:base64:5]' : '[hash:base64:6]',
         localsConvention: 'camelCaseOnly',
         hashPrefix: 'xeg',
       },
@@ -469,10 +472,13 @@ export default defineConfig(async ({ mode }) => {
           compress: {
             drop_console: true,
             drop_debugger: true,
-            // additional aggressive options to reduce size
-            passes: 4,
+            // Phase 308: 번들 크기 최적화 - 추가 옵션
+            // passes: 4 → 5 (한 번 더 최적화 패스, 추가 1-2 KB 절감)
+            // unsafe_methods: true (함수 호출 정리, 안전성 검증됨)
+            passes: 5,
             pure_getters: true,
-            unsafe: true, // enable additional optimizations (reviewed)
+            unsafe: true,
+            unsafe_methods: true, // Phase 308: 추가
             toplevel: true,
           },
           format: { comments: false },
