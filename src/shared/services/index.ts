@@ -108,6 +108,8 @@ export {
   NotificationService,
   getNotificationService,
   type NotificationOptions,
+  type NotificationProvider,
+  type NotificationProviderInfo,
 } from './notification-service';
 export {
   UnifiedDownloadService,
@@ -121,6 +123,8 @@ export {
   downloadService,
   type BlobDownloadOptions,
   type BlobDownloadResult,
+  type TestModeDownloadOptions,
+  type TestModeDownloadResult,
 } from './download-service';
 export {
   HttpRequestService,
@@ -130,6 +134,15 @@ export {
   type HttpResponse,
   HttpError,
 } from './http-request-service';
+
+// Error Formatter (Phase 314-2)
+export {
+  formatErrorMessage,
+  formatErrorForLogging,
+  createErrorContext,
+  type ErrorContext,
+  type FormattedError,
+} from './error-formatter';
 
 // 7. 클립보드 서비스 (Phase 311)
 export { ClipboardService, clipboardService, type ClipboardResult } from './clipboard-service';

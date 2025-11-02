@@ -1,10 +1,25 @@
 /**
  * @fileoverview Notification Service - Phase 315
  * @description Direct Tampermonkey GM_notification wrapper for system notifications
- *              with environment-aware error handling
+ *              with environment-aware error handling and fallback providers
  */
 
 import { logger } from '@shared/logging';
+
+/**
+ * Notification provider type - Phase 314-3
+ */
+export type NotificationProvider = 'gm' | 'console' | 'none';
+
+/**
+ * Notification provider info - Phase 314-3
+ */
+export interface NotificationProviderInfo {
+  provider: NotificationProvider;
+  available: boolean;
+  fallback: NotificationProvider | null;
+  description: string;
+}
 
 /**
  * Notification options
@@ -83,6 +98,48 @@ export class NotificationService {
   }
 
   /**
+   * Get notification provider for current environment - Phase 314-3
+   *
+   * Determines the best notification provider based on environment availability.
+   * Priority: GM > Console > None
+   *
+   * @returns Notification provider info
+   *
+   * @example
+   * ```typescript
+   * const notifier = NotificationService.getInstance();
+   * const providerInfo = await notifier.getNotificationProvider();
+   * console.error(providerInfo.provider); // 'gm' | 'console' | 'none'
+   * console.error(providerInfo.available); // boolean
+   * console.error(providerInfo.fallback); // Next fallback provider
+   * ```
+   */
+  async getNotificationProvider(): Promise<NotificationProviderInfo> {
+    const { detectEnvironment } = await import('@shared/external/userscript');
+
+    const env = detectEnvironment();
+    const gmNotif = (globalThis as GlobalWithGMNotification).GM_notification;
+
+    // Priority: GM > Console > None
+    if (gmNotif) {
+      return {
+        provider: 'gm',
+        available: true,
+        fallback: 'console',
+        description: `✅ Using GM_notification in ${env.environment} environment`,
+      };
+    }
+
+    // Fallback to console (always available in browsers)
+    return {
+      provider: 'console',
+      available: true,
+      fallback: 'none',
+      description: `⚠️ GM_notification unavailable. Using console fallback in ${env.environment} environment`,
+    };
+  }
+
+  /**
    * Validate notification availability in current environment - Phase 315
    *
    * Checks if GM_notification is available and provides environment-specific guidance.
@@ -119,31 +176,42 @@ export class NotificationService {
   /**
    * Show notification
    *
-   * Displays a notification using GM_notification if available.
+   * Displays a notification using GM_notification if available, with fallback to console.
+   * Phase 314-3: Uses getNotificationProvider() to determine best provider and fallback.
    * Phase 315: Logs environment-aware warnings when API is unavailable.
    *
    * @param options Notification options
    */
   async show(options: NotificationOptions): Promise<void> {
     try {
-      const gm = globalThis as GlobalWithGMNotification;
-      if (!gm.GM_notification) {
-        // Phase 315: Log environment context for debugging
-        const availability = await this.validateAvailability();
-        logger.warn(
-          `GM_notification not available in ${availability.environment} environment. ${availability.message}`
-        );
-        return;
-      }
+      const provider = await this.getNotificationProvider();
 
-      gm.GM_notification(
-        options.text,
-        options.title,
-        options.image,
-        options.onclick,
-        options.timeout
-      );
-      logger.debug(`Notification: ${options.title}`);
+      switch (provider.provider) {
+        case 'gm': {
+          const gm = globalThis as GlobalWithGMNotification;
+          gm.GM_notification?.(
+            options.text,
+            options.title,
+            options.image,
+            options.onclick,
+            options.timeout
+          );
+          logger.debug(`Notification (GM): ${options.title}`);
+          break;
+        }
+
+        case 'console': {
+          // Fallback to console output
+          const msg = `[${options.title}] ${options.text}`;
+          logger.info(msg);
+          break;
+        }
+
+        case 'none':
+        default: {
+          logger.warn(`No notification provider available: ${provider.description}`);
+        }
+      }
     } catch (error) {
       logger.error('Failed to show notification:', error);
     }

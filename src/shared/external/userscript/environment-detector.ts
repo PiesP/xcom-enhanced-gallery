@@ -106,15 +106,18 @@ export function detectEnvironment(): EnvironmentInfo {
   let isExtension = false;
   let isConsole = false;
 
-  if (tampermonkeyInstalled && !testFramework) {
+  // Priority: Explicit GM API presence > Browser extension > Test framework/Node.js > Console
+  // Note: If Tampermonkey APIs are explicitly present, prioritize them over test framework
+  // This allows testing services that depend on Tampermonkey APIs
+  if (tampermonkeyInstalled) {
     environment = 'userscript';
     isUserscript = true;
+  } else if (browserExtension && !testFramework) {
+    environment = 'extension';
+    isExtension = true;
   } else if (testFramework || isNode) {
     environment = 'test';
     isTest = true;
-  } else if (browserExtension) {
-    environment = 'extension';
-    isExtension = true;
   } else {
     environment = 'console';
     isConsole = true;

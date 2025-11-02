@@ -469,10 +469,13 @@ export default defineConfig(async ({ mode }) => {
         output: {
           format: 'iife',
           name: 'XEG',
-          inlineDynamicImports: true, // 단일 iife 번들 보장(Userscript 용)
+          inlineDynamicImports: true, // 단일 iife 번들 보장(Userscript 용) - Phase 326에서도 필수
           // Sourcemap 생성 시 sourcesContent 포함을 허용하여 원본 추적성 보장
           sourcemapExcludeSources: false,
           // 실제 최종 파일명/포맷은 userscriptPlugin에서 결정
+          // Phase 326: Code Splitting은 번들 크기 최적화를 위한 동적 import 전략이지만,
+          // Userscript 환경의 IIFE 제약으로 인해 모든 청크를 단일 파일로 번들함
+          // 따라서 manualChunks는 적용하지 않음 (IIFE + code-splitting 불가)
         },
         treeshake: flags.isProd,
         // Phase 230: 병렬 처리 최적화

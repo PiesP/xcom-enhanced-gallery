@@ -3,9 +3,11 @@
  *
  * Phase 309: URL-based downloads (now superseded by UnifiedDownloadService)
  * Phase 320: Blob/File download support via Tampermonkey 5.4.0+ GM_download
+ * Phase 314-4: Test mode support for non-userscript environments
  *
  * Current Use:
  * - Blob/File downloads: downloadBlob(), downloadBlobBulk() ✅ Active
+ * - Test mode downloads: downloadInTestMode(), downloadBlobBulkInTestMode() ✅ Active (Phase 314-4)
  *
  * Pattern: Singleton with async/await, error handling, user notifications
  * MV3 Compatible: All methods use standard browser APIs + Tampermonkey native features
@@ -36,6 +38,24 @@ export interface BlobDownloadResult {
   filename?: string;
   error?: string;
   size?: number;
+}
+
+/**
+ * Test mode download options - Phase 314-4
+ * For testing in non-userscript environments
+ */
+export interface TestModeDownloadOptions {
+  simulateSuccess?: boolean;
+  simulateDelay?: number;
+  errorMessage?: string;
+}
+
+/**
+ * Test mode download result - Phase 314-4
+ */
+export interface TestModeDownloadResult extends BlobDownloadResult {
+  testMode: true;
+  simulatedAt: string;
 }
 
 /**
@@ -233,6 +253,148 @@ export class DownloadService {
         `[DownloadService] Blob bulk download: ${successCount}/${options.length} succeeded, ${failureCount} failed`
       );
     }
+
+    return results;
+  }
+
+  /**
+   * Download in test mode - Phase 314-4
+   *
+   * Simulates a download without actually calling GM_download.
+   * Useful for testing in development and test environments where Tampermonkey is unavailable.
+   *
+   * @param options Blob download options (blob, name, optional saveAs/conflictAction)
+   * @param testOptions Test mode configuration (simulateSuccess, simulateDelay, errorMessage)
+   * @returns Promise resolving to test mode download result
+   *
+   * @example
+   * ```typescript
+   * const blob = new Blob(['test data'], { type: 'text/plain' });
+   * const result = await downloadService.downloadInTestMode(
+   *   { blob, name: 'test.txt' },
+   *   { simulateSuccess: true, simulateDelay: 500 }
+   * );
+   * console.log(result.testMode); // true
+   * console.log(result.success);  // true
+   * ```
+   */
+  async downloadInTestMode(
+    options: BlobDownloadOptions,
+    testOptions?: TestModeDownloadOptions
+  ): Promise<TestModeDownloadResult> {
+    const {
+      simulateSuccess = true,
+      simulateDelay = 100,
+      errorMessage = 'Simulated test error',
+    } = testOptions || {};
+
+    try {
+      // Simulate delay
+      if (simulateDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, simulateDelay));
+      }
+
+      // Validate blob
+      if (!options.blob || !(options.blob instanceof Blob)) {
+        logger.warn('[DownloadService] Test mode: Invalid blob provided');
+        return {
+          success: false,
+          error: 'Invalid blob provided',
+          testMode: true,
+          simulatedAt: new Date().toISOString(),
+        };
+      }
+
+      const size = options.blob.size;
+
+      if (simulateSuccess) {
+        logger.info(
+          `[DownloadService] Test mode: Simulated download of ${options.name} (${size} bytes)`
+        );
+        return {
+          success: true,
+          filename: options.name,
+          size,
+          testMode: true,
+          simulatedAt: new Date().toISOString(),
+        };
+      }
+
+      logger.warn(`[DownloadService] Test mode: Simulated download failure for ${options.name}`);
+      return {
+        success: false,
+        filename: options.name,
+        size,
+        error: errorMessage,
+        testMode: true,
+        simulatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`[DownloadService] Test mode error:`, error);
+      return {
+        success: false,
+        error: errorMsg,
+        testMode: true,
+        simulatedAt: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * Download multiple blobs in test mode - Phase 314-4
+   *
+   * Simulates bulk downloads without calling GM_download.
+   *
+   * @param options Array of Blob download options
+   * @param testOptions Test mode configuration
+   * @param onProgress Optional progress callback
+   * @returns Promise resolving to array of test mode download results
+   */
+  async downloadBlobBulkInTestMode(
+    options: BlobDownloadOptions[],
+    testOptions?: TestModeDownloadOptions,
+    onProgress?: (progress: { current: number; total: number }) => void
+  ): Promise<TestModeDownloadResult[]> {
+    const results: TestModeDownloadResult[] = [];
+    const { simulateDelay = 50 } = testOptions || {};
+
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      if (!option) {
+        results.push({
+          success: false,
+          error: 'Invalid option',
+          testMode: true,
+          simulatedAt: new Date().toISOString(),
+        });
+        continue;
+      }
+
+      // Simulate with smaller delay for bulk
+      const result = await this.downloadInTestMode(option, {
+        ...testOptions,
+        simulateDelay,
+      });
+      results.push(result);
+
+      onProgress?.({
+        current: i + 1,
+        total: options.length,
+      });
+
+      // Small delay between simulated downloads
+      if (i < options.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+
+    logger.info(
+      `[DownloadService] Test mode bulk: ${successCount}/${results.length} succeeded${failureCount > 0 ? `, ${failureCount} failed` : ''}`
+    );
 
     return results;
   }

@@ -421,6 +421,19 @@ async function startApplication(): Promise<void> {
     // 6단계: 백그라운드에서 Non-Critical 시스템 초기화
     initializeNonCriticalSystems();
 
+    // Phase 326: Code Splitting - 프리로드 전략 실행
+    // 선택 기능(Settings 등) 청크를 유휴 시간에 미리 로드
+    if (import.meta.env.MODE !== 'test') {
+      void (async () => {
+        try {
+          const { executePreloadStrategy } = await import('@/bootstrap');
+          await executePreloadStrategy();
+        } catch (error) {
+          logger.warn('[Phase 326] 프리로드 전략 실행 중 오류:', error);
+        }
+      })();
+    }
+
     isStarted = true;
 
     const endTime = performance.now();
