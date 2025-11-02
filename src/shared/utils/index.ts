@@ -19,6 +19,27 @@ export {
   parseColor,
 } from './utils';
 
+// === 바이너리 유틸리티 (18개) - Phase 320: 신규 추가 ===
+export {
+  stringToUint8Array,
+  uint8ArrayToString,
+  blobToUint8Array,
+  blobToArrayBuffer,
+  uint8ArrayToBlob,
+  arrayBufferToUint8Array,
+  uint8ArrayToArrayBuffer,
+  arrayBufferToBlob,
+  isValidBlobData,
+  isValidBinaryData,
+  getBinarySize,
+  concatenateUint8Arrays,
+  concatenateBlobs,
+  jsonToBlob,
+  blobToJson,
+  sha256,
+  md5,
+} from './binary-utils';
+
 // === 타이머 관리 (4개) ===
 export {
   TimerManager,

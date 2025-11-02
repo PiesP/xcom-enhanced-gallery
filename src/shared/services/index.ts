@@ -117,9 +117,16 @@ export {
   type BulkDownloadResult as UnifiedBulkDownloadResult,
 } from './unified-download-service';
 export {
+  DownloadService,
+  downloadService,
+  type BlobDownloadOptions,
+  type BlobDownloadResult,
+} from './download-service';
+export {
   HttpRequestService,
   getHttpRequestService,
   type HttpRequestOptions,
+  type BinaryRequestOptions,
   type HttpResponse,
   HttpError,
 } from './http-request-service';

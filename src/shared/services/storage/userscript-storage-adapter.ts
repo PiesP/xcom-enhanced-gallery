@@ -10,8 +10,7 @@ import { logger } from '@shared/logging';
 /**
  * Userscript 기반 저장소 어댑터
  *
- * GM_setValue/GM_getValue를 우선 사용하고,
- * 미지원 환경에서는 localStorage로 fallback합니다.
+ * GM_setValue/GM_getValue를 사용하여 Tampermonkey의 저장소에 안전하게 접근합니다.
  *
  * @example
  * ```typescript

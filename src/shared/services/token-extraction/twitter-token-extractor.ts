@@ -171,7 +171,7 @@ export class TwitterTokenExtractor {
    */
   private async extractToken(): Promise<TokenExtractionResult> {
     this.extractionAttempts++;
-    // 우선순위: 페이지(script) → cookie/session → 설정(localStorage) → (보조)네트워크 힌트 → fallback
+    // 우선순위: 페이지(script) → cookie/session → 설정(PersistentStorage) → (보조)네트워크 힌트 → fallback
 
     // 1. 스크립트 태그에서 추출 시도 (페이지 최우선)
     const scriptResult = await this.extractFromScripts();
@@ -385,11 +385,12 @@ export class TwitterTokenExtractor {
   private async extractFromConfig(): Promise<TokenExtractionResult> {
     try {
       // SettingsService에서 설정된 토큰 확인
-      // 현재는 순환 의존성을 피하기 위해 localStorage에서 직접 확인
-      const settings = localStorage.getItem('xeg-app-settings');
+      // PersistentStorage를 통해 안전하게 접근
+      const { PersistentStorage } = await import('@shared/services');
+      const storage = PersistentStorage.getInstance();
+      const settings = await storage.get<{ tokens?: { bearerToken?: string } }>('xeg-app-settings');
       if (settings) {
-        const parsed = JSON.parse(settings);
-        const token = parsed?.tokens?.bearerToken;
+        const token = settings.tokens?.bearerToken;
 
         if (token && this.isValidTokenFormat(token)) {
           logger.debug('설정에서 토큰 추출 성공');

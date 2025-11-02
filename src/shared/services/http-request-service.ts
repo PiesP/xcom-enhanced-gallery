@@ -41,6 +41,18 @@ export interface HttpRequestOptions {
 }
 
 /**
+ * Binary request options - Phase 320
+ * For sending ArrayBuffer or UInt8Array as request body
+ */
+export interface BinaryRequestOptions {
+  headers?: Record<string, string>;
+  timeout?: number; // milliseconds, default: 10000
+  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer'; // expected response type
+  contentType?: string; // MIME type for binary data, default: 'application/octet-stream'
+  signal?: AbortSignal; // for cancellation
+}
+
+/**
  * HTTP response wrapper
  */
 export interface HttpResponse<T = unknown> {
@@ -290,6 +302,141 @@ export class HttpRequestService {
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     return this.request<T>('PATCH', url, { ...options, data });
+  }
+
+  /**
+   * Send binary data (ArrayBuffer or UInt8Array) via POST request - Phase 320
+   * Optimized for large binary payloads with proper Content-Type handling
+   *
+   * MV3 Compatible: Uses native fetch with standard ArrayBuffer/UInt8Array APIs
+   * Requires @connect directive for target domain
+   *
+   * @param url Target endpoint
+   * @param data ArrayBuffer or UInt8Array to send
+   * @param options Binary request options (contentType defaults to 'application/octet-stream')
+   * @returns Promise resolving to HTTP response with parsed data
+   *
+   * @example
+   * ```typescript
+   * // Send compressed data
+   * const compressed = await compressData(largeData);
+   * const response = await httpService.postBinary<ApiResponse>(
+   *   'https://api.example.com/upload',
+   *   compressed,
+   *   {
+   *     contentType: 'application/gzip',
+   *     responseType: 'json',
+   *     timeout: 30000
+   *   }
+   * );
+   *
+   * // Send raw binary data
+   * const binary = new Uint8Array([1, 2, 3, 4, 5]);
+   * const result = await httpService.postBinary(url, binary);
+   * ```
+   */
+  async postBinary<T = unknown>(
+    url: string,
+    data: ArrayBuffer | Uint8Array,
+    options?: BinaryRequestOptions
+  ): Promise<HttpResponse<T>> {
+    const timeout = options?.timeout ?? this.defaultTimeout;
+    const contentType = options?.contentType ?? 'application/octet-stream';
+
+    try {
+      // Validate binary data
+      if (!data || (!(data instanceof ArrayBuffer) && !(data instanceof Uint8Array))) {
+        throw new Error('Data must be ArrayBuffer or Uint8Array');
+      }
+
+      // Check for abort signal before starting
+      if (options?.signal?.aborted) {
+        throw new Error('Request was aborted');
+      }
+
+      const controller = new AbortController();
+      const timeoutId = globalThis.setTimeout(() => controller.abort(), timeout);
+
+      // Convert Uint8Array to ArrayBuffer if needed (for consistent body handling)
+      let bodyData: ArrayBufferLike;
+      if (data instanceof Uint8Array) {
+        // Create a proper copy to avoid SharedArrayBuffer type issues
+        const copy = new Uint8Array(data);
+        bodyData = copy.buffer.slice(copy.byteOffset, copy.byteOffset + copy.byteLength);
+      } else {
+        bodyData = data;
+      }
+
+      const fetchOptions: RequestInit = {
+        method: 'POST',
+        signal: options?.signal || controller.signal,
+        body: bodyData,
+        headers: {
+          'content-type': contentType,
+          ...options?.headers,
+        },
+      };
+
+      logger.debug(`[HttpRequestService] POST binary request to ${url}`, {
+        size: bodyData.byteLength,
+        contentType,
+        timeout,
+        hasHeaders: !!options?.headers,
+      });
+
+      const response = await fetch(url, fetchOptions);
+      globalThis.clearTimeout(timeoutId);
+
+      let responseData: unknown;
+
+      // Parse response based on requested type
+      if (options?.responseType === 'blob') {
+        responseData = await response.blob();
+      } else if (options?.responseType === 'arraybuffer') {
+        responseData = await response.arrayBuffer();
+      } else if (options?.responseType === 'text') {
+        responseData = await response.text();
+      } else {
+        // Default to JSON, fallback to text if parse fails
+        try {
+          responseData = await response.json();
+        } catch {
+          responseData = await response.text();
+        }
+      }
+
+      // Convert Headers to plain object
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+
+      logger.debug(`[HttpRequestService] POST binary response from ${url}`, {
+        status: response.status,
+        ok: response.ok,
+        contentType: headers['content-type'],
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData as T,
+        headers,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new HttpError(`Binary request timeout after ${timeout}ms`, 0, 'Timeout');
+      }
+      if (error instanceof Error && error.message === 'Request was aborted') {
+        throw new Error('Request was aborted');
+      }
+      throw new HttpError(
+        `Binary request error: ${error instanceof Error ? error.message : String(error)}`,
+        0,
+        'Network Error'
+      );
+    }
   }
 }
 
