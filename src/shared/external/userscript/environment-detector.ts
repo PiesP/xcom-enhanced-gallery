@@ -9,8 +9,8 @@
  * - Browser extension environment
  * - Plain browser console (no APIs)
  *
- * @version 1.0.0
- * @phase 314
+ * @version 1.1.0
+ * @phase 318.1 - GM_xmlHttpRequest 제거 (MV3 불가)
  */
 
 /**
@@ -60,7 +60,6 @@ export function detectEnvironment(): EnvironmentInfo {
   const tampermonkeyInstalled = !!(
     gm.GM_getValue ||
     gm.GM_setValue ||
-    gm.GM_xmlHttpRequest ||
     gm.GM_download ||
     gm.GM_notification ||
     gm.GM_setClipboard ||
@@ -93,7 +92,6 @@ export function detectEnvironment(): EnvironmentInfo {
   const availableGMAPIs: string[] = [];
   if (gm.GM_getValue) availableGMAPIs.push('getValue');
   if (gm.GM_setValue) availableGMAPIs.push('setValue');
-  if (gm.GM_xmlHttpRequest) availableGMAPIs.push('xmlHttpRequest');
   if (gm.GM_download) availableGMAPIs.push('download');
   if (gm.GM_notification) availableGMAPIs.push('notification');
   if (gm.GM_setClipboard) availableGMAPIs.push('setClipboard');
@@ -150,7 +148,6 @@ export function isGMAPIAvailable(apiName: string): boolean {
   const apiMap: Record<string, string> = {
     getValue: 'GM_getValue',
     setValue: 'GM_setValue',
-    xmlHttpRequest: 'GM_xmlHttpRequest',
     download: 'GM_download',
     notification: 'GM_notification',
     setClipboard: 'GM_setClipboard',

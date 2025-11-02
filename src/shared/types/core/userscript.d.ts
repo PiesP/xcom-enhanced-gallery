@@ -31,60 +31,13 @@ declare function GM_notification(
 declare function GM_setClipboard(
   data: string,
   info?: string | { type?: string; mimetype?: string }
-): void; /**
- * GM_xmlhttpRequest 응답 인터페이스
- */
-export interface GMXmlHttpRequestResponse {
-  readonly responseText: string;
-  readonly responseXML?: Document;
-  readonly readyState: number;
-  readonly responseHeaders: string;
-  readonly status: number;
-  readonly statusText: string;
-  readonly finalUrl: string;
-  readonly response?: any;
-}
-
-/**
- * GM_xmlhttpRequest 옵션 인터페이스 (개선된 버전)
- */
-export interface GMXmlHttpRequestOptions {
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
-  url: string;
-  headers?: Record<string, string>;
-  data?: string | FormData | Blob;
-  binary?: boolean;
-  timeout?: number;
-  context?: any;
-  responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'document';
-  overrideMimeType?: string;
-  anonymous?: boolean;
-  fetch?: boolean;
-  username?: string;
-  password?: string;
-
-  // 이벤트 핸들러
-  onload?: (response: GMXmlHttpRequestResponse) => void;
-  onerror?: (response: GMXmlHttpRequestResponse) => void;
-  onreadystatechange?: (response: GMXmlHttpRequestResponse) => void;
-  ontimeout?: () => void;
-  onprogress?: (response: ProgressEvent) => void;
-  onloadstart?: (response: ProgressEvent) => void;
-  onloadend?: (response: ProgressEvent) => void;
-  onabort?: () => void;
-}
-
-/**
- * GM_xmlhttpRequest 함수
- */
-declare function GM_xmlhttpRequest(options: GMXmlHttpRequestOptions): { abort: () => void };
+): void;
 
 /**
  * Greasemonkey/Tampermonkey API 전역 함수
+ * Phase 318.1: GM_xmlhttpRequest 제거 (MV3 불가)
  */
 declare global {
-  function GM_xmlhttpRequest(options: GMXmlHttpRequestOptions): void;
-
   // 기타 GM API
   function GM_setValue(key: string, value: any): void;
   function GM_getValue(key: string, defaultValue?: any): any;
@@ -162,6 +115,7 @@ export interface BrowserEnvironment {
 
 /**
  * UserScript 권한 타입
+ * Phase 318.1: GM_xmlhttpRequest 제거 (MV3 불가)
  */
 export type UserScriptGrant =
   | 'GM_registerMenuCommand'
@@ -170,7 +124,6 @@ export type UserScriptGrant =
   | 'GM_download'
   | 'GM_openInTab'
   | 'GM_notification'
-  | 'GM_xmlhttpRequest'
   | 'GM_addStyle'
   | 'GM_setClipboard';
 

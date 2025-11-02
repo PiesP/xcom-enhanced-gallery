@@ -27,6 +27,7 @@ import { MediaService } from '../../shared/services/media-service';
 import { ToastController } from '../../shared/services/unified-toast-manager';
 import { initializeTheme } from './services/theme-initialization';
 import { getTwitterScrollPreservation } from '../../shared/utils/twitter/scroll-preservation';
+import { isGMAPIAvailable } from '@shared/external/userscript';
 
 /**
  * 갤러리 앱 설정 인터페이스
@@ -116,6 +117,23 @@ export class GalleryApp {
   public async initialize(): Promise<void> {
     try {
       logger.info('[GalleryApp] 초기화 시작');
+
+      // Phase 317: Environment guard - Tampermonkey API 확인
+      const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
+      if (!hasRequiredGMAPIs) {
+        logger.warn(
+          '[GalleryApp] Tampermonkey APIs not available - gallery will display toast/error panel only'
+        );
+        // 토스트 컨트롤러만 초기화하고 반환
+        await this.toastController.initialize();
+        this.toastController.show({
+          title: 'Tampermonkey 미탑재',
+          message: '이 앱은 Tampermonkey 또는 유사한 유저스크립트 매니저가 필요합니다.',
+          type: 'error',
+        });
+        this.isInitialized = false;
+        return;
+      }
 
       // Phase 268-2: StaticVendorManager 명시적 초기화
       // getSolid() 호출로 vendor 라이브러리를 미리 캐시하여 경고 방지
@@ -216,6 +234,17 @@ export class GalleryApp {
    * 갤러리 열기
    */
   public async openGallery(mediaItems: MediaInfo[], startIndex: number = 0): Promise<void> {
+    // Phase 317: Environment guard - Tampermonkey 미탑재 확인
+    if (!this.isInitialized) {
+      logger.warn('[GalleryApp] 갤러리가 초기화되지 않았습니다. Tampermonkey 미탑재 가능성.');
+      this.toastController.show({
+        title: '갤러리 사용 불가',
+        message: 'Tampermonkey 또는 유사한 유저스크립트 매니저가 필요합니다.',
+        type: 'error',
+      });
+      return;
+    }
+
     if (!mediaItems?.length) {
       logger.warn('갤러리 열기 실패: 미디어 아이템이 없음');
       return;

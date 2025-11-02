@@ -1,7 +1,7 @@
 /**
  * @fileoverview Twitter API 기반 미디어 추출기
  * @description 트윗 정보가 확보된 후 API를 통한 정확한 미디어 추출
- * @version 2.0.0 - Clean Architecture (Strategy Pattern)
+ * @version 2.1.0 - Phase 318.1: GM_xmlHttpRequest 체크 제거 (MV3 불가)
  */
 
 import { logger } from '@shared/logging';
@@ -23,6 +23,8 @@ import {
 export class TwitterAPIExtractor implements APIExtractor {
   /**
    * API 기반 미디어 추출
+   *
+   * Phase 317: Environment-aware fallback to DOM backup when GM API is unavailable
    */
   async extract(
     tweetInfo: TweetInfo,

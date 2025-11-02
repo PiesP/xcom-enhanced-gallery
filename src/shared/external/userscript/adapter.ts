@@ -2,9 +2,9 @@
  * @fileoverview Userscript API Adapter (Tampermonkey/Greasemonkey/Violentmonkey)
  * @description getter 함수로 외부 Userscript GM_* API를 캡슐화하고,
  * 미지원 환경(Node/Vitest)에서 안전한 fallback (localStorage, fetch) 제공
- * @version 11.0.0 - Phase 200: 현대화, 에러 처리 강화, 주석 개선
+ * @version 12.0.0 - Phase 318.1: GM_xmlHttpRequest 제거 (MV3 불가)
  */
-import type { GMXmlHttpRequestOptions, BrowserEnvironment } from '@shared/types/core/userscript';
+import type { BrowserEnvironment } from '@shared/types/core/userscript';
 import { isGMUserScriptInfo } from '@shared/utils/core';
 
 type GMUserScriptInfo = Record<string, unknown>;
@@ -16,7 +16,6 @@ export interface UserscriptAPI {
   readonly manager: UserscriptManager;
   info(): GMUserScriptInfo | null;
   download(url: string, filename: string): Promise<void>;
-  xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined;
   setValue(key: string, value: unknown): Promise<void>;
   getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
   deleteValue(key: string): Promise<void>;
@@ -38,7 +37,6 @@ interface GlobalWithGM {
     [key: string]: unknown;
   };
   GM_download?: (url: string, filename: string) => void;
-  GM_xmlhttpRequest?: (options: GMXmlHttpRequestOptions) => { abort: () => void };
   GM_setValue?: (key: string, value: unknown) => Promise<void> | void;
   GM_getValue?: <T>(key: string, defaultValue?: T) => Promise<T> | T;
   GM_deleteValue?: (key: string) => Promise<void> | void;
@@ -102,12 +100,11 @@ function getSafeLocalStorage(): Storage | null {
 export function getUserscript(): UserscriptAPI {
   const g = globalThis;
   const hasGMDownload = hasGMInfo(g) && typeof g.GM_download === 'function';
-  const hasGMXhr = hasGMInfo(g) && typeof g.GM_xmlhttpRequest === 'function';
   const hasGMStorage =
     hasGMInfo(g) && typeof g.GM_setValue === 'function' && typeof g.GM_getValue === 'function';
 
   return Object.freeze({
-    hasGM: hasGMDownload || hasGMXhr || hasGMStorage,
+    hasGM: hasGMDownload || hasGMStorage,
     manager: detectManager(),
     info: safeInfo,
 
@@ -119,17 +116,6 @@ export function getUserscript(): UserscriptAPI {
         );
       }
       g.GM_download(url, filename);
-    },
-
-    xhr(options: GMXmlHttpRequestOptions): { abort: () => void } | undefined {
-      // GM API 필수 - fallback 없음
-      if (!hasGMXhr || !hasGMInfo(g) || !g.GM_xmlhttpRequest) {
-        throw new Error(
-          'GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-      // Cast through unknown to satisfy TS when underlying lib returns void in some managers
-      return g.GM_xmlhttpRequest(options) as unknown as { abort: () => void } | undefined;
     },
 
     async setValue(key: string, value: unknown): Promise<void> {

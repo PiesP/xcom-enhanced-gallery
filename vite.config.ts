@@ -114,15 +114,22 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @grant        GM_setValue\n` +
     `// @grant        GM_getValue\n` +
     `// @grant        GM_download\n` +
-    `// @grant        GM_xmlhttpRequest\n` +
+    `// @grant        GM_notification\n` +
     `// @connect      pbs.twimg.com\n` +
     `// @connect      video.twimg.com\n` +
+    `// @connect      api.twitter.com\n` +
     `// @run-at       document-idle\n` +
     `// @supportURL   https://github.com/piesp/xcom-enhanced-gallery/issues\n` +
     `// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @noframes\n` +
-    `// ==/UserScript==\n`
+    `// ==/UserScript==\n` +
+    `//\n` +
+    `// Phase 318: Tampermonkey 5.4.0+ MV3 Compatibility\n` +
+    `// - GM_xmlHttpRequest removed (not available in Manifest V3)\n` +
+    `// - Uses native fetch API for HTTP requests\n` +
+    `// - @connect directives enable cross-origin fetch requests\n` +
+    `//\n`
   );
 }
 

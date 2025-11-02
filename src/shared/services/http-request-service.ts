@@ -1,9 +1,16 @@
 /**
- * HTTP Request Service - Phase 310
+ * HTTP Request Service - Phase 318
  *
- * Wraps Tampermonkey's GM_xmlHttpRequest API to provide a type-safe,
- * Promise-based HTTP client with support for timeouts, error handling,
- * and consistent request/response patterns.
+ * Provides a type-safe, Promise-based HTTP client using native fetch API.
+ * Designed for Tampermonkey 5.4.0+ Manifest V3 environments where
+ * GM_xmlHttpRequest is no longer available.
+ *
+ * Features:
+ * - Native fetch API as primary HTTP method
+ * - Support for GET, POST, PUT, DELETE, PATCH methods
+ * - Timeout handling and abort signal support
+ * - Multiple response types: json, text, blob, arraybuffer
+ * - Requires @connect directives for cross-origin requests
  *
  * Usage:
  * ```typescript
@@ -13,7 +20,14 @@
  *   console.log(response.data);
  * }
  * ```
+ *
+ * @connect Requirements:
+ * Add target domains to UserScript header for CORS:
+ * // @connect api.twitter.com
+ * // @connect pbs.twimg.com
  */
+
+import { logger } from '@shared/logging';
 
 /**
  * HTTP request options
@@ -52,86 +66,6 @@ export class HttpError extends Error {
 }
 
 /**
- * Type definition for GM_xmlHttpRequest function
- */
-interface GMXmlHttpRequestOptions {
-  method?: string;
-  url: string;
-  headers?: Record<string, string>;
-  data?: string;
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer';
-  timeout?: number;
-  onload?: (response: GMXmlHttpRequestResponse) => void;
-  onerror?: (error: unknown) => void;
-  ontimeout?: () => void;
-}
-
-interface GMXmlHttpRequestResponse {
-  status: number;
-  statusText: string;
-  response: unknown;
-  responseHeaders: string;
-}
-
-/**
- * Get GM_xmlHttpRequest function from userscript environment
- */
-function getGMXmlHttpRequest(): ((options: GMXmlHttpRequestOptions) => void) | undefined {
-  const gm = globalThis as Record<string, unknown> & {
-    GM_xmlHttpRequest?: (options: GMXmlHttpRequestOptions) => void;
-  };
-  return gm.GM_xmlHttpRequest;
-}
-
-/**
- * Parse response headers from string format to object
- */
-function parseResponseHeaders(headersStr: string): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (!headersStr) return headers;
-
-  headersStr.split('\r\n').forEach(line => {
-    const colonIndex = line.indexOf(':');
-    if (colonIndex > 0) {
-      const name = line.substring(0, colonIndex).trim();
-      const value = line.substring(colonIndex + 1).trim();
-      headers[name.toLowerCase()] = value;
-    }
-  });
-
-  return headers;
-}
-
-/**
- * Parse response data based on content type
- */
-function parseResponseData(
-  data: unknown,
-  responseType?: 'json' | 'text' | 'blob' | 'arraybuffer'
-): unknown {
-  if (responseType === 'json' || responseType === undefined) {
-    if (typeof data === 'string') {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return data;
-      }
-    }
-    return data;
-  }
-
-  if (responseType === 'text') {
-    return String(data);
-  }
-
-  if (responseType === 'arraybuffer' && data instanceof ArrayBuffer) {
-    return new Uint8Array(data);
-  }
-
-  return data;
-}
-
-/**
  * Validation result for HTTP request availability
  */
 export interface AvailabilityCheckResult {
@@ -144,13 +78,13 @@ export interface AvailabilityCheckResult {
 /**
  * Singleton HTTP Request Service
  *
- * Provides a type-safe wrapper around Tampermonkey's GM_xmlHttpRequest API.
- * Supports GET, POST, PUT, and DELETE methods with Promise-based interface.
+ * Provides fetch-based HTTP client for Tampermonkey 5.4.0+ MV3 environment.
+ * Uses native fetch API as primary method (GM_xmlHttpRequest removed in MV3).
  *
  * Features:
- * - Phase 314: Environment-aware error messages
+ * - Phase 318: Native fetch as primary HTTP method (MV3 compatible)
  * - Detects Tampermonkey, test, extension, and console environments
- * - Provides clear fallback suggestions in non-Tampermonkey environments
+ * - Requires @connect directives for cross-origin requests
  */
 export class HttpRequestService {
   private static instance: HttpRequestService;
@@ -172,18 +106,17 @@ export class HttpRequestService {
   }
 
   /**
-   * Validate if GM_xmlHttpRequest is available and return environment info
+   * Validate HTTP request availability in current environment
    *
-   * Phase 314-2: Environment-aware validation
+   * Phase 318: Fetch-based validation for MV3 compatibility
+   * Note: Always returns available=true since fetch is a standard browser API
    *
-   * @returns Availability status with environment-specific guidance
+   * @returns Availability status with environment info
    *
    * @example
    * ```typescript
    * const validation = await httpService.validateAvailability();
-   * if (!validation.available) {
-   *   console.warn(validation.message); // Details about why GM API is unavailable
-   * }
+   * console.log(validation.message); // Environment and fetch availability
    * ```
    */
   async validateAvailability(): Promise<AvailabilityCheckResult> {
@@ -193,91 +126,123 @@ export class HttpRequestService {
     );
 
     const env = detectEnvironment();
-    const gmXhr = getGMXmlHttpRequest();
+    const hasFetch = typeof globalThis.fetch === 'function';
 
     return {
-      available: !!gmXhr,
+      available: hasFetch,
       environment: env.environment,
-      message: gmXhr
-        ? `✅ GM_xmlHttpRequest available in ${env.environment} environment (${env.availableGMAPIs.length} APIs)`
-        : `⚠️ GM_xmlHttpRequest not available. ${getEnvironmentDescription(env)}. HttpRequestService requires Tampermonkey.`,
-      canFallback: env.isTestEnvironment || env.isBrowserConsole,
+      message: hasFetch
+        ? `✅ Fetch API available in ${env.environment} environment (Tampermonkey 5.4.0+ MV3 compatible)`
+        : `⚠️ Fetch API not available. ${getEnvironmentDescription(env)}. This should not happen in modern browsers.`,
+      canFallback: false, // No fallback needed, fetch is primary
     };
   }
 
   /**
-   * Perform a generic HTTP request
+   * Perform a generic HTTP request using native fetch API
    *
-   * Phase 314-2: Environment-aware error handling
+   * Phase 318: Fetch-only implementation for Tampermonkey 5.4.0+ MV3
+   * - Uses native fetch API (GM_xmlHttpRequest removed in MV3)
+   * - Requires @connect directives for cross-origin requests
+   * - Supports timeout, abort signal, and multiple response types
    */
-  private request<T = unknown>(
+  private async request<T = unknown>(
     method: string,
     url: string,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    return new Promise((resolve, reject) => {
+    const timeout = options?.timeout ?? this.defaultTimeout;
+
+    try {
       // Check for abort signal before starting
       if (options?.signal?.aborted) {
-        reject(new Error('Request was aborted'));
-        return;
+        throw new Error('Request was aborted');
       }
 
-      const gmXhr = getGMXmlHttpRequest();
-      if (!gmXhr) {
-        reject(
-          new Error('GM_xmlHttpRequest is not available. This service requires Tampermonkey.')
-        );
-        return;
-      }
+      const controller = new AbortController();
+      const timeoutId = globalThis.setTimeout(() => controller.abort(), timeout);
 
-      const timeout = options?.timeout ?? this.defaultTimeout;
-      const timeoutHandle = globalThis.setTimeout(() => {
-        reject(new HttpError(`Request timeout after ${timeout}ms`, 0, 'Timeout'));
-      }, timeout);
-
-      const requestOptions: GMXmlHttpRequestOptions = {
-        ...(options?.headers ? { headers: options.headers } : {}),
+      const fetchOptions: RequestInit = {
         method,
-        url,
-        ...(options?.data ? { data: JSON.stringify(options.data) } : {}),
-        responseType: (options?.responseType ?? 'json') as 'json' | 'text' | 'blob',
-        onload: response => {
-          clearTimeout(timeoutHandle);
-
-          const ok = response.status >= 200 && response.status < 300;
-          const parsedData = parseResponseData(response.response, options?.responseType);
-          const parsedHeaders = parseResponseHeaders(response.responseHeaders);
-
-          resolve({
-            ok,
-            status: response.status,
-            statusText: response.statusText,
-            data: parsedData as T,
-            headers: parsedHeaders,
-          });
-        },
-        onerror: error => {
-          clearTimeout(timeoutHandle);
-          reject(new HttpError(`Network error: ${String(error)}`, 0, 'Network Error'));
-        },
-        ontimeout: () => {
-          clearTimeout(timeoutHandle);
-          reject(new HttpError(`Request timeout after ${timeout}ms`, 0, 'Timeout'));
-        },
+        signal: options?.signal || controller.signal,
       };
 
-      // Set up abort signal listener if provided
-      const onAbort = () => {
-        clearTimeout(timeoutHandle);
-        reject(new Error('Request was aborted'));
-      };
-
-      if (options?.signal) {
-        options.signal.addEventListener('abort', onAbort, { once: true });
+      // Add headers if present
+      if (options?.headers) {
+        fetchOptions.headers = options.headers;
       }
 
-      gmXhr(requestOptions);
-    });
+      // Only add body if data exists and method requires it
+      if (options?.data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        fetchOptions.body = JSON.stringify(options.data);
+        // Ensure content-type header is set for JSON data
+        if (!options?.headers?.['content-type']) {
+          fetchOptions.headers = {
+            ...fetchOptions.headers,
+            'content-type': 'application/json',
+          };
+        }
+      }
+
+      logger.debug(`[HttpRequestService] ${method} request to ${url}`, {
+        hasHeaders: !!options?.headers,
+        hasData: !!options?.data,
+        timeout,
+      });
+
+      const response = await fetch(url, fetchOptions);
+      globalThis.clearTimeout(timeoutId);
+
+      let data: unknown;
+
+      // Parse response based on requested type
+      if (options?.responseType === 'blob') {
+        data = await response.blob();
+      } else if (options?.responseType === 'arraybuffer') {
+        data = await response.arrayBuffer();
+      } else if (options?.responseType === 'text') {
+        data = await response.text();
+      } else {
+        // Default to JSON, fallback to text if parse fails
+        try {
+          data = await response.json();
+        } catch {
+          data = await response.text();
+        }
+      }
+
+      // Convert Headers to plain object
+      const headers: Record<string, string> = {};
+      response.headers.forEach((value, key) => {
+        headers[key.toLowerCase()] = value;
+      });
+
+      logger.debug(`[HttpRequestService] ${method} response from ${url}`, {
+        status: response.status,
+        ok: response.ok,
+        contentType: headers['content-type'],
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data: data as T,
+        headers,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new HttpError(`Request timeout after ${timeout}ms`, 0, 'Timeout');
+      }
+      if (error instanceof Error && error.message === 'Request was aborted') {
+        throw new Error('Request was aborted');
+      }
+      throw new HttpError(
+        `Fetch error: ${error instanceof Error ? error.message : String(error)}`,
+        0,
+        'Network Error'
+      );
+    }
   }
 
   /**

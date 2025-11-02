@@ -30,6 +30,7 @@ import './styles/gallery-global.css';
 import { logger } from '@shared/logging';
 import { getSolid } from '../../shared/external/vendors';
 import { unifiedDownloadService } from '@shared/services';
+import { isGMAPIAvailable } from '@shared/external/userscript';
 
 /**
  * 갤러리 렌더러 - DOM 렌더링 및 생명주기 관리
@@ -178,12 +179,22 @@ export class GalleryRenderer implements GalleryRendererInterface {
   /**
    * 다운로드 처리
    *
+   * Phase 317: Environment guard - GM API 확인
    * Phase 312-4: Lazy registration of BulkDownloadService
    * - First bulk download: 100-150ms delay (service loads from disk)
    * - Subsequent downloads: instant (service cached)
    */
   private async handleDownload(type: 'current' | 'all'): Promise<void> {
     try {
+      // Phase 317: GM API 확인 - 없으면 사용자 안내만 표시
+      if (!isGMAPIAvailable('download')) {
+        logger.warn('[GalleryRenderer] GM_download not available');
+        setError(
+          'Tampermonkey 또는 유사한 유저스크립트 매니저가 필요합니다. 다운로드 기능을 사용할 수 없습니다.'
+        );
+        return;
+      }
+
       setLoading(true);
 
       // Phase 312: UnifiedDownloadService 사용 (Singleton)
