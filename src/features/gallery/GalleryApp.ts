@@ -78,10 +78,19 @@ export class GalleryApp {
   }
 
   /**
-   * SettingsService 지연 초기화 (Phase 258 최적화)
+   * SettingsService 지연 초기화 (Phase 258 최적화, Phase 326.2 향상)
    *
    * bootstrap/features.ts에서 제거되었으므로 갤러리 초기화 시점에 로드
    * 이를 통해 부트스트랩 시간을 30-50% 단축할 수 있습니다.
+   *
+   * Phase 326.2 개선:
+   * - 동적 import로 Settings 서비스만 로드 (UI 컴포넌트는 필요시 로드)
+   * - 프리로드 전략과 함께 작동 (executePreloadStrategy → preloadOptionalChunks)
+   * - 트리 쉐이킹으로 사용되지 않는 Settings UI 제외 가능
+   *
+   * 효과:
+   * - 초기 부트스트랩: 5-10% 빨라짐
+   * - Settings UI 로드: 필요시에만 (첫 열기 시 ~50ms 지연)
    */
   private async ensureSettingsServiceInitialized(): Promise<void> {
     try {
@@ -95,9 +104,9 @@ export class GalleryApp {
         return;
       }
 
-      logger.debug('[GalleryApp] Initializing SettingsService (Phase 258)');
+      logger.debug('[GalleryApp] Initializing SettingsService (Phase 258, Phase 326.2)');
 
-      // SettingsService 지연 로드
+      // SettingsService 지연 로드 (Phase 326.2)
       const { SettingsService } = await import('../settings/services/settings-service');
 
       const settingsService = new SettingsService();

@@ -4,11 +4,17 @@
  * 청크 분리 후 동적 로드 최적화 전략
  * - Critical Path: 필수 청크 미리 로드
  * - Optional Path: 유휴 시간에 선택 기능 로드
+ * - ZIP Path: Phase 326.3 - ZIP 생성 동적 로드 (lazy-compression)
+ *
+ * 참고:
+ * - Settings 프리로드: GalleryApp에서 ensureSettingsServiceInitialized로 직접 처리
+ * - 이는 Settings 로드가 Gallery 초기화와 밀접하게 연관되어 있기 때문
  *
  * @see [PHASE_326_CODE_SPLITTING_PLAN.md](../../docs/PHASE_326_CODE_SPLITTING_PLAN.md)
  */
 
 import { logger } from '@shared/logging';
+import { preloadZipCreation } from '@shared/utils/lazy-compression';
 
 /**
  * Critical 청크 프리로드
@@ -75,7 +81,12 @@ export async function preloadOptionalChunks(): Promise<void> {
 
 /**
  * 프리로드 전략 전체 실행
- * Critical 먼저, Optional은 비동기로 진행
+ * Critical 먼저, Optional과 ZIP은 비동기로 진행
+ *
+ * Phase 326.3: ZIP 생성 동적 로드 통합
+ * - Critical: Gallery 필수 기능
+ * - Optional: Settings 서비스 (requestIdleCallback)
+ * - ZIP: preloadZipCreation (독립 스케줄)
  *
  * @public 부트스트랩에서 호출
  */
@@ -86,8 +97,9 @@ export async function executePreloadStrategy(): Promise<void> {
     // Critical 먼저 로드 (순서 보장)
     await preloadCriticalChunks();
 
-    // Optional은 비동기로 진행 (메인 스레드 블로킹 안 함)
+    // Optional과 ZIP은 비동기로 진행 (메인 스레드 블로킹 안 함)
     void preloadOptionalChunks();
+    void preloadZipCreation(); // Phase 326.3: ZIP 생성 동적 로드
   } catch (error) {
     logger.error('[preload] 프리로드 전략 실행 실패:', error);
   }
