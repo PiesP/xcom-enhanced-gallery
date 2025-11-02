@@ -39,6 +39,61 @@ and this project adheres to
 - 프로덕션 빌드: 344.54 KB (gzip: 93.16 KB, 변화 없음)
 - Tree-shaking 검증: 프로덕션에서 개발 전용 코드 0바이트 오버헤드
 
+## [0.4.2] - 2025-11-02
+
+### ✨ 100% 테스트 통과 달성 - 안정성 및 품질 개선
+
+이 릴리즈는 모든 테스트를 통과시켜 프로젝트 안정화를 완료합니다.
+Phase 306-307 작업을 통해 **6개의 RED 테스트를 모두 해결**하고 **100% 테스트 통과율**을 달성했습니다.
+
+### Added
+
+#### 미디어 파일명 서비스 강화 (Phase 307)
+- **FilenameService 테스트 커버리지**: 유효한 미디어 파일명 형식 검증
+  - 형식: `{username}_{tweetId}_{YYYYMMDD}_{index}.{ext}`
+  - 예제: `alice_1234567890_20251102_1.jpg`
+
+#### 갤러리 이벤트 리스너 범위 지정 (Phase 307, Phase 305)
+- **초기화 함수 개선**: `initializeGalleryEvents(handlers, galleryRoot?)` 
+  - 명시적 `galleryRoot` 파라미터 지원 (선택적)
+  - Gallery-scoped 이벤트 리스너 등록
+  - AbortController 기반 정리 함수 반환
+
+#### Twitter 스크롤 복원 정확도 개선 (Phase 307, Phase 304)
+- **threshold 경계값 처리**: `difference >= threshold` 정확한 비교
+  - 스크롤 변화가 threshold 값과 동일할 때도 복원
+  - 스크롤 지터 방지 및 안정성 개선
+
+### Fixed
+
+- **media-url.filename-policy**: FilenameService 의존성 주입 문제 해결
+- **events-phase305**: Gallery root에 제한된 이벤트 리스너 등록 구현
+- **twitter-scroll-preservation**: 스크롤 복원 threshold 경계값 오류 수정
+
+### Changed
+
+- **src/shared/utils/events.ts**: `initializeGalleryEvents()` 함수 시그니처
+  - 이전: `initializeGalleryEvents(handlers, options?)`
+  - 현재: `initializeGalleryEvents(handlers, optionsOrRoot?)`
+  - 하위 호환성 유지됨 (기존 옵션 객체 호출 가능)
+
+- **src/shared/utils/twitter/scroll-preservation.ts**: threshold 비교 연산자
+  - 이전: `if (difference > threshold)`
+  - 현재: `if (difference >= threshold)`
+
+### Quality
+
+- **테스트 통과율**: 2809/2809 (100%) ✅
+- **타입스크립트**: 0 에러
+- **린트**: 0 경고
+- **빌드 크기**: dev 934 KB, prod 376 KB (변화 없음)
+- **코드 품질**: TypeScript strict mode, ESLint, Stylelint 0 issues
+
+### Performance
+
+- 개발 빌드: 934 KB (sourcemap 1.65 MB)
+- 프로덕션 빌드: 376 KB (gzip ~89 KB, 변화 없음)
+
 ## [0.4.1] - 2025-10-27
 
 ### 🚀 빌드 성능 및 안정성 개선
