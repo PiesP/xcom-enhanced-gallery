@@ -2,10 +2,11 @@
  * DownloadOrchestrator
  * - Centralizes concurrency, retry, and ZIP assembly for media downloads
  * - Pure service with no UI side-effects. Vendors accessed only via getters.
- * @version 2.0.0 - Phase 2025-10-27: base-service로 마이그레이션, 구현 완성
+ * @version 3.0.0 - Phase 310-B: fetch → HttpRequestService migration
  */
 
 import { BaseServiceImpl } from '../base-service';
+import { HttpRequestService } from '../http-request-service';
 import { getErrorMessage } from '../../utils/error-handling';
 import { globalTimerManager } from '../../utils/timer-management';
 
@@ -91,18 +92,22 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     signal?: AbortSignal,
     backoffBaseMs: number = DownloadOrchestrator.DEFAULT_BACKOFF_BASE_MS
   ): Promise<Uint8Array> {
+    const httpService = HttpRequestService.getInstance();
     let attempt = 0;
     // total tries = retries + 1
     while (true) {
       if (signal?.aborted) throw new Error('Download cancelled by user');
       try {
-        const response = await fetch(url, { ...(signal ? { signal } : {}) } as RequestInit);
-        // Some tests/mock responses may omit the "ok" property. In that case, assume OK.
-        if ('ok' in response && !response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const options = {
+          responseType: 'arraybuffer' as const,
+          timeout: 30000, // 30 second timeout for download
+          ...(signal ? { signal } : {}),
+        };
+        const response = await httpService.get<ArrayBuffer>(url, options);
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
         }
-        const arrayBuffer = await response.arrayBuffer();
-        return new Uint8Array(arrayBuffer);
+        return new Uint8Array(response.data);
       } catch (err) {
         if (attempt >= retries) throw err;
         attempt += 1;
