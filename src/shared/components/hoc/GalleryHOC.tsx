@@ -226,49 +226,70 @@ function createEventHandlers<P extends GalleryComponentProps>(
 ): Partial<GalleryComponentProps> {
   const handlers: Partial<GalleryComponentProps> = {};
 
-  // 클릭 이벤트 핸들러
-  if (options.events.preventClick || options.events.blockTwitterNative) {
-    handlers.onClick = (event: MouseEvent): void => {
-      logger.debug(`Gallery click handler: ${options.type}`, {
-        preventDefault: options.events.preventClick,
-        blockTwitter: options.events.blockTwitterNative,
-      });
-
-      // 기존 핸들러 호출
-      if (props.onClick) {
-        props.onClick(event);
+  // 클릭 이벤트 핸들러 (항상 정의하여 조건부 할당 문제 방지)
+  handlers.onClick = (event: MouseEvent | undefined): void => {
+    // 안전 가드: event 파라미터 검증 (Solid.js 이벤트 위임 시스템과의 호환성)
+    if (!event || typeof event.stopImmediatePropagation !== 'function') {
+      if (!event) {
+        logger.warn('Gallery click handler received undefined event', {
+          type: options.type,
+        });
       }
+      return;
+    }
 
-      // 트위터 네이티브 갤러리 차단
-      if (options.events.blockTwitterNative) {
-        event.stopImmediatePropagation();
-      }
+    logger.debug(`Gallery click handler: ${options.type}`, {
+      preventDefault: options.events.preventClick,
+      blockTwitter: options.events.blockTwitterNative,
+    });
 
-      // 클릭 이벤트 차단
-      if (options.events.preventClick) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-    };
-  }
+    // 기존 핸들러 호출
+    if (props.onClick) {
+      props.onClick(event);
+    }
+
+    // 트위터 네이티브 갤러리 차단
+    if (options.events.blockTwitterNative) {
+      event.stopImmediatePropagation();
+    }
+
+    // 클릭 이벤트 차단
+    if (options.events.preventClick) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  };
 
   // 키보드 이벤트 핸들러
-  if (options.events.preventKeyboard) {
-    handlers.onKeyDown = (event: KeyboardEvent): void => {
-      logger.debug(`Gallery keyboard handler: ${options.type}`);
-
-      // 기존 핸들러 호출
-      if (props.onKeyDown) {
-        props.onKeyDown(event);
+  handlers.onKeyDown = (event: KeyboardEvent | undefined): void => {
+    // 안전 가드: event 파라미터 검증
+    if (!event || typeof event.stopPropagation !== 'function') {
+      if (!event) {
+        logger.warn('Gallery keyboard handler received undefined event', {
+          type: options.type,
+        });
       }
+      return;
+    }
 
-      // 특정 키 차단
-      if (['Space', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-        event.stopPropagation();
-        event.preventDefault();
-      }
-    };
-  }
+    // preventKeyboard 옵션이 활성화된 경우에만 처리
+    if (!options.events.preventKeyboard) {
+      return;
+    }
+
+    logger.debug(`Gallery keyboard handler: ${options.type}`);
+
+    // 기존 핸들러 호출
+    if (props.onKeyDown) {
+      props.onKeyDown(event);
+    }
+
+    // 특정 키 차단
+    if (['Space', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+  };
 
   return handlers;
 }
