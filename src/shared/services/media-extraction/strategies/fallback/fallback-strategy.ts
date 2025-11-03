@@ -14,6 +14,8 @@ import {
   isEmojiUrl,
   isVideoThumbnailUrl,
 } from '@shared/utils/media/media-url.util';
+// Phase 333: Video thumbnail to video URL conversion
+import { getVideoUrlFromThumbnail } from '@shared/services/media/twitter-video-extractor';
 import type { MediaInfo, MediaExtractionResult, MediaType } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
 
@@ -34,28 +36,32 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       let clickedIndex = 0;
 
       // 1. 이미지 요소에서 추출
-      const imageResult = this.extractFromImages(tweetContainer, clickedElement, tweetInfo);
+      const imageResult = await this.extractFromImages(tweetContainer, clickedElement, tweetInfo);
       if (imageResult.clickedIndex >= 0) {
         clickedIndex = mediaItems.length + imageResult.clickedIndex;
       }
       mediaItems.push(...imageResult.items);
 
       // 2. 비디오 요소에서 추출
-      const videoResult = this.extractFromVideos(tweetContainer, clickedElement, tweetInfo);
+      const videoResult = await this.extractFromVideos(tweetContainer, clickedElement, tweetInfo);
       if (videoResult.clickedIndex >= 0 && clickedIndex === 0) {
         clickedIndex = mediaItems.length + videoResult.clickedIndex;
       }
       mediaItems.push(...videoResult.items);
 
       // 3. 데이터 속성에서 추출
-      const dataResult = this.extractFromDataAttributes(tweetContainer, clickedElement, tweetInfo);
+      const dataResult = await this.extractFromDataAttributes(
+        tweetContainer,
+        clickedElement,
+        tweetInfo
+      );
       if (dataResult.clickedIndex >= 0 && clickedIndex === 0) {
         clickedIndex = mediaItems.length + dataResult.clickedIndex;
       }
       mediaItems.push(...dataResult.items);
 
       // 4. 배경 이미지에서 추출
-      const backgroundResult = this.extractFromBackgroundImages(
+      const backgroundResult = await this.extractFromBackgroundImages(
         tweetContainer,
         clickedElement,
         tweetInfo
@@ -90,11 +96,11 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * 이미지 요소에서 미디어 추출
    */
-  private extractFromImages(
+  private async extractFromImages(
     tweetContainer: HTMLElement,
     clickedElement: HTMLElement,
     tweetInfo?: TweetInfo
-  ): { items: MediaInfo[]; clickedIndex: number } {
+  ): Promise<{ items: MediaInfo[]; clickedIndex: number }> {
     const images = tweetContainer.querySelectorAll('img');
     const items: MediaInfo[] = [];
     let clickedIndex = -1;
@@ -112,11 +118,54 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
         continue;
       }
 
-      // 비디오 섬네일 제외 (Phase 332 - 실제 video 요소 우선)
+      // Phase 333: 비디오 섬네일 → 실제 비디오 URL 변환
       if (isVideoThumbnailUrl(src)) {
-        logger.debug('[FallbackStrategy] 비디오 섬네일 스킵 (실제 video 요소 우선):', {
+        logger.debug('[FallbackStrategy] 비디오 섬네일 감지 (Phase 333):', {
           thumbnailUrl: src,
+          tweetId: tweetInfo?.tweetId,
         });
+
+        try {
+          // Twitter API 호출로 실제 비디오 URL 추출
+          const videoUrl = await getVideoUrlFromThumbnail(img as HTMLImageElement, tweetContainer);
+
+          if (videoUrl) {
+            // 클릭된 요소 확인
+            if (
+              img === clickedElement ||
+              clickedElement.contains(img) ||
+              img.contains(clickedElement)
+            ) {
+              clickedIndex = items.length;
+            }
+
+            // 섬네일 대신 실제 비디오 MediaInfo 생성
+            const videoInfo = this.createMediaInfo(`video_${i}`, videoUrl, 'video', tweetInfo, {
+              thumbnailUrl: src,
+              alt: `Video ${i + 1}`,
+              fallbackSource: 'thumbnail-conversion',
+            });
+
+            logger.debug('[FallbackStrategy] 비디오 URL 변환 성공 (Phase 333):', {
+              thumbnailUrl: src,
+              videoUrl,
+              videoId: videoInfo.id,
+            });
+
+            items.push(videoInfo);
+          } else {
+            logger.debug('[FallbackStrategy] 비디오 URL 변환 실패 - 섬네일 스킵:', {
+              thumbnailUrl: src,
+            });
+          }
+        } catch (error) {
+          logger.warn('[FallbackStrategy] 비디오 URL 변환 오류 - 섬네일 스킵:', {
+            thumbnailUrl: src,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+
+        // 섬네일 자체는 항상 스킵 (변환 성공/실패 무관)
         continue;
       }
 
@@ -157,11 +206,11 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * 비디오 요소에서 미디어 추출
    */
-  private extractFromVideos(
+  private async extractFromVideos(
     tweetContainer: HTMLElement,
     clickedElement: HTMLElement,
     tweetInfo?: TweetInfo
-  ): { items: MediaInfo[]; clickedIndex: number } {
+  ): Promise<{ items: MediaInfo[]; clickedIndex: number }> {
     const videos = tweetContainer.querySelectorAll('video');
     const items: MediaInfo[] = [];
     let clickedIndex = -1;
@@ -215,11 +264,11 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * 데이터 속성에서 미디어 추출
    */
-  private extractFromDataAttributes(
+  private async extractFromDataAttributes(
     tweetContainer: HTMLElement,
     clickedElement: HTMLElement,
     tweetInfo?: TweetInfo
-  ): { items: MediaInfo[]; clickedIndex: number } {
+  ): Promise<{ items: MediaInfo[]; clickedIndex: number }> {
     const elementsWithData = tweetContainer.querySelectorAll(
       '[data-src], [data-background-image], [data-url]'
     );
@@ -236,6 +285,22 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const url = dataSrc || dataBg || dataUrl;
 
       if (!this.isValidMediaUrl(url)) continue;
+
+      // 이모지 URL 제외 (Phase 331)
+      if (isEmojiUrl(url)) {
+        logger.debug('[FallbackStrategy] 이모지 URL 필터링 (data-attributes):', {
+          sourceUrl: url,
+        });
+        continue;
+      }
+
+      // 비디오 섬네일 제외 (Phase 332)
+      if (isVideoThumbnailUrl(url)) {
+        logger.debug('[FallbackStrategy] 비디오 섬네일 스킵 (data-attributes):', {
+          thumbnailUrl: url,
+        });
+        continue;
+      }
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
@@ -261,11 +326,11 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * 배경 이미지에서 미디어 추출
    */
-  private extractFromBackgroundImages(
+  private async extractFromBackgroundImages(
     tweetContainer: HTMLElement,
     clickedElement: HTMLElement,
     tweetInfo?: TweetInfo
-  ): { items: MediaInfo[]; clickedIndex: number } {
+  ): Promise<{ items: MediaInfo[]; clickedIndex: number }> {
     const elements = tweetContainer.querySelectorAll('*');
     const items: MediaInfo[] = [];
     let clickedIndex = -1;
@@ -281,6 +346,22 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
 
       const url = this.extractUrlFromBackgroundImage(backgroundImage);
       if (!this.isValidMediaUrl(url)) continue;
+
+      // 이모지 URL 제외 (Phase 331)
+      if (isEmojiUrl(url)) {
+        logger.debug('[FallbackStrategy] 이모지 URL 필터링 (background-images):', {
+          sourceUrl: url,
+        });
+        continue;
+      }
+
+      // 비디오 섬네일 제외 (Phase 332)
+      if (isVideoThumbnailUrl(url)) {
+        logger.debug('[FallbackStrategy] 비디오 섬네일 스킵 (background-images):', {
+          thumbnailUrl: url,
+        });
+        continue;
+      }
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {

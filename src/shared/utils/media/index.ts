@@ -17,6 +17,9 @@ export {
   isVideoThumbnailUrl,
   extractVideoIdFromThumbnail,
   convertThumbnailToVideoUrl,
+  classifyMediaUrl,
+  shouldIncludeMediaUrl,
+  type MediaTypeResult,
 } from './media-url.util';
 
 // Media Click Detection utilities

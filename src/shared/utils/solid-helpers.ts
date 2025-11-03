@@ -23,6 +23,16 @@ export function toAccessor<T>(value: T | Accessor<T>): Accessor<T> {
 }
 
 /**
+ * Type Guard: Accessor 타입 검증
+ *
+ * @param value 검증할 값
+ * @returns Accessor 타입 여부 (함수인지 확인)
+ */
+export function isAccessor<T = unknown>(value: unknown): value is Accessor<T> {
+  return typeof value === 'function';
+}
+
+/**
  * Type Guard: HTMLElement 타입 검증
  * Phase 141.3: event.target 타입 단언 제거
  *

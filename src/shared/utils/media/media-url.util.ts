@@ -55,42 +55,58 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     // 반드시 isTwitterMediaUrl()로 호스트명을 재검증한다(도메인 스푸핑 방지).
     const images = cachedQuerySelectorAll('img[src*="pbs.twimg.com"]', rootElement, 3000);
     if (images && images.length > 0) {
-      Array.from(images).forEach(img => {
+      for (const img of Array.from(images)) {
         const imgElement = img as HTMLImageElement;
         const src = imgElement.src;
 
         // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출
-        // 이모지 제외 (Phase 331), 비디오 섬네일 제외 (Phase 332 - 실제 video 요소 우선)
+        // 이모지 제외 (Phase 331)
+        // 비디오 섬네일 제외 (Phase 332)
         if (
-          isTwitterMediaUrl(src) &&
-          src.includes('/media/') &&
-          !src.includes('profile_images') &&
-          !isEmojiUrl(src) &&
-          !isVideoThumbnailUrl(src) // 비디오 섬네일은 Phase 1에서 이미 처리됨
+          !isTwitterMediaUrl(src) ||
+          !src.includes('/media/') ||
+          src.includes('profile_images') ||
+          isEmojiUrl(src) ||
+          isVideoThumbnailUrl(src)
         ) {
-          const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
-          if (mediaInfo) {
-            mediaItems.push(mediaInfo);
-            mediaIndex++;
-          }
+          continue;
         }
-      });
+
+        // 일반 이미지 처리
+        const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
+        if (mediaInfo) {
+          mediaItems.push(mediaInfo);
+          mediaIndex++;
+        }
+      }
     }
 
     // 추가: data-testid="tweetPhoto"와 data-testid="videoPlayer" 요소들도 확인 (캐시된 조회)
     const tweetPhotos = cachedQuerySelectorAll(SELECTORS.TWEET_PHOTO, rootElement, 3000);
     if (tweetPhotos && tweetPhotos.length > 0) {
-      Array.from(tweetPhotos).forEach(photo => {
+      for (const photo of Array.from(tweetPhotos)) {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
-        // URL 검증: 호스트명을 정확히 확인하여 도메인 스푸핑 방지 + 이모지 제외
-        if (imgElement?.src && isTwitterMediaUrl(imgElement.src) && !isEmojiUrl(imgElement.src)) {
-          const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
-          if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {
-            mediaItems.push(mediaInfo);
-            mediaIndex++;
-          }
+        if (!imgElement?.src || !isTwitterMediaUrl(imgElement.src)) {
+          continue;
         }
-      });
+
+        // 이모지 제외
+        if (isEmojiUrl(imgElement.src)) {
+          continue;
+        }
+
+        // 비디오 섬네일 제외 (Phase 332)
+        if (isVideoThumbnailUrl(imgElement.src)) {
+          continue;
+        }
+
+        // 일반 이미지 처리
+        const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
+        if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {
+          mediaItems.push(mediaInfo);
+          mediaIndex++;
+        }
+      }
     }
 
     logger.debug(`getMediaUrlsFromTweet: ${mediaItems.length}개 미디어 추출됨 - ${tweetId}`);
@@ -338,6 +354,35 @@ function isTwitterMediaUrl(url: string): boolean {
   }
 }
 
+// ===== Media Filter Patterns (Cached Regex) =====
+/**
+ * Cached regex patterns for performance optimization
+ * Phase 331-332: Emoji and video thumbnail filtering
+ */
+const MEDIA_FILTER_PATTERNS = {
+  /** abs[-N].twimg.com hostname pattern for emoji CDN */
+  EMOJI_HOSTNAME: /^abs(-\d+)?\.twimg\.com$/i,
+  /** /emoji/v<N>/(svg|<size>) path pattern */
+  EMOJI_PATH: /\/emoji\/v\d+\/(svg|\d+x\d+)\//i,
+  /** Video thumbnail paths: amplify_video_thumb, ext_tw_video_thumb, tweet_video_thumb */
+  VIDEO_THUMB_PATH:
+    /\/(amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|ad_img\/amplify_video)\//i,
+} as const;
+
+/**
+ * Media type discriminator result
+ */
+export interface MediaTypeResult {
+  /** Media type classification */
+  type: 'image' | 'video' | 'emoji' | 'video-thumbnail' | 'unknown';
+  /** Whether this media should be included in extraction */
+  shouldInclude: boolean;
+  /** Reason for filtering (if shouldInclude is false) */
+  reason?: string;
+  /** Validated hostname */
+  hostname?: string;
+}
+
 /**
  * URL이 Twitter 이모지인지 판별
  *
@@ -348,6 +393,13 @@ function isTwitterMediaUrl(url: string): boolean {
  *
  * @param url - 검증할 URL
  * @returns 이모지 URL 여부
+ *
+ * @example
+ * ```ts
+ * isEmojiUrl('https://abs.twimg.com/emoji/v2/svg/1f600.svg') // true
+ * isEmojiUrl('https://abs-0.twimg.com/emoji/v1/72x72/1f44d.png') // true
+ * isEmojiUrl('https://pbs.twimg.com/media/ABC123?format=jpg') // false
+ * ```
  */
 export function isEmojiUrl(url: string): boolean {
   if (!url || typeof url !== 'string') {
@@ -358,7 +410,7 @@ export function isEmojiUrl(url: string): boolean {
     const urlObj = new URL(url);
 
     // 1. 호스트 확인: abs[-N].twimg.com (이모지는 abs 서버에서 제공)
-    if (!urlObj.hostname.match(/^abs(-\d+)?\.twimg\.com$/i)) {
+    if (!MEDIA_FILTER_PATTERNS.EMOJI_HOSTNAME.test(urlObj.hostname)) {
       return false;
     }
 
@@ -369,7 +421,7 @@ export function isEmojiUrl(url: string): boolean {
 
     // 3. 형식 확인: /emoji/v<N>/(svg|<size>x<size>)/
     // 예: /emoji/v2/svg/, /emoji/v1/72x72/, /emoji/v2/36x36/
-    return /\/emoji\/v\d+\/(svg|[\dx]+)\//i.test(urlObj.pathname);
+    return MEDIA_FILTER_PATTERNS.EMOJI_PATH.test(urlObj.pathname);
   } catch {
     return false;
   }
@@ -380,12 +432,17 @@ export function isEmojiUrl(url: string): boolean {
  *
  * 2-layer validation:
  * 1. 호스트명: pbs.twimg.com
- * 2. 경로: /amplify_video_thumb/ 또는 /ext_tw_video_thumb/
- *
- * 예: https://pbs.twimg.com/amplify_video_thumb/1931629000243453952/img/wzXQeHFbVbPENOya?format=jpg&name=orig
+ * 2. 경로: /amplify_video_thumb/ 또는 /ext_tw_video_thumb/ 또는 /tweet_video_thumb/
  *
  * @param url - 검증할 URL
  * @returns 영상 섬네일 URL 여부
+ *
+ * @example
+ * ```ts
+ * isVideoThumbnailUrl('https://pbs.twimg.com/amplify_video_thumb/123/img/abc.jpg') // true
+ * isVideoThumbnailUrl('https://pbs.twimg.com/ext_tw_video_thumb/456/img/def.jpg') // true
+ * isVideoThumbnailUrl('https://pbs.twimg.com/media/ABC123?format=jpg') // false
+ * ```
  */
 export function isVideoThumbnailUrl(url: string): boolean {
   if (!url || typeof url !== 'string') {
@@ -400,13 +457,131 @@ export function isVideoThumbnailUrl(url: string): boolean {
       return false;
     }
 
-    // 2. 경로 확인: /amplify_video_thumb/ 또는 /ext_tw_video_thumb/
+    // 2. 경로 확인: video thumbnail 패턴 매칭
     // 예: /amplify_video_thumb/1931629000243453952/img/...
     //     /ext_tw_video_thumb/1234567890/img/...
-    return /\/(amplify_video_thumb|ext_tw_video_thumb)\/\d+\/img\//i.test(urlObj.pathname);
+    //     /tweet_video_thumb/1234567890/img/...
+    //     /ad_img/amplify_video/1234567890/...
+    return MEDIA_FILTER_PATTERNS.VIDEO_THUMB_PATH.test(urlObj.pathname);
   } catch {
     return false;
   }
+}
+
+/**
+ * Comprehensive media type classifier
+ *
+ * Determines the exact type of media URL and whether it should be included in extraction.
+ * This is the primary filter for media extraction workflows.
+ *
+ * @param url - Media URL to classify
+ * @returns Classification result with inclusion recommendation
+ *
+ * @example
+ * ```ts
+ * classifyMediaUrl('https://pbs.twimg.com/media/ABC123?format=jpg&name=orig')
+ * // { type: 'image', shouldInclude: true, hostname: 'pbs.twimg.com' }
+ *
+ * classifyMediaUrl('https://abs.twimg.com/emoji/v2/svg/1f600.svg')
+ * // { type: 'emoji', shouldInclude: false, reason: 'Emoji URLs are filtered', ... }
+ *
+ * classifyMediaUrl('https://pbs.twimg.com/amplify_video_thumb/123/img/abc.jpg')
+ * // { type: 'video-thumbnail', shouldInclude: false, reason: 'Video thumbnails are skipped (prefer video elements)', ... }
+ * ```
+ */
+export function classifyMediaUrl(url: string): MediaTypeResult {
+  if (!url || typeof url !== 'string') {
+    return {
+      type: 'unknown',
+      shouldInclude: false,
+      reason: 'Invalid URL: empty or non-string',
+    };
+  }
+
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+
+    // 1. Check for emoji (highest priority filter)
+    if (isEmojiUrl(url)) {
+      return {
+        type: 'emoji',
+        shouldInclude: false,
+        reason: 'Emoji URLs are filtered (Phase 331)',
+        hostname,
+      };
+    }
+
+    // 2. Check for video thumbnail (second priority filter)
+    if (isVideoThumbnailUrl(url)) {
+      return {
+        type: 'video-thumbnail',
+        shouldInclude: false,
+        reason: 'Video thumbnails are skipped (prefer video elements - Phase 332)',
+        hostname,
+      };
+    }
+
+    // 3. Classify valid media types
+    if (hostname === 'video.twimg.com') {
+      // Only include if it's a proper video path (/ext_tw_video/, /tweet_video/, etc.)
+      if (urlObj.pathname.match(/\/(ext_tw_video|tweet_video|amplify_video)\//i)) {
+        return {
+          type: 'video',
+          shouldInclude: true,
+          hostname,
+        };
+      }
+      // Unknown video path
+      return {
+        type: 'unknown',
+        shouldInclude: false,
+        reason: 'Unsupported video path pattern',
+        hostname,
+      };
+    }
+
+    if (hostname === 'pbs.twimg.com' && urlObj.pathname.includes('/media/')) {
+      return {
+        type: 'image',
+        shouldInclude: true,
+        hostname,
+      };
+    }
+
+    // 4. Unknown or unsupported URL
+    return {
+      type: 'unknown',
+      shouldInclude: false,
+      reason: 'Unsupported hostname or path pattern',
+      hostname,
+    };
+  } catch {
+    return {
+      type: 'unknown',
+      shouldInclude: false,
+      reason: 'URL parsing failed',
+    };
+  }
+}
+
+/**
+ * Check if a URL should be included in media extraction
+ *
+ * Convenience wrapper around classifyMediaUrl for simple include/exclude decisions.
+ *
+ * @param url - Media URL to check
+ * @returns true if URL should be included, false otherwise
+ *
+ * @example
+ * ```ts
+ * shouldIncludeMediaUrl('https://pbs.twimg.com/media/ABC?format=jpg') // true
+ * shouldIncludeMediaUrl('https://abs.twimg.com/emoji/v2/svg/1f600.svg') // false
+ * shouldIncludeMediaUrl('https://pbs.twimg.com/amplify_video_thumb/123/img/abc.jpg') // false
+ * ```
+ */
+export function shouldIncludeMediaUrl(url: string): boolean {
+  return classifyMediaUrl(url).shouldInclude;
 }
 
 /**
