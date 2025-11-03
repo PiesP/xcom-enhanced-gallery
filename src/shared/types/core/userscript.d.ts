@@ -28,10 +28,6 @@ declare function GM_notification(
   image?: string,
   onclick?: () => void
 ): void;
-declare function GM_setClipboard(
-  data: string,
-  info?: string | { type?: string; mimetype?: string }
-): void;
 
 /**
  * Greasemonkey/Tampermonkey API 전역 함수

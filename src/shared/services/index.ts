@@ -144,9 +144,6 @@ export {
   type FormattedError,
 } from './error-formatter';
 
-// 7. 클립보드 서비스 (Phase 311)
-export { ClipboardService, clipboardService, type ClipboardResult } from './clipboard-service';
-
 // ====================================
 // 유틸리티 및 타입들
 // ====================================
