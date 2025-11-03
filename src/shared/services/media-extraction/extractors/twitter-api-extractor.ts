@@ -38,7 +38,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       });
 
       const timeoutMs = options.timeoutMs ?? 10_000;
-      const maxRetries = options.maxRetries ?? 3;
+      const maxRetries = options.maxRetries ?? 1;
 
       const apiMedias = await this.fetchWithRetry(
         () => TwitterAPI.getTweetMedias(tweetInfo.tweetId),

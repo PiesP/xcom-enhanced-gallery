@@ -90,52 +90,15 @@ export const EVENTS = {
   DOWNLOAD_ERROR: 'xeg:download:error',
 } as const;
 
-// 안정적인 DOM 선택자 (Fallback 전략)
+// 안정적인 DOM 선택자 (최적화됨 - Phase 335)
 export const STABLE_SELECTORS = {
-  TWEET_CONTAINERS: [
-    'article[data-testid="tweet"]',
-    'article[role="article"]',
-    'div[data-testid="tweet"]',
-    'article',
-  ],
-  MEDIA_CONTAINERS: [
-    '[data-testid="tweetPhoto"]',
-    '[data-testid="videoPlayer"]',
-    '[aria-label*="Image"]',
-    '[aria-label*="Video"]',
-  ],
-  VIDEO_CONTAINERS: [
-    '[data-testid="videoPlayer"]',
-    '[data-testid="tweetVideo"]',
-    '[data-testid="tweetPhoto"]',
-    'video',
-    '.media-container video',
-    '[role="button"][aria-label*="video"]',
-  ],
-
-  IMAGE_CONTAINERS: [
-    '[data-testid="tweetPhoto"]',
-    'img[src*="pbs.twimg.com"]',
-    'img[src*="twimg.com"]',
-    'a[href*="/photo/"]',
-    '.media-container img',
-    '[role="img"]',
-  ],
-  MEDIA_LINKS: [
-    'a[href*="/status/"][href*="/photo/"]',
-    'a[href*="/status/"][href*="/video/"]',
-    'a[data-testid="tweetPhoto"]',
-  ],
-  MEDIA_VIEWERS: [
-    '[data-testid="photoViewer"]',
-    '[data-testid="videoComponent"]',
-    '[data-testid="media-overlay"]',
-    '[data-testid="playButton"]',
-    '[aria-modal="true"][data-testid="Drawer"]',
-    '[data-testid="swipe-to-dismiss"]',
-    '[data-testid="Drawer"] [role="button"]',
-  ],
-  MEDIA_PLAYERS: ['[data-testid="videoPlayer"]', 'video', '[role="button"][aria-label*="video"]'],
+  TWEET_CONTAINERS: ['article[data-testid="tweet"]'],
+  MEDIA_CONTAINERS: ['[data-testid="tweetPhoto"]', '[data-testid="videoPlayer"]'],
+  VIDEO_CONTAINERS: ['[data-testid="videoPlayer"]', 'video'],
+  IMAGE_CONTAINERS: ['[data-testid="tweetPhoto"]', 'img[src*="pbs.twimg.com"]'],
+  MEDIA_LINKS: ['a[href*="/status/"][href*="/photo/"]', 'a[href*="/status/"][href*="/video/"]'],
+  MEDIA_VIEWERS: ['[data-testid="photoViewer"]', '[aria-modal="true"][data-testid="Drawer"]'],
+  MEDIA_PLAYERS: ['[data-testid="videoPlayer"]', 'video'],
   ACTION_BUTTONS: {
     like: '[data-testid="like"]',
     retweet: '[data-testid="retweet"]',
@@ -281,19 +244,6 @@ export const DEFAULT_SETTINGS = {
   },
   version: '1.0.0',
   lastModified: Date.now(),
-} as const;
-
-// ================================
-// 미디어 추출 기본 옵션
-// ================================
-
-export const DEFAULT_EXTRACTION_OPTIONS = {
-  enableBackgroundLoading: true,
-  enableCache: true,
-  maxRetries: 3,
-  timeout: 10000,
-  fallbackStrategies: true,
-  debugMode: false,
 } as const;
 
 // ================================

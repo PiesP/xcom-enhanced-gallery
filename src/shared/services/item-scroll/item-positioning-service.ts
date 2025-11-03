@@ -24,7 +24,7 @@ export interface ScrollOptions {
  */
 export class ItemPositioningService {
   private retryCount = 0;
-  private readonly maxRetries = 3;
+  private readonly maxRetries = 2;
   private pollingAttempts = 0;
   private readonly maxPollingAttempts = 20;
 

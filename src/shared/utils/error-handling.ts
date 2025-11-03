@@ -253,7 +253,7 @@ export async function withFallback<T>(
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries = 3,
+  maxRetries = 1,
   delay = 1000,
   context: Omit<ErrorContext, 'timestamp'>
 ): Promise<T> {

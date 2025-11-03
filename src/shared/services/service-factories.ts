@@ -13,7 +13,12 @@ export async function getMediaService(): Promise<MediaService> {
     // Use class-level singleton to avoid duplicate instances created via both
     // module-level exports (mediaService) and factory usage. This ensures a single
     // VideoControlService interval lifecycle that is properly cleaned up.
-    mediaServiceInstance = import('./media-service').then(m => m.MediaService.getInstance());
+    mediaServiceInstance = import('./media-service').then(async m => {
+      const service = m.MediaService.getInstance();
+      // Ensure initialization to load MediaExtractionService dynamically
+      await service.initialize();
+      return service;
+    });
   }
   return mediaServiceInstance;
 }

@@ -161,7 +161,6 @@ export interface ExtractionOptions {
   readonly enableCache: boolean;
   readonly maxRetries: number;
   readonly timeout: number;
-  readonly fallbackStrategies: boolean;
   readonly debugMode: boolean;
 }
 
