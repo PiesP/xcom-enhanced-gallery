@@ -9,6 +9,8 @@ import {
   extractOriginalImageUrl,
   isValidMediaUrl,
   canExtractOriginalImage,
+  extractOriginalVideoUrl,
+  canExtractOriginalVideo,
 } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
@@ -202,8 +204,20 @@ export class DOMDirectExtractor {
     videos.forEach((video, _index) => {
       const videoElement = video as HTMLVideoElement;
       if (videoElement.src) {
+        // Phase 330: 비디오 URL 최적화 (tag=12로 MP4 품질 보장)
+        let optimizedUrl = videoElement.src;
+        if (canExtractOriginalVideo(videoElement.src)) {
+          optimizedUrl = extractOriginalVideoUrl(videoElement.src);
+
+          logger.debug('[DOMDirectExtractor] 비디오 URL 최적화 성공 (Phase 330)', {
+            sourceUrl: videoElement.src,
+            optimizedUrl,
+            tweetId: tweetInfo?.tweetId,
+          });
+        }
+
         mediaItems.push(
-          this.createVideoMediaInfo(videoElement, videoElement.src, mediaItems.length, tweetInfo)
+          this.createVideoMediaInfo(videoElement, optimizedUrl, mediaItems.length, tweetInfo)
         );
       }
     });

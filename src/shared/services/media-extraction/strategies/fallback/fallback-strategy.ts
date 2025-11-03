@@ -9,6 +9,8 @@ import { parseUsernameFast } from '@shared/services/media/username-extraction-se
 import {
   extractOriginalImageUrl,
   canExtractOriginalImage,
+  extractOriginalVideoUrl,
+  canExtractOriginalVideo,
 } from '@shared/utils/media/media-url.util';
 import type { MediaInfo, MediaExtractionResult, MediaType } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
@@ -164,8 +166,26 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`video_${i}`, src, 'video', tweetInfo, {
-        thumbnailUrl: video.getAttribute('poster') || src,
+      // Phase 330: 비디오 URL 최적화 (tag=12로 MP4 품질 보장)
+      let optimizedUrl = src;
+      if (src && canExtractOriginalVideo(src)) {
+        optimizedUrl = extractOriginalVideoUrl(src);
+
+        logger.debug('[FallbackStrategy] 비디오 URL 최적화 성공 (Phase 330)', {
+          sourceUrl: src,
+          optimizedUrl,
+          index: i,
+          tweetId: tweetInfo?.tweetId,
+        });
+      } else if (src?.includes('video.twimg.com')) {
+        logger.debug('[FallbackStrategy] 비디오 URL 최적화 불가능', {
+          sourceUrl: src,
+          reason: !src.includes('/vi/') ? 'not /vi/ path' : 'already optimized',
+        });
+      }
+
+      const mediaInfo = this.createMediaInfo(`video_${i}`, optimizedUrl, 'video', tweetInfo, {
+        thumbnailUrl: video.getAttribute('poster') || optimizedUrl,
         alt: `Video ${i + 1}`,
         fallbackSource: 'video-element',
       });

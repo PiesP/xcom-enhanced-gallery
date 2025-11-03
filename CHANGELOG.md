@@ -10,6 +10,41 @@ and this project adheres to
 
 ### Added
 
+#### 비디오 원본 추출 품질 개선 (Phase 330)
+
+- **자동 비디오 최적화**: Twitter 비디오 미디어 추출 시 최고 품질 MP4 (`tag=12`)
+  자동 요청
+  - `canExtractOriginalVideo()`: 비디오 최적화 가능 여부 사전 검증
+  - `extractOriginalVideoUrl()`: video.twimg.com 비디오 URL 최적화 로직
+    - tag 파라미터 없으면 `?tag=12` 추가
+    - tag=13이면 tag=12로 변경
+    - 이미 tag=12면 그대로 반환
+- **상세 로깅**: 비디오 URL 최적화 상태 추적
+  - Twitter 미디어인 경우만 상세 로깅 (노이즈 최소화)
+  - 변환 전/후 URL 비교 로깅
+- **폴백 메커니즘**: URL 파싱 실패 시 문자열 기반 처리로 안정성 보장
+- **적용 범위**:
+  - `createMediaInfoFromVideo()`: 미디어 정보 생성 시 URL 최적화
+  - `FallbackStrategy.extractFromVideos()`: 백업 추출 전략에 적용
+  - `DOMDirectExtractor`: DOM 직접 추출에 적용
+- **성능**: 런타임 오버헤드 없음 (URL 변환만 수행, ~마이크로초 단위)
+- **호환성**:
+  - ✅ `video.twimg.com/vi/...` 형식 완벽 지원
+  - ⏸️ `pbs.twimg.com` GIF (향후 이미지 로직 통일)
+  - ❌ `amplifeed.twimg.com` (API 제한, 미지원)
+
+#### 미디어 추출 원본 이미지 품질 개선 (Phase 329)
+
+- **자동 원본 추출**: Twitter 이미지 미디어 추출 시 고화질 원본(`name=orig`)
+  자동 요청
+  - `canExtractOriginalImage()`: 원본 추출 가능 여부 사전 검증
+  - `extractOriginalImageUrl()` 강화: 로깅, 에러 처리, 폴백 전략 추가
+- **상세 로깅**: 원본 추출 성공/실패 추적
+  - Twitter 미디어인 경우만 상세 로깅 (노이즈 최소화)
+  - 각 단계별 상태 확인 가능
+- **폴백 메커니즘**: URL 파싱 실패 시 문자열 기반 처리로 안정성 보장
+- **적용 범위**: FallbackStrategy, DOMDirectExtractor 모두에 적용
+
 #### 개발 전용 고급 로깅 시스템 (Phase 285)
 
 - **메모리 프로파일링**: `measureMemory()` 함수 추가 - `performance.memory`
@@ -33,11 +68,18 @@ and this project adheres to
   `keydown`, `keyup`, `wheel`(스로틀)
 - **프로덕션 제로 오버헤드**: `__DEV__` + Tree-shaking으로 프로덕션 완전 제거
 
+### Fixed
+
+- **미디어 원본 추출**: 사전 검증으로 불필요한 처리 방지
+- **URL 파싱 실패**: 폴백 전략으로 안정성 개선
+- **타입 안전성**: Optional chaining으로 린트 경고 제거
+
 ### Performance
 
-- 개발 빌드: 792.49 KB (디버깅 도구 포함)
-- 프로덕션 빌드: 344.54 KB (gzip: 93.16 KB, 변화 없음)
+- 개발 빌드: 934 KB (디버깅 도구 포함)
+- 프로덕션 빌드: 376 KB (gzip: 93 KB, 변화 없음)
 - Tree-shaking 검증: 프로덕션에서 개발 전용 코드 0바이트 오버헤드
+- 원본 추출 오버헤드: 미미 (URL만 변경, 네트워크 동일)
 
 ## [0.4.2] - 2025-11-02
 
