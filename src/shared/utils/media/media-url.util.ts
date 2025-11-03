@@ -34,6 +34,35 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     // document의 경우 documentElement를 사용
     const rootElement = doc instanceof Document ? doc.documentElement : doc;
 
+    // ===== Phase 1: 비디오 미디어 우선 추출 (실제 video 요소) =====
+    // 실제 비디오 요소가 있으면 그것을 우선 사용 (섬네일 변환보다 우선)
+    const videos = cachedQuerySelectorAll('video', rootElement, 2000);
+    const processedVideoIds = new Set<string>(); // 중복 방지
+
+    if (videos && videos.length > 0) {
+      Array.from(videos).forEach(video => {
+        const videoElement = video as HTMLVideoElement;
+        const videoSrc = videoElement.src || videoElement.currentSrc;
+
+        // 비디오 ID 추출 (중복 방지용)
+        if (videoSrc) {
+          const videoIdMatch = videoSrc.match(
+            /\/(?:ext_tw_video|amplify_video|tweet_video)\/(\d+)\//
+          );
+          if (videoIdMatch?.[1]) {
+            processedVideoIds.add(videoIdMatch[1]);
+          }
+        }
+
+        const mediaInfo = createMediaInfoFromVideo(videoElement, tweetId, mediaIndex);
+        if (mediaInfo) {
+          mediaItems.push(mediaInfo);
+          mediaIndex++;
+        }
+      });
+    }
+
+    // ===== Phase 2: 이미지 미디어 추출 (섬네일 fallback 포함) =====
     // 이미지 미디어 추출 (캐시된 조회 사용)
     // 1차 선택은 성능/범용성을 위해 substring 셀렉터를 사용하되,
     // 반드시 isTwitterMediaUrl()로 호스트명을 재검증한다(도메인 스푸핑 방지).
@@ -43,32 +72,30 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         const imgElement = img as HTMLImageElement;
         const src = imgElement.src;
 
-        // 영상 섬네일 우선 처리: 섬네일이면 동영상으로 변환
+        // 영상 섬네일 fallback 처리: 실제 비디오 요소가 없을 때만 변환
         if (isVideoThumbnailUrl(src)) {
-          const videoUrl = convertThumbnailToVideoUrl(src);
-          if (videoUrl) {
-            // Complete fake HTMLVideoElement with all required properties
-            const fakeVideoElement = {
-              src: videoUrl,
-              currentSrc: videoUrl,
-              poster: '',
-              videoWidth: 1920,
-              videoHeight: 1080,
-              currentTime: 0,
-            } as HTMLVideoElement;
+          const videoId = extractVideoIdFromThumbnail(src);
 
-            const mediaInfo = createMediaInfoFromVideo(fakeVideoElement, tweetId, mediaIndex);
-            if (mediaInfo) {
-              logger.debug('[getMediaUrlsFromTweet] 영상 섬네일에서 동영상 추출', {
-                thumbnailUrl: src,
-                videoUrl,
-                tweetId,
-              });
-              mediaItems.push(mediaInfo);
-              mediaIndex++;
-            }
+          // 이미 실제 video 요소로 처리된 경우 스킵
+          if (videoId && processedVideoIds.has(videoId)) {
+            logger.debug('[getMediaUrlsFromTweet] 영상 섬네일 스킵 (실제 비디오 요소 존재)', {
+              thumbnailUrl: src,
+              videoId,
+              tweetId,
+            });
             return;
           }
+
+          // 실제 비디오 요소가 없는 경우에만 섬네일에서 변환 시도
+          logger.warn(
+            '[getMediaUrlsFromTweet] 실제 비디오 요소 없음 - 섬네일 변환은 신뢰할 수 없으므로 스킵',
+            {
+              thumbnailUrl: src,
+              videoId,
+              tweetId,
+            }
+          );
+          return; // 섬네일 변환은 사용하지 않음 (URL 형식 불완전)
         }
 
         // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출 + 이모지 제외
@@ -83,18 +110,6 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
             mediaItems.push(mediaInfo);
             mediaIndex++;
           }
-        }
-      });
-    }
-
-    // 비디오 미디어 추출 (캐시된 조회 사용) — 호스트 검증 강화
-    const videos = cachedQuerySelectorAll('video', rootElement, 2000);
-    if (videos && videos.length > 0) {
-      Array.from(videos).forEach(video => {
-        const mediaInfo = createMediaInfoFromVideo(video as HTMLVideoElement, tweetId, mediaIndex);
-        if (mediaInfo) {
-          mediaItems.push(mediaInfo);
-          mediaIndex++;
         }
       });
     }
