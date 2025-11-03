@@ -194,6 +194,48 @@ export function useGalleryItemScroll(
         });
       }
 
+      // Phase 327: 마지막 아이템 특수 처리
+      const isLastItem = index === total - 1;
+      if (isLastItem) {
+        const itemHeight = targetElement.offsetHeight;
+        const viewportHeight = container.clientHeight;
+
+        if (itemHeight < viewportHeight) {
+          logger.debug('useGalleryItemScroll: Phase 327 - Last item special scroll', {
+            index,
+            itemHeight,
+            viewportHeight,
+            scrollHeight: container.scrollHeight,
+          });
+
+          // 스크롤을 최대 끝으로 이동
+          const actualBehavior = resolveBehavior();
+          container.scrollTo({
+            top: container.scrollHeight - viewportHeight,
+            behavior: actualBehavior,
+          });
+
+          updateStateSignal(setState, {
+            lastScrolledIndex: index,
+            pendingIndex: null,
+          });
+          retryCount = 0;
+
+          // Wait for smooth scroll if needed
+          if (actualBehavior === 'smooth') {
+            await new Promise<void>(resolve => {
+              globalTimerManager.setTimeout(resolve, 300);
+            });
+          }
+
+          globalTimerManager.setTimeout(() => {
+            updateStateSignal(setState, { isAutoScrolling: false });
+          }, 50);
+
+          return;
+        }
+      }
+
       const actualBehavior = resolveBehavior();
 
       targetElement.scrollIntoView({

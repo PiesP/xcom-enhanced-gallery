@@ -9,10 +9,10 @@
  * @example
  * ```typescript
  * // ❌ 직접 사용 금지 (내부용)
- * CoreServiceRegistry.get<ToastController>(SERVICE_KEYS.TOAST);
+ * CoreServiceRegistry.get<ToastManager>(SERVICE_KEYS.TOAST);
  *
  * // ✅ 접근자 사용
- * getToastController();
+ * getToastManager();
  * ```
  */
 

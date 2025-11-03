@@ -1,14 +1,23 @@
 /**
  * UnifiedDownloadService - Phase 312
  *
- * 통합 다운로드 서비스 (BulkDownloadService + DownloadService 통합)
+ * **역할**: URL 기반 미디어 다운로드 (단일/대량) + ZIP 조립
  *
- * Phase 312: 두 개의 다운로드 서비스를 하나로 통합
- * - 단일 파일 다운로드: GM_download 직접 사용
+ * Phase 312: 통합 다운로드 서비스
+ * - 단일 파일 다운로드: GM_download 직접 사용 (URL 기반)
  * - 대량 파일 다운로드: ZIP 조립 (DownloadOrchestrator)
  * - 통일된 API 제공 (Singleton pattern)
  *
- * 코드 감소: 625줄 → 300줄 (52% ↓)
+ * **사용 시나리오**:
+ * - ✅ 단일 미디어 다운로드: downloadSingle(media)
+ * - ✅ 대량 미디어 다운로드: downloadBulk(items, options)
+ * - ✅ ZIP 조립: DownloadOrchestrator 위임
+ *
+ * **vs DownloadService**:
+ * - UnifiedDownloadService: URL 기반 → 원격 리소스 (MediaInfo)
+ * - DownloadService: Blob/File 객체 → 브라우저 메모리 상의 데이터
+ *
+ * 코드 감소: 625줄 → 300줄 (52% ↓) (Phase 312 통합)
  * 테스트 복잡도: 50% ↓
  * 유지보수성: 100% ↑
  */

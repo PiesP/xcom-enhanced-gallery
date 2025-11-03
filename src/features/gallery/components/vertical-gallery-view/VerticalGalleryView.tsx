@@ -66,6 +66,7 @@ import { useSelector, useCombinedSelector } from '@shared/utils/signal-selector'
 import type { MediaInfo } from '@shared/types';
 import { observeViewportCssVars } from '@shared/utils/viewport';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { safeEventPrevent } from '@shared/utils/event-utils';
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
@@ -492,10 +493,7 @@ function VerticalGalleryViewCore({
   };
 
   const handleFitOriginal = (event?: Event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    safeEventPrevent(event);
 
     setImageFitMode('original');
     setSetting('gallery.imageFitMode', 'original').catch(err => {
@@ -506,10 +504,7 @@ function VerticalGalleryViewCore({
   };
 
   const handleFitWidth = (event?: Event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    safeEventPrevent(event);
 
     setImageFitMode('fitWidth');
     setSetting('gallery.imageFitMode', 'fitWidth').catch(err => {
@@ -520,10 +515,7 @@ function VerticalGalleryViewCore({
   };
 
   const handleFitHeight = (event?: Event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    safeEventPrevent(event);
 
     setImageFitMode('fitHeight');
     setSetting('gallery.imageFitMode', 'fitHeight').catch(err => {
@@ -534,10 +526,7 @@ function VerticalGalleryViewCore({
   };
 
   const handleFitContainer = (event?: Event) => {
-    if (event) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
+    safeEventPrevent(event);
 
     setImageFitMode('fitContainer');
     setSetting('gallery.imageFitMode', 'fitContainer').catch(err => {

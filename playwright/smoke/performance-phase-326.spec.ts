@@ -28,26 +28,6 @@ interface ResourceTiming {
 }
 
 /**
- * Performance metrics interface
- */
-interface PerformanceMetrics {
-  // Load times
-  initialLoadTime: number;
-  gallerySetupTime: number;
-  firstContentfulPaint?: number;
-  domContentLoaded?: number;
-
-  // Resource metrics
-  bundleSize: number;
-  cssSize: number;
-  totalResources: number;
-
-  // Runtime metrics
-  memoryUsage: number;
-  frameRate: number;
-}
-
-/**
  * Performance thresholds (Phase 326.5 baseline)
  */
 const PERFORMANCE_THRESHOLDS = {
@@ -419,8 +399,6 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
   // ===== Cumulative Layout Shift (CLS) =====
 
   test('should have minimal layout shift during load', async ({ page }) => {
-    let layoutShifts: number[] = [];
-
     // Monitor layout shifts
     await page.evaluate(() => {
       (window as any).__layoutShifts = [];

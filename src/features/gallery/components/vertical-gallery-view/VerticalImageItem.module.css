@@ -80,6 +80,14 @@
   align-items: center;
 }
 
+/* fitOriginal 모드: 이미지 원본 크기에 맞춰 컨테이너 확장 */
+.imageWrapper:has(.image.fitOriginal),
+.imageWrapper:has(.video.fitOriginal) {
+  width: auto;
+  max-width: none;
+  /* 컨테이너가 이미지 크기에 맞춰 확장 */
+}
+
 .container[data-media-loaded='false'] .imageWrapper {
   min-height: var(--xeg-spacing-3xl, 3rem);
   /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
@@ -158,6 +166,7 @@
 
 /* 이미지 크기 조정 모드별 스타일 */
 .image.fitOriginal {
+  /* 원본 크기: 이미지를 원본 크기 그대로 표시 (축소/확대 없음) */
   inline-size: auto;
   block-size: auto;
   max-inline-size: none;
@@ -166,22 +175,26 @@
 }
 
 .image.fitWidth {
-  inline-size: 100%;
-  block-size: auto;
-  max-inline-size: 100%;
-  object-fit: contain;
-}
-
-.image.fitHeight {
+  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
   inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
+  max-block-size: none;
+  object-fit: scale-down;
+}
+
+.image.fitHeight {
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
   max-block-size: var(--xeg-viewport-height-constrained, 90vh);
-  object-fit: contain;
+  object-fit: scale-down;
 }
 
 .image.fitContainer {
-  inline-size: 100%;
+  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
+  inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
   max-block-size: var(--xeg-viewport-height-constrained, 90vh);
@@ -197,6 +210,7 @@
 }
 
 .video.fitOriginal {
+  /* 원본 크기: 비디오를 원본 크기 그대로 표시 (축소/확대 없음) */
   inline-size: auto;
   block-size: auto;
   max-inline-size: none;
@@ -205,15 +219,26 @@
 }
 
 .video.fitWidth {
-  inline-size: 100%;
+  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
+  inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
-  object-fit: contain;
+  max-block-size: none;
+  object-fit: scale-down;
 }
 
-.video.fitHeight,
+.video.fitHeight {
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  object-fit: scale-down;
+}
+
 .video.fitContainer {
-  inline-size: 100%;
+  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
+  inline-size: auto;
   block-size: auto;
   max-inline-size: 100%;
   max-block-size: var(--xeg-viewport-height-constrained, 90vh);
@@ -349,13 +374,22 @@
 }
 
 /* Fit 모드별 컨테이너 조정 (intrinsic sizing 연동) */
-.container[data-fit-mode='original'] {
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--xeg-color-overlay-light) transparent;
+/* Phase 326: fitOriginal은 이제 다른 모드와 동일하게 컨테이너 제한을 따름 */
+/* overflow/scrollbar 스타일 제거 (일관성 적용) */
+
+/* Base style - lower specificity */
+.container[data-fit-mode='original'] .image,
+.container[data-fit-mode='original'] .video {
+  /* Phase 326: grab cursor 제거 (스크롤 불필요) */
+  cursor: pointer;
 }
 
+.container[data-fit-mode='original'] .image:active,
+.container[data-fit-mode='original'] .video:active {
+  cursor: pointer;
+}
+
+/* Loading state - higher specificity */
 .container[data-media-loaded='false'][data-fit-mode='original'] {
   inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
   max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
@@ -363,30 +397,6 @@
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
     var(--xeg-viewport-height-constrained, 90vh)
   );
-}
-
-.container[data-fit-mode='original']::-webkit-scrollbar {
-  width: 0.5rem; /* 8px = 0.5rem */
-  height: 0.5rem; /* 8px = 0.5rem */
-}
-
-.container[data-fit-mode='original']::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.container[data-fit-mode='original']::-webkit-scrollbar-thumb {
-  background: var(--xeg-color-overlay-light);
-  border-radius: var(--xeg-radius-sm);
-  transition: var(--xeg-transition-normal);
-}
-
-.container[data-fit-mode='original']::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-color-overlay-medium);
-}
-
-.container[data-fit-mode='original'] .image,
-.container[data-fit-mode='original'] .video {
-  cursor: grab;
 }
 
 .container[data-media-loaded='false'][data-fit-mode='original'] .image,
@@ -397,11 +407,6 @@
     var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
     var(--xeg-viewport-height-constrained, 90vh)
   );
-}
-
-.container[data-fit-mode='original'] .image:active,
-.container[data-fit-mode='original'] .video:active {
-  cursor: grabbing;
 }
 
 .container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight'],

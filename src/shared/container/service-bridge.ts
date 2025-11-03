@@ -7,7 +7,7 @@
  * **내부 전용**: 일반 코드는 service-accessors.ts의 typed getter를 사용하세요.
  *
  * **용도별 선택**:
- * - 일반 서비스: `service-accessors.ts`의 typed getter (e.g., `getToastController()`)
+ * - 일반 서비스: `service-accessors.ts`의 typed getter (e.g., `getToastManager()`)
  * - 타입 숨김 필요: `bridgeGetService(key)` (순환 의존성 회피)
  * - BaseService 전용: `bridgeGetBaseService(key)`, `bridgeRegisterBaseService(...)`
  *
@@ -17,7 +17,7 @@
  * import { CoreService } from '@shared/services/service-manager';
  *
  * // ✅ 브릿지 또는 접근자 사용
- * import { getToastController } from '@shared/container/service-accessors';
+ * import { getToastManager } from '@shared/container/service-accessors';
  * import { bridgeGetService } from '@shared/container/service-bridge';
  * ```
  */

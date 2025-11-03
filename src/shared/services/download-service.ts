@@ -1,13 +1,19 @@
 /**
  * DownloadService - Direct Tampermonkey GM_download integration
  *
- * Phase 309: URL-based downloads (now superseded by UnifiedDownloadService)
+ * **역할**: Blob/File 객체 다운로드 전용 (Phase 320+)
+ *
  * Phase 320: Blob/File download support via Tampermonkey 5.4.0+ GM_download
  * Phase 314-4: Test mode support for non-userscript environments
  *
- * Current Use:
- * - Blob/File downloads: downloadBlob(), downloadBlobBulk() ✅ Active
- * - Test mode downloads: downloadInTestMode(), downloadBlobBulkInTestMode() ✅ Active (Phase 314-4)
+ * **사용 시나리오**:
+ * - ✅ Blob/File 다운로드: downloadBlob(), downloadBlobBulk()
+ * - ✅ 테스트 모드: downloadInTestMode(), downloadBlobBulkInTestMode()
+ * - ❌ URL 기반 다운로드: UnifiedDownloadService 사용 권장
+ *
+ * **vs UnifiedDownloadService**:
+ * - DownloadService: Blob/File 객체 → 브라우저 메모리 상의 데이터
+ * - UnifiedDownloadService: URL 기반 → 원격 리소스 다운로드 + ZIP 조립
  *
  * Pattern: Singleton with async/await, error handling, user notifications
  * MV3 Compatible: All methods use standard browser APIs + Tampermonkey native features

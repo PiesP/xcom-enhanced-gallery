@@ -4,7 +4,7 @@
  * 서비스 컨테이너의 공개 인터페이스를 제공합니다.
  *
  * **공개 API**:
- * - 서비스 접근자: `getToastController()`, `getThemeService()` 등
+ * - 서비스 접근자: `getToastManager()`, `getThemeService()` 등
  * - 서비스 등록: `registerGalleryRenderer()`, `registerSettingsManager()` 등
  * - 설정 접근: `getSetting()`, `setSetting()`, `tryGetSettingsService()`
  * - 테스트 하네스: `createTestHarness()` (테스트 전용)
@@ -20,12 +20,12 @@
  * ```typescript
  * // ✅ Features에서
  * import {
- *   getToastController,
+ *   getToastManager,
  *   getThemeService,
  *   getSetting,
  * } from '@shared/container';
  *
- * const toast = getToastController();
+ * const toast = getToastManager();
  * const theme = getThemeService();
  * const autoDownload = getSetting('autoDownload', false);
  *
@@ -40,7 +40,7 @@
 // ============================================================================
 export {
   // Service Getters
-  getToastController,
+  getToastManager,
   getThemeService,
   getMediaFilenameService,
   getMediaServiceFromContainer,

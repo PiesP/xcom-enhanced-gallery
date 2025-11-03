@@ -1,6 +1,6 @@
 /**
  * @fileoverview 통합 미디어 타입 정의
- * @version 4.0.0 - Phase 195: 최종 통합 (core/media.types.ts 병합)
+ * @version 4.1.0 - Phase 327: MediaType SSOT 확립 (constants.ts 단일 소스)
  *
  * 모든 미디어 관련 타입을 하나로 통합:
  * - media.types.ts (핵심 미디어 타입)
@@ -9,16 +9,13 @@
  */
 
 // ================================
-// 기본 미디어 타입들
+// 기본 미디어 타입들 (constants.ts에서 재export - SSOT)
 // ================================
 
-// Constants에서 re-export
-import type { MediaType as BaseMediaType, MediaQuality as BaseMediaQuality } from '@/constants';
+// MediaType과 MediaQuality는 constants.ts가 단일 소스
+export type { MediaType, MediaQuality } from '@/constants';
 // ErrorCode 통합을 위해 import (ExtractionErrorCode 별칭으로 제공)
 import type { ErrorCode } from './result.types';
-
-export type MediaType = BaseMediaType;
-export type MediaQuality = BaseMediaQuality;
 
 /**
  * 브랜드 타입 기본 구조

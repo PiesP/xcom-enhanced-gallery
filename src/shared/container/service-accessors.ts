@@ -5,14 +5,14 @@
  * 모든 접근은 CoreServiceRegistry를 통해 캐싱됩니다.
  *
  * **권장 용법**:
- * - Features에서: `getToastController()`, `getThemeService()` 등 사용
+ * - Features에서: `getToastManager()`, `getThemeService()` 등 사용
  * - SERVICE_KEYS 직접 참조 금지
  * - 없는 서비스는 try* 로 시작하는 함수 사용 (e.g., `tryGetSettingsManager()`)
  *
  * @example
  * ```typescript
  * // ✅ 접근자 사용
- * const toast = getToastController();
+ * const toast = getToastManager();
  * const theme = getThemeService();
  * const settings = tryGetSettingsManager();
  *
@@ -23,7 +23,7 @@
  */
 import type { FilenameService } from '../services/file-naming';
 import type { ThemeService } from '../services/theme-service';
-import type { ToastController } from '../services/unified-toast-manager';
+import type { ToastManager } from '../services/unified-toast-manager';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 // Phase 237: Core Base 서비스들을 static import로 변경 (require 제거)
@@ -41,12 +41,12 @@ import { logger } from '../logging';
 // ============================================================================
 
 /**
- * 토스트 컨트롤러를 조회합니다.
- * @returns ToastController 인스턴스
+ * 토스트 관리자를 조회합니다.
+ * @returns ToastManager 인스턴스
  * @throws 서비스를 찾을 수 없으면 예외 발생
  */
-export function getToastController(): ToastController {
-  return CoreServiceRegistry.get<ToastController>(SERVICE_KEYS.TOAST);
+export function getToastManager(): ToastManager {
+  return CoreServiceRegistry.get<ToastManager>(SERVICE_KEYS.TOAST);
 }
 
 /**
@@ -161,7 +161,7 @@ export function registerBaseService(key: string, service: unknown): void {
 
 /**
  * 필수 서비스들을 미리 초기화합니다 (실패해도 무시).
- * MediaService, ToastController 초기화 시도.
+ * MediaService, ToastManager 초기화 시도.
  */
 export function warmupCriticalServices(): void {
   try {
@@ -170,7 +170,7 @@ export function warmupCriticalServices(): void {
     // noop: 브라우저 환경에서만 필요
   }
   try {
-    void getToastController();
+    void getToastManager();
   } catch {
     // noop
   }

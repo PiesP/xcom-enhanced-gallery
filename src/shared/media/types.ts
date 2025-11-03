@@ -3,15 +3,14 @@
  * @description MediaDescriptor와 관련 타입 정의
  */
 
+// MediaType은 constants.ts에서 재export (SSOT)
+import type { MediaType } from '@/constants';
+export type { MediaType };
+
 /**
  * Result 패턴 - 성공/실패를 타입으로 표현
  */
 export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
-
-/**
- * 미디어 종류
- */
-export type MediaType = 'image' | 'video' | 'gif';
 
 /**
  * 미디어 품질 변형

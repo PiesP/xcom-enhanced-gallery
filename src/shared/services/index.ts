@@ -61,14 +61,9 @@ export {
   createFocusStateManagerService,
 } from './focus';
 
-// 6. 토스트 서비스 - ToastManager 인스턴스 사용 권장
-export {
-  toastManager,
-  ToastManager,
-  ToastController,
-  toastController,
-} from './unified-toast-manager';
-export type { ToastOptions } from './unified-toast-manager';
+// 6. 토스트 서비스 - 통합 관리자 (Phase 327: ToastController 제거)
+export { toastManager, ToastManager } from './unified-toast-manager';
+export type { ToastOptions, ToastItem } from './unified-toast-manager';
 
 // File Naming Service
 export {

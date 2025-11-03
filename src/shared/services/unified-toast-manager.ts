@@ -1,11 +1,10 @@
 /**
  * @fileoverview 통합된 Toast 관리자
- * @description ToastController와 Toast 컴포넌트의 중복 상태 관리를 통합한 단일 관리자
- * @version 1.0.0 - TDD 기반 중복 제거 구현
+ * @description Toast 상태 관리를 위한 단일 소스(SSOT)
+ * @version 2.0.0 - Phase 327: ToastController 제거, 간결성 우선
  */
 
 import { logger } from '@shared/logging';
-import type { BaseService } from '../types/core/base-service.types';
 import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
 import { createSignalSafe } from '../state/signals/signal-factory';
 
@@ -278,62 +277,6 @@ export class ToastManager {
  * 전역 인스턴스
  */
 export const toastManager = ToastManager.getInstance();
-
-/**
- * BaseService 인터페이스 구현 (호환성용 - 기존 코드와 호환)
- */
-export class ToastController implements BaseService {
-  private _initialized = false;
-  private readonly manager = ToastManager.getInstance();
-
-  async initialize(): Promise<void> {
-    this._initialized = true;
-    logger.debug('[ToastController] 초기화됨 (토스트 관리자 위임)');
-  }
-
-  destroy(): void {
-    this._initialized = false;
-    logger.debug('[ToastController] 파괴됨');
-  }
-
-  isInitialized(): boolean {
-    return this._initialized;
-  }
-
-  // 편의 메서드: 모두 manager로 위임
-  show(options: ToastOptions): string {
-    return this.manager.show(options);
-  }
-
-  success(title: string, message: string, options?: Partial<ToastOptions>): string {
-    return this.manager.success(title, message, options);
-  }
-
-  info(title: string, message: string, options?: Partial<ToastOptions>): string {
-    return this.manager.info(title, message, options);
-  }
-
-  warning(title: string, message: string, options?: Partial<ToastOptions>): string {
-    return this.manager.warning(title, message, options);
-  }
-
-  error(title: string, message: string, options?: Partial<ToastOptions>): string {
-    return this.manager.error(title, message, options);
-  }
-
-  remove(id: string): void {
-    this.manager.remove(id);
-  }
-
-  clear(): void {
-    this.manager.clear();
-  }
-}
-
-/**
- * 편의를 위한 전역 ToastController 인스턴스 (하위 호환성용)
- */
-export const toastController = new ToastController();
 
 /**
  * Preact 컴포넌트에서 사용할 수 있는 signals 기반 상태

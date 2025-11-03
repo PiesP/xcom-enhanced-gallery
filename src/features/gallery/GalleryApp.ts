@@ -24,7 +24,7 @@ import {
 import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
-import { ToastController } from '../../shared/services/unified-toast-manager';
+import { toastManager } from '../../shared/services/unified-toast-manager';
 import { initializeTheme } from './services/theme-initialization';
 import { getTwitterScrollPreservation } from '../../shared/utils/twitter/scroll-preservation';
 import { isGMAPIAvailable } from '@shared/external/userscript';
@@ -46,7 +46,6 @@ export interface GalleryConfig {
 export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
-  private readonly toastController: ToastController;
   private isInitialized = false;
   private readonly config: GalleryConfig = {
     autoTheme: true,
@@ -58,7 +57,6 @@ export class GalleryApp {
 
   constructor() {
     logger.info('[GalleryApp] 생성자 호출');
-    this.toastController = new ToastController();
   }
 
   /**
@@ -134,8 +132,8 @@ export class GalleryApp {
           '[GalleryApp] Tampermonkey APIs not available - gallery will display toast/error panel only'
         );
         // 토스트 컨트롤러만 초기화하고 반환
-        await this.toastController.initialize();
-        this.toastController.show({
+        await // toast manager는 자동 초기화됨 (싱글톤);
+        toastManager.show({
           title: 'Tampermonkey 미탑재',
           message: '이 앱은 Tampermonkey 또는 유사한 유저스크립트 매니저가 필요합니다.',
           type: 'error',
@@ -160,7 +158,7 @@ export class GalleryApp {
       await this.ensureSettingsServiceInitialized();
 
       initializeTheme();
-      await this.toastController.initialize();
+      await // toast manager는 자동 초기화됨 (싱글톤);
       await this.initializeRenderer();
       await this.setupEventHandlers();
 
@@ -207,7 +205,7 @@ export class GalleryApp {
                 success: result.success,
                 mediaCount: result.mediaItems.length,
               });
-              this.toastController.show({
+              toastManager.show({
                 title: '미디어 로드 실패',
                 message: '이미지나 비디오를 찾을 수 없습니다.',
                 type: 'error',
@@ -215,7 +213,7 @@ export class GalleryApp {
             }
           } catch (error) {
             logger.error('[GalleryApp] 미디어 추출 중 오류:', error);
-            this.toastController.show({
+            toastManager.show({
               title: '오류 발생',
               message: error instanceof Error ? error.message : '알 수 없는 오류',
               type: 'error',
@@ -246,7 +244,7 @@ export class GalleryApp {
     // Phase 317: Environment guard - Tampermonkey 미탑재 확인
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] 갤러리가 초기화되지 않았습니다. Tampermonkey 미탑재 가능성.');
-      this.toastController.show({
+      toastManager.show({
         title: '갤러리 사용 불가',
         message: 'Tampermonkey 또는 유사한 유저스크립트 매니저가 필요합니다.',
         type: 'error',
@@ -279,7 +277,7 @@ export class GalleryApp {
       openGallery(mediaItems, validIndex);
     } catch (error) {
       logger.error('[GalleryApp] 갤러리 열기 실패:', error);
-      this.toastController?.show({
+      toastManager?.show({
         title: '갤러리 로드 실패',
         message: `${error instanceof Error ? error.message : '알 수 없는 오류'}`,
         type: 'error',

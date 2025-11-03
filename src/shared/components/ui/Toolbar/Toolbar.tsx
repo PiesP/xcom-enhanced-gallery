@@ -13,6 +13,7 @@ import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use
 import { useToolbarSettingsController } from '../../../hooks/toolbar/use-toolbar-settings-controller';
 import { ToolbarView } from './ToolbarView';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
+import { safeEventPreventAll, safeEventPrevent } from '@shared/utils/event-utils';
 import styles from './Toolbar.module.css';
 
 const solid = getSolid();
@@ -143,9 +144,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const handleFitModeClick = createMemo(() => {
     const disabled = props.disabled;
     return (mode: FitMode) => (event: MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      (event as { stopImmediatePropagation?: () => void }).stopImmediatePropagation?.();
+      safeEventPreventAll(event);
       if (!disabled) {
         getFitHandler(mode)?.(event);
       }
@@ -156,27 +155,27 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   // Phase 87: 개별 액션 핸들러 메모이제이션
   const onPreviousClick = createMemo(() => (event: MouseEvent) => {
-    event.stopPropagation();
+    safeEventPrevent(event);
     props.onPrevious?.();
   });
 
   const onNextClick = createMemo(() => (event: MouseEvent) => {
-    event.stopPropagation();
+    safeEventPrevent(event);
     props.onNext?.();
   });
 
   const onDownloadCurrent = createMemo(() => (event: MouseEvent) => {
-    event.stopPropagation();
+    safeEventPrevent(event);
     props.onDownloadCurrent?.();
   });
 
   const onDownloadAll = createMemo(() => (event: MouseEvent) => {
-    event.stopPropagation();
+    safeEventPrevent(event);
     props.onDownloadAll?.();
   });
 
   const onCloseClick = createMemo(() => (event: MouseEvent) => {
-    event.stopPropagation();
+    safeEventPrevent(event);
     props.onClose?.();
   });
 

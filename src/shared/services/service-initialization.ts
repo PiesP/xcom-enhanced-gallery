@@ -32,20 +32,19 @@ export async function registerCoreServices(): Promise<void> {
 
   // 개별 UI 서비스들
   const { ThemeService } = await import('./theme-service');
-  const { ToastController } = await import('./unified-toast-manager');
+  const { toastManager } = await import('./unified-toast-manager');
 
   const themeService = new ThemeService();
-  const toastController = new ToastController();
 
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
-  serviceManager.register(SERVICE_KEYS.TOAST, toastController);
+  serviceManager.register(SERVICE_KEYS.TOAST, toastManager);
 
   // Phase 268-3: 하위 호환성 키 조건부 등록
   // 테스트 환경에서만 등록하여 프로덕션 경고 제거
   if (import.meta.env.MODE === 'test') {
     // 테스트 전용 키 (하위 호환성)
     serviceManager.register('theme.service', themeService);
-    serviceManager.register('toast.controller', toastController);
+    serviceManager.register('toast.manager', toastManager);
   }
 
   // ====================================
