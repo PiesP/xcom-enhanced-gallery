@@ -231,6 +231,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         tweetUsername: tweetInfo.username,
         tweetId: tweetInfo.tweetId,
         tweetUrl: tweetInfo.tweetUrl,
+        tweetText: apiMedia.tweet_text,
         originalUrl: apiMedia.download_url,
         thumbnailUrl: apiMedia.preview_url,
         alt: `${mediaType} ${index + 1}`,

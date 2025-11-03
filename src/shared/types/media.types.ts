@@ -44,6 +44,7 @@ export interface MediaInfo {
   tweetUsername?: string | undefined;
   tweetId?: string | undefined;
   tweetUrl?: string;
+  tweetText?: string | undefined;
   metadata?: Record<string, unknown>;
 }
 

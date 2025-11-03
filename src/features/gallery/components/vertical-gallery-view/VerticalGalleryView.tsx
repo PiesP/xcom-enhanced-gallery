@@ -39,6 +39,7 @@
 import type { JSX } from 'solid-js';
 import { logger } from '@shared/logging';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
+import { TweetModal } from '@shared/components/ui/TweetModal';
 import type { ImageFitMode } from '@shared/types';
 import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
@@ -111,6 +112,8 @@ function VerticalGalleryViewCore({
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
+  const [showTweetModal, setShowTweetModal] = createSignal(false);
+
   // StabilityDetector: Activity 기반 안정 상태 감지 (Phase 83.1)
   const stabilityDetector = createStabilityDetector();
 
@@ -630,6 +633,11 @@ function VerticalGalleryViewCore({
       data-xeg-role='gallery'
     >
       <KeyboardHelpOverlay open={isHelpOpen()} onClose={() => setIsHelpOpen(false)} />
+      <TweetModal
+        open={showTweetModal()}
+        text={mediaItems()[currentIndex()]?.tweetText}
+        onClose={() => setShowTweetModal(false)}
+      />
 
       <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
 
@@ -651,6 +659,14 @@ function VerticalGalleryViewCore({
           onOpenSettings={() => {}}
           className={styles.toolbar || ''}
         />
+        <button
+          class={styles.tweetButton}
+          onClick={() => setShowTweetModal(true)}
+          aria-label={languageService.getString('gallery.showTweet') ?? 'Show tweet text'}
+          type='button'
+        >
+          📝
+        </button>
       </div>
 
       <div
