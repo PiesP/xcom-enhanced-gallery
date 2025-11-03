@@ -5,12 +5,12 @@
 
 .xeg-button {
   /* Component 토큰 사용 */
-  background-color: var(--button-bg-primary);
+  background-color: var(--xeg-color-primary);
   color: var(--button-text-primary);
   border: var(--border-width-thin) solid var(--button-border);
-  border-radius: var(--button-radius);
-  padding: var(--button-padding-y) var(--button-padding-x);
-  height: var(--button-height);
+  border-radius: var(--xeg-radius-md);
+  padding: var(--space-sm) var(--space-md);
+  height: var(--size-button-height);
 
   /* 애니메이션 */
   transition: var(--button-transition);
@@ -19,7 +19,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--spacing-item-gap);
+  gap: var(--space-sm);
 
   /* 기본 스타일 */
   font-family: inherit;
@@ -41,7 +41,7 @@
 
   /* 비활성 상태 */
   &:disabled {
-    opacity: var(--opacity-disabled);
+    opacity: var(--xeg-opacity-disabled);
     cursor: not-allowed;
     transform: none;
   }

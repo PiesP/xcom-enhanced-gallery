@@ -117,10 +117,9 @@
   --color-glass-border: oklch(1 0 0 / 20%); /* white with 20% opacity */
 
   /* Spacing - Semantic Roles */
-  --spacing-component-padding: var(--space-md);
+  /* Removed: --spacing-component-padding, --spacing-item-gap (use --space-md and --space-sm directly) */
   --spacing-component-margin: var(--space-sm);
   --spacing-section-gap: var(--space-lg);
-  --spacing-item-gap: var(--space-sm);
 
   /* Component Sizing - Semantic Roles (em: relative to font-size) */
   --size-button-height: 2.5em; /* 40px @ 16px */

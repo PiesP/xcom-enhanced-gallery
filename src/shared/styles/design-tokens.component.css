@@ -9,10 +9,7 @@
 
   /* Toolbar Component */
   --toolbar-bg: var(--xeg-bg-toolbar);
-  /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow */
-  --toolbar-height: 3.75rem; /* 60px = 3.75rem */
-  --toolbar-padding: var(--spacing-component-padding);
-  --toolbar-gap: var(--spacing-item-gap);
+  /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow, --toolbar-height, --toolbar-padding, --toolbar-gap */
 
   /* Toolbar Expandable Panel (Phase 44) */
   --xeg-toolbar-panel-transition:
@@ -22,16 +19,12 @@
   --xeg-toolbar-panel-max-height: 17.5rem; /* 280px = 17.5rem */
 
   /* Button Component */
-  --button-bg-primary: var(--color-primary);
   --button-bg-primary-hover: var(--color-primary-hover);
   --button-bg-primary-active: var(--color-primary-active);
   --button-text-primary: var(--color-text-inverse);
   --button-text-secondary: var(--color-text-primary);
   --button-border: var(--color-border-default);
-  --button-radius: var(--xeg-radius-md);
-  --button-padding-x: var(--space-md);
-  --button-padding-y: var(--space-sm);
-  --button-height: var(--size-button-height);
+  /* Removed: --button-bg-primary, --button-radius, --button-padding-x, --button-padding-y, --button-height */
   --button-transition: var(--transition-fast);
 
   /* Toast Component */
@@ -48,7 +41,7 @@
   --toast-border-warning: var(--color-warning);
   --toast-border-info: var(--color-info);
   --toast-radius: var(--xeg-radius-lg);
-  --toast-padding: var(--spacing-component-padding);
+  /* Removed: --toast-padding (use --space-md directly) */
   --toast-shadow: var(--shadow-md);
   --toast-offset: 1.25rem; /* 20px = 1.25rem */
 
@@ -56,7 +49,7 @@
   --panel-bg: var(--color-bg-elevated);
   --panel-border: var(--color-border-default);
   --panel-radius: var(--xeg-radius-lg);
-  --panel-padding: var(--spacing-component-padding);
+  /* Removed: --panel-padding (use --space-md directly) */
   --panel-shadow: var(--shadow-sm);
 
   /* Glass Surface Component */
