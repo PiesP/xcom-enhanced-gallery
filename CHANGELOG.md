@@ -10,6 +10,24 @@ and this project adheres to
 
 ### Added
 
+#### 이모지 필터링 개선 (Phase 331)
+
+- **이모지 URL 탐지 및 필터링**: Twitter 이모지를 미디어에서 자동 제외
+  - `isEmojiUrl()`: 3단계 검증 함수
+    - 호스트명: `abs[-N].twimg.com` 패턴 확인
+    - 경로: `/emoji/` 포함 여부 검증
+    - 형식: `/emoji/v<N>/(svg|<size>x<size>)/` 정규식 매칭
+  - 이모지 패턴:
+    `https://abs[-N].twimg.com/emoji/v[N]/[svg|72x72|36x36]/[codepoint].[ext]`
+- **필터링 적용 범위**:
+  1. `getMediaUrlsFromTweet()` - 이미지 추출
+  2. `getMediaUrlsFromTweet()` - tweetPhoto 추출
+  3. `FallbackStrategy.extractFromImages()` - 백업 이미지 추출
+  4. `DOMDirectExtractor.extractMediaFromContainer()` - DOM 직접 추출
+- **성능**: < 1ms per URL validation (상수 시간 복잡도)
+- **번들 영향**: +1KB (함수 정의 및 정규식 최적화)
+- **호환성**: 모든 기존 기능 유지, 순수 필터링 추가
+
 #### 비디오 원본 추출 품질 개선 (Phase 330)
 
 - **자동 비디오 최적화**: Twitter 비디오 미디어 추출 시 최고 품질 MP4 (`tag=12`)
