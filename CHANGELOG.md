@@ -10,37 +10,27 @@ and this project adheres to
 
 ### Added
 
-#### 영상 섬네일 동영상 변환 (Phase 332)
+#### 비디오 추출 개선 (Phase 332)
 
-- **영상 섬네일 자동 변환**: Twitter 영상 섬네일(pbs.twimg.com)을 실제
-  동영상으로 추출
+- **실제 비디오 요소 우선 추출**: Twitter 페이지의 `<video>` 요소에서 직접
+  비디오 URL 추출
+  - 추출 순서 최적화: 비디오 → 이미지 (기존: 이미지 → 비디오)
+  - 올바른 Twitter 비디오 URL 사용:
+    `/ext_tw_video/{id}/pu/vid/{resolution}/{filename}.mp4`
+  - 비디오 로드 실패 문제 완전 해결
+- **비디오 섬네일 필터링**:
   - `isVideoThumbnailUrl()`: 영상 섬네일 URL 탐지
     - 패턴: `/amplify_video_thumb/{videoId}/img/` 또는
       `/ext_tw_video_thumb/{videoId}/img/`
     - 호스트: `pbs.twimg.com` 확인
-  - `extractVideoIdFromThumbnail()`: 섬네일 URL에서 비디오 ID 추출
-    - 정규식: `/amplify_video_thumb|ext_tw_video_thumb\/(\d+)\/img/`
-    - 안전한 파싱 (존재 확인 + 숫자 검증)
-  - `convertThumbnailToVideoUrl()`: 섬네일을 실제 동영상 URL로 변환
-    - 입력:
-      `https://pbs.twimg.com/amplify_video_thumb/1931629000243453952/img/wzXQeHFbVbPENOya?format=jpg`
-    - 출력: `https://video.twimg.com/vi/1931629000243453952/pu.mp4`
-- **추출 우선순위 정렬**:
-  1. 영상 섬네일 감지 → 동영상으로 변환
-  2. 직접 동영상 요소
-  3. 일반 이미지
-  4. 이모지 필터링
-- **필터링 적용 범위**:
-  1. `getMediaUrlsFromTweet()` - 주요 미디어 추출
-  2. `FallbackStrategy.extractFromImages()` - 백업 이미지 추출
-  3. `DOMDirectExtractor.extractMediaFromContainer()` - DOM 직접 추출
-- **상세 로깅**: 섬네일 감지 및 변환 과정 추적
-  - 섬네일 URL 패턴 매칭
-  - 비디오 ID 추출 성공 여부
-  - 최종 동영상 URL 변환 결과
-- **성능**: < 1ms per URL detection (정규식 최적화)
-- **번들 영향**: +2KB (3개 함수 추가, 정규식 포함)
-- **호환성**: 모든 기존 기능 유지, 순수 변환 추가
+  - 섬네일은 이미지로 추출하지 않음 (실제 비디오 요소 우선)
+- **적용 범위**:
+  1. `getMediaUrlsFromTweet()` - Phase 1: 비디오 우선, Phase 2: 이미지 (섬네일
+     제외)
+  2. `FallbackStrategy.extractFromImages()` - 섬네일 스킵 로직 추가
+  3. `DOMDirectExtractor.extractMediaFromContainer()` - 섬네일 스킵 로직 추가
+- **성능**: 번들 크기 -2KB (불필요한 변환 로직 제거)
+- **호환성**: 모든 기존 기능 유지, 비디오 로드 안정성 개선
 
 #### 이모지 필터링 개선 (Phase 331)
 
