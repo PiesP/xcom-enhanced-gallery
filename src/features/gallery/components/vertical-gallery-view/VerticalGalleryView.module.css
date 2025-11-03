@@ -26,41 +26,30 @@
   contain-intrinsic-size: 100vw 100vh;
 }
 
-@layer base {
-  :root {
-    /* ?�능 최적??변?? */
-    --xeg-vertical-gpu-acceleration: translateZ(0);
-
-    /* Container Query 지??감�? */
-    --supports-container-queries: 1;
-  }
-}
+/* CSS Cascade Layer declarations remain for other rules */
 
 @layer components {
-  /* 공통 CSS 변???�의 - OKLCH ?�상 ?�스???�용 */
+  /* Common CSS variables - OKLCH color system */
   :root {
-    /* ?�랜지??- 최신 easing ?�수 ?�용 */
+    /* Transitions - modern easing functions */
     --xeg-transition-fast:
       transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-normal:
       transform var(--xeg-duration-fade) var(--xeg-easing-ease-in-out),
       opacity var(--xeg-duration-fade) var(--xeg-easing-ease-in-out);
-    --xeg-transition-smooth: transform var(--xeg-duration-slow) var(--xeg-easing-ease-out);
+    /* Removed --xeg-transition-smooth: unused */
     --xeg-transition-toolbar:
       opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
       transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
 
-    /* ?�페?�싱 - CSS Logical Properties ?�용 */
+    /* Spacing - CSS Logical Properties */
     --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
     --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
     --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
 
-    /* ?�이?�웃 */
-    --xeg-toolbar-height: clamp(3.75rem, 10vh, 5rem);
-
-    /* 블러 ?�과 */
-    --xeg-backdrop-blur: 0.5rem;
+    /* Removed --xeg-toolbar-height: unused */
+    /* Removed --xeg-backdrop-blur: unused */
   }
 }
 

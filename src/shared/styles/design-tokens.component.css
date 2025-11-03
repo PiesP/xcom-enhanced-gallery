@@ -5,14 +5,11 @@
 
 :root {
   /* Gallery Component - 배경은 semantic 레벨의 --xeg-gallery-bg 사용 */
-  --gallery-border: var(--color-border-default);
-  --gallery-shadow: var(--shadow-lg);
+  /* Removed unused: --gallery-border, --gallery-shadow */
 
   /* Toolbar Component */
   --toolbar-bg: var(--xeg-bg-toolbar);
-  --toolbar-text: var(--color-text-inverse);
-  --toolbar-border: var(--xeg-color-border-primary);
-  --toolbar-shadow: var(--shadow-md);
+  /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow */
   --toolbar-height: 3.75rem; /* 60px = 3.75rem */
   --toolbar-padding: var(--spacing-component-padding);
   --toolbar-gap: var(--spacing-item-gap);
