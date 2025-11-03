@@ -217,23 +217,71 @@ notificationService.success('작업 완료');
 **프로젝트 상태**: 🚀 **진행 중 (v0.4.2 → v0.5.0)**
 
 **마지막 활동**:
-- Commit: `ac0442d5` - Phase 326.4-4: Integration Tests for Feature Flags ✅
-- Branch: `feat/phase-326-code-splitting` (작업 중)
-- 테스트: 모두 통과 (3,207+ passed, 99.3%)
-- 빌드: 성공 (407 KB maintained)
+- Commit: `e25f2732` - Phase 326.5-3C: CSS Variable Consolidation ✅
+- Branch: `master` (병합 완료)
+- 테스트: 3156/3189 passed (99.0%)
+- 빌드: 성공 (405 KB, Gzipped: 112.37 KB)
 
-**현재 단계**: Phase 326 (Code Splitting 완료) → Phase 326.5 (Performance Optimization 시작)
+**현재 단계**: Phase 326 (Code Splitting 완료) → Phase 326.5 (Performance Optimization 진행 중)
 - Phase 326.1: ✅ 완료 (프리로드 전략)
 - Phase 326.2: ✅ 완료 (Settings 동적 로드)
 - Phase 326.3: ✅ 완료 (fflate 지연 로드)
 - Phase 326.4: ✅ 완료 (Feature Flag System + Tests)
 - Phase 326.5: ⏳ 진행 중 (Performance Baseline & Optimization)
   - 326.5-1: ✅ 완료 (Baseline Documentation)
-  - 326.5-2: ⏳ 진행 (Bundle Analysis)
-  - 326.5-3: ⏳ 예정 (E2E Performance Testing)
-  - 326.5-4: ⏳ 예정 (Release v0.5.0)
+  - 326.5-2: ✅ 완료 (Bundle Analysis)
+  - 326.5-3: ✅ 완료 (CSS Optimization)
+    - 326.5-3A: ⏭️ 스킵 (CSS 주석 이미 제거됨 - cssnano default)
+    - 326.5-3B: ✅ 완료 (미사용 CSS 변수 8개 제거, 406 KB → 405 KB)
+    - 326.5-3C: ✅ 완료 (CSS 변수 통합 9개, 일관성 개선)
+      * Phase 1: 8개 변수 (spacing, primary color, border radius, component height)
+      * Phase 2: 1개 변수 (opacity)
+      * 영향: 코드 일관성 향상, 디자인 토큰 통일감 개선
+      * 번들: 405 KB (Gzipped: 112.37 KB)
+  - 326.5-4: ⏳ 예정 (E2E Performance Testing)
+  - 326.5-5: ⏳ 예정 (Release v0.5.0)
 
 **예상 완료**: v0.5.0 (2025-11월 예정)
+
+### Phase 326.5-3 CSS Optimization 상세
+
+**Phase 326.5-3A: CSS 주석 제거** (⏭️ 스킵)
+- **원인**: cssnano default preset이 이미 모든 주석 제거
+- **결과**: 추가 최적화 불필요
+- **파일**: postcss.config.js (gitignore됨)
+
+**Phase 326.5-3B: 미사용 CSS 변수 제거** (✅ 완료)
+- **제거**: 8개 변수
+  - GPU 가속 관련: `--xeg-vertical-gpu-acceleration`, `--supports-container-queries`
+  - Transition: `--xeg-transition-smooth`
+  - Gallery: `--gallery-active`
+  - Toolbar: `--toolbar-height`, `--xeg-backdrop-blur`
+  - 기타: `--gallery-border`, `--gallery-shadow`
+- **영향**: 406 KB → 405 KB (-1 KB, -0.25%)
+- **파일**: `VerticalGalleryView.module.css`, `Gallery.module.css`, `design-tokens.component.css`
+
+**Phase 326.5-3C: CSS 변수 통합** (✅ 완료)
+- **통합**: 9개 변수
+  - **Phase 1** (8개):
+    * Spacing: `--toolbar-padding`, `--toolbar-gap` 제거
+    * Primary Color: `--button-bg-primary`, `--color-primary` → `--xeg-color-primary`
+    * Border Radius: `--button-radius` → `--xeg-radius-md`
+    * Button Spacing: `--button-padding-x/y` → `--space-md/sm`
+    * Component Height: `--button-height` → `--size-button-height`
+    * Semantic: `--spacing-component-padding`, `--spacing-item-gap` 제거
+  - **Phase 2** (1개):
+    * Opacity: `--opacity-disabled` → `--xeg-opacity-disabled`
+- **목표**: 코드 일관성 및 디자인 토큰 통일감 향상
+- **영향**: 405 KB 유지 (Gzipped: 112.37 KB, -0.07 KB)
+- **파일**: `design-tokens.component.css`, `design-tokens.semantic.css`, `design-tokens.primitive.css`, `Button.css`
+- **트레이드오프**: 세밀한 커스터마이즈 가능성 감소 vs. 통일감 향상
+
+**총 누적 효과** (Phase 326.5-3):
+- **변수 제거**: 17개 (8개 미사용 + 9개 통합)
+- **번들 크기**: 406 KB → 405 KB (-1 KB)
+- **Gzipped**: 112.44 KB → 112.37 KB (-0.07 KB)
+- **일관성**: 디자인 토큰 계층 간 중복 제거
+- **유지보수**: 변수 네이밍 혼란 감소
 
 ---
 
