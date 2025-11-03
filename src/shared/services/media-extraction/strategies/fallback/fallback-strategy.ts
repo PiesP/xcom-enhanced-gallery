@@ -13,7 +13,6 @@ import {
   canExtractOriginalVideo,
   isEmojiUrl,
   isVideoThumbnailUrl,
-  convertThumbnailToVideoUrl,
 } from '@shared/utils/media/media-url.util';
 import type { MediaInfo, MediaExtractionResult, MediaType } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
@@ -107,36 +106,19 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const src = img.getAttribute('src');
       if (!this.isValidMediaUrl(src)) continue;
 
-      // 영상 섬네일 우선 처리: 섬네일이면 동영상으로 변환
-      if (isVideoThumbnailUrl(src)) {
-        const videoUrl = convertThumbnailToVideoUrl(src);
-        if (videoUrl) {
-          // 클릭된 요소 확인
-          if (
-            img === clickedElement ||
-            clickedElement.contains(img) ||
-            img.contains(clickedElement)
-          ) {
-            clickedIndex = items.length;
-          }
-
-          logger.debug('[FallbackStrategy] 영상 섬네일에서 동영상 추출', {
-            thumbnailUrl: src,
-            videoUrl,
-            tweetId: tweetInfo?.tweetId,
-          });
-
-          const mediaInfo = this.createMediaInfo(`video_thumb_${i}`, videoUrl, 'video', tweetInfo, {
-            fallbackSource: 'thumbnail-converted-video',
-            originalUrl: src,
-          });
-          items.push(mediaInfo);
-          continue;
-        }
+      // 이모지 URL 제외 (Phase 331)
+      if (isEmojiUrl(src)) {
+        logger.debug('[FallbackStrategy] 이모지 URL 필터링:', { sourceUrl: src });
+        continue;
       }
 
-      // 이모지 URL 제외
-      if (isEmojiUrl(src)) continue;
+      // 비디오 섬네일 제외 (Phase 332 - 실제 video 요소 우선)
+      if (isVideoThumbnailUrl(src)) {
+        logger.debug('[FallbackStrategy] 비디오 섬네일 스킵 (실제 video 요소 우선):', {
+          thumbnailUrl: src,
+        });
+        continue;
+      }
 
       // 클릭된 요소 확인
       if (img === clickedElement || clickedElement.contains(img) || img.contains(clickedElement)) {

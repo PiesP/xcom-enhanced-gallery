@@ -13,7 +13,6 @@ import {
   canExtractOriginalVideo,
   isEmojiUrl,
   isVideoThumbnailUrl,
-  convertThumbnailToVideoUrl,
 } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
@@ -173,37 +172,18 @@ export class DOMDirectExtractor {
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
-        // 영상 섬네일 우선 처리: 섬네일이면 동영상으로 변환
-        if (isVideoThumbnailUrl(imgElement.src)) {
-          const videoUrl = convertThumbnailToVideoUrl(imgElement.src);
-          if (videoUrl) {
-            logger.debug('[DOMDirectExtractor] 영상 섬네일에서 동영상 추출:', {
-              thumbnailUrl: imgElement.src,
-              videoUrl,
-              tweetId: tweetInfo?.tweetId,
-            });
-
-            // Complete fake HTMLVideoElement with all required properties
-            const fakeVideoElement = {
-              src: videoUrl,
-              currentSrc: videoUrl,
-              poster: '',
-              videoWidth: 1920,
-              videoHeight: 1080,
-              currentTime: 0,
-            } as HTMLVideoElement;
-
-            mediaItems.push(
-              this.createVideoMediaInfo(fakeVideoElement, videoUrl, mediaItems.length, tweetInfo)
-            );
-            return;
-          }
-        }
-
-        // 이모지 URL 제외
+        // 이모지 URL 제외 (Phase 331)
         if (isEmojiUrl(imgElement.src)) {
           logger.debug('[DOMDirectExtractor] 이모지 URL 필터링:', {
             sourceUrl: imgElement.src,
+          });
+          return;
+        }
+
+        // 비디오 섬네일 제외 (Phase 332 - 실제 video 요소 우선)
+        if (isVideoThumbnailUrl(imgElement.src)) {
+          logger.debug('[DOMDirectExtractor] 비디오 섬네일 스킵 (실제 video 요소 우선):', {
+            thumbnailUrl: imgElement.src,
           });
           return;
         }
