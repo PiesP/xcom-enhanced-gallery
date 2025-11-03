@@ -14,6 +14,9 @@ export {
   getMediaUrlsFromTweet,
   isValidMediaUrl,
   isEmojiUrl,
+  isVideoThumbnailUrl,
+  extractVideoIdFromThumbnail,
+  convertThumbnailToVideoUrl,
 } from './media-url.util';
 
 // Media Click Detection utilities

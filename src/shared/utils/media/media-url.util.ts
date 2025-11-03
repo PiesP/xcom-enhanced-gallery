@@ -43,6 +43,28 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         const imgElement = img as HTMLImageElement;
         const src = imgElement.src;
 
+        // 영상 섬네일 우선 처리: 섬네일이면 동영상으로 변환
+        if (isVideoThumbnailUrl(src)) {
+          const videoUrl = convertThumbnailToVideoUrl(src);
+          if (videoUrl) {
+            const mediaInfo = createMediaInfoFromVideo(
+              { src: videoUrl, currentTime: 0 } as HTMLVideoElement,
+              tweetId,
+              mediaIndex
+            );
+            if (mediaInfo) {
+              logger.debug('[getMediaUrlsFromTweet] 영상 섬네일에서 동영상 추출', {
+                thumbnailUrl: src,
+                videoUrl,
+                tweetId,
+              });
+              mediaItems.push(mediaInfo);
+              mediaIndex++;
+            }
+            return;
+          }
+        }
+
         // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출 + 이모지 제외
         if (
           isTwitterMediaUrl(src) &&
@@ -366,6 +388,100 @@ export function isEmojiUrl(url: string): boolean {
     return /\/emoji\/v\d+\/(svg|[\dx]+)\//i.test(urlObj.pathname);
   } catch {
     return false;
+  }
+}
+
+/**
+ * URL이 Twitter 영상 섬네일인지 판별
+ *
+ * 2-layer validation:
+ * 1. 호스트명: pbs.twimg.com
+ * 2. 경로: /amplify_video_thumb/ 또는 /ext_tw_video_thumb/
+ *
+ * 예: https://pbs.twimg.com/amplify_video_thumb/1931629000243453952/img/wzXQeHFbVbPENOya?format=jpg&name=orig
+ *
+ * @param url - 검증할 URL
+ * @returns 영상 섬네일 URL 여부
+ */
+export function isVideoThumbnailUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  try {
+    const urlObj = new URL(url);
+
+    // 1. 호스트 확인: pbs.twimg.com (섬네일 서버)
+    if (urlObj.hostname !== 'pbs.twimg.com') {
+      return false;
+    }
+
+    // 2. 경로 확인: /amplify_video_thumb/ 또는 /ext_tw_video_thumb/
+    // 예: /amplify_video_thumb/1931629000243453952/img/...
+    //     /ext_tw_video_thumb/1234567890/img/...
+    return /\/(amplify_video_thumb|ext_tw_video_thumb)\/\d+\/img\//i.test(urlObj.pathname);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 영상 섬네일 URL에서 video ID 추출
+ *
+ * @param url - 영상 섬네일 URL
+ * @returns video ID (예: "1931629000243453952") 또는 null
+ */
+export function extractVideoIdFromThumbnail(url: string): string | null {
+  if (!isVideoThumbnailUrl(url)) {
+    return null;
+  }
+
+  try {
+    // 경로 예: /amplify_video_thumb/1931629000243453952/img/wzXQeHFbVbPENOya
+    // video ID는 두 번째 경로 세그먼트
+    const urlObj = new URL(url);
+    const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+
+    // amplify_video_thumb 또는 ext_tw_video_thumb 인덱스 찾기
+    const thumbIndex = pathSegments.findIndex(seg =>
+      /^(amplify_video_thumb|ext_tw_video_thumb)$/i.test(seg)
+    );
+
+    if (thumbIndex === -1 || thumbIndex + 1 >= pathSegments.length) {
+      return null;
+    }
+
+    const videoId = pathSegments[thumbIndex + 1];
+
+    // video ID는 숫자여야 함
+    if (!videoId || !/^\d+$/.test(videoId)) {
+      return null;
+    }
+
+    return videoId;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 영상 섬네일에서 동영상 URL로 변환
+ *
+ * @param thumbnailUrl - 영상 섬네일 URL
+ * @returns 동영상 URL (video.twimg.com 포맷) 또는 null
+ */
+export function convertThumbnailToVideoUrl(thumbnailUrl: string): string | null {
+  const videoId = extractVideoIdFromThumbnail(thumbnailUrl);
+  if (!videoId) {
+    return null;
+  }
+
+  // Twitter 동영상 표준 형식
+  // 예: https://video.twimg.com/vi/1931629000243453952/pu.mp4
+  try {
+    return new URL(`https://video.twimg.com/vi/${videoId}/pu.mp4`).toString();
+  } catch {
+    return null;
   }
 }
 

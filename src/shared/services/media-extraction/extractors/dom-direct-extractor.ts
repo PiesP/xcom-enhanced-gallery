@@ -12,6 +12,8 @@ import {
   extractOriginalVideoUrl,
   canExtractOriginalVideo,
   isEmojiUrl,
+  isVideoThumbnailUrl,
+  convertThumbnailToVideoUrl,
 } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
@@ -171,6 +173,27 @@ export class DOMDirectExtractor {
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
+        // 영상 섬네일 우선 처리: 섬네일이면 동영상으로 변환
+        if (isVideoThumbnailUrl(imgElement.src)) {
+          const videoUrl = convertThumbnailToVideoUrl(imgElement.src);
+          if (videoUrl) {
+            logger.debug('[DOMDirectExtractor] 영상 섬네일에서 동영상 추출:', {
+              thumbnailUrl: imgElement.src,
+              videoUrl,
+              tweetId: tweetInfo?.tweetId,
+            });
+            mediaItems.push(
+              this.createVideoMediaInfo(
+                { src: videoUrl, currentTime: 0 } as HTMLVideoElement,
+                videoUrl,
+                mediaItems.length,
+                tweetInfo
+              )
+            );
+            return;
+          }
+        }
+
         // 이모지 URL 제외
         if (isEmojiUrl(imgElement.src)) {
           logger.debug('[DOMDirectExtractor] 이모지 URL 필터링:', {
