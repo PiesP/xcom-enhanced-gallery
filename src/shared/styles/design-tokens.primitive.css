@@ -94,7 +94,7 @@
   --duration-slow: 300ms;
 
   /* Opacity Scale */
-  --opacity-disabled: 0.5;
+  /* Removed: --opacity-disabled (use --xeg-opacity-disabled) */
   --opacity-hover: 0.8;
   --opacity-overlay-light: 0.1;
   --opacity-overlay-medium: 0.3;
