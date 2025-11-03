@@ -120,10 +120,7 @@
   }
 }
 
-/* 갤러리가 활성화된 상태 - :has() 선택자 활용 */
-.xegGalleryContainer:has(.xegGalleryViewer.xegVisible) {
-  --gallery-active: 1;
-}
+/* Removed: --gallery-active unused variable */
 
 /**
  * 갤러리 뷰어 표시 상태
