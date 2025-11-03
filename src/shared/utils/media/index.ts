@@ -9,7 +9,12 @@ export {
 } from './image-filter';
 
 // Media URL utilities
-export { getHighQualityMediaUrl, getMediaUrlsFromTweet, isValidMediaUrl } from './media-url.util';
+export {
+  getHighQualityMediaUrl,
+  getMediaUrlsFromTweet,
+  isValidMediaUrl,
+  isEmojiUrl,
+} from './media-url.util';
 
 // Media Click Detection utilities
 export {

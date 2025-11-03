@@ -11,6 +11,7 @@ import {
   canExtractOriginalImage,
   extractOriginalVideoUrl,
   canExtractOriginalVideo,
+  isEmojiUrl,
 } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
@@ -170,6 +171,14 @@ export class DOMDirectExtractor {
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
+        // 이모지 URL 제외
+        if (isEmojiUrl(imgElement.src)) {
+          logger.debug('[DOMDirectExtractor] 이모지 URL 필터링:', {
+            sourceUrl: imgElement.src,
+          });
+          return;
+        }
+
         // 원본(orig) 고화질 URL 추출
         const originalUrl = extractOriginalImageUrl(imgElement.src);
 

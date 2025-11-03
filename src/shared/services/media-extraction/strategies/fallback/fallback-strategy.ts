@@ -11,6 +11,7 @@ import {
   canExtractOriginalImage,
   extractOriginalVideoUrl,
   canExtractOriginalVideo,
+  isEmojiUrl,
 } from '@shared/utils/media/media-url.util';
 import type { MediaInfo, MediaExtractionResult, MediaType } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
@@ -103,6 +104,9 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
 
       const src = img.getAttribute('src');
       if (!this.isValidMediaUrl(src)) continue;
+
+      // 이모지 URL 제외
+      if (isEmojiUrl(src)) continue;
 
       // 클릭된 요소 확인
       if (img === clickedElement || clickedElement.contains(img) || img.contains(clickedElement)) {

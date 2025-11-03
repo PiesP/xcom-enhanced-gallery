@@ -43,8 +43,13 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         const imgElement = img as HTMLImageElement;
         const src = imgElement.src;
 
-        // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출
-        if (isTwitterMediaUrl(src) && src.includes('/media/') && !src.includes('profile_images')) {
+        // 썸네일이나 프로필 이미지가 아닌 실제 미디어만 추출 + 이모지 제외
+        if (
+          isTwitterMediaUrl(src) &&
+          src.includes('/media/') &&
+          !src.includes('profile_images') &&
+          !isEmojiUrl(src)
+        ) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo) {
             mediaItems.push(mediaInfo);
@@ -71,8 +76,8 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
     if (tweetPhotos && tweetPhotos.length > 0) {
       Array.from(tweetPhotos).forEach(photo => {
         const imgElement = cachedQuerySelector('img', photo as Element, 2000) as HTMLImageElement;
-        // URL 검증: 호스트명을 정확히 확인하여 도메인 스푸핑 방지
-        if (imgElement?.src && isTwitterMediaUrl(imgElement.src)) {
+        // URL 검증: 호스트명을 정확히 확인하여 도메인 스푸핑 방지 + 이모지 제외
+        if (imgElement?.src && isTwitterMediaUrl(imgElement.src) && !isEmojiUrl(imgElement.src)) {
           const mediaInfo = createMediaInfoFromImage(imgElement, tweetId, mediaIndex);
           if (mediaInfo && !mediaItems.some(item => item.url === mediaInfo.url)) {
             mediaItems.push(mediaInfo);
@@ -322,6 +327,43 @@ function isTwitterMediaUrl(url: string): boolean {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname === 'pbs.twimg.com' || urlObj.hostname === 'video.twimg.com';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * URL이 Twitter 이모지인지 판별
+ *
+ * 3-layer validation:
+ * 1. 호스트명: abs[-N].twimg.com (CDN 분산)
+ * 2. 경로: /emoji/ 포함
+ * 3. 형식: /emoji/v<N>/<size|svg>/
+ *
+ * @param url - 검증할 URL
+ * @returns 이모지 URL 여부
+ */
+export function isEmojiUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+
+  try {
+    const urlObj = new URL(url);
+
+    // 1. 호스트 확인: abs[-N].twimg.com (이모지는 abs 서버에서 제공)
+    if (!urlObj.hostname.match(/^abs(-\d+)?\.twimg\.com$/i)) {
+      return false;
+    }
+
+    // 2. 경로 확인: /emoji/ 포함 (이모지 경로 식별)
+    if (!urlObj.pathname.includes('/emoji/')) {
+      return false;
+    }
+
+    // 3. 형식 확인: /emoji/v<N>/(svg|<size>x<size>)/
+    // 예: /emoji/v2/svg/, /emoji/v1/72x72/, /emoji/v2/36x36/
+    return /\/emoji\/v\d+\/(svg|[\dx]+)\//i.test(urlObj.pathname);
   } catch {
     return false;
   }
