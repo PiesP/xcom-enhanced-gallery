@@ -140,28 +140,19 @@ const isTest: boolean = (() => {
 // Use __DEV__ global (defined in vite/vitest config) when available.
 // In some Node/test initializations __DEV__ may be undefined – guard with fallbacks.
 // Fallback order: globalThis.__DEV__ → import.meta.env.DEV → NODE_ENV !== 'production' → true
-const isDev: boolean = (() => {
-  try {
-    type GlobalFlags = { __DEV__?: unknown };
-    const g = (globalThis as unknown as GlobalFlags) || {};
-    if (typeof g.__DEV__ !== 'undefined') return Boolean(g.__DEV__);
-  } catch {
-    // ignore
-  }
-
-  try {
-    type ImportMetaEnvLike = { env?: { DEV?: unknown } };
-    const meta = (import.meta as unknown as ImportMetaEnvLike) || {};
-    if (typeof meta.env?.DEV !== 'undefined') return Boolean(meta.env?.DEV);
-  } catch {
-    // ignore
-  }
-
-  if (typeof process !== 'undefined' && process.env && typeof process.env.NODE_ENV === 'string') {
-    return process.env.NODE_ENV !== 'production';
-  }
-  return true;
-})();
+// Optimized for tree-shaking: Use __DEV__ directly when available, or fallback
+const isDev: boolean =
+  typeof __DEV__ !== 'undefined'
+    ? __DEV__
+    : (() => {
+        if (import.meta?.env !== undefined) {
+          return import.meta.env.DEV === true;
+        }
+        if (typeof process !== 'undefined' && process.env !== undefined) {
+          return process.env.NODE_ENV !== 'production';
+        }
+        return true; // Default to development mode if detection fails
+      })();
 
 type LoggerFactory = (config?: Partial<LoggerConfig>) => Logger;
 type ScopedFactory = (scope: string, config?: Partial<LoggerConfig>) => Logger;

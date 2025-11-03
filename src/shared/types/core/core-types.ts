@@ -42,105 +42,8 @@ export type { BaseService };
  */
 export type ServiceLifecycle = 'uninitialized' | 'initializing' | 'initialized' | 'destroyed';
 
-/**
- * 서비스 설정
- */
-export interface ServiceConfig<T = unknown> {
-  factory: () => T | Promise<T>;
-  singleton?: boolean;
-  dependencies?: string[];
-  lazy?: boolean;
-}
-
-/**
- * 서비스 의존성 타입
- */
-export type ServiceDependency = string;
-export type ServiceFactory<T> = () => T | Promise<T>;
-
-/**
- * BulkDownloadService 타입 (순환 의존성 방지)
- */
-export interface BulkDownloadServiceType extends BaseService {
-  downloadSingle(
-    media: MediaInfo,
-    options?: { signal?: AbortSignal }
-  ): Promise<{
-    success: boolean;
-    status: 'success' | 'error' | 'cancelled';
-    filename?: string;
-    error?: string;
-  }>;
-
-  downloadMultiple(
-    mediaItems: readonly MediaInfo[],
-    options?: {
-      onProgress?: (progress: {
-        phase: string;
-        current: number;
-        total: number;
-        percentage: number;
-      }) => void;
-      signal?: AbortSignal;
-      zipFilename?: string;
-      concurrency?: number;
-      retries?: number;
-    }
-  ): Promise<{
-    success: boolean;
-    status: 'success' | 'error' | 'cancelled';
-    filesProcessed: number;
-    filesSuccessful: number;
-    error?: string;
-    filename?: string;
-  }>;
-}
-
-/**
- * 서비스 타입 매핑 (Infrastructure 서비스들)
- * @note 순환 의존성 방지를 위해 미사용 타입은 제거됨
- */
-export type FilenameServiceType = unknown;
-export type ThemeServiceType = unknown;
-export type VideoControlServiceType = unknown;
-export type ToastControllerType = unknown;
-
-/**
- * 갤러리 렌더러 서비스 타입
- */
-export interface GalleryRendererType extends BaseService {
-  render(mediaItems: readonly unknown[], renderOptions?: unknown): Promise<void>;
-  close?(): void;
-  isRendering?(): boolean;
-  setOnCloseCallback?(callback: () => void): void;
-}
-
-/**
- * 다운로드 매니저 서비스 타입
- */
-export interface DownloadManagerType extends BaseService {
-  getInstance?(): DownloadManagerType;
-  downloadAll(items: unknown[]): Promise<void>;
-}
-
-/**
- * 미디어 추출 서비스 타입
- */
-export interface MediaExtractionServiceType extends BaseService {
-  extractMediaFromElement?(element: Element): Promise<unknown>;
-  extractMedia?(element: Element, options?: unknown): Promise<unknown>;
-  getInstance?(): MediaExtractionServiceType;
-}
-
-/**
- * 갤러리 앱 서비스 타입
- */
-export interface GalleryAppType extends BaseService {
-  initialize(): Promise<void>;
-  destroy(): void;
-}
-
-// ServiceTypeMapping 제거됨 - Phase 4 Step 4: 과도한 추상화 제거
+// All unused service type definitions removed in Phase 326.6
+// Services use concrete implementations instead of interface abstractions
 
 // ========================================
 // GALLERY TYPES (from gallery.types.ts)
@@ -165,33 +68,6 @@ export interface GalleryState {
 }
 
 /**
- * 갤러리 액션 인터페이스 (Clean Architecture)
- */
-export interface GalleryActions {
-  open(items: MediaInfo[], startIndex?: number): void;
-  close(): void;
-  next(): void;
-  previous(): void;
-  goToIndex(index: number): void;
-  setViewMode(mode: GalleryViewMode): void;
-  toggleFullscreen(): void;
-  setLoading(isLoading: boolean): void;
-  setError(error: string | null): void;
-}
-
-/**
- * 갤러리 설정 인터페이스 (Gallery Domain specific)
- */
-export interface GalleryDomainConfig {
-  readonly autoPlay: boolean;
-  readonly loopNavigation: boolean;
-  readonly keyboardNavigation: boolean;
-  readonly showThumbnails: boolean;
-  readonly animationDuration: number;
-  readonly maxZoomLevel: number;
-}
-
-/**
  * 갤러리 이벤트 타입
  */
 export type GalleryEvents = {
@@ -202,28 +78,6 @@ export type GalleryEvents = {
   'gallery:fullscreenToggle': { isFullscreen: boolean };
   'gallery:error': { error: string };
 };
-
-/**
- * 갤러리 생명주기 단계
- */
-export type GalleryLifecycleState =
-  | 'idle'
-  | 'initializing'
-  | 'ready'
-  | 'opening'
-  | 'open'
-  | 'closing'
-  | 'error'
-  | 'destroyed';
-
-/**
- * 갤러리 초기화 옵션
- */
-export interface GalleryInitOptions {
-  readonly container?: HTMLElement;
-  readonly config?: Partial<GalleryDomainConfig>;
-  readonly onError?: (error: string) => void;
-}
 
 // ========================================
 // VIEW MODE TYPES (from view-mode.types.ts)
@@ -300,18 +154,6 @@ export interface GalleryConfig {
 }
 
 /**
- * 테마 설정
- */
-export interface ThemeConfig {
-  /** 테마 모드 */
-  mode: 'light' | 'dark' | 'auto';
-  /** 색상 스킴 */
-  colorScheme?: 'twitter' | 'minimal' | 'custom';
-  /** 애니메이션 활성화 여부 */
-  animationsEnabled?: boolean;
-}
-
-/**
  * 다운로드 옵션
  */
 export interface DownloadOptions {
@@ -321,14 +163,6 @@ export interface DownloadOptions {
   filenameFormat?: string;
   /** 압축 활성화 여부 */
   compressionEnabled?: boolean;
-}
-
-/**
- * 기본 위치 좌표
- */
-export interface Point {
-  x: number;
-  y: number;
 }
 
 /**
@@ -342,22 +176,8 @@ export interface Size {
 /** 일반적인 이벤트 핸들러 타입 */
 export type EventHandler<T = Event> = (event: T) => void;
 
-/** 비동기 이벤트 핸들러 타입 */
-export type AsyncEventHandler<T = Event> = (event: T) => Promise<void>;
-
-/** 취소 가능한 함수 타입 */
-export type CancelableFunction = () => void;
-
 /** 로딩 상태 */
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-/** 에러 정보 */
-export interface ErrorInfo {
-  message: string;
-  code?: string;
-  details?: Record<string, unknown>;
-  timestamp?: Date;
-}
 
 // ========================================
 // APPLICATION TYPES (from app.types.ts)
@@ -381,91 +201,6 @@ export interface AppConfig {
   renderAfterLoad?: boolean;
 }
 
-/**
- * 애플리케이션 인스턴스 인터페이스
- */
-export interface AppInstance {
-  /** 초기화 */
-  initialize(): Promise<void>;
-  /** 정리 */
-  cleanup?(): Promise<void>;
-  /** 실행 상태 확인 */
-  isRunning?(): boolean;
-}
-
-/**
- * 애플리케이션 상태
- */
-export type ApplicationState = 'initializing' | 'running' | 'stopping' | 'stopped' | 'error';
-
-/**
- * 애플리케이션 라이프사이클 상태
- */
-export type AppLifecycleState = 'idle' | 'initializing' | 'ready' | 'error' | 'destroyed';
-
-/**
- * 서비스 상태
- */
-export type ServiceState =
-  | 'registered'
-  | 'initializing'
-  | 'initialized'
-  | 'destroying'
-  | 'destroyed'
-  | 'error';
-
-/**
- * 애플리케이션 메타데이터
- */
-export interface ApplicationMetadata {
-  /** 애플리케이션 이름 */
-  name: string;
-  /** 버전 */
-  version: string;
-  /** 빌드 시간 */
-  buildTime?: string;
-  /** 환경 정보 */
-  environment: 'development' | 'production' | 'test';
-}
-
-/**
- * 성능 메트릭
- */
-export interface PerformanceMetrics {
-  /** 초기화 시간 (ms) */
-  initializationTime: number;
-  /** 메모리 사용량 */
-  memoryUsage: {
-    /** 힙 사용량 */
-    usedJSHeapSize?: number;
-    /** 총 힙 크기 */
-    totalJSHeapSize?: number;
-    /** 힙 크기 제한 */
-    jsHeapSizeLimit?: number;
-  };
-  /** 서비스 수 */
-  serviceCount: {
-    /** 등록된 서비스 수 */
-    registered: number;
-    /** 초기화된 서비스 수 */
-    initialized: number;
-  };
-  /** 최적화 설정 */
-  optimizations?: {
-    memoryMonitoring?: boolean;
-    performanceProfiling?: boolean;
-  };
-}
-
-/**
- * 생명주기 설정 옵션
- */
-export interface LifecycleConfig {
-  autoStart: boolean;
-  retryCount: number;
-  timeout: number;
-}
-
 // ========================================
 // LIFECYCLE TYPES (from lifecycle.types.ts)
 // ========================================
@@ -481,29 +216,9 @@ export interface Cleanupable {
 }
 
 /**
- * 비동기적 정리 인터페이스
- */
-export interface Disposable {
-  /**
-   * 비동기적 정리 (파일, 네트워크, 스트림 등)
-   */
-  dispose(): Promise<void>;
-}
-
-/**
- * 완전한 소멸 인터페이스
- */
-export interface Destroyable {
-  /**
-   * 완전한 소멸 (상태 초기화 포함)
-   */
-  destroy(): void;
-}
-
-/**
  * 통합 생명주기 인터페이스
  */
-export interface Lifecycle extends Cleanupable, Disposable, Destroyable {
+export interface Lifecycle extends Cleanupable {
   /**
    * 리소스 상태 확인
    */

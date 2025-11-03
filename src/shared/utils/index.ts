@@ -3,7 +3,7 @@
  * @version 2.1.0 - services에서 이동된 유틸리티 추가
  */
 
-// === 기본 유틸리티 (12개) - galleryDebugUtils removed in Phase 140.2 ===
+// === 기본 유틸리티 (Phase 326.7: Removed duplicates) ===
 export {
   combineClasses,
   toggleClass,
@@ -54,18 +54,14 @@ export {
   createAddEventListenerOptions,
 } from './type-guards';
 
-// === 핵심 유틸리티 (10개) ===
+// === 핵심 유틸리티 (Phase 326.7: Reduced to 3, removed unused functions) ===
 export {
-  safeQuerySelector,
-  isInsideGallery,
   ensureGalleryScrollAvailable,
   findTwitterScrollContainer,
-  extractTweetInfoFromUrl,
-  safeGetAttribute,
-  safeSetAttribute,
+  isGalleryInternalEvent,
 } from './core-utils';
 
-export { canTriggerGallery, isGalleryInternalElement, isGalleryContainer } from './utils';
+export { canTriggerGallery, isGalleryInternalElement } from './utils';
 
 // === 접근성 (2개) ===
 export { detectLightBackground, getRelativeLuminance } from './accessibility';

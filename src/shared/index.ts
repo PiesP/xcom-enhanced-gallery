@@ -28,24 +28,20 @@ export * from './logging';
 // 메모리 관리 모듈 제거됨 (Phase 140.2 - 미사용 코드 정리)
 // export * from './memory';
 
-// 핵심 유틸리티들 (주요 기능만)
+// 핵심 유틸리티들 (Phase 326.7: Removed unused exports)
 export {
   // 접근성 & DOM 유틸리티
   detectLightBackground,
   getRelativeLuminance,
   parseColor,
   imageFilter,
-  extractTweetInfoFromUrl,
   rafThrottle,
   throttleScroll,
   createDebouncer,
   safeElementCheck,
   canTriggerGallery,
   isGalleryInternalElement,
-  isGalleryContainer,
 } from './utils';
-
-export { isInsideGallery } from './utils/dom';
 
 // 새로운 P4-P7 유틸리티들
 export {
