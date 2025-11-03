@@ -1,16 +1,16 @@
 {
-  "timestamp": "2025-11-02T22:52:03.322Z",
+  "timestamp": "2025-11-03T07:52:37.478Z",
   "phase": "326.5-2",
   "sourceAnalysis": {
     "features": {
       "gallery": {
         "files": 26,
-        "lines": 6579,
-        "size": 182929,
+        "lines": 6599,
+        "size": 183877,
         "modules": {
           "GalleryApp.ts": {
-            "lines": 400,
-            "size": 12118
+            "lines": 398,
+            "size": 11968
           },
           "GalleryRenderer.ts": {
             "lines": 308,
@@ -29,20 +29,20 @@
             "size": 5524
           },
           "components/vertical-gallery-view/VerticalGalleryView.module.css": {
-            "lines": 552,
-            "size": 14370
+            "lines": 541,
+            "size": 14200
           },
           "components/vertical-gallery-view/VerticalGalleryView.tsx": {
-            "lines": 679,
-            "size": 21551
+            "lines": 668,
+            "size": 21393
           },
           "components/vertical-gallery-view/VerticalImageItem.helpers.ts": {
             "lines": 53,
             "size": 1264
           },
           "components/vertical-gallery-view/VerticalImageItem.module.css": {
-            "lines": 501,
-            "size": 12051
+            "lines": 506,
+            "size": 12291
           },
           "components/vertical-gallery-view/VerticalImageItem.tsx": {
             "lines": 505,
@@ -77,8 +77,8 @@
             "size": 16019
           },
           "hooks/useGalleryItemScroll.ts": {
-            "lines": 531,
-            "size": 16659
+            "lines": 573,
+            "size": 17914
           },
           "hooks/useGalleryScroll.ts": {
             "lines": 348,
@@ -93,8 +93,8 @@
             "size": 5938
           },
           "styles/Gallery.module.css": {
-            "lines": 847,
-            "size": 18572
+            "lines": 844,
+            "size": 18503
           },
           "styles/gallery-global.css": {
             "lines": 458,
@@ -151,9 +151,9 @@
       }
     },
     "shared": {
-      "files": 288,
-      "lines": 44455,
-      "size": 1174813,
+      "files": 286,
+      "lines": 42560,
+      "size": 1130278,
       "modules": {
         "browser/browser-service.ts": {
           "lines": 157,
@@ -320,8 +320,8 @@
           "size": 55
         },
         "components/ui/Toolbar/Toolbar.tsx": {
-          "lines": 225,
-          "size": 6896
+          "lines": 224,
+          "size": 6863
         },
         "components/ui/Toolbar/Toolbar.types.ts": {
           "lines": 41,
@@ -357,7 +357,7 @@
         },
         "components/ui/primitive/Button.css": {
           "lines": 93,
-          "size": 2058
+          "size": 2043
         },
         "components/ui/primitive/Button.tsx": {
           "lines": 110,
@@ -413,7 +413,7 @@
         },
         "container/core-service-registry.ts": {
           "lines": 184,
-          "size": 3822
+          "size": 3816
         },
         "container/harness.ts": {
           "lines": 83,
@@ -421,15 +421,15 @@
         },
         "container/index.ts": {
           "lines": 87,
-          "size": 2792
+          "size": 2780
         },
         "container/service-accessors.ts": {
           "lines": 221,
-          "size": 6357
+          "size": 6329
         },
         "container/service-bridge.ts": {
           "lines": 127,
-          "size": 3477
+          "size": 3471
         },
         "container/settings-access.ts": {
           "lines": 119,
@@ -532,8 +532,8 @@
           "size": 3366
         },
         "index.ts": {
-          "lines": 85,
-          "size": 1746
+          "lines": 81,
+          "size": 1678
         },
         "interfaces/gallery.interfaces.ts": {
           "lines": 51,
@@ -552,8 +552,8 @@
           "size": 228
         },
         "logging/logger.ts": {
-          "lines": 740,
-          "size": 21791
+          "lines": 731,
+          "size": 21619
         },
         "media/index.ts": {
           "lines": 15,
@@ -568,8 +568,8 @@
           "size": 8686
         },
         "media/types.ts": {
-          "lines": 48,
-          "size": 935
+          "lines": 47,
+          "size": 983
         },
         "media/username-source.ts": {
           "lines": 23,
@@ -586,10 +586,6 @@
         "services/bulk-download-service.ts": {
           "lines": 560,
           "size": 19345
-        },
-        "services/clipboard-service.ts": {
-          "lines": 178,
-          "size": 5213
         },
         "services/core/index.ts": {
           "lines": 11,
@@ -624,8 +620,8 @@
           "size": 298
         },
         "services/download-service.ts": {
-          "lines": 414,
-          "size": 12997
+          "lines": 420,
+          "size": 13120
         },
         "services/error-formatter.ts": {
           "lines": 277,
@@ -664,8 +660,8 @@
           "size": 13727
         },
         "services/index.ts": {
-          "lines": 159,
-          "size": 4552
+          "lines": 151,
+          "size": 4411
         },
         "services/input/keyboard-navigator.ts": {
           "lines": 198,
@@ -816,8 +812,8 @@
           "size": 1375
         },
         "services/service-initialization.ts": {
-          "lines": 63,
-          "size": 2144
+          "lines": 62,
+          "size": 2083
         },
         "services/service-manager.ts": {
           "lines": 16,
@@ -839,10 +835,6 @@
           "lines": 296,
           "size": 7274
         },
-        "services/toast-controller.ts": {
-          "lines": 179,
-          "size": 3343
-        },
         "services/token-extraction/index.ts": {
           "lines": 8,
           "size": 279
@@ -852,12 +844,12 @@
           "size": 13947
         },
         "services/unified-download-service.ts": {
-          "lines": 624,
-          "size": 17866
+          "lines": 633,
+          "size": 18155
         },
         "services/unified-toast-manager.ts": {
-          "lines": 382,
-          "size": 9712
+          "lines": 325,
+          "size": 8240
         },
         "state/focus/focus-cache.ts": {
           "lines": 170,
@@ -940,8 +932,8 @@
           "size": 1882
         },
         "styles/design-tokens.component.css": {
-          "lines": 235,
-          "size": 7302
+          "lines": 225,
+          "size": 7031
         },
         "styles/design-tokens.css": {
           "lines": 28,
@@ -949,11 +941,11 @@
         },
         "styles/design-tokens.primitive.css": {
           "lines": 105,
-          "size": 3707
+          "size": 3745
         },
         "styles/design-tokens.semantic.css": {
-          "lines": 621,
-          "size": 25279
+          "lines": 620,
+          "size": 25298
         },
         "styles/index.ts": {
           "lines": 22,
@@ -1008,8 +1000,8 @@
           "size": 234
         },
         "types/core/core-types.ts": {
-          "lines": 623,
-          "size": 13542
+          "lines": 338,
+          "size": 8016
         },
         "types/core/extraction.types.ts": {
           "lines": 30,
@@ -1020,16 +1012,16 @@
           "size": 817
         },
         "types/core/userscript.d.ts": {
-          "lines": 158,
-          "size": 3783
+          "lines": 154,
+          "size": 3669
         },
         "types/index.ts": {
           "lines": 73,
           "size": 1868
         },
         "types/media.types.ts": {
-          "lines": 559,
-          "size": 11065
+          "lines": 556,
+          "size": 11006
         },
         "types/navigation.types.ts": {
           "lines": 14,
@@ -1076,12 +1068,8 @@
           "size": 200
         },
         "utils/animations.ts": {
-          "lines": 243,
-          "size": 6738
-        },
-        "utils/binary-utils.ts": {
-          "lines": 379,
-          "size": 10368
+          "lines": 133,
+          "size": 3645
         },
         "utils/browser/index.ts": {
           "lines": 10,
@@ -1096,8 +1084,8 @@
           "size": 2418
         },
         "utils/component-utils.ts": {
-          "lines": 145,
-          "size": 4142
+          "lines": 89,
+          "size": 2729
         },
         "utils/conditional-loading.ts": {
           "lines": 366,
@@ -1108,8 +1096,8 @@
           "size": 151
         },
         "utils/core-utils.ts": {
-          "lines": 361,
-          "size": 8339
+          "lines": 118,
+          "size": 2878
         },
         "utils/css-animations.ts": {
           "lines": 211,
@@ -1136,8 +1124,8 @@
           "size": 2746
         },
         "utils/dom/index.ts": {
-          "lines": 21,
-          "size": 542
+          "lines": 19,
+          "size": 555
         },
         "utils/error-handling.ts": {
           "lines": 376,
@@ -1146,6 +1134,10 @@
         "utils/event-emitter.ts": {
           "lines": 78,
           "size": 1826
+        },
+        "utils/event-utils.ts": {
+          "lines": 83,
+          "size": 2188
         },
         "utils/events.ts": {
           "lines": 1021,
@@ -1160,8 +1152,8 @@
           "size": 2167
         },
         "utils/index.ts": {
-          "lines": 170,
-          "size": 3617
+          "lines": 137,
+          "size": 3067
         },
         "utils/keyboard-debounce.ts": {
           "lines": 76,
@@ -1252,8 +1244,8 @@
           "size": 7421
         },
         "utils/solid-helpers.ts": {
-          "lines": 46,
-          "size": 1035
+          "lines": 35,
+          "size": 808
         },
         "utils/stability.ts": {
           "lines": 240,
@@ -1292,8 +1284,8 @@
           "size": 4681
         },
         "utils/type-safety-helpers.ts": {
-          "lines": 562,
-          "size": 13271
+          "lines": 144,
+          "size": 3670
         },
         "utils/utils.ts": {
           "lines": 185,
@@ -1352,9 +1344,9 @@
       }
     },
     "total": {
-      "files": 328,
-      "lines": 52780,
-      "size": 1404955
+      "files": 326,
+      "lines": 50905,
+      "size": 1361368
     }
   },
   "optionalFeatures": {
@@ -1402,28 +1394,8 @@
   "deadCode": {
     "unusedUtils": [
       {
-        "file": "animations.ts",
-        "exports": 8,
-        "note": "Multiple exports, check for unused"
-      },
-      {
-        "file": "binary-utils.ts",
-        "exports": 12,
-        "note": "Multiple exports, check for unused"
-      },
-      {
-        "file": "component-utils.ts",
-        "exports": 6,
-        "note": "Multiple exports, check for unused"
-      },
-      {
         "file": "conditional-loading.ts",
         "exports": 6,
-        "note": "Multiple exports, check for unused"
-      },
-      {
-        "file": "core-utils.ts",
-        "exports": 20,
         "note": "Multiple exports, check for unused"
       },
       {
@@ -1448,7 +1420,7 @@
       },
       {
         "file": "type-safety-helpers.ts",
-        "exports": 35,
+        "exports": 10,
         "note": "Multiple exports, check for unused"
       },
       {
