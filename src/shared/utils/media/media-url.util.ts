@@ -47,11 +47,17 @@ export function getMediaUrlsFromTweet(doc: Document | HTMLElement, tweetId: stri
         if (isVideoThumbnailUrl(src)) {
           const videoUrl = convertThumbnailToVideoUrl(src);
           if (videoUrl) {
-            const mediaInfo = createMediaInfoFromVideo(
-              { src: videoUrl, currentTime: 0 } as HTMLVideoElement,
-              tweetId,
-              mediaIndex
-            );
+            // Phase 332 Fix: HTMLVideoElement의 필수 속성 추가
+            // src와 currentSrc가 모두 필요 (createMediaInfoFromVideo에서 검사)
+            const fakeVideoElement = {
+              src: videoUrl,
+              currentSrc: videoUrl,
+              poster: undefined,
+              videoWidth: 1920,
+              videoHeight: 1080,
+            } as unknown as HTMLVideoElement;
+
+            const mediaInfo = createMediaInfoFromVideo(fakeVideoElement, tweetId, mediaIndex);
             if (mediaInfo) {
               logger.debug('[getMediaUrlsFromTweet] 영상 섬네일에서 동영상 추출', {
                 thumbnailUrl: src,

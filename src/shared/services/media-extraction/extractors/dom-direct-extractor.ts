@@ -182,13 +182,18 @@ export class DOMDirectExtractor {
               videoUrl,
               tweetId: tweetInfo?.tweetId,
             });
+
+            // Phase 332 Fix: HTMLVideoElement의 필수 속성 추가
+            const fakeVideoElement = {
+              src: videoUrl,
+              currentSrc: videoUrl,
+              poster: undefined,
+              videoWidth: 1920,
+              videoHeight: 1080,
+            } as unknown as HTMLVideoElement;
+
             mediaItems.push(
-              this.createVideoMediaInfo(
-                { src: videoUrl, currentTime: 0 } as HTMLVideoElement,
-                videoUrl,
-                mediaItems.length,
-                tweetInfo
-              )
+              this.createVideoMediaInfo(fakeVideoElement, videoUrl, mediaItems.length, tweetInfo)
             );
             return;
           }
