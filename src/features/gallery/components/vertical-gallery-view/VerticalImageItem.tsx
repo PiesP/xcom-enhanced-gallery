@@ -407,6 +407,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     <div
       ref={assignContainerRef}
       class={containerClasses()}
+      data-xeg-role='gallery-item'
       data-index={index}
       data-item-index={index}
       data-fit-mode={resolvedFitMode()}

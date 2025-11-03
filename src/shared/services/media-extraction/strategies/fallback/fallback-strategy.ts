@@ -6,7 +6,11 @@
 
 import { logger } from '@shared/logging';
 import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
-import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types';
+import {
+  extractOriginalImageUrl,
+  canExtractOriginalImage,
+} from '@shared/utils/media/media-url.util';
+import type { MediaInfo, MediaExtractionResult, MediaType } from '@shared/types/media.types';
 import type { TweetInfo, FallbackExtractionStrategy } from '@shared/types/media.types';
 
 /**
@@ -57,7 +61,19 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       }
       mediaItems.push(...backgroundResult.items);
 
-      return this.createSuccessResult(mediaItems, clickedIndex, tweetInfo);
+      const { items: dedupedItems, removedCount } = this.dedupeMediaItems(mediaItems);
+      const resolvedClickedIndex = this.resolveClickedIndex(clickedIndex, mediaItems, dedupedItems);
+
+      if (removedCount > 0) {
+        logger.debug('[FallbackStrategy] Duplicate media entries removed', {
+          before: mediaItems.length,
+          after: dedupedItems.length,
+          removed: removedCount,
+          tweetId: tweetInfo?.tweetId ?? null,
+        });
+      }
+
+      return this.createSuccessResult(dedupedItems, resolvedClickedIndex, tweetInfo);
     } catch (error) {
       logger.error('[FallbackStrategy] 추출 오류:', error);
       return this.createFailureResult(
@@ -84,16 +100,34 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       if (!img) continue;
 
       const src = img.getAttribute('src');
-      if (!src || !this.isValidMediaUrl(src)) continue;
+      if (!this.isValidMediaUrl(src)) continue;
 
       // 클릭된 요소 확인
       if (img === clickedElement || clickedElement.contains(img) || img.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`img_${i}`, src, 'image', tweetInfo, {
+      // 원본(orig) 고화질 URL로 변환
+      const originalUrl = extractOriginalImageUrl(src);
+
+      // Twitter 미디어인 경우만 상세 로깅
+      if (canExtractOriginalImage(src)) {
+        logger.debug('[FallbackStrategy] 원본 이미지 추출 성공', {
+          sourceUrl: src,
+          extractedUrl: originalUrl,
+          index: i,
+          tweetId: tweetInfo?.tweetId,
+        });
+      } else if (src?.includes('pbs.twimg.com')) {
+        logger.debug('[FallbackStrategy] 원본 이미지 추출 불가능 (이미 orig)', {
+          sourceUrl: src,
+        });
+      }
+
+      const mediaInfo = this.createMediaInfo(`img_${i}`, originalUrl, 'image', tweetInfo, {
         alt: img.getAttribute('alt') || `Image ${i + 1}`,
         fallbackSource: 'img-element',
+        originalUrl: src,
       });
 
       items.push(mediaInfo);
@@ -165,23 +199,22 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       const dataUrl = element.getAttribute('data-url');
       const url = dataSrc || dataBg || dataUrl;
 
-      if (!url || !this.isValidMediaUrl(url)) continue;
+      if (!this.isValidMediaUrl(url)) continue;
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(
-        `data_${i}`,
-        url,
-        this.detectMediaType(url),
-        tweetInfo,
-        {
-          alt: `Data Media ${i + 1}`,
-          fallbackSource: 'data-attribute',
-        }
-      );
+      // 이미지는 고품질 원본 URL 추출
+      const mediaType = this.detectMediaType(url);
+      const processedUrl = mediaType === 'image' ? extractOriginalImageUrl(url) : url;
+
+      const mediaInfo = this.createMediaInfo(`data_${i}`, processedUrl, mediaType, tweetInfo, {
+        alt: `Data Media ${i + 1}`,
+        fallbackSource: 'data-attribute',
+        originalUrl: mediaType === 'image' ? url : null,
+      });
 
       items.push(mediaInfo);
     }
@@ -211,16 +244,19 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       if (!backgroundImage || backgroundImage === 'none') continue;
 
       const url = this.extractUrlFromBackgroundImage(backgroundImage);
-      if (!url || !this.isValidMediaUrl(url)) continue;
+      if (!this.isValidMediaUrl(url)) continue;
 
       // 클릭된 요소 확인
       if (element === clickedElement || element.contains(clickedElement)) {
         clickedIndex = items.length;
       }
 
-      const mediaInfo = this.createMediaInfo(`bg_${i}`, url, 'image', tweetInfo, {
+      // 배경 이미지도 고품질 원본 URL 추출
+      const originalUrl = extractOriginalImageUrl(url);
+      const mediaInfo = this.createMediaInfo(`bg_${i}`, originalUrl, 'image', tweetInfo, {
         alt: `Background Image ${i + 1}`,
         fallbackSource: 'background-image',
+        originalUrl: url,
       });
 
       items.push(mediaInfo);
@@ -235,12 +271,13 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   private createMediaInfo(
     id: string,
     url: string,
-    type: 'image' | 'video',
+    type: MediaType,
     tweetInfo?: TweetInfo,
     options: {
       thumbnailUrl?: string;
       alt?: string;
       fallbackSource?: string;
+      originalUrl?: string | null;
     } = {}
   ): MediaInfo {
     return {
@@ -251,7 +288,7 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
       tweetUsername: tweetInfo?.username || parseUsernameFast() || '',
       tweetId: tweetInfo?.tweetId || '',
       tweetUrl: tweetInfo?.tweetUrl || '',
-      originalUrl: url,
+      originalUrl: options.originalUrl || url,
       thumbnailUrl: options.thumbnailUrl || url,
       alt: options.alt || `${type} item`,
       metadata: {
@@ -263,8 +300,26 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   /**
    * URL 검증
    */
-  private isValidMediaUrl(url: string): boolean {
-    return url.startsWith('http') && !url.includes('profile_images');
+  private isValidMediaUrl(url: string | null | undefined): url is string {
+    if (!url) {
+      return false;
+    }
+
+    const trimmed = url.trim();
+    if (!trimmed) {
+      return false;
+    }
+
+    if (trimmed.includes('profile_images')) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(trimmed);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return /^https?:\/\//i.test(trimmed);
+    }
   }
 
   /**
@@ -282,6 +337,150 @@ export class FallbackStrategy implements FallbackExtractionStrategy {
   private extractUrlFromBackgroundImage(backgroundImage: string): string | null {
     const match = backgroundImage.match(/url\(['"]?([^'"]+)['"]?\)/);
     return match ? (match[1] ?? null) : null;
+  }
+
+  private dedupeMediaItems(mediaItems: MediaInfo[]): { items: MediaInfo[]; removedCount: number } {
+    if (mediaItems.length === 0) {
+      return { items: [], removedCount: 0 };
+    }
+
+    const seenKeys = new Set<string>();
+    const deduped: MediaInfo[] = [];
+    let removedCount = 0;
+
+    for (const item of mediaItems) {
+      const key = this.buildDedupeKey(item);
+      if (key) {
+        if (seenKeys.has(key)) {
+          removedCount += 1;
+          continue;
+        }
+        seenKeys.add(key);
+      }
+
+      deduped.push(item);
+    }
+
+    return { items: deduped, removedCount };
+  }
+
+  private resolveClickedIndex(
+    originalIndex: number,
+    originalItems: MediaInfo[],
+    dedupedItems: MediaInfo[]
+  ): number {
+    if (dedupedItems.length === 0) {
+      return 0;
+    }
+
+    const boundedOriginalIndex = Math.max(0, Math.min(originalIndex, originalItems.length - 1));
+    const originalItem = originalItems[boundedOriginalIndex];
+    if (!originalItem) {
+      return 0;
+    }
+
+    const targetKey = this.buildDedupeKey(originalItem);
+    if (targetKey) {
+      const byKeyIndex = dedupedItems.findIndex(item => this.buildDedupeKey(item) === targetKey);
+      if (byKeyIndex >= 0) {
+        return byKeyIndex;
+      }
+    }
+
+    const normalizedUrl = this.normalizeUrlForDedupe(originalItem.originalUrl ?? originalItem.url);
+    if (normalizedUrl) {
+      const byUrlIndex = dedupedItems.findIndex(candidate => {
+        const candidateUrl = this.normalizeUrlForDedupe(candidate.originalUrl ?? candidate.url);
+        return candidateUrl !== null && candidateUrl === normalizedUrl;
+      });
+      if (byUrlIndex >= 0) {
+        return byUrlIndex;
+      }
+    }
+
+    const byIdIndex = dedupedItems.findIndex(item => item.id === originalItem.id);
+    if (byIdIndex >= 0) {
+      return byIdIndex;
+    }
+
+    return Math.min(boundedOriginalIndex, dedupedItems.length - 1);
+  }
+
+  private buildDedupeKey(item: MediaInfo): string | null {
+    const metadata = item.metadata as Record<string, unknown> | undefined;
+    const mediaKey = this.extractMediaKey(metadata);
+    if (mediaKey) {
+      return `media-key:${mediaKey}`;
+    }
+
+    const normalizedUrl = this.normalizeUrlForDedupe(item.originalUrl ?? item.url);
+    if (normalizedUrl) {
+      return `url:${normalizedUrl}`;
+    }
+
+    return null;
+  }
+
+  private extractMediaKey(metadata?: Record<string, unknown>): string | null {
+    if (!metadata) {
+      return null;
+    }
+
+    const direct = this.normalizeMediaKeyValue(metadata['media_key']);
+    if (direct) {
+      return direct;
+    }
+
+    const camel = this.normalizeMediaKeyValue(metadata['mediaKey']);
+    if (camel) {
+      return camel;
+    }
+
+    const apiData = metadata['apiData'];
+    if (apiData && typeof apiData === 'object') {
+      const apiKey = this.normalizeMediaKeyValue((apiData as Record<string, unknown>)['media_key']);
+      if (apiKey) {
+        return apiKey;
+      }
+
+      const apiKeyCamel = this.normalizeMediaKeyValue(
+        (apiData as Record<string, unknown>)['mediaKey']
+      );
+      if (apiKeyCamel) {
+        return apiKeyCamel;
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeMediaKeyValue(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed.toLowerCase() : null;
+  }
+
+  private normalizeUrlForDedupe(url?: string | null): string | null {
+    if (!url) {
+      return null;
+    }
+
+    try {
+      const parsed = new URL(url);
+      const normalized = `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+      return normalized.toLowerCase();
+    } catch {
+      const withoutQuery = url.split('?')[0] ?? url;
+      const withoutHash = withoutQuery.split('#')[0] ?? withoutQuery;
+      const sanitized = withoutHash.trim();
+      if (!sanitized) {
+        return null;
+      }
+      return sanitized.toLowerCase();
+    }
   }
 
   /**

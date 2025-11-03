@@ -32,6 +32,8 @@ import { getSolid } from '../../shared/external/vendors';
 import { unifiedDownloadService } from '@shared/services';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 
+let galleryMountCount = 0;
+
 /**
  * 갤러리 렌더러 - DOM 렌더링 및 생명주기 관리
  */
@@ -144,6 +146,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
       });
 
     this.disposeApp = render(elementFactory, this.container);
+    galleryMountCount += 1;
+    logger.info('[GalleryRenderer] 갤러리 마운트', {
+      mountCount: galleryMountCount,
+    });
 
     // Toast 컨테이너를 갤러리 내부에 마운트
     this.renderToastContainer();

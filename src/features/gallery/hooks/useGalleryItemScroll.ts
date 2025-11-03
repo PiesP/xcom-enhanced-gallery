@@ -177,12 +177,14 @@ export function useGalleryItemScroll(
         return;
       }
 
-      const targetElement = itemsRoot.children[index] as HTMLElement | undefined;
+      // Phase 328: Use querySelectorAll to exclude spacer element (data-xeg-role='scroll-spacer')
+      const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+      const targetElement = galleryItems[index] as HTMLElement | undefined;
       if (!targetElement) {
         logger.warn('useGalleryItemScroll: 타겟 요소를 찾을 수 없음', {
           index,
           totalItems: total,
-          itemsContainerChildrenCount: itemsRoot.children.length,
+          galleryItemsCount: galleryItems.length,
         });
         updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
         return;
@@ -194,48 +196,9 @@ export function useGalleryItemScroll(
         });
       }
 
-      // Phase 327: 마지막 아이템 특수 처리
-      const isLastItem = index === total - 1;
-      if (isLastItem) {
-        const itemHeight = targetElement.offsetHeight;
-        const viewportHeight = container.clientHeight;
-
-        if (itemHeight < viewportHeight) {
-          logger.debug('useGalleryItemScroll: Phase 327 - Last item special scroll', {
-            index,
-            itemHeight,
-            viewportHeight,
-            scrollHeight: container.scrollHeight,
-          });
-
-          // 스크롤을 최대 끝으로 이동
-          const actualBehavior = resolveBehavior();
-          container.scrollTo({
-            top: container.scrollHeight - viewportHeight,
-            behavior: actualBehavior,
-          });
-
-          updateStateSignal(setState, {
-            lastScrolledIndex: index,
-            pendingIndex: null,
-          });
-          retryCount = 0;
-
-          // Wait for smooth scroll if needed
-          if (actualBehavior === 'smooth') {
-            await new Promise<void>(resolve => {
-              globalTimerManager.setTimeout(resolve, 300);
-            });
-          }
-
-          globalTimerManager.setTimeout(() => {
-            updateStateSignal(setState, { isAutoScrolling: false });
-          }, 50);
-
-          return;
-        }
-      }
-
+      // Phase 328: Removed Phase 327 special logic for last item
+      // All items now use consistent scrollIntoView behavior
+      // Last item can scroll to top via transparent spacer element
       const actualBehavior = resolveBehavior();
 
       targetElement.scrollIntoView({
@@ -334,7 +297,9 @@ export function useGalleryItemScroll(
           return;
         }
 
-        const targetElement = itemsRoot.children[index] as HTMLElement | undefined;
+        // Phase 328: Use querySelectorAll to exclude spacer
+        const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+        const targetElement = galleryItems[index] as HTMLElement | undefined;
         if (targetElement) {
           // Element found, proceed with scroll
           logger.debug('useGalleryItemScroll: element found, proceeding with scroll', {
@@ -411,8 +376,9 @@ export function useGalleryItemScroll(
 
     if (!itemsRoot) return;
 
-    // Check if target element already exists
-    const targetElement = itemsRoot.children[targetIndex] as HTMLElement | undefined;
+    // Phase 328: Use querySelectorAll to exclude spacer
+    const galleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+    const targetElement = galleryItems[targetIndex] as HTMLElement | undefined;
     if (targetElement) {
       logger.debug(
         'useGalleryItemScroll: target element already rendered, skipping MutationObserver',
@@ -425,7 +391,8 @@ export function useGalleryItemScroll(
 
     // Phase 263: Solution 1 - Watch for DOM mutations (additions) to detect rendering
     renderMutationObserver = new MutationObserver(() => {
-      const currentTargetElement = itemsRoot.children[targetIndex] as HTMLElement | undefined;
+      const updatedGalleryItems = itemsRoot.querySelectorAll('[data-xeg-role="gallery-item"]');
+      const currentTargetElement = updatedGalleryItems[targetIndex] as HTMLElement | undefined;
       if (currentTargetElement) {
         logger.debug('useGalleryItemScroll: target element detected by MutationObserver', {
           targetIndex,

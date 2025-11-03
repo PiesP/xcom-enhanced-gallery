@@ -66,7 +66,7 @@ export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T)
  * ```
  */
 export function removeDuplicateMediaItems(mediaItems: readonly MediaInfo[]): MediaInfo[] {
-  const result = removeDuplicates(mediaItems, item => item.url);
+  const result = removeDuplicates(mediaItems, item => item.originalUrl ?? item.url);
 
   // 성능 최적화를 위해 실제로 제거된 경우만 로깅
   const removedCount = mediaItems.length - result.length;

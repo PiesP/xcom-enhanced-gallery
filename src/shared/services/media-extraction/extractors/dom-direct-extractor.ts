@@ -5,7 +5,11 @@
  */
 
 import { logger } from '@shared/logging';
-import { extractOriginalImageUrl, isValidMediaUrl } from '@shared/utils/media/media-url.util';
+import {
+  extractOriginalImageUrl,
+  isValidMediaUrl,
+  canExtractOriginalImage,
+} from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
@@ -160,11 +164,34 @@ export class DOMDirectExtractor {
 
     // 이미지 추출
     const images = container.querySelectorAll('img[src]');
+    const seenImageUrls = new Set<string>();
     images.forEach((img, index) => {
       const imgElement = img as HTMLImageElement;
       if (this.isValidImageUrl(imgElement.src)) {
+        // 원본(orig) 고화질 URL 추출
         const originalUrl = extractOriginalImageUrl(imgElement.src);
+
+        // Twitter 미디어인 경우만 상세 로깅
+        if (canExtractOriginalImage(imgElement.src)) {
+          logger.debug('[DOMDirectExtractor] 원본 이미지 추출 성공', {
+            sourceUrl: imgElement.src,
+            extractedUrl: originalUrl,
+            index,
+            tweetId: tweetInfo?.tweetId,
+          });
+        } else if (imgElement.src?.includes('pbs.twimg.com')) {
+          logger.debug('[DOMDirectExtractor] 원본 이미지 추출 불가능 (이미 orig)', {
+            sourceUrl: imgElement.src,
+          });
+        }
+
         if (originalUrl) {
+          const normalizedUrl = this.normalizeUrlForComparison(originalUrl);
+          if (seenImageUrls.has(normalizedUrl)) {
+            logger.debug(`[DOMDirectExtractor] 중복 이미지 필터링: ${normalizedUrl}`);
+            return;
+          }
+          seenImageUrls.add(normalizedUrl);
           mediaItems.push(this.createImageMediaInfo(imgElement, originalUrl, index, tweetInfo));
         }
       }
@@ -267,6 +294,19 @@ export class DOMDirectExtractor {
    */
   private isValidImageUrl(url: string): boolean {
     return isValidMediaUrl(url);
+  }
+
+  /**
+   * URL 정규화 - 쿼리 파라미터 무시하고 비교
+   */
+  private normalizeUrlForComparison(url: string): string {
+    try {
+      const parsed = new URL(url);
+      return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+    } catch {
+      const withoutQuery = url.split('?')[0] ?? url;
+      return withoutQuery.toLowerCase();
+    }
   }
 
   /**

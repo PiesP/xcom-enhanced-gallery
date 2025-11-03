@@ -359,14 +359,16 @@ function VerticalGalleryViewCore({
     const itemsContainer = container.querySelector(
       '[data-xeg-role="items-list"], [data-xeg-role="items-container"]'
     );
-    if (!itemsContainer || itemsContainer.children.length === 0) return;
+    // Phase 328: Check only gallery items (exclude spacer)
+    const galleryItems = itemsContainer?.querySelectorAll('[data-xeg-role="gallery-item"]');
+    if (!itemsContainer || !galleryItems || galleryItems.length === 0) return;
 
     // 첫 렌더링 시 한 번만 실행
     hasPerformedInitialScroll = true;
 
     logger.debug('VerticalGalleryView: 초기 스크롤 시작 (Phase 293)', {
       currentIndex: currentIndex(),
-      itemsRendered: itemsContainer.children.length,
+      itemsRendered: galleryItems.length,
       mediaCount: items.length,
       timestamp: Date.now(),
     });
@@ -569,6 +571,42 @@ function VerticalGalleryViewCore({
     }
   };
 
+  // DEV-only: Detect and log duplicate rendered items for diagnostics (no side effects)
+  if (__DEV__) {
+    const { createEffect: devCreateEffect, on: devOn } = solidAPI;
+    // Log once per media length change to avoid noise
+    let lastLoggedLength = -1;
+    devCreateEffect(
+      devOn([mediaItems, itemsContainerEl], ([items, container]) => {
+        const length = items.length;
+        if (!container || length === 0) return;
+        if (length === lastLoggedLength) return;
+        lastLoggedLength = length;
+
+        // Count actual DOM items and detect duplicate indices
+        const nodes = container.querySelectorAll('[data-xeg-role="gallery-item"]');
+        const indices = Array.from(nodes).map(el => {
+          const h = el as HTMLElement;
+          return h.getAttribute('data-item-index') || h.getAttribute('data-index') || '';
+        });
+        const unique = new Set(indices.filter(Boolean));
+        if (nodes.length !== length || unique.size !== length) {
+          logger.warn('[DEV] Duplicate or mismatched gallery items detected', {
+            expected: length,
+            domCount: nodes.length,
+            uniqueIndices: unique.size,
+            indicesSample: indices.slice(0, 20),
+          });
+        } else {
+          logger.debug('[DEV] Gallery items render check OK', {
+            expected: length,
+            domCount: nodes.length,
+          });
+        }
+      })
+    );
+  }
+
   if (!isVisible() || mediaItems().length === 0) {
     const emptyTitle = languageService.getString('messages.gallery.emptyTitle');
     const emptyDesc = languageService.getString('messages.gallery.emptyDescription');
@@ -621,15 +659,10 @@ function VerticalGalleryViewCore({
         data-xeg-role-compat='items-list'
         ref={el => setItemsContainerEl(el ?? null)}
       >
-        <For
-          each={mediaItems().map((item, index) => ({
-            ...item,
-            _galleryKey: `${item.id || item.url}-${index}`,
-            _index: index,
-          }))}
-        >
-          {item => {
-            const actualIndex = (item as Record<string, unknown>)._index as number;
+        {/* Phase 328: Fixed - Simplified For loop without transformation */}
+        <For each={mediaItems()}>
+          {(item, index) => {
+            const actualIndex = index();
             const forcePreload = preloadIndices().includes(actualIndex);
 
             return (
@@ -659,6 +692,8 @@ function VerticalGalleryViewCore({
             );
           }}
         </For>
+        {/* Phase 328: Transparent spacer for last item top-align scrolling */}
+        <div class={styles.scrollSpacer} aria-hidden='true' data-xeg-role='scroll-spacer' />
       </div>
     </div>
   );

@@ -278,6 +278,24 @@
 
 /* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
 
+/* Phase 328: Transparent spacer for last item top-align scrolling */
+.scrollSpacer {
+  /* Dynamic height via CSS custom property (set by viewport observer) */
+  height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
+  min-height: 50vh; /* Fallback minimum height */
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Invisible spacer */
+  background: transparent;
+  opacity: 0;
+
+  /* Performance optimization */
+  contain: strict;
+  content-visibility: auto;
+}
+
 .container:has(.itemActive) {
   /* ?�성 ?�이?�이 ?�을 ?? */
   --has-active-item: 1;

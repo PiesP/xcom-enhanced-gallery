@@ -31,8 +31,8 @@
 | **326.6** | Type cleanup | N/A | ✅ 완료 | 미사용 타입 제거 | -273줄 |
 | **326.7** | Utility consolidation | N/A | ✅ 완료 | core-utils.ts 정리 | -161줄 |
 | **326.8** | CSS 번들 분석 | N/A | ✅ 완료 | CSS 최적화 검증 | 이미 최적화됨 |
-| **327** | 마지막 아이템 스크롤 | N/A | ✅ 완료 | useGalleryItemScroll.ts | +50줄 |
-| **328** | 정책 표준화 | N/A | ✅ 완료 | 중복 분석 + 문서화 + jscpd 통합 | +200줄 (문서) |
+| **327** | 마지막 아이템 스크롤 | N/A | ⛔ 제거됨 | useGalleryItemScroll.ts | Phase 328로 대체 |
+| **328** | 투명 Spacer 접근 | N/A | ✅ 완료 | Phase 327 제거 + Spacer 추가 | -45줄, +20줄 |
 
 **누적 효과**:
 - 자체 구현 제거: **80%+**
@@ -595,7 +595,99 @@ targetElement.scrollIntoView({ ... });
 
 ---
 
-**문서 유지보수**: 2025-11-03 | AI Assistant 업데이트 (문서 정리 및 현황 갱신)
+**문서 유지보수**: 2025-11-03 | AI Assistant 업데이트 (Phase 328: 투명 Spacer 접근 방식으로 마지막 아이템 스크롤 개선)
+
+---
+
+## 📝 Phase 328: 투명 Spacer로 마지막 아이템 Top-Align 스크롤 (2025-11-03)
+
+### 배경 및 문제점
+- **Phase 327의 문제**: 마지막 아이템이 viewport보다 작을 때 컨테이너 최하단으로 스크롤
+  - 결과: 마지막 이미지가 viewport 하단에 위치 (일관성 저하)
+  - 사용자 기대: 모든 아이템이 viewport 최상단 정렬
+- **UX 불일치**: 마지막 아이템만 다르게 동작하여 혼란 발생
+
+### 해결책: 투명 Spacer 요소 추가 (Hybrid Approach)
+- Phase 327 특수 로직 제거 (45줄 삭제)
+- 마지막 아이템 이후 투명 spacer 요소 추가 (DOM)
+- Spacer 높이: `calc(100vh - toolbar-height)`
+- 접근성: `aria-hidden="true"` (스크린 리더 제외)
+- CSS 최적화: `pointer-events: none`, `opacity: 0`, `contain: strict`
+
+### 변경 사항
+
+#### 1. Phase 327 로직 제거
+**파일**: `src/features/gallery/hooks/useGalleryItemScroll.ts`
+
+```typescript
+// Phase 328: Removed Phase 327 special logic for last item
+// All items now use consistent scrollIntoView behavior
+// Last item can scroll to top via transparent spacer element
+const actualBehavior = resolveBehavior();
+
+targetElement.scrollIntoView({
+  behavior: actualBehavior,
+  block: alignToCenter() ? 'center' : block(),
+  inline: 'nearest',
+});
+```
+
+**삭제된 코드**: -45줄 (Phase 327 조건 분기 로직)
+
+#### 2. 투명 Spacer 추가
+**파일**: `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.tsx`
+
+```tsx
+</For>
+{/* Phase 328: Transparent spacer for last item top-align scrolling */}
+<div class={styles.scrollSpacer} aria-hidden='true' data-xeg-role='scroll-spacer' />
+```
+
+**추가된 코드**: +3줄 (투명 spacer DOM 요소)
+
+#### 3. Spacer CSS 스타일
+**파일**: `src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css`
+
+```css
+/* Phase 328: Transparent spacer for last item top-align scrolling */
+.scrollSpacer {
+  /* Dynamic height via CSS custom property (set by viewport observer) */
+  height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
+  min-height: 50vh; /* Fallback minimum height */
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Invisible spacer */
+  background: transparent;
+  opacity: 0;
+
+  /* Performance optimization */
+  contain: strict;
+  content-visibility: auto;
+}
+```
+
+**추가된 코드**: +17줄 (Spacer CSS 정의)
+
+### 장점
+1. **일관성**: 모든 아이템이 viewport 최상단 정렬 (사용자 혼란 제거)
+2. **단순성**: Phase 327 특수 로직 제거로 코드 복잡도 감소
+3. **접근성**: `aria-hidden="true"`로 스크린 리더에서 제외
+4. **스크롤 범위**: 마지막 아이템 이후에도 스크롤 가능 (자연스러운 UX)
+5. **성능**: CSS `contain: strict`, `content-visibility: auto`로 최적화
+
+### 검증 결과
+- ✅ TypeScript 컴파일: 0 에러
+- ✅ ESLint: 0 경고
+- ✅ Prettier: 통과
+- ✅ 기존 스크롤 테스트 통과 (회귀 없음)
+
+**net 라인 변화**: -45줄 (Phase 327 제거) + 20줄 (Spacer 추가) = **-25줄**
+
+---
+
+**문서 유지보수**: 2025-11-03 | AI Assistant 업데이트 (Phase 328 완료)
 **참고 문서**:
 - [PHASE_326_REVISED_PLAN.md](./archive/PHASE_326_REVISED_PLAN.md) - Phase 326 재계획 (Userscript 제약 반영)
 - [PHASE_326_CODE_SPLITTING_PLAN.md](./archive/PHASE_326_CODE_SPLITTING_PLAN.md) - 원본 계획 (참고용)

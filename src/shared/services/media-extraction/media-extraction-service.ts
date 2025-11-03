@@ -12,6 +12,7 @@ import { ErrorCode } from '@shared/types/result.types';
 import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
 import { DOMDirectExtractor } from './extractors/dom-direct-extractor';
+import { removeDuplicateMediaItems } from '@shared/utils/deduplication';
 
 /**
  * 미디어 추출기
@@ -85,7 +86,7 @@ export class MediaExtractionService implements MediaExtractor {
         }
 
         // core 인터페이스 형식으로 변환
-        return {
+        return this.finalizeResult({
           success: domResult.success,
           mediaItems: domResult.mediaItems,
           clickedIndex: domResult.clickedIndex,
@@ -95,7 +96,7 @@ export class MediaExtractionService implements MediaExtractor {
             strategy: 'media-extraction',
           },
           tweetInfo: domResult.tweetInfo,
-        };
+        });
       }
 
       logger.debug(`[MediaExtractor] ${extractionId}: 트윗 정보 확보 - ${tweetInfo.tweetId}`);
@@ -108,7 +109,7 @@ export class MediaExtractionService implements MediaExtractor {
           `[MediaExtractor] ${extractionId}: ✅ API 추출 성공 - ${apiResult.mediaItems.length}개 미디어`
         );
         // core 인터페이스 형식으로 변환
-        return {
+        return this.finalizeResult({
           success: apiResult.success,
           mediaItems: apiResult.mediaItems,
           clickedIndex: apiResult.clickedIndex,
@@ -118,7 +119,7 @@ export class MediaExtractionService implements MediaExtractor {
             strategy: 'media-extraction',
           },
           tweetInfo: apiResult.tweetInfo,
-        };
+        });
       }
 
       // 3단계: DOM 백업 추출
@@ -162,7 +163,7 @@ export class MediaExtractionService implements MediaExtractor {
       }
 
       // core 인터페이스 형식으로 변환
-      return {
+      return this.finalizeResult({
         success: domResult.success,
         mediaItems: domResult.mediaItems,
         clickedIndex: domResult.clickedIndex,
@@ -172,7 +173,7 @@ export class MediaExtractionService implements MediaExtractor {
           strategy: 'extraction',
         },
         tweetInfo: domResult.tweetInfo,
-      };
+      });
     } catch (error) {
       logger.error(`[MediaExtractor] ${extractionId}: 추출 실패:`, error);
       return this.createErrorResult(error);
@@ -265,5 +266,70 @@ export class MediaExtractionService implements MediaExtractor {
         ),
       ],
     };
+  }
+
+  private finalizeResult(result: MediaExtractionResult): MediaExtractionResult {
+    if (!result.success) {
+      return result;
+    }
+
+    const uniqueItems = removeDuplicateMediaItems(result.mediaItems);
+    const hasDuplicates = uniqueItems.length !== result.mediaItems.length;
+
+    if (uniqueItems.length === 0) {
+      return {
+        ...result,
+        mediaItems: [],
+        clickedIndex: 0,
+      };
+    }
+
+    const originalIndex = this.normalizeClickedIndex(result.clickedIndex, result.mediaItems.length);
+    let adjustedIndex = this.normalizeClickedIndex(result.clickedIndex, uniqueItems.length);
+
+    if (hasDuplicates) {
+      const clickedItem = result.mediaItems[originalIndex] ?? null;
+      if (clickedItem) {
+        const clickedKey = clickedItem.originalUrl ?? clickedItem.url;
+        const newIndex = uniqueItems.findIndex(item => {
+          const itemKey = item.originalUrl ?? item.url;
+          return itemKey === clickedKey;
+        });
+
+        if (newIndex >= 0) {
+          adjustedIndex = newIndex;
+        }
+      }
+
+      logger.debug('[MediaExtractor] Duplicate media removed', {
+        originalCount: result.mediaItems.length,
+        uniqueCount: uniqueItems.length,
+        originalClickedIndex: result.clickedIndex,
+        adjustedClickedIndex: adjustedIndex,
+      });
+    }
+
+    return {
+      ...result,
+      mediaItems: uniqueItems,
+      clickedIndex: adjustedIndex,
+    };
+  }
+
+  private normalizeClickedIndex(index: number | undefined, length: number): number {
+    if (length === 0) {
+      return 0;
+    }
+
+    if (typeof index !== 'number' || !Number.isFinite(index)) {
+      return 0;
+    }
+
+    const safeIndex = Math.max(0, Math.floor(index));
+    if (safeIndex >= length) {
+      return length - 1;
+    }
+
+    return safeIndex;
   }
 }

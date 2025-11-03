@@ -99,7 +99,7 @@
     "outdated": "npm outdated",
     "// ===== Shortcuts ===== ": "",
     "dev": "npm run validate && npm run build:dev",
-    "ci": "npm run validate:ci && npm run test:all && npm run e2e:all",
+    "ci": "npm run check",
     "prerelease": "npm run validate:full && npm run build",
     "// ===== Git Hooks ===== ": "",
     "prepare": "husky",
