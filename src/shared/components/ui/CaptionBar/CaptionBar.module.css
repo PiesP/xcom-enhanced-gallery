@@ -1,0 +1,153 @@
+/**
+ * Caption Bar Styles
+ * @description Glassmorphism caption bar for tweet text display
+ * @version 1.0.0
+ */
+
+/* Container */
+.captionBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--xeg-z-overlay);
+
+  /* Glassmorphism design */
+  background: var(--xeg-bg-toolbar);
+  border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
+  backdrop-filter: blur(0.75rem);
+
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  padding: 0.75em 1em;
+  gap: 0.5em;
+
+  /* Collapsed state: max 4em height */
+  max-height: 4em;
+  overflow: hidden;
+  transition:
+    max-height var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /* Typography */
+  color: var(--xeg-color-text-primary);
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+/* Expanded state */
+.captionBar[data-expanded='true'] {
+  max-height: 16em;
+}
+
+/* Text content */
+.textContent {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+.textContent[data-expanded='true'] {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Custom scrollbar for glassmorphism */
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-color-neutral-400) transparent;
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar {
+  width: 0.375em;
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-400);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-500);
+}
+
+/* Toggle button */
+.toggleButton {
+  align-self: center;
+  width: 2em;
+  height: 1.5em;
+  padding: 0.25em;
+  border: none;
+  background: var(--xeg-color-neutral-200);
+  border-radius: var(--xeg-radius-sm);
+  color: var(--xeg-color-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+  font-size: 0.75em;
+}
+
+.toggleButton:hover {
+  background: var(--xeg-color-neutral-300);
+}
+
+.toggleButton:active {
+  transform: scale(0.95);
+}
+
+.toggleButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/* Toggle icon */
+.toggleIcon {
+  display: inline-block;
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.toggleIcon[data-expanded='true'] {
+  transform: rotate(180deg);
+}
+
+/* Dark theme adjustments */
+[data-theme='dark'] .captionBar {
+  background: var(--xeg-color-neutral-800);
+  color: var(--xeg-color-neutral-100);
+}
+
+[data-theme='dark'] .toggleButton {
+  background: var(--xeg-color-neutral-700);
+  color: var(--xeg-color-neutral-100);
+}
+
+[data-theme='dark'] .toggleButton:hover {
+  background: var(--xeg-color-neutral-600);
+}
+
+/* Responsive */
+@media (width <= 48em) {
+  .captionBar {
+    font-size: 0.8125em;
+  }
+}
+
+/* High contrast mode - placed last for highest specificity */
+.captionBar.highContrast {
+  background: var(--xeg-toolbar-button-bg-high-contrast);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast);
+}
+
+.captionBar.highContrast .toggleButton {
+  background: var(--xeg-color-overlay-strong);
+  border: var(--border-width-thin) solid var(--xeg-color-neutral-100);
+}
