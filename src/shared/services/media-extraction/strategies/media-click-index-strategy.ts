@@ -147,23 +147,3 @@ export class DOMOrderEstimationStrategy implements MediaClickIndexStrategy {
     return -1;
   }
 }
-
-/**
- * 폴백 전략 (신뢰도 50%)
- *
- * 모든 시도 실패 시 첫 번째 미디어(index 0) 반환
- * 사용자 경험 저하를 막기 위한 안전장치
- */
-export class FallbackStrategy implements MediaClickIndexStrategy {
-  readonly name = 'Fallback';
-  readonly confidence = 50;
-
-  calculate(
-    _clickedElement: HTMLElement,
-    _apiMedias: TweetMediaEntry[],
-    mediaItems: MediaInfo[]
-  ): number {
-    // 미디어가 있으면 0, 없으면 -1
-    return mediaItems.length > 0 ? 0 : -1;
-  }
-}

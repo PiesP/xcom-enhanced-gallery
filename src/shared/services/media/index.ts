@@ -7,9 +7,6 @@
 export { VideoControlService } from './video-control-service';
 export { UsernameParser, extractUsername, parseUsernameFast } from './username-extraction-service';
 
-// Media Extraction Services
-export { FallbackExtractor } from './fallback-extractor';
-
 // Twitter Video Extractor Utilities
 export {
   TwitterAPI,

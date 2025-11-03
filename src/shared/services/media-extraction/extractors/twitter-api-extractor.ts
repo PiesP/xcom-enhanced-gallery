@@ -12,7 +12,6 @@ import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/ty
 import {
   DirectMediaMatchingStrategy,
   DOMOrderEstimationStrategy,
-  FallbackStrategy,
   type MediaClickIndexStrategy,
 } from '../strategies/media-click-index-strategy';
 
@@ -257,7 +256,6 @@ export class TwitterAPIExtractor implements APIExtractor {
    * 전략 순서 (우선순위):
    * 1️⃣ DirectMediaMatchingStrategy (99% 신뢰도)
    * 2️⃣ DOMOrderEstimationStrategy (85% 신뢰도)
-   * 3️⃣ FallbackStrategy (50% 신뢰도)
    *
    * @param clickedElement - 사용자가 클릭한 DOM 요소
    * @param apiMedias - API에서 추출한 미디어 배열
@@ -280,7 +278,6 @@ export class TwitterAPIExtractor implements APIExtractor {
         container => Array.from(container.querySelectorAll('img, video')),
         this.isDirectMediaChild.bind(this)
       ),
-      new FallbackStrategy(),
     ];
 
     // 각 Strategy 순차 실행

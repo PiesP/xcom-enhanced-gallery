@@ -6,7 +6,7 @@
  */
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
-import type { TweetInfo, MediaExtractionOptions } from '@shared/types/media.types';
+import type { MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo, MediaItem } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
 import type { BaseResultStatus } from '@shared/types/result.types';
@@ -91,7 +91,6 @@ export interface SimulatedMediaFetchResult {
 // Phase 326.5: Conditional import for tree-shaking
 // MediaExtractionService는 Feature Flag에 따라 동적으로 로드
 import type { MediaExtractionService } from './media-extraction/media-extraction-service';
-import { FallbackExtractor } from './media/fallback-extractor';
 import { VideoControlService } from './media/video-control-service';
 import {
   UsernameParser,
@@ -117,7 +116,6 @@ export class MediaService extends BaseServiceImpl {
   private static instance: MediaService | null = null;
 
   private readonly mediaExtraction: MediaExtractionService | null;
-  private readonly fallbackExtractor: FallbackExtractor;
   private readonly videoControl: VideoControlService;
   private readonly usernameParser: UsernameParser;
 
@@ -140,7 +138,6 @@ export class MediaService extends BaseServiceImpl {
     const enableMediaExtraction = options.enableMediaExtraction ?? true;
     this.mediaExtraction = null; // 일단 null로 초기화, onInitialize에서 로드
 
-    this.fallbackExtractor = new FallbackExtractor();
     this.videoControl = new VideoControlService();
     this.usernameParser = new UsernameParser();
 
@@ -148,7 +145,7 @@ export class MediaService extends BaseServiceImpl {
     (this as { _enableMediaExtraction?: boolean })._enableMediaExtraction = enableMediaExtraction;
 
     if (!enableMediaExtraction) {
-      logger.info('[MediaService] Media Extraction 비활성화 - Fallback만 사용');
+      logger.info('[MediaService] Media Extraction 비활성화');
     }
   }
 
@@ -194,10 +191,9 @@ export class MediaService extends BaseServiceImpl {
     element: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
-    // Phase 326.5: Media Extraction 비활성화 시 Fallback 사용
+    // Phase 326.5: Media Extraction 필수
     if (!this.mediaExtraction) {
-      logger.debug('[MediaService] Media Extraction 비활성화 - Fallback 사용');
-      return this.fallbackExtractor.extract(element, options, this.generateExtractionId());
+      throw new Error('[MediaService] Media Extraction not initialized');
     }
     return this.mediaExtraction.extractFromClickedElement(element, options);
   }
@@ -206,28 +202,11 @@ export class MediaService extends BaseServiceImpl {
     container: HTMLElement,
     options: MediaExtractionOptions = {}
   ): Promise<MediaExtractionResult> {
-    // Phase 326.5: Media Extraction 비활성화 시 Fallback 사용
+    // Phase 326.5: Media Extraction 필수
     if (!this.mediaExtraction) {
-      logger.debug('[MediaService] Media Extraction 비활성화 - Fallback 사용');
-      return this.fallbackExtractor.extract(container, options, this.generateExtractionId());
+      throw new Error('[MediaService] Media Extraction not initialized');
     }
     return this.mediaExtraction.extractAllFromContainer(container, options);
-  }
-
-  /**
-   * 추출 ID 생성 (내부 헬퍼)
-   */
-  private generateExtractionId(): string {
-    return `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  async extractWithFallback(
-    element: HTMLElement,
-    options: MediaExtractionOptions,
-    extractionId: string,
-    tweetInfo?: TweetInfo
-  ): Promise<MediaExtractionResult> {
-    return this.fallbackExtractor.extract(element, options, extractionId, tweetInfo);
   }
 
   // ====================================
