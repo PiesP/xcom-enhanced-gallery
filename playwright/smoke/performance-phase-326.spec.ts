@@ -105,7 +105,7 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
       // Get resource metrics
       const resources = performance.getEntriesByType('resource') as any as ResourceTiming[];
       const scripts = resources.filter(r => r.initiatorType === 'script');
-      
+
       // Estimate bundle size from transfer size
       const totalTransferSize = scripts.reduce((sum, r) => sum + (r.transferSize || 0), 0);
 
@@ -179,7 +179,7 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
       }
 
       const startTime = performance.now();
-      
+
       // Trigger ZIP creation (lazy load)
       try {
         (downloadButton as HTMLElement).click();
@@ -213,8 +213,8 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
 
       // Get CSS resources
       const resources = performance.getEntriesByType('resource') as any as ResourceTiming[];
-      const cssResources = resources.filter(r => 
-        r.initiatorType === 'link' || r.name.includes('.css')
+      const cssResources = resources.filter(
+        r => r.initiatorType === 'link' || r.name.includes('.css')
       );
 
       const totalCssSize = cssResources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
@@ -265,7 +265,7 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
 
     const cssAnalysis = await page.evaluate(() => {
       const computedStyle = window.getComputedStyle(document.documentElement);
-      
+
       // Check for consolidated variables (Phase 326.5-3C)
       const consolidatedVars = [
         '--xeg-color-primary',
@@ -424,7 +424,7 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
     // Monitor layout shifts
     await page.evaluate(() => {
       (window as any).__layoutShifts = [];
-      
+
       try {
         const PerfObserver = (window as any).PerformanceObserver;
         if (!PerfObserver) return;
@@ -507,12 +507,20 @@ test.describe('Phase 326.5-4: Performance Testing', () => {
 
     // Validate all thresholds
     expect(allMetrics.setupTime).toBeLessThan(PERFORMANCE_THRESHOLDS.GALLERY_SETUP);
-    
+
     console.log('\n📊 Phase 326.5 Performance Summary:');
-    console.log(`   ⚡ Setup Time: ${allMetrics.setupTime.toFixed(2)}ms (target: <${PERFORMANCE_THRESHOLDS.GALLERY_SETUP}ms)`);
-    console.log(`   📦 Bundle Size: ${allMetrics.bundleSize.toFixed(2)} KB (target: <${PERFORMANCE_THRESHOLDS.BUNDLE_SIZE} KB)`);
-    console.log(`   🎨 CSS Size: ${allMetrics.cssSize.toFixed(2)} KB (target: <${PERFORMANCE_THRESHOLDS.CSS_SIZE} KB)`);
-    console.log(`   💾 Memory: ${allMetrics.memoryMB.toFixed(2)} MB (target: <${PERFORMANCE_THRESHOLDS.MAX_MEMORY_MB} MB)`);
+    console.log(
+      `   ⚡ Setup Time: ${allMetrics.setupTime.toFixed(2)}ms (target: <${PERFORMANCE_THRESHOLDS.GALLERY_SETUP}ms)`
+    );
+    console.log(
+      `   📦 Bundle Size: ${allMetrics.bundleSize.toFixed(2)} KB (target: <${PERFORMANCE_THRESHOLDS.BUNDLE_SIZE} KB)`
+    );
+    console.log(
+      `   🎨 CSS Size: ${allMetrics.cssSize.toFixed(2)} KB (target: <${PERFORMANCE_THRESHOLDS.CSS_SIZE} KB)`
+    );
+    console.log(
+      `   💾 Memory: ${allMetrics.memoryMB.toFixed(2)} MB (target: <${PERFORMANCE_THRESHOLDS.MAX_MEMORY_MB} MB)`
+    );
     console.log(`   📊 Resources: ${allMetrics.resourceCount}`);
   });
 });
