@@ -12,3 +12,11 @@ declare const __PROD__: boolean;
 
 /** 프로젝트 버전 (package.json에서 읽음) */
 declare const __VERSION__: string;
+
+/**
+ * Phase 326.5: Feature Flags
+ * Optional features를 빌드 타임에 비활성화하여 번들 크기 절감
+ */
+
+/** Media Extraction 기능 활성화 여부 (기본: true, 비활성화 시 ~50 KB 절감) */
+declare const __FEATURE_MEDIA_EXTRACTION__: boolean;

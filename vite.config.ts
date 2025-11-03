@@ -416,6 +416,8 @@ export default defineConfig(async ({ mode }) => {
       'process.env.NODE_ENV': JSON.stringify(flags.isProd ? 'production' : 'development'),
       'process.env': '{}',
       global: 'globalThis',
+      // Phase 326.5: Feature Flags for optional modules (Boolean, not string)
+      __FEATURE_MEDIA_EXTRACTION__: process.env.ENABLE_MEDIA_EXTRACTION !== 'false',
     },
     esbuild: {
       jsx: 'preserve',
