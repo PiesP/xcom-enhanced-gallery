@@ -123,13 +123,7 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @downloadURL  https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @updateURL    https://github.com/piesp/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js\n` +
     `// @noframes\n` +
-    `// ==/UserScript==\n` +
-    `//\n` +
-    `// Phase 318: Tampermonkey 5.4.0+ MV3 Compatibility\n` +
-    `// - GM_xmlHttpRequest removed (not available in Manifest V3)\n` +
-    `// - Uses native fetch API for HTTP requests\n` +
-    `// - @connect directives enable cross-origin fetch requests\n` +
-    `//\n`
+    `// ==/UserScript==\n`
   );
 }
 

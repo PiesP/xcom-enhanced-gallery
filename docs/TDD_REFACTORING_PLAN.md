@@ -1,6 +1,6 @@
 # TDD 리팩토링 계획
 
-**최종 업데이트**: 2025-11-03 | **현황**: Phase 326.1-3 완료, Phase 327-328 완료 | **버전**: v0.4.2 → v0.5.0
+**최종 업데이트**: 2025-11-03 | **현황**: Phase 326.5 완료, v0.5.0 릴리스 준비 | **버전**: v0.4.2 → v0.5.0
 
 ---
 
@@ -23,8 +23,13 @@
 | **326.1** | 프리로드 전략 | N/A | ✅ 완료 | preload.ts, main.ts 수정 | +120줄 |
 | **326.2** | Settings 동적 로드 | N/A | ✅ 완료 | GalleryApp.ts 개선 | +11줄 |
 | **326.3** | ZIP 동적 로드 | N/A | ✅ 완료 | lazy-compression.ts | +144줄 |
+| **326.4** | Feature Flag System | N/A | ✅ 완료 | feature-flags.ts 추가 | +150줄 |
+| **326.5-1** | 성능 베이스라인 | N/A | ✅ 완료 | 성능 문서화 | +200줄 (문서) |
+| **326.5-2** | 번들 분석 | N/A | ✅ 완료 | 번들 최적화 계획 | +300줄 (문서) |
+| **326.5-3** | CSS 최적화 | N/A | ✅ 완료 | CSS 변수 정리 | -17개 변수 |
+| **326.5-4** | E2E 성능 테스트 | N/A | ✅ 완료 | performance-phase-326.spec.ts | +250줄 |
 | **327** | 마지막 아이템 스크롤 | N/A | ✅ 완료 | useGalleryItemScroll.ts | +50줄 |
-| **328** | 정책 표준화 | N/A | ✅ 완료 | 중복 분석 + 문서화 | +200줄 (문서) |
+| **328** | 정책 표준화 | N/A | ✅ 완료 | 중복 분석 + 문서화 + jscpd 통합 | +200줄 (문서) |
 
 **누적 효과**:
 - 자체 구현 제거: **80%+**
@@ -42,13 +47,15 @@
 
 | 항목 | 수치 |
 |------|------|
-| **번들 크기** | 328 KB (prod) / 934 KB (dev) |
-| **테스트** | 664/666 통과 (99.7%) |
+| **번들 크기** | 405 KB (prod, -0.25% from 326.5-3) / 934 KB (dev) |
+| **Gzipped** | 112.37 KB (prod, -0.06% from 326.5-3) |
+| **테스트** | 3156/3189 unit tests, 9/9 E2E performance tests |
 | **TypeScript** | 0 에러 |
 | **ESLint** | 0 경고 |
 | **Service 레이어** | 5개 완성 |
 | **코드 감소** | ~1,460줄 (77%+) |
 | **프리로드 전략** | ✅ 완료 (Phase 326.1-3) |
+| **성능 테스트** | ✅ 완료 (Phase 326.5-4) |
 
 ### 완료된 Service 계층 & 프리로드
 
@@ -139,11 +146,18 @@ src/bootstrap/
    - ✅ 전체 프로젝트 스캔: 모든 import가 `@/constants`에서 수행됨
    - ✅ 표준 준수 확인 (위반 사항 없음)
 
+5. **jscpd 통합** (코드 중복 분석):
+   - ✅ jscpd 설치 및 설정 (`.jscpd.json`)
+   - ✅ 첫 분석 실행: 중복 코드 거의 없음 (0.151ms 검출 시간)
+   - ✅ npm 스크립트 추가: `npm run analyze:duplication`
+   - ✅ 결과: 프로젝트 코드 품질 우수 확인
+
 **결과**:
 - 정책 문서화 완료 (ARCHITECTURE.md +200줄)
 - 개발 가이드라인 명확화
 - 코드 일관성 기준 수립
 - jscpd 도구 통합 (npm run analyze:duplication)
+- 코드 중복 분석 자동화
 
 ---
 
@@ -207,44 +221,50 @@ notificationService.success('작업 완료');
 - ✅ **Tampermonkey API 마이그레이션**: 100% 완료 (5개 Service)
 - ✅ **직접 GM API 호출**: 0건 (모두 Service 레이어)
 - ✅ **Getter 패턴**: 100% 준수
-- ✅ **테스트**: 664/666 통과 (99.7%)
+- ✅ **테스트**: 3156/3189 unit tests, 9/9 E2E performance tests
 - ✅ **TypeScript**: strict mode 0 에러
 - ✅ **ESLint**: 0 경고
-- ✅ **번들 크기**: 328 KB (prod) - 최적화됨
+- ✅ **번들 크기**: 405 KB (prod), 112.37 KB (gzipped) - 최적화됨
 - ✅ **성능**: 50%+ 개선
-- ✅ **코드 품질**: 높음 (77%+ 자체 구현 제거)
+- ✅ **코드 품질**: 높음 (77%+ 자체 구현 제거, jscpd 중복 거의 없음)
+- ✅ **Phase 326.5**: 완료 (성능 베이스라인, 번들 분석, CSS 최적화, E2E 테스트)
 
 ---
 
 ## 🎯 향후 계획 (v0.5.0+)
 
-### 현재 진행: Phase 326 - Code Splitting (동적 Import)
+### Phase 326.5 완료 상태
 
-**상태**: Phase 326.1 완료 ✅, Phase 326.2-3 진행 예정
+**상태**: Phase 326.5-4 완료 ✅, v0.5.0 릴리스 준비 중
 
-**Phase 326 상세**:
-- **326.1**: 프리로드 전략 (✅ 완료)
-  - `src/bootstrap/preload.ts` 구현
-  - Critical/Optional 청크 분리
-  - 모든 테스트 통과 (92 passed)
+**Phase 326.5 전체 완료**:
+- **326.5-1**: ✅ 완료 (성능 베이스라인 문서화)
+  - 기준 성능 측정 및 문서화
+  - PHASE_326_5_PERFORMANCE_BASELINE.md 작성
+  - 최적화 목표 수립
 
-- **326.2**: Settings 동적 로드 (⏳ 예정)
-  - GalleryApp에서 Settings lazy loading
-  - Suspense 폴백 UI
-  - 예상: 328 KB → 320 KB
+- **326.5-2**: ✅ 완료 (번들 분석 및 최적화 계획)
+  - 상세 번들 분석 (rollup-plugin-visualizer)
+  - 최적화 계획 수립
+  - PHASE_326_5_2_BUNDLE_ANALYSIS.md, PHASE_326_5_2_OPTIMIZATION_PLAN.md 작성
 
-- **326.3**: 의존성 최적화 (⏳ 예정)
-  - fflate 지연 로드 (compression.ts)
-  - 예상: 328 KB → 310 KB
+- **326.5-3**: ✅ 완료 (CSS 최적화)
+  - Phase 3A: CSS 주석 제거 (⏭️ 스킵 - cssnano가 이미 처리)
+  - Phase 3B: 미사용 CSS 변수 8개 제거
+  - Phase 3C: CSS 변수 통합 9개
+  - 결과: 406 KB → 405 KB (-1 KB, -0.25%)
+  - Gzipped: 112.44 KB → 112.37 KB (-0.07 KB)
 
-- **326.4**: 추가 최적화 (📋 선택)
-  - 추가 모듈 동적 로드
-  - 예상: 328 KB → 305 KB
+- **326.5-4**: ✅ 완료 (E2E 성능 테스트)
+  - 9개 E2E 성능 테스트 작성 및 통과
+  - Gallery setup, FPS, Memory, CLS 검증
+  - CSS 최적화 영향 검증
+  - performance-phase-326.spec.ts (+250줄)
 
-**중요 발견**: Userscript IIFE 제약
-- ❌ Rollup manualChunks 불가능
-- ✅ 동적 import + Tree-shaking 가능 (5% 감소)
-- 📄 상세: [PHASE_326_REVISED_PLAN.md](./PHASE_326_REVISED_PLAN.md)
+- **326.5-5**: ⏳ 다음 단계 (v0.5.0 릴리스)
+  - 릴리스 노트 작성
+  - 최종 검증 및 빌드
+  - GitHub Release 배포
 
 ---
 
@@ -413,52 +433,47 @@ targetElement.scrollIntoView({ ... });
 
 ---
 
-### 계획된 추가 개선사항
+### 계획된 추가 개선사항 (Post v0.5.0)
 
-1. **Tree-shaking 강화** (Phase 328)
-   - 번들 분석 도구 활용
-   - Unused code 제거
-   - 예상: 추가 2-5 KB
+1. **추가 성능 최적화** (Phase 329+)
+   - 이미지 지연 로딩 개선
+   - 캐싱 전략 고도화
+   - 예상: 추가 2-5% 성능 향상
 
-2. **기능 확장** (Phase 328+)
+2. **기능 확장** (Phase 330+)
    - 사용자 설정 고급화
    - UI/UX 개선
    - 추가 다운로드 형식 지원
+   - 다국어 확장 (추가 언어 지원)
 
 ---
 
 ## 📞 상태 요약
 
-**프로젝트 상태**: 🚀 **진행 중 (v0.4.2 → v0.5.0)**
+**프로젝트 상태**: 🚀 **v0.5.0 릴리스 준비**
 
 **마지막 활동**:
-- Commit: `b763acc6` - Phase 326.5-4: E2E Performance Testing ✅
+- Commit: `abfdb0e8` - feat: integrate jscpd for duplication analysis and update dependencies
 - Branch: `master`
 - 테스트: 3156/3189 unit tests, 9/9 E2E performance tests passed
 - 빌드: 성공 (405 KB, Gzipped: 112.37 KB)
 
-**현재 단계**: Phase 326 (Code Splitting 완료) → Phase 326.5 (Performance Optimization 완료) → v0.5.0 준비
+**현재 단계**: Phase 326.5 완료 → v0.5.0 릴리스 준비
 - Phase 326.1: ✅ 완료 (프리로드 전략)
 - Phase 326.2: ✅ 완료 (Settings 동적 로드)
 - Phase 326.3: ✅ 완료 (fflate 지연 로드)
 - Phase 326.4: ✅ 완료 (Feature Flag System + Tests)
-- Phase 326.5: ✅ 완료 (Performance Baseline & Optimization)
+- Phase 326.5: ✅ 완료 (Performance Optimization)
   - 326.5-1: ✅ 완료 (Baseline Documentation)
   - 326.5-2: ✅ 완료 (Bundle Analysis)
   - 326.5-3: ✅ 완료 (CSS Optimization)
-    - 326.5-3A: ⏭️ 스킵 (CSS 주석 이미 제거됨 - cssnano default)
-    - 326.5-3B: ✅ 완료 (미사용 CSS 변수 8개 제거, 406 KB → 405 KB)
-    - 326.5-3C: ✅ 완료 (CSS 변수 통합 9개, 일관성 개선)
-      * Phase 1: 8개 변수 (spacing, primary color, border radius, component height)
-      * Phase 2: 1개 변수 (opacity)
-      * 영향: 코드 일관성 향상, 디자인 토큰 통일감 개선
-      * 번들: 405 KB (Gzipped: 112.37 KB)
+    * Phase 3A: ⏭️ 스킵 (CSS 주석 이미 제거됨 - cssnano default)
+    * Phase 3B: ✅ 완료 (미사용 CSS 변수 8개 제거)
+    * Phase 3C: ✅ 완료 (CSS 변수 통합 9개)
   - 326.5-4: ✅ 완료 (E2E Performance Testing)
-    * 9개 테스트 통과 (Gallery load, Settings/ZIP lazy load, CSS optimization, FPS, Memory, CLS)
-    * Setup: ~10-12ms (목표: <200ms) ✅
-    * Memory: ~10 MB (목표: <50 MB) ✅
-    * FPS: ~62 (목표: ≥30) ✅
   - 326.5-5: ⏳ 다음 (Release v0.5.0)
+- Phase 327: ✅ 완료 (마지막 아이템 스크롤 개선)
+- Phase 328: ✅ 완료 (정책 표준화 + jscpd 통합)
 
 **예상 완료**: v0.5.0 (2025-11월 예정)
 
@@ -543,7 +558,18 @@ targetElement.scrollIntoView({ ... });
 
 ---
 
-**문서 유지보수**: 2025-11-03 | AI Assistant 업데이트
+**문서 유지보수**: 2025-11-03 | AI Assistant 업데이트 (문서 정리 및 현황 갱신)
 **참고 문서**:
-- [PHASE_326_REVISED_PLAN.md](./PHASE_326_REVISED_PLAN.md) - Phase 326 재계획 (Userscript 제약 반영)
-- [PHASE_326_CODE_SPLITTING_PLAN.md](./PHASE_326_CODE_SPLITTING_PLAN.md) - 원본 계획 (참고용)
+- [PHASE_326_REVISED_PLAN.md](./archive/PHASE_326_REVISED_PLAN.md) - Phase 326 재계획 (Userscript 제약 반영)
+- [PHASE_326_CODE_SPLITTING_PLAN.md](./archive/PHASE_326_CODE_SPLITTING_PLAN.md) - 원본 계획 (참고용)
+- [PHASE_326_5_PERFORMANCE_BASELINE.md](./PHASE_326_5_PERFORMANCE_BASELINE.md) - 성능 베이스라인
+- [PHASE_326_5_2_BUNDLE_ANALYSIS.md](./PHASE_326_5_2_BUNDLE_ANALYSIS.md) - 번들 분석
+- [PHASE_326_5_2_OPTIMIZATION_PLAN.md](./PHASE_326_5_2_OPTIMIZATION_PLAN.md) - 최적화 계획
+- [PHASE_326_5_3_IMPLEMENTATION_PLAN.md](./PHASE_326_5_3_IMPLEMENTATION_PLAN.md) - CSS 최적화 구현
+
+**문서 정리 (2025-11-03)**:
+- ✅ docs/archive에서 매우 오래된 Phase 문서들 정리 (Phase 138-287)
+- ✅ 백업 파일들 제거 (TDD_REFACTORING_PLAN_*.md)
+- ✅ 분석 리포트 정리 (BROWSER_*, VITEST_*, VSCODE_* 등)
+- ✅ 세션 완료 리포트 정리 (COMPLETION_REPORT_*.md)
+- ✅ 보존 가치 있는 문서만 유지 (Phase 304+, 326 시리즈, REPOSITORY_STRUCTURE 등)
