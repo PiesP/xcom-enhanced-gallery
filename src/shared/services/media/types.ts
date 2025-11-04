@@ -109,4 +109,13 @@ export interface TweetMediaEntry {
   original_width?: number;
   original_height?: number;
   aspect_ratio?: [number, number];
+  // Phase 342: 인용 리트윗 필드
+  /** 미디어의 출처 위치 (인용 리트윗인 경우) */
+  sourceLocation?: 'original' | 'quoted' | undefined;
+  /** 인용된 트윗 ID (인용 리트윗인 경우) */
+  quotedTweetId?: string | undefined;
+  /** 인용된 트윗 작성자 (인용 리트윗인 경우) */
+  quotedScreenName?: string | undefined;
+  /** 원본 트윗 ID (인용 리트윗인 경우) */
+  originalTweetId?: string | undefined;
 }

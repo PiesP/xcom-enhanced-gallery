@@ -47,6 +47,15 @@ export interface MediaInfo {
   tweetText?: string | undefined;
   tweetTextHTML?: string | undefined; // Phase 2: Sanitized HTML from DOM
   metadata?: Record<string, unknown>;
+  // Phase 342: 인용 리트윗 필드
+  /** 미디어의 출처 위치 (인용 리트윗인 경우) */
+  sourceLocation?: 'original' | 'quoted' | undefined;
+  /** 인용된 트윗 ID (인용 리트윗인 경우) */
+  quotedTweetId?: string | undefined;
+  /** 인용된 트윗 작성자 (인용 리트윗인 경우) */
+  quotedUsername?: string | undefined;
+  /** 인용된 트윗 URL (인용 리트윗인 경우) */
+  quotedTweetUrl?: string | undefined;
 }
 
 /**
@@ -102,6 +111,29 @@ export interface TweetInfo {
   confidence: number;
   /** 추가 메타데이터 */
   metadata?: Record<string, unknown>;
+}
+
+/**
+ * Phase 342: 인용 리트윗 정보 인터페이스
+ *
+ * 인용 리트윗(Quote Tweet)의 구조를 나타냅니다:
+ * - isQuoteTweet: 인용 리트윗 여부
+ * - clickedLocation: 클릭된 위치 (인용 내부 vs 외부)
+ * - quotedTweetId: 인용된 원본 트윗 ID
+ * - quotedUsername: 인용된 원본 트윗 작성자
+ * - sourceLocation: API 응답의 미디어 출처 (인용 vs 원본)
+ */
+export interface QuoteTweetInfo {
+  /** 인용 리트윗 여부 */
+  isQuoteTweet: boolean;
+  /** 클릭된 위치 */
+  clickedLocation: 'quoted' | 'original' | 'unknown';
+  /** 원본 트윗 ID (인용인 경우만) */
+  quotedTweetId?: string | undefined;
+  /** 원본 트윗 작성자 (인용인 경우만) */
+  quotedUsername?: string | undefined;
+  /** 미디어 출처 표시 */
+  sourceLocation?: 'original' | 'quoted' | undefined;
 }
 
 /**

@@ -106,6 +106,8 @@ export const STABLE_SELECTORS = {
     share: '[data-testid="share"]',
     bookmark: '[data-testid="bookmark"]',
   },
+  // Phase 342: 인용 리트윗 선택자
+  QUOTED_TWEET_ARTICLE: 'article[data-testid="tweet"] article[data-testid="tweet"]',
 } as const;
 
 export const SERVICE_KEYS = {
