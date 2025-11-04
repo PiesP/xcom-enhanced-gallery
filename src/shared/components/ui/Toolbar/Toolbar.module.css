@@ -775,7 +775,9 @@ button.fitButton {
 .tweetLabel {
   font-size: var(--font-size-xs);
   font-weight: 600;
-  color: var(--xeg-color-text-secondary);
+  color: var(
+    --xeg-color-text-secondary
+  ); /* Phase: design-consistency - improved from hardcoded secondary */
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -852,10 +854,10 @@ button.fitButton {
 }
 
 /* Phase 2: Twitter-style hashtags and mentions (from sanitized HTML) */
-/* Match Twitter's blue color (#1d9bf0) using oklch */
+/* Match Twitter's blue color using semantic token */
 .tweetContent a[href*='/hashtag/'],
 .tweetContent a[href*='/search?q=%23'] {
-  color: oklch(61% 0.19 232deg); /* Twitter blue: #1d9bf0 */
+  color: var(--color-twitter-blue); /* Phase: design-consistency - use token instead of hardcoded */
   text-decoration: none;
   overflow-wrap: break-word;
   transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
@@ -867,7 +869,7 @@ button.fitButton {
 }
 
 .tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']) {
-  color: oklch(61% 0.19 232deg); /* Twitter blue for mentions */
+  color: var(--color-twitter-blue); /* Phase: design-consistency - use token for mentions */
   text-decoration: none;
   overflow-wrap: break-word;
   transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);

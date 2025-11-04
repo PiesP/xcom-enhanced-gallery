@@ -25,7 +25,9 @@
 
   /* Text Colors - Semantic Roles */
   --color-text-primary: var(--color-base-black);
-  --color-text-secondary: var(--color-gray-700);
+  --color-text-secondary: var(
+    --color-gray-600
+  ); /* Phase: design-consistency - improved from gray-700 */
   --color-text-muted: var(--color-gray-500);
   --color-text-inverse: var(--color-base-white);
   --color-text-error: oklch(1 0 0 / 70%); /* white with 70% opacity */
@@ -227,12 +229,13 @@
 [data-theme='light'] {
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
+  --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
   --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
   --xeg-gallery-bg: var(--xeg-gallery-bg-light);
   --xeg-modal-bg: var(--xeg-modal-bg-light);
   --xeg-modal-border: var(--xeg-modal-border-light);
   --xeg-color-border-primary: var(--color-border-default);
-  --xeg-toolbar-panel-bg: var(--color-bg-surface);
+  --xeg-toolbar-panel-bg: var(--color-gray-50); /* Phase: design-consistency - improved hierarchy */
   --xeg-toolbar-panel-border: var(--color-border-default);
   --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
   --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
@@ -240,7 +243,9 @@
   --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
   /* Settings controls alignment with toolbar palette (Phase 52) */
-  --xeg-settings-select-bg: var(--xeg-bg-toolbar);
+  --xeg-settings-select-bg: var(
+    --color-bg-surface
+  ); /* Phase: design-consistency - white for content areas */
   --xeg-settings-select-border: var(--xeg-color-border-primary);
   --xeg-settings-select-border-hover: var(--xeg-color-border-hover);
   --xeg-focus-ring-color: var(--xeg-color-border-primary);
@@ -262,12 +267,17 @@
   --color-bg-surface: var(--color-gray-900);
   --color-bg-elevated: var(--color-gray-700);
   --color-text-primary: var(--color-base-white);
+  --color-text-secondary: var(
+    --color-gray-400
+  ); /* Phase: design-consistency - improved from white */
   --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
 
   /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
   --xeg-bg-toolbar: var(--color-gray-800);
-  --xeg-color-border-primary: var(--color-border-emphasis);
-  --xeg-toolbar-border: var(--color-border-emphasis);
+  --xeg-color-border-primary: var(
+    --color-gray-600
+  ); /* Phase: design-consistency - improved from gray-500 */
+  --xeg-toolbar-border: var(--color-gray-600);
 
   /* Gallery Image Item Dark Mode Tokens */
   --xeg-color-bg-secondary: var(--color-gray-800);
@@ -277,18 +287,24 @@
 
   /* Button Tokens - Dark Mode */
   --xeg-button-bg: var(--color-gray-800);
-  --xeg-button-border: var(--color-border-emphasis);
+  --xeg-button-border: var(--color-gray-600);
   --xeg-button-text: var(--color-text-primary);
   --xeg-button-bg-hover: var(--color-gray-700);
-  --xeg-button-border-hover: var(--color-border-emphasis);
+  --xeg-button-border-hover: var(--color-gray-600);
 
   /* Modal Background/Border Tokens - Dark Mode */
   --xeg-modal-bg: var(--xeg-modal-bg-dark);
   --xeg-modal-border: var(--xeg-modal-border-dark);
 
   /* Toolbar Component Tokens - Dark Mode */
-  --xeg-toolbar-panel-bg: var(--color-gray-800);
-  --xeg-toolbar-panel-border: var(--color-border-emphasis);
+  --xeg-toolbar-panel-bg: var(
+    --color-gray-900
+  ); /* Phase: design-consistency - improved hierarchy */
+  --xeg-toolbar-panel-border: var(--color-gray-600);
+
+  /* Settings controls - Dark Mode (Phase: design-consistency) */
+  --xeg-settings-select-bg: var(--color-gray-800); /* Content areas stay gray-800 */
+  --xeg-settings-select-border: var(--color-gray-600);
 
   /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
   --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
@@ -303,12 +319,13 @@
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);
     --color-text-primary: var(--color-base-white);
+    --color-text-secondary: var(--color-gray-400); /* Phase: design-consistency */
     --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
 
     /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
     --xeg-bg-toolbar: var(--color-gray-800);
-    --xeg-color-border-primary: var(--color-border-emphasis);
-    --xeg-toolbar-border: var(--color-border-emphasis);
+    --xeg-color-border-primary: var(--color-gray-600);
+    --xeg-toolbar-border: var(--color-gray-600);
     --xeg-surface-glass-bg: oklch(0.234 0.006 277.8 / 95%); /* gray-900 with 95% opacity */
 
     /* Gallery Image Item Dark Mode Tokens */
@@ -319,10 +336,10 @@
 
     /* Button Tokens - System Dark Mode */
     --xeg-button-bg: var(--color-gray-800);
-    --xeg-button-border: var(--color-border-emphasis);
+    --xeg-button-border: var(--color-gray-600);
     --xeg-button-text: var(--color-text-primary);
     --xeg-button-bg-hover: var(--color-gray-700);
-    --xeg-button-border-hover: var(--color-border-emphasis);
+    --xeg-button-border-hover: var(--color-gray-600);
 
     /* Modal Background/Border Tokens - System Dark Mode */
     --xeg-modal-bg: var(--xeg-modal-bg-dark);
@@ -335,8 +352,12 @@
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
 
     /* Toolbar Component Tokens - System Dark Mode */
-    --xeg-toolbar-panel-bg: var(--color-gray-800);
-    --xeg-toolbar-panel-border: var(--color-border-emphasis);
+    --xeg-toolbar-panel-bg: var(--color-gray-900);
+    --xeg-toolbar-panel-border: var(--color-gray-600);
+
+    /* Settings controls - System Dark Mode */
+    --xeg-settings-select-bg: var(--color-gray-800);
+    --xeg-settings-select-border: var(--color-gray-600);
   }
 }
 
@@ -344,6 +365,7 @@
   :root:not([data-theme='dark']) {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
+    --color-text-secondary: var(--color-gray-600);
     --color-glass-bg: oklch(1 0 0 / var(--opacity-glass));
 
     --xeg-bg-toolbar: var(--color-bg-surface);
@@ -358,8 +380,11 @@
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
-    --xeg-toolbar-panel-bg: var(--color-bg-surface);
+    --xeg-toolbar-panel-bg: var(--color-gray-50);
     --xeg-toolbar-panel-border: var(--color-border-default);
+
+    --xeg-settings-select-bg: var(--color-bg-surface);
+    --xeg-settings-select-border: var(--xeg-color-border-primary);
   }
 }
 
