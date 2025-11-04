@@ -778,11 +778,13 @@ button.fitButton {
   color: var(
     --xeg-color-text-secondary
   ); /* Phase: design-consistency - improved from hardcoded secondary */
+
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 /* Tweet Content - 설정 패널의 select와 유사한 스타일 */
+
 .tweetContent {
   padding: var(--space-sm);
   font-size: var(--xeg-font-size-md);

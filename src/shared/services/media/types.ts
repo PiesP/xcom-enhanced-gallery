@@ -24,6 +24,18 @@ export interface TwitterTweet {
   extended_entities?: { media?: TwitterMedia[] } | undefined;
   full_text?: string | undefined;
   id_str?: string | undefined;
+  note_tweet?: {
+    text?: string;
+    entity_set?: {
+      urls?: Array<{
+        url: string;
+        expanded_url: string;
+        display_url: string;
+      }>;
+      hashtags?: Array<{ text: string }>;
+      user_mentions?: Array<{ screen_name: string }>;
+    };
+  };
   quoted_status_result?: {
     result?: TwitterTweet;
   };

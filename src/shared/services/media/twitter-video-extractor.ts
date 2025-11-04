@@ -336,6 +336,11 @@ export class TwitterAPI {
         tweetResult.id_str = tweetResult.legacy.id_str;
       }
     }
+
+    // Phase: Full tweet text support - prefer note_tweet.text for long tweets
+    if (tweetResult.note_tweet?.text) {
+      tweetResult.full_text = tweetResult.note_tweet.text;
+    }
     if (!tweetUser) return [];
     if (tweetUser.legacy) {
       if (!tweetUser.screen_name && tweetUser.legacy.screen_name) {
@@ -364,6 +369,11 @@ export class TwitterAPI {
           if (!quotedTweet.id_str && quotedTweet.legacy.id_str) {
             quotedTweet.id_str = quotedTweet.legacy.id_str;
           }
+        }
+
+        // Phase: Full tweet text support - prefer note_tweet.text for long quoted tweets
+        if (quotedTweet.note_tweet?.text) {
+          quotedTweet.full_text = quotedTweet.note_tweet.text;
         }
         if (quotedUser.legacy) {
           if (!quotedUser.screen_name && quotedUser.legacy.screen_name) {
