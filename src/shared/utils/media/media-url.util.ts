@@ -16,7 +16,7 @@ import { getPreferredUsername } from '../../media/username-source';
 export type { FilenameOptions };
 import type { MediaInfo } from '../../types/media.types';
 import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
-import { SELECTORS } from '../../../constants';
+import { SELECTORS } from '@/constants';
 import { URL_PATTERNS } from '../patterns/url-patterns';
 
 /**

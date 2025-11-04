@@ -18,8 +18,8 @@
  * - After: 단일 헬퍼 함수로 통합
  */
 
-import { logger } from '../../../logging';
-import { getMediaServiceFromContainer } from '../../../container/service-accessors';
+import { logger } from '@shared/logging';
+import { getMediaServiceFromContainer } from '@shared/container/service-accessors';
 import { isMediaServiceLike } from '../../type-safety-helpers';
 
 /**

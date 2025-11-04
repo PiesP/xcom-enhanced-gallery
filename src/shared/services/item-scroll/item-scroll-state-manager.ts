@@ -8,7 +8,7 @@
  */
 
 import { logger } from '../../logging';
-import { globalTimerManager } from '../../../shared/utils/timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { createItemScrollStateSignal, updateStateSignal } from '../../state/item-scroll';
 
 /**

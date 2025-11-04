@@ -6,7 +6,7 @@
  * @description Solid.js Signal 기반의 ItemScrollState 관리 모듈
  */
 
-import { getSolid } from '../../../shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import type { ItemScrollState } from './item-scroll-state.ts';
 import {
   INITIAL_ITEM_SCROLL_STATE,

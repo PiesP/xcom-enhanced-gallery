@@ -4,7 +4,7 @@
  *              listeners Map 및 상태 관리를 별도 모듈로 분리
  */
 
-import { logger } from '../../../logging';
+import { logger } from '@shared/logging';
 import type { EventContext } from './event-context';
 
 /**

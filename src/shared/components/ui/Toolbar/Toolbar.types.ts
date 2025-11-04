@@ -2,7 +2,7 @@
  * @file Toolbar 타입 정의
  */
 
-import type { ViewMode, FitMode } from '../../../types';
+import type { ViewMode, FitMode } from '@shared/types';
 
 // Re-export FitMode for component convenience
 export type { FitMode };

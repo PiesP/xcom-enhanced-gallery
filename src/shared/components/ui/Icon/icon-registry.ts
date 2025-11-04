@@ -4,7 +4,7 @@
  * @version 2.0.0 - services에서 components/ui/Icon로 이동
  */
 
-import type { JSXElement } from '../../../external/vendors';
+import type { JSXElement } from '@shared/external/vendors';
 import type { IconProps } from './Icon';
 
 export type IconName =

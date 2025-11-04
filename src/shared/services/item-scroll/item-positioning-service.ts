@@ -9,7 +9,7 @@
  */
 
 import { logger } from '../../logging';
-import { globalTimerManager } from '../../../shared/utils/timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 export interface ScrollOptions {
   behavior: ScrollBehavior;

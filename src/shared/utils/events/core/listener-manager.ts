@@ -4,7 +4,7 @@
  *              addListener, removeListener 등 리스너 조작 기능
  */
 
-import { logger } from '../../../logging';
+import { logger } from '@shared/logging';
 import { listenerRegistry } from './listener-registry';
 import type { EventContext } from './event-context';
 

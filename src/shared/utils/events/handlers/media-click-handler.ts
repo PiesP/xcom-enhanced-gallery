@@ -5,12 +5,12 @@
  */
 
 import { logger } from '@shared/logging';
-import { STABLE_SELECTORS } from '../../../../constants';
+import { STABLE_SELECTORS } from '@/constants';
 import { isHTMLElement } from '../../type-guards';
 import { detectMediaFromClick, isProcessableMedia } from '../../media/media-click-detector';
 import { isVideoControlElement, isGalleryInternalElement } from '../../utils';
-import { gallerySignals } from '../../../state/signals/gallery.signals';
-import type { MediaInfo } from '../../../types/media.types';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/media.types';
 import type {
   EventHandlers,
   EventHandlingResult,

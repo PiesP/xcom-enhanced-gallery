@@ -4,7 +4,7 @@
  *              events.ts에서 타입 정의 분리
  */
 
-import type { MediaInfo } from '../../../types/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * 이벤트 리스너 컨텍스트
