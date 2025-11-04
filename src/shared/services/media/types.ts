@@ -24,6 +24,30 @@ export interface TwitterTweet {
   extended_entities?: { media?: TwitterMedia[] } | undefined;
   full_text?: string | undefined;
   id_str?: string | undefined;
+  note_tweet?: {
+    is_expandable?: boolean;
+    note_tweet_results?: {
+      result?: {
+        id?: string;
+        text?: string;
+        entity_set?: {
+          urls?: Array<{
+            url: string;
+            expanded_url: string;
+            display_url: string;
+          }>;
+          hashtags?: Array<{ text: string }>;
+          user_mentions?: Array<{ screen_name: string }>;
+        };
+        richtext?: {
+          richtext_tags?: Array<unknown>;
+        };
+        media?: {
+          inline_media?: Array<unknown>;
+        };
+      };
+    };
+  };
   quoted_status_result?: {
     result?: TwitterTweet;
   };

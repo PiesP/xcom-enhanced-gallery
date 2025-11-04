@@ -10,6 +10,24 @@ and this project adheres to
 
 ### Added
 
+#### 긴 트윗(Notes) 전문 지원 (Phase 333)
+
+- **280자 이상 트윗 전체 텍스트 표시**: X.com의 Notes 기능 지원
+  - `note_tweet` API 필드 구조 분석 및 적용
+    - 경로: `note_tweet.note_tweet_results.result.text`
+    - 중첩 구조 타입 정의: `TwitterTweet` 인터페이스 확장
+  - 긴 트윗 자동 감지 및 전체 텍스트 추출
+  - 갤러리 툴바의 "트윗 텍스트" 패널에 완전한 내용 표시
+- **적용 범위**:
+  - 메인 트윗: `getTweetMedias()` 함수
+  - 인용 트윗: quoted tweet 처리 로직
+  - 하위 호환성: 짧은 트윗은 기존 `full_text` 사용
+- **디버그 로깅**:
+  - `hasNoteTweet`, `hasNoteTweetResults` 플래그
+  - 텍스트 길이 비교 (원본 vs 전체)
+  - 텍스트 미리보기 (처음 100자)
+- **사용자 경험**: 잘린 텍스트 없이 원본 그대로 표시
+
 #### 비디오 추출 개선 (Phase 332)
 
 - **실제 비디오 요소 우선 추출**: Twitter 페이지의 `<video>` 요소에서 직접
