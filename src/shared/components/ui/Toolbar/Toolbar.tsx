@@ -60,7 +60,33 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   // Local settings expanded state (component-owned for proper reactivity)
   const [isSettingsExpanded, setIsSettingsExpanded] = createSignal(false);
-  const toggleSettingsExpanded = () => setIsSettingsExpanded(prev => !prev);
+
+  // Local tweet panel expanded state
+  const [isTweetPanelExpanded, setIsTweetPanelExpanded] = createSignal(false);
+
+  // Exclusive toggle: settings panel opens, tweet panel closes
+  const toggleSettingsExpanded = () => {
+    setIsSettingsExpanded(prev => {
+      const nextState = !prev;
+      if (nextState) {
+        // Close tweet panel when opening settings
+        setIsTweetPanelExpanded(false);
+      }
+      return nextState;
+    });
+  };
+
+  // Exclusive toggle: tweet panel opens, settings panel closes
+  const toggleTweetPanelExpanded = () => {
+    setIsTweetPanelExpanded(prev => {
+      const nextState = !prev;
+      if (nextState) {
+        // Close settings panel when opening tweet
+        setIsSettingsExpanded(false);
+      }
+      return nextState;
+    });
+  };
 
   const toolbarClass = createMemo(() =>
     createClassName(
@@ -214,6 +240,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     onCloseClick: onCloseClick(),
     settingsController: enhancedSettingsController,
     showSettingsButton,
+    isTweetPanelExpanded,
+    toggleTweetPanelExpanded,
   });
 }
 

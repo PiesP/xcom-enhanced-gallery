@@ -158,54 +158,6 @@
   pointer-events: inherit;
 }
 
-/* Tweet button - floats next to toolbar */
-.tweetButton {
-  position: fixed;
-  top: 1.25em;
-  right: 2em;
-  z-index: var(--xeg-z-modal);
-
-  /* Glassmorphism design */
-  width: 2.5em;
-  height: 2.5em;
-  padding: 0.5em;
-  background: var(--xeg-bg-toolbar);
-  border: none;
-  border-radius: var(--xeg-radius-md);
-  color: var(--xeg-color-text-primary);
-  cursor: pointer;
-
-  /* Layout */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1em;
-
-  /* Transition */
-  transition:
-    background var(--xeg-duration-fast) var(--xeg-ease-standard),
-    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
-
-  /* Match toolbar opacity */
-  opacity: var(--toolbar-opacity, 0);
-  visibility: var(--toolbar-visibility, hidden);
-}
-
-.tweetButton:hover {
-  background: var(--xeg-color-neutral-300);
-  transform: scale(1.05);
-}
-
-.tweetButton:active {
-  transform: scale(0.95);
-}
-
-.tweetButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
-}
-
 /* FIX: Ensure settings panel remains interactive when expanded, even if wrapper loses hover
    Rationale: .toolbarWrapper sets all descendants to pointer-events: inherit. When the wrapper
    resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,

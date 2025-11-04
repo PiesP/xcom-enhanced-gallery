@@ -90,8 +90,9 @@
 
 /* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
 
-/* 툴바 확장 상태 - 설정 패널과 시각적으로 연결 */
-.galleryToolbar[data-settings-expanded='true'] {
+/* 툴바 확장 상태 - 설정 패널 또는 트윗 패널과 시각적으로 연결 */
+.galleryToolbar[data-settings-expanded='true'],
+.galleryToolbar[data-tweet-panel-expanded='true'] {
   /* 하단 border-radius 제거하여 패널과 매끄럽게 연결 */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 
@@ -644,7 +645,7 @@ button.fitButton {
 .settingsPanel {
   /* Layout - 툴바 바로 아래 절대 위치 */
   position: absolute;
-  top: 100%; /* 툴바 바로 아래 */
+  top: 100%; /* 툴바 바로 아래 기준점 */
   left: 0;
   right: 0;
   width: 100%;
@@ -659,7 +660,7 @@ button.fitButton {
   /* Phase 49: 애니메이션 개선 - height → opacity + transform */
   /* 초기 상태 (축소) */
   opacity: 0;
-  transform: translateY(-0.5em); /* 위로 살짝 이동 */
+  transform: translateY(-0.5em); /* 접힌 상태에서 약간 위로 */
   visibility: hidden;
   pointer-events: none;
   transition:
@@ -672,6 +673,12 @@ button.fitButton {
   border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border); /* 1px → var(--border-width-thin) */
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   box-shadow: var(--xeg-toolbar-panel-shadow);
+
+  /* Stacking Context: z-index 명시적 설정 */
+  z-index: 1;
+
+  /* Performance Optimization: GPU 가속을 위한 힌트 */
+  will-change: transform, opacity;
 }
 
 /* Expanded State - Phase 49: 간소화된 확장 상태 */
@@ -687,6 +694,125 @@ button.fitButton {
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s 0s;
+  /* Exclusive panel: always z-index 2 when opened (tweet closes automatically) */
+  z-index: 2;
 }
 
 /* Phase 254: settingsPanel의 transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+
+/* Tweet Panel - Settings Panel과 동일한 패턴 */
+.tweetPanel {
+  /* Layout - 툴바 바로 아래 절대 위치 */
+  position: absolute;
+  top: 100%; /* 툴바 바로 아래 기준점 */
+  left: 0;
+  right: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  min-height: var(--xeg-toolbar-panel-height);
+  max-height: var(--xeg-toolbar-panel-max-height);
+  overflow: hidden;
+
+  /* 초기 상태 (축소) */
+  opacity: 0;
+  transform: translateY(-0.5em); /* 접힌 상태에서 약간 위로 */
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    var(--xeg-toolbar-panel-transition),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    visibility 0s var(--xeg-duration-normal);
+
+  /* Visual */
+  background: var(--xeg-toolbar-panel-bg);
+  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border);
+  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
+  box-shadow: var(--xeg-toolbar-panel-shadow);
+
+  /* Stacking Context: 기본 z-index - 설정 패널과 동일 계층 */
+  z-index: 1;
+
+  /* Performance Optimization: GPU 가속을 위한 힌트 */
+  will-change: transform, opacity;
+}
+
+/* Expanded State */
+.tweetPanel[data-expanded='true'] {
+  height: auto;
+  opacity: 1;
+  transform: translateY(0); /* 정상 위치로 이동 */
+  visibility: visible;
+  pointer-events: auto;
+  border-top-color: var(--xeg-toolbar-panel-border);
+  box-shadow: var(--xeg-toolbar-panel-shadow);
+  transition:
+    var(--xeg-toolbar-panel-transition),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    visibility 0s 0s;
+  /* 툴바 아래에 붙은 형태 */
+  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
+  /* Exclusive panel: always on top when opened (settings closes automatically) */
+  z-index: 2;
+}
+
+/* Tweet Panel Body - Settings Panel과 유사한 레이아웃 */
+.tweetPanelBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* Tweet Header - 설정 패널의 라벨 스타일과 통일 */
+.tweetHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tweetLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--xeg-color-text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Tweet Content - 설정 패널의 select와 유사한 스타일 */
+.tweetContent {
+  padding: var(--space-sm);
+  font-size: var(--xeg-font-size-md);
+  line-height: 1.5;
+  color: var(--xeg-color-text-primary);
+  background: var(--xeg-settings-select-bg);
+  border: var(--border-width-thin) solid var(--xeg-settings-select-border);
+  border-radius: var(--xeg-radius-md);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  max-height: 15em; /* 약 10줄 정도의 텍스트 */
+  transition:
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+/* 스크롤바 스타일링 (optional) */
+.tweetContent::-webkit-scrollbar {
+  width: 0.5em;
+}
+
+.tweetContent::-webkit-scrollbar-track {
+  background: var(--xeg-color-neutral-200);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.tweetContent::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-400);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.tweetContent::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-500);
+}
