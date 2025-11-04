@@ -13,16 +13,18 @@ import type { AppConfig } from '@/types';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { waitForWindowLoad } from '@shared/utils/window-load';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
-import {
-  warmupCriticalServices,
-  warmupNonCriticalServices,
-  registerGalleryRenderer,
-  registerCoreBaseServices,
-  initializeBaseServices,
-} from '@shared/container/service-accessors';
+import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/service-manager';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
+// Phase 2.1: 부트스트랩 로직 모듈화
+import {
+  initializeCriticalSystems,
+  initializeCoreBaseServices,
+  initializeDevTools,
+  initializeGalleryApp,
+  clearGalleryApp,
+} from '@/bootstrap';
 
 // 전역 스타일
 // 글로벌 스타일은 import 시점(side-effect)을 피하기 위해 런타임에 로드합니다.
@@ -100,6 +102,89 @@ async function logTestDiagnostics(phase: 'before' | 'after'): Promise<void> {
 }
 
 /**
+ * 재시작 정책 인터페이스
+ * Phase 2.2: 구성 가능한 재시작 로직
+ */
+interface RetryPolicy {
+  /** 최대 재시도 횟수 */
+  maxRetries: number;
+  /** 기본 지연 시간 (ms) */
+  delayMs: number;
+  /** 백오프 전략 */
+  backoff?: 'linear' | 'exponential';
+}
+
+/**
+ * 유휴 작업 스케줄링 옵션
+ * Phase 3.1: requestIdleCallback 지원
+ */
+interface IdleWorkOptions {
+  /** 최대 대기 시간 (ms) */
+  timeout?: number;
+}
+
+/**
+ * 유휴 시간에 작업 스케줄링
+ * Phase 3.1: requestIdleCallback 활용 (폴백: setTimeout)
+ *
+ * 브라우저가 유휴 상태일 때 작업을 실행하여 메인 스레드 부하 감소
+ *
+ * @param callback 실행할 작업
+ * @param options 스케줄링 옵션
+ */
+function scheduleIdleWork(callback: () => void | Promise<void>, options?: IdleWorkOptions): void {
+  // globalThis를 통한 안전한 접근
+  const global = globalThis as typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  };
+
+  if (typeof global.requestIdleCallback !== 'undefined') {
+    const idleOptions: IdleRequestOptions | undefined = options?.timeout
+      ? { timeout: options.timeout }
+      : undefined;
+
+    global.requestIdleCallback(async () => {
+      await callback();
+    }, idleOptions);
+  } else {
+    // requestIdleCallback 미지원 환경: setTimeout 폴백
+    globalTimerManager.setTimeout(callback, 0);
+  }
+}
+
+/**
+ * 애플리케이션 재시작 헬퍼 함수
+ * Phase 2.2: 구성 가능한 retry 정책 (exponential backoff 지원)
+ *
+ * @param error 초기 에러
+ * @param attempt 현재 시도 횟수
+ * @param policy 재시도 정책
+ */
+async function retryStartApplication(
+  error: unknown,
+  attempt = 1,
+  policy: RetryPolicy = { maxRetries: 3, delayMs: 2000, backoff: 'exponential' }
+): Promise<void> {
+  if (attempt > policy.maxRetries) {
+    logger.error('❌ 최대 재시도 횟수 초과:', error);
+    return;
+  }
+
+  const delay =
+    policy.backoff === 'exponential' ? policy.delayMs * Math.pow(2, attempt - 1) : policy.delayMs;
+
+  logger.info(`🔄 애플리케이션 재시작 시도 (${attempt}/${policy.maxRetries}), 지연: ${delay}ms`);
+
+  globalTimerManager.setTimeout(async () => {
+    try {
+      await startApplication();
+    } catch (retryError) {
+      await retryStartApplication(retryError, attempt + 1, policy);
+    }
+  }, delay);
+}
+
+/**
  * 애플리케이션 설정 생성
  */
 function createAppConfig(): AppConfig {
@@ -129,52 +214,8 @@ async function initializeInfrastructure(): Promise<void> {
 }
 
 /**
- * Critical Path - 필수 시스템 초기화 (동기 부분만)
- */
-async function initializeCriticalSystems(): Promise<void> {
-  try {
-    logger.info('Critical Path 초기화 시작');
-    if (__DEV__ && tracePoint) tracePoint('critical:init:start');
-
-    // Core 서비스 등록 (동적 import)
-    const { registerCoreServices } = await import('@shared/services/core-services');
-    await registerCoreServices();
-
-    // Critical Services만 즉시 초기화
-    // 강제 로드 (팩토리/서비스 즉시 활성화)
-    warmupCriticalServices();
-
-    logger.info('✅ Critical Path 초기화 완료');
-    if (__DEV__ && tracePoint) tracePoint('critical:init:done');
-  } catch (error) {
-    logger.error('❌ Critical Path 초기화 실패:', error);
-    throw error;
-  }
-}
-
-/**
- * Phase A5.2: BaseService 생명주기 중앙화 초기화
- * service-manager에서 AnimationService, ThemeService, LanguageService 관리
- */
-async function initializeCoreBaseServices(): Promise<void> {
-  try {
-    logger.debug('🔄 BaseService 레지스트리 등록 중...');
-    if (__DEV__ && tracePoint) tracePoint('baseservice:register:start');
-    registerCoreBaseServices();
-
-    logger.debug('🔄 BaseService 초기화 중...');
-    if (__DEV__ && tracePoint) tracePoint('baseservice:init:start');
-    await initializeBaseServices();
-
-    logger.debug('✅ BaseService 초기화 완료');
-    if (__DEV__ && tracePoint) tracePoint('baseservice:init:done');
-  } catch (error) {
-    logger.warn('BaseService 초기화 실패 (계속 진행):', error);
-  }
-}
-
-/**
  * Non-Critical 시스템 백그라운드 초기화
+ * Phase 3.1: requestIdleCallback 활용
  */
 function initializeNonCriticalSystems(): void {
   // 테스트 모드에서는 비필수 시스템 초기화를 건너뛰어 불필요한 타이머를 만들지 않는다
@@ -183,19 +224,23 @@ function initializeNonCriticalSystems(): void {
     return;
   }
 
-  globalTimerManager.setTimeout(async () => {
-    try {
-      logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
-      if (__DEV__ && tracePoint) tracePoint('noncritical:init:start');
+  // Phase 3.1: requestIdleCallback을 활용한 유휴 시간 스케줄링
+  scheduleIdleWork(
+    async () => {
+      try {
+        logger.info('Non-Critical 시스템 백그라운드 초기화 시작');
+        if (__DEV__ && tracePoint) tracePoint('noncritical:init:start');
 
-      warmupNonCriticalServices();
+        warmupNonCriticalServices();
 
-      logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
-      if (__DEV__ && tracePoint) tracePoint('noncritical:init:done');
-    } catch (error) {
-      logger.warn('Non-Critical 시스템 초기화 중 오류 (앱 동작에는 영향 없음):', error);
-    }
-  }, 0);
+        logger.info('✅ Non-Critical 시스템 백그라운드 초기화 완료');
+        if (__DEV__ && tracePoint) tracePoint('noncritical:init:done');
+      } catch (error) {
+        logger.warn('Non-Critical 시스템 초기화 중 오류 (앱 동작에는 영향 없음):', error);
+      }
+    },
+    { timeout: 1000 }
+  );
 }
 
 /**
@@ -221,6 +266,7 @@ async function cleanup(): Promise<void> {
 
     if (galleryApp) {
       await galleryApp.cleanup();
+      clearGalleryApp(); // Phase 2.1: bootstrap 모듈을 통한 정리
       galleryApp = null;
       // Phase 290: 네임스페이스 격리 - 개발 환경에서만 정리
       if (import.meta.env.DEV) {
@@ -298,79 +344,12 @@ async function cleanup(): Promise<void> {
 }
 
 /**
- * 개발 환경 디버깅 도구 초기화
- */
-async function initializeDevTools(): Promise<void> {
-  if (!import.meta.env.DEV) return;
-
-  try {
-    // 갤러리 디버깅 유틸리티 제거됨 (Phase 140.2 - 미사용 코드 정리)
-    // DEV 전용 전역 키를 런타임 생성하여 프로덕션 번들에 문자열이 포함되지 않도록 함
-    // const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-    // const kDebug = __devKey([95, 95, 88, 69, 71, 95, 68, 69, 66, 85, 71, 95, 95]); // "__XEG_DEBUG__"
-    // (globalThis as Record<string, unknown>)[kDebug] = galleryDebugUtils;
-
-    // 서비스 진단 도구
-    const { ServiceDiagnostics } = await import('@shared/services/core-services');
-    // DEV 전용 전역 진단 등록 (import 부작용 제거)
-    ServiceDiagnostics.registerGlobalDiagnostic();
-    await ServiceDiagnostics.diagnoseServiceManager();
-
-    logger.info('🛠️ 개발 도구 활성화됨');
-    if (__DEV__ && tracePoint) tracePoint('devtools:ready');
-  } catch (error) {
-    logger.warn('개발 도구 로드 실패:', error);
-  }
-}
-
-/**
- * 갤러리 앱 생성 및 초기화 (지연 로딩)
- */
-async function initializeGalleryApp(): Promise<void> {
-  if (galleryApp) {
-    logger.debug('갤러리 앱이 이미 초기화됨');
-    return;
-  }
-
-  try {
-    logger.info('🎨 갤러리 앱 지연 초기화 시작');
-    if (__DEV__ && tracePoint) tracePoint('gallery:init:start');
-
-    // Gallery Renderer 서비스 등록 (갤러리 앱에만 필요)
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    registerGalleryRenderer(new GalleryRenderer());
-
-    // 갤러리 앱 인스턴스 생성
-    const { GalleryApp } = await import('@features/gallery/GalleryApp');
-    galleryApp = new GalleryApp();
-
-    // 갤러리 앱 초기화
-    await galleryApp.initialize();
-    logger.info('✅ 갤러리 앱 초기화 완료');
-    if (__DEV__ && tracePoint) tracePoint('gallery:init:done');
-
-    // 개발 환경에서만 디버깅용 전역 접근 허용 (R1)
-    if (import.meta.env.DEV) {
-      const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-      const kApp = __devKey([
-        95, 95, 88, 69, 71, 95, 71, 65, 76, 76, 69, 82, 89, 95, 65, 80, 80, 95, 95,
-      ]); // "__XEG_GALLERY_APP__"
-      (globalThis as Record<string, unknown>)[kApp] = galleryApp;
-    }
-  } catch (error) {
-    logger.error('❌ 갤러리 앱 초기화 실패:', error);
-    if (__DEV__ && tracePoint) tracePoint('gallery:init:error', { error: String(error) });
-    throw error;
-  }
-}
-
-/**
  * 애플리케이션 메인 진입점
  *
  * 📋 7단계 부트스트랩 프로세스:
  * 1️⃣  인프라 초기화 (Vendor 로드) - src/bootstrap/environment.ts
- * 2️⃣  핵심 시스템 (Core 서비스 + Toast) - src/shared/services/core-services.ts
- * 3️⃣  기본 서비스 (Animation/Theme/Language) - src/shared/services/service-manager.ts
+ * 2️⃣  핵심 시스템 (Core 서비스 + Toast) - src/bootstrap/critical-systems.ts (Phase 2.1)
+ * 3️⃣  기본 서비스 (Animation/Theme/Language) - src/bootstrap/base-services.ts (Phase 2.1)
  * 4️⃣  기능 서비스 등록 (지연 로드) - src/bootstrap/features.ts
  * 5️⃣  전역 이벤트 핸들러 설정 - src/bootstrap/events.ts
  * 6️⃣  갤러리 앱 초기화 - src/features/gallery/GalleryApp.ts
@@ -473,14 +452,8 @@ async function startApplication(): Promise<void> {
     .catch(error => {
       logger.error('❌ 애플리케이션 초기화 실패:', error);
       if (__DEV__ && tracePoint) tracePoint('app:error', { error: String(error) });
-      // 에러 복구 시도
-      // 전역 타이머 매니저를 통해 예약하여 cleanup 보장 (R4)
-      globalTimerManager.setTimeout(() => {
-        logger.info('🔄 애플리케이션 재시작 시도...');
-        startApplication().catch(retryError => {
-          logger.error('❌ 재시작 실패:', retryError);
-        });
-      }, 2000);
+      // Phase 2.2: 구성 가능한 재시작 로직 (exponential backoff)
+      void retryStartApplication(error);
     })
     .finally(() => {
       // 다음 수동 호출을 위해 startPromise 해제(이미 시작된 경우 isStarted가 가드)
@@ -498,8 +471,8 @@ async function initializeGalleryImmediately(): Promise<void> {
   try {
     logger.debug('🎯 갤러리 즉시 초기화 시작');
 
-    // 기존의 scheduleGalleryInitialization 대신 즉시 실행
-    await initializeGalleryApp();
+    // Phase 2.1: bootstrap 모듈을 통한 초기화
+    galleryApp = await initializeGalleryApp();
 
     logger.debug('✅ 갤러리 즉시 초기화 완료');
   } catch (error) {
