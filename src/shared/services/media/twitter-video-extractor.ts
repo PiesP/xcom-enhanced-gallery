@@ -342,6 +342,7 @@ export class TwitterAPI {
     logger.debug('[getTweetMedias] Tweet text comparison:', {
       tweetId,
       hasNoteTweet: !!tweetResult.note_tweet,
+      noteTweetStructure: tweetResult.note_tweet ? JSON.stringify(tweetResult.note_tweet) : 'N/A',
       noteTweetLength: tweetResult.note_tweet?.text?.length,
       fullTextLength: tweetResult.full_text?.length,
       noteTweetPreview: tweetResult.note_tweet?.text?.substring(0, 100),
