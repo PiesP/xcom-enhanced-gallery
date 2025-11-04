@@ -13,7 +13,6 @@
 **X.com Enhanced Gallery**는 현대적인 웹 기술로 구축된 경량 유저스크립트입니다:
 
 - **UI 프레임워크**: Solid.js 1.9.9 - 반응형 UI, 고성능
-- **번들 크기**: 730KB (dev), 328KB (prod, gzip: ~89KB)
 - **브라우저 호환**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
 - **PC 전용 설계**: 마우스/키보드 최적화, 터치 이벤트 미지원
 - **품질 보증**: TypeScript strict, 1115+ passing tests, 0 lint warnings
@@ -126,7 +125,7 @@ _클릭하면 유저스크립트 매니저에서 자동으로 설치 화면이 �
 
 - **3-Layer Architecture**: Features → Shared → External 구조로 모듈화
 - **타입 안전성**: TypeScript 기반 완전한 타입 안전성 보장
-- **성능 최적화**: 번들 크기 최소화 및 지연 로딩 구현
+- **성능 최적화**: 지연 로딩 및 효율적인 메모리 관리
 - **격리된 렌더링**: X.com 원본 스타일에 영향 없는 독립적 UI
 
 ### 핵심 기술
