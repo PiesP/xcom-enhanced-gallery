@@ -1,34 +1,201 @@
 /**
  * @fileoverview Shared Layer Exports
- * @version 3.0.0 - Phase 4: Core 통합 완료
+ * @version 4.0.0 - Phase 352: Named export 최적화
  * @description 모든 공통 기능을 통합한 Shared 레이어
  */
 
+// ====================================
 // 핵심 UI 컴포넌트들
-export * from './components/ui';
+// ====================================
 
+export type {
+  StandardButtonProps,
+  StandardToastProps,
+  StandardToastContainerProps,
+  StandardToolbarProps,
+} from './components/ui';
+
+export { DEFAULT_SIZES, DEFAULT_VARIANTS, DEFAULT_TOAST_TYPES } from './components/ui';
+export { Icon } from './components/ui';
+export type { IconProps } from './components/ui';
+export { LazyIcon, useIconPreload, useCommonIconPreload } from './components/ui';
+export type { LazyIconProps } from './components/ui';
+export { Button } from './components/ui';
+export type { ButtonProps } from './components/ui';
+export { IconButton } from './components/ui';
+export type { IconButtonProps } from './components/ui';
+export { Toast, ToastContainer } from './components/ui';
+export type { ToastContainerProps } from './components/ui';
+export { Toolbar } from './components/ui';
+export type { ToolbarProps, GalleryToolbarProps, FitMode } from './components/ui';
+
+// ====================================
 // 격리 컴포넌트들 (갤러리 전용)
-export * from './components/isolation';
+// ====================================
 
+export {
+  GalleryContainer,
+  mountGallery,
+  unmountGallery,
+  type GalleryContainerProps,
+} from './components/isolation';
+
+// ====================================
 // HOC 컴포넌트들
-export * from './components/hoc';
+// ====================================
 
-// 최적화 컴포넌트들 제거됨 (기본 Preact memo 사용 권장)
-// export * from './components/optimization';
+export { withGallery, type GalleryComponentProps } from './components/hoc';
 
-// 서비스들 (기존 Core에서 이동)
-export * from './services';
+// ====================================
+// 서비스들
+// ====================================
 
-// 상태 관리 (기존 Core에서 이동)
-export * from './state';
+export { BaseService } from './services';
+export { AnimationService, MediaService } from './services';
+export { extractUsername, parseUsernameFast } from './services';
+export type {
+  UsernameExtractionResult,
+  MediaLoadingState,
+  MediaLoadingOptions,
+  PrefetchOptions,
+  BulkDownloadOptions,
+  DownloadResult,
+  DownloadProgress,
+} from './services';
+export { ThemeService } from './services';
+export type { Theme } from './services';
+export { LanguageService } from './services';
+export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './services';
+export {
+  FocusObserverManager,
+  createFocusObserverManager,
+  FocusApplicatorService,
+  createFocusApplicatorService,
+  FocusStateManagerService,
+  createFocusStateManagerService,
+  toastManager,
+  ToastManager,
+} from './services';
+export type { ToastOptions, ToastItem } from './services';
+export {
+  FilenameService,
+  generateMediaFilename,
+  generateZipFilename,
+  isValidMediaFilename,
+  isValidZipFilename,
+} from './services';
+export type { FilenameOptions, ZipFilenameOptions } from './services';
+export { BrowserService, TwitterTokenExtractor } from './services';
+export type { TokenExtractionResult, TokenValidationResult } from './services';
+export { CoreService } from './services';
+export { type StorageAdapter, UserscriptStorageAdapter } from './services';
+export { PersistentStorage, getPersistentStorage } from './services';
+export type { StorageUsage } from './services';
+export {
+  NotificationService,
+  getNotificationService,
+  UnifiedDownloadService,
+  unifiedDownloadService,
+  DownloadService,
+  downloadService,
+  HttpRequestService,
+  getHttpRequestService,
+} from './services';
+export type {
+  NotificationOptions,
+  NotificationProvider,
+  NotificationProviderInfo,
+  UnifiedDownloadOptions,
+  UnifiedSingleDownloadResult,
+  UnifiedBulkDownloadResult,
+  BlobDownloadOptions,
+  BlobDownloadResult,
+  TestModeDownloadOptions,
+  TestModeDownloadResult,
+  HttpRequestOptions,
+  BinaryRequestOptions,
+  HttpResponse,
+} from './services';
+export {
+  HttpError,
+  formatErrorMessage,
+  formatErrorForLogging,
+  createErrorContext,
+} from './services';
+export type { ErrorContext, FormattedError } from './services';
+export { logger, type ILogger, type Logger } from './services';
 
-// 로깅 시스템 (기존 Core에서 이동)
-export * from './logging';
+// ====================================
+// 상태 관리
+// ====================================
 
-// 메모리 관리 모듈 제거됨 (Phase 140.2 - 미사용 코드 정리)
-// export * from './memory';
+export {
+  gallerySignals,
+  openGallery,
+  closeGallery,
+  navigateToItem,
+  navigatePrevious,
+  navigateNext,
+  setFocusedIndex,
+  setLoading,
+  setError,
+  setViewMode,
+  getCurrentMediaItem,
+  getCurrentIndex,
+  getMediaItems,
+  getMediaItemsCount,
+  hasPreviousMedia,
+  hasNextMedia,
+  isGalleryOpen,
+  isLoading,
+  getError,
+  getViewMode,
+  galleryIndexEvents,
+  getNavigationState,
+  getLastNavigationSource,
+  toolbarState,
+  setSettingsExpanded,
+  downloadState,
+} from './state';
+export type { NavigationSource } from './state';
 
-// 핵심 유틸리티들 (Phase 326.7: Removed unused exports)
+// ====================================
+// 로깅 시스템
+// ====================================
+
+export {
+  LOG_LEVELS,
+  createLogger,
+  logger as loggingLogger,
+  createScopedLogger,
+  createScopedLoggerWithCorrelation,
+  createCorrelationId,
+  measurePerformance as loggingMeasurePerformance,
+  logError,
+  measureMemory,
+  logGroup,
+  logTable,
+  setLogLevel,
+  getLogLevel,
+  tracePoint,
+  traceAsync,
+  startFlowTrace,
+  stopFlowTrace,
+  traceStatus,
+} from './logging';
+export type {
+  LogLevel,
+  LoggableData,
+  Logger as LoggerType,
+  MemorySnapshot,
+  TraceOptions,
+} from './logging';
+export { defaultLogger } from './logging';
+
+// ====================================
+// 핵심 유틸리티들
+// ====================================
+
 export {
   // 접근성 & DOM 유틸리티
   detectLightBackground,
@@ -61,13 +228,26 @@ export {
 } from './utils/toolbar-utils';
 
 // 새로운 P4-P7 훅들
-// NOTE: useGalleryToolbarLogic 제거 (Phase 140.2 미사용 코드 정리, 2025-10-26)
 export { useFocusTrap } from './hooks/use-focus-trap';
 
-// 새로운 P6 스타일 토큰들
-export * from './styles/tokens';
+// ====================================
+// 스타일 토큰들
+// ====================================
 
+export {
+  SPACING_TOKENS,
+  RADIUS_TOKENS,
+  getSpacing,
+  getRadius,
+  getSpacingVar,
+  getRadiusVar,
+} from './styles/tokens';
+export type { SpacingToken, RadiusToken } from './styles/tokens';
+
+// ====================================
 // 타입들
+// ====================================
+
 export type {
   BaseComponentProps,
   GalleryTheme,
