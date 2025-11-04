@@ -1,6 +1,6 @@
 /**
  * @fileoverview Settings Feature Exports (Feature barrel)
- * @version 2.3.0 - Phase 193: 타입-서비스 분리 강화, 문서화 개선
+ * @version 3.0.0 - Phase 352: Named export 최적화
  *
  * @description
  * Settings feature를 위한 타입과 서비스 초기화 진입점.
@@ -30,7 +30,19 @@
  * 기본값(DEFAULT_SETTINGS)은 @/constants에서 직접 임포트:
  * @example `import { DEFAULT_SETTINGS } from '@/constants'`
  */
-export * from './types/settings.types';
+export type {
+  GallerySettings,
+  DownloadSettings,
+  TokenSettings,
+  PerformanceSettings,
+  AccessibilitySettings,
+  FeatureFlags,
+  AppSettings,
+  SettingKey,
+  NestedSettingKey,
+  SettingChangeEvent,
+  SettingValidationResult,
+} from './types/settings.types';
 
 // ─────────────────────────────────────────
 // Service Initialization (Lazy Import Pattern)

@@ -1,11 +1,8 @@
 /**
  * @fileoverview Shared Components Exports
- * @version 3.2.0 - Phase 224: LazyIcon 경로 최적화 및 통합
+ * @version 4.0.0 - Phase 352: Named export 최적화
  * @description 공통 컴포넌트들의 정리된 export
  */
-
-// 기본 컴포넌트 Props 시스템 (이제 @shared/types에서 정의됨)
-export * from './base';
 
 // 핵심 UI 컴포넌트들
 export { Button } from './ui/Button/Button';
