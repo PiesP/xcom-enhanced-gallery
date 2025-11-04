@@ -415,6 +415,7 @@ let galleryEventState = {
   scopeRefreshTimer: null as number | null,
   keyListener: null as EventListener | null,
   clickListener: null as EventListener | null,
+  spaRouterCleanup: null as (() => void) | null, // SPA router cleanup function
 };
 
 function resolveTwitterEventScope(): HTMLElement | null {
@@ -571,6 +572,38 @@ export async function initializeGalleryEvents(
     }
 
     galleryEventState.initialized = true;
+
+    // **SPA Router Observer Setup**
+    // Observe SPA routing changes (pushState, replaceState, popstate) and re-initialize event listeners
+    try {
+      const { initializeSPARouterObserver, onRouteChange } = await import('./spa-router-observer');
+
+      // Initialize the SPA router observer once
+      initializeSPARouterObserver();
+
+      // Register callback for route changes
+      const unsubscribe = onRouteChange((oldUrl, newUrl) => {
+        logger.info('[GalleryEvents] SPA route changed, re-initializing event listeners', {
+          oldUrl,
+          newUrl,
+        });
+
+        // Re-establish event listeners on new page
+        if (galleryEventState.keyListener && galleryEventState.clickListener) {
+          ensureScopedEventTarget(
+            galleryEventState.keyListener,
+            galleryEventState.clickListener,
+            finalOptions
+          );
+        }
+      });
+
+      galleryEventState.spaRouterCleanup = unsubscribe;
+
+      logger.debug('[GalleryEvents] SPA router observer registered');
+    } catch (error) {
+      logger.warn('[GalleryEvents] Failed to setup SPA router observer:', error);
+    }
 
     // Phase 305: cleanup 함수 반환
     return () => {
@@ -843,6 +876,16 @@ export function cleanupGalleryEvents(): void {
     // 키보드 debounce 상태 초기화
     resetKeyboardDebounceState();
 
+    // **SPA Router Cleanup**
+    if (galleryEventState.spaRouterCleanup) {
+      try {
+        galleryEventState.spaRouterCleanup();
+        logger.debug('[GalleryEvents] SPA router observer unregistered');
+      } catch (error) {
+        logger.warn('[GalleryEvents] Failed to cleanup SPA router observer:', error);
+      }
+    }
+
     galleryEventState = {
       initialized: false,
       listenerIds: [],
@@ -853,6 +896,7 @@ export function cleanupGalleryEvents(): void {
       scopeRefreshTimer: null,
       keyListener: null,
       clickListener: null,
+      spaRouterCleanup: null,
     };
   } catch (error) {
     logger.error('Error cleaning up gallery events:', error);
