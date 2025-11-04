@@ -35,6 +35,8 @@
 !/README.md
 !/LICENSE
 !/CHANGELOG.md
+!/docs
+!/docs/**
 
 # --- GitHub Actions (배포/보안) ---
 !/.github
@@ -54,7 +56,6 @@
 # 개발 가이드 문서 (로컬 참고)
 /AGENTS.md
 /CLAUDE.md
-/docs/
 .github/copilot-instructions.md
 
 # 테스트 코드 (CI에서 실행)
