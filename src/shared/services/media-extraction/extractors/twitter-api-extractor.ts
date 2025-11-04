@@ -14,6 +14,7 @@ import {
   DOMOrderEstimationStrategy,
   type MediaClickIndexStrategy,
 } from '../strategies/media-click-index-strategy';
+import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
 
 /**
  * Twitter API 기반 추출기
@@ -49,7 +50,10 @@ export class TwitterAPIExtractor implements APIExtractor {
         return this.createFailureResult('No media found in API response');
       }
 
-      const mediaItems = await this.convertAPIMediaToMediaInfo(apiMedias, tweetInfo);
+      // Extract tweet text HTML once from clicked element
+      const tweetTextHTML = extractTweetTextHTMLFromClickedElement(clickedElement);
+
+      const mediaItems = await this.convertAPIMediaToMediaInfo(apiMedias, tweetInfo, tweetTextHTML);
       const clickedIndex = await this.calculateClickedIndex(clickedElement, apiMedias, mediaItems);
 
       return {
@@ -127,7 +131,8 @@ export class TwitterAPIExtractor implements APIExtractor {
    */
   private async convertAPIMediaToMediaInfo(
     apiMedias: TweetMediaEntry[],
-    tweetInfo: TweetInfo
+    tweetInfo: TweetInfo,
+    tweetTextHTML?: string | undefined
   ): Promise<MediaInfo[]> {
     const mediaItems: MediaInfo[] = [];
 
@@ -135,7 +140,7 @@ export class TwitterAPIExtractor implements APIExtractor {
       const apiMedia = apiMedias[i];
       if (!apiMedia) continue;
 
-      const mediaInfo = this.createMediaInfoFromAPI(apiMedia, tweetInfo, i);
+      const mediaInfo = this.createMediaInfoFromAPI(apiMedia, tweetInfo, i, tweetTextHTML);
       if (mediaInfo) {
         mediaItems.push(mediaInfo);
       }
@@ -208,7 +213,8 @@ export class TwitterAPIExtractor implements APIExtractor {
   private createMediaInfoFromAPI(
     apiMedia: TweetMediaEntry,
     tweetInfo: TweetInfo,
-    index: number
+    index: number,
+    tweetTextHTML?: string | undefined
   ): MediaInfo | null {
     try {
       // 타입 변환: photo -> image, video -> video
@@ -232,6 +238,7 @@ export class TwitterAPIExtractor implements APIExtractor {
         tweetId: tweetInfo.tweetId,
         tweetUrl: tweetInfo.tweetUrl,
         tweetText: apiMedia.tweet_text,
+        tweetTextHTML,
         originalUrl: apiMedia.download_url,
         thumbnailUrl: apiMedia.preview_url,
         alt: `${mediaType} ${index + 1}`,

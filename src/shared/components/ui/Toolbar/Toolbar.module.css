@@ -816,3 +816,74 @@ button.fitButton {
 .tweetContent::-webkit-scrollbar-thumb:hover {
   background: var(--xeg-color-neutral-500);
 }
+
+/* Tweet Link Styles - Phase 1: Safe text formatting */
+.tweetLink {
+  color: var(--xeg-color-primary);
+  text-decoration: none;
+  overflow-wrap: break-word;
+  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.tweetLink:hover {
+  color: var(--xeg-color-primary-hover);
+  text-decoration: underline;
+}
+
+.tweetLink:focus {
+  outline: 0.125em solid var(--xeg-color-focus); /* 2px → 0.125em */
+  outline-offset: 0.125em; /* 2px → 0.125em */
+  border-radius: var(--xeg-radius-xs);
+}
+
+.tweetLink:active {
+  color: var(--xeg-color-primary-active);
+}
+
+/* High contrast mode for links */
+.highContrast .tweetLink {
+  color: var(--xeg-color-overlay-heavy);
+  text-decoration: underline;
+}
+
+.highContrast .tweetLink:hover {
+  color: var(--xeg-color-neutral-100);
+  background: var(--xeg-color-overlay-medium);
+}
+
+/* Phase 2: Twitter-style hashtags and mentions (from sanitized HTML) */
+/* Match Twitter's blue color (#1d9bf0) using oklch */
+.tweetContent a[href*='/hashtag/'],
+.tweetContent a[href*='/search?q=%23'] {
+  color: oklch(61% 0.19 232deg); /* Twitter blue: #1d9bf0 */
+  text-decoration: none;
+  overflow-wrap: break-word;
+  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.tweetContent a[href*='/hashtag/']:hover,
+.tweetContent a[href*='/search?q=%23']:hover {
+  text-decoration: underline;
+}
+
+.tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']) {
+  color: oklch(61% 0.19 232deg); /* Twitter blue for mentions */
+  text-decoration: none;
+  overflow-wrap: break-word;
+  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']):hover {
+  text-decoration: underline;
+}
+
+/* High contrast mode for Twitter-style links */
+.highContrast .tweetContent a {
+  color: var(--xeg-color-overlay-heavy);
+  text-decoration: underline;
+}
+
+.highContrast .tweetContent a:hover {
+  color: var(--xeg-color-neutral-100);
+  background: var(--xeg-color-overlay-medium);
+}

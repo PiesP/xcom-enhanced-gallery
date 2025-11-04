@@ -8,6 +8,7 @@ import { getSolid } from '../../../external/vendors';
 import { IconButton } from '../Button/IconButton';
 import { ChevronLeft, ChevronRight, Download, FileZip, Settings, X, DocumentText } from '../Icon';
 import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
+import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import styles from './Toolbar.module.css';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
 import type { ToolbarState } from '../../../hooks/use-toolbar-state';
@@ -59,6 +60,7 @@ export interface ToolbarViewProps extends ToolbarViewBaseProps {
   readonly isTweetPanelExpanded: () => boolean;
   readonly toggleTweetPanelExpanded: () => void;
   readonly tweetText?: string | undefined;
+  readonly tweetTextHTML?: string | undefined;
 }
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
@@ -289,7 +291,42 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             <div class={styles.tweetHeader}>
               <span class={styles.tweetLabel}>트윗 텍스트</span>
             </div>
-            <div class={styles.tweetContent}>{props.tweetText}</div>
+            <div class={styles.tweetContent}>
+              <solid.Show
+                when={props.tweetTextHTML}
+                fallback={
+                  <solid.For each={formatTweetText(props.tweetText)}>
+                    {token => (
+                      <solid.Switch>
+                        <solid.Match when={token.type === 'link' && token}>
+                          {linkToken => (
+                            <a
+                              href={linkToken().href}
+                              target='_blank'
+                              rel='noopener noreferrer'
+                              class={styles.tweetLink}
+                              title={linkToken().href}
+                            >
+                              {shortenUrl(linkToken().content, 40)}
+                            </a>
+                          )}
+                        </solid.Match>
+                        <solid.Match when={token.type === 'break'}>
+                          <br />
+                        </solid.Match>
+                        <solid.Match when={token.type === 'text' && token}>
+                          {textToken => <span>{textToken().content}</span>}
+                        </solid.Match>
+                      </solid.Switch>
+                    )}
+                  </solid.For>
+                }
+              >
+                {/* Phase 2: Render sanitized HTML from DOM (already safe) */}
+                {/* @ts-expect-error - innerHTML requires non-undefined, but Show ensures tweetTextHTML is truthy */}
+                <div innerHTML={props.tweetTextHTML} />
+              </solid.Show>
+            </div>
           </div>
         </solid.Show>
       </div>

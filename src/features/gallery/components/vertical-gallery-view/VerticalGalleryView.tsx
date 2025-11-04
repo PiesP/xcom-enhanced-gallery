@@ -651,6 +651,7 @@ function VerticalGalleryViewCore({
           onFitContainer={handleFitContainer}
           onOpenSettings={() => {}}
           tweetText={mediaItems()[currentIndex()]?.tweetText}
+          tweetTextHTML={mediaItems()[currentIndex()]?.tweetTextHTML}
           className={styles.toolbar || ''}
         />
       </div>
