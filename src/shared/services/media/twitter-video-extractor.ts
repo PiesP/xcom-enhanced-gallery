@@ -188,7 +188,8 @@ export class TwitterAPI {
 
   private static extractMediaFromTweet(
     tweetResult: TwitterTweet,
-    tweetUser: TwitterUser
+    tweetUser: TwitterUser,
+    sourceLocation: 'original' | 'quoted' = 'original'
   ): TweetMediaEntry[] {
     if (!tweetResult.extended_entities?.media) return [];
     const mediaItems: TweetMediaEntry[] = [];
@@ -235,6 +236,7 @@ export class TwitterAPI {
           short_expanded_url: media.display_url ?? '',
           short_tweet_url: media.url ?? '',
           tweet_text: tweetText,
+          sourceLocation,
         };
 
         if (resolvedWidth) {
@@ -369,7 +371,7 @@ export class TwitterAPI {
         tweetUser.name = tweetUser.legacy.name;
       }
     }
-    let result = this.extractMediaFromTweet(tweetResult, tweetUser);
+    let result = this.extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
     // Phase 290.1: Fix media order - Sort by visual order (expanded_url photo/video number)
     result = sortMediaByVisualOrder(result);
@@ -423,8 +425,8 @@ export class TwitterAPI {
             quotedUser.name = quotedUser.legacy.name;
           }
         }
-        // 인용 트윗의 미디어를 먼저 배치
-        const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser);
+        // Phase 342: 인용 트윗의 미디어를 sourceLocation='quoted'로 마킹하여 추출
+        const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
         // Phase 290.1: Sort quoted tweet media by visual order
         const sortedQuotedMedia = sortMediaByVisualOrder(quotedMedia);
 
