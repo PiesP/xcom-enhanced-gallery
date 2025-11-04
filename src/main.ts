@@ -10,6 +10,7 @@ import { logger, tracePoint, traceAsync, startFlowTrace, stopFlowTrace } from '@
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import type { AppConfig } from '@/types';
+import type { IGalleryApp } from '@shared/container/app-container';
 import { waitForWindowLoad } from '@shared/utils/window-load';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import {
@@ -31,8 +32,72 @@ import { globalTimerManager } from '@shared/utils/timer-management';
 // 애플리케이션 상태 관리
 let isStarted = false;
 let startPromise: Promise<void> | null = null;
-let galleryApp: unknown = null; // Features GalleryApp 인스턴스
+let galleryApp: IGalleryApp | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
+
+/**
+ * DEV 네임스페이스 설정 유틸리티
+ * Phase 1.1: 중복 코드 제거를 위한 헬퍼 함수
+ */
+function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
+  if (!import.meta.env.DEV) return;
+
+  type WindowWithXEG = Window & {
+    __XEG__?: {
+      main?: {
+        start: typeof startApplication;
+        createConfig: typeof createAppConfig;
+        cleanup: typeof cleanup;
+        galleryApp?: IGalleryApp;
+      };
+    };
+  };
+
+  const win = globalThis as unknown as WindowWithXEG;
+  win.__XEG__ = win.__XEG__ || {};
+  win.__XEG__.main = {
+    start: startApplication,
+    createConfig: createAppConfig,
+    cleanup,
+  };
+
+  if (galleryAppInstance) {
+    win.__XEG__.main.galleryApp = galleryAppInstance;
+  }
+}
+
+/**
+ * 개발 모드 tracing 헬퍼 함수
+ * Phase 1.2: traceAsync 조건부 호출 패턴 추상화
+ */
+async function traceIfDev<T>(label: string, fn: () => T | Promise<T>): Promise<T> {
+  if (__DEV__ && traceAsync) {
+    return traceAsync(label, fn);
+  }
+  return Promise.resolve(fn());
+}
+
+/**
+ * 테스트 모드 진단 로깅 헬퍼 함수
+ * Phase 1.3: 중복된 테스트 진단 로직 통합
+ */
+async function logTestDiagnostics(phase: 'before' | 'after'): Promise<void> {
+  if (import.meta.env.MODE !== 'test') return;
+
+  try {
+    const { getEventListenerStatus } = await import('@shared/utils/events');
+    const timers = globalTimerManager.getActiveTimersCount();
+    const events = getEventListenerStatus();
+
+    logger.debug(`[TEST][cleanup:${phase}] activeTimers:`, timers, 'managedEvents:', {
+      total: events.total,
+      byType: events.byType,
+      byContext: events.byContext,
+    });
+  } catch (e) {
+    logger.debug(`[TEST] cleanup ${phase}-diagnostics skipped:`, e);
+  }
+}
 
 /**
  * 애플리케이션 설정 생성
@@ -152,24 +217,10 @@ async function cleanup(): Promise<void> {
     logger.info('🧹 애플리케이션 정리 시작');
 
     // 테스트 모드 진단: 정리 전 타이머/이벤트 상태 출력
-    if (import.meta.env.MODE === 'test') {
-      try {
-        const { getEventListenerStatus } = await import('@shared/utils/events');
-        const beforeTimers = globalTimerManager.getActiveTimersCount();
-        const beforeEvents = getEventListenerStatus();
-        logger.debug('[TEST][cleanup:before] activeTimers:', beforeTimers, 'managedEvents:', {
-          total: beforeEvents.total,
-          byType: beforeEvents.byType,
-          byContext: beforeEvents.byContext,
-        });
-        // Phase 19: 테스트용 console.log 제거, logger.debug로 충분
-      } catch (e) {
-        logger.debug('[TEST] cleanup pre-diagnostics skipped:', e);
-      }
-    }
+    await logTestDiagnostics('before');
 
     if (galleryApp) {
-      await (galleryApp as { cleanup(): Promise<void> }).cleanup();
+      await galleryApp.cleanup();
       galleryApp = null;
       // Phase 290: 네임스페이스 격리 - 개발 환경에서만 정리
       if (import.meta.env.DEV) {
@@ -239,21 +290,7 @@ async function cleanup(): Promise<void> {
     logger.info('✅ 애플리케이션 정리 완료');
 
     // 테스트 모드 진단: 정리 후 타이머/이벤트 상태 출력
-    if (import.meta.env.MODE === 'test') {
-      try {
-        const { getEventListenerStatus } = await import('@shared/utils/events');
-        const afterTimers = globalTimerManager.getActiveTimersCount();
-        const afterEvents = getEventListenerStatus();
-        logger.debug('[TEST][cleanup:after] activeTimers:', afterTimers, 'managedEvents:', {
-          total: afterEvents.total,
-          byType: afterEvents.byType,
-          byContext: afterEvents.byContext,
-        });
-        // Phase 19: 테스트용 console.log 제거, logger.debug로 충분
-      } catch (e) {
-        logger.debug('[TEST] cleanup post-diagnostics skipped:', e);
-      }
-    }
+    await logTestDiagnostics('after');
   } catch (error) {
     logger.error('❌ 애플리케이션 정리 중 오류:', error);
     throw error;
@@ -308,7 +345,7 @@ async function initializeGalleryApp(): Promise<void> {
     galleryApp = new GalleryApp();
 
     // 갤러리 앱 초기화
-    await (galleryApp as { initialize(): Promise<void> }).initialize();
+    await galleryApp.initialize();
     logger.info('✅ 갤러리 앱 초기화 완료');
     if (__DEV__ && tracePoint) tracePoint('gallery:init:done');
 
@@ -362,33 +399,23 @@ async function startApplication(): Promise<void> {
     const startTime = performance.now();
 
     // 전역 스타일 로드 (사이드이펙트 import 방지)
-    await (traceAsync
-      ? traceAsync('styles:load', () => import('./styles/globals'))
-      : import('./styles/globals'));
+    await traceIfDev('styles:load', () => import('./styles/globals'));
 
     // 개발 도구 초기화 (개발 환경만; 테스트 모드에서는 제외하여 누수 스캔 간섭 방지)
     if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
-      await (traceAsync
-        ? traceAsync('devtools:init', () => initializeDevTools())
-        : initializeDevTools());
+      await traceIfDev('devtools:init', () => initializeDevTools());
     } else if (import.meta.env.DEV) {
       logger.debug('DevTools initialization skipped (test mode)');
     }
 
     // 1단계: 기본 인프라 초기화
-    await (traceAsync
-      ? traceAsync('infra:init', () => initializeInfrastructure())
-      : initializeInfrastructure());
+    await traceIfDev('infra:init', () => initializeInfrastructure());
 
     // 2단계: 핵심 시스템만 초기화 (갤러리 제외)
-    await (traceAsync
-      ? traceAsync('critical:init', () => initializeCriticalSystems())
-      : initializeCriticalSystems());
+    await traceIfDev('critical:init', () => initializeCriticalSystems());
 
     // Phase A5.2: BaseService 생명주기 중앙화 (이전: initializeLanguageService)
-    await (traceAsync
-      ? traceAsync('baseservice:init', () => initializeCoreBaseServices())
-      : initializeCoreBaseServices());
+    await traceIfDev('baseservice:init', () => initializeCoreBaseServices());
 
     // 3단계: Feature Services 지연 등록
     if (__DEV__ && tracePoint) tracePoint('features:register:start');
@@ -405,15 +432,11 @@ async function startApplication(): Promise<void> {
       const appConfig = createAppConfig();
       if (appConfig.renderAfterLoad !== false) {
         if (__DEV__ && tracePoint) tracePoint('window:load:wait:start');
-        await (traceAsync
-          ? traceAsync('window:load:wait', () => waitForWindowLoad({ timeoutMs: 8000 }))
-          : waitForWindowLoad({ timeoutMs: 8000 }));
+        await traceIfDev('window:load:wait', () => waitForWindowLoad({ timeoutMs: 8000 }));
         if (__DEV__ && tracePoint) tracePoint('window:load:wait:done');
       }
 
-      await (traceAsync
-        ? traceAsync('gallery:immediate', () => initializeGalleryImmediately())
-        : initializeGalleryImmediately());
+      await traceIfDev('gallery:immediate', () => initializeGalleryImmediately());
     } else {
       logger.debug('Gallery initialization skipped (test mode)');
     }
@@ -445,27 +468,7 @@ async function startApplication(): Promise<void> {
     if (__DEV__ && tracePoint) tracePoint('app:ready', { startupMs: duration.toFixed(2) });
 
     // Phase 290: 네임스페이스 격리 - 개발 환경에서만 단일 네임스페이스로 전역 접근 제공
-    if (import.meta.env.DEV) {
-      type WindowWithXEG = Window & {
-        __XEG__?: {
-          main?: {
-            start: typeof startApplication;
-            createConfig: typeof createAppConfig;
-            cleanup: typeof cleanup;
-            galleryApp?: unknown;
-          };
-        };
-      };
-
-      const win = globalThis as unknown as WindowWithXEG;
-      win.__XEG__ = win.__XEG__ || {};
-      win.__XEG__.main = {
-        start: startApplication,
-        createConfig: createAppConfig,
-        cleanup,
-        galleryApp,
-      };
-    }
+    setupDevNamespace(galleryApp);
   })()
     .catch(error => {
       logger.error('❌ 애플리케이션 초기화 실패:', error);
@@ -524,22 +527,4 @@ export default {
 };
 
 // Phase 290: 네임스페이스 격리 - 개발 환경에서만 전역 접근 허용
-if (import.meta.env.DEV) {
-  type WindowWithXEG = Window & {
-    __XEG__?: {
-      main?: {
-        start: typeof startApplication;
-        createConfig: typeof createAppConfig;
-        cleanup: typeof cleanup;
-      };
-    };
-  };
-
-  const win = globalThis as unknown as WindowWithXEG;
-  win.__XEG__ = win.__XEG__ || {};
-  win.__XEG__.main = {
-    start: startApplication,
-    createConfig: createAppConfig,
-    cleanup,
-  };
-}
+setupDevNamespace();
