@@ -338,7 +338,22 @@ export class TwitterAPI {
     }
 
     // Phase: Full tweet text support - prefer note_tweet.text for long tweets
+    // Debug logging for testing
+    logger.debug('[getTweetMedias] Tweet text comparison:', {
+      tweetId,
+      hasNoteTweet: !!tweetResult.note_tweet,
+      noteTweetLength: tweetResult.note_tweet?.text?.length,
+      fullTextLength: tweetResult.full_text?.length,
+      noteTweetPreview: tweetResult.note_tweet?.text?.substring(0, 100),
+      fullTextPreview: tweetResult.full_text?.substring(0, 100),
+    });
+
     if (tweetResult.note_tweet?.text) {
+      logger.info('[getTweetMedias] Using note_tweet.text for long tweet', {
+        tweetId,
+        originalLength: tweetResult.full_text?.length,
+        noteTweetLength: tweetResult.note_tweet.text.length,
+      });
       tweetResult.full_text = tweetResult.note_tweet.text;
     }
     if (!tweetUser) return [];
@@ -372,7 +387,24 @@ export class TwitterAPI {
         }
 
         // Phase: Full tweet text support - prefer note_tweet.text for long quoted tweets
+        // Debug logging for testing
+        logger.debug('[getTweetMedias] Quoted tweet text comparison:', {
+          tweetId,
+          quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
+          hasNoteTweet: !!quotedTweet.note_tweet,
+          noteTweetLength: quotedTweet.note_tweet?.text?.length,
+          fullTextLength: quotedTweet.full_text?.length,
+          noteTweetPreview: quotedTweet.note_tweet?.text?.substring(0, 100),
+          fullTextPreview: quotedTweet.full_text?.substring(0, 100),
+        });
+
         if (quotedTweet.note_tweet?.text) {
+          logger.info('[getTweetMedias] Using note_tweet.text for long quoted tweet', {
+            tweetId,
+            quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
+            originalLength: quotedTweet.full_text?.length,
+            noteTweetLength: quotedTweet.note_tweet.text.length,
+          });
           quotedTweet.full_text = quotedTweet.note_tweet.text;
         }
         if (quotedUser.legacy) {
