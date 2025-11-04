@@ -337,25 +337,28 @@ export class TwitterAPI {
       }
     }
 
-    // Phase: Full tweet text support - prefer note_tweet.text for long tweets
+    // Phase: Full tweet text support - prefer note_tweet for long tweets
+    // Extract full text from note_tweet structure
+    const noteTweetText = tweetResult.note_tweet?.note_tweet_results?.result?.text;
+
     // Debug logging for testing
     logger.debug('[getTweetMedias] Tweet text comparison:', {
       tweetId,
       hasNoteTweet: !!tweetResult.note_tweet,
-      noteTweetStructure: tweetResult.note_tweet ? JSON.stringify(tweetResult.note_tweet) : 'N/A',
-      noteTweetLength: tweetResult.note_tweet?.text?.length,
+      hasNoteTweetResults: !!tweetResult.note_tweet?.note_tweet_results,
+      noteTweetLength: noteTweetText?.length,
       fullTextLength: tweetResult.full_text?.length,
-      noteTweetPreview: tweetResult.note_tweet?.text?.substring(0, 100),
+      noteTweetPreview: noteTweetText?.substring(0, 100),
       fullTextPreview: tweetResult.full_text?.substring(0, 100),
     });
 
-    if (tweetResult.note_tweet?.text) {
-      logger.info('[getTweetMedias] Using note_tweet.text for long tweet', {
+    if (noteTweetText) {
+      logger.info('[getTweetMedias] Using note_tweet for long tweet', {
         tweetId,
         originalLength: tweetResult.full_text?.length,
-        noteTweetLength: tweetResult.note_tweet.text.length,
+        noteTweetLength: noteTweetText.length,
       });
-      tweetResult.full_text = tweetResult.note_tweet.text;
+      tweetResult.full_text = noteTweetText;
     }
     if (!tweetUser) return [];
     if (tweetUser.legacy) {
@@ -387,26 +390,30 @@ export class TwitterAPI {
           }
         }
 
-        // Phase: Full tweet text support - prefer note_tweet.text for long quoted tweets
+        // Phase: Full tweet text support - prefer note_tweet for long quoted tweets
+        // Extract full text from quoted tweet note_tweet structure
+        const quotedNoteTweetText = quotedTweet.note_tweet?.note_tweet_results?.result?.text;
+
         // Debug logging for testing
         logger.debug('[getTweetMedias] Quoted tweet text comparison:', {
           tweetId,
           quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
           hasNoteTweet: !!quotedTweet.note_tweet,
-          noteTweetLength: quotedTweet.note_tweet?.text?.length,
+          hasNoteTweetResults: !!quotedTweet.note_tweet?.note_tweet_results,
+          noteTweetLength: quotedNoteTweetText?.length,
           fullTextLength: quotedTweet.full_text?.length,
-          noteTweetPreview: quotedTweet.note_tweet?.text?.substring(0, 100),
+          noteTweetPreview: quotedNoteTweetText?.substring(0, 100),
           fullTextPreview: quotedTweet.full_text?.substring(0, 100),
         });
 
-        if (quotedTweet.note_tweet?.text) {
-          logger.info('[getTweetMedias] Using note_tweet.text for long quoted tweet', {
+        if (quotedNoteTweetText) {
+          logger.info('[getTweetMedias] Using note_tweet for long quoted tweet', {
             tweetId,
             quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
             originalLength: quotedTweet.full_text?.length,
-            noteTweetLength: quotedTweet.note_tweet.text.length,
+            noteTweetLength: quotedNoteTweetText.length,
           });
-          quotedTweet.full_text = quotedTweet.note_tweet.text;
+          quotedTweet.full_text = quotedNoteTweetText;
         }
         if (quotedUser.legacy) {
           if (!quotedUser.screen_name && quotedUser.legacy.screen_name) {
