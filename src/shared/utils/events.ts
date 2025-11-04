@@ -103,9 +103,6 @@ function safeExecute(fn: () => void, _ctx: string): void {
   }
 }
 
-/**
- * 비디오 볼륨 조절 (공통 로직)
- */
 function adjustVideoVolume(delta: number): void {
   const svc = getMediaService();
   if (svc) {
@@ -168,7 +165,6 @@ export function addListener(
   const id = generateListenerId(context);
 
   try {
-    // 안전성 검사: element가 유효한지 확인
     if (!element || typeof element.addEventListener !== 'function') {
       logger.warn(`Invalid element passed to addEventListenerManaged: ${element}`, {
         type,
@@ -176,16 +172,15 @@ export function addListener(
         elementType: typeof element,
         hasAddEventListener: element && typeof element.addEventListener,
       });
-      return id; // 빈 ID 반환하여 오류 방지
+      return id;
     }
 
-    // AbortSignal 지원: 이미 종료된 시그널이면 등록을 건너뜀
     const signal: AbortSignal | undefined = options?.signal as AbortSignal | undefined;
     if (signal?.aborted) {
       logger.debug(`Skip adding listener due to pre-aborted signal: ${type} (${id})`, {
         context,
       });
-      return id; // 등록/저장하지 않음
+      return id;
     }
 
     element.addEventListener(type, listener, options);
@@ -200,13 +195,11 @@ export function addListener(
       created: Date.now(),
     });
 
-    // AbortSignal 지원: abort 시 자동 해제
     if (signal && typeof signal.addEventListener === 'function') {
       const onAbort = () => {
         try {
           removeEventListenerManaged(id);
         } finally {
-          // once 옵션으로 자동 해제되지만, 방어적으로 제거 시도
           try {
             signal.removeEventListener('abort', onAbort);
           } catch {
@@ -219,7 +212,6 @@ export function addListener(
       try {
         signal.addEventListener('abort', onAbort, { once: true } as AddEventListenerOptions);
       } catch {
-        // ignore — 환경에 따라 EventTarget 미구현일 수 있음
         logger.debug('AbortSignal addEventListener not available (ignored)', { context });
       }
     }
@@ -228,13 +220,10 @@ export function addListener(
     return id;
   } catch (error) {
     logger.error(`Failed to add event listener: ${type}`, { error, context });
-    return id; // 빈 ID 반환하여 오류 방지
+    return id;
   }
 }
 
-/**
- * 이벤트 리스너 제거
- */
 export function removeEventListenerManaged(id: string): boolean {
   const eventContext = listeners.get(id);
   if (!eventContext) {

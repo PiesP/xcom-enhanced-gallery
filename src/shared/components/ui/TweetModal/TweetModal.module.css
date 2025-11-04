@@ -13,8 +13,8 @@
   bottom: 0;
   z-index: var(--xeg-z-modal);
 
-  /* Semi-transparent backdrop */
-  background: oklch(0% 0 0deg / 50%);
+  /* Semi-transparent backdrop using glassmorphism token */
+  background: var(--xeg-surface-glass-bg);
   backdrop-filter: blur(0.375rem);
 
   /* Flexbox for centering */
