@@ -8,28 +8,12 @@
  * - service-checker.ts: Service availability checks
  * - bootstrap-logger.ts: Logging utilities
  * - bootstrap-reporter.ts: Diagnostics aggregation
+ *
+ * Phase 347.1: Type definitions moved to diagnostics/types.ts to resolve circular dependency
  */
 
-/**
- * Service availability information - Phase 314-5
- */
-export interface ServiceAvailabilityInfo {
-  name: string;
-  available: boolean;
-  message: string;
-}
-
-/**
- * Bootstrap result summary - Phase 314-5
- */
-export interface BootstrapResult {
-  success: boolean;
-  environment: string;
-  timestamp: string;
-  services: ServiceAvailabilityInfo[];
-  warnings: string[];
-  errors: string[];
-}
+// Phase 347.1: Re-export types from diagnostics/types
+export type { ServiceAvailabilityInfo, BootstrapResult } from './diagnostics/types';
 
 // Phase 347: Re-export from diagnostics modules
 export {

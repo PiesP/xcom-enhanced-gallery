@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../../shared/logging';
-import type { BootstrapResult } from '../bootstrap-info';
+import type { BootstrapResult } from './types';
 
 /**
  * Log bootstrap summary

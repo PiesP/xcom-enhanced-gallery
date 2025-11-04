@@ -8,7 +8,7 @@ import { logger } from '../../shared/logging';
 import { detectEnvironment } from '../../shared/external/userscript';
 import { checkAllServices } from './service-checker';
 import { logBootstrapSummary, logEnvironmentInfo } from './bootstrap-logger';
-import type { BootstrapResult } from '../bootstrap-info';
+import type { BootstrapResult } from './types';
 
 /**
  * Get bootstrap diagnostics

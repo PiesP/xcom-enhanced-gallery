@@ -4,7 +4,7 @@
  * @module bootstrap/diagnostics/service-checker
  */
 
-import type { ServiceAvailabilityInfo } from '../bootstrap-info';
+import type { ServiceAvailabilityInfo } from './types';
 
 /**
  * Check HttpRequestService availability
