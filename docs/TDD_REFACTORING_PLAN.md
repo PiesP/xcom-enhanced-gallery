@@ -33,6 +33,7 @@
 | **326.8** | CSS 번들 분석 | N/A | ✅ 완료 | CSS 최적화 검증 | 이미 최적화됨 |
 | **327** | 마지막 아이템 스크롤 | N/A | ⛔ 제거됨 | useGalleryItemScroll.ts | Phase 328로 대체 |
 | **328** | 투명 Spacer 접근 | N/A | ✅ 완료 | Phase 327 제거 + Spacer 추가 | -45줄, +20줄 |
+| **329** | Events 통합 리팩토링 | N/A | 🔄 진행 중 | events.ts 분리 + 중복 제거 | 1,053줄 → 5개 파일 |
 
 **누적 효과**:
 - 자체 구현 제거: **80%+**
@@ -702,3 +703,207 @@ targetElement.scrollIntoView({
 - ✅ 분석 리포트 정리 (BROWSER_*, VITEST_*, VSCODE_* 등)
 - ✅ 세션 완료 리포트 정리 (COMPLETION_REPORT_*.md)
 - ✅ 보존 가치 있는 문서만 유지 (Phase 304+, 326 시리즈, REPOSITORY_STRUCTURE 등)
+
+---
+
+## 🔧 Phase 329: Events 통합 리팩토링 (진행 중)
+
+**시작**: 2025-11-04 | **목표**: 1,053줄 → 850줄, 테스트 커버리지 60% → 85%
+
+### 📋 개요
+
+`src/shared/utils/events.ts`는 6개 이상의 책임을 가진 거대한 유틸리티 파일입니다. 단일 책임 원칙(SRP) 위반으로 인해 테스트 어려움, 성능 이슈, 중복 코드 등이 발생했습니다.
+
+**현황**:
+- 파일 크기: **1,053줄**
+- 함수 수: **40+개**
+- Export 수: **12개**
+- Cyclomatic Complexity: 추정 **30+**
+- 테스트 커버리지: 추정 **60%**
+
+### 🎯 목표
+
+| 항목 | Before | After | 개선 |
+|------|--------|-------|------|
+| 파일 크기 | 1,053줄 | ~250줄/파일 | 유지보수 ↑ |
+| 파일 수 | 1개 | 5개 (모듈화) | 테스트 ↑ |
+| 복잡도 | 30+ | 10 이하/파일 | 읽기 쉬움 ↑ |
+| 테스트 커버리지 | 60% | 85%+ | 품질 ↑ |
+| 번들 크기 | 동일 | Tree-shaking 개선 | 성능 ↑ |
+
+### 🏗️ 새로운 구조
+
+```
+src/shared/utils/events/
+├── core/
+│   ├── listener-manager.ts        # 이벤트 리스너 추상화 (addListener 등)
+│   ├── listener-registry.ts       # listeners Map + 상태 관리
+│   └── event-context.ts           # EventContext, EventHandlers 타입
+├── handlers/
+│   ├── keyboard-handler.ts        # 키보드 이벤트 (navigation, video control)
+│   ├── media-click-handler.ts     # 미디어 클릭 감지 & 처리
+│   └── video-control-helper.ts    # Service/Video fallback 통합 (NEW)
+├── lifecycle/
+│   └── gallery-lifecycle.ts       # initializeGalleryEvents, cleanup
+├── policies/
+│   └── pc-only-policy.ts          # Touch/Pointer 차단 (PC-only 정책)
+├── scope/
+│   └── event-scope-manager.ts     # Twitter DOM 스코프 탐지/관리
+└── index.ts                       # 배럴 export
+```
+
+### 📝 Phase 세부 계획
+
+#### Step 1: 준비 (1시간)
+- [ ] 브랜치 생성: `git checkout -b refactor/events-optimization`
+- [ ] 기존 테스트 확인: `npm run test:unit -- --grep events`
+- [ ] 테스트 커버리지 베이스라인: `npm run test:unit -- --coverage events`
+
+#### Step 2: Phase 1 - 성능 최적화 (2시간)
+
+**2-1. 비디오 제어 로직 통합**
+- 파일: `src/shared/utils/events/handlers/video-control-helper.ts` (NEW)
+- 목표: Service/Video fallback 패턴 통합
+- 중복 제거: 3개 위치 → 1개 함수
+- 예상 감소: ~100줄
+- 테스트: Unit 테스트 신규 추가
+
+```typescript
+// NEW: video-control-helper.ts
+export type VideoControlAction =
+  | 'play'
+  | 'pause'
+  | 'volumeUp'
+  | 'volumeDown'
+  | 'mute'
+  | 'togglePlayPause'
+  | 'toggleMute';
+
+export function executeVideoControl(
+  action: VideoControlAction,
+  options?: { video?: HTMLVideoElement }
+): void;
+```
+
+**2-2. DOM 쿼리 캐싱**
+- 파일: `src/shared/state/signals/gallery.signals.ts` (수정)
+- 목표: `currentVideoElement` Signal 추가
+- 성능 개선: 키보드 이벤트 처리 30% ↑
+- 테스트: E2E 성능 벤치마크
+
+```typescript
+// 기존 (매번 DOM 쿼리)
+const video = getCurrentGalleryVideo(); // ← 매번 쿼리
+
+// NEW (Signal 기반)
+const video = gallerySignals.currentVideoElement.value; // ← 캐시됨
+```
+
+#### Step 3: Phase 2 - 파일 분리 (3시간)
+
+**3-1. Core 레이어 추출**
+- `listener-manager.ts`: `addListener`, `removeEventListenerManaged` 등
+- `listener-registry.ts`: `listeners` Map, `getEventListenerStatus`
+- `event-context.ts`: 타입 정의 (EventContext, EventHandlers, GalleryEventOptions)
+- 예상: 150줄 + 100줄 + 50줄 = 300줄
+
+**3-2. Handlers 레이어 추출**
+- `keyboard-handler.ts`: `handleKeyboardEvent` 및 키보드 로직
+- `media-click-handler.ts`: `handleMediaClick`, `detectMediaFromEvent` 등
+- `video-control-helper.ts`: Phase 1에서 추출한 통합 로직
+- 예상: 200줄 + 150줄 + 100줄 = 450줄
+
+**3-3. Lifecycle 레이어 추출**
+- `gallery-lifecycle.ts`: `initializeGalleryEvents`, `cleanupGalleryEvents`
+- `galleryEventState` → 클래스 인스턴스로 전환
+- 예상: 200줄
+
+**3-4. Policies 레이어 추출**
+- `pc-only-policy.ts`: `applyGalleryPointerPolicy` 및 Touch/Pointer 차단 로직
+- 예상: 100줄
+
+**3-5. Scope 레이어 추출** (NEW)
+- `event-scope-manager.ts`: `resolveTwitterEventScope`, `bindScopedListeners` 등
+- 목표: 스코프 관리 로직을 독립적인 클래스로 분리
+- 예상: 150줄
+
+**3-6. 배럴 export**
+- `events/index.ts`: Public API 통합
+- 기존 사용처: `addListener`, `initializeGalleryEvents`, `cleanupGalleryEvents` 등 유지
+
+#### Step 4: 테스트 작성 (2시간)
+
+**4-1. Unit 테스트** (JSDOM)
+- `test/unit/shared/utils/events/core/listener-manager.test.ts`
+- `test/unit/shared/utils/events/handlers/video-control-helper.test.ts`
+- `test/unit/shared/utils/events/handlers/keyboard-handler.test.ts`
+- `test/unit/shared/utils/events/policies/pc-only-policy.test.ts`
+- 예상 테스트: 60+ 케이스
+
+**4-2. E2E 테스트** (Playwright)
+- 기존 테스트 유지 (`e2e:smoke`)
+- 성능 벤치마크 추가 (Video 캐싱 효과 검증)
+
+#### Step 5: 검증 (1시간)
+- [ ] `npm run validate:pre`: 0 에러, 0 경고
+- [ ] `npm test`: 모든 테스트 통과
+- [ ] `npm run check`: Full validation 통과
+- [ ] `npm run build`: 번들 크기 동일 또는 개선
+- [ ] 기존 기능 회귀 테스트: E2E smoke 통과
+
+#### Step 6: 문서화 (1시간)
+- [ ] `ARCHITECTURE.md` 업데이트: Events 모듈 구조
+- [ ] Migration guide 작성 (코드 예시)
+- [ ] CHANGELOG 추가 (breaking change 없음)
+
+### 📊 예상 효과
+
+| 메트릭 | Before | After | 개선 |
+|--------|--------|-------|------|
+| 파일 크기 | 1,053줄 | ~850줄 | -20% |
+| 테스트 커버리지 | 60% | 85%+ | +25% |
+| 최대 파일 크기 | 1,053줄 | 250줄 | -76% |
+| 키보드 성능 | 기준 | +30% | 캐싱 효과 |
+| Cyclomatic Complexity | 30+ | ~8/파일 | -73% |
+| 번들 크기 | 989 KB | ~985 KB | Tree-shaking |
+
+### ⚠️ 위험 요소 & 완화 전략
+
+| 위험 | 확률 | 영향 | 완화 |
+|------|------|------|------|
+| 기존 기능 회귀 | 중간 | 높음 | E2E 테스트 + smoke 검증 |
+| 번들 크기 증가 | 낮음 | 중간 | Tree-shaking 검증 |
+| 성능 저하 | 낮음 | 높음 | 벤치마크 비교 (before/after) |
+| 순환 의존성 | 중간 | 높음 | 의존성 그래프 검증 |
+
+**완화 전략**:
+1. TDD 기반: Red → Green → Refactor (테스트 먼저)
+2. 증분 리팩토링: 한 번에 1-2개 파일씩
+3. Feature branch: `refactor/events-optimization`
+4. 회귀 테스트: 각 단계 후 `npm test` 실행
+5. 성능 비교: before/after 벤치마크
+
+### 🔗 관련 파일
+
+- 기본 파일: `src/shared/utils/events.ts` (1,053줄)
+- 의존 파일:
+  - `src/shared/state/signals/gallery.signals.ts` (Signal 추가)
+  - `src/shared/services/event-manager.ts` (통합 관리자)
+  - `test/**/*.test.ts` (기존 테스트)
+- 테스트 파일:
+  - `test/unit/shared/services/event-manager.test.ts`
+  - `test/e2e/smoke/gallery-events.spec.ts`
+
+### 📅 타임라인
+
+| Phase | 소요 시간 | 예상 기한 |
+|-------|----------|----------|
+| Step 1 (준비) | 1시간 | 2025-11-04 (오늘) |
+| Step 2 (Phase 1) | 2시간 | 2025-11-04 |
+| Step 3 (Phase 2) | 3시간 | 2025-11-04 (또는 분할) |
+| Step 4 (테스트) | 2시간 | 2025-11-05 |
+| Step 5 (검증) | 1시간 | 2025-11-05 |
+| Step 6 (문서화) | 1시간 | 2025-11-05 |
+| **총 계** | **10시간** | **2-3일** |
+
+**AI 협업 시 예상 단축**: 7시간 (병렬 작업, 자동 테스트 생성)

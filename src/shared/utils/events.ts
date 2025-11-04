@@ -4,6 +4,10 @@
  * - 허용: click, keydown/keyup, wheel, contextmenu, mouse*
  * - 금지: touchstart/move/end/cancel, pointerdown/up/move/enter/leave/cancel
  * - 검증: CodeQL `forbidden-touch-events.ql` 및 타입 검사
+ *
+ * Phase 329: 리팩토링 진행 중
+ * - video-control-helper.ts로 중복 로직 분리
+ * - 향후 추가 파일 분리 예정
  */
 
 import { logger } from '@shared/logging';
@@ -14,14 +18,12 @@ import {
   detectMediaFromClick as detectMediaElement,
   isProcessableMedia,
 } from './media/media-click-detector';
-import { isMediaServiceLike } from './type-safety-helpers';
 import {
   gallerySignals,
   navigateToItem,
   navigatePrevious,
   navigateNext,
 } from '../state/signals/gallery.signals';
-import { getMediaServiceFromContainer } from '../container/service-accessors';
 import { globalTimerManager } from './timer-management';
 import {
   shouldExecuteVideoControlKey,
@@ -29,6 +31,7 @@ import {
   resetKeyboardDebounceState,
 } from './keyboard-debounce';
 import { findTwitterScrollContainer } from './core-utils';
+import { executeVideoControl } from './events/handlers/video-control-helper';
 import type { MediaInfo } from '../types/media.types';
 
 interface EventContext {
@@ -41,55 +44,11 @@ interface EventContext {
   created: number;
 }
 
-type MediaServiceLike = {
-  togglePlayPauseCurrent: () => void;
-  volumeUpCurrent: () => void;
-  volumeDownCurrent: () => void;
-  toggleMuteCurrent: () => void;
-};
-
 const listeners = new Map<string, EventContext>();
-const __videoPlaybackState = new WeakMap<HTMLVideoElement, { playing: boolean }>();
 
 function generateListenerId(ctx?: string): string {
   const r = Math.random().toString(36).substr(2, 9);
   return ctx ? `${ctx}:${r}` : r;
-}
-
-/**
- * 현재 갤러리 비디오 요소 가져오기 (공통 헬퍼)
- */
-function getCurrentGalleryVideo(): HTMLVideoElement | null {
-  try {
-    const d =
-      typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
-    if (!(d instanceof Document)) return null;
-    const sel = '#xeg-gallery-root';
-    const isel = '[data-xeg-role="items-container"]';
-    const it = d.querySelector(sel)?.querySelector(isel) as HTMLElement | null;
-    if (!it) return null;
-    const idx = gallerySignals.currentIndex.value;
-    const itm = it.children?.[idx] as HTMLElement | null;
-    return itm?.querySelector('video') as HTMLVideoElement | null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * MediaService 인스턴스 가져오기 (공통 헬퍼)
- */
-function getMediaService(): MediaServiceLike | null {
-  try {
-    const service = getMediaServiceFromContainer();
-    // Type Guard를 사용하여 타입 안전성 확보
-    if (isMediaServiceLike(service)) {
-      return service as unknown as MediaServiceLike;
-    }
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 /**
@@ -100,23 +59,6 @@ function safeExecute(fn: () => void, _ctx: string): void {
     fn();
   } catch {
     // 무시
-  }
-}
-
-function adjustVideoVolume(delta: number): void {
-  const svc = getMediaService();
-  if (svc) {
-    delta > 0 ? svc.volumeUpCurrent() : svc.volumeDownCurrent();
-  } else {
-    const v = getCurrentGalleryVideo();
-    if (v) {
-      const next =
-        delta > 0
-          ? Math.min(1, Math.round((v.volume + 0.1) * 100) / 100)
-          : Math.max(0, Math.round((v.volume - 0.1) * 100) / 100);
-      v.volume = next;
-      if (next > 0 && v.muted) v.muted = false;
-    }
   }
 }
 
@@ -740,22 +682,7 @@ function handleKeyboardEvent(
           case 'Space':
             // Keyboard debounce: Space 반복 입력 시 재생/일시정지 중복 호출 방지 (150ms 간격)
             if (shouldExecutePlayPauseKey(event.key)) {
-              safeExecute(() => {
-                const svc = getMediaService();
-                if (svc) {
-                  svc.togglePlayPauseCurrent();
-                } else {
-                  const v = getCurrentGalleryVideo();
-                  if (v) {
-                    const current = __videoPlaybackState.get(v)?.playing ?? false;
-                    const next = !current;
-                    next
-                      ? (v as HTMLVideoElement & Partial<{ play: () => Promise<void> }>).play?.()
-                      : (v as HTMLVideoElement & Partial<{ pause: () => void }>).pause?.();
-                    __videoPlaybackState.set(v, { playing: next });
-                  }
-                }
-              }, 'togglePlayPauseCurrent');
+              safeExecute(() => executeVideoControl('togglePlayPause'), 'togglePlayPauseCurrent');
             }
             break;
           case 'ArrowLeft':
@@ -793,28 +720,20 @@ function handleKeyboardEvent(
           case 'ArrowUp':
             // Keyboard debounce: ArrowUp 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => adjustVideoVolume(+0.1), 'volumeUpCurrent');
+              safeExecute(() => executeVideoControl('volumeUp'), 'volumeUpCurrent');
             }
             break;
           case 'ArrowDown':
             // Keyboard debounce: ArrowDown 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => adjustVideoVolume(-0.1), 'volumeDownCurrent');
+              safeExecute(() => executeVideoControl('volumeDown'), 'volumeDownCurrent');
             }
             break;
           case 'm':
           case 'M':
             // Keyboard debounce: M 키 반복 입력 시 음소거 토글 중복 호출 방지 (100ms 간격)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => {
-                const svc = getMediaService();
-                if (svc) {
-                  svc.toggleMuteCurrent();
-                } else {
-                  const v = getCurrentGalleryVideo();
-                  if (v) v.muted = !v.muted;
-                }
-              }, 'toggleMuteCurrent');
+              safeExecute(() => executeVideoControl('toggleMute'), 'toggleMuteCurrent');
             }
             break;
         }
