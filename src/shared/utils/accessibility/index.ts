@@ -1,14 +1,70 @@
 /**
  * Accessibility utilities module
- * Phase 104: 3개 모듈로 분해 (color-contrast, keyboard-navigation, aria-helpers)
+ * @version 2.0.0 - Phase 352: Named export 최적화
+ * Phase 104: 4개 모듈로 분해 (color-contrast, keyboard-navigation, aria-helpers, focus-restore-manager)
  */
-export * from './color-contrast';
-export * from './keyboard-navigation';
-export * from './aria-helpers';
-export * from './focus-restore-manager';
-// Live region 매니저는 명시적으로 내보내기 (vitest 번들러에서의 디렉토리 import 호환성 강화)
+
+// Color contrast utilities
+export {
+  safeParseInt,
+  getRelativeLuminance,
+  parseColor,
+  calculateContrastRatio,
+  calculateLuminance,
+  meetsWCAGAA,
+  meetsWCAGAAA,
+  detectActualBackgroundColor,
+  detectLightBackground,
+  validateContrast,
+  analyzeContrast,
+  testContrastRatio,
+  isWCAGAACompliant,
+  isWCAGAAACompliant,
+  isWCAGLargeTextAACompliant,
+} from './color-contrast';
+
+// Keyboard navigation utilities
+export {
+  enableKeyboardNavigation,
+  disableKeyboardNavigation,
+  enableWCAGKeyboardNavigation,
+  manageFocus,
+  enhanceFocusVisibility,
+  validateKeyboardAccess,
+  validateNavigationStructure,
+  isFocusable,
+  createFocusTrap,
+  releaseKeyboardTrap,
+} from './keyboard-navigation';
+
+// ARIA helpers
+export {
+  addScreenReaderText,
+  setAriaLabel,
+  setAriaRole,
+  setAriaLive,
+  validateScreenReaderSupport,
+  createNavigationLandmark,
+  announceLiveMessage,
+  validateAltTextQuality,
+  setAriaAtomic,
+  setAriaDescription,
+  initializeLiveRegion,
+  notifyScreenReader,
+  associateLabel,
+  setAccessibleName,
+  setAccessibleDescription,
+} from './aria-helpers';
+
+// Focus restore manager
+export type { FocusRestoreFn } from './focus-restore-manager';
+export { beginFocusScope } from './focus-restore-manager';
+
+// Live region manager
 export {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
   getLiveRegionElements,
+  cleanupLiveRegions,
+  announce,
 } from './live-region-manager';

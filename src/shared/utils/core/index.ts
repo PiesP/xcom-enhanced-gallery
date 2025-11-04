@@ -1,6 +1,18 @@
 /**
  * @fileoverview Core Utility Functions Export
  * @description Type safety helpers and core utilities
+ * @version 2.0.0 - Phase 352: Named export 최적화
  */
 
-export * from '../type-safety-helpers';
+export {
+  safeParseInt,
+  safeParseFloat,
+  undefinedToNull,
+  stringWithDefault,
+  safeElementCheck,
+  safeTweetId,
+  createEventListener,
+  isGlobalLike,
+  isGMUserScriptInfo,
+  isMediaServiceLike,
+} from '../type-safety-helpers';
