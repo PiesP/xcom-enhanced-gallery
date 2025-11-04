@@ -1,37 +1,10 @@
-/**
- * @fileoverview 통합 이벤트 관리 시스템
- * PC-only 이벤트 정책 (MANDATORY):
- * - 허용: click, keydown/keyup, wheel, contextmenu, mouse*
- * - 금지: touchstart/move/end/cancel, pointerdown/up/move/enter/leave/cancel
- * - 검증: CodeQL `forbidden-touch-events.ql` 및 타입 검사
- *
- * Phase 329: 리팩토링 진행 중
- * - video-control-helper.ts로 중복 로직 분리
- * - 향후 추가 파일 분리 예정
- */
-
 import { logger } from '@shared/logging';
-import { STABLE_SELECTORS } from '../../constants';
-import { isGalleryInternalElement, isVideoControlElement } from './utils';
-import { isHTMLElement } from './type-guards';
-import {
-  detectMediaFromClick as detectMediaElement,
-  isProcessableMedia,
-} from './media/media-click-detector';
-import {
-  gallerySignals,
-  navigateToItem,
-  navigatePrevious,
-  navigateNext,
-} from '../state/signals/gallery.signals';
+import { isGalleryInternalElement } from './utils';
 import { globalTimerManager } from './timer-management';
-import {
-  shouldExecuteVideoControlKey,
-  shouldExecutePlayPauseKey,
-  resetKeyboardDebounceState,
-} from './keyboard-debounce';
+import { resetKeyboardDebounceState } from './keyboard-debounce';
 import { findTwitterScrollContainer } from './core-utils';
-import { executeVideoControl } from './events/handlers/video-control-helper';
+import { handleKeyboardEvent } from './events/handlers/keyboard-handler';
+import { handleMediaClick } from './events/handlers/media-click-handler';
 import type { MediaInfo } from '../types/media.types';
 
 interface EventContext {
@@ -49,49 +22,6 @@ const listeners = new Map<string, EventContext>();
 function generateListenerId(ctx?: string): string {
   const r = Math.random().toString(36).substr(2, 9);
   return ctx ? `${ctx}:${r}` : r;
-}
-
-/**
- * 안전한 함수 실행 래퍼 (에러 로깅 포함)
- */
-function safeExecute(fn: () => void, _ctx: string): void {
-  try {
-    fn();
-  } catch {
-    // 무시
-  }
-}
-
-/**
- * 트위터 네이티브 갤러리 요소인지 확인 (중복 실행 방지용)
- */
-function isTwitterNativeGalleryElement(element: HTMLElement): boolean {
-  // 우리의 갤러리 요소는 제외
-  if (
-    element.closest('.xeg-gallery-container, [data-xeg-gallery], .xeg-gallery') ||
-    element.classList.contains('xeg-gallery-item') ||
-    element.hasAttribute('data-xeg-gallery-type')
-  ) {
-    return false;
-  }
-
-  const selectors = [
-    ...STABLE_SELECTORS.MEDIA_CONTAINERS,
-    ...STABLE_SELECTORS.IMAGE_CONTAINERS,
-    ...STABLE_SELECTORS.MEDIA_PLAYERS,
-    ...STABLE_SELECTORS.MEDIA_LINKS,
-    ...STABLE_SELECTORS.MEDIA_VIEWERS,
-    'div[role="button"][aria-label*="재생"]',
-    'div[role="button"][aria-label*="Play"]',
-  ];
-
-  return selectors.some(selector => {
-    try {
-      return element.matches(selector) || element.closest(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
 }
 
 /**
@@ -235,88 +165,8 @@ export function getEventListenerStatus() {
       created: ctx.created,
     })),
   };
-} // Helper 함수들
-function checkGalleryOpen(): boolean {
-  try {
-    return gallerySignals.isOpen.value;
-  } catch {
-    return false;
-  }
-}
-
-function checkInsideGallery(element: HTMLElement | null): boolean {
-  try {
-    if (!element) return false;
-    return isGalleryInternalElement(element);
-  } catch {
-    return false;
-  }
-}
-
-async function detectMediaFromEvent(event: MouseEvent): Promise<MediaInfo | null> {
-  try {
-    const target = event.target;
-    if (!target || !isHTMLElement(target)) return null;
-
-    const result = detectMediaElement(target);
-
-    if (result?.type !== 'none' && result.mediaUrl) {
-      const mediaInfo: MediaInfo = {
-        id: `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        url: result.mediaUrl,
-        originalUrl: result.mediaUrl,
-        type: result.type === 'video' ? 'video' : result.type === 'image' ? 'image' : 'image',
-        filename: extractFilenameFromUrl(result.mediaUrl) || 'untitled',
-      };
-
-      return mediaInfo;
-    }
-    return null;
-  } catch (error) {
-    logger.warn('Failed to detect media from click:', error);
-    return null;
-  }
-}
-
-function extractFilenameFromUrl(url: string): string | null {
-  try {
-    // URL 생성자를 안전하게 시도
-    let URLConstructor: typeof URL | undefined;
-
-    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-      URLConstructor = globalThis.URL;
-    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-      URLConstructor = window.URL;
-    }
-
-    if (!URLConstructor) {
-      // Fallback: 간단한 파싱
-      const lastSlashIndex = url.lastIndexOf('/');
-      if (lastSlashIndex === -1) return null;
-      const filename = url.substring(lastSlashIndex + 1);
-      return filename.length > 0 ? filename : null;
-    }
-
-    const urlObj = new URLConstructor(url);
-    const pathname = urlObj.pathname;
-    const filename = pathname.split('/').pop();
-    return filename && filename.length > 0 ? filename : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 이벤트 처리 결과
- */
-interface EventHandlingResult {
-  handled: boolean;
-  reason?: string;
-  mediaInfo?: MediaInfo;
-}
-
-/**
- * 이벤트 핸들러 인터페이스
+} /**
+ * 이벤트 핸들러 인터페이스 (handlers에서 export됨)
  */
 export interface EventHandlers {
   onMediaClick: (mediaInfo: MediaInfo, element: HTMLElement, event: MouseEvent) => Promise<void>;
@@ -325,7 +175,7 @@ export interface EventHandlers {
 }
 
 /**
- * 갤러리 이벤트 옵션
+ * 갤러리 이벤트 옵션 (handlers에서 export됨)
  */
 export interface GalleryEventOptions {
   enableKeyboard: boolean;
@@ -554,215 +404,9 @@ export async function initializeGalleryEvents(
  * - 빠른 경로 체크: 미디어 컨테이너 범위 확인 먼저
  * - 비처리 가능한 요소는 조기 종료 (불필요한 오버헤드 감소)
  */
-async function handleMediaClick(
-  event: MouseEvent,
-  handlers: EventHandlers,
-  options: GalleryEventOptions
-): Promise<EventHandlingResult> {
-  try {
-    const target = event.target;
-    if (!isHTMLElement(target)) {
-      return { handled: false, reason: 'Invalid target (not HTMLElement)' };
-    }
-
-    // **Phase 228.1: 빠른 경로 체크 (조기 종료)**
-    // 미디어 컨테이너 범위 확인 - 가장 먼저 검사하여 불필요한 처리 제거
-    if (!options.enableMediaDetection) {
-      return { handled: false, reason: 'Media detection disabled' };
-    }
-
-    // 갤러리 내부 클릭인지 확인
-    if (checkGalleryOpen() && checkInsideGallery(target)) {
-      return { handled: false, reason: 'Gallery internal event' };
-    }
-
-    // 비디오 컨트롤 클릭인지 확인
-    if (isVideoControlElement(target)) {
-      return { handled: false, reason: 'Video control element' };
-    }
-
-    // **빠른 범위 체크: 미디어 컨테이너 범위 밖이면 조기 종료**
-    // 이 체크는 isProcessableMedia()보다 먼저 실행되어 성능 개선
-    const mediaContainerSelectors = [
-      ...STABLE_SELECTORS.IMAGE_CONTAINERS,
-      ...STABLE_SELECTORS.MEDIA_PLAYERS,
-      ...STABLE_SELECTORS.MEDIA_LINKS,
-    ].join(', ');
-
-    const isInMediaContainer = target.closest(mediaContainerSelectors);
-    if (!isInMediaContainer) {
-      return { handled: false, reason: 'Outside media container' };
-    }
-
-    if (!isProcessableMedia(target)) {
-      return { handled: false, reason: 'Non-processable media target' };
-    }
-
-    // **우선순위 1: 트위터 네이티브 갤러리 요소 확인 및 차단 (중복 실행 방지)**
-    if (isTwitterNativeGalleryElement(target)) {
-      // 트위터 네이티브 이벤트를 즉시 차단
-      event.stopImmediatePropagation();
-      event.preventDefault();
-
-      // 미디어 감지 후 우리의 갤러리 열기 시도
-      if (options.enableMediaDetection) {
-        const mediaInfo = await detectMediaFromEvent(event);
-        if (mediaInfo) {
-          await handlers.onMediaClick(mediaInfo, target, event);
-          return {
-            handled: true,
-            reason: 'Twitter blocked, our gallery opened',
-            mediaInfo,
-          };
-        }
-      }
-      return { handled: true, reason: 'Twitter native gallery blocked' };
-    }
-
-    // **우선순위 2: 일반 미디어 감지 (트위터 요소가 아닌 경우)**
-    if (options.enableMediaDetection) {
-      const mediaInfo = await detectMediaFromEvent(event);
-      if (mediaInfo) {
-        await handlers.onMediaClick(mediaInfo, target, event);
-        return {
-          handled: true,
-          reason: 'Media click handled',
-          mediaInfo,
-        };
-      }
-    }
-
-    return { handled: false, reason: 'No media detected' };
-  } catch (error) {
-    logger.error('Error handling media click:', error);
-    return { handled: false, reason: `Error: ${error}` };
-  }
-}
-
 /**
  * 키보드 이벤트 처리
  */
-function handleKeyboardEvent(
-  event: KeyboardEvent,
-  handlers: EventHandlers,
-  options: GalleryEventOptions
-): void {
-  if (!options.enableKeyboard) return;
-
-  try {
-    // 갤러리 열린 상태에서 네비게이션 키들의 기본 스크롤을 차단하여 충돌 방지
-    if (checkGalleryOpen()) {
-      const key = event.key;
-      const isNavKey =
-        key === 'Home' ||
-        key === 'End' ||
-        key === 'PageDown' ||
-        key === 'PageUp' ||
-        key === 'ArrowLeft' ||
-        key === 'ArrowRight' ||
-        key === ' ' ||
-        key === 'Space';
-
-      // 비디오 제어 키: Space(재생/일시정지), ArrowUp/Down(볼륨), M/m(음소거)
-      const isVideoKey =
-        key === ' ' ||
-        key === 'Space' ||
-        key === 'ArrowUp' ||
-        key === 'ArrowDown' ||
-        key === 'm' ||
-        key === 'M';
-
-      if (isNavKey || isVideoKey) {
-        // 기본 스크롤/페이지 전환을 차단
-        event.preventDefault();
-        event.stopPropagation();
-
-        switch (key) {
-          case ' ':
-          case 'Space':
-            // Keyboard debounce: Space 반복 입력 시 재생/일시정지 중복 호출 방지 (150ms 간격)
-            if (shouldExecutePlayPauseKey(event.key)) {
-              safeExecute(() => executeVideoControl('togglePlayPause'), 'togglePlayPauseCurrent');
-            }
-            break;
-          case 'ArrowLeft':
-            safeExecute(() => navigatePrevious('keyboard'), 'navigatePrevious');
-            break;
-          case 'ArrowRight':
-            safeExecute(() => navigateNext('keyboard'), 'navigateNext');
-            break;
-          case 'Home':
-            safeExecute(() => navigateToItem(0, 'keyboard'), 'navigateToItem(Home)');
-            break;
-          case 'End':
-            safeExecute(() => {
-              const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
-              navigateToItem(lastIndex, 'keyboard');
-            }, 'navigateToItem(End)');
-            break;
-          case 'PageDown':
-            safeExecute(() => {
-              // Page Down: +5 items
-              const nextIndex = Math.min(
-                gallerySignals.mediaItems.value.length - 1,
-                gallerySignals.currentIndex.value + 5
-              );
-              navigateToItem(nextIndex, 'keyboard');
-            }, 'navigateToItem(PageDown)');
-            break;
-          case 'PageUp':
-            safeExecute(() => {
-              // Page Up: -5 items
-              const prevIndex = Math.max(0, gallerySignals.currentIndex.value - 5);
-              navigateToItem(prevIndex, 'keyboard');
-            }, 'navigateToItem(PageUp)');
-            break;
-          case 'ArrowUp':
-            // Keyboard debounce: ArrowUp 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
-            if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('volumeUp'), 'volumeUpCurrent');
-            }
-            break;
-          case 'ArrowDown':
-            // Keyboard debounce: ArrowDown 반복 입력 시 볼륨 조절 과도 호출 방지 (100ms 간격)
-            if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('volumeDown'), 'volumeDownCurrent');
-            }
-            break;
-          case 'm':
-          case 'M':
-            // Keyboard debounce: M 키 반복 입력 시 음소거 토글 중복 호출 방지 (100ms 간격)
-            if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('toggleMute'), 'toggleMuteCurrent');
-            }
-            break;
-        }
-
-        // 커스텀 핸들러 위임
-        if (handlers.onKeyboardEvent) {
-          handlers.onKeyboardEvent(event);
-        }
-        return;
-      }
-    }
-
-    // ESC 키로 갤러리 닫기
-    if (event.key === 'Escape' && checkGalleryOpen()) {
-      handlers.onGalleryClose();
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-
-    // 커스텀 키보드 핸들러 호출
-    if (handlers.onKeyboardEvent) {
-      handlers.onKeyboardEvent(event);
-    }
-  } catch (error) {
-    logger.error('Error handling keyboard event:', error);
-  }
-}
-
 /**
  * 갤러리 이벤트 정리
  */
