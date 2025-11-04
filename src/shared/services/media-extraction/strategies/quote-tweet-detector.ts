@@ -73,11 +73,17 @@ export class QuoteTweetDetector {
    */
   static analyzeQuoteTweetStructure(element: HTMLElement): QuoteTweetStructure {
     logger.debug('[QuoteTweetDetector] 분석 시작', {
-      element: element.tagName,
-      elementClass: element.className.substring(0, 50),
+      element: element?.tagName,
+      elementClass: element?.className?.substring(0, 50),
     });
 
     try {
+      // null 또는 undefined 체크
+      if (!element || typeof element !== 'object') {
+        logger.debug('[QuoteTweetDetector] 유효하지 않은 요소');
+        return this.createStructure(false, 'unknown', null, null, null);
+      }
+
       // 1. 모든 조상 article 수집
       const articles = this.collectAncestorArticles(element);
 

@@ -12,4 +12,7 @@ export { DomStructureTweetStrategy } from './dom-structure-tweet-strategy';
 export { DataAttributeTweetStrategy } from './data-attribute-tweet-strategy';
 export { ParentTraversalTweetStrategy } from './parent-traversal-tweet-strategy';
 
+// Phase 342: Quote Tweet Detection
+export { QuoteTweetDetector } from './quote-tweet-detector';
+
 // Fallback strategies have been moved to features/media/extraction/strategies/fallback/

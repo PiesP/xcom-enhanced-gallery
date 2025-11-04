@@ -4,3 +4,4 @@
  */
 
 export { MediaExtractionService } from './media-extraction-service';
+export { DOMDirectExtractor } from './extractors/dom-direct-extractor';
