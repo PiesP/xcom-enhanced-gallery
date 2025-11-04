@@ -16,6 +16,7 @@ import {
 } from '@shared/utils/media/media-url.util';
 import { createSelectorRegistry } from '@shared/dom';
 import { STABLE_SELECTORS } from '@/constants';
+import { QuoteTweetDetector } from '@shared/services/media-extraction/strategies/quote-tweet-detector';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
 
@@ -148,10 +149,21 @@ export class DOMDirectExtractor {
   }
 
   /**
-   * 미디어 컨테이너 찾기 (단순화된 로직)
+   * 미디어 컨테이너 찾기 (인용 리트윗 대응)
+   * Phase 342: QuoteTweetDetector를 사용하여 정확한 article 선택
    */
   private findMediaContainer(element: HTMLElement): HTMLElement | null {
-    // 우선 가장 가까운 상위 트윗 컨테이너를 우선 선택
+    // 1. 인용 리트윗 여부 확인 및 정확한 미디어 컨테이너 찾기
+    const quoteTweetStructure = QuoteTweetDetector.analyzeQuoteTweetStructure(element);
+
+    if (quoteTweetStructure.isQuoteTweet && quoteTweetStructure.targetArticle) {
+      logger.debug('[DOMDirectExtractor] 인용 리트윗 감지 - 타겟 article 사용', {
+        clickedLocation: quoteTweetStructure.clickedLocation,
+      });
+      return quoteTweetStructure.targetArticle;
+    }
+
+    // 2. 일반 트윗 처리 (기존 로직)
     const closestTweet = this.selectors.findClosest(STABLE_SELECTORS.TWEET_CONTAINERS, element);
     if (closestTweet) return closestTweet as HTMLElement;
 
@@ -343,20 +355,46 @@ export class DOMDirectExtractor {
 
   /**
    * 클릭된 미디어 인덱스 찾기
+   * Phase 342: 인용 리트윗 구조 고려
    */
   private findClickedIndex(clickedElement: HTMLElement, mediaItems: MediaInfo[]): number {
+    // 인용 리트윗 상황에서 정확한 미디어 인덱스 찾기
+    const quoteTweetStructure = QuoteTweetDetector.analyzeQuoteTweetStructure(clickedElement);
+
     if (clickedElement.tagName === 'IMG') {
       const imgSrc = (clickedElement as HTMLImageElement).src;
       const index = mediaItems.findIndex(
-        item => item.url.includes(imgSrc.split('?')[0]!) || imgSrc.includes(item.url.split('?')[0]!)
+        item =>
+          item.url.includes(imgSrc.split('?')[0] ?? '') ||
+          imgSrc.includes(item.url.split('?')[0] ?? '')
       );
-      return Math.max(0, index);
+
+      if (index >= 0) {
+        if (quoteTweetStructure.isQuoteTweet) {
+          logger.debug('[DOMDirectExtractor] 인용 리트윗 내 이미지 - 인덱스 확인됨', {
+            index,
+            clickedLocation: quoteTweetStructure.clickedLocation,
+          });
+        }
+        return index;
+      }
+      return 0;
     }
 
     if (clickedElement.tagName === 'VIDEO') {
       const videoSrc = (clickedElement as HTMLVideoElement).src;
       const index = mediaItems.findIndex(item => item.url.includes(videoSrc));
-      return Math.max(0, index);
+
+      if (index >= 0) {
+        if (quoteTweetStructure.isQuoteTweet) {
+          logger.debug('[DOMDirectExtractor] 인용 리트윗 내 비디오 - 인덱스 확인됨', {
+            index,
+            clickedLocation: quoteTweetStructure.clickedLocation,
+          });
+        }
+        return index;
+      }
+      return 0;
     }
 
     // 기본적으로 첫 번째 미디어 반환
