@@ -6,10 +6,9 @@
 
 ```
 src/shared/styles/
-├─ design-tokens.css               # SSOT: 3계층 통합 토큰
-├─ design-tokens.primitive.css     # 기본 토큰 (색상, 크기, 간격)
-├─ design-tokens.semantic.css      # 의미 토큰 (역할 기반)
-├─ design-tokens.component.css     # 컴포넌트 토큰 (UI 특화)
+├─ design-tokens.primitive.css     # 1단계: 기본 토큰 (색상, 크기, 간격)
+├─ design-tokens.semantic.css      # 2단계: 의미 토큰 (역할 기반)
+├─ design-tokens.component.css     # 3단계: 컴포넌트 토큰 (UI 특화)
 ├─ isolated-gallery.css            # 격리된 갤러리 스타일
 ├─ modern-features.css             # 모던 CSS 기능 (OKLCH, Grid Subgrid)
 ├─ tokens.ts                       # JS 토큰 (타입 안정성용, 보조)
@@ -85,20 +84,21 @@ background: rgba(0, 0, 0, 0.1); /* rgba 금지 */
 
 ## 📖 파일별 용도
 
-### `design-tokens.css` (SSOT)
+### Design Token 시스템 (3단 계층)
 
-**역할**: 3계층 토큰 통합 진입점
-
-```css
-@import './design-tokens.primitive.css';
-@import './design-tokens.semantic.css';
-@import './design-tokens.component.css';
-```
+**Phase 352 변경**: ~~`design-tokens.css`~~ 제거됨 (중간 레이어 불필요)
 
 **사용**:
 
-- 모든 프로젝트는 이 파일만 import
-- 내부 구조 변경해도 외부 영향 없음
+- `src/styles/globals.ts`에서 3개 파일을 직접 import
+- CSS `@import` 대신 JS import로 번들러 최적화
+
+```typescript
+// src/styles/globals.ts
+import '@shared/styles/design-tokens.primitive.css'; // 1단계
+import '@shared/styles/design-tokens.semantic.css'; // 2단계
+import '@shared/styles/design-tokens.component.css'; // 3단계
+```
 
 ### `design-tokens.primitive.css`
 

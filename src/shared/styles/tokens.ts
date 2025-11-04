@@ -1,7 +1,7 @@
 /**
  * @fileoverview Design Tokens - Spacing & Border Radius
  *
- * ⚠️ **참고**: CSS 변수 (`design-tokens.css`)가 SSOT(Single Source of Truth)입니다.
+ * ⚠️ **참고**: CSS 변수 (design-tokens.*.css 3계층)가 SSOT(Single Source of Truth)입니다.
  * 이 파일은 JS 기반 타입 안정성과 IDE 자동완성 제공을 위해 유지됩니다.
  * 새로운 토큰 추가 시 CSS 변수 먼저 정의한 후, 이 파일을 갱신하세요.
  *
