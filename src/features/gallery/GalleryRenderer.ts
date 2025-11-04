@@ -29,7 +29,7 @@ import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBou
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging';
 import { getSolid } from '../../shared/external/vendors';
-import { unifiedDownloadService } from '@shared/services';
+import { unifiedDownloadService } from '@shared/services/unified-download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 
 let galleryMountCount = 0;

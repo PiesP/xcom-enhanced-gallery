@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { HttpRequestService } from '@shared/services';
+import { HttpRequestService } from '@shared/services/http-request-service';
 import { globalTimerManager } from '../../utils/timer-management';
 
 /**

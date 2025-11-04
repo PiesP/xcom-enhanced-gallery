@@ -7,7 +7,7 @@
 
 import { logger } from '@shared/logging';
 import { TWITTER_API_CONFIG } from '@/constants';
-import { HttpRequestService } from '@shared/services';
+import { HttpRequestService } from '@shared/services/http-request-service';
 import type {
   TwitterAPIResponse,
   TwitterTweet,
