@@ -28,7 +28,7 @@ import { getErrorMessage } from '../utils/error-handling';
 import { generateMediaFilename } from './file-naming';
 import { NotificationService } from './notification-service';
 import { DownloadOrchestrator } from './download/download-orchestrator';
-import { logger } from './core-services';
+import { logger } from '@shared/logging'; // Phase 350: 순환 참조 방지 (core-services → @shared/logging)
 import type { DownloadProgress } from './download/types';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';

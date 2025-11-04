@@ -25,7 +25,8 @@ export async function initializeDevTools(): Promise<void> {
 
   try {
     // 서비스 진단 도구
-    const { ServiceDiagnostics } = await import('../shared/services/core-services');
+    // Phase 350: ServiceDiagnostics 직접 import (순환 참조 방지)
+    const { ServiceDiagnostics } = await import('../shared/services/service-diagnostics');
     // DEV 전용 전역 진단 등록 (import 부작용 제거)
     ServiceDiagnostics.registerGlobalDiagnostic();
     await ServiceDiagnostics.diagnoseServiceManager();

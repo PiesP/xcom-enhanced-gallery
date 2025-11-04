@@ -1,14 +1,14 @@
 /**
  * @fileoverview Core Services Consolidation
- * @version 1.0.0 - Phase 1 Step 3
+ * @version 1.1.0 - Phase 350: 순환 참조 제거
  *
  * 작은 서비스 파일들의 통합
- * - ServiceDiagnostics
  * - ServiceRegistry (통합됨)
  * - CoreService (구 ServiceManager) export 추가
  *
  * Phase 1 Step 3: 파일 통합을 통한 복잡도 감소
  * Phase 2025-10-27: Logger 재정의 제거 (→ @shared/logging 사용)
+ * Phase 350 (2025-11-04): ServiceDiagnostics re-export 제거 (순환 참조 방지)
  */
 
 // ================================
@@ -40,9 +40,13 @@ export type ServiceKey = string;
  * ServiceManager 진단 도구
  *
  * ServiceManager의 상태와 서비스 등록 상황을 확인하는 도구
+ *
+ * Phase 350: 순환 참조 제거
+ * - ServiceDiagnostics는 개발 도구이므로 필요시 직접 import 사용:
+ *   import { ServiceDiagnostics } from '@shared/services/service-diagnostics';
+ * - core-services.ts에서 re-export 제거하여 순환 참조 방지
  */
-// Diagnostics are extracted to a separate module to avoid cycles
-export { ServiceDiagnostics } from './service-diagnostics';
+// export { ServiceDiagnostics } from './service-diagnostics'; // REMOVED: Circular dependency
 
 // ================================
 // Service Registry는 별도 파일로 분리됨
