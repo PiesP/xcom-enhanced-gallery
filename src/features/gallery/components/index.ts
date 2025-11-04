@@ -33,4 +33,4 @@ export { KeyboardHelpOverlay } from './vertical-gallery-view/KeyboardHelpOverlay
 export type { KeyboardHelpOverlayProps } from './vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
 
 // 갤러리 커스텀 훅
-export * from './vertical-gallery-view/hooks';
+export { useGalleryKeyboard, useProgressiveImage } from './vertical-gallery-view/hooks';
