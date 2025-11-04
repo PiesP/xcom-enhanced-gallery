@@ -1,6 +1,6 @@
 /**
  * @fileoverview Core Types - Infrastructure layer 타입 export
- * @version 3.0.0 - Phase 197: 구조 명확화
+ * @version 4.0.0 - Phase 352: Named export 최적화
  *
  * **역할**:
  * - 핵심 도메인 타입 (Result, BaseService 등)
@@ -13,11 +13,53 @@
  * - `@shared/types/result.types`: Result 패턴만
  */
 
-// 핵심 도메인 타입들
-export * from './core-types';
+// Phase 352: Explicit named exports from core-types
+export type { BaseService } from './core-types';
+export type {
+  ServiceLifecycle,
+  GalleryViewMode,
+  GalleryState,
+  GalleryEvents,
+  ViewMode,
+  MediaItem,
+  MediaMappingStrategy,
+  StrategyMetrics,
+  MappingCacheEntry,
+  GalleryConfig,
+  DownloadOptions,
+  Size,
+  EventHandler,
+  LoadingState,
+  AppConfig,
+  Cleanupable,
+  Lifecycle,
+  Result,
+  AsyncResult,
+  Option,
+} from './core-types';
 
-// UserScript API 타입들
-export * from './userscript.d';
+export {
+  VIEW_MODES,
+  isValidViewMode,
+  success,
+  failure,
+  safeAsync,
+  safe,
+  unwrapOr,
+  isSuccess,
+  isFailure,
+  chain,
+} from './core-types';
+
+// UserScript API types
+export type {
+  UserScriptInfo,
+  BrowserEnvironment,
+  UserScriptGrant,
+  UserScriptConnect,
+  UserScriptRunAt,
+  UserScriptMetadata,
+} from './userscript.d';
 
 // Backward compatibility: extraction types (실제는 media.types에 정의됨)
 export type {

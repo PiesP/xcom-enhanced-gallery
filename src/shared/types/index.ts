@@ -2,7 +2,7 @@
  * Shared Types Barrel Export
  *
  * @fileoverview 전체 타입 생태계의 단일 import 지점
- * @version 5.0.0 - Phase 197: 명확한 구조 개선
+ * @version 6.0.0 - Phase 352: Named export 최적화
  *
  * **구조**:
  * ```
@@ -26,35 +26,149 @@
  * - 일반적인 경우: `import type { ... } from '@shared/types'`
  * - 세부 타입이 필요한 경우: `import type { ... } from '@shared/types/media.types'`
  * - Result 패턴만: `import { success, failure } from '@shared/types/core/core-types'`
- *
- * **Phase 197 변경사항**:
- * - app.types.ts 350줄 → 205줄 (재-export 중심 구조화)
- * - BaseService 중복 제거 (core-types.ts에서 base-service.types.ts 재-export)
- * - JSDoc 현대화 및 명확성 개선
- * - toolbar-types.ts 제거 (features/gallery/types/toolbar.types.ts 사용)
  */
 
 // ==========================================
-// Shared Types Barrel Export
+// Phase 352: Explicit Named Exports
 // ==========================================
 
-// 미디어 관련 타입들
-export * from './media.types';
+// 미디어 관련 타입들 (가장 많이 사용되는 것들만 명시)
+export type { MediaType, MediaQuality } from '@/constants';
+export type {
+  MediaInfo,
+  MediaItem,
+  MediaEntity,
+  MediaId,
+  TweetInfo,
+  QuoteTweetInfo,
+  MediaExtractionOptions,
+  MediaExtractionResult,
+  ExtractionSource,
+  PageType,
+  ExtractionOptions,
+  ExtractionMetadata,
+  ExtractionContext,
+  MediaExtractor,
+  TweetInfoExtractionStrategy,
+  APIExtractor,
+  FallbackExtractionStrategy,
+  DownloadMediaItem,
+  BulkDownloadOptions,
+  GalleryRenderOptions,
+  GalleryOpenEventDetail,
+  GalleryOpenEvent,
+  GalleryCloseEvent,
+  MediaCollection,
+  MediaPageType,
+  ExtractionStrategy,
+  MediaMapping,
+  MediaMappingStrategy,
+  ValidationIssue,
+  ValidationResult,
+  MediaValidationResult,
+  MediaMetadata,
+  MediaInfoForFilename,
+  MediaItemForFilename,
+  MediaInfoWithFilename,
+  TweetUrl,
+  UrlWithFilename,
+  ExtractionConfidence,
+} from './media.types';
 
-// 앱 전역 타입들 (re-export 포함)
-export * from './app.types';
+export {
+  PageType as MediaPageTypeEnum,
+  ExtractionSource as ExtractionSourceEnum,
+} from './media.types';
+
+// 앱 전역 타입들
+export type {
+  AppConfig,
+  Cleanupable,
+  Result,
+  AsyncResult,
+  BaseService,
+  ServiceLifecycle,
+  Option,
+  Nullable,
+  Optional,
+  DeepPartial,
+  UserId,
+  TweetId,
+  ServiceKey,
+  ElementId,
+  MediaUrl,
+} from './app.types';
+
+export {
+  success,
+  failure,
+  safe,
+  safeAsync,
+  unwrapOr,
+  isSuccess,
+  isFailure,
+  chain,
+} from './app.types';
+
+// Core types from app.types re-exports
+export type {
+  ViewMode,
+  GalleryViewMode,
+  GalleryState,
+  GalleryEvents,
+  StrategyMetrics,
+  MappingCacheEntry,
+  GalleryConfig,
+  DownloadOptions,
+  Size,
+  Lifecycle,
+} from './core/core-types';
+
+export { VIEW_MODES, isValidViewMode } from './core/core-types';
 
 // UI/테마 타입들
-export * from './ui.types';
+export type {
+  Theme,
+  GalleryTheme,
+  ToastType,
+  ButtonVariant,
+  ButtonSize,
+  ColorVariant,
+  LoadingState,
+  AsyncState,
+  AnimationConfig,
+  ImageFitMode,
+  ImageFitOptions,
+  ImageFitCallbacks,
+  FilenameStrategy,
+  MediaFileExtension,
+  GlobalConfig,
+} from './ui.types';
 
 // 컴포넌트 Props 타입들
-export * from './component.types';
+export type {
+  VNode,
+  ComponentType,
+  ComponentChildren,
+  CSSProperties,
+  BaseComponentProps,
+  InteractiveComponentProps,
+  LoadingComponentProps,
+  SizedComponentProps,
+  VariantComponentProps,
+  FormComponentProps,
+  ContainerComponentProps,
+  GalleryComponentProps,
+  EventHandler,
+  MouseEventHandler,
+  KeyboardEventHandler,
+} from './component.types';
 
 // 네비게이션 상태 타입들
-export * from './navigation.types';
+export type { NavigationSource } from './navigation.types';
 
 // 툴바 UI 상태 타입들
-export * from './toolbar.types';
+export type { ToolbarDataState, FitMode, ToolbarState, ToolbarActions } from './toolbar.types';
 
 // Result 패턴 타입들 (ErrorCode와 Result 관련)
 export type {
@@ -65,8 +179,12 @@ export type {
   ResultError,
 } from './result.types';
 
-// UserScript API 타입들
-export * from './core/userscript.d';
-
-// 하위 호환성을 위한 re-export
-export type { Option } from './app.types';
+// UserScript API 타입들 (core/index.ts에서 재export)
+export type {
+  UserScriptInfo,
+  BrowserEnvironment,
+  UserScriptGrant,
+  UserScriptConnect,
+  UserScriptRunAt,
+  UserScriptMetadata,
+} from './core/userscript.d';
