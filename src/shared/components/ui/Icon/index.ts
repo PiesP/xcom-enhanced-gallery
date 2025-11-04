@@ -22,4 +22,5 @@ export { HeroFileZip as FileZip } from './hero/HeroFileZip';
 export { HeroArrowAutofitWidth as ArrowAutofitWidth } from './hero/HeroArrowAutofitWidth';
 export { HeroArrowAutofitHeight as ArrowAutofitHeight } from './hero/HeroArrowAutofitHeight';
 export { HeroArrowsMaximize as ArrowsMaximize } from './hero/HeroArrowsMaximize';
+export { HeroDocumentText as DocumentText } from './hero/HeroDocumentText';
 // Note: 레거시 Tabler Icons는 완전히 제거되었습니다. (Phase 215 완료)

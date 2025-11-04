@@ -35,6 +35,8 @@ export interface ToolbarProps {
   onFocus?: (event: FocusEvent) => void;
   onBlur?: (event: FocusEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
+  tweetText?: string | undefined;
+  tweetTextHTML?: string | undefined;
 }
 
 export type GalleryToolbarProps = ToolbarProps;

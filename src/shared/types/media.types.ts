@@ -44,6 +44,8 @@ export interface MediaInfo {
   tweetUsername?: string | undefined;
   tweetId?: string | undefined;
   tweetUrl?: string;
+  tweetText?: string | undefined;
+  tweetTextHTML?: string | undefined; // Phase 2: Sanitized HTML from DOM
   metadata?: Record<string, unknown>;
 }
 

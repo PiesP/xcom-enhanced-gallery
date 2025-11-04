@@ -111,6 +111,7 @@ function VerticalGalleryViewCore({
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
+
   // StabilityDetector: Activity 기반 안정 상태 감지 (Phase 83.1)
   const stabilityDetector = createStabilityDetector();
 
@@ -649,6 +650,8 @@ function VerticalGalleryViewCore({
           onFitHeight={handleFitHeight}
           onFitContainer={handleFitContainer}
           onOpenSettings={() => {}}
+          tweetText={mediaItems()[currentIndex()]?.tweetText}
+          tweetTextHTML={mediaItems()[currentIndex()]?.tweetTextHTML}
           className={styles.toolbar || ''}
         />
       </div>
