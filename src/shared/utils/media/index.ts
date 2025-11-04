@@ -8,7 +8,7 @@ export {
   type ImageFilterResult,
 } from './image-filter';
 
-// Media URL utilities
+// Media URL utilities (Phase 351: now via compat layer)
 export {
   getHighQualityMediaUrl,
   getMediaUrlsFromTweet,
@@ -20,7 +20,7 @@ export {
   classifyMediaUrl,
   shouldIncludeMediaUrl,
   type MediaTypeResult,
-} from './media-url.util';
+} from './media-url-compat';
 
 // Media Click Detection utilities
 export {
