@@ -10,6 +10,45 @@ and this project adheres to
 
 ### Added
 
+#### Media URL 유틸리티 모듈화 (Phase 351)
+
+- **6계층 아키텍처로 리팩토링**: 1,118줄 단일 파일 → 1,228줄 14개 모듈 파일
+  - **Validation Layer** (185줄): URL 유효성 검증
+    - `isValidMediaUrl()`: Twitter 미디어 도메인 검증
+    - 프로토콜, 경로, 도메인 검증 로직 분리
+  - **Classification Layer** (225줄): 미디어 타입 분류
+    - `classifyMediaUrl()`: 이미지/비디오 타입 감지
+    - `isEmojiUrl()`, `isVideoThumbnailUrl()`: 특수 케이스 필터링
+    - `shouldIncludeMediaUrl()`: 포함 여부 결정
+  - **Transformation Layer** (395줄): URL 최적화
+    - Image: `extractOriginalImageUrl()` (name=orig)
+    - Video: `extractOriginalVideoUrl()` (tag=12)
+    - Thumbnail conversion utilities
+  - **Quality Layer** (110줄): 품질 파라미터 관리
+    - `getHighQualityMediaUrl()`: large/medium/small 선택
+  - **Factory Layer** (60줄): 파일명 유틸리티
+    - `cleanFilename()`: 안전한 파일명 생성
+  - **Types** (85줄): 공통 타입 정의
+- **Tree-shaking 준비**: Layer별 독립 import 가능
+  - 선택적 번들링: Validation만 270줄 (vs 1,118줄 전체)
+  - 예상 절감: 75% (validation), 72% (classification), 57% (transformation)
+- **완벽한 후방호환성**:
+  - `media-url-compat.ts` 호환성 레이어 제공
+  - 기존 import 경로 유지 (`@shared/utils/media`)
+  - 새 import 경로 지원 (`@shared/utils/media-url`)
+- **함수 마이그레이션**: 16/20 함수 (80%)
+  - ✅ Migrated: validation (1), classification (4), transformation (8), quality
+    (1), factory (1), types (7)
+  - ⏸️ Deferred: extraction layer (4) - DOM-dependent, future phase
+- **번들 크기**:
+  - Production: 418 KB (116 KB gzipped, 72% 압축)
+  - Development: 1.1 MB (소스맵 포함)
+  - 추가 문서: 259 KB bundle analysis HTML
+- **문서화**:
+  - `PHASE_351_COMPLETION.md`: 완료 보고서 (아키텍처, 함수 매핑, 의존성)
+  - `PHASE_351_BUNDLE_ANALYSIS.md`: 번들 크기 분석 (treemap, 최적화 기회)
+  - `PHASE_351_352_MODULARIZATION_PLAN.md`: 기획 문서
+
 #### 인용 리트윗(Quote Tweet) 미디어 추출 (Phase 342, v0.5.0)
 
 - **인용 리트윗 내부 미디어 정확한 추출**: 중첩 DOM 구조 처리
