@@ -2,11 +2,19 @@
  * @fileoverview Gallery App Initialization
  * @description Phase 2.1: 갤러리 앱 생성 및 초기화
  * 지연 로딩 및 생명주기 관리
+ * Phase 345: 타입 안전성 강화
  */
 
 import { logger, tracePoint } from '../shared/logging';
 import { registerGalleryRenderer } from '../shared/container/service-accessors';
 import type { IGalleryApp } from '../shared/container/app-container';
+
+// Phase 345: 타입 가드 - 개발 환경 전역 네임스페이스
+declare global {
+  interface Window {
+    __XEG_GALLERY_APP__?: IGalleryApp;
+  }
+}
 
 /** 갤러리 앱 인스턴스 (모듈 레벨 관리) */
 let galleryAppInstance: IGalleryApp | null = null;
@@ -56,13 +64,9 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     logger.info('✅ 갤러리 앱 초기화 완료');
     if (__DEV__ && tracePoint) tracePoint('gallery:init:done');
 
-    // 개발 환경에서만 디버깅용 전역 접근 허용
+    // Phase 345: 타입 안전한 전역 접근 (개발 환경만)
     if (import.meta.env.DEV) {
-      const __devKey = (codes: number[]) => String.fromCharCode(...codes);
-      const kApp = __devKey([
-        95, 95, 88, 69, 71, 95, 71, 65, 76, 76, 69, 82, 89, 95, 65, 80, 80, 95, 95,
-      ]); // "__XEG_GALLERY_APP__"
-      (globalThis as Record<string, unknown>)[kApp] = galleryAppInstance;
+      window.__XEG_GALLERY_APP__ = galleryAppInstance;
     }
 
     return galleryAppInstance as IGalleryApp;

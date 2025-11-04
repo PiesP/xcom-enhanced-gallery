@@ -7,6 +7,9 @@
  * - 사용자 설정 기반 기능 플래그 확인
  * - 활성화된 기능만 로드
  * - 미사용 기능은 번들에서 tree-shaking으로 제거
+ *
+ * Phase 343: Error Handling Standardization
+ * - Non-Critical 시스템으로 에러 발생 시 경고만 출력
  */
 
 import { logger } from '../shared/logging';
@@ -17,6 +20,7 @@ import {
   createConditionalLoader,
 } from '@shared/utils/conditional-loading';
 import type { SettingsWithFeatures } from '@shared/utils/conditional-loading';
+import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
 
 /**
  * Feature 서비스 지연 등록
@@ -29,6 +33,8 @@ import type { SettingsWithFeatures } from '@shared/utils/conditional-loading';
  * - 기능 플래그가 비활성화되면 해당 서비스는 로드되지 않음
  * - Tree-shaking으로 미사용 코드가 번들에서 제거됨
  * - 번들 크기 2-5% 추가 감소
+ *
+ * Phase 343: Non-Critical 시스템으로 실패 시 경고만
  *
  * @remarks
  * 서비스 로딩 실패는 치명적이지 않으며, 경고만 기록합니다.
@@ -123,7 +129,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
 
     logger.debug('[features] ✅ Feature services registered');
   } catch (error) {
-    // Feature 서비스 로딩 실패는 치명적이지 않음 - 경고만 기록
-    logger.warn('[features] ⚠️ Feature service registration failed:', error);
+    // Phase 343: 표준화된 에러 처리 (Non-Critical - 경고만)
+    handleBootstrapError(error, { ...NON_CRITICAL_ERROR_STRATEGY, context: 'features' }, logger);
   }
 }
