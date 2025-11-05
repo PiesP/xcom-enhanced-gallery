@@ -7,7 +7,7 @@
 
 import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { MediaExtractionOptions } from '@shared/types/media.types';
-import type { MediaInfo, MediaItem } from '@shared/types/media.types';
+import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
 import type { BaseResultStatus } from '@shared/types/result.types';
 import type { DownloadProgress } from './download/types';
@@ -325,7 +325,7 @@ export class MediaService extends BaseServiceImpl {
    * @returns 시뮬레이션 결과
    */
   async simulateMediaFetch(
-    mediaItems: (MediaInfo | MediaItem)[],
+    mediaItems: MediaInfo[],
     options: { signal?: AbortSignal } = {}
   ): Promise<SimulatedMediaFetchResult> {
     try {
@@ -806,7 +806,7 @@ export class MediaService extends BaseServiceImpl {
     };
   }
 
-  async downloadSingle(media: MediaInfo | MediaItem): Promise<SingleDownloadResult> {
+  async downloadSingle(media: MediaInfo): Promise<SingleDownloadResult> {
     const { unifiedDownloadService } = await import('./unified-download-service');
     const result = await unifiedDownloadService.downloadSingle(media);
 
@@ -821,7 +821,7 @@ export class MediaService extends BaseServiceImpl {
   }
 
   async downloadMultiple(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo>,
     _options?: BulkDownloadOptions
   ): Promise<DownloadResult> {
     const { unifiedDownloadService } = await import('./unified-download-service');
@@ -839,7 +839,7 @@ export class MediaService extends BaseServiceImpl {
   }
 
   async downloadBulk(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
+    mediaItems: readonly MediaInfo[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     return this.downloadMultiple(Array.from(mediaItems), options);

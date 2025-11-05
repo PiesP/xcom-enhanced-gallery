@@ -21,7 +21,6 @@ export type {
   GalleryState,
   GalleryEvents,
   ViewMode,
-  MediaItem,
   MediaMappingStrategy,
   StrategyMetrics,
   MappingCacheEntry,

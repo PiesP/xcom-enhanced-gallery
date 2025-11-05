@@ -97,12 +97,6 @@ export function isValidViewMode(mode: string): mode is (typeof VIEW_MODES)[numbe
 // ========================================
 // CORE UTILITY TYPES
 // ========================================
-
-/**
- * Re-export utility types from root media.types (Phase 195)
- */
-export type { MediaItem } from '@shared/types/media.types';
-
 // ========================================
 // MEDIA MAPPING TYPES (from media.types.ts)
 // ========================================

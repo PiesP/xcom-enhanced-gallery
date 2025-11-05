@@ -63,9 +63,9 @@ const SUPPORTED_EXTENSIONS = /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i;
  * @example
  * ```typescript
  * const service = new FilenameService();
- * const filename = service.generateMediaFilename(mediaItem, { index: 1 });
+ * const filename = service.generateMediaFilename(mediaInfo, { index: 1 });
  * // 결과: "username_1234567890_20250101_1.jpg"
- * const zipFilename = service.generateZipFilename([mediaItem]);
+ * const zipFilename = service.generateZipFilename([mediaInfo]);
  * // 결과: "username_1234567890_20250101.zip"
  * ```
  */
@@ -407,7 +407,7 @@ export class FilenameService {
  *
  * @example
  * ```typescript
- * const filename = generateMediaFilename(mediaItem, { index: 2 });
+ * const filename = generateMediaFilename(mediaInfo, { index: 2 });
  * // "username_1234567890_20250101_2.jpg"
  * ```
  */

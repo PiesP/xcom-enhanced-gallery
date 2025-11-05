@@ -36,7 +36,6 @@
 export type { MediaType, MediaQuality } from '@/constants';
 export type {
   MediaInfo,
-  MediaItem,
   MediaEntity,
   MediaId,
   TweetInfo,

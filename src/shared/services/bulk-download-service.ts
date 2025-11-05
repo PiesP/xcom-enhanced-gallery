@@ -1,6 +1,6 @@
 /** Bulk download service - ZIP/individual download */
 
-import type { MediaInfo, MediaItem } from '../types/media.types';
+import type { MediaInfo } from '../types/media.types';
 import type { MediaItemForFilename } from '../types/media.types';
 import { logger, createCorrelationId, createScopedLoggerWithCorrelation } from '@shared/logging';
 import { getNativeDownload } from '../external/vendors';
@@ -83,14 +83,14 @@ export interface SimulatedBulkDownloadResult {
   message: string;
 }
 
-function ensureMediaItem(media: MediaInfo | MediaItem): MediaItem & { id: string } {
+function ensureMediaItem(media: MediaInfo): MediaInfo & { id: string } {
   return {
     ...media,
     id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   };
 }
 
-function toFilenameCompatible(media: MediaInfo | MediaItem): MediaItemForFilename {
+function toFilenameCompatible(media: MediaInfo): MediaItemForFilename {
   const ensured = ensureMediaItem(media);
   const result: MediaItemForFilename = { id: ensured.id, url: ensured.url, type: ensured.type };
 
@@ -121,7 +121,7 @@ export class BulkDownloadService extends BaseServiceImpl {
   }
 
   public async downloadSingle(
-    media: MediaInfo | MediaItem,
+    media: MediaInfo,
     options: { signal?: AbortSignal } = {}
   ): Promise<SingleDownloadResult> {
     try {
@@ -161,7 +161,7 @@ export class BulkDownloadService extends BaseServiceImpl {
   }
 
   public async downloadMultiple(
-    mediaItems: Array<MediaInfo | MediaItem> | readonly (MediaInfo | MediaItem)[],
+    mediaItems: Array<MediaInfo> | readonly MediaInfo[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     const correlationId = createCorrelationId();
@@ -259,7 +259,7 @@ export class BulkDownloadService extends BaseServiceImpl {
   }
 
   private async downloadAsZip(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo>,
     options: BulkDownloadOptions
   ): Promise<DownloadResult> {
     try {
@@ -398,7 +398,7 @@ export class BulkDownloadService extends BaseServiceImpl {
   }
 
   async downloadBulk(
-    mediaItems: readonly (MediaItem | MediaInfo)[],
+    mediaItems: readonly MediaInfo[],
     options: BulkDownloadOptions = {}
   ): Promise<DownloadResult> {
     return this.downloadMultiple(Array.from(mediaItems), options);
@@ -494,7 +494,7 @@ export class BulkDownloadService extends BaseServiceImpl {
    * // }
    */
   async simulateBulkDownload(
-    mediaItems: (MediaInfo | MediaItem)[],
+    mediaItems: MediaInfo[],
     options: BulkDownloadOptions = {}
   ): Promise<SimulatedBulkDownloadResult> {
     const filenames: string[] = [];
