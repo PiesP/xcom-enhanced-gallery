@@ -48,19 +48,8 @@ export interface Cleanupable {
 // 핵심 타입 및 패턴 (재-export)
 // ================================
 
-// Result 패턴 - core-types에서 재-export
+// Result 패턴 - core-types에서 재-export (Phase 355.2: 유틸리티 함수 제거, result.types로 이동)
 export type { Result, AsyncResult } from './core/core-types';
-export {
-  success,
-  failure,
-  isSuccess,
-  isFailure,
-  unwrapOr,
-  map,
-  chain,
-  safe,
-  safeAsync,
-} from './core/core-types';
 
 // BaseService 및 서비스 타입들
 export type { BaseService } from './core/core-types';

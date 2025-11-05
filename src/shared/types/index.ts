@@ -79,11 +79,10 @@ export {
   ExtractionSource as ExtractionSourceEnum,
 } from './media.types';
 
-// 앱 전역 타입들
+// 앱 전역 타입들 (Phase 355.2: Result 타입 제거, result.types로 이동)
 export type {
   AppConfig,
   Cleanupable,
-  Result,
   AsyncResult,
   BaseService,
   ServiceLifecycle,
@@ -96,17 +95,6 @@ export type {
   ServiceKey,
   ElementId,
   MediaUrl,
-} from './app.types';
-
-export {
-  success,
-  failure,
-  safe,
-  safeAsync,
-  unwrapOr,
-  isSuccess,
-  isFailure,
-  chain,
 } from './app.types';
 
 // Core types from app.types re-exports
@@ -175,8 +163,34 @@ export type {
   ErrorCode,
   BaseResult,
   ResultSuccess,
+  ResultPartial,
   ResultError,
+  Result,
 } from './result.types';
+
+// Result 유틸리티 함수들 (Phase 355.2)
+export {
+  success,
+  failure,
+  partial,
+  cancelled,
+  isSuccess,
+  isFailure,
+  isPartial,
+  unwrapOr,
+  safe,
+  safeAsync,
+  chain,
+  map,
+} from './result.types';
+
+// Result 호환성 레이어 (Phase 355.2)
+export {
+  toEnhancedResult,
+  toSimpleResult,
+  toEnhancedResults,
+  toSimpleResults,
+} from './result-compat';
 
 // UserScript API 타입들 (core/index.ts에서 재export)
 export type {
