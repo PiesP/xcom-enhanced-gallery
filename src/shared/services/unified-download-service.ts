@@ -22,7 +22,7 @@
  * 유지보수성: 100% ↑
  */
 
-import type { MediaInfo, MediaItem } from '../types/media.types';
+import type { MediaInfo } from '../types/media.types';
 import type { MediaItemForFilename } from '../types/media.types';
 import { getErrorMessage } from '../utils/error-handling';
 import { generateMediaFilename } from './file-naming';
@@ -230,7 +230,7 @@ export class UnifiedDownloadService {
    * @returns 다운로드 결과
    */
   async downloadSingle(
-    media: MediaInfo | MediaItem,
+    media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     try {
@@ -303,7 +303,7 @@ export class UnifiedDownloadService {
    * @returns 다운로드 결과
    */
   async downloadBulk(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo>,
     options: DownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     if (mediaItems.length === 0) {
@@ -358,7 +358,7 @@ export class UnifiedDownloadService {
    * @returns 다운로드 결과
    */
   private async downloadAsZip(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo>,
     options: DownloadOptions
   ): Promise<BulkDownloadResult> {
     try {
@@ -456,7 +456,7 @@ export class UnifiedDownloadService {
    * @returns 시뮬레이션 결과
    */
   async simulateUnifiedDownload(
-    mediaItems: Array<MediaInfo | MediaItem>,
+    mediaItems: Array<MediaInfo>,
     options: { signal?: AbortSignal } = {}
   ): Promise<SimulatedUnifiedDownloadResult> {
     try {
@@ -579,9 +579,9 @@ export class UnifiedDownloadService {
   // ====================================
 
   /**
-   * MediaInfo | MediaItem을 MediaItemForFilename으로 변환
+   * MediaInfo을 MediaItemForFilename으로 변환
    */
-  private toMediaItemForFilename(media: MediaInfo | MediaItem): MediaItemForFilename {
+  private toMediaItemForFilename(media: MediaInfo): MediaItemForFilename {
     const result: MediaItemForFilename = {
       id: media.id || `media_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       url: media.url,
@@ -607,7 +607,7 @@ export class UnifiedDownloadService {
   /**
    * 미디어 URL 획득
    */
-  private getMediaUrl(media: MediaInfo | MediaItem): string {
+  private getMediaUrl(media: MediaInfo): string {
     return media.url;
   }
 

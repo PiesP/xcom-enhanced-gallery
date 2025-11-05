@@ -69,7 +69,6 @@ export interface MediaEntity extends MediaInfo {
 /**
  * 미디어 아이템 (MediaInfo 별칭)
  */
-export type MediaItem = MediaInfo;
 
 /**
  * 파일명 생성용 미디어 정보 (별칭)
@@ -423,7 +422,7 @@ export interface GalleryRenderOptions {
  */
 export interface GalleryOpenEventDetail {
   /** 미디어 아이템 목록 */
-  media: MediaItem[];
+  media: MediaInfo[];
   /** 시작 인덱스 */
   startIndex: number;
 }
@@ -446,7 +445,7 @@ export interface GalleryCloseEvent extends CustomEvent<void> {
  * 미디어 컬렉션 인터페이스 (Core에서 병합)
  */
 export interface MediaCollection {
-  items: MediaItem[];
+  items: MediaInfo[];
   totalCount: number;
   currentIndex: number;
 }

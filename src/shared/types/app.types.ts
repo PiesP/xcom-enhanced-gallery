@@ -183,7 +183,6 @@ export type {
   MediaId,
   MediaInfo,
   MediaEntity,
-  MediaItem,
   MediaInfoForFilename,
   MediaItemForFilename,
   MediaInfoWithFilename,
