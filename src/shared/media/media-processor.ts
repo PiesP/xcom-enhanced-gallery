@@ -3,7 +3,9 @@
  * @description HTML → MediaDescriptor[] 변환을 위한 통합 처리기
  */
 
-import type { MediaDescriptor, Result } from './types';
+import type { MediaDescriptor } from './types';
+import type { Result } from '@shared/types/result.types';
+import { failure, ErrorCode, isSuccess } from '@shared/types/result.types';
 import { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
 import { logger } from '../logging';
 
@@ -86,9 +88,9 @@ export class MediaProcessor {
 
       // 5단계: 최종 검증
       const result = validate(unique);
-      record('validate', result.success ? result.data.length : 0);
+      record('validate', isSuccess(result) ? result.data.length : 0);
 
-      if (result.success) {
+      if (isSuccess(result)) {
         logger.info(`✅ MediaProcessor: ${result.data.length}개 미디어 처리 완료`);
       } else {
         // Avoid direct union property access; log a generic failure message
@@ -101,20 +103,23 @@ export class MediaProcessor {
         const totalMs = Math.max(0, now - startTime);
         onStage?.({
           stage: 'complete',
-          count: result.success ? result.data.length : 0,
+          count: isSuccess(result) ? result.data.length : 0,
           stageMs,
           totalMs,
         });
       } else {
-        onStage?.({ stage: 'complete', count: result.success ? result.data.length : 0 });
+        onStage?.({ stage: 'complete', count: isSuccess(result) ? result.data.length : 0 });
       }
       return collectTelemetry ? { ...result, telemetry } : result;
     } catch (error) {
       logger.error('❌ MediaProcessor: 처리 중 오류:', error);
-      const err: Result<MediaDescriptor[]> = {
-        success: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      };
+      const err = failure<MediaDescriptor[]>(
+        error instanceof Error ? error.message : String(error),
+        ErrorCode.UNKNOWN,
+        {
+          cause: error instanceof Error ? error : undefined,
+        }
+      );
       if (collectTelemetry) {
         const now = performance.now();
         const stageMs = Math.max(0, now - lastTime);
@@ -139,10 +144,9 @@ export class MediaProcessor {
 export function processMedia(root: HTMLElement): Result<MediaDescriptor[]> {
   // null 체크
   if (!root) {
-    return {
-      success: false,
-      error: new Error('processMedia: root element가 null입니다'),
-    };
+    return failure('processMedia: root element가 null입니다', ErrorCode.INVALID_ELEMENT, {
+      meta: { rootElementType: typeof root },
+    });
   }
 
   const processor = new MediaProcessor();

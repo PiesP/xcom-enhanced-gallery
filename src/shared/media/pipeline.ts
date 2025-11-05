@@ -3,7 +3,9 @@
  * @description 단계별 미디어 처리 함수들
  */
 
-import type { MediaDescriptor, MediaVariant, RawMediaCandidate, Result } from './types';
+import type { MediaDescriptor, MediaVariant, RawMediaCandidate } from './types';
+import type { Result } from '@shared/types/result.types';
+import { success, failure, ErrorCode } from '@shared/types/result.types';
 import { logger } from '../logging';
 import {
   extractOriginalImageUrl,
@@ -201,18 +203,23 @@ export function dedupe(descriptors: MediaDescriptor[]): MediaDescriptor[] {
 export function validate(descriptors: MediaDescriptor[]): Result<MediaDescriptor[]> {
   try {
     // 유효한 URL인지 검사
+    const invalidUrls: string[] = [];
     for (const desc of descriptors) {
       if (!isValidUrl(desc.url)) {
         logger.warn(`유효하지 않은 URL 발견: ${desc.url}`);
+        invalidUrls.push(desc.url);
       }
     }
 
-    return { success: true, data: descriptors };
+    return success(descriptors, {
+      validatedCount: descriptors.length,
+      invalidUrlCount: invalidUrls.length,
+    });
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error : new Error(String(error)),
-    };
+    return failure(error instanceof Error ? error.message : String(error), ErrorCode.UNKNOWN, {
+      cause: error instanceof Error ? error : undefined,
+      meta: { descriptorCount: descriptors.length },
+    });
   }
 }
 
