@@ -8,6 +8,29 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+#### 타입 시스템 최적화 (Phase 353)
+
+- **AsyncResult 시그니처 단순화**
+  - `AsyncResult<T, E>` → `AsyncResult<T>` 제네릭 파라미터 감소
+  - 프로젝트가 `ErrorCode` enum을 사용하므로 E 파라미터 불필요
+  - 파일: `src/shared/types/core/core-types.ts`
+- **Deprecated 타입 제거**
+  - `ExtractionErrorCode` 별칭 완전 제거 (Phase 195에서 `ErrorCode`로 통합됨)
+  - 실제 사용처 0개 확인 후 안전하게 제거
+  - 마이그레이션 가이드: `ErrorCode`를 직접 사용
+    (`import { ErrorCode } from '@shared/types'`)
+  - 영향 파일:
+    - `src/shared/types/core/extraction.types.ts` (v3.1.0)
+    - `src/shared/types/core/index.ts`
+    - `src/shared/types/media.types.ts`
+    - `src/shared/types/result.types.ts` (v2.1.0)
+
+- **Breaking Changes**: 없음 (deprecated 타입은 사용처 없음)
+- **코드 감소**: -3줄 (export 제거)
+- **타입 명확성**: 향상 (중복 제거, 단일 ErrorCode 사용)
+
 ### Added
 
 #### Media URL 유틸리티 모듈화 (Phase 351)
