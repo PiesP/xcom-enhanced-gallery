@@ -236,8 +236,9 @@ export type Result<T, E = Error> = { success: true; data: T } | { success: false
 
 /**
  * 비동기 Result 타입
+ * @note E 파라미터 제거 - 프로젝트는 ErrorCode enum 사용
  */
-export type AsyncResult<T, E = Error> = Promise<Result<T, E>>;
+export type AsyncResult<T> = Promise<Result<T>>;
 
 /**
  * Option 타입 - 값이 있거나 없음을 명시적으로 표현

@@ -72,4 +72,5 @@ export type {
   MediaExtractionResult,
 } from './extraction.types';
 
-export { ExtractionError, ExtractionErrorCode } from './extraction.types';
+export { ExtractionError } from './extraction.types';
+// ExtractionErrorCode는 Phase 353에서 제거됨 - ErrorCode 사용 권장
