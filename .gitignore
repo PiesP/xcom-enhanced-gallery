@@ -35,8 +35,6 @@
 !/README.md
 !/LICENSE
 !/CHANGELOG.md
-!/docs
-!/docs/**
 
 # --- GitHub Actions (배포/보안) ---
 !/.github

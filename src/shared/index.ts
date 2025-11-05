@@ -1,6 +1,6 @@
 /**
  * @fileoverview Shared Layer Exports
- * @version 4.0.0 - Phase 352: Named export 최적화
+ * @version 4.1.0 - Phase 353: Export 최적화 및 정리
  * @description 모든 공통 기능을 통합한 Shared 레이어
  */
 
@@ -8,31 +8,32 @@
 // 핵심 UI 컴포넌트들
 // ====================================
 
+// Types
 export type {
   StandardButtonProps,
   StandardToastProps,
   StandardToastContainerProps,
   StandardToolbarProps,
+  IconProps,
+  LazyIconProps,
+  ButtonProps,
+  IconButtonProps,
+  ToastContainerProps,
+  ToolbarProps,
+  GalleryToolbarProps,
+  FitMode,
 } from './components/ui';
 
+// Components & Constants
 export { DEFAULT_SIZES, DEFAULT_VARIANTS, DEFAULT_TOAST_TYPES } from './components/ui';
-export { Icon } from './components/ui';
-export type { IconProps } from './components/ui';
-export { LazyIcon, useIconPreload, useCommonIconPreload } from './components/ui';
-export type { LazyIconProps } from './components/ui';
-export { Button } from './components/ui';
-export type { ButtonProps } from './components/ui';
-export { IconButton } from './components/ui';
-export type { IconButtonProps } from './components/ui';
+export { Icon, LazyIcon, useIconPreload, useCommonIconPreload } from './components/ui';
+export { Button, IconButton } from './components/ui';
 export { Toast, ToastContainer } from './components/ui';
-export type { ToastContainerProps } from './components/ui';
 export { Toolbar } from './components/ui';
-export type { ToolbarProps, GalleryToolbarProps, FitMode } from './components/ui';
 
 // ====================================
 // 격리 컴포넌트들 (갤러리 전용)
 // ====================================
-
 export {
   GalleryContainer,
   mountGallery,
@@ -44,15 +45,14 @@ export {
 // HOC 컴포넌트들
 // ====================================
 
-export { withGallery, type GalleryComponentProps } from './components/hoc';
+export { withGallery } from './components/hoc';
+export type { GalleryComponentProps } from './components/hoc';
 
 // ====================================
 // 서비스들
 // ====================================
 
-export { BaseService } from './services';
-export { AnimationService, MediaService } from './services';
-export { extractUsername, parseUsernameFast } from './services';
+// Types
 export type {
   UsernameExtractionResult,
   MediaLoadingState,
@@ -61,11 +61,24 @@ export type {
   BulkDownloadOptions,
   DownloadResult,
   DownloadProgress,
+  Theme,
+  SupportedLanguage,
+  LanguageStrings,
+  BaseLanguageCode,
+  ToastOptions,
+  ToastItem,
+  FilenameOptions,
+  ZipFilenameOptions,
+  TokenExtractionResult,
+  TokenValidationResult,
 } from './services';
+
+// Services
+export { BaseService } from './services';
+export { AnimationService, MediaService } from './services';
+export { extractUsername, parseUsernameFast } from './services';
 export { ThemeService } from './services';
-export type { Theme } from './services';
 export { LanguageService } from './services';
-export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './services';
 export {
   FocusObserverManager,
   createFocusObserverManager,
@@ -76,7 +89,6 @@ export {
   toastManager,
   ToastManager,
 } from './services';
-export type { ToastOptions, ToastItem } from './services';
 export {
   FilenameService,
   generateMediaFilename,
@@ -84,27 +96,30 @@ export {
   isValidMediaFilename,
   isValidZipFilename,
 } from './services';
-export type { FilenameOptions, ZipFilenameOptions } from './services';
 export { BrowserService, TwitterTokenExtractor } from './services';
-export type { TokenExtractionResult, TokenValidationResult } from './services';
 export { CoreService } from './services';
-export { type StorageAdapter, UserscriptStorageAdapter } from './services';
+
+// Storage & Infrastructure Services
+export { UserscriptStorageAdapter } from './services';
+export type { StorageAdapter, StorageUsage } from './services';
 export { PersistentStorage, getPersistentStorage } from './services';
-export type { StorageUsage } from './services';
-export {
-  NotificationService,
-  getNotificationService,
-  UnifiedDownloadService,
-  unifiedDownloadService,
-  DownloadService,
-  downloadService,
-  HttpRequestService,
-  getHttpRequestService,
-} from './services';
+
+// Notification Service
+export { NotificationService, getNotificationService } from './services';
 export type {
   NotificationOptions,
   NotificationProvider,
   NotificationProviderInfo,
+} from './services';
+
+// Download Services
+export {
+  UnifiedDownloadService,
+  unifiedDownloadService,
+  DownloadService,
+  downloadService,
+} from './services';
+export type {
   UnifiedDownloadOptions,
   UnifiedSingleDownloadResult,
   UnifiedBulkDownloadResult,
@@ -112,23 +127,24 @@ export type {
   BlobDownloadResult,
   TestModeDownloadOptions,
   TestModeDownloadResult,
-  HttpRequestOptions,
-  BinaryRequestOptions,
-  HttpResponse,
 } from './services';
-export {
-  HttpError,
-  formatErrorMessage,
-  formatErrorForLogging,
-  createErrorContext,
-} from './services';
+
+// HTTP Request Service
+export { HttpRequestService, getHttpRequestService, HttpError } from './services';
+export type { HttpRequestOptions, BinaryRequestOptions, HttpResponse } from './services';
+
+// Error Handling
+export { formatErrorMessage, formatErrorForLogging, createErrorContext } from './services';
 export type { ErrorContext, FormattedError } from './services';
-export { logger, type ILogger, type Logger } from './services';
 
 // ====================================
 // 상태 관리
 // ====================================
 
+// Types
+export type { NavigationSource } from './state';
+
+// State & Actions
 export {
   gallerySignals,
   openGallery,
@@ -157,16 +173,26 @@ export {
   setSettingsExpanded,
   downloadState,
 } from './state';
-export type { NavigationSource } from './state';
 
 // ====================================
 // 로깅 시스템
 // ====================================
 
+// Types
+export type {
+  LogLevel,
+  LoggableData,
+  Logger as LoggerType,
+  MemorySnapshot,
+  TraceOptions,
+} from './logging';
+
+// Logger & Utilities
 export {
   LOG_LEVELS,
   createLogger,
-  logger as loggingLogger,
+  logger,
+  defaultLogger,
   createScopedLogger,
   createScopedLoggerWithCorrelation,
   createCorrelationId,
@@ -183,21 +209,13 @@ export {
   stopFlowTrace,
   traceStatus,
 } from './logging';
-export type {
-  LogLevel,
-  LoggableData,
-  Logger as LoggerType,
-  MemorySnapshot,
-  TraceOptions,
-} from './logging';
-export { defaultLogger } from './logging';
 
 // ====================================
 // 핵심 유틸리티들
 // ====================================
 
+// Accessibility & DOM
 export {
-  // 접근성 & DOM 유틸리티
   detectLightBackground,
   getRelativeLuminance,
   parseColor,
@@ -210,7 +228,7 @@ export {
   isGalleryInternalElement,
 } from './utils';
 
-// 새로운 P4-P7 유틸리티들
+// Signal Selectors
 export {
   createSelector,
   useSelector,
@@ -219,16 +237,15 @@ export {
   getGlobalSelectorStats,
   clearGlobalSelectorStats,
 } from './utils/signal-selector';
+
+// Focus Management
 export { createFocusTrap } from './utils/focus-trap';
 export type { FocusTrapOptions, FocusTrap } from './utils/focus-trap';
-export {
-  getToolbarDataState,
-  getToolbarClassName,
-  type ToolbarDataState,
-} from './utils/toolbar-utils';
-
-// 새로운 P4-P7 훅들
 export { useFocusTrap } from './hooks/use-focus-trap';
+
+// Toolbar Utilities
+export { getToolbarDataState, getToolbarClassName } from './utils/toolbar-utils';
+export type { ToolbarDataState } from './utils/toolbar-utils';
 
 // ====================================
 // 스타일 토큰들

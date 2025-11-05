@@ -83,14 +83,7 @@ export { BrowserService } from '@shared/browser';
 export { TwitterTokenExtractor } from './token-extraction';
 export type { TokenExtractionResult, TokenValidationResult } from './token-extraction';
 
-// 6. 갤러리 서비스 - GalleryService 제거됨
-// export { GalleryService } from './gallery';
-// export type { OpenGalleryOptions, NavigationResult, GalleryInfo } from './gallery';
-
-// 7. 지연 로딩 서비스 - 제거됨 (현재 구현되지 않음)
-// export { LazyLoadingService } from './LazyLoadingService';
-
-// 8. 서비스 관리 (ServiceRegistry 통합)
+// 7. 서비스 관리 (ServiceRegistry 통합)
 export { CoreService } from './service-manager';
 
 // ====================================
