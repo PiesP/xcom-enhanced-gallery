@@ -1,8 +1,8 @@
 # Phase 370: Critical CSS Extraction Automation Plan
 
-**Status**: 📋 Planning  
-**Created**: 2025-11-05  
-**Target**: Phase 370+ (Long-term)  
+**Status**: 📋 Planning
+**Created**: 2025-11-05
+**Target**: Phase 370+ (Long-term)
 **Priority**: P3 (Low-Medium)
 
 ---
@@ -140,7 +140,7 @@ export default defineConfig({
     * { margin: 0; padding: 0; }
     .xeg-gallery-root { ... }
   </style>
-  
+
   <!-- Non-critical CSS (lazy load) -->
   <link rel="preload" href="/assets/style-[hash].css" as="style" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="/assets/style-[hash].css"></noscript>
