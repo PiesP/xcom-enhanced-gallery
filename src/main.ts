@@ -9,7 +9,7 @@
 import { logger, tracePoint, traceAsync, startFlowTrace, stopFlowTrace } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
-import type { AppConfig } from '@/types';
+import type { AppConfig } from '@shared/types';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { waitForWindowLoad } from '@shared/utils/window-load';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';

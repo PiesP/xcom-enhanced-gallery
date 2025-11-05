@@ -3,7 +3,7 @@
  * @description CoreService 대체를 위한 타입 안전한 컨테이너 인터페이스
  */
 
-import type { AppConfig } from '@/types';
+import type { AppConfig } from '@shared/types';
 
 /**
  * 로거 인터페이스
