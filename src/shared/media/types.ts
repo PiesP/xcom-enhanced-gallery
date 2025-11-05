@@ -8,9 +8,11 @@ import type { MediaType } from '@/constants';
 export type { MediaType };
 
 /**
- * Result 패턴 - 성공/실패를 타입으로 표현
+ * Result 패턴 - Enhanced Result 사용
+ * @deprecated Simple Result<T, E> 패턴은 Phase 355.4에서 제거됨
+ * @see {@link @shared/types/result.types} - Enhanced Result 정의
  */
-export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+export type { Result } from '@shared/types/result.types';
 
 /**
  * 미디어 품질 변형

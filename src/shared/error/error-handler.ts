@@ -138,7 +138,7 @@ import {
   safeAsync as coreSafeAsync,
   safe as coreSafe,
   isSuccess,
-} from '@shared/types/core/core-types';
+} from '@shared/types/result.types';
 
 /**
  * 비동기 안전 실행 래퍼

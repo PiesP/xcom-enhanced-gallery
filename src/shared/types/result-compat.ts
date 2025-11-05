@@ -1,12 +1,18 @@
 /**
  * Result 타입 호환성 레이어 (Phase 355.2)
  * @description Simple Result ↔ Enhanced Result 변환 함수
- * @version 1.0.0
+ * @version 1.1.0 - Phase 355.4: Simple Result 로컬 정의
  */
 
-import type { Result as SimpleResult } from './core/core-types';
 import type { Result as EnhancedResult } from './result.types';
 import { ErrorCode } from './result.types';
+
+/**
+ * Simple Result 타입 (레거시 호환용)
+ * @deprecated Phase 355.4에서 core-types.ts에서 제거됨
+ * @note 이 타입은 호환성 레이어 내부에서만 사용
+ */
+type SimpleResult<T, E = Error> = { success: true; data: T } | { success: false; error: E };
 
 /**
  * Simple Result → Enhanced Result 변환

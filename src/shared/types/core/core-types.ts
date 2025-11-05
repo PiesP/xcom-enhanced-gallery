@@ -29,6 +29,7 @@
 
 import type { MediaInfo, MediaMapping } from '@shared/types/media.types';
 import type { BaseService } from './base-service.types';
+import type { Result } from '../result.types';
 
 // ========================================
 // SERVICE TYPES (from services.types.ts)
@@ -224,13 +225,15 @@ export interface Lifecycle extends Cleanupable {
 // ========================================
 
 /**
- * Result 타입 - 성공 또는 실패를 명시적으로 표현
+ * Result 타입 - Enhanced Result 패턴 사용
+ * @deprecated Simple Result<T, E> 패턴은 Phase 355.4에서 제거됨
+ * @see {@link ../result.types.ts} - Enhanced Result 정의 및 유틸리티
  */
-export type Result<T, E = Error> = { success: true; data: T } | { success: false; error: E };
+export type { Result } from '../result.types';
 
 /**
  * 비동기 Result 타입
- * @note E 파라미터 제거 - 프로젝트는 ErrorCode enum 사용
+ * @note Phase 353: E 파라미터 제거 완료
  */
 export type AsyncResult<T> = Promise<Result<T>>;
 
@@ -239,94 +242,8 @@ export type AsyncResult<T> = Promise<Result<T>>;
  */
 export type Option<T> = T | null;
 
-/**
- * 성공 Result 생성
- */
-export function success<T>(data: T): Result<T, never> {
-  return { success: true, data };
-}
-
-/**
- * 실패 Result 생성
- */
-export function failure<E>(error: E): Result<never, E> {
-  return { success: false, error };
-}
-
-/**
- * 비동기 함수를 안전하게 실행하고 Result 반환
- */
-export async function safeAsync<T>(
-  fn: () => Promise<T>,
-  errorTransform?: (error: unknown) => Error
-): AsyncResult<T> {
-  try {
-    const data = await fn();
-    return success(data);
-  } catch (error) {
-    const processedError = errorTransform
-      ? errorTransform(error)
-      : error instanceof Error
-        ? error
-        : new Error(String(error));
-    return failure(processedError);
-  }
-}
-
-/**
- * 동기 함수를 안전하게 실행하고 Result 반환
- */
-export function safe<T>(fn: () => T, errorTransform?: (error: unknown) => Error): Result<T> {
-  try {
-    const data = fn();
-    return success(data);
-  } catch (error) {
-    const processedError = errorTransform
-      ? errorTransform(error)
-      : error instanceof Error
-        ? error
-        : new Error(String(error));
-    return failure(processedError);
-  }
-}
-
-/**
- * Result에서 값을 추출 (기본값 제공)
- */
-export function unwrapOr<T>(result: Result<T>, defaultValue: T): T {
-  return result.success ? result.data : defaultValue;
-}
-
-/**
- * Result가 성공인지 확인
- */
-export function isSuccess<T, E>(result: Result<T, E>): result is { success: true; data: T } {
-  return result.success;
-}
-
-/**
- * Result가 실패인지 확인
- */
-export function isFailure<T, E>(result: Result<T, E>): result is { success: false; error: E } {
-  return !result.success;
-}
-
-/**
- * Result 체이닝 (flatMap)
- */
-export function chain<T, U, E>(result: Result<T, E>, fn: (value: T) => Result<U, E>): Result<U, E> {
-  if (!result.success) {
-    return failure<E>((result as { success: false; error: E }).error) as Result<U, E>;
-  }
-  return fn(result.data);
-}
-
-/**
- * Result 매핑 (map)
- */
-export function map<T, U, E>(result: Result<T, E>, fn: (value: T) => U): Result<U, E> {
-  if (!result.success) {
-    return failure<E>((result as { success: false; error: E }).error) as Result<U, E>;
-  }
-  return success(fn(result.data));
-}
+// Result 유틸리티 함수들은 result.types.ts로 이동됨 (Phase 355.2)
+// - success, failure, partial, cancelled
+// - isSuccess, isFailure, isPartial
+// - unwrapOr, safe, safeAsync, chain, map
+// import { success, failure, isSuccess, ... } from '@shared/types/result.types';

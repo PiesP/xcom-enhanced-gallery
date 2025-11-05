@@ -37,9 +37,11 @@ export type {
   Option,
 } from './core-types';
 
+export { VIEW_MODES, isValidViewMode } from './core-types';
+
+// Result utilities are now in result.types.ts (Phase 355.2)
+// Re-export for backward compatibility
 export {
-  VIEW_MODES,
-  isValidViewMode,
   success,
   failure,
   safeAsync,
@@ -48,7 +50,7 @@ export {
   isSuccess,
   isFailure,
   chain,
-} from './core-types';
+} from '../result.types';
 
 // UserScript API types
 export type {
