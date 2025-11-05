@@ -3,7 +3,8 @@
  */
 
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
-import type { Result } from '@shared/types/core/core-types';
+import type { Result } from '@shared/types/result.types';
+import { success, failure, ErrorCode } from '@shared/types/result.types';
 import { createSignalSafe, effectSafe } from './signal-factory';
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
 
@@ -107,7 +108,7 @@ function dispatchEvent<K extends keyof DownloadEvents>(event: K, data: DownloadE
 /**
  * Create a download task
  */
-export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string, Error> {
+export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Result<string> {
   try {
     // MediaInfo의 id가 없는 경우 임시 ID 생성
     const mediaId = mediaInfo.id ?? `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -136,31 +137,36 @@ export function createDownloadTask(mediaInfo: MediaInfo, filename?: string): Res
     logger.info(`[Download] 작업 생성: ${taskId} - ${mediaInfo.url}`);
     dispatchEvent('download:queue-updated', { queueLength: downloadState.value.queue.length });
 
-    return { success: true, data: taskId };
+    return success(taskId, { mediaId, filename: task.filename });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     logger.error('[Download] 작업 생성 실패:', errorMsg);
-    return { success: false, error: new Error(errorMsg) };
+    return failure(errorMsg, ErrorCode.UNKNOWN, {
+      cause: error,
+      meta: { mediaUrl: mediaInfo.url },
+    });
   }
 }
 
 /**
  * Start download
  */
-export function startDownload(taskId: string): Result<void, Error> {
+export function startDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    const error = new Error(`Task not found: ${taskId}`);
     logger.error('[Download] 작업을 찾을 수 없음:', taskId);
-    return { success: false, error };
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId },
+    });
   }
 
   if (task.status !== 'pending') {
-    const error = new Error(`Task is not pending: ${taskId}`);
     logger.warn('[Download] 작업이 대기 상태가 아님:', task.status);
-    return { success: false, error };
+    return failure(`Task is not pending: ${taskId}`, ErrorCode.INVALID_ELEMENT, {
+      meta: { taskId, currentStatus: task.status },
+    });
   }
 
   const updatedTask: DownloadTask = {
@@ -181,19 +187,20 @@ export function startDownload(taskId: string): Result<void, Error> {
   logger.info(`[Download] 다운로드 시작: ${taskId}`);
   dispatchEvent('download:started', { taskId, mediaId: task.mediaId });
 
-  return { success: true, data: undefined };
+  return success(undefined);
 }
 
 /**
  * Update download progress
  */
-export function updateDownloadProgress(taskId: string, progress: number): Result<void, Error> {
+export function updateDownloadProgress(taskId: string, progress: number): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    const error = new Error(`Task not found: ${taskId}`);
-    return { success: false, error };
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId, requestedProgress: progress },
+    });
   }
 
   const clampedProgress = Math.max(0, Math.min(100, progress));
@@ -217,26 +224,32 @@ export function updateDownloadProgress(taskId: string, progress: number): Result
 
   dispatchEvent('download:progress', { taskId, progress: clampedProgress });
 
-  return { success: true, data: undefined };
+  return success(undefined, {
+    taskId,
+    progress: clampedProgress,
+    globalProgress: totalProgress,
+  });
 }
 
 /**
  * Mark download as completed
  */
-export function completeDownload(taskId: string): Result<void, Error> {
+export function completeDownload(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    const error = new Error(`Task not found: ${taskId}`);
-    return { success: false, error };
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId },
+    });
   }
 
+  const completedAt = Date.now();
   const updatedTask: DownloadTask = {
     ...task,
     status: 'completed',
     progress: 100,
-    completedAt: Date.now(),
+    completedAt,
   };
 
   const newTasks = new Map(currentState.activeTasks);
@@ -254,26 +267,33 @@ export function completeDownload(taskId: string): Result<void, Error> {
   logger.info(`[Download] 다운로드 완료: ${taskId}`);
   dispatchEvent('download:completed', { taskId, mediaId: task.mediaId });
 
-  return { success: true, data: undefined };
+  return success(undefined, {
+    taskId,
+    mediaId: task.mediaId,
+    completedAt,
+    duration: completedAt - task.startedAt,
+  });
 }
 
 /**
  * Download failure
  */
-export function failDownload(taskId: string, error: string): Result<void, Error> {
+export function failDownload(taskId: string, error: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    const err = new Error(`Task not found: ${taskId}`);
-    return { success: false, error: err };
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId, attemptedError: error },
+    });
   }
 
+  const completedAt = Date.now();
   const updatedTask: DownloadTask = {
     ...task,
     status: 'failed',
     error,
-    completedAt: Date.now(),
+    completedAt,
   };
 
   const newTasks = new Map(currentState.activeTasks);
@@ -291,24 +311,30 @@ export function failDownload(taskId: string, error: string): Result<void, Error>
   logger.error(`[Download] download failed: ${taskId} - ${error}`);
   dispatchEvent('download:failed', { taskId, error });
 
-  return { success: true, data: undefined };
+  return success(undefined, {
+    taskId,
+    downloadError: error,
+    completedAt,
+  });
 }
 
 /**
  * Remove a task (must be completed or failed)
  */
-export function removeTask(taskId: string): Result<void, Error> {
+export function removeTask(taskId: string): Result<void> {
   const currentState = downloadState.value;
   const task = currentState.activeTasks.get(taskId);
 
   if (!task) {
-    const error = new Error(`Task not found: ${taskId}`);
-    return { success: false, error };
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId },
+    });
   }
 
   if (task.status === 'downloading') {
-    const error = new Error(`Cannot remove active download: ${taskId}`);
-    return { success: false, error };
+    return failure(`Cannot remove active download: ${taskId}`, ErrorCode.PERMISSION_DENIED, {
+      meta: { taskId, currentStatus: 'downloading' },
+    });
   }
 
   const newTasks = new Map(currentState.activeTasks);
@@ -321,7 +347,7 @@ export function removeTask(taskId: string): Result<void, Error> {
 
   logger.debug(`[Download] 작업 제거: ${taskId}`);
 
-  return { success: true, data: undefined };
+  return success(undefined);
 }
 
 /**
