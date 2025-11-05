@@ -272,13 +272,8 @@ export interface MediaExtractionResult {
       };
 }
 
-/**
- * 추출 에러 코드
- *
- * @deprecated ErrorCode를 사용하세요 (Phase 195에서 ErrorCode로 통합)
- * 호환성을 위해 별칭으로 유지됩니다.
- */
-export { ErrorCode as ExtractionErrorCode } from './result.types';
+// ExtractionErrorCode는 Phase 353에서 제거됨
+// ErrorCode를 직접 사용하세요: import { ErrorCode } from '@shared/types'
 
 /**
  * 추출 에러 클래스

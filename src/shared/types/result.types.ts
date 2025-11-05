@@ -1,6 +1,6 @@
 /**
  * 공통 Result 패턴 (Phase: Result Unification)
- * @version 2.0.0 - Phase 195: ErrorCode 통합 (ExtractionErrorCode 통합)
+ * @version 2.1.0 - Phase 353: ExtractionErrorCode 별칭 제거
  */
 export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
 
@@ -19,7 +19,7 @@ export type BaseResultStatus = 'success' | 'partial' | 'error' | 'cancelled';
  *   - NETWORK: 네트워크 에러
  *   - TIMEOUT: 타임아웃
  *
- * 미디어 추출 전용 (이전 ExtractionErrorCode):
+ * 미디어 추출 전용 (Phase 195에서 ExtractionErrorCode 통합):
  *   - ELEMENT_NOT_FOUND: 요소를 찾을 수 없음
  *   - INVALID_ELEMENT: 유효하지 않은 요소
  *   - NO_MEDIA_FOUND: 미디어를 찾을 수 없음
