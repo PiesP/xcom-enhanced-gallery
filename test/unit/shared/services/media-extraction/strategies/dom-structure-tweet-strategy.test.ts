@@ -164,7 +164,7 @@ describe('DomStructureTweetStrategy', () => {
       expect(result?.username).toBe('fallback_user');
     });
 
-    it('사용자명이 "fallback"이면 null을 반환한다', async () => {
+    it('returns null when fallback resolver does not provide a username', async () => {
       const container = document.createElement('article');
       const statusLink = document.createElement('a');
       statusLink.href = '/someone/status/1234567890';
@@ -173,7 +173,7 @@ describe('DomStructureTweetStrategy', () => {
       const element = document.createElement('div');
       container.appendChild(element);
 
-      // parseUsernameFast가 null 반환 → 'fallback' 사용 → null 반환
+      // parseUsernameFast returns null, so username resolution still fails
       const result = await strategy.extract(element);
 
       expect(result).toBeNull();

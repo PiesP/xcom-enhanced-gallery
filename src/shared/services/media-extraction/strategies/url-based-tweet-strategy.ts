@@ -49,17 +49,25 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
         return null;
       }
 
-      const username = this.extractUsernameFromUrl(currentUrl) || parseUsernameFast() || 'fallback';
+      const primaryUsername = this.extractUsernameFromUrl(currentUrl)?.trim() ?? null;
+      let resolvedUsername = primaryUsername && primaryUsername.length > 0 ? primaryUsername : null;
 
-      if (!username || username === 'fallback') {
+      if (!resolvedUsername) {
+        const fallbackUsername = parseUsernameFast()?.trim();
+        if (fallbackUsername && fallbackUsername.length > 0) {
+          resolvedUsername = fallbackUsername;
+        }
+      }
+
+      if (!resolvedUsername) {
         logger.debug('UrlBasedTweetStrategy: Username extraction failed');
         return null;
       }
 
       return {
         tweetId,
-        username,
-        tweetUrl: `https://twitter.com/${username}/status/${tweetId}`,
+        username: resolvedUsername,
+        tweetUrl: `https://twitter.com/${resolvedUsername}/status/${tweetId}`,
         extractionMethod: 'url-based',
         confidence: 0.8,
         metadata: {

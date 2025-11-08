@@ -36,12 +36,17 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
       const tweetId = this.findTweetIdInContainer(tweetContainer as HTMLElement);
       if (!tweetId) return null;
 
-      const username =
-        this.findUsernameInContainer(tweetContainer as HTMLElement) ||
-        parseUsernameFast() ||
-        'fallback';
+      const containerUsername = this.findUsernameInContainer(tweetContainer as HTMLElement)?.trim();
+      let username = containerUsername && containerUsername.length > 0 ? containerUsername : null;
 
-      if (!username || username === 'fallback') {
+      if (!username) {
+        const fallbackUsername = parseUsernameFast()?.trim();
+        if (fallbackUsername && fallbackUsername.length > 0) {
+          username = fallbackUsername;
+        }
+      }
+
+      if (!username) {
         logger.debug('DomStructureTweetStrategy: Username extraction failed');
         return null;
       }
