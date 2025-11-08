@@ -13,7 +13,6 @@
  *    - Core logging system with multi-level support (debug, info, warn, error)
  *    - Scoped loggers for automatic prefix management
  *    - Correlation ID tracking for request/operation tracing
- *    - Development-only utilities (memory profiling, log groups, tables)
  *    - Tree-shaking: All debug code removed in production
  *
  * **Usage Examples**:
@@ -32,11 +31,11 @@
  * const correlated = createScopedLoggerWithCorrelation('BulkDownload', cid);
  * correlated.info('Operation started');
  *
- * // Performance measurement helpers
+ * // Performance measurement helpers (deprecated in Phase 420)
  * ```
  *
  * **Development vs Production**:
- * - **Dev**: Full logging (debug+), timestamps, stack traces, all tools available
+ * - **Dev**: Full logging (debug+), timestamps, stack traces, timers
  * - **Prod**: Warn+ only, minimal output, zero overhead from removed code
  * - **Test**: Error level only (suppresses console noise)
  *
@@ -57,7 +56,7 @@
  * - Performance: No runtime overhead in production
  *
  * **Global Exposure** (Dev Only):
- * - Logging tools: `window.__XEG__.logging.setLogLevel()`, `.measureMemory()`, etc.
+ * - Logging helpers are intentionally not exposed globally (Phase 420)
  *
  * @related [Services](../services/), [Utils](../utils/)
  */
@@ -71,13 +70,8 @@ export {
   createScopedLoggerWithCorrelation,
   createCorrelationId,
   logError,
-  measureMemory,
-  logGroup,
-  logTable,
-  setLogLevel,
-  getLogLevel,
 } from './logger';
 
-export type { LogLevel, LoggableData, Logger, MemorySnapshot } from './logger';
+export type { LogLevel, LoggableData, Logger } from './logger';
 
 export { default as defaultLogger } from './logger';

@@ -172,7 +172,7 @@ export {
 // ====================================
 
 // Types
-export type { LogLevel, LoggableData, Logger as LoggerType, MemorySnapshot } from './logging';
+export type { LogLevel, LoggableData, Logger as LoggerType } from './logging';
 
 // Logger & Utilities
 export {
@@ -184,11 +184,6 @@ export {
   createScopedLoggerWithCorrelation,
   createCorrelationId,
   logError,
-  measureMemory,
-  logGroup,
-  logTable,
-  setLogLevel,
-  getLogLevel,
 } from './logging';
 
 // ====================================

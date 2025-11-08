@@ -47,7 +47,9 @@ describe('Phase 290: Twitter 페이지 격리', () => {
       // DEV 환경에서는 __XEG__가 있을 수 있음 (조건부)
       const xeg = (window as WindowWithXEG).__XEG__;
 
-      if (__DEV__) {
+      const isDevRuntime = Boolean((globalThis as { __DEV__?: boolean }).__DEV__);
+
+      if (isDevRuntime) {
         // 개발 환경에서는 존재할 수 있음 (선택적)
         if (xeg) {
           expect(typeof xeg).toBe('object');
@@ -60,11 +62,7 @@ describe('Phase 290: Twitter 페이지 격리', () => {
 
     it('__XEG__ 네임스페이스 구조가 올바르게 정의되어야 함', () => {
       type XEGNamespace = {
-        logging?: {
-          setLogLevel?: (level: string) => void;
-          getLogLevel?: () => string;
-          measureMemory?: (label: string) => unknown;
-        };
+        logging?: undefined;
         tracing?: {
           start?: (options?: unknown) => void;
           stop?: () => void;
@@ -82,12 +80,8 @@ describe('Phase 290: Twitter 페이지 격리', () => {
       const xeg = (window as WindowWithXEG).__XEG__ as XEGNamespace | undefined;
 
       if (xeg) {
-        // logging 네임스페이스 검증
-        if (xeg.logging) {
-          expect(typeof xeg.logging.setLogLevel).toBe('function');
-          expect(typeof xeg.logging.getLogLevel).toBe('function');
-          expect(typeof xeg.logging.measureMemory).toBe('function');
-        }
+        // logging 네임스페이스는 Phase 420에서 제거되었으므로 노출되지 않아야 함
+        expect(xeg.logging).toBeUndefined();
 
         // tracing 네임스페이스 검증
         if (xeg.tracing) {

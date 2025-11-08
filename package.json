@@ -122,7 +122,7 @@
     "@types/node": "^24.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
-    "@typescript/native-preview": "^7.0.0-dev.20251107.1",
+    "@typescript/native-preview": "^7.0.0-dev.20251108.1",
     "@vitest/browser": "^4.0.8",
     "@vitest/browser-playwright": "^4.0.8",
     "@vitest/coverage-v8": "^4.0.8",

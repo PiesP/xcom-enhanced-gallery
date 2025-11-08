@@ -69,7 +69,6 @@ import { beforeEach, afterEach, vi } from 'vitest';
 import { setupTestEnvironment, cleanupTestEnvironment } from './__mocks__/test-environment.js';
 import { setupGlobalMocks, resetMockApiState } from './__mocks__/userscript-api.mock.js';
 import { URL as NodeURL } from 'node:url';
-import { setLogLevel } from '../src/shared/logging/logger';
 
 // ================================
 // 전역 테스트 환경 설정
@@ -126,15 +125,7 @@ const vendorInitializationPromise = (async () => {
   }
 })();
 
-// 테스트 전역 로그 레벨을 낮춰 IPC/콘솔 부하를 줄임 (EPIPE 완화)
-try {
-  // 가능한 최소한으로 출력: error만 노출
-  if (typeof setLogLevel === 'function') {
-    setLogLevel('error');
-  }
-} catch {
-  // 무시 (개발 모드 전용 API)
-}
+// 테스트 전역 로그 레벨을 낮추기 위한 별도 API는 제거됨 (Phase 420)
 
 // happy-dom 환경 호환성 향상을 위한 polyfill 설정
 function setupTestEnvironmentPolyfills() {
