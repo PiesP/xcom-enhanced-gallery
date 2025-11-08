@@ -8,7 +8,6 @@
 export {
   safeParseInt,
   getRelativeLuminance,
-  parseColor,
   calculateContrastRatio,
   calculateLuminance,
   meetsWCAGAA,

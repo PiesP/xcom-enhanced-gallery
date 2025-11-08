@@ -199,7 +199,6 @@ export {
 export {
   detectLightBackground,
   getRelativeLuminance,
-  parseColor,
   imageFilter,
   rafThrottle,
   throttleScroll,

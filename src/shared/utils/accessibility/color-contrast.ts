@@ -49,7 +49,7 @@ export function getRelativeLuminance(r: number, g: number, b: number): number {
  * const rgb3 = parseColor('#0000ff');               // [0, 0, 255]
  * ```
  */
-export function parseColor(color: string): [number, number, number] | null {
+function parseColor(color: string): [number, number, number] | null {
   // RGB/RGBA format
   const rgbMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (rgbMatch) {

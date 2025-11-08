@@ -15,7 +15,6 @@ export {
   createDebouncer,
   rafThrottle,
   throttleScroll,
-  parseColor,
 } from './utils';
 
 // === Timer management (4) ===

@@ -34,7 +34,6 @@ export { removeDuplicates, removeDuplicateMediaItems } from './deduplication';
 // Accessibility utilities
 export {
   getRelativeLuminance,
-  parseColor,
   calculateContrastRatio,
   meetsWCAGAA,
   meetsWCAGAAA,
