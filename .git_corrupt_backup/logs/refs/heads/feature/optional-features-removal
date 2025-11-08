@@ -1,6 +1,0 @@
-0000000000000000000000000000000000000000 ca45ed2cdcea2489f5b2f0f14a2dff10d935a45a PiesP <15217557+PiesP@users.noreply.github.com> 1762474433 +0900	branch: Created from HEAD
-ca45ed2cdcea2489f5b2f0f14a2dff10d935a45a f98381624cec24d4332724227ee5891896e5edec PiesP <15217557+PiesP@users.noreply.github.com> 1762474577 +0900	commit: refactor(services): Phase 414.1 - Remove AnimationService (optional feature)
-f98381624cec24d4332724227ee5891896e5edec 8d2d1bb75f6b9e128cc8ff67455f8309c8010fca PiesP <15217557+PiesP@users.noreply.github.com> 1762474664 +0900	commit: docs: Phase 414 progress report and Toolbar assessment
-8d2d1bb75f6b9e128cc8ff67455f8309c8010fca da59c65fe720a24a89a0abdb8777f70825780b8d PiesP <15217557+PiesP@users.noreply.github.com> 1762475137 +0900	commit: refactor(logging): Phase 414.3 - Logger removal from production builds
-da59c65fe720a24a89a0abdb8777f70825780b8d b58c4df96183791a8ec2df038318bd7e55d29f54 PiesP <15217557+PiesP@users.noreply.github.com> 1762475183 +0900	commit: docs: Phase 414 Final Completion Report
-b58c4df96183791a8ec2df038318bd7e55d29f54 f57c2ac30e3843ef37ba00877b42f36a0b281171 PiesP <15217557+PiesP@users.noreply.github.com> 1762475363 +0900	commit: docs: Fix formatting in Phase 414.3 Logger Production-Only Removal Strategy

@@ -23,41 +23,25 @@ export function createSelector<T, R>(
   let lastInput: T;
   let lastOutput: R;
   let hasResult = false;
-  const stats = { calls: 0, hits: 0, misses: 0 };
 
-  const memoizedSelector = (input: T): R => {
-    stats.calls++;
-    globalStats.selectorCalls++;
-
-    // Object.is for reference identity check (checking actual value to compare, not entire input)
+  return (input: T): R => {
     if (hasResult && Object.is(input, lastInput)) {
-      stats.hits++;
-      globalStats.cacheHits++;
-      if (debug || debugMode) {
-        logger.debug('[Signal Selector] Cache hit:', stats);
+      if (debug) {
+        logger.debug('[Signal Selector] Cache hit');
       }
       return lastOutput;
     }
 
-    // Calculate new result
-    stats.misses++;
-    globalStats.cacheMisses++;
     lastInput = input;
     lastOutput = selector(input);
     hasResult = true;
 
-    if (debug || debugMode) {
-      logger.debug('[Signal Selector] Cache miss, computed new result:', stats);
+    if (debug) {
+      logger.debug('[Signal Selector] Cache miss');
     }
 
     return lastOutput;
   };
-
-  // Add statistics accessor for debugging
-  (memoizedSelector as typeof memoizedSelector & { getStats: () => typeof stats }).getStats =
-    () => ({ ...stats });
-
-  return memoizedSelector;
 }
 
 /**
@@ -161,53 +145,4 @@ export function useCombinedSelector<T1, T2, R>(
   const { createMemo } = getSolid();
 
   return createMemo(() => selector(signal1.value, signal2.value), [signal1.value, signal2.value]);
-}
-
-/**
- * Global performance statistics
- */
-interface PerformanceStats {
-  selectorCalls: number;
-  cacheHits: number;
-  cacheMisses: number;
-}
-
-let globalStats: PerformanceStats = {
-  selectorCalls: 0,
-  cacheHits: 0,
-  cacheMisses: 0,
-};
-
-let debugMode = false;
-
-/**
- * Collect global statistics
- */
-export function getGlobalStats(): PerformanceStats {
-  return { ...globalStats };
-}
-
-/**
- * Reset statistics
- */
-export function resetGlobalStats(): void {
-  globalStats = {
-    selectorCalls: 0,
-    cacheHits: 0,
-    cacheMisses: 0,
-  };
-}
-
-/**
- * Enable or disable debug mode
- */
-export function setDebugMode(enabled: boolean): void {
-  debugMode = enabled;
-}
-
-/**
- * Check debug mode status
- */
-export function isDebugMode(): boolean {
-  return debugMode;
 }
