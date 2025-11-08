@@ -1,13 +1,23 @@
 /**
- * @fileoverview Gallery Feature Barrel - Minimal public surface
- * @version 3.0.0 - Phase 352: Named export optimization
- * @description Minimized public surface: Runtime implementation is not re-exported.
+ * @fileoverview Gallery public entry point
+ * @description Exposes primary gallery runtime APIs and shared types.
  */
 
-// Types only
+export { GalleryApp } from './GalleryApp';
+export { GalleryRenderer } from './GalleryRenderer';
+
+export {
+  initializeTheme,
+  detectSystemTheme,
+  getSavedThemeSetting,
+  resolveAndApplyTheme,
+  applyThemeToDOM,
+  setupThemeChangeListener,
+} from './services/theme-initialization';
+
 export type {
   ToolbarDataState,
   FitMode,
   ToolbarState,
   ToolbarActions,
-} from './types/toolbar.types';
+} from '@shared/types/toolbar.types';

@@ -5,7 +5,6 @@
  */
 
 import { logger } from '@shared/logging';
-import { isRecord, toRecord } from '@shared/utils/type-guards';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import type {
   AppSettings,
@@ -22,30 +21,78 @@ import { computeCurrentSettingsSchemaHash } from './settings-schema';
  */
 const STORAGE_KEY = 'xeg-app-settings';
 
+type SettingsCategoryKey =
+  | 'gallery'
+  | 'download'
+  | 'tokens'
+  | 'performance'
+  | 'accessibility'
+  | 'features';
+
+const SETTINGS_CATEGORY_KEYS: readonly SettingsCategoryKey[] = [
+  'gallery',
+  'download',
+  'tokens',
+  'performance',
+  'accessibility',
+  'features',
+];
+
+const CRITICAL_SETTINGS = new Set<NestedSettingKey>([
+  'tokens.bearerToken',
+  'performance.debugMode',
+  'accessibility.reduceMotion',
+]);
+
+function cloneDeep<T>(value: T): T {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function resolveNestedValue(source: unknown, keys: string[]): unknown {
+  let value: unknown = source;
+
+  for (const key of keys) {
+    if (!key) continue;
+
+    if (!value || typeof value !== 'object' || !(key in (value as Record<string, unknown>))) {
+      return undefined;
+    }
+
+    value = (value as Record<string, unknown>)[key];
+  }
+
+  return value;
+}
+
+function assignNestedValue(target: Record<string, unknown>, keys: string[], value: unknown): void {
+  let current = target;
+  const lastIndex = keys.length - 1;
+
+  for (let index = 0; index < keys.length; index++) {
+    const key = keys[index];
+    if (!key) continue;
+
+    if (index === lastIndex) {
+      current[key] = value as unknown;
+      return;
+    }
+
+    const next = current[key];
+    if (!next || typeof next !== 'object') {
+      current[key] = {};
+    }
+
+    current = current[key] as Record<string, unknown>;
+  }
+}
+
 /**
  * Settings change event listener type
  */
 type SettingChangeListener = (event: SettingChangeEvent) => void;
-
-/**
- * Set nested value helper - Navigate deep paths and set value
- */
-function setNestedValue(target: Record<string, unknown>, keys: string[], value: unknown): void {
-  for (let i = 0; i < keys.length - 1; i++) {
-    const currentKey = keys[i];
-    if (!currentKey) continue;
-
-    if (!target[currentKey] || typeof target[currentKey] !== 'object') {
-      target[currentKey] = {};
-    }
-    target = target[currentKey] as Record<string, unknown>;
-  }
-
-  const finalKey = keys[keys.length - 1];
-  if (finalKey) {
-    target[finalKey] = value;
-  }
-}
 
 /**
  * Settings management service
@@ -77,18 +124,20 @@ export class SettingsService {
   private readonly schemaHash = computeCurrentSettingsSchemaHash();
   private readonly storage = getPersistentStorage();
 
-  /** Clone default settings (1-level depth - separate category objects) */
+  /** Clone default settings while keeping feature-specific categories isolated */
   private static cloneDefaults(): AppSettings {
+    const now = Date.now();
+
     return {
-      ...defaultSettings,
-      gallery: { ...defaultSettings.gallery },
-      download: { ...defaultSettings.download },
-      tokens: { ...defaultSettings.tokens },
-      performance: { ...defaultSettings.performance },
-      accessibility: { ...defaultSettings.accessibility },
-      // lastModified is reset with new timestamp
-      lastModified: Date.now(),
-    } as AppSettings;
+      gallery: cloneDeep(defaultSettings.gallery),
+      download: cloneDeep(defaultSettings.download),
+      tokens: cloneDeep(defaultSettings.tokens),
+      performance: cloneDeep(defaultSettings.performance),
+      accessibility: cloneDeep(defaultSettings.accessibility),
+      features: cloneDeep(defaultSettings.features),
+      version: defaultSettings.version,
+      lastModified: now,
+    };
   }
 
   /**
@@ -128,7 +177,7 @@ export class SettingsService {
    * @returns Current settings (read-only, deep copy)
    */
   getAllSettings(): Readonly<AppSettings> {
-    return JSON.parse(JSON.stringify(this.settings)) as AppSettings;
+    return cloneDeep(this.settings);
   }
 
   /**
@@ -145,15 +194,11 @@ export class SettingsService {
    */
   get<T = unknown>(key: NestedSettingKey): T {
     const keys = key.split('.');
-    let value: unknown = this.settings;
+    const value = resolveNestedValue(this.settings, keys);
 
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = (value as Record<string, unknown>)[k];
-      } else {
-        logger.warn(`Setting key not found: ${key}`);
-        return this.getDefaultValue(key) as T;
-      }
+    if (value === undefined) {
+      logger.warn(`Setting key not found: ${key}`);
+      return this.getDefaultValue(key) as T;
     }
 
     return value as T;
@@ -179,25 +224,24 @@ export class SettingsService {
 
     const oldValue = this.get(key);
     const keys = key.split('.');
+    const timestamp = Date.now();
 
-    setNestedValue(toRecord(this.settings), keys, value);
-    this.settings.lastModified = Date.now();
+    assignNestedValue(this.settings as unknown as Record<string, unknown>, keys, value);
+    this.settings.lastModified = timestamp;
 
-    // Emit change event
     this.notifyListeners({
       key,
       oldValue,
       newValue: value,
-      timestamp: Date.now(),
+      timestamp,
       status: 'success',
     });
 
-    // Immediate save (critical settings)
-    if (this.isCriticalSetting(key)) {
+    if (CRITICAL_SETTINGS.has(key)) {
       await this.saveSettings();
     }
 
-    logger.debug(`Setting changed: ${key} = ${value}`);
+    logger.debug('Setting changed:', { key, value });
   }
 
   /**
@@ -215,40 +259,41 @@ export class SettingsService {
    * ```
    */
   async updateBatch(updates: Partial<Record<NestedSettingKey, unknown>>): Promise<void> {
-    const changes: SettingChangeEvent[] = [];
+    const entries = Object.entries(updates) as Array<[NestedSettingKey, unknown]>;
+    if (entries.length === 0) {
+      return;
+    }
 
-    // Validate all changes
-    for (const [key, value] of Object.entries(updates)) {
-      const validation = this.validateSetting(key as NestedSettingKey, value);
+    for (const [key, value] of entries) {
+      const validation = this.validateSetting(key, value);
       if (!validation.valid) {
         throw new Error(`Invalid setting value (${key}): ${validation.error}`);
       }
     }
 
-    // Batch update
-    for (const [key, value] of Object.entries(updates)) {
-      const oldValue = this.get(key as NestedSettingKey);
-      const keys = key.split('.');
-      setNestedValue(toRecord(this.settings), keys, value);
+    const timestamp = Date.now();
+    const changes: SettingChangeEvent[] = [];
+
+    for (const [key, value] of entries) {
+      const oldValue = this.get(key);
+      assignNestedValue(this.settings as unknown as Record<string, unknown>, key.split('.'), value);
 
       changes.push({
-        key: key as NestedSettingKey,
+        key,
         oldValue,
         newValue: value,
-        timestamp: Date.now(),
+        timestamp,
         status: 'success',
       });
     }
 
-    this.settings.lastModified = Date.now();
+    this.settings.lastModified = timestamp;
 
-    // Emit all change events
     changes.forEach(change => this.notifyListeners(change));
 
-    // Save
     await this.saveSettings();
 
-    logger.debug(`Batch settings update complete: ${Object.keys(updates).length} items`);
+    logger.debug(`Batch settings update complete: ${entries.length} items`);
   }
 
   /**
@@ -257,38 +302,40 @@ export class SettingsService {
    * @param category Specific category to reset (optional)
    */
   async resetToDefaults(category?: keyof AppSettings): Promise<void> {
-    const oldSettings = { ...this.settings };
+    const previous = this.getAllSettings();
+    const timestamp = Date.now();
 
-    if (category) {
-      // Phase 141.1: Type Guard based safe category reset (removed double assertion)
-      const defaultsRecord = toRecord(defaultSettings);
-      const categoryDefaults = defaultsRecord[category as string];
-
-      if (isRecord(categoryDefaults)) {
-        const cloned = { ...categoryDefaults };
-        const settingsRecord = toRecord(this.settings);
-        settingsRecord[category] = cloned;
-      }
-    } else {
-      // Full reset uses safe deep clone
+    if (!category) {
       this.settings = SettingsService.cloneDefaults();
+    } else if (SETTINGS_CATEGORY_KEYS.includes(category as SettingsCategoryKey)) {
+      const defaults = cloneDeep(
+        defaultSettings[category as SettingsCategoryKey]
+      ) as AppSettings[typeof category];
+      const settingsRecord = this.settings as unknown as Record<string, unknown>;
+      settingsRecord[category as string] = defaults as unknown;
+    } else if (category === 'version') {
+      this.settings.version = defaultSettings.version;
+    } else if (category === 'lastModified') {
+      // lastModified handled below via timestamp assignment
+    } else {
+      logger.warn(`resetToDefaults: unknown category "${String(category)}" ignored`);
     }
 
-    this.settings.lastModified = Date.now();
+    this.settings.lastModified = timestamp;
 
-    // Emit change event
-    const resetKey = category || 'all';
+    const updated = this.getAllSettings();
+
     this.notifyListeners({
-      key: resetKey as NestedSettingKey,
-      oldValue: oldSettings,
-      newValue: this.settings,
-      timestamp: Date.now(),
+      key: (category ?? 'all') as NestedSettingKey,
+      oldValue: previous,
+      newValue: updated,
+      timestamp,
       status: 'success',
     });
 
     await this.saveSettings();
 
-    logger.info(`Settings reset complete: ${category || 'all'}`);
+    logger.info(`Settings reset complete: ${category ?? 'all'}`);
   }
 
   /**
@@ -328,17 +375,19 @@ export class SettingsService {
 
       // Perform migration if needed
       const migratedSettings = this.migrateSettings(importedSettings);
+      const previous = this.getAllSettings();
 
-      const oldSettings = { ...this.settings };
       this.settings = migratedSettings;
-      this.settings.lastModified = Date.now();
+      const timestamp = Date.now();
+      this.settings.lastModified = timestamp;
 
-      // Emit change event
+      const updated = this.getAllSettings();
+
       this.notifyListeners({
         key: 'all' as NestedSettingKey,
-        oldValue: oldSettings,
-        newValue: this.settings,
-        timestamp: Date.now(),
+        oldValue: previous,
+        newValue: updated,
+        timestamp,
         status: 'success',
       });
 
@@ -408,8 +457,8 @@ export class SettingsService {
       const withHash: AppSettings & { __schemaHash: string } = {
         ...this.settings,
         __schemaHash: this.schemaHash,
-      } as AppSettings & { __schemaHash: string };
-      await this.storage.set(STORAGE_KEY, JSON.stringify(withHash));
+      };
+      await this.storage.set(STORAGE_KEY, withHash);
       logger.debug('Settings saved');
     } catch (error) {
       logger.error('Settings save failed:', error);
@@ -489,31 +538,7 @@ export class SettingsService {
    * Get default value for key
    */
   private getDefaultValue(key: NestedSettingKey): unknown {
-    const keys = key.split('.');
-    let value: unknown = defaultSettings;
-
-    for (const k of keys) {
-      if (value && typeof value === 'object' && k in value) {
-        value = (value as Record<string, unknown>)[k];
-      } else {
-        return undefined;
-      }
-    }
-
-    return value;
-  }
-
-  /**
-   * Check if setting is critical (requires immediate save)
-   */
-  private isCriticalSetting(key: NestedSettingKey): boolean {
-    const criticalSettings = [
-      'tokens.bearerToken',
-      'performance.debugMode',
-      'accessibility.reduceMotion',
-    ];
-
-    return criticalSettings.includes(key);
+    return resolveNestedValue(defaultSettings, key.split('.'));
   }
 
   /**

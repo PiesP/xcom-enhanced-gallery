@@ -20,8 +20,9 @@
  * - Phase 197.1: Moved to @shared/types (resolved circular dependency)
  * - Phase 219: Separated ToolbarModeState (resolved naming conflict)
  *
- * **Migration Path**:
- * - Re-exported from @features/gallery/types (backward compatibility)
+ * **Migration Note**:
+ * - Import directly from `@shared/types/toolbar.types`
+ * - Legacy `@features/gallery/types` barrel was removed in gallery cleanup (Phase 360+)
  */
 
 /**

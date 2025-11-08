@@ -59,13 +59,11 @@ export async function getMediaService(): Promise<BaseService> {
   return mediaServiceInstance;
 }
 
-// SettingsService factory moved to features layer (shared cannot import features directly)
+// SettingsService factory lives in the feature layer (shared cannot import features directly)
 // By contract (test), getSettingsService function export must exist, so error is thrown on call.
-// Actual usage code must import directly from @features/settings/services/settings-factory getSettingsService.
+// Use initializeSettingsService() from @features/settings instead of this stub.
 export async function getSettingsService(): Promise<never> {
-  throw new Error(
-    'getSettingsService(): Import directly from features layer factory (@features/settings/services/settings-factory)'
-  );
+  throw new Error('getSettingsService(): Use initializeSettingsService() from @features/settings');
 }
 
 /**

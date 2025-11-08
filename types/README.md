@@ -71,10 +71,11 @@ define: {
 
 ### ✅ Place in src/features/{name}/types/ when (Phase 196):
 
-- Feature-specific state/action types (e.g., gallery/types/toolbar.types.ts)
-- Feature-specific types that cannot be expressed with shared types
+- Feature-specific state/action types that cannot live in shared types
+- Avoid re-export barrels; expose only feature-local definitions
 - Examples:
-  - `@features/gallery/types/toolbar.types.ts`: ToolbarState, ToolbarActions
+  - _(Deprecated)_ `@features/gallery/types/toolbar.types.ts` → moved to
+    `@shared/types/toolbar.types.ts`
   - `@features/settings/types/settings-form.types.ts` (future)
 
 ### Phase 196 Migration Summary
@@ -85,8 +86,8 @@ define: {
   types
 - `src/shared/types/component.types.ts` (281 lines) — BaseComponentProps and
   event handlers
-- `src/features/gallery/types/toolbar.types.ts` (75 lines) — Gallery-specific
-  state types
+- `src/features/gallery/types/toolbar.types.ts` (Phase 196) — Removed in Phase
+  360 cleanup
 
 **Improvement Effects**:
 

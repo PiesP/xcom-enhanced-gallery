@@ -154,10 +154,10 @@ import { success, failure, isSuccess } from '@shared/types';
 ### ❌ Patterns to Avoid
 
 ```typescript
-// Forbidden: Import @features types from @shared (circular dependency)
+// Legacy path (removed during gallery cleanup)
 import type { GalleryConfig } from '@features/gallery/types';
 
-// Instead use @shared/types
+// Use shared types directly instead
 import type { ToolbarState } from '@shared/types/toolbar.types';
 ```
 
@@ -218,8 +218,8 @@ import type { ToolbarState } from '@shared/types/toolbar.types';
 ### 3. Backward Compatibility
 
 - extraction.types.ts: Maintains backward compat
-- @features/gallery/types/toolbar.types.ts: Re-export layer
-- Previous code can be migrated incrementally
+- Gallery toolbar types now live solely under `@shared/types/toolbar.types.ts`
+- Previous `@features/gallery/types` barrel was removed (Phase 360 cleanup)
 
 ---
 

@@ -66,14 +66,12 @@ describe('Service Factories', () => {
   describe('getSettingsService()', () => {
     it('호출 시 에러를 던진다 (deprecated, features 레이어로 이동)', async () => {
       await expect(getSettingsService()).rejects.toThrow(
-        'getSettingsService(): features 레이어 factory(@features/settings/services/settings-factory)를 직접 import 하세요'
+        'getSettingsService(): Use initializeSettingsService() from @features/settings'
       );
     });
 
     it('에러 메시지에 올바른 import 경로가 포함된다', async () => {
-      await expect(getSettingsService()).rejects.toThrow(
-        '@features/settings/services/settings-factory'
-      );
+      await expect(getSettingsService()).rejects.toThrow('initializeSettingsService()');
     });
   });
 
@@ -128,7 +126,7 @@ describe('Service Factories', () => {
         results.forEach(result => {
           expect(result.status).toBe('rejected');
           if (result.status === 'rejected') {
-            expect(result.reason.message).toContain('features 레이어 factory');
+            expect(result.reason.message).toContain('initializeSettingsService');
           }
         });
       });
