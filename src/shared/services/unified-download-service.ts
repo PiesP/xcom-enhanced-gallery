@@ -37,6 +37,7 @@ import { globalTimerManager } from '../utils/timer-management';
 import type { DownloadProgress } from './download/types';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
+import { getGMDownload, isGMDownloadAvailable } from './download/gm-download';
 
 // ====================================
 // Types
@@ -98,19 +99,6 @@ export interface SimulatedUnifiedDownloadResult {
 }
 
 // ====================================
-// Getter: Safe GM_download access
-// ====================================
-
-function getGMDownload(): ((options: Record<string, unknown>) => void) | undefined {
-  const gm = globalThis as Record<string, unknown> & {
-    GM_download?: (options: Record<string, unknown>) => void;
-  };
-  if (typeof gm.GM_download === 'function') {
-    return gm.GM_download;
-  }
-  return undefined;
-}
-
 // ====================================
 // UnifiedDownloadService
 // ====================================
@@ -160,8 +148,7 @@ export class UnifiedDownloadService {
 
       // 2. Check dependent service availability
       // - DownloadService: GM_download support
-      const gmDownload = getGMDownload();
-      const downloadAvailable = !!gmDownload;
+      const downloadAvailable = isGMDownloadAvailable();
 
       // - BulkDownloadService: Separately configured service
       const bulkAvailable = true; // Always available (code-based)
@@ -429,15 +416,15 @@ export class UnifiedDownloadService {
       const zipFilename =
         options.zipFilename || generateZipFilename(mediaItems, { fallbackPrefix: 'xcom_gallery' });
       const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      const gmDownload = getGMDownload();
+      const downloadResult = await downloadService.downloadBlob({
+        blob,
+        name: zipFilename,
+        suppressNotifications: true,
+      });
 
-      if (!gmDownload) {
-        throw new Error('Must be run in Tampermonkey environment');
+      if (!downloadResult.success) {
+        throw new Error(downloadResult.error ?? 'ZIP download failed');
       }
-
-      // Create blob URL and download
-      const blobUrl = URL.createObjectURL(blob);
-      gmDownload({ url: blobUrl, name: zipFilename });
 
       this.notificationService.success(`ZIP download complete: ${zipFilename}`);
       logger.info(`[UnifiedDownloadService] ZIP download complete: ${zipFilename}`);

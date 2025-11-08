@@ -21,6 +21,7 @@
 import { NotificationService } from './notification-service';
 import { logger } from '../logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { getGMDownload } from './download/gm-download';
 
 /**
  * Blob/File download options - Phase 320
@@ -52,19 +53,6 @@ export interface BlobDownloadResult {
  * For testing in non-userscript environments
  */
 // Test mode interfaces removed in lean mode
-
-/**
- * Get GM_download from userscript global context
- */
-function getGMDownload(): ((options: Record<string, unknown>) => void) | undefined {
-  const gm = globalThis as Record<string, unknown> & {
-    GM_download?: (options: Record<string, unknown>) => void;
-  };
-  if (typeof gm.GM_download === 'function') {
-    return gm.GM_download;
-  }
-  return undefined;
-}
 
 /**
  * DownloadService - Singleton for file downloads
