@@ -3,7 +3,7 @@
  * @description querySelector, createElement 등 DOM 조작 유틸리티 테스트
  *
  * Note: addEventListener/removeEventListener는 Phase 195에서 제거됨
- * → BrowserService 또는 DomEventManager 사용
+ * → DomEventManager 또는 @shared/utils/browser 사용
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -20,7 +20,7 @@ import {
   isElementInViewport,
   getDebugInfo,
   type DOMElementCreationOptions,
-} from '@shared/dom/utils/dom-utils';
+} from '@shared/dom/utils/dom-utils.ts';
 
 describe('DOM Utilities', () => {
   setupGlobalTestIsolation();

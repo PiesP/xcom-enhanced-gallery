@@ -19,7 +19,7 @@
  *
  * **What's NOT Included**:
  * ❌ Event listener registration (intentionally excluded from barrel)
- * → Use: DomEventManager (relative import) or BrowserService
+ * → Use: DomEventManager (relative import) or utilities from @shared/utils/browser
  *
  * **Architecture**:
  * Features/Services (import)

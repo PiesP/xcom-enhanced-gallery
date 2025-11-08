@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import { getBrowserInfo, isExtensionEnvironment, isExtensionContext } from '@shared/browser';
+import { getBrowserInfo, isExtensionEnvironment, isExtensionContext } from '@shared/utils';
 
 /**
  * Mock setup for logger

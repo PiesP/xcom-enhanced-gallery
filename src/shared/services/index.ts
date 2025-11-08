@@ -73,15 +73,12 @@ export {
   type ZipFilenameOptions,
 } from './file-naming';
 
-// 5. Browser service
-export { BrowserService } from '@shared/browser';
-
-// 6. Token extraction service
+// Token extraction service
 // Phase 380: Direct import required to break circular dependency
 // import { TwitterTokenExtractor } from '@shared/services/token-extraction';
 // export type { TokenExtractionResult, TokenValidationResult } from '@shared/services/token-extraction';
 
-// 7. Service management (ServiceRegistry integrated)
+// Service management (ServiceRegistry integrated)
 export {
   CoreService,
   serviceManager,

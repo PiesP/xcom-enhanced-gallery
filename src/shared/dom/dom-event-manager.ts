@@ -28,7 +28,7 @@
  *
  * **Access**:
  * ❌ NOT in: index.ts (internal only)
- * ✅ Use: Direct relative import or BrowserService event API
+ * ✅ Use: Direct relative import or helpers from @shared/utils/browser
  *
  * **Vitest Note**: Relative imports used (Windows alias resolution workaround)
  *
