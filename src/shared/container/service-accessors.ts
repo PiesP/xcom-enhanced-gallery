@@ -42,7 +42,6 @@ import { languageService } from '../services/language-service';
 import { CoreServiceRegistry } from './core-service-registry';
 import { bridgeRegisterBaseService, bridgeInitializeAllBaseServices } from './service-bridge';
 import { SERVICE_KEYS } from '../../constants';
-import { logger } from '../logging';
 
 // ============================================================================
 // Required Service Getters
@@ -241,15 +240,7 @@ export function warmupNonCriticalServices(): void {
  * @internal
  */
 export function registerCoreBaseServices(): void {
-  try {
-    registerBaseService(SERVICE_KEYS.THEME, themeService);
-  } catch (error) {
-    logger.error(`[registerCoreBaseServices] ThemeService registration failed:`, error);
-  }
-
-  try {
-    registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
-  } catch (error) {
-    logger.error(`[registerCoreBaseServices] LanguageService registration failed:`, error);
-  }
+  // Allow registration errors to surface so bootstrap can fail fast.
+  registerBaseService(SERVICE_KEYS.THEME, themeService);
+  registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
 }
