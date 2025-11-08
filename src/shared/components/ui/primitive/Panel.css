@@ -1,130 +1,21 @@
-/**
- * @fileoverview Primitive Panel Component Styles
- * @version 1.1.0 - Phase 390: Full English documentation, comprehensive comments
- * @description CSS styling for semantic panel/surface element with design token integration
- * @module shared/components/ui/primitive/Panel.css
- *
- * **Design System Integration**:
- * - Colors: --panel-bg, --color-bg-elevated, --glass-bg (variants)
- * - Borders: --panel-border, --border-width-thin for outlines
- * - Shadows: --panel-shadow, --shadow-md, --glass-shadow (depth)
- * - Radius: --panel-radius for border-radius consistency
- * - Spacing: --panel-padding for content padding
- * - Effects: --glass-backdrop-filter for frosted glass variant
- *
- * **CSS Architecture**:
- * 1. Base Styles: xeg-panel (all panels)
- * 2. Variants: xeg-panel--default|elevated|glass (appearance)
- * 3. Padding: xeg-panel--padded (optional padding control)
- * 4. Responsive: Media queries for mobile/tablet adjustments
- * 5. Dark Mode: Handled by semantic tokens (Phase 54.1)
- *
- * **Variant Details**:
- * - default: Standard surface appearance (cards, containers)
- * - elevated: Raised surface (emphasis, important sections)
- * - glass: Frosted glass effect (overlays, modal backdrops)
- *
- * **Performance**:
- * - No animations: Static styling (fast rendering)
- * - CSS Modules: Scoped classes prevent conflicts
- * - Design tokens: Centralized color/shadow management
- * - Memory: Simple div wrapper, minimal DOM overhead
- *
- * **Accessibility**:
- * - Semantic: Uses div (passive container)
- * - Nesting: Safe for any content (images, forms, components)
- * - Contrast: Design tokens ensure proper color contrast
- * - Structure: Screen reader neutral (container only)
- */
-
-/* ===== Base Panel Styles ===== */
-
-/**
- * Base panel element styling
- * Applied to all panel instances
- * Provides surface/container appearance with design system tokens
- *
- * **Visual**:
- * - background: --panel-bg (surface color)
- * - border: 1px solid --panel-border (subtle outline)
- * - radius: --panel-radius (rounded corners)
- * - shadow: --panel-shadow (subtle depth)
- */
+/* Base panel surface */
 .xeg-panel {
-  /* Component color tokens */
   background-color: var(--panel-bg);
   border: var(--border-width-thin) solid var(--panel-border);
   border-radius: var(--panel-radius);
   box-shadow: var(--panel-shadow);
 }
 
-/**
- * Padded variant
- * Adds internal spacing to panel when padding=true
- * Separates content from edges (standard card behavior)
- *
- * - padding: --panel-padding (all sides, e.g., 16px)
- * Useful for: Text-heavy content, cards, standard layouts
- * Not useful for: Full-width images, borderless content
- */
 .xeg-panel--padded {
   padding: var(--panel-padding);
 }
 
-/* ===== Variant: Default ===== */
-
-/**
- * Default panel variant
- * Standard appearance for general containers
- * Balances visibility with subtlety
- *
- * Base styles already provide default appearance:
- * - Background: --panel-bg (surface color)
- * - Border: --panel-border (subtle outline)
- * - Shadow: --panel-shadow (minimal depth)
- *
- * Use case: Standard cards, content containers, general panels
- */
-/* Default variant uses base .xeg-panel styles only */
-
-/* ===== Variant: Elevated ===== */
-
-/**
- * Elevated panel variant
- * Raised surface for emphasis and visual hierarchy
- * More prominent than default, less prominent than glass
- *
- * - Background: --color-bg-elevated (higher visual weight)
- * - Shadow: --shadow-md (more pronounced depth)
- * Uses semantic tokens for dark mode support (Phase 54.1)
- *
- * Use case: Important sections, highlighted content, emphasis boxes
- */
+/* Variant overrides */
 .xeg-panel--elevated {
   background-color: var(--color-bg-elevated);
   box-shadow: var(--shadow-md);
 }
 
-/* ===== Variant: Glass ===== */
-
-/**
- * Glass panel variant
- * Frosted glass effect for overlay surfaces
- * Creates translucent, blurred appearance
- *
- * **Visual Effect**:
- * - Background: --glass-bg (semi-transparent color)
- * - Blur: --glass-backdrop-filter (frosted effect)
- * - Border: --glass-border (subtle separation)
- * - Shadow: --glass-shadow (minimal, for definition)
- *
- * **Browser Support**:
- * - backdrop-filter: Chrome 76+, Firefox 103+, Safari 9+
- * - Fallback: Opaque background if not supported
- *
- * Use case: Modal backdrops, overlay panels, translucent surfaces
- * Common patterns: Modal shell backgrounds, content overlays
- */
 .xeg-panel--glass {
   background-color: var(--glass-bg);
   border-color: var(--glass-border);

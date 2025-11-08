@@ -1,111 +1,16 @@
-/**
- * @fileoverview Primitive Button Component Styles
- * @version 1.1.0 - Phase 390: Full English documentation, comprehensive comments
- * @description CSS styling for semantic button element with design token integration
- * @module shared/components/ui/primitive/Button.css
- *
- * **Design System Integration**:
- * - Colors: --xeg-color-primary, --button-text-*, --button-bg-*
- * - Spacing: --space-xs, --space-sm, --space-md, --space-lg (padding)
- * - Sizing: 2em (sm), 2.5em (md), 3em (lg) with em-based scaling
- * - Transitions: --button-transition for smooth hover/active effects
- * - Radius: --xeg-radius-md for border-radius consistency
- * - Focus: --xeg-focus-ring (outline + offset)
- * - Opacity: --xeg-opacity-disabled for disabled state
- * - Lift: --xeg-button-lift for hover effect (translateY)
- *
- * **CSS Architecture**:
- * 1. Base Styles: xeg-button (all buttons)
- * 2. Variants: xeg-button--primary|secondary|outline
- * 3. Sizes: xeg-button--sm|md|lg (responsive scaling)
- * 4. States: :focus-visible, :disabled, :hover, :active
- * 5. Intents: Color overrides for semantic meaning (success, danger, etc)
- *
- * **Interactive States**:
- * - Hover: Transform lift effect, background color change
- * - Active: Pressed effect, no lift transform
- * - Focus: Visible outline with 2px offset
- * - Disabled: Reduced opacity, cursor disabled
- *
- * **Responsive Design**:
- * - Em-based scaling: Button size adjusts with font-size context
- * - Small: 2em height (~32px), smaller font
- * - Medium: 2.5em height (~40px), default font (default)
- * - Large: 3em height (~48px), larger font
- *
- * **Performance**:
- * - GPU Acceleration: transform and opacity only
- * - No reflows: outline, background, transform are non-layout
- * - Smooth: Transitions via --button-transition token
- * - Memory: No pseudo-elements, minimal CSS size
- *
- * **Accessibility**:
- * - Focus visible: 2px outline with proper offset (WCAG AA)
- * - Contrast: Design tokens ensure 4.5:1 minimum
- * - Disabled: Clear visual feedback (opacity, cursor)
- * - Semantic: Native button element (no ARIA hacks needed)
- *
- * **Browser Support**:
- * - Modern browsers (Chrome 120+, Firefox 121+, Safari 17+)
- * - CSS Modules: No vendor prefixes needed
- * - Grid gaps: Standard flex gap support
- */
-
-/* ===== Base Button Styles ===== */
-
-/**
- * Base button element styling
- * Applied to all button instances
- * Provides semantic HTML button appearance with design system tokens
- *
- * **Layout**:
- * - display: inline-flex (allows children alignment)
- * - align-items: center (vertical centering)
- * - justify-content: center (horizontal centering)
- * - gap: --space-sm (spacing between icon and text)
- *
- * **Typography**:
- * - font-family: inherit (uses parent font)
- * - font-size: --font-size-md (medium, default)
- * - font-weight: 500 (semi-bold for emphasis)
- * - line-height: 1 (tight line-height for buttons)
- * - text-decoration: none (removes underlines)
- *
- * **Visual**:
- * - background: --xeg-color-primary (primary action color)
- * - color: --button-text-primary (text color)
- * - border: 1px solid --button-border (subtle outline)
- * - radius: --xeg-radius-md (rounded corners)
- *
- * **Interaction**:
- * - cursor: pointer (hand cursor for mouse users)
- * - user-select: none (prevents text selection on click)
- * - outline: none (default, managed via :focus-visible)
- *
- * **Animation**:
- * - transition: --button-transition (smooth state changes)
- * - transform: applied on hover/active
- * - opacity: applied on disabled
- */
+/* Base button primitive styling */
 .xeg-button {
-  /* Component color tokens */
   background-color: var(--xeg-color-primary);
   color: var(--button-text-primary);
   border: var(--border-width-thin) solid var(--button-border);
   border-radius: var(--xeg-radius-md);
   padding: var(--space-sm) var(--space-md);
   height: var(--size-button-height);
-
-  /* Animation */
   transition: var(--button-transition);
-
-  /* Layout */
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-sm);
-
-  /* Typography */
   font-family: inherit;
   font-size: var(--font-size-md);
   font-weight: 500;
@@ -113,131 +18,53 @@
   text-decoration: none;
   cursor: pointer;
   user-select: none;
-
-  /* Accessibility */
   outline: none;
 }
 
-/**
- * Focus-visible state (keyboard navigation)
- * Shows outline ring for keyboard users (WCAG AA compliant)
- * Hidden by default for mouse users (focus-visible)
- *
- * Uses design token: --xeg-focus-ring (color + width)
- * Offset: --xeg-focus-ring-offset for visible separation from border
- */
+/* Keyboard focus ring */
 .xeg-button:focus-visible {
-  outline: 0.125rem solid var(--color-primary); /* 2px outline */
-  outline-offset: 0.125rem; /* 2px offset */
+  outline: 0.125rem solid var(--color-primary);
+  outline-offset: 0.125rem;
 }
 
-/**
- * Disabled state
- * Applies when button is disabled or loading
- * Prevents all interaction visually and functionally
- *
- * - opacity: Reduced to --xeg-opacity-disabled (typically 0.5)
- * - cursor: not-allowed (indicates non-interactive)
- * - transform: none (removes hover lift effect)
- */
 .xeg-button:disabled {
   opacity: var(--xeg-opacity-disabled);
   cursor: not-allowed;
   transform: none;
 }
 
-/**
- * Hover state (non-disabled)
- * Visual feedback when user hovers over button
- * Indicates button is interactive and clickable
- *
- * - background: Lighter/darker variant of primary color
- * - transform: Lift effect (translateY negative) via --xeg-button-lift
- * Effect: Button appears to rise on hover
- */
 .xeg-button:hover:not(:disabled) {
   background-color: var(--button-bg-primary-hover);
-  /* Hover lift effect based on design tokens */
   transform: translateY(var(--xeg-button-lift));
 }
 
-/**
- * Active state (pressed)
- * Visual feedback when button is being clicked
- * Indicates user action is being processed
- *
- * - background: Darkest/most saturated primary color
- * - transform: none (removes lift, returns to baseline)
- * Effect: Button appears pressed down
- */
 .xeg-button:active:not(:disabled) {
   background-color: var(--button-bg-primary-active);
   transform: translateY(0);
 }
 
-/* ===== Variant: Secondary ===== */
-
-/**
- * Secondary button variant
- * Subtle appearance for secondary actions
- * Lower visual priority than primary buttons
- *
- * - Background: --color-bg-primary (surface color, not filled)
- * - Text: --button-text-secondary (secondary text color)
- * - Border: --button-border (subtle outline)
- */
+/* Secondary variant overrides */
 .xeg-button--secondary {
   background-color: var(--color-bg-primary);
   color: var(--button-text-secondary);
   border-color: var(--button-border);
 }
 
-/**
- * Secondary hover state
- * Transitions to secondary background variant
- */
 .xeg-button--secondary:hover:not(:disabled) {
   background-color: var(--color-bg-secondary);
 }
 
-/**
- * Secondary active state
- * Darker background to indicate pressed state
- */
 .xeg-button--secondary:active:not(:disabled) {
   background-color: var(--color-border-default);
 }
 
-/* ===== Size: Small ===== */
-
-/**
- * Small button size (sm variant)
- * Compact button for limited space
- * Approximately 32px height at 16px base font-size
- *
- * - Height: 2em (~32px with default font)
- * - Padding: --space-xs (horizontal), --space-sm (vertical)
- * - Font: --font-size-sm (smaller text)
- * Uses em-based scaling for responsive sizing
- */
+/* Size modifiers */
 .xeg-button--sm {
   height: 2em;
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--font-size-sm);
 }
 
-/* ===== Size: Large ===== */
-
-/**
- * Large button size (lg variant)
- * Prominent button for primary actions
- * Approximately 48px height at 16px base font-size
- *
- * - Height: 3em (~48px with default font)
- * - Padding: --space-sm (horizontal), --space-lg (vertical)
- * - Font: --font-size-lg (larger text)
- * Uses em-based scaling for responsive sizing
- */
 .xeg-button--lg {
   height: 3em;
   padding: var(--space-sm) var(--space-lg);
