@@ -127,9 +127,9 @@ describe('Bootstrap Reporter', () => {
       });
 
       const mockServices = [
-        { name: 'HttpRequestService', available: true, message: 'fetch API available' },
-        { name: 'DownloadService', available: false, message: 'GM_download not found' },
-        { name: 'PersistentStorage', available: true, message: 'localStorage fallback' },
+        { name: 'HttpRequestService', available: true, message: 'Native fetch API detected' },
+        { name: 'DownloadService', available: false, message: 'GM_download unavailable' },
+        { name: 'PersistentStorage', available: true, message: 'GM_setValue detected' },
       ];
 
       checkAllServicesSpy.mockResolvedValue(mockServices);

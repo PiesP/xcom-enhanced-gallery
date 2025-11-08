@@ -5,8 +5,19 @@
  */
 
 import { logger } from '../shared/logging';
-import { getBootstrapDiagnostics, type BootstrapResult } from './diagnostics';
+import type { BootstrapResult } from './diagnostics/types';
 import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+
+function createBootstrapSkeleton(environment: string): BootstrapResult {
+  return {
+    success: true,
+    environment,
+    timestamp: new Date().toISOString(),
+    services: [],
+    warnings: [],
+    errors: [],
+  };
+}
 
 /**
  * Runtime environment initialization (Phase 314-5, Phase 343 improvements)
@@ -20,23 +31,22 @@ import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
  * @returns {Promise<BootstrapResult>} Bootstrap result and diagnostic information
  */
 export async function initializeEnvironment(): Promise<BootstrapResult> {
-  let diagnostics: BootstrapResult = {
-    success: true,
-    environment: 'unknown',
-    timestamp: new Date().toISOString(),
-    services: [],
-    warnings: [],
-    errors: [],
-  };
+  const shouldCollectDiagnostics = !import.meta.env.PROD;
+  let diagnostics = createBootstrapSkeleton(shouldCollectDiagnostics ? 'unknown' : 'production');
 
   try {
-    // Collect bootstrap diagnostics information
-    diagnostics = await getBootstrapDiagnostics();
+    if (shouldCollectDiagnostics) {
+      const { getBootstrapDiagnostics } = await import('./diagnostics/bootstrap-reporter');
+      diagnostics = await getBootstrapDiagnostics();
+    }
 
     // Initialize vendors
     const { initializeVendors } = await import('../shared/external/vendors');
     await initializeVendors();
-    logger.debug('[environment] ✅ Vendors initialized');
+
+    if (!import.meta.env.PROD) {
+      logger.debug('[environment] ✅ Vendors initialized');
+    }
 
     return diagnostics;
   } catch (error) {

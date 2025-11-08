@@ -36,8 +36,8 @@ describe('Bootstrap Logger', () => {
         environment: 'tampermonkey',
         timestamp: '2025-11-04T12:00:00.000Z',
         services: [
-          { name: 'HttpRequestService', available: true, message: 'HTTP requests available' },
-          { name: 'DownloadService', available: true, message: 'GM_download available' },
+          { name: 'HttpRequestService', available: true, message: 'Native fetch API detected' },
+          { name: 'DownloadService', available: true, message: 'GM_download detected' },
         ],
         warnings: [],
         errors: [],
@@ -52,11 +52,9 @@ describe('Bootstrap Logger', () => {
 
       // Verify service logs
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ HttpRequestService: HTTP requests available'
+        '[bootstrap] ✅ HttpRequestService: Native fetch API detected'
       );
-      expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ DownloadService: GM_download available'
-      );
+      expect(debugSpy).toHaveBeenCalledWith('[bootstrap] ✅ DownloadService: GM_download detected');
     });
 
     it('should log failed bootstrap with status ❌', () => {
@@ -82,8 +80,8 @@ describe('Bootstrap Logger', () => {
         environment: 'browser',
         timestamp: '2025-11-04T12:00:00.000Z',
         services: [
-          { name: 'HttpRequestService', available: true, message: 'Available' },
-          { name: 'DownloadService', available: false, message: 'GM_download not found' },
+          { name: 'HttpRequestService', available: true, message: 'Native fetch API detected' },
+          { name: 'DownloadService', available: false, message: 'GM_download unavailable' },
         ],
         warnings: [],
         errors: [],
@@ -94,9 +92,11 @@ describe('Bootstrap Logger', () => {
       expect(infoSpy).toHaveBeenCalledWith(
         '[bootstrap] Summary: browser | Services: 1/2 | Status: ✅'
       );
-      expect(debugSpy).toHaveBeenCalledWith('[bootstrap] ✅ HttpRequestService: Available');
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ⚠️  DownloadService: GM_download not found'
+        '[bootstrap] ✅ HttpRequestService: Native fetch API detected'
+      );
+      expect(debugSpy).toHaveBeenCalledWith(
+        '[bootstrap] ⚠️  DownloadService: GM_download unavailable'
       );
     });
 

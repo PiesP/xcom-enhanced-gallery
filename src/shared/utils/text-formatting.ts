@@ -9,7 +9,20 @@
 export type TextToken =
   | { type: 'text'; content: string }
   | { type: 'link'; content: string; href: string }
+  | { type: 'mention'; content: string; href: string }
+  | { type: 'hashtag'; content: string; href: string }
+  | { type: 'cashtag'; content: string; href: string }
   | { type: 'break' };
+
+/**
+ * Combined pattern matching URLs, mentions, hashtags, and cashtags
+ * - URLs: http / https
+ * - Mentions: @username (1-15 chars, alphanumeric + underscore)
+ * - Hashtags: #tag (letters, numbers, underscore, unicode aware)
+ * - Cashtags: $TICKER (1-6 uppercase characters, optional .XX suffix)
+ */
+const ENTITY_PATTERN =
+  /(https?:\/\/[^\s]+|@[a-zA-Z0-9_]{1,15}|#[\p{L}\p{N}_]{1,50}|\$[A-Z]{1,6}(?:\.[A-Z]{1,2})?)/gu;
 
 /**
  * Formats tweet text into safe renderable tokens
@@ -31,10 +44,6 @@ export type TextToken =
 export function formatTweetText(text: string | undefined): TextToken[] {
   if (!text) return [];
 
-  // URL pattern: matches http(s) URLs
-  // Simplified pattern for safety (doesn't capture complex edge cases)
-  const urlPattern = /(https?:\/\/[^\s]+)/g;
-
   const tokens: TextToken[] = [];
   const lines = text.split('\n');
 
@@ -49,17 +58,17 @@ export function formatTweetText(text: string | undefined): TextToken[] {
       continue;
     }
 
-    // Split line by URLs
+    // Split line by interactive entities (URLs, mentions, tags)
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
-    urlPattern.lastIndex = 0; // Reset regex state
+    ENTITY_PATTERN.lastIndex = 0; // Reset regex state
 
-    while ((match = urlPattern.exec(line)) !== null) {
-      const url = match[0];
+    while ((match = ENTITY_PATTERN.exec(line)) !== null) {
+      const entity = match[0];
       const matchIndex = match.index;
 
-      // Add text before URL
+      // Add text before entity
       if (matchIndex > lastIndex) {
         const textContent = line.slice(lastIndex, matchIndex);
         if (textContent) {
@@ -67,17 +76,13 @@ export function formatTweetText(text: string | undefined): TextToken[] {
         }
       }
 
-      // Add URL as link
-      tokens.push({
-        type: 'link',
-        content: url,
-        href: url,
-      });
+      // Add entity as appropriate interactive token
+      tokens.push(createEntityToken(entity));
 
-      lastIndex = matchIndex + url.length;
+      lastIndex = matchIndex + entity.length;
     }
 
-    // Add remaining text after last URL
+    // Add remaining text after last entity
     if (lastIndex < line.length) {
       const textContent = line.slice(lastIndex);
       if (textContent) {
@@ -92,6 +97,53 @@ export function formatTweetText(text: string | undefined): TextToken[] {
   }
 
   return tokens;
+}
+
+/**
+ * Creates an interactive token (link/mention/hashtag/cashtag) with resolved href
+ */
+function createEntityToken(entity: string): TextToken {
+  if (entity.startsWith('http')) {
+    return {
+      type: 'link',
+      content: entity,
+      href: entity,
+    };
+  }
+
+  if (entity.startsWith('@')) {
+    const username = entity.slice(1);
+    return {
+      type: 'mention',
+      content: entity,
+      href: `https://x.com/${username}`,
+    };
+  }
+
+  if (entity.startsWith('#')) {
+    const tag = entity.slice(1);
+    return {
+      type: 'hashtag',
+      content: entity,
+      href: `https://x.com/hashtag/${encodeURIComponent(tag)}`,
+    };
+  }
+
+  if (entity.startsWith('$')) {
+    const symbol = entity.slice(1);
+    const encoded = encodeURIComponent(`$${symbol}`);
+    return {
+      type: 'cashtag',
+      content: entity,
+      href: `https://x.com/search?q=${encoded}`,
+    };
+  }
+
+  // Fallback: treat as plain text token
+  return {
+    type: 'text',
+    content: entity,
+  };
 }
 
 /**

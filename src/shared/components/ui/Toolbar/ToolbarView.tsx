@@ -127,6 +127,29 @@ type ToolbarViewNavState = {
   readonly anyActionDisabled: boolean;
 };
 
+type TweetAnchorType = 'url' | 'mention' | 'hashtag' | 'cashtag';
+
+function renderTweetAnchor(
+  tokenAccessor: () => { content: string; href: string },
+  anchorType: TweetAnchorType,
+  displayOverride?: string
+): JSXElement {
+  const token = tokenAccessor();
+
+  return (
+    <a
+      href={token.href}
+      target='_blank'
+      rel='noopener noreferrer'
+      class={styles.tweetLink}
+      data-token-type={anchorType}
+      title={anchorType === 'url' ? token.href : token.content}
+    >
+      {displayOverride ?? token.content}
+    </a>
+  );
+}
+
 /**
  * @type FitModeLabel
  * @description Localized fit mode button label
@@ -531,17 +554,22 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                     {token => (
                       <solid.Switch>
                         <solid.Match when={token.type === 'link' && token}>
-                          {linkToken => (
-                            <a
-                              href={linkToken().href}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                              class={styles.tweetLink}
-                              title={linkToken().href}
-                            >
-                              {shortenUrl(linkToken().content, 40)}
-                            </a>
-                          )}
+                          {linkToken => {
+                            return renderTweetAnchor(
+                              linkToken,
+                              'url',
+                              shortenUrl(linkToken().content, 40)
+                            );
+                          }}
+                        </solid.Match>
+                        <solid.Match when={token.type === 'mention' && token}>
+                          {mentionToken => renderTweetAnchor(mentionToken, 'mention')}
+                        </solid.Match>
+                        <solid.Match when={token.type === 'hashtag' && token}>
+                          {hashtagToken => renderTweetAnchor(hashtagToken, 'hashtag')}
+                        </solid.Match>
+                        <solid.Match when={token.type === 'cashtag' && token}>
+                          {cashtagToken => renderTweetAnchor(cashtagToken, 'cashtag')}
                         </solid.Match>
                         <solid.Match when={token.type === 'break'}>
                           <br />

@@ -93,6 +93,61 @@ describe('formatTweetText', () => {
     ]);
   });
 
+  it('should detect mentions and create profile links', () => {
+    const result = formatTweetText('Thanks @example_user!');
+    expect(result).toEqual([
+      { type: 'text', content: 'Thanks ' },
+      {
+        type: 'mention',
+        content: '@example_user',
+        href: 'https://x.com/example_user',
+      },
+      { type: 'text', content: '!' },
+    ]);
+  });
+
+  it('should detect hashtags and create hashtag links', () => {
+    const result = formatTweetText('Launch day #XEG2025');
+    expect(result).toEqual([
+      { type: 'text', content: 'Launch day ' },
+      {
+        type: 'hashtag',
+        content: '#XEG2025',
+        href: 'https://x.com/hashtag/XEG2025',
+      },
+    ]);
+  });
+
+  it('should support multilingual hashtags', () => {
+    const result = formatTweetText('업데이트 완료 #갤러리');
+    expect(result).toEqual([
+      { type: 'text', content: '업데이트 완료 ' },
+      {
+        type: 'hashtag',
+        content: '#갤러리',
+        href: `https://x.com/hashtag/${encodeURIComponent('갤러리')}`,
+      },
+    ]);
+  });
+
+  it('should detect cashtags and create search links', () => {
+    const result = formatTweetText('Long $TSLA short $NVDA');
+    expect(result).toEqual([
+      { type: 'text', content: 'Long ' },
+      {
+        type: 'cashtag',
+        content: '$TSLA',
+        href: 'https://x.com/search?q=%24TSLA',
+      },
+      { type: 'text', content: ' short ' },
+      {
+        type: 'cashtag',
+        content: '$NVDA',
+        href: 'https://x.com/search?q=%24NVDA',
+      },
+    ]);
+  });
+
   it('should handle complex real-world tweet', () => {
     const tweet = `Just launched our new product! 🚀
 

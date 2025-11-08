@@ -6,90 +6,91 @@
 
 import type { ServiceAvailabilityInfo } from './types';
 
-/**
- * Check HttpRequestService availability
- * Phase 347: Extracted from bootstrap-info.ts
- */
+type AvailabilityFormatter = (available: boolean) => string;
+
+const gmScope = globalThis as Record<string, unknown>;
+
+function makeBinaryMessage(label: string): AvailabilityFormatter {
+  return available => (available ? `${label} detected` : `${label} unavailable`);
+}
+
+const gmApiAvailable = (api: 'GM_download' | 'GM_setValue'): boolean =>
+  typeof gmScope[api] === 'function';
+
+const notificationUnavailableMessage = 'Notification provider unavailable';
+
 export async function checkHttpService(): Promise<ServiceAvailabilityInfo> {
+  const available = typeof fetch === 'function';
   return {
     name: 'HttpRequestService',
-    available: typeof fetch !== 'undefined',
-    message: 'HTTP requests (native fetch API)',
+    available,
+    message: makeBinaryMessage('Native fetch API')(available),
   };
 }
 
-/**
- * Check NotificationService availability
- * Phase 347: Extracted from bootstrap-info.ts
- */
 export async function checkNotificationService(): Promise<ServiceAvailabilityInfo> {
   try {
     const { NotificationService } = await import('../../shared/services');
     const notificationService = NotificationService.getInstance();
-    const notificationProvider = await notificationService.getNotificationProvider();
+    const provider = await notificationService.getNotificationProvider();
     return {
       name: 'NotificationService',
-      available: notificationProvider.available,
-      message: `Notifications via ${notificationProvider.provider} provider`,
+      available: provider.available,
+      message: provider.available
+        ? `Notification provider: ${provider.provider}`
+        : notificationUnavailableMessage,
     };
   } catch {
     return {
       name: 'NotificationService',
       available: false,
-      message: 'Failed to check notification availability',
+      message: notificationUnavailableMessage,
     };
   }
 }
 
-/**
- * Check DownloadService availability (GM_download)
- * Phase 347: Extracted from bootstrap-info.ts
- */
 export async function checkDownloadService(): Promise<ServiceAvailabilityInfo> {
-  const gmDownload = (globalThis as Record<string, unknown>).GM_download;
+  const available = gmApiAvailable('GM_download');
   return {
     name: 'DownloadService',
-    available: !!gmDownload,
-    message: gmDownload ? 'GM_download available' : 'GM_download unavailable (test mode available)',
+    available,
+    message: makeBinaryMessage('GM_download')(available),
   };
 }
 
-/**
- * Check PersistentStorage availability (GM_setValue)
- * Phase 347: Extracted from bootstrap-info.ts
- */
 export async function checkPersistentStorage(): Promise<ServiceAvailabilityInfo> {
-  const gmSetValue = (globalThis as Record<string, unknown>).GM_setValue;
+  const available = gmApiAvailable('GM_setValue');
   return {
     name: 'PersistentStorage',
-    available: !!gmSetValue,
-    message: gmSetValue ? 'GM_setValue available' : 'LocalStorage fallback available',
+    available,
+    message: makeBinaryMessage('GM_setValue')(available),
   };
 }
 
-/**
- * Check all services in parallel
- * Phase 347: Main entry point for service checking
- *
- * @returns Array of service availability information
- */
+const serviceChecks: Array<{
+  name: ServiceAvailabilityInfo['name'];
+  run: () => Promise<ServiceAvailabilityInfo>;
+}> = [
+  { name: 'HttpRequestService', run: checkHttpService },
+  { name: 'NotificationService', run: checkNotificationService },
+  { name: 'DownloadService', run: checkDownloadService },
+  { name: 'PersistentStorage', run: checkPersistentStorage },
+];
+
 export async function checkAllServices(): Promise<ServiceAvailabilityInfo[]> {
-  const checks = [
-    checkHttpService(),
-    checkNotificationService(),
-    checkDownloadService(),
-    checkPersistentStorage(),
-  ];
-
-  const results = await Promise.allSettled(checks);
-
-  return results.map(result =>
-    result.status === 'fulfilled'
-      ? result.value
-      : {
-          name: 'Unknown',
+  const results = await Promise.all(
+    serviceChecks.map(async service => {
+      try {
+        return await service.run();
+      } catch {
+        return {
+          name: service.name,
           available: false,
-          message: 'Check failed',
-        }
+          message: 'Unable to determine availability',
+        } satisfies ServiceAvailabilityInfo;
+      }
+    })
   );
+
+  return results;
 }

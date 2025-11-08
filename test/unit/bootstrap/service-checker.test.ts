@@ -21,7 +21,7 @@ describe('Service Checker', () => {
       const result = await checkHttpService();
       expect(result.name).toBe('HttpRequestService');
       expect(result.available).toBe(typeof fetch !== 'undefined');
-      expect(result.message).toBe('HTTP requests (native fetch API)');
+      expect(result.message).toContain('Native fetch API');
     });
   });
 
@@ -37,7 +37,7 @@ describe('Service Checker', () => {
     it('should report unavailable when GM_download is missing', async () => {
       const result = await checkDownloadService();
       if (!result.available) {
-        expect(result.message).toContain('unavailable');
+        expect(result.message).toBe('GM_download unavailable');
       }
     });
   });
@@ -51,10 +51,10 @@ describe('Service Checker', () => {
       );
     });
 
-    it('should report fallback when GM_setValue is missing', async () => {
+    it('should report unavailable message when GM_setValue is missing', async () => {
       const result = await checkPersistentStorage();
       if (!result.available) {
-        expect(result.message).toContain('fallback');
+        expect(result.message).toBe('GM_setValue unavailable');
       }
     });
   });

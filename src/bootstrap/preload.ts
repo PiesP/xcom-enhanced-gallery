@@ -16,6 +16,25 @@
 import { logger } from '@shared/logging';
 import { preloadZipCreation } from '@shared/utils/lazy-compression';
 
+const isProdBuild = import.meta.env.PROD;
+
+function scheduleIdleWork(callback: () => Promise<void>): void {
+  const requestIdleCallback = (globalThis as Record<string, unknown>).requestIdleCallback as
+    | ((cb: () => void) => void)
+    | undefined;
+
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(() => {
+      void callback();
+    });
+    return;
+  }
+
+  globalThis.setTimeout(() => {
+    void callback();
+  }, 2000);
+}
+
 /**
  * Critical chunk preload
  * Preload essential chunks after initialization - Gallery, Services, etc.
@@ -23,13 +42,17 @@ import { preloadZipCreation } from '@shared/utils/lazy-compression';
  * @private Internal bootstrap function
  */
 export async function preloadCriticalChunks(): Promise<void> {
-  logger.debug('[preload] Preloading critical chunks...');
+  if (!isProdBuild) {
+    logger.debug('[preload] Preloading critical chunks...');
+  }
 
   try {
     // Preload Gallery chunk (main feature)
     // Phase 326: Chunk separation via dynamic import
     await import('@features/gallery');
-    logger.debug('[preload] Gallery chunk loaded');
+    if (!isProdBuild) {
+      logger.debug('[preload] Gallery chunk loaded');
+    }
   } catch (error) {
     logger.warn('[preload] Critical chunk preload failed:', error);
   }
@@ -44,35 +67,18 @@ export async function preloadCriticalChunks(): Promise<void> {
  * @private Internal bootstrap function
  */
 export async function preloadOptionalChunks(): Promise<void> {
-  // Check requestIdleCallback support
-  const schedulePreload = (callback: () => Promise<void>) => {
-    const hasRequestIdleCallback =
-      typeof globalThis !== 'undefined' &&
-      typeof (globalThis as Record<string, unknown>).requestIdleCallback === 'function';
-
-    if (hasRequestIdleCallback) {
-      const requestIdleCallback = (globalThis as Record<string, unknown>).requestIdleCallback as (
-        cb: () => void
-      ) => void;
-      requestIdleCallback(() => {
-        void callback();
-      });
-    } else {
-      // Fallback: Load after 2 seconds (estimated idle time)
-      globalThis.setTimeout(() => {
-        void callback();
-      }, 2000);
+  scheduleIdleWork(async () => {
+    if (!isProdBuild) {
+      logger.debug('[preload] Preloading optional chunks...');
     }
-  };
-
-  schedulePreload(async () => {
-    logger.debug('[preload] Preloading optional chunks...');
 
     try {
       // Delayed Settings chunk loading
       // Phase 326: Chunk separation via dynamic import
       await import('@features/settings');
-      logger.debug('[preload] Settings chunk loaded');
+      if (!isProdBuild) {
+        logger.debug('[preload] Settings chunk loaded');
+      }
     } catch (error) {
       logger.warn('[preload] Optional chunk preload failed:', error);
     }
@@ -91,7 +97,9 @@ export async function preloadOptionalChunks(): Promise<void> {
  * @public 부트스트랩에서 호출
  */
 export async function executePreloadStrategy(): Promise<void> {
-  logger.info('[preload] 프리로드 전략 시작');
+  if (!isProdBuild) {
+    logger.info('[preload] 프리로드 전략 시작');
+  }
 
   try {
     // Critical 먼저 로드 (순서 보장)

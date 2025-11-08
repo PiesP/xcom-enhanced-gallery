@@ -863,6 +863,9 @@ button.fitButton {
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 /* 스크롤바 스타일링 (optional) */
@@ -904,6 +907,29 @@ button.fitButton {
 }
 
 .tweetLink:active {
+  color: var(--xeg-color-primary-active);
+}
+
+.tweetContent a {
+  color: var(--xeg-color-primary);
+  text-decoration: none;
+  overflow-wrap: break-word;
+  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
+  cursor: pointer;
+}
+
+.tweetContent a:hover {
+  color: var(--xeg-color-primary-hover);
+  text-decoration: underline;
+}
+
+.tweetContent a:focus {
+  outline: 0.125em solid var(--xeg-color-focus); /* 2px → 0.125em */
+  outline-offset: 0.125em; /* 2px → 0.125em */
+  border-radius: var(--xeg-radius-xs);
+}
+
+.tweetContent a:active {
   color: var(--xeg-color-primary-active);
 }
 

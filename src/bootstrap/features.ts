@@ -24,7 +24,10 @@ import {
   type FeatureKey,
 } from '@shared/utils/conditional-loading';
 import type { SettingsWithFeatures } from '@shared/utils/conditional-loading';
+import { DEFAULT_SETTINGS } from '@/constants/default-settings';
 import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+
+const isProdBuild = import.meta.env.PROD;
 
 /**
  * Feature Loader definition
@@ -34,7 +37,6 @@ interface FeatureLoader {
   flag: FeatureKey;
   name: string;
   load: () => Promise<void>;
-  optional?: boolean;
 }
 
 /**
@@ -50,51 +52,19 @@ const FEATURE_LOADERS: FeatureLoader[] = [
       registerTwitterTokenExtractor(new TwitterTokenExtractor());
     },
   },
-  // Download feature currently has no actual loading, so placeholder
-  {
-    flag: 'download',
-    name: 'Download',
-    load: async () => {
-      // Planned for future implementation
-    },
-    optional: true,
-  },
-  // Advanced Filters to be implemented in future
-  {
-    flag: 'advancedFilters',
-    name: 'AdvancedFilters',
-    load: async () => {
-      // Planned for future implementation
-    },
-    optional: true,
-  },
-  // Accessibility to be implemented in future
-  {
-    flag: 'accessibility',
-    name: 'Accessibility',
-    load: async () => {
-      // Planned for future implementation
-    },
-    optional: true,
-  },
 ];
+
+function createDefaultFeatureSettings(): SettingsWithFeatures {
+  return {
+    features: { ...DEFAULT_SETTINGS.features },
+  };
+}
 
 /**
  * Settings loading helper function
  * Phase 346: Logic separation
  */
 async function loadSettings(): Promise<SettingsWithFeatures> {
-  const defaultSettings: SettingsWithFeatures = {
-    features: {
-      gallery: true,
-      settings: true,
-      download: true,
-      mediaExtraction: true,
-      advancedFilters: true,
-      accessibility: true,
-    },
-  };
-
   try {
     const { PersistentStorage } = await import('@shared/services/persistent-storage');
     const storage = PersistentStorage.getInstance();
@@ -102,16 +72,18 @@ async function loadSettings(): Promise<SettingsWithFeatures> {
 
     if (stored && typeof stored === 'object' && (stored as Record<string, unknown>).features) {
       const settings = stored as unknown as SettingsWithFeatures;
-      logger.debug('[features] Settings loaded successfully', {
-        features: getEnabledFeatures(settings).join(', '),
-      });
+      if (!isProdBuild) {
+        logger.debug('[features] Settings loaded successfully', {
+          features: getEnabledFeatures(settings).join(', '),
+        });
+      }
       return settings;
     }
   } catch (error) {
     logger.warn('[features] Settings loading failed - using defaults:', error);
   }
 
-  return defaultSettings;
+  return createDefaultFeatureSettings();
 }
 
 /**
@@ -126,7 +98,9 @@ async function loadSettings(): Promise<SettingsWithFeatures> {
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    logger.debug('[features] Registering feature services');
+    if (!isProdBuild) {
+      logger.debug('[features] Registering feature services');
+    }
 
     // Load settings
     const settings = await loadSettings();
@@ -141,31 +115,33 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     // Phase 346: Declarative loader pattern
     for (const loader of FEATURE_LOADERS) {
       if (!getFeatureStatus(settings, loader.flag)) {
-        logger.debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
-        continue;
-      }
-
-      // Optional loaders only log if no actual implementation
-      if (loader.optional) {
-        logger.debug(`[features] ℹ️ ${loader.name} enabled (loading planned)`);
+        if (!isProdBuild) {
+          logger.debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
+        }
         continue;
       }
 
       try {
         await loader.load();
-        logger.debug(`[features] ✅ ${loader.name} registered`);
+        if (!isProdBuild) {
+          logger.debug(`[features] ✅ ${loader.name} registered`);
+        }
       } catch (error) {
         logger.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
       }
     }
 
     // Start async loading using conditional loader (non-blocking)
-    const conditionalLoader = createConditionalLoader(settings, { debug: __DEV__ });
+    const conditionalLoader = createConditionalLoader(settings, {
+      debug: !isProdBuild,
+    });
     void conditionalLoader.loadEnabledServices().catch(error => {
       logger.warn('[features] Error during conditional feature loading (continuing):', error);
     });
 
-    logger.debug('[features] ✅ Feature services registered');
+    if (!isProdBuild) {
+      logger.debug('[features] ✅ Feature services registered');
+    }
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
     handleBootstrapError(error, { ...NON_CRITICAL_ERROR_STRATEGY, context: 'features' }, logger);
