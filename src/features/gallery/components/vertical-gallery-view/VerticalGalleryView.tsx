@@ -47,11 +47,7 @@ import { getSolid } from '@shared/external/vendors';
 import { createStabilityDetector } from '@shared/utils/stability';
 import { languageService } from '@shared/services/language-service';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
-import {
-  animateGalleryEnter,
-  animateGalleryExit,
-  setupScrollAnimation,
-} from '@shared/utils/animations';
+import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/animations';
 import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
@@ -119,15 +115,6 @@ function VerticalGalleryViewCore({
   // Solid.js의 fine-grained reactivity가 자동으로 최적화하므로 memo 불필요
   const isVisible = () => mediaItems().length > 0;
 
-  // Visibility change debugging log separated into its own effect
-  createEffect(() => {
-    const visible = isVisible();
-    logger.debug('VerticalGalleryView: visibility calculation', {
-      visible,
-      mediaCount: mediaItems().length,
-    });
-  });
-
   // Phase 146: 툴바 초기 표시 및 자동 숨김
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(false);
 
@@ -154,15 +141,11 @@ function VerticalGalleryViewCore({
     // Timer setup
     const timer = globalTimerManager.setTimeout(() => {
       setIsInitialToolbarVisible(false);
-      logger.debug('VerticalGalleryView: toolbar auto-hide executed', {
-        delay: autoHideDelay,
-      });
     }, autoHideDelay);
 
     // cleanup for timer
     onCleanup(() => {
       globalTimerManager.clearTimeout(timer);
-      logger.debug('VerticalGalleryView: toolbar auto-hide timer cleanup');
     });
   });
 
@@ -197,10 +180,8 @@ function VerticalGalleryViewCore({
 
         if (visible) {
           animateGalleryEnter(container);
-          logger.debug('gallery enter animation executed');
         } else {
           animateGalleryExit(container);
-          logger.debug('gallery exit animation executed');
         }
       },
       { defer: true }
@@ -208,36 +189,22 @@ function VerticalGalleryViewCore({
   );
 
   createEffect(
-    on(
-      () => isVisible(),
-      visible => {
-        if (!visible) {
-          const videos = document.querySelectorAll('video');
-          videos.forEach(video => {
-            try {
-              video.pause();
-              video.currentTime = 0;
-            } catch (error) {
-              logger.warn('video cleanup failed:', error);
-            }
-          });
-        }
+    on([isVisible, containerEl], ([visible, container]) => {
+      if (visible || !container) {
+        return;
       }
-    )
+
+      const videos = container.querySelectorAll('video');
+      videos.forEach(video => {
+        try {
+          video.pause();
+          video.currentTime = 0;
+        } catch (error) {
+          logger.warn('video cleanup failed', { error });
+        }
+      });
+    })
   );
-
-  createEffect(() => {
-    const container = containerEl();
-    if (!container || !isVisible()) return;
-
-    const cleanup = setupScrollAnimation(({ scrollY, progress }) => {
-      logger.debug('scroll animation', { scrollY, progress });
-    }, container);
-
-    onCleanup(() => {
-      cleanup?.();
-    });
-  });
 
   // Phase 430: 미디어 프리로드 자동화 (currentIndex 변경 시 자동 프리페치)
   createEffect(() => {
@@ -276,9 +243,8 @@ function VerticalGalleryViewCore({
         }
 
         document.head.appendChild(link);
-        logger.debug('[MediaPreloader] Auto-prefetch:', url);
       } catch (error) {
-        logger.warn('[MediaPreloader] Failed to prefetch:', error);
+        logger.warn('Media prefetch failed', { error, url });
       }
     });
   });
@@ -298,45 +264,9 @@ function VerticalGalleryViewCore({
     });
   });
 
-  createEffect(
-    on(
-      () => imageFitMode(),
-      mode => {
-        logger.debug('VerticalGalleryView: image fit mode changed', {
-          mode,
-          mediaItemsCount: mediaItems().length,
-        });
-      }
-    )
-  );
-
   const { isScrolling } = useGalleryScroll({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
-    onScroll: (delta, scrollTargetElement) => {
-      // Phase 76: 브라우저 네이티브 스크롤로 전환
-      // scrollBy 수동 호출 제거 - CSS overflow:auto로 자동 처리
-      const container = containerEl();
-      const target = scrollTargetElement ?? container;
-
-      if (!container || !target) {
-        logger.debug('VerticalGalleryView: scroll detected - target element missing', {
-          delta,
-          hasContainer: !!container,
-          hasTarget: !!target,
-        });
-        return;
-      }
-
-      logger.debug('VerticalGalleryView: scroll detected (native)', {
-        delta,
-        currentTop: target.scrollTop,
-        scrollHeight: target.scrollHeight,
-        clientHeight: target.clientHeight,
-        timestamp: Date.now(),
-        targetType: target === container ? 'container' : 'itemsContainer',
-      });
-    },
     enabled: isVisible,
     stabilityDetector,
   });
@@ -410,13 +340,6 @@ function VerticalGalleryViewCore({
     // First render only, run once
     hasPerformedInitialScroll = true;
 
-    logger.debug('VerticalGalleryView: initial scroll started (Phase 293)', {
-      currentIndex: currentIndex(),
-      itemsRendered: galleryItems.length,
-      mediaCount: items.length,
-      timestamp: Date.now(),
-    });
-
     // Phase 293+: rAF 체인 + 이미지 로드 대기로 초기 스크롤 안정성 개선
     // - 1st rAF: 현재 프레임 paint 완료
     // - 2nd rAF: 다음 프레임 시작 (레이아웃 계산 완료 보장)
@@ -435,21 +358,10 @@ function VerticalGalleryViewCore({
 
             if (itemElement) {
               await waitForMediaLoad(itemElement, 1000);
-              logger.debug('VerticalGalleryView: initial item image loaded (Phase 319)', {
-                currentIndex: currentIdx,
-                timestamp: Date.now(),
-              });
             }
           }
 
           void scrollToCurrentItem();
-          logger.debug(
-            'VerticalGalleryView: initial scroll completed (Phase 319 - rAF + image load)',
-            {
-              currentIndex: currentIndex(),
-              timestamp: Date.now(),
-            }
-          );
         });
       });
     } else {
@@ -491,9 +403,6 @@ function VerticalGalleryViewCore({
       // 타임아웃 처리 (네트워크 지연 시에도 스크롤 진행)
       const timeoutId = globalTimerManager.setTimeout(() => {
         globalTimerManager.clearInterval(checkInterval);
-        logger.debug(
-          'VerticalGalleryView: image load timeout (1000ms) - proceeding with partial load state'
-        );
         resolve();
       }, timeoutMs);
     });
@@ -504,7 +413,6 @@ function VerticalGalleryViewCore({
     const container = containerEl();
 
     if (!container || currentIdx < 0 || currentIdx >= mediaItems().length) {
-      logger.debug('VerticalGalleryView: autoScrollToCurrentItem skipped (no valid items)');
       return;
     }
 
@@ -528,61 +436,39 @@ function VerticalGalleryViewCore({
   });
 
   const handleDownloadCurrent = () => {
-    if (onDownloadCurrent) {
-      onDownloadCurrent();
-      logger.debug('VerticalGalleryView: starting current item download');
-    }
+    onDownloadCurrent?.();
   };
 
   const handleDownloadAll = () => {
-    if (onDownloadAll) {
-      onDownloadAll();
-      logger.debug('VerticalGalleryView: starting full download');
-    }
+    onDownloadAll?.();
+  };
+
+  const persistFitMode = (mode: ImageFitMode) =>
+    setSetting('gallery.imageFitMode', mode).catch(error => {
+      logger.warn('Failed to save fit mode', { error, mode });
+    });
+
+  const applyFitMode = (mode: ImageFitMode, event?: Event) => {
+    safeEventPrevent(event);
+    setImageFitMode(mode);
+    void persistFitMode(mode);
+    void autoScrollToCurrentItem();
   };
 
   const handleFitOriginal = (event?: Event) => {
-    safeEventPrevent(event);
-
-    setImageFitMode('original');
-    setSetting('gallery.imageFitMode', 'original').catch(err => {
-      logger.warn('Failed to save fit mode', { error: err });
-    });
-    logger.debug('VerticalGalleryView: set image size to original');
-    autoScrollToCurrentItem();
+    applyFitMode('original', event);
   };
 
   const handleFitWidth = (event?: Event) => {
-    safeEventPrevent(event);
-
-    setImageFitMode('fitWidth');
-    setSetting('gallery.imageFitMode', 'fitWidth').catch(err => {
-      logger.warn('Failed to save fit mode', { error: err });
-    });
-    logger.debug('VerticalGalleryView: set image size to fit width');
-    autoScrollToCurrentItem();
+    applyFitMode('fitWidth', event);
   };
 
   const handleFitHeight = (event?: Event) => {
-    safeEventPrevent(event);
-
-    setImageFitMode('fitHeight');
-    setSetting('gallery.imageFitMode', 'fitHeight').catch(err => {
-      logger.warn('Failed to save fit mode', { error: err });
-    });
-    logger.debug('VerticalGalleryView: set image size to fit height');
-    autoScrollToCurrentItem();
+    applyFitMode('fitHeight', event);
   };
 
   const handleFitContainer = (event?: Event) => {
-    safeEventPrevent(event);
-
-    setImageFitMode('fitContainer');
-    setSetting('gallery.imageFitMode', 'fitContainer').catch(err => {
-      logger.warn('Failed to save fit mode', { error: err });
-    });
-    logger.debug('VerticalGalleryView: set image size to fit container');
-    autoScrollToCurrentItem();
+    applyFitMode('fitContainer', event);
   };
 
   const handleBackgroundClick = (event: MouseEvent) => {
@@ -601,58 +487,14 @@ function VerticalGalleryViewCore({
     }
   };
 
-  const handleMediaLoad = (mediaId: string, index: number) => {
-    logger.debug('VerticalGalleryView: media load complete', { mediaId, index });
-    // Phase 18: Auto-scroll removed
-    // - Do not interfere with manual scrolling when media loads
-    // - prev/next navigation is handled by useGalleryItemScroll hook
-  };
-
   const handleMediaItemClick = (index: number) => {
     const items = mediaItems();
     const current = currentIndex();
 
     if (index >= 0 && index < items.length && index !== current) {
       navigateToItem(index, 'click');
-      logger.debug('VerticalGalleryView: media item navigation by click', { index });
     }
   };
-
-  // DEV-only: Detect and log duplicate rendered items for diagnostics (no side effects)
-  if (__DEV__) {
-    const { createEffect: devCreateEffect, on: devOn } = solidAPI;
-    // Log once per media length change to avoid noise
-    let lastLoggedLength = -1;
-    devCreateEffect(
-      devOn([mediaItems, itemsContainerEl], ([items, container]) => {
-        const length = items.length;
-        if (!container || length === 0) return;
-        if (length === lastLoggedLength) return;
-        lastLoggedLength = length;
-
-        // Count actual DOM items and detect duplicate indices
-        const nodes = container.querySelectorAll('[data-xeg-role="gallery-item"]');
-        const indices = Array.from(nodes).map(el => {
-          const h = el as HTMLElement;
-          return h.getAttribute('data-item-index') || h.getAttribute('data-index') || '';
-        });
-        const unique = new Set(indices.filter(Boolean));
-        if (nodes.length !== length || unique.size !== length) {
-          logger.warn('[DEV] Duplicate or mismatched gallery items detected', {
-            expected: length,
-            domCount: nodes.length,
-            uniqueIndices: unique.size,
-            indicesSample: indices.slice(0, 20),
-          });
-        } else {
-          logger.debug('[DEV] Gallery items render check OK', {
-            expected: length,
-            domCount: nodes.length,
-          });
-        }
-      })
-    );
-  }
 
   if (!isVisible() || mediaItems().length === 0) {
     const emptyTitle = languageService.getString('messages.gallery.emptyTitle');
@@ -723,7 +565,6 @@ function VerticalGalleryViewCore({
                 forceVisible={forcePreload}
                 fitMode={imageFitMode}
                 onClick={() => handleMediaItemClick(actualIndex)}
-                onMediaLoad={handleMediaLoad}
                 className={`${styles.galleryItem} ${
                   actualIndex === currentIndex() ? styles.itemActive : ''
                 }`}

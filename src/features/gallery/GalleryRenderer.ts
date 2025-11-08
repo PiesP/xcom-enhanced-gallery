@@ -24,7 +24,7 @@ import {
 } from '../../shared/state/signals/gallery.signals';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { VerticalGalleryView } from './components/vertical-gallery-view';
+import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
 import { GalleryContainer } from '../../shared/components/isolation';
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';

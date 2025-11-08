@@ -397,12 +397,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
     if (!aspectRatio || aspectRatio.trim() === '') {
       container.style.setProperty('--xeg-aspect-default-fallback', '4 / 3');
     }
-
-    logger.debug('[VerticalImageItem] Phase 269-3 inline style validation completed', {
-      index,
-      imageWrapperMinHeight: imageWrapperMinHeight || 'undefined',
-      aspectRatio: aspectRatio || 'undefined',
-    });
   });
 
   return (

@@ -117,4 +117,11 @@ export type { KeyboardHelpOverlayProps } from './vertical-gallery-view/KeyboardH
  * @see {@link useGalleryKeyboard}
  * @see {@link useProgressiveImage}
  */
-export { useGalleryKeyboard, useProgressiveImage } from './vertical-gallery-view/hooks';
+export { useGalleryKeyboard } from './vertical-gallery-view/hooks/useGalleryKeyboard';
+export type { UseGalleryKeyboardOptions } from './vertical-gallery-view/hooks/useGalleryKeyboard';
+
+export { useProgressiveImage } from './vertical-gallery-view/hooks/useProgressiveImage';
+export type {
+  ProgressiveImageOptions,
+  ProgressiveImageResult,
+} from './vertical-gallery-view/hooks/useProgressiveImage';

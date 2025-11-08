@@ -18,7 +18,6 @@
  * @version 1.1.0 - Path optimization (Phase 354+)
  */
 
-import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
 import { keyboardNavigator } from '@shared/services/input/keyboard-navigator';
 
@@ -64,11 +63,9 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
     const unsubscribe = keyboardNavigator.subscribe(
       {
         onEscape: () => {
-          logger.debug('Gallery: Esc key pressed, closing gallery');
           onClose();
         },
         onHelp: () => {
-          logger.debug('Gallery: Help key pressed, opening help overlay');
           onOpenHelp?.();
         },
       },
@@ -76,7 +73,6 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
     );
 
     onCleanup(() => {
-      logger.debug('Gallery keyboard hook: cleanup');
       unsubscribe();
     });
   });
