@@ -1,6 +1,1 @@
-/**
- * @fileoverview Scroll utilities shim
- * @description Minimal bridge that exposes scroll throttling helpers still in use.
- */
-
-export { throttleScroll } from '../performance/performance-utils';
+// Deprecated: former scroll utility shim removed. Use performance utilities directly.

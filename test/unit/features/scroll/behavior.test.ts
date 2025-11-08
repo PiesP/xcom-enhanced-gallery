@@ -178,12 +178,14 @@ describe('Native Scroll Behavior', () => {
       expect(true).toBe(true); // Placeholder - 실제 구현 시 수정
     });
 
-    it('should NOT have preventScrollPropagation in scroll-utils', async () => {
-      // RED: scroll-utils에서 preventScrollPropagation 제거 확인
-      const scrollUtils = await import('@/shared/utils/scroll/scroll-utils');
+    it('should NOT have preventScrollPropagation helper in performance utilities', async () => {
+      // RED: performance utilities에서 preventScrollPropagation 제거 확인
+      const performanceUtils = await import(
+        '../../../../src/shared/utils/performance/performance-utils'
+      );
 
       // preventScrollPropagation 함수가 존재하지 않아야 함
-      expect(scrollUtils).not.toHaveProperty('preventScrollPropagation');
+      expect(performanceUtils).not.toHaveProperty('preventScrollPropagation');
     });
 
     // Note: ensureWheelLock 테스트는 @/utils 경로가 존재하지 않아 제거됨

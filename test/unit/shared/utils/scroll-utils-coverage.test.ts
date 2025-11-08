@@ -1,17 +1,12 @@
-/**
 import { describe, it, expect } from 'vitest';
 
-describe('scroll-utils public surface', () => {
-  it('only exposes throttleScroll helper', async () => {
-    const module = await import('@/shared/utils/scroll/scroll-utils');
+describe('performance utilities surface', () => {
+  it('exposes throttleScroll without legacy scroll helpers', async () => {
+    const module = await import('../../../../src/shared/utils/performance/performance-utils');
 
     expect(module).toHaveProperty('throttleScroll');
-    expect(module).not.toHaveProperty('isGalleryElement');
-    expect(module).not.toHaveProperty('createScrollDebouncer');
+    expect(module).not.toHaveProperty('preventScrollPropagation');
     expect(module).not.toHaveProperty('createScrollHandler');
-  });
-});
-
-    removeListener();
+    expect(module).not.toHaveProperty('createScrollDebouncer');
   });
 });
