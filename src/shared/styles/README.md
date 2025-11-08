@@ -174,32 +174,25 @@ import '@shared/styles/design-tokens.component.css'; // 3단계
 }
 ```
 
-### `tokens.ts` (보조)
+### `tokens.ts` (legacy)
 
-**역할**: JS 기반 토큰 (타입 안정성, IDE 자동완성)
+**Status**: Removed. Rely on CSS variables instead of JS mirrors.
+
+**Recommended approach**:
+
+- Use `design-tokens.*.css` as the single source of truth
+- Read values through `getXEGVariable()` when runtime access is unavoidable
+- Compose spacing/radius in CSS via `var(--xeg-*)`
 
 ```typescript
-export const SPACING_TOKENS = {
-  xs: '0.25rem',
-  md: '1rem',
-  lg: '1.5rem',
-} as const;
+import { getXEGVariable } from '@shared/styles/theme-utils';
 
-export const RADIUS_TOKENS = {
-  sm: '0.25rem',
-  full: '50%',
-} as const;
-
-export function getSpacing(token: SpacingToken): string {
-  return SPACING_TOKENS[token];
-}
+const primaryColor = getXEGVariable('color-primary-500');
+const spacingMd = `var(--xeg-spacing-md)`;
 ```
 
-**사용 시기**:
-
-- IDE 자동완성이 필요할 때
-- 타입 체크가 필요할 때
-- ⚠️ CSS 변수와 동기화 필수!
+> Avoid recreating JS copies of token maps. Keeping CSS as SSOT prevents the
+> drift that the legacy `tokens.ts` file used to introduce.
 
 ### `theme-utils.ts`
 
@@ -255,19 +248,20 @@ if (isInsideGallery(element)) {
 }
 ```
 
-### Step 4: JS 토큰 동기화 (선택, 자동완성 필요시)
+### Step 4: (Optional) Local helpers for autocomplete
 
 ```typescript
-// src/shared/styles/tokens.ts
-export const SPACING_TOKENS = {
-  // ... 기존
-  xl: '2rem', // 새로 추가
+// Define inside the component/module that needs autocomplete
+const SPACING = {
+  xl: 'var(--xeg-spacing-xl)',
+  toastOffset: 'var(--xeg-toast-offset)',
 } as const;
 
-export const COLOR_TOKENS = {
-  // ... 필요시 추가
-  accent: 'oklch(75% 0.12 60deg)',
-} as const;
+type SpacingKey = keyof typeof SPACING;
+
+export function getSpacing(token: SpacingKey): string {
+  return SPACING[token];
+}
 ```
 
 ### Step 5: 테스트
@@ -307,14 +301,13 @@ npm run build:dev
 ### 예제 2: TypeScript에서 토큰 접근
 
 ```typescript
-import { getSpacing, getRadius } from '@shared/styles/tokens';
 import { getXEGVariable } from '@shared/styles/theme-utils';
 
-// ✅ JS 토큰으로 값 얻기 (타입 안전)
-const padding = getSpacing('md'); // '1rem'
-const radius = getRadius('lg'); // '0.5rem'
+// ✅ CSS 변수 조합 (정적)
+const padding = 'var(--xeg-spacing-md)';
+const radius = 'var(--xeg-radius-lg)';
 
-// ✅ CSS 변수 값 읽기 (런타임)
+// ✅ CSS 변수 값 읽기 (런타임 필요 시)
 const primaryColor = getXEGVariable('color-primary-500');
 ```
 
@@ -393,20 +386,26 @@ const doublePadding = `calc(2 * var(--xeg-spacing-md))`;
 }
 ```
 
-### Q2: tokens.ts는 언제 사용하나?
+### Q2: How do I get IDE autocomplete without `tokens.ts`?
 
-**A**: IDE 자동완성이나 타입 체크가 필요할 때:
+**A**: Define local helper maps when you truly need TS assistance:
 
 ```typescript
-// ✅ 자동완성 필요
-import { getSpacing } from '@shared/styles/tokens';
-const padding = getSpacing('md'); // IDE가 'md' 자동완성
+const SPACING = {
+  xs: 'var(--xeg-spacing-xs)',
+  md: 'var(--xeg-spacing-md)',
+  lg: 'var(--xeg-spacing-lg)',
+} as const;
 
-// vs
+type SpacingKey = keyof typeof SPACING;
 
-// CSS 변수 직접 사용 (자동완성 없음)
-padding: var(--xeg-spacing-md);
+function getSpacing(token: SpacingKey): string {
+  return SPACING[token];
+}
 ```
+
+Keeping the map local prevents divergence from the CSS source of truth while
+still giving editors something to autocomplete.
 
 ### Q3: 색상 변경이 필요하면?
 
