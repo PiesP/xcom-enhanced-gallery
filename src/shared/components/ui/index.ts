@@ -485,18 +485,8 @@ export type { ModalShellProps } from './ModalShell/ModalShell';
 export { ToolbarShell } from './ToolbarShell/ToolbarShell';
 export type { ToolbarShellProps } from './ToolbarShell/ToolbarShell';
 
-/**
- * Settings Modal Styles
- * @description CSS modules for settings modal styling
- * @see {@link ./SettingsModal} - CSS module documentation
- *
- * **Note**: SettingsModal components are composed from:
- * - {@link ./ModalShell} - Container pattern
- * - {@link ./Settings} - SettingsControls content
- *
- * **Usage**: Import styles directly: `import styles from './SettingsModal/SettingsModal.module.css'`
- */
-// Export intentionally omitted - styles-only module
+export { SettingsModal } from './SettingsModal/SettingsModal';
+export type { SettingsModalProps } from './SettingsModal/SettingsModal';
 
 /**
  * Toolbar Component
