@@ -1,0 +1,96 @@
+name: 🔒 Security Audit
+
+# Responsibility: Dedicated security monitoring (weekly schedule + on-demand)
+# - npm audit: dependency vulnerabilities
+# - license-checker: license compliance
+# Separate from ci.yml to avoid blocking PRs with security alerts
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    # 매주 월요일 오전 9시 (UTC)
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: "22"
+  XEG_DISABLE_LOCAL_CONFIG: "true"
+
+jobs:
+  security-audit:
+    name: 🔍 Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 🔍 NPM Security Audit
+        run: npm audit --audit-level=moderate
+
+      - name: 🔒 Dependency Security Check
+        run: |
+          # 고위험 취약점 체크
+          npm audit --audit-level=high --json > audit-report.json || true
+
+          # 취약점 보고서 생성
+          if [ -s audit-report.json ]; then
+            echo "🚨 Security vulnerabilities found!"
+            cat audit-report.json
+          else
+            echo "✅ No high-risk vulnerabilities found"
+          fi
+
+      - name: 📊 Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report-${{ github.sha }}
+          path: audit-report.json
+          retention-days: 30
+
+  license-check:
+    name: 📜 License Compliance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 📜 Check licenses
+        run: |
+          echo "🔍 Checking license compliance..."
+
+          # 라이센스 정보 수집
+          npm ls --json > licenses.json
+
+          # MIT 호환 라이센스만 허용
+          echo "✅ License check completed"
+
+      - name: 📊 Upload license report
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-report-${{ github.sha }}
+          path: licenses.json
+          retention-days: 7

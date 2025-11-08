@@ -1,0 +1,417 @@
+/**
+ * @fileoverview Persistent Storage Service - Tampermonkey GM_* API Infrastructure
+ *
+ * 🔹 System Role:
+ * Centralized storage layer providing type-safe key-value persistence using Tampermonkey's
+ * native GM_getValue/GM_setValue APIs. Implements Singleton pattern for unified access.
+ *
+ * 🔹 Architecture:
+ * ```
+ * Application Code
+ *   ↓
+ * PersistentStorage.getInstance() [Singleton]
+ *   ↓
+ * set/get/remove/has methods
+ *   ↓
+ * getUserscript() [Vendor Getter - Phase 309]
+ *   ↓
+ * GM_setValue/GM_getValue [Tampermonkey Native API]
+ *   ↓
+ * Browser Storage (~5MB per domain)
+ * ```
+ *
+ * 🔹 Key Characteristics:
+ * - **Singleton Pattern**: Single instance per application lifecycle
+ * - **Type Safety**: Generic <T> typing for type-aware get/set operations
+ * - **Auto Serialization**: Automatic JSON stringification for non-string values
+ * - **Error Handling**: Structured error logging via logger service
+ * - **Tampermonkey Limitation**: No key enumeration (listKeys() unavailable)
+ *
+ * 🔹 Storage Limits:
+ * - Per Domain: ~5MB (Tampermonkey standard)
+ * - Suitable for: User settings, session data, cached metadata
+ * - NOT suitable for: Large media files, binary data (use downloads instead)
+ *
+ * 🔹 Phase 309 Integration:
+ * Uses getUserscript() vendor getter to safely access Tampermonkey APIs without
+ * direct GM_* imports, enabling substitution in test environments.
+ *
+ * 🔹 Usage Pattern:
+ * ```typescript
+ * // Get singleton instance
+ * const storage = PersistentStorage.getInstance();
+ *
+ * // Store data
+ * await storage.set('user-theme', { name: 'dark', contrast: 'high' });
+ *
+ * // Retrieve data (with fallback)
+ * const theme = await storage.get<Theme>('user-theme', defaultTheme);
+ *
+ * // Check existence
+ * const exists = await storage.has('user-theme');
+ *
+ * // Clean up
+ * await storage.remove('user-theme');
+ * ```
+ *
+ * 🔹 Related Services:
+ * - SettingsService: Application settings wrapper using PersistentStorage
+ * - LanguageService: Language preference management via PersistentStorage
+ * - ThemeService: UI theme persistence via PersistentStorage
+ *
+ * @version 0.4.2 (Phase 309 Service Layer)
+ * @see {@link SettingsService} for application-level settings
+ * @see {@link LanguageService} for multilingual configuration
+ * @see {@link ARCHITECTURE.md} for Phase 309 Service Layer details
+ */
+
+import { getUserscript } from '@shared/external/userscript';
+import { logger } from '@shared/logging';
+
+/**
+ * Persistent Storage Service using Tampermonkey API
+ *
+ * 🔹 Implementation Details:
+ *
+ * **Singleton Pattern**:
+ * - Private constructor enforces single instance per lifecycle
+ * - getInstance() lazily creates instance on first call
+ * - Thread-safe in userscript context (single-threaded JavaScript)
+ *
+ * **Data Serialization**:
+ * - Non-string values automatically converted to JSON
+ * - Retrieval auto-deserializes JSON back to typed objects
+ * - Fallback for unparseable strings (stores raw value)
+ *
+ * **Error Handling Strategy**:
+ * - All methods wrapped in try-catch with logger.error() calls
+ * - Failed reads return defaultValue (graceful degradation)
+ * - Failed writes throw Error (fail-fast for consistency)
+ * - All errors include descriptive context messages
+ *
+ * **Tampermonkey API Limitations**:
+ * - No key enumeration: Use explicit key removal instead of pattern clearing
+ * - No usage API: Track quota at application level if needed
+ * - No reset-all: Manual tracking of keys to reset
+ *
+ * 🔹 Storage Characteristics:
+ * - Per-domain quota: ~5MB (varies by Tampermonkey version)
+ * - Persistence: Survives script reload and browser restart
+ * - Scope: Domain-specific (cannot access cross-domain data)
+ *
+ * 🔹 Direct GM_* API Usage (Phase 309):
+ * This service uses getUserscript() getter to access GM APIs without direct imports:
+ * - Enables test mocking (substitute getUserscript() implementation)
+ * - Maintains static analysis (no 'undefined GM_setValue' issues)
+ * - Follows Phase 309 Service Layer architecture pattern
+ *
+ * @example
+ * ```typescript
+ * // Typical usage pattern
+ * const storage = PersistentStorage.getInstance();
+ *
+ * // Type-safe storage
+ * interface UserSettings {
+ *   theme: 'light' | 'dark';
+ *   language: 'en' | 'ko' | 'ja';
+ * }
+ *
+ * const settings: UserSettings = { theme: 'dark', language: 'ko' };
+ * await storage.set('settings', settings);
+ *
+ * // Typed retrieval with fallback
+ * const retrieved = await storage.get<UserSettings>(
+ *   'settings',
+ *   { theme: 'light', language: 'en' }
+ * );
+ *
+ * // Existence check before operations
+ * if (await storage.has('auth-token')) {
+ *   const token = await storage.get<string>('auth-token');
+ * }
+ *
+ * // Cleanup
+ * await storage.remove('auth-token');
+ * ```
+ *
+ * @see {@link getUserscript} for vendor getter pattern
+ * @see {@link logger} for error handling integration
+ */
+export class PersistentStorage {
+  private static instance: PersistentStorage | null = null;
+  private readonly userscript = getUserscript();
+
+  private constructor() {}
+
+  /**
+   * Get singleton instance
+   */
+  static getInstance(): PersistentStorage {
+    if (!this.instance) {
+      this.instance = new PersistentStorage();
+    }
+    return this.instance;
+  }
+
+  /**
+   * Store value in persistent storage
+   *
+   * 🔹 Serialization Strategy:
+   * - String values: Stored directly (no encoding)
+   * - Objects/Arrays: Converted to JSON via JSON.stringify()
+   * - Primitives (number, boolean): JSON-encoded (e.g., true → "true")
+   * - undefined: Converted to JSON null (undefined not serializable)
+   *
+   * 🔹 Error Handling:
+   * - Network/API errors: Caught and logged, re-thrown as descriptive Error
+   * - Invalid data: JSON.stringify() throws TypeError (propagated)
+   * - Success: Logs bytes written for monitoring large datasets
+   *
+   * 🔹 Performance Considerations:
+   * - Synchronous in Tampermonkey (despite async signature)
+   * - JSON serialization can be slow for large objects (100KB+)
+   * - Avoid storing megabytes of data; use explicit chunking if needed
+   *
+   * 🔹 Use Cases:
+   * - User settings: { theme: 'dark', language: 'ko' }
+   * - Session tokens: 'eyJhbGc...' (strings)
+   * - Metadata caches: [{ id: 1, name: 'item' }, ...]
+   *
+   * @template T Generic value type (any JSON-serializable)
+   * @param key Storage key (use namespacing: 'feature.subfeature.key')
+   * @param value Value to store (auto-serializes non-strings)
+   * @throws {Error} If key is invalid or serialization fails
+   *
+   * @example
+   * ```typescript
+   * // Store object
+   * await storage.set('user-prefs', { theme: 'dark', notifications: true });
+   *
+   * // Store string (no JSON encoding)
+   * await storage.set('auth-token', 'Bearer abc123...');
+   *
+   * // Store array
+   * await storage.set('favorites', ['id1', 'id2', 'id3']);
+   * ```
+   */
+  async set<T>(key: string, value: T): Promise<void> {
+    try {
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      await this.userscript.setValue(key, serialized);
+      logger.debug(`PersistentStorage.set: ${key} (${serialized.length} bytes)`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`PersistentStorage.set failed for key "${key}":`, error);
+      throw new Error(`Failed to store "${key}": ${msg}`);
+    }
+  }
+
+  /**
+   * Retrieve value from persistent storage
+   *
+   * 🔹 Deserialization Strategy:
+   * - Missing keys: Returns defaultValue (graceful fallback)
+   * - JSON strings: Parsed back to typed objects
+   * - Non-JSON strings: Returned as-is (fallback for manual data)
+   * - null/undefined: Treated as missing, returns defaultValue
+   *
+   * 🔹 Type Safety:
+   * - Generic <T> enables typed retrieval
+   * - Runtime JSON.parse() can still fail (invalid JSON)
+   * - Fallback behavior: Return raw string on parse failure
+   * - Application responsible for type validation post-retrieval
+   *
+   * 🔹 Error Handling:
+   * - Tampermonkey API errors: Caught, logged, return defaultValue
+   * - JSON parse errors: Caught, return raw string
+   * - No exception thrown (graceful degradation)
+   *
+   * 🔹 Performance:
+   * - First call: Reads from storage (synchronous, ~1-2ms)
+   * - Subsequent calls: New read each time (no client-side cache)
+   * - For frequently accessed data: Cache in memory at call site
+   *
+   * 🔹 Common Patterns:
+   * - With validation: const data = await storage.get<T>(...) || fallback;
+   * - With type guard: if (data && typeof data === 'object') { ... }
+   * - With parser: JSON.parse() on retrieval for extra safety
+   *
+   * @template T Generic return type (must match stored structure)
+   * @param key Storage key to retrieve
+   * @param defaultValue Fallback if key not found (default: undefined)
+   * @returns Stored value (typed) or defaultValue
+   *
+   * @example
+   * ```typescript
+   * // Retrieve with type
+   * const prefs = await storage.get<UserPrefs>('user-prefs', DEFAULT_PREFS);
+   *
+   * // Retrieve string
+   * const token = await storage.get<string>('auth-token');
+   * if (!token) console.log('Not authenticated');
+   *
+   * // Retrieve array
+   * const favorites = await storage.get<string[]>('favorites', []);
+   * ```
+   */
+  async get<T>(key: string, defaultValue?: T): Promise<T | undefined> {
+    try {
+      const value = await this.userscript.getValue<string | undefined>(key);
+
+      if (value === undefined || value === null) {
+        return defaultValue;
+      }
+
+      // Try to parse JSON, fallback to raw string
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return value as unknown as T;
+      }
+    } catch (error) {
+      logger.error(`PersistentStorage.get failed for key "${key}":`, error);
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Check if key exists in storage
+   *
+   * 🔹 Purpose:
+   * Pre-flight check before retrieval to avoid try-catch patterns.
+   * Useful for conditional logic based on data availability.
+   *
+   * 🔹 Null Handling:
+   * - Explicit null: Considered NOT present (returns false)
+   * - undefined: Considered NOT present (returns false)
+   * - Empty string "": Considered PRESENT (returns true)
+   * - "0", "false": Considered PRESENT (returns true)
+   *
+   * 🔹 Use Cases:
+   * - Auth check: if (await storage.has('auth-token')) { ... }
+   * - Feature gates: if (await storage.has('feature.beta')) { ... }
+   * - Setup detection: if (!await storage.has('first-run-done')) { ... }
+   *
+   * 🔹 Performance:
+   * - Equivalent to get() but discards value (minimal overhead)
+   * - Avoid repeated has() calls for value that will be used
+   *
+   * @param key Storage key to check
+   * @returns true if key exists and is not null/undefined, false otherwise
+   *
+   * @example
+   * ```typescript
+   * if (await storage.has('auth-token')) {
+   *   const token = await storage.get<string>('auth-token');
+   *   performAuthenticatedOperation(token);
+   * } else {
+   *   showLoginPrompt();
+   * }
+   * ```
+   */
+  async has(key: string): Promise<boolean> {
+    try {
+      const value = await this.userscript.getValue<unknown>(key);
+      return value !== undefined && value !== null;
+    } catch (error) {
+      logger.error(`PersistentStorage.has failed for key "${key}":`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Remove value from persistent storage
+   *
+   * 🔹 Deletion Semantics:
+   * - Existing key: Deleted, subsequent get() returns defaultValue
+   * - Missing key: No error, idempotent (safe to call multiple times)
+   * - null value: Explicitly deletes entry (different from storing null)
+   *
+   * 🔹 Error Handling:
+   * - Tampermonkey API errors: Caught, logged, re-thrown
+   * - Deletion is fail-fast (unlike get which degrades gracefully)
+   *
+   * 🔹 Use Cases:
+   * - Session cleanup: await storage.remove('auth-token') on logout
+   * - Feature reset: await storage.remove('feature.beta.settings')
+   * - Temp data cleanup: await storage.remove('cache.thumbnail.123')
+   *
+   * 🔹 Bulk Cleanup:
+   * For multiple keys, use loop or Promise.all():
+   * ```typescript
+   * await Promise.all([
+   *   storage.remove('key1'),
+   *   storage.remove('key2'),
+   *   storage.remove('key3'),
+   * ]);
+   * ```
+   *
+   * 🔹 Pattern Cleanup:
+   * Tampermonkey doesn't support wildcard removal. Track prefixed keys:
+   * ```typescript
+   * const tempKeys = ['temp.cache.1', 'temp.cache.2'];
+   * await Promise.all(tempKeys.map(k => storage.remove(k)));
+   * ```
+   *
+   * @param key Storage key to remove
+   * @throws {Error} If removal fails (API error)
+   *
+   * @example
+   * ```typescript
+   * // Cleanup on logout
+   * await storage.remove('auth-token');
+   * await storage.remove('user-settings');
+   *
+   * // Idempotent removal
+   * await storage.remove('already-deleted'); // OK, no error
+   * ```
+   */
+  async remove(key: string): Promise<void> {
+    try {
+      await this.userscript.deleteValue(key);
+      logger.debug(`PersistentStorage.remove: ${key}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`PersistentStorage.remove failed for key "${key}":`, error);
+      throw new Error(`Failed to remove "${key}": ${msg}`);
+    }
+  }
+}
+
+/**
+ * Get singleton instance convenience function
+ *
+ * 🔹 Purpose:
+ * Shorthand accessor for PersistentStorage.getInstance(). Enables:
+ * ```typescript
+ * // Import as named export
+ * import { getPersistentStorage } from '@shared/services';
+ *
+ * // vs. class method
+ * import { PersistentStorage } from '@shared/services';
+ * PersistentStorage.getInstance();
+ * ```
+ *
+ * 🔹 Equivalence:
+ * Both patterns return the same singleton instance:
+ * ```typescript
+ * const s1 = getPersistentStorage();
+ * const s2 = PersistentStorage.getInstance();
+ * console.log(s1 === s2); // true (same object)
+ * ```
+ *
+ * 🔹 Usage:
+ * Preferred for importing in modules and services:
+ * ```typescript
+ * // In SettingsService
+ * const storage = getPersistentStorage();
+ * const settings = await storage.get<UserSettings>('settings');
+ * ```
+ *
+ * @returns Singleton PersistentStorage instance
+ *
+ * @see {@link PersistentStorage.getInstance} for class method
+ */
+export function getPersistentStorage(): PersistentStorage {
+  return PersistentStorage.getInstance();
+}

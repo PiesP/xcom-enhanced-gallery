@@ -1,0 +1,300 @@
+/**
+ * @fileoverview 격리된 갤러리 스타일 시스템
+ * @description 트위터 페이지에 영향을 주지 않는 완전히 격리된 스타일
+ * @version 1.0.0
+ */
+
+/* ========================================
+   격리된 갤러리 루트 컨테이너
+   ======================================== */
+
+.xeg-root {
+  /* 완전한 스타일 격리 */
+  all: initial !important;
+
+  /* 기본 폰트 및 텍스트 설정 */
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: var(--font-size-base) !important; /* 0.875rem = 14px */
+  line-height: 1.5 !important;
+  color: var(--color-base-white) !important;
+
+  /* 박스 모델 */
+  box-sizing: border-box !important;
+
+  /* 위치 및 크기 */
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+
+  /* 레이어링 */
+  z-index: var(--xeg-layer-root) !important;
+
+  /* 스타일 격리 */
+  isolation: isolate !important;
+  /* Phase 294: contain layout 제거 - Twitter 페이지 레이아웃 재계산 최소화 */
+  contain: style paint !important;
+
+  /* 배경 */
+  background: var(--xeg-gallery-bg) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  /* 이벤트 처리 */
+  pointer-events: auto !important;
+  user-select: none !important;
+
+  /* 하드웨어 가속 */
+  transform: translateZ(0) !important;
+  will-change: opacity, transform !important;
+
+  /* 접근성 */
+  outline: none !important;
+
+  /* CSS 변수 시스템 - 색상 토큰 */
+  --xeg-isolated-text: var(--color-base-white);
+  --xeg-isolated-text-muted: var(--color-gray-500);
+
+  /* Twitter 브랜드 색상 (OKLCH) */
+  --xeg-isolated-primary: var(--color-twitter-blue);
+  --xeg-isolated-primary-hover: var(--color-twitter-blue-hover);
+  --xeg-isolated-primary-active: var(--color-twitter-blue-active);
+
+  /* 상태 색상 */
+  --xeg-isolated-danger: var(--color-twitter-red);
+  --xeg-isolated-danger-hover: var(--color-twitter-red-hover);
+
+  /* 성공/경고 색상 */
+  --xeg-isolated-success: var(--color-twitter-green);
+  --xeg-isolated-success-hover: var(--color-twitter-green-hover);
+
+  /* 경고 색상 */
+  --xeg-isolated-warning: var(--color-twitter-orange);
+  --xeg-isolated-warning-hover: var(--color-twitter-orange-hover);
+
+  /* 그레이 스케일 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-gray-100: var(--color-overlay-light);
+  --xeg-isolated-gray-200: var(--color-overlay-medium);
+  --xeg-isolated-gray-300: var(--color-overlay-strong);
+  --xeg-isolated-gray-400: var(--color-overlay-backdrop);
+  --xeg-isolated-gray-500: var(--color-glass-bg);
+
+  /* 그림자 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-shadow-sm: var(--shadow-sm);
+  --xeg-isolated-shadow-md: var(--shadow-md);
+  --xeg-isolated-shadow-lg: var(--shadow-lg);
+  --xeg-isolated-shadow-xl: 0 1rem 2rem oklch(23.4% 0.006 277.8deg / 40%);
+
+  /* 반경 (alias 제거 - 직접 semantic 토큰 사용) */
+  /* 기존 --xeg-isolated-radius-* 변수 제거됨: 테스트 업데이트 필요 */
+
+  /* 간격 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-spacing-xs: var(--space-xs);
+  --xeg-isolated-spacing-sm: var(--space-sm);
+  --xeg-isolated-spacing-md: var(--space-md);
+  --xeg-isolated-spacing-lg: var(--space-lg);
+  --xeg-isolated-spacing-xl: var(--space-xl);
+  --xeg-isolated-spacing-2xl: var(--space-2xl);
+
+  /* 전환 - semantic 토큰 참조로 통합 */
+  --xeg-isolated-transition-fast: var(--transition-fast);
+  --xeg-isolated-transition-normal: var(--transition-normal);
+  --xeg-isolated-transition-slow: var(--transition-slow);
+
+  /* z-index - semantic 토큰 참조로 통합 */
+  --xeg-isolated-z-base: var(--xeg-layer-base);
+  --xeg-isolated-z-dropdown: 10;
+  --xeg-isolated-z-sticky: 20;
+  --xeg-isolated-z-fixed: 30;
+  --xeg-isolated-z-modal: var(--xeg-layer-modal);
+  --xeg-isolated-z-popover: 50;
+  --xeg-isolated-z-tooltip: 60;
+  --xeg-isolated-z-toast: var(--xeg-layer-toast);
+}
+
+/* 모든 자식 요소에 박스 모델 적용 */
+.xeg-root *,
+.xeg-root *::before,
+.xeg-root *::after {
+  box-sizing: border-box !important;
+}
+
+/* ========================================
+   격리된 갤러리 기본 컴포넌트 스타일
+   ======================================== */
+
+/* 갤러리 컨테이너 */
+.xeg-root .gallery-container {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
+  color: var(--xeg-isolated-text) !important;
+}
+
+/* 툴바 */
+.xeg-root .toolbar {
+  background: var(--xeg-isolated-gray-200) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: var(--xeg-radius-xl) !important; /* alias 제거 후 직접 참조 */
+  box-shadow: var(--xeg-isolated-shadow-md) !important;
+  padding: var(--xeg-isolated-spacing-sm) var(--xeg-isolated-spacing-md) !important;
+  margin: var(--xeg-isolated-spacing-md) !important;
+}
+
+/* 버튼 */
+.xeg-root .button {
+  background: var(--xeg-isolated-gray-200) !important;
+  color: var(--xeg-isolated-text) !important;
+  border: var(--border-width-thin) solid var(--xeg-isolated-gray-300) !important;
+  border-radius: var(--xeg-radius-lg) !important; /* alias 제거 후 직접 참조 */
+  padding: var(--xeg-isolated-spacing-sm) var(--xeg-isolated-spacing-md) !important;
+  font-family: inherit !important;
+  font-size: var(--font-size-base) !important; /* 0.875rem = 14px */
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  /* 명시적 프로퍼티 전환으로 성능/정확성 향상 (transition: all 금지) */
+  transition:
+    background-color var(--xeg-isolated-transition-fast),
+    border-color var(--xeg-isolated-transition-fast),
+    transform var(--xeg-isolated-transition-fast),
+    box-shadow var(--xeg-isolated-transition-fast) !important;
+  user-select: none !important;
+  outline: none !important;
+}
+
+.xeg-root .button:hover {
+  background: var(--xeg-isolated-gray-300) !important;
+  border-color: var(--xeg-isolated-gray-400) !important;
+  /* hover lift는 토큰 기반으로만 정의 */
+  transform: translateY(var(--xeg-button-lift)) !important;
+  box-shadow: var(--xeg-isolated-shadow-md) !important;
+}
+
+.xeg-root .button:active {
+  transform: translateY(0) !important;
+  transition:
+    background-color var(--xeg-isolated-transition-fast),
+    border-color var(--xeg-isolated-transition-fast),
+    transform var(--xeg-isolated-transition-fast),
+    box-shadow var(--xeg-isolated-transition-fast) !important;
+}
+
+.xeg-root .button:focus-visible {
+  outline: var(--border-width-medium) solid var(--xeg-isolated-primary) !important;
+  outline-offset: var(--border-width-medium) !important;
+}
+
+/* 프라이머리 버튼 */
+.xeg-root .button-primary {
+  background: var(--xeg-isolated-primary) !important;
+  border-color: var(--xeg-isolated-primary) !important;
+  color: var(--color-base-white) !important;
+}
+
+.xeg-root .button-primary:hover {
+  background: var(--xeg-isolated-primary-hover) !important;
+  border-color: var(--xeg-isolated-primary-hover) !important;
+}
+
+/* 위험 버튼 */
+.xeg-root .button-danger {
+  background: var(--xeg-isolated-danger) !important;
+  border-color: var(--xeg-isolated-danger) !important;
+  color: var(--color-base-white) !important;
+}
+
+.xeg-root .button-danger:hover {
+  background: var(--xeg-isolated-danger-hover) !important;
+  border-color: var(--xeg-isolated-danger-hover) !important;
+}
+
+/* ========================================
+   접근성 및 반응형 지원
+   ======================================== */
+
+/* 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  .xeg-root {
+    background: var(--color-base-black) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .xeg-root .button {
+    border-width: var(--border-width-medium) !important;
+  }
+}
+
+/* 모션 감소 선호도 지원 */
+@media (prefers-reduced-motion: reduce) {
+  .xeg-root *,
+  .xeg-root *::before,
+  .xeg-root *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 터치 친화적 크기 */
+@media (hover: none) and (pointer: coarse) {
+  .xeg-root .button {
+    min-height: var(--size-touch-target) !important; /* 2.75rem = 44px */
+    min-width: var(--size-touch-target) !important;
+    padding: var(--xeg-isolated-spacing-md) !important;
+  }
+}
+
+/* 모바일 최적화 */
+@media (width <= 48rem) {
+  /* 768px = 48rem */
+  .xeg-root {
+    /* 모바일에서 주소창 숨김 대응 */
+    height: 100dvh !important;
+  }
+
+  .xeg-root .toolbar {
+    margin: var(--xeg-isolated-spacing-sm) !important;
+    padding: var(--xeg-isolated-spacing-sm) !important;
+  }
+}
+
+/* 작은 화면에서 성능 최적화 */
+@media (width <= 30rem) {
+  /* 480px = 30rem */
+  .xeg-root {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--xeg-gallery-bg) !important;
+  }
+
+  .xeg-root .toolbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--xeg-isolated-gray-400) !important;
+  }
+}
+
+/* ===== 통합 Glass Surface 클래스 ===== */
+
+/* Glass Surface 통합 클래스 */
+.glass-surface {
+  background: var(--xeg-surface-glass-bg) !important;
+  border: var(--border-width-thin) solid var(--xeg-surface-glass-border) !important;
+  box-shadow: var(--xeg-surface-glass-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.glass-surface:hover {
+  background: oklch(100% 0 0deg / 15%) !important;
+  box-shadow:
+    0 0.5rem 2rem oklch(0% 0 0deg / 20%),
+    0 0.25rem 1rem oklch(0% 0 0deg / 10%) !important;
+}

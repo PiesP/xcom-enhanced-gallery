@@ -1,0 +1,600 @@
+/**
+ * Copyright (c) 2024 X.com Enhanced Gallery
+ * Licensed under the MIT License
+ *
+ * @fileoverview Vertical Gallery View Component Styles
+ * @description Modal gallery container layout and styling
+ *
+ * **Design System**:
+ * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
+ * - No hardcoded colors or dimensions
+ * - Responsive design via container queries and media queries
+ * - Accessibility: focus-visible, reduced-motion support
+ *
+ * **Key Selectors**:
+ * - .container: Fixed modal gallery container
+ * - .toolbarWrapper: Toolbar with hover/focus auto-show
+ * - .itemsContainer: Scrollable items list
+ * - .galleryItem: Individual media item wrapper
+ * - .scrollSpacer: Top-align scroll anchor spacer
+ *
+ * **Performance Optimizations**:
+ * - CSS Containment (contain: layout style paint)
+ * - content-visibility: auto for off-screen content
+ * - transform: translateZ(0) for GPU acceleration
+ * - will-change for animated properties
+ * - CSS custom properties for dynamic values
+ *
+ * **Responsive Features**:
+ * - Container queries for layout adaptation
+ * - Media queries fallback for unsupported browsers
+ * - Responsive spacing via clamp()
+ *
+ * @version 5.1.0 - Enhanced documentation and style organization (Phase 354+)
+ */
+
+/**
+ * VerticalGalleryView Component Styles
+ * @version 5.0.0 - Modern CSS features with OKLCH colors and Container Queries
+ *
+ * @description
+ * Phase 2 integrates modern CSS features: Cascade Layers, OKLCH color space,
+ * Container Queries, CSS Subgrid, CSS Containment, and Logical Properties.
+ *
+ * @features
+ * - CSS Cascade Layers: Clear layer priority (base, components, utilities)
+ * - OKLCH Color Space: Perceptually uniform color system
+ * - Container Queries: True component-based responsive design
+ * - CSS Subgrid: Advanced layout implementation
+ * - CSS Containment: Better performance optimization
+ * - CSS Logical Properties: Direction-agnostic layout
+ * - Advanced CSS Selectors: :has, :where, :is for better specificity
+ * - CSS Nesting: Improved code readability (via PostCSS)
+ */
+
+/* CSS Cascade Layer definitions */
+@layer base, components, utilities;
+
+/**
+ * Vertical Gallery Container: Outer container with size containment
+ */
+.xegVerticalGalleryContainer {
+  container-type: size;
+  container-name: vertical-gallery;
+
+  /* CSS Containment for performance optimization */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 100vw 100vh;
+}
+
+/* CSS Cascade Layer declarations remain for other rules */
+
+@layer components {
+  /* Common CSS variables - OKLCH color system */
+  :root {
+    /* Transitions - modern easing functions */
+    --xeg-transition-fast:
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    --xeg-transition-normal:
+      transform var(--xeg-duration-fade) var(--xeg-easing-ease-in-out),
+      opacity var(--xeg-duration-fade) var(--xeg-easing-ease-in-out);
+    /* Removed --xeg-transition-smooth: unused */
+    --xeg-transition-toolbar:
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+
+    /* Spacing - CSS Logical Properties */
+    --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
+    --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+    --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
+
+    /* Removed --xeg-toolbar-height: unused */
+    /* Removed --xeg-backdrop-blur: unused */
+  }
+}
+
+/* 메인 컨테?�너 - ?�순?�된 갤러�?컨테?�너 */
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--xeg-z-gallery, 10000);
+  background: var(--xeg-gallery-bg);
+
+  /* 기본 ?�이?�웃 */
+  display: flex;
+  flex-direction: column;
+
+  /* 블러 ?�과 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* ?�드?�어 가??최적?? */
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  contain: layout style paint;
+
+  /* 초기 ?�태 */
+  opacity: 1;
+  visibility: visible;
+  transition: var(--xeg-transition-normal);
+
+  /* ?�벤??처리 - ?�크�??�벤?�는 ??�� ?�용 */
+  cursor: default;
+  pointer-events: auto;
+
+  /* 컨테?�너 쿼리 ?�성?? */
+  container-type: size;
+  container-name: gallery-container;
+
+  /* ?�크�?최적?? */
+  scroll-behavior: smooth;
+  overscroll-behavior: none; /* ?�크�?체이??방�? */
+
+  /* 갤러�??��? ?�크롤만 ?�용 */
+
+  /* ?�로?�션 빌드 ?�환?�을 ?�해 CSS 커스?� ?�로?�티 ?�거 */
+}
+
+/* ?�바 ?�퍼 - 기본 가?�성 보장 �?개선???�랜지?? */
+.toolbarWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  z-index: var(--xeg-z-modal);
+
+  /* 기본 ?�태: CSS 변?�로 ?�어?�는 ?��? ?�태 */
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  display: block;
+  transition: var(--xeg-transition-toolbar);
+  will-change: transform, opacity, visibility;
+  contain: layout style;
+
+  /* 즉시 반응???�한 추�? 최적?? */
+  transform: translateZ(0); /* GPU 가???�성?? */
+  backface-visibility: hidden; /* ?�더�?최적?? */
+
+  /* 툴바 전체에서 클릭 가능하도록 설정 */
+  pointer-events: var(--toolbar-pointer-events, none);
+
+  /* 그라디언트 배경 - oklch 기반 */
+  background: linear-gradient(
+    to bottom,
+    var(--xeg-toolbar-wrapper-gradient-start, oklch(0% 0 0deg / 80%)) 0%,
+    var(--xeg-toolbar-wrapper-gradient-mid, oklch(0% 0 0deg / 40%)) 70%,
+    transparent 100%
+  );
+  border: var(--xeg-toolbar-wrapper-border, none);
+  border-radius: var(--xeg-toolbar-wrapper-radius, 0);
+  margin: var(--xeg-toolbar-wrapper-margin, 0);
+  padding-block-end: var(--xeg-spacing-gallery);
+}
+
+/* ?�바 ?�체 ?�버 ?�에???�시 ?��? - 강화??가?�성 */
+.toolbarWrapper:hover {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* ?�근?? ?�커???�에???�바 ?�시 - ??강력??보장 */
+.toolbarWrapper:focus-within {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+  /* ?�커???�에????빠른 ?�랜지?? */
+  transition: var(--xeg-transition-fast);
+}
+
+/* 툴바 래퍼 내 모든 요소 클릭 보장 */
+.toolbarWrapper * {
+  pointer-events: inherit;
+}
+
+/* FIX: Ensure settings panel remains interactive when expanded, even if wrapper loses hover
+   Rationale: .toolbarWrapper sets all descendants to pointer-events: inherit. When the wrapper
+   resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,
+   which prevents native <select> dropdowns from opening inside the settings panel.
+   This rule explicitly restores pointer-events:auto for the expanded panel so its children inherit 'auto'. */
+.toolbarWrapper [data-gallery-element='settings-panel'][data-expanded='true'] {
+  pointer-events: auto;
+}
+
+/* When settings panel is expanded, keep the toolbar wrapper interactive regardless of hover state */
+.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true']) {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+}
+
+/* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
+.container.uiHidden {
+  /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */
+  cursor: none;
+  /* pointer-events: none; ?�거 - ?�크�?차단 방�? */
+}
+
+/* 모든 ?�위 ?�소???�벤???�파 최적?? */
+.container * {
+  pointer-events: auto;
+}
+
+/* ?�이??컨테?�너 - ?�이?�브 ?�크롤만 ?�용 */
+.itemsContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto; /* 갤러�??��? ?�크롤만 ?�용 */
+  position: relative;
+
+  /* ?�능 최적?? */
+  contain: layout style;
+  transform: translateZ(0);
+  overscroll-behavior: contain; /* 체이닝 방지: 내부 스크롤만 허용 */
+
+  /* ?�크�??�벤?? */
+  scrollbar-gutter: stable;
+  scroll-snap-type: y proximity;
+  pointer-events: auto;
+
+  /* 컨테?�너 쿼리 */
+  container-type: size;
+  container-name: items-list;
+}
+
+/* ?�킷 ?�크롤바 ?��??? */
+.itemsContainer::-webkit-scrollbar {
+  width: var(--xeg-scrollbar-width); /* 0.5rem�??�큰?�로 교체 */
+}
+
+.itemsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsContainer::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-300);
+  border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
+  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+.itemsContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-400);
+}
+
+.container.uiHidden .toolbarWrapper,
+.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
+  /* 개별 UI ?�소�??�벤??차단 */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+/* ?�크�?가?�한 콘텐�??�역?� ??�� ?�벤???�용 */
+.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden .itemsContainer {
+  pointer-events: auto;
+}
+
+/* ?�태�?최적?? */
+.container.visible {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+
+.container.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+/* 갤러리 아이템 기본 스타일 - 앵커형 스크롤에 최적화 */
+.galleryItem {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem */
+  border-radius: var(--xeg-radius-lg, 0.5rem);
+  transition: var(--xeg-transition-normal); /* 앵커형 변단 렬 */
+
+  /* 성능 최적화 */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* 스크롤 스냅 */
+  scroll-snap-align: start;
+  scroll-margin-top: var(--xeg-spacing-sm);
+}
+
+/* ?�커?�된 ?�이??강조 - 2�??�두�?방�?�??�해 ?�니메이���거 */
+.itemActive {
+  position: relative;
+  z-index: 1;
+  /* 기존 itemActive::before ?�니메이???�거�?2�??�두�?방�? */
+}
+
+/* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
+
+/* Phase 328: Transparent spacer for last item top-align scrolling */
+.scrollSpacer {
+  /* Dynamic height via CSS custom property (set by viewport observer) */
+  height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
+  min-height: 50vh; /* Fallback minimum height */
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Invisible spacer */
+  background: transparent;
+  opacity: 0;
+
+  /* Performance optimization */
+  contain: strict;
+  content-visibility: auto;
+}
+
+.container:has(.itemActive) {
+  /* ?�성 ?�이?�이 ?�을 ?? */
+  --has-active-item: 1;
+}
+
+.container:has(.toolbarWrapper:hover) {
+  /* ?�바 ?�버 ??컨테?�너 ?�태 변�? */
+  --toolbar-interaction: 1;
+}
+
+/* ?�립?�인 ?�단 ?�버 감�? ?�역 - ?�장??감�? ?�역 */
+.toolbarHoverZone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
+  z-index: calc(var(--xeg-z-modal) - 1); /* ?�바보다 ??? z-index */
+  background: transparent;
+  pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
+}
+
+/* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
+.toolbarHoverZone:hover {
+  /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
+  z-index: calc(var(--xeg-z-modal) - 1);
+  background: var(--xeg-toolbar-hover-zone-bg, transparent);
+}
+
+/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
+.container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
+  pointer-events: none;
+}
+
+/* :has() 미�???브라?��?�??�한 ?�?? */
+@supports not (selector(:has(*))) {
+  .toolbarWrapper:hover ~ .toolbarHoverZone {
+    pointer-events: none;
+  }
+}
+
+/* ?�바 ?�버 ?�리�??�역??마우?��? ?�라갔을 ???�바 ?�시 */
+.toolbarHoverTrigger:hover + .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
+/* ?�버 ??부�?컨테?�너??CSS 변???�정 - 강화??가?�성 */
+.container.initialToolbarVisible .toolbarWrapper,
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* :has() 지?�하지 ?�는 브라?��?�??�한 ?�??- ?�로?�션 빌드 ?�환??개선 */
+@supports not (selector(:has(*))) {
+  /* ?�버 ?�리�??�역 ?�버 ??직접 ?�제 ?�소???�바 ?�퍼???�용 */
+  .toolbarHoverZone:hover + .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+
+  /* 추�? ?�?? ?�반 ?�제 ?�택???�용 */
+  .toolbarHoverZone:hover ~ .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+
+  /* ??견고???�?? 부�??�버 */
+  .container:hover .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+}
+
+/* 갤러�??�바 컴포?�트 ?�체??가?�성 보장 */
+.toolbarWrapper [class*='galleryToolbar'],
+.toolbarWrapper [data-testid*='toolbar'] {
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  display: flex;
+  pointer-events: var(--toolbar-pointer-events, none);
+}
+
+/* ?�바 버튼???�벤???�파 방�? �??�릭 보장 */
+.toolbarWrapper button,
+.toolbarWrapper [role='button'],
+.toolbarWrapper .toolbarButton {
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+
+/* 콘텐�??�역 - 컨테?�너 쿼리 지?�과 ?�체 ?�면 ?�용 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  position: relative;
+  /* ?�바 ?�역 ?�거 - ?�재 ?�체 ?�면 ?�용 */
+
+  /* ?�능 최적?? */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* ?�벤???�파 */
+  pointer-events: auto;
+
+  /* 컨테?�너 쿼리 */
+  container-type: size;
+  container-name: content-area;
+}
+
+/* ?�니메이??- GPU 가?? */
+.fadeInOut {
+  animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: var(--xeg-transform-translate-up) var(--xeg-transform-scale-down);
+  }
+  100% {
+    opacity: 1;
+    transform: var(--xeg-transform-translate-center) var(--xeg-transform-scale-normal);
+  }
+}
+
+/* �??�태 메시지 - ?�합???�?�포그래?? */
+.emptyMessage {
+  text-align: center;
+  color: var(--xeg-color-text-secondary);
+  max-inline-size: min(25rem, 90vw); /* 400px = 25rem */
+  padding: clamp(1.875rem, 5vw, 2.5rem); /* 30px-40px = 1.875rem-2.5rem */
+}
+
+.emptyMessage h3 {
+  margin: 0 0 clamp(0.75rem, 2vw, 1rem); /* 10.125rem-16px = 0.75rem-1rem */
+  font-size: clamp(1.25rem, 4vw, 1.5rem); /* 20px-20.25rem = 1.25rem-1.5rem */
+  font-weight: 600;
+  color: var(--xeg-color-text-primary);
+  line-height: 1.2;
+}
+
+.emptyMessage p {
+  margin: 0;
+  font-size: clamp(0.875rem, 2.5vw, 1rem); /* 10.25rem-16px = 0.875rem-1rem */
+  line-height: 1.5;
+  color: var(--xeg-color-text-tertiary);
+}
+/* 컨테?�너 쿼리 기반 반응???�자?? */
+@container gallery-container (max-width: 48rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@container gallery-container (max-width: 30rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+
+/* 기존 미디??쿼리??컨테?�너 쿼리 지?�이 ?�는 브라?��?�??�한 ?�백 */
+@media (width <= 760.5rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@media (width <= 45rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+/* Phase 254: 접근성 - 모션 감소 지원 */
+/* scroll-behavior와 will-change는 명시적으로 제어 */
+@media (prefers-reduced-motion: reduce) {
+  .itemsContainer {
+    scroll-behavior: auto;
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/* Light mode support deferred to design-tokens.semantic.css */
+
+/* 비어있는 상태 버튼 스타일 */
+.emptyButton {
+  margin-top: 1rem;
+}
+
+/* N1: 통합 ToastContainer 사용으로 로컬 toastContainer 제거 */
+
+/* Phase 254: 감소된 모션은 semantic 레이어의 토큰으로 자동 처리 */
+/* animation만 명시적으로 비활성화 */
+@media (prefers-reduced-motion: reduce) {
+  .fadeInOut {
+    animation: none;
+  }
+
+  /* transform은 hover 상태에서 제거 */
+  .toolbarWrapper:hover,
+  .toolbarWrapper:focus-within {
+    transform: none;
+  }
+}
+
+/* ?�바 ?�버 ?�리�??�역 */
+.toolbarHoverTrigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--xeg-hover-zone-height); /* ?�장???�버 ?�역 */
+  z-index: calc(var(--xeg-z-modal) - 1);
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* ?�바 ?�체 ?�버 ?�에???�시 ?��? */
+.container [class*='galleryToolbar']:hover {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
+/* 브라?��? ?�환?�을 ?�한 ?��?방법 */
+@supports not (selector(:hover + *)) {
+  .container:hover [class*='galleryToolbar'] {
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
+  }
+}

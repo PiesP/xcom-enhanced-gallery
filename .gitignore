@@ -1,0 +1,76 @@
+# Node
+node_modules/
+.pnp.cjs
+.pnp.js
+
+# Build output
+/dist/
+/build/
+/out/
+/lib/
+/esm/
+/.venv/
+/.parcel-cache/
+/.vite/
+/.vite-cache/
+/.next/
+
+# TypeScript
+*.tsbuildinfo
+
+# Generated types & artifacts
+types/**/*.d.ts
+*.d.ts.map
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.sublime-*
+*.code-workspace
+*.iml
+
+# Husky internal (if present)
+.husky/_/
+
+# Cache / temp (project policy: only specific temp dirs)
+.cache/
+.tmp/
+.temp/
+
+# Project-specific temp folders (follow File Lifecycle policy)
+docs/temp/
+scripts/temp/
+test/archive/
+
+# Test runners / vitest
+.vitest/
+coverage/
+test-results/
+
+# Misc
+*.tmp
+*.temp
+*.swp
+*.lock-wscript
+
+# Keep lockfiles tracked (do not ignore package-lock.json / yarn.lock)

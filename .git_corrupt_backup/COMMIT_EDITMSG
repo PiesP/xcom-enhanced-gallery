@@ -1,0 +1,7 @@
+Refactor: Remove performance monitoring feature from GalleryApp and related configurations
+
+- Removed `performanceMonitoring` property from `GalleryConfig` and `AppConfig` interfaces.
+- Cleaned up related code in `startApplication` function to eliminate performance timing logs.
+- Updated `ToastContainer` to use typed `ToastItem` from the unified toast manager.
+- Removed unused global selector statistics functions from `signal-selector`.
+- Cleaned up unit tests by removing performance monitoring tests and debug mode checks.

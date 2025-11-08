@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true,
+    "useDefineForClassFields": true,
+    "allowImportingTsExtensions": true,
+    "allowArbitraryExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "customConditions": ["module"],
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "*": ["./*"],
+      "@/*": ["./src/*"],
+      "@features/*": ["./src/features/*"],
+      "@shared/i18n": ["./src/shared/constants/i18n/index.ts"],
+      "@shared/i18n/*": ["./src/shared/constants/i18n/*"],
+      "@shared/*": ["./src/shared/*"],
+      "@assets/*": ["./src/assets/*"],
+      "@test/*": ["./test/*"]
+    },
+    "types": ["vite/client", "vitest/globals"],
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo"
+  }
+}

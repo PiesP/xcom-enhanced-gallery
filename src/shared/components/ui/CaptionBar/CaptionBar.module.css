@@ -1,0 +1,597 @@
+/**
+ * @fileoverview Caption Bar Styles
+ * @version 2.0.0 - Phase 393: Full English documentation, comprehensive JSDoc
+ * @description Glassmorphism caption display with expand/collapse functionality
+ * @module shared/components/ui/CaptionBar/CaptionBar.module.css
+ *
+ * **Caption Bar Architecture** (Phase 385+):
+ * Bottom-aligned overlay caption display for tweet text with glassmorphism design.
+ * Supports expand/collapse with smooth animations and custom scrollbar styling.
+ *
+ * **Features**:
+ * - Glassmorphism design: Backdrop blur + semi-transparent background
+ * - Expand/collapse: Data-driven state with max-height animation
+ * - Scrollable content: Custom scrollbar styling (thin, themed)
+ * - Toggle button: Icon rotation, hover feedback, focus ring
+ * - Responsive: Mobile-optimized font sizing
+ * - Accessibility: Focus visible, high contrast mode, WCAG 2.1 AA
+ * - Theme support: Light/dark mode, high contrast variants
+ *
+ * **Design System Integration**:
+ * - Colors: --xeg-color-text-primary, --xeg-color-neutral-*, --xeg-bg-toolbar
+ * - Spacing: em-based units (relative to font-size) for scalability
+ * - Animation: --xeg-duration-fast/normal, --xeg-ease-standard
+ * - Radius: --xeg-radius-lg (main), --xeg-radius-sm (scrollbar)
+ * - Focus: --xeg-focus-ring, --xeg-focus-ring-offset
+ * - Z-Index: --xeg-z-overlay for positioning
+ *
+ * **State Management**:
+ * - data-expanded='true'|'false': Controls max-height and overflow
+ * - data-theme='dark'|'light': Theme variant selection
+ * - .highContrast: CSS class for high contrast mode (last rule)
+ *
+ * **Layout Pattern**:
+ * 1. Container (.captionBar): Position absolute, flex column
+ * 2. Content (.textContent): Flex 1, handles overflow/scrolling
+ * 3. Toggle (.toggleButton): Centered, triggers state change
+ *
+ * **Animation Strategy**:
+ * - Collapsed: max-height 4em (single line + padding)
+ * - Expanded: max-height 16em (multi-line, scrollable)
+ * - Transition: Normal duration (0.2s typical) for smooth effect
+ * - Icon: Rotates 180deg on expansion (visual indicator)
+ *
+ * **Scrollbar Customization**:
+ * - Standard: scrollbar-width: thin, scrollbar-color
+ * - WebKit (Chrome/Safari): ::-webkit-scrollbar* pseudo-elements
+ * - Track: Transparent (blends with content)
+ * - Thumb: Neutral color with hover darkening
+ * - Radius: Rounded corners for modern look
+ *
+ * **Responsive Behavior**:
+ * - Desktop: Full font size (0.875em)
+ * - Mobile (≤48em/768px): Reduced font size (0.8125em)
+ * - Typography: Scales with container
+ * - Layout: Maintains flex structure
+ *
+ * **Accessibility** (WCAG 2.1 AA):
+ * - Semantic: Button element for toggle
+ * - Focus: :focus-visible with outline ring
+ * - High contrast: Dedicated mode with strong borders/colors
+ * - Motion: Respects prefers-reduced-motion (via tokens)
+ * - Color: 4.5:1 minimum contrast via tokens
+ * - Keyboard: Tab to toggle, Enter/Space to activate
+ *
+ * **Browser Compatibility**:
+ * - Flexbox: Full support (modern browsers)
+ * - Backdrop-filter: Chrome 76+, Firefox 103+, Safari 9+
+ * - Scrollbar styling: scrollbar-width (Firefox), ::-webkit-* (Chrome/Safari)
+ * - CSS Variables: Full support (IE 11 not supported)
+ * - Transform: GPU-accelerated (rotate, scale)
+ *
+ * **Performance Optimization**:
+ * - Transitions: Only on interactive elements (button hover/active)
+ * - Transform: GPU-accelerated (rotate, scale, no reflow)
+ * - Backdrop-filter: Optimized blur distance (0.75rem)
+ * - Flex: Efficient layout calculation
+ * - Max-height: Smooth animation (no pixel jumps)
+ *
+ * **Phase History**:
+ * - Phase 385: Initial caption bar styling with glassmorphism
+ * - Phase 393: Full English documentation and accessibility review
+ *
+ * **Related Files**:
+ * - CaptionBar.tsx: Component implementation (not present, CSS-only)
+ * - index.ts: Barrel export (NEW in Phase 393)
+ *
+ * @see {@link ./index.ts} - Barrel export documentation
+ * @see {@link ../../../styles} - Design token definitions
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/backdrop-filter - Backdrop filter docs
+ * @see https://developer.mozilla.org/en-US/docs/Web/CSS/scrollbar-width - Scrollbar width (Firefox)
+ */
+
+/**
+ * ============================================================================
+ * Caption Bar Container - Main Overlay
+ * ============================================================================
+ *
+ * Absolute positioned overlay at bottom of gallery surface.
+ * Displays tweet caption with glassmorphism design and expand/collapse.
+ */
+
+/**
+ * Primary Caption Bar Container
+ *
+ * **Positioning**:
+ * - position: absolute - Relative to nearest positioned ancestor
+ * - bottom: 0, left: 0, right: 0 - Stretches full width at bottom
+ * - z-index: var(--xeg-z-overlay) - Above main content, below modals
+ *
+ * **Glassmorphism Design**:
+ * - background: var(--xeg-bg-toolbar) - Semi-transparent (typically 10-20% opacity)
+ * - border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0 - Top rounded only
+ * - backdrop-filter: blur(0.75rem) - 12px blur for frosted glass effect
+ * - Color blend: Creates depth and visual layering
+ *
+ * **Layout Properties**:
+ * - display: flex - Enables flexbox layout
+ * - flex-direction: column - Stack children vertically (text, button)
+ * - padding: 0.75em 1em - em-based spacing (scales with font-size)
+ * - gap: 0.5em - Space between text and toggle button
+ *
+ * **Collapsed State** (default):
+ * - max-height: 4em - Shows ~1 line of text (with padding/button)
+ * - overflow: hidden - Hides excess content
+ * - Text truncated with ellipsis (via .textContent styles)
+ *
+ * **Typography**:
+ * - color: var(--xeg-color-text-primary) - Primary text color (theme-aware)
+ * - font-size: 0.875em - 14px at base (em-based for scalability)
+ * - line-height: 1.5 - 1.5x for comfortable reading
+ *
+ * **Transition**:
+ * - max-height: Normal duration (typically 0.2s) smooth animation
+ * - opacity: Fast duration (typically 0.1s) for quick feedback
+ * - Uses --xeg-ease-standard (ease-in-out typical)
+ */
+.captionBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--xeg-z-overlay);
+
+  /**
+   * Glassmorphism effect: Semi-transparent background with blur
+   * Creates frosted glass appearance for modern aesthetic
+   * Requires backdrop-filter support (available in modern browsers)
+   */
+  background: var(--xeg-bg-toolbar);
+  border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
+  backdrop-filter: blur(0.75rem);
+
+  /**
+   * Layout: Flex container for vertical arrangement
+   * Aligns text content (flex: 1) above toggle button (centered)
+   */
+  display: flex;
+  flex-direction: column;
+  padding: 0.75em 1em;
+  gap: 0.5em;
+
+  /**
+   * Collapsed state sizing and overflow
+   * Max-height combined with overflow: hidden creates expand/collapse animation
+   * 4em ≈ 64px (sufficient for 1 line + padding + button)
+   */
+  max-height: 4em;
+  overflow: hidden;
+  transition:
+    max-height var(--xeg-duration-normal) var(--xeg-ease-standard),
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /**
+   * Typography settings
+   * em-based font-size scales with component container
+   * line-height: 1.5 improves readability
+   */
+  color: var(--xeg-color-text-primary);
+  font-size: 0.875em;
+  line-height: 1.5;
+}
+
+/**
+ * Expanded State - Content Fully Visible
+ *
+ * Applied when data-expanded='true' attribute present.
+ * Increases max-height to allow multi-line content and scrolling.
+ *
+ * **Changes from default**:
+ * - max-height: 16em - Expands to ~256px for multi-line display
+ * - Text content overflow-y: auto - Enables vertical scrolling
+ * - Animation: Smooth max-height transition
+ *
+ * **Visual Effect**:
+ * - Caption bar grows from 4em to 16em height
+ * - Content becomes scrollable if exceeds 16em
+ * - Toggle icon rotates 180deg (visual feedback)
+ * - Backdrop blur remains consistent
+ */
+.captionBar[data-expanded='true'] {
+  max-height: 16em;
+}
+
+/**
+ * ============================================================================
+ * Text Content Area - Caption Text Container
+ * ============================================================================
+ *
+ * Handles text rendering, overflow, and scrolling.
+ * Supports single-line truncation (collapsed) and multi-line scrolling (expanded).
+ */
+
+/**
+ * Text Content Container - Default (Collapsed)
+ *
+ * **Layout**:
+ * - flex: 1 - Takes available space in flex container
+ * - overflow: hidden - Clips excess content
+ * - text-overflow: ellipsis - Shows ... for truncated text
+ * - overflow-wrap: break-word - Wraps long words intelligently
+ *
+ * **Transition**:
+ * - Smooth animation to accommodate expand/collapse
+ * - Opacity fade during state change (visual continuity)
+ *
+ * **Collapsed Behavior**:
+ * - Text truncated with ellipsis if exceeds container
+ * - Single line visible (maintained by max-height: 4em parent)
+ * - Scrollbar hidden (overflow: hidden)
+ */
+.textContent {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: break-word;
+  transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+/**
+ * Text Content Container - Expanded
+ *
+ * Applied when data-expanded='true' attribute present.
+ * Enables scrolling for multi-line content exceeding 16em.
+ *
+ * **Scrolling**:
+ * - overflow-y: auto - Vertical scrollbar when needed
+ * - overflow-x: hidden - No horizontal scrolling
+ * - Custom scrollbar styling (thin, themed)
+ *
+ * **Scrollbar Styling** (Firefox):
+ * - scrollbar-width: thin - Reduced scrollbar width
+ * - scrollbar-color: Foreground (thumb) & background (track)
+ *   - Thumb: var(--xeg-color-neutral-400) standard
+ *   - Track: transparent (inherits caption bar background)
+ *
+ * **Note**: Firefox uses scrollbar-width/scrollbar-color
+ * Chrome/Safari use ::-webkit-scrollbar* pseudo-elements (below)
+ */
+.textContent[data-expanded='true'] {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /**
+   * Standard scrollbar styling (Firefox)
+   * Thin scrollbar with custom color
+   */
+  scrollbar-width: thin;
+  scrollbar-color: var(--xeg-color-neutral-400) transparent;
+}
+
+/**
+ * WebKit Scrollbar Track (Chrome/Safari)
+ *
+ * Transparent background for scrollbar track.
+ * Allows caption bar background to show through.
+ */
+.textContent[data-expanded='true']::-webkit-scrollbar {
+  width: 0.375em;
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/**
+ * WebKit Scrollbar Thumb (Chrome/Safari)
+ *
+ * **Styling**:
+ * - background: var(--xeg-color-neutral-400) - Standard thumb color
+ * - border-radius: var(--xeg-radius-sm) - Rounded corners
+ * - width: 0.375em - Thin scrollbar (6px)
+ *
+ * **Hover State**:
+ * - background: var(--xeg-color-neutral-500) - Slightly darker on hover
+ * - Visual feedback without changing scrollbar width
+ */
+.textContent[data-expanded='true']::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-400);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.textContent[data-expanded='true']::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-500);
+}
+
+/**
+ * ============================================================================
+ * Toggle Button - Expand/Collapse Control
+ * ============================================================================
+ *
+ * Centered button below text content.
+ * Triggers expand/collapse state with visual feedback.
+ */
+
+/**
+ * Expand/Collapse Toggle Button
+ *
+ * **Positioning & Sizing**:
+ * - align-self: center - Centers button horizontally in flex container
+ * - width: 2em, height: 1.5em - Small compact button (em-based)
+ * - padding: 0.25em - Inner spacing for content
+ *
+ * **Styling**:
+ * - border: none - Semantic button (reset default)
+ * - background: var(--xeg-color-neutral-200) - Light neutral background
+ * - border-radius: var(--xeg-radius-sm) - Subtle rounding
+ * - color: var(--xeg-color-text-primary) - Text/icon color
+ * - cursor: pointer - Indicates interactivity
+ *
+ * **Layout**:
+ * - display: flex - Centers child content (icon)
+ * - align-items: center - Vertical centering
+ * - justify-content: center - Horizontal centering
+ * - font-size: 0.75em - Small icon size
+ *
+ * **Interaction**:
+ * - Smooth transitions on background and transform
+ * - Hover: Background darkens
+ * - Active: Scale shrinks slightly for tactile feedback
+ * - Focus-visible: Focus ring for keyboard navigation
+ */
+.toggleButton {
+  align-self: center;
+  width: 2em;
+  height: 1.5em;
+  padding: 0.25em;
+  border: none;
+  background: var(--xeg-color-neutral-200);
+  border-radius: var(--xeg-radius-sm);
+  color: var(--xeg-color-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+  font-size: 0.75em;
+}
+
+/**
+ * Toggle Button Hover State
+ *
+ * **Changes**:
+ * - background: Darkens to var(--xeg-color-neutral-300)
+ * - Visual feedback: Indicates button is interactive
+ * - Smooth transition: Normal duration via :toggle-button transition
+ *
+ * **User Experience**:
+ * - Clear interaction affordance
+ * - Matches web convention for button hover
+ * - Subtle but perceivable
+ */
+.toggleButton:hover {
+  background: var(--xeg-color-neutral-300);
+}
+
+/**
+ * Toggle Button Active State
+ *
+ * **Changes**:
+ * - transform: scale(0.95) - Shrinks to 95% (5% reduction)
+ * - Creates "press" effect (tactile feedback)
+ * - Maintains center position (scale origin)
+ *
+ * **User Experience**:
+ * - Immediate visual feedback on click
+ * - Feels responsive and interactive
+ * - Modern button interaction pattern
+ */
+.toggleButton:active {
+  transform: scale(0.95);
+}
+
+/**
+ * Toggle Button Focus State
+ *
+ * **Keyboard Navigation**:
+ * - :focus-visible - Only shows on keyboard focus (not mouse)
+ * - outline: var(--xeg-focus-ring) - Focus ring from design system
+ * - outline-offset: var(--xeg-focus-ring-offset) - Space from border
+ *
+ * **Accessibility**:
+ * - Clear focus indicator (essential for keyboard users)
+ * - High contrast focus ring (WCAG AA)
+ * - Distinguishes from mouse hover
+ * - Supports Tab navigation
+ *
+ * **Design Tokens**:
+ * - --xeg-focus-ring: Typically 2-3px solid, high contrast color
+ * - --xeg-focus-ring-offset: Typically 2-3px space
+ * - Consistent with other interactive elements
+ */
+.toggleButton:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/**
+ * ============================================================================
+ * Toggle Icon Animation
+ * ============================================================================
+ *
+ * Icon that rotates to indicate expanded/collapsed state.
+ * Typically chevron or arrow that flips 180 degrees.
+ */
+
+/**
+ * Toggle Icon Base
+ *
+ * **Display**:
+ * - display: inline-block - Creates box for transform
+ * - Allows rotation transform (inline elements can't rotate)
+ *
+ * **Animation**:
+ * - transition: Smooth rotation on state change
+ * - Duration: Fast (typically 0.1s) for snappy feedback
+ * - Easing: Standard (ease-in-out) for natural feel
+ *
+ * **Default**: Points down (collapsed state indicator)
+ */
+.toggleIcon {
+  display: inline-block;
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+/**
+ * Toggle Icon Expanded State
+ *
+ * Applied when data-expanded='true' attribute present.
+ * Visual indicator that content is expanded.
+ *
+ * **Changes**:
+ * - transform: rotate(180deg) - Flips icon upside down
+ * - Creates clear visual feedback
+ * - Smooth animation (fast duration)
+ *
+ * **User Experience**:
+ * - Icon rotation matches content expansion
+ * - Intuitive visual metaphor
+ * - Smooth animation (not jarring)
+ * - Clear state indication (expanded vs collapsed)
+ */
+.toggleIcon[data-expanded='true'] {
+  transform: rotate(180deg);
+}
+
+/**
+ * ============================================================================
+ * Theme Variants
+ * ============================================================================
+ *
+ * Light/dark mode and high contrast adjustments.
+ * Maintains readability and accessibility in different contexts.
+ */
+
+/**
+ * Dark Theme Variant
+ *
+ * Applied via data-theme='dark' attribute on ancestor element.
+ * Adjusts colors for dark mode viewing.
+ *
+ * **Changes**:
+ * - Caption bar: Darker background with lighter text
+ * - Toggle button: Dark background, light text
+ * - Maintains contrast ratios (WCAG AA)
+ *
+ * **Design Intent**:
+ * - Preserves glassmorphism effect in dark mode
+ * - Reduces eye strain in low-light environments
+ * - Maintains visual hierarchy
+ */
+[data-theme='dark'] .captionBar {
+  background: var(--xeg-color-neutral-800);
+  color: var(--xeg-color-neutral-100);
+}
+
+[data-theme='dark'] .toggleButton {
+  background: var(--xeg-color-neutral-700);
+  color: var(--xeg-color-neutral-100);
+}
+
+[data-theme='dark'] .toggleButton:hover {
+  background: var(--xeg-color-neutral-600);
+}
+
+/**
+ * ============================================================================
+ * Responsive Design
+ * ============================================================================
+ *
+ * Adapts to different screen sizes and contexts.
+ * Mobile-first approach with breakpoints.
+ */
+
+/**
+ * Mobile Responsive Adjustments
+ *
+ * **Applied**:
+ * - Screens 48em or smaller (768px, typical tablet/mobile threshold)
+ * - Media query: (width <= 48em)
+ *
+ * **Changes**:
+ * - Font size: Reduced from 0.875em to 0.8125em
+ * - Reason: Space constraints on mobile devices
+ * - Typography: Still readable, compact
+ *
+ * **Scaling**:
+ * - em-based units scale proportionally
+ * - padding, margins, height all scale with font
+ * - Maintains visual proportions
+ *
+ * **Layout**:
+ * - Flex layout remains unchanged
+ * - Toggle button and scrollbar scale appropriately
+ * - Overall container size adapts
+ */
+@media (width <= 48em) {
+  .captionBar {
+    font-size: 0.8125em;
+  }
+}
+
+/**
+ * ============================================================================
+ * High Contrast Mode
+ * ============================================================================
+ *
+ * Maximum accessibility for users with vision impairments.
+ * Applied as .highContrast CSS class (highest specificity).
+ */
+
+/**
+ * High Contrast Caption Bar
+ *
+ * **Changes**:
+ * - background: Stronger background color (high-contrast token)
+ * - border: Added 1px border for additional contrast
+ *   - Uses --xeg-toolbar-button-border-high-contrast token
+ *   - Typically strong/dark color (black or near-black)
+ *
+ * **Purpose**:
+ * - Improves visibility for low-vision users
+ * - Meets WCAG AAA requirements (enhanced contrast)
+ * - Clear visual separation from background
+ *
+ * **Note**: .highContrast is last rule (highest specificity)
+ * Ensures high-contrast values override regular theme
+ */
+.captionBar.highContrast {
+  background: var(--xeg-toolbar-button-bg-high-contrast);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast);
+}
+
+/**
+ * High Contrast Toggle Button
+ *
+ * **Changes**:
+ * - background: Strong overlay color (high-contrast)
+ * - border: Added 1px border for maximum definition
+ *   - Color: var(--xeg-color-neutral-100) - Near white
+ *   - Creates strong visual boundary
+ *
+ * **Visual Result**:
+ * - Button clearly visible against background
+ * - Strong contrast ratio (meets WCAG AAA)
+ * - Distinct from caption bar background
+ *
+ * **Accessibility**:
+ * - Users with low vision can easily identify and interact
+ * - Meets section 508 requirements
+ * - Best practice for inclusive design
+ */
+.captionBar.highContrast .toggleButton {
+  background: var(--xeg-color-overlay-strong);
+  border: var(--border-width-thin) solid var(--xeg-color-neutral-100);
+}

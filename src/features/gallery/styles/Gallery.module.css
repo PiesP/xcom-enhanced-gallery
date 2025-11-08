@@ -1,0 +1,841 @@
+/**
+ * Copyright (c) 2024 X.com Enhanced Gallery
+ * Licensed under the MIT License
+ *
+ * @fileoverview Gallery Component Styles - Modern CSS Integration
+ * @description CSS Modules implementation for X.com Enhanced Gallery.
+ * Demonstrates advanced CSS features including Cascade Layers, Container Queries,
+ * CSS Containment, Logical Properties, and modern selectors.
+ * @version 3.0.0
+ * @status ⚠️ WIP: Currently unused in production code, used only for test validation
+ * (Phase 37, cross-component-consistency). Planned for future VerticalGalleryView
+ * CSS Modules migration or removal if deemed unnecessary.
+ * @features
+ * - CSS Cascade Layers for style priority management
+ * - OKLCH color space and CSS Color Module Level 4
+ * - Container Queries for responsive design
+ * - CSS Containment for performance optimization
+ * - CSS Logical Properties for internationalization support
+ * - Advanced CSS selectors (:has, :where, :is)
+ * - Full accessibility and user preference support
+ * @author X.com Enhanced Gallery Team
+ */
+
+/* Container query-related variables */
+:root {
+  --xeg-gallery-container-inline-size: 100vw;
+  --xeg-gallery-container-block-size: 100vh;
+
+  /* Performance optimization variables */
+  --xeg-gallery-gpu-acceleration: translateZ(0);
+  --xeg-gallery-containment: layout style paint;
+}
+
+/**
+ * Gallery Container - Container Queries support
+ * Acts as the main container for the entire gallery.
+ */
+.xegGalleryContainer {
+  /* Container Queries configuration */
+  container-type: size;
+  container-name: gallery-main;
+
+  /* Performance optimization */
+  contain: var(--xeg-gallery-containment);
+  content-visibility: auto;
+  contain-intrinsic-size: var(--xeg-gallery-container-inline-size)
+    var(--xeg-gallery-container-block-size);
+
+  /* GPU acceleration */
+  transform: var(--xeg-gallery-gpu-acceleration);
+  will-change: transform;
+
+  /* Layout */
+  position: fixed;
+  inset: 0;
+  z-index: var(--xeg-z-gallery, 10000);
+
+  /* Background - Using semantic tokens */
+  background: var(--xeg-gallery-bg);
+  backdrop-filter: none;
+
+  /* Logical Properties */
+  padding-block: var(--xeg-spacing-md);
+  padding-inline: var(--xeg-spacing-md);
+}
+
+/**
+ * Gallery Viewer Overlay - Modern glassmorphism design
+ * Used as a modal background covering the entire screen.
+ *
+ * Features:
+ * - Container Queries-based responsive design
+ * - OKLCH color space utilization
+ * - CSS Containment performance optimization
+ * - CSS Logical Properties for internationalization support
+ * - Advanced CSS selectors
+ */
+.xegGalleryViewer {
+  /* Layout - Using Logical Properties */
+  position: fixed;
+  inset: 0;
+  z-index: var(--xeg-z-gallery-overlay);
+
+  /* Background - Using semantic tokens */
+  background: var(--xeg-gallery-bg);
+
+  /* Flex layout - State management via :has() selector */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Initial state */
+  opacity: 0;
+  transition:
+    opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+  pointer-events: none;
+
+  /* Performance optimization */
+  contain: layout style;
+  will-change: opacity, transform;
+  transform: var(--xeg-gallery-gpu-acceleration);
+
+  /* Minimal design (no blur) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* CSS Nesting - Theme variations */
+  &.xegThemeLight {
+    background: var(--xeg-gallery-bg-light);
+  }
+  &.xegThemeDark {
+    background: var(--xeg-gallery-bg-dark);
+  }
+  &.xegThemeAuto {
+    background: var(--xeg-gallery-bg);
+  }
+}
+
+/* Removed: --gallery-active unused variable */
+
+/**
+ * Gallery Viewer Visible State
+ * Used with .xegGalleryViewer to apply styles when gallery is displayed.
+ * Features: GPU acceleration, Container Queries optimization
+ */
+.xegGalleryViewer.xegVisible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: var(--xeg-gallery-gpu-acceleration) scale(1);
+}
+
+/**
+ * Container Queries - Responsive gallery layout
+ */
+@container gallery-main (width > 768px) {
+  .xegGalleryViewer {
+    /* Styles for tablet and larger screens */
+    padding-block: var(--xeg-spacing-xl);
+    padding-inline: var(--xeg-spacing-lg);
+  }
+}
+
+@container gallery-main (width > 1200px) {
+  .xegGalleryViewer {
+    /* Styles for desktop screens */
+    padding-block: var(--xeg-spacing-2xl);
+    padding-inline: var(--xeg-spacing-xl);
+  }
+}
+
+@container gallery-main (height < 600px) {
+  .xegGalleryViewer {
+    /* Optimization for low-height screens */
+    padding-block: var(--xeg-spacing-sm);
+  }
+}
+
+/**
+ * Gallery Close Button - Modern glassmorphism design
+ * Features: OKLCH colors, CSS Nesting, CSS Logical Properties, GPU acceleration
+ */
+.xegCloseButton {
+  /* Position - Using Logical Properties */
+  position: absolute;
+  inset-block-start: var(--xeg-spacing-lg);
+  inset-inline-end: var(--xeg-spacing-lg);
+
+  /* Surface/Border - Using semantic tokens (alias removed) */
+  background: var(--xeg-bg-toolbar);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  border-radius: var(--xeg-radius-full);
+
+  /* Size */
+  inline-size: var(--xeg-button-size-lg);
+  block-size: var(--xeg-button-size-lg);
+
+  /* Text */
+  color: var(--color-text-primary);
+  font-size: var(--xeg-icon-size-lg);
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Stacking */
+  z-index: var(--xeg-z-gallery-toolbar);
+
+  /* Interaction */
+  cursor: pointer;
+
+  /* Performance optimization */
+  contain: layout style;
+  will-change: transform, background-color;
+  transform: var(--xeg-gallery-gpu-acceleration);
+
+  /* Minimal design (no blur) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* Shadow - using semantic shadow */
+  box-shadow: var(--shadow-md, var(--xeg-shadow-md));
+
+  /* Transition */
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /* CSS Nesting - Interaction states */
+  &:hover {
+    background: var(--xeg-bg-toolbar);
+    border-color: var(--color-border-default);
+    transform: var(--xeg-gallery-gpu-acceleration) scale(1.1) translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-lg);
+  }
+
+  &:active {
+    transform: var(--xeg-gallery-gpu-acceleration) scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
+  }
+}
+
+/**
+ * Navigation Button Base Styles - Using CSS Nesting and OKLCH colors
+ * Features: CSS Nesting, OKLCH colors, CSS Logical Properties, GPU acceleration
+ */
+.xegNavButton {
+  /* Position */
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+
+  /* Surface/Border - Using semantic tokens */
+  background: var(--xeg-bg-toolbar);
+  border: var(--border-width-thin) solid var(--color-border-default);
+  border-radius: var(--xeg-radius-full);
+
+  /* Size */
+  inline-size: var(--xeg-button-size-xl);
+  block-size: var(--xeg-button-size-xl);
+
+  /* Text */
+  color: var(--color-text-primary);
+  font-size: var(--xeg-icon-size-lg);
+
+  /* Layout */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Interaction */
+  cursor: pointer;
+
+  /* Stacking */
+  z-index: var(--xeg-z-gallery-toolbar);
+
+  /* Performance optimization */
+  contain: layout style;
+  will-change: transform, background-color;
+
+  /* Minimal design (no blur) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* Shadow */
+  box-shadow: var(--shadow-md, var(--xeg-shadow-md));
+
+  /* Transition */
+  transition:
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /* CSS Nesting - Interaction states */
+  &:hover {
+    background: var(--xeg-bg-toolbar);
+    border-color: var(--color-border-default);
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(1.1);
+  }
+
+  &:active {
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration) scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
+  }
+
+  /* CSS Nesting - Disabled state */
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+
+    &:hover {
+      background: var(--xeg-color-neutral-200);
+      border-color: var(--color-border-muted);
+      transform: translateY(-50%) var(--xeg-gallery-gpu-acceleration);
+    }
+  }
+}
+
+/**
+ * Navigation Button Position - Using CSS Logical Properties
+ */
+.xegNavPrev {
+  inset-inline-start: var(--xeg-spacing-lg);
+}
+
+.xegNavNext {
+  inset-inline-end: var(--xeg-spacing-lg);
+}
+
+/**
+ * Media Container - Using CSS Subgrid and Container Queries
+ * Features: CSS Grid with Subgrid, CSS Containment, Container Queries
+ */
+.xegMediaContainer {
+  /* CSS Grid with Subgrid */
+  display: grid;
+  grid-template-areas:
+    'header'
+    'content'
+    'footer';
+  grid-template-rows: auto 1fr auto;
+
+  /* Size limits - Logical Properties */
+  max-inline-size: 90vw;
+  max-block-size: 90vh;
+
+  /* Container Queries setup */
+  container-type: size;
+  container-name: media-container;
+
+  /* Content alignment */
+  align-items: center;
+  justify-content: center;
+
+  /* Layout */
+  position: relative;
+
+  /* Performance optimization */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 90vw 90vh;
+
+  /* GPU acceleration */
+  transform: var(--xeg-gallery-gpu-acceleration);
+  will-change: transform;
+}
+
+/* Fallback for browsers without Subgrid support */
+@supports not (grid-template-rows: subgrid) {
+  .xegMediaContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Container Queries for media container */
+@container media-container (width > 600px) {
+  .xegMediaContainer {
+    /* Adjust spacing for medium-size screens */
+    gap: var(--xeg-spacing-md);
+  }
+}
+
+@container media-container (width > 1200px) {
+  .xegMediaContainer {
+    /* Adjust spacing for large screens */
+    gap: var(--xeg-spacing-lg);
+    max-inline-size: 95vw;
+    max-block-size: 95vh;
+  }
+}
+
+/**
+ * Media Element (Image/Video)
+ * Element where actual media content is displayed.
+ *
+ * Features:
+ * - object-fit: contain to maintain aspect ratio
+ * - Rounded corners and shadow effects
+ * - Transitions based on loading state
+ */
+.mediaElement {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--xeg-radius-lg);
+  box-shadow: var(--shadow-gallery-image);
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+/**
+ * Media Element Loading State
+ * Styles applied while media is loading.
+ */
+.mediaElement.loading {
+  transform: scale(0.9);
+  opacity: 0.7;
+}
+
+/**
+ * Media Element Loaded State
+ * Styles applied when media load is complete.
+ */
+.mediaElement.loaded {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/**
+ * Loading State Text
+ * Loading message styles displayed while media is loading.
+ */
+.loading {
+  color: white;
+  font-size: var(--xeg-text-xl);
+  text-align: center;
+  padding: var(--xeg-spacing-lg);
+}
+
+/**
+ * Loading Spinner
+ * Rotating loading indicator.
+ *
+ * Features:
+ * - Circular border design
+ * - Infinite rotation animation
+ * - Displayed inline with text
+ */
+.loadingSpinner {
+  display: inline-block;
+  width: var(--xeg-icon-size-md);
+  height: var(--xeg-icon-size-md);
+  border: var(--border-width-sm) solid var(--xeg-color-neutral-400);
+  border-radius: var(--xeg-radius-full);
+  border-top-color: var(--xeg-color-text-primary);
+  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
+  margin-right: var(--xeg-spacing-sm);
+}
+
+/**
+ * Spinner Rotation Animation
+ * 360-degree rotation keyframe animation.
+ */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/**
+ * Error State Styles
+ * Error message styles displayed when media load fails.
+ *
+ * Features:
+ * - Error color text
+ * - Toolbar background and blur effects
+ * - Rounded corners
+ */
+.error {
+  color: var(--xeg-color-error);
+  font-size: var(--xeg-text-xl);
+  text-align: center;
+  padding: var(--xeg-spacing-lg);
+  background: var(--xeg-toolbar-bg);
+  border-radius: var(--xeg-radius-lg);
+  backdrop-filter: none;
+  box-shadow: var(--xeg-toolbar-shadow);
+}
+
+/**
+ * Control Toolbar - Modern glassmorphism design
+ * Container for control buttons positioned at the bottom of the gallery.
+ *
+ * Features:
+ * - Absolute positioning fixed at bottom center
+ * - Flexbox layout for buttons
+ * - Modern glassmorphism background and blur effects
+ * - Smooth show/hide transitions
+ * - Enhanced shadow and border effects
+ */
+.controls {
+  position: absolute;
+  bottom: var(--xeg-spacing-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--xeg-spacing-md);
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-md);
+  background: var(--xeg-toolbar-bg);
+  border: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  border-radius: var(--radius-pill); /* 28px → var(--radius-pill) = 1.75em */
+  z-index: var(--xeg-z-gallery-toolbar);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--xeg-toolbar-shadow);
+  transition:
+    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+/**
+ * Control Toolbar Hidden State
+ * Styles applied when toolbar is hidden on mouse inactivity or auto-hide.
+ */
+.controls.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/**
+ * Control Button Base Styles
+ * Base styles applied to all buttons in the toolbar.
+ *
+ * Features:
+ * - Unified button background
+ * - Rounded corners
+ * - Hover and active state animations
+ * - Disabled state support
+ */
+.controlButton {
+  background: var(--xeg-button-bg);
+  border: var(--border-width-thin) solid var(--xeg-button-border);
+  /* Interaction element radius policy: md */
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  color: var(--xeg-button-text);
+  font-size: var(--xeg-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+}
+
+/**
+ * Control Button Hover State
+ * Provides upward movement effect when mouse is over the button.
+ */
+.controlButton:hover {
+  background: var(--xeg-button-bg-hover);
+  border-color: var(--xeg-button-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+}
+
+/**
+ * Control Button Active State
+ * Provides effect to return to original position when clicked.
+ */
+.controlButton:active {
+  transform: translateY(0);
+}
+
+/**
+ * Control Button Disabled State
+ * Styles applied when functionality is unavailable.
+ */
+.controlButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/**
+ * Download Button Styles
+ * Styles applied to single file download buttons.
+ *
+ * Features:
+ * - Inherits controlButton styles
+ * - Primary color background
+ * - Darker primary color on hover
+ */
+.downloadButton {
+  /* Includes controlButton base properties (CSS Modules composes not used) */
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color: var(--xeg-button-text);
+  background: var(--xeg-color-primary);
+  border-color: var(--xeg-color-primary);
+}
+
+/**
+ * Download Button Hover State
+ * Displays darker color when mouse is over the button.
+ */
+.downloadButton:hover {
+  background: var(--xeg-color-primary-hover);
+  border-color: var(--xeg-color-primary-hover);
+}
+
+/**
+ * Download All Button Styles
+ * Styles applied to buttons for downloading all files as ZIP.
+ *
+ * Features:
+ * - Inherits controlButton styles
+ * - Success color background
+ * - Darker success color on hover
+ */
+.downloadAllButton {
+  /* Includes controlButton base properties (CSS Modules composes not used) */
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color: var(--xeg-button-text);
+  background: var(--xeg-color-success);
+  border-color: var(--xeg-color-success);
+}
+
+/**
+ * Download All Button Hover State
+ * Displays darker color when mouse is over the button.
+ */
+.downloadAllButton:hover {
+  background: var(--xeg-color-success-hover);
+  border-color: var(--xeg-color-success-hover);
+}
+
+/**
+ * Media Counter
+ * Text styles for displaying current media position.
+ *
+ * Features:
+ * - Uses unified counter color
+ * - Appropriate padding and font size
+ * - Displayed with secondary text color for reduced prominence
+ */
+.counter {
+  color: var(--xeg-counter-text);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+/**
+ * Animation Classes
+ * Animation classes for gallery element entry/exit effects.
+ */
+
+/**
+ * Fade In Animation
+ * Animation with opacity changing from 0 to 1.
+ */
+.fadeIn {
+  animation: fadeIn var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
+}
+
+/**
+ * Fade Out Animation
+ * Animation with opacity changing from 1 to 0.
+ */
+.fadeOut {
+  animation: fadeOut var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
+}
+
+/**
+ * Scale In Animation
+ * Animation with size and opacity changing simultaneously.
+ */
+.scaleIn {
+  animation: scaleIn var(--xeg-duration-fast) var(--xeg-easing-ease-in-out);
+}
+
+/**
+ * Slide In From Left Animation
+ * Animation with element sliding from left to right with entry effect.
+ */
+.slideInLeft {
+  animation: slideInLeft var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
+}
+
+/**
+ * Slide In From Right Animation
+ * Animation with element sliding from right to left with entry effect.
+ */
+.slideInRight {
+  animation: slideInRight var(--xeg-duration-normal) var(--xeg-easing-ease-in-out);
+}
+
+/**
+ * Keyframe Animation Definitions
+ * Actual keyframes for animations used above.
+ */
+
+/**
+ * Fade In Keyframe
+ * Opacity changes from 0 to 1
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/**
+ * Fade Out Keyframe
+ * Opacity changes from 1 to 0
+ */
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/**
+ * Scale In Keyframe
+ * Size changes from 0.9x and opacity 0 to original size and opacity 1
+ */
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/**
+ * Left Slide In Keyframe
+ * Moves from left outside to original position with opacity change
+ */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Right Slide In Keyframe
+ * Moves from right outside to original position with opacity change
+ */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/**
+ * Accessibility Improvements
+ * Styles to comply with web accessibility standards.
+ */
+
+/**
+ * Show Controls on Focus
+ * Displays controls always when gallery viewer has focus.
+ */
+.galleryViewer:focus-within .controls {
+  opacity: 1;
+}
+
+/**
+/**
+ * Screen Reader Only Text
+ * Text styles that are visually hidden but readable by screen readers.
+ *
+ * Features:
+ * - Visually hidden with 1px size
+ * - Removed from layout with absolute positioning
+ * - Completely hidden with overflow: hidden
+ */
+.srOnly {
+  position: absolute;
+  width: 0.0625rem; /* 1px = 0.0625rem */
+  height: 0.0625rem; /* 1px = 0.0625rem */
+  padding: 0;
+  margin: -0.0625rem; /* -1px = -0.0625rem */
+  overflow: clip;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/**
+ * Phase 254: Reduced Motion Support
+ * - transition is automatically handled by semantic layer --xeg-duration-* tokens
+ * - animation explicitly disabled only
+ */
+@media (prefers-reduced-motion: reduce) {
+  .fadeIn,
+  .fadeOut,
+  .scaleIn,
+  .slideInLeft,
+  .slideInRight {
+    animation: none;
+  }
+
+  .loadingSpinner {
+    animation: none;
+  }
+}

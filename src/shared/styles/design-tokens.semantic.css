@@ -1,0 +1,644 @@
+/**
+ * @fileoverview Semantic Design Tokens
+ * @description 역할 기반 토큰들 - primitive 값들을 참조
+ */
+
+:root {
+  /* Background Colors - Semantic Roles */
+  --color-bg-primary: var(--color-base-white);
+  --color-bg-secondary: var(--color-gray-50);
+  --color-bg-surface: var(--color-base-white);
+  --color-bg-elevated: var(--color-base-white);
+
+  /* 갤러리 및 툴바 배경 토큰 */
+  --xeg-bg-toolbar: var(--color-bg-surface);
+  --xeg-toolbar-border: var(--xeg-color-border-primary);
+  --xeg-toolbar-bg: var(--xeg-bg-toolbar);
+
+  /* Gallery Image Item Background Tokens */
+  --xeg-color-bg-secondary: var(--color-bg-secondary);
+
+  /* Gallery Background - 라이트/다크 변형 */
+  --xeg-gallery-bg-light: var(--color-bg-primary);
+  --xeg-gallery-bg-dark: var(--color-gray-900);
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+
+  /* Text Colors - Semantic Roles */
+  --color-text-primary: var(--color-base-black);
+  --color-text-secondary: var(
+    --color-gray-600
+  ); /* Phase: design-consistency - improved from gray-700 */
+  --color-text-muted: var(--color-gray-500);
+  --color-text-inverse: var(--color-base-white);
+  --color-text-error: oklch(1 0 0 / 70%); /* white with 70% opacity */
+  --color-text-on-overlay: oklch(1 0 0 / 90%); /* white with 90% opacity */
+
+  /* Border Colors - Semantic Roles */
+  --color-border-default: var(--color-gray-200);
+  --color-border-muted: var(--color-gray-100);
+  --color-border-subtle: var(--color-gray-100);
+  --color-border-emphasis: var(--color-gray-500);
+  --color-border-hover: var(--color-gray-300); /* Hover state for borders */
+
+  /* Border Color Tokens - xeg prefix for consistency */
+  --xeg-color-border-primary: var(--color-border-default);
+  --xeg-color-border-hover: var(--color-border-hover);
+
+  /* Button Tokens - Semantic Roles */
+  --xeg-button-bg: var(--color-bg-surface);
+  --xeg-button-border: var(--color-border-default);
+  --xeg-button-text: var(--color-text-primary);
+  --xeg-button-bg-hover: var(--color-bg-secondary);
+  --xeg-button-border-hover: var(--color-border-hover);
+
+  /* Modal Background/Border Tokens */
+  --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg-dark: var(--color-gray-800);
+  --xeg-modal-border-dark: var(--color-border-emphasis);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+
+  /* Toolbar High Contrast Tokens (Phase 56) */
+  --xeg-toolbar-bg-high-contrast-light: var(--xeg-color-neutral-100);
+  --xeg-toolbar-border-high-contrast-light: var(--xeg-color-overlay-medium);
+  --xeg-toolbar-button-bg-high-contrast-light: var(--xeg-glass-bg);
+  --xeg-toolbar-button-border-high-contrast-light: var(--xeg-color-overlay-light);
+  --xeg-toolbar-bg-high-contrast-dark: var(--color-gray-900);
+  --xeg-toolbar-border-high-contrast-dark: var(--color-border-emphasis);
+  --xeg-toolbar-button-bg-high-contrast-dark: var(--xeg-color-neutral-700);
+  --xeg-toolbar-button-border-high-contrast-dark: var(--xeg-glass-border);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
+
+  /* State Colors - Semantic Roles */
+  --color-success: var(--color-green-500);
+  --color-success-hover: var(--color-green-600);
+  --color-success-bg: var(--color-green-50);
+  --color-error: var(--color-red-500);
+  --color-error-hover: var(--color-red-600);
+  --color-error-bg: var(--color-red-50);
+  --color-warning: var(--color-yellow-500);
+  --color-warning-bg: var(--color-yellow-50);
+  --color-info: var(--color-blue-500);
+  --color-info-bg: var(--color-blue-50);
+
+  /* Interactive Colors - Semantic Roles */
+  --color-primary: var(--color-twitter-blue);
+  --color-primary-hover: var(--color-twitter-blue-hover);
+  --color-primary-active: var(--color-twitter-blue-active);
+
+  /* Interactive Color Tokens - xeg prefix for consistency */
+  --xeg-color-primary: var(--color-primary);
+  --xeg-color-success: var(--color-success);
+
+  /* Neutral Colors for Button States */
+  --xeg-color-neutral-100: var(--color-gray-100);
+  --xeg-color-neutral-200: var(--color-gray-200);
+  --xeg-color-neutral-300: var(--color-gray-300);
+  --xeg-color-neutral-400: var(--color-gray-400);
+  --xeg-color-neutral-500: var(--color-gray-500);
+  --xeg-color-neutral-700: var(--color-gray-700);
+  --xeg-color-neutral-800: var(--color-gray-800);
+  --xeg-color-neutral-900: var(--color-gray-900);
+
+  /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
+  --color-overlay-light: oklch(0 0 0 / var(--opacity-overlay-light));
+  --color-overlay-medium: oklch(0 0 0 / var(--opacity-overlay-medium));
+  --color-overlay-strong: oklch(0 0 0 / var(--opacity-overlay-strong));
+  --color-overlay-backdrop: oklch(0 0 0 / var(--opacity-overlay-backdrop));
+  --color-overlay-light-bg: oklch(1 0 0 / 95%); /* white with 95% opacity */
+  --color-overlay-dark-bg: oklch(0 0 0 / 95%); /* black with 95% opacity */
+  --color-overlay-button-light: oklch(0 0 0 / 10%); /* black with 10% opacity */
+  --color-overlay-button-light-hover: oklch(0 0 0 / 20%); /* black with 20% opacity */
+
+  /* Glass Effect - Semantic Roles (oklch with opacity tokens) */
+  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
+  --color-glass-border: oklch(1 0 0 / 20%); /* white with 20% opacity */
+
+  /* Spacing - Semantic Roles */
+  /* Removed: --spacing-component-padding, --spacing-item-gap (use --space-md and --space-sm directly) */
+  --spacing-component-margin: var(--space-sm);
+  --spacing-section-gap: var(--space-lg);
+
+  /* Component Sizing - Semantic Roles (em: relative to font-size) */
+  --size-button-height: 2.5em; /* 40px @ 16px */
+  --size-button-sm: 2em; /* 32px @ 16px */
+  --size-button-md: 2.5em; /* 40px @ 16px */
+  --size-button-lg: 3em; /* 48px @ 16px */
+  --size-button-touch: 2.75em; /* 44px @ 16px, Touch-friendly button size */
+  --size-input-height: 2.5em; /* 40px @ 16px */
+
+  /* Button Size Tokens - xeg prefix for consistency */
+  --xeg-size-button-sm: var(--size-button-sm);
+  --xeg-size-button-md: var(--size-button-md);
+  --xeg-size-button-lg: var(--size-button-lg);
+  --xeg-size-button-touch: var(--size-button-touch);
+  --size-icon-sm: 1em; /* 16px @ 16px */
+  --size-icon-md: 1.25em; /* 20px @ 16px */
+  --size-icon-lg: 1.5em; /* 24px @ 16px */
+
+  /* Animation - Semantic Roles */
+  --transition-fast: var(--duration-fast) cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Shadows - Semantic Roles (rem for absolute positioning, oklch for colors) */
+  --shadow-xs: 0 0.03125rem 0.0625rem oklch(0 0 0 / 4%);
+  --shadow-sm: 0 0.0625rem 0.125rem oklch(0 0 0 / 5%); /* 0 1px 2px, black 5% */
+  --shadow-md: 0 0.25rem 0.75rem oklch(0 0 0 / 15%); /* 0 4px 12px, black 15% */
+  --shadow-lg: 0 0.5rem 2rem oklch(0 0 0 / 15%); /* 0 8px 32px, black 15% */
+  --shadow-xl: 0 0.25rem 1.25rem oklch(0 0 0 / 30%); /* 0 4px 20px, black 30% */
+  --shadow-inset-border: 0 0 0 0.0625rem oklch(0 0 0 / 5%); /* 0 0 0 1px, black 5% */
+  --shadow-gallery-image: var(--shadow-xl);
+  --shadow-gallery-counter: var(--shadow-sm);
+  --shadow-gallery-nav: 0 0.25rem 1rem oklch(0 0 0 / 12%), 0 0.125rem 0.5rem oklch(0 0 0 / 8%);
+  --shadow-gallery-nav-hover:
+    0 0.5rem 1.5rem oklch(0 0 0 / 18%), 0 0.25rem 0.75rem oklch(0 0 0 / 12%);
+  --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0.006 277.8 / 8%); /* 0 2px 8px, slate-900 8% */
+  --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0.006 277.8 / 12%); /* 0 4px 16px, slate-900 12% */
+
+  /* Legacy Shadow Tokens - 호환성 보장 */
+  --xeg-shadow-xs: var(--shadow-xs);
+  --xeg-shadow-sm: var(--shadow-sm);
+  --xeg-shadow-md: var(--shadow-md);
+  --xeg-shadow-lg: var(--shadow-lg);
+  --xeg-shadow-inset-border: var(--shadow-inset-border);
+
+  /* Focus & Accessibility (rem for absolute outline width) */
+  --xeg-focus-outline: 0.125rem solid var(--color-gray-500); /* 2px */
+  --xeg-focus-offset: 0.125rem; /* 2px */
+
+  /* Button Component Typography - Required by Button.module.css */
+  --xeg-font-size-sm: 0.875rem;
+  --xeg-font-size-base: 1rem;
+  --xeg-font-size-lg: 1.125rem;
+  --xeg-font-weight-medium: 500;
+
+  /* Button Component Text Colors - Required by Button.module.css */
+  --xeg-color-text-primary: var(--color-text-primary);
+  --xeg-color-text-secondary: var(--color-text-secondary);
+
+  /* Animation Timing - Semantic Roles */
+  --xeg-duration: var(--duration-normal);
+  --xeg-duration-fast: var(--duration-fast);
+  --xeg-duration-slow: var(--duration-slow);
+  --xeg-duration-normal: var(--duration-normal);
+  --xeg-easing-linear: linear;
+
+  /* Surface Glass - Unified Tokens */
+  --xeg-surface-glass-bg: var(--color-glass-bg);
+  --xeg-surface-glass-border: var(--color-glass-border);
+  --xeg-surface-glass-shadow: var(--shadow-lg);
+
+  /* Z-Index Management */
+  --xeg-z-modal: 10000;
+  --xeg-z-toolbar: 10001;
+  --xeg-z-overlay: 9999;
+  --xeg-z-toast: 10080;
+  --xeg-z-gallery: var(--xeg-z-overlay);
+
+  /* Layer Management - Semantic Roles */
+  --xeg-layer-base: 0;
+  --xeg-layer-toolbar: var(--xeg-z-toolbar);
+  --xeg-layer-modal: var(--xeg-z-modal);
+  --xeg-layer-toast: var(--xeg-z-toast);
+
+  /* Animation Easing */
+  --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --xeg-easing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Interaction State Tokens */
+  --xeg-button-lift: -1px;
+  --xeg-button-lift-hover: -2px;
+  --xeg-opacity-disabled: 0.5;
+
+  /* Border Radius - Extended Scale */
+  --xeg-radius-sm: var(--radius-sm);
+  --xeg-radius-md: var(--radius-md);
+  --xeg-radius-lg: var(--radius-lg);
+  --xeg-radius-xl: var(--radius-xl);
+  --xeg-radius-2xl: var(--radius-2xl);
+  --xeg-radius-full: var(--radius-full);
+}
+
+/* Theme Support - Dark/Light Mode */
+[data-theme='light'] {
+  --color-bg-primary: var(--color-base-white);
+  --color-text-primary: var(--color-base-black);
+  --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
+  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
+  --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+  --xeg-color-border-primary: var(--color-border-default);
+  --xeg-toolbar-panel-bg: var(--color-gray-50); /* Phase: design-consistency - improved hierarchy */
+  --xeg-toolbar-panel-border: var(--color-border-default);
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
+
+  /* Settings controls alignment with toolbar palette (Phase 52) */
+  --xeg-settings-select-bg: var(
+    --color-bg-surface
+  ); /* Phase: design-consistency - white for content areas */
+  --xeg-settings-select-border: var(--xeg-color-border-primary);
+  --xeg-settings-select-border-hover: var(--xeg-color-border-hover);
+  --xeg-focus-ring-color: var(--xeg-color-border-primary);
+  --xeg-settings-select-focus-ring: var(--xeg-focus-ring-color);
+  --xeg-settings-gap: var(--space-md);
+  --xeg-settings-padding: var(--space-md);
+  --xeg-settings-control-gap: var(--space-sm);
+  --xeg-settings-label-font-size: var(--font-size-sm);
+  --xeg-settings-label-font-weight: var(--font-weight-medium);
+  --xeg-settings-select-padding: var(--space-sm);
+  --xeg-settings-select-font-size: var(--font-size-sm);
+
+  /* Layout stability tokens */
+  --xeg-aspect-default: 4 / 3;
+}
+
+[data-theme='dark'] {
+  --color-bg-primary: var(--color-gray-900);
+  --color-bg-surface: var(--color-gray-900);
+  --color-bg-elevated: var(--color-gray-700);
+  --color-text-primary: var(--color-base-white);
+  --color-text-secondary: var(
+    --color-gray-400
+  ); /* Phase: design-consistency - improved from white */
+  --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
+
+  /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+  --xeg-bg-toolbar: var(--color-gray-800);
+  --xeg-color-border-primary: var(
+    --color-gray-600
+  ); /* Phase: design-consistency - improved from gray-500 */
+  --xeg-toolbar-border: var(--color-gray-600);
+
+  /* Gallery Image Item Dark Mode Tokens */
+  --xeg-color-bg-secondary: var(--color-gray-800);
+
+  /* Gallery Background - 다크 모드 */
+  --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+
+  /* Button Tokens - Dark Mode */
+  --xeg-button-bg: var(--color-gray-800);
+  --xeg-button-border: var(--color-gray-600);
+  --xeg-button-text: var(--color-text-primary);
+  --xeg-button-bg-hover: var(--color-gray-700);
+  --xeg-button-border-hover: var(--color-gray-600);
+
+  /* Modal Background/Border Tokens - Dark Mode */
+  --xeg-modal-bg: var(--xeg-modal-bg-dark);
+  --xeg-modal-border: var(--xeg-modal-border-dark);
+
+  /* Toolbar Component Tokens - Dark Mode */
+  --xeg-toolbar-panel-bg: var(
+    --color-gray-900
+  ); /* Phase: design-consistency - improved hierarchy */
+  --xeg-toolbar-panel-border: var(--color-gray-600);
+
+  /* Settings controls - Dark Mode (Phase: design-consistency) */
+  --xeg-settings-select-bg: var(--color-gray-800); /* Content areas stay gray-800 */
+  --xeg-settings-select-border: var(--color-gray-600);
+
+  /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
+  --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+  --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
+  --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
+  --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg-primary: var(--color-gray-900);
+    --color-bg-surface: var(--color-gray-900);
+    --color-bg-elevated: var(--color-gray-700);
+    --color-text-primary: var(--color-base-white);
+    --color-text-secondary: var(--color-gray-400); /* Phase: design-consistency */
+    --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
+
+    /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+    --xeg-bg-toolbar: var(--color-gray-800);
+    --xeg-color-border-primary: var(--color-gray-600);
+    --xeg-toolbar-border: var(--color-gray-600);
+    --xeg-surface-glass-bg: oklch(0.234 0.006 277.8 / 95%); /* gray-900 with 95% opacity */
+
+    /* Gallery Image Item Dark Mode Tokens */
+    --xeg-color-bg-secondary: var(--color-gray-800);
+
+    /* Gallery Background */
+    --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
+
+    /* Button Tokens - System Dark Mode */
+    --xeg-button-bg: var(--color-gray-800);
+    --xeg-button-border: var(--color-gray-600);
+    --xeg-button-text: var(--color-text-primary);
+    --xeg-button-bg-hover: var(--color-gray-700);
+    --xeg-button-border-hover: var(--color-gray-600);
+
+    /* Modal Background/Border Tokens - System Dark Mode */
+    --xeg-modal-bg: var(--xeg-modal-bg-dark);
+    --xeg-modal-border: var(--xeg-modal-border-dark);
+
+    /* High Contrast Toolbar Tokens - System Dark Mode */
+    --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-dark);
+    --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
+    --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
+    --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
+
+    /* Toolbar Component Tokens - System Dark Mode */
+    --xeg-toolbar-panel-bg: var(--color-gray-900);
+    --xeg-toolbar-panel-border: var(--color-gray-600);
+
+    /* Settings controls - System Dark Mode */
+    --xeg-settings-select-bg: var(--color-gray-800);
+    --xeg-settings-select-border: var(--color-gray-600);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-bg-primary: var(--color-base-white);
+    --color-text-primary: var(--color-base-black);
+    --color-text-secondary: var(--color-gray-600);
+    --color-glass-bg: oklch(1 0 0 / var(--opacity-glass));
+
+    --xeg-bg-toolbar: var(--color-bg-surface);
+    --xeg-color-border-primary: var(--color-border-default);
+    --xeg-toolbar-border: var(--color-border-default);
+    --xeg-color-bg-secondary: var(--color-bg-secondary);
+    --xeg-gallery-bg: var(--xeg-gallery-bg-light);
+    --xeg-modal-bg: var(--xeg-modal-bg-light);
+    --xeg-modal-border: var(--xeg-modal-border-light);
+    --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
+    --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
+    --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
+    --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
+
+    --xeg-toolbar-panel-bg: var(--color-gray-50);
+    --xeg-toolbar-panel-border: var(--color-border-default);
+
+    --xeg-settings-select-bg: var(--color-bg-surface);
+    --xeg-settings-select-border: var(--xeg-color-border-primary);
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    /* Surface contrast adjustments */
+    --color-bg-primary: Canvas;
+    --color-bg-secondary: Canvas;
+    --color-bg-surface: Canvas;
+    --color-bg-elevated: Canvas;
+
+    /* Gallery specific backgrounds */
+    --xeg-gallery-bg-light: Canvas;
+    --xeg-gallery-bg-dark: Canvas;
+    --xeg-gallery-bg: Canvas;
+    --xeg-color-bg-secondary: Canvas;
+
+    /* Text contrast */
+    --color-text-primary: CanvasText;
+    --color-text-secondary: CanvasText;
+    --color-text-muted: CanvasText;
+    --color-text-inverse: Canvas;
+
+    /* Border emphasis */
+    --color-border-default: CanvasText;
+    --color-border-hover: CanvasText;
+    --color-border-emphasis: CanvasText;
+
+    /* Neutral palette remap */
+    --xeg-color-neutral-100: Canvas;
+    --xeg-color-neutral-200: Canvas;
+    --xeg-color-neutral-300: Canvas;
+    --xeg-color-neutral-400: Canvas;
+    --xeg-color-neutral-700: CanvasText;
+    --xeg-color-neutral-800: CanvasText;
+    --xeg-color-neutral-900: CanvasText;
+
+    /* Glass & media surfaces */
+    --color-glass-bg: Canvas;
+    --color-glass-border: CanvasText;
+    --xeg-surface-glass-bg: Canvas;
+    --xeg-surface-glass-border: CanvasText;
+    --xeg-surface-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-media-glass-border: CanvasText;
+    --xeg-media-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-media-glass-blur: none;
+
+    /* Toolbar high-contrast tokens */
+    --xeg-toolbar-bg-high-contrast: Canvas;
+    --xeg-toolbar-border-high-contrast: CanvasText;
+    --xeg-toolbar-button-bg-high-contrast: Canvas;
+    --xeg-toolbar-button-border-high-contrast: CanvasText;
+    --xeg-toolbar-wrapper-gradient-start: Canvas;
+    --xeg-toolbar-wrapper-gradient-mid: color-mix(in srgb, Canvas 80%, transparent);
+    --xeg-toolbar-wrapper-border: 0.125rem solid CanvasText;
+    --xeg-toolbar-wrapper-radius: var(--xeg-radius-md);
+    --xeg-toolbar-wrapper-margin: var(--space-xs);
+    --xeg-toolbar-hover-zone-bg: color-mix(in srgb, CanvasText 20%, transparent);
+
+    /* Focus styling */
+    --xeg-focus-outline: 0.1875rem solid CanvasText; /* 3px */
+    --xeg-focus-ring: 0.1875rem solid CanvasText;
+    --xeg-focus-offset: 0.1875rem;
+    --xeg-focus-ring-offset: 0.1875rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Durations (design-tokens.semantic.css) */
+    --xeg-duration: 0ms;
+    --xeg-duration-fast: 0ms;
+    --xeg-duration-slow: 0ms;
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+    --transition-slow: 0ms;
+
+    /* Transitions (design-tokens.css) */
+    --xeg-transition-fast: none;
+    --xeg-transition-normal: none;
+    --xeg-transition-slow: none;
+
+    /* Animations (design-tokens.component.css) */
+    --animation-fade-in: none;
+    --animation-fade-out: none;
+    --animation-slide-in: none;
+    --animation-slide-out: none;
+    --animation-toolbar-show: none;
+    --animation-toolbar-hide: none;
+  }
+}
+
+/* Component Scope Tokens */
+:root {
+  /* Settings Component Tokens */
+  /* Layout */
+  --xeg-settings-gap: var(--space-md);
+  --xeg-settings-padding: var(--space-md);
+  --xeg-settings-control-gap: var(--space-sm);
+
+  /* Typography */
+  --xeg-settings-label-font-size: var(--font-size-sm);
+  --xeg-settings-label-font-weight: var(
+    --font-weight-bold
+  ); /* Phase D2: 인디케이터(currentIndex)와 통일하여 700으로 변경 */
+  --xeg-settings-select-font-size: var(--font-size-sm);
+
+  /* Input */
+  --xeg-settings-select-padding: var(--space-sm) var(--space-md);
+  --xeg-settings-select-bg: var(--xeg-bg-toolbar);
+  --xeg-settings-select-border: var(--xeg-color-border-primary);
+
+  /* Toolbar Component Tokens */
+  --xeg-toolbar-panel-bg: var(--xeg-bg-toolbar);
+  --xeg-toolbar-panel-shadow: var(--xeg-shadow-xs);
+  --xeg-toolbar-panel-border: var(--xeg-color-border-primary);
+
+  /* Toolbar/Counter Typography Tokens */
+  /* 미디어 카운터 기본 텍스트 톤을 공용 토큰으로 정의 (일관성 확보) */
+  /* 2025-10-21: 툴바 인디케이터 색상 통일에 따라 기본 텍스트(primary)로 승격 */
+  --xeg-text-counter: var(--xeg-color-text-primary);
+
+  /* Legacy/Global Gallery aliases (Phase: design-unification) */
+  /* NOTE: gallery-global.css에서 사용하는 레거시 토큰명을 최신 semantic 토큰으로 연결 */
+  --xeg-text-button: var(--xeg-color-text-primary);
+  --xeg-text-button-navigation: var(--xeg-color-text-primary);
+  --xeg-shadow-toolbar: var(--xeg-shadow-md);
+  --xeg-media-glass-border: var(--color-glass-border);
+  --xeg-media-glass-shadow: var(--shadow-md);
+  --xeg-media-glass-blur: none;
+  --xeg-toolbar-wrapper-gradient-start: oklch(0% 0 0deg / 80%);
+  --xeg-toolbar-wrapper-gradient-mid: oklch(0% 0 0deg / 40%);
+  --xeg-toolbar-wrapper-border: none;
+  --xeg-toolbar-wrapper-radius: 0;
+  --xeg-toolbar-wrapper-margin: 0;
+  --xeg-toolbar-hover-zone-bg: transparent;
+  /* Neutral color aliases */
+  --xeg-neutral-100: var(--xeg-color-neutral-100);
+  --xeg-neutral-200: var(--xeg-color-neutral-200);
+  --xeg-neutral-300: var(--xeg-color-neutral-300);
+  --xeg-neutral-400: var(--xeg-color-neutral-400);
+
+  /* Modal Component Tokens */
+  /* NOTE: Modal component tokens now defer to semantic tokens to avoid
+    cascading alias overwrite issues that previously caused dark mode
+    transparency regressions (see 2025-09-11 fix log). */
+  --xeg-comp-modal-backdrop: var(--color-overlay-backdrop);
+  --xeg-comp-toolbar-bg: var(--xeg-toolbar-panel-bg);
+  --xeg-comp-toolbar-border: var(--xeg-toolbar-panel-border);
+  --xeg-modal-bg-light: var(--color-bg-elevated);
+  --xeg-modal-border-light: var(--color-border-default);
+  --xeg-modal-bg: var(--xeg-modal-bg-light);
+  --xeg-modal-border: var(--xeg-modal-border-light);
+
+  /* Toast Component Tokens (Phase 111.1: Monochrome Unification) */
+  /* All Toast types now use the same gray-based colors for consistency.
+   * Visual distinction is provided by icons (Phase 110.2) and text content. */
+  --xeg-toast-bg-info: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-info: var(--color-gray-300);
+  --xeg-toast-bg-success: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-success: var(--color-gray-300);
+  --xeg-toast-bg-warning: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-warning: var(--color-gray-300);
+  --xeg-toast-bg-error: var(--xeg-surface-glass-bg);
+  --xeg-toast-border-error: var(--color-gray-300);
+  --xeg-toast-bg-neutral: var(--xeg-surface-glass-bg);
+  --xeg-toast-shadow-info: var(--xeg-shadow-md); /* 0 2px 8px */
+  --xeg-toast-shadow-focus: var(--xeg-shadow-lg); /* 0 4px 16px */
+
+  /* Toast Layout Tokens (Phase 52) */
+  --xeg-toast-margin-bottom: var(--space-md); /* 16px - 4px grid normalized */
+  --xeg-toast-padding: var(--space-lg); /* 24px - 4px grid normalized */
+  --xeg-toast-gap: var(--space-sm); /* 8px - content gap */
+  --xeg-toast-header-gap: var(--space-md); /* 16px - header gap normalized */
+  --xeg-toast-min-width: 20rem; /* 320px */
+  --xeg-toast-max-width: 30rem; /* 480px */
+  --xeg-toast-border-width: 0.25rem; /* 4px */
+
+  /* Toast Typography Tokens (Phase 52) */
+  --xeg-toast-title-font-size: var(--font-size-sm); /* 14px */
+  --xeg-toast-title-font-weight: 600;
+  --xeg-toast-message-font-size: 0.8125rem; /* 13px */
+
+  /* Focus Ring Utilities */
+  --xeg-focus-ring: 0.125rem solid var(--color-gray-500); /* 2px */
+  --xeg-focus-ring-offset: 0.125rem; /* 2px */
+} /* ===== 유틸리티 클래스 ===== */
+
+/* Toast 애니메이션 토큰 */
+.xeg-anim-slide-in {
+  animation: slideInFromRight var(--xeg-duration-fast) var(--xeg-ease-standard);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.xeg-anim-fade-slide-in {
+  animation: fadeSlideIn var(--xeg-duration-normal) var(--xeg-ease-standard);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Toast GPU 가속 keyframes */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    transform: translateY(-0.5rem) translateZ(0);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) translateZ(0);
+    opacity: 1;
+  }
+}
+
+/* Focus Ring 유틸리티 클래스 */
+.xeg-focus-ring {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+.xeg-focus-ring:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/* Theme Overrides - Glass System 변형 (라이트 모드) */
+[data-theme='light'] {
+  --xeg-surface-glass-bg: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.2);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
+}
+
+/* Theme Overrides - Glass System 변형 (다크 모드) */
+[data-theme='dark'] {
+  --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+  --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+}
+
+/* System Preference Fallback - 다크 모드 시스템 설정 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
+    --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
+    --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+  }
+}

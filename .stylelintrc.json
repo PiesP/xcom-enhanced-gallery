@@ -1,0 +1,55 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "unit-disallowed-list": [
+      ["px"],
+      {
+        "ignoreProperties": {
+          "px": ["/^--/"]
+        },
+        "message": "Use design tokens (rem/em) instead of hardcoded px values. See docs/CODING_GUIDELINES.md § Size Units"
+      }
+    ],
+    "no-duplicate-selectors": true,
+    "no-descending-specificity": [
+      true,
+      {
+        "message": "Reorder CSS rules from low to high specificity. See docs/CODING_GUIDELINES.md § CSS Specificity"
+      }
+    ],
+    "declaration-block-no-shorthand-property-overrides": true,
+    "color-named": null,
+    "color-no-hex": [
+      true,
+      {
+        "message": "Use oklch() tokens instead of hex colors (#fff/#000 allowed). See docs/CODING_GUIDELINES.md § Color Units"
+      }
+    ],
+    "color-function-notation": "modern",
+    "alpha-value-notation": ["percentage", { "exceptProperties": ["opacity"] }],
+    "value-keyword-case": ["lower", { "camelCaseSvgKeywords": true, "ignoreKeywords": ["currentColor"] }],
+    "property-no-vendor-prefix": null,
+    "property-no-deprecated": null,
+    "comment-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "media-feature-name-value-no-unknown": null,
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+    "keyframes-name-pattern": null
+  },
+  "ignoreFiles": [
+    "dist/**",
+    "coverage/**",
+    "node_modules/**",
+    "test-results/**",
+    "codeql-reports/**",
+    "codeql-results/**",
+    "docs/temp/**",
+    "docs/archive/**",
+    "scripts/temp/**",
+    "**/design-tokens.primitive.css",
+    "**/design-tokens.semantic.css",
+    "**/design-tokens.css"
+  ]
+}

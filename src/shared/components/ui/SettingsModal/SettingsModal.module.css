@@ -1,0 +1,245 @@
+/**
+ * @fileoverview Settings Modal Styles
+ * @version 1.1.0 - Phase 392: Full English documentation, comprehensive JSDoc
+ * @description Semantic styling for settings modal dialog and backdrop overlay
+ * @module shared/components/ui/SettingsModal/SettingsModal.module.css
+ *
+ * **Modal Architecture** (Phase 45):
+ * Settings modal UI extracted from ModalShell component. Provides styled backdrop
+ * and modal container for displaying theme/language selection in dialog format.
+ * Now split: ModalShell (container), SettingsControls (content), SettingsModal (styles).
+ *
+ * **Design System Integration**:
+ * Fully integrated with xeg-* design token system:
+ * - Positioning: Fixed positioning with centered alignment
+ * - Colors: --xeg-modal-bg, --xeg-modal-border, --color-overlay-backdrop
+ * - Z-Index: --xeg-z-modal base level
+ * - Sizing: min-width 20em (320px), max-width 40em (640px)
+ * - Spacing: --space-lg padding (1.5rem)
+ * - Radius: --xeg-radius-lg border-radius (12px)
+ * - Shadow: --xeg-shadow-lg for depth
+ * - Focus: --xeg-focus-ring outline for keyboard navigation
+ *
+ * **Layout Components**:
+ * 1. `.backdrop` - Fullscreen overlay behind modal
+ *    - Fixed positioning (covers viewport)
+ *    - Inset 0 (all sides)
+ *    - Semi-transparent background (--color-overlay-backdrop)
+ *    - Z-Index: --xeg-z-modal (base level)
+ *
+ * 2. `.modal` - Dialog container
+ *    - Fixed positioning (centered)
+ *    - Transform: translate(-50%, -50%) for centering
+ *    - Sizing: 20em-40em width, auto height
+ *    - Z-Index: calc(--xeg-z-modal + 1) (above backdrop)
+ *    - Focus outline: --xeg-focus-ring (keyboard accessibility)
+ *
+ * **Responsive Behavior**:
+ * - Desktop: Full sizing (up to 40em max-width)
+ * - Tablet: Same modal, adjusts to available space
+ * - Mobile: min-width 20em (minimum readable), no max-width constraint
+ * - Viewport: Centers regardless of size (translate-based centering)
+ *
+ * **Accessibility** (WCAG 2.1 AA):
+ * - Backdrop: Prevents interaction with page content (modal pattern)
+ * - Focus: :focus-visible outline for keyboard navigation
+ * - Z-Index: Proper stacking ensures modal on top
+ * - Role: Should be paired with role="dialog" in HTML
+ * - ARIA: aria-modal="true", aria-labelledby for title
+ *
+ * **Animation/Transition** (Phase 254):
+ * - Note: Animations handled by semantic layer (not CSS-only)
+ * - Entry/exit transitions: Defined in component JavaScript
+ * - Fade backdrop: opacity animation (smooth)
+ * - Scale modal: transform animation (entrance effect)
+ * - Implementation: Via CSS-in-JS or component lifecycle
+ *
+ * **Browser Compatibility**:
+ * - All modern browsers: Full support
+ * - Fixed positioning: Works on all screens
+ * - Transform: Full support (fallback: left/top for older browsers)
+ * - CSS Variables: Full support (IE 11 not supported)
+ * - Focus-visible: Progressive enhancement (fallback to :focus)
+ *
+ * **Theme Integration**:
+ * - Light/dark mode: Via design tokens (--xeg-modal-bg changes)
+ * - Backdrop color: Dynamic via --color-overlay-backdrop
+ * - All colors: No hardcoded hex/rgb values
+ * - Automatic switching: No media queries needed (tokens handle)
+ *
+ * **CSS Variables Used**:
+ * - Layout: Fixed positioning, inset: 0, transform
+ * - Sizing: min-width 20em, max-width 40em, padding --space-lg
+ * - Colors: --xeg-modal-bg, --xeg-modal-border, --color-overlay-backdrop
+ * - Styling: --xeg-radius-lg, --border-width-thin, --xeg-shadow-lg
+ * - Interactive: --xeg-focus-ring, --xeg-focus-ring-offset
+ * - Stacking: --xeg-z-modal, calc(--xeg-z-modal + 1)
+ *
+ * **Phase Annotations**:
+ * - Phase 45: Settings modal UI extraction
+ * - Phase 254: Animation/transition handling (semantic layer)
+ * - Phase 309+: Service layer integration for settings data
+ * - Phase 391: SettingsControls component split
+ *
+ * @see {@link ../ModalShell/ModalShell.tsx} - Container component
+ * @see {@link ../Settings/SettingsControls.tsx} - Content component
+ * @see {@link ../../../styles} - Design token definitions
+ * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialogmodal/ - Dialog modal pattern
+ */
+
+/**
+ * Modal Backdrop - Fullscreen Overlay
+ *
+ * Semi-transparent overlay that covers entire viewport.
+ * Prevents user interaction with page content behind modal (modal pattern).
+ * Provides visual separation and focus containment.
+ *
+ * **Layout Properties**:
+ * - position: fixed - Fixed to viewport
+ * - inset: 0 - All sides (top, right, bottom, left: 0)
+ * - Equivalent to: top: 0; right: 0; bottom: 0; left: 0;
+ *
+ * **Styling**:
+ * - background: var(--color-overlay-backdrop) - Semi-transparent (typically rgba(0, 0, 0, 0.3))
+ * - z-index: var(--xeg-z-modal) - Base modal stacking level
+ * - No pointer-events: click on backdrop should close modal (handled via JS)
+ *
+ * **Visual Effect**:
+ * - Darkens page content
+ * - Creates visual separation
+ * - Focuses user attention on modal content
+ * - Dims during modal entrance animation (Phase 254)
+ *
+ * **Accessibility**:
+ * - Semantic backdrop (indicates modal context)
+ * - Screen readers: Should not be announced (inert)
+ * - Keyboard: Focus cannot escape to backdrop
+ */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-backdrop);
+  z-index: var(--xeg-z-modal);
+}
+
+/**
+ * Modal Container - Dialog Content Area
+ *
+ * Centered dialog box containing settings controls.
+ * Positioned absolutely at center of viewport using transform.
+ *
+ * **Positioning**:
+ * - position: fixed - Fixed to viewport (not document)
+ * - top: 50%, left: 50% - Initial positioning
+ * - transform: translate(-50%, -50%) - Centering adjustment
+ *   - translate(-50%, -50%) centers the modal perfectly
+ *   - Alternative to: left: calc(50% - width/2)
+ *   - Advantage: Works regardless of modal dimensions
+ *   - Performance: GPU-accelerated, smooth animations
+ *
+ * **Sizing**:
+ * - min-width: 20em (320px) - Minimum readable width
+ * - max-width: 40em (640px) - Maximum for readability
+ * - height: auto - Content-driven (no fixed height)
+ * - Responsive: Adjusts to content, respects min/max
+ *
+ * **Spacing & Styling**:
+ * - padding: var(--space-lg) - Inner spacing (typically 1.5rem)
+ * - border-radius: var(--xeg-radius-lg) - Rounded corners (typically 12px)
+ * - background: var(--xeg-modal-bg) - Background color (theme-aware)
+ * - border: var(--border-width-thin) solid var(--xeg-modal-border) - 1px border
+ * - box-shadow: var(--xeg-shadow-lg) - Drop shadow for depth
+ *
+ * **Z-Index Stacking**:
+ * - z-index: calc(var(--xeg-z-modal) + 1)
+ * - One level above backdrop (.backdrop)
+ * - Ensures modal always visible on top
+ * - Uses CSS calc() for dynamic stacking relationships
+ *
+ * **Visual Design**:
+ * - Elevation: Shadow indicates depth above page
+ * - Border: Subtle border separates from background
+ * - Radius: Soft corners for modern aesthetic
+ * - Centered: Perfect visual balance
+ *
+ * **Responsive Behavior**:
+ * - Maintains centering regardless of size
+ * - min-width ensures readability on small screens
+ * - max-width prevents excessive width on large screens
+ * - Mobile: May become full-width if viewport < 20em (handled via media query in parent)
+ *
+ * **Animation** (Phase 254):
+ * - Entry: Fade in (backdrop opacity), scale up (modal transform)
+ * - Exit: Fade out (backdrop opacity), scale down (modal transform)
+ * - Implementation: CSS transitions or Solid.js component lifecycle
+ * - Duration: Typically 200-300ms (smooth but not sluggish)
+ *
+ * **Accessibility**:
+ * - Focus outline: :focus-visible for keyboard navigation
+ * - Role: Should have role="dialog" in HTML
+ * - ARIA: aria-modal="true", aria-labelledby for title
+ * - Keyboard trap: Focus should cycle within modal (not escape)
+ * - Escape key: Should close modal (handled via JS)
+ *
+ * **Design Token Dependencies**:
+ * - --xeg-z-modal: Base Z-index level (typically 1000)
+ * - --xeg-modal-bg: Background color (light/dark theme)
+ * - --xeg-modal-border: Border color (subtle contrast)
+ * - --color-overlay-backdrop: Overlay color (semi-transparent)
+ * - --space-lg: Padding (typically 1.5rem / 24px)
+ * - --xeg-radius-lg: Border radius (typically 12px / 0.75rem)
+ * - --border-width-thin: Border width (typically 1px)
+ * - --xeg-shadow-lg: Drop shadow (typically 0 10px 25px rgba(0, 0, 0, 0.15))
+ * - --xeg-focus-ring: Focus outline (typically 3px solid)
+ * - --xeg-focus-ring-offset: Focus outline offset (typically 2px)
+ */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 20em;
+  max-width: 40em;
+  padding: var(--space-lg);
+  border-radius: var(--xeg-radius-lg);
+  background: var(--xeg-modal-bg);
+  border: var(--border-width-thin) solid var(--xeg-modal-border);
+  box-shadow: var(--xeg-shadow-lg);
+  z-index: calc(var(--xeg-z-modal) + 1);
+}
+
+/**
+ * Modal Focus State - Keyboard Navigation Indicator
+ *
+ * Visible focus outline when modal receives keyboard focus.
+ * Essential for keyboard accessibility (WCAG 2.1 AA).
+ *
+ * **Only Applied To**:
+ * - :focus-visible selector (keyboard focus only)
+ * - Not :focus (avoids outline on mouse click)
+ * - Progressive enhancement (works on all modern browsers)
+ *
+ * **Styling**:
+ * - outline: var(--xeg-focus-ring) - Focus ring color/width
+ * - outline-offset: var(--xeg-focus-ring-offset) - Space from border
+ *
+ * **Accessibility**:
+ * - Clear focus indicator (essential for keyboard navigation)
+ * - Sufficient contrast (WCAG color contrast requirements)
+ * - Outline offset prevents "boxing in" feel
+ * - Matches OS/browser native focus styling
+ *
+ * **Design Token Dependencies**:
+ * - --xeg-focus-ring: Focus ring color and width (typically 3px solid)
+ * - --xeg-focus-ring-offset: Space between element and ring (typically 2px)
+ *
+ * **User Experience**:
+ * - Keyboard user sees clear focus indicator
+ * - Modal is clearly interactive
+ * - Easy to navigate with Tab key
+ * - Escape key closes modal (handled via JS)
+ */
+.modal:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}

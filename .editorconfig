@@ -1,0 +1,57 @@
+# EditorConfig: Cross-platform editor configuration
+# https://editorconfig.org
+
+root = true
+
+# Default settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = 80
+
+# JSON files
+[*.{json,jsonc}]
+indent_size = 2
+max_line_length = 120
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# TypeScript/JavaScript files
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_size = 2
+max_line_length = 100
+
+# CSS files
+[*.{css,scss,sass,less}]
+indent_size = 2
+
+# HTML files
+[*.html]
+indent_size = 2
+
+# Python files
+[*.py]
+indent_size = 4
+max_line_length = 100
+
+# Shell scripts
+[*.sh]
+end_of_line = lf
+
+# Makefile
+[Makefile]
+indent_style = tab
+
+# Batch 파일
+[*.{bat,cmd}]
+end_of_line = crlf

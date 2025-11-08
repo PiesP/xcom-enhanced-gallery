@@ -1,0 +1,317 @@
+/**
+ * @fileoverview ModalShell Component Styles
+ * @version 1.2.0 - Phase 389: Full English documentation, comprehensive comments
+ * @description Semantic CSS Module for modal dialog styling and animations
+ * @module shared/components/ui/ModalShell/ModalShell.module.css
+ *
+ * **Design System Integration**:
+ * - Colors: --xeg-modal-bg, --xeg-modal-border, --xeg-color-* semantic tokens
+ * - Spacing: var(--space-lg), var(--space-md) responsive padding
+ * - Shadows: var(--xeg-shadow-lg) for depth and elevation
+ * - Animations: --xeg-duration-fast (150ms), --xeg-ease-standard cubic-bezier
+ * - Radius: var(--xeg-radius-lg), var(--xeg-radius-md) for corners
+ * - Z-index: var(--xeg-z-modal) for layering above content
+ *
+ * **CSS Architecture**:
+ * 1. Backdrop: Full-screen overlay with flex centering
+ * 2. Modal Shell: Centered dialog with size/variant classes
+ * 3. Animations: Opacity + transform for entry effect
+ * 4. Responsive: Mobile adjustments via media query
+ * 5. Scrolling: Custom scrollbar styling with webkit support
+ *
+ * **Key Properties**:
+ * - position: fixed (backdrop), relative (modal)
+ * - display: flex (centering with align-items, justify-content)
+ * - transform: scale(0.95) scale(1) animation on entry
+ * - transition: All animations use GPU-accelerated properties
+ * - overflow: auto with scrollbar-width for scrolling content
+ *
+ * **Browser Support**:
+ * - Modern browsers (Chrome 120+, Firefox 121+, Safari 17+)
+ * - Fallbacks: -webkit- prefix for WebKit scrollbar styling
+ * - Webkit smoothing via -webkit-backdrop-filter (future enhancement)
+ *
+ * **Performance**:
+ * - GPU Acceleration: transform, opacity only (no reflow)
+ * - Scrollbar: Thin width, transparent track for minimal visual impact
+ * - Z-index: Single token prevents stacking issues
+ * - Backface visibility: Implicit (GPU-optimized)
+ *
+ * **Accessibility** (WCAG 2.1 AA):
+ * - Focus ring: var(--xeg-focus-ring) for keyboard navigation
+ * - Outline offset: var(--xeg-focus-ring-offset) for clear visibility
+ * - Color contrast: 4.5:1 minimum via semantic tokens (Phase 54.1)
+ * - High contrast mode: Respects via system colors (future enhancement)
+ */
+
+/* ===== Backdrop Layer ===== */
+
+/**
+ * Full-screen backdrop element
+ * Provides overlay effect with center alignment for modal shell
+ * Uses flexbox for perfect centering (both axes)
+ *
+ * **Visual State**:
+ * - Initial: opacity 0, visibility hidden (off-screen)
+ * - Active: opacity 1, visibility visible (smooth fade-in)
+ * - Duration: 150ms (--xeg-duration-fast)
+ * - Easing: --xeg-ease-standard cubic-bezier(0.2, 0, 0, 1)
+ */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--xeg-comp-modal-backdrop);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  z-index: var(--xeg-z-modal);
+
+  /* Fade-in animation */
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
+    visibility var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /* Center content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+/**
+ * Backdrop active state
+ * Applied when modal opens (isOpen=true triggers 'modal-open' class)
+ * Animates from hidden to visible state
+ */
+.modal-backdrop.modal-open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== Modal Shell Base Styles ===== */
+
+/**
+ * Core modal dialog element
+ * Provides semantic dialog container with animation and scrolling
+ *
+ * **Styling**:
+ * - Background: var(--xeg-modal-bg) semantic token
+ * - Border: 1px via --xeg-modal-border token
+ * - Radius: var(--xeg-radius-lg) for rounded corners
+ * - Shadow: var(--xeg-shadow-lg) for elevation depth
+ *
+ * **Animation**:
+ * - Scale: 0.95 (95%) on entry, 1.0 (100%) when active
+ * - TranslateY: -10px on entry, 0px when active
+ * - Duration: 150ms fade-in on modal-open class
+ * - Effect: Subtle scale + drop animation for focus attention
+ *
+ * **Scrolling**:
+ * - overflow-y: auto for tall content
+ * - scrollbar-width: thin (webkit support)
+ * - Custom scrollbar styling via ::-webkit- pseudo-elements
+ * - Background track: transparent, thumb: border color
+ */
+.modal-shell {
+  background: var(--xeg-modal-bg);
+  border-radius: var(--xeg-radius-lg);
+  border: 0.0625rem solid var(--xeg-modal-border); /* 1px */
+  overflow: clip;
+
+  /* Entry animation */
+  transform: scale(0.95) translateY(-0.625rem); /* scale(0.95) translateY(-10px) */
+  transition: transform var(--xeg-duration-fast) var(--xeg-ease-standard);
+
+  /* Focus management */
+  outline: none;
+
+  /* Scrolling */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-default) transparent;
+}
+
+/**
+ * Modal shell active state
+ * Applied when parent backdrop has 'modal-open' class
+ * Animates scale and position into final view
+ */
+.modal-open .modal-shell {
+  transform: scale(1) translateY(0);
+}
+
+/* ===== Size Variants ===== */
+
+/**
+ * Small modal size (400px × 300px max)
+ * Use case: Alerts, confirmations, quick actions
+ * Responsive: 100% width on mobile, max-width 400px on desktop
+ */
+.modal-size-sm {
+  width: 100%;
+  max-width: 25rem; /* 400px */
+  max-height: 18.75rem; /* 300px */
+}
+
+/**
+ * Medium modal size (500px × 70vh max) - DEFAULT
+ * Use case: Forms, standard dialogs, settings (common case)
+ * Responsive: 100% width on mobile, max-width 500px on desktop
+ */
+.modal-size-md {
+  width: 100%;
+  max-width: 31.25rem; /* 500px */
+  max-height: 70vh;
+}
+
+/**
+ * Large modal size (700px × 80vh max)
+ * Use case: Settings panels, large dialogs, multi-step forms
+ * Responsive: 100% width on mobile, max-width 700px on desktop
+ */
+.modal-size-lg {
+  width: 100%;
+  max-width: 43.75rem; /* 700px */
+  max-height: 80vh;
+}
+
+/**
+ * Extra-large modal size (900px × 90vh max)
+ * Use case: Wizards, galleries, complex workflows
+ * Responsive: 100% width on mobile, max-width 900px on desktop
+ */
+.modal-size-xl {
+  width: 100%;
+  max-width: 56.25rem; /* 900px */
+  max-height: 90vh;
+}
+
+/* ===== Surface Variants ===== */
+
+/**
+ * Glass surface variant
+ * Visual: Frosted glass effect with backdrop blur (future enhancement)
+ * Use case: Overlays, previews, secondary information
+ * Border: Semi-transparent via --xeg-modal-border token
+ * Shadow: Large depth effect for separation
+ */
+.modal-surface-glass {
+  background: var(--xeg-modal-bg);
+  border-color: var(--xeg-modal-border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+/**
+ * Solid surface variant
+ * Visual: Flat, opaque background
+ * Use case: Forms, dialogs, primary content
+ * Background: --color-bg-surface (semantic token)
+ * Border: --color-border-default for subtle separation
+ */
+.modal-surface-solid {
+  background: var(--color-bg-surface);
+  border-color: var(--color-border-default);
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+/**
+ * Elevated surface variant
+ * Visual: Raised surface with emphasis
+ * Use case: Critical dialogs, important confirmations, emphasis
+ * Background: --color-bg-elevated (higher visual weight)
+ * Border: --color-border-emphasis (stronger definition)
+ */
+.modal-surface-elevated {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--xeg-shadow-lg);
+}
+
+/* ===== Responsive Design ===== */
+
+/**
+ * Mobile media query (≤768px viewport)
+ * Adjusts modal sizes and spacing for smaller screens
+ * Phase 389: Responsive modal system
+ */
+@media (width <= 48rem) {
+  /* 768px */
+  .modal-backdrop {
+    padding: var(--space-md);
+  }
+
+  .modal-shell {
+    border-radius: var(--xeg-radius-md);
+  }
+
+  .modal-size-sm,
+  .modal-size-md,
+  .modal-size-lg,
+  .modal-size-xl {
+    max-width: 100%;
+    max-height: 85vh;
+  }
+}
+
+/* ===== Focus Management ===== */
+
+/**
+ * Modal focus state
+ * Visible focus ring for keyboard navigation (WCAG 2.1 Level AA)
+ * Outline: var(--xeg-focus-ring) design token (color + width)
+ * Offset: var(--xeg-focus-ring-offset) for visible separation
+ * Accessibility: Required for keyboard-only users
+ */
+.modal-shell:focus {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
+
+/* ===== Custom Scrollbar Styling ===== */
+
+/**
+ * WebKit scrollbar width
+ * Used by Chrome, Safari, Edge on macOS
+ * Standard height: 6px (0.375rem)
+ * Thin variant controlled via scrollbar-width: thin
+ */
+.modal-shell::-webkit-scrollbar {
+  width: 0.375rem; /* 6px */
+}
+
+/**
+ * Scrollbar track background
+ * Transparent to match modal background seamlessly
+ * No visual container around scrollbar (minimal design)
+ */
+.modal-shell::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/**
+ * Scrollbar thumb (draggable portion)
+ * Color: --color-border-default (subtle, non-intrusive)
+ * Radius: var(--xeg-radius-sm) for rounded edges
+ * Hover: --color-border-emphasis for visual feedback
+ * Phase 389: Design system token integration
+ */
+.modal-shell::-webkit-scrollbar-thumb {
+  background: var(--color-border-default);
+  border-radius: var(--xeg-radius-sm);
+}
+
+/**
+ * Scrollbar thumb hover state
+ * Provides visual feedback when user hovers over scrollbar
+ * Color: --color-border-emphasis (darker, more visible)
+ * Encourages user to interact with scrollbar
+ */
+.modal-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-emphasis);
+}

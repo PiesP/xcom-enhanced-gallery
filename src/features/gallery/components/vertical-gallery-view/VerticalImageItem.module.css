@@ -1,0 +1,544 @@
+/**
+ * Copyright (c) 2024 X.com Enhanced Gallery
+ * Licensed under the MIT License
+ *
+ * @fileoverview Vertical Image Item Component Styles
+ * @description Individual media item styles with fit modes and interactions
+ *
+ * **Design System**:
+ * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
+ * - No hardcoded values
+ * - Glassmorphism effect with backdrop blur
+ * - Responsive fit modes for different image dimensions
+ *
+ * **Fit Modes** (CSS class-based):
+ * - .fitOriginal: Image at 1:1 scale
+ * - .fitWidth: Image fills container width
+ * - .fitHeight: Image fills container height
+ * - .fitContainer: Image fills both width and height (with aspect preservation)
+ *
+ * **Key Selectors**:
+ * - .container: Item wrapper with interactive states
+ * - .imageWrapper: Image/video container
+ * - .image / .video: Media element
+ * - .videoOverlay: Video play button overlay
+ * - .downloadButton: Download action button
+ *
+ * **Performance Optimizations**:
+ * - CSS Containment (contain: layout style)
+ * - transform: translateZ(0) for GPU acceleration
+ * - will-change for animated properties
+ *
+ * **Accessibility**:
+ * - :focus-visible for keyboard navigation
+ * - .active state for current item
+ * - .focused state for scroll target
+ *
+ * @version 3.1.0 - Enhanced documentation and accessibility (Phase 354+)
+ */
+
+/**
+ * VerticalImageItem Component Styles
+ * @version 3.0.0 - Performance optimized vertical image item styles
+ * @description Optimized styling for individual media items in vertical gallery
+ */
+
+.container {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md);
+  border-radius: var(--xeg-radius-lg);
+  overflow: visible;
+  transition: var(--xeg-transition-normal);
+  cursor: pointer;
+  border: 0.0625rem solid var(--xeg-media-glass-border); /* 1px = 0.0625rem */
+  background: var(--xeg-color-bg-secondary);
+  padding: var(--xeg-spacing-sm);
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+
+  /* 글래스모피즘 효과 */
+  backdrop-filter: var(--xeg-media-glass-blur);
+  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
+  box-shadow: var(--xeg-media-glass-shadow);
+
+  /* 성능 최적화 */
+  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  contain: layout style;
+
+  /* 통합된 포커스/활성 상태 처리 - 기본 outline 제거 */
+  outline: none;
+}
+
+.container:hover {
+  transform: var(--xeg-hover-lift);
+  background: var(--xeg-color-surface-elevated);
+  border-color: var(--xeg-glass-border-medium);
+  box-shadow: var(--xeg-glass-shadow-medium), var(--xeg-shadow-md);
+}
+
+/* 포커스 상태 - outline 대신 box-shadow 사용 */
+.container:focus-visible {
+  box-shadow: var(--xeg-focus-shadow);
+  border-radius: var(--xeg-radius-lg);
+}
+
+/* 활성 상태 - 더 강한 강조 */
+.container.active {
+  box-shadow: var(--xeg-active-shadow);
+  border-radius: var(--xeg-radius-lg);
+  transition: var(--xeg-transition-fast);
+  transform: translateZ(0);
+}
+
+/* 활성+포커스 상태 - 중복 제거 */
+.container.active:focus-visible {
+  box-shadow: var(--xeg-active-shadow);
+}
+
+/* 포커스된 상태 (스크롤 대상) */
+.container.focused {
+  box-shadow: var(--xeg-focus-shadow);
+  border-radius: var(--xeg-radius-lg);
+  transition: var(--xeg-transition-fast);
+}
+
+.imageWrapper {
+  position: relative;
+  background: var(--xeg-color-bg-secondary);
+  /* 이미지 크기에 맞는 컨테이너 */
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* fitOriginal 모드: 이미지 원본 크기에 맞춰 컨테이너 확장 */
+.imageWrapper:has(.image.fitOriginal),
+.imageWrapper:has(.video.fitOriginal) {
+  width: auto;
+  max-width: none;
+  /* 컨테이너가 이미지 크기에 맞춰 확장 */
+}
+
+.container[data-media-loaded='false'] .imageWrapper {
+  min-height: var(--xeg-spacing-3xl, 3rem);
+  /* CLS: 초기 레이아웃 안정성을 위한 기본 종횡비 예약 */
+  aspect-ratio: var(--xeg-aspect-default, 4 / 3);
+}
+
+.placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Skeleton: 토큰화된 배경/모션 사용 */
+  background: var(--xeg-skeleton-bg);
+  min-height: var(--xeg-spacing-3xl, 3rem);
+}
+
+.loadingSpinner {
+  width: var(--xeg-spacing-lg);
+  height: var(--xeg-spacing-lg);
+  border: 0.125rem solid var(--xeg-color-border-primary); /* 2px = 0.125rem */
+  border-top: 0.125rem solid var(--xeg-color-primary); /* 2px = 0.125rem */
+  border-radius: var(--xeg-radius-full);
+  /* Skeleton: 토큰화된 duration/easing 사용 */
+  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.image {
+  display: block;
+  border-radius: var(--xeg-radius-md);
+  /* 기본 스타일 - JavaScript에서 동적으로 크기 조정 */
+  object-fit: contain;
+  /* 컨텍스트 메뉴 허용을 위해 pointer-events 활성화 */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* 드래그 방지를 위한 추가 속성 */
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  /* GPU 가속을 위한 3D 변환 */
+  transform: translateZ(0);
+  will-change: opacity;
+}
+
+/* Loading/Loaded state transitions (tokenized) */
+.loading.image,
+.loading.video {
+  opacity: 0;
+}
+
+.loaded.image,
+.loaded.video {
+  opacity: 1;
+}
+
+.image,
+.video {
+  transition: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+/* 이미지 크기 조정 모드별 스타일 */
+.image.fitOriginal {
+  /* 원본 크기: 이미지를 원본 크기 그대로 표시 (축소/확대 없음) */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+  object-fit: none;
+}
+
+.image.fitWidth {
+  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: none;
+  object-fit: scale-down;
+}
+
+.image.fitHeight {
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  object-fit: scale-down;
+}
+
+.image.fitContainer {
+  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  object-fit: contain;
+}
+
+/* 비디오 크기 조정 모드 - 이미지 규칙과 동기화 */
+.video {
+  inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--xeg-radius-md);
+  overflow: clip;
+}
+
+.video.fitOriginal {
+  /* 원본 크기: 비디오를 원본 크기 그대로 표시 (축소/확대 없음) */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: none;
+  object-fit: none;
+}
+
+.video.fitWidth {
+  /* 폭에 맞추기: 컨테이너보다 작으면 원본 크기, 크면 폭에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: none;
+  object-fit: scale-down;
+}
+
+.video.fitHeight {
+  /* 높이에 맞추기: 뷰포트보다 작으면 원본 크기, 크면 높이에 맞춤 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: none;
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  object-fit: scale-down;
+}
+
+.video.fitContainer {
+  /* 컨테이너에 맞추기: 폭과 높이 모두 컨테이너에 수용 */
+  inline-size: auto;
+  block-size: auto;
+  max-inline-size: 100%;
+  max-block-size: var(--xeg-viewport-height-constrained, 90vh);
+  object-fit: contain;
+}
+
+.errorState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--xeg-spacing-3xl, 3rem) var(--xeg-spacing-lg);
+  background: var(--xeg-color-bg-secondary);
+  color: var(--xeg-color-text-secondary);
+  min-height: var(--xeg-spacing-3xl, 3rem);
+}
+
+.errorIcon {
+  font-size: var(--xeg-font-size-2xl);
+  margin-bottom: var(--xeg-spacing-sm);
+}
+
+.errorText {
+  font-size: var(--xeg-font-size-sm);
+  text-align: center;
+}
+
+.overlay {
+  position: absolute;
+  top: var(--xeg-spacing-sm);
+  right: var(--xeg-spacing-sm);
+  display: flex;
+  gap: var(--xeg-spacing-sm);
+  opacity: 0;
+  transition: var(--xeg-transition-opacity);
+}
+
+.container:hover .overlay {
+  opacity: 1;
+}
+
+.indexBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--xeg-spacing-lg);
+  height: var(--xeg-spacing-lg);
+  background: var(--xeg-color-overlay-medium);
+  color: var(--xeg-color-text-inverse);
+  font-size: var(--xeg-font-size-xs);
+  font-weight: var(--xeg-font-weight-semibold);
+  border-radius: var(--xeg-radius-lg);
+  padding: 0 var(--xeg-spacing-sm);
+}
+
+.metadata {
+  padding: var(--xeg-spacing-sm);
+  background: var(--xeg-color-bg-primary);
+}
+
+.filename {
+  font-size: var(--xeg-font-size-sm);
+  font-weight: var(--xeg-font-weight-medium);
+  color: var(--xeg-color-text-primary);
+  margin-bottom: var(--xeg-spacing-xs);
+  overflow: clip;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: var(--xeg-font-size-xs);
+  color: var(--xeg-color-text-secondary);
+}
+
+/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+/*
+.downloadButton {
+  position: absolute;
+  top: var(--xeg-spacing-sm);
+  right: var(--xeg-spacing-sm);
+  background: var(--xeg-color-overlay-medium);
+  color: var(--xeg-color-text-inverse);
+  border: none;
+  border-radius: var(--xeg-radius-full);
+  width: var(--xeg-button-height-sm);
+  height: var(--xeg-button-height-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: var(--xeg-transition-opacity);
+  font-size: var(--xeg-font-size-md);
+}
+
+.container:hover .downloadButton {
+  opacity: 1;
+}
+
+.downloadButton:hover {
+  background: var(--xeg-color-overlay-strong);
+  transform: var(--xeg-hover-lift);
+}
+
+.downloadIcon {
+  display: block;
+}
+*/
+
+.error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  min-height: var(--xeg-spacing-3xl);
+}
+
+/* State classes */
+.container.loaded .image {
+  opacity: 1;
+}
+
+.container.error {
+  border: 0.0625rem solid var(--xeg-color-error); /* 1px = 0.0625rem */
+}
+
+/* Fit 모드별 컨테이너 조정 (intrinsic sizing 연동) */
+/* Phase 326: fitOriginal은 이제 다른 모드와 동일하게 컨테이너 제한을 따름 */
+/* overflow/scrollbar 스타일 제거 (일관성 적용) */
+
+/* Base style - lower specificity */
+.container[data-fit-mode='original'] .image,
+.container[data-fit-mode='original'] .video {
+  /* Phase 326: grab cursor 제거 (스크롤 불필요) */
+  cursor: pointer;
+}
+
+.container[data-fit-mode='original'] .image:active,
+.container[data-fit-mode='original'] .video:active {
+  cursor: pointer;
+}
+
+/* Loading state - higher specificity */
+.container[data-media-loaded='false'][data-fit-mode='original'] {
+  inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-block-size: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
+}
+
+.container[data-media-loaded='false'][data-fit-mode='original'] .image,
+.container[data-media-loaded='false'][data-fit-mode='original'] .video {
+  inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-inline-size: min(var(--xeg-gallery-item-intrinsic-width, 100%), 100%);
+  max-block-size: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight'],
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer'] {
+  --xeg-gallery-fit-height-target: min(
+    var(--xeg-gallery-item-intrinsic-height, var(--xeg-spacing-5xl)),
+    var(--xeg-viewport-height-constrained, 90vh)
+  );
+
+  max-block-size: var(--xeg-gallery-fit-height-target);
+  inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+  max-inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
+  .image,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitHeight']
+  .video,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
+  .image,
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitContainer']
+  .video {
+  max-block-size: var(--xeg-gallery-fit-height-target);
+  max-inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-fit-height-target) * var(--xeg-gallery-item-intrinsic-ratio, 1))
+  );
+}
+
+.container:not([data-fit-mode='original']) {
+  inline-size: 100%;
+  max-inline-size: 100%;
+}
+
+/* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+/*
+.downloadButton {
+  pointer-events: auto;
+}
+*/
+
+/* 이벤트 전파 차단을 위한 CSS 클래스 */
+.eventBlocked {
+  pointer-events: none !important;
+}
+
+/* Twitter 기본 UI 요소 차단 */
+.container ~ [data-testid],
+.container ~ [role='dialog'],
+.container ~ .r-1p0dtai {
+  pointer-events: none !important;
+  z-index: var(--xeg-z-tooltip) !important;
+}
+
+/* Phase 254: 모션 감소는 semantic 레이어의 --xeg-transition-* 토큰으로 자동 처리 */
+/* will-change는 성능 최적화이므로 auto로 변경 유지 */
+@media (prefers-reduced-motion: reduce) {
+  .container {
+    will-change: auto;
+  }
+
+  .container:hover {
+    transform: none;
+  }
+}
+
+/* 강제 색상 모드 지원 (Windows 고대비 모드) */
+@media (forced-colors: active) {
+  .container {
+    border: 0.0625rem solid ButtonText; /* 1px = 0.0625rem */
+    background: ButtonFace;
+    forced-color-adjust: none;
+  }
+
+  .container:focus-visible,
+  .container.active {
+    border: 0.125rem solid Highlight; /* 2px = 0.125rem */
+    background: HighlightText;
+  }
+
+  /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
+  /*
+  .downloadButton {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+  }
+  */
+}
