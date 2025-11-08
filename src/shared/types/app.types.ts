@@ -194,5 +194,4 @@ export { ErrorCode } from './result.types';
 export type { GalleryViewMode } from './core/core-types';
 export type { ViewMode } from './core/core-types';
 
-// Phase 380: ViewMode utilities moved to @shared/utils/view-mode-helpers
-// export { VIEW_MODES, isValidViewMode } from '@shared/utils/view-mode-helpers';
+// Phase 421: ViewMode helper utilities removed; use VIEW_MODES from '@/constants'.

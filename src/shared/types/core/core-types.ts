@@ -87,9 +87,8 @@ export type GalleryEvents = {
 export type { ViewMode } from '@/constants';
 
 /**
- * ViewMode 유효성 검사 함수
- * Phase 380: Moved to @shared/utils/view-mode-helpers to break circular dependency
- * @deprecated Use isValidViewMode from '@shared/utils/view-mode-helpers' instead
+ * ViewMode helper functions were removed in Phase 421 cleanup.
+ * Use VIEW_MODES from '@/constants' for validation when needed.
  */
 
 // ========================================

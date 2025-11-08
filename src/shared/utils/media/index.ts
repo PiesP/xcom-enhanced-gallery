@@ -8,10 +8,9 @@ export {
   type ImageFilterResult,
 } from './image-filter';
 
-// Media URL utilities (Phase 351: now via compat layer)
+// Media URL utilities (Phase 351: modularized exports)
 export {
   getHighQualityMediaUrl,
-  getMediaUrlsFromTweet,
   isValidMediaUrl,
   isEmojiUrl,
   isVideoThumbnailUrl,
@@ -19,8 +18,12 @@ export {
   convertThumbnailToVideoUrl,
   classifyMediaUrl,
   shouldIncludeMediaUrl,
+  type FilenameOptions,
   type MediaTypeResult,
-} from './media-url-compat';
+} from '../media-url';
+
+// DOM extraction utilities retained until migration completes
+export { getMediaUrlsFromTweet } from './media-url.util';
 
 // Media Click Detection utilities
 export {

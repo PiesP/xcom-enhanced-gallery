@@ -36,8 +36,7 @@ export type {
 export type { EventHandler } from '../component.types';
 export type { LoadingState } from '../ui.types';
 
-// Phase 380: Removed VIEW_MODES and isValidViewMode (moved to utils)
-// Use: import { isValidViewMode } from '@shared/utils/view-mode-helpers'
+// Phase 421: ViewMode helpers removed; rely on VIEW_MODES from '@/constants'
 
 // Result utilities are now in result.types.ts (Phase 355.2)
 // Re-export for backward compatibility

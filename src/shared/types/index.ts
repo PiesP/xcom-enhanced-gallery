@@ -104,8 +104,7 @@ export type {
   Lifecycle,
 } from './core/core-types';
 
-// Phase 380: Removed VIEW_MODES and isValidViewMode (moved to utils)
-// Use: import { isValidViewMode } from '@shared/utils/view-mode-helpers'
+// Phase 421: ViewMode helpers removed; use VIEW_MODES from '@/constants'
 
 // UI/theme types
 export type {
