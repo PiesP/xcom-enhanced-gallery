@@ -44,13 +44,6 @@ export function isGalleryInternalEvent(event: Event): boolean {
   return isInsideGallery(target);
 }
 
-// ================================
-// Performance Utilities
-// ================================
-
-// RAF throttle and scroll throttle from performance module
-export { rafThrottle, throttleScroll } from './performance/performance-utils';
-
 /**
  * Ensure gallery scroll is available
  */
@@ -70,13 +63,6 @@ export function ensureGalleryScrollAvailable(element: HTMLElement | null): void 
     }
   });
 }
-
-// ================================
-// Performance Measurement Utilities
-// ================================
-
-// Performance utilities re-export
-export { Debouncer, createDebouncer } from './performance/performance-utils';
 
 /**
  * Remove duplicates from string array
