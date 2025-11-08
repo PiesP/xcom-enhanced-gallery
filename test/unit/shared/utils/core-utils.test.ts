@@ -4,11 +4,8 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  ensureGalleryScrollAvailable,
-  isGalleryInternalEvent,
-  removeDuplicateStrings,
-} from '@shared/utils';
+import { ensureGalleryScrollAvailable } from '@shared/utils/core-utils';
+import { isGalleryInternalEvent } from '@shared/utils/utils';
 
 describe('core-utils', () => {
   beforeEach(() => {
@@ -75,37 +72,6 @@ describe('core-utils', () => {
 
     it('should handle null element gracefully', () => {
       expect(() => ensureGalleryScrollAvailable(null)).not.toThrow();
-    });
-  });
-
-  describe('removeDuplicateStrings', () => {
-    it('should remove exact duplicates', () => {
-      const input = ['apple', 'banana', 'apple', 'cherry', 'banana'];
-      const result = removeDuplicateStrings(input);
-      expect(result).toEqual(['apple', 'banana', 'cherry']);
-    });
-
-    it('should handle empty array', () => {
-      const result = removeDuplicateStrings([]);
-      expect(result).toEqual([]);
-    });
-
-    it('should handle array with no duplicates', () => {
-      const input = ['apple', 'banana', 'cherry'];
-      const result = removeDuplicateStrings(input);
-      expect(result).toEqual(['apple', 'banana', 'cherry']);
-    });
-
-    it('should handle array with all duplicates', () => {
-      const input = ['apple', 'apple', 'apple'];
-      const result = removeDuplicateStrings(input);
-      expect(result).toEqual(['apple']);
-    });
-
-    it('should preserve order of first occurrence', () => {
-      const input = ['zebra', 'apple', 'banana', 'apple', 'zebra'];
-      const result = removeDuplicateStrings(input);
-      expect(result).toEqual(['zebra', 'apple', 'banana']);
     });
   });
 });

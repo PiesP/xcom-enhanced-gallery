@@ -24,7 +24,7 @@ export {
 } from './styles/css-utilities';
 
 // Core utilities (from core-utils)
-export { ensureGalleryScrollAvailable, removeDuplicateStrings } from './core-utils';
+export { ensureGalleryScrollAvailable } from './core-utils';
 
 // Deduplication utilities
 export { removeDuplicates, removeDuplicateMediaItems } from './deduplication/deduplication-utils';
@@ -75,13 +75,6 @@ export function canTriggerGallery(target: HTMLElement | null): boolean {
   }
 
   return true;
-}
-
-/**
- * Check if gallery trigger should be blocked
- */
-export function shouldBlockGalleryTrigger(target: HTMLElement | null): boolean {
-  return !canTriggerGallery(target);
 }
 
 /**
@@ -153,11 +146,4 @@ export function isGalleryInternalEvent(event: Event): boolean {
   const target = event.target;
   if (!isHTMLElement(target)) return false;
   return isGalleryInternalElement(target);
-}
-
-/**
- * Check if gallery event should be blocked
- */
-export function shouldBlockGalleryEvent(event: Event): boolean {
-  return isGalleryInternalEvent(event);
 }

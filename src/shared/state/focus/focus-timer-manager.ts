@@ -6,7 +6,7 @@
  */
 
 import { getSolid } from '../../external/vendors';
-import { globalTimerManager } from '../../utils/timer-management';
+import { globalTimerManager, safePerformanceNow } from '../../utils/timer-management';
 import { logger } from '@shared/logging';
 
 /**
@@ -67,7 +67,7 @@ export class FocusTimerManager {
     const record: TimerRecord = {
       role,
       timerId,
-      startTime: performance.now?.() ?? Date.now(),
+      startTime: safePerformanceNow(),
       delay,
       callback,
     };
@@ -137,7 +137,7 @@ export class FocusTimerManager {
       return 0;
     }
 
-    return (performance.now?.() ?? Date.now()) - record.startTime;
+    return safePerformanceNow() - record.startTime;
   }
 
   /**
@@ -149,7 +149,7 @@ export class FocusTimerManager {
       return 0;
     }
 
-    const elapsed = (performance.now?.() ?? Date.now()) - record.startTime;
+    const elapsed = safePerformanceNow() - record.startTime;
     return Math.max(0, record.delay - elapsed);
   }
 

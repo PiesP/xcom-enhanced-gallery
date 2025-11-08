@@ -10,20 +10,15 @@ export {
   setCSSVariable,
   updateComponentState,
   removeDuplicates,
-  removeDuplicateStrings,
   removeDuplicateMediaItems,
   createDebouncer,
   rafThrottle,
   throttleScroll,
+  isGalleryInternalEvent,
 } from './utils';
 
 // === Timer management (4) ===
-export {
-  TimerManager,
-  globalTimerManager,
-  safePerformanceNow,
-  createManagedDebounce,
-} from './timer-management';
+export { TimerManager, globalTimerManager, safePerformanceNow } from './timer-management';
 
 // === Type-safe utilities (6) ===
 export {
@@ -52,8 +47,8 @@ export {
   createAddEventListenerOptions,
 } from './type-guards';
 
-// === Core utilities (Phase 326.7: Reduced to 3, removed unused functions) ===
-export { ensureGalleryScrollAvailable, isGalleryInternalEvent } from './core-utils';
+// === Core utilities ===
+export { ensureGalleryScrollAvailable } from './core-utils';
 
 export { canTriggerGallery, isGalleryInternalElement } from './utils';
 

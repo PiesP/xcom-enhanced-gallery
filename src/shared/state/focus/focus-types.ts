@@ -19,6 +19,8 @@
  *    - lastUpdateTime: Last update time for tracking metadata
  */
 
+import { safePerformanceNow } from '../../utils/timer-management';
+
 /**
  * Focus source type
  *
@@ -180,7 +182,7 @@ export function createFocusTracking(
 ): FocusTracking {
   return {
     ...INITIAL_FOCUS_TRACKING,
-    lastUpdateTime: performance.now?.() ?? Date.now(),
+    lastUpdateTime: safePerformanceNow(),
     ...overrides,
   };
 }
@@ -239,7 +241,7 @@ export function updateFocusTracking(
   return {
     ...tracking,
     ...updates,
-    lastUpdateTime: performance.now?.() ?? Date.now(),
+    lastUpdateTime: safePerformanceNow(),
   };
 }
 

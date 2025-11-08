@@ -3,9 +3,6 @@
  * @description Phase C: Consistent timer and resource management
  * @version 1.0.0
  */
-
-import { createDebouncer } from './performance/performance-utils';
-
 /**
  * Timer manager
  * Utility to track all timers and clean them up in batch
@@ -80,19 +77,13 @@ export class TimerManager {
 export const globalTimerManager = new TimerManager();
 
 /**
- * Safe performance.now() call
+ * Consistent high-resolution timestamp helper
  *
- * @returns Current time or Date.now() fallback
+ * @returns Current timestamp using performance.now()
  */
 export function safePerformanceNow(): number {
-  if (typeof performance !== 'undefined' && performance.now) {
-    return performance.now();
-  }
-  return Date.now();
+  return performance.now();
 }
 
 // Performance utilities re-export (deprecated wrappers removed)
 export { createDebouncer, rafThrottle } from './performance/performance-utils';
-
-// Aliases for backward compatibility
-export const createManagedDebounce = createDebouncer;
