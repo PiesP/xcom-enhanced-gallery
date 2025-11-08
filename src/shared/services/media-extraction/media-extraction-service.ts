@@ -119,7 +119,7 @@ import { ErrorCode } from '@shared/types/result.types';
 import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
 import { DOMDirectExtractor } from './extractors/dom-direct-extractor';
-import { removeDuplicateMediaItems } from '@shared/utils/deduplication';
+import { removeDuplicateMediaItems } from '@shared/utils';
 
 /**
  * MediaExtractionService - Unified Media Extraction Orchestrator

@@ -225,7 +225,7 @@ async function removeDuplicatesAsync<T>(...): Promise<T[]> {
 ### 사용 예제
 
 ```typescript
-import { removeDuplicates, removeDuplicateMediaItems } from '@shared/utils/deduplication';
+import { removeDuplicates, removeDuplicateMediaItems } from '@shared/utils';
 
 // 예제 1: 제네릭 함수
 const items = [

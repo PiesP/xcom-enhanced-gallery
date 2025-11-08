@@ -26,7 +26,7 @@
  * @see HttpRequestService - Recommended service for HTTP requests (Phase 318+)
  */
 import type { BrowserEnvironment } from '@shared/types/core/userscript';
-import { isGMUserScriptInfo } from '@shared/utils/core';
+import { isGMUserScriptInfo } from '@shared/utils/type-safety-helpers';
 
 type GMUserScriptInfo = Record<string, unknown>;
 
