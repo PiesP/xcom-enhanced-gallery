@@ -1,6 +1,7 @@
 /**
- * @deprecated This module has been retired.
- * Import from `@shared/services/core` instead.
+ * @deprecated Removed. Import from `@shared/services/core` instead.
+ * @throws Always throws to prevent accidental usage.
  */
-
-export {};
+throw new Error(
+  '`@shared/services/service-manager` has been removed. Import from `@shared/services/core` instead.'
+);

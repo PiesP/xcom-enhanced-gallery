@@ -216,16 +216,16 @@ export class GalleryRenderer implements GalleryRendererInterface {
           }
         }
       } else {
-        // Phase 312-4: Ensure BulkDownloadService is registered (lazy loading)
+        // Phase 312-4: Ensure UnifiedDownloadService is registered (lazy loading)
         // This delays first bulk download by 100-150ms, but removes 15-20 KB from initial bundle
         try {
-          const { ensureBulkDownloadServiceRegistered } = await import(
+          const { ensureUnifiedDownloadServiceRegistered } = await import(
             '@shared/services/lazy-service-registration'
           );
-          await ensureBulkDownloadServiceRegistered();
-          logger.debug('[GalleryRenderer] BulkDownloadService lazy registration completed');
+          await ensureUnifiedDownloadServiceRegistered();
+          logger.debug('[GalleryRenderer] UnifiedDownloadService lazy registration completed');
         } catch (error) {
-          logger.warn('[GalleryRenderer] BulkDownloadService lazy registration failed:', error);
+          logger.warn('[GalleryRenderer] UnifiedDownloadService lazy registration failed:', error);
           // Continue with download anyway - service might already be registered
         }
 

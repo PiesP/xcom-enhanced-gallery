@@ -1,7 +1,7 @@
 /**
- * @deprecated Phase 412: Use '@shared/utils/window-load' instead.
- * This module existed to mirror legacy paths under browser utils.
- * It now simply re-exports the canonical implementation.
+ * @deprecated Removed. Use '@shared/utils/window-load' instead.
+ * This module now throws to highlight outdated import paths during development.
  */
-export { waitForWindowLoad } from '../window-load';
-export type { WaitForWindowLoadOptions } from '../window-load';
+throw new Error(
+  "'@shared/utils/browser/wait-for-load' has been removed. Import from '@shared/utils/window-load' instead."
+);

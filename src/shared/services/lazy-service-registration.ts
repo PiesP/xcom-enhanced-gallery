@@ -58,17 +58,6 @@ export async function ensureUnifiedDownloadServiceRegistered(): Promise<void> {
 }
 
 /**
- * Deprecated: Use ensureUnifiedDownloadServiceRegistered instead
- * @deprecated Phase 355: Consolidated to UnifiedDownloadService
- */
-export async function ensureBulkDownloadServiceRegistered(): Promise<void> {
-  logger.warn(
-    '[Deprecation] ensureBulkDownloadServiceRegistered is deprecated. Use ensureUnifiedDownloadServiceRegistered instead.'
-  );
-  return ensureUnifiedDownloadServiceRegistered();
-}
-
-/**
  * Test utility: Reset lazy registration state
  * Use only in test teardown
  */
