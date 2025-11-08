@@ -49,6 +49,8 @@ export {
   clearCompletedTasks,
   getDownloadTask,
   getDownloadInfo,
+  acquireDownloadLock,
+  isDownloadLocked,
   addEventListener as addDownloadEventListener,
 } from './download.signals';
 

@@ -24,7 +24,7 @@
 
 import type { MediaInfo } from '../types/media.types';
 import { getErrorMessage } from '../utils/error-handling';
-import { generateMediaFilename } from './file-naming';
+import { generateMediaFilename, generateZipFilename } from './file-naming';
 import { NotificationService } from './notification-service';
 import { downloadService } from './download-service';
 import {
@@ -426,7 +426,8 @@ export class UnifiedDownloadService {
       }
 
       // Execute ZIP download
-      const zipFilename = options.zipFilename || `download_${Date.now()}.zip`;
+      const zipFilename =
+        options.zipFilename || generateZipFilename(mediaItems, { fallbackPrefix: 'xcom_gallery' });
       const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
       const gmDownload = getGMDownload();
 

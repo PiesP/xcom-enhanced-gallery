@@ -117,12 +117,14 @@ type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
  * @property nextDisabled - Next button disabled
  * @property canDownloadAll - Bulk download button visibility
  * @property downloadDisabled - Download button disabled
+ * @property anyActionDisabled - Derived flag indicating any primary action is disabled
  */
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;
   readonly nextDisabled: boolean;
   readonly canDownloadAll: boolean;
   readonly downloadDisabled: boolean;
+  readonly anyActionDisabled: boolean;
 };
 
 /**
@@ -336,6 +338,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onClick={props.onPreviousClick}
             data-gallery-element='nav-previous'
             data-disabled={props.navState().prevDisabled}
+            data-action-disabled={props.navState().anyActionDisabled}
           >
             <ArrowSmallLeft size={18} />
           </IconButton>
@@ -348,6 +351,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             onClick={props.onNextClick}
             data-gallery-element='nav-next'
             data-disabled={props.navState().nextDisabled}
+            data-action-disabled={props.navState().anyActionDisabled}
           >
             <ArrowSmallRight size={18} />
           </IconButton>
@@ -406,6 +410,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             title='현재 파일 다운로드 (Ctrl+D)'
             data-gallery-element='download-current'
             data-disabled={props.navState().downloadDisabled}
+            data-action-disabled={props.navState().anyActionDisabled}
             data-loading={isDownloading()}
           >
             <ArrowDownTray size={18} />
@@ -420,6 +425,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
               data-gallery-element='download-all'
               data-disabled={props.navState().downloadDisabled}
+              data-action-disabled={props.navState().anyActionDisabled}
               data-loading={isDownloading()}
             >
               <ArrowDownOnSquareStack size={18} />

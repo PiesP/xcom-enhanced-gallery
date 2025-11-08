@@ -59,11 +59,58 @@ let downloadStateSignal: Signal<DownloadState> | null = null;
 // Logger instance
 const logger: ILogger = rootLogger;
 
+// Manual processing depth to gate UI interactions during ad-hoc downloads
+let manualProcessingDepth = 0;
+
 function getDownloadState(): Signal<DownloadState> {
   if (!downloadStateSignal) {
     downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
   }
   return downloadStateSignal!;
+}
+
+function setProcessingFlag(isProcessing: boolean): void {
+  const currentState = downloadState.value;
+  if (currentState.isProcessing === isProcessing) {
+    return;
+  }
+  downloadState.value = {
+    ...currentState,
+    isProcessing,
+  };
+}
+
+function releaseManualProcessing(): void {
+  if (manualProcessingDepth > 0) {
+    manualProcessingDepth -= 1;
+  }
+
+  if (manualProcessingDepth > 0) {
+    return;
+  }
+
+  const { queue } = downloadState.value;
+  setProcessingFlag(queue.length > 0);
+}
+
+export function acquireDownloadLock(): () => void {
+  manualProcessingDepth += 1;
+  if (manualProcessingDepth === 1) {
+    setProcessingFlag(true);
+  }
+
+  let released = false;
+  return () => {
+    if (released) {
+      return;
+    }
+    released = true;
+    releaseManualProcessing();
+  };
+}
+
+export function isDownloadLocked(): boolean {
+  return manualProcessingDepth > 0 || downloadState.value.isProcessing;
 }
 
 // ============================================================================

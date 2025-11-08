@@ -471,11 +471,17 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     const disabled = !!props.disabled;
     const isDownloading = !!props.isDownloading;
 
+    const prevDisabled = disabled || total <= 1;
+    const nextDisabled = disabled || total <= 1;
+    const downloadDisabled = disabled || isDownloading;
+    const canDownloadAll = total > 1;
+
     return {
-      prevDisabled: disabled || total <= 1,
-      nextDisabled: disabled || total <= 1,
-      canDownloadAll: total > 1,
-      downloadDisabled: disabled || isDownloading,
+      prevDisabled,
+      nextDisabled,
+      canDownloadAll,
+      downloadDisabled,
+      anyActionDisabled: prevDisabled || nextDisabled || downloadDisabled,
     } as const;
   });
 

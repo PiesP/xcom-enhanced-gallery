@@ -2,11 +2,11 @@
  * FilenameService 단위 테스트
  *
  * 파일명 생성 형식 검증:
- * - 미디어: username_tweetId_YYYYMMDD_index.ext
- * - ZIP: username_tweetId_YYYYMMDD.zip
+ * - 미디어: username_tweetId_index.ext
+ * - ZIP: username_tweetId.zip
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 import {
   generateMediaFilename,
@@ -16,18 +16,11 @@ import {
 } from '../../../src/shared/services/file-naming/filename-service';
 import type { MediaInfo } from '../../../src/shared/types/media.types';
 
-describe('FilenameService - YYYYMMDD Format (v3)', () => {
+describe('FilenameService - Username/TweetId Format', () => {
   setupGlobalTestIsolation();
 
-  let testDate: Date;
-
-  beforeEach(() => {
-    // 테스트 용 고정 날짜: 2025-01-01
-    testDate = new Date('2025-01-01');
-  });
-
   describe('generateMediaFilename', () => {
-    it('미디어 파일명: username_tweetId_YYYYMMDD_index.ext 형식', () => {
+    it('미디어 파일명: username_tweetId_index.ext 형식', () => {
       const media: MediaInfo = {
         id: 'media_media_0', // 0기반 인덱스 → 1로 변환됨
         url: 'https://example.com/image.jpg',
@@ -38,14 +31,13 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
-      expect(filename).toBe('piesp_1234567890_20250101_1.jpg');
+      expect(filename).toBe('piesp_1234567890_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
-    it('index가 없을 때 기본값 1 사용', () => {
+    it('media.id에서 index 추출하여 기본값 결정', () => {
       const media: MediaInfo = {
         id: 'user123_media_0', // /_media_(\d+)$/ 패턴에 맞음 → 0 추출 → 1로 변환
         url: 'https://example.com/image.png',
@@ -54,30 +46,29 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
         tweetUsername: 'user123',
       };
 
-      const filename = generateMediaFilename(media, { date: testDate });
+      const filename = generateMediaFilename(media);
 
-      expect(filename).toBe('user123_1234567890_20250101_1.png');
+      expect(filename).toBe('user123_1234567890_1.png');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
-    it('다양한 index 값 처리', () => {
+    it('다양한 index 값을 지원', () => {
       const filenames = [1, 2, 10, 99].map(idx => {
-        // 각 index에 해당하는 media.id 생성 (_media_ 패턴: 0기반 → 1기반 변환)
         const media: MediaInfo = {
-          id: `tweet_${Math.random()}_media_${idx - 1}`, // 0기반 인덱스 (idx - 1) → idx로 변환
-          url: 'https://example.com/image.jpg',
+          id: `tweet_${idx}_media_${idx - 1}`,
+          url: `https://example.com/image-${idx}.jpg`,
           type: 'image',
           tweetId: '1234567890',
           tweetUsername: 'test',
         };
-        return generateMediaFilename(media, { date: testDate });
+        return generateMediaFilename(media);
       });
 
       expect(filenames).toEqual([
-        'test_1234567890_20250101_1.jpg',
-        'test_1234567890_20250101_2.jpg',
-        'test_1234567890_20250101_10.jpg',
-        'test_1234567890_20250101_99.jpg',
+        'test_1234567890_1.jpg',
+        'test_1234567890_2.jpg',
+        'test_1234567890_10.jpg',
+        'test_1234567890_99.jpg',
       ]);
 
       filenames.forEach(filename => {
@@ -85,7 +76,7 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
       });
     });
 
-    it('다양한 확장자 추출', () => {
+    it('확장자 override 지원', () => {
       const extensions = ['jpg', 'png', 'gif', 'mp4'];
       const media: MediaInfo = {
         id: 'media_0',
@@ -99,15 +90,14 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
         const filename = generateMediaFilename(media, {
           index: 1,
           extension: ext,
-          date: testDate,
         });
 
-        expect(filename).toMatch(new RegExp(`\\.${ext}$`));
+        expect(filename).toBe(`user_1234567890_1.${ext}`);
         expect(isValidMediaFilename(filename)).toBe(true);
       });
     });
 
-    it('폴백 사용자명 사용', () => {
+    it('fallback 사용자명 사용', () => {
       const media: MediaInfo = {
         id: 'media_media_0',
         url: 'https://example.com/image.jpg',
@@ -118,10 +108,9 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
       const filename = generateMediaFilename(media, {
         index: 1,
         fallbackUsername: 'fallback_user',
-        date: testDate,
       });
 
-      expect(filename).toBe('fallback_user_1234567890_20250101_1.jpg');
+      expect(filename).toBe('fallback_user_1234567890_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -136,15 +125,14 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
-      expect(filename).toContain('extracted_user_1234567890_20250101_1');
+      expect(filename).toBe('extracted_user_1234567890_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
     it('기존 유효한 파일명 유지', () => {
-      const existingFilename = 'existing_1234567890_20250101_1.jpg';
+      const existingFilename = 'existing_1234567890_1.jpg';
       const media: MediaInfo = {
         id: 'media_0',
         url: 'https://example.com/image.jpg',
@@ -152,14 +140,14 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
         filename: existingFilename,
       };
 
-      const result = generateMediaFilename(media, { date: testDate });
+      const result = generateMediaFilename(media);
 
       expect(result).toBe(existingFilename);
     });
   });
 
   describe('generateZipFilename', () => {
-    it('ZIP 파일명: username_tweetId_YYYYMMDD.zip 형식', () => {
+    it('ZIP 파일명: username_tweetId.zip 형식', () => {
       const media: MediaInfo = {
         id: 'media_0',
         url: 'https://example.com/image.jpg',
@@ -170,7 +158,7 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateZipFilename([media], { fallbackPrefix: 'xcom' });
 
-      expect(filename).toMatch(/^piesp_1234567890_\d{8}\.zip$/);
+      expect(filename).toBe('piesp_1234567890.zip');
       expect(isValidZipFilename(filename)).toBe(true);
     });
 
@@ -194,7 +182,25 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateZipFilename(medias);
 
-      expect(filename).toMatch(/^user1_1234567890_\d{8}\.zip$/);
+      expect(filename).toBe('user1_1234567890.zip');
+      expect(isValidZipFilename(filename)).toBe(true);
+    });
+
+    it('인용 트윗 미디어는 quoted 정보 사용', () => {
+      const media: MediaInfo = {
+        id: 'media_0',
+        url: 'https://example.com/image.jpg',
+        type: 'image',
+        tweetId: '9999999999',
+        tweetUsername: 'retweeter',
+        sourceLocation: 'quoted',
+        quotedTweetId: '1234567890',
+        quotedUsername: 'original_author',
+      };
+
+      const filename = generateZipFilename([media]);
+
+      expect(filename).toBe('original_author_1234567890.zip');
       expect(isValidZipFilename(filename)).toBe(true);
     });
 
@@ -216,9 +222,9 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
   describe('isValidMediaFilename', () => {
     it('유효한 미디어 파일명 검증', () => {
       const validFilenames = [
-        'user_1234567890_20250101_1.jpg',
-        'piesp_9876543210_20250101_99.png',
-        'test_user_1234567890_20250101_5.mp4',
+        'user_1234567890_1.jpg',
+        'piesp_9876543210_99.png',
+        'test_user_1234567890_5.mp4',
       ];
 
       validFilenames.forEach(filename => {
@@ -228,11 +234,11 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
     it('유효하지 않은 미디어 파일명 거부', () => {
       const invalidFilenames = [
-        'user_1234567890_1.jpg', // YYYYMMDD 없음
-        'user_1234567890_202501_1.jpg', // 잘못된 날짜 형식
-        'user_20250101_1.jpg', // tweetId 없음
-        '_1234567890_20250101_1.jpg', // username 없음
-        'user_1234567890_20250101.jpg', // index 없음
+        'user_1234567890.jpg', // index 없음
+        'user_12345_1.jpg', // tweetId 길이 짧음
+        '_1234567890_1.jpg', // username 없음
+        'user_1234567890_index.jpg', // 숫자가 아닌 index
+        'user-1234567890_1.jpg', // 허용되지 않는 문자
       ];
 
       invalidFilenames.forEach(filename => {
@@ -244,9 +250,9 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
   describe('isValidZipFilename', () => {
     it('유효한 ZIP 파일명 검증', () => {
       const validFilenames = [
-        'user_1234567890_20250101.zip',
-        'piesp_9876543210_20250101.zip',
-        'test_user_1234567890_20250101.zip',
+        'user_1234567890.zip',
+        'piesp_9876543210.zip',
+        'test_user_1234567890.zip',
       ];
 
       validFilenames.forEach(filename => {
@@ -256,11 +262,11 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
     it('유효하지 않은 ZIP 파일명 거부', () => {
       const invalidFilenames = [
-        'user_1234567890.zip', // YYYYMMDD 없음
-        'user_1234567890_202501.zip', // 잘못된 날짜 형식
-        'user_20250101.zip', // tweetId 없음
-        '_1234567890_20250101.zip', // username 없음
-        'user_1234567890_20250101.tar.gz', // .zip 아님
+        'user_1234567890_1.zip', // index가 포함됨
+        'user_1234567890_2025.zip', // 불필요한 suffix
+        'user_123.zip', // tweetId 길이 짧음
+        '_1234567890.zip', // username 없음
+        'user_1234567890.tar.gz', // .zip 아님
       ];
 
       invalidFilenames.forEach(filename => {
@@ -270,8 +276,7 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
   });
 
   describe('포맷 일관성', () => {
-    it('미디어 파일과 ZIP 파일이 같은 날짜 정보 공유', () => {
-      const testDate = new Date('2025-06-15');
+    it('미디어 파일과 ZIP 파일이 동일한 prefix 공유', () => {
       const medias: MediaInfo[] = [
         {
           id: 'media_0',
@@ -291,19 +296,15 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const mediaFilename1 = generateMediaFilename(medias[0], {
         index: 1,
-        date: testDate,
       });
       const mediaFilename2 = generateMediaFilename(medias[1], {
         index: 2,
-        date: testDate,
       });
       const zipFilename = generateZipFilename(medias);
 
-      expect(mediaFilename1).toContain('20250615');
-      expect(mediaFilename2).toContain('20250615');
-
-      // ZIP 파일명도 같은 날짜 사용 (동일 시간)
-      expect(zipFilename).toMatch(/user_1234567890_\d{8}\.zip/);
+      expect(mediaFilename1).toBe('user_1234567890_1.jpg');
+      expect(mediaFilename2).toBe('user_1234567890_2.jpg');
+      expect(zipFilename).toBe('user_1234567890.zip');
     });
 
     it('특수 문자 정규화 테스트', () => {
@@ -317,17 +318,16 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
       // 특수 문자가 제거되고 올바른 형식
       expect(isValidMediaFilename(filename)).toBe(true);
-      expect(filename).toContain('1234567890_20250101_1');
+      expect(filename).toContain('1234567890_1');
     });
   });
 
   describe('에지 케이스', () => {
-    it('날짜 옵션이 없으면 현재 시간 사용', () => {
+    it('옵션 없이도 index 기본값 1 유지', () => {
       const media: MediaInfo = {
         id: 'tweet_123_media_0', // _media_ 패턴: 0기반 → 1로 변환
         url: 'https://example.com/image.jpg',
@@ -338,8 +338,7 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media);
 
-      // YYYYMMDD 형식으로 8자리 숫자 포함, index는 1
-      expect(filename).toMatch(/user_1234567890_\d{8}_1\.jpg/);
+      expect(filename).toBe('user_1234567890_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -359,11 +358,10 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
       const filename = generateMediaFilename(media, {
         index: 1,
         fallbackPrefix: 'fallback',
-        date: testDate,
       });
 
       // 폴백이지만 유효한 형식이어야 함
-      expect(filename).toContain('fallback');
+      expect(filename).toMatch(/^fallback_\d+_1\.jpg$/);
     });
   });
 
@@ -383,11 +381,10 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
       // 인용된 원본 작성자의 정보가 파일명에 사용되어야 함
-      expect(filename).toBe('original_author_1111111111_20250101_1.jpg');
+      expect(filename).toBe('original_author_1111111111_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -405,11 +402,10 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
       // 인용 트윗 작성자의 정보가 파일명에 사용되어야 함
-      expect(filename).toBe('quoting_user_9999999999_20250101_1.jpg');
+      expect(filename).toBe('quoting_user_9999999999_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -424,10 +420,9 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
-      expect(filename).toBe('regular_user_1234567890_20250101_1.jpg');
+      expect(filename).toBe('regular_user_1234567890_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -444,11 +439,10 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const filename = generateMediaFilename(media, {
         index: 1,
-        date: testDate,
       });
 
       // 인용 트윗 작성자 정보로 폴백
-      expect(filename).toBe('quoting_user_9999999999_20250101_1.jpg');
+      expect(filename).toBe('quoting_user_9999999999_1.jpg');
       expect(isValidMediaFilename(filename)).toBe(true);
     });
 
@@ -467,14 +461,13 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
       const filenames = medias.map((media, idx) =>
         generateMediaFilename(media, {
           index: idx + 1,
-          date: testDate,
         })
       );
 
       expect(filenames).toEqual([
-        'original_author_1111111111_20250101_1.jpg',
-        'original_author_1111111111_20250101_2.jpg',
-        'original_author_1111111111_20250101_3.jpg',
+        'original_author_1111111111_1.jpg',
+        'original_author_1111111111_2.jpg',
+        'original_author_1111111111_3.jpg',
       ]);
 
       filenames.forEach(filename => {
@@ -496,9 +489,8 @@ describe('FilenameService - YYYYMMDD Format (v3)', () => {
 
       const zipFilename = generateZipFilename([media]);
 
-      // ZIP은 첫 번째 미디어의 tweetUsername/tweetId를 사용 (인용 트윗 작성자)
-      // Note: ZIP 파일명은 sourceLocation을 고려하지 않음 (컬렉션 레벨)
-      expect(zipFilename).toMatch(/^quoting_user_9999999999_\d{8}\.zip$/);
+      // ZIP은 인용된 원본 작성자 정보 사용
+      expect(zipFilename).toBe('original_author_1111111111.zip');
       expect(isValidZipFilename(zipFilename)).toBe(true);
     });
   });

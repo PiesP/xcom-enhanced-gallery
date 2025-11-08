@@ -24,9 +24,9 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
-      expect(filename).toMatch(/^testuser_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('testuser_1234567890_1.jpg');
     });
 
     it('should reject "unknown" username and use fallback', () => {
@@ -38,10 +38,10 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
       // Should use tweet_{tweetId} fallback
-      expect(filename).toMatch(/^tweet_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('tweet_1234567890_1.jpg');
     });
 
     it('should skip media URL extraction (pbs.twimg.com)', () => {
@@ -52,10 +52,10 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
       // Should NOT extract 'media' or 'pbs' from URL
-      expect(filename).toMatch(/^tweet_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('tweet_1234567890_1.jpg');
       expect(filename).not.toContain('media_');
       expect(filename).not.toContain('pbs_');
     });
@@ -72,10 +72,10 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
       // Should use quoted tweet info
-      expect(filename).toMatch(/^quoteduser_9876543210_20251105_\d+\.jpg$/);
+      expect(filename).toBe('quoteduser_9876543210_1.jpg');
     });
 
     it('should handle missing username with TweetId-based fallback', () => {
@@ -86,9 +86,9 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
-      expect(filename).toMatch(/^tweet_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('tweet_1234567890_1.jpg');
     });
 
     it('should use timestamp fallback when no TweetId available', () => {
@@ -98,7 +98,7 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         type: 'image',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
       // Should use media_{timestamp} format
       expect(filename).toMatch(/^media_\d+_\d+\.jpg$/);
@@ -113,9 +113,9 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
-      expect(filename).toMatch(/^videouser_1234567890_20251105_\d+\.mp4$/);
+      expect(filename).toBe('videouser_1234567890_1.mp4');
     });
 
     it('should use fallbackUsername option when provided', () => {
@@ -127,11 +127,10 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
       };
 
       const filename = service.generateMediaFilename(media, {
-        date: new Date('2025-11-05'),
         fallbackUsername: 'fallbackuser',
       });
 
-      expect(filename).toMatch(/^fallbackuser_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('fallbackuser_1234567890_1.jpg');
     });
   });
 
@@ -232,9 +231,9 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
         tweetId: '1234567890',
       };
 
-      const filename = service.generateMediaFilename(media, { date: new Date('2025-11-05') });
+      const filename = service.generateMediaFilename(media);
 
-      expect(filename).toMatch(/^tweet_1234567890_20251105_\d+\.jpg$/);
+      expect(filename).toBe('tweet_1234567890_1.jpg');
     });
 
     it('should use media_{timestamp} format when no TweetId', () => {
@@ -305,7 +304,7 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
       const filename = service.generateMediaFilename(media);
 
       // Should still generate valid filename
-      expect(filename).toMatch(/^tweet_1234567890_\d{8}_\d+\.jpg$/);
+      expect(filename).toMatch(/^tweet_1234567890_\d+\.jpg$/);
     });
 
     it('should extract correct index from media ID', () => {
@@ -320,7 +319,7 @@ describe('FilenameService - Phase 432 Username Extraction', () => {
       const filename = service.generateMediaFilename(media);
 
       // Index should be 3 (2 + 1 due to zero-based to one-based conversion)
-      expect(filename).toMatch(/^testuser_1234567890_\d{8}_3\.jpg$/);
+      expect(filename).toBe('testuser_1234567890_3.jpg');
     });
   });
 });

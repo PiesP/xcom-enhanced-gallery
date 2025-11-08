@@ -22,6 +22,7 @@ import {
   navigatePrevious,
   navigateNext,
 } from '../../shared/state/signals/gallery.signals';
+import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view';
 import { GalleryContainer } from '../../shared/components/isolation';
@@ -191,18 +192,24 @@ export class GalleryRenderer implements GalleryRendererInterface {
    * - Subsequent downloads: instant (service cached)
    */
   private async handleDownload(type: 'current' | 'all'): Promise<void> {
+    // Phase 317: GM API check - if not available, only show notification
+    if (!isGMAPIAvailable('download')) {
+      logger.warn('[GalleryRenderer] GM_download not available');
+      setError(
+        'Tampermonkey or similar userscript manager is required. Download functionality is not available.'
+      );
+      return;
+    }
+
+    if (isDownloadLocked()) {
+      logger.debug('[GalleryRenderer] Download request ignored: operation already in progress');
+      return;
+    }
+
+    const releaseDownloadLock = acquireDownloadLock();
+    setLoading(true);
+
     try {
-      // Phase 317: GM API check - if not available, only show notification
-      if (!isGMAPIAvailable('download')) {
-        logger.warn('[GalleryRenderer] GM_download not available');
-        setError(
-          'Tampermonkey or similar userscript manager is required. Download functionality is not available.'
-        );
-        return;
-      }
-
-      setLoading(true);
-
       // Phase 312: UnifiedDownloadService usage (Singleton)
       const mediaItems = gallerySignals.mediaItems.value;
       const currentIndex = gallerySignals.currentIndex.value;
@@ -241,6 +248,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
       setError('Download failed.');
     } finally {
       setLoading(false);
+      releaseDownloadLock();
     }
   }
 
