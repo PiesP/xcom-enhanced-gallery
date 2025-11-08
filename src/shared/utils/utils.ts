@@ -23,9 +23,6 @@ export {
   createThemedClassName,
 } from './styles/css-utilities';
 
-// Scroll utilities
-export { createScrollHandler, isGalleryElement, createScrollDebouncer } from './scroll';
-
 // Core utilities (from core-utils)
 export { ensureGalleryScrollAvailable, removeDuplicateStrings } from './core-utils';
 

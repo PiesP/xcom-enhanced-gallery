@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 import { join } from 'node:path';
 import { cwd } from 'node:process';
@@ -13,7 +14,6 @@ import { cwd } from 'node:process';
  *
  * **Allowed list**:
  * - `src/shared/utils/events.ts` (중앙 이벤트 관리)
- * - `src/shared/utils/scroll/scroll-utils.ts` (스크롤 특화 헬퍼)
  */
 describe('R2: wheel-listener-direct-use policy (no direct addEventListener)', () => {
   setupGlobalTestIsolation();
@@ -23,7 +23,6 @@ describe('R2: wheel-listener-direct-use policy (no direct addEventListener)', ()
   // Allow list: central wheel utility file(s)
   const allowList = new Set<string>([
     join(SRC_ROOT, 'shared', 'utils', 'events.ts').replace(/\\/g, '/'),
-    join(SRC_ROOT, 'shared', 'utils', 'scroll', 'scroll-utils.ts').replace(/\\/g, '/'),
   ]);
 
   function* walk(dir: string): Generator<string> {

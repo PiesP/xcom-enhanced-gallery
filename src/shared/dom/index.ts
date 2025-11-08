@@ -56,7 +56,6 @@ export {
   cachedQuerySelector,
   cachedQuerySelectorAll,
   cachedStableQuery,
-  invalidateCacheOnMutation,
 } from './dom-cache';
 
 // ============================================================================

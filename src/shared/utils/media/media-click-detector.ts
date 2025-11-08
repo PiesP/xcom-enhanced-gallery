@@ -69,7 +69,7 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
   }
 
   if (shouldBlockMediaTrigger(target)) {
-    logger.debug('MediaClickDetector: Blocked by shouldBlockGalleryTrigger');
+    logger.debug('MediaClickDetector: Blocked by shouldBlockMediaTrigger');
     return false;
   }
 
