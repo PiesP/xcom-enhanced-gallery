@@ -55,6 +55,17 @@ export type IconName =
   | 'X'
   | 'ChevronLeft'
   | 'ChevronRight'
+  | 'ArrowDownTray'
+  | 'ArrowDownOnSquareStack'
+  | 'ArrowSmallLeft'
+  | 'ArrowSmallRight'
+  | 'ArrowLeftOnRectangle'
+  | 'ChatBubbleLeftRight'
+  | 'Cog6Tooth'
+  | 'ArrowsPointingIn'
+  | 'ArrowsRightLeft'
+  | 'ArrowsUpDown'
+  | 'ArrowsPointingOut'
   | (string & {});
 
 /**
@@ -173,14 +184,38 @@ function dynamicImport(name: IconName): Promise<IconComponent> {
   switch (name) {
     case 'Download':
       return import('./hero/HeroDownload.tsx').then(m => m.HeroDownload);
+    case 'ArrowDownTray':
+      return import('./hero/HeroDownload.tsx').then(m => m.HeroDownload);
+    case 'ArrowDownOnSquareStack':
+      return import('./hero/HeroArrowDownOnSquareStack.tsx').then(
+        m => m.HeroArrowDownOnSquareStack
+      );
     case 'Settings':
       return import('./hero/HeroSettings.tsx').then(m => m.HeroSettings);
+    case 'Cog6Tooth':
+      return import('./hero/HeroCog6Tooth.tsx').then(m => m.HeroCog6Tooth);
     case 'X':
       return import('./hero/HeroX.tsx').then(m => m.HeroX);
+    case 'ArrowLeftOnRectangle':
+      return import('./hero/HeroArrowLeftOnRectangle.tsx').then(m => m.HeroArrowLeftOnRectangle);
     case 'ChevronLeft':
       return import('./hero/HeroChevronLeft.tsx').then(m => m.HeroChevronLeft);
     case 'ChevronRight':
       return import('./hero/HeroChevronRight.tsx').then(m => m.HeroChevronRight);
+    case 'ArrowSmallLeft':
+      return import('./hero/HeroArrowSmallLeft.tsx').then(m => m.HeroArrowSmallLeft);
+    case 'ArrowSmallRight':
+      return import('./hero/HeroArrowSmallRight.tsx').then(m => m.HeroArrowSmallRight);
+    case 'ChatBubbleLeftRight':
+      return import('./hero/HeroChatBubbleLeftRight.tsx').then(m => m.HeroChatBubbleLeftRight);
+    case 'ArrowsPointingIn':
+      return import('./hero/HeroArrowsPointingIn.tsx').then(m => m.HeroArrowsPointingIn);
+    case 'ArrowsRightLeft':
+      return import('./hero/HeroArrowsRightLeft.tsx').then(m => m.HeroArrowsRightLeft);
+    case 'ArrowsUpDown':
+      return import('./hero/HeroArrowsUpDown.tsx').then(m => m.HeroArrowsUpDown);
+    case 'ArrowsPointingOut':
+      return import('./hero/HeroArrowsPointingOut.tsx').then(m => m.HeroArrowsPointingOut);
     default:
       if (_fallback) return Promise.resolve(_fallback);
       return Promise.reject(new Error(`Icon not found: ${name}`));

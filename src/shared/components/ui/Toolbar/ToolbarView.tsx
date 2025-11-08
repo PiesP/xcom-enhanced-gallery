@@ -36,7 +36,7 @@
  *
  * @dependencies
  * - Solid.js: getSolid(), Show, For, Switch, Match components
- * - Icons: ChevronLeft, ChevronRight, Download, FileZip, Settings, X, DocumentText
+ * - Icons: ArrowSmallLeft, ArrowSmallRight, ArrowDownTray, ArrowDownOnSquareStack, Cog6Tooth, ArrowLeftOnRectangle, ChatBubbleLeftRight
  * - Components: IconButton (basic), SettingsControlsLazy (lazy loaded)
  * - Services: languageService for i18n strings
  * - Utils: formatTweetText, shortenUrl for tweet formatting
@@ -87,7 +87,15 @@
 import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
 import { IconButton } from '../Button/IconButton';
-import { ChevronLeft, ChevronRight, Download, FileZip, Settings, X, DocumentText } from '../Icon';
+import {
+  ArrowSmallLeft,
+  ArrowSmallRight,
+  ArrowDownTray,
+  ArrowDownOnSquareStack,
+  Cog6Tooth,
+  ArrowLeftOnRectangle,
+  ChatBubbleLeftRight,
+} from '../Icon';
 import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
 import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
@@ -329,7 +337,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-gallery-element='nav-previous'
             data-disabled={props.navState().prevDisabled}
           >
-            <ChevronLeft size={18} />
+            <ArrowSmallLeft size={18} />
           </IconButton>
 
           <IconButton
@@ -341,7 +349,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-gallery-element='nav-next'
             data-disabled={props.navState().nextDisabled}
           >
-            <ChevronRight size={18} />
+            <ArrowSmallRight size={18} />
           </IconButton>
         </div>
 
@@ -400,7 +408,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-disabled={props.navState().downloadDisabled}
             data-loading={isDownloading()}
           >
-            <Download size={18} />
+            <ArrowDownTray size={18} />
           </IconButton>
 
           {props.navState().canDownloadAll && (
@@ -414,7 +422,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               data-disabled={props.navState().downloadDisabled}
               data-loading={isDownloading()}
             >
-              <FileZip size={18} />
+              <ArrowDownOnSquareStack size={18} />
             </IconButton>
           )}
 
@@ -433,7 +441,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               data-gallery-element='settings'
               data-disabled={isToolbarDisabled()}
             >
-              <Settings size={18} />
+              <Cog6Tooth size={18} />
             </IconButton>
           )}
 
@@ -450,7 +458,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               data-gallery-element='tweet-text'
               data-disabled={isToolbarDisabled()}
             >
-              <DocumentText size={18} />
+              <ChatBubbleLeftRight size={18} />
             </IconButton>
           )}
 
@@ -464,7 +472,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-gallery-element='close'
             data-disabled={isToolbarDisabled()}
           >
-            <X size={18} />
+            <ArrowLeftOnRectangle size={18} />
           </IconButton>
         </div>
       </div>

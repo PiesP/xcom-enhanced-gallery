@@ -42,7 +42,7 @@
  * // Pattern 1: Preload on app init
  * import { useCommonIconPreload } from '@shared/components/ui/Icon';
  * export function App() {
- *   useCommonIconPreload(); // Preload all 11 Heroicons
+ *   useCommonIconPreload(); // Preload toolbar Heroicons
  *   return <GalleryApp />;
  * }
  *
@@ -308,20 +308,18 @@ export function useIconPreload(names: readonly IconName[]): void {
 /**
  * Preload Common Icons Hook
  *
- * Preloads frequently-used icons (all 11 Heroicons) for instant rendering
+ * Preloads the toolbar's high-traffic Heroicons for instant rendering
  * throughout the app. Call once during app initialization (e.g., in App.tsx
- * or bootstrap code) to ensure all UI controls render icons immediately.
+ * or bootstrap code) to ensure those controls render without a loading state.
  *
- * **Preloaded Icons** (11 total):
+ * **Preloaded Icons** (5 total):
  * - Navigation: ChevronLeft, ChevronRight
- * - Actions: Download, Settings, X (Close), ZoomIn
- * - Files: DocumentText, FileZip
- * - Sizing: ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize
+ * - Actions: Download, Settings, X (Close)
  *
  * **Performance Impact**:
  * - Bundle: Icons included in main bundle (or lazy-loaded via registry)
  * - Load Time: Preload happens in background (non-blocking)
- * - Memory: All 11 icons cached in registry WeakMap (~50KB total)
+ * - Memory: Icons cached in registry WeakMap (~25KB total)
  * - Network: 0 additional requests (icons already downloaded)
  *
  * **Timing**:
@@ -335,7 +333,7 @@ export function useIconPreload(names: readonly IconName[]): void {
  * import { useCommonIconPreload } from '@shared/components/ui/Icon';
  *
  * export function App() {
- *   useCommonIconPreload(); // Preload all 11 Heroicons
+ *   useCommonIconPreload(); // Preload toolbar Heroicons
  *   return <GalleryApp />;
  * }
  * ```

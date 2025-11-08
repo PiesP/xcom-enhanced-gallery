@@ -30,10 +30,11 @@
  * ```
  *
  * **Icon Catalog** (Heroicons adapted):
- * - Navigation: ChevronLeft, ChevronRight
- * - Actions: Download, Settings, X (Close), ZoomIn
- * - Files: DocumentText, FileZip
- * - Sizing: ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize
+ * - Navigation: ArrowSmallLeft, ArrowSmallRight, ChevronLeft, ChevronRight
+ * - Fit Controls: ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut
+ * - Actions: ArrowDownTray, ArrowDownOnSquareStack, Settings, Cog6Tooth, X (Close), ArrowLeftOnRectangle, ZoomIn
+ * - Communication: ChatBubbleLeftRight, DocumentText
+ * - Files: FileZip
  *
  * **Phase Timeline**:
  * - Phase 224: LazyIcon integration, path optimization
@@ -88,29 +89,38 @@ export type { LazyIconProps } from './lazy-icon';
  * - FileZip: Archive box with download arrow
  *
  * **Sizing Icons**:
- * - ArrowAutofitWidth: Horizontal expand/collapse
- * - ArrowAutofitHeight: Vertical expand/collapse
- * - ArrowsMaximize: Bidirectional expand (fullscreen)
+ * - ArrowsPointingIn: Original size
+ * - ArrowsPointingOut: Fit to container
  */
 
 // Navigation
+export { HeroArrowSmallLeft as ArrowSmallLeft } from './hero/HeroArrowSmallLeft';
+export { HeroArrowSmallRight as ArrowSmallRight } from './hero/HeroArrowSmallRight';
 export { HeroChevronLeft as ChevronLeft } from './hero/HeroChevronLeft';
 export { HeroChevronRight as ChevronRight } from './hero/HeroChevronRight';
 
 // Actions
 export { HeroDownload as Download } from './hero/HeroDownload';
+export { HeroDownload as ArrowDownTray } from './hero/HeroDownload';
+export { HeroArrowDownOnSquareStack as ArrowDownOnSquareStack } from './hero/HeroArrowDownOnSquareStack';
 export { HeroSettings as Settings } from './hero/HeroSettings';
+export { HeroCog6Tooth as Cog6Tooth } from './hero/HeroCog6Tooth';
 export { HeroX as X } from './hero/HeroX';
+export { HeroArrowLeftOnRectangle as ArrowLeftOnRectangle } from './hero/HeroArrowLeftOnRectangle';
 export { HeroZoomIn as ZoomIn } from './hero/HeroZoomIn';
+
+// Communication
+export { HeroChatBubbleLeftRight as ChatBubbleLeftRight } from './hero/HeroChatBubbleLeftRight';
+export { HeroDocumentText as DocumentText } from './hero/HeroDocumentText';
 
 // Files
 export { HeroFileZip as FileZip } from './hero/HeroFileZip';
-export { HeroDocumentText as DocumentText } from './hero/HeroDocumentText';
 
 // Sizing
-export { HeroArrowAutofitWidth as ArrowAutofitWidth } from './hero/HeroArrowAutofitWidth';
-export { HeroArrowAutofitHeight as ArrowAutofitHeight } from './hero/HeroArrowAutofitHeight';
-export { HeroArrowsMaximize as ArrowsMaximize } from './hero/HeroArrowsMaximize';
+export { HeroArrowsPointingIn as ArrowsPointingIn } from './hero/HeroArrowsPointingIn';
+export { HeroArrowsRightLeft as ArrowsRightLeft } from './hero/HeroArrowsRightLeft';
+export { HeroArrowsUpDown as ArrowsUpDown } from './hero/HeroArrowsUpDown';
+export { HeroArrowsPointingOut as ArrowsPointingOut } from './hero/HeroArrowsPointingOut';
 
 /**
  * @deprecated Phase 215: Tabler Icons removed completely

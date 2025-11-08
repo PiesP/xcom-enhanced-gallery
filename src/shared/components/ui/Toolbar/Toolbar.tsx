@@ -24,8 +24,8 @@
  * - **Media Counter**: Real-time updates via createMemo reactivity
  *
  * ## Fit Mode Handling
- * - **FitMode Types**: 'original', 'fitWidth', 'fitHeight', 'fitContainer'
- * - **Icon Mapping**: ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize
+ * - **FitMode Types**: 'fitContainer', 'fitWidth', 'fitHeight', 'original'
+ * - **Icon Mapping**: ArrowsPointingOut, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingIn
  * - **Disable Logic**: Disabled when no handler provided or toolbar disabled
  * - **Dynamic Click Handlers**: Each mode has handler memoization + event prevent logic
  *
@@ -62,7 +62,7 @@
  * - Hooks: useToolbarState, useToolbarSettingsController
  * - Types: ToolbarProps, FitMode, ToolbarState
  * - Services: (via hooks)
- * - Icons: ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize
+ * - Icons: ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut
  * - Views: ToolbarView (presentational)
  *
  * @example
@@ -118,7 +118,7 @@ import { getSolid } from '../../../external/vendors';
 import { useToolbarState } from '../../../hooks/use-toolbar-state';
 import { getToolbarDataState, getToolbarClassName } from '../../../utils/toolbar-utils';
 import { createClassName } from '@shared/utils/component-utils'; // Phase 284: individual function direct import
-import { ZoomIn, ArrowAutofitWidth, ArrowAutofitHeight, ArrowsMaximize } from '../Icon';
+import { ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut } from '../Icon';
 import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
 import { useToolbarSettingsController } from '../../../hooks/toolbar/use-toolbar-settings-controller';
 import { ToolbarView } from './ToolbarView';
@@ -171,10 +171,10 @@ const fitModeLabels = {
  * Determines the left-to-right order of fit mode buttons in toolbar
  */
 const FIT_MODE_ORDER = [
-  { mode: 'original' as const, Icon: ZoomIn },
-  { mode: 'fitWidth' as const, Icon: ArrowAutofitWidth },
-  { mode: 'fitHeight' as const, Icon: ArrowAutofitHeight },
-  { mode: 'fitContainer' as const, Icon: ArrowsMaximize },
+  { mode: 'original' as const, Icon: ArrowsPointingOut },
+  { mode: 'fitWidth' as const, Icon: ArrowsRightLeft },
+  { mode: 'fitHeight' as const, Icon: ArrowsUpDown },
+  { mode: 'fitContainer' as const, Icon: ArrowsPointingIn },
 ] as const;
 
 /**

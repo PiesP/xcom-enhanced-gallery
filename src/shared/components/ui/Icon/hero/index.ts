@@ -14,10 +14,11 @@
  * - Type-safe IconProps interface
  *
  * **Icon Categories**:
- * - Navigation: ChevronLeft, ChevronRight
- * - Arrow: ArrowAutofitHeight, ArrowAutofitWidth, ArrowsMaximize
- * - Actions: Download, Settings, X (Close), ZoomIn
- * - Files: DocumentText, FileZip
+ * - Navigation: ArrowSmallLeft, ArrowSmallRight, ChevronLeft, ChevronRight
+ * - Fit Controls: ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut
+ * - Actions: ArrowDownTray, ArrowDownOnSquareStack, Settings, Cog6Tooth, X (Close), ArrowLeftOnRectangle, ZoomIn
+ * - Communication: ChatBubbleLeftRight, DocumentText
+ * - Files: FileZip
  *
  * @example
  * ```tsx
@@ -29,11 +30,18 @@
  * ```
  */
 
-export { HeroArrowAutofitHeight } from './HeroArrowAutofitHeight';
-export { HeroArrowAutofitWidth } from './HeroArrowAutofitWidth';
-export { HeroArrowsMaximize } from './HeroArrowsMaximize';
+export { HeroArrowDownOnSquareStack } from './HeroArrowDownOnSquareStack';
+export { HeroArrowSmallLeft } from './HeroArrowSmallLeft';
+export { HeroArrowSmallRight } from './HeroArrowSmallRight';
+export { HeroArrowLeftOnRectangle } from './HeroArrowLeftOnRectangle';
+export { HeroArrowsPointingIn } from './HeroArrowsPointingIn';
+export { HeroArrowsPointingOut } from './HeroArrowsPointingOut';
+export { HeroArrowsRightLeft } from './HeroArrowsRightLeft';
+export { HeroArrowsUpDown } from './HeroArrowsUpDown';
+export { HeroChatBubbleLeftRight } from './HeroChatBubbleLeftRight';
 export { HeroChevronLeft } from './HeroChevronLeft';
 export { HeroChevronRight } from './HeroChevronRight';
+export { HeroCog6Tooth } from './HeroCog6Tooth';
 export { HeroDocumentText } from './HeroDocumentText';
 export { HeroDownload } from './HeroDownload';
 export { HeroFileZip } from './HeroFileZip';
