@@ -127,7 +127,8 @@ export {
 // ====================================
 
 // Logger (utility, not a service)
-export { logger, type ILogger, type Logger } from './core-services';
+export { logger } from '@shared/logging';
+export type { Logger as ILogger, Logger } from '@shared/logging';
 
 // Service management utility
 // Note: Service key constants are not re-exported here to reduce direct usage pathways.

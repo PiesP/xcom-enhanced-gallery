@@ -7,9 +7,9 @@ export { initializeEnvironment } from './environment';
 export {
   getBootstrapDiagnostics,
   logBootstrapSummary,
-  checkServiceAvailability,
-} from './bootstrap-info';
-export type { BootstrapResult, ServiceAvailabilityInfo } from './bootstrap-info';
+  checkAllServices as checkServiceAvailability,
+} from './diagnostics';
+export type { BootstrapResult, ServiceAvailabilityInfo } from './diagnostics';
 // Phase 343: Error Handling Standardization
 export type { BootstrapErrorStrategy, BootstrapSystemType } from './types';
 export {

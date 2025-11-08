@@ -5,7 +5,7 @@
  */
 
 import { logger } from '../shared/logging';
-import { getBootstrapDiagnostics, type BootstrapResult } from './bootstrap-info';
+import { getBootstrapDiagnostics, type BootstrapResult } from './diagnostics';
 import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
 
 /**

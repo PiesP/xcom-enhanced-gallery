@@ -71,14 +71,14 @@ export class TestHarness {
    * @throws Error if service registration fails
    *
    * **Side Effects**:
-   * - Imports core-services module
+   * - Imports service-initialization module
    * - Registers all services with CoreService
    * - May initialize external dependencies (DB, API clients)
    *
    * **Usage**: Call once per test suite or before each test
    */
   async initCoreServices(): Promise<void> {
-    const { registerCoreServices } = await import('../services/core-services');
+    const { registerCoreServices } = await import('../services/service-initialization');
     await registerCoreServices();
   }
 

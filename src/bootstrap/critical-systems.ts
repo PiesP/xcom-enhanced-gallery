@@ -26,7 +26,7 @@ export async function initializeCriticalSystems(): Promise<void> {
     logger.info('Critical Path initialization starting');
 
     // Register core services (dynamic import)
-    const { registerCoreServices } = await import('../shared/services/core-services');
+    const { registerCoreServices } = await import('../shared/services/service-initialization');
     await registerCoreServices();
 
     // Immediately initialize only critical services
