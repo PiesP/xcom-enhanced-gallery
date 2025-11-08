@@ -13,5 +13,5 @@ export {
   updateComponentState as updateComponentStateFromCss,
 } from './css-utilities';
 
-// Style utilities
-export { combineClasses, toggleClass, setCSSVariable, updateComponentState } from './style-utils';
+// Style utilities (direct re-export from css-utilities)
+export { combineClasses, toggleClass, setCSSVariable, updateComponentState } from './css-utilities';

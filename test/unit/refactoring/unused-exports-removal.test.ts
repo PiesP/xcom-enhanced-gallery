@@ -59,16 +59,13 @@ function findSymbolUsages(symbolName: string, excludePaths: string[]): string[] 
   return usages;
 }
 
-describe('Phase 34 Step 1: Unused Exports Detection - style-utils.ts', () => {
+describe('Phase 34 Step 1: Style utilities canonicalization', () => {
   setupGlobalTestIsolation();
 
   describe('getCSSVariable usage detection', () => {
     it('should detect getCSSVariable is not used in codebase', () => {
       // 정의 파일 제외
-      const excludePaths = [
-        'src/shared/utils/styles/style-utils.ts',
-        'src/shared/utils/styles/index.ts',
-      ];
+      const excludePaths = ['src/shared/utils/styles/index.ts'];
 
       const usages = findSymbolUsages('getCSSVariable', excludePaths);
 
@@ -80,10 +77,7 @@ describe('Phase 34 Step 1: Unused Exports Detection - style-utils.ts', () => {
   describe('applyTheme usage detection', () => {
     it('should detect applyTheme is not used in codebase', () => {
       // 정의 파일 제외
-      const excludePaths = [
-        'src/shared/utils/styles/style-utils.ts',
-        'src/shared/utils/styles/index.ts',
-      ];
+      const excludePaths = ['src/shared/utils/styles/index.ts'];
 
       const usages = findSymbolUsages('applyTheme', excludePaths);
 
@@ -92,24 +86,22 @@ describe('Phase 34 Step 1: Unused Exports Detection - style-utils.ts', () => {
     });
   });
 
-  describe('verify exports are properly defined', () => {
-    it('should confirm getCSSVariable and applyTheme are removed', () => {
+  describe('verify canonical source is css-utilities', () => {
+    it('should confirm style-utils.ts has been removed', () => {
       const styleUtilsPath = path.join(projectRoot, 'src/shared/utils/styles/style-utils.ts');
-      const content = fs.readFileSync(styleUtilsPath, 'utf-8');
+      const exists = fs.existsSync(styleUtilsPath);
 
-      // 함수가 제거되었는지 확인
-      expect(content).not.toContain('export function getCSSVariable');
-      expect(content).not.toContain('export function applyTheme');
+      expect(exists).toBe(false);
     });
 
-    it('should confirm other utilities are re-exported', () => {
-      const styleUtilsPath = path.join(projectRoot, 'src/shared/utils/styles/style-utils.ts');
-      const content = fs.readFileSync(styleUtilsPath, 'utf-8');
+    it('should confirm css-utilities.ts provides canonical exports', () => {
+      const cssUtilitiesPath = path.join(projectRoot, 'src/shared/utils/styles/css-utilities.ts');
+      const content = fs.readFileSync(cssUtilitiesPath, 'utf-8');
 
-      // Re-export 확인
-      expect(content).toContain('combineClasses');
-      expect(content).toContain('setCSSVariable');
-      expect(content).toContain('toggleClass');
+      expect(content).toContain('export function combineClasses');
+      expect(content).toContain('export function toggleClass');
+      expect(content).toContain('export function setCSSVariable');
+      expect(content).toContain('export function updateComponentState');
     });
   });
 });

@@ -58,7 +58,7 @@ export { ensureGalleryScrollAvailable, isGalleryInternalEvent } from './core-uti
 export { canTriggerGallery, isGalleryInternalElement } from './utils';
 
 // === Accessibility (2) ===
-export { detectLightBackground, getRelativeLuminance } from './accessibility';
+export { detectLightBackground, getRelativeLuminance } from './accessibility/index';
 
 // === Error handling (1) ===
 export { getErrorMessage } from './error-handling';
