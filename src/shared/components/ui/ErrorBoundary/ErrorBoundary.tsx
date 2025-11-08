@@ -30,7 +30,6 @@
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
 import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
-import styles from './ErrorBoundary.module.css';
 
 /**
  * @description Props for ErrorBoundary component
@@ -58,7 +57,7 @@ type Props = {
  */
 export function ErrorBoundary({ children }: Props): JSXElement {
   const { ErrorBoundary: SolidErrorBoundary } = getSolid();
-  let reportedError: unknown = null;
+  let lastReportedError: unknown = null;
 
   /**
    * Report error to user via ToastManager
@@ -75,10 +74,10 @@ export function ErrorBoundary({ children }: Props): JSXElement {
    */
   const reportError = (err: unknown): void => {
     // Deduplicate: ignore if same error already reported
-    if (reportedError === err) {
+    if (lastReportedError === err) {
       return;
     }
-    reportedError = err;
+    lastReportedError = err;
 
     try {
       // Fetch localized error title and body
@@ -97,22 +96,15 @@ export function ErrorBoundary({ children }: Props): JSXElement {
   return (
     <SolidErrorBoundary
       fallback={(err, reset) => {
-        // Report error to user via toast
         reportError(err);
-        return (
-          <>
-            {reset && typeof reset === 'function' && (
-              // Hidden reset span: used internally by test/monitoring
-              // No visible UI rendered (silent recovery)
-              <span class={styles.hiddenReset} data-xeg-error-boundary-reset />
-            )}
-          </>
-        );
+        if (typeof reset !== 'function') {
+          return null;
+        }
+        // Hidden reset marker used by tests to confirm fallback rendering
+        return <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
       }}
     >
       {children ?? <></>}
     </SolidErrorBoundary>
   );
 }
-
-export default ErrorBoundary;

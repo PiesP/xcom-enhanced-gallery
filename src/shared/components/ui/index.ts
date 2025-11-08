@@ -23,7 +23,6 @@
  * - **Button**: Semantic button with variants (primary, secondary, outline, danger)
  * - **IconButton**: Icon-only button for compact toolbars
  * - **Panel**: Surface component with elevation variants
- * - **CaptionBar**: Text label container for gallery captions
  *
  * ### Controls (Phase 391+)
  * Settings and configuration components
@@ -374,16 +373,6 @@ export type { ButtonProps } from './Button/Button';
 
 export { IconButton } from './Button/IconButton';
 export type { IconButtonProps } from './Button/IconButton';
-
-/**
- * Caption Bar Styles
- * @description CSS modules for caption bar styling
- * @see {@link ./CaptionBar} - CSS module documentation
- *
- * **Note**: CaptionBar component source is internal;
- * import styles directly: `import styles from './CaptionBar/CaptionBar.module.css'`
- */
-// Export intentionally omitted - styles-only module
 
 /**
  * Settings Controls Component
