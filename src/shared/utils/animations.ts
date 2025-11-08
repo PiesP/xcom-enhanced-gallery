@@ -71,13 +71,7 @@ export const animateCustom = async (
     htmlElement.style.transition = transition;
 
     Object.entries(keyframes).forEach(([prop, value]) => {
-      // Set styles only in browser environment
-      if (typeof htmlElement.style.setProperty === 'function') {
-        htmlElement.style.setProperty(prop, String(value));
-      } else {
-        // Fallback: direct assignment
-        (htmlElement.style as CSSStyleDeclaration & Record<string, string>)[prop] = String(value);
-      }
+      htmlElement.style.setProperty(prop, String(value));
     });
 
     globalTimerManager.setTimeout(() => {
