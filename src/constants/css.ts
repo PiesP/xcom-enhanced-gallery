@@ -25,8 +25,3 @@ export const CSS = {
     XXL: 'var(--xeg-spacing-2xl)',
   },
 } as const;
-
-export const HOTKEYS = {
-  OPEN: 'Enter',
-  CLOSE: 'Escape',
-} as const;

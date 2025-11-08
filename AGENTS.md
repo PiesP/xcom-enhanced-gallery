@@ -318,6 +318,18 @@ Root-level temp files **Flow**: Draft → `*/temp/` → Stable (Git) → `*/arch
 - UI: Container/presentational split, `shared/state/**` Signals, PC-only, CSS
   Modules
 
+### Web Research Tools
+
+- **Brave Search MCP** (`mcp_brave-search-*`): General web queries, API docs,
+  ecosystem news. Use `brave_web_search` for broad lookups, leverage the `news`
+  / `image` / `video` / `local` variants when those result types matter. Choose
+  Brave for quick answers you can cite directly.
+- **Tavily Remote MCP** (`mcp_tavily-remote_*`): In-depth research, structured
+  extraction, and site exploration. Combine `tavily_search` with
+  `tavily_extract` for cleaned content, and use `tavily_map` / `tavily_crawl`
+  when you must follow internal links or build a site outline. Reserve Tavily
+  for tasks that require curated text you plan to quote or synthesize.
+
 ## Documentation
 
 - [DOCUMENTATION.md](docs/DOCUMENTATION.md) - Hub

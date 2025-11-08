@@ -2,7 +2,7 @@
  * @fileoverview Integrated constants barrel export (Phase 352)
  *
  * Maintains backward compatibility with existing import paths:
- * - import { APP_CONFIG, TIMING } from '@/constants';
+ * - import { APP_CONFIG, SELECTORS } from '@/constants';
  *
  * Individual file imports are also available (tree-shaking optimization):
  * - import { APP_CONFIG } from '@/constants/app-config';
@@ -12,14 +12,13 @@
 // Core Constants
 // ================================
 export { APP_CONFIG } from './app-config';
-export { TIMING } from './timing';
 export { SELECTORS, STABLE_SELECTORS } from './selectors';
 
 // ================================
 // Media & CSS
 // ================================
 export { MEDIA } from './media';
-export { CSS, HOTKEYS } from './css';
+export { CSS } from './css';
 
 // ================================
 // Events & Services
@@ -57,4 +56,3 @@ export type {
 // ================================
 // URL Patterns (Phase 22.2 compatibility)
 // ================================
-export { URL_PATTERNS } from '../shared/utils/patterns/url-patterns';

@@ -71,10 +71,24 @@ GM_setValue('key', value);
 - ❌ `require()` in ES modules
 - ❌ Direct GM APIs (use services)
 
+docs, versions (`perplexity_search`)
+
 ## Web Search
 
-**Brave**: API docs, code patterns (`brave_web_search`) **Perplexity**: Current
-docs, versions (`perplexity_search`)
+- **Brave Search MCP** (`mcp_brave-search-*`): Quick snapshots, API docs, code
+  patterns, vendor news. Use `brave_web_search` for general queries,
+  `brave_news_search` for fresh headlines, and the `brave_image_search` /
+  `brave_video_search` / `brave_local_search` variants when you need those
+  verticals. Prefer Brave when you want fast answers with rich metadata you can
+  cite directly.
+- **Tavily Remote MCP** (`mcp_tavily-remote_*`): Structured research, site
+  discovery, and clean content extraction. Use `tavily_search` for scoped web
+  results, `tavily_extract` to pull full-page markdown/text, `tavily_map` to
+  outline site structure, and `tavily_crawl` for following internal links. Reach
+  for Tavily when you need curated content you will quote or when the task needs
+  multiple related pages.
+- **Perplexity**: Current docs, changelog validation, version checks
+  (`perplexity_search`).
 
 ## Context Template
 

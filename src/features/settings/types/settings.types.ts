@@ -64,8 +64,6 @@ export interface PerformanceSettings {
   domCaching: boolean;
   /** Cache TTL (milliseconds) */
   cacheTTL: number;
-  /** Performance logging */
-  performanceLogging: boolean;
   /** Debug mode */
   debugMode: boolean;
 }

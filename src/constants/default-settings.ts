@@ -30,7 +30,6 @@ export const DEFAULT_SETTINGS = {
   performance: {
     domCaching: true,
     cacheTTL: 3000,
-    performanceLogging: false,
     debugMode: false,
   },
   accessibility: {
