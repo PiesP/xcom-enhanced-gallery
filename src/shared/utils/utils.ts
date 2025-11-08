@@ -31,16 +31,6 @@ export { removeDuplicates, removeDuplicateMediaItems } from './deduplication/ded
 
 // Debug utilities (removed in Phase 140.2 - unused code cleanup)
 
-// Accessibility utilities
-export {
-  getRelativeLuminance,
-  calculateContrastRatio,
-  meetsWCAGAA,
-  meetsWCAGAAA,
-  detectActualBackgroundColor,
-  detectLightBackground,
-} from './accessibility/index';
-
 // Performance utilities (re-export from performance module)
 export {
   createDebouncer,

@@ -197,8 +197,6 @@ export {
 
 // Accessibility & DOM
 export {
-  detectLightBackground,
-  getRelativeLuminance,
   imageFilter,
   rafThrottle,
   throttleScroll,

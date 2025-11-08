@@ -398,8 +398,6 @@ export interface GalleryRenderOptions {
   className?: string | undefined;
   /** Tweet ID */
   tweetId?: string | undefined;
-  /** Enable keyboard navigation */
-  enableKeyboardNavigation?: boolean;
   /** Show download button */
   showDownloadButton?: boolean;
   /** Show filenames */
