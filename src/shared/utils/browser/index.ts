@@ -4,7 +4,6 @@
  *
  * Re-export browser environment safe access utilities
  */
-
 export {
   isExtensionEnvironment,
   isBrowserEnvironment,
@@ -24,5 +23,3 @@ export {
   getBrowserInfo,
   isExtensionContext,
 } from './safe-browser';
-
-export { waitForWindowLoad } from './wait-for-load';

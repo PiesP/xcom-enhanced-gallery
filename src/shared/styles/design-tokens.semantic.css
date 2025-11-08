@@ -235,7 +235,9 @@
   --xeg-modal-bg: var(--xeg-modal-bg-light);
   --xeg-modal-border: var(--xeg-modal-border-light);
   --xeg-color-border-primary: var(--color-border-default);
-  --xeg-toolbar-panel-bg: var(--color-gray-50); /* Phase: design-consistency - improved hierarchy */
+  --xeg-toolbar-panel-bg: var(
+    --xeg-bg-toolbar
+  ); /* Phase: design-consistency - unified with toolbar surface */
   --xeg-toolbar-panel-border: var(--color-border-default);
   --xeg-toolbar-bg-high-contrast: var(--xeg-toolbar-bg-high-contrast-light);
   --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-light);
@@ -244,8 +246,8 @@
 
   /* Settings controls alignment with toolbar palette (Phase 52) */
   --xeg-settings-select-bg: var(
-    --color-bg-surface
-  ); /* Phase: design-consistency - white for content areas */
+    --xeg-bg-toolbar
+  ); /* Phase: design-consistency - unified with toolbar surface */
   --xeg-settings-select-border: var(--xeg-color-border-primary);
   --xeg-settings-select-border-hover: var(--xeg-color-border-hover);
   --xeg-focus-ring-color: var(--xeg-color-border-primary);
@@ -298,12 +300,14 @@
 
   /* Toolbar Component Tokens - Dark Mode */
   --xeg-toolbar-panel-bg: var(
-    --color-gray-900
-  ); /* Phase: design-consistency - improved hierarchy */
+    --xeg-bg-toolbar
+  ); /* Phase: design-consistency - unified with toolbar surface */
   --xeg-toolbar-panel-border: var(--color-gray-600);
 
   /* Settings controls - Dark Mode (Phase: design-consistency) */
-  --xeg-settings-select-bg: var(--color-gray-800); /* Content areas stay gray-800 */
+  --xeg-settings-select-bg: var(
+    --xeg-bg-toolbar
+  ); /* Content areas stay aligned with toolbar surface */
   --xeg-settings-select-border: var(--color-gray-600);
 
   /* High Contrast Toolbar Tokens - Dark Mode (Phase 56) */
@@ -352,11 +356,11 @@
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
 
     /* Toolbar Component Tokens - System Dark Mode */
-    --xeg-toolbar-panel-bg: var(--color-gray-900);
+    --xeg-toolbar-panel-bg: var(--xeg-bg-toolbar);
     --xeg-toolbar-panel-border: var(--color-gray-600);
 
     /* Settings controls - System Dark Mode */
-    --xeg-settings-select-bg: var(--color-gray-800);
+    --xeg-settings-select-bg: var(--xeg-bg-toolbar);
     --xeg-settings-select-border: var(--color-gray-600);
   }
 }
@@ -380,10 +384,10 @@
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
-    --xeg-toolbar-panel-bg: var(--color-gray-50);
+    --xeg-toolbar-panel-bg: var(--xeg-bg-toolbar);
     --xeg-toolbar-panel-border: var(--color-border-default);
 
-    --xeg-settings-select-bg: var(--color-bg-surface);
+    --xeg-settings-select-bg: var(--xeg-bg-toolbar);
     --xeg-settings-select-border: var(--xeg-color-border-primary);
   }
 }
