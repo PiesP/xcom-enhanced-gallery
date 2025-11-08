@@ -30,27 +30,13 @@
  * ```
  */
 
-import type { ComponentChildren, JSXElement } from '../../../external/vendors';
-import { getSolid } from '../../../external/vendors';
-import { logger } from '../../../logging';
+import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { logger } from '@shared/logging';
+import { createClassName } from '@shared/utils/component-utils';
 import styles from './Button.module.css';
 
 const solid = getSolid();
 const { mergeProps, splitProps, createEffect, onCleanup } = solid;
-
-// ============================================================================
-// Utilities
-// ============================================================================
-
-/**
- * Simple clsx alternative - combines class names
- * @description Filters out falsy values and joins class names with space
- * @param classes - Variable number of class name strings or falsy values
- * @returns Combined class name string
- */
-function classnames(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(' ');
-}
 
 // ============================================================================
 // Type Definitions
@@ -241,25 +227,51 @@ export function Button(rawProps: ButtonProps): JSXElement {
     local.ref?.(null);
   });
   // Compute button state accessors
-  const resolvedIntent = () => local.intent;
   const isDisabled = () => local.disabled || local.loading;
+
+  const handleClick = (event: MouseEvent) => {
+    if (isDisabled()) {
+      event.preventDefault();
+      return;
+    }
+    local.onClick?.(event);
+  };
+
+  const handleMouseDown = (event: MouseEvent) => {
+    if (isDisabled()) {
+      event.preventDefault();
+      return;
+    }
+    local.onMouseDown?.(event);
+  };
+
+  const handleMouseUp = (event: MouseEvent) => {
+    if (isDisabled()) {
+      return;
+    }
+    local.onMouseUp?.(event);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (isDisabled()) {
+      return;
+    }
+    local.onKeyDown?.(event);
+  };
 
   /**
    * Generate combined class names
    * @description Merges variant, size, intent, and state classes from CSS Module
    */
   const buttonClasses = () =>
-    classnames(
+    createClassName(
       styles.unifiedButton,
       styles[`variant-${local.variant}`],
       styles[`size-${local.size}`],
-      resolvedIntent() && styles[`intent-${resolvedIntent()}`],
-      local.iconOnly && styles.iconOnly,
-      local.variant === 'icon' && styles.icon,
-      resolvedIntent() && styles[resolvedIntent() as keyof typeof styles],
-      styles[local.size as keyof typeof styles],
-      local.loading && styles.loading,
-      local.disabled && styles.disabled,
+      local.intent ? styles[`intent-${local.intent}`] : undefined,
+      local.iconOnly ? styles.iconOnly : undefined,
+      local.loading ? styles.loading : undefined,
+      local.disabled ? styles.disabled : undefined,
       local.className,
       local.class
     );
@@ -272,7 +284,6 @@ export function Button(rawProps: ButtonProps): JSXElement {
           local.ref(element ?? null);
         }
       }}
-      role='button'
       type={local.type}
       form={local.form}
       autofocus={local.autoFocus}
@@ -295,34 +306,12 @@ export function Button(rawProps: ButtonProps): JSXElement {
       data-selected={local['data-selected']}
       data-loading={local['data-loading']}
       title={local.title}
-      onClick={event => {
-        if (isDisabled()) {
-          event.preventDefault();
-          return;
-        }
-        local.onClick?.(event);
-      }}
-      onMouseDown={event => {
-        if (isDisabled()) {
-          event.preventDefault();
-          return;
-        }
-        local.onMouseDown?.(event);
-      }}
-      onMouseUp={event => {
-        if (isDisabled()) {
-          return;
-        }
-        local.onMouseUp?.(event);
-      }}
+      onClick={handleClick}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       onFocus={local.onFocus}
       onBlur={local.onBlur}
-      onKeyDown={event => {
-        if (isDisabled()) {
-          return;
-        }
-        local.onKeyDown?.(event);
-      }}
+      onKeyDown={handleKeyDown}
       onMouseEnter={local.onMouseEnter}
       onMouseLeave={local.onMouseLeave}
     >
@@ -331,5 +320,3 @@ export function Button(rawProps: ButtonProps): JSXElement {
     </button>
   );
 }
-
-export default Button;

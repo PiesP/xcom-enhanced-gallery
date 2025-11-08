@@ -369,10 +369,10 @@ export type { LazyIconProps } from './Icon/lazy-icon';
  * <IconButton size="md" aria-label="Close">✕</IconButton>
  * ```
  */
-export { default as Button } from './Button/Button';
+export { Button } from './Button/Button';
 export type { ButtonProps } from './Button/Button';
 
-export { default as IconButton } from './Button/IconButton';
+export { IconButton } from './Button/IconButton';
 export type { IconButtonProps } from './Button/IconButton';
 
 /**

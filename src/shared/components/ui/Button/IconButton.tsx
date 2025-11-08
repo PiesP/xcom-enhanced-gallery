@@ -20,9 +20,8 @@
  * ```
  */
 
-import type { ComponentChildren, JSXElement } from '../../../external/vendors';
-import { Button } from './Button';
-import type { ButtonProps } from './Button';
+import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { Button, type ButtonProps } from './Button';
 
 // ============================================================================
 // Constants
@@ -33,12 +32,7 @@ import type { ButtonProps } from './Button';
  * @description Size options validated by TDD: icon-button.size-map
  * Centrally managed to ensure consistency across tests
  */
-export const ICON_BUTTON_SIZES: ReadonlyArray<'sm' | 'md' | 'lg' | 'toolbar'> = [
-  'sm',
-  'md',
-  'lg',
-  'toolbar',
-] as const;
+const ALLOWED_ICON_SIZES = new Set<ButtonProps['size']>(['sm', 'md', 'lg', 'toolbar']);
 
 // ============================================================================
 // Type Definitions
@@ -83,13 +77,7 @@ export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly
  */
 export function IconButton({ size = 'md', ...props }: IconButtonProps): JSXElement {
   // Validate size is in allowed list, fallback to 'md'
-  const safeSize: IconButtonProps['size'] = ICON_BUTTON_SIZES.includes(
-    size as 'sm' | 'md' | 'lg' | 'toolbar'
-  )
-    ? size
-    : 'md';
+  const safeSize: IconButtonProps['size'] = size && ALLOWED_ICON_SIZES.has(size) ? size : 'md';
 
   return <Button {...props} variant='icon' size={safeSize} iconOnly />;
 }
-
-export default IconButton;
