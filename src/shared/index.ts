@@ -197,7 +197,6 @@ export {
 
 // Accessibility & DOM
 export {
-  imageFilter,
   rafThrottle,
   throttleScroll,
   createDebouncer,

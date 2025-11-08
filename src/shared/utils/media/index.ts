@@ -1,13 +1,3 @@
-// Image filtering utilities
-export {
-  imageFilter,
-  filterValidImages,
-  getDetailedFilterResults,
-  isValidTweetImage,
-  type FilterOptions,
-  type ImageFilterResult,
-} from './image-filter';
-
 // Media URL utilities (Phase 351: modularized exports)
 export {
   getHighQualityMediaUrl,

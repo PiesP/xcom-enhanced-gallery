@@ -63,9 +63,8 @@ export { getErrorMessage } from './error-handling';
 // === Events (1) ===
 export { addListener } from './events';
 
-// === Media (6) ===
+// === Media (5) ===
 export {
-  imageFilter,
   getHighQualityMediaUrl,
   detectMediaFromClick,
   findMediaAtCoordinates,
