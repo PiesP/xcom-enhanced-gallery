@@ -7,14 +7,13 @@
  * - Gallery initialization and lifecycle management
  * - Media service and renderer orchestration
  * - Event handler registration/cleanup
- * - User notification (Toast) management
+ * - User notification management via Tampermonkey
  */
 
 import type { GalleryRenderer } from '../../shared/interfaces/gallery.interfaces';
 import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
-  getToastManager,
 } from '../../shared/container/service-accessors';
 import {
   gallerySignals,
@@ -24,7 +23,7 @@ import {
 import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
-import { toastManager } from '../../shared/services/unified-toast-manager';
+import { NotificationService } from '@shared/services';
 import { initializeTheme } from './services/theme-initialization';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 
@@ -45,6 +44,7 @@ export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
   private isInitialized = false;
+  private readonly notificationService = NotificationService.getInstance();
   private readonly config: GalleryConfig = {
     autoTheme: true,
     keyboardShortcuts: true,
@@ -153,15 +153,13 @@ export class GalleryApp {
       const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
       if (!hasRequiredGMAPIs) {
         logger.warn(
-          '[GalleryApp] Tampermonkey APIs not available - gallery will display toast/error panel only'
+          '[GalleryApp] Tampermonkey APIs not available - gallery will display system notification only'
         );
-        // Initialize toast controller only and return
-        await // toast manager auto-initializes (singleton);
-        toastManager.show({
-          title: 'Tampermonkey not installed',
-          message: 'This app requires Tampermonkey or similar userscript manager.',
-          type: 'error',
-        });
+        // Notify user and abort initialization
+        void this.notificationService.error(
+          'Tampermonkey not installed',
+          'This app requires Tampermonkey or similar userscript manager.'
+        );
         this.isInitialized = false;
         return;
       }
@@ -179,15 +177,6 @@ export class GalleryApp {
         logger.debug('[GalleryApp] Theme initialization complete');
       } catch (error) {
         logger.warn('[GalleryApp] Theme initialization failed (non-critical):', error);
-      }
-
-      // Phase 415: Toast manager verification (singleton - auto-initializes)
-      try {
-        getToastManager(); // Verify toast manager is available
-        logger.debug('[GalleryApp] Toast manager verified');
-      } catch (error) {
-        logger.warn('[GalleryApp] Toast manager verification failed (non-critical):', error);
-        // Gallery continues even if toast manager is unavailable
       }
 
       await this.initializeRenderer();
@@ -236,19 +225,17 @@ export class GalleryApp {
                 success: result.success,
                 mediaCount: result.mediaItems.length,
               });
-              toastManager.show({
-                title: 'Failed to load media',
-                message: 'Could not find images or videos.',
-                type: 'error',
-              });
+              void this.notificationService.error(
+                'Failed to load media',
+                'Could not find images or videos.'
+              );
             }
           } catch (error) {
             logger.error('[GalleryApp] Error during media extraction:', error);
-            toastManager.show({
-              title: 'Error occurred',
-              message: error instanceof Error ? error.message : 'Unknown error',
-              type: 'error',
-            });
+            void this.notificationService.error(
+              'Error occurred',
+              error instanceof Error ? error.message : 'Unknown error'
+            );
           }
         },
         onGalleryClose: () => {
@@ -275,11 +262,10 @@ export class GalleryApp {
     // Phase 317: Environment guard - Check for Tampermonkey availability
     if (!this.isInitialized) {
       logger.warn('[GalleryApp] Gallery not initialized. Tampermonkey may not be installed.');
-      toastManager.show({
-        title: 'Gallery unavailable',
-        message: 'Tampermonkey or similar userscript manager is required.',
-        type: 'error',
-      });
+      void this.notificationService.error(
+        'Gallery unavailable',
+        'Tampermonkey or similar userscript manager is required.'
+      );
       return;
     }
 
@@ -299,11 +285,10 @@ export class GalleryApp {
       openGallery(mediaItems, validIndex);
     } catch (error) {
       logger.error('[GalleryApp] Failed to open gallery:', error);
-      toastManager?.show({
-        title: 'Failed to load gallery',
-        message: `${error instanceof Error ? error.message : 'Unknown error'}`,
-        type: 'error',
-      });
+      void this.notificationService.error(
+        'Failed to load gallery',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       throw error;
     }
   }

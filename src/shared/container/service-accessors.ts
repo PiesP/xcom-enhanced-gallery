@@ -49,14 +49,14 @@ import { SERVICE_KEYS } from '../../constants';
 // These throw if service not found. Use for guaranteed services.
 
 /**
- * Get toast manager for user notifications.
+ * Get notification manager for user alerts.
  *
- * @returns ToastManager for displaying UI notifications
- * @throws CoreService throws if toast service not registered
+ * @returns ToastManager delegating to Tampermonkey NotificationService
+ * @throws CoreService throws if notification service not registered
  *
  * @example
- * const toast = getToastManager();
- * toast.show({ message: 'Operation complete', type: 'success' });
+ * const notifications = getToastManager();
+ * notifications.success('Operation complete', 'Your media has been saved.');
  */
 export function getToastManager(): ToastManager {
   return CoreServiceRegistry.get<ToastManager>(SERVICE_KEYS.TOAST);
@@ -197,7 +197,7 @@ export function registerBaseService(key: string, service: unknown): void {
 /**
  * Pre-initialize critical services (best-effort, no error throwing).
  *
- * **Services**: MediaService, ToastManager
+ * **Services**: MediaService, NotificationService (via ToastManager proxy)
  * **Behavior**: Silently fails if service not available
  * **Use Case**: Eager initialization for performance (optional)
  */

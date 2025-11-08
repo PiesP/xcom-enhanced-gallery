@@ -12,18 +12,21 @@ describe('Phase 1: 디자인 토큰 계층화 (GREEN 테스트)', () => {
 
   test('primitive.css 파일이 존재해야 한다', async () => {
     // GREEN: 파일이 성공적으로 생성됨
+    // @ts-expect-error CSS module presence check only
     const primitiveModule = await import('@shared/styles/design-tokens.primitive.css');
     expect(primitiveModule).toBeDefined();
   });
 
   test('semantic.css 파일이 존재해야 한다', async () => {
     // GREEN: 파일이 성공적으로 생성됨
+    // @ts-expect-error CSS module presence check only
     const semanticModule = await import('@shared/styles/design-tokens.semantic.css');
     expect(semanticModule).toBeDefined();
   });
 
   test('component.css 파일이 존재해야 한다', async () => {
     // GREEN: 파일이 성공적으로 생성됨
+    // @ts-expect-error CSS module presence check only
     const componentModule = await import('@shared/styles/design-tokens.component.css');
     expect(componentModule).toBeDefined();
   });
@@ -64,16 +67,6 @@ const simulateFileContent = (filename: string) => {
       }
       .toolbarWrapper {
         background: rgba(0, 0, 0, 0.95); /* 하드코딩된 색상 */
-      }
-    `;
-  }
-
-  if (filename.includes('Toast.module.css')) {
-    return `
-      .toast {
-        padding: 12px 16px; /* 하드코딩된 값 */
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
     `;
   }
@@ -120,7 +113,6 @@ describe('Design Tokens System', () => {
 describe('CSS Modules Token Usage - 실제 하드코딩 검출', () => {
   const cssModulePaths = [
     'src/features/gallery/components/vertical-gallery-view/VerticalGalleryView.module.css',
-    'src/shared/components/ui/Toast/Toast.module.css',
     'src/shared/components/ui/Toolbar/Toolbar.module.css',
   ];
 
@@ -191,7 +183,6 @@ describe('디자인 토큰 적용 권장사항', () => {
       '--xeg-spacing-lg', // 24px
       '--xeg-hover-zone-height', // 120px 대체용
       '--xeg-scrollbar-width', // 8px 대체용
-      '--xeg-toast-offset', // 20px 대체용
     ];
 
     // 권장 토큰 구조 검증

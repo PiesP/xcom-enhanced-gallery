@@ -399,32 +399,9 @@ export { SettingsControls } from './Settings/index';
 export { SettingsControlsLazy } from './Settings/SettingsControlsLazy';
 
 /**
- * Toast Components
- * @description Notification components for transient messages
- *
- * **Toast**: Individual notification
- * - Types: success (green), error (red), warning (amber), info (blue)
- * - Duration: Auto-dismiss or manual
- * - Content: Message + optional icon
- *
- * **ToastContainer**: Aggregator and manager
- * - Position: Usually top-right
- * - Stacking: Multiple toasts stack vertically
- * - Animation: Slide in/out transitions
- *
- * **Usage Note**:
- * State-based functions (show, hide) provided by NotificationService only.
- * Components exported for composition and testing.
- *
- * @example
- * ```tsx
- * import { Toast, ToastContainer } from '@shared/components/ui';
- *
- * <ToastContainer>
- *   <Toast type="success">Operation completed!</Toast>
- *   <Toast type="error">Something went wrong</Toast>
- * </ToastContainer>
- * ```
+ * @deprecated Phase 420: Toast UI components removed in favor of Tampermonkey notifications.
+ * Exports remain for backward compatibility but render nothing.
+ * Prefer using {@link NotificationService} for all user notifications.
  */
 export { Toast } from './Toast/Toast';
 export { ToastContainer } from './Toast/ToastContainer';

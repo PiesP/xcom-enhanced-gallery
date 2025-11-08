@@ -28,7 +28,7 @@
  */
 
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { ToastManager } from '@shared/services/unified-toast-manager';
+import { NotificationService } from '@shared/services';
 import { languageService } from '@shared/services/language-service';
 
 /**
@@ -85,8 +85,8 @@ export function ErrorBoundary({ children }: Props): JSXElement {
       const body = languageService.getFormattedString('messages.errorBoundary.body', {
         error: err instanceof Error ? err.message : String(err),
       });
-      // Notify user with toast-only mode (no persistent UI)
-      ToastManager.getInstance().error(title, body, { route: 'toast-only' });
+      // Notify user with Tampermonkey notification
+      NotificationService.getInstance().error(title, body);
     } catch {
       // Silently ignore toast/language service failures
       // Error boundary must never crash due to notification failures

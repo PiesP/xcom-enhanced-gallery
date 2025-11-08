@@ -1,12 +1,11 @@
 /**
- * @fileoverview Unified Toast Manager
- * @description Single source of truth (SSOT) for toast state management
- * @version 2.0.0 - Phase 327: ToastController removal, simplicity first
+ * @fileoverview Toast Manager proxy
+ * @description Delegates all notifications to Tampermonkey NotificationService (Toast UI deprecated)
+ * @version 3.0.0 - Phase 420: Toast UI removal
  */
 
 import { logger } from '@shared/logging';
-import { ensurePoliteLiveRegion, ensureAssertiveLiveRegion } from '../utils/accessibility/index';
-import { createSignalSafe } from '../state/signals/signal-factory';
+import { NotificationService } from './notification-service';
 
 // 통합된 Toast 타입 정의
 export interface ToastItem {
@@ -26,33 +25,23 @@ export interface ToastOptions {
   duration?: number;
   actionText?: string;
   onAction?: () => void;
-  /**
-   * Routing override:
-   * - 'live-only': announce to live region only (no toast list)
-   * - 'toast-only': show toast only (no live region)
-   * - 'both': announce to live region and show toast
-   * If omitted, a default policy is applied (info/success → live-only, warning/error → toast-only).
-   */
+  /** @deprecated Phase 420: Toast UI removed, route option has no effect. */
   route?: 'live-only' | 'toast-only' | 'both';
 }
 
 /**
- * Unified Toast Manager class
+ * Toast Manager proxy class
  *
- * Integrates the Map-based state management from the existing ToastController.ts
- * and the signals-based state management from Toast.tsx to provide
- * a single source of truth (SSOT).
+ * Maintains backward-compatible API surface while delegating all work to
+ * Tampermonkey NotificationService.
  */
 export class ToastManager {
   private static instance: ToastManager | null = null;
-  private readonly toastsSignal = createSignalSafe<ToastItem[]>([]);
+  private readonly notificationService = NotificationService.getInstance();
   private toastIdCounter = 0;
-  private readonly subscribers = new Set<(toasts: ToastItem[]) => void>();
 
   private constructor() {
-    this.toastsSignal.subscribe(this.notifySubscribers.bind(this));
-
-    logger.debug('[ToastManager] Initialized');
+    logger.debug('[ToastManager] Initialized (delegating to NotificationService)');
   }
 
   /**
@@ -70,40 +59,18 @@ export class ToastManager {
    */
   public show(options: ToastOptions): string {
     const id = this.generateId();
-    const toast: ToastItem = {
-      id,
-      type: options.type ?? 'info',
+    const type = options.type ?? 'info';
+
+    const notificationOptions: Parameters<NotificationService['show']>[0] = {
       title: options.title,
-      message: options.message,
-      ...(options.duration !== undefined && { duration: options.duration }),
-      ...(options.actionText && { actionText: options.actionText }),
-      ...(options.onAction && { onAction: options.onAction }),
+      text: options.message,
+      ...(options.duration !== undefined ? { timeout: options.duration } : {}),
+      ...(options.onAction ? { onclick: options.onAction } : {}),
     };
 
-    // Routing policy with override
-    // Default routing: info/success → live-only, warning/error → toast-only
-    const defaultRoute: 'live-only' | 'toast-only' =
-      toast.type === 'warning' || toast.type === 'error' ? 'toast-only' : 'live-only';
-    const route = options.route ?? defaultRoute;
+    void this.notificationService.show(notificationOptions);
 
-    if (route === 'live-only' || route === 'both') {
-      this.announceToLiveRegion(toast);
-      logger.debug(
-        `[ToastManager] LiveRegion announce(${toast.type}): ${options.title} - ${options.message}`
-      );
-    }
-
-    if (route === 'toast-only' || route === 'both') {
-      const currentToasts = this.toastsSignal.value;
-      this.toastsSignal.value = [...currentToasts, toast];
-
-      logger.debug(`[ToastManager] Toast shown: ${options.title} - ${options.message}`);
-      // Manual notification for UI updates in environments without subscription API
-      this.notifySubscribers(this.toastsSignal.value);
-    }
-
-    // return id regardless of routing path
-    // Synchronize to legacy toast list (UI subscribes to Toast.tsx's toasts)
+    logger.debug(`[ToastManager] Delegated ${type} notification: ${options.title}`);
     return id;
   }
 
@@ -159,44 +126,30 @@ export class ToastManager {
    * Remove specific toast
    */
   public remove(id: string): void {
-    const currentToasts = this.toastsSignal.value;
-    const filteredToasts = currentToasts.filter(toast => toast.id !== id);
-
-    if (filteredToasts.length !== currentToasts.length) {
-      this.toastsSignal.value = filteredToasts;
-      logger.debug(`[ToastManager] Toast removed: ${id}`);
-      this.notifySubscribers(this.toastsSignal.value);
-    }
+    logger.debug(`[ToastManager] remove(${id}) noop – handled by NotificationService`);
   }
 
   /**
    * Remove all toasts
    */
   public clear(): void {
-    this.toastsSignal.value = [];
-    logger.debug('[ToastManager] All toasts removed');
-    this.notifySubscribers(this.toastsSignal.value);
+    logger.debug('[ToastManager] clear() noop – handled by NotificationService');
   }
 
   /**
    * Get current toast list
    */
   public getToasts(): ToastItem[] {
-    return this.toastsSignal.value;
+    return [];
   }
 
   /**
    * Subscribe to toast state changes
    */
   public subscribe(callback: (toasts: ToastItem[]) => void): () => void {
-    this.subscribers.add(callback);
-
-    // Deliver current state immediately
-    callback(this.getToasts());
-
-    // Return unsubscribe function
+    callback([]);
     return () => {
-      this.subscribers.delete(callback);
+      /* noop */
     };
   }
 
@@ -204,23 +157,34 @@ export class ToastManager {
    * Signal accessor for Preact signals integration
    */
   public get signal() {
-    return this.toastsSignal;
+    return {
+      get value() {
+        return [] as ToastItem[];
+      },
+      set value(_: ToastItem[]) {
+        logger.warn('[ToastManager] Direct state setting is not supported.');
+      },
+      subscribe(callback: (value: ToastItem[]) => void) {
+        callback([]);
+        return () => {
+          /* noop */
+        };
+      },
+    };
   }
 
   /**
    * Service initialization
    */
   public async init(): Promise<void> {
-    logger.debug('[ToastManager] Service initialization');
+    logger.debug('[ToastManager] Service initialization (noop)');
   }
 
   /**
    * Cleanup
    */
   public cleanup(): void {
-    this.clear();
-    this.subscribers.clear();
-    logger.debug('[ToastManager] Cleanup complete');
+    logger.debug('[ToastManager] Cleanup complete (noop)');
   }
 
   /**
@@ -233,35 +197,6 @@ export class ToastManager {
   /**
    * Notify subscribers of state changes
    */
-  private notifySubscribers(toasts: ToastItem[]): void {
-    this.subscribers.forEach(callback => {
-      try {
-        callback(toasts);
-      } catch (error) {
-        logger.warn('[ToastManager] Subscriber notification failed:', error);
-      }
-    });
-  }
-
-  /**
-   * Accessibility: Announce message to live region.
-   * Info/success use polite, error can use assertive.
-   */
-  private announceToLiveRegion(toast: ToastItem): void {
-    try {
-      const region =
-        toast.type === 'error' ? ensureAssertiveLiveRegion() : ensurePoliteLiveRegion();
-      // Update text node so screen readers can read the message
-      const text = document.createElement('div');
-      text.textContent = `${toast.title}: ${toast.message}`;
-      // Clear region and add new node
-      while (region.firstChild) region.removeChild(region.firstChild);
-      region.appendChild(text);
-    } catch {
-      // document may not exist in test/SSR environment – silently ignore
-    }
-  }
-
   /**
    * Initialize singleton instance (for testing)
    */
@@ -284,14 +219,17 @@ export const toastManager = ToastManager.getInstance();
  */
 export const toasts = {
   get value(): ToastItem[] {
-    return toastManager.getToasts();
+    return [];
   },
   set value(_: ToastItem[]) {
     // Direct setting is not allowed - changes must be made through manager methods
     logger.warn('[ToastManager] Direct state setting is not allowed. Use manager methods.');
   },
   subscribe(callback: (value: ToastItem[]) => void) {
-    return toastManager.subscribe(callback);
+    callback([]);
+    return () => {
+      /* noop */
+    };
   },
 };
 

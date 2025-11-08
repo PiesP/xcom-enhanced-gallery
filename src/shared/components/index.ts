@@ -13,8 +13,6 @@
  * ### UI Components (Phase 390+)
  * Low-level, reusable UI components with semantic styling
  * - **Button**: Semantic button with variants (primary, secondary, danger)
- * - **Toast**: Transient notification component
- * - **ToastContainer**: Toast aggregator and manager
  * - **Icon/LazyIcon**: SVG icon system with registry and lazy loading
  * - **ErrorBoundary**: Error handling wrapper component
  * - **Toolbar**: Gallery media control toolbar
@@ -25,7 +23,7 @@
  *
  * **Type Exports** (Phase 45+):
  * All component-specific types exported alongside components
- * - ButtonProps, ToastProps, ToolbarProps
+ * - ButtonProps, ToolbarProps
  * - IconProps, LazyIconProps
  * - GalleryContainerProps
  *
@@ -36,7 +34,7 @@
  * Shared Components (this barrel)
  *   ├─ UI Module (@/shared/components/ui)
  *   │  ├─ Primitives: Button, Icon, Panel
- *   │  ├─ Content: Toast, Toolbar
+ *   │  ├─ Content: Toolbar (Toast deprecated)
  *   │  ├─ Containers: ModalShell, ToolbarShell
  *   │  └─ Controls: ErrorBoundary
  *   └─ Layout Module (@/shared/components/isolation)
@@ -53,13 +51,13 @@
  *
  * **Recommended** (Named exports):
  * ```typescript
- * import { Button, Toast, Icon } from '@shared/components';
+ * import { Button, Icon } from '@shared/components';
  * ```
  *
  * **With Types**:
  * ```typescript
- * import { Button, Toast } from '@shared/components';
- * import type { ButtonProps, ToastProps } from '@shared/components';
+ * import { Button } from '@shared/components';
+ * import type { ButtonProps } from '@shared/components';
  * ```
  *
  * **Sub-module Access** (when needed):
@@ -75,7 +73,6 @@
  *
  * **All components**:
  * - Use design tokens: `--xeg-*` CSS variables
- * - Support light/dark mode automatically
  * - Semantic sizing: sm | md | lg | xl
  * - Semantic variants: primary | secondary | danger | success | warning | info
  * - Accessible by default: WCAG 2.1 AA
@@ -95,8 +92,6 @@
  * - danger: Destructive (red) - delete, warning
  * - success: Affirmative (green) - confirm
  * - warning: Caution (amber)
- * - info: Informational (blue)
- * - ghost: Transparent only
  *
  * ## Component Details
  *
@@ -109,19 +104,11 @@
  * - Accessibility: aria-label, focus ring, keyboard activation
  * - Usage: CTAs, navigation, form controls
  *
- * **Toast** (transient notification):
- * - Types: success (green), error (red), warning (amber), info (blue)
- * - Auto-dismiss or manual close
- * - ARIA roles: alert, status, log
- * - Content: title + message
+ * **NotificationService** (Tampermonkey bridge):
+ * - Handles success/error/info/warning alerts via GM_notification
+ * - Native OS notifications with optional timeout and click action
+ * - Replaces legacy Toast/ToastContainer UI components (now deprecated)
  * - Use: Status updates, confirmations, errors
- *
- * **ToastContainer** (notification aggregator):
- * - Positions: 9 corners/edges (top-left, top-center, etc.)
- * - Stacking: Multiple toasts with max limit
- * - Animations: Slide in/fade out
- * - Accessibility: Live region management
- * - Parent: Typically one per app (top-right)
  *
  * **Icon** (SVG registry):
  * - Registry-based lookup
@@ -250,47 +237,15 @@
 export { Button } from './ui/Button/Button';
 
 /**
- * Toast Component - Individual transient notification
- * @component Toast
- * @see {@link ./ui/Toast/Toast}
- *
- * **Features**:
- * - Types: success, error, warning, info (color-coded)
- * - Content: title + message
- * - Control: duration, autoClose, manual dismiss
- * - Accessibility: role (alert/status/log)
- *
- * @example
- * ```tsx
- * import { Toast } from '@shared/components';
- *
- * <Toast
- *   type="success"
- *   title="Download Complete"
- *   message="5 images saved"
- *   duration={3000}
- * />
- * ```
+/**
+ * @deprecated Phase 420: Toast UI removed in favor of Tampermonkey notifications.
+ * Exports remain for backward compatibility but render nothing.
  */
 export { Toast } from './ui/Toast/Toast';
 
 /**
- * ToastContainer Component - Notification aggregator and manager
- * @component ToastContainer
- * @see {@link ./ui/Toast/ToastContainer}
- *
- * **Features**:
- * - Stacking: Multiple toasts with max limit
- * - Positions: 9 corners/edges
- * - Animations: Slide in/fade out
- * - Management: Auto-dismiss, manual close
- *
- * @example
- * ```tsx
- * import { ToastContainer } from '@shared/components';
- *
- * <ToastContainer position="top-right" maxToasts={5} />
- * ```
+ * @deprecated Phase 420: Toast UI removed in favor of Tampermonkey notifications.
+ * Exports remain for backward compatibility but render nothing.
  */
 export { ToastContainer } from './ui/Toast/ToastContainer';
 
@@ -399,16 +354,12 @@ export { GalleryContainer } from './isolation/GalleryContainer';
 export type { ButtonProps } from './ui/Button/Button';
 
 /**
- * Toast Props Type - Configuration for Toast component
- * @typedef {Object} ToastProps
- * @see {@link ./ui/Toast/Toast}
+ * @deprecated Phase 420: Toast UI removed. Types retained for compatibility only.
  */
 export type { ToastProps } from './ui/Toast/Toast';
 
 /**
- * Toast Container Props Type - Configuration for ToastContainer component
- * @typedef {Object} ToastContainerProps
- * @see {@link ./ui/Toast/ToastContainer}
+ * @deprecated Phase 420: Toast container UI removed. Types retained for compatibility only.
  */
 export type { ToastContainerProps } from './ui/Toast/ToastContainer';
 

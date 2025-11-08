@@ -337,37 +337,8 @@ export interface StandardToastProps extends BaseComponentProps {
 
 /**
  * Standard Toast Container Props
- * @description Toast notification aggregator and manager configuration
- *
- * **Position Options**:
- * - top-left: Upper left corner
- * - top-right: Upper right corner (default)
- * - top-center: Top center
- * - bottom-left: Lower left corner
- * - bottom-right: Lower right corner
- * - bottom-center: Bottom center
- *
- * **Stacking Behavior**:
- * - Multiple toasts stack vertically
- * - maxToasts limits visible count
- * - Older toasts pushed out when limit reached
- * - Each toast still auto-dismisses independently
- *
- * **Semantics**:
- * Container manages the life cycle and layout of multiple toast notifications.
- * Typically one container per app (top-right corner is standard).
- * Animations (slide-in/fade-out) handled by container.
- *
- * **Example**:
- * ```typescript
- * const containerProps: StandardToastContainerProps = {
- *   position: 'top-right',
- *   maxToasts: 5,
- *   className: 'custom-toast-container',
- * };
- * ```
- *
- * @see {@link ./Toast/ToastContainer} - Container implementation
+ * @deprecated Phase 420: Toast container UI removed in favor of Tampermonkey notifications.
+ * Interface retained for backward compatibility only.
  */
 export interface StandardToastContainerProps extends BaseComponentProps {
   /** Maximum toasts to display simultaneously (default: 5) */

@@ -58,7 +58,7 @@ export {
   createFocusStateManagerService,
 } from './focus';
 
-// 6. Toast service - unified manager (Phase 327: ToastController removed)
+// 6. Notification bridge (Phase 420: Toast UI removed, Tampermonkey notifications only)
 export { toastManager, ToastManager } from './unified-toast-manager';
 export type { ToastOptions, ToastItem } from './unified-toast-manager';
 
