@@ -498,7 +498,7 @@ export type { SettingsModalProps } from './SettingsModal/SettingsModal';
  * ```
  */
 export { Toolbar } from './Toolbar/Toolbar.tsx';
-export type { ToolbarProps, GalleryToolbarProps, FitMode } from './Toolbar/Toolbar.types';
+export type { ToolbarProps, FitMode } from './Toolbar/Toolbar.types';
 
 /**
  * Error Boundary Component

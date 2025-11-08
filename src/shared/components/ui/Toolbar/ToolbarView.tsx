@@ -1,89 +1,3 @@
-/**
- * @fileoverview Toolbar Presentational Component (View)
- * @description Pure presentational component rendering complete toolbar UI
- *
- * @architecture
- * Split from ToolbarContainer to isolate rendering logic and improve testability.
- * All state and callbacks injected via props (container/presentational pattern).
- *
- * ## Layout Structure
- * - **Left Section**: Previous/Next navigation buttons
- * - **Center Section**: Media counter + progress bar (aria-live region)
- * - **Right Section**: Fit modes, downloads, settings, tweet, close buttons
- * - **Settings Panel**: Expandable theme/language controls (below toolbar)
- * - **Tweet Panel**: Expandable tweet text display with formatted links
- *
- * ## Key Features
- * - **No Local State**: All behavior via props from container (pure function)
- * - **Accessibility**: Full ARIA support (aria-live, aria-expanded, aria-label)
- * - **Responsive**: Sections collapse/expand based on toolbar state
- * - **Interactive Panels**: Settings and tweet panels mutually exclusive
- *
- * ## Rendering
- * - Navigation: Previous/Next buttons (disabled based on position)
- * - Counter: Displays (currentIndex + 1) / totalCount with live region updates
- * - Progress: Bar width = (currentIndex + 1) / totalCount * 100%
- * - Fit Modes: Maps over fitModeOrder array with icon mapping
- * - Downloads: Single always visible; bulk ZIP if totalCount > 1
- * - Settings: Only rendered if showSettingsButton true
- * - Tweet: Only rendered if tweetText provided; HTML or text fallback
- *
- * @performance
- * - **Fine-grain Reactivity**: Props not destructured (Solid.js optimization)
- * - **Lazy Rendering**: solid.Show for conditional sections (panels)
- * - **For Loops**: solid.For for fit mode buttons (efficient array rendering)
- * - **Memoized Callbacks**: All handlers pre-memoized from parent
- *
- * @dependencies
- * - Solid.js: getSolid(), Show, For, Switch, Match components
- * - Icons: ArrowSmallLeft, ArrowSmallRight, ArrowDownTray, ArrowDownOnSquareStack, Cog6Tooth, ArrowLeftOnRectangle, ChatBubbleLeftRight
- * - Components: IconButton (basic), SettingsControlsLazy (lazy loaded)
- * - Services: languageService for i18n strings
- * - Utils: formatTweetText, shortenUrl for tweet formatting
- * - Styling: Toolbar.module.css (CSS Modules with state selectors)
- *
- * @example
- * ```typescript
- * // Usage from ToolbarContainer
- * <ToolbarView
- *   currentIndex={currentIndex()}
- *   totalCount={totalCount()}
- *   toolbarClass={toolbarClass}
- *   toolbarState={toolbarState()}
- *   toolbarDataState={() => {
- *     if (downloading) return 'downloading';
- *     if (error) return 'error';
- *     return 'idle';
- *   }}
- *   navState={navState}
- *   displayedIndex={displayedIndex}
- *   progressWidth={progressWidth}
- *   fitModeOrder={FIT_MODE_ORDER}
- *   fitModeLabels={fitModeLabels}
- *   handleFitModeClick={handleFitModeClick}
- *   isFitDisabled={(mode) => disabled() || !onFitModeChange}
- *   onPreviousClick={onPreviousClick}
- *   onNextClick={onNextClick}
- *   onDownloadCurrent={onDownloadCurrent}
- *   onDownloadAll={onDownloadAll}
- *   onCloseClick={onCloseClick}
- *   settingsController={settingsController}
- *   showSettingsButton={!!onOpenSettings}
- *   isTweetPanelExpanded={isTweetPanelExpanded}
- *   toggleTweetPanelExpanded={toggleTweetPanelExpanded}
- *   tweetText={tweetContent()?.text}
- *   tweetTextHTML={tweetContent()?.html}
- * />
- * ```
- *
- * @notes
- * - Phase 87: Props accessed directly (no destructuring) for fine-grain Solid.js reactivity
- * - Settings/tweet panels managed by container (mutually exclusive)
- * - Tweet uses HTML rendering if available, falls back to formatted text nodes
- * - All strings Korean localization (TODO: integrate i18n service in Phase X)
- * - Data attributes (data-*) used for testing and CSS state selectors
- */
-
 import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
 import { IconButton } from '../Button/IconButton';
@@ -104,21 +18,9 @@ import type { ToolbarProps, FitMode } from './Toolbar.types';
 import type { ToolbarState } from '../../../hooks/use-toolbar-state';
 import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
 
-/** @type ThemeOption - Available theme options for settings controls */
-type ThemeOption = 'auto' | 'light' | 'dark';
+const solid = getSolid();
+const { Show, For, Switch, Match } = solid;
 
-/** @type LanguageOption - Available language options for settings controls */
-type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
-
-/**
- * @type ToolbarViewNavState
- * @description Navigation state determining button disable states
- * @property prevDisabled - Previous button disabled
- * @property nextDisabled - Next button disabled
- * @property canDownloadAll - Bulk download button visibility
- * @property downloadDisabled - Download button disabled
- * @property anyActionDisabled - Derived flag indicating any primary action is disabled
- */
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;
   readonly nextDisabled: boolean;
@@ -127,14 +29,57 @@ type ToolbarViewNavState = {
   readonly anyActionDisabled: boolean;
 };
 
-type TweetAnchorType = 'url' | 'mention' | 'hashtag' | 'cashtag';
+type FitModeDefinition = {
+  readonly mode: FitMode;
+  readonly Icon: (props: { size?: number }) => JSXElement;
+};
+
+type ToolbarViewBaseProps = Omit<
+  ToolbarProps,
+  | 'onPrevious'
+  | 'onNext'
+  | 'onDownloadCurrent'
+  | 'onDownloadAll'
+  | 'onClose'
+  | 'onOpenSettings'
+  | 'onFitOriginal'
+  | 'onFitWidth'
+  | 'onFitHeight'
+  | 'onFitContainer'
+>;
+
+export interface ToolbarViewProps extends ToolbarViewBaseProps {
+  readonly toolbarClass: () => string;
+  readonly toolbarState: ToolbarState;
+  readonly toolbarDataState: () => string;
+  readonly navState: () => ToolbarViewNavState;
+  readonly displayedIndex: () => number;
+  readonly progressWidth: () => string;
+  readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
+  readonly fitModeLabels: Record<FitMode, { label: string; title: string }>;
+  readonly handleFitModeClick: (mode: FitMode) => (event: MouseEvent) => void;
+  readonly isFitDisabled: (mode: FitMode) => boolean;
+  readonly onPreviousClick: (event: MouseEvent) => void;
+  readonly onNextClick: (event: MouseEvent) => void;
+  readonly onDownloadCurrent: (event: MouseEvent) => void;
+  readonly onDownloadAll: (event: MouseEvent) => void;
+  readonly onCloseClick: (event: MouseEvent) => void;
+  readonly settingsController: ToolbarSettingsControllerResult;
+  readonly showSettingsButton: boolean;
+  readonly isTweetPanelExpanded: () => boolean;
+  readonly toggleTweetPanelExpanded: () => void;
+}
+
+type TweetAnchorKind = 'url' | 'mention' | 'hashtag' | 'cashtag';
+
+type TweetTokenAccessor = () => { content: string; href: string };
 
 function renderTweetAnchor(
-  tokenAccessor: () => { content: string; href: string },
-  anchorType: TweetAnchorType,
-  displayOverride?: string
+  accessor: TweetTokenAccessor,
+  kind: TweetAnchorKind,
+  displayText?: string
 ): JSXElement {
-  const token = tokenAccessor();
+  const token = accessor();
 
   return (
     <a
@@ -142,181 +87,16 @@ function renderTweetAnchor(
       target='_blank'
       rel='noopener noreferrer'
       class={styles.tweetLink}
-      data-token-type={anchorType}
-      title={anchorType === 'url' ? token.href : token.content}
+      data-token-type={kind}
+      title={kind === 'url' ? token.href : token.content}
     >
-      {displayOverride ?? token.content}
+      {displayText ?? token.content}
     </a>
   );
 }
 
-/**
- * @type FitModeLabel
- * @description Localized fit mode button label
- * @property label - Aria-label string
- * @property title - Tooltip title
- */
-type FitModeLabel = {
-  readonly label: string;
-  readonly title: string;
-};
-
-/**
- * @type FitModeDefinition
- * @description Fit mode with icon component
- * @property mode - Fit mode identifier
- * @property Icon - Icon component factory
- */
-type FitModeDefinition = {
-  readonly mode: FitMode;
-  readonly Icon: (props: { size?: number }) => JSXElement;
-};
-
-/**
- * @type ToolbarViewBaseProps
- * @description Base toolbar props excluding event callbacks
- */
-type ToolbarViewBaseProps = Omit<
-  ToolbarProps,
-  'onPrevious' | 'onNext' | 'onDownloadCurrent' | 'onDownloadAll' | 'onClose' | 'onOpenSettings'
->;
-
-/**
- * @interface ToolbarViewProps
- * @description Complete props for ToolbarView presentational component
- *
- * Extends base props with:
- * - Reactive prop functions (signals/memos for reactivity)
- * - Event handler callbacks (pre-memoized)
- * - State controllers and configuration
- *
- * @section Reactive Props
- * Properties that are functions returning dynamic values (Solid.js signals/memos)
- *
- * @section Handlers
- * Pre-memoized callback functions from ToolbarContainer
- */
-
-export interface ToolbarViewProps extends ToolbarViewBaseProps {
-  // Reactive Props: Solid.js signals/memos returning dynamic values
-  /** @prop Reactive CSS class selector for root toolbar element */
-  readonly toolbarClass: () => string;
-
-  /** @prop Current toolbar state (downloading, error, highContrast, currentFitMode) */
-  readonly toolbarState: ToolbarState;
-
-  /** @prop Reactive data-state attribute: 'idle' | 'loading' | 'downloading' | 'error' */
-  readonly toolbarDataState: () => string;
-
-  /** @prop Reactive navigation button disable states */
-  readonly navState: () => ToolbarViewNavState;
-
-  /** @prop Reactive display index (0-based) for media counter */
-  readonly displayedIndex: () => number;
-
-  /** @prop Reactive progress bar width percentage (0-100%) */
-  readonly progressWidth: () => string;
-
-  /** @prop Ordered fit mode definitions for button rendering */
-  readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
-
-  /** @prop Fit mode localized labels (aria-label and title strings) */
-  readonly fitModeLabels: Record<FitMode, FitModeLabel>;
-
-  /** @prop Factory function returning click handler for specified fit mode */
-  readonly handleFitModeClick: (mode: FitMode) => (event: MouseEvent) => void;
-
-  /** @prop Check if fit mode button should be disabled */
-  readonly isFitDisabled: (mode: FitMode) => boolean;
-
-  // Event Handlers: Pre-memoized callbacks from ToolbarContainer
-  /** @handler Memoized callback for previous navigation button click */
-  readonly onPreviousClick: (event: MouseEvent) => void;
-
-  /** @handler Memoized callback for next navigation button click */
-  readonly onNextClick: (event: MouseEvent) => void;
-
-  /** @handler Memoized callback for single file download button */
-  readonly onDownloadCurrent: (event: MouseEvent) => void;
-
-  /** @handler Memoized callback for bulk ZIP download button */
-  readonly onDownloadAll: (event: MouseEvent) => void;
-
-  /** @handler Memoized callback for close button click */
-  readonly onCloseClick: (event: MouseEvent) => void;
-
-  // State Controllers & Config
-  /** @controller Settings panel controller (ref management, state, event handlers) */
-  readonly settingsController: ToolbarSettingsControllerResult;
-
-  /** @prop Whether to render the settings button (depends on onOpenSettings) */
-  readonly showSettingsButton: boolean;
-
-  /** @prop Reactive tweet panel expanded state */
-  readonly isTweetPanelExpanded: () => boolean;
-
-  /** @handler Toggle tweet panel expanded state */
-  readonly toggleTweetPanelExpanded: () => void;
-
-  /** @prop Plain text of tweet content (fallback if HTML not available) */
-  readonly tweetText?: string | undefined;
-
-  /** @prop Sanitized HTML of tweet content (preferred over tweetText) */
-  readonly tweetTextHTML?: string | undefined;
-}
-
-/**
- * @function ToolbarView
- * @description Pure presentational component rendering complete toolbar UI
- * All behavior controlled via injected props from ToolbarContainer
- *
- * @param props - ToolbarViewProps containing all display data and callbacks
- * @returns JSXElement - Complete toolbar DOM structure with nested panels
- *
- * @renderingFlow
- * 1. Toolbar root element with ARIA attributes and data-* state selectors
- * 2. Toolbar content wrapper: 3 horizontal sections (left/center/right)
- * 3. Left section: navigation buttons (previous/next)
- * 4. Center section: media counter + progress bar (aria-live region)
- * 5. Right section: fit modes, downloads, settings, tweet, close buttons
- * 6. Settings panel: expandable SettingsControlsLazy (theme/language)
- * 7. Tweet panel: expandable tweet text with HTML or formatted text
- *
- * @accessibility
- * - Root element: role="toolbar", aria-label, aria-disabled, aria-describedby
- * - Counter: aria-live="polite" for announcement of media changes
- * - Buttons: aria-label for descriptive text, title for tooltips
- * - Settings/Tweet: aria-expanded to indicate expand state
- * - Expandable buttons: aria-controls pointing to target panels
- * - Keyboard navigation: managed by settingsController.handleToolbarKeyDown
- *
- * @reactivityPattern
- * - Phase 87: Props accessed directly (not destructured) for fine-grain reactivity
- * - Solid.js Show/For/Switch for conditional/list rendering
- * - createMemo values (toolbarClass, displayedIndex, etc) trigger updates
- * - Data attributes sync with reactive values via signals
- *
- * @performance
- * - No internal state (all via props)
- * - Lazy loading: SettingsControlsLazy only loaded when settings expanded
- * - Memoized callbacks prevent unnecessary event handler creation
- * - CSS Modules for scoped styling (no global pollution)
- */
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  const solid = getSolid();
-
-  /**
-   * @memo isToolbarDisabled
-   * Checked directly from props each time to enable fine-grain reactivity.
-   * Prevents reactivity loss through state variables (Phase 87 pattern).
-   */
   const isToolbarDisabled = () => Boolean(props.disabled);
-
-  /**
-   * @memo isDownloading
-   * Track download state for loading spinner animation.
-   * Updated via props from container when download operation progresses.
-   */
   const isDownloading = () => Boolean(props.isDownloading);
 
   return (
@@ -341,7 +121,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
       onKeyDown={
         props.settingsController.handleToolbarKeyDown as unknown as
-          | ((event: Event) => void)
+          | ((event: KeyboardEvent) => void)
           | undefined
       }
     >
@@ -518,16 +298,16 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-gallery-element='settings-panel'
         onClick={props.settingsController.handlePanelClick}
       >
-        <solid.Show when={props.settingsController.isSettingsExpanded()}>
+        <Show when={props.settingsController.isSettingsExpanded()}>
           <SettingsControlsLazy
-            currentTheme={props.settingsController.currentTheme() as ThemeOption}
-            currentLanguage={props.settingsController.currentLanguage() as LanguageOption}
+            currentTheme={props.settingsController.currentTheme()}
+            currentLanguage={props.settingsController.currentLanguage()}
             onThemeChange={props.settingsController.handleThemeChange}
             onLanguageChange={props.settingsController.handleLanguageChange}
-            compact={true}
+            compact
             data-testid='settings-controls'
           />
-        </solid.Show>
+        </Show>
       </div>
 
       <div
@@ -539,7 +319,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         aria-labelledby='tweet-text-button'
         data-gallery-element='tweet-panel'
       >
-        <solid.Show when={props.isTweetPanelExpanded() && props.tweetText}>
+        <Show when={props.isTweetPanelExpanded() && props.tweetText}>
           <div class={styles.tweetPanelBody}>
             <div class={styles.tweetHeader}>
               <span class={styles.tweetLabel}>
@@ -547,48 +327,42 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               </span>
             </div>
             <div class={styles.tweetContent}>
-              <solid.Show
+              <Show
                 when={props.tweetTextHTML}
                 fallback={
-                  <solid.For each={formatTweetText(props.tweetText)}>
+                  <For each={formatTweetText(props.tweetText ?? '')}>
                     {token => (
-                      <solid.Switch>
-                        <solid.Match when={token.type === 'link' && token}>
-                          {linkToken => {
-                            return renderTweetAnchor(
-                              linkToken,
-                              'url',
-                              shortenUrl(linkToken().content, 40)
-                            );
-                          }}
-                        </solid.Match>
-                        <solid.Match when={token.type === 'mention' && token}>
+                      <Switch>
+                        <Match when={token.type === 'link' && token}>
+                          {linkToken =>
+                            renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))
+                          }
+                        </Match>
+                        <Match when={token.type === 'mention' && token}>
                           {mentionToken => renderTweetAnchor(mentionToken, 'mention')}
-                        </solid.Match>
-                        <solid.Match when={token.type === 'hashtag' && token}>
+                        </Match>
+                        <Match when={token.type === 'hashtag' && token}>
                           {hashtagToken => renderTweetAnchor(hashtagToken, 'hashtag')}
-                        </solid.Match>
-                        <solid.Match when={token.type === 'cashtag' && token}>
+                        </Match>
+                        <Match when={token.type === 'cashtag' && token}>
                           {cashtagToken => renderTweetAnchor(cashtagToken, 'cashtag')}
-                        </solid.Match>
-                        <solid.Match when={token.type === 'break'}>
+                        </Match>
+                        <Match when={token.type === 'break'}>
                           <br />
-                        </solid.Match>
-                        <solid.Match when={token.type === 'text' && token}>
+                        </Match>
+                        <Match when={token.type === 'text' && token}>
                           {textToken => <span>{textToken().content}</span>}
-                        </solid.Match>
-                      </solid.Switch>
+                        </Match>
+                      </Switch>
                     )}
-                  </solid.For>
+                  </For>
                 }
               >
-                {/* Phase 2: Render sanitized HTML from DOM (already safe) */}
-                {/* @ts-expect-error - innerHTML requires non-undefined, but Show ensures tweetTextHTML is truthy */}
-                <div innerHTML={props.tweetTextHTML} />
-              </solid.Show>
+                <div innerHTML={props.tweetTextHTML ?? ''} />
+              </Show>
             </div>
           </div>
-        </solid.Show>
+        </Show>
       </div>
     </div>
   );
