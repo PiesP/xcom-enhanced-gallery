@@ -6,15 +6,15 @@ import {
   cleanupGalleryEvents as _cleanupGalleryEvents,
   updateGalleryEventOptions as _updateGalleryEventOptions,
   getGalleryEventSnapshot as _getGalleryEventSnapshot,
-} from './events/lifecycle';
+} from './events/lifecycle/gallery-lifecycle';
 import {
   addListener,
   removeEventListenerManaged,
   removeEventListenersByContext,
   removeAllEventListeners,
   getEventListenerStatus,
-} from './events/core';
-import type { EventContext, EventHandlers, GalleryEventOptions } from './events/core';
+} from './events/core/listener-manager';
+import type { EventContext, EventHandlers, GalleryEventOptions } from './events/core/event-context';
 // Phase 420.3: Import listener profiler for diagnostics
 
 // Re-export core functions and types for backward compatibility

@@ -32,7 +32,7 @@ export type {
 // ===== Layer Exports =====
 
 // Validation Layer (Phase 351.3) ✅
-export { isValidMediaUrl } from './validation';
+export { isValidMediaUrl } from './validation/url-validator';
 
 // Classification Layer (Phase 351.4) ✅
 export {
@@ -40,23 +40,25 @@ export {
   isEmojiUrl,
   isVideoThumbnailUrl,
   shouldIncludeMediaUrl,
-} from './classification';
+} from './classification/url-classifier';
 
 // Transformation Layer (Phase 351.5) ✅
 export {
   extractOriginalImageUrl,
   canExtractOriginalImage,
+} from './transformation/image-transformer';
+export {
   extractOriginalVideoUrl,
   canExtractOriginalVideo,
-  convertThumbnailToVideoUrl,
   extractVideoIdFromThumbnail,
-} from './transformation';
+  convertThumbnailToVideoUrl,
+} from './transformation/video-transformer';
 
 // Quality Layer (Phase 351.6) ✅
-export { getHighQualityMediaUrl } from './quality';
+export { getHighQualityMediaUrl } from './quality/quality-selector';
 
 // Factory Layer (Phase 351.7) ✅
-export { cleanFilename } from './factory';
+export { cleanFilename } from './factory/filename-utils';
 
 // Note: Extraction layer will be added when needed
 // Currently getMediaUrlsFromTweet stays in legacy location for compatibility
@@ -67,27 +69,25 @@ export { cleanFilename } from './factory';
 //   isEmojiUrl,
 //   isVideoThumbnailUrl,
 //   shouldIncludeMediaUrl,
-// } from './classification';
+// } from './classification/url-classifier';
 
 // Transformation Layer (Phase 351.5)
 // export {
 //   extractOriginalImageUrl,
 //   canExtractOriginalImage,
+// } from './transformation/image-transformer';
+// export {
 //   extractOriginalVideoUrl,
 //   canExtractOriginalVideo,
 //   convertThumbnailToVideoUrl,
 //   extractVideoIdFromThumbnail,
-// } from './transformation';
+// } from './transformation/video-transformer';
 
 // Quality Layer (Phase 351.6)
-// export { getHighQualityMediaUrl } from './quality';
+// export { getHighQualityMediaUrl } from './quality/quality-selector';
 
 // Factory Layer (Phase 351.7)
-// export {
-//   createMediaInfoFromImage,
-//   createMediaInfoFromVideo,
-//   cleanFilename,
-// } from './factory';
+// export { cleanFilename } from './factory/filename-utils';
 
 // Extraction Layer (Phase 351.8)
 // export { getMediaUrlsFromTweet } from './extraction';
