@@ -136,7 +136,7 @@ src/shared/utils/events/
 #### 구현 확인
 
 ```
-✅ 배치 실행 스크립트: scripts/run-unit-tests-batched.js (561줄)
+✅ 배치 실행 스크립트: scripts/run-unit-tests-batched.ts (~200줄, TS 포팅)
 ✅ 자동 테스트 발견: 332개 파일 수집
 ✅ 직렬 실행: Node.js 22 EPIPE 버그 우회
 ✅ npm 스크립트 추가: "test:unit:batched"

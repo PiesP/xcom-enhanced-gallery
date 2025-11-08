@@ -1,9 +1,6 @@
 #!/usr/bin/env node
 /**
- * Run all test projects sequentially with aggregated exit code
- * - Replaces bash-based scripts/run-all-tests.sh (Node-only policy)
- * - Provides --dry or --list to preview without executing
- * - Prints clear pass/fail for each suite and final summary
+ * Run all test projects sequentially with aggregated exit code.
  */
 
 import { spawnSync } from 'node:child_process';
@@ -11,7 +8,12 @@ import { spawnSync } from 'node:child_process';
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry') || args.includes('--dry-run') || args.includes('--list');
 
-const tests = [
+interface TestCommand {
+  name: string;
+  cmd: [string, string[]];
+}
+
+const tests: TestCommand[] = [
   { name: 'smoke tests', cmd: ['npm', ['run', 'test:smoke']] },
   { name: 'unit tests', cmd: ['npm', ['run', 'test:unit']] },
   { name: 'style tests', cmd: ['npm', ['run', 'test:styles']] },
@@ -21,16 +23,16 @@ const tests = [
   { name: 'browser tests', cmd: ['npm', ['run', 'test:browser']] },
 ];
 
-function runOne(name, command, args) {
+function runOne(name: string, command: string, commandArgs: string[]): boolean {
   console.log('');
   console.log(`📍 Running ${name}...`);
 
   if (isDryRun) {
-    console.log(`ℹ️  Dry-run: ${[command, ...args].join(' ')}`);
+    console.log(`ℹ️  Dry-run: ${[command, ...commandArgs].join(' ')}`);
     return true;
   }
 
-  const res = spawnSync(command, args, { stdio: 'inherit', shell: true });
+  const res = spawnSync(command, commandArgs, { stdio: 'inherit', shell: true });
   const ok = res.status === 0;
   if (ok) {
     console.log(`✅ ${name} passed`);
@@ -40,14 +42,14 @@ function runOne(name, command, args) {
   return ok;
 }
 
-function main() {
+function main(): void {
   console.log('🧪 Running all tests...');
 
   let exitCode = 0;
-  for (const t of tests) {
-    const [cmd, a] = t.cmd;
-    const ok = runOne(t.name, cmd, a);
-    if (!ok) exitCode = 1; // continue running others
+  for (const test of tests) {
+    const [cmd, commandArgs] = test.cmd;
+    const ok = runOne(test.name, cmd, commandArgs);
+    if (!ok) exitCode = 1;
   }
 
   console.log('');

@@ -2013,14 +2013,14 @@ Node.js 22의 child_process IPC 버그로 인한 Vitest EPIPE 에러를 **배치
 
 **솔루션**:
 
-- 배치 실행 스크립트 구현 (`scripts/run-unit-tests-batched.js`)
+- 배치 실행 스크립트 구현 (`scripts/run-unit-tests-batched.ts`)
 - 테스트 파일 자동 발견 및 분할
 - 직렬 실행 + 배치 간 워커 클린업
 - EPIPE 에러 0건 달성
 
 ### 스크립트 상세
 
-**파일**: `scripts/run-unit-tests-batched.js` (561줄)
+**파일**: `scripts/run-unit-tests-batched.ts` (~200줄, TypeScript 변환)
 
 **기능**:
 
@@ -2028,7 +2028,7 @@ Node.js 22의 child_process IPC 버그로 인한 Vitest EPIPE 에러를 **배치
    파일 수집
 2. **배치 분할**: 설정 가능한 크기로 분할 (기본값: 20개/배치)
 3. **직렬 실행**: 각 배치를 순차적으로 실행 (EPIPE 방지)
-4. **자동 클린업**: 배치 간 `cleanup-vitest-workers.js` 실행
+4. **자동 클린업**: 배치 간 `cleanup-vitest-workers.ts` 실행
 5. **진행 상황 보고**: 배치별 성공/실패 표시
 6. **결과 집계**: 전체 통계 및 실패 배치 목록
 
@@ -2080,7 +2080,7 @@ npm run test:unit:batched -- --verbose
 ```json
 {
   "scripts": {
-    "test:unit:batched": "node ./scripts/run-unit-tests-batched.js"
+    "test:unit:batched": "tsx ./scripts/run-unit-tests-batched.ts"
   }
 }
 ```
@@ -2114,7 +2114,7 @@ npm run test:unit:batched -- --verbose
 3. 각 배치 실행:
    a. Vitest 실행 (지정된 파일들)
    b. 결과 기록 (성공/실패)
-   c. Worker 클린업 (cleanup-vitest-workers.js)
+  c. Worker 클린업 (cleanup-vitest-workers.ts)
 4. 전체 결과 집계 및 출력
 5. 종료 코드 반환 (실패 시 1)
 ```

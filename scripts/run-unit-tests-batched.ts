@@ -4,27 +4,7 @@
  * Batched Unit Test Runner with Automatic Cleanup
  *
  * @description Runs unit tests in small batches to avoid EPIPE errors
- * @usage node scripts/run-unit-tests-batched.js [options]
- *
- * @options
- * --batch-size=N    Number of test files per batch (default: 20)
- * --memory=N        Memory allocation in MB (default: 3072)
- * --fail-fast       Stop on first batch failure (default: false)
- * --pattern=GLOB    Test file pattern (default: test/unit/**\/*.{test,spec}.{ts,tsx})
- * --verbose         Show detailed output
- *
- * @example
- * node scripts/run-unit-tests-batched.js
- * node scripts/run-unit-tests-batched.js --batch-size=10
- * node scripts/run-unit-tests-batched.js --fail-fast --verbose
- *
- * @features
- * - Automatic test file discovery
- * - Configurable batch size
- * - Worker cleanup between batches
- * - Progress reporting
- * - Failure summary
- * - EPIPE error mitigation
+ * @usage node scripts/run-unit-tests-batched.ts [options]
  */
 
 import { spawnSync } from 'node:child_process';
@@ -38,14 +18,14 @@ const PROJECT_ROOT = resolve(__dirname, '..');
 
 // Parse command-line arguments
 const args = process.argv.slice(2);
-const getArg = (name, defaultValue) => {
-  const arg = args.find(a => a.startsWith(`--${name}=`));
+const getArg = (name: string, defaultValue: string): string => {
+  const arg = args.find(entry => entry.startsWith(`--${name}=`));
   return arg ? arg.split('=')[1] : defaultValue;
 };
-const hasFlag = name => args.includes(`--${name}`);
+const hasFlag = (name: string): boolean => args.includes(`--${name}`);
 
-const BATCH_SIZE = parseInt(getArg('batch-size', '20'), 10);
-const MEMORY = parseInt(getArg('memory', '3072'), 10);
+const BATCH_SIZE = Number.parseInt(getArg('batch-size', '20'), 10);
+const MEMORY = Number.parseInt(getArg('memory', '3072'), 10);
 const FAIL_FAST = hasFlag('fail-fast');
 const VERBOSE = hasFlag('verbose');
 const PATTERN = getArg('pattern', 'test/unit/**/*.{test,spec}.{ts,tsx}');
@@ -60,11 +40,11 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 console.log('\n💡 Tip: Use --verbose to see detailed output');
 console.log('💡 Tip: Use --batch-size=10 for safer execution');
 console.log('💡 Tip: Use --monitor-memory to track memory usage');
-console.log('💡 Tip: See run-unit-tests-batched-enhanced.js for advanced options');
+console.log('💡 Tip: See run-unit-tests-batched-enhanced.ts for advanced options');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
 // Discover test files
-async function discoverTestFiles() {
+async function discoverTestFiles(): Promise<string[]> {
   console.log('🔍 Discovering test files...');
 
   const files = await glob(PATTERN, {
@@ -84,21 +64,21 @@ async function discoverTestFiles() {
 }
 
 // Split files into batches
-function createBatches(files, batchSize) {
-  const batches = [];
-  for (let i = 0; i < files.length; i += batchSize) {
-    batches.push(files.slice(i, i + batchSize));
+function createBatches(files: string[], batchSize: number): string[][] {
+  const batches: string[][] = [];
+  for (let index = 0; index < files.length; index += batchSize) {
+    batches.push(files.slice(index, index + batchSize));
   }
   return batches;
 }
 
 // Run cleanup script
-function runCleanup() {
+function runCleanup(): boolean {
   if (VERBOSE) {
     console.log('🧹 Running worker cleanup...');
   }
 
-  const result = spawnSync('node', ['./scripts/cleanup-vitest-workers.js'], {
+  const result = spawnSync('tsx', ['./scripts/cleanup-vitest-workers.ts'], {
     cwd: PROJECT_ROOT,
     stdio: VERBOSE ? 'inherit' : 'pipe',
     encoding: 'utf8',
@@ -107,8 +87,13 @@ function runCleanup() {
   return result.status === 0;
 }
 
+interface BatchResult {
+  success: boolean;
+  exitCode: number | null;
+}
+
 // Run a single batch
-function runBatch(batch, batchIndex, totalBatches) {
+function runBatch(batch: string[], batchIndex: number, totalBatches: number): BatchResult {
   const batchNum = batchIndex + 1;
   console.log(`\n📊 Batch ${batchNum}/${totalBatches} (${batch.length} files)`);
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -118,7 +103,6 @@ function runBatch(batch, batchIndex, totalBatches) {
     console.log('');
   }
 
-  // Build Vitest command with specific file patterns
   const testPatterns = batch.map(file => relative(PROJECT_ROOT, file)).join(' ');
 
   const result = spawnSync(
@@ -147,13 +131,17 @@ function runBatch(batch, batchIndex, totalBatches) {
   return { success, exitCode: result.status };
 }
 
+interface SummaryResult extends BatchResult {
+  batchNum: number;
+  fileCount: number;
+}
+
 // Main execution
-async function main() {
+async function main(): Promise<void> {
   const startTime = Date.now();
-  const results = [];
+  const results: SummaryResult[] = [];
 
   try {
-    // Discover test files
     const files = await discoverTestFiles();
 
     if (files.length === 0) {
@@ -161,40 +149,33 @@ async function main() {
       process.exit(0);
     }
 
-    // Create batches
     const batches = createBatches(files, BATCH_SIZE);
     console.log(`📦 Created ${batches.length} batches\n`);
 
-    // Run each batch
-    for (let i = 0; i < batches.length; i++) {
-      const batch = batches[i];
+    for (let index = 0; index < batches.length; index += 1) {
+      const batch = batches[index];
 
-      // Run cleanup before each batch (except first)
-      if (i > 0) {
+      if (index > 0) {
         console.log('');
         runCleanup();
       }
 
-      // Run batch
-      const result = runBatch(batch, i, batches.length);
+      const result = runBatch(batch, index, batches.length);
       results.push({
-        batchNum: i + 1,
+        batchNum: index + 1,
         fileCount: batch.length,
         ...result,
       });
 
-      // Fail-fast mode
       if (!result.success && FAIL_FAST) {
         console.log('\n⚠️  Fail-fast enabled, stopping execution');
         break;
       }
     }
 
-    // Final cleanup
     console.log('\n🧹 Final cleanup...');
     runCleanup();
 
-    // Print summary
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000).toFixed(2);
 
@@ -203,9 +184,9 @@ async function main() {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const totalBatches = results.length;
-    const passedBatches = results.filter(r => r.success).length;
-    const failedBatches = results.filter(r => !r.success).length;
-    const totalFiles = results.reduce((sum, r) => sum + r.fileCount, 0);
+    const passedBatches = results.filter(result => result.success).length;
+    const failedBatches = results.filter(result => !result.success).length;
+    const totalFiles = results.reduce((sum, result) => sum + result.fileCount, 0);
 
     console.log(`⏱️  Duration: ${duration}s`);
     console.log(`📦 Total batches: ${totalBatches}`);
@@ -216,15 +197,14 @@ async function main() {
     if (failedBatches > 0) {
       console.log('\n❌ Failed batches:');
       results
-        .filter(r => !r.success)
-        .forEach(r => {
-          console.log(`   - Batch ${r.batchNum} (exit code: ${r.exitCode})`);
+        .filter(result => !result.success)
+        .forEach(result => {
+          console.log(`   - Batch ${result.batchNum} (exit code: ${result.exitCode})`);
         });
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-    // Exit with appropriate code
     const exitCode = failedBatches > 0 ? 1 : 0;
     process.exit(exitCode);
   } catch (error) {

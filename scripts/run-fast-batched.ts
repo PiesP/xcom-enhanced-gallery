@@ -6,18 +6,18 @@
  */
 import { spawnSync } from 'node:child_process';
 
-const vitestBaseArgs = ['vitest', '--project', 'fast', 'run', '--reporter=dot'];
+const vitestBaseArgs: string[] = ['vitest', '--project', 'fast', 'run', '--reporter=dot'];
 
 // Use sharding to split the fast project into N sequential shards
 const SHARDS = 4;
-const shards = Array.from({ length: SHARDS }, (_, i) => `${i + 1}/${SHARDS}`);
+const shards: string[] = Array.from({ length: SHARDS }, (_, index) => `${index + 1}/${SHARDS}`);
 
-function run(cmd, args) {
-  const res = spawnSync(cmd, args, { stdio: 'inherit', shell: true, env: process.env });
-  return res.status === 0;
+function run(command: string, args: string[]): boolean {
+  const result = spawnSync(command, args, { stdio: 'inherit', shell: true, env: process.env });
+  return result.status === 0;
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('🧪 Running fast tests in batches...');
   let exitCode = 0;
   for (const shard of shards) {

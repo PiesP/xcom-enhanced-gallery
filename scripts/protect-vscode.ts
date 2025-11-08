@@ -1,28 +1,12 @@
 #!/usr/bin/env node
 /**
- * VS Code Server Comprehensive Protection Script
- * Purpose: Protect VS Code Server processes from OOM Killer
- *
- * Features:
- * 1. OOM Score adjustment (-500 setting, strong protection)
- * 2. Nice value adjustment (-5 setting, high CPU priority)
- * 3. Swap setting verification and recommendations
- * 4. Memory state monitoring
- *
- * Note: OOM Score/Nice adjustment requires sudo privileges
- *
- * Advantages:
- * - Cross-platform compatible (Linux/WSL)
- * - Improved error handling
- * - Detailed logging
- * - Easy npm script integration
+ * VS Code Server Comprehensive Protection Script.
  */
 
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { freemem, totalmem } from 'node:os';
 
-// ANSI color codes
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
@@ -30,19 +14,15 @@ const colors = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   cyan: '\x1b[36m',
-};
+} as const;
 
-/**
- * Print colored message
- */
-function log(message, color = 'reset') {
+type ColorKey = keyof typeof colors;
+
+function log(message: string, color: ColorKey = 'reset'): void {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-/**
- * Execute command and return output (ignore errors)
- */
-function execSafe(command) {
+function execSafe(command: string): string {
   try {
     return execSync(command, { encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
@@ -50,10 +30,7 @@ function execSafe(command) {
   }
 }
 
-/**
- * Read file (ignore errors)
- */
-function readFileSafe(path) {
+function readFileSafe(path: string): string | null {
   try {
     return readFileSync(path, 'utf-8').trim();
   } catch {
@@ -61,10 +38,7 @@ function readFileSafe(path) {
   }
 }
 
-/**
- * Write file (using sudo)
- */
-function writeFileWithSudo(path, content) {
+function writeFileWithSudo(path: string, content: string): boolean {
   try {
     execSync(`echo ${content} | sudo tee ${path}`, { stdio: 'pipe' });
     return true;
@@ -73,34 +47,22 @@ function writeFileWithSudo(path, content) {
   }
 }
 
-/**
- * Get VS Code Server main process PID
- */
-function getVSCodeServerPids() {
+function getVSCodeServerPids(): string[] {
   const output = execSafe('pgrep -f "server-main.js"');
   return output ? output.split('\n').filter(Boolean) : [];
 }
 
-/**
- * Get all VS Code Server process PIDs
- */
-function getAllVSCodePids() {
+function getAllVSCodePids(): string[] {
   const output = execSafe('pgrep -f "vscode-server"');
   return output ? output.split('\n').filter(Boolean) : [];
 }
 
-/**
- * Format memory size
- */
-function formatMemory(bytes) {
+function formatMemory(bytes: number): string {
   const gb = bytes / 1024 / 1024 / 1024;
   return `${gb.toFixed(1)}GB`;
 }
 
-/**
- * Adjust OOM Score
- */
-function adjustOOMScore() {
+function adjustOOMScore(): void {
   console.log('[1/4] Adjusting OOM Score...');
 
   const pids = getVSCodeServerPids();
@@ -124,7 +86,6 @@ function adjustOOMScore() {
       continue;
     }
 
-    // Attempt OOM Score adjustment
     if (writeFileWithSudo(oomScorePath, '-500')) {
       log(`  ✓ Protected PID ${pid} (OOM Score: ${currentScore} → -500)`, 'green');
     } else {
@@ -133,10 +94,7 @@ function adjustOOMScore() {
   }
 }
 
-/**
- * Adjust process priority
- */
-function adjustNiceValue() {
+function adjustNiceValue(): void {
   console.log('\n[2/4] Adjusting process priority...');
 
   const pids = getAllVSCodePids();
@@ -150,7 +108,7 @@ function adjustNiceValue() {
   for (const pid of pids) {
     const result = execSafe(`sudo renice -n -5 -p ${pid}`);
     if (result) {
-      protectedCount++;
+      protectedCount += 1;
     }
   }
 
@@ -161,10 +119,7 @@ function adjustNiceValue() {
   }
 }
 
-/**
- * Check swap settings
- */
-function checkSwapSettings() {
+function checkSwapSettings(): void {
   console.log('\n[3/4] Checking swap settings...');
 
   const swappiness = readFileSafe('/proc/sys/vm/swappiness');
@@ -176,7 +131,7 @@ function checkSwapSettings() {
 
   console.log(`  Current swappiness: ${swappiness}`);
 
-  if (parseInt(swappiness, 10) > 10) {
+  if (Number.parseInt(swappiness, 10) > 10) {
     log('  ⚠ Swappiness is high (recommend: 10)', 'yellow');
     console.log('  To apply: sudo sysctl vm.swappiness=10');
     console.log('  Permanent: echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf');
@@ -185,10 +140,7 @@ function checkSwapSettings() {
   }
 }
 
-/**
- * Check memory usage
- */
-function checkMemoryUsage() {
+function checkMemoryUsage(): void {
   console.log('\n[4/4] Checking memory usage...');
   console.log('  Current memory status:');
 
@@ -218,10 +170,7 @@ function checkMemoryUsage() {
   }
 }
 
-/**
- * Main execution function
- */
-function main() {
+function main(): number {
   if (process.platform !== 'linux') {
     log('ℹ️  VS Code Server protection is Linux-specific; skipping on this OS.', 'yellow');
     return 0;
@@ -241,11 +190,11 @@ function main() {
 
     return 0;
   } catch (error) {
-    log(`\n❌ Error: ${error.message}`, 'red');
+    const err = error as Error;
+    log(`\n❌ Error: ${err.message}`, 'red');
     console.error(error);
     return 1;
   }
 }
 
-// Execute script
 process.exit(main());

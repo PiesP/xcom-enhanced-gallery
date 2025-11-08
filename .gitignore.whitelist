@@ -81,16 +81,18 @@
 
 # === Scripts (공용 스크립트만) ===
 !scripts/
-!scripts/validate-build.js
 !scripts/validate-build.ts
-!scripts/check-codeql.js
-!scripts/cleanup-vitest-workers.js
-!scripts/generate-dep-graph.js
-!scripts/maintenance-check.js
-!scripts/protect-vscode.js
-!scripts/run-all-tests.js
-!scripts/run-fast-batched.js
-!scripts/run-vitest-project.js
+!scripts/analyze-solid-apis.ts
+!scripts/apply-test-isolation.ts
+!scripts/cleanup-vitest-workers.ts
+!scripts/generate-dep-graph.ts
+!scripts/maintenance-check.ts
+!scripts/protect-vscode.ts
+!scripts/run-all-tests.ts
+!scripts/run-fast-batched.ts
+!scripts/run-unit-tests-batched.ts
+!scripts/run-vitest-project.ts
+!scripts/test-perplexity-api.ts
 
 # === Git Configuration (필수) ===
 !.git

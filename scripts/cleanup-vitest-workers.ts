@@ -2,84 +2,56 @@
 /**
  * Vitest Worker Process Auto Cleanup Script
  *
- * @description Automatically terminates orphaned Vitest worker processes to free memory
- * @usage Runs automatically after tests or manually via 'npm run test:cleanup'
- *
- * @benefits
- * - Cross-platform compatible (Windows, Linux, macOS)
- * - Improved error handling
- * - Easy npm script integration
- * - Project-wide consistency (all scripts use JavaScript)
+ * Automatically terminates orphaned Vitest worker processes to free memory.
  */
 
 import { execSync } from 'node:child_process';
 import { freemem, totalmem } from 'node:os';
 
-// ANSI 색상 코드
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
-};
+} as const;
 
-/**
- * Print colored console message
- */
-function log(message, color = 'reset') {
+type ColorKey = keyof typeof colors;
+type KillSignal = 'SIGTERM' | 'SIGKILL';
+
+function log(message: string, color: ColorKey = 'reset'): void {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
-/**
- * Execute command safely and return output (ignore errors)
- */
-function execSafe(command) {
+function execSafe(command: string): string {
   try {
     return execSync(command, { encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
-    // If pgrep doesn't find the process, it returns exit code 1.
-    // This is normal behavior, so we return an empty string.
     return '';
   }
 }
 
-/**
- * Get list of Vitest worker process PIDs
- */
-function getVitestWorkerPids() {
-  // Use ps aux to find only exact processes.
-  // Use [v]itest pattern to prevent grep from matching itself.
+function getVitestWorkerPids(): string[] {
   const output = execSafe('ps aux | grep "[v]itest/dist/workers/forks.js" | awk \'{print $2}\'');
   if (!output) return [];
-
   return output.split('\n').filter(Boolean);
 }
 
-/**
- * Check if a process is alive
- */
-function isProcessAlive(pid) {
+function isProcessAlive(pid: string): boolean {
   try {
-    process.kill(parseInt(pid, 10), 0);
+    process.kill(Number.parseInt(pid, 10), 0);
     return true;
   } catch {
     return false;
   }
 }
 
-/**
- * Format memory bytes to GB string
- */
-function formatMemory(bytes) {
+function formatMemory(bytes: number): string {
   const gb = bytes / 1024 / 1024 / 1024;
   return `${gb.toFixed(1)}GB`;
 }
 
-/**
- * Print current memory status
- */
-function printMemoryStatus() {
+function printMemoryStatus(): void {
   const total = totalmem();
   const free = freemem();
   const used = total - free;
@@ -90,14 +62,10 @@ function printMemoryStatus() {
   console.log(`  Free: ${formatMemory(free)}`);
 }
 
-/**
- * Print process memory usage
- */
-function printProcessMemory(pids) {
+function printProcessMemory(pids: string[]): void {
   if (pids.length === 0) return;
 
   console.log('\n📊 Memory Usage Report:');
-  // Use [v]itest pattern to prevent grep from matching itself
   const output = execSafe('ps aux --sort=-%mem | grep "[v]itest/dist/workers/forks.js" | head -5');
   if (output) {
     const lines = output.split('\n').filter(line => line.trim());
@@ -109,33 +77,22 @@ function printProcessMemory(pids) {
   }
 }
 
-/**
- * Send signal to a process
- */
-function killProcess(pid, signal = 'SIGTERM') {
+function killProcess(pid: string, signal: KillSignal = 'SIGTERM'): boolean {
   try {
-    process.kill(parseInt(pid, 10), signal);
+    process.kill(Number.parseInt(pid, 10), signal);
     return true;
   } catch {
     return false;
   }
 }
 
-/**
- * Sleep for specified milliseconds
- */
-function sleep(ms) {
-  // eslint-disable-next-line no-undef
-  return new Promise(resolve => setTimeout(resolve, ms));
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => globalThis.setTimeout(resolve, ms));
 }
 
-/**
- * Main execution function
- */
-async function main() {
+async function main(): Promise<number> {
   console.log('🧹 Starting Vitest Worker Process Cleanup...\n');
 
-  // 1. Find Vitest worker processes
   let workerPids = getVitestWorkerPids();
 
   if (workerPids.length === 0) {
@@ -143,64 +100,50 @@ async function main() {
     return 0;
   }
 
-  // 2. Print process information
   log(`⚠️  Found ${workerPids.length} Vitest worker(s)`, 'yellow');
   printProcessMemory(workerPids);
 
-  // 3. Terminate processes (SIGTERM → SIGKILL)
   console.log('\n🔄 Terminating processes...');
 
-  // Attempt graceful shutdown with SIGTERM
   for (const pid of workerPids) {
-    if (isProcessAlive(pid)) {
-      if (killProcess(pid, 'SIGTERM')) {
-        console.log(`  - PID ${pid}: sent SIGTERM`);
-      }
+    if (isProcessAlive(pid) && killProcess(pid, 'SIGTERM')) {
+      console.log(`  - PID ${pid}: sent SIGTERM`);
     }
   }
 
-  // Wait 2 seconds for graceful termination
   await sleep(2000);
 
-  // Check for any remaining processes
   const remainingPids = getVitestWorkerPids();
 
   if (remainingPids.length > 0) {
     log('⚠️  Some processes still running. Sending SIGKILL...', 'yellow');
     for (const pid of remainingPids) {
-      if (isProcessAlive(pid)) {
-        if (killProcess(pid, 'SIGKILL')) {
-          console.log(`  - PID ${pid}: sent SIGKILL`);
-        }
+      if (isProcessAlive(pid) && killProcess(pid, 'SIGKILL')) {
+        console.log(`  - PID ${pid}: sent SIGKILL`);
       }
     }
     await sleep(1000);
   }
 
-  // 4. Verify cleanup result
-  const finalCheck = getVitestWorkerPids();
+  workerPids = getVitestWorkerPids();
 
-  if (finalCheck.length === 0) {
+  if (workerPids.length === 0) {
     log('\n✓ All Vitest worker processes successfully cleaned up.', 'green');
-
-    // Verify memory freed
     console.log('\n📊 Memory Status After Cleanup:');
     printMemoryStatus();
-
     console.log('\n✅ Cleanup Complete');
     return 0;
-  } else {
-    log('\n❌ Some processes are still running.', 'red');
-    console.log(`Remaining processes: ${finalCheck.join(', ')}`);
-    return 1;
   }
+
+  log('\n❌ Some processes are still running.', 'red');
+  console.log(`Remaining processes: ${workerPids.join(', ')}`);
+  return 1;
 }
 
-// Run script
 main()
   .then(exitCode => process.exit(exitCode))
   .catch(error => {
-    log(`❌ Error occurred: ${error.message}`, 'red');
+    log(`❌ Error occurred: ${(error as Error).message}`, 'red');
     console.error(error);
     process.exit(1);
   });

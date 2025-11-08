@@ -245,15 +245,9 @@ git config xeg.prepushScope full
 
 ## CodeQL
 
-**CI**: `security-extended` queries (XSS, injection, prototype pollution)
-**Local** (optional):
-
-```bash
-npm run codeql:check              # Basic
-npm run codeql:check -- --report  # + markdown report
-```
-
-**Setup**: `gh extension install github/gh-codeql`
+- GitHub Actions runs the `security-extended` suite on protected branches.
+- Local helper script was removed; invoke `gh codeql` manually when needed.
+- Recommended setup: `gh extension install github/gh-codeql`
 
 ## Validation Checklist
 

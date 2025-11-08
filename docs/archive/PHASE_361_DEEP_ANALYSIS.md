@@ -108,7 +108,7 @@ npm run test:unit:batched -- --batch-size=3
 #### 2. **EPIPE 완화 (worker 정리 강화)**
 
 ```javascript
-// scripts/run-unit-tests-batched.js 개선
+// scripts/run-unit-tests-batched.ts 개선
 // 각 배치 후:
 - GC 강제 호출: global.gc()
 - Worker 재시작: 5배치마다 process 재시작

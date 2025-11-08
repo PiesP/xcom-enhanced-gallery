@@ -1,22 +1,23 @@
 #!/usr/bin/env node
-
 /**
- * Perplexity API Validation Script
- * Purpose: Quickly diagnose API key validity and model availability
- * Usage: node scripts/test-perplexity-api.js
+ * Perplexity API Validation Script.
  */
 
-import * as https from 'https';
+import * as https from 'node:https';
+import type { IncomingHttpHeaders } from 'node:http';
 
 const API_KEY = process.env.PERPLEXITY_API_KEY;
 
-/**
- * Async sleep function
- */
-async function sleep(ms) {
+function sleep(ms: number): Promise<void> {
   return new Promise(resolve => {
     globalThis.setTimeout(resolve, ms);
   });
+}
+
+interface ModelConfig {
+  name: string;
+  description: string;
+  requiresPro: boolean;
 }
 
 const MODELS = {
@@ -35,12 +36,26 @@ const MODELS = {
     description: 'Deep research (Pro plan required)',
     requiresPro: true,
   },
-};
+} satisfies Record<'basic' | 'advanced' | 'research', ModelConfig>;
 
-/**
- * Make HTTP request
- */
-function makeRequest(options, data) {
+interface RequestOptions {
+  hostname: string;
+  port: number;
+  path: string;
+  method: 'POST';
+  headers: Record<string, string>;
+}
+
+interface RequestResult<T = unknown> {
+  status: number | undefined;
+  body: T;
+  headers: IncomingHttpHeaders;
+}
+
+function makeRequest<T>(
+  options: RequestOptions,
+  data: unknown
+): Promise<RequestResult<T | string>> {
   return new Promise((resolve, reject) => {
     const req = https.request(options, res => {
       let body = '';
@@ -51,7 +66,7 @@ function makeRequest(options, data) {
 
       res.on('end', () => {
         try {
-          const parsed = JSON.parse(body);
+          const parsed = JSON.parse(body) as T;
           resolve({
             status: res.statusCode,
             body: parsed,
@@ -77,20 +92,25 @@ function makeRequest(options, data) {
   });
 }
 
-/**
- * 모델 접근성 테스트
- */
-async function testModel(modelKey, modelConfig) {
-  console.log(`\n📡 테스트: ${modelKey.toUpperCase()} (${modelConfig.name})`);
-  console.log(`   설명: ${modelConfig.description}`);
+type ModelKey = keyof typeof MODELS;
 
-  const options = {
+interface TestResult {
+  success: boolean;
+  status?: number;
+  error?: 'unauthorized' | 'forbidden' | 'rate_limit' | 'network' | 'unknown';
+}
+
+async function testModel(modelKey: ModelKey, modelConfig: ModelConfig): Promise<TestResult> {
+  console.log(`\n📡 Testing: ${modelKey.toUpperCase()} (${modelConfig.name})`);
+  console.log(`   Description: ${modelConfig.description}`);
+
+  const options: RequestOptions = {
     hostname: 'api.perplexity.ai',
     port: 443,
     path: '/chat/completions',
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${API_KEY}`,
+      Authorization: `Bearer ${API_KEY ?? ''}`,
       'Content-Type': 'application/json',
     },
   };
@@ -102,7 +122,7 @@ async function testModel(modelKey, modelConfig) {
   };
 
   try {
-    const result = await makeRequest(options, payload);
+    const result = await makeRequest<{ error?: { message?: string } }>(options, payload);
 
     if (result.status === 200) {
       console.log('   ✅ Success: Model accessible');
@@ -110,9 +130,11 @@ async function testModel(modelKey, modelConfig) {
     }
     if (result.status === 401) {
       console.log('   ❌ 401 Unauthorized: Authentication failed');
-      if (result.body?.error) {
-        console.log(`      Error message: ${result.body.error.message || result.body.error}`);
-      }
+      const errorMessage =
+        typeof result.body === 'string'
+          ? result.body
+          : (result.body?.error?.message ?? JSON.stringify(result.body));
+      console.log(`      Error message: ${errorMessage}`);
       return { success: false, status: result.status, error: 'unauthorized' };
     }
     if (result.status === 403) {
@@ -124,45 +146,39 @@ async function testModel(modelKey, modelConfig) {
       return { success: false, status: result.status, error: 'rate_limit' };
     }
     console.log(`   ⚠️  Status code: ${result.status}`);
-    if (result.body?.error) {
+    if (typeof result.body !== 'string' && result.body?.error) {
       console.log(`      Error: ${JSON.stringify(result.body.error)}`);
     }
     return { success: false, status: result.status, error: 'unknown' };
   } catch (error) {
-    console.log(`   ❌ 네트워크 오류: ${error.message}`);
+    const err = error as Error;
+    console.log(`   ❌ Network error: ${err.message}`);
     return { success: false, error: 'network' };
   }
 }
 
-/**
- * 플랜 유형 추론
- */
-function inferPlan(results) {
+function inferPlan(results: Record<ModelKey, TestResult>): string {
   const basicOk = results.basic.success;
   const advancedOk = results.advanced.success;
   const researchOk = results.research.success;
 
   if (basicOk && advancedOk && researchOk) {
-    return 'Pro 플랜 (모든 모델 지원)';
+    return 'Pro plan (all models available)';
   }
   if (basicOk && !advancedOk && !researchOk) {
-    return 'Free 또는 Basic 플랜 (기본 모델만 지원)';
+    return 'Free or Basic plan (only sonar-pro available)';
   }
   if (!basicOk && !advancedOk && !researchOk) {
-    return 'API 키 오류 또는 인증 실패';
+    return 'API key error or authentication failure';
   }
-  return '알 수 없음';
+  return 'Unknown plan status';
 }
 
-/**
- * 주 함수
- */
-async function main() {
+async function main(): Promise<void> {
   console.log('═══════════════════════════════════════════════════════');
   console.log('🔍 Perplexity MCP API Diagnostic Tool');
   console.log('═══════════════════════════════════════════════════════');
 
-  // Step 1: Check API key
   console.log('\n📋 Step 1: Checking environment variables');
   if (!API_KEY) {
     console.log('❌ PERPLEXITY_API_KEY environment variable not set.');
@@ -173,22 +189,18 @@ async function main() {
   console.log(`   Length: ${API_KEY.length} chars`);
   console.log(`   Prefix: ${API_KEY.substring(0, 8)}...`);
 
-  // Step 2: Test each model
   console.log('\n📋 Step 2: Testing model accessibility');
-  const results = {};
+  const results = {} as Record<ModelKey, TestResult>;
 
-  for (const [key, config] of Object.entries(MODELS)) {
+  for (const [key, config] of Object.entries(MODELS) as [ModelKey, ModelConfig][]) {
     results[key] = await testModel(key, config);
-    // Delay between requests (prevent rate limit)
     await sleep(1000);
   }
 
-  // Step 3: Infer plan type
   console.log('\n📋 Step 3: Inferring plan type');
   const inferredPlan = inferPlan(results);
   console.log(`Inferred plan: ${inferredPlan}`);
 
-  // Step 4: Summary and recommendations
   console.log('\n═══════════════════════════════════════════════════════');
   console.log('📊 Diagnostic Results Summary');
   console.log('═══════════════════════════════════════════════════════');
@@ -205,13 +217,12 @@ Advanced reasoning (sonar-reasoning-pro): ${summary.advanced}
 Deep research (sonar-deep-research): ${summary.research}
   `);
 
-  // Recommendations
   console.log('💡 Recommendations:');
   if (results.basic.success && !results.advanced.success) {
     if (results.advanced.error === 'forbidden') {
-      console.log('  • Advanced models not available with current plan.');
-      console.log('  • Consider upgrading to Pro plan: https://www.perplexity.ai/pro');
-      console.log('  • Or use basic features only (Ask, Search).');
+      console.log('  • Advanced models are not available with the current plan.');
+      console.log('  • Consider upgrading to Perplexity Pro: https://www.perplexity.ai/pro');
+      console.log('  • Or continue using the basic Ask/Search features.');
     }
   }
 
@@ -223,8 +234,8 @@ Deep research (sonar-deep-research): ${summary.research}
   console.log('\n═══════════════════════════════════════════════════════');
 }
 
-// Execute
 main().catch(err => {
-  console.error('❌ Error:', err.message);
+  const error = err as Error;
+  console.error('❌ Error:', error.message);
   process.exit(1);
 });

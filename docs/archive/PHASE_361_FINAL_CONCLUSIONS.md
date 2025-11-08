@@ -153,7 +153,7 @@ nvm use 22
 node --version  # 확인: v24.11.0
 
 # Workaround: 각 배치마다 프로세스 재시작
-# (scripts/run-unit-tests-batched.js에 구현)
+# (scripts/run-unit-tests-batched.ts에 구현)
 ```
 
 ### 3. **테스트 재구조화** (장기)

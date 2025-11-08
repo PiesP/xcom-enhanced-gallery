@@ -1,38 +1,31 @@
 #!/usr/bin/env node
-
 /**
- * Phase 327: Apply setupGlobalTestIsolation to all test files
- *
- * @description Bulk apply setupGlobalTestIsolation() pattern to all test files
- * @usage node scripts/apply-test-isolation.js [--apply]
+ * Phase 327: Apply setupGlobalTestIsolation to all test files.
  */
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { globSync } from 'glob';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const projectRoot = path.join(__dirname, '..');
 const testDir = path.join(projectRoot, 'test');
 
-// Exclude patterns
 const EXCLUDE_PATTERNS = ['**/archive/**', '**/*.skip.test.ts', '**/temp/**'];
 
-// Get test file list
 const testFiles = globSync(`${testDir}/**/*.test.ts`, {
-  ignore: EXCLUDE_PATTERNS.map(p => `${testDir}/${p}`),
+  ignore: EXCLUDE_PATTERNS.map(pattern => `${testDir}/${pattern}`),
 });
 
 console.log(`📋 Total test files: ${testFiles.length}`);
 
-// Analysis results
 let isolatedCount = 0;
 let notIsolatedCount = 0;
-const filesToProcess = [];
+const filesToProcess: string[] = [];
 
 for (const file of testFiles) {
-  // Skip directories
   if (!fs.statSync(file).isFile()) {
     continue;
   }
@@ -40,43 +33,38 @@ for (const file of testFiles) {
   const content = fs.readFileSync(file, 'utf-8');
 
   if (content.includes('setupGlobalTestIsolation')) {
-    isolatedCount++;
+    isolatedCount += 1;
   } else {
-    notIsolatedCount++;
+    notIsolatedCount += 1;
     filesToProcess.push(file);
   }
 }
 
-console.log(`
-✅ Already isolated: ${isolatedCount}
-⚠️  Not yet isolated: ${notIsolatedCount}
-`);
+console.log(`\n✅ Already isolated: ${isolatedCount}`);
+console.log(`⚠️  Not yet isolated: ${notIsolatedCount}\n`);
 
 if (filesToProcess.length === 0) {
   console.log('✅ All test files already have isolation applied!');
   process.exit(0);
 }
 
-// Show sample of first 10 files
-console.log('📝 Sample of files needing isolation (first 10):');
-filesToProcess.slice(0, 10).forEach((file, idx) => {
+console.log('📝 Sample files needing isolation (first 10):');
+filesToProcess.slice(0, 10).forEach((file, index) => {
   const relPath = path.relative(projectRoot, file);
-  console.log(`  ${idx + 1}. ${relPath}`);
+  console.log(`  ${index + 1}. ${relPath}`);
 });
 
 if (filesToProcess.length > 10) {
   console.log(`  ... and ${filesToProcess.length - 10} more\n`);
 }
 
-// Statistics
 console.log('📊 Summary:');
 console.log(
   `  - Isolation applied: ${isolatedCount}/${testFiles.length} (${((isolatedCount / testFiles.length) * 100).toFixed(1)}%)`
 );
 console.log(`  - Isolation needed: ${notIsolatedCount}/${testFiles.length}`);
 
-// Category-based analysis
-const categories = {};
+const categories: Record<string, string[]> = {};
 filesToProcess.forEach(file => {
   const relPath = path.relative(testDir, file);
   const parts = relPath.split(path.sep);
@@ -89,93 +77,84 @@ filesToProcess.forEach(file => {
 });
 
 console.log('\n📁 Files needing isolation by category:');
-Object.entries(categories).forEach(([cat, files]) => {
-  console.log(`  ${cat}: ${files.length}`);
+Object.entries(categories).forEach(([category, files]) => {
+  console.log(`  ${category}: ${files.length}`);
 });
 
-// Check if apply flag is set
 const args = process.argv.slice(2);
 if (args.includes('--apply')) {
-  console.log('\n🚀 Starting isolation pattern application...');
+  console.log('\n🚀 Applying isolation pattern...');
   applyIsolation(filesToProcess);
 } else {
-  console.log('\n💡 To apply: node scripts/apply-test-isolation.js --apply');
+  console.log('\n💡 To apply: node scripts/apply-test-isolation.ts --apply');
 }
 
-function applyIsolation(files) {
+function applyIsolation(files: string[]): void {
   let successCount = 0;
   let errorCount = 0;
-  const errors = [];
+  const errors: string[] = [];
 
   for (const file of files) {
     try {
       let content = fs.readFileSync(file, 'utf-8');
 
-      // Skip if already applied
       if (content.includes('setupGlobalTestIsolation')) {
         continue;
       }
 
-      // Identify import section
       const importMatch = content.match(/^(import[\s\S]*?from\s+['"][^'"]+['"]\s*;?)\n/m);
-      if (!importMatch) {
+      if (!importMatch || importMatch.index === undefined) {
         errors.push(`${file}: No valid import statement found`);
-        errorCount++;
+        errorCount += 1;
         continue;
       }
 
-      // Calculate relative path based on file depth
       const fileDir = path.dirname(file);
       const testRootPath = path.join(projectRoot, 'test');
-      const depth = path.relative(testRootPath, fileDir).split(path.sep).length;
+      const depth = path.relative(testRootPath, fileDir).split(path.sep).filter(Boolean).length;
       const relativePath =
         depth > 0
           ? `${Array(depth).fill('..').join(path.sep)}/shared/global-cleanup-hooks`
           : './shared/global-cleanup-hooks';
 
-      // Add import statement
       const importLine = `import { setupGlobalTestIsolation } from '${relativePath}';\n`;
       const insertPosition = importMatch.index + importMatch[0].length;
 
-      // Identify describe block
       const describeMatch = content.match(/describe\s*\(\s*['"`]/);
-      if (!describeMatch) {
+      if (!describeMatch || describeMatch.index === undefined) {
         errors.push(`${file}: describe block not found`);
-        errorCount++;
+        errorCount += 1;
         continue;
       }
 
-      // Find opening brace of describe block
       const describeBlockStart = describeMatch.index + describeMatch[0].length;
       const describeOpenBrace = content.indexOf('{', describeBlockStart);
 
       if (describeOpenBrace === -1) {
         errors.push(`${file}: Opening brace { of describe block not found`);
-        errorCount++;
+        errorCount += 1;
         continue;
       }
 
-      // Find insertion point after describe opening brace
       const insertAfterBrace = content.indexOf('\n', describeOpenBrace) + 1;
       const setupLine = '  setupGlobalTestIsolation();\n\n';
 
-      // Build final content
-      let newContent =
+      const newContent =
         content.slice(0, insertPosition) +
         importLine +
         content.slice(insertPosition, insertAfterBrace) +
         setupLine +
         content.slice(insertAfterBrace);
 
-      // Write file
       fs.writeFileSync(file, newContent, 'utf-8');
-      successCount++;
+      successCount += 1;
 
       const relPath = path.relative(projectRoot, file);
       console.log(`  ✅ ${relPath}`);
     } catch (error) {
-      errorCount++;
-      errors.push(`${file}: ${error.message}`);
+      errorCount += 1;
+      const err = error as Error;
+      errors.push(`${file}: ${err.message}`);
     }
   }
 
@@ -183,7 +162,7 @@ function applyIsolation(files) {
 
   if (errors.length > 0) {
     console.log(`\n⚠️  Errors (${errorCount}):`);
-    errors.forEach(err => console.log(`  - ${err}`));
+    errors.forEach(message => console.log(`  - ${message}`));
   }
 
   if (successCount > 0) {

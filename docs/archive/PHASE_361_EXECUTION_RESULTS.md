@@ -107,7 +107,7 @@ npm run vitest run batch-5-files
 ### Phase 361.3: 메모리 최적화
 
 ```typescript
-// scripts/run-unit-tests-batched.js 개선
+// scripts/run-unit-tests-batched.ts 개선
 - 배치 크기 자동 감소 (메모리 압박 시)
 - Worker 강제 재시작 (배치마다)
 - GC (Garbage Collection) 호출
