@@ -26,22 +26,20 @@ describe('ServiceHarness — 경량 테스트 하네스', () => {
     await harness.initCoreServices();
 
     // 필수 서비스들이 등록되어야 함
-    const toast = harness.get<unknown>(SERVICE_KEYS.TOAST);
     const theme = harness.get<unknown>(SERVICE_KEYS.THEME);
     const media = harness.get<unknown>(SERVICE_KEYS.MEDIA_SERVICE);
 
-    expect(toast).toBeDefined();
     expect(theme).toBeDefined();
     expect(media).toBeDefined();
   });
 
   it('reset() 호출로 등록 상태를 초기화할 수 있어야 한다', async () => {
     await harness.initCoreServices();
-    expect(harness.get<unknown>(SERVICE_KEYS.TOAST)).toBeDefined();
+    expect(harness.get<unknown>(SERVICE_KEYS.THEME)).toBeDefined();
 
     harness.reset();
 
     // tryGet은 null을 반환해야 함 (등록 해제 상태)
-    expect(harness.tryGet<unknown>(SERVICE_KEYS.TOAST)).toBeNull();
+    expect(harness.tryGet<unknown>(SERVICE_KEYS.THEME)).toBeNull();
   });
 });

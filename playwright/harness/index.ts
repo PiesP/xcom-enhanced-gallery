@@ -7,8 +7,6 @@ import type {
   ErrorBoundaryResult,
   ToolbarMountResult,
   KeyboardOverlayResult,
-  ToastMountResult,
-  ToastState,
   GalleryAppSetupResult,
   GalleryAppState,
   GalleryEventsResult,
@@ -24,8 +22,8 @@ import type {
 
 import { initializeVendors, getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
-import { ToastManager } from '@shared/services/unified-toast-manager';
 import { languageService } from '@shared/services/language-service';
+import { NotificationService } from '@shared/services';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { KeyboardHelpOverlay } from '@features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
@@ -465,166 +463,7 @@ async function disposeKeyboardOverlayHarness(): Promise<void> {
   keyboardOverlayHandle.dispose();
 }
 
-// ========================================================================
-// Toast Harness Functions
-// ========================================================================
-
-type ToastHandle = {
-  container: HTMLElement;
-  manager: ToastManager;
-  dispose: () => void;
-};
-
-let toastHandle: ToastHandle | null = null;
-
-async function mountToastHarness(): Promise<ToastMountResult> {
-  await ensureVendorsReady();
-
-  if (toastHandle) {
-    await disposeToastHarness();
-  }
-
-  const container = createContainer('xeg-toast-container');
-  const manager = ToastManager.getInstance();
-
-  toastHandle = {
-    container,
-    manager,
-    dispose: () => {
-      manager.clear();
-      container.remove();
-      toastHandle = null;
-    },
-  };
-
-  await sleep();
-  return {
-    containerId: container.id,
-    toastCount: manager.getToasts().length,
-  };
-}
-
-async function showToastHarness(
-  message: string,
-  type: 'info' | 'success' | 'warning' | 'error' = 'info'
-): Promise<void> {
-  if (!toastHandle) {
-    throw new Error('Toast is not mounted.');
-  }
-
-  switch (type) {
-    case 'info':
-      toastHandle.manager.info('Test Toast', message);
-      break;
-    case 'success':
-      toastHandle.manager.success('Success', message);
-      break;
-    case 'warning':
-      toastHandle.manager.warning('Warning', message);
-      break;
-    case 'error':
-      toastHandle.manager.error('Error', message);
-      break;
-  }
-
-  await sleep(50);
-}
-
-async function getToastStateHarness(): Promise<ToastState> {
-  if (!toastHandle) {
-    throw new Error('Toast is not mounted.');
-  }
-
-  const toasts = toastHandle.manager.getToasts();
-  return {
-    messages: toasts.map(toast => ({
-      id: toast.id,
-      message: toast.message,
-      type: toast.type,
-    })),
-  };
-}
-
-async function clearAllToastsHarness(): Promise<void> {
-  if (!toastHandle) {
-    throw new Error('Toast is not mounted.');
-  }
-
-  toastHandle.manager.clear();
-  await sleep(50);
-}
-
-async function disposeToastHarness(): Promise<void> {
-  if (!toastHandle) {
-    return;
-  }
-  toastHandle.dispose();
-}
-
-// TODO Phase 49: Remove SettingsModal harness functions after migrating E2E tests to Toolbar expandable panel
-/*
-type SettingsModalHandle = {
-  container: HTMLElement;
-  trigger: HTMLButtonElement;
-  state: SettingsModalState;
-  setOpen: (open: boolean) => void;
-  dispose: () => void;
-};
-
-let settingsModalHandle: SettingsModalHandle | null = null;
-
-async function mountSettingsModalHarness(initialOpen = true): Promise<{ containerId: string }> {
-  await ensureVendorsReady();
-
-  if (settingsModalHandle) {
-    await disposeSettingsModalHarness();
-  }
-
-  const solid = getSolid();
-  const { render, createSignal, createComponent } = solid;
-
-  const trigger = document.createElement('button');
-  trigger.type = 'button';
-  trigger.id = uniqueId('xeg-settings-trigger');
-  trigger.textContent = 'Open settings';
-  ensureDocumentBody().append(trigger);
-  trigger.focus();
-
-  const container = createContainer('xeg-settings-modal');
-  const [isOpen, setIsOpen] = createSignal(initialOpen);
-  const state: SettingsModalState = { closeCalls: 0 };
-
-  const dispose = render(
-    () =>
-      createComponent(SettingsModal, {
-        isOpen: isOpen(),
-        onClose: () => {
-          state.closeCalls += 1;
-          setIsOpen(false);
-        },
-      }),
-    container
-  );
-
-  settingsModalHandle = {
-    container,
-    trigger,
-    state,
-    setOpen: open => {
-      setIsOpen(() => open);
-    },
-    dispose: () => {
-      dispose();
-      container.remove();
-      trigger.remove();
-      settingsModalHandle = null;
-    },
-  };
-
-  await sleep();
-  return { containerId: container.id };
-}
-
+/* Legacy settings modal harness (Phase 49 TODO)
 async function setSettingsModalOpenHarness(isOpen: boolean): Promise<void> {
   if (!settingsModalHandle) {
     throw new Error('Settings modal is not mounted.');
@@ -651,15 +490,24 @@ async function disposeSettingsModalHarness(): Promise<void> {
 async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   await ensureVendorsReady();
 
-  ToastManager.resetInstance();
-  const toastManager = ToastManager.getInstance();
-  toastManager.clear();
-
   const solid = getSolid();
   const { render, createComponent } = solid;
   const container = createContainer('xeg-error-boundary');
 
-  let errorCaught = false;
+  const notificationService = NotificationService.getInstance();
+  const originalErrorMethod = notificationService.error;
+  const serviceWithOverride = notificationService as NotificationService & {
+    error: (title: string, text?: string, timeout?: number) => Promise<void>;
+  };
+
+  let notificationTriggered = false;
+
+  serviceWithOverride.error = async (title, text, timeout) => {
+    notificationTriggered = true;
+    await originalErrorMethod.call(notificationService, title, text, timeout);
+  };
+
+  let renderThrew = false;
 
   const Thrower = () => {
     throw new Error('Harness error boundary trigger');
@@ -674,37 +522,21 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
       container
     );
   } catch (err) {
-    // ErrorBoundary caught the error but might also propagate to render() caller
-    errorCaught = true;
+    renderThrew = true;
   }
 
-  // Wait time to allow toast creation (ErrorBoundary fallback render + toast creation)
-  await sleep(100);
+  await sleep(50);
 
-  // Check if ErrorBoundary fallback has rendered
-  const hasResetElement = container.querySelector('[data-xeg-error-boundary-reset]') !== null;
-
-  const toasts = toastManager.getToasts();
-  const hasErrorToast = toasts.some(toast => toast.type === 'error');
-
-  // 디버깅용 정보 추가
-  if (!hasErrorToast && !errorCaught && !hasResetElement) {
-    // ErrorBoundary가 제대로 작동하지 않음 - 대체 방법으로 토스트 직접 생성
-    toastManager.error('Error Boundary Fallback', 'Component error occurred', {
-      route: 'toast-only',
-    });
-    await sleep(10);
-  }
-
-  const finalToasts = toastManager.getToasts();
-  const finalHasErrorToast = finalToasts.some(toast => toast.type === 'error');
+  const fallbackRendered = container.querySelector('[data-xeg-error-boundary-reset]') !== null;
 
   container.remove();
-  toastManager.clear();
+  serviceWithOverride.error = originalErrorMethod;
+
+  const errorCaught = renderThrew || fallbackRendered || notificationTriggered;
 
   return {
-    toastCount: finalToasts.length,
-    hasErrorToast: finalHasErrorToast,
+    errorCaught,
+    fallbackRendered,
   };
 }
 
@@ -1347,11 +1179,6 @@ const harness: XegHarness = {
   openKeyboardOverlay: openKeyboardOverlayHarness,
   closeKeyboardOverlay: closeKeyboardOverlayHarness,
   disposeKeyboardOverlay: disposeKeyboardOverlayHarness,
-  mountToast: mountToastHarness,
-  showToast: showToastHarness,
-  getToastState: getToastStateHarness,
-  clearAllToasts: clearAllToastsHarness,
-  disposeToast: disposeToastHarness,
   setupGalleryApp: setupGalleryAppHarness,
   triggerGalleryAppMediaClick: triggerGalleryAppMediaClickHarness,
   triggerMediaClickWithIndex: triggerMediaClickWithIndexHarness,

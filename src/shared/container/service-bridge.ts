@@ -16,7 +16,7 @@
  * **Bridge vs Accessors**:
  * | Accessor            | Bridge                    | Context           |
  * |---------------------|---------------------------|-------------------|
- * | `getToastManager()` | `bridgeGetService<T>(key)`| Type-safe vs generic |
+ * | `getThemeService()` | `bridgeGetService<T>(key)`| Type-safe vs generic |
  * | Named (convenience) | Manual `SERVICE_KEYS`    | Recommended vs internal |
  * | Features layer      | Container infrastructure | Public vs private |
  *

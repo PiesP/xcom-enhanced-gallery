@@ -5,7 +5,7 @@
  * Optimized core services:
  * - MediaService: All media-related functionality unified (MediaLoading, Prefetching, WebP, BulkDownload included)
  * - ThemeService: Theme management
- * - ToastService: Toast notifications
+ * - NotificationService: Tampermonkey notifications
  * - LanguageService: Multilingual support
  * - EventManager: DOM event management
  * - ServiceManager: Service management + integrated registry
@@ -59,8 +59,6 @@ export {
 } from './focus';
 
 // 6. Notification bridge (Phase 420: Toast UI removed, Tampermonkey notifications only)
-export { toastManager, ToastManager } from './unified-toast-manager';
-export type { ToastOptions, ToastItem } from './unified-toast-manager';
 
 // File Naming Service
 export {

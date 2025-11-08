@@ -187,7 +187,7 @@ describe('Button Animation System Consistency', () => {
   });
 
   describe('Cross-Component Animation Consistency', () => {
-    it('Button, Toolbar, Toast가 일관된 애니메이션 패턴을 사용해야 함', () => {
+    it('Button과 Toolbar가 일관된 애니메이션 패턴을 사용해야 함', () => {
       const buttonCSS = read(BUTTON_CSS_PATH);
       const toolbarCSS = read(TOOLBAR_CSS_PATH);
       const tokensCSS = read(DESIGN_TOKENS_PATH);

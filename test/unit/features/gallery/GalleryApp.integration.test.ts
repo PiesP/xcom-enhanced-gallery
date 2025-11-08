@@ -80,7 +80,7 @@ describe('GalleryApp Integration', () => {
       expect(galleryApp.isRunning()).toBe(true);
     });
 
-    it('should initialize theme and toast controller', async () => {
+    it('should initialize theme on document root', async () => {
       // When: 초기화 실행
       await galleryApp.initialize();
 

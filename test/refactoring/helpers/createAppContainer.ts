@@ -20,7 +20,6 @@ import type {
   ILogger,
   IMediaService,
   IThemeService,
-  IToastService,
   IVideoService,
   ISettingsService,
   IGalleryApp,
@@ -41,8 +40,6 @@ class LegacyServiceAdapter {
         return this.container.services.media as T;
       case SERVICE_KEYS.THEME:
         return this.container.services.theme as T;
-      case SERVICE_KEYS.TOAST:
-        return this.container.services.toast as T;
       case SERVICE_KEYS.VIDEO_CONTROL:
       case SERVICE_KEYS.VIDEO_STATE:
         return this.container.services.video as T;
@@ -103,19 +100,6 @@ class ThemeServiceWrapper implements IThemeService {
   }
 }
 
-class ToastServiceWrapper implements IToastService {
-  constructor(private readonly legacyService: LegacyServiceMap | null) {}
-  show(
-    message: string,
-    options?: { type?: 'info' | 'success' | 'warning' | 'error'; duration?: number }
-  ): void {
-    this.legacyService?.show?.(message, options);
-  }
-  cleanup(): void {
-    this.legacyService?.cleanup?.();
-  }
-}
-
 class VideoServiceWrapper implements IVideoService {
   constructor(private readonly legacyService: LegacyServiceMap | null) {}
   play = (): void => {
@@ -141,7 +125,6 @@ class AppContainerImpl implements AppContainer {
   public services: {
     media: IMediaService;
     theme: IThemeService;
-    toast: IToastService;
     video: IVideoService;
     settings?: ISettingsService;
   };
@@ -158,7 +141,6 @@ class AppContainerImpl implements AppContainer {
 
     const mediaService = new MediaServiceWrapper(this.createMediaService());
     const themeService = new ThemeServiceWrapper(this.createThemeService());
-    const toastService = new ToastServiceWrapper(this.createToastService());
     const videoService = new VideoServiceWrapper(this.createVideoService());
     const settingsService = this.createSettingsService();
 
@@ -173,13 +155,6 @@ class AppContainerImpl implements AppContainer {
         cleanup: () => themeService.cleanup(),
         getCurrentTheme: () => themeService.getCurrentTheme(),
         setTheme: (theme: 'light' | 'dark' | 'auto') => themeService.setTheme(theme),
-      }),
-      toast: Object.assign(() => Promise.resolve(toastService), toastService, {
-        cleanup: () => toastService.cleanup(),
-        show: (
-          message: string,
-          options?: { type?: 'info' | 'success' | 'warning' | 'error'; duration?: number }
-        ) => toastService.show(message, options),
       }),
       video: Object.assign(() => Promise.resolve(videoService), videoService, {
         cleanup: () => videoService.cleanup(),
@@ -237,14 +212,6 @@ class AppContainerImpl implements AppContainer {
     return {
       apply: () => logger.debug('Theme service - apply'),
       cleanup: () => logger.debug('Theme service - cleanup'),
-    };
-  }
-
-  private createToastService(): LegacyServiceMap {
-    return {
-      show: (message: string) => logger.info(`Toast: ${message}`),
-      hide: () => logger.debug('Toast service - hide'),
-      cleanup: () => logger.debug('Toast service - cleanup'),
     };
   }
 
@@ -357,7 +324,6 @@ class AppContainerImpl implements AppContainer {
     await Promise.all([
       this.services.media.cleanup(),
       this.services.theme.cleanup(),
-      this.services.toast.cleanup(),
       this.services.video.cleanup(),
       this.services.settings?.cleanup(),
     ]);

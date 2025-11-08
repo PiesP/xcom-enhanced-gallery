@@ -31,7 +31,6 @@
  */
 import type { FilenameService } from '../services/file-naming';
 import type { ThemeService } from '../services/theme-service';
-import type { ToastManager } from '../services/unified-toast-manager';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
 
 // Phase 237: Core Base 서비스들을 static import로 변경 (require 제거)
@@ -47,20 +46,6 @@ import { SERVICE_KEYS } from '../../constants';
 // Required Service Getters
 // ============================================================================
 // These throw if service not found. Use for guaranteed services.
-
-/**
- * Get notification manager for user alerts.
- *
- * @returns ToastManager delegating to Tampermonkey NotificationService
- * @throws CoreService throws if notification service not registered
- *
- * @example
- * const notifications = getToastManager();
- * notifications.success('Operation complete', 'Your media has been saved.');
- */
-export function getToastManager(): ToastManager {
-  return CoreServiceRegistry.get<ToastManager>(SERVICE_KEYS.TOAST);
-}
 
 /**
  * Get theme service for UI styling.
@@ -197,7 +182,7 @@ export function registerBaseService(key: string, service: unknown): void {
 /**
  * Pre-initialize critical services (best-effort, no error throwing).
  *
- * **Services**: MediaService, NotificationService (via ToastManager proxy)
+ * **Services**: MediaService
  * **Behavior**: Silently fails if service not available
  * **Use Case**: Eager initialization for performance (optional)
  */
@@ -206,11 +191,6 @@ export function warmupCriticalServices(): void {
     void getMediaServiceFromContainer();
   } catch {
     // noop: Only needed in browser environment
-  }
-  try {
-    void getToastManager();
-  } catch {
-    // noop
   }
 }
 

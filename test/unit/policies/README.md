@@ -40,12 +40,11 @@
 **목적**: 신호 선택자 메모이제이션 정책 검증 (통합)
 
 - `useSelector`를 통한 일관된 파생값 메모이제이션 확인
-- Toast, Toolbar, VerticalImageItem의 selector 사용 패턴 검증
+- Toolbar, VerticalImageItem의 selector 사용 패턴 검증
 - 의존성 추적 및 캐싱 동작 확인
 
 **포함 테스트**:
 
-- Toast Container: `limitedToasts` selector
 - Toolbar: `toolbarDataState`, `enhancedToolbarState` selectors
 - VerticalImageItem: `fitModeClass`, `containerClasses` selectors
 

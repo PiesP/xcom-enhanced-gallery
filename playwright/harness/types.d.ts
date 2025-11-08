@@ -6,8 +6,8 @@ export type ToolbarMountProps = Pick<
 >;
 
 export type ErrorBoundaryResult = {
-  toastCount: number;
-  hasErrorToast: boolean;
+  errorCaught: boolean;
+  fallbackRendered: boolean;
 };
 
 export type ToolbarMountResult = {
@@ -16,15 +16,6 @@ export type ToolbarMountResult = {
 
 export type KeyboardOverlayResult = {
   containerId: string;
-};
-
-export type ToastMountResult = {
-  containerId: string;
-  toastCount: number;
-};
-
-export type ToastState = {
-  messages: Array<{ id: string; message: string; type: string }>;
 };
 
 export type ToolbarHeadlessResult = {
@@ -113,11 +104,6 @@ export interface XegHarness {
   openKeyboardOverlay(): Promise<void>;
   closeKeyboardOverlay(): Promise<void>;
   disposeKeyboardOverlay(): Promise<void>;
-  mountToast(): Promise<ToastMountResult>;
-  showToast(message: string, type?: 'info' | 'success' | 'warning' | 'error'): Promise<void>;
-  getToastState(): Promise<ToastState>;
-  clearAllToasts(): Promise<void>;
-  disposeToast(): Promise<void>;
   setupGalleryApp(): Promise<GalleryAppSetupResult>;
   triggerGalleryAppMediaClick(): Promise<void>;
   triggerMediaClickWithIndex(mediaIndex?: number): Promise<void>;

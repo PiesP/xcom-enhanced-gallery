@@ -9,7 +9,7 @@
  * **Three Layers of Access**:
  *
  * 1. **High-Level (Recommended for Features)**:
- *    - Service accessors: getToastManager(), getThemeService()
+ *    - Service accessors: getThemeService()
  *    - Named exports prevent direct registry access
  *
  * 2. **Low-Level (Internal Only)**:
@@ -32,7 +32,7 @@
  * **Access Pattern Decision Tree**:
  * ```
  * Need service? (Features code)
- *   └─ Named method available? → Use it (getToastManager)
+ *   └─ Named method available? → Use it (getThemeService)
  *
  * Need registry access? (Infrastructure code)
  *   ├─ Registering? → Use bridgeRegister
@@ -49,7 +49,7 @@
  *
  * **Common Mistakes**:
  * ❌ Direct import: const { SERVICE_KEYS } from '@shared/container'
- * ✅ Use accessor: const toast = getToastManager()
+ * ✅ Use accessor: const service = getThemeService()
  *
  * ❌ Runtime harness: import { createTestHarness } in production
  * ✅ Tree-shake: Only in test setup/teardown
@@ -72,7 +72,6 @@
 // Encourages features layer to use these instead of direct registry access.
 export {
   // Service Getters
-  getToastManager,
   getThemeService,
   getMediaFilenameService,
   getMediaServiceFromContainer,

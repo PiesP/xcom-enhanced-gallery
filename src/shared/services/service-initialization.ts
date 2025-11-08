@@ -37,19 +37,16 @@ export async function registerCoreServices(): Promise<void> {
 
   // Individual UI services
   const { ThemeService } = await import('./theme-service');
-  const { toastManager } = await import('./unified-toast-manager');
 
   const themeService = new ThemeService();
 
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
-  serviceManager.register(SERVICE_KEYS.TOAST, toastManager);
 
   // Phase 268-3: Conditional registration of backward compatibility keys
   // Register only in test environment to remove production warnings
   if (import.meta.env.MODE === 'test') {
     // Test-only keys (backward compatibility)
     serviceManager.register('theme.service', themeService);
-    serviceManager.register('toast.manager', toastManager);
   }
 
   // ====================================

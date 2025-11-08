@@ -55,10 +55,6 @@ const simulateFileContent = (filename: string) => {
         height: 120px; /* 하드코딩된 값 */
         margin: 4px;
       }
-      .toastContainer {
-        top: 20px;
-        right: 20px;
-      }
       .itemsList::-webkit-scrollbar {
         width: 8px;
       }
@@ -133,7 +129,6 @@ describe('CSS Modules Token Usage - 실제 하드코딩 검출', () => {
       // VerticalGalleryView에는 하드코딩된 값들이 있어야 함 (RED 테스트)
       expect(invalidHardcoded.length).toBeGreaterThan(0);
       expect(invalidHardcoded).toContain('120'); // height: 120px
-      expect(invalidHardcoded).toContain('20'); // top: 20px
       expect(invalidHardcoded).toContain('8'); // width: 8px
     }
   });

@@ -79,37 +79,6 @@ describe('Signal Selector Memoization Policy', () => {
     });
   });
 
-  describe('Toast Container selector use case', () => {
-    it('should support slice operation for toast limiting', () => {
-      // Simulate ToastContainer usage
-      const mockToastSignal = {
-        value: [
-          { id: '1', message: 'Toast 1' },
-          { id: '2', message: 'Toast 2' },
-          { id: '3', message: 'Toast 3' },
-          { id: '4', message: 'Toast 4' },
-          { id: '5', message: 'Toast 5' },
-        ],
-      };
-
-      const maxToasts = 3;
-      const limitedToastsSelector = useSelector(
-        mockToastSignal,
-        state => state.slice(0, maxToasts),
-        {
-          dependencies: state => [state.length, maxToasts],
-          name: 'limitedToasts',
-        }
-      );
-
-      expect(typeof limitedToastsSelector).toBe('function');
-
-      const result = limitedToastsSelector();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeLessThanOrEqual(maxToasts);
-    });
-  });
-
   describe('Toolbar state transformation selector', () => {
     it('should create toolbarDataState selector', () => {
       const mockSignal = {

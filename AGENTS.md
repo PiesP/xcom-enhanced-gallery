@@ -132,8 +132,7 @@ test('setup gallery', async ({ page }) => {
 | `setupGalleryApp.dispose()` | Cleanup gallery         | `void`                     |
 | `mountToolbar(props?)`      | Mount toolbar component | `ToolbarMountResult`       |
 | `disposeToolbar()`          | Cleanup toolbar         | `void`                     |
-| `mountErrorBoundary()`      | Mount error boundary    | `ErrorBoundaryResult`      |
-| `mountToast()`              | Mount toast manager     | `ToastMountResult`         |
+| `errorBoundaryScenario()`   | Trigger error boundary  | `ErrorBoundaryResult`      |
 | `evaluateGalleryEvents()`   | Emit keyboard/click     | `GalleryEventsResult`      |
 | `simulateKeyboard()`        | Simulate key events     | `KeyboardSimulationResult` |
 | `getPerformanceMetrics()`   | Measure performance     | `PerformanceMetrics`       |

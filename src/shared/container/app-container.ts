@@ -10,7 +10,6 @@
  * - ILogger: Diagnostic logging (debug, info, warn, error)
  * - IMediaService: Media extraction from DOM
  * - IThemeService: Theme management (light, dark, auto)
- * - IToastService: User notifications
  * - IVideoService: Video playback control
  * - ISettingsService: Application settings storage
  * - IGalleryApp: Gallery feature lifecycle
@@ -58,18 +57,6 @@ export interface IMediaService {
 export interface IThemeService {
   getCurrentTheme(): 'light' | 'dark' | 'auto';
   setTheme(theme: 'light' | 'dark' | 'auto'): void;
-  cleanup(): void;
-}
-
-/**
- * Toast notification service interface
- * Shows user notifications with optional type and duration
- */
-export interface IToastService {
-  show(
-    message: string,
-    options?: { type?: 'info' | 'success' | 'warning' | 'error'; duration?: number }
-  ): void;
   cleanup(): void;
 }
 
@@ -124,7 +111,6 @@ export interface AppContainer {
   services: {
     media: IMediaService;
     theme: IThemeService;
-    toast: IToastService;
     video: IVideoService;
     settings?: ISettingsService; // lazy 로딩
   };

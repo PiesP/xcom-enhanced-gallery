@@ -40,7 +40,6 @@ export const SERVICE_KEYS = {
   // UI Services
   // ========================================
   THEME: 'theme.auto',
-  TOAST: 'toast.controller',
 
   // ========================================
   // Video Services
