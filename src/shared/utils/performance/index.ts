@@ -24,8 +24,4 @@ export {
   useAsyncSelector,
   useSelector,
   useCombinedSelector,
-  getGlobalStats,
-  resetGlobalStats,
-  setDebugMode,
-  isDebugMode,
 } from './signal-optimization';
