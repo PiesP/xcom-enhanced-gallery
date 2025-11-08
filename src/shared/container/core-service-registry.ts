@@ -25,10 +25,10 @@
  *   ↓
  * Service Implementations
  *
- * @related [CoreService](../services/service-manager.ts), [Service Accessors](./service-accessors.ts)
+ * @related [CoreService](../services/core/core-service-manager.ts), [Service Accessors](./service-accessors.ts)
  */
 
-import { CoreService } from '../services/service-manager';
+import { CoreService } from '../services/core';
 
 /**
  * Centralized service registry with caching optimization.

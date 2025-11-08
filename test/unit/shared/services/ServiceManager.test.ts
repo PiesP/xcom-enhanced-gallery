@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { CoreService } from '@shared/services/service-manager';
+import { CoreService } from '@shared/services/core';
 
 describe('CoreService (ServiceManager)', () => {
   setupGlobalTestIsolation();

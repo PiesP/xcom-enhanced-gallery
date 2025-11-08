@@ -38,7 +38,7 @@
  * - Typed get/tryGet methods validate at compile time
  */
 import { bridgeGetService, bridgeTryGet, bridgeRegister } from './service-bridge';
-import { CoreService } from '../services/service-manager';
+import { CoreService } from '../services/core';
 
 /**
  * @class TestHarness

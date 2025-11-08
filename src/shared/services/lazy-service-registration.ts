@@ -38,7 +38,7 @@ export async function ensureUnifiedDownloadServiceRegistered(): Promise<void> {
   try {
     // Dynamically import at first use
     const { unifiedDownloadService } = await import('./unified-download-service');
-    const { CoreService } = await import('./service-manager');
+    const { CoreService } = await import('./core/core-service-manager');
     const { SERVICE_KEYS } = await import('../../constants');
 
     const serviceManager = CoreService.getInstance();

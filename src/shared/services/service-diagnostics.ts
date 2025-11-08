@@ -18,7 +18,7 @@ export class ServiceDiagnostics {
       // Dynamic imports to avoid static cycles
       const [{ registerCoreServices }, { CoreService }, { SERVICE_KEYS }] = await Promise.all([
         import('./service-initialization'),
-        import('./service-manager'),
+        import('./core/core-service-manager'),
         import('@/constants'),
       ]);
 

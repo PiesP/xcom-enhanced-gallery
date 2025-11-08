@@ -8,7 +8,7 @@ import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
 import { BulkDownloadService } from '@/shared/services/bulk-download-service';
 import { mediaService } from '@/shared/services/media-service';
 import { SettingsService } from '@/features/settings/services/settings-service';
-import { serviceManager } from '@/shared/services/service-manager';
+import { serviceManager } from '@/shared/services/core';
 import { getBulkDownloadService } from '@/shared/services/service-factories';
 
 describe('RED: 공통 Result 패턴 통일', () => {

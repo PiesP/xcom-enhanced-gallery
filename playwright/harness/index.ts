@@ -32,7 +32,7 @@ import { KeyboardHelpOverlay } from '@features/gallery/components/vertical-galle
 // import { SettingsModal } from '@shared/components/ui/SettingsModal/SettingsModal'; // TODO Phase 49: Migrate to Toolbar expandable settings
 import { GalleryApp } from '@features/gallery/GalleryApp';
 import { SERVICE_KEYS } from '@/constants';
-import { CoreService } from '@shared/services/service-manager';
+import { CoreService } from '@shared/services/core';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import { initializeGalleryEvents, cleanupGalleryEvents } from '@shared/utils/events';
 import { waitForWindowLoad } from '@shared/utils/window-load';

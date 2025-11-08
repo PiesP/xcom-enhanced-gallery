@@ -14,7 +14,7 @@ import type { IGalleryApp } from '@shared/container/app-container';
 import { waitForWindowLoad } from '@shared/utils/window-load';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
-import { CoreService } from '@shared/services/service-manager';
+import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 // Phase 2.1: Bootstrap logic modularization

@@ -10,7 +10,7 @@ import {
   tryGetService,
   registerService,
 } from '@shared/container/core-service-registry';
-import { CoreService } from '@shared/services/service-manager';
+import { CoreService } from '@shared/services/core';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('CoreServiceRegistry', () => {

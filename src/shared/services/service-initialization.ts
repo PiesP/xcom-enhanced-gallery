@@ -14,7 +14,7 @@ import { logger } from '@shared/logging';
 export async function registerCoreServices(): Promise<void> {
   // Phase 370: Dynamic imports to break circular dependencies
   const [{ CoreService }, { getMediaService }, { SERVICE_KEYS }] = await Promise.all([
-    import('./service-manager'),
+    import('./core/core-service-manager'),
     import('./service-factories'),
     import('../../constants'),
   ]);

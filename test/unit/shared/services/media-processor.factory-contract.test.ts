@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { CoreService, getService, registerServiceFactory } from '@shared/services/service-manager';
+import { CoreService, getService, registerServiceFactory } from '@shared/services/core';
 
 interface ExpectedMediaProcessor {
   processHtml(): void;

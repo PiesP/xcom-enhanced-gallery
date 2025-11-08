@@ -25,7 +25,7 @@
  *
  * @related [Service Accessors](./service-accessors.ts), [CoreServiceRegistry](./core-service-registry.ts)
  */
-import { CoreService } from '../services/service-manager';
+import { CoreService } from '../services/core';
 import type { BaseService } from '../types/core/base-service.types';
 
 // ============================================================================

@@ -82,7 +82,12 @@ export { BrowserService } from '@shared/browser';
 // export type { TokenExtractionResult, TokenValidationResult } from '@shared/services/token-extraction';
 
 // 7. Service management (ServiceRegistry integrated)
-export { CoreService } from './service-manager';
+export {
+  CoreService,
+  serviceManager,
+  getService,
+  registerServiceFactory,
+} from './core/core-service-manager';
 
 // ====================================
 // Storage services

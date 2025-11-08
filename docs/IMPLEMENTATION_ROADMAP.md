@@ -160,7 +160,8 @@ npm run validate:pre
 
 ### 목표
 
-`service-manager.ts` 파일명 충돌 해결 → import 혼동 방지
+`service-manager.ts` 파일명 충돌 해결 → import 혼동 방지 (2025-11-08 업데이트:
+상위 계층 래퍼 모듈 제거 완료, `@shared/services/core` 경로 사용)
 
 ### 분석 결과
 

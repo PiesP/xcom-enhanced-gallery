@@ -4,7 +4,7 @@ import { GalleryApp } from '@/features/gallery/GalleryApp';
 import { GalleryRenderer } from '@/features/gallery/GalleryRenderer';
 import type { MediaInfo } from '@/shared/types/media.types';
 import { initializeVendors } from '@/shared/external/vendors';
-import { CoreService } from '@/shared/services/service-manager';
+import { CoreService } from '@/shared/services/core';
 import { registerGalleryRenderer } from '@/shared/container/service-accessors';
 
 /**
