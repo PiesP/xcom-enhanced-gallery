@@ -1,32 +1,6 @@
-/**
- * @fileoverview Gallery Container - Light DOM based gallery rendering
- * @version 4.0.0 - Phase 384: Style isolation via Cascade Layers
- * @description Light DOM based gallery container with style isolation using CSS Cascade Layers
- * @module @shared/components/isolation
- *
- * This module provides:
- * - Light DOM mounting/unmounting with Solid.js integration
- * - Style isolation through Cascade Layers (not Shadow DOM)
- * - Twitter scroll restoration compatibility (Phase 294, 300.1)
- * - Event management via EventManager service
- * - Keyboard event handling (Escape key to close)
- *
- * @example
- * ```typescript
- * import { GalleryContainer, mountGallery, unmountGallery } from '@shared/components/isolation';
- *
- * // Mount gallery
- * const element = () => <GalleryContainer onClose={handleClose}>Content</GalleryContainer>;
- * mountGallery(container, element);
- *
- * // Unmount gallery
- * unmountGallery(container);
- * ```
- */
-
-import { getSolid, type ComponentChildren, type JSXElement } from '../../external/vendors';
-import { logger } from '../../logging';
-import { EventManager } from '../../services/event-manager';
+import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
+import { createClassName } from '@shared/utils/component-utils';
+import { EventManager } from '@shared/services/event-manager';
 
 // ============================================================================
 // Constants
@@ -55,6 +29,12 @@ export interface GalleryContainerProps {
   className?: string;
 }
 
+type HostElement = HTMLElement & {
+  [DISPOSE_SYMBOL]?: () => void;
+};
+
+type GalleryRenderable = JSXElement | null | undefined | (() => JSXElement | null | undefined);
+
 // ============================================================================
 // Gallery Mounting and Unmounting
 // ============================================================================
@@ -78,29 +58,20 @@ export interface GalleryContainerProps {
  * mountGallery(container, element);
  * ```
  */
-export function mountGallery(container: Element, element: unknown): Element {
+export function mountGallery(container: Element, element: GalleryRenderable): Element {
   const solid = getSolid();
+  const host = container as HostElement;
 
-  try {
-    const host = container as HTMLElement & {
-      [DISPOSE_SYMBOL]?: () => void;
-    };
+  host[DISPOSE_SYMBOL]?.();
 
-    // Clean up existing gallery if present
-    host[DISPOSE_SYMBOL]?.();
+  const factory =
+    typeof element === 'function'
+      ? (element as () => JSXElement | null | undefined)
+      : () => element ?? null;
 
-    // Create factory function from element
-    const factory: () => JSXElement =
-      typeof element === 'function' ? (element as () => JSXElement) : () => element as JSXElement;
+  host[DISPOSE_SYMBOL] = solid.render(factory, host);
 
-    // Mount Solid.js component and store dispose function
-    host[DISPOSE_SYMBOL] = solid.render(factory, host);
-    logger.debug('Gallery mounted with Light DOM (Cascade Layers for style isolation)');
-    return container;
-  } catch (error) {
-    logger.error('Failed to mount gallery:', error);
-    throw error;
-  }
+  return container;
 }
 
 /**
@@ -123,25 +94,12 @@ export function mountGallery(container: Element, element: unknown): Element {
  * ```
  */
 export function unmountGallery(container: Element): void {
-  try {
-    const host = container as HTMLElement & {
-      [DISPOSE_SYMBOL]?: () => void;
-    };
+  const host = container as HostElement;
 
-    // Step 1: Call Solid.js dispose function
-    host[DISPOSE_SYMBOL]?.();
-    delete host[DISPOSE_SYMBOL];
+  host[DISPOSE_SYMBOL]?.();
+  delete host[DISPOSE_SYMBOL];
 
-    // Step 2: Phase 294 - Complete DOM cleanup for Twitter scroll restoration compatibility
-    while (container.firstChild) {
-      container.removeChild(container.firstChild);
-    }
-
-    logger.debug('Gallery unmounted successfully (Phase 300.1: DOM cleaned)');
-  } catch (error) {
-    logger.error('Failed to unmount gallery:', error);
-    throw error;
-  }
+  container.replaceChildren();
 }
 
 // ============================================================================
@@ -174,9 +132,15 @@ export function unmountGallery(container: Element): void {
 export function GalleryContainer({
   children,
   onClose,
-  className = '',
+  className,
 }: GalleryContainerProps): JSXElement {
   const { createEffect, onCleanup } = getSolid();
+  const classes = createClassName(
+    'xeg-gallery-overlay',
+    'xeg-gallery-container',
+    'gallery-container',
+    className
+  );
 
   // Setup keyboard event handling
   createEffect(() => {
@@ -185,7 +149,8 @@ export function GalleryContainer({
     }
 
     // Register Escape key handler
-    const listenerId = EventManager.getInstance().addListener(document, 'keydown', event => {
+    const eventManager = EventManager.getInstance();
+    const listenerId = eventManager.addListener(document, 'keydown', event => {
       const keyboardEvent = event as KeyboardEvent;
       if (keyboardEvent.key === 'Escape') {
         keyboardEvent.preventDefault();
@@ -196,18 +161,13 @@ export function GalleryContainer({
 
     // Cleanup listener on component unmount
     onCleanup(() => {
-      EventManager.getInstance().removeListener(listenerId);
+      eventManager.removeListener(listenerId);
     });
   });
 
   return (
-    <div
-      class={`xeg-gallery-overlay xeg-gallery-container gallery-container ${className}`.trim()}
-      data-xeg-gallery-container=''
-    >
+    <div class={classes} data-xeg-gallery-container=''>
       {children}
     </div>
   );
 }
-
-export default GalleryContainer;
