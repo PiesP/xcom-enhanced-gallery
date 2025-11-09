@@ -132,7 +132,7 @@
     "cross-env": "^10.1.0",
     "cssnano": "^7.1.2",
     "dependency-cruiser": "^17.2.0",
-    "esbuild": "^0.25.12",
+    "esbuild": "^0.26.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-jsx-a11y": "^6.10.2",

@@ -44,7 +44,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
-  private disposeToast: (() => void) | null = null;
 
   constructor() {
     this.setupStateSubscription();
@@ -151,36 +150,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     logger.info('[GalleryRenderer] Gallery mounted', {
       mountCount: galleryMountCount,
     });
-
-    // Mount toast container inside gallery
-    this.renderToastContainer();
-  }
-
-  /**
-   * Render toast container
-   */
-  private async renderToastContainer(): Promise<void> {
-    if (!this.container) {
-      return;
-    }
-
-    try {
-      const { ToastContainer } = await import('@shared/components/ui');
-      const { render, createComponent } = getSolid();
-
-      // Create toast container DOM element
-      const toastContainer = document.createElement('div');
-      toastContainer.id = 'xeg-toast-container';
-      toastContainer.setAttribute('data-gallery-toast', 'true');
-      this.container.appendChild(toastContainer);
-
-      // Mount toast component
-      this.disposeToast = render(() => createComponent(ToastContainer, {}), toastContainer);
-
-      logger.debug('[GalleryRenderer] Toast container rendering complete');
-    } catch (error) {
-      logger.warn('[GalleryRenderer] Toast container rendering failed:', error);
-    }
   }
 
   /**
@@ -267,10 +236,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private cleanupContainer(): void {
     if (this.container) {
       try {
-        // Cleanup toast
-        this.disposeToast?.();
-        this.disposeToast = null;
-
         // Cleanup gallery app
         this.disposeApp?.();
         this.disposeApp = null;

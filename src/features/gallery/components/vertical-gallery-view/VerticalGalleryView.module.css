@@ -557,8 +557,6 @@
   margin-top: 1rem;
 }
 
-/* N1: 통합 ToastContainer 사용으로 로컬 toastContainer 제거 */
-
 /* Phase 254: 감소된 모션은 semantic 레이어의 토큰으로 자동 처리 */
 /* animation만 명시적으로 비활성화 */
 @media (prefers-reduced-motion: reduce) {

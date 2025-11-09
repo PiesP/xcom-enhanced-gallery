@@ -34,7 +34,7 @@
  * Shared Components (this barrel)
  *   ├─ UI Module (@/shared/components/ui)
  *   │  ├─ Primitives: Button, Icon, Panel
- *   │  ├─ Content: Toolbar (Toast deprecated)
+ *   │  ├─ Content: Toolbar
  *   │  ├─ Containers: ModalShell, ToolbarShell
  *   │  └─ Controls: ErrorBoundary
  *   └─ Layout Module (@/shared/components/isolation)
@@ -107,7 +107,6 @@
  * **NotificationService** (Tampermonkey bridge):
  * - Handles success/error/info/warning alerts via GM_notification
  * - Native OS notifications with optional timeout and click action
- * - Replaces legacy Toast/ToastContainer UI components (now deprecated)
  * - Use: Status updates, confirmations, errors
  *
  * **Icon** (SVG registry):
@@ -196,7 +195,6 @@
  *
  * - {@link ./ui} - UI component library details
  * - {@link ./ui/Button/Button} - Button component
- * - {@link ./ui/Toast/Toast} - Toast component
  * - {@link ./ui/Toolbar/Toolbar.tsx} - Toolbar component
  * - {@link ./ui/Icon} - Icon system
  * - {@link ./isolation/GalleryContainer} - Container component
@@ -235,19 +233,6 @@
  * ```
  */
 export { Button } from './ui/Button/Button';
-
-/**
-/**
- * @deprecated Phase 420: Toast UI removed in favor of Tampermonkey notifications.
- * Exports remain for backward compatibility but render nothing.
- */
-export { Toast } from './ui/Toast/Toast';
-
-/**
- * @deprecated Phase 420: Toast UI removed in favor of Tampermonkey notifications.
- * Exports remain for backward compatibility but render nothing.
- */
-export { ToastContainer } from './ui/Toast/ToastContainer';
 
 /**
  * ErrorBoundary Component - Error handling wrapper
@@ -352,16 +337,6 @@ export { GalleryContainer } from './isolation/GalleryContainer';
  * @see {@link ./ui/Button/Button}
  */
 export type { ButtonProps } from './ui/Button/Button';
-
-/**
- * @deprecated Phase 420: Toast UI removed. Types retained for compatibility only.
- */
-export type { ToastProps } from './ui/Toast/Toast';
-
-/**
- * @deprecated Phase 420: Toast container UI removed. Types retained for compatibility only.
- */
-export type { ToastContainerProps } from './ui/Toast/ToastContainer';
 
 /**
  * Toolbar Props Type - Configuration for Toolbar component

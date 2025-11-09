@@ -87,7 +87,6 @@
 
 - **현재 상태**: ⚠️ Array mutations는 있지만 For 컴포넌트는 없음
 - **프로젝트 사용처**:
-  - `ToastContainer.tsx` (1회)
   - `VerticalGalleryView.tsx` (1회)
 - **테스트 필요성**: For의 참조 안정성, 최적화 검증
 - **예상 시나리오**:
@@ -249,6 +248,5 @@ describe('Solid.js Advanced Reactivity in Browser', () => {
 
 ---
 
-**작성자**: AI Assistant  
-**검토자**: (Phase B1 완료 시 기록)  
-**마지막 업데이트**: 2025-10-21
+**작성자**: AI Assistant **검토자**: (Phase B1 완료 시 기록) **마지막
+업데이트**: 2025-10-21

@@ -13,7 +13,7 @@ describe('Phase 99: Signal 타입 단언 제거', () => {
 
   describe('galleryState Signal 인터페이스 검증', () => {
     it('galleryState는 { value: GalleryState } 구조를 가져야 한다', async () => {
-      const { galleryState } = await import('@/shared/state/signals/gallery.signals');
+      const { galleryState } = await import('../../../../src/shared/state/signals/gallery.signals');
 
       // galleryState는 getter 객체로 { value: ... } 구조 구현
       expect(typeof galleryState).toBe('object');
@@ -25,8 +25,8 @@ describe('Phase 99: Signal 타입 단언 제거', () => {
     });
 
     it('galleryState는 타입 단언 없이 useSelector에 사용 가능해야 한다', async () => {
-      const { galleryState } = await import('@/shared/state/signals/gallery.signals');
-      const { useSelector } = await import('@/shared/utils/signal-selector');
+      const { galleryState } = await import('../../../../src/shared/state/signals/gallery.signals');
+      const { useSelector } = await import('../../../../src/shared/utils/signal-selector');
 
       // 타입 단언 없이 useSelector에 전달 가능
       const isOpen = useSelector(
@@ -41,7 +41,9 @@ describe('Phase 99: Signal 타입 단언 제거', () => {
 
   describe('downloadState Signal 인터페이스 검증', () => {
     it('downloadState는 { value: DownloadState } 구조를 가져야 한다', async () => {
-      const { downloadState } = await import('@/shared/state/signals/download.signals');
+      const { downloadState } = await import(
+        '../../../../src/shared/state/signals/download.signals'
+      );
 
       // downloadState는 SafeSignal로 { value: ... } 구조 구현
       expect(typeof downloadState).toBe('object');
@@ -58,8 +60,10 @@ describe('Phase 99: Signal 타입 단언 제거', () => {
     });
 
     it('downloadState는 타입 단언 없이 useSelector에 사용 가능해야 한다', async () => {
-      const { downloadState } = await import('@/shared/state/signals/download.signals');
-      const { useSelector } = await import('@/shared/utils/signal-selector');
+      const { downloadState } = await import(
+        '../../../../src/shared/state/signals/download.signals'
+      );
+      const { useSelector } = await import('../../../../src/shared/utils/signal-selector');
 
       // 타입 단언 없이 useSelector에 전달 가능
       const isProcessing = useSelector(
@@ -73,21 +77,6 @@ describe('Phase 99: Signal 타입 단언 제거', () => {
   });
 
   describe('타입 단언 제거 검증', () => {
-    it('ToastContainer.tsx는 타입 단언을 사용하지 않아야 한다', async () => {
-      const fs = await import('node:fs');
-      const path = await import('node:path');
-
-      const filePath = path.resolve(
-        process.cwd(),
-        'src/shared/components/ui/Toast/ToastContainer.tsx'
-      );
-      const source = fs.readFileSync(filePath, 'utf-8');
-
-      // manager.signal 단언 제거 확인
-      const assertionCount = (source.match(/manager\.signal as unknown as/g) || []).length;
-      expect(assertionCount).toBe(0);
-    });
-
     it('useGalleryScroll.ts는 타입 단언을 사용하지 않아야 한다', async () => {
       const fs = await import('node:fs');
       const path = await import('node:path');
