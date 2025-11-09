@@ -1,38 +1,17 @@
-/**
- * Focus Management Module
- *
- * Unified management module for focus state, cache, timer, and tracking.
- *
- * Main components:
- * - FocusState, FocusTracking: Core types
- * - ItemCache: Item cache management
- * - FocusTimerManager: Centralized timer management
- */
-
-/* ============================================================================
- * Types & Constants
- * ============================================================================ */
-
-export type { FocusState, FocusTracking } from './focus-types';
-
+export type { FocusState, FocusTracking, FocusSource } from './focus-types';
 export {
   INITIAL_FOCUS_STATE,
   INITIAL_FOCUS_TRACKING,
-  isValidFocusState,
   createFocusState,
-  isSameFocusState,
   createFocusTracking,
+  isSameFocusState,
   isSameFocusTracking,
+  isValidFocusState,
   resetFocusTracking,
   updateFocusTracking,
 } from './focus-types';
 
-/* ============================================================================
- * Cache
- * ============================================================================ */
-
 export type { ItemEntry } from './focus-cache';
-
 export {
   ItemCache,
   createItemCache,
@@ -40,14 +19,5 @@ export {
   calculateTopDistance,
 } from './focus-cache';
 
-/* ============================================================================
- * Timer Management
- * ============================================================================ */
-
 export type { FocusTimerRole } from './focus-timer-manager';
-
-export {
-  FocusTimerManager,
-  createFocusTimerManager,
-  useFocusTimerManager,
-} from './focus-timer-manager';
+export { FocusTimerManager, createFocusTimerManager } from './focus-timer-manager';
