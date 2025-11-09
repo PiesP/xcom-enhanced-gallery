@@ -30,34 +30,28 @@ import type { MediaDescriptor } from './types';
 import type { Result } from '@shared/types/result.types';
 import { failure, ErrorCode, isSuccess } from '@shared/types/result.types';
 import { collectNodes, extractRawData, normalize, dedupe, validate } from './pipeline';
-import { logger } from '../logging';
 
 /**
  * @interface MediaProcessStageEvent
  * Performance and progress event emitted at each pipeline stage
  *
- * Provides real-time feedback on pipeline progress when a callback is supplied.
+ * Provides lightweight feedback on pipeline progress when a callback is supplied.
  *
  * @property {string} stage - Pipeline stage identifier
  *   Values: 'collect' | 'extract' | 'normalize' | 'dedupe' | 'validate' | 'complete'
  *   Identifies which stage completed or is in progress
  *
  * @property {number} [count] - Item count after stage completion
- *   Number of items after processing this stage
- *   May be less than input due to filtering/deduplication
- *
- * @property {number} [count] - Item count after stage completion
- *   Number of items after processing this stage
- *   May be less than input due to filtering/deduplication
+ *   Number of items after processing this stage (may shrink due to filtering)
  *
  * @example
  * processor.process(element, {
  *   onStage: (event) => {
- *     console.log(`${event.stage}: ${event.count} items (${event.stageMs}ms)`);
- *     // Output: "collect: 24 items (12ms)"
- *     // Output: "extract: 18 items (8ms)"
- *     // Output: "normalize: 18 items (15ms)"
- *     // Output: "complete: 12 items (45ms total)"
+ *     console.log(`${event.stage}: ${event.count} items`);
+ *     // Output: "collect: 24 items"
+ *     // Output: "extract: 18 items"
+ *     // Output: "normalize: 18 items"
+ *     // Output: "complete: 12 items"
  *   }
  * });
  */
@@ -72,19 +66,8 @@ export interface MediaProcessStageEvent {
  *
  * Allows customization of processing behavior including progress events.
  *
- * @property {Function} [onStage] - Progress callback function
- *   Called after each pipeline stage with MediaProcessStageEvent
- *   Useful for lightweight UI updates or logging
- *
- * @example
- * const options: MediaProcessOptions = {
- *   telemetry: true,  // Enable timing metrics
- *   onStage: (event) => {
- *     if (event.stageMs && event.stageMs > 100) {
- *       console.warn(`Slow stage: ${event.stage} (${event.stageMs}ms)`);
- *     }
- *   }
- * };
+ * @property {Function} [onStage] - Progress callback function invoked after each stage
+ *   Useful for lightweight UI updates or diagnostics outside production builds
  */
 export interface MediaProcessOptions {
   readonly onStage?: (event: MediaProcessStageEvent) => void;
@@ -96,7 +79,7 @@ export interface MediaProcessOptions {
  *
  * Coordinates multi-stage transformation from raw HTML elements to
  * normalized MediaDescriptor objects. Provides optional progress
- * event emission without collecting timing information.
+ * event emission without collecting timing metrics.
  *
  * **Pipeline Stages**:
  * 1. Collection: Discover candidate elements in DOM
@@ -108,9 +91,8 @@ export interface MediaProcessOptions {
  * **Usage Pattern**:
  * ```typescript
  * const processor = new MediaProcessor();
- * const result = await processor.process(rootElement, {
- *   telemetry: true,
- *   onStage: (event) => console.log(`${event.stage}: ${event.count} items`)
+ * const result = processor.process(rootElement, {
+ *   onStage: event => console.log(`${event.stage}: ${event.count} items`),
  * });
  *
  * if (result.success) {
@@ -126,50 +108,17 @@ export interface MediaProcessOptions {
  */
 export class MediaProcessor {
   /**
-   * Process HTML element to extract and normalize media items
+   * Run the five-stage media pipeline against the provided root element.
    *
-   * Orchestrates five-stage pipeline: collect → extract → normalize → dedupe → validate
-   * Emits progress events at each stage via onStage callback if provided.
-   *
-   * **Performance Characteristics**:
-   * - Without telemetry: Minimal overhead (~1-2ms for typical pages)
-   * - With telemetry: Adds performance.now() calls (~2-3ms additional overhead)
-   * - Memory: O(n) where n is number of media items found
-   *
-   * **Error Handling**:
-   * Catches exceptions at each stage and returns Result with error code.
-   * Partial failures are handled gracefully (later stages skip failed items).
-   *
-   * @param {HTMLElement} root - Root DOM element to search for media
-   *   Typically document.body or specific container element
-   *   Used as base for querySelectorAll operations
-   *
-   * @param {MediaProcessStageEvent & MediaProcessOptions} [options] - Configuration
-   *   - onStage: Callback fired after each stage completes
-   *
-   * @returns {Result<MediaDescriptor[]>} Pipeline result
-   *   - success: Result.data contains MediaDescriptor array
-   *   - failure: Result.error contains ErrorCode with context
+   * @param root Root DOM element to search for media nodes.
+   * @param options Optional callback configuration.
+   * @returns Result containing normalized media descriptors or an error payload.
    *
    * @example
-   * // Basic usage
    * const processor = new MediaProcessor();
-   * const result = processor.process(document.body);
-   *
-   * if (result.success) {
-   *   media = result.data;
-   * }
-   *
-   * @example
-   * // With progress monitoring
-   * processor.process(document.body, {
-   *   onStage: (event) => {
-   *     console.log(`[${event.stage}] Items: ${event.count}, Time: ${event.totalMs}ms`);
-   *   },
-   *   telemetry: true
+   * const result = processor.process(document.body, {
+   *   onStage: event => console.log(`${event.stage}: ${event.count ?? 0}`),
    * });
-   *
-   * @throws None - All errors caught and returned via Result type
    */
   process(root: HTMLElement, options?: MediaProcessOptions): Result<MediaDescriptor[]> {
     const onStage = options?.onStage;
@@ -184,45 +133,32 @@ export class MediaProcessor {
     };
 
     try {
-      logger.debug('MediaProcessor: Starting media extraction');
-
       // Stage 1: Collection - Discover media candidate elements
       const elements = collectNodes(root);
-      logger.debug(`MediaProcessor: Collected ${elements.length} candidate elements`);
       record('collect', elements.length);
 
       // Stage 2: Extraction - Extract raw data from elements
       const rawCandidates = elements
         .map(extractRawData)
         .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null);
-      logger.debug(`MediaProcessor: Extracted ${rawCandidates.length} raw candidates`);
       record('extract', rawCandidates.length);
 
       // Stage 3: Normalization - Standardize and clean extracted data
       const normalized = normalize(rawCandidates);
-      logger.debug(`MediaProcessor: Normalized ${normalized.length} items`);
       record('normalize', normalized.length);
 
       // Stage 4: Deduplication - Remove duplicate entries
       const unique = dedupe(normalized);
-      logger.debug(`MediaProcessor: Deduplicated to ${unique.length} unique items`);
       record('dedupe', unique.length);
 
       // Stage 5: Validation - Verify data contracts and integrity
       const result = validate(unique);
       record('validate', isSuccess(result) ? result.data.length : 0);
 
-      if (isSuccess(result)) {
-        logger.info(`✅ MediaProcessor: Successfully extracted ${result.data.length} media items`);
-      } else {
-        logger.error('❌ MediaProcessor: Validation stage failed');
-      }
-
       record('complete', isSuccess(result) ? result.data.length : 0);
 
       return result;
     } catch (error) {
-      logger.error('❌ MediaProcessor: Error during processing:', error);
       const err = failure<MediaDescriptor[]>(
         error instanceof Error ? error.message : String(error),
         ErrorCode.UNKNOWN,
@@ -279,6 +215,3 @@ export function processMedia(root: HTMLElement): Result<MediaDescriptor[]> {
   const processor = new MediaProcessor();
   return processor.process(root);
 }
-
-// 기본 export
-export default MediaProcessor;

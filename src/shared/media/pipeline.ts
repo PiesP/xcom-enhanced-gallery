@@ -18,7 +18,6 @@
  * @section Architecture
  * - **Immutability**: No mutations; functional pipelines produce new arrays
  * - **Type Safety**: Full TypeScript coverage with Result pattern
- * - **Logging**: Debug/warn logging at each stage for diagnostics
  * - **Error Recovery**: Graceful handling of invalid items (skipped, not thrown)
  * - **Performance**: O(n) complexity, single passes where possible
  *
@@ -32,7 +31,6 @@
 import type { MediaDescriptor, MediaVariant, RawMediaCandidate } from './types';
 import type { Result } from '@shared/types/result.types';
 import { success, failure, ErrorCode } from '@shared/types/result.types';
-import { logger } from '../logging';
 import {
   extractOriginalImageUrl,
   getHighQualityMediaUrl,
@@ -67,8 +65,8 @@ export function collectNodes(root: HTMLElement): Element[] {
     try {
       const found = root.querySelectorAll(selector);
       elements.push(...Array.from(found));
-    } catch (error) {
-      logger.warn(`collectNodes: CSS selector failed: ${selector}`, error);
+    } catch {
+      // Ignore selector failures to keep processing resilient.
     }
   }
 
@@ -126,8 +124,7 @@ export function extractRawData(element: Element): RawMediaCandidate | null {
       type,
       attributes,
     };
-  } catch (error) {
-    logger.warn('extractRawData: Extraction failed', error);
+  } catch {
     return null;
   }
 }
@@ -227,8 +224,8 @@ export function normalize(rawCandidates: RawMediaCandidate[]): MediaDescriptor[]
       };
 
       descriptors.push(descriptor);
-    } catch (error) {
-      logger.warn('normalize: Normalization failed for candidate', error);
+    } catch {
+      // Skip invalid candidates
     }
   }
 
@@ -276,7 +273,6 @@ export function validate(descriptors: MediaDescriptor[]): Result<MediaDescriptor
     const invalidUrls: string[] = [];
     for (const desc of descriptors) {
       if (!isValidUrl(desc.url)) {
-        logger.warn(`validate: Invalid URL detected: ${desc.url}`);
         invalidUrls.push(desc.url);
       }
     }

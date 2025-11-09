@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import MediaProcessor, { type MediaProcessStageEvent } from '@/shared/media/media-processor';
+import type { MediaProcessStageEvent } from '../../../src/shared/media/media-processor.ts';
 
 function makeDom(html: string) {
   const container = document.createElement('div');
@@ -12,13 +12,14 @@ function makeDom(html: string) {
 describe('MediaProcessor stage metrics', () => {
   setupGlobalTestIsolation();
 
-  it('calls onStage with stageMs and totalMs when telemetry=true', () => {
+  it('emits progress events for each stage', async () => {
     const root = makeDom('<img src="https://pbs.twimg.com/media/a.jpg" />');
     const onStage = vi.fn<(event: MediaProcessStageEvent) => void>();
+    const { MediaProcessor } = await import('../../../src/shared/media/media-processor.ts');
     const processor = new MediaProcessor();
 
     // act
-    const result = processor.process(root, { stage: 'collect', onStage, telemetry: true });
+    const result = processor.process(root, { onStage });
 
     // assert
     expect(onStage).toHaveBeenCalled();
@@ -30,29 +31,15 @@ describe('MediaProcessor stage metrics', () => {
       expect.arrayContaining(['collect', 'extract', 'normalize', 'dedupe', 'validate', 'complete'])
     );
 
-    // verify metrics presence when telemetry enabled
     for (const evt of calls) {
-      expect(evt).toHaveProperty('count');
-      expect(evt).toHaveProperty('stageMs');
-      expect(evt).toHaveProperty('totalMs');
-      if (typeof evt.stageMs === 'number') expect(evt.stageMs).toBeGreaterThanOrEqual(0);
-      if (typeof evt.totalMs === 'number') expect(evt.totalMs).toBeGreaterThanOrEqual(0);
+      if (evt.count !== undefined) {
+        expect(typeof evt.count).toBe('number');
+        expect(evt.count).toBeGreaterThanOrEqual(0);
+      }
+      expect('stageMs' in evt).toBe(false);
+      expect('totalMs' in evt).toBe(false);
     }
 
-    // result should still be standard Result shape with optional telemetry array
     expect(result).toHaveProperty('status');
-    if ((result as any).telemetry) {
-      const telemetry = (result as any).telemetry as Array<{
-        stage: string;
-        count: number;
-        duration: number;
-      }>;
-      expect(Array.isArray(telemetry)).toBe(true);
-      expect(telemetry.length).toBeGreaterThan(0);
-      for (const t of telemetry) {
-        expect(typeof t.duration).toBe('number');
-        expect(t.duration).toBeGreaterThanOrEqual(0);
-      }
-    }
   });
 });

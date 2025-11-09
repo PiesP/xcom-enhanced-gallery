@@ -63,28 +63,11 @@
  */
 
 /**
- * Supported Log Levels with Priority Ordering
- *
- * **Priority**:
- * - debug (0): Lowest priority, most verbose
- * - info (1): General informational messages
- * - warn (2): Warning messages, issues to investigate
- * - error (3): Highest priority, errors only
- *
- * **Filtering**: Messages logged at level >= configured level are shown.
- * Example: If level=warn, then warn+error shown, debug+info hidden.
- *
- * @const {readonly string[]}
- * @public
- */
-export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
-
-/**
- * Log Level Type - One of the supported log levels
+ * Supported Log Level literals with priority ordering.
  *
  * @public
  */
-export type LogLevel = (typeof LOG_LEVELS)[number];
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
  * Loggable Data Type - Any value that can be logged
@@ -619,5 +602,3 @@ export function logError(
     logger.debug('Error stack:', error.stack);
   }
 }
-
-export default logger;

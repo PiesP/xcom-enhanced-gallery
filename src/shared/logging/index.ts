@@ -63,7 +63,6 @@
 
 // Logger
 export {
-  LOG_LEVELS,
   createLogger,
   logger,
   createScopedLogger,
@@ -73,5 +72,3 @@ export {
 } from './logger';
 
 export type { LogLevel, LoggableData, Logger } from './logger';
-
-export { default as defaultLogger } from './logger';
