@@ -35,7 +35,7 @@ import {
   extractOriginalImageUrl,
   getHighQualityMediaUrl,
   isValidMediaUrl as isTwitterMediaUrl,
-} from '../utils/media/media-url.util';
+} from '../utils/media-url';
 
 /**
  * Stage 1: Collection - Discover media candidate elements

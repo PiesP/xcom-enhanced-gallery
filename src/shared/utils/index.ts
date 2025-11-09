@@ -59,12 +59,12 @@ export { addListener } from './events';
 
 // === Media (5) ===
 export {
-  getHighQualityMediaUrl,
   detectMediaFromClick,
   findMediaAtCoordinates,
   isProcessableMedia,
   shouldBlockMediaTrigger,
 } from './media';
+export { getHighQualityMediaUrl } from './media-url';
 
 // === DOM utilities ===
 export { isValidCSSSelector, calculateSelectorComplexity, hasPerformanceIssues } from './dom';

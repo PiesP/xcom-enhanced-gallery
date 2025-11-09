@@ -10,7 +10,7 @@ import {
   classifyMediaUrl,
   shouldIncludeMediaUrl,
   type MediaTypeResult,
-} from '@shared/utils/media';
+} from '@shared/utils/media-url/index';
 
 describe('Media Filter - Emoji Detection (Phase 331)', () => {
   describe('isEmojiUrl', () => {
