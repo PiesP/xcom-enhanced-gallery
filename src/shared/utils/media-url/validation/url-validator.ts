@@ -2,12 +2,14 @@
  * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * URL Validator
- *
- * Phase 351.3: Validation Layer - URL validation
+ * Media URL validation utilities.
  */
 
-import { logger } from '../../../logging';
+const SUPPORTED_MEDIA_HOSTS = new Set(['pbs.twimg.com', 'video.twimg.com']);
+const MAX_URL_LENGTH = 2048;
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
 
 /**
  * Validate Twitter media URL
@@ -29,57 +31,31 @@ import { logger } from '../../../logging';
  * ```
  */
 export function isValidMediaUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url) || url.length > MAX_URL_LENGTH) {
     return false;
   }
 
-  // URL length limit (common browser limit of 2048 chars)
-  if (url.length > 2048) {
-    return false;
-  }
+  let parsed: URL;
 
   try {
-    // Check URL constructor availability in test environment
-    let URLConstructor: typeof URL | undefined;
-
-    if (typeof globalThis !== 'undefined' && typeof globalThis.URL === 'function') {
-      URLConstructor = globalThis.URL;
-    } else if (typeof window !== 'undefined' && typeof window.URL === 'function') {
-      URLConstructor = window.URL;
-    } else {
-      // Test environment fallback if needed
-      // Browser environment always has globalThis.URL or window.URL available
-      return isValidMediaUrlFallback(url);
-    }
-
-    if (!URLConstructor) {
-      return isValidMediaUrlFallback(url);
-    }
-
-    const urlObj = new URLConstructor(url);
-
-    // Validate protocol
-    if (!verifyUrlProtocol(urlObj.protocol)) {
-      return false;
-    }
-
-    // Validate path by domain
-    if (urlObj.hostname === 'pbs.twimg.com') {
-      return checkPbsMediaPath(urlObj.pathname);
-    }
-
-    if (urlObj.hostname === 'video.twimg.com') {
-      // video.twimg.com allows all paths
-      return true;
-    }
-
-    // Other domains not supported (Twitter media only)
+    parsed = new URL(url);
+  } catch {
     return false;
-  } catch (error) {
-    // URL parsing failed - use fallback
-    logger.warn('URL parsing failed, using fallback:', error);
-    return isValidMediaUrlFallback(url);
   }
+
+  if (!verifyUrlProtocol(parsed.protocol)) {
+    return false;
+  }
+
+  if (parsed.hostname === 'pbs.twimg.com') {
+    return checkPbsMediaPath(parsed.pathname);
+  }
+
+  if (parsed.hostname === 'video.twimg.com') {
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -90,13 +66,13 @@ export function isValidMediaUrl(url: string): boolean {
  * @returns Whether URL is from Twitter media domain
  */
 export function isTwitterMediaUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return false;
   }
 
   try {
-    const urlObj = new URL(url);
-    return urlObj.hostname === 'pbs.twimg.com' || urlObj.hostname === 'video.twimg.com';
+    const parsed = new URL(url);
+    return SUPPORTED_MEDIA_HOSTS.has(parsed.hostname);
   } catch {
     return false;
   }
@@ -121,7 +97,10 @@ function verifyUrlProtocol(protocol: string): boolean {
  * @returns Whether path is valid media path
  */
 function checkPbsMediaPath(pathname: string): boolean {
-  // pbs.twimg.com must include /media/ or video thumbnail path, excluding profile_images
+  if (!pathname) {
+    return false;
+  }
+
   const isMedia = pathname.includes('/media/');
   const isVideoThumb =
     /\/ext_tw_video_thumb\//.test(pathname) ||
@@ -129,44 +108,4 @@ function checkPbsMediaPath(pathname: string): boolean {
     /\/video_thumb\//.test(pathname);
 
   return (isMedia || isVideoThumb) && !pathname.includes('/profile_images/');
-}
-
-/**
- * Fallback validation function for environments without URL constructor
- *
- * @internal
- * @param url - URL to validate
- * @returns Whether URL is valid
- */
-function isValidMediaUrlFallback(url: string): boolean {
-  // Basic protocol check
-  if (!url.startsWith('https://') && !url.startsWith('http://')) {
-    return false;
-  }
-
-  // Domain spoofing prevention: exact hostname matching
-  const protocolRegex = /^https?:\/\/([^/?#]+)/;
-  const match = url.match(protocolRegex);
-  if (!match) {
-    return false;
-  }
-
-  const hostname = match[1];
-
-  // Twitter media domain exact check
-  if (hostname === 'pbs.twimg.com') {
-    const isMedia = url.includes('/media/');
-    const isVideoThumb =
-      url.includes('/ext_tw_video_thumb/') ||
-      url.includes('/tweet_video_thumb/') ||
-      url.includes('/video_thumb/');
-    return (isMedia || isVideoThumb) && !url.includes('/profile_images/');
-  }
-
-  if (hostname === 'video.twimg.com') {
-    return true;
-  }
-
-  // Explicitly reject unsupported domains
-  return false;
 }
