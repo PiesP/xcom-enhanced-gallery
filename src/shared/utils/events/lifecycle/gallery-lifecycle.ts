@@ -20,6 +20,14 @@ interface LifecycleState {
   eventTarget: EventTarget | null;
 }
 
+const DEFAULT_GALLERY_EVENT_OPTIONS: GalleryEventOptions = {
+  enableKeyboard: true,
+  enableMediaDetection: true,
+  debugMode: false,
+  preventBubbling: true,
+  context: 'gallery',
+};
+
 const initialLifecycleState: LifecycleState = {
   initialized: false,
   options: null,
@@ -31,6 +39,36 @@ const initialLifecycleState: LifecycleState = {
 };
 
 let lifecycleState: LifecycleState = { ...initialLifecycleState };
+
+function sanitizeContext(context: string | undefined): string {
+  const trimmed = context?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_GALLERY_EVENT_OPTIONS.context;
+}
+
+function resolveInitializationInput(optionsOrRoot?: Partial<GalleryEventOptions> | HTMLElement): {
+  options: GalleryEventOptions;
+  root: HTMLElement | null;
+} {
+  if (optionsOrRoot instanceof HTMLElement) {
+    return {
+      options: { ...DEFAULT_GALLERY_EVENT_OPTIONS },
+      root: optionsOrRoot,
+    };
+  }
+
+  const partial = optionsOrRoot ?? {};
+  const merged: GalleryEventOptions = {
+    ...DEFAULT_GALLERY_EVENT_OPTIONS,
+    ...partial,
+  };
+
+  merged.context = sanitizeContext(merged.context);
+
+  return {
+    options: merged,
+    root: null,
+  };
+}
 
 function resolveEventTarget(explicitRoot: HTMLElement | null): EventTarget {
   if (explicitRoot) {
@@ -56,29 +94,9 @@ export async function initializeGalleryEvents(
     cleanupGalleryEvents();
   }
 
-  let finalOptions: GalleryEventOptions;
-  let explicitGalleryRoot: HTMLElement | null = null;
-
-  if (optionsOrRoot instanceof HTMLElement) {
-    explicitGalleryRoot = optionsOrRoot;
-    finalOptions = {
-      enableKeyboard: true,
-      enableMediaDetection: true,
-      debugMode: false,
-      preventBubbling: true,
-      context: 'gallery',
-    };
-  } else {
-    const options = optionsOrRoot || {};
-    finalOptions = {
-      enableKeyboard: true,
-      enableMediaDetection: true,
-      debugMode: false,
-      preventBubbling: true,
-      context: 'gallery',
-      ...options,
-    };
-  }
+  const { options: finalOptions, root: explicitGalleryRoot } =
+    resolveInitializationInput(optionsOrRoot);
+  const listenerContext = sanitizeContext(finalOptions.context);
 
   const keyHandler: EventListener = (evt: Event) => {
     const event = evt as KeyboardEvent;
@@ -100,8 +118,8 @@ export async function initializeGalleryEvents(
     passive: false,
   };
 
-  addListener(target, 'keydown', keyHandler, listenerOptions, finalOptions.context);
-  addListener(target, 'click', clickHandler, listenerOptions, finalOptions.context);
+  addListener(target, 'keydown', keyHandler, listenerOptions, listenerContext);
+  addListener(target, 'click', clickHandler, listenerOptions, listenerContext);
 
   lifecycleState = {
     initialized: true,
@@ -109,13 +127,15 @@ export async function initializeGalleryEvents(
     handlers,
     keyListener: keyHandler,
     clickListener: clickHandler,
-    listenerContext: finalOptions.context,
+    listenerContext,
     eventTarget: target,
   };
 
-  logger.debug('[GalleryEvents] Event listeners registered', {
-    context: finalOptions.context,
-  });
+  if (finalOptions.debugMode) {
+    logger.debug('[GalleryEvents] Event listeners registered', {
+      context: listenerContext,
+    });
+  }
 
   return () => {
     cleanupGalleryEvents();
