@@ -16,7 +16,6 @@
  * @version 2.0.0 - Service Manager Delegation Pattern (Complete Separation)
  */
 
-import { logger } from '../../logging';
 import type { BaseService } from '../../types/core/base-service.types';
 import { ServiceRegistry } from './service-registry';
 import { ServiceFactoryManager } from './service-factory';
@@ -43,9 +42,7 @@ export class CoreService {
   private readonly factory = new ServiceFactoryManager();
   private readonly lifecycle = new ServiceLifecycleManager();
 
-  private constructor() {
-    logger.debug('[CoreService] Initialized (Orchestrator Pattern)');
-  }
+  private constructor() {}
 
   /**
    * Get singleton instance
@@ -143,11 +140,11 @@ export class CoreService {
    * ```
    */
   public tryGet<T>(key: string): T | null {
-    try {
-      return this.get<T>(key);
-    } catch {
-      return null;
+    const fromRegistry = this.registry.tryGet<T>(key);
+    if (fromRegistry !== null) {
+      return fromRegistry;
     }
+    return this.factory.createFromFactory<T>(key);
   }
 
   /**
@@ -401,10 +398,8 @@ export class CoreService {
    * @internal Phase 137: Cleanup sequence for graceful shutdown
    */
   public cleanup(): void {
-    logger.debug('[CoreService] Cleanup started');
     this.lifecycle.cleanup();
     this.registry.cleanup();
-    logger.debug('[CoreService] Cleanup completed');
   }
 
   /**
@@ -419,7 +414,6 @@ export class CoreService {
     this.registry.reset();
     this.factory.reset();
     this.lifecycle.reset();
-    logger.debug('[CoreService] All services reset');
   }
 
   /**
@@ -434,7 +428,6 @@ export class CoreService {
     if (CoreService.instance) {
       CoreService.instance.reset();
       CoreService.instance = null;
-      logger.debug('[CoreService] Singleton reset');
     }
   }
 }
@@ -498,20 +491,4 @@ export function getService<T>(key: string): T {
  */
 export function registerServiceFactory<T>(key: string, factory: () => T): void {
   CoreService.getInstance().registerFactory<T>(key, factory);
-}
-
-// Phase 137: Test compatibility - expose to global namespace in test/dev mode
-// Note: This works because Vite transforms import.meta.env at build time.
-// At runtime, no issues occur since Vite has already done the substitution.
-try {
-  // @ts-ignore - Vite dev/test mode only
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const viteEnv = (globalThis as any)['__VITE_ENV__'] || import.meta.env;
-  if (viteEnv?.DEV || viteEnv?.MODE === 'test') {
-    const kRegister = 'registerService' + 'Factory';
-    const globalRecord = globalThis as Record<string, unknown>;
-    globalRecord[kRegister] = registerServiceFactory as unknown as object;
-  }
-} catch {
-  // Non-Vite environment - ignore
 }

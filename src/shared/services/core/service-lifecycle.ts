@@ -15,7 +15,6 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Lifecycle Specialization)
  */
 
-import { logger } from '../../logging';
 import type { BaseService } from '../../types/core/base-service.types';
 
 /**
@@ -38,15 +37,13 @@ export class ServiceLifecycleManager {
   private readonly baseServices = new Map<string, BaseService>();
   private readonly initializedServices = new Set<string>();
 
-  constructor() {
-    logger.debug('[ServiceLifecycleManager] Initialized');
-  }
+  constructor() {}
 
   /**
    * Register a BaseService instance for lifecycle management
    *
-   * **Overwrite Handling**: If service with same key exists, logs warning
-   * and replaces with new instance. Tracking continues with new instance.
+   * **Overwrite Handling**: If service with same key exists, the previous
+   * registration is replaced (last registration wins).
    *
    * @param {string} key - Unique service identifier
    * @param {BaseService} service - Service implementing BaseService interface
@@ -61,11 +58,7 @@ export class ServiceLifecycleManager {
    * @internal Phase 309: BaseServices registered during bootstrap
    */
   public registerBaseService(key: string, service: BaseService): void {
-    if (this.baseServices.has(key)) {
-      logger.warn(`[ServiceLifecycleManager] BaseService overwrite: ${key}`);
-    }
     this.baseServices.set(key, service);
-    logger.debug(`[ServiceLifecycleManager] BaseService registered: ${key}`);
   }
 
   /**
@@ -117,7 +110,7 @@ export class ServiceLifecycleManager {
    * Initialize a single BaseService (async)
    *
    * **Initialization State**: Tracks initialization to prevent duplicate
-   * initialization. If already initialized, returns early with debug log.
+   * initialization. If already initialized, the call becomes a no-op.
    *
    * **Error Handling**: Throws on initialization failure. Caller must handle.
    *
@@ -126,11 +119,7 @@ export class ServiceLifecycleManager {
    *
    * @example
    * ```typescript
-   * try {
-   *   await manager.initializeBaseService('myService');
-   * } catch (error) {
-   *   logger.error('Initialization failed:', error);
-   * }
+   * await manager.initializeBaseService('myService');
    * ```
    *
    * @internal Phase 309: Called during application bootstrap
@@ -139,21 +128,13 @@ export class ServiceLifecycleManager {
     const service = this.getBaseService(key);
 
     if (this.initializedServices.has(key)) {
-      logger.debug(`[ServiceLifecycleManager] Already initialized: ${key}`);
       return;
     }
 
-    try {
-      logger.debug(`[ServiceLifecycleManager] Initializing BaseService: ${key}`);
-      if (service.initialize) {
-        await service.initialize();
-      }
-      this.initializedServices.add(key);
-      logger.debug(`[ServiceLifecycleManager] Initialization completed: ${key}`);
-    } catch (error) {
-      logger.error(`[ServiceLifecycleManager] Initialization failed (${key}):`, error);
-      throw error;
+    if (service.initialize) {
+      await service.initialize();
     }
+    this.initializedServices.add(key);
   }
 
   /**
@@ -162,8 +143,8 @@ export class ServiceLifecycleManager {
    * **Sequence**: Initializes services one-by-one in order.
    * If specific keys provided, initializes only those; otherwise initializes all.
    *
-   * **Error Handling**: Logs errors but continues initialization of other services.
-   * Ensures all initialization attempts despite failures.
+   * **Error Handling**: Continues initializing remaining services and surfaces
+   * failures as a single `AggregateError` once all attempts complete.
    *
    * @param {string[]} [keys] - Optional list of service keys to initialize.
    *   If omitted, initializes all registered BaseServices.
@@ -181,20 +162,24 @@ export class ServiceLifecycleManager {
    */
   public async initializeAllBaseServices(keys?: string[]): Promise<void> {
     const serviceKeys = keys || Array.from(this.baseServices.keys());
-    logger.debug(`[ServiceLifecycleManager] Initializing ${serviceKeys.length} BaseServices...`);
+
+    const failures: Array<{ key: string; error: Error }> = [];
 
     for (const key of serviceKeys) {
       try {
         await this.initializeBaseService(key);
       } catch (error) {
-        logger.error(
-          `[ServiceLifecycleManager] Initialization failed (${key}), continuing:`,
-          error
-        );
+        const normalized = error instanceof Error ? error : new Error(String(error));
+        failures.push({ key, error: normalized });
       }
     }
 
-    logger.debug(`[ServiceLifecycleManager] All BaseServices initialization completed`);
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures.map(entry => entry.error),
+        `BaseService initialization failed for: ${failures.map(entry => entry.key).join(', ')}`
+      );
+    }
   }
 
   /**
@@ -238,28 +223,33 @@ export class ServiceLifecycleManager {
    * **Lifecycle**: Calls destroy() on each initialized BaseService.
    * Used during application shutdown or test teardown.
    *
-   * **Error Handling**: Errors during cleanup are logged but don't stop
-   * cleanup of other services. Ensures all cleanup happens despite failures.
+   * **Error Handling**: Collects cleanup failures and throws a single
+   * `AggregateError` after attempting all destroy hooks.
    *
    * @internal Phase 137: Cleanup sequence for application shutdown
    */
   public cleanup(): void {
-    logger.debug('[ServiceLifecycleManager] Cleanup started');
+    const failures: Array<{ key: string; error: Error }> = [];
 
     for (const [key, service] of this.baseServices) {
       if (this.initializedServices.has(key)) {
         try {
           if (service.destroy) {
             service.destroy();
-            logger.debug(`[ServiceLifecycleManager] BaseService destroy completed: ${key}`);
           }
         } catch (error) {
-          logger.warn(`[ServiceLifecycleManager] BaseService destroy failed (${key}):`, error);
+          const normalized = error instanceof Error ? error : new Error(String(error));
+          failures.push({ key, error: normalized });
         }
       }
     }
 
-    logger.debug('[ServiceLifecycleManager] Cleanup completed');
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures.map(entry => entry.error),
+        `BaseService cleanup failed for: ${failures.map(entry => entry.key).join(', ')}`
+      );
+    }
   }
 
   /**
@@ -273,6 +263,5 @@ export class ServiceLifecycleManager {
   public reset(): void {
     this.baseServices.clear();
     this.initializedServices.clear();
-    logger.debug('[ServiceLifecycleManager] All BaseServices reset');
   }
 }

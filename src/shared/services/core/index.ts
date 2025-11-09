@@ -23,6 +23,3 @@ export {
   getService,
   registerServiceFactory,
 } from './core-service-manager';
-export { ServiceRegistry } from './service-registry';
-export { ServiceFactoryManager } from './service-factory';
-export { ServiceLifecycleManager } from './service-lifecycle';

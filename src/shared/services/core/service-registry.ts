@@ -16,8 +16,6 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Registry Specialization)
  */
 
-import { logger } from '../../logging';
-
 type CleanupCapable = { destroy?: () => void; cleanup?: () => void };
 
 /**
@@ -39,9 +37,7 @@ type CleanupCapable = { destroy?: () => void; cleanup?: () => void };
 export class ServiceRegistry {
   private readonly services = new Map<string, unknown>();
 
-  constructor() {
-    logger.debug('[ServiceRegistry] Initialized');
-  }
+  constructor() {}
 
   /**
    * Register a service instance directly
@@ -63,31 +59,27 @@ export class ServiceRegistry {
    */
   public register<T>(key: string, instance: T): void {
     if (this.services.has(key)) {
-      logger.warn(`[ServiceRegistry] Service overwrite detected: ${key}`);
       const prev = this.services.get(key);
-      // Attempt safe cleanup of previous instance
       if (prev && typeof prev === 'object') {
-        try {
-          const p = prev as CleanupCapable;
-          if (typeof p.destroy === 'function') {
-            p.destroy();
+        const candidate = prev as CleanupCapable;
+        if (typeof candidate.destroy === 'function') {
+          try {
+            candidate.destroy();
+          } catch {
+            // Ignore cleanup failures on overwrite to avoid cascading issues.
           }
-        } catch (error) {
-          logger.warn(`[ServiceRegistry] Previous instance destroy failed (${key}):`, error);
         }
-        try {
-          const p = prev as CleanupCapable;
-          if (typeof p.cleanup === 'function') {
-            p.cleanup();
+        if (typeof candidate.cleanup === 'function') {
+          try {
+            candidate.cleanup();
+          } catch {
+            // Ignore cleanup failures on overwrite.
           }
-        } catch (error) {
-          logger.warn(`[ServiceRegistry] Previous instance cleanup failed (${key}):`, error);
         }
       }
     }
 
     this.services.set(key, instance);
-    logger.debug(`[ServiceRegistry] Service registered: ${key}`);
   }
 
   /**
@@ -131,12 +123,10 @@ export class ServiceRegistry {
    * ```
    */
   public tryGet<T>(key: string): T | null {
-    try {
-      return this.get<T>(key);
-    } catch {
-      logger.warn(`[ServiceRegistry] Service lookup failed: ${key}`);
+    if (!this.services.has(key)) {
       return null;
     }
+    return this.services.get(key) as T;
   }
 
   /**
@@ -179,18 +169,15 @@ export class ServiceRegistry {
    * @internal Phase 137: Cleanup sequence for application shutdown
    */
   public cleanup(): void {
-    logger.debug('[ServiceRegistry] Cleanup started');
-
-    for (const [key, instance] of this.services) {
+    for (const instance of this.services.values()) {
       if (instance && typeof instance === 'object') {
         const inst = instance as CleanupCapable;
         // Call destroy() first (highest priority)
         if (typeof inst.destroy === 'function') {
           try {
             inst.destroy();
-            logger.debug(`[ServiceRegistry] ${key} destroy completed`);
-          } catch (error) {
-            logger.warn(`[ServiceRegistry] ${key} destroy failed:`, error);
+          } catch {
+            // Continue cleanup to avoid leaking other services.
           }
         }
 
@@ -198,15 +185,12 @@ export class ServiceRegistry {
         if (typeof inst.cleanup === 'function') {
           try {
             inst.cleanup();
-            logger.debug(`[ServiceRegistry] ${key} cleanup completed`);
-          } catch (error) {
-            logger.warn(`[ServiceRegistry] ${key} cleanup failed:`, error);
+          } catch {
+            // Continue cleanup even if one service fails.
           }
         }
       }
     }
-
-    logger.debug('[ServiceRegistry] Cleanup completed');
   }
 
   /**
@@ -219,6 +203,5 @@ export class ServiceRegistry {
    */
   public reset(): void {
     this.services.clear();
-    logger.debug('[ServiceRegistry] All services reset');
   }
 }

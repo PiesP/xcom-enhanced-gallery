@@ -35,9 +35,7 @@ export class ServiceFactoryManager {
   private readonly factories = new Map<string, () => unknown>();
   private readonly factoryCache = new Map<string, unknown>();
 
-  constructor() {
-    logger.debug('[ServiceFactoryManager] Initialized');
-  }
+  constructor() {}
 
   /**
    * Register a service factory function
@@ -58,11 +56,10 @@ export class ServiceFactoryManager {
    */
   public registerFactory<T>(key: string, factory: () => T): void {
     if (this.factories.has(key)) {
-      logger.warn(`[ServiceFactoryManager] Factory already registered (ignored): ${key}`);
+      logger.warn(`팩토리 중복 등록 무시: ${key}`);
       return;
     }
     this.factories.set(key, factory);
-    logger.debug(`[ServiceFactoryManager] Factory registered: ${key}`);
   }
 
   /**
@@ -100,7 +97,6 @@ export class ServiceFactoryManager {
     try {
       const created = factory();
       this.factoryCache.set(key, created);
-      logger.debug(`[ServiceFactoryManager] Instance created from factory: ${key}`);
       return created as T;
     } catch (error) {
       logger.error(`[ServiceFactoryManager] Factory execution failed (${key}):`, error);
@@ -146,6 +142,5 @@ export class ServiceFactoryManager {
   public reset(): void {
     this.factories.clear();
     this.factoryCache.clear();
-    logger.debug('[ServiceFactoryManager] All factories reset');
   }
 }
