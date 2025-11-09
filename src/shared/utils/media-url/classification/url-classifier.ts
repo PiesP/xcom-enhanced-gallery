@@ -2,27 +2,79 @@
  * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * URL Classifier
- *
- * Phase 351.4: Classification Layer - URL type classification and filtering
+ * URL classifier utilities.
  */
 
 import type { MediaTypeResult } from '../types';
 
-// ===== Media Filter Patterns (Cached Regex) =====
-/**
- * Cached regex patterns for performance optimization
- * Phase 331-332: Emoji and video thumbnail filtering
- */
-const MEDIA_FILTER_PATTERNS = {
-  /** abs[-N].twimg.com hostname pattern for emoji CDN */
-  EMOJI_HOSTNAME: /^abs(-\d+)?\.twimg\.com$/i,
-  /** /emoji/v<N>/(svg|<size>) path pattern */
-  EMOJI_PATH: /\/emoji\/v\d+\/(svg|\d+x\d+)\//i,
-  /** Video thumbnail paths: amplify_video_thumb, ext_tw_video_thumb, tweet_video_thumb */
-  VIDEO_THUMB_PATH:
-    /\/(amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|ad_img\/amplify_video)\//i,
-} as const;
+const TWITTER_EMOJI_HOST_PATTERN = /^abs(?:-\d+)?\.twimg\.com$/i;
+const TWITTER_EMOJI_PATH_PATTERN = /\/emoji\/v\d+\/(?:svg|\d+x\d+)\//i;
+const TWITTER_VIDEO_THUMB_PATH_PATTERN =
+  /\/(?:amplify_video_thumb|ext_tw_video_thumb|tweet_video_thumb|ad_img\/amplify_video)\//i;
+const TWITTER_VIDEO_CONTENT_PATH_PATTERN = /\/(?:ext_tw_video|tweet_video|amplify_video)\//i;
+
+const EMOJI_SEGMENT = '/emoji/';
+const MEDIA_SEGMENT = '/media/';
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function safeParseUrl(rawUrl: string): URL | null {
+  try {
+    return new URL(rawUrl);
+  } catch {
+    return null;
+  }
+}
+
+function matchesEmoji(parsed: URL): boolean {
+  return (
+    TWITTER_EMOJI_HOST_PATTERN.test(parsed.hostname) &&
+    parsed.pathname.includes(EMOJI_SEGMENT) &&
+    TWITTER_EMOJI_PATH_PATTERN.test(parsed.pathname)
+  );
+}
+
+function matchesVideoThumbnail(parsed: URL): boolean {
+  const isTwitterCdnHost = parsed.hostname === 'pbs.twimg.com';
+  const matchesThumbnailPath = TWITTER_VIDEO_THUMB_PATH_PATTERN.test(parsed.pathname);
+  return isTwitterCdnHost && matchesThumbnailPath;
+}
+
+function classifyVideoHost(parsed: URL): MediaTypeResult {
+  if (TWITTER_VIDEO_CONTENT_PATH_PATTERN.test(parsed.pathname)) {
+    return {
+      type: 'video',
+      shouldInclude: true,
+      hostname: parsed.hostname,
+    };
+  }
+
+  return {
+    type: 'unknown',
+    shouldInclude: false,
+    reason: 'Unsupported video path pattern',
+    hostname: parsed.hostname,
+  };
+}
+
+function classifyImageHost(parsed: URL): MediaTypeResult {
+  if (parsed.pathname.includes(MEDIA_SEGMENT)) {
+    return {
+      type: 'image',
+      shouldInclude: true,
+      hostname: parsed.hostname,
+    };
+  }
+
+  return {
+    type: 'unknown',
+    shouldInclude: false,
+    reason: 'Unsupported image path pattern',
+    hostname: parsed.hostname,
+  };
+}
 
 /**
  * URL이 Twitter 이모지인지 판별
@@ -45,29 +97,12 @@ const MEDIA_FILTER_PATTERNS = {
  * ```
  */
 export function isEmojiUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return false;
   }
 
-  try {
-    const urlObj = new URL(url);
-
-    // 1. Hostname validation: abs[-N].twimg.com (emoji served from abs server)
-    if (!MEDIA_FILTER_PATTERNS.EMOJI_HOSTNAME.test(urlObj.hostname)) {
-      return false;
-    }
-
-    // 2. Path validation: includes /emoji/ (identify emoji path)
-    if (!urlObj.pathname.includes('/emoji/')) {
-      return false;
-    }
-
-    // 3. Format validation: /emoji/v<N>/(svg|<size>x<size>)/
-    // Example: /emoji/v2/svg/, /emoji/v1/72x72/, /emoji/v2/36x36/
-    return MEDIA_FILTER_PATTERNS.EMOJI_PATH.test(urlObj.pathname);
-  } catch {
-    return false;
-  }
+  const parsed = safeParseUrl(url.trim());
+  return parsed ? matchesEmoji(parsed) : false;
 }
 
 /**
@@ -90,27 +125,12 @@ export function isEmojiUrl(url: string): boolean {
  * ```
  */
 export function isVideoThumbnailUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return false;
   }
 
-  try {
-    const urlObj = new URL(url);
-
-    // 1. Hostname validation: pbs.twimg.com (thumbnail server)
-    if (urlObj.hostname !== 'pbs.twimg.com') {
-      return false;
-    }
-
-    // 2. Path validation: video thumbnail pattern matching
-    // Example: /amplify_video_thumb/1931629000243453952/img/...
-    //          /ext_tw_video_thumb/1234567890/img/...
-    //          /tweet_video_thumb/1234567890/img/...
-    //          /ad_img/amplify_video/1234567890/...
-    return MEDIA_FILTER_PATTERNS.VIDEO_THUMB_PATH.test(urlObj.pathname);
-  } catch {
-    return false;
-  }
+  const parsed = safeParseUrl(url.trim());
+  return parsed ? matchesVideoThumbnail(parsed) : false;
 }
 
 /**
@@ -135,7 +155,7 @@ export function isVideoThumbnailUrl(url: string): boolean {
  * ```
  */
 export function classifyMediaUrl(url: string): MediaTypeResult {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return {
       type: 'unknown',
       shouldInclude: false,
@@ -143,71 +163,51 @@ export function classifyMediaUrl(url: string): MediaTypeResult {
     };
   }
 
-  try {
-    const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
+  const trimmedUrl = url.trim();
+  const parsed = safeParseUrl(trimmedUrl);
 
-    // 1. Check for emoji (highest priority filter)
-    if (isEmojiUrl(url)) {
-      return {
-        type: 'emoji',
-        shouldInclude: false,
-        reason: 'Emoji URLs are filtered (Phase 331)',
-        hostname,
-      };
-    }
-
-    // 2. Check for video thumbnail (second priority filter)
-    if (isVideoThumbnailUrl(url)) {
-      return {
-        type: 'video-thumbnail',
-        shouldInclude: false,
-        reason: 'Video thumbnails are skipped (prefer video elements - Phase 332)',
-        hostname,
-      };
-    }
-
-    // 3. Classify valid media types
-    if (hostname === 'video.twimg.com') {
-      // Only include if it's a proper video path (/ext_tw_video/, /tweet_video/, etc.)
-      if (urlObj.pathname.match(/\/(ext_tw_video|tweet_video|amplify_video)\//i)) {
-        return {
-          type: 'video',
-          shouldInclude: true,
-          hostname,
-        };
-      }
-      // Unknown video path
-      return {
-        type: 'unknown',
-        shouldInclude: false,
-        reason: 'Unsupported video path pattern',
-        hostname,
-      };
-    }
-
-    if (hostname === 'pbs.twimg.com' && urlObj.pathname.includes('/media/')) {
-      return {
-        type: 'image',
-        shouldInclude: true,
-        hostname,
-      };
-    }
-
-    // 4. Unknown or unsupported URL
-    return {
-      type: 'unknown',
-      shouldInclude: false,
-      reason: 'Unsupported hostname or path pattern',
-      hostname,
-    };
-  } catch {
+  if (!parsed) {
     return {
       type: 'unknown',
       shouldInclude: false,
       reason: 'URL parsing failed',
     };
   }
+
+  const hostname = parsed.hostname;
+
+  if (matchesEmoji(parsed)) {
+    return {
+      type: 'emoji',
+      shouldInclude: false,
+      reason: 'Emoji URLs are filtered',
+      hostname,
+    };
+  }
+
+  if (matchesVideoThumbnail(parsed)) {
+    return {
+      type: 'video-thumbnail',
+      shouldInclude: false,
+      reason: 'Video thumbnails are skipped',
+      hostname,
+    };
+  }
+
+  if (hostname === 'video.twimg.com') {
+    return classifyVideoHost(parsed);
+  }
+
+  if (hostname === 'pbs.twimg.com') {
+    return classifyImageHost(parsed);
+  }
+
+  return {
+    type: 'unknown',
+    shouldInclude: false,
+    reason: 'Unsupported hostname or path pattern',
+    hostname,
+  };
 }
 
 /**
