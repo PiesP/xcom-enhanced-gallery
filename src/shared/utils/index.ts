@@ -66,8 +66,8 @@ export {
   shouldBlockMediaTrigger,
 } from './media';
 
-// === DOM Batcher (2) ===
-export { DOMBatcher, globalDOMBatcher } from './dom/index';
+// === DOM utilities ===
+export { isValidCSSSelector, calculateSelectorComplexity, hasPerformanceIssues } from './dom';
 
 // === Browser environment safe access (17) - Phase 194: Added ===
 export {
@@ -111,4 +111,3 @@ export {
 
 // === Listener profiling (Phase 420.3) ===
 // === Core types (total 44 exports) ===
-export type { DOMUpdate as DOMUpdateTask } from './dom/index';
