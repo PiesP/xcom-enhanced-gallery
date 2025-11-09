@@ -1,12 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
 
-type TwitterTokenExtractorModule =
-  typeof import('@shared/services/token-extraction/twitter-token-extractor');
+interface TwitterTokenExtractorInstance {
+  initialize(): Promise<void>;
+  cleanup(): Promise<void> | void;
+  isInitialized(): boolean;
+  getToken(forceRefresh?: boolean): Promise<string | null>;
+  refreshToken(): Promise<unknown>;
+  validateToken(token?: string): Promise<{ valid: boolean; reason?: string }>;
+}
+
+interface TwitterTokenExtractorModule {
+  TwitterTokenExtractor: new () => TwitterTokenExtractorInstance;
+}
 
 async function importModule(): Promise<TwitterTokenExtractorModule> {
   vi.resetModules();
-  return await import('@shared/services/token-extraction/twitter-token-extractor');
+  const moduleUrl = new URL(
+    '../../../../../src/shared/services/token-extraction/twitter-token-extractor.ts',
+    import.meta.url
+  );
+  return (await import(moduleUrl.href)) as TwitterTokenExtractorModule;
 }
 
 describe('TwitterTokenExtractor', () => {
@@ -110,7 +124,7 @@ describe('TwitterTokenExtractor', () => {
       await extractor.initialize();
       const validation = await extractor.validateToken('short');
       expect(validation.valid).toBe(false);
-      expect(validation.reason).toContain('유효하지 않은 토큰 형식');
+      expect(validation.reason).toBe('Invalid token format');
       await extractor.cleanup();
     });
   });

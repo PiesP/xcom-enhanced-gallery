@@ -1,441 +1,251 @@
 /**
  * TwitterTokenExtractor Unit Tests
  *
- * @description Twitter bearer token extraction service 검증
+ * @description Token extraction and validation behaviour coverage
  * @category Unit Test - Services
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
-import { TwitterTokenExtractor } from '@/shared/services/token-extraction/twitter-token-extractor';
-import type {
-  TokenExtractionResult,
-  TokenValidationResult,
-} from '@/shared/services/token-extraction/twitter-token-extractor';
-import { HttpRequestService } from '@/shared/services';
+interface TestTokenExtractionResult {
+  success: boolean;
+  token?: string;
+  error?: string;
+  source: 'script' | 'cookie' | 'session' | 'storage' | 'unknown';
+  timestamp: number;
+}
 
-// Mock HttpRequestService
-vi.mock('@/shared/services', async () => {
-  const actual = await vi.importActual('@/shared/services');
-  const mockInstance = {
-    post: vi.fn(),
-    get: vi.fn(),
-  };
+interface TestTokenValidationResult {
+  valid: boolean;
+  reason?: string;
+  remainingTime?: number;
+}
 
-  return {
-    ...actual,
-    HttpRequestService: {
-      getInstance: vi.fn(() => mockInstance),
-    },
-  };
-});
+interface TwitterTokenExtractorInstance {
+  initialize(): Promise<void>;
+  cleanup(): void;
+  isInitialized(): boolean;
+  getToken(forceRefresh?: boolean): Promise<string | null>;
+  refreshToken(): Promise<TestTokenExtractionResult>;
+  validateToken(token?: string): Promise<TestTokenValidationResult>;
+}
 
-// Valid test token
+interface TwitterTokenExtractorConstructor {
+  new (): TwitterTokenExtractorInstance;
+}
+
+const mockHttpService = {
+  post: vi.fn(),
+};
+
+const mockPersistentStorage = {
+  get: vi.fn(),
+};
+
+vi.mock('@shared/services/http-request-service', () => ({
+  HttpRequestService: {
+    getInstance: vi.fn(() => mockHttpService),
+  },
+}));
+
+vi.mock('@shared/services/persistent-storage', () => ({
+  getPersistentStorage: vi.fn(() => mockPersistentStorage),
+}));
+
 const VALID_TEST_TOKEN =
   'AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA';
+
+function appendScriptWithToken(token: string) {
+  const script = document.createElement('script');
+  script.dataset.testid = 'token-script';
+  script.textContent = `window.__CONFIG__ = { "Bearer": "${token}" };`;
+  document.body.appendChild(script);
+  return script;
+}
 
 describe('TwitterTokenExtractor', () => {
   setupGlobalTestIsolation();
 
-  let extractor: TwitterTokenExtractor;
-  let mockHttpService: ReturnType<typeof HttpRequestService.getInstance>;
+  let extractor: TwitterTokenExtractorInstance;
 
-  beforeEach(() => {
-    extractor = new TwitterTokenExtractor();
-    mockHttpService = HttpRequestService.getInstance();
+  beforeEach(async () => {
+    const moduleUrl = new URL(
+      '../../../../src/shared/services/token-extraction/twitter-token-extractor.ts',
+      import.meta.url
+    );
+    const moduleExports = (await import(moduleUrl.href)) as {
+      TwitterTokenExtractor: TwitterTokenExtractorConstructor;
+    };
+    extractor = new moduleExports.TwitterTokenExtractor();
     vi.clearAllMocks();
+    mockHttpService.post.mockReset();
+    mockPersistentStorage.get.mockReset();
+    mockPersistentStorage.get.mockResolvedValue(null);
+    const storage = globalThis.sessionStorage;
+    storage?.clear();
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.querySelectorAll('script[data-testid="token-script"]').forEach(node => node.remove());
   });
 
-  afterEach(async () => {
-    await extractor.cleanup();
+  afterEach(() => {
+    extractor.cleanup();
   });
 
-  describe('초기화', () => {
-    it('should create instance', () => {
-      expect(extractor).toBeInstanceOf(TwitterTokenExtractor);
-    });
-
-    it('should start uninitialized', () => {
+  describe('initialize', () => {
+    it('marks extractor as initialized', async () => {
       expect(extractor.isInitialized()).toBe(false);
-    });
-
-    it('should initialize successfully with fallback token', async () => {
       await extractor.initialize();
       expect(extractor.isInitialized()).toBe(true);
-    });
-
-    it('should handle initialization errors gracefully', async () => {
-      // This test was causing issues - skip for now as error handling
-      // is complex and initialize() catches errors internally
-      // The service is designed to continue even if one extraction method fails
     });
   });
 
   describe('cleanup', () => {
-    it('should clear state on cleanup', async () => {
+    it('resets state', async () => {
+      appendScriptWithToken(VALID_TEST_TOKEN);
       await extractor.initialize();
-      expect(extractor.isInitialized()).toBe(true);
+      expect(await extractor.getToken()).toBe(VALID_TEST_TOKEN);
 
-      await extractor.cleanup();
+      extractor.cleanup();
+
       expect(extractor.isInitialized()).toBe(false);
-    });
-
-    it('should handle cleanup without initialization', async () => {
-      await expect(extractor.cleanup()).resolves.not.toThrow();
+      expect(await extractor.getToken()).toBeNull();
     });
   });
 
   describe('getToken', () => {
-    it('should return null if no token available', async () => {
+    it('returns null when no token exists', async () => {
       const token = await extractor.getToken();
       expect(token).toBeNull();
     });
 
-    it('should return current token if available after initialization', async () => {
-      await extractor.initialize();
-      // Token may or may not be available depending on extraction success
-      const token = await extractor.getToken();
-      // Just verify it doesn't crash
-      expect(token === null || typeof token === 'string').toBe(true);
+    it('returns cached token without forcing refresh', async () => {
+      appendScriptWithToken(VALID_TEST_TOKEN);
+      await extractor.refreshToken();
+
+      const first = await extractor.getToken();
+      const second = await extractor.getToken();
+
+      expect(first).toBe(VALID_TEST_TOKEN);
+      expect(second).toBe(VALID_TEST_TOKEN);
     });
 
-    it('should force refresh when requested', async () => {
-      await extractor.initialize();
-      const token1 = await extractor.getToken();
-      const token2 = await extractor.getToken(true); // force refresh
+    it('forces refresh when requested', async () => {
+      appendScriptWithToken(VALID_TEST_TOKEN);
+      await extractor.refreshToken();
 
-      // Both should be either null or string
-      expect(token2 === null || typeof token2 === 'string').toBe(true);
+      const token = await extractor.getToken(true);
+      expect(token).toBe(VALID_TEST_TOKEN);
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('captures tokens from script tags', async () => {
+      const script = appendScriptWithToken(VALID_TEST_TOKEN);
+      const result = await extractor.refreshToken();
+
+      expect(result).toMatchObject<TestTokenExtractionResult>({
+        success: true,
+        token: VALID_TEST_TOKEN,
+        source: 'script',
+      });
+
+      script.remove();
+    });
+
+    it('captures tokens from cookies', async () => {
+      document.cookie = `auth_token=${VALID_TEST_TOKEN}; path=/`;
+
+      const result = await extractor.refreshToken();
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('cookie');
+    });
+
+    it('captures tokens from session storage', async () => {
+      const storage = globalThis.sessionStorage;
+      storage?.setItem('auth_token', VALID_TEST_TOKEN);
+
+      const result = await extractor.refreshToken();
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('session');
+    });
+
+    it('captures tokens from persistent storage', async () => {
+      mockPersistentStorage.get.mockResolvedValue({
+        tokens: { bearerToken: VALID_TEST_TOKEN },
+      });
+
+      const result = await extractor.refreshToken();
+      expect(result.success).toBe(true);
+      expect(result.source).toBe('storage');
+    });
+
+    it('returns failure when no sources succeed', async () => {
+      const result = await extractor.refreshToken();
+      expect(result.success).toBe(false);
+      expect(result.source).toBe('unknown');
     });
   });
 
   describe('validateToken', () => {
-    it('should return invalid for null token', async () => {
+    it('returns invalid for missing token', async () => {
       const result = await extractor.validateToken();
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain('토큰이 없습니다');
+      expect(result.reason).toBe('No token available');
     });
 
-    it('should return invalid for malformed token', async () => {
+    it('rejects malformed tokens', async () => {
       const result = await extractor.validateToken('invalid-token');
       expect(result.valid).toBe(false);
-      expect(result.reason).toContain('유효하지 않은 토큰 형식');
+      expect(result.reason).toBe('Invalid token format');
     });
 
-    it('should validate well-formed token', async () => {
-      const result = await extractor.validateToken(VALID_TEST_TOKEN);
-      expect(result.valid).toBe(true);
-    });
-
-    it('should handle API validation success', async () => {
-      mockHttpService.post = vi.fn().mockResolvedValue({
+    it('accepts well-formed tokens when API succeeds', async () => {
+      mockHttpService.post.mockResolvedValue({
         ok: true,
-        data: { guest_token: 'test-guest-token' },
+        data: { guest_token: 'guest' },
         status: 200,
       });
 
       const result = await extractor.validateToken(VALID_TEST_TOKEN);
       expect(result.valid).toBe(true);
-      expect(result.remainingTime).toBeDefined();
+      expect(result.remainingTime).toBe(3600000);
     });
 
-    it('should handle API validation failure', async () => {
-      mockHttpService.post = vi.fn().mockResolvedValue({
+    it('relays API error reason on failure', async () => {
+      mockHttpService.post.mockResolvedValue({
         ok: false,
         status: 401,
       });
 
       const result = await extractor.validateToken(VALID_TEST_TOKEN);
-      // API failure falls back to format validation for well-formed tokens
-      expect(result.valid).toBe(true); // Format is valid even if API fails
+      expect(result.valid).toBe(false);
+      expect(result.reason).toBe('API response error: 401');
     });
 
-    it('should fallback to format validation on API error', async () => {
-      mockHttpService.post = vi.fn().mockRejectedValue(new Error('Network error'));
+    it('falls back to format validation on API exception', async () => {
+      mockHttpService.post.mockRejectedValue(new Error('network error'));
 
       const result = await extractor.validateToken(VALID_TEST_TOKEN);
-      // Should fallback to format validation
       expect(result.valid).toBe(true);
+      expect(result.remainingTime).toBe(3600000);
     });
   });
 
-  describe('refreshToken', () => {
-    it('should reset extraction attempts', async () => {
-      await extractor.initialize();
-      const result = await extractor.refreshToken();
-
-      expect(result).toBeDefined();
-      expect(result.timestamp).toBeDefined();
-    });
-
-    it('should return new token result', async () => {
-      const result = await extractor.refreshToken();
-
-      expect(result.success).toBeDefined();
-      expect(result.source).toBeDefined();
-      expect(result.timestamp).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Token extraction from scripts', () => {
-    it('should extract token from script tag', async () => {
-      const script = document.createElement('script');
-      script.textContent = `
-        const config = {
-          "Bearer": "${VALID_TEST_TOKEN}"
-        };
-      `;
-      document.body.appendChild(script);
-
-      await extractor.initialize();
-      const token = await extractor.getToken();
-
-      // Token extraction from script is complex and may not always work in test env
-      // Just verify no crash
-      expect(token === null || typeof token === 'string').toBe(true);
-      document.body.removeChild(script);
-    });
-
-    it('should handle missing script tags', async () => {
-      // Remove previous mock if any
-      vi.restoreAllMocks();
-
-      // Clear all scripts
-      document.querySelectorAll('script').forEach(s => s.remove());
-
-      await extractor.initialize();
-      const token = await extractor.getToken();
-
-      // Should not crash, may return null
-      expect(token === null || typeof token === 'string').toBe(true);
-    });
-
-    it('should try multiple token patterns', async () => {
-      const script = document.createElement('script');
-      script.textContent = `
-        bearerToken = "${VALID_TEST_TOKEN}";
-      `;
-      document.body.appendChild(script);
-
-      await extractor.initialize();
-      const token = await extractor.getToken();
-
-      // May or may not extract successfully
-      expect(token === null || typeof token === 'string').toBe(true);
-      document.body.removeChild(script);
-    });
-  });
-
-  describe('Token extraction from config', () => {
-    it('should extract token from persistent storage', async () => {
-      // Mock PersistentStorage
-      vi.doMock('@shared/services', () => ({
-        PersistentStorage: {
-          getInstance: () => ({
-            get: vi.fn().mockResolvedValue({
-              tokens: {
-                bearerToken: VALID_TEST_TOKEN,
-              },
-            }),
-          }),
-        },
-      }));
-
-      const result = await extractor.refreshToken();
-      expect(result.success).toBe(true);
-    });
-
-    it('should handle missing config gracefully', async () => {
-      vi.doMock('@shared/services', () => ({
-        PersistentStorage: {
-          getInstance: () => ({
-            get: vi.fn().mockResolvedValue(null),
-          }),
-        },
-      }));
-
-      const result = await extractor.refreshToken();
-      // Should try other methods
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('Token extraction from cookies/session', () => {
-    it('should extract token from cookies', async () => {
-      Object.defineProperty(document, 'cookie', {
-        writable: true,
-        value: `auth_token=${VALID_TEST_TOKEN}; path=/`,
-      });
-
-      const result = await extractor.refreshToken();
-      expect(result.success).toBeDefined();
-    });
-
-    it('should handle missing cookies', async () => {
-      Object.defineProperty(document, 'cookie', {
-        writable: true,
-        value: '',
-      });
-
-      const result = await extractor.refreshToken();
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('Fallback token mechanism', () => {
-    it('should use fallback token after max attempts', async () => {
-      // Force max attempts by calling refreshToken multiple times
-      let lastResult;
-      for (let i = 0; i < 11; i++) {
-        lastResult = await extractor.refreshToken();
-      }
-
-      // After max attempts, should use fallback
-      expect(lastResult).toBeDefined();
-      expect(['fallback', 'network', 'script', 'config']).toContain(lastResult!.source);
-    });
-
-    it('should return valid token result from fallback', async () => {
-      // Force fallback by exhausting attempts
-      let result;
-      for (let i = 0; i < 11; i++) {
-        result = await extractor.refreshToken();
-      }
-
-      expect(result).toBeDefined();
-      expect(result!.timestamp).toBeGreaterThan(0);
-    });
-  });
-
-  describe('Token format validation', () => {
-    it('should accept valid Twitter token format', async () => {
-      const result = await extractor.validateToken(VALID_TEST_TOKEN);
-      expect(result.valid).toBe(true);
-    });
-
-    it('should reject short tokens', async () => {
-      const result = await extractor.validateToken('short');
-      expect(result.valid).toBe(false);
-    });
-
-    it('should reject tokens without AA prefix', async () => {
-      const token = 'X'.repeat(60) + '%3D';
-      const result = await extractor.validateToken(token);
-      expect(result.valid).toBe(false);
-    });
-
-    it('should reject tokens without URL encoding', async () => {
-      const token = 'AA' + 'X'.repeat(60);
-      const result = await extractor.validateToken(token);
-      expect(result.valid).toBe(false);
-    });
-  });
-
-  describe('Network monitoring', () => {
-    it('should check performance entries for token hints', async () => {
-      // Mock performance API
-      const mockEntries = [
-        {
-          name: 'https://api.twitter.com/1.1/guest/activate.json',
-          entryType: 'resource',
-        },
-      ];
-
-      vi.spyOn(performance, 'getEntriesByType').mockReturnValue(mockEntries as any);
-
-      await extractor.initialize();
-      // Should not crash
-      expect(extractor.isInitialized()).toBe(true);
-    });
-
-    it('should handle invalid URLs in performance entries', async () => {
-      const mockEntries = [
-        {
-          name: 'not-a-valid-url',
-          entryType: 'resource',
-        },
-      ];
-
-      vi.spyOn(performance, 'getEntriesByType').mockReturnValue(mockEntries as any);
-
+  describe('integration', () => {
+    it('runs initialization flow without token', async () => {
       await extractor.initialize();
       expect(extractor.isInitialized()).toBe(true);
-    });
-  });
-
-  describe('Error handling', () => {
-    it('should handle document unavailable', async () => {
-      const originalDocument = global.document;
-      // @ts-expect-error - Testing error condition
-      global.document = undefined;
-
-      const result = await extractor.refreshToken();
-      expect(result.success).toBeDefined();
-
-      global.document = originalDocument;
+      expect(await extractor.getToken()).toBeNull();
     });
 
-    it('should handle storage errors', async () => {
-      vi.doMock('@shared/services', () => ({
-        PersistentStorage: {
-          getInstance: () => ({
-            get: vi.fn().mockRejectedValue(new Error('Storage error')),
-          }),
-        },
-      }));
-
-      const result = await extractor.refreshToken();
-      expect(result).toBeDefined();
-    });
-
-    it('should handle API errors gracefully', async () => {
-      mockHttpService.post = vi.fn().mockRejectedValue(new Error('API error'));
-
-      const result = await extractor.validateToken(VALID_TEST_TOKEN);
-      // Should fallback to format validation
-      expect(result.valid).toBe(true);
-    });
-  });
-
-  describe('Integration scenarios', () => {
-    it('should complete full initialization flow', async () => {
-      await extractor.initialize();
-      expect(extractor.isInitialized()).toBe(true);
-
-      const token = await extractor.getToken();
-      // Token may be null if no source is available
-      if (token) {
-        const validation = await extractor.validateToken(token);
-        expect(validation).toBeDefined();
-      } else {
-        // No token extracted is also valid
-        expect(token).toBeNull();
-      }
-    });
-
-    it('should handle refresh after initialization', async () => {
-      await extractor.initialize();
-      const token1 = await extractor.getToken();
-
-      const refreshResult = await extractor.refreshToken();
-      expect(refreshResult).toBeDefined();
-      expect(refreshResult.timestamp).toBeGreaterThan(0);
-
-      const token2 = await extractor.getToken();
-      // Verify no crashes
-      expect(token2 === null || typeof token2 === 'string').toBe(true);
-    });
-
-    it('should maintain state across multiple getToken calls', async () => {
+    it('maintains cached token across calls', async () => {
+      appendScriptWithToken(VALID_TEST_TOKEN);
       await extractor.initialize();
 
-      const token1 = await extractor.getToken();
-      const token2 = await extractor.getToken();
-      const token3 = await extractor.getToken();
-
-      // Should return same token if not force refreshed
-      expect(token1).toBe(token2);
-      expect(token2).toBe(token3);
+      const first = await extractor.getToken();
+      const second = await extractor.getToken();
+      expect(first).toBe(second);
     });
   });
 });

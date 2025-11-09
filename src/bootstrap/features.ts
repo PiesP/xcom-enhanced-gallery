@@ -48,7 +48,9 @@ const FEATURE_LOADERS: FeatureLoader[] = [
     flag: 'mediaExtraction',
     name: 'TwitterTokenExtractor',
     load: async () => {
-      const { TwitterTokenExtractor } = await import('../shared/services/token-extraction');
+      const { TwitterTokenExtractor } = await import(
+        '../shared/services/token-extraction/twitter-token-extractor'
+      );
       registerTwitterTokenExtractor(new TwitterTokenExtractor());
     },
   },

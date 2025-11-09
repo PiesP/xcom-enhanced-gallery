@@ -11,4 +11,4 @@ export { SettingsService } from './settings-service';
 export type {
   TokenExtractionResult,
   TokenValidationResult,
-} from '@shared/services/token-extraction';
+} from '@shared/services/token-extraction/twitter-token-extractor';

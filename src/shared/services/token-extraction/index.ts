@@ -1,7 +1,8 @@
 /**
- * @fileoverview Token extraction services barrel export
- * @location src/shared/services/token-extraction/
+ * @deprecated Phase 381: Token extraction barrel removed
+ *
+ * Import {@link TwitterTokenExtractor} directly from
+ * `@shared/services/token-extraction/twitter-token-extractor`.
  */
 
-export { TwitterTokenExtractor } from './twitter-token-extractor';
-export type { TokenExtractionResult, TokenValidationResult } from './twitter-token-extractor';
+export {};
