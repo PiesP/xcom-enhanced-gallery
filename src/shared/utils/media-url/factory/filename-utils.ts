@@ -2,60 +2,81 @@
  * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * Filename Utilities
- *
- * Phase 351.7: Factory Layer - Filename processing utilities
+ * Filename utilities for media downloads.
  */
 
-/**
- * Safely clean filename (remove extension duplicates, handle special characters)
- *
- * Normalizes filenames by:
- * - Trimming whitespace
- * - Removing extension if present
- * - Replacing filesystem-unsafe characters with underscores
- * - Limiting length to filesystem limits
- *
- * @param filename - Original filename to clean
- * @returns Cleaned and normalized filename
- *
- * @example
- * cleanFilename('  media.jpg  ') // 'media'
- * cleanFilename('user<name>.jpg') // 'user_name_'
- * cleanFilename('') // 'media'
- */
-export function cleanFilename(filename: string): string {
-  if (!filename || typeof filename !== 'string') {
-    return 'media';
-  }
+const DEFAULT_FILENAME = 'media';
+const MAX_FILENAME_LENGTH = 200;
+const INVALID_CHARACTER_PATTERN = /[<>:"/\\|?*]/g;
+const SEGMENT_SPLITTER = /[\\/]+/;
 
-  // Basic cleanup: trim whitespace
-  let cleaned = filename.trim();
+const KNOWN_EXTENSIONS = [
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.webp',
+  '.bmp',
+  '.mp4',
+  '.webm',
+  '.mov',
+  '.avi',
+] as const;
 
-  // Remove extension if present (image/video formats)
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
-  const videoExtensions = ['.mp4', '.webm', '.mov', '.avi'];
-  const allExtensions = [...imageExtensions, ...videoExtensions];
+const KNOWN_EXTENSIONS_LOWER = KNOWN_EXTENSIONS.map(ext => ext.toLowerCase());
 
-  for (const ext of allExtensions) {
-    if (cleaned.toLowerCase().endsWith(ext)) {
-      cleaned = cleaned.slice(0, -ext.length);
-      break;
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function stripQueryAndFragment(segment: string): string {
+  const queryIndex = segment.indexOf('?');
+  const hashIndex = segment.indexOf('#');
+
+  const cutIndex = Math.min(
+    queryIndex === -1 ? segment.length : queryIndex,
+    hashIndex === -1 ? segment.length : hashIndex
+  );
+
+  return segment.slice(0, cutIndex);
+}
+
+function stripKnownExtension(segment: string): string {
+  const lower = segment.toLowerCase();
+  for (const extension of KNOWN_EXTENSIONS_LOWER) {
+    if (lower.endsWith(extension)) {
+      return segment.slice(0, -extension.length);
     }
   }
+  return segment;
+}
 
-  // Return default if filename is empty
-  if (!cleaned) {
-    return 'media';
+function normaliseSegment(raw: string): string {
+  const withoutQuery = stripQueryAndFragment(raw);
+  const withoutExtension = stripKnownExtension(withoutQuery);
+  const sanitised = withoutExtension.replace(INVALID_CHARACTER_PATTERN, '_');
+  if (!sanitised) {
+    return DEFAULT_FILENAME;
   }
 
-  // Remove special characters (filesystem safety)
-  cleaned = cleaned.replace(/[<>:"/\\|?*]/g, '_');
+  return sanitised.slice(0, MAX_FILENAME_LENGTH);
+}
 
-  // Length limit (255 chars is typical filesystem limit)
-  if (cleaned.length > 200) {
-    cleaned = cleaned.substring(0, 200);
+/**
+ * Normalise a media filename so it can be safely used on disk.
+ *
+ * The function trims whitespace, removes path segments, strips query/hash
+ * fragments, drops known media extensions, replaces filesystem unsafe
+ * characters with underscores, and truncates overly long values.
+ */
+export function cleanFilename(filename: string): string {
+  if (!isNonEmptyString(filename)) {
+    return DEFAULT_FILENAME;
   }
 
-  return cleaned;
+  const trimmed = filename.trim();
+  const segments = trimmed.split(SEGMENT_SPLITTER);
+  const lastSegment = segments.pop() ?? trimmed;
+
+  return normaliseSegment(lastSegment);
 }
