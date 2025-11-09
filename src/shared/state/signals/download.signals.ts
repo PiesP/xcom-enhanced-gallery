@@ -5,14 +5,8 @@
 import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { success, failure, ErrorCode } from '@shared/types/result.types';
-import { createSignalSafe, effectSafe } from './signal-factory';
+import { createSignalSafe, type SafeSignal } from './signal-factory';
 import { logger as rootLogger, type Logger as ILogger } from '../../logging';
-
-// Signal type
-type Signal<T> = {
-  value: T;
-  subscribe?: (callback: (value: T) => void) => () => void;
-};
 
 // Download status
 export type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';
@@ -54,7 +48,7 @@ export type DownloadEvents = {
 };
 
 // Lazy-initialized signal
-let downloadStateSignal: Signal<DownloadState> | null = null;
+let downloadStateSignal: SafeSignal<DownloadState> | null = null;
 
 // Logger instance
 const logger: ILogger = rootLogger;
@@ -62,7 +56,7 @@ const logger: ILogger = rootLogger;
 // Manual processing depth to gate UI interactions during ad-hoc downloads
 let manualProcessingDepth = 0;
 
-function getDownloadState(): Signal<DownloadState> {
+function getDownloadState(): SafeSignal<DownloadState> {
   if (!downloadStateSignal) {
     downloadStateSignal = createSignalSafe<DownloadState>(INITIAL_STATE);
   }
@@ -130,8 +124,12 @@ export const downloadState = {
   },
 
   subscribe(callback: (state: DownloadState) => void): () => void {
-    return effectSafe(() => {
-      callback(this.value);
+    return getDownloadState().subscribe(state => {
+      try {
+        callback(state);
+      } catch (error) {
+        logger.warn('[Download] subscriber callback failed', { error });
+      }
     });
   },
 };
@@ -141,11 +139,27 @@ export const downloadState = {
 // ============================================================================
 
 function dispatchEvent<K extends keyof DownloadEvents>(event: K, data: DownloadEvents[K]): void {
-  const customEvent = new CustomEvent(`xeg:${event}`, {
-    detail: { ...data, timestamp: Date.now() },
-  });
-  document.dispatchEvent(customEvent);
-  logger.debug(`[Download] ${event} emitted`, data);
+  const detail = { ...data, timestamp: Date.now() };
+  const doc = globalThis.document;
+
+  if (!doc || typeof doc.dispatchEvent !== 'function') {
+    logger.debug(`[Download] ${event} dispatch skipped (no document)`, detail);
+    return;
+  }
+
+  const CustomEventCtor = globalThis.CustomEvent;
+  if (typeof CustomEventCtor !== 'function') {
+    logger.debug(`[Download] ${event} dispatch skipped (no CustomEvent)`, detail);
+    return;
+  }
+
+  try {
+    const customEvent = new CustomEventCtor(`xeg:${event}`, { detail });
+    doc.dispatchEvent(customEvent);
+    logger.debug(`[Download] ${event} emitted`, data);
+  } catch (error) {
+    logger.warn(`[Download] ${event} dispatch failed`, { error, detail });
+  }
 }
 
 // ============================================================================
@@ -470,15 +484,25 @@ export function addEventListener<K extends keyof DownloadEvents>(
   event: K,
   handler: (data: DownloadEvents[K]) => void
 ): () => void {
+  const doc = globalThis.document;
+  if (!doc || typeof doc.addEventListener !== 'function') {
+    logger.debug(`[Download] listener skipped for ${event} (no document)`);
+    return () => {};
+  }
+
   const eventHandler = (e: Event): void => {
     const customEvent = e as CustomEvent<DownloadEvents[K]>;
-    handler(customEvent.detail);
+    try {
+      handler(customEvent.detail);
+    } catch (error) {
+      logger.warn('[Download] listener callback failed', { error, event });
+    }
   };
 
   const eventName = `xeg:${event}`;
-  document.addEventListener(eventName, eventHandler);
+  doc.addEventListener(eventName, eventHandler as EventListener);
 
   return () => {
-    document.removeEventListener(eventName, eventHandler);
+    doc.removeEventListener(eventName, eventHandler as EventListener);
   };
 }

@@ -1,69 +1,11 @@
 /**
- * Signals Module
+ * Deprecated barrel removed in Phase 371.
  *
- * Solid.js-based reactive signals collection
+ * The signals module now expects consumers to import from the specific signal files
+ * (e.g. `@shared/state/signals/gallery.signals`).
+ *
+ * This empty module remains to avoid breaking bare path resolution while we migrate
+ * existing call sites. Intentionally exporting nothing keeps tree-shaking optimal.
  */
 
-export { createSignalSafe, effectSafe, computedSafe, type SafeSignal } from './signal-factory';
-
-export {
-  type GalleryState,
-  type GalleryEvents,
-  galleryState,
-  gallerySignals,
-  galleryIndexEvents,
-  openGallery,
-  closeGallery,
-  navigateToItem,
-  navigatePrevious,
-  navigateNext,
-  setLoading,
-  setError,
-  setViewMode,
-  setFocusedIndex,
-  getCurrentMediaItem,
-  hasMediaItems,
-  getMediaItemsCount,
-  hasPreviousMedia,
-  hasNextMedia,
-  isGalleryOpen,
-  getCurrentIndex,
-  getMediaItems,
-  isLoading,
-  getError,
-  getViewMode,
-} from './gallery.signals';
-
-export {
-  type DownloadStatus,
-  type DownloadTask,
-  type DownloadState,
-  type DownloadEvents,
-  downloadState,
-  createDownloadTask,
-  startDownload,
-  updateDownloadProgress,
-  completeDownload,
-  failDownload,
-  removeTask,
-  clearCompletedTasks,
-  getDownloadTask,
-  getDownloadInfo,
-  acquireDownloadLock,
-  isDownloadLocked,
-  addEventListener as addDownloadEventListener,
-} from './download.signals';
-
-export { type ScrollState, type ScrollDirection, INITIAL_SCROLL_STATE } from './scroll.signals';
-
-export {
-  type ToolbarModeStateData,
-  type ToolbarEvents,
-  toolbarState,
-  updateToolbarMode,
-  setHighContrast,
-  getCurrentToolbarMode,
-  getToolbarInfo,
-  getCurrentMode,
-  addEventListener as addToolbarEventListener,
-} from './toolbar.signals';
+export {};

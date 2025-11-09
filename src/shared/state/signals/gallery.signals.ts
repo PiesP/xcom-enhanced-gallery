@@ -22,7 +22,30 @@ import {
   type NavigationAction,
 } from '@shared/state/machines/navigation.machine';
 
-const { batch } = getSolid();
+// Logger instance (services-free)
+const logger: ILogger = rootLogger;
+
+type BatchExecutor = (fn: () => void) => void;
+
+function resolveBatchExecutor(): BatchExecutor {
+  try {
+    const solid = getSolid();
+    if (solid?.batch) {
+      return solid.batch;
+    }
+  } catch (error) {
+    logger.debug('[Gallery] Solid batch unavailable, using fallback executor', { error });
+  }
+  return (fn: () => void) => {
+    try {
+      fn();
+    } catch (error) {
+      logger.warn('[Gallery] Fallback batch executor failed', { error });
+    }
+  };
+}
+
+const batch: BatchExecutor = resolveBatchExecutor();
 
 /**
  * Gallery state interface
@@ -60,9 +83,6 @@ export type GalleryEvents = {
 
 // Re-export NavigationSource type for backward compatibility
 export type { NavigationSource };
-
-// Logger instance (services-free)
-const logger: ILogger = rootLogger;
 
 // ============================================================================
 // Navigation State Management

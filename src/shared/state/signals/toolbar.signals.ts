@@ -80,18 +80,13 @@ export const toolbarState = {
   },
 
   subscribe(callback: (state: ToolbarModeStateData) => void): () => void {
-    try {
-      return toolbarStateSignal.subscribe(state => {
-        try {
-          callback(state);
-        } catch (error) {
-          logger.warn('toolbar state callback error', { error });
-        }
-      });
-    } catch (error) {
-      logger.warn('toolbar state subscribe failed', { error });
-      return () => {};
-    }
+    return toolbarStateSignal.subscribe(state => {
+      try {
+        callback(state);
+      } catch (error) {
+        logger.warn('toolbar state callback error', { error });
+      }
+    });
   },
 };
 
@@ -100,12 +95,26 @@ export const toolbarState = {
 // ============================================================================
 
 function dispatchEvent<K extends keyof ToolbarEvents>(event: K, data: ToolbarEvents[K]): void {
+  const detail = { ...data };
+  const doc = globalThis.document;
+
+  if (!doc || typeof doc.dispatchEvent !== 'function') {
+    logger.debug(`Event dispatch skipped: ${event} (no document)`, detail);
+    return;
+  }
+
+  const CustomEventCtor = globalThis.CustomEvent;
+  if (typeof CustomEventCtor !== 'function') {
+    logger.debug(`Event dispatch skipped: ${event} (no CustomEvent)`, detail);
+    return;
+  }
+
   try {
-    const customEvent = new CustomEvent(`xeg-${event}`, { detail: data });
-    document.dispatchEvent(customEvent);
-    logger.debug(`Event dispatched: ${event}`, data);
+    const customEvent = new CustomEventCtor(`xeg-${event}`, { detail });
+    doc.dispatchEvent(customEvent);
+    logger.debug(`Event dispatched: ${event}`, detail);
   } catch (error) {
-    logger.warn(`Failed to dispatch event: ${event}`, { error, data });
+    logger.warn(`Failed to dispatch event: ${event}`, { error, detail });
   }
 }
 
@@ -150,15 +159,11 @@ export function getCurrentToolbarMode(): ToolbarModeState {
 }
 
 /**
- * 툴바 상태 요약 정보 (CSS 호버 시스템용으로 간소화)
- * Phase A5.3: createSignalSafe 사용
-/**
  * Get toolbar info summary
+ *
+ * @description Returns a snapshot of the toolbar mode signal for hover/ARIA helpers.
  */
-export function getToolbarInfo(): {
-  currentMode: string;
-  needsHighContrast: boolean;
-} {
+export function getToolbarInfo(): ToolbarModeStateData {
   const state = toolbarStateSignal.value;
   return {
     currentMode: state.currentMode,
@@ -173,21 +178,28 @@ export function addEventListener<K extends keyof ToolbarEvents>(
   event: K,
   handler: (data: ToolbarEvents[K]) => void
 ): () => void {
+  const doc = globalThis.document;
+  if (!doc || typeof doc.addEventListener !== 'function') {
+    logger.debug(`Listener skipped: ${event} (no document)`);
+    return () => {};
+  }
+
   const eventName = `xeg-${event}`;
 
   const listener = (e: CustomEvent) => {
-    handler(e.detail);
+    try {
+      handler(e.detail as ToolbarEvents[K]);
+    } catch (error) {
+      logger.warn(`Listener callback failed: ${event}`, { error });
+    }
   };
 
-  document.addEventListener(eventName, listener as EventListener);
+  doc.addEventListener(eventName, listener as EventListener);
 
   return () => {
-    document.removeEventListener(eventName, listener as EventListener);
+    doc.removeEventListener(eventName, listener as EventListener);
   };
 }
-
-// Legacy alias
-export const getCurrentMode = getCurrentToolbarMode;
 
 // ============================================================================
 // Expandable Panel API
