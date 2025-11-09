@@ -413,7 +413,6 @@ export default defineConfig(async ({ mode }) => {
     ].filter(Boolean) as Plugin[],
     define: {
       __DEV__: flags.isDev,
-      __PROD__: flags.isProd,
       __VERSION__: JSON.stringify(pkg.version),
       'process.env.NODE_ENV': JSON.stringify(flags.isProd ? 'production' : 'development'),
       'process.env': '{}',

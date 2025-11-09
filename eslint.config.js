@@ -62,7 +62,6 @@ const baseConfig = [
       globals: {
         // Vite build-time globals
         __DEV__: 'readonly',
-        __PROD__: 'readonly',
         __VERSION__: 'readonly',
         // Phase 326.5: Feature Flags
         __FEATURE_MEDIA_EXTRACTION__: 'readonly',
@@ -273,7 +272,6 @@ const baseConfig = [
       globals: {
         // Vite build-time globals
         __DEV__: 'readonly',
-        __PROD__: 'readonly',
         __VERSION__: 'readonly',
         // Phase 326.5: Feature Flags
         __FEATURE_MEDIA_EXTRACTION__: 'readonly',
