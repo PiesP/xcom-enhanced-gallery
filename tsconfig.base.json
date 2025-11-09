@@ -33,6 +33,7 @@
       "@shared/i18n": ["./src/shared/constants/i18n/index.ts"],
       "@shared/i18n/*": ["./src/shared/constants/i18n/*"],
       "@shared/*": ["./src/shared/*"],
+      "@shared/state/machines": ["./src/shared/state/machines/index.ts"],
       "@assets/*": ["./src/assets/*"],
       "@test/*": ["./test/*"]
     },

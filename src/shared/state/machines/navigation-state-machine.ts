@@ -37,9 +37,8 @@ export type NavigationAction =
       type: 'RESET';
     };
 
-export interface TransitionResult {
+export interface NavigationTransitionResult {
   readonly newState: NavigationState;
-  readonly shouldSync: boolean;
   readonly isDuplicate: boolean;
 }
 
@@ -57,7 +56,7 @@ export class NavigationStateMachine {
     };
   }
 
-  static transition(state: NavigationState, action: NavigationAction): TransitionResult {
+  static transition(state: NavigationState, action: NavigationAction): NavigationTransitionResult {
     switch (action.type) {
       case 'NAVIGATE':
         return this.handleNavigate(state, action.payload);
@@ -68,7 +67,6 @@ export class NavigationStateMachine {
       default:
         return {
           newState: state,
-          shouldSync: false,
           isDuplicate: false,
         };
     }
@@ -77,8 +75,9 @@ export class NavigationStateMachine {
   private static handleNavigate(
     state: NavigationState,
     payload: { targetIndex: number; source: NavigationSource; trigger: string }
-  ): TransitionResult {
+  ): NavigationTransitionResult {
     const { targetIndex, source } = payload;
+    const timestamp = Date.now();
 
     // Check for duplicate manual navigation
     const isDuplicateManual =
@@ -93,9 +92,8 @@ export class NavigationStateMachine {
         newState: {
           ...state,
           focusedIndex: targetIndex,
-          lastTimestamp: Date.now(),
+          lastTimestamp: timestamp,
         },
-        shouldSync: true,
         isDuplicate: true,
       };
     }
@@ -105,9 +103,8 @@ export class NavigationStateMachine {
         currentIndex: targetIndex,
         focusedIndex: targetIndex,
         lastSource: source,
-        lastTimestamp: Date.now(),
+        lastTimestamp: timestamp,
       },
-      shouldSync: true,
       isDuplicate: false,
     };
   }
@@ -115,8 +112,9 @@ export class NavigationStateMachine {
   private static handleSetFocus(
     state: NavigationState,
     payload: { focusIndex: number | null; source: NavigationSource }
-  ): TransitionResult {
+  ): NavigationTransitionResult {
     const { focusIndex, source } = payload;
+    const timestamp = Date.now();
 
     if (focusIndex === null) {
       return {
@@ -124,9 +122,8 @@ export class NavigationStateMachine {
           ...state,
           focusedIndex: null,
           lastSource: source,
-          lastTimestamp: Date.now(),
+          lastTimestamp: timestamp,
         },
-        shouldSync: false,
         isDuplicate: false,
       };
     }
@@ -138,17 +135,15 @@ export class NavigationStateMachine {
         ...state,
         focusedIndex: focusIndex,
         lastSource: source,
-        lastTimestamp: Date.now(),
+        lastTimestamp: timestamp,
       },
-      shouldSync: false,
       isDuplicate,
     };
   }
 
-  private static handleReset(): TransitionResult {
+  private static handleReset(): NavigationTransitionResult {
     return {
       newState: NavigationStateMachine.createInitialState(),
-      shouldSync: false,
       isDuplicate: false,
     };
   }

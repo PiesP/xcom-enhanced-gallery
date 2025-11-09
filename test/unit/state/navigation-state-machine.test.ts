@@ -9,7 +9,7 @@ import {
   NavigationStateMachine,
   type NavigationState,
   type NavigationAction,
-} from '@shared/state/machines/navigation-state-machine';
+} from '@shared/state/machines';
 
 describe('NavigationStateMachine', () => {
   setupGlobalTestIsolation();
@@ -47,7 +47,6 @@ describe('NavigationStateMachine', () => {
       expect(result.newState.currentIndex).toBe(3);
       expect(result.newState.focusedIndex).toBe(3);
       expect(result.newState.lastSource).toBe('button');
-      expect(result.shouldSync).toBe(true);
       expect(result.isDuplicate).toBe(false);
     });
 
@@ -67,7 +66,6 @@ describe('NavigationStateMachine', () => {
       expect(result.isDuplicate).toBe(true);
       expect(result.newState.currentIndex).toBe(3); // 변경 없음
       expect(result.newState.focusedIndex).toBe(3); // 동기화됨
-      expect(result.shouldSync).toBe(true);
     });
 
     it('같은 인덱스로 자동 네비게이션(scroll) 시 중복이 아님', () => {
@@ -119,7 +117,6 @@ describe('NavigationStateMachine', () => {
       expect(result.newState.focusedIndex).toBe(2);
       expect(result.newState.currentIndex).toBe(0); // 변경 없음
       expect(result.newState.lastSource).toBe('auto-focus');
-      expect(result.shouldSync).toBe(false);
       expect(result.isDuplicate).toBe(false);
     });
 
@@ -137,7 +134,6 @@ describe('NavigationStateMachine', () => {
       });
 
       expect(result.newState.focusedIndex).toBe(null);
-      expect(result.shouldSync).toBe(false);
     });
 
     it('이미 같은 인덱스에 포커스되어 있으면 중복으로 처리', () => {
@@ -229,7 +225,6 @@ describe('NavigationStateMachine', () => {
       });
 
       expect(result3.isDuplicate).toBe(true);
-      expect(result3.shouldSync).toBe(true);
     });
   });
 
