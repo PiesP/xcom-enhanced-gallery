@@ -13,7 +13,6 @@ import {
   getTestMetadata,
   type TestModeOptions,
 } from '../external/test/test-environment-config';
-import { logger } from '../logging';
 
 /**
  * Test setup context - Phase 314-7
@@ -21,9 +20,6 @@ import { logger } from '../logging';
 export interface TestSetupContext {
   testName: string;
   setupTime: number;
-  cleanupTime?: number;
-  duration?: number;
-  error?: Error;
 }
 
 /** Stack of active test contexts - Phase 314-7 */
@@ -57,20 +53,23 @@ export function setupTestEnvironment(
     setupTime: Date.now(),
   };
 
-  try {
-    // Enable test mode with provided options
-    enableTestMode(options);
-
-    // Set current test name for tracking
-    setCurrentTest(testName);
-
-    logger.debug(`[TestSetup] ✅ Setup complete for: ${testName}`);
-  } catch (error) {
-    context.error = error instanceof Error ? error : new Error(String(error));
-    logger.error(`[TestSetup] ❌ Setup failed for: ${testName}`, context.error);
-  }
+  enableTestMode(options);
+  setCurrentTest(testName);
 
   testContextStack.push(context);
+  return context;
+}
+
+function detachContext(context?: TestSetupContext): TestSetupContext | undefined {
+  if (!context) {
+    return testContextStack.pop();
+  }
+
+  const index = testContextStack.lastIndexOf(context);
+  if (index !== -1) {
+    testContextStack.splice(index, 1);
+  }
+
   return context;
 }
 
@@ -94,77 +93,16 @@ export function cleanupTestEnvironment(context?: TestSetupContext): {
   duration: number;
   success: boolean;
 } {
-  const activeContext = context || testContextStack.pop();
+  const activeContext = detachContext(context);
+  const setupTime = activeContext?.setupTime ?? Date.now();
 
-  const result = {
-    testName: activeContext?.testName || 'unknown',
-    duration: Date.now() - (activeContext?.setupTime || 0),
-    success: !activeContext?.error,
-  };
+  clearCurrentTest();
+  disableTestMode();
 
-  try {
-    // Clear current test
-    clearCurrentTest();
-
-    // Disable test mode
-    disableTestMode();
-
-    logger.debug(`[TestSetup] ✅ Cleanup complete for: ${result.testName} (${result.duration}ms)`);
-  } catch (error) {
-    logger.error(`[TestSetup] ❌ Cleanup failed for: ${result.testName}`, error);
-    result.success = false;
-  }
-
-  return result;
-}
-
-/**
- * Create beforeEach hook for test setup - Phase 314-7
- *
- * Returns a function suitable for use with test framework's beforeEach.
- *
- * @param options Test mode options
- * @returns Function to use in beforeEach
- *
- * @example
- * ```typescript
- * describe('My Service', () => {
- *   beforeEach(createBeforeEachHook({ mockServices: true }));
- *
- *   it('should work', () => {
- *     // test code
- *   });
- * });
- * ```
- */
-export function createBeforeEachHook(options?: Partial<TestModeOptions>) {
-  return function beforeEachHook(this: { currentTest?: { title: string } }) {
-    const testName = this?.currentTest?.title || 'anonymous-test';
-    setupTestEnvironment(testName, options);
-  };
-}
-
-/**
- * Create afterEach hook for test cleanup - Phase 314-7
- *
- * Returns a function suitable for use with test framework's afterEach.
- *
- * @returns Function to use in afterEach
- *
- * @example
- * ```typescript
- * describe('My Service', () => {
- *   afterEach(createAfterEachHook());
- *
- *   it('should work', () => {
- *     // test code
- *   });
- * });
- * ```
- */
-export function createAfterEachHook() {
-  return function afterEachHook() {
-    cleanupTestEnvironment();
+  return {
+    testName: activeContext?.testName ?? 'unknown',
+    duration: Date.now() - setupTime,
+    success: Boolean(activeContext),
   };
 }
 
@@ -195,18 +133,12 @@ export async function withTestIsolation<T>(
   fn: () => T | Promise<T>,
   options?: Partial<TestModeOptions>
 ): Promise<T> {
-  const setupContext = setupTestEnvironment(testName, options);
+  const context = setupTestEnvironment(testName, options);
 
   try {
-    const result = await fn();
-    logger.debug(`[TestSetup] ✅ Test isolation complete: ${testName}`);
-    return result;
-  } catch (error) {
-    setupContext.error = error instanceof Error ? error : new Error(String(error));
-    logger.error(`[TestSetup] ❌ Test isolation failed: ${testName}`, error);
-    throw error;
+    return await fn();
   } finally {
-    cleanupTestEnvironment(setupContext);
+    cleanupTestEnvironment(context);
   }
 }
 
@@ -225,18 +157,12 @@ export function withTestIsolationSync<T>(
   fn: () => T,
   options?: Partial<TestModeOptions>
 ): T {
-  const setupContext = setupTestEnvironment(testName, options);
+  const context = setupTestEnvironment(testName, options);
 
   try {
-    const result = fn();
-    logger.debug(`[TestSetup] ✅ Test isolation complete: ${testName}`);
-    return result;
-  } catch (error) {
-    setupContext.error = error instanceof Error ? error : new Error(String(error));
-    logger.error(`[TestSetup] ❌ Test isolation failed: ${testName}`, error);
-    throw error;
+    return fn();
   } finally {
-    cleanupTestEnvironment(setupContext);
+    cleanupTestEnvironment(context);
   }
 }
 
@@ -246,11 +172,9 @@ export function withTestIsolationSync<T>(
  * Use only if normal cleanup failed or in test teardown.
  */
 export function clearAllTestContexts(): void {
-  const count = testContextStack.length;
   testContextStack.length = 0;
   disableTestMode();
   resetTestConfig();
-  logger.warn(`[TestSetup] ⚠️  Cleared ${count} test contexts`);
 }
 
 /**
