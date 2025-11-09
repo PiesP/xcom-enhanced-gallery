@@ -56,9 +56,10 @@ type Props = {
  * @throws Never throws - all errors are caught and silently handled
  */
 export function ErrorBoundary({ children }: Props): JSXElement {
-  const { ErrorBoundary: SolidErrorBoundary, children: resolveChildren } = getSolid();
+  const { children: resolveChildren, createMemo, createSignal } = getSolid();
   let lastReportedError: unknown = null;
-  const resolvedChildren = resolveChildren(() => children);
+  const [currentError, setCurrentError] = createSignal<unknown>(undefined);
+  const fallbackElement = <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
 
   /**
    * Report error to user via ToastManager
@@ -94,15 +95,20 @@ export function ErrorBoundary({ children }: Props): JSXElement {
     }
   };
 
-  return (
-    <SolidErrorBoundary
-      fallback={err => {
-        reportError(err);
-        // Hidden reset marker used by tests to confirm fallback rendering
-        return <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
-      }}
-    >
-      {resolvedChildren() ?? <></>}
-    </SolidErrorBoundary>
-  );
+  const safeChildren = createMemo<JSXElement>(() => {
+    if (currentError() !== undefined) {
+      return fallbackElement;
+    }
+
+    try {
+      const childAccessor = resolveChildren(() => children);
+      return childAccessor() ?? <></>;
+    } catch (err) {
+      reportError(err);
+      setCurrentError(err);
+      return fallbackElement;
+    }
+  });
+
+  return safeChildren();
 }

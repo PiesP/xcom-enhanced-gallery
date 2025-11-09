@@ -9,7 +9,6 @@ export type ErrorBoundaryResult = {
   errorCaught: boolean;
   fallbackRendered: boolean;
   markup?: string;
-  childCount?: number;
 };
 
 export type ToolbarMountResult = {

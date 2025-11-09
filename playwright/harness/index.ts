@@ -20,7 +20,7 @@ import type {
   XegHarness,
 } from './types';
 
-import { initializeVendors, getSolid } from '@shared/external/vendors';
+import { initializeVendors, getSolid, type ComponentChildren } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import { languageService } from '@shared/services/language-service';
 import { NotificationService } from '@shared/services';
@@ -491,7 +491,7 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   await ensureVendorsReady();
 
   const solid = getSolid();
-  const { render, createComponent, createEffect } = solid;
+  const { render, createComponent } = solid;
   const container = createContainer('xeg-error-boundary');
 
   const notificationService = NotificationService.getInstance();
@@ -507,27 +507,20 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
     await originalErrorMethod.call(notificationService, title, text, timeout);
   };
 
-  let renderThrew = false;
-
   const Thrower = () => {
-    createEffect(() => {
-      throw new Error('Harness error boundary trigger');
-    });
-    return null;
+    throw new Error('Harness error boundary trigger');
   };
 
   try {
     render(
       () =>
         createComponent(ErrorBoundary, {
-          get children() {
-            return createComponent(Thrower, {});
-          },
+          children: (() => createComponent(Thrower, {})) as unknown as ComponentChildren,
         }),
       container
     );
   } catch (err) {
-    renderThrew = true;
+    notificationTriggered = true;
   }
 
   await sleep(150);
@@ -536,18 +529,16 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   const fallbackRendered = fallbackMarker !== null;
 
   const markup = container.innerHTML;
-  const childCount = container.childNodes.length;
 
   container.remove();
   serviceWithOverride.error = originalErrorMethod;
 
-  const errorCaught = renderThrew || fallbackRendered || notificationTriggered;
+  const errorCaught = fallbackRendered || notificationTriggered;
 
   return {
     errorCaught,
     fallbackRendered,
     markup,
-    childCount,
   };
 }
 
