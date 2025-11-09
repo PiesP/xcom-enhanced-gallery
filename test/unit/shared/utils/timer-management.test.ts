@@ -341,21 +341,17 @@ describe('timer-management', () => {
       expect(typeof globalThis.performance.now).toBe('function');
     });
 
-    it('should fallback to Date.now if performance is unavailable', () => {
+    it('should throw when performance object is unavailable', () => {
       const originalPerformance = globalThis.performance;
 
-      // Mock: Remove performance
       Object.defineProperty(globalThis, 'performance', {
         value: undefined,
         writable: true,
         configurable: true,
       });
 
-      const result = safePerformanceNow();
-      expect(typeof result).toBe('number');
-      expect(result).toBeGreaterThan(0);
+      expect(() => safePerformanceNow()).toThrow();
 
-      // Restore
       Object.defineProperty(globalThis, 'performance', {
         value: originalPerformance,
         writable: true,
@@ -376,7 +372,7 @@ describe('timer-management', () => {
       expect(time2).toBeGreaterThanOrEqual(time1);
     });
 
-    it('should work with performance.now unavailable', () => {
+    it('should throw when performance.now is missing', () => {
       const originalPerf = globalThis.performance;
 
       Object.defineProperty(globalThis, 'performance', {
@@ -385,8 +381,7 @@ describe('timer-management', () => {
         configurable: true,
       });
 
-      const result = safePerformanceNow();
-      expect(typeof result).toBe('number');
+      expect(() => safePerformanceNow()).toThrow();
 
       Object.defineProperty(globalThis, 'performance', {
         value: originalPerf,

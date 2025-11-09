@@ -16,11 +16,9 @@ interface TwitterTokenExtractorModule {
 
 async function importModule(): Promise<TwitterTokenExtractorModule> {
   vi.resetModules();
-  const moduleUrl = new URL(
-    '../../../../../src/shared/services/token-extraction/twitter-token-extractor.ts',
-    import.meta.url
-  );
-  return (await import(moduleUrl.href)) as TwitterTokenExtractorModule;
+  return (await import(
+    '../../../../../src/shared/services/token-extraction/twitter-token-extractor'
+  )) as TwitterTokenExtractorModule;
 }
 
 describe('TwitterTokenExtractor', () => {
@@ -74,9 +72,11 @@ describe('TwitterTokenExtractor', () => {
 
   describe('token extraction priority', () => {
     it('should extract token from script tag (priority 1)', async () => {
-      const scriptToken = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ScriptTokenExample';
+      const scriptToken =
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ScriptTokenExamplePaddingForLength1234567890AA';
       document.body.innerHTML = `<script>{"Bearer": "${scriptToken}"}</script>`;
-      document.cookie = 'auth_token=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1CookieToken';
+      document.cookie =
+        'auth_token=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1CookieTokenExamplePaddingForLength1234567890AA';
       const { TwitterTokenExtractor } = await importModule();
       const extractor = new TwitterTokenExtractor();
       await extractor.initialize();
@@ -85,7 +85,8 @@ describe('TwitterTokenExtractor', () => {
     });
 
     it('should extract token from cookie when script fails (priority 2)', async () => {
-      const cookieToken = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1CookieTokenExample';
+      const cookieToken =
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1CookieTokenExamplePaddingForLength1234567890AA';
       document.cookie = `auth_token=${cookieToken}`;
       const { TwitterTokenExtractor } = await importModule();
       const extractor = new TwitterTokenExtractor();
@@ -108,7 +109,8 @@ describe('TwitterTokenExtractor', () => {
 
   describe('token validation', () => {
     it('should validate token format correctly', async () => {
-      const validToken = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ValidTokenExample';
+      const validToken =
+        'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA%3D1ValidTokenExamplePaddingForLength1234567890AA';
       document.cookie = `auth_token=${validToken}`;
       const { TwitterTokenExtractor } = await importModule();
       const extractor = new TwitterTokenExtractor();

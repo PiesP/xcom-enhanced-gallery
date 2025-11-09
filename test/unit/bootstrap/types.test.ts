@@ -59,7 +59,10 @@ describe('Bootstrap Types', () => {
         handleBootstrapError(error, strategy, mockLogger);
       }).toThrow('Test error');
 
-      expect(mockLogger.error).toHaveBeenCalledWith('[critical] 초기화 실패: Test error', error);
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        '[critical] initialization failed: Test error',
+        error
+      );
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
 
@@ -76,7 +79,10 @@ describe('Bootstrap Types', () => {
         handleBootstrapError(error, strategy, mockLogger);
       }).not.toThrow();
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('[non-critical] 초기화 실패: Test error', error);
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        '[non-critical] initialization failed: Test error',
+        error
+      );
       expect(mockLogger.error).not.toHaveBeenCalled();
     });
 
@@ -92,7 +98,7 @@ describe('Bootstrap Types', () => {
       handleBootstrapError(error, strategy, mockLogger);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
-        '[non-critical] 초기화 실패: String error',
+        '[non-critical] initialization failed: String error',
         error
       );
     });
@@ -108,7 +114,10 @@ describe('Bootstrap Types', () => {
 
       handleBootstrapError(error, strategy, mockLogger);
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('[features] 초기화 실패: Custom error', error);
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        '[features] initialization failed: Custom error',
+        error
+      );
     });
   });
 });

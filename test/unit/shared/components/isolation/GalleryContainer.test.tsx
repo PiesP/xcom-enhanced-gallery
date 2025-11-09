@@ -131,7 +131,7 @@ describe('GalleryContainer Component - Unit Tests', () => {
       }).toThrow();
     });
 
-    it('Phase 300.1: Twitter 페이지에서만 조건부 reflow 실행', () => {
+    it('Phase 300.1: Twitter 페이지에서도 reflow 없이 정리', () => {
       // Twitter 컨테이너 생성
       const twitterScroll = document.createElement('div');
       twitterScroll.setAttribute('data-testid', 'primaryColumn');
@@ -149,14 +149,14 @@ describe('GalleryContainer Component - Unit Tests', () => {
       // unmount 실행
       unmountGallery(mockContainer);
 
-      // scrollHeight가 읽혔는지 확인 (reflow 트리거)
-      expect(scrollHeightSpy).toHaveBeenCalled();
+      // scrollHeight가 읽히지 않아야 함 (reflow 제거)
+      expect(scrollHeightSpy).not.toHaveBeenCalled();
 
       // 정리
       document.body.removeChild(twitterScroll);
     });
 
-    it('Phase 300.1: 비-Twitter 페이지에서는 reflow 스킵', () => {
+    it('Phase 300.1: 비-Twitter 페이지에서도 reflow가 발생하지 않음', () => {
       // Twitter 컨테이너 생성
       const twitterScroll = document.createElement('div');
       twitterScroll.setAttribute('data-testid', 'primaryColumn');

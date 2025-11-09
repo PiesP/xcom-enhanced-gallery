@@ -28,10 +28,10 @@ function renderComponent(props = {}) {
   return {
     container,
     themeSelect: container.querySelector(
-      'select[id="theme-select"]'
+      'select[id="settings-theme-select"]'
     ) as globalThis.HTMLSelectElement,
     languageSelect: container.querySelector(
-      'select[id="language-select"]'
+      'select[id="settings-language-select"]'
     ) as globalThis.HTMLSelectElement,
     props: finalProps,
   };
@@ -101,8 +101,8 @@ describe('SettingsControls Component', () => {
     it('should render select elements with proper IDs for event binding', () => {
       const { themeSelect, languageSelect } = renderComponent();
 
-      expect(themeSelect?.id).toBe('theme-select');
-      expect(languageSelect?.id).toBe('language-select');
+      expect(themeSelect?.id).toBe('settings-theme-select');
+      expect(languageSelect?.id).toBe('settings-language-select');
 
       // Event handlers are verified in E2E tests
       // playwright/smoke/settings-controls-e2e.spec.ts
@@ -120,8 +120,8 @@ describe('SettingsControls Component', () => {
     it('should render labels when not compact', () => {
       const { container } = renderComponent({ compact: false });
 
-      const themeLabel = container.querySelector('label[for="theme-select"]');
-      const languageLabel = container.querySelector('label[for="language-select"]');
+      const themeLabel = container.querySelector('label[for="settings-theme-select"]');
+      const languageLabel = container.querySelector('label[for="settings-language-select"]');
 
       expect(themeLabel).toBeTruthy();
       expect(languageLabel).toBeTruthy();

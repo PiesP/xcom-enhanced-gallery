@@ -5,7 +5,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import { initializeEnvironment, type BootstrapResult } from '../../../src/bootstrap';
+import { initializeEnvironment } from '../../../src/bootstrap/environment';
+import type { BootstrapResult } from '../../../src/bootstrap/diagnostics/types';
 
 describe('Bootstrap Environment - Phase 314-5', () => {
   // Setup global test isolation to prevent state leakage
