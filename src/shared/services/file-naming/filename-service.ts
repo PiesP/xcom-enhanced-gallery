@@ -33,8 +33,7 @@
  * @see Phase 432.3 for TweetId utilization improvements
  */
 
-import { logger } from '../../logging';
-import { safeParseInt, undefinedToNull } from '../../utils/type-safety-helpers';
+import { safeParseInt } from '../../utils/type-safety-helpers';
 import type { MediaInfo } from '../../types/media.types';
 
 /**
@@ -183,8 +182,6 @@ export class FilenameService {
    * @param options - Filename generation options
    * @returns Generated filename (Windows-compatible, normalized)
    *
-   * @throws None (errors are caught and logged, returns fallback)
-   *
    * @example
    * ```typescript
    * // Standard tweet media
@@ -243,8 +240,7 @@ export class FilenameService {
           index,
         })
       );
-    } catch (error) {
-      logger.warn('Failed to generate media filename:', error);
+    } catch {
       return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
     }
   }
@@ -291,8 +287,7 @@ export class FilenameService {
       const prefix = options.fallbackPrefix ?? 'xcom_gallery';
       const timestamp = Date.now();
       return this.sanitizeForWindows(`${prefix}_${timestamp}.zip`);
-    } catch (error) {
-      logger.warn('Failed to generate ZIP filename:', error);
+    } catch {
       const timestamp = Date.now();
       return this.sanitizeForWindows(`download_${timestamp}.zip`);
     }
@@ -360,7 +355,6 @@ export class FilenameService {
     if (media.sourceLocation === 'quoted' && media.quotedUsername && media.quotedTweetId) {
       username = media.quotedUsername;
       tweetId = media.quotedTweetId;
-      logger.debug('Using quoted tweet info for filename:', { username, tweetId });
     } else {
       tweetId = media.tweetId ?? null;
 
@@ -403,22 +397,16 @@ export class FilenameService {
   private extractIndexFromMediaId(mediaId?: string): string | null {
     if (!mediaId) return null;
 
-    try {
-      const match = mediaId.match(/_media_(\d+)$/);
-      if (match) {
-        const zeroBasedIndex = safeParseInt(match[1], 10);
+    const match = mediaId.match(/_media_(\d+)$/);
+    if (match) {
+      const zeroBasedIndex = safeParseInt(match[1], 10);
+      if (!Number.isNaN(zeroBasedIndex)) {
         return (zeroBasedIndex + 1).toString();
       }
-
-      const previousMatch = mediaId.match(/_(\d+)$/);
-      if (previousMatch) {
-        return undefinedToNull(previousMatch[1]);
-      }
-    } catch (error) {
-      logger.debug('Failed to extract index from media ID:', mediaId, error);
     }
 
-    return null;
+    const previousMatch = mediaId.match(/_(\d+)$/);
+    return previousMatch?.[1] ?? null;
   }
 
   /**
@@ -482,7 +470,7 @@ export class FilenameService {
         }
       }
     } catch {
-      logger.debug('Failed to extract extension from URL:', url);
+      // ignore parse error and fall through to default
     }
     return 'jpg';
   }
@@ -766,6 +754,8 @@ export class FilenameService {
 
 // ===== Public Convenience Functions =====
 
+const sharedFilenameService = new FilenameService();
+
 /**
  * Generate media filename - Convenience function
  *
@@ -776,18 +766,17 @@ export class FilenameService {
  *
  * **Usage**:
  * - Single filename generation
- * - Avoid service instantiation overhead
+ * - Shared helper when you do not need custom service wiring
  * - Direct import and use
- *
- * **Performance Note**: Creates new FilenameService instance on each call.
- * For multiple generations, consider creating a single service instance.
+
+ * **Performance Note**: Reuses a shared FilenameService instance under the hood
+ * to avoid repeated allocations. Instantiate your own service if you need
+ * isolated configuration.
  *
  * @param media - Media information object
  * @param options - Filename generation options (optional)
  * @returns Generated filename (Windows-compatible, normalized)
- *
- * @throws None (errors are caught and logged, returns fallback)
- *
+
  * @example
  * ```typescript
  * import { generateMediaFilename } from '@shared/services/file-naming';
@@ -805,8 +794,7 @@ export class FilenameService {
  * @see {@link FilenameOptions} for available options
  */
 export function generateMediaFilename(media: MediaInfo, options?: FilenameOptions): string {
-  const service = new FilenameService();
-  return service.generateMediaFilename(media, options);
+  return sharedFilenameService.generateMediaFilename(media, options);
 }
 
 /**
@@ -843,8 +831,7 @@ export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
   options?: ZipFilenameOptions
 ): string {
-  const service = new FilenameService();
-  return service.generateZipFilename(mediaItems, options);
+  return sharedFilenameService.generateZipFilename(mediaItems, options);
 }
 
 /**
@@ -878,8 +865,7 @@ export function generateZipFilename(
  * @see {@link MEDIA_FILENAME_PATTERN} for regex pattern
  */
 export function isValidMediaFilename(filename: string): boolean {
-  const service = new FilenameService();
-  return service.isValidMediaFilename(filename);
+  return sharedFilenameService.isValidMediaFilename(filename);
 }
 
 /**
@@ -906,6 +892,5 @@ export function isValidMediaFilename(filename: string): boolean {
  * @see {@link ZIP_FILENAME_PATTERN} for regex pattern
  */
 export function isValidZipFilename(filename: string): boolean {
-  const service = new FilenameService();
-  return service.isValidZipFilename(filename);
+  return sharedFilenameService.isValidZipFilename(filename);
 }
