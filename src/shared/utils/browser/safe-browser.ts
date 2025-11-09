@@ -9,27 +9,27 @@
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '../timer-management';
 
+type ExtensionRuntimeWindow = Window & {
+  chrome?: { runtime?: { id?: string } };
+  browser?: { runtime?: { id?: string } };
+};
+
+// Shared runtime detector keeps extension environment helpers in sync.
+function detectExtensionRuntime(): boolean {
+  const win = safeWindow() as ExtensionRuntimeWindow | null;
+  if (!win) return false;
+
+  const chromeRuntimeId = win.chrome?.runtime?.id;
+  const firefoxRuntimeId = win.browser?.runtime?.id;
+  return Boolean(chromeRuntimeId || firefoxRuntimeId);
+}
+
 /**
  * Check if in extension environment
  */
 export function isExtensionEnvironment(): boolean {
   try {
-    const win = safeWindow();
-    if (!win) return false;
-
-    // Chrome extension detection
-    const chromeWin = win as Window & { chrome?: { runtime?: { id?: string } } };
-    if (chromeWin.chrome?.runtime?.id) {
-      return true;
-    }
-
-    // Firefox extension detection
-    const firefoxWin = win as Window & { browser?: { runtime?: { id?: string } } };
-    if (firefoxWin.browser?.runtime?.id) {
-      return true;
-    }
-
-    return false;
+    return detectExtensionRuntime();
   } catch {
     return false;
   }
@@ -305,22 +305,7 @@ export function getBrowserInfo(): {
  */
 export function isExtensionContext(): boolean {
   try {
-    const win = safeWindow();
-    if (!win) return false;
-
-    // Chrome extension detection
-    const chromeWin = win as Window & { chrome?: { runtime?: { id?: string } } };
-    if (chromeWin.chrome?.runtime?.id) {
-      return true;
-    }
-
-    // Firefox extension detection
-    const firefoxWin = win as Window & { browser?: { runtime?: { id?: string } } };
-    if (firefoxWin.browser?.runtime?.id) {
-      return true;
-    }
-
-    return false;
+    return detectExtensionRuntime();
   } catch (error) {
     logger.debug('isExtensionContext: Extension detection failed:', error);
     return false;

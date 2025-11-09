@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import type { MediaInfo } from '../../types';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Generic deduplication function
@@ -24,7 +24,7 @@ import type { MediaInfo } from '../../types';
  * // [{ id: 1, ... }, { id: 2, ... }]
  * ```
  */
-export function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
+function removeDuplicates<T>(items: readonly T[], keyExtractor: (item: T) => string): T[] {
   if (!items?.length) {
     return [];
   }

@@ -27,7 +27,7 @@ export {
 export { ensureGalleryScrollAvailable } from './core-utils';
 
 // Deduplication utilities
-export { removeDuplicates, removeDuplicateMediaItems } from './deduplication/deduplication-utils';
+export { removeDuplicateMediaItems } from './deduplication/deduplication-utils';
 
 // Debug utilities (removed in Phase 140.2 - unused code cleanup)
 

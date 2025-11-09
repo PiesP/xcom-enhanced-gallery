@@ -9,7 +9,6 @@ export {
   toggleClass,
   setCSSVariable,
   updateComponentState,
-  removeDuplicates,
   removeDuplicateMediaItems,
   createDebouncer,
   rafThrottle,
@@ -70,7 +69,7 @@ export {
 // === DOM Batcher (2) ===
 export { DOMBatcher, globalDOMBatcher } from './dom/index';
 
-// === Browser environment safe access (11) - Phase 194: Added ===
+// === Browser environment safe access (17) - Phase 194: Added ===
 export {
   isBrowserEnvironment,
   safeWindow,
