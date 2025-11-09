@@ -9,6 +9,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { readAllDesignTokens } from '../shared/design-token-helpers';
 
 // ESM에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -137,9 +138,8 @@ describe('RED: 하드코딩된 CSS 제거', () => {
   });
 
   describe('4. Design Token 시스템 완성도 검증', () => {
-    it('design-tokens.css에 필요한 모든 토큰이 정의되어야 한다', () => {
-      const filePath = join(PROJECT_ROOT, 'src/shared/styles/design-tokens.css');
-      const content = readFileSync(filePath, 'utf-8');
+    it('design tokens 계층에 필요한 모든 토큰이 정의되어야 한다', () => {
+      const content = readAllDesignTokens();
 
       // 새로 추가되어야 할 토큰들
       const requiredNewTokens = [
@@ -157,7 +157,7 @@ describe('RED: 하드코딩된 CSS 제거', () => {
     });
 
     it('모든 토큰이 다크모드 및 라이트모드를 지원해야 한다', () => {
-      const filePath = join(PROJECT_ROOT, 'src/shared/styles/design-tokens.css');
+      const filePath = join(PROJECT_ROOT, 'src/shared/styles/design-tokens.semantic.css');
       const content = readFileSync(filePath, 'utf-8');
 
       // 다크모드 및 라이트모드 선택자 확인 (작은따옴표 사용)

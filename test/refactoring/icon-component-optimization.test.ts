@@ -13,6 +13,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
+import { readAllDesignTokens } from '../shared/design-token-helpers';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -68,9 +69,8 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
       expect(iconContent).toMatch(relativeUnitPattern);
     });
 
-    it('디자인 토큰이 design-tokens.css에 정의되어야 한다', async () => {
-      const tokensFilePath = path.resolve(currentDir, '../../src/shared/styles/design-tokens.css');
-      const tokensContent = fs.readFileSync(tokensFilePath, 'utf-8');
+    it('디자인 토큰이 design token 계층에 정의되어야 한다', async () => {
+      const tokensContent = readAllDesignTokens();
 
       // Icon 관련 디자인 토큰들이 존재해야 함
       expect(tokensContent).toMatch(/--xeg-icon-stroke-width:/);
@@ -190,8 +190,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
 
   describe('디자인 시스템 일관성', () => {
     it('Icon 컴포넌트가 Toolbar, Button과 동일한 디자인 토큰을 사용해야 한다', async () => {
-      const tokensFilePath = path.resolve(currentDir, '../../src/shared/styles/design-tokens.css');
-      const tokensContent = fs.readFileSync(tokensFilePath, 'utf-8');
+      const tokensContent = readAllDesignTokens();
 
       // 공통 디자인 토큰 패턴들
       const sharedTokenPatterns = [
@@ -280,8 +279,7 @@ describe('Icon 컴포넌트 최적화 (TDD)', () => {
     });
 
     it('CSS 변수 fallback 값이 설정되어야 한다', async () => {
-      const tokensFilePath = path.resolve(currentDir, '../../src/shared/styles/design-tokens.css');
-      const tokensContent = fs.readFileSync(tokensFilePath, 'utf-8');
+      const tokensContent = readAllDesignTokens();
 
       // CSS 변수들이 fallback 값을 가져야 함
       const iconTokens = tokensContent.match(/--xeg-icon-[^:]+:[^;]+;/g) || [];

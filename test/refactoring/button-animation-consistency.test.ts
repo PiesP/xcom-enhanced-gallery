@@ -5,9 +5,9 @@
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
 import { readFileSync } from 'node:fs';
+import { readAllDesignTokens } from '../shared/design-token-helpers';
 
 // 공통 경로 상수
-const DESIGN_TOKENS_PATH = 'src/shared/styles/design-tokens.css';
 const BUTTON_CSS_PATH = 'src/shared/components/ui/Button/Button.module.css';
 const TOOLBAR_CSS_PATH = 'src/shared/components/ui/Toolbar/Toolbar.module.css';
 
@@ -79,13 +79,13 @@ describe('Button Animation System Consistency', () => {
   });
 
   describe('Shared Animation System Integration', () => {
-    it('공통 spin 애니메이션이 design-tokens.css에 정의되어야 함', () => {
-      const tokensCSS = read(DESIGN_TOKENS_PATH);
+    it('공통 spin 애니메이션이 디자인 토큰 시스템에 정의되어야 함', () => {
+      const tokensCSS = readAllDesignTokens();
 
       // 공통 spin 애니메이션 키프레임 확인
       const hasSpinAnimation = tokensCSS.includes('@keyframes xeg-spin');
 
-      expect(hasSpinAnimation, '공통 spin 애니메이션이 design-tokens.css에 정의되지 않음').toBe(
+      expect(hasSpinAnimation, '공통 spin 애니메이션이 디자인 토큰 시스템에 정의되지 않음').toBe(
         true
       );
     });
@@ -103,8 +103,8 @@ describe('Button Animation System Consistency', () => {
       expect(toolbarUsesCommon, 'Toolbar가 공통 spin 애니메이션을 사용하지 않음').toBe(true);
     });
 
-    it('공통 transition 변수가 design-tokens.css에 정의되어야 함', () => {
-      const tokensCSS = read(DESIGN_TOKENS_PATH);
+    it('공통 transition 변수가 디자인 토큰 시스템에 정의되어야 함', () => {
+      const tokensCSS = readAllDesignTokens();
 
       // 필수 transition 변수들 확인
       const hasTransitionVariables =
@@ -114,7 +114,7 @@ describe('Button Animation System Consistency', () => {
 
       expect(
         hasTransitionVariables,
-        '필수 transition 변수들이 design-tokens.css에 정의되지 않음'
+        '필수 transition 변수들이 디자인 토큰 시스템에 정의되지 않음'
       ).toBe(true);
     });
   });
@@ -122,7 +122,7 @@ describe('Button Animation System Consistency', () => {
   describe('Focus Ring System Consistency', () => {
     it('Button focus ring이 공통 시스템을 사용해야 함', () => {
       const buttonCSS = read(BUTTON_CSS_PATH);
-      const tokensCSS = read(DESIGN_TOKENS_PATH);
+      const tokensCSS = readAllDesignTokens();
 
       // focus ring 변수 사용 확인
       const buttonUsesFocusVariables =
@@ -134,7 +134,9 @@ describe('Button Animation System Consistency', () => {
 
       expect(buttonUsesFocusVariables, 'Button이 공통 focus ring 변수를 사용하지 않음').toBe(true);
 
-      expect(hasFocusVariables, 'focus ring 변수들이 design-tokens.css에 정의되지 않음').toBe(true);
+      expect(hasFocusVariables, 'focus ring 변수들이 디자인 토큰 시스템에 정의되지 않음').toBe(
+        true
+      );
     });
 
     it('Toolbar 버튼들도 동일한 focus ring 시스템을 사용해야 함', () => {
@@ -157,7 +159,7 @@ describe('Button Animation System Consistency', () => {
     it('모든 애니메이션이 GPU 가속을 사용해야 함', () => {
       const buttonCSS = read(BUTTON_CSS_PATH);
       const toolbarCSS = read(TOOLBAR_CSS_PATH);
-      const tokensCSS = read(DESIGN_TOKENS_PATH);
+      const tokensCSS = readAllDesignTokens();
 
       // GPU 가속 속성 확인 (transform, opacity 기반)
       const hasGPUProperties =
@@ -190,7 +192,7 @@ describe('Button Animation System Consistency', () => {
     it('Button과 Toolbar가 일관된 애니메이션 패턴을 사용해야 함', () => {
       const buttonCSS = read(BUTTON_CSS_PATH);
       const toolbarCSS = read(TOOLBAR_CSS_PATH);
-      const tokensCSS = read(DESIGN_TOKENS_PATH);
+      const tokensCSS = readAllDesignTokens();
 
       // 공통 애니메이션 패턴 사용 확인
       const commonPattern = /var\(--xeg-(duration|transition|easing)-[a-z]+\)/;

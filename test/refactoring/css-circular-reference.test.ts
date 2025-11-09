@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { getDesignTokenPaths, readAllDesignTokens } from '../shared/design-token-helpers';
 
 interface CSSVariable {
   name: string;
@@ -89,14 +89,16 @@ function detectCircularReferences(variables: Map<string, CSSVariable>): string[]
 describe('CSS 변수 순환 참조 탐지', () => {
   setupGlobalTestIsolation();
 
-  const designTokensPath = join(process.cwd(), 'src', 'shared', 'styles', 'design-tokens.css');
+  const designTokenPaths = getDesignTokenPaths();
 
-  it('design-tokens.css 파일이 존재해야 함', () => {
-    expect(() => readFileSync(designTokensPath, 'utf-8')).not.toThrow();
+  it('디자인 토큰 계층 파일이 모두 존재해야 함', () => {
+    designTokenPaths.forEach(path => {
+      expect(() => readFileSync(path, 'utf-8')).not.toThrow();
+    });
   });
 
   it('통합된 surface glass 변수들이 순환 참조 없이 정의되어야 함', () => {
-    const cssContent = readFileSync(designTokensPath, 'utf-8');
+    const cssContent = readAllDesignTokens();
     const variables = parseCSSVariables(cssContent);
 
     // 통합된 surface glass 변수들 확인
@@ -160,7 +162,7 @@ describe('CSS 변수 순환 참조 탐지', () => {
   });
 
   it('모든 CSS 변수에 순환 참조가 없어야 함', () => {
-    const cssContent = readFileSync(designTokensPath, 'utf-8');
+    const cssContent = readAllDesignTokens();
     const variables = parseCSSVariables(cssContent);
     const circularRefs = detectCircularReferences(variables);
 
@@ -172,7 +174,7 @@ describe('CSS 변수 순환 참조 탐지', () => {
   });
 
   it('xeg-surface-glass-bg는 실제 색상 값 또는 기본 토큰을 참조해야 함', () => {
-    const cssContent = readFileSync(designTokensPath, 'utf-8');
+    const cssContent = readAllDesignTokens();
     const variables = parseCSSVariables(cssContent);
 
     const surfaceGlassBg = variables.get('xeg-surface-glass-bg');

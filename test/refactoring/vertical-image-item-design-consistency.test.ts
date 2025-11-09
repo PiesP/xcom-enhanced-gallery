@@ -5,8 +5,9 @@
  */
 
 import { readFileSync } from 'fs';
-import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
 import { describe, it, expect } from 'vitest';
+import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
+import { readAllDesignTokens } from '../shared/design-token-helpers';
 
 describe('TDD: VerticalImageItem 디자인 일관성 개선', () => {
   setupGlobalTestIsolation();
@@ -192,7 +193,7 @@ describe('TDD: VerticalImageItem 디자인 일관성 개선', () => {
         'utf8'
       );
 
-      const designTokensContent = readFileSync('src/shared/styles/design-tokens.css', 'utf8');
+      const designTokensContent = readAllDesignTokens();
 
       // 핵심 디자인 토큰 활용 검증
       const requiredTokens = [

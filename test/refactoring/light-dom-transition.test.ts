@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
 import fs from 'node:fs';
 import path from 'node:path';
+import { readAllDesignTokens } from '../shared/design-token-helpers';
 
 describe('Shadow DOM → Light DOM 전환 검증', () => {
   setupGlobalTestIsolation();
@@ -137,8 +138,7 @@ describe('Shadow DOM → Light DOM 전환 검증', () => {
     });
 
     it('디자인 토큰이 CSS 변수로 정의되어 있어야 함', () => {
-      const tokensPath = path.join(process.cwd(), 'src/shared/styles/design-tokens.css');
-      const source = fs.readFileSync(tokensPath, 'utf8');
+      const source = readAllDesignTokens();
 
       // --xeg- 프리픽스 CSS 변수가 존재해야 함
       const xegVars = source.match(/--xeg-[\w-]+/g);
