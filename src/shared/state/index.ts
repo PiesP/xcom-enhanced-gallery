@@ -1,34 +1,14 @@
-export {
-  gallerySignals,
-  openGallery,
-  closeGallery,
-  navigateToItem,
-  navigatePrevious,
-  navigateNext,
-  setFocusedIndex,
-  setLoading,
-  setError,
-  setViewMode,
-  // selectors
-  getCurrentMediaItem,
-  getCurrentIndex,
-  getMediaItems,
-  getMediaItemsCount,
-  hasPreviousMedia,
-  hasNextMedia,
-  isGalleryOpen,
-  isLoading,
-  getError,
-  getViewMode,
-  // navigation helpers
-  galleryIndexEvents,
-  getNavigationState,
-  getLastNavigationSource,
-} from './signals/gallery.signals';
-export type { NavigationSource } from './signals/gallery.signals';
-export { toolbarState, setSettingsExpanded } from './signals/toolbar.signals';
-export { downloadState } from './signals/download.signals';
 /**
- * @fileoverview State Layer Exports
- * @description Exports for state management (explicit exports only)
+ * Barrel exports removed in Phase 371.
+ *
+ * Import state helpers from their dedicated modules instead:
+ * - `@shared/state/signals/gallery.signals`
+ * - `@shared/state/signals/toolbar.signals`
+ * - `@shared/state/signals/download.signals`
+ * - `@shared/state/signals/signal-factory`
+ *
+ * This placeholder remains to avoid breaking relative imports that still reference
+ * `@shared/state`. No public API is re-exported from here.
  */
+
+export {};
