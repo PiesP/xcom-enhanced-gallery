@@ -6,7 +6,7 @@
 import { logger } from '@shared/logging';
 import { resetKeyboardDebounceState } from '../../keyboard-debounce';
 import { handleKeyboardEvent } from '../handlers/keyboard-handler';
-import { handleDelegatedMediaClick } from '../handlers/delegated-click-handler';
+import { handleMediaClick } from '../handlers/media-click-handler';
 import { addListener, removeEventListenersByContext } from '../core/listener-manager';
 import type { EventHandlers, GalleryEventOptions } from '../core/event-context';
 
@@ -87,7 +87,7 @@ export async function initializeGalleryEvents(
 
   const clickHandler: EventListener = async (evt: Event) => {
     const event = evt as MouseEvent;
-    const result = await handleDelegatedMediaClick(event, handlers, finalOptions);
+    const result = await handleMediaClick(event, handlers, finalOptions);
     if (result.handled && finalOptions.preventBubbling) {
       event.stopPropagation();
       event.preventDefault();

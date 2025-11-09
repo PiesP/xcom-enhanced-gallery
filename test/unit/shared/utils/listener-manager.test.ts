@@ -175,6 +175,19 @@ describe('listener-manager.ts', () => {
       expect(status.total).toBe(0);
     });
 
+    it('should detach listeners from the DOM', () => {
+      const removeSpy = vi.spyOn(mockElement, 'removeEventListener');
+
+      addListener(mockElement, 'click', mockListener);
+      addListener(mockElement, 'keydown', mockListener);
+
+      removeAllEventListeners();
+
+      expect(removeSpy).toHaveBeenCalledTimes(2);
+      expect(removeSpy).toHaveBeenCalledWith('click', mockListener, undefined);
+      expect(removeSpy).toHaveBeenCalledWith('keydown', mockListener, undefined);
+    });
+
     it('should not throw error if no listeners exist', () => {
       expect(() => removeAllEventListeners()).not.toThrow();
     });

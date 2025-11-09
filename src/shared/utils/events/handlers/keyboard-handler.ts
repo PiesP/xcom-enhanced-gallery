@@ -23,17 +23,6 @@ function checkGalleryOpen(): boolean {
 }
 
 /**
- * Safe function execution wrapper (with error logging)
- */
-function safeExecute(fn: () => void, _ctx: string): void {
-  try {
-    fn();
-  } catch {
-    // Ignore
-  }
-}
-
-/**
  * Handle keyboard events
  * Space: play/pause, arrow keys: navigation, M: mute
  */
@@ -77,58 +66,56 @@ export function handleKeyboardEvent(
           case 'Space':
             // Keyboard debounce: Prevent duplicate play/pause calls on repeated Space input (150ms interval)
             if (shouldExecutePlayPauseKey(event.key)) {
-              safeExecute(() => executeVideoControl('togglePlayPause'), 'togglePlayPauseCurrent');
+              executeVideoControl('togglePlayPause');
             }
             break;
           case 'ArrowLeft':
-            safeExecute(() => navigatePrevious('keyboard'), 'navigatePrevious');
+            navigatePrevious('keyboard');
             break;
           case 'ArrowRight':
-            safeExecute(() => navigateNext('keyboard'), 'navigateNext');
+            navigateNext('keyboard');
             break;
           case 'Home':
-            safeExecute(() => navigateToItem(0, 'keyboard'), 'navigateToItem(Home)');
+            navigateToItem(0, 'keyboard');
             break;
-          case 'End':
-            safeExecute(() => {
-              const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
-              navigateToItem(lastIndex, 'keyboard');
-            }, 'navigateToItem(End)');
+          case 'End': {
+            const lastIndex = Math.max(0, gallerySignals.mediaItems.value.length - 1);
+            navigateToItem(lastIndex, 'keyboard');
             break;
-          case 'PageDown':
-            safeExecute(() => {
-              // Page Down: +5 items
-              const nextIndex = Math.min(
+          }
+          case 'PageDown': {
+            // Page Down: +5 items
+            navigateToItem(
+              Math.min(
                 gallerySignals.mediaItems.value.length - 1,
                 gallerySignals.currentIndex.value + 5
-              );
-              navigateToItem(nextIndex, 'keyboard');
-            }, 'navigateToItem(PageDown)');
+              ),
+              'keyboard'
+            );
             break;
-          case 'PageUp':
-            safeExecute(() => {
-              // Page Up: -5 items
-              const prevIndex = Math.max(0, gallerySignals.currentIndex.value - 5);
-              navigateToItem(prevIndex, 'keyboard');
-            }, 'navigateToItem(PageUp)');
+          }
+          case 'PageUp': {
+            // Page Up: -5 items
+            navigateToItem(Math.max(0, gallerySignals.currentIndex.value - 5), 'keyboard');
             break;
+          }
           case 'ArrowUp':
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowUp input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('volumeUp'), 'volumeUpCurrent');
+              executeVideoControl('volumeUp');
             }
             break;
           case 'ArrowDown':
             // Keyboard debounce: Prevent excessive volume control on repeated ArrowDown input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('volumeDown'), 'volumeDownCurrent');
+              executeVideoControl('volumeDown');
             }
             break;
           case 'm':
           case 'M':
             // Keyboard debounce: Prevent duplicate mute toggle calls on repeated M key input (100ms interval)
             if (shouldExecuteVideoControlKey(event.key)) {
-              safeExecute(() => executeVideoControl('toggleMute'), 'toggleMuteCurrent');
+              executeVideoControl('toggleMute');
             }
             break;
         }

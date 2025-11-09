@@ -13,7 +13,7 @@ import type { EventContext } from './event-context';
  * Generate listener ID
  */
 function generateListenerId(ctx?: string): string {
-  const r = Math.random().toString(36).substr(2, 9);
+  const r = Math.random().toString(36).slice(2, 11);
   return ctx ? `${ctx}:${r}` : r;
 }
 
@@ -154,10 +154,7 @@ export function removeEventListenersByContext(context: string): number {
   // This function safely handles already-removed listeners (returns false)
   let removedCount = 0;
   for (const id of listenersToRemove) {
-    // Check if listener still exists before attempting removal
-    // (it may have been removed during previous iteration if same listener
-    // appeared multiple times in the registry)
-    if (listenerRegistry.get(id) && removeEventListenerManaged(id)) {
+    if (removeEventListenerManaged(id)) {
       removedCount++;
     }
   }
@@ -175,7 +172,25 @@ export function removeEventListenersByContext(context: string): number {
  * Remove all listeners
  */
 export function removeAllEventListeners(): void {
-  listenerRegistry.clear();
+  const listeners = listenerRegistry.drain();
+  if (listeners.length === 0) {
+    return;
+  }
+
+  let detachedCount = 0;
+  for (const context of listeners) {
+    try {
+      context.element.removeEventListener(context.type, context.listener, context.options);
+      detachedCount++;
+    } catch (error) {
+      logger.warn(`Failed to remove event listener during drain: ${context.type}`, {
+        error,
+        context: context.context,
+      });
+    }
+  }
+
+  logger.debug(`[removeAllEventListeners] Removed ${detachedCount} listeners`);
 }
 
 /**

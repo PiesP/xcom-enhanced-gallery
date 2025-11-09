@@ -63,30 +63,17 @@ class ListenerRegistry {
   }
 
   /**
-   * Remove listeners by context
+   * Drain all listeners from the registry and return their contexts
    */
-  unregisterByContext(context: string): number {
-    let removedCount = 0;
-    for (const [id, eventContext] of this.listeners.entries()) {
-      if (eventContext.context === context) {
-        this.listeners.delete(id);
-        removedCount++;
-      }
+  drain(): EventContext[] {
+    if (this.listeners.size === 0) {
+      return [];
     }
 
-    if (removedCount > 0) {
-      logger.debug(`[ListenerRegistry] Removed ${removedCount} listeners for context: ${context}`);
-    }
-    return removedCount;
-  }
-
-  /**
-   * Clear all listeners
-   */
-  clear(): void {
-    const count = this.listeners.size;
+    const contexts = Array.from(this.listeners.values());
     this.listeners.clear();
-    logger.debug(`[ListenerRegistry] Cleared all ${count} listeners`);
+    logger.debug(`[ListenerRegistry] Cleared all ${contexts.length} listeners`);
+    return contexts;
   }
 
   /**
@@ -113,13 +100,6 @@ class ListenerRegistry {
         created: ctx.created,
       })),
     };
-  }
-
-  /**
-   * Total listener count
-   */
-  size(): number {
-    return this.listeners.size;
   }
 
   /**
