@@ -159,11 +159,9 @@ export function isItemVisibleEnough(
 }
 
 /**
- * 중심 거리 계산 헬퍼 (점수 계산용)
+ * Viewport top proximity helper (scoring use).
  */
-export function calculateCenterDistance(entry: IntersectionObserverEntry): number {
-  const { top, height } = entry.boundingClientRect;
-  const centerY = top + height / 2;
-  const viewportCenter = (window.innerHeight ?? 800) / 2;
-  return Math.abs(centerY - viewportCenter);
+export function calculateTopDistance(entry: IntersectionObserverEntry): number {
+  const visibleTop = entry.intersectionRect?.top ?? entry.boundingClientRect.top;
+  return Math.abs(visibleTop);
 }

@@ -25,6 +25,8 @@ type MaybeAccessor<T> = T | Accessor<T>;
 const toAccessor = <T>(value: MaybeAccessor<T>): Accessor<T> =>
   typeof value === 'function' ? (value as Accessor<T>) : () => value;
 
+type FocusNavigationTrigger = 'button' | 'click' | 'keyboard' | 'init';
+
 /**
  * useGalleryFocusTracker 훅의 옵션 인터페이스
  *
@@ -69,6 +71,12 @@ export interface UseGalleryFocusTrackerReturn {
   forceSync: () => void;
   /** 수동 포커스 명시적 설정 */
   setManualFocus: (index: number | null) => void;
+  /** 네비게이션 스크롤 완료 후 포커스 적용 */
+  applyFocusAfterNavigation: (
+    index: number,
+    trigger: FocusNavigationTrigger,
+    options?: { force?: boolean }
+  ) => void;
 }
 
 const DEFAULT_THRESHOLD = [0.25, 0.5, 0.75];
@@ -326,6 +334,7 @@ export function useGalleryFocusTracker({
   let pendingFocusIndex: number | null = null;
   let pendingBlurIndex: number | null = null;
   let focusBatchScheduled = false;
+  let pendingNavigation: { index: number; trigger: FocusNavigationTrigger } | null = null;
 
   const flushFocusBatch = () => {
     focusBatchScheduled = false;
@@ -390,6 +399,39 @@ export function useGalleryFocusTracker({
     });
   };
 
+  const applyFocusAfterNavigation = (
+    index: number,
+    trigger: FocusNavigationTrigger,
+    options?: { force?: boolean }
+  ) => {
+    const shouldForce = options?.force ?? false;
+    const isPendingMatch =
+      pendingNavigation?.index === index && pendingNavigation?.trigger === trigger;
+
+    if (!shouldForce && !isPendingMatch) {
+      return;
+    }
+
+    pendingNavigation = null;
+
+    if (!shouldAutoFocusAccessor()) {
+      return;
+    }
+
+    if (manualFocusIndex() !== null) {
+      return;
+    }
+
+    stateManager.syncAutoFocus(index);
+
+    const delay = Math.max(0, autoFocusDelayAccessor());
+    const reason = trigger === 'init' ? 'navigation:init' : `navigation:${trigger}`;
+
+    globalTimerManager.setTimeout(() => {
+      applyAutoFocus(index, reason);
+    }, delay);
+  };
+
   // Explicit manual focus setting (clears auto-focus timer)
   const setManualFocus = (index: number | null) => {
     applicator.clearAutoFocusTimer(focusTimerManager);
@@ -443,21 +485,17 @@ export function useGalleryFocusTracker({
       applicator.clearAutoFocusTimer(focusTimerManager);
 
       // Update focus state immediately
-      const { batch: solidBatch } = getSolid();
-      solidBatch(() => {
+      batch(() => {
         setFocusState(createFocusState(index, 'auto'));
         stateManager.syncContainer(index);
       });
 
-      // Apply focus after scroll completes
-      const delay = autoFocusDelayAccessor();
-      globalTimerManager.setTimeout(() => {
-        applyAutoFocus(index, `navigation:${trigger}`);
-      }, delay + 100);
+      pendingNavigation = { index, trigger };
     });
 
     onCleanup(() => {
       unsubNavigate();
+      pendingNavigation = null;
     });
   });
 
@@ -535,5 +573,6 @@ export function useGalleryFocusTracker({
     handleItemBlur,
     forceSync,
     setManualFocus,
+    applyFocusAfterNavigation,
   };
 }

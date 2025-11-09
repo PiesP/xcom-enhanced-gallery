@@ -9,7 +9,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
-import { FocusObserverManager, createFocusObserverManager } from '@/shared/services/focus';
+import { createFocusObserverManager } from '@/shared/services/focus';
 import { ItemCache } from '@/shared/state/focus';
 
 /**
@@ -51,7 +51,7 @@ function createMockEntry(
 describe('FocusObserverManager - IntersectionObserver Lifecycle', () => {
   setupGlobalTestIsolation();
 
-  let manager: FocusObserverManager;
+  let manager: ReturnType<typeof createFocusObserverManager>;
   let itemCache: ItemCache;
   let mockIntersectionObserverCallback: (entries: IntersectionObserverEntry[]) => void;
 
@@ -189,7 +189,7 @@ describe('FocusObserverManager - IntersectionObserver Lifecycle', () => {
           expect.objectContaining({
             index: 0,
             intersectionRatio: 0.8,
-            centerDistance: expect.any(Number),
+            topDistance: expect.any(Number),
           }),
         ])
       );
@@ -502,8 +502,9 @@ describe('FocusObserverManager - IntersectionObserver Lifecycle', () => {
       const instance1 = createFocusObserverManager();
       const instance2 = createFocusObserverManager();
 
-      expect(instance1).toBeInstanceOf(FocusObserverManager);
-      expect(instance2).toBeInstanceOf(FocusObserverManager);
+      expect(typeof instance1.setupObserver).toBe('function');
+      expect(typeof instance1.cleanupObserver).toBe('function');
+      expect(typeof instance2.setupObserver).toBe('function');
       expect(instance1).not.toBe(instance2);
     });
   });
@@ -529,7 +530,7 @@ describe('FocusObserverManager - IntersectionObserver Lifecycle', () => {
       expect(mockObserve).not.toHaveBeenCalled();
     });
 
-    it('should calculate centerDistance correctly for various element positions', () => {
+    it('should calculate topDistance correctly for various element positions', () => {
       const container = document.createElement('div');
       const item = document.createElement('div');
       item.setAttribute('data-index', '0');
@@ -551,7 +552,7 @@ describe('FocusObserverManager - IntersectionObserver Lifecycle', () => {
         expect.arrayContaining([
           expect.objectContaining({
             index: 0,
-            centerDistance: expect.any(Number),
+            topDistance: expect.any(Number),
           }),
         ])
       );

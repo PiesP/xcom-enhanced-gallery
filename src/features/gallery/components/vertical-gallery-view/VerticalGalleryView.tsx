@@ -40,7 +40,11 @@ import type { JSX } from 'solid-js';
 import { logger } from '@shared/logging';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import type { ImageFitMode } from '@shared/types';
-import { galleryState, navigateToItem } from '@shared/state/signals/gallery.signals';
+import {
+  galleryState,
+  galleryIndexEvents,
+  navigateToItem,
+} from '@shared/state/signals/gallery.signals';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { getSolid } from '@shared/external/vendors';
@@ -276,7 +280,7 @@ function VerticalGalleryViewCore({
     registerItem: registerFocusItem,
     handleItemFocus,
     handleItemBlur,
-    forceSync: forceFocusSync,
+    applyFocusAfterNavigation,
   } = useGalleryFocusTracker({
     container: () => containerEl(),
     isEnabled: isVisible,
@@ -290,13 +294,7 @@ function VerticalGalleryViewCore({
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
   });
 
-  createEffect(
-    on(currentIndex, () => {
-      forceFocusSync();
-    })
-  );
-
-  const { scrollToCurrentItem } = useGalleryItemScroll(
+  const { scrollToItem } = useGalleryItemScroll(
     () => containerEl(),
     currentIndex,
     () => mediaItems().length,
@@ -359,9 +357,10 @@ function VerticalGalleryViewCore({
             if (itemElement) {
               await waitForMediaLoad(itemElement, 1000);
             }
-          }
 
-          void scrollToCurrentItem();
+            await scrollToItem(currentIdx);
+            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+          }
         });
       });
     } else {
@@ -373,13 +372,18 @@ function VerticalGalleryViewCore({
           container.querySelector(`[data-index="${currentIdx}"]`);
 
         if (itemElement) {
-          void waitForMediaLoad(itemElement, 1000).then(() => {
-            void scrollToCurrentItem();
+          void waitForMediaLoad(itemElement, 1000).then(async () => {
+            await scrollToItem(currentIdx);
+            applyFocusAfterNavigation(currentIdx, 'init', { force: true });
           });
           return;
         }
+
+        void scrollToItem(currentIdx).then(() => {
+          applyFocusAfterNavigation(currentIdx, 'init', { force: true });
+        });
+        return;
       }
-      void scrollToCurrentItem();
     }
   });
 
@@ -426,9 +430,26 @@ function VerticalGalleryViewCore({
       await waitForMediaLoad(itemElement);
     }
 
-    // 로드 완료 후 스크롤 실행
-    void scrollToCurrentItem();
+    // 로드 완료 후 스크롤 실행 및 포커스 연계
+    await scrollToItem(currentIdx);
+    applyFocusAfterNavigation(currentIdx, 'init', { force: true });
   };
+
+  createEffect(() => {
+    if (!isVisible()) {
+      return;
+    }
+
+    const unsubscribe = galleryIndexEvents.on('navigate:complete', ({ index, trigger }) => {
+      void scrollToItem(index).then(() => {
+        applyFocusAfterNavigation(index, trigger);
+      });
+    });
+
+    onCleanup(() => {
+      unsubscribe();
+    });
+  });
 
   useGalleryKeyboard({
     onClose: onClose || (() => {}),

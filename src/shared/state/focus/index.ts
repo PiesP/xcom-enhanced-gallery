@@ -37,7 +37,7 @@ export {
   ItemCache,
   createItemCache,
   isItemVisibleEnough,
-  calculateCenterDistance,
+  calculateTopDistance,
 } from './focus-cache';
 
 /* ============================================================================

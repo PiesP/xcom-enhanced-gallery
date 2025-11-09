@@ -2,7 +2,7 @@
  * Manages the IntersectionObserver used for gallery focus tracking.
  */
 import type { ItemCache } from '../../state/focus';
-import { isItemVisibleEnough, calculateCenterDistance } from '../../state/focus';
+import { isItemVisibleEnough, calculateTopDistance } from '../../state/focus';
 
 /**
  * Focus candidate scoring information
@@ -11,7 +11,7 @@ import { isItemVisibleEnough, calculateCenterDistance } from '../../state/focus'
  * Lower scores indicate better focus candidates (closer to viewport center, more visible).
  *
  * @property index - Item index in gallery (cache key)
- * @property centerDistance - Distance from viewport vertical center (pixels)
+ * @property topDistance - Distance from viewport top edge (pixels)
  * @property intersectionRatio - Fraction of item currently visible (0-1)
  * @property time - Timestamp when entry was processed (milliseconds)
  *
@@ -20,7 +20,7 @@ import { isItemVisibleEnough, calculateCenterDistance } from '../../state/focus'
  */
 interface CandidateScore {
   index: number;
-  centerDistance: number;
+  topDistance: number;
   intersectionRatio: number;
   time: number;
 }
@@ -43,7 +43,7 @@ interface CandidateScore {
  * @returns CandidateScore if visible enough, null otherwise
  *
  * @see {@link isItemVisibleEnough} for visibility check
- * @see {@link calculateCenterDistance} for distance calculation
+ * @see {@link calculateTopDistance} for distance calculation
  * @see {@link CandidateScore} for score structure
  * @internal Used by handleEntries to process each intersection entry
  */
@@ -57,12 +57,12 @@ function calculateCandidateScore(
     return null;
   }
 
-  const centerDistance = calculateCenterDistance(entry);
+  const topDistance = calculateTopDistance(entry);
   const intersectionRatio = entry.intersectionRatio;
 
   return {
     index,
-    centerDistance,
+    topDistance,
     intersectionRatio,
     time,
   };

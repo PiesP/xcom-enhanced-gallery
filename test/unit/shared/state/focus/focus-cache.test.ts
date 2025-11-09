@@ -4,9 +4,9 @@ import {
   ItemCache,
   createItemCache,
   isItemVisibleEnough,
-  calculateCenterDistance,
-} from '@shared/state/focus/focus-cache';
-import type { ItemEntry } from '@shared/state/focus/focus-cache';
+  calculateTopDistance,
+} from '@shared/state/focus';
+import type { ItemEntry } from '@shared/state/focus';
 
 describe('Focus Cache Integration (Phase 150.2 Step 2)', () => {
   setupGlobalTestIsolation();
@@ -158,12 +158,14 @@ describe('Focus Cache Integration (Phase 150.2 Step 2)', () => {
     });
   });
 
-  describe('calculateCenterDistance', () => {
-    it('should calculate distance from viewport center', () => {
-      // This test validates the function signature
-      // Real IntersectionObserverEntry objects are tested in integration tests
-      const viewportCenter = (window.innerHeight ?? 800) / 2;
-      expect(viewportCenter).toBeGreaterThan(0);
+  describe('calculateTopDistance', () => {
+    it('should measure distance from viewport top', () => {
+      const entry = {
+        intersectionRect: { top: 120 },
+        boundingClientRect: { top: 120 },
+      } as Parameters<typeof calculateTopDistance>[0];
+
+      expect(calculateTopDistance(entry)).toBe(120);
     });
   });
 
