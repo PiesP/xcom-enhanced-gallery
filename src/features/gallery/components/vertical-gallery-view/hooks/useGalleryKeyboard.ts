@@ -19,7 +19,6 @@
  */
 
 import { getSolid } from '@shared/external/vendors';
-import { keyboardNavigator } from '@shared/services/input/keyboard-navigator';
 
 /**
  * Gallery keyboard event options
@@ -60,20 +59,49 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
   const { createEffect, onCleanup } = getSolid();
 
   createEffect(() => {
-    const unsubscribe = keyboardNavigator.subscribe(
-      {
-        onEscape: () => {
-          onClose();
-        },
-        onHelp: () => {
-          onOpenHelp?.();
-        },
-      },
-      { context: 'use-gallery-keyboard', capture: true }
-    );
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const isEditableTarget = (target: EventTarget | null | undefined): boolean => {
+      const element = target as HTMLElement | null;
+      if (!element) {
+        return false;
+      }
+
+      const tag = element.tagName?.toUpperCase();
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        return true;
+      }
+
+      return Boolean(element.isContentEditable);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      let handled = false;
+
+      if (event.key === 'Escape') {
+        onClose();
+        handled = true;
+      } else if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+        onOpenHelp?.();
+        handled = true;
+      }
+
+      if (handled) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
 
     onCleanup(() => {
-      unsubscribe();
+      document.removeEventListener('keydown', handleKeyDown, true);
     });
   });
 }
