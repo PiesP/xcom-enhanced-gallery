@@ -8,6 +8,8 @@ export type ToolbarMountProps = Pick<
 export type ErrorBoundaryResult = {
   errorCaught: boolean;
   fallbackRendered: boolean;
+  markup?: string;
+  childCount?: number;
 };
 
 export type ToolbarMountResult = {

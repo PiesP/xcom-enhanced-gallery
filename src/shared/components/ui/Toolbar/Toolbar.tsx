@@ -103,7 +103,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const toolbarClass = createMemo(() =>
     createClassName(
       styles.toolbar,
-      getToolbarClassName(toolbarState, styles.galleryToolbar),
+      getToolbarClassName(toolbarState, styles.galleryToolbar ?? ''),
       props.className ?? ''
     )
   );

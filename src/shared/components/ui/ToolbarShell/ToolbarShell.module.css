@@ -1,202 +1,70 @@
-/**
- * @file ToolbarShell CSS Module Styles
- * @description Semantic styling for toolbar shell wrapper component
- *
- * @architecture
- * ## Design System
- * - **Semantic Props**: elevation, surfaceVariant, position mapped to CSS classes
- * - **Color System**: oklch() colors via design tokens (--xeg-*)
- * - **Sizing**: Relative units (rem, em) for responsive scaling
- * - **Z-Index**: Layer tokens for visual hierarchy
- * - **Transitions**: Duration/easing tokens (Phase 254)
- *
- * ## CSS Class Structure
- * 1. **.toolbar-shell**: Base wrapper styles (flexbox layout)
- * 2. **.toolbar-elevation-{low|medium|high}**: Elevation levels (z-index hierarchy)
- * 3. **.toolbar-surface-{glass|solid|overlay}**: Background variants
- * 4. **.toolbar-position-{fixed|sticky|relative}**: Positioning strategies
- * 5. **@media queries**: Responsive design (768px = 48rem breakpoint)
- * 6. **Accessibility**: Focus-within indicators for keyboard navigation
- *
- * ## Design Tokens Used
- * - Colors: --xeg-bg-toolbar, --xeg-toolbar-panel-border
- * - Shadows: --xeg-shadow-md for elevation
- * - Layers: --xeg-layer-toolbar for z-index base
- * - Radius: --xeg-radius-lg, --xeg-radius-md
- * - Transitions: --xeg-duration-fast, --xeg-ease-standard
- * - Focus: --xeg-focus-ring, --xeg-focus-ring-offset
- *
- * ## Responsive Breakpoints
- * - **768px (48rem)**: Mobile threshold
- *   - Border radius reduced (lg → md)
- *   - Fixed positioning adjusted (bottom vs top)
- *
- * ## Performance Considerations
- * - Transitions: Use will-change sparingly (only on elevation/position change)
- * - GPU Acceleration: Transform used for positioning
- * - Containment: Semantic styles isolated to toolbar shell
- *
- * @dependencies
- * - Design tokens: src/shared/styles/design-tokens.*.css
- * - Theme utilities: semantic layer handles dark mode via CSS variables
- */
-
-/**
- * @section Base Shell Container
- * Flexbox layout wrapper with semantic styling
- */
-.toolbar-shell {
+.shell {
   display: flex;
   align-items: center;
   width: 100%;
   border-radius: var(--xeg-radius-lg);
-
-  /* Smooth transitions for state changes (Phase 254) */
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
-/**
- * @section Elevation Levels
- * Determine z-index hierarchy for layering multiple toolbars
- * Used in modals, overlays, and floating UI
- */
-
-/**
- * @subsection Low Elevation
- * Base layer for standard toolbars
- */
-.toolbar-elevation-low {
+.elevationLow {
   box-shadow: var(--xeg-shadow-md);
   z-index: var(--xeg-layer-toolbar);
 }
 
-/**
- * @subsection Medium Elevation (Default)
- * Above low, for primary toolbars
- */
-.toolbar-elevation-medium {
+.elevationMedium {
   box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 1);
 }
 
-/**
- * @subsection High Elevation
- * Modal/overlay level, above all regular UI
- */
-.toolbar-elevation-high {
+.elevationHigh {
   box-shadow: var(--xeg-shadow-md);
   z-index: calc(var(--xeg-layer-toolbar) + 2);
 }
 
-/**
- * @section Surface Variants
- * Background and border treatment for different visual effects
- */
-
-/**
- * @subsection Glass Surface
- * Glassmorphism effect with backdrop-filter (modern appearance)
- * Requires browser support for backdrop-filter (Safari 9+, Firefox 103+)
- */
-.toolbar-surface-glass {
+.surfaceGlass,
+.surfaceSolid,
+.surfaceOverlay {
   background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--xeg-toolbar-panel-border); /* 1px = 0.0625rem */
+  border: 0.0625rem solid var(--xeg-toolbar-panel-border);
+}
+
+.surfaceGlass {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
-/**
- * @subsection Solid Surface
- * Flat solid background (better accessibility, less GPU pressure)
- */
-.toolbar-surface-solid {
-  background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--xeg-toolbar-panel-border);
-}
-
-/**
- * @subsection Overlay Surface
- * Semi-transparent overlay on content
- */
-.toolbar-surface-overlay {
-  background: var(--xeg-bg-toolbar);
-  border: 0.0625rem solid var(--xeg-toolbar-panel-border);
-}
-
-/**
- * @section Positioning Strategies
- * CSS positioning for different layout scenarios
- */
-
-/**
- * @subsection Fixed Positioning
- * Modal/floating toolbar centered on viewport
- * Default: centered 50% / 50%
- */
-.toolbar-position-fixed {
+.positionFixed {
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
-/**
- * @subsection Sticky Positioning
- * Header/footer toolbar that scrolls with content
- * Sticks to top at 1rem (16px) offset
- */
-.toolbar-position-sticky {
+.positionSticky {
   position: sticky;
-  top: 1rem; /* 16px = 1rem */
+  top: 1rem;
 }
 
-/**
- * @subsection Relative Positioning
- * Inline toolbar in document flow (no special positioning)
- */
-.toolbar-position-relative {
+.positionRelative {
   position: relative;
 }
 
-/**
- * @section Responsive Design
- * Mobile-first adjustments at 768px (48rem) breakpoint
- */
 @media (width <= 48rem) {
-  /* Shell border radius reduced on mobile */
-  .toolbar-shell {
+  .shell {
     border-radius: var(--xeg-radius-md);
   }
 
-  /**
-   * Fixed positioning adjusted for mobile:
-   * - Moved to bottom (easier reach on mobile)
-   * - Full width centering via translateX
-   */
-  .toolbar-position-fixed {
-    bottom: 1rem; /* 16px = 1rem */
+  .positionFixed {
+    bottom: 1rem;
     top: auto;
     transform: translateX(-50%);
   }
 }
 
-/**
- * @section Accessibility Features
- * Enhanced focus indicators and keyboard navigation support
- */
-
-/**
- * Focus indicator for keyboard navigation
- * Visible when any child element receives focus
- * (Phase X: Keyboard navigation focus management)
- */
-.toolbar-shell:focus-within {
+.shell:focus-within {
   outline: var(--xeg-focus-ring);
   outline-offset: var(--xeg-focus-ring-offset);
 }
-
-/* Dark mode colors delegated to semantic layer tokens (Phase 54.1) */
-/* Transitions handled by --xeg-duration-* tokens (Phase 254) */

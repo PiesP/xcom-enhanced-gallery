@@ -16,6 +16,7 @@ test.describe('ErrorBoundary E2E', () => {
       return outcome;
     });
 
+    console.log('ErrorBoundary test result:', result);
     expect(result.errorCaught).toBeTruthy();
     expect(result.fallbackRendered).toBeTruthy();
   });

@@ -37,6 +37,6 @@ export interface ToolbarProps {
   onBlur?: (event: FocusEvent) => void;
   onKeyDown?: (event: KeyboardEvent) => void;
 
-  tweetText?: string;
-  tweetTextHTML?: string;
+  tweetText?: string | null | undefined;
+  tweetTextHTML?: string | null | undefined;
 }

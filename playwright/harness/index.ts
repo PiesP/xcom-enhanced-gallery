@@ -491,7 +491,7 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   await ensureVendorsReady();
 
   const solid = getSolid();
-  const { render, createComponent } = solid;
+  const { render, createComponent, createEffect } = solid;
   const container = createContainer('xeg-error-boundary');
 
   const notificationService = NotificationService.getInstance();
@@ -510,14 +510,19 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   let renderThrew = false;
 
   const Thrower = () => {
-    throw new Error('Harness error boundary trigger');
+    createEffect(() => {
+      throw new Error('Harness error boundary trigger');
+    });
+    return null;
   };
 
   try {
     render(
       () =>
         createComponent(ErrorBoundary, {
-          children: createComponent(Thrower, {}),
+          get children() {
+            return createComponent(Thrower, {});
+          },
         }),
       container
     );
@@ -525,9 +530,13 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
     renderThrew = true;
   }
 
-  await sleep(50);
+  await sleep(150);
 
-  const fallbackRendered = container.querySelector('[data-xeg-error-boundary-reset]') !== null;
+  const fallbackMarker = container.querySelector('[data-xeg-error-boundary-reset]');
+  const fallbackRendered = fallbackMarker !== null;
+
+  const markup = container.innerHTML;
+  const childCount = container.childNodes.length;
 
   container.remove();
   serviceWithOverride.error = originalErrorMethod;
@@ -537,6 +546,8 @@ async function runErrorBoundaryScenario(): Promise<ErrorBoundaryResult> {
   return {
     errorCaught,
     fallbackRendered,
+    markup,
+    childCount,
   };
 }
 

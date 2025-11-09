@@ -56,8 +56,9 @@ type Props = {
  * @throws Never throws - all errors are caught and silently handled
  */
 export function ErrorBoundary({ children }: Props): JSXElement {
-  const { ErrorBoundary: SolidErrorBoundary } = getSolid();
+  const { ErrorBoundary: SolidErrorBoundary, children: resolveChildren } = getSolid();
   let lastReportedError: unknown = null;
+  const resolvedChildren = resolveChildren(() => children);
 
   /**
    * Report error to user via ToastManager
@@ -95,16 +96,13 @@ export function ErrorBoundary({ children }: Props): JSXElement {
 
   return (
     <SolidErrorBoundary
-      fallback={(err, reset) => {
+      fallback={err => {
         reportError(err);
-        if (typeof reset !== 'function') {
-          return null;
-        }
         // Hidden reset marker used by tests to confirm fallback rendering
         return <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
       }}
     >
-      {children ?? <></>}
+      {resolvedChildren() ?? <></>}
     </SolidErrorBoundary>
   );
 }
