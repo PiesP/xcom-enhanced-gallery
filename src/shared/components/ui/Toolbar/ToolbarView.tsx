@@ -15,8 +15,7 @@ import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
-import type { ToolbarState } from '../../../hooks/use-toolbar-state';
-import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
+import type { ToolbarState, ToolbarSettingsControllerResult } from '@shared/hooks';
 
 const solid = getSolid();
 const { Show, For, Switch, Match } = solid;

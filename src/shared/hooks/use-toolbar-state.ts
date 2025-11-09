@@ -19,7 +19,6 @@
  * **Integration**:
  * - Uses globalTimerManager for timer management
  * - Uses Solid.js createStore for reactive state
- * - Re-exports types from @shared/types/toolbar.types (inverse dependency resolution)
  *
  * **Performance**:
  * - Download timeout only scheduled when needed
@@ -38,24 +37,6 @@
 import { getSolid, getSolidStore } from '../external/vendors';
 import { globalTimerManager } from '../utils/timer-management';
 import type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
-
-// Phase 2: Helper functions delegation (toolbar-utils)
-/**
- * Re-exported from toolbar-utils for convenience
- * @see ../utils/toolbar-utils - Implementation
- */
-export {
-  getToolbarDataState,
-  getToolbarClassName,
-  type ToolbarDataState,
-} from '../utils/toolbar-utils';
-
-// Phase 197.1: Types moved to @shared/types (inverse dependency resolution)
-/**
- * Re-exported toolbar types for convenience
- * @see ../types/toolbar.types.ts - Type definitions
- */
-export type { ToolbarState, ToolbarActions, FitMode } from '@shared/types/toolbar.types';
 
 /**
  * Initial toolbar state constant
@@ -258,5 +239,3 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
 
   return [state, actions];
 }
-
-export default useToolbarState;

@@ -26,7 +26,7 @@
 
 import { logger } from '@shared/logging';
 import { getSolid } from '../../external/vendors';
-import { ThemeService } from '../../services/theme-service';
+import { ThemeService, themeService } from '../../services/theme-service';
 import {
   LanguageService,
   languageService as sharedLanguageService,
@@ -79,37 +79,15 @@ export interface ToolbarSettingsControllerResult {
   readonly handleLanguageChange: (event: Event) => void;
 }
 
-type TimeoutHandle = number | ReturnType<typeof globalTimerManager.setTimeout>;
-
-interface TimeoutControls {
-  readonly schedule: (callback: () => void, delay: number) => TimeoutHandle;
-  readonly clear: (id: TimeoutHandle | undefined) => void;
-}
-
-function createTimeoutControls(_windowRef: Window | undefined): TimeoutControls {
-  return {
-    schedule: (callback, delay) => {
-      return globalTimerManager.setTimeout(callback, delay);
-    },
-    clear: id => {
-      if (id === undefined) {
-        return;
-      }
-      globalTimerManager.clearTimeout(id as number);
-    },
-  };
-}
-
 function resolveThemeService(override?: ThemeService): ThemeService {
   if (override) {
     return override;
   }
-
   try {
     return getThemeService();
   } catch (error) {
-    logger.warn('[ToolbarSettingsController] Falling back to direct ThemeService instance', error);
-    return new ThemeService();
+    logger.warn('[ToolbarSettingsController] Falling back to shared ThemeService instance', error);
+    return themeService;
   }
 }
 
@@ -198,7 +176,17 @@ export function useToolbarSettingsController(
   } = options;
 
   const themeManager = resolveThemeService(providedThemeService);
-  const timeoutControls = createTimeoutControls(windowRef);
+
+  const scheduleTimeout = (callback: () => void, delay: number): number => {
+    return globalTimerManager.setTimeout(callback, delay);
+  };
+
+  const clearScheduledTimeout = (handle: number | null | undefined): void => {
+    if (handle == null) {
+      return;
+    }
+    globalTimerManager.clearTimeout(handle);
+  };
 
   const [toolbarRef, setToolbarRef] = createSignal<HTMLDivElement | undefined>(undefined);
   const [settingsPanelRef, setSettingsPanelRef] = createSignal<HTMLDivElement | undefined>(
@@ -222,7 +210,7 @@ export function useToolbarSettingsController(
       const setting = themeManager.getCurrentTheme();
       setCurrentTheme(toThemeOption(setting));
     } catch (error) {
-      logger.debug('[ToolbarSettingsController] Failed to read theme from service', error);
+      logger.warn('[ToolbarSettingsController] Failed to read theme from service', error);
     }
   };
 
@@ -317,31 +305,25 @@ export function useToolbarSettingsController(
       return;
     }
 
-    logger.debug('[ToolbarSettingsController] Settings panel expanded');
-
     let isSelectActive = false;
-    let selectGuardTimeout: TimeoutHandle | undefined;
+    let selectGuardTimeout: number | null = null;
 
     const handleSelectFocus = () => {
       isSelectActive = true;
-      logger.debug('[ToolbarSettingsController] Select focused - enabling guard');
     };
 
     const handleSelectBlur = () => {
-      timeoutControls.schedule(() => {
+      scheduleTimeout(() => {
         isSelectActive = false;
-        logger.debug('[ToolbarSettingsController] Select blur - guard disabled');
       }, 100);
     };
 
     const handleSelectChange = () => {
-      logger.debug('[ToolbarSettingsController] Select change detected');
       isSelectActive = true;
-      timeoutControls.clear(selectGuardTimeout);
-      selectGuardTimeout = timeoutControls.schedule(() => {
+      clearScheduledTimeout(selectGuardTimeout);
+      selectGuardTimeout = scheduleTimeout(() => {
         isSelectActive = false;
-        logger.debug('[ToolbarSettingsController] Select change guard released');
-        selectGuardTimeout = undefined;
+        selectGuardTimeout = null;
       }, selectChangeGuardMs);
     };
 
@@ -356,17 +338,11 @@ export function useToolbarSettingsController(
       const target = event.target as Node | null;
       const settingsButton = settingsButtonRef();
 
-      logger.debug('[ToolbarSettingsController] Outside click detected', {
-        tagName: target instanceof HTMLElement ? target.tagName : 'unknown',
-        isSelectActive,
-      });
-
       if (!target) {
         return;
       }
 
       if (isSelectActive) {
-        logger.debug('[ToolbarSettingsController] Outside click ignored - select guard active');
         return;
       }
 
@@ -376,32 +352,28 @@ export function useToolbarSettingsController(
         settingsButton &&
         (settingsButton === targetElement || settingsButton.contains(targetElement))
       ) {
-        logger.debug('[ToolbarSettingsController] Outside click ignored - inside settings button');
         return;
       }
 
       if (panel.contains(targetElement)) {
-        logger.debug('[ToolbarSettingsController] Outside click ignored - inside panel');
         return;
       }
 
       let currentNode: HTMLElement | null = targetElement;
       while (currentNode) {
         if (currentNode.tagName === 'SELECT' || currentNode.tagName === 'OPTION') {
-          logger.debug('[ToolbarSettingsController] Outside click ignored - select hierarchy');
           return;
         }
         currentNode = currentNode.parentElement;
       }
 
-      logger.debug('[ToolbarSettingsController] Closing settings panel via outside click');
       setSettingsExpanded(false);
     };
 
     documentRef.addEventListener('mousedown', handleOutsideClick, false);
 
     onCleanup(() => {
-      timeoutControls.clear(selectGuardTimeout);
+      clearScheduledTimeout(selectGuardTimeout);
       documentRef.removeEventListener('mousedown', handleOutsideClick, false);
       selects.forEach(select => {
         select.removeEventListener('focus', handleSelectFocus);
@@ -412,28 +384,16 @@ export function useToolbarSettingsController(
   });
 
   const handleSettingsClick = (event: MouseEvent) => {
-    logger.debug('[ToolbarSettingsController] Settings button click', {
-      wasExpanded: isSettingsExpanded(),
-      eventType: event.type,
-      timeStamp: event.timeStamp,
-    });
-
     event.stopImmediatePropagation?.();
     const wasExpanded = isSettingsExpanded();
 
     toggleSettingsExpanded();
 
-    logger.debug('[ToolbarSettingsController] Settings toggled', {
-      wasExpanded,
-      nowExpanded: isSettingsExpanded(),
-    });
-
     if (!wasExpanded) {
-      timeoutControls.schedule(() => {
+      scheduleTimeout(() => {
         const panel = settingsPanelRef();
         const firstControl = panel?.querySelector('select') as HTMLSelectElement | null;
         if (firstControl) {
-          logger.debug('[ToolbarSettingsController] Focusing first settings control');
           firstControl.focus({ preventScroll: true });
         }
       }, focusDelayMs);
@@ -441,7 +401,6 @@ export function useToolbarSettingsController(
   };
 
   const handleSettingsMouseDown = (event: MouseEvent) => {
-    logger.debug('[ToolbarSettingsController] Settings button mousedown');
     event.stopPropagation();
   };
 
@@ -449,10 +408,9 @@ export function useToolbarSettingsController(
     if (event.key === 'Escape' && isSettingsExpanded()) {
       event.preventDefault();
       event.stopPropagation();
-      logger.debug('[ToolbarSettingsController] Escape pressed - closing settings panel');
       setSettingsExpanded(false);
 
-      timeoutControls.schedule(() => {
+      scheduleTimeout(() => {
         const settingsButton = settingsButtonRef();
         if (settingsButton) {
           settingsButton.focus({ preventScroll: true });

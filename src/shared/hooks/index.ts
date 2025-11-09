@@ -8,7 +8,7 @@
  * **Public API**:
  * - `useToolbarState`: Toolbar state management (download, loading, error, fit mode)
  * - `useFocusTrap`: Focus trap for modal/dialog accessibility
- * - Re-exported types from toolbar-utils (utility delegation pattern)
+ * - `useToolbarSettingsController`: Toolbar settings panel orchestration
  *
  * **Hooks Overview**:
  *
@@ -29,10 +29,11 @@
  * import {
  *   useToolbarState,
  *   useFocusTrap,
+ *   useToolbarSettingsController,
  *   type ToolbarState,
  *   type FocusTrapOptions,
  * } from '@shared/hooks';
- *
+
  * // ❌ Forbidden: Direct import of implementation
  * import { useToolbarState } from '@shared/hooks/use-toolbar-state';
  * ```
@@ -62,7 +63,7 @@
  * - {@link ../../utils/toolbar-utils.ts} - Toolbar utility functions
  * - {@link ../../utils/focus-trap.ts} - Focus trap implementation
  * - {@link ../../types/toolbar.types.ts} - Toolbar type definitions
- * - {@link ./toolbar/index.ts} - Toolbar-specific hooks (settings controller)
+ * - {@link ./toolbar/use-toolbar-settings-controller.ts} - Toolbar-specific settings hook
  *
  * @fileoverview Shared hooks layer - barrel export (Phase 376)
  * @version 11.0.0 - Phase 376: Comprehensive documentation + pattern consolidation
@@ -78,7 +79,8 @@
  *
  * @see useToolbarState - Full hook documentation
  */
-export { useToolbarState, type ToolbarState, type ToolbarActions } from './use-toolbar-state';
+export { useToolbarState } from './use-toolbar-state';
+export type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
 
 /**
  * **useFocusTrap**: Focus trap for accessible modals and dialogs
@@ -90,23 +92,11 @@ export { useToolbarState, type ToolbarState, type ToolbarActions } from './use-t
  */
 export { useFocusTrap, type FocusTrapOptions, type FocusTrapResult } from './use-focus-trap';
 
-// Toolbar utilities (utility delegation pattern - shared/utils/toolbar-utils)
-/**
- * **Toolbar Utilities**: Helper functions for toolbar state and styling
- *
- * Re-exported from @shared/utils/toolbar-utils for convenience.
- * These are stateless utility functions, not hooks.
- *
- * - `getToolbarDataState()`: Extract toolbar data state from ToolbarState
- * - `getToolbarClassName()`: Generate toolbar CSS classes from state
- *
- * @see ../utils/toolbar-utils - Implementation details
- */
 export {
-  getToolbarDataState,
-  getToolbarClassName,
-  type ToolbarDataState,
-} from '../utils/toolbar-utils';
+  useToolbarSettingsController,
+  type UseToolbarSettingsControllerOptions,
+  type ToolbarSettingsControllerResult,
+} from './toolbar/use-toolbar-settings-controller';
 
 // Phase 376: Removed hooks (archived history)
 /**

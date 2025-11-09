@@ -29,7 +29,7 @@
 
 import type { JSXElement } from 'solid-js';
 import { getSolid } from '@shared/external/vendors';
-import { useFocusTrap } from '@shared/hooks/use-focus-trap';
+import { useFocusTrap } from '@shared/hooks';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { IconButton } from '@shared/components/ui/Button/IconButton';
 import { languageService } from '@shared/services/language-service';

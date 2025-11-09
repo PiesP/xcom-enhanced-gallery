@@ -1,11 +1,10 @@
 import type { JSXElement } from '../../../external/vendors';
 import { getSolid } from '../../../external/vendors';
-import { useToolbarState } from '../../../hooks/use-toolbar-state';
+import { useToolbarState, useToolbarSettingsController } from '@shared/hooks';
 import { getToolbarDataState, getToolbarClassName } from '../../../utils/toolbar-utils';
 import { createClassName } from '@shared/utils/component-utils';
 import { ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut } from '../Icon';
-import type { ToolbarSettingsControllerResult } from '../../../hooks/toolbar/use-toolbar-settings-controller';
-import { useToolbarSettingsController } from '../../../hooks/toolbar/use-toolbar-settings-controller';
+import type { ToolbarSettingsControllerResult } from '@shared/hooks';
 import { ToolbarView } from './ToolbarView';
 import type { ToolbarProps, FitMode } from './Toolbar.types';
 import { safeEventPreventAll, safeEventPrevent } from '@shared/utils/event-utils';
