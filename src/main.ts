@@ -11,19 +11,15 @@ import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import type { AppConfig } from '@shared/types';
 import type { IGalleryApp } from '@shared/container/app-container';
-import { waitForWindowLoad } from '@shared/utils/window-load';
+import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
+import { initializeDevTools } from '@/bootstrap/dev-tools';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
+import { initializeGalleryApp, clearGalleryApp } from '@/bootstrap/gallery-init';
+import { waitForWindowLoad } from '@shared/utils/window-load';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
-// Phase 2.1: Bootstrap logic modularization
-import {
-  initializeCriticalSystems,
-  initializeDevTools,
-  initializeGalleryApp,
-  clearGalleryApp,
-} from '@/bootstrap';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -300,7 +296,7 @@ async function startApplication(): Promise<void> {
     if (import.meta.env.MODE !== 'test') {
       void (async () => {
         try {
-          const { executePreloadStrategy } = await import('@/bootstrap');
+          const { executePreloadStrategy } = await import('@/bootstrap/preload');
           await executePreloadStrategy();
         } catch (error) {
           logger.warn('[Phase 326] Error executing preload strategy:', error);

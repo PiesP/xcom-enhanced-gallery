@@ -1,23 +1,9 @@
 /**
- * @fileoverview Bootstrap Module Barrel Export
- * @description Central export point for all bootstrap utilities
+ * Bootstrap barrel export (legacy).
+ *
+ * Phase 420: Redundant re-exports removed in favor of direct module imports.
+ * The file remains as a typed module boundary to avoid breaking path resolution
+ * for existing tooling, but intentionally exports nothing.
  */
 
-export { initializeEnvironment } from './environment';
-export type { BootstrapResult, ServiceAvailabilityInfo } from './diagnostics/types';
-// Phase 343: Error Handling Standardization
-export type { BootstrapErrorStrategy, BootstrapSystemType } from './types';
-export {
-  CRITICAL_ERROR_STRATEGY,
-  NON_CRITICAL_ERROR_STRATEGY,
-  getErrorStrategy,
-  handleBootstrapError,
-} from './types';
-// Phase 326: Code Splitting - preload strategy
-export { preloadCriticalChunks, preloadOptionalChunks, executePreloadStrategy } from './preload';
-
-// Phase 2.1: Bootstrap logic modularization
-export { initializeCriticalSystems } from './critical-systems';
-export { initializeCoreBaseServices } from './base-services';
-export { initializeDevTools } from './dev-tools';
-export { initializeGalleryApp, getGalleryApp, clearGalleryApp } from './gallery-init';
+export {};
