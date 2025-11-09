@@ -66,25 +66,16 @@ interface GlobalWithGM {
 }
 
 /**
- * hasGMInfo: Type guard to check for GM_info availability
- * @internal
- */
-function hasGMInfo(g: unknown): g is GlobalWithGM {
-  return typeof g === 'object' && g !== null && 'GM_info' in g;
-}
-
-/**
  * Detect userscript manager from GM_info
  * @internal
  *
  * Determines which userscript manager is running (Tampermonkey, Greasemonkey, Violentmonkey)
  * by inspecting the scriptHandler property of GM_info.
  */
-function detectManager(): UserscriptManager {
+function detectManager(global: GlobalWithGM): UserscriptManager {
   try {
-    const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
-    const handler = isGMUserScriptInfo(info)
-      ? (info as { scriptHandler?: string }).scriptHandler?.toLowerCase?.()
+    const handler = isGMUserScriptInfo(global.GM_info)
+      ? global.GM_info?.scriptHandler?.toLowerCase?.()
       : undefined;
     if (!handler) return 'unknown';
     if (handler.includes('tamper')) return 'tampermonkey';
@@ -102,13 +93,32 @@ function detectManager(): UserscriptManager {
  *
  * Returns GM_info object if available and valid, otherwise returns null
  */
-function safeInfo(): GMUserScriptInfo | null {
+function safeInfo(global: GlobalWithGM): GMUserScriptInfo | null {
   try {
-    const info = hasGMInfo(globalThis) ? globalThis.GM_info : undefined;
-    return isGMUserScriptInfo(info) ? (info as unknown as GMUserScriptInfo) : null;
+    return isGMUserScriptInfo(global.GM_info)
+      ? (global.GM_info as unknown as GMUserScriptInfo)
+      : null;
   } catch {
     return null;
   }
+}
+
+const ERROR_MESSAGES = {
+  download: 'GM_download not available - Tampermonkey/Greasemonkey environment required',
+  setValue: 'GM_setValue not available - Tampermonkey/Greasemonkey environment required',
+  getValue: 'GM_getValue not available - Tampermonkey/Greasemonkey environment required',
+  deleteValue: 'GM_deleteValue not available - Tampermonkey/Greasemonkey environment required',
+  listValues: 'GM_listValues not available - Tampermonkey/Greasemonkey environment required',
+} as const;
+
+function assertFunction<T extends (...args: never[]) => unknown>(
+  fn: T | undefined,
+  errorMessage: string
+): T {
+  if (typeof fn !== 'function') {
+    throw new Error(errorMessage);
+  }
+  return fn;
 }
 
 /**
@@ -123,68 +133,47 @@ function safeInfo(): GMUserScriptInfo | null {
  * @internal Advanced/testing only
  */
 export function getUserscript(): UserscriptAPI {
-  const g = globalThis;
-  const hasGMDownload = hasGMInfo(g) && typeof g.GM_download === 'function';
-  const hasGMStorage =
-    hasGMInfo(g) && typeof g.GM_setValue === 'function' && typeof g.GM_getValue === 'function';
+  const global = globalThis as unknown as GlobalWithGM;
+  const gmDownload = typeof global.GM_download === 'function' ? global.GM_download : undefined;
+  const gmSetValue = typeof global.GM_setValue === 'function' ? global.GM_setValue : undefined;
+  const gmGetValue = typeof global.GM_getValue === 'function' ? global.GM_getValue : undefined;
+  const gmDeleteValue =
+    typeof global.GM_deleteValue === 'function' ? global.GM_deleteValue : undefined;
+  const gmListValues =
+    typeof global.GM_listValues === 'function' ? global.GM_listValues : undefined;
+
+  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue));
 
   return Object.freeze({
-    hasGM: hasGMDownload || hasGMStorage,
-    manager: detectManager(),
-    info: safeInfo,
+    hasGM,
+    manager: detectManager(global),
+    info: () => safeInfo(global),
 
     async download(url: string, filename: string): Promise<void> {
-      // GM_download required - no fallback available
-      if (!hasGMDownload || !hasGMInfo(g) || !g.GM_download) {
-        throw new Error(
-          'GM_download not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-      g.GM_download(url, filename);
+      const fn = assertFunction(gmDownload, ERROR_MESSAGES.download);
+      fn(url, filename);
     },
 
     async setValue(key: string, value: unknown): Promise<void> {
-      if (!hasGMStorage || !hasGMInfo(g) || !g.GM_setValue) {
-        throw new Error(
-          'GM_setValue not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-
-      await Promise.resolve(g.GM_setValue(key, value));
+      const fn = assertFunction(gmSetValue, ERROR_MESSAGES.setValue);
+      await Promise.resolve(fn(key, value));
     },
 
     async getValue<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-      if (!hasGMStorage || !hasGMInfo(g) || !g.GM_getValue) {
-        throw new Error(
-          'GM_getValue not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-
-      const value = await Promise.resolve(g.GM_getValue(key, defaultValue));
+      const fn = assertFunction(gmGetValue, ERROR_MESSAGES.getValue);
+      const value = await Promise.resolve(fn(key, defaultValue));
       return value as T | undefined;
     },
 
     async deleteValue(key: string): Promise<void> {
-      if (!hasGMStorage || !hasGMInfo(g) || !g.GM_deleteValue) {
-        throw new Error(
-          'GM_deleteValue not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-
-      await Promise.resolve(g.GM_deleteValue(key));
+      const fn = assertFunction(gmDeleteValue, ERROR_MESSAGES.deleteValue);
+      await Promise.resolve(fn(key));
     },
 
     async listValues(): Promise<string[]> {
-      if (!hasGMStorage || !hasGMInfo(g) || !g.GM_listValues) {
-        throw new Error(
-          'GM_listValues not available - Tampermonkey/Greasemonkey environment required'
-        );
-      }
-
-      const values = await Promise.resolve(g.GM_listValues());
+      const fn = assertFunction(gmListValues, ERROR_MESSAGES.listValues);
+      const values = await Promise.resolve(fn());
       return Array.isArray(values) ? values : [];
     },
   });
 }
-
-export default getUserscript;

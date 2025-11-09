@@ -57,26 +57,26 @@ let initializationPromise: Promise<void> | null = null;
  */
 export async function initializeVendorsSafe(): Promise<void> {
   if (staticVendorManager.getInitializationStatus().isInitialized) {
-    logger.debug('Vendor is already initialized.');
+    logger.debug('Vendor initialization skipped; cache already ready.');
     return;
   }
 
   if (isInitializing && initializationPromise) {
-    logger.debug('Vendor initialization in progress. Waiting...');
+    logger.debug('Vendor initialization already in progress; awaiting completion.');
     return initializationPromise;
   }
 
   isInitializing = true;
 
   try {
-    logger.info('🚀 Safe Vendor initialization started (Solid.js)...');
+    logger.info('Vendor initialization started (Solid.js).');
 
     initializationPromise = staticVendorManager.initialize();
     await initializationPromise;
 
-    logger.info('✅ Safe Vendor initialization completed (Solid.js)');
+    logger.info('Vendor initialization completed (Solid.js).');
   } catch (error) {
-    logger.error('❌ Safe Vendor initialization failed:', error);
+    logger.error('Vendor initialization failed:', error);
     throw error;
   } finally {
     isInitializing = false;
@@ -108,7 +108,7 @@ export function getSolidSafe(): SolidAPI {
     return staticVendorManager.getSolid();
   } catch (error) {
     logger.error('Solid.js access failed:', error);
-    throw new Error('Cannot use Solid.js library. Initialization is required.');
+    throw new Error('Cannot use Solid.js library. Call initializeVendors() first.');
   }
 }
 
@@ -137,7 +137,7 @@ export function getSolidStoreSafe(): SolidStoreAPI {
     return staticVendorManager.getSolidStore();
   } catch (error) {
     logger.error('Solid.js Store access failed:', error);
-    throw new Error('Cannot use Solid.js Store library. Initialization is required.');
+    throw new Error('Cannot use Solid.js Store library. Call initializeVendors() first.');
   }
 }
 

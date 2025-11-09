@@ -19,7 +19,7 @@ import {
   isTestFeatureEnabled,
   type TestModeOptions,
   type TestEnvironmentConfig,
-} from '../../../../../src/shared/external';
+} from '../../../../../src/shared/external/test/test-environment-config';
 
 describe('test-environment-config', () => {
   // ==========================================

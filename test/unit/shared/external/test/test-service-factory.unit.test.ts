@@ -15,12 +15,12 @@ import {
   assertServiceIsReal,
   type ServiceFactoryOptions,
   type ServiceStatus,
-} from '../../../../../src/shared/external';
+} from '../../../../../src/shared/external/test/test-service-factory';
 import {
   enableTestMode,
   disableTestMode,
   resetTestConfig,
-} from '../../../../../src/shared/external';
+} from '../../../../../src/shared/external/test/test-environment-config';
 
 describe('test-service-factory', () => {
   // ==========================================
@@ -172,29 +172,30 @@ describe('test-service-factory', () => {
       expect(result).toBe('mock-implementation');
     });
 
-    it('should fallback to real if mock creation fails', () => {
+    it('should surface mock creation failure', () => {
       enableTestMode({ mockServices: true });
-      const result = createConditionalService(
-        'TestService',
-        () => 'fallback-real',
-        () => {
-          throw new Error('Mock creation failed');
-        }
-      );
 
-      expect(result).toBe('fallback-real');
+      expect(() =>
+        createConditionalService(
+          'TestService',
+          () => 'fallback-real',
+          () => {
+            throw new Error('Mock creation failed');
+          }
+        )
+      ).toThrow(/Mock creation failed/);
     });
 
-    it('should fallback to mock if real creation fails', () => {
-      const result = createConditionalService(
-        'TestService',
-        () => {
-          throw new Error('Real creation failed');
-        },
-        () => 'fallback-mock'
-      );
-
-      expect(result).toBe('fallback-mock');
+    it('should surface real creation failure', () => {
+      expect(() =>
+        createConditionalService(
+          'TestService',
+          () => {
+            throw new Error('Real creation failed');
+          },
+          () => 'fallback-mock'
+        )
+      ).toThrow(/Real creation failed/);
     });
 
     it('should throw if both implementations fail', () => {

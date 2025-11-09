@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
-import { getUserscript } from '@shared/external/userscript/adapter';
+import { getUserscript } from '@shared/external/userscript';
 
 describe('Userscript Adapter', () => {
   setupGlobalTestIsolation();
@@ -277,7 +277,7 @@ describe('Userscript Adapter', () => {
       expect(api.info()).toBeNull();
     });
 
-    it('should return empty array when GM_listValues fails', async () => {
+    it('should surface GM_listValues failure', async () => {
       const gmListValuesMock = vi.fn(() => {
         throw new Error('Failed');
       });
@@ -290,29 +290,30 @@ describe('Userscript Adapter', () => {
       (globalThis as any).GM_listValues = gmListValuesMock;
 
       const api = getUserscript();
-      const result = await api.listValues();
-
-      expect(Array.isArray(result)).toBe(true);
+      await expect(api.listValues()).rejects.toThrow('Failed');
     });
 
-    it('should return default value on storage error', async () => {
+    it('should throw descriptive error when storage APIs are missing', async () => {
       const api = getUserscript();
-      const result = await api.getValue('missing-key', { default: 'fallback' });
-
-      expect(result).toEqual({ default: 'fallback' });
+      await expect(api.getValue('missing-key')).rejects.toThrow('GM_getValue not available');
+      await expect(api.setValue('key', 'value')).rejects.toThrow('GM_setValue not available');
+      await expect(api.deleteValue('key')).rejects.toThrow('GM_deleteValue not available');
+      await expect(api.listValues()).rejects.toThrow('GM_listValues not available');
     });
 
-    it('should throw when setValue fails and no fallback', async () => {
-      Object.defineProperty(globalThis, 'localStorage', {
-        get() {
-          throw new Error('SecurityError');
-        },
-        configurable: true,
+    it('should surface errors from GM implementation', async () => {
+      const failingSetValue = vi.fn(() => {
+        throw new Error('GM failed');
       });
+      (globalThis as any).GM_info = {
+        scriptHandler: 'Tampermonkey',
+        script: { name: 'Test', version: '1.0' },
+      };
+      (globalThis as any).GM_setValue = failingSetValue;
+      (globalThis as any).GM_getValue = vi.fn();
 
       const api = getUserscript();
-
-      await expect(api.setValue('key', 'value')).rejects.toThrow();
+      await expect(api.setValue('key', 'value')).rejects.toThrow('GM failed');
     });
   });
 
@@ -375,7 +376,7 @@ describe('Userscript Adapter', () => {
       expect(result).toEqual([]);
     });
 
-    it('should handle storage cascade when GM fails', async () => {
+    it('should throw when GM_setValue throws', async () => {
       const gmSetValueMock = vi.fn(() => {
         throw new Error('GM failed');
       });
@@ -387,15 +388,7 @@ describe('Userscript Adapter', () => {
       (globalThis as any).GM_getValue = vi.fn();
 
       const api = getUserscript();
-      // When both GM and localStorage fail, should throw
-      // But if localStorage is available through fallback, it works
-      // In test environment, we expect it to try fallback
-      try {
-        await api.setValue('key', 'value');
-      } catch (error) {
-        // Expected behavior: throws when no storage available
-        expect((error as any).message).toBeDefined();
-      }
+      await expect(api.setValue('key', 'value')).rejects.toThrow('GM failed');
     });
   });
 });

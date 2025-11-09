@@ -255,7 +255,7 @@ describe('Mock service test', () => {
 1. **Test Helpers Only**: Must not be used in production code
 2. **Conditional Creation**: Mock/Real selection controlled by developer
 3. **Selection Priority**: custom selector > force flags > testMode > default
-4. **Error Handling**: Automatic fallback (mock failure → real attempt)
+4. **Error Handling**: Surface creation errors immediately (no hidden fallback)
 
 ### Forbidden Patterns
 

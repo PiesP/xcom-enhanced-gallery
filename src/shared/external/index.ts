@@ -12,7 +12,7 @@
  * ├── vendors/        → Solid.js getter (getSolid, getSolidStore)
  * ├── userscript/     → Tampermonkey getter (getUserscript) + environment detection
  * ├── zip/            → ZIP file creation utility (createZipBytesFromFileMap)
- * └── test/           → Test infrastructure (enableTestMode, getServiceImplementation)
+ * └── test/           → Test infrastructure (direct imports only)
  * ```
  *
  * **Usage Rules**:
@@ -68,7 +68,6 @@ export {
   cleanupVendors,
   registerVendorCleanupOnUnload,
   // Internal only (@internal - testing/debugging only)
-  StaticVendorManager,
   resetVendorManagerInstance,
 } from './vendors';
 
@@ -105,37 +104,5 @@ export { createZipBytesFromFileMap, type MediaItemForZip } from './zip';
 // 4. TEST INFRASTRUCTURE (test helpers & configuration, @internal)
 // ============================================================================
 // 📌 Purpose: Test environment configuration and Mock/Real service selection
-// 📌 Production: Do not use directly (testing only)
+// 📌 Policy: No barrel export – import from './test/<module>' when writing tests
 // ============================================================================
-
-export {
-  // Test mode configuration
-  enableTestMode,
-  disableTestMode,
-  isTestModeEnabled,
-  getTestConfig,
-  setTestConfig,
-  resetTestConfig,
-  // Test metadata
-  setCurrentTest,
-  clearCurrentTest,
-  getTestMetadata,
-  isTestFeatureEnabled,
-  // Type definitions
-  type TestModeOptions,
-  type TestEnvironmentConfig,
-} from './test/test-environment-config';
-
-export {
-  // Service factory (Mock/Real selection)
-  getServiceImplementation,
-  createConditionalService,
-  getServiceStatus,
-  getAllServiceStatuses,
-  // Validation helpers
-  assertServiceIsMock,
-  assertServiceIsReal,
-  // Type definitions
-  type ServiceFactoryOptions,
-  type ServiceStatus,
-} from './test/test-service-factory';

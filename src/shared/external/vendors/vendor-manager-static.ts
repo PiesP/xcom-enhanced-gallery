@@ -111,13 +111,7 @@ const forwardRefCompat: PreactCompat['forwardRef'] = <P>(
   return ForwardedComponent;
 };
 
-// 메모리 관리 상수
-const MEMORY_CONSTANTS = {
-  MAX_CACHE_SIZE: 50,
-  CLEANUP_INTERVAL: 30000,
-  INSTANCE_TIMEOUT: 300000,
-  URL_CLEANUP_TIMEOUT: 60000,
-} as const;
+const URL_CLEANUP_TIMEOUT = 60000;
 
 // 타입 정의들 (Solid.js)
 export interface SolidAPI {
@@ -322,11 +316,24 @@ export class StaticVendorManager {
       this.cacheAPIs();
 
       this.isInitialized = true;
-      logger.info('✅ StaticVendorManager: Solid.js vendors initialized and cached');
+      logger.info('StaticVendorManager: Solid.js vendors initialized and cached');
     } catch (error) {
-      logger.error('❌ StaticVendorManager: Initialization failed:', error);
+      logger.error('StaticVendorManager: Initialization failed:', error);
       throw error;
     }
+  }
+
+  private ensureInitializedSync(): void {
+    if (this.isInitialized) {
+      return;
+    }
+
+    const log = import.meta.env.MODE === 'test' ? logger.debug : logger.warn;
+    log('StaticVendorManager not initialized. Performing synchronous warm-up.');
+
+    this.validateStaticImports();
+    this.cacheAPIs();
+    this.isInitialized = true;
   }
 
   /**
@@ -350,7 +357,7 @@ export class StaticVendorManager {
       throw new Error('Solid.js Store validation failed: createStore not found or not callable');
     }
 
-    logger.debug('✅ All static imports validated (Solid.js)');
+    logger.debug('StaticVendorManager: static import validation succeeded');
   }
 
   /**
@@ -408,7 +415,7 @@ export class StaticVendorManager {
     this.apiCache.set('solid', solidAPI);
     this.apiCache.set('solid-store', solidStoreAPI);
 
-    logger.debug('✅ All vendor APIs cached (Solid.js)');
+    logger.debug('StaticVendorManager: vendor APIs cached');
   }
 
   /**
@@ -424,16 +431,7 @@ export class StaticVendorManager {
    * @internal Use barrel export {@link getSolid} instead
    */
   public getSolid(): SolidAPI {
-    if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager not initialized. Attempting auto-initialization...');
-      } else {
-        logger.warn('StaticVendorManager not initialized. Attempting auto-initialization...');
-      }
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
+    this.ensureInitializedSync();
 
     const api = this.apiCache.get('solid') as SolidAPI;
     if (!api) {
@@ -457,16 +455,7 @@ export class StaticVendorManager {
    * @internal Use barrel export {@link getSolidStore} instead
    */
   public getSolidStore(): SolidStoreAPI {
-    if (!this.isInitialized) {
-      if (import.meta.env.MODE === 'test') {
-        logger.debug('StaticVendorManager not initialized. Attempting auto-initialization...');
-      } else {
-        logger.warn('StaticVendorManager not initialized. Attempting auto-initialization...');
-      }
-      this.validateStaticImports();
-      this.cacheAPIs();
-      this.isInitialized = true;
-    }
+    this.ensureInitializedSync();
 
     const api = this.apiCache.get('solid-store') as SolidStoreAPI;
     if (!api) {
@@ -545,7 +534,7 @@ export class StaticVendorManager {
               logger.warn('Automatic URL cleanup failed:', error);
             }
           }
-        }, MEMORY_CONSTANTS.URL_CLEANUP_TIMEOUT);
+        }, URL_CLEANUP_TIMEOUT);
 
         this.urlTimers.set(url, timerId);
 

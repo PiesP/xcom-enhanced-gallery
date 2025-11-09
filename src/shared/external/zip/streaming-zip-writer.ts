@@ -17,6 +17,7 @@
  */
 
 import { logger } from '../../logging/logger';
+import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
 
 /**
  * Internal file entry metadata
@@ -28,55 +29,6 @@ interface FileEntry {
   data: Uint8Array;
   offset: number; // File start offset in ZIP
   crc32: number;
-}
-
-/**
- * Calculate CRC32 checksum (PKZIP standard)
- *
- * Uses precomputed polynomial table for efficiency.
- *
- * @param data - File data to checksum
- * @returns 32-bit CRC32 value (unsigned)
- *
- * @internal Implementation detail for ZIP format compliance
- */
-function calculateCRC32(data: Uint8Array): number {
-  let crc = 0xffffffff;
-  const table = getCRC32Table();
-
-  for (let i = 0; i < data.length; i++) {
-    const byte = data[i];
-    if (byte !== undefined) {
-      crc = (crc >>> 8) ^ table[(crc ^ byte) & 0xff]!;
-    }
-  }
-
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-/**
- * Generate CRC32 lookup table (memoized)
- *
- * Precomputed polynomial (0xEDB88320) for fast CRC32 calculation.
- * Cached after first generation.
- *
- * @returns 256-entry lookup table (Uint32Array)
- *
- * @internal Performance optimization, called once per session
- */
-let crc32Table: Uint32Array | null = null;
-function getCRC32Table(): Uint32Array {
-  if (crc32Table) return crc32Table;
-
-  crc32Table = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) {
-    let c = i;
-    for (let k = 0; k < 8; k++) {
-      c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-    }
-    crc32Table[i] = c;
-  }
-  return crc32Table;
 }
 
 /**
@@ -112,47 +64,6 @@ function concatenateUint8Arrays(arrays: Uint8Array[]): Uint8Array {
  *
  * @internal ZIP format requirement
  */
-function writeUint32LE(value: number): Uint8Array {
-  const bytes = new Uint8Array(4);
-  bytes[0] = value & 0xff;
-  bytes[1] = (value >>> 8) & 0xff;
-  bytes[2] = (value >>> 16) & 0xff;
-  bytes[3] = (value >>> 24) & 0xff;
-  return bytes;
-}
-
-/**
- * Write 16-bit unsigned integer as Little-Endian bytes
- *
- * **Format**: PKZIP uses Little-Endian byte order for all multi-byte fields
- *
- * @param value - 16-bit unsigned value
- * @returns 2-byte Little-Endian representation
- *
- * @internal ZIP format requirement
- */
-function writeUint16LE(value: number): Uint8Array {
-  const bytes = new Uint8Array(2);
-  bytes[0] = value & 0xff;
-  bytes[1] = (value >>> 8) & 0xff;
-  return bytes;
-}
-
-/**
- * Encode string to UTF-8 byte array
- *
- * **Encoding**: ZIP uses UTF-8 for filename and comment fields
- *
- * @param str - String to encode
- * @returns UTF-8 encoded bytes
- *
- * @internal ZIP format requirement
- */
-function encodeUTF8(str: string): Uint8Array {
-  const encoder = new TextEncoder();
-  return encoder.encode(str);
-}
-
 /**
  * Streaming ZIP Writer
  *
@@ -173,7 +84,7 @@ export class StreamingZipWriter {
    * @param data 파일 데이터
    */
   addFile(filename: string, data: Uint8Array): void {
-    const filenameBytes = encodeUTF8(filename);
+    const filenameBytes = encodeUtf8(filename);
     const crc32 = calculateCRC32(data);
 
     // Local File Header (30 bytes + filename length)
@@ -220,7 +131,7 @@ export class StreamingZipWriter {
 
     // Central Directory Headers 생성
     for (const entry of this.entries) {
-      const filenameBytes = encodeUTF8(entry.filename);
+      const filenameBytes = encodeUtf8(entry.filename);
 
       const centralDirHeader = concatenateUint8Arrays([
         new Uint8Array([0x50, 0x4b, 0x01, 0x02]), // Central directory header signature

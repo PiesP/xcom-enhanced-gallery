@@ -29,6 +29,13 @@
  * @internal Implementation detail - access only via barrel export {@link createZipBytesFromFileMap}
  */
 
+import {
+  calculateCRC32,
+  encodeUtf8,
+  writeUint16LEToBuffer,
+  writeUint32LEToBuffer,
+} from './zip-utils';
+
 /**
  * ZIP internal file entry (local representation)
  *
@@ -44,6 +51,7 @@
  */
 interface FileEntry {
   filename: string;
+  filenameBytes: Uint8Array;
   data: Uint8Array;
   crc32: number;
   offset: number;
@@ -105,14 +113,14 @@ export class StoreZipWriter {
       throw new Error('Filename cannot be empty');
     }
 
-    const encoder = new TextEncoder();
-    const filenameBytes = encoder.encode(filename);
+    const filenameBytes = encodeUtf8(filename);
     const crc32 = calculateCRC32(data);
     const now = new Date();
     const [modTime, modDate] = toDOSDateTime(now);
 
     this.files.push({
       filename,
+      filenameBytes,
       data,
       crc32,
       offset: this.currentOffset,
@@ -195,21 +203,18 @@ export class StoreZipWriter {
    */
   private calculateTotalSize(): number {
     let size = 0;
-    const encoder = new TextEncoder();
 
     // Local File Headers + File Data
     for (const file of this.files) {
-      const filenameBytes = encoder.encode(file.filename);
       size += 30; // Local File Header fixed portion
-      size += filenameBytes.length; // Filename
+      size += file.filenameBytes.length; // Filename
       size += file.data.length; // File data
     }
 
     // Central Directory Headers
     for (const file of this.files) {
-      const filenameBytes = encoder.encode(file.filename);
       size += 46; // Central Directory Header fixed portion
-      size += filenameBytes.length; // Filename
+      size += file.filenameBytes.length; // Filename
     }
 
     // End of Central Directory Record (fixed)
@@ -235,51 +240,50 @@ export class StoreZipWriter {
    * @internal
    */
   private writeLocalFileHeader(buffer: Uint8Array, offset: number, file: FileEntry): number {
-    const encoder = new TextEncoder();
-    const filenameBytes = encoder.encode(file.filename);
+    const { filenameBytes } = file;
 
     // Local file header signature (0x04034b50)
-    writeUint32(buffer, offset, 0x04034b50);
+    writeUint32LEToBuffer(buffer, offset, 0x04034b50);
     offset += 4;
 
     // Version needed to extract (2.0 = 20)
-    writeUint16(buffer, offset, 20);
+    writeUint16LEToBuffer(buffer, offset, 20);
     offset += 2;
 
     // General purpose bit flag (no special features)
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Compression method (0 = STORE, no compression)
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Last mod file time (DOS format)
-    writeUint16(buffer, offset, file.modTime);
+    writeUint16LEToBuffer(buffer, offset, file.modTime);
     offset += 2;
 
     // Last mod file date (DOS format)
-    writeUint16(buffer, offset, file.modDate);
+    writeUint16LEToBuffer(buffer, offset, file.modDate);
     offset += 2;
 
     // CRC-32 checksum
-    writeUint32(buffer, offset, file.crc32);
+    writeUint32LEToBuffer(buffer, offset, file.crc32);
     offset += 4;
 
     // Compressed size (same as uncompressed for STORE)
-    writeUint32(buffer, offset, file.data.length);
+    writeUint32LEToBuffer(buffer, offset, file.data.length);
     offset += 4;
 
     // Uncompressed size
-    writeUint32(buffer, offset, file.data.length);
+    writeUint32LEToBuffer(buffer, offset, file.data.length);
     offset += 4;
 
     // File name length
-    writeUint16(buffer, offset, filenameBytes.length);
+    writeUint16LEToBuffer(buffer, offset, filenameBytes.length);
     offset += 2;
 
     // Extra field length (no extra fields)
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // File name
@@ -312,75 +316,74 @@ export class StoreZipWriter {
    * @internal
    */
   private writeCentralDirectoryHeader(buffer: Uint8Array, offset: number, file: FileEntry): number {
-    const encoder = new TextEncoder();
-    const filenameBytes = encoder.encode(file.filename);
+    const { filenameBytes } = file;
 
     // Central directory file header signature (0x02014b50)
-    writeUint32(buffer, offset, 0x02014b50);
+    writeUint32LEToBuffer(buffer, offset, 0x02014b50);
     offset += 4;
 
     // Version made by (2.0 = 20)
-    writeUint16(buffer, offset, 20);
+    writeUint16LEToBuffer(buffer, offset, 20);
     offset += 2;
 
     // Version needed to extract (2.0 = 20)
-    writeUint16(buffer, offset, 20);
+    writeUint16LEToBuffer(buffer, offset, 20);
     offset += 2;
 
     // General purpose bit flag
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Compression method (0 = STORE)
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Last mod file time
-    writeUint16(buffer, offset, file.modTime);
+    writeUint16LEToBuffer(buffer, offset, file.modTime);
     offset += 2;
 
     // Last mod file date
-    writeUint16(buffer, offset, file.modDate);
+    writeUint16LEToBuffer(buffer, offset, file.modDate);
     offset += 2;
 
     // CRC-32
-    writeUint32(buffer, offset, file.crc32);
+    writeUint32LEToBuffer(buffer, offset, file.crc32);
     offset += 4;
 
     // Compressed size
-    writeUint32(buffer, offset, file.data.length);
+    writeUint32LEToBuffer(buffer, offset, file.data.length);
     offset += 4;
 
     // Uncompressed size
-    writeUint32(buffer, offset, file.data.length);
+    writeUint32LEToBuffer(buffer, offset, file.data.length);
     offset += 4;
 
     // File name length
-    writeUint16(buffer, offset, filenameBytes.length);
+    writeUint16LEToBuffer(buffer, offset, filenameBytes.length);
     offset += 2;
 
     // Extra field length
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // File comment length
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Disk number start
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Internal file attributes
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // External file attributes
-    writeUint32(buffer, offset, 0);
+    writeUint32LEToBuffer(buffer, offset, 0);
     offset += 4;
 
     // Relative offset of local header
-    writeUint32(buffer, offset, file.offset);
+    writeUint32LEToBuffer(buffer, offset, file.offset);
     offset += 4;
 
     // File name
@@ -401,74 +404,36 @@ export class StoreZipWriter {
     cdOffset: number
   ): void {
     // End of central directory signature (0x06054b50)
-    writeUint32(buffer, offset, 0x06054b50);
+    writeUint32LEToBuffer(buffer, offset, 0x06054b50);
     offset += 4;
 
     // Number of this disk
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Disk where central directory starts
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
     offset += 2;
 
     // Number of central directory records on this disk
-    writeUint16(buffer, offset, fileCount);
+    writeUint16LEToBuffer(buffer, offset, fileCount);
     offset += 2;
 
     // Total number of central directory records
-    writeUint16(buffer, offset, fileCount);
+    writeUint16LEToBuffer(buffer, offset, fileCount);
     offset += 2;
 
     // Size of central directory
-    writeUint32(buffer, offset, cdSize);
+    writeUint32LEToBuffer(buffer, offset, cdSize);
     offset += 4;
 
     // Offset of start of central directory
-    writeUint32(buffer, offset, cdOffset);
+    writeUint32LEToBuffer(buffer, offset, cdOffset);
     offset += 4;
 
     // ZIP file comment length
-    writeUint16(buffer, offset, 0);
+    writeUint16LEToBuffer(buffer, offset, 0);
   }
-}
-
-/**
- * CRC-32 체크섬 계산
- *
- * @param data - 체크섬을 계산할 데이터
- * @returns CRC-32 값
- */
-function calculateCRC32(data: Uint8Array): number {
-  const table = makeCRC32Table();
-  let crc = 0xffffffff;
-
-  for (let i = 0; i < data.length; i++) {
-    const byte = data[i];
-    if (byte !== undefined) {
-      crc = (crc >>> 8) ^ (table[(crc ^ byte) & 0xff] ?? 0);
-    }
-  }
-
-  return (crc ^ 0xffffffff) >>> 0;
-}
-
-/**
- * CRC-32 테이블 생성
- */
-function makeCRC32Table(): Uint32Array {
-  const table = new Uint32Array(256);
-  const polynomial = 0xedb88320;
-
-  for (let i = 0; i < 256; i++) {
-    let crc = i;
-    for (let j = 0; j < 8; j++) {
-      crc = crc & 1 ? (crc >>> 1) ^ polynomial : crc >>> 1;
-    }
-    table[i] = crc >>> 0;
-  }
-
-  return table;
 }
 
 /**
@@ -489,30 +454,4 @@ function toDOSDateTime(date: Date): [number, number] {
   const dosTime = (hours << 11) | (minutes << 5) | seconds;
 
   return [dosTime, dosDate];
-}
-
-/**
- * 16비트 부호 없는 정수 쓰기 (리틀 엔디안)
- *
- * @param buffer - 대상 버퍼
- * @param offset - 쓰기 시작 위치
- * @param value - 쓸 값
- */
-function writeUint16(buffer: Uint8Array, offset: number, value: number): void {
-  buffer[offset] = value & 0xff;
-  buffer[offset + 1] = (value >>> 8) & 0xff;
-}
-
-/**
- * 32비트 부호 없는 정수 쓰기 (리틀 엔디안)
- *
- * @param buffer - 대상 버퍼
- * @param offset - 쓰기 시작 위치
- * @param value - 쓸 값
- */
-function writeUint32(buffer: Uint8Array, offset: number, value: number): void {
-  buffer[offset] = value & 0xff;
-  buffer[offset + 1] = (value >>> 8) & 0xff;
-  buffer[offset + 2] = (value >>> 16) & 0xff;
-  buffer[offset + 3] = (value >>> 24) & 0xff;
 }

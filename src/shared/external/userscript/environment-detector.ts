@@ -1,44 +1,6 @@
 /**
- * Environment Detection for Userscript Execution
- *
- * **Purpose**: Detect runtime environment and available Tampermonkey APIs
- * **Architecture**: Distinguish between Tampermonkey, test, extension, and console environments
- * **Scope**: Identify execution context and GM_* API availability
- *
- * **Supported Environments**:
- * 1. **Userscript** (Tampermonkey/Greasemonkey/Violentmonkey): Full GM_* API support
- * 2. **Test** (Vitest/Playwright): Mock API support + localStorage fallback
- * 3. **Extension** (Browser extension): Limited GM_* API support
- * 4. **Console** (Plain browser): No GM_* API support
- *
- * **Detection Priority** (highest to lowest):
- * 1. Explicit Tampermonkey API presence (GM_getValue, GM_info, etc.)
- * 2. Browser extension markers (chrome.runtime.id, browser.runtime.id)
- * 3. Test framework markers (__VITEST__, __PLAYWRIGHT__, NODE_ENV=test)
- * 4. Node.js environment
- * 5. Default: Plain browser console
- *
- * **Note**: If Tampermonkey APIs are explicitly present, they take priority.
- * This allows testing services that depend on Tampermonkey APIs.
- *
- * **Usage Example**:
- * ```typescript
- * import { detectEnvironment, isGMAPIAvailable } from '@shared/external/userscript/environment-detector';
- *
- * const env = detectEnvironment();
- * if (env.isUserscriptEnvironment) {
- *   console.log('Available APIs:', env.availableGMAPIs);
- * }
- *
- * if (isGMAPIAvailable('download')) {
- *   // Can use DownloadService
- * }
- * ```
- *
- * @internal Environment detection only
- * @version 2.0.0 - Phase 372: Language policy enforcement + priority clarification
- * @fileoverview Environment detection for userscript execution contexts
- * @see ../adapter.ts - Userscript API adapter
+ * Environment detection helpers for the userscript layer.
+ * Identifies runtime context and available GM_* APIs so services can react safely.
  */
 
 /**
@@ -67,107 +29,66 @@ export interface EnvironmentInfo {
   environment: 'userscript' | 'test' | 'extension' | 'console';
 }
 
-/**
- * Detects the current execution environment
- *
- * Analyzes globalThis for markers to determine which environment this code is running in:
- * - Userscript (Tampermonkey/Greasemonkey/Violentmonkey)
- * - Test framework (Vitest, Playwright, etc.)
- * - Browser extension
- * - Plain browser console
- *
- * Also collects available Tampermonkey APIs for reference.
- *
- * @returns EnvironmentInfo with comprehensive environment detection results
- * @internal
- *
- * @example
- * ```typescript
- * const env = detectEnvironment();
- * if (env.isUserscriptEnvironment) {
- *   // Use Tampermonkey APIs directly (if needed)
- *   console.log('Available APIs:', env.availableGMAPIs);
- * } else if (env.isTestEnvironment) {
- *   // Use mock/stub implementations
- *   console.log('Test environment detected');
- * }
- * ```
- */
+const GM_API_MAP = {
+  getValue: 'GM_getValue',
+  setValue: 'GM_setValue',
+  download: 'GM_download',
+  notification: 'GM_notification',
+  setClipboard: 'GM_setClipboard',
+  registerMenuCommand: 'GM_registerMenuCommand',
+  deleteValue: 'GM_deleteValue',
+  listValues: 'GM_listValues',
+} as const;
+
+const GM_API_KEYS = Object.keys(GM_API_MAP) as Array<keyof typeof GM_API_MAP>;
+const USERSCRIPT_FLAGS = ['__TAMPERMONKEY__'] as const;
+const TEST_FLAGS = [
+  '__VITEST__',
+  '__PLAYWRIGHT__',
+  'PLAYWRIGHT_TEST_UTILITIES',
+  '__TEST__',
+] as const;
+
+type UserscriptEnvironment = EnvironmentInfo['environment'];
+
 export function detectEnvironment(): EnvironmentInfo {
-  const gm = globalThis as Record<string, unknown>;
+  const gm = globalThis as Record<string, unknown> & {
+    unsafeWindow?: unknown;
+    chrome?: { runtime?: { id?: string } };
+    browser?: { runtime?: { id?: string } };
+  };
 
-  // Signal 1: Explicit Tampermonkey API markers
-  const tampermonkeyInstalled = !!(
-    gm.GM_getValue ||
-    gm.GM_setValue ||
-    gm.GM_download ||
-    gm.GM_notification ||
-    gm.GM_setClipboard ||
-    gm.__TAMPERMONKEY__ ||
-    (gm as Record<string, unknown> & { unsafeWindow?: unknown }).unsafeWindow
-  );
+  const availableGMAPIs = GM_API_KEYS.filter(key => typeof gm[GM_API_MAP[key]] === 'function');
 
-  // Signal 2: Test framework markers
-  const testFramework = !!(
-    gm.__VITEST__ ||
-    gm.__PLAYWRIGHT__ ||
-    gm.PLAYWRIGHT_TEST_UTILITIES ||
-    gm.__TEST__ ||
-    (typeof process !== 'undefined' &&
-      typeof (process as unknown as { env?: { NODE_ENV?: string } }).env === 'object' &&
-      (process as unknown as { env?: { NODE_ENV?: string } }).env?.NODE_ENV === 'test')
-  );
+  const hasUserscriptSignals =
+    availableGMAPIs.length > 0 ||
+    USERSCRIPT_FLAGS.some(flag => Boolean(gm[flag])) ||
+    Boolean(gm.unsafeWindow);
 
-  // Signal 3: Browser extension markers
-  const browserExtension = !!(
-    (gm.chrome as unknown as { runtime?: { id?: string } } | undefined)?.runtime?.id ||
-    (gm.browser as unknown as { runtime?: { id?: string } } | undefined)?.runtime?.id
-  );
+  const processRef =
+    typeof process === 'undefined'
+      ? undefined
+      : (process as { env?: Record<string, string | undefined>; version?: string });
 
-  // Signal 4: Node.js environment
-  const isNode =
-    typeof process !== 'undefined' && !!(process as unknown as { version?: string }).version;
+  const isTestFramework = TEST_FLAGS.some(flag => Boolean(gm[flag]));
+  const isTestRuntime = Boolean(processRef?.env?.NODE_ENV === 'test' || processRef?.version);
+  const isTestEnvironment = isTestFramework || isTestRuntime;
 
-  // Collect available GM APIs
-  const availableGMAPIs: string[] = [];
-  if (gm.GM_getValue) availableGMAPIs.push('getValue');
-  if (gm.GM_setValue) availableGMAPIs.push('setValue');
-  if (gm.GM_download) availableGMAPIs.push('download');
-  if (gm.GM_notification) availableGMAPIs.push('notification');
-  if (gm.GM_setClipboard) availableGMAPIs.push('setClipboard');
-  if (gm.GM_registerMenuCommand) availableGMAPIs.push('registerMenuCommand');
-  if (gm.GM_deleteValue) availableGMAPIs.push('deleteValue');
-  if (gm.GM_listValues) availableGMAPIs.push('listValues');
+  const isBrowserExtension = Boolean(gm.chrome?.runtime?.id || gm.browser?.runtime?.id);
 
-  // Determine environment type
-  let environment: EnvironmentInfo['environment'] = 'console';
-  let isUserscript = false;
-  let isTest = false;
-  let isExtension = false;
-  let isConsole = false;
-
-  // Priority: Explicit GM API presence > Browser extension > Test framework/Node.js > Console
-  // Note: If Tampermonkey APIs are explicitly present, prioritize them over test framework
-  // This allows testing services that depend on Tampermonkey APIs
-  if (tampermonkeyInstalled) {
-    environment = 'userscript';
-    isUserscript = true;
-  } else if (browserExtension && !testFramework) {
-    environment = 'extension';
-    isExtension = true;
-  } else if (testFramework || isNode) {
-    environment = 'test';
-    isTest = true;
-  } else {
-    environment = 'console';
-    isConsole = true;
-  }
+  const environment: UserscriptEnvironment = hasUserscriptSignals
+    ? 'userscript'
+    : isBrowserExtension && !isTestEnvironment
+      ? 'extension'
+      : isTestEnvironment
+        ? 'test'
+        : 'console';
 
   return {
-    isUserscriptEnvironment: isUserscript,
-    isTestEnvironment: isTest,
-    isBrowserExtension: isExtension,
-    isBrowserConsole: isConsole,
+    isUserscriptEnvironment: environment === 'userscript',
+    isTestEnvironment: environment === 'test',
+    isBrowserExtension: environment === 'extension',
+    isBrowserConsole: environment === 'console',
     availableGMAPIs,
     environment,
   };
@@ -195,18 +116,7 @@ export function detectEnvironment(): EnvironmentInfo {
  */
 export function isGMAPIAvailable(apiName: string): boolean {
   const gm = globalThis as Record<string, unknown>;
-  const apiMap: Record<string, string> = {
-    getValue: 'GM_getValue',
-    setValue: 'GM_setValue',
-    download: 'GM_download',
-    notification: 'GM_notification',
-    setClipboard: 'GM_setClipboard',
-    registerMenuCommand: 'GM_registerMenuCommand',
-    deleteValue: 'GM_deleteValue',
-    listValues: 'GM_listValues',
-  };
-
-  const gmFunctionName = apiMap[apiName];
+  const gmFunctionName = GM_API_MAP[apiName as keyof typeof GM_API_MAP];
   if (!gmFunctionName) return false;
 
   return typeof gm[gmFunctionName] === 'function';
@@ -232,12 +142,15 @@ export function isGMAPIAvailable(apiName: string): boolean {
 export function getEnvironmentDescription(env: EnvironmentInfo): string {
   const apiList = env.availableGMAPIs.join(', ') || 'none';
 
-  const descriptions: Record<EnvironmentInfo['environment'], string> = {
-    userscript: `Tampermonkey environment (${env.availableGMAPIs.length} APIs available: ${apiList})`,
-    test: `Test environment (${env.availableGMAPIs.length} APIs available: ${apiList})`,
-    extension: `Browser extension environment (${env.availableGMAPIs.length} APIs available: ${apiList})`,
-    console: 'Plain browser console (no Tampermonkey APIs available)',
-  };
-
-  return descriptions[env.environment];
+  switch (env.environment) {
+    case 'userscript':
+      return `Tampermonkey environment (${env.availableGMAPIs.length} APIs available: ${apiList})`;
+    case 'test':
+      return `Test environment (${env.availableGMAPIs.length} APIs available: ${apiList})`;
+    case 'extension':
+      return `Browser extension environment (${env.availableGMAPIs.length} APIs available: ${apiList})`;
+    case 'console':
+    default:
+      return 'Plain browser console (no Tampermonkey APIs available)';
+  }
 }

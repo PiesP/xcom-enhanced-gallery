@@ -6,10 +6,7 @@
  * **Pattern**: Interface definitions + type aliases for consistency
  * **Principle**: Enable strict typing for vendor APIs
  *
- * **Scope**: Types for:
- * - Solid.js component patterns (PreactComponent, ForwardRef, Memo)
- * - PreactCompat polyfills (memo, forwardRef for React compatibility)
- * - Vendor lifecycle tracking (VendorInitState, VendorError)
+ * **Scope**: Types for Solid.js component compatibility helpers.
  *
  * **Related**:
  * - {@link vendor-api-safe.ts} - TDZ-safe vendor access layer
@@ -50,7 +47,7 @@ export type PreactComponent<P = Record<string, unknown>> = ((
  * **Pattern**: React.memo compare function (PreactCompat polyfill)
  *
  * @typeParam P - Props object type (default: empty Record)
- * @returns true if props unchanged (skip re-render), false if props changed (re-render)
+ * @returns true if props unchanged (skip re-render), false otherwise
  * @internal Used by {@link PreactCompat.memo}
  */
 export type MemoCompareFunction<P = Record<string, unknown>> = (
@@ -74,59 +71,6 @@ export type ForwardRefComponent<P = Record<string, unknown>> = (
   props: P,
   ref: unknown
 ) => SolidJSXElement | null;
-
-/**
- * Vendor initialization state tracking
- *
- * Records initialization status for each vendor library:
- * - preact: Preact runtime (deprecated, no longer used)
- * - fflate: Compression library (deprecated, no longer used)
- * - motion: Motion One animation (deprecated, removed Phase 372+)
- * - motionOne: Motion One v2 (deprecated, removed Phase 372+)
- *
- * **Note**: All vendors except Solid.js are deprecated. This type exists for
- * backwards compatibility with legacy code paths.
- *
- * @internal Type exists for legacy support - do not use in new code
- * @deprecated Phase 372: Only Solid.js is active
- */
-export interface VendorInitState {
-  preact: boolean;
-  fflate: boolean;
-  motion: boolean;
-  motionOne: boolean;
-}
-
-/**
- * Vendor initialization error information
- *
- * Captures detailed error context when vendor loading fails.
- * Includes vendor name, user-friendly message, and original error.
- *
- * @internal Used for diagnostic error reporting
- * @see {@link StaticVendorManager.validateAll} for error collection
- */
-export interface VendorError {
-  vendor: keyof VendorInitState;
-  message: string;
-  originalError?: Error;
-}
-
-/**
- * Safe vendor function wrapper type
- *
- * Generic type for safe vendor functions that catch errors and return null on failure.
- * Preserves original function signature while allowing null returns for error cases.
- *
- * **Pattern**: Error-tolerant function wrapper
- *
- * @typeParam T - Original function type
- * @returns Same return type as T, or null if error occurs
- * @internal Advanced pattern - rarely used
- */
-export type SafeVendorFunction<T extends (...args: unknown[]) => unknown> = (
-  ...args: Parameters<T>
-) => ReturnType<T> | null;
 
 /**
  * PreactCompat type definition
