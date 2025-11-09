@@ -21,8 +21,6 @@
  * @see {@link DownloadCacheService} for persistence (Phase 420)
  */
 
-import { logger } from '../../logging/logger';
-
 /**
  * Result of DOM media extraction operation
  *
@@ -52,7 +50,6 @@ export interface DOMExtractionResult {
  * **Implementation Notes**:
  * - Uses Canvas API for image/video to JPEG conversion (quality: 0.95)
  * - Validates CORS attributes to prevent tainted canvas errors
- * - Automatically logs extraction success/failure with telemetry
  * - Falls back gracefully on CORS or extraction failures
  *
  * @class DOMMediaExtractor
@@ -106,7 +103,6 @@ export class DOMMediaExtractor {
       // CORS validation: crossOrigin attribute must be present to avoid tainted canvas
       // Without it, canvas.toBlob() will fail with security error
       if (!imgElement.crossOrigin) {
-        logger.debug('[DOMMediaExtractor] Image lacks crossOrigin attribute, may be tainted');
         return {
           success: false,
           error: 'Image may be CORS-tainted (no crossOrigin attribute)',
@@ -140,11 +136,6 @@ export class DOMMediaExtractor {
         };
       }
 
-      logger.debug('[DOMMediaExtractor] Image extracted from DOM', {
-        size: blob.size,
-        type: blob.type,
-      });
-
       return {
         success: true,
         blob,
@@ -152,7 +143,6 @@ export class DOMMediaExtractor {
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      logger.warn('[DOMMediaExtractor] Image extraction failed:', msg);
       return {
         success: false,
         error: msg,
@@ -213,7 +203,6 @@ export class DOMMediaExtractor {
 
       // CORS validation: crossOrigin attribute must be present to avoid tainted canvas
       if (!videoElement.crossOrigin) {
-        logger.debug('[DOMMediaExtractor] Video lacks crossOrigin attribute, may be tainted');
         return {
           success: false,
           error: 'Video may be CORS-tainted (no crossOrigin attribute)',
@@ -247,11 +236,6 @@ export class DOMMediaExtractor {
         };
       }
 
-      logger.debug('[DOMMediaExtractor] Video frame extracted from DOM', {
-        size: blob.size,
-        type: blob.type,
-      });
-
       return {
         success: true,
         blob,
@@ -259,7 +243,6 @@ export class DOMMediaExtractor {
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      logger.warn('[DOMMediaExtractor] Video extraction failed:', msg);
       return {
         success: false,
         error: msg,
@@ -297,34 +280,25 @@ export class DOMMediaExtractor {
    * @since Phase 400
    */
   findLoadedMediaElement(url: string): HTMLImageElement | HTMLVideoElement | null {
-    try {
-      // Find gallery container
-      const galleryContainer = document.querySelector('[data-xeg-gallery]');
-      if (!galleryContainer) {
-        logger.debug('[DOMMediaExtractor] Gallery container not found');
-        return null;
-      }
-
-      // Search for loaded image (must be complete with valid dimensions)
-      const img = galleryContainer.querySelector<HTMLImageElement>(`img[src="${url}"]`);
-      if (img?.complete && img.naturalWidth > 0) {
-        logger.debug('[DOMMediaExtractor] Found loaded image in DOM:', url);
-        return img;
-      }
-
-      // Search for loaded video (must have current frame data)
-      const video = galleryContainer.querySelector<HTMLVideoElement>(`video[src="${url}"]`);
-      if (video && video.readyState >= 2) {
-        // HAVE_CURRENT_DATA
-        logger.debug('[DOMMediaExtractor] Found loaded video in DOM:', url);
-        return video;
-      }
-
-      return null;
-    } catch (error) {
-      logger.warn('[DOMMediaExtractor] Error finding media element:', error);
+    const galleryContainer = document.querySelector('[data-xeg-gallery]');
+    if (!galleryContainer) {
       return null;
     }
+
+    // Search for loaded image (must be complete with valid dimensions)
+    const img = galleryContainer.querySelector<HTMLImageElement>(`img[src="${url}"]`);
+    if (img?.complete && img.naturalWidth > 0) {
+      return img;
+    }
+
+    // Search for loaded video (must have current frame data)
+    const video = galleryContainer.querySelector<HTMLVideoElement>(`video[src="${url}"]`);
+    if (video && video.readyState >= 2) {
+      // HAVE_CURRENT_DATA
+      return video;
+    }
+
+    return null;
   }
 
   /**

@@ -427,5 +427,3 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     };
   }
 }
-
-export default DownloadOrchestrator;

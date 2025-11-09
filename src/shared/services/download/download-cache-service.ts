@@ -65,8 +65,6 @@
  * @since Phase 420
  */
 
-import { logger } from '../../logging';
-
 /**
  * Cache entry stored in IndexedDB
  *
@@ -144,8 +142,8 @@ export class DownloadCacheService {
    * 5. Store db reference for subsequent operations
    *
    * **Error Handling**:
-   * - IndexedDB unavailable: Log warning, resolve gracefully
-   * - Open error: Log error, reject promise (caller should handle)
+   * - IndexedDB unavailable: Resolve gracefully without caching
+   * - Open error: Reject promise so caller can handle failure
    * - Quota exceeded: IndexedDB API will throw (cleanup will help next call)
    *
    * **Async Idempotency**: Multiple calls return the same Promise (initPromise)
@@ -161,21 +159,18 @@ export class DownloadCacheService {
 
     this.initPromise = new Promise<void>((resolve, reject) => {
       if (!globalThis.indexedDB) {
-        logger.warn('[DownloadCacheService] IndexedDB not available');
-        resolve(); // 캐시 없이 계속 진행
+        resolve();
         return;
       }
 
       const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
 
       request.onerror = () => {
-        logger.error('[DownloadCacheService] Failed to open IndexedDB', request.error);
         reject(request.error);
       };
 
       request.onsuccess = () => {
         this.db = request.result;
-        logger.info('[DownloadCacheService] IndexedDB initialized');
         resolve();
       };
 
@@ -190,8 +185,6 @@ export class DownloadCacheService {
           store.createIndex('timestamp', 'timestamp', { unique: false });
           store.createIndex('lastAccessed', 'lastAccessed', { unique: false });
           store.createIndex('size', 'size', { unique: false });
-
-          logger.info('[DownloadCacheService] ObjectStore created');
         }
       };
     });
@@ -215,14 +208,13 @@ export class DownloadCacheService {
    * - Expiration check: ~0.5ms (timestamp comparison)
    * - Total savings vs HTTP: 90% (~300ms HTTP → ~3ms cache hit)
    *
-   * **Error Handling**:
-   * - IndexedDB unavailable: Return null (HTTP fallback)
-   * - Query failure: Log error, return null
-   * - Expired entry: Delete, return null
-   *
-   * **Side Effects**:
-   * - Updates `accessCount` and `lastAccessed` for LRU ranking
-   * - Logs cache hit/miss/expiration events
+  * **Error Handling**:
+  * - IndexedDB unavailable: Return null (HTTP fallback)
+  * - Query failure: Return null
+  * - Expired entry: Delete, return null
+
+  * **Side Effects**:
+  * - Updates `accessCount` and `lastAccessed` for LRU ranking
    *
    * @param {string} url - Media URL to retrieve
    * @returns {Promise<Uint8Array | null>} Cached data or null if not found/expired
@@ -254,14 +246,12 @@ export class DownloadCacheService {
       });
 
       if (!entry) {
-        logger.debug('[DownloadCacheService] Cache miss:', url);
         return null;
       }
 
       // Expiration check: if age > 30 days, delete and return null
       const age = Date.now() - entry.timestamp;
       if (age > this.MAX_AGE_MS) {
-        logger.debug('[DownloadCacheService] Cache expired:', url);
         await this.deleteCached(url);
         return null;
       }
@@ -271,10 +261,8 @@ export class DownloadCacheService {
       entry.lastAccessed = Date.now();
       store.put(entry);
 
-      logger.debug('[DownloadCacheService] Cache hit:', url, entry.size, 'bytes');
       return entry.data;
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to get cached data:', error);
+    } catch {
       return null;
     }
   }
@@ -287,7 +275,7 @@ export class DownloadCacheService {
    * 2. If exceeds limit (100MB): Trigger LRU cleanup
    * 3. Create CacheEntry (url, data, timestamp, size, accessCount=1, lastAccessed=now)
    * 4. Store in IndexedDB via transaction
-   * 5. Log success with data size
+   * 5. Resolve once write completes
    *
    * **LRU Eviction Strategy**:
    * - When cache exceeds 100MB: Delete least-recently-used items
@@ -302,7 +290,7 @@ export class DownloadCacheService {
    *
    * **Error Handling**:
    * - IndexedDB unavailable: Return silently (no caching, but no error)
-   * - Transaction failure: Log error, continue (cache miss on next access)
+   * - Transaction failure: Continue without caching (cache miss on next access)
    * - Quota exceeded: LRU cleanup will help, but may fail on very large items
    *
    * **Side Effects**:
@@ -356,10 +344,8 @@ export class DownloadCacheService {
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       });
-
-      logger.debug('[DownloadCacheService] Cached:', url, data.byteLength, 'bytes');
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to set cache:', error);
+    } catch {
+      // Cache writes are best-effort; ignore failures silently.
     }
   }
 
@@ -375,11 +361,10 @@ export class DownloadCacheService {
    * 1. Begin read-write transaction
    * 2. Delete entry by primary key (url)
    * 3. Wait for transaction commit
-   * 4. Log deletion
    *
    * **Error Handling**:
    * - Entry not found: Succeeds silently (idempotent delete)
-   * - Transaction failure: Log error, continue
+   * - Transaction failure: Continue without throwing
    * - IndexedDB unavailable: Return silently
    *
    * @param {string} url - Media URL (cache key) to delete
@@ -400,10 +385,8 @@ export class DownloadCacheService {
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       });
-
-      logger.debug('[DownloadCacheService] Deleted:', url);
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to delete cache:', error);
+    } catch {
+      // Deletion errors are ignored to keep cache best-effort.
     }
   }
 
@@ -423,7 +406,7 @@ export class DownloadCacheService {
    *
    * **Error Handling**:
    * - IndexedDB unavailable: Return 0
-   * - Transaction failure: Log error, return 0
+   * - Transaction failure: Return 0
    *
    * **Side Effects**:
    * - Deletes entries permanently from IndexedDB
@@ -467,10 +450,8 @@ export class DownloadCacheService {
         request.onerror = () => reject(request.error);
       });
 
-      logger.info('[DownloadCacheService] Cleaned up expired entries:', deletedCount);
       return deletedCount;
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to cleanup expired:', error);
+    } catch {
       return 0;
     }
   }
@@ -501,7 +482,7 @@ export class DownloadCacheService {
    *
    * **Error Handling**:
    * - IndexedDB unavailable: Return silently
-   * - Transaction failure: Log error, continue
+   * - Transaction failure: Continue silently
    *
    * @param {number} requiredSpace - Minimum space needed in bytes
    * @returns {Promise<void>} Resolves when cleanup complete
@@ -537,10 +518,8 @@ export class DownloadCacheService {
         };
         request.onerror = () => reject(request.error);
       });
-
-      logger.info('[DownloadCacheService] Freed space by LRU:', freedSpace, 'bytes');
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to cleanup by LRU:', error);
+    } catch {
+      // Ignore cleanup errors to avoid cascading failures.
     }
   }
 
@@ -566,7 +545,7 @@ export class DownloadCacheService {
    *
    * **Error Handling**:
    * - IndexedDB unavailable: Return zeroed stats
-   * - Transaction failure: Log error, return zeroed stats
+   * - Transaction failure: Return zeroed stats
    *
    * **Example Stats**:
    * ```
@@ -625,8 +604,7 @@ export class DownloadCacheService {
       });
 
       return { totalSize, itemCount, oldestEntry, newestEntry };
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to get stats:', error);
+    } catch {
       return { totalSize: 0, itemCount: 0, oldestEntry: null, newestEntry: null };
     }
   }
@@ -644,7 +622,6 @@ export class DownloadCacheService {
    * 1. Begin read-write transaction
    * 2. Clear all entries in media-cache store
    * 3. Wait for transaction commit
-   * 4. Log completion
    *
    * **Performance**:
    * - Typical: ~50-200ms (depends on cache size)
@@ -652,7 +629,7 @@ export class DownloadCacheService {
    *
    * **Error Handling**:
    * - IndexedDB unavailable: Return silently
-   * - Transaction failure: Log error, continue
+   * - Transaction failure: Continue silently
    * - Idempotent: Safe to call multiple times
    *
    * **Recovery After Clear**:
@@ -681,10 +658,8 @@ export class DownloadCacheService {
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       });
-
-      logger.info('[DownloadCacheService] All cache cleared');
-    } catch (error) {
-      logger.error('[DownloadCacheService] Failed to clear all:', error);
+    } catch {
+      // Ignore clear failures; cache remains as-is.
     }
   }
 }
