@@ -5,15 +5,6 @@
 
 @layer xeg.utilities {
   /* Keyframes */
-  @keyframes xeg-fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
   @keyframes xeg-slide-up {
     from {
       opacity: 0;
@@ -79,33 +70,6 @@
       box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard),
       outline var(--xeg-duration-fast) var(--xeg-ease-standard);
     will-change: box-shadow;
-  }
-
-  /* Performance hints */
-  .xeg-gpu-accelerated {
-    transform: var(--xeg-gpu-hack);
-    backface-visibility: var(--xeg-backface-visibility);
-  }
-
-  .xeg-will-change-transform {
-    will-change: transform;
-  }
-
-  .xeg-will-change-opacity {
-    will-change: opacity;
-  }
-
-  .xeg-will-change-auto {
-    will-change: auto;
-  }
-
-  .xeg-animation-paused {
-    animation-play-state: paused;
-  }
-
-  .xeg-animation-finished {
-    transform: none;
-    will-change: auto;
   }
 
   /* Reduced motion */

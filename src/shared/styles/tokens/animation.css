@@ -3,41 +3,16 @@
  * @description Extends duration/easing/delay presets without redefining base token values.
  */
 
-:root {
-  /* Duration Extensions */
-  --xeg-duration-instant: 0ms;
-  --xeg-duration-slower: 500ms;
-  --xeg-duration-tooltip: var(--xeg-duration-fast);
-  --xeg-duration-dropdown: var(--xeg-duration-normal);
-  --xeg-duration-modal: var(--xeg-duration-slow);
-  --xeg-duration-page-transition: var(--xeg-duration-slower);
+@layer xeg.tokens {
+  :root {
+    /* Motion easing */
+    --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+    --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+    --xeg-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --xeg-ease-entrance: var(--xeg-ease-decelerate);
 
-  /* Delay Scale */
-  --xeg-delay-none: 0ms;
-  --xeg-delay-short: 50ms;
-  --xeg-delay-medium: 100ms;
-  --xeg-delay-long: 200ms;
-  --xeg-delay-stagger-1: 0ms;
-  --xeg-delay-stagger-2: 100ms;
-  --xeg-delay-stagger-3: 200ms;
-  --xeg-delay-stagger-4: 300ms;
-  --xeg-delay-stagger-5: 400ms;
-
-  /* Easing Functions */
-  --xeg-ease-linear: linear;
-  --xeg-ease-ease: ease;
-  --xeg-ease-ease-in: ease-in;
-  --xeg-ease-ease-out: ease-out;
-  --xeg-ease-ease-in-out: ease-in-out;
-  --xeg-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
-  --xeg-ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
-  --xeg-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  --xeg-ease-entrance: var(--xeg-ease-decelerate);
-  --xeg-ease-exit: var(--xeg-ease-accelerate);
-  --xeg-ease-emphasis: var(--xeg-ease-bounce);
-
-  /* GPU hints */
-  --xeg-gpu-hack: translate3d(0, 0, 0);
-  --xeg-backface-visibility: hidden;
-  --xeg-perspective: 62.5rem; /* 1000px */
+    /* Performance assists */
+    --xeg-gpu-hack: translate3d(0, 0, 0);
+    --xeg-backface-visibility: hidden;
+  }
 }
