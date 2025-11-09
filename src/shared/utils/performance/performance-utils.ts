@@ -6,8 +6,6 @@
  * Separated into independent modules for tree-shaking optimization
  */
 
-import { logger } from '@shared/logging';
-
 /**
  * Debouncer class - prevents duplicate execution
  * @template T - Function parameter type
@@ -133,8 +131,8 @@ export function rafThrottle<T extends (...args: unknown[]) => void>(
       if (leading) {
         try {
           fn(...args);
-        } catch (error) {
-          logger.warn('RAF throttle function error:', error);
+        } catch {
+          // Swallow errors to avoid secondary failures during throttled invocations.
         }
       }
 
@@ -144,8 +142,8 @@ export function rafThrottle<T extends (...args: unknown[]) => void>(
         if (trailing && pendingArgs) {
           try {
             fn(...pendingArgs);
-          } catch (error) {
-            logger.warn('RAF throttle trailing function error:', error);
+          } catch {
+            // Trailing invocation errors are intentionally ignored here.
           }
         }
         pendingArgs = null;

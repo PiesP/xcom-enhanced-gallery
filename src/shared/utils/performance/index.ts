@@ -1,27 +1,12 @@
 /**
- * @fileoverview Performance Optimization Exports
- * @description Unified export for all performance optimization utilities
- * @version 2.0.0 - Phase 352: Named export optimization
+ * Minimal barrel for performance-related helpers that remain in production.
  */
 
-// Performance utilities
-export { Debouncer, createDebouncer, rafThrottle, throttleScroll } from './performance-utils';
-
-// Preload utilities
+// Gallery preload helper
 export { computePreloadIndices } from './preload';
 
-// Idle scheduler
-export type { IdleScheduleOptions, IdleHandle } from './idle-scheduler';
+// Idle scheduling
 export { scheduleIdle } from './idle-scheduler';
 
-// Schedulers
-export type { SchedulerHandle } from './schedulers';
+// Animation/microtask scheduling
 export { scheduleRaf, scheduleMicrotask } from './schedulers';
-
-// Signal optimization
-export {
-  createSelector,
-  useAsyncSelector,
-  useSelector,
-  useCombinedSelector,
-} from './signal-optimization';
