@@ -63,6 +63,8 @@ const sharedPoolOptions = {
     execArgv: ['--expose-gc'],
   },
 };
+// Toggle performance/benchmark suite explicitly (opt-in only)
+const enablePerformanceProject = process.env.ENABLE_PERFORMANCE_TESTS === 'true';
 // Helpers
 const toPosix = (p: string) => p.replace(/\\/g, '/');
 // helpers kept minimal for lint cleanliness
@@ -370,7 +372,7 @@ const baseConfig = defineConfig({
           transformMode: solidTransformMode,
         },
       },
-      // Full unit tests (excluding performance/bench) - Sharded project 1: shared services
+      // Full unit tests (excluding performance/bench) - Sharded project
       {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
@@ -398,14 +400,14 @@ const baseConfig = defineConfig({
           transformMode: solidTransformMode,
         },
       },
-      // Unit tests sharded 2: shared services (Part 2)
-      {
+      // Performance/benchmark suite (opt-in via ENABLE_PERFORMANCE_TESTS)
+      enablePerformanceProject && {
         resolve: sharedResolve,
         esbuild: solidEsbuildConfig,
         pool: 'forks',
         poolOptions: sharedPoolOptions,
         test: {
-          name: 'unit-part2',
+          name: 'performance',
           globals: true,
           testTimeout: 20000,
           hookTimeout: 25000,
@@ -416,31 +418,8 @@ const baseConfig = defineConfig({
               url: 'https://x.com',
             },
           },
-          include: [], // Currently empty (for future sharding if needed)
-          exclude: ['**/node_modules/**', '**/dist/**'],
-          transformMode: solidTransformMode,
-        },
-      },
-      // Features layer-focused tests
-      {
-        resolve: sharedResolve,
-        esbuild: solidEsbuildConfig,
-        pool: 'forks',
-        poolOptions: sharedPoolOptions,
-        test: {
-          name: 'features',
-          globals: true,
-          testTimeout: 20000,
-          hookTimeout: 25000,
-          environment: 'happy-dom',
-          setupFiles: ['./test/setup.ts'],
-          environmentOptions: {
-            happyDom: {
-              url: 'https://x.com',
-            },
-          },
-          include: ['test/features/**/*.{test,spec}.{ts,tsx}'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
+          include: ['test/unit/performance/**/*.{test,spec}.{ts,tsx}', '**/*.bench.test.*'],
+          exclude: ['**/node_modules/**', '**/dist/**', '**/test/archive/**'],
           transformMode: solidTransformMode,
         },
       },
@@ -468,88 +447,6 @@ const baseConfig = defineConfig({
             'test/unit/policies/**/*.{test,spec}.{ts,tsx}',
           ],
           exclude: ['**/node_modules/**', '**/dist/**'],
-          transformMode: solidTransformMode,
-        },
-      },
-      // Performance/benchmark only
-      {
-        resolve: sharedResolve,
-        esbuild: solidEsbuildConfig,
-        pool: 'forks',
-        poolOptions: sharedPoolOptions,
-        test: {
-          name: 'performance',
-          globals: true,
-          testTimeout: 20000,
-          hookTimeout: 25000,
-          environment: 'happy-dom',
-          setupFiles: ['./test/setup.ts'],
-          environmentOptions: {
-            happyDom: {
-              url: 'https://x.com',
-            },
-          },
-          include: ['test/unit/performance/**/*.{test,spec}.{ts,tsx}', '**/*.bench.test.*'],
-          exclude: ['**/node_modules/**', '**/dist/**', '**/test/archive/**'],
-          transformMode: solidTransformMode,
-        },
-      },
-      // Phase-specific (*-phase-*) / final suite
-      {
-        resolve: sharedResolve,
-        esbuild: solidEsbuildConfig,
-        pool: 'threads',
-        poolOptions: sharedPoolOptions,
-        test: {
-          name: 'phases',
-          globals: true,
-          testTimeout: 20000,
-          hookTimeout: 25000,
-          environment: 'happy-dom',
-          setupFiles: ['./test/setup.ts'],
-          environmentOptions: {
-            happyDom: {
-              url: 'https://x.com',
-            },
-          },
-          include: ['test/phase-*.*', 'test/final/**/*.{test,spec}.{ts,tsx}'],
-          exclude: ['**/node_modules/**', '**/dist/**'],
-          transformMode: solidTransformMode,
-        },
-      },
-      // Refactoring in-progress/guard suite
-      // NOTE: 2025-10-23 - All refactoring tests completed, exclude entire folder
-      // For future refactoring work, create tests and utilize this project
-      {
-        resolve: sharedResolve,
-        esbuild: solidEsbuildConfig,
-        pool: 'threads',
-        poolOptions: sharedPoolOptions,
-        test: {
-          name: 'refactor',
-          globals: true,
-          testTimeout: 20000,
-          hookTimeout: 25000,
-          environment: 'happy-dom',
-          setupFiles: ['./test/setup.ts'],
-          environmentOptions: {
-            happyDom: {
-              url: 'https://x.com',
-            },
-          },
-          include: ['test/refactoring/**/*.{test,spec}.{ts,tsx}'],
-          // Phase 174: Exclude refactoring tests (27 maintenance targets)
-          // Phase files (2) + Container (8) archive completed
-          // Deduplication (3) and edge cases (8) cleanup completed
-          // See: test/archive/refactoring/README.md
-          exclude: [
-            '**/node_modules/**',
-            '**/dist/**',
-            'test/refactoring/**/*.test.ts',
-            'test/refactoring/**/*.test.tsx',
-            'test/refactoring/**/*.spec.ts',
-            'test/refactoring/**/*.spec.tsx',
-          ],
           transformMode: solidTransformMode,
         },
       },
@@ -654,7 +551,7 @@ const baseConfig = defineConfig({
           transformMode: solidTransformMode,
         },
       },
-    ],
+    ].filter(Boolean),
   },
 });
 

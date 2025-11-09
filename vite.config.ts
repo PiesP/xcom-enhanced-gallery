@@ -395,14 +395,16 @@ function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
 
 export default defineConfig(async ({ mode }) => {
   const flags = resolveFlags(mode);
+  const shouldEnableBundleAnalysis =
+    flags.isProd && process.env.XEG_ENABLE_BUNDLE_ANALYSIS === 'true';
   const config: UserConfig = {
     plugins: [
       stripLoggerDebugPlugin(flags),
       solidPlugin({ dev: flags.isDev, ssr: false }),
       tsconfigPaths({ projects: ['tsconfig.json'] }),
       userscriptPlugin(flags),
-      // Bundle analysis (prod builds only)
-      flags.isProd &&
+      // Bundle analysis (opt-in via XEG_ENABLE_BUNDLE_ANALYSIS)
+      shouldEnableBundleAnalysis &&
         visualizer({
           filename: 'docs/bundle-analysis.html',
           open: false,
