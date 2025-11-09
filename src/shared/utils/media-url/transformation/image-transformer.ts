@@ -2,13 +2,13 @@
  * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * Image URL Transformer
- *
- * Phase 351.5: Transformation Layer - Image URL transformation
+ * Image URL transformation utilities.
  */
 
-import { logger } from '../../../logging';
 import { URL_PATTERNS } from '../../patterns/url-patterns';
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
 
 /**
  * Extract original high-quality image URL from Twitter image
@@ -29,56 +29,21 @@ import { URL_PATTERNS } from '../../patterns/url-patterns';
  * // Returns: 'https://pbs.twimg.com/media/ABC123?format=jpg&name=orig' (unchanged)
  */
 export function extractOriginalImageUrl(url: string): string {
-  if (!url || typeof url !== 'string') {
-    logger.warn('extractOriginalImageUrl: URL is empty or not a string', { url });
-    return url;
+  if (!isNonEmptyString(url)) {
+    return url || '';
   }
 
   try {
-    const urlObj = new URL(url);
+    const parsed = new URL(url);
 
-    // Check current name parameter
-    const currentName = urlObj.searchParams.get('name');
-
-    // If already set to orig, return as-is
-    if (currentName === 'orig') {
-      logger.debug('extractOriginalImageUrl: orig parameter already set', { url });
+    if (parsed.searchParams.get('name') === 'orig') {
       return url;
     }
 
-    // Set name parameter to orig
-    urlObj.searchParams.set('name', 'orig');
-    const result = urlObj.toString();
-
-    logger.debug('extractOriginalImageUrl: successfully extracted original URL', {
-      originalUrl: url,
-      extractedUrl: result,
-      previousName: currentName,
-    });
-
-    return result;
-  } catch (error) {
-    // URL parsing failed - apply fallback strategy
-    logger.debug('extractOriginalImageUrl: URL parsing failed, applying fallback', {
-      url,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    // If name parameter exists, replace it with orig
-    if (url.includes('?')) {
-      const result = `${url.replace(/[?&]name=[^&]*/, '')}&name=orig`;
-      logger.debug('extractOriginalImageUrl: string-based extraction (replace existing name)', {
-        result,
-      });
-      return result;
-    }
-
-    // If no name parameter, add it
-    const result = `${url}?name=orig`;
-    logger.debug('extractOriginalImageUrl: string-based extraction (add new name parameter)', {
-      result,
-    });
-    return result;
+    parsed.searchParams.set('name', 'orig');
+    return parsed.toString();
+  } catch {
+    return url;
   }
 }
 
@@ -102,34 +67,20 @@ export function extractOriginalImageUrl(url: string): string {
  * canExtractOriginalImage('https://video.twimg.com/...')
  */
 export function canExtractOriginalImage(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return false;
   }
 
-  // If already orig, no extraction needed
   try {
-    const urlObj = new URL(url);
-    if (urlObj.searchParams.get('name') === 'orig') {
-      logger.debug('canExtractOriginalImage: orig parameter already set', { url });
+    const parsed = new URL(url);
+
+    if (parsed.searchParams.get('name') === 'orig') {
       return false;
     }
+    return parsed.hostname === 'pbs.twimg.com' && parsed.pathname.includes('/media/');
   } catch {
-    // URL parsing failed - continue with fallback
+    return false;
   }
-
-  // Only pbs.twimg.com/media/ paths support original extraction
-  const isMediaImage = url.includes('pbs.twimg.com') && url.includes('/media/');
-
-  if (isMediaImage) {
-    logger.debug('canExtractOriginalImage: original extraction possible', { url });
-    return true;
-  }
-
-  logger.debug('canExtractOriginalImage: original extraction not possible', {
-    url,
-    reason: isMediaImage ? 'already orig' : 'not a pbs.twimg.com/media URL',
-  });
-  return false;
 }
 
 /**
@@ -141,6 +92,10 @@ export function canExtractOriginalImage(url: string): boolean {
  * @returns Extracted media ID or null
  */
 export function extractMediaId(url: string): string | null {
+  if (!isNonEmptyString(url)) {
+    return null;
+  }
+
   const match = url.match(URL_PATTERNS.MEDIA_ID);
   if (match?.[1]) return match[1];
 
@@ -164,8 +119,19 @@ export function generateOriginalUrl(url: string): string | null {
   const mediaId = extractMediaId(url);
   if (!mediaId) return null;
 
-  const formatMatch = url.match(/[?&]format=([^&]+)/);
-  const format = formatMatch?.[1] ?? 'jpg';
+  let format = 'jpg';
+
+  if (isNonEmptyString(url)) {
+    try {
+      const parsed = new URL(url);
+      format = parsed.searchParams.get('format') ?? format;
+    } catch {
+      const formatMatch = url.match(/[?&]format=([^&]+)/);
+      if (formatMatch?.[1]) {
+        format = formatMatch[1];
+      }
+    }
+  }
 
   return `https://pbs.twimg.com/media/${mediaId}?format=${format}&name=orig`;
 }

@@ -2,13 +2,11 @@
  * Copyright (c) 2024 X.com Gallery
  * Licensed under the MIT License
  *
- * Video URL Transformer
- *
- * Phase 351.5: Transformation Layer - Video URL transformation
- * Phase 330: Video URL optimization (tag=12 for MP4 quality)
+ * Video URL transformation utilities.
  */
 
-import { logger } from '../../../logging';
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
 
 /**
  * Extract and optimize original video URL
@@ -36,66 +34,21 @@ import { logger } from '../../../logging';
  * // → 'https://video.twimg.com/vi/1234567890/pu.mp4?tag=12'
  */
 export function extractOriginalVideoUrl(url: string): string {
-  // Input validation
-  if (!url || typeof url !== 'string') {
-    logger.warn('extractOriginalVideoUrl: URL is empty or not a string', { url });
+  if (!isNonEmptyString(url)) {
     return url || '';
   }
 
   try {
-    // URL parsing for tag parameter handling
-    const urlObj = new URL(url);
-    const searchParams = urlObj.searchParams;
+    const parsed = new URL(url);
 
-    // If tag=12 already set, return as-is
-    if (searchParams.get('tag') === '12') {
-      logger.debug('extractOriginalVideoUrl: tag=12 already optimally set', { url });
+    if (parsed.searchParams.get('tag') === '12') {
       return url;
     }
 
-    // Set or change tag parameter to 12
-    searchParams.set('tag', '12');
-    const optimizedUrl = urlObj.toString();
-
-    logger.debug('extractOriginalVideoUrl: video URL optimization successful', {
-      original: url,
-      optimized: optimizedUrl,
-      changed: url !== optimizedUrl,
-    });
-
-    return optimizedUrl;
-  } catch (error) {
-    // URL parsing failed - apply fallback: string-based handling
-    logger.debug('extractOriginalVideoUrl: URL parsing failed, applying fallback strategy', {
-      url,
-      error: (error as Error).message,
-    });
-
-    // Fallback: string-based handling
-    if (url.includes('?')) {
-      // Existing query parameters case
-      const [base, params] = url.split('?');
-      const searchParams = new URLSearchParams(params);
-      const previousTag = searchParams.get('tag');
-      searchParams.set('tag', '12');
-      const fallbackUrl = `${base}?${searchParams.toString()}`;
-
-      logger.debug('extractOriginalVideoUrl: string-based tag parameter change', {
-        original: url,
-        fallback: fallbackUrl,
-        previousTag,
-      });
-
-      return fallbackUrl;
-    }
-    // No query parameters case
-    const fallbackUrl = `${url}?tag=12`;
-    logger.debug('extractOriginalVideoUrl: string-based tag parameter addition', {
-      original: url,
-      fallback: fallbackUrl,
-    });
-
-    return fallbackUrl;
+    parsed.searchParams.set('tag', '12');
+    return parsed.toString();
+  } catch {
+    return url;
   }
 }
 
@@ -122,23 +75,16 @@ export function extractOriginalVideoUrl(url: string): string {
  * canExtractOriginalVideo('https://amplifeed.twimg.com/...')
  */
 export function canExtractOriginalVideo(url: string): boolean {
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return false;
   }
 
-  // Only video.twimg.com/vi/ format supports tag parameter optimization
-  const isVideoTwimgUrl = url.includes('video.twimg.com') && url.includes('/vi/');
-
-  if (isVideoTwimgUrl) {
-    logger.debug('canExtractOriginalVideo: video optimization possible', { url });
-    return true;
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'video.twimg.com' && parsed.pathname.includes('/vi/');
+  } catch {
+    return false;
   }
-
-  logger.debug('canExtractOriginalVideo: video optimization not possible', {
-    url,
-    reason: !url.includes('video.twimg.com') ? 'not video.twimg.com' : 'not /vi/ path',
-  });
-  return false;
 }
 
 /**
@@ -149,7 +95,7 @@ export function canExtractOriginalVideo(url: string): boolean {
  */
 export function extractVideoIdFromThumbnail(url: string): string | null {
   // Remove dependency on isVideoThumbnailUrl() - validate independently
-  if (!url || typeof url !== 'string') {
+  if (!isNonEmptyString(url)) {
     return null;
   }
 
