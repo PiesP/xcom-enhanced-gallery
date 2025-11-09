@@ -90,10 +90,11 @@ src/shared/types/
 
 ### Core Layer Files
 
-#### `core/index.ts` - Core barrel
+#### `core/index.ts` (removed) - Legacy core barrel
 
-- **Purpose**: Entry point for core types
-- **Role**: Re-export core-types.ts, extraction.types.ts, UserScript API
+- **Status**: Removed after Phase 364 simplification
+- **Reason**: Direct imports from `core/core-types.ts` and `userscript.d.ts`
+  replace the barrel
 
 #### `core/core-types.ts` - Integrated domain types (613 lines)
 
@@ -111,11 +112,10 @@ src/shared/types/
 - **Size**: 12 lines (very small)
 - **Reason**: Separated to prevent circular dependency
 
-#### `core/extraction.types.ts` - Backward Compatibility
+#### `core/extraction.types.ts` (removed) - Backward compatibility bridge
 
-- **Purpose**: Support previous import paths
-- **Role**: Re-export extraction types from media.types.ts
-- **Usage**: Used only in core/index.ts
+- **Status**: Removed; extraction types now imported from `media.types.ts`
+- **Note**: Legacy guides should reference `@shared/types/media.types`
 
 #### `core/userscript.d.ts` - UserScript API (205 lines)
 

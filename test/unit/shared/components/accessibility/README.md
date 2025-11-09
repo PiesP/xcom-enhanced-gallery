@@ -22,7 +22,7 @@
 
 **목적**: Live Region 단일 인스턴스 및 속성 검증
 
-- 모듈: `@/shared/utils/accessibility/live-region-manager`
+- 모듈: `@/shared/utils/accessibility`
 - 함수: `ensurePoliteLiveRegion()`, `ensureAssertiveLiveRegion()`
 - 라인 수: ~40줄
 
@@ -37,8 +37,7 @@
 
 ```
 src/shared/utils/accessibility/
-├── index.ts                     # 메인 재exports
-└── live-region-manager.ts       # Live region 관리
+└── index.ts                     # Live region 유틸리티 및 announce 함수
 ```
 
 ## 🔄 통합 테스트
@@ -59,10 +58,9 @@ src/shared/utils/accessibility/
 
 ### 새로운 접근성 유틸리티 추가 시
 
-1. **src/shared/utils/accessibility/\{module\}.ts**에 구현
+1. **src/shared/utils/accessibility/index.ts**에 구현
 2. **test/unit/accessibility/{module}.test.ts** 추가
-3. **src/shared/utils/accessibility/index.ts**에 재export
-4. **test/unit/accessibility/index.import.test.ts** 업데이트 (필요시)
+3. **test/unit/accessibility/index.import.test.ts** 업데이트 (필요시)
 
 ### 테스트 작성 원칙
 

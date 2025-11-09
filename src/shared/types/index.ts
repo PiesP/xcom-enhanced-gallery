@@ -25,7 +25,7 @@
  * **Usage Guide**:
  * - General case: `import type { ... } from '@shared/types'`
  * - Detailed types needed: `import type { ... } from '@shared/types/media.types'`
- * - Result pattern only: `import { success, failure } from '@shared/types/core/core-types'`
+ * - Result pattern only: `import { success, failure } from '@shared/types/result.types'`
  */
 
 // ==========================================
@@ -185,7 +185,7 @@ export {
   toSimpleResults,
 } from './result-compat';
 
-// UserScript API types (re-exported from core/index.ts)
+// UserScript API types (re-exported directly from userscript definition)
 export type {
   UserScriptInfo,
   BrowserEnvironment,

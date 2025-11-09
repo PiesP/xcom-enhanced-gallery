@@ -3,7 +3,7 @@ import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hook
 import {
   ensurePoliteLiveRegion,
   ensureAssertiveLiveRegion,
-} from '@/shared/utils/accessibility/live-region-manager';
+} from '@/shared/utils/accessibility/index';
 
 describe('[a11y] LiveRegionManager – 단일 인스턴스 & 속성', () => {
   setupGlobalTestIsolation();

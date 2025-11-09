@@ -27,6 +27,7 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
+import type { Cleanupable } from '../app.types';
 import type { BaseService } from './base-service.types';
 
 // ========================================
@@ -133,40 +134,6 @@ export interface Size {
   height: number;
 }
 
-// ========================================
-// APPLICATION TYPES (from app.types.ts)
-// ========================================
-
-/**
- * 애플리케이션 설정 (통합된 버전)
- */
-export interface AppConfig {
-  /** 애플리케이션 버전 */
-  version: string;
-  /** 개발 모드 여부 */
-  isDevelopment: boolean;
-  /** 디버그 모드 여부 */
-  debug: boolean;
-  /** 자동 시작 여부 */
-  autoStart: boolean;
-  /** 윈도우 load 이후에 갤러리 렌더링을 지연할지 여부 (기본 true, 테스트 모드 제외) */
-  renderAfterLoad?: boolean;
-}
-
-// ========================================
-// LIFECYCLE TYPES (from lifecycle.types.ts)
-// ========================================
-
-/**
- * 동기적 정리 인터페이스
- */
-export interface Cleanupable {
-  /**
-   * 동기적 정리 (메모리, 타이머, 이벤트 리스너 등)
-   */
-  cleanup(): void;
-}
-
 /**
  * 통합 생명주기 인터페이스
  */
@@ -189,12 +156,8 @@ export interface Lifecycle extends Cleanupable {
  */
 export type { Result, AsyncResult } from '../result.types';
 
-/**
- * Option 타입 - T 또는 null
- * @note Phase 400: app.types.ts에서 분리 (순환 참조 제거)
- * @note Nullable<T>와 동일한 의미
- */
-export type Option<T> = T | null;
+// Application & utility types are defined in app.types.ts (single source of truth)
+export type { AppConfig, Cleanupable, Option } from '../app.types';
 
 // Result 유틸리티 함수들은 result.types.ts로 이동됨 (Phase 355.2)
 // - success, failure, partial, cancelled

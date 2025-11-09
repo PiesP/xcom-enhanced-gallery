@@ -1361,7 +1361,7 @@ export type AsyncResult<T> = Promise<Result<T>>;
 
 ```typescript
 // ❌ Before (deprecated)
-import { ExtractionErrorCode } from '@shared/types/core';
+import { ExtractionErrorCode } from '@shared/types/core/extraction.types';
 
 // ✅ After
 import { ErrorCode } from '@shared/types';
