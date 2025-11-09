@@ -1,58 +1,6 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
- * Licensed under the MIT License
- *
- * @fileoverview Focus Observer Manager - IntersectionObserver-based visibility detection
- * @version 1.0.0
- *
- * Implements the visibility detection stage of the 3-stage focus system:
- *
- * **Focus System Architecture**:
- * 1. **FocusObserverManager** (this): Detects visible items via IntersectionObserver
- * 2. **FocusApplicatorService**: Applies focus to DOM element
- * 3. **FocusStateManagerService**: Synchronizes state and handles debouncing
- *
- * **Key Responsibilities**:
- * - Setup and manage IntersectionObserver lifecycle
- * - Process intersection entries and calculate visibility metrics
- * - Synchronize cache with intersection data
- * - Calculate focus priority scores for visible items
- * - Support dynamic item observation (add/remove items)
- * - Provide debug information for troubleshooting
- *
- * **IntersectionObserver Configuration**:
- * - **Threshold**: [0.25, 0.5, 0.75] (multiple visibility levels)
- * - **Root**: null (viewport-relative, not container-relative)
- * - **RootMargin**: "0px" (customizable, expand observation range)
- *
- * **Visibility Scoring Algorithm** (Phase 334):
- * Lower score = better focus candidate
- *
- * **Performance Characteristics**:
- * - Observer setup: O(n) where n = visible items
- * - Entry processing: O(1) per entry (score calculation)
- * - Cache sync: O(1) per entry
- * - Total per update: O(entries count) typically 1-5
- * - Memory: O(n) for observer only
- *
- * **Key Features**:
- * - Phase 330: Focus management service framework
- * - Phase 334: Focus priority scoring and selection
- * - Phase 340: Performance optimization (efficient scoring)
- * - Efficient entry batching (single callback for multiple changes)
- * - Stateful cache synchronization with intersection data
- * - Configurable observation thresholds
- * - Support for dynamic element observation
- * - Comprehensive debug info for troubleshooting
- *
- * @see {@link FocusApplicatorService} for focus application
- * @see {@link FocusStateManagerService} for state synchronization
- * @see Phase 330 for focus system architecture
- * @see Phase 334 for focus priority algorithm
- * @see Phase 340 for performance optimization patterns
+ * Manages the IntersectionObserver used for gallery focus tracking.
  */
-
-import { logger } from '../../logging';
 import type { ItemCache } from '../../state/focus';
 import { isItemVisibleEnough, calculateCenterDistance } from '../../state/focus';
 
@@ -156,9 +104,8 @@ function calculateCandidateScore(
  * @see {@link CandidateScore} for scoring structure
  * @see Phase 334 for focus priority algorithm
  */
-export class FocusObserverManager {
+class FocusObserverManagerImpl {
   private observer: IntersectionObserver | null = null;
-  private lastUpdateTime: number = 0;
 
   /**
    * Setup IntersectionObserver with visibility detection
@@ -209,12 +156,6 @@ export class FocusObserverManager {
         this.observer?.observe(item);
       }
     });
-
-    logger.debug('FocusObserverManager: observer setup', {
-      itemCount: items.length,
-      threshold,
-      rootMargin,
-    });
   }
 
   /**
@@ -244,7 +185,6 @@ export class FocusObserverManager {
     itemCache: ItemCache,
     onEntries: (candidates: CandidateScore[]) => void
   ): void {
-    const now = Date.now();
     const candidates: CandidateScore[] = [];
 
     entries.forEach(entry => {
@@ -258,13 +198,12 @@ export class FocusObserverManager {
 
       itemCache.setEntry(element, entry);
 
-      const score = calculateCandidateScore(entry, 0.05, index, now);
+      const score = calculateCandidateScore(entry, 0.05, index, Date.now());
       if (score) {
         candidates.push(score);
       }
     });
 
-    this.lastUpdateTime = now;
     onEntries(candidates);
   }
 
@@ -317,41 +256,9 @@ export class FocusObserverManager {
       this.observer = null;
     }
   }
-
-  /**
-   * Get timestamp of last observer update
-   *
-   * Returns when last entries were processed.
-   * Useful for debouncing or throttling update logic.
-   *
-   * @returns Millisecond timestamp of last update (0 if never updated)
-   *
-   * @see {@link getDebugInfo} for more debug information
-   */
-  getLastUpdateTime(): number {
-    return this.lastUpdateTime;
-  }
-
-  /**
-   * Get debug information for troubleshooting
-   *
-   * Returns observer state and activity information.
-   *
-   * @returns Debug info object with isActive and lastUpdateTime
-   *
-   * @see {@link getLastUpdateTime} for update timing only
-   * @internal Used for development and diagnostics
-   */
-  getDebugInfo(): {
-    isActive: boolean;
-    lastUpdateTime: number;
-  } {
-    return {
-      isActive: this.observer !== null,
-      lastUpdateTime: this.lastUpdateTime,
-    };
-  }
 }
+
+export type FocusObserverManager = FocusObserverManagerImpl;
 
 /**
  * Factory function for FocusObserverManager
@@ -363,8 +270,7 @@ export class FocusObserverManager {
  *
  * @returns New FocusObserverManager instance
  *
- * @see {@link FocusObserverManager} for API documentation
  */
 export function createFocusObserverManager(): FocusObserverManager {
-  return new FocusObserverManager();
+  return new FocusObserverManagerImpl();
 }

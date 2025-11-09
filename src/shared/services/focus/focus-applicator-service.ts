@@ -1,65 +1,6 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
- * Licensed under the MIT License
- *
- * @fileoverview Focus Applicator Service - Auto-focus implementation and element focus application
- * @version 1.0.0
- *
- * Implements the focus application stage of the 3-stage focus system:
- *
- * **Focus System Architecture**:
- * 1. **FocusObserverManager**: Detects visible items via IntersectionObserver
- * 2. **FocusApplicatorService** (this): Applies focus to the DOM element
- * 3. **FocusStateManagerService**: Synchronizes state and handles debouncing
- *
- * **Key Responsibilities**:
- * - Manage auto-focus timer lifecycle (schedule, clear, execute)
- * - Determine correct focus target element from cache
- * - Apply focus to element with graceful fallback (preventScroll → fallback)
- * - Prevent duplicate focus operations for same element
- * - Evaluate whether auto-focus should proceed (manual focus override, element visibility)
- * - Track last applied focus index to avoid redundant operations
- *
- * **Focus Application Flow**:
- * ```
- * evaluateAndScheduleAutoFocus()
- *   ├─ Clear existing timer
- *   ├─ Check auto-focus enabled + no manual focus
- *   ├─ Validate target element exists and connected
- *   └─ Schedule timer → onApply callback
- *
- * applyAutoFocus() [via timer callback]
- *   ├─ Skip if already focused on same element
- *   ├─ Fetch element from cache
- *   ├─ Verify element connectivity
- *   └─ Apply focus with fallback:
- *       1. element.focus({ preventScroll: true })
- *       2. element.focus() [if step 1 fails]
- * ```
- *
- * **Performance Characteristics**:
- * - Focus application: O(1) - direct DOM operation
- * - Duplicate detection: O(1) - lastAppliedIndex comparison
- * - Timer management: O(1) - single timer per service
- * - Memory: Minimal - only tracks last applied index + timer reference
- *
- * **Key Features**:
- * - Phase 330: Focus management service framework
- * - Phase 334: Focus priority scoring and duplicate prevention
- * - Phase 340: Performance optimization (timer-based scheduling)
- * - Prevents focus thrashing (duplicate focus on same element)
- * - Graceful degradation when preventScroll not supported
- * - Element connectivity validation to prevent ghost focus
- * - Comprehensive debug info for troubleshooting
- *
- * @see {@link FocusObserverManager} for visibility detection
- * @see {@link FocusStateManagerService} for state synchronization
- * @see Phase 330 for focus system architecture
- * @see Phase 334 for focus priority algorithm
- * @see Phase 340 for performance optimization patterns
+ * Handles the DOM-side piece of gallery auto focus.
  */
-
-import { logger } from '../../logging';
 import type { ItemCache, FocusTimerManager } from '../../state/focus';
 import type { FocusTracking } from '../../state/focus';
 import { updateFocusTracking } from '../../state/focus';
@@ -109,7 +50,7 @@ import { updateFocusTracking } from '../../state/focus';
  * @see {@link applyAutoFocus} for focus application details
  * @see {@link evaluateAndScheduleAutoFocus} for scheduling logic
  */
-export class FocusApplicatorService {
+class FocusApplicatorServiceImpl {
   /**
    * Clear auto-focus timer
    *
@@ -204,7 +145,7 @@ export class FocusApplicatorService {
     index: number,
     itemCache: ItemCache,
     focusTracking: FocusTracking,
-    reason: string
+    _reason: string
   ): FocusTracking | null {
     // 중복 적용 방지
     if (focusTracking.lastAppliedIndex === index) {
@@ -230,36 +171,18 @@ export class FocusApplicatorService {
     // 포커스 적용 시도
     try {
       element.focus({ preventScroll: true });
-      logger.debug('FocusApplicatorService: auto focus applied', {
-        index,
-        reason,
-      });
-      return updateFocusTracking(focusTracking, {
-        lastAutoFocusedIndex: index,
-        lastAppliedIndex: index,
-      });
-    } catch (error) {
-      // fallback: retry without preventScroll
+    } catch {
       try {
         element.focus();
-        logger.debug('FocusApplicatorService: auto focus applied (fallback)', {
-          index,
-          reason,
-        });
-        return updateFocusTracking(focusTracking, {
-          lastAutoFocusedIndex: index,
-          lastAppliedIndex: index,
-        });
-      } catch (fallbackError) {
-        logger.warn('FocusApplicatorService: auto focus failed', {
-          index,
-          reason,
-          error,
-          fallbackError,
-        });
+      } catch {
         return null;
       }
     }
+
+    return updateFocusTracking(focusTracking, {
+      lastAutoFocusedIndex: index,
+      lastAppliedIndex: index,
+    });
   }
 
   /**
@@ -410,40 +333,6 @@ export class FocusApplicatorService {
 
     return updatedTracking;
   }
-
-  /**
-   * Get debug information for troubleshooting
-   *
-   * Returns current focus tracking state snapshot for debugging and diagnostics.
-   *
-   * **Debug Fields**:
-   * - lastAutoFocusedIndex: Last item that received focus via auto-focus
-   * - lastAppliedIndex: Last item focused (for duplicate prevention)
-   *
-   * **Use Cases**:
-   * - Troubleshooting focus application issues
-   * - Monitoring focus state changes
-   * - Verifying focus tracking integrity
-   *
-   * @param focusTracking - Current focus tracking state
-   * @returns Debug info object with tracking indices
-   *
-   * @example
-   * ```typescript
-   * const debugInfo = service.getDebugInfo(focusTracking);
-   * console.log('Focus state:', debugInfo);
-   * // Output: { lastAutoFocusedIndex: 5, lastAppliedIndex: 5 }
-   * ```
-   *
-   * @see {@link FocusTracking} for full state structure
-   * @internal Used for development and debugging only
-   */
-  getDebugInfo(focusTracking: FocusTracking) {
-    return {
-      lastAutoFocusedIndex: focusTracking.lastAutoFocusedIndex,
-      lastAppliedIndex: focusTracking.lastAppliedIndex,
-    };
-  }
 }
 
 /**
@@ -472,6 +361,8 @@ export class FocusApplicatorService {
  *
  * @see {@link FocusApplicatorService} for API documentation
  */
+export type FocusApplicatorService = FocusApplicatorServiceImpl;
+
 export function createFocusApplicatorService(): FocusApplicatorService {
-  return new FocusApplicatorService();
+  return new FocusApplicatorServiceImpl();
 }

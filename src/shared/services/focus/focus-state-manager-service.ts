@@ -1,54 +1,6 @@
 /**
- * Copyright (c) 2024 X.com Enhanced Gallery Team
- * Licensed under the MIT License
- *
- * @fileoverview Focus State Manager Service - State synchronization and debouncing
- * @version 1.0.0
- *
- * Implements the state synchronization stage of the 3-stage focus system:
- *
- * **Focus System Architecture**:
- * 1. **FocusObserverManager**: Detects visible items via IntersectionObserver
- * 2. **FocusApplicatorService**: Applies focus to DOM element
- * 3. **FocusStateManagerService** (this): Synchronizes state and handles debouncing
- *
- * **Key Responsibilities**:
- * - Setup and manage debounced auto-focus synchronization
- * - Coordinate container attribute updates
- * - Handle scroll state transitions
- * - Defer synchronization during rapid state changes
- * - Prevent thrashing from frequent updates
- * - Maintain focus tracking state
- *
- * **Debouncing Strategy**:
- * - Default delay: 50ms (balances responsiveness and performance)
- * - Auto-focus sync: Debounced to prevent excessive state updates
- * - Container sync: Debounced to batch DOM attribute updates
- * - Fallback logic: Handles null index gracefully
- *
- * **Performance Characteristics**:
- * - Debouncer setup: O(1)
- * - Sync execution: O(1) amortized (debouncing reduces frequency)
- * - State update: O(1)
- * - Memory: O(1) (two debouncer instances)
- *
- * **Key Features**:
- * - Phase 330: Focus management service framework
- * - Phase 334: Focus priority scoring and selection
- * - Phase 340: Performance optimization (debouncing)
- * - Efficient debouncing to reduce DOM thrashing
- * - Scroll state-aware synchronization
- * - Comprehensive state tracking
- * - Debug information for troubleshooting
- *
- * @see {@link FocusObserverManager} for visibility detection
- * @see {@link FocusApplicatorService} for focus application
- * @see Phase 330 for focus system architecture
- * @see Phase 334 for focus priority algorithm
- * @see Phase 340 for performance optimization patterns
+ * Coordinates debounced focus state updates for the gallery.
  */
-
-import { logger } from '../../logging';
 import type { FocusState, FocusTracking } from '../../state/focus';
 import { updateFocusTracking } from '../../state/focus';
 import { createDebouncer } from '../../utils/performance/performance-utils';
@@ -107,7 +59,7 @@ import { createDebouncer } from '../../utils/performance/performance-utils';
  * @see {@link setupContainerSync} for container setup
  * @see Phase 340 for debouncing strategy
  */
-export class FocusStateManagerService {
+class FocusStateManagerServiceImpl {
   private debouncedSetAutoFocus: ReturnType<
     typeof createDebouncer<[number | null, { forceClear?: boolean }?]>
   > | null = null;
@@ -372,8 +324,6 @@ export class FocusStateManagerService {
     onRecompute: () => void
   ): FocusTracking {
     if (!isScrolling && focusTracking.hasPendingRecompute) {
-      logger.debug('FocusStateManagerService: processing deferred recompute after scroll settles');
-
       onRecompute();
       return updateFocusTracking(focusTracking, { hasPendingRecompute: false });
     }
@@ -459,43 +409,14 @@ export class FocusStateManagerService {
    * @see {@link getDebugInfo} for checking active debouncers
    */
   dispose(): void {
+    this.debouncedSetAutoFocus?.cancel();
+    this.debouncedUpdateContainer?.cancel();
     this.debouncedSetAutoFocus = null;
     this.debouncedUpdateContainer = null;
   }
-
-  /**
-   * Get debug information for troubleshooting
-   *
-   * Returns state of internal debouncers and their activity status.
-   * Useful for performance profiling and debugging.
-   *
-   * **Debug Fields**:
-   * - autoFocusDebouncerActive: Whether auto-focus debouncer exists
-   * - containerSyncDebouncerActive: Whether container sync debouncer exists
-   *
-   * **Interpretation**:
-   * - Both true: Service is properly initialized
-   * - Either false: Setup not completed or already disposed
-   * - Can check to verify service state
-   *
-   * @returns Debug info object
-   *
-   * @example
-   * ```typescript
-   * const debug = stateManager.getDebugInfo();
-   * console.log('Focus debouncer:', debug.autoFocusDebouncerActive);
-   * console.log('Container debouncer:', debug.containerSyncDebouncerActive);
-   * ```
-   *
-   * @internal Used for development and diagnostics
-   */
-  getDebugInfo() {
-    return {
-      autoFocusDebouncerActive: this.debouncedSetAutoFocus !== null,
-      containerSyncDebouncerActive: this.debouncedUpdateContainer !== null,
-    };
-  }
 }
+
+export type FocusStateManagerService = FocusStateManagerServiceImpl;
 
 /**
  * Factory function for FocusStateManagerService
@@ -510,5 +431,5 @@ export class FocusStateManagerService {
  * @see {@link FocusStateManagerService} for API documentation
  */
 export function createFocusStateManagerService(): FocusStateManagerService {
-  return new FocusStateManagerService();
+  return new FocusStateManagerServiceImpl();
 }

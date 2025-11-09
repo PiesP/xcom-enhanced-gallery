@@ -50,12 +50,12 @@ export type { SupportedLanguage, LanguageStrings, BaseLanguageCode } from './lan
 
 // 5. Focus service (Phase 150.3)
 export {
-  FocusObserverManager,
   createFocusObserverManager,
-  FocusApplicatorService,
+  type FocusObserverManager,
   createFocusApplicatorService,
-  FocusStateManagerService,
+  type FocusApplicatorService,
   createFocusStateManagerService,
+  type FocusStateManagerService,
 } from './focus';
 
 // 6. Notification bridge (Phase 420: Toast UI removed, Tampermonkey notifications only)
