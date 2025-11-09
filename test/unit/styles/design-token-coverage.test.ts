@@ -36,9 +36,8 @@ describe('Design Token Coverage', () => {
   it('should use semantic tokens for all border-radius values', () => {
     const cssFiles = [
       'shared/components/ui/Button/Button.module.css',
-      'shared/components/ui/Toast/Toast.module.css',
-      // Phase 48: SettingsModal removed, replaced with inline toolbar settings
-      // 'shared/components/ui/SettingsModal/SettingsModal.module.css',
+      'shared/components/ui/Toolbar/Toolbar.module.css',
+      'shared/components/ui/ModalShell/ModalShell.module.css',
       'shared/components/ui/Settings/SettingsControls.module.css',
     ];
 

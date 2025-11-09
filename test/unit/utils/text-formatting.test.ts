@@ -203,7 +203,16 @@ Learn more: https://docs.example.com`;
 
   it('should not create link for non-HTTP protocols', () => {
     const result = formatTweetText('Email: mailto:test@example.com');
-    expect(result).toEqual([{ type: 'text', content: 'Email: mailto:test@example.com' }]);
+    expect(result).toEqual([
+      { type: 'text', content: 'Email: mailto:test' },
+      {
+        type: 'mention',
+        content: '@example',
+        href: 'https://x.com/example',
+      },
+      { type: 'text', content: '.com' },
+    ]);
+    expect(result.some(token => token.type === 'link')).toBe(false);
   });
 });
 

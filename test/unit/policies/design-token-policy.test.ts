@@ -139,29 +139,6 @@ describe('Design Token Policy - Unified', () => {
       // Must use standard easing tokens
       expect(css).toMatch(/var\(--xeg-(?:ease-standard|ease-accelerate|ease-decelerate)\)/);
     });
-
-    it('AnimationService inject uses only duration/easing tokens', async () => {
-      const { AnimationService } = await import('@/shared/services/animation-service');
-      const svc = AnimationService.getInstance();
-      const doc = globalThis.document;
-      await svc.fadeIn(doc.createElement('div'));
-
-      const style = doc.getElementById('xcom-animations');
-      expect(style).not.toBeNull();
-      const css = style?.textContent || '';
-
-      // No hardcoded duration values
-      const hardcodedDurations = css.match(/\b\d+(?:\.\d+)?m?s\b/g) || [];
-      expect(hardcodedDurations.length).toBe(0);
-
-      // No raw easing functions
-      const cssNoVars = css.replace(/var\([^)]*\)/g, '');
-      expect(cssNoVars).not.toMatch(/cubic-bezier\(/);
-      expect(cssNoVars).not.toMatch(/\bease(?:-in|-out|-in-out)?\b/);
-
-      // Must use standard easing tokens
-      expect(css).toMatch(/var\(--xeg-(?:ease-standard|ease-accelerate|ease-decelerate)\)/);
-    });
   });
 
   describe('3. Unused legacy tokens detection', () => {

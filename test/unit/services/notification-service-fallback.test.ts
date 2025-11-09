@@ -1,21 +1,18 @@
 /**
- * Notification Service Fallback Tests - Phase 314-3
+ * Notification Service Lean Mode Tests - Phase 321
  *
- * Tests for getNotificationProvider() method with fallback providers.
- * Verifies provider detection and fallback chain.
- *
- * @see src/shared/services/notification-service.ts
+ * The notification service now operates in a "lean" configuration:
+ * - Only Tampermonkey's GM_notification is used when available
+ * - No console/UI fallback chain is provided
+ * - Provider metadata reports GM availability or absence only
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { logger } from '../../../src/shared/logging';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import {
-  NotificationService,
-  type NotificationProvider,
-  type NotificationProviderInfo,
-} from '../../../src/shared/services';
+import { NotificationService } from '../../../src/shared/services';
 
-describe('NotificationService Fallback (Phase 314-3)', () => {
+describe('NotificationService Lean Mode (Phase 321)', () => {
   setupGlobalTestIsolation();
 
   let notificationService: NotificationService;
@@ -44,9 +41,8 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
 
       expect(provider.provider).toBe('gm');
       expect(provider.available).toBe(true);
-      expect(provider.fallback).toBe('console');
-      expect(provider.description).toContain('✅');
-      expect(provider.description).toContain('GM_notification');
+      expect(provider.description).toContain('✅ GM_notification available');
+      expect(provider.description).toMatch(/\(.*\)$/);
 
       // Cleanup
       Object.defineProperty(globalThis, 'GM_notification', {
@@ -56,7 +52,7 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
       });
     });
 
-    it('should return console provider when GM_notification is unavailable', async () => {
+    it('should return none provider when GM_notification is unavailable', async () => {
       // Ensure GM_notification is not available
       Object.defineProperty(globalThis, 'GM_notification', {
         value: undefined,
@@ -66,36 +62,10 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
 
       const provider = await notificationService.getNotificationProvider();
 
-      expect(provider.provider).toBe('console');
-      expect(provider.available).toBe(true);
-      expect(provider.fallback).toBe('none');
-      expect(provider.description).toContain('⚠️');
-      expect(provider.description).toContain('console');
-    });
-
-    it('should have correct fallback chain: gm -> console -> none', async () => {
-      // Test with GM available
-      const mockGMNotif = vi.fn();
-      Object.defineProperty(globalThis, 'GM_notification', {
-        value: mockGMNotif,
-        writable: true,
-        configurable: true,
-      });
-
-      let provider = await notificationService.getNotificationProvider();
-      expect(provider.provider).toBe('gm');
-      expect(provider.fallback).toBe('console');
-
-      // Test without GM (console available)
-      Object.defineProperty(globalThis, 'GM_notification', {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
-
-      provider = await notificationService.getNotificationProvider();
-      expect(provider.provider).toBe('console');
-      expect(provider.fallback).toBe('none');
+      expect(provider.provider).toBe('none');
+      expect(provider.available).toBe(false);
+      expect(provider.description).toContain('⚠️ GM_notification unavailable');
+      expect(provider.description).toMatch(/\(.*\)$/);
     });
 
     it('should include environment info in description', async () => {
@@ -107,14 +77,8 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
 
       const provider = await notificationService.getNotificationProvider();
 
-      expect(provider.description).toContain('environment');
-      // Verify description contains one of the environment types
-      const hasEnvironmentInfo =
-        provider.description.includes('test') ||
-        provider.description.includes('userscript') ||
-        provider.description.includes('extension') ||
-        provider.description.includes('console');
-      expect(hasEnvironmentInfo).toBe(true);
+      expect(provider.description).toMatch(/\(.*\)$/);
+      expect(provider.description).toContain('GM_notification');
     });
 
     it('should return valid NotificationProviderInfo structure', async () => {
@@ -123,26 +87,15 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
       // Verify all required fields exist
       expect(provider).toHaveProperty('provider');
       expect(provider).toHaveProperty('available');
-      expect(provider).toHaveProperty('fallback');
       expect(provider).toHaveProperty('description');
 
       // Verify types
       expect(typeof provider.provider).toBe('string');
       expect(typeof provider.available).toBe('boolean');
       expect(typeof provider.description).toBe('string');
-      expect(provider.fallback === null || typeof provider.fallback === 'string').toBe(true);
 
       // Verify provider is valid
-      expect(['gm', 'console', 'none']).toContain(provider.provider);
-
-      // Verify fallback chain
-      if (provider.provider === 'gm') {
-        expect(provider.fallback).toBe('console');
-      } else if (provider.provider === 'console') {
-        expect(provider.fallback).toBe('none');
-      } else if (provider.provider === 'none') {
-        expect(provider.fallback).toBe(null);
-      }
+      expect(['gm', 'none']).toContain(provider.provider);
     });
   });
 
@@ -160,7 +113,17 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
         text: 'Message',
       });
 
-      expect(mockGMNotif).toHaveBeenCalled();
+      expect(mockGMNotif).toHaveBeenCalledTimes(1);
+      expect(mockGMNotif).toHaveBeenCalledWith(
+        {
+          title: 'Test',
+          text: 'Message',
+          image: undefined,
+          timeout: undefined,
+          onclick: undefined,
+        },
+        undefined
+      );
 
       Object.defineProperty(globalThis, 'GM_notification', {
         value: undefined,
@@ -169,24 +132,22 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
       });
     });
 
-    it('should fallback to console when GM is unavailable', async () => {
+    it('should skip notification and log debug when GM is unavailable', async () => {
       Object.defineProperty(globalThis, 'GM_notification', {
         value: undefined,
         writable: true,
         configurable: true,
       });
 
-      const loggerSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       await notificationService.show({
         title: 'Test',
         text: 'Fallback Message',
       });
 
-      // Console fallback should be used (via logger.info)
-      // This test verifies the fallback path is taken
-
-      loggerSpy.mockRestore();
+      expect(debugSpy).toHaveBeenCalledWith('Notification skipped (no GM_notification): Test');
+      debugSpy.mockRestore();
     });
 
     it('should handle errors gracefully', async () => {
@@ -200,6 +161,8 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
         configurable: true,
       });
 
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+
       // Should not throw - error handling is in place
       await expect(
         notificationService.show({
@@ -207,6 +170,9 @@ describe('NotificationService Fallback (Phase 314-3)', () => {
           text: 'Should handle error',
         })
       ).resolves.not.toThrow();
+
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
 
       Object.defineProperty(globalThis, 'GM_notification', {
         value: undefined,

@@ -1,53 +1,71 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import {
-  formatErrorMessage,
-  formatErrorForLogging,
-  createErrorContext,
-  type ErrorContext,
-  type FormattedError,
-} from '../../../src/shared/services/error-formatter';
+import { HttpRequestService, HttpError } from '../../../src/shared/services/http-request-service';
 
-describe('Error formatter', () => {
+describe('HttpRequestService error handling (Phase 318)', () => {
   setupGlobalTestIsolation();
 
+  const service = HttpRequestService.getInstance();
+  let originalFetch: typeof globalThis.fetch | undefined;
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
+    originalFetch = globalThis.fetch;
   });
 
-  it('returns compact formatted error data', () => {
-    const context: ErrorContext = {
-      environment: 'userscript',
-      method: 'GET',
-      url: 'https://api.example.com/data',
-      status: 403,
-      timeout: undefined,
-      message: 'Forbidden',
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (originalFetch) {
+      globalThis.fetch = originalFetch;
+    } else {
+      Reflect.deleteProperty(globalThis, 'fetch');
+    }
+  });
+
+  it('preserves HttpError metadata', () => {
+    const error = new HttpError('Timeout', 504, 'Gateway Timeout');
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.name).toBe('HttpError');
+    expect(error.status).toBe(504);
+    expect(error.statusText).toBe('Gateway Timeout');
+    expect(error.message).toBe('Timeout');
+  });
+
+  it('wraps fetch failures in HttpError', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network down'));
+
+    await expect(service.get('https://example.com/api')).rejects.toMatchObject({
+      name: 'HttpError',
+      message: 'Fetch error: Network down',
+      status: 0,
+      statusText: 'Network Error',
+    });
+  });
+
+  it('returns parsed JSON data on success', async () => {
+    const responsePayload = { data: 'ok' };
+    const mockHeaders = new Map<string, string>([['content-type', 'application/json']]);
+    const response = {
+      ok: true,
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        forEach: (callback: (value: string, key: string) => void) => {
+          mockHeaders.forEach((value, key) => callback(value, key));
+        },
+      },
+      json: vi.fn().mockResolvedValue(responsePayload),
+      text: vi.fn().mockResolvedValue(JSON.stringify(responsePayload)),
     };
 
-    const formatted: FormattedError = formatErrorMessage(context);
+    globalThis.fetch = vi.fn().mockResolvedValue(response) as unknown as typeof globalThis.fetch;
 
-    expect(formatted.message).toContain('[GET] https://api.example.com/data failed');
-    expect(formatted.context).toContain('Environment: userscript');
-    expect(formatted.userFriendlyMessage).toBe('Request failed (403).');
-  });
+    const result = await service.get<typeof responsePayload>('https://example.com/api');
 
-  it('prints simplified log output', () => {
-    const context = createErrorContext('GET', 'https://api.example.com/data', 500, 'Server error');
-    const logMessage = formatErrorForLogging(new Error('Request failed'), context);
-
-    expect(logMessage).toContain('HTTP Request Error');
-    expect(logMessage).toContain('Server error');
-    expect(logMessage).not.toContain('Retryable');
-  });
-
-  it('preserves custom timeout metadata', () => {
-    const context = createErrorContext('POST', 'https://api.example.com/data', 408, 'Timeout', {
-      timeout: 3000,
-      message: 'Custom timeout',
-    });
-
-    expect(context.timeout).toBe(3000);
-    expect(context.message).toBe('Custom timeout');
+    expect(result.ok).toBe(true);
+    expect(result.status).toBe(200);
+    expect(result.data).toEqual(responsePayload);
+    expect(result.headers['content-type']).toBe('application/json');
   });
 });

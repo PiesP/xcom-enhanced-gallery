@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { logger } from '../../../../src/shared/logging';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
 
 let NotificationService: any;
@@ -47,7 +48,7 @@ describe('NotificationService - Phase 315', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result.environment).toBe('test');
-      expect(result.canFallback).toBe(true);
+      expect(result.canFallback).toBe(false);
       expect(result.available).toBe(false);
       expect(result.message).toContain('not available');
     });
@@ -67,6 +68,7 @@ describe('NotificationService - Phase 315', () => {
       // Phase 320: Test environment may return 'userscript' when GM API is mocked, or 'test' depending on detection order
       expect(['userscript', 'test', 'Test']).toContain(result.environment);
       expect(result.message).toContain('available');
+      expect(result.canFallback).toBe(false);
     });
 
     it('should detect browser console without GM APIs', async () => {
@@ -84,7 +86,7 @@ describe('NotificationService - Phase 315', () => {
       // Phase 320: In test environment, may return 'test' instead of 'console'
       expect(['console', 'test', 'Test']).toContain(result.environment);
       expect(result.available).toBe(false);
-      expect(result.canFallback).toBe(true);
+      expect(result.canFallback).toBe(false);
     });
 
     it('should include environment description message', async () => {
@@ -137,7 +139,7 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(result.available).toBe(false);
-      expect(result.canFallback).toBe(true);
+      expect(result.canFallback).toBe(false);
       expect(result.message).toBeTruthy();
     });
 
@@ -157,7 +159,7 @@ describe('NotificationService - Phase 315', () => {
     it('should log environment context when show() fails', async () => {
       // Arrange: Set test environment
       (globalThis as Record<string, unknown>).__VITEST__ = true;
-      const mockConsoleWarn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       // Act
       await service.show({
@@ -166,8 +168,8 @@ describe('NotificationService - Phase 315', () => {
       });
 
       // Assert
-      // Should have logged warning about unavailable notification
-      mockConsoleWarn.mockRestore();
+      expect(debugSpy).toHaveBeenCalledWith('Notification skipped (no GM_notification): Test');
+      debugSpy.mockRestore();
     });
   });
 
@@ -186,11 +188,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'Test Text',
-        'Test Title',
-        undefined,
-        undefined,
-        5000
+        {
+          title: 'Test Title',
+          text: 'Test Text',
+          image: undefined,
+          timeout: 5000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
 
@@ -209,10 +214,13 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'Text',
-        'Test',
-        undefined,
-        onclickMock,
+        {
+          title: 'Test',
+          text: 'Text',
+          image: undefined,
+          timeout: undefined,
+          onclick: onclickMock,
+        },
         undefined
       );
     });
@@ -231,18 +239,21 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'Text',
-        'Test',
-        'https://example.com/image.png',
-        undefined,
+        {
+          title: 'Test',
+          text: 'Text',
+          image: 'https://example.com/image.png',
+          timeout: undefined,
+          onclick: undefined,
+        },
         undefined
       );
     });
 
-    it('should fallback to console when GM_notification is unavailable', async () => {
+    it('should log debug when GM_notification is unavailable', async () => {
       // Arrange
       delete (globalThis as Record<string, unknown>).GM_notification;
-      const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       // Act
       await service.show({
@@ -251,7 +262,10 @@ describe('NotificationService - Phase 315', () => {
       });
 
       // Assert: Should not throw and handle gracefully
-      mockConsoleLog.mockRestore();
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Notification skipped (no GM_notification): Test Title'
+      );
+      debugSpy.mockRestore();
     });
   });
 
@@ -266,11 +280,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        '완료되었습니다.',
-        'Operation completed',
-        undefined,
-        undefined,
-        3000
+        {
+          title: 'Operation completed',
+          text: '완료되었습니다.',
+          image: undefined,
+          timeout: 3000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
 
@@ -284,11 +301,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        '5 files downloaded',
-        'Download',
-        undefined,
-        undefined,
-        2000
+        {
+          title: 'Download',
+          text: '5 files downloaded',
+          image: undefined,
+          timeout: 2000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
   });
@@ -304,11 +324,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        '오류가 발생했습니다.',
-        'Operation failed',
-        undefined,
-        undefined,
-        5000
+        {
+          title: 'Operation failed',
+          text: '오류가 발생했습니다.',
+          image: undefined,
+          timeout: 5000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
 
@@ -322,11 +345,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'Network error',
-        'Download failed',
-        undefined,
-        undefined,
-        4000
+        {
+          title: 'Download failed',
+          text: 'Network error',
+          image: undefined,
+          timeout: 4000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
   });
@@ -342,11 +368,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        '주의하세요.',
-        'Be careful',
-        undefined,
-        undefined,
-        4000
+        {
+          title: 'Be careful',
+          text: '주의하세요.',
+          image: undefined,
+          timeout: 4000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
 
@@ -360,11 +389,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'Low disk space',
-        'Warning',
-        undefined,
-        undefined,
-        3000
+        {
+          title: 'Warning',
+          text: 'Low disk space',
+          image: undefined,
+          timeout: 3000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
   });
@@ -380,11 +412,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        '정보입니다.',
-        'Information',
-        undefined,
-        undefined,
-        3000
+        {
+          title: 'Information',
+          text: '정보입니다.',
+          image: undefined,
+          timeout: 3000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
 
@@ -398,11 +433,14 @@ describe('NotificationService - Phase 315', () => {
 
       // Assert
       expect(mockGMNotification).toHaveBeenCalledWith(
-        'System status',
-        'Info',
-        undefined,
-        undefined,
-        2000
+        {
+          title: 'Info',
+          text: 'System status',
+          image: undefined,
+          timeout: 2000,
+          onclick: undefined,
+        },
+        undefined
       );
     });
   });
@@ -418,10 +456,10 @@ describe('NotificationService - Phase 315', () => {
       // Assert
       expect(providerInfo.provider).toBe('gm');
       expect(providerInfo.available).toBe(true);
-      expect(providerInfo.fallback).toBe('console');
+      expect(providerInfo.description).toContain('GM_notification available');
     });
 
-    it('should return console provider when GM_notification is not available', async () => {
+    it('should return none provider when GM_notification is not available', async () => {
       // Arrange
       delete (globalThis as Record<string, unknown>).GM_notification;
 
@@ -429,9 +467,9 @@ describe('NotificationService - Phase 315', () => {
       const providerInfo: any = await service.getNotificationProvider();
 
       // Assert
-      expect(providerInfo.provider).toBe('console');
-      expect(providerInfo.available).toBe(true);
-      expect(providerInfo.fallback).toBe('none');
+      expect(providerInfo.provider).toBe('none');
+      expect(providerInfo.available).toBe(false);
+      expect(providerInfo.description).toContain('GM_notification unavailable');
     });
   });
 });

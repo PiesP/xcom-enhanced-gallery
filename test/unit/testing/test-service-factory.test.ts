@@ -152,7 +152,7 @@ describe('Test Service Factory - Phase 314-7', () => {
       expect(realImpl).not.toHaveBeenCalled();
     });
 
-    it('should fall back to real if mock creation fails', () => {
+    it('should surface mock creation errors with contextual message', () => {
       enableTestMode({ mockServices: true });
 
       const realImpl = vi.fn(() => ({ type: 'real' }));
@@ -160,11 +160,11 @@ describe('Test Service Factory - Phase 314-7', () => {
         throw new Error('Mock creation failed');
       });
 
-      const service = createConditionalService('TestService', realImpl, mockImpl);
-
-      expect(service).toEqual({ type: 'real' });
+      expect(() => createConditionalService('TestService', realImpl, mockImpl)).toThrowError(
+        new Error('[TestServiceFactory] TestService: Mock creation failed')
+      );
       expect(mockImpl).toHaveBeenCalled();
-      expect(realImpl).toHaveBeenCalled();
+      expect(realImpl).not.toHaveBeenCalled();
     });
 
     it('should respect forceMock option', () => {

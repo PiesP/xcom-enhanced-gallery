@@ -111,7 +111,7 @@ describe('UnifiedDownloadService', () => {
       const result = await service.downloadSingle(media, { signal: controller.signal });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('취소');
+      expect(result.error).toBe('User cancelled download');
     });
   });
 
@@ -127,7 +127,7 @@ describe('UnifiedDownloadService', () => {
       const result = await service.downloadBulk([]);
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('없습니다');
+      expect(result.error).toBe('No files to download');
       expect(result.filesProcessed).toBe(0);
     });
 

@@ -37,30 +37,70 @@ describe('Solid vendor 통합', () => {
   });
 });
 
-describe('AnimationService 통합', () => {
-  it('AnimationService 인스턴스를 노출한다', async () => {
-    const { AnimationService } = await import('@shared/services/animation-service');
-    const animationService = AnimationService.getInstance();
+describe('CSS Animation Utilities 통합', () => {
+  setupGlobalTestIsolation();
 
-    expect(typeof animationService.fadeIn).toBe('function');
-    expect(typeof animationService.fadeOut).toBe('function');
-    expect(typeof animationService.cleanup).toBe('function');
+  beforeEach(() => {
+    document.head.innerHTML = '';
+    document.body.innerHTML = '';
   });
 
-  it('fadeIn이 DOM 요소에서 작동한다', async () => {
-    const { AnimationService } = await import('@shared/services/animation-service');
-    const animationService = AnimationService.getInstance();
+  it('animation utilities를 노출한다', async () => {
+    const animations = await import('@shared/utils/animations');
+
+    expect(typeof animations.injectAnimationStyles).toBe('function');
+    expect(typeof animations.animateGalleryEnter).toBe('function');
+    expect(typeof animations.animateGalleryExit).toBe('function');
+    expect(typeof animations.cleanupAnimations).toBe('function');
+  });
+
+  it('injectAnimationStyles는 스타일을 한 번만 주입한다', async () => {
+    const { injectAnimationStyles } = await import('@shared/utils/animations');
+
+    injectAnimationStyles();
+    injectAnimationStyles();
+
+    const styles = document.querySelectorAll('style#xcom-gallery-animations');
+    expect(styles).toHaveLength(1);
+  });
+
+  it('animateGalleryEnter는 애니메이션 클래스 추가 후 종료 이벤트를 처리한다', async () => {
+    const { animateGalleryEnter, ANIMATION_CLASSES } = await import('@shared/utils/animations');
 
     const element = document.createElement('div');
-    element.style.opacity = '0';
+    document.body.appendChild(element);
 
-    await expect(animationService.fadeIn(element, { duration: 0 })).resolves.toBeUndefined();
+    const promise = animateGalleryEnter(element);
+
+    expect(element.classList.contains(ANIMATION_CLASSES.FADE_IN)).toBe(true);
+
+    element.dispatchEvent(new Event('animationend'));
+    await promise;
+
+    expect(element.classList.contains(ANIMATION_CLASSES.FADE_IN)).toBe(false);
   });
 
-  it('cleanup이 예외 없이 수행된다', async () => {
-    const { AnimationService } = await import('@shared/services/animation-service');
-    const animationService = AnimationService.getInstance();
+  it('cleanupAnimations는 모든 애니메이션 클래스를 제거한다', async () => {
+    const { animateGalleryEnter, cleanupAnimations, ANIMATION_CLASSES } = await import(
+      '@shared/utils/animations'
+    );
 
-    expect(() => animationService.cleanup()).not.toThrow();
+    const element = document.createElement('div');
+    document.body.appendChild(element);
+
+    const promise = animateGalleryEnter(element);
+    element.dispatchEvent(new Event('animationend'));
+    await promise;
+
+    // 강제로 다른 클래스 추가
+    element.classList.add(ANIMATION_CLASSES.SLIDE_IN_BOTTOM);
+
+    cleanupAnimations(element);
+
+    const animationClassNames = Object.values(ANIMATION_CLASSES) as string[];
+
+    animationClassNames.forEach(className => {
+      expect(element.classList.contains(className)).toBe(false);
+    });
   });
 });

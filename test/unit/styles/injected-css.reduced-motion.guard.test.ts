@@ -1,33 +1,28 @@
 /**
  * @fileoverview Guard: Injected CSS must respect reduced motion
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+function readAnimationsCSS(): string {
+  const filePath = resolve(__dirname, '../../../src/shared/styles/utilities/animations.css');
+  return readFileSync(filePath, 'utf-8');
+}
 
 describe('Injected CSS — reduced motion policy', () => {
   setupGlobalTestIsolation();
 
-  beforeEach(() => {
-    // Clean up any previously injected styles
-    const doc = globalThis.document;
-    doc.querySelectorAll('style#xcom-animations').forEach(s => s.remove());
-  });
+  it('animation utilities include reduced motion safeguards', () => {
+    const css = readAnimationsCSS();
 
-  it('AnimationService CSS includes @media (prefers-reduced-motion: reduce)', async () => {
-    const { AnimationService } = await import('@shared/services/animation-service');
-    const svc = AnimationService.getInstance();
-    // trigger injection
-    await svc.fadeIn(globalThis.document.createElement('div'));
-
-    const style = globalThis.document.getElementById('xcom-animations');
-    expect(style).not.toBeNull();
-    const css = style && style.textContent ? style.textContent : '';
-
-    // Must include reduced-motion media query
     expect(css).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
 
-    // In reduced-motion, animations/transitions should be disabled or minimized
-    // We check for a simple signal: transition: none or animation: none within the block
     const reducedBlock = css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?\}/);
     expect(reducedBlock).not.toBeNull();
     if (reducedBlock) {

@@ -8,9 +8,8 @@
  * 1. Singleton pattern
  * 2. Blob download (downloadBlob)
  * 3. Bulk blob download (downloadBlobBulk)
- * 4. Test mode (downloadInTestMode, downloadBlobBulkInTestMode)
- * 5. Error handling
- * 6. GM_download integration
+ * 4. Error handling
+ * 5. GM_download integration
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -18,8 +17,6 @@ import { DownloadService } from '../../../../src/shared/services/download-servic
 import type {
   BlobDownloadOptions,
   BlobDownloadResult,
-  TestModeDownloadOptions,
-  TestModeDownloadResult,
 } from '../../../../src/shared/services/download-service';
 
 // Mock dependencies
@@ -363,151 +360,7 @@ describe('DownloadService', () => {
     });
   });
 
-  describe('downloadInTestMode', () => {
-    it('should simulate successful download', async () => {
-      const blob = new Blob(['test data'], { type: 'text/plain' });
-      const options: BlobDownloadOptions = { blob, name: 'test.txt' };
-      const testOptions: TestModeDownloadOptions = {
-        simulateSuccess: true,
-        simulateDelay: 10,
-      };
-
-      const result = await service.downloadInTestMode(options, testOptions);
-
-      expect(result.testMode).toBe(true);
-      expect(result.success).toBe(true);
-      expect(result.filename).toBe('test.txt');
-      expect(result.size).toBe(blob.size);
-      expect(result.simulatedAt).toBeDefined();
-    });
-
-    it('should simulate failed download', async () => {
-      const blob = new Blob(['test data'], { type: 'text/plain' });
-      const options: BlobDownloadOptions = { blob, name: 'test.txt' };
-      const testOptions: TestModeDownloadOptions = {
-        simulateSuccess: false,
-        simulateDelay: 10,
-        errorMessage: 'Custom error',
-      };
-
-      const result = await service.downloadInTestMode(options, testOptions);
-
-      expect(result.testMode).toBe(true);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Custom error');
-      expect(result.simulatedAt).toBeDefined();
-    });
-
-    it('should handle invalid blob in test mode', async () => {
-      const options: BlobDownloadOptions = {
-        blob: null as unknown as Blob,
-        name: 'test.txt',
-      };
-
-      const result = await service.downloadInTestMode(options);
-
-      expect(result.testMode).toBe(true);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid blob provided');
-    });
-
-    it('should use default test options', async () => {
-      const blob = new Blob(['test'], { type: 'text/plain' });
-      const result = await service.downloadInTestMode({ blob, name: 'test.txt' });
-
-      expect(result.testMode).toBe(true);
-      expect(result.success).toBe(true);
-    });
-
-    it('should respect simulateDelay', async () => {
-      const blob = new Blob(['test'], { type: 'text/plain' });
-      const startTime = Date.now();
-
-      await service.downloadInTestMode({ blob, name: 'test.txt' }, { simulateDelay: 100 });
-
-      const elapsed = Date.now() - startTime;
-      expect(elapsed).toBeGreaterThanOrEqual(90); // Allow 10ms tolerance
-    });
-
-    it('should handle exceptions in test mode', async () => {
-      const blob = new Blob(['test'], { type: 'text/plain' });
-      vi.spyOn(blob, 'size', 'get').mockImplementation(() => {
-        throw new Error('Size getter error');
-      });
-
-      const result = await service.downloadInTestMode({ blob, name: 'test.txt' });
-
-      expect(result.testMode).toBe(true);
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('Size getter error');
-    });
-  });
-
-  describe('downloadBlobBulkInTestMode', () => {
-    it('should simulate bulk download', async () => {
-      const blobs = [
-        new Blob(['data1'], { type: 'text/plain' }),
-        new Blob(['data2'], { type: 'text/plain' }),
-      ];
-
-      const options: BlobDownloadOptions[] = blobs.map((blob, i) => ({
-        blob,
-        name: `file-${i}.txt`,
-      }));
-
-      const results = await service.downloadBlobBulkInTestMode(options, {
-        simulateSuccess: true,
-        simulateDelay: 10,
-      });
-
-      expect(results).toHaveLength(2);
-      expect(results.every(r => r.testMode)).toBe(true);
-      expect(results.every(r => r.success)).toBe(true);
-    });
-
-    it('should report progress in test mode', async () => {
-      const blobs = [
-        new Blob(['data1'], { type: 'text/plain' }),
-        new Blob(['data2'], { type: 'text/plain' }),
-      ];
-
-      const options: BlobDownloadOptions[] = blobs.map((blob, i) => ({
-        blob,
-        name: `file-${i}.txt`,
-      }));
-
-      const progressUpdates: Array<{ current: number; total: number }> = [];
-      const onProgress = (progress: { current: number; total: number }) => {
-        progressUpdates.push(progress);
-      };
-
-      await service.downloadBlobBulkInTestMode(options, { simulateSuccess: true }, onProgress);
-
-      expect(progressUpdates).toHaveLength(2);
-      expect(progressUpdates[0]).toEqual({ current: 1, total: 2 });
-      expect(progressUpdates[1]).toEqual({ current: 2, total: 2 });
-    });
-
-    it('should handle invalid options in test mode', async () => {
-      const options: BlobDownloadOptions[] = [
-        { blob: new Blob(['data1'], { type: 'text/plain' }), name: 'file-1.txt' },
-        undefined as unknown as BlobDownloadOptions,
-      ];
-
-      const results = await service.downloadBlobBulkInTestMode(options);
-
-      expect(results).toHaveLength(2);
-      expect(results[0]?.success).toBe(true);
-      expect(results[1]?.success).toBe(false);
-      expect(results[1]?.error).toBe('Invalid option');
-    });
-  });
-
-  describe('reset', () => {
-    it('should reset service without errors', () => {
-      expect(() => service.reset()).not.toThrow();
-    });
-  });
+  // Phase 321: Test-mode helpers removed. Runtime tests now focus on production APIs only.
 
   describe('Edge Cases', () => {
     it('should handle File object (subclass of Blob)', async () => {

@@ -75,7 +75,7 @@
  *
  *   protected async onInitialize(): Promise<void> {
  *     const theme = await storage.get<Theme>('theme');
- *     applyTheme(theme);
+ *     setTheme(theme);
  *     logger.info('Theme loaded: ' + theme.name);
  *   }
  *
