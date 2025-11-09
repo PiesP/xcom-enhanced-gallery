@@ -16,7 +16,11 @@ import { getSolid } from '../../external/vendors';
 import { createEventEmitter } from '../../utils/event-emitter';
 // Navigation state types
 import type { NavigationSource } from '../../types/navigation.types';
-import { NavigationStateMachine, type NavigationState, type NavigationAction } from '../machines';
+import {
+  NavigationStateMachine,
+  type NavigationState,
+  type NavigationAction,
+} from '@shared/state/machines/navigation.machine';
 
 const { batch } = getSolid();
 

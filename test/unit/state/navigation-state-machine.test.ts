@@ -9,7 +9,7 @@ import {
   NavigationStateMachine,
   type NavigationState,
   type NavigationAction,
-} from '@shared/state/machines';
+} from '@shared/state/machines/navigation.machine';
 
 describe('NavigationStateMachine', () => {
   setupGlobalTestIsolation();
