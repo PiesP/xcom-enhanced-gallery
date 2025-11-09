@@ -16,7 +16,7 @@ import type { ScrollState, ScrollDirection } from '@shared/state/signals/scroll.
 import { INITIAL_SCROLL_STATE } from '@shared/state/signals/scroll.signals';
 import { useSelector } from '@shared/utils/signal-selector';
 import { toAccessor } from '@shared/utils/solid-helpers';
-import { isGalleryInternalEvent } from '@shared/utils';
+import { isGalleryInternalEvent } from '@shared/utils/utils';
 import { globalTimerManager } from '@shared/utils/timer-management';
 
 const { createSignal, createEffect, batch, onCleanup } = getSolid();

@@ -13,16 +13,6 @@ import { isHTMLElement } from './type-guards';
 // Re-exports from focused modules
 // ================================
 
-// Style utilities
-export {
-  combineClasses,
-  toggleClass,
-  setCSSVariable,
-  setCSSVariables,
-  updateComponentState,
-  createThemedClassName,
-} from './styles/css-utilities';
-
 // Core utilities (from core-utils)
 export { ensureGalleryScrollAvailable } from './core-utils';
 

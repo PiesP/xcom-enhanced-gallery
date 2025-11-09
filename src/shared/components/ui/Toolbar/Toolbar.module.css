@@ -46,7 +46,7 @@
  *
  * @dependencies
  * - Design tokens: src/shared/styles/design-tokens.*.css
- * - Theme utilities: src/shared/styles/theme-utils.ts
+ * - Theme selectors: CSS variables from design tokens
  * - CSS containment: Modern browsers (Safari 16.4+, Firefox 109+)
  * - Backdrop filter: Modern browsers (Safari 9+, Firefox 103+)
  */

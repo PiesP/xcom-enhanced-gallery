@@ -23,8 +23,5 @@ import '@shared/styles/utilities/layout.css';
 // Utility classes: @keyframes definition + animation utility classes
 import '@shared/styles/utilities/animations.css';
 
-// Latest CSS features (OKLCH, Nesting, Relative colors)
-import '@shared/styles/modern-features.css';
-
 // Isolated gallery styles (no impact on Twitter page)
 import '@shared/styles/isolated-gallery.css';

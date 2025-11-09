@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -19,44 +19,10 @@ const PROJECT_ROOT = join(__dirname, '../..');
 describe('RED: 하드코딩된 CSS 제거', () => {
   setupGlobalTestIsolation();
 
-  describe('1. namespaced-styles.ts 하드코딩 제거', () => {
-    it('하드코딩된 색상 값들이 제거되어야 한다', () => {
+  describe('1. namespaced-styles.ts 제거 검증', () => {
+    it('legacy 파일이 더 이상 존재하지 않아야 한다', () => {
       const filePath = join(PROJECT_ROOT, 'src/shared/styles/namespaced-styles.ts');
-      const content = readFileSync(filePath, 'utf-8');
-
-      // 하드코딩된 색상들이 존재하면 테스트 실패
-      const hardcodedColors = [
-        '#1d9bf0', // Twitter blue
-        '#1a8cd8', // Twitter blue dark
-        '#000000', // Black
-        '#ffffff', // White
-        '#f7f9fa', // Light gray
-        '#15202b', // Dark theme background
-        'rgba(29, 155, 240', // RGBA Twitter blue
-        'rgba(255, 255, 255', // RGBA white
-        'rgba(15, 20, 25', // RGBA dark
-      ];
-
-      hardcodedColors.forEach(color => {
-        expect(content).not.toContain(color);
-      });
-    });
-
-    it('design-token CSS 변수를 사용해야 한다', () => {
-      const filePath = join(PROJECT_ROOT, 'src/shared/styles/namespaced-styles.ts');
-      const content = readFileSync(filePath, 'utf-8');
-
-      // design-token 변수들이 사용되어야 함
-      const expectedTokens = [
-        '--xeg-color-primary-500',
-        '--xeg-color-surface-primary',
-        '--xeg-color-text-primary',
-        '--xeg-color-border-primary',
-      ];
-
-      expectedTokens.forEach(token => {
-        expect(content).toContain(token);
-      });
+      expect(existsSync(filePath)).toBe(false);
     });
   });
 

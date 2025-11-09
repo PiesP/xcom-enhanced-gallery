@@ -16,7 +16,7 @@ import {
   hasElement,
   isArray,
   isRecord,
-} from '@shared/utils';
+} from '@shared/utils/type-guards';
 
 describe('Phase 135: Type Guard 함수들', () => {
   setupGlobalTestIsolation();

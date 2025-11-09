@@ -6,7 +6,7 @@
 /* eslint-disable no-undef */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import { rafThrottle, throttleScroll } from '@shared/utils';
+import { rafThrottle, throttleScroll } from '@shared/utils/performance/performance-utils';
 
 // requestAnimationFrame 모킹
 const mockRequestAnimationFrame = vi.fn();

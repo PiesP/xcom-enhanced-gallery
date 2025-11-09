@@ -277,9 +277,9 @@ describe('P6: Legacy CSS Class Cleanup', () => {
       const removalPhases = [
         {
           phase: 'Phase 1: Dead Code Removal',
-          target: 'Completely unused legacy classes',
+          target: 'Completely unused legacy classes (modern features removed)',
           risk: 'Low',
-          files: ['isolated-gallery.css', 'modern-features.css'],
+          files: ['isolated-gallery.css'],
           validation: ['grep search', 'TypeScript check'],
         },
         {

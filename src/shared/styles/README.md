@@ -10,11 +10,8 @@ src/shared/styles/
 ├─ design-tokens.semantic.css      # Step 2: Semantic tokens (role-based)
 ├─ design-tokens.component.css     # Step 3: Component tokens (UI specific)
 ├─ isolated-gallery.css            # Isolated gallery styles
-├─ modern-features.css             # Modern CSS features (OKLCH, Grid Subgrid)
-├─ tokens.ts                       # JS tokens (type safety, auxiliary)
-├─ theme-utils.ts                  # Theme helpers (CSS variable access)
-├─ namespaced-styles.ts            # Unused (future Light DOM isolation)
-└─ index.ts                        # Centralized exports
+├─ tokens/                         # Animation token CSS
+└─ utilities/                      # Shared utility CSS (layout, animations)
 ```
 
 ## 🎯 Core Principles
@@ -166,50 +163,28 @@ import '@shared/styles/design-tokens.component.css'; // 3단계
 **역할**: 트위터/X.com과 격리된 갤러리 스타일
 
 ```css
-.xeg-gallery-container {
-  /* 갤러리 컨테이너만 적용 */
-  box-sizing: border-box;
-  font-family: system-ui, sans-serif;
-  all: revert; /* 트위터 스타일 리셋 */
+.xeg-gallery-root {
+  /* 격리된 갤러리 루트만 스타일 */
+  all: initial;
+  isolation: isolate;
+  background: var(--xeg-gallery-bg);
 }
 ```
 
 ### `tokens.ts` (legacy)
 
-**Status**: Removed. Rely on CSS variables instead of JS mirrors.
+**Status**: Removed. CSS variables remain the single source of truth.
 
 **Recommended approach**:
 
-- Use `design-tokens.*.css` as the single source of truth
-- Read values through `getXEGVariable()` when runtime access is unavoidable
-- Compose spacing/radius in CSS via `var(--xeg-*)`
+- Reference `var(--xeg-*)` tokens directly in CSS Modules and component styles.
+- Prefer passing theme or mode via data attributes rather than reading computed
+  styles.
+- When runtime values are unavoidable, add a component-scoped helper instead of
+  a shared utility.
 
-```typescript
-import { getXEGVariable } from '@shared/styles/theme-utils';
-
-const primaryColor = getXEGVariable('color-primary-500');
-const spacingMd = `var(--xeg-spacing-md)`;
-```
-
-> Avoid recreating JS copies of token maps. Keeping CSS as SSOT prevents the
-> drift that the legacy `tokens.ts` file used to introduce.
-
-### `theme-utils.ts`
-
-**역할**: CSS 변수 접근, 테마 설정
-
-```typescript
-// CSS 변수 값 읽기
-const primaryColor = getXEGVariable('color-primary-500');
-
-// 테마 설정
-setGalleryTheme('dark');
-
-// 갤러리 내부 확인
-if (isInsideGallery(element)) {
-  applyGalleryStyles(element);
-}
-```
+> Avoid recreating JS copies of token maps. Keeping CSS as SSOT prevents drift
+> that the legacy `tokens.ts` file introduced.
 
 ---
 
@@ -301,26 +276,24 @@ npm run build:dev
 ### 예제 2: TypeScript에서 토큰 접근
 
 ```typescript
-import { getXEGVariable } from '@shared/styles/theme-utils';
-
 // ✅ CSS 변수 조합 (정적)
 const padding = 'var(--xeg-spacing-md)';
 const radius = 'var(--xeg-radius-lg)';
 
-// ✅ CSS 변수 값 읽기 (런타임 필요 시)
-const primaryColor = getXEGVariable('color-primary-500');
+// ⚠️ 런타임 접근은 컴포넌트 범위에 한정하세요
+function readToken(element: HTMLElement, token: string): string {
+  return getComputedStyle(element).getPropertyValue(`--xeg-${token}`).trim();
+}
 ```
 
 ### 예제 3: 테마 설정
 
 ```typescript
-import { setGalleryTheme, getXEGVariable } from '@shared/styles/theme-utils';
+const root = document.querySelector('[data-xeg-gallery-container]');
 
-// ✅ 테마 변경
-setGalleryTheme('dark');
-
-// ✅ 설정값 읽기
-const isDarkTheme = getXEGVariable('theme') === 'dark';
+if (root instanceof HTMLElement) {
+  root.setAttribute('data-theme', 'dark');
+}
 ```
 
 ---
@@ -344,8 +317,15 @@ color: rgb(255, 0, 0);
 ```
 
 ```typescript
-// ❌ CSS 변수 값 계산하지 말 것
-const padding = parseFloat(getXEGVariable('spacing-md')) * 2;
+// ❌ CSS 변수 값을 숫자로 파싱하지 말 것
+const element = document.querySelector('[data-xeg-gallery-container]');
+
+if (element instanceof HTMLElement) {
+  // ❌ Avoid converting CSS variables to numbers
+  const padding =
+    parseFloat(getComputedStyle(element).getPropertyValue('--xeg-spacing-md')) *
+    2;
+}
 
 // ✅ 토큰 조합 사용
 const doublePadding = `calc(2 * var(--xeg-spacing-md))`;

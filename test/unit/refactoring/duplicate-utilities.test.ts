@@ -47,7 +47,7 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
   setupGlobalTestIsolation();
 
   describe('combineClasses function', () => {
-    it('should be defined in exactly one canonical location', () => {
+    it('should no longer exist in the codebase', () => {
       const files = findTypeScriptFiles(SRC_DIR);
       const filesWithCombineClasses: Array<{ file: string; count: number }> = [];
 
@@ -63,58 +63,14 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // GREEN 상태: 정확히 1개의 정의만 있어야 함
-      expect(filesWithCombineClasses.length).toBe(1);
-      expect(filesWithCombineClasses[0].file).toContain('css-utilities.ts');
+      expect(filesWithCombineClasses.length).toBe(0);
 
-      // 상세 정보 출력
-      console.log('\n✅ combineClasses 정의 위치:');
-      filesWithCombineClasses.forEach(({ file, count }) => {
-        console.log(`  - ${file} (${count}회)`);
-      });
-    });
-
-    it('should identify duplicate implementations', () => {
-      const targetFiles = [
-        'src/shared/utils/styles/style-utils.ts',
-        'src/shared/utils/styles/css-utilities.ts',
-        'src/shared/utils/core-utils.ts',
-      ];
-
-      const implementations: Array<{ file: string; content: string }> = [];
-
-      for (const file of targetFiles) {
-        const fullPath = join(process.cwd(), file);
-        try {
-          const content = readFileSync(fullPath, 'utf-8');
-          const match = content.match(
-            /function combineClasses[\s\S]*?\{[\s\S]*?return[\s\S]*?;[\s\S]*?\}/
-          );
-
-          if (match) {
-            implementations.push({
-              file: relative(process.cwd(), fullPath),
-              content: match[0],
-            });
-          }
-        } catch {
-          // 파일이 없으면 무시
-        }
-      }
-
-      // GREEN 상태: 단일 구현만 있어야 함
-      expect(implementations.length).toBe(1);
-      expect(implementations[0].file).toContain('css-utilities.ts');
-
-      console.log(`\n✅ ${implementations.length}개의 구현 발견 (목표 달성):`);
-      implementations.forEach(({ file }) => {
-        console.log(`  - ${file}`);
-      });
+      console.log('\n✅ combineClasses 정의가 더 이상 존재하지 않습니다.');
     });
   });
 
   describe('toggleClass function', () => {
-    it('should be defined in exactly one canonical location', () => {
+    it('should no longer exist in the codebase', () => {
       const files = findTypeScriptFiles(SRC_DIR);
       const filesWithToggleClass: Array<{ file: string; count: number }> = [];
 
@@ -130,19 +86,14 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // GREEN 상태: 정확히 1개의 정의만 있어야 함
-      expect(filesWithToggleClass.length).toBe(1);
-      expect(filesWithToggleClass[0].file).toContain('css-utilities.ts');
+      expect(filesWithToggleClass.length).toBe(0);
 
-      console.log('\n✅ toggleClass 정의 위치:');
-      filesWithToggleClass.forEach(({ file, count }) => {
-        console.log(`  - ${file} (${count}회)`);
-      });
+      console.log('\n✅ toggleClass 정의가 더 이상 존재하지 않습니다.');
     });
   });
 
   describe('updateComponentState function', () => {
-    it('should be defined in exactly one canonical location', () => {
+    it('should no longer exist in the codebase', () => {
       const files = findTypeScriptFiles(SRC_DIR);
       const filesWithUpdateState: Array<{ file: string; count: number }> = [];
 
@@ -158,14 +109,9 @@ describe('Phase 33 Step 3: Duplicate Utilities Detection (RED)', () => {
         }
       }
 
-      // GREEN 상태: 정확히 1개의 정의만 있어야 함
-      expect(filesWithUpdateState.length).toBe(1);
-      expect(filesWithUpdateState[0].file).toContain('css-utilities.ts');
+      expect(filesWithUpdateState.length).toBe(0);
 
-      console.log('\n✅ updateComponentState 정의 위치:');
-      filesWithUpdateState.forEach(({ file, count }) => {
-        console.log(`  - ${file} (${count}회)`);
-      });
+      console.log('\n✅ updateComponentState 정의가 더 이상 존재하지 않습니다.');
     });
   });
 

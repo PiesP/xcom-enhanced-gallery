@@ -5,7 +5,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
-import { getBrowserInfo, isExtensionEnvironment, isExtensionContext } from '@shared/utils';
+import {
+  getBrowserInfo,
+  isExtensionEnvironment,
+  isExtensionContext,
+} from '@shared/utils/browser/safe-browser';
 
 /**
  * Mock setup for logger

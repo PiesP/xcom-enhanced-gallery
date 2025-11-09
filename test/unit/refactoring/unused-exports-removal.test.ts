@@ -94,14 +94,11 @@ describe('Phase 34 Step 1: Style utilities canonicalization', () => {
       expect(exists).toBe(false);
     });
 
-    it('should confirm css-utilities.ts provides canonical exports', () => {
+    it('should confirm css-utilities.ts has been removed', () => {
       const cssUtilitiesPath = path.join(projectRoot, 'src/shared/utils/styles/css-utilities.ts');
-      const content = fs.readFileSync(cssUtilitiesPath, 'utf-8');
+      const exists = fs.existsSync(cssUtilitiesPath);
 
-      expect(content).toContain('export function combineClasses');
-      expect(content).toContain('export function toggleClass');
-      expect(content).toContain('export function setCSSVariable');
-      expect(content).toContain('export function updateComponentState');
+      expect(exists).toBe(false);
     });
   });
 });

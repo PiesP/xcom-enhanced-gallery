@@ -8,7 +8,7 @@
    격리된 갤러리 루트 컨테이너
    ======================================== */
 
-.xeg-root {
+.xeg-gallery-root {
   /* 완전한 스타일 격리 */
   all: initial !important;
 
@@ -115,9 +115,9 @@
 }
 
 /* 모든 자식 요소에 박스 모델 적용 */
-.xeg-root *,
-.xeg-root *::before,
-.xeg-root *::after {
+.xeg-gallery-root *,
+.xeg-gallery-root *::before,
+.xeg-gallery-root *::after {
   box-sizing: border-box !important;
 }
 
@@ -126,7 +126,7 @@
    ======================================== */
 
 /* 갤러리 컨테이너 */
-.xeg-root .gallery-container {
+.xeg-gallery-root .gallery-container {
   width: 100% !important;
   height: 100% !important;
   display: flex !important;
@@ -136,7 +136,7 @@
 }
 
 /* 툴바 */
-.xeg-root .toolbar {
+.xeg-gallery-root .toolbar {
   background: var(--xeg-isolated-gray-200) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -147,7 +147,7 @@
 }
 
 /* 버튼 */
-.xeg-root .button {
+.xeg-gallery-root .button {
   background: var(--xeg-isolated-gray-200) !important;
   color: var(--xeg-isolated-text) !important;
   border: var(--border-width-thin) solid var(--xeg-isolated-gray-300) !important;
@@ -167,7 +167,7 @@
   outline: none !important;
 }
 
-.xeg-root .button:hover {
+.xeg-gallery-root .button:hover {
   background: var(--xeg-isolated-gray-300) !important;
   border-color: var(--xeg-isolated-gray-400) !important;
   /* hover lift는 토큰 기반으로만 정의 */
@@ -175,7 +175,7 @@
   box-shadow: var(--xeg-isolated-shadow-md) !important;
 }
 
-.xeg-root .button:active {
+.xeg-gallery-root .button:active {
   transform: translateY(0) !important;
   transition:
     background-color var(--xeg-isolated-transition-fast),
@@ -184,31 +184,31 @@
     box-shadow var(--xeg-isolated-transition-fast) !important;
 }
 
-.xeg-root .button:focus-visible {
+.xeg-gallery-root .button:focus-visible {
   outline: var(--border-width-medium) solid var(--xeg-isolated-primary) !important;
   outline-offset: var(--border-width-medium) !important;
 }
 
 /* 프라이머리 버튼 */
-.xeg-root .button-primary {
+.xeg-gallery-root .button-primary {
   background: var(--xeg-isolated-primary) !important;
   border-color: var(--xeg-isolated-primary) !important;
   color: var(--color-base-white) !important;
 }
 
-.xeg-root .button-primary:hover {
+.xeg-gallery-root .button-primary:hover {
   background: var(--xeg-isolated-primary-hover) !important;
   border-color: var(--xeg-isolated-primary-hover) !important;
 }
 
 /* 위험 버튼 */
-.xeg-root .button-danger {
+.xeg-gallery-root .button-danger {
   background: var(--xeg-isolated-danger) !important;
   border-color: var(--xeg-isolated-danger) !important;
   color: var(--color-base-white) !important;
 }
 
-.xeg-root .button-danger:hover {
+.xeg-gallery-root .button-danger:hover {
   background: var(--xeg-isolated-danger-hover) !important;
   border-color: var(--xeg-isolated-danger-hover) !important;
 }
@@ -219,22 +219,22 @@
 
 /* 고대비 모드 지원 */
 @media (prefers-contrast: high) {
-  .xeg-root {
+  .xeg-gallery-root {
     background: var(--color-base-black) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
   }
 
-  .xeg-root .button {
+  .xeg-gallery-root .button {
     border-width: var(--border-width-medium) !important;
   }
 }
 
 /* 모션 감소 선호도 지원 */
 @media (prefers-reduced-motion: reduce) {
-  .xeg-root *,
-  .xeg-root *::before,
-  .xeg-root *::after {
+  .xeg-gallery-root *,
+  .xeg-gallery-root *::before,
+  .xeg-gallery-root *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -244,7 +244,7 @@
 
 /* 터치 친화적 크기 */
 @media (hover: none) and (pointer: coarse) {
-  .xeg-root .button {
+  .xeg-gallery-root .button {
     min-height: var(--size-touch-target) !important; /* 2.75rem = 44px */
     min-width: var(--size-touch-target) !important;
     padding: var(--xeg-isolated-spacing-md) !important;
@@ -254,12 +254,12 @@
 /* 모바일 최적화 */
 @media (width <= 48rem) {
   /* 768px = 48rem */
-  .xeg-root {
+  .xeg-gallery-root {
     /* 모바일에서 주소창 숨김 대응 */
     height: 100dvh !important;
   }
 
-  .xeg-root .toolbar {
+  .xeg-gallery-root .toolbar {
     margin: var(--xeg-isolated-spacing-sm) !important;
     padding: var(--xeg-isolated-spacing-sm) !important;
   }
@@ -268,13 +268,13 @@
 /* 작은 화면에서 성능 최적화 */
 @media (width <= 30rem) {
   /* 480px = 30rem */
-  .xeg-root {
+  .xeg-gallery-root {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: var(--xeg-gallery-bg) !important;
   }
 
-  .xeg-root .toolbar {
+  .xeg-gallery-root .toolbar {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: var(--xeg-isolated-gray-400) !important;

@@ -56,7 +56,7 @@ import { useGalleryKeyboard } from './hooks/useGalleryKeyboard';
 import { useGalleryScroll } from '@features/gallery/hooks/useGalleryScroll';
 import { useGalleryItemScroll } from '@features/gallery/hooks/useGalleryItemScroll';
 import { useGalleryFocusTracker } from '@features/gallery/hooks/useGalleryFocusTracker';
-import { ensureGalleryScrollAvailable } from '@shared/utils';
+import { ensureGalleryScrollAvailable } from '@shared/utils/core-utils';
 import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
