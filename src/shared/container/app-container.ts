@@ -23,7 +23,7 @@
  * - Composability: Services combined in AppContainer
  * - Resource management: Explicit cleanup/dispose
  *
- * @related [Service Bridge](./service-bridge.ts), [Service Accessors](./service-accessors.ts)
+ * @related [Service Accessors](./service-accessors.ts)
  */
 
 import type { AppConfig } from '@shared/types';

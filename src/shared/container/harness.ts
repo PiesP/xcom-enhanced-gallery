@@ -4,7 +4,7 @@
  * @phase 402: Enhanced documentation for test infrastructure
  *
  * Provides simplified service registration, retrieval, and lifecycle management
- * for test suites. Acts as a bridge to CoreService with convenient test-focused APIs.
+ * for test suites using CoreService directly.
  *
  * **Test Only**: Not used in runtime code. Consumed by test harness utilities
  * and test suites for service initialization and mocking.
@@ -37,7 +37,7 @@
  * - SERVICE_KEYS constants prevent string-based runtime errors
  * - Typed get/tryGet methods validate at compile time
  */
-import { bridgeGetService, bridgeTryGet, bridgeRegister } from './service-bridge';
+import { CoreServiceRegistry } from './core-service-registry';
 import { CoreService } from '../services/core';
 
 /**
@@ -102,7 +102,7 @@ export class TestHarness {
    * **Precondition**: initCoreServices() must be called first
    */
   register<T>(key: string, instance: T): void {
-    bridgeRegister<T>(key, instance);
+    CoreServiceRegistry.register<T>(key, instance);
   }
 
   /**
@@ -125,7 +125,7 @@ export class TestHarness {
    * **Precondition**: Service must be registered first
    */
   get<T>(key: string): T {
-    return bridgeGetService<T>(key);
+    return CoreServiceRegistry.get<T>(key);
   }
 
   /**
@@ -152,7 +152,7 @@ export class TestHarness {
    * **Safety**: Always check return value before use
    */
   tryGet<T>(key: string): T | null {
-    return bridgeTryGet<T>(key);
+    return CoreServiceRegistry.tryGet<T>(key);
   }
 
   /**
@@ -174,6 +174,7 @@ export class TestHarness {
    */
   reset(): void {
     CoreService.resetInstance();
+    CoreServiceRegistry.clearCache();
   }
 }
 

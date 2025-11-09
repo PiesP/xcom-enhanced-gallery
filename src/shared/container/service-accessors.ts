@@ -1,46 +1,14 @@
-/**
- * @fileoverview Service Accessors - Type-Safe Named Service Getters
- * @version 1.0.0 - Named accessor functions for service retrieval
- * @phase 402: Enhanced documentation for accessor pattern
- *
- * Provides type-safe named getter functions that hide SERVICE_KEYS from
- * features layer. All access routes through CoreServiceRegistry caching.
- *
- * **Design Pattern**: Named accessor pattern for type safety + convenience
- * **Architecture Role**: Feature-facing API layer (public interface)
- * **Performance**: Leverages CoreServiceRegistry caching (no repeated lookups)
- * **Recommended Usage**: Features should import and call named getters
- *
- * **Access Patterns**:
- * - Required services: `getServiceName()` - throws if missing
- * - Optional services: `tryGetServiceName()` - returns null if missing
- * - Internal registry: Use CoreServiceRegistry directly (bridge pattern)
- *
- * **Layer Integration**:
- * Features Layer
- *   ↓ (imports from)
- * Service Accessors (named getters, this file)
- *   ↓ (delegates to)
- * CoreServiceRegistry (caching layer)
- *   ↓ (retrieves from)
- * CoreService (singleton)
- *   ↓ (provides)
- * Service Implementations
- *
- * @related [CoreServiceRegistry](./core-service-registry.ts), [Service Bridge](./service-bridge.ts)
- */
 import type { FilenameService } from '../services/file-naming';
 import type { ThemeService } from '../services/theme-service';
 import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
+import type { BaseService } from '../types/core/base-service.types';
 
-// Phase 237: Core Base 서비스들을 static import로 변경 (require 제거)
-// Phase 414: AnimationService 제거 (optional feature)
+import { CoreService } from '../services/core';
 import { themeService } from '../services/theme-service';
 import { languageService } from '../services/language-service';
 
 import { CoreServiceRegistry } from './core-service-registry';
-import { bridgeRegisterBaseService, bridgeInitializeAllBaseServices } from './service-bridge';
-import { SERVICE_KEYS } from '../../constants';
+import { SERVICE_KEYS } from '@/constants';
 
 // ============================================================================
 // Required Service Getters
@@ -161,7 +129,10 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
  * await initializeBaseServices();
  */
 export async function initializeBaseServices(): Promise<void> {
-  await bridgeInitializeAllBaseServices([SERVICE_KEYS.THEME, SERVICE_KEYS.LANGUAGE]);
+  await CoreService.getInstance().initializeAllBaseServices([
+    SERVICE_KEYS.THEME,
+    SERVICE_KEYS.LANGUAGE,
+  ]);
 }
 
 /**
@@ -171,8 +142,8 @@ export async function initializeBaseServices(): Promise<void> {
  * @param key - Service key from SERVICE_KEYS
  * @param service - Service instance to register
  */
-export function registerBaseService(key: string, service: unknown): void {
-  bridgeRegisterBaseService(key, service as Parameters<typeof bridgeRegisterBaseService>[1]);
+export function registerBaseService(key: string, service: BaseService): void {
+  CoreService.getInstance().registerBaseService(key, service);
 }
 
 // ============================================================================

@@ -8,7 +8,7 @@
  */
 
 import { logger } from '@shared/logging/logger';
-import { bridgeGetService } from '@shared/container/service-bridge';
+import { CoreServiceRegistry } from '@shared/container/core-service-registry';
 import { registerGalleryRenderer } from '@shared/container/service-accessors';
 import { SERVICE_KEYS } from '@/constants';
 import { FilenameService } from '@shared/services/file-naming';
@@ -49,7 +49,7 @@ class LegacyServiceAdapter {
         }
         return this.container.services.settings as T;
       default:
-        return bridgeGetService<T>(key);
+        return CoreServiceRegistry.get<T>(key);
     }
   }
 }

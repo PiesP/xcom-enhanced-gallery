@@ -2,8 +2,7 @@
  * P4: SERVICE_KEYS direct usage reduction
  * - Forbid importing or referencing SERVICE_KEYS outside of approved modules.
  * Approved: constants.ts, shared/container/service-accessors.ts, shared/services/service-initialization.ts,
- *           shared/services/service-diagnostics.ts, shared/container/service-bridge.ts (indirect, not referencing keys),
- *           (runtime createAppContainer implementation removed; test harness only)
+ *           shared/services/service-diagnostics.ts (runtime createAppContainer implementation removed; test harness only)
  */
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
@@ -43,7 +42,6 @@ describe('P4: SERVICE_KEYS direct usage scan', () => {
         'src/shared/container/core-service-registry.ts',
         'src/shared/container/harness.ts',
         'src/shared/container/index.ts',
-        'src/shared/container/service-bridge.ts',
         'src/shared/services/lazy-service-registration.ts',
       ].map(p => p.replace(/\\/g, '/'))
     );
