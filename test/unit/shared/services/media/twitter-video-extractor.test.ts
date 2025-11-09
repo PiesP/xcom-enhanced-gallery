@@ -8,16 +8,18 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
 import {
+  getVideoMediaEntry,
+  getVideoUrlFromThumbnail,
+  TwitterAPI,
+} from '@/shared/services/media/twitter-video-extractor';
+import {
   isVideoThumbnail,
   isVideoPlayer,
   isVideoElement,
   extractTweetId,
   getTweetIdFromContainer,
-  getVideoMediaEntry,
-  getVideoUrlFromThumbnail,
-  TwitterAPI,
-  type TweetMediaEntry,
-} from '@/shared/services/media/twitter-video-extractor';
+} from '@/shared/services/media/video-utils';
+import type { TweetMediaEntry } from '@/shared/services/media/types';
 import { STABLE_SELECTORS } from '@/constants';
 
 describe('twitter-video-extractor', () => {

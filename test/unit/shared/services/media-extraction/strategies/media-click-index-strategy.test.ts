@@ -10,7 +10,7 @@ import {
   DOMOrderEstimationStrategy,
   type MediaClickIndexStrategy,
 } from '@/shared/services/media-extraction/strategies/media-click-index-strategy';
-import type { TweetMediaEntry } from '@/shared/services/media/twitter-video-extractor';
+import type { TweetMediaEntry } from '@/shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
 // Mock 데이터

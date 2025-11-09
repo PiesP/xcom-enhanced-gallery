@@ -47,7 +47,7 @@
  * - Phase 405B-2: This documentation
  */
 
-import type { TweetMediaEntry } from '../../media/twitter-video-extractor';
+import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**

@@ -82,18 +82,6 @@ import {
   getVideoUrlFromThumbnail as getVideoUrlFromThumbnailBase,
 } from './video-utils';
 
-// Re-export types
-export type { TweetMediaEntry } from './types';
-
-// Re-export utilities (required by MediaService)
-export {
-  isVideoThumbnail,
-  isVideoPlayer,
-  isVideoElement,
-  extractTweetId,
-  getTweetIdFromContainer,
-} from './video-utils';
-
 /**
  * Get Cookie Value by Name
  *
@@ -464,7 +452,6 @@ export class TwitterAPI {
 
     // Check cache first
     if (this.requestCache.has(_url)) {
-      logger.debug('Using cached API request:', _url);
       const cachedResult = this.requestCache.get(_url);
       if (cachedResult) return cachedResult;
     }
@@ -1180,23 +1167,7 @@ export class TwitterAPI {
     // Extract full text from note_tweet structure
     const noteTweetText = tweetResult.note_tweet?.note_tweet_results?.result?.text;
 
-    // Debug logging for testing
-    logger.debug('[getTweetMedias] Tweet text comparison:', {
-      tweetId,
-      hasNoteTweet: !!tweetResult.note_tweet,
-      hasNoteTweetResults: !!tweetResult.note_tweet?.note_tweet_results,
-      noteTweetLength: noteTweetText?.length,
-      fullTextLength: tweetResult.full_text?.length,
-      noteTweetPreview: noteTweetText?.substring(0, 100),
-      fullTextPreview: tweetResult.full_text?.substring(0, 100),
-    });
-
     if (noteTweetText) {
-      logger.info('[getTweetMedias] Using note_tweet for long tweet', {
-        tweetId,
-        originalLength: tweetResult.full_text?.length,
-        noteTweetLength: noteTweetText.length,
-      });
       tweetResult.full_text = noteTweetText;
     }
     if (!tweetUser) return [];
@@ -1233,25 +1204,7 @@ export class TwitterAPI {
         // Extract full text from quoted tweet note_tweet structure
         const quotedNoteTweetText = quotedTweet.note_tweet?.note_tweet_results?.result?.text;
 
-        // Debug logging for testing
-        logger.debug('[getTweetMedias] Quoted tweet text comparison:', {
-          tweetId,
-          quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
-          hasNoteTweet: !!quotedTweet.note_tweet,
-          hasNoteTweetResults: !!quotedTweet.note_tweet?.note_tweet_results,
-          noteTweetLength: quotedNoteTweetText?.length,
-          fullTextLength: quotedTweet.full_text?.length,
-          noteTweetPreview: quotedNoteTweetText?.substring(0, 100),
-          fullTextPreview: quotedTweet.full_text?.substring(0, 100),
-        });
-
         if (quotedNoteTweetText) {
-          logger.info('[getTweetMedias] Using note_tweet for long quoted tweet', {
-            tweetId,
-            quotedTweetId: quotedTweet.rest_id ?? quotedTweet.id_str,
-            originalLength: quotedTweet.full_text?.length,
-            noteTweetLength: quotedNoteTweetText.length,
-          });
           quotedTweet.full_text = quotedNoteTweetText;
         }
         if (quotedUser.legacy) {
