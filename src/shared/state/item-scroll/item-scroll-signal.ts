@@ -13,7 +13,6 @@ import {
   createItemScrollState,
   updateItemScrollState,
   clearItemScrollTimeouts,
-  isSameItemScrollState,
 } from './item-scroll-state.ts';
 
 const { createSignal } = getSolid();
@@ -75,22 +74,4 @@ export function updateStateSignal(
   updates: Partial<ItemScrollState>
 ): void {
   setterFn(prev => updateItemScrollState(prev, updates));
-}
-
-/**
- * Item Scroll State equality comparison helper (Signal aware)
- * @param currentState - Current state
- * @param prevState - Previous state
- * @returns Whether state has changed
- *
- * @example
- * if (hasStateChanged(newState, oldState)) {
- *   // State changed - perform necessary actions
- * }
- */
-export function hasItemScrollStateChanged(
-  currentState: ItemScrollState,
-  prevState: ItemScrollState
-): boolean {
-  return !isSameItemScrollState(currentState, prevState);
 }

@@ -5,15 +5,15 @@
  * @fileoverview Item Scroll State Signal Tests
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
 import {
+  INITIAL_ITEM_SCROLL_STATE,
+  createItemScrollState,
   createItemScrollStateSignal,
   updateStateSignal,
-  hasItemScrollStateChanged,
   type ItemScrollStateSignal,
 } from '@shared/state/item-scroll';
-import { createItemScrollState, INITIAL_ITEM_SCROLL_STATE } from '@shared/state/item-scroll';
 
 describe('ItemScrollStateSignal', () => {
   setupGlobalTestIsolation();
@@ -65,14 +65,14 @@ describe('ItemScrollStateSignal', () => {
       const signal = createItemScrollStateSignal();
       const newState = createItemScrollState({
         lastScrolledIndex: 15,
-        retryCount: 2,
+        pendingIndex: 2,
       });
 
       signal.setState(newState);
       const state = signal.getState();
 
       expect(state.lastScrolledIndex).toBe(15);
-      expect(state.retryCount).toBe(2);
+      expect(state.pendingIndex).toBe(2);
     });
 
     it('should update state with updater function', () => {
@@ -91,7 +91,7 @@ describe('ItemScrollStateSignal', () => {
       const signal = createItemScrollStateSignal({
         lastScrolledIndex: 10,
         userScrollDetected: true,
-        retryCount: 3,
+        userScrollTimeoutId: 123,
       });
 
       signal.setState(prev => ({
@@ -102,7 +102,7 @@ describe('ItemScrollStateSignal', () => {
       const state = signal.getState();
       expect(state.lastScrolledIndex).toBe(20);
       expect(state.userScrollDetected).toBe(true);
-      expect(state.retryCount).toBe(3);
+      expect(state.userScrollTimeoutId).toBe(123);
     });
   });
 
@@ -110,8 +110,8 @@ describe('ItemScrollStateSignal', () => {
     it('should reset state to initial value', () => {
       const signal = createItemScrollStateSignal({
         lastScrolledIndex: 50,
-        retryCount: 5,
         userScrollDetected: true,
+        scrollTimeoutId: 99,
       });
 
       signal.reset();
@@ -173,21 +173,21 @@ describe('ItemScrollStateSignal', () => {
 
       updateStateSignal(signal.setState, {
         userScrollDetected: true,
-        retryCount: 2,
+        pendingIndex: 8,
       });
 
       const state = signal.getState();
       expect(state.lastScrolledIndex).toBe(5);
       expect(state.userScrollDetected).toBe(true);
-      expect(state.retryCount).toBe(2);
+      expect(state.pendingIndex).toBe(8);
     });
 
     it('should preserve other fields during partial updates', () => {
       const signal = createItemScrollStateSignal({
         lastScrolledIndex: 10,
         userScrollDetected: true,
-        retryCount: 1,
         isAutoScrolling: false,
+        userScrollTimeoutId: 33,
       });
 
       updateStateSignal(signal.setState, {
@@ -197,9 +197,9 @@ describe('ItemScrollStateSignal', () => {
       const state = signal.getState();
       expect(state.lastScrolledIndex).toBe(10);
       expect(state.userScrollDetected).toBe(true);
-      expect(state.retryCount).toBe(1);
       expect(state.isAutoScrolling).toBe(false);
       expect(state.pendingIndex).toBe(20);
+      expect(state.userScrollTimeoutId).toBe(33);
     });
 
     it('should handle empty updates', () => {
@@ -211,65 +211,6 @@ describe('ItemScrollStateSignal', () => {
       const newState = signal.getState();
       // State should be the same semantically
       expect(newState.lastScrolledIndex).toBe(prevState.lastScrolledIndex);
-    });
-  });
-
-  describe('hasItemScrollStateChanged', () => {
-    it('should return true when state changes', () => {
-      const state1 = createItemScrollState({ lastScrolledIndex: 5 });
-      const state2 = createItemScrollState({ lastScrolledIndex: 10 });
-
-      expect(hasItemScrollStateChanged(state1, state2)).toBe(true);
-    });
-
-    it('should return false when state is the same', () => {
-      const state1 = createItemScrollState({ lastScrolledIndex: 5 });
-      const state2 = createItemScrollState({ lastScrolledIndex: 5 });
-
-      expect(hasItemScrollStateChanged(state1, state2)).toBe(false);
-    });
-
-    it('should ignore timeout IDs when comparing changes', () => {
-      const state1 = createItemScrollState({
-        lastScrolledIndex: 5,
-        scrollTimeoutId: 123,
-      });
-      const state2 = createItemScrollState({
-        lastScrolledIndex: 5,
-        scrollTimeoutId: 456,
-      });
-
-      // Should return false because timeout IDs are not compared
-      expect(hasItemScrollStateChanged(state1, state2)).toBe(false);
-    });
-
-    it('should detect changes in key state fields', () => {
-      const baseState = createItemScrollState({
-        lastScrolledIndex: 5,
-        pendingIndex: null,
-        userScrollDetected: false,
-        isAutoScrolling: false,
-        retryCount: 0,
-      });
-
-      const changedUserScroll = createItemScrollState({
-        ...baseState,
-        userScrollDetected: true,
-      });
-
-      const changedAutoScroll = createItemScrollState({
-        ...baseState,
-        isAutoScrolling: true,
-      });
-
-      const changedRetry = createItemScrollState({
-        ...baseState,
-        retryCount: 3,
-      });
-
-      expect(hasItemScrollStateChanged(baseState, changedUserScroll)).toBe(true);
-      expect(hasItemScrollStateChanged(baseState, changedAutoScroll)).toBe(true);
-      expect(hasItemScrollStateChanged(baseState, changedRetry)).toBe(true);
     });
   });
 
@@ -320,17 +261,17 @@ describe('ItemScrollStateSignal', () => {
       });
       expect(signal.getState().isAutoScrolling).toBe(true);
 
-      // Update 3 - increment retryCount
+      // Update 3 - set pending index
       updateStateSignal(signal.setState, {
-        retryCount: 1,
+        pendingIndex: 3,
       });
-      expect(signal.getState().retryCount).toBe(1);
+      expect(signal.getState().pendingIndex).toBe(3);
 
       // Verify all updates are preserved
       const finalState = signal.getState();
       expect(finalState.lastScrolledIndex).toBe(1);
       expect(finalState.isAutoScrolling).toBe(true);
-      expect(finalState.retryCount).toBe(1);
+      expect(finalState.pendingIndex).toBe(3);
     });
   });
 });
