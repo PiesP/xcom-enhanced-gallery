@@ -19,6 +19,7 @@
  */
 
 import { getSolid } from '@shared/external/vendors';
+import { EventManager } from '@shared/services';
 
 /**
  * Gallery keyboard event options
@@ -77,31 +78,45 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
       return Boolean(element.isContentEditable);
     };
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) {
+    const handleKeyDown = (event: Event) => {
+      const keyboardEvent = event as KeyboardEvent;
+
+      if (isEditableTarget(keyboardEvent.target)) {
         return;
       }
 
       let handled = false;
 
-      if (event.key === 'Escape') {
+      if (keyboardEvent.key === 'Escape') {
         onClose();
         handled = true;
-      } else if (event.key === '?' || (event.key === '/' && event.shiftKey)) {
+      } else if (
+        keyboardEvent.key === '?' ||
+        (keyboardEvent.key === '/' && keyboardEvent.shiftKey)
+      ) {
         onOpenHelp?.();
         handled = true;
       }
 
       if (handled) {
-        event.preventDefault();
-        event.stopPropagation();
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown, true);
+    const eventManager = EventManager.getInstance();
+    const listenerId = eventManager.addListener(
+      document,
+      'keydown',
+      handleKeyDown,
+      { capture: true },
+      'gallery-keyboard-navigation'
+    );
 
     onCleanup(() => {
-      document.removeEventListener('keydown', handleKeyDown, true);
+      if (listenerId) {
+        eventManager.removeListener(listenerId);
+      }
     });
   });
 }

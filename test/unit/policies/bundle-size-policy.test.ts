@@ -110,16 +110,16 @@ describe('Bundle Size Policy', () => {
         context: 'Phase 333: Added video thumbnail detection and emoji filtering',
       },
       {
-        path: 'shared/services/bulk-download-service.ts',
-        maxLines: 600,
-        maxKB: 20.0,
-        context: 'Phase 312: Legacy service (replaced by UnifiedDownloadService)',
+        path: 'shared/services/unified-download-service.ts',
+        maxLines: 860,
+        maxKB: 27.0,
+        context: 'Phase 360: UnifiedDownloadService consolidation',
       },
       {
         path: 'shared/services/media/twitter-video-extractor.ts',
-        maxLines: 580,
-        maxKB: 20.0,
-        context: 'Phase 290.1: Media order sorting by visual index',
+        maxLines: 1400,
+        maxKB: 48.0,
+        context: 'Phase 342: Quote tweet extraction overhaul',
       },
     ];
 

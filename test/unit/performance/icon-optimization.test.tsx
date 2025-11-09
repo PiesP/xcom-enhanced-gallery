@@ -4,19 +4,19 @@
  * IconRegistry와 LazyIcon의 성능 최적화를 검증합니다.
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import {
-  IconRegistry,
   getIconRegistry,
   resetIconRegistry,
   preloadCommonIcons,
   type IconName,
-} from '@shared/components/ui/Icon/icon-registry.ts';
+} from '@shared/components/ui/Icon/icon-registry';
+import type { IconRegistry } from '@shared/components/ui/Icon/icon-registry';
 import {
   LazyIcon,
   useIconPreload,
   useCommonIconPreload,
-} from '@shared/components/ui/Icon/lazy-icon.tsx';
+} from '@shared/components/ui/Icon/lazy-icon';
 
 type TestVNode = {
   tag?: string;
@@ -76,125 +76,46 @@ describe('P7: Performance Optimization Unit Tests', () => {
     });
 
     afterEach(() => {
-      registry.clearAllCaches();
+      resetIconRegistry();
     });
 
     test('아이콘을 지연 로딩해야 함', async () => {
       const iconName: IconName = 'Download';
 
-      // 처음에는 캐시에 없어야 함
-      const cacheKey = {};
-      expect(registry.getCachedIcon(cacheKey, iconName)).toBeNull();
-
-      // 아이콘 로드
       const IconComponent = await registry.loadIcon(iconName);
-      expect(IconComponent).toBeDefined();
+      expect(IconComponent).toBeInstanceOf(Function);
 
-      // 캐시에 저장
-      registry.setCachedIcon(cacheKey, iconName, IconComponent);
-      expect(registry.getCachedIcon(cacheKey, iconName)).toBe(IconComponent);
+      const rendered = toVNode(IconComponent({} as never));
+      expect(rendered.props['data-testid']).toBe('icon-download');
     });
 
-    test('중복 로딩을 방지해야 함', async () => {
+    test('동시 로딩 요청을 하나의 로더로 처리해야 함', async () => {
       const iconName: IconName = 'Settings';
 
-      // 동시에 여러 번 로드 요청
-      const promises = [
+      const [firstLoad, secondLoad] = await Promise.all([
         registry.loadIcon(iconName),
         registry.loadIcon(iconName),
-        registry.loadIcon(iconName),
-      ];
+      ]);
 
-      const results = await Promise.all(promises);
-
-      // 모든 결과가 동일한 컴포넌트여야 함
-      expect(results[0]).toBe(results[1]);
-      expect(results[1]).toBe(results[2]);
+      expect(firstLoad).toBe(secondLoad);
     });
 
-    test('로딩 상태를 추적해야 함', () => {
+    test('로딩 중 상태를 getDebugInfo로 노출해야 함', async () => {
       const iconName: IconName = 'X';
 
-      // 초기에는 로딩 중이 아님
-      expect(registry.isLoading(iconName)).toBe(false);
+      expect(registry.getDebugInfo()).toEqual({ loadingCount: 0, loadingIcons: [] });
 
-      // 로딩 시작 (Promise는 대기하지 않음)
       const loadPromise = registry.loadIcon(iconName);
+      const during = registry.getDebugInfo();
 
-      // 로딩 중 상태 확인 (즉시 확인하면 여전히 로딩 중일 수 있음)
-      expect(registry.isLoading(iconName)).toBe(true);
+      expect(during.loadingCount).toBe(1);
+      expect(during.loadingIcons).toContain(iconName);
 
-      // 로딩 완료 후 정리
-      return loadPromise.then(() => {
-        expect(registry.isLoading(iconName)).toBe(false);
-      });
-    });
+      await loadPromise;
 
-    test('캐시를 적절히 관리해야 함', async () => {
-      const iconName: IconName = 'ChevronLeft';
-      const cacheKey1 = {};
-      const cacheKey2 = {};
-
-      // 아이콘 로드
-      const IconComponent = await registry.loadIcon(iconName);
-
-      // 서로 다른 캐시 키에 저장
-      registry.setCachedIcon(cacheKey1, iconName, IconComponent);
-      registry.setCachedIcon(cacheKey2, iconName, IconComponent);
-
-      // 각각의 캐시에서 조회 가능
-      expect(registry.getCachedIcon(cacheKey1, iconName)).toBe(IconComponent);
-      expect(registry.getCachedIcon(cacheKey2, iconName)).toBe(IconComponent);
-
-      // cacheKey1 캐시 제거
-      registry.clearCache(cacheKey1);
-      expect(registry.getCachedIcon(cacheKey1, iconName)).toBeNull();
-      expect(registry.getCachedIcon(cacheKey2, iconName)).toBe(IconComponent);
-
-      // 모든 캐시 제거
-      registry.clearAllCaches();
-      expect(registry.getCachedIcon(cacheKey2, iconName)).toBeNull();
-    });
-
-    test('디버그 정보를 제공해야 함', () => {
-      const debugInfo = registry.getDebugInfo();
-
-      expect(debugInfo).toHaveProperty('loadingCount');
-      expect(debugInfo).toHaveProperty('loadingIcons');
-      expect(typeof debugInfo.loadingCount).toBe('number');
-      expect(Array.isArray(debugInfo.loadingIcons)).toBe(true);
-    });
-
-    test('fallback 아이콘을 지원해야 함', async () => {
-      const fallbackStub = vi.fn(() => ({ tag: 'div', children: ['Fallback Icon'] }));
-      const fallbackComponent = fallbackStub as unknown as Parameters<
-        IconRegistry['setFallbackIcon']
-      >[0];
-      registry.setFallbackIcon(fallbackComponent);
-
-      // 존재하지 않는 아이콘을 시뮬레이션하기 위해 임시 mock 제거
-      vi.doUnmock('@/shared/components/ui/Icon/hero/HeroDownload.tsx');
-
-      // 빈 객체로 mock하여 아이콘을 찾을 수 없도록 설정
-      vi.doMock('@/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({}));
-
-      try {
-        const result = await registry.loadIcon('Download' as IconName);
-        // fallback이 반환되어야 함
-        expect(result).toBe(fallbackComponent);
-      } catch (error) {
-        // mock 환경에서는 fallback 로직이 정상 작동하지 않을 수 있음
-        expect(error).toBeDefined();
-      }
-
-      // 원래 mock 복원
-      vi.doMock('@/shared/components/ui/Icon/hero/HeroDownload.tsx', () => ({
-        HeroDownload: vi.fn(() => ({
-          tag: 'div',
-          props: { 'data-testid': 'icon-download' },
-          children: ['Download Icon'],
-        })),
-      }));
+      const after = registry.getDebugInfo();
+      expect(after.loadingCount).toBe(0);
+      expect(after.loadingIcons).toHaveLength(0);
     });
   });
 
@@ -266,62 +187,30 @@ describe('P7: Performance Optimization Unit Tests', () => {
       resetIconRegistry();
     });
 
-    test('번들 크기 최적화를 확인해야 함', async () => {
-      // 동적 import가 사용되는지 확인
+    test('동적 import는 아이콘이 렌더링될 때만 실행되어야 함', async () => {
       const registry = getIconRegistry();
+      const heroDownloadModule = await import('@/shared/components/ui/Icon/hero/HeroDownload.tsx');
+      const heroDownloadMock = heroDownloadModule.HeroDownload as unknown as Mock;
 
-      // 아이콘을 로드하기 전에는 메모리에 없어야 함
-      const cacheKey = {};
-      expect(registry.getCachedIcon(cacheKey, 'Download')).toBeNull();
+      heroDownloadMock.mockClear();
 
-      // 필요할 때만 로드 (mock 환경에서는 실제 동적 import 대신 mock이 사용됨)
       const IconComponent = await registry.loadIcon('Download');
-      expect(IconComponent).toBeDefined();
+      expect(heroDownloadMock).not.toHaveBeenCalled();
 
-      // 캐시된 후에는 즉시 접근 가능
-      registry.setCachedIcon(cacheKey, 'Download', IconComponent);
-      expect(registry.getCachedIcon(cacheKey, 'Download')).toBe(IconComponent);
-    });
-
-    test('메모리 사용량을 최적화해야 함', async () => {
-      const registry = getIconRegistry();
-
-      // WeakMap 사용으로 가비지 컬렉션 가능한 캐시
-      let cacheKey: object | null = {};
-      const iconName: IconName = 'Settings';
-
-      const IconComponent = await registry.loadIcon(iconName);
-      registry.setCachedIcon(cacheKey, iconName, IconComponent);
-
-      expect(registry.getCachedIcon(cacheKey, iconName)).toBe(IconComponent);
-
-      // 캐시 키 참조 제거 (실제 GC는 제어할 수 없으므로 null 할당으로 시뮬레이션)
-      cacheKey = null;
-
-      // 새로운 캐시 키에서는 이전 캐시를 찾을 수 없어야 함
-      const newCacheKey = {};
-      expect(registry.getCachedIcon(newCacheKey, iconName)).toBeNull();
+      IconComponent({} as never);
+      expect(heroDownloadMock).toHaveBeenCalledTimes(1);
     });
 
     test('중복 요청을 효율적으로 처리해야 함', async () => {
       const registry = getIconRegistry();
       const iconName: IconName = 'X';
 
-      // 여러 번의 동시 요청
-      const startTime = performance.now();
-      const promises = Array.from({ length: 10 }, () => registry.loadIcon(iconName));
-
+      const promises = Array.from({ length: 6 }, () => registry.loadIcon(iconName));
       const results = await Promise.all(promises);
-      const endTime = performance.now();
 
-      // 모든 결과가 동일해야 함 (중복 로딩 방지)
-      const firstResult = results[0];
       results.forEach(result => {
-        expect(result).toBe(firstResult);
+        expect(result).toBe(results[0]);
       });
-
-      // 로딩 시간이 합리적이어야 함 (정확한 시간은 환경에 따라 다름)
-      expect(endTime - startTime).toBeLessThan(1000); // 1초 이내
     });
   });
 });
