@@ -28,7 +28,7 @@
  */
 
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { NotificationService } from '@shared/services';
+import { NotificationService } from '@shared/services/notification-service';
 import { languageService } from '@shared/services/language-service';
 
 /**

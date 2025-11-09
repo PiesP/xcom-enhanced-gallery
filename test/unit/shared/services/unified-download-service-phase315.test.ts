@@ -5,11 +5,11 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { unifiedDownloadService } from '@shared/services';
+import { unifiedDownloadService } from '@shared/services/unified-download-service';
 import type {
   UnifiedDownloadAvailabilityResult,
   SimulatedUnifiedDownloadResult,
-} from '@shared/services';
+} from '@shared/services/unified-download-service';
 import type { MediaInfo } from '@shared/types';
 
 describe('UnifiedDownloadService - Phase 315-Extended', () => {

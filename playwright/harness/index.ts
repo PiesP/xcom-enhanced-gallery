@@ -23,7 +23,7 @@ import type {
 import { initializeVendors, getSolid, type ComponentChildren } from '@shared/external/vendors';
 import { logger } from '@shared/logging/logger';
 import { languageService } from '@shared/services/language-service';
-import { NotificationService } from '@shared/services';
+import { NotificationService } from '@shared/services/notification-service';
 import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import { Toolbar } from '@shared/components/ui/Toolbar/Toolbar';
 import { KeyboardHelpOverlay } from '@features/gallery/components/vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';

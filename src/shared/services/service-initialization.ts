@@ -30,24 +30,12 @@ export async function registerCoreServices(): Promise<void> {
   const mediaService = await getMediaService();
   serviceManager.register(SERVICE_KEYS.MEDIA_SERVICE, mediaService);
 
-  // Duplicate registration for compatibility with existing keys
-  serviceManager.register(SERVICE_KEYS.MEDIA_EXTRACTION, mediaService);
-  serviceManager.register(SERVICE_KEYS.VIDEO_CONTROL, mediaService);
-  serviceManager.register(SERVICE_KEYS.VIDEO_STATE, mediaService);
-
   // Individual UI services
   const { ThemeService } = await import('./theme-service');
 
   const themeService = new ThemeService();
 
   serviceManager.register(SERVICE_KEYS.THEME, themeService);
-
-  // Phase 268-3: Conditional registration of backward compatibility keys
-  // Register only in test environment to remove production warnings
-  if (import.meta.env.MODE === 'test') {
-    // Test-only keys (backward compatibility)
-    serviceManager.register('theme.service', themeService);
-  }
 
   // ====================================
   // Services maintained independently

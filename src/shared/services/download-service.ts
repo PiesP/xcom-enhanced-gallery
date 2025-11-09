@@ -1,33 +1,11 @@
-/**
- * DownloadService - Direct Tampermonkey GM_download integration
- *
- * **Role**: Blob/File object download only (Phase 320+)
- *
- * Phase 320: Blob/File download support via Tampermonkey 5.4.0+ GM_download
- * Lean mode: Test mode paths removed (userscript-only)
- *
- * **Usage scenarios**:
- * - ✅ Blob/File download: downloadBlob(), downloadBlobBulk()
- * - ❌ URL-based download: Recommend using UnifiedDownloadService
- *
- * **vs UnifiedDownloadService**:
- * - DownloadService: Blob/File object → browser memory data
- * - UnifiedDownloadService: URL-based → remote resource download + ZIP assembly
- *
- * Pattern: Singleton with async/await, error handling, user notifications
- * MV3 Compatible: All methods use standard browser APIs + Tampermonkey native features
- */
+/** DownloadService wraps GM_download for Blob/File downloads. */
 
 import { NotificationService } from './notification-service';
 import { logger } from '../logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { getGMDownload } from './download/gm-download';
 
-/**
- * Blob/File download options - Phase 320
- * Supports downloading Blob or File objects directly
- * Compatible with Tampermonkey 5.4.0+ where GM_download accepts Blob/File
- */
+/** Options for downloading a Blob or File via GM_download. */
 export interface BlobDownloadOptions {
   blob: Blob | File;
   name: string;
@@ -38,9 +16,7 @@ export interface BlobDownloadOptions {
   suppressNotifications?: boolean;
 }
 
-/**
- * Blob/File download result - Phase 320
- */
+/** Result of a blob download attempt. */
 export interface BlobDownloadResult {
   success: boolean;
   filename?: string;
@@ -48,15 +24,7 @@ export interface BlobDownloadResult {
   size?: number;
 }
 
-/**
- * Test mode download options - Phase 314-4
- * For testing in non-userscript environments
- */
-// Test mode interfaces removed in lean mode
-
-/**
- * DownloadService - Singleton for file downloads
- */
+/** Singleton service for Blob/File downloads. */
 export class DownloadService {
   private static instance: DownloadService | null = null;
   private readonly notificationService = NotificationService.getInstance();
@@ -70,28 +38,7 @@ export class DownloadService {
     return DownloadService.instance;
   }
 
-  /**
-   * Download a single Blob or File - Phase 320
-   *
-   * Requires Tampermonkey 5.4.0+ where GM_download supports Blob/File.
-   * MV3 Compatible: Uses standard Blob API and Tampermonkey native feature.
-   *
-   * @param options Blob download options (blob, name, optional saveAs/conflictAction)
-   * @returns Promise resolving to download result
-   *
-   * @example
-   * ```typescript
-   * const blob = new Blob(['data'], { type: 'text/plain' });
-   * const result = await downloadService.downloadBlob({
-   *   blob,
-   *   name: 'data.txt',
-   *   saveAs: true
-   * });
-   * if (result.success) {
-   *   console.log(`Downloaded: ${result.filename}`);
-   * }
-   * ```
-   */
+  /** Download a single Blob or File. */
   async downloadBlob(options: BlobDownloadOptions): Promise<BlobDownloadResult> {
     try {
       const gmDownload = getGMDownload();
@@ -179,28 +126,7 @@ export class DownloadService {
     }
   }
 
-  /**
-   * Download multiple Blobs sequentially - Phase 320
-   *
-   * Downloads multiple Blob objects with a small delay between each
-   * to avoid overwhelming the system.
-   *
-   * @param options Array of Blob download options
-   * @param onProgress Optional progress callback
-   * @returns Promise resolving to array of download results
-   *
-   * @example
-   * ```typescript
-   * const blobs = [
-   *   new Blob(['data1'], { type: 'text/plain' }),
-   *   new Blob(['data2'], { type: 'text/plain' })
-   * ];
-   * const results = await downloadService.downloadBlobBulk(
-   *   blobs.map((blob, i) => ({ blob, name: `file-${i}.txt` })),
-   *   (progress) => console.log(`${progress.current}/${progress.total}`)
-   * );
-   * ```
-   */
+  /** Download multiple Blobs sequentially. */
   async downloadBlobBulk(
     options: BlobDownloadOptions[],
     onProgress?: (progress: { current: number; total: number }) => void
@@ -252,29 +178,6 @@ export class DownloadService {
     }
 
     return results;
-  }
-
-  // downloadInTestMode removed in lean mode
-
-  /**
-   * Download multiple blobs in test mode - Phase 314-4
-   *
-   * Simulates bulk downloads without calling GM_download.
-   *
-   * @param options Array of Blob download options
-   * @param testOptions Test mode configuration
-   * @param onProgress Optional progress callback
-   * @returns Promise resolving to array of test mode download results
-   */
-  // downloadBlobBulkInTestMode removed in lean mode
-
-  /**
-   * Reset service state
-   *
-   * @internal Not used by any feature (reserved for potential future use)
-   */
-  reset(): void {
-    logger.debug('[DownloadService] Service reset');
   }
 }
 

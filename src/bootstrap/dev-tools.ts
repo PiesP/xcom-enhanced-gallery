@@ -27,10 +27,11 @@ export async function initializeDevTools(): Promise<void> {
   try {
     // Service diagnostic tools
     // Phase 350: Import ServiceDiagnostics directly (prevent circular reference)
-    const { ServiceDiagnostics } = await import('../shared/services/service-diagnostics');
-    // Register DEV-only global diagnostics (remove import side effects)
-    ServiceDiagnostics.registerGlobalDiagnostic();
-    await ServiceDiagnostics.diagnoseServiceManager();
+    const { registerDiagnosticsGlobal, diagnoseServiceManager } = await import(
+      '../shared/services/diagnostics'
+    );
+    registerDiagnosticsGlobal();
+    await diagnoseServiceManager();
 
     logger.info('🛠️ Development tools activated');
   } catch (error) {

@@ -5,7 +5,11 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { ServiceDiagnostics } from '@shared/services/service-diagnostics';
+import {
+  ServiceDiagnostics,
+  diagnoseServiceManager,
+  registerDiagnosticsGlobal,
+} from '@shared/services/diagnostics';
 
 describe('ServiceDiagnostics', () => {
   setupGlobalTestIsolation();
@@ -24,7 +28,7 @@ describe('ServiceDiagnostics', () => {
   describe('diagnoseServiceManager()', () => {
     it('서비스 매니저 진단을 성공적으로 수행해야 함', async () => {
       // 이 테스트는 실제 서비스 초기화를 수행하므로 통합 테스트에 가깝습니다
-      await expect(ServiceDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
+      await expect(diagnoseServiceManager()).resolves.not.toThrow();
     });
 
     it('진단 중 발생한 에러를 재throw해야 함', async () => {
@@ -34,7 +38,7 @@ describe('ServiceDiagnostics', () => {
       }));
 
       // 에러가 발생하면 재throw되어야 함
-      await expect(ServiceDiagnostics.diagnoseServiceManager()).rejects.toThrow();
+      await expect(diagnoseServiceManager()).rejects.toThrow();
 
       vi.doUnmock('@/shared/services/service-initialization');
     });
@@ -42,7 +46,7 @@ describe('ServiceDiagnostics', () => {
     it('필수 서비스 초기화를 시도해야 함', async () => {
       // SERVICE_KEYS.THEME이 tryGet으로 호출되는지 확인
       // 실제 구현은 통합 테스트에서 검증하므로 여기서는 에러가 발생하지 않는지만 확인
-      await expect(ServiceDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
+      await expect(diagnoseServiceManager()).resolves.not.toThrow();
     });
   });
 
@@ -50,7 +54,7 @@ describe('ServiceDiagnostics', () => {
     it('DEV 모드에서 전역 진단 함수를 등록해야 함', () => {
       vi.stubEnv('DEV', true);
 
-      ServiceDiagnostics.registerGlobalDiagnostic();
+      registerDiagnosticsGlobal();
 
       expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeDefined();
       expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBe(
@@ -61,7 +65,7 @@ describe('ServiceDiagnostics', () => {
     it('DEV 모드가 아니면 전역 함수를 등록하지 않아야 함', () => {
       vi.stubEnv('DEV', false);
 
-      ServiceDiagnostics.registerGlobalDiagnostic();
+      registerDiagnosticsGlobal();
 
       expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeUndefined();
     });
@@ -70,11 +74,11 @@ describe('ServiceDiagnostics', () => {
       vi.stubEnv('DEV', true);
 
       // 첫 번째 등록
-      ServiceDiagnostics.registerGlobalDiagnostic();
+      registerDiagnosticsGlobal();
       const firstRegistration = (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
 
       // 두 번째 등록
-      ServiceDiagnostics.registerGlobalDiagnostic();
+      registerDiagnosticsGlobal();
       const secondRegistration = (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
 
       // 동일한 참조여야 함 (static 메서드이므로)

@@ -12,13 +12,8 @@ import {
   isBaseLanguageCode,
   type BaseLanguageCode,
   type SupportedLanguage,
-  type LanguageStrings,
 } from '@shared/constants/i18n/language-types';
-import {
-  DEFAULT_LANGUAGE,
-  TRANSLATION_REGISTRY,
-  getLanguageStrings,
-} from '@shared/constants/i18n/translation-registry';
+import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
 
 export type {
   SupportedLanguage,
@@ -73,54 +68,6 @@ export class LanguageService extends BaseServiceImpl {
   protected onDestroy(): void {
     this.listeners.clear();
   }
-  /**
-   * (Phase 4) Multilingual resource integrity report
-   * missing: List of keys missing from other locales compared to base (en)
-   * extra: List of keys present in other locales but not in base (en)
-   */
-  getIntegrityReport(): {
-    missing: Record<BaseLanguageCode, string[]>;
-    extra: Record<BaseLanguageCode, string[]>;
-  } {
-    const locales: readonly BaseLanguageCode[] = LANGUAGE_CODES;
-    const base: LanguageStrings = TRANSLATION_REGISTRY[DEFAULT_LANGUAGE];
-
-    const flatten = (obj: unknown, prefix = '', acc: string[] = []): string[] => {
-      if (obj && typeof obj === 'object') {
-        for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-          const key = prefix ? `${prefix}.${k}` : k;
-          // Leaf nodes are strings; recursively process objects
-          if (typeof v === 'string') acc.push(key);
-          else flatten(v, key, acc);
-        }
-      }
-      return acc;
-    };
-
-    const baseKeys = new Set(flatten(base));
-    const missing: Record<BaseLanguageCode, string[]> = {
-      en: [],
-      ko: [],
-      ja: [],
-    };
-    const extra: Record<BaseLanguageCode, string[]> = {
-      en: [],
-      ko: [],
-      ja: [],
-    };
-
-    for (const locale of locales) {
-      const localeStrings: LanguageStrings = TRANSLATION_REGISTRY[locale];
-      const keys = new Set(flatten(localeStrings));
-      // missing (base exists, locale missing)
-      for (const k of baseKeys) if (!keys.has(k)) missing[locale].push(k);
-      // extra (locale exists, base missing)
-      for (const k of keys) if (!baseKeys.has(k)) extra[locale].push(k);
-    }
-
-    return { missing, extra };
-  }
-
   detectLanguage(): BaseLanguageCode {
     // Safe navigator.language access
     const browserLang =

@@ -23,7 +23,7 @@ import {
 import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
-import { NotificationService } from '@shared/services';
+import { NotificationService } from '@shared/services/notification-service';
 import { initializeTheme } from './services/theme-initialization';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 
