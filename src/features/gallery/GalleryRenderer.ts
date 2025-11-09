@@ -8,10 +8,7 @@
  * - State changes handled via signal subscription
  */
 
-import type {
-  GalleryRenderOptions,
-  GalleryRenderer as GalleryRendererInterface,
-} from '@shared/interfaces/gallery.interfaces';
+import type { GalleryRenderer as GalleryRendererInterface } from '@shared/interfaces';
 import {
   closeGallery,
   gallerySignals,
@@ -23,7 +20,7 @@ import {
   navigateNext,
 } from '../../shared/state/signals/gallery.signals';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
-import type { MediaInfo } from '@shared/types/media.types';
+import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
 import { GalleryContainer } from '../../shared/components/isolation';
 import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';

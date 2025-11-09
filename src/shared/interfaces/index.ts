@@ -11,10 +11,6 @@
  *   * Enables loose coupling between gallery implementation and features
  *
  * **Exported Types**:
- * - `GalleryRenderOptions`: Configuration for gallery rendering behavior
- *   * Re-exported from @shared/types/media.types (single source of truth)
- *   * Includes currentIndex, defaultFitMode, and other render settings
- *   * Provides convenience co-location with GalleryRenderer interface
  *
  * **Architecture Pattern**: Barrel Export (Phase 370)
  * - Aggregates all public interfaces in single file
@@ -28,11 +24,11 @@
  *
  * **Module Scope** (Phase 200: Type Hierarchy Integration):
  * - Public: GalleryRenderer interface (features layer contract)
- * - Public: GalleryRenderOptions type (re-export for convenience)
  * - Internal: None (interface-only module)
  *
  * **Usage** (Features Layer):
- * import type { GalleryRenderer, GalleryRenderOptions } from '@shared/interfaces';
+ * import type { GalleryRenderer } from '@shared/interfaces';
+ * import type { GalleryRenderOptions } from '@shared/types';
  *
  * **Related**:
  * - @see @shared/types/media.types.ts (type hierarchy, single source of truth)
@@ -43,4 +39,4 @@
  * @internal Module for architectural abstraction (Shared layer)
  */
 
-export type { GalleryRenderer, GalleryRenderOptions } from './gallery.interfaces';
+export type { GalleryRenderer } from './gallery.interfaces';

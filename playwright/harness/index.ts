@@ -1,6 +1,6 @@
 import type { ToolbarProps as SolidToolbarProps } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { MediaInfo } from '@shared/types/media.types';
-import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
+import type { GalleryRenderer } from '@shared/interfaces';
 import type { EventHandlers } from '@shared/utils/events';
 import type {
   ToolbarMountProps,

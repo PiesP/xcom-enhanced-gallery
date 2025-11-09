@@ -8,7 +8,7 @@
  * **Architecture Pattern**:
  * - Dependency rules: features → shared → core → infrastructure
  * - GalleryRenderer: Abstract contract for gallery lifecycle (render, close, destroy)
- * - GalleryRenderOptions: Configuration for rendering behavior (re-exported from types)
+ * - GalleryRenderOptions: Configuration for rendering behavior (imported from shared types)
  *
  * **Type Hierarchy Integration** (Phase 200):
  * - Core types defined in @shared/types/media.types.ts (single source of truth)
@@ -17,11 +17,11 @@
  *
  * **Module Scope**:
  * - Public: GalleryRenderer interface (features layer contract)
- * - Public: GalleryRenderOptions type (re-export for convenience)
  * - Internal: None (interface-only module)
  *
  * **Usage** (Features Layer):
- * import type { GalleryRenderer, GalleryRenderOptions } from '@shared/interfaces';
+ * import type { GalleryRenderer } from '@shared/interfaces';
+ * import type { GalleryRenderOptions } from '@shared/types';
  *
  * class GalleryApp implements GalleryRenderer {
  *   async render(mediaItems: readonly MediaInfo[], options?: GalleryRenderOptions) {
@@ -216,15 +216,3 @@ export interface GalleryRenderer {
    */
   setOnCloseCallback(onClose: () => void): void;
 }
-
-/**
- * Re-export GalleryRenderOptions for convenience
- *
- * **Note**: Primary source of truth is @shared/types/media.types.ts
- * Re-exported here for co-location with GalleryRenderer interface
- * Prevents need for multiple imports in features layer
- *
- * @see @shared/types/media.types.ts for type definition
- * @internal Re-export for API convenience
- */
-export type { GalleryRenderOptions };
