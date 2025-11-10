@@ -84,7 +84,7 @@ describe('Guard: direct GM_* usage is forbidden (adapter-only)', () => {
       // Environment detection layer
       'src/shared/external/userscript/environment-detector.ts',
       // Bootstrap diagnostics (service availability check)
-      'src/bootstrap/diagnostics/service-checker.ts',
+      'src/bootstrap/diagnostics/service-scan.ts',
     ]);
 
     const offenders: { file: string; line: string }[] = [];

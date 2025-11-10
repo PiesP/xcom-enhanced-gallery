@@ -9,7 +9,7 @@ import {
   checkDownloadService,
   checkPersistentStorage,
   checkAllServices,
-} from '../../../src/bootstrap/diagnostics/service-checker';
+} from '../../../src/bootstrap/diagnostics/service-scan';
 
 describe('Service Checker', () => {
   beforeEach(() => {

@@ -36,7 +36,7 @@ export async function initializeEnvironment(): Promise<BootstrapResult> {
 
   try {
     if (shouldCollectDiagnostics) {
-      const { getBootstrapDiagnostics } = await import('./diagnostics/bootstrap-reporter');
+      const { getBootstrapDiagnostics } = await import('./diagnostics/collector');
       diagnostics = await getBootstrapDiagnostics();
     }
 

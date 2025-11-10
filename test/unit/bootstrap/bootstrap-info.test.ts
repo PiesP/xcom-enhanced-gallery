@@ -6,9 +6,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 import { logger } from '../../../src/shared/logging';
-import { checkAllServices } from '../../../src/bootstrap/diagnostics/service-checker';
-import { logBootstrapSummary } from '../../../src/bootstrap/diagnostics/bootstrap-logger';
-import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/bootstrap-reporter';
+import { checkAllServices } from '../../../src/bootstrap/diagnostics/service-scan';
+import { logBootstrapSummary } from '../../../src/bootstrap/diagnostics/logger';
+import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/collector';
 import type { BootstrapResult } from '../../../src/bootstrap/diagnostics/types';
 
 describe('Bootstrap Info - Phase 314-5', () => {

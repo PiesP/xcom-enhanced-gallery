@@ -5,10 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger } from '../../../src/shared/logging';
-import {
-  logBootstrapSummary,
-  logEnvironmentInfo,
-} from '../../../src/bootstrap/diagnostics/bootstrap-logger';
+import { logBootstrapSummary, logEnvironmentInfo } from '../../../src/bootstrap/diagnostics/logger';
 import type { BootstrapResult } from '../../../src/bootstrap/diagnostics/types';
 
 describe('Bootstrap Logger', () => {
@@ -96,7 +93,7 @@ describe('Bootstrap Logger', () => {
         '[bootstrap] ✅ HttpRequestService: Native fetch API detected'
       );
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ⚠️  DownloadService: GM_download unavailable'
+        '[bootstrap] ⚠️ DownloadService: GM_download unavailable'
       );
     });
 

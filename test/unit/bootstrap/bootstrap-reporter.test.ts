@@ -5,10 +5,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger } from '../../../src/shared/logging';
-import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/bootstrap-reporter';
+import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/collector';
 import * as userscript from '../../../src/shared/external/userscript';
-import * as serviceChecker from '../../../src/bootstrap/diagnostics/service-checker';
-import * as bootstrapLogger from '../../../src/bootstrap/diagnostics/bootstrap-logger';
+import * as serviceScan from '../../../src/bootstrap/diagnostics/service-scan';
+import * as diagnosticsLogger from '../../../src/bootstrap/diagnostics/logger';
 
 describe('Bootstrap Reporter', () => {
   let detectEnvironmentSpy: ReturnType<typeof vi.fn>;
@@ -23,12 +23,12 @@ describe('Bootstrap Reporter', () => {
 
     // Mock dependencies
     detectEnvironmentSpy = vi.spyOn(userscript, 'detectEnvironment');
-    checkAllServicesSpy = vi.spyOn(serviceChecker, 'checkAllServices');
+    checkAllServicesSpy = vi.spyOn(serviceScan, 'checkAllServices');
     logEnvironmentInfoSpy = vi
-      .spyOn(bootstrapLogger, 'logEnvironmentInfo')
+      .spyOn(diagnosticsLogger, 'logEnvironmentInfo')
       .mockImplementation(() => {});
     logBootstrapSummarySpy = vi
-      .spyOn(bootstrapLogger, 'logBootstrapSummary')
+      .spyOn(diagnosticsLogger, 'logBootstrapSummary')
       .mockImplementation(() => {});
   });
 
