@@ -5,31 +5,19 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { BulkDownloadService } from '@/shared/services/bulk-download-service';
-import { mediaService } from '@/shared/services/media-service';
-import { SettingsService } from '@/features/settings/services/settings-service';
-import { serviceManager } from '@/shared/services/core';
-import { getBulkDownloadService } from '@/shared/services/service-factories';
+import { UnifiedDownloadService } from '../../../../src/shared/services/unified-download-service';
+import { mediaService } from '../../../../src/shared/services/media-service';
+import { SettingsService } from '../../../../src/features/settings/services/settings-service';
 
 describe('RED: 공통 Result 패턴 통일', () => {
   setupGlobalTestIsolation();
 
-  beforeEach(() => {
-    // Phase A1: BulkDownloadService는 bootstrap에서 등록되므로 테스트에서도 등록 필요
-    // 서비스 덮어쓰기 경고를 피하기 위해 이미 등록되어 있는지 확인
-    try {
-      serviceManager.get('core.bulkDownload');
-    } catch {
-      const bulkDownloadService = getBulkDownloadService();
-      serviceManager.register('core.bulkDownload', bulkDownloadService);
-    }
-  });
+  it('UnifiedDownloadService.downloadBulk 결과는 status 필드를 포함해야 한다', async () => {
+    const svc = UnifiedDownloadService.getInstance();
+    const result: any = await svc.downloadBulk([] as any); // 빈 배열로 즉시 에러 반환
 
-  it('BulkDownloadService.downloadMultiple 가 status 필드를 제공해야 한다 (현재 없음)', async () => {
-    const svc = new BulkDownloadService();
-    const result: any = await svc.downloadMultiple([] as any); // 빈 배열로 실패 유도
-    // 현재 구현에는 status가 없으므로 이 테스트는 실패(RED)해야 한다.
-    expect(result.status).toBeDefined();
+    expect(result).toBeDefined();
+    expect(result.status).toBe('error');
   });
 
   it(
@@ -49,14 +37,13 @@ describe('RED: 공통 Result 패턴 통일', () => {
     }
   );
 
-  it('SettingsService 이벤트가 BaseResult 형태가 아니므로 어댑터 도입 후 status 기대 (현재 없음)', async () => {
+  it('SettingsService 이벤트가 BaseResult 형태의 status 필드를 노출해야 한다', async () => {
     const svc = new SettingsService();
     await svc.initialize();
     const events: any[] = [];
     svc.subscribe(e => events.push(e));
     await svc.set('gallery.preloadCount' as any, 4); // 숫자 범위 내 유효 값 (0-20)
-    // 첫 이벤트를 BaseResult 형태로 변환할 어댑터가 없으므로 현재 실패 (RED)
     const first = events[0];
-    expect(first.status).toBeDefined();
+    expect(first.status).toBe('success');
   });
 });

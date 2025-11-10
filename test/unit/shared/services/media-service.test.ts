@@ -7,7 +7,7 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { MediaService } from '@/shared/services/media-service.js';
+import { MediaService } from '../../../../src/shared/services/media-service';
 
 describe('MediaService', () => {
   setupGlobalTestIsolation();
@@ -74,33 +74,6 @@ describe('MediaService', () => {
     });
   });
 
-  describe('pauseAllBackgroundVideos', () => {
-    it('should pause background videos without errors', () => {
-      expect(() => service.pauseAllBackgroundVideos()).not.toThrow();
-    });
-
-    it('should be callable multiple times', () => {
-      service.pauseAllBackgroundVideos();
-      expect(() => service.pauseAllBackgroundVideos()).not.toThrow();
-    });
-  });
-
-  describe('cleanupAfterGallery', () => {
-    it('should cleanup after gallery without errors', async () => {
-      await expect(service.cleanupAfterGallery()).resolves.not.toThrow();
-    });
-
-    it('should be callable multiple times', async () => {
-      await service.cleanupAfterGallery();
-      await expect(service.cleanupAfterGallery()).resolves.not.toThrow();
-    });
-
-    it('should work after pausing videos', async () => {
-      service.pauseAllBackgroundVideos();
-      await expect(service.cleanupAfterGallery()).resolves.not.toThrow();
-    });
-  });
-
   describe('prefetchNextMedia', () => {
     it('should handle empty arrays gracefully', async () => {
       await expect(service.prefetchNextMedia([], 0)).resolves.not.toThrow();
@@ -130,17 +103,14 @@ describe('MediaService', () => {
   });
 
   describe('라이프사이클', () => {
-    it('should support full lifecycle: pause -> cleanup -> cancel', async () => {
-      service.pauseAllBackgroundVideos();
-      await service.cleanupAfterGallery();
-      service.cancelDownload();
+    it('should support full lifecycle: cleanup -> cancel', async () => {
       await service.cleanup();
+      service.cancelDownload();
 
       expect(service.isDownloading()).toBe(false);
     });
 
     it('should handle cleanup without pause', async () => {
-      await service.cleanupAfterGallery();
       await service.cleanup();
 
       expect(service.isDownloading()).toBe(false);
@@ -156,8 +126,8 @@ describe('MediaService', () => {
   describe('getOptimizedImageUrl - 보안 검증', () => {
     beforeEach(() => {
       // WebP 지원 활성화 (테스트 목적)
-      // @ts-expect-error - private property access for testing
-      service.webpSupported = true;
+      // Force-enable WebP support for deterministic assertions
+      (service as unknown as { webpSupported: boolean | null }).webpSupported = true;
     });
 
     it('should only optimize valid pbs.twimg.com URLs', () => {

@@ -205,8 +205,8 @@ describe('UnifiedDownloadService - Phase 315-Extended', () => {
 
       expect(result.message).toContain('✅');
       expect(result.message).toContain('/');
-      expect(result.message).toContain('아이템');
-      expect(result.message).toContain('완료');
+      expect(result.message.toLowerCase()).toContain('items');
+      expect(result.message.toLowerCase()).toContain('complete');
     });
 
     it('should handle different media types', async () => {

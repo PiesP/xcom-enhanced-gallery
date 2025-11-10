@@ -1,15 +1,16 @@
 /**
- * @fileoverview UnifiedToastManager 테스트
- * @description ToastManager 싱글톤의 상태 관리, 라우팅, 구독 시스템 검증
+ * @fileoverview UnifiedToastManager 테스트 (Phase 420 이후)
+ * @description NotificationService 위임 동작을 검증한다.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { ToastManager, toastManager } from '@/shared/services/unified-toast-manager';
-import type { ToastItem, ToastOptions } from '@/shared/services/unified-toast-manager';
+import { ToastManager, toastManager, type ToastItem } from '@shared/services/unified-toast-manager';
+import { NotificationService } from '@shared/services/notification-service';
+import { logger } from '@shared/logging';
 
-// Mock logger
-vi.mock('@/shared/logging/logger', () => ({
+// 로거는 출력만 남기므로 더미로 대체한다.
+vi.mock('@shared/logging', () => ({
   logger: {
     debug: vi.fn(),
     info: vi.fn(),
@@ -18,31 +19,33 @@ vi.mock('@/shared/logging/logger', () => ({
   },
 }));
 
-// Mock accessibility helpers
-const mockPoliteLiveRegion = document.createElement('div');
-const mockAssertiveLiveRegion = document.createElement('div');
-vi.mock('@/shared/utils/accessibility/index', () => ({
-  ensurePoliteLiveRegion: vi.fn(() => mockPoliteLiveRegion),
-  ensureAssertiveLiveRegion: vi.fn(() => mockAssertiveLiveRegion),
-}));
-
-describe('ToastManager', () => {
+describe('ToastManager (Notification proxy)', () => {
   setupGlobalTestIsolation();
 
   let manager: ToastManager;
+  let notificationMock: Pick<NotificationService, 'show'>;
+  let getInstanceSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
+    notificationMock = {
+      show: vi.fn().mockResolvedValue(undefined),
+    } as Pick<NotificationService, 'show'>;
+
+    getInstanceSpy = vi
+      .spyOn(NotificationService, 'getInstance')
+      .mockReturnValue(notificationMock as NotificationService);
+
     ToastManager.resetInstance();
     manager = ToastManager.getInstance();
-    mockPoliteLiveRegion.innerHTML = '';
-    mockAssertiveLiveRegion.innerHTML = '';
   });
 
   afterEach(() => {
+    getInstanceSpy.mockRestore();
     ToastManager.resetInstance();
+    vi.clearAllMocks();
   });
 
-  describe('Singleton Pattern', () => {
+  describe('Singleton', () => {
     it('getInstance()는 항상 동일한 인스턴스를 반환한다', () => {
       const instance1 = ToastManager.getInstance();
       const instance2 = ToastManager.getInstance();
@@ -50,399 +53,135 @@ describe('ToastManager', () => {
       expect(instance1).toBe(instance2);
     });
 
+    it('toastManager export는 ToastManager 인스턴스를 노출한다', () => {
+      expect(toastManager).toBeInstanceOf(ToastManager);
+    });
+
     it('resetInstance() 후 새로운 인스턴스를 생성한다', () => {
-      const instance1 = ToastManager.getInstance();
+      const first = ToastManager.getInstance();
       ToastManager.resetInstance();
-      const instance2 = ToastManager.getInstance();
+      const second = ToastManager.getInstance();
 
-      expect(instance1).not.toBe(instance2);
+      expect(first).not.toBe(second);
     });
   });
 
-  describe('State Management', () => {
-    it('초기 상태는 빈 배열이다', () => {
-      expect(manager.getToasts()).toEqual([]);
-    });
-
-    it('show()는 toast를 추가하고 ID를 반환한다 (route: toast-only)', () => {
-      const id = manager.show({
-        title: 'Test',
-        message: 'Message',
-        type: 'warning', // warning은 기본 toast-only
-      });
+  describe('show()', () => {
+    it('ID를 반환하고 NotificationService.show를 호출한다', () => {
+      const id = manager.show({ title: '알림', message: '본문' });
 
       expect(id).toMatch(/^toast_\d+_\d+$/);
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(manager.getToasts()[0]).toMatchObject({
-        id,
-        title: 'Test',
-        message: 'Message',
-        type: 'warning',
+      expect(notificationMock.show).toHaveBeenCalledTimes(1);
+      expect(notificationMock.show).toHaveBeenCalledWith({
+        title: '알림',
+        text: '본문',
       });
-    });
-
-    it('remove()는 특정 toast를 제거한다', () => {
-      const id1 = manager.show({ title: 'T1', message: 'M1', type: 'warning' });
-      const id2 = manager.show({ title: 'T2', message: 'M2', type: 'warning' });
-
-      manager.remove(id1);
-
-      const toasts = manager.getToasts();
-      expect(toasts).toHaveLength(1);
-      expect(toasts[0].id).toBe(id2);
-    });
-
-    it('clear()는 모든 toast를 제거한다', () => {
-      manager.show({ title: 'T1', message: 'M1', type: 'warning' });
-      manager.show({ title: 'T2', message: 'M2', type: 'warning' });
-
-      manager.clear();
-
       expect(manager.getToasts()).toEqual([]);
     });
 
-    it('존재하지 않는 ID를 remove()해도 에러가 발생하지 않는다', () => {
-      const initialToasts = manager.getToasts();
+    it('duration과 onAction 옵션을 NotificationService 옵션으로 매핑한다', () => {
+      const onAction = vi.fn();
 
-      expect(() => manager.remove('non-existent-id')).not.toThrow();
-      expect(manager.getToasts()).toEqual(initialToasts);
+      manager.show({
+        title: 'Title',
+        message: 'Message',
+        duration: 4000,
+        onAction,
+        route: 'toast-only', // Phase 420: route는 무시되지만 에러 없이 처리되어야 한다.
+      });
+
+      expect(notificationMock.show).toHaveBeenCalledWith({
+        title: 'Title',
+        text: 'Message',
+        timeout: 4000,
+        onclick: onAction,
+      });
     });
   });
 
-  describe('Routing Policy', () => {
-    it('info 타입은 기본적으로 live-only 라우팅을 사용한다', () => {
-      manager.show({
-        title: 'Info',
-        message: 'Message',
-        type: 'info',
+  describe('헬퍼 메서드', () => {
+    it.each([
+      ['success', '성공', '완료'],
+      ['info', '정보', '알림'],
+      ['warning', '주의', '경고'],
+      ['error', '오류', '문제'],
+    ] as const)('%s()는 show()를 위임한다', (method, title, message) => {
+      notificationMock.show.mockClear();
+
+      const id = manager[method](title, message);
+
+      expect(id).toMatch(/^toast_\d+_\d+$/);
+      expect(notificationMock.show).toHaveBeenCalledTimes(1);
+      expect(notificationMock.show).toHaveBeenCalledWith({
+        title,
+        text: message,
       });
-
-      // live-only이므로 toast 목록에 추가되지 않음
-      expect(manager.getToasts()).toEqual([]);
-      // live region에는 공지됨
-      expect(mockPoliteLiveRegion.textContent).toContain('Info: Message');
-    });
-
-    it('success 타입은 기본적으로 live-only 라우팅을 사용한다', () => {
-      manager.show({
-        title: 'Success',
-        message: 'Message',
-        type: 'success',
-      });
-
-      expect(manager.getToasts()).toEqual([]);
-      expect(mockPoliteLiveRegion.textContent).toContain('Success: Message');
-    });
-
-    it('warning 타입은 기본적으로 toast-only 라우팅을 사용한다', () => {
-      manager.show({
-        title: 'Warning',
-        message: 'Message',
-        type: 'warning',
-      });
-
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(mockPoliteLiveRegion.textContent).toBe('');
-    });
-
-    it('error 타입은 기본적으로 toast-only 라우팅을 사용한다', () => {
-      manager.show({
-        title: 'Error',
-        message: 'Message',
-        type: 'error',
-      });
-
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(mockAssertiveLiveRegion.textContent).toBe('');
-    });
-
-    it('route 옵션으로 라우팅을 재정의할 수 있다 - both', () => {
-      manager.show({
-        title: 'Info',
-        message: 'Message',
-        type: 'info',
-        route: 'both',
-      });
-
-      // both이므로 toast 목록에도 추가되고 live region에도 공지됨
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(mockPoliteLiveRegion.textContent).toContain('Info: Message');
-    });
-
-    it('route 옵션으로 라우팅을 재정의할 수 있다 - toast-only', () => {
-      manager.show({
-        title: 'Info',
-        message: 'Message',
-        type: 'info',
-        route: 'toast-only',
-      });
-
-      // toast-only이므로 toast 목록에만 추가되고 live region에는 공지 안됨
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(mockPoliteLiveRegion.textContent).toBe('');
-    });
-
-    it('error 타입은 assertive live region을 사용한다', () => {
-      manager.show({
-        title: 'Critical',
-        message: 'Error',
-        type: 'error',
-        route: 'live-only',
-      });
-
-      expect(mockAssertiveLiveRegion.textContent).toContain('Critical: Error');
-      expect(mockPoliteLiveRegion.textContent).toBe('');
     });
   });
 
-  describe('Type Helpers', () => {
-    it('success()는 success 타입의 toast를 표시한다', () => {
-      const id = manager.success('Success', 'Message');
-
-      expect(id).toMatch(/^toast_\d+_\d+$/);
-      // success는 기본 live-only이므로 toast 목록에 없음
+  describe('상태 관련 메서드', () => {
+    it('getToasts()는 항상 빈 배열을 반환한다', () => {
+      manager.show({ title: '테스트', message: '본문' });
       expect(manager.getToasts()).toEqual([]);
     });
 
-    it('info()는 info 타입의 toast를 표시한다', () => {
-      const id = manager.info('Info', 'Message');
-
-      expect(id).toMatch(/^toast_\d+_\d+$/);
+    it('remove()/clear()는 예외 없이 동작한다', () => {
+      expect(() => manager.remove('dummy')).not.toThrow();
+      expect(() => manager.clear()).not.toThrow();
       expect(manager.getToasts()).toEqual([]);
-    });
-
-    it('warning()은 warning 타입의 toast를 표시한다', () => {
-      const id = manager.warning('Warning', 'Message');
-
-      expect(id).toMatch(/^toast_\d+_\d+$/);
-      // warning은 기본 toast-only이므로 목록에 추가됨
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(manager.getToasts()[0].type).toBe('warning');
-    });
-
-    it('error()는 error 타입의 toast를 표시한다', () => {
-      const id = manager.error('Error', 'Message');
-
-      expect(id).toMatch(/^toast_\d+_\d+$/);
-      expect(manager.getToasts()).toHaveLength(1);
-      expect(manager.getToasts()[0].type).toBe('error');
-    });
-
-    it('헬퍼 메서드는 추가 옵션을 병합한다', () => {
-      const id = manager.error('Error', 'Message', {
-        duration: 5000,
-        actionText: 'Retry',
-        onAction: vi.fn(),
-      });
-
-      const toast = manager.getToasts()[0];
-      expect(toast).toMatchObject({
-        title: 'Error',
-        message: 'Message',
-        type: 'error',
-        duration: 5000,
-        actionText: 'Retry',
-      });
-      expect(toast.onAction).toBeTypeOf('function');
     });
   });
 
-  describe('Subscription System', () => {
-    it('subscribe()는 현재 상태를 즉시 전달한다', () => {
-      manager.show({ title: 'Existing', message: 'Toast', type: 'warning' });
-
-      const callback = vi.fn();
-      manager.subscribe(callback);
-
-      expect(callback).toHaveBeenCalledTimes(1);
-      expect(callback).toHaveBeenCalledWith(manager.getToasts());
-    });
-
-    it('상태 변경 시 구독자에게 알림을 보낸다 - add', () => {
-      const callback = vi.fn();
-      manager.subscribe(callback);
-
-      callback.mockClear();
-      manager.show({ title: 'New', message: 'Toast', type: 'warning' });
-
-      // signal.subscribe + 수동 notifySubscribers로 2번 호출됨
-      expect(callback).toHaveBeenCalledTimes(2);
-      expect(callback).toHaveBeenCalledWith(manager.getToasts());
-    });
-
-    it('상태 변경 시 구독자에게 알림을 보낸다 - remove', () => {
-      const id = manager.show({ title: 'Toast', message: 'Test', type: 'warning' });
-
-      const callback = vi.fn();
-      manager.subscribe(callback);
-
-      callback.mockClear();
-      manager.remove(id);
-
-      expect(callback).toHaveBeenCalledTimes(2);
-      expect(callback).toHaveBeenCalledWith([]);
-    });
-
-    it('상태 변경 시 구독자에게 알림을 보낸다 - clear', () => {
-      manager.show({ title: 'T1', message: 'M1', type: 'warning' });
-      manager.show({ title: 'T2', message: 'M2', type: 'warning' });
-
-      const callback = vi.fn();
-      manager.subscribe(callback);
-
-      callback.mockClear();
-      manager.clear();
-
-      expect(callback).toHaveBeenCalledTimes(2);
-      expect(callback).toHaveBeenCalledWith([]);
-    });
-
-    it('구독 해제 함수가 정상 동작한다', () => {
+  describe('구독 시스템', () => {
+    it('subscribe()는 즉시 빈 배열을 전달하고 unsubscribe는 noop이다', () => {
       const callback = vi.fn();
       const unsubscribe = manager.subscribe(callback);
 
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback).toHaveBeenCalledWith([]);
+
       callback.mockClear();
-      unsubscribe();
-
-      manager.show({ title: 'Test', message: 'Toast', type: 'warning' });
-
+      manager.show({ title: 'Another', message: 'Toast' });
       expect(callback).not.toHaveBeenCalled();
-    });
 
-    it('여러 구독자를 동시에 관리할 수 있다', () => {
-      const callback1 = vi.fn();
-      const callback2 = vi.fn();
-
-      manager.subscribe(callback1);
-      manager.subscribe(callback2);
-
-      callback1.mockClear();
-      callback2.mockClear();
-
-      manager.show({ title: 'Test', message: 'Toast', type: 'warning' });
-
-      expect(callback1).toHaveBeenCalledTimes(2);
-      expect(callback2).toHaveBeenCalledTimes(2);
-    });
-
-    it('구독자 콜백에서 에러가 발생해도 다른 구독자에게 영향을 주지 않는다', () => {
-      const errorCallback = vi.fn(() => {
-        throw new Error('Subscriber error');
-      });
-      const normalCallback = vi.fn();
-
-      // subscribe()는 즉시 callback 호출하므로 try-catch로 감싸야 함
-      expect(() => manager.subscribe(errorCallback)).toThrow('Subscriber error');
-      manager.subscribe(normalCallback);
-
-      errorCallback.mockClear();
-      normalCallback.mockClear();
-
-      // show()는 notifySubscribers의 try-catch로 보호됨
-      expect(() => {
-        manager.show({ title: 'Test', message: 'Toast', type: 'warning' });
-      }).not.toThrow();
-
-      expect(errorCallback).toHaveBeenCalledTimes(2);
-      expect(normalCallback).toHaveBeenCalledTimes(2);
+      unsubscribe();
     });
   });
 
-  describe('Signal Integration', () => {
-    it('signal 접근자를 제공한다', () => {
+  describe('signal', () => {
+    it('값은 항상 빈 배열이며 setter는 경고만 남긴다', () => {
       const signal = manager.signal;
+      expect(signal.value).toEqual([]);
 
-      expect(signal).toBeDefined();
+      signal.value = [
+        {
+          id: 'temp',
+          title: 'Ignored',
+          message: 'Ignored',
+          type: 'info',
+        } as ToastItem,
+      ];
+      expect(logger.warn).toHaveBeenCalled();
       expect(signal.value).toEqual([]);
     });
-
-    it('signal.value는 현재 toast 목록과 동기화된다', () => {
-      const signal = manager.signal;
-
-      manager.show({ title: 'Test', message: 'Toast', type: 'warning' });
-
-      expect(signal.value).toEqual(manager.getToasts());
-    });
   });
 
-  describe('Lifecycle Methods', () => {
-    it('init()을 호출할 수 있다', async () => {
+  describe('라이프사이클', () => {
+    it('init()과 cleanup()은 Promise/void 반환', async () => {
       await expect(manager.init()).resolves.toBeUndefined();
-    });
-
-    it('cleanup()은 모든 toast를 제거하고 구독자를 정리한다', () => {
-      manager.show({ title: 'T1', message: 'M1', type: 'warning' });
-      manager.show({ title: 'T2', message: 'M2', type: 'warning' });
-
-      const callback = vi.fn();
-      manager.subscribe(callback);
-
-      manager.cleanup();
-
-      expect(manager.getToasts()).toEqual([]);
-
-      callback.mockClear();
-      manager.show({ title: 'T3', message: 'M3', type: 'warning' });
-
-      expect(callback).not.toHaveBeenCalled();
+      expect(() => manager.cleanup()).not.toThrow();
     });
   });
 
-  describe('Toast Options', () => {
-    it('duration 옵션을 포함한다', () => {
-      const id = manager.show({
-        title: 'Test',
-        message: 'Toast',
-        type: 'warning',
-        duration: 3000,
+  describe('ID 생성', () => {
+    it('각 호출마다 고유한 ID를 만든다', () => {
+      const ids = new Set(
+        Array.from({ length: 3 }).map(() => manager.show({ title: 'T', message: 'M' }))
+      );
+      expect(ids.size).toBe(3);
+      ids.forEach(id => {
+        expect(id).toMatch(/^toast_\d+_\d+$/);
       });
-
-      const toast = manager.getToasts().find(t => t.id === id);
-      expect(toast?.duration).toBe(3000);
-    });
-
-    it('actionText와 onAction 옵션을 포함한다', () => {
-      const onAction = vi.fn();
-      const id = manager.show({
-        title: 'Test',
-        message: 'Toast',
-        type: 'warning',
-        actionText: 'Undo',
-        onAction,
-      });
-
-      const toast = manager.getToasts().find(t => t.id === id);
-      expect(toast?.actionText).toBe('Undo');
-      expect(toast?.onAction).toBe(onAction);
-    });
-
-    it('type 옵션이 없으면 info를 기본값으로 사용한다', () => {
-      const id = manager.show({
-        title: 'Test',
-        message: 'Toast',
-        route: 'toast-only',
-      });
-
-      const toast = manager.getToasts().find(t => t.id === id);
-      expect(toast?.type).toBe('info');
-    });
-  });
-
-  describe('ID Generation', () => {
-    it('각 toast는 고유한 ID를 받는다', () => {
-      const id1 = manager.show({ title: 'T1', message: 'M1', type: 'warning' });
-      const id2 = manager.show({ title: 'T2', message: 'M2', type: 'warning' });
-      const id3 = manager.show({ title: 'T3', message: 'M3', type: 'warning' });
-
-      expect(id1).not.toBe(id2);
-      expect(id2).not.toBe(id3);
-      expect(id1).not.toBe(id3);
-    });
-
-    it('ID는 toast_[counter]_[timestamp] 형식이다', () => {
-      const id = manager.show({ title: 'Test', message: 'Toast', type: 'warning' });
-
-      expect(id).toMatch(/^toast_\d+_\d+$/);
     });
   });
 });

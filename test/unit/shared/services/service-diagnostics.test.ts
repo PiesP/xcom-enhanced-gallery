@@ -9,12 +9,14 @@ import {
   ServiceDiagnostics,
   diagnoseServiceManager,
   registerDiagnosticsGlobal,
-} from '@shared/services/diagnostics';
+} from '../../../../src/shared/services/diagnostics';
+import { logger } from '../../../../src/shared/logging';
 
 describe('ServiceDiagnostics', () => {
   setupGlobalTestIsolation();
 
   beforeEach(() => {
+    vi.restoreAllMocks();
     // 환경 변수 초기화
     vi.stubEnv('DEV', true);
   });
@@ -23,6 +25,7 @@ describe('ServiceDiagnostics', () => {
     // 전역 함수 정리
     delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   describe('diagnoseServiceManager()', () => {
@@ -32,15 +35,14 @@ describe('ServiceDiagnostics', () => {
     });
 
     it('진단 중 발생한 에러를 재throw해야 함', async () => {
-      // registerCoreServices를 모킹하여 에러 발생
-      vi.doMock('@/shared/services/service-initialization', () => ({
-        registerCoreServices: vi.fn().mockRejectedValue(new Error('Mock registration error')),
-      }));
+      const initModule = await import('../../../../src/shared/services/service-initialization');
+      const registerSpy = vi
+        .spyOn(initModule, 'registerCoreServices')
+        .mockRejectedValue(new Error('Mock registration error'));
 
-      // 에러가 발생하면 재throw되어야 함
-      await expect(diagnoseServiceManager()).rejects.toThrow();
+      await expect(diagnoseServiceManager()).rejects.toThrow('Mock registration error');
 
-      vi.doUnmock('@/shared/services/service-initialization');
+      registerSpy.mockRestore();
     });
 
     it('필수 서비스 초기화를 시도해야 함', async () => {
@@ -128,14 +130,11 @@ describe('ServiceDiagnostics', () => {
 
   describe('Error Recovery', () => {
     it('진단 중 일부 단계가 실패해도 에러 로깅 후 계속 진행해야 함', async () => {
-      // ResourceManager import 실패 시나리오
-      const originalError = console.error;
-      const errors: unknown[] = [];
-      console.error = vi.fn((...args: unknown[]) => errors.push(args));
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
       await expect(ServiceDiagnostics.diagnoseServiceManager()).resolves.not.toThrow();
 
-      console.error = originalError;
+      expect(errorSpy).not.toHaveBeenCalled();
     });
 
     it('tryGet 실패 시에도 전체 진단이 실패하지 않아야 함', async () => {
@@ -147,46 +146,41 @@ describe('ServiceDiagnostics', () => {
 
   describe('Diagnostics Output', () => {
     it('ServiceManager 상태 정보를 로깅해야 함', async () => {
-      const logs: unknown[] = [];
-      const originalInfo = console.info;
-      console.info = vi.fn((...args: unknown[]) => logs.push(args));
+      const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
       await ServiceDiagnostics.diagnoseServiceManager();
 
-      // 진단 시작/완료 로그가 있어야 함
-      const logStrings = logs.map(log => JSON.stringify(log));
-      expect(logStrings.some(log => log.includes('진단 시작'))).toBe(true);
-      expect(logStrings.some(log => log.includes('진단 완료'))).toBe(true);
-
-      console.info = originalInfo;
+      const messages = infoSpy.mock.calls.map(call => call[0]);
+      expect(messages).toContain('🔍 ServiceManager diagnostic started');
+      expect(messages).toContain('✅ ServiceManager diagnostic complete');
     });
 
     it('등록된 서비스 수를 보고해야 함', async () => {
-      const logs: unknown[] = [];
-      const originalInfo = console.info;
-      console.info = vi.fn((...args: unknown[]) => logs.push(args));
+      const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
       await ServiceDiagnostics.diagnoseServiceManager();
 
-      // registeredCount가 로그에 포함되어야 함
-      const logStrings = logs.map(log => JSON.stringify(log));
-      expect(logStrings.some(log => log.includes('registeredCount'))).toBe(true);
-
-      console.info = originalInfo;
+      const payloads = infoSpy.mock.calls
+        .map(([, payload]) => payload)
+        .filter(
+          (value): value is Record<string, unknown> => typeof value === 'object' && value !== null
+        );
+      const hasRegisteredCount = payloads.some(payload => 'registeredCount' in payload);
+      expect(hasRegisteredCount).toBe(true);
     });
 
     it('초기화된 서비스 수를 보고해야 함', async () => {
-      const logs: unknown[] = [];
-      const originalInfo = console.info;
-      console.info = vi.fn((...args: unknown[]) => logs.push(args));
+      const infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
 
       await ServiceDiagnostics.diagnoseServiceManager();
 
-      // initializedCount가 로그에 포함되어야 함
-      const logStrings = logs.map(log => JSON.stringify(log));
-      expect(logStrings.some(log => log.includes('initializedCount'))).toBe(true);
-
-      console.info = originalInfo;
+      const payloads = infoSpy.mock.calls
+        .map(([, payload]) => payload)
+        .filter(
+          (value): value is Record<string, unknown> => typeof value === 'object' && value !== null
+        );
+      const hasInitializedCount = payloads.some(payload => 'initializedCount' in payload);
+      expect(hasInitializedCount).toBe(true);
     });
   });
 

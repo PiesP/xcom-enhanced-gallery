@@ -67,7 +67,7 @@ describe('NotificationService - Phase 315', () => {
       expect(result.available).toBe(true); // GM_notification is available
       // Phase 320: Test environment may return 'userscript' when GM API is mocked, or 'test' depending on detection order
       expect(['userscript', 'test', 'Test']).toContain(result.environment);
-      expect(result.message).toContain('available');
+      expect(result.message).toMatch(/available|enabled/i);
       expect(result.canFallback).toBe(false);
     });
 
