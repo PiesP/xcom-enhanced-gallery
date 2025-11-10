@@ -10,7 +10,7 @@ import { join } from 'path';
 describe('Phase 102: 이벤트 핸들러 타입 단언 제거 (파일 스캔)', () => {
   describe('Button.tsx 타입 단언 검증', () => {
     it('Button.tsx는 "as unknown as MouseEvent" 타입 단언을 사용하지 않아야 함', async () => {
-      const buttonPath = join(process.cwd(), 'src/shared/components/ui/primitive/Button.tsx');
+      const buttonPath = join(process.cwd(), 'src/shared/components/ui/Button/Button.tsx');
       const content = await readFile(buttonPath, 'utf-8');
 
       // 타입 단언 패턴 검사
@@ -18,14 +18,13 @@ describe('Phase 102: 이벤트 핸들러 타입 단언 제거 (파일 스캔)', 
       expect(content).not.toMatch(/\(event\) as MouseEvent/);
     });
 
-    it('Button.tsx onClick 타입은 MouseEvent | KeyboardEvent를 허용해야 함', async () => {
-      const buttonPath = join(process.cwd(), 'src/shared/components/ui/primitive/Button.tsx');
+    it('Button.tsx onClick 타입은 MouseEvent를 허용해야 함', async () => {
+      const buttonPath = join(process.cwd(), 'src/shared/components/ui/Button/Button.tsx');
       const content = await readFile(buttonPath, 'utf-8');
 
       // ButtonProps 인터페이스에서 onClick 타입 확인
-      expect(content).toMatch(
-        /readonly onClick\?:\s*\(event:\s*MouseEvent\s*\|\s*KeyboardEvent\)\s*=>\s*void/
-      );
+      expect(content).toMatch(/readonly onClick\?:\s*\(event:\s*MouseEvent\)\s*=>\s*void/);
+      expect(content).toMatch(/readonly onKeyDown\?:\s*\(event:\s*KeyboardEvent\)\s*=>\s*void/);
     });
   });
 
