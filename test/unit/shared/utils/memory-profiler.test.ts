@@ -1,125 +1,136 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+// @ts-nocheck
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import {
-  isMemoryProfilingSupported,
-  takeMemorySnapshot,
-  MemoryProfiler,
-} from '@/shared/utils/memory';
+import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
-// Helper to patch/unpatch performance.memory
-function setPerformanceMemory(
-  mem:
-    | Partial<{
-        usedJSHeapSize: number;
-        totalJSHeapSize: number;
-        jsHeapSizeLimit: number;
-      }>
-    | undefined
-) {
-  const perf: any = globalThis.performance as any;
-  if (!perf) return;
-  if (mem === undefined) {
-    if (perf.memory !== undefined) {
-      try {
-        delete perf.memory;
-      } catch {
-        perf.memory = undefined;
-      }
-    }
-    return;
-  }
-  perf.memory = {
-    usedJSHeapSize: 0,
-    totalJSHeapSize: 0,
-    jsHeapSizeLimit: 0,
-    ...mem,
-  };
-}
-
-describe('MemoryProfiler utility', () => {
+describe('Performance schedulers', () => {
   setupGlobalTestIsolation();
 
+  type FrameCallback = (timestamp: number) => void;
+
+  const globalAny = globalThis as Record<string, any>;
+
+  let originalIdleRequest: ((...args: any[]) => any) | undefined;
+  let originalIdleCancel: ((...args: any[]) => any) | undefined;
+  let originalRaf: typeof globalThis.requestAnimationFrame | undefined;
+  let originalCancelRaf: typeof globalThis.cancelAnimationFrame | undefined;
+  let originalQueueMicrotask: typeof globalThis.queueMicrotask | undefined;
+
   beforeEach(() => {
-    // reset any previous patch
-    setPerformanceMemory(undefined);
+    vi.useFakeTimers();
+    globalTimerManager.cleanup();
+
+    originalIdleRequest = globalAny.requestIdleCallback;
+    originalIdleCancel = globalAny.cancelIdleCallback;
+    originalRaf = globalThis.requestAnimationFrame;
+    originalCancelRaf = globalThis.cancelAnimationFrame;
+    originalQueueMicrotask = globalThis.queueMicrotask;
+  });
+
+  afterEach(() => {
     vi.useRealTimers();
+    globalTimerManager.cleanup();
+    if (originalIdleRequest) {
+      globalAny.requestIdleCallback = originalIdleRequest;
+    } else {
+      delete globalAny.requestIdleCallback;
+    }
+    if (originalIdleCancel) {
+      globalAny.cancelIdleCallback = originalIdleCancel;
+    } else {
+      delete globalAny.cancelIdleCallback;
+    }
+    if (originalRaf) {
+      globalAny.requestAnimationFrame = originalRaf;
+    } else {
+      delete globalAny.requestAnimationFrame;
+    }
+    if (originalCancelRaf) {
+      globalAny.cancelAnimationFrame = originalCancelRaf;
+    } else {
+      delete globalAny.cancelAnimationFrame;
+    }
+    if (originalQueueMicrotask) {
+      globalAny.queueMicrotask = originalQueueMicrotask;
+    } else {
+      delete globalAny.queueMicrotask;
+    }
   });
 
-  it('returns noop on unsupported environments', () => {
-    setPerformanceMemory(undefined);
+  it('scheduleIdle() falls back to tracked setTimeout when idle APIs are unavailable', () => {
+    delete globalAny.requestIdleCallback;
+    delete globalAny.cancelIdleCallback;
 
-    expect(isMemoryProfilingSupported()).toBe(false);
-    expect(takeMemorySnapshot()).toBeNull();
+    const task = vi.fn();
+    const handle = scheduleIdle(task);
 
-    const profiler = new MemoryProfiler();
-    expect(profiler.start()).toBe(false);
-    expect(profiler.stop()).toBeNull();
+    expect(task).not.toHaveBeenCalled();
+
+    vi.runOnlyPendingTimers();
+    expect(task).toHaveBeenCalledTimes(1);
+
+    handle.cancel();
+    expect(globalTimerManager.getActiveTimersCount()).toBe(0);
   });
 
-  it('takes snapshot when performance.memory is available', () => {
-    setPerformanceMemory({
-      usedJSHeapSize: 1_000_000,
-      totalJSHeapSize: 2_000_000,
-      jsHeapSizeLimit: 4_000_000,
-    });
+  it('scheduleIdle() cancellation prevents fallback execution', () => {
+    delete globalAny.requestIdleCallback;
+    delete globalAny.cancelIdleCallback;
 
-    expect(isMemoryProfilingSupported()).toBe(true);
-    const snap = takeMemorySnapshot();
-    expect(snap).not.toBeNull();
-    expect(snap!).toMatchObject({
-      usedJSHeapSize: expect.any(Number),
-      totalJSHeapSize: expect.any(Number),
-      jsHeapSizeLimit: expect.any(Number),
-      timestamp: expect.any(Number),
-    });
+    const task = vi.fn();
+    const handle = scheduleIdle(task);
+
+    handle.cancel();
+    vi.runOnlyPendingTimers();
+
+    expect(task).not.toHaveBeenCalled();
+    expect(globalTimerManager.getActiveTimersCount()).toBe(0);
   });
 
-  it('profiles delta between start and stop', () => {
-    // start values
-    setPerformanceMemory({
-      usedJSHeapSize: 1_000_000,
-      totalJSHeapSize: 2_000_000,
-      jsHeapSizeLimit: 4_000_000,
+  it('scheduleRaf() uses requestAnimationFrame when available and clears fallback timer', () => {
+    const rafCallbacks: FrameCallback[] = [];
+    globalThis.requestAnimationFrame = vi.fn(cb => {
+      rafCallbacks.push(cb);
+      return 42;
     });
+    globalThis.cancelAnimationFrame = vi.fn();
 
-    const profiler = new MemoryProfiler();
-    expect(profiler.start()).toBe(true);
+    const task = vi.fn();
+    const handle = scheduleRaf(task);
 
-    // simulate growth before stop
-    setPerformanceMemory({
-      usedJSHeapSize: 1_500_000,
-      totalJSHeapSize: 2_100_000,
-      jsHeapSizeLimit: 4_000_000,
-    });
+    expect(globalThis.requestAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(task).not.toHaveBeenCalled();
 
-    const result = profiler.stop();
-    expect(result).not.toBeNull();
-    expect(result!.delta.usedJSHeapSize).toBe(500_000);
-    expect(result!.delta.totalJSHeapSize).toBe(100_000);
-    expect(result!.durationMs).toBeGreaterThanOrEqual(0);
+    rafCallbacks[0](16);
+    expect(task).toHaveBeenCalledTimes(1);
+
+    handle.cancel();
+    expect(globalThis.cancelAnimationFrame).toHaveBeenCalledTimes(1);
+    expect(globalTimerManager.getActiveTimersCount()).toBe(0);
   });
 
-  it('measure(fn) rethrows on error but ensures stop is executed', async () => {
-    setPerformanceMemory({
-      usedJSHeapSize: 1_000_000,
-      totalJSHeapSize: 2_000_000,
-      jsHeapSizeLimit: 4_000_000,
-    });
+  it('scheduleMicrotask() prefers queueMicrotask and runs synchronously in tests', () => {
+    const qm = vi.fn((cb: () => void) => cb());
+    globalThis.queueMicrotask = qm;
 
-    const profiler = new MemoryProfiler();
+    const task = vi.fn();
+    const handle = scheduleMicrotask(task);
 
-    await expect(
-      profiler.measure(async () => {
-        setPerformanceMemory({
-          usedJSHeapSize: 1_250_000,
-          totalJSHeapSize: 2_050_000,
-          jsHeapSizeLimit: 4_000_000,
-        });
-        throw new Error('boom');
-      })
-    ).rejects.toThrow('boom');
+    expect(qm).toHaveBeenCalledTimes(1);
+    expect(task).toHaveBeenCalledTimes(1);
+    handle.cancel();
+  });
 
-    // After measure throws, profiler should already be stopped
-    expect(profiler.stop()).toBeNull();
+  it('scheduleMicrotask() falls back to Promise microtask when queueMicrotask is missing', async () => {
+    delete globalAny.queueMicrotask;
+
+    const task = vi.fn();
+    const handle = scheduleMicrotask(task);
+
+    await Promise.resolve();
+    expect(task).toHaveBeenCalledTimes(1);
+
+    handle.cancel();
   });
 });

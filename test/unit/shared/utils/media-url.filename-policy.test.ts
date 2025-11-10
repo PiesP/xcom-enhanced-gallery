@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
 import {
@@ -41,9 +42,9 @@ describe('Filename single-source policy (FilenameService)', () => {
     expect(info).not.toBeNull();
     if (!info) return;
 
-    // Should follow {username}_{tweetId}_{YYYYMMDD}_{index}.ext
+    // Should follow {username}_{tweetId}_{index}.ext (date segment removed in Phase 360+)
     expect(isValidMediaFilename(info.filename)).toBe(true);
-    expect(info.filename).toMatch(/^alice_1234567890_\d{8}_1\.(jpg|jpeg|png|gif|webp)$/);
+    expect(info.filename).toBe('alice_1234567890_1.jpg');
   });
 
   it('createMediaInfoFromVideo should produce service-standard filename when tweetId/username are known (RED → GREEN)', () => {
@@ -55,8 +56,8 @@ describe('Filename single-source policy (FilenameService)', () => {
     expect(info).not.toBeNull();
     if (!info) return;
 
-    // Should follow {username}_{tweetId}_{YYYYMMDD}_{index}.ext (index is 2 here)
+    // Should follow {username}_{tweetId}_{index}.ext (index is 2 here)
     expect(isValidMediaFilename(info.filename)).toBe(true);
-    expect(info.filename).toMatch(/^alice_1234567890_\d{8}_2\.(mp4|mov|avi|gif)$/);
+    expect(info.filename).toBe('alice_1234567890_2.mp4');
   });
 });

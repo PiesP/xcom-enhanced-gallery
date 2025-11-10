@@ -6,13 +6,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 import { logger } from '../../../src/shared/logging';
-import {
-  checkServiceAvailability,
-  logBootstrapSummary,
-  getBootstrapDiagnostics,
-  type ServiceAvailabilityInfo,
-  type BootstrapResult,
-} from '../../../src/bootstrap/bootstrap-info';
+import { checkAllServices } from '../../../src/bootstrap/diagnostics/service-checker';
+import { logBootstrapSummary } from '../../../src/bootstrap/diagnostics/bootstrap-logger';
+import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/bootstrap-reporter';
+import type { BootstrapResult } from '../../../src/bootstrap/diagnostics/types';
 
 describe('Bootstrap Info - Phase 314-5', () => {
   // Setup global test isolation to prevent state leakage
@@ -23,6 +20,8 @@ describe('Bootstrap Info - Phase 314-5', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
+
     // Restore global state after each test
     delete (globalThis as any).GM_getValue;
     delete (globalThis as any).GM_setValue;
@@ -33,9 +32,9 @@ describe('Bootstrap Info - Phase 314-5', () => {
     delete (globalThis as any).__TAMPERMONKEY__;
   });
 
-  describe('checkServiceAvailability', () => {
+  describe('checkAllServices', () => {
     it('should check HttpRequestService (fetch API)', async () => {
-      const services = await checkServiceAvailability();
+      const services = await checkAllServices();
       const httpService = services.find(s => s.name === 'HttpRequestService');
 
       expect(httpService).toBeDefined();
@@ -44,7 +43,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
     });
 
     it('should check NotificationService availability', async () => {
-      const services = await checkServiceAvailability();
+      const services = await checkAllServices();
       const notificationService = services.find(s => s.name === 'NotificationService');
 
       expect(notificationService).toBeDefined();
@@ -53,7 +52,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
     });
 
     it('should check DownloadService availability (GM_download)', async () => {
-      const services = await checkServiceAvailability();
+      const services = await checkAllServices();
       const downloadService = services.find(s => s.name === 'DownloadService');
 
       expect(downloadService).toBeDefined();
@@ -62,7 +61,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
     });
 
     it('should check PersistentStorage availability (GM_setValue)', async () => {
-      const services = await checkServiceAvailability();
+      const services = await checkAllServices();
       const storage = services.find(s => s.name === 'PersistentStorage');
 
       expect(storage).toBeDefined();
@@ -71,7 +70,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
     });
 
     it('should return array of ServiceAvailabilityInfo', async () => {
-      const services = await checkServiceAvailability();
+      const services = await checkAllServices();
 
       expect(Array.isArray(services)).toBe(true);
       expect(services.length).toBeGreaterThan(0);
@@ -89,6 +88,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
   describe('logBootstrapSummary', () => {
     it('should log bootstrap result with success status', () => {
       const mockLogger = vi.spyOn(logger, 'info').mockImplementation(() => {});
+      const debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       const result: BootstrapResult = {
         success: true,
@@ -112,12 +112,16 @@ describe('Bootstrap Info - Phase 314-5', () => {
 
       logBootstrapSummary(result);
       expect(mockLogger).toHaveBeenCalled();
+      expect(debugSpy).toHaveBeenCalled();
 
       mockLogger.mockRestore();
+      debugSpy.mockRestore();
     });
 
     it('should log warnings if present', () => {
       const mockLogger = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      vi.spyOn(logger, 'info').mockImplementation(() => {});
+      vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       const result: BootstrapResult = {
         success: true,
@@ -135,7 +139,9 @@ describe('Bootstrap Info - Phase 314-5', () => {
     });
 
     it('should log errors if present', () => {
-      const mockLogger = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      vi.spyOn(logger, 'info').mockImplementation(() => {});
+      vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
       const result: BootstrapResult = {
         success: false,
@@ -147,9 +153,9 @@ describe('Bootstrap Info - Phase 314-5', () => {
       };
 
       logBootstrapSummary(result);
-      expect(mockLogger).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
 
-      mockLogger.mockRestore();
+      errorSpy.mockRestore();
     });
   });
 

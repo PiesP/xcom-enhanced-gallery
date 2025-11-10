@@ -6,7 +6,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { CoreService, serviceManager, getService } from '@/shared/services/core-services';
+import {
+  CoreService,
+  getService,
+} from '../../../../src/shared/services/core/core-service-manager.ts';
 
 describe('CoreService', () => {
   setupGlobalTestIsolation();
@@ -63,9 +66,7 @@ describe('CoreService', () => {
     });
 
     it('존재하지 않는 서비스 조회 시 에러를 던진다', () => {
-      expect(() => coreService.get('non-existent')).toThrow(
-        '서비스를 찾을 수 없습니다: non-existent'
-      );
+      expect(() => coreService.get('non-existent')).toThrow('Service not found: non-existent');
     });
 
     it('동일 키로 재등록 시 덮어쓰기 동작을 수행한다', () => {
