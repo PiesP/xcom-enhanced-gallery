@@ -21,9 +21,8 @@ export { MEDIA } from './media';
 export { CSS } from './css';
 
 // ================================
-// Events & Services
+// Services
 // ================================
-export { EVENTS } from './events';
 export { SERVICE_KEYS } from './service-keys';
 
 // ================================
@@ -44,14 +43,7 @@ export { DEFAULT_SETTINGS } from './default-settings';
 // ================================
 // Types
 // ================================
-export type {
-  MediaType,
-  MediaQuality,
-  FileExtension,
-  AppServiceKey,
-  EventType,
-  ViewMode,
-} from './types';
+export type { MediaType, MediaQuality, FileExtension, AppServiceKey, ViewMode } from './types';
 
 // ================================
 // URL Patterns (Phase 22.2 compatibility)

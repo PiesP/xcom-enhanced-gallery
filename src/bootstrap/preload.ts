@@ -38,10 +38,8 @@ function scheduleIdleWork(callback: () => Promise<void>): void {
 /**
  * Critical chunk preload
  * Preload essential chunks after initialization - Gallery, Services, etc.
- *
- * @private Internal bootstrap function
  */
-export async function preloadCriticalChunks(): Promise<void> {
+async function preloadCriticalChunks(): Promise<void> {
   if (!isProdBuild) {
     logger.debug('[preload] Preloading critical chunks...');
   }
@@ -60,13 +58,10 @@ export async function preloadCriticalChunks(): Promise<void> {
 
 /**
  * Optional chunk delayed loading
- * Load Settings and other optional feature chunks during browser idle time
- *
- * Falls back to timeout if requestIdleCallback is unsupported
- *
- * @private Internal bootstrap function
+ * Load Settings and other optional feature chunks during browser idle time.
+ * Falls back to timeout if requestIdleCallback is unsupported.
  */
-export async function preloadOptionalChunks(): Promise<void> {
+async function preloadOptionalChunks(): Promise<void> {
   scheduleIdleWork(async () => {
     if (!isProdBuild) {
       logger.debug('[preload] Preloading optional chunks...');

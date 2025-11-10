@@ -81,4 +81,8 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
  */
 export function clearGalleryApp(): void {
   galleryAppInstance = null;
+
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    delete window.__XEG_GALLERY_APP__;
+  }
 }
