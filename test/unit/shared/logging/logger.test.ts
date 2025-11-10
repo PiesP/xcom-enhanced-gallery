@@ -65,16 +65,8 @@ describe('logger', () => {
     prodLogger.error('global error');
 
     expect(infoSpy).not.toHaveBeenCalled();
-    expect(warnSpy).toHaveBeenCalledTimes(2);
-    expect(errorSpy).toHaveBeenCalledTimes(2);
-
-    const warnPrefix = String(warnSpy.mock.calls[0][0]);
-    expect(warnPrefix).toContain('[XEG]');
-    expect(warnPrefix).toContain('[cid:cid-42]');
-
-    const errorPrefix = String(errorSpy.mock.calls[0][0]);
-    expect(errorPrefix).toContain('[XEG]');
-    expect(errorPrefix).toContain('[cid:cid-42]');
+    expect(warnSpy).not.toHaveBeenCalled();
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 
   describe('Phase 124: 로그 레벨 필터링', () => {

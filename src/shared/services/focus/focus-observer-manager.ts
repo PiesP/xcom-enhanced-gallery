@@ -104,8 +104,14 @@ function calculateCandidateScore(
  * @see {@link CandidateScore} for scoring structure
  * @see Phase 334 for focus priority algorithm
  */
+interface FocusObserverDebugInfo {
+  isActive: boolean;
+  lastUpdateTime: number;
+}
+
 class FocusObserverManagerImpl {
   private observer: IntersectionObserver | null = null;
+  private lastUpdateTime = 0;
 
   /**
    * Setup IntersectionObserver with visibility detection
@@ -186,6 +192,7 @@ class FocusObserverManagerImpl {
     onEntries: (candidates: CandidateScore[]) => void
   ): void {
     const candidates: CandidateScore[] = [];
+    this.lastUpdateTime = Date.now();
 
     entries.forEach(entry => {
       const element = entry.target as HTMLElement;
@@ -255,6 +262,17 @@ class FocusObserverManagerImpl {
       this.observer.disconnect();
       this.observer = null;
     }
+  }
+
+  getDebugInfo(): FocusObserverDebugInfo {
+    return {
+      isActive: this.observer !== null,
+      lastUpdateTime: this.lastUpdateTime,
+    };
+  }
+
+  getLastUpdateTime(): number {
+    return this.lastUpdateTime;
   }
 }
 

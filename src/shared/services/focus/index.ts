@@ -8,5 +8,5 @@ export {
 } from './focus-applicator-service';
 export {
   createFocusStateManagerService,
-  type FocusStateManagerService,
+  FocusStateManagerService,
 } from './focus-state-manager-service';

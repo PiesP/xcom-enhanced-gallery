@@ -35,7 +35,7 @@ describe('Userscript Adapter – 경계 가드', () => {
 
   it('GM_* 미존재 환경에서 안전한 기본 속성을 제공한다', async () => {
     // Dynamic import after GM_* reset
-    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
+    const { getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     expect(api.hasGM).toBe(false);
     expect(['unknown', 'tampermonkey', 'greasemonkey', 'violentmonkey']).toContain(api.manager);
@@ -47,7 +47,7 @@ describe('Userscript Adapter – 경계 가드', () => {
 
   it('download()는 GM_download 없으면 에러를 throw한다 (fallback 없음)', async () => {
     // Arrange: No GM_download, clean environment
-    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
+    const { getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
 
     // Act & Assert: Should throw error when GM_download is not available
@@ -66,7 +66,7 @@ describe('Userscript Adapter – 경계 가드', () => {
     };
     (globalThis as unknown as Record<string, unknown>).GM_download = gmDownloadMock;
 
-    const { default: getUserscript } = await import('@/shared/external/userscript/adapter');
+    const { getUserscript } = await import('@/shared/external/userscript/adapter');
     const api = getUserscript();
     await expect(api.download('https://example.com/img.jpg', 'img.jpg')).resolves.toBeUndefined();
     expect(gmDownloadMock).toHaveBeenCalledWith('https://example.com/img.jpg', 'img.jpg');

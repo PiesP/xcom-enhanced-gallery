@@ -83,7 +83,7 @@ describe('CoreService (ServiceManager)', () => {
       // 행위 중심 테스트: 에러 처리 동작 검증
       expect(() => {
         coreService.get('non-existent-service');
-      }).toThrow('서비스를 찾을 수 없습니다: non-existent-service');
+      }).toThrow('Service not found: non-existent-service');
     });
 
     it('tryGet()은 존재하지 않는 서비스에 대해 null을 반환해야 함', () => {

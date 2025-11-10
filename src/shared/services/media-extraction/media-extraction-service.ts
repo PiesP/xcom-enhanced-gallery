@@ -112,8 +112,12 @@
  */
 
 import { logger } from '@shared/logging';
-import type { MediaExtractor, MediaExtractionOptions } from '@shared/types/media.types';
-import type { MediaExtractionResult } from '@shared/types/media.types';
+import type {
+  MediaExtractionOptions,
+  MediaExtractionResult,
+  MediaExtractor,
+  TweetInfo,
+} from '@shared/types/media.types';
 import { ExtractionError } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
 import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
@@ -278,10 +282,11 @@ export class MediaExtractionService implements MediaExtractor {
   ): Promise<MediaExtractionResult> {
     const extractionId = this.generateExtractionId();
     logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
+    let tweetInfo: TweetInfo | null = null;
 
     try {
       // Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
-      const tweetInfo = await this.tweetInfoExtractor.extract(element);
+      tweetInfo = await this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
         logger.debug(
@@ -289,7 +294,12 @@ export class MediaExtractionService implements MediaExtractor {
         );
         // No tweet ID: Skip Phase 2a (API extraction)
         // Proceed directly to Phase 2b (DOM extraction)
-        const domResult = await this.domExtractor.extract(element, options, extractionId);
+        const domResult = await this.domExtractor.extract(
+          element,
+          options,
+          extractionId,
+          tweetInfo ?? undefined
+        );
 
         // Phase 2b failed: DOM extraction returned no media
         if (!domResult.success || domResult.mediaItems.length === 0) {
@@ -320,7 +330,7 @@ export class MediaExtractionService implements MediaExtractor {
                 },
               },
             },
-            tweetInfo: domResult.tweetInfo,
+            tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
             errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'No media found in tweet.')],
           };
         }
@@ -335,7 +345,7 @@ export class MediaExtractionService implements MediaExtractor {
             sourceType: 'dom-fallback',
             strategy: 'media-extraction',
           },
-          tweetInfo: domResult.tweetInfo,
+          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
         });
       }
 
@@ -360,7 +370,7 @@ export class MediaExtractionService implements MediaExtractor {
             sourceType: 'api-first',
             strategy: 'media-extraction',
           },
-          tweetInfo: apiResult.tweetInfo,
+          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
         });
       }
 
@@ -368,7 +378,12 @@ export class MediaExtractionService implements MediaExtractor {
       logger.warn(
         `[MediaExtractor] ${extractionId}: API extraction failed - executing DOM fallback strategy`
       );
-      const domResult = await this.domExtractor.extract(element, options, extractionId, tweetInfo);
+      const domResult = await this.domExtractor.extract(
+        element,
+        options,
+        extractionId,
+        tweetInfo ?? undefined
+      );
 
       // Phase 2b failed: DOM extraction also returned no media
       if (!domResult.success || domResult.mediaItems.length === 0) {
@@ -399,7 +414,7 @@ export class MediaExtractionService implements MediaExtractor {
               },
             },
           },
-          tweetInfo: domResult.tweetInfo,
+          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
           errors: [
             new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'Both API and DOM extraction failed.'),
           ],
@@ -416,11 +431,16 @@ export class MediaExtractionService implements MediaExtractor {
           sourceType: 'dom-fallback',
           strategy: 'extraction',
         },
-        tweetInfo: domResult.tweetInfo,
+        tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
       });
     } catch (error) {
-      logger.error(`[MediaExtractor] ${extractionId}: Extraction failed:`, error);
-      return this.createErrorResult(error);
+      return MediaExtractionService.resolveFallbackResult(this, {
+        cause: error,
+        element,
+        options,
+        extractionId,
+        tweetInfo,
+      });
     }
   }
 
@@ -742,6 +762,103 @@ export class MediaExtractionService implements MediaExtractor {
       mediaItems: uniqueItems,
       clickedIndex: adjustedIndex,
     };
+  }
+
+  private mergeTweetInfoMetadata(
+    base: TweetInfo | null | undefined,
+    override: TweetInfo | null | undefined
+  ): TweetInfo | null {
+    if (!base && !override) {
+      return null;
+    }
+
+    if (!base) {
+      return override ?? null;
+    }
+
+    if (!override) {
+      return base;
+    }
+
+    const mergedMetadata = {
+      ...(base.metadata ?? {}),
+      ...(override.metadata ?? {}),
+    };
+
+    const metadataKeys = Object.keys(mergedMetadata);
+
+    return {
+      ...base,
+      ...override,
+      ...(metadataKeys.length > 0 ? { metadata: mergedMetadata } : {}),
+    };
+  }
+
+  private static async resolveFallbackResult(
+    service: MediaExtractionService,
+    params: {
+      cause: unknown;
+      element: HTMLElement;
+      options: MediaExtractionOptions;
+      extractionId: string;
+      tweetInfo: TweetInfo | null;
+    }
+  ): Promise<MediaExtractionResult> {
+    const { cause, element, options, extractionId, tweetInfo } = params;
+
+    logger.warn(
+      `[MediaExtractor] ${extractionId}: API extraction threw error - executing DOM fallback strategy`,
+      {
+        message: cause instanceof Error ? cause.message : String(cause ?? 'Unknown error'),
+        tweetId: tweetInfo?.tweetId,
+      }
+    );
+
+    try {
+      const domResult = await service.domExtractor.extract(
+        element,
+        options,
+        extractionId,
+        tweetInfo ?? undefined
+      );
+
+      if (domResult.success && domResult.mediaItems.length > 0) {
+        logger.info(
+          `[MediaExtractor] ${extractionId}: ✅ DOM fallback succeeded after API error - ${domResult.mediaItems.length} media items`
+        );
+
+        return service.finalizeResult({
+          success: domResult.success,
+          mediaItems: domResult.mediaItems,
+          clickedIndex: domResult.clickedIndex,
+          metadata: {
+            extractedAt: Date.now(),
+            sourceType: 'dom-fallback',
+            strategy: 'extraction',
+          },
+          tweetInfo: service.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
+        });
+      }
+
+      logger.error(
+        `[MediaExtractor] ${extractionId}: DOM fallback after API error returned no media`,
+        {
+          domSuccess: domResult.success,
+          mediaCount: domResult.mediaItems.length,
+          tweetId: tweetInfo?.tweetId,
+        }
+      );
+
+      return service.createErrorResult(
+        new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'DOM fallback failed after API error')
+      );
+    } catch (fallbackError) {
+      logger.error(
+        `[MediaExtractor] ${extractionId}: DOM fallback extraction threw error`,
+        fallbackError
+      );
+      return service.createErrorResult(fallbackError);
+    }
   }
 
   /**

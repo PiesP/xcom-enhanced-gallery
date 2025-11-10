@@ -59,7 +59,12 @@ import { createDebouncer } from '../../utils/performance/performance-utils';
  * @see {@link setupContainerSync} for container setup
  * @see Phase 340 for debouncing strategy
  */
-class FocusStateManagerServiceImpl {
+interface FocusStateManagerDebugInfo {
+  autoFocusDebouncerActive: boolean;
+  containerSyncDebouncerActive: boolean;
+}
+
+export class FocusStateManagerService {
   private debouncedSetAutoFocus: ReturnType<
     typeof createDebouncer<[number | null, { forceClear?: boolean }?]>
   > | null = null;
@@ -414,9 +419,17 @@ class FocusStateManagerServiceImpl {
     this.debouncedSetAutoFocus = null;
     this.debouncedUpdateContainer = null;
   }
-}
 
-export type FocusStateManagerService = FocusStateManagerServiceImpl;
+  /**
+   * Provide insight into the current debouncer state for diagnostics.
+   */
+  getDebugInfo(): FocusStateManagerDebugInfo {
+    return {
+      autoFocusDebouncerActive: this.debouncedSetAutoFocus !== null,
+      containerSyncDebouncerActive: this.debouncedUpdateContainer !== null,
+    };
+  }
+}
 
 /**
  * Factory function for FocusStateManagerService
@@ -431,5 +444,5 @@ export type FocusStateManagerService = FocusStateManagerServiceImpl;
  * @see {@link FocusStateManagerService} for API documentation
  */
 export function createFocusStateManagerService(): FocusStateManagerService {
-  return new FocusStateManagerServiceImpl();
+  return new FocusStateManagerService();
 }

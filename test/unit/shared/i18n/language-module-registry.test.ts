@@ -6,7 +6,7 @@ import {
   isBaseLanguageCode,
   getLanguageStrings,
   type BaseLanguageCode,
-} from '@shared/i18n';
+} from '@shared/constants/i18n';
 
 describe('i18n translation registry', () => {
   setupGlobalTestIsolation();
