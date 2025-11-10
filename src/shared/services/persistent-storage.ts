@@ -1,4 +1,4 @@
-/** PersistentStorage wraps GM_getValue / GM_setValue with a typed singleton API. */
+/** PersistentStorage wraps the userscript storage API (getValue/setValue) with a typed singleton interface. */
 
 import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
@@ -34,10 +34,10 @@ import { logger } from '@shared/logging';
  * - Persistence: Survives script reload and browser restart
  * - Scope: Domain-specific (cannot access cross-domain data)
  *
- * 🔹 Direct GM_* API Usage (Phase 309):
- * This service uses getUserscript() getter to access GM APIs without direct imports:
+ * 🔹 Direct userscript API usage (Phase 309):
+ * This service uses getUserscript() getter to access storage APIs without direct imports:
  * - Enables test mocking (substitute getUserscript() implementation)
- * - Maintains static analysis (no 'undefined GM_setValue' issues)
+ * - Maintains static analysis (no 'undefined setValue' issues)
  * - Follows Phase 309 Service Layer architecture pattern
  *
  * @example

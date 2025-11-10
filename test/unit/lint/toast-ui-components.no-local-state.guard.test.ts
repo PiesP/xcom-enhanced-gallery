@@ -6,7 +6,8 @@
  * Scope: src/shared/components/ui/Toast/*.tsx
  */
 
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { describe, it } from 'vitest';
+import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 import { resolve, sep } from 'path';
 
@@ -31,6 +32,12 @@ describe('lint: UI Toast components (no local state, type-only import)', () => {
   it('must not define local toast state/functions and must type-only import ToastItem from service', () => {
     const root = resolve(process.cwd());
     const toastDir = resolve(root, 'src/shared/components/ui/Toast');
+
+    if (!existsSync(toastDir)) {
+      // Toast UI has been removed; absence counts as passing the guard.
+      return;
+    }
+
     const files = listToastFiles(toastDir);
 
     const violations: string[] = [];

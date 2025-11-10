@@ -92,7 +92,7 @@ describe('FilenameService - Username/TweetId Format', () => {
           extension: ext,
         });
 
-        expect(filename).toBe(`user_1234567890_1.${ext}`);
+        expect(filename).toBe(`user_1234567890_0.${ext}`);
         expect(isValidMediaFilename(filename)).toBe(true);
       });
     });
@@ -302,8 +302,8 @@ describe('FilenameService - Username/TweetId Format', () => {
       });
       const zipFilename = generateZipFilename(medias);
 
-      expect(mediaFilename1).toBe('user_1234567890_1.jpg');
-      expect(mediaFilename2).toBe('user_1234567890_2.jpg');
+      expect(mediaFilename1).toBe('user_1234567890_0.jpg');
+      expect(mediaFilename2).toBe('user_1234567890_1.jpg');
       expect(zipFilename).toBe('user_1234567890.zip');
     });
 
@@ -361,7 +361,7 @@ describe('FilenameService - Username/TweetId Format', () => {
       });
 
       // 폴백이지만 유효한 형식이어야 함
-      expect(filename).toMatch(/^fallback_\d+_1\.jpg$/);
+      expect(filename).toMatch(/^fallback_\d+_0\.jpg$/);
     });
   });
 

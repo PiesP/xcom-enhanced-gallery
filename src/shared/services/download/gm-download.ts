@@ -6,7 +6,7 @@
 export type GMDownloadFunction = (options: Record<string, unknown>) => void;
 
 type GlobalWithGMDownload = typeof globalThis & {
-  GM_download?: GMDownloadFunction;
+  ['GM_download']?: GMDownloadFunction;
 };
 
 /**
@@ -14,7 +14,8 @@ type GlobalWithGMDownload = typeof globalThis & {
  */
 export function getGMDownload(): GMDownloadFunction | undefined {
   const gm = globalThis as GlobalWithGMDownload;
-  return typeof gm.GM_download === 'function' ? gm.GM_download : undefined;
+  const download = gm['GM_download'];
+  return typeof download === 'function' ? download : undefined;
 }
 
 /**

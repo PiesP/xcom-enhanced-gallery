@@ -19,8 +19,20 @@ const PROJECT_ROOT = resolve(__dirname, '..');
 // Parse command-line arguments
 const args = process.argv.slice(2);
 const getArg = (name: string, defaultValue: string): string => {
-  const arg = args.find(entry => entry.startsWith(`--${name}=`));
-  return arg ? arg.split('=')[1] : defaultValue;
+  const withEquals = args.find(entry => entry.startsWith(`--${name}=`));
+  if (withEquals) {
+    return withEquals.split('=')[1];
+  }
+
+  const index = args.indexOf(`--${name}`);
+  if (index !== -1 && index + 1 < args.length) {
+    const candidate = args[index + 1];
+    if (!candidate.startsWith('--')) {
+      return candidate;
+    }
+  }
+
+  return defaultValue;
 };
 const hasFlag = (name: string): boolean => args.includes(`--${name}`);
 
