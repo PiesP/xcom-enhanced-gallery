@@ -216,6 +216,9 @@ describe('useGalleryFocusTracker: 이벤트 구독 및 동기화', () => {
       container.appendChild(mockElement);
 
       let registerItem: ((index: number, element: HTMLElement | null) => void) | null = null;
+      let applyFocusAfterNavigation:
+        | ReturnType<typeof useGalleryFocusTracker>['applyFocusAfterNavigation']
+        | null = null;
 
       dispose = createRoot(disposeRoot => {
         const tracker = useGalleryFocusTracker({
@@ -227,6 +230,7 @@ describe('useGalleryFocusTracker: 이벤트 구독 및 동기화', () => {
         });
 
         registerItem = tracker.registerItem;
+        applyFocusAfterNavigation = tracker.applyFocusAfterNavigation;
         return disposeRoot;
       });
 
@@ -234,6 +238,9 @@ describe('useGalleryFocusTracker: 이벤트 구독 및 동기화', () => {
 
       // 네비게이션 이벤트
       galleryIndexEvents.emit('navigate:complete', { index: 2, trigger: 'keyboard' });
+
+      // 실제 갤러리 구현은 네비게이션 이후 applyFocusAfterNavigation을 호출한다
+      applyFocusAfterNavigation?.(2, 'keyboard');
 
       // 즉시는 포커스되지 않음
       expect(document.activeElement).not.toBe(mockElement);

@@ -1,143 +1,78 @@
-/**
- * @fileoverview waitForWindowLoad 함수 단위 테스트
- * @version 1.0.0 - Phase 289: 갤러리 렌더링을 로드 완료 이후로 지연
- */
-
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
-import { waitForWindowLoad } from '@shared/utils/browser';
+import { waitForWindowLoad } from '@shared/utils/window-load';
 
 describe('waitForWindowLoad', () => {
   setupGlobalTestIsolation();
 
+  type ReadyState = 'loading' | 'interactive' | 'complete';
+
+  let originalReadyStateDescriptor: PropertyDescriptor | undefined;
+  let currentReadyState: ReadyState;
+
+  const defineReadyStateProperty = () => {
+    Object.defineProperty(document, 'readyState', {
+      configurable: true,
+      get: () => currentReadyState,
+    });
+  };
+
+  const setReadyState = (state: ReadyState) => {
+    currentReadyState = state;
+  };
+
+  beforeAll(() => {
+    originalReadyStateDescriptor = Object.getOwnPropertyDescriptor(document, 'readyState');
+  });
+
   beforeEach(() => {
     vi.useFakeTimers();
+    setReadyState('loading');
+    defineReadyStateProperty();
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    if (originalReadyStateDescriptor) {
+      Object.defineProperty(document, 'readyState', originalReadyStateDescriptor);
+    } else {
+      delete (document as unknown as Record<string, unknown>).readyState;
+    }
     vi.useRealTimers();
   });
 
-  it('이미 로드 완료된 경우 즉시 complete 반환', async () => {
-    // Arrange: readyState를 'complete'로 설정
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'complete',
-    });
-
-    // Act
-    const promise = waitForWindowLoad();
-    const result = await promise;
-
-    // Assert
-    expect(result).toBe('complete');
+  it('resolves immediately when document is already complete', async () => {
+    setReadyState('complete');
+    const result = await waitForWindowLoad();
+    expect(result).toBe(true);
   });
 
-  it('load 이벤트를 기다린 후 waiting 반환', async () => {
-    // Arrange: readyState를 'loading'으로 설정
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'loading',
-    });
-
-    // Act
-    const promise = waitForWindowLoad();
-
-    // 이벤트를 트리거
-    const loadEvent = new Event('load');
-    window.dispatchEvent(loadEvent);
-
+  it('resolves true when load event fires before timeout', async () => {
+    const promise = waitForWindowLoad({ timeoutMs: 5000 });
+    window.dispatchEvent(new Event('load'));
     const result = await promise;
-
-    // Assert
-    expect(result).toBe('waiting');
+    expect(result).toBe(true);
   });
 
-  it('타임아웃 도달 시 timeout 반환', async () => {
-    // Arrange: readyState를 'loading'으로 설정
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'loading',
-    });
-
-    // Act
-    const promise = waitForWindowLoad(1000); // 1초 타임아웃
-
-    // 타이머를 1초 진행
-    vi.advanceTimersByTime(1000);
-
+  it('resolves false when timeout elapses first', async () => {
+    const promise = waitForWindowLoad({ timeoutMs: 1000 });
+    await vi.advanceTimersByTimeAsync(1000);
     const result = await promise;
-
-    // Assert
-    expect(result).toBe('timeout');
+    expect(result).toBe(false);
   });
 
-  it('타임아웃 전에 load 이벤트가 발생하면 waiting 반환', async () => {
-    // Arrange: readyState를 'loading'으로 설정
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'loading',
-    });
+  it('honors forceEventPath even if readyState is complete', async () => {
+    setReadyState('complete');
+    const promise = waitForWindowLoad({ timeoutMs: 1000, forceEventPath: true });
 
-    // Act
-    const promise = waitForWindowLoad(5000); // 5초 타임아웃
-
-    // 500ms 후 load 이벤트 발생
-    vi.advanceTimersByTime(500);
-    const loadEvent = new Event('load');
-    window.dispatchEvent(loadEvent);
-
-    const result = await promise;
-
-    // Assert
-    expect(result).toBe('waiting');
+    // Without dispatching load, promise should resolve via timeout
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(await promise).toBe(false);
   });
 
-  it('load 이벤트 후 타임아웃이 발생해도 두 번 resolve하지 않음', async () => {
-    // Arrange: readyState를 'loading'으로 설정
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'loading',
-    });
-
-    // Act
-    const promise = waitForWindowLoad(1000);
-
-    // load 이벤트 먼저 발생
-    const loadEvent = new Event('load');
-    window.dispatchEvent(loadEvent);
-
-    const result = await promise;
-
-    // 타임아웃 시간까지 진행 (이미 resolved 되었으므로 아무 일도 없어야 함)
-    vi.advanceTimersByTime(1000);
-
-    // Assert
-    expect(result).toBe('waiting');
-  });
-
-  it('커스텀 타임아웃 값 적용', async () => {
-    // Arrange
-    Object.defineProperty(document, 'readyState', {
-      writable: true,
-      value: 'loading',
-    });
-
-    const customTimeout = 3000; // 3초
-
-    // Act
-    const promise = waitForWindowLoad(customTimeout);
-
-    // 2.5초 진행 (타임아웃 전)
-    vi.advanceTimersByTime(2500);
-
-    // 아직 resolve되지 않아야 함 (promise를 체크하기 어려우므로 타임아웃까지 진행)
-    vi.advanceTimersByTime(500);
-
-    const result = await promise;
-
-    // Assert
-    expect(result).toBe('timeout');
+  it('forceEventPath resolves true when load event is dispatched', async () => {
+    setReadyState('complete');
+    const promise = waitForWindowLoad({ timeoutMs: 1000, forceEventPath: true });
+    window.dispatchEvent(new Event('load'));
+    expect(await promise).toBe(true);
   });
 });

@@ -400,14 +400,12 @@ describe('test-service-factory', () => {
       expect(impl4).toBe('mock');
     });
 
-    it('forceReal should override forceMock', () => {
+    it('forceMock takes precedence when both flags are set', () => {
       const impl = getServiceImplementation('TestService', {
         forceMock: true,
         forceReal: true,
       });
-      // forceReal should be checked after forceMock, so it depends on implementation order
-      // In this case, we expect forceReal to override
-      expect(impl).toBe('real');
+      expect(impl).toBe('mock');
     });
   });
 

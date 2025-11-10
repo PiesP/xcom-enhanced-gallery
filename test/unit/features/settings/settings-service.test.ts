@@ -14,12 +14,28 @@ import { DEFAULT_SETTINGS } from '../../../../src/constants';
 // 모킹 스토리지
 let mockStorage = new Map<string, string>();
 
+const serializeValue = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value);
+
+const deserializeValue = (value: string | undefined, fallback?: unknown): unknown => {
+  if (value === undefined) {
+    return fallback;
+  }
+
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+};
+
 // PersistentStorage 모킹
 vi.mock('../../../../src/shared/services/persistent-storage', () => ({
   getPersistentStorage: () => ({
-    get: async (key: string) => mockStorage.get(key),
-    set: async (key: string, value: string) => {
-      mockStorage.set(key, value);
+    get: async (key: string, defaultValue?: unknown) =>
+      deserializeValue(mockStorage.get(key), defaultValue),
+    set: async (key: string, value: unknown) => {
+      mockStorage.set(key, serializeValue(value));
     },
     remove: async (key: string) => {
       mockStorage.delete(key);

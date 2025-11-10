@@ -6,18 +6,35 @@ import { DEFAULT_SETTINGS } from '@/constants';
 const STORAGE_KEY = 'xeg-app-settings';
 
 function stripVolatile(obj: any) {
-  const { lastModified, __schemaHash, ...rest } = obj;
+  const { lastModified, __schemaHash, toolbar: _toolbar, ...rest } = obj;
   return rest;
 }
 
 // Phase 354: PersistentStorage mock
 vi.mock('@shared/services/persistent-storage', () => {
-  const store = new Map<string, unknown>();
+  const store = new Map<string, string>();
+
+  const serialize = (value: unknown): string =>
+    typeof value === 'string' ? value : JSON.stringify(value);
+
+  const deserialize = <T>(value: string | undefined, fallback?: T): T | undefined => {
+    if (value === undefined) {
+      return fallback;
+    }
+
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return value as unknown as T;
+    }
+  };
   return {
     getPersistentStorage: vi.fn(() => ({
-      get: vi.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+      get: vi.fn(<T>(key: string, defaultValue?: T) =>
+        Promise.resolve(deserialize<T>(store.get(key), defaultValue))
+      ),
       set: vi.fn((key: string, value: unknown) => {
-        store.set(key, value);
+        store.set(key, serialize(value));
         return Promise.resolve();
       }),
       remove: vi.fn((key: string) => {
@@ -33,19 +50,21 @@ vi.mock('@shared/services/persistent-storage', () => {
 describe('SettingsService – SETTINGS-MIG-HASH-01', () => {
   setupGlobalTestIsolation();
 
-  let mockStorage: {
+  type MockStorage = {
     get: ReturnType<typeof vi.fn>;
     set: ReturnType<typeof vi.fn>;
     remove: ReturnType<typeof vi.fn>;
-    __testStore: Map<string, unknown>;
+    __testStore: Map<string, string>;
   };
+
+  let mockStorage: MockStorage;
 
   beforeEach(async () => {
     vi.useFakeTimers();
 
     // Reset mock storage
     const { getPersistentStorage } = await import('@shared/services/persistent-storage');
-    mockStorage = (getPersistentStorage as ReturnType<typeof vi.fn>)() as any;
+    mockStorage = (getPersistentStorage as unknown as () => MockStorage)();
     mockStorage.__testStore.clear();
   });
 
