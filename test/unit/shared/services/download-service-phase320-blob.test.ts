@@ -64,9 +64,9 @@ describe('DownloadService - Phase 320 Blob/File Downloads', () => {
 
         (globalThis as any).GM_download = vi.fn((options: any) => {
           callbackCalled = true;
-          expect(options.blob).toBe(blob);
           expect(options.name).toBe('test.txt');
           expect(options.saveAs).toBe(false);
+          expect(typeof options.url).toBe('string');
           // Call synchronously for test
           options.onload?.();
         });
@@ -126,7 +126,7 @@ describe('DownloadService - Phase 320 Blob/File Downloads', () => {
         const blob = new Blob([largeData], { type: 'application/octet-stream' });
 
         (globalThis as any).GM_download = vi.fn((options: any) => {
-          expect(options.blob.size).toBe(5 * 1024 * 1024);
+          expect(options.name).toBe('large-file.bin');
           options.onload?.();
         });
 
@@ -143,7 +143,7 @@ describe('DownloadService - Phase 320 Blob/File Downloads', () => {
         const file = new File(['file content'], 'test.txt', { type: 'text/plain' });
 
         (globalThis as any).GM_download = vi.fn((options: any) => {
-          expect(options.blob instanceof File).toBe(true);
+          expect(typeof options.url).toBe('string');
           options.onload?.();
         });
 

@@ -219,12 +219,7 @@ describe('Project Health Guards (Phase 170B+)', () => {
     it('주요 서비스 파일이 모두 존재해야 함', () => {
       const servicesPath = path.resolve(__dirname, '../../src/shared/services');
 
-      const requiredServices = [
-        'media-service.ts',
-        'bulk-download-service.ts',
-        'theme-service.ts',
-        'animation-service.ts',
-      ];
+      const requiredServices = ['media-service.ts', 'theme-service.ts', 'animation-service.ts'];
 
       for (const service of requiredServices) {
         const servicePath = path.join(servicesPath, service);

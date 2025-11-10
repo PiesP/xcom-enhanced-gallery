@@ -139,12 +139,12 @@
 
 ```
 ✅ 올바른 예
-- media-service.test.ts          # 서비스
-- keyboard-navigator.test.ts     # 서비스 구현
-- bulk-download-service.test.ts  # 서비스
-- media-url.policy.test.ts       # 정책
-- vendor-getter.strict.test.ts   # 검증
-- design-token-coverage.test.ts  # 커버리지
+- media-service.test.ts              # 서비스
+- keyboard-navigator.test.ts         # 서비스 구현
+- unified-download-service.test.ts   # 서비스
+- media-url.policy.test.ts           # 정책
+- vendor-getter.strict.test.ts       # 검증
+- design-token-coverage.test.ts      # 커버리지
 
 ❌ 잘못된 예
 - MediaService.test.ts           # PascalCase 금지

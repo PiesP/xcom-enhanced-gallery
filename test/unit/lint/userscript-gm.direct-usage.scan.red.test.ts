@@ -81,7 +81,6 @@ describe('Guard: direct GM_* usage is forbidden (adapter-only)', () => {
       'src/shared/services/download-service.ts',
       'src/shared/services/notification-service.ts',
       'src/shared/services/unified-download-service.ts',
-      'src/shared/services/bulk-download-service.ts',
       // Environment detection layer
       'src/shared/external/userscript/environment-detector.ts',
       // Bootstrap diagnostics (service availability check)

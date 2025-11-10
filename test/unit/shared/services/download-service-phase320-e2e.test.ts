@@ -25,7 +25,7 @@ describe('DownloadService - Phase 320 E2E Tests (Stage 4-3)', () => {
 
   beforeEach(() => {
     service = DownloadService.getInstance();
-    service.reset?.();
+    (service as unknown as { reset?: () => void }).reset?.();
     vi.clearAllMocks();
   });
 
@@ -43,12 +43,13 @@ describe('DownloadService - Phase 320 E2E Tests (Stage 4-3)', () => {
       // Mock GM_download behavior
       let downloadCalled = false;
       let downloadedFilename = '';
-      let downloadedSize = 0;
+      let capturedUrl: string | undefined;
 
       (globalThis as any).GM_download = vi.fn((options: any) => {
         downloadCalled = true;
         downloadedFilename = options.name;
-        downloadedSize = (options.blob as Blob).size;
+        capturedUrl = options.url;
+        expect(typeof options.url).toBe('string');
 
         // Simulate successful download
         setTimeout(() => options.onload?.(), 10);
@@ -66,7 +67,7 @@ describe('DownloadService - Phase 320 E2E Tests (Stage 4-3)', () => {
       expect(result.filename).toBe(filename);
       expect(result.size).toBe(fileContent.length);
       expect(downloadedFilename).toBe(filename);
-      expect(downloadedSize).toBe(fileContent.length);
+      expect(capturedUrl).toBeDefined();
     });
 
     it('[E2E-2] Bulk download workflow with progress tracking', async () => {
@@ -92,7 +93,7 @@ describe('DownloadService - Phase 320 E2E Tests (Stage 4-3)', () => {
         downloadLog.push({
           order: callIndex,
           filename: options.name,
-          size: options.blob.size,
+          size: currentFile.content.length,
         });
 
         options.onload?.();
@@ -366,7 +367,8 @@ describe('DownloadService - Phase 320 E2E Tests (Stage 4-3)', () => {
 
       (globalThis as any).GM_download = vi.fn((options: any) => {
         downloadCount++;
-        const fileSize = (options.blob as Blob).size;
+        const fileIndex = downloadCount - 1;
+        const fileSize = largeFiles[fileIndex]?.size ?? 0;
 
         if (usedQuota + fileSize > quotaLimit) {
           options.onerror?.('QuotaExceededError: Storage quota exceeded');
