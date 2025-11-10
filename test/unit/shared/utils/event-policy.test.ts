@@ -5,7 +5,11 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { initializeGalleryEvents, cleanupGalleryEvents } from '@/shared/utils/events';
+import {
+  initializeGalleryEvents,
+  cleanupGalleryEvents,
+  getEventListenerStatus,
+} from '@/shared/utils/events';
 import type { EventHandlers } from '@/shared/utils/events';
 
 /**
@@ -149,43 +153,42 @@ describe('Event Policy: PC-only 이벤트 검증', () => {
 
   describe('PC-only 이벤트 등록', () => {
     it('should register click listener', async () => {
-      const primaryColumn = document.querySelector('[data-testid="primaryColumn"]') as HTMLElement;
-      const addEventListenerSpy = vi.spyOn(primaryColumn, 'addEventListener');
-
       await initializeGalleryEvents(handlers);
 
-      const clickCalls = addEventListenerSpy.mock.calls.filter(call => call[0] === 'click');
-      expect(clickCalls.length).toBeGreaterThan(0);
+      const status = getEventListenerStatus();
+      const clickCount = status.byType.click ?? 0;
 
-      addEventListenerSpy.mockRestore();
+      expect(clickCount).toBeGreaterThan(0);
     });
 
     it('should register keydown listener', async () => {
-      const primaryColumn = document.querySelector('[data-testid="primaryColumn"]') as HTMLElement;
-      const addEventListenerSpy = vi.spyOn(primaryColumn, 'addEventListener');
-
       await initializeGalleryEvents(handlers);
 
-      const keydownCalls = addEventListenerSpy.mock.calls.filter(call => call[0] === 'keydown');
-      expect(keydownCalls.length).toBeGreaterThan(0);
+      const status = getEventListenerStatus();
+      const keydownCount = status.byType.keydown ?? 0;
 
-      addEventListenerSpy.mockRestore();
+      expect(keydownCount).toBeGreaterThan(0);
     });
 
     it('should use capture phase for PC-only events', async () => {
-      const primaryColumn = document.querySelector('[data-testid="primaryColumn"]') as HTMLElement;
-      const addEventListenerSpy = vi.spyOn(primaryColumn, 'addEventListener');
+      const target = document.body as HTMLElement;
+      const addEventListenerSpy = vi.spyOn(target, 'addEventListener');
 
-      await initializeGalleryEvents(handlers);
+      try {
+        await initializeGalleryEvents(handlers);
 
-      // 캡처 페이즈에서 등록되어야 함 (capture: true)
-      const clickCalls = addEventListenerSpy.mock.calls.filter(
-        call =>
-          call[0] === 'click' && (call[2] as unknown as { capture?: boolean })?.capture === true
-      );
-      expect(clickCalls.length).toBeGreaterThan(0);
+        const captureCall = addEventListenerSpy.mock.calls.find(
+          call =>
+            call[0] === 'click' &&
+            typeof call[2] === 'object' &&
+            call[2] !== null &&
+            (call[2] as { capture?: boolean }).capture === true
+        );
 
-      addEventListenerSpy.mockRestore();
+        expect(captureCall).toBeDefined();
+      } finally {
+        addEventListenerSpy.mockRestore();
+      }
     });
   });
 

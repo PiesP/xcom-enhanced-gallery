@@ -113,7 +113,7 @@ describe('DOMDirectExtractor', () => {
       expect(result.success).toBe(false);
       expect(result.mediaItems).toHaveLength(0);
       expect(result.metadata.strategy).toBe('dom-fallback-failed');
-      expect(result.metadata.error).toBe('미디어를 찾을 수 없음');
+      expect(result.metadata.error).toBe('No media items found');
     });
 
     it('should return failure if no media found', async () => {
@@ -126,7 +126,7 @@ describe('DOMDirectExtractor', () => {
 
       expect(result.success).toBe(false);
       expect(result.mediaItems).toHaveLength(0);
-      expect(result.metadata.error).toBe('미디어를 찾을 수 없음');
+      expect(result.metadata.error).toBe('No media items found');
     });
 
     it('should find clicked index for clicked element', async () => {

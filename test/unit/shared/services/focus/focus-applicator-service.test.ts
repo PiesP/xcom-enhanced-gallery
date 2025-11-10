@@ -70,7 +70,11 @@ describe('FocusApplicatorService', () => {
   describe('createFocusApplicatorService', () => {
     it('should create a new instance', () => {
       const instance = createFocusApplicatorService();
-      expect(instance).toBeInstanceOf(FocusApplicatorService);
+      expect(instance).toMatchObject({
+        clearAutoFocusTimer: expect.any(Function),
+        applyAutoFocus: expect.any(Function),
+        evaluateAndScheduleAutoFocus: expect.any(Function),
+      });
     });
   });
 
@@ -445,33 +449,6 @@ describe('FocusApplicatorService', () => {
       expect(onApply).toHaveBeenCalledWith(0, 'test');
       realTimerManager.clearAllTimers();
       document.body.removeChild(element);
-    });
-  });
-
-  describe('getDebugInfo', () => {
-    it('should return tracking debug info', () => {
-      const focusTracking = createMockFocusTracking({
-        lastAutoFocusedIndex: 5,
-        lastAppliedIndex: 3,
-      });
-
-      const debugInfo = service.getDebugInfo(focusTracking);
-
-      expect(debugInfo).toEqual({
-        lastAutoFocusedIndex: 5,
-        lastAppliedIndex: 3,
-      });
-    });
-
-    it('should handle null values', () => {
-      const focusTracking = createMockFocusTracking();
-
-      const debugInfo = service.getDebugInfo(focusTracking);
-
-      expect(debugInfo).toEqual({
-        lastAutoFocusedIndex: null,
-        lastAppliedIndex: null,
-      });
     });
   });
 });

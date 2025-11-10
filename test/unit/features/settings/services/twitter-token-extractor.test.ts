@@ -1,6 +1,30 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
 
+const mockHttpPost = vi.fn(async () => ({
+  ok: true,
+  status: 200,
+  statusText: 'OK',
+  headers: {},
+  data: { guest_token: 'mock-guest-token' },
+}));
+
+const mockPersistentGet = vi.fn(async () => undefined);
+
+vi.mock('@shared/services/http-request-service', () => ({
+  HttpRequestService: {
+    getInstance: () => ({
+      post: mockHttpPost,
+    }),
+  },
+}));
+
+vi.mock('@shared/services/persistent-storage', () => ({
+  getPersistentStorage: () => ({
+    get: mockPersistentGet,
+  }),
+}));
+
 interface TwitterTokenExtractorInstance {
   initialize(): Promise<void>;
   cleanup(): Promise<void> | void;
@@ -33,6 +57,8 @@ describe('TwitterTokenExtractor', () => {
     if (typeof sessionStorage !== 'undefined') sessionStorage.clear();
     vi.spyOn(performance, 'getEntriesByType').mockReturnValue([]);
     global.fetch = vi.fn();
+    mockHttpPost.mockClear();
+    mockPersistentGet.mockClear();
   });
 
   afterEach(() => {

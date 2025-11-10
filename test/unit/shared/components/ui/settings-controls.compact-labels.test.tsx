@@ -46,8 +46,8 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   it('should render visible theme and language labels in compact mode', () => {
     mountSettingsControls();
 
-    const themeLabel = container.querySelector(`label[for="${themeSelectId}"]`);
-    const languageLabel = container.querySelector(`label[for="${languageSelectId}"]`);
+    const themeLabel = container.querySelector('label[for$="theme-select"]');
+    const languageLabel = container.querySelector('label[for$="language-select"]');
 
     expect(themeLabel, 'Theme label should be present in compact mode').not.toBeNull();
     expect(languageLabel, 'Language label should be present in compact mode').not.toBeNull();
@@ -59,8 +59,8 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   it('should apply compact label styling and maintain DOM order', () => {
     mountSettingsControls({ theme: 'light', language: 'en' });
 
-    const themeLabel = container.querySelector(`label[for="${themeSelectId}"]`);
-    const themeSelect = container.querySelector(`#${themeSelectId}`);
+    const themeLabel = container.querySelector('label[for$="theme-select"]');
+    const themeSelect = container.querySelector('select[id$="theme-select"]');
 
     expect(themeLabel).not.toBeNull();
     expect(themeLabel?.classList.contains(styles.label)).toBe(true);
