@@ -37,7 +37,8 @@ if (args[1] && /^\d+$/.test(args[1])) {
 const noCleanup = args.includes('--no-cleanup');
 const rawVitestArgs = args.slice(vitestArgsStart).filter(arg => arg !== '--no-cleanup');
 const wantsCoverage =
-  process.env.XEG_VITEST_COVERAGE === '1' || rawVitestArgs.includes('--coverage');
+  process.env.XEG_VITEST_COVERAGE === '1' || rawVitestArgs.some(arg => arg === '--coverage');
+const forwardedVitestArgs = rawVitestArgs.filter(arg => arg !== '--coverage');
 
 function mergeNodeOptions(current: string | undefined, required: string[]): string {
   const existing = current?.split(/\s+/).filter(Boolean) ?? [];
@@ -81,6 +82,7 @@ const vitestArgv: string[] = [
   project,
   'run',
   ...(wantsCoverage ? ['--coverage'] : []),
+  ...forwardedVitestArgs,
 ];
 
 try {

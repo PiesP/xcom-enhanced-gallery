@@ -1,12 +1,43 @@
 #!/usr/bin/env node
 /**
- * Vitest Worker Process Auto Cleanup Script
- *
- * Automatically terminates orphaned Vitest worker processes to free memory.
+ * Vitest worker cleanup helper with optional memory diagnostics.
  */
 
 import { execSync } from 'node:child_process';
 import { freemem, totalmem } from 'node:os';
+
+const args = process.argv.slice(2);
+
+const getArgValue = (name: string, fallback: string): string => {
+  let value = fallback;
+  for (let index = 0; index < args.length; index += 1) {
+    const entry = args[index];
+    const prefix = `--${name}`;
+    if (entry.startsWith(`${prefix}=`)) {
+      value = entry.slice(prefix.length + 1);
+    } else if (entry === prefix) {
+      const next = args[index + 1];
+      if (next && !next.startsWith('--')) {
+        value = next;
+        index += 1;
+      } else {
+        value = 'true';
+      }
+    }
+  }
+  return value;
+};
+
+const hasFlag = (name: string): boolean =>
+  args.some(entry => entry === `--${name}` || entry === `--${name}=true`);
+
+const QUIET = hasFlag('quiet');
+const FORCE_KILL_ONLY = hasFlag('force');
+const DRY_RUN = hasFlag('dry-run');
+const RUN_GC = hasFlag('gc');
+const PATTERN = getArgValue('pattern', 'vitest');
+const TERM_WAIT_MS = Math.max(0, Number.parseInt(getArgValue('term-wait', '1500'), 10) || 0);
+const KILL_WAIT_MS = Math.max(0, Number.parseInt(getArgValue('kill-wait', '750'), 10) || 0);
 
 const colors = {
   reset: '\x1b[0m',
@@ -17,133 +48,205 @@ const colors = {
 } as const;
 
 type ColorKey = keyof typeof colors;
-type KillSignal = 'SIGTERM' | 'SIGKILL';
 
-function log(message: string, color: ColorKey = 'reset'): void {
+const log = (message: string, color: ColorKey = 'reset'): void => {
+  if (QUIET) return;
   console.log(`${colors[color]}${message}${colors.reset}`);
-}
+};
 
-function execSafe(command: string): string {
+const execSafe = (command: string): string => {
   try {
     return execSync(command, { encoding: 'utf-8', stdio: 'pipe' }).trim();
   } catch {
     return '';
   }
+};
+
+interface ProcessInfo {
+  pid: number;
+  cpu: number;
+  memory: number;
+  command: string;
 }
 
-function getVitestWorkerPids(): string[] {
-  const output = execSafe('ps aux | grep "[v]itest/dist/workers/forks.js" | awk \'{print $2}\'');
+type NodeSignal = Parameters<typeof process.kill>[1];
+
+const parseProcesses = (): ProcessInfo[] => {
+  const output = execSafe('ps -eo pid=,pcpu=,pmem=,command=');
   if (!output) return [];
-  return output.split('\n').filter(Boolean);
-}
 
-function isProcessAlive(pid: string): boolean {
+  const processes: ProcessInfo[] = [];
+  for (const line of output.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const match = trimmed.match(/^(\d+)\s+(\S+)\s+(\S+)\s+(.+)$/);
+    if (!match) continue;
+    const [, pidStr, cpuStr, memStr, command] = match;
+    const pid = Number.parseInt(pidStr, 10);
+    if (!Number.isFinite(pid)) continue;
+    const cpu = Number.parseFloat(cpuStr);
+    const memory = Number.parseFloat(memStr);
+    const normalized = command.toLowerCase();
+    if (normalized.includes('cleanup-vitest-workers')) continue;
+    if (!normalized.includes('vitest')) continue;
+    if (!(normalized.includes('worker') || normalized.includes('fork'))) continue;
+    if (!normalized.includes(PATTERN.toLowerCase())) continue;
+    processes.push({
+      pid,
+      cpu: Number.isFinite(cpu) ? cpu : 0,
+      memory: Number.isFinite(memory) ? memory : 0,
+      command,
+    });
+  }
+  return processes;
+};
+
+const isProcessAlive = (pid: number): boolean => {
   try {
-    process.kill(Number.parseInt(pid, 10), 0);
+    process.kill(pid, 0);
     return true;
   } catch {
     return false;
   }
+};
+
+const killProcess = (pid: number, signal: NodeSignal): boolean => {
+  try {
+    process.kill(pid, signal);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise(resolve => globalThis.setTimeout(resolve, ms));
+
+const formatMB = (bytes: number): string => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+const formatSignedMB = (bytes: number): string => {
+  if (bytes === 0) return `+${formatMB(0)}`;
+  const sign = bytes > 0 ? '+' : '-';
+  return `${sign}${formatMB(Math.abs(bytes))}`;
+};
+
+interface MemorySnapshot {
+  total: number;
+  free: number;
+  used: number;
 }
 
-function formatMemory(bytes: number): string {
-  const gb = bytes / 1024 / 1024 / 1024;
-  return `${gb.toFixed(1)}GB`;
-}
-
-function printMemoryStatus(): void {
+const captureMemory = (): MemorySnapshot => {
   const total = totalmem();
   const free = freemem();
-  const used = total - free;
-  const usedPercent = ((used / total) * 100).toFixed(1);
+  return { total, free, used: total - free };
+};
 
-  console.log(`  Total: ${formatMemory(total)}`);
-  console.log(`  Used: ${formatMemory(used)} (${usedPercent}%)`);
-  console.log(`  Free: ${formatMemory(free)}`);
-}
+const logMemory = (label: string, snapshot: MemorySnapshot): void => {
+  if (QUIET) return;
+  const usedPercent = snapshot.total === 0 ? 0 : (snapshot.used / snapshot.total) * 100;
+  console.log(`${label}`);
+  console.log(`  - Used: ${formatMB(snapshot.used)} (${usedPercent.toFixed(1)}%)`);
+  console.log(`  - Free: ${formatMB(snapshot.free)}`);
+  console.log(`  - Total: ${formatMB(snapshot.total)}`);
+};
 
-function printProcessMemory(pids: string[]): void {
-  if (pids.length === 0) return;
+const reportProcesses = (processes: ProcessInfo[]): void => {
+  if (QUIET || processes.length === 0) return;
+  console.log('\nTop Vitest workers (by memory)');
+  processes
+    .slice()
+    .sort((a, b) => b.memory - a.memory)
+    .slice(0, 5)
+    .forEach(proc => {
+      console.log(
+        `  - PID ${proc.pid} | CPU ${proc.cpu.toFixed(1)}% | MEM ${proc.memory.toFixed(1)}% | ${proc.command}`
+      );
+    });
+};
 
-  console.log('\n📊 Memory Usage Report:');
-  const output = execSafe('ps aux --sort=-%mem | grep "[v]itest/dist/workers/forks.js" | head -5');
-  if (output) {
-    const lines = output.split('\n').filter(line => line.trim());
-    if (lines.length > 0) {
-      console.log(lines.join('\n'));
-    } else {
-      console.log('  (no detailed info)');
-    }
+async function cleanup(): Promise<number> {
+  const beforeMemory = captureMemory();
+  if (!QUIET) {
+    console.log('🧹 Starting Vitest worker cleanup...');
+    logMemory('\nSystem memory before cleanup', beforeMemory);
   }
-}
 
-function killProcess(pid: string, signal: KillSignal = 'SIGTERM'): boolean {
-  try {
-    process.kill(Number.parseInt(pid, 10), signal);
-    return true;
-  } catch {
-    return false;
-  }
-}
+  let processes = parseProcesses();
 
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => globalThis.setTimeout(resolve, ms));
-}
-
-async function main(): Promise<number> {
-  console.log('🧹 Starting Vitest Worker Process Cleanup...\n');
-
-  let workerPids = getVitestWorkerPids();
-
-  if (workerPids.length === 0) {
-    log('✓ No Vitest worker processes to clean up.', 'green');
+  if (processes.length === 0) {
+    log('✓ No Vitest worker processes detected.', 'green');
     return 0;
   }
 
-  log(`⚠️  Found ${workerPids.length} Vitest worker(s)`, 'yellow');
-  printProcessMemory(workerPids);
+  log(`⚠️  Found ${processes.length} Vitest worker(s)`, 'yellow');
+  reportProcesses(processes);
 
-  console.log('\n🔄 Terminating processes...');
-
-  for (const pid of workerPids) {
-    if (isProcessAlive(pid) && killProcess(pid, 'SIGTERM')) {
-      console.log(`  - PID ${pid}: sent SIGTERM`);
-    }
+  if (DRY_RUN) {
+    log('\nDry run enabled, no processes were terminated.', 'blue');
+    return 0;
   }
 
-  await sleep(2000);
-
-  const remainingPids = getVitestWorkerPids();
-
-  if (remainingPids.length > 0) {
-    log('⚠️  Some processes still running. Sending SIGKILL...', 'yellow');
-    for (const pid of remainingPids) {
-      if (isProcessAlive(pid) && killProcess(pid, 'SIGKILL')) {
-        console.log(`  - PID ${pid}: sent SIGKILL`);
+  if (!FORCE_KILL_ONLY) {
+    for (const proc of processes) {
+      if (isProcessAlive(proc.pid) && killProcess(proc.pid, 'SIGTERM')) {
+        log(`  - PID ${proc.pid}: sent SIGTERM`, 'blue');
       }
     }
-    await sleep(1000);
+    if (TERM_WAIT_MS > 0) {
+      await sleep(TERM_WAIT_MS);
+    }
   }
 
-  workerPids = getVitestWorkerPids();
+  if (FORCE_KILL_ONLY) {
+    processes = parseProcesses();
+  } else {
+    processes = parseProcesses();
+    processes = processes.filter(proc => isProcessAlive(proc.pid));
+  }
 
-  if (workerPids.length === 0) {
-    log('\n✓ All Vitest worker processes successfully cleaned up.', 'green');
-    console.log('\n📊 Memory Status After Cleanup:');
-    printMemoryStatus();
-    console.log('\n✅ Cleanup Complete');
+  if (processes.length > 0) {
+    if (!QUIET) {
+      console.log('\nEscalating to SIGKILL for remaining processes...');
+    }
+    for (const proc of processes) {
+      if (killProcess(proc.pid, 'SIGKILL')) {
+        log(`  - PID ${proc.pid}: sent SIGKILL`, 'yellow');
+      }
+    }
+    if (KILL_WAIT_MS > 0) {
+      await sleep(KILL_WAIT_MS);
+    }
+  }
+
+  if (RUN_GC && typeof globalThis.gc === 'function') {
+    globalThis.gc();
+  }
+
+  const remaining = parseProcesses();
+
+  const afterMemory = captureMemory();
+  if (!QUIET) {
+    logMemory('\nSystem memory after cleanup', afterMemory);
+    const usedDelta = afterMemory.used - beforeMemory.used;
+    console.log(`  - Used memory delta: ${formatSignedMB(usedDelta)}`);
+  }
+
+  if (remaining.length === 0) {
+    log('\n✓ Cleanup complete.', 'green');
     return 0;
   }
 
-  log('\n❌ Some processes are still running.', 'red');
-  console.log(`Remaining processes: ${workerPids.join(', ')}`);
+  log('\n❌ Some Vitest workers are still running:', 'red');
+  if (!QUIET) {
+    remaining.forEach(proc => console.log(`  - PID ${proc.pid} | ${proc.command}`));
+  }
   return 1;
 }
 
-main()
-  .then(exitCode => process.exit(exitCode))
+cleanup()
+  .then(code => process.exit(code))
   .catch(error => {
-    log(`❌ Error occurred: ${(error as Error).message}`, 'red');
+    log(`❌ Cleanup failed: ${(error as Error).message}`, 'red');
     console.error(error);
     process.exit(1);
   });
