@@ -11,6 +11,7 @@ import {
   ChatBubbleLeftRight,
 } from '../Icon';
 import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
+import { createClassName } from '@shared/utils/component-utils';
 import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
@@ -97,6 +98,9 @@ function renderTweetAnchor(
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const isToolbarDisabled = () => Boolean(props.disabled);
   const isDownloading = () => Boolean(props.isDownloading);
+  const isHighContrast = () => Boolean(props.toolbarState.needsHighContrast);
+  const toolbarButtonClass = (...extra: Array<string | undefined>) =>
+    createClassName(styles.toolbarButton, ...extra);
 
   return (
     <div
@@ -110,7 +114,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       data-gallery-element='toolbar'
       data-state={props.toolbarDataState()}
       data-disabled={isToolbarDisabled()}
-      data-high-contrast={props.toolbarState.needsHighContrast}
+      data-high-contrast={isHighContrast() ? 'true' : 'false'}
       data-settings-expanded={props.settingsController.isSettingsExpanded()}
       data-tweet-panel-expanded={props.isTweetPanelExpanded()}
       data-focused-index={String(props.displayedIndex())}
@@ -133,6 +137,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           data-gallery-element='navigation-left'
         >
           <IconButton
+            class={toolbarButtonClass()}
             size='toolbar'
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
@@ -146,6 +151,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           </IconButton>
 
           <IconButton
+            class={toolbarButtonClass()}
             size='toolbar'
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
@@ -189,6 +195,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             const label = props.fitModeLabels[mode];
             return (
               <IconButton
+                class={toolbarButtonClass(styles.fitButton)}
                 size='toolbar'
                 onClick={props.handleFitModeClick(mode)}
                 disabled={props.isFitDisabled(mode)}
@@ -204,6 +211,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           })}
 
           <IconButton
+            class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
             size='toolbar'
             loading={isDownloading()}
             onClick={props.onDownloadCurrent}
@@ -220,6 +228,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
           {props.navState().canDownloadAll && (
             <IconButton
+              class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
               size='toolbar'
               onClick={props.onDownloadAll}
               disabled={props.navState().downloadDisabled}
@@ -238,6 +247,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             <IconButton
               ref={props.settingsController.assignSettingsButtonRef}
               id='settings-button'
+              class={toolbarButtonClass()}
               size='toolbar'
               aria-label='설정 열기'
               aria-expanded={props.settingsController.isSettingsExpanded() ? 'true' : 'false'}
@@ -256,6 +266,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           {props.tweetText && (
             <IconButton
               id='tweet-text-button'
+              class={toolbarButtonClass()}
               size='toolbar'
               aria-label={languageService.getString('toolbar.tweetText') || 'View tweet text'}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
@@ -271,6 +282,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           )}
 
           <IconButton
+            class={toolbarButtonClass(styles.closeButton)}
             size='toolbar'
             intent='danger'
             aria-label='갤러리 닫기'

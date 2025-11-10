@@ -96,9 +96,9 @@
 /**
  * @subsection High Contrast Mode
  * Enhanced visibility for accessibility (Phase X: Vision Impairment support)
- * Applies when highContrast class present on parent
+ * Applies when toolbar root exposes data-high-contrast='true'
  */
-.highContrast .toolbarButton {
+[data-high-contrast='true'] .toolbarButton {
   background: var(--xeg-toolbar-button-bg-high-contrast);
   border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast);
   color: var(--xeg-color-overlay-strong);
@@ -666,7 +666,7 @@ button.fitButton {
 /* ===== 동적 시인성 조정 ===== */
 
 /* 동적 고대비 모드 - 완전 불투명 배경 (Phase 56: 토큰화) */
-.galleryToolbar.highContrast {
+.galleryToolbar[data-high-contrast='true'] {
   background: var(--xeg-toolbar-bg-high-contrast) !important;
   border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
   backdrop-filter: none !important;
@@ -676,7 +676,7 @@ button.fitButton {
     /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
-[data-theme='dark'] .galleryToolbar.highContrast {
+[data-theme='dark'] .galleryToolbar[data-high-contrast='true'] {
   background: var(--xeg-toolbar-bg-high-contrast) !important;
   border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
   box-shadow:
@@ -684,13 +684,13 @@ button.fitButton {
     /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-medium) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
-[data-theme='dark'] .highContrast .toolbarButton {
+[data-theme='dark'] [data-high-contrast='true'] .toolbarButton {
   background: var(--xeg-toolbar-button-bg-high-contrast);
   border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast); /* 1px → var(--border-width-thin) */
   color: var(--xeg-glass-bg);
 }
 
-.highContrast .toolbarButton:hover:not(:disabled) {
+[data-high-contrast='true'] .toolbarButton:hover:not(:disabled) {
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-overlay-medium);
   box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light); /* 2px 8px → 0.125em 0.5em */
@@ -934,12 +934,12 @@ button.fitButton {
 }
 
 /* High contrast mode for links */
-.highContrast .tweetLink {
+[data-high-contrast='true'] .tweetLink {
   color: var(--xeg-color-overlay-heavy);
   text-decoration: underline;
 }
 
-.highContrast .tweetLink:hover {
+[data-high-contrast='true'] .tweetLink:hover {
   color: var(--xeg-color-neutral-100);
   background: var(--xeg-color-overlay-medium);
 }
@@ -971,12 +971,12 @@ button.fitButton {
 }
 
 /* High contrast mode for Twitter-style links */
-.highContrast .tweetContent a {
+[data-high-contrast='true'] .tweetContent a {
   color: var(--xeg-color-overlay-heavy);
   text-decoration: underline;
 }
 
-.highContrast .tweetContent a:hover {
+[data-high-contrast='true'] .tweetContent a:hover {
   color: var(--xeg-color-neutral-100);
   background: var(--xeg-color-overlay-medium);
 }
