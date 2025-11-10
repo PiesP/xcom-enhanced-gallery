@@ -1,48 +1,153 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
 
-import { KeyboardNavigator, keyboardNavigator } from '@/shared/services/input/keyboard-navigator';
+type RegisteredHandler = (event: Event) => void;
 
-// Basic contract tests for KeyboardNavigator service
-
-describe('KeyboardNavigator service', () => {
+describe('useGalleryKeyboard (service parity)', () => {
   setupGlobalTestIsolation();
 
-  it('invokes onEscape for Escape key and ignores editable targets', () => {
-    const onEscape = vi.fn();
+  const addListenerMock = vi.fn();
+  const removeListenerMock = vi.fn();
+  const getInstanceMock = vi.fn();
+  let cleanupCallbacks: Array<() => void> = [];
+  let registeredHandler: RegisteredHandler | null = null;
+  let listenerIdQueue: string[] = [];
 
-    const unsubscribe = keyboardNavigator.subscribe({ onEscape });
+  const primeModule = async () => {
+    vi.resetModules();
+    cleanupCallbacks = [];
+    registeredHandler = null;
+    listenerIdQueue = [];
+    addListenerMock.mockImplementation((_target, type, handler) => {
+      if (type === 'keydown') {
+        registeredHandler = handler;
+      }
+      return listenerIdQueue.shift() ?? 'listener-id';
+    });
+    removeListenerMock.mockImplementation(() => {
+      registeredHandler = null;
+      return true;
+    });
+    getInstanceMock.mockReturnValue({
+      addListener: addListenerMock,
+      removeListener: removeListenerMock,
+    });
 
-    const target = document.createElement('div');
-    document.body.appendChild(target);
-    const EvtCtor: any = (window as any).KeyboardEvent || (globalThis as any).KeyboardEvent;
-    const evt = new EvtCtor('keydown', { key: 'Escape', bubbles: true });
-    target.dispatchEvent(evt);
+    vi.doMock('@/shared/services/event-manager', () => ({
+      EventManager: {
+        getInstance: getInstanceMock,
+      },
+    }));
 
-    expect(onEscape).toHaveBeenCalledTimes(1);
+    vi.doMock('@/shared/external/vendors', () => ({
+      getSolid: vi.fn(() => ({
+        createEffect: (fn: () => void) => fn(),
+        onCleanup: (fn: () => void) => {
+          cleanupCallbacks.push(fn);
+        },
+      })),
+    }));
 
-    // Editable should be ignored
-    const input = document.createElement('input');
-    document.body.appendChild(input);
-    const evt2 = new EvtCtor('keydown', { key: 'Escape', bubbles: true });
-    input.dispatchEvent(evt2);
-    expect(onEscape).toHaveBeenCalledTimes(1);
+    const mod = await import(
+      '@features/gallery/components/vertical-gallery-view/hooks/useGalleryKeyboard' as string
+    );
+    return mod.useGalleryKeyboard;
+  };
 
-    unsubscribe();
+  beforeEach(() => {
+    addListenerMock.mockReset();
+    removeListenerMock.mockReset();
+    removeListenerMock.mockImplementation(() => {
+      registeredHandler = null;
+      return true;
+    });
+    getInstanceMock.mockReset();
+    cleanupCallbacks = [];
+    registeredHandler = null;
+    listenerIdQueue = [];
   });
 
-  it('invokes onHelp for Shift+/? variants', () => {
-    const onHelp = vi.fn();
-    const unsubscribe = KeyboardNavigator.getInstance().subscribe({ onHelp });
+  const fire = (event: KeyboardEvent) => {
+    if (!registeredHandler) {
+      throw new Error('keyboard listener not registered');
+    }
+    registeredHandler(event);
+  };
 
-    const EvtCtor: any = (window as any).KeyboardEvent || (globalThis as any).KeyboardEvent;
-    const e1 = new EvtCtor('keydown', { key: '?', bubbles: true });
-    document.dispatchEvent(e1);
+  it('triggers onClose for Escape and ignores editable targets', async () => {
+    const useGalleryKeyboard = await primeModule();
+    const onClose = vi.fn();
 
-    const e2 = new EvtCtor('keydown', { key: '/', shiftKey: true, bubbles: true });
-    document.dispatchEvent(e2);
+    useGalleryKeyboard({ onClose });
 
-    expect(onHelp).toHaveBeenCalledTimes(2);
-    unsubscribe();
+    expect(addListenerMock).toHaveBeenCalledWith(
+      document,
+      'keydown',
+      expect.any(Function),
+      { capture: true },
+      'gallery-keyboard-navigation'
+    );
+
+    fire(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    const input = document.createElement('input');
+    const editableEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+    Object.defineProperty(editableEvent, 'target', { value: input });
+    fire(editableEvent);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('triggers onOpenHelp for ? and Shift+/', async () => {
+    const useGalleryKeyboard = await primeModule();
+    const onClose = vi.fn();
+    const onOpenHelp = vi.fn();
+
+    useGalleryKeyboard({ onClose, onOpenHelp });
+
+    fire(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+    fire(new KeyboardEvent('keydown', { key: '/', shiftKey: true, bubbles: true }));
+
+    expect(onOpenHelp).toHaveBeenCalledTimes(2);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('cleans up listeners via onCleanup', async () => {
+    const useGalleryKeyboard = await primeModule();
+    useGalleryKeyboard({ onClose: vi.fn() });
+
+    expect(cleanupCallbacks).toHaveLength(1);
+    cleanupCallbacks[0]!();
+
+    expect(removeListenerMock).toHaveBeenCalledWith('listener-id');
+  });
+
+  it('prevents default propagation when handled and re-subscribes cleanly', async () => {
+    const useGalleryKeyboard = await primeModule();
+    const onClose = vi.fn();
+
+    listenerIdQueue = ['first-listener', 'second-listener'];
+    useGalleryKeyboard({ onClose });
+
+    const preventDefault = vi.fn();
+    const stopPropagation = vi.fn();
+    fire({
+      key: 'Escape',
+      preventDefault,
+      stopPropagation,
+      target: null,
+    } as unknown as KeyboardEvent);
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(stopPropagation).toHaveBeenCalledTimes(1);
+
+    expect(cleanupCallbacks).toHaveLength(1);
+    cleanupCallbacks[0]!();
+    expect(removeListenerMock).toHaveBeenCalledWith('first-listener');
+
+    expect(() => fire(new KeyboardEvent('keydown', { key: 'Escape' }))).toThrowError(
+      'keyboard listener not registered'
+    );
   });
 });
