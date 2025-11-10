@@ -114,7 +114,7 @@ describe('DownloadService', () => {
       expect(result.size).toBe(blob.size);
       expect(mockGMDownload).toHaveBeenCalledWith(
         expect.objectContaining({
-          blob,
+          url: expect.stringMatching(/^blob:/),
           name: 'test.txt',
           saveAs: true,
           conflictAction: 'uniquify',
