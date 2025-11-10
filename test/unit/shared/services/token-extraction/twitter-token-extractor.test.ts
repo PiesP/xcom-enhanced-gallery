@@ -70,21 +70,18 @@ describe('TwitterTokenExtractor', () => {
   let extractor: TwitterTokenExtractorInstance;
 
   beforeEach(async () => {
-    const moduleUrl = new URL(
-      '../../../../src/shared/services/token-extraction/twitter-token-extractor.ts',
-      import.meta.url
-    );
-    const moduleExports = (await import(moduleUrl.href)) as {
-      TwitterTokenExtractor: TwitterTokenExtractorConstructor;
-    };
-    extractor = new moduleExports.TwitterTokenExtractor();
+    vi.resetModules();
+    const { TwitterTokenExtractor } = (await import(
+      '../../../../../src/shared/services/token-extraction/twitter-token-extractor'
+    )) as { TwitterTokenExtractor: TwitterTokenExtractorConstructor };
+    extractor = new TwitterTokenExtractor();
     vi.clearAllMocks();
     mockHttpService.post.mockReset();
     mockPersistentStorage.get.mockReset();
     mockPersistentStorage.get.mockResolvedValue(null);
     const storage = globalThis.sessionStorage;
     storage?.clear();
-    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
     document.querySelectorAll('script[data-testid="token-script"]').forEach(node => node.remove());
   });
 
@@ -102,11 +99,12 @@ describe('TwitterTokenExtractor', () => {
 
   describe('cleanup', () => {
     it('resets state', async () => {
-      appendScriptWithToken(VALID_TEST_TOKEN);
+      const script = appendScriptWithToken(VALID_TEST_TOKEN);
       await extractor.initialize();
       expect(await extractor.getToken()).toBe(VALID_TEST_TOKEN);
 
       extractor.cleanup();
+      script.remove();
 
       expect(extractor.isInitialized()).toBe(false);
       expect(await extractor.getToken()).toBeNull();
@@ -148,6 +146,7 @@ describe('TwitterTokenExtractor', () => {
         success: true,
         token: VALID_TEST_TOKEN,
         source: 'script',
+        timestamp: expect.any(Number),
       });
 
       script.remove();

@@ -157,7 +157,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.clickedIndex).toBe(0);
       expect(result.mediaItems.map(item => item.url)).toContain(SAMPLE_TWEETS.sample1_media1.url);
     });
@@ -180,7 +181,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.clickedIndex).toBe(1);
       expect(result.mediaItems[1]?.url).toBe(SAMPLE_TWEETS.sample1_media2.url);
     });
@@ -203,7 +205,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.clickedIndex).toBe(2);
       expect(result.mediaItems[2]?.url).toBe(SAMPLE_TWEETS.sample1_media3.url);
     });
@@ -226,7 +229,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.clickedIndex).toBe(3);
       expect(result.mediaItems[3]?.url).toBe(SAMPLE_TWEETS.sample1_media4.url);
     });
@@ -249,7 +253,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.mediaItems).toHaveLength(4);
       expect(result.mediaItems.map(item => item.url)).toEqual(allMediaUrls);
     });
@@ -275,7 +280,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.mediaItems).toHaveLength(1);
       expect(result.mediaItems[0]?.url).toBe(singleMediaUrl);
     });
@@ -303,7 +309,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.mediaItems[0]?.url).toBe(normalizedUrl);
     });
 
@@ -327,7 +334,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('dom-fallback');
       expect(result.mediaItems[0]?.url).toBe(SAMPLE_TWEETS.sample1_media1.url);
       expect(mockDOMExtractor.extract).toHaveBeenCalled();
     });
@@ -358,7 +366,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.tweetInfo?.metadata?.timestamp).toBe(timestamp);
     });
 
@@ -380,7 +389,8 @@ describe('Sample-Based Click Media Extraction', () => {
       const result = await service.extractFromClickedElement(mockElement);
 
       // Assert
-      expect(result.status === 'success').toBe(true);
+      expect(result.success).toBe(true);
+      expect(result.metadata?.sourceType).toBe('api-first');
       expect(result.metadata?.sourceType).toBeDefined();
     });
   });

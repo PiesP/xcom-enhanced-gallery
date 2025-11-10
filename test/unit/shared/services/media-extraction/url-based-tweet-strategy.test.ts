@@ -5,8 +5,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../../shared/global-cleanup-hooks';
-import type { TweetInfo } from '@/shared/types/media.types.js';
-import { UrlBasedTweetStrategy } from '@/shared/services/media-extraction/strategies/url-based-tweet-strategy.js';
+import type { TweetInfo } from '@/shared/types/media.types';
+import { UrlBasedTweetStrategy } from '@/shared/services/media-extraction/strategies/url-based-tweet-strategy';
 
 // parseUsernameFast 모킹
 vi.mock('@/shared/services/media/username-extraction-service.js', () => ({
@@ -126,12 +126,14 @@ describe('UrlBasedTweetStrategy', () => {
       expect(result?.username).toBe('test_user_123');
     });
 
-    it('should return null if username is "fallback"', async () => {
+    it('should return extracted username even if it matches "fallback"', async () => {
       (window as any).location = { href: 'https://x.com/fallback/status/1234567890' };
 
       const result = await strategy.extract(element);
 
-      expect(result).toBeNull();
+      expect(result).not.toBeNull();
+      expect(result?.username).toBe('fallback');
+      expect(result?.tweetId).toBe('1234567890');
     });
 
     it('should return null if no username in URL', async () => {

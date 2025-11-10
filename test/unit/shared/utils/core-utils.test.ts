@@ -20,7 +20,7 @@ describe('core-utils', () => {
   describe('isGalleryInternalEvent', () => {
     it('should return true for events from gallery container', () => {
       const galleryContainer = document.createElement('div');
-      galleryContainer.setAttribute('data-gallery-container', '');
+      galleryContainer.setAttribute('data-xeg-gallery-container', '');
       document.body.appendChild(galleryContainer);
 
       const element = document.createElement('div');

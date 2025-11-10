@@ -46,11 +46,15 @@ describe('애니메이션 유틸리티', () => {
   let mockElement: HTMLElement;
 
   beforeEach(() => {
-    // Mock element
-    mockElement = {
-      animate: vi.fn().mockResolvedValue({}),
-      style: {},
-    } as unknown as HTMLElement;
+    // Use a real element to ensure style.setProperty is available in JSDOM
+    const element = document.createElement('div');
+    Object.defineProperty(element, 'animate', {
+      value: vi.fn().mockResolvedValue({}),
+      configurable: true,
+      writable: true,
+    });
+
+    mockElement = element;
     vi.clearAllMocks();
   });
 
@@ -76,9 +80,12 @@ describe('애니메이션 유틸리티', () => {
 
   describe('에러 처리', () => {
     it('애니메이션 실패 시 에러를 우아하게 처리해야 한다', async () => {
-      // Solid.js는 애니메이션 라이브러리를 직접 사용하지 않으므로 이 테스트는 스킵
-      // 에러가 발생해도 함수가 정상적으로 완료되어야 함
-      await expect(animateGalleryEnter(mockElement as HTMLElement)).resolves.toBeUndefined();
+      const promise = animateGalleryEnter(mockElement as HTMLElement);
+
+      // 즉시 애니메이션 종료 이벤트를 트리거해 Promise가 해제되도록 함
+      mockElement.dispatchEvent(new Event('animationend'));
+
+      await expect(promise).resolves.toBeUndefined();
     });
   });
 });
