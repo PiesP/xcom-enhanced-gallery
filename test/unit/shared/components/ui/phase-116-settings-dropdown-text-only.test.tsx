@@ -11,6 +11,9 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
   let container: HTMLDivElement;
   let dispose: (() => void) | undefined;
   const languageService = new LanguageService();
+  const testId = 'phase-116-settings-controls';
+  const themeSelectId = `${testId}-theme-select`;
+  const languageSelectId = `${testId}-language-select`;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -39,7 +42,7 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
           onThemeChange={() => undefined}
           onLanguageChange={() => undefined}
           compact={compact}
-          data-testid='phase-116-settings-controls'
+          data-testid={testId}
         />
       ),
       container
@@ -65,20 +68,20 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
   it('renders theme and language labels as plain text (default mode)', () => {
     mountControls();
 
-    assertLabelText('theme-select', languageService.getString('settings.theme'));
-    assertLabelText('language-select', languageService.getString('settings.language'));
+    assertLabelText(themeSelectId, languageService.getString('settings.theme'));
+    assertLabelText(languageSelectId, languageService.getString('settings.language'));
   });
 
   it('renders compact labels without decorative symbols', () => {
     mountControls({ compact: true, theme: 'light', language: 'en' });
 
-    const themeLabel = container.querySelector('label[for="theme-select"]');
-    const languageLabel = container.querySelector('label[for="language-select"]');
+    const themeLabel = container.querySelector(`label[for="${themeSelectId}"]`);
+    const languageLabel = container.querySelector(`label[for="${languageSelectId}"]`);
 
     expect(themeLabel?.classList.contains(styles.compactLabel)).toBe(true);
     expect(languageLabel?.classList.contains(styles.compactLabel)).toBe(true);
 
-    assertLabelText('theme-select', languageService.getString('settings.theme'));
-    assertLabelText('language-select', languageService.getString('settings.language'));
+    assertLabelText(themeSelectId, languageService.getString('settings.theme'));
+    assertLabelText(languageSelectId, languageService.getString('settings.language'));
   });
 });

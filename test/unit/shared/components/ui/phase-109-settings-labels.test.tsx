@@ -15,8 +15,8 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
   it('테마 선택 드롭다운에 aria-label이 있어야 함', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // id='theme-select'인 select 요소에 aria-label 속성 확인 (여러 줄 지원)
-    const themeSelectPattern = /id=['"]theme-select['"][\s\S]*?aria-label=/;
+    // id={themeSelectId}로 변경된 select 요소에 aria-label 속성 확인 (여러 줄 지원)
+    const themeSelectPattern = /id=\{themeSelectId\}[\s\S]*?aria-label=/;
 
     expect(
       themeSelectPattern.test(controlsTSX),
@@ -27,8 +27,8 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
   it('언어 선택 드롭다운에 aria-label이 있어야 함', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // id='language-select'인 select 요소에 aria-label 속성 확인 (여러 줄 지원)
-    const languageSelectPattern = /id=['"]language-select['"][\s\S]*?aria-label=/;
+    // id={languageSelectId}로 변경된 select 요소에 aria-label 속성 확인 (여러 줄 지원)
+    const languageSelectPattern = /id=\{languageSelectId\}[\s\S]*?aria-label=/;
 
     expect(
       languageSelectPattern.test(controlsTSX),
@@ -40,11 +40,9 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
     // Phase 113: compact 모드에서도 라벨이 항상 표시됨
-    // <label for='theme-select' class={labelClass}> 패턴 확인
-    const themeLabel = /<label for=['"]theme-select['"] class=\{labelClass\}>/.test(controlsTSX);
-    const languageLabel = /<label for=['"]language-select['"] class=\{labelClass\}>/.test(
-      controlsTSX
-    );
+    // <label for={themeSelectId} class={labelClass}> 패턴 확인
+    const themeLabel = /<label for=\{themeSelectId\} class=\{labelClass\}>/.test(controlsTSX);
+    const languageLabel = /<label for=\{languageSelectId\} class=\{labelClass\}>/.test(controlsTSX);
 
     expect(
       themeLabel && languageLabel,
@@ -52,8 +50,8 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
     ).toBe(true);
 
     // select에는 항상 aria-label이 있어야 함
-    const themeHasAriaLabel = /id=['"]theme-select['"][\s\S]*?aria-label=/.test(controlsTSX);
-    const languageHasAriaLabel = /id=['"]language-select['"][\s\S]*?aria-label=/.test(controlsTSX);
+    const themeHasAriaLabel = /id=\{themeSelectId\}[\s\S]*?aria-label=/.test(controlsTSX);
+    const languageHasAriaLabel = /id=\{languageSelectId\}[\s\S]*?aria-label=/.test(controlsTSX);
 
     expect(
       themeHasAriaLabel && languageHasAriaLabel,
@@ -66,7 +64,8 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
 
     // Phase 118 업데이트: themeTitle()과 languageTitle()은 createMemo로 생성된 getter 함수
     // 테마 드롭다운: aria-label={themeTitle()} 형식 확인
-    const themeAriaLabelPattern = /id=['"]theme-select['"][\s\S]*?aria-label=\{themeTitle\(\)\}/;
+    const themeAriaLabelPattern =
+      /id=\{themeSelectId\}[\s\S]*?aria-label=\{themeStrings\(\)\.title\}/;
 
     expect(
       themeAriaLabelPattern.test(controlsTSX),
@@ -75,7 +74,7 @@ describe('Phase 109.2: Settings Dropdown Label Accessibility', () => {
 
     // 언어 드롭다운: aria-label={languageTitle()} 형식 확인
     const languageAriaLabelPattern =
-      /id=['"]language-select['"][\s\S]*?aria-label=\{languageTitle\(\)\}/;
+      /id=\{languageSelectId\}[\s\S]*?aria-label=\{languageStrings\(\)\.title\}/;
 
     expect(
       languageAriaLabelPattern.test(controlsTSX),

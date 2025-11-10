@@ -7,6 +7,9 @@ import styles from '@shared/components/ui/Settings/SettingsControls.module.css';
 describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   let container: HTMLDivElement;
   let dispose: (() => void) | undefined;
+  const testId = 'settings-controls-test';
+  const themeSelectId = `${testId}-theme-select`;
+  const languageSelectId = `${testId}-language-select`;
 
   beforeEach(() => {
     container = document.createElement('div');
@@ -33,7 +36,7 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
           onThemeChange={() => undefined}
           onLanguageChange={() => undefined}
           compact={true}
-          data-testid='settings-controls-test'
+          data-testid={testId}
         />
       ),
       container
@@ -43,8 +46,8 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   it('should render visible theme and language labels in compact mode', () => {
     mountSettingsControls();
 
-    const themeLabel = container.querySelector('label[for="theme-select"]');
-    const languageLabel = container.querySelector('label[for="language-select"]');
+    const themeLabel = container.querySelector(`label[for="${themeSelectId}"]`);
+    const languageLabel = container.querySelector(`label[for="${languageSelectId}"]`);
 
     expect(themeLabel, 'Theme label should be present in compact mode').not.toBeNull();
     expect(languageLabel, 'Language label should be present in compact mode').not.toBeNull();
@@ -56,8 +59,8 @@ describe('SettingsControls compact mode labels (Phase 113 RED)', () => {
   it('should apply compact label styling and maintain DOM order', () => {
     mountSettingsControls({ theme: 'light', language: 'en' });
 
-    const themeLabel = container.querySelector('label[for="theme-select"]');
-    const themeSelect = container.querySelector('#theme-select');
+    const themeLabel = container.querySelector(`label[for="${themeSelectId}"]`);
+    const themeSelect = container.querySelector(`#${themeSelectId}`);
 
     expect(themeLabel).not.toBeNull();
     expect(themeLabel?.classList.contains(styles.label)).toBe(true);
