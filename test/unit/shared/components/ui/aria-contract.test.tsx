@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, h } from '@test/utils/testing-library';
+import { render, screen, h } from '@test/utils/testing-library';
 
 // Phase S1 RED: UnifiedButton 통합 후 ARIA 표준 검증
 import { Button as UnifiedButton } from '@/shared/components/ui/Button/Button';
@@ -12,19 +12,15 @@ import { Button as UnifiedButton } from '@/shared/components/ui/Button/Button';
 describe('ARIA Contract (v4.1 - RED)', () => {
   describe('Basic ARIA Attributes', () => {
     it('should have role="button" by default', () => {
-      const { container } = render(h(UnifiedButton, { 'data-testid': 'basic-button' }, 'Test'));
+      render(h(UnifiedButton, { 'data-testid': 'basic-button' }, 'Test'));
 
-      // DEBUG: 실제 렌더링된 HTML 확인
-      console.log('Rendered HTML:', container.innerHTML);
-
-      const button = container.querySelector('button');
-      console.log('Found button:', button);
-
-      expect(button).toHaveAttribute('role', 'button');
+      const button = screen.getByRole('button', { name: 'Test' });
+      expect(button).toBeInstanceOf(HTMLButtonElement);
+      expect(button).toHaveRole('button');
     });
 
     it('should support custom aria-label', () => {
-      const { container } = render(
+      render(
         h(
           UnifiedButton,
           {
@@ -35,10 +31,7 @@ describe('ARIA Contract (v4.1 - RED)', () => {
         )
       );
 
-      // DEBUG: 실제 렌더링된 HTML 확인
-      console.log('Rendered HTML with aria-label:', container.innerHTML);
-
-      const button = container.querySelector('button');
+      const button = screen.getByTestId('labeled-button');
       expect(button).toHaveAttribute('aria-label', 'Custom Label');
     });
   });

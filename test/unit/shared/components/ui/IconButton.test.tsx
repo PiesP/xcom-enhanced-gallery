@@ -5,6 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, h } from '@test/utils/testing-library';
 import { IconButton } from '@/shared/components/ui/Button/IconButton';
+import styles from '@/shared/components/ui/Button/Button.module.css';
 
 describe('IconButton', () => {
   it('renders an icon-only button with required aria-label', () => {
@@ -20,11 +21,14 @@ describe('IconButton', () => {
       )
     );
 
-    const btn = screen.getByTestId('icon-button');
-    expect(btn).toHaveAttribute('role', 'button');
+    const btn = screen.getByRole('button', { name: 'Download' });
+    expect(btn).toBeInstanceOf(HTMLButtonElement);
+    expect(btn).toHaveRole('button');
+    expect(btn).toHaveAccessibleName('Download');
     expect(btn).toHaveAttribute('aria-label', 'Download');
-    // should carry icon-related classes from underlying Button (variant icon)
-    expect(btn.className).toMatch(/_icon_/);
+    expect(btn.classList.contains(styles.unifiedButton)).toBe(true);
+    expect(btn.classList.contains(styles['variant-icon'])).toBe(true);
+    expect(btn.classList.contains(styles.iconOnly)).toBe(true);
   });
 
   it('supports sizes sm, md, lg via class names', () => {
@@ -42,8 +46,9 @@ describe('IconButton', () => {
         )
       );
 
-      const btn = screen.getByTestId(`icon-${size}`);
-      expect(btn.className).toMatch(new RegExp(`_${size}_`));
+      const btn = screen.getByRole('button', { name: `${size} icon` });
+      expect(btn.classList.contains(styles[`size-${size}`])).toBe(true);
+      expect(btn.classList.contains(styles.iconOnly)).toBe(true);
     });
   });
 
@@ -61,8 +66,8 @@ describe('IconButton', () => {
       )
     );
 
-    const btn = screen.getByTestId('icon-loading');
+    const btn = screen.getByRole('button', { name: 'Loading Icon' });
     expect(btn).toBeDisabled();
-    expect(btn.className).toMatch(/_loading_/);
+    expect(btn.classList.contains(styles.loading)).toBe(true);
   });
 });

@@ -7,17 +7,16 @@ import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 // jsdom 환경 전제 선언
 declare const document: any;
 
-interface TelemetryEntry {
+interface StageEventEntry {
   stage: string;
   count: number;
-  duration: number; // ms
 }
 
 describe('MediaProcessor - Telemetry', () => {
   setupGlobalTestIsolation();
 
-  it('단계별 latency 텔레메트리를 반환해야 한다', async () => {
-    const { MediaProcessor } = await import('@shared/media/media-processor');
+  it('단계별 진행 이벤트를 onStage 콜백으로 반환해야 한다', async () => {
+    const { MediaProcessor } = await import('../../../src/shared/media/media-processor');
     const root = document.createElement('div');
     for (let i = 0; i < 3; i++) {
       const img = document.createElement('img');
@@ -26,15 +25,23 @@ describe('MediaProcessor - Telemetry', () => {
     }
 
     const processor = new MediaProcessor();
-    const result: any = processor.process(root, { telemetry: true } as any);
+    const capturedEvents: StageEventEntry[] = [];
+    const result: any = processor.process(root, {
+      onStage: event => {
+        capturedEvents.push({ stage: event.stage, count: event.count ?? 0 });
+      },
+    });
+
     expect(result.status).toBe('success');
-    expect(result).toHaveProperty('telemetry');
-    const telemetry: TelemetryEntry[] = result.telemetry;
+
     const expectedStages = ['collect', 'extract', 'normalize', 'dedupe', 'validate'];
-    expect(telemetry.map(t => t.stage)).toEqual(expectedStages);
-    telemetry.forEach(entry => {
+    const emittedStages = capturedEvents
+      .filter(entry => entry.stage !== 'complete')
+      .map(entry => entry.stage);
+    expect(emittedStages).toEqual(expectedStages);
+
+    capturedEvents.forEach(entry => {
       expect(entry.count).toBeGreaterThanOrEqual(0);
-      expect(entry.duration).toBeGreaterThanOrEqual(0);
     });
   });
 });

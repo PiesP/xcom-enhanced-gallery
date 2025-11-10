@@ -4,21 +4,33 @@
 
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, h } from '@test/utils/testing-library';
-import type { MediaInfo } from '@/shared/types';
-import { galleryState } from '@/shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types';
+import { galleryState } from '@shared/state/signals/gallery.signals';
 
-let capturedOnScroll: ((delta: number, target: HTMLElement | null) => void) | undefined;
+type CapturedScrollOptions = {
+  container?: () => HTMLElement | null;
+  scrollTarget?: () => HTMLElement | null;
+  enabled?: () => boolean;
+  stabilityDetector?: unknown;
+  onScroll?: (delta: number, target: HTMLElement | null) => void;
+};
 
-const useGalleryScrollMock = vi.fn(
-  (options?: { onScroll?: (delta: number, target: HTMLElement | null) => void }) => {
-    capturedOnScroll = options?.onScroll;
-    return {
-      lastScrollTime: () => Date.now(),
-      isScrolling: () => false,
-      scrollDirection: () => 'idle' as const,
-    };
-  }
-);
+let latestScrollOptions: CapturedScrollOptions | undefined;
+
+const useGalleryScrollMock = vi.fn((options?: CapturedScrollOptions & Record<string, unknown>) => {
+  latestScrollOptions = options;
+  return {
+    lastScrollTime: () => Date.now(),
+    isScrolling: () => false,
+    scrollDirection: () => 'idle' as const,
+    state: () => ({
+      isScrolling: false,
+      lastScrollTime: 0,
+      lastDelta: 0,
+      direction: 'idle' as const,
+    }),
+  };
+});
 
 vi.mock('@/features/gallery/hooks/useGalleryScroll', () => ({
   useGalleryScroll: (options: unknown) =>
@@ -65,6 +77,12 @@ vi.mock('@/shared/utils/viewport', () => ({
   observeViewportCssVars: vi.fn().mockReturnValue(() => {}),
 }));
 
+vi.mock('@shared/container/settings-access', () => ({
+  getSetting: (_key: string, fallback: unknown) => fallback,
+  setSetting: vi.fn(() => Promise.resolve()),
+  tryGetSettingsService: () => null,
+}));
+
 describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
   const mediaItems: MediaInfo[] = [
     {
@@ -82,7 +100,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
   ];
 
   beforeEach(() => {
-    capturedOnScroll = undefined;
+    latestScrollOptions = undefined;
     useGalleryScrollMock.mockClear();
 
     galleryState.value = {
@@ -108,9 +126,7 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     };
   });
 
-  it('휠 델타가 전달되면 아이템 컨테이너 scrollBy가 호출되어야 함', async () => {
-    // Phase 76: 브라우저 네이티브 스크롤로 전환 - scrollBy 제거됨
-    // 이 테스트는 더 이상 유효하지 않음
+  it('useGalleryScroll 훅에 갤러리 컨테이너와 아이템 컨테이너를 전달한다', async () => {
     const { VerticalGalleryView } = await import(
       '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
@@ -127,14 +143,15 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     expect(itemsContainer).not.toBeNull();
     if (!gallery || !itemsContainer) return;
 
-    // Phase 76: onScroll 콜백은 로그만 남기고 scrollBy를 호출하지 않음
-    expect(capturedOnScroll).toBeTypeOf('function');
-    // 브라우저가 네이티브 스크롤을 처리하므로, 여기서는 콜백이 호출 가능한지만 확인
-    capturedOnScroll?.(120, itemsContainer);
-    // scrollBy는 더 이상 호출되지 않음 (브라우저 네이티브 스크롤)
+    expect(latestScrollOptions).toBeDefined();
+    if (!latestScrollOptions) return;
+
+    expect(latestScrollOptions.container?.()).toBe(gallery);
+    expect(latestScrollOptions.scrollTarget?.()).toBe(itemsContainer);
+    expect(latestScrollOptions.onScroll).toBeUndefined();
   });
 
-  it('컨테이너가 최상단일 때 음수 델타는 무시되어야 함', async () => {
+  it('enabled accessor는 갤러리 아이템 존재 여부에 따라 변한다', async () => {
     const { VerticalGalleryView } = await import(
       '@/features/gallery/components/vertical-gallery-view/VerticalGalleryView'
     );
@@ -151,23 +168,19 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     expect(itemsContainer).not.toBeNull();
     if (!gallery || !itemsContainer) return;
 
-    gallery.scrollTop = 0;
-    Object.defineProperty(gallery, 'scrollHeight', { value: 1200, configurable: true });
-    Object.defineProperty(gallery, 'clientHeight', { value: 600, configurable: true });
+    expect(latestScrollOptions).toBeDefined();
+    if (!latestScrollOptions) return;
 
-    itemsContainer.scrollTop = 0;
-    Object.defineProperty(itemsContainer, 'scrollHeight', { value: 2200, configurable: true });
-    Object.defineProperty(itemsContainer, 'clientHeight', { value: 700, configurable: true });
+    expect(latestScrollOptions.enabled?.()).toBe(true);
 
-    const scrollSpy = vi.fn();
-    const itemsScrollSpy = vi.fn();
-    gallery.scrollBy = scrollSpy;
-    itemsContainer.scrollBy = itemsScrollSpy as typeof itemsContainer.scrollBy;
+    galleryState.value = {
+      ...galleryState.value,
+      mediaItems: [],
+    };
 
-    expect(capturedOnScroll).toBeTypeOf('function');
-    capturedOnScroll?.(-240, itemsContainer);
+    await Promise.resolve();
 
-    expect(itemsScrollSpy).not.toHaveBeenCalled();
-    expect(scrollSpy).not.toHaveBeenCalled();
+    expect(latestScrollOptions.enabled?.()).toBe(false);
+    expect(latestScrollOptions.stabilityDetector).toBeDefined();
   });
 });

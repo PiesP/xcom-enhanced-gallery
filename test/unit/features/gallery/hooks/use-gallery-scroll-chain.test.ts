@@ -17,7 +17,23 @@ function createWheelEvent(deltaY: number): WheelEvent {
   return event as WheelEvent;
 }
 
-describe('useGalleryScroll – scroll chaining guard', () => {
+function createGalleryElements(): {
+  galleryContainer: HTMLElement;
+  itemsContainer: HTMLElement;
+} {
+  const galleryContainer = document.createElement('div');
+  galleryContainer.setAttribute('data-gallery-element', 'gallery-root');
+
+  const itemsContainer = document.createElement('div');
+  itemsContainer.setAttribute('data-gallery-element', 'items-list');
+
+  galleryContainer.appendChild(itemsContainer);
+  document.body.appendChild(galleryContainer);
+
+  return { galleryContainer, itemsContainer };
+}
+
+describe('useGalleryScroll – internal scroll management', () => {
   setupGlobalTestIsolation();
 
   let disposeHook: (() => void) | null = null;
@@ -47,154 +63,99 @@ describe('useGalleryScroll – scroll chaining guard', () => {
     document.body.innerHTML = '';
   });
 
-  it('does not block gallery internal wheel events when body fallback is used', () => {
-    const galleryContainer = document.createElement('div');
-    galleryContainer.setAttribute('data-gallery-container', 'true');
-
-    const itemsContainer = document.createElement('div');
-    itemsContainer.setAttribute('data-xeg-role', 'items-list');
-    galleryContainer.appendChild(itemsContainer);
-    document.body.appendChild(galleryContainer);
+  it('updates scroll state for gallery wheel events', () => {
+    const { galleryContainer, itemsContainer } = createGalleryElements();
 
     let hookState!: ReturnType<typeof useGalleryScroll>;
-
     createRoot(dispose => {
       disposeHook = dispose;
       hookState = useGalleryScroll({
         container: () => galleryContainer,
         scrollTarget: () => itemsContainer,
         enabled: () => true,
-        blockTwitterScroll: () => true,
       });
       return hookState;
     });
 
+    vi.setSystemTime(1_000);
     const internalEvent = createWheelEvent(120);
     const dispatchResult = itemsContainer.dispatchEvent(internalEvent);
 
     expect(dispatchResult).toBe(true);
     expect(internalEvent.defaultPrevented).toBe(false);
     expect(hookState.state().lastDelta).toBe(120);
-    expect(hookState.state().lastPreventedAt).toBe(0);
+    expect(hookState.lastScrollTime()).toBe(1_000);
+    expect(hookState.isScrolling()).toBe(true);
   });
 
-  it('does not block external wheel events before gallery interaction', () => {
-    const galleryContainer = document.createElement('div');
-    galleryContainer.setAttribute('data-gallery-container', 'true');
-
-    const itemsContainer = document.createElement('div');
-    itemsContainer.setAttribute('data-xeg-role', 'items-list');
-    galleryContainer.appendChild(itemsContainer);
-
-    const externalSurface = document.createElement('div');
-    externalSurface.id = 'external-host-before-scroll';
-
-    document.body.appendChild(galleryContainer);
-    document.body.appendChild(externalSurface);
+  it('resets scrolling flag after idle timeout', () => {
+    const { galleryContainer, itemsContainer } = createGalleryElements();
 
     let hookState!: ReturnType<typeof useGalleryScroll>;
-
     createRoot(dispose => {
       disposeHook = dispose;
       hookState = useGalleryScroll({
         container: () => galleryContainer,
         scrollTarget: () => itemsContainer,
         enabled: () => true,
-        blockTwitterScroll: () => true,
       });
       return hookState;
     });
 
-    const externalEvent = createWheelEvent(45);
-    const dispatchResult = externalSurface.dispatchEvent(externalEvent);
+    vi.setSystemTime(500);
+    itemsContainer.dispatchEvent(createWheelEvent(60));
 
-    expect(dispatchResult).toBe(true);
-    expect(externalEvent.defaultPrevented).toBe(false);
-    expect(hookState.isScrolling()).toBe(false);
-    expect(hookState.state().lastPreventedTarget).toBeNull();
-  });
-
-  it('blocks external wheel events while gallery scroll is active and records metadata', () => {
-    const galleryContainer = document.createElement('div');
-    galleryContainer.setAttribute('data-gallery-container', 'true');
-
-    const itemsContainer = document.createElement('div');
-    itemsContainer.setAttribute('data-xeg-role', 'items-list');
-    galleryContainer.appendChild(itemsContainer);
-
-    const externalSurface = document.createElement('div');
-    externalSurface.id = 'external-scroll-host';
-
-    document.body.appendChild(galleryContainer);
-    document.body.appendChild(externalSurface);
-
-    let hookState!: ReturnType<typeof useGalleryScroll>;
-
-    createRoot(dispose => {
-      disposeHook = dispose;
-      hookState = useGalleryScroll({
-        container: () => galleryContainer,
-        scrollTarget: () => itemsContainer,
-        enabled: () => true,
-        blockTwitterScroll: () => true,
-      });
-      return hookState;
-    });
-
-    const internalEvent = createWheelEvent(90);
-    itemsContainer.dispatchEvent(internalEvent);
-
-    vi.setSystemTime(1_000);
-    const externalEvent = createWheelEvent(60);
-    const dispatchResult = externalSurface.dispatchEvent(externalEvent);
-
-    expect(dispatchResult).toBe(false);
-    expect(externalEvent.defaultPrevented).toBe(true);
-    expect(hookState.state().lastPreventedTarget).toBe('external-scroll-host');
-    expect(hookState.state().lastPreventedDelta).toBe(60);
-    expect(hookState.state().lastPreventedAt).toBe(1_000);
+    expect(hookState.isScrolling()).toBe(true);
 
     vi.advanceTimersByTime(SCROLL_IDLE_TIMEOUT + 1);
     expect(hookState.isScrolling()).toBe(false);
   });
 
-  it('reattaches wheel guard when twitter container changes', () => {
-    const galleryContainer = document.createElement('div');
-    galleryContainer.setAttribute('data-gallery-container', 'true');
-
-    const itemsContainer = document.createElement('div');
-    itemsContainer.setAttribute('data-xeg-role', 'items-list');
-    galleryContainer.appendChild(itemsContainer);
-    document.body.appendChild(galleryContainer);
+  it('invokes onScroll callback with delta and target', () => {
+    const { galleryContainer, itemsContainer } = createGalleryElements();
+    const onScroll = vi.fn();
 
     let hookState!: ReturnType<typeof useGalleryScroll>;
-
     createRoot(dispose => {
       disposeHook = dispose;
       hookState = useGalleryScroll({
         container: () => galleryContainer,
         scrollTarget: () => itemsContainer,
         enabled: () => true,
-        blockTwitterScroll: () => true,
+        onScroll,
       });
       return hookState;
     });
 
-    const internalEvent = createWheelEvent(30);
-    itemsContainer.dispatchEvent(internalEvent);
+    itemsContainer.dispatchEvent(createWheelEvent(90));
 
-    const twitterColumn = document.createElement('div');
-    twitterColumn.setAttribute('data-testid', 'primaryColumn');
-    document.body.appendChild(twitterColumn);
+    expect(onScroll).toHaveBeenCalledTimes(1);
+    expect(onScroll).toHaveBeenCalledWith(90, itemsContainer);
+    expect(hookState.state().lastDelta).toBe(90);
+  });
 
-    vi.setSystemTime(2_000);
-    const externalEvent = createWheelEvent(75);
-    const dispatchResult = twitterColumn.dispatchEvent(externalEvent);
+  it('ignores wheel events when gallery is closed', () => {
+    const { galleryContainer, itemsContainer } = createGalleryElements();
 
-    expect(dispatchResult).toBe(false);
-    expect(externalEvent.defaultPrevented).toBe(true);
-    expect(hookState.state().lastPreventedTarget).toBe('primaryColumn');
-    expect(hookState.state().lastPreventedDelta).toBe(75);
-    expect(hookState.state().lastPreventedAt).toBe(2_000);
+    let hookState!: ReturnType<typeof useGalleryScroll>;
+    createRoot(dispose => {
+      disposeHook = dispose;
+      hookState = useGalleryScroll({
+        container: () => galleryContainer,
+        scrollTarget: () => itemsContainer,
+        enabled: () => true,
+      });
+      return hookState;
+    });
+
+    galleryState.value = {
+      ...galleryState.value,
+      isOpen: false,
+    };
+
+    itemsContainer.dispatchEvent(createWheelEvent(45));
+
+    expect(hookState.state().lastDelta).toBe(0);
+    expect(hookState.isScrolling()).toBe(false);
   });
 });

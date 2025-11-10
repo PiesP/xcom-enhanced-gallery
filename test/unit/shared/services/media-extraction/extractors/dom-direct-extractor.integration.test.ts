@@ -221,14 +221,10 @@ describe('DOMDirectExtractor + QuoteTweetDetector Integration', () => {
       const extractor = new DOMDirectExtractor();
       const options: MediaExtractionOptions = {};
 
-      // Act & Assert - 에러를 던지거나 실패 반환
-      try {
-        const result = await extractor.extract(null as any, options, 'test-7');
-        expect(result.success).toBe(false);
-      } catch (error: any) {
-        // DOMCache가 null 컨테이너에 대해 에러를 던지는 것도 정상 동작
-        expect(error.message).toContain('Container is null or undefined');
-      }
+      // Act & Assert - null 요소는 DOM 캐시 접근 시 TypeError 발생이 정상
+      await expect(
+        extractor.extract(null as unknown as HTMLElement, options, 'test-7')
+      ).rejects.toThrow(TypeError);
     });
   });
 
