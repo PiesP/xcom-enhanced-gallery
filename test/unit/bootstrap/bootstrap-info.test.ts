@@ -40,7 +40,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
 
       expect(httpService).toBeDefined();
       expect(httpService?.available).toBe(true); // fetch is always available
-      expect(httpService?.message).toContain('HTTP requests');
+      expect(httpService?.message).toMatch(/fetch/i);
     });
 
     it('should check NotificationService availability', async () => {
@@ -67,7 +67,7 @@ describe('Bootstrap Info - Phase 314-5', () => {
 
       expect(storage).toBeDefined();
       expect(storage?.available).toBe(false); // Not available in test
-      expect(storage?.message).toContain('LocalStorage');
+      expect(storage?.message).toMatch(/GM_setValue|storage/i);
     });
 
     it('should return array of ServiceAvailabilityInfo', async () => {

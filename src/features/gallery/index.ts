@@ -1,19 +1,7 @@
 /**
  * @fileoverview Gallery public entry point
- * @description Exposes primary gallery runtime APIs and shared types.
+ * @description Exposes gallery type contracts only (F1-c policy).
  */
-
-export { GalleryApp } from './GalleryApp';
-export { GalleryRenderer } from './GalleryRenderer';
-
-export {
-  initializeTheme,
-  detectSystemTheme,
-  getSavedThemeSetting,
-  resolveAndApplyTheme,
-  applyThemeToDOM,
-  setupThemeChangeListener,
-} from './services/theme-initialization';
 
 export type {
   ToolbarDataState,
