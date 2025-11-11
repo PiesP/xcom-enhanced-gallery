@@ -4,12 +4,10 @@
     "types": ["vite/client", "vitest/globals", "node"],
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    // 테스트 전용 해상도/엄격도 완화: 레거시 경로 및 동적 import 호환
-    "moduleResolution": "bundler",
+    // Relax strictness for test-only dynamic imports and legacy helper paths
     "strict": false,
     "noUncheckedIndexedAccess": false,
-    "exactOptionalPropertyTypes": false,
-    "skipLibCheck": true
+    "exactOptionalPropertyTypes": false
   },
   "include": ["types/**/*.d.ts", "src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx", "test/**/*.d.ts"],
   "exclude": [
