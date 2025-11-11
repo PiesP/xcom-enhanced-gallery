@@ -149,6 +149,7 @@
     opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard);
   user-select: none;
+  overscroll-behavior: contain;
 }
 
 /* ===== Phase 57: Toolbar-Settings Panel Visual Continuity ===== */
@@ -730,6 +731,7 @@ button.fitButton {
   box-shadow: var(--xeg-toolbar-panel-shadow);
   z-index: 1;
   will-change: transform, opacity;
+  overscroll-behavior: contain;
 }
 
 /* Expandable Settings Panel - 툴바 아래 절대 위치 */
@@ -799,6 +801,7 @@ button.fitButton {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-y: auto;
+  overscroll-behavior: contain;
   max-height: 15em; /* 약 10줄 정도의 텍스트 */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),

@@ -12,6 +12,7 @@ import {
 } from '../Icon';
 import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
 import { createClassName } from '@shared/utils/component-utils';
+import { safeEventPreventAll } from '@shared/utils/event-utils';
 import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
@@ -95,12 +96,59 @@ function renderTweetAnchor(
   );
 }
 
+const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
+const SCROLL_LOCK_TOLERANCE = 1;
+
+const findScrollableAncestor = (target: EventTarget | null): HTMLElement | null => {
+  if (!(target instanceof HTMLElement)) {
+    return null;
+  }
+
+  return target.closest<HTMLElement>(SCROLLABLE_SELECTOR);
+};
+
+const canConsumeWheelEvent = (element: HTMLElement, deltaY: number): boolean => {
+  const overflow = element.scrollHeight - element.clientHeight;
+
+  if (overflow <= SCROLL_LOCK_TOLERANCE) {
+    return false;
+  }
+
+  if (deltaY < 0) {
+    return element.scrollTop > SCROLL_LOCK_TOLERANCE;
+  }
+
+  if (deltaY > 0) {
+    const maxScrollTop = overflow;
+    return element.scrollTop < maxScrollTop - SCROLL_LOCK_TOLERANCE;
+  }
+
+  return true;
+};
+
+const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
+  const scrollable = findScrollableAncestor(event.target);
+  if (!scrollable) {
+    return false;
+  }
+
+  return canConsumeWheelEvent(scrollable, event.deltaY);
+};
+
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const isToolbarDisabled = () => Boolean(props.disabled);
   const isDownloading = () => Boolean(props.isDownloading);
   const isHighContrast = () => Boolean(props.toolbarState.needsHighContrast);
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
     createClassName(styles.toolbarButton, ...extra);
+
+  const preventScrollChaining = (event: WheelEvent) => {
+    if (shouldAllowWheelDefault(event)) {
+      return;
+    }
+
+    safeEventPreventAll(event);
+  };
 
   return (
     <div
@@ -127,6 +175,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           | ((event: KeyboardEvent) => void)
           | undefined
       }
+      onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
     >
       <div
         class={`${styles.toolbarContent} xeg-center-between xeg-gap-md`}
@@ -302,12 +351,14 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         id='toolbar-settings-panel'
         class={styles.settingsPanel}
         data-expanded={props.settingsController.isSettingsExpanded()}
+        data-gallery-scrollable='true'
         onMouseDown={props.settingsController.handlePanelMouseDown}
         role='region'
         aria-label='설정 패널'
         aria-labelledby='settings-button'
         data-gallery-element='settings-panel'
         onClick={props.settingsController.handlePanelClick}
+        onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
         <Show when={props.settingsController.isSettingsExpanded()}>
           <SettingsControlsLazy
@@ -329,6 +380,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         aria-label={languageService.getString('toolbar.tweetTextPanel') || 'Tweet text panel'}
         aria-labelledby='tweet-text-button'
         data-gallery-element='tweet-panel'
+        onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
         <Show when={props.isTweetPanelExpanded() && props.tweetText}>
           <div class={styles.tweetPanelBody}>
@@ -337,7 +389,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 {languageService.getString('toolbar.tweetText') || 'Tweet text'}
               </span>
             </div>
-            <div class={styles.tweetContent}>
+            <div
+              class={styles.tweetContent}
+              data-gallery-element='tweet-content'
+              data-gallery-scrollable='true'
+            >
               <Show
                 when={props.tweetTextHTML}
                 fallback={
