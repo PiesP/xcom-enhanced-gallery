@@ -704,48 +704,48 @@ button.fitButton {
 
 /* ===== Phase 44: Toolbar Expandable Panel Styles ===== */
 
-/* Expandable Settings Panel - 툴바 아래 절대 위치 */
-.settingsPanel {
-  /* Layout - 툴바 바로 아래 절대 위치 */
+:where(.settingsPanel, .tweetPanel) {
   position: absolute;
-  top: 100%; /* 툴바 바로 아래 기준점 */
+  top: 100%;
   left: 0;
   right: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  padding: var(--space-md); /* Phase 49: 항상 패딩 유지 */
-  height: var(--xeg-toolbar-panel-height);
+  padding: var(--space-md);
   max-height: var(--xeg-toolbar-panel-max-height);
   overflow: hidden;
-
-  /* Phase 49: 애니메이션 개선 - height → opacity + transform */
-  /* 초기 상태 (축소) */
   opacity: 0;
-  transform: translateY(-0.5em); /* 접힌 상태에서 약간 위로 */
+  transform: translateY(-0.5em);
   visibility: hidden;
   pointer-events: none;
   transition:
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s var(--xeg-duration-normal);
-
-  /* Visual */
   background: var(--xeg-toolbar-panel-bg);
-  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border); /* 1px → var(--border-width-thin) */
+  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border);
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   box-shadow: var(--xeg-toolbar-panel-shadow);
-
-  /* Stacking Context: z-index 명시적 설정 */
   z-index: 1;
-
-  /* Performance Optimization: GPU 가속을 위한 힌트 */
   will-change: transform, opacity;
 }
 
-/* Expanded State - Phase 49: 간소화된 확장 상태 */
-.settingsPanel[data-expanded='true'] {
+/* Expandable Settings Panel - 툴바 아래 절대 위치 */
+.settingsPanel {
+  /* Layout adjustments specific to settings */
+  height: var(--xeg-toolbar-panel-height);
+}
+
+/* Phase 254: settingsPanel의 transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+
+/* Tweet Panel - Settings Panel과 동일한 패턴 */
+.tweetPanel {
+  min-height: var(--xeg-toolbar-panel-height);
+}
+
+:where(.settingsPanel, .tweetPanel)[data-expanded='true'] {
   height: auto;
   opacity: 1;
   transform: translateY(0);
@@ -757,67 +757,7 @@ button.fitButton {
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s 0s;
-  /* Exclusive panel: always z-index 2 when opened (tweet closes automatically) */
-  z-index: 2;
-}
-
-/* Phase 254: settingsPanel의 transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
-
-/* Tweet Panel - Settings Panel과 동일한 패턴 */
-.tweetPanel {
-  /* Layout - 툴바 바로 아래 절대 위치 */
-  position: absolute;
-  top: 100%; /* 툴바 바로 아래 기준점 */
-  left: 0;
-  right: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  min-height: var(--xeg-toolbar-panel-height);
-  max-height: var(--xeg-toolbar-panel-max-height);
-  overflow: hidden;
-
-  /* 초기 상태 (축소) */
-  opacity: 0;
-  transform: translateY(-0.5em); /* 접힌 상태에서 약간 위로 */
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    var(--xeg-toolbar-panel-transition),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s var(--xeg-duration-normal);
-
-  /* Visual */
-  background: var(--xeg-toolbar-panel-bg);
-  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border);
-  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
-  box-shadow: var(--xeg-toolbar-panel-shadow);
-
-  /* Stacking Context: 기본 z-index - 설정 패널과 동일 계층 */
-  z-index: 1;
-
-  /* Performance Optimization: GPU 가속을 위한 힌트 */
-  will-change: transform, opacity;
-}
-
-/* Expanded State */
-.tweetPanel[data-expanded='true'] {
-  height: auto;
-  opacity: 1;
-  transform: translateY(0); /* 정상 위치로 이동 */
-  visibility: visible;
-  pointer-events: auto;
-  border-top-color: var(--xeg-toolbar-panel-border);
-  box-shadow: var(--xeg-toolbar-panel-shadow);
-  transition:
-    var(--xeg-toolbar-panel-transition),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-    visibility 0s 0s;
-  /* 툴바 아래에 붙은 형태 */
-  border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
-  /* Exclusive panel: always on top when opened (settings closes automatically) */
+  /* Exclusive panels: float above toolbar when opened */
   z-index: 2;
 }
 

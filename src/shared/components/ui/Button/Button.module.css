@@ -22,6 +22,20 @@
  * - .disabled: Disabled state styling
  */
 
+/* =========================================================================
+ * Shared Behaviors
+ * ========================================================================= */
+
+:where(.unifiedButton, .toolbarButton, .xeg-toolbar-button, .xeg-icon-button) {
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  outline: none;
+}
+
 /* ============================================================================
  * Base Button Styles
  * ============================================================================ */
@@ -52,17 +66,6 @@
   /* Default state */
   background: transparent;
   color: inherit;
-
-  /* Transitions for smooth state changes */
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-
-  /* Accessibility */
-  outline: none;
 
   /* Focus state */
   &:focus-visible {
@@ -490,13 +493,6 @@
   text-decoration: none;
   white-space: nowrap;
   user-select: none;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  outline: none;
 }
 
 .toolbarButton:disabled,
@@ -538,13 +534,6 @@
   font: inherit;
   line-height: 1;
   cursor: pointer;
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-  outline: none;
 }
 
 .xeg-icon-button:focus-visible {

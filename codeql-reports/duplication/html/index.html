@@ -1,0 +1,608 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Copy/Paste Detector Report</title><link href="styles/tailwind.css" rel="stylesheet"><link href="styles/prism.css" rel="stylesheet"></head><body class="bg-gray-100"><header class="bg-white shadow py-4"><div class="container mx-auto px-4"><h1 class="text-3xl font-semibold text-gray-800">jscpd - copy/paste report</h1></div></header><main class="container mx-auto my-8 p-4 bg-white shadow rounded"><section class="mb-8" id="dashboard"><h2 class="text-2xl font-semibold text-gray-700 mb-4">Dashboard</h2><div class="grid grid-cols-4 gap-4"><div class="bg-blue-200 p-4 rounded text-center"><h3 class="text-lg font-semibold text-blue-800 mb-2">Total Files</h3><span class="text-4xl font-bold text-blue-800">295</span></div><div class="bg-green-200 p-4 rounded text-center"><h3 class="text-lg font-semibold text-green-800 mb-2">Total Lines of Code</h3><span class="text-4xl font-bold text-green-800">54239</span></div><div class="bg-yellow-200 p-4 rounded text-center"><h3 class="text-lg font-semibold text-yellow-800 mb-2">Number of Clones</h3><span class="text-4xl font-bold text-yellow-800">20</span></div><div class="bg-red-200 p-4 rounded text-center"><h3 class="text-lg font-semibold text-red-800 mb-2">Duplicated Lines</h3><span class="text-4xl font-bold text-red-800">599 (1.10%)</span></div></div></section><section class="mb-8" id="formats"><h2 class="text-2xl font-semibold text-gray-700 mb-4">Formats with Duplications</h2><table class="w-full table-auto"><thead><tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal"><th class="py-3 px-6 text-left">Format</th><th class="py-3 px-6 text-left">Files</th><th class="py-3 px-6 text-left">Lines</th><th class="py-3 px-6 text-left">Clones</th><th class="py-3 px-6 text-left">Duplicated Lines</th><th class="py-3 px-6 text-left">Duplicated Tokens</th></tr></thead><tbody><tr class="bg-white border-b border-gray-200 text-gray-800 text-sm"><td class="py-3 px-6"><a class="text-blue-600 hover:underline" href="#typescript-clones">typescript</a></td><td class="py-3 px-6">271</td><td class="py-3 px-6">47185</td><td class="py-3 px-6">15</td><td class="py-3 px-6">548</td><td class="py-3 px-6">4241</td></tr><tr class="bg-white border-b border-gray-200 text-gray-800 text-sm"><td class="py-3 px-6"><a class="text-blue-600 hover:underline" href="#css-clones">css</a></td><td class="py-3 px-6">19</td><td class="py-3 px-6">6308</td><td class="py-3 px-6">5</td><td class="py-3 px-6">51</td><td class="py-3 px-6">481</td></tr><tr class="bg-white border-b border-gray-200 text-gray-800 text-sm"><td class="py-3 px-6"><a class="text-blue-600 hover:underline" href="#javascript-clones">javascript</a></td><td class="py-3 px-6">5</td><td class="py-3 px-6">746</td><td class="py-3 px-6">0</td><td class="py-3 px-6">0</td><td class="py-3 px-6">0</td></tr></tbody></table></section><section class="mb-8" id="txt-clones"><a name="typescript-clones"></a><h2 class="text-2xl font-semibold text-gray-700 mb-4">typescript</h2><div class="divide-y divide-gray-200 border-b-2"><div class="py-4"><p class="text-gray-600">src/shared/state/signals/download.signals.ts (Line 298:7 - Line 304:2), src/shared/state/signals/download.signals.ts (Line 257:7 - Line 263:2)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn3" onclick="toggleCodeBlock('cloneGroup3', 'expandBtn3', 'collapseBtn3')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn3" onclick="toggleCodeBlock('cloneGroup3', 'expandBtn3', 'collapseBtn3')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup3"><code class="language-typescript text-sm text-gray-800">): Result&lt;void&gt; {
+  const currentState = downloadState.value;
+  const task = currentState.activeTasks.get(taskId);
+
+  if (!task) {
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId }</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/state/signals/download.signals.ts (Line 342:6 - Line 348:15), src/shared/state/signals/download.signals.ts (Line 298:7 - Line 263:18)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn4" onclick="toggleCodeBlock('cloneGroup4', 'expandBtn4', 'collapseBtn4')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn4" onclick="toggleCodeBlock('cloneGroup4', 'expandBtn4', 'collapseBtn4')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup4"><code class="language-typescript text-sm text-gray-800">: string): Result&lt;void&gt; {
+  const currentState = downloadState.value;
+  const task = currentState.activeTasks.get(taskId);
+
+  if (!task) {
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId, attemptedError</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/state/signals/download.signals.ts (Line 356:6 - Line 372:6), src/shared/state/signals/download.signals.ts (Line 312:4 - Line 328:5)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn5" onclick="toggleCodeBlock('cloneGroup5', 'expandBtn5', 'collapseBtn5')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn5" onclick="toggleCodeBlock('cloneGroup5', 'expandBtn5', 'collapseBtn5')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup5"><code class="language-typescript text-sm text-gray-800">,
+    completedAt,
+  };
+
+  const newTasks = new Map(currentState.activeTasks);
+  newTasks.set(taskId, updatedTask);
+
+  const newQueue = currentState.queue.filter(id =&gt; id !== taskId);
+
+  downloadState.value = {
+    ...currentState,
+    activeTasks: newTasks,
+    queue: newQueue,
+    isProcessing: newQueue.length &gt; 0,
+  };
+
+  logger.error</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/state/signals/download.signals.ts (Line 385:11 - Line 395:3), src/shared/state/signals/download.signals.ts (Line 298:17 - Line 308:6)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn6" onclick="toggleCodeBlock('cloneGroup6', 'expandBtn6', 'collapseBtn6')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn6" onclick="toggleCodeBlock('cloneGroup6', 'expandBtn6', 'collapseBtn6')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup6"><code class="language-typescript text-sm text-gray-800">(taskId: string): Result&lt;void&gt; {
+  const currentState = downloadState.value;
+  const task = currentState.activeTasks.get(taskId);
+
+  if (!task) {
+    return failure(`Task not found: ${taskId}`, ErrorCode.ELEMENT_NOT_FOUND, {
+      meta: { taskId },
+    });
+  }
+
+  if</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/services/download/download-cache-service.ts (Line 649:2 - Line 655:6), src/shared/services/download/download-cache-service.ts (Line 376:7 - Line 382:7)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn7" onclick="toggleCodeBlock('cloneGroup7', 'expandBtn7', 'collapseBtn7')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn7" onclick="toggleCodeBlock('cloneGroup7', 'expandBtn7', 'collapseBtn7')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup7"><code class="language-typescript text-sm text-gray-800">): Promise&lt;void&gt; {
+    if (!this.db) return;
+
+    try {
+      const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
+      const store = transaction.objectStore(this.STORE_NAME);
+      store.clear</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/services/download/dom-media-extractor.ts (Line 228:7 - Line 242:12), src/shared/services/download/dom-media-extractor.ts (Line 128:7 - Line 142:12)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn8" onclick="toggleCodeBlock('cloneGroup8', 'expandBtn8', 'collapseBtn8')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn8" onclick="toggleCodeBlock('cloneGroup8', 'expandBtn8', 'collapseBtn8')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup8"><code class="language-typescript text-sm text-gray-800">const blob = await new Promise&lt;Blob | null&gt;(resolve =&gt; {
+        canvas.toBlob(blob =&gt; resolve(blob), 'image/jpeg', 0.95);
+      });
+
+      if (!blob) {
+        return {
+          success: false,
+          error: 'Failed to convert canvas to blob',
+        };
+      }
+
+      return {
+        success: true,
+        blob,
+        source: 'dom-video'</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/external/zip/store-zip-writer.ts (Line 354:5 - Line 365:22), src/shared/external/zip/store-zip-writer.ts (Line 274:5 - Line 285:40)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn9" onclick="toggleCodeBlock('cloneGroup9', 'expandBtn9', 'collapseBtn9')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn9" onclick="toggleCodeBlock('cloneGroup9', 'expandBtn9', 'collapseBtn9')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup9"><code class="language-typescript text-sm text-gray-800">writeUint32LEToBuffer(buffer, offset, file.data.length);
+    offset += 4;
+
+    // Uncompressed size
+    writeUint32LEToBuffer(buffer, offset, file.data.length);
+    offset += 4;
+
+    // File name length
+    writeUint16LEToBuffer(buffer, offset, filenameBytes.length);
+    offset += 2;
+
+    // Extra field length</code></pre></div><div class="py-4"><p class="text-gray-600">src/features/gallery/hooks/useGalleryItemScroll.ts (Line 314:15 - Line 336:19), src/features/gallery/hooks/useGalleryItemScroll.ts (Line 202:7 - Line 224:7)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn12" onclick="toggleCodeBlock('cloneGroup12', 'expandBtn12', 'collapseBtn12')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn12" onclick="toggleCodeBlock('cloneGroup12', 'expandBtn12', 'collapseBtn12')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup12"><code class="language-typescript text-sm text-gray-800">const actualBehavior = resolveBehavior();
+
+              targetElement.scrollIntoView({
+                behavior: actualBehavior,
+                block: alignToCenter() ? 'center' : block(),
+                inline: 'nearest',
+              });
+
+              const offsetValue = offset();
+              if (offsetValue !== 0) {
+                container.scrollTo({
+                  top: container.scrollTop - offsetValue,
+                  behavior: actualBehavior,
+                });
+              }
+
+              updateStateSignal(setState, {
+                lastScrolledIndex: index,
+                pendingIndex: null,
+              });
+              retryCount = 0;
+
+              globalTimerManager</code></pre></div><div class="py-4"><p class="text-gray-600">test/unit/__factories__/mock-utils.factory.ts (Line 1:1 - Line 372:2), test/unit/shared/factories/mock-utils.factory.ts (Line 1:1 - Line 372:2)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn13" onclick="toggleCodeBlock('cloneGroup13', 'expandBtn13', 'collapseBtn13')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn13" onclick="toggleCodeBlock('cloneGroup13', 'expandBtn13', 'collapseBtn13')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup13"><code class="language-typescript text-sm text-gray-800">/**
+ * test/unit/__factories__/mock-utils.factory.ts
+ *
+ * Mock 객체 생성 팩토리 함수 모음
+ * 목표: 반복되는 Mock 패턴을 표준화하여 테스트 코드 단순화
+ *
+ * 사용 예:
+ * ```typescript
+ * const { element, mockHandler } = createMockEventContext();
+ * const service = createMockService({ extract: vi.fn() });
+ * const { signals, store } = createMockSignalStore();
+ * ```
+ */
+
+import { vi } from 'vitest';
+
+// ============ DOM Mock Factories ============
+
+/**
+ * Mock DOM Element 생성
+ * 용도: 이벤트 리스너 테스트, DOM 유틸 테스트
+ */
+export function createMockElement(overrides: Partial&lt;HTMLElement&gt; = {}) {
+  return {
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    getBoundingClientRect: vi.fn(() =&gt; ({
+      top: 0,
+      left: 0,
+      width: 100,
+      height: 100,
+      right: 100,
+      bottom: 100,
+      x: 0,
+      y: 0,
+      toJSON: () =&gt; ({}),
+    })),
+    classList: {
+      add: vi.fn(),
+      remove: vi.fn(),
+      toggle: vi.fn(),
+      contains: vi.fn(() =&gt; false),
+    },
+    setAttribute: vi.fn(),
+    getAttribute: vi.fn(),
+    removeAttribute: vi.fn(),
+    ...overrides,
+  } as any;
+}
+
+/**
+ * Mock Event 생성
+ * 용도: 이벤트 핸들러 테스트, 키보드/마우스 이벤트 시뮬레이션
+ */
+export function createMockEvent(type: string, overrides: Partial&lt;Event&gt; = {}) {
+  return {
+    type,
+    preventDefault: vi.fn(),
+    stopPropagation: vi.fn(),
+    target: createMockElement(),
+    currentTarget: createMockElement(),
+    key: '',
+    keyCode: 0,
+    ...overrides,
+  } as any;
+}
+
+/**
+ * Mock KeyboardEvent 생성
+ * 용도: 키보드 네비게이션 테스트
+ */
+export function createMockKeyEvent(key: string, overrides: Partial&lt;KeyboardEvent&gt; = {}) {
+  return createMockEvent('keydown', {
+    key,
+    code: `Key${key.toUpperCase()}`,
+    ...overrides,
+  }) as any;
+}
+
+/**
+ * Mock WheelEvent 생성
+ * 용도: 스크롤 테스트
+ */
+export function createMockWheelEvent(deltaY: number = 100) {
+  return {
+    ...createMockEvent('wheel'),
+    deltaY,
+    deltaX: 0,
+    deltaZ: 0,
+  } as any;
+}
+
+// ============ Service Mock Factories ============
+
+/**
+ * Mock Service 컨텍스트
+ * 용도: 서비스 간 협업 테스트
+ */
+export function createMockServiceContext() {
+  return {
+    extract: vi.fn(),
+    download: vi.fn(),
+    process: vi.fn(),
+    validate: vi.fn(),
+    transform: vi.fn(),
+    dispose: vi.fn(),
+    initialize: vi.fn(),
+    reset: vi.fn(),
+  };
+}
+
+/**
+ * Mock Media Service
+ * 용도: 미디어 서비스 테스트
+ */
+export function createMockMediaService(overrides = {}) {
+  return {
+    extract: vi.fn(async () =&gt; [
+      {
+        url: 'https://example.com/image.jpg',
+        type: 'image' as const,
+        filename: 'image.jpg',
+      },
+    ]),
+    processMedia: vi.fn(async (items: any) =&gt; items),
+    getMetadata: vi.fn(async () =&gt; ({ count: 1, totalSize: 1024 })),
+    ...overrides,
+  };
+}
+
+/**
+ * Mock Bulk Download Service
+ * 용도: 대량 다운로드 서비스 테스트
+ */
+export function createMockBulkDownloadService(overrides = {}) {
+  return {
+    start: vi.fn(async () =&gt; ({ success: true, count: 5 })),
+    cancel: vi.fn(),
+    pause: vi.fn(),
+    resume: vi.fn(),
+    getProgress: vi.fn(() =&gt; ({ current: 0, total: 5, percent: 0 })),
+    ...overrides,
+  };
+}
+
+/**
+ * Mock Event Manager
+ * 용도: 이벤트 시스템 테스트
+ */
+export function createMockEventManager(overrides = {}) {
+  return {
+    on: vi.fn(),
+    off: vi.fn(),
+    emit: vi.fn(),
+    once: vi.fn(),
+    clear: vi.fn(),
+    getListeners: vi.fn(() =&gt; ({})),
+    ...overrides,
+  };
+}
+
+// ============ Reactive (Solid.js) Mock Factories ============
+
+/**
+ * Mock Signal Store
+ * 용도: Solid.js 신호 기반 상태 테스트
+ */
+export function createMockSignalStore(initialValue = {}) {
+  const signals: Record&lt;string, any&gt; = {};
+  const handlers = new Set&lt;Function&gt;();
+
+  return {
+    get(key: string) {
+      return signals[key];
+    },
+    set(key: string, value: any) {
+      signals[key] = value;
+      handlers.forEach(h =&gt; h({ [key]: value }));
+    },
+    subscribe(handler: Function) {
+      handlers.add(handler);
+      return () =&gt; handlers.delete(handler);
+    },
+    getState() {
+      return { ...signals };
+    },
+    ...initialValue,
+  };
+}
+
+/**
+ * Mock Solid.js Signal
+ * 용도: 신호 리액티비티 테스트
+ */
+export function createMockSignal&lt;T&gt;(initialValue: T) {
+  let value = initialValue;
+  const subscribers = new Set&lt;Function&gt;();
+
+  const getter = (() =&gt; value) as any;
+  getter.setter = (newValue: T) =&gt; {
+    if (value !== newValue) {
+      value = newValue;
+      subscribers.forEach(sub =&gt; sub(newValue));
+    }
+  };
+  getter.subscribe = (handler: Function) =&gt; {
+    subscribers.add(handler);
+    return () =&gt; subscribers.delete(handler);
+  };
+
+  return [getter, getter.setter] as [() =&gt; T, (value: T) =&gt; void];
+}
+
+// ============ Data Structure Mock Factories ============
+
+/**
+ * Mock Media Item
+ * 용도: 미디어 데이터 테스트
+ */
+export function createMockMediaItem(overrides: Partial&lt;any&gt; = {}) {
+  return {
+    url: 'https://example.com/image.jpg',
+    type: 'image' as const,
+    filename: 'image.jpg',
+    size: 1024,
+    timestamp: Date.now(),
+    ...overrides,
+  };
+}
+
+/**
+ * Mock Gallery State
+ * 용도: 갤러리 상태 테스트
+ */
+export function createMockGalleryState(overrides: Partial&lt;any&gt; = {}) {
+  return {
+    currentIndex: 0,
+    items: [],
+    isOpen: false,
+    isLoading: false,
+    error: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Mock Settings
+ * 용도: 설정 테스트
+ */
+export function createMockSettings(overrides: Partial&lt;any&gt; = {}) {
+  return {
+    theme: 'light',
+    downloadPath: '/downloads',
+    autoPlay: false,
+    quality: 'high',
+    ...overrides,
+  };
+}
+
+// ============ Context Mock Factories ============
+
+/**
+ * Mock Test Context (복합 팩토리)
+ * 용도: 통합 테스트에서 여러 Mock을 한 번에 설정
+ */
+export function createMockTestContext() {
+  return {
+    // DOM
+    element: createMockElement(),
+    event: createMockEvent('click'),
+    keyEvent: (key: string) =&gt; createMockKeyEvent(key),
+    wheelEvent: (deltaY?: number) =&gt; createMockWheelEvent(deltaY),
+
+    // Services
+    mediaService: createMockMediaService(),
+    bulkDownloadService: createMockBulkDownloadService(),
+    eventManager: createMockEventManager(),
+
+    // Reactive
+    signalStore: createMockSignalStore(),
+
+    // Data
+    mediaItem: createMockMediaItem(),
+    galleryState: createMockGalleryState(),
+    settings: createMockSettings(),
+
+    // Utilities
+    createMockElement,
+    createMockEvent,
+    createMockKeyEvent,
+    createMockWheelEvent,
+    createMockServiceContext,
+  };
+}
+
+// ============ Advanced Mock Factories ============
+
+/**
+ * Mock EventEmitter with Typed Events
+ * 용도: 타입 안전 이벤트 시스템 테스트
+ */
+export function createMockEventEmitter&lt;T extends Record&lt;string, any&gt;&gt;() {
+  const listeners: Record&lt;string, Function[]&gt; = {};
+
+  return {
+    on&lt;K extends keyof T&gt;(event: K, handler: (data: T[K]) =&gt; void) {
+      if (!listeners[String(event)]) listeners[String(event)] = [];
+      listeners[String(event)].push(handler);
+      return () =&gt; {
+        const idx = listeners[String(event)].indexOf(handler);
+        if (idx &gt; -1) listeners[String(event)].splice(idx, 1);
+      };
+    },
+    emit&lt;K extends keyof T&gt;(event: K, data: T[K]) {
+      const cbs = listeners[String(event)] || [];
+      cbs.forEach(cb =&gt; cb(data));
+    },
+    clear() {
+      Object.keys(listeners).forEach(key =&gt; {
+        listeners[key] = [];
+      });
+    },
+    getListeners(event?: keyof T) {
+      if (event) return listeners[String(event)]?.length || 0;
+      return Object.values(listeners).reduce((sum, arr) =&gt; sum + arr.length, 0);
+    },
+  };
+}
+
+/**
+ * Mock Fetch Response
+ * 용도: HTTP 요청 테스트
+ */
+export function createMockFetchResponse(data: any = {}, overrides: Record&lt;string, any&gt; = {}) {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    url: 'https://example.com',
+    headers: new Map(),
+    json: vi.fn(async () =&gt; data),
+    text: vi.fn(async () =&gt; JSON.stringify(data)),
+    blob: vi.fn(async () =&gt; new Blob([JSON.stringify(data)])),
+    arrayBuffer: vi.fn(async () =&gt; new ArrayBuffer(0)),
+    clone: vi.fn(function () {
+      return this;
+    }),
+    ...overrides,
+  } as any;
+}
+
+/**
+ * Mock Storage (localStorage/sessionStorage)
+ * 용도: 저장소 테스트
+ */
+export function createMockStorage() {
+  const store = new Map&lt;string, string&gt;();
+
+  return {
+    getItem: vi.fn((key: string) =&gt; store.get(key) || null),
+    setItem: vi.fn((key: string, value: string) =&gt; store.set(key, value)),
+    removeItem: vi.fn((key: string) =&gt; store.delete(key)),
+    clear: vi.fn(() =&gt; store.clear()),
+    key: vi.fn((index: number) =&gt; {
+      const keys = Array.from(store.keys());
+      return keys[index] || null;
+    }),
+    get length() {
+      return store.size;
+    },
+  } as any;
+}</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/utils/css-animations.ts (Line 132:19 - Line 140:9), src/shared/utils/css-animations.ts (Line 107:20 - Line 115:8)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn14" onclick="toggleCodeBlock('cloneGroup14', 'expandBtn14', 'collapseBtn14')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn14" onclick="toggleCodeBlock('cloneGroup14', 'expandBtn14', 'collapseBtn14')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup14"><code class="language-typescript text-sm text-gray-800">(
+  element: Element,
+  options: CSSAnimationOptions = {}
+): Promise&lt;void&gt; {
+  return new Promise&lt;void&gt;(resolve =&gt; {
+    try {
+      const handleAnimationEnd = () =&gt; {
+        element.removeEventListener('animationend', handleAnimationEnd);
+        element.classList.remove(ANIMATION_CLASSES.FADE_OUT</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/types/result.types.ts (Line 301:2 - Line 326:4), src/shared/types/result.types.ts (Line 264:2 - Line 292:4)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn15" onclick="toggleCodeBlock('cloneGroup15', 'expandBtn15', 'collapseBtn15')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn15" onclick="toggleCodeBlock('cloneGroup15', 'expandBtn15', 'collapseBtn15')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup15"><code class="language-typescript text-sm text-gray-800">fn();
+    return success(data, options?.meta);
+  } catch (error) {
+    return failure(
+      error instanceof Error ? error.message : String(error),
+      options?.code ?? ErrorCode.UNKNOWN,
+      {
+        cause: error,
+        ...(options?.meta &amp;&amp; { meta: options.meta }),
+      }
+    );
+  }
+}
+
+/**
+ * Result chaining (flatMap)
+ *
+ * @param result - Input Result
+ * @param fn - Transform function (returns Result)
+ * @returns Chained Result
+ *
+ * @example
+ * ```typescript
+ * const result2 = chain(result1, (data) =&gt; processData(data));
+ * ```
+ */</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/services/media-service.ts (Line 47:2 - Line 58:21), src/shared/services/unified-download-service.ts (Line 60:2 - Line 71:34)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn16" onclick="toggleCodeBlock('cloneGroup16', 'expandBtn16', 'collapseBtn16')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn16" onclick="toggleCodeBlock('cloneGroup16', 'expandBtn16', 'collapseBtn16')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup16"><code class="language-typescript text-sm text-gray-800">{
+  success: boolean;
+  status: BaseResultStatus;
+  filesProcessed: number;
+  filesSuccessful: number;
+  error?: string;
+  filename?: string;
+  failures?: Array&lt;{ url: string; error: string }&gt;;
+  code?: ErrorCode;
+}
+
+export interface SingleDownloadResult</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/services/http-request-service.ts (Line 405:2 - Line 415:49), src/shared/services/http-request-service.ts (Line 223:2 - Line 233:23)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn17" onclick="toggleCodeBlock('cloneGroup17', 'expandBtn17', 'collapseBtn17')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn17" onclick="toggleCodeBlock('cloneGroup17', 'expandBtn17', 'collapseBtn17')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup17"><code class="language-typescript text-sm text-gray-800">= await response.text();
+        }
+      }
+
+      // Convert Headers to plain object
+      const headers: Record&lt;string, string&gt; = {};
+      response.headers.forEach((value, key) =&gt; {
+        headers[key.toLowerCase()] = value;
+      });
+
+      logger.debug(`[HttpRequestService] POST binary response from </code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/services/http-request-service.ts (Line 415:49 - Line 425:13), src/shared/services/http-request-service.ts (Line 233:16 - Line 243:5)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn18" onclick="toggleCodeBlock('cloneGroup18', 'expandBtn18', 'collapseBtn18')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn18" onclick="toggleCodeBlock('cloneGroup18', 'expandBtn18', 'collapseBtn18')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup18"><code class="language-typescript text-sm text-gray-800">${url}`, {
+        status: response.status,
+        ok: response.ok,
+        contentType: headers['content-type'],
+      });
+
+      return {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        data: responseData</code></pre></div><div class="py-4"><p class="text-gray-600">scripts/cleanup-vitest-workers.ts (Line 9:1 - Line 31:8), scripts/run-unit-tests-batched.ts (Line 21:1 - Line 43:14)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn19" onclick="toggleCodeBlock('cloneGroup19', 'expandBtn19', 'collapseBtn19')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn19" onclick="toggleCodeBlock('cloneGroup19', 'expandBtn19', 'collapseBtn19')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup19"><code class="language-typescript text-sm text-gray-800">const args = process.argv.slice(2);
+
+const getArgValue = (name: string, fallback: string): string =&gt; {
+  let value = fallback;
+  for (let index = 0; index &lt; args.length; index += 1) {
+    const entry = args[index];
+    const prefix = `--${name}`;
+    if (entry.startsWith(`${prefix}=`)) {
+      value = entry.slice(prefix.length + 1);
+    } else if (entry === prefix) {
+      const next = args[index + 1];
+      if (next &amp;&amp; !next.startsWith('--')) {
+        value = next;
+        index += 1;
+      } else {
+        value = 'true';
+      }
+    }
+  }
+  return value;
+};
+
+const hasFlag</code></pre></div><!-- Add more clone groups for .txt format as needed         // Add more clone groups for .txt format as needed--></div><a name="css-clones"></a><h2 class="text-2xl font-semibold text-gray-700 mb-4">css</h2><div class="divide-y divide-gray-200 border-b-2"><div class="py-4"><p class="text-gray-600">src/shared/components/ui/Toolbar/Toolbar.module.css (Line 782:3 - Line 795:14), src/shared/components/ui/Toolbar/Toolbar.module.css (Line 724:3 - Line 736:37)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn0" onclick="toggleCodeBlock('cloneGroup0', 'expandBtn0', 'collapseBtn0')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn0" onclick="toggleCodeBlock('cloneGroup0', 'expandBtn0', 'collapseBtn0')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup0"><code class="language-css text-sm text-gray-800">/* 초기 상태 (축소) */
+  opacity: 0;
+  transform: translateY(-0.5em); /* 접힌 상태에서 약간 위로 */
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    var(--xeg-toolbar-panel-transition),
+    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+    visibility 0s var(--xeg-duration-normal);
+
+  /* Visual */
+  background: var(--xeg-toolbar-panel-bg);
+  border-top: var(--border-width-thin) solid var(--xeg-toolbar-panel-border);
+  border-radius</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/components/ui/Button/Button.module.css (Line 493:3 - Line 499:8), src/shared/components/ui/Button/Button.module.css (Line 57:3 - Line 64:20)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn1" onclick="toggleCodeBlock('cloneGroup1', 'expandBtn1', 'collapseBtn1')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn1" onclick="toggleCodeBlock('cloneGroup1', 'expandBtn1', 'collapseBtn1')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup1"><code class="language-css text-sm text-gray-800">transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  outline</code></pre></div><div class="py-4"><p class="text-gray-600">src/shared/components/ui/Button/Button.module.css (Line 540:8 - Line 550:31), src/shared/components/ui/Button/Button.module.css (Line 492:5 - Line 503:29)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn2" onclick="toggleCodeBlock('cloneGroup2', 'expandBtn2', 'collapseBtn2')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn2" onclick="toggleCodeBlock('cloneGroup2', 'expandBtn2', 'collapseBtn2')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup2"><code class="language-css text-sm text-gray-800">;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  outline: none;
+}
+
+.xeg-icon-button:focus-visible</code></pre></div><div class="py-4"><p class="text-gray-600">src/features/gallery/styles/Gallery.module.css (Line 593:17 - Line 602:6), src/features/gallery/styles/Gallery.module.css (Line 543:18 - Line 552:2)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn10" onclick="toggleCodeBlock('cloneGroup10', 'expandBtn10', 'collapseBtn10')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn10" onclick="toggleCodeBlock('cloneGroup10', 'expandBtn10', 'collapseBtn10')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup10"><code class="language-css text-sm text-gray-800">);
+  font-size: var(--xeg-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color</code></pre></div><div class="py-4"><p class="text-gray-600">src/features/gallery/styles/Gallery.module.css (Line 625:2 - Line 638:20), src/features/gallery/styles/Gallery.module.css (Line 590:2 - Line 603:20)</p><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2" id="expandBtn11" onclick="toggleCodeBlock('cloneGroup11', 'expandBtn11', 'collapseBtn11')">Show code</button><button class="bg-gray-500 text-white px-1 py-0.5 text-xs rounded focus:outline-none ml-2 hidden" id="collapseBtn11" onclick="toggleCodeBlock('cloneGroup11', 'expandBtn11', 'collapseBtn11')">Hide code</button><pre class="bg-gray-100 border border-gray-200 p-4 rounded mt-2 hidden" id="cloneGroup11"><code class="language-css text-sm text-gray-800">{
+  /* Includes controlButton base properties (CSS Modules composes not used) */
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-text-sm);
+  cursor: pointer;
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+  white-space: nowrap;
+  color: var(--xeg-button-text);
+  background: var(--xeg-color-success</code></pre></div><!-- Add more clone groups for .txt format as needed         // Add more clone groups for .txt format as needed--></div><a name="javascript-clones"></a><h2 class="text-2xl font-semibold text-gray-700 mb-4">javascript</h2><div class="divide-y divide-gray-200 border-b-2"><!-- Add more clone groups for .txt format as needed         // Add more clone groups for .txt format as needed--></div></section><!-- Add more sections for other formats and clone groups as needed--></main><footer class="bg-white shadow mt-8 py-4"><div class="container mx-auto px-4 text-center"><p class="text-sm text-gray-600">This report is generated by jscpd, an open-source copy/paste detector.</p><p class="text-sm text-gray-600">jscpd is licensed under the MIT License.</p><a class="text-blue-500 text-sm" href="https://github.com/kucherenko/jscpd" target="_blank" rel="noopener noreferrer">View jscpd on GitHub</a></div></footer><script src="js/prism.js"></script><script>function toggleCodeBlock(codeBlockId, expandBtnId, collapseBtnId) {
+  const codeBlock = document.getElementById(codeBlockId);
+  const expandBtn = document.getElementById(expandBtnId);
+  const collapseBtn = document.getElementById(collapseBtnId);
+
+  codeBlock.classList.toggle('hidden');
+  expandBtn.classList.toggle('hidden');
+  collapseBtn.classList.toggle('hidden');
+}</script></body></html>
