@@ -76,7 +76,7 @@
 
   /* 비활성화 상태 */
   &:disabled {
-    opacity: var(--xeg-opacity-disabled);
+    opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
     cursor: not-allowed;
     transform: none !important;
     box-shadow: none !important;
@@ -373,7 +373,7 @@
 }
 
 .disabled {
-  opacity: var(--xeg-opacity-disabled);
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
@@ -497,7 +497,7 @@
 
 .toolbarButton:disabled,
 .xeg-toolbar-button:disabled {
-  opacity: var(--xeg-opacity-disabled);
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
@@ -543,7 +543,7 @@
 }
 
 .xeg-icon-button:disabled {
-  opacity: var(--xeg-opacity-disabled);
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
   cursor: not-allowed;
   transform: none;
 }

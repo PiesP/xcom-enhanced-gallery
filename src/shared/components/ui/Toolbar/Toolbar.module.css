@@ -81,8 +81,11 @@
   position: relative;
   overflow: clip;
   border-radius: var(--xeg-radius-md);
-  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-  border: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  background: var(
+    --toolbar-surface-base,
+    var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
+  );
+  border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -119,7 +122,11 @@
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  --toolbar-surface-border: var(--xeg-toolbar-border);
+  --xeg-button-disabled-opacity: 1;
+
+  background: var(--toolbar-surface-base);
   border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
   border-radius: var(--xeg-radius-lg);
 
@@ -240,20 +247,15 @@
 
 /* 데이터 속성 기반 상태 관리 */
 .toolbarButton[data-active='true'] {
-  background: var(--xeg-color-primary);
-
-  --button-color: white;
-
+  border-color: var(--xeg-color-primary);
   box-shadow:
-    0 0 0 0.125em var(--xeg-color-primary-alpha-30),
-    /* 2px → 0.125em */ 0 0.25em 1em var(--color-overlay-light); /* 4px 16px → 0.25em 1em */
+    0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 35%, transparent),
+    0 0.25em 1em var(--color-overlay-light);
 }
 
 .toolbarButton[data-selected='true'] {
-  --button-bg: var(--xeg-color-primary);
-  --button-color: white;
-
   border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 20%, transparent);
 }
 
 .toolbarButton[data-loading='true'] {
@@ -264,10 +266,7 @@
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
 
-  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-
-  --button-color: var(--xeg-color-neutral-400);
-
+  color: var(--xeg-color-neutral-400);
   cursor: not-allowed;
 }
 
@@ -276,13 +275,9 @@
   .toolbarButton:hover:not([data-disabled='true']) {
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
-    background: color-mix(
-      in oklch,
-      var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface)) 92%,
-      var(--color-text-primary) 8%
-    );
     border-color: var(--xeg-color-border-hover);
     transform: translateY(var(--xeg-button-lift));
+    box-shadow: var(--xeg-shadow-sm);
   }
 }
 
@@ -292,8 +287,8 @@
 }
 
 .toolbarButton.primary:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-primary-50);
   border-color: var(--xeg-color-primary-hover);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
 }
 
 .toolbarButton.success {
@@ -301,8 +296,8 @@
 }
 
 .toolbarButton.success:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-success-50);
   border-color: var(--xeg-color-success-hover);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
 }
 
 .toolbarButton.danger {
@@ -310,9 +305,9 @@
 }
 
 .toolbarButton.danger:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-error-50);
   border-color: var(--xeg-color-error-hover);
   color: var(--xeg-color-error);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-error) 25%, transparent);
 }
 
 /* 네비게이션 섹션 */
@@ -323,8 +318,8 @@
 /* 네비게이션 버튼 - 기본 스타일 상속 */
 .navButton:active:not(:disabled),
 .navButton.active {
-  background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
 }
 
 /* 미디어 카운터 */
@@ -410,9 +405,6 @@ button.fitButton {
 
   /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
   border-radius: var(--xeg-radius-md);
-  background: transparent;
-  border: none;
-  color: var(--xeg-color-neutral-600);
   transition: var(--xeg-transition-normal);
 
   /* 이벤트 전파 방지 및 안정성 */
@@ -422,8 +414,8 @@ button.fitButton {
 }
 
 .fitButton.selected {
-  background: var(--xeg-color-primary);
-  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-primary);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
 }
 
 .fitButton:focus-visible {
@@ -444,7 +436,6 @@ button.fitButton {
 
 .downloadButton:hover:not([data-disabled='true']) {
   /* 다른 버튼들과 동일한 호버 효과 */
-  background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-neutral-300);
   transform: translateY(-0.0625em); /* -1px → -0.0625em */
   box-shadow: var(--xeg-shadow-md);
@@ -456,8 +447,8 @@ button.fitButton {
 }
 
 .downloadCurrent:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-primary-50);
   border-color: var(--xeg-color-primary-hover);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
 }
 
 .downloadAll {
@@ -466,8 +457,8 @@ button.fitButton {
 }
 
 .downloadAll:hover:not([data-disabled='true']) {
-  background: var(--xeg-color-success-50);
   border-color: var(--xeg-color-success-hover);
+  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
 }
 
 .downloadSpinner {
@@ -705,8 +696,12 @@ button.fitButton {
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s var(--xeg-duration-normal);
-  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-  border-top: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  background: var(
+    --toolbar-surface-base,
+    var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
+  );
+  border-top: var(--border-width-thin) solid
+    var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   box-shadow: var(--xeg-toolbar-panel-shadow);
   z-index: 1;
@@ -733,7 +728,7 @@ button.fitButton {
   transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
-  border-top-color: var(--xeg-toolbar-border);
+  border-top-color: var(--toolbar-surface-border, var(--xeg-toolbar-border));
   box-shadow: var(--xeg-toolbar-panel-shadow);
   transition:
     var(--xeg-toolbar-panel-transition),
@@ -775,8 +770,11 @@ button.fitButton {
   font-size: var(--xeg-font-size-md);
   line-height: 1.5;
   color: var(--xeg-color-text-primary);
-  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-  border: var(--border-width-thin) solid var(--xeg-toolbar-border);
+  background: var(
+    --toolbar-surface-base,
+    var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
+  );
+  border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: var(--xeg-radius-md);
   white-space: pre-wrap;
   word-wrap: break-word;
