@@ -34,13 +34,16 @@ describe('Phase 52: Toolbar/Settings 디자인 정합성', () => {
     'src/shared/components/ui/Settings/SettingsControls.module.css'
   );
 
-  it('settings select 토큰이 정의되어 있어야 함', () => {
-    // Phase 52: 여러 테마에서 다른 값을 가질 수 있음
-    // 기본값과 각 테마에서 최소 한 번은 정의되어 있어야 함
-    expect(semanticTokens).toContain('--xeg-settings-select-bg:');
-    expect(semanticTokens).toContain('--xeg-settings-select-border:');
-    expect(semanticTokens).toContain('--xeg-settings-select-border-hover:');
-    expect(semanticTokens).toContain('--xeg-settings-select-focus-ring:');
+  it('settings select가 툴바 표면 토큰을 직접 사용해야 함', () => {
+    expect(semanticTokens).not.toContain('--xeg-settings-select-bg:');
+    expect(semanticTokens).not.toContain('--xeg-settings-select-border:');
+    expect(semanticTokens).not.toContain('--xeg-settings-select-border-hover:');
+    expect(semanticTokens).not.toContain('--xeg-settings-select-focus-ring:');
+
+    expect(settingsCss).toMatch(/background-color:\s*var\(--xeg-bg-toolbar\)/);
+    expect(settingsCss).toMatch(
+      /border:\s*var\(--border-width-thin\)\s*solid\s*var\(--xeg-toolbar-border\)/
+    );
   });
 
   it('settings select 포커스 스타일이 공통 포커스 링을 사용해야 함', () => {
