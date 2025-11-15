@@ -558,6 +558,7 @@ function VerticalGalleryViewCore({
           onFitWidth={handleFitWidth}
           onFitHeight={handleFitHeight}
           onFitContainer={handleFitContainer}
+          currentFitMode={imageFitMode()}
           onOpenSettings={() => {}}
           tweetText={mediaItems()[currentIndex()]?.tweetText}
           tweetTextHTML={mediaItems()[currentIndex()]?.tweetTextHTML}

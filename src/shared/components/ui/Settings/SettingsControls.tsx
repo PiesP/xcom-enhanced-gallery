@@ -1,7 +1,6 @@
-import { getSolid } from '../../../external/vendors';
-import type { JSXElement } from '../../../external/vendors';
-import { languageService } from '../../../services/language-service';
-import toolbarStyles from '../Toolbar/Toolbar.module.css';
+import { getSolid, type JSXElement } from '@shared/external/vendors';
+import { languageService } from '@shared/services';
+import toolbarStyles from '@shared/components/ui/Toolbar/Toolbar.module.css';
 import styles from './SettingsControls.module.css';
 
 export type ThemeOption = 'auto' | 'light' | 'dark';

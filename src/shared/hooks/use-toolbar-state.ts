@@ -36,7 +36,7 @@
 
 import { getSolid, getSolidStore } from '../external/vendors';
 import { globalTimerManager } from '../utils/timer-management';
-import type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
+import type { ToolbarState, ToolbarActions, FitMode } from '@shared/types/toolbar.types';
 
 /**
  * Initial toolbar state constant
@@ -204,6 +204,10 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setState({ needsHighContrast });
   };
 
+  const setFitMode = (mode: FitMode): void => {
+    setState({ currentFitMode: mode });
+  };
+
   /**
    * Reset all state to initial values and clear timers
    *
@@ -234,6 +238,7 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setLoading,
     setError,
     setHighContrast,
+    setFitMode,
     resetState,
   };
 

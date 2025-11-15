@@ -1,8 +1,7 @@
-import type { JSXElement } from '../../../external/vendors';
-import { ModalShell } from '../ModalShell/ModalShell';
-import type { ModalShellProps } from '../ModalShell/ModalShell';
-import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
-import type { SettingsControlsProps } from '../Settings/SettingsControls';
+import type { JSXElement } from '@shared/external/vendors';
+import { ModalShell, type ModalShellProps } from '@shared/components/ui/ModalShell/ModalShell';
+import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
+import type { SettingsControlsProps } from '@shared/components/ui/Settings/SettingsControls';
 import styles from './SettingsModal.module.css';
 
 type SettingsControlsBindings = Pick<

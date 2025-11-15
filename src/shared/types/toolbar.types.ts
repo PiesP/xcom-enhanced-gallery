@@ -109,6 +109,8 @@ export interface ToolbarActions {
   setError(value: boolean): void;
   /** Set high contrast mode */
   setHighContrast(value: boolean): void;
+  /** Set current fit mode */
+  setFitMode(value: FitMode): void;
   /** Reset state */
   resetState(): void;
 }

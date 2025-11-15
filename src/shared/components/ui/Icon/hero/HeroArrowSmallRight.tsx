@@ -8,8 +8,8 @@
  * Used for: next navigation, forward actions.
  */
 
-import type { JSXElement } from '../../../../external/vendors';
-import { Icon, type IconProps } from '../Icon';
+import type { JSXElement } from '@shared/external/vendors';
+import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 
 /**
  * ArrowSmallRight Icon Component

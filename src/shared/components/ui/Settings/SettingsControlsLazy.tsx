@@ -1,10 +1,9 @@
-import { getSolid } from '../../../external/vendors';
-import type { JSXElement } from '../../../external/vendors';
-import type { SettingsControlsProps } from './SettingsControls';
+import { getSolid, type JSXElement } from '@shared/external/vendors';
+import type { SettingsControlsProps } from '@shared/components/ui/Settings/SettingsControls';
 
 const { lazy, Suspense } = getSolid();
 const LazySettingsControls = lazy(() =>
-  import('./SettingsControls').then(module => ({
+  import('@shared/components/ui/Settings/SettingsControls').then(module => ({
     default: module.SettingsControls,
   }))
 );

@@ -158,6 +158,15 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     )
   );
 
+  createEffect(() => {
+    const mode = props.currentFitMode;
+    if (!mode) {
+      return;
+    }
+
+    toolbarActions.setFitMode(mode);
+  });
+
   const baseSettingsController = useToolbarSettingsController({
     setNeedsHighContrast: toolbarActions.setHighContrast,
     isSettingsExpanded: settingsExpandedSignal,

@@ -8,8 +8,8 @@
  * Used for: expand to container, fullscreen actions.
  */
 
-import type { JSXElement } from '../../../../external/vendors';
-import { Icon, type IconProps } from '../Icon';
+import type { JSXElement } from '@shared/external/vendors';
+import { Icon, type IconProps } from '@shared/components/ui/Icon/Icon';
 
 /**
  * ArrowsPointingOut Icon Component

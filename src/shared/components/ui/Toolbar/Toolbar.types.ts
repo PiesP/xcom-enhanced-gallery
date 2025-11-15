@@ -16,6 +16,7 @@ export interface ToolbarProps {
 
   currentViewMode?: ViewMode;
   onViewModeChange?: (mode: ViewMode) => void;
+  currentFitMode?: FitMode;
 
   onFitOriginal?: (event?: Event) => void;
   onFitWidth?: (event?: Event) => void;

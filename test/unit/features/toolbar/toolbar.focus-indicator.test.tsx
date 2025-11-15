@@ -4,6 +4,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, h } from '@test/utils/testing-library';
 
+const setFitModeMock = vi.fn();
+
 vi.mock('@shared/external/vendors', async () => {
   const actualVendors = await vi.importActual<typeof import('@shared/external/vendors')>(
     '@shared/external/vendors'
@@ -18,27 +20,30 @@ vi.mock('@shared/external/vendors', async () => {
   };
 });
 
-vi.mock('@shared/hooks/useToolbarState', () => ({
-  useToolbarState: vi.fn(() => [
-    {
-      isDownloading: false,
-      isLoading: false,
-      hasError: false,
-      currentFitMode: 'fitWidth',
-      needsHighContrast: false,
-    },
-    {
-      setDownloading: vi.fn(),
-      setLoading: vi.fn(),
-      setError: vi.fn(),
-      setCurrentFitMode: vi.fn(),
-      setNeedsHighContrast: vi.fn(),
-      resetState: vi.fn(),
-    },
-  ]),
-  getToolbarDataState: vi.fn(() => 'idle'),
-  getToolbarClassName: vi.fn((_state: unknown, base: string) => base || 'toolbar'),
-}));
+vi.mock('@shared/hooks', async () => {
+  const actual = await vi.importActual<typeof import('@shared/hooks')>('@shared/hooks');
+
+  return {
+    ...actual,
+    useToolbarState: vi.fn(() => [
+      {
+        isDownloading: false,
+        isLoading: false,
+        hasError: false,
+        currentFitMode: 'original',
+        needsHighContrast: false,
+      },
+      {
+        setDownloading: vi.fn(),
+        setLoading: vi.fn(),
+        setError: vi.fn(),
+        setHighContrast: vi.fn(),
+        setFitMode: setFitModeMock,
+        resetState: vi.fn(),
+      },
+    ]),
+  };
+});
 
 vi.mock('@shared/utils/performance/performance-utils', async () => {
   const actual = await vi.importActual<
@@ -93,6 +98,7 @@ describe('Toolbar focus indicator data attributes (UI-FCS-02)', () => {
   beforeEach(() => {
     cleanup();
     vi.clearAllMocks();
+    setFitModeMock.mockClear();
   });
 
   afterEach(() => {
@@ -132,5 +138,11 @@ describe('Toolbar focus indicator data attributes (UI-FCS-02)', () => {
 
     expect(toolbar).toHaveAttribute('data-focused-index', '4');
     expect(counter?.getAttribute('data-focused-index')).toBe('4');
+  });
+
+  it('currentFitMode prop 동기화 시 상태 업데이트를 트리거한다', () => {
+    render(h(Toolbar as any, mkProps({ currentFitMode: 'fitWidth' })));
+
+    expect(setFitModeMock).toHaveBeenCalledWith('fitWidth');
   });
 });
