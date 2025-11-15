@@ -177,14 +177,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       }
       onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
     >
-      <div
-        class={`${styles.toolbarContent} xeg-center-between xeg-gap-md`}
-        data-gallery-element='toolbar-content'
-      >
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarLeft} toolbarLeft xeg-row-center xeg-gap-sm`}
-          data-gallery-element='navigation-left'
-        >
+      <div class={`${styles.toolbarContent} xeg-row-center`} data-gallery-element='toolbar-content'>
+        <div class={styles.toolbarControls} data-gallery-element='toolbar-controls'>
           <IconButton
             class={toolbarButtonClass()}
             size='toolbar'
@@ -212,34 +206,26 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           >
             <ArrowSmallRight size={18} />
           </IconButton>
-        </div>
 
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarCenter} xeg-row-center`}
-          data-gallery-element='counter-section'
-        >
-          <div class={styles.mediaCounterWrapper}>
-            <span
-              class={styles.mediaCounter}
-              aria-live='polite'
-              data-gallery-element='counter'
-              data-focused-index={String(props.displayedIndex())}
-              data-current-index={String(props.currentIndex)}
-            >
-              <span class={styles.currentIndex}>{props.displayedIndex() + 1}</span>
-              <span class={styles.separator}>/</span>
-              <span class={styles.totalCount}>{props.totalCount}</span>
-            </span>
-            <div class={styles.progressBar}>
-              <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
+          <div class={styles.counterBlock} data-gallery-element='counter-section'>
+            <div class={styles.mediaCounterWrapper}>
+              <span
+                class={styles.mediaCounter}
+                aria-live='polite'
+                data-gallery-element='counter'
+                data-focused-index={String(props.displayedIndex())}
+                data-current-index={String(props.currentIndex)}
+              >
+                <span class={styles.currentIndex}>{props.displayedIndex() + 1}</span>
+                <span class={styles.separator}>/</span>
+                <span class={styles.totalCount}>{props.totalCount}</span>
+              </span>
+              <div class={styles.progressBar}>
+                <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
+              </div>
             </div>
           </div>
-        </div>
 
-        <div
-          class={`${styles.toolbarSection} ${styles.toolbarRight} xeg-row-center xeg-gap-sm`}
-          data-gallery-element='actions-right'
-        >
           {props.fitModeOrder.map(({ mode, Icon }) => {
             const label = props.fitModeLabels[mode];
             return (

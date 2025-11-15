@@ -14,6 +14,8 @@
   --xeg-bg-toolbar: var(--color-bg-surface);
   --xeg-toolbar-border: var(--xeg-color-border-primary);
   --xeg-toolbar-bg: var(--xeg-bg-toolbar);
+  --xeg-toolbar-surface: var(--xeg-bg-toolbar);
+  --xeg-toolbar-panel-surface: var(--xeg-bg-toolbar);
 
   /* Gallery Image Item Background Tokens */
   --xeg-color-bg-secondary: var(--color-bg-secondary);

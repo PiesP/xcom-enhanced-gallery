@@ -27,7 +27,7 @@
 .surfaceGlass,
 .surfaceSolid,
 .surfaceOverlay {
-  background: var(--xeg-bg-toolbar);
+  background: var(--xeg-toolbar-surface);
   border: 0.0625rem solid var(--xeg-toolbar-border);
 }
 
