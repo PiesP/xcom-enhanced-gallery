@@ -114,9 +114,9 @@
   --color-overlay-button-light: oklch(0 0 0 / 10%); /* black with 10% opacity */
   --color-overlay-button-light-hover: oklch(0 0 0 / 20%); /* black with 20% opacity */
 
-  /* Glass Effect - Semantic Roles (oklch with opacity tokens) */
-  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
-  --color-glass-border: oklch(1 0 0 / 20%); /* white with 20% opacity */
+  /* Legacy naming: glass tokens now map to flat surfaces */
+  --color-glass-bg: var(--color-bg-surface);
+  --color-glass-border: var(--color-border-default);
 
   /* Spacing - Semantic Roles */
   /* Removed: --spacing-component-padding, --spacing-item-gap (use --space-md and --space-sm directly) */
@@ -188,10 +188,11 @@
   --xeg-duration-normal: var(--duration-normal);
   --xeg-easing-linear: linear;
 
-  /* Surface Glass - Unified Tokens */
+  /* Surface Glass - Legacy naming preserved for flat panels */
   --xeg-surface-glass-bg: var(--color-glass-bg);
   --xeg-surface-glass-border: var(--color-glass-border);
-  --xeg-surface-glass-shadow: var(--shadow-lg);
+  --xeg-surface-glass-shadow: none;
+  --xeg-surface-glass-blur: none;
 
   /* Z-Index Management */
   --xeg-z-modal: 10000;
@@ -231,7 +232,8 @@
   --color-bg-primary: var(--color-base-white);
   --color-text-primary: var(--color-base-black);
   --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
-  --color-glass-bg: oklch(1 0 0 / var(--opacity-glass)); /* white with glass opacity */
+  --color-glass-bg: var(--color-bg-surface);
+  --color-glass-border: var(--color-border-default);
   --xeg-gallery-bg: var(--xeg-gallery-bg-light);
   --xeg-modal-bg: var(--xeg-modal-bg-light);
   --xeg-modal-border: var(--xeg-modal-border-light);
@@ -273,7 +275,8 @@
   --color-text-secondary: var(
     --color-gray-400
   ); /* Phase: design-consistency - improved from white */
-  --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
+  --color-glass-bg: var(--color-gray-900);
+  --color-glass-border: var(--color-gray-600);
 
   /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
   --xeg-bg-toolbar: var(--color-gray-800);
@@ -325,13 +328,14 @@
     --color-bg-elevated: var(--color-gray-700);
     --color-text-primary: var(--color-base-white);
     --color-text-secondary: var(--color-gray-400); /* Phase: design-consistency */
-    --color-glass-bg: oklch(0 0 0 / var(--opacity-glass)); /* black with glass opacity */
+    --color-glass-bg: var(--color-gray-900);
+    --color-glass-border: var(--color-gray-600);
 
     /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-color-border-primary: var(--color-gray-600);
     --xeg-toolbar-border: var(--color-gray-600);
-    --xeg-surface-glass-bg: oklch(0.234 0.006 277.8 / 95%); /* gray-900 with 95% opacity */
+    --xeg-surface-glass-bg: var(--color-gray-900);
 
     /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
@@ -371,7 +375,7 @@
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600);
-    --color-glass-bg: oklch(1 0 0 / var(--opacity-glass));
+    --color-glass-bg: var(--color-bg-surface);
 
     --xeg-bg-toolbar: var(--color-bg-surface);
     --xeg-color-border-primary: var(--color-border-default);
@@ -432,9 +436,10 @@
     --color-glass-border: CanvasText;
     --xeg-surface-glass-bg: Canvas;
     --xeg-surface-glass-border: CanvasText;
-    --xeg-surface-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-surface-glass-shadow: none;
+    --xeg-surface-glass-blur: none;
     --xeg-media-glass-border: CanvasText;
-    --xeg-media-glass-shadow: 0 0 0 0.125rem CanvasText;
+    --xeg-media-glass-shadow: none;
     --xeg-media-glass-blur: none;
 
     /* Toolbar high-contrast tokens */
@@ -518,7 +523,7 @@
   --xeg-text-button-navigation: var(--xeg-color-text-primary);
   --xeg-shadow-toolbar: var(--xeg-shadow-md);
   --xeg-media-glass-border: var(--color-glass-border);
-  --xeg-media-glass-shadow: var(--shadow-md);
+  --xeg-media-glass-shadow: none;
   --xeg-media-glass-blur: none;
   --xeg-toolbar-wrapper-gradient-start: oklch(0% 0 0deg / 80%);
   --xeg-toolbar-wrapper-gradient-mid: oklch(0% 0 0deg / 40%);
@@ -627,23 +632,26 @@
 
 /* Theme Overrides - Glass System 변형 (라이트 모드) */
 [data-theme='light'] {
-  --xeg-surface-glass-bg: oklch(1 0 0 / 0.1);
-  --xeg-surface-glass-border: oklch(1 0 0 / 0.2);
-  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.1);
+  --xeg-surface-glass-bg: var(--color-bg-surface);
+  --xeg-surface-glass-border: var(--color-border-default);
+  --xeg-surface-glass-shadow: none;
+  --xeg-surface-glass-blur: none;
 }
 
 /* Theme Overrides - Glass System 변형 (다크 모드) */
 [data-theme='dark'] {
-  --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
-  --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
-  --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+  --xeg-surface-glass-bg: var(--color-gray-900);
+  --xeg-surface-glass-border: var(--color-gray-600);
+  --xeg-surface-glass-shadow: none;
+  --xeg-surface-glass-blur: none;
 }
 
 /* System Preference Fallback - 다크 모드 시스템 설정 */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --xeg-surface-glass-bg: oklch(0 0 0 / 0.1);
-    --xeg-surface-glass-border: oklch(1 0 0 / 0.1);
-    --xeg-surface-glass-shadow: 0 8px 32px oklch(0 0 0 / 0.3);
+    --xeg-surface-glass-bg: var(--color-gray-900);
+    --xeg-surface-glass-border: var(--color-gray-600);
+    --xeg-surface-glass-shadow: none;
+    --xeg-surface-glass-blur: none;
   }
 }

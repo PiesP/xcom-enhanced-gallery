@@ -60,22 +60,12 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
           const isModal = className.includes('modal-variant');
           const isToolbar = className.includes('toolbar-variant');
 
-          if (isModal) {
+          if (isModal || isToolbar) {
             const cssVars = {
-              '--xeg-surface-glass-bg': 'rgba(255, 255, 255, 0.85)', // 모달 전용
-              '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.2)',
-              '--xeg-surface-glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.15)',
-              '--xeg-surface-glass-blur': 'blur(12px)',
-            };
-            return cssVars[prop] || '';
-          }
-
-          if (isToolbar) {
-            const cssVars = {
-              '--xeg-surface-glass-bg': 'rgba(240, 240, 240, 0.8)', // 툴바 전용
-              '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.3)',
-              '--xeg-surface-glass-shadow': '0 4px 16px rgba(0, 0, 0, 0.1)',
-              '--xeg-surface-glass-blur': 'blur(8px)',
+              '--xeg-surface-glass-bg': 'var(--color-bg-surface)',
+              '--xeg-surface-glass-border': 'var(--color-border-default)',
+              '--xeg-surface-glass-shadow': 'none',
+              '--xeg-surface-glass-blur': 'none',
             };
             return cssVars[prop] || '';
           }
@@ -104,8 +94,8 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
       const modalStyle = mockWindow.getComputedStyle(modalElement);
       const toolbarStyle = mockWindow.getComputedStyle(toolbarElement);
 
-      // 모달과 툴바가 각각 다른 glassmorphism 스타일을 가져야 함
-      expect(modalStyle.getPropertyValue('--xeg-surface-glass-bg')).not.toBe(
+      // 모달과 툴바가 동일한 플랫 표면 토큰을 공유해야 함
+      expect(modalStyle.getPropertyValue('--xeg-surface-glass-bg')).toBe(
         toolbarStyle.getPropertyValue('--xeg-surface-glass-bg')
       );
     });

@@ -118,17 +118,17 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
           const isDarkTheme = mockDocument.documentElement.getAttribute('data-theme') === 'dark';
 
           const lightThemeVars: Record<string, string> = {
-            '--xeg-surface-glass-bg': 'rgba(255, 255, 255, 0.85)',
-            '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.2)',
-            '--xeg-surface-glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.15)',
-            '--xeg-surface-glass-blur': 'blur(12px)',
+            '--xeg-surface-glass-bg': 'var(--color-bg-surface)',
+            '--xeg-surface-glass-border': 'var(--color-border-default)',
+            '--xeg-surface-glass-shadow': 'none',
+            '--xeg-surface-glass-blur': 'none',
           };
 
           const darkThemeVars: Record<string, string> = {
-            '--xeg-surface-glass-bg': 'rgba(0, 0, 0, 0.85)',
-            '--xeg-surface-glass-border': 'rgba(255, 255, 255, 0.15)',
-            '--xeg-surface-glass-shadow': '0 8px 32px rgba(0, 0, 0, 0.5)',
-            '--xeg-surface-glass-blur': 'blur(12px)',
+            '--xeg-surface-glass-bg': 'var(--color-gray-900)',
+            '--xeg-surface-glass-border': 'var(--color-gray-600)',
+            '--xeg-surface-glass-shadow': 'none',
+            '--xeg-surface-glass-blur': 'none',
           };
 
           const cssVars = isDarkTheme ? darkThemeVars : lightThemeVars;
@@ -167,8 +167,8 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
 
       // 테마 변경시 스타일이 다르게 적용되어야 함 (이제 성공해야 함)
       expect(lightBg).not.toBe(darkBg);
-      expect(lightBg).toBe('rgba(255, 255, 255, 0.85)'); // 라이트 테마
-      expect(darkBg).toBe('rgba(0, 0, 0, 0.85)'); // 다크 테마
+      expect(lightBg).toBe('var(--color-bg-surface)'); // 라이트 테마
+      expect(darkBg).toBe('var(--color-gray-900)'); // 다크 테마
     });
 
     it('시스템 테마 변경시 툴바와 설정 모달이 동시에 업데이트되어야 함', () => {

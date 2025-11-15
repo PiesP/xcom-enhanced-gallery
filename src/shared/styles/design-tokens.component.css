@@ -52,11 +52,11 @@
   /* Removed: --panel-padding (use --space-md directly) */
   --panel-shadow: var(--shadow-sm);
 
-  /* Glass Surface Component */
+  /* Legacy glass surface tokens now map to flat panels */
   --glass-bg: var(--color-glass-bg);
   --glass-border: var(--color-glass-border);
   --glass-backdrop-filter: none;
-  --glass-shadow: var(--shadow-lg);
+  --glass-shadow: none;
 
   /* Media/Image Component */
   --media-border-radius: var(--xeg-radius-md);
@@ -127,12 +127,10 @@
 /* Utility Classes */
 /* ======================================= */
 
-/* Glassmorphism Base Class */
+/* Legacy glass utility (now a flat surface helper) */
 .xeg-glassmorphism {
   background: var(--glass-bg);
   border: 0.0625rem solid var(--glass-border); /* 1px = 0.0625rem */
-  backdrop-filter: var(--glass-backdrop-filter);
-  box-shadow: var(--glass-shadow);
   border-radius: var(--xeg-radius-lg);
 }
 

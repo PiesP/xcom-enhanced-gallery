@@ -63,19 +63,16 @@
 .surfaceGlass {
   background: var(--xeg-modal-bg);
   border-color: var(--xeg-modal-border);
-  box-shadow: var(--xeg-shadow-lg);
 }
 
 .surfaceSolid {
   background: var(--color-bg-surface);
   border-color: var(--color-border-default);
-  box-shadow: var(--xeg-shadow-lg);
 }
 
 .surfaceElevated {
   background: var(--color-bg-elevated);
   border-color: var(--color-border-emphasis);
-  box-shadow: var(--xeg-shadow-lg);
 }
 
 @media (width <= 48rem) {

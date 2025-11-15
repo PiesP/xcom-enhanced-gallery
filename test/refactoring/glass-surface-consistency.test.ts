@@ -52,8 +52,8 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
 
       const glassSurfaceLightContent = extractGlassSurfaceBlock(globalCSS, 'light');
 
-      // 필수 glassmorphism 속성들이 포함되어야 함
-      const requiredStyles = ['background:', 'backdrop-filter:', 'box-shadow:', 'border:'];
+      // 필수 표면 속성 (단순 플랫 스타일)
+      const requiredStyles = ['background:', 'border:'];
 
       requiredStyles.forEach(style => {
         expect(glassSurfaceLightContent.includes(style)).toBe(true);
@@ -67,8 +67,8 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
 
       const glassSurfaceDarkContent = extractGlassSurfaceBlock(globalCSS, 'dark');
 
-      // 필수 glassmorphism 속성들이 포함되어야 함
-      const requiredStyles = ['background:', 'backdrop-filter:', 'box-shadow:', 'border:'];
+      // 필수 표면 속성 (단순 플랫 스타일)
+      const requiredStyles = ['background:', 'border:'];
 
       requiredStyles.forEach(style => {
         expect(glassSurfaceDarkContent.includes(style)).toBe(true);

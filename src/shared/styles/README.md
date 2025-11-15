@@ -415,10 +415,11 @@ still giving editors something to autocomplete.
 ### Q4: Glass Surface 유틸은 어디에 정의되나요?
 
 `src/features/gallery/styles/gallery-global.css` 안의 `@layer xeg.features`
-블록에서 `:where(.xeg-glass-surface, .glass-surface)` 와 그 파생
-클래스(`.xeg-glass-surface-light`, `.xeg-glass-surface-dark`)를 정의합니다.
-`xeg-` 접두사가 공식 네이밍이며, `.glass-surface`는 호환성을 위한 얇은
-alias입니다.
+블록에서 `:where(.xeg-glass-surface, .glass-surface)`와 그 파생 클래스를
+정의합니다. 최신 리팩터링 이후 이 유틸들은 더 이상 블러/ 그라데이션/그림자를
+사용하지 않고, 단순한 플랫 표면을 제공하는 legacy alias일 뿐입니다. `xeg-`
+접두사가 공식 네이밍이며, `.glass-surface`는 호환성을 위한 얇은 alias로 남겨
+둡니다.
 
 **A**: Primitive 레벨에서만 변경:
 
