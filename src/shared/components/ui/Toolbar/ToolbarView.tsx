@@ -1,22 +1,22 @@
-import type { JSXElement } from '../../../external/vendors';
-import { getSolid } from '../../../external/vendors';
-import { IconButton } from '../Button/IconButton';
+import type { JSXElement } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
+import { IconButton } from '@shared/components/ui/Button/IconButton';
 import {
+  ArrowDownOnSquareStack,
+  ArrowDownTray,
+  ArrowLeftOnRectangle,
   ArrowSmallLeft,
   ArrowSmallRight,
-  ArrowDownTray,
-  ArrowDownOnSquareStack,
-  Cog6Tooth,
-  ArrowLeftOnRectangle,
   ChatBubbleLeftRight,
-} from '../Icon';
-import { SettingsControlsLazy } from '../Settings/SettingsControlsLazy';
+  Cog6Tooth,
+} from '@shared/components/ui/Icon';
+import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
 import { createClassName } from '@shared/utils/component-utils';
 import { safeEventPreventAll } from '@shared/utils/event-utils';
 import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
-import type { ToolbarProps, FitMode } from './Toolbar.types';
+import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { ToolbarState, ToolbarSettingsControllerResult } from '@shared/hooks';
 
 const solid = getSolid();

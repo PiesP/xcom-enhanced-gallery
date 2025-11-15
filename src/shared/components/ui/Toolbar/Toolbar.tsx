@@ -1,13 +1,21 @@
-import type { JSXElement } from '../../../external/vendors';
-import { getSolid } from '../../../external/vendors';
-import { useToolbarState, useToolbarSettingsController } from '@shared/hooks';
-import { getToolbarDataState, getToolbarClassName } from '../../../utils/toolbar-utils';
+import type { JSXElement } from '@shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
+import {
+  useToolbarState,
+  useToolbarSettingsController,
+  type ToolbarSettingsControllerResult,
+} from '@shared/hooks';
+import { getToolbarDataState, getToolbarClassName } from '@shared/utils/toolbar-utils';
 import { createClassName } from '@shared/utils/component-utils';
-import { ArrowsPointingIn, ArrowsRightLeft, ArrowsUpDown, ArrowsPointingOut } from '../Icon';
-import type { ToolbarSettingsControllerResult } from '@shared/hooks';
-import { ToolbarView } from './ToolbarView';
-import type { ToolbarProps, FitMode } from './Toolbar.types';
 import { safeEventPreventAll, safeEventPrevent } from '@shared/utils/event-utils';
+import {
+  ArrowsPointingIn,
+  ArrowsPointingOut,
+  ArrowsRightLeft,
+  ArrowsUpDown,
+} from '@shared/components/ui/Icon';
+import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
+import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
 import styles from './Toolbar.module.css';
 
 const solid = getSolid();
@@ -42,6 +50,76 @@ function clampIndex(index: number, total: number): number {
 
   return Math.min(Math.max(index, 0), total - 1);
 }
+
+type FitModeHandlers = Record<FitMode, ToolbarProps['onFitOriginal'] | undefined>;
+
+interface NavigationStateParams {
+  readonly total: number;
+  readonly toolbarDisabled: boolean;
+  readonly downloadBusy: boolean;
+  readonly index: number;
+}
+
+const resolveDisplayedIndex = ({
+  total,
+  currentIndex,
+  focusedIndex,
+}: {
+  total: number;
+  currentIndex: number;
+  focusedIndex?: number | null | undefined;
+}): number => {
+  if (total <= 0) {
+    return 0;
+  }
+
+  if (typeof focusedIndex === 'number' && focusedIndex >= 0 && focusedIndex < total) {
+    return focusedIndex;
+  }
+
+  return clampIndex(currentIndex, total);
+};
+
+const calculateProgressWidth = (index: number, total: number): string => {
+  if (total <= 0) {
+    return '0%';
+  }
+
+  return `${((index + 1) / total) * 100}%`;
+};
+
+const computeNavigationState = ({
+  total,
+  toolbarDisabled,
+  downloadBusy,
+  index,
+}: NavigationStateParams) => {
+  const hasItems = total > 0;
+  const prevDisabled = toolbarDisabled || !hasItems || index <= 0;
+  const nextDisabled = toolbarDisabled || !hasItems || index >= Math.max(total - 1, 0);
+  const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
+
+  return {
+    prevDisabled,
+    nextDisabled,
+    canDownloadAll: total > 1,
+    downloadDisabled,
+    anyActionDisabled: toolbarDisabled || downloadBusy,
+  } as const;
+};
+
+const createGuardedHandler = (
+  guard: () => boolean,
+  action?: () => void
+): ((event: MouseEvent) => void) => {
+  return event => {
+    safeEventPrevent(event);
+    if (guard()) {
+      return;
+    }
+    action?.();
+  };
+};
 
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const props = mergeProps(DEFAULT_PROPS, rawProps);
@@ -106,117 +184,70 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       props.className ?? ''
     )
   );
+  const totalItems = createMemo(() => Math.max(0, props.totalCount));
 
-  const displayedIndex = createMemo(() => {
-    const total = props.totalCount;
-    if (total <= 0) {
-      return 0;
-    }
+  const displayedIndex = createMemo(() =>
+    resolveDisplayedIndex({
+      total: totalItems(),
+      currentIndex: props.currentIndex,
+      focusedIndex: props.focusedIndex,
+    })
+  );
 
-    const focus = props.focusedIndex;
-    if (typeof focus === 'number' && focus >= 0 && focus < total) {
-      return focus;
-    }
-
-    return clampIndex(props.currentIndex, total);
-  });
-
-  const progressWidth = createMemo(() => {
-    const total = props.totalCount;
-    if (total <= 0) {
-      return '0%';
-    }
-
-    return `${((displayedIndex() + 1) / total) * 100}%`;
-  });
+  const progressWidth = createMemo(() => calculateProgressWidth(displayedIndex(), totalItems()));
 
   const toolbarDataState = createMemo(() => getToolbarDataState(toolbarState));
 
-  const navState = createMemo(() => {
-    const total = Math.max(0, props.totalCount);
-    const toolbarDisabled = Boolean(props.disabled);
-    const downloadBusy = Boolean(props.isDownloading);
-    const hasItems = total > 0;
-    const hasMultipleItems = total > 1;
-    const current = displayedIndex();
+  const navState = createMemo(() =>
+    computeNavigationState({
+      total: totalItems(),
+      toolbarDisabled: Boolean(props.disabled),
+      downloadBusy: Boolean(props.isDownloading),
+      index: displayedIndex(),
+    })
+  );
 
-    const baseNavDisabled = toolbarDisabled || !hasItems;
-    const prevDisabled = baseNavDisabled || current <= 0;
-    const nextDisabled = baseNavDisabled || current >= Math.max(total - 1, 0);
-    const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
+  const fitModeHandlers = createMemo<FitModeHandlers>(() => ({
+    original: props.onFitOriginal,
+    fitWidth: props.onFitWidth,
+    fitHeight: props.onFitHeight,
+    fitContainer: props.onFitContainer,
+  }));
 
-    return {
-      prevDisabled,
-      nextDisabled,
-      canDownloadAll: hasMultipleItems,
-      downloadDisabled,
-      anyActionDisabled: toolbarDisabled || downloadBusy,
-    } as const;
-  });
-
-  const getFitHandler = (mode: FitMode): ToolbarProps['onFitOriginal'] => {
-    switch (mode) {
-      case 'fitWidth':
-        return props.onFitWidth;
-      case 'fitHeight':
-        return props.onFitHeight;
-      case 'fitContainer':
-        return props.onFitContainer;
-      default:
-        return props.onFitOriginal;
-    }
-  };
+  const isToolbarDisabled = () => Boolean(props.disabled);
 
   const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
     safeEventPreventAll(event);
-    if (!props.disabled) {
-      getFitHandler(mode)?.(event);
+    if (isToolbarDisabled()) {
+      return;
     }
+
+    fitModeHandlers()[mode]?.(event);
   };
 
   const isFitDisabled = (mode: FitMode): boolean => {
-    if (props.disabled) {
+    if (isToolbarDisabled()) {
       return true;
     }
 
-    if (!getFitHandler(mode)) {
+    const handler = fitModeHandlers()[mode];
+    if (!handler) {
       return true;
     }
 
     return toolbarState.currentFitMode === mode;
   };
 
-  const handlePrevious = (event: MouseEvent) => {
-    safeEventPrevent(event);
-    if (navState().prevDisabled) {
-      return;
-    }
-    props.onPrevious?.();
-  };
-
-  const handleNext = (event: MouseEvent) => {
-    safeEventPrevent(event);
-    if (navState().nextDisabled) {
-      return;
-    }
-    props.onNext?.();
-  };
-
-  const handleDownloadCurrent = (event: MouseEvent) => {
-    safeEventPrevent(event);
-    if (navState().downloadDisabled) {
-      return;
-    }
-    props.onDownloadCurrent?.();
-  };
-
-  const handleDownloadAll = (event: MouseEvent) => {
-    safeEventPrevent(event);
-    if (navState().downloadDisabled) {
-      return;
-    }
-    props.onDownloadAll?.();
-  };
+  const handlePrevious = createGuardedHandler(() => navState().prevDisabled, props.onPrevious);
+  const handleNext = createGuardedHandler(() => navState().nextDisabled, props.onNext);
+  const handleDownloadCurrent = createGuardedHandler(
+    () => navState().downloadDisabled,
+    props.onDownloadCurrent
+  );
+  const handleDownloadAll = createGuardedHandler(
+    () => navState().downloadDisabled,
+    props.onDownloadAll
+  );
 
   const handleClose = (event: MouseEvent) => {
     safeEventPrevent(event);
@@ -247,5 +278,5 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   });
 }
 
-export type { ToolbarProps, FitMode } from './Toolbar.types';
+export type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
 export const Toolbar = ToolbarContainer;
