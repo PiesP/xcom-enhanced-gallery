@@ -16,6 +16,23 @@ src/shared/styles/
 
 ## 🎯 Core Principles
 
+### 0. Cascade Layer Order
+
+To keep isolation predictable, every shared stylesheet must register itself in
+the following layer sequence (top to bottom priority):
+
+1. `@layer xeg.tokens` – primitive/semantic/component tokens + animation tokens
+2. `@layer xeg.base` – scoped reset files (e.g. `base/reset.css`)
+3. `@layer xeg.utilities` – helper classes and keyframes (`utilities/*`)
+4. `@layer xeg.components` – shared UI primitives (CSS Modules usually don't
+   need a layer, but global component helpers belong here)
+5. `@layer xeg.features` – gallery-specific globals (e.g. `gallery-global.css`,
+   `isolated-gallery.css`)
+
+Layers downstream may override upstream values when absolutely necessary, but
+new rules should live in the lowest applicable layer to prevent specificity
+wars.
+
 ### 1. SSOT (Single Source of Truth): CSS variables at top level
 
 **CSS variables have the highest authority for all tokens.** JS tokens serve
@@ -160,16 +177,22 @@ import '@shared/styles/design-tokens.component.css'; // 3단계
 
 ### `isolated-gallery.css`
 
-**역할**: 트위터/X.com과 격리된 갤러리 스타일
+**역할**: 트위터/X.com과 격리된 갤러리 루트 컨테이너 정의 (Light DOM 기반)
 
 ```css
-.xeg-gallery-root {
-  /* 격리된 갤러리 루트만 스타일 */
-  all: initial;
-  isolation: isolate;
-  background: var(--xeg-gallery-bg);
+@layer xeg.features {
+  .xeg-gallery-root {
+    all: initial;
+    position: fixed;
+    inset: 0;
+    isolation: isolate;
+    background: var(--xeg-gallery-bg);
+  }
 }
 ```
+
+이 파일은 이제 루트 컨테이너 속성만 유지하고, 실제 레이아웃/컴포넌트 스타일은
+`gallery-global.css` 또는 CSS Modules에 위임합니다.
 
 ### `tokens.ts` (legacy)
 
@@ -388,6 +411,14 @@ Keeping the map local prevents divergence from the CSS source of truth while
 still giving editors something to autocomplete.
 
 ### Q3: 색상 변경이 필요하면?
+
+### Q4: Glass Surface 유틸은 어디에 정의되나요?
+
+`src/features/gallery/styles/gallery-global.css` 안의 `@layer xeg.features`
+블록에서 `:where(.xeg-glass-surface, .glass-surface)` 와 그 파생
+클래스(`.xeg-glass-surface-light`, `.xeg-glass-surface-dark`)를 정의합니다.
+`xeg-` 접두사가 공식 네이밍이며, `.glass-surface`는 호환성을 위한 얇은
+alias입니다.
 
 **A**: Primitive 레벨에서만 변경:
 

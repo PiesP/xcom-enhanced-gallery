@@ -1,8 +1,8 @@
 /**
  * @fileoverview Glass Surface 디자인 일관성 테스트 (분리된 glassmorphism 클래스)
  * @description TDD로 개발된 glassmorphism 스타일의 일관성과 중복 제거를 검증합니다.
- * - Toolbar: 어두운 glassmorphism (glass-surface-dark)
- * - SettingsModal: 밝은 glassmorphism (glass-surface-light)
+ * - Toolbar: 어두운 glassmorphism (xeg-glass-surface-dark)
+ * - SettingsModal: 밝은 glassmorphism (xeg-glass-surface-light)
  * @version 6.1.0 - 분리된 glassmorphism 클래스 지원
  */
 
@@ -20,6 +20,15 @@ function readFile(relativePath: string): string {
   return readFileSync(fullPath, 'utf-8');
 }
 
+function extractGlassSurfaceBlock(cssContent: string, variant: 'light' | 'dark'): string {
+  const selector = `:where(.xeg-glass-surface-${variant}`;
+  const start = cssContent.indexOf(selector);
+  expect(start).toBeGreaterThan(-1);
+  const end = cssContent.indexOf('}', start);
+  expect(end).toBeGreaterThan(start);
+  return cssContent.substring(start, end);
+}
+
 describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래스)', () => {
   setupGlobalTestIsolation();
 
@@ -27,27 +36,21 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
     it('gallery-global.css에 glass-surface-light 클래스가 정의되어야 함', () => {
       const globalCSS = readFile('src/features/gallery/styles/gallery-global.css');
 
-      // glass-surface-light 클래스 존재 여부 확인
-      expect(globalCSS.includes('.glass-surface-light')).toBe(true);
+      // xeg-glass-surface-light 클래스 존재 여부 확인
+      expect(globalCSS.includes('.xeg-glass-surface-light')).toBe(true);
     });
 
     it('gallery-global.css에 glass-surface-dark 클래스가 정의되어야 함', () => {
       const globalCSS = readFile('src/features/gallery/styles/gallery-global.css');
 
-      // glass-surface-dark 클래스 존재 여부 확인
-      expect(globalCSS.includes('.glass-surface-dark')).toBe(true);
+      // xeg-glass-surface-dark 클래스 존재 여부 확인
+      expect(globalCSS.includes('.xeg-glass-surface-dark')).toBe(true);
     });
 
     it('glass-surface-light 클래스가 밝은 glassmorphism 속성을 포함해야 함', () => {
       const globalCSS = readFile('src/features/gallery/styles/gallery-global.css');
 
-      // glass-surface-light 클래스 내용 추출
-      const glassSurfaceLightStart = globalCSS.indexOf('.glass-surface-light');
-      const glassSurfaceLightEnd = globalCSS.indexOf('}', glassSurfaceLightStart);
-      const glassSurfaceLightContent = globalCSS.substring(
-        glassSurfaceLightStart,
-        glassSurfaceLightEnd
-      );
+      const glassSurfaceLightContent = extractGlassSurfaceBlock(globalCSS, 'light');
 
       // 필수 glassmorphism 속성들이 포함되어야 함
       const requiredStyles = ['background:', 'backdrop-filter:', 'box-shadow:', 'border:'];
@@ -55,18 +58,14 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
       requiredStyles.forEach(style => {
         expect(glassSurfaceLightContent.includes(style)).toBe(true);
       });
+
+      expect(glassSurfaceLightContent).toMatch(/var\(--xeg-surface-glass-bg-light\)/);
     });
 
     it('glass-surface-dark 클래스가 어두운 glassmorphism 속성을 포함해야 함', () => {
       const globalCSS = readFile('src/features/gallery/styles/gallery-global.css');
 
-      // glass-surface-dark 클래스 내용 추출
-      const glassSurfaceDarkStart = globalCSS.indexOf('.glass-surface-dark');
-      const glassSurfaceDarkEnd = globalCSS.indexOf('}', glassSurfaceDarkStart);
-      const glassSurfaceDarkContent = globalCSS.substring(
-        glassSurfaceDarkStart,
-        glassSurfaceDarkEnd
-      );
+      const glassSurfaceDarkContent = extractGlassSurfaceBlock(globalCSS, 'dark');
 
       // 필수 glassmorphism 속성들이 포함되어야 함
       const requiredStyles = ['background:', 'backdrop-filter:', 'box-shadow:', 'border:'];
@@ -75,8 +74,8 @@ describe('Glass Surface 디자인 일관성 - TDD GREEN Phase (분리된 클래�
         expect(glassSurfaceDarkContent.includes(style)).toBe(true);
       });
 
-      // 어두운 배경 색상인지 확인
-      expect(glassSurfaceDarkContent.includes('rgba(0, 0, 0')).toBe(true);
+      // 어두운 배경이 semantic 토큰을 사용하고 있는지 확인
+      expect(glassSurfaceDarkContent).toMatch(/var\(--xeg-surface-glass-bg-dark\)/);
     });
   });
 

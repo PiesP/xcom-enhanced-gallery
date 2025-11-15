@@ -3,7 +3,7 @@
  * @description Normalizes browser defaults while preserving design-token fallbacks.
  */
 
-@layer xeg.reset {
+@layer xeg.base {
   :where(.xeg-gallery-root, .xeg-gallery-root *),
   :where(.xeg-gallery-root *::before, .xeg-gallery-root *::after) {
     box-sizing: border-box;

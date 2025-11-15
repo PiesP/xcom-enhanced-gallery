@@ -202,6 +202,7 @@
 
   /* Layer Management - Semantic Roles */
   --xeg-layer-base: 0;
+  --xeg-layer-root: var(--xeg-z-overlay);
   --xeg-layer-toolbar: var(--xeg-z-toolbar);
   --xeg-layer-modal: var(--xeg-z-modal);
   --xeg-layer-toast: var(--xeg-z-toast);

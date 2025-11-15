@@ -32,18 +32,22 @@ describe('Color Token Consistency', () => {
       expect(cssContent).not.toMatch(/#1a8cd8/i);
     });
 
-    it('glass-surface에서 rgba 색상 하드코딩을 금지한다', () => {
+    it('xeg-glass-surface 계열에서 rgba 색상 하드코딩을 금지한다', () => {
       const cssPath = resolve(projectRoot, 'src/features/gallery/styles/gallery-global.css');
       const cssContent = readFileSync(cssPath, 'utf8');
 
-      // glass-surface 클래스 내 rgba 하드코딩 검증
-      const glassSurfaceSection = cssContent.match(/\.glass-surface\s*{[^}]+}/gs);
-      if (glassSurfaceSection) {
-        for (const section of glassSurfaceSection) {
-          expect(section).not.toMatch(/rgba\(29,\s*155,\s*240/i);
-          expect(section).not.toMatch(/rgba\(21,\s*32,\s*43/i);
-        }
-      }
+      // xeg-glass-surface 계열 selector 내 rgba 하드코딩 검증
+      const glassSurfaceSections = [
+        ...(cssContent.match(/:where\(\.xeg-glass-surface[^)]*\)\s*{[^}]+}/gs) ?? []),
+        ...(cssContent.match(/:where\(\.xeg-glass-surface-(?:light|dark)[^)]*\)\s*{[^}]+}/gs) ??
+          []),
+      ];
+
+      glassSurfaceSections.forEach(section => {
+        expect(section).not.toMatch(/rgba\(29,\s*155,\s*240/i);
+        expect(section).not.toMatch(/rgba\(21,\s*32,\s*43/i);
+        expect(section).not.toMatch(/rgba\(0,\s*0,\s*0/i);
+      });
     });
   });
 
