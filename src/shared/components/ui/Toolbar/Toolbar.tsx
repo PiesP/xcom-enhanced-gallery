@@ -134,18 +134,23 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
 
   const navState = createMemo(() => {
     const total = Math.max(0, props.totalCount);
-    const disabled = Boolean(props.disabled);
+    const toolbarDisabled = Boolean(props.disabled);
     const downloadBusy = Boolean(props.isDownloading);
+    const hasItems = total > 0;
+    const hasMultipleItems = total > 1;
+    const current = displayedIndex();
 
-    const navigationDisabled = disabled || total <= 1;
-    const downloadDisabled = disabled || downloadBusy;
+    const baseNavDisabled = toolbarDisabled || !hasItems;
+    const prevDisabled = baseNavDisabled || current <= 0;
+    const nextDisabled = baseNavDisabled || current >= Math.max(total - 1, 0);
+    const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
 
     return {
-      prevDisabled: navigationDisabled,
-      nextDisabled: navigationDisabled,
-      canDownloadAll: total > 1,
+      prevDisabled,
+      nextDisabled,
+      canDownloadAll: hasMultipleItems,
       downloadDisabled,
-      anyActionDisabled: navigationDisabled || downloadDisabled,
+      anyActionDisabled: toolbarDisabled || downloadBusy,
     } as const;
   });
 
@@ -169,25 +174,47 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     }
   };
 
-  const isFitDisabled = (mode: FitMode): boolean => Boolean(props.disabled || !getFitHandler(mode));
+  const isFitDisabled = (mode: FitMode): boolean => {
+    if (props.disabled) {
+      return true;
+    }
+
+    if (!getFitHandler(mode)) {
+      return true;
+    }
+
+    return toolbarState.currentFitMode === mode;
+  };
 
   const handlePrevious = (event: MouseEvent) => {
     safeEventPrevent(event);
+    if (navState().prevDisabled) {
+      return;
+    }
     props.onPrevious?.();
   };
 
   const handleNext = (event: MouseEvent) => {
     safeEventPrevent(event);
+    if (navState().nextDisabled) {
+      return;
+    }
     props.onNext?.();
   };
 
   const handleDownloadCurrent = (event: MouseEvent) => {
     safeEventPrevent(event);
+    if (navState().downloadDisabled) {
+      return;
+    }
     props.onDownloadCurrent?.();
   };
 
   const handleDownloadAll = (event: MouseEvent) => {
     safeEventPrevent(event);
+    if (navState().downloadDisabled) {
+      return;
+    }
     props.onDownloadAll?.();
   };
 

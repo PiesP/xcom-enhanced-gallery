@@ -43,9 +43,8 @@ test.describe('Toolbar accessibility', () => {
     expect(buttonCount).toBeGreaterThanOrEqual(8);
   });
 
-  test('circular navigation keeps buttons enabled', async ({ page }) => {
-    // Phase 66: Circular navigation - always enabled when totalCount > 1
-    // First state: currentIndex=0, totalCount=2
+  test('navigation buttons disable when no direction is available', async ({ page }) => {
+    // First state: currentIndex=0 (first item)
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__;
       if (!harness) throw new Error('Harness not available');
@@ -63,9 +62,10 @@ test.describe('Toolbar accessibility', () => {
     await expect(prevButtonTitle).toBeVisible();
     await expect(nextButtonTitle).toBeVisible();
 
-    // Circular navigation: previous button enabled even on first item
-    await expect(prevButtonTitle).toHaveAttribute('data-disabled', 'false');
+    await expect(prevButtonTitle).toHaveAttribute('data-disabled', 'true');
     await expect(nextButtonTitle).toHaveAttribute('data-disabled', 'false');
+    await expect(prevButtonTitle).toBeDisabled();
+    await expect(nextButtonTitle).toBeEnabled();
 
     // Second state: remount with currentIndex=1 (last item)
     await page.evaluate(async () => {
@@ -83,8 +83,10 @@ test.describe('Toolbar accessibility', () => {
     const prevButton2 = page.locator('[data-gallery-element="nav-previous"]');
     const nextButton2 = page.locator('[data-gallery-element="nav-next"]');
 
-    // Last item: next button also enabled (circular navigation)
+    // Last item: only next button disables, previous remains enabled
     await expect(prevButton2).toHaveAttribute('data-disabled', 'false');
-    await expect(nextButton2).toHaveAttribute('data-disabled', 'false');
+    await expect(nextButton2).toHaveAttribute('data-disabled', 'true');
+    await expect(prevButton2).toBeEnabled();
+    await expect(nextButton2).toBeDisabled();
   });
 });

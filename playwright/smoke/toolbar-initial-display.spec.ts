@@ -94,7 +94,7 @@ test.describe('Phase 146: Toolbar Initial Display (E2E)', () => {
     });
   });
 
-  test('buttons are in clickable state', async ({ page }) => {
+  test('navigation buttons are interactive on mount', async ({ page }) => {
     await page.evaluate(async () => {
       const harness = window.__XEG_HARNESS__ as XegHarness;
       if (!harness) throw new Error('Harness not available');
@@ -108,14 +108,16 @@ test.describe('Phase 146: Toolbar Initial Display (E2E)', () => {
 
     // Find previous button
     const prevButton = page.locator('[data-gallery-element="nav-previous"]').first();
+    const nextButton = page.locator('[data-gallery-element="nav-next"]').first();
 
-    // Check if button is enabled
-    await expect(prevButton).toBeEnabled();
-    await expect(prevButton).toBeVisible();
+    await expect(prevButton).toHaveAttribute('data-disabled', 'true');
+    await expect(nextButton).toHaveAttribute('data-disabled', 'false');
+    await expect(prevButton).toBeDisabled();
+    await expect(nextButton).toBeEnabled();
 
     test.info().annotations.push({
       type: 'note',
-      description: '✓ Toolbar buttons are clickable',
+      description: '✓ Navigation buttons reflect disabled state on mount',
     });
   });
 
