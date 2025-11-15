@@ -81,7 +81,7 @@
   position: relative;
   overflow: clip;
   border-radius: var(--xeg-radius-md);
-  background: var(--xeg-toolbar-surface);
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
@@ -119,7 +119,7 @@
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
-  background: var(--xeg-toolbar-surface);
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border: none; /* Phase 58: 툴바 외곽선 제거하여 디자인 패턴 통일 */
   border-radius: var(--xeg-radius-lg);
 
@@ -264,7 +264,7 @@
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
 
-  background: var(--xeg-toolbar-surface);
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
 
   --button-color: var(--xeg-color-neutral-400);
 
@@ -276,7 +276,11 @@
   .toolbarButton:hover:not([data-disabled='true']) {
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
-    background: color-mix(in oklch, var(--xeg-toolbar-surface) 92%, var(--color-text-primary) 8%);
+    background: color-mix(
+      in oklch,
+      var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface)) 92%,
+      var(--color-text-primary) 8%
+    );
     border-color: var(--xeg-color-border-hover);
     transform: translateY(var(--xeg-button-lift));
   }
@@ -581,7 +585,7 @@ button.fitButton {
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
-    background: var(--xeg-toolbar-surface);
+    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     box-shadow:
@@ -590,7 +594,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-toolbar-surface);
+    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   }
 }
 
@@ -598,7 +602,7 @@ button.fitButton {
 @media (width <= 48em) {
   /* 768px → 48em */
   .galleryToolbar {
-    background: var(--xeg-toolbar-surface);
+    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
@@ -606,7 +610,7 @@ button.fitButton {
   }
 
   [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-toolbar-surface);
+    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   }
 }
 
@@ -701,7 +705,7 @@ button.fitButton {
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s var(--xeg-duration-normal);
-  background: var(--xeg-toolbar-surface);
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border-top: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   box-shadow: var(--xeg-toolbar-panel-shadow);
@@ -771,7 +775,7 @@ button.fitButton {
   font-size: var(--xeg-font-size-md);
   line-height: 1.5;
   color: var(--xeg-color-text-primary);
-  background: var(--xeg-toolbar-surface);
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   white-space: pre-wrap;

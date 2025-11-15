@@ -228,6 +228,7 @@ export function useToolbarSettingsController(
   createEffect(() => {
     const unsubscribe = themeManager.onThemeChange((_, setting) => {
       setCurrentTheme(toThemeOption(setting));
+      checkHighContrast();
     });
 
     onCleanup(() => {
@@ -245,7 +246,7 @@ export function useToolbarSettingsController(
     });
   });
 
-  const checkHighContrast = () => {
+  function checkHighContrast(): void {
     const toolbarElement = toolbarRef();
     if (!toolbarElement || !documentRef || !windowRef) {
       setNeedsHighContrast(false);
@@ -260,7 +261,7 @@ export function useToolbarSettingsController(
     });
 
     setNeedsHighContrast(shouldEnable);
-  };
+  }
 
   createEffect(() => {
     if (!windowRef) {

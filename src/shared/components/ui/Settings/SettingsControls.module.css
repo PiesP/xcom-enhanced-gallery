@@ -39,7 +39,7 @@
  *   - Result: Compatible with all browsers, options render correctly
  * - Custom styling via variables instead:
  *   - --xeg-settings-select-padding: Input padding
- *   - --xeg-toolbar-surface: Background color (shared toolbar surface)
+*   - --xeg-toolbar-panel-surface: Background color (shared toolbar surface)
  *   - --xeg-toolbar-border: Border color (shared toolbar surface)
  *   - --xeg-settings-select-font-size: Font size
  *
@@ -91,7 +91,7 @@
  * - Typography: --xeg-settings-label-font-size, --font-size-xs, --font-weight-*
  * - Colors: --xeg-color-text-primary, --xeg-color-text-secondary, --xeg-color-border-*
  * - Interactive: --xeg-focus-ring, --xeg-focus-ring-offset, --xeg-radius-md
- * - Input: --xeg-settings-select-padding, --xeg-toolbar-surface, --xeg-settings-select-font-size
+* - Input: --xeg-settings-select-padding, --xeg-toolbar-panel-surface, --xeg-settings-select-font-size
  * - Animation: --xeg-duration-fast, --xeg-ease-standard
  * - Borders: --border-width-thin
  *
@@ -251,7 +251,7 @@
  * - color: --xeg-color-text-primary (text color, theme-aware)
  *
  * **Visual Design**:
- * - background-color: --xeg-toolbar-surface (input background, shared surface)
+* - background-color: --xeg-toolbar-panel-surface (input background, shared surface)
  * - border: var(--border-width-thin) solid --xeg-toolbar-border (1px border)
  * - border-radius: --xeg-radius-md (rounded corners)
  *
@@ -274,7 +274,7 @@
  * **Design Token Dependencies**:
  * - --xeg-settings-select-padding: Input padding
  * - --xeg-settings-select-font-size: Input font size
- * - --xeg-toolbar-surface: Background color
+* - --xeg-toolbar-panel-surface: Background color
  * - --xeg-toolbar-border: Border color
  * - --border-width-thin: Border width (typically 1px)
  * - --xeg-radius-md: Border radius
@@ -290,7 +290,7 @@
   padding: var(--xeg-settings-select-padding);
   font-size: var(--xeg-settings-select-font-size);
   color: var(--xeg-color-text-primary);
-  background-color: var(--xeg-toolbar-surface);
+  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
@@ -321,7 +321,7 @@
  *
  * **Changes**:
  * - border-color: Changes to --xeg-color-border-hover
- * - background-color: Remains --xeg-toolbar-surface (or slightly lighter)
+ * - background-color: Matches --xeg-toolbar-panel-surface for consistent surface color
  * - Smooth transition via --xeg-duration-fast
  *
  * **User Experience**:
@@ -331,11 +331,7 @@
  */
 .select:hover {
   border-color: var(--xeg-color-border-hover);
-  background-color: color-mix(
-    in oklch,
-    var(--xeg-toolbar-surface) 92%,
-    var(--color-text-primary) 8%
-  );
+  background-color: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
 }
 
 /**
