@@ -3,164 +3,176 @@
  * @description 컴포넌트별 전용 토큰들 - semantic 값들을 참조
  */
 
-:root {
-  /* Gallery Component - 배경은 semantic 레벨의 --xeg-gallery-bg 사용 */
-  /* Removed unused: --gallery-border, --gallery-shadow */
+@layer xeg.tokens {
+  :root {
+    /* Gallery Component - 배경은 semantic 레벨의 --xeg-gallery-bg 사용 */
+    /* Removed unused: --gallery-border, --gallery-shadow */
 
-  /* Toolbar Component */
-  --toolbar-bg: var(--xeg-bg-toolbar);
-  /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow, --toolbar-height, --toolbar-padding, --toolbar-gap */
+    /* Toolbar Component */
+    --toolbar-bg: var(--xeg-bg-toolbar);
+    /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow, --toolbar-height, --toolbar-padding, --toolbar-gap */
 
-  /* Toolbar Expandable Panel (Phase 44) */
-  --xeg-toolbar-panel-transition:
-    height var(--xeg-duration-normal) var(--xeg-ease-standard),
-    opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
-  --xeg-toolbar-panel-height: 0;
-  --xeg-toolbar-panel-max-height: 17.5rem; /* 280px = 17.5rem */
+    /* Toolbar Expandable Panel (Phase 44) */
+    --xeg-toolbar-panel-transition:
+      height var(--xeg-duration-normal) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+    --xeg-toolbar-panel-height: 0;
+    --xeg-toolbar-panel-max-height: 17.5rem; /* 280px = 17.5rem */
 
-  /* Button Component */
-  --button-bg-primary-hover: var(--color-primary-hover);
-  --button-bg-primary-active: var(--color-primary-active);
-  --button-text-primary: var(--color-text-inverse);
-  --button-text-secondary: var(--color-text-primary);
-  --button-border: var(--color-border-default);
-  /* Removed: --button-bg-primary, --button-radius, --button-padding-x, --button-padding-y, --button-height */
-  --button-transition: var(--transition-fast);
+    /* Button Component */
+    --button-bg-primary-hover: var(--color-primary-hover);
+    --button-bg-primary-active: var(--color-primary-active);
+    --button-text-primary: var(--color-text-inverse);
+    --button-text-secondary: var(--color-text-primary);
+    --button-border: var(--color-border-default);
+    /* Removed: --button-bg-primary, --button-radius, --button-padding-x, --button-padding-y, --button-height */
+    --button-transition: var(--transition-fast);
 
-  /* Toast Component */
-  --toast-bg-success: var(--color-success-bg);
-  --toast-bg-error: var(--color-error-bg);
-  --toast-bg-warning: var(--color-warning-bg);
-  --toast-bg-info: var(--color-info-bg);
-  --toast-text-success: var(--color-success);
-  --toast-text-error: var(--color-error);
-  --toast-text-warning: var(--color-warning);
-  --toast-text-info: var(--color-info);
-  --toast-border-success: var(--color-success);
-  --toast-border-error: var(--color-error);
-  --toast-border-warning: var(--color-warning);
-  --toast-border-info: var(--color-info);
-  --toast-radius: var(--xeg-radius-lg);
-  /* Removed: --toast-padding (use --space-md directly) */
-  --toast-shadow: var(--shadow-md);
-  --toast-offset: 1.25rem; /* 20px = 1.25rem */
+    /* Toast Component */
+    --toast-bg-success: var(--color-success-bg);
+    --toast-bg-error: var(--color-error-bg);
+    --toast-bg-warning: var(--color-warning-bg);
+    --toast-bg-info: var(--color-info-bg);
+    --toast-text-success: var(--color-success);
+    --toast-text-error: var(--color-error);
+    --toast-text-warning: var(--color-warning);
+    --toast-text-info: var(--color-info);
+    --toast-border-success: var(--color-success);
+    --toast-border-error: var(--color-error);
+    --toast-border-warning: var(--color-warning);
+    --toast-border-info: var(--color-info);
+    --toast-radius: var(--xeg-radius-lg);
+    /* Removed: --toast-padding (use --space-md directly) */
+    --toast-shadow: var(--shadow-md);
+    --toast-offset: 1.25rem; /* 20px = 1.25rem */
 
-  /* Panel/Surface Component */
-  --panel-bg: var(--color-bg-elevated);
-  --panel-border: var(--color-border-default);
-  --panel-radius: var(--xeg-radius-lg);
-  /* Removed: --panel-padding (use --space-md directly) */
-  --panel-shadow: var(--shadow-sm);
+    /* Panel/Surface Component */
+    --panel-bg: var(--color-bg-elevated);
+    --panel-border: var(--color-border-default);
+    --panel-radius: var(--xeg-radius-lg);
+    /* Removed: --panel-padding (use --space-md directly) */
+    --panel-shadow: var(--shadow-sm);
 
-  /* Legacy glass surface tokens now map to flat panels */
-  --glass-bg: var(--color-glass-bg);
-  --glass-border: var(--color-glass-border);
-  --glass-backdrop-filter: none;
-  --glass-shadow: none;
+    /* Legacy glass surface tokens now map to flat panels */
+    --glass-bg: var(--color-glass-bg);
+    --glass-border: var(--color-glass-border);
+    --glass-backdrop-filter: none;
+    --glass-shadow: none;
 
-  /* Media/Image Component */
-  --media-border-radius: var(--xeg-radius-md);
-  --media-loading-bg: var(--color-bg-secondary);
-  --media-placeholder-text: var(--color-text-muted);
-  --xeg-aspect-default: 4 / 3;
+    /* Media/Image Component */
+    --media-border-radius: var(--xeg-radius-md);
+    --media-loading-bg: var(--color-bg-secondary);
+    --media-placeholder-text: var(--color-text-muted);
+    --xeg-aspect-default: 4 / 3;
 
-  /* Scrollbar Component */
-  --scrollbar-width: 0.5rem; /* 8px = 0.5rem */
-  --scrollbar-track-bg: var(--color-bg-secondary);
-  --scrollbar-thumb-bg: var(--color-border-emphasis);
-  --scrollbar-thumb-hover-bg: var(--color-text-secondary);
+    /* Scrollbar Component */
+    --scrollbar-width: 0.5rem; /* 8px = 0.5rem */
+    --scrollbar-track-bg: var(--color-bg-secondary);
+    --scrollbar-thumb-bg: var(--color-border-emphasis);
+    --scrollbar-thumb-hover-bg: var(--color-text-secondary);
 
-  /* Hover Zone Component */
-  --hover-zone-height: 7.5rem; /* 120px = 7.5rem */
-  --hover-zone-bg: transparent;
-  --hover-zone-transition: var(--transition-fast);
+    /* Hover Zone Component */
+    --hover-zone-height: 7.5rem; /* 120px = 7.5rem */
+    --hover-zone-bg: transparent;
+    --hover-zone-transition: var(--transition-fast);
 
-  /* Animation Presets - Component Specific */
-  --animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
-  --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-  --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
-  --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-  /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
+    /* Animation Presets - Component Specific */
+    --animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
+    --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+    --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
+    --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+    /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
 
-  /* Icon Component Tokens */
-  --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
-  --xeg-icon-size: var(--size-icon-md);
-  --xeg-icon-line-height: 1;
-  --xeg-icon-color: currentColor;
+    /* Icon Component Tokens */
+    --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
+    --xeg-icon-size: var(--size-icon-md);
+    --xeg-icon-line-height: 1;
+    --xeg-icon-color: currentColor;
 
-  /* Icon Size Variants */
-  --xeg-icon-size-sm: var(--size-icon-sm);
-  --xeg-icon-size-md: var(--size-icon-md);
-  --xeg-icon-size-lg: var(--size-icon-lg);
+    /* Icon Size Variants */
+    --xeg-icon-size-sm: var(--size-icon-sm);
+    --xeg-icon-size-md: var(--size-icon-md);
+    --xeg-icon-size-lg: var(--size-icon-lg);
 
-  /* Button Size Variants */
-  --xeg-button-size-sm: var(--size-button-sm);
-  --xeg-button-size-md: var(--size-button-md);
-  --xeg-button-size-lg: var(--size-button-lg);
+    /* Button Size Variants */
+    --xeg-button-size-sm: var(--size-button-sm);
+    --xeg-button-size-md: var(--size-button-md);
+    --xeg-button-size-lg: var(--size-button-lg);
 
-  /* Text Size Variants */
-  --xeg-text-2xs: var(--font-size-2xs);
-  --xeg-text-xs: var(--font-size-xs);
-  --xeg-text-sm: var(--font-size-sm);
-  --xeg-text-base: var(--font-size-base);
-  --xeg-text-md: var(--font-size-md);
-  --xeg-text-lg: var(--font-size-lg);
-  --xeg-text-xl: var(--font-size-xl);
-  --xeg-text-2xl: var(--font-size-2xl);
-  --xeg-text-3xl: var(--font-size-3xl);
+    /* Text Size Variants */
+    --xeg-text-2xs: var(--font-size-2xs);
+    --xeg-text-xs: var(--font-size-xs);
+    --xeg-text-sm: var(--font-size-sm);
+    --xeg-text-base: var(--font-size-base);
+    --xeg-text-md: var(--font-size-md);
+    --xeg-text-lg: var(--font-size-lg);
+    --xeg-text-xl: var(--font-size-xl);
+    --xeg-text-2xl: var(--font-size-2xl);
+    --xeg-text-3xl: var(--font-size-3xl);
 
-  /* Spacing Variants */
-  --xeg-spacing-xs: var(--space-xs);
-  --xeg-spacing-sm: var(--space-sm);
-  --xeg-spacing-md: var(--space-md);
-  --xeg-spacing-lg: var(--space-lg);
-  --xeg-spacing-xl: var(--space-xl);
-  --xeg-spacing-2xl: var(--space-2xl);
+    /* Spacing Variants */
+    --xeg-spacing-xs: var(--space-xs);
+    --xeg-spacing-sm: var(--space-sm);
+    --xeg-spacing-md: var(--space-md);
+    --xeg-spacing-lg: var(--space-lg);
+    --xeg-spacing-xl: var(--space-xl);
+    --xeg-spacing-2xl: var(--space-2xl);
 
-  /* Phase 269: Gallery Initial Height Fallbacks */
-  --xeg-spacing-3xl: 3rem; /* 48px = 3 × 1rem */
-  --xeg-spacing-5xl: 5rem; /* 80px = 5 × 1rem */
-  --xeg-viewport-height-constrained: 90vh; /* 반응형 제약 높이 */
+    /* Phase 269: Gallery Initial Height Fallbacks */
+    --xeg-spacing-3xl: 3rem; /* 48px = 3 × 1rem */
+    --xeg-spacing-5xl: 5rem; /* 80px = 5 × 1rem */
+    --xeg-viewport-height-constrained: 90vh; /* 반응형 제약 높이 */
+  }
 }
 
-/* ======================================= */
-/* Utility Classes */
-/* ======================================= */
+@layer xeg.components {
+  /* ======================================= */
+  /* Utility Classes */
+  /* ======================================= */
 
-/* Legacy glass utility (now a flat surface helper) */
-.xeg-glassmorphism {
-  background: var(--glass-bg);
-  border: 0.0625rem solid var(--glass-border); /* 1px = 0.0625rem */
-  border-radius: var(--xeg-radius-lg);
-}
+  /* Legacy glass utility (now a flat surface helper) */
+  .xeg-glassmorphism {
+    background: var(--glass-bg);
+    border: 0.0625rem solid var(--glass-border); /* 1px = 0.0625rem */
+    border-radius: var(--xeg-radius-lg);
+  }
 
-/* Focus Ring Utility */
-.xeg-focus-ring:focus-visible {
-  outline: var(--xeg-focus-outline);
-  outline-offset: var(--xeg-focus-offset);
-}
+  /* Focus Ring Utility */
+  .xeg-focus-ring {
+    outline: var(--xeg-focus-outline);
+    outline-offset: var(--xeg-focus-offset);
+  }
 
-/* Animation Utility Classes */
-.xeg-anim-fade-in {
-  animation: xeg-fade-in var(--xeg-duration) var(--xeg-easing-ease-out);
-}
+  .xeg-focus-ring:focus-visible {
+    outline: var(--xeg-focus-outline);
+    outline-offset: var(--xeg-focus-offset);
+  }
 
-.xeg-anim-fade-out {
-  animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in);
-}
+  /* Animation Utility Classes */
+  .xeg-anim-fade-in {
+    animation: xeg-fade-in var(--xeg-duration) var(--xeg-easing-ease-out);
+  }
 
-.xeg-anim-slide-in {
-  animation: xeg-slide-in-bottom var(--xeg-duration) var(--xeg-easing-ease-out);
-}
+  .xeg-anim-fade-out {
+    animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in);
+  }
 
-.xeg-anim-slide-out {
-  animation: xeg-slide-out-top var(--xeg-duration-fast) var(--xeg-easing-ease-in);
-}
+  /* Toast animation helpers */
+  .xeg-anim-slide-in {
+    animation: slideInFromRight var(--xeg-duration-fast) var(--xeg-ease-standard);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
 
-.xeg-anim-fade-slide-in {
-  animation:
-    xeg-fade-in var(--xeg-duration) var(--xeg-easing-ease-out),
-    xeg-slide-in-bottom var(--xeg-duration) var(--xeg-easing-ease-out);
+  .xeg-anim-slide-out {
+    animation: xeg-slide-out-top var(--xeg-duration-fast) var(--xeg-easing-ease-in);
+  }
+
+  .xeg-anim-fade-slide-in {
+    animation: fadeSlideIn var(--xeg-duration-normal) var(--xeg-ease-standard);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
 }
 
 /* ======================================= */
@@ -168,54 +180,69 @@
 /* ======================================= */
 
 /* 투명도 감소 선호 지원 */
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --color-glass-bg: var(--color-bg-primary);
-    --glass-bg: var(--color-bg-primary);
-    --xeg-surface-glass-bg: var(--color-bg-surface);
-    --glass-backdrop-filter: none;
+@layer xeg.tokens {
+  @media (prefers-reduced-transparency: reduce) {
+    :root {
+      --color-glass-bg: var(--color-bg-primary);
+      --glass-bg: var(--color-bg-primary);
+      --xeg-surface-glass-bg: var(--color-bg-surface);
+      --glass-backdrop-filter: none;
+    }
   }
 }
 
 /* NOTE: prefers-reduced-motion 토큰은 design-tokens.semantic.css로 통합됨 */
 
-@keyframes xeg-fade-in {
-  from {
-    opacity: 0;
+@layer xeg.components {
+  @keyframes xeg-fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
-  to {
-    opacity: 1;
-  }
-}
 
-@keyframes xeg-fade-out {
-  from {
-    opacity: 1;
+  @keyframes xeg-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
   }
-  to {
-    opacity: 0;
-  }
-}
 
-@keyframes xeg-slide-in-bottom {
-  from {
-    opacity: 0;
-    transform: translateY(1.25rem) scale(0.95); /* 20px = 1.25rem */
+  @keyframes xeg-slide-out-top {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-1.25rem) scale(0.95); /* -20px = -1.25rem */
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
 
-@keyframes xeg-slide-out-top {
-  from {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+  @keyframes slideInFromRight {
+    from {
+      transform: translateX(100%) translateZ(0);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0) translateZ(0);
+      opacity: 1;
+    }
   }
-  to {
-    opacity: 0;
-    transform: translateY(-1.25rem) scale(0.95); /* -20px = -1.25rem */
+
+  @keyframes fadeSlideIn {
+    from {
+      transform: translateY(-0.5rem) translateZ(0);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) translateZ(0);
+      opacity: 1;
+    }
   }
 }
 
