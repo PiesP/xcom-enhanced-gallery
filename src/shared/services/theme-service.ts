@@ -5,6 +5,7 @@
  * @version 3.2.0 - Phase 360: Direct PersistentStorage usage
  */
 
+import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
@@ -33,7 +34,6 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
  * - isInitialized(): Query method for state
  */
 export class ThemeService extends BaseServiceImpl {
-  private static readonly STORAGE_KEY = 'xeg-theme';
   private static readonly VALID_SETTINGS: readonly ThemeSetting[] = ['auto', 'light', 'dark'];
 
   private readonly storage = getPersistentStorage();
@@ -71,14 +71,22 @@ export class ThemeService extends BaseServiceImpl {
    * Restore theme setting
    */
   private async restoreThemeSetting(): Promise<void> {
+    let normalized: ThemeSetting | null = null;
+
     try {
-      const savedSetting = await this.storage.get<string>(ThemeService.STORAGE_KEY);
-      const normalized = ThemeService.normalizeThemeSetting(savedSetting);
-      if (normalized) {
-        this.themeSetting = normalized;
-      }
+      const savedSetting = await this.storage.get<string>(THEME_STORAGE_KEY);
+      normalized = ThemeService.normalizeThemeSetting(savedSetting);
     } catch (error) {
       logger.warn('Failed to restore theme setting from storage:', error);
+    }
+
+    if (!normalized) {
+      normalized = ThemeService.readLocalThemeSetting();
+    }
+
+    if (normalized) {
+      this.themeSetting = normalized;
+      ThemeService.persistLocalThemeSetting(this.themeSetting);
     }
   }
 
@@ -109,6 +117,49 @@ export class ThemeService extends BaseServiceImpl {
     }
 
     return null;
+  }
+
+  private static getSafeLocalStorage(): Storage | null {
+    try {
+      if (typeof globalThis === 'undefined' || typeof globalThis.localStorage === 'undefined') {
+        return null;
+      }
+
+      const storage = globalThis.localStorage;
+      void storage.length;
+      return storage;
+    } catch (error) {
+      logger.debug('[ThemeService] Local storage access unavailable:', error);
+      return null;
+    }
+  }
+
+  private static readLocalThemeSetting(): ThemeSetting | null {
+    const storage = ThemeService.getSafeLocalStorage();
+    if (!storage) {
+      return null;
+    }
+
+    try {
+      const rawValue = storage.getItem(THEME_STORAGE_KEY);
+      return ThemeService.normalizeThemeSetting(rawValue);
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to read theme from local storage:', error);
+      return null;
+    }
+  }
+
+  private static persistLocalThemeSetting(setting: ThemeSetting): void {
+    const storage = ThemeService.getSafeLocalStorage();
+    if (!storage) {
+      return;
+    }
+
+    try {
+      storage.setItem(THEME_STORAGE_KEY, setting);
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to write theme to local storage:', error);
+    }
   }
 
   /**
@@ -154,7 +205,7 @@ export class ThemeService extends BaseServiceImpl {
 
       // Set data-theme attribute for automatic CSS application
       if (typeof document !== 'undefined') {
-        document.documentElement?.setAttribute('data-theme', this.currentTheme);
+        document.documentElement?.setAttribute(THEME_DOM_ATTRIBUTE, this.currentTheme);
       }
 
       // Notify listeners
@@ -207,8 +258,10 @@ export class ThemeService extends BaseServiceImpl {
    * Save theme setting
    */
   private async saveThemeSetting(): Promise<void> {
+    ThemeService.persistLocalThemeSetting(this.themeSetting);
+
     try {
-      await this.storage.set(ThemeService.STORAGE_KEY, this.themeSetting);
+      await this.storage.set(THEME_STORAGE_KEY, this.themeSetting);
     } catch (error) {
       logger.warn('Failed to save theme setting to storage:', error);
     }

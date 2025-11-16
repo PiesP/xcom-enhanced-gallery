@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { THEME_DOM_ATTRIBUTE } from '@shared/constants';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
 
 type ClassListOperation = (...tokens: string[]) => void;
@@ -98,12 +99,12 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
       querySelectorAll: () => [],
       documentElement: {
         setAttribute: (name: string, value: string) => {
-          if (name === 'data-theme') {
+          if (name === THEME_DOM_ATTRIBUTE) {
             currentTheme = value;
           }
         },
         getAttribute: (name: string) => {
-          if (name === 'data-theme') {
+          if (name === THEME_DOM_ATTRIBUTE) {
             return currentTheme;
           }
           return null;
@@ -115,7 +116,8 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
     mockWindow = {
       getComputedStyle: () => ({
         getPropertyValue: (prop: string) => {
-          const isDarkTheme = mockDocument.documentElement.getAttribute('data-theme') === 'dark';
+          const isDarkTheme =
+            mockDocument.documentElement.getAttribute(THEME_DOM_ATTRIBUTE) === 'dark';
 
           const lightThemeVars: Record<string, string> = {
             '--xeg-surface-glass-bg': 'var(--color-bg-surface)',
@@ -156,12 +158,12 @@ describe('Phase 2: 테마 동기화 메커니즘', () => {
       modalElement.classList.add('xeg-glassmorphism', 'modal-variant');
 
       // 라이트 테마 설정
-      mockDocument.documentElement.setAttribute('data-theme', 'light');
+      mockDocument.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
       const lightStyle = mockWindow.getComputedStyle(modalElement);
       const lightBg = lightStyle.getPropertyValue('--xeg-surface-glass-bg');
 
       // 다크 테마로 변경
-      mockDocument.documentElement.setAttribute('data-theme', 'dark');
+      mockDocument.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
       const darkStyle = mockWindow.getComputedStyle(modalElement);
       const darkBg = darkStyle.getPropertyValue('--xeg-surface-glass-bg');
 

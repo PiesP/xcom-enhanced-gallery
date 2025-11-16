@@ -21,7 +21,8 @@ import {
   resolveAndApplyTheme,
   type ThemeMode,
   type ThemeSetting,
-} from '../../src/features/gallery/services/theme-initialization';
+} from '@/features/gallery/services/theme-initialization';
+import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
 
 describe('Toolbar Initial Transparency', () => {
   setupGlobalTestIsolation();
@@ -31,30 +32,30 @@ describe('Toolbar Initial Transparency', () => {
   beforeEach(() => {
     // 초기 상태 저장
     if (typeof document !== 'undefined') {
-      originalDataTheme = document.documentElement.getAttribute('data-theme');
+      originalDataTheme = document.documentElement.getAttribute(THEME_DOM_ATTRIBUTE);
       // 테스트를 위해 data-theme 제거 (초기 상태 시뮬레이션)
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.removeAttribute(THEME_DOM_ATTRIBUTE);
     }
   });
 
   afterEach(() => {
     // 원래 상태 복원
     if (typeof document !== 'undefined' && originalDataTheme !== null) {
-      document.documentElement.setAttribute('data-theme', originalDataTheme);
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, originalDataTheme);
     }
   });
 
   describe('Theme Initialization', () => {
     it('should set data-theme attribute immediately on initialization', () => {
       // GIVEN: 초기 상태 (data-theme 없음)
-      expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+      expect(document.documentElement.hasAttribute(THEME_DOM_ATTRIBUTE)).toBe(false);
 
       // WHEN: 테마 초기화
       initializeTheme();
 
       // THEN: data-theme 속성이 설정되어야 함
       expect(
-        document.documentElement.hasAttribute('data-theme'),
+        document.documentElement.hasAttribute(THEME_DOM_ATTRIBUTE),
         'data-theme attribute should be set after initialization'
       ).toBe(true);
     });
@@ -69,7 +70,7 @@ describe('Toolbar Initial Transparency', () => {
       // THEN: 시스템 테마에 맞는 data-theme이 설정되어야 함
       const expectedTheme = prefersDark ? 'dark' : 'light';
       expect(
-        document.documentElement.getAttribute('data-theme'),
+        document.documentElement.getAttribute(THEME_DOM_ATTRIBUTE),
         `data-theme should be ${expectedTheme} based on system preference`
       ).toBe(expectedTheme);
       expect(appliedTheme).toBe(expectedTheme);
@@ -79,7 +80,7 @@ describe('Toolbar Initial Transparency', () => {
       // GIVEN: 저장된 테마 설정이 있음
       const savedTheme = 'dark';
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem('xeg-theme', savedTheme);
+        window.localStorage.setItem(THEME_STORAGE_KEY, savedTheme);
       }
 
       // WHEN: 테마 초기화
@@ -87,29 +88,29 @@ describe('Toolbar Initial Transparency', () => {
 
       // THEN: 저장된 테마가 적용되어야 함
       expect(
-        document.documentElement.getAttribute('data-theme'),
+        document.documentElement.getAttribute(THEME_DOM_ATTRIBUTE),
         'data-theme should match saved preference'
       ).toBe(savedTheme);
       expect(appliedTheme).toBe(savedTheme);
 
       // CLEANUP
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('xeg-theme');
+        window.localStorage.removeItem(THEME_STORAGE_KEY);
       }
     });
 
     it('should normalize JSON encoded theme values from storage', () => {
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.setItem('xeg-theme', '"dark"');
+        window.localStorage.setItem(THEME_STORAGE_KEY, '"dark"');
       }
 
       const appliedTheme = initializeTheme();
 
-      expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+      expect(document.documentElement.getAttribute(THEME_DOM_ATTRIBUTE)).toBe('dark');
       expect(appliedTheme).toBe('dark');
 
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem('xeg-theme');
+        window.localStorage.removeItem(THEME_STORAGE_KEY);
       }
     });
   });
@@ -117,7 +118,7 @@ describe('Toolbar Initial Transparency', () => {
   describe('Toolbar Background Color', () => {
     it('should have opaque background color in light mode', () => {
       // GIVEN: 라이트 모드 설정
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
 
       // WHEN: CSS 변수 값 확인
       const toolbarBg = window
@@ -127,14 +128,14 @@ describe('Toolbar Initial Transparency', () => {
       // THEN: 투명하지 않은 배경색이어야 함
       expect(toolbarBg, '--xeg-bg-toolbar should have a value in light mode').toBeTruthy();
       expect(
-        toolbarBg.includes('rgba') && toolbarBg.includes(', 0)'),
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
         '--xeg-bg-toolbar should not be fully transparent'
       ).toBe(false);
     });
 
     it('should have opaque background color in dark mode', () => {
       // GIVEN: 다크 모드 설정
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
 
       // WHEN: CSS 변수 값 확인
       const toolbarBg = window
@@ -144,14 +145,47 @@ describe('Toolbar Initial Transparency', () => {
       // THEN: 투명하지 않은 배경색이어야 함
       expect(toolbarBg, '--xeg-bg-toolbar should have a value in dark mode').toBeTruthy();
       expect(
-        toolbarBg.includes('rgba') && toolbarBg.includes(', 0)'),
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
         '--xeg-bg-toolbar should not be fully transparent'
       ).toBe(false);
     });
 
+    it('should define gallery root background token in light mode', () => {
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
+
+      const rootBg = window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--xeg-color-background');
+
+      expect(rootBg, '--xeg-color-background should exist in light mode').toBeTruthy();
+      expect(rootBg.trim()).not.toBe('transparent');
+    });
+
+    it('should define gallery root background token in dark mode', () => {
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
+
+      const rootBg = window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--xeg-color-background');
+
+      expect(rootBg, '--xeg-color-background should exist in dark mode').toBeTruthy();
+      expect(rootBg.trim()).not.toBe('transparent');
+    });
+
+    it('should provide gallery root background when theme is unset', () => {
+      document.documentElement.removeAttribute(THEME_DOM_ATTRIBUTE);
+
+      const rootBg = window
+        .getComputedStyle(document.documentElement)
+        .getPropertyValue('--xeg-color-background');
+
+      expect(rootBg, '--xeg-color-background should exist without explicit theme').toBeTruthy();
+      expect(rootBg.trim()).not.toBe('transparent');
+    });
+
     it('should have fallback background color when data-theme is not set', () => {
       // GIVEN: data-theme 속성이 없음 (초기 상태)
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.removeAttribute(THEME_DOM_ATTRIBUTE);
 
       // WHEN: CSS 변수 값 확인
       const toolbarBg = window
@@ -173,7 +207,7 @@ describe('Toolbar Initial Transparency', () => {
   describe('CSS Token Resolution', () => {
     it('should resolve --color-bg-surface correctly in light mode', () => {
       // GIVEN: 라이트 모드
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
 
       // WHEN: CSS 변수 해석
       const bgSurface = window
@@ -186,7 +220,7 @@ describe('Toolbar Initial Transparency', () => {
 
     it('should resolve --color-gray-800 correctly in dark mode', () => {
       // GIVEN: 다크 모드
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
 
       // WHEN: CSS 변수 해석
       const gray800 = window
@@ -199,13 +233,13 @@ describe('Toolbar Initial Transparency', () => {
 
     it('should maintain color consistency across theme changes', () => {
       // GIVEN: 초기 라이트 모드
-      document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'light');
       const lightBg = window
         .getComputedStyle(document.documentElement)
         .getPropertyValue('--xeg-bg-toolbar');
 
       // WHEN: 다크 모드로 변경
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, 'dark');
       const darkBg = window
         .getComputedStyle(document.documentElement)
         .getPropertyValue('--xeg-bg-toolbar');
@@ -239,7 +273,7 @@ describe('Toolbar Initial Transparency', () => {
 
       // 그리고 즉시 적용되어야 함
       expect(
-        document.documentElement.hasAttribute('data-theme'),
+        document.documentElement.hasAttribute(THEME_DOM_ATTRIBUTE),
         'data-theme should be set synchronously'
       ).toBe(true);
     });

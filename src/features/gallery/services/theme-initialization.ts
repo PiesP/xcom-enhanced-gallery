@@ -9,7 +9,8 @@
  * @version 1.0.0
  */
 
-import { logger } from '../../../shared/logging';
+import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
+import { logger } from '@shared/logging';
 
 /**
  * Theme mode type
@@ -22,16 +23,6 @@ export type ThemeMode = 'light' | 'dark';
  * @readonly
  */
 export type ThemeSetting = 'auto' | ThemeMode;
-
-/**
- * Storage key for persisting theme setting
- */
-const THEME_STORAGE_KEY = 'xeg-theme';
-
-/**
- * DOM attribute name for applying theme
- */
-const THEME_DOM_ATTRIBUTE = 'data-theme';
 
 /**
  * Valid theme setting values

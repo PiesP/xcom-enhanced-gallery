@@ -5,11 +5,13 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
 import { ThemeService } from '@/shared/services/theme-service';
 
 // Phase 360: PersistentStorage mock with shared store
 const mockStore = new Map<string, unknown>();
+let localStorageStore: Map<string, string>;
 vi.mock('@shared/services/persistent-storage', () => ({
   getPersistentStorage: vi.fn(() => ({
     get: vi.fn((key: string) => Promise.resolve(mockStore.get(key) ?? null)),
@@ -34,6 +36,7 @@ describe('ThemeService Extended', () => {
   beforeEach(async () => {
     // Clear mock storage
     mockStore.clear();
+    localStorageStore = new Map<string, string>();
 
     // DOM mock 설정
     mockDocument = {
@@ -43,6 +46,20 @@ describe('ThemeService Extended', () => {
       } as any,
     };
     vi.stubGlobal('document', mockDocument);
+    vi.stubGlobal('localStorage', {
+      get length() {
+        return localStorageStore.size;
+      },
+      clear: vi.fn(() => localStorageStore.clear()),
+      getItem: vi.fn((key: string) => localStorageStore.get(key) ?? null),
+      key: vi.fn((index: number) => Array.from(localStorageStore.keys())[index] ?? null),
+      removeItem: vi.fn((key: string) => {
+        localStorageStore.delete(key);
+      }),
+      setItem: vi.fn((key: string, value: string) => {
+        localStorageStore.set(key, value);
+      }),
+    });
 
     themeService = new ThemeService();
     await themeService.initialize(); // Phase 360: initialize 필수
@@ -67,7 +84,7 @@ describe('ThemeService Extended', () => {
       themeService.setTheme('light');
 
       expect(mockDocument.documentElement?.setAttribute).toHaveBeenLastCalledWith(
-        'data-theme',
+        THEME_DOM_ATTRIBUTE,
         'light'
       );
     });
@@ -92,7 +109,7 @@ describe('ThemeService Extended', () => {
 
       // auto 설정 시 시스템 테마를 감지하여 적용
       expect(mockDocument.documentElement?.setAttribute).toHaveBeenLastCalledWith(
-        'data-theme',
+        THEME_DOM_ATTRIBUTE,
         'dark'
       );
     });
@@ -104,15 +121,31 @@ describe('ThemeService Extended', () => {
   });
 
   describe('theme persistence', () => {
-    it('테마 설정이 localStorage에 저장되어야 함', async () => {
+    it('should persist theme setting via PersistentStorage', async () => {
       themeService.setTheme('dark');
 
-      const stored = mockStore.get('xeg-theme');
+      const stored = mockStore.get(THEME_STORAGE_KEY);
       expect(stored).toBe('dark');
     });
 
-    it('페이지 로드 시 저장된 테마를 복원해야 함', async () => {
-      mockStore.set('xeg-theme', 'dark');
+    it('should mirror theme setting to localStorage for synchronous access', () => {
+      themeService.setTheme('dark');
+
+      expect(localStorageStore.get(THEME_STORAGE_KEY)).toBe('dark');
+    });
+
+    it('should hydrate localStorage when restoring from PersistentStorage', async () => {
+      mockStore.set(THEME_STORAGE_KEY, 'dark');
+
+      const newThemeService = new ThemeService();
+      await newThemeService.initialize();
+
+      expect(newThemeService.getCurrentTheme()).toBe('dark');
+      expect(localStorageStore.get(THEME_STORAGE_KEY)).toBe('dark');
+    });
+
+    it('should restore JSON-encoded themes from PersistentStorage', async () => {
+      mockStore.set(THEME_STORAGE_KEY, '"dark"');
 
       const newThemeService = new ThemeService();
       await newThemeService.initialize();
@@ -120,8 +153,8 @@ describe('ThemeService Extended', () => {
       expect(newThemeService.getCurrentTheme()).toBe('dark');
     });
 
-    it('JSON 문자열 형태로 저장된 테마도 복원해야 함', async () => {
-      mockStore.set('xeg-theme', '"dark"');
+    it('should fallback to localStorage when PersistentStorage has no data', async () => {
+      localStorageStore.set(THEME_STORAGE_KEY, 'dark');
 
       const newThemeService = new ThemeService();
       await newThemeService.initialize();
@@ -129,7 +162,7 @@ describe('ThemeService Extended', () => {
       expect(newThemeService.getCurrentTheme()).toBe('dark');
     });
 
-    it('저장된 테마가 없으면 auto를 기본값으로 사용해야 함', async () => {
+    it('should use auto as default when no stored theme exists', async () => {
       const newThemeService = new ThemeService();
       await newThemeService.initialize();
 

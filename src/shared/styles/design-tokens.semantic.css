@@ -26,6 +26,9 @@
     --xeg-gallery-bg-dark: var(--color-gray-900);
     --xeg-gallery-bg: var(--xeg-gallery-bg-light);
 
+    /* Root background fallback for gallery shell */
+    --xeg-color-background: oklch(95% 0 0deg);
+
     /* Text Colors - Semantic Roles */
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(
@@ -255,6 +258,9 @@
 
     /* Layout stability tokens */
     --xeg-aspect-default: 4 / 3;
+
+    /* Explicit light background for gallery root */
+    --xeg-color-background: oklch(95% 0 0deg);
   }
 
   [data-theme='dark'] {
@@ -301,6 +307,9 @@
     --xeg-toolbar-border-high-contrast: var(--xeg-toolbar-border-high-contrast-dark);
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
+
+    /* Explicit dark background for gallery root */
+    --xeg-color-background: oklch(20% 0 0deg);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -348,6 +357,8 @@
       /* Settings controls - System Dark Mode */
       --xeg-settings-select-padding: var(--space-sm);
       --xeg-settings-select-font-size: var(--font-size-sm);
+
+      --xeg-color-background: oklch(20% 0 0deg);
     }
   }
 
@@ -374,6 +385,8 @@
 
       --xeg-settings-select-padding: var(--space-sm);
       --xeg-settings-select-font-size: var(--font-size-sm);
+
+      --xeg-color-background: oklch(95% 0 0deg);
     }
   }
 
@@ -390,6 +403,7 @@
       --xeg-gallery-bg-dark: Canvas;
       --xeg-gallery-bg: Canvas;
       --xeg-color-bg-secondary: Canvas;
+      --xeg-color-background: Canvas;
 
       /* Text contrast */
       --color-text-primary: CanvasText;
