@@ -29,6 +29,7 @@ interface MockApiState {
 // ================================
 
 const mockStorage = new Map<string, unknown>();
+const mockCookieStore = new Map<string, string>();
 
 // ================================
 // Storage API Mocks
@@ -110,6 +111,34 @@ const networkAPIMocks = {
   }),
 };
 
+const cookieAPIMocks = {
+  GM_cookie: {
+    list: vi.fn(
+      (
+        details?: { name?: string },
+        callback?: (cookies: Array<{ name: string; value: string }>, error: string | null) => void
+      ) => {
+        const entries = Array.from(mockCookieStore.entries()).map(([name, value]) => ({
+          name,
+          value,
+        }));
+        const filtered = details?.name
+          ? entries.filter(entry => entry.name === details.name)
+          : entries;
+        callback?.(filtered, null);
+      }
+    ),
+    set: vi.fn((details: { name: string; value: string }, callback?: (error?: string) => void) => {
+      mockCookieStore.set(details.name, details.value);
+      callback?.();
+    }),
+    delete: vi.fn((details: { name: string }, callback?: (error?: string) => void) => {
+      mockCookieStore.delete(details.name);
+      callback?.();
+    }),
+  },
+};
+
 // ================================
 // UI API Mocks
 // ================================
@@ -186,6 +215,7 @@ export const mockUserscriptAPI = {
   ...uiAPIMocks,
   ...menuAPIMocks,
   ...infoAPIMocks,
+  ...cookieAPIMocks,
 };
 
 // ================================
@@ -298,10 +328,18 @@ export function setupGlobalMocks(): void {
  */
 export function clearMockStorage(): void {
   mockStorage.clear();
+  mockCookieStore.clear();
   // 모든 mock 함수들의 호출 기록 초기화
   Object.values(mockUserscriptAPI).forEach(mock => {
     if (typeof mock === 'function' && 'mockClear' in mock) {
       (mock as any).mockClear();
+    }
+    if (typeof mock === 'object') {
+      Object.values(mock).forEach(inner => {
+        if (typeof inner === 'function' && 'mockClear' in inner) {
+          (inner as any).mockClear();
+        }
+      });
     }
   });
 }

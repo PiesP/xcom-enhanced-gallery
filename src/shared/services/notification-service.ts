@@ -3,6 +3,7 @@
  * Simplified: Only uses Tampermonkey GM_notification when available. No console or UI fallbacks.
  */
 import { logger } from '@shared/logging';
+import type { GMNotificationDetails } from '@shared/types/core/userscript';
 
 export interface NotificationOptions {
   title: string;
@@ -23,14 +24,6 @@ export interface NotificationAvailabilityCheckResult {
   environment: string;
   message: string;
   canFallback: boolean; // always false in lean mode
-}
-
-interface GMNotificationDetails {
-  title?: string;
-  text?: string | undefined;
-  image?: string | undefined;
-  timeout?: number | undefined;
-  onclick?: (() => void) | undefined;
 }
 
 interface GlobalWithGMNotification {
@@ -81,16 +74,24 @@ export class NotificationService {
     const gm = (globalThis as GlobalWithGMNotification).GM_notification;
     if (!gm) return; // silent in lean mode
     try {
-      gm(
-        {
-          title: options.title,
-          text: options.text,
-          image: options.image,
-          timeout: options.timeout,
-          onclick: options.onclick,
-        },
-        undefined
-      );
+      const details: GMNotificationDetails = {
+        title: options.title,
+      };
+
+      if (typeof options.text !== 'undefined') {
+        details.text = options.text;
+      }
+      if (typeof options.image !== 'undefined') {
+        details.image = options.image;
+      }
+      if (typeof options.timeout !== 'undefined') {
+        details.timeout = options.timeout;
+      }
+      if (typeof options.onclick === 'function') {
+        details.onclick = options.onclick;
+      }
+
+      gm(details, undefined);
     } catch (e) {
       logger.warn('[NotificationService] GM_notification failed (silent lean mode)', e);
     }

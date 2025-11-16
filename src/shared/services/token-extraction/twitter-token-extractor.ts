@@ -6,6 +6,7 @@
 import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { getCookieService } from '@shared/services/cookie-service';
 
 export type TokenSource = 'script' | 'cookie' | 'session' | 'storage';
 
@@ -35,6 +36,7 @@ const SCRIPT_TOKEN_PATTERNS: RegExp[] = [
 export class TwitterTokenExtractor {
   private currentToken: string | null = null;
   private initialized = false;
+  private readonly cookieService = getCookieService();
 
   private readonly extractionStrategies: ExtractionStrategy[] = [
     () => this.extractFromScripts(),
@@ -167,18 +169,11 @@ export class TwitterTokenExtractor {
   }
 
   private async extractFromCookies(): Promise<TokenExtractionResult | null> {
-    if (typeof document === 'undefined') {
-      return null;
-    }
-
     try {
-      const cookieValue = document.cookie ?? '';
-      if (!cookieValue) {
-        return null;
-      }
-
-      const match = cookieValue.match(/(?:^|;\s*)auth_token=([^;]+)/);
-      const token = match?.[1];
+      const tokenFromGM = await this.cookieService.getValue('auth_token', {
+        domain: '.twitter.com',
+      });
+      const token = tokenFromGM ?? this.cookieService.getValueSync('auth_token');
       if (token && this.isValidTokenFormat(token)) {
         logger.debug('Token extracted from cookie');
         return this.buildSuccessResult(token, 'cookie');

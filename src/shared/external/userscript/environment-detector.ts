@@ -29,18 +29,17 @@ export interface EnvironmentInfo {
   environment: 'userscript' | 'test' | 'extension' | 'console';
 }
 
-const GM_API_MAP = {
-  getValue: 'GM_getValue',
-  setValue: 'GM_setValue',
-  download: 'GM_download',
-  notification: 'GM_notification',
-  setClipboard: 'GM_setClipboard',
-  registerMenuCommand: 'GM_registerMenuCommand',
-  deleteValue: 'GM_deleteValue',
-  listValues: 'GM_listValues',
-} as const;
-
-const GM_API_KEYS = Object.keys(GM_API_MAP) as Array<keyof typeof GM_API_MAP>;
+const GM_API_CHECKS: Record<string, (gm: Record<string, unknown>) => boolean> = {
+  getValue: gm => typeof gm.GM_getValue === 'function',
+  setValue: gm => typeof gm.GM_setValue === 'function',
+  download: gm => typeof gm.GM_download === 'function',
+  notification: gm => typeof gm.GM_notification === 'function',
+  setClipboard: gm => typeof gm.GM_setClipboard === 'function',
+  registerMenuCommand: gm => typeof gm.GM_registerMenuCommand === 'function',
+  deleteValue: gm => typeof gm.GM_deleteValue === 'function',
+  listValues: gm => typeof gm.GM_listValues === 'function',
+  cookie: gm => typeof (gm.GM_cookie as { list?: unknown } | undefined)?.list === 'function',
+};
 const USERSCRIPT_FLAGS = ['__TAMPERMONKEY__'] as const;
 const TEST_FLAGS = [
   '__VITEST__',
@@ -58,7 +57,15 @@ export function detectEnvironment(): EnvironmentInfo {
     browser?: { runtime?: { id?: string } };
   };
 
-  const availableGMAPIs = GM_API_KEYS.filter(key => typeof gm[GM_API_MAP[key]] === 'function');
+  const availableGMAPIs = Object.entries(GM_API_CHECKS)
+    .filter(([, check]) => {
+      try {
+        return check(gm);
+      } catch {
+        return false;
+      }
+    })
+    .map(([key]) => key);
 
   const hasUserscriptSignals =
     availableGMAPIs.length > 0 ||
@@ -116,10 +123,13 @@ export function detectEnvironment(): EnvironmentInfo {
  */
 export function isGMAPIAvailable(apiName: string): boolean {
   const gm = globalThis as Record<string, unknown>;
-  const gmFunctionName = GM_API_MAP[apiName as keyof typeof GM_API_MAP];
-  if (!gmFunctionName) return false;
-
-  return typeof gm[gmFunctionName] === 'function';
+  const checker = GM_API_CHECKS[apiName];
+  if (!checker) return false;
+  try {
+    return checker(gm);
+  } catch {
+    return false;
+  }
 }
 
 /**

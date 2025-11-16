@@ -81,48 +81,7 @@ import {
   getVideoMediaEntry as getVideoMediaEntryBase,
   getVideoUrlFromThumbnail as getVideoUrlFromThumbnailBase,
 } from './video-utils';
-
-/**
- * Get Cookie Value by Name
- *
- * Purpose:
- * Safely retrieve cookie value from document.cookie string.
- *
- * Algorithm:
- * 1. Check if document and document.cookie exist (browser only)
- * 2. Create regex to match cookie: name=value
- *    - Pattern: (?<=name=)[^;]+ (positive lookbehind)
- *    - Matches characters after "name=" until semicolon
- * 3. Execute match and return first group or undefined
- *
- * Error Handling:
- * - Returns undefined if:
- *   - document is undefined (non-browser environment)
- *   - document.cookie is undefined or empty
- *   - Cookie name not found
- *
- * Performance:
- * - O(n) where n = document.cookie length (typically < 5KB)
- * - Single regex match
- * - < 1ms typical execution
- *
- * Security:
- * - No parsing of cookie attributes (secure, httpOnly, etc.)
- * - Only value extraction (enough for gt, ct0 tokens)
- *
- * Example:
- * ```typescript
- * // document.cookie = "gt=abc123; ct0=xyz789; path=/; domain=.twitter.com"
- * getCookie('gt')    // Returns: 'abc123'
- * getCookie('ct0')   // Returns: 'xyz789'
- * getCookie('foo')   // Returns: undefined
- * ```
- */
-function getCookie(name: string): string | undefined {
-  if (typeof document === 'undefined' || !document.cookie) return undefined;
-  const match = document.cookie.match(new RegExp(`(?<=${name}=)[^;]+`));
-  return match?.[0];
-}
+import { getCookieService } from '@shared/services/cookie-service';
 
 /**
  * TwitterAPI - GraphQL Media Extraction Service
@@ -223,6 +182,9 @@ export class TwitterAPI {
   /** LRU cache for API responses (max 16 entries) */
   private static readonly requestCache = new Map<string, TwitterAPIResponse>();
 
+  /** Cookie accessor (GM_cookie or document.cookie fallback) */
+  private static readonly cookieService = getCookieService();
+
   /**
    * Initialize Tokens - Load from Cookies
    *
@@ -259,11 +221,37 @@ export class TwitterAPI {
    * - May set _guestToken and _csrfToken
    */
   private static initializeTokens(): void {
-    if (!this._tokensInitialized) {
-      this._guestToken = getCookie('gt');
-      this._csrfToken = getCookie('ct0');
-      this._tokensInitialized = true;
+    if (this._tokensInitialized) {
+      return;
     }
+
+    const cookieService = this.cookieService;
+    this._guestToken = cookieService.getValueSync('gt');
+    this._csrfToken = cookieService.getValueSync('ct0');
+
+    void cookieService
+      .getValue('gt')
+      .then(value => {
+        if (value) {
+          this._guestToken = value;
+        }
+      })
+      .catch(error => {
+        logger.debug('Failed to hydrate guest token from GM_cookie', error);
+      });
+
+    void cookieService
+      .getValue('ct0')
+      .then(value => {
+        if (value) {
+          this._csrfToken = value;
+        }
+      })
+      .catch(error => {
+        logger.debug('Failed to hydrate CSRF token from GM_cookie', error);
+      });
+
+    this._tokensInitialized = true;
   }
 
   /**

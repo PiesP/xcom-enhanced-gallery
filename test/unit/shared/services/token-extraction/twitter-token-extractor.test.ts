@@ -43,6 +43,13 @@ const mockPersistentStorage = {
   get: vi.fn(),
 };
 
+const mockCookieService = {
+  getValueSync: vi.fn(),
+  getValue: vi.fn(),
+  list: vi.fn(),
+  hasNativeAccess: vi.fn(() => false),
+};
+
 vi.mock('@shared/services/http-request-service', () => ({
   HttpRequestService: {
     getInstance: vi.fn(() => mockHttpService),
@@ -51,6 +58,10 @@ vi.mock('@shared/services/http-request-service', () => ({
 
 vi.mock('@shared/services/persistent-storage', () => ({
   getPersistentStorage: vi.fn(() => mockPersistentStorage),
+}));
+
+vi.mock('@shared/services/cookie-service', () => ({
+  getCookieService: vi.fn(() => mockCookieService),
 }));
 
 const VALID_TEST_TOKEN =
@@ -79,6 +90,12 @@ describe('TwitterTokenExtractor', () => {
     mockHttpService.post.mockReset();
     mockPersistentStorage.get.mockReset();
     mockPersistentStorage.get.mockResolvedValue(null);
+    mockCookieService.getValueSync.mockReset();
+    mockCookieService.getValue.mockReset();
+    mockCookieService.list.mockReset();
+    mockCookieService.hasNativeAccess.mockReset();
+    mockCookieService.getValueSync.mockReturnValue(undefined);
+    mockCookieService.getValue.mockResolvedValue(undefined);
     const storage = globalThis.sessionStorage;
     storage?.clear();
     document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
@@ -153,7 +170,7 @@ describe('TwitterTokenExtractor', () => {
     });
 
     it('captures tokens from cookies', async () => {
-      document.cookie = `auth_token=${VALID_TEST_TOKEN}; path=/`;
+      mockCookieService.getValue.mockResolvedValueOnce(VALID_TEST_TOKEN);
 
       const result = await extractor.refreshToken();
       expect(result.success).toBe(true);

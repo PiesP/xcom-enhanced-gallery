@@ -7,6 +7,7 @@ export { LanguageService, languageService } from './language-service';
 
 export { NotificationService, getNotificationService } from './notification-service';
 export { PersistentStorage, getPersistentStorage } from './persistent-storage';
+export { CookieService, getCookieService } from './cookie-service';
 
 export { DownloadService, downloadService } from './download-service';
 export { UnifiedDownloadService, unifiedDownloadService } from './unified-download-service';

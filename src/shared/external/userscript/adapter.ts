@@ -25,6 +25,7 @@
  * @see DownloadService - Recommended service for downloads
  * @see HttpRequestService - Recommended service for HTTP requests (Phase 318+)
  */
+import type { CookieAPI } from '@shared/types/core/cookie.types';
 import type { BrowserEnvironment } from '@shared/types/core/userscript';
 import { isGMUserScriptInfo } from '@shared/utils/type-safety-helpers';
 
@@ -41,6 +42,7 @@ export interface UserscriptAPI {
   getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
   deleteValue(key: string): Promise<void>;
   listValues(): Promise<string[]>;
+  readonly cookie: CookieAPI | undefined;
 }
 
 /**
@@ -63,6 +65,7 @@ interface GlobalWithGM {
   GM_getValue?: <T>(key: string, defaultValue?: T) => Promise<T> | T;
   GM_deleteValue?: (key: string) => Promise<void> | void;
   GM_listValues?: () => Promise<string[]> | string[];
+  GM_cookie?: CookieAPI;
 }
 
 /**
@@ -141,6 +144,8 @@ export function getUserscript(): UserscriptAPI {
     typeof global.GM_deleteValue === 'function' ? global.GM_deleteValue : undefined;
   const gmListValues =
     typeof global.GM_listValues === 'function' ? global.GM_listValues : undefined;
+  const gmCookie =
+    global.GM_cookie && typeof global.GM_cookie.list === 'function' ? global.GM_cookie : undefined;
 
   const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue));
 
@@ -175,5 +180,6 @@ export function getUserscript(): UserscriptAPI {
       const values = await Promise.resolve(fn());
       return Array.isArray(values) ? values : [];
     },
+    cookie: gmCookie,
   });
 }
