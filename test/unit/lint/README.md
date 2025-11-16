@@ -83,8 +83,6 @@
 | timer-direct-usage.scan.red.test.ts           | Timer 직접 사용 금지               |
 | zip-api-surface.scan.red.test.ts              | ZIP API 표면                       |
 | zip-direct-usage.scan.red.test.ts             | ZIP 직접 사용 금지                 |
-| toast-ui-barrel.stateful-exports.guard.test   | Toast UI 배럴 상태                 |
-| toast-ui-components.no-local-state.guard.test | Toast UI 로컬 상태 금지            |
 
 ## 🔍 사용 패턴
 

@@ -306,9 +306,8 @@ const baseConfig = defineConfig({
           include: [
             // Basic utilities: viewport calculation (core function that must succeed)
             'test/unit/shared/utils/viewport-utils.test.ts',
-            // External API contract guards: userscript, toast, settings, service container
+            // External API contract guards: userscript, settings, service container
             'test/unit/shared/external/userscript-adapter.contract.test.ts',
-            'test/unit/shared/services/toast-manager.contract.test.ts',
             'test/unit/shared/services/settings-service.contract.test.ts',
             'test/unit/shared/container/service-harness.contract.test.ts',
           ],

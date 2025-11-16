@@ -51,13 +51,12 @@ npx playwright test --debug
 playwright/accessibility/
 ├── gallery-a11y.spec.ts           # Gallery 컴포넌트 (3 tests)
 ├── toolbar-a11y.spec.ts           # Toolbar 컴포넌트 (3 tests)
-├── toast-a11y.spec.ts             # Toast 컴포넌트 (4 tests)
 ├── keyboard-overlay-a11y.spec.ts  # KeyboardHelpOverlay (4 tests)
 ├── dialog-focus-a11y.spec.ts      # Dialog/Focus 통합 (19 tests)
 └── README.md                       # 이 파일
 ```
 
-**총 33개 테스트** - 모두 WCAG 2.1 Level AA 기준 준수 검증
+**총 29개 테스트** - 모두 WCAG 2.1 Level AA 기준 준수 검증
 
 ### 테스트 스위트 상세
 
@@ -77,17 +76,7 @@ playwright/accessibility/
 - ✅ 키보드 탐색 가능
 - ✅ ARIA role 및 레이블 적절성
 
-#### 3. Toast Accessibility (`toast-a11y.spec.ts`)
-
-토스트 알림의 스크린 리더 호환성 검증:
-
-- ✅ aria-live 리전 적절성
-- ✅ 접근 가능한 닫기 버튼
-- ✅ 색상 대비 준수
-
-**중요성**: 스크린 리더 사용자가 즉시 알림을 받을 수 있도록 보장
-
-#### 4. KeyboardHelpOverlay Accessibility (`keyboard-overlay-a11y.spec.ts`)
+#### 3. KeyboardHelpOverlay Accessibility (`keyboard-overlay-a11y.spec.ts`)
 
 키보드 단축키 도움말 오버레이 검증:
 
@@ -97,7 +86,7 @@ playwright/accessibility/
 
 **중요성**: 키보드 사용자를 위한 도움말이므로 완벽한 키보드 접근성 필수
 
-#### 5. Dialog & Focus Management (`dialog-focus-a11y.spec.ts`)
+#### 4. Dialog & Focus Management (`dialog-focus-a11y.spec.ts`)
 
 다이얼로그 및 포커스 관리 통합 검증 (19 tests):
 

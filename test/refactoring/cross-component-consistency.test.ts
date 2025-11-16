@@ -18,7 +18,6 @@ const __dirname = dirname(__filename);
 const CSS_FILES = {
   designTokensPrimitive: 'src/shared/styles/design-tokens.primitive.css',
   designTokensSemantic: 'src/shared/styles/design-tokens.semantic.css',
-  toast: 'src/shared/components/ui/Toast/Toast.module.css',
   gallery: 'src/features/gallery/styles/Gallery.module.css',
   galleryGlobal: 'src/features/gallery/assets/styles/gallery-global.css',
   isolatedGallery: 'src/features/gallery/assets/styles/isolated-gallery.css',
@@ -161,19 +160,6 @@ describe('Cross-Component Consistency Verification', () => {
       radiusTokens.forEach(t => expect(allowed.includes(t)).toBe(true));
     });
 
-    it('Toast 컴포넌트가 적절한 토큰만 사용해야 함', () => {
-      const toastCSS = readCSSFile(CSS_FILES.toast);
-
-      // 하드코딩된 border-radius 값이 없어야 함
-      const hardcodedValues = /border-radius:\s*\d+px/g;
-      expect(toastCSS).not.toMatch(hardcodedValues);
-
-      // 적절한 토큰 사용 확인
-      expect(toastCSS).toMatch(/var\(--xeg-radius-2xl\)/); // Toast 컨테이너 (surface large)
-      expect(toastCSS).toMatch(/var\(--xeg-radius-md\)/); // Action/close buttons (interaction)
-      // sm/lg 사용은 현재 Toast에서 제거됨 (정책: interaction=md, surface=2xl 유지)
-    });
-
     it('Gallery 컴포넌트들이 적절한 토큰만 사용해야 함', () => {
       const galleryCSS = readCSSFile(CSS_FILES.gallery);
       const galleryGlobalCSS = readCSSFile(CSS_FILES.galleryGlobal);
@@ -202,22 +188,20 @@ describe('Cross-Component Consistency Verification', () => {
   describe('Phase 3: 역할별 토큰 사용 일관성', () => {
     it('버튼 역할 요소들이 일관된 토큰을 사용해야 함', () => {
       const buttonCSS = readCSSFile(CSS_FILES.button);
-      const toastCSS = readCSSFile(CSS_FILES.toast);
       const galleryCSS = readCSSFile(CSS_FILES.gallery);
 
       // 정책상 인터랙션 요소(md) 사용 (Button)
       const buttonTokenPattern = /var\(--xeg-radius-md\)/; // 정책상 모든 interaction 요소 md
       expect(buttonCSS).toMatch(buttonTokenPattern);
-      expect(toastCSS).toMatch(buttonTokenPattern); // Action button
       expect(galleryCSS).toMatch(buttonTokenPattern); // Control buttons
     });
 
     it('컨테이너 역할 요소들이 적절한 크기별 토큰을 사용해야 함', () => {
-      const toastCSS = readCSSFile(CSS_FILES.toast);
       const galleryCSS = readCSSFile(CSS_FILES.gallery);
+      const semanticCSS = readCSSFile(CSS_FILES.designTokensSemantic);
 
-      // Large surface: 최소 한 곳(Toast)에서 2xl 사용
-      expect(toastCSS).toMatch(/var\(--xeg-radius-2xl\)/);
+      // Large surface 토큰 정의 유지 (실제 사용 여부와 별개로 문서 기반 정책 검증)
+      expect(semanticCSS).toMatch(/--xeg-radius-2xl:\s*var\(--radius-2xl\)/);
       // Gallery는 2xl optional. 대신 표준 surface lg 사용 보장
       expect(galleryCSS).toMatch(/var\(--xeg-radius-lg\)/); // mediaElement / error 등
     });

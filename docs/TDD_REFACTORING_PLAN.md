@@ -143,6 +143,21 @@ src/bootstrap/
 - 타입 체크 통과 (0 에러)
 - 문서 정합성 확보
 
+### Phase 420: Toast UI Retirement (2025-11-16 완료)
+
+**변경사항**:
+
+- ❌ UnifiedToastManager 서비스 및 관련 테스트/가드 삭제
+- ❌ Toast UI 접근성/통합 테스트 제거 (Playwright, Vitest, lint guards)
+- ✅ NotificationService만으로 알림 경로 단일화
+- ✅ vitest.config 및 문서/README 동기화 (toast 참조 제거)
+
+**결과**:
+
+- Tampermonkey 고유 알림 파이프라인만 유지 (GM_notification)
+- 테스트 노이즈 감소 (불필요한 guard 6개 제거)
+- 문서/도구 정합성 확보 (Phase 309+ 서비스 계층 준수)
+
 ### Phase 328: 코드 품질 표준화 (2025-11-03 완료)
 
 **변경사항**:
