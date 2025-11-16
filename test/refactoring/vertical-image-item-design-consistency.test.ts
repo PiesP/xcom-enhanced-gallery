@@ -75,7 +75,7 @@ describe('TDD: VerticalImageItem 디자인 일관성 개선', () => {
       // 표준화된 design-tokens.css 변수 사용 검증
       expect(cssContent).toMatch(/var\(--xeg-radius-lg\)/);
       expect(cssContent).toMatch(/var\(--xeg-spacing-md\)/);
-      expect(cssContent).toMatch(/var\(--xeg-transition-normal\)/);
+      expect(cssContent).toMatch(/var\(--xeg-transition-interaction-fast\)/);
     });
   });
 
@@ -202,7 +202,7 @@ describe('TDD: VerticalImageItem 디자인 일관성 개선', () => {
         '--xeg-spacing-md',
         '--xeg-color-primary',
         '--xeg-shadow-md',
-        '--xeg-transition-normal',
+        '--xeg-transition-interaction-fast',
         '--xeg-font-size-sm',
         '--xeg-font-weight-medium',
       ];

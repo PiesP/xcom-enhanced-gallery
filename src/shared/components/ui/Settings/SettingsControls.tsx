@@ -1,5 +1,6 @@
 import { getSolid, type JSXElement } from '@shared/external/vendors';
 import { languageService } from '@shared/services';
+import { createClassName } from '@shared/utils/component-utils';
 import toolbarStyles from '@shared/components/ui/Toolbar/Toolbar.module.css';
 import styles from './SettingsControls.module.css';
 
@@ -50,7 +51,11 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     };
   });
 
-  const selectClass = `${toolbarStyles.toolbarButton} ${styles.select}`;
+  const selectClass = createClassName(
+    toolbarStyles.toolbarButton,
+    'xeg-inline-center',
+    styles.select
+  );
   const containerClass = props.compact ? `${styles.body} ${styles.bodyCompact}` : styles.body;
   const settingClass = props.compact
     ? `${styles.setting} ${styles.settingCompact}`

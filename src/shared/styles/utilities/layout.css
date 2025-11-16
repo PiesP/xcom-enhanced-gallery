@@ -16,6 +16,18 @@
     justify-content: space-between;
   }
 
+  .xeg-inline-center {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .xeg-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   /* Gap presets */
   .xeg-gap-sm {
     gap: var(--xeg-spacing-sm);

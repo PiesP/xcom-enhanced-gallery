@@ -27,12 +27,7 @@
  * ========================================================================= */
 
 :where(.unifiedButton, .toolbarButton, .xeg-toolbar-button, .xeg-icon-button) {
-  transition:
-    background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-    box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+  transition: var(--xeg-transition-interaction-fast);
   outline: none;
 }
 
@@ -42,10 +37,6 @@
 
 .unifiedButton {
   /* Layout */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--xeg-spacing-sm);
   border: 0.0625rem solid transparent; /* 1px */
   border-radius: var(--xeg-radius-md);
 
@@ -218,16 +209,19 @@
 }
 
 /* ===== 툴바 전용 변형 ===== */
+:where(.variant-toolbar, .variant-navigation, .variant-action, .size-toolbar) {
+  width: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  height: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  min-width: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  min-height: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  padding: var(--xeg-button-square-padding, 0.5em);
+  aspect-ratio: 1;
+}
+
 .variant-toolbar {
   background: transparent;
   color: var(--xeg-color-text-primary);
   border-color: var(--xeg-color-border-primary);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  padding: 0.5em;
-  aspect-ratio: 1;
 }
 
 .variant-toolbar:hover:not(:disabled) {
@@ -246,12 +240,6 @@
   background: var(--xeg-color-primary);
   color: var(--color-text-inverse);
   border-color: var(--xeg-color-primary);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  padding: 0.5em;
-  aspect-ratio: 1;
 }
 
 .variant-navigation:hover:not(:disabled) {
@@ -270,12 +258,6 @@
   background: var(--xeg-color-success);
   color: var(--color-text-inverse);
   border-color: var(--xeg-color-success);
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  padding: 0.5em;
-  aspect-ratio: 1;
 }
 
 .variant-action:hover:not(:disabled) {
@@ -292,36 +274,38 @@
 
 /* ===== 툴바 전용 크기 ===== */
 .size-toolbar {
-  width: 2.5em;
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  padding: 0.5em;
+  --xeg-button-square-size: var(--xeg-size-button-md);
+  --xeg-button-square-padding: 0.5em;
+
   font-size: 0.875em;
 }
 
 /* ===== 아이콘 전용 모드 ===== */
 .iconOnly {
+  --xeg-icon-only-size: var(--xeg-size-button-md);
+
   aspect-ratio: 1;
   padding: var(--xeg-spacing-sm);
+  width: var(--xeg-icon-only-size);
+  height: var(--xeg-icon-only-size);
+  min-width: var(--xeg-icon-only-size);
+  min-height: var(--xeg-icon-only-size);
 }
 
 .iconOnly.size-sm {
+  --xeg-icon-only-size: var(--xeg-size-button-sm);
+
   padding: var(--xeg-spacing-xs);
-  width: var(--xeg-size-button-sm);
-  height: var(--xeg-size-button-sm);
 }
 
 .iconOnly.size-md {
-  padding: var(--xeg-spacing-sm);
-  width: var(--xeg-size-button-md);
-  height: var(--xeg-size-button-md);
+  --xeg-icon-only-size: var(--xeg-size-button-md);
 }
 
 .iconOnly.size-lg {
+  --xeg-icon-only-size: var(--xeg-size-button-lg);
+
   padding: var(--xeg-spacing-md);
-  width: var(--xeg-size-button-lg);
-  height: var(--xeg-size-button-lg);
 }
 
 /* ===== Intent 변형 (iconVariant 대체) ===== */
@@ -381,22 +365,11 @@
 
 /* ===== 로딩 스피너 ===== */
 .spinner {
-  width: 1em;
-  height: 1em;
-  border: 0.125rem solid transparent; /* 2px */
-  border-top: 0.125rem solid currentColor; /* 2px */
-  border-radius: 50%;
-  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  margin-right: var(--xeg-spacing-xs);
-}
+  --xeg-spinner-size: 1em;
+  --xeg-spinner-track-color: transparent;
+  --xeg-spinner-indicator-color: currentColor;
 
-@keyframes xeg-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  margin-right: var(--xeg-spacing-xs);
 }
 
 /* ===== 다크 모드 지원 제거: semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
@@ -428,13 +401,11 @@
   }
 
   .iconOnly {
-    width: var(--xeg-size-button-touch);
-    height: var(--xeg-size-button-touch);
+    --xeg-icon-only-size: var(--xeg-size-button-touch);
   }
 
   .iconOnly.size-sm {
-    width: var(--xeg-size-button-md);
-    height: var(--xeg-size-button-md);
+    --xeg-icon-only-size: var(--xeg-size-button-md);
   }
 }
 
@@ -470,10 +441,6 @@
 /* toolbarButton: 기존 ToolbarButton 기본 스타일을 unifiedButton 스타일에 매핑 */
 .toolbarButton,
 .xeg-toolbar-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--xeg-spacing-sm);
   font-family: var(
     --xeg-font-family-ui,
     -apple-system,
@@ -577,13 +544,6 @@
   padding: var(--xeg-spacing-md);
   width: 2.75em; /* 44px @ 16px */
   height: 2.75em;
-}
-
-/* loading spinner placeholder (ToolbarButton -> Unified) */
-.loadingSpinner {
-  display: inline-block;
-  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  font-size: 0.875em;
 }
 
 /* variant-loading (map to .loading state) */

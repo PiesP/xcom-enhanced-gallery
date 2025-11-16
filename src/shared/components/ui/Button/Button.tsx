@@ -272,6 +272,8 @@ export function Button(rawProps: ButtonProps): JSXElement {
       local.iconOnly ? styles.iconOnly : undefined,
       local.loading ? styles.loading : undefined,
       local.disabled ? styles.disabled : undefined,
+      'xeg-inline-center',
+      'xeg-gap-sm',
       local.className,
       local.class
     );
@@ -315,7 +317,9 @@ export function Button(rawProps: ButtonProps): JSXElement {
       onMouseEnter={local.onMouseEnter}
       onMouseLeave={local.onMouseLeave}
     >
-      {local.loading && <span class={styles.spinner} aria-hidden='true' />}
+      {local.loading && (
+        <span class={createClassName('xeg-spinner', styles.spinner)} aria-hidden='true' />
+      )}
       {local.children}
     </button>
   );

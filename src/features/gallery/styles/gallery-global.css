@@ -29,10 +29,7 @@
       var(--xeg-surface-glass-border-light, var(--xeg-surface-glass-border));
     border-radius: var(--xeg-radius-2xl);
     isolation: isolate;
-    transition:
-      background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      color var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal);
   }
 
   :where(.xeg-glass-surface-dark, .glass-surface-dark) {
@@ -41,9 +38,18 @@
     border: var(--border-width-thin) solid
       var(--xeg-surface-glass-border-dark, var(--xeg-surface-glass-border));
     border-radius: var(--xeg-radius-2xl);
-    transition:
-      background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      border-color var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal);
+  }
+
+  .xeg-gallery-overlay,
+  .xeg-gallery-viewer,
+  .xeg-gallery-media,
+  .xeg-gallery-error,
+  .xeg-gallery-nav-left,
+  .xeg-gallery-nav-right {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   /* Gallery overlay - Full screen background */
@@ -52,9 +58,6 @@
     inset: 0;
     z-index: var(--xeg-z-gallery);
     background: var(--xeg-gallery-bg);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     opacity: 1;
     transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
     pointer-events: auto;
@@ -88,11 +91,7 @@
     justify-content: space-between;
     padding: 0 var(--space-lg);
     color: var(--xeg-color-text-primary);
-    transition:
-      background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      transform var(--xeg-duration-normal) var(--xeg-ease-standard),
-      opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal), var(--xeg-transition-elevation-normal);
   }
 
   .xeg-toolbar-section-left,
@@ -118,7 +117,7 @@
     border-radius: var(--xeg-radius-lg);
     border: var(--border-width-thin) solid var(--color-border-default);
     margin-left: var(--space-md);
-    transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal);
   }
 
   /* Image fit button group */
@@ -129,7 +128,7 @@
     border: var(--border-width-thin) solid var(--xeg-color-neutral-200);
     border-radius: var(--xeg-radius-lg);
     padding: 0.25em;
-    transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal);
   }
 
   /* Download progress indicator */
@@ -159,7 +158,7 @@
   .xeg-progress-fill {
     height: 100%;
     background: var(--xeg-color-text-primary);
-    transition: width var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-width-normal);
   }
 
   .xeg-progress-text {
@@ -171,9 +170,6 @@
   /* Main viewer area - Media display */
   .xeg-gallery-viewer {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     padding: 3.75rem 1.25rem 1.25rem;
     position: relative;
   }
@@ -181,9 +177,6 @@
   .xeg-gallery-media {
     max-width: 100%;
     max-height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
 
   /* Gallery images and videos */
@@ -198,9 +191,6 @@
 
   /* Gallery error message */
   .xeg-gallery-error {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     color: var(--color-text-error);
     font-size: var(--font-size-md);
   }
@@ -220,12 +210,8 @@
     font-size: var(--font-size-xl);
     cursor: pointer;
     z-index: var(--xeg-z-gallery-overlay);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition:
-      background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
-      border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+      var(--xeg-transition-surface-normal),
       transform var(--xeg-duration-normal) var(--xeg-ease-standard);
   }
 
@@ -275,7 +261,7 @@
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    transition: all var(--xeg-duration-normal) var(--xeg-ease-standard);
+    transition: var(--xeg-transition-surface-normal);
   }
 
   .xeg-thumbnails-container::-webkit-scrollbar {
@@ -293,7 +279,7 @@
     flex-shrink: 0;
     overflow: clip;
     transition:
-      border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+      var(--xeg-transition-surface-normal),
       transform var(--xeg-duration-normal) var(--xeg-ease-standard);
   }
 

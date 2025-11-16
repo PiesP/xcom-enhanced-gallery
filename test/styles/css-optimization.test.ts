@@ -157,7 +157,7 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
         console.warn(
           `\n⚠️  Transition 중복 정의 파일:\n` +
             problematicFiles.map(f => `   - ${f}`).join('\n') +
-            `\n   권장: .xeg-transition-fast, .xeg-transition-normal 등 유틸리티 클래스 사용`
+            `\n   권장: .xeg-transition-surface-fast, .xeg-transition-elevation-normal 등 유틸리티 클래스 사용`
         );
       }
     });

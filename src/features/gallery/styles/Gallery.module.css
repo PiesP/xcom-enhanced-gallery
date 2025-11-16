@@ -441,24 +441,13 @@
  * - Displayed inline with text
  */
 .loadingSpinner {
-  display: inline-block;
-  width: var(--xeg-icon-size-md);
-  height: var(--xeg-icon-size-md);
-  border: var(--border-width-sm) solid var(--xeg-color-neutral-400);
-  border-radius: var(--xeg-radius-full);
-  border-top-color: var(--xeg-color-text-primary);
-  animation: spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-  margin-right: var(--xeg-spacing-sm);
-}
+  --xeg-spinner-size: var(--xeg-icon-size-md);
+  --xeg-spinner-border-width: var(--border-width-sm);
+  --xeg-spinner-track-color: var(--xeg-color-neutral-400);
+  --xeg-spinner-indicator-color: var(--xeg-color-text-primary);
 
-/**
- * Spinner Rotation Animation
- * 360-degree rotation keyframe animation.
- */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  display: inline-block;
+  margin-right: var(--xeg-spacing-sm);
 }
 
 /**
@@ -832,10 +821,6 @@
   .scaleIn,
   .slideInLeft,
   .slideInRight {
-    animation: none;
-  }
-
-  .loadingSpinner {
     animation: none;
   }
 }

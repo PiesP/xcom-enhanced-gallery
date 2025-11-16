@@ -68,6 +68,37 @@
     --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
     /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
 
+    /* Spinner Component Tokens */
+    --xeg-spinner-size-default: 1rem;
+    --xeg-spinner-border-width: 0.125rem; /* 2px = 0.125rem */
+    --xeg-spinner-track-color: color-mix(in oklch, var(--xeg-color-neutral-400) 60%, transparent);
+    --xeg-spinner-indicator-color: var(--xeg-color-primary, currentColor);
+    --xeg-spinner-duration: var(--xeg-duration-normal);
+    --xeg-spinner-easing: var(--xeg-easing-linear);
+
+    /* Transition Presets - Component Specific */
+    --xeg-transition-surface-normal:
+      background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+      border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
+      color var(--xeg-duration-normal) var(--xeg-ease-standard);
+    --xeg-transition-surface-fast:
+      background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+      border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+      color var(--xeg-duration-fast) var(--xeg-ease-standard);
+    --xeg-transition-elevation-normal:
+      transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+    --xeg-transition-elevation-fast:
+      transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
+    --xeg-transition-interaction-fast:
+      background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
+      box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+    --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
+
     /* Icon Component Tokens */
     --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
     --xeg-icon-size: var(--size-icon-md);
@@ -141,6 +172,23 @@
   .xeg-anim-fade-out {
     animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in);
   }
+
+  .xeg-spinner {
+    display: inline-block;
+    width: var(--xeg-spinner-size, var(--xeg-spinner-size-default));
+    height: var(--xeg-spinner-size, var(--xeg-spinner-size-default));
+    border-radius: var(--xeg-radius-full);
+    border: var(--xeg-spinner-border-width) solid var(--xeg-spinner-track-color);
+    border-top-color: var(--xeg-spinner-indicator-color);
+    animation: xeg-spin var(--xeg-spinner-duration) var(--xeg-spinner-easing) infinite;
+    box-sizing: border-box;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .xeg-spinner {
+      animation: none;
+    }
+  }
 }
 
 /* ======================================= */
@@ -177,6 +225,15 @@
     }
     to {
       opacity: 0;
+    }
+  }
+
+  @keyframes xeg-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
     }
   }
 

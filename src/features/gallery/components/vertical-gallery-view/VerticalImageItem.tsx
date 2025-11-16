@@ -421,7 +421,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
         <>
           {!isLoaded() && !isError() && !isVideo && (
             <div class={styles.placeholder}>
-              <div class={styles.loadingSpinner} />
+              <div class={createClassName('xeg-spinner', styles.loadingSpinner)} />
             </div>
           )}
 

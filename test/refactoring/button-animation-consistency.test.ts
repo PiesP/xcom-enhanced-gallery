@@ -108,9 +108,9 @@ describe('Button Animation System Consistency', () => {
 
       // 필수 transition 변수들 확인
       const hasTransitionVariables =
-        tokensCSS.includes('--xeg-transition-fast') &&
-        tokensCSS.includes('--xeg-transition-normal') &&
-        tokensCSS.includes('--xeg-transition-slow');
+        tokensCSS.includes('--xeg-transition-surface-fast') &&
+        tokensCSS.includes('--xeg-transition-elevation-normal') &&
+        tokensCSS.includes('--xeg-transition-interaction-fast');
 
       expect(
         hasTransitionVariables,

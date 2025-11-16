@@ -140,7 +140,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const isDownloading = () => Boolean(props.isDownloading);
   const isHighContrast = () => Boolean(props.toolbarState.needsHighContrast);
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
-    createClassName(styles.toolbarButton, ...extra);
+    createClassName(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
   const preventScrollChaining = (event: WheelEvent) => {
     if (shouldAllowWheelDefault(event)) {
@@ -208,9 +208,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           </IconButton>
 
           <div class={styles.counterBlock} data-gallery-element='counter-section'>
-            <div class={styles.mediaCounterWrapper}>
+            <div class={createClassName(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
-                class={styles.mediaCounter}
+                class={createClassName(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live='polite'
                 data-gallery-element='counter'
                 data-focused-index={String(props.displayedIndex())}

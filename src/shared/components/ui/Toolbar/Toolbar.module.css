@@ -57,25 +57,16 @@
  */
 /**
  * @subsection Button Base Styles
- * Unified button sizing (2.5em = 40px) with glassmorphism applied via intent classes
+ * Toolbar buttons inherit their 2.5em footprint from Button.module.css square sizing helpers.
+ * This block focuses on toolbar-specific surfacing (glassmorphism, tokens, states).
  * Phase 87: Event handlers managed by parent component (ToolbarContainer)
  */
 .toolbarButton {
-  /* Base sizing: consistent with design tokens */
-  width: 2.5em; /* 40px in em units for responsive scaling */
-  height: 2.5em;
-  min-width: 2.5em;
-  min-height: 2.5em;
-  padding: 0.5em; /* 8px padding inside button */
-
   /* Text and cursor */
   color: var(--xeg-color-text-primary);
   cursor: pointer;
 
   /* Layout: centered icon with flexbox */
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 0.875em; /* 14px typography scale */
   font-weight: 500;
   position: relative;
@@ -85,10 +76,16 @@
     --toolbar-surface-base,
     var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
   );
-  border: var(--border-width-thin) solid var(--toolbar-surface-border, var(--xeg-toolbar-border));
+  border: var(--border-width-thin) solid var(--toolbar-button-accent, var(--xeg-toolbar-border));
+
+  --toolbar-button-accent: var(--toolbar-surface-border, var(--xeg-toolbar-border));
+  --toolbar-button-accent-hover: var(--xeg-color-border-hover);
+  --toolbar-button-focus-shadow: 0 0 0 0.125em
+    color-mix(in oklch, var(--toolbar-button-accent-hover) 20%, transparent);
+  --toolbar-button-hover-shadow: var(--xeg-shadow-sm);
+
   transition:
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    var(--xeg-transition-surface-fast),
     transform var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
@@ -148,9 +145,7 @@
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
-  transition:
-    opacity var(--xeg-duration-normal) var(--xeg-ease-standard),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition: var(--xeg-transition-elevation-normal);
   user-select: none;
   overscroll-behavior: contain;
 }
@@ -246,16 +241,9 @@
 }
 
 /* 데이터 속성 기반 상태 관리 */
-.toolbarButton[data-active='true'] {
-  border-color: var(--xeg-color-primary);
-  box-shadow:
-    0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 35%, transparent),
-    0 0.25em 1em var(--color-overlay-light);
-}
-
-.toolbarButton[data-selected='true'] {
-  border-color: var(--xeg-color-primary);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 20%, transparent);
+:where(.toolbarButton[data-active='true'], .toolbarButton[data-selected='true']) {
+  border-color: var(--toolbar-button-accent-hover);
+  box-shadow: var(--toolbar-button-focus-shadow);
 }
 
 .toolbarButton[data-loading='true'] {
@@ -275,39 +263,39 @@
   .toolbarButton:hover:not([data-disabled='true']) {
     /* glassmorphism 클래스의 호버 효과 사용 */
     /* 복잡한 transform 효과 제거 */
-    border-color: var(--xeg-color-border-hover);
+    border-color: var(--toolbar-button-accent-hover);
     transform: translateY(var(--xeg-button-lift));
-    box-shadow: var(--xeg-shadow-sm);
+    box-shadow: var(--toolbar-button-hover-shadow);
   }
 }
 
 /* 의미론적 버튼 변형 */
-.toolbarButton.primary {
-  border-color: var(--xeg-color-primary);
+:where(.toolbarButton.primary, .downloadCurrent) {
+  --toolbar-button-accent: var(--xeg-color-primary);
+  --toolbar-button-accent-hover: var(--xeg-color-primary-hover);
+  --toolbar-button-focus-shadow: 0 0 0 0.125em
+    color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
+  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
-.toolbarButton.primary:hover:not([data-disabled='true']) {
-  border-color: var(--xeg-color-primary-hover);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
+:where(.toolbarButton.success, .downloadAll) {
+  --toolbar-button-accent: var(--xeg-color-success);
+  --toolbar-button-accent-hover: var(--xeg-color-success-hover);
+  --toolbar-button-focus-shadow: 0 0 0 0.125em
+    color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
+  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
-.toolbarButton.success {
-  border-color: var(--xeg-color-success);
+:where(.toolbarButton.danger, .closeButton) {
+  --toolbar-button-accent: var(--xeg-color-error);
+  --toolbar-button-accent-hover: var(--xeg-color-error-hover);
+  --toolbar-button-focus-shadow: 0 0 0 0.125em
+    color-mix(in oklch, var(--xeg-color-error) 25%, transparent);
+  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
-.toolbarButton.success:hover:not([data-disabled='true']) {
-  border-color: var(--xeg-color-success-hover);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
-}
-
-.toolbarButton.danger {
-  border-color: var(--xeg-color-error);
-}
-
-.toolbarButton.danger:hover:not([data-disabled='true']) {
-  border-color: var(--xeg-color-error-hover);
+:where(.toolbarButton.danger, .closeButton):hover:not([data-disabled='true']) {
   color: var(--xeg-color-error);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-error) 25%, transparent);
 }
 
 /* 네비게이션 섹션 */
@@ -325,9 +313,6 @@
 /* 미디어 카운터 */
 .mediaCounterWrapper {
   /* 베이스라인 동기화를 위한 인라인 플렉스 컨테이너 */
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   position: relative; /* 진행 바를 오버레이로 배치 */
   gap: 0; /* 세로 갭 제거 – 진행 바는 absolute로 하단에 고정 */
   min-width: 5em; /* 80px → 5em */
@@ -344,8 +329,6 @@
   text-align: center;
   white-space: nowrap;
   /* 베이스라인 동기화: 텍스트 자체의 라인 박스를 최소화 */
-  display: inline-flex;
-  align-items: center;
   line-height: 1;
   background: transparent; /* Phase 58: 툴바 배경색과 통일하기 위해 투명화 */
   padding: 0.25em 0.5em; /* 4px 8px → 0.25em 0.5em */
@@ -387,35 +370,23 @@
   height: 100%;
   background: var(--xeg-color-text-primary);
   border-radius: var(--xeg-radius-sm);
-  transition: var(--xeg-transition-normal);
+  transition: var(--xeg-transition-width-normal);
   transform-origin: left;
 }
 
 .fitButton,
 button.fitButton {
-  /* 🔧 FIXED: 다른 버튼들과 동일한 크기 보장 - 최고 우선순위 */
-  width: 2.5em !important; /* 40px → 2.5em */
-  height: 2.5em !important; /* 40px → 2.5em */
-  min-width: 2.5em !important; /* 40px → 2.5em */
-  min-height: 2.5em !important; /* 40px → 2.5em */
-  max-width: 2.5em !important; /* 40px → 2.5em */
-  max-height: 2.5em !important; /* 40px → 2.5em */
-  padding: 0.5em !important; /* 8px → 0.5em */
-  box-sizing: border-box !important;
-
-  /* toolbarButton 기본 스타일 상속하면서 독립 버튼 스타일 적용 */
-  border-radius: var(--xeg-radius-md);
-  transition: var(--xeg-transition-normal);
-
-  /* 이벤트 전파 방지 및 안정성 */
+  transition: var(--xeg-transition-interaction-fast);
   position: relative;
   z-index: 10;
   pointer-events: auto;
 }
 
-.fitButton.selected {
-  border-color: var(--xeg-color-primary);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
+.fitButton[data-selected='true'] {
+  --toolbar-button-accent-hover: var(--xeg-color-primary);
+  --toolbar-button-focus-shadow: 0 0 0 0.125em
+    color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
+  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
 .fitButton:focus-visible {
@@ -426,66 +397,8 @@ button.fitButton {
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
-  border-radius: var(--xeg-radius-md);
-}
 
-.downloadButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
-}
-
-.downloadButton:hover:not([data-disabled='true']) {
-  /* 다른 버튼들과 동일한 호버 효과 */
-  border-color: var(--xeg-color-neutral-300);
-  transform: translateY(-0.0625em); /* -1px → -0.0625em */
-  box-shadow: var(--xeg-shadow-md);
-}
-
-.downloadCurrent {
-  /* primary 변형 적용 */
-  border-color: var(--xeg-color-primary);
-}
-
-.downloadCurrent:hover:not([data-disabled='true']) {
-  border-color: var(--xeg-color-primary-hover);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
-}
-
-.downloadAll {
-  /* success 변형 적용 */
-  border-color: var(--xeg-color-success);
-}
-
-.downloadAll:hover:not([data-disabled='true']) {
-  border-color: var(--xeg-color-success-hover);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
-}
-
-.downloadSpinner {
-  position: absolute;
-  top: -0.375em; /* -6px → -0.375em */
-  right: -0.375em; /* -6px → -0.375em */
-  width: 0.75em; /* 12px → 0.75em */
-  height: 0.75em; /* 12px → 0.75em */
-  background: var(--xeg-color-success);
-  color: var(--color-text-inverse);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.5em; /* 8px → 0.5em */
-  animation: xeg-spin var(--xeg-duration-normal) var(--xeg-easing-linear) infinite;
-}
-
-/* 설정 및 닫기 버튼 - 기본 스타일 상속 */
-.closeButton {
-  /* danger 변형을 위한 기본 설정 */
-  border-color: var(--xeg-color-neutral-300);
-}
-
-.closeButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  --toolbar-button-hover-shadow: var(--xeg-shadow-md);
 }
 
 /* 반응형 디자인 */
@@ -506,11 +419,9 @@ button.fitButton {
   .toolbarButton.closeButton,
   .fitButton {
     /* ✅ 최소 클릭 타겟 유지: 2.5em (정책 준수) */
-    width: 2.5em !important;
-    height: 2.5em !important;
-    min-width: 2.5em !important;
-    min-height: 2.5em !important;
-    padding: 0.5em !important;
+    --xeg-button-square-size: 2.5em;
+    --xeg-button-square-padding: 0.5em;
+
     font-size: 0.8125em; /* 13px → 0.8125em */
   }
 
@@ -543,11 +454,8 @@ button.fitButton {
 
   .toolbarButton {
     /* ✅ 작은 화면에서도 클릭 타겟 최소치 유지 */
-    width: 2.5em; /* 고정 폭으로 정렬 안정화 */
-    height: 2.5em;
-    min-width: 2.5em;
-    min-height: 2.5em;
-    padding: 0.5em; /* 컨텐츠 여백 유지 */
+    --xeg-button-square-size: 2.5em; /* 고정 폭으로 정렬 안정화 */
+    --xeg-button-square-padding: 0.5em; /* 컨텐츠 여백 유지 */
   }
 
   .mediaCounterWrapper {
@@ -620,10 +528,6 @@ button.fitButton {
 /* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
 /* animation을 사용하는 요소만 명시적으로 비활성화 */
 @media (prefers-reduced-motion: reduce) {
-  .downloadSpinner {
-    animation: none;
-  }
-
   /* 모든 버튼에서 transform 효과 제거 */
   .toolbarButton:hover:not(:disabled),
   .navButton:hover:not(:disabled),
@@ -781,9 +685,7 @@ button.fitButton {
   overflow-y: auto;
   overscroll-behavior: contain;
   max-height: 15em; /* 약 10줄 정도의 텍스트 */
-  transition:
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+  transition: var(--xeg-transition-surface-fast);
   user-select: text;
   -webkit-user-select: text;
   cursor: text;
@@ -809,29 +711,7 @@ button.fitButton {
 }
 
 /* Tweet Link Styles - Phase 1: Safe text formatting */
-.tweetLink {
-  color: var(--xeg-color-primary);
-  text-decoration: none;
-  overflow-wrap: break-word;
-  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
-}
-
-.tweetLink:hover {
-  color: var(--xeg-color-primary-hover);
-  text-decoration: underline;
-}
-
-.tweetLink:focus {
-  outline: 0.125em solid var(--xeg-color-focus); /* 2px → 0.125em */
-  outline-offset: 0.125em; /* 2px → 0.125em */
-  border-radius: var(--xeg-radius-xs);
-}
-
-.tweetLink:active {
-  color: var(--xeg-color-primary-active);
-}
-
-.tweetContent a {
+:where(.tweetLink, .tweetContent a) {
   color: var(--xeg-color-primary);
   text-decoration: none;
   overflow-wrap: break-word;
@@ -839,65 +719,28 @@ button.fitButton {
   cursor: pointer;
 }
 
-.tweetContent a:hover {
+:where(.tweetLink, .tweetContent a):hover {
   color: var(--xeg-color-primary-hover);
   text-decoration: underline;
 }
 
-.tweetContent a:focus {
-  outline: 0.125em solid var(--xeg-color-focus); /* 2px → 0.125em */
-  outline-offset: 0.125em; /* 2px → 0.125em */
+:where(.tweetLink, .tweetContent a):focus {
+  outline: var(--xeg-focus-ring, 0.125em solid currentColor);
+  outline-offset: var(--xeg-focus-ring-offset, 0.125em);
   border-radius: var(--xeg-radius-xs);
 }
 
-.tweetContent a:active {
+:where(.tweetLink, .tweetContent a):active {
   color: var(--xeg-color-primary-active);
 }
 
 /* High contrast mode for links */
-[data-high-contrast='true'] .tweetLink {
+[data-high-contrast='true'] :where(.tweetLink, .tweetContent a) {
   color: var(--xeg-color-overlay-heavy);
   text-decoration: underline;
 }
 
-[data-high-contrast='true'] .tweetLink:hover {
-  color: var(--xeg-color-neutral-100);
-  background: var(--xeg-color-overlay-medium);
-}
-
-/* Phase 2: Twitter-style hashtags and mentions (from sanitized HTML) */
-/* Match Twitter's blue color using semantic token */
-.tweetContent a[href*='/hashtag/'],
-.tweetContent a[href*='/search?q=%23'] {
-  color: var(--xeg-color-primary);
-  text-decoration: none;
-  overflow-wrap: break-word;
-  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
-}
-
-.tweetContent a[href*='/hashtag/']:hover,
-.tweetContent a[href*='/search?q=%23']:hover {
-  text-decoration: underline;
-}
-
-.tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']) {
-  color: var(--xeg-color-primary);
-  text-decoration: none;
-  overflow-wrap: break-word;
-  transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
-}
-
-.tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']):hover {
-  text-decoration: underline;
-}
-
-/* High contrast mode for Twitter-style links */
-[data-high-contrast='true'] .tweetContent a {
-  color: var(--xeg-color-overlay-heavy);
-  text-decoration: underline;
-}
-
-[data-high-contrast='true'] .tweetContent a:hover {
+[data-high-contrast='true'] :where(.tweetLink, .tweetContent a):hover {
   color: var(--xeg-color-neutral-100);
   background: var(--xeg-color-overlay-medium);
 }

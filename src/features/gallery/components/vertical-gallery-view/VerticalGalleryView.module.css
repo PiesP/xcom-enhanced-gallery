@@ -73,14 +73,7 @@
 @layer components {
   /* Common CSS variables - OKLCH color system */
   :root {
-    /* Transitions - modern easing functions */
-    --xeg-transition-fast:
-      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-      opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
-    --xeg-transition-normal:
-      transform var(--xeg-duration-fade) var(--xeg-easing-ease-in-out),
-      opacity var(--xeg-duration-fade) var(--xeg-easing-ease-in-out);
-    /* Removed --xeg-transition-smooth: unused */
+    /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
       opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
       transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
@@ -92,6 +85,14 @@
 
     /* Removed --xeg-toolbar-height: unused */
     /* Removed --xeg-backdrop-blur: unused */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    :root {
+      --xeg-transition-toolbar: none;
+    }
   }
 }
 
@@ -121,7 +122,7 @@
   /* 초기 ?�태 */
   opacity: 1;
   visibility: visible;
-  transition: var(--xeg-transition-normal);
+  transition: var(--xeg-transition-elevation-normal);
 
   /* ?�벤??처리 - ?�크�??�벤?�는 ??�� ?�용 */
   cursor: default;
@@ -192,7 +193,7 @@
   --toolbar-pointer-events: auto;
   --toolbar-transform-y: 0;
   /* ?�커???�에????빠른 ?�랜지?? */
-  transition: var(--xeg-transition-fast);
+  transition: var(--xeg-transition-elevation-fast);
 }
 
 /* 툴바 래퍼 내 모든 요소 클릭 보장 */
@@ -300,7 +301,7 @@
   position: relative;
   margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem */
   border-radius: var(--xeg-radius-lg, 0.5rem);
-  transition: var(--xeg-transition-normal); /* 앵커형 변단 렬 */
+  transition: var(--xeg-transition-elevation-normal); /* 앵커형 변단 렬 */
 
   /* 성능 최적화 */
   contain: layout style;

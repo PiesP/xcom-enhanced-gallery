@@ -523,10 +523,13 @@
       --transition-normal: 0ms;
       --transition-slow: 0ms;
 
-      /* Transitions (design-tokens.css) */
-      --xeg-transition-fast: none;
-      --xeg-transition-normal: none;
-      --xeg-transition-slow: none;
+      /* Transitions (design-tokens.component.css) */
+      --xeg-transition-surface-normal: none;
+      --xeg-transition-surface-fast: none;
+      --xeg-transition-elevation-normal: none;
+      --xeg-transition-elevation-fast: none;
+      --xeg-transition-interaction-fast: none;
+      --xeg-transition-width-normal: none;
 
       /* Animations (design-tokens.component.css) */
       --animation-fade-in: none;
