@@ -255,8 +255,8 @@
     --xeg-easing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
 
     /* Interaction State Tokens */
-    --xeg-button-lift: -1px;
-    --xeg-button-lift-hover: -2px;
+    --xeg-button-lift: -0.0625rem; /* -1px */
+    --xeg-button-lift-hover: -0.125rem; /* -2px */
     --xeg-opacity-disabled: 0.5;
     --xeg-hover-lift: translateY(-0.125rem);
 
