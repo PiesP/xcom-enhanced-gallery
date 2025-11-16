@@ -223,7 +223,7 @@ async function cleanup(): Promise<void> {
  *
  * 📋 7-stage bootstrap process:
  * 1️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
- * 2️⃣  Core systems (Core services + Toast) - src/bootstrap/critical-systems.ts (Phase 2.1)
+ * 2️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts (Phase 2.1)
  * 3️⃣  Base services (Animation/Theme/Language) - src/bootstrap/base-services.ts (Phase 2.1)
  * 4️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
  * 5️⃣  Global event handler setup - src/bootstrap/events.ts

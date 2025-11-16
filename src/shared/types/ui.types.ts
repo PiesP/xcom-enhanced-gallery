@@ -1,7 +1,7 @@
 /**
  * @fileoverview UI/theme related type definitions
  * @version 1.0.0 - Phase 196: Split from app.types.ts
- * @description Integration of theme, toast, button style, animation and other UI-related types
+ * @description Integration of theme, button style, animation and other UI-related types
  */
 
 /**
@@ -19,11 +19,6 @@ export type Theme = 'light' | 'dark' | 'auto';
  * @see {@link Theme} - Base theme type
  */
 export type GalleryTheme = 'light' | 'dark' | 'auto' | 'system';
-
-/**
- * Toast notification type
- */
-export type ToastType = 'info' | 'warning' | 'error' | 'success';
 
 /**
  * Button variant

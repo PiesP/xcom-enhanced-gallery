@@ -28,24 +28,6 @@
     /* Removed: --button-bg-primary, --button-radius, --button-padding-x, --button-padding-y, --button-height */
     --button-transition: var(--transition-fast);
 
-    /* Toast Component */
-    --toast-bg-success: var(--color-success-bg);
-    --toast-bg-error: var(--color-error-bg);
-    --toast-bg-warning: var(--color-warning-bg);
-    --toast-bg-info: var(--color-info-bg);
-    --toast-text-success: var(--color-success);
-    --toast-text-error: var(--color-error);
-    --toast-text-warning: var(--color-warning);
-    --toast-text-info: var(--color-info);
-    --toast-border-success: var(--color-success);
-    --toast-border-error: var(--color-error);
-    --toast-border-warning: var(--color-warning);
-    --toast-border-info: var(--color-info);
-    --toast-radius: var(--xeg-radius-lg);
-    /* Removed: --toast-padding (use --space-md directly) */
-    --toast-shadow: var(--shadow-md);
-    --toast-offset: 1.25rem; /* 20px = 1.25rem */
-
     /* Panel/Surface Component */
     --panel-bg: var(--color-bg-elevated);
     --panel-border: var(--color-border-default);
@@ -156,23 +138,6 @@
   .xeg-anim-fade-out {
     animation: xeg-fade-out var(--xeg-duration-fast) var(--xeg-easing-ease-in);
   }
-
-  /* Toast animation helpers */
-  .xeg-anim-slide-in {
-    animation: slideInFromRight var(--xeg-duration-fast) var(--xeg-ease-standard);
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-  }
-
-  .xeg-anim-slide-out {
-    animation: xeg-slide-out-top var(--xeg-duration-fast) var(--xeg-easing-ease-in);
-  }
-
-  .xeg-anim-fade-slide-in {
-    animation: fadeSlideIn var(--xeg-duration-normal) var(--xeg-ease-standard);
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-  }
 }
 
 /* ======================================= */
@@ -220,28 +185,6 @@
     to {
       opacity: 0;
       transform: translateY(-1.25rem) scale(0.95); /* -20px = -1.25rem */
-    }
-  }
-
-  @keyframes slideInFromRight {
-    from {
-      transform: translateX(100%) translateZ(0);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0) translateZ(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes fadeSlideIn {
-    from {
-      transform: translateY(-0.5rem) translateZ(0);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0) translateZ(0);
-      opacity: 1;
     }
   }
 }

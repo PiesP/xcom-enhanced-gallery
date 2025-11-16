@@ -116,7 +116,6 @@ export type FileExtension = Brand<string, 'FileExtension'>;
 export type {
   Theme,
   GalleryTheme,
-  ToastType,
   ButtonVariant,
   ButtonSize,
   ColorVariant,

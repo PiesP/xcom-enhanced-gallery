@@ -14,7 +14,6 @@ export const CSS = {
     GALLERY: 'var(--xeg-z-gallery)',
     MODAL: 'var(--xeg-z-modal)',
     TOOLBAR: 'var(--xeg-z-toolbar)',
-    TOAST: 'var(--xeg-z-toast)',
   },
   SPACING: {
     XS: 'var(--xeg-spacing-xs)',

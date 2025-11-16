@@ -252,7 +252,6 @@ import '@shared/styles/design-tokens.component.css'; // 3단계
 // Define inside the component/module that needs autocomplete
 const SPACING = {
   xl: 'var(--xeg-spacing-xl)',
-  toastOffset: 'var(--xeg-toast-offset)',
 } as const;
 
 type SpacingKey = keyof typeof SPACING;

@@ -55,7 +55,7 @@ src/shared/types/
 #### `ui.types.ts` - UI/theme types
 
 - **Purpose**: UI-related types
-- **Includes**: Theme, GalleryTheme, ToastType, ButtonVariant
+- **Includes**: Theme, GalleryTheme, ButtonVariant
 - **Usage**: UI components, theme system
 
 #### `component.types.ts` - Component types

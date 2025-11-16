@@ -110,7 +110,6 @@ export type {
 export type {
   Theme,
   GalleryTheme,
-  ToastType,
   ButtonVariant,
   ButtonSize,
   ColorVariant,

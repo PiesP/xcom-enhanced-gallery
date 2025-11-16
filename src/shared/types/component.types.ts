@@ -195,7 +195,7 @@ export interface FormComponentProps extends InteractiveComponentProps {
 /**
  * Container component Props
  *
- * @description For container elements like toast, modal
+ * @description For container elements like modal overlays
  */
 export interface ContainerComponentProps extends BaseComponentProps {
   /** Close callback */

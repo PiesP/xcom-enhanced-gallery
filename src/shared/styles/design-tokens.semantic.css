@@ -201,7 +201,6 @@
     --xeg-z-modal: 10000;
     --xeg-z-toolbar: 10001;
     --xeg-z-overlay: 9999;
-    --xeg-z-toast: 10080;
     --xeg-z-gallery: var(--xeg-z-overlay);
 
     /* Layer Management - Semantic Roles */
@@ -209,7 +208,6 @@
     --xeg-layer-root: var(--xeg-z-overlay);
     --xeg-layer-toolbar: var(--xeg-z-toolbar);
     --xeg-layer-modal: var(--xeg-z-modal);
-    --xeg-layer-toast: var(--xeg-z-toast);
 
     /* Animation Easing */
     --xeg-easing-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -525,35 +523,6 @@
     --xeg-modal-border-light: var(--color-border-default);
     --xeg-modal-bg: var(--xeg-modal-bg-light);
     --xeg-modal-border: var(--xeg-modal-border-light);
-
-    /* Toast Component Tokens (Phase 111.1: Monochrome Unification) */
-    /* All Toast types now use the same gray-based colors for consistency.
-   * Visual distinction is provided by icons (Phase 110.2) and text content. */
-    --xeg-toast-bg-info: var(--xeg-surface-glass-bg);
-    --xeg-toast-border-info: var(--color-gray-300);
-    --xeg-toast-bg-success: var(--xeg-surface-glass-bg);
-    --xeg-toast-border-success: var(--color-gray-300);
-    --xeg-toast-bg-warning: var(--xeg-surface-glass-bg);
-    --xeg-toast-border-warning: var(--color-gray-300);
-    --xeg-toast-bg-error: var(--xeg-surface-glass-bg);
-    --xeg-toast-border-error: var(--color-gray-300);
-    --xeg-toast-bg-neutral: var(--xeg-surface-glass-bg);
-    --xeg-toast-shadow-info: var(--xeg-shadow-md); /* 0 2px 8px */
-    --xeg-toast-shadow-focus: var(--xeg-shadow-lg); /* 0 4px 16px */
-
-    /* Toast Layout Tokens (Phase 52) */
-    --xeg-toast-margin-bottom: var(--space-md); /* 16px - 4px grid normalized */
-    --xeg-toast-padding: var(--space-lg); /* 24px - 4px grid normalized */
-    --xeg-toast-gap: var(--space-sm); /* 8px - content gap */
-    --xeg-toast-header-gap: var(--space-md); /* 16px - header gap normalized */
-    --xeg-toast-min-width: 20rem; /* 320px */
-    --xeg-toast-max-width: 30rem; /* 480px */
-    --xeg-toast-border-width: 0.25rem; /* 4px */
-
-    /* Toast Typography Tokens (Phase 52) */
-    --xeg-toast-title-font-size: var(--font-size-sm); /* 14px */
-    --xeg-toast-title-font-weight: 600;
-    --xeg-toast-message-font-size: 0.8125rem; /* 13px */
 
     /* Focus Ring Utilities */
     --xeg-focus-ring: 0.125rem solid var(--color-gray-500); /* 2px */

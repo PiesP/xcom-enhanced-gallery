@@ -1,30 +1,18 @@
 /**
  * @fileoverview Error Boundary - Error Recovery Component
- * @description Catches render errors from child components and notifies users via toast.
+ * @description Catches render errors from child components and notifies users via Tampermonkey notifications.
  * Failed component silently replaces with empty fallback (no text rendering).
  * Adheres to PC-only events and vendor getter policies (Phase 309+).
- * @version 1.0.0
- * @module shared/components/ui/ErrorBoundary
- *
- * @example
- * ```tsx
- * <ErrorBoundary>
- *   <GalleryApp />
- * </ErrorBoundary>
- * ```
- *
- * **Error Flow**:
- * 1. Child component throws during render
- * 2. ErrorBoundary catches error
- * 3. Notifies user via ToastManager.error()
- * 4. Renders silent fallback (empty span, no text)
- * 5. Language/Toast service errors are silently ignored
+ * 5. Language/notification service errors are silently ignored
  *
  * **Design Decisions**:
- * - Silent UI recovery: Users see no error message on screen (toast-only mode)
+ * - Silent UI recovery: Users see no error message on screen (notification-only mode)
  * - One-time reporting: Duplicate errors ignored (reportedError deduplication)
- * - Fault tolerant: Toast/language service failures don't crash error boundary
+ * - Fault tolerant: Notification/language service failures don't crash error boundary
  * - PC-only: No touch/pointer events, uses getSolid() vendor getter
+ *
+ * @version 1.0.0
+ * @module shared/components/ui/ErrorBoundary
  */
 
 import { getSolid, type ComponentChildren, type JSXElement } from '@shared/external/vendors';
@@ -44,7 +32,7 @@ type Props = {
  *
  * **Responsibilities**:
  * - Catch render errors from child components
- * - Notify user via ToastManager
+ * - Notify user via NotificationService
  * - Silent UI recovery (no error display)
  * - Deduplicate duplicate errors
  *
@@ -62,7 +50,7 @@ export function ErrorBoundary({ children }: Props): JSXElement {
   const fallbackElement = <span data-xeg-error-boundary-reset hidden aria-hidden='true' />;
 
   /**
-   * Report error to user via ToastManager
+   * Report error to user via NotificationService
    * Deduplicates identical errors to prevent notification spam
    *
    * @param {unknown} err - Error object from child component
@@ -72,7 +60,7 @@ export function ErrorBoundary({ children }: Props): JSXElement {
    * - Compares by reference to deduplicate (reportedError === err)
    * - Retrieves localized error messages from language service
    * - Formats error message with error.message or String fallback
-   * - Silently ignores Toast/language service failures
+   * - Silently ignores Notification/language service failures
    */
   const reportError = (err: unknown): void => {
     // Deduplicate: ignore if same error already reported
@@ -90,7 +78,7 @@ export function ErrorBoundary({ children }: Props): JSXElement {
       // Notify user with Tampermonkey notification
       NotificationService.getInstance().error(title, body);
     } catch {
-      // Silently ignore toast/language service failures
+      // Silently ignore notification/language service failures
       // Error boundary must never crash due to notification failures
     }
   };
