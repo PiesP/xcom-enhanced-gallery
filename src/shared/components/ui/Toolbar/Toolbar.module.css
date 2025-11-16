@@ -467,7 +467,7 @@ button.fitButton {
   right: -0.375em; /* -6px → -0.375em */
   width: 0.75em; /* 12px → 0.75em */
   height: 0.75em; /* 12px → 0.75em */
-  background: var(--color-green-500);
+  background: var(--xeg-color-success);
   color: var(--color-text-inverse);
   border-radius: 50%;
   display: flex;
@@ -704,7 +704,7 @@ button.fitButton {
     var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   box-shadow: var(--xeg-toolbar-panel-shadow);
-  z-index: 1;
+  z-index: var(--xeg-z-toolbar-panel);
   will-change: transform, opacity;
   overscroll-behavior: contain;
 }
@@ -735,7 +735,7 @@ button.fitButton {
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s 0s;
   /* Exclusive panels: float above toolbar when opened */
-  z-index: 2;
+  z-index: var(--xeg-z-toolbar-panel-active);
 }
 
 /* Tweet Panel Body - Settings Panel과 유사한 레이아웃 */
@@ -869,7 +869,7 @@ button.fitButton {
 /* Match Twitter's blue color using semantic token */
 .tweetContent a[href*='/hashtag/'],
 .tweetContent a[href*='/search?q=%23'] {
-  color: var(--color-twitter-blue); /* Phase: design-consistency - use token instead of hardcoded */
+  color: var(--xeg-color-primary);
   text-decoration: none;
   overflow-wrap: break-word;
   transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);
@@ -881,7 +881,7 @@ button.fitButton {
 }
 
 .tweetContent a[href^='/']:not([href*='/hashtag/'], [href*='/search?q=%23']) {
-  color: var(--color-twitter-blue); /* Phase: design-consistency - use token for mentions */
+  color: var(--xeg-color-primary);
   text-decoration: none;
   overflow-wrap: break-word;
   transition: color var(--xeg-duration-fast) var(--xeg-ease-standard);

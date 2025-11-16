@@ -219,7 +219,7 @@
     color: var(--xeg-color-text-primary);
     font-size: var(--font-size-xl);
     cursor: pointer;
-    z-index: var(--xeg-z-overlay);
+    z-index: var(--xeg-z-gallery-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -262,7 +262,7 @@
     left: 50%;
     transform: translateX(-50%);
     max-width: calc(100vw - 2.5rem);
-    z-index: var(--xeg-z-overlay);
+    z-index: var(--xeg-z-gallery-overlay);
   }
 
   .xeg-thumbnails-container {
@@ -336,7 +336,7 @@
   .xeg-gallery-backdrop {
     position: absolute;
     inset: 0;
-    z-index: var(--xeg-z-overlay);
+    z-index: var(--xeg-z-gallery-overlay);
     cursor: pointer;
   }
 

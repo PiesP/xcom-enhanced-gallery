@@ -13,7 +13,7 @@
   transition:
     opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
     visibility var(--xeg-duration-fast) var(--xeg-ease-standard);
-  z-index: var(--xeg-z-modal);
+  z-index: var(--xeg-z-modal-backdrop);
 }
 
 .backdropOpen {

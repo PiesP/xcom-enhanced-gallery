@@ -147,7 +147,7 @@
   left: 0;
   right: 0;
   height: auto;
-  z-index: var(--xeg-z-modal);
+  z-index: var(--xeg-z-toolbar);
 
   /* 기본 ?�태: CSS 변?�로 ?�어?�는 ?��? ?�태 */
   opacity: var(--toolbar-opacity, 0);
@@ -167,9 +167,9 @@
   /* 그라디언트 배경 - oklch 기반 */
   background: linear-gradient(
     to bottom,
-    var(--xeg-toolbar-wrapper-gradient-start, oklch(0% 0 0deg / 80%)) 0%,
-    var(--xeg-toolbar-wrapper-gradient-mid, oklch(0% 0 0deg / 40%)) 70%,
-    transparent 100%
+    var(--xeg-toolbar-wrapper-gradient-start, var(--xeg-bg-toolbar)) 0%,
+    var(--xeg-toolbar-wrapper-gradient-mid, var(--xeg-bg-toolbar)) 70%,
+    var(--xeg-toolbar-wrapper-gradient-end, var(--xeg-bg-toolbar)) 100%
   );
   border: var(--xeg-toolbar-wrapper-border, none);
   border-radius: var(--xeg-toolbar-wrapper-radius, 0);
@@ -355,7 +355,7 @@
   left: 0;
   right: 0;
   height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
-  z-index: calc(var(--xeg-z-modal) - 1); /* ?�바보다 ??? z-index */
+  z-index: var(--xeg-z-toolbar-hover-zone); /* keeps hover detection just below toolbar */
   background: transparent;
   pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
 }
@@ -363,8 +363,8 @@
 /* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
 .toolbarHoverZone:hover {
   /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
-  z-index: calc(var(--xeg-z-modal) - 1);
-  background: var(--xeg-toolbar-hover-zone-bg, transparent);
+  z-index: var(--xeg-z-toolbar-hover-zone);
+  background: var(--xeg-toolbar-hover-zone-bg, var(--xeg-bg-toolbar));
 }
 
 /* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
@@ -578,7 +578,7 @@
   left: 0;
   right: 0;
   height: var(--xeg-hover-zone-height); /* ?�장???�버 ?�역 */
-  z-index: calc(var(--xeg-z-modal) - 1);
+  z-index: var(--xeg-z-toolbar-hover-zone);
   pointer-events: auto;
   background: transparent;
 }

@@ -35,7 +35,7 @@
   position: fixed;
   inset: 0;
   background: var(--color-overlay-backdrop);
-  z-index: var(--xeg-z-modal);
+  z-index: var(--xeg-z-modal-backdrop);
 }
 
 /**
@@ -68,7 +68,7 @@
   background: var(--xeg-modal-bg);
   border: var(--border-width-thin) solid var(--xeg-modal-border);
   box-shadow: var(--xeg-shadow-lg);
-  z-index: calc(var(--xeg-z-modal) + 1);
+  z-index: var(--xeg-z-modal-foreground);
 }
 
 /**

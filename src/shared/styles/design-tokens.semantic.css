@@ -36,8 +36,8 @@
     ); /* Phase: design-consistency - improved from gray-700 */
     --color-text-muted: var(--color-gray-500);
     --color-text-inverse: var(--color-base-white);
-    --color-text-error: oklch(1 0 0 / 70%); /* white with 70% opacity */
-    --color-text-on-overlay: oklch(1 0 0 / 90%); /* white with 90% opacity */
+    --color-text-error: var(--color-base-white);
+    --color-text-on-overlay: var(--color-base-white);
 
     /* Border Colors - Semantic Roles */
     --color-border-default: var(--color-gray-200);
@@ -80,26 +80,26 @@
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
-    /* State Colors - Semantic Roles */
-    --color-success: var(--color-green-500);
-    --color-success-hover: var(--color-green-600);
-    --color-success-bg: var(--color-green-50);
-    --color-error: var(--color-red-500);
-    --color-error-hover: var(--color-red-600);
-    --color-error-bg: var(--color-red-50);
-    --color-warning: var(--color-yellow-500);
-    --color-warning-bg: var(--color-yellow-50);
-    --color-info: var(--color-blue-500);
-    --color-info-bg: var(--color-blue-50);
+    /* State Colors - Semantic Roles (monochrome, minimal) */
+    --color-success: var(--color-gray-800);
+    --color-success-hover: var(--color-gray-900);
+    --color-success-bg: var(--color-gray-100);
+    --color-error: var(--color-gray-800);
+    --color-error-hover: var(--color-gray-900);
+    --color-error-bg: var(--color-gray-100);
+    --color-warning: var(--color-gray-700);
+    --color-warning-bg: var(--color-gray-50);
+    --color-info: var(--color-gray-700);
+    --color-info-bg: var(--color-gray-50);
 
     /* State Color Tokens - xeg prefix aliases */
     --xeg-color-error: var(--color-error);
     --xeg-color-error-hover: var(--color-error-hover);
 
-    /* Interactive Colors - Semantic Roles */
-    --color-primary: var(--color-twitter-blue);
-    --color-primary-hover: var(--color-twitter-blue-hover);
-    --color-primary-active: var(--color-twitter-blue-active);
+    /* Interactive Colors - Semantic Roles (monochrome accent) */
+    --color-primary: var(--color-gray-900);
+    --color-primary-hover: var(--color-gray-700);
+    --color-primary-active: var(--color-gray-800);
 
     /* Interactive Color Tokens - xeg prefix for consistency */
     --xeg-color-primary: var(--color-primary);
@@ -125,14 +125,14 @@
     --xeg-color-bg-primary: var(--color-bg-primary);
 
     /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
-    --color-overlay-light: oklch(0 0 0 / var(--opacity-overlay-light));
-    --color-overlay-medium: oklch(0 0 0 / var(--opacity-overlay-medium));
-    --color-overlay-strong: oklch(0 0 0 / var(--opacity-overlay-strong));
-    --color-overlay-backdrop: oklch(0 0 0 / var(--opacity-overlay-backdrop));
-    --color-overlay-light-bg: oklch(1 0 0 / 95%); /* white with 95% opacity */
-    --color-overlay-dark-bg: oklch(0 0 0 / 95%); /* black with 95% opacity */
-    --color-overlay-button-light: oklch(0 0 0 / 10%); /* black with 10% opacity */
-    --color-overlay-button-light-hover: oklch(0 0 0 / 20%); /* black with 20% opacity */
+    --color-overlay-light: var(--color-gray-100);
+    --color-overlay-medium: var(--color-gray-300);
+    --color-overlay-strong: var(--color-gray-500);
+    --color-overlay-backdrop: var(--color-gray-900);
+    --color-overlay-light-bg: var(--color-gray-50);
+    --color-overlay-dark-bg: var(--color-gray-900);
+    --color-overlay-button-light: var(--color-gray-200);
+    --color-overlay-button-light-hover: var(--color-gray-300);
 
     /* Overlay Color Tokens - xeg prefix aliases */
     --xeg-color-overlay-light: var(--color-overlay-light);
@@ -183,8 +183,8 @@
     --shadow-gallery-nav: 0 0.25rem 1rem oklch(0 0 0 / 12%), 0 0.125rem 0.5rem oklch(0 0 0 / 8%);
     --shadow-gallery-nav-hover:
       0 0.5rem 1.5rem oklch(0 0 0 / 18%), 0 0.25rem 0.75rem oklch(0 0 0 / 12%);
-    --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0.006 277.8 / 8%); /* 0 2px 8px, slate-900 8% */
-    --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0.006 277.8 / 12%); /* 0 4px 16px, slate-900 12% */
+    --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0 0 / 8%); /* 0 2px 8px, neutral 8% */
+    --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0 0 / 12%); /* 0 4px 16px, neutral 12% */
 
     /* Legacy Shadow Tokens - 호환성 보장 */
     --xeg-shadow-xs: var(--shadow-xs);
@@ -234,19 +234,27 @@
     --xeg-glass-border-medium: var(--xeg-media-glass-border);
     --xeg-glass-shadow-medium: var(--xeg-media-glass-shadow);
 
-    /* Z-Index Management */
-    --xeg-z-modal: 10000;
-    --xeg-z-toolbar: 10001;
-    --xeg-z-overlay: 9999;
-    --xeg-z-gallery: var(--xeg-z-overlay);
-    --xeg-z-gallery-overlay: var(--xeg-z-overlay);
-    --xeg-z-gallery-toolbar: var(--xeg-z-toolbar);
-    --xeg-z-tooltip: 10002;
+    /* Z-Index Management - anchored above twitter.com UI */
+    --xeg-z-stack-base: 10000;
+    --xeg-z-gallery: 10000;
+    --xeg-z-gallery-overlay: 10008;
+    --xeg-z-gallery-toolbar: 10012;
+    --xeg-z-toolbar-hover-zone: 10018;
+    --xeg-z-toolbar: 10020;
+    --xeg-z-toolbar-panel: 10022;
+    --xeg-z-toolbar-panel-active: 10024;
+    --xeg-z-overlay: 10030;
+    --xeg-z-modal-backdrop: 10040;
+    --xeg-z-modal: 10045;
+    --xeg-z-modal-foreground: 10048;
+    --xeg-z-tooltip: 10060;
 
     /* Layer Management - Semantic Roles */
     --xeg-layer-base: 0;
-    --xeg-layer-root: var(--xeg-z-overlay);
+    --xeg-layer-root: var(--xeg-z-gallery);
     --xeg-layer-toolbar: var(--xeg-z-toolbar);
+    --xeg-layer-toolbar-panel: var(--xeg-z-toolbar-panel);
+    --xeg-layer-overlay: var(--xeg-z-overlay);
     --xeg-layer-modal: var(--xeg-z-modal);
 
     /* Animation Easing */
@@ -312,7 +320,7 @@
     --color-glass-bg: var(--color-gray-900);
     --color-glass-border: var(--color-gray-600);
 
-    /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+    /* Unified dark backgrounds - toolbar and modal share gray-800 */
     --xeg-bg-toolbar: var(--color-gray-800);
     --xeg-color-border-primary: var(
       --color-gray-600
@@ -322,7 +330,7 @@
     /* Gallery Image Item Dark Mode Tokens */
     --xeg-color-bg-secondary: var(--color-gray-800);
 
-    /* Gallery Background - 다크 모드 */
+    /* Gallery Background - dark mode */
     --xeg-gallery-bg: var(--xeg-gallery-bg-dark);
 
     /* Button Tokens - Dark Mode */
@@ -348,6 +356,11 @@
 
     /* Explicit dark background for gallery root */
     --xeg-color-background: oklch(20% 0 0deg);
+
+    /* Interactive Colors - Dark Theme Overrides (monochrome accent) */
+    --color-primary: var(--color-gray-100);
+    --color-primary-hover: var(--color-gray-200);
+    --color-primary-active: var(--color-gray-300);
   }
 
   @media (prefers-color-scheme: dark) {
@@ -360,7 +373,7 @@
       --color-glass-bg: var(--color-gray-900);
       --color-glass-border: var(--color-gray-600);
 
-      /* Unified dark backgrounds - 툴바와 모달 모두 gray-800 사용 */
+      /* Unified dark backgrounds - toolbar and modal share gray-800 */
       --xeg-bg-toolbar: var(--color-gray-800);
       --xeg-color-border-primary: var(--color-gray-600);
       --xeg-toolbar-border: var(--color-gray-600);
@@ -397,6 +410,11 @@
       --xeg-settings-select-font-size: var(--font-size-sm);
 
       --xeg-color-background: oklch(20% 0 0deg);
+
+      /* Interactive Colors - System Dark Theme Overrides (monochrome accent) */
+      --color-primary: var(--color-gray-100);
+      --color-primary-hover: var(--color-gray-200);
+      --color-primary-active: var(--color-gray-300);
     }
   }
 
@@ -480,11 +498,12 @@
       --xeg-toolbar-button-bg-high-contrast: Canvas;
       --xeg-toolbar-button-border-high-contrast: CanvasText;
       --xeg-toolbar-wrapper-gradient-start: Canvas;
-      --xeg-toolbar-wrapper-gradient-mid: color-mix(in srgb, Canvas 80%, transparent);
+      --xeg-toolbar-wrapper-gradient-mid: color-mix(in srgb, Canvas 85%, CanvasText 15%);
+      --xeg-toolbar-wrapper-gradient-end: Canvas;
       --xeg-toolbar-wrapper-border: 0.125rem solid CanvasText;
       --xeg-toolbar-wrapper-radius: var(--xeg-radius-md);
       --xeg-toolbar-wrapper-margin: var(--space-xs);
-      --xeg-toolbar-hover-zone-bg: color-mix(in srgb, CanvasText 20%, transparent);
+      --xeg-toolbar-hover-zone-bg: color-mix(in srgb, CanvasText 15%, Canvas 85%);
 
       /* Focus styling */
       --xeg-focus-outline: 0.1875rem solid CanvasText; /* 3px */
@@ -561,12 +580,17 @@
     --xeg-media-glass-border: var(--color-glass-border);
     --xeg-media-glass-shadow: none;
     --xeg-media-glass-blur: none;
-    --xeg-toolbar-wrapper-gradient-start: oklch(0% 0 0deg / 80%);
-    --xeg-toolbar-wrapper-gradient-mid: oklch(0% 0 0deg / 40%);
+    --xeg-toolbar-wrapper-gradient-start: var(--xeg-bg-toolbar);
+    --xeg-toolbar-wrapper-gradient-mid: color-mix(
+      in oklab,
+      var(--xeg-bg-toolbar) 85%,
+      var(--color-gray-900) 15%
+    );
+    --xeg-toolbar-wrapper-gradient-end: var(--xeg-bg-toolbar);
     --xeg-toolbar-wrapper-border: none;
     --xeg-toolbar-wrapper-radius: 0;
     --xeg-toolbar-wrapper-margin: 0;
-    --xeg-toolbar-hover-zone-bg: transparent;
+    --xeg-toolbar-hover-zone-bg: var(--xeg-bg-toolbar);
     /* Neutral color aliases */
     --xeg-neutral-100: var(--xeg-color-neutral-100);
     --xeg-neutral-200: var(--xeg-color-neutral-200);

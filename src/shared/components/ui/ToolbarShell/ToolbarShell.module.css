@@ -16,12 +16,12 @@
 
 .elevationMedium {
   box-shadow: var(--xeg-shadow-md);
-  z-index: calc(var(--xeg-layer-toolbar) + 1);
+  z-index: var(--xeg-layer-toolbar-panel);
 }
 
 .elevationHigh {
   box-shadow: var(--xeg-shadow-md);
-  z-index: calc(var(--xeg-layer-toolbar) + 2);
+  z-index: var(--xeg-z-toolbar-panel-active);
 }
 
 .surfaceGlass,
