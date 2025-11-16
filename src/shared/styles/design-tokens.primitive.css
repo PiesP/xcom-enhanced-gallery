@@ -96,6 +96,10 @@
     --duration-normal: 250ms;
     --duration-slow: 300ms;
 
+    /* Border Width Scale */
+    --border-width-thin: 0.0625rem; /* 1px */
+    --border-width-sm: 0.125rem; /* 2px */
+
     /* Opacity Scale */
     /* Removed: --opacity-disabled (use --xeg-opacity-disabled) */
     --opacity-hover: 0.8;

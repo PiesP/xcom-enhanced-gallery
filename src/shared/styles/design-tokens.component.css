@@ -52,11 +52,14 @@
     --scrollbar-track-bg: var(--color-bg-secondary);
     --scrollbar-thumb-bg: var(--color-border-emphasis);
     --scrollbar-thumb-hover-bg: var(--color-text-secondary);
+    --xeg-scrollbar-width: var(--scrollbar-width);
+    --xeg-scrollbar-border-radius: var(--radius-sm);
 
     /* Hover Zone Component */
     --hover-zone-height: 7.5rem; /* 120px = 7.5rem */
     --hover-zone-bg: transparent;
     --hover-zone-transition: var(--transition-fast);
+    --xeg-hover-zone-height: var(--hover-zone-height);
 
     /* Animation Presets - Component Specific */
     --animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);

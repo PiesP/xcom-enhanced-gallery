@@ -56,6 +56,7 @@
     --xeg-button-text: var(--color-text-primary);
     --xeg-button-bg-hover: var(--color-bg-secondary);
     --xeg-button-border-hover: var(--color-border-hover);
+    --xeg-border-button: var(--xeg-color-border-primary);
 
     /* Modal Background/Border Tokens */
     --xeg-modal-bg-light: var(--color-bg-elevated);
@@ -91,6 +92,10 @@
     --color-info: var(--color-blue-500);
     --color-info-bg: var(--color-blue-50);
 
+    /* State Color Tokens - xeg prefix aliases */
+    --xeg-color-error: var(--color-error);
+    --xeg-color-error-hover: var(--color-error-hover);
+
     /* Interactive Colors - Semantic Roles */
     --color-primary: var(--color-twitter-blue);
     --color-primary-hover: var(--color-twitter-blue-hover);
@@ -110,6 +115,15 @@
     --xeg-color-neutral-800: var(--color-gray-800);
     --xeg-color-neutral-900: var(--color-gray-900);
 
+    /* Text color aliases for components */
+    --xeg-color-text-primary: var(--color-text-primary);
+    --xeg-color-text-secondary: var(--color-text-secondary);
+    --xeg-color-text-tertiary: var(--color-text-muted);
+    --xeg-color-text-inverse: var(--color-text-inverse);
+
+    /* Background color aliases for components */
+    --xeg-color-bg-primary: var(--color-bg-primary);
+
     /* Overlay Colors - Semantic Roles (oklch with opacity tokens) */
     --color-overlay-light: oklch(0 0 0 / var(--opacity-overlay-light));
     --color-overlay-medium: oklch(0 0 0 / var(--opacity-overlay-medium));
@@ -119,6 +133,12 @@
     --color-overlay-dark-bg: oklch(0 0 0 / 95%); /* black with 95% opacity */
     --color-overlay-button-light: oklch(0 0 0 / 10%); /* black with 10% opacity */
     --color-overlay-button-light-hover: oklch(0 0 0 / 20%); /* black with 20% opacity */
+
+    /* Overlay Color Tokens - xeg prefix aliases */
+    --xeg-color-overlay-light: var(--color-overlay-light);
+    --xeg-color-overlay-medium: var(--color-overlay-medium);
+    --xeg-color-overlay-strong: var(--color-overlay-strong);
+    --xeg-color-overlay-heavy: var(--color-overlay-strong);
 
     /* Legacy naming: glass tokens now map to flat surfaces */
     --color-glass-bg: var(--color-bg-surface);
@@ -177,22 +197,30 @@
     --xeg-focus-outline: 0.125rem solid var(--color-gray-500); /* 2px */
     --xeg-focus-offset: 0.125rem; /* 2px */
 
+    /* Focus/Active shadow helpers */
+    --xeg-focus-shadow: 0 0 0 0.125rem color-mix(in oklch, var(--color-primary) 35%, transparent);
+    --xeg-active-shadow: var(--shadow-md);
+
     /* Button Component Typography - Required by Button.module.css */
     --xeg-font-size-sm: 0.875rem;
     --xeg-font-size-base: 1rem;
     --xeg-font-size-lg: 1.125rem;
     --xeg-font-weight-medium: 500;
+    --xeg-font-size-2xl: var(--font-size-2xl);
+    --xeg-font-weight-semibold: var(--font-weight-semibold);
 
     /* Button Component Text Colors - Required by Button.module.css */
-    --xeg-color-text-primary: var(--color-text-primary);
-    --xeg-color-text-secondary: var(--color-text-secondary);
-
     /* Animation Timing - Semantic Roles */
     --xeg-duration: var(--duration-normal);
     --xeg-duration-fast: var(--duration-fast);
     --xeg-duration-slow: var(--duration-slow);
     --xeg-duration-normal: var(--duration-normal);
+    --xeg-duration-fade: var(--duration-normal);
+    --xeg-duration-toolbar: var(--duration-normal);
     --xeg-easing-linear: linear;
+
+    /* Common transition helpers */
+    --xeg-transition-opacity: opacity var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 
     /* Surface Glass - Legacy naming preserved for flat panels */
     --xeg-surface-glass-bg: var(--color-glass-bg);
@@ -200,11 +228,20 @@
     --xeg-surface-glass-shadow: none;
     --xeg-surface-glass-blur: none;
 
+    /* Elevated surfaces & skeletons */
+    --xeg-color-surface-elevated: var(--color-bg-elevated);
+    --xeg-skeleton-bg: var(--color-bg-secondary);
+    --xeg-glass-border-medium: var(--xeg-media-glass-border);
+    --xeg-glass-shadow-medium: var(--xeg-media-glass-shadow);
+
     /* Z-Index Management */
     --xeg-z-modal: 10000;
     --xeg-z-toolbar: 10001;
     --xeg-z-overlay: 9999;
     --xeg-z-gallery: var(--xeg-z-overlay);
+    --xeg-z-gallery-overlay: var(--xeg-z-overlay);
+    --xeg-z-gallery-toolbar: var(--xeg-z-toolbar);
+    --xeg-z-tooltip: 10002;
 
     /* Layer Management - Semantic Roles */
     --xeg-layer-base: 0;
@@ -221,6 +258,7 @@
     --xeg-button-lift: -1px;
     --xeg-button-lift-hover: -2px;
     --xeg-opacity-disabled: 0.5;
+    --xeg-hover-lift: translateY(-0.125rem);
 
     /* Border Radius - Extended Scale */
     --xeg-radius-sm: var(--radius-sm);
@@ -483,6 +521,11 @@
 
   /* Component Scope Tokens */
   :root {
+    /* Legacy spacing aliases (KeyboardHelpOverlay, etc.) */
+    --xeg-space-8: var(--space-sm); /* 8px */
+    --xeg-space-12: 0.75rem; /* 12px */
+    --xeg-space-16: var(--space-md); /* 16px */
+
     /* Settings Component Tokens */
     /* Layout */
     --xeg-settings-gap: var(--space-md);
@@ -507,12 +550,14 @@
     /* 미디어 카운터 기본 텍스트 톤을 공용 토큰으로 정의 (일관성 확보) */
     /* 2025-10-21: 툴바 인디케이터 색상 통일에 따라 기본 텍스트(primary)로 승격 */
     --xeg-text-counter: var(--xeg-color-text-primary);
+    --xeg-counter-text: var(--xeg-text-counter);
 
     /* Legacy/Global Gallery aliases (Phase: design-unification) */
     /* NOTE: gallery-global.css에서 사용하는 레거시 토큰명을 최신 semantic 토큰으로 연결 */
     --xeg-text-button: var(--xeg-color-text-primary);
     --xeg-text-button-navigation: var(--xeg-color-text-primary);
     --xeg-shadow-toolbar: var(--xeg-shadow-md);
+    --xeg-toolbar-shadow: var(--xeg-shadow-toolbar);
     --xeg-media-glass-border: var(--color-glass-border);
     --xeg-media-glass-shadow: none;
     --xeg-media-glass-blur: none;
