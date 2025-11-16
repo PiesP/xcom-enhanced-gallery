@@ -303,10 +303,10 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               id='tweet-text-button'
               class={toolbarButtonClass()}
               size='toolbar'
-              aria-label={languageService.getString('toolbar.tweetText') || 'View tweet text'}
+              aria-label={languageService.translate('toolbar.tweetText') || 'View tweet text'}
               aria-expanded={props.isTweetPanelExpanded() ? 'true' : 'false'}
               aria-controls='toolbar-tweet-panel'
-              title={languageService.getString('toolbar.tweetText') || 'Tweet text'}
+              title={languageService.translate('toolbar.tweetText') || 'Tweet text'}
               disabled={isToolbarDisabled()}
               onClick={props.toggleTweetPanelExpanded}
               data-gallery-element='tweet-text'
@@ -363,7 +363,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         class={styles.tweetPanel}
         data-expanded={props.isTweetPanelExpanded()}
         role='region'
-        aria-label={languageService.getString('toolbar.tweetTextPanel') || 'Tweet text panel'}
+        aria-label={languageService.translate('toolbar.tweetTextPanel') || 'Tweet text panel'}
         aria-labelledby='tweet-text-button'
         data-gallery-element='tweet-panel'
         onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
@@ -372,7 +372,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <div class={styles.tweetPanelBody}>
             <div class={styles.tweetHeader}>
               <span class={styles.tweetLabel}>
-                {languageService.getString('toolbar.tweetText') || 'Tweet text'}
+                {languageService.translate('toolbar.tweetText') || 'Tweet text'}
               </span>
             </div>
             <div

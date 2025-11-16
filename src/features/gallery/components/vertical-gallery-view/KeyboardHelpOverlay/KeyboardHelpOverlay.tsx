@@ -224,23 +224,23 @@ export function KeyboardHelpOverlay({
           className={styles.closeButton || ''}
           size='md'
           tabIndex={0}
-          aria-label={languageService.getString('toolbar.close')}
+          aria-label={languageService.translate('toolbar.close')}
           data-testid='kho-close-button'
           onClick={onClose}
         />
 
         {/* Title */}
         <h2 id={titleId} class={styles.title}>
-          {languageService.getString('messages.keyboardHelp.title')}
+          {languageService.translate('messages.keyboardHelp.title')}
         </h2>
 
         {/* Content: Description and keyboard shortcuts list */}
         <div id={descId} class={styles.content}>
           <ul class={styles.shortcutList}>
-            <li>{languageService.getString('messages.keyboardHelp.navPrevious')}</li>
-            <li>{languageService.getString('messages.keyboardHelp.navNext')}</li>
-            <li>{languageService.getString('messages.keyboardHelp.close')}</li>
-            <li>{languageService.getString('messages.keyboardHelp.toggleHelp')}</li>
+            <li>{languageService.translate('messages.keyboardHelp.navPrevious')}</li>
+            <li>{languageService.translate('messages.keyboardHelp.navNext')}</li>
+            <li>{languageService.translate('messages.keyboardHelp.close')}</li>
+            <li>{languageService.translate('messages.keyboardHelp.toggleHelp')}</li>
           </ul>
         </div>
       </div>

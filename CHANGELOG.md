@@ -69,6 +69,17 @@ and this project adheres to
 - **Code Reduction**: -3 lines (export removal)
 - **Type Clarity**: Improved (duplicate removal, single ErrorCode usage)
 
+### Removed
+
+- `LanguageService.getString()` and `LanguageService.getFormattedString()`
+  legacy helpers were deleted.
+  - `languageService.translate(key, params?)` is now the single runtime API
+    exposed to consumers.
+  - Components and tests already relied on `translate`, so this removal has no
+    downstream impact.
+  - Ensures future features cannot accidentally reintroduce string-literal
+    access via deprecated helpers.
+
 ### Added
 
 #### Media URL Utilities Modularization (Phase 351)

@@ -518,8 +518,8 @@ function VerticalGalleryViewCore({
   };
 
   if (!isVisible() || mediaItems().length === 0) {
-    const emptyTitle = languageService.getString('messages.gallery.emptyTitle');
-    const emptyDesc = languageService.getString('messages.gallery.emptyDescription');
+    const emptyTitle = languageService.translate('messages.gallery.emptyTitle');
+    const emptyDesc = languageService.translate('messages.gallery.emptyDescription');
 
     return (
       <div class={`${styles.container} ${styles.empty} ${stringWithDefault(className, '')}`}>

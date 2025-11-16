@@ -450,7 +450,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
               src={media.url}
               alt={
                 cleanFilename(media.filename) ||
-                languageService.getFormattedString('messages.gallery.failedToLoadImage', {
+                languageService.translate('messages.gallery.failedToLoadImage', {
                   type: 'image',
                 })
               }
@@ -469,7 +469,7 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
             <div class={styles.error}>
               <span class={styles.errorIcon}>⚠️</span>
               <span class={styles.errorText}>
-                {languageService.getFormattedString('messages.gallery.failedToLoadImage', {
+                {languageService.translate('messages.gallery.failedToLoadImage', {
                   type: isVideo ? 'video' : 'image',
                 })}
               </span>

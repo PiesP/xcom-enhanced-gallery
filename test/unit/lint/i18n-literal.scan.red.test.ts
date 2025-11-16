@@ -72,7 +72,7 @@ describe('Guard: i18n literals should not appear directly in JSX text nodes', ()
     if (offenders.length > 0) {
       const details = offenders.map(o => `- ${o.file}: ${o.snippet}`).join('\n');
       throw new Error(
-        `User-facing raw literals detected in JSX text nodes. Use languageService.getString(). Offenders:\n${details}`
+        `User-facing raw literals detected in JSX text nodes. Use languageService.translate(). Offenders:\n${details}`
       );
     }
   });

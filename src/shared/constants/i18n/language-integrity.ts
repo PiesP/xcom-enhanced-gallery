@@ -1,31 +1,15 @@
 import { LANGUAGE_CODES, type BaseLanguageCode, type LanguageStrings } from './language-types';
 import { DEFAULT_LANGUAGE, TRANSLATION_REGISTRY } from './translation-registry';
+import { collectTranslationKeys } from '@shared/i18n/translation-utils';
 
 export type LanguageIntegrityReport = {
   missing: Record<BaseLanguageCode, string[]>;
   extra: Record<BaseLanguageCode, string[]>;
 };
 
-const collectKeys = (value: unknown, prefix = '', result: string[] = []): string[] => {
-  if (!value || typeof value !== 'object') {
-    return result;
-  }
-
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    const path = prefix ? `${prefix}.${key}` : key;
-    if (typeof nested === 'string') {
-      result.push(path);
-    } else {
-      collectKeys(nested, path, result);
-    }
-  }
-
-  return result;
-};
-
 export function createLanguageIntegrityReport(): LanguageIntegrityReport {
   const base: LanguageStrings = TRANSLATION_REGISTRY[DEFAULT_LANGUAGE];
-  const baseKeys = new Set(collectKeys(base));
+  const baseKeys = new Set(collectTranslationKeys(base));
   const missing: Record<BaseLanguageCode, string[]> = {
     en: [],
     ko: [],
@@ -39,7 +23,7 @@ export function createLanguageIntegrityReport(): LanguageIntegrityReport {
 
   for (const locale of LANGUAGE_CODES) {
     const localeStrings: LanguageStrings = TRANSLATION_REGISTRY[locale];
-    const localeKeys = new Set(collectKeys(localeStrings));
+    const localeKeys = new Set(collectTranslationKeys(localeStrings));
 
     for (const key of baseKeys) {
       if (!localeKeys.has(key)) {

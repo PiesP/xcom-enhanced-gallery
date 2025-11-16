@@ -89,7 +89,7 @@ describe('i18n.message-keys (Phase 4 완료 GREEN)', () => {
     const service = new LanguageService();
     const missing: string[] = [];
     for (const key of REQUIRED_MESSAGE_KEYS) {
-      const value = service.getString(key);
+      const value = service.translate(key);
       if (value === key) missing.push(key);
     }
     expect(missing, `누락된 메시지 키: ${missing.join(', ')}`).toHaveLength(0);

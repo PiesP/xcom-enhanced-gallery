@@ -16,7 +16,7 @@ describe('Phase 118: SettingsControls 언어 변경 실시간 반영', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
     // getSolid import가 있어야 함
-    const hasGetSolid = /import\s*\{\s*getSolid\s*\}\s*from/.test(controlsTSX);
+    const hasGetSolid = /import\s*\{[^}]*\bgetSolid\b[^}]*\}\s*from/.test(controlsTSX);
 
     expect(
       hasGetSolid,
@@ -132,14 +132,14 @@ describe('Phase 118: SettingsControls 언어 변경 실시간 반영', () => {
   it('[RED] JSX에서는 memoized getter를 사용하고 정적 languageService 호출이 없어야 함', () => {
     const controlsTSX = read(SETTINGS_CONTROLS_TSX_PATH);
 
-    // 정적 languageService.getString 호출이 JSX 내에 있는지 확인
-    const hasStaticLanguageServiceInJSX = /<[^>]+>\s*\{\s*languageService\.getString\(/g.test(
+    // 정적 languageService.translate 호출이 JSX 내에 있는지 확인
+    const hasStaticLanguageServiceInJSX = /<[^>]+>\s*\{\s*languageService\.translate\(/g.test(
       controlsTSX
     );
 
     expect(
       !hasStaticLanguageServiceInJSX,
-      '❌ JSX 내에 정적 languageService.getString() 호출이 있습니다. memoized getter를 사용해야 합니다.'
+      '❌ JSX 내에 정적 languageService.translate() 호출이 있습니다. memoized getter를 사용해야 합니다.'
     ).toBe(true);
 
     const usesMemoizedTheme = /themeStrings\(\)\.title/.test(controlsTSX);

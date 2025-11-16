@@ -8,18 +8,33 @@ import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
 import {
-  LANGUAGE_CODES,
   isBaseLanguageCode,
   type BaseLanguageCode,
   type SupportedLanguage,
 } from '@shared/constants/i18n/language-types';
-import { DEFAULT_LANGUAGE, getLanguageStrings } from '@shared/constants/i18n/translation-registry';
+import {
+  DEFAULT_LANGUAGE,
+  TRANSLATION_REGISTRY,
+} from '@shared/constants/i18n/translation-registry';
+import {
+  Translator,
+  TranslationCatalog,
+  type TranslationKey,
+  type TranslationParams,
+} from '@shared/i18n';
 
 export type {
   SupportedLanguage,
   LanguageStrings,
   BaseLanguageCode,
 } from '@shared/constants/i18n/language-types';
+export type { TranslationKey, TranslationParams } from '@shared/i18n';
+
+const translationCatalog = new TranslationCatalog({
+  bundles: TRANSLATION_REGISTRY,
+  fallbackLanguage: DEFAULT_LANGUAGE,
+});
+const translator = new Translator(translationCatalog);
 
 /**
  * Multilingual Service (Phase 355: Direct PersistentStorage usage)
@@ -32,7 +47,7 @@ export class LanguageService extends BaseServiceImpl {
   private static readonly STORAGE_KEY = 'xeg-language';
   private static readonly SUPPORTED_LANGUAGES: ReadonlySet<SupportedLanguage> = new Set([
     'auto',
-    ...LANGUAGE_CODES,
+    ...translator.languages,
   ]);
 
   private currentLanguage: SupportedLanguage = 'auto';
@@ -86,6 +101,10 @@ export class LanguageService extends BaseServiceImpl {
     return this.currentLanguage;
   }
 
+  getAvailableLanguages(): BaseLanguageCode[] {
+    return translator.languages;
+  }
+
   setLanguage(language: SupportedLanguage): void {
     const normalized = this.normalizeLanguage(language);
 
@@ -105,30 +124,8 @@ export class LanguageService extends BaseServiceImpl {
     logger.debug(`Language changed to: ${normalized}`);
   }
 
-  getString(path: string): string {
-    const effectiveLanguage: BaseLanguageCode =
-      this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
-
-    const keys = path.split('.');
-    let value: unknown = getLanguageStrings(effectiveLanguage);
-
-    for (const key of keys) {
-      if (!value || typeof value !== 'object') {
-        return path;
-      }
-      value = (value as Record<string, unknown>)[key];
-    }
-
-    return typeof value === 'string' ? value : path;
-  }
-
-  /**
-   * Message format support: {param} substitution
-   */
-  getFormattedString(path: string, params?: Record<string, string | number>): string {
-    const base = this.getString(path);
-    if (!params) return base;
-    return base.replace(/\{(\w+)\}/g, (_, k) => String(params[k] ?? `{${k}}`));
+  translate(key: TranslationKey, params?: TranslationParams): string {
+    return translator.translate(this.getEffectiveLanguage(), key, params);
   }
 
   onLanguageChange(callback: (language: SupportedLanguage) => void): () => void {
@@ -166,6 +163,10 @@ export class LanguageService extends BaseServiceImpl {
     } catch (error) {
       logger.warn('Failed to persist language setting:', error);
     }
+  }
+
+  private getEffectiveLanguage(): BaseLanguageCode {
+    return this.currentLanguage === 'auto' ? this.detectLanguage() : this.currentLanguage;
   }
 }
 

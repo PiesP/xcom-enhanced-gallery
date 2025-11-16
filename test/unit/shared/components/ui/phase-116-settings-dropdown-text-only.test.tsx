@@ -68,8 +68,8 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
   it('renders theme and language labels as plain text (default mode)', () => {
     mountControls();
 
-    assertLabelText(themeSelectId, languageService.getString('settings.theme'));
-    assertLabelText(languageSelectId, languageService.getString('settings.language'));
+    assertLabelText(themeSelectId, languageService.translate('settings.theme'));
+    assertLabelText(languageSelectId, languageService.translate('settings.language'));
   });
 
   it('renders compact labels without decorative symbols', () => {
@@ -81,7 +81,7 @@ describe('Phase 116: Settings dropdown labels should not include decorative symb
     expect(themeLabel?.classList.contains(styles.compactLabel)).toBe(true);
     expect(languageLabel?.classList.contains(styles.compactLabel)).toBe(true);
 
-    assertLabelText(themeSelectId, languageService.getString('settings.theme'));
-    assertLabelText(languageSelectId, languageService.getString('settings.language'));
+    assertLabelText(themeSelectId, languageService.translate('settings.theme'));
+    assertLabelText(languageSelectId, languageService.translate('settings.language'));
   });
 });

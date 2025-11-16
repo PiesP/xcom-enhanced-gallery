@@ -71,8 +71,8 @@ export function ErrorBoundary({ children }: Props): JSXElement {
 
     try {
       // Fetch localized error title and body
-      const title = languageService.getString('messages.errorBoundary.title');
-      const body = languageService.getFormattedString('messages.errorBoundary.body', {
+      const title = languageService.translate('messages.errorBoundary.title');
+      const body = languageService.translate('messages.errorBoundary.body', {
         error: err instanceof Error ? err.message : String(err),
       });
       // Notify user with Tampermonkey notification

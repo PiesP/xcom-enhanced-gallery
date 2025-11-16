@@ -118,6 +118,24 @@ console.log(koStrings.toolbar.previous);
 - 타입 검증: `isBaseLanguageCode(value)`
 - 확장성: 새 언어 추가 시 `languages/` 하위에 파일 생성
 
+### Runtime i18n Layer
+
+`src/shared/i18n/` hosts the runtime that consumes translation dictionaries.
+
+- `TranslationCatalog`: lightweight registry for registering and resolving
+  translation bundles
+- `Translator`: helper that understands dot-notation keys (`TranslationKey`)
+  plus parameter interpolation
+- `createTranslationFunction`: inject a language resolver to obtain the familiar
+  `t(key, params)` shape
+- Path aliases: `@shared/i18n` (runtime) / `@shared/constants/i18n`
+  (dictionaries)
+- `LanguageService.translate(key, params)` is the canonical entrypoint for
+  runtime lookups
+
+The separation keeps dictionaries immutable while providing a modern, fully
+typed translation workflow for services, hooks, and UI components.
+
 ---
 
 ## 🔄 Constants vs Shared Constants 선택 기준
