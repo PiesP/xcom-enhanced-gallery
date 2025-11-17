@@ -9,13 +9,6 @@ import { logger } from '../shared/logging';
 import { registerGalleryRenderer } from '../shared/container/service-accessors';
 import type { IGalleryApp } from '../shared/container/app-container';
 
-// Phase 345: Type guard - global namespace in development environment
-declare global {
-  interface Window {
-    __XEG_GALLERY_APP__?: IGalleryApp;
-  }
-}
-
 /** Gallery app instance (module-level management) */
 let galleryAppInstance: IGalleryApp | null = null;
 
@@ -62,11 +55,6 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     await galleryAppInstance.initialize();
     logger.info('✅ Gallery app initialization complete');
 
-    // Phase 345: Type-safe global access (development environment only)
-    if (import.meta.env.DEV) {
-      window.__XEG_GALLERY_APP__ = galleryAppInstance;
-    }
-
     return galleryAppInstance as IGalleryApp;
   } catch (error) {
     logger.error('❌ Gallery app initialization failed:', error);
@@ -81,8 +69,4 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
  */
 export function clearGalleryApp(): void {
   galleryAppInstance = null;
-
-  if (import.meta.env.DEV && typeof window !== 'undefined') {
-    delete window.__XEG_GALLERY_APP__;
-  }
 }

@@ -12,6 +12,29 @@ import {
 } from '../../../../src/shared/services/diagnostics';
 import { logger } from '../../../../src/shared/logging';
 
+type GlobalWithDevNamespace = typeof globalThis & {
+  __XEG__?: {
+    diagnostics?: {
+      run?: typeof ServiceDiagnostics.diagnoseServiceManager;
+    };
+  };
+};
+
+const getDiagnosticsHook = () =>
+  ((globalThis as GlobalWithDevNamespace).__XEG__?.diagnostics?.run ?? undefined) as
+    | typeof ServiceDiagnostics.diagnoseServiceManager
+    | undefined;
+
+const clearDiagnosticsHook = () => {
+  const globalTarget = globalThis as GlobalWithDevNamespace;
+  if (globalTarget.__XEG__?.diagnostics) {
+    delete globalTarget.__XEG__.diagnostics;
+  }
+  if (globalTarget.__XEG__ && Object.keys(globalTarget.__XEG__).length === 0) {
+    delete globalTarget.__XEG__;
+  }
+};
+
 describe('ServiceDiagnostics', () => {
   setupGlobalTestIsolation();
 
@@ -23,7 +46,7 @@ describe('ServiceDiagnostics', () => {
 
   afterEach(() => {
     // 전역 함수 정리
-    delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+    clearDiagnosticsHook();
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -58,10 +81,7 @@ describe('ServiceDiagnostics', () => {
 
       registerDiagnosticsGlobal();
 
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeDefined();
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBe(
-        ServiceDiagnostics.diagnoseServiceManager
-      );
+      expect(getDiagnosticsHook()).toBe(ServiceDiagnostics.diagnoseServiceManager);
     });
 
     it('DEV 모드가 아니면 전역 함수를 등록하지 않아야 함', () => {
@@ -69,7 +89,7 @@ describe('ServiceDiagnostics', () => {
 
       registerDiagnosticsGlobal();
 
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeUndefined();
+      expect(getDiagnosticsHook()).toBeUndefined();
     });
 
     it('이미 등록된 전역 함수를 덮어써야 함', () => {
@@ -77,11 +97,11 @@ describe('ServiceDiagnostics', () => {
 
       // 첫 번째 등록
       registerDiagnosticsGlobal();
-      const firstRegistration = (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+      const firstRegistration = getDiagnosticsHook();
 
       // 두 번째 등록
       registerDiagnosticsGlobal();
-      const secondRegistration = (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+      const secondRegistration = getDiagnosticsHook();
 
       // 동일한 참조여야 함 (static 메서드이므로)
       expect(firstRegistration).toBe(secondRegistration);
@@ -95,11 +115,10 @@ describe('ServiceDiagnostics', () => {
 
       ServiceDiagnostics.registerGlobalDiagnostic();
 
-      const diagnose = (globalThis as Record<string, unknown>)
-        .__XEG_DIAGNOSE__ as typeof ServiceDiagnostics.diagnoseServiceManager;
+      const diagnose = getDiagnosticsHook();
 
       expect(diagnose).toBeDefined();
-      await expect(diagnose()).resolves.not.toThrow();
+      await expect(diagnose!()).resolves.not.toThrow();
     });
 
     it('전역 함수가 실제 diagnoseServiceManager와 동일해야 함', () => {
@@ -107,9 +126,7 @@ describe('ServiceDiagnostics', () => {
 
       ServiceDiagnostics.registerGlobalDiagnostic();
 
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBe(
-        ServiceDiagnostics.diagnoseServiceManager
-      );
+      expect(getDiagnosticsHook()).toBe(ServiceDiagnostics.diagnoseServiceManager);
     });
   });
 
@@ -189,31 +206,31 @@ describe('ServiceDiagnostics', () => {
       // DEV=true
       vi.stubEnv('DEV', true);
       ServiceDiagnostics.registerGlobalDiagnostic();
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeDefined();
+      expect(getDiagnosticsHook()).toBeDefined();
 
       // 정리
-      delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+      clearDiagnosticsHook();
 
       // DEV=false
       vi.stubEnv('DEV', false);
       ServiceDiagnostics.registerGlobalDiagnostic();
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeUndefined();
+      expect(getDiagnosticsHook()).toBeUndefined();
     });
 
     it('import.meta.env.DEV를 정확히 체크해야 함', () => {
       // true 체크
       vi.stubEnv('DEV', true);
       ServiceDiagnostics.registerGlobalDiagnostic();
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeDefined();
-      delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+      expect(getDiagnosticsHook()).toBeDefined();
+      clearDiagnosticsHook();
 
       // false 체크
       vi.stubEnv('DEV', false);
       ServiceDiagnostics.registerGlobalDiagnostic();
-      expect((globalThis as Record<string, unknown>).__XEG_DIAGNOSE__).toBeUndefined();
+      expect(getDiagnosticsHook()).toBeUndefined();
 
       // 정리
-      delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
+      clearDiagnosticsHook();
     });
   });
 });

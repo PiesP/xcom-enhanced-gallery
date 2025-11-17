@@ -69,6 +69,9 @@ describe('Phase 290: Twitter 페이지 격리', () => {
           point?: (label: string, data?: Record<string, unknown>) => void;
           status?: () => unknown;
         };
+        diagnostics?: {
+          run?: () => Promise<void> | void;
+        };
         main?: {
           start?: () => Promise<void>;
           createConfig?: () => unknown;
@@ -89,6 +92,10 @@ describe('Phase 290: Twitter 페이지 격리', () => {
           expect(typeof xeg.tracing.stop).toBe('function');
           expect(typeof xeg.tracing.point).toBe('function');
           expect(typeof xeg.tracing.status).toBe('function');
+        }
+
+        if (xeg.diagnostics) {
+          expect(typeof xeg.diagnostics.run).toBe('function');
         }
 
         // main 네임스페이스 검증

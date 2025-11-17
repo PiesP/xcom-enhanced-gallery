@@ -1,5 +1,23 @@
 import { logger } from '@shared/logging';
 
+type DiagnosticsNamespace = {
+  run: typeof diagnoseServiceManager;
+};
+
+type DevNamespace = {
+  diagnostics?: DiagnosticsNamespace;
+};
+
+type GlobalWithDevNamespace = typeof globalThis & {
+  __XEG__?: DevNamespace;
+};
+
+function getOrCreateDevNamespace(): DevNamespace {
+  const globalTarget = globalThis as GlobalWithDevNamespace;
+  globalTarget.__XEG__ = globalTarget.__XEG__ ?? {};
+  return globalTarget.__XEG__;
+}
+
 export async function diagnoseServiceManager(): Promise<void> {
   try {
     logger.info('🔍 ServiceManager diagnostic started');
@@ -36,9 +54,18 @@ export async function diagnoseServiceManager(): Promise<void> {
 }
 
 export function registerDiagnosticsGlobal(): void {
-  if (import.meta.env.DEV) {
-    (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__ = diagnoseServiceManager;
+  if (!import.meta.env.DEV) {
+    return;
   }
+
+  const namespace = getOrCreateDevNamespace();
+
+  namespace.diagnostics = {
+    run: diagnoseServiceManager,
+  };
+
+  // Clean up legacy global exposure to avoid duplicate entry points.
+  delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
 }
 
 export const ServiceDiagnostics = {
