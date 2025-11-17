@@ -20,6 +20,7 @@ import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -32,35 +33,39 @@ let startPromise: Promise<void> | null = null;
 let galleryApp: IGalleryApp | null = null;
 let cleanupHandlers: (() => Promise<void> | void)[] = [];
 
+type DevMainNamespace = {
+  start: typeof startApplication;
+  createConfig: typeof createAppConfig;
+  cleanup: typeof cleanup;
+  galleryApp?: IGalleryApp | null;
+};
+
 /**
  * DEV namespace setup utility
  * Phase 1.1: Helper function to eliminate duplicate code
  */
 function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
-  if (!import.meta.env.DEV) return;
+  mutateDevNamespace(namespace => {
+    const mainNamespace =
+      (namespace.main as DevMainNamespace | undefined) ??
+      (namespace.main = {
+        start: startApplication,
+        createConfig: createAppConfig,
+        cleanup,
+      } as DevMainNamespace);
 
-  type WindowWithXEG = Window & {
-    __XEG__?: {
-      main?: {
-        start: typeof startApplication;
-        createConfig: typeof createAppConfig;
-        cleanup: typeof cleanup;
-        galleryApp?: IGalleryApp;
-      };
-    };
-  };
+    mainNamespace.start = startApplication;
+    mainNamespace.createConfig = createAppConfig;
+    mainNamespace.cleanup = cleanup;
 
-  const win = globalThis as unknown as WindowWithXEG;
-  win.__XEG__ = win.__XEG__ || {};
-  win.__XEG__.main = {
-    start: startApplication,
-    createConfig: createAppConfig,
-    cleanup,
-  };
-
-  if (galleryAppInstance) {
-    win.__XEG__.main.galleryApp = galleryAppInstance;
-  }
+    if (galleryAppInstance !== undefined) {
+      if (galleryAppInstance) {
+        mainNamespace.galleryApp = galleryAppInstance;
+      } else {
+        delete mainNamespace.galleryApp;
+      }
+    }
+  });
 }
 
 // Lean mode: requestIdleCallback scheduling removed
@@ -126,20 +131,7 @@ async function cleanup(): Promise<void> {
       await galleryApp.cleanup();
       clearGalleryApp(); // Phase 2.1: Cleanup via bootstrap module
       galleryApp = null;
-      // Phase 290: Namespace isolation - cleanup only in development environment
-      if (import.meta.env.DEV) {
-        type WindowWithXEG = Window & {
-          __XEG__?: {
-            main?: {
-              galleryApp?: unknown;
-            };
-          };
-        };
-        const win = globalThis as unknown as WindowWithXEG;
-        if (win.__XEG__?.main) {
-          delete win.__XEG__.main.galleryApp;
-        }
-      }
+      setupDevNamespace(null);
     }
 
     // CoreService instance cleanup (access prohibited from features layer, performed here only)

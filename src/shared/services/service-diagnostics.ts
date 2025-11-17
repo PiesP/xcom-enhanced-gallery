@@ -1,22 +1,9 @@
 import { logger } from '@shared/logging';
+import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 
 type DiagnosticsNamespace = {
   run: typeof diagnoseServiceManager;
 };
-
-type DevNamespace = {
-  diagnostics?: DiagnosticsNamespace;
-};
-
-type GlobalWithDevNamespace = typeof globalThis & {
-  __XEG__?: DevNamespace;
-};
-
-function getOrCreateDevNamespace(): DevNamespace {
-  const globalTarget = globalThis as GlobalWithDevNamespace;
-  globalTarget.__XEG__ = globalTarget.__XEG__ ?? {};
-  return globalTarget.__XEG__;
-}
 
 export async function diagnoseServiceManager(): Promise<void> {
   try {
@@ -58,11 +45,11 @@ export function registerDiagnosticsGlobal(): void {
     return;
   }
 
-  const namespace = getOrCreateDevNamespace();
-
-  namespace.diagnostics = {
-    run: diagnoseServiceManager,
-  };
+  mutateDevNamespace(namespace => {
+    namespace.diagnostics = {
+      run: diagnoseServiceManager,
+    } as DiagnosticsNamespace;
+  });
 
   // Clean up legacy global exposure to avoid duplicate entry points.
   delete (globalThis as Record<string, unknown>).__XEG_DIAGNOSE__;
