@@ -37,7 +37,7 @@ import { globalTimerManager } from '../utils/timer-management';
 import type { DownloadProgress } from './download/types';
 import type { BaseResultStatus } from '../types/result.types';
 import { ErrorCode } from '../types/result.types';
-import { getGMDownload, isGMDownloadAvailable } from './download/gm-download';
+import { getGMDownload } from './download/gm-download';
 
 // ====================================
 // Types
@@ -66,36 +66,6 @@ export interface BulkDownloadResult {
   filename?: string;
   failures?: Array<{ url: string; error: string }>;
   code?: ErrorCode;
-}
-
-export interface UnifiedDownloadAvailabilityResult {
-  available: boolean;
-  environment: string;
-  message: string;
-  canSimulate: boolean;
-  dependencies: {
-    downloadService: {
-      available: boolean;
-      reason?: string;
-    };
-    bulkDownloadService: {
-      available: boolean;
-      reason?: string;
-    };
-    orchestrator: {
-      available: boolean;
-      reason?: string;
-    };
-  };
-}
-
-export interface SimulatedUnifiedDownloadResult {
-  success: boolean;
-  itemsProcessed: number;
-  itemsSimulated: number;
-  filenames: string[];
-  error?: string;
-  message: string;
 }
 
 // ====================================
@@ -128,84 +98,6 @@ export class UnifiedDownloadService {
       this.instance = new UnifiedDownloadService();
     }
     return this.instance;
-  }
-
-  // ====================================
-  // Environment-Aware Methods (Phase 315-Extended)
-  // ====================================
-
-  /**
-   * Check UnifiedDownloadService availability
-   * Validates three dependent services
-   *
-   * @returns Availability information and dependency status
-   */
-  async validateAvailability(): Promise<UnifiedDownloadAvailabilityResult> {
-    try {
-      // 1. Dynamic import of environment-detector
-      const { detectEnvironment } = await import('@shared/external/userscript');
-      const env = detectEnvironment();
-
-      // 2. Check dependent service availability
-      // - DownloadService: GM_download support
-      const downloadAvailable = isGMDownloadAvailable();
-
-      // - BulkDownloadService: Separately configured service
-      const bulkAvailable = true; // Always available (code-based)
-
-      // - DownloadOrchestrator: ZIP assembly capability
-      const orchestratorAvailable = true; // Always available (internal service)
-
-      // 3. Determine overall availability
-      const available = downloadAvailable && bulkAvailable && orchestratorAvailable;
-
-      return {
-        available,
-        environment: env.environment,
-        message: available
-          ? `✅ UnifiedDownloadService ready (${env.environment})`
-          : `⚠️ UnifiedDownloadService limited: ${!downloadAvailable ? 'GM_download not supported' : 'service restriction'}`,
-        canSimulate: env.isTestEnvironment || available,
-        dependencies: {
-          downloadService: {
-            available: downloadAvailable,
-            reason: downloadAvailable ? 'GM_download available' : 'GM_download not supported',
-          },
-          bulkDownloadService: {
-            available: bulkAvailable,
-            reason: 'Bulk download support',
-          },
-          orchestrator: {
-            available: orchestratorAvailable,
-            reason: 'ZIP assembly engine support',
-          },
-        },
-      };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.warn('[UnifiedDownloadService] validateAvailability error:', errorMsg);
-
-      return {
-        available: false,
-        environment: 'unknown',
-        message: `❌ Availability check failed: ${errorMsg}`,
-        canSimulate: false,
-        dependencies: {
-          downloadService: {
-            available: false,
-            reason: errorMsg,
-          },
-          bulkDownloadService: {
-            available: false,
-            reason: errorMsg,
-          },
-          orchestrator: {
-            available: false,
-            reason: errorMsg,
-          },
-        },
-      };
-    }
   }
 
   // ====================================
@@ -468,114 +360,6 @@ export class UnifiedDownloadService {
       };
     } finally {
       this.currentAbortController = undefined;
-    }
-  }
-
-  /**
-   * Simulate unified download
-   * Simulate single and multiple file downloads
-   *
-   * @param mediaItems Array of media items to simulate
-   * @param options Simulation options
-   * @returns Simulation result
-   */
-  async simulateUnifiedDownload(
-    mediaItems: Array<MediaInfo>,
-    options: { signal?: AbortSignal } = {}
-  ): Promise<SimulatedUnifiedDownloadResult> {
-    try {
-      // 1. Check abort signal
-      if (options.signal?.aborted) {
-        return {
-          success: false,
-          itemsProcessed: 0,
-          itemsSimulated: 0,
-          filenames: [],
-          error: 'Aborted',
-          message: '❌ Operation cancelled',
-        };
-      }
-
-      // 2. Validate input
-      if (mediaItems.length === 0) {
-        return {
-          success: false,
-          itemsProcessed: 0,
-          itemsSimulated: 0,
-          filenames: [],
-          error: 'Empty input',
-          message: '❌ No items to download',
-        };
-      }
-
-      const filenames: string[] = [];
-      let itemsSimulated = 0;
-
-      // 3. Branch for single vs multiple files
-      if (mediaItems.length === 1) {
-        // Single file: Quick simulation (30-80ms)
-        const delay = Math.random() * 50 + 30;
-        await new Promise(resolve =>
-          globalTimerManager.setTimeout(() => resolve(undefined), delay)
-        );
-
-        const media = mediaItems[0];
-        if (media) {
-          const filename = generateMediaFilename(media);
-          filenames.push(filename);
-          itemsSimulated++;
-          logger.debug(`[UnifiedDownloadService] Single file simulation: ${filename}`);
-        }
-      } else {
-        // Multiple files: ZIP simulation (200-500ms + 50-100ms per item)
-        const baseDelay = Math.random() * 300 + 200;
-        await new Promise(resolve =>
-          globalTimerManager.setTimeout(() => resolve(undefined), baseDelay)
-        );
-
-        for (const media of mediaItems) {
-          if (options.signal?.aborted) break;
-
-          // Additional delay per item
-          const itemDelay = Math.random() * 50 + 50;
-          await new Promise(resolve =>
-            globalTimerManager.setTimeout(() => resolve(undefined), itemDelay)
-          );
-
-          try {
-            const filename = generateMediaFilename(media);
-            filenames.push(filename);
-            itemsSimulated++;
-          } catch (itemError) {
-            logger.warn('[UnifiedDownloadService] Item simulation error:', itemError);
-            continue;
-          }
-        }
-
-        // Create ZIP filename
-        const zipFilename = `unified_download_${Date.now()}.zip`;
-        filenames.push(zipFilename);
-      }
-
-      return {
-        success: itemsSimulated > 0,
-        itemsProcessed: mediaItems.length,
-        itemsSimulated,
-        filenames,
-        message: `✅ Unified download simulation complete: ${itemsSimulated}/${mediaItems.length} items`,
-      };
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error('[UnifiedDownloadService] simulateUnifiedDownload error:', errorMsg);
-
-      return {
-        success: false,
-        itemsProcessed: mediaItems.length,
-        itemsSimulated: 0,
-        filenames: [],
-        error: errorMsg,
-        message: `❌ Simulation failed: ${errorMsg}`,
-      };
     }
   }
 

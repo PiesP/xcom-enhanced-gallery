@@ -19,13 +19,6 @@ export interface NotificationProviderInfo {
   description: string;
 }
 
-export interface NotificationAvailabilityCheckResult {
-  available: boolean;
-  environment: string;
-  message: string;
-  canFallback: boolean; // always false in lean mode
-}
-
 interface GlobalWithGMNotification {
   GM_notification?: (details: GMNotificationDetails, ondone?: () => void) => void;
 }
@@ -54,20 +47,6 @@ export class NotificationService {
           available: false,
           description: `⚠️ GM_notification unavailable (${env.environment})`,
         };
-  }
-
-  async validateAvailability(): Promise<NotificationAvailabilityCheckResult> {
-    const { detectEnvironment } = await import('@shared/external/userscript');
-    const env = detectEnvironment();
-    const gm = (globalThis as GlobalWithGMNotification).GM_notification;
-    return {
-      available: !!gm,
-      environment: env.environment,
-      message: gm
-        ? '✅ Notifications enabled via GM_notification'
-        : '⚠️ GM_notification not available; notifications disabled',
-      canFallback: false,
-    };
   }
 
   private gmNotify(options: NotificationOptions): void {

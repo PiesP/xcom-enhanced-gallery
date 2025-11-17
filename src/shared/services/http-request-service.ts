@@ -79,16 +79,6 @@ export class HttpError extends Error {
 }
 
 /**
- * Validation result for HTTP request availability
- */
-export interface AvailabilityCheckResult {
-  available: boolean;
-  environment: string;
-  message: string;
-  canFallback: boolean;
-}
-
-/**
  * Singleton HTTP Request Service
  *
  * Provides fetch-based HTTP client for Tampermonkey 5.4.0+ MV3 environment.
@@ -116,39 +106,6 @@ export class HttpRequestService {
       HttpRequestService.instance = new HttpRequestService();
     }
     return HttpRequestService.instance;
-  }
-
-  /**
-   * Validate HTTP request availability in current environment
-   *
-   * Phase 318: Fetch-based validation for MV3 compatibility
-   * Note: Always returns available=true since fetch is a standard browser API
-   *
-   * @returns Availability status with environment info
-   *
-   * @example
-   * ```typescript
-   * const validation = await httpService.validateAvailability();
-   * console.log(validation.message); // Environment and fetch availability
-   * ```
-   */
-  async validateAvailability(): Promise<AvailabilityCheckResult> {
-    // Dynamically import to avoid circular dependencies
-    const { detectEnvironment, getEnvironmentDescription } = await import(
-      '@shared/external/userscript'
-    );
-
-    const env = detectEnvironment();
-    const hasFetch = typeof globalThis.fetch === 'function';
-
-    return {
-      available: hasFetch,
-      environment: env.environment,
-      message: hasFetch
-        ? `✅ Fetch API available in ${env.environment} environment (Tampermonkey 5.4.0+ MV3 compatible)`
-        : `⚠️ Fetch API not available. ${getEnvironmentDescription(env)}. This should not happen in modern browsers.`,
-      canFallback: false, // No fallback needed, fetch is primary
-    };
   }
 
   /**

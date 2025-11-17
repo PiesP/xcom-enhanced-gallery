@@ -28,10 +28,3 @@ export function assertGMDownload(): GMDownloadFunction {
   }
   return gmDownload;
 }
-
-/**
- * Indicates whether GM_download is currently available.
- */
-export function isGMDownloadAvailable(): boolean {
-  return !!getGMDownload();
-}
