@@ -61,8 +61,6 @@ const fitModeMap: Record<string, string | undefined> = {
   fitContainer: styles.fitContainer,
 };
 
-const FIT_MODE_CLASSES = Object.values(fitModeMap).filter(Boolean) as string[];
-
 type DimensionPair = { width: number; height: number };
 
 const VIDEO_DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
@@ -99,17 +97,6 @@ const parsePositiveNumber = (value: unknown): number | null => {
     if (Number.isFinite(n) && n > 0) return n;
   }
   return null;
-};
-
-const syncFitModeAttributes = (
-  element: HTMLElement | null,
-  mode: ImageFitMode,
-  className: string
-): void => {
-  if (!element) return;
-  element.setAttribute('data-fit-mode', mode);
-  element.classList.remove(...FIT_MODE_CLASSES);
-  className && element.classList.add(className);
 };
 
 function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element | null {
@@ -351,15 +338,6 @@ function BaseVerticalImageItemCore(props: VerticalImageItemProps): JSX.Element |
   );
 
   const imageClasses = createMemo(() => createClassName(styles.image, fitModeClass()));
-
-  createEffect(() => {
-    const mode = resolvedFitMode();
-    const nextClass = fitModeClass();
-
-    syncFitModeAttributes(containerRef(), mode, nextClass);
-    syncFitModeAttributes(imageRef(), mode, nextClass);
-    syncFitModeAttributes(videoRefSignal(), mode, nextClass);
-  });
 
   const ariaProps = createAriaProps({
     'aria-label': ariaLabel || `미디어 ${index + 1}: ${cleanFilename(media.filename)}`,
