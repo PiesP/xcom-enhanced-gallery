@@ -14,8 +14,8 @@ export interface ToolbarProps {
   onClose: () => void;
   onOpenSettings?: () => void;
 
-  currentViewMode?: ViewMode;
-  onViewModeChange?: (mode: ViewMode) => void;
+  currentViewMode?: ViewMode | undefined;
+  onViewModeChange?: ((mode: ViewMode) => void) | undefined;
   currentFitMode?: FitMode;
 
   onFitOriginal?: (event?: Event) => void;
@@ -23,20 +23,20 @@ export interface ToolbarProps {
   onFitHeight?: (event?: Event) => void;
   onFitContainer?: (event?: Event) => void;
 
-  isDownloading?: boolean;
-  disabled?: boolean;
-  className?: string;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  isDownloading?: boolean | undefined;
+  disabled?: boolean | undefined;
+  className?: string | undefined;
+  position?: 'top' | 'bottom' | 'left' | 'right' | undefined;
 
-  'aria-label'?: string;
-  'aria-describedby'?: string;
-  role?: 'toolbar';
-  tabIndex?: number;
-  'data-testid'?: string;
+  'aria-label'?: string | undefined;
+  'aria-describedby'?: string | undefined;
+  role?: 'toolbar' | undefined;
+  tabIndex?: number | undefined;
+  'data-testid'?: string | undefined;
 
-  onFocus?: (event: FocusEvent) => void;
-  onBlur?: (event: FocusEvent) => void;
-  onKeyDown?: (event: KeyboardEvent) => void;
+  onFocus?: ((event: FocusEvent) => void) | undefined;
+  onBlur?: ((event: FocusEvent) => void) | undefined;
+  onKeyDown?: ((event: KeyboardEvent) => void) | undefined;
 
   tweetText?: string | null | undefined;
   tweetTextHTML?: string | null | undefined;

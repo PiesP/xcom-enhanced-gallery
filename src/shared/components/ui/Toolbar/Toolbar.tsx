@@ -19,7 +19,7 @@ import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolba
 import styles from './Toolbar.module.css';
 
 const solid = getSolid();
-const { mergeProps, createMemo, createEffect, on, createSignal, createComponent } = solid;
+const { mergeProps, createMemo, createEffect, on, createSignal } = solid;
 
 const DEFAULT_PROPS = {
   isDownloading: false,
@@ -265,28 +265,45 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     props.onClose?.();
   };
 
-  return createComponent(ToolbarView, {
-    ...props,
-    toolbarClass,
-    toolbarState,
-    toolbarDataState,
-    navState,
-    displayedIndex,
-    progressWidth,
-    fitModeOrder: FIT_MODE_ORDER,
-    fitModeLabels: FIT_MODE_LABELS,
-    handleFitModeClick,
-    isFitDisabled,
-    onPreviousClick: handlePrevious,
-    onNextClick: handleNext,
-    onDownloadCurrent: handleDownloadCurrent,
-    onDownloadAll: handleDownloadAll,
-    onCloseClick: handleClose,
-    settingsController,
-    showSettingsButton: typeof props.onOpenSettings === 'function',
-    isTweetPanelExpanded: tweetExpanded,
-    toggleTweetPanelExpanded: toggleTweet,
-  });
+  return (
+    <ToolbarView
+      // Base toolbar props (reactive via Solid JSX transform)
+      currentIndex={props.currentIndex}
+      focusedIndex={props.focusedIndex ?? null}
+      totalCount={props.totalCount}
+      isDownloading={props.isDownloading}
+      disabled={props.disabled}
+      aria-label={props['aria-label']}
+      aria-describedby={props['aria-describedby']}
+      role={props.role}
+      tabIndex={props.tabIndex}
+      data-testid={props['data-testid']}
+      onFocus={props.onFocus}
+      onBlur={props.onBlur}
+      tweetText={props.tweetText}
+      tweetTextHTML={props.tweetTextHTML}
+      // Derived toolbar view props
+      toolbarClass={toolbarClass}
+      toolbarState={toolbarState}
+      toolbarDataState={toolbarDataState}
+      navState={navState}
+      displayedIndex={displayedIndex}
+      progressWidth={progressWidth}
+      fitModeOrder={FIT_MODE_ORDER}
+      fitModeLabels={FIT_MODE_LABELS}
+      handleFitModeClick={handleFitModeClick}
+      isFitDisabled={isFitDisabled}
+      onPreviousClick={handlePrevious}
+      onNextClick={handleNext}
+      onDownloadCurrent={handleDownloadCurrent}
+      onDownloadAll={handleDownloadAll}
+      onCloseClick={handleClose}
+      settingsController={settingsController}
+      showSettingsButton={typeof props.onOpenSettings === 'function'}
+      isTweetPanelExpanded={tweetExpanded}
+      toggleTweetPanelExpanded={toggleTweet}
+    />
+  );
 }
 
 export type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
