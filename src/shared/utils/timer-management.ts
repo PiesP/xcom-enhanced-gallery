@@ -84,6 +84,3 @@ export const globalTimerManager = new TimerManager();
 export function safePerformanceNow(): number {
   return performance.now();
 }
-
-// Performance utilities re-export (deprecated wrappers removed)
-export { createDebouncer, rafThrottle } from './performance/performance-utils';

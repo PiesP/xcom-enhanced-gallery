@@ -48,7 +48,6 @@ import {
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
 import { downloadState } from '@shared/state/signals/download.signals';
 import { getSolid } from '@shared/external/vendors';
-import { createStabilityDetector } from '@shared/utils/stability';
 import { languageService } from '@shared/services/language-service';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
 import { animateGalleryEnter, animateGalleryExit } from '@shared/utils/animations';
@@ -112,9 +111,6 @@ function VerticalGalleryViewCore({
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);
   const [toolbarWrapperEl, setToolbarWrapperEl] = createSignal<HTMLDivElement | null>(null);
   const [itemsContainerEl, setItemsContainerEl] = createSignal<HTMLDivElement | null>(null);
-
-  // StabilityDetector: Activity 기반 안정 상태 감지 (Phase 83.1)
-  const stabilityDetector = createStabilityDetector();
 
   // Phase 21.4 → Phase 376: memoized visibility accessor for toolbar sync
   const isVisible = createMemo(() => mediaItems().length > 0);
@@ -278,7 +274,6 @@ function VerticalGalleryViewCore({
     container: () => containerEl(),
     scrollTarget: () => itemsContainerEl(),
     enabled: isVisible,
-    stabilityDetector,
   });
 
   const {

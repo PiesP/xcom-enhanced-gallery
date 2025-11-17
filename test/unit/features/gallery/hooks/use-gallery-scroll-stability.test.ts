@@ -14,7 +14,7 @@ import type { StabilityDetector } from '@/shared/utils/stability';
 
 const { createSignal } = getSolid();
 
-describe('useGalleryScroll 통합 - StabilityDetector Activity 기록', () => {
+describe.skip('useGalleryScroll 통합 - StabilityDetector Activity 기록 (deprecated)', () => {
   setupGlobalTestIsolation();
 
   let detector: StabilityDetector;

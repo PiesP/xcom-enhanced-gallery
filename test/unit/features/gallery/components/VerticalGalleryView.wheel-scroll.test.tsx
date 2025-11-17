@@ -11,7 +11,6 @@ type CapturedScrollOptions = {
   container?: () => HTMLElement | null;
   scrollTarget?: () => HTMLElement | null;
   enabled?: () => boolean;
-  stabilityDetector?: unknown;
   onScroll?: (delta: number, target: HTMLElement | null) => void;
 };
 
@@ -181,6 +180,5 @@ describe('VerticalGalleryView – wheel scroll handling (P0)', () => {
     await Promise.resolve();
 
     expect(latestScrollOptions.enabled?.()).toBe(false);
-    expect(latestScrollOptions.stabilityDetector).toBeDefined();
   });
 });

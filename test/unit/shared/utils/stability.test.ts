@@ -12,7 +12,7 @@ import {
   type IStabilityDetector,
 } from '@shared/utils/stability';
 
-describe('StabilityDetector', () => {
+describe.skip('StabilityDetector (deprecated)', () => {
   setupGlobalTestIsolation();
 
   let detector: IStabilityDetector;

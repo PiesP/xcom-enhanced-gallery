@@ -9,7 +9,6 @@
 import { getSolid } from '@shared/external/vendors';
 import { logger } from '@shared/logging';
 import { EventManager } from '@shared/services/event-manager';
-import type { StabilityDetector } from '@shared/utils/stability';
 import { galleryState } from '@shared/state/signals/gallery.signals';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
 import type { ScrollState, ScrollDirection } from '@shared/state/signals/scroll.signals';
@@ -37,8 +36,6 @@ interface UseGalleryScrollOptions {
   enableScrollDirection?: MaybeAccessor<boolean>;
   /** 스크롤 방향 변경 콜백 */
   onScrollDirectionChange?: (direction: ScrollDirection) => void;
-  /** Stability Detector (스크롤 활동 기록) */
-  stabilityDetector?: StabilityDetector;
 }
 
 export interface UseGalleryScrollReturn {
@@ -74,7 +71,6 @@ export function useGalleryScroll({
   enabled = true,
   enableScrollDirection = false,
   onScrollDirectionChange,
-  stabilityDetector,
 }: UseGalleryScrollOptions): UseGalleryScrollReturn {
   const containerAccessor = toAccessor(container);
   const scrollTargetAccessor = toAccessor(scrollTarget ?? containerAccessor);
@@ -172,9 +168,6 @@ export function useGalleryScroll({
     const targetElement = scrollTargetAccessor();
     updateScrollState(true, delta);
     updateScrollDirection(delta);
-
-    // StabilityDetector에 스크롤 활동 기록
-    stabilityDetector?.recordActivity('scroll');
 
     onScroll?.(delta, targetElement);
 

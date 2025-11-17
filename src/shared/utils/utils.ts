@@ -21,14 +21,6 @@ export { removeDuplicateMediaItems } from './deduplication/deduplication-utils';
 
 // Debug utilities (removed in Phase 140.2 - unused code cleanup)
 
-// Performance utilities (re-export from performance module)
-export {
-  createDebouncer,
-  Debouncer,
-  rafThrottle,
-  throttleScroll,
-} from './performance/performance-utils';
-
 // ================================
 // Gallery utilities (simplified functions)
 // ================================
