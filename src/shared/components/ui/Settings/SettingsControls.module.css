@@ -294,6 +294,11 @@
   border: var(--border-width-thin) solid var(--xeg-toolbar-border);
   border-radius: var(--xeg-radius-md);
   cursor: pointer;
+  line-height: 1.375;
+  min-height: 2.5em;
+  /* Prevent inherited button transforms from causing dropdown jitter */
+  transform: none;
+  overflow: visible;
 
   /**
    * Transition Effects - Smooth state changes
