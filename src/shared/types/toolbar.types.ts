@@ -114,3 +114,24 @@ export interface ToolbarActions {
   /** Reset state */
   resetState(): void;
 }
+
+/**
+ * Toolbar ViewModel (derived state)
+ *
+ * @description Normalized toolbar information ready for UI consumption.
+ * Provides memo-friendly aggregate data that can be shared across
+ * components without duplicating state calculations.
+ */
+export interface ToolbarViewModel {
+  readonly totalCount: number;
+  readonly currentIndex: number;
+  readonly focusedIndex: number;
+  readonly displayedIndex: number;
+  readonly hasItems: boolean;
+  readonly hasMultipleItems: boolean;
+  readonly hasTweetText: boolean;
+  readonly progressPercent: number;
+  readonly progressWidth: string;
+  readonly tweetText?: string | null;
+  readonly tweetTextHTML?: string | null;
+}

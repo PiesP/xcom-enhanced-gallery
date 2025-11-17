@@ -147,7 +147,13 @@ export type {
 export type { NavigationSource } from './navigation.types';
 
 // Toolbar UI state types
-export type { ToolbarDataState, FitMode, ToolbarState, ToolbarActions } from './toolbar.types';
+export type {
+  ToolbarDataState,
+  FitMode,
+  ToolbarState,
+  ToolbarActions,
+  ToolbarViewModel,
+} from './toolbar.types';
 
 // Result pattern types (ErrorCode and Result related)
 export type {

@@ -67,6 +67,7 @@ import type { MediaInfo } from '@shared/types';
 import { observeViewportCssVars } from '@shared/utils/viewport';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { safeEventPrevent } from '@shared/utils/event-utils';
+import { createToolbarViewModel } from '@shared/utils/toolbar-view-model';
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
@@ -115,9 +116,8 @@ function VerticalGalleryViewCore({
   // StabilityDetector: Activity 기반 안정 상태 감지 (Phase 83.1)
   const stabilityDetector = createStabilityDetector();
 
-  // Phase 21.4: isVisible을 단순 accessor로 변경 (불필요한 createMemo 제거)
-  // Solid.js의 fine-grained reactivity가 자동으로 최적화하므로 memo 불필요
-  const isVisible = () => mediaItems().length > 0;
+  // Phase 21.4 → Phase 376: memoized visibility accessor for toolbar sync
+  const isVisible = createMemo(() => mediaItems().length > 0);
 
   // Phase 146: 툴바 초기 표시 및 자동 숨김
   const [isInitialToolbarVisible, setIsInitialToolbarVisible] = createSignal(false);
@@ -161,6 +161,12 @@ function VerticalGalleryViewCore({
   };
 
   const [imageFitMode, setImageFitMode] = createSignal<ImageFitMode>(getInitialFitMode());
+
+  const activeMedia = createMemo(() => {
+    const items = mediaItems();
+    const index = currentIndex();
+    return items[index] ?? null;
+  });
 
   const preloadIndices = createMemo(() => {
     const count = getSetting<number>('gallery.preloadCount', 0);
@@ -292,6 +298,14 @@ function VerticalGalleryViewCore({
     // 키보드 내비게이션 반응성 개선
     autoFocusDebounce: 0,
     isScrolling, // ✅ Phase 83.3: settling 기반 포커스 갱신 최적화
+  });
+
+  const toolbarViewModel = createToolbarViewModel({
+    totalCount: () => mediaItems().length,
+    currentIndex,
+    focusedIndex,
+    tweetText: () => activeMedia()?.tweetText ?? null,
+    tweetTextHTML: () => activeMedia()?.tweetTextHTML ?? null,
   });
 
   const { scrollToItem } = useGalleryItemScroll(
@@ -548,9 +562,9 @@ function VerticalGalleryViewCore({
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}
-          currentIndex={currentIndex()}
-          focusedIndex={focusedIndex() ?? currentIndex()}
-          totalCount={mediaItems().length}
+          currentIndex={toolbarViewModel().currentIndex}
+          focusedIndex={toolbarViewModel().focusedIndex}
+          totalCount={toolbarViewModel().totalCount}
           isDownloading={isDownloading()}
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
@@ -560,8 +574,8 @@ function VerticalGalleryViewCore({
           onFitContainer={handleFitContainer}
           currentFitMode={imageFitMode()}
           onOpenSettings={() => {}}
-          tweetText={mediaItems()[currentIndex()]?.tweetText}
-          tweetTextHTML={mediaItems()[currentIndex()]?.tweetTextHTML}
+          tweetText={toolbarViewModel().tweetText ?? undefined}
+          tweetTextHTML={toolbarViewModel().tweetTextHTML ?? undefined}
           className={styles.toolbar || ''}
         />
       </div>
