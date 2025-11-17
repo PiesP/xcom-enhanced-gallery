@@ -82,14 +82,13 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id={themeSelectId}
           class={selectClass}
           onChange={props.onThemeChange}
+          value={props.currentTheme}
           aria-label={themeStrings().title}
           title={themeStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
           {withCurrentFirst(THEME_OPTIONS, props.currentTheme).map(option => (
-            <option value={option} selected={option === props.currentTheme}>
-              {themeStrings().labels[option]}
-            </option>
+            <option value={option}>{themeStrings().labels[option]}</option>
           ))}
         </select>
       </div>
@@ -102,14 +101,13 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id={languageSelectId}
           class={selectClass}
           onChange={props.onLanguageChange}
+          value={props.currentLanguage}
           aria-label={languageStrings().title}
           title={languageStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
           {withCurrentFirst(LANGUAGE_OPTIONS, props.currentLanguage).map(option => (
-            <option value={option} selected={option === props.currentLanguage}>
-              {languageStrings().labels[option]}
-            </option>
+            <option value={option}>{languageStrings().labels[option]}</option>
           ))}
         </select>
       </div>

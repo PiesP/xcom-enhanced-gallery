@@ -101,7 +101,30 @@ export function KeyboardHelpOverlay({
   open,
   onClose,
 }: KeyboardHelpOverlayProps): JSXElement | null {
-  const { createEffect, onCleanup } = getSolid();
+  const { createEffect, onCleanup, createSignal, createMemo, onMount } = getSolid();
+
+  const [languageRevision, setLanguageRevision] = createSignal(0);
+
+  onMount(() => {
+    const unsubscribe = languageService.onLanguageChange(() =>
+      setLanguageRevision(revision => revision + 1)
+    );
+    onCleanup(unsubscribe);
+  });
+
+  const localizedStrings = createMemo(() => {
+    languageRevision();
+    return {
+      closeLabel: languageService.translate('toolbar.close'),
+      title: languageService.translate('messages.keyboardHelp.title'),
+      shortcuts: {
+        navPrevious: languageService.translate('messages.keyboardHelp.navPrevious'),
+        navNext: languageService.translate('messages.keyboardHelp.navNext'),
+        close: languageService.translate('messages.keyboardHelp.close'),
+        toggleHelp: languageService.translate('messages.keyboardHelp.toggleHelp'),
+      },
+    } as const;
+  });
 
   // Dialog and button element references
   let dialogElement: HTMLDivElement | null = null;
@@ -224,23 +247,23 @@ export function KeyboardHelpOverlay({
           className={styles.closeButton || ''}
           size='md'
           tabIndex={0}
-          aria-label={languageService.translate('toolbar.close')}
+          aria-label={localizedStrings().closeLabel}
           data-testid='kho-close-button'
           onClick={onClose}
         />
 
         {/* Title */}
         <h2 id={titleId} class={styles.title}>
-          {languageService.translate('messages.keyboardHelp.title')}
+          {localizedStrings().title}
         </h2>
 
         {/* Content: Description and keyboard shortcuts list */}
         <div id={descId} class={styles.content}>
           <ul class={styles.shortcutList}>
-            <li>{languageService.translate('messages.keyboardHelp.navPrevious')}</li>
-            <li>{languageService.translate('messages.keyboardHelp.navNext')}</li>
-            <li>{languageService.translate('messages.keyboardHelp.close')}</li>
-            <li>{languageService.translate('messages.keyboardHelp.toggleHelp')}</li>
+            <li>{localizedStrings().shortcuts.navPrevious}</li>
+            <li>{localizedStrings().shortcuts.navNext}</li>
+            <li>{localizedStrings().shortcuts.close}</li>
+            <li>{localizedStrings().shortcuts.toggleHelp}</li>
           </ul>
         </div>
       </div>
