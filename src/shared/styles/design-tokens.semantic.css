@@ -4,7 +4,7 @@
  */
 
 @layer xeg.tokens {
-  :root {
+  :where(:root, .xeg-theme-scope) {
     /* Background Colors - Semantic Roles */
     --color-bg-primary: var(--color-base-white);
     --color-bg-secondary: var(--color-gray-50);
@@ -278,7 +278,8 @@
   }
 
   /* Theme Support - Dark/Light Mode */
-  [data-theme='light'] {
+  [data-theme='light'],
+  [data-theme='light'] .xeg-theme-scope {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
@@ -309,7 +310,8 @@
     --xeg-color-background: oklch(95% 0 0deg);
   }
 
-  [data-theme='dark'] {
+  [data-theme='dark'],
+  [data-theme='dark'] .xeg-theme-scope {
     --color-bg-primary: var(--color-gray-900);
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);
@@ -364,7 +366,8 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
+    :root:not([data-theme='light']),
+    :root:not([data-theme='light']) .xeg-theme-scope {
       --color-bg-primary: var(--color-gray-900);
       --color-bg-surface: var(--color-gray-900);
       --color-bg-elevated: var(--color-gray-700);
@@ -419,7 +422,8 @@
   }
 
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']) {
+    :root:not([data-theme='dark']),
+    :root:not([data-theme='dark']) .xeg-theme-scope {
       --color-bg-primary: var(--color-base-white);
       --color-text-primary: var(--color-base-black);
       --color-text-secondary: var(--color-gray-600);
@@ -447,7 +451,7 @@
   }
 
   @media (prefers-contrast: high) {
-    :root {
+    :where(:root, .xeg-theme-scope) {
       /* Surface contrast adjustments */
       --color-bg-primary: Canvas;
       --color-bg-secondary: Canvas;
@@ -514,7 +518,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    :root {
+    :where(:root, .xeg-theme-scope) {
       /* Durations (design-tokens.semantic.css) */
       --xeg-duration: 0ms;
       --xeg-duration-fast: 0ms;
@@ -542,7 +546,7 @@
   }
 
   /* Component Scope Tokens */
-  :root {
+  :where(:root, .xeg-theme-scope) {
     /* Legacy spacing aliases (KeyboardHelpOverlay, etc.) */
     --xeg-space-8: var(--space-sm); /* 8px */
     --xeg-space-12: 0.75rem; /* 12px */
@@ -616,7 +620,8 @@
   } /* ===== 유틸리티 클래스 ===== */
 
   /* Theme Overrides - Glass System 변형 (라이트 모드) */
-  [data-theme='light'] {
+  [data-theme='light'],
+  [data-theme='light'] .xeg-theme-scope {
     --xeg-surface-glass-bg: var(--color-bg-surface);
     --xeg-surface-glass-border: var(--color-border-default);
     --xeg-surface-glass-shadow: none;
@@ -624,7 +629,8 @@
   }
 
   /* Theme Overrides - Glass System 변형 (다크 모드) */
-  [data-theme='dark'] {
+  [data-theme='dark'],
+  [data-theme='dark'] .xeg-theme-scope {
     --xeg-surface-glass-bg: var(--color-gray-900);
     --xeg-surface-glass-border: var(--color-gray-600);
     --xeg-surface-glass-shadow: none;
@@ -633,7 +639,8 @@
 
   /* System Preference Fallback - 다크 모드 시스템 설정 */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']) {
+    :root:not([data-theme='light']),
+    :root:not([data-theme='light']) .xeg-theme-scope {
       --xeg-surface-glass-bg: var(--color-gray-900);
       --xeg-surface-glass-border: var(--color-gray-600);
       --xeg-surface-glass-shadow: none;

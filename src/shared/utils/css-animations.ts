@@ -7,7 +7,8 @@
  * Removed Motion One library dependency and optimized bundle size
  */
 
-import { logger } from '../logging';
+import { logger } from '@shared/logging';
+import { getStyleRegistry } from '@shared/services/style-registry';
 import { globalTimerManager } from './timer-management';
 
 // CSS animation variables and constants
@@ -46,59 +47,100 @@ export interface CSSAnimationOptions {
 /**
  * Inject CSS keyframes into DOM
  */
-export function injectAnimationStyles(): void {
-  const styleId = 'xcom-gallery-animations';
+const ANIMATION_STYLE_ID = 'xeg-animation-styles';
+const ANIMATION_LAYER = 'xeg.utilities';
+const GALLERY_SCOPE_SELECTOR = '.xeg-gallery-root';
 
-  if (document.getElementById(styleId)) {
+const styleRegistry = getStyleRegistry();
+
+const KEYFRAMES = {
+  FADE_IN: 'xeg-fade-in',
+  FADE_OUT: 'xeg-fade-out',
+  SLIDE_IN_BOTTOM: 'xeg-slide-in-bottom',
+  SLIDE_OUT_TOP: 'xeg-slide-out-top',
+  SCALE_IN: 'xeg-scale-in',
+  SCALE_OUT: 'xeg-scale-out',
+  IMAGE_LOAD: 'xeg-image-load',
+} as const;
+
+export function injectAnimationStyles(): void {
+  if (styleRegistry.hasStyle(ANIMATION_STYLE_ID)) {
     return;
   }
 
-  const style = document.createElement('style');
-  style.id = styleId;
-  style.textContent = `
-    @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
-    @keyframes slide-in-bottom {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes slide-out-top {
-      from { opacity: 1; transform: translateY(0); }
-      to { opacity: 0; transform: translateY(-20px); }
-    }
-    @keyframes scale-in {
-      from { opacity: 0; transform: scale(0.95); }
-      to { opacity: 1; transform: scale(1); }
-    }
-    @keyframes scale-out {
-      from { opacity: 1; transform: scale(1); }
-      to { opacity: 0; transform: scale(0.95); }
-    }
-    /* toolbar-slide-* keyframes removed: use JS API (toolbarSlideDown/Up) */
-    @keyframes image-load {
-      from { opacity: 0; transform: scale(0.98); }
-      to { opacity: 1; transform: scale(1); }
-    }
+  const cssText = buildScopedAnimationCss();
+  styleRegistry.registerStyle({ id: ANIMATION_STYLE_ID, cssText });
+  logger.debug('CSS animation styles registered via StyleRegistry.');
+}
 
-  .animate-fade-in { animation: fade-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
-  .animate-fade-out { animation: fade-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
-  .animate-slide-in-bottom { animation: slide-in-bottom var(--xeg-duration-normal) var(--xeg-ease-decelerate) forwards; }
-  .animate-slide-out-top { animation: slide-out-top var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
-  .animate-scale-in { animation: scale-in var(--xeg-duration-normal) var(--xeg-ease-standard) forwards; }
-  .animate-scale-out { animation: scale-out var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards; }
-  .animate-image-load { animation: image-load var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards; }
+function buildScopedAnimationCss(): string {
+  const scopedClass = (className: string): string => `${GALLERY_SCOPE_SELECTOR} .${className}`;
+  const reducedMotionSelectors = [
+    ANIMATION_CLASSES.FADE_IN,
+    ANIMATION_CLASSES.FADE_OUT,
+    ANIMATION_CLASSES.SLIDE_IN_BOTTOM,
+    ANIMATION_CLASSES.SLIDE_OUT_TOP,
+    ANIMATION_CLASSES.SCALE_IN,
+    ANIMATION_CLASSES.SCALE_OUT,
+    ANIMATION_CLASSES.IMAGE_LOAD,
+  ]
+    .map(scopedClass)
+    .join(',\n      ');
 
-    @media (prefers-reduced-motion: reduce) {
-      .animate-fade-in, .animate-fade-out, .animate-slide-in-bottom,
-      .animate-slide-out-top, .animate-scale-in, .animate-scale-out,
-      .animate-image-load {
+  return `
+@layer ${ANIMATION_LAYER} {
+  @keyframes ${KEYFRAMES.FADE_IN} { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ${KEYFRAMES.FADE_OUT} { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes ${KEYFRAMES.SLIDE_IN_BOTTOM} {
+    from { opacity: 0; transform: translateY(1.25rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes ${KEYFRAMES.SLIDE_OUT_TOP} {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-1.25rem); }
+  }
+  @keyframes ${KEYFRAMES.SCALE_IN} {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes ${KEYFRAMES.SCALE_OUT} {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.95); }
+  }
+  @keyframes ${KEYFRAMES.IMAGE_LOAD} {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  ${scopedClass(ANIMATION_CLASSES.FADE_IN)} {
+    animation: ${KEYFRAMES.FADE_IN} var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.FADE_OUT)} {
+    animation: ${KEYFRAMES.FADE_OUT} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.SLIDE_IN_BOTTOM)} {
+    animation: ${KEYFRAMES.SLIDE_IN_BOTTOM} var(--xeg-duration-normal) var(--xeg-ease-decelerate) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.SLIDE_OUT_TOP)} {
+    animation: ${KEYFRAMES.SLIDE_OUT_TOP} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.SCALE_IN)} {
+    animation: ${KEYFRAMES.SCALE_IN} var(--xeg-duration-normal) var(--xeg-ease-standard) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.SCALE_OUT)} {
+    animation: ${KEYFRAMES.SCALE_OUT} var(--xeg-duration-fast) var(--xeg-ease-accelerate) forwards;
+  }
+  ${scopedClass(ANIMATION_CLASSES.IMAGE_LOAD)} {
+    animation: ${KEYFRAMES.IMAGE_LOAD} var(--xeg-duration-slow) var(--xeg-ease-decelerate) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+      ${reducedMotionSelectors} {
         animation: none !important;
       }
-    }
-  `;
-  document.head.appendChild(style);
-
-  logger.debug('CSS animation styles injected.');
+  }
+}
+`;
 }
 
 /**

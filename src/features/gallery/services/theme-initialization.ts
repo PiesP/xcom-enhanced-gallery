@@ -9,8 +9,9 @@
  * @version 1.0.0
  */
 
-import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
+import { THEME_STORAGE_KEY } from '@shared/constants';
 import { logger } from '@shared/logging';
+import { syncThemeAttributes } from '@shared/utils/theme-dom';
 
 /**
  * Theme mode type
@@ -129,7 +130,7 @@ export function applyThemeToDOM(theme: ThemeMode): void {
   }
 
   try {
-    document.documentElement.setAttribute(THEME_DOM_ATTRIBUTE, theme);
+    syncThemeAttributes(theme);
     logger.debug(`[theme] Applied: ${theme}`);
   } catch (error) {
     logger.error('[theme] Failed to apply theme to DOM:', error);

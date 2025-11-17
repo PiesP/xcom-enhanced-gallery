@@ -4,7 +4,7 @@
  */
 
 @layer xeg.tokens {
-  :root {
+  :where(:root, .xeg-theme-scope) {
     /* Base Colors - Raw Values */
     --color-base-white: oklch(1 0 0);
     --color-base-black: oklch(0 0 0);

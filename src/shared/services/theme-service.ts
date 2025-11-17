@@ -5,10 +5,11 @@
  * @version 3.2.0 - Phase 360: Direct PersistentStorage usage
  */
 
-import { THEME_DOM_ATTRIBUTE, THEME_STORAGE_KEY } from '@shared/constants';
+import { THEME_STORAGE_KEY } from '@shared/constants';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
+import { syncThemeAttributes } from '@shared/utils/theme-dom';
 
 /**
  * Theme type
@@ -204,9 +205,7 @@ export class ThemeService extends BaseServiceImpl {
       this.currentTheme = effectiveTheme;
 
       // Set data-theme attribute for automatic CSS application
-      if (typeof document !== 'undefined') {
-        document.documentElement?.setAttribute(THEME_DOM_ATTRIBUTE, this.currentTheme);
-      }
+      syncThemeAttributes(this.currentTheme);
 
       // Notify listeners
       this.notifyListeners();

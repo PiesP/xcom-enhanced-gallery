@@ -4,7 +4,7 @@
  */
 
 @layer xeg.tokens {
-  :root {
+  :where(:root, .xeg-theme-scope) {
     /* Gallery Component - 배경은 semantic 레벨의 --xeg-gallery-bg 사용 */
     /* Removed unused: --gallery-border, --gallery-shadow */
 
@@ -198,7 +198,7 @@
 /* 투명도 감소 선호 지원 */
 @layer xeg.tokens {
   @media (prefers-reduced-transparency: reduce) {
-    :root {
+    :where(:root, .xeg-theme-scope) {
       --color-glass-bg: var(--color-bg-primary);
       --glass-bg: var(--color-bg-primary);
       --xeg-surface-glass-bg: var(--color-bg-surface);

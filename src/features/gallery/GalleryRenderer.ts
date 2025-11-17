@@ -125,7 +125,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const elementFactory = () =>
       createComponent(GalleryContainer, {
         onClose: handleClose,
-        className: 'xeg-gallery-renderer xeg-gallery-root',
+        className: 'xeg-gallery-renderer xeg-gallery-root xeg-theme-scope',
         get children() {
           return createComponent(ErrorBoundary, {
             get children() {
