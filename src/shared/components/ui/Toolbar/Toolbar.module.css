@@ -116,11 +116,6 @@
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
-/* 기본 툴바 - 컴포넌트 토큰 사용 */
-.toolbar {
-  /* Intentionally empty: exported for CSS Modules consumers. */
-}
-
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
   --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
@@ -668,6 +663,7 @@ button.fitButton {
     --xeg-toolbar-text-muted,
     var(--xeg-color-text-secondary)
   ); /* Phase: design-consistency */
+
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
