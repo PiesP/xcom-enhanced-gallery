@@ -182,14 +182,6 @@ export {
   map,
 } from './result.types';
 
-// Result compatibility layer (Phase 355.2)
-export {
-  toEnhancedResult,
-  toSimpleResult,
-  toEnhancedResults,
-  toSimpleResults,
-} from './result-compat';
-
 // UserScript API types (re-exported directly from userscript definition)
 export type {
   UserScriptInfo,

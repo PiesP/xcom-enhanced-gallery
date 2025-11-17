@@ -10,9 +10,11 @@ import type { MediaExtractionResult } from '@shared/types/media.types';
 import type { MediaExtractionOptions } from '@shared/types/media.types';
 import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
-import type { BaseResultStatus } from '@shared/types/result.types';
-import type { DownloadProgress } from './download/types';
-import { ErrorCode } from '@shared/types/result.types';
+import type {
+  BulkDownloadResult,
+  SingleDownloadResult,
+  DownloadOptions,
+} from './unified-download-service';
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { BaseServiceImpl } from './base-service';
@@ -38,30 +40,7 @@ export interface PrefetchOptions {
 
 export type { DownloadProgress } from './download/types';
 
-export interface BulkDownloadOptions {
-  onProgress?: (progress: DownloadProgress) => void;
-  signal?: AbortSignal;
-  zipFilename?: string;
-}
-
-export interface DownloadResult {
-  success: boolean;
-  status: BaseResultStatus;
-  filesProcessed: number;
-  filesSuccessful: number;
-  error?: string;
-  filename?: string;
-  failures?: Array<{ url: string; error: string }>;
-  code?: ErrorCode;
-}
-
-export interface SingleDownloadResult {
-  success: boolean;
-  status: BaseResultStatus;
-  filename?: string;
-  error?: string;
-  code?: ErrorCode;
-}
+export type BulkDownloadOptions = DownloadOptions;
 
 export interface MediaAvailabilityResult {
   available: boolean;
@@ -740,42 +719,26 @@ export class MediaService extends BaseServiceImpl {
     logger.debug('[MediaService] Prefetch cache cleared.');
   }
 
-  async downloadSingle(media: MediaInfo): Promise<SingleDownloadResult> {
+  async downloadSingle(
+    media: MediaInfo,
+    options: DownloadOptions = {}
+  ): Promise<SingleDownloadResult> {
     const { unifiedDownloadService } = await import('./unified-download-service');
-    const result = await unifiedDownloadService.downloadSingle(media);
-
-    // Convert UnifiedSingleDownloadResult to SingleDownloadResult (backwards compatibility)
-    return {
-      success: result.success,
-      status: result.success ? 'success' : 'error',
-      ...(result.filename && { filename: result.filename }),
-      ...(result.error && { error: result.error }),
-      code: result.success ? ErrorCode.NONE : ErrorCode.UNKNOWN,
-    };
+    return unifiedDownloadService.downloadSingle(media, options);
   }
 
   async downloadMultiple(
     mediaItems: Array<MediaInfo>,
-    _options?: BulkDownloadOptions
-  ): Promise<DownloadResult> {
+    options: BulkDownloadOptions = {}
+  ): Promise<BulkDownloadResult> {
     const { unifiedDownloadService } = await import('./unified-download-service');
-    const result = await unifiedDownloadService.downloadBulk(mediaItems);
-
-    // Convert UnifiedBulkDownloadResult to DownloadResult (backwards compatibility)
-    return {
-      success: result.success,
-      status: result.status,
-      filesProcessed: result.filesProcessed,
-      filesSuccessful: result.filesSuccessful,
-      ...(result.error && { error: result.error }),
-      ...(result.filename && { filename: result.filename }),
-    };
+    return unifiedDownloadService.downloadBulk(mediaItems, options);
   }
 
   async downloadBulk(
     mediaItems: readonly MediaInfo[],
     options: BulkDownloadOptions = {}
-  ): Promise<DownloadResult> {
+  ): Promise<BulkDownloadResult> {
     return this.downloadMultiple(Array.from(mediaItems), options);
   }
 
