@@ -365,7 +365,7 @@
 .toolbarHoverZone:hover {
   /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
   z-index: var(--xeg-z-toolbar-hover-zone);
-  background: var(--xeg-toolbar-hover-zone-bg, var(--xeg-bg-toolbar));
+  background: var(--xeg-toolbar-hover-zone-bg, transparent);
 }
 
 /* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */

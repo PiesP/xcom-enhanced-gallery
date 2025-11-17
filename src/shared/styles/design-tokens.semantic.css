@@ -607,7 +607,7 @@
       --xeg-toolbar-wrapper-border: 0.125rem solid CanvasText;
       --xeg-toolbar-wrapper-radius: var(--xeg-radius-md);
       --xeg-toolbar-wrapper-margin: var(--space-xs);
-      --xeg-toolbar-hover-zone-bg: color-mix(in srgb, CanvasText 15%, Canvas 85%);
+      --xeg-toolbar-hover-zone-bg: var(--hover-zone-bg, transparent);
 
       /* Focus styling */
       --xeg-focus-outline: 0.1875rem solid CanvasText; /* 3px */
@@ -697,7 +697,7 @@
     --xeg-toolbar-wrapper-border: none;
     --xeg-toolbar-wrapper-radius: 0;
     --xeg-toolbar-wrapper-margin: 0;
-    --xeg-toolbar-hover-zone-bg: var(--xeg-bg-toolbar);
+    --xeg-toolbar-hover-zone-bg: var(--hover-zone-bg, transparent);
     /* Neutral color aliases */
     --xeg-neutral-100: var(--xeg-color-neutral-100);
     --xeg-neutral-200: var(--xeg-color-neutral-200);
