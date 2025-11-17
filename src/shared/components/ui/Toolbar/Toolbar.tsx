@@ -57,7 +57,7 @@ interface NavigationStateParams {
   readonly total: number;
   readonly toolbarDisabled: boolean;
   readonly downloadBusy: boolean;
-  readonly index: number;
+  readonly currentIndex: number;
 }
 
 const resolveDisplayedIndex = ({
@@ -92,11 +92,11 @@ const computeNavigationState = ({
   total,
   toolbarDisabled,
   downloadBusy,
-  index,
+  currentIndex,
 }: NavigationStateParams) => {
   const hasItems = total > 0;
-  const prevDisabled = toolbarDisabled || !hasItems || index <= 0;
-  const nextDisabled = toolbarDisabled || !hasItems || index >= Math.max(total - 1, 0);
+  const prevDisabled = toolbarDisabled || !hasItems || currentIndex <= 0;
+  const nextDisabled = toolbarDisabled || !hasItems || currentIndex >= Math.max(total - 1, 0);
   const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
 
   return {
@@ -195,10 +195,12 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
   const totalItems = createMemo(() => Math.max(0, props.totalCount));
 
+  const currentIndexForNav = createMemo(() => clampIndex(props.currentIndex, totalItems()));
+
   const displayedIndex = createMemo(() =>
     resolveDisplayedIndex({
       total: totalItems(),
-      currentIndex: props.currentIndex,
+      currentIndex: currentIndexForNav(),
       focusedIndex: props.focusedIndex,
     })
   );
@@ -212,7 +214,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       toolbarDisabled: Boolean(props.disabled),
       downloadBusy: Boolean(props.isDownloading),
-      index: displayedIndex(),
+      currentIndex: currentIndexForNav(),
     })
   );
 

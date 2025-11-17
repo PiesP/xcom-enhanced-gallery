@@ -425,7 +425,7 @@
  * Loading message styles displayed while media is loading.
  */
 .loading {
-  color: white;
+  color: var(--xeg-color-text-primary);
   font-size: var(--xeg-text-xl);
   text-align: center;
   padding: var(--xeg-spacing-lg);

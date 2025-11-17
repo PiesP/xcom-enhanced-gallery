@@ -80,6 +80,40 @@
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-light);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-light);
 
+    /* Toolbar color harmony tokens (light defaults) */
+    --xeg-toolbar-text-color: var(--xeg-color-text-primary);
+    --xeg-toolbar-text-muted: var(--xeg-color-text-secondary);
+    --xeg-toolbar-element-bg: color-mix(
+      in oklch,
+      var(--xeg-bg-toolbar) 80%,
+      var(--color-base-white) 20%
+    );
+    --xeg-toolbar-element-bg-strong: color-mix(
+      in oklch,
+      var(--xeg-bg-toolbar) 65%,
+      var(--color-base-white) 35%
+    );
+    --xeg-toolbar-element-border: color-mix(
+      in oklch,
+      var(--xeg-toolbar-border) 85%,
+      var(--color-base-white) 15%
+    );
+    --xeg-toolbar-progress-track: color-mix(
+      in oklch,
+      var(--xeg-toolbar-element-bg) 60%,
+      var(--xeg-toolbar-element-border) 40%
+    );
+    --xeg-toolbar-scrollbar-track: color-mix(
+      in oklch,
+      var(--xeg-toolbar-element-bg) 50%,
+      var(--color-base-white) 50%
+    );
+    --xeg-toolbar-scrollbar-thumb: color-mix(
+      in oklch,
+      var(--xeg-toolbar-element-border) 80%,
+      var(--color-base-white) 20%
+    );
+
     /* State Colors - Semantic Roles (monochrome, minimal) */
     --color-success: var(--color-gray-800);
     --color-success-hover: var(--color-gray-900);
@@ -356,6 +390,39 @@
     --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
     --xeg-toolbar-button-border-high-contrast: var(--xeg-toolbar-button-border-high-contrast-dark);
 
+    --xeg-toolbar-text-color: var(--color-text-primary);
+    --xeg-toolbar-text-muted: var(--color-gray-300);
+    --xeg-toolbar-element-bg: color-mix(
+      in oklch,
+      var(--xeg-bg-toolbar) 85%,
+      var(--color-base-black) 15%
+    );
+    --xeg-toolbar-element-bg-strong: color-mix(
+      in oklch,
+      var(--xeg-bg-toolbar) 70%,
+      var(--color-base-black) 30%
+    );
+    --xeg-toolbar-element-border: color-mix(
+      in oklch,
+      var(--xeg-toolbar-border) 75%,
+      var(--color-base-black) 25%
+    );
+    --xeg-toolbar-progress-track: color-mix(
+      in oklch,
+      var(--xeg-toolbar-border) 65%,
+      var(--xeg-bg-toolbar) 35%
+    );
+    --xeg-toolbar-scrollbar-track: color-mix(
+      in oklch,
+      var(--xeg-toolbar-element-bg) 80%,
+      var(--color-base-black) 20%
+    );
+    --xeg-toolbar-scrollbar-thumb: color-mix(
+      in oklch,
+      var(--xeg-toolbar-element-border) 85%,
+      var(--color-base-black) 15%
+    );
+
     /* Explicit dark background for gallery root */
     --xeg-color-background: oklch(20% 0 0deg);
 
@@ -405,6 +472,39 @@
       --xeg-toolbar-button-bg-high-contrast: var(--xeg-toolbar-button-bg-high-contrast-dark);
       --xeg-toolbar-button-border-high-contrast: var(
         --xeg-toolbar-button-border-high-contrast-dark
+      );
+
+      --xeg-toolbar-text-color: var(--color-text-primary);
+      --xeg-toolbar-text-muted: var(--color-gray-300);
+      --xeg-toolbar-element-bg: color-mix(
+        in oklch,
+        var(--xeg-bg-toolbar) 85%,
+        var(--color-base-black) 15%
+      );
+      --xeg-toolbar-element-bg-strong: color-mix(
+        in oklch,
+        var(--xeg-bg-toolbar) 70%,
+        var(--color-base-black) 30%
+      );
+      --xeg-toolbar-element-border: color-mix(
+        in oklch,
+        var(--xeg-toolbar-border) 75%,
+        var(--color-base-black) 25%
+      );
+      --xeg-toolbar-progress-track: color-mix(
+        in oklch,
+        var(--xeg-toolbar-border) 65%,
+        var(--xeg-bg-toolbar) 35%
+      );
+      --xeg-toolbar-scrollbar-track: color-mix(
+        in oklch,
+        var(--xeg-toolbar-element-bg) 80%,
+        var(--color-base-black) 20%
+      );
+      --xeg-toolbar-scrollbar-thumb: color-mix(
+        in oklch,
+        var(--xeg-toolbar-element-border) 85%,
+        var(--color-base-black) 15%
       );
 
       /* Toolbar Component Tokens - System Dark Mode */

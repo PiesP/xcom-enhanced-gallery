@@ -63,7 +63,7 @@
  */
 .toolbarButton {
   /* Text and cursor */
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   cursor: pointer;
 
   /* Layout: centered icon with flexbox */
@@ -117,6 +117,10 @@
 }
 
 /* 기본 툴바 - 컴포넌트 토큰 사용 */
+.toolbar {
+  /* Intentionally empty: exported for CSS Modules consumers. */
+}
+
 .galleryToolbar {
   /* 레이아웃 속성만 정의 - semantic 토큰 사용 (alias 제거) */
   --toolbar-surface-base: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
@@ -143,6 +147,7 @@
   gap: 0; /* 설정 패널과의 간격은 별도 관리 */
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition: var(--xeg-transition-elevation-normal);
@@ -236,7 +241,7 @@
 
 .separator {
   /* 구분자('/')를 인디케이터 숫자와 동일 톤(Primary)으로 통일 */
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-muted, var(--xeg-color-text-primary));
   margin: 0 0.125em; /* 0 2px → 0 0.125em */
 }
 
@@ -254,7 +259,7 @@
 .toolbarButton[data-disabled='true'] {
   --button-opacity: 0.5;
 
-  color: var(--xeg-color-neutral-400);
+  color: var(--xeg-toolbar-text-muted, var(--xeg-color-neutral-400));
   cursor: not-allowed;
 }
 
@@ -323,7 +328,7 @@
 
 .mediaCounter {
   /* 인디케이터 텍스트는 기본 텍스트 톤으로 통일 */
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   font-size: var(--xeg-font-size-md);
   font-weight: 600;
   text-align: center;
@@ -337,18 +342,18 @@
 }
 
 .currentIndex {
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   font-weight: 700;
 }
 
 /* 고대비 필요 상태(data-high-contrast) 또는 시스템 고대비에서 1차 텍스트 색상으로 승격 */
 .galleryToolbar[data-high-contrast='true'] .separator {
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
 }
 
 .totalCount {
   /* 현재/전체 모두 동일한 텍스트 톤 사용 */
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
 }
 /* 고대비 환경은 design-tokens.semantic.css에서 토큰으로 관리 */
 /* 진행률 바 */
@@ -360,7 +365,7 @@
   transform: translateX(-50%);
   width: 3.75em; /* 60px → 3.75em */
   height: 0.125em; /* 2px → 0.125em */
-  background: var(--xeg-color-neutral-200);
+  background: var(--xeg-toolbar-progress-track, var(--xeg-color-neutral-200));
   border-radius: var(--xeg-radius-sm);
   overflow: clip;
 }
@@ -368,7 +373,7 @@
 .progressFill {
   width: 100%;
   height: 100%;
-  background: var(--xeg-color-text-primary);
+  background: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   border-radius: var(--xeg-radius-sm);
   transition: var(--xeg-transition-width-normal);
   transform-origin: left;
@@ -660,9 +665,9 @@ button.fitButton {
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(
-    --xeg-color-text-secondary
-  ); /* Phase: design-consistency - improved from hardcoded secondary */
-
+    --xeg-toolbar-text-muted,
+    var(--xeg-color-text-secondary)
+  ); /* Phase: design-consistency */
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -673,7 +678,7 @@ button.fitButton {
   padding: var(--space-sm);
   font-size: var(--xeg-font-size-md);
   line-height: 1.5;
-  color: var(--xeg-color-text-primary);
+  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
   background: var(
     --toolbar-surface-base,
     var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
@@ -697,17 +702,17 @@ button.fitButton {
 }
 
 .tweetContent::-webkit-scrollbar-track {
-  background: var(--xeg-color-neutral-200);
+  background: var(--xeg-toolbar-scrollbar-track, var(--xeg-color-neutral-200));
   border-radius: var(--xeg-radius-sm);
 }
 
 .tweetContent::-webkit-scrollbar-thumb {
-  background: var(--xeg-color-neutral-400);
+  background: var(--xeg-toolbar-scrollbar-thumb, var(--xeg-color-neutral-400));
   border-radius: var(--xeg-radius-sm);
 }
 
 .tweetContent::-webkit-scrollbar-thumb:hover {
-  background: var(--xeg-color-neutral-500);
+  background: var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-500));
 }
 
 /* Tweet Link Styles - Phase 1: Safe text formatting */
