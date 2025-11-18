@@ -5,9 +5,9 @@
  * Phase 345: Enhanced type safety
  */
 
-import { logger } from '../shared/logging';
-import { registerGalleryRenderer } from '../shared/container/service-accessors';
-import type { IGalleryApp } from '../shared/container/app-container';
+import { logger } from '@shared/logging';
+import { registerGalleryRenderer } from '@shared/container';
+import type { IGalleryApp } from '@shared/container/app-container';
 
 /** Gallery app instance (module-level management) */
 let galleryAppInstance: IGalleryApp | null = null;
@@ -41,11 +41,11 @@ export async function initializeGalleryApp(): Promise<IGalleryApp> {
     logger.info('🎨 Gallery app lazy initialization starting');
 
     // Register Gallery Renderer service (needed only for gallery app)
-    const { GalleryRenderer } = await import('../features/gallery/GalleryRenderer');
+    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
     registerGalleryRenderer(new GalleryRenderer());
 
     // Create gallery app instance
-    const { GalleryApp } = await import('../features/gallery/GalleryApp');
+    const { GalleryApp } = await import('@features/gallery/GalleryApp');
     galleryAppInstance = new GalleryApp();
 
     // Initialize gallery app

@@ -5,12 +5,31 @@
  * Phase 343: Standardized error handling
  */
 
-import { logger } from '../shared/logging';
+import { logger } from '@shared/logging';
 import {
-  registerCoreBaseServices,
-  initializeBaseServices,
-} from '../shared/container/service-accessors';
-import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+  CORE_BASE_SERVICE_IDENTIFIERS,
+  LANGUAGE_SERVICE_IDENTIFIER,
+  THEME_SERVICE_IDENTIFIER,
+} from '@shared/container/service-accessors';
+import { CoreService } from '@shared/services/core';
+import { languageService } from '@shared/services/language-service';
+import { themeService } from '@shared/services/theme-service';
+import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+
+const BASE_SERVICE_IDS = CORE_BASE_SERVICE_IDENTIFIERS;
+const BASE_SERVICE_REGISTRATIONS = [
+  [THEME_SERVICE_IDENTIFIER, themeService],
+  [LANGUAGE_SERVICE_IDENTIFIER, languageService],
+] as const;
+
+function ensureBaseServicesRegistered(coreService: CoreService): void {
+  for (const [key, service] of BASE_SERVICE_REGISTRATIONS) {
+    const existing = coreService.tryGetBaseService(key);
+    if (!existing) {
+      coreService.registerBaseService(key, service);
+    }
+  }
+}
 
 /**
  * Phase A5.2: Centralized BaseService lifecycle initialization
@@ -26,16 +45,13 @@ import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
  * @note On failure, only warning is printed and app continues (non-critical)
  */
 export async function initializeCoreBaseServices(): Promise<void> {
+  const coreService = CoreService.getInstance();
+
   try {
-    logger.debug('🔄 Registering BaseService registry...');
-    registerCoreBaseServices();
-
-    logger.debug('🔄 Initializing BaseService...');
-    await initializeBaseServices();
-
-    logger.debug('✅ BaseService initialization complete');
+    ensureBaseServicesRegistered(coreService);
+    await coreService.initializeAllBaseServices([...BASE_SERVICE_IDS]);
+    logger.debug('[base-services] Base services ready');
   } catch (error) {
-    // Phase 343: Standardized error handling (Non-Critical - warn only)
     handleBootstrapError(
       error,
       { ...NON_CRITICAL_ERROR_STRATEGY, context: 'base-services' },

@@ -1,41 +1,27 @@
-/**
- * @fileoverview Critical Systems Initialization
- * @description Phase 2.1: Critical Path initialization logic
- * Core systems initialization separated in Phase A5.2
- * Phase 343: Standardized error handling
- */
+import { logger } from '@shared/logging';
+import { warmupCriticalServices } from '@shared/container';
+import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
 
-import { logger } from '../shared/logging';
-import { warmupCriticalServices } from '../shared/container/service-accessors';
-import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+const debugEnabled = !import.meta.env.PROD;
+const debug = (message: string): void => {
+  if (debugEnabled) {
+    logger.debug(`[critical] ${message}`);
+  }
+};
 
-/**
- * Critical Path - Essential system initialization (synchronous part only)
- *
- * Responsibilities:
- * - Register core services (dynamic import)
- * - Immediately initialize critical services
- * - Force load factories/services
- *
- * Phase 343: Critical system - app startup impossible on error
- *
- * @throws {Error} On critical initialization failure (app startup impossible)
- */
+async function registerCoreLayer(): Promise<void> {
+  const { registerCoreServices } = await import('@shared/services/service-initialization');
+  await registerCoreServices();
+}
+
 export async function initializeCriticalSystems(): Promise<void> {
+  debug('initialization started');
+
   try {
-    logger.info('Critical Path initialization starting');
-
-    // Register core services (dynamic import)
-    const { registerCoreServices } = await import('../shared/services/service-initialization');
-    await registerCoreServices();
-
-    // Immediately initialize only critical services
-    // Force load (activate factories/services immediately)
+    await registerCoreLayer();
     warmupCriticalServices();
-
-    logger.info('✅ Critical Path initialization complete');
+    debug('initialization complete');
   } catch (error) {
-    // Phase 343: Standardized error handling
     handleBootstrapError(
       error,
       { ...CRITICAL_ERROR_STRATEGY, context: 'critical-systems' },

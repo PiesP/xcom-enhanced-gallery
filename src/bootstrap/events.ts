@@ -4,7 +4,7 @@
  * @module bootstrap/events
  */
 
-import { logger } from '../shared/logging';
+import { logger } from '@shared/logging';
 
 /**
  * Event handler unregister function type
@@ -21,18 +21,49 @@ export type Unregister = () => void;
  * @returns Event handler unregister function
  */
 export function wireGlobalEvents(onBeforeUnload: () => void): Unregister {
-  // BFCache compatibility: registering beforeunload can prevent browser's page snapshot (BFCache) loading
-  // Cleanup is only performed in pagehide to preserve back button restoration quality
-  const handler = (): void => {
+  const hasWindow = typeof window !== 'undefined' && Boolean(window.addEventListener);
+  const debugEnabled = import.meta.env.DEV;
+
+  if (!hasWindow) {
+    if (debugEnabled) {
+      logger.debug('[events] 🧩 Global events wiring skipped (no window context)');
+    }
+    return () => {
+      /* noop */
+    };
+  }
+
+  let disposed = false;
+
+  const invokeOnce = (): void => {
+    if (disposed) {
+      return;
+    }
+
+    disposed = true;
     onBeforeUnload();
   };
 
-  window.addEventListener('pagehide', handler);
+  const handler = (): void => {
+    invokeOnce();
+  };
 
-  logger.debug('[events] 🧩 Global events wired (pagehide only)');
+  window.addEventListener('pagehide', handler, { once: true, passive: true });
+
+  if (debugEnabled) {
+    logger.debug('[events] 🧩 Global events wired (pagehide only)');
+  }
 
   return () => {
+    if (disposed) {
+      return;
+    }
+
+    disposed = true;
     window.removeEventListener('pagehide', handler);
-    logger.debug('[events] 🧩 Global events unwired');
+
+    if (debugEnabled) {
+      logger.debug('[events] 🧩 Global events unwired');
+    }
   };
 }

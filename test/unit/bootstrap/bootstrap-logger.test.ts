@@ -4,22 +4,28 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logger } from '../../../src/shared/logging';
-import { logBootstrapSummary, logEnvironmentInfo } from '../../../src/bootstrap/diagnostics/logger';
+import type { Logger } from '../../../src/shared/logging';
+import {
+  diagnosticsLogger,
+  logBootstrapSummary,
+  logEnvironmentInfo,
+} from '../../../src/bootstrap/diagnostics/logger';
 import type { BootstrapResult } from '../../../src/bootstrap/diagnostics/types';
 
 describe('Bootstrap Logger', () => {
   // Mock logger functions
+  let scopedLogger: Logger;
   let infoSpy: ReturnType<typeof vi.fn>;
   let debugSpy: ReturnType<typeof vi.fn>;
   let warnSpy: ReturnType<typeof vi.fn>;
   let errorSpy: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    infoSpy = vi.spyOn(logger, 'info').mockImplementation(() => {});
-    debugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => {});
-    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+    scopedLogger = diagnosticsLogger.getLogger();
+    infoSpy = vi.spyOn(scopedLogger, 'info').mockImplementation(() => {});
+    debugSpy = vi.spyOn(scopedLogger, 'debug').mockImplementation(() => {});
+    warnSpy = vi.spyOn(scopedLogger, 'warn').mockImplementation(() => {});
+    errorSpy = vi.spyOn(scopedLogger, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -43,15 +49,11 @@ describe('Bootstrap Logger', () => {
       logBootstrapSummary(result);
 
       // Verify summary log
-      expect(infoSpy).toHaveBeenCalledWith(
-        '[bootstrap] Summary: tampermonkey | Services: 2/2 | Status: ✅'
-      );
+      expect(infoSpy).toHaveBeenCalledWith('✅ Bootstrap summary • tampermonkey • Services 2/2');
 
       // Verify service logs
-      expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ HttpRequestService: Native fetch API detected'
-      );
-      expect(debugSpy).toHaveBeenCalledWith('[bootstrap] ✅ DownloadService: GM_download detected');
+      expect(debugSpy).toHaveBeenCalledWith('✅ HttpRequestService: Native fetch API detected');
+      expect(debugSpy).toHaveBeenCalledWith('✅ DownloadService: GM_download detected');
     });
 
     it('should log failed bootstrap with status ❌', () => {
@@ -66,9 +68,7 @@ describe('Bootstrap Logger', () => {
 
       logBootstrapSummary(result);
 
-      expect(infoSpy).toHaveBeenCalledWith(
-        '[bootstrap] Summary: test | Services: 0/0 | Status: ❌'
-      );
+      expect(infoSpy).toHaveBeenCalledWith('❌ Bootstrap summary • test • Services 0/0');
     });
 
     it('should log unavailable services with warning icon', () => {
@@ -86,15 +86,9 @@ describe('Bootstrap Logger', () => {
 
       logBootstrapSummary(result);
 
-      expect(infoSpy).toHaveBeenCalledWith(
-        '[bootstrap] Summary: browser | Services: 1/2 | Status: ✅'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ HttpRequestService: Native fetch API detected'
-      );
-      expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ⚠️ DownloadService: GM_download unavailable'
-      );
+      expect(infoSpy).toHaveBeenCalledWith('✅ Bootstrap summary • browser • Services 1/2');
+      expect(debugSpy).toHaveBeenCalledWith('✅ HttpRequestService: Native fetch API detected');
+      expect(debugSpy).toHaveBeenCalledWith('⚠️ DownloadService: GM_download unavailable');
     });
 
     it('should log warnings if present', () => {
@@ -109,8 +103,8 @@ describe('Bootstrap Logger', () => {
 
       logBootstrapSummary(result);
 
-      expect(warnSpy).toHaveBeenCalledWith('[bootstrap] Warning 1');
-      expect(warnSpy).toHaveBeenCalledWith('[bootstrap] Warning 2');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️ Warning 1');
+      expect(warnSpy).toHaveBeenCalledWith('⚠️ Warning 2');
     });
 
     it('should log errors if present', () => {
@@ -125,8 +119,8 @@ describe('Bootstrap Logger', () => {
 
       logBootstrapSummary(result);
 
-      expect(errorSpy).toHaveBeenCalledWith('[bootstrap] Error 1');
-      expect(errorSpy).toHaveBeenCalledWith('[bootstrap] Error 2');
+      expect(errorSpy).toHaveBeenCalledWith('❌ Error 1');
+      expect(errorSpy).toHaveBeenCalledWith('❌ Error 2');
     });
 
     it('should handle empty services array', () => {
@@ -141,9 +135,7 @@ describe('Bootstrap Logger', () => {
 
       logBootstrapSummary(result);
 
-      expect(infoSpy).toHaveBeenCalledWith(
-        '[bootstrap] Summary: test | Services: 0/0 | Status: ✅'
-      );
+      expect(infoSpy).toHaveBeenCalledWith('✅ Bootstrap summary • test • Services 0/0');
     });
   });
 
@@ -161,7 +153,7 @@ describe('Bootstrap Logger', () => {
       logEnvironmentInfo(environment);
 
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ Tampermonkey APIs available: GM_download, GM_setValue, GM_getValue'
+        'Tampermonkey environment detected • GM APIs: GM_download, GM_setValue, GM_getValue'
       );
     });
 
@@ -178,7 +170,7 @@ describe('Bootstrap Logger', () => {
       logEnvironmentInfo(environment);
 
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] 🧪 Test environment - using mock implementations'
+        'Test environment detected • using mock implementations'
       );
     });
 
@@ -194,7 +186,7 @@ describe('Bootstrap Logger', () => {
 
       logEnvironmentInfo(environment);
 
-      expect(debugSpy).toHaveBeenCalledWith('[bootstrap] 🔌 Browser extension environment');
+      expect(debugSpy).toHaveBeenCalledWith('Browser extension environment detected');
     });
 
     it('should warn about plain browser console environment', () => {
@@ -209,7 +201,7 @@ describe('Bootstrap Logger', () => {
 
       logEnvironmentInfo(environment);
 
-      expect(warnSpy).toHaveBeenCalledWith('[bootstrap] ⚠️ Plain browser console environment');
+      expect(warnSpy).toHaveBeenCalledWith('Plain browser console environment detected');
     });
 
     it('should handle empty GM APIs array', () => {
@@ -224,7 +216,7 @@ describe('Bootstrap Logger', () => {
 
       logEnvironmentInfo(environment);
 
-      expect(debugSpy).toHaveBeenCalledWith('[bootstrap] ✅ Tampermonkey APIs available: ');
+      expect(debugSpy).toHaveBeenCalledWith('Tampermonkey environment detected • GM APIs: none');
     });
 
     it('should prioritize userscript environment over test environment', () => {
@@ -240,10 +232,10 @@ describe('Bootstrap Logger', () => {
       logEnvironmentInfo(environment);
 
       expect(debugSpy).toHaveBeenCalledWith(
-        '[bootstrap] ✅ Tampermonkey APIs available: GM_download'
+        'Tampermonkey environment detected • GM APIs: GM_download'
       );
       expect(debugSpy).not.toHaveBeenCalledWith(
-        '[bootstrap] 🧪 Test environment - using mock implementations'
+        'Test environment detected • using mock implementations'
       );
     });
   });

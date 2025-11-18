@@ -1,14 +1,25 @@
-import type { FilenameService } from '../services/file-naming';
-import type { ThemeService } from '../services/theme-service';
-import type { GalleryRenderer } from '../interfaces/gallery.interfaces';
-import type { BaseService } from '../types/core/base-service.types';
+import type { FilenameService } from '@shared/services/file-naming';
+import type { ThemeService } from '@shared/services/theme-service';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 
-import { CoreService } from '../services/core';
-import { themeService } from '../services/theme-service';
-import { languageService } from '../services/language-service';
-
-import { CoreServiceRegistry } from './core-service-registry';
+import { CoreServiceRegistry } from '@shared/container/core-service-registry';
 import { SERVICE_KEYS } from '@/constants';
+
+// ============================================================================
+// Service Key Accessors (Phase 414): Centralized SERVICE_KEYS exposure
+// ============================================================================
+// Keeping the literal SERVICE_KEYS references inside this module maintains the
+// existing lint contract (only specific files may reference SERVICE_KEYS).
+// Other modules should import these constants instead of referencing
+// SERVICE_KEYS directly.
+
+export const THEME_SERVICE_IDENTIFIER = SERVICE_KEYS.THEME;
+export const LANGUAGE_SERVICE_IDENTIFIER = SERVICE_KEYS.LANGUAGE;
+export const CORE_BASE_SERVICE_IDENTIFIERS = [
+  THEME_SERVICE_IDENTIFIER,
+  LANGUAGE_SERVICE_IDENTIFIER,
+] as const;
+export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[number];
 
 // ============================================================================
 // Required Service Getters
@@ -112,41 +123,6 @@ export function tryGetSettingsManager<T = unknown>(): T | null {
 }
 
 // ============================================================================
-// BaseService Initialization (Framework setup)
-// ============================================================================
-
-/**
- * Initialize base services (infrastructure layer).
- *
- * **Services**: Theme, Language (PC-only, core infrastructure)
- * **Note**: AnimationService removed in Phase 414 (optional feature)
- *
- * @internal Called from app bootstrap phase
- * @throws If any base service initialization fails
- *
- * @example
- * // During app startup
- * await initializeBaseServices();
- */
-export async function initializeBaseServices(): Promise<void> {
-  await CoreService.getInstance().initializeAllBaseServices([
-    SERVICE_KEYS.THEME,
-    SERVICE_KEYS.LANGUAGE,
-  ]);
-}
-
-/**
- * Register base service in registry.
- *
- * @internal Called from app bootstrap or service initialization
- * @param key - Service key from SERVICE_KEYS
- * @param service - Service instance to register
- */
-export function registerBaseService(key: string, service: BaseService): void {
-  CoreService.getInstance().registerBaseService(key, service);
-}
-
-// ============================================================================
 // Service Warmup (Lazy initialization attempts)
 // ============================================================================
 
@@ -183,15 +159,4 @@ export function warmupNonCriticalServices(): void {
   } catch {
     // noop
   }
-}
-
-/**
- * Register core base services (ThemeService, LanguageService).
- * Phase 414: AnimationService removed (optional feature)
- * @internal
- */
-export function registerCoreBaseServices(): void {
-  // Allow registration errors to surface so bootstrap can fail fast.
-  registerBaseService(SERVICE_KEYS.THEME, themeService);
-  registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
 }

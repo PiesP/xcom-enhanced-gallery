@@ -15,8 +15,8 @@
  * - Remove duplication via declarative loader array (138 lines → 80 lines)
  */
 
-import { logger } from '../shared/logging';
-import { registerTwitterTokenExtractor } from '../shared/container/service-accessors';
+import { logger } from '@shared/logging';
+import { registerTwitterTokenExtractor } from '@shared/container';
 import {
   getFeatureStatus,
   getEnabledFeatures,
@@ -49,7 +49,7 @@ const FEATURE_LOADERS: FeatureLoader[] = [
     name: 'TwitterTokenExtractor',
     load: async () => {
       const { TwitterTokenExtractor } = await import(
-        '../shared/services/token-extraction/twitter-token-extractor'
+        '@shared/services/token-extraction/twitter-token-extractor'
       );
       registerTwitterTokenExtractor(new TwitterTokenExtractor());
     },
@@ -109,7 +109,7 @@ export async function registerFeatureServicesLazy(): Promise<void> {
 
     // DOMCache initialization (optional)
     try {
-      await import('../shared/dom/dom-cache');
+      await import('@shared/dom/dom-cache');
     } catch {
       // DOMCache absent or not initialized - ignore
     }

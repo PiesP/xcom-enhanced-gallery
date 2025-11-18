@@ -4,23 +4,47 @@
  * @module bootstrap/diagnostics/types
  */
 
+export type DiagnosticsMessage = string;
+export type DiagnosticsMessages = DiagnosticsMessage[];
+export type DiagnosticsTimestamp = string;
+export type KnownBootstrapServiceName =
+  | 'HttpRequestService'
+  | 'NotificationService'
+  | 'DownloadService'
+  | 'PersistentStorage';
+
 /**
  * Service availability information - Phase 314-5
  */
-export interface ServiceAvailabilityInfo {
-  name: string;
+export type ServiceAvailabilityInfo<Name extends string = string> = Readonly<{
+  name: Name;
   available: boolean;
   message: string;
-}
+}>;
 
 /**
  * Bootstrap result summary - Phase 314-5
  */
-export interface BootstrapResult {
+export type BootstrapResult = {
   success: boolean;
   environment: string;
-  timestamp: string;
+  timestamp: DiagnosticsTimestamp;
   services: ServiceAvailabilityInfo[];
-  warnings: string[];
-  errors: string[];
-}
+  warnings: DiagnosticsMessages;
+  errors: DiagnosticsMessages;
+};
+
+export type BootstrapResultOverrides = Partial<BootstrapResult>;
+
+export type ServiceCheckRunner<Name extends string = string> = () => Promise<
+  ServiceAvailabilityInfo<Name>
+>;
+
+export type DiagnosticsEnvironmentInfo = Readonly<{
+  environment: string;
+  isUserscriptEnvironment: boolean;
+  isTestEnvironment: boolean;
+  isBrowserExtension: boolean;
+  isBrowserConsole: boolean;
+  availableGMAPIs: readonly string[];
+}>;

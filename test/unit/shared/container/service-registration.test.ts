@@ -3,47 +3,55 @@
  * @description 서비스 등록 시 require 사용 없이 정상 작동하는지 검증
  */
 
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../../../shared/global-cleanup-hooks';
-import { registerCoreBaseServices } from '@/shared/container/service-accessors';
-import { CoreServiceRegistry } from '@/shared/container/core-service-registry';
+import { initializeCoreBaseServices } from '@/bootstrap/base-services';
+import { CoreService } from '@shared/services/core';
 import { SERVICE_KEYS } from '@/constants';
 
 describe('Phase 237: Service Registration', () => {
   setupGlobalTestIsolation();
 
-  describe('registerCoreBaseServices', () => {
-    it('should register core services without require', () => {
-      // Act
-      registerCoreBaseServices();
-
-      // Assert: 핵심 서비스들이 등록되었는지 확인
-      // Phase 414: AnimationService removed (optional feature)
-      const themeService = CoreServiceRegistry.tryGet(SERVICE_KEYS.THEME);
-      const languageService = CoreServiceRegistry.tryGet(SERVICE_KEYS.LANGUAGE);
-
-      expect(themeService).toBeDefined();
-      expect(languageService).toBeDefined();
+  describe('initializeCoreBaseServices', () => {
+    beforeEach(() => {
+      CoreService.resetInstance();
     });
 
-    it('should not throw ReferenceError about require', () => {
-      // Arrange: require가 정의되지 않은 환경에서도 작동해야 함
-      const originalRequire = (global as any).require;
-      delete (global as any).require;
+    it('registers and initializes base services', async () => {
+      const coreService = CoreService.getInstance();
 
-      // Act & Assert: require 없이도 동작해야 함
-      expect(() => registerCoreBaseServices()).not.toThrow();
+      await initializeCoreBaseServices();
 
-      // Cleanup
+      const registeredKeys = coreService.getRegisteredBaseServices();
+
+      expect(registeredKeys).toContain(SERVICE_KEYS.THEME);
+      expect(registeredKeys).toContain(SERVICE_KEYS.LANGUAGE);
+      expect(coreService.isBaseServiceInitialized(SERVICE_KEYS.THEME)).toBe(true);
+      expect(coreService.isBaseServiceInitialized(SERVICE_KEYS.LANGUAGE)).toBe(true);
+    });
+
+    it('is idempotent even without require()', async () => {
+      const originalRequire = (global as Record<string, unknown>).require;
+      delete (global as Record<string, unknown>).require;
+
+      await expect(initializeCoreBaseServices()).resolves.not.toThrow();
+      await expect(initializeCoreBaseServices()).resolves.not.toThrow();
+
       if (originalRequire) {
-        (global as any).require = originalRequire;
+        (global as Record<string, unknown>).require = originalRequire;
       }
     });
 
-    it('should handle service registration errors gracefully', () => {
-      // Act & Assert: 에러가 throw되지 않아야 함
-      // try-catch로 감싸져 있으므로 개별 서비스 등록 실패해도 전체 함수는 실패하지 않음
-      expect(() => registerCoreBaseServices()).not.toThrow();
+    it('swallows initialization errors using bootstrap strategy', async () => {
+      const instance = CoreService.getInstance();
+      const originalRegister = instance.registerBaseService;
+      instance.registerBaseService = () => {
+        throw new Error('forced');
+      };
+
+      await expect(initializeCoreBaseServices()).resolves.not.toThrow();
+
+      instance.registerBaseService = originalRegister;
     });
   });
 });

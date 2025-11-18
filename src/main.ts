@@ -1,6 +1,7 @@
 import { logger } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
+import type { Unregister } from '@/bootstrap/events';
 import type { AppConfig } from '@shared/types';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
@@ -31,8 +32,6 @@ const lifecycleState = {
   galleryApp: null as IGalleryApp | null,
 };
 
-const cleanupRegistry = new Set<CleanupTask>();
-
 type BootstrapStage = {
   label: string;
   run: () => Promise<void> | void;
@@ -46,25 +45,23 @@ const debugCleanupLog: CleanupLogger = (message, error) => {
   logger.debug(message, error);
 };
 
-function registerCleanupTask(task: CleanupTask): void {
-  cleanupRegistry.add(task);
-}
+let globalEventTeardown: Unregister | null = null;
 
-async function flushCleanupTasks(): Promise<void> {
-  if (!cleanupRegistry.size) {
+function tearDownGlobalEventHandlers(): void {
+  if (!globalEventTeardown) {
     return;
   }
 
-  const tasks = Array.from(cleanupRegistry);
-  cleanupRegistry.clear();
+  const teardown = globalEventTeardown;
+  globalEventTeardown = null;
 
-  await Promise.all(
-    tasks.map(handler =>
-      Promise.resolve(handler()).catch((error: unknown) =>
-        logger.warn('Error during cleanup handler execution:', error)
-      )
-    )
-  );
+  try {
+    teardown();
+  } catch (error) {
+    if (isDevEnvironment) {
+      logger.debug('[events] Error while tearing down global handlers', error);
+    }
+  }
 }
 
 async function runOptionalCleanup(
@@ -176,10 +173,11 @@ function initializeNonCriticalSystems(): void {
  * Set up global event handlers
  */
 function setupGlobalEventHandlers(): void {
-  const unregister = wireGlobalEvents(() => {
+  tearDownGlobalEventHandlers();
+
+  globalEventTeardown = wireGlobalEvents(() => {
     cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
   });
-  registerCleanupTask(unregister);
 }
 
 async function loadGlobalStyles(): Promise<void> {
@@ -240,6 +238,8 @@ function triggerPreloadStrategy(): void {
 async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 Starting application cleanup');
+
+    tearDownGlobalEventHandlers();
     await runOptionalCleanup('Gallery cleanup', async () => {
       if (!lifecycleState.galleryApp) {
         return;
@@ -267,8 +267,6 @@ async function cleanup(): Promise<void> {
       },
       debugCleanupLog
     );
-
-    await flushCleanupTasks();
 
     await runOptionalCleanup('Global timer cleanup', () => {
       globalTimerManager.cleanup();

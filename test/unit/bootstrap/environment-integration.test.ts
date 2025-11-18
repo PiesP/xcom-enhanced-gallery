@@ -1,8 +1,20 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
 
+function mockLoggerModule() {
+  vi.doMock('../../../src/shared/logging', () => ({
+    logger: {
+      info: vi.fn(),
+      debug: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+    },
+  }));
+}
+
 async function importModule() {
   vi.resetModules();
+  mockLoggerModule();
   return await import('../../../src/bootstrap/environment');
 }
 
@@ -26,15 +38,6 @@ describe('Bootstrap Environment Integration', () => {
 
       const { initializeEnvironment } = await importModule();
 
-      // Mock logger to prevent actual log output
-      vi.doMock('../../../src/shared/logging', () => ({
-        logger: {
-          debug: vi.fn(),
-          warn: vi.fn(),
-          error: vi.fn(),
-        },
-      }));
-
       await expect(initializeEnvironment()).resolves.not.toThrow();
     });
 
@@ -43,27 +46,11 @@ describe('Bootstrap Environment Integration', () => {
 
       const { initializeEnvironment } = await importModule();
 
-      vi.doMock('../../../src/shared/logging', () => ({
-        logger: {
-          debug: vi.fn(),
-          warn: vi.fn(),
-          error: vi.fn(),
-        },
-      }));
-
       await expect(initializeEnvironment()).resolves.not.toThrow();
     });
 
     it('should handle environment detection gracefully', async () => {
       const { initializeEnvironment } = await importModule();
-
-      vi.doMock('../../../src/shared/logging', () => ({
-        logger: {
-          debug: vi.fn(),
-          warn: vi.fn(),
-          error: vi.fn(),
-        },
-      }));
 
       // Environment should be detected even if no APIs are available
       await expect(initializeEnvironment()).resolves.not.toThrow();

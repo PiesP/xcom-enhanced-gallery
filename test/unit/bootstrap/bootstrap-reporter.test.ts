@@ -3,256 +3,213 @@
  * @description Phase 348: 부트스트랩 진단 리포터 테스트
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type SpyInstance } from 'vitest';
 import { logger } from '../../../src/shared/logging';
-import { getBootstrapDiagnostics } from '../../../src/bootstrap/diagnostics/collector';
-import * as userscript from '../../../src/shared/external/userscript';
-import * as serviceScan from '../../../src/bootstrap/diagnostics/service-scan';
-import * as diagnosticsLogger from '../../../src/bootstrap/diagnostics/logger';
+import {
+  createDiagnosticsCollector,
+  getBootstrapDiagnostics,
+} from '../../../src/bootstrap/diagnostics/collector';
+import type {
+  BootstrapResult,
+  ServiceAvailabilityInfo,
+} from '../../../src/bootstrap/diagnostics/types';
+import type { EnvironmentInfo } from '../../../src/shared/external/userscript/environment-detector';
+
+const BASE_ENVIRONMENT: EnvironmentInfo = Object.freeze({
+  environment: 'userscript',
+  isUserscriptEnvironment: true,
+  isTestEnvironment: false,
+  isBrowserExtension: false,
+  isBrowserConsole: false,
+  availableGMAPIs: ['GM_download'],
+});
+
+const DEFAULT_TIMESTAMP = '2025-11-05T00:00:00.000Z';
+
+type CollectorTestOverrides = {
+  environment?: EnvironmentInfo;
+  services?: ServiceAvailabilityInfo[];
+  timestamp?: string;
+  detectError?: unknown;
+  serviceError?: unknown;
+  now?: () => Date;
+};
+
+const createTestCollector = (overrides: CollectorTestOverrides = {}) => {
+  const environment = overrides.environment ?? BASE_ENVIRONMENT;
+  const detectEnvironment = vi.fn<[], EnvironmentInfo>();
+  if ('detectError' in overrides && overrides.detectError !== undefined) {
+    detectEnvironment.mockImplementation(() => {
+      throw overrides.detectError;
+    });
+  } else {
+    detectEnvironment.mockReturnValue(environment);
+  }
+
+  const checkAllServices = vi.fn<[], Promise<ServiceAvailabilityInfo[]>>();
+  if ('serviceError' in overrides && overrides.serviceError !== undefined) {
+    checkAllServices.mockImplementation(async () => {
+      throw overrides.serviceError;
+    });
+  } else {
+    checkAllServices.mockResolvedValue(overrides.services ?? []);
+  }
+
+  const logEnvironmentInfo = vi.fn<[EnvironmentInfo], void>();
+  const logBootstrapSummary = vi.fn<[BootstrapResult], void>();
+  const now = overrides.now ?? (() => new Date(overrides.timestamp ?? DEFAULT_TIMESTAMP));
+
+  const collector = createDiagnosticsCollector({
+    detectEnvironment,
+    checkAllServices,
+    logEnvironmentInfo,
+    logBootstrapSummary,
+    now,
+  });
+
+  return {
+    collector,
+    detectEnvironment,
+    checkAllServices,
+    logEnvironmentInfo,
+    logBootstrapSummary,
+  };
+};
 
 describe('Bootstrap Reporter', () => {
-  let detectEnvironmentSpy: ReturnType<typeof vi.fn>;
-  let checkAllServicesSpy: ReturnType<typeof vi.fn>;
-  let logEnvironmentInfoSpy: ReturnType<typeof vi.fn>;
-  let logBootstrapSummarySpy: ReturnType<typeof vi.fn>;
-  let loggerErrorSpy: ReturnType<typeof vi.fn>;
+  let loggerErrorSpy: SpyInstance;
 
   beforeEach(() => {
-    // Mock logger
     loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
-
-    // Mock dependencies
-    detectEnvironmentSpy = vi.spyOn(userscript, 'detectEnvironment');
-    checkAllServicesSpy = vi.spyOn(serviceScan, 'checkAllServices');
-    logEnvironmentInfoSpy = vi
-      .spyOn(diagnosticsLogger, 'logEnvironmentInfo')
-      .mockImplementation(() => {});
-    logBootstrapSummarySpy = vi
-      .spyOn(diagnosticsLogger, 'logBootstrapSummary')
-      .mockImplementation(() => {});
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe('getBootstrapDiagnostics', () => {
-    it('should return BootstrapResult with environment and services', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'tampermonkey',
-        isUserscriptEnvironment: true,
-        isTestEnvironment: false,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: ['GM_download'],
-      });
-
-      checkAllServicesSpy.mockResolvedValue([
-        { name: 'HttpRequestService', available: true, message: 'Available' },
-        { name: 'DownloadService', available: true, message: 'GM_download available' },
-      ]);
-
+  describe('getBootstrapDiagnostics (integration)', () => {
+    it('returns a snapshot using real environment detection', async () => {
       const result = await getBootstrapDiagnostics();
 
-      expect(result).toMatchObject({
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: expect.any(Boolean),
+          environment: expect.any(String),
+          timestamp: expect.any(String),
+          services: expect.any(Array),
+          warnings: expect.any(Array),
+          errors: expect.any(Array),
+        })
+      );
+    });
+  });
+
+  describe('createDiagnosticsCollector', () => {
+    it('collects diagnostics with deterministic dependencies', async () => {
+      const services: ServiceAvailabilityInfo[] = [
+        { name: 'HttpRequestService', available: true, message: 'ok' },
+      ];
+      const { collector } = createTestCollector({ services });
+
+      const result = await collector.collect();
+
+      expect(result).toEqual({
         success: true,
-        environment: 'tampermonkey',
+        environment: 'userscript',
+        timestamp: DEFAULT_TIMESTAMP,
+        services,
         warnings: [],
         errors: [],
       });
-      expect(result.services).toHaveLength(2);
-      expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/); // ISO format
     });
 
-    it('should call logEnvironmentInfo with detected environment', async () => {
-      const mockEnv = {
-        environment: 'test',
-        isUserscriptEnvironment: false,
-        isTestEnvironment: true,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: [],
-      };
+    it('logs environment info and bootstrap summary on success', async () => {
+      const services: ServiceAvailabilityInfo[] = [
+        { name: 'PersistentStorage', available: true, message: 'GM_setValue detected' },
+      ];
+      const { collector, logEnvironmentInfo, logBootstrapSummary } = createTestCollector({
+        services,
+      });
 
-      detectEnvironmentSpy.mockReturnValue(mockEnv);
-      checkAllServicesSpy.mockResolvedValue([]);
+      const result = await collector.collect();
 
-      await getBootstrapDiagnostics();
-
-      expect(logEnvironmentInfoSpy).toHaveBeenCalledWith(mockEnv);
+      expect(logEnvironmentInfo).toHaveBeenCalledWith(
+        expect.objectContaining({ environment: 'userscript' })
+      );
+      expect(logBootstrapSummary).toHaveBeenCalledWith(result);
     });
 
-    it('should add warning for browser console environment', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'browser',
+    it('adds warnings for browser console environments', async () => {
+      const consoleEnvironment: EnvironmentInfo = {
+        environment: 'console',
         isUserscriptEnvironment: false,
         isTestEnvironment: false,
         isBrowserExtension: false,
         isBrowserConsole: true,
         availableGMAPIs: [],
-      });
+      };
 
-      checkAllServicesSpy.mockResolvedValue([]);
-
-      const result = await getBootstrapDiagnostics();
+      const { collector } = createTestCollector({ environment: consoleEnvironment });
+      const result = await collector.collect();
 
       expect(result.warnings).toContain('⚠️ Plain browser console - limited functionality');
     });
 
-    it('should not add warning for non-browser-console environment', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'tampermonkey',
-        isUserscriptEnvironment: true,
-        isTestEnvironment: false,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: ['GM_download'],
+    it('handles service check failures gracefully', async () => {
+      const serviceError = new Error('Service check failed');
+      const { collector, logBootstrapSummary } = createTestCollector({
+        serviceError,
       });
 
-      checkAllServicesSpy.mockResolvedValue([]);
-
-      const result = await getBootstrapDiagnostics();
-
-      expect(result.warnings).toHaveLength(0);
-    });
-
-    it('should include service check results', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'test',
-        isUserscriptEnvironment: false,
-        isTestEnvironment: true,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: [],
-      });
-
-      const mockServices = [
-        { name: 'HttpRequestService', available: true, message: 'Native fetch API detected' },
-        { name: 'DownloadService', available: false, message: 'GM_download unavailable' },
-        { name: 'PersistentStorage', available: true, message: 'GM_setValue detected' },
-      ];
-
-      checkAllServicesSpy.mockResolvedValue(mockServices);
-
-      const result = await getBootstrapDiagnostics();
-
-      expect(result.services).toEqual(mockServices);
-      expect(result.services).toHaveLength(3);
-    });
-
-    it('should call logBootstrapSummary with result', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'test',
-        isUserscriptEnvironment: false,
-        isTestEnvironment: true,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: [],
-      });
-
-      checkAllServicesSpy.mockResolvedValue([]);
-
-      const result = await getBootstrapDiagnostics();
-
-      expect(logBootstrapSummarySpy).toHaveBeenCalledWith(result);
-    });
-
-    it('should handle errors and set success to false', async () => {
-      const testError = new Error('Environment detection failed');
-      detectEnvironmentSpy.mockImplementation(() => {
-        throw testError;
-      });
-
-      const result = await getBootstrapDiagnostics();
+      const result = await collector.collect();
 
       expect(result.success).toBe(false);
-      expect(result.errors).toContain('Environment detection failed');
+      expect(result.environment).toBe('unknown');
+      expect(result.errors).toContain('Service check failed');
+      expect(logBootstrapSummary).not.toHaveBeenCalled();
       expect(loggerErrorSpy).toHaveBeenCalledWith(
         '[bootstrap] Bootstrap diagnostics error:',
-        testError
+        serviceError
       );
     });
 
-    it('should handle non-Error exceptions', async () => {
-      detectEnvironmentSpy.mockImplementation(() => {
-        throw 'String error';
+    it('handles environment detection errors', async () => {
+      const detectionError = new Error('Environment detection failed');
+      const { collector, logEnvironmentInfo, logBootstrapSummary } = createTestCollector({
+        detectError: detectionError,
       });
 
-      const result = await getBootstrapDiagnostics();
+      const result = await collector.collect();
+
+      expect(result.success).toBe(false);
+      expect(result.environment).toBe('unknown');
+      expect(result.errors).toContain('Environment detection failed');
+      expect(logEnvironmentInfo).not.toHaveBeenCalled();
+      expect(logBootstrapSummary).not.toHaveBeenCalled();
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        '[bootstrap] Bootstrap diagnostics error:',
+        detectionError
+      );
+    });
+
+    it('normalizes non-Error exceptions', async () => {
+      const { collector } = createTestCollector({ detectError: 'String error' });
+
+      const result = await collector.collect();
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain('String error');
     });
 
-    it('should handle service check failures gracefully', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'test',
-        isUserscriptEnvironment: false,
-        isTestEnvironment: true,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: [],
+    it('supports custom timestamps via dependency injection', async () => {
+      const customTimestamp = '2025-12-01T12:34:56.789Z';
+      const { collector } = createTestCollector({
+        now: () => new Date(customTimestamp),
       });
 
-      checkAllServicesSpy.mockRejectedValue(new Error('Service check failed'));
+      const result = await collector.collect();
 
-      const result = await getBootstrapDiagnostics();
-
-      expect(result.success).toBe(false);
-      expect(result.errors).toContain('Service check failed');
-    });
-
-    it('should generate ISO format timestamps', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'test',
-        isUserscriptEnvironment: false,
-        isTestEnvironment: true,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: [],
-      });
-
-      checkAllServicesSpy.mockResolvedValue([]);
-
-      const result = await getBootstrapDiagnostics();
-
-      // Verify ISO 8601 format: YYYY-MM-DDTHH:mm:ss.sssZ
-      expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-
-      // Verify it's a valid date
-      const date = new Date(result.timestamp);
-      expect(date.getTime()).toBeGreaterThan(0);
-    });
-
-    it('should return success=true when no errors occur', async () => {
-      detectEnvironmentSpy.mockReturnValue({
-        environment: 'tampermonkey',
-        isUserscriptEnvironment: true,
-        isTestEnvironment: false,
-        isBrowserExtension: false,
-        isBrowserConsole: false,
-        availableGMAPIs: ['GM_download', 'GM_setValue'],
-      });
-
-      checkAllServicesSpy.mockResolvedValue([
-        { name: 'HttpRequestService', available: true, message: 'Available' },
-      ]);
-
-      const result = await getBootstrapDiagnostics();
-
-      expect(result.success).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it('should set environment to unknown before detection', async () => {
-      detectEnvironmentSpy.mockImplementation(() => {
-        throw new Error('Detection failed');
-      });
-
-      const result = await getBootstrapDiagnostics();
-
-      // Environment should remain 'unknown' if detection fails
-      expect(result.environment).toBe('unknown');
+      expect(result.timestamp).toBe(customTimestamp);
     });
   });
 });

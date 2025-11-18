@@ -13,10 +13,6 @@ export {
   registerSettingsManager,
   registerTwitterTokenExtractor,
   tryGetSettingsManager,
-  // BaseService
-  initializeBaseServices,
-  registerBaseService,
-  registerCoreBaseServices,
   // Warmup
   warmupCriticalServices,
   warmupNonCriticalServices,

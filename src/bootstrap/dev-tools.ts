@@ -5,8 +5,10 @@
  * Phase 343: Standardized error handling
  */
 
-import { logger } from '../shared/logging';
-import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+import { logger } from '@shared/logging';
+import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+
+let devToolsRegistered = false;
 
 /**
  * Development environment debugging tools initialization
@@ -23,17 +25,18 @@ import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
  */
 export async function initializeDevTools(): Promise<void> {
   if (!import.meta.env.DEV) return;
+  if (devToolsRegistered) {
+    return;
+  }
 
   try {
     // Service diagnostic tools
     // Phase 350: Import ServiceDiagnostics directly (prevent circular reference)
-    const { registerDiagnosticsGlobal, diagnoseServiceManager } = await import(
-      '../shared/services/diagnostics'
-    );
+    const { registerDiagnosticsGlobal } = await import('@shared/services/diagnostics');
     registerDiagnosticsGlobal();
-    await diagnoseServiceManager();
+    devToolsRegistered = true;
 
-    logger.info('🛠️ Development tools activated');
+    logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
     handleBootstrapError(error, { ...NON_CRITICAL_ERROR_STRATEGY, context: 'dev-tools' }, logger);
