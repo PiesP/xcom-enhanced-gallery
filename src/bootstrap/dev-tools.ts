@@ -6,7 +6,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@/bootstrap/types';
 
 let devToolsRegistered = false;
 
@@ -52,6 +52,6 @@ export async function initializeDevTools(): Promise<void> {
     logger.info('🛠️ Development diagnostics ready (run window.__XEG__.diagnostics.run())');
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
-    handleBootstrapError(error, { ...NON_CRITICAL_ERROR_STRATEGY, context: 'dev-tools' }, logger);
+    reportBootstrapError(error, { context: 'dev-tools', logger });
   }
 }

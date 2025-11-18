@@ -15,7 +15,7 @@ import {
 import { CoreService } from '@shared/services/core';
 import { languageService } from '@shared/services/language-service';
 import { themeService } from '@shared/services/theme-service';
-import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@/bootstrap/types';
 import type { BaseService } from '@shared/types/core/base-service.types';
 
 type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, BaseService];
@@ -61,12 +61,10 @@ export async function initializeCoreBaseServices(): Promise<void> {
     }
 
     await coreService.initializeAllBaseServices([...CORE_BASE_SERVICE_IDENTIFIERS]);
-    logger.debug('[base-services] Base services ready');
+    if (import.meta.env.DEV) {
+      logger.debug('[base-services] Base services ready');
+    }
   } catch (error) {
-    handleBootstrapError(
-      error,
-      { ...NON_CRITICAL_ERROR_STRATEGY, context: 'base-services' },
-      logger
-    );
+    reportBootstrapError(error, { context: 'base-services', logger });
   }
 }

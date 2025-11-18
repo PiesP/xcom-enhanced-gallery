@@ -23,10 +23,11 @@ import {
   type SettingsWithFeatures,
 } from '@shared/utils/conditional-loading';
 import { DEFAULT_SETTINGS } from '@/constants/default-settings';
-import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
+import { reportBootstrapError } from '@/bootstrap/types';
 
-const isProdBuild = import.meta.env.PROD;
 const SETTINGS_STORAGE_KEY = 'xeg-app-settings';
+const isDevBuild = import.meta.env.DEV;
+const debug = isDevBuild ? (message: string) => logger.debug(message) : () => {};
 
 /**
  * Feature Loader definition
@@ -43,7 +44,7 @@ interface FeatureLoader {
  * Feature Loaders array
  * Phase 346: Declarative definition to eliminate duplicate code
  */
-const FEATURE_LOADERS: FeatureLoader[] = [
+const FEATURE_LOADERS: readonly FeatureLoader[] = [
   {
     flag: 'mediaExtraction',
     name: 'TwitterTokenExtractor',
@@ -56,11 +57,13 @@ const FEATURE_LOADERS: FeatureLoader[] = [
   },
 ];
 
-function createDefaultFeatureSettings(): SettingsWithFeatures {
-  return {
-    features: { ...DEFAULT_SETTINGS.features },
-  };
-}
+const DEFAULT_FEATURE_SETTINGS: Readonly<SettingsWithFeatures> = Object.freeze({
+  features: { ...DEFAULT_SETTINGS.features },
+});
+
+const cloneDefaultFeatureSettings = (): SettingsWithFeatures => ({
+  features: { ...DEFAULT_FEATURE_SETTINGS.features },
+});
 
 /**
  * Settings loading helper function
@@ -73,17 +76,23 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
     const stored = await storage.get<Record<string, unknown>>(SETTINGS_STORAGE_KEY);
 
     if (stored && typeof stored === 'object' && 'features' in stored) {
-      const settings = stored as unknown as SettingsWithFeatures;
-      if (!isProdBuild) {
-        logger.debug('[features] Settings loaded successfully');
+      const candidate = (stored as Partial<SettingsWithFeatures>).features;
+
+      if (candidate && typeof candidate === 'object') {
+        debug('[features] Settings loaded successfully');
+        return {
+          features: {
+            ...DEFAULT_FEATURE_SETTINGS.features,
+            ...candidate,
+          },
+        } satisfies SettingsWithFeatures;
       }
-      return settings;
     }
   } catch (error) {
     logger.warn('[features] Settings loading failed - using defaults:', error);
   }
 
-  return createDefaultFeatureSettings();
+  return cloneDefaultFeatureSettings();
 }
 
 /**
@@ -98,9 +107,7 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
  */
 export async function registerFeatureServicesLazy(): Promise<void> {
   try {
-    if (!isProdBuild) {
-      logger.debug('[features] Registering feature services');
-    }
+    debug('[features] Registering feature services');
 
     // Load settings
     const settings = await loadFeatureSettings();
@@ -108,32 +115,26 @@ export async function registerFeatureServicesLazy(): Promise<void> {
 
     // Phase 346: Declarative loader pattern
     for (const loader of FEATURE_LOADERS) {
-      if (loader.devOnly && isProdBuild) {
+      if (loader.devOnly && !isDevBuild) {
         continue;
       }
 
       if (!featureStates[loader.flag]) {
-        if (!isProdBuild) {
-          logger.debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
-        }
+        debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
         continue;
       }
 
       try {
         await loader.load();
-        if (!isProdBuild) {
-          logger.debug(`[features] ✅ ${loader.name} registered`);
-        }
+        debug(`[features] ✅ ${loader.name} registered`);
       } catch (error) {
         logger.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
       }
     }
 
-    if (!isProdBuild) {
-      logger.debug('[features] ✅ Feature services registered');
-    }
+    debug('[features] ✅ Feature services registered');
   } catch (error) {
     // Phase 343: Standardized error handling (Non-Critical - warn only)
-    handleBootstrapError(error, { ...NON_CRITICAL_ERROR_STRATEGY, context: 'features' }, logger);
+    reportBootstrapError(error, { context: 'features', logger });
   }
 }

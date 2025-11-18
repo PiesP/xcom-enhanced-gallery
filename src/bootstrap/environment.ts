@@ -5,15 +5,11 @@
  */
 
 import { logger } from '@shared/logging';
-import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+import { reportBootstrapError } from '@/bootstrap/types';
 
-const shouldRunDiagnostics = (): boolean => import.meta.env.DEV && import.meta.env.MODE !== 'test';
+const shouldCaptureDiagnostics = import.meta.env.DEV && import.meta.env.MODE !== 'test';
 
-async function runDiagnosticsIfEnabled(): Promise<void> {
-  if (!shouldRunDiagnostics()) {
-    return;
-  }
-
+async function runDiagnostics(): Promise<void> {
   try {
     const { getBootstrapDiagnostics } = await import('./diagnostics/collector');
     await getBootstrapDiagnostics();
@@ -33,7 +29,7 @@ async function runDiagnosticsIfEnabled(): Promise<void> {
  * @throws {Error} On vendor initialization failure (Critical error)
  */
 export async function initializeEnvironment(): Promise<void> {
-  const diagnosticsTask = runDiagnosticsIfEnabled();
+  const diagnosticsTask = shouldCaptureDiagnostics ? runDiagnostics() : Promise.resolve();
 
   try {
     const { initializeVendors } = await import('@shared/external/vendors');
@@ -44,7 +40,7 @@ export async function initializeEnvironment(): Promise<void> {
     }
   } catch (error) {
     // Phase 343: Standardized error handling (Critical - re-throw error)
-    handleBootstrapError(error, { ...CRITICAL_ERROR_STRATEGY, context: 'environment' }, logger);
+    reportBootstrapError(error, { context: 'environment', severity: 'critical', logger });
   }
 
   await diagnosticsTask;
