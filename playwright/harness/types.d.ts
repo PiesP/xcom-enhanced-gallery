@@ -76,18 +76,6 @@ export type KeyboardSimulationOptions = {
   metaKey?: boolean;
 };
 
-export type PerformanceMetrics = {
-  duration: number;
-  startTime: number;
-  endTime: number;
-};
-
-export type MemoryMetrics = {
-  usedJSHeapSize: number;
-  totalJSHeapSize: number;
-  jsHeapSizeLimit: number;
-};
-
 export type DebugInfo = {
   isOpen: boolean;
   currentIndex: number;
@@ -132,12 +120,8 @@ export interface XegHarness {
   triggerFocusChange(index: number): Promise<void>;
   // Phase 82.3: Keyboard & Performance E2E API
   simulateKeyPress(key: string, options?: KeyboardSimulationOptions): Promise<void>;
-  measureKeyboardPerformance(action: () => Promise<void>): Promise<PerformanceMetrics>;
-  getMemoryUsage(): Promise<MemoryMetrics>;
   // Debug function
   getDebugInfo(): Promise<DebugInfo>;
-  // Phase 289: window load deferral helper
-  waitForWindowLoad(options?: { timeoutMs?: number; forceEventPath?: boolean }): Promise<boolean>;
 }
 
 declare global {

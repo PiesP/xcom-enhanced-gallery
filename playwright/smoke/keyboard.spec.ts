@@ -12,7 +12,6 @@
  * **Consolidated from**:
  * - keyboard-navigation.spec.ts (Phase 82.3)
  * - keyboard-video.spec.ts (Phase 82.7)
- * - keyboard-interaction.spec.ts (partial)
  */
 
 import { expect, test } from '@playwright/test';

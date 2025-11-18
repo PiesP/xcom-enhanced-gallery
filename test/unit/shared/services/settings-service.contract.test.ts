@@ -51,10 +51,10 @@ describe('Phase E: SettingsService 계약(Contract) 가드', () => {
   it('updateBatch 로 여러 항목을 일괄 갱신한다', async () => {
     await svc.updateBatch({
       'gallery.preloadCount': 4,
-      'performance.debugMode': false,
+      'download.autoZip': true,
     });
     expect(svc.get('gallery.preloadCount')).toBe(4);
-    expect(svc.get('performance.debugMode')).toBe(false);
+    expect(svc.get('download.autoZip')).toBe(true);
   });
 
   it('resetToDefaults 로 카테고리만 재설정한다', async () => {

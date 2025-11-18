@@ -14,8 +14,6 @@ import type {
   ViewportChangeResult,
   FocusIndicatorPosition,
   KeyboardSimulationOptions,
-  PerformanceMetrics,
-  MemoryMetrics,
   DebugInfo,
   XegHarness,
 } from './types';
@@ -33,7 +31,6 @@ import { SERVICE_KEYS } from '@/constants';
 import { CoreService } from '@shared/services/core';
 import { galleryState, openGallery, closeGallery } from '@shared/state/signals/gallery.signals';
 import { initializeGalleryEvents, cleanupGalleryEvents } from '@shared/utils/events';
-import { waitForWindowLoad } from '@shared/utils/window-load';
 
 // Phase 324: Use data URI images that load instantly in E2E tests
 // This prevents waitForMediaLoad() timeout issues (Phase 319)
@@ -1120,48 +1117,6 @@ async function simulateKeyPressHarness(
   await sleep(16); // Allow event handlers to process
 }
 
-async function measureKeyboardPerformanceHarness(
-  action: () => Promise<void>
-): Promise<PerformanceMetrics> {
-  const startTime = performance.now();
-  await action();
-  const endTime = performance.now();
-  const duration = endTime - startTime;
-
-  return {
-    duration,
-    startTime,
-    endTime,
-  };
-}
-
-async function getMemoryUsageHarness(): Promise<MemoryMetrics> {
-  // TypeScript doesn't include performance.memory in standard lib
-  // It's a non-standard Chrome API
-  const perfWithMemory = performance as Performance & {
-    memory?: {
-      usedJSHeapSize: number;
-      totalJSHeapSize: number;
-      jsHeapSizeLimit: number;
-    };
-  };
-
-  if (!perfWithMemory.memory) {
-    // Fallback for browsers without performance.memory
-    return {
-      usedJSHeapSize: 0,
-      totalJSHeapSize: 0,
-      jsHeapSizeLimit: 0,
-    };
-  }
-
-  return {
-    usedJSHeapSize: perfWithMemory.memory.usedJSHeapSize,
-    totalJSHeapSize: perfWithMemory.memory.totalJSHeapSize,
-    jsHeapSizeLimit: perfWithMemory.memory.jsHeapSizeLimit,
-  };
-}
-
 async function getDebugInfoHarness(): Promise<DebugInfo> {
   return {
     isOpen: galleryState.value.isOpen,
@@ -1188,7 +1143,6 @@ const harness: XegHarness = {
   getGalleryAppState: getGalleryAppStateHarness,
   disposeGalleryApp: disposeGalleryAppHarness,
   evaluateGalleryEvents: evaluateGalleryEventsHarness,
-  waitForWindowLoad: (opts: any) => waitForWindowLoad(opts),
   // Phase 82.2: Focus Tracking E2E API
   setupFocusTracker: setupFocusTrackerHarness,
   simulateViewportScroll: simulateViewportScrollHarness,
@@ -1201,8 +1155,6 @@ const harness: XegHarness = {
   triggerFocusChange: triggerFocusChangeHarness,
   // Phase 82.3: Keyboard & Performance E2E API
   simulateKeyPress: simulateKeyPressHarness,
-  measureKeyboardPerformance: measureKeyboardPerformanceHarness,
-  getMemoryUsage: getMemoryUsageHarness,
   getDebugInfo: getDebugInfoHarness,
 };
 

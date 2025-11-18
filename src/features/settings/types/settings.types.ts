@@ -1,6 +1,6 @@
 /**
  * @fileoverview Settings module types - Application settings interfaces and types
- * @description Defines configuration structure for gallery, download, tokens, performance, and accessibility settings.
+ * @description Defines configuration structure for gallery, download, tokens, and accessibility settings.
  * @module features/settings/types
  */
 
@@ -57,18 +57,6 @@ export interface TokenSettings {
 }
 
 /**
- * Performance settings configuration
- */
-export interface PerformanceSettings {
-  /** Enable DOM caching */
-  domCaching: boolean;
-  /** Cache TTL (milliseconds) */
-  cacheTTL: number;
-  /** Debug mode */
-  debugMode: boolean;
-}
-
-/**
  * Accessibility settings configuration
  */
 export interface AccessibilitySettings {
@@ -107,7 +95,6 @@ export interface AppSettings {
   gallery: GallerySettings;
   download: DownloadSettings;
   tokens: TokenSettings;
-  performance: PerformanceSettings;
   accessibility: AccessibilitySettings;
   /** Phase 326.4: Feature flags */
   features: FeatureFlags;
@@ -129,7 +116,6 @@ export type NestedSettingKey =
   | `gallery.${keyof GallerySettings}`
   | `download.${keyof DownloadSettings}`
   | `tokens.${keyof TokenSettings}`
-  | `performance.${keyof PerformanceSettings}`
   | `accessibility.${keyof AccessibilitySettings}`
   | `features.${keyof FeatureFlags}`
   | SettingKey;

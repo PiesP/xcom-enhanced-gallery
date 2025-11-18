@@ -15,7 +15,6 @@ import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
 import { initializeDevTools } from '@/bootstrap/dev-tools';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
 import { initializeGalleryApp, clearGalleryApp } from '@/bootstrap/gallery-init';
-import { waitForWindowLoad } from '@shared/utils/window-load';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
@@ -79,7 +78,6 @@ function createAppConfig(): AppConfig {
     isDevelopment: import.meta.env.DEV,
     debug: import.meta.env.DEV,
     autoStart: true,
-    renderAfterLoad: true,
   };
 }
 
@@ -270,11 +268,6 @@ async function startApplication(): Promise<void> {
     // In test mode, Solid.js global event delegation listeners are registered,
     // which can interfere with leak scan tests (active EventTarget listeners), so skip this.
     if (import.meta.env.MODE !== 'test') {
-      const appConfig = createAppConfig();
-      if (appConfig.renderAfterLoad !== false) {
-        await waitForWindowLoad({ timeoutMs: 8000 });
-      }
-
       await initializeGalleryImmediately();
     } else {
       logger.debug('Gallery initialization skipped (test mode)');

@@ -85,7 +85,6 @@ describe('Bootstrap Features with Conditional Loading', () => {
 
       expect(DEFAULT_SETTINGS.gallery).toBeDefined();
       expect(DEFAULT_SETTINGS.download).toBeDefined();
-      expect(DEFAULT_SETTINGS.performance).toBeDefined();
       expect(DEFAULT_SETTINGS.accessibility).toBeDefined();
     });
 
@@ -473,7 +472,6 @@ describe('Bootstrap Features with Conditional Loading', () => {
 
       expect(DEFAULT_SETTINGS.gallery).toBeDefined();
       expect(DEFAULT_SETTINGS.download).toBeDefined();
-      expect(DEFAULT_SETTINGS.performance).toBeDefined();
       expect(DEFAULT_SETTINGS.accessibility).toBeDefined();
       expect(DEFAULT_SETTINGS.version).toBeDefined();
     });

@@ -54,7 +54,6 @@ function fillWithDefaults(settings: AppSettings): AppSettings {
     gallery: defaultSettings.gallery,
     download: defaultSettings.download,
     tokens: defaultSettings.tokens,
-    performance: defaultSettings.performance,
     accessibility: defaultSettings.accessibility,
   } as const;
 

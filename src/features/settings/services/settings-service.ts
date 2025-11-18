@@ -21,26 +21,18 @@ import { computeCurrentSettingsSchemaHash } from './settings-schema';
  */
 const STORAGE_KEY = 'xeg-app-settings';
 
-type SettingsCategoryKey =
-  | 'gallery'
-  | 'download'
-  | 'tokens'
-  | 'performance'
-  | 'accessibility'
-  | 'features';
+type SettingsCategoryKey = 'gallery' | 'download' | 'tokens' | 'accessibility' | 'features';
 
 const SETTINGS_CATEGORY_KEYS: readonly SettingsCategoryKey[] = [
   'gallery',
   'download',
   'tokens',
-  'performance',
   'accessibility',
   'features',
 ];
 
 const CRITICAL_SETTINGS = new Set<NestedSettingKey>([
   'tokens.bearerToken',
-  'performance.debugMode',
   'accessibility.reduceMotion',
 ]);
 
@@ -132,7 +124,6 @@ export class SettingsService {
       gallery: cloneDeep(defaultSettings.gallery),
       download: cloneDeep(defaultSettings.download),
       tokens: cloneDeep(defaultSettings.tokens),
-      performance: cloneDeep(defaultSettings.performance),
       accessibility: cloneDeep(defaultSettings.accessibility),
       features: cloneDeep(defaultSettings.features),
       version: defaultSettings.version,
@@ -253,8 +244,7 @@ export class SettingsService {
    * ```typescript
    * settingsService.updateBatch({
    *   'gallery.theme': 'dark',
-   *   'download.autoZip': true,
-   *   'performance.debugMode': false
+   *   'download.autoZip': true
    * });
    * ```
    */
@@ -519,7 +509,6 @@ export class SettingsService {
       'gallery' in settingsObj &&
       'download' in settingsObj &&
       'tokens' in settingsObj &&
-      'performance' in settingsObj &&
       'accessibility' in settingsObj &&
       'version' in settingsObj &&
       'lastModified' in settingsObj &&

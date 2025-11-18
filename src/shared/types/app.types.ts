@@ -31,8 +31,6 @@ export interface AppConfig {
   readonly isDevelopment: boolean;
   readonly debug: boolean;
   readonly autoStart: boolean;
-  /** Whether to delay gallery rendering after window load (default true, except in test mode) */
-  readonly renderAfterLoad?: boolean;
 }
 
 /**

@@ -135,7 +135,6 @@ test('setup gallery', async ({ page }) => {
 | `errorBoundaryScenario()`   | Trigger error boundary  | `ErrorBoundaryResult`      |
 | `evaluateGalleryEvents()`   | Emit keyboard/click     | `GalleryEventsResult`      |
 | `simulateKeyboard()`        | Simulate key events     | `KeyboardSimulationResult` |
-| `getPerformanceMetrics()`   | Measure performance     | `PerformanceMetrics`       |
 
 ### Remount Pattern
 

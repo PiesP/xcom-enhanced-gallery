@@ -27,11 +27,6 @@ export const DEFAULT_SETTINGS = {
     autoRefresh: true,
     expirationMinutes: 60,
   },
-  performance: {
-    domCaching: true,
-    cacheTTL: 3000,
-    debugMode: false,
-  },
   accessibility: {
     highContrast: false,
     reduceMotion: false,
