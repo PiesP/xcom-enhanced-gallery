@@ -39,7 +39,6 @@ export const DEFAULT_SETTINGS = {
     settings: true, // Settings UI enabled
     download: true, // Download feature enabled
     mediaExtraction: true, // Media extraction enabled
-    advancedFilters: true, // Advanced filters enabled (optional)
     accessibility: true, // Accessibility features enabled
   },
   version: '1.0.0',

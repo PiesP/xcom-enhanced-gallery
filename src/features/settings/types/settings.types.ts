@@ -82,8 +82,6 @@ export interface FeatureFlags {
   download: boolean;
   /** Enable media extraction */
   mediaExtraction: boolean;
-  /** Enable advanced filters (optional) */
-  advancedFilters: boolean;
   /** Enable accessibility features */
   accessibility: boolean;
 }

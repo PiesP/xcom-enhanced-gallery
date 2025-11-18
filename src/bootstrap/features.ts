@@ -18,16 +18,15 @@
 import { logger } from '@shared/logging';
 import { registerTwitterTokenExtractor } from '@shared/container';
 import {
-  getFeatureStatus,
-  getEnabledFeatures,
-  createConditionalLoader,
+  resolveFeatureStates,
   type FeatureKey,
+  type SettingsWithFeatures,
 } from '@shared/utils/conditional-loading';
-import type { SettingsWithFeatures } from '@shared/utils/conditional-loading';
 import { DEFAULT_SETTINGS } from '@/constants/default-settings';
 import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from './types';
 
 const isProdBuild = import.meta.env.PROD;
+const SETTINGS_STORAGE_KEY = 'xeg-app-settings';
 
 /**
  * Feature Loader definition
@@ -37,6 +36,7 @@ interface FeatureLoader {
   flag: FeatureKey;
   name: string;
   load: () => Promise<void>;
+  devOnly?: boolean;
 }
 
 /**
@@ -66,18 +66,16 @@ function createDefaultFeatureSettings(): SettingsWithFeatures {
  * Settings loading helper function
  * Phase 346: Logic separation
  */
-async function loadSettings(): Promise<SettingsWithFeatures> {
+async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
   try {
-    const { PersistentStorage } = await import('@shared/services/persistent-storage');
-    const storage = PersistentStorage.getInstance();
-    const stored = await storage.get<Record<string, unknown>>('settings');
+    const { getPersistentStorage } = await import('@shared/services/persistent-storage');
+    const storage = getPersistentStorage();
+    const stored = await storage.get<Record<string, unknown>>(SETTINGS_STORAGE_KEY);
 
-    if (stored && typeof stored === 'object' && (stored as Record<string, unknown>).features) {
+    if (stored && typeof stored === 'object' && 'features' in stored) {
       const settings = stored as unknown as SettingsWithFeatures;
       if (!isProdBuild) {
-        logger.debug('[features] Settings loaded successfully', {
-          features: getEnabledFeatures(settings).join(', '),
-        });
+        logger.debug('[features] Settings loaded successfully');
       }
       return settings;
     }
@@ -105,18 +103,16 @@ export async function registerFeatureServicesLazy(): Promise<void> {
     }
 
     // Load settings
-    const settings = await loadSettings();
-
-    // DOMCache initialization (optional)
-    try {
-      await import('@shared/dom/dom-cache');
-    } catch {
-      // DOMCache absent or not initialized - ignore
-    }
+    const settings = await loadFeatureSettings();
+    const featureStates = resolveFeatureStates(settings);
 
     // Phase 346: Declarative loader pattern
     for (const loader of FEATURE_LOADERS) {
-      if (!getFeatureStatus(settings, loader.flag)) {
+      if (loader.devOnly && isProdBuild) {
+        continue;
+      }
+
+      if (!featureStates[loader.flag]) {
         if (!isProdBuild) {
           logger.debug(`[features] ℹ️ ${loader.name} disabled (${loader.flag}: false)`);
         }
@@ -132,14 +128,6 @@ export async function registerFeatureServicesLazy(): Promise<void> {
         logger.warn(`[features] ⚠️ ${loader.name} registration failed (continuing):`, error);
       }
     }
-
-    // Start async loading using conditional loader (non-blocking)
-    const conditionalLoader = createConditionalLoader(settings, {
-      debug: !isProdBuild,
-    });
-    void conditionalLoader.loadEnabledServices().catch(error => {
-      logger.warn('[features] Error during conditional feature loading (continuing):', error);
-    });
 
     if (!isProdBuild) {
       logger.debug('[features] ✅ Feature services registered');
