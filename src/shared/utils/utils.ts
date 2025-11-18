@@ -6,7 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { gallerySignals } from '../state/signals/gallery.signals';
-import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '../../constants';
+import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '@/constants';
 import { isHTMLElement } from './type-guards';
 
 // ================================
@@ -26,13 +26,13 @@ export { removeDuplicateMediaItems } from './deduplication/deduplication-utils';
 // ================================
 
 // Gallery element selectors (constants)
-const GALLERY_SELECTORS = [
-  `.${CSS_CONST.CLASSES.GALLERY_CONTAINER}`,
-  '[data-gallery-element]',
-  '#xeg-gallery-root',
-  '.vertical-gallery-view',
-  '[data-xeg-gallery-container]',
-];
+const GALLERY_SELECTORS = CSS_CONST.INTERNAL_SELECTORS;
+const GALLERY_CONTAINER_QUERY = [
+  CSS_CONST.SELECTORS.CONTAINER,
+  CSS_CONST.SELECTORS.DATA_CONTAINER,
+  CSS_CONST.SELECTORS.ROOT,
+  CSS_CONST.SELECTORS.DATA_GALLERY,
+].join(', ');
 
 /**
  * Check if gallery can be triggered
@@ -94,7 +94,7 @@ export function isGalleryContainer(element: HTMLElement | null): boolean {
   if (!element) return false;
 
   try {
-    return element.matches('.xeg-gallery-container, #xeg-gallery-root');
+    return element.matches(GALLERY_CONTAINER_QUERY);
   } catch {
     return false;
   }

@@ -135,12 +135,7 @@ export function GalleryContainer({
   className,
 }: GalleryContainerProps): JSXElement {
   const { createEffect, onCleanup } = getSolid();
-  const classes = createClassName(
-    'xeg-gallery-overlay',
-    'xeg-gallery-container',
-    'gallery-container',
-    className
-  );
+  const classes = createClassName('xeg-gallery-overlay', 'xeg-gallery-container', className);
 
   // Setup keyboard event handling
   createEffect(() => {

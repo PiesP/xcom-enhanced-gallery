@@ -13,8 +13,6 @@ type EnvSource = Partial<{
   VITE_VERSION: string;
   VITE_AUTO_START: string;
   VITE_ENABLE_DEBUG_TOOLS: string;
-  VITE_ENABLE_PERF_METRICS: string;
-  VITE_ENABLE_TIMELINE_RECOVERY: string;
 }>;
 
 type NodeEnvSource = Partial<Record<string, string | undefined>>;
@@ -43,12 +41,6 @@ const autoStartFlag = parseBooleanFlag(importMetaEnv.VITE_AUTO_START ?? nodeEnv.
 const debugToolsFlag = parseBooleanFlag(
   importMetaEnv.VITE_ENABLE_DEBUG_TOOLS ?? nodeEnv.VITE_ENABLE_DEBUG_TOOLS
 );
-const perfTelemetryFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_PERF_METRICS ?? nodeEnv.VITE_ENABLE_PERF_METRICS
-);
-const timelineRecoveryFlag = parseBooleanFlag(
-  importMetaEnv.VITE_ENABLE_TIMELINE_RECOVERY ?? nodeEnv.VITE_ENABLE_TIMELINE_RECOVERY
-);
 
 const resolvedAppConfig = Object.freeze({
   meta: {
@@ -65,7 +57,6 @@ const resolvedAppConfig = Object.freeze({
   runtime: {
     autoStart: autoStartFlag ?? true,
     blockExternalTimelineMutations: true,
-    blockLegacyTimelineRecovery: !(timelineRecoveryFlag ?? false),
   },
   limits: {
     maxGalleryItems: MAX_GALLERY_ITEMS,
@@ -79,8 +70,6 @@ const resolvedAppConfig = Object.freeze({
     settings: true,
     accessibility: true,
     debugTools: debugToolsFlag ?? isDev,
-    performanceTelemetry: Boolean(isDev && perfTelemetryFlag),
-    timelinePositionRecovery: timelineRecoveryFlag ?? false,
   },
   diagnostics: {
     enableLogger: true,

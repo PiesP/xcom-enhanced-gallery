@@ -21,6 +21,8 @@
  * @see {@link DownloadCacheService} for persistence (Phase 420)
  */
 
+import { CSS } from '@/constants';
+
 /**
  * Result of DOM media extraction operation
  *
@@ -280,7 +282,7 @@ export class DOMMediaExtractor {
    * @since Phase 400
    */
   findLoadedMediaElement(url: string): HTMLImageElement | HTMLVideoElement | null {
-    const galleryContainer = document.querySelector('[data-xeg-gallery]');
+    const galleryContainer = document.querySelector(CSS.SELECTORS.DATA_GALLERY);
     if (!galleryContainer) {
       return null;
     }

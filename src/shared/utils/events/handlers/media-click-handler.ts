@@ -6,7 +6,7 @@
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
-import { STABLE_SELECTORS } from '@/constants';
+import { STABLE_SELECTORS, CSS } from '@/constants';
 import { detectMediaFromClick, isProcessableMedia } from '../../media/media-click-detector';
 import { isHTMLElement } from '../../type-guards';
 import { isGalleryInternalElement, isVideoControlElement } from '../../utils';
@@ -16,7 +16,7 @@ import type {
   GalleryEventOptions,
 } from '../core/event-context';
 
-const OUR_GALLERY_SCOPE = '.xeg-gallery-container, [data-xeg-gallery], .xeg-gallery';
+const OUR_GALLERY_SCOPE = CSS.INTERNAL_SELECTORS.join(', ');
 const TWITTER_NATIVE_SELECTORS = [
   ...STABLE_SELECTORS.MEDIA_CONTAINERS,
   ...STABLE_SELECTORS.IMAGE_CONTAINERS,

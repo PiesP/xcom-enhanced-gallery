@@ -7,6 +7,7 @@ import { STABLE_SELECTORS, CSS } from '@/constants';
 import { isVideoControlElement } from '../utils';
 import { logger } from '@shared/logging';
 import { cachedQuerySelector } from '../../dom';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 
 /**
  * Media detection result
@@ -24,15 +25,7 @@ export interface MediaDetectionResult {
   method: string;
 }
 
-const GALLERY_INTERNAL_SELECTORS = [
-  `.${CSS.CLASSES.GALLERY_CONTAINER}`,
-  '[data-gallery-element]',
-  '#xeg-gallery-root',
-  '.vertical-gallery-view',
-  '[data-xeg-gallery-container]',
-  '[data-xeg-gallery]',
-  '.xeg-vertical-gallery',
-];
+const GALLERY_INTERNAL_SELECTORS = CSS.INTERNAL_SELECTORS;
 
 const UI_BUTTON_SELECTORS = [
   STABLE_SELECTORS.ACTION_BUTTONS.bookmark,
@@ -63,7 +56,7 @@ export function isProcessableMedia(target: HTMLElement | null): boolean {
     dataset: target.dataset,
   });
 
-  if (cachedQuerySelector(`.${CSS.CLASSES.GALLERY_CONTAINER}`, document, 1000)) {
+  if (gallerySignals.isOpen.value) {
     logger.debug('MediaClickDetector: Gallery already open - blocking');
     return false;
   }

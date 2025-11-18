@@ -2,13 +2,17 @@
  * @fileoverview DOM selector constants
  */
 
+import { CSS } from '@/constants/css';
+
+const GALLERY_SELECTORS = CSS.SELECTORS;
+
 export const SELECTORS = {
   TWEET: 'article[data-testid="tweet"]',
   TWEET_PHOTO: '[data-testid="tweetPhoto"]',
   TWEET_TEXT: '[data-testid="tweetText"]',
   VIDEO_PLAYER: '[data-testid="videoPlayer"]',
-  GALLERY_OVERLAY: '.xeg-gallery-overlay',
-  GALLERY_CONTAINER: '.xeg-gallery-container',
+  GALLERY_OVERLAY: GALLERY_SELECTORS.OVERLAY,
+  GALLERY_CONTAINER: GALLERY_SELECTORS.CONTAINER,
 } as const;
 
 /**

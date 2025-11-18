@@ -9,6 +9,7 @@
 
 import { logger } from '@shared/logging';
 import { getStyleRegistry } from '@shared/services/style-registry';
+import { CSS } from '@/constants';
 import { globalTimerManager } from './timer-management';
 
 // CSS animation variables and constants
@@ -49,7 +50,7 @@ export interface CSSAnimationOptions {
  */
 const ANIMATION_STYLE_ID = 'xeg-animation-styles';
 const ANIMATION_LAYER = 'xeg.utilities';
-const GALLERY_SCOPE_SELECTOR = '.xeg-gallery-root';
+const GALLERY_SCOPE_HOSTS = CSS.SCOPES.HOSTS;
 
 const styleRegistry = getStyleRegistry();
 
@@ -74,7 +75,8 @@ export function injectAnimationStyles(): void {
 }
 
 function buildScopedAnimationCss(): string {
-  const scopedClass = (className: string): string => `${GALLERY_SCOPE_SELECTOR} .${className}`;
+  const scopedClass = (className: string): string =>
+    GALLERY_SCOPE_HOSTS.map(scope => `${scope} .${className}`).join(', ');
   const reducedMotionSelectors = [
     ANIMATION_CLASSES.FADE_IN,
     ANIMATION_CLASSES.FADE_OUT,

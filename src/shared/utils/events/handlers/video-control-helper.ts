@@ -10,6 +10,7 @@
 
 import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
+import { CSS } from '@/constants';
 
 /**
  * Video control action type
@@ -62,7 +63,20 @@ function getCurrentGalleryVideo(video?: HTMLVideoElement | null): HTMLVideoEleme
       typeof document !== 'undefined' ? document : (globalThis as { document?: Document }).document;
     if (!(doc instanceof Document)) return null;
 
-    const container = doc.querySelector('#xeg-gallery-root');
+    const hostSelectors = [
+      CSS.SELECTORS.DATA_GALLERY,
+      CSS.SELECTORS.ROOT,
+      CSS.SELECTORS.CONTAINER,
+      CSS.SELECTORS.DATA_CONTAINER,
+    ];
+    let container: Element | null = null;
+    for (const selector of hostSelectors) {
+      const match = doc.querySelector(selector);
+      if (match) {
+        container = match;
+        break;
+      }
+    }
     if (!container) return null;
 
     const items = container.querySelector('[data-xeg-role="items-container"]');
