@@ -2,7 +2,6 @@ import { logger } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
 import type { Unregister } from '@/bootstrap/events';
-import type { AppConfig } from '@shared/types';
 import type { IGalleryApp } from '@shared/container/app-container';
 import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
 import { initializeDevTools } from '@/bootstrap/dev-tools';
@@ -13,6 +12,7 @@ import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
+import { createAppConfig } from '@/constants/app-config';
 
 // Global styles
 // Global styles are loaded at runtime to avoid import-time side effects.
@@ -128,18 +128,6 @@ async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
 }
 
 // Lean mode: requestIdleCallback scheduling removed
-
-/**
- * Create application configuration
- */
-function createAppConfig(): AppConfig {
-  return {
-    version: import.meta.env.VITE_VERSION ?? '3.1.0',
-    isDevelopment: import.meta.env.DEV,
-    debug: import.meta.env.DEV,
-    autoStart: true,
-  };
-}
 
 /**
  * Initialize base infrastructure

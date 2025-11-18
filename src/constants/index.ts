@@ -1,17 +1,16 @@
 /**
  * @fileoverview Integrated constants barrel export (Phase 352)
  *
- * Maintains backward compatibility with existing import paths:
- * - import { APP_CONFIG, SELECTORS } from '@/constants';
+ * Maintains backward compatibility with shared constant imports such as selectors and media data:
+ * - import { SELECTORS } from '@/constants';
  *
- * Individual file imports are also available (tree-shaking optimization):
- * - import { APP_CONFIG } from '@/constants/app-config';
+ * App runtime config is available via the dedicated module to avoid duplicate exposures:
+ * - import { APP_CONFIG, createAppConfig } from '@/constants/app-config';
  */
 
 // ================================
 // Core Constants
 // ================================
-export { APP_CONFIG } from './app-config';
 export { SELECTORS, STABLE_SELECTORS } from './selectors';
 
 // ================================
