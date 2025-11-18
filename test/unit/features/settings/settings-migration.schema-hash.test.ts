@@ -6,7 +6,7 @@ import { DEFAULT_SETTINGS } from '@/constants';
 const STORAGE_KEY = 'xeg-app-settings';
 
 function stripVolatile(obj: any) {
-  const { lastModified, __schemaHash, toolbar: _toolbar, ...rest } = obj;
+  const { lastModified, __schemaHash, ...rest } = obj;
   return rest;
 }
 

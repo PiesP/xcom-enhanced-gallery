@@ -37,7 +37,7 @@ export { VIDEO_CONTROL_SELECTORS, SYSTEM_PAGES, VIEW_MODES } from './video-contr
 // ================================
 // Settings
 // ================================
-export { DEFAULT_SETTINGS } from './default-settings';
+export { DEFAULT_SETTINGS, createDefaultSettings } from './default-settings';
 
 // ================================
 // Types

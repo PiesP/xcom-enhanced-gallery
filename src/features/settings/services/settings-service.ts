@@ -12,7 +12,7 @@ import type {
   SettingChangeEvent,
   SettingValidationResult,
 } from '../types/settings.types';
-import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
+import { DEFAULT_SETTINGS as defaultSettings, createDefaultSettings } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';
 
@@ -21,10 +21,17 @@ import { computeCurrentSettingsSchemaHash } from './settings-schema';
  */
 const STORAGE_KEY = 'xeg-app-settings';
 
-type SettingsCategoryKey = 'gallery' | 'download' | 'tokens' | 'accessibility' | 'features';
+type SettingsCategoryKey =
+  | 'gallery'
+  | 'toolbar'
+  | 'download'
+  | 'tokens'
+  | 'accessibility'
+  | 'features';
 
 const SETTINGS_CATEGORY_KEYS: readonly SettingsCategoryKey[] = [
   'gallery',
+  'toolbar',
   'download',
   'tokens',
   'accessibility',
@@ -110,26 +117,11 @@ export class SettingsService {
   // defaultSettings.gallery.preloadCount). resetToDefaults(category) failure
   // was due to initial shallow copy causing set() to modify base objects directly.
   // Solution: Always use deep (structural) copy on initialization and reset.
-  private settings: AppSettings = SettingsService.cloneDefaults();
+  private settings: AppSettings = createDefaultSettings();
   private readonly listeners = new Set<SettingChangeListener>();
   private initialized = false;
   private readonly schemaHash = computeCurrentSettingsSchemaHash();
   private readonly storage = getPersistentStorage();
-
-  /** Clone default settings while keeping feature-specific categories isolated */
-  private static cloneDefaults(): AppSettings {
-    const now = Date.now();
-
-    return {
-      gallery: cloneDeep(defaultSettings.gallery),
-      download: cloneDeep(defaultSettings.download),
-      tokens: cloneDeep(defaultSettings.tokens),
-      accessibility: cloneDeep(defaultSettings.accessibility),
-      features: cloneDeep(defaultSettings.features),
-      version: defaultSettings.version,
-      lastModified: now,
-    };
-  }
 
   /**
    * Initialize service - Load settings from storage
@@ -296,7 +288,7 @@ export class SettingsService {
     const timestamp = Date.now();
 
     if (!category) {
-      this.settings = SettingsService.cloneDefaults();
+      this.settings = createDefaultSettings();
     } else if (SETTINGS_CATEGORY_KEYS.includes(category as SettingsCategoryKey)) {
       const defaults = cloneDeep(
         defaultSettings[category as SettingsCategoryKey]
@@ -414,7 +406,7 @@ export class SettingsService {
       if (!this.validateSettingsStructure(parsedSettings)) {
         logger.warn('Invalid settings structure, restoring defaults');
         // Restore defaults and save (include hash)
-        this.settings = SettingsService.cloneDefaults();
+        this.settings = createDefaultSettings();
         await this.saveSettings();
         return;
       }
@@ -459,6 +451,62 @@ export class SettingsService {
    * Validate setting value
    */
   private validateSetting(key: NestedSettingKey, value: unknown): SettingValidationResult {
+    const defaultValue = this.getDefaultValue(key);
+
+    if (defaultValue !== undefined) {
+      const expectedType = Array.isArray(defaultValue) ? 'array' : typeof defaultValue;
+
+      switch (expectedType) {
+        case 'boolean':
+          if (typeof value !== 'boolean') {
+            return {
+              valid: false,
+              error: 'This setting must be a true or false value',
+              suggestion: 'Enter true or false',
+            };
+          }
+          break;
+        case 'number':
+          if (typeof value !== 'number' || Number.isNaN(value)) {
+            return {
+              valid: false,
+              error: 'This setting must be a numeric value',
+              suggestion: 'Enter a valid number',
+            };
+          }
+          break;
+        case 'string':
+          if (typeof value !== 'string') {
+            return {
+              valid: false,
+              error: 'This setting must be a text value',
+              suggestion: 'Enter a string value',
+            };
+          }
+          break;
+        case 'object':
+          if (defaultValue !== null && (typeof value !== 'object' || value === null)) {
+            return {
+              valid: false,
+              error: 'This setting expects an object value',
+              suggestion: 'Provide an object with the appropriate shape',
+            };
+          }
+          break;
+        case 'array':
+          if (!Array.isArray(value)) {
+            return {
+              valid: false,
+              error: 'This setting expects a list value',
+              suggestion: 'Provide an array value',
+            };
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
     // Speed-related settings validation
     if (key.includes('Speed') && typeof value === 'number') {
       if (value < 1 || value > 10) {
@@ -481,17 +529,6 @@ export class SettingsService {
       }
     }
 
-    // Boolean values validation
-    if (key.includes('enabled') || key.includes('auto') || key.includes('show')) {
-      if (typeof value !== 'boolean') {
-        return {
-          valid: false,
-          error: 'This setting must be a true or false value',
-          suggestion: 'Enter true or false',
-        };
-      }
-    }
-
     return { valid: true };
   }
 
@@ -507,9 +544,11 @@ export class SettingsService {
 
     return (
       'gallery' in settingsObj &&
+      'toolbar' in settingsObj &&
       'download' in settingsObj &&
       'tokens' in settingsObj &&
       'accessibility' in settingsObj &&
+      'features' in settingsObj &&
       'version' in settingsObj &&
       'lastModified' in settingsObj &&
       typeof settingsObj.lastModified === 'number'

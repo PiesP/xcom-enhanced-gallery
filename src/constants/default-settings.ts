@@ -2,7 +2,9 @@
  * @fileoverview Default settings configuration
  */
 
-export const DEFAULT_SETTINGS = {
+import type { AppSettings } from '@features/settings/types/settings.types';
+
+const STATIC_DEFAULT_SETTINGS = {
   gallery: {
     autoScrollSpeed: 5,
     infiniteScroll: true,
@@ -42,5 +44,28 @@ export const DEFAULT_SETTINGS = {
     accessibility: true, // Accessibility features enabled
   },
   version: '1.0.0',
-  lastModified: Date.now(),
-} as const;
+  // Static default retains deterministic timestamp for hashing comparisons
+  lastModified: 0,
+} as const satisfies AppSettings;
+
+export const DEFAULT_SETTINGS = STATIC_DEFAULT_SETTINGS;
+
+export function createDefaultSettings(timestamp: number = Date.now()): AppSettings {
+  return {
+    gallery: cloneValue(DEFAULT_SETTINGS.gallery),
+    toolbar: cloneValue(DEFAULT_SETTINGS.toolbar),
+    download: cloneValue(DEFAULT_SETTINGS.download),
+    tokens: cloneValue(DEFAULT_SETTINGS.tokens),
+    accessibility: cloneValue(DEFAULT_SETTINGS.accessibility),
+    features: cloneValue(DEFAULT_SETTINGS.features),
+    version: DEFAULT_SETTINGS.version,
+    lastModified: timestamp,
+  };
+}
+
+function cloneValue<T>(value: T): T {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value)) as T;
+}

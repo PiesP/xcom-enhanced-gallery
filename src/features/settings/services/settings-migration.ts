@@ -52,9 +52,11 @@ function fillWithDefaults(settings: AppSettings): AppSettings {
   // Merge category defaults
   const categories = {
     gallery: defaultSettings.gallery,
+    toolbar: defaultSettings.toolbar,
     download: defaultSettings.download,
     tokens: defaultSettings.tokens,
     accessibility: defaultSettings.accessibility,
+    features: defaultSettings.features,
   } as const;
 
   const merged: Record<string, unknown> = { ...defaultSettings, ...pruned };

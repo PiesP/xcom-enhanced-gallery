@@ -103,6 +103,11 @@ describe('SettingsService', () => {
       expect(theme).toBeDefined();
     });
 
+    it('toolbar 기본값을 반환해야 함', () => {
+      const delay = service.get<number>('toolbar.autoHideDelay');
+      expect(delay).toBe(DEFAULT_SETTINGS.toolbar.autoHideDelay);
+    });
+
     it('getAllSettings는 읽기 전용 복사본을 반환해야 함', () => {
       const settings = service.getAllSettings();
       const originalTheme = settings.gallery.theme;
@@ -133,6 +138,11 @@ describe('SettingsService', () => {
 
       const after = service.getAllSettings().lastModified;
       expect(after).toBeGreaterThan(before);
+    });
+
+    it('toolbar 설정을 갱신할 수 있어야 함', async () => {
+      await service.set('toolbar.autoHideDelay', 1200);
+      expect(service.get('toolbar.autoHideDelay')).toBe(1200);
     });
   });
 

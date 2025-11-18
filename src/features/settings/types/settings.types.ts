@@ -25,6 +25,14 @@ export interface GallerySettings {
 }
 
 /**
+ * Toolbar settings configuration
+ */
+export interface ToolbarSettings {
+  /** Auto-hide delay in milliseconds (0 disables auto-hide) */
+  autoHideDelay: number;
+}
+
+/**
  * Download settings configuration
  */
 export interface DownloadSettings {
@@ -91,6 +99,7 @@ export interface FeatureFlags {
  */
 export interface AppSettings {
   gallery: GallerySettings;
+  toolbar: ToolbarSettings;
   download: DownloadSettings;
   tokens: TokenSettings;
   accessibility: AccessibilitySettings;
@@ -112,6 +121,7 @@ export type SettingKey = keyof AppSettings;
  */
 export type NestedSettingKey =
   | `gallery.${keyof GallerySettings}`
+  | `toolbar.${keyof ToolbarSettings}`
   | `download.${keyof DownloadSettings}`
   | `tokens.${keyof TokenSettings}`
   | `accessibility.${keyof AccessibilitySettings}`
