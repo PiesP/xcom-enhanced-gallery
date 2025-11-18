@@ -1,11 +1,3 @@
-/**
- * X.com Enhanced Gallery - Main entry point
- *
- * Simplified structure - Optimized for userscript
- *
- * @version 4.0.0
- */
-
 import { logger } from '@/shared/logging';
 import { initializeEnvironment } from '@/bootstrap/environment';
 import { wireGlobalEvents } from '@/bootstrap/events';
@@ -26,11 +18,66 @@ import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 // They are dynamically loaded inside startApplication for safety in both tests and bundling.
 
 // Vendor initialization moved to startApplication
-// Application state management
-let isStarted = false;
-let startPromise: Promise<void> | null = null;
-let galleryApp: IGalleryApp | null = null;
-let cleanupHandlers: (() => Promise<void> | void)[] = [];
+
+const isDevEnvironment = import.meta.env.DEV;
+const isTestMode = import.meta.env.MODE === 'test';
+
+type CleanupTask = () => Promise<void> | void;
+type CleanupLogger = (message: string, error: unknown) => void;
+
+const lifecycleState = {
+  started: false,
+  startPromise: null as Promise<void> | null,
+  galleryApp: null as IGalleryApp | null,
+};
+
+const cleanupRegistry = new Set<CleanupTask>();
+
+type BootstrapStage = {
+  label: string;
+  run: () => Promise<void> | void;
+};
+
+const warnCleanupLog: CleanupLogger = (message, error) => {
+  logger.warn(message, error);
+};
+
+const debugCleanupLog: CleanupLogger = (message, error) => {
+  logger.debug(message, error);
+};
+
+function registerCleanupTask(task: CleanupTask): void {
+  cleanupRegistry.add(task);
+}
+
+async function flushCleanupTasks(): Promise<void> {
+  if (!cleanupRegistry.size) {
+    return;
+  }
+
+  const tasks = Array.from(cleanupRegistry);
+  cleanupRegistry.clear();
+
+  await Promise.all(
+    tasks.map(handler =>
+      Promise.resolve(handler()).catch((error: unknown) =>
+        logger.warn('Error during cleanup handler execution:', error)
+      )
+    )
+  );
+}
+
+async function runOptionalCleanup(
+  label: string,
+  task: CleanupTask,
+  log: CleanupLogger = warnCleanupLog
+): Promise<void> {
+  try {
+    await task();
+  } catch (error) {
+    log(label, error);
+  }
+}
 
 type DevMainNamespace = {
   start: typeof startApplication;
@@ -65,6 +112,22 @@ function setupDevNamespace(galleryAppInstance?: IGalleryApp | null): void {
       }
     }
   });
+}
+
+async function runBootstrapStages(): Promise<void> {
+  for (const stage of bootstrapStages) {
+    await executeBootstrapStage(stage);
+  }
+}
+
+async function executeBootstrapStage(stage: BootstrapStage): Promise<void> {
+  try {
+    logger.debug(`[bootstrap] ➡️ ${stage.label}`);
+    await Promise.resolve(stage.run());
+  } catch (error) {
+    logger.error(`[bootstrap] ❌ ${stage.label} failed`, error);
+    throw error;
+  }
 }
 
 // Lean mode: requestIdleCallback scheduling removed
@@ -116,7 +179,59 @@ function setupGlobalEventHandlers(): void {
   const unregister = wireGlobalEvents(() => {
     cleanup().catch(error => logger.error('Error during page unload cleanup:', error));
   });
-  cleanupHandlers.push(unregister);
+  registerCleanupTask(unregister);
+}
+
+async function loadGlobalStyles(): Promise<void> {
+  await import('./styles/globals');
+}
+
+async function initializeDevToolsIfNeeded(): Promise<void> {
+  if (!isDevEnvironment) {
+    return;
+  }
+
+  if (isTestMode) {
+    logger.debug('DevTools initialization skipped (test mode)');
+    return;
+  }
+
+  await initializeDevTools();
+}
+
+async function initializeGalleryIfPermitted(): Promise<void> {
+  if (isTestMode) {
+    logger.debug('Gallery initialization skipped (test mode)');
+    return;
+  }
+
+  await initializeGallery();
+}
+
+const bootstrapStages: BootstrapStage[] = [
+  { label: 'Global styles', run: loadGlobalStyles },
+  { label: 'Developer tooling', run: initializeDevToolsIfNeeded },
+  { label: 'Infrastructure', run: initializeInfrastructure },
+  { label: 'Critical systems', run: initializeCriticalSystems },
+  { label: 'Feature service registration', run: registerFeatureServicesLazy },
+  { label: 'Global event wiring', run: () => setupGlobalEventHandlers() },
+  { label: 'Gallery initialization', run: initializeGalleryIfPermitted },
+  { label: 'Non-critical systems', run: () => initializeNonCriticalSystems() },
+];
+
+function triggerPreloadStrategy(): void {
+  if (isTestMode) {
+    return;
+  }
+
+  void (async () => {
+    try {
+      const { executePreloadStrategy } = await import('@/bootstrap/preload');
+      await executePreloadStrategy();
+    } catch (error) {
+      logger.warn('[Phase 326] Error executing preload strategy:', error);
+    }
+  })();
 }
 
 /**
@@ -125,82 +240,70 @@ function setupGlobalEventHandlers(): void {
 async function cleanup(): Promise<void> {
   try {
     logger.info('🧹 Starting application cleanup');
-    if (galleryApp) {
-      await galleryApp.cleanup();
-      clearGalleryApp(); // Phase 2.1: Cleanup via bootstrap module
-      galleryApp = null;
+    await runOptionalCleanup('Gallery cleanup', async () => {
+      if (!lifecycleState.galleryApp) {
+        return;
+      }
+
+      await lifecycleState.galleryApp.cleanup();
+      clearGalleryApp();
+      lifecycleState.galleryApp = null;
       setupDevNamespace(null);
-    }
+    });
 
-    // CoreService instance cleanup (access prohibited from features layer, performed here only)
-    CoreService.getInstance().cleanup();
+    await runOptionalCleanup('CoreService cleanup', () => {
+      CoreService.getInstance().cleanup();
+    });
 
-    // Vendor resource cleanup (explicit call; no import-time side effects)
-    try {
+    await runOptionalCleanup('Vendor cleanup', () => {
       cleanupVendors();
-    } catch (e) {
-      logger.warn('Warning during vendor cleanup:', e);
-    }
+    });
 
-    // Global DOMCache instance cleanup (remove import-time interval)
-    try {
-      const { globalDOMCache } = await import('@shared/dom/dom-cache');
-      if (globalDOMCache) {
-        globalDOMCache.dispose();
-      }
-    } catch (e) {
-      logger.warn('Warning during DOMCache cleanup:', e);
-    }
-
-    await Promise.all(
-      cleanupHandlers.map(handler =>
-        Promise.resolve(handler()).catch((error: unknown) =>
-          logger.warn('Error during cleanup handler execution:', error)
-        )
-      )
+    await runOptionalCleanup(
+      'DOMCache cleanup',
+      async () => {
+        const { globalDOMCache } = await import('@shared/dom/dom-cache');
+        globalDOMCache?.dispose();
+      },
+      debugCleanupLog
     );
-    cleanupHandlers = [];
 
-    // Global timer cleanup (non-critical init, etc.)
-    try {
+    await flushCleanupTasks();
+
+    await runOptionalCleanup('Global timer cleanup', () => {
       globalTimerManager.cleanup();
-    } catch (e) {
-      logger.warn('Warning during global timer cleanup:', e);
+    });
+
+    await runOptionalCleanup(
+      'Global error handler cleanup',
+      async () => {
+        const { GlobalErrorHandler } = await import('@shared/error');
+        GlobalErrorHandler.getInstance().destroy();
+      },
+      debugCleanupLog
+    );
+
+    if (isDevEnvironment) {
+      await runOptionalCleanup(
+        '[cleanup] Event listener status check',
+        async () => {
+          const { getEventListenerStatus } = await import('@shared/utils/events');
+          const status = getEventListenerStatus();
+          if (status.total > 0) {
+            logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
+              total: status.total,
+              byType: status.byType,
+              byContext: status.byContext,
+            });
+          } else {
+            logger.debug('[cleanup] ✅ All event listeners cleared successfully');
+          }
+        },
+        debugCleanupLog
+      );
     }
 
-    // DOMContentLoaded handler registered at module level removed (test environment stabilization)
-    // Phase 236: @run-at document-idle guarantee eliminates DOMContentLoaded listener
-    // No listeners to remove anymore, so this block itself is removed
-
-    // Global error handler cleanup (remove window:error/unhandledrejection listeners)
-    try {
-      const { GlobalErrorHandler } = await import('@shared/error');
-      GlobalErrorHandler.getInstance().destroy();
-    } catch (e) {
-      logger.debug('Global error handlers cleanup skipped or failed:', e);
-    }
-
-    // Phase 415: Event listener cleanup verification (development mode)
-    // Detect uncleared event listeners in development to catch memory leaks early
-    if (import.meta.env.DEV) {
-      try {
-        const { getEventListenerStatus } = await import('@shared/utils/events');
-        const status = getEventListenerStatus();
-        if (status.total > 0) {
-          logger.warn('[cleanup] ⚠️ Warning: uncleared event listeners remain:', {
-            total: status.total,
-            byType: status.byType,
-            byContext: status.byContext,
-          });
-        } else {
-          logger.debug('[cleanup] ✅ All event listeners cleared successfully');
-        }
-      } catch (e) {
-        logger.debug('[cleanup] Event listener status check skipped:', e);
-      }
-    }
-
-    isStarted = false;
+    lifecycleState.started = false;
     logger.info('✅ Application cleanup complete');
   } catch (error) {
     logger.error('❌ Error during application cleanup:', error);
@@ -225,97 +328,49 @@ async function cleanup(): Promise<void> {
  * - Non-Critical: Can wait until after user interaction (background timers)
  */
 async function startApplication(): Promise<void> {
-  if (isStarted) {
+  if (lifecycleState.started) {
     logger.debug('Application: Already started');
     return;
   }
 
-  if (startPromise) {
+  if (lifecycleState.startPromise) {
     logger.debug('Application: Start in progress - reusing promise');
-    return startPromise;
+    return lifecycleState.startPromise;
   }
 
-  startPromise = (async () => {
+  lifecycleState.startPromise = (async () => {
     logger.info('🚀 Starting X.com Enhanced Gallery...');
 
-    // Load global styles (prevent import-time side effects)
-    await import('./styles/globals');
+    await runBootstrapStages();
 
-    // Initialize development tools (dev environment only; skip in test mode to avoid leak scan interference)
-    if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
-      await initializeDevTools();
-    } else if (import.meta.env.DEV) {
-      logger.debug('DevTools initialization skipped (test mode)');
-    }
+    triggerPreloadStrategy();
 
-    // Phase 1: Initialize base infrastructure
-    await initializeInfrastructure();
-
-    // Phase 2: Initialize only critical systems (gallery excluded)
-    await initializeCriticalSystems();
-
-    // Phase 415: BaseService initialization moved to GalleryApp (deferred initialization)
-    // Previously Phase A5.2 was here, now moved to GalleryApp.initialize() for lazy loading
-    // This reduces initial bootstrap time by 5-10% since Theme/Language are not immediately needed
-
-    // Phase 3: Register Feature Services lazily
-    await registerFeatureServicesLazy();
-
-    // Phase 4: Set up global event handlers
-    setupGlobalEventHandlers();
-
-    // Phase 5: Initialize gallery app (optionally delayed after window.load)
-    // In test mode, Solid.js global event delegation listeners are registered,
-    // which can interfere with leak scan tests (active EventTarget listeners), so skip this.
-    if (import.meta.env.MODE !== 'test') {
-      await initializeGalleryImmediately();
-    } else {
-      logger.debug('Gallery initialization skipped (test mode)');
-    }
-
-    // Phase 6: Initialize Non-Critical systems in background
-    initializeNonCriticalSystems();
-
-    // Phase 326: Code Splitting - Execute preload strategy
-    // Preload optional feature (Settings, etc.) chunks during idle time
-    if (import.meta.env.MODE !== 'test') {
-      void (async () => {
-        try {
-          const { executePreloadStrategy } = await import('@/bootstrap/preload');
-          await executePreloadStrategy();
-        } catch (error) {
-          logger.warn('[Phase 326] Error executing preload strategy:', error);
-        }
-      })();
-    }
-
-    isStarted = true;
+    lifecycleState.started = true;
 
     logger.info('✅ Application initialization complete');
 
     // Phase 290: Namespace isolation - provide single namespace for global access in dev environment
-    setupDevNamespace(galleryApp);
+    setupDevNamespace(lifecycleState.galleryApp);
   })()
     .catch(error => {
       logger.error('❌ Application initialization failed (lean mode, no retry):', error);
     })
     .finally(() => {
-      // Release startPromise for next manual call (already started case is guarded by isStarted)
-      startPromise = null;
+      lifecycleState.startPromise = null;
     });
 
-  return startPromise;
+  return lifecycleState.startPromise;
 }
 
 /**
  * Gallery immediate initialization (no delay)
  */
-async function initializeGalleryImmediately(): Promise<void> {
+async function initializeGallery(): Promise<void> {
   try {
     logger.debug('🎯 Starting gallery immediate initialization');
 
     // Phase 2.1: Initialization via bootstrap module
-    galleryApp = await initializeGalleryApp();
+    lifecycleState.galleryApp = await initializeGalleryApp();
 
     logger.debug('✅ Gallery immediate initialization complete');
   } catch (error) {
