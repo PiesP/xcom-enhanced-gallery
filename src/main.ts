@@ -7,7 +7,7 @@ import type { IGalleryApp } from '@shared/container/app-container';
 import { initializeCriticalSystems } from '@/bootstrap/critical-systems';
 import { initializeDevTools } from '@/bootstrap/dev-tools';
 import { registerFeatureServicesLazy } from '@/bootstrap/features';
-import { initializeGalleryApp, clearGalleryApp } from '@/bootstrap/gallery-init';
+import { initializeGalleryApp } from '@/bootstrap/gallery-init';
 import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
@@ -189,11 +189,6 @@ async function initializeDevToolsIfNeeded(): Promise<void> {
     return;
   }
 
-  if (isTestMode) {
-    logger.debug('DevTools initialization skipped (test mode)');
-    return;
-  }
-
   await initializeDevTools();
 }
 
@@ -246,7 +241,6 @@ async function cleanup(): Promise<void> {
       }
 
       await lifecycleState.galleryApp.cleanup();
-      clearGalleryApp();
       lifecycleState.galleryApp = null;
       setupDevNamespace(null);
     });

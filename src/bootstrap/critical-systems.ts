@@ -2,25 +2,16 @@ import { logger } from '@shared/logging';
 import { warmupCriticalServices } from '@shared/container';
 import { CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
 
-const debugEnabled = !import.meta.env.PROD;
-const debug = (message: string): void => {
-  if (debugEnabled) {
-    logger.debug(`[critical] ${message}`);
-  }
-};
-
-async function registerCoreLayer(): Promise<void> {
-  const { registerCoreServices } = await import('@shared/services/service-initialization');
-  await registerCoreServices();
-}
+const devLogger = import.meta.env.PROD ? null : logger;
 
 export async function initializeCriticalSystems(): Promise<void> {
-  debug('initialization started');
+  devLogger?.debug('[critical] initialization started');
 
   try {
-    await registerCoreLayer();
+    const { registerCoreServices } = await import('@shared/services/service-initialization');
+    await registerCoreServices();
     warmupCriticalServices();
-    debug('initialization complete');
+    devLogger?.debug('[critical] initialization complete');
   } catch (error) {
     handleBootstrapError(
       error,

@@ -9,14 +9,19 @@ import { logger } from '@shared/logging';
 import { registerGalleryRenderer } from '@shared/container';
 import type { IGalleryApp } from '@shared/container/app-container';
 
-/** Gallery app instance (module-level management) */
-let galleryAppInstance: IGalleryApp | null = null;
+let rendererRegistrationTask: Promise<void> | null = null;
 
-/**
- * Gallery app instance accessor
- */
-export function getGalleryApp(): IGalleryApp | null {
-  return galleryAppInstance;
+async function registerRenderer(): Promise<void> {
+  if (!rendererRegistrationTask) {
+    rendererRegistrationTask = (async () => {
+      const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
+      registerGalleryRenderer(new GalleryRenderer());
+    })().finally(() => {
+      rendererRegistrationTask = null;
+    });
+  }
+
+  await rendererRegistrationTask;
 }
 
 /**
@@ -32,41 +37,19 @@ export function getGalleryApp(): IGalleryApp | null {
  * @throws {Error} On gallery initialization failure
  */
 export async function initializeGalleryApp(): Promise<IGalleryApp> {
-  if (galleryAppInstance) {
-    logger.debug('Gallery app already initialized');
-    return galleryAppInstance;
-  }
-
   try {
     logger.info('🎨 Gallery app lazy initialization starting');
 
-    // Register Gallery Renderer service (needed only for gallery app)
-    const { GalleryRenderer } = await import('@features/gallery/GalleryRenderer');
-    registerGalleryRenderer(new GalleryRenderer());
+    await registerRenderer();
 
-    // Create gallery app instance
     const { GalleryApp } = await import('@features/gallery/GalleryApp');
-    galleryAppInstance = new GalleryApp();
+    const galleryApp = new GalleryApp();
+    await galleryApp.initialize();
 
-    // Initialize gallery app
-    if (!galleryAppInstance) {
-      throw new Error('GalleryApp creation failed');
-    }
-    await galleryAppInstance.initialize();
     logger.info('✅ Gallery app initialization complete');
-
-    return galleryAppInstance as IGalleryApp;
+    return galleryApp;
   } catch (error) {
     logger.error('❌ Gallery app initialization failed:', error);
     throw error;
   }
-}
-
-/**
- * Gallery app cleanup
- *
- * @note Called from cleanup() function
- */
-export function clearGalleryApp(): void {
-  galleryAppInstance = null;
 }

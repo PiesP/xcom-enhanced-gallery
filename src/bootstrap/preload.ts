@@ -1,109 +1,51 @@
-/**
- * Phase 326: Code Splitting - preload strategy
- *
- * Dynamic chunk loading optimization strategy after chunk separation
- * - Critical Path: Preload essential chunks
- * - Optional Path: Load optional features during idle time
- * - ZIP Path: Phase 326.3 - ZIP creation dynamic loading (lazy-compression)
- *
- * Note:
- * - Settings preload: Handled directly in GalleryApp via ensureSettingsServiceInitialized
- * - This is because Settings loading is closely related to Gallery initialization
- *
- * @see [PHASE_326_CODE_SPLITTING_PLAN.md](../../docs/PHASE_326_CODE_SPLITTING_PLAN.md)
- */
-
 import { logger } from '@shared/logging';
-import { preloadZipCreation } from '@shared/utils/lazy-compression';
 
-const isProdBuild = import.meta.env.PROD;
+type ChunkLoader = () => Promise<unknown>;
 
-function scheduleIdleWork(callback: () => Promise<void>): void {
-  const requestIdleCallback = (globalThis as Record<string, unknown>).requestIdleCallback as
-    | ((cb: () => void) => void)
-    | undefined;
+export type PreloadTask = Readonly<{
+  label: string;
+  loader: ChunkLoader;
+}>;
 
-  if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => {
-      void callback();
-    });
-    return;
-  }
+export type PreloadDependencies = Readonly<{
+  logWarn: (message: string, error: unknown) => void;
+}>;
 
-  globalThis.setTimeout(() => {
-    void callback();
-  }, 2000);
-}
+const PRELOAD_TASKS: readonly PreloadTask[] = Object.freeze([
+  {
+    label: 'gallery core',
+    loader: () => import('@features/gallery'),
+  },
+]);
 
-/**
- * Critical chunk preload
- * Preload essential chunks after initialization - Gallery, Services, etc.
- */
-async function preloadCriticalChunks(): Promise<void> {
-  if (!isProdBuild) {
-    logger.debug('[preload] Preloading critical chunks...');
-  }
+const debug = import.meta.env.DEV ? (message: string) => logger.debug(message) : () => {};
 
-  try {
-    // Preload Gallery chunk (main feature)
-    // Phase 326: Chunk separation via dynamic import
-    await import('@features/gallery');
-    if (!isProdBuild) {
-      logger.debug('[preload] Gallery chunk loaded');
-    }
-  } catch (error) {
-    logger.warn('[preload] Critical chunk preload failed:', error);
-  }
-}
+const DEFAULT_PRELOAD_DEPENDENCIES: PreloadDependencies = Object.freeze({
+  logWarn: (message: string, error: unknown) => {
+    logger.warn(message, error);
+  },
+});
 
-/**
- * Optional chunk delayed loading
- * Load Settings and other optional feature chunks during browser idle time.
- * Falls back to timeout if requestIdleCallback is unsupported.
- */
-async function preloadOptionalChunks(): Promise<void> {
-  scheduleIdleWork(async () => {
-    if (!isProdBuild) {
-      logger.debug('[preload] Preloading optional chunks...');
-    }
-
-    try {
-      // Delayed Settings chunk loading
-      // Phase 326: Chunk separation via dynamic import
-      await import('@features/settings');
-      if (!isProdBuild) {
-        logger.debug('[preload] Settings chunk loaded');
-      }
-    } catch (error) {
-      logger.warn('[preload] Optional chunk preload failed:', error);
-    }
-  });
-}
-
-/**
- * 프리로드 전략 전체 실행
- * Critical 먼저, Optional과 ZIP은 비동기로 진행
- *
- * Phase 326.3: ZIP 생성 동적 로드 통합
- * - Critical: Gallery 필수 기능
- * - Optional: Settings 서비스 (requestIdleCallback)
- * - ZIP: preloadZipCreation (독립 스케줄)
- *
- * @public 부트스트랩에서 호출
- */
-export async function executePreloadStrategy(): Promise<void> {
-  if (!isProdBuild) {
-    logger.info('[preload] 프리로드 전략 시작');
-  }
+async function runPreloadTask(task: PreloadTask, deps: PreloadDependencies): Promise<void> {
+  debug(`[preload] loading ${task.label}`);
 
   try {
-    // Critical 먼저 로드 (순서 보장)
-    await preloadCriticalChunks();
-
-    // Optional과 ZIP은 비동기로 진행 (메인 스레드 블로킹 안 함)
-    void preloadOptionalChunks();
-    void preloadZipCreation(); // Phase 326.3: ZIP 생성 동적 로드
+    await task.loader();
+    debug(`[preload] ${task.label} ready`);
   } catch (error) {
-    logger.error('[preload] 프리로드 전략 실행 실패:', error);
+    deps.logWarn(`[preload] ${task.label} preload failed`, error);
+  }
+}
+
+/**
+ * Execute minimal preload strategy for essential chunks.
+ * Tasks run sequentially to avoid racing the timeline or user interactions.
+ */
+export async function executePreloadStrategy(
+  tasks: readonly PreloadTask[] = PRELOAD_TASKS,
+  deps: PreloadDependencies = DEFAULT_PRELOAD_DEPENDENCIES
+): Promise<void> {
+  for (const task of tasks) {
+    await runPreloadTask(task, deps);
   }
 }

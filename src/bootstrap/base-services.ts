@@ -10,25 +10,32 @@ import {
   CORE_BASE_SERVICE_IDENTIFIERS,
   LANGUAGE_SERVICE_IDENTIFIER,
   THEME_SERVICE_IDENTIFIER,
+  type CoreBaseServiceIdentifier,
 } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { languageService } from '@shared/services/language-service';
 import { themeService } from '@shared/services/theme-service';
 import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/types';
+import type { BaseService } from '@shared/types/core/base-service.types';
 
-const BASE_SERVICE_IDS = CORE_BASE_SERVICE_IDENTIFIERS;
-const BASE_SERVICE_REGISTRATIONS = [
+type BaseServiceRegistration = readonly [CoreBaseServiceIdentifier, BaseService];
+
+const BASE_SERVICE_REGISTRATIONS: ReadonlyArray<BaseServiceRegistration> = [
   [THEME_SERVICE_IDENTIFIER, themeService],
   [LANGUAGE_SERVICE_IDENTIFIER, languageService],
-] as const;
+];
 
-function ensureBaseServicesRegistered(coreService: CoreService): void {
+function registerMissingBaseServices(coreService: CoreService): number {
+  let registeredCount = 0;
+
   for (const [key, service] of BASE_SERVICE_REGISTRATIONS) {
-    const existing = coreService.tryGetBaseService(key);
-    if (!existing) {
+    if (!coreService.tryGetBaseService(key)) {
       coreService.registerBaseService(key, service);
+      registeredCount += 1;
     }
   }
+
+  return registeredCount;
 }
 
 /**
@@ -48,8 +55,12 @@ export async function initializeCoreBaseServices(): Promise<void> {
   const coreService = CoreService.getInstance();
 
   try {
-    ensureBaseServicesRegistered(coreService);
-    await coreService.initializeAllBaseServices([...BASE_SERVICE_IDS]);
+    const newlyRegistered = registerMissingBaseServices(coreService);
+    if (newlyRegistered > 0 && import.meta.env.DEV) {
+      logger.debug(`[base-services] Registered ${newlyRegistered} base services`);
+    }
+
+    await coreService.initializeAllBaseServices([...CORE_BASE_SERVICE_IDENTIFIERS]);
     logger.debug('[base-services] Base services ready');
   } catch (error) {
     handleBootstrapError(

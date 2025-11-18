@@ -10,6 +10,13 @@ import { NON_CRITICAL_ERROR_STRATEGY, handleBootstrapError } from '@/bootstrap/t
 
 let devToolsRegistered = false;
 
+const isTestMode = import.meta.env.MODE === 'test';
+const isVitestRuntime = Boolean(globalThis.process?.env?.VITEST);
+const allowDevToolsInTests = isTestMode && isVitestRuntime;
+
+const shouldInitializeDevTools = import.meta.env.DEV && (allowDevToolsInTests || !isTestMode);
+const isDevTestRuntime = import.meta.env.DEV && isTestMode;
+
 /**
  * Development environment debugging tools initialization
  *
@@ -24,7 +31,13 @@ let devToolsRegistered = false;
  * @note Development environment only (tree-shaken in production)
  */
 export async function initializeDevTools(): Promise<void> {
-  if (!import.meta.env.DEV) return;
+  if (!shouldInitializeDevTools) {
+    if (isDevTestRuntime) {
+      logger.debug('[dev-tools] Initialization skipped (test mode)');
+    }
+    return;
+  }
+
   if (devToolsRegistered) {
     return;
   }
