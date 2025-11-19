@@ -1,16 +1,36 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { THEME_STORAGE_KEY } from '@shared/constants';
 
-const storageMocks = vi.hoisted(() => ({
-  storageGet: vi.fn<() => Promise<string | undefined>>(),
-  storageSet: vi.fn<(key: string, value: string) => Promise<void>>(),
-}));
+const storageState = vi.hoisted(() => {
+  const data = new Map<string, unknown>();
 
-const { storageGet, storageSet } = storageMocks;
+  const get = vi.fn(async (key: string) => data.get(key));
+  const getSync = vi.fn((key: string) => data.get(key));
+  const set = vi.fn(async (key: string, value: unknown) => {
+    data.set(key, value);
+  });
+
+  return {
+    data,
+    get,
+    getSync,
+    set,
+    reset(): void {
+      data.clear();
+      get.mockClear();
+      getSync.mockClear();
+      set.mockClear();
+    },
+  };
+});
 
 vi.mock('@shared/services/persistent-storage', () => ({
   getPersistentStorage: () => ({
-    get: storageMocks.storageGet,
-    set: storageMocks.storageSet,
+    get: storageState.get,
+    getSync: storageState.getSync,
+    set: storageState.set,
+    setSync: vi.fn(),
   }),
 }));
 
@@ -40,48 +60,36 @@ function ensureMatchMedia(): void {
   });
 }
 
-describe('ThemeService storage reconciliation', () => {
+describe('ThemeService storage (Phase 420: PersistentStorage only)', () => {
   beforeEach(() => {
-    storageGet.mockReset();
-    storageSet.mockReset();
-    storageSet.mockResolvedValue(undefined);
-    getTestStorage().clear();
+    storageState.reset();
     ensureMatchMedia();
   });
 
-  it('prefers local manual theme when persistent is stuck on auto', async () => {
-    storageGet.mockResolvedValue('auto');
-    const storage = getTestStorage();
-    storage.setItem('xeg-theme', 'dark');
+  it('loads manual theme from settings snapshot when available', async () => {
+    storageState.data.set(APP_SETTINGS_STORAGE_KEY, { gallery: { theme: 'dark' } });
 
     const service = new ThemeService();
     await service.initialize();
 
     expect(service.getCurrentTheme()).toBe('dark');
-    expect(storageSet).toHaveBeenCalledWith(expect.any(String), 'dark');
   });
 
-  it('prefers persistent manual theme when local value is auto', async () => {
-    storageGet.mockResolvedValue('light');
-    const storage = getTestStorage();
-    storage.setItem('xeg-theme', 'auto');
+  it('falls back to legacy theme storage when settings snapshot is missing', async () => {
+    storageState.data.set(THEME_STORAGE_KEY, 'light');
 
     const service = new ThemeService();
     await service.initialize();
 
     expect(service.getCurrentTheme()).toBe('light');
-    expect(storage.getItem('xeg-theme')).toBe('light');
   });
 
   it('defaults to auto when no stored value exists', async () => {
-    storageGet.mockResolvedValue(undefined);
-    getTestStorage().removeItem('xeg-theme');
-
     const service = new ThemeService();
     await service.initialize();
 
     expect(service.getCurrentTheme()).toBe('auto');
-    expect(storageSet).not.toHaveBeenCalled();
+    expect(storageState.set).not.toHaveBeenCalled();
   });
 });
 

@@ -6,6 +6,7 @@
  */
 
 import { THEME_STORAGE_KEY } from '@shared/constants';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
@@ -20,6 +21,12 @@ export type Theme = 'light' | 'dark';
  * Theme setting type (includes automatic detection)
  */
 export type ThemeSetting = 'auto' | Theme;
+
+type ThemeSettingsSnapshot = {
+  gallery?: {
+    theme?: ThemeSetting | string | null;
+  } | null;
+} | null;
 
 /**
  * Theme change event listener
@@ -52,19 +59,11 @@ export class ThemeService extends BaseServiceImpl {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
     }
 
-    // Phase 420: Synchronous theme initialization from PersistentStorage
-    // Read persisted theme setting immediately in constructor
-    // This ensures getCurrentTheme() returns correct value before async initialize() completes
-    try {
-      const savedSetting = this.storage.getSync<string>(THEME_STORAGE_KEY);
-      const normalizedSetting = ThemeService.normalizeThemeSetting(savedSetting);
-      if (normalizedSetting) {
-        this.themeSetting = normalizedSetting;
-        logger.debug(`[ThemeService] Loaded theme from PersistentStorage: ${normalizedSetting}`);
-      }
-    } catch (error) {
-      logger.debug('[ThemeService] Failed to load theme synchronously:', error);
-    }
+    this.loadPersistedThemeSetting();
+
+    // Apply initial theme immediately (whether loaded from storage or default 'auto')
+    // This prevents FOUC by applying the theme before the async initialization phase
+    this.applyCurrentTheme(true);
   }
 
   /**
@@ -86,16 +85,12 @@ export class ThemeService extends BaseServiceImpl {
    * Restore theme setting (Phase 420: PersistentStorage only)
    */
   private async restoreThemeSetting(): Promise<void> {
-    try {
-      const savedSetting = await this.storage.get<string>(THEME_STORAGE_KEY);
-      const normalizedSetting = ThemeService.normalizeThemeSetting(savedSetting);
+    const restoredSetting =
+      (await this.readThemeFromSettingsAsync()) ?? (await this.readLegacyThemeSettingAsync());
 
-      if (normalizedSetting && normalizedSetting !== this.themeSetting) {
-        this.themeSetting = normalizedSetting;
-        logger.debug(`[ThemeService] Restored theme setting: ${normalizedSetting}`);
-      }
-    } catch (error) {
-      logger.warn('Failed to restore theme setting from storage:', error);
+    if (restoredSetting && restoredSetting !== this.themeSetting) {
+      this.themeSetting = restoredSetting;
+      logger.debug(`[ThemeService] Restored theme setting: ${restoredSetting}`);
     }
   }
 
@@ -298,6 +293,76 @@ export class ThemeService extends BaseServiceImpl {
 
     this.listeners.clear();
     this.onMediaQueryChange = null;
+  }
+
+  private loadPersistedThemeSetting(): void {
+    const settingsTheme = this.readThemeFromSettingsSync();
+    if (settingsTheme) {
+      this.themeSetting = settingsTheme;
+      logger.debug(`[ThemeService] Loaded theme from settings snapshot: ${settingsTheme}`);
+      return;
+    }
+
+    const legacyTheme = this.readLegacyThemeSettingSync();
+    if (legacyTheme) {
+      this.themeSetting = legacyTheme;
+      logger.debug(`[ThemeService] Loaded theme from legacy storage: ${legacyTheme}`);
+    }
+  }
+
+  private readThemeFromSettingsSync(): ThemeSetting | null {
+    try {
+      const snapshot = this.storage.getSync<ThemeSettingsSnapshot>(APP_SETTINGS_STORAGE_KEY);
+      return ThemeService.extractThemeFromSettingsSnapshot(snapshot);
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to read theme from settings synchronously:', error);
+      return null;
+    }
+  }
+
+  private async readThemeFromSettingsAsync(): Promise<ThemeSetting | null> {
+    try {
+      const snapshot = await this.storage.get<ThemeSettingsSnapshot>(APP_SETTINGS_STORAGE_KEY);
+      return ThemeService.extractThemeFromSettingsSnapshot(snapshot);
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to read theme from settings:', error);
+      return null;
+    }
+  }
+
+  private readLegacyThemeSettingSync(): ThemeSetting | null {
+    try {
+      const savedSetting = this.storage.getSync<string>(THEME_STORAGE_KEY);
+      return ThemeService.normalizeThemeSetting(savedSetting);
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to load legacy theme synchronously:', error);
+      return null;
+    }
+  }
+
+  private async readLegacyThemeSettingAsync(): Promise<ThemeSetting | null> {
+    try {
+      const savedSetting = await this.storage.get<string>(THEME_STORAGE_KEY);
+      return ThemeService.normalizeThemeSetting(savedSetting);
+    } catch (error) {
+      logger.warn('Failed to restore theme setting from legacy storage:', error);
+      return null;
+    }
+  }
+
+  private static extractThemeFromSettingsSnapshot(
+    snapshot?: ThemeSettingsSnapshot
+  ): ThemeSetting | null {
+    if (!snapshot || typeof snapshot !== 'object') {
+      return null;
+    }
+
+    const candidate = snapshot.gallery?.theme;
+    if (candidate === undefined || candidate === null) {
+      return null;
+    }
+
+    return ThemeService.normalizeThemeSetting(candidate);
   }
 }
 

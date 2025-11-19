@@ -7,6 +7,7 @@ import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { getCookieService } from '@shared/services/cookie-service';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
 
 export type TokenSource = 'script' | 'cookie' | 'session' | 'storage';
 
@@ -203,7 +204,9 @@ export class TwitterTokenExtractor {
   private async extractFromPersistentStorage(): Promise<TokenExtractionResult | null> {
     try {
       const storage = getPersistentStorage();
-      const settings = await storage.get<{ tokens?: { bearerToken?: string } }>('xeg-app-settings');
+      const settings = await storage.get<{ tokens?: { bearerToken?: string } }>(
+        APP_SETTINGS_STORAGE_KEY
+      );
       const token = settings?.tokens?.bearerToken;
 
       if (token && this.isValidTokenFormat(token)) {

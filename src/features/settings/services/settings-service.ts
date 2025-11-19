@@ -6,6 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
 import type {
   AppSettings,
   NestedSettingKey,
@@ -19,7 +20,6 @@ import { computeCurrentSettingsSchemaHash } from './settings-schema';
 /**
  * Settings storage key
  */
-const STORAGE_KEY = 'xeg-app-settings';
 
 type SettingsCategoryKey =
   | 'gallery'
@@ -385,7 +385,7 @@ export class SettingsService {
       // Phase 431: PersistentStorage.get<T>() already performs JSON.parse(),
       // use returned object directly (prevent double parsing)
       type WithSchemaHash = AppSettings & { __schemaHash?: string };
-      const stored = await this.storage.get<WithSchemaHash>(STORAGE_KEY);
+      const stored = await this.storage.get<WithSchemaHash>(APP_SETTINGS_STORAGE_KEY);
       if (!stored) {
         logger.debug('No saved settings, using defaults');
         // Include current schema hash on first save for consistency
@@ -433,7 +433,7 @@ export class SettingsService {
         ...this.settings,
         __schemaHash: this.schemaHash,
       };
-      await this.storage.set(STORAGE_KEY, withHash);
+      await this.storage.set(APP_SETTINGS_STORAGE_KEY, withHash);
       logger.debug('Settings saved');
     } catch (error) {
       logger.error('Settings save failed:', error);

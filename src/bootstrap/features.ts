@@ -23,9 +23,9 @@ import {
   type SettingsWithFeatures,
 } from '@shared/utils/conditional-loading';
 import { DEFAULT_SETTINGS } from '@/constants/default-settings';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
 import { reportBootstrapError } from '@/bootstrap/types';
 
-const SETTINGS_STORAGE_KEY = 'xeg-app-settings';
 const isDevBuild = import.meta.env.DEV;
 const debug = isDevBuild ? (message: string) => logger.debug(message) : () => {};
 
@@ -73,7 +73,7 @@ async function loadFeatureSettings(): Promise<SettingsWithFeatures> {
   try {
     const { getPersistentStorage } = await import('@shared/services/persistent-storage');
     const storage = getPersistentStorage();
-    const stored = await storage.get<Record<string, unknown>>(SETTINGS_STORAGE_KEY);
+    const stored = await storage.get<Record<string, unknown>>(APP_SETTINGS_STORAGE_KEY);
 
     if (stored && typeof stored === 'object' && 'features' in stored) {
       const candidate = (stored as Partial<SettingsWithFeatures>).features;

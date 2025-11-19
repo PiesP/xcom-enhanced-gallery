@@ -76,8 +76,11 @@ describe('Phase 34 Step 1: Style utilities canonicalization', () => {
 
   describe('applyTheme usage detection', () => {
     it('should detect applyTheme is not used in codebase', () => {
-      // 정의 파일 제외
-      const excludePaths = ['src/shared/utils/styles/index.ts'];
+      // 정의 파일 및 주석 참조 제외
+      const excludePaths = [
+        'src/shared/utils/styles/index.ts',
+        'src/shared/services/persistent-storage.ts',
+      ];
 
       const usages = findSymbolUsages('applyTheme', excludePaths);
 

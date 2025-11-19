@@ -25,6 +25,11 @@ export { CSS } from './css';
 export { SERVICE_KEYS } from './service-keys';
 
 // ================================
+// Storage
+// ================================
+export { APP_SETTINGS_STORAGE_KEY } from './storage';
+
+// ================================
 // Twitter API
 // ================================
 export { TWITTER_API_CONFIG } from './twitter-api';

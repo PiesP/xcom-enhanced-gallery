@@ -279,7 +279,7 @@ export class PersistentStorage {
    * ```typescript
    * // ThemeService constructor
    * const theme = storage.getSync<string>('theme', 'light');
-   * this.applyTheme(theme);
+   * // Apply the theme to your UI
    * ```
    */
   getSync<T>(key: string, defaultValue?: T): T | undefined {
