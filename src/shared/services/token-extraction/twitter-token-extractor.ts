@@ -7,7 +7,7 @@ import { logger } from '@shared/logging';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
 import { getCookieService } from '@shared/services/cookie-service';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 
 export type TokenSource = 'script' | 'cookie' | 'session' | 'storage';
 

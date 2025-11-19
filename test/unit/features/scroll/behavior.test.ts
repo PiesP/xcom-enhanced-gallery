@@ -180,9 +180,7 @@ describe('Native Scroll Behavior', () => {
 
     it('should NOT have preventScrollPropagation helper in performance utilities', async () => {
       // RED: performance utilities에서 preventScrollPropagation 제거 확인
-      const performanceUtils = await import(
-        '../../../../src/shared/utils/performance/performance-utils'
-      );
+      const performanceUtils = await import('../../../../src/shared/utils/performance');
 
       // preventScrollPropagation 함수가 존재하지 않아야 함
       expect(performanceUtils).not.toHaveProperty('preventScrollPropagation');

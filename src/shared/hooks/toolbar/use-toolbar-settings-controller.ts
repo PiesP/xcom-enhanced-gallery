@@ -31,7 +31,7 @@ import {
   LanguageService,
   languageService as sharedLanguageService,
 } from '../../services/language-service';
-import { throttleScroll } from '../../utils/performance/performance-utils';
+import { throttleScroll } from '../../utils/performance';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
 import { evaluateHighContrast } from '../../utils/high-contrast';

@@ -3,7 +3,7 @@
  */
 import type { FocusState, FocusTracking } from '../../state/focus';
 import { updateFocusTracking } from '../../state/focus';
-import { createDebouncer } from '../../utils/performance/performance-utils';
+import { createDebouncer } from '../../utils/performance';
 
 /**
  * Focus State Manager Service - Debounced state synchronization

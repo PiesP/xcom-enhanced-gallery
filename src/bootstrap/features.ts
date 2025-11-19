@@ -22,8 +22,8 @@ import {
   type FeatureKey,
   type SettingsWithFeatures,
 } from '@shared/utils/conditional-loading';
-import { DEFAULT_SETTINGS } from '@/constants/default-settings';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { DEFAULT_SETTINGS } from '@/constants';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import { reportBootstrapError } from '@/bootstrap/types';
 
 const isDevBuild = import.meta.env.DEV;

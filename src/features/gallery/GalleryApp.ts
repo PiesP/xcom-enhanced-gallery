@@ -73,50 +73,6 @@ export class GalleryApp {
   }
 
   /**
-   * Delayed initialization of SettingsService (Phase 258 optimization, Phase 326.2 enhancement)
-   *
-   * Removed from bootstrap/features.ts, loaded at gallery initialization time
-   * This reduces bootstrap time by 30-50%.
-   *
-   * Phase 326.2 improvements:
-   * - Dynamic import loads Settings service only (UI components loaded as needed)
-   * - Works with preload strategy (executePreloadStrategy → preloadOptionalChunks)
-   * - Tree-shaking can exclude unused Settings UI
-   *
-   * Benefits:
-   * - Initial bootstrap: 5-10% faster
-   * - Settings UI load: Only when needed (first open ~50ms delay)
-   */
-  private async ensureSettingsServiceInitialized(): Promise<void> {
-    try {
-      const { tryGetSettingsManager, registerSettingsManager } = await import(
-        '../../shared/container/service-accessors'
-      );
-      const existingSettings = tryGetSettingsManager();
-
-      if (existingSettings) {
-        logger.debug('[GalleryApp] SettingsService already initialized');
-        return;
-      }
-
-      logger.debug('[GalleryApp] Initializing SettingsService (Phase 258, Phase 326.2)');
-
-      // Delayed SettingsService load (Phase 326.2)
-      const { SettingsService } = await import('../settings/services/settings-service');
-
-      const settingsService = new SettingsService();
-      await settingsService.initialize();
-      registerSettingsManager(settingsService);
-      this.settingsService = settingsService;
-
-      logger.debug('[GalleryApp] ✅ SettingsService initialized');
-    } catch (error) {
-      logger.warn('[GalleryApp] SettingsService initialization failed (non-critical):', error);
-      // SettingsService initialization failure does not affect gallery operation
-    }
-  }
-
-  /**
    * Gallery app initialization
    */
   public async initialize(): Promise<void> {
@@ -124,34 +80,49 @@ export class GalleryApp {
       logger.info('[GalleryApp] Initialization started');
 
       // Phase 317: Environment guard - Check Tampermonkey API availability
+      // Phase 420: Simplified check - PersistentStorage handles missing APIs gracefully
+      // We only warn if absolutely no storage capability is detected, but proceed anyway
+      // to allow basic functionality (viewing) even if settings/download might fail.
       const hasRequiredGMAPIs = isGMAPIAvailable('download') || isGMAPIAvailable('setValue');
       if (!hasRequiredGMAPIs) {
-        logger.warn(
-          '[GalleryApp] Tampermonkey APIs not available - gallery will display system notification only'
-        );
-        // Notify user and abort initialization
-        void this.notificationService.error(
-          'Tampermonkey not installed',
-          'This app requires Tampermonkey or similar userscript manager.'
-        );
-        this.isInitialized = false;
-        return;
+        logger.warn('[GalleryApp] Tampermonkey APIs limited - some features may be unavailable');
       }
 
       // Phase 258: Delayed SettingsService load (bootstrap optimization)
       // Removed from bootstrap/features.ts, loaded here
-      await this.ensureSettingsServiceInitialized();
+      // Phase 420: Simplified initialization
+      try {
+        const { SettingsService } = await import('../settings/services/settings-service');
+        const { registerSettingsManager } = await import(
+          '../../shared/container/service-accessors'
+        );
+
+        const settingsService = new SettingsService();
+        await settingsService.initialize();
+        registerSettingsManager(settingsService);
+        this.settingsService = settingsService;
+        logger.debug('[GalleryApp] ✅ SettingsService initialized');
+      } catch (error) {
+        logger.warn('[GalleryApp] SettingsService initialization failed (non-critical):', error);
+      }
 
       // Phase 415: Verify theme initialization and sync from SettingsService
       try {
         // Phase 360: Use ThemeService (already initialized in base-services)
-        // Legacy initializeTheme() removed to prevent overwriting PersistentStorage settings with localStorage defaults
         const { getThemeService } = await import('../../shared/container/service-accessors');
         const themeService = getThemeService();
 
+        // Ensure ThemeService is initialized (loads settings asynchronously)
+        if (!themeService.isInitialized()) {
+          await themeService.initialize();
+        }
+
         // Sync theme from SettingsService to ThemeService if SettingsService is initialized
         if (this.settingsService) {
-          themeService.bindSettingsService(this.settingsService);
+          themeService.bindSettingsService(
+            this
+              .settingsService as unknown as import('../../shared/services/theme-service').SettingsServiceLike
+          );
         }
 
         logger.debug(`[GalleryApp] Theme confirmed: ${themeService.getCurrentTheme()}`);
@@ -164,15 +135,6 @@ export class GalleryApp {
 
       this.isInitialized = true;
       logger.info('[GalleryApp] ✅ Initialization complete');
-
-      if (__IS_DEV__) {
-        (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug = {
-          openGallery: this.openGallery.bind(this),
-          closeGallery: this.closeGallery.bind(this),
-          getDiagnostics: this.getDiagnostics.bind(this),
-        };
-        logger.debug('[GalleryApp] Debug API exposed: xegGalleryDebug');
-      }
     } catch (error) {
       logger.error('[GalleryApp] ❌ Initialization failed:', error);
       throw error;

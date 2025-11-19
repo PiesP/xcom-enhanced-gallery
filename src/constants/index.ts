@@ -5,7 +5,7 @@
  * - import { SELECTORS } from '@/constants';
  *
  * App runtime config is available via the dedicated module to avoid duplicate exposures:
- * - import { APP_CONFIG, createAppConfig } from '@/constants/app-config';
+ * - import { createAppConfig } from '@/constants/app-config';
  */
 
 // ================================

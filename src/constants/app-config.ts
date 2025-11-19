@@ -56,7 +56,6 @@ const resolvedAppConfig = Object.freeze({
   },
   runtime: {
     autoStart: autoStartFlag ?? true,
-    blockExternalTimelineMutations: true,
   },
   limits: {
     maxGalleryItems: MAX_GALLERY_ITEMS,
@@ -79,12 +78,12 @@ const resolvedAppConfig = Object.freeze({
 
 export type ResolvedAppConfig = typeof resolvedAppConfig;
 
-export const APP_CONFIG: ResolvedAppConfig = resolvedAppConfig;
+const APP_CONFIG: ResolvedAppConfig = resolvedAppConfig;
 
 /**
  * Lightweight getter to emphasize read-only usage and simplify future memoization.
  */
-export function getAppConfig(): ResolvedAppConfig {
+function getAppConfig(): ResolvedAppConfig {
   return APP_CONFIG;
 }
 

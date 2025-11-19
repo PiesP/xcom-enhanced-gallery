@@ -6,7 +6,7 @@
  */
 
 import { THEME_STORAGE_KEY } from '@shared/constants';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
@@ -38,6 +38,7 @@ export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
  */
 export interface SettingsServiceLike {
   get?: (key: string) => unknown;
+  set?: (key: string, value: unknown) => Promise<void> | void;
   subscribe?: (
     listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void
   ) => () => void;
@@ -122,10 +123,23 @@ export class ThemeService extends BaseServiceImpl {
     try {
       const settingsTheme = settingsService.get?.('gallery.theme');
       const normalized = ThemeService.normalizeThemeSetting(settingsTheme);
-      if (normalized && normalized !== this.themeSetting) {
-        this.themeSetting = normalized;
-        this.applyCurrentTheme(true);
-        logger.debug(`[ThemeService] Synced initial theme from SettingsService: ${normalized}`);
+
+      if (normalized) {
+        // Phase 420 Fix: Don't overwrite legacy theme with default 'auto' from Settings
+        // This prevents the "auto overrides specific mode" issue on first launch
+        if (normalized === 'auto' && this.themeSetting !== 'auto') {
+          logger.debug(
+            '[ThemeService] Ignoring default auto from SettingsService in favor of legacy setting'
+          );
+          // Sync our specific theme back to SettingsService so it persists there too
+          if (typeof settingsService.set === 'function') {
+            void settingsService.set('gallery.theme', this.themeSetting);
+          }
+        } else if (normalized !== this.themeSetting) {
+          this.themeSetting = normalized;
+          this.applyCurrentTheme(true);
+          logger.debug(`[ThemeService] Synced initial theme from SettingsService: ${normalized}`);
+        }
       }
     } catch (err) {
       logger.debug('[ThemeService] Failed to sync theme from SettingsService', err);

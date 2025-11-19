@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import { THEME_STORAGE_KEY } from '@shared/constants';
 
 const storageState = vi.hoisted(() => {

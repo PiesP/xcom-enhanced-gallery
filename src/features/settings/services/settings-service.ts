@@ -6,7 +6,7 @@
 
 import { logger } from '@shared/logging';
 import { getPersistentStorage } from '@shared/services/persistent-storage';
-import { APP_SETTINGS_STORAGE_KEY } from '@/constants/storage';
+import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import type {
   AppSettings,
   NestedSettingKey,

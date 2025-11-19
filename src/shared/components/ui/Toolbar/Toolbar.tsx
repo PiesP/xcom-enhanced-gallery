@@ -128,7 +128,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const currentIndex = toRequiredAccessor(() => props.currentIndex, 0);
   const totalCount = toRequiredAccessor(() => props.totalCount, 0);
   const focusedIndex = toRequiredAccessor(() => props.focusedIndex, null);
-  const isDownloading = toRequiredAccessor(() => props.isDownloading, false);
+  const isDownloadingProp = toRequiredAccessor(() => props.isDownloading, false);
   const isDisabled = toRequiredAccessor(() => props.disabled, false);
   const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
   const tweetText = toOptionalAccessor(() => props.tweetText);
@@ -160,7 +160,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   createEffect(
-    on(isDownloading, value => {
+    on(isDownloadingProp, value => {
       toolbarActions.setDownloading(Boolean(value));
     })
   );
@@ -220,7 +220,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     computeNavigationState({
       total: totalItems(),
       toolbarDisabled: Boolean(isDisabled()),
-      downloadBusy: Boolean(isDownloading()),
+      downloadBusy: Boolean(isDownloadingProp() || toolbarState.isDownloading),
       currentIndex: currentIndexForNav(),
     })
   );
@@ -278,7 +278,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       currentIndex={currentIndex}
       focusedIndex={focusedIndex}
       totalCount={totalCount}
-      isDownloading={isDownloading}
+      isDownloading={isDownloadingProp}
       disabled={isDisabled}
       aria-label={props['aria-label']}
       aria-describedby={props['aria-describedby']}
