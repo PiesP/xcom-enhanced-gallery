@@ -36,18 +36,11 @@ type Accessor<T> = () => T;
 const isAccessor = <T,>(value: MaybeAccessor<T> | undefined): value is Accessor<T> =>
   typeof value === 'function';
 
-const toRequiredAccessor = <T,>(value: MaybeAccessor<T> | undefined, fallback: T): Accessor<T> => {
+const resolveAccessor = <T,>(value: MaybeAccessor<T> | undefined, fallback?: T): T => {
   if (isAccessor(value)) {
-    return value;
+    return value();
   }
-  return () => value ?? fallback;
-};
-
-const toOptionalAccessor = <T,>(value: MaybeAccessor<T> | undefined): Accessor<T | undefined> => {
-  if (isAccessor(value)) {
-    return value;
-  }
-  return () => value;
+  return value ?? (fallback as T);
 };
 
 const FIT_MODE_LABELS: Record<FitMode, { label: string; title: string }> = {
@@ -147,14 +140,14 @@ const createGuardedHandler = (
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const props = mergeProps(DEFAULT_PROPS, rawProps);
 
-  const currentIndex = toRequiredAccessor(props.currentIndex, 0);
-  const totalCount = toRequiredAccessor(props.totalCount, 0);
-  const focusedIndex = toRequiredAccessor(props.focusedIndex, null);
-  const isDownloading = toRequiredAccessor(props.isDownloading, false);
-  const isDisabled = toRequiredAccessor(props.disabled, false);
-  const currentFitMode = toOptionalAccessor(props.currentFitMode);
-  const tweetText = toOptionalAccessor(props.tweetText);
-  const tweetTextHTML = toOptionalAccessor(props.tweetTextHTML);
+  const currentIndex = () => resolveAccessor(props.currentIndex, 0);
+  const totalCount = () => resolveAccessor(props.totalCount, 0);
+  const focusedIndex = () => resolveAccessor(props.focusedIndex, null);
+  const isDownloading = () => resolveAccessor(props.isDownloading, false);
+  const isDisabled = () => resolveAccessor(props.disabled, false);
+  const currentFitMode = () => resolveAccessor(props.currentFitMode);
+  const tweetText = () => resolveAccessor(props.tweetText);
+  const tweetTextHTML = () => resolveAccessor(props.tweetTextHTML);
 
   const [toolbarState, toolbarActions] = useToolbarState();
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);

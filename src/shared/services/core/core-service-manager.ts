@@ -114,6 +114,12 @@ export class CoreService {
       return this.registry.get<T>(key);
     }
 
+    // Check lifecycle manager (BaseServices)
+    const baseService = this.lifecycle.tryGetBaseService(key);
+    if (baseService) {
+      return baseService as unknown as T;
+    }
+
     // Fall back to factory
     const fromFactory = this.factory.createFromFactory<T>(key);
     if (fromFactory !== null) {
@@ -144,6 +150,12 @@ export class CoreService {
     if (fromRegistry !== null) {
       return fromRegistry;
     }
+
+    const baseService = this.lifecycle.tryGetBaseService(key);
+    if (baseService) {
+      return baseService as unknown as T;
+    }
+
     return this.factory.createFromFactory<T>(key);
   }
 
@@ -156,7 +168,11 @@ export class CoreService {
    * @internal Phase 309: Used to query service availability
    */
   public has(key: string): boolean {
-    return this.registry.has(key) || this.factory.hasFactory(key);
+    return (
+      this.registry.has(key) ||
+      !!this.lifecycle.tryGetBaseService(key) ||
+      this.factory.hasFactory(key)
+    );
   }
 
   /**

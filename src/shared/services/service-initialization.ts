@@ -33,10 +33,12 @@ export async function registerCoreServices(): Promise<void> {
   // Individual UI services share the singleton instances that are also managed
   // via BaseService registration to avoid divergent state between containers.
   const { themeService } = await import('./theme-service');
-  serviceManager.register(SERVICE_KEYS.THEME, themeService);
+  serviceManager.registerBaseService(SERVICE_KEYS.THEME, themeService);
+  await serviceManager.initializeBaseService(SERVICE_KEYS.THEME);
 
   const { languageService } = await import('./language-service');
-  serviceManager.register(SERVICE_KEYS.LANGUAGE, languageService);
+  serviceManager.registerBaseService(SERVICE_KEYS.LANGUAGE, languageService);
+  await serviceManager.initializeBaseService(SERVICE_KEYS.LANGUAGE);
 
   // ====================================
   // Services maintained independently
