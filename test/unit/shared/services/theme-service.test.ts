@@ -38,6 +38,27 @@ vi.mock('@shared/utils/theme-dom', () => ({
   syncThemeAttributes: vi.fn(),
 }));
 
+// Mock the container service accessor for settings subscription
+const settingsSubscribers: Array<
+  (event: { key: string; oldValue: unknown; newValue: unknown }) => void
+> = [];
+const fakeSettingsService = {
+  get: vi.fn((key: string) => undefined),
+  subscribe: vi.fn(
+    (listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void) => {
+      settingsSubscribers.push(listener);
+      return () => {
+        const idx = settingsSubscribers.indexOf(listener);
+        if (idx >= 0) settingsSubscribers.splice(idx, 1);
+      };
+    }
+  ),
+};
+
+vi.mock('@shared/container/service-accessors', () => ({
+  tryGetSettingsManager: () => fakeSettingsService,
+}));
+
 // The module under test is imported after mocks are declared.
 import { ThemeService } from '@shared/services/theme-service';
 
@@ -64,6 +85,10 @@ describe('ThemeService storage (Phase 420: PersistentStorage only)', () => {
   beforeEach(() => {
     storageState.reset();
     ensureMatchMedia();
+    // Clear any previous subscribers to avoid cross-test leakage
+    settingsSubscribers.length = 0;
+    fakeSettingsService.get.mockClear?.();
+    fakeSettingsService.subscribe.mockClear?.();
   });
 
   it('loads manual theme from settings snapshot when available', async () => {
@@ -90,6 +115,27 @@ describe('ThemeService storage (Phase 420: PersistentStorage only)', () => {
 
     expect(service.getCurrentTheme()).toBe('auto');
     expect(storageState.set).not.toHaveBeenCalled();
+  });
+
+  it('subscribes to SettingsService changes and updates theme accordingly', async () => {
+    // Ensure no persisted setting exists
+    const service = new ThemeService();
+    await service.initialize();
+
+    // Subscribe should be attached via ThemeService.onInitialize
+    expect(fakeSettingsService.subscribe).toHaveBeenCalled();
+
+    // Simulate a SettingsService change to 'dark'
+    const callback = settingsSubscribers[0];
+    expect(callback).toBeDefined();
+
+    // Fire change event
+    callback({ key: 'gallery.theme', oldValue: 'auto', newValue: 'dark' });
+
+    // Theme should update
+    expect(service.getCurrentTheme()).toBe('dark');
+    // Persisted storage should be updated
+    expect(storageState.set).toHaveBeenCalledWith(THEME_STORAGE_KEY, 'dark');
   });
 });
 

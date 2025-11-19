@@ -49,6 +49,7 @@ export class ThemeService extends BaseServiceImpl {
   private currentTheme: Theme = 'light';
   private themeSetting: ThemeSetting = 'auto';
   private readonly listeners: Set<ThemeChangeListener> = new Set();
+  private settingsUnsubscribe: (() => void) | null = null;
   private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
     null;
 
@@ -79,6 +80,56 @@ export class ThemeService extends BaseServiceImpl {
 
     // Apply initial theme
     this.applyCurrentTheme(true);
+
+    // Attempt to subscribe to SettingsService changes to keep ThemeService in sync
+    try {
+      const { tryGetSettingsManager } = await import('@shared/container/service-accessors');
+      type SettingsServiceLike = {
+        get?: (key: string) => unknown;
+        subscribe?: (
+          listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void
+        ) => () => void;
+      };
+      const settingsService = tryGetSettingsManager() as SettingsServiceLike | null;
+
+      if (typeof settingsService?.subscribe === 'function') {
+        // Sync any currently stored value from SettingsService if present
+        try {
+          const settingsTheme = settingsService.get?.('gallery.theme');
+          const normalized = ThemeService.normalizeThemeSetting(settingsTheme);
+          if (normalized && normalized !== this.themeSetting) {
+            this.themeSetting = normalized;
+            this.applyCurrentTheme(true);
+          }
+        } catch (err) {
+          logger.debug(
+            '[ThemeService] Failed to read theme from SettingsService during initialize',
+            err
+          );
+        }
+
+        // Subscribe to subsequent changes
+        const unsubscribe = settingsService.subscribe?.(event => {
+          try {
+            if (event?.key === 'gallery.theme') {
+              const normalized = ThemeService.normalizeThemeSetting(event.newValue) ?? 'auto';
+              if (normalized !== this.themeSetting) {
+                this.themeSetting = normalized;
+                void this.saveThemeSetting();
+                this.applyCurrentTheme();
+              }
+            }
+          } catch (err) {
+            logger.warn('[ThemeService] Error while handling SettingsService theme change', err);
+          }
+        });
+
+        this.settingsUnsubscribe = unsubscribe ?? null;
+      }
+    } catch (err) {
+      // No settings service available or import failed; ignore and continue
+      logger.debug('[ThemeService] SettingsService subscription not available', err);
+    }
   }
 
   /**
@@ -293,6 +344,16 @@ export class ThemeService extends BaseServiceImpl {
 
     this.listeners.clear();
     this.onMediaQueryChange = null;
+
+    // Unsubscribe from settings change events if subscribed
+    if (this.settingsUnsubscribe) {
+      try {
+        this.settingsUnsubscribe();
+      } catch {
+        // ignore
+      }
+      this.settingsUnsubscribe = null;
+    }
   }
 
   private loadPersistedThemeSetting(): void {
