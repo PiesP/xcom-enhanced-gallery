@@ -196,6 +196,10 @@ export function useToolbarSettingsController(
     undefined
   );
 
+  const toThemeOption = (value: unknown): ThemeOption => {
+    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
+  };
+
   // Fix: Read initial theme from ThemeService instead of hardcoded 'auto'
   const getInitialTheme = (): ThemeOption => {
     try {
@@ -215,10 +219,6 @@ export function useToolbarSettingsController(
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
     languageService.getCurrentLanguage() as LanguageOption
   );
-
-  const toThemeOption = (value: unknown): ThemeOption => {
-    return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
-  };
 
   const syncThemeFromService = () => {
     try {
