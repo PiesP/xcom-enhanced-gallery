@@ -206,6 +206,7 @@ export class ThemeService extends BaseServiceImpl {
 
     try {
       storage.setItem(THEME_STORAGE_KEY, setting);
+      logger.debug(`[ThemeService] Persisted to local storage: ${setting}`);
     } catch (error) {
       logger.debug('[ThemeService] Failed to write theme to local storage:', error);
     }

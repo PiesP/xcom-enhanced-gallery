@@ -557,9 +557,9 @@ function VerticalGalleryViewCore({
           onClose={onClose || (() => {})}
           onPrevious={onPrevious || (() => {})}
           onNext={onNext || (() => {})}
-          currentIndex={toolbarViewModel().currentIndex}
-          focusedIndex={toolbarViewModel().focusedIndex}
-          totalCount={toolbarViewModel().totalCount}
+          currentIndex={() => toolbarViewModel().currentIndex}
+          focusedIndex={() => toolbarViewModel().focusedIndex}
+          totalCount={() => toolbarViewModel().totalCount}
           isDownloading={isDownloading()}
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
@@ -569,8 +569,8 @@ function VerticalGalleryViewCore({
           onFitContainer={handleFitContainer}
           currentFitMode={imageFitMode()}
           onOpenSettings={() => {}}
-          tweetText={toolbarViewModel().tweetText ?? undefined}
-          tweetTextHTML={toolbarViewModel().tweetTextHTML ?? undefined}
+          tweetText={() => toolbarViewModel().tweetText ?? undefined}
+          tweetTextHTML={() => toolbarViewModel().tweetTextHTML ?? undefined}
           className={styles.toolbar || ''}
         />
       </div>
