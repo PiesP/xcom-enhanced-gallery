@@ -15,12 +15,9 @@ import {
   ArrowsUpDown,
 } from '@shared/components/ui/Icon';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
-import type {
-  ToolbarProps,
-  FitMode,
-  MaybeAccessor,
-} from '@shared/components/ui/Toolbar/Toolbar.types';
+import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
 import styles from './Toolbar.module.css';
+import { toOptionalAccessor, toRequiredAccessor } from './accessor-utils';
 
 const solid = getSolid();
 const { mergeProps, createMemo, createEffect, on, createSignal } = solid;
@@ -30,25 +27,6 @@ const DEFAULT_PROPS = {
   disabled: false,
   className: '',
 } as const;
-
-type Accessor<T> = () => T;
-
-const isAccessor = <T,>(value: MaybeAccessor<T> | undefined): value is Accessor<T> =>
-  typeof value === 'function';
-
-const toRequiredAccessor = <T,>(value: MaybeAccessor<T> | undefined, fallback: T): Accessor<T> => {
-  if (isAccessor(value)) {
-    return value;
-  }
-  return () => value ?? fallback;
-};
-
-const toOptionalAccessor = <T,>(value: MaybeAccessor<T> | undefined): Accessor<T | undefined> => {
-  if (isAccessor(value)) {
-    return value;
-  }
-  return () => value;
-};
 
 const FIT_MODE_LABELS: Record<FitMode, { label: string; title: string }> = {
   original: { label: '원본 크기', title: '원본 크기 (1:1)' },
@@ -147,14 +125,14 @@ const createGuardedHandler = (
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const props = mergeProps(DEFAULT_PROPS, rawProps);
 
-  const currentIndex = toRequiredAccessor(props.currentIndex, 0);
-  const totalCount = toRequiredAccessor(props.totalCount, 0);
-  const focusedIndex = toRequiredAccessor(props.focusedIndex, null);
-  const isDownloading = toRequiredAccessor(props.isDownloading, false);
-  const isDisabled = toRequiredAccessor(props.disabled, false);
-  const currentFitMode = toOptionalAccessor(props.currentFitMode);
-  const tweetText = toOptionalAccessor(props.tweetText);
-  const tweetTextHTML = toOptionalAccessor(props.tweetTextHTML);
+  const currentIndex = toRequiredAccessor(() => props.currentIndex, 0);
+  const totalCount = toRequiredAccessor(() => props.totalCount, 0);
+  const focusedIndex = toRequiredAccessor(() => props.focusedIndex, null);
+  const isDownloading = toRequiredAccessor(() => props.isDownloading, false);
+  const isDisabled = toRequiredAccessor(() => props.disabled, false);
+  const currentFitMode = toOptionalAccessor(() => props.currentFitMode);
+  const tweetText = toOptionalAccessor(() => props.tweetText);
+  const tweetTextHTML = toOptionalAccessor(() => props.tweetTextHTML);
 
   const [toolbarState, toolbarActions] = useToolbarState();
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);

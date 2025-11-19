@@ -219,7 +219,32 @@ async function buildHarness(): Promise<void> {
  * **호출 시점**: 모든 E2E 테스트 시작 전 한 번
  * **실행 환경**: Node.js (브라우저 아님)
  * **결과**: 환경 변수 설정 및 캐시 파일 생성
+ *
+ * Phase 415: Added test server startup for localStorage tests
  */
 export default async function globalSetup(): Promise<void> {
   await buildHarness();
+
+  // Start local HTTP server for E2E tests (resolves localStorage SecurityError)
+  const { startTestServer } = await import('./test-server.js');
+  const testServerURL = await startTestServer({ port: 3456 });
+  process.env.XEG_TEST_SERVER_URL = testServerURL;
+
+  const isCI = process.env.CI === 'true';
+  if (!isCI) {
+    console.log(`[Test Server] ✓ Started: ${testServerURL}`);
+  }
+}
+
+/**
+ * Global teardown - cleanup test server
+ */
+export async function globalTeardown(): Promise<void> {
+  const { stopTestServer } = await import('./test-server.js');
+  await stopTestServer();
+
+  const isCI = process.env.CI === 'true';
+  if (!isCI) {
+    console.log('[Test Server] ✓ Stopped');
+  }
 }

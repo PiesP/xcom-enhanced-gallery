@@ -35,7 +35,7 @@ import { throttleScroll } from '../../utils/performance/performance-utils';
 import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
 import { evaluateHighContrast } from '../../utils/high-contrast';
-import { getThemeService } from '../../container/service-accessors';
+import { getThemeService, tryGetSettingsManager } from '../../container/service-accessors';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
@@ -200,13 +200,15 @@ export function useToolbarSettingsController(
     return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
   };
 
-  // Fix: Read initial theme from ThemeService instead of hardcoded 'auto'
+  // Fix: Read initial theme from ThemeService (remove isInitialized check)
+  // The service should return persisted theme even during initialization
   const getInitialTheme = (): ThemeOption => {
     try {
       const service = resolveThemeService(providedThemeService);
-      if (typeof service.isInitialized === 'function' && service.isInitialized()) {
-        return toThemeOption(service.getCurrentTheme());
-      }
+      // Try to get current theme even if service is not fully initialized
+      // ThemeService.getCurrentTheme() returns themeSetting which is set in constructor
+      const currentSetting = service.getCurrentTheme();
+      return toThemeOption(currentSetting);
     } catch (error) {
       if (import.meta.env.DEV) {
         logger.debug('[ToolbarSettingsController] Failed to read initial theme', error);
@@ -451,6 +453,26 @@ export function useToolbarSettingsController(
     const theme = toThemeOption(select.value);
     setCurrentTheme(theme);
     themeManager.setTheme(theme);
+
+    // Sync theme to SettingsService if available (fixes auto theme override on restart)
+    try {
+      const settingsService = tryGetSettingsManager<{
+        set: (key: string, value: unknown) => Promise<void>;
+      }>();
+      if (settingsService) {
+        void settingsService.set('gallery.theme', theme).catch((error: unknown) => {
+          logger.warn(
+            '[ToolbarSettingsController] Failed to sync theme to SettingsService:',
+            error
+          );
+        });
+      }
+    } catch (error) {
+      logger.debug(
+        '[ToolbarSettingsController] SettingsService not available for theme sync:',
+        error
+      );
+    }
   };
 
   const handleLanguageChange = (event: Event) => {

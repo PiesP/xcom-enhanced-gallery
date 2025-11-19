@@ -51,6 +51,15 @@ export class ThemeService extends BaseServiceImpl {
     if (typeof window !== 'undefined') {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
     }
+
+    // Phase 415: Synchronous theme initialization from localStorage
+    // Read persisted theme setting immediately in constructor
+    // This ensures getCurrentTheme() returns correct value before async initialize() completes
+    const localSetting = ThemeService.readLocalThemeSetting();
+    if (localSetting) {
+      this.themeSetting = localSetting;
+      logger.debug(`[ThemeService] Loaded theme from localStorage: ${localSetting}`);
+    }
   }
 
   /**

@@ -560,7 +560,11 @@ function VerticalGalleryViewCore({
           currentIndex={() => toolbarViewModel().currentIndex}
           focusedIndex={() => toolbarViewModel().focusedIndex}
           totalCount={() => toolbarViewModel().totalCount}
+          // Phase 415: Two separate props for different purposes
+          // isDownloading: Internal state tracking for download button visual feedback
+          // disabled: External control to disable all toolbar buttons during operations
           isDownloading={isDownloading()}
+          disabled={isDownloading()}
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
           onFitOriginal={handleFitOriginal}

@@ -142,15 +142,30 @@ export class GalleryApp {
       // Removed from bootstrap/features.ts, loaded here
       await this.ensureSettingsServiceInitialized();
 
-      // Phase 415: Verify theme initialization
+      // Phase 415: Verify theme initialization and sync from SettingsService
       try {
         // Phase 360: Use ThemeService (already initialized in base-services)
         // Legacy initializeTheme() removed to prevent overwriting PersistentStorage settings with localStorage defaults
         const { getThemeService } = await import('../../shared/container/service-accessors');
-        const currentTheme = getThemeService().getCurrentTheme();
-        logger.debug(`[GalleryApp] Theme confirmed: ${currentTheme}`);
+        const themeService = getThemeService();
+        const currentTheme = themeService.getCurrentTheme();
+
+        // Sync theme from SettingsService to ThemeService if SettingsService is initialized
+        if (this.settingsService) {
+          const settingsTheme = this.settingsService.get<'auto' | 'light' | 'dark'>(
+            'gallery.theme'
+          );
+          if (settingsTheme && settingsTheme !== currentTheme) {
+            logger.debug(
+              `[GalleryApp] Syncing theme from SettingsService: ${settingsTheme} (was: ${currentTheme})`
+            );
+            themeService.setTheme(settingsTheme);
+          }
+        }
+
+        logger.debug(`[GalleryApp] Theme confirmed: ${themeService.getCurrentTheme()}`);
       } catch (error) {
-        logger.warn('[GalleryApp] Theme check failed (non-critical):', error);
+        logger.warn('[GalleryApp] Theme check/sync failed (non-critical):', error);
       }
 
       await this.initializeRenderer();

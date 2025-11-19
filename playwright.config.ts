@@ -235,14 +235,25 @@ export default defineConfig({
   ],
 
   /**
-   * 전역 설정 스크립트
+   * Global setup script
    *
    * **역할**: Playwright 테스트 시작 전 한 번 실행
    * - E2E 테스트 harness 빌드
    * - 환경 변수 설정 (XEG_E2E_HARNESS_PATH)
    * - 캐시 디렉토리 생성
+   * - Phase 415: 로컬 HTTP 서버 시작 (localStorage 테스트용)
    *
    * **참조**: playwright/global-setup.ts
    */
   globalSetup: path.resolve(__dirname, 'playwright', 'global-setup.ts'),
+
+  /**
+   * Global teardown script
+   *
+   * **역할**: Playwright 테스트 종료 후 정리
+   * - Phase 415: 로컬 HTTP 서버 중지
+   *
+   * **참조**: playwright/global-setup.ts (globalTeardown)
+   */
+  globalTeardown: path.resolve(__dirname, 'playwright', 'global-setup.ts'),
 });
