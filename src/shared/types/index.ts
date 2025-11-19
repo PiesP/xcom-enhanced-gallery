@@ -17,7 +17,6 @@
  * └── core/ - core domain & infrastructure
  *     ├── core-types.ts - core types
  *     ├── base-service.types.ts - BaseService (circular dependency prevention)
- *     ├── extraction.types.ts - extraction types (backward compat)
  *     ├── userscript.d.ts - UserScript API
  *     └── index.ts - core barrel
  * ```

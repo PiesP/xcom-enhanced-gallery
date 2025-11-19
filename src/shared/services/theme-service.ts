@@ -2,7 +2,7 @@
  * Core Layer - Theme Service
  *
  * System theme detection and application service
- * @version 3.2.0 - Phase 360: Direct PersistentStorage usage
+ * @version 3.3.0 - Phase 420: Complete Tampermonkey migration (localStorage removed)
  */
 
 import { THEME_STORAGE_KEY } from '@shared/constants';
@@ -52,13 +52,18 @@ export class ThemeService extends BaseServiceImpl {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
     }
 
-    // Phase 415: Synchronous theme initialization from localStorage
+    // Phase 420: Synchronous theme initialization from PersistentStorage
     // Read persisted theme setting immediately in constructor
     // This ensures getCurrentTheme() returns correct value before async initialize() completes
-    const localSetting = ThemeService.readLocalThemeSetting();
-    if (localSetting) {
-      this.themeSetting = localSetting;
-      logger.debug(`[ThemeService] Loaded theme from localStorage: ${localSetting}`);
+    try {
+      const savedSetting = this.storage.getSync<string>(THEME_STORAGE_KEY);
+      const normalizedSetting = ThemeService.normalizeThemeSetting(savedSetting);
+      if (normalizedSetting) {
+        this.themeSetting = normalizedSetting;
+        logger.debug(`[ThemeService] Loaded theme from PersistentStorage: ${normalizedSetting}`);
+      }
+    } catch (error) {
+      logger.debug('[ThemeService] Failed to load theme synchronously:', error);
     }
   }
 
@@ -78,74 +83,20 @@ export class ThemeService extends BaseServiceImpl {
   }
 
   /**
-   * Restore theme setting
+   * Restore theme setting (Phase 420: PersistentStorage only)
    */
   private async restoreThemeSetting(): Promise<void> {
-    let persistentSetting: ThemeSetting | null = null;
-
     try {
       const savedSetting = await this.storage.get<string>(THEME_STORAGE_KEY);
-      persistentSetting = ThemeService.normalizeThemeSetting(savedSetting);
+      const normalizedSetting = ThemeService.normalizeThemeSetting(savedSetting);
+
+      if (normalizedSetting && normalizedSetting !== this.themeSetting) {
+        this.themeSetting = normalizedSetting;
+        logger.debug(`[ThemeService] Restored theme setting: ${normalizedSetting}`);
+      }
     } catch (error) {
       logger.warn('Failed to restore theme setting from storage:', error);
     }
-
-    const localSetting = ThemeService.readLocalThemeSetting();
-    const resolvedSetting = ThemeService.resolveStoredThemeSetting(persistentSetting, localSetting);
-
-    if (!resolvedSetting) {
-      return;
-    }
-
-    if (
-      import.meta.env.DEV &&
-      persistentSetting &&
-      localSetting &&
-      persistentSetting !== localSetting
-    ) {
-      logger.debug('[ThemeService] Divergent stored theme values detected', {
-        persistent: persistentSetting,
-        local: localSetting,
-        resolved: resolvedSetting,
-      });
-    }
-
-    this.themeSetting = resolvedSetting;
-
-    if (localSetting !== resolvedSetting) {
-      ThemeService.persistLocalThemeSetting(resolvedSetting);
-    }
-
-    if (persistentSetting !== resolvedSetting) {
-      try {
-        await this.storage.set(THEME_STORAGE_KEY, resolvedSetting);
-      } catch (error) {
-        logger.debug('[ThemeService] Failed to synchronize persistent theme setting:', error);
-      }
-    }
-  }
-
-  private static resolveStoredThemeSetting(
-    persistent: ThemeSetting | null,
-    local: ThemeSetting | null
-  ): ThemeSetting | null {
-    if (persistent && local) {
-      if (persistent === local) {
-        return persistent;
-      }
-
-      if (persistent === 'auto' && local !== 'auto') {
-        return local;
-      }
-
-      if (local === 'auto' && persistent !== 'auto') {
-        return persistent;
-      }
-
-      return persistent;
-    }
-
-    return persistent ?? local;
   }
 
   private static normalizeThemeSetting(value: unknown): ThemeSetting | null {
@@ -175,50 +126,6 @@ export class ThemeService extends BaseServiceImpl {
     }
 
     return null;
-  }
-
-  private static getSafeLocalStorage(): Storage | null {
-    try {
-      if (typeof globalThis === 'undefined' || typeof globalThis.localStorage === 'undefined') {
-        return null;
-      }
-
-      const storage = globalThis.localStorage;
-      void storage.length;
-      return storage;
-    } catch (error) {
-      logger.debug('[ThemeService] Local storage access unavailable:', error);
-      return null;
-    }
-  }
-
-  private static readLocalThemeSetting(): ThemeSetting | null {
-    const storage = ThemeService.getSafeLocalStorage();
-    if (!storage) {
-      return null;
-    }
-
-    try {
-      const rawValue = storage.getItem(THEME_STORAGE_KEY);
-      return ThemeService.normalizeThemeSetting(rawValue);
-    } catch (error) {
-      logger.debug('[ThemeService] Failed to read theme from local storage:', error);
-      return null;
-    }
-  }
-
-  private static persistLocalThemeSetting(setting: ThemeSetting): void {
-    const storage = ThemeService.getSafeLocalStorage();
-    if (!storage) {
-      return;
-    }
-
-    try {
-      storage.setItem(THEME_STORAGE_KEY, setting);
-      logger.debug(`[ThemeService] Persisted to local storage: ${setting}`);
-    } catch (error) {
-      logger.debug('[ThemeService] Failed to write theme to local storage:', error);
-    }
   }
 
   /**
@@ -312,13 +219,12 @@ export class ThemeService extends BaseServiceImpl {
   }
 
   /**
-   * Save theme setting
+   * Save theme setting (Phase 420: PersistentStorage only)
    */
   private async saveThemeSetting(): Promise<void> {
-    ThemeService.persistLocalThemeSetting(this.themeSetting);
-
     try {
       await this.storage.set(THEME_STORAGE_KEY, this.themeSetting);
+      logger.debug(`[ThemeService] Saved theme setting: ${this.themeSetting}`);
     } catch (error) {
       logger.warn('Failed to save theme setting to storage:', error);
     }

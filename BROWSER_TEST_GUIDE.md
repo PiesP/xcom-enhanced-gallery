@@ -1,7 +1,7 @@
 # Browser Testing Guide - Theme & Toolbar Button State Fix
 
-**Date**: 2025-11-19
-**Changes**: Fixed theme sync and toolbar button reactivity issues
+**Date**: 2025-11-19 **Changes**: Fixed theme sync and toolbar button reactivity
+issues
 
 ---
 
@@ -14,6 +14,7 @@
 **Test Scenarios**:
 
 #### Scenario 1.1: Theme Setting Persistence
+
 1. Open X.com gallery
 2. Click Settings button (gear icon) in toolbar
 3. Select **Light** theme from dropdown
@@ -22,6 +23,7 @@
 6. **Expected**: Theme should still be **Light** (not 'auto')
 
 #### Scenario 1.2: Theme Setting Persistence Across Browser Restart
+
 1. Open X.com gallery
 2. Select **Dark** theme
 3. Close browser completely (all tabs)
@@ -30,11 +32,13 @@
 6. **Expected**: Theme should still be **Dark**
 
 #### Scenario 1.3: Auto Theme System Sync
+
 1. Set theme to **Auto**
 2. Change OS system theme (Light → Dark or vice versa)
 3. **Expected**: Gallery theme should follow system theme immediately
 
 #### Scenario 1.4: Theme Storage Verification
+
 1. Open browser DevTools (F12)
 2. Go to Application → Local Storage → x.com
 3. Check for key: `xeg-theme`
@@ -52,6 +56,7 @@
 **Test Scenarios**:
 
 #### Scenario 2.1: Download Button State
+
 1. Open multi-image tweet (4+ images)
 2. Click **Download All** button
 3. **Expected During Download**:
@@ -62,6 +67,7 @@
    - All buttons should re-enable immediately
 
 #### Scenario 2.2: Navigation Button State
+
 1. Open gallery with 3 images
 2. On first image (index 0):
    - **Expected**: Previous button disabled, Next enabled
@@ -71,6 +77,7 @@
    - **Expected**: Both buttons enabled
 
 #### Scenario 2.3: Download Current Button
+
 1. Open gallery
 2. Click **Download Current** (single image download)
 3. **Expected**:
@@ -79,6 +86,7 @@
    - Button re-enables after completion
 
 #### Scenario 2.4: Rapid Button Clicks (Debounce Test)
+
 1. Open gallery with 5+ images
 2. Rapidly click Next button 5 times
 3. **Expected**:
@@ -91,6 +99,7 @@
 ### 3. Integration Tests (MEDIUM PRIORITY)
 
 #### Scenario 3.1: Theme + Download State
+
 1. Set theme to Dark
 2. Start downloading all images
 3. While downloading, change theme to Light
@@ -100,6 +109,7 @@
    - Button states remain consistent
 
 #### Scenario 3.2: Settings Panel + Toolbar State
+
 1. Click Settings button to open panel
 2. While panel is open, try clicking navigation buttons
 3. **Expected**:
@@ -128,7 +138,8 @@
 ### Storage Keys
 
 - **ThemeService**: `xeg-theme` (localStorage + PersistentStorage)
-- **SettingsService**: `xeg-app-settings` (PersistentStorage, contains `gallery.theme`)
+- **SettingsService**: `xeg-app-settings` (PersistentStorage, contains
+  `gallery.theme`)
 
 ### Reactive Flow
 

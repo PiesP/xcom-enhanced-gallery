@@ -255,6 +255,122 @@ export class PersistentStorage {
   }
 
   /**
+   * Synchronously retrieve value from persistent storage
+   *
+   * 🔹 Critical Path Usage:
+   * - Use for initialization code that must complete before async
+   * - ThemeService constructor: Must set theme before render
+   * - Service bootstrapping: Read config before async init
+   *
+   * 🔹 Warning:
+   * - GM_getValue may be async in some environments (returns Promise)
+   * - This method blocks if GM_getValue returns Promise
+   * - Prefer async get() for non-critical paths
+   *
+   * 🔹 Deserialization:
+   * Same as get() - JSON parsing with fallback
+   *
+   * @template T Generic return type
+   * @param key Storage key to retrieve
+   * @param defaultValue Fallback if key not found
+   * @returns Stored value (typed) or defaultValue
+   *
+   * @example
+   * ```typescript
+   * // ThemeService constructor
+   * const theme = storage.getSync<string>('theme', 'light');
+   * this.applyTheme(theme);
+   * ```
+   */
+  getSync<T>(key: string, defaultValue?: T): T | undefined {
+    try {
+      // GM_getValue can be sync or async - we handle both
+      const gmGetValue = (
+        globalThis as never as { GM_getValue?: <U>(k: string, d?: U) => U | Promise<U> }
+      ).GM_getValue;
+      if (!gmGetValue) {
+        logger.debug(`PersistentStorage.getSync: GM_getValue unavailable, returning default`);
+        return defaultValue;
+      }
+
+      const value = gmGetValue<string | undefined>(key);
+
+      // If it's a Promise, we can't help - this is synchronous
+      if (value instanceof Promise) {
+        logger.warn(
+          `PersistentStorage.getSync: GM_getValue returned Promise for key "${key}", returning default`
+        );
+        return defaultValue;
+      }
+
+      if (value === undefined || value === null) {
+        return defaultValue;
+      }
+
+      // Try to parse JSON, fallback to raw string
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return value as unknown as T;
+      }
+    } catch (error) {
+      logger.error(`PersistentStorage.getSync failed for key "${key}":`, error);
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Synchronously store value in persistent storage
+   *
+   * 🔹 Critical Path Usage:
+   * - Use for synchronous operations (e.g., theme changes)
+   * - Constructor initialization
+   * - Synchronous event handlers
+   *
+   * 🔹 Warning:
+   * - GM_setValue may be async in some environments
+   * - This method blocks if GM_setValue returns Promise
+   * - Prefer async set() for non-critical paths
+   *
+   * @template T Generic value type
+   * @param key Storage key
+   * @param value Value to store
+   *
+   * @example
+   * ```typescript
+   * // Synchronous theme setting
+   * storage.setSync('theme', 'dark');
+   * ```
+   */
+  setSync<T>(key: string, value: T): void {
+    try {
+      const gmSetValue = (
+        globalThis as never as { GM_setValue?: (k: string, v: unknown) => void | Promise<void> }
+      ).GM_setValue;
+      if (!gmSetValue) {
+        logger.debug(`PersistentStorage.setSync: GM_setValue unavailable`);
+        return;
+      }
+
+      const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+      const result = gmSetValue(key, serialized);
+
+      // If it's a Promise, we can't wait - this is synchronous
+      if (result instanceof Promise) {
+        logger.warn(
+          `PersistentStorage.setSync: GM_setValue returned Promise for key "${key}" (async operation initiated)`
+        );
+      }
+
+      logger.debug(`PersistentStorage.setSync: ${key} (${serialized.length} bytes)`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`PersistentStorage.setSync failed for key "${key}":`, error);
+      throw new Error(`Failed to store "${key}": ${msg}`);
+    }
+  }
+
+  /**
    * Remove value from persistent storage
    *
    * 🔹 Deletion Semantics:
