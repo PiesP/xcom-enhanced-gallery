@@ -46,7 +46,8 @@ describe('Toolbar Effect Cleanup', () => {
 
     // on() helper 사용 패턴 검증 (최적화된 경우)
     // 또는 createEffect(() => { ... }) 패턴 (대안)
-    const hasOnHelper = /on\(\s*\(\)\s*=>\s*props\.isDownloading/s.test(sourceCode);
+    // Updated to support both direct prop access and accessor variable
+    const hasOnHelper = /on\(\s*(\(\)\s*=>\s*props\.isDownloading|isDownloading)/s.test(sourceCode);
     const hasDirectEffect = /createEffect\(\(\)\s*=>\s*\{[^}]*setDownloading[^}]*\}\)/s.test(
       sourceCode
     );

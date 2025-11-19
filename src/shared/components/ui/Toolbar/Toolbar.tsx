@@ -160,12 +160,9 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   };
 
   createEffect(
-    on(
-      () => props.isDownloading,
-      value => {
-        toolbarActions.setDownloading(Boolean(value));
-      }
-    )
+    on(isDownloading, value => {
+      toolbarActions.setDownloading(Boolean(value));
+    })
   );
 
   createEffect(() => {

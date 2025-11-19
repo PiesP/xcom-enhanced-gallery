@@ -17,7 +17,9 @@ vi.mock('@shared/components/ui/Toolbar/ToolbarView', () => {
   return {
     ToolbarView: (props: ToolbarViewProps) => {
       capturedProps = props;
-      capturedIsDownloadingProp = props.isDownloading;
+      solidRuntime.createEffect(() => {
+        capturedIsDownloadingProp = props.isDownloading;
+      });
       return solidRuntime.h('div', {});
     },
   };
@@ -40,7 +42,7 @@ describe('Toolbar container reactivity', () => {
         currentIndex: 1,
         focusedIndex: () => null,
         totalCount: 3,
-        isDownloading: downloading(),
+        isDownloading: downloading,
         onPrevious: noop,
         onNext: noop,
         onDownloadCurrent: noop,
@@ -56,15 +58,14 @@ describe('Toolbar container reactivity', () => {
     );
 
     expect(capturedProps).not.toBeNull();
-    expect(typeof capturedIsDownloadingProp).toBe('function');
-
-    const isDownloadingAccessor = capturedIsDownloadingProp as () => boolean | undefined;
-    expect(isDownloadingAccessor()).toBe(false);
+    // Initial value should be false
+    expect(capturedIsDownloadingProp).toBe(false);
 
     setDownloading(true);
 
     await waitFor(() => {
-      expect(isDownloadingAccessor()).toBe(true);
+      // Should update to true reactively
+      expect(capturedIsDownloadingProp).toBe(true);
     });
   });
 });
