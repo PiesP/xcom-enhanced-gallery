@@ -76,6 +76,21 @@ export class ThemeService extends BaseServiceImpl {
     // Apply initial theme immediately (whether loaded from storage or default 'auto')
     // This prevents FOUC by applying the theme before the async initialization phase
     this.applyCurrentTheme(true);
+
+    // Schedule an async restore to re-apply persisted theme if the synchronous read fell back
+    // (e.g., GM_getValue returns a Promise in some environments). We intentionally do not await
+    // this here to avoid blocking service construction; this will ensure persisted theme is
+    // applied as soon as the storage API resolves.
+    void Promise.resolve().then(async () => {
+      try {
+        await this.restoreThemeSetting();
+        // Ensure we have system detection initialized and re-apply theme after restore
+        this.initializeSystemThemeDetection();
+        this.applyCurrentTheme(true);
+      } catch (err) {
+        logger.debug('[ThemeService] Async restore failed during constructor scheduled task', err);
+      }
+    });
   }
 
   /**

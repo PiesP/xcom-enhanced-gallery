@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen, h } from '@test/utils/testing-library';
+import { render, screen, h, waitFor } from '@test/utils/testing-library';
+import { getSolid } from '@shared/external/vendors';
 import { IconButton } from '@/shared/components/ui/Button/IconButton';
 import styles from '@/shared/components/ui/Button/Button.module.css';
 
@@ -69,5 +70,34 @@ describe('IconButton', () => {
     const btn = screen.getByRole('button', { name: 'Loading Icon' });
     expect(btn).toBeDisabled();
     expect(btn.classList.contains(styles.loading)).toBe(true);
+  });
+
+  it('updates disabled and loading reactively when accessors change', async () => {
+    const { createSignal, createComponent } = getSolid();
+    const [loading, setLoading] = createSignal(false);
+    const [disabled, setDisabled] = createSignal(false);
+
+    render(() =>
+      createComponent(
+        IconButton,
+        {
+          'aria-label': 'dynamic-icon',
+          'data-testid': 'icon-dynamic',
+          loading,
+          disabled,
+        },
+        '♻'
+      )
+    );
+
+    const btn = screen.getByRole('button', { name: 'dynamic-icon' });
+    expect(btn).not.toBeDisabled();
+
+    setDisabled(true);
+    await waitFor(() => expect(btn).toBeDisabled());
+
+    setDisabled(false);
+    setLoading(true);
+    await waitFor(() => expect(btn.classList.contains(styles.loading)).toBeTruthy());
   });
 });

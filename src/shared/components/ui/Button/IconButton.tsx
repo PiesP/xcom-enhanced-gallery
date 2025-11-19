@@ -75,9 +75,55 @@ export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly
  * </IconButton>
  * ```
  */
-export function IconButton({ size = 'md', ...props }: IconButtonProps): JSXElement {
-  // Validate size is in allowed list, fallback to 'md'
-  const safeSize: IconButtonProps['size'] = size && ALLOWED_ICON_SIZES.has(size) ? size : 'md';
+export function IconButton(props: IconButtonProps): JSXElement {
+  // Compute safe size by reading props.size if present, fallback to 'md'
+  const sizeValue =
+    typeof (props as any).size === 'function' ? (props as any).size() : (props as any).size;
+  const safeSize: IconButtonProps['size'] =
+    sizeValue && ALLOWED_ICON_SIZES.has(sizeValue) ? (sizeValue as any) : 'md';
 
-  return <Button {...props} variant='icon' size={safeSize} iconOnly />;
+  // Debugging: capture whether props contain accessor functions or primitive values
+  const passedDisabledType = typeof (props as Record<string, unknown>).disabled;
+  const passedDisabledValue =
+    passedDisabledType === 'function'
+      ? (props as Record<string, any>).disabled?.()
+      : (props as Record<string, unknown>).disabled;
+  const passedLoadingType = typeof (props as Record<string, unknown>).loading;
+  const passedLoadingValue =
+    passedLoadingType === 'function'
+      ? (props as Record<string, any>).loading?.()
+      : (props as Record<string, unknown>).loading;
+
+  // Ensure disabled/loading are passed as accessors (functions returning current value)
+  // to prevent Solid runtime from unwrapping them during props spread/merge.
+  const passedDisabled =
+    typeof (props as Record<string, unknown>).disabled === 'function'
+      ? (props as Record<string, any>).disabled
+      : () => (props as Record<string, unknown>).disabled;
+  const passedLoading =
+    typeof (props as Record<string, unknown>).loading === 'function'
+      ? (props as Record<string, any>).loading
+      : () => (props as Record<string, unknown>).loading;
+
+  // Build rest props without disabled/loading to ensure explicit accessor forwarding
+  const restProps: Record<string, unknown> = { ...props } as Record<string, unknown>;
+  // Avoid mutating original prop container if it's a proxied reactive object
+  delete restProps.disabled;
+  delete restProps.loading;
+
+  return (
+    // Explicitly pass in disabled/loading accessors to ensure preservation into Button
+    <Button
+      {...(restProps as IconButtonProps)}
+      disabled={passedDisabled as any}
+      loading={passedLoading as any}
+      variant='icon'
+      size={safeSize}
+      iconOnly
+      data-debug-prop-disabled-type={passedDisabledType}
+      data-debug-prop-disabled-value={String(passedDisabledValue)}
+      data-debug-prop-loading-type={passedLoadingType}
+      data-debug-prop-loading-value={String(passedLoadingValue)}
+    />
+  );
 }

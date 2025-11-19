@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { waitFor } from '@test/utils/testing-library';
 import { APP_SETTINGS_STORAGE_KEY } from '@/constants';
 import { THEME_STORAGE_KEY } from '@shared/constants';
 
@@ -136,6 +137,23 @@ describe('ThemeService storage (Phase 420: PersistentStorage only)', () => {
     expect(service.getCurrentTheme()).toBe('dark');
     // Persisted storage should be updated
     expect(storageState.set).toHaveBeenCalledWith(THEME_STORAGE_KEY, 'dark');
+  });
+
+  it('re-applies persisted theme when synchronous read fallback occurs (GM_getValue returns Promise)', async () => {
+    // Simulate sync read failing (returns undefined) but async read resolves to stored theme
+    storageState.getSync.mockImplementation((key: string) => undefined);
+    storageState.get.mockImplementation(async (key: string) => {
+      if (key === APP_SETTINGS_STORAGE_KEY) return { gallery: { theme: 'dark' } };
+      return undefined;
+    });
+
+    const service = new (require('@shared/services/theme-service').ThemeService)();
+
+    // Initially should be auto (fallback)
+    expect(service.getCurrentTheme()).toBe('auto');
+
+    // Wait for async restore scheduled in constructor to update the theme
+    await waitFor(() => expect(service.getCurrentTheme()).toBe('dark'));
   });
 });
 
