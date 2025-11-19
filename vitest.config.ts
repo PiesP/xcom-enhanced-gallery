@@ -170,6 +170,7 @@ const baseConfig = defineConfig({
     'import.meta.env.TEST_ENV': true, // Vitest environment detection
     __BROWSER__: true,
     __DEV__: true,
+    __IS_DEV__: true,
   },
   test: {
     globals: true,
@@ -485,6 +486,7 @@ const baseConfig = defineConfig({
           'import.meta.env.DEV': true,
           __BROWSER__: true,
           __DEV__: true,
+          __IS_DEV__: true,
         },
         test: {
           name: 'browser',

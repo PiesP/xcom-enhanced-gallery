@@ -16,11 +16,25 @@ import { safeEventPreventAll } from '@shared/utils/event-utils';
 import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
-import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
+import type {
+  ToolbarProps,
+  FitMode,
+  MaybeAccessor,
+} from '@shared/components/ui/Toolbar/Toolbar.types';
 import type { ToolbarState, ToolbarSettingsControllerResult } from '@shared/hooks';
 
 const solid = getSolid();
-const { Show, For, Switch, Match } = solid;
+const { Show, For, Switch, Match, createMemo, createSignal, createEffect } = solid;
+
+const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
+  typeof value === 'function' ? (value as () => T)() : value;
+
+const resolveOptionalAccessorValue = <T,>(value?: MaybeAccessor<T>): T | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+  return resolveAccessorValue(value);
+};
 
 type ToolbarViewNavState = {
   readonly prevDisabled: boolean;
@@ -136,8 +150,41 @@ const shouldAllowWheelDefault = (event: WheelEvent): boolean => {
 };
 
 export function ToolbarView(props: ToolbarViewProps): JSXElement {
-  const isToolbarDisabled = () => Boolean(props.disabled);
-  const isDownloading = () => Boolean(props.isDownloading);
+  const totalCount = createMemo(() => resolveAccessorValue(props.totalCount));
+  const currentIndex = createMemo(() => resolveAccessorValue(props.currentIndex));
+  const displayedIndex = createMemo(() => props.displayedIndex());
+  const isToolbarDisabled = createMemo(() => Boolean(resolveOptionalAccessorValue(props.disabled)));
+  const isDownloading = createMemo(() =>
+    Boolean(resolveOptionalAccessorValue(props.isDownloading))
+  );
+  const tweetText = createMemo(() => resolveOptionalAccessorValue(props.tweetText) ?? null);
+  const tweetTextHTML = createMemo(() => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null);
+  const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
+  const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
+
+  const assignToolbarRef = (element: HTMLDivElement | null) => {
+    setToolbarElement(element);
+    props.settingsController.assignToolbarRef(element);
+  };
+
+  createEffect(() => {
+    const element = toolbarElement();
+    if (!element) {
+      return;
+    }
+    element.dataset.currentIndex = String(currentIndex());
+    element.dataset.focusedIndex = String(displayedIndex());
+  });
+
+  createEffect(() => {
+    const element = counterElement();
+    if (!element) {
+      return;
+    }
+    element.dataset.currentIndex = String(currentIndex());
+    element.dataset.focusedIndex = String(displayedIndex());
+  });
+  const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
   const isHighContrast = () => Boolean(props.toolbarState.needsHighContrast);
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
     createClassName(styles.toolbarButton, 'xeg-inline-center', ...extra);
@@ -152,7 +199,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
 
   return (
     <div
-      ref={props.settingsController.assignToolbarRef}
+      ref={assignToolbarRef}
       class={props.toolbarClass()}
       role={props.role ?? 'toolbar'}
       aria-label={props['aria-label'] ?? '갤러리 도구모음'}
@@ -165,8 +212,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       data-high-contrast={isHighContrast() ? 'true' : 'false'}
       data-settings-expanded={props.settingsController.isSettingsExpanded()}
       data-tweet-panel-expanded={props.isTweetPanelExpanded()}
-      data-focused-index={String(props.displayedIndex())}
-      data-current-index={String(props.currentIndex)}
+      data-focused-index={displayedIndex()}
+      data-current-index={currentIndex()}
       tabIndex={props.tabIndex}
       onFocus={props.onFocus as ((event: FocusEvent) => void) | undefined}
       onBlur={props.onBlur as ((event: FocusEvent) => void) | undefined}
@@ -210,15 +257,18 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <div class={styles.counterBlock} data-gallery-element='counter-section'>
             <div class={createClassName(styles.mediaCounterWrapper, 'xeg-inline-center')}>
               <span
+                ref={element => {
+                  setCounterElement(element);
+                }}
                 class={createClassName(styles.mediaCounter, 'xeg-inline-center')}
                 aria-live='polite'
                 data-gallery-element='counter'
-                data-focused-index={String(props.displayedIndex())}
-                data-current-index={String(props.currentIndex)}
+                data-focused-index={displayedIndex()}
+                data-current-index={currentIndex()}
               >
-                <span class={styles.currentIndex}>{props.displayedIndex() + 1}</span>
+                <span class={styles.currentIndex}>{displayedIndex() + 1}</span>
                 <span class={styles.separator}>/</span>
-                <span class={styles.totalCount}>{props.totalCount}</span>
+                <span class={styles.totalCount}>{totalCount()}</span>
               </span>
               <div class={styles.progressBar}>
                 <div class={styles.progressFill} style={{ width: props.progressWidth() }} />
@@ -267,8 +317,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               size='toolbar'
               onClick={props.onDownloadAll}
               disabled={props.navState().downloadDisabled}
-              aria-label={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
-              title={`전체 ${props.totalCount}개 파일 ZIP 다운로드`}
+              aria-label={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
+              title={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
               data-gallery-element='download-all'
               data-disabled={props.navState().downloadDisabled}
               data-action-disabled={props.navState().anyActionDisabled}
@@ -298,7 +348,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             </IconButton>
           )}
 
-          {props.tweetText && (
+          {hasTweetContent() && (
             <IconButton
               id='tweet-text-button'
               class={toolbarButtonClass()}
@@ -348,8 +398,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       >
         <Show when={props.settingsController.isSettingsExpanded()}>
           <SettingsControlsLazy
-            currentTheme={props.settingsController.currentTheme()}
-            currentLanguage={props.settingsController.currentLanguage()}
+            currentTheme={props.settingsController.currentTheme}
+            currentLanguage={props.settingsController.currentLanguage}
             onThemeChange={props.settingsController.handleThemeChange}
             onLanguageChange={props.settingsController.handleLanguageChange}
             compact
@@ -368,7 +418,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         data-gallery-element='tweet-panel'
         onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
-        <Show when={props.isTweetPanelExpanded() && props.tweetText}>
+        <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
           <div class={styles.tweetPanelBody}>
             <div class={styles.tweetHeader}>
               <span class={styles.tweetLabel}>
@@ -381,9 +431,9 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               data-gallery-scrollable='true'
             >
               <Show
-                when={props.tweetTextHTML}
+                when={tweetTextHTML()}
                 fallback={
-                  <For each={formatTweetText(props.tweetText ?? '')}>
+                  <For each={formatTweetText(tweetText() ?? '')}>
                     {token => (
                       <Switch>
                         <Match when={token.type === 'link' && token}>
@@ -411,7 +461,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                   </For>
                 }
               >
-                <div innerHTML={props.tweetTextHTML ?? ''} />
+                <div innerHTML={tweetTextHTML() ?? ''} />
               </Show>
             </div>
           </div>

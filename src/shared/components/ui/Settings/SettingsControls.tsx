@@ -3,22 +3,28 @@ import { languageService } from '@shared/services';
 import { createClassName } from '@shared/utils/component-utils';
 import styles from './SettingsControls.module.css';
 
+type Accessor<T> = () => T;
+type MaybeAccessor<T> = T | Accessor<T>;
+
 export type ThemeOption = 'auto' | 'light' | 'dark';
 export type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
 const THEME_OPTIONS: readonly ThemeOption[] = ['auto', 'light', 'dark'];
 const LANGUAGE_OPTIONS: readonly LanguageOption[] = ['auto', 'ko', 'en', 'ja'];
 
+const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
+  typeof value === 'function' ? (value as Accessor<T>)() : value;
+
 export interface SettingsControlsProps {
-  currentTheme: ThemeOption;
-  currentLanguage: LanguageOption;
+  currentTheme: MaybeAccessor<ThemeOption>;
+  currentLanguage: MaybeAccessor<LanguageOption>;
   onThemeChange: (event: Event) => void;
   onLanguageChange: (event: Event) => void;
   compact?: boolean;
   'data-testid'?: string;
 }
 export function SettingsControls(props: SettingsControlsProps): JSXElement {
-  const { createMemo, createSignal, onCleanup, onMount } = getSolid();
+  const { createEffect, createMemo, createSignal, onCleanup, onMount } = getSolid();
 
   const [revision, setRevision] = createSignal(0);
 
@@ -62,6 +68,29 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
     ...options.filter(option => option !== current),
   ];
 
+  const themeValue = createMemo(() => resolveAccessorValue(props.currentTheme));
+  const languageValue = createMemo(() => resolveAccessorValue(props.currentLanguage));
+
+  const themeOptions = createMemo(() => withCurrentFirst(THEME_OPTIONS, themeValue()));
+  const languageOptions = createMemo(() => withCurrentFirst(LANGUAGE_OPTIONS, languageValue()));
+
+  let themeSelectRef: HTMLSelectElement | undefined;
+  let languageSelectRef: HTMLSelectElement | undefined;
+
+  createEffect(() => {
+    const value = themeValue();
+    if (themeSelectRef && themeSelectRef.value !== value) {
+      themeSelectRef.value = value;
+    }
+  });
+
+  createEffect(() => {
+    const value = languageValue();
+    if (languageSelectRef && languageSelectRef.value !== value) {
+      languageSelectRef.value = value;
+    }
+  });
+
   const themeSelectId = props['data-testid']
     ? `${props['data-testid']}-theme-select`
     : 'settings-theme-select';
@@ -82,12 +111,15 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id={themeSelectId}
           class={selectClass}
           onChange={props.onThemeChange}
-          value={props.currentTheme}
+          value={themeValue()}
+          ref={element => {
+            themeSelectRef = element;
+          }}
           aria-label={themeStrings().title}
           title={themeStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-theme` : undefined}
         >
-          {withCurrentFirst(THEME_OPTIONS, props.currentTheme).map(option => (
+          {themeOptions().map(option => (
             <option value={option}>{themeStrings().labels[option]}</option>
           ))}
         </select>
@@ -101,12 +133,15 @@ export function SettingsControls(props: SettingsControlsProps): JSXElement {
           id={languageSelectId}
           class={selectClass}
           onChange={props.onLanguageChange}
-          value={props.currentLanguage}
+          value={languageValue()}
+          ref={element => {
+            languageSelectRef = element;
+          }}
           aria-label={languageStrings().title}
           title={languageStrings().title}
           data-testid={props['data-testid'] ? `${props['data-testid']}-language` : undefined}
         >
-          {withCurrentFirst(LANGUAGE_OPTIONS, props.currentLanguage).map(option => (
+          {languageOptions().map(option => (
             <option value={option}>{languageStrings().labels[option]}</option>
           ))}
         </select>

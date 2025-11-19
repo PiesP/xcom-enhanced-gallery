@@ -72,23 +72,71 @@ export class ThemeService extends BaseServiceImpl {
    * Restore theme setting
    */
   private async restoreThemeSetting(): Promise<void> {
-    let normalized: ThemeSetting | null = null;
+    let persistentSetting: ThemeSetting | null = null;
 
     try {
       const savedSetting = await this.storage.get<string>(THEME_STORAGE_KEY);
-      normalized = ThemeService.normalizeThemeSetting(savedSetting);
+      persistentSetting = ThemeService.normalizeThemeSetting(savedSetting);
     } catch (error) {
       logger.warn('Failed to restore theme setting from storage:', error);
     }
 
-    if (!normalized) {
-      normalized = ThemeService.readLocalThemeSetting();
+    const localSetting = ThemeService.readLocalThemeSetting();
+    const resolvedSetting = ThemeService.resolveStoredThemeSetting(persistentSetting, localSetting);
+
+    if (!resolvedSetting) {
+      return;
     }
 
-    if (normalized) {
-      this.themeSetting = normalized;
-      ThemeService.persistLocalThemeSetting(this.themeSetting);
+    if (
+      import.meta.env.DEV &&
+      persistentSetting &&
+      localSetting &&
+      persistentSetting !== localSetting
+    ) {
+      logger.debug('[ThemeService] Divergent stored theme values detected', {
+        persistent: persistentSetting,
+        local: localSetting,
+        resolved: resolvedSetting,
+      });
     }
+
+    this.themeSetting = resolvedSetting;
+
+    if (localSetting !== resolvedSetting) {
+      ThemeService.persistLocalThemeSetting(resolvedSetting);
+    }
+
+    if (persistentSetting !== resolvedSetting) {
+      try {
+        await this.storage.set(THEME_STORAGE_KEY, resolvedSetting);
+      } catch (error) {
+        logger.debug('[ThemeService] Failed to synchronize persistent theme setting:', error);
+      }
+    }
+  }
+
+  private static resolveStoredThemeSetting(
+    persistent: ThemeSetting | null,
+    local: ThemeSetting | null
+  ): ThemeSetting | null {
+    if (persistent && local) {
+      if (persistent === local) {
+        return persistent;
+      }
+
+      if (persistent === 'auto' && local !== 'auto') {
+        return local;
+      }
+
+      if (local === 'auto' && persistent !== 'auto') {
+        return persistent;
+      }
+
+      return persistent;
+    }
+
+    return persistent ?? local;
   }
 
   private static normalizeThemeSetting(value: unknown): ThemeSetting | null {

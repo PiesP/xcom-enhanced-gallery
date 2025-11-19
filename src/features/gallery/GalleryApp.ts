@@ -159,8 +159,13 @@ export class GalleryApp {
       this.isInitialized = true;
       logger.info('[GalleryApp] ✅ Initialization complete');
 
-      if (process.env.NODE_ENV === 'development') {
-        this.exposeDebugAPI();
+      if (__IS_DEV__) {
+        (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug = {
+          openGallery: this.openGallery.bind(this),
+          closeGallery: this.closeGallery.bind(this),
+          getDiagnostics: this.getDiagnostics.bind(this),
+        };
+        logger.debug('[GalleryApp] Debug API exposed: xegGalleryDebug');
       }
     } catch (error) {
       logger.error('[GalleryApp] ❌ Initialization failed:', error);
@@ -324,18 +329,6 @@ export class GalleryApp {
         currentIndex: gallerySignals.currentIndex.value,
       },
     };
-  }
-
-  /**
-   * Expose debug API - Development mode
-   */
-  private exposeDebugAPI(): void {
-    (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug = {
-      openGallery: this.openGallery.bind(this),
-      closeGallery: this.closeGallery.bind(this),
-      getDiagnostics: this.getDiagnostics.bind(this),
-    };
-    logger.debug('[GalleryApp] Debug API exposed: xegGalleryDebug');
   }
 
   /**

@@ -11,6 +11,7 @@ import { warmupNonCriticalServices } from '@shared/container/service-accessors';
 import { CoreService } from '@shared/services/core';
 import { cleanupVendors } from './shared/external/vendors';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { runAfterWindowLoad } from '@shared/utils/window-load';
 import { mutateDevNamespace } from '@shared/devtools/dev-namespace';
 import { createAppConfig } from '@/constants/app-config';
 
@@ -216,14 +217,14 @@ function triggerPreloadStrategy(): void {
     return;
   }
 
-  void (async () => {
+  void runAfterWindowLoad(async () => {
     try {
       const { executePreloadStrategy } = await import('@/bootstrap/preload');
       await executePreloadStrategy();
     } catch (error) {
       logger.warn('[Phase 326] Error executing preload strategy:', error);
     }
-  })();
+  });
 }
 
 /**

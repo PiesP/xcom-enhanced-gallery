@@ -414,6 +414,7 @@ export default defineConfig(async ({ mode }) => {
     ].filter(Boolean) as Plugin[],
     define: {
       __DEV__: flags.isDev,
+      __IS_DEV__: flags.isDev,
       __VERSION__: JSON.stringify(pkg.version),
       'process.env.NODE_ENV': JSON.stringify(flags.isProd ? 'production' : 'development'),
       'process.env': '{}',
@@ -484,6 +485,7 @@ export default defineConfig(async ({ mode }) => {
           compress: {
             drop_console: true,
             drop_debugger: true,
+            pure_funcs: ['console.info', 'console.debug', 'exposeDebugAPI'],
             // Phase 308: Bundle size optimization - additional options
             // passes: 4 → 5 (one more optimization pass, saves additional 1-2 KB)
             // unsafe_methods: true (clean up function calls, safety verified)

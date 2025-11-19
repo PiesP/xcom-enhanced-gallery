@@ -153,6 +153,7 @@ const cssModuleStubPlugin: Plugin = {
  *
  * **환경 변수 정의**:
  * - __DEV__: true (개발 환경 기능 활성화)
+ * - __IS_DEV__: true (디버그 플래그 동기화)
  * - NODE_ENV: 'development'
  * - import.meta.env.*: Vite 호환 변수
  *
@@ -188,6 +189,7 @@ async function buildHarness(): Promise<void> {
       logLevel: isVerbose ? 'info' : 'silent',
       define: {
         __DEV__: 'true',
+        __IS_DEV__: 'true',
         'process.env.NODE_ENV': '"development"',
         'import.meta.env.MODE': '"e2e"',
         'import.meta.env.DEV': '"true"',

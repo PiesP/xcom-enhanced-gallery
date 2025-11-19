@@ -24,14 +24,14 @@ types/
 
 ### env.d.ts
 
-- Declares build flags injected by `vite.config.ts` (`__DEV__`, `__VERSION__`,
-  and `__FEATURE_MEDIA_EXTRACTION__`).
+- Declares build flags injected by `vite.config.ts` (`__DEV__`, `__IS_DEV__`,
+  `__VERSION__`, and `__FEATURE_MEDIA_EXTRACTION__`).
 - Preferred over `import.meta.env` for tree-shaking because the constants are
   statically replaced during bundling.
 - Example:
 
   ```typescript
-  if (__DEV__) {
+  if (__IS_DEV__) {
     logger.debug(`Running v${__VERSION__}`);
   }
   ```

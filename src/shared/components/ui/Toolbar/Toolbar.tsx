@@ -15,7 +15,11 @@ import {
   ArrowsUpDown,
 } from '@shared/components/ui/Icon';
 import { ToolbarView } from '@shared/components/ui/Toolbar/ToolbarView';
-import type { ToolbarProps, FitMode } from '@shared/components/ui/Toolbar/Toolbar.types';
+import type {
+  ToolbarProps,
+  FitMode,
+  MaybeAccessor,
+} from '@shared/components/ui/Toolbar/Toolbar.types';
 import styles from './Toolbar.module.css';
 
 const solid = getSolid();
@@ -26,6 +30,25 @@ const DEFAULT_PROPS = {
   disabled: false,
   className: '',
 } as const;
+
+type Accessor<T> = () => T;
+
+const isAccessor = <T,>(value: MaybeAccessor<T> | undefined): value is Accessor<T> =>
+  typeof value === 'function';
+
+const toRequiredAccessor = <T,>(value: MaybeAccessor<T> | undefined, fallback: T): Accessor<T> => {
+  if (isAccessor(value)) {
+    return value;
+  }
+  return () => value ?? fallback;
+};
+
+const toOptionalAccessor = <T,>(value: MaybeAccessor<T> | undefined): Accessor<T | undefined> => {
+  if (isAccessor(value)) {
+    return value;
+  }
+  return () => value;
+};
 
 const FIT_MODE_LABELS: Record<FitMode, { label: string; title: string }> = {
   original: { label: '원본 크기', title: '원본 크기 (1:1)' },
@@ -124,6 +147,15 @@ const createGuardedHandler = (
 function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const props = mergeProps(DEFAULT_PROPS, rawProps);
 
+  const currentIndex = toRequiredAccessor(props.currentIndex, 0);
+  const totalCount = toRequiredAccessor(props.totalCount, 0);
+  const focusedIndex = toRequiredAccessor(props.focusedIndex, null);
+  const isDownloading = toRequiredAccessor(props.isDownloading, false);
+  const isDisabled = toRequiredAccessor(props.disabled, false);
+  const currentFitMode = toOptionalAccessor(props.currentFitMode);
+  const tweetText = toOptionalAccessor(props.tweetText);
+  const tweetTextHTML = toOptionalAccessor(props.tweetTextHTML);
+
   const [toolbarState, toolbarActions] = useToolbarState();
   const [settingsExpandedSignal, setSettingsExpandedSignal] = createSignal(false);
   const [tweetExpanded, setTweetExpanded] = createSignal(false);
@@ -159,7 +191,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   createEffect(() => {
-    const mode = props.currentFitMode;
+    const mode = currentFitMode();
     if (!mode) {
       return;
     }
@@ -193,15 +225,15 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       props.className ?? ''
     )
   );
-  const totalItems = createMemo(() => Math.max(0, props.totalCount));
+  const totalItems = createMemo(() => Math.max(0, totalCount()));
 
-  const currentIndexForNav = createMemo(() => clampIndex(props.currentIndex, totalItems()));
+  const currentIndexForNav = createMemo(() => clampIndex(currentIndex(), totalItems()));
 
   const displayedIndex = createMemo(() =>
     resolveDisplayedIndex({
       total: totalItems(),
       currentIndex: currentIndexForNav(),
-      focusedIndex: props.focusedIndex,
+      focusedIndex: focusedIndex(),
     })
   );
 
@@ -212,8 +244,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const navState = createMemo(() =>
     computeNavigationState({
       total: totalItems(),
-      toolbarDisabled: Boolean(props.disabled),
-      downloadBusy: Boolean(props.isDownloading),
+      toolbarDisabled: Boolean(isDisabled()),
+      downloadBusy: Boolean(isDownloading()),
       currentIndex: currentIndexForNav(),
     })
   );
@@ -225,7 +257,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     fitContainer: props.onFitContainer,
   }));
 
-  const isToolbarDisabled = () => Boolean(props.disabled);
+  const isToolbarDisabled = () => Boolean(isDisabled());
 
   const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
     safeEventPreventAll(event);
@@ -268,11 +300,11 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   return (
     <ToolbarView
       // Base toolbar props (reactive via Solid JSX transform)
-      currentIndex={props.currentIndex}
-      focusedIndex={props.focusedIndex ?? null}
-      totalCount={props.totalCount}
-      isDownloading={props.isDownloading}
-      disabled={props.disabled}
+      currentIndex={currentIndex}
+      focusedIndex={focusedIndex}
+      totalCount={totalCount}
+      isDownloading={isDownloading}
+      disabled={isDisabled}
       aria-label={props['aria-label']}
       aria-describedby={props['aria-describedby']}
       role={props.role}
@@ -280,8 +312,8 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       data-testid={props['data-testid']}
       onFocus={props.onFocus}
       onBlur={props.onBlur}
-      tweetText={props.tweetText}
-      tweetTextHTML={props.tweetTextHTML}
+      tweetText={tweetText}
+      tweetTextHTML={tweetTextHTML}
       // Derived toolbar view props
       toolbarClass={toolbarClass}
       toolbarState={toolbarState}

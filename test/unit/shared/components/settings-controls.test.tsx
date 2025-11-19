@@ -4,30 +4,54 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup } from '@test/utils/testing-library';
+import { render, cleanup, waitFor } from '@test/utils/testing-library';
 import { getSolid } from '@shared/external/vendors';
-import { SettingsControls } from '@shared/components/ui/Settings/SettingsControls';
+import {
+  SettingsControls,
+  type ThemeOption,
+  type LanguageOption,
+  type SettingsControlsProps,
+} from '@shared/components/ui/Settings/SettingsControls';
 
-const { h } = getSolid();
+const { createComponent } = getSolid();
+
+type MaybeAccessor<T> = T | (() => T);
+
+type SettingsControlsTestOverrides = Partial<
+  Omit<SettingsControlsProps, 'currentTheme' | 'currentLanguage'>
+> & {
+  currentTheme?: MaybeAccessor<ThemeOption>;
+  currentLanguage?: MaybeAccessor<LanguageOption>;
+};
+
+const toAccessor = <T,>(value: MaybeAccessor<T>): (() => T) => {
+  return typeof value === 'function' ? (value as () => T) : () => value;
+};
 
 // Factory: Create default props
-function createProps(overrides = {}) {
-  return {
-    currentTheme: 'auto' as const,
-    currentLanguage: 'auto' as const,
+function createProps(overrides: SettingsControlsTestOverrides = {}) {
+  const merged = {
+    currentTheme: 'auto' as ThemeOption | (() => ThemeOption),
+    currentLanguage: 'auto' as LanguageOption | (() => LanguageOption),
     onThemeChange: vi.fn(),
     onLanguageChange: vi.fn(),
     ...overrides,
   };
+
+  return {
+    ...merged,
+    currentTheme: toAccessor(merged.currentTheme),
+    currentLanguage: toAccessor(merged.currentLanguage),
+  } satisfies SettingsControlsProps;
 }
 
 // Factory: Render component and get elements
 const THEME_SELECT_SELECTOR = 'select[id="settings-theme-select"]';
 const LANGUAGE_SELECT_SELECTOR = 'select[id="settings-language-select"]';
 
-function renderComponent(props = {}) {
+function renderComponent(props: SettingsControlsTestOverrides = {}) {
   const finalProps = createProps(props);
-  const { container } = render(h(SettingsControls, finalProps));
+  const { container } = render(() => createComponent(SettingsControls, finalProps));
   return {
     container,
     themeSelect: container.querySelector(
@@ -36,7 +60,6 @@ function renderComponent(props = {}) {
     languageSelect: container.querySelector(
       LANGUAGE_SELECT_SELECTOR
     ) as globalThis.HTMLSelectElement | null,
-    props: finalProps,
   };
 }
 
@@ -97,6 +120,20 @@ describe('SettingsControls Component', () => {
     it('should update when props change', () => {
       const { themeSelect } = renderComponent({ currentTheme: 'light' });
       expect(themeSelect?.value).toBe('light');
+    });
+
+    it('should react when currentTheme accessor changes after render', async () => {
+      const { createSignal } = getSolid();
+      const [theme, setTheme] = createSignal<ThemeOption>('auto');
+      const { themeSelect } = renderComponent({ currentTheme: () => theme() });
+
+      expect(themeSelect?.value).toBe('auto');
+
+      setTheme('dark');
+
+      await waitFor(() => {
+        expect(themeSelect?.value).toBe('dark');
+      });
     });
   });
 

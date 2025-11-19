@@ -1,11 +1,15 @@
 import type { ViewMode, FitMode } from '@shared/types';
 
+type Accessor<T> = () => T;
+
+export type MaybeAccessor<T> = T | Accessor<T>;
+
 export type { FitMode };
 
 export interface ToolbarProps {
-  currentIndex: number;
-  focusedIndex?: number | null;
-  totalCount: number;
+  currentIndex: MaybeAccessor<number>;
+  focusedIndex?: MaybeAccessor<number | null>;
+  totalCount: MaybeAccessor<number>;
 
   onPrevious: () => void;
   onNext: () => void;
@@ -14,17 +18,17 @@ export interface ToolbarProps {
   onClose: () => void;
   onOpenSettings?: () => void;
 
-  currentViewMode?: ViewMode | undefined;
+  currentViewMode?: MaybeAccessor<ViewMode | undefined>;
   onViewModeChange?: ((mode: ViewMode) => void) | undefined;
-  currentFitMode?: FitMode;
+  currentFitMode?: MaybeAccessor<FitMode | undefined>;
 
   onFitOriginal?: (event?: Event) => void;
   onFitWidth?: (event?: Event) => void;
   onFitHeight?: (event?: Event) => void;
   onFitContainer?: (event?: Event) => void;
 
-  isDownloading?: boolean | undefined;
-  disabled?: boolean | undefined;
+  isDownloading?: MaybeAccessor<boolean | undefined>;
+  disabled?: MaybeAccessor<boolean | undefined>;
   className?: string | undefined;
   position?: 'top' | 'bottom' | 'left' | 'right' | undefined;
 
@@ -38,6 +42,6 @@ export interface ToolbarProps {
   onBlur?: ((event: FocusEvent) => void) | undefined;
   onKeyDown?: ((event: KeyboardEvent) => void) | undefined;
 
-  tweetText?: string | null | undefined;
-  tweetTextHTML?: string | null | undefined;
+  tweetText?: MaybeAccessor<string | null | undefined>;
+  tweetTextHTML?: MaybeAccessor<string | null | undefined>;
 }

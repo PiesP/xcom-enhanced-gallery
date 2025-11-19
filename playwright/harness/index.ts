@@ -133,6 +133,17 @@ const noopToolbarHandlers: Pick<
   onFitContainer: () => undefined,
 };
 
+const resolveIsDownloading = (value: SolidToolbarProps['isDownloading'] | undefined): boolean => {
+  if (typeof value === 'function') {
+    try {
+      return Boolean(value());
+    } catch {
+      return false;
+    }
+  }
+  return Boolean(value);
+};
+
 function createContainer(prefix: string): HTMLElement {
   const container = document.createElement('div');
   container.id = uniqueId(prefix);
@@ -161,7 +172,7 @@ async function mountToolbarHarness(props: ToolbarMountProps): Promise<ToolbarMou
   const container = createContainer('xeg-toolbar');
   const [currentIndex, setCurrentIndex] = createSignal(props.currentIndex);
   const [totalCount, setTotalCount] = createSignal(props.totalCount);
-  const [isDownloading, setIsDownloading] = createSignal(props.isDownloading ?? false);
+  const [isDownloading, setIsDownloading] = createSignal(resolveIsDownloading(props.isDownloading));
 
   const ToolbarHost = () =>
     createComponent(Toolbar, {
@@ -185,7 +196,9 @@ async function mountToolbarHarness(props: ToolbarMountProps): Promise<ToolbarMou
     update: partial => {
       if (partial.currentIndex !== undefined) setCurrentIndex(partial.currentIndex);
       if (partial.totalCount !== undefined) setTotalCount(partial.totalCount);
-      if (partial.isDownloading !== undefined) setIsDownloading(partial.isDownloading);
+      if (partial.isDownloading !== undefined) {
+        setIsDownloading(resolveIsDownloading(partial.isDownloading));
+      }
     },
     dispose: () => {
       dispose();

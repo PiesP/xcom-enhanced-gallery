@@ -43,6 +43,7 @@ if (typeof process !== 'undefined' && process.env) {
 // ================================
 if (typeof globalThis !== 'undefined') {
   (globalThis as typeof globalThis & { __DEV__?: boolean }).__DEV__ = true;
+  (globalThis as typeof globalThis & { __IS_DEV__?: boolean }).__IS_DEV__ = true;
 }
 
 // ================================

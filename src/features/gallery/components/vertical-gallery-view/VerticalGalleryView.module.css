@@ -243,6 +243,7 @@
   pointer-events: auto;
 
   /* Container query hook for responsive spacing */
+
   container-type: size;
   container-name: items-list;
 }
@@ -260,6 +261,7 @@
   border-radius: var(
     --xeg-scrollbar-border-radius
   ); /* Tokenized replacement for the old 0.25rem radius */
+
   transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
