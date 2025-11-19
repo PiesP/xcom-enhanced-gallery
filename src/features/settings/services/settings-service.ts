@@ -170,13 +170,13 @@ export class SettingsService {
    * const theme = settingsService.get('gallery.theme');
    * ```
    */
-  get<T = unknown>(key: NestedSettingKey): T {
+  get<T = unknown>(key: NestedSettingKey | string): T {
     const keys = key.split('.');
     const value = resolveNestedValue(this.settings, keys);
 
     if (value === undefined) {
       logger.warn(`Setting key not found: ${key}`);
-      return this.getDefaultValue(key) as T;
+      return this.getDefaultValue(key as NestedSettingKey) as T;
     }
 
     return value as T;

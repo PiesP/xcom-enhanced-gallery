@@ -148,19 +148,10 @@ export class GalleryApp {
         // Legacy initializeTheme() removed to prevent overwriting PersistentStorage settings with localStorage defaults
         const { getThemeService } = await import('../../shared/container/service-accessors');
         const themeService = getThemeService();
-        const currentTheme = themeService.getCurrentTheme();
 
         // Sync theme from SettingsService to ThemeService if SettingsService is initialized
         if (this.settingsService) {
-          const settingsTheme = this.settingsService.get<'auto' | 'light' | 'dark'>(
-            'gallery.theme'
-          );
-          if (settingsTheme && settingsTheme !== currentTheme) {
-            logger.debug(
-              `[GalleryApp] Syncing theme from SettingsService: ${settingsTheme} (was: ${currentTheme})`
-            );
-            themeService.setTheme(settingsTheme);
-          }
+          themeService.bindSettingsService(this.settingsService);
         }
 
         logger.debug(`[GalleryApp] Theme confirmed: ${themeService.getCurrentTheme()}`);
