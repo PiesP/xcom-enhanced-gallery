@@ -18,7 +18,7 @@ const __dirname = dirname(__filename);
 const CSS_FILES = {
   designTokensPrimitive: 'src/shared/styles/design-tokens.primitive.css',
   designTokensSemantic: 'src/shared/styles/design-tokens.semantic.css',
-  gallery: 'src/features/gallery/styles/Gallery.module.css',
+  gallery: 'test/fixtures/gallery/Gallery.module.css',
   galleryGlobal: 'src/features/gallery/assets/styles/gallery-global.css',
   isolatedGallery: 'src/features/gallery/assets/styles/isolated-gallery.css',
   button: 'src/shared/components/ui/Button/Button.module.css',

@@ -38,11 +38,6 @@ const SETTINGS_CATEGORY_KEYS: readonly SettingsCategoryKey[] = [
   'features',
 ];
 
-const CRITICAL_SETTINGS = new Set<NestedSettingKey>([
-  'tokens.bearerToken',
-  'accessibility.reduceMotion',
-]);
-
 function cloneDeep<T>(value: T): T {
   if (typeof globalThis.structuredClone === 'function') {
     return globalThis.structuredClone(value);
@@ -220,9 +215,7 @@ export class SettingsService {
       status: 'success',
     });
 
-    if (CRITICAL_SETTINGS.has(key)) {
-      await this.saveSettings();
-    }
+    await this.saveSettings();
 
     logger.debug('Setting changed:', { key, value });
   }

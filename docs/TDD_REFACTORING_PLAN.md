@@ -341,8 +341,8 @@ notificationService.success('작업 완료');
   - Toolbar: `--toolbar-height`, `--xeg-backdrop-blur`
   - 기타: `--gallery-border`, `--gallery-shadow`
 - **영향**: 406 KB → 405 KB (-1 KB, -0.25%)
-- **파일**: `VerticalGalleryView.module.css`, `Gallery.module.css`,
-  `design-tokens.component.css`
+- **파일**: `VerticalGalleryView.module.css`,
+  `test/fixtures/gallery/Gallery.module.css`, `design-tokens.component.css`
 
 **Phase 326.5-3C: CSS 변수 통합** (✅ 완료)
 

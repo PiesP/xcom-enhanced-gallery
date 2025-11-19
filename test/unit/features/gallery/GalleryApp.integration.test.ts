@@ -6,6 +6,8 @@ import type { MediaInfo } from '@/shared/types/media.types';
 import { initializeVendors } from '@/shared/external/vendors';
 import { CoreService } from '@/shared/services/core';
 import { registerGalleryRenderer } from '@/shared/container/service-accessors';
+import { ThemeService } from '@/shared/services/theme-service';
+import { SERVICE_KEYS } from '@/constants';
 
 /**
  * @fileoverview GalleryApp Integration Tests
@@ -38,12 +40,17 @@ describe('GalleryApp Integration', () => {
     };
   }
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // 벤더 초기화
     initializeVendors();
 
     // 서비스 매니저 리셋
     CoreService.resetInstance();
+
+    // ThemeService 등록 및 초기화
+    const themeService = new ThemeService();
+    await themeService.initialize();
+    CoreService.getInstance().register(SERVICE_KEYS.THEME, themeService);
 
     // GalleryRenderer 서비스 등록
     const renderer = new GalleryRenderer();
@@ -53,7 +60,10 @@ describe('GalleryApp Integration', () => {
     galleryApp = new GalleryApp();
 
     // DOM 환경 설정
-    document.body.innerHTML = '';
+    // ThemeService가 initialize() 시점에 documentElement에 테마를 설정하므로
+    // document.body.innerHTML = '' 만으로는 부족할 수 있음.
+    // 하지만 ThemeService.initialize()가 이미 실행되었으므로 data-theme 속성은 설정되어 있을 것임.
+    // document.body.innerHTML = ''; // 기존 코드 유지
 
     // 모킹: 필요한 경우 최소한으로만
     vi.clearAllMocks();

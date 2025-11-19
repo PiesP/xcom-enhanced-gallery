@@ -96,7 +96,7 @@
   }
 }
 
-/* 메인 컨테?�너 - ?�순?�된 갤러�?컨테?�너 */
+/* Main overlay container */
 .container {
   position: fixed;
   top: 0;
@@ -106,42 +106,38 @@
   z-index: var(--xeg-z-gallery, 10000);
   background: var(--xeg-gallery-bg);
 
-  /* 기본 ?�이?�웃 */
+  /* Layout */
   display: flex;
   flex-direction: column;
 
-  /* 블러 ?�과 */
+  /* Surfaces stay flat (no blur) */
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 
-  /* ?�드?�어 가??최적?? */
+  /* Performance hints */
   transform: translateZ(0);
   will-change: opacity, transform;
   contain: layout style paint;
 
-  /* 초기 ?�태 */
+  /* Visible by default */
   opacity: 1;
   visibility: visible;
   transition: var(--xeg-transition-elevation-normal);
 
-  /* ?�벤??처리 - ?�크�??�벤?�는 ??�� ?�용 */
+  /* Pointer handling */
   cursor: default;
   pointer-events: auto;
 
-  /* 컨테?�너 쿼리 ?�성?? */
+  /* Container query contract */
   container-type: size;
   container-name: gallery-container;
 
-  /* ?�크�?최적?? */
+  /* Scrolling */
   scroll-behavior: smooth;
-  overscroll-behavior: none; /* ?�크�?체이??방�? */
-
-  /* 갤러�??��? ?�크롤만 ?�용 */
-
-  /* ?�로?�션 빌드 ?�환?�을 ?�해 CSS 커스?� ?�로?�티 ?�거 */
+  overscroll-behavior: none; /* Prevent scroll chaining */
 }
 
-/* ?�바 ?�퍼 - 기본 가?�성 보장 �?개선???�랜지?? */
+/* Floating toolbar wrapper with hover/focus auto-show */
 .toolbarWrapper {
   position: fixed;
   top: 0;
@@ -150,7 +146,7 @@
   height: auto;
   z-index: var(--xeg-z-toolbar);
 
-  /* 기본 ?�태: CSS 변?�로 ?�어?�는 ?��? ?�태 */
+  /* Default state controlled through CSS variables */
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   display: block;
@@ -158,14 +154,14 @@
   will-change: transform, opacity, visibility;
   contain: layout style;
 
-  /* 즉시 반응???�한 추�? 최적?? */
-  transform: translateZ(0); /* GPU 가???�성?? */
-  backface-visibility: hidden; /* ?�더�?최적?? */
+  /* Performance hints */
+  transform: translateZ(0); /* GPU acceleration */
+  backface-visibility: hidden; /* Prevent flicker */
 
-  /* 툴바 전체에서 클릭 가능하도록 설정 */
+  /* Pointer handling */
   pointer-events: var(--toolbar-pointer-events, none);
 
-  /* 그라디언트 배경 - oklch 기반 */
+  /* Gradient background driven by tokens */
   background: linear-gradient(
     to bottom,
     var(--xeg-toolbar-wrapper-gradient-start, var(--xeg-bg-toolbar)) 0%,
@@ -178,7 +174,7 @@
   padding-block-end: var(--xeg-spacing-gallery);
 }
 
-/* ?�바 ?�체 ?�버 ?�에???�시 ?��? - 강화??가?�성 */
+/* Reveal toolbar on hover */
 .toolbarWrapper:hover {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
@@ -186,17 +182,17 @@
   --toolbar-transform-y: 0;
 }
 
-/* ?�근?? ?�커???�에???�바 ?�시 - ??강력??보장 */
+/* Keep toolbar visible when focused */
 .toolbarWrapper:focus-within {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
   --toolbar-transform-y: 0;
-  /* ?�커???�에????빠른 ?�랜지?? */
+
   transition: var(--xeg-transition-elevation-fast);
 }
 
-/* 툴바 래퍼 내 모든 요소 클릭 보장 */
+/* Descendants inherit pointer behavior */
 .toolbarWrapper * {
   pointer-events: inherit;
 }
@@ -217,44 +213,42 @@
   --toolbar-pointer-events: auto;
 }
 
-/* UI ?��? ?�태 - ?�크�??�벤?�는 ?��??�되 ?�각???�소�??��? */
+/* UI-hidden state: hide the chrome while keeping gallery interactions available */
 .container.uiHidden {
-  /* UI???�기지�??�크�??�벤?�는 차단?��? ?�음 */
+  /* Keep pointer interactions enabled (pointer-events: none was removed) and hide the cursor */
   cursor: none;
-  /* pointer-events: none; ?�거 - ?�크�?차단 방�? */
 }
 
-/* 모든 ?�위 ?�소???�벤???�파 최적?? */
+/* Ensure nested elements inherit the restored pointer behavior */
 .container * {
   pointer-events: auto;
 }
 
-/* ?�이??컨테?�너 - ?�이?�브 ?�크롤만 ?�용 */
+/* Items container: scrollable column that isolates gallery scrolling */
 .itemsContainer {
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: auto; /* 갤러�??��? ?�크롤만 ?�용 */
+  overflow: auto; /* Only the gallery list scrolls; the document stays fixed */
   position: relative;
 
-  /* ?�능 최적?? */
+  /* Performance optimizations */
   contain: layout style;
   transform: translateZ(0);
-  overscroll-behavior: contain; /* 체이닝 방지: 내부 스크롤만 허용 */
+  overscroll-behavior: contain; /* Prevent scroll chaining outside the modal */
 
-  /* ?�크�??�벤?? */
+  /* Pointer + scroll handling */
   scrollbar-gutter: stable;
   scroll-snap-type: y proximity;
   pointer-events: auto;
 
-  /* 컨테?�너 쿼리 */
+  /* Container query hook for responsive spacing */
   container-type: size;
   container-name: items-list;
 }
-
-/* ?�킷 ?�크롤바 ?��??? */
+/* Custom scrollbar styling (WebKit browsers only) */
 .itemsContainer::-webkit-scrollbar {
-  width: var(--xeg-scrollbar-width); /* 0.5rem�??�큰?�로 교체 */
+  width: var(--xeg-scrollbar-width); /* Tokenized replacement for the old 0.5rem magic number */
 }
 
 .itemsContainer::-webkit-scrollbar-track {
@@ -263,7 +257,9 @@
 
 .itemsContainer::-webkit-scrollbar-thumb {
   background: var(--xeg-color-neutral-300);
-  border-radius: var(--xeg-scrollbar-border-radius); /* 0.25rem�??�큰?�로 교체 */
+  border-radius: var(
+    --xeg-scrollbar-border-radius
+  ); /* Tokenized replacement for the old 0.25rem radius */
   transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
 }
 
@@ -273,19 +269,18 @@
 
 .container.uiHidden .toolbarWrapper,
 .container.uiHidden .content > *:not([data-xeg-role='items-list']) {
-  /* 개별 UI ?�소�??�벤??차단 */
+  /* Hide non-content UI surfaces while the gallery is in immersive mode */
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
-/* ?�크�?가?�한 콘텐�??�역?� ??�� ?�벤???�용 */
 .container.uiHidden [data-xeg-role='items-list'],
 .container.uiHidden .itemsContainer {
+  /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;
 }
 
-/* ?�태�?최적?? */
 .container.visible {
   opacity: 1;
   transform: scale3d(1, 1, 1);
@@ -296,30 +291,30 @@
   align-items: center;
 }
 
-/* 갤러리 아이템 기본 스타일 - 앵커형 스크롤에 최적화 */
+/* Gallery item wrapper optimized for anchor-style scrolling */
 .galleryItem {
   position: relative;
-  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem */
+  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem reference */
   border-radius: var(--xeg-radius-lg, 0.5rem);
-  transition: var(--xeg-transition-elevation-normal); /* 앵커형 변단 렬 */
+  transition: var(--xeg-transition-elevation-normal); /* Smooth anchor snapping */
 
-  /* 성능 최적화 */
+  /* Performance optimizations */
   contain: layout style;
   transform: translateZ(0);
 
-  /* 스크롤 스냅 */
+  /* Scroll snapping */
   scroll-snap-align: start;
   scroll-margin-top: var(--xeg-spacing-sm);
 }
 
-/* ?�커?�된 ?�이??강조 - 2�??�두�?방�?�??�해 ?�니메이���거 */
+/* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */
 .itemActive {
   position: relative;
   z-index: 1;
-  /* 기존 itemActive::before ?�니메이???�거�?2�??�두�?방�? */
+  /* Legacy ::before glow animation removed to reduce distraction */
 }
 
-/* focusGlow ?�니메이???�거 - 2�??�두�?방�? */
+/* focusGlow animation removed (Phase 328) */
 
 /* Phase 328: Transparent spacer for last item top-align scrolling */
 .scrollSpacer {
@@ -340,48 +335,47 @@
 }
 
 .container:has(.itemActive) {
-  /* ?�성 ?�이?�이 ?�을 ?? */
+  /* Flag used by observers to know when at least one item is active */
   --has-active-item: 1;
 }
 
 .container:has(.toolbarWrapper:hover) {
-  /* ?�바 ?�버 ??컨테?�너 ?�태 변�? */
+  /* Surface-level signal to indicate the toolbar is currently interactive */
   --toolbar-interaction: 1;
 }
 
-/* ?�립?�인 ?�단 ?�버 감�? ?�역 - ?�장??감�? ?�역 */
+/* Invisible hover strip that keeps the toolbar awake without covering content */
 .toolbarHoverZone {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--xeg-hover-zone-height); /* 120px�??�큰?�로 교체 */
-  z-index: var(--xeg-z-toolbar-hover-zone); /* keeps hover detection just below toolbar */
+  height: var(--xeg-hover-zone-height); /* Tokenized replacement for the old 120px magic number */
+  z-index: var(--xeg-z-toolbar-hover-zone); /* Keep hover detection just below the toolbar */
   background: transparent;
-  pointer-events: auto; /* ?�버 감�?�??�해 ?�벤???�용 */
+  pointer-events: auto; /* Dedicated hover sensor */
 }
 
-/* ?�버 감�?�??�한 기본 ?��???- ?�로?�션 빌드 ?�환??개선 */
+/* Provide immediate feedback while the hover strip is active */
 .toolbarHoverZone:hover {
-  /* ?�버 ?�태 ?�시�??�한 ?��? ?�성 */
   z-index: var(--xeg-z-toolbar-hover-zone);
   background: var(--xeg-toolbar-hover-zone-bg, transparent);
 }
 
-/* ?�바가 ?�시???�태?�서???�버 ?�역 ?�전??비활?�화 (설??메뉴??열린 경우 제외) */
+/* Disable the hover strip when the toolbar is already locked open (settings expanded) */
 .container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
 .container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
   pointer-events: none;
 }
 
-/* :has() 미�???브라?��?�??�한 ?�?? */
+/* Fallback for browsers without :has() support */
 @supports not (selector(:has(*))) {
   .toolbarWrapper:hover ~ .toolbarHoverZone {
     pointer-events: none;
   }
 }
 
-/* ?�바 ?�버 ?�리�??�역??마우?��? ?�라갔을 ???�바 ?�시 */
+/* Hover trigger next to the toolbar for browsers that lack :has */
 .toolbarHoverTrigger:hover + .toolbarWrapper {
   opacity: 1;
   transform: translateY(0);
@@ -391,7 +385,7 @@
   --toolbar-pointer-events: auto;
 }
 
-/* ?�버 ??부�?컨테?�너??CSS 변???�정 - 강화??가?�성 */
+/* Keep toolbar visible when hover strips or layout toggles are engaged */
 .container.initialToolbarVisible .toolbarWrapper,
 .container:has(.toolbarHoverZone:hover) .toolbarWrapper {
   --toolbar-opacity: 1;
@@ -400,9 +394,8 @@
   --toolbar-transform-y: 0;
 }
 
-/* :has() 지?�하지 ?�는 브라?��?�??�한 ?�??- ?�로?�션 빌드 ?�환??개선 */
+/* Additional fallbacks for browsers without :has() support */
 @supports not (selector(:has(*))) {
-  /* ?�버 ?�리�??�역 ?�버 ??직접 ?�제 ?�소???�바 ?�퍼???�용 */
   .toolbarHoverZone:hover + .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -410,7 +403,6 @@
     --toolbar-transform-y: 0;
   }
 
-  /* 추�? ?�?? ?�반 ?�제 ?�택???�용 */
   .toolbarHoverZone:hover ~ .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -418,7 +410,6 @@
     --toolbar-transform-y: 0;
   }
 
-  /* ??견고???�?? 부�??�버 */
   .container:hover .toolbarWrapper {
     --toolbar-opacity: 1;
     --toolbar-visibility: visible;
@@ -427,7 +418,7 @@
   }
 }
 
-/* 갤러�??�바 컴포?�트 ?�체??가?�성 보장 */
+/* Ensure every toolbar component honors the wrapper's visibility variables */
 .toolbarWrapper [class*='galleryToolbar'],
 .toolbarWrapper [data-testid*='toolbar'] {
   opacity: var(--toolbar-opacity, 0);
@@ -436,7 +427,7 @@
   pointer-events: var(--toolbar-pointer-events, none);
 }
 
-/* ?�바 버튼???�벤???�파 방�? �??�릭 보장 */
+/* Toolbar buttons should always be clickable even when wrapper blocks interaction */
 .toolbarWrapper button,
 .toolbarWrapper [role='button'],
 .toolbarWrapper .toolbarButton {
@@ -445,28 +436,27 @@
   z-index: 10;
 }
 
-/* 콘텐�??�역 - 컨테?�너 쿼리 지?�과 ?�체 ?�면 ?�용 */
+/* Main content wrapper that hosts the scrolling list and toolbar */
 .content {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: clip;
   position: relative;
-  /* ?�바 ?�역 ?�거 - ?�재 ?�체 ?�면 ?�용 */
 
-  /* ?�능 최적?? */
+  /* Performance optimizations */
   contain: layout style;
   transform: translateZ(0);
 
-  /* ?�벤???�파 */
+  /* Maintain pointer events for nested surfaces */
   pointer-events: auto;
 
-  /* 컨테?�너 쿼리 */
+  /* Container query hook for responsive padding */
   container-type: size;
   container-name: content-area;
 }
 
-/* ?�니메이??- GPU 가?? */
+/* Shared fade helpers leverage GPU-backed transforms */
 .fadeInOut {
   animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
 }
@@ -482,7 +472,7 @@
   }
 }
 
-/* �??�태 메시지 - ?�합???�?�포그래?? */
+/* Empty state message with responsive typography */
 .emptyMessage {
   text-align: center;
   color: var(--xeg-color-text-secondary);
@@ -504,7 +494,7 @@
   line-height: 1.5;
   color: var(--xeg-color-text-tertiary);
 }
-/* 컨테?�너 쿼리 기반 반응???�자?? */
+/* Container query responsive sizing */
 @container gallery-container (max-width: 48rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
@@ -523,7 +513,7 @@
   }
 }
 
-/* 기존 미디??쿼리??컨테?�너 쿼리 지?�이 ?�는 브라?��?�??�한 ?�백 */
+/* Traditional media query fallback when container queries are unavailable */
 @media (width <= 760.5rem) {
   .itemsContainer {
     padding: var(--xeg-spacing-mobile);
@@ -541,8 +531,7 @@
     gap: var(--xeg-spacing-compact);
   }
 }
-/* Phase 254: 접근성 - 모션 감소 지원 */
-/* scroll-behavior와 will-change는 명시적으로 제어 */
+/* Phase 254: Reduced motion support (scroll-behavior + will-change overrides) */
 @media (prefers-reduced-motion: reduce) {
   .itemsContainer {
     scroll-behavior: auto;
@@ -553,44 +542,43 @@
 
 /* Light mode support deferred to design-tokens.semantic.css */
 
-/* 비어있는 상태 버튼 스타일 */
+/* Empty state button spacing */
 .emptyButton {
   margin-top: 1rem;
 }
 
-/* Phase 254: 감소된 모션은 semantic 레이어의 토큰으로 자동 처리 */
-/* animation만 명시적으로 비활성화 */
+/* Phase 254: Disable motion helpers when reduced-motion is requested */
 @media (prefers-reduced-motion: reduce) {
   .fadeInOut {
     animation: none;
   }
 
-  /* transform은 hover 상태에서 제거 */
+  /* Disable hover transforms for toolbar surfaces */
   .toolbarWrapper:hover,
   .toolbarWrapper:focus-within {
     transform: none;
   }
 }
 
-/* ?�바 ?�버 ?�리�??�역 */
+/* Legacy hover trigger area (used alongside toolbarHoverZone) */
 .toolbarHoverTrigger {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: var(--xeg-hover-zone-height); /* ?�장???�버 ?�역 */
+  height: var(--xeg-hover-zone-height); /* Same token as hover zone */
   z-index: var(--xeg-z-toolbar-hover-zone);
   pointer-events: auto;
   background: transparent;
 }
 
-/* ?�바 ?�체 ?�버 ?�에???�시 ?��? */
+/* Ensure interacting with toolbar components forces them visible */
 .container [class*='galleryToolbar']:hover {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
 }
 
-/* 브라?��? ?�환?�을 ?�한 ?��?방법 */
+/* Fallback for browsers that cannot select siblings via :hover + */
 @supports not (selector(:hover + *)) {
   .container:hover [class*='galleryToolbar'] {
     --toolbar-opacity: 1;

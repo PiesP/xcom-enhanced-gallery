@@ -48,7 +48,7 @@ src/features/
 │  │  └─ (기타 훅)
 │  ├─ styles/
 │  │  ├─ gallery-global.css                (200 라인, 8 KB)
-│  │  └─ Gallery.module.css                (150 라인, 5 KB)
+│  │  └─ test/fixtures/gallery/Gallery.module.css (150 라인, 5 KB · test fixture)
 │  └─ gallery.feature.tsx                  (40 라인, 1.5 KB)
 │
 └─ (기타 기능 모듈: 작음)
@@ -368,7 +368,7 @@ CSS 원본: 38 KB
 --xeg-button-hover: oklch(55% 0.18 250);
 ```
 
-**Gallery.module.css** (5 KB)
+**test/fixtures/gallery/Gallery.module.css** (5 KB · test fixture)
 
 ```css
 /* ❌ 현재: 모든 상태 포함 */

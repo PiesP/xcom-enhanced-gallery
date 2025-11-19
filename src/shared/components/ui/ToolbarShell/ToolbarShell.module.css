@@ -5,22 +5,21 @@
   border-radius: var(--xeg-radius-lg);
   transition:
     background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 .elevationLow {
-  box-shadow: var(--xeg-shadow-md);
+  box-shadow: none;
   z-index: var(--xeg-layer-toolbar);
 }
 
 .elevationMedium {
-  box-shadow: var(--xeg-shadow-md);
+  box-shadow: none;
   z-index: var(--xeg-layer-toolbar-panel);
 }
 
 .elevationHigh {
-  box-shadow: var(--xeg-shadow-md);
+  box-shadow: none;
   z-index: var(--xeg-z-toolbar-panel-active);
 }
 

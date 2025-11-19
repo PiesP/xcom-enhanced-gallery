@@ -73,8 +73,8 @@
   }
 
   .xeg-gallery-root ::-webkit-scrollbar {
-    width: var(--scrollbar-width, 0.5rem);
-    height: var(--scrollbar-width, 0.5rem);
+    width: var(--xeg-scrollbar-width, 0.5rem);
+    height: var(--xeg-scrollbar-width, 0.5rem);
   }
 
   .xeg-gallery-root ::-webkit-scrollbar-track {

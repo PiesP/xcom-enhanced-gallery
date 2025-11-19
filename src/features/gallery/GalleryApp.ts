@@ -24,8 +24,8 @@ import type { MediaInfo } from '../../shared/types/media.types';
 import { logger } from '@shared/logging';
 import { MediaService } from '../../shared/services/media-service';
 import { NotificationService } from '@shared/services/notification-service';
-import { initializeTheme } from './services/theme-initialization';
 import { isGMAPIAvailable } from '@shared/external/userscript';
+import type { SettingsService } from '../settings/services/settings-service';
 
 /**
  * Gallery app configuration interface
@@ -43,6 +43,7 @@ export interface GalleryConfig {
 export class GalleryApp {
   private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
+  private settingsService: SettingsService | null = null;
   private isInitialized = false;
   private readonly notificationService = NotificationService.getInstance();
   private readonly config: GalleryConfig = {
@@ -106,39 +107,12 @@ export class GalleryApp {
       const settingsService = new SettingsService();
       await settingsService.initialize();
       registerSettingsManager(settingsService);
+      this.settingsService = settingsService;
 
       logger.debug('[GalleryApp] ✅ SettingsService initialized');
     } catch (error) {
       logger.warn('[GalleryApp] SettingsService initialization failed (non-critical):', error);
       // SettingsService initialization failure does not affect gallery operation
-    }
-  }
-
-  /**
-   * Phase 415: Deferred BaseService initialization (Theme, Language)
-   *
-   * Moved from bootstrap/base-services.ts to GalleryApp initialization
-   * for lazy loading. Previously initialized during Phase 2, now deferred to Phase 6.
-   * This reduces initial bootstrap time by 5-10%.
-   *
-   * Benefits:
-   * - Only initialized when gallery is actually used
-   * - If user never opens gallery, these services are never loaded
-   * - Reduces initial page load impact
-   *
-   * @private
-   */
-  private async ensureBaseServicesInitialized(): Promise<void> {
-    try {
-      logger.debug('[GalleryApp] Ensuring BaseService initialization (Phase 415)');
-
-      const { initializeCoreBaseServices } = await import('../../bootstrap/base-services');
-      await initializeCoreBaseServices();
-
-      logger.debug('[GalleryApp] ✅ BaseService initialization complete (Theme, Language)');
-    } catch (error) {
-      logger.warn('[GalleryApp] BaseService initialization failed (non-critical):', error);
-      // BaseService initialization failure does not affect gallery operation (uses defaults)
     }
   }
 
@@ -164,19 +138,19 @@ export class GalleryApp {
         return;
       }
 
-      // Phase 415: Deferred BaseService initialization (Theme, Language)
-      await this.ensureBaseServicesInitialized();
-
       // Phase 258: Delayed SettingsService load (bootstrap optimization)
       // Removed from bootstrap/features.ts, loaded here
       await this.ensureSettingsServiceInitialized();
 
-      // Phase 415: Initialize theme with explicit error handling
+      // Phase 415: Verify theme initialization
       try {
-        initializeTheme();
-        logger.debug('[GalleryApp] Theme initialization complete');
+        // Phase 360: Use ThemeService (already initialized in base-services)
+        // Legacy initializeTheme() removed to prevent overwriting PersistentStorage settings with localStorage defaults
+        const { getThemeService } = await import('../../shared/container/service-accessors');
+        const currentTheme = getThemeService().getCurrentTheme();
+        logger.debug(`[GalleryApp] Theme confirmed: ${currentTheme}`);
       } catch (error) {
-        logger.warn('[GalleryApp] Theme initialization failed (non-critical):', error);
+        logger.warn('[GalleryApp] Theme check failed (non-critical):', error);
       }
 
       await this.initializeRenderer();
@@ -212,41 +186,55 @@ export class GalleryApp {
     try {
       const { initializeGalleryEvents } = await import('../../shared/utils/events');
 
-      await initializeGalleryEvents({
-        onMediaClick: async (_mediaInfo, element) => {
-          try {
-            const mediaService = await this.getMediaService();
-            const result = await mediaService.extractFromClickedElement(element);
+      // Get settings if available
+      const enableKeyboard = this.settingsService
+        ? (this.settingsService.get<boolean>('gallery.enableKeyboardNav') ?? true)
+        : true;
 
-            if (result.success && result.mediaItems.length > 0) {
-              await this.openGallery(result.mediaItems, result.clickedIndex);
-            } else {
-              logger.warn('[GalleryApp] Media extraction failed:', {
-                success: result.success,
-                mediaCount: result.mediaItems.length,
-              });
+      await initializeGalleryEvents(
+        {
+          onMediaClick: async (_mediaInfo, element) => {
+            try {
+              const mediaService = await this.getMediaService();
+              const result = await mediaService.extractFromClickedElement(element);
+
+              if (result.success && result.mediaItems.length > 0) {
+                await this.openGallery(result.mediaItems, result.clickedIndex);
+              } else {
+                logger.warn('[GalleryApp] Media extraction failed:', {
+                  success: result.success,
+                  mediaCount: result.mediaItems.length,
+                });
+                void this.notificationService.error(
+                  'Failed to load media',
+                  'Could not find images or videos.'
+                );
+              }
+            } catch (error) {
+              logger.error('[GalleryApp] Error during media extraction:', error);
               void this.notificationService.error(
-                'Failed to load media',
-                'Could not find images or videos.'
+                'Error occurred',
+                error instanceof Error ? error.message : 'Unknown error'
               );
             }
-          } catch (error) {
-            logger.error('[GalleryApp] Error during media extraction:', error);
-            void this.notificationService.error(
-              'Error occurred',
-              error instanceof Error ? error.message : 'Unknown error'
-            );
-          }
-        },
-        onGalleryClose: () => {
-          this.closeGallery();
-        },
-        onKeyboardEvent: event => {
-          if (event.key === 'Escape' && gallerySignals.isOpen.value) {
+          },
+          onGalleryClose: () => {
             this.closeGallery();
-          }
+          },
+          onKeyboardEvent: event => {
+            if (event.key === 'Escape' && gallerySignals.isOpen.value) {
+              this.closeGallery();
+            }
+          },
         },
-      });
+        {
+          enableKeyboard,
+          enableMediaDetection: true,
+          debugMode: false,
+          preventBubbling: true,
+          context: 'gallery',
+        }
+      );
 
       logger.info('[GalleryApp] ✅ Event handlers setup complete');
     } catch (error) {

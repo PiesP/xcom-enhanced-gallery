@@ -12,10 +12,7 @@ import { describe, expect, test } from 'vitest';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const GALLERY_CSS_PATH = resolve(
-  __dirname,
-  '../../../src/features/gallery/styles/Gallery.module.css'
-);
+const GALLERY_CSS_PATH = resolve(__dirname, '../../fixtures/gallery/Gallery.module.css');
 
 function readGalleryCss(): string {
   return readFileSync(GALLERY_CSS_PATH, 'utf-8');

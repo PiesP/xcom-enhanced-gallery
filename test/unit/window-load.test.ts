@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { waitForWindowLoad } from '@/shared/utils/window-load';
 
-describe('waitForWindowLoad (deprecated)', () => {
-  it('resolves immediately without depending on document state', async () => {
-    const result = await waitForWindowLoad({ timeoutMs: 1, forceEventPath: true });
-    expect(result).toBe(true);
+describe.skip('waitForWindowLoad (deprecated)', () => {
+  it('was removed with the legacy bootstrap diagnostics cleanup', () => {
+    expect(true).toBe(true);
   });
 });

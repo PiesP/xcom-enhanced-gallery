@@ -144,6 +144,15 @@ describe('SettingsService', () => {
       await service.set('toolbar.autoHideDelay', 1200);
       expect(service.get('toolbar.autoHideDelay')).toBe(1200);
     });
+
+    it('gallery.imageFitMode 설정을 저장소에 즉시 반영해야 함', async () => {
+      await service.set('gallery.imageFitMode', 'fitHeight');
+
+      const reloaded = new SettingsService();
+      await reloaded.initialize();
+
+      expect(reloaded.get('gallery.imageFitMode')).toBe('fitHeight');
+    });
   });
 
   describe('구독 (subscribe)', () => {

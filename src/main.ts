@@ -142,6 +142,16 @@ async function initializeInfrastructure(): Promise<void> {
   }
 }
 
+async function initializeBaseServicesStage(): Promise<void> {
+  try {
+    const { initializeCoreBaseServices } = await import('@/bootstrap/base-services');
+    await initializeCoreBaseServices();
+    logger.debug('✅ Base services initialization complete');
+  } catch (error) {
+    logger.warn('⚠️ Base services initialization failed:', error);
+  }
+}
+
 /**
  * Non-Critical system background initialization
  * Phase 3.1: Utilize requestIdleCallback
@@ -194,6 +204,7 @@ const bootstrapStages: BootstrapStage[] = [
   { label: 'Developer tooling', run: initializeDevToolsIfNeeded },
   { label: 'Infrastructure', run: initializeInfrastructure },
   { label: 'Critical systems', run: initializeCriticalSystems },
+  { label: 'Base services', run: initializeBaseServicesStage },
   { label: 'Feature service registration', run: registerFeatureServicesLazy },
   { label: 'Global event wiring', run: () => setupGlobalEventHandlers() },
   { label: 'Gallery initialization', run: initializeGalleryIfPermitted },
@@ -294,14 +305,16 @@ async function cleanup(): Promise<void> {
 /**
  * Main application entry point
  *
- * 📋 7-stage bootstrap process:
- * 1️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
- * 2️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts (Phase 2.1)
- * 3️⃣  Base services (Animation/Theme/Language) - src/bootstrap/base-services.ts (Phase 2.1)
- * 4️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
- * 5️⃣  Global event handler setup - src/bootstrap/events.ts
- * 6️⃣  Gallery app initialization - src/features/gallery/GalleryApp.ts
- * 7️⃣  Background system initialization (non-critical services)
+ * 📋 9-stage bootstrap process:
+ * 1️⃣  Global styles - src/styles/globals
+ * 2️⃣  Developer tooling - src/bootstrap/dev-tools.ts
+ * 3️⃣  Infrastructure initialization (Vendor load) - src/bootstrap/environment.ts
+ * 4️⃣  Core systems (Core services + notification stack) - src/bootstrap/critical-systems.ts (Phase 2.1)
+ * 5️⃣  Base services (Theme/Language) - src/bootstrap/base-services.ts (Phase 2.1)
+ * 6️⃣  Feature service registration (lazy load) - src/bootstrap/features.ts
+ * 7️⃣  Global event handler setup - src/bootstrap/events.ts
+ * 8️⃣  Gallery app initialization - src/features/gallery/GalleryApp.ts
+ * 9️⃣  Background system initialization (non-critical services)
  *
  * 💡 Critical vs Non-Critical:
  * - Critical: Needed immediately after page load (infrastructure, core, gallery)

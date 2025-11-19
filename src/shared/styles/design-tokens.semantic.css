@@ -302,6 +302,9 @@
     --xeg-opacity-disabled: 0.5;
     --xeg-hover-lift: translateY(-0.125rem);
 
+    /* Typography Tokens */
+    --xeg-font-family-ui: var(--font-family-primary);
+
     /* Border Radius - Extended Scale */
     --xeg-radius-sm: var(--radius-sm);
     --xeg-radius-md: var(--radius-md);

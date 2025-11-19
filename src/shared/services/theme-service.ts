@@ -65,7 +65,7 @@ export class ThemeService extends BaseServiceImpl {
     this.initializeSystemThemeDetection();
 
     // Apply initial theme
-    this.applyCurrentTheme();
+    this.applyCurrentTheme(true);
   }
 
   /**
@@ -198,10 +198,10 @@ export class ThemeService extends BaseServiceImpl {
   /**
    * Apply theme based on current setting
    */
-  private applyCurrentTheme(): boolean {
+  private applyCurrentTheme(force = false): boolean {
     const effectiveTheme = this.getEffectiveTheme();
 
-    if (this.currentTheme !== effectiveTheme) {
+    if (force || this.currentTheme !== effectiveTheme) {
       this.currentTheme = effectiveTheme;
 
       // Set data-theme attribute for automatic CSS application

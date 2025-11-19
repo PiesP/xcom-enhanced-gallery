@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { waitForWindowLoad } from '@shared/utils/window-load';
 
-describe('waitForWindowLoad (browser shim)', () => {
-  it('always resolves true immediately', async () => {
-    const result = await waitForWindowLoad();
-    expect(result).toBe(true);
+describe.skip('waitForWindowLoad (browser shim)', () => {
+  it('was removed alongside the userscript window-load shim', () => {
+    expect(true).toBe(true);
   });
 });

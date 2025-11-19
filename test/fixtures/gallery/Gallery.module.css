@@ -10,6 +10,7 @@
  * @status ⚠️ WIP: Currently unused in production code, used only for test validation
  * (Phase 37, cross-component-consistency). Planned for future VerticalGalleryView
  * CSS Modules migration or removal if deemed unnecessary.
+ * @note Fixture-only file that lives under test/fixtures to avoid shipping unused CSS.
  * @features
  * - CSS Cascade Layers for style priority management
  * - OKLCH color space and CSS Color Module Level 4

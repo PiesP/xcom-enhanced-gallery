@@ -82,7 +82,7 @@
   --toolbar-button-accent-hover: var(--xeg-color-border-hover);
   --toolbar-button-focus-shadow: 0 0 0 0.125em
     color-mix(in oklch, var(--toolbar-button-accent-hover) 20%, transparent);
-  --toolbar-button-hover-shadow: var(--xeg-shadow-sm);
+  --toolbar-button-hover-shadow: none;
 
   transition:
     var(--xeg-transition-surface-fast),
@@ -112,7 +112,7 @@
 
 /* 클릭 상태 - 단순화된 피드백 */
 .toolbarButton:active:not([data-disabled='true']) {
-  box-shadow: var(--xeg-shadow-sm);
+  box-shadow: none;
   /* 단순한 클릭 효과 - transform 제거 */
 }
 
@@ -159,7 +159,7 @@
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
 
   /* 확장 상태에서 더 강조된 그림자 - 패널까지 포함하는 통합 그림자 */
-  box-shadow: var(--xeg-shadow-lg);
+  box-shadow: none;
 }
 
 /* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
@@ -176,31 +176,14 @@
   pointer-events: auto !important;
 }
 
-.galleryToolbar[data-state='loading'] {
-  --toolbar-opacity: 0.7 !important;
-  --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-loading);
-  /* 로딩 상태에서도 가시성 보장 */
-  opacity: 0.7 !important;
-  pointer-events: auto !important;
-}
-
-.galleryToolbar[data-state='downloading'] {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-downloading);
-  /* 다운로드 상태에서도 가시성 보장 */
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
+.galleryToolbar[data-state='loading'],
+.galleryToolbar[data-state='downloading'],
 .galleryToolbar[data-state='error'] {
-  --toolbar-opacity: 1 !important;
   --toolbar-pointer-events: auto !important;
-  --toolbar-bg: var(--toolbar-bg-error);
-  --toolbar-offset-y: -0.25em; /* -4px → -0.25em */
-  /* 에러 상태에서도 가시성 보장 */
+
   opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
   pointer-events: auto !important;
 }
 
@@ -398,7 +381,7 @@ button.fitButton {
 .downloadButton {
   position: relative;
 
-  --toolbar-button-hover-shadow: var(--xeg-shadow-md);
+  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
 /* 반응형 디자인 */
@@ -487,9 +470,7 @@ button.fitButton {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    box-shadow:
-      0 0.25rem 1rem var(--xeg-color-overlay-light),
-      /* 4px 16px → 0.25rem 1rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light); /* 2px 8px → 0.125rem 0.5rem */
+    box-shadow: none;
   }
 
   [data-theme='dark'] .galleryToolbar {
@@ -547,17 +528,11 @@ button.fitButton {
   border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  box-shadow:
-    0 0.25rem 1.25rem var(--xeg-color-overlay-medium),
-    /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-light) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
 [data-theme='dark'] .galleryToolbar[data-high-contrast='true'] {
   background: var(--xeg-toolbar-bg-high-contrast) !important;
   border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
-  box-shadow:
-    0 0.25rem 1.25rem var(--xeg-color-overlay-medium),
-    /* 4px 20px → 0.25rem 1.25rem */ 0 0.125rem 0.5rem var(--xeg-color-overlay-medium) !important; /* 2px 8px → 0.125rem 0.5rem */
 }
 
 [data-theme='dark'] [data-high-contrast='true'] .toolbarButton {
@@ -569,7 +544,6 @@ button.fitButton {
 [data-high-contrast='true'] .toolbarButton:hover:not(:disabled) {
   background: var(--xeg-color-neutral-100);
   border-color: var(--xeg-color-overlay-medium);
-  box-shadow: 0 0.125em 0.5em var(--xeg-color-overlay-light); /* 2px 8px → 0.125em 0.5em */
 }
 
 /* ===== 접근성 개선 ===== */
@@ -607,7 +581,7 @@ button.fitButton {
   border-top: var(--border-width-thin) solid
     var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
-  box-shadow: var(--xeg-toolbar-panel-shadow);
+  box-shadow: none;
   z-index: var(--xeg-z-toolbar-panel);
   will-change: transform, opacity;
   overscroll-behavior: contain;
@@ -633,7 +607,7 @@ button.fitButton {
   visibility: visible;
   pointer-events: auto;
   border-top-color: var(--toolbar-surface-border, var(--xeg-toolbar-border));
-  box-shadow: var(--xeg-toolbar-panel-shadow);
+  box-shadow: none;
   transition:
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),

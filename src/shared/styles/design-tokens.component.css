@@ -5,78 +5,69 @@
 
 @layer xeg.tokens {
   :where(:root, .xeg-theme-scope) {
-    /* Gallery Component - 배경은 semantic 레벨의 --xeg-gallery-bg 사용 */
-    /* Removed unused: --gallery-border, --gallery-shadow */
-
     /* Toolbar Component */
-    --toolbar-bg: var(--xeg-bg-toolbar);
-    /* Removed unused: --toolbar-text, --toolbar-border, --toolbar-shadow, --toolbar-height, --toolbar-padding, --toolbar-gap */
+    /* --xeg-toolbar-bg is defined in semantic.css */
 
-    /* Toolbar Expandable Panel (Phase 44) */
+    /* Toolbar Expandable Panel */
     --xeg-toolbar-panel-transition:
       height var(--xeg-duration-normal) var(--xeg-ease-standard),
       opacity var(--xeg-duration-fast) var(--xeg-ease-standard);
     --xeg-toolbar-panel-height: 0;
-    --xeg-toolbar-panel-max-height: 17.5rem; /* 280px = 17.5rem */
+    --xeg-toolbar-panel-max-height: 17.5rem; /* 280px */
 
     /* Button Component */
-    --button-bg-primary-hover: var(--color-primary-hover);
-    --button-bg-primary-active: var(--color-primary-active);
-    --button-text-primary: var(--color-text-inverse);
-    --button-text-secondary: var(--color-text-primary);
-    --button-border: var(--color-border-default);
-    /* Removed: --button-bg-primary, --button-radius, --button-padding-x, --button-padding-y, --button-height */
-    --button-transition: var(--transition-fast);
+    --xeg-button-bg-primary-hover: var(--color-primary-hover);
+    --xeg-button-bg-primary-active: var(--color-primary-active);
+    --xeg-button-text-primary: var(--color-text-inverse);
+    --xeg-button-text-secondary: var(--color-text-primary);
+    --xeg-button-border: var(--color-border-default);
+    --xeg-button-transition: var(--transition-fast);
 
     /* Panel/Surface Component */
-    --panel-bg: var(--color-bg-elevated);
-    --panel-border: var(--color-border-default);
-    --panel-radius: var(--xeg-radius-lg);
-    /* Removed: --panel-padding (use --space-md directly) */
-    --panel-shadow: var(--shadow-sm);
+    --xeg-panel-bg: var(--color-bg-elevated);
+    --xeg-panel-border: var(--color-border-default);
+    --xeg-panel-radius: var(--xeg-radius-lg);
+    --xeg-panel-shadow: var(--shadow-sm);
 
-    /* Legacy glass surface tokens now map to flat panels */
-    --glass-bg: var(--color-glass-bg);
-    --glass-border: var(--color-glass-border);
-    --glass-backdrop-filter: none;
-    --glass-shadow: none;
+    /* Glass Surface (Legacy support mapping to flat panels) */
+    --xeg-glass-bg: var(--color-glass-bg);
+    --xeg-glass-border: var(--color-glass-border);
+    --xeg-glass-backdrop-filter: none;
+    --xeg-glass-shadow: none;
 
     /* Media/Image Component */
-    --media-border-radius: var(--xeg-radius-md);
-    --media-loading-bg: var(--color-bg-secondary);
-    --media-placeholder-text: var(--color-text-muted);
+    --xeg-media-border-radius: var(--xeg-radius-md);
+    --xeg-media-loading-bg: var(--color-bg-secondary);
+    --xeg-media-placeholder-text: var(--color-text-muted);
     --xeg-aspect-default: 4 / 3;
 
     /* Scrollbar Component */
-    --scrollbar-width: 0.5rem; /* 8px = 0.5rem */
-    --scrollbar-track-bg: var(--color-bg-secondary);
-    --scrollbar-thumb-bg: var(--color-border-emphasis);
-    --scrollbar-thumb-hover-bg: var(--color-text-secondary);
-    --xeg-scrollbar-width: var(--scrollbar-width);
+    --xeg-scrollbar-width: 0.5rem; /* 8px */
+    --xeg-scrollbar-track-bg: var(--color-bg-secondary);
+    --xeg-scrollbar-thumb-bg: var(--color-border-emphasis);
+    --xeg-scrollbar-thumb-hover-bg: var(--color-text-secondary);
     --xeg-scrollbar-border-radius: var(--radius-sm);
 
     /* Hover Zone Component */
-    --hover-zone-height: 7.5rem; /* 120px = 7.5rem */
-    --hover-zone-bg: transparent;
-    --hover-zone-transition: var(--transition-fast);
-    --xeg-hover-zone-height: var(--hover-zone-height);
+    --xeg-hover-zone-height: 7.5rem; /* 120px */
+    --xeg-hover-zone-bg: transparent;
+    --xeg-hover-zone-transition: var(--transition-fast);
 
-    /* Animation Presets - Component Specific */
-    --animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
-    --animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-    --animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
-    --animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
-    /* toolbar-slide-* 키프레임 및 토큰 제거: JS API(toolbarSlideDown/Up)만 사용 */
+    /* Animation Presets */
+    --xeg-animation-fade-in: fade-in var(--duration-normal) var(--transition-normal);
+    --xeg-animation-fade-out: fade-out var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
+    --xeg-animation-slide-in: slide-in-bottom var(--duration-normal) var(--transition-normal);
+    --xeg-animation-slide-out: slide-out-top var(--duration-fast) cubic-bezier(0.4, 0, 1, 1);
 
-    /* Spinner Component Tokens */
+    /* Spinner Component */
     --xeg-spinner-size-default: 1rem;
-    --xeg-spinner-border-width: 0.125rem; /* 2px = 0.125rem */
+    --xeg-spinner-border-width: 0.125rem;
     --xeg-spinner-track-color: color-mix(in oklch, var(--xeg-color-neutral-400) 60%, transparent);
     --xeg-spinner-indicator-color: var(--xeg-color-primary, currentColor);
     --xeg-spinner-duration: var(--xeg-duration-normal);
     --xeg-spinner-easing: var(--xeg-easing-linear);
 
-    /* Transition Presets - Component Specific */
+    /* Transition Presets */
     --xeg-transition-surface-normal:
       background-color var(--xeg-duration-normal) var(--xeg-ease-standard),
       border-color var(--xeg-duration-normal) var(--xeg-ease-standard),
@@ -99,8 +90,8 @@
       box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 
-    /* Icon Component Tokens */
-    --xeg-icon-stroke-width: 0.125rem; /* 2px = 0.125rem */
+    /* Icon Component */
+    --xeg-icon-stroke-width: 0.125rem;
     --xeg-icon-size: var(--size-icon-md);
     --xeg-icon-line-height: 1;
     --xeg-icon-color: currentColor;
@@ -133,23 +124,19 @@
     --xeg-spacing-lg: var(--space-lg);
     --xeg-spacing-xl: var(--space-xl);
     --xeg-spacing-2xl: var(--space-2xl);
-
-    /* Phase 269: Gallery Initial Height Fallbacks */
-    --xeg-spacing-3xl: 3rem; /* 48px = 3 × 1rem */
-    --xeg-spacing-5xl: 5rem; /* 80px = 5 × 1rem */
-    --xeg-viewport-height-constrained: 90vh; /* 반응형 제약 높이 */
+    --xeg-spacing-3xl: 3rem;
+    --xeg-spacing-5xl: 5rem;
+    --xeg-viewport-height-constrained: 90vh;
   }
 }
 
 @layer xeg.components {
-  /* ======================================= */
   /* Utility Classes */
-  /* ======================================= */
 
-  /* Legacy glass utility (now a flat surface helper) */
+  /* Glass utility */
   .xeg-glassmorphism {
-    background: var(--glass-bg);
-    border: 0.0625rem solid var(--glass-border); /* 1px = 0.0625rem */
+    background: var(--xeg-glass-bg);
+    border: 0.0625rem solid var(--xeg-glass-border);
     border-radius: var(--xeg-radius-lg);
   }
 
@@ -200,9 +187,9 @@
   @media (prefers-reduced-transparency: reduce) {
     :where(:root, .xeg-theme-scope) {
       --color-glass-bg: var(--color-bg-primary);
-      --glass-bg: var(--color-bg-primary);
+      --xeg-glass-bg: var(--color-bg-primary);
       --xeg-surface-glass-bg: var(--color-bg-surface);
-      --glass-backdrop-filter: none;
+      --xeg-glass-backdrop-filter: none;
     }
   }
 }
