@@ -162,6 +162,13 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
 
+  // Fix: Wrap navState properties in createMemo for reactivity
+  const prevDisabled = createMemo(() => props.navState().prevDisabled);
+  const nextDisabled = createMemo(() => props.navState().nextDisabled);
+  const downloadDisabled = createMemo(() => props.navState().downloadDisabled);
+  const canDownloadAll = createMemo(() => props.navState().canDownloadAll);
+  const anyActionDisabled = createMemo(() => props.navState().anyActionDisabled);
+
   const assignToolbarRef = (element: HTMLDivElement | null) => {
     setToolbarElement(element);
     props.settingsController.assignToolbarRef(element);
@@ -231,11 +238,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             aria-label='이전 미디어'
             title='이전 미디어 (←)'
-            disabled={props.navState().prevDisabled}
+            disabled={prevDisabled()}
             onClick={props.onPreviousClick}
             data-gallery-element='nav-previous'
-            data-disabled={props.navState().prevDisabled}
-            data-action-disabled={props.navState().anyActionDisabled}
+            data-disabled={prevDisabled()}
+            data-action-disabled={anyActionDisabled()}
           >
             <ArrowSmallLeft size={18} />
           </IconButton>
@@ -245,11 +252,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             aria-label='다음 미디어'
             title='다음 미디어 (→)'
-            disabled={props.navState().nextDisabled}
+            disabled={nextDisabled()}
             onClick={props.onNextClick}
             data-gallery-element='nav-next'
-            data-disabled={props.navState().nextDisabled}
-            data-action-disabled={props.navState().anyActionDisabled}
+            data-disabled={nextDisabled()}
+            data-action-disabled={anyActionDisabled()}
           >
             <ArrowSmallRight size={18} />
           </IconButton>
@@ -300,28 +307,28 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             size='toolbar'
             loading={isDownloading()}
             onClick={props.onDownloadCurrent}
-            disabled={props.navState().downloadDisabled}
+            disabled={downloadDisabled()}
             aria-label='현재 파일 다운로드'
             title='현재 파일 다운로드 (Ctrl+D)'
             data-gallery-element='download-current'
-            data-disabled={props.navState().downloadDisabled}
-            data-action-disabled={props.navState().anyActionDisabled}
+            data-disabled={downloadDisabled()}
+            data-action-disabled={anyActionDisabled()}
             data-loading={isDownloading()}
           >
             <ArrowDownTray size={18} />
           </IconButton>
 
-          {props.navState().canDownloadAll && (
+          {canDownloadAll() && (
             <IconButton
               class={toolbarButtonClass(styles.downloadButton, styles.downloadAll)}
               size='toolbar'
               onClick={props.onDownloadAll}
-              disabled={props.navState().downloadDisabled}
+              disabled={downloadDisabled()}
               aria-label={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
               title={`전체 ${totalCount()}개 파일 ZIP 다운로드`}
               data-gallery-element='download-all'
-              data-disabled={props.navState().downloadDisabled}
-              data-action-disabled={props.navState().anyActionDisabled}
+              data-disabled={downloadDisabled()}
+              data-action-disabled={anyActionDisabled()}
               data-loading={isDownloading()}
             >
               <ArrowDownOnSquareStack size={18} />

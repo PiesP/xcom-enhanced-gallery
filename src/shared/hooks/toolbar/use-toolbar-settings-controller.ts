@@ -196,7 +196,22 @@ export function useToolbarSettingsController(
     undefined
   );
 
-  const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>('auto');
+  // Fix: Read initial theme from ThemeService instead of hardcoded 'auto'
+  const getInitialTheme = (): ThemeOption => {
+    try {
+      const service = resolveThemeService(providedThemeService);
+      if (typeof service.isInitialized === 'function' && service.isInitialized()) {
+        return toThemeOption(service.getCurrentTheme());
+      }
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        logger.debug('[ToolbarSettingsController] Failed to read initial theme', error);
+      }
+    }
+    return 'auto';
+  };
+
+  const [currentTheme, setCurrentTheme] = createSignal<ThemeOption>(getInitialTheme());
   const [currentLanguage, setCurrentLanguage] = createSignal<LanguageOption>(
     languageService.getCurrentLanguage() as LanguageOption
   );
