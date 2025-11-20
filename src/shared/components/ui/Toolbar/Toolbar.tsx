@@ -165,15 +165,6 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     })
   );
 
-  createEffect(() => {
-    const mode = currentFitMode();
-    if (!mode) {
-      return;
-    }
-
-    toolbarActions.setFitMode(mode);
-  });
-
   const baseSettingsController = useToolbarSettingsController({
     setNeedsHighContrast: toolbarActions.setHighContrast,
     isSettingsExpanded: settingsExpandedSignal,
@@ -232,6 +223,10 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
     fitContainer: props.onFitContainer,
   }));
 
+  const activeFitMode = createMemo<FitMode>(
+    () => currentFitMode() ?? FIT_MODE_ORDER[0]?.mode ?? 'original'
+  );
+
   const isToolbarDisabled = () => Boolean(isDisabled());
 
   const handleFitModeClick = (mode: FitMode) => (event: MouseEvent) => {
@@ -253,7 +248,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       return true;
     }
 
-    return toolbarState.currentFitMode === mode;
+    return activeFitMode() === mode;
   };
 
   const handlePrevious = createGuardedHandler(() => navState().prevDisabled, props.onPrevious);
@@ -298,6 +293,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       progressWidth={progressWidth}
       fitModeOrder={FIT_MODE_ORDER}
       fitModeLabels={FIT_MODE_LABELS}
+      activeFitMode={activeFitMode}
       handleFitModeClick={handleFitModeClick}
       isFitDisabled={isFitDisabled}
       onPreviousClick={handlePrevious}

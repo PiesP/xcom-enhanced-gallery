@@ -72,6 +72,7 @@ export interface ToolbarViewProps extends ToolbarViewBaseProps {
   readonly progressWidth: () => string;
   readonly fitModeOrder: ReadonlyArray<FitModeDefinition>;
   readonly fitModeLabels: Record<FitMode, { label: string; title: string }>;
+  readonly activeFitMode: () => FitMode;
   readonly handleFitModeClick: (mode: FitMode) => (event: MouseEvent) => void;
   readonly isFitDisabled: (mode: FitMode) => boolean;
   readonly onPreviousClick: (event: MouseEvent) => void;
@@ -157,6 +158,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const isDownloading = createMemo(() =>
     Boolean(resolveOptionalAccessorValue(props.isDownloading))
   );
+  const activeFitMode = createMemo(() => props.activeFitMode());
   const tweetText = createMemo(() => resolveOptionalAccessorValue(props.tweetText) ?? null);
   const tweetTextHTML = createMemo(() => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null);
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
@@ -295,7 +297,7 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                 aria-label={label.label}
                 title={label.title}
                 data-gallery-element={`fit-${mode}`}
-                data-selected={props.toolbarState.currentFitMode === mode}
+                data-selected={activeFitMode() === mode}
                 data-disabled={props.isFitDisabled(mode)}
               >
                 <Icon size={18} />

@@ -7,7 +7,6 @@
  * - Loading state management
  * - Error state management
  * - High-contrast mode state
- * - Fit mode state (original, contain, cover)
  * - State reset and cleanup
  *
  * **Features**:
@@ -36,7 +35,7 @@
 
 import { getSolid, getSolidStore } from '../external/vendors';
 import { globalTimerManager } from '../utils/timer-management';
-import type { ToolbarState, ToolbarActions, FitMode } from '@shared/types/toolbar.types';
+import type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
 
 /**
  * Initial toolbar state constant
@@ -45,7 +44,6 @@ import type { ToolbarState, ToolbarActions, FitMode } from '@shared/types/toolba
  * - `isDownloading`: Download operation in progress
  * - `isLoading`: Async data loading in progress
  * - `hasError`: Error occurred during operation
- * - `currentFitMode`: Image fit mode (original, contain, cover)
  * - `needsHighContrast`: High-contrast mode for accessibility
  *
  * @internal Default values for new toolbar instances
@@ -54,20 +52,18 @@ const INITIAL_STATE: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  currentFitMode: 'original',
   needsHighContrast: false,
 } as const;
 
 /**
  * Toolbar State Management Hook
  *
- * **Purpose**: Manages toolbar UI state (download, loading, error, fit mode) with proper debouncing
+ * **Purpose**: Manages toolbar UI state (download, loading, error) with proper debouncing
  *
  * **State Properties**:
  * - `isDownloading`: Download in progress (minimum 300ms display)
  * - `isLoading`: Async operation in progress
  * - `hasError`: Error occurred
- * - `currentFitMode`: Image fit mode
  * - `needsHighContrast`: Accessibility mode
  *
  * **Actions Provided**:
@@ -204,10 +200,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setState({ needsHighContrast });
   };
 
-  const setFitMode = (mode: FitMode): void => {
-    setState({ currentFitMode: mode });
-  };
-
   /**
    * Reset all state to initial values and clear timers
    *
@@ -238,7 +230,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setLoading,
     setError,
     setHighContrast,
-    setFitMode,
     resetState,
   };
 

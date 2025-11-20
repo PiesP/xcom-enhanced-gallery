@@ -35,7 +35,6 @@ const TOOLBAR_STATE_STUB: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  currentFitMode: 'fitContainer',
   needsHighContrast: false,
 };
 
@@ -90,6 +89,7 @@ const createToolbarViewProps = (options: ToolbarViewOptions = {}): ToolbarViewPr
     progressWidth: () => '100%',
     fitModeOrder: FIT_MODE_ORDER_STUB,
     fitModeLabels: FIT_MODE_LABELS_STUB,
+    activeFitMode: () => 'fitContainer',
     handleFitModeClick: () => () => {},
     isFitDisabled: () => false,
     onPreviousClick: noop,

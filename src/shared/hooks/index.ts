@@ -13,7 +13,7 @@
  * **Hooks Overview**:
  *
  * 1. **useToolbarState** (Phase 2B Step 2)
- *    - State: isDownloading, isLoading, hasError, currentFitMode, needsHighContrast
+ *    - State: isDownloading, isLoading, hasError, needsHighContrast
  *    - Actions: setDownloading, setLoading, setError, setHighContrast, resetState
  *    - Features: Download debounce (300ms minimum display), state sync
  *

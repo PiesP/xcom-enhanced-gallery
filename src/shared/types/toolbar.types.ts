@@ -8,7 +8,7 @@
  *
  * Do not confuse with separate "mode state":
  * - This file (toolbar.types.ts): ToolbarState = UI state
- *   Structure: { isDownloading, isLoading, hasError, currentFitMode, needsHighContrast }
+ *   Structure: { isDownloading, isLoading, hasError, needsHighContrast }
  *   Purpose: Component visual state management
  *
  * - @shared/state/signals/toolbar.signals.ts: ToolbarModeStateData = Mode state
@@ -68,7 +68,6 @@ export type FitMode = 'original' | 'fitWidth' | 'fitHeight' | 'fitContainer';
  *   isDownloading: false,
  *   isLoading: false,
  *   hasError: false,
- *   currentFitMode: 'fitContainer',
  *   needsHighContrast: false,
  * });
  * ```
@@ -80,8 +79,6 @@ export interface ToolbarState {
   readonly isLoading: boolean;
   /** Error occurred state */
   readonly hasError: boolean;
-  /** Current fit mode */
-  readonly currentFitMode: FitMode;
   /** High contrast mode needed (WCAG accessibility) */
   readonly needsHighContrast: boolean;
 }
@@ -109,8 +106,6 @@ export interface ToolbarActions {
   setError(value: boolean): void;
   /** Set high contrast mode */
   setHighContrast(value: boolean): void;
-  /** Set current fit mode */
-  setFitMode(value: FitMode): void;
   /** Reset state */
   resetState(): void;
 }

@@ -86,7 +86,6 @@ describe('Signal Selector Memoization Policy', () => {
           currentIndex: 0,
           totalCount: 10,
           isLoading: false,
-          currentFitMode: 'fitWidth' as const,
         },
       };
 
@@ -110,7 +109,6 @@ describe('Signal Selector Memoization Policy', () => {
           currentIndex: 0,
           totalCount: 100,
           isLoading: false,
-          currentFitMode: 'fitWidth' as const,
           isDownloading: false,
           disabled: false,
         },

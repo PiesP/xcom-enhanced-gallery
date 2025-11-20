@@ -33,7 +33,6 @@ const TOOLBAR_STATE_STUB: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  currentFitMode: 'fitContainer',
   needsHighContrast: false,
 };
 
@@ -82,6 +81,7 @@ describe('ToolbarView reactivity', () => {
       progressWidth: () => `${(((focusedIndex() ?? currentIndex()) + 1) / totalCountValue) * 100}%`,
       fitModeOrder: FIT_MODE_ORDER,
       fitModeLabels: FIT_MODE_LABELS,
+      activeFitMode: () => 'fitContainer',
       handleFitModeClick: () => () => {},
       isFitDisabled: () => false,
       onPreviousClick: () => {},
