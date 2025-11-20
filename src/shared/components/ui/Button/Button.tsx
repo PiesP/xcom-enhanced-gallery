@@ -57,8 +57,13 @@ type ButtonVariant =
   | 'navigation'
   | 'action';
 
-/** Button size options */
-type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
+/**
+ * Button size
+ */
+export type ButtonSize = 'sm' | 'md' | 'lg' | 'toolbar';
+
+/**
+ * Button intent
 
 /** Button semantic intent color */
 type ButtonIntent = 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
@@ -233,36 +238,32 @@ export function Button(rawProps: ButtonProps): JSXElement {
         'disabledAccessor:',
         disabledAccessor()
       );
-      // Additional debug: inspect accessor identity and raw prop
-      try {
-        // eslint-disable-next-line no-console
-        console.log(
-          '[UnifiedButton:DEBUG] raw-disabled-identity-equals-accessor:',
-          (rawProps as any).disabled === disabledAccessor
-        );
-        // eslint-disable-next-line no-console
-        console.log('[UnifiedButton:DEBUG] raw-disabled-type:', typeof (rawProps as any).disabled);
-        // eslint-disable-next-line no-console
-        console.log(
-          '[UnifiedButton:DEBUG] disabledAccessor-return-type:',
-          typeof disabledAccessor()
-        );
-      } catch (err) {
-        // ignore any ancillary errors during debug logs
+      if (__DEV__) {
+        // Additional debug: inspect accessor identity and raw prop
+        try {
+          // eslint-disable-next-line no-console
+          console.log(
+            '[UnifiedButton:DEBUG] raw-disabled-identity-equals-accessor:',
+            (rawProps as Record<string, unknown>).disabled === disabledAccessor
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            '[UnifiedButton:DEBUG] raw-disabled-type:',
+            typeof (rawProps as Record<string, unknown>).disabled
+          );
+          // eslint-disable-next-line no-console
+          console.log(
+            '[UnifiedButton:DEBUG] disabledAccessor-return-type:',
+            typeof disabledAccessor()
+          );
+        } catch {
+          // ignore any ancillary errors during debug logs
+        }
       }
-    } catch (err) {
+    } catch {
       // ignore logging failures
     }
   });
-
-  const resolveString = (value: unknown) => {
-    try {
-      if (typeof value === 'function') return (value as Function)();
-      return value as string | undefined;
-    } catch {
-      return undefined;
-    }
-  };
 
   createEffect(() => {
     if (!toAccessor((rawProps as ButtonProps).iconOnly ?? local.iconOnly)()) return;
@@ -373,22 +374,27 @@ export function Button(rawProps: ButtonProps): JSXElement {
       data-disabled={local['data-disabled']}
       data-selected={local['data-selected']}
       data-loading={local['data-loading']}
-      // Debug helper: reflect computed disabled state in dataset (temporary for test diagnostics)
-      data-debug-isdisabled={String(isDisabled())}
-      // Debug helper: reveal the type of the local.disabled prop and accessor
-      data-debug-local-disabled-type={typeof local.disabled}
-      data-debug-disabled-accessor-type={typeof disabledAccessor}
-      data-debug-disabled-accessor-value={String(disabledAccessor())}
-      // Debug: inspect rawProps to ensure original accessor passed through
-      data-debug-raw-disabled-type={typeof (rawProps as ButtonProps).disabled}
-      data-debug-raw-disabled-value={String(
-        typeof (rawProps as ButtonProps).disabled === 'function'
-          ? (rawProps as ButtonProps).disabled?.()
-          : (rawProps as ButtonProps).disabled
-      )}
-      data-debug-raw-disabled-equals-accessor={String(
-        (rawProps as ButtonProps).disabled === disabledAccessor
-      )}
+      {...(__DEV__
+        ? {
+            // Debug helper: reflect computed disabled state in dataset (temporary for test diagnostics)
+            'data-debug-isdisabled': String(isDisabled()),
+            // Debug helper: reveal the type of the local.disabled prop and accessor
+            'data-debug-local-disabled-type': typeof local.disabled,
+            'data-debug-disabled-accessor-type': typeof disabledAccessor,
+            'data-debug-disabled-accessor-value': String(disabledAccessor()),
+            // Debug: inspect rawProps to ensure original accessor passed through
+            'data-debug-raw-disabled-type': typeof (rawProps as ButtonProps).disabled,
+            'data-debug-raw-disabled-value': String(
+              typeof (rawProps as ButtonProps).disabled === 'function'
+                ? ((rawProps as Record<string, () => unknown>).disabled as () => unknown)()
+                : (rawProps as ButtonProps).disabled
+            ),
+            'data-debug-raw-disabled-equals-accessor':
+              typeof (rawProps as ButtonProps).disabled === 'function'
+                ? String((rawProps as Record<string, unknown>).disabled === disabledAccessor)
+                : 'false',
+          }
+        : {})}
       title={local.title}
       onClick={handleClick}
       onMouseDown={handleMouseDown}

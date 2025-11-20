@@ -162,7 +162,8 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const [toolbarElement, setToolbarElement] = createSignal<HTMLDivElement | null>(null);
   const [counterElement, setCounterElement] = createSignal<HTMLSpanElement | null>(null);
 
-  // Fix: Wrap navState properties in createMemo for reactivity
+  // Phase 430: Wrap navState properties in createMemo for reactivity
+  // This ensures button states update when props.navState() changes
   const prevDisabled = createMemo(() => props.navState().prevDisabled);
   const nextDisabled = createMemo(() => props.navState().nextDisabled);
   const downloadDisabled = createMemo(() => props.navState().downloadDisabled);

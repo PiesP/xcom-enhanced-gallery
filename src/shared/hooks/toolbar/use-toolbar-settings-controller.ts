@@ -200,13 +200,14 @@ export function useToolbarSettingsController(
     return value === 'light' || value === 'dark' || value === 'auto' ? value : 'auto';
   };
 
-  // Fix: Read initial theme from ThemeService (remove isInitialized check)
-  // The service should return persisted theme even during initialization
+  // Phase 430: Read initial theme from ThemeService reliably
+  // Service may not be fully initialized during first render, so we ensure proper fallback
   const getInitialTheme = (): ThemeOption => {
     try {
       const service = resolveThemeService(providedThemeService);
-      // Try to get current theme even if service is not fully initialized
+
       // ThemeService.getCurrentTheme() returns themeSetting which is set in constructor
+      // This should be available even before full initialization
       const currentSetting = service.getCurrentTheme();
       return toThemeOption(currentSetting);
     } catch (error) {

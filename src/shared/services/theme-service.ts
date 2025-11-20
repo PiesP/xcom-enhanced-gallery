@@ -142,9 +142,12 @@ export class ThemeService extends BaseServiceImpl {
       if (normalized) {
         // Phase 420 Fix: Don't overwrite legacy theme with default 'auto' from Settings
         // This prevents the "auto overrides specific mode" issue on first launch
-        if (normalized === 'auto' && this.themeSetting !== 'auto') {
+        const hasExistingTheme = this.themeSetting !== 'auto';
+        const settingsHasDefaultAuto = normalized === 'auto';
+
+        if (settingsHasDefaultAuto && hasExistingTheme) {
           logger.debug(
-            '[ThemeService] Ignoring default auto from SettingsService in favor of legacy setting'
+            `[ThemeService] Preserving existing theme '${this.themeSetting}' over SettingsService default 'auto'`
           );
           // Sync our specific theme back to SettingsService so it persists there too
           if (typeof settingsService.set === 'function') {
@@ -154,6 +157,14 @@ export class ThemeService extends BaseServiceImpl {
           this.themeSetting = normalized;
           this.applyCurrentTheme(true);
           logger.debug(`[ThemeService] Synced initial theme from SettingsService: ${normalized}`);
+        }
+      } else {
+        // No valid theme in SettingsService, persist current theme to it
+        if (typeof settingsService.set === 'function' && this.themeSetting !== 'auto') {
+          logger.debug(
+            `[ThemeService] Persisting current theme '${this.themeSetting}' to SettingsService`
+          );
+          void settingsService.set('gallery.theme', this.themeSetting);
         }
       }
     } catch (err) {

@@ -21,7 +21,7 @@
  */
 
 import { type ComponentChildren, type JSXElement } from '@shared/external/vendors';
-import { Button, type ButtonProps } from './Button';
+import { Button, type ButtonProps, type ButtonSize } from './Button';
 
 // ============================================================================
 // Constants
@@ -78,47 +78,64 @@ export interface IconButtonProps extends Omit<ButtonProps, 'variant' | 'iconOnly
 export function IconButton(props: IconButtonProps): JSXElement {
   // Compute safe size by reading props.size if present, fallback to 'md'
   const sizeValue =
-    typeof (props as any).size === 'function' ? (props as any).size() : (props as any).size;
-  const safeSize: IconButtonProps['size'] =
-    sizeValue && ALLOWED_ICON_SIZES.has(sizeValue) ? (sizeValue as any) : 'md';
+    typeof (props as Record<string, unknown>).size === 'function'
+      ? ((props as Record<string, () => unknown>).size as () => unknown)()
+      : (props as Record<string, unknown>).size;
 
-  // Debugging: capture whether props contain accessor functions or primitive values
-  const passedDisabledType = typeof (props as Record<string, unknown>).disabled;
-  const passedDisabledValue =
-    passedDisabledType === 'function'
-      ? (props as Record<string, any>).disabled?.()
-      : (props as Record<string, unknown>).disabled;
-  const passedLoadingType = typeof (props as Record<string, unknown>).loading;
-  const passedLoadingValue =
-    passedLoadingType === 'function'
-      ? (props as Record<string, any>).loading?.()
-      : (props as Record<string, unknown>).loading;
+  // Type guard: validate size is one of allowed ButtonSize values
+  const isValidSize = (value: unknown): value is ButtonSize =>
+    typeof value === 'string' && ALLOWED_ICON_SIZES.has(value as ButtonSize);
+
+  const safeSize: IconButtonProps['size'] = isValidSize(sizeValue) ? sizeValue : 'md';
+
+  // Debugging: capture whether props contain accessor functions or primitive values (dev only)
+  const passedDisabledType = __DEV__
+    ? typeof (props as Record<string, unknown>).disabled
+    : undefined;
+
+  const passedDisabledValue = __DEV__
+    ? passedDisabledType === 'function'
+      ? ((props as Record<string, () => unknown>).disabled as () => unknown)?.()
+      : (props as Record<string, unknown>).disabled
+    : undefined;
+  const passedLoadingType = __DEV__ ? typeof (props as Record<string, unknown>).loading : undefined;
+
+  const passedLoadingValue = __DEV__
+    ? passedLoadingType === 'function'
+      ? ((props as Record<string, () => unknown>).loading as () => unknown)?.()
+      : (props as Record<string, unknown>).loading
+    : undefined;
 
   // Ensure disabled/loading are passed as accessors (functions returning current value)
   // to prevent Solid runtime from unwrapping them during props spread/merge.
+
   const passedDisabled =
     typeof (props as Record<string, unknown>).disabled === 'function'
-      ? (props as Record<string, any>).disabled
-      : () => (props as Record<string, unknown>).disabled;
+      ? ((props as Record<string, () => unknown>).disabled as () => boolean | undefined)
+      : () => (props as Record<string, unknown>).disabled as boolean | undefined;
+
   const passedLoading =
     typeof (props as Record<string, unknown>).loading === 'function'
-      ? (props as Record<string, any>).loading
-      : () => (props as Record<string, unknown>).loading;
+      ? ((props as Record<string, () => unknown>).loading as () => boolean | undefined)
+      : () => (props as Record<string, unknown>).loading as boolean | undefined;
 
   // Build rest props without disabled/loading to ensure explicit accessor forwarding
   const restProps: Record<string, unknown> = { ...props } as Record<string, unknown>;
   // Avoid mutating original prop container if it's a proxied reactive object
   delete restProps.disabled;
   delete restProps.loading;
+  delete restProps.size; // Remove size to use safeSize explicitly
 
   return (
     // Explicitly pass in disabled/loading accessors to ensure preservation into Button
     <Button
       {...(restProps as IconButtonProps)}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       disabled={passedDisabled as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       loading={passedLoading as any}
       variant='icon'
-      size={safeSize}
+      size={safeSize as ButtonSize}
       iconOnly
       data-debug-prop-disabled-type={passedDisabledType}
       data-debug-prop-disabled-value={String(passedDisabledValue)}
