@@ -23,7 +23,7 @@
 | **325**     | 레거시 API 제거       | N/A                    | ✅ 완료   | URL 기반 다운로드 제거        | -80줄                  |
 | **326.1**   | 프리로드 전략         | N/A                    | ✅ 완료   | preload.ts, main.ts 수정      | +120줄                 |
 | **326.2**   | Settings 동적 로드    | N/A                    | ✅ 완료   | GalleryApp.ts 개선            | +11줄                  |
-| **326.3**   | ZIP 동적 로드         | N/A                    | ✅ 완료   | lazy-compression.ts           | +144줄                 |
+| **326.3**   | ZIP 동적 로드         | N/A                    | ⛔ 제거됨 | lazy-compression.ts (unused)  | 2025-11-20 정리        |
 | **326.4**   | Feature Flag System   | N/A                    | ✅ 완료   | feature-flags.ts 추가         | +150줄                 |
 | **326.5-1** | 성능 베이스라인       | N/A                    | ✅ 완료   | 성능 문서화                   | +200줄 (문서)          |
 | **326.5-2** | 번들 분석             | N/A                    | ✅ 완료   | 번들 최적화 계획              | +300줄 (문서)          |
@@ -85,7 +85,7 @@ src/shared/services/
 └── index.ts                        ✅ 배럴 export
 
 src/shared/utils/
-└── lazy-compression.ts             ✅ ZIP 동적 로드 (Phase 326.3)
+└── lazy-compression.ts             ⛔ 제거됨 (Phase 433 Cleanup - 미사용 ZIP 동적 로드)
 
 src/bootstrap/
 ├── preload.ts                      ✅ 프리로드 전략 (Phase 326.1-3)

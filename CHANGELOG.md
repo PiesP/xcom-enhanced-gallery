@@ -38,6 +38,18 @@ and this project adheres to
   3. **FilenameService Fallback Improvement** (Phase 432.3):
      - Skip media URLs (`pbs.twimg.com`, `video.twimg.com`)
      - Use TweetId in fallback filename: `tweet_{tweetId}_{date}_index.jpg`
+
+### Removed
+
+- **High-contrast mode artifacts**: Deleted the unused `@shared/utils/high-contrast`
+  shim and removed the remaining `@media (forced-colors: active)` overrides from
+  `VerticalImageItem.module.css` to prevent duplicate styling exposures.
+- **Orphaned lazy compression loader**: Removed
+  `src/shared/utils/lazy-compression.ts` (and its documentation references) since no
+  runtime code invoked the ZIP preloading entry point any longer.
+- **Unused GlobalConfig performance toggles**: Dropped the `performance` block from
+  `GlobalConfig` because metrics tracking and cache sizing options were never wired
+  into the UI, trimming redundant configuration paths from production builds.
      - File: `src/shared/services/file-naming/filename-service.ts`
 - **Result**:
   - Before: `i_1909228010194309548_20251105_1.jpg` ❌

@@ -144,11 +144,4 @@ export interface GlobalConfig {
   language: string;
   /** Debug mode */
   debug: boolean;
-  /** Performance-related settings */
-  performance: {
-    /** Enable performance metrics tracking */
-    enableMetrics: boolean;
-    /** Maximum cache size (MB) */
-    maxCacheSize: number;
-  };
 }

@@ -505,28 +505,3 @@
     transform: none;
   }
 }
-
-/* 강제 색상 (forced-colors) 모드 지원 */
-@media (forced-colors: active) {
-  .container {
-    border: 0.0625rem solid ButtonText; /* 1px = 0.0625rem */
-    background: ButtonFace;
-    forced-color-adjust: none;
-  }
-
-  .container:focus-visible,
-  .container.active {
-    border: 0.125rem solid Highlight; /* 2px = 0.125rem */
-    background: HighlightText;
-  }
-
-  /* Phase 58: 다운로드 버튼 제거로 인한 미사용 스타일 제거 */
-  /*
-  .downloadButton {
-    background: ButtonFace;
-    color: ButtonText;
-    border: 1px solid ButtonText;
-    forced-color-adjust: none;
-  }
-  */
-}
