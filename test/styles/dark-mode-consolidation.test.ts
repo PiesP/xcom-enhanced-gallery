@@ -8,7 +8,7 @@
  * - VerticalImageItem.module.css
  * - ModalShell.module.css
  * - Button.module.css
- * - Toolbar.module.css (고대비 조합 포함)
+ * - Toolbar.module.css (이전 고대비 조합 제거됨)
  *
  * GREEN 목표: semantic layer만 @media 쿼리 사용, 컴포넌트는 토큰 참조만
  */

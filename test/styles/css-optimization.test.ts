@@ -77,7 +77,7 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
       }
     });
 
-    it('should limit prefers-contrast media queries (현재 15개 → 목표 1-2개)', () => {
+    it('should eliminate prefers-contrast media queries (deprecated feature)', () => {
       const files: string[] = [];
       let totalCount = 0;
 
@@ -89,13 +89,11 @@ describe('Phase 32: CSS Optimization - Duplication Detection', () => {
         }
       }
 
-      // RED: 현재 15개가 발견됨
-      expect(totalCount).toBeLessThanOrEqual(2);
+      expect(totalCount).toBe(0);
 
-      if (totalCount > 2) {
+      if (totalCount > 0) {
         console.warn(
-          `\n⚠️  prefers-contrast 중복: ${totalCount}개 발견\n` +
-            `   목표: 전역 파일 1-2개로 통합\n` +
+          `\n⚠️  prefers-contrast 사용 금지 위반: ${totalCount}개 발견\n` +
             `   파일:\n${files.map(f => `   - ${f.replace(SRC_DIR, 'src')}`).join('\n')}`
         );
       }

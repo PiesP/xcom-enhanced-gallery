@@ -148,14 +148,13 @@ describe('CSS Design System Consolidation - TDD', () => {
       expect(hasSemanticColors).toBe(true);
     });
 
-    it('should have accessibility-compliant color contrast', () => {
+    it('should avoid deprecated high contrast media queries while keeping reduced-motion', () => {
       const content = readAllDesignTokens();
 
-      // 고대비 모드 지원 확인
       const hasHighContrastSupport = content.includes('@media (prefers-contrast: high)');
       const hasReducedMotionSupport = content.includes('@media (prefers-reduced-motion: reduce)');
 
-      expect(hasHighContrastSupport).toBe(true);
+      expect(hasHighContrastSupport).toBe(false);
       expect(hasReducedMotionSupport).toBe(true);
     });
   });

@@ -29,7 +29,6 @@
  * - `data-selected`: true/false for fit mode selection
  * - `data-expanded`: true/false for panel expansion
  * - `data-loading`: true/false for download loading
- * - `data-high-contrast`: true/false for high contrast mode
  *
  * ## Performance Considerations
  * - Minimal reflows: Use transform and opacity for animations
@@ -90,19 +89,8 @@
 }
 
 /**
- * @subsection High Contrast Mode
- * Enhanced visibility for accessibility (Phase X: Vision Impairment support)
- * Applies when toolbar root exposes data-high-contrast='true'
- */
-[data-high-contrast='true'] .toolbarButton {
-  background: var(--xeg-toolbar-button-bg-high-contrast);
-  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast);
-  color: var(--xeg-color-overlay-strong);
-}
-
-/**
  * @subsection Focus Indicator
- * WCAG 2.1 AA compliance: 2px focus ring with high contrast
+ * WCAG 2.1 AA compliance: 2px focus ring with tokenized contrast
  * Visible on keyboard navigation (Phase 87: Keyboard navigation focus management)
  */
 .toolbarButton:focus-visible {
@@ -324,16 +312,11 @@
   font-weight: 700;
 }
 
-/* 고대비 필요 상태(data-high-contrast) 또는 시스템 고대비에서 1차 텍스트 색상으로 승격 */
-.galleryToolbar[data-high-contrast='true'] .separator {
-  color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
-}
-
 .totalCount {
   /* 현재/전체 모두 동일한 텍스트 톤 사용 */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
 }
-/* 고대비 환경은 design-tokens.semantic.css에서 토큰으로 관리 */
+/* 텍스트 대비는 design-tokens.semantic.css 토큰으로 일괄 관리 */
 /* 진행률 바 */
 .progressBar {
   /* 오버레이 배치하여 텍스트 수직 중심에 영향 없음 */
@@ -462,7 +445,7 @@ button.fitButton {
 
   /* 작은 화면에서도 separator 표시 유지 */
 }
-/* 다크 모드 + 고대비 조합은 semantic 토큰으로 위임 (Phase 54.1) */
+/* 다크 모드 특화 색상은 semantic 토큰에서 일괄 관리 */
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
 @media (prefers-reduced-transparency: reduce) {
@@ -519,38 +502,6 @@ button.fitButton {
     transform: none !important;
   }
 }
-
-/* ===== 동적 시인성 조정 ===== */
-
-/* 동적 고대비 모드 - 완전 불투명 배경 (Phase 56: 토큰화) */
-.galleryToolbar[data-high-contrast='true'] {
-  background: var(--xeg-toolbar-bg-high-contrast) !important;
-  border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-[data-theme='dark'] .galleryToolbar[data-high-contrast='true'] {
-  background: var(--xeg-toolbar-bg-high-contrast) !important;
-  border: var(--border-width-sm) solid var(--xeg-toolbar-border-high-contrast) !important; /* 2px → var(--border-width-sm) */
-}
-
-[data-theme='dark'] [data-high-contrast='true'] .toolbarButton {
-  background: var(--xeg-toolbar-button-bg-high-contrast);
-  border: var(--border-width-thin) solid var(--xeg-toolbar-button-border-high-contrast); /* 1px → var(--border-width-thin) */
-  color: var(--xeg-glass-bg);
-}
-
-[data-high-contrast='true'] .toolbarButton:hover:not(:disabled) {
-  background: var(--xeg-color-neutral-100);
-  border-color: var(--xeg-color-overlay-medium);
-}
-
-/* ===== 접근성 개선 ===== */
-
-/* 고대비 모드 - 시인성 개선 */
-
-/* Fit Mode Group 래퍼 제거 - 독립 버튼 배치 원칙 준수 */
 
 /* ===== Phase 44: Toolbar Expandable Panel Styles ===== */
 
@@ -707,15 +658,4 @@ button.fitButton {
 
 :where(.tweetLink, .tweetContent a):active {
   color: var(--xeg-color-primary-active);
-}
-
-/* High contrast mode for links */
-[data-high-contrast='true'] :where(.tweetLink, .tweetContent a) {
-  color: var(--xeg-color-overlay-heavy);
-  text-decoration: underline;
-}
-
-[data-high-contrast='true'] :where(.tweetLink, .tweetContent a):hover {
-  color: var(--xeg-color-neutral-100);
-  background: var(--xeg-color-overlay-medium);
 }

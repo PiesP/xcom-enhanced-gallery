@@ -1,7 +1,7 @@
 /**
  * TDD Red Test: Modal-Toolbar Visual Consistency
  * @description 설정 모달과 툴바의 시각적 일관성을 검증하는 테스트
- * 포커스 링, 애니메이션, 고대비 모드 등의 일관성을 강제
+ * 포커스 링, 애니메이션, (이제 제거된) 고대비 모드 흐름을 점검
  */
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../shared/global-cleanup-hooks';
@@ -93,21 +93,17 @@ describe('Modal-Toolbar Visual Consistency', () => {
     });
   });
 
-  describe('High Contrast Mode Consistency', () => {
-    it('고대비 모드 지원이 모든 컴포넌트에 일관되게 적용되어야 함', () => {
+  describe('High Contrast Mode Removal', () => {
+    it('고대비 모드 전용 미디어 쿼리가 컴포넌트에서 제거되어야 함', () => {
       const modalCSS = read(SETTINGS_MODAL_CSS_PATH);
       const toolbarCSS = read(TOOLBAR_CSS_PATH);
 
-      // 고대비 모드 미디어 쿼리 확인
       const modalHasHighContrast =
         modalCSS.includes('prefers-contrast: high') || modalCSS.includes('highContrast');
       const toolbarHasHighContrast =
         toolbarCSS.includes('prefers-contrast: high') || toolbarCSS.includes('highContrast');
 
-      expect(
-        modalHasHighContrast && toolbarHasHighContrast,
-        '고대비 모드가 모든 컴포넌트에 일관되게 적용되지 않음'
-      ).toBe(true);
+      expect(modalHasHighContrast || toolbarHasHighContrast).toBe(false);
     });
   });
 

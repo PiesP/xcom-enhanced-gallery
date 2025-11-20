@@ -72,8 +72,7 @@ function createOptions(
   });
 
   const baseOptions: UseToolbarSettingsControllerOptions = {
-    setNeedsHighContrast: vi.fn(),
-    getExpandableState: () => ({ isSettingsExpanded: expanded() }),
+    isSettingsExpanded: () => expanded(),
     setSettingsExpanded,
     toggleSettingsExpanded,
     documentRef: document,
@@ -81,9 +80,6 @@ function createOptions(
     eventManager: createFakeEventManager(),
     focusDelayMs: 0,
     selectChangeGuardMs: 300,
-    highContrastOffsets: [0.25, 0.5, 0.75],
-    highContrastEvaluator: () => false,
-    scrollThrottle: <T extends (...args: never[]) => void>(fn: T): T => fn,
     ...overrides,
   };
 
@@ -198,27 +194,6 @@ describe('useToolbarSettingsController', () => {
     vi.advanceTimersByTime(301);
     outsideTarget.dispatchEvent(new globalThis.MouseEvent('mousedown', { bubbles: true }));
     expect(setSettingsExpanded).toHaveBeenCalledWith(false);
-
-    mount.dispose();
-  });
-
-  it('notifies high contrast changes via evaluator', () => {
-    const setNeedsHighContrast = vi.fn();
-    let flip = false;
-    const { options } = createOptions(true, {
-      setNeedsHighContrast,
-      highContrastEvaluator: () => {
-        flip = !flip;
-        return flip;
-      },
-    });
-
-    const mount = mountController(options);
-
-    expect(setNeedsHighContrast).toHaveBeenNthCalledWith(1, true);
-
-    window.dispatchEvent(new globalThis.Event('scroll'));
-    expect(setNeedsHighContrast).toHaveBeenNthCalledWith(2, false);
 
     mount.dispose();
   });

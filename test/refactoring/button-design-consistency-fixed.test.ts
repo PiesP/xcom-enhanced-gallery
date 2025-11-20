@@ -60,9 +60,9 @@ describe('Button Design Consistency (Fixed)', () => {
   });
 
   describe('접근성 지원', () => {
-    it('고대비 모드를 지원해야 함', () => {
-      expect(buttonCSS).toMatch(/@media.*prefers-contrast.*high/);
-      expect(buttonCSS).toMatch(/border-width:\s*2px/);
+    it('고대비 전용 미디어 쿼리가 없어야 함', () => {
+      expect(buttonCSS).not.toMatch(/@media.*prefers-contrast.*high/);
+      expect(buttonCSS).not.toMatch(/data-high-contrast/);
     });
 
     it('애니메이션 감소를 지원해야 함', () => {

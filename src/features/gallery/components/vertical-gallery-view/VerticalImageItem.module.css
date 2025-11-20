@@ -506,7 +506,7 @@
   }
 }
 
-/* 강제 색상 모드 지원 (Windows 고대비 모드) */
+/* 강제 색상 (forced-colors) 모드 지원 */
 @media (forced-colors: active) {
   .container {
     border: 0.0625rem solid ButtonText; /* 1px = 0.0625rem */

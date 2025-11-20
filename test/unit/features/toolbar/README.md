@@ -14,9 +14,9 @@
 
 **검증 항목**:
 
-- 배경 밝기 감지 effect의 메모리 누수 방지
+- 외부 클릭 감지 effect의 메모리 누수 방지
 - props 동기화 최적화 (on() helper 사용)
-- EventManager 리스너 cleanup
+- 파생 상태 createMemo 최적화
 
 **검증 범위**:
 
@@ -25,21 +25,17 @@
 
 **테스트 케이스**:
 
-1. **배경 밝기 감지 effect cleanup**
-   - `useToolbarSettingsController`에서 `evaluateHighContrast` 구현 검증
-   - `eventManager.addListener()` 호출 확인
-   - `onCleanup()` 내 `eventManager.removeListener()` 호출 확인
-   - scroll 이벤트 리스너에 `passive: true` 옵션 확인
+1. **외부 클릭 감지 effect cleanup**
+   - `useToolbarSettingsController`에서 `mousedown` 리스너 등록/해제 검증
+   - `onCleanup()` 내 `removeEventListener()` 호출 확인
 
 2. **isDownloading props 동기화 최적화**
    - `Toolbar.tsx`에서 `isDownloading` 효과 검증
    - `on()` helper 또는 `createEffect()` 패턴 사용 확인
    - props 동기화 로직 존재 여부 검증
 
-3. **메모리 누수 방지**
-   - `Toolbar.tsx`의 모든 EventManager 리스너 추가/제거 쌍 검증
-   - addListener 호출 수 ≥ removeListener 호출 수 확인
-   - EventManager 리스너 사용 시 `onCleanup()` 구현 확인
+3. **파생 상태 메모화**
+   - `Toolbar.tsx`에서 `createMemo` 기반 파생 상태(navState, progressWidth) 검증
 
 ## 🏃 실행 방법
 
@@ -76,10 +72,8 @@ npm run test:watch -- test/unit/features/toolbar
 
 - **Toolbar.tsx** 변경 시: `setDownloading`, `createEffect`, `on()` 패턴 유지
 - **use-toolbar-settings-controller.ts** 변경 시:
-  - `evaluateHighContrast` 함수명 유지
-  - `eventManager.addListener()` / `removeListener()` 쌍 유지
-  - scroll 이벤트에 `passive: true` 유지
-  - `onCleanup()` 구현 유지
+   - 외부 클릭(mousedown) 리스너 등록/해제 유지
+   - `onCleanup()` 구현 유지
 
 ## 🔗 관련 파일
 

@@ -26,10 +26,9 @@ describe('toolbar.signals - createSignalSafe 마이그레이션', () => {
   });
 
   describe('ToolbarState 초기화 및 구독', () => {
-    it('초기 상태는 gallery 모드, 고대비 비활성화', () => {
+    it('초기 상태는 gallery 모드', () => {
       const state = toolbarState.value;
       expect(state.currentMode).toBe('gallery');
-      expect(state.needsHighContrast).toBe(false);
     });
 
     it('toolbarState.subscribe는 상태 변경 시 콜백 호출', async () => {
@@ -59,7 +58,7 @@ describe('toolbar.signals - createSignalSafe 마이그레이션', () => {
 
   describe('toolbarState 직접 수정', () => {
     it('toolbarState.value = newState로 상태 업데이트', () => {
-      const newState = { currentMode: 'settings' as const, needsHighContrast: true };
+      const newState = { currentMode: 'settings' as const };
       toolbarState.value = newState;
       expect(toolbarState.value).toEqual(newState);
     });
@@ -69,7 +68,6 @@ describe('toolbar.signals - createSignalSafe 마이그레이션', () => {
       const updated = { ...currentState, currentMode: 'download' as const };
       toolbarState.value = updated;
       expect(toolbarState.value.currentMode).toBe('download');
-      expect(toolbarState.value.needsHighContrast).toBe(currentState.needsHighContrast);
     });
   });
 
@@ -103,7 +101,6 @@ describe('toolbar.signals - createSignalSafe 마이그레이션', () => {
       updateToolbarMode('settings');
       const info = getToolbarInfo();
       expect(info.currentMode).toBe('settings');
-      expect(typeof info.needsHighContrast).toBe('boolean');
     });
   });
 
@@ -188,22 +185,6 @@ describe('toolbar.signals - createSignalSafe 마이그레이션', () => {
       expect(getCurrentToolbarMode()).toBe('settings');
 
       unsubscribe();
-    });
-
-    it('상태 업데이트 실패 시 기존값 유지', () => {
-      const originalState = toolbarState.value;
-
-      try {
-        // 의도적인 에러는 아니지만, createSignalSafe의 write 실패 케이스
-        // 실제로는 이 부분이 에러를 반환해야 하는데,
-        // 현재는 정상 작동하므로 기본 동작 확인
-        toolbarState.value = { currentMode: 'gallery' as const, needsHighContrast: true };
-      } catch {
-        // 에러 발생해도 상태는 업데이트되어야 함
-      }
-
-      // 상태 업데이트됨을 확인
-      expect(toolbarState.value.needsHighContrast).toBe(true);
     });
   });
 

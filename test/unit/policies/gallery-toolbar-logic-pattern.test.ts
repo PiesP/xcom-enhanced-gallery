@@ -44,21 +44,17 @@ describe('Policy: useToolbarSettingsController 구조 검증 (Phase 254)', () =>
     });
   });
 
-  describe('고대비 감지 및 스크롤 감시', () => {
-    it('DEFAULT_HIGH_CONTRAST_OFFSETS가 0.25/0.5/0.75를 포함해야 함', () => {
-      expect(
-        /const\s+DEFAULT_HIGH_CONTRAST_OFFSETS\s*=\s*\[0\.25,\s*0\.5,\s*0\.75\]\s*as\s*const;/.test(
-          fileContent
-        )
-      ).toBe(true);
+  describe('고대비 감지 및 스크롤 감시 제거', () => {
+    it('DEFAULT_HIGH_CONTRAST_OFFSETS 상수가 존재하지 않아야 함', () => {
+      expect(/DEFAULT_HIGH_CONTRAST_OFFSETS/.test(fileContent)).toBe(false);
     });
 
-    it('evaluateHighContrast 유틸을 사용해야 함', () => {
-      expect(/evaluateHighContrast\(/.test(fileContent)).toBe(true);
+    it('evaluateHighContrast 유틸 호출이 없어야 함', () => {
+      expect(/evaluateHighContrast\(/.test(fileContent)).toBe(false);
     });
 
-    it('eventManager.addListener로 scroll 감시를 등록해야 함', () => {
-      expect(/eventManager\.addListener\(\s*windowRef,\s*'scroll'/.test(fileContent)).toBe(true);
+    it('window scroll 감시 이벤트가 등록되지 않아야 함', () => {
+      expect(/eventManager\.addListener\([^)]*'scroll'/.test(fileContent)).toBe(false);
     });
   });
 

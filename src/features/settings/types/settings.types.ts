@@ -68,8 +68,6 @@ export interface TokenSettings {
  * Accessibility settings configuration
  */
 export interface AccessibilitySettings {
-  /** High contrast mode */
-  highContrast: boolean;
   /** Reduce animations */
   reduceMotion: boolean;
   /** Screen reader support */

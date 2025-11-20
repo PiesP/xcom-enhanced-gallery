@@ -1,12 +1,11 @@
 /**
  * @fileoverview Toolbar Settings Controller Hook - Phase 375
- * @description Manages settings panel toggling, outside click handling, and high-contrast detection
+ * @description Manages settings panel toggling, outside click handling, and localized options
  *
  * **Responsibilities**:
  * - Settings panel show/hide toggling with document outside-click detection
  * - Theme selection (auto/light/dark) with persistence via ThemeService
  * - Language selection (auto/ko/en/ja) with persistence via LanguageService
- * - High-contrast detection during scroll (accessibility feature)
  * - Focus management (auto-focus first control, restore on close)
  * - Select element guard (prevents closing on select dropdown interactions)
  *
@@ -31,36 +30,23 @@ import {
   LanguageService,
   languageService as sharedLanguageService,
 } from '../../services/language-service';
-import { throttleScroll } from '../../utils/performance';
-import { EventManager } from '../../services/event-manager';
 import { globalTimerManager } from '../../utils/timer-management';
-import { evaluateHighContrast } from '../../utils/high-contrast';
 import { getThemeService, tryGetSettingsManager } from '../../container/service-accessors';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;
-const DEFAULT_HIGH_CONTRAST_OFFSETS = [0.25, 0.5, 0.75] as const;
-
 type ThemeOption = 'auto' | 'light' | 'dark';
 type LanguageOption = 'auto' | 'ko' | 'en' | 'ja';
 
-/** Event manager interface subset */
-type EventManagerLike = Pick<EventManager, 'addListener' | 'removeListener'>;
-
 export interface UseToolbarSettingsControllerOptions {
-  readonly setNeedsHighContrast: (enabled: boolean) => void;
   readonly isSettingsExpanded: () => boolean;
   readonly setSettingsExpanded: (expanded: boolean) => void;
   readonly toggleSettingsExpanded: () => void;
   readonly documentRef?: Document;
-  readonly windowRef?: Window;
-  readonly eventManager?: EventManagerLike;
   readonly themeService?: ThemeService;
   readonly languageService?: LanguageService;
   readonly focusDelayMs?: number;
   readonly selectChangeGuardMs?: number;
-  readonly highContrastOffsets?: ReadonlyArray<number>;
-  readonly scrollThrottle?: <T extends (...args: never[]) => void>(fn: T) => T;
 }
 
 export interface ToolbarSettingsControllerResult {
@@ -120,25 +106,17 @@ export function useToolbarSettingsController(
    *    - Reactive to service changes
    *    - Affects UI language immediately
    *
-   * 5. **High-Contrast Mode** - Accessibility feature
-   *    - Samples toolbar luminance at scroll events
-   *    - Throttled via requestAnimationFrame
-   *    - Sets CSS class for high-contrast CSS
-   *    - Improves readability on low-contrast backgrounds
    *
    * **Event Flow**:
    * Settings Click → Toggle Panel
    *   ↓ (if opening)
    * Focus First Select (50ms delay)
    *   ↓
-   * Scroll → High-Contrast Check (throttled)
-   *   ↓
    * Outside Click → Check Guard/Panel → Close if valid
    *
    * **Usage Example**:
    * ```typescript
    * const controller = useToolbarSettingsController({
-   *   setNeedsHighContrast: setHighContrast,
    *   isSettingsExpanded: () => expanded(),
    *   setSettingsExpanded: setExpanded,
    *   toggleSettingsExpanded: () => setExpanded(e => !e),
@@ -160,19 +138,14 @@ export function useToolbarSettingsController(
   const { createSignal, createEffect, onCleanup } = solid;
 
   const {
-    setNeedsHighContrast,
     isSettingsExpanded,
     setSettingsExpanded,
     toggleSettingsExpanded,
     documentRef = typeof document !== 'undefined' ? document : undefined,
-    windowRef = typeof window !== 'undefined' ? window : undefined,
-    eventManager = EventManager.getInstance(),
     themeService: providedThemeService,
     languageService = sharedLanguageService,
     focusDelayMs = DEFAULT_FOCUS_DELAY_MS,
     selectChangeGuardMs = DEFAULT_SELECT_GUARD_MS,
-    highContrastOffsets = DEFAULT_HIGH_CONTRAST_OFFSETS,
-    scrollThrottle = throttleScroll,
   } = options;
 
   const themeManager = resolveThemeService(providedThemeService);
@@ -246,7 +219,6 @@ export function useToolbarSettingsController(
   createEffect(() => {
     const unsubscribe = themeManager.onThemeChange((_, setting) => {
       setCurrentTheme(toThemeOption(setting));
-      checkHighContrast();
     });
 
     onCleanup(() => {
@@ -261,54 +233,6 @@ export function useToolbarSettingsController(
 
     onCleanup(() => {
       unsubscribe();
-    });
-  });
-
-  function checkHighContrast(): void {
-    const toolbarElement = toolbarRef();
-    if (!toolbarElement || !documentRef || !windowRef) {
-      setNeedsHighContrast(false);
-      return;
-    }
-
-    const shouldEnable = evaluateHighContrast({
-      toolbar: toolbarElement,
-      documentRef,
-      windowRef,
-      offsets: highContrastOffsets,
-    });
-
-    setNeedsHighContrast(shouldEnable);
-  }
-
-  createEffect(() => {
-    if (!windowRef) {
-      setNeedsHighContrast(false);
-      return;
-    }
-
-    checkHighContrast();
-
-    const detect = scrollThrottle(() => {
-      if (typeof windowRef.requestAnimationFrame === 'function') {
-        windowRef.requestAnimationFrame(() => checkHighContrast());
-      } else {
-        checkHighContrast();
-      }
-    });
-
-    const listenerId = eventManager.addListener(windowRef, 'scroll', detect as EventListener, {
-      passive: true,
-    });
-
-    onCleanup(() => {
-      if (!listenerId) {
-        return;
-      }
-      const removed = eventManager.removeListener(listenerId);
-      if (!removed) {
-        windowRef.removeEventListener('scroll', detect as EventListener);
-      }
     });
   });
 
@@ -356,6 +280,7 @@ export function useToolbarSettingsController(
     const handleOutsideClick = (event: MouseEvent) => {
       const target = event.target as Node | null;
       const settingsButton = settingsButtonRef();
+      const toolbarElement = toolbarRef();
 
       if (!target) {
         return;
@@ -366,6 +291,10 @@ export function useToolbarSettingsController(
       }
 
       const targetElement = target as HTMLElement;
+
+      if (toolbarElement?.contains(targetElement)) {
+        return;
+      }
 
       if (
         settingsButton &&

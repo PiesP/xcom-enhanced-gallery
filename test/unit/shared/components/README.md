@@ -15,7 +15,7 @@
 - `toolbar-expandable-aria.test.tsx`: 툴바 확장 가능 ARIA 접근성
 - `toolbar-layout-stability.test.tsx`: 툴바 레이아웃 안정성 (설정 패널 드롭다운)
 - `toolbar-settings-toggle.test.tsx`: 툴바 설정 토글 기능
-- `toolbar.separator-contrast.test.tsx`: 툴바 구분선 고대비 검증
+- (Phase 360 이후 제거됨) 대비 모드 관련 테스트는 더 이상 유지되지 않습니다.
 
 ### Settings Components
 
@@ -39,7 +39,6 @@ test/unit/shared/components/
 ├── toolbar-expandable-aria.test.tsx
 ├── toolbar-layout-stability.test.tsx
 ├── toolbar-settings-toggle.test.tsx
-├── toolbar.separator-contrast.test.tsx
 ├── settings-controls.test.tsx
 ├── button-event-types.test.tsx
 └── accessibility/                              ← Phase 187에서 추가됨

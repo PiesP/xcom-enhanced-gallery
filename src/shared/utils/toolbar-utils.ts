@@ -31,15 +31,10 @@ export function getToolbarDataState(state: ToolbarState): ToolbarDataState {
  * @returns Combined class name string
  */
 export function getToolbarClassName(
-  state: ToolbarState,
   baseClassName: string,
   ...additionalClassNames: string[]
 ): string {
   const classNames = [baseClassName];
-
-  if (state.needsHighContrast) {
-    classNames.push('highContrast');
-  }
 
   classNames.push(...additionalClassNames.filter(Boolean));
 

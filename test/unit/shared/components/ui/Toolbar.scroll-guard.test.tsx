@@ -35,7 +35,6 @@ const TOOLBAR_STATE_STUB: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  needsHighContrast: false,
 };
 
 const NAV_STATE_STUB = {

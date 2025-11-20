@@ -195,7 +195,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
     element.dataset.focusedIndex = String(displayedIndex());
   });
   const hasTweetContent = () => Boolean(tweetTextHTML() ?? tweetText());
-  const isHighContrast = () => Boolean(props.toolbarState.needsHighContrast);
   const toolbarButtonClass = (...extra: Array<string | undefined>) =>
     createClassName(styles.toolbarButton, 'xeg-inline-center', ...extra);
 
@@ -219,7 +218,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
       data-gallery-element='toolbar'
       data-state={props.toolbarDataState()}
       data-disabled={isToolbarDisabled()}
-      data-high-contrast={isHighContrast() ? 'true' : 'false'}
       data-settings-expanded={props.settingsController.isSettingsExpanded()}
       data-tweet-panel-expanded={props.isTweetPanelExpanded()}
       data-focused-index={displayedIndex()}

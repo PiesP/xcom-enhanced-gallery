@@ -13,8 +13,8 @@
  * **Hooks Overview**:
  *
  * 1. **useToolbarState** (Phase 2B Step 2)
- *    - State: isDownloading, isLoading, hasError, needsHighContrast
- *    - Actions: setDownloading, setLoading, setError, setHighContrast, resetState
+ *    - State: isDownloading, isLoading, hasError
+ *    - Actions: setDownloading, setLoading, setError, resetState
  *    - Features: Download debounce (300ms minimum display), state sync
  *
  * 2. **useFocusTrap** (Phase 3.0.0)
@@ -74,7 +74,7 @@
 /**
  * **useToolbarState**: Toolbar state management with download debounce
  *
- * Provides toolbar UI state (downloading, loading, error, fit mode, high-contrast)
+ * Provides toolbar UI state (downloading, loading, error)
  * and action methods to update state.
  *
  * @see useToolbarState - Full hook documentation

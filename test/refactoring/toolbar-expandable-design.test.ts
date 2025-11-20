@@ -152,22 +152,14 @@ describe('Phase 46: Toolbar Expandable Panel Design Consistency', () => {
     });
   });
 
-  describe('High Contrast Mode', () => {
-    it('toolbar CSS가 forced-colors 미디어 쿼리를 지원해야 함 (있다면)', () => {
+  describe('Forced Colors / High Contrast Cleanup', () => {
+    it('toolbar CSS에 forced-colors 미디어 쿼리가 없어야 함', () => {
       const forcedColorsSupport = toolbarCSS.includes('@media (forced-colors: active)');
 
-      // 현재 지원하지 않으면 경고만 (향후 추가 권장)
-      if (!forcedColorsSupport) {
-        console.warn(
-          '⚠️  Toolbar does not support forced-colors mode yet. Consider adding for high contrast accessibility.'
-        );
-      }
-
-      // 테스트는 통과 (선택적 기능)
-      expect(true).toBe(true);
+      expect(forcedColorsSupport).toBe(false);
     });
 
-    it('settingsPanel이 기본 border를 가져야 함 (고대비 모드 대비)', () => {
+    it('settingsPanel이 기본 border를 유지해 가독성을 확보해야 함', () => {
       const panelBorder = toolbarCSS.match(
         /\.settingsPanel\s*\{[\s\S]*?border-top:\s*([^;]+)/
       )?.[1];

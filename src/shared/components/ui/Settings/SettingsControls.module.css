@@ -84,7 +84,7 @@
  * - Light/dark mode: Via design tokens (--xeg-color-text-primary changes)
  * - All colors dynamic: No hardcoded hex/rgb values
  * - Automatic switching: No media queries needed (tokens handle)
- * - High contrast mode: Via browser preference (inherited from tokens)
+ * - Forced colors: Relies on browser defaults (no custom overrides)
  *
  * **CSS Variables Used**:
  * - Layout: --xeg-settings-gap, --xeg-settings-padding, --xeg-settings-control-gap

@@ -42,8 +42,6 @@ const FIT_MODE_ORDER = [
   { mode: 'fitContainer' as const, Icon: ArrowsPointingIn },
 ] as const;
 
-const HIGH_CONTRAST_LEVELS = [0.25, 0.5, 0.75] as const;
-
 function clampIndex(index: number, total: number): number {
   if (!Number.isFinite(index) || total <= 0) {
     return 0;
@@ -166,11 +164,9 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   );
 
   const baseSettingsController = useToolbarSettingsController({
-    setNeedsHighContrast: toolbarActions.setHighContrast,
     isSettingsExpanded: settingsExpandedSignal,
     setSettingsExpanded,
     toggleSettingsExpanded: toggleSettings,
-    highContrastOffsets: HIGH_CONTRAST_LEVELS,
   });
 
   const settingsController: ToolbarSettingsControllerResult = {
@@ -187,7 +183,7 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
   const toolbarClass = createMemo(() =>
     createClassName(
       styles.toolbar,
-      getToolbarClassName(toolbarState, styles.galleryToolbar ?? ''),
+      getToolbarClassName(styles.galleryToolbar ?? ''),
       props.className ?? ''
     )
   );

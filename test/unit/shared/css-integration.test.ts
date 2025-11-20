@@ -5,6 +5,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { setupGlobalTestIsolation } from '../../shared/global-cleanup-hooks';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 describe('Phase 2: CSS Integration', () => {
   setupGlobalTestIsolation();
@@ -174,19 +176,14 @@ describe('Phase 2: CSS Integration', () => {
       expect(motionCSS).toContain('animation: none');
     });
 
-    it('should support high contrast mode', () => {
-      const contrastCSS = `
-        @media (prefers-contrast: high) {
-          .element {
-            border: 2px solid CanvasText;
-            background: Canvas;
-          }
-        }
-      `;
+    it('should not rely on deprecated high contrast media queries', () => {
+      const semanticTokensPath = join(
+        process.cwd(),
+        'src/shared/styles/design-tokens.semantic.css'
+      );
+      const semanticTokens = readFileSync(semanticTokensPath, 'utf-8');
 
-      expect(contrastCSS).toContain('prefers-contrast: high');
-      expect(contrastCSS).toContain('CanvasText');
-      expect(contrastCSS).toContain('Canvas');
+      expect(semanticTokens).not.toMatch(/@media\s*\(\s*prefers-contrast:\s*high\s*\)/);
     });
 
     it('should implement GPU acceleration patterns', () => {

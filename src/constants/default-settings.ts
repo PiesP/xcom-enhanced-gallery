@@ -30,7 +30,6 @@ const STATIC_DEFAULT_SETTINGS = {
     expirationMinutes: 60,
   },
   accessibility: {
-    highContrast: false,
     reduceMotion: false,
     screenReaderSupport: true,
     focusIndicators: true,

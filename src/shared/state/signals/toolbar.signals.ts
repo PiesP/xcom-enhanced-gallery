@@ -29,7 +29,6 @@ export type ToolbarModeState = 'gallery' | 'settings' | 'download';
  */
 export interface ToolbarModeStateData {
   readonly currentMode: ToolbarModeState;
-  readonly needsHighContrast: boolean;
 }
 
 export interface ToolbarExpandableState {
@@ -47,7 +46,6 @@ export type ToolbarEvents = {
 
 const INITIAL_TOOLBAR_STATE: ToolbarModeStateData = {
   currentMode: 'gallery',
-  needsHighContrast: false,
 };
 
 const INITIAL_EXPANDABLE_STATE: ToolbarExpandableState = {
@@ -135,18 +133,6 @@ export function updateToolbarMode(mode: ToolbarModeState): void {
   }
 }
 
-/**
- * Set high contrast mode
- */
-export function setHighContrast(enabled: boolean): void {
-  const currentState = toolbarStateSignal.value;
-
-  if (currentState.needsHighContrast !== enabled) {
-    toolbarStateSignal.value = { ...currentState, needsHighContrast: enabled };
-    logger.debug(`High contrast mode ${enabled ? 'enabled' : 'disabled'}`);
-  }
-}
-
 // ============================================================================
 // Selectors
 // ============================================================================
@@ -167,7 +153,6 @@ export function getToolbarInfo(): ToolbarModeStateData {
   const state = toolbarStateSignal.value;
   return {
     currentMode: state.currentMode,
-    needsHighContrast: state.needsHighContrast,
   };
 }
 

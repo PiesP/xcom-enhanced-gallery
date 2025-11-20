@@ -8,7 +8,6 @@ import { ensureHarness } from './utils';
  * 1. Settings button rendering and accessibility
  * 2. Settings panel visibility states
  * 3. Focus trap activation (keyboard navigation)
- * 4. High contrast detection behavior
  *
  * NOTE: Solid.js Reactivity Constraints:
  * - Signal-based state updates don't properly propagate to DOM attributes in Playwright
@@ -224,35 +223,6 @@ test.describe('Settings Panel Control (E2E)', () => {
       const exists = await panel.count();
       expect(exists).toBeGreaterThan(0);
     }
-  });
-
-  test('should detect high contrast mode based on background', async ({ page }) => {
-    // Mount Toolbar
-    const containerId = await page.evaluate(async () => {
-      const harness = (window as any).__XEG_HARNESS__;
-      if (!harness) throw new Error('Harness not available');
-      const result = await harness.mountToolbar({
-        currentIndex: 0,
-        totalCount: 5,
-      });
-      return result.containerId;
-    });
-
-    const toolbar = page.locator(`#${containerId}`);
-    await expect(toolbar).toBeVisible();
-
-    // Verify toolbar exists and is properly rendered
-    const toolbarInfo = await toolbar.evaluate(el => {
-      const htmlEl = el as HTMLElement;
-      return {
-        isVisible: !!(htmlEl.offsetWidth || htmlEl.offsetHeight),
-        tagName: el.tagName,
-        id: el.id,
-      };
-    });
-
-    expect(toolbarInfo.isVisible).toBe(true);
-    expect(toolbarInfo.id).toBe(containerId);
   });
 });
 

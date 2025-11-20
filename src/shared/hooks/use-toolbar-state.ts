@@ -6,7 +6,6 @@
  * - Download state management with 300ms minimum display
  * - Loading state management
  * - Error state management
- * - High-contrast mode state
  * - State reset and cleanup
  *
  * **Features**:
@@ -18,13 +17,11 @@
  * **Integration**:
  * - Uses globalTimerManager for timer management
  * - Uses Solid.js createStore for reactive state
- *
  * **Performance**:
  * - Download timeout only scheduled when needed
  * - Store updates batched within Solid.js reactivity system
  * - Cleanup prevents timer leaks
  *
- * **Related**:
  * - {@link ../utils/toolbar-utils.ts} - State extraction and styling utilities
  * - {@link ../types/toolbar.types.ts} - State type definitions
  * - {@link ../../features/gallery/hooks/use-gallery-app.ts} - Main app integration
@@ -44,7 +41,6 @@ import type { ToolbarState, ToolbarActions } from '@shared/types/toolbar.types';
  * - `isDownloading`: Download operation in progress
  * - `isLoading`: Async data loading in progress
  * - `hasError`: Error occurred during operation
- * - `needsHighContrast`: High-contrast mode for accessibility
  *
  * @internal Default values for new toolbar instances
  */
@@ -52,7 +48,6 @@ const INITIAL_STATE: ToolbarState = {
   isDownloading: false,
   isLoading: false,
   hasError: false,
-  needsHighContrast: false,
 } as const;
 
 /**
@@ -64,13 +59,11 @@ const INITIAL_STATE: ToolbarState = {
  * - `isDownloading`: Download in progress (minimum 300ms display)
  * - `isLoading`: Async operation in progress
  * - `hasError`: Error occurred
- * - `needsHighContrast`: Accessibility mode
  *
  * **Actions Provided**:
  * - `setDownloading(bool)`: Toggle download state with debounce
  * - `setLoading(bool)`: Toggle loading state, clears error on start
  * - `setError(bool)`: Set error state, clears loading/downloading on error
- * - `setHighContrast(bool)`: Toggle high-contrast mode
  * - `resetState()`: Reset all state to initial values and cleanup timers
  *
  * **Download Debounce**:
@@ -193,14 +186,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
   };
 
   /**
-   * Set high-contrast mode for accessibility
-   * @internal State action
-   */
-  const setHighContrast = (needsHighContrast: boolean): void => {
-    setState({ needsHighContrast });
-  };
-
-  /**
    * Reset all state to initial values and clear timers
    *
    * **Cleanup**:
@@ -229,7 +214,6 @@ export function useToolbarState(): [ToolbarState, ToolbarActions] {
     setDownloading,
     setLoading,
     setError,
-    setHighContrast,
     resetState,
   };
 

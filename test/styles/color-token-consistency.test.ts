@@ -99,14 +99,14 @@ describe('Color Token Consistency', () => {
   });
 
   describe('Accessibility Token Support', () => {
-    it('고대비 모드 미디어 쿼리를 지원한다', () => {
+    it('고대비 모드 미디어 쿼리가 제거되어야 한다', () => {
       const semanticTokensPath = resolve(
         projectRoot,
         'src/shared/styles/design-tokens.semantic.css'
       );
       const semanticTokens = readFileSync(semanticTokensPath, 'utf8');
 
-      expect(semanticTokens).toMatch(/@media\s*\(\s*prefers-contrast:\s*high\s*\)/);
+      expect(semanticTokens).not.toMatch(/@media\s*\(\s*prefers-contrast:\s*high\s*\)/);
     });
 
     it('감소된 투명도 미디어 쿼리를 지원한다', () => {
