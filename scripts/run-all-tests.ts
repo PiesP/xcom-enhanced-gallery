@@ -46,10 +46,14 @@ function main(): void {
   console.log('🧪 Running all tests...');
 
   let exitCode = 0;
+  const failedSuites: string[] = [];
   for (const test of tests) {
     const [cmd, commandArgs] = test.cmd;
     const ok = runOne(test.name, cmd, commandArgs);
-    if (!ok) exitCode = 1;
+    if (!ok) {
+      exitCode = 1;
+      failedSuites.push(test.name);
+    }
   }
 
   console.log('');
@@ -58,6 +62,10 @@ function main(): void {
     console.log('✅ All tests passed!');
   } else {
     console.log(`❌ Some tests failed (EXIT_CODE=${exitCode})`);
+    if (failedSuites.length > 0) {
+      console.log('   ↳ Failed suites (latest failures last):');
+      failedSuites.forEach(suite => console.log(`      • ${suite}`));
+    }
   }
   console.log('=========================================');
 

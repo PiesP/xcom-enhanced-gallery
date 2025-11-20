@@ -139,6 +139,19 @@ describe('CoreService (ServiceManager)', () => {
       expect(mockCleanup).toHaveBeenCalled();
     });
 
+    it('cleanup 이후 서비스 레지스트리가 비워져 고아 모듈을 남기지 않아야 함', () => {
+      const mockDestroy = vi.fn();
+      const serviceKey = 'orphan-service';
+      const service = { destroy: mockDestroy };
+
+      coreService.register(serviceKey, service);
+      coreService.cleanup();
+
+      expect(mockDestroy).toHaveBeenCalled();
+      expect(coreService.getRegisteredServices()).toHaveLength(0);
+      expect(() => coreService.get(serviceKey)).toThrow('Service not found: orphan-service');
+    });
+
     it('reset()은 모든 서비스를 제거해야 함', () => {
       // 로직 분리: 리셋 로직만 테스트
       const testService = { name: 'test-service' };

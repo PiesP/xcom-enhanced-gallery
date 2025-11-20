@@ -4,7 +4,7 @@
  * Batched Vitest runner with worker cleanup and optional memory diagnostics.
  */
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { glob } from 'glob';
 import { resolve, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,6 +62,7 @@ const FAIL_FAST = hasFlag('fail-fast');
 const VERBOSE = hasFlag('verbose');
 const MONITOR_MEMORY = hasFlag('monitor-memory');
 const CLEANUP_ENABLED = !hasFlag('no-cleanup');
+const FAILURE_SUMMARY_LIMIT = Math.max(1, getNumericArg('failure-lines', 5));
 
 console.log('\n🧪 Batched Unit Test Runner');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -85,6 +86,8 @@ console.log('━━━━━━━━━━━━━━━━━━━━━━�
 // ---------------------------------------------------------------------------
 
 const toPosix = (input: string): string => input.replace(/\\/g, '/');
+const toRelativeTestPath = (file: string): string =>
+  toPosix(relative(PROJECT_ROOT, resolve(PROJECT_ROOT, file)));
 
 interface MemorySnapshot {
   total: number;
@@ -128,6 +131,21 @@ const logMemoryDelta = (before: MemorySnapshot, after: MemorySnapshot): void => 
 };
 
 const logDivider = (): void => console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+const ANSI_ESCAPE_PATTERN =
+  // eslint-disable-next-line no-control-regex
+  /[\u001B\u009B][[\]()#;?]*(?:(?:[0-9]{1,4})(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g;
+
+const stripAnsi = (value: string): string => value.replace(ANSI_ESCAPE_PATTERN, '');
+
+const extractFailureHighlights = (output: string): string[] => {
+  const clean = stripAnsi(output);
+  const lines = clean
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+  const failureLines = lines.filter(line => /^(FAIL|✖|●)\s+/u.test(line));
+  return failureLines.slice(-FAILURE_SUMMARY_LIMIT);
+};
 
 // ---------------------------------------------------------------------------
 // Core helpers
@@ -192,22 +210,79 @@ interface BatchRunResult {
   exitCode: number | null;
   memoryBefore?: MemorySnapshot;
   memoryAfter?: MemorySnapshot;
+  failureHighlights?: string[];
+  durationMs?: number;
 }
 
-function runSingleBatch(
+interface VitestExecutionResult {
+  exitCode: number;
+  signal: NodeJS.Signals | null;
+  error?: Error;
+  stdout: string;
+  stderr: string;
+}
+
+function runVitestProcess(relativeFiles: string[]): Promise<VitestExecutionResult> {
+  return new Promise(resolve => {
+    const vitestArgs = [
+      'vitest',
+      'run',
+      '--project',
+      PROJECT,
+      `--reporter=${REPORTER}`,
+      ...relativeFiles,
+    ];
+
+    const child = spawn('npx', vitestArgs, {
+      cwd: PROJECT_ROOT,
+      env: {
+        ...process.env,
+        NODE_OPTIONS: `--max-old-space-size=${MEMORY} --preserve-symlinks`,
+        VITEST_MAX_THREADS: '1',
+      },
+      stdio: ['inherit', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout?.on('data', chunk => {
+      const text = chunk.toString();
+      stdout += text;
+      process.stdout.write(text);
+    });
+
+    child.stderr?.on('data', chunk => {
+      const text = chunk.toString();
+      stderr += text;
+      process.stderr.write(text);
+    });
+
+    child.on('error', error => {
+      resolve({ exitCode: 1, signal: null, error, stdout, stderr });
+    });
+
+    child.on('close', (code, signal) => {
+      const exitCode = typeof code === 'number' ? code : signal ? 1 : 0;
+      resolve({ exitCode, signal, stdout, stderr });
+    });
+  });
+}
+
+async function runSingleBatch(
   batch: string[],
   batchIndex: number,
   totalBatches: number,
   attempt: number,
   label?: string
-): BatchRunResult {
+): Promise<BatchRunResult> {
   const batchNum = batchIndex + 1;
   const attemptSuffix = attempt > 1 ? ` (attempt ${attempt})` : '';
   const headerLabel = label ?? `Batch ${batchNum}/${totalBatches}`;
   console.log(`\n📊 ${headerLabel} (${batch.length} files)${attemptSuffix}`);
   logDivider();
 
-  const relativeFiles = batch.map(file => toPosix(relative(PROJECT_ROOT, file)));
+  const relativeFiles = batch.map(toRelativeTestPath);
 
   if (VERBOSE) {
     relativeFiles.forEach(file => console.log(`   - ${file}`));
@@ -220,34 +295,19 @@ function runSingleBatch(
     logMemorySnapshot('📈 Memory before batch', memoryBefore);
   }
 
-  const vitestArgs = [
-    'vitest',
-    'run',
-    '--project',
-    PROJECT,
-    `--reporter=${REPORTER}`,
-    ...relativeFiles,
-  ];
+  const timerStart = Date.now();
+  const execution = await runVitestProcess(relativeFiles);
+  const durationMs = Date.now() - timerStart;
 
-  const result = spawnSync('npx', vitestArgs, {
-    cwd: PROJECT_ROOT,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      NODE_OPTIONS: `--max-old-space-size=${MEMORY} --preserve-symlinks`,
-      VITEST_MAX_THREADS: '1',
-    },
-  });
-
-  let success = result.status === 0;
-  let exitCode = result.status ?? null;
+  let success = execution.exitCode === 0;
+  let exitCode: number | null = execution.exitCode;
 
   if (!success) {
-    if (typeof result.signal === 'string') {
+    if (execution.signal) {
       exitCode = 1;
     }
-    if (result.error) {
-      console.error(`❌ Failed to execute Vitest: ${(result.error as Error).message}`);
+    if (execution.error) {
+      console.error(`❌ Failed to execute Vitest: ${execution.error.message}`);
       exitCode = 1;
     }
   }
@@ -267,7 +327,9 @@ function runSingleBatch(
     console.log(`❌ ${headerLabel} failed (exit code: ${exitCode ?? 'unknown'})`);
   }
 
-  return { success, exitCode, memoryBefore, memoryAfter };
+  const failureHighlights = success ? [] : extractFailureHighlights(execution.stdout);
+
+  return { success, exitCode, memoryBefore, memoryAfter, failureHighlights, durationMs };
 }
 
 interface SummaryResult extends BatchRunResult {
@@ -275,22 +337,28 @@ interface SummaryResult extends BatchRunResult {
   fileCount: number;
   attempts: number;
   label: string;
+  files: string[];
 }
 
-function runBatchWithRetry(
+async function runBatchWithRetry(
   batch: string[],
   index: number,
   total: number,
   label?: string
-): SummaryResult {
+): Promise<SummaryResult> {
   let attempt = 0;
-  let latest: BatchRunResult = { success: false, exitCode: 1 };
+  let latest: BatchRunResult = {
+    success: false,
+    exitCode: 1,
+    failureHighlights: [],
+    durationMs: 0,
+  };
   const defaultLabel = `Batch ${index + 1}`;
   const labelToUse = label ?? defaultLabel;
 
   while (attempt <= RETRY_LIMIT) {
     attempt += 1;
-    latest = runSingleBatch(batch, index, total, attempt, labelToUse);
+    latest = await runSingleBatch(batch, index, total, attempt, labelToUse);
 
     if (latest.success) {
       break;
@@ -309,11 +377,16 @@ function runBatchWithRetry(
     fileCount: batch.length,
     attempts: attempt,
     label: labelToUse,
+    files: batch.map(toRelativeTestPath),
     ...latest,
   };
 }
 
-function splitBatchAndRun(batch: string[], index: number, total: number): SummaryResult[] {
+async function splitBatchAndRun(
+  batch: string[],
+  index: number,
+  total: number
+): Promise<SummaryResult[]> {
   console.log(`\n🪓 Splitting batch ${index + 1} into ${batch.length} single-file runs`);
   const results: SummaryResult[] = [];
 
@@ -323,7 +396,7 @@ function splitBatchAndRun(batch: string[], index: number, total: number): Summar
     const label = `Batch ${index + 1}.${subIndex + 1}/${total}`;
     console.log(`   ↳ ${label} → ${relativeFile}`);
     runCleanup();
-    const summary = runBatchWithRetry([file], index, total, label);
+    const summary = await runBatchWithRetry([file], index, total, label);
     results.push(summary);
   }
 
@@ -361,7 +434,7 @@ async function main(): Promise<void> {
         runCleanup();
       }
 
-      const summary = runBatchWithRetry(batch, index, batches.length);
+      const summary = await runBatchWithRetry(batch, index, batches.length);
 
       if (summary.success) {
         results.push(summary);
@@ -372,7 +445,7 @@ async function main(): Promise<void> {
           break;
         }
       } else {
-        const splitResults = splitBatchAndRun(batch, index, batches.length);
+        const splitResults = await splitBatchAndRun(batch, index, batches.length);
         results.push(...splitResults);
 
         const hasSplitFailure = splitResults.some(result => !result.success);
@@ -418,13 +491,36 @@ async function main(): Promise<void> {
 
     if (failedBatches > 0) {
       console.log('\n❌ Failed batches:');
-      results
-        .filter(result => !result.success)
-        .forEach(result => {
-          console.log(
-            `   - ${result.label} (exit code: ${result.exitCode ?? 'unknown'}, attempts: ${result.attempts})`
-          );
+      const failedResults = results.filter(result => !result.success);
+      failedResults.forEach(result => {
+        console.log(
+          `   - ${result.label} (exit code: ${result.exitCode ?? 'unknown'}, attempts: ${result.attempts})`
+        );
+        if (result.failureHighlights && result.failureHighlights.length > 0) {
+          result.failureHighlights.forEach(highlight => {
+            console.log(`       ↳ ${highlight}`);
+          });
+        }
+      });
+
+      const failedFiles = Array.from(new Set(failedResults.flatMap(result => result.files ?? [])));
+      if (failedFiles.length > 0) {
+        console.log('\n📝 Failed test files:');
+        failedFiles.forEach(file => {
+          console.log(`   - ${file}`);
         });
+      }
+
+      const failureHighlightSet = new Set<string>();
+      failedResults.forEach(result => {
+        (result.failureHighlights ?? []).forEach(line => failureHighlightSet.add(line));
+      });
+      if (failureHighlightSet.size > 0) {
+        console.log('\n🔍 Failure highlights (deduped):');
+        failureHighlightSet.forEach(line => {
+          console.log(`   - ${line}`);
+        });
+      }
     }
 
     logDivider();

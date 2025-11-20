@@ -191,6 +191,10 @@ export class ServiceRegistry {
         }
       }
     }
+
+    // Remove all references after lifecycle hooks complete to avoid
+    // orphaned modules lingering between reinitializations.
+    this.services.clear();
   }
 
   /**

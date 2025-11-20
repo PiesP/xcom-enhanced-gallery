@@ -214,59 +214,36 @@ export function Button(rawProps: ButtonProps): JSXElement {
   // Use toAccessor + createMemo to ensure reactive tracking and consistency.
   // Prefer rawProps accessors when available to preserve reactivity
   // (mergeProps may snapshot/resolve functions into primitive values)
-  const loadingAccessor = toAccessor((rawProps as ButtonProps).loading ?? local.loading);
-  const disabledAccessor = toAccessor((rawProps as ButtonProps).disabled ?? local.disabled);
-  const ariaBusyAccessor = toAccessor((rawProps as ButtonProps)['aria-busy'] ?? local['aria-busy']);
-  const titleAccessor = toAccessor((rawProps as ButtonProps).title ?? local.title);
-  const ariaLabelAccessor = toAccessor(
-    (rawProps as ButtonProps)['aria-label'] ?? local['aria-label']
-  );
-  const ariaLabelledByAccessor = toAccessor(
-    (rawProps as ButtonProps)['aria-labelledby'] ?? local['aria-labelledby']
-  );
+  type ReactivePropKey =
+    | 'loading'
+    | 'disabled'
+    | 'aria-busy'
+    | 'aria-pressed'
+    | 'aria-describedby'
+    | 'title'
+    | 'aria-label'
+    | 'aria-labelledby'
+    | 'iconOnly';
+
+  const fallbackProps = local as ButtonProps;
+  const resolveProp = <K extends ReactivePropKey>(key: K): ButtonProps[K] =>
+    (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
+
+  const iconOnlyAccessor = toAccessor(resolveProp('iconOnly'));
+  const loadingAccessor = toAccessor(resolveProp('loading'));
+  const disabledAccessor = toAccessor(resolveProp('disabled'));
+  const ariaBusyAccessor = toAccessor(resolveProp('aria-busy'));
+  const ariaPressedAccessor = toAccessor(resolveProp('aria-pressed'));
+  const ariaDescribedbyAccessor = toAccessor(resolveProp('aria-describedby'));
+  const titleAccessor = toAccessor(resolveProp('title'));
+  const ariaLabelAccessor = toAccessor(resolveProp('aria-label'));
+  const ariaLabelledByAccessor = toAccessor(resolveProp('aria-labelledby'));
 
   const isLoading = createMemo(() => !!loadingAccessor());
   const isDisabled = createMemo(() => !!disabledAccessor() || isLoading());
 
-  // Debugging instrumentation: log state transitions for isDisabled and disabledAccessor
   createEffect(() => {
-    try {
-      // eslint-disable-next-line no-console
-      console.log(
-        '[UnifiedButton] isDisabled:',
-        isDisabled(),
-        'disabledAccessor:',
-        disabledAccessor()
-      );
-      if (__DEV__) {
-        // Additional debug: inspect accessor identity and raw prop
-        try {
-          // eslint-disable-next-line no-console
-          console.log(
-            '[UnifiedButton:DEBUG] raw-disabled-identity-equals-accessor:',
-            (rawProps as Record<string, unknown>).disabled === disabledAccessor
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            '[UnifiedButton:DEBUG] raw-disabled-type:',
-            typeof (rawProps as Record<string, unknown>).disabled
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            '[UnifiedButton:DEBUG] disabledAccessor-return-type:',
-            typeof disabledAccessor()
-          );
-        } catch {
-          // ignore any ancillary errors during debug logs
-        }
-      }
-    } catch {
-      // ignore logging failures
-    }
-  });
-
-  createEffect(() => {
-    if (!toAccessor((rawProps as ButtonProps).iconOnly ?? local.iconOnly)()) return;
+    if (!iconOnlyAccessor()) return;
     const derived = ariaLabelAccessor() ?? ariaLabelledByAccessor() ?? titleAccessor();
     if (!derived) {
       logger.warn(
@@ -284,6 +261,11 @@ export function Button(rawProps: ButtonProps): JSXElement {
   onCleanup(() => {
     local.ref?.(null);
   });
+  // Store element ref to ensure direct DOM property updates for attributes like disabled
+  const [elementRef, setElementRef] = (() => {
+    const { createSignal } = solid;
+    return createSignal<HTMLButtonElement | null>(null);
+  })();
   // Compute button state accessors
   // Use resolved accessors to support signal/function props
   // isDisabled is defined above (resolves accessors safely)
@@ -298,7 +280,6 @@ export function Button(rawProps: ButtonProps): JSXElement {
 
   const handleMouseDown = (event: MouseEvent) => {
     if (isDisabled()) {
-      event.preventDefault();
       return;
     }
     local.onMouseDown?.(event);
@@ -328,7 +309,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
       styles[`variant-${local.variant}`],
       styles[`size-${local.size}`],
       local.intent ? styles[`intent-${local.intent}`] : undefined,
-      toAccessor(local.iconOnly)() ? styles.iconOnly : undefined,
+      iconOnlyAccessor() ? styles.iconOnly : undefined,
       isLoading() ? styles.loading : undefined,
       isDisabled() ? styles.disabled : undefined,
       'xeg-inline-center',
@@ -337,27 +318,56 @@ export function Button(rawProps: ButtonProps): JSXElement {
       typeof local.class === 'function' ? (local.class as Function)() : local.class
     );
 
+  // Keep the DOM disabled property in sync with the isDisabled() accessor to aid testing and DOM consumers
+  const { createEffect: _createEffect } = solid;
+  const loadingClassName = styles.loading;
+  _createEffect(() => {
+    const el = elementRef();
+    const disabledNow = isDisabled();
+    const loadingNow = isLoading();
+    if (el) {
+      el.disabled = disabledNow;
+      // debug: ensure dataset reflects computed disabled state for tests
+      try {
+        el.dataset.debugIsdisabled = String(disabledNow);
+        el.dataset.debugPropertyDisabled = String(Boolean((el as HTMLButtonElement).disabled));
+        el.dataset.debugAttrDisabled = String(el.hasAttribute('disabled'));
+        // Also set aria-disabled attribute to reflect a11y state
+        el.setAttribute('aria-disabled', String(disabledNow));
+        if (loadingClassName) {
+          try {
+            if (loadingNow) {
+              el.classList.add(loadingClassName);
+            } else {
+              el.classList.remove(loadingClassName);
+            }
+          } catch {
+            // ignore DOM variations
+          }
+        }
+      } catch {
+        // ignore immutability in some DOM setups
+      }
+    }
+  });
+
   return (
     <button
       {...rest}
       ref={element => {
+        setElementRef(element ?? null);
         if (typeof local.ref === 'function') {
           local.ref(element ?? null);
         }
       }}
-      type={local.type}
-      form={local.form}
-      autofocus={
-        typeof local.autoFocus === 'function' ? (local.autoFocus as Function)() : local.autoFocus
-      }
       disabled={isDisabled()}
+      type={local.type}
       class={buttonClasses()}
       id={local.id}
-      aria-label={local['aria-label']}
-      aria-labelledby={local['aria-labelledby']}
-      aria-describedby={local['aria-describedby']}
-      aria-pressed={local['aria-pressed']}
       aria-expanded={local['aria-expanded']}
+      aria-pressed={ariaPressedAccessor() ?? undefined}
+      aria-describedby={ariaDescribedbyAccessor() ?? undefined}
+      aria-label={ariaLabelAccessor() ?? undefined}
       aria-controls={local['aria-controls']}
       aria-haspopup={local['aria-haspopup']}
       aria-busy={ariaBusyAccessor() ?? isLoading()}
@@ -374,27 +384,6 @@ export function Button(rawProps: ButtonProps): JSXElement {
       data-disabled={local['data-disabled']}
       data-selected={local['data-selected']}
       data-loading={local['data-loading']}
-      {...(__DEV__
-        ? {
-            // Debug helper: reflect computed disabled state in dataset (temporary for test diagnostics)
-            'data-debug-isdisabled': String(isDisabled()),
-            // Debug helper: reveal the type of the local.disabled prop and accessor
-            'data-debug-local-disabled-type': typeof local.disabled,
-            'data-debug-disabled-accessor-type': typeof disabledAccessor,
-            'data-debug-disabled-accessor-value': String(disabledAccessor()),
-            // Debug: inspect rawProps to ensure original accessor passed through
-            'data-debug-raw-disabled-type': typeof (rawProps as ButtonProps).disabled,
-            'data-debug-raw-disabled-value': String(
-              typeof (rawProps as ButtonProps).disabled === 'function'
-                ? ((rawProps as Record<string, () => unknown>).disabled as () => unknown)()
-                : (rawProps as ButtonProps).disabled
-            ),
-            'data-debug-raw-disabled-equals-accessor':
-              typeof (rawProps as ButtonProps).disabled === 'function'
-                ? String((rawProps as Record<string, unknown>).disabled === disabledAccessor)
-                : 'false',
-          }
-        : {})}
       title={local.title}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
