@@ -22,6 +22,13 @@ export type Theme = 'light' | 'dark';
  */
 export type ThemeSetting = 'auto' | Theme;
 
+export interface ThemeSetOptions {
+  /** Force DOM updates and listener notifications even if the effective theme is unchanged. */
+  force?: boolean;
+  /** Skip persistence when true (useful for startup reapply). Defaults to true (persist). */
+  persist?: boolean;
+}
+
 type ThemeSettingsSnapshot = {
   gallery?: {
     theme?: ThemeSetting | string | null;
@@ -304,19 +311,22 @@ export class ThemeService extends BaseServiceImpl {
   /**
    * Set theme manually
    */
-  public setTheme(setting: ThemeSetting | string): void {
+  public setTheme(setting: ThemeSetting | string, options?: ThemeSetOptions): void {
     const normalized = ThemeService.normalizeThemeSetting(setting) ?? 'light';
     const previousSetting = this.themeSetting;
 
     this.themeSetting = normalized;
 
-    // Save to storage
-    void this.saveThemeSetting();
+    // Save to storage when persistence is enabled (default behavior)
+    if (options?.persist !== false) {
+      void this.saveThemeSetting();
+    }
 
     // Apply theme
-    const themeChanged = this.applyCurrentTheme();
+    const shouldForceApply = options?.force === true;
+    const themeChanged = this.applyCurrentTheme(shouldForceApply);
 
-    if (!themeChanged && previousSetting !== this.themeSetting) {
+    if (!themeChanged && (shouldForceApply || previousSetting !== this.themeSetting)) {
       this.notifyListeners();
     }
 

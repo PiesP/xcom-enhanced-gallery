@@ -153,6 +153,26 @@ async function initializeBaseServicesStage(): Promise<void> {
   }
 }
 
+async function applyInitialThemeSetting(): Promise<void> {
+  try {
+    const { getThemeService } = await import('@shared/container/service-accessors');
+    const themeService = getThemeService();
+
+    if (typeof themeService.isInitialized === 'function' && !themeService.isInitialized()) {
+      await themeService.initialize();
+    }
+
+    const savedSetting = themeService.getCurrentTheme();
+    themeService.setTheme(savedSetting, { force: true, persist: false });
+
+    if (import.meta.env.DEV) {
+      logger.debug(`[theme-sync] Applied saved theme: ${savedSetting}`);
+    }
+  } catch (error) {
+    logger.warn('[theme-sync] Initial theme application skipped:', error);
+  }
+}
+
 /**
  * Non-Critical system background initialization
  * Phase 3.1: Utilize requestIdleCallback
@@ -206,6 +226,7 @@ const bootstrapStages: BootstrapStage[] = [
   { label: 'Infrastructure', run: initializeInfrastructure },
   { label: 'Critical systems', run: initializeCriticalSystems },
   { label: 'Base services', run: initializeBaseServicesStage },
+  { label: 'Theme synchronization', run: applyInitialThemeSetting },
   { label: 'Feature service registration', run: registerFeatureServicesLazy },
   { label: 'Global event wiring', run: () => setupGlobalEventHandlers() },
   { label: 'Gallery initialization', run: initializeGalleryIfPermitted },

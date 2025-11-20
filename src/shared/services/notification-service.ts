@@ -36,16 +36,17 @@ export class NotificationService {
     const { detectEnvironment } = await import('@shared/external/userscript');
     const env = detectEnvironment();
     const gm = (globalThis as GlobalWithGMNotification).GM_notification;
+    const summary = `theme:${env.colorScheme}/lang:${env.language}`;
     return gm
       ? {
           provider: 'gm',
           available: true,
-          description: `✅ GM_notification available (${env.environment})`,
+          description: `GM_notification ready (${summary})`,
         }
       : {
           provider: 'none',
           available: false,
-          description: `⚠️ GM_notification unavailable (${env.environment})`,
+          description: `GM_notification unavailable (${summary})`,
         };
   }
 

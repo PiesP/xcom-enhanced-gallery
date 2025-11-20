@@ -41,7 +41,7 @@ describe('NotificationService Lean Mode (Phase 321)', () => {
 
       expect(provider.provider).toBe('gm');
       expect(provider.available).toBe(true);
-      expect(provider.description).toContain('✅ GM_notification available');
+      expect(provider.description).toContain('GM_notification ready');
       expect(provider.description).toMatch(/\(.*\)$/);
 
       // Cleanup
@@ -64,7 +64,7 @@ describe('NotificationService Lean Mode (Phase 321)', () => {
 
       expect(provider.provider).toBe('none');
       expect(provider.available).toBe(false);
-      expect(provider.description).toContain('⚠️ GM_notification unavailable');
+      expect(provider.description).toContain('GM_notification unavailable');
       expect(provider.description).toMatch(/\(.*\)$/);
     });
 

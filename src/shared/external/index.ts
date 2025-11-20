@@ -84,7 +84,6 @@ export {
   detectEnvironment,
   type EnvironmentInfo,
   isGMAPIAvailable,
-  getEnvironmentDescription,
   // Userscript Getter (내부 전용 - 고급/테스트만)
   getUserscript,
   type UserscriptAPI,
