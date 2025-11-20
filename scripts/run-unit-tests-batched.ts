@@ -147,6 +147,14 @@ const extractFailureHighlights = (output: string): string[] => {
   return failureLines.slice(-FAILURE_SUMMARY_LIMIT);
 };
 
+const extractSkippedHighlights = (output: string): string[] => {
+  const clean = stripAnsi(output);
+  return clean
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(line => /^-\s+/u.test(line));
+};
+
 // ---------------------------------------------------------------------------
 // Core helpers
 // ---------------------------------------------------------------------------
@@ -211,6 +219,7 @@ interface BatchRunResult {
   memoryBefore?: MemorySnapshot;
   memoryAfter?: MemorySnapshot;
   failureHighlights?: string[];
+  skippedHighlights?: string[];
   durationMs?: number;
 }
 
@@ -328,8 +337,17 @@ async function runSingleBatch(
   }
 
   const failureHighlights = success ? [] : extractFailureHighlights(execution.stdout);
+  const skippedHighlights = extractSkippedHighlights(execution.stdout);
 
-  return { success, exitCode, memoryBefore, memoryAfter, failureHighlights, durationMs };
+  return {
+    success,
+    exitCode,
+    memoryBefore,
+    memoryAfter,
+    failureHighlights,
+    skippedHighlights,
+    durationMs,
+  };
 }
 
 interface SummaryResult extends BatchRunResult {
@@ -518,6 +536,17 @@ async function main(): Promise<void> {
       if (failureHighlightSet.size > 0) {
         console.log('\n🔍 Failure highlights (deduped):');
         failureHighlightSet.forEach(line => {
+          console.log(`   - ${line}`);
+        });
+      }
+
+      const skippedHighlightSet = new Set<string>();
+      failedResults.forEach(result => {
+        (result.skippedHighlights ?? []).forEach(line => skippedHighlightSet.add(line));
+      });
+      if (skippedHighlightSet.size > 0) {
+        console.log('\n⏭️  Skipped tests (deduped):');
+        skippedHighlightSet.forEach(line => {
           console.log(`   - ${line}`);
         });
       }
