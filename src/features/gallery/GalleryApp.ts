@@ -26,6 +26,7 @@ import { MediaService } from '../../shared/services/media-service';
 import { NotificationService } from '@shared/services/notification-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import type { SettingsService } from '../settings/services/settings-service';
+import type { ThemeService, ThemeSetting } from '@shared/services/theme-service';
 
 /**
  * Gallery app configuration interface
@@ -123,6 +124,8 @@ export class GalleryApp {
             this
               .settingsService as unknown as import('../../shared/services/theme-service').SettingsServiceLike
           );
+
+          this.reapplyStoredTheme(themeService);
         }
 
         logger.debug(`[GalleryApp] Theme confirmed: ${themeService.getCurrentTheme()}`);
@@ -214,6 +217,25 @@ export class GalleryApp {
       logger.error('[GalleryApp] ❌ Event handlers setup failed:', error);
       throw error;
     }
+  }
+
+  private reapplyStoredTheme(themeService: ThemeService): void {
+    if (!this.settingsService) {
+      return;
+    }
+
+    const storedTheme = this.settingsService.get<ThemeSetting>('gallery.theme');
+    const isExplicitTheme = storedTheme === 'light' || storedTheme === 'dark';
+
+    if (!isExplicitTheme) {
+      logger.debug(
+        '[GalleryApp] Stored theme is not explicitly light/dark; skipping manual reapply'
+      );
+      return;
+    }
+
+    themeService.setTheme(storedTheme, { force: true, persist: false });
+    logger.info(`[GalleryApp] Applied stored ${storedTheme} theme at startup`);
   }
 
   /**

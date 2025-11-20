@@ -290,6 +290,3 @@ export class GalleryRenderer implements GalleryRendererInterface {
     logger.debug('[GalleryRenderer] Full cleanup complete');
   }
 }
-
-// Export singleton instance
-export const galleryRenderer = new GalleryRenderer();

@@ -65,9 +65,10 @@ export class ThemeService extends BaseServiceImpl {
   private readonly storage = getPersistentStorage();
   private mediaQueryList: MediaQueryList | null = null;
   private currentTheme: Theme = 'light';
-  private themeSetting: ThemeSetting = 'auto';
+  private themeSetting: ThemeSetting;
   private readonly listeners: Set<ThemeChangeListener> = new Set();
   private settingsUnsubscribe: (() => void) | null = null;
+  private boundSettingsService: SettingsServiceLike | null = null;
   private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
     null;
 
@@ -78,7 +79,7 @@ export class ThemeService extends BaseServiceImpl {
       this.mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
     }
 
-    this.loadPersistedThemeSetting();
+    this.themeSetting = this.loadPersistedThemeSetting();
 
     // Apply initial theme immediately (whether loaded from storage or default 'auto')
     // This prevents FOUC by applying the theme before the async initialization phase
@@ -133,13 +134,22 @@ export class ThemeService extends BaseServiceImpl {
    * Called by GalleryApp when SettingsService is ready
    */
   public bindSettingsService(settingsService: SettingsServiceLike): void {
-    if (this.settingsUnsubscribe) {
-      return; // Already bound
-    }
-
-    if (typeof settingsService?.subscribe !== 'function') {
+    if (!settingsService) {
       return;
     }
+
+    const isSameService =
+      this.boundSettingsService === settingsService && Boolean(this.settingsUnsubscribe);
+    if (isSameService) {
+      return;
+    }
+
+    if (this.settingsUnsubscribe) {
+      logger.debug('[ThemeService] Rebinding to updated SettingsService instance');
+      this.detachSettingsBinding();
+    }
+
+    this.boundSettingsService = settingsService;
 
     // Sync initial value
     try {
@@ -178,37 +188,67 @@ export class ThemeService extends BaseServiceImpl {
       logger.debug('[ThemeService] Failed to sync theme from SettingsService', err);
     }
 
-    // Subscribe to changes
-    const unsubscribe = settingsService.subscribe?.(event => {
-      try {
-        if (event?.key === 'gallery.theme') {
-          const normalized = ThemeService.normalizeThemeSetting(event.newValue) ?? 'auto';
-          if (normalized !== this.themeSetting) {
-            this.themeSetting = normalized;
-            void this.saveThemeSetting();
-            this.applyCurrentTheme();
+    const canSubscribe = typeof settingsService.subscribe === 'function';
+    if (canSubscribe) {
+      // Subscribe to changes
+      const unsubscribe = settingsService.subscribe?.(event => {
+        try {
+          if (event?.key === 'gallery.theme') {
+            const normalized = ThemeService.normalizeThemeSetting(event.newValue) ?? 'auto';
+            if (normalized !== this.themeSetting) {
+              this.themeSetting = normalized;
+              void this.saveThemeSetting();
+              this.applyCurrentTheme();
+            }
           }
+        } catch (err) {
+          logger.warn('[ThemeService] Error handling SettingsService theme change', err);
         }
-      } catch (err) {
-        logger.warn('[ThemeService] Error handling SettingsService theme change', err);
-      }
-    });
+      });
 
-    this.settingsUnsubscribe = unsubscribe ?? null;
-    logger.debug('[ThemeService] Bound to SettingsService');
+      this.settingsUnsubscribe = unsubscribe ?? null;
+      logger.debug('[ThemeService] Bound to SettingsService');
+    } else {
+      this.settingsUnsubscribe = null;
+      logger.debug(
+        '[ThemeService] SettingsService lacks subscribe support; operating in snapshot mode'
+      );
+    }
   }
 
   /**
    * Restore theme setting (Phase 420: PersistentStorage only)
    */
   private async restoreThemeSetting(): Promise<void> {
-    const restoredSetting =
-      (await this.readThemeFromSettingsAsync()) ?? (await this.readLegacyThemeSettingAsync());
+    const saved = await this.loadThemeFromStorage();
+    if (saved) {
+      this.themeSetting = saved;
+      logger.debug(`[ThemeService] Restored theme setting: ${saved}`);
 
-    if (restoredSetting && restoredSetting !== this.themeSetting) {
-      this.themeSetting = restoredSetting;
-      logger.debug(`[ThemeService] Restored theme setting: ${restoredSetting}`);
+      // Phase 420 Fix: Sync restored theme to SettingsService if SettingsService has default 'auto'
+      // This handles the case where sync load failed (defaulting to 'auto') but async restore succeeded.
+      if (this.boundSettingsService?.get && this.boundSettingsService?.set) {
+        const currentSettingsTheme = this.boundSettingsService.get('gallery.theme');
+        if (currentSettingsTheme === 'auto' && saved !== 'auto') {
+          logger.info(
+            `[ThemeService] Syncing restored theme '${saved}' to SettingsService (was 'auto')`
+          );
+          void this.boundSettingsService.set('gallery.theme', saved);
+        }
+      }
     }
+  }
+
+  private async loadThemeFromStorage(): Promise<ThemeSetting | null> {
+    const settingsTheme = await this.readThemeFromSettingsAsync();
+    if (settingsTheme) {
+      return settingsTheme;
+    }
+    const legacyTheme = await this.readLegacyThemeSettingAsync();
+    if (legacyTheme) {
+      return legacyTheme;
+    }
+    return null;
   }
 
   private static normalizeThemeSetting(value: unknown): ThemeSetting | null {
@@ -415,29 +455,37 @@ export class ThemeService extends BaseServiceImpl {
     this.onMediaQueryChange = null;
 
     // Unsubscribe from settings change events if subscribed
+    this.detachSettingsBinding();
+  }
+
+  private detachSettingsBinding(): void {
     if (this.settingsUnsubscribe) {
       try {
         this.settingsUnsubscribe();
-      } catch {
-        // ignore
+      } catch (error) {
+        logger.debug('[ThemeService] SettingsService unsubscribe failed', error);
       }
       this.settingsUnsubscribe = null;
     }
+
+    this.boundSettingsService = null;
   }
 
-  private loadPersistedThemeSetting(): void {
+  private loadPersistedThemeSetting(): ThemeSetting {
     const settingsTheme = this.readThemeFromSettingsSync();
     if (settingsTheme) {
-      this.themeSetting = settingsTheme;
       logger.debug(`[ThemeService] Loaded theme from settings snapshot: ${settingsTheme}`);
-      return;
+      return settingsTheme;
     }
 
     const legacyTheme = this.readLegacyThemeSettingSync();
     if (legacyTheme) {
-      this.themeSetting = legacyTheme;
       logger.debug(`[ThemeService] Loaded theme from legacy storage: ${legacyTheme}`);
+      return legacyTheme;
     }
+
+    logger.debug('[ThemeService] No stored theme found, falling back to auto');
+    return 'auto';
   }
 
   private readThemeFromSettingsSync(): ThemeSetting | null {
