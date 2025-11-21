@@ -72,6 +72,7 @@
  */
 /config/
 !/config/utils/load-local-config.js
+!/config/utils/load-local-config.d.ts
 
 # 로컬 설정
 /*.local.ts
