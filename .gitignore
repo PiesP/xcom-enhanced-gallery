@@ -32,6 +32,10 @@
 !/package-lock.json
 !/.npmrc
 
+# --- 품질 검사 설정 (CI 필수) ---
+!/eslint.config.cjs
+!/stylelint.config.cjs
+
 # --- 핵심 문서 ---
 !/README.md
 !/LICENSE
@@ -47,6 +51,13 @@
 
 # --- Git 설정 ---
 !/.gitignore
+
+# --- 로컬 전용 디렉토리 가이드 (문서만 추적) ---
+!/playwright/README.md
+!/playwright/.cache/README.md
+!/scripts/README.md
+!/scripts/temp/README.md
+!/config/README.md
 
 # ============================================================================
 # NOT TRACKED: 로컬만 처리하는 파일들 (개발 도구)

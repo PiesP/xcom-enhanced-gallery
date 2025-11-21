@@ -201,7 +201,6 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
 const isTest: boolean = (() => {
   try {
     // Vitest exposes import.meta.vitest
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const meta = (import.meta as any) || {};
     if (typeof meta?.vitest !== 'undefined') return true;
   } catch {

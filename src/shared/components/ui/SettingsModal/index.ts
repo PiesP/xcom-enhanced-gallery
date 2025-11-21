@@ -14,9 +14,12 @@
  *   - `.backdrop`: Fullscreen overlay behind modal
  *   - `.modal`: Centered dialog container
  *   - `.modal:focus-visible`: Keyboard focus indicator
- *
+ */
+
 export { SettingsModal } from './SettingsModal';
 export type { SettingsModalProps } from './SettingsModal';
+
+/**
  * - Phase 391: Settings component split
  * - Phase 392: Styling consolidation and documentation
  *
