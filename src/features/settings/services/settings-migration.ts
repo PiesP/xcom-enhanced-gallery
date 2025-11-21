@@ -5,7 +5,7 @@
  */
 
 import { isRecord } from '@shared/utils/type-guards';
-import type { AppSettings } from '../types/settings.types';
+import type { AppSettings } from '@features/settings/types/settings.types';
 import { DEFAULT_SETTINGS as defaultSettings } from '@/constants';
 
 type Migration = (input: AppSettings) => AppSettings;

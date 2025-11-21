@@ -16,7 +16,7 @@
  * @internal Phase 410 feature, used by BulkDownloadService
  */
 
-import { logger } from '../../logging/logger';
+import { logger } from '@shared/logging';
 import { calculateCRC32, encodeUtf8, writeUint16LE, writeUint32LE } from './zip-utils';
 
 /**

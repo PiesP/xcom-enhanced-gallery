@@ -124,11 +124,11 @@
 
 import { logger } from '@shared/logging';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
-import { ClickedElementTweetStrategy } from '../strategies/clicked-element-tweet-strategy';
-import { UrlBasedTweetStrategy } from '../strategies/url-based-tweet-strategy';
-import { DomStructureTweetStrategy } from '../strategies/dom-structure-tweet-strategy';
-import { DataAttributeTweetStrategy } from '../strategies/data-attribute-tweet-strategy';
-import { ParentTraversalTweetStrategy } from '../strategies/parent-traversal-tweet-strategy';
+import { ClickedElementTweetStrategy } from '@shared/services/media-extraction/strategies/clicked-element-tweet-strategy';
+import { UrlBasedTweetStrategy } from '@shared/services/media-extraction/strategies/url-based-tweet-strategy';
+import { DomStructureTweetStrategy } from '@shared/services/media-extraction/strategies/dom-structure-tweet-strategy';
+import { DataAttributeTweetStrategy } from '@shared/services/media-extraction/strategies/data-attribute-tweet-strategy';
+import { ParentTraversalTweetStrategy } from '@shared/services/media-extraction/strategies/parent-traversal-tweet-strategy';
 
 /**
  * TweetInfoExtractor - Multi-Strategy Tweet Metadata Discovery

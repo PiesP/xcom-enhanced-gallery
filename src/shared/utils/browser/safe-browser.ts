@@ -7,7 +7,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '../timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 type ExtensionRuntimeWindow = Window & {
   chrome?: { runtime?: { id?: string } };

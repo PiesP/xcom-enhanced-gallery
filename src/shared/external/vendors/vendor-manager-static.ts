@@ -27,8 +27,8 @@
  * ✅ Use barrel export: `import { getSolid } from '@shared/external/vendors'`
  */
 
-import { logger } from '../../logging';
-import { globalTimerManager } from '../../utils/timer-management';
+import { logger } from '@shared/logging';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import type {
   ForwardRefComponent,
   MemoCompareFunction,

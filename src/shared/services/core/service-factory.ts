@@ -14,7 +14,7 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Factory Specialization)
  */
 
-import { logger } from '../../logging';
+import { logger } from '@shared/logging';
 
 /**
  * Specialized factory manager for service instantiation

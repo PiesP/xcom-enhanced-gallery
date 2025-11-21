@@ -27,6 +27,17 @@ module.exports = [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['../**', '..\\**'],
+              message: 'Use registered path aliases (@shared, @features, @/) instead of parent-relative imports.',
+            },
+          ],
+        },
+      ],
     },
   },
 ];

@@ -14,9 +14,9 @@ import { SELECTORS } from '@/constants';
 import { getMediaFilenameService } from '@shared/container/service-accessors';
 import { logger } from '@shared/logging';
 import type { FilenameOptions } from '@shared/services/file-naming';
-import { cachedQuerySelector, cachedQuerySelectorAll } from '../../dom';
-import { getPreferredUsername } from '../../media/username-source';
-import type { MediaInfo } from '../../types/media.types';
+import { cachedQuerySelector, cachedQuerySelectorAll } from '@shared/dom';
+import { getPreferredUsername } from '@shared/media/username-source';
+import type { MediaInfo } from '@shared/types/media.types';
 import {
   canExtractOriginalImage,
   canExtractOriginalVideo,
@@ -35,7 +35,7 @@ import {
   isVideoThumbnailUrl,
   shouldIncludeMediaUrl,
   type MediaTypeResult,
-} from '../media-url';
+} from '@shared/utils/media-url';
 
 export type { FilenameOptions, MediaTypeResult };
 

@@ -18,15 +18,15 @@ import {
   setViewMode,
   navigatePrevious,
   navigateNext,
-} from '../../shared/state/signals/gallery.signals';
+} from '@shared/state/signals/gallery.signals';
 import { acquireDownloadLock, isDownloadLocked } from '@shared/state/signals/download.signals';
 import type { GalleryRenderOptions, MediaInfo } from '@shared/types/media.types';
 import { VerticalGalleryView } from './components/vertical-gallery-view/VerticalGalleryView';
-import { GalleryContainer } from '../../shared/components/isolation';
-import { ErrorBoundary } from '../../shared/components/ui/ErrorBoundary/ErrorBoundary';
+import { GalleryContainer } from '@shared/components/isolation';
+import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary';
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging';
-import { getSolid } from '../../shared/external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import { unifiedDownloadService } from '@shared/services/unified-download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 

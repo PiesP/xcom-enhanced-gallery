@@ -5,7 +5,7 @@
  * Image URL transformation utilities.
  */
 
-import { URL_PATTERNS } from '../../patterns/url-patterns';
+import { URL_PATTERNS } from '@shared/utils/patterns/url-patterns';
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;

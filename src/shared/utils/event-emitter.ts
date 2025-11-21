@@ -8,7 +8,7 @@
  * - Minimal bundle size (+~200 bytes)
  */
 
-import { logger } from '../logging';
+import { logger } from '@shared/logging';
 
 /**
  * Create type-safe event emitter

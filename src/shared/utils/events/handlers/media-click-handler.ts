@@ -7,9 +7,9 @@ import { logger } from '@shared/logging';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import type { MediaInfo } from '@shared/types/media.types';
 import { STABLE_SELECTORS, CSS } from '@/constants';
-import { detectMediaFromClick, isProcessableMedia } from '../../media/media-click-detector';
-import { isHTMLElement } from '../../type-guards';
-import { isGalleryInternalElement, isVideoControlElement } from '../../utils';
+import { detectMediaFromClick, isProcessableMedia } from '@shared/utils/media/media-click-detector';
+import { isHTMLElement } from '@shared/utils/type-guards';
+import { isGalleryInternalElement, isVideoControlElement } from '@shared/utils';
 import type {
   EventHandlers,
   EventHandlingResult,

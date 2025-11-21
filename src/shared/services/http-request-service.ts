@@ -28,7 +28,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { globalTimerManager } from '../utils/timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 /**
  * HTTP request options

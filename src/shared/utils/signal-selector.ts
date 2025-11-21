@@ -5,7 +5,7 @@
  * Prevent unnecessary re-renders to optimize performance.
  */
 
-import { getSolid } from '../external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import { globalTimerManager } from './timer-management';
 
 // Type definitions

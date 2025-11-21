@@ -3,7 +3,7 @@
  * Consolidated module dedicated to polite/assertive announcements.
  */
 
-import { globalTimerManager } from '../timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 
 type LiveRegionType = 'polite' | 'assertive';
 

@@ -4,11 +4,14 @@
  */
 
 import { logger } from '@shared/logging';
-import { resetKeyboardDebounceState } from '../../keyboard-debounce';
-import { handleKeyboardEvent } from '../handlers/keyboard-handler';
-import { handleMediaClick } from '../handlers/media-click-handler';
-import { addListener, removeEventListenersByContext } from '../core/listener-manager';
-import type { EventHandlers, GalleryEventOptions } from '../core/event-context';
+import { resetKeyboardDebounceState } from '@shared/utils/keyboard-debounce';
+import { handleKeyboardEvent } from '@shared/utils/events/handlers/keyboard-handler';
+import { handleMediaClick } from '@shared/utils/events/handlers/media-click-handler';
+import {
+  addListener,
+  removeEventListenersByContext,
+} from '@shared/utils/events/core/listener-manager';
+import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
 
 interface LifecycleState {
   initialized: boolean;

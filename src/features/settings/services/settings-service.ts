@@ -12,7 +12,7 @@ import type {
   NestedSettingKey,
   SettingChangeEvent,
   SettingValidationResult,
-} from '../types/settings.types';
+} from '@features/settings/types/settings.types';
 import { DEFAULT_SETTINGS as defaultSettings, createDefaultSettings } from '@/constants';
 import { migrateSettings as runMigration } from './settings-migration';
 import { computeCurrentSettingsSchemaHash } from './settings-schema';

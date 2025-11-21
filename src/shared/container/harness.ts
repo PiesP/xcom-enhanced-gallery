@@ -38,7 +38,7 @@
  * - Typed get/tryGet methods validate at compile time
  */
 import { CoreServiceRegistry } from './core-service-registry';
-import { CoreService } from '../services/core';
+import { CoreService } from '@shared/services/core';
 
 /**
  * @class TestHarness
@@ -78,7 +78,7 @@ export class TestHarness {
    * **Usage**: Call once per test suite or before each test
    */
   async initCoreServices(): Promise<void> {
-    const { registerCoreServices } = await import('../services/service-initialization');
+    const { registerCoreServices } = await import('@shared/services/service-initialization');
     await registerCoreServices();
   }
 

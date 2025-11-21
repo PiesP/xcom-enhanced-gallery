@@ -5,7 +5,7 @@
  */
 
 import { logger } from '@shared/logging';
-import { gallerySignals } from '../state/signals/gallery.signals';
+import { gallerySignals } from '@shared/state/signals/gallery.signals';
 import { CSS as CSS_CONST, VIDEO_CONTROL_SELECTORS } from '@/constants';
 import { isHTMLElement } from './type-guards';
 

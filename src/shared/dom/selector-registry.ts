@@ -31,7 +31,7 @@
  * @related [DomCache](./dom-cache.ts), [DOM Utils](./utils/dom-utils.ts), [STABLE_SELECTORS](@/constants)
  */
 
-import { STABLE_SELECTORS } from '../../constants';
+import { STABLE_SELECTORS } from '@/constants';
 import { cachedQuerySelectorAll, cachedStableQuery } from './dom-cache';
 
 // ============================================================================

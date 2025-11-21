@@ -24,15 +24,15 @@
  */
 
 import { logger } from '@shared/logging';
-import { getSolid } from '../../external/vendors';
-import type { ThemeServiceContract } from '../../services/theme-service';
-import { themeService } from '../../services/theme-service';
+import { getSolid } from '@shared/external/vendors';
+import type { ThemeServiceContract } from '@shared/services/theme-service';
+import { themeService } from '@shared/services/theme-service';
 import {
   LanguageService,
   languageService as sharedLanguageService,
-} from '../../services/language-service';
-import { globalTimerManager } from '../../utils/timer-management';
-import { getThemeService, tryGetSettingsManager } from '../../container/service-accessors';
+} from '@shared/services/language-service';
+import { globalTimerManager } from '@shared/utils/timer-management';
+import { getThemeService, tryGetSettingsManager } from '@shared/container/service-accessors';
 
 const DEFAULT_FOCUS_DELAY_MS = 50;
 const DEFAULT_SELECT_GUARD_MS = 300;

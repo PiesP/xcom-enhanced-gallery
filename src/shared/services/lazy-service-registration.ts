@@ -5,7 +5,7 @@
  * @phase Phase 355: Download Service Consolidation (BulkDownloadService removed)
  */
 
-import { logger } from '../logging';
+import { logger } from '@shared/logging';
 
 // Singleton pattern: track if service has been registered
 let unifiedDownloadServiceRegistered = false;
@@ -39,7 +39,7 @@ export async function ensureUnifiedDownloadServiceRegistered(): Promise<void> {
     // Dynamically import at first use
     const { unifiedDownloadService } = await import('./unified-download-service');
     const { CoreService } = await import('./core/core-service-manager');
-    const { SERVICE_KEYS } = await import('../../constants');
+    const { SERVICE_KEYS } = await import('@/constants');
 
     const serviceManager = CoreService.getInstance();
 

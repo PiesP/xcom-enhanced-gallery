@@ -5,7 +5,7 @@
  */
 
 import { sanitizeHTML } from './html-sanitizer';
-import { logger } from '../logging';
+import { logger } from '@shared/logging';
 import { SELECTORS } from '@/constants';
 
 /**

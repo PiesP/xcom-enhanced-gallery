@@ -20,7 +20,7 @@
  * ✅ Use barrel export: `import { getSolid } from '@shared/external/vendors'`
  */
 
-import { logger } from '../../logging';
+import { logger } from '@shared/logging';
 import {
   StaticVendorManager,
   type SolidAPI,

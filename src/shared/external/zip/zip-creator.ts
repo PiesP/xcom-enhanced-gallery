@@ -11,7 +11,7 @@
  * @internal Phase 374 ZIP optimization, used by BulkDownloadService
  */
 
-import { logger } from '../../logging';
+import { logger } from '@shared/logging';
 import { StoreZipWriter } from './store-zip-writer';
 
 /**

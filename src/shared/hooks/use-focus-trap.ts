@@ -36,12 +36,12 @@
  * @internal Hook for modal/dialog component integration
  */
 
-import { getSolid } from '../external/vendors';
+import { getSolid } from '@shared/external/vendors';
 import {
   createFocusTrap,
   type FocusTrap as FocusTrapUtil,
   type FocusTrapOptions as UtilOptions,
-} from '../utils/focus-trap';
+} from '@shared/utils/focus-trap';
 
 export interface FocusTrapOptions extends UtilOptions {
   /**

@@ -27,7 +27,7 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
-import type { Cleanupable } from '../lifecycle.types';
+import type { Cleanupable } from '@shared/types/lifecycle.types';
 import type { BaseService } from './base-service.types';
 
 // ========================================
@@ -154,7 +154,7 @@ export interface Lifecycle extends Cleanupable {
  *
  * Phase 353: AsyncResult 타입 통합 (result.types.ts로 이동)
  */
-export type { Result, AsyncResult } from '../result.types';
+export type { Result, AsyncResult } from '@shared/types/result.types';
 
 // Result 유틸리티 함수들은 result.types.ts로 이동됨 (Phase 355.2)
 // - success, failure, partial, cancelled

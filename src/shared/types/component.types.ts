@@ -8,7 +8,7 @@
  * - SpecificComponentProps: Role-specific props extending BaseComponentProps
  */
 
-import type { JSXElement } from '../external/vendors';
+import type { JSXElement } from '@shared/external/vendors';
 
 // ================================
 // Basic type definitions

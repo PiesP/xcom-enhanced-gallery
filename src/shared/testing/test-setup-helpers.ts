@@ -12,7 +12,7 @@ import {
   resetTestConfig,
   getTestMetadata,
   type TestModeOptions,
-} from '../external/test/test-environment-config';
+} from '@shared/external/test/test-environment-config';
 
 /**
  * Test setup context - Phase 314-7

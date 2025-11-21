@@ -4,7 +4,7 @@
  * Pure function collection that exposes deterministic navigation transitions.
  */
 
-import type { NavigationSource } from '../../types/navigation.types';
+import type { NavigationSource } from '@shared/types/navigation.types';
 
 // ============================================================================
 // State Types

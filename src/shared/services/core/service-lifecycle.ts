@@ -15,7 +15,7 @@
  * @version 1.0.0 - Service Manager Delegation Pattern (Lifecycle Specialization)
  */
 
-import type { BaseService } from '../../types/core/base-service.types';
+import type { BaseService } from '@shared/types/core/base-service.types';
 
 /**
  * Specialized lifecycle manager for BaseService instances

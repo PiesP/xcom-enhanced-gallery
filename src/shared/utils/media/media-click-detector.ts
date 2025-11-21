@@ -4,9 +4,9 @@
  */
 
 import { STABLE_SELECTORS, CSS } from '@/constants';
-import { isVideoControlElement } from '../utils';
+import { isVideoControlElement } from '@shared/utils';
 import { logger } from '@shared/logging';
-import { cachedQuerySelector } from '../../dom';
+import { cachedQuerySelector } from '@shared/dom';
 import { gallerySignals } from '@shared/state/signals/gallery.signals';
 
 /**

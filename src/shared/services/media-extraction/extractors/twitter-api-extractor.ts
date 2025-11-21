@@ -174,7 +174,7 @@ import {
   DirectMediaMatchingStrategy,
   DOMOrderEstimationStrategy,
   type MediaClickIndexStrategy,
-} from '../strategies/media-click-index-strategy';
+} from '@shared/services/media-extraction/strategies/media-click-index-strategy';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
 
 /**

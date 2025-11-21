@@ -4,7 +4,7 @@
  * @version 1.0.0
  */
 
-import type { BaseComponentProps } from '../types/app.types';
+import type { BaseComponentProps } from '@shared/types/app.types';
 
 /**
  * Create standard class names

@@ -6,7 +6,7 @@ import type { MediaInfo, MediaId } from '@shared/types/media.types';
 import type { Result } from '@shared/types/result.types';
 import { success, failure, ErrorCode } from '@shared/types/result.types';
 import { createSignalSafe, type SafeSignal } from './signal-factory';
-import { logger as rootLogger, type Logger as ILogger } from '../../logging';
+import { logger as rootLogger, type Logger as ILogger } from '@shared/logging';
 
 // Download status
 export type DownloadStatus = 'pending' | 'downloading' | 'completed' | 'failed';

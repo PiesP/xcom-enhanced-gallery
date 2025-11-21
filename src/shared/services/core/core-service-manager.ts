@@ -16,7 +16,7 @@
  * @version 2.0.0 - Service Manager Delegation Pattern (Complete Separation)
  */
 
-import type { BaseService } from '../../types/core/base-service.types';
+import type { BaseService } from '@shared/types/core/base-service.types';
 import { ServiceRegistry } from './service-registry';
 import { ServiceFactoryManager } from './service-factory';
 import { ServiceLifecycleManager } from './service-lifecycle';

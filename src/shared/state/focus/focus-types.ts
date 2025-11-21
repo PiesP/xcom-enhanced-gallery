@@ -1,4 +1,4 @@
-import { safePerformanceNow } from '../../utils/timer-management';
+import { safePerformanceNow } from '@shared/utils/timer-management';
 
 export type FocusSource = 'auto' | 'manual' | 'external';
 

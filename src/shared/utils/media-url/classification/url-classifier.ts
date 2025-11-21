@@ -5,7 +5,7 @@
  * URL classifier utilities.
  */
 
-import type { MediaTypeResult } from '../types';
+import type { MediaTypeResult } from '@shared/utils/media-url/types';
 
 const TWITTER_EMOJI_HOST_PATTERN = /^abs(?:-\d+)?\.twimg\.com$/i;
 const TWITTER_EMOJI_PATH_PATTERN = /\/emoji\/v\d+\/(?:svg|\d+x\d+)\//i;

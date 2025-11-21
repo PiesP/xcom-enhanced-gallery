@@ -1,9 +1,9 @@
 /**
  * Handles the DOM-side piece of gallery auto focus.
  */
-import type { ItemCache, FocusTimerManager } from '../../state/focus';
-import type { FocusTracking } from '../../state/focus';
-import { updateFocusTracking } from '../../state/focus';
+import type { ItemCache, FocusTimerManager } from '@shared/state/focus';
+import type { FocusTracking } from '@shared/state/focus';
+import { updateFocusTracking } from '@shared/state/focus';
 
 /**
  * Focus Applicator Service - Element focus application and timer management

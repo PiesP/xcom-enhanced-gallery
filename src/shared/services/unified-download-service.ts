@@ -22,8 +22,8 @@
  * Maintainability: 100% ↑
  */
 
-import type { MediaInfo } from '../types/media.types';
-import { getErrorMessage } from '../utils/error-handling';
+import type { MediaInfo } from '@shared/types/media.types';
+import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename, generateZipFilename } from './file-naming';
 import { NotificationService } from './notification-service';
 import { downloadService } from './download-service';
@@ -33,10 +33,10 @@ import {
   type SingleItemDownloadResult,
 } from './download/download-orchestrator';
 import { logger } from '@shared/logging'; // Phase 350: 순환 참조 방지 (core-services → @shared/logging)
-import { globalTimerManager } from '../utils/timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import type { DownloadProgress } from './download/types';
-import type { BaseResultStatus } from '../types/result.types';
-import { ErrorCode } from '../types/result.types';
+import type { BaseResultStatus } from '@shared/types/result.types';
+import { ErrorCode } from '@shared/types/result.types';
 import { getGMDownload } from './download/gm-download';
 
 // ====================================

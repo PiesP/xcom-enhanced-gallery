@@ -1,4 +1,4 @@
-import type { LanguageStrings } from '../language-types';
+import type { LanguageStrings } from '@shared/constants/i18n/language-types';
 
 export const en: LanguageStrings = {
   toolbar: {

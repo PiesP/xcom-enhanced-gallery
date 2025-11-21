@@ -10,8 +10,11 @@ import {
   navigatePrevious,
   navigateNext,
   gallerySignals,
-} from '../../../state/signals/gallery.signals';
-import { shouldExecuteVideoControlKey, shouldExecutePlayPauseKey } from '../../keyboard-debounce';
+} from '@shared/state/signals/gallery.signals';
+import {
+  shouldExecuteVideoControlKey,
+  shouldExecutePlayPauseKey,
+} from '@shared/utils/keyboard-debounce';
 import { executeVideoControl } from './video-control-helper';
 import type { EventHandlers, GalleryEventOptions } from '../core/event-context';
 
