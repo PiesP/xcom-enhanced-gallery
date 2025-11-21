@@ -93,6 +93,19 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          config: |
+            name: "CodeQL config"
+            paths-ignore:
+              - dist/
+              - node_modules/
+              - docs/
+              - test/
+              - scripts/
+              - config/
+              - coverage/
+              - "**/*.d.ts"
+              - "**/*.min.js"
+              - "**/*.map"
 
       - name: 🏗️ Build for analysis
         run: npx vite build --mode production
