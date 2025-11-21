@@ -469,6 +469,11 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
                   </For>
                 }
               >
+                {/*
+                  Security Note: tweetTextHTML is sanitized via @shared/utils/html-sanitizer
+                  before being passed here. It only allows safe tags (a, span, etc.) and attributes.
+                  Links are checked for safe protocols (http/https) and target="_blank" is secured.
+                */}
                 <div innerHTML={tweetTextHTML() ?? ''} />
               </Show>
             </div>

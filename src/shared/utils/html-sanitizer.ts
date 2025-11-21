@@ -98,6 +98,11 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
       sanitized.setAttribute(attrName, attr.value);
     }
 
+    // Enforce rel="noopener noreferrer" for target="_blank" on links to prevent tabnabbing
+    if (tagName === 'a' && sanitized.getAttribute('target') === '_blank') {
+      sanitized.setAttribute('rel', 'noopener noreferrer');
+    }
+
     // Recursively sanitize children
     for (const child of Array.from(element.childNodes)) {
       const sanitizedChild = sanitizeNode(child);
