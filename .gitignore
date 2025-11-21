@@ -48,6 +48,7 @@
 # --- GitHub Actions (배포/보안) ---
 !/.github
 !/.github/**
+.github/copilot-instructions.md
 
 # --- 의존성 라이선스 (법적 필요, vite.config.ts에서 참조) ---
 !/LICENSES
