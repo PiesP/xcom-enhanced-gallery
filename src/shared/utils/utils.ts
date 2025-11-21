@@ -13,8 +13,25 @@ import { isHTMLElement } from './type-guards';
 // Re-exports from focused modules
 // ================================
 
-// Core utilities (from core-utils)
-export { ensureGalleryScrollAvailable } from './core-utils';
+/**
+ * Ensure gallery scroll is available by enforcing scrollable containers to allow overflow.
+ */
+export function ensureGalleryScrollAvailable(element: HTMLElement | null): void {
+  if (!element) {
+    return;
+  }
+
+  // Find scrollable elements and enable default scroll
+  const scrollableElements = element.querySelectorAll(
+    '[data-xeg-role="items-list"], .itemsList, .content'
+  ) as NodeListOf<HTMLElement>;
+
+  scrollableElements.forEach(el => {
+    if (el.style.overflowY !== 'auto' && el.style.overflowY !== 'scroll') {
+      el.style.overflowY = 'auto';
+    }
+  });
+}
 
 // Deduplication utilities
 export { removeDuplicateMediaItems } from './deduplication/deduplication-utils';
