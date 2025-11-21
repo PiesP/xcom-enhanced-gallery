@@ -9,3 +9,13 @@ export {
   calculateSelectorComplexity,
   hasPerformanceIssues,
 } from './css-validation';
+
+// Gallery DOM utilities
+export {
+  ensureGalleryScrollAvailable,
+  isVideoControlElement,
+  isGalleryInternalElement,
+  canTriggerGallery,
+  isGalleryContainer,
+  isGalleryInternalEvent,
+} from './gallery-dom';

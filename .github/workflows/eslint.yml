@@ -45,7 +45,7 @@ jobs:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
           npm exec -- eslint src \
-            --config eslint.config.mjs \
+            --config eslint.config.cjs \
             --format @microsoft/eslint-formatter-sarif \
             --output-file eslint-results.sarif
         continue-on-error: true
