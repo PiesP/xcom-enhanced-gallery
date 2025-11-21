@@ -212,6 +212,14 @@ GitHub Actions intentionally keeps CI lean:
 
 No lint/test/npm script automation runs inside CI or release workflows, so always execute `npm run quality:full`, `npm run test:unit:batched`, and related commands locally before pushing or invoking the release workflow.
 
+Security hardening runs separately via `security.yml`:
+
+- Weekly + on-demand `npm audit` (moderate/high) with artifacts for traceability.
+- `npm run security:gh-scan` (GH CLI) blocks builds when GitHub reports open Dependabot, Code Scanning, or Secret Scanning alerts.
+  - The script writes a structured summary to standard output so CI logs immediately show the alert kind, counts, severities, and representative samples.
+- Official CodeQL analysis uploads SARIF results to the repository Security tab for long-term tracking.
+  - Locally the gate logs warnings; set `XEG_ENFORCE_GH_SECURITY_SCAN=1` to turn alerts into hard failures (security.yml does this automatically).
+
 ### Quality Profiles
 
 Use `npm run quality:*` to execute the centralized guard suite before builds:

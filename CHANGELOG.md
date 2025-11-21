@@ -172,6 +172,12 @@ and this project adheres to
 
 ### Added
 
+#### GitHub Security Surface Automation (Phase 440)
+
+- Introduced `scripts/security-surface-check.ts` (`npm run security:gh-scan`), a GH CLI-powered gate that queries Code Scanning, Dependabot, and Secret Scanning APIs. Build now runs the gate after bundle validation, surfacing severity/sample context and failing fast whenever `XEG_ENFORCE_GH_SECURITY_SCAN=1` (security.yml sets this). Opt-out via `XEG_SKIP_GH_SECURITY_SCAN=1` remains available for offline or demo environments.
+- `security.yml` gained a dedicated step that injects `${{ secrets.GITHUB_TOKEN }}` into the new gate plus a standalone CodeQL job (init → autobuild → analyze). The workflow now uploads SARIF results straight to the repository Security tab so maintainers can triage findings without leaving GitHub.
+- README + docs (`docs/temp/SECURITY_PIPELINE_UPDATE.md`) document the pipeline, prerequisites (`gh` CLI) and validation flow, keeping developers aligned on the new requirement.
+
 #### Ambient Twitter Video Auto-Pause
 
 - **User Experience**: When the gallery launches, any actively playing videos in

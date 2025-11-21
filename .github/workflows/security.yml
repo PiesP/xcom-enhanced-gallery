@@ -52,6 +52,13 @@ jobs:
             echo "✅ No high-risk vulnerabilities found"
           fi
 
+      - name: 🛡️ GitHub Security Surface Check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          XEG_ENFORCE_GH_SECURITY_SCAN: "1"
+        run: npm run security:gh-scan
+
       - name: 📊 Upload security report
         if: always()
         uses: actions/upload-artifact@v4
@@ -94,3 +101,29 @@ jobs:
           name: license-report-${{ github.sha }}
           path: licenses.json
           retention-days: 7
+
+  codeql-scan:
+    name: 🧠 CodeQL Static Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🧰 Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      - name: ⚙️ Autobuild project
+        uses: github/codeql-action/autobuild@v3
+
+      - name: 📊 Analyze with CodeQL
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/github/workflow/security'

@@ -73,7 +73,7 @@
 /CLAUDE.md
 /docs/
 
-# 테스트 코드 (CI에서 실행)
+# 테스트 코드 (CI에서 실행하지 않음)
 /test/**
 /playwright/
 
