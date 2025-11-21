@@ -38,7 +38,7 @@ jobs:
         language: ["javascript-typescript"]
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v6
@@ -78,7 +78,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 📥 Download OSV-Scanner
         run: |
@@ -108,7 +108,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Setup Node.js
         uses: actions/setup-node@v6
@@ -149,7 +149,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: 🚀 Setup Node.js
         uses: actions/setup-node@v6
