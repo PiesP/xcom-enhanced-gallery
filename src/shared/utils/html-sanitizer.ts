@@ -4,6 +4,8 @@
  * @version 1.0.0 - Phase 2: DOM HTML preservation
  */
 
+import { HTML_ATTRIBUTE_URL_POLICY, isUrlAllowed } from '@shared/utils/url-safety';
+
 /**
  * Configuration for HTML sanitization
  */
@@ -12,8 +14,6 @@ interface SanitizerConfig {
   allowedTags: string[];
   /** Allowed attributes per tag */
   allowedAttributes: Record<string, string[]>;
-  /** Protocols allowed in URLs */
-  allowedProtocols: string[];
 }
 
 /**
@@ -27,7 +27,6 @@ const DEFAULT_CONFIG: SanitizerConfig = {
     span: ['class', 'dir'],
     img: ['alt', 'src', 'draggable'],
   },
-  allowedProtocols: ['http:', 'https:'],
 };
 
 /**
@@ -92,19 +91,8 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
       }
 
       // Special handling for href attributes
-      if (attrName === 'href') {
-        const href = attr.value;
-        if (!isValidUrl(href, config.allowedProtocols)) {
-          continue;
-        }
-      }
-
-      // Special handling for src attributes (images)
-      if (attrName === 'src') {
-        const src = attr.value;
-        if (!isValidUrl(src, config.allowedProtocols)) {
-          continue;
-        }
+      if ((attrName === 'href' || attrName === 'src') && !isSafeAttributeUrl(attr.value)) {
+        continue;
       }
 
       sanitized.setAttribute(attrName, attr.value);
@@ -136,37 +124,10 @@ export function sanitizeHTML(html: string, config: SanitizerConfig = DEFAULT_CON
 }
 
 /**
- * Validates URL safety
- * Checks protocol and prevents javascript: URLs
- *
- * @param url - URL string to validate
- * @param allowedProtocols - List of allowed protocols
- * @returns True if URL is safe
+ * Validates attribute URLs via the centralized url-safety helper.
  */
-function isValidUrl(url: string, allowedProtocols: string[]): boolean {
-  if (!url || typeof url !== 'string') return false;
-
-  // Remove whitespace
-  const trimmed = url.trim();
-
-  // Reject javascript: and data: protocols
-  if (
-    trimmed.toLowerCase().startsWith('javascript:') ||
-    trimmed.toLowerCase().startsWith('data:') ||
-    trimmed.toLowerCase().startsWith('vbscript:')
-  ) {
-    return false;
-  }
-
-  // Check if URL has an allowed protocol
-  try {
-    const urlObj = new URL(trimmed, 'https://example.com'); // Use base for relative URLs
-    return allowedProtocols.includes(urlObj.protocol);
-  } catch {
-    // If URL parsing fails, check for relative URLs
-    // Relative URLs are considered safe (e.g., /path or #fragment)
-    return trimmed.startsWith('/') || trimmed.startsWith('#') || trimmed.startsWith('.');
-  }
+function isSafeAttributeUrl(url: string): boolean {
+  return isUrlAllowed(url, HTML_ATTRIBUTE_URL_POLICY);
 }
 
 /**

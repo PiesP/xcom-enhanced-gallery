@@ -87,6 +87,26 @@ and this project adheres to
   stylesheet, and barrel exports. UI barrel tests enforce that the symbol stays
   absent going forward.
 
+#### URL Protocol Sanitization Hardening
+
+- **Issue**: `npm run security:gh-scan` surfaced high-severity CodeQL alerts
+  ("Incomplete URL scheme check" and "Incomplete URL substring sanitization")
+  against the HTML sanitizer and media pipeline. Both features relied on
+  hand-written `startsWith()` guards, so adversarial inputs such as newline
+  injected strings (`java\nscripT:alert(1)`) or percent-encoded payloads
+  (`javascript%3Aalert(1)`) slipped past the filters and reached DOM nodes.
+- **Solution**: Added `@shared/utils/url-safety`, a single enforcement point
+  that strips control characters, repeatedly decodes percent-encoded segments,
+  and enforces allowlists for http/https, blob, protocol-relative, relative
+  paths, and `data:image/*` URLs (images only). Both `sanitizeHTML()` and the
+  media normalization pipeline now delegate to this helper, eliminating
+  duplicate code paths and blocking unsafe schemes before they hit the gallery.
+- **Tests**: New regression suites
+  (`test/unit/shared/utils/html-sanitizer.test.ts` and
+  `test/unit/shared/media/pipeline-url-sanitization.test.ts`) encode the exact
+  payloads reported by GitHub Security to keep the guardrails locked going
+  forward.
+
 #### Service Dependency Graph Cleanup (Phase 433)
 
 - **Issue**: Dependency Cruiser reported two persistent circular references:

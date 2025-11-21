@@ -36,6 +36,7 @@ import {
   getHighQualityMediaUrl,
   isValidMediaUrl as isTwitterMediaUrl,
 } from '@shared/utils/media-url';
+import { isUrlAllowed, MEDIA_URL_POLICY } from '@shared/utils/url-safety';
 
 /**
  * Stage 1: Collection - Discover media candidate elements
@@ -373,55 +374,8 @@ function isGifLikeUrl(url: string): boolean {
 /**
  * @internal URL Sanitization Helper (Phase 8)
  *
- * Filters out disallowed schemes (javascript:, vbscript:, file:, etc.)
- * Allows safe schemes: http://, https://, data:image/*, blob:, /relative
+ * Delegates to the centralized url-safety utility for consistent enforcement
  */
 function isSafeMediaUrl(url: string): boolean {
-  const trimmed = url.trim();
-  const lower = trimmed.toLowerCase();
-
-  // Allow root-relative and relative paths
-  if (lower.startsWith('/') || lower.startsWith('./') || lower.startsWith('../')) {
-    return true;
-  }
-
-  // Allow protocol-relative URLs
-  if (lower.startsWith('//')) {
-    return true;
-  }
-
-  // Block explicitly dangerous schemes
-  const blockedSchemes = [
-    'javascript:',
-    'vbscript:',
-    'file:',
-    'ftp:',
-    'chrome-extension:',
-    'about:',
-    'mailto:',
-    'tel:',
-  ];
-  for (const scheme of blockedSchemes) {
-    if (lower.startsWith(scheme)) return false;
-  }
-
-  // data: URLs - allow only image MIME types
-  if (lower.startsWith('data:')) {
-    // Allow: data:image/png;base64,...
-    if (/^data:image\//i.test(lower)) return true;
-    // Block: data:text/html, data:application/javascript, etc.
-    return false;
-  }
-
-  // Allow blob: URLs (dynamic content)
-  if (lower.startsWith('blob:')) return true;
-
-  // Allow http and https
-  if (lower.startsWith('http://') || lower.startsWith('https://')) return true;
-
-  // No explicit scheme - assume relative path, allow it
-  if (!/^[a-z0-9+.-]+:/.test(lower)) return true;
-
-  // Unknown schemes - block by default
-  return false;
+  return isUrlAllowed(url, MEDIA_URL_POLICY);
 }
