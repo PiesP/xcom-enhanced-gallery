@@ -10,6 +10,12 @@ and this project adheres to
 
 ### Fixed
 
+#### OSV-Scanner Workflow Hardening
+
+- **Issue**: `gi`/`gh run list --workflow osv-scanner.yml` surfaced repeated failures (Run ID `19574702362`) where the reusable Google workflow stalled while pulling `ghcr.io/google/osv-scanner-action` and never generated a SARIF.
+- **Solution**: Inlined the scanning logic so Actions downloads the official `osv-scanner` v2.3.0 binary directly from GitHub Releases, verifies the published SHA-256 digest, and runs `osv-scanner scan source --recursive --format sarif ./`. We now upload the SARIF artifact and push results to the Security tab before failing the job when vulnerabilities or operational errors occur.
+- **Benefits**: Removes the GHCR dependency (no more docker pull timeouts), ensures every failure still captures a SARIF for triage, and centralizes future upgrades to three environment variables inside `.github/workflows/osv-scanner.yml`.
+
 #### Toolbar Button Disablement Regression
 
 - **Issue**: When the gallery first opened, whichever toolbar button started in the

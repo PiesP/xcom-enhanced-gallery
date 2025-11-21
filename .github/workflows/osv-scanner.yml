@@ -21,28 +21,120 @@ on:
   push:
     branches: [ "master" ]
 
+env:
+  OSV_SCANNER_VERSION: v2.3.0
+  OSV_SCANNER_URL: https://github.com/google/osv-scanner/releases/download/v2.3.0/osv-scanner_linux_amd64
+  OSV_SCANNER_SHA256: e774e5770c31d60745c067be5f69bf3b46641b6d0e0ed87fd65e569cda35dc50
+  OSV_RESULTS_FILE: results.sarif
+
 permissions:
-  # Require writing security events to upload SARIF file to security tab
+  actions: read
   security-events: write
-  # Read commit contents
   contents: read
 
 jobs:
   scan-scheduled:
     if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
-    with:
-      # Example of specifying custom arguments
-      scan-args: |-
-        -r
-        --skip-git
-        ./
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download OSV-Scanner CLI
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.local/bin"
+          curl -sSLo "${RUNNER_TEMP}/osv-scanner" "${OSV_SCANNER_URL}"
+          echo "${OSV_SCANNER_SHA256}  ${RUNNER_TEMP}/osv-scanner" | sha256sum --check --status
+          install -m 0755 "${RUNNER_TEMP}/osv-scanner" "${HOME}/.local/bin/osv-scanner"
+
+      - name: Add local bin to PATH
+        run: echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Print OSV-Scanner version
+        run: osv-scanner --version
+
+      - name: Run OSV scan
+        id: run-osv-scan
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          osv-scanner scan source \
+            --recursive \
+            --format sarif \
+            --output "${OSV_RESULTS_FILE}" \
+            ./
+
+      - name: Upload SARIF artifact
+        if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: OSV-sarif-${{ github.job }}-${{ github.run_number }}
+          path: ${{ env.OSV_RESULTS_FILE }}
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.OSV_RESULTS_FILE }}
+
+      - name: Fail on vulnerabilities
+        if: steps.run-osv-scan.outcome == 'failure'
+        run: |
+          echo "::error::OSV-Scanner reported vulnerabilities or errors. Review the SARIF artifact for more details."
+          exit 1
+
   scan-pr:
     if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
-    with:
-      # Example of specifying custom arguments
-      scan-args: |-
-        -r
-        --skip-git
-        ./
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download OSV-Scanner CLI
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.local/bin"
+          curl -sSLo "${RUNNER_TEMP}/osv-scanner" "${OSV_SCANNER_URL}"
+          echo "${OSV_SCANNER_SHA256}  ${RUNNER_TEMP}/osv-scanner" | sha256sum --check --status
+          install -m 0755 "${RUNNER_TEMP}/osv-scanner" "${HOME}/.local/bin/osv-scanner"
+
+      - name: Add local bin to PATH
+        run: echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Print OSV-Scanner version
+        run: osv-scanner --version
+
+      - name: Run OSV scan
+        id: run-osv-scan
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          osv-scanner scan source \
+            --recursive \
+            --format sarif \
+            --output "${OSV_RESULTS_FILE}" \
+            ./
+
+      - name: Upload SARIF artifact
+        if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: OSV-sarif-${{ github.job }}-${{ github.run_number }}
+          path: ${{ env.OSV_RESULTS_FILE }}
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ env.OSV_RESULTS_FILE }}
+
+      - name: Fail on vulnerabilities
+        if: steps.run-osv-scan.outcome == 'failure'
+        run: |
+          echo "::error::OSV-Scanner reported vulnerabilities or errors. Review the SARIF artifact for more details."
+          exit 1
