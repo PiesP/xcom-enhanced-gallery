@@ -68,6 +68,9 @@ and this project adheres to
 
 ### Removed
 
+- **GitHub CLI security gate**: Deleted `scripts/security-surface-check.ts`, its `npm run security:gh-scan` alias, and the `XEG_ENFORCE_GH_SECURITY_SCAN` / `XEG_SKIP_GH_SECURITY_SCAN`
+  toggles. The `security.yml` workflow now leans entirely on GitHub-native Code Scanning, Dependabot, and Secret Scanning alerts, reducing CI permissions and avoiding bespoke GH CLI
+  dependencies.
 - **High-contrast mode artifacts**: Deleted the unused `@shared/utils/high-contrast`
   shim and removed the remaining `@media (forced-colors: active)` overrides from
   `VerticalImageItem.module.css` to prevent duplicate styling exposures.

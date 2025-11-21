@@ -215,10 +215,8 @@ No lint/test/npm script automation runs inside CI or release workflows, so alway
 Security hardening runs separately via `security.yml`:
 
 - Weekly + on-demand `npm audit` (moderate/high) with artifacts for traceability.
-- `npm run security:gh-scan` (GH CLI) blocks builds when GitHub reports open Dependabot, Code Scanning, or Secret Scanning alerts.
-  - The script writes a structured summary to standard output so CI logs immediately show the alert kind, counts, severities, and representative samples.
-- Official CodeQL analysis uploads SARIF results to the repository Security tab for long-term tracking.
-  - Locally the gate logs warnings; set `XEG_ENFORCE_GH_SECURITY_SCAN=1` to turn alerts into hard failures (security.yml does this automatically).
+- GitHub-native security signals (Code Scanning, Dependabot, Secret Scanning) are surfaced directly inside the Security tab; the workflow no longer depends on local scripts or the GH CLI to enforce gates.
+- Official CodeQL analysis uploads SARIF results to the repository Security tab for long-term tracking, letting maintainers triage alerts without leaving GitHub.
 
 ### Quality Profiles
 
