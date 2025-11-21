@@ -288,26 +288,22 @@ export class UsernameParser {
    */
   private extractFromURL(): UsernameExtractionResult {
     try {
-      const url = window.location.href;
-      const patterns = [
-        // Profile page: https://x.com/username
-        /\/([a-zA-Z0-9_]+)(?:\/status\/\d+)?(?:\?|$)/,
-        // Old Twitter domain
-        /twitter\.com\/([a-zA-Z0-9_]+)/,
-      ];
+      const urlObj = new URL(window.location.href);
+      const pathname = urlObj.pathname;
 
-      for (const pattern of patterns) {
-        const match = url.match(pattern);
-        if (match?.[1]) {
-          const username = match[1];
-          // Skip system pages
-          if (!this.isSystemPage(username)) {
-            return {
-              username,
-              method: 'url',
-              confidence: 0.8,
-            };
-          }
+      // Match /username or /username/status/id
+      // Anchored regex on pathname ensures we are matching the first segment
+      const match = pathname.match(/^\/([a-zA-Z0-9_]+)(?:\/status\/\d+)?/);
+
+      if (match?.[1]) {
+        const username = match[1];
+        // Skip system pages
+        if (!this.isSystemPage(username)) {
+          return {
+            username,
+            method: 'url',
+            confidence: 0.8,
+          };
         }
       }
     } catch (error) {

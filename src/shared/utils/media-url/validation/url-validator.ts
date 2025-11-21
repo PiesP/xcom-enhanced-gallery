@@ -101,11 +101,11 @@ function checkPbsMediaPath(pathname: string): boolean {
     return false;
   }
 
-  const isMedia = pathname.includes('/media/');
-  const isVideoThumb =
-    /\/ext_tw_video_thumb\//.test(pathname) ||
-    /\/tweet_video_thumb\//.test(pathname) ||
-    /\/video_thumb\//.test(pathname);
-
-  return (isMedia || isVideoThumb) && !pathname.includes('/profile_images/');
+  // Use strict prefix matching instead of substring search
+  return (
+    pathname.startsWith('/media/') ||
+    pathname.startsWith('/ext_tw_video_thumb/') ||
+    pathname.startsWith('/tweet_video_thumb/') ||
+    pathname.startsWith('/video_thumb/')
+  );
 }

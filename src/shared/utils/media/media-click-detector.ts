@@ -152,8 +152,21 @@ export function shouldBlockMediaTrigger(target: HTMLElement | null): boolean {
   // Image in external link: exclude media container
   if (target.tagName === 'IMG') {
     const parentLink = target.closest('a');
-    if (parentLink && !parentLink.href.includes('/status/') && !target.closest(mcSel)) {
-      return true;
+    if (parentLink) {
+      // Check if it is a status link on X/Twitter
+      const isStatusLink = (href: string) => {
+        try {
+          const url = new URL(href, window.location.href);
+          const isTwitter = /(?:^|\.)(?:twitter|x)\.com$/.test(url.hostname);
+          return isTwitter && url.pathname.includes('/status/');
+        } catch {
+          return false;
+        }
+      };
+
+      if (!isStatusLink(parentLink.href) && !target.closest(mcSel)) {
+        return true;
+      }
     }
   }
 

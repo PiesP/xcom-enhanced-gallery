@@ -86,15 +86,22 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
   }
 
   private extractUsernameFromUrl(url: string): string | null {
-    // Extract username from URL path (supports port numbers, @ prefix)
-    const match = url.match(/(?:twitter|x)\.com(?::\d+)?\/([^/]+)\//);
-    const username = match ? (match[1] ?? null) : null;
+    try {
+      const urlObj = new URL(url);
+      // Check if host is twitter/x
+      if (!/(?:^|\.)(?:twitter|x)\.com$/.test(urlObj.hostname)) {
+        return null;
+      }
 
-    // "status" is a path segment, not a username
-    if (username === 'status') {
+      const pathSegments = urlObj.pathname.split('/').filter(Boolean);
+      if (pathSegments.length > 0) {
+        const username = pathSegments[0];
+        if (username === 'status') return null;
+        return username;
+      }
+      return null;
+    } catch {
       return null;
     }
-
-    return username;
   }
 }

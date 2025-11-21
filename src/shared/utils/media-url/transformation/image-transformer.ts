@@ -77,7 +77,7 @@ export function canExtractOriginalImage(url: string): boolean {
     if (parsed.searchParams.get('name') === 'orig') {
       return false;
     }
-    return parsed.hostname === 'pbs.twimg.com' && parsed.pathname.includes('/media/');
+    return parsed.hostname === 'pbs.twimg.com' && parsed.pathname.startsWith('/media/');
   } catch {
     return false;
   }

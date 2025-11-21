@@ -81,7 +81,7 @@ export function canExtractOriginalVideo(url: string): boolean {
 
   try {
     const parsed = new URL(url);
-    return parsed.hostname === 'video.twimg.com' && parsed.pathname.includes('/vi/');
+    return parsed.hostname === 'video.twimg.com' && parsed.pathname.startsWith('/vi/');
   } catch {
     return false;
   }
