@@ -63,7 +63,7 @@ jobs:
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          npx -- eslint src \
+          npx eslint src \
             --config eslint.config.cjs \
             --format @microsoft/eslint-formatter-sarif \
             --output-file eslint-results.sarif
@@ -93,7 +93,7 @@ jobs:
 
       - name: 📐 Run Typecheck
         # Bypass 'npm run typecheck' to skip 'pretypecheck' script (which relies on local-only scripts)
-        run: npm exec tsgo -- --project ./tsconfig.json --noEmit
+        run: npx tsgo --project ./tsconfig.json --noEmit
 
   build:
     name: 🚀 Build Check

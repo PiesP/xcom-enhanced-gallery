@@ -95,7 +95,7 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
 
       const pathSegments = urlObj.pathname.split('/').filter(Boolean);
       if (pathSegments.length > 0) {
-        const username = pathSegments[0];
+        const username = pathSegments[0] ?? null;
         if (username === 'status') return null;
         return username;
       }
