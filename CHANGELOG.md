@@ -10,6 +10,12 @@ and this project adheres to
 
 ### Fixed
 
+#### ESLint Workflow Flat Config Alignment
+
+- **Issue**: The scheduled/push ESLint workflow installed a standalone ESLint 8.10.0 and invoked `.eslintrc.js`, which no longer exists after the repository migrated to the flat `eslint.config.cjs`. Every CI run crashed before generating SARIF results.
+- **Solution**: The workflow now pins Node.js 22 with npm caching, installs the project dependencies via `npm ci --ignore-scripts`, and executes `eslint` using the flat config plus the SARIF formatter that ships with the repository (`@microsoft/eslint-formatter-sarif`).
+- **Impact**: ESLint scans succeed again, continue producing SARIF uploads for the Security tab, and avoid ad-hoc dependency installation in CI.
+
 #### OSV-Scanner Workflow Hardening
 
 - **Issue**: `gi`/`gh run list --workflow osv-scanner.yml` surfaced repeated failures (Run ID `19574702362`) where the reusable Google workflow stalled while pulling `ghcr.io/google/osv-scanner-action` and never generated a SARIF.

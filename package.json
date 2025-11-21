@@ -126,6 +126,7 @@
     "@babel/preset-typescript": "^7.28.5",
     "@csstools/postcss-oklab-function": "^4.0.12",
     "@eslint/js": "^9.39.1",
+    "@microsoft/eslint-formatter-sarif": "^3.1.0",
     "@playwright/test": "^1.56.1",
     "@solidjs/testing-library": "^0.8.10",
     "@testing-library/jest-dom": "^6.9.1",
