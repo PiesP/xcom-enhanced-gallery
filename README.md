@@ -203,6 +203,25 @@ npm run build
 npm test
 ```
 
+### Continuous Integration
+
+GitHub Actions intentionally keeps CI lean:
+
+- `ci.yml` installs dependencies, performs a production build via `npx vite build --mode production`, uploads the artifact, and then runs a separate CodeQL job.
+- `release.yml` only bumps versions when manually triggered, runs `npm ci`, executes `npx vite build` in development and production modes, and uploads the packaged release.
+
+No lint/test/npm script automation runs inside CI or release workflows, so always execute `npm run quality:full`, `npm run test:unit:batched`, and related commands locally before pushing or invoking the release workflow.
+
+### Quality Profiles
+
+Use `npm run quality:*` to execute the centralized guard suite before builds:
+
+- `quality:prebuild` runs tokens, typecheck, ESLint, Stylelint, dependency cruiser, and the relative import guard.
+- `quality:validate` mirrors the prebuild profile for local workflows.
+- `quality:full` adds the style-import guard; run it locally (CI never runs this profile) and it will auto-skip when no CSS changed.
+
+Each command writes `test-results/quality-suite-summary.json`, making it easy to see which guard failed during `npm run build` or PR validation.
+
 ## 📞 Support and Feedback
 
 - **🐛 Report Bugs**:

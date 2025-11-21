@@ -3,6 +3,30 @@
 import { getUserscript } from '@shared/external/userscript';
 import { logger } from '@shared/logging';
 
+type StorageOperation = 'set' | 'get' | 'has' | 'getSync' | 'setSync' | 'remove';
+
+const gmWarningRegistry = new Set<StorageOperation>();
+
+function isGMUnavailableError(error: unknown): error is Error {
+  return error instanceof Error && /GM_\w+ not available/i.test(error.message);
+}
+
+function handleMissingGMError(operation: StorageOperation, key: string, error: unknown): boolean {
+  if (!isGMUnavailableError(error)) {
+    return false;
+  }
+
+  if (!gmWarningRegistry.has(operation)) {
+    gmWarningRegistry.add(operation);
+    const keySuffix = key ? ` (key: ${key})` : '';
+    logger.warn(
+      `PersistentStorage.${operation}${keySuffix}: Userscript APIs unavailable. Mock GM_* APIs in tests or run inside Tampermonkey.`
+    );
+  }
+
+  return true;
+}
+
 /**
  * Persistent Storage Service using Tampermonkey API
  *
@@ -136,7 +160,9 @@ export class PersistentStorage {
       logger.debug(`PersistentStorage.set: ${key} (${serialized.length} bytes)`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(`PersistentStorage.set failed for key "${key}":`, error);
+      if (!handleMissingGMError('set', key, error)) {
+        logger.error(`PersistentStorage.set failed for key "${key}":`, error);
+      }
       throw new Error(`Failed to store "${key}": ${msg}`);
     }
   }
@@ -204,7 +230,9 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      logger.error(`PersistentStorage.get failed for key "${key}":`, error);
+      if (!handleMissingGMError('get', key, error)) {
+        logger.error(`PersistentStorage.get failed for key "${key}":`, error);
+      }
       return defaultValue;
     }
   }
@@ -249,7 +277,9 @@ export class PersistentStorage {
       const value = await this.userscript.getValue<unknown>(key);
       return value !== undefined && value !== null;
     } catch (error) {
-      logger.error(`PersistentStorage.has failed for key "${key}":`, error);
+      if (!handleMissingGMError('has', key, error)) {
+        logger.error(`PersistentStorage.has failed for key "${key}":`, error);
+      }
       return false;
     }
   }
@@ -314,7 +344,9 @@ export class PersistentStorage {
         return value as unknown as T;
       }
     } catch (error) {
-      logger.error(`PersistentStorage.getSync failed for key "${key}":`, error);
+      if (!handleMissingGMError('getSync', key, error)) {
+        logger.error(`PersistentStorage.getSync failed for key "${key}":`, error);
+      }
       return defaultValue;
     }
   }
@@ -365,7 +397,9 @@ export class PersistentStorage {
       logger.debug(`PersistentStorage.setSync: ${key} (${serialized.length} bytes)`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(`PersistentStorage.setSync failed for key "${key}":`, error);
+      if (!handleMissingGMError('setSync', key, error)) {
+        logger.error(`PersistentStorage.setSync failed for key "${key}":`, error);
+      }
       throw new Error(`Failed to store "${key}": ${msg}`);
     }
   }
@@ -423,7 +457,9 @@ export class PersistentStorage {
       logger.debug(`PersistentStorage.remove: ${key}`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      logger.error(`PersistentStorage.remove failed for key "${key}":`, error);
+      if (!handleMissingGMError('remove', key, error)) {
+        logger.error(`PersistentStorage.remove failed for key "${key}":`, error);
+      }
       throw new Error(`Failed to remove "${key}": ${msg}`);
     }
   }

@@ -46,10 +46,11 @@ jobs:
       - name: 📦 Install dependencies
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
+      - name: 🧹 Clean workspace
+        run: rm -rf dist
+
       - name: 🚀 Build production
-        run: |
-          npm run clean
-          npx vite build --mode production
+        run: npx vite build --mode production
 
       - name: 📊 Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -58,3 +59,38 @@ jobs:
           name: build-artifacts-${{ github.sha }}
           path: dist/
           retention-days: 7
+
+  codeql:
+    name: 🛡️ CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 🛠️ Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: 🏗️ Build for analysis
+        run: npx vite build --mode production
+
+      - name: 🧠 Analyze
+        uses: github/codeql-action/analyze@v3

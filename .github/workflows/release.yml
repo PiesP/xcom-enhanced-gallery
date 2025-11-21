@@ -4,11 +4,10 @@ name: 🚀 Release
 # - Version detection: package.json changes or manual trigger
 # - Production build: userscript + checksums + metadata
 # - GitHub Release: automated creation with assets
-# - Validation (typecheck, lint) + E2E smoke tests (fast)
+# - No CI validation beyond direct Vite builds
 #
-# NOTE: All local-only scripts (scripts/*.js) are NOT used in CI.
-# CI uses: npm scripts (package.json) + GitHub Actions native tasks only.
-# Full validation (deps:check, coverage) is done locally before push.
+# NOTE: All validation (tests, lint, deps, coverage) happens locally before push.
+# CI uses first-party commands only: npm ci + npx vite build.
 
 on:
   push:
@@ -154,13 +153,6 @@ jobs:
             git push origin "${TAG}"
             echo "Tag created and pushed: ${TAG}"
           fi
-
-      - name: ✅ Quality checks (typecheck + lint)
-        run: |
-          # Run tscheck directly to avoid local-only pretypecheck scripts
-          npx tsgo --project ./tsconfig.json --noEmit
-          npm run lint:all
-          if [ -f .dependency-cruiser.cjs ]; then npm run deps:check; else echo "Skipping deps:check; config not found."; fi
 
       - name: 🏗️ Build (development + production)
         run: npx vite build --mode development && npx vite build --mode production
