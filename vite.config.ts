@@ -13,9 +13,100 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 import { transformSync } from '@babel/core';
-import { createStyleInjector } from './.github/scripts/lib/style-injector';
-import { createLogger as createCliLogger } from './.github/scripts/lib/logger';
-import { ensureUserscriptIntegrity } from './.github/scripts/lib/userscript-integrity';
+
+// ============================================================================
+// Internal Build Utilities (formerly .github/scripts/lib)
+// ============================================================================
+
+// --- Logger ---
+interface Logger {
+  info: (msg: string, ...args: unknown[]) => void;
+  warn: (msg: string, ...args: unknown[]) => void;
+  error: (msg: string, ...args: unknown[]) => void;
+  success: (msg: string, ...args: unknown[]) => void;
+}
+
+function createCliLogger(scope: string): Logger {
+  const prefix = `[${scope}]`;
+  // Simple console wrapper for build process (no chalk dependency to keep vite config minimal)
+  return {
+    info: (msg, ...args) => console.log(`\x1b[34m${prefix}\x1b[0m`, msg, ...args),
+    warn: (msg, ...args) => console.warn(`\x1b[33m${prefix}\x1b[0m`, msg, ...args),
+    error: (msg, ...args) => console.error(`\x1b[31m${prefix}\x1b[0m`, msg, ...args),
+    success: (msg, ...args) => console.log(`\x1b[32m${prefix}\x1b[0m`, msg, ...args),
+  };
+}
+
+// --- Style Injector ---
+function createStyleInjector(css: string, isDev: boolean): string {
+  // Escape backticks and backslashes to prevent syntax errors in template literal
+  const safeCss = css.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
+
+  if (isDev) {
+    return `
+    try {
+      const style = document.createElement('style');
+      style.id = 'xeg-styles-dev';
+      style.textContent = \`${safeCss}\`;
+      document.head.appendChild(style);
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('xeg:style-injection-error', { detail: e }));
+    }
+    `;
+  }
+
+  // Production: Minimized injection
+  return `(function(){try{const s=document.createElement('style');s.id='xeg-styles';s.textContent=\`${safeCss}\`;document.head.appendChild(s);}catch(e){}})();`;
+}
+
+// --- Userscript Integrity ---
+interface ValidationError {
+  code: string;
+  message: string;
+}
+
+function validateUserscriptContent(content: string): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!content || content.trim().length === 0) {
+    errors.push({ code: 'empty-content', message: 'Userscript content is empty' });
+    return errors;
+  }
+
+  if (!content.includes('// ==UserScript==') || !content.includes('// ==/UserScript==')) {
+    errors.push({ code: 'missing-metadata-block', message: 'Userscript header missing or invalid' });
+  } else {
+    // Check for directives inside the block
+    const blockMatch = content.match(/\/\/ ==UserScript==([\s\S]*?)\/\/ ==\/UserScript==/);
+    if (blockMatch && blockMatch[1]) {
+      const blockContent = blockMatch[1];
+      const hasDirectives = blockContent.split('\n').some(line => line.trim().startsWith('// @'));
+      if (!hasDirectives) {
+        errors.push({ code: 'empty-metadata-directives', message: 'Metadata block contains no directives' });
+      }
+    }
+  }
+
+  if (/^(<<<<<<< .+|=======|>>>>>>> .+)$/m.test(content)) {
+    errors.push({ code: 'merge-conflict-marker', message: 'Merge conflict markers detected' });
+  }
+
+  return errors;
+}
+
+function ensureUserscriptIntegrity(
+  content: string,
+  onError: (error: Error) => void
+): void {
+  const errors = validateUserscriptContent(content);
+  for (const err of errors) {
+    onError(new Error(`[${err.code}] ${err.message}`));
+  }
+}
+
+// ============================================================================
+// End Internal Build Utilities
+// ============================================================================
 
 // Local config loader (local only, skipped in CI)
 // noinspection JSUnusedLocalSymbols
