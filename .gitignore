@@ -63,7 +63,15 @@
 
 # 개발 스크립트 및 도구
 /scripts/
+/**
+ * NOTE: The `config/` directory contains developer-specific configuration and is
+ * ignored by default. The file `config/utils/load-local-config.js` however is a
+ * CI-safe stub required for builds in the action runners. We explicitly un-ignore
+ * it so the file can be committed while keeping the rest of the `config/` dir
+ * as local-only entries.
+ */
 /config/
+!/config/utils/load-local-config.js
 
 # 로컬 설정
 /*.local.ts
