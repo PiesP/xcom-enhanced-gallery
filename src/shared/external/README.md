@@ -223,7 +223,7 @@ GM_download({ ... });            // DownloadService 사용
 import { createSignal } from 'solid-js'; // getSolid() 사용
 
 // ❌ 금지 4: 상대 경로 import
-import { getSolid } from '../external/vendors'; // @shared/external 사용
+import { getSolid } from '@shared/external/vendors'; // @shared/external 사용
 ```
 
 **🔒 Service Layer 매핑** (Phase 309+):

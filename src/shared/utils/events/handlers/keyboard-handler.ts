@@ -16,7 +16,7 @@ import {
   shouldExecutePlayPauseKey,
 } from '@shared/utils/keyboard-debounce';
 import { executeVideoControl } from './video-control-helper';
-import type { EventHandlers, GalleryEventOptions } from '../core/event-context';
+import type { EventHandlers, GalleryEventOptions } from '@shared/utils/events/core/event-context';
 
 /**
  * Check if gallery is open

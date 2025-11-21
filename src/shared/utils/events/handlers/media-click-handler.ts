@@ -9,12 +9,12 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { STABLE_SELECTORS, CSS } from '@/constants';
 import { detectMediaFromClick, isProcessableMedia } from '@shared/utils/media/media-click-detector';
 import { isHTMLElement } from '@shared/utils/type-guards';
-import { isGalleryInternalElement, isVideoControlElement } from '@shared/utils';
+import { isGalleryInternalElement, isVideoControlElement } from '@shared/utils/utils';
 import type {
   EventHandlers,
   EventHandlingResult,
   GalleryEventOptions,
-} from '../core/event-context';
+} from '@shared/utils/events/core/event-context';
 
 const OUR_GALLERY_SCOPE = CSS.INTERNAL_SELECTORS.join(', ');
 const TWITTER_NATIVE_SELECTORS = [

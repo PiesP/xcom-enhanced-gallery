@@ -1,8 +1,8 @@
 /**
  * Manages the IntersectionObserver used for gallery focus tracking.
  */
-import type { ItemCache } from '../../state/focus';
-import { isItemVisibleEnough, calculateTopDistance } from '../../state/focus';
+import type { ItemCache } from '@shared/state/focus';
+import { isItemVisibleEnough, calculateTopDistance } from '@shared/state/focus';
 
 /**
  * Focus candidate scoring information

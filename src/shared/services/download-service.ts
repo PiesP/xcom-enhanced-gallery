@@ -1,7 +1,7 @@
 /** DownloadService wraps GM_download for Blob/File downloads. */
 
 import { NotificationService } from './notification-service';
-import { logger } from '../logging/logger';
+import { logger } from '@shared/logging/logger';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { getGMDownload } from './download/gm-download';
 

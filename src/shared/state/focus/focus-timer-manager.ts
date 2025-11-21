@@ -1,4 +1,4 @@
-import { globalTimerManager } from '../../utils/timer-management';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { logger } from '@shared/logging';
 
 export type FocusTimerRole = 'auto-focus';

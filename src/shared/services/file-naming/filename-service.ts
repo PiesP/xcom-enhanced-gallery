@@ -33,8 +33,8 @@
  * @see Phase 432.3 for TweetId utilization improvements
  */
 
-import { safeParseInt } from '../../utils/type-safety-helpers';
-import type { MediaInfo } from '../../types/media.types';
+import { safeParseInt } from '@shared/utils/type-safety-helpers';
+import type { MediaInfo } from '@shared/types/media.types';
 
 /**
  * Filename generation options

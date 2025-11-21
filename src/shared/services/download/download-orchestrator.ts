@@ -5,10 +5,10 @@
  * @version 3.0.0 - Phase 310-B: fetch → HttpRequestService migration
  */
 
-import { BaseServiceImpl } from '../base-service';
-import { HttpRequestService } from '../http-request-service';
-import { getErrorMessage } from '../../utils/error-handling';
-import { globalTimerManager } from '../../utils/timer-management';
+import { BaseServiceImpl } from '@shared/services/base-service';
+import { HttpRequestService } from '@shared/services/http-request-service';
+import { getErrorMessage } from '@shared/utils/error-handling';
+import { globalTimerManager } from '@shared/utils/timer-management';
 import { DOMMediaExtractor } from './dom-media-extractor';
 
 export interface OrchestratorItem {
@@ -307,7 +307,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     items: OrchestratorItem[],
     options: OrchestratorOptions = {}
   ): Promise<ZipResult> {
-    const { StreamingZipWriter } = await import('../../external/zip/streaming-zip-writer');
+    const { StreamingZipWriter } = await import('@shared/external/zip/streaming-zip-writer');
     const writer = new StreamingZipWriter();
     const failures: Array<{ url: string; error: string }> = [];
 

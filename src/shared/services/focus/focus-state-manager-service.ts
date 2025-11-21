@@ -1,9 +1,9 @@
 /**
  * Coordinates debounced focus state updates for the gallery.
  */
-import type { FocusState, FocusTracking } from '../../state/focus';
-import { updateFocusTracking } from '../../state/focus';
-import { createDebouncer } from '../../utils/performance';
+import type { FocusState, FocusTracking } from '@shared/state/focus';
+import { updateFocusTracking } from '@shared/state/focus';
+import { createDebouncer } from '@shared/utils/performance';
 
 /**
  * Focus State Manager Service - Debounced state synchronization
