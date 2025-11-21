@@ -1,8 +1,4 @@
-/**
- * @file babel-preset-solid type declarations
- * @description The babel-preset-solid package doesn't provide type definitions, so this is a temporary declaration
- */
-
+/** Minimal typings for the babel-preset-solid dynamic import used in tooling. */
 declare module 'babel-preset-solid' {
   import type { PluginItem } from '@babel/core';
 

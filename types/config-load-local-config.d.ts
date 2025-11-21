@@ -1,11 +1,13 @@
-// Type declaration for CI-safe local config loader
-// Declares the module when importing with either './config/utils/load-local-config' or './config/utils/load-local-config.js'
-export function loadLocalConfig<T = unknown>(): Promise<T | null>;
+type LoadLocalConfig = <T = unknown>() => Promise<T | null>;
+
+export type { LoadLocalConfig };
 
 declare module './config/utils/load-local-config' {
+  const loadLocalConfig: LoadLocalConfig;
   export { loadLocalConfig };
 }
 
 declare module './config/utils/load-local-config.js' {
+  const loadLocalConfig: LoadLocalConfig;
   export { loadLocalConfig };
 }

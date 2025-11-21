@@ -1,9 +1,11 @@
+type CssModuleClasses = Readonly<Record<string, string>>;
+
 declare module '*.module.css' {
-  const classes: { readonly [key: string]: string };
+  const classes: CssModuleClasses;
   export default classes;
 }
 
 declare module '*.css' {
-  const classes: { readonly [key: string]: string };
-  export default classes;
+  const stylesheet: string;
+  export default stylesheet;
 }
