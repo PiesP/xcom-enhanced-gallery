@@ -94,8 +94,8 @@
 }
 
 .shell:focus {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  outline: none;
+  box-shadow: var(--xeg-focus-ring);
 }
 
 .shell::-webkit-scrollbar {

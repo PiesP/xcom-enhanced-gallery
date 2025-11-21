@@ -10,5 +10,4 @@ export type {
   LanguageOption,
 } from './Settings/SettingsControls';
 export type { SettingsModalProps } from './SettingsModal/SettingsModal';
-export type { ToolbarShellProps } from './ToolbarShell/ToolbarShell';
 export type { ToolbarProps, FitMode } from './Toolbar/Toolbar.types';

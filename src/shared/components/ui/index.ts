@@ -16,8 +16,6 @@ export type {
 
 export { ModalShell } from './ModalShell/ModalShell';
 export type { ModalShellProps } from './ModalShell/ModalShell';
-export { ToolbarShell } from './ToolbarShell/ToolbarShell';
-export type { ToolbarShellProps } from './ToolbarShell/ToolbarShell';
 export { SettingsModal, type SettingsModalProps } from './SettingsModal';
 
 export { Toolbar } from './Toolbar/Toolbar';

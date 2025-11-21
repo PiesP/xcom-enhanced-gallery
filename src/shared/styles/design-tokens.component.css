@@ -141,14 +141,10 @@
   }
 
   /* Focus Ring Utility */
-  .xeg-focus-ring {
-    outline: var(--xeg-focus-outline);
-    outline-offset: var(--xeg-focus-offset);
-  }
-
+  .xeg-focus-ring,
   .xeg-focus-ring:focus-visible {
-    outline: var(--xeg-focus-outline);
-    outline-offset: var(--xeg-focus-offset);
+    outline: none;
+    box-shadow: var(--xeg-focus-ring);
   }
 
   /* Animation Utility Classes */

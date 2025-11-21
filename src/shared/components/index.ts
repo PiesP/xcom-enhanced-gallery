@@ -35,7 +35,7 @@
  *   ├─ UI Module (@/shared/components/ui)
  *   │  ├─ Primitives: Button, Icon, Panel
  *   │  ├─ Content: Toolbar
- *   │  ├─ Containers: ModalShell, ToolbarShell
+ *   │  ├─ Containers: ModalShell
  *   │  └─ Controls: ErrorBoundary
  *   └─ Layout Module (@/shared/components/isolation)
  *      └─ Containers: GalleryContainer (HOC pattern)

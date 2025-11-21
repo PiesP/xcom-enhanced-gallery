@@ -132,18 +132,18 @@
 
 /**
  * Close Button Focus: Keyboard navigation indicator
- *
+
  * **Accessibility**:
  * - Uses :focus-visible - Only shows on keyboard navigation (not mouse click)
- * - outline: Focus ring from design token
- * - outline-offset: Visual separation from button boundary
- *
+ * - box-shadow: Halo from design token (consistent with buttons)
+ * - Outline suppressed to avoid double indicators
+
  * **Standards**:
  * - Follows WCAG 2.1 AA focus indicator requirements
- * - Minimum 3px focus ring width
- * - Sufficient contrast against background
+ * - Minimum 3px focus halo width via --xeg-focus-ring-width
+ * - Sufficient contrast against background (token-managed)
  */
 .closeButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  outline: none;
+  box-shadow: var(--xeg-focus-ring);
 }

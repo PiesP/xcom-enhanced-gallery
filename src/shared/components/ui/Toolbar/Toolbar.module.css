@@ -94,8 +94,8 @@
  * Visible on keyboard navigation (Phase 87: Keyboard navigation focus management)
  */
 .toolbarButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  outline: none;
+  box-shadow: var(--toolbar-button-focus-shadow);
 }
 
 /* 클릭 상태 - 단순화된 피드백 */
@@ -120,7 +120,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
-  display: inline-flex;
+  display: var(--toolbar-display, inline-flex);
   /* Phase 49: flex-direction 제거 - 기본 row 사용 */
   /* 설정 패널은 absolute positioning으로 플로우에서 제외됨 */
   align-items: center;
@@ -131,6 +131,7 @@
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  visibility: var(--toolbar-visibility, visible);
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition: var(--xeg-transition-elevation-normal);
@@ -155,24 +156,19 @@
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
-  /* 명시적 가시성 보장 */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+  --toolbar-visibility: visible;
+  --toolbar-display: inline-flex;
 }
 
 .galleryToolbar[data-state='loading'],
 .galleryToolbar[data-state='downloading'],
 .galleryToolbar[data-state='error'] {
-  --toolbar-pointer-events: auto !important;
-
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+  --toolbar-visibility: visible;
+  --toolbar-display: inline-flex;
 }
 
 .toolbarContent {
@@ -356,8 +352,8 @@ button.fitButton {
 }
 
 .fitButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  outline: none;
+  box-shadow: var(--toolbar-button-focus-shadow);
 }
 
 /* 다운로드 버튼 - 기본 스타일 상속 */
@@ -499,7 +495,7 @@ button.fitButton {
   .settingsButton:hover:not(:disabled),
   .closeButton:hover:not(:disabled),
   .fitButton:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 
@@ -651,8 +647,8 @@ button.fitButton {
 }
 
 :where(.tweetLink, .tweetContent a):focus {
-  outline: var(--xeg-focus-ring, 0.125em solid currentColor);
-  outline-offset: var(--xeg-focus-ring-offset, 0.125em);
+  outline: none;
+  box-shadow: var(--xeg-focus-ring);
   border-radius: var(--xeg-radius-xs);
 }
 

@@ -56,8 +56,43 @@ and this project adheres to
   - After: `spmy0495_1909228010194309548_20251105_1.jpg` ✅
 - **Validation**: TypeScript 0 errors, ESLint 0 warnings, actual download test
   passed
+- **ToolbarShell container**: Removed the deprecated toolbar wrapper component,
+  stylesheet, and barrel exports. UI barrel tests enforce that the symbol stays
+  absent going forward.
+
+#### Service Dependency Graph Cleanup (Phase 433)
+
+- **Issue**: Dependency Cruiser reported two persistent circular references:
+  `ThemeService ↔ service-accessors` (runtime import) and
+  `app.types ↔ core/core-types` (type-only re-export loop).
+- **Solution**:
+  - Introduced `theme-service.contract.ts`, making container accessors depend on
+    the contract instead of the concrete implementation. The ThemeService class
+    now implements this contract and re-exports it for consumers.
+  - Moved the shared `Cleanupable` interface into `lifecycle.types.ts` so
+    `core/core-types` no longer import from `app.types`. Removed the redundant
+    re-export block responsible for the type cycle.
+- **Impact**: Dependency graph is cycle-free again, TypeScript/ESLint stay clean
+  on strict settings, and feature modules continue to consume the exact same
+  public APIs via the service container.
 
 ### Changed
+
+#### Focus Shadow + Toolbar Cleanup (Phase 430)
+
+- Replaced every outline-based focus indicator (toolbar controls, settings
+  selects, gallery thumbnails, modal shells, keyboard help overlay) with the
+  shared `--xeg-focus-ring` halo token. Old outline/offset tokens and CSS rules
+  were deleted, and the semantic/component token layers plus generated typings
+  only expose the new contract.
+- Toolbar visibility, hover, and reduced-motion overrides now rely on CSS
+  custom properties and cascade order (no `!important` stacking). Wrapper
+  `data-state` attributes set `--toolbar-opacity`, `--toolbar-pointer-events`,
+  `--toolbar-visibility`, and `--toolbar-display` so the userscript interferes
+  less with host DOM.
+- Documentation and tests were refreshed: the focus refactor spec includes a
+  status/QA checklist, and the UI barrel unit test guards that ToolbarShell
+  stays removed.
 
 #### Type System Optimization (Phase 353)
 

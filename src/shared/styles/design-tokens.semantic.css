@@ -213,12 +213,12 @@
     --xeg-shadow-lg: var(--shadow-lg);
     --xeg-shadow-inset-border: var(--shadow-inset-border);
 
-    /* Focus & Accessibility (rem for absolute outline width) */
-    --xeg-focus-outline: 0.125rem solid var(--color-gray-500); /* 2px */
-    --xeg-focus-offset: 0.125rem; /* 2px */
+    /* Focus indicator tokens */
+    --xeg-focus-ring-width: 0.1875rem; /* 3px */
+    --xeg-focus-ring: 0 0 0 var(--xeg-focus-ring-width)
+      color-mix(in oklch, var(--xeg-focus-ring-color) 70%, transparent);
 
     /* Focus/Active shadow helpers */
-    --xeg-focus-shadow: 0 0 0 0.125rem color-mix(in oklch, var(--color-primary) 35%, transparent);
     --xeg-active-shadow: var(--shadow-md);
 
     /* Button Component Typography - Required by Button.module.css */
@@ -608,9 +608,6 @@
     --xeg-modal-bg: var(--xeg-modal-bg-light);
     --xeg-modal-border: var(--xeg-modal-border-light);
 
-    /* Focus Ring Utilities */
-    --xeg-focus-ring: 0.125rem solid var(--color-gray-500); /* 2px */
-    --xeg-focus-ring-offset: 0.125rem; /* 2px */
   } /* ===== 유틸리티 클래스 ===== */
 
   /* Theme Overrides - Glass System 변형 (라이트 모드) */
