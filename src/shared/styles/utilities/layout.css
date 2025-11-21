@@ -1,0 +1,39 @@
+/**
+ * @fileoverview Layout utilities (flex alignment, spacing, hit targets).
+ * @description Token-driven helpers shared by Toolbar/Overlay modules.
+ */
+
+@layer xeg.utilities {
+  /* Flex alignment */
+  .xeg-row-center {
+    display: flex;
+    align-items: center;
+  }
+
+  .xeg-center-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .xeg-inline-center {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .xeg-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Gap presets */
+  .xeg-gap-sm {
+    gap: var(--xeg-spacing-sm);
+  }
+
+  .xeg-gap-md {
+    gap: var(--xeg-spacing-md);
+  }
+}

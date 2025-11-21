@@ -1,0 +1,589 @@
+/**
+ * Copyright (c) 2024 X.com Enhanced Gallery
+ * Licensed under the MIT License
+ *
+ * @fileoverview Vertical Gallery View Component Styles
+ * @description Modal gallery container layout and styling
+ *
+ * **Design System**:
+ * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
+ * - No hardcoded colors or dimensions
+ * - Responsive design via container queries and media queries
+ * - Accessibility: focus-visible, reduced-motion support
+ *
+ * **Key Selectors**:
+ * - .container: Fixed modal gallery container
+ * - .toolbarWrapper: Toolbar with hover/focus auto-show
+ * - .itemsContainer: Scrollable items list
+ * - .galleryItem: Individual media item wrapper
+ * - .scrollSpacer: Top-align scroll anchor spacer
+ *
+ * **Performance Optimizations**:
+ * - CSS Containment (contain: layout style paint)
+ * - content-visibility: auto for off-screen content
+ * - transform: translateZ(0) for GPU acceleration
+ * - will-change for animated properties
+ * - CSS custom properties for dynamic values
+ *
+ * **Responsive Features**:
+ * - Container queries for layout adaptation
+ * - Media queries fallback for unsupported browsers
+ * - Responsive spacing via clamp()
+ *
+ * @version 5.1.0 - Enhanced documentation and style organization (Phase 354+)
+ */
+
+/**
+ * VerticalGalleryView Component Styles
+ * @version 5.0.0 - Modern CSS features with OKLCH colors and Container Queries
+ *
+ * @description
+ * Phase 2 integrates modern CSS features: Cascade Layers, OKLCH color space,
+ * Container Queries, CSS Subgrid, CSS Containment, and Logical Properties.
+ *
+ * @features
+ * - CSS Cascade Layers: Clear layer priority (base, components, utilities)
+ * - OKLCH Color Space: Perceptually uniform color system
+ * - Container Queries: True component-based responsive design
+ * - CSS Subgrid: Advanced layout implementation
+ * - CSS Containment: Better performance optimization
+ * - CSS Logical Properties: Direction-agnostic layout
+ * - Advanced CSS Selectors: :has, :where, :is for better specificity
+ * - CSS Nesting: Improved code readability (via PostCSS)
+ */
+
+/* CSS Cascade Layer definitions */
+@layer base, components, utilities;
+
+/**
+ * Vertical Gallery Container: Outer container with size containment
+ */
+.xegVerticalGalleryContainer {
+  container-type: size;
+  container-name: vertical-gallery;
+
+  /* CSS Containment for performance optimization */
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 100vw 100vh;
+}
+
+/* CSS Cascade Layer declarations remain for other rules */
+
+@layer components {
+  /* Common CSS variables - OKLCH color system */
+  :root {
+    /* Transitions - toolbar visibility helper only */
+    --xeg-transition-toolbar:
+      opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
+      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+
+    /* Spacing - CSS Logical Properties */
+    --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
+    --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+    --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
+
+    /* Removed --xeg-toolbar-height: unused */
+    /* Removed --xeg-backdrop-blur: unused */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @layer components {
+    :root {
+      --xeg-transition-toolbar: none;
+    }
+  }
+}
+
+/* Main overlay container */
+.container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--xeg-z-gallery, 10000);
+  background: var(--xeg-gallery-bg);
+
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+
+  /* Surfaces stay flat (no blur) */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+
+  /* Performance hints */
+  transform: translateZ(0);
+  will-change: opacity, transform;
+  contain: layout style paint;
+
+  /* Visible by default */
+  opacity: 1;
+  visibility: visible;
+  transition: var(--xeg-transition-elevation-normal);
+
+  /* Pointer handling */
+  cursor: default;
+  pointer-events: auto;
+
+  /* Container query contract */
+  container-type: size;
+  container-name: gallery-container;
+
+  /* Scrolling */
+  scroll-behavior: smooth;
+  overscroll-behavior: none; /* Prevent scroll chaining */
+}
+
+/* Floating toolbar wrapper with hover/focus auto-show */
+.toolbarWrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: auto;
+  z-index: var(--xeg-z-toolbar);
+
+  /* Default state controlled through CSS variables */
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  display: block;
+  transition: var(--xeg-transition-toolbar);
+  will-change: transform, opacity, visibility;
+  contain: layout style;
+
+  /* Performance hints */
+  transform: translateZ(0); /* GPU acceleration */
+  backface-visibility: hidden; /* Prevent flicker */
+
+  /* Pointer handling */
+  pointer-events: var(--toolbar-pointer-events, none);
+
+  /* Gradient background driven by tokens */
+  background: linear-gradient(
+    to bottom,
+    var(--xeg-toolbar-wrapper-gradient-start, var(--xeg-bg-toolbar)) 0%,
+    var(--xeg-toolbar-wrapper-gradient-mid, var(--xeg-bg-toolbar)) 70%,
+    var(--xeg-toolbar-wrapper-gradient-end, var(--xeg-bg-toolbar)) 100%
+  );
+  border: var(--xeg-toolbar-wrapper-border, none);
+  border-radius: var(--xeg-toolbar-wrapper-radius, 0);
+  margin: var(--xeg-toolbar-wrapper-margin, 0);
+  padding-block-end: var(--xeg-spacing-gallery);
+}
+
+/* Reveal toolbar on hover */
+.toolbarWrapper:hover {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* Keep toolbar visible when focused */
+.toolbarWrapper:focus-within {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+
+  transition: var(--xeg-transition-elevation-fast);
+}
+
+/* Descendants inherit pointer behavior */
+.toolbarWrapper * {
+  pointer-events: inherit;
+}
+
+/* FIX: Ensure settings panel remains interactive when expanded, even if wrapper loses hover
+   Rationale: .toolbarWrapper sets all descendants to pointer-events: inherit. When the wrapper
+   resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,
+   which prevents native <select> dropdowns from opening inside the settings panel.
+   This rule explicitly restores pointer-events:auto for the expanded panel so its children inherit 'auto'. */
+.toolbarWrapper [data-gallery-element='settings-panel'][data-expanded='true'] {
+  pointer-events: auto;
+}
+
+/* When settings panel is expanded, keep the toolbar wrapper interactive regardless of hover state */
+.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true']) {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+}
+
+/* UI-hidden state: hide the chrome while keeping gallery interactions available */
+.container.uiHidden {
+  /* Keep pointer interactions enabled (pointer-events: none was removed) and hide the cursor */
+  cursor: none;
+}
+
+/* Ensure nested elements inherit the restored pointer behavior */
+.container * {
+  pointer-events: auto;
+}
+
+/* Items container: scrollable column that isolates gallery scrolling */
+.itemsContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto; /* Only the gallery list scrolls; the document stays fixed */
+  position: relative;
+
+  /* Performance optimizations */
+  contain: layout style;
+  transform: translateZ(0);
+  overscroll-behavior: contain; /* Prevent scroll chaining outside the modal */
+
+  /* Pointer + scroll handling */
+  scrollbar-gutter: stable;
+  scroll-snap-type: y proximity;
+  pointer-events: auto;
+
+  /* Container query hook for responsive spacing */
+
+  container-type: size;
+  container-name: items-list;
+}
+/* Custom scrollbar styling (WebKit browsers only) */
+.itemsContainer::-webkit-scrollbar {
+  width: var(--xeg-scrollbar-width); /* Tokenized replacement for the old 0.5rem magic number */
+}
+
+.itemsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.itemsContainer::-webkit-scrollbar-thumb {
+  background: var(--xeg-color-neutral-300);
+  border-radius: var(
+    --xeg-scrollbar-border-radius
+  ); /* Tokenized replacement for the old 0.25rem radius */
+
+  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
+}
+
+.itemsContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--xeg-color-neutral-400);
+}
+
+.container.uiHidden .toolbarWrapper,
+.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
+  /* Hide non-content UI surfaces while the gallery is in immersive mode */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+}
+
+.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden .itemsContainer {
+  /* Keep the scroll surface interactive even when chrome is hidden */
+  pointer-events: auto;
+}
+
+.container.visible {
+  opacity: 1;
+  transform: scale3d(1, 1, 1);
+}
+
+.container.empty {
+  justify-content: center;
+  align-items: center;
+}
+
+/* Gallery item wrapper optimized for anchor-style scrolling */
+.galleryItem {
+  position: relative;
+  margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem reference */
+  border-radius: var(--xeg-radius-lg, 0.5rem);
+  transition: var(--xeg-transition-elevation-normal); /* Smooth anchor snapping */
+
+  /* Performance optimizations */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* Scroll snapping */
+  scroll-snap-align: start;
+  scroll-margin-top: var(--xeg-spacing-sm);
+}
+
+/* Active gallery item highlight (animation removed in Phase 328 to avoid double emphasis) */
+.itemActive {
+  position: relative;
+  z-index: 1;
+  /* Legacy ::before glow animation removed to reduce distraction */
+}
+
+/* focusGlow animation removed (Phase 328) */
+
+/* Phase 328: Transparent spacer for last item top-align scrolling */
+.scrollSpacer {
+  /* Dynamic height via CSS custom property (set by viewport observer) */
+  height: calc(100vh - var(--xeg-toolbar-height, 3.75rem));
+  min-height: 50vh; /* Fallback minimum height */
+  pointer-events: none;
+  user-select: none;
+  flex-shrink: 0;
+
+  /* Invisible spacer */
+  background: transparent;
+  opacity: 0;
+
+  /* Performance optimization */
+  contain: strict;
+  content-visibility: auto;
+}
+
+.container:has(.itemActive) {
+  /* Flag used by observers to know when at least one item is active */
+  --has-active-item: 1;
+}
+
+.container:has(.toolbarWrapper:hover) {
+  /* Surface-level signal to indicate the toolbar is currently interactive */
+  --toolbar-interaction: 1;
+}
+
+/* Invisible hover strip that keeps the toolbar awake without covering content */
+.toolbarHoverZone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--xeg-hover-zone-height); /* Tokenized replacement for the old 120px magic number */
+  z-index: var(--xeg-z-toolbar-hover-zone); /* Keep hover detection just below the toolbar */
+  background: transparent;
+  pointer-events: auto; /* Dedicated hover sensor */
+}
+
+/* Provide immediate feedback while the hover strip is active */
+.toolbarHoverZone:hover {
+  z-index: var(--xeg-z-toolbar-hover-zone);
+  background: var(--xeg-toolbar-hover-zone-bg, transparent);
+}
+
+/* Disable the hover strip when the toolbar is already locked open (settings expanded) */
+.container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
+  pointer-events: none;
+}
+
+/* Fallback for browsers without :has() support */
+@supports not (selector(:has(*))) {
+  .toolbarWrapper:hover ~ .toolbarHoverZone {
+    pointer-events: none;
+  }
+}
+
+/* Hover trigger next to the toolbar for browsers that lack :has */
+.toolbarHoverTrigger:hover + .toolbarWrapper {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
+/* Keep toolbar visible when hover strips or layout toggles are engaged */
+.container.initialToolbarVisible .toolbarWrapper,
+.container:has(.toolbarHoverZone:hover) .toolbarWrapper {
+  --toolbar-opacity: 1;
+  --toolbar-visibility: visible;
+  --toolbar-pointer-events: auto;
+  --toolbar-transform-y: 0;
+}
+
+/* Additional fallbacks for browsers without :has() support */
+@supports not (selector(:has(*))) {
+  .toolbarHoverZone:hover + .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+
+  .toolbarHoverZone:hover ~ .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+
+  .container:hover .toolbarWrapper {
+    --toolbar-opacity: 1;
+    --toolbar-visibility: visible;
+    --toolbar-pointer-events: auto;
+    --toolbar-transform-y: 0;
+  }
+}
+
+/* Ensure every toolbar component honors the wrapper's visibility variables */
+.toolbarWrapper [class*='galleryToolbar'],
+.toolbarWrapper [data-testid*='toolbar'] {
+  opacity: var(--toolbar-opacity, 0);
+  visibility: var(--toolbar-visibility, hidden);
+  display: flex;
+  pointer-events: var(--toolbar-pointer-events, none);
+}
+
+/* Toolbar buttons should always be clickable even when wrapper blocks interaction */
+.toolbarWrapper button,
+.toolbarWrapper [role='button'],
+.toolbarWrapper .toolbarButton {
+  pointer-events: auto;
+  position: relative;
+  z-index: 10;
+}
+
+/* Main content wrapper that hosts the scrolling list and toolbar */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  position: relative;
+
+  /* Performance optimizations */
+  contain: layout style;
+  transform: translateZ(0);
+
+  /* Maintain pointer events for nested surfaces */
+  pointer-events: auto;
+
+  /* Container query hook for responsive padding */
+  container-type: size;
+  container-name: content-area;
+}
+
+/* Shared fade helpers leverage GPU-backed transforms */
+.fadeInOut {
+  animation: fadeInOut var(--xeg-duration-normal) var(--xeg-easing-ease-out);
+}
+
+@keyframes fadeInOut {
+  0% {
+    opacity: 0;
+    transform: var(--xeg-transform-translate-up) var(--xeg-transform-scale-down);
+  }
+  100% {
+    opacity: 1;
+    transform: var(--xeg-transform-translate-center) var(--xeg-transform-scale-normal);
+  }
+}
+
+/* Empty state message with responsive typography */
+.emptyMessage {
+  text-align: center;
+  color: var(--xeg-color-text-secondary);
+  max-inline-size: min(25rem, 90vw); /* 400px = 25rem */
+  padding: clamp(1.875rem, 5vw, 2.5rem); /* 30px-40px = 1.875rem-2.5rem */
+}
+
+.emptyMessage h3 {
+  margin: 0 0 clamp(0.75rem, 2vw, 1rem); /* 10.125rem-16px = 0.75rem-1rem */
+  font-size: clamp(1.25rem, 4vw, 1.5rem); /* 20px-20.25rem = 1.25rem-1.5rem */
+  font-weight: 600;
+  color: var(--xeg-color-text-primary);
+  line-height: 1.2;
+}
+
+.emptyMessage p {
+  margin: 0;
+  font-size: clamp(0.875rem, 2.5vw, 1rem); /* 10.25rem-16px = 0.875rem-1rem */
+  line-height: 1.5;
+  color: var(--xeg-color-text-tertiary);
+}
+/* Container query responsive sizing */
+@container gallery-container (max-width: 48rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@container gallery-container (max-width: 30rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+
+/* Traditional media query fallback when container queries are unavailable */
+@media (width <= 760.5rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-mobile);
+    gap: var(--xeg-spacing-mobile);
+  }
+
+  .toolbarWrapper {
+    padding-block-end: var(--xeg-spacing-mobile);
+  }
+}
+
+@media (width <= 45rem) {
+  .itemsContainer {
+    padding: var(--xeg-spacing-compact);
+    gap: var(--xeg-spacing-compact);
+  }
+}
+/* Phase 254: Reduced motion support (scroll-behavior + will-change overrides) */
+@media (prefers-reduced-motion: reduce) {
+  .itemsContainer {
+    scroll-behavior: auto;
+    will-change: auto;
+    transform: none;
+  }
+}
+
+/* Light mode support deferred to design-tokens.semantic.css */
+
+/* Empty state button spacing */
+.emptyButton {
+  margin-top: 1rem;
+}
+
+/* Phase 254: Disable motion helpers when reduced-motion is requested */
+@media (prefers-reduced-motion: reduce) {
+  .fadeInOut {
+    animation: none;
+  }
+
+  /* Disable hover transforms for toolbar surfaces */
+  .toolbarWrapper:hover,
+  .toolbarWrapper:focus-within {
+    transform: none;
+  }
+}
+
+/* Legacy hover trigger area (used alongside toolbarHoverZone) */
+.toolbarHoverTrigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--xeg-hover-zone-height); /* Same token as hover zone */
+  z-index: var(--xeg-z-toolbar-hover-zone);
+  pointer-events: auto;
+  background: transparent;
+}
+
+/* Ensure interacting with toolbar components forces them visible */
+.container [class*='galleryToolbar']:hover {
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+}
+
+/* Fallback for browsers that cannot select siblings via :hover + */
+@supports not (selector(:hover + *)) {
+  .container:hover [class*='galleryToolbar'] {
+    --toolbar-opacity: 1;
+    --toolbar-pointer-events: auto;
+  }
+}

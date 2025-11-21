@@ -1,0 +1,192 @@
+name: 🚀 Release
+
+# Responsibility: Release artifact creation only
+# - Version detection: package.json changes or manual trigger
+# - Production build: userscript + checksums + metadata
+# - GitHub Release: automated creation with assets
+# - Validation (typecheck, lint) + E2E smoke tests (fast)
+#
+# NOTE: All local-only scripts (scripts/*.js) are NOT used in CI.
+# CI uses: npm scripts (package.json) + GitHub Actions native tasks only.
+# Full validation (deps:check, coverage) is done locally before push.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "package.json"
+      - "vite.config.ts"
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: "Version bump type"
+        required: true
+        default: "patch"
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  NODE_VERSION: "22"
+  XEG_DISABLE_LOCAL_CONFIG: "true"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check-changes:
+    name: 🔍 Check Version Changes
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+      current_version: ${{ steps.check.outputs.current_version }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🔍 Check version changes
+        id: check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "Manual release triggered"
+          else
+            PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
+
+            if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+              echo "should_release=true" >> $GITHUB_OUTPUT
+              echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
+            else
+              echo "should_release=false" >> $GITHUB_OUTPUT
+              echo "⏭️ No version change detected"
+            fi
+          fi
+
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+
+  build-and-release:
+    name: 🏗️ Build and Release
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.should_release == 'true'
+    timeout-minutes: 8
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 📈 Bump version (if manual)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          echo "🔄 Bumping version (${{ inputs.version_type }})..."
+          npm version ${{ inputs.version_type }} --no-git-tag-version
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "✅ Version bumped to: $NEW_VERSION"
+
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION"
+          git push
+
+      - name: 📝 Get final version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Release version: $VERSION"
+
+      - name: ✅ Quality checks (typecheck + lint)
+        run: npm run validate:pre
+
+      - name: 🏗️ Build and validate
+        run: npm run build
+
+      - name: 📦 Create release package
+        run: |
+          echo "📦 Preparing release files..."
+          mkdir -p release
+
+          # Copy userscript from production build
+          cp dist/xcom-enhanced-gallery.user.js release/
+
+          # Generate checksums
+          cd release
+          sha256sum xcom-enhanced-gallery.user.js > checksums.txt
+          cd ..
+
+          # Create metadata
+          cat > release/metadata.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "build_date": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
+            "commit": "${{ github.sha }}",
+            "node_version": "${{ env.NODE_VERSION }}",
+            "build_type": "production"
+          }
+          EOF
+
+          # Create release notes
+          cat > release/RELEASE_NOTES.md << EOF
+          # 🚀 Release v${{ steps.version.outputs.version }}
+
+          ## 📥 Installation
+
+          **[📥 Click here to install userscript](https://github.com/PiesP/xcom-enhanced-gallery/releases/download/v${{ steps.version.outputs.version }}/xcom-enhanced-gallery.user.js)**
+
+          ## 📋 What's Changed
+
+          - Built from commit: \`${{ github.sha }}\`
+          - Release date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          ## 🔧 Technical Details
+
+          - Version: \`${{ steps.version.outputs.version }}\`
+          - Node.js: \`${{ env.NODE_VERSION }}\`
+          - Build: Production optimized
+
+          EOF
+
+      - name: 🏷️ Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: 🚀 Release v${{ steps.version.outputs.version }}
+          body_path: release/RELEASE_NOTES.md
+          files: |
+            release/xcom-enhanced-gallery.user.js
+            release/checksums.txt
+            release/metadata.json
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 📊 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-v${{ steps.version.outputs.version }}
+          path: release/
+          retention-days: 30

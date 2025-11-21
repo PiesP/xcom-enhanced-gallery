@@ -1,0 +1,558 @@
+/**
+ * @fileoverview Unified Button CSS Module - All button styles in single source
+ * @version 4.1.0 - Phase 385: Unified button styling
+ * @description CSS Module for unified button component supporting all variants and sizes
+ *
+ * Design System:
+ * - Layout: Flexbox-based button with customizable gap
+ * - Typography: Uses design token font family and weights
+ * - Colors: Intent-based color system (primary, secondary, success, warning, danger)
+ * - Accessibility: Focus ring, disabled states, loading states
+ * - Animation: Smooth transitions for all state changes
+ *
+ * @module Button.module.css
+ *
+ * Classes:
+ * - .unifiedButton: Base button styles
+ * - .variant-*: Variant specific styling (primary, secondary, icon, danger, etc.)
+ * - .size-*: Size variants (sm, md, lg, toolbar)
+ * - .intent-*: Semantic color intents
+ * - .iconOnly: Icon-only button adjustment
+ * - .loading: Loading state with spinner
+ * - .disabled: Disabled state styling
+ */
+
+/* =========================================================================
+ * Shared Behaviors
+ * ========================================================================= */
+
+:where(.unifiedButton, .toolbarButton, .xeg-toolbar-button, .xeg-icon-button) {
+  transition: var(--xeg-transition-interaction-fast);
+  outline: none;
+}
+
+/* ============================================================================
+ * Base Button Styles
+ * ============================================================================ */
+
+.unifiedButton {
+  /* Layout */
+  border: 0.0625rem solid transparent; /* 1px */
+  border-radius: var(--xeg-radius-md);
+
+  /* Typography */
+  font-family: var(
+    --xeg-font-family-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  font-weight: var(--xeg-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+
+  /* Default state */
+  background: transparent;
+  color: inherit;
+
+  /* Focus state */
+  &:focus-visible {
+    outline: var(--xeg-focus-ring);
+    outline-offset: var(--xeg-focus-ring-offset);
+    z-index: 1;
+  }
+
+  /* 비활성화 상태 */
+  &:disabled {
+    opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* ===== 크기 변형 ===== */
+.size-sm {
+  padding: var(--xeg-spacing-xs) var(--xeg-spacing-sm);
+  font-size: var(--xeg-font-size-sm);
+  min-height: var(--xeg-size-button-sm);
+  border-radius: var(--xeg-radius-sm);
+}
+
+.size-md {
+  padding: var(--xeg-spacing-sm) var(--xeg-spacing-md);
+  font-size: var(--xeg-font-size-base);
+  min-height: var(--xeg-size-button-md);
+}
+
+.size-lg {
+  padding: var(--xeg-spacing-md) var(--xeg-spacing-lg);
+  font-size: var(--xeg-font-size-lg);
+  min-height: var(--xeg-size-button-lg);
+  border-radius: var(--xeg-radius-lg);
+}
+
+/* ===== 색상 변형 ===== */
+.variant-primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-secondary {
+  background: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-secondary:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-200);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-secondary:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-100);
+}
+
+.variant-outline {
+  background: transparent;
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+}
+
+.variant-outline:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+}
+
+.variant-outline:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-200);
+}
+
+.variant-ghost {
+  background: transparent;
+  color: var(--xeg-color-text-secondary);
+  border-color: transparent;
+}
+
+.variant-ghost:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  transform: translateY(var(--xeg-button-lift));
+}
+
+.variant-ghost:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-200);
+}
+
+.variant-danger {
+  background: var(--color-error);
+  color: var(--color-text-inverse);
+  border-color: var(--color-error);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-danger:hover:not(:disabled) {
+  background: var(--color-error-hover);
+  border-color: var(--color-error-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-danger:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-icon {
+  background: transparent;
+  color: var(--xeg-color-text-secondary);
+  border-color: var(--xeg-color-border-primary);
+  aspect-ratio: 1;
+  padding: var(--xeg-spacing-sm);
+}
+
+.variant-icon:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-icon:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-200);
+}
+
+/* ===== 툴바 전용 변형 ===== */
+:where(.variant-toolbar, .variant-navigation, .variant-action, .size-toolbar) {
+  width: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  height: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  min-width: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  min-height: var(--xeg-button-square-size, var(--xeg-size-button-md));
+  padding: var(--xeg-button-square-padding, 0.5em);
+  aspect-ratio: 1;
+}
+
+.variant-toolbar {
+  background: transparent;
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+}
+
+.variant-toolbar:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-border-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-toolbar:active:not(:disabled) {
+  transform: translateY(0);
+  background: var(--xeg-color-neutral-200);
+}
+
+.variant-navigation {
+  background: var(--xeg-color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-primary);
+}
+
+.variant-navigation:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-navigation:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.variant-action {
+  background: var(--xeg-color-success);
+  color: var(--color-text-inverse);
+  border-color: var(--xeg-color-success);
+}
+
+.variant-action:hover:not(:disabled) {
+  background: var(--color-success-hover);
+  border-color: var(--color-success-hover);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-md);
+}
+
+.variant-action:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+/* ===== 툴바 전용 크기 ===== */
+.size-toolbar {
+  --xeg-button-square-size: var(--xeg-size-button-md);
+  --xeg-button-square-padding: 0.5em;
+
+  font-size: 0.875em;
+}
+
+/* ===== 아이콘 전용 모드 ===== */
+.iconOnly {
+  --xeg-icon-only-size: var(--xeg-size-button-md);
+
+  aspect-ratio: 1;
+  padding: var(--xeg-spacing-sm);
+  width: var(--xeg-icon-only-size);
+  height: var(--xeg-icon-only-size);
+  min-width: var(--xeg-icon-only-size);
+  min-height: var(--xeg-icon-only-size);
+}
+
+.iconOnly.size-sm {
+  --xeg-icon-only-size: var(--xeg-size-button-sm);
+
+  padding: var(--xeg-spacing-xs);
+}
+
+.iconOnly.size-md {
+  --xeg-icon-only-size: var(--xeg-size-button-md);
+}
+
+.iconOnly.size-lg {
+  --xeg-icon-only-size: var(--xeg-size-button-lg);
+
+  padding: var(--xeg-spacing-md);
+}
+
+/* ===== Intent 변형 (iconVariant 대체) ===== */
+.intent-primary {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.intent-primary:hover:not(:disabled) {
+  background: var(--color-info-bg);
+  border-color: var(--color-primary-hover);
+}
+
+.intent-success {
+  border-color: var(--color-success);
+  color: var(--color-success);
+}
+
+.intent-success:hover:not(:disabled) {
+  background: var(--color-success-bg);
+  border-color: var(--color-success-hover);
+}
+
+.intent-danger {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.intent-danger:hover:not(:disabled) {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-hover);
+}
+
+.intent-neutral {
+  border-color: var(--xeg-color-neutral-400);
+  color: var(--xeg-color-text-secondary);
+}
+
+.intent-neutral:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  border-color: var(--xeg-color-neutral-500);
+}
+
+/* ===== 상태 변형 ===== */
+.loading {
+  opacity: 0.8;
+  cursor: wait;
+  pointer-events: none;
+}
+
+.disabled {
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== 로딩 스피너 ===== */
+.spinner {
+  --xeg-spinner-size: 1em;
+  --xeg-spinner-track-color: transparent;
+  --xeg-spinner-indicator-color: currentColor;
+
+  margin-right: var(--xeg-spacing-xs);
+}
+
+/* ===== 다크 모드 지원 제거: semantic 레이어 토큰에 위임 (Phase 54.1) ===== */
+
+/* ===== 애니메이션 감소 지원 ===== */
+/* Phase 254: transition은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
+/* spinner animation만 명시적으로 비활성화 (animation-duration: 0s는 1프레임 실행) */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+
+  .unifiedButton:hover:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* ===== 반응형 디자인 ===== */
+@media (width <= 48rem) {
+  /* 768px */
+  .unifiedButton {
+    min-height: var(--xeg-size-button-touch);
+    min-width: var(--xeg-size-button-touch);
+  }
+
+  .size-sm {
+    min-height: var(--xeg-size-button-md);
+    min-width: var(--xeg-size-button-md);
+  }
+
+  .iconOnly {
+    --xeg-icon-only-size: var(--xeg-size-button-touch);
+  }
+
+  .iconOnly.size-sm {
+    --xeg-icon-only-size: var(--xeg-size-button-md);
+  }
+}
+
+/* ===== 하위 호환성 클래스 ===== */
+.icon {
+  content: '';
+} /* variant='icon'을 위한 추가 클래스 */
+.sm {
+  content: '';
+} /* size='sm'을 위한 추가 클래스 */
+.md {
+  content: '';
+} /* size='md'를 위한 추가 클래스 */
+.lg {
+  content: '';
+} /* size='lg'를 위한 추가 클래스 */
+.primary {
+  content: '';
+} /* intent='primary'를 위한 추가 클래스 */
+.success {
+  content: '';
+} /* intent='success'를 위한 추가 클래스 */
+.danger {
+  content: '';
+} /* intent='danger'를 위한 추가 클래스 */
+.neutral {
+  content: '';
+} /* intent='neutral'을 위한 추가 클래스 */
+
+/* ===== 레거시 통합 클래스 (Phase 3 Consolidation) ===== */
+/* ToolbarButton.module.css / IconButton.css 에서 필요한 최소 스타일만 유지 */
+
+/* toolbarButton: 기존 ToolbarButton 기본 스타일을 unifiedButton 스타일에 매핑 */
+.toolbarButton,
+.xeg-toolbar-button {
+  font-family: var(
+    --xeg-font-family-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif
+  );
+  font-weight: var(--xeg-font-weight-medium);
+  font-size: var(--xeg-font-size-sm);
+  line-height: 1.2;
+  border: 0.0625rem solid transparent; /* 1px */
+  border-radius: var(--xeg-radius-md);
+  background: transparent;
+  color: currentColor;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.toolbarButton:disabled,
+.xeg-toolbar-button:disabled {
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.toolbarButton:focus-visible,
+.xeg-toolbar-button:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+  z-index: 1;
+}
+
+.toolbarButton:hover:not(:disabled),
+.xeg-toolbar-button:hover {
+  transform: translateY(var(--xeg-button-lift));
+}
+
+.toolbarButton:active:not(:disabled),
+.xeg-toolbar-button:active {
+  transform: translateY(0);
+}
+
+/* IconButton primitive 매핑 */
+.xeg-icon-button {
+  background: transparent;
+  border: 0.0625rem solid var(--xeg-color-border-primary); /* 1px */
+  border-radius: var(--xeg-radius-md);
+  padding: var(--xeg-spacing-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: var(--xeg-color-text-secondary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.xeg-icon-button:focus-visible {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+  z-index: 1;
+}
+
+.xeg-icon-button:disabled {
+  opacity: var(--xeg-button-disabled-opacity, var(--xeg-opacity-disabled));
+  cursor: not-allowed;
+  transform: none;
+}
+
+.xeg-icon-button:hover:not(:disabled) {
+  background: var(--xeg-color-neutral-100);
+  color: var(--xeg-color-text-primary);
+  border-color: var(--xeg-color-border-primary);
+  transform: translateY(var(--xeg-button-lift));
+  box-shadow: var(--xeg-shadow-sm);
+}
+
+.xeg-icon-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--xeg-shadow-inset-border);
+  background: var(--xeg-color-border-primary);
+}
+
+/* IconButton size variants */
+.xeg-icon-button--sm {
+  padding: var(--xeg-spacing-xs);
+  width: 1.75em; /* 28px @ 16px */
+  height: 1.75em;
+}
+.xeg-icon-button--md {
+  padding: var(--xeg-spacing-sm);
+  width: 2.25em; /* 36px @ 16px */
+  height: 2.25em;
+}
+.xeg-icon-button--lg {
+  padding: var(--xeg-spacing-md);
+  width: 2.75em; /* 44px @ 16px */
+  height: 2.75em;
+}
+
+/* variant-loading (map to .loading state) */
+.variant-loading {
+  cursor: wait;
+  pointer-events: none;
+}
+
+/* hasIcon spacing 유지 */
+.hasIcon {
+  gap: var(--xeg-spacing-xs);
+}

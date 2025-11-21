@@ -1,0 +1,103 @@
+/**
+ * @fileoverview Reusable animation utilities (keyframes + helper classes).
+ * @description Complements design tokens by exposing lightweight motion presets.
+ */
+
+@layer xeg.utilities {
+  /* Keyframes */
+  @keyframes xeg-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(1.25rem) var(--xeg-gpu-hack);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) var(--xeg-gpu-hack);
+    }
+  }
+
+  @keyframes xeg-scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.8) var(--xeg-gpu-hack);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) var(--xeg-gpu-hack);
+    }
+  }
+
+  /* Animation helpers */
+  .xeg-fade-in {
+    animation: xeg-fade-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
+    animation-fill-mode: both;
+  }
+
+  .xeg-slide-up {
+    animation: xeg-slide-up var(--xeg-duration-normal) var(--xeg-ease-entrance);
+    animation-fill-mode: both;
+    backface-visibility: var(--xeg-backface-visibility);
+  }
+
+  .xeg-scale-in {
+    animation: xeg-scale-in var(--xeg-duration-normal) var(--xeg-ease-entrance);
+    animation-fill-mode: both;
+    backface-visibility: var(--xeg-backface-visibility);
+  }
+
+  /* Transition helpers */
+  .xeg-transition {
+    transition:
+      transform var(--xeg-duration-normal) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
+    will-change: transform, opacity;
+  }
+
+  .xeg-transition-hover {
+    transition:
+      transform var(--xeg-duration-fast) var(--xeg-ease-standard),
+      opacity var(--xeg-duration-fast) var(--xeg-ease-standard),
+      background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+    will-change: transform, opacity, background-color;
+  }
+
+  .xeg-transition-hover:hover {
+    transform: translateY(var(--xeg-button-lift)) var(--xeg-gpu-hack);
+  }
+
+  .xeg-transition-focus {
+    transition:
+      box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard),
+      outline var(--xeg-duration-fast) var(--xeg-ease-standard);
+    will-change: box-shadow;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .xeg-fade-in,
+    .xeg-slide-up,
+    .xeg-scale-in {
+      animation: none;
+    }
+
+    .xeg-transition,
+    .xeg-transition-hover,
+    .xeg-transition-focus {
+      transition: none;
+    }
+
+    .xeg-transition-hover:hover {
+      transform: none;
+    }
+  }
+
+  .xeg-no-animation,
+  .xeg-no-animation * {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .xeg-no-animation .xeg-transition-hover:hover {
+    transform: none !important;
+  }
+}

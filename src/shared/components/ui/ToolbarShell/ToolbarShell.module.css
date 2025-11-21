@@ -1,0 +1,69 @@
+.shell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: var(--xeg-radius-lg);
+  transition:
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
+    border-color var(--xeg-duration-fast) var(--xeg-ease-standard);
+}
+
+.elevationLow {
+  box-shadow: none;
+  z-index: var(--xeg-layer-toolbar);
+}
+
+.elevationMedium {
+  box-shadow: none;
+  z-index: var(--xeg-layer-toolbar-panel);
+}
+
+.elevationHigh {
+  box-shadow: none;
+  z-index: var(--xeg-z-toolbar-panel-active);
+}
+
+.surfaceGlass,
+.surfaceSolid,
+.surfaceOverlay {
+  background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
+  border: 0.0625rem solid var(--xeg-toolbar-border);
+}
+
+.surfaceGlass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.positionFixed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.positionSticky {
+  position: sticky;
+  top: 1rem;
+}
+
+.positionRelative {
+  position: relative;
+}
+
+@media (width <= 48rem) {
+  .shell {
+    border-radius: var(--xeg-radius-md);
+  }
+
+  .positionFixed {
+    bottom: 1rem;
+    top: auto;
+    transform: translateX(-50%);
+  }
+}
+
+.shell:focus-within {
+  outline: var(--xeg-focus-ring);
+  outline-offset: var(--xeg-focus-ring-offset);
+}
