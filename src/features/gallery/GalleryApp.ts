@@ -10,23 +10,24 @@
  * - User notification management via Tampermonkey
  */
 
-import type { GalleryRenderer } from '../../shared/interfaces/gallery.interfaces';
+import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
-} from '../../shared/container/service-accessors';
+} from '@shared/container/service-accessors';
 import {
   gallerySignals,
   openGallery,
   closeGallery,
-} from '../../shared/state/signals/gallery.signals';
-import type { MediaInfo } from '../../shared/types/media.types';
+} from '@shared/state/signals/gallery.signals';
+import type { MediaInfo } from '@shared/types/media.types';
 import { logger } from '@shared/logging';
-import { MediaService } from '../../shared/services/media-service';
+import { MediaService } from '@shared/services/media-service';
 import { NotificationService } from '@shared/services/notification-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
-import type { SettingsService } from '../settings/services/settings-service';
+import type { SettingsService } from '@features/settings/services/settings-service';
 import type { ThemeServiceContract, ThemeSetting } from '@shared/services/theme-service';
+import { pauseActiveTwitterVideos } from '@shared/utils/media/twitter-video-pauser';
 
 /**
  * Gallery app configuration interface
@@ -93,10 +94,8 @@ export class GalleryApp {
       // Removed from bootstrap/features.ts, loaded here
       // Phase 420: Simplified initialization
       try {
-        const { SettingsService } = await import('../settings/services/settings-service');
-        const { registerSettingsManager } = await import(
-          '../../shared/container/service-accessors'
-        );
+        const { SettingsService } = await import('@features/settings/services/settings-service');
+        const { registerSettingsManager } = await import('@shared/container/service-accessors');
 
         const settingsService = new SettingsService();
         await settingsService.initialize();
@@ -110,7 +109,7 @@ export class GalleryApp {
       // Phase 415: Verify theme initialization and sync from SettingsService
       try {
         // Phase 360: Use ThemeService (already initialized in base-services)
-        const { getThemeService } = await import('../../shared/container/service-accessors');
+        const { getThemeService } = await import('@shared/container/service-accessors');
         const themeService = getThemeService();
 
         // Ensure ThemeService is initialized (loads settings asynchronously)
@@ -263,6 +262,12 @@ export class GalleryApp {
         mediaCount: mediaItems.length,
         startIndex: validIndex,
       });
+
+      try {
+        pauseActiveTwitterVideos();
+      } catch (error) {
+        logger.warn('[GalleryApp] Ambient video pause failed (non-blocking)', error);
+      }
 
       // Update state (renderer auto-renders via signal subscription)
       openGallery(mediaItems, validIndex);

@@ -172,6 +172,25 @@ and this project adheres to
 
 ### Added
 
+#### Ambient Twitter Video Auto-Pause
+
+- **User Experience**: When the gallery launches, any actively playing videos in
+  Twitter timeline/video player containers are paused automatically so their
+  audio does not compete with the gallery overlay.
+- **Implementation**:
+  - Added `pauseActiveTwitterVideos()` helper
+    (`src/shared/utils/media/twitter-video-pauser.ts`) that scopes DOM queries
+    to stable Twitter selectors, skips gallery-owned `<video>` elements, and
+    defensively pauses only confirmed playing media.
+  - `GalleryApp.openGallery()` now invokes the helper (non-blocking) before the
+    gallery state flips open, with debug logging plus warning fallback on error.
+- **Tests**: Regression coverage in
+  `test/unit/shared/utils/pause-active-twitter-videos.test.ts` and
+  `test/unit/features/gallery/gallery-app-video-autopause.test.ts` ensures both
+  the helper and GalleryApp integration keep pausing ambient media.
+- **Doc**: `docs/temp/GALLERY_VIDEO_AUTOPAUSE_SPEC.md` captures the spec and QA
+  checklist for this change.
+
 #### Media URL Utilities Modularization (Phase 351)
 
 - **6-Layer Architecture Refactored**: 1,118 lines single file → 1,228 lines 14

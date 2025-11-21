@@ -1,5 +1,5 @@
 // DOM extraction utilities retained until migration completes
-export { getMediaUrlsFromTweet } from './media-url.util';
+export { getMediaUrlsFromTweet } from '@/shared/utils/media/media-url.util';
 
 // Media Click Detection utilities
 export {
@@ -7,4 +7,6 @@ export {
   findMediaAtCoordinates,
   isProcessableMedia,
   shouldBlockMediaTrigger,
-} from './media-click-detector';
+} from '@/shared/utils/media/media-click-detector';
+
+export { pauseActiveTwitterVideos } from '@/shared/utils/media/twitter-video-pauser';
