@@ -191,6 +191,18 @@ and this project adheres to
 - **Doc**: `docs/temp/GALLERY_VIDEO_AUTOPAUSE_SPEC.md` captures the spec and QA
   checklist for this change.
 
+#### Relative Import Guard Automation
+
+- Added `scripts/validate-relative-imports.ts`, a typed CLI that scans the
+  `src/`, `test/`, and `scripts/` trees for any `../` or `..\` import/export
+  specifiers (static, re-export, dynamic `import()`, or `require`).
+- Wired the guard into `npm run build` via the `prebuild:only` lifecycle so CI
+  fails fast before Vite compilation when parent-relative imports appear.
+- Documented acceptance criteria in
+  `docs/temp/RELATIVE_IMPORT_GUARD_SPEC.md` and added dedicated unit coverage
+  in `test/unit/scripts/relative-import-guard.test.ts` to keep the detector
+  honest.
+
 #### Media URL Utilities Modularization (Phase 351)
 
 - **6-Layer Architecture Refactored**: 1,118 lines single file → 1,228 lines 14

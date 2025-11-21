@@ -121,7 +121,7 @@ export class GalleryApp {
         if (this.settingsService) {
           themeService.bindSettingsService(
             this
-              .settingsService as unknown as import('../../shared/services/theme-service').SettingsServiceLike
+              .settingsService as unknown as import('@shared/services/theme-service').SettingsServiceLike
           );
 
           this.reapplyStoredTheme(themeService);
@@ -159,7 +159,7 @@ export class GalleryApp {
    */
   private async setupEventHandlers(): Promise<void> {
     try {
-      const { initializeGalleryEvents } = await import('../../shared/utils/events');
+      const { initializeGalleryEvents } = await import('@shared/utils/events');
 
       // Get settings if available
       const enableKeyboard = this.settingsService
@@ -338,7 +338,7 @@ export class GalleryApp {
       }
 
       try {
-        const { cleanupGalleryEvents } = await import('../../shared/utils/events');
+        const { cleanupGalleryEvents } = await import('@shared/utils/events');
         cleanupGalleryEvents();
       } catch (error) {
         logger.warn('[GalleryApp] Event cleanup failed:', error);

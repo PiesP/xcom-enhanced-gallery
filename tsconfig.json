@@ -5,6 +5,7 @@
     "types/**/*",
     "playwright/**/*",
     "test/**/*",
+    "scripts/**/*.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "config/**/*.d.ts"

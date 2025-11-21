@@ -34,7 +34,8 @@
       "@shared/i18n/*": ["./src/shared/i18n/*"],
       "@shared/*": ["./src/shared/*"],
       "@assets/*": ["./src/assets/*"],
-      "@test/*": ["./test/*"]
+      "@test/*": ["./test/*"],
+      "scripts/*": ["./scripts/*"]
     },
     "types": ["vite/client", "vitest/globals"],
     "incremental": true,

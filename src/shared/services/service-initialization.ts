@@ -16,7 +16,7 @@ export async function registerCoreServices(): Promise<void> {
   const [{ CoreService }, { getMediaService }, { SERVICE_KEYS }] = await Promise.all([
     import('./core/core-service-manager'),
     import('./service-factories'),
-    import('../../constants'),
+    import('@/constants'),
   ]);
 
   // Always resolve the current CoreService singleton to avoid stale instance issues in tests
