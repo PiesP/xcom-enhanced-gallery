@@ -112,6 +112,237 @@ function setupURLPolyfill() {
 // URL 폴백 설정 실행
 setupURLPolyfill();
 
+let mutationObserverPolyfillInstalled = false;
+
+function ensureMutationObserverPolyfill(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (typeof Node === 'undefined') {
+    return;
+  }
+
+  if (mutationObserverPolyfillInstalled) {
+    return;
+  }
+
+  const NativeMutationObserver =
+    (globalThis as typeof globalThis & { MutationObserver?: typeof MutationObserver })
+      .MutationObserver || (typeof window !== 'undefined' ? window.MutationObserver : undefined);
+
+  const hasFunctionalObserver = (() => {
+    if (typeof NativeMutationObserver !== 'function') {
+      return false;
+    }
+
+    try {
+      let triggered = false;
+      const testTarget = document.createElement('div');
+      const testObserver = new NativeMutationObserver(() => {
+        triggered = true;
+      });
+      testObserver.observe(testTarget, { childList: true });
+      const child = document.createElement('span');
+      testTarget.appendChild(child);
+      testObserver.disconnect();
+      return triggered;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (hasFunctionalObserver) {
+    return;
+  }
+
+  type ObserverState = {
+    observer: MutationObserverPolyfill;
+    target: Node;
+    options: Required<Pick<MutationObserverInit, 'childList' | 'subtree'>>;
+  };
+
+  const observerRegistry = new Set<ObserverState>();
+  const pendingRecords = new Map<MutationObserverPolyfill, MutationRecord[]>();
+  let flushScheduled = false;
+
+  const scheduleFlush = (): void => {
+    if (flushScheduled) {
+      return;
+    }
+    flushScheduled = true;
+    Promise.resolve().then(() => {
+      flushScheduled = false;
+      for (const [observer, records] of pendingRecords) {
+        pendingRecords.delete(observer);
+        observer._deliver(records);
+      }
+    });
+  };
+
+  const enqueueRecord = (observer: MutationObserverPolyfill, record: MutationRecord): void => {
+    const list = pendingRecords.get(observer) ?? [];
+    list.push(record);
+    pendingRecords.set(observer, list);
+    scheduleFlush();
+  };
+
+  const collectNodes = (node: Node): Node[] => {
+    if (!node) {
+      return [];
+    }
+
+    if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+      return Array.from(node.childNodes);
+    }
+
+    return [node];
+  };
+
+  const isWithinTarget = (parent: Node, target: Node): boolean => {
+    if (parent === target) {
+      return true;
+    }
+    let current: Node | null = parent.parentNode;
+    while (current) {
+      if (current === target) {
+        return true;
+      }
+      current = current.parentNode;
+    }
+    return false;
+  };
+
+  const notifyObservers = (mutationTarget: Node, added: Node[], removed: Node[]): void => {
+    if (added.length === 0 && removed.length === 0) {
+      return;
+    }
+
+    for (const state of observerRegistry) {
+      if (!state.options.childList && !state.options.subtree) {
+        continue;
+      }
+
+      const matchesTarget =
+        state.target === mutationTarget ||
+        (state.options.subtree && isWithinTarget(mutationTarget, state.target));
+
+      if (!matchesTarget) {
+        continue;
+      }
+
+      const record: MutationRecord = {
+        type: 'childList',
+        target: mutationTarget,
+        addedNodes: added as unknown as NodeListOf<Node>,
+        removedNodes: removed as unknown as NodeListOf<Node>,
+        previousSibling: added[0]?.previousSibling ?? null,
+        nextSibling: added.at(-1)?.nextSibling ?? null,
+        attributeName: null,
+        attributeNamespace: null,
+        oldValue: null,
+      };
+
+      enqueueRecord(state.observer, record);
+    }
+  };
+
+  class MutationObserverPolyfill {
+    private callback: MutationCallback;
+    private state: ObserverState | null = null;
+
+    constructor(callback: MutationCallback) {
+      this.callback = callback;
+    }
+
+    observe(target: Node, options: MutationObserverInit = {}): void {
+      if (!target) {
+        return;
+      }
+
+      if (this.state) {
+        observerRegistry.delete(this.state);
+      }
+
+      const normalizedOptions: Required<Pick<MutationObserverInit, 'childList' | 'subtree'>> = {
+        childList: options.childList !== false,
+        subtree: Boolean(options.subtree),
+      };
+
+      this.state = {
+        observer: this,
+        target,
+        options: normalizedOptions,
+      };
+
+      observerRegistry.add(this.state);
+    }
+
+    disconnect(): void {
+      if (this.state) {
+        observerRegistry.delete(this.state);
+        this.state = null;
+      }
+    }
+
+    takeRecords(): MutationRecord[] {
+      const records = pendingRecords.get(this);
+      if (!records) {
+        return [];
+      }
+      pendingRecords.delete(this);
+      return [...records];
+    }
+
+    _deliver(records: MutationRecord[]): void {
+      if (records.length === 0) {
+        return;
+      }
+      this.callback(records, this as unknown as MutationObserver);
+    }
+  }
+
+  const originalAppendChild = Node.prototype.appendChild;
+  Node.prototype.appendChild = function <T extends Node>(node: T): T {
+    const added = collectNodes(node);
+    const result = originalAppendChild.call(this, node);
+    notifyObservers(this, added, []);
+    return result;
+  };
+
+  const originalInsertBefore = Node.prototype.insertBefore;
+  Node.prototype.insertBefore = function <T extends Node>(node: T, ref: Node | null): T {
+    const added = collectNodes(node);
+    const result = originalInsertBefore.call(this, node, ref);
+    notifyObservers(this, added, []);
+    return result;
+  };
+
+  const originalRemoveChild = Node.prototype.removeChild;
+  Node.prototype.removeChild = function <T extends Node>(node: T): T {
+    const result = originalRemoveChild.call(this, node);
+    notifyObservers(this, [], [node]);
+    return result;
+  };
+
+  const originalReplaceChild = Node.prototype.replaceChild;
+  Node.prototype.replaceChild = function <T extends Node>(node: Node, oldNode: T): T {
+    const added = collectNodes(node);
+    const result = originalReplaceChild.call(this, node, oldNode);
+    notifyObservers(this, added, [oldNode]);
+    return result;
+  };
+
+  (
+    globalThis as typeof globalThis & { MutationObserver?: typeof MutationObserver }
+  ).MutationObserver = MutationObserverPolyfill as unknown as typeof MutationObserver;
+  if (typeof window !== 'undefined') {
+    window.MutationObserver = MutationObserverPolyfill as unknown as typeof MutationObserver;
+  }
+
+  mutationObserverPolyfillInstalled = true;
+}
+
 // Vendors 선행 초기화 (모듈 로드 시 1회)
 // 자동 초기화 경고/신호 폴백 경고를 줄이기 위해 테스트 시작 전에 초기화합니다.
 // 중복 호출은 StaticVendorManager에서 안전하게 처리됩니다.
@@ -273,6 +504,9 @@ function setupTestEnvironmentPolyfills() {
   if (typeof globalThis.IntersectionObserver === 'undefined') {
     globalThis.IntersectionObserver = globalThis.window?.IntersectionObserver;
   }
+
+  // MutationObserver가 제공되지 않거나 동작하지 않는 환경을 위한 폴리필
+  ensureMutationObserverPolyfill();
 
   // HTMLCanvasElement.toDataURL polyfill (jsdom: Not implemented 방지)
   try {

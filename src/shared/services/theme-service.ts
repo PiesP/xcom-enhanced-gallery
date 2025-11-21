@@ -12,6 +12,18 @@ import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
 import { syncThemeAttributes } from '@shared/utils/theme-dom';
 
+const getMutationObserverCtor = (): typeof MutationObserver | undefined => {
+  if (typeof MutationObserver !== 'undefined') {
+    return MutationObserver;
+  }
+
+  if (typeof window !== 'undefined' && typeof window.MutationObserver !== 'undefined') {
+    return window.MutationObserver;
+  }
+
+  return undefined;
+};
+
 /**
  * Theme type
  */
@@ -97,6 +109,7 @@ export class ThemeService extends BaseServiceImpl {
   private boundSettingsService: SettingsServiceLike | null = null;
   private onMediaQueryChange: ((this: MediaQueryList, ev: MediaQueryListEvent) => void) | null =
     null;
+  private scopeObserver: MutationObserver | null = null;
 
   constructor() {
     super('ThemeService');
@@ -110,6 +123,7 @@ export class ThemeService extends BaseServiceImpl {
     // Apply initial theme immediately (whether loaded from storage or default 'auto')
     // This prevents FOUC by applying the theme before the async initialization phase
     this.applyCurrentTheme(true);
+    this.ensureScopeObserverInitialized();
 
     // Schedule an async restore to re-apply persisted theme if the synchronous read fell back
     // (e.g., GM_getValue returns a Promise in some environments). We intentionally do not await
@@ -132,6 +146,8 @@ export class ThemeService extends BaseServiceImpl {
    * Restore settings from storage and set up system detection
    */
   protected async onInitialize(): Promise<void> {
+    this.ensureScopeObserverInitialized();
+
     // Restore settings from storage
     await this.restoreThemeSetting();
 
@@ -183,23 +199,33 @@ export class ThemeService extends BaseServiceImpl {
       const normalized = ThemeService.normalizeThemeSetting(settingsTheme);
 
       if (normalized) {
-        // Phase 420 Fix: Don't overwrite legacy theme with default 'auto' from Settings
+        // Phase 420 Fix Enhanced: Prioritize explicit themes over 'auto'
         // This prevents the "auto overrides specific mode" issue on first launch
-        const hasExistingTheme = this.themeSetting !== 'auto';
+        const currentIsExplicit = this.themeSetting === 'light' || this.themeSetting === 'dark';
+        const settingsIsExplicit = normalized === 'light' || normalized === 'dark';
         const settingsHasDefaultAuto = normalized === 'auto';
 
-        if (settingsHasDefaultAuto && hasExistingTheme) {
+        if (settingsHasDefaultAuto && currentIsExplicit) {
+          // SettingsService has default 'auto' but we have explicit theme from legacy storage
           logger.debug(
-            `[ThemeService] Preserving existing theme '${this.themeSetting}' over SettingsService default 'auto'`
+            `[ThemeService] Preserving legacy theme '${this.themeSetting}' over SettingsService default 'auto'`
           );
-          // Sync our specific theme back to SettingsService so it persists there too
+          // Sync our explicit theme back to SettingsService so it persists there too
           if (typeof settingsService.set === 'function') {
             void settingsService.set('gallery.theme', this.themeSetting);
           }
-        } else if (normalized !== this.themeSetting) {
+        } else if (settingsIsExplicit && !currentIsExplicit) {
+          // SettingsService has explicit theme but we have 'auto' (constructor fallback)
+          logger.debug(
+            `[ThemeService] Adopting explicit SettingsService theme '${normalized}' over current 'auto'`
+          );
           this.themeSetting = normalized;
           this.applyCurrentTheme(true);
-          logger.debug(`[ThemeService] Synced initial theme from SettingsService: ${normalized}`);
+        } else if (normalized !== this.themeSetting) {
+          // Both are explicit or both are 'auto', but different
+          this.themeSetting = normalized;
+          this.applyCurrentTheme(true);
+          logger.debug(`[ThemeService] Synced theme from SettingsService: ${normalized}`);
         }
       } else {
         // No valid theme in SettingsService, persist current theme to it
@@ -248,16 +274,30 @@ export class ThemeService extends BaseServiceImpl {
   private async restoreThemeSetting(): Promise<void> {
     const saved = await this.loadThemeFromStorage();
     if (saved) {
+      const previousSetting = this.themeSetting;
       this.themeSetting = saved;
       logger.debug(`[ThemeService] Restored theme setting: ${saved}`);
 
-      // Phase 420 Fix: Sync restored theme to SettingsService if SettingsService has default 'auto'
+      // Phase 420 Fix Enhanced: Apply restored theme immediately if different
+      if (previousSetting !== saved) {
+        logger.info(
+          `[ThemeService] Theme changed during async restore: '${previousSetting}' → '${saved}'`
+        );
+        this.applyCurrentTheme(true);
+      }
+
+      // Sync restored theme to SettingsService if SettingsService has default 'auto' or missing
       // This handles the case where sync load failed (defaulting to 'auto') but async restore succeeded.
       if (this.boundSettingsService?.get && this.boundSettingsService?.set) {
         const currentSettingsTheme = this.boundSettingsService.get('gallery.theme');
-        if (currentSettingsTheme === 'auto' && saved !== 'auto') {
+        const normalizedSettingsTheme = ThemeService.normalizeThemeSetting(currentSettingsTheme);
+        const savedIsExplicit = saved === 'light' || saved === 'dark';
+        const settingsIsAutoOrMissing =
+          !normalizedSettingsTheme || normalizedSettingsTheme === 'auto';
+
+        if (savedIsExplicit && settingsIsAutoOrMissing) {
           logger.info(
-            `[ThemeService] Syncing restored theme '${saved}' to SettingsService (was 'auto')`
+            `[ThemeService] Syncing explicit restored theme '${saved}' to SettingsService (was '${normalizedSettingsTheme || 'missing'}')`
           );
           void this.boundSettingsService.set('gallery.theme', saved);
         }
@@ -344,8 +384,8 @@ export class ThemeService extends BaseServiceImpl {
     if (force || this.currentTheme !== effectiveTheme) {
       this.currentTheme = effectiveTheme;
 
-      // Set data-theme attribute for automatic CSS application
-      syncThemeAttributes(this.currentTheme);
+      // Update gallery theme scopes without mutating the host document root
+      this.refreshThemeScopes();
 
       // Notify listeners
       this.notifyListeners();
@@ -476,6 +516,10 @@ export class ThemeService extends BaseServiceImpl {
 
     this.listeners.clear();
     this.onMediaQueryChange = null;
+    if (this.scopeObserver) {
+      this.scopeObserver.disconnect();
+      this.scopeObserver = null;
+    }
 
     // Unsubscribe from settings change events if subscribed
     this.detachSettingsBinding();
@@ -562,6 +606,71 @@ export class ThemeService extends BaseServiceImpl {
     }
 
     return ThemeService.normalizeThemeSetting(candidate);
+  }
+
+  private refreshThemeScopes(scopes?: Iterable<Element> | ArrayLike<Element>): void {
+    if (typeof scopes === 'undefined') {
+      syncThemeAttributes(this.currentTheme);
+      return;
+    }
+
+    syncThemeAttributes(this.currentTheme, {
+      scopes,
+    });
+  }
+
+  private ensureScopeObserverInitialized(): void {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const MutationObserverCtor = getMutationObserverCtor();
+    if (!MutationObserverCtor) {
+      logger.debug('[ThemeService] MutationObserver unavailable; running full scope refresh');
+      this.refreshThemeScopes();
+      return;
+    }
+
+    if (this.scopeObserver) {
+      return;
+    }
+
+    const observerTarget = document.documentElement;
+    if (!observerTarget) {
+      return;
+    }
+
+    this.scopeObserver = new MutationObserverCtor(mutations => {
+      const pendingScopes = new Set<Element>();
+
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach(node => {
+          this.collectThemeScopesFromNode(node, pendingScopes);
+        });
+      }
+
+      if (pendingScopes.size > 0) {
+        this.refreshThemeScopes(pendingScopes);
+      }
+    });
+
+    this.scopeObserver.observe(observerTarget, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  private collectThemeScopesFromNode(node: Node, bucket: Set<Element>): void {
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+
+    if (node.classList.contains('xeg-theme-scope')) {
+      bucket.add(node);
+    }
+
+    const descendants = node.querySelectorAll('.xeg-theme-scope');
+    descendants.forEach(scope => bucket.add(scope));
   }
 }
 

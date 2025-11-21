@@ -301,8 +301,7 @@
   }
 
   /* Theme Support - Dark/Light Mode */
-  [data-theme='light'],
-  [data-theme='light'] .xeg-theme-scope {
+  :where(:root, .xeg-theme-scope)[data-theme='light'] {
     --color-bg-primary: var(--color-base-white);
     --color-text-primary: var(--color-base-black);
     --color-text-secondary: var(--color-gray-600); /* Phase: design-consistency */
@@ -329,8 +328,7 @@
     --xeg-color-background: oklch(95% 0 0deg);
   }
 
-  [data-theme='dark'],
-  [data-theme='dark'] .xeg-theme-scope {
+  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
     --color-bg-primary: var(--color-gray-900);
     --color-bg-surface: var(--color-gray-900);
     --color-bg-elevated: var(--color-gray-700);
@@ -412,8 +410,7 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']),
-    :root:not([data-theme='light']) .xeg-theme-scope {
+    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
       --color-bg-primary: var(--color-gray-900);
       --color-bg-surface: var(--color-gray-900);
       --color-bg-elevated: var(--color-gray-700);
@@ -493,8 +490,7 @@
   }
 
   @media (prefers-color-scheme: light) {
-    :root:not([data-theme='dark']),
-    :root:not([data-theme='dark']) .xeg-theme-scope {
+    :where(:root, .xeg-theme-scope):not([data-theme='dark']) {
       --color-bg-primary: var(--color-base-white);
       --color-text-primary: var(--color-base-black);
       --color-text-secondary: var(--color-gray-600);
@@ -618,8 +614,7 @@
   } /* ===== 유틸리티 클래스 ===== */
 
   /* Theme Overrides - Glass System 변형 (라이트 모드) */
-  [data-theme='light'],
-  [data-theme='light'] .xeg-theme-scope {
+  :where(:root, .xeg-theme-scope)[data-theme='light'] {
     --xeg-surface-glass-bg: var(--color-bg-surface);
     --xeg-surface-glass-border: var(--color-border-default);
     --xeg-surface-glass-shadow: none;
@@ -627,8 +622,7 @@
   }
 
   /* Theme Overrides - Glass System 변형 (다크 모드) */
-  [data-theme='dark'],
-  [data-theme='dark'] .xeg-theme-scope {
+  :where(:root, .xeg-theme-scope)[data-theme='dark'] {
     --xeg-surface-glass-bg: var(--color-gray-900);
     --xeg-surface-glass-border: var(--color-gray-600);
     --xeg-surface-glass-shadow: none;
@@ -637,8 +631,7 @@
 
   /* System Preference Fallback - 다크 모드 시스템 설정 */
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme='light']),
-    :root:not([data-theme='light']) .xeg-theme-scope {
+    :where(:root, .xeg-theme-scope):not([data-theme='light']) {
       --xeg-surface-glass-bg: var(--color-gray-900);
       --xeg-surface-glass-border: var(--color-gray-600);
       --xeg-surface-glass-shadow: none;

@@ -1890,6 +1890,20 @@ export class ThemeService extends BaseServiceImpl {
 }
 ```
 
+#### ThemeService Scope Sync (Phase 421)
+
+- **Document root 안전성**: 이제 `<html data-theme>`를 직접 수정하지 않고,
+  `.xeg-theme-scope` 요소에만 `data-theme` 속성을 부여한다. Twitter/X 전역 테마를
+  강제로 덮어쓰는 부작용을 제거했다.
+- **MutationObserver 기반 자동화**: ThemeService는 DOM 트리를 관찰해 갤러리 루트가
+  추가되는 즉시 저장된 테마(light/dark)를 적용한다. 늦게 생성된 DOM조차 사용자가
+  지정한 모드로 표시된다.
+- **CSS 셀렉터 정비**: `design-tokens.semantic.css`는
+  `:where(:root, .xeg-theme-scope)[data-theme='light' | 'dark']` 패턴을 사용해 루트/스코프
+  어느 곳에 속성이 있더라도 동일한 토큰을 소비한다.
+- **사용자 영향**: 시스템 다크 모드가 gallery light 모드를 덮어쓰던 문제가 해결되고,
+  외부 페이지에 대한 간섭도 최소화되었다.
+
 #### 2. StorageAdapter 디렉토리 완전 삭제
 
 **삭제된 파일**:

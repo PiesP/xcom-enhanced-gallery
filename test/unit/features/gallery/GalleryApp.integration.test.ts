@@ -59,11 +59,9 @@ describe('GalleryApp Integration', () => {
     // 각 테스트마다 새로운 GalleryApp 인스턴스 생성
     galleryApp = new GalleryApp();
 
-    // DOM 환경 설정
-    // ThemeService가 initialize() 시점에 documentElement에 테마를 설정하므로
-    // document.body.innerHTML = '' 만으로는 부족할 수 있음.
-    // 하지만 ThemeService.initialize()가 이미 실행되었으므로 data-theme 속성은 설정되어 있을 것임.
-    // document.body.innerHTML = ''; // 기존 코드 유지
+    // DOM 환경 설정 - ThemeService는 이제 documentElement를 수정하지 않고
+    // `.xeg-theme-scope` 요소가 추가될 때마다 MutationObserver를 통해 테마를 동기화한다.
+    // 필요 시 각 테스트에서 scope 요소를 직접 추가해 동작을 확인할 수 있다.
 
     // 모킹: 필요한 경우 최소한으로만
     vi.clearAllMocks();
@@ -90,14 +88,18 @@ describe('GalleryApp Integration', () => {
       expect(galleryApp.isRunning()).toBe(true);
     });
 
-    it('should initialize theme on document root', async () => {
-      // When: 초기화 실행
+    it('should sync theme onto late-added gallery scopes', async () => {
       await galleryApp.initialize();
 
-      // Then: 테마가 적용되어 있어야 함 (dark 또는 light)
-      const htmlElement = document.documentElement;
-      const theme = htmlElement.getAttribute('data-theme');
-      expect(['dark', 'light']).toContain(theme);
+      const scope = document.createElement('div');
+      scope.className = 'xeg-theme-scope';
+      document.body.append(scope);
+
+      await Promise.resolve();
+
+      expect(['dark', 'light']).toContain(scope.getAttribute('data-theme'));
+
+      scope.remove();
     });
 
     it('should handle initialization errors gracefully', async () => {
