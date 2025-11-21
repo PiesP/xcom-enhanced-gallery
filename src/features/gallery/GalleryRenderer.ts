@@ -116,10 +116,10 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
 
     const { render, createComponent } = getSolid();
-    const self = this;
+    const handleDownload = (type: 'current' | 'all') => this.handleDownload(type);
     const handleClose = () => {
       closeGallery();
-      self.onCloseCallback?.();
+      this.onCloseCallback?.();
     };
 
     const elementFactory = () =>
@@ -133,8 +133,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
                 onClose: handleClose,
                 onPrevious: () => navigatePrevious('button'),
                 onNext: () => navigateNext('button'),
-                onDownloadCurrent: () => self.handleDownload('current'),
-                onDownloadAll: () => self.handleDownload('all'),
+                onDownloadCurrent: () => handleDownload('current'),
+                onDownloadAll: () => handleDownload('all'),
                 className: 'xeg-vertical-gallery',
               });
             },

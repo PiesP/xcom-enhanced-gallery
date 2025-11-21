@@ -27,6 +27,10 @@
 !/tsconfig.json
 !/vite.config.ts
 
+# --- 품질 검사 설정 (CI 필수) ---
+!/eslint.config.cjs
+!/stylelint.config.cjs
+
 # --- 패키지 관리 ---
 !/package.json
 !/package-lock.json
@@ -63,13 +67,11 @@
 
 # 개발 스크립트 및 도구
 /scripts/
-/**
- * NOTE: The `config/` directory contains developer-specific configuration and is
- * ignored by default. The file `config/utils/load-local-config.js` however is a
- * CI-safe stub required for builds in the action runners. We explicitly un-ignore
- * it so the file can be committed while keeping the rest of the `config/` dir
- * as local-only entries.
- */
+# NOTE: The `config/` directory contains developer-specific configuration and is
+# ignored by default. The file `config/utils/load-local-config.js` however is a
+# CI-safe stub required for builds in the action runners. We explicitly un-ignore
+# it so the file can be committed while keeping the rest of the `config/` dir
+# as local-only entries.
 /config/
 !/config/utils/load-local-config.js
 !/config/utils/load-local-config.d.ts
@@ -86,7 +88,6 @@
 /tsconfig.tests.json
 
 # 빌드 설정 (옵션)
-/eslint.config.js
 /postcss.config.js
 /playwright.config.ts
 /vitest.config.ts

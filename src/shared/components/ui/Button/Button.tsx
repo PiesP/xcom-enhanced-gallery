@@ -314,8 +314,8 @@ export function Button(rawProps: ButtonProps): JSXElement {
       isDisabled() ? styles.disabled : undefined,
       'xeg-inline-center',
       'xeg-gap-sm',
-      typeof local.className === 'function' ? (local.className as Function)() : local.className,
-      typeof local.class === 'function' ? (local.class as Function)() : local.class
+      typeof local.className === 'function' ? (local.className as () => string)() : local.className,
+      typeof local.class === 'function' ? (local.class as () => string)() : local.class
     );
 
   // Keep the DOM disabled property in sync with the isDisabled() accessor to aid testing and DOM consumers
@@ -376,7 +376,7 @@ export function Button(rawProps: ButtonProps): JSXElement {
         isDisabled()
           ? -1
           : typeof local.tabIndex === 'function'
-            ? (local.tabIndex as Function)()
+            ? (local.tabIndex as () => number)()
             : local.tabIndex
       }
       data-testid={local['data-testid']}

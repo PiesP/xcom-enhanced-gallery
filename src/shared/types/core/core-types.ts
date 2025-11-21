@@ -72,7 +72,7 @@ export interface GalleryState {
  */
 export type GalleryEvents = {
   'gallery:open': { items: MediaInfo[]; startIndex: number };
-  'gallery:close': {};
+  'gallery:close': Record<string, never>;
   'gallery:navigate': { index: number; item: MediaInfo };
   'gallery:viewModeChange': { mode: GalleryViewMode };
   'gallery:fullscreenToggle': { isFullscreen: boolean };

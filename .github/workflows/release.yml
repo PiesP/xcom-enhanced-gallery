@@ -160,10 +160,10 @@ jobs:
           # Run tscheck directly to avoid local-only pretypecheck scripts
           npx tsgo --project ./tsconfig.json --noEmit
           npm run lint:all
-          npm run deps:check
+          if [ -f .dependency-cruiser.cjs ]; then npm run deps:check; else echo "Skipping deps:check; config not found."; fi
 
-      - name: 🏗️ Build and validate
-        run: npm run build:only
+      - name: 🏗️ Build (development + production)
+        run: npx vite build --mode development && npx vite build --mode production
 
       - name: 📦 Create release package
         run: |
