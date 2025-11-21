@@ -30,7 +30,7 @@ on:
           - major
 
 env:
-  NODE_VERSION: "22"
+  NODE_VERSION: "24"
   XEG_DISABLE_LOCAL_CONFIG: "true"
 
 concurrency:
@@ -49,29 +49,50 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+
+      - name: 🚀 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
 
       - name: 🔍 Check version changes
         id: check
         run: |
+          set -euo pipefail
+
           CURRENT_VERSION=$(node -p "require('./package.json').version")
 
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
             echo "Manual release triggered"
           else
-            PREV_VERSION=$(git show HEAD~1:package.json | node -p "JSON.parse(require('fs').readFileSync(0)).version")
+            PREV_VERSION=""
 
-            if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
-              echo "should_release=true" >> $GITHUB_OUTPUT
-              echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
+            # If there's a parent commit, attempt to read package.json from it.
+            if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+              if git ls-tree -r HEAD~1 --name-only | grep -q '^package.json$'; then
+                PREV_VERSION=$(git show HEAD~1:package.json 2>/dev/null || true | node -e "try{ const s = require('fs').readFileSync(0,'utf8'); const p = JSON.parse(s); if (p && p.version) console.log(p.version); } catch(e){}")
+              fi
+            fi
+
+            if [ -z "$PREV_VERSION" ]; then
+              # No previous package.json or version available -> treat as changed.
+              echo "should_release=true" >> "$GITHUB_OUTPUT"
+              echo "🚦 Pre-release: No previous version found; will release"
             else
-              echo "should_release=false" >> $GITHUB_OUTPUT
-              echo "⏭️ No version change detected"
+              if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+                echo "should_release=true" >> "$GITHUB_OUTPUT"
+                echo "✅ Version changed: $PREV_VERSION → $CURRENT_VERSION"
+              else
+                echo "should_release=false" >> "$GITHUB_OUTPUT"
+                echo "⏭️ No version change detected"
+              fi
             fi
           fi
 
-          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
 
   build-and-release:
     name: 🏗️ Build and Release
@@ -85,6 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: 🚀 Setup Node.js
         uses: actions/setup-node@v4
@@ -117,6 +139,21 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "📦 Release version: $VERSION"
+
+      - name: 🏷️ Create Git tag
+        run: |
+          set -euo pipefail
+          TAG=v${{ steps.version.outputs.version }}
+          echo "Creating tag ${TAG} if it doesn't exist"
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists; skipping"
+          else
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git tag -a "${TAG}" -m "Release ${TAG}"
+            git push origin "${TAG}"
+            echo "Tag created and pushed: ${TAG}"
+          fi
 
       - name: ✅ Quality checks (typecheck + lint)
         run: npm run validate:pre
