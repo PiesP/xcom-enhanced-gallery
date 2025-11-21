@@ -130,7 +130,7 @@ jobs:
           echo "✅ Version bumped to: $NEW_VERSION"
 
           git add package.json
-          git commit -m "chore: bump version to $NEW_VERSION"
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
           git push
 
       - name: 📝 Get final version
@@ -157,12 +157,13 @@ jobs:
 
       - name: ✅ Quality checks (typecheck + lint)
         run: |
-          npm run typecheck
+          # Run tscheck directly to avoid local-only pretypecheck scripts
+          npx tsgo --project ./tsconfig.json --noEmit
           npm run lint:all
           npm run deps:check
 
       - name: 🏗️ Build and validate
-        run: npm run build
+        run: npm run build:only
 
       - name: 📦 Create release package
         run: |
