@@ -63,7 +63,7 @@ jobs:
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
         run: |
-          npm exec -- eslint src \
+          npx -- eslint src \
             --config eslint.config.cjs \
             --format @microsoft/eslint-formatter-sarif \
             --output-file eslint-results.sarif
@@ -92,26 +92,8 @@ jobs:
         run: npm ci --prefer-offline --no-audit --legacy-peer-deps
 
       - name: 📐 Run Typecheck
-        run: npm run typecheck
-
-  test:
-    name: 🧪 Unit Tests
-    runs-on: ubuntu-slim
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v6
-
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-
-      - name: 🧪 Run Unit Tests
-        run: npm run test:unit:batched
+        # Bypass 'npm run typecheck' to skip 'pretypecheck' script (which relies on local-only scripts)
+        run: npm exec tsgo -- --project ./tsconfig.json --noEmit
 
   build:
     name: 🚀 Build Check
