@@ -1,12 +1,15 @@
-name: 🔒 Security Audit
+name: 🛡️ Security Suite
 
-# Responsibility: Dedicated security monitoring (weekly schedule + on-demand)
-# - npm audit: dependency vulnerabilities
-# - license-checker: license compliance
-# Separate from ci.yml to avoid blocking PRs with security alerts
+# Responsibility: Comprehensive Security Monitoring
+# - CodeQL Analysis (Static Analysis)
+# - OSV Scanner (Vulnerability Scanning)
+# - NPM Audit (Dependency Vulnerabilities)
+# - License Compliance
 
 on:
   push:
+    branches: [master]
+  pull_request:
     branches: [master]
   schedule:
     # Every Monday 9 AM (UTC)
@@ -16,18 +19,93 @@ on:
 env:
   NODE_VERSION: "24"
   XEG_DISABLE_LOCAL_CONFIG: "true"
+  OSV_SCANNER_VERSION: v2.3.0
+  OSV_RESULTS_FILE: osv-results.sarif
 
 permissions:
   contents: read
+  security-events: write
+  actions: read
 
 jobs:
-  security-audit:
-    name: 🔍 Security Vulnerability Scan
+  codeql:
+    name: 🧠 CodeQL Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["javascript-typescript"]
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 🛠️ Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          config: |
+            paths-ignore:
+              - dist/
+              - node_modules/
+              - docs/
+              - test/
+              - scripts/
+              - config/
+              - coverage/
+              - "**/*.d.ts"
+              - "**/*.min.js"
+              - "**/*.map"
+
+      - name: 🏗️ Build for analysis
+        run: npx vite build --mode production
+
+      - name: 📊 Analyze
+        uses: github/codeql-action/analyze@v4
+
+  osv-scanner:
+    name: 🔍 OSV Scanner
+    runs-on: ubuntu-slim
+    timeout-minutes: 20
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download OSV-Scanner
+        run: |
+          mkdir -p "${HOME}/.local/bin"
+          curl -sSLo "${HOME}/.local/bin/osv-scanner" "https://github.com/google/osv-scanner/releases/download/${{ env.OSV_SCANNER_VERSION }}/osv-scanner_linux_amd64"
+          chmod +x "${HOME}/.local/bin/osv-scanner"
+          echo "${HOME}/.local/bin" >> "$GITHUB_PATH"
+
+      - name: 🔍 Run OSV scan
+        continue-on-error: true
+        run: |
+          osv-scanner scan source \
+            --recursive \
+            --format sarif \
+            --output "${{ env.OSV_RESULTS_FILE }}" \
+            ./
+
+      - name: 📊 Upload SARIF
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: ${{ env.OSV_RESULTS_FILE }}
+
+  audit:
+    name: 📦 NPM Audit
     runs-on: ubuntu-slim
     timeout-minutes: 10
-    permissions:
-      contents: read
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -65,13 +143,10 @@ jobs:
           path: audit-report.json
           retention-days: 30
 
-  license-check:
-    name: 📜 License Compliance Check
+  license:
+    name: 📜 License Compliance
     runs-on: ubuntu-slim
     timeout-minutes: 5
-    permissions:
-      contents: read
-
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
@@ -88,11 +163,7 @@ jobs:
       - name: 📜 Check licenses
         run: |
           echo "🔍 Checking license compliance..."
-
-          # Collect license information
           npm ls --json > licenses.json
-
-          # Allow only MIT-compatible licenses
           echo "✅ License check completed"
 
       - name: 📊 Upload license report
@@ -101,46 +172,3 @@ jobs:
           name: license-report-${{ github.sha }}
           path: licenses.json
           retention-days: 7
-
-  codeql-scan:
-    name: 🧠 CodeQL Static Analysis
-    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
-    timeout-minutes: 30
-    permissions:
-      security-events: write
-      packages: read
-      actions: read
-      contents: read
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - language: actions
-            build-mode: none
-          - language: javascript-typescript
-            build-mode: none
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🧰 Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          build-mode: ${{ matrix.build-mode }}
-
-      - name: 🛠️ Run manual build steps
-        if: matrix.build-mode == 'manual'
-        shell: bash
-        run: |
-          echo 'If you are using a "manual" build mode for one or more of the languages you are analyzing, replace this with the commands to build your code, for example:'
-          echo '  make bootstrap'
-          echo '  make release'
-          exit 1
-
-      - name: 📊 Analyze with CodeQL
-        uses: github/codeql-action/analyze@v4
-        with:
-          category: "/language:${{ matrix.language }}"

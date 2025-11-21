@@ -1,14 +1,21 @@
-name: 🏗️ Build Pipeline
+name: 🏗️ CI Pipeline
 
-# Responsibility: Production build only
-# - Build userscript (production mode only for optimal performance)
-# - No quality checks (typecheck, lint, format)
-# - No testing (unit, browser, E2E, accessibility)
-# - All validation and testing happens locally before push
-# This workflow only builds production artifacts
+# Responsibility: Continuous Integration
+# - Linting (ESLint)
+# - Build verification (Production mode)
+# - Ensures code quality and buildability on every Push/PR
 
 on:
   push:
+    branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.MD"
+      - "**/*.txt"
+      - "**/*.svg"
+      - ".vscode/**"
+  pull_request:
     branches: [master]
     paths-ignore:
       - "docs/**"
@@ -32,8 +39,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: 🧹 Lint (ESLint)
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: 📦 Install dependencies
+        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
+
+      - name: 🔍 Run ESLint
+        env:
+          SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
+        run: |
+          npm exec -- eslint src \
+            --config eslint.config.cjs \
+            --format @microsoft/eslint-formatter-sarif \
+            --output-file eslint-results.sarif
+        continue-on-error: true
+
+      - name: 📊 Upload analysis results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: eslint-results.sarif
+          wait-for-processing: true
+
   build:
-    name: 🚀 Build Production
+    name: 🚀 Build Check
     runs-on: ubuntu-slim
     timeout-minutes: 15
     permissions:
@@ -64,51 +107,3 @@ jobs:
           name: build-artifacts-${{ github.sha }}
           path: dist/
           retention-days: 7
-
-  codeql:
-    name: 🛡️ CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        language: ["javascript-typescript"]
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - name: 📦 Install dependencies
-        run: npm ci --prefer-offline --no-audit --legacy-peer-deps
-
-      - name: 🛠️ Initialize CodeQL
-        uses: github/codeql-action/init@v4
-        with:
-          languages: ${{ matrix.language }}
-          config: |
-            name: "CodeQL config"
-            paths-ignore:
-              - dist/
-              - node_modules/
-              - docs/
-              - test/
-              - scripts/
-              - config/
-              - coverage/
-              - "**/*.d.ts"
-              - "**/*.min.js"
-              - "**/*.map"
-
-      - name: 🏗️ Build for analysis
-        run: npx vite build --mode production
-
-      - name: 🧠 Analyze
-        uses: github/codeql-action/analyze@v4
