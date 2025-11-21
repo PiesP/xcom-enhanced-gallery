@@ -56,7 +56,6 @@ interface NavigationStateParams {
   readonly total: number;
   readonly toolbarDisabled: boolean;
   readonly downloadBusy: boolean;
-  readonly currentIndex: number;
 }
 
 const resolveDisplayedIndex = ({
@@ -91,11 +90,11 @@ const computeNavigationState = ({
   total,
   toolbarDisabled,
   downloadBusy,
-  currentIndex,
 }: NavigationStateParams) => {
   const hasItems = total > 0;
-  const prevDisabled = toolbarDisabled || !hasItems || currentIndex <= 0;
-  const nextDisabled = toolbarDisabled || !hasItems || currentIndex >= Math.max(total - 1, 0);
+  const canNavigate = hasItems && total > 1;
+  const prevDisabled = toolbarDisabled || !canNavigate;
+  const nextDisabled = toolbarDisabled || !canNavigate;
   const downloadDisabled = toolbarDisabled || downloadBusy || !hasItems;
 
   return {
@@ -208,7 +207,6 @@ function ToolbarContainer(rawProps: ToolbarProps): JSXElement {
       total: totalItems(),
       toolbarDisabled: Boolean(isDisabled()),
       downloadBusy: Boolean(isDownloadingProp() || toolbarState.isDownloading),
-      currentIndex: currentIndexForNav(),
     })
   );
 

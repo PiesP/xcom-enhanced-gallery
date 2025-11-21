@@ -1,16 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
-<<<<<<< HEAD
-  "include": ["src/**/*", "types/**/*", "playwright/**/*", "vite.config.ts", "vitest.config.ts", "config/**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "build", "coverage"]
-=======
   "include": [
     "src/**/*",
     "types/**/*",
     "playwright/**/*",
     "test/**/*",
     "vite.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "config/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",
@@ -20,5 +17,4 @@
     "test/archive",
     "test/archive/**/*"
   ]
->>>>>>> refactor/CSS
 }

@@ -25,6 +25,18 @@ and this project adheres to
   (`test/unit/shared/components/ui/button-disabled-reactivity.test.tsx`) that
   reproduces the stuck disabled state and now verifies it flips correctly.
 
+#### Toolbar Navigation Wrap-around
+
+- **Issue**: Toolbar previous/next buttons stayed disabled at the first or last
+  media item even though gallery navigation already wraps when users keep
+  browsing via keyboard or the state machine API.
+- **Impact**: Pointer users could not loop through media items without leaving
+  the toolbar, introducing UX inconsistency relative to keyboard shortcuts.
+- **Solution**: Navigation controls now remain enabled whenever at least two
+  media items exist, delegating wrap-around to the existing gallery navigation
+  signals. Added regression coverage in
+  `test/unit/shared/components/ui/toolbar-navigation-wrap.test.tsx`.
+
 #### Username Extraction and Filename Generation Improvement (Phase 432)
 
 - **Issue**: Downloaded filenames generated as
