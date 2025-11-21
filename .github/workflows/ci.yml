@@ -101,7 +101,7 @@ jobs:
         run: npx vite build --mode production
 
       - name: 📊 Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: success()
         with:
           name: build-artifacts-${{ github.sha }}

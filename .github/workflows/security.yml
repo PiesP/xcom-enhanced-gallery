@@ -137,7 +137,7 @@ jobs:
 
       - name: 📊 Upload security report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-audit-report-${{ github.sha }}
           path: audit-report.json
@@ -167,7 +167,7 @@ jobs:
           echo "✅ License check completed"
 
       - name: 📊 Upload license report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: license-report-${{ github.sha }}
           path: licenses.json
