@@ -9,7 +9,7 @@ on:
   push:
     branches: [master]
   schedule:
-    # 매주 월요일 오전 9시 (UTC)
+    # Every Monday 9 AM (UTC)
     - cron: "0 9 * * 1"
   workflow_dispatch:
 
@@ -41,10 +41,10 @@ jobs:
 
       - name: 🔒 Dependency Security Check
         run: |
-          # 고위험 취약점 체크
+          # High-risk vulnerability check
           npm audit --audit-level=high --json > audit-report.json || true
 
-          # 취약점 보고서 생성
+          # Generate vulnerability report
           if [ -s audit-report.json ]; then
             echo "🚨 Security vulnerabilities found!"
             cat audit-report.json
@@ -82,10 +82,10 @@ jobs:
         run: |
           echo "🔍 Checking license compliance..."
 
-          # 라이센스 정보 수집
+          # Collect license information
           npm ls --json > licenses.json
 
-          # MIT 호환 라이센스만 허용
+          # Allow only MIT-compatible licenses
           echo "✅ License check completed"
 
       - name: 📊 Upload license report
