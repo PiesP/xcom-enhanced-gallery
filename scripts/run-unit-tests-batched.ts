@@ -6,6 +6,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { glob } from 'glob';
+import { existsSync, statSync } from 'node:fs';
 import { resolve, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { totalmem, freemem } from 'node:os';
@@ -64,11 +65,24 @@ const MONITOR_MEMORY = hasFlag('monitor-memory');
 const CLEANUP_ENABLED = !hasFlag('no-cleanup');
 const FAILURE_SUMMARY_LIMIT = Math.max(1, getNumericArg('failure-lines', 5));
 
+const SINGLE_FILE_RAW = getArgValue('file', '').trim();
+if (SINGLE_FILE_RAW === 'true') {
+  console.error('❌ The --file flag requires a file path argument');
+  process.exit(1);
+}
+const SINGLE_FILE_PATH =
+  SINGLE_FILE_RAW === '' || SINGLE_FILE_RAW === 'false' ? null : SINGLE_FILE_RAW;
+const SINGLE_FILE_MODE = Boolean(SINGLE_FILE_PATH);
+
 console.log('\n🧪 Batched Unit Test Runner');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log(`📦 Batch size: ${BATCH_SIZE} files`);
 console.log(`💾 Memory per batch: ${MEMORY} MB`);
-console.log(`🎯 Pattern: ${PATTERN}`);
+if (SINGLE_FILE_MODE) {
+  console.log(`🎯 Target file: ${SINGLE_FILE_PATH}`);
+} else {
+  console.log(`🎯 Pattern: ${PATTERN}`);
+}
 console.log(`🧪 Project: ${PROJECT}`);
 console.log(`🗞 Reporter: ${REPORTER}`);
 console.log(`⚡ Fail-fast: ${FAIL_FAST ? 'enabled' : 'disabled'}`);
@@ -160,6 +174,22 @@ const extractSkippedHighlights = (output: string): string[] => {
 // ---------------------------------------------------------------------------
 
 async function discoverTestFiles(): Promise<string[]> {
+  if (SINGLE_FILE_MODE && SINGLE_FILE_PATH) {
+    const candidate = resolve(PROJECT_ROOT, SINGLE_FILE_PATH);
+    if (!existsSync(candidate) || !statSync(candidate).isFile()) {
+      console.error(`❌ The specified test file does not exist: ${SINGLE_FILE_PATH}`);
+      process.exit(1);
+    }
+    const relativePath = toRelativeTestPath(candidate);
+    if (relativePath.startsWith('..')) {
+      console.error('❌ The --file path must point to a file inside the project workspace');
+      process.exit(1);
+    }
+    console.log('🎯 Single test file mode enabled');
+    console.log(`   ↳ ${relativePath}\n`);
+    return [relativePath];
+  }
+
   console.log('🔍 Discovering test files...');
 
   const files = await glob(PATTERN, {

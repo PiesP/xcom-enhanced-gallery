@@ -444,6 +444,8 @@ find test -name "*bulk-download*" -o -name "*download*service*"
 
 # 3. 테스트 실행
 npm run test:unit:batched -- --pattern="*download*"
+#    또는 단일 테스트 파일만 실행
+npm run test:unit:batched -- --file test/unit/shared/services/download-service.test.ts
 ```
 
 #### Step 355.9: 종합 검증

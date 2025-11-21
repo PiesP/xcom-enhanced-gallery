@@ -62,6 +62,7 @@ npm run e2e:a11y          # Accessibility (axe)
 - Splits 332 test files into batches (default: 20 files/batch)
 - Auto-cleanup between batches (prevents EPIPE errors)
 - Node 22 IPC bug workaround (known issue: nodejs/node#32106)
+- Supports a strict single-file mode via `--file <path>`
 
 ```bash
 # Recommended: Batched execution
@@ -71,6 +72,7 @@ npm run test:unit:batched
 npm run test:unit:batched -- --batch-size=10  # Smaller batches
 npm run test:unit:batched -- --fail-fast      # Stop on first failure
 npm run test:unit:batched -- --verbose        # Detailed output
+npm run test:unit:batched -- --file test/unit/shared/events/keyboard-handler.test.ts # Single test file
 
 # Legacy: Direct execution (may encounter EPIPE on Node 22)
 npm run test:unit

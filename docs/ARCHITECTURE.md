@@ -2071,6 +2071,7 @@ Node.js 22의 child_process IPC 버그로 인한 Vitest EPIPE 에러를 **배치
 --memory=N       # 메모리 할당 MB (기본값: 3072)
 --fail-fast      # 첫 실패 시 즉시 중단
 --pattern=GLOB   # 테스트 파일 패턴
+--file=PATH      # 지정된 단일 테스트 파일만 실행
 --verbose        # 상세 로그
 ```
 
@@ -2088,6 +2089,9 @@ npm run test:unit:batched -- --fail-fast
 
 # 상세 로그
 npm run test:unit:batched -- --verbose
+
+# 단일 파일만 실행 (glob 건너뜀)
+npm run test:unit:batched -- --file test/unit/shared/events/keyboard-handler.test.ts
 ```
 
 ### 실행 결과
