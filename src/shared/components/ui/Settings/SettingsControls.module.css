@@ -45,12 +45,12 @@
  *
  * **Interactive States**:
  * - :hover (border, background, smooth transition)
- * - :focus / :focus-visible (halo via box-shadow var(--xeg-focus-ring))
+ * - :focus / :focus-visible (border-color change via focus indicator tokens)
  * - Transitions: All properties via --xeg-duration-fast and --xeg-ease-standard
  * - No :disabled state (not needed for settings UI)
  *
  * **Focus Ring Integration** (Accessibility):
- * - box-shadow: var(--xeg-focus-ring) (visible halo)
+ * - border-color swaps driven by `--xeg-focus-indicator-color`
  * - Ring width: var(--xeg-focus-ring-width) (consistent 3px default)
  * - Color managed by design token system (light/dark aware)
  * - Ensures WCAG 2.1 AA compliance for keyboard navigation
@@ -258,7 +258,7 @@
  * **Interactive States**:
  * - All transitions via --xeg-duration-fast and --xeg-ease-standard
  * - Hover: Border/background color change
- * - Focus/Focus-visible: Halo via box-shadow var(--xeg-focus-ring)
+ * - Focus/Focus-visible: Border-color swap via focus indicator tokens
  *
  * **Phase 198 Note** (Critical):
  * - appearance: REMOVED intentionally
@@ -278,8 +278,8 @@
  * - --xeg-toolbar-border: Border color
  * - --border-width-thin: Border width (typically 1px)
  * - --xeg-radius-md: Border radius
- * - --xeg-focus-ring: Focus halo definition (box-shadow)
- * - --xeg-focus-ring-width: Focus halo thickness
+ * - --xeg-focus-indicator-color: Focus border color
+ * - --xeg-focus-indicator-width: Recommended 3px-equivalent treatment
  * - --xeg-duration-fast: Transition duration (typically 0.2s)
  * - --xeg-ease-standard: Easing function (typically ease-in-out)
  * - --xeg-color-text-primary: Text color
@@ -306,7 +306,7 @@
    * Phase 318: Optimized transitions for interactive states
    * - border-color: Hover and focus border changes
    * - background-color: Hover background updates
-   * - box-shadow: Focus halo (synchronized with --xeg-focus-ring)
+   * - border-color: Focus indicator (synchronized with --xeg-focus-indicator-color)
    * - Duration: --xeg-duration-fast (typically 0.2s)
    * - Easing: --xeg-ease-standard (typically ease-in-out)
    *
@@ -314,8 +314,7 @@
    */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /**
@@ -351,8 +350,8 @@
  *
  * **Changes**:
  * - border-color: Changes to --xeg-color-border-hover (matches hover)
- * - box-shadow: Uses --xeg-focus-ring halo (layered above element)
- * - Outline removed to avoid double indicators (handled globally)
+ * - border-color: Uses --xeg-focus-indicator-color for contrast
+ * - No outline suppression; browsers manage outlines if desired
  *
  * **Accessibility**:
  * - Clear halo indicator (essential for keyboard navigation)
@@ -361,14 +360,12 @@
  * - Consistent with other gallery controls (buttons, toolbar)
  *
  * **Design Token Dependencies**:
- * - --xeg-focus-ring: Box-shadow declaration for halo (color + width)
- * - --xeg-focus-ring-width: Controls halo thickness (defaults to 3px)
+ * - --xeg-focus-indicator-color: Focus border color token
+ * - --xeg-focus-indicator-width: Recommended thickness guidance
  */
 .select:focus,
 .select:focus-visible {
-  border-color: var(--xeg-color-border-hover);
-  outline: none;
-  box-shadow: var(--xeg-focus-ring);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-hover));
 }
 
 /**

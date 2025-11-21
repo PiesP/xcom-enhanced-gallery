@@ -1,5 +1,19 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["src/**/*", "types/**/*", "playwright/**/*", "vite.config.ts", "vitest.config.ts"],
-  "exclude": ["node_modules", "dist", "build", "coverage"]
+  "include": [
+    "src/**/*",
+    "types/**/*",
+    "playwright/**/*",
+    "test/**/*",
+    "vite.config.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "test/archive",
+    "test/archive/**/*"
+  ]
 }

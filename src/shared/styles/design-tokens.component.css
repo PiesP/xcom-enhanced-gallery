@@ -86,8 +86,7 @@
       background-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       border-color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
       color var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out),
-      box-shadow var(--xeg-duration-fast) var(--xeg-easing-ease-out);
+      transform var(--xeg-duration-fast) var(--xeg-easing-ease-out);
     --xeg-transition-width-normal: width var(--xeg-duration-normal) var(--xeg-ease-standard);
 
     /* Icon Component */
@@ -138,13 +137,6 @@
     background: var(--xeg-glass-bg);
     border: 0.0625rem solid var(--xeg-glass-border);
     border-radius: var(--xeg-radius-lg);
-  }
-
-  /* Focus Ring Utility */
-  .xeg-focus-ring,
-  .xeg-focus-ring:focus-visible {
-    outline: none;
-    box-shadow: var(--xeg-focus-ring);
   }
 
   /* Animation Utility Classes */

@@ -30,8 +30,6 @@
     isolation: isolate;
     contain: style paint;
     background: var(--xeg-gallery-bg, var(--color-bg-primary));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     pointer-events: auto;
     user-select: none;
     overscroll-behavior: contain;

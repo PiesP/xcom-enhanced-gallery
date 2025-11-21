@@ -191,35 +191,30 @@
     --transition-normal: var(--duration-normal) cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: var(--duration-slow) cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Shadows - Semantic Roles (rem for absolute positioning, oklch for colors) */
-    --shadow-xs: 0 0.03125rem 0.0625rem oklch(0 0 0 / 4%);
-    --shadow-sm: 0 0.0625rem 0.125rem oklch(0 0 0 / 5%); /* 0 1px 2px, black 5% */
-    --shadow-md: 0 0.25rem 0.75rem oklch(0 0 0 / 15%); /* 0 4px 12px, black 15% */
-    --shadow-lg: 0 0.5rem 2rem oklch(0 0 0 / 15%); /* 0 8px 32px, black 15% */
-    --shadow-xl: 0 0.25rem 1.25rem oklch(0 0 0 / 30%); /* 0 4px 20px, black 30% */
-    --shadow-inset-border: 0 0 0 0.0625rem oklch(0 0 0 / 5%); /* 0 0 0 1px, black 5% */
-    --shadow-gallery-image: var(--shadow-xl);
-    --shadow-gallery-counter: var(--shadow-sm);
-    --shadow-gallery-nav: 0 0.25rem 1rem oklch(0 0 0 / 12%), 0 0.125rem 0.5rem oklch(0 0 0 / 8%);
-    --shadow-gallery-nav-hover:
-      0 0.5rem 1.5rem oklch(0 0 0 / 18%), 0 0.25rem 0.75rem oklch(0 0 0 / 12%);
-    --shadow-thumbnail: 0 0.125rem 0.5rem oklch(0.234 0 0 / 8%); /* 0 2px 8px, neutral 8% */
-    --shadow-thumbnail-hover: 0 0.25rem 1rem oklch(0.234 0 0 / 12%); /* 0 4px 16px, neutral 12% */
+    /* Shadows - removed for flat design */
+    --shadow-xs: none;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+    --shadow-xl: none;
+    --shadow-inset-border: none;
+    --shadow-gallery-image: none;
+    --shadow-gallery-counter: none;
+    --shadow-gallery-nav: none;
+    --shadow-gallery-nav-hover: none;
+    --shadow-thumbnail: none;
+    --shadow-thumbnail-hover: none;
 
-    /* Legacy Shadow Tokens - 호환성 보장 */
-    --xeg-shadow-xs: var(--shadow-xs);
-    --xeg-shadow-sm: var(--shadow-sm);
-    --xeg-shadow-md: var(--shadow-md);
-    --xeg-shadow-lg: var(--shadow-lg);
-    --xeg-shadow-inset-border: var(--shadow-inset-border);
+    /* Legacy Shadow Tokens - maintained for compatibility */
+    --xeg-shadow-xs: none;
+    --xeg-shadow-sm: none;
+    --xeg-shadow-md: none;
+    --xeg-shadow-lg: none;
+    --xeg-shadow-inset-border: none;
 
     /* Focus indicator tokens */
-    --xeg-focus-ring-width: 0.1875rem; /* 3px */
-    --xeg-focus-ring: 0 0 0 var(--xeg-focus-ring-width)
-      color-mix(in oklch, var(--xeg-focus-ring-color) 70%, transparent);
-
-    /* Focus/Active shadow helpers */
-    --xeg-active-shadow: var(--shadow-md);
+    --xeg-focus-indicator-color: var(--xeg-color-border-primary);
+    --xeg-focus-indicator-weight: 0.125rem;
 
     /* Button Component Typography - Required by Button.module.css */
     --xeg-font-size-sm: 0.875rem;
@@ -312,7 +307,6 @@
     --xeg-modal-border: var(--xeg-modal-border-light);
     --xeg-color-border-primary: var(--color-border-default);
 
-    --xeg-focus-ring-color: var(--xeg-color-border-primary);
     --xeg-settings-gap: var(--space-md);
     --xeg-settings-padding: var(--space-md);
     --xeg-settings-control-gap: var(--space-sm);

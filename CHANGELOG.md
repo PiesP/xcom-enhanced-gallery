@@ -10,6 +10,21 @@ and this project adheres to
 
 ### Fixed
 
+#### Toolbar Button Disablement Regression
+
+- **Issue**: When the gallery first opened, whichever toolbar button started in the
+  disabled state (e.g., **Previous** on the first media item) stayed permanently
+  blocked even after navigation moved the disabled flag to a different control.
+- **Root Cause**: The shared `Button` component's `resolveProp()` helper eagerly
+  evaluated reactive props and wrapped the resulting primitives in constant
+  accessors, so `disabled`, `loading`, and ARIA flags never re-read Solid
+  signals.
+- **Solution**: Swapped the helper for a lazy accessor factory so every read goes
+  back through the original getter (`Button.tsx`), ensuring DOM attributes and
+  pointer handling stay in sync with signal updates. Added a regression test
+  (`test/unit/shared/components/ui/button-disabled-reactivity.test.tsx`) that
+  reproduces the stuck disabled state and now verifies it flips correctly.
+
 #### Username Extraction and Filename Generation Improvement (Phase 432)
 
 - **Issue**: Downloaded filenames generated as
@@ -93,6 +108,22 @@ and this project adheres to
 - Documentation and tests were refreshed: the focus refactor spec includes a
   status/QA checklist, and the UI barrel unit test guards that ToolbarShell
   stays removed.
+
+#### Flat Design Contract Compliance (Phase 431)
+
+- Removed drop shadows, gradients, blur filters, and outline resets from every
+  gallery-facing CSS module (Toolbar, ModalShell, Settings controls, keyboard
+  overlay, gallery globals, VerticalImageItem, VerticalGalleryView, isolated
+  gallery surfaces, and shared animation helpers). Focus indicators now rely on
+  the shared `--xeg-focus-indicator-color` border treatment.
+- Eliminated host-page interference selectors (`container ~ [data-testid]` etc.)
+  and stripped all `!important` overrides so pointer handling is scoped to the
+  gallery shell itself.
+- Added `PHASE_431_FLAT_DESIGN_SPEC.md` to record the acceptance criteria and
+  refreshed the changelog to capture the removal work.
+- Validation: `npx vitest test/unit/shared/styles --run`,
+  `npm run deps:check`, `npm run build`, and `npm run test:unit:batched` now
+  pass with zero flat-design violations.
 
 #### Type System Optimization (Phase 353)
 

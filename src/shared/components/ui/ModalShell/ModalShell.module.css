@@ -93,9 +93,9 @@
   }
 }
 
-.shell:focus {
-  outline: none;
-  box-shadow: var(--xeg-focus-ring);
+.shell:focus,
+.shell:focus-visible {
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-modal-border));
 }
 
 .shell::-webkit-scrollbar {

@@ -226,18 +226,18 @@ export function Button(rawProps: ButtonProps): JSXElement {
     | 'iconOnly';
 
   const fallbackProps = local as ButtonProps;
-  const resolveProp = <K extends ReactivePropKey>(key: K): ButtonProps[K] =>
+  const resolvePropAccessor = <K extends ReactivePropKey>(key: K) => () =>
     (rawProps[key] ?? fallbackProps[key]) as ButtonProps[K];
 
-  const iconOnlyAccessor = toAccessor(resolveProp('iconOnly'));
-  const loadingAccessor = toAccessor(resolveProp('loading'));
-  const disabledAccessor = toAccessor(resolveProp('disabled'));
-  const ariaBusyAccessor = toAccessor(resolveProp('aria-busy'));
-  const ariaPressedAccessor = toAccessor(resolveProp('aria-pressed'));
-  const ariaDescribedbyAccessor = toAccessor(resolveProp('aria-describedby'));
-  const titleAccessor = toAccessor(resolveProp('title'));
-  const ariaLabelAccessor = toAccessor(resolveProp('aria-label'));
-  const ariaLabelledByAccessor = toAccessor(resolveProp('aria-labelledby'));
+  const iconOnlyAccessor = toAccessor(resolvePropAccessor('iconOnly'));
+  const loadingAccessor = toAccessor(resolvePropAccessor('loading'));
+  const disabledAccessor = toAccessor(resolvePropAccessor('disabled'));
+  const ariaBusyAccessor = toAccessor(resolvePropAccessor('aria-busy'));
+  const ariaPressedAccessor = toAccessor(resolvePropAccessor('aria-pressed'));
+  const ariaDescribedbyAccessor = toAccessor(resolvePropAccessor('aria-describedby'));
+  const titleAccessor = toAccessor(resolvePropAccessor('title'));
+  const ariaLabelAccessor = toAccessor(resolvePropAccessor('aria-label'));
+  const ariaLabelledByAccessor = toAccessor(resolvePropAccessor('aria-labelledby'));
 
   const isLoading = createMemo(() => !!loadingAccessor());
   const isDisabled = createMemo(() => !!disabledAccessor() || isLoading());
