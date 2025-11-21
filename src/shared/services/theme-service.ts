@@ -22,6 +22,32 @@ export type Theme = 'light' | 'dark';
  */
 export type ThemeSetting = 'auto' | Theme;
 
+/**
+ * Resolve stored theme preference by coalescing SettingsService and legacy storage values.
+ *
+ * Priority order:
+ * 1. Honor explicit light/dark selections from application settings.
+ * 2. Otherwise, fall back to legacy storage when it contains an explicit selection.
+ * 3. If no explicit selections exist, return whichever value (including 'auto') is available first.
+ */
+export function resolveStoredThemePreference(
+  settingsTheme?: ThemeSetting | null,
+  legacyTheme?: ThemeSetting | null
+): ThemeSetting | null {
+  const isExplicit = (value?: ThemeSetting | null): value is Theme =>
+    value === 'light' || value === 'dark';
+
+  if (isExplicit(settingsTheme)) {
+    return settingsTheme;
+  }
+
+  if (isExplicit(legacyTheme)) {
+    return legacyTheme;
+  }
+
+  return settingsTheme ?? legacyTheme ?? null;
+}
+
 export interface ThemeSetOptions {
   /** Force DOM updates and listener notifications even if the effective theme is unchanged. */
   force?: boolean;
@@ -240,15 +266,12 @@ export class ThemeService extends BaseServiceImpl {
   }
 
   private async loadThemeFromStorage(): Promise<ThemeSetting | null> {
-    const settingsTheme = await this.readThemeFromSettingsAsync();
-    if (settingsTheme) {
-      return settingsTheme;
-    }
-    const legacyTheme = await this.readLegacyThemeSettingAsync();
-    if (legacyTheme) {
-      return legacyTheme;
-    }
-    return null;
+    const [settingsTheme, legacyTheme] = await Promise.all([
+      this.readThemeFromSettingsAsync(),
+      this.readLegacyThemeSettingAsync(),
+    ]);
+
+    return resolveStoredThemePreference(settingsTheme, legacyTheme);
   }
 
   private static normalizeThemeSetting(value: unknown): ThemeSetting | null {
@@ -473,15 +496,13 @@ export class ThemeService extends BaseServiceImpl {
 
   private loadPersistedThemeSetting(): ThemeSetting {
     const settingsTheme = this.readThemeFromSettingsSync();
-    if (settingsTheme) {
-      logger.debug(`[ThemeService] Loaded theme from settings snapshot: ${settingsTheme}`);
-      return settingsTheme;
-    }
-
     const legacyTheme = this.readLegacyThemeSettingSync();
-    if (legacyTheme) {
-      logger.debug(`[ThemeService] Loaded theme from legacy storage: ${legacyTheme}`);
-      return legacyTheme;
+    const resolvedTheme = resolveStoredThemePreference(settingsTheme, legacyTheme);
+
+    if (resolvedTheme) {
+      const source = resolvedTheme === settingsTheme ? 'settings snapshot' : 'legacy storage';
+      logger.debug(`[ThemeService] Loaded theme from ${source}: ${resolvedTheme}`);
+      return resolvedTheme;
     }
 
     logger.debug('[ThemeService] No stored theme found, falling back to auto');
