@@ -1,6 +1,6 @@
 /**
  * @file Toolbar Component Styles (CSS Modules)
- * @description Comprehensive styling for toolbar component with glassmorphism design
+ * @description Flat-design toolbar styling with tokenized borders and zero elevation effects
  *
  * @architecture
  * ## Design System
@@ -41,13 +41,12 @@
  * - Secondary text: var(--xeg-color-text-secondary)
  * - Surface: oklch colors with 90% lightness in light mode
  * - Borders: Subtle 1px divisions using --xeg-color-neutral-*
- * - Focus ring: 2px solid oklch for WCAG 2.1 AA compliance
+ * - Focus indicator: Border color swaps via `--xeg-focus-indicator-color`
  *
  * @dependencies
  * - Design tokens: src/shared/styles/design-tokens.*.css
  * - Theme selectors: CSS variables from design tokens
  * - CSS containment: Modern browsers (Safari 16.4+, Firefox 109+)
- * - Backdrop filter: Modern browsers (Safari 9+, Firefox 103+)
  */
 
 /**
@@ -75,14 +74,14 @@
     --toolbar-surface-base,
     var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface))
   );
-  border: var(--border-width-thin) solid var(--toolbar-button-accent, var(--xeg-toolbar-border));
-
   --toolbar-button-accent: var(--toolbar-surface-border, var(--xeg-toolbar-border));
   --toolbar-button-accent-hover: var(--xeg-color-border-hover);
-  --toolbar-button-focus-shadow: 0 0 0 0.125em
-    color-mix(in oklch, var(--toolbar-button-accent-hover) 20%, transparent);
-  --toolbar-button-hover-shadow: none;
+  --toolbar-button-focus-border: var(
+    --xeg-focus-indicator-color,
+    var(--toolbar-button-accent-hover)
+  );
 
+  border: var(--border-width-thin) solid var(--toolbar-button-accent, var(--xeg-toolbar-border));
   transition:
     var(--xeg-transition-surface-fast),
     transform var(--xeg-duration-fast) var(--xeg-ease-standard);
@@ -90,18 +89,12 @@
 
 /**
  * @subsection Focus Indicator
- * WCAG 2.1 AA compliance: 2px focus ring with tokenized contrast
+ * WCAG 2.1 AA compliance: Border color swap with tokenized contrast
  * Visible on keyboard navigation (Phase 87: Keyboard navigation focus management)
  */
+.toolbarButton:focus,
 .toolbarButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
-}
-
-/* 클릭 상태 - 단순화된 피드백 */
-.toolbarButton:active:not([data-disabled='true']) {
-  box-shadow: none;
-  /* 단순한 클릭 효과 - transform 제거 */
+  border-color: var(--toolbar-button-focus-border);
 }
 
 .galleryToolbar {
@@ -120,7 +113,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--xeg-z-toolbar);
-  display: inline-flex;
+  display: var(--toolbar-display, inline-flex);
   /* Phase 49: flex-direction 제거 - 기본 row 사용 */
   /* 설정 패널은 absolute positioning으로 플로우에서 제외됨 */
   align-items: center;
@@ -131,6 +124,7 @@
 
   /* CSS 변수를 통한 부모 컨테이너의 툴바 가시성 상속 */
   color: var(--xeg-toolbar-text-color, var(--xeg-color-text-primary));
+  visibility: var(--toolbar-visibility, visible);
   opacity: var(--toolbar-opacity, 1);
   pointer-events: var(--toolbar-pointer-events, auto);
   transition: var(--xeg-transition-elevation-normal);
@@ -145,9 +139,6 @@
 .galleryToolbar[data-tweet-panel-expanded='true'] {
   /* 하단 border-radius 제거하여 패널과 매끄럽게 연결 */
   border-radius: var(--xeg-radius-lg) var(--xeg-radius-lg) 0 0;
-
-  /* 확장 상태에서 더 강조된 그림자 - 패널까지 포함하는 통합 그림자 */
-  box-shadow: none;
 }
 
 /* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
@@ -155,24 +146,19 @@
 /* 상태별 CSS 커스텀 프로퍼티 정의 - 기본값 수정으로 가시성 보장 */
 .galleryToolbar[data-state='idle'],
 .galleryToolbar:not([data-state]) {
-  --toolbar-opacity: 1 !important;
-  --toolbar-pointer-events: auto !important;
-  /* 명시적 가시성 보장 */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+  --toolbar-visibility: visible;
+  --toolbar-display: inline-flex;
 }
 
 .galleryToolbar[data-state='loading'],
 .galleryToolbar[data-state='downloading'],
 .galleryToolbar[data-state='error'] {
-  --toolbar-pointer-events: auto !important;
-
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: flex !important;
-  pointer-events: auto !important;
+  --toolbar-opacity: 1;
+  --toolbar-pointer-events: auto;
+  --toolbar-visibility: visible;
+  --toolbar-display: inline-flex;
 }
 
 .toolbarContent {
@@ -214,7 +200,6 @@
 /* 데이터 속성 기반 상태 관리 */
 :where(.toolbarButton[data-active='true'], .toolbarButton[data-selected='true']) {
   border-color: var(--toolbar-button-accent-hover);
-  box-shadow: var(--toolbar-button-focus-shadow);
 }
 
 .toolbarButton[data-loading='true'] {
@@ -236,7 +221,6 @@
     /* 복잡한 transform 효과 제거 */
     border-color: var(--toolbar-button-accent-hover);
     transform: translateY(var(--xeg-button-lift));
-    box-shadow: var(--toolbar-button-hover-shadow);
   }
 }
 
@@ -244,25 +228,19 @@
 :where(.toolbarButton.primary, .downloadCurrent) {
   --toolbar-button-accent: var(--xeg-color-primary);
   --toolbar-button-accent-hover: var(--xeg-color-primary-hover);
-  --toolbar-button-focus-shadow: 0 0 0 0.125em
-    color-mix(in oklch, var(--xeg-color-primary) 25%, transparent);
-  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
+  --toolbar-button-focus-border: var(--xeg-color-primary-hover);
 }
 
 :where(.toolbarButton.success, .downloadAll) {
   --toolbar-button-accent: var(--xeg-color-success);
   --toolbar-button-accent-hover: var(--xeg-color-success-hover);
-  --toolbar-button-focus-shadow: 0 0 0 0.125em
-    color-mix(in oklch, var(--xeg-color-success) 25%, transparent);
-  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
+  --toolbar-button-focus-border: var(--xeg-color-success-hover);
 }
 
 :where(.toolbarButton.danger, .closeButton) {
   --toolbar-button-accent: var(--xeg-color-error);
   --toolbar-button-accent-hover: var(--xeg-color-error-hover);
-  --toolbar-button-focus-shadow: 0 0 0 0.125em
-    color-mix(in oklch, var(--xeg-color-error) 25%, transparent);
-  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
+  --toolbar-button-focus-border: var(--xeg-color-error-hover);
 }
 
 :where(.toolbarButton.danger, .closeButton):hover:not([data-disabled='true']) {
@@ -278,7 +256,6 @@
 .navButton:active:not(:disabled),
 .navButton.active {
   border-color: var(--xeg-color-primary);
-  box-shadow: 0 0 0 0.125em color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
 }
 
 /* 미디어 카운터 */
@@ -350,21 +327,17 @@ button.fitButton {
 
 .fitButton[data-selected='true'] {
   --toolbar-button-accent-hover: var(--xeg-color-primary);
-  --toolbar-button-focus-shadow: 0 0 0 0.125em
-    color-mix(in oklch, var(--xeg-color-primary) 30%, transparent);
-  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
+  --toolbar-button-focus-border: var(--xeg-color-primary-hover);
 }
 
+.fitButton:focus,
 .fitButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  border-color: var(--toolbar-button-focus-border, var(--xeg-color-border-hover));
 }
 
 /* 다운로드 버튼 - 기본 스타일 상속 */
 .downloadButton {
   position: relative;
-
-  --toolbar-button-hover-shadow: var(--toolbar-button-focus-shadow);
 }
 
 /* 반응형 디자인 */
@@ -451,9 +424,6 @@ button.fitButton {
 @media (prefers-reduced-transparency: reduce) {
   .galleryToolbar {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    box-shadow: none;
   }
 
   [data-theme='dark'] .galleryToolbar {
@@ -466,8 +436,6 @@ button.fitButton {
   /* 768px → 48em */
   .galleryToolbar {
     background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
     min-height: 3em; /* 48px → 3em */
   }
@@ -499,7 +467,7 @@ button.fitButton {
   .settingsButton:hover:not(:disabled),
   .closeButton:hover:not(:disabled),
   .fitButton:hover {
-    transform: none !important;
+    transform: none;
   }
 }
 
@@ -532,7 +500,6 @@ button.fitButton {
   border-top: var(--border-width-thin) solid
     var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
-  box-shadow: none;
   z-index: var(--xeg-z-toolbar-panel);
   will-change: transform, opacity;
   overscroll-behavior: contain;
@@ -558,7 +525,6 @@ button.fitButton {
   visibility: visible;
   pointer-events: auto;
   border-top-color: var(--toolbar-surface-border, var(--xeg-toolbar-border));
-  box-shadow: none;
   transition:
     var(--xeg-toolbar-panel-transition),
     transform var(--xeg-duration-normal) var(--xeg-ease-standard),
@@ -650,9 +616,13 @@ button.fitButton {
   text-decoration: underline;
 }
 
-:where(.tweetLink, .tweetContent a):focus {
-  outline: var(--xeg-focus-ring, 0.125em solid currentColor);
-  outline-offset: var(--xeg-focus-ring-offset, 0.125em);
+:where(.tweetLink, .tweetContent a):focus,
+:where(.tweetLink, .tweetContent a):focus-visible {
+  outline: 0.125rem solid var(
+    --xeg-focus-indicator-color,
+    var(--xeg-color-primary)
+  );
+  outline-offset: 0.125rem;
   border-radius: var(--xeg-radius-xs);
 }
 

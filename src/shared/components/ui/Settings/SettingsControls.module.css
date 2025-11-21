@@ -9,7 +9,7 @@
  * - Colors: --xeg-color-text-primary, --xeg-color-text-secondary, --xeg-color-border-*
  * - Spacing: --xeg-settings-gap, --xeg-settings-padding, --xeg-settings-control-gap
  * - Typography: --xeg-settings-label-font-size, --font-size-xs, --font-weight-*
- * - Interactive: --xeg-focus-ring, --xeg-focus-ring-offset, transitions
+ * - Interactive: --xeg-focus-ring, --xeg-focus-ring-width, transitions
  * - Radius: --xeg-radius-md (border-radius consistency)
  *
  * **Layout Architecture**:
@@ -45,14 +45,14 @@
  *
  * **Interactive States**:
  * - :hover (border, background, smooth transition)
- * - :focus / :focus-visible (outline via --xeg-focus-ring)
+ * - :focus / :focus-visible (border-color change via focus indicator tokens)
  * - Transitions: All properties via --xeg-duration-fast and --xeg-ease-standard
  * - No :disabled state (not needed for settings UI)
  *
  * **Focus Ring Integration** (Accessibility):
- * - outline: var(--xeg-focus-ring) (visible focus indicator)
- * - outline-offset: var(--xeg-focus-ring-offset) (space from border)
- * - Color managed by design token system
+ * - border-color swaps driven by `--xeg-focus-indicator-color`
+ * - Ring width: var(--xeg-focus-ring-width) (consistent 3px default)
+ * - Color managed by design token system (light/dark aware)
  * - Ensures WCAG 2.1 AA compliance for keyboard navigation
  *
  * **Option Styling Limitation** (Phase 198):
@@ -90,8 +90,8 @@
  * - Layout: --xeg-settings-gap, --xeg-settings-padding, --xeg-settings-control-gap
  * - Typography: --xeg-settings-label-font-size, --font-size-xs, --font-weight-*
  * - Colors: --xeg-color-text-primary, --xeg-color-text-secondary, --xeg-color-border-*
- * - Interactive: --xeg-focus-ring, --xeg-focus-ring-offset, --xeg-radius-md
-* - Input: --xeg-settings-select-padding, --xeg-toolbar-panel-surface, --xeg-settings-select-font-size
+ * - Interactive: --xeg-focus-ring, --xeg-focus-ring-width, --xeg-radius-md
+ * - Input: --xeg-settings-select-padding, --xeg-toolbar-panel-surface, --xeg-settings-select-font-size
  * - Animation: --xeg-duration-fast, --xeg-ease-standard
  * - Borders: --border-width-thin
  *
@@ -258,7 +258,7 @@
  * **Interactive States**:
  * - All transitions via --xeg-duration-fast and --xeg-ease-standard
  * - Hover: Border/background color change
- * - Focus/Focus-visible: Outline with --xeg-focus-ring
+ * - Focus/Focus-visible: Border-color swap via focus indicator tokens
  *
  * **Phase 198 Note** (Critical):
  * - appearance: REMOVED intentionally
@@ -268,7 +268,7 @@
  *
  * **Accessibility**:
  * - Native select (screen reader friendly)
- * - Focus outline (keyboard navigation)
+ * - Focus halo (keyboard navigation)
  * - Semantic HTML (not custom-built dropdown)
  *
  * **Design Token Dependencies**:
@@ -278,8 +278,8 @@
  * - --xeg-toolbar-border: Border color
  * - --border-width-thin: Border width (typically 1px)
  * - --xeg-radius-md: Border radius
- * - --xeg-focus-ring: Focus outline color/width
- * - --xeg-focus-ring-offset: Focus outline offset
+ * - --xeg-focus-indicator-color: Focus border color
+ * - --xeg-focus-indicator-width: Recommended 3px-equivalent treatment
  * - --xeg-duration-fast: Transition duration (typically 0.2s)
  * - --xeg-ease-standard: Easing function (typically ease-in-out)
  * - --xeg-color-text-primary: Text color
@@ -306,7 +306,7 @@
    * Phase 318: Optimized transitions for interactive states
    * - border-color: Hover and focus border changes
    * - background-color: Hover background updates
-   * - box-shadow: Focus state indication (future enhancement)
+   * - border-color: Focus indicator (synchronized with --xeg-focus-indicator-color)
    * - Duration: --xeg-duration-fast (typically 0.2s)
    * - Easing: --xeg-ease-standard (typically ease-in-out)
    *
@@ -314,8 +314,7 @@
    */
   transition:
     border-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    background-color var(--xeg-duration-fast) var(--xeg-ease-standard),
-    box-shadow var(--xeg-duration-fast) var(--xeg-ease-standard);
+    background-color var(--xeg-duration-fast) var(--xeg-ease-standard);
 }
 
 /**
@@ -351,24 +350,22 @@
  *
  * **Changes**:
  * - border-color: Changes to --xeg-color-border-hover (matches hover)
- * - outline: --xeg-focus-ring (typically 2-3px border)
- * - outline-offset: --xeg-focus-ring-offset (typically 2px)
+ * - border-color: Uses --xeg-focus-indicator-color for contrast
+ * - No outline suppression; browsers manage outlines if desired
  *
  * **Accessibility**:
- * - Clear focus indicator (essential for keyboard navigation)
+ * - Clear halo indicator (essential for keyboard navigation)
  * - Sufficient contrast (WCAG color contrast requirements)
- * - Outline offset prevents visual "boxing in" feel
- * - Matches OS/browser native focus styling
+ * - Soft glow avoids jittery offsets around curved corners
+ * - Consistent with other gallery controls (buttons, toolbar)
  *
  * **Design Token Dependencies**:
- * - --xeg-focus-ring: Focus ring color and width (typically 3px solid currentColor)
- * - --xeg-focus-ring-offset: Space between element and ring (typically 2px)
+ * - --xeg-focus-indicator-color: Focus border color token
+ * - --xeg-focus-indicator-width: Recommended thickness guidance
  */
 .select:focus,
 .select:focus-visible {
-  border-color: var(--xeg-color-border-hover);
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-hover));
 }
 
 /**

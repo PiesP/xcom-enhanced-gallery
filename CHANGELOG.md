@@ -10,6 +10,21 @@ and this project adheres to
 
 ### Fixed
 
+#### Toolbar Button Disablement Regression
+
+- **Issue**: When the gallery first opened, whichever toolbar button started in the
+  disabled state (e.g., **Previous** on the first media item) stayed permanently
+  blocked even after navigation moved the disabled flag to a different control.
+- **Root Cause**: The shared `Button` component's `resolveProp()` helper eagerly
+  evaluated reactive props and wrapped the resulting primitives in constant
+  accessors, so `disabled`, `loading`, and ARIA flags never re-read Solid
+  signals.
+- **Solution**: Swapped the helper for a lazy accessor factory so every read goes
+  back through the original getter (`Button.tsx`), ensuring DOM attributes and
+  pointer handling stay in sync with signal updates. Added a regression test
+  (`test/unit/shared/components/ui/button-disabled-reactivity.test.tsx`) that
+  reproduces the stuck disabled state and now verifies it flips correctly.
+
 #### Username Extraction and Filename Generation Improvement (Phase 432)
 
 - **Issue**: Downloaded filenames generated as
@@ -56,8 +71,59 @@ and this project adheres to
   - After: `spmy0495_1909228010194309548_20251105_1.jpg` ✅
 - **Validation**: TypeScript 0 errors, ESLint 0 warnings, actual download test
   passed
+- **ToolbarShell container**: Removed the deprecated toolbar wrapper component,
+  stylesheet, and barrel exports. UI barrel tests enforce that the symbol stays
+  absent going forward.
+
+#### Service Dependency Graph Cleanup (Phase 433)
+
+- **Issue**: Dependency Cruiser reported two persistent circular references:
+  `ThemeService ↔ service-accessors` (runtime import) and
+  `app.types ↔ core/core-types` (type-only re-export loop).
+- **Solution**:
+  - Introduced `theme-service.contract.ts`, making container accessors depend on
+    the contract instead of the concrete implementation. The ThemeService class
+    now implements this contract and re-exports it for consumers.
+  - Moved the shared `Cleanupable` interface into `lifecycle.types.ts` so
+    `core/core-types` no longer import from `app.types`. Removed the redundant
+    re-export block responsible for the type cycle.
+- **Impact**: Dependency graph is cycle-free again, TypeScript/ESLint stay clean
+  on strict settings, and feature modules continue to consume the exact same
+  public APIs via the service container.
 
 ### Changed
+
+#### Focus Shadow + Toolbar Cleanup (Phase 430)
+
+- Replaced every outline-based focus indicator (toolbar controls, settings
+  selects, gallery thumbnails, modal shells, keyboard help overlay) with the
+  shared `--xeg-focus-ring` halo token. Old outline/offset tokens and CSS rules
+  were deleted, and the semantic/component token layers plus generated typings
+  only expose the new contract.
+- Toolbar visibility, hover, and reduced-motion overrides now rely on CSS
+  custom properties and cascade order (no `!important` stacking). Wrapper
+  `data-state` attributes set `--toolbar-opacity`, `--toolbar-pointer-events`,
+  `--toolbar-visibility`, and `--toolbar-display` so the userscript interferes
+  less with host DOM.
+- Documentation and tests were refreshed: the focus refactor spec includes a
+  status/QA checklist, and the UI barrel unit test guards that ToolbarShell
+  stays removed.
+
+#### Flat Design Contract Compliance (Phase 431)
+
+- Removed drop shadows, gradients, blur filters, and outline resets from every
+  gallery-facing CSS module (Toolbar, ModalShell, Settings controls, keyboard
+  overlay, gallery globals, VerticalImageItem, VerticalGalleryView, isolated
+  gallery surfaces, and shared animation helpers). Focus indicators now rely on
+  the shared `--xeg-focus-indicator-color` border treatment.
+- Eliminated host-page interference selectors (`container ~ [data-testid]` etc.)
+  and stripped all `!important` overrides so pointer handling is scoped to the
+  gallery shell itself.
+- Added `PHASE_431_FLAT_DESIGN_SPEC.md` to record the acceptance criteria and
+  refreshed the changelog to capture the removal work.
+- Validation: `npx vitest test/unit/shared/styles --run`,
+  `npm run deps:check`, `npm run build`, and `npm run test:unit:batched` now
+  pass with zero flat-design violations.
 
 #### Type System Optimization (Phase 353)
 

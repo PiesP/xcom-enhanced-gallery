@@ -110,10 +110,6 @@
   display: flex;
   flex-direction: column;
 
-  /* Surfaces stay flat (no blur) */
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-
   /* Performance hints */
   transform: translateZ(0);
   will-change: opacity, transform;
@@ -161,13 +157,8 @@
   /* Pointer handling */
   pointer-events: var(--toolbar-pointer-events, none);
 
-  /* Gradient background driven by tokens */
-  background: linear-gradient(
-    to bottom,
-    var(--xeg-toolbar-wrapper-gradient-start, var(--xeg-bg-toolbar)) 0%,
-    var(--xeg-toolbar-wrapper-gradient-mid, var(--xeg-bg-toolbar)) 70%,
-    var(--xeg-toolbar-wrapper-gradient-end, var(--xeg-bg-toolbar)) 100%
-  );
+  /* Flat surface background */
+  background: var(--xeg-toolbar-wrapper-surface, var(--xeg-bg-toolbar));
   border: var(--xeg-toolbar-wrapper-border, none);
   border-radius: var(--xeg-toolbar-wrapper-radius, 0);
   margin: var(--xeg-toolbar-wrapper-margin, 0);

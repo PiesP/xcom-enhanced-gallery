@@ -25,7 +25,8 @@
 
 import { logger } from '@shared/logging';
 import { getSolid } from '../../external/vendors';
-import { ThemeService, themeService } from '../../services/theme-service';
+import type { ThemeServiceContract } from '../../services/theme-service';
+import { themeService } from '../../services/theme-service';
 import {
   LanguageService,
   languageService as sharedLanguageService,
@@ -43,7 +44,7 @@ export interface UseToolbarSettingsControllerOptions {
   readonly setSettingsExpanded: (expanded: boolean) => void;
   readonly toggleSettingsExpanded: () => void;
   readonly documentRef?: Document;
-  readonly themeService?: ThemeService;
+  readonly themeService?: ThemeServiceContract;
   readonly languageService?: LanguageService;
   readonly focusDelayMs?: number;
   readonly selectChangeGuardMs?: number;
@@ -65,7 +66,7 @@ export interface ToolbarSettingsControllerResult {
   readonly handleLanguageChange: (event: Event) => void;
 }
 
-function resolveThemeService(override?: ThemeService): ThemeService {
+function resolveThemeService(override?: ThemeServiceContract): ThemeServiceContract {
   if (override) {
     return override;
   }

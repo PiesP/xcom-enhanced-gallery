@@ -31,15 +31,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  .xeg-gallery-root :focus {
-    outline: none;
-  }
-
-  .xeg-gallery-root :focus-visible {
-    outline: var(--xeg-focus-ring, 0.125rem solid currentColor);
-    outline-offset: var(--xeg-focus-ring-offset, 0.125rem);
-  }
-
   .xeg-gallery-root button {
     border: none;
     background: none;

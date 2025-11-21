@@ -8,7 +8,7 @@
  * **Design System**:
  * - All colors, spacing, sizing use CSS custom properties (--xeg-* design tokens)
  * - No hardcoded values
- * - Glassmorphism effect with backdrop blur
+ * - Flat surfaces focused on border contrast (no blur)
  * - Responsive fit modes for different image dimensions
  *
  * **Fit Modes** (CSS class-based):
@@ -50,7 +50,7 @@
   overflow: visible;
   transition: var(--xeg-transition-interaction-fast);
   cursor: pointer;
-  border: 0.0625rem solid var(--xeg-media-glass-border); /* 1px = 0.0625rem */
+  border: 0.0625rem solid var(--xeg-color-border-primary);
   background: var(--xeg-color-bg-secondary);
   padding: var(--xeg-spacing-sm);
   width: 100%;
@@ -60,50 +60,38 @@
   align-items: center;
   pointer-events: auto;
 
-  /* 글래스모피즘 효과 */
-  backdrop-filter: var(--xeg-media-glass-blur);
-  -webkit-backdrop-filter: var(--xeg-media-glass-blur);
-  box-shadow: var(--xeg-media-glass-shadow);
-
   /* 성능 최적화 */
   transform: translateZ(0);
-  will-change: transform, box-shadow;
+  will-change: transform;
   contain: layout style;
-
-  /* 통합된 포커스/활성 상태 처리 - 기본 outline 제거 */
-  outline: none;
 }
 
 .container:hover {
   transform: var(--xeg-hover-lift);
   background: var(--xeg-color-surface-elevated);
   border-color: var(--xeg-glass-border-medium);
-  box-shadow: var(--xeg-glass-shadow-medium), var(--xeg-shadow-md);
 }
 
-/* 포커스 상태 - outline 대신 box-shadow 사용 */
+/* 포커스 상태는 보더 색상만 변경 */
 .container:focus-visible {
-  box-shadow: var(--xeg-focus-shadow);
-  border-radius: var(--xeg-radius-lg);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }
 
 /* 활성 상태 - 더 강한 강조 */
 .container.active {
-  box-shadow: var(--xeg-active-shadow);
-  border-radius: var(--xeg-radius-lg);
+  border-color: var(--xeg-glass-border-strong, var(--xeg-color-border-strong));
   transition: var(--xeg-transition-interaction-fast);
   transform: translateZ(0);
 }
 
 /* 활성+포커스 상태 - 중복 제거 */
 .container.active:focus-visible {
-  box-shadow: var(--xeg-active-shadow);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-strong));
 }
 
 /* 포커스된 상태 (스크롤 대상) */
 .container.focused {
-  box-shadow: var(--xeg-focus-shadow);
-  border-radius: var(--xeg-radius-lg);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
   transition: var(--xeg-transition-interaction-fast);
 }
 
@@ -483,15 +471,7 @@
 
 /* 이벤트 전파 차단을 위한 CSS 클래스 */
 .eventBlocked {
-  pointer-events: none !important;
-}
-
-/* Twitter 기본 UI 요소 차단 */
-.container ~ [data-testid],
-.container ~ [role='dialog'],
-.container ~ .r-1p0dtai {
-  pointer-events: none !important;
-  z-index: var(--xeg-z-tooltip) !important;
+  pointer-events: none;
 }
 
 /* Phase 254: 모션 감소는 semantic 레이어의 --xeg-transition-* 토큰으로 자동 처리 */

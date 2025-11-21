@@ -26,7 +26,7 @@ import { MediaService } from '../../shared/services/media-service';
 import { NotificationService } from '@shared/services/notification-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import type { SettingsService } from '../settings/services/settings-service';
-import type { ThemeService, ThemeSetting } from '@shared/services/theme-service';
+import type { ThemeServiceContract, ThemeSetting } from '@shared/services/theme-service';
 
 /**
  * Gallery app configuration interface
@@ -219,7 +219,7 @@ export class GalleryApp {
     }
   }
 
-  private reapplyStoredTheme(themeService: ThemeService): void {
+  private reapplyStoredTheme(themeService: ThemeServiceContract): void {
     if (!this.settingsService) {
       return;
     }

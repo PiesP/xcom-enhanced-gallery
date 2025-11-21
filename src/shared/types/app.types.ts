@@ -33,13 +33,7 @@ export interface AppConfig {
   readonly autoStart: boolean;
 }
 
-/**
- * Synchronously cleanupable resource interface
- * @description Contract for objects requiring memory/resource cleanup
- */
-export interface Cleanupable {
-  cleanup(): void;
-}
+export type { Cleanupable } from './lifecycle.types';
 
 // ================================
 // Core types and patterns (re-export)

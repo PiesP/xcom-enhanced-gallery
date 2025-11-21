@@ -1,5 +1,5 @@
 import type { FilenameService } from '@shared/services/file-naming';
-import type { ThemeService } from '@shared/services/theme-service';
+import type { ThemeServiceContract } from '@shared/services/theme-service.contract';
 import type { GalleryRenderer } from '@shared/interfaces/gallery.interfaces';
 
 import { CoreServiceRegistry } from '@shared/container/core-service-registry';
@@ -32,8 +32,8 @@ export type CoreBaseServiceIdentifier = (typeof CORE_BASE_SERVICE_IDENTIFIERS)[n
  * @returns ThemeService for theme management
  * @throws CoreService throws if theme service not registered
  */
-export function getThemeService(): ThemeService {
-  return CoreServiceRegistry.get<ThemeService>(SERVICE_KEYS.THEME);
+export function getThemeService(): ThemeServiceContract {
+  return CoreServiceRegistry.get<ThemeServiceContract>(SERVICE_KEYS.THEME);
 }
 
 /**

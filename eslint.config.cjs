@@ -2,9 +2,15 @@
 // deterministic linting environment on CI without relying on editor settings.
 /* eslint-disable unicorn/prevent-abbreviations */
 const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+<<<<<<< HEAD
 module.exports = [
   // Use TypeScript plugin's flat recommended config as the base set of rules
   // TypeScript plugin's flat recommended config
+=======
+
+module.exports = [
+  // Use TypeScript plugin's flat recommended config as the base set of rules
+>>>>>>> refactor/CSS
   ...typescriptPlugin.configs['flat/recommended'],
   // Minimal project specific overrides
   {

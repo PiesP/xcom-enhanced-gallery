@@ -116,7 +116,12 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
 
     const { render, createComponent } = getSolid();
+<<<<<<< HEAD
     const handleDownload = (type: 'current' | 'all') => this.handleDownload(type);
+=======
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+>>>>>>> refactor/CSS
     const handleClose = () => {
       closeGallery();
       this.onCloseCallback?.();

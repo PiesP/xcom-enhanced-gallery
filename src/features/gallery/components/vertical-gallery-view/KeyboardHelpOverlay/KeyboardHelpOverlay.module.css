@@ -50,7 +50,7 @@
  * - background: Uses modal background token
  * - border: Thin border with modal border color token
  * - border-radius: Rounded corners per design system
- * - box-shadow: Modal elevation shadow
+ * - elevation handled via border contrast (flat surface)
  * - z-index: Stacked above backdrop
  *
  * **Spacing**:
@@ -67,7 +67,6 @@
   border-radius: var(--xeg-radius-2xl);
   background: var(--xeg-modal-bg);
   border: var(--border-width-thin) solid var(--xeg-modal-border);
-  box-shadow: var(--xeg-shadow-lg);
   z-index: var(--xeg-z-modal-foreground);
 }
 
@@ -128,22 +127,27 @@
   width: 2.5em;
   height: 2.5em;
   border-radius: var(--xeg-radius-md);
+  border: var(--border-width-thin) solid var(--xeg-color-border-primary);
+  background: var(--xeg-color-bg-primary);
+  color: var(--xeg-color-text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--xeg-transition-interaction-fast);
 }
 
 /**
  * Close Button Focus: Keyboard navigation indicator
- *
+
  * **Accessibility**:
  * - Uses :focus-visible - Only shows on keyboard navigation (not mouse click)
- * - outline: Focus ring from design token
- * - outline-offset: Visual separation from button boundary
- *
+ * - border-color swap driven by focus indicator token
+
  * **Standards**:
- * - Follows WCAG 2.1 AA focus indicator requirements
- * - Minimum 3px focus ring width
- * - Sufficient contrast against background
+ * - Follows WCAG 2.1 AA focus indicator requirements using border contrast
+ * - Minimum 3px-equivalent contrast handled by --xeg-focus-indicator-* tokens
+ * - Sufficient contrast against background (token-managed)
  */
 .closeButton:focus-visible {
-  outline: var(--xeg-focus-ring);
-  outline-offset: var(--xeg-focus-ring-offset);
+  border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
 }

@@ -318,8 +318,7 @@
 
   .xeg-thumbnail:focus,
   .xeg-thumbnail:focus-visible {
-    outline: var(--xeg-focus-ring);
-    outline-offset: var(--xeg-focus-ring-offset);
+    border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
   }
 
   /* Backdrop - Click detection */

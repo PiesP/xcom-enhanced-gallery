@@ -11,6 +11,14 @@ import { logger } from '@shared/logging';
 import { getPersistentStorage } from './persistent-storage';
 import { BaseServiceImpl } from './base-service';
 import { syncThemeAttributes } from '@shared/utils/theme-dom';
+import type {
+  Theme,
+  ThemeSetting,
+  ThemeSetOptions,
+  ThemeChangeListener,
+  SettingsServiceLike,
+  ThemeServiceContract,
+} from './theme-service.contract';
 
 const getMutationObserverCtor = (): typeof MutationObserver | undefined => {
   if (typeof MutationObserver !== 'undefined') {
@@ -23,16 +31,6 @@ const getMutationObserverCtor = (): typeof MutationObserver | undefined => {
 
   return undefined;
 };
-
-/**
- * Theme type
- */
-export type Theme = 'light' | 'dark';
-
-/**
- * Theme setting type (includes automatic detection)
- */
-export type ThemeSetting = 'auto' | Theme;
 
 /**
  * Resolve stored theme preference by coalescing SettingsService and legacy storage values.
@@ -60,34 +58,11 @@ export function resolveStoredThemePreference(
   return settingsTheme ?? legacyTheme ?? null;
 }
 
-export interface ThemeSetOptions {
-  /** Force DOM updates and listener notifications even if the effective theme is unchanged. */
-  force?: boolean;
-  /** Skip persistence when true (useful for startup reapply). Defaults to true (persist). */
-  persist?: boolean;
-}
-
 type ThemeSettingsSnapshot = {
   gallery?: {
     theme?: ThemeSetting | string | null;
   } | null;
 } | null;
-
-/**
- * Theme change event listener
- */
-export type ThemeChangeListener = (theme: Theme, setting: ThemeSetting) => void;
-
-/**
- * Interface for SettingsService interaction
- */
-export interface SettingsServiceLike {
-  get?: (key: string) => unknown;
-  set?: (key: string, value: unknown) => Promise<void> | void;
-  subscribe?: (
-    listener: (event: { key: string; oldValue: unknown; newValue: unknown }) => void
-  ) => () => void;
-}
 
 /**
  * System Theme Service - Phase 360: Direct PersistentStorage usage
@@ -97,7 +72,7 @@ export interface SettingsServiceLike {
  * - onDestroy(): Clean up MediaQueryList listeners and state
  * - isInitialized(): Query method for state
  */
-export class ThemeService extends BaseServiceImpl {
+export class ThemeService extends BaseServiceImpl implements ThemeServiceContract {
   private static readonly VALID_SETTINGS: readonly ThemeSetting[] = ['auto', 'light', 'dark'];
 
   private readonly storage = getPersistentStorage();
@@ -679,3 +654,12 @@ export class ThemeService extends BaseServiceImpl {
  * Phase 230: Export added for BaseService initialization
  */
 export const themeService = new ThemeService();
+
+export type {
+  Theme,
+  ThemeSetting,
+  ThemeSetOptions,
+  ThemeChangeListener,
+  SettingsServiceLike,
+  ThemeServiceContract,
+} from './theme-service.contract';

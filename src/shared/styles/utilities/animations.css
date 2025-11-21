@@ -91,13 +91,12 @@
     }
   }
 
-  .xeg-no-animation,
-  .xeg-no-animation * {
-    animation: none !important;
-    transition: none !important;
+  :where(.xeg-no-animation, .xeg-no-animation *) {
+    animation: none;
+    transition: none;
   }
 
   .xeg-no-animation .xeg-transition-hover:hover {
-    transform: none !important;
+    transform: none;
   }
 }
