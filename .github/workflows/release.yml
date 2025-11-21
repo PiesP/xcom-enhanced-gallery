@@ -32,6 +32,9 @@ env:
   NODE_VERSION: "24"
   XEG_DISABLE_LOCAL_CONFIG: "true"
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -43,6 +46,8 @@ jobs:
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
       current_version: ${{ steps.check.outputs.current_version }}
+    permissions:
+      contents: read
 
     steps:
       - name: 📥 Checkout code
@@ -99,6 +104,8 @@ jobs:
     needs: check-changes
     if: needs.check-changes.outputs.should_release == 'true'
     timeout-minutes: 8
+    permissions:
+      contents: write
 
     steps:
       - name: 📥 Checkout code

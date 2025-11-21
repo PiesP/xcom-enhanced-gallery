@@ -17,6 +17,9 @@ env:
   NODE_VERSION: "24"
   XEG_DISABLE_LOCAL_CONFIG: "true"
 
+permissions:
+  contents: read
+
 jobs:
   security-audit:
     name: 🔍 Security Vulnerability Scan
@@ -66,6 +69,8 @@ jobs:
     name: 📜 License Compliance Check
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
 
     steps:
       - name: 📥 Checkout code

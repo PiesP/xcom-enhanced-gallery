@@ -113,10 +113,13 @@ import { STABLE_SELECTORS } from '@/constants';
 import { QuoteTweetDetector } from '@shared/services/media-extraction/strategies/quote-tweet-detector';
 import type { MediaExtractionOptions, TweetInfo } from '@shared/types/media.types';
 import type { MediaExtractionResult, MediaInfo } from '@shared/types/media.types';
+import { isHostMatching } from '@shared/utils/url/host-utils';
 
 type DimensionPair = { width: number; height: number };
 
 const DIMENSION_PATTERN = /\/(\d{2,6})x(\d{2,6})\//;
+const TWITTER_IMAGE_CDN_HOST = 'pbs.twimg.com';
+const TWITTER_VIDEO_CDN_HOST = 'video.twimg.com';
 
 /**
  * Parse positive number from various sources
@@ -372,9 +375,10 @@ export class DOMDirectExtractor {
       metadata: {
         extractedAt: Date.now(),
         sourceType: 'dom-direct',
-        strategy: 'dom-fallback',
+        strategy: 'dom-direct-fallback',
+        mediaCount: mediaItems.length,
       },
-      tweetInfo: tweetInfo ?? null,
+      tweetInfo,
     };
   }
 
@@ -483,7 +487,7 @@ export class DOMDirectExtractor {
             index,
             tweetId: tweetInfo?.tweetId,
           });
-        } else if (imgElement.src?.includes('pbs.twimg.com')) {
+        } else if (isHostMatching(imgElement.src, [TWITTER_IMAGE_CDN_HOST])) {
           logger.debug(
             '[DOMDirectExtractor] Original image extraction not possible (already orig)',
             {
@@ -505,9 +509,11 @@ export class DOMDirectExtractor {
     });
 
     // Extract videos
-    const videos = container.querySelectorAll('video[src*="video.twimg.com"]');
-    videos.forEach((video, _index) => {
-      const videoElement = video as HTMLVideoElement;
+    const videos = Array.from(container.querySelectorAll('video[src]')).filter(videoElement =>
+      isHostMatching(videoElement.getAttribute('src'), [TWITTER_VIDEO_CDN_HOST])
+    ) as HTMLVideoElement[];
+
+    videos.forEach((videoElement, _index) => {
       if (videoElement.src) {
         // Phase 330: Optimize video URL for MP4 quality (tag=12)
         let optimizedUrl = videoElement.src;

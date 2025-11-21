@@ -124,8 +124,12 @@
  */
 
 import { logger } from '@shared/logging';
+import { isHostMatching } from '@shared/utils/url/host-utils';
 import type { QuoteTweetInfo } from '@shared/types/media.types';
 import { SELECTORS } from '@/constants';
+
+const TWITTER_IMAGE_CDN_HOST = 'pbs.twimg.com';
+const TWITTER_VIDEO_CDN_HOST = 'video.twimg.com';
 
 /**
  * Quote tweet DOM structure analysis result (Phase 342.1).
@@ -605,12 +609,18 @@ export class QuoteTweetDetector {
     }
 
     // Image element check
-    if (element.tagName === 'IMG' && element.getAttribute('src')?.includes('pbs.twimg.com')) {
+    if (
+      element.tagName === 'IMG' &&
+      isHostMatching(element.getAttribute('src'), [TWITTER_IMAGE_CDN_HOST])
+    ) {
       return true;
     }
 
     // Video element check
-    if (element.tagName === 'VIDEO' && element.getAttribute('src')?.includes('video.twimg.com')) {
+    if (
+      element.tagName === 'VIDEO' &&
+      isHostMatching(element.getAttribute('src'), [TWITTER_VIDEO_CDN_HOST])
+    ) {
       return true;
     }
 

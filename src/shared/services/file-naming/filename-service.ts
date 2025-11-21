@@ -34,6 +34,7 @@
  */
 
 import { safeParseInt } from '@shared/utils/type-safety-helpers';
+import { isHostMatching, tryParseUrl } from '@shared/utils/url/host-utils';
 import type { MediaInfo } from '@shared/types/media.types';
 
 /**
@@ -119,6 +120,41 @@ const ZIP_FILENAME_PATTERN = /^[a-zA-Z0-9_]+_\d{10,19}\.zip$/;
  * @internal
  */
 const SUPPORTED_EXTENSIONS = /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i;
+
+const TWIMG_ROOT_DOMAIN = 'twimg.com';
+const TWITTER_PROFILE_HOSTS = new Set([
+  'x.com',
+  'www.x.com',
+  'twitter.com',
+  'www.twitter.com',
+  'mobile.twitter.com',
+  'm.twitter.com',
+]);
+
+const RESERVED_TWITTER_ROUTES = new Set([
+  'i',
+  'home',
+  'explore',
+  'notifications',
+  'messages',
+  'bookmarks',
+  'lists',
+  'profile',
+  'more',
+  'compose',
+  'search',
+  'settings',
+  'help',
+  'display',
+  'moments',
+  'topics',
+  'login',
+  'logout',
+  'signup',
+  'account',
+  'privacy',
+  'tos',
+]);
 
 /**
  * Filename Service - Centralized media filename generation and validation
@@ -698,57 +734,30 @@ export class FilenameService {
    * @see Phase 432.3 for URL validation improvement context
    */
   private extractUsernameFromUrl(url: string): string | null {
-    try {
-      // 미디어 URL (pbs.twimg.com, video.twimg.com 등)은 username이 없으므로 건너뛰기
-      if (
-        url.includes('pbs.twimg.com') ||
-        url.includes('video.twimg.com') ||
-        url.includes('twimg.com')
-      ) {
-        return null;
-      }
-
-      const match = url.match(/(?:twitter\.com|x\.com)\/([^/?#]+)/);
-      if (match?.[1]) {
-        const username = match[1];
-
-        // 예약된 경로 제외
-        const reserved = [
-          'i',
-          'home',
-          'explore',
-          'notifications',
-          'messages',
-          'bookmarks',
-          'lists',
-          'profile',
-          'more',
-          'compose',
-          'search',
-          'settings',
-          'help',
-          'display',
-          'moments',
-          'topics',
-          'login',
-          'logout',
-          'signup',
-          'account',
-          'privacy',
-          'tos',
-        ];
-
-        if (reserved.includes(username.toLowerCase())) return null;
-
-        // 유효한 사용자명 패턴
-        if (/^[a-zA-Z0-9_]{1,15}$/.test(username)) {
-          return username;
-        }
-      }
-      return null;
-    } catch {
+    const parsed = tryParseUrl(url);
+    if (!parsed) {
       return null;
     }
+
+    if (isHostMatching(parsed, [TWIMG_ROOT_DOMAIN], { allowSubdomains: true })) {
+      return null;
+    }
+
+    if (!TWITTER_PROFILE_HOSTS.has(parsed.hostname.toLowerCase())) {
+      return null;
+    }
+
+    const [rawCandidate] = parsed.pathname.split('/').filter(Boolean);
+    if (!rawCandidate) {
+      return null;
+    }
+
+    const candidate = rawCandidate.trim();
+    if (!candidate || RESERVED_TWITTER_ROUTES.has(candidate.toLowerCase())) {
+      return null;
+    }
+
+    return /^[a-zA-Z0-9_]{1,15}$/.test(candidate) ? candidate : null;
   }
 }
 

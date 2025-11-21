@@ -24,6 +24,9 @@ env:
   CI: "true"
   XEG_DISABLE_LOCAL_CONFIG: "true"
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -33,6 +36,8 @@ jobs:
     name: 🚀 Build Production
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
