@@ -44,6 +44,8 @@
 !/README.md
 !/LICENSE
 !/CHANGELOG.md
+!/CONTRIBUTING.md
+!/CODE_OF_CONDUCT.md
 
 # --- GitHub Actions (배포/보안) ---
 !/.github

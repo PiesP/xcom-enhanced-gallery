@@ -1,66 +1,31 @@
 # 🚀 X.com Enhanced Gallery
 
-> **PC-only userscript to download media in original quality from X.com and
-> navigate conveniently**
+> PC-only userscript to browse and download media from X.com in original quality.
 
 [![Install](https://img.shields.io/badge/Install-Click-brightgreen?style=for-the-badge)](https://github.com/PiesP/xcom-enhanced-gallery/releases/latest/download/xcom-enhanced-gallery.user.js)
-[![Version](https://img.shields.io/badge/Version-v0.4.0-blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
+[![Version](https://img.shields.io/github/v/release/PiesP/xcom-enhanced-gallery?label=Version&color=blue)](https://github.com/PiesP/xcom-enhanced-gallery/releases)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Chrome/Edge](https://img.shields.io/badge/Chrome%2FEdge-✓-4285F4)](https://www.google.com/chrome/)
-[![Firefox](https://img.shields.io/badge/Firefox-✓-FF7139)](https://www.mozilla.org/firefox/)
-[![Safari](https://img.shields.io/badge/Safari-✓-00D4FF)](https://www.apple.com/safari/)
 
-**X.com Enhanced Gallery** is a lightweight userscript built with modern web
-technologies:
+**X.com Enhanced Gallery** is a lightweight, PC-only userscript that turns X.com (formerly Twitter) media into a fast, keyboard-friendly gallery with one-click original-quality downloads.
 
-- **UI Framework**: Solid.js 1.9.9 - Reactive UI, high performance
-- **Browser Support**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
-- **PC-only Design**: Mouse/keyboard optimized, no touch event support
-- **Quality Assurance**: TypeScript strict, 1115+ passing tests, 0 lint warnings
-  - **Security**: Automated surface check (GH Alerts, URL sanitization)
-  - **Unit Tests**: Vitest + JSDOM (900+ tests)
-  - **Browser Tests**: Vitest + Chromium (62 tests)
-  - **Integration Tests**: Service lifecycle (8 tests)
-  - **E2E Tests**: Playwright (45 tests)
-  - **Accessibility Tests**: axe-core WCAG 2.1 (14 tests)
+---
 
-**X.com Enhanced Gallery** is a **PC-only** userscript that lets you download
-images and videos in **high-quality original** from X.com (formerly Twitter) and
-navigate them with an **intuitive vertical-scroll gallery** interface.
+## ✨ What it does
 
-## ✨ Key Features
+- Opens an **isolated vertical gallery** for all images and videos in a tweet
+- Downloads media in **original quality** (single file or bulk ZIP)
+- Provides **keyboard and mouse** navigation optimized for desktop use
+- Keeps the original X.com UI intact while adding an overlay gallery
+- Respects **privacy** by running entirely in your browser (no data collection)
 
-### 🖼️ Enhanced Gallery Viewer
+Built with modern tooling:
 
-- **Vertical Scroll Gallery**: Intuitively navigate all media from a tweet in
-  one view
-- **Original Quality**: Load the highest quality original images/videos from
-  X.com servers
-- **Real-time Video Playback**: Extract actual MP4 videos from thumbnails and
-  play instantly
-- **PC Optimized**: Mouse wheel scrolling, keyboard shortcuts, and other
-  desktop-specific features
+- **UI**: Solid.js 1.9.10
+- **Language**: TypeScript 5.9.3 (strict)
+- **Bundler**: Vite 7
+- **Quality**: 2,800+ automated tests (unit, browser, integration, E2E, accessibility)
 
-### 💾 Smart Download
-
-- **Original Quality Guaranteed**: Download without Twitter compression at
-  highest quality
-- **Bulk Download**: Download all media from a tweet as a single ZIP file
-- **Intelligent Filenames**:
-  - ZIP file: `author_tweetID_YYYYMMDD.zip`
-  - Media file: `author_tweetID_YYYYMMDD_number.extension`
-- **Fast Download**: Optimized download process with duplicate elimination
-
-### 🎨 User Experience
-
-- **Isolated UI**: Independent gallery that doesn't affect original X.com
-  interface
-- **Auto Theme**: Automatic theme switching based on system dark mode
-- **Accessibility Support**: Full support for screen readers and keyboard
-  navigation
-- **Performance Optimization**: Fast loading and smooth animations
-
-## 📥 Installation Guide
+## 📥 Installation
 
 ### 1️⃣ Install Userscript Manager
 
@@ -129,42 +94,25 @@ manager_
 - **Optimized Loading**: Current image loads first for faster navigation
 - **Memory Management**: Unused images auto-released for performance
 
-## 🛠️ Technical Features
+## 🌐 Browser support
 
-### Architecture
+Desktop browsers only (no mobile/touch support):
 
-- **3-Layer Architecture**: Features → Shared → External modular structure
-- **Type Safety**: Complete type safety guaranteed with TypeScript
-- **Performance Optimization**: Lazy loading and efficient memory management
-- **Isolated Rendering**: Independent UI that doesn't affect X.com's original
-  styles
+| Browser | Version (minimum) |
+| ------- | ----------------- |
+| Chrome  | 110+              |
+| Edge    | 110+              |
+| Firefox | 78+               |
+| Safari  | 14+               |
 
-### Core Technologies
+## 🔒 Security & privacy
 
-- **UI Framework**: Solid.js 1.9.9 - Reactive UI, high performance
-- **State Management**: Solid.js Signals - Fine-grained reactive state
-- **Compression**: fflate - High-performance ZIP compression library
-- **Styling**: CSS Modules + design token system
+- All logic runs locally in your browser on X.com.
+- No analytics, telemetry, or third-party tracking.
+- No personal data or authentication tokens are collected or sent to external servers.
+- Network requests are limited to X.com/Twitter media endpoints and GitHub (for update checks).
 
-### Icon System
-
-- **Icon Library**: Heroicons (React) components used safely via "vendor getter"
-  pattern.
-  - Application code only uses getters from `@shared/external/vendors`, never
-    directly imports external libraries.
-  - `@heroicons/react` components are safely converted from React Elements →
-    Solid VNodes inside getters.
-  - UI renders via semantic-named adapters (e.g., `HeroDownload` → `Download`)
-    using consistent `Icon` wrapper.
-
-### Browser Compatibility
-
-| Browser | Version | Status |
-| ------- | ------- | ------ |
-| Chrome  | 88+     | ✅     |
-| Firefox | 78+     | ✅     |
-| Safari  | 14+     | ✅     |
-| Edge    | 88+     | ✅     |
+For full details and vulnerability reporting, see the [Security Policy](.github/SECURITY.md).
 
 ## 📄 License and Open Source
 
@@ -187,57 +135,27 @@ Have ideas for project improvements?
 ### Development Setup
 
 ```bash
-# Clone repository
 git clone https://github.com/PiesP/xcom-enhanced-gallery.git
 cd xcom-enhanced-gallery
 
-# Install dependencies
 npm install
 
-# Run dev server
-npm run dev
-
-# Build
+# Build userscript bundle
 npm run build
 
-# Test
-npm test
+# Optional: typecheck and lint
+npm run typecheck
+npm run lint
 ```
 
-### Continuous Integration
-
-GitHub Actions intentionally keeps CI lean:
-
-- `ci.yml` installs dependencies, performs a production build via `npx vite build --mode production`, uploads the artifact, and then runs a separate CodeQL job.
-- `release.yml` only bumps versions when manually triggered, runs `npm ci`, executes `npx vite build` in development and production modes, and uploads the packaged release.
-
-No lint/test/npm script automation runs inside CI or release workflows, so always execute `npm run quality:full`, `npm run test:unit:batched`, and related commands locally before pushing or invoking the release workflow.
-
-Security hardening runs separately via `security.yml`:
-
-- Weekly + on-demand `npm audit` (moderate/high) with artifacts for traceability.
-- GitHub-native security signals (Code Scanning, Dependabot, Secret Scanning) are surfaced directly inside the Security tab; the workflow no longer depends on local scripts or the GH CLI to enforce gates.
-- Official CodeQL analysis uploads SARIF results to the repository Security tab for long-term tracking, letting maintainers triage alerts without leaving GitHub.
-
-### Quality Profiles
-
-Use `npm run quality:*` to execute the centralized guard suite before builds:
-
-- `quality:prebuild` runs tokens, typecheck, ESLint, Stylelint, dependency cruiser, and the relative import guard.
-- `quality:validate` mirrors the prebuild profile for local workflows.
-- `quality:full` adds the style-import guard; run it locally (CI never runs this profile) and it will auto-skip when no CSS changed.
-
-Each command writes `test-results/quality-suite-summary.json`, making it easy to see which guard failed during `npm run build` or PR validation.
+GitHub Actions runs a subset of these commands for continuous integration and security. See `.github/workflows/` for details.
 
 ## 📞 Support and Feedback
 
-- **🐛 Report Bugs**:
-  [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
-- **💡 Feature Requests**:
-  [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
-- **📚 Documentation**: See `docs/` directory locally (developer-only, not in
-  repository)
-- **📝 Changelog**: [RELEASE_NOTES.md](release/RELEASE_NOTES.md)
+- **🐛 Report bugs**: [GitHub Issues](https://github.com/PiesP/xcom-enhanced-gallery/issues)
+- **💡 Feature requests & questions**: [GitHub Discussions](https://github.com/PiesP/xcom-enhanced-gallery/discussions)
+- **📝 Changelog**: [CHANGELOG.md](CHANGELOG.md)
+- **🔒 Security reports**: Please follow the [Security Policy](.github/SECURITY.md).
 
 ---
 

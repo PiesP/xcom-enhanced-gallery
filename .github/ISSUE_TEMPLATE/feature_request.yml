@@ -1,0 +1,48 @@
+name: "Feature request"
+description: "Propose an improvement or new capability for X.com Enhanced Gallery"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement.
+        Please describe the problem you want to solve and how the feature would help.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problem statement"
+      description: "What problem or pain point are you experiencing?"
+      placeholder: "When I ... I wish I could ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposed solution"
+      description: "Describe the feature or behavior you would like to see."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives considered"
+      description: "Have you tried any workarounds or other tools?"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: "Additional context"
+      description: "Mockups, examples, or related tweets that help explain the idea."
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "Checklist"
+      options:
+        - label: "This is not a security or privacy issue (see .github/SECURITY.md for those)."
+          required: true
+        - label: "I have checked existing issues and discussions for similar requests."
+          required: true
