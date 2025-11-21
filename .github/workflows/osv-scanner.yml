@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload to code scanning
         if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ env.OSV_RESULTS_FILE }}
 
@@ -129,7 +129,7 @@ jobs:
 
       - name: Upload to code scanning
         if: ${{ always() && hashFiles(env.OSV_RESULTS_FILE) != '' }}
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ env.OSV_RESULTS_FILE }}
 
