@@ -74,13 +74,11 @@
 /docs/
 
 # 테스트 코드 (CI에서 실행)
-/test/
+/test/**
 /playwright/
 
 # 개발 스크립트 및 도구
 /scripts/**
-!/scripts/run-unit-tests-batched.ts
-!/scripts/validate-relative-imports.ts
 # NOTE: The `config/` directory contains developer-specific configuration and is
 # ignored by default. The file `config/utils/load-local-config.js` however is a
 # CI-safe stub required for builds in the action runners. We explicitly un-ignore
