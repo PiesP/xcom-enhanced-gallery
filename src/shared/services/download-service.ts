@@ -134,8 +134,7 @@ export class DownloadService {
     const results: BlobDownloadResult[] = [];
     let successCount = 0;
 
-    for (let i = 0; i < options.length; i++) {
-      const option = options[i];
+    for (const [i, option] of options.entries()) {
       if (!option) {
         // Skip undefined options
         results.push({ success: false, error: 'Invalid option' });

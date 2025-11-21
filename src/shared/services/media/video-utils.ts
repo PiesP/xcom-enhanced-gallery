@@ -78,10 +78,24 @@ import type { TweetMediaEntry } from './types';
 export function isVideoThumbnail(imgElement: HTMLImageElement): boolean {
   const src = imgElement.src;
   const alt = imgElement.alt;
+
+  let isVideoUrl = false;
+  try {
+    const url = new URL(src);
+    isVideoUrl =
+      url.pathname.includes('ext_tw_video_thumb') ||
+      url.pathname.includes('amplify_video_thumb') ||
+      url.pathname.includes('tweet_video_thumb');
+  } catch {
+    // Fallback for relative URLs or invalid URLs (though img.src is usually absolute)
+    isVideoUrl =
+      src.includes('ext_tw_video_thumb') ||
+      src.includes('amplify_video_thumb') ||
+      src.includes('tweet_video_thumb');
+  }
+
   return (
-    src.includes('ext_tw_video_thumb') ||
-    src.includes('amplify_video_thumb') ||
-    src.includes('tweet_video_thumb') ||
+    isVideoUrl ||
     alt === 'Animated Text GIF' ||
     alt === 'Embedded video' ||
     imgElement.closest(STABLE_SELECTORS.MEDIA_PLAYERS.join(', ')) !== null ||
@@ -184,8 +198,16 @@ export function isVideoElement(element: HTMLElement): boolean {
  * ```
  */
 export function extractTweetId(url: string): string | null {
-  const match = url.match(/(?<=\/status\/)\d+/);
-  return match?.[0] ?? null;
+  try {
+    // Attempt to parse as URL to safely check pathname
+    const urlObj = new URL(url, 'https://x.com'); // Base allows parsing relative URLs
+    const match = urlObj.pathname.match(/\/status\/(\d+)/);
+    return match?.[1] ?? null;
+  } catch {
+    // Fallback for non-standard strings
+    const match = url.match(/\/status\/(\d+)/);
+    return match?.[1] ?? null;
+  }
 }
 
 /**

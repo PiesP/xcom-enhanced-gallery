@@ -17,6 +17,7 @@ technologies:
 - **Browser Support**: Chrome 110+, Firefox 78+, Safari 14+, Edge 110+
 - **PC-only Design**: Mouse/keyboard optimized, no touch event support
 - **Quality Assurance**: TypeScript strict, 1115+ passing tests, 0 lint warnings
+  - **Security**: Automated surface check (GH Alerts, URL sanitization)
   - **Unit Tests**: Vitest + JSDOM (900+ tests)
   - **Browser Tests**: Vitest + Chromium (62 tests)
   - **Integration Tests**: Service lifecycle (8 tests)

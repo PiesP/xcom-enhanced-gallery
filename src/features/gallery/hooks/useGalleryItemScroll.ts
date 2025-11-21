@@ -161,6 +161,40 @@ export function useGalleryItemScroll(
       return;
     }
 
+    const performScroll = (element: HTMLElement, behavior: ScrollBehavior) => {
+      element.scrollIntoView({
+        behavior,
+        block: alignToCenter() ? 'center' : block(),
+        inline: 'nearest',
+      });
+
+      const offsetValue = offset();
+      if (offsetValue !== 0) {
+        container.scrollTo({
+          top: container.scrollTop - offsetValue,
+          behavior,
+        });
+      }
+
+      updateStateSignal(setState, {
+        lastScrolledIndex: index,
+        pendingIndex: null,
+      });
+      retryCount = 0;
+
+      logger.debug('useGalleryItemScroll: Scroll completed', {
+        index,
+        behavior,
+        block: alignToCenter() ? 'center' : block(),
+        offset: offsetValue,
+        timestamp: Date.now(),
+      });
+
+      globalTimerManager.setTimeout(() => {
+        updateStateSignal(setState, { isAutoScrolling: false });
+      }, 50);
+    };
+
     try {
       // Set auto-scroll flag to ignore user scroll events
       updateStateSignal(setState, { isAutoScrolling: true });
@@ -201,44 +235,13 @@ export function useGalleryItemScroll(
       // Last item can scroll to top via transparent spacer element
       const actualBehavior = resolveBehavior();
 
-      targetElement.scrollIntoView({
-        behavior: actualBehavior,
-        block: alignToCenter() ? 'center' : block(),
-        inline: 'nearest',
-      });
-
-      const offsetValue = offset();
-      if (offsetValue !== 0) {
-        container.scrollTo({
-          top: container.scrollTop - offsetValue,
-          behavior: actualBehavior,
-        });
-      }
-
-      updateStateSignal(setState, {
-        lastScrolledIndex: index,
-        pendingIndex: null,
-      });
-      retryCount = 0;
-
-      logger.debug('useGalleryItemScroll: Scroll completed', {
-        index,
-        behavior: actualBehavior,
-        block: alignToCenter() ? 'center' : block(),
-        offset: offsetValue,
-        timestamp: Date.now(),
-      });
+      performScroll(targetElement, actualBehavior);
 
       if (actualBehavior === 'smooth') {
         await new Promise<void>(resolve => {
           globalTimerManager.setTimeout(resolve, 300);
         });
       }
-
-      // Clear auto-scroll flag on next tick to allow scroll event processing
-      globalTimerManager.setTimeout(() => {
-        updateStateSignal(setState, { isAutoScrolling: false });
-      }, 50);
     } catch (error) {
       logger.error('useGalleryItemScroll: Scroll failed', { index, error });
       updateStateSignal(setState, { pendingIndex: null, isAutoScrolling: false });
@@ -312,30 +315,7 @@ export function useGalleryItemScroll(
             try {
               updateStateSignal(setState, { isAutoScrolling: true });
               const actualBehavior = resolveBehavior();
-
-              targetElement.scrollIntoView({
-                behavior: actualBehavior,
-                block: alignToCenter() ? 'center' : block(),
-                inline: 'nearest',
-              });
-
-              const offsetValue = offset();
-              if (offsetValue !== 0) {
-                container.scrollTo({
-                  top: container.scrollTop - offsetValue,
-                  behavior: actualBehavior,
-                });
-              }
-
-              updateStateSignal(setState, {
-                lastScrolledIndex: index,
-                pendingIndex: null,
-              });
-              retryCount = 0;
-
-              globalTimerManager.setTimeout(() => {
-                updateStateSignal(setState, { isAutoScrolling: false });
-              }, 50);
+              performScroll(targetElement, actualBehavior);
             } catch (err) {
               logger.error('useGalleryItemScroll: Scroll failed after polling', {
                 index,
