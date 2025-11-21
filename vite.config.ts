@@ -13,8 +13,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 import { transformSync } from '@babel/core';
-import { createStyleInjector } from './scripts/lib/style-injector';
-import { createLogger as createCliLogger } from './scripts/lib/logger';
+import { createStyleInjector } from './.github/scripts/lib/style-injector';
+import { createLogger as createCliLogger } from './.github/scripts/lib/logger';
+import { ensureUserscriptIntegrity } from './.github/scripts/lib/userscript-integrity';
 
 // Local config loader (local only, skipped in CI)
 // noinspection JSUnusedLocalSymbols
@@ -265,6 +266,10 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         styleInjector: styleInjector,
         code: cleanedCode,
         isProd: flags.isProd,
+      });
+
+      ensureUserscriptIntegrity(wrapped, error => {
+        buildLogger.error(`[userscript:validation] ${error.message}`);
       });
 
       const finalName = flags.isDev
