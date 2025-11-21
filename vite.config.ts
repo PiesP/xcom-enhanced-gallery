@@ -24,7 +24,9 @@ async function loadLocalConfigSafe<T = unknown>(): Promise<T | null> {
 
   try {
     // Dynamic import to load only if file exists (resolve file absence in CI)
-    const { loadLocalConfig } = await import('./config/utils/load-local-config.js');
+    const { loadLocalConfig } = (await import('./config/utils/load-local-config.js')) as {
+      loadLocalConfig: <T = unknown>() => Promise<T | null>;
+    };
     return (await loadLocalConfig<T>()) ?? null;
   } catch {
     // Return null if file doesn't exist or other error occurs (continue build)
