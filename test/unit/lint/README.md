@@ -51,7 +51,7 @@
 
 | 파일                                        | 역할                     |
 | ------------------------------------------- | ------------------------ |
-| direct-imports-source-scan.test.js          | 직접 import 검사         |
+| direct-imports-source-scan.test.ts          | Direct import guard       |
 | barrel-reimport.cycle.scan.red.test.ts      | 배럴 순환 참조 검사      |
 | type-only-imports.policy.red.test.ts        | 타입 import 순서         |
 | features-barrel.class-exports.scan.red.test | Feature 배럴 export 정책 |

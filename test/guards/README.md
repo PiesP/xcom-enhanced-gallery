@@ -24,7 +24,7 @@ Guards는 프로젝트 건강 상태와 코드 정책 준수를 자동으로 검
 
 #### Vendor & Import Policy (9개)
 
-- `direct-imports-source-scan.test.js`: 직접 import 감지
+- `direct-imports-source-scan.test.ts`: 직접 import 감지
 - `vendor-getter.strict.scan.red.test.ts`: Vendor getter 엄격 정책
 - `vendor-api.imports.scan.red.test.ts`: 벤더 API import
 - `userscript-gm.direct-usage.scan.red.test.ts`: GM\_\* 직접 사용
