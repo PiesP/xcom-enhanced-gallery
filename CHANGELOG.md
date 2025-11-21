@@ -102,6 +102,24 @@ and this project adheres to
   stylesheet, and barrel exports. UI barrel tests enforce that the symbol stays
   absent going forward.
 
+#### Build Console Hardening & Style Injector Diagnostics
+
+- **Issue**: `npx tsx scripts/security-surface-check.ts` reported 12 open GitHub
+  Code Scanning alerts (`Disallow the use of console`) because
+  `vite.config.ts` logged via `console.*`, and the generated style injector
+  snippet emitted runtime `console.error` calls when CSS injection failed.
+- **Solution**: Reused the shared `scripts/lib/logger` CLI helper for all Vite
+  build output (warnings, success notices, cleanup summaries) and replaced the
+  inline `console` calls with a CustomEvent-based diagnostics hook
+  (`xeg:style-injection-error`). The injector now dispatches a payload with the
+  original error message/stack so browser listeners can react without touching
+  the X.com DOM or console.
+- **Tests**: `test/unit/config/style-injector.spec.ts` guards that both dev and
+  prod injectors embed the event hook and stay free of `console.*` usage.
+- **Browser QA**: When style injection fails, verify that
+  `window.addEventListener('xeg:style-injection-error', handler)` receives the
+  emitted detail instead of relying on console output.
+
 #### URL Protocol Sanitization Hardening
 
 - **Issue**: `npm run security:gh-scan` surfaced high-severity CodeQL alerts
@@ -193,6 +211,15 @@ and this project adheres to
 - **Breaking Changes**: None (deprecated type had 0 usages)
 - **Code Reduction**: -3 lines (export removal)
 - **Type Clarity**: Improved (duplicate removal, single ErrorCode usage)
+
+#### GitHub Security Surface Check Detailing
+
+- `npx tsx scripts/security-surface-check.ts` now emits severity-tagged sample blocks for every alert source, including
+  inline `[CRITICAL]` / `[HIGH]` style badges so CI logs are skimmable without opening GitHub first.
+- Each sampled alert links directly to its GitHub Security URL (Code Scanning, Dependabot, Secret Scanning) when the API payload
+  contains an alert number or explicit `html_url`, making it trivial to jump from the CLI output to the remediation screen.
+- The stdout formatter switched to nested bullet lists (`Sample details → - [SEVERITY] label → URL`) while the logger summary keeps
+  a condensed inline representation for error aggregation. Vitest coverage was extended to encode the new structure.
 
 ### Removed
 

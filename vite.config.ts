@@ -13,6 +13,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
 import { transformSync } from '@babel/core';
+import { createStyleInjector } from './scripts/lib/style-injector';
+import { createLogger as createCliLogger } from './scripts/lib/logger';
 
 // Local config loader (local only, skipped in CI)
 // noinspection JSUnusedLocalSymbols
@@ -53,6 +55,23 @@ function resolveFlags(mode: string): BuildFlags {
 }
 
 const pkg: PackageJsonMeta = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+const buildLogger = createCliLogger('vite');
+
+const formatCliError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.stack ? `${error.message}\n${error.stack}` : error.message;
+  }
+
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+};
 
 /**
  * Read external library license text from LICENSES/ and insert as comment at the top of userscript.
@@ -78,7 +97,7 @@ function generateLicenseNotices(): string {
         notices += '\n';
       }
     } catch (error) {
-      console.warn(`[license] Failed to read license file for ${name}:`, error);
+      buildLogger.warn(`[license] Failed to read license file for ${name}: ${formatCliError(error)}`);
     }
   }
 
@@ -142,45 +161,6 @@ function userscriptHeader(flags: BuildFlags): string {
  *           - Dev: JSON.stringify() automatically escapes special characters
  *           - Prod: Base64 ensures binary safety
  */
-function createStyleInjector(css: string, isDev: boolean = false): string {
-  if (!css.trim()) {
-    return '';
-  }
-
-  if (isDev) {
-    // 📝 Dev build: Use plain CSS (directly viewable in DevTools)
-    // JSON.stringify() automatically escapes all special characters ('", \n, \t, etc).
-    return `(function() {
-  try {
-    var s = document.getElementById('xeg-styles');
-    if (s) s.remove();
-    s = document.createElement('style');
-    s.id = 'xeg-styles';
-    s.textContent = ${JSON.stringify(css)};
-    (document.head || document.documentElement).appendChild(s);
-  } catch (e) {
-    console.error('[XEG] style inject fail', e);
-  }
-})();`;
-  } else {
-    // 🔒 Production build: Inline CSS directly to avoid Base64 overhead (smaller bundle)
-    // CSS content is already processed by PostCSS/CSSNano, so additional minification is unnecessary here.
-    const serializedCss = JSON.stringify(css);
-    return (
-      `(function(){` +
-      `try{` +
-      `var s=document.getElementById('xeg-styles');` +
-      `if(s) s.remove();` +
-      `s=document.createElement('style');` +
-      `s.id='xeg-styles';` +
-      `s.textContent=${serializedCss};` +
-      `(document.head||document.documentElement).appendChild(s);` +
-      `}catch(e){console.error('[XEG] style inject fail',e);}` +
-      `})();`
-    );
-  }
-}
-
 /**
  * Generate UserScript wrapper code at build time
  *
@@ -260,7 +240,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
       }
 
       if (!entryChunk) {
-        console.warn('[userscript] entry chunk not found');
+        buildLogger.warn('[userscript] entry chunk not found');
         return;
       }
 
@@ -302,10 +282,10 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
           const suffix = `\n//# sourceMappingURL=${mapName}`;
           fs.appendFileSync(path.join(outDir, finalName), suffix, 'utf8');
         } catch {}
-        console.log(`✅ Sourcemap generated: ${mapName}`);
+        buildLogger.success(`Sourcemap generated: ${mapName}`);
       }
 
-      console.log(`✅ Userscript generated: ${finalName}`);
+      buildLogger.success(`Userscript generated: ${finalName}`);
 
       // Remove temp asset directories like dist/assets (goal is single userscript output).
       const assetsDir = path.join(outDir, 'assets');
@@ -322,7 +302,7 @@ function userscriptPlugin(flags: BuildFlags): Plugin {
         }
       }
 
-      console.log('🗑️ Cleanup of unnecessary files complete');
+      buildLogger.info('Cleanup of unnecessary files complete');
     },
   };
 }
