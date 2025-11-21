@@ -22,6 +22,9 @@ jobs:
     name: 🔍 Security Vulnerability Scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      security-events: read
 
     steps:
       - name: 📥 Checkout code
@@ -53,11 +56,134 @@ jobs:
           fi
 
       - name: 🛡️ GitHub Security Surface Check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          XEG_ENFORCE_GH_SECURITY_SCAN: "1"
-        run: npm run security:gh-scan
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const dashboardUrl = `https://github.com/${owner}/${repo}/security`;
+            const maxSamples = 3;
+
+            const normalize = (value) => {
+              if (!value) {
+                return 'unknown';
+              }
+              const normalized = String(value).trim().toLowerCase();
+              return normalized || 'unknown';
+            };
+
+            const sources = [
+              {
+                kind: 'Code Scanning Alerts',
+                fetch: () => github.paginate('GET /repos/{owner}/{repo}/code-scanning/alerts', {
+                  owner,
+                  repo,
+                  state: 'open',
+                  per_page: 100,
+                }),
+                severity: (alert) => alert?.rule?.security_severity_level ?? alert?.rule?.severity ?? alert?.severity ?? 'unknown',
+                label: (alert) => alert?.rule?.description ?? alert?.rule?.name ?? alert?.rule?.id ?? alert?.tool?.name ?? (alert?.number ? `Alert #${alert.number}` : undefined),
+              },
+              {
+                kind: 'Dependabot Alerts',
+                fetch: () => github.paginate('GET /repos/{owner}/{repo}/dependabot/alerts', {
+                  owner,
+                  repo,
+                  state: 'open',
+                  per_page: 100,
+                }),
+                severity: (alert) => alert?.security_advisory?.severity ?? 'unknown',
+                label: (alert) => {
+                  const pkg = alert?.dependency?.package?.name ?? 'dependency';
+                  const manifest = alert?.dependency?.manifest_path ?? 'manifest';
+                  return `${pkg} (${manifest})`;
+                },
+              },
+              {
+                kind: 'Secret Scanning Alerts',
+                fetch: () => github.paginate('GET /repos/{owner}/{repo}/secret-scanning/alerts', {
+                  owner,
+                  repo,
+                  state: 'open',
+                  per_page: 100,
+                }),
+                severity: (alert) => alert?.secret_type_display_name ?? alert?.secret_type ?? 'unknown',
+                label: (alert) => alert?.secret_type_display_name ?? alert?.secret_type ?? (alert?.number ? `Secret #${alert.number}` : undefined),
+              },
+            ];
+
+            const summaries = [];
+            const warnings = [];
+
+            for (const source of sources) {
+              try {
+                const alerts = await source.fetch();
+                const severityCounts = new Map();
+                const samples = [];
+
+                for (const alert of alerts) {
+                  const severity = normalize(source.severity(alert));
+                  severityCounts.set(severity, (severityCounts.get(severity) ?? 0) + 1);
+
+                  if (samples.length < maxSamples) {
+                    const label = source.label(alert);
+                    if (label) {
+                      samples.push(label);
+                    }
+                  }
+                }
+
+                const severityBreakdown = Array.from(severityCounts.entries())
+                  .sort((a, b) => {
+                    if (b[1] !== a[1]) {
+                      return b[1] - a[1];
+                    }
+                    return a[0].localeCompare(b[0]);
+                  })
+                  .map(([severity, count]) => `${severity}=${count}`);
+
+                summaries.push({
+                  kind: source.kind,
+                  total: alerts.length,
+                  severityBreakdown,
+                  samples,
+                });
+              } catch (error) {
+                warnings.push(`Failed to query ${source.kind}: ${error.message}`);
+              }
+            }
+
+            if (warnings.length > 0) {
+              warnings.forEach(message => core.warning(message));
+            }
+
+            if (summaries.length === 0) {
+              core.notice('GitHub Security scan: no alert data returned from GitHub API.');
+              return;
+            }
+
+            core.startGroup('GitHub Security Surface Summary');
+            summaries.forEach(summary => {
+              const severityText = summary.severityBreakdown.length > 0 ? summary.severityBreakdown.join(', ') : 'no severity data';
+              const samplesText = summary.samples.length > 0 ? ` Samples: ${summary.samples.join(' | ')}` : '';
+              core.info(`${summary.kind} → ${summary.total} alert(s) [${severityText}].${samplesText}`);
+            });
+            core.endGroup();
+
+            const blocking = summaries.filter(summary => summary.total > 0);
+            if (blocking.length === 0) {
+              core.notice('GitHub Security surface clean (no open alerts detected).');
+              return;
+            }
+
+            blocking.forEach(summary => {
+              const severityText = summary.severityBreakdown.length > 0 ? summary.severityBreakdown.join(', ') : 'no severity data';
+              const samplesText = summary.samples.length > 0 ? ` Samples: ${summary.samples.join(' | ')}` : '';
+              core.error(`${summary.kind}: ${summary.total} open alert(s). Severities: ${severityText}.${samplesText}`);
+            });
+
+            core.setFailed(`Open GitHub security alerts detected. Review ${dashboardUrl} for details.`);
 
       - name: 📊 Upload security report
         if: always()
