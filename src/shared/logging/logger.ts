@@ -103,8 +103,6 @@ export type LoggableData =
  * - error(): Error messages (failures)
  * - debug(): Debug-only messages (development)
  * - trace(): Trace-level messages (lowest priority, dev only)
- * - time(label): Start performance timer
- * - timeEnd(label): End timer and log duration
  *
  * **Usage Pattern**:
  * ```typescript
@@ -115,7 +113,7 @@ export type LoggableData =
  * ```
  *
  * **Development vs Production**:
- * - debug/trace/time: Production builds = no-op stubs
+ * - debug/trace: Production builds = no-op stubs
  * - info/warn/error: Both modes (but reduced output in prod)
  *
  * @interface Logger
@@ -151,18 +149,6 @@ export interface Logger {
    * @param {...LoggableData[]} args - Data to log
    */
   trace?: (...args: LoggableData[]) => void;
-
-  /**
-   * Start performance timer (development only)
-   * @param {string} label - Timer identifier (e.g., 'extract-media')
-   */
-  time: (label: string) => void;
-
-  /**
-   * End performance timer and log duration (development only)
-   * @param {string} label - Timer identifier (must match time() call)
-   */
-  timeEnd: (label: string) => void;
 }
 
 // ============================================================================
@@ -253,8 +239,6 @@ const createNoOpLogger = (): Logger => {
     error: noop,
     debug: noop,
     trace: noop,
-    time: noop,
-    timeEnd: noop,
   };
 };
 
@@ -293,8 +277,6 @@ if (isDev) {
     includeTimestamp: true,
     includeStackTrace: true,
   };
-
-  const timerStorage: Record<string, number> = {};
 
   const formatMessage = (
     level: LogLevel,
@@ -346,29 +328,6 @@ if (isDev) {
       trace: (...args: LoggableData[]): void => {
         if (shouldLog('debug', finalConfig)) {
           console.debug(...formatMessage('debug', finalConfig, ...args));
-        }
-      },
-      time: (label: string): void => {
-        if (shouldLog('debug', finalConfig)) {
-          const timerKey = `__timer_${label}`;
-          timerStorage[timerKey] = Date.now();
-          console.info(...formatMessage('debug', finalConfig, `Timer started: ${label}`));
-        }
-      },
-      timeEnd: (label: string): void => {
-        if (shouldLog('debug', finalConfig)) {
-          const timerKey = `__timer_${label}`;
-          const startTime = timerStorage[timerKey];
-
-          if (typeof startTime === 'number') {
-            const duration = Date.now() - startTime;
-            console.info(...formatMessage('debug', finalConfig, `${label}: ${duration}ms`));
-            delete timerStorage[timerKey];
-          } else {
-            console.info(
-              ...formatMessage('debug', finalConfig, `Timer '${label}' was not started`)
-            );
-          }
         }
       },
     };

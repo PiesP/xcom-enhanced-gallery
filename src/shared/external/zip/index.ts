@@ -7,22 +7,15 @@
  * **Integration**: BulkDownloadService batch download orchestration
  *
  * **Internal Implementation (not exposed)**:
- * - `zip-creator.ts`: Core ZIP creation logic (public API)
- * - `store-zip-writer.ts`: STORE mode ZIP writer (internal)
- * - `streaming-zip-writer.ts`: Streaming processing (optional, Phase 410)
+ * - `streaming-zip-writer.ts`: Streaming processing (Phase 410)
  *
  * **Usage Pattern**:
  * ```typescript
  * // ✅ Correct: Use barrel export
- * import { createZipBytesFromFileMap } from '@shared/external/zip';
- * const zipBytes = await createZipBytesFromFileMap(
- *   { 'photo1.jpg': buffer1, 'photo2.jpg': buffer2 },
- *   { compressionLevel: 0 }
- * );
- *
- * // ❌ Forbidden: Direct import of internal files
- * import { StoreZipWriter } from '@shared/external/zip/store-zip-writer';
- * import { createZipImpl } from '@shared/external/zip/zip-creator';
+ * import { StreamingZipWriter } from '@shared/external/zip';
+ * const writer = new StreamingZipWriter();
+ * writer.add('photo1.jpg', buffer1);
+ * const zipBytes = writer.finalize();
  * ```
  *
  * **Constraints**:
@@ -46,36 +39,4 @@
  * @internal Implementation details exposed in individual files, not here
  */
 
-/**
- * **ZIP Creation**: Create ZIP file bytes from file map
- *
- * **STORE Mode**: Already compressed media is not re-compressed (performance optimization)
- *
- * @example
- * ```typescript
- * import { createZipBytesFromFileMap } from '@shared/external/zip';
- *
- * // Prepare file map
- * const files: Record<string, Uint8Array> = {
- *   'photo1.jpg': jpgBuffer1,
- *   'photo2.jpg': jpgBuffer2,
- *   'video.mp4': mp4Buffer,
- * };
- *
- * // Create ZIP
- * const zipBytes = await createZipBytesFromFileMap(files, {
- *   compressionLevel: 0, // STORE mode (no compression)
- * });
- *
- * // Download
- * const blob = new Blob([zipBytes], { type: 'application/zip' });
- * await downloadService.downloadBlob({ blob, name: 'media.zip' });
- * ```
- *
- * @param fileMap File name → bytes map
- * @param options Options (compressionLevel, etc)
- * @returns ZIP file bytes (Uint8Array)
- *
- * @see MediaItemForZip - Input type definition
- */
-export { createZipBytesFromFileMap, type MediaItemForZip } from './zip-creator';
+export { StreamingZipWriter } from './streaming-zip-writer';

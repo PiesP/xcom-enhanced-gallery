@@ -97,7 +97,7 @@ export {
 // 📌 Integration: Used by BulkDownloadService during batch downloads
 // ============================================================================
 
-export { createZipBytesFromFileMap, type MediaItemForZip } from './zip';
+export { StreamingZipWriter } from './zip';
 
 // ============================================================================
 // 4. TEST INFRASTRUCTURE (test helpers & configuration, @internal)

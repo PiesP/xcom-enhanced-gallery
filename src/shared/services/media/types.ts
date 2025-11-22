@@ -84,6 +84,7 @@ export interface TwitterAPIResponse {
       result?: TwitterTweet;
     };
   };
+  errors?: Array<{ message: string; code: number; [key: string]: unknown }>;
 }
 
 /**

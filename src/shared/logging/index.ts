@@ -30,12 +30,10 @@
  * const cid = createCorrelationId();
  * const correlated = createScopedLoggerWithCorrelation('BulkDownload', cid);
  * correlated.info('Operation started');
- *
- * // Performance measurement helpers (deprecated in Phase 420)
  * ```
  *
  * **Development vs Production**:
- * - **Dev**: Full logging (debug+), timestamps, stack traces, timers
+ * - **Dev**: Full logging (debug+), timestamps, stack traces
  * - **Prod**: Warn+ only, minimal output, zero overhead from removed code
  * - **Test**: Error level only (suppresses console noise)
  *
