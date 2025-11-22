@@ -10,6 +10,21 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - No user-facing changes have been recorded yet.
 
+## [0.4.16] - 2025-11-23
+
+### Added
+
+- **Feature**: Implemented "Instant Download" via media prefetching when gallery opens.
+- **Optimization**: ZIP downloads now utilize prefetched memory cache (Blobs) to eliminate redundant network requests, significantly speeding up bulk downloads.
+
+### Changed
+
+- **Refactor**: Modernized `MediaService` and `DownloadService` architecture.
+  - Integrated prefetch cache directly into download pipeline.
+  - Removed legacy loading state management (`mediaLoadingStates`) and unused DOM helpers.
+  - Consolidated error handling logic.
+- **Cleanup**: Removed orphaned modules and simplified service interfaces.
+
 ## [0.4.15] - 2025-11-22
 
 ### Fixed
