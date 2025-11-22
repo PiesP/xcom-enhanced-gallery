@@ -115,7 +115,6 @@
  * 🔹 Related Services:
  * - MediaExtractionService: Primary consumer (Phase 1 of 3)
  * - TwitterAPIExtractor: Requires tweet ID from this extractor
- * - DOMDirectExtractor: Uses tweet info for context
  * - All 5 strategy implementations
  *
  * @version 0.4.2 (Phase 309 Service Layer)

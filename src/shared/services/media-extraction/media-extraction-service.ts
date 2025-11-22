@@ -15,7 +15,7 @@
  *   │
  *   └─ Phase 2: TwitterAPIExtractor → API-based media retrieval
  *               If success → Finalize result (mark source='api')
- *               If failure → Return error (no DOM fallback)
+ *               If failure → Return error (Fail-Fast)
  *   ↓
  * MediaExtractionResult
  *   ├─ success: boolean (true if media items found)
@@ -127,16 +127,12 @@ export class MediaExtractionService implements MediaExtractor {
    * 🔹 Extraction Flow:
    * ```
    * Step 1: Extract tweet metadata (tweet ID, user, quote tweet detection)
-   *   ├─ If available: Proceed to Step 2a (API extraction)
-   *   └─ If missing: Skip to Step 2b (DOM extraction)
+   *   ├─ If available: Proceed to Step 2 (API extraction)
+   *   └─ If missing: Return error (Fail-Fast)
    *
-   * Step 2a: Attempt API-based media extraction (primary strategy)
+   * Step 2: Attempt API-based media extraction (primary strategy)
    *   ├─ If success (count > 0): Finalize result and return
-   *   └─ If failure or empty: Fall through to Step 2b (DOM extraction)
-   *
-   * Step 2b: Attempt DOM-based media extraction (backup strategy)
-   *   ├─ If success (count > 0): Finalize result and return
-   *   └─ If failure: Return comprehensive error result
+   *   └─ If failure or empty: Return error (Fail-Fast)
    *
    * Step 3: Finalize result
    *   ├─ Deduplication: Remove duplicate media items by URL
@@ -146,16 +142,14 @@ export class MediaExtractionService implements MediaExtractor {
    * ```
    *
    * 🔹 Error Handling:
-   * - **Missing tweet ID**: Immediately fallback to DOM extraction
-   * - **API unavailable**: Automatically try DOM extraction
-   * - **API returns empty**: Automatically try DOM extraction
-   * - **DOM extraction fails**: Return error result with context
-   * - **Both fail**: Return comprehensive error with debug info
+   * - **Missing tweet ID**: Return error result
+   * - **API unavailable**: Return error result
+   * - **API returns empty**: Return error result
    * - **Exception thrown**: Catch and convert to error result
    *
    * 🔹 Metadata Enrichment:
    * - extractedAt: Timestamp of extraction completion
-   * - sourceType: 'api-first', 'dom-fallback', 'extraction-failed', etc.
+   * - sourceType: 'api-first', 'extraction-failed', etc.
    * - strategy: Always 'media-extraction'
    * - error: Error message if extraction failed
    * - debug: Contextual information (element tag, parent, etc.)

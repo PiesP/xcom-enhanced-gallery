@@ -24,7 +24,6 @@
  *    └─ Last resort parent search (up to 15 levels)
  *
  * **Other Exports**:
- * - QuoteTweetDetector (Phase 342): Quote tweet DOM analysis
  * - MediaClickIndexStrategy (Phase 351): Click index calculation
  *
  * **Import Examples**:

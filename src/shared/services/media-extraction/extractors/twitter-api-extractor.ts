@@ -107,7 +107,7 @@
  * **Timeout Strategy**:
  * - timeoutMs: Single request timeout in milliseconds (default: 10,000ms = 10s)
  * - Behavior: Request fails fast after timeout (single attempt)
- * - Fallback: On failure, DOMDirectExtractor (Phase 2b) attempts extraction
+ * - Fallback: On failure, returns error (Fail-Fast)
  *
  * **Performance Characteristics**:
  * - Typical: 100-200ms (API call + transformation)
@@ -127,7 +127,6 @@
  * - TweetInfoExtractor (Phase 405B-2): Extract tweetId before calling this
  * - TwitterAPI (shared/services/media): API wrapper, URL parsing
  * - MediaExtractionService (Phase 405B-1): Orchestrator
- * - DOMDirectExtractor (Phase 405B-3): Fallback strategy
  * - MediaClickIndexStrategy (Phase 351): Click index calculation
  * - Phase 318: GM_xmlHttpRequest removal (MV3 compat)
  * - Phase 342: Quote tweet media extraction
@@ -155,7 +154,6 @@
  *   console.log('Clicked index:', result.clickedIndex);
  * } else {
  *   console.error('API extraction failed:', result.metadata.error);
- *   // Fallback to DOMDirectExtractor
  * }
  * ```
  */
@@ -1060,8 +1058,8 @@ export class TwitterAPIExtractor implements APIExtractor {
    *
    * **Next Steps After Failure**:
    * - MediaExtractionService (Phase 405B-1) catches this
-   * - Falls back to Phase 2b: DOMDirectExtractor
-   * - If DOM also fails: Logs error, user sees gallery without media
+   * - Returns error result (Fail-Fast)
+   * - Logs error, user sees gallery without media
    *
    * **Error Logging**:
    * - Already logged before creating failure result
