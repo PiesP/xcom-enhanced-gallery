@@ -63,14 +63,14 @@
  */
 
 // Tweet info extraction strategies (TweetInfoExtractor uses these - Priority order)
-export { ClickedElementTweetStrategy } from './clicked-element-tweet-strategy';
-export { UrlBasedTweetStrategy } from './url-based-tweet-strategy';
-export { DomStructureTweetStrategy } from './dom-structure-tweet-strategy';
-export { DataAttributeTweetStrategy } from './data-attribute-tweet-strategy';
-export { ParentTraversalTweetStrategy } from './parent-traversal-tweet-strategy';
+export { ClickedElementTweetStrategy } from './clicked-element';
+export { UrlBasedTweetStrategy } from './url-based';
+export { DomStructureTweetStrategy } from './dom-structure';
+export { DataAttributeTweetStrategy } from './data-attribute';
+export { ParentTraversalTweetStrategy } from './parent-traversal';
 
 // Click index calculation strategy (Used by TwitterAPIExtractor)
-export { type MediaClickIndexStrategy } from './media-click-index-strategy';
+export { type MediaClickIndexStrategy } from './click-index';
 export {
   DirectMediaMatchingStrategy,
-} from './media-click-index-strategy';
+} from './click-index';

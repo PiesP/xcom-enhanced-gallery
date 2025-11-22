@@ -315,9 +315,11 @@ export class PersistentStorage {
   getSync<T>(key: string, defaultValue?: T): T | undefined {
     try {
       // GM_getValue can be sync or async - we handle both
-      const gmGetValue = (
-        globalThis as never as { GM_getValue?: <U>(k: string, d?: U) => U | Promise<U> }
-      ).GM_getValue;
+      const gmGetValue =
+        typeof GM_getValue !== 'undefined'
+          ? GM_getValue
+          : (globalThis as never as { GM_getValue?: <U>(k: string, d?: U) => U | Promise<U> })
+              .GM_getValue;
       if (!gmGetValue) {
         logger.debug(`PersistentStorage.getSync: GM_getValue unavailable, returning default`);
         return defaultValue;

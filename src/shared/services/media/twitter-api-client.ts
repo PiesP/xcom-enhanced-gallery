@@ -438,6 +438,7 @@ export class TwitterAPI {
             authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
             'content-type': 'application/json',
           },
+          responseType: 'json',
         }
       );
 
@@ -530,6 +531,13 @@ export class TwitterAPI {
       'content-type': 'application/json',
     });
 
+    // Phase 373: GM_xmlhttpRequest requires explicit Origin/Referer for some endpoints
+    // when running in userscript context to match browser behavior
+    if (typeof window !== 'undefined') {
+      headers.append('referer', window.location.href);
+      headers.append('origin', window.location.origin);
+    }
+
     // Add guest token if available
     if (this.guestToken) {
       headers.append('x-guest-token', this.guestToken);
@@ -541,9 +549,25 @@ export class TwitterAPI {
       const httpService = HttpRequestService.getInstance();
       const response = await httpService.get<TwitterAPIResponse>(_url, {
         headers: Object.fromEntries(headers.entries()),
+        responseType: 'json',
       });
 
+      // Phase 373: Log API errors for debugging
+      if (!response.ok) {
+        logger.warn(
+          `Twitter API request failed: ${response.status} ${response.statusText}`,
+          response.data
+        );
+        throw new Error(`Twitter API request failed: ${response.status} ${response.statusText}`);
+      }
+
       const json = response.data;
+
+      // Check for application-level errors (HTTP 200 but contains errors)
+      if (json.errors && json.errors.length > 0) {
+        logger.warn('Twitter API returned errors:', json.errors);
+        // We don't throw here because partial data might still be available in json.data
+      }
 
       // Cache on success (with LRU eviction)
       if (response.ok) {

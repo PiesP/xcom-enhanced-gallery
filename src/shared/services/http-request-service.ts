@@ -27,8 +27,6 @@
  * // @connect pbs.twimg.com
  */
 
-import { logger } from '@shared/logging';
-import { globalTimerManager } from '@shared/utils/timer-management';
 import { getUserscript } from '@shared/external/userscript/adapter';
 import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 
@@ -117,7 +115,7 @@ export class HttpRequestService {
         const details: GMXMLHttpRequestDetails = {
           method: method as any,
           url,
-          headers: options?.headers,
+          headers: options?.headers || {},
           timeout: options?.timeout ?? this.defaultTimeout,
           responseType: options?.responseType as any,
           onload: (response) => {
@@ -220,108 +218,7 @@ export class HttpRequestService {
     url: string,
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
-    const timeout = options?.timeout ?? this.defaultTimeout;
-
-    try {
-      return await this.gmRequest<T>(method, url, options);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('GM_xmlhttpRequest not available')) {
-        // Fallback to fetch
-      } else {
-        throw error;
-      }
-    }
-
-    try {
-      // Check for abort signal before starting
-      if (options?.signal?.aborted) {
-        throw new Error('Request was aborted');
-      }
-
-      const controller = new AbortController();
-      const timeoutId = globalTimerManager.setTimeout(() => controller.abort(), timeout);
-
-      const fetchOptions: RequestInit = {
-        method,
-        signal: options?.signal || controller.signal,
-      };
-
-      // Add headers if present
-      if (options?.headers) {
-        fetchOptions.headers = options.headers;
-      }
-
-      // Only add body if data exists and method requires it
-      if (options?.data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-        fetchOptions.body = JSON.stringify(options.data);
-        // Ensure content-type header is set for JSON data
-        if (!options?.headers?.['content-type']) {
-          fetchOptions.headers = {
-            ...fetchOptions.headers,
-            'content-type': 'application/json',
-          };
-        }
-      }
-
-      logger.debug(`[HttpRequestService] ${method} request to ${url}`, {
-        hasHeaders: !!options?.headers,
-        hasData: !!options?.data,
-        timeout,
-      });
-
-      const response = await fetch(url, fetchOptions);
-      globalTimerManager.clearTimeout(timeoutId);
-
-      let data: unknown;
-
-      // Parse response based on requested type
-      if (options?.responseType === 'blob') {
-        data = await response.blob();
-      } else if (options?.responseType === 'arraybuffer') {
-        data = await response.arrayBuffer();
-      } else if (options?.responseType === 'text') {
-        data = await response.text();
-      } else {
-        // Default to JSON, fallback to text if parse fails
-        try {
-          data = await response.json();
-        } catch {
-          data = await response.text();
-        }
-      }
-
-      // Convert Headers to plain object
-      const headers: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
-        headers[key.toLowerCase()] = value;
-      });
-
-      logger.debug(`[HttpRequestService] ${method} response from ${url}`, {
-        status: response.status,
-        ok: response.ok,
-        contentType: headers['content-type'],
-      });
-
-      return {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        data: data as T,
-        headers,
-      };
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new HttpError(`Request timeout after ${timeout}ms`, 0, 'Timeout');
-      }
-      if (error instanceof Error && error.message === 'Request was aborted') {
-        throw new Error('Request was aborted');
-      }
-      throw new HttpError(
-        `Fetch error: ${error instanceof Error ? error.message : String(error)}`,
-        0,
-        'Network Error'
-      );
-    }
+    return await this.gmRequest<T>(method, url, options);
   }
 
   /**
@@ -407,113 +304,8 @@ export class HttpRequestService {
     data: ArrayBuffer | Uint8Array,
     options?: BinaryRequestOptions
   ): Promise<HttpResponse<T>> {
-    const timeout = options?.timeout ?? this.defaultTimeout;
     const contentType = options?.contentType ?? 'application/octet-stream';
-
-    try {
-      return await this.gmRequest<T>('POST', url, { ...options, data, contentType } as any);
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('GM_xmlhttpRequest not available')) {
-        // Fallback to fetch
-      } else {
-        throw error;
-      }
-    }
-
-    try {
-      // Validate binary data
-      if (!data || (!(data instanceof ArrayBuffer) && !(data instanceof Uint8Array))) {
-        throw new Error('Data must be ArrayBuffer or Uint8Array');
-      }
-
-      // Check for abort signal before starting
-      if (options?.signal?.aborted) {
-        throw new Error('Request was aborted');
-      }
-
-      const controller = new AbortController();
-      const timeoutId = globalTimerManager.setTimeout(() => controller.abort(), timeout);
-
-      // Convert Uint8Array to ArrayBuffer if needed (for consistent body handling)
-      let bodyData: ArrayBufferLike;
-      if (data instanceof Uint8Array) {
-        // Create a proper copy to avoid SharedArrayBuffer type issues
-        const copy = new Uint8Array(data);
-        bodyData = copy.buffer.slice(copy.byteOffset, copy.byteOffset + copy.byteLength);
-      } else {
-        bodyData = data;
-      }
-
-      const fetchOptions: RequestInit = {
-        method: 'POST',
-        signal: options?.signal || controller.signal,
-        body: bodyData,
-        headers: {
-          'content-type': contentType,
-          ...options?.headers,
-        },
-      };
-
-      logger.debug(`[HttpRequestService] POST binary request to ${url}`, {
-        size: bodyData.byteLength,
-        contentType,
-        timeout,
-        hasHeaders: !!options?.headers,
-      });
-
-      const response = await fetch(url, fetchOptions);
-      globalTimerManager.clearTimeout(timeoutId);
-
-      let responseData: unknown;
-
-      // Parse response based on requested type
-      if (options?.responseType === 'blob') {
-        responseData = await response.blob();
-      } else if (options?.responseType === 'arraybuffer') {
-        responseData = await response.arrayBuffer();
-      } else if (options?.responseType === 'text') {
-        responseData = await response.text();
-      } else {
-        // Default to JSON, fallback to text if parse fails
-        try {
-          responseData = await response.json();
-        } catch {
-          responseData = await response.text();
-        }
-      }
-
-      // Convert Headers to plain object
-      const headers: Record<string, string> = {};
-      response.headers.forEach((value, key) => {
-        headers[key.toLowerCase()] = value;
-      });
-
-      logger.debug(`[HttpRequestService] POST binary response from ${url}`, {
-        status: response.status,
-        ok: response.ok,
-        contentType: headers['content-type'],
-      });
-
-      return {
-        ok: response.ok,
-        status: response.status,
-        statusText: response.statusText,
-        data: responseData as T,
-        headers,
-      };
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new HttpError(`Binary request timeout after ${timeout}ms`, 0, 'Timeout');
-      }
-      if (error instanceof Error && error.message === 'Request was aborted') {
-        throw new Error('Request was aborted');
-      }
-      throw new HttpError(
-        `Binary request error: ${error instanceof Error ? error.message : String(error)}`,
-        0,
-        'Network Error'
-      );
-    }
+    return await this.gmRequest<T>('POST', url, { ...options, data, contentType } as any);
   }
 }
 

@@ -14,7 +14,10 @@ type GlobalWithGMDownload = typeof globalThis & {
  */
 export function getGMDownload(): GMDownloadFunction | undefined {
   const gm = globalThis as GlobalWithGMDownload;
-  const download = gm['GM_download'];
+  const download =
+    typeof GM_download !== 'undefined'
+      ? (GM_download as unknown as GMDownloadFunction)
+      : gm['GM_download'];
   return typeof download === 'function' ? download : undefined;
 }
 

@@ -167,7 +167,7 @@ import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/ty
 import {
   DirectMediaMatchingStrategy,
   type MediaClickIndexStrategy,
-} from '@shared/services/media-extraction/strategies/media-click-index-strategy';
+} from '@shared/services/media-extraction/strategies/click-index';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
 
 /**

@@ -228,6 +228,7 @@ function userscriptHeader(flags: BuildFlags): string {
     `// @grant        GM_getValue\n` +
     `// @grant        GM_download\n` +
     `// @grant        GM_notification\n` +
+    `// @grant        GM_xmlhttpRequest\n` +
     `// @connect      pbs.twimg.com\n` +
     `// @connect      video.twimg.com\n` +
     `// @connect      api.twitter.com\n` +
