@@ -50,7 +50,7 @@ body:
     attributes:
       label: "Script version"
       description: "From the userscript header or GitHub release tag"
-      placeholder: "v0.4.14"
+      placeholder: "v0.4.15"
 
   - type: dropdown
     id: browser

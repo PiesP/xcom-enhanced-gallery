@@ -10,6 +10,20 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - No user-facing changes have been recorded yet.
 
+## [0.4.15] - 2025-11-22
+
+### Fixed
+
+- **Critical**: Fixed `GM_xmlhttpRequest` detection in Tampermonkey/Greasemonkey environments (resolved "GM_xmlhttpRequest not available" error).
+- **Critical**: Fixed Twitter API extraction failures by adding missing `Referer`/`Origin` headers and enforcing `responseType: 'json'`.
+- Fixed TypeScript type definitions in `PersistentStorage` and `TwitterAPIClient`.
+
+### Changed
+
+- **Performance**: Removed performance measurement code (`logger.time`/`timeEnd`) from production builds to reduce bundle size and overhead.
+- **Maintenance**: Removed orphaned modules (`zip-creator.ts`, `store-zip-writer.ts`) and unused scripts (`validate-build.ts`).
+- **Refactor**: Improved code conciseness and removed unused internal logic.
+
 ## [0.4.14]
 
 ### Added

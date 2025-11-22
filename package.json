@@ -1,6 +1,6 @@
 {
   "name": "xcom-enhanced-gallery",
-  "version": "0.4.14",
+  "version": "0.4.15",
   "description": "Media viewer and download functionality for X.com",
   "license": "MIT",
   "type": "module",
