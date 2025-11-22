@@ -14,7 +14,7 @@ import type {
   BulkDownloadResult,
   SingleDownloadResult,
   DownloadOptions,
-} from './unified-download-service';
+} from './download-service';
 import { scheduleIdle, scheduleMicrotask, scheduleRaf } from '@shared/utils/performance';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import { BaseServiceImpl } from './base-service';
@@ -520,16 +520,16 @@ export class MediaService extends BaseServiceImpl {
     media: MediaInfo,
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
-    const { unifiedDownloadService } = await import('./unified-download-service');
-    return unifiedDownloadService.downloadSingle(media, options);
+    const { downloadService } = await import('./download-service');
+    return downloadService.downloadSingle(media, options);
   }
 
   async downloadMultiple(
     mediaItems: Array<MediaInfo>,
     options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
-    const { unifiedDownloadService } = await import('./unified-download-service');
-    return unifiedDownloadService.downloadBulk(mediaItems, options);
+    const { downloadService } = await import('./download-service');
+    return downloadService.downloadBulk(mediaItems, options);
   }
 
   async downloadBulk(

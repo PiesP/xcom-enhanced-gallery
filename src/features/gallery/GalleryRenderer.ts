@@ -26,7 +26,7 @@ import { ErrorBoundary } from '@shared/components/ui/ErrorBoundary/ErrorBoundary
 import './styles/gallery-global.css';
 import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
-import { unifiedDownloadService } from '@shared/services/unified-download-service';
+import { downloadService } from '@shared/services/download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { getThemeService } from '@shared/container/service-accessors';
 import { languageService } from '@shared/services/language-service';
@@ -194,35 +194,35 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const releaseDownloadLock = acquireDownloadLock();
 
     try {
-      // Phase 312: UnifiedDownloadService usage (Singleton)
+      // Phase 312: DownloadService usage (Singleton)
       const mediaItems = gallerySignals.mediaItems.value;
       const currentIndex = gallerySignals.currentIndex.value;
 
       if (type === 'current') {
         const currentMedia = mediaItems[currentIndex];
         if (currentMedia) {
-          const result = await unifiedDownloadService.downloadSingle(currentMedia);
+          const result = await downloadService.downloadSingle(currentMedia);
           if (!result.success) {
             setError(result.error || 'Download failed.');
           }
         }
       } else {
-        // Phase 312-4: Ensure UnifiedDownloadService is registered (lazy loading)
+        // Phase 312-4: Ensure DownloadService is registered (lazy loading)
         // This delays first bulk download by 100-150ms, but removes 15-20 KB from initial bundle
         try {
-          const { ensureUnifiedDownloadServiceRegistered } = await import(
+          const { ensureDownloadServiceRegistered } = await import(
             '@shared/services/lazy-service-registration'
           );
-          await ensureUnifiedDownloadServiceRegistered();
-          logger.debug('[GalleryRenderer] UnifiedDownloadService lazy registration completed');
+          await ensureDownloadServiceRegistered();
+          logger.debug('[GalleryRenderer] DownloadService lazy registration completed');
         } catch (error) {
-          logger.warn('[GalleryRenderer] UnifiedDownloadService lazy registration failed:', error);
+          logger.warn('[GalleryRenderer] DownloadService lazy registration failed:', error);
           // Continue with download anyway - service might already be registered
         }
 
         // Convert readonly array to mutable
         const mutableMediaItems = Array.from(mediaItems);
-        const result = await unifiedDownloadService.downloadBulk(mutableMediaItems);
+        const result = await downloadService.downloadBulk(mutableMediaItems);
         if (!result.success) {
           setError(result.error || 'Download failed.');
         }

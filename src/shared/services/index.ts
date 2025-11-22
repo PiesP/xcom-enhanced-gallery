@@ -10,8 +10,8 @@ export { PersistentStorage, getPersistentStorage } from './persistent-storage';
 export { CookieService, getCookieService } from './cookie-service';
 export { StyleRegistry, getStyleRegistry } from './style-registry';
 
-export { UnifiedDownloadService, unifiedDownloadService } from './unified-download-service';
-export { ensureUnifiedDownloadServiceRegistered } from './lazy-service-registration';
+export { DownloadService, downloadService } from './download-service';
+export { ensureDownloadServiceRegistered } from './lazy-service-registration';
 
 export { HttpRequestService, getHttpRequestService, HttpError } from './http-request-service';
 
