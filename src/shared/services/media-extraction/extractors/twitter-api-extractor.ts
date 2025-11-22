@@ -166,7 +166,6 @@ import type { MediaInfo, MediaExtractionResult } from '@shared/types/media.types
 import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/types/media.types';
 import {
   DirectMediaMatchingStrategy,
-  DOMOrderEstimationStrategy,
   type MediaClickIndexStrategy,
 } from '@shared/services/media-extraction/strategies/media-click-index-strategy';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
@@ -708,10 +707,6 @@ export class TwitterAPIExtractor implements APIExtractor {
         this.findMediaElement.bind(this),
         el => this.extractMediaUrl(el) ?? '',
         this.normalizeMediaUrl.bind(this)
-      ),
-      new DOMOrderEstimationStrategy(
-        container => Array.from(container.querySelectorAll('img, video')),
-        this.isDirectMediaChild.bind(this)
       ),
     ];
 

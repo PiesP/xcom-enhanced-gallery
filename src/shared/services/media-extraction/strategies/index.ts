@@ -73,5 +73,4 @@ export { ParentTraversalTweetStrategy } from './parent-traversal-tweet-strategy'
 export { type MediaClickIndexStrategy } from './media-click-index-strategy';
 export {
   DirectMediaMatchingStrategy,
-  DOMOrderEstimationStrategy,
 } from './media-click-index-strategy';

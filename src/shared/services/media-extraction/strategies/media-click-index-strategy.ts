@@ -17,17 +17,14 @@
  *
  * ```
  * MediaClickIndexStrategy (Interface)
- *   ├─ DirectMediaMatchingStrategy (99% confidence)
- *   │  └─ Direct URL comparison (fastest, most reliable)
- *   └─ DOMOrderEstimationStrategy (85% confidence)
- *      └─ DOM element order analysis (fallback)
+ *   └─ DirectMediaMatchingStrategy (99% confidence)
+ *      └─ Direct URL comparison (fastest, most reliable)
  * ```
  *
  * **Key Characteristics**:
  * ✅ Strategy Pattern (Gang of Four design pattern)
- * ✅ Confidence-based selection (99%, 85%)
+ * ✅ Confidence-based selection (99%)
  * ✅ Pluggable strategies (easy to add new ones)
- * ✅ Fallback chain (try best first, fallback to less reliable)
  * ✅ Logging support (strategy name and confidence)
  *
  * **Use Cases**:
@@ -37,7 +34,6 @@
  *
  * **Performance**:
  * - Strategy 1 success: O(n) where n = mediaItems.length, typically 5-20ms
- * - Strategy 2 success: O(m) where m = DOM elements, typically 10-50ms
  * - Fallback: O(1), <1ms
  *
  * **Related Phases**:
@@ -85,15 +81,13 @@ export interface MediaClickIndexStrategy {
    *
    * Higher values = more reliable. Used for strategy selection and logging.
    * - 99: Direct URL match (most reliable)
-   * - 85: DOM order analysis (medium reliability)
-   * - 50: Fallback heuristics (low reliability)
    */
   readonly confidence: number;
 
   /**
    * Strategy name for logging and debugging.
    *
-   * @example "DirectMediaMatching", "DOMOrderEstimation"
+   * @example "DirectMediaMatching"
    */
   readonly name: string;
 }
@@ -167,73 +161,6 @@ export class DirectMediaMatchingStrategy implements MediaClickIndexStrategy {
       if (apiFilename && clickedFilename === apiFilename) {
         return i;
       }
-    }
-
-    return -1;
-  }
-}
-
-/**
- * DOM order-based estimation strategy (Phase 351, Confidence: 80-90%).
- *
- * Estimates media index by analyzing DOM element order in tweet container.
- * Fallback strategy when direct URL matching fails.
- *
- * **Matching Approach**:
- * 1. Find clicked element's position in container's media elements
- * 2. Analyze sibling relationships
- * 3. Match DOM order to media items array order
- *
- * **Advantages**:
- * - Works without URL extraction
- * - Handles dynamic media generation
- * - Scope-limited traversal (performance optimized)
- *
- * **Limitations**:
- * - DOM order must match media items order
- * - Assumes linear media layout
- * - Less reliable than URL matching
- */
-export class DOMOrderEstimationStrategy implements MediaClickIndexStrategy {
-  readonly name = 'DOMOrderEstimation';
-  readonly confidence = 85;
-
-  constructor(
-    private readonly findMediaElementsInContainer: (container: HTMLElement) => HTMLElement[],
-    private readonly isDirectMediaChild: (parent: HTMLElement, child: HTMLElement) => boolean
-  ) {}
-
-  calculate(
-    clickedElement: HTMLElement,
-    _apiMedias: TweetMediaEntry[],
-    mediaItems: MediaInfo[]
-  ): number {
-    const maxIndex = mediaItems.length - 1;
-
-    // Step 1: Check if clicked element is already media (sibling relationship)
-    const parentElement = clickedElement.parentElement;
-    if (!parentElement) return -1;
-
-    const mediaElements = this.findMediaElementsInContainer(parentElement);
-    const clickedMediaIndex = mediaElements.indexOf(clickedElement);
-    if (clickedMediaIndex !== -1) {
-      return Math.min(clickedMediaIndex, maxIndex);
-    }
-
-    // Step 2: Search parent containers (up to 10 levels)
-    let current: HTMLElement | null = parentElement;
-    for (let i = 0; i < 10 && current; i++) {
-      const container = current;
-      const siblings = this.findMediaElementsInContainer(container);
-
-      for (const sibling of siblings) {
-        if (!sibling) continue;
-        if (sibling.contains(clickedElement) || this.isDirectMediaChild(clickedElement, sibling)) {
-          return Math.min(siblings.indexOf(sibling), maxIndex);
-        }
-      }
-
-      current = current.parentElement;
     }
 
     return -1;
