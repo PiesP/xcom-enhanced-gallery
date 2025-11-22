@@ -17,7 +17,6 @@ import { DownloadOrchestrator } from './download/download-orchestrator';
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
 import type { DownloadProgress } from './download/types';
-import type { BaseResultStatus } from '@shared/types/result.types';
 import { ErrorCode } from '@shared/types/result.types';
 import { getGMDownload } from './download/gm-download';
 
@@ -53,18 +52,18 @@ interface BlobDownloadResult {
 export interface SingleDownloadResult {
   success: boolean;
   filename?: string;
-  error?: string;
+  error?: string | undefined;
 }
 
 export interface BulkDownloadResult {
   success: boolean;
-  status: BaseResultStatus;
+  status: 'success' | 'partial' | 'error';
   filesProcessed: number;
   filesSuccessful: number;
-  error?: string;
-  filename?: string;
-  failures?: Array<{ url: string; error: string }>;
-  code?: ErrorCode;
+  filename?: string | undefined;
+  error?: string | undefined;
+  failures?: Array<{ url: string; error: string }> | undefined;
+  code: ErrorCode;
 }
 
 // ====================================

@@ -31,7 +31,7 @@
     "// Shared: build*, validate*, typecheck (Local + CI) ": "",
     "// ===== Build ===== ": "",
     "build:only": "npm run clean && vite build --mode development && vite build --mode production",
-    "build": "npm run build:only",
+    "build": "npm run validate && npm run build:only",
     "build:local": "npm run local:prebuild && npm run build:only && npm run e2e:smoke",
     "build:dev": "vite build --mode development",
     "build:prod": "vite build --mode production",

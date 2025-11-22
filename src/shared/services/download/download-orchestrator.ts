@@ -14,20 +14,20 @@ export interface OrchestratorItem {
   url: string;
   /** desired filename (before collision resolution) */
   desiredName: string;
-  blob?: Blob;
+  blob?: Blob | undefined;
 }
 
 export interface OrchestratorOptions {
-  concurrency?: number; // 1..8
-  retries?: number; // >= 0
-  signal?: AbortSignal;
-  onProgress?: (progress: {
+  concurrency?: number | undefined; // 1..8
+  retries?: number | undefined; // >= 0
+  signal?: AbortSignal | undefined;
+  onProgress?: ((progress: {
     phase: 'preparing' | 'downloading' | 'complete';
     current: number;
     total: number;
     percentage: number;
     filename?: string;
-  }) => void;
+  }) => void) | undefined;
 }
 
 export interface ZipResult {
@@ -311,7 +311,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
           let data: Uint8Array;
           if (item.blob) {
             data = new Uint8Array(await item.blob.arrayBuffer());
-            onSourceDetected?.('cache');
+            // onSourceDetected?.('cache');
           } else {
             data = await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
           }
