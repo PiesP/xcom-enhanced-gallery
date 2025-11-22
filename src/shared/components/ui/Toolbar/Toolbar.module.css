@@ -341,83 +341,7 @@ button.fitButton {
 }
 
 /* 반응형 디자인 */
-@media (width <= 48em) {
-  /* 768px → 48em */
-  .galleryToolbar {
-    padding: 0.75em 1em; /* 12px 16px → 0.75em 1em */
-  }
-
-  .toolbarContent {
-    gap: 0.75em; /* 12px → 0.75em */
-  }
-
-  .toolbarButton,
-  .toolbarButton.fitButton,
-  .toolbarButton.downloadButton,
-  .toolbarButton.settingsButton,
-  .toolbarButton.closeButton,
-  .fitButton {
-    /* ✅ 최소 클릭 타겟 유지: 2.5em (정책 준수) */
-    --xeg-button-square-size: 2.5em;
-    --xeg-button-square-padding: 0.5em;
-
-    font-size: 0.8125em; /* 13px → 0.8125em */
-  }
-
-  .mediaCounter {
-    font-size: 0.875em; /* 14px → 0.875em */
-  }
-
-  .progressBar {
-    width: 3.125em; /* 50px → 3.125em */
-  }
-
-  /* 반응형에서도 separator 표시 유지 */
-}
-
-@media (width <= 30em) {
-  /* 480px → 30em */
-  .galleryToolbar {
-    padding: 0.625em 0.75em; /* 10px 12px → 0.625em 0.75em */
-  }
-
-  .toolbarContent {
-    gap: 0.5em; /* 8px → 0.5em */
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .toolbarControls {
-    gap: 0.25em; /* 4px → 0.25em */
-  }
-
-  .toolbarButton {
-    /* ✅ 작은 화면에서도 클릭 타겟 최소치 유지 */
-    --xeg-button-square-size: 2.5em; /* 고정 폭으로 정렬 안정화 */
-    --xeg-button-square-padding: 0.5em; /* 컨텐츠 여백 유지 */
-  }
-
-  .mediaCounterWrapper {
-    min-width: 4.375em; /* 70px → 4.375em */
-  }
-
-  .mediaCounter {
-    font-size: 0.8125em; /* 13px → 0.8125em */
-  }
-
-  .progressBar {
-    width: 2.5em; /* 40px → 2.5em */
-    height: 0.125em; /* 2px → 0.125em */
-  }
-
-  /* (white box 제거 유지 - 별도 스타일 불필요) */
-
-  .fitButton {
-    padding: 0.1875em 0.375em; /* 3px 6px → 0.1875em 0.375em */
-  }
-
-  /* 작은 화면에서도 separator 표시 유지 */
-}
+/* PC-only: Mobile styles removed (Phase 242) */
 /* 다크 모드 특화 색상은 semantic 토큰에서 일괄 관리 */
 
 /* 투명도 감소 선호 사용자를 위한 대체 스타일 */
@@ -432,30 +356,7 @@ button.fitButton {
 }
 
 /* 모바일 환경에서 시인성 강화 */
-@media (width <= 48em) {
-  /* 768px → 48em */
-  .galleryToolbar {
-    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-    padding: 0.5em 0.75em; /* 8px 12px → 0.5em 0.75em */
-    min-height: 3em; /* 48px → 3em */
-  }
-
-  [data-theme='dark'] .galleryToolbar {
-    background: var(--xeg-toolbar-panel-surface, var(--xeg-toolbar-surface));
-  }
-}
-
-/* 작은 모바일 화면 */
-@media (width <= 30em) {
-  /* 480px → 30em */
-  .galleryToolbar {
-    width: calc(100vw - 1.25em); /* 20px → 1.25em */
-    max-width: none;
-    left: 0.625em; /* 10px → 0.625em */
-    transform: none;
-    border-radius: var(--xeg-radius-md);
-  }
-}
+/* PC-only: Mobile styles removed (Phase 242) */
 
 /* Phase 254: 감소된 모션은 semantic 레이어의 --xeg-duration-* 토큰으로 자동 처리 */
 /* animation을 사용하는 요소만 명시적으로 비활성화 */

@@ -558,7 +558,6 @@ function VerticalGalleryViewCore({
           // isDownloading: Internal state tracking for download button visual feedback
           // disabled: External control to disable all toolbar buttons during operations
           isDownloading={isDownloading}
-          // disabled={isDownloading} // Phase 430: Allow navigation during download
 
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}

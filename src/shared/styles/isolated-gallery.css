@@ -42,10 +42,4 @@
   .xeg-gallery-root *::after {
     box-sizing: border-box;
   }
-
-  @media (width <= 48rem) {
-    .xeg-gallery-root {
-      height: 100dvh;
-    }
-  }
 }

@@ -330,63 +330,7 @@
   }
 
   /* Responsive Design - Tablet and Mobile */
-  @media (width <= 48rem) {
-    .xeg-gallery-toolbar {
-      height: 3.125rem;
-      padding: 0 0.75rem;
-    }
-    .xeg-toolbar-section-left,
-    .xeg-toolbar-section-center,
-    .xeg-toolbar-section-right {
-      gap: var(--space-sm);
-    }
-
-    .xeg-toolbar-button {
-      min-width: 2rem;
-      height: 2rem;
-      padding: 0.375rem 0.625rem;
-      font-size: var(--font-size-xs);
-    }
-
-    .xeg-gallery-counter {
-      font-size: var(--font-size-xs);
-      margin-left: var(--space-sm);
-    }
-
-    .xeg-gallery-viewer {
-      padding: 3.125rem 0.75rem 0.75rem;
-    }
-
-    .xeg-gallery-nav-left,
-    .xeg-gallery-nav-right {
-      width: 2.5rem;
-      height: 2.5rem;
-      font-size: var(--font-size-md);
-    }
-
-    .xeg-gallery-nav-left {
-      left: 0.75rem;
-    }
-
-    .xeg-gallery-nav-right {
-      right: 0.75rem;
-    }
-
-    .xeg-gallery-thumbnails {
-      bottom: 0.75rem;
-      max-width: calc(100vw - 1.5rem);
-    }
-
-    .xeg-thumbnails-container {
-      padding: var(--space-sm);
-      gap: 0.375rem;
-    }
-
-    .xeg-thumbnail-image {
-      width: 3.75rem;
-      height: 3.75rem;
-    }
-  }
+  /* PC-only: Mobile styles removed (Phase 242) */
 
   /* Light mode colors managed by design-tokens.semantic.css */
 

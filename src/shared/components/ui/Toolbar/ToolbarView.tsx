@@ -306,7 +306,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
           <IconButton
             class={toolbarButtonClass(styles.downloadButton, styles.downloadCurrent)}
             size='toolbar'
-            loading={isDownloading()}
             onClick={props.onDownloadCurrent}
             disabled={downloadDisabled()}
             aria-label='현재 파일 다운로드'
@@ -314,7 +313,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
             data-gallery-element='download-current'
             data-disabled={downloadDisabled()}
             data-action-disabled={anyActionDisabled()}
-            data-loading={isDownloading()}
           >
             <ArrowDownTray size={18} />
           </IconButton>
@@ -330,7 +328,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
               data-gallery-element='download-all'
               data-disabled={downloadDisabled()}
               data-action-disabled={anyActionDisabled()}
-              data-loading={isDownloading()}
             >
               <ArrowDownOnSquareStack size={18} />
             </IconButton>
