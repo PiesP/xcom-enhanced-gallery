@@ -1095,6 +1095,42 @@ export class TwitterAPI {
   }
 
   /**
+   * Normalize legacy tweet fields and enrich with note tweet text
+   */
+  private static normalizeLegacyTweet(tweet: TwitterTweet): void {
+    if (tweet.legacy) {
+      if (!tweet.extended_entities && tweet.legacy.extended_entities) {
+        tweet.extended_entities = tweet.legacy.extended_entities;
+      }
+      if (!tweet.full_text && tweet.legacy.full_text) {
+        tweet.full_text = tweet.legacy.full_text;
+      }
+      if (!tweet.id_str && tweet.legacy.id_str) {
+        tweet.id_str = tweet.legacy.id_str;
+      }
+    }
+
+    const noteTweetText = tweet.note_tweet?.note_tweet_results?.result?.text;
+    if (noteTweetText) {
+      tweet.full_text = noteTweetText;
+    }
+  }
+
+  /**
+   * Normalize legacy user fields
+   */
+  private static normalizeLegacyUser(user: TwitterUser): void {
+    if (user.legacy) {
+      if (!user.screen_name && user.legacy.screen_name) {
+        user.screen_name = user.legacy.screen_name;
+      }
+      if (!user.name && user.legacy.name) {
+        user.name = user.legacy.name;
+      }
+    }
+  }
+
+  /**
    * Get Tweet Medias - Main API Entry Point
    *
    * Purpose:
@@ -1212,71 +1248,28 @@ export class TwitterAPI {
     let tweetResult = json.data.tweetResult.result;
     if (tweetResult.tweet) tweetResult = tweetResult.tweet;
     const tweetUser = tweetResult.core?.user_results?.result;
-    // Inline legacy normalization
-    if (tweetResult.legacy) {
-      if (!tweetResult.extended_entities && tweetResult.legacy.extended_entities) {
-        tweetResult.extended_entities = tweetResult.legacy.extended_entities;
-      }
-      if (!tweetResult.full_text && tweetResult.legacy.full_text) {
-        tweetResult.full_text = tweetResult.legacy.full_text;
-      }
-      if (!tweetResult.id_str && tweetResult.legacy.id_str) {
-        tweetResult.id_str = tweetResult.legacy.id_str;
-      }
-    }
 
-    // Phase: Full tweet text support - prefer note_tweet for long tweets
-    // Extract full text from note_tweet structure
-    const noteTweetText = tweetResult.note_tweet?.note_tweet_results?.result?.text;
+    this.normalizeLegacyTweet(tweetResult);
 
-    if (noteTweetText) {
-      tweetResult.full_text = noteTweetText;
-    }
     if (!tweetUser) return [];
-    if (tweetUser.legacy) {
-      if (!tweetUser.screen_name && tweetUser.legacy.screen_name) {
-        tweetUser.screen_name = tweetUser.legacy.screen_name;
-      }
-      if (!tweetUser.name && tweetUser.legacy.name) {
-        tweetUser.name = tweetUser.legacy.name;
-      }
-    }
+    this.normalizeLegacyUser(tweetUser);
+
     let result = this.extractMediaFromTweet(tweetResult, tweetUser, 'original');
 
     // Phase 290.1: Fix media order - Sort by visual order (expanded_url photo/video number)
     result = sortMediaByVisualOrder(result);
 
     if (tweetResult.quoted_status_result?.result) {
-      const quotedTweet = tweetResult.quoted_status_result.result;
+      let quotedTweet = tweetResult.quoted_status_result.result;
+      // Unwrap quoted tweet if needed (e.g. TweetWithVisibilityResults)
+      if (quotedTweet.tweet) {
+        quotedTweet = quotedTweet.tweet;
+      }
       const quotedUser = quotedTweet.core?.user_results?.result;
       if (quotedTweet && quotedUser) {
-        if (quotedTweet.legacy) {
-          if (!quotedTweet.extended_entities && quotedTweet.legacy.extended_entities) {
-            quotedTweet.extended_entities = quotedTweet.legacy.extended_entities;
-          }
-          if (!quotedTweet.full_text && quotedTweet.legacy.full_text) {
-            quotedTweet.full_text = quotedTweet.legacy.full_text;
-          }
-          if (!quotedTweet.id_str && quotedTweet.legacy.id_str) {
-            quotedTweet.id_str = quotedTweet.legacy.id_str;
-          }
-        }
+        this.normalizeLegacyTweet(quotedTweet);
+        this.normalizeLegacyUser(quotedUser);
 
-        // Phase: Full tweet text support - prefer note_tweet for long quoted tweets
-        // Extract full text from quoted tweet note_tweet structure
-        const quotedNoteTweetText = quotedTweet.note_tweet?.note_tweet_results?.result?.text;
-
-        if (quotedNoteTweetText) {
-          quotedTweet.full_text = quotedNoteTweetText;
-        }
-        if (quotedUser.legacy) {
-          if (!quotedUser.screen_name && quotedUser.legacy.screen_name) {
-            quotedUser.screen_name = quotedUser.legacy.screen_name;
-          }
-          if (!quotedUser.name && quotedUser.legacy.name) {
-            quotedUser.name = quotedUser.legacy.name;
-          }
-        }
         // Phase 342: 인용 트윗의 미디어를 sourceLocation='quoted'로 마킹하여 추출
         const quotedMedia = this.extractMediaFromTweet(quotedTweet, quotedUser, 'quoted');
         // Phase 290.1: Sort quoted tweet media by visual order
