@@ -26,7 +26,6 @@
  */
 
 import { logger } from '@shared/logging';
-import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 /**
@@ -50,19 +49,7 @@ export class UrlBasedTweetStrategy implements TweetInfoExtractionStrategy {
       }
 
       const primaryUsername = this.extractUsernameFromUrl(currentUrl)?.trim() ?? null;
-      let resolvedUsername = primaryUsername && primaryUsername.length > 0 ? primaryUsername : null;
-
-      if (!resolvedUsername) {
-        const fallbackUsername = parseUsernameFast()?.trim();
-        if (fallbackUsername && fallbackUsername.length > 0) {
-          resolvedUsername = fallbackUsername;
-        }
-      }
-
-      if (!resolvedUsername) {
-        logger.debug('UrlBasedTweetStrategy: Username extraction failed');
-        return null;
-      }
+      const resolvedUsername = primaryUsername && primaryUsername.length > 0 ? primaryUsername : 'unknown';
 
       return {
         tweetId,

@@ -17,7 +17,7 @@
  * - Test Friendly: Selectors injected via options (mockable)
  *
  * **Architectural Role**:
- * DomDirectExtractor (uses)
+ * MediaExtractionService (uses)
  *   ↓
  * SelectorRegistry (queries)
  *   ↓
@@ -26,7 +26,6 @@
  * DOM Utils (safe queries)
  *
  * **Primary Use Case**: Media extraction from tweet DOM (X.com gallery)
- * **Related**: [DomDirectExtractor](../services/media-extraction/extractors/dom-direct-extractor.ts)
  *
  * @related [DomCache](./dom-cache.ts), [DOM Utils](./utils/dom-utils.ts), [STABLE_SELECTORS](@/constants)
  */

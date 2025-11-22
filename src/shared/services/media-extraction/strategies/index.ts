@@ -46,7 +46,7 @@
  *
  * **Related Modules**:
  * - Parent: @shared/services/media-extraction (orchestrator)
- * - Sibling: extractors/ (TwitterAPIExtractor, DOMDirectExtractor)
+ * - Sibling: extractors/ (TwitterAPIExtractor)
  * - Consumer: TweetInfoExtractor (Phase 405B-2)
  * - Utilities: quote-tweet-detector (Phase 342)
  *
@@ -70,7 +70,7 @@ export { DomStructureTweetStrategy } from './dom-structure-tweet-strategy';
 export { DataAttributeTweetStrategy } from './data-attribute-tweet-strategy';
 export { ParentTraversalTweetStrategy } from './parent-traversal-tweet-strategy';
 
-// Click index calculation strategy (Used by TwitterAPIExtractor, DOMDirectExtractor)
+// Click index calculation strategy (Used by TwitterAPIExtractor)
 export { type MediaClickIndexStrategy } from './media-click-index-strategy';
 export {
   DirectMediaMatchingStrategy,

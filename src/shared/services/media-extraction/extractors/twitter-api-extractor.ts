@@ -18,18 +18,15 @@
  * Phase 1: TweetInfoExtractor
  *   └─ Extract: tweetId, username, tweetUrl
  *
- * Phase 2a: TwitterAPIExtractor (PRIMARY - Phase 405B-4)
+ * Phase 2: TwitterAPIExtractor (PRIMARY - Phase 405B-4)
  *   ├─ Input: TweetInfo + clickedElement
  *   ├─ Step 1: Fetch media from API (TwitterAPI.getTweetMedias)
  *   ├─ Step 2: Convert API response to MediaInfo[]
  *   ├─ Step 3: Calculate clicked media index (2 strategies)
  *   └─ Output: MediaExtractionResult
  *
- * Phase 2b: DOMDirectExtractor (FALLBACK - Phase 405B-3)
- *   └─ If Phase 2a fails, extract from DOM directly
- *
  * Phase 3: MediaExtractionService (Orchestrator - Phase 405B-1)
- *   └─ Coordinate phases 1→2a→2b
+ *   └─ Coordinate phases 1→2
  * ```
  *
  * **Key Characteristics**:
@@ -38,7 +35,6 @@
  * ✅ User metadata: screen_name from API response
  * ⚠️  Network dependent: Requires API access
  * ⚠️  Rate limiting: Tampermonkey GM_xmlHttpRequest subject to limits
- * ⚠️  Fallback: DOMDirectExtractor if API fails
  *
  * **3-Phase Extraction Pipeline**:
  *

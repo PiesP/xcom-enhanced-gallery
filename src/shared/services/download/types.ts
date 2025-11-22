@@ -7,8 +7,6 @@
  *
  * **Related Services**:
  * - {@link DownloadOrchestrator}: Download orchestration with concurrency control (Phase 310-B)
- * - {@link DOMMediaExtractor}: DOM-based media extraction (Phase 400)
- * - {@link DownloadCacheService}: IndexedDB caching with LRU policy (Phase 420)
  * - {@link HttpRequestService}: HTTP download client with retry (Phase 310-B)
  *
  * **Import**:

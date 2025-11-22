@@ -22,8 +22,6 @@
  * @author X.com Enhanced Gallery | Phase 379
  */
 
-import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
-
 /**
  * Extract tweet author username using optimized DOM parsing
  *
@@ -55,10 +53,6 @@ import { parseUsernameFast } from '@shared/services/media/username-extraction-se
  *
  * @see UsernameExtractionService - Underlying service implementation
  */
-export function getPreferredUsername(element?: HTMLElement | Document): string | null {
-  try {
-    return parseUsernameFast(element) ?? null;
-  } catch {
-    return null;
-  }
+export function getPreferredUsername(_element?: HTMLElement | Document): string | null {
+  return null;
 }

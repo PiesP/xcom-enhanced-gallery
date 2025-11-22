@@ -45,12 +45,6 @@ export type BulkDownloadOptions = DownloadOptions;
 // Phase 326.5: Conditional import for tree-shaking
 // MediaExtractionService는 Feature Flag에 따라 동적으로 로드
 import type { MediaExtractionService } from './media-extraction/media-extraction-service';
-import {
-  UsernameParser,
-  extractUsername,
-  parseUsernameFast,
-} from './media/username-extraction-service';
-import type { UsernameExtractionResult } from './media/username-extraction-service';
 
 /**
  * MediaService configuration options
@@ -69,7 +63,6 @@ export class MediaService extends BaseServiceImpl {
   private static instance: MediaService | null = null;
 
   private readonly mediaExtraction: MediaExtractionService | null;
-  private readonly usernameParser: UsernameParser;
 
   private webpSupported: boolean | null = null;
 
@@ -87,8 +80,6 @@ export class MediaService extends BaseServiceImpl {
     // Phase 326.5: Feature Flag - Media Extraction is dynamically loaded during initialization
     const enableMediaExtraction = options.enableMediaExtraction ?? true;
     this.mediaExtraction = null; // Initialize as null, load in onInitialize
-
-    this.usernameParser = new UsernameParser();
 
     // Save enableMediaExtraction flag internally
     (this as { _enableMediaExtraction?: boolean })._enableMediaExtraction = enableMediaExtraction;
@@ -156,14 +147,6 @@ export class MediaService extends BaseServiceImpl {
       throw new Error('[MediaService] Media Extraction not initialized');
     }
     return this.mediaExtraction.extractAllFromContainer(container, options);
-  }
-
-  extractUsername(element?: HTMLElement | Document): UsernameExtractionResult {
-    return this.usernameParser.extractUsername(element);
-  }
-
-  parseUsernameFast(element?: HTMLElement | Document): string | null {
-    return parseUsernameFast(element);
   }
 
   // ====================================
@@ -573,10 +556,6 @@ export class MediaService extends BaseServiceImpl {
     logger.debug('[MediaService] Service cleanup completed.');
   }
 }
-
-export { extractUsername };
-export { parseUsernameFast };
-export type { UsernameExtractionResult };
 
 let __mediaServiceInstance: MediaService | null = null;
 function __getMediaService(): MediaService {

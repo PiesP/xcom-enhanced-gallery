@@ -43,7 +43,6 @@
  * **Related Phases**:
  * - Phase 351: Initial Strategy pattern introduction
  * - Phase 405B-4: Used by TwitterAPIExtractor
- * - Phase 405B-3: Used by DOMDirectExtractor
  * - Phase 405B-2: This documentation
  */
 

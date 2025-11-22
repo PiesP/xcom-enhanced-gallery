@@ -30,12 +30,6 @@ export interface UseGalleryKeyboardOptions {
    * Callback triggered when Escape key is pressed
    */
   onClose: () => void;
-
-  /**
-   * Callback triggered when Help key is pressed (Shift+? or ?)
-   * Only active within gallery context
-   */
-  onOpenHelp?: () => void;
 }
 
 /**
@@ -56,7 +50,7 @@ export interface UseGalleryKeyboardOptions {
  *
  * @param options - Configuration options
  */
-export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOptions): void {
+export function useGalleryKeyboard({ onClose }: UseGalleryKeyboardOptions): void {
   const { createEffect, onCleanup } = getSolid();
 
   createEffect(() => {
@@ -89,12 +83,6 @@ export function useGalleryKeyboard({ onClose, onOpenHelp }: UseGalleryKeyboardOp
 
       if (keyboardEvent.key === 'Escape') {
         onClose();
-        handled = true;
-      } else if (
-        keyboardEvent.key === '?' ||
-        (keyboardEvent.key === '/' && keyboardEvent.shiftKey)
-      ) {
-        onOpenHelp?.();
         handled = true;
       }
 

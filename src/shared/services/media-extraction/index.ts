@@ -20,12 +20,8 @@
  *        │
  *        ├─ MediaExtractionService (Phase 405B-1) - ORCHESTRATOR
  *        │  ├─ Phase 1: TweetInfoExtractor (extract metadata)
- *        │  ├─ Phase 2a: TwitterAPIExtractor (primary strategy)
- *        │  ├─ Phase 2b: DOMDirectExtractor (fallback strategy)
- *        │  └─ Phase 3: Coordinate 1→2a→2b pipeline
- *        │
- *        ├─ DOMDirectExtractor (Phase 405B-3) - Direct Export
- *        │  └─ For advanced use cases requiring DOM extraction only
+ *        │  ├─ Phase 2: TwitterAPIExtractor (primary strategy)
+ *        │  └─ Phase 3: Coordinate 1→2 pipeline
  *        │
  *        └─ TwitterAPIExtractor (NOT exported - internal only)
  *           └─ Used by MediaExtractionService, not public API
@@ -36,15 +32,13 @@
  * | Export | Type | Purpose | Typical Usage |
  * |--------|------|---------|---------------|
  * | `MediaExtractionService` | Class | Main orchestrator | Primary entry point for all extractions |
- * | `DOMDirectExtractor` | Class | Direct DOM extraction | Fallback or testing only |
  *
  * **Internal Implementation** (NOT Exported):
  *
  * | Module | Type | Purpose | Reason for Hiding |
  * |--------|------|---------|-------------------|
  * | `media-extraction-service.ts` | Orchestrator | Coordinate extraction phases | Consumers shouldn't manage phases |
- * | `extractors/twitter-api-extractor.ts` | Strategy | API-based extraction | Implementation detail of Phase 2a |
- * | `extractors/dom-direct-extractor.ts` | Strategy | DOM-based extraction | Fallback, exported separately |
+ * | `extractors/twitter-api-extractor.ts` | Strategy | API-based extraction | Implementation detail of Phase 2 |
  * | `strategies/media-click-index-strategy.ts` | Strategies | Index calculation | Implementation detail |
  * | `strategies/tweet-info-extractor.ts` | Strategy | Metadata extraction | Implementation detail |
  *
@@ -52,7 +46,7 @@
  * - Principle: Export only what consumers need
  * - Reason: Hide internal orchestration details
  * - Benefit: Freedom to refactor internals without breaking consumers
- * - Example: If Phase 2b strategy changes, consumers unaffected (abstracted)
+ * - Example: If Phase 2 strategy changes, consumers unaffected (abstracted)
  *
  * **Import Examples** (How to Use):
  *
@@ -66,12 +60,6 @@
  *   options,
  *   extractionId
  * );
- *
- * // ✅ CORRECT: Direct DOM extraction (advanced/testing)
- * import { DOMDirectExtractor } from '@shared/services/media-extraction';
- *
- * const extractor = new DOMDirectExtractor();
- * const result = await extractor.extract(element, options, extractionId);
  *
  * // ❌ WRONG: Don't import internal strategies directly
  * import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
@@ -90,8 +78,7 @@
  * ├─ index.ts                          (THIS FILE - Public API)
  * ├─ media-extraction-service.ts       (Phase 405B-1: Orchestrator)
  * ├─ extractors/
- * │  ├─ twitter-api-extractor.ts      (Phase 405B-4: Primary strategy)
- * │  └─ dom-direct-extractor.ts       (Phase 405B-3: Fallback strategy)
+ * │  └─ twitter-api-extractor.ts      (Phase 405B-4: Primary strategy)
  * └─ strategies/
  *    ├─ tweet-info-extractor.ts       (Phase 405B-2: Metadata extraction)
  *    ├─ media-click-index-strategy.ts (Phase 351: Index calculation)
@@ -115,7 +102,6 @@
  * - 3.0.0 (v0.4.2+): Phase 405B consolidation
  *   - Phase 405B-1: MediaExtractionService orchestrator
  *   - Phase 405B-2: TweetInfoExtractor metadata
- *   - Phase 405B-3: DOMDirectExtractor fallback
  *   - Phase 405B-4: TwitterAPIExtractor primary
  * - 2.0.0: Initial extraction service
  * - 1.0.0: Basic media handling
@@ -141,4 +127,3 @@
  */
 
 export { MediaExtractionService } from './media-extraction-service';
-export { DOMDirectExtractor } from './extractors/dom-direct-extractor';

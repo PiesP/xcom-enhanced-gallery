@@ -9,7 +9,6 @@ import { BaseServiceImpl } from '@shared/services/base-service';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import { DOMMediaExtractor } from './dom-media-extractor';
 
 export interface OrchestratorItem {
   url: string;
@@ -48,11 +47,9 @@ export class DownloadOrchestrator extends BaseServiceImpl {
   static readonly DEFAULT_BACKOFF_BASE_MS = 200;
   private static instance: DownloadOrchestrator | null = null;
   private activeTimers: ReturnType<typeof globalTimerManager.setTimeout>[] = [];
-  private readonly domExtractor: DOMMediaExtractor;
 
   private constructor() {
     super('DownloadOrchestrator');
-    this.domExtractor = new DOMMediaExtractor();
   }
 
   public static getInstance(): DownloadOrchestrator {
@@ -103,39 +100,10 @@ export class DownloadOrchestrator extends BaseServiceImpl {
     backoffBaseMs: number = DownloadOrchestrator.DEFAULT_BACKOFF_BASE_MS,
     onSourceDetected?: (source: DownloadDataSource) => void
   ): Promise<Uint8Array> {
-    // Phase 400: 1단계 - DOM에서 먼저 추출 시도 (90-99% 시간 단축)
-    try {
-      const domResult = await this.domExtractor.extractFromUrl(url);
-      if (domResult.success && domResult.blob) {
-        const arrayBuffer = await domResult.blob.arrayBuffer();
-        onSourceDetected?.('dom');
-        return new Uint8Array(arrayBuffer);
-      }
-    } catch {
-      // DOM extraction failed - fallback to IndexedDB
-      // (error logging already handled by domExtractor)
-    }
-
-    // **Phase 420** (Step 2): Check IndexedDB cache (90% time savings on re-download)
-    // If media was downloaded before: retrieve from offline cache
-    try {
-      const { downloadCacheService } = await import('./download-cache-service');
-      await downloadCacheService.initialize();
-      const cached = await downloadCacheService.getCached(url);
-      if (cached) {
-        onSourceDetected?.('cache');
-        return cached;
-      }
-    } catch {
-      // IndexedDB failed - fallback to HTTP
-      // (error logging handled by service)
-    }
-
     // **Phase 310-B** (Step 3): HTTP download with caching and retry logic
     // Use HttpRequestService for cross-origin fetch with proper CORS handling
     const httpService = HttpRequestService.getInstance();
     let attempt = 0;
-    let downloadedData: Uint8Array | null = null;
 
     // Total attempts = retries + 1 (retries=2 means 3 total attempts: 0, 1, 2)
     while (true) {
@@ -154,16 +122,7 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         if (!response.ok) {
           throw new Error(`HTTP error: ${response.status}`);
         }
-        downloadedData = new Uint8Array(response.data);
-
-        // **Phase 420** (Background Caching): Cache successful downloads for instant replay
-        // Non-blocking operation - if caching fails, download succeeds anyway
-        try {
-          const { downloadCacheService } = await import('./download-cache-service');
-          await downloadCacheService.setCached(url, downloadedData);
-        } catch {
-          // Caching failure does not affect download (soft failure)
-        }
+        const downloadedData = new Uint8Array(response.data);
 
         onSourceDetected?.('network');
         return downloadedData;

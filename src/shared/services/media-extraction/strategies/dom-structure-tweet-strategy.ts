@@ -21,7 +21,6 @@
  */
 
 import { logger } from '@shared/logging';
-import { parseUsernameFast } from '@shared/services/media/username-extraction-service';
 import type { TweetInfo, TweetInfoExtractionStrategy } from '@shared/types/media.types';
 
 export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
@@ -37,19 +36,7 @@ export class DomStructureTweetStrategy implements TweetInfoExtractionStrategy {
       if (!tweetId) return null;
 
       const containerUsername = this.findUsernameInContainer(tweetContainer as HTMLElement)?.trim();
-      let username = containerUsername && containerUsername.length > 0 ? containerUsername : null;
-
-      if (!username) {
-        const fallbackUsername = parseUsernameFast()?.trim();
-        if (fallbackUsername && fallbackUsername.length > 0) {
-          username = fallbackUsername;
-        }
-      }
-
-      if (!username) {
-        logger.debug('DomStructureTweetStrategy: Username extraction failed');
-        return null;
-      }
+      const username = containerUsername && containerUsername.length > 0 ? containerUsername : 'unknown';
 
       return {
         tweetId,

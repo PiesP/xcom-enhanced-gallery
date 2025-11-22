@@ -7,9 +7,6 @@ export type { VerticalGalleryViewProps } from './vertical-gallery-view/VerticalG
 
 export { VerticalImageItem } from './vertical-gallery-view/VerticalImageItem';
 
-export { KeyboardHelpOverlay } from './vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
-export type { KeyboardHelpOverlayProps } from './vertical-gallery-view/KeyboardHelpOverlay/KeyboardHelpOverlay';
-
 export { useGalleryKeyboard } from './vertical-gallery-view/hooks/useGalleryKeyboard';
 export type { UseGalleryKeyboardOptions } from './vertical-gallery-view/hooks/useGalleryKeyboard';
 

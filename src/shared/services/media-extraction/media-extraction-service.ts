@@ -2,10 +2,9 @@
  * @fileoverview Media Extraction Service - Multi-Strategy Media Discovery & Retrieval
  *
  * 🔹 System Role:
- * Unified media extraction orchestrator implementing multi-phase extraction strategy:
+ * Unified media extraction orchestrator implementing API-based extraction strategy:
  * Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
- * Phase 2a: Fetch media items via API (primary strategy)
- * Phase 2b: Extract media directly from DOM (fallback strategy)
+ * Phase 2: Fetch media items via API (primary strategy)
  *
  * 🔹 Architecture Overview:
  * ```
@@ -13,15 +12,10 @@
  *   ↓
  * MediaExtractionService.extractFromClickedElement(element)
  *   ├─ Phase 1: TweetInfoExtractor → Extract tweet ID, user, quote detection
- *   │           If no tweet ID → Skip to Phase 2b (DOM direct)
  *   │
- *   ├─ Phase 2a: TwitterAPIExtractor → API-based media retrieval (primary)
- *   │            If success → Finalize result (mark source='api')
- *   │            If failure → Fallback to Phase 2b (DOM direct)
- *   │
- *   └─ Phase 2b: DOMDirectExtractor → Direct DOM media extraction (backup)
- *               Searches page DOM for visible media elements
- *               Final fallback, returns result or comprehensive error
+ *   └─ Phase 2: TwitterAPIExtractor → API-based media retrieval
+ *               If success → Finalize result (mark source='api')
+ *               If failure → Return error (no DOM fallback)
  *   ↓
  * MediaExtractionResult
  *   ├─ success: boolean (true if media items found)
@@ -34,8 +28,7 @@
  *
  * 🔹 Key Characteristics:
  * - **Progressive Extraction**: Tweet info → Media retrieval
- * - **API-Priority Strategy**: Prefer API over DOM for accuracy
- * - **Graceful Fallback**: Automatic DOM backup when API unavailable
+ * - **API-Only Strategy**: Relies solely on API for accuracy and simplicity
  * - **Deduplication**: Remove duplicate media items by URL
  * - **Index Safety**: Normalize clicked index after deduplication
  * - **Error Recovery**: Comprehensive error handling with debug context
@@ -43,27 +36,19 @@
  *
  * 🔹 Extraction Strategies:
  *
- * **Phase 2a: API-Based Extraction** (TwitterAPIExtractor)
+ * **Phase 2: API-Based Extraction** (TwitterAPIExtractor)
  * - Most reliable and complete
  * - Requires tweet ID from Phase 1
  * - Returns all associated media for the tweet
  * - Used when Phase 1 successfully extracts tweet ID
  *
- * **Phase 2b: DOM-Based Extraction** (DOMDirectExtractor)
- * - Works when API unavailable, fails, or tweet ID unknown
- * - Direct access to page DOM
- * - Useful for complex layouts, quote tweets, embedded media
- * - Fallback strategy, always available
- *
  * **Phase 1: Tweet Info Extraction** (TweetInfoExtractor)
  * - Extract tweet ID, username, URLs
  * - Detect quote tweet structure
  * - Enable API-based extraction
- * - If fails, skip directly to DOM fallback
  *
  * 🔹 Error Handling Philosophy:
- * - **Fail-Soft Design**: Each phase can fail independently
- * - **Automatic Fallback**: Seamless transition to next strategy
+ * - **Fail-Fast Design**: If API fails, report error immediately
  * - **Rich Context**: Include element details, parent info in errors
  * - **Debug Metadata**: Preserve all error context for diagnostics
  * - **No Throwing**: All errors captured and returned in result
@@ -91,16 +76,9 @@
  * }
  * ```
  *
- * **Container Extraction**:
- * ```typescript
- * const containerResult = await extractor.extractAllFromContainer(container);
- * // Finds first media in container and extracts associated items
- * ```
- *
  * 🔹 Related Services:
  * - TweetInfoExtractor: Metadata extraction (tweet ID, user, quote tweets)
  * - TwitterAPIExtractor: API-based media retrieval
- * - DOMDirectExtractor: DOM-based media extraction
  *
  * 🔹 Integration Points:
  * - GalleryApp: Main consumer of extraction results
@@ -122,64 +100,18 @@ import { ExtractionError } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/result.types';
 import { TweetInfoExtractor } from './extractors/tweet-info-extractor';
 import { TwitterAPIExtractor } from './extractors/twitter-api-extractor';
-import { DOMDirectExtractor } from './extractors/dom-direct-extractor';
 import { removeDuplicateMediaItems } from '@shared/utils/deduplication/deduplication-utils';
 
-/**
- * MediaExtractionService - Unified Media Extraction Orchestrator
- *
- * 🔹 Responsibility:
- * Coordinates multi-phase media extraction with automatic fallback chain:
- * Tweet Info → API Extraction (primary) → DOM Extraction (backup)
- *
- * 🔹 Lifecycle:
- * 1. **Initialization**: Create three extractor instances
- *    - TweetInfoExtractor: Metadata extraction
- *    - TwitterAPIExtractor: API-based media retrieval
- *    - DOMDirectExtractor: DOM-based media extraction
- *
- * 2. **Extraction Entry Points**:
- *    - extractFromClickedElement(): Single element extraction
- *    - extractAllFromContainer(): Container-based extraction
- *
- * 3. **Internal Flow**:
- *    - Phase 1: Extract tweet metadata
- *    - Phase 2a: Attempt API extraction
- *    - Phase 2b: Fallback to DOM extraction if Phase 2a fails
- *    - Finalization: Deduplicate, normalize index, add metadata
- *
- * 🔹 Result Finalization Process:
- * - **Deduplication**: Remove duplicate media items by URL
- * - **Index Adjustment**: Remap clicked index after deduplication
- * - **Bounds Checking**: Ensure index within [0, length-1]
- * - **Metadata Addition**: Add extraction timing and source info
- *
- * 🔹 Error Scenarios Handled:
- * - Missing tweet ID → Skip to DOM extraction
- * - API unavailable → Skip to DOM extraction
- * - API returns empty → Skip to DOM extraction
- * - DOM extraction fails → Return error with context
- * - Both strategies fail → Return error with debug metadata
- * - Exception thrown → Catch and return error result
- *
- * 🔹 Design Patterns:
- * - **Composition**: Uses three specialized extractors
- * - **Strategy Pattern**: Multiple extraction approaches
- * - **Fail-Soft**: Continue on errors rather than throwing
- * - **Chain of Responsibility**: API → DOM fallback
- */
 export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;
   private readonly apiExtractor: TwitterAPIExtractor;
-  private readonly domExtractor: DOMDirectExtractor;
 
   /**
-   * Initialize MediaExtractionService with three specialized extractors
+   * Initialize MediaExtractionService with specialized extractors
    *
    * 🔹 Extractor Roles:
    * - **tweetInfoExtractor**: Metadata extraction (tweet ID, username, etc.)
    * - **apiExtractor**: API-based media retrieval (primary strategy)
-   * - **domExtractor**: DOM-based media extraction (fallback strategy)
    *
    * Constructor is lightweight (no async initialization needed).
    * All extractors are singleton patterns, thread-safe.
@@ -187,7 +119,6 @@ export class MediaExtractionService implements MediaExtractor {
   constructor() {
     this.tweetInfoExtractor = new TweetInfoExtractor();
     this.apiExtractor = new TwitterAPIExtractor();
-    this.domExtractor = new DOMDirectExtractor();
   }
 
   /**
@@ -285,68 +216,32 @@ export class MediaExtractionService implements MediaExtractor {
     let tweetInfo: TweetInfo | null = null;
 
     try {
-      // Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
+            // Phase 1: Extract tweet metadata (ID, user, quote tweet detection)
       tweetInfo = await this.tweetInfoExtractor.extract(element);
 
       if (!tweetInfo?.tweetId) {
-        logger.debug(
-          `[MediaExtractor] ${extractionId}: Tweet info not available - proceeding with direct DOM extraction`
-        );
-        // No tweet ID: Skip Phase 2a (API extraction)
-        // Proceed directly to Phase 2b (DOM extraction)
-        const domResult = await this.domExtractor.extract(
-          element,
-          options,
-          extractionId,
-          tweetInfo ?? undefined
+        logger.warn(
+          `[MediaExtractor] ${extractionId}: Tweet info not available - extraction failed`
         );
 
-        // Phase 2b failed: DOM extraction returned no media
-        if (!domResult.success || domResult.mediaItems.length === 0) {
-          logger.warn(`[MediaExtractor] ${extractionId}: Direct DOM extraction failed`, {
-            success: domResult.success,
-            mediaCount: domResult.mediaItems.length,
-            element: element.tagName,
-            elementClass: element.className,
-            parentElement: element.parentElement?.tagName,
-          });
-
-          return {
-            success: false,
-            mediaItems: [],
-            clickedIndex: 0,
-            metadata: {
-              extractedAt: Date.now(),
-              sourceType: 'dom-direct-failed',
-              strategy: 'media-extraction',
-              error: 'No tweet information and direct DOM extraction failed',
-              debug: {
-                element: element.tagName,
-                elementClass: element.className,
-                parentElement: element.parentElement?.tagName,
-                domResult: {
-                  success: domResult.success,
-                  mediaCount: domResult.mediaItems.length,
-                },
-              },
-            },
-            tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
-            errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'No media found in tweet.')],
-          };
-        }
-
-        // Phase 2b succeeded: Convert to core interface format
-        return this.finalizeResult({
-          success: domResult.success,
-          mediaItems: domResult.mediaItems,
-          clickedIndex: domResult.clickedIndex,
+        return {
+          success: false,
+          mediaItems: [],
+          clickedIndex: 0,
           metadata: {
             extractedAt: Date.now(),
-            sourceType: 'dom-fallback',
+            sourceType: 'extraction-failed',
             strategy: 'media-extraction',
+            error: 'No tweet information found',
+            debug: {
+              element: element.tagName,
+              elementClass: element.className,
+              parentElement: element.parentElement?.tagName,
+            },
           },
-          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
-        });
+          tweetInfo: null,
+          errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'No tweet info found.')],
+        };
       }
 
       logger.debug(
@@ -374,73 +269,36 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
-      // Phase 2a failed or returned empty: Fallback to Phase 2b (DOM extraction)
-      logger.warn(
-        `[MediaExtractor] ${extractionId}: API extraction failed - executing DOM fallback strategy`
-      );
-      const domResult = await this.domExtractor.extract(
-        element,
-        options,
-        extractionId,
-        tweetInfo ?? undefined
+      // Phase 2a failed or returned empty
+      logger.error(
+        `[MediaExtractor] ${extractionId}: API extraction failed`
       );
 
-      // Phase 2b failed: DOM extraction also returned no media
-      if (!domResult.success || domResult.mediaItems.length === 0) {
-        logger.error(`[MediaExtractor] ${extractionId}: DOM fallback extraction also failed`, {
-          domSuccess: domResult.success,
-          mediaCount: domResult.mediaItems.length,
-          element: element.tagName,
-          elementClass: element.className,
-          tweetId: tweetInfo.tweetId,
-        });
-
-        return {
-          success: false,
-          mediaItems: [],
-          clickedIndex: 0,
-          metadata: {
-            extractedAt: Date.now(),
-            sourceType: 'extraction-failed',
-            strategy: 'media-extraction',
-            error: `Media extraction failed: Both API and DOM extraction failed`,
-            debug: {
-              element: element.tagName,
-              elementClass: element.className,
-              tweetId: tweetInfo.tweetId,
-              domResult: {
-                success: domResult.success,
-                mediaCount: domResult.mediaItems.length,
-              },
-            },
-          },
-          tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
-          errors: [
-            new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'Both API and DOM extraction failed.'),
-          ],
-        };
-      }
-
-      // Phase 2b succeeded: Convert to core interface format
-      return this.finalizeResult({
-        success: domResult.success,
-        mediaItems: domResult.mediaItems,
-        clickedIndex: domResult.clickedIndex,
+      return {
+        success: false,
+        mediaItems: [],
+        clickedIndex: 0,
         metadata: {
           extractedAt: Date.now(),
-          sourceType: 'dom-fallback',
-          strategy: 'extraction',
+          sourceType: 'extraction-failed',
+          strategy: 'media-extraction',
+          error: 'API extraction failed',
+          debug: {
+            tweetId: tweetInfo.tweetId,
+            apiResult: {
+              success: apiResult.success,
+              mediaCount: apiResult.mediaItems.length,
+            },
+          },
         },
-        tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
-      });
+        tweetInfo: this.mergeTweetInfoMetadata(tweetInfo, apiResult.tweetInfo),
+        errors: [new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'API extraction failed.')],
+      };
+
+
     } catch (error) {
-      return MediaExtractionService.resolveFallbackResult(this, {
-        cause: error,
-        element,
-        options,
-        extractionId,
-        tweetInfo,
-      });
+      logger.error(`[MediaExtractor] ${extractionId}: Extraction threw error`, error);
+      return this.createErrorResult(error);
     }
   }
 
@@ -794,72 +652,7 @@ export class MediaExtractionService implements MediaExtractor {
     };
   }
 
-  private static async resolveFallbackResult(
-    service: MediaExtractionService,
-    params: {
-      cause: unknown;
-      element: HTMLElement;
-      options: MediaExtractionOptions;
-      extractionId: string;
-      tweetInfo: TweetInfo | null;
-    }
-  ): Promise<MediaExtractionResult> {
-    const { cause, element, options, extractionId, tweetInfo } = params;
 
-    logger.warn(
-      `[MediaExtractor] ${extractionId}: API extraction threw error - executing DOM fallback strategy`,
-      {
-        message: cause instanceof Error ? cause.message : String(cause ?? 'Unknown error'),
-        tweetId: tweetInfo?.tweetId,
-      }
-    );
-
-    try {
-      const domResult = await service.domExtractor.extract(
-        element,
-        options,
-        extractionId,
-        tweetInfo ?? undefined
-      );
-
-      if (domResult.success && domResult.mediaItems.length > 0) {
-        logger.info(
-          `[MediaExtractor] ${extractionId}: ✅ DOM fallback succeeded after API error - ${domResult.mediaItems.length} media items`
-        );
-
-        return service.finalizeResult({
-          success: domResult.success,
-          mediaItems: domResult.mediaItems,
-          clickedIndex: domResult.clickedIndex,
-          metadata: {
-            extractedAt: Date.now(),
-            sourceType: 'dom-fallback',
-            strategy: 'extraction',
-          },
-          tweetInfo: service.mergeTweetInfoMetadata(tweetInfo, domResult.tweetInfo),
-        });
-      }
-
-      logger.error(
-        `[MediaExtractor] ${extractionId}: DOM fallback after API error returned no media`,
-        {
-          domSuccess: domResult.success,
-          mediaCount: domResult.mediaItems.length,
-          tweetId: tweetInfo?.tweetId,
-        }
-      );
-
-      return service.createErrorResult(
-        new ExtractionError(ErrorCode.NO_MEDIA_FOUND, 'DOM fallback failed after API error')
-      );
-    } catch (fallbackError) {
-      logger.error(
-        `[MediaExtractor] ${extractionId}: DOM fallback extraction threw error`,
-        fallbackError
-      );
-      return service.createErrorResult(fallbackError);
-    }
-  }
 
   /**
    * Normalize clicked index to safe bounds

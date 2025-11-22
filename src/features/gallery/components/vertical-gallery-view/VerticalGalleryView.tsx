@@ -60,7 +60,6 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import { KeyboardHelpOverlay } from './KeyboardHelpOverlay/KeyboardHelpOverlay';
 import { useSelector, useCombinedSelector } from '@shared/utils/signal-selector';
 import type { MediaInfo } from '@shared/types';
 import { observeViewportCssVars } from '@shared/utils/viewport';
@@ -148,8 +147,6 @@ function VerticalGalleryViewCore({
       globalTimerManager.clearTimeout(timer);
     });
   });
-
-  const [isHelpOpen, setIsHelpOpen] = createSignal(false);
 
   const getInitialFitMode = (): ImageFitMode => {
     const saved = getSetting<ImageFitMode>('gallery.imageFitMode', 'fitWidth');
@@ -462,7 +459,6 @@ function VerticalGalleryViewCore({
 
   useGalleryKeyboard({
     onClose: onClose || (() => {}),
-    onOpenHelp: () => setIsHelpOpen(true),
   });
 
   const handleDownloadCurrent = () => {
@@ -548,8 +544,6 @@ function VerticalGalleryViewCore({
       data-xeg-gallery='true'
       data-xeg-role='gallery'
     >
-      <KeyboardHelpOverlay open={isHelpOpen()} onClose={() => setIsHelpOpen(false)} />
-
       <div class={styles.toolbarHoverZone} data-role='toolbar-hover-zone' />
 
       <div class={styles.toolbarWrapper} ref={el => setToolbarWrapperEl(el ?? null)}>

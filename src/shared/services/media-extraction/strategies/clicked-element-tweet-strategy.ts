@@ -239,15 +239,12 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
     method: string
   ): Promise<TweetInfo | null> {
     try {
-      // Extract username
-      const username = this.extractUsername(element) || 'unknown';
-
-      // Build tweet URL
-      const tweetUrl = `https://twitter.com/${username}/status/${tweetId}`;
+      // Use generic URL format that doesn't require username
+      const tweetUrl = `https://twitter.com/i/web/status/${tweetId}`;
 
       return {
         tweetId,
-        username,
+        username: 'unknown', // Will be populated by API
         tweetUrl,
         extractionMethod: `clicked-element-${method}`,
         confidence: 0.9,
@@ -262,167 +259,5 @@ export class ClickedElementTweetStrategy implements TweetInfoExtractionStrategy 
     }
   }
 
-  /**
-   * Extract username from element or container context (Phase 432.2).
-   *
-   * Multi-layer fallback strategy for robust username extraction:
-   * 1. data-testid="User-Name" link from tweet container (latest Twitter structure)
-   * 2. role="link" with href from user links (alternative patterns)
-   * 3. Parent element href attributes (backward compatibility)
-   * 4. Current page URL pathname (fallback for detail pages)
-   *
-   * Each method searches up to 10 parent levels for container context.
-   */
-  private extractUsername(element: HTMLElement): string | null {
-    // Layer 1: Search for data-testid="User-Name" link from tweet container
-    let current: HTMLElement | null = element;
-    for (let i = 0; i < 10 && current; i++) {
-      // Find tweet container
-      const container = current.closest('[data-testid="tweet"], article') as HTMLElement | null;
-      if (container) {
-        // Search for User-Name link
-        const userNameLink = container.querySelector(
-          'a[href^="/"][data-testid="User-Name"]'
-        ) as HTMLAnchorElement | null;
-        if (userNameLink?.href) {
-          const username = this.extractUsernameFromHref(userNameLink.href);
-          if (username) return username;
-        }
 
-        // Alternative: role="link" with href (user link patterns)
-        const userLinks = container.querySelectorAll<HTMLAnchorElement>(
-          'a[role="link"][href^="/"]'
-        );
-        for (const link of userLinks) {
-          if (!link.href) continue;
-          const href = link.href;
-          // Exclude links containing status/photo/video/hashtag/search paths
-          if (
-            !href.includes('/status/') &&
-            !href.includes('/photo/') &&
-            !href.includes('/video/') &&
-            !href.includes('/hashtag/') &&
-            !href.includes('/search')
-          ) {
-            const username = this.extractUsernameFromHref(href);
-            if (username) return username;
-          }
-        }
-      }
-      current = current.parentElement;
-    }
-
-    // Layer 2: Backward compatibility - parent element href search
-    current = element;
-    for (let i = 0; i < 10 && current; i++) {
-      const usernameElement = current.querySelector(
-        '[href^="/"]:not([href*="/status/"]):not([href*="/photo/"]):not([href*="/video/"])'
-      );
-      if (usernameElement) {
-        const href = usernameElement.getAttribute('href');
-        // Check if href is "/username" format (only single slash after slash)
-        if (href && href.startsWith('/') && href.lastIndexOf('/') === 0) {
-          const username = href.substring(1); // Remove leading slash
-          if (this.isValidUsername(username)) {
-            return username;
-          }
-        }
-      }
-      current = current.parentElement;
-    }
-
-    // Layer 3: Fallback to current page URL
-    const urlMatch = window.location.pathname.match(/^\/([^/]+)\//);
-    if (urlMatch?.[1]) {
-      const username = urlMatch[1];
-      if (this.isValidUsername(username)) {
-        return username;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Extract username from URL href (Phase 432.2).
-   *
-   * Parses URL pathname for Twitter username patterns:
-   * - "/username": Direct user profile link
-   * - "/username/...": User profile with sub-path
-   *
-   * Validates extracted username against Twitter rules.
-   */
-  private extractUsernameFromHref(href: string): string | null {
-    try {
-      const url = new URL(href, window.location.origin);
-      const pathname = url.pathname;
-
-      // "/username" format check
-      if (pathname.startsWith('/') && pathname.lastIndexOf('/') === 0) {
-        const username = pathname.substring(1);
-        if (this.isValidUsername(username)) {
-          return username;
-        }
-      }
-
-      // "/username/..." format extraction
-      const match = pathname.match(/^\/([^/]+)/);
-      if (match?.[1]) {
-        const username = match[1];
-        if (this.isValidUsername(username)) {
-          return username;
-        }
-      }
-    } catch {
-      // URL parsing error - ignore silently
-    }
-
-    return null;
-  }
-
-  /**
-   * Validate Twitter username (Phase 432.2).
-   *
-   * Twitter username rules:
-   * - 1-15 characters length
-   * - Alphanumeric and underscore only (a-z, A-Z, 0-9, _)
-   * - Excludes reserved system paths (i, home, explore, settings, etc.)
-   */
-  private isValidUsername(username: string): boolean {
-    // Exclude reserved system paths
-    const reserved = [
-      'i',
-      'home',
-      'explore',
-      'notifications',
-      'messages',
-      'bookmarks',
-      'lists',
-      'profile',
-      'more',
-      'compose',
-      'search',
-      'settings',
-      'help',
-      'display',
-      'moments',
-      'topics',
-      'login',
-      'logout',
-      'signup',
-      'account',
-      'privacy',
-      'tos',
-      'hashtag',
-      'intent',
-      'share',
-    ];
-
-    if (reserved.includes(username.toLowerCase())) {
-      return false;
-    }
-
-    // Twitter username rule: 1-15 chars, alphanumeric and underscore only
-    return /^[a-zA-Z0-9_]{1,15}$/.test(username);
-  }
 }
