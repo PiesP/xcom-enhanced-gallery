@@ -9,5 +9,4 @@ export type {
   ThemeOption,
   LanguageOption,
 } from './Settings/SettingsControls';
-export type { SettingsModalProps } from './SettingsModal/SettingsModal';
 export type { ToolbarProps, FitMode } from './Toolbar/Toolbar.types';

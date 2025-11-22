@@ -47,6 +47,7 @@ import {
 } from '@shared/state/signals/gallery.signals';
 import type { GalleryState } from '@shared/state/signals/gallery.signals';
 import { downloadState } from '@shared/state/signals/download.signals';
+import type { DownloadState } from '@shared/state/signals/download.signals';
 import { getSolid } from '@shared/external/vendors';
 import { languageService } from '@shared/services/language-service';
 import { stringWithDefault } from '@shared/utils/type-safety-helpers';
@@ -104,11 +105,11 @@ function VerticalGalleryViewCore({
 
   const isDownloading = useSelector(
     downloadState,
-    download =>
+    (download: DownloadState) =>
       isDownloadUiBusy({
         downloadProcessing: download.isProcessing,
       }),
-    download => [download.isProcessing]
+    { dependencies: (download: DownloadState) => [download.isProcessing] }
   );
 
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);

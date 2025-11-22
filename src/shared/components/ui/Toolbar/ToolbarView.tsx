@@ -155,9 +155,6 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
   const currentIndex = createMemo(() => resolveAccessorValue(props.currentIndex));
   const displayedIndex = createMemo(() => props.displayedIndex());
   const isToolbarDisabled = createMemo(() => Boolean(resolveOptionalAccessorValue(props.disabled)));
-  const isDownloading = createMemo(() =>
-    Boolean(resolveOptionalAccessorValue(props.isDownloading))
-  );
   const activeFitMode = createMemo(() => props.activeFitMode());
   const tweetText = createMemo(() => resolveOptionalAccessorValue(props.tweetText) ?? null);
   const tweetTextHTML = createMemo(() => resolveOptionalAccessorValue(props.tweetTextHTML) ?? null);

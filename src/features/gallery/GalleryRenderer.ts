@@ -127,10 +127,8 @@ export class GalleryRenderer implements GalleryRendererInterface {
 
     const Root = () => {
       // Reactive state for settings
-      const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
-      const [currentLanguage, setCurrentLanguage] = createSignal(
-        languageService.getCurrentLanguage()
-      );
+      const [, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+      const [, setCurrentLanguage] = createSignal(languageService.getCurrentLanguage());
 
       // Sync with services
       const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));

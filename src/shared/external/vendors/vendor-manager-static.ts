@@ -487,7 +487,7 @@ export class StaticVendorManager {
    */
   public getNativeDownload(): NativeDownloadAPI {
     return {
-      downloadBlob: (blob: Blob, filename: string): void => {
+      downloadBlob: (_blob: Blob, _filename: string): void => {
         logger.warn('Native download fallback removed. Use DownloadService.');
       },
 
