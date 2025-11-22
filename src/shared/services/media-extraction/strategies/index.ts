@@ -67,7 +67,6 @@ export { ClickedElementTweetStrategy } from './clicked-element';
 export { UrlBasedTweetStrategy } from './url-based';
 export { DomStructureTweetStrategy } from './dom-structure';
 export { DataAttributeTweetStrategy } from './data-attribute';
-export { ParentTraversalTweetStrategy } from './parent-traversal';
 
 // Click index calculation strategy (Used by TwitterAPIExtractor)
 export { type MediaClickIndexStrategy } from './click-index';

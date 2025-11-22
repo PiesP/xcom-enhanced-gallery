@@ -127,14 +127,13 @@ import { ClickedElementTweetStrategy } from '@shared/services/media-extraction/s
 import { UrlBasedTweetStrategy } from '@shared/services/media-extraction/strategies/url-based';
 import { DomStructureTweetStrategy } from '@shared/services/media-extraction/strategies/dom-structure';
 import { DataAttributeTweetStrategy } from '@shared/services/media-extraction/strategies/data-attribute';
-import { ParentTraversalTweetStrategy } from '@shared/services/media-extraction/strategies/parent-traversal';
 
 /**
  * TweetInfoExtractor - Multi-Strategy Tweet Metadata Discovery
  *
  * 🔹 Responsibility:
  * Discover essential tweet metadata (ID, username, URL) required for subsequent extraction
- * phases. Implements Strategy Pattern with 5 extraction approaches in priority order.
+ * phases. Implements Strategy Pattern with 4 extraction approaches in priority order.
  *
  * 🔹 Key Design Decisions:
  * - **Strategy Pattern**: Multiple extraction approaches, each optimized for different scenarios
@@ -144,7 +143,7 @@ import { ParentTraversalTweetStrategy } from '@shared/services/media-extraction/
  * - **Diagnostic API**: extractWithAllStrategies() for testing and comparison
  *
  * 🔹 Lifecycle:
- * 1. **Initialization**: Create 5 strategy instances
+ * 1. **Initialization**: Create 4 strategy instances
  * 2. **Priority Sorting**: Sort by priority (ascending)
  * 3. **Extraction**:
  *    - Try each strategy in order
@@ -159,7 +158,6 @@ import { ParentTraversalTweetStrategy } from '@shared/services/media-extraction/
  * | 2        | UrlBasedTweetStrategy         | Fast  | High        | URL pattern matching        |
  * | 3        | DomStructureTweetStrategy     | Med   | High        | DOM analysis                |
  * | 4        | DataAttributeTweetStrategy    | Fast  | Medium      | data-* attributes          |
- * | 5        | ParentTraversalTweetStrategy  | Slow  | Medium      | Ancestor traversal (fallback)|
  *
  * 🔹 Public API:
  * - extract(): Try all strategies, return first valid result
@@ -170,14 +168,13 @@ export class TweetInfoExtractor {
   private readonly strategies: TweetInfoExtractionStrategy[];
 
   /**
-   * Initialize TweetInfoExtractor with 5 strategies
+   * Initialize TweetInfoExtractor with 4 strategies
    *
    * 🔹 Strategy Initialization:
    * 1. **ClickedElementTweetStrategy**: Direct element attribute extraction
    * 2. **UrlBasedTweetStrategy**: URL pattern-based extraction
    * 3. **DomStructureTweetStrategy**: DOM structural analysis
    * 4. **DataAttributeTweetStrategy**: data-* attribute extraction
-   * 5. **ParentTraversalTweetStrategy**: Parent element traversal
    *
    * 🔹 Priority Sorting:
    * - Strategies automatically sorted by priority (ascending)
@@ -187,7 +184,7 @@ export class TweetInfoExtractor {
    * @example
    * ```typescript
    * const extractor = new TweetInfoExtractor();
-   * // Ready to extract with 5 strategies in priority order
+   * // Ready to extract with 4 strategies in priority order
    * ```
    */
   constructor() {
@@ -196,7 +193,6 @@ export class TweetInfoExtractor {
       new UrlBasedTweetStrategy(), // Priority: 2 (URL pattern matching)
       new DomStructureTweetStrategy(), // Priority: 3 (DOM structure analysis)
       new DataAttributeTweetStrategy(), // Priority: 4 (data-* attributes)
-      new ParentTraversalTweetStrategy(), // Priority: 5 (lowest, traversal)
     ];
 
     // Sort by priority (ascending: lower numbers first)
