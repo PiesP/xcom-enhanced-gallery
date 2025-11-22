@@ -60,7 +60,8 @@ import styles from './VerticalGalleryView.module.css';
 import { VerticalImageItem } from './VerticalImageItem';
 import { computePreloadIndices } from '@shared/utils/performance';
 import { getSetting, setSetting } from '@shared/container/settings-access';
-import { useSelector, useCombinedSelector } from '@shared/utils/signal-selector';
+import { useSelector } from '@shared/utils/signal-selector';
+import { isDownloadUiBusy } from '@shared/utils/download-ui-state';
 import type { MediaInfo } from '@shared/types';
 import { observeViewportCssVars } from '@shared/utils/viewport';
 import { globalTimerManager } from '@shared/utils/timer-management';
@@ -101,10 +102,13 @@ function VerticalGalleryViewCore({
     { dependencies: state => [state.currentIndex] }
   );
 
-  const isDownloading = useCombinedSelector(
-    [galleryState, downloadState] as const,
-    (g, d) => Boolean(g.isLoading || d.isProcessing),
-    (g, d) => [g.isLoading, d.isProcessing]
+  const isDownloading = useSelector(
+    downloadState,
+    download =>
+      isDownloadUiBusy({
+        downloadProcessing: download.isProcessing,
+      }),
+    download => [download.isProcessing]
   );
 
   const [containerEl, setContainerEl] = createSignal<HTMLDivElement | null>(null);

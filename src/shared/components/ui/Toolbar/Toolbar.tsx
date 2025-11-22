@@ -102,7 +102,7 @@ const computeNavigationState = ({
     nextDisabled,
     canDownloadAll: total > 1,
     downloadDisabled,
-    anyActionDisabled: toolbarDisabled || downloadBusy,
+    anyActionDisabled: toolbarDisabled,
   } as const;
 };
 

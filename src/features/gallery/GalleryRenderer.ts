@@ -13,7 +13,6 @@ import {
   closeGallery,
   gallerySignals,
   setError,
-  setLoading,
   openGallery,
   setViewMode,
   navigatePrevious,
@@ -173,7 +172,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
     }
 
     const releaseDownloadLock = acquireDownloadLock();
-    setLoading(true);
 
     try {
       // Phase 312: UnifiedDownloadService usage (Singleton)
@@ -213,7 +211,6 @@ export class GalleryRenderer implements GalleryRendererInterface {
       logger.error(`[GalleryRenderer] ${type} download failed:`, error);
       setError('Download failed.');
     } finally {
-      setLoading(false);
       releaseDownloadLock();
     }
   }
