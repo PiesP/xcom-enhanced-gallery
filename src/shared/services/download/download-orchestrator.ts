@@ -14,6 +14,7 @@ export interface OrchestratorItem {
   url: string;
   /** desired filename (before collision resolution) */
   desiredName: string;
+  blob?: Blob;
 }
 
 export interface OrchestratorOptions {
@@ -307,7 +308,13 @@ export class DownloadOrchestrator extends BaseServiceImpl {
         });
 
         try {
-          const data = await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
+          let data: Uint8Array;
+          if (item.blob) {
+            data = new Uint8Array(await item.blob.arrayBuffer());
+            onSourceDetected?.('cache');
+          } else {
+            data = await this.fetchArrayBufferWithRetry(item.url, retries, abortSignal);
+          }
           const filename = ensureUniqueFilename(item.desiredName);
 
           // **Phase 410 Streaming ZIP**: Add files to ZIP immediately as they complete

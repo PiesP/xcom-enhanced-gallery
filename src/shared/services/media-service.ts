@@ -20,18 +20,6 @@ import { globalTimerManager } from '@shared/utils/timer-management';
 import { BaseServiceImpl } from './base-service';
 import { HttpRequestService } from './http-request-service';
 
-export interface MediaLoadingState {
-  isLoading: boolean;
-  hasError: boolean;
-  loadedUrl?: string;
-  errorMessage?: string;
-}
-
-export interface MediaLoadingOptions {
-  retryAttempts?: number;
-  timeout?: number;
-}
-
 export interface PrefetchOptions {
   maxConcurrent?: number;
   prefetchRange?: number;
@@ -65,8 +53,6 @@ export class MediaService extends BaseServiceImpl {
   private readonly mediaExtraction: MediaExtractionService | null;
 
   private webpSupported: boolean | null = null;
-
-  private readonly mediaLoadingStates = new Map<string, MediaLoadingState>();
 
   private readonly prefetchCache = new Map<string, Blob>();
   private readonly activePrefetchRequests = new Map<string, AbortController>();
@@ -113,7 +99,6 @@ export class MediaService extends BaseServiceImpl {
    */
   protected onDestroy(): void {
     this.prefetchCache.clear();
-    this.mediaLoadingStates.clear();
     this.activePrefetchRequests.forEach(controller => controller.abort());
     this.activePrefetchRequests.clear();
   }
@@ -220,91 +205,6 @@ export class MediaService extends BaseServiceImpl {
 
   optimizeWebP(originalUrl: string): string {
     return this.getOptimizedImageUrl(originalUrl);
-  }
-  /**
-   * 트위터 이미지 URL 최적화 (하위 호환성)
-   */
-  optimizeTwitterImageUrl(originalUrl: string): string {
-    return this.getOptimizedImageUrl(originalUrl);
-  }
-
-  registerMediaElement(
-    id: string,
-    element: HTMLElement,
-    options: { src: string } = { src: '' }
-  ): void {
-    this.mediaLoadingStates.set(id, {
-      isLoading: true,
-      hasError: false,
-    });
-
-    this.loadMediaElement(id, element, options.src);
-  }
-
-  unregisterMediaElement(id: string): void {
-    this.mediaLoadingStates.delete(id);
-  }
-
-  getLoadingState(id: string): MediaLoadingState | undefined {
-    return this.mediaLoadingStates.get(id);
-  }
-
-  private loadMediaElement(id: string, element: HTMLElement, src: string): void {
-    if (element instanceof HTMLImageElement) {
-      this.loadImage(id, element, src);
-    } else if (element instanceof HTMLVideoElement) {
-      this.loadVideo(id, element, src);
-    }
-  }
-
-  private loadImage(id: string, img: HTMLImageElement, src: string): void {
-    const state = this.mediaLoadingStates.get(id);
-    if (!state) return;
-
-    img.onload = () => {
-      const currentState = this.mediaLoadingStates.get(id);
-      if (currentState) {
-        currentState.isLoading = false;
-        currentState.hasError = false;
-        currentState.loadedUrl = src;
-      }
-    };
-
-    img.onerror = () => {
-      const currentState = this.mediaLoadingStates.get(id);
-      if (currentState) {
-        currentState.isLoading = false;
-        currentState.hasError = true;
-        currentState.errorMessage = 'Image load failed';
-      }
-    };
-
-    img.src = src;
-  }
-
-  private loadVideo(id: string, video: HTMLVideoElement, src: string): void {
-    const state = this.mediaLoadingStates.get(id);
-    if (!state) return;
-
-    video.onloadeddata = () => {
-      const currentState = this.mediaLoadingStates.get(id);
-      if (currentState) {
-        currentState.isLoading = false;
-        currentState.hasError = false;
-        currentState.loadedUrl = src;
-      }
-    };
-
-    video.onerror = () => {
-      const currentState = this.mediaLoadingStates.get(id);
-      if (currentState) {
-        currentState.isLoading = false;
-        currentState.hasError = true;
-        currentState.errorMessage = 'Video load failed';
-      }
-    };
-
-    video.src = src;
   }
 
   /**
@@ -569,7 +469,10 @@ export class MediaService extends BaseServiceImpl {
     options: BulkDownloadOptions = {}
   ): Promise<BulkDownloadResult> {
     const { downloadService } = await import('./download-service');
-    return downloadService.downloadBulk(mediaItems, options);
+    return downloadService.downloadBulk(mediaItems, {
+      ...options,
+      prefetchedBlobs: this.prefetchCache,
+    });
   }
 
   async downloadBulk(
@@ -591,7 +494,6 @@ export class MediaService extends BaseServiceImpl {
   async cleanup(): Promise<void> {
     this.cancelAllPrefetch();
     this.clearPrefetchCache();
-    this.mediaLoadingStates.clear();
     this.onDestroy();
     logger.debug('[MediaService] Service cleanup completed.');
   }

@@ -31,7 +31,8 @@ export interface DownloadOptions {
   concurrency?: number;
   retries?: number;
   zipFilename?: string;
-  blob?: Blob; // Phase 368: Support for prefetched blob
+  blob?: Blob; // Phase 368: Support for prefetched blob (single)
+  prefetchedBlobs?: Map<string, Blob>; // Phase 368: Support for prefetched blobs (bulk)
 }
 
 interface BlobDownloadOptions {
@@ -150,7 +151,7 @@ export class DownloadService {
           },
           onerror: (error: unknown) => {
             globalTimerManager.clearTimeout(timer);
-            const errorMsg = this.extractErrorMessage(error);
+            const errorMsg = getErrorMessage(error);
             this.notificationService.error(`Download failed: ${errorMsg}`);
             logger.error('[DownloadService] Single file download failed:', error);
             options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
@@ -228,6 +229,7 @@ export class DownloadService {
       const itemsForZip = mediaItems.map(m => ({
         url: m.url,
         desiredName: generateMediaFilename(m),
+        blob: options.prefetchedBlobs?.get(m.url),
       }));
 
       const { filesSuccessful, failures, zipData } = await this.orchestrator.zipMediaItems(
@@ -337,7 +339,7 @@ export class DownloadService {
           },
           onerror: (error: any) => {
             cleanup();
-            const errorMsg = this.extractErrorMessage(error);
+            const errorMsg = getErrorMessage(error);
             resolve({ success: false, error: errorMsg, filename: options.name, size });
             if (!options.suppressNotifications) this.notificationService.error(`Download failed: ${errorMsg}`);
             logger.error(`[DownloadService] Blob download failed:`, error);
@@ -355,12 +357,6 @@ export class DownloadService {
         logger.error(`[DownloadService] GM_download error:`, error);
       }
     });
-  }
-
-  private extractErrorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    if (typeof error === 'object' && error && 'error' in (error as any)) return String((error as any).error);
-    return String(error) || 'Unknown error';
   }
 }
 
