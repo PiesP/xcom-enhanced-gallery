@@ -76,7 +76,3 @@ export {
   DirectMediaMatchingStrategy,
   DOMOrderEstimationStrategy,
 } from './media-click-index-strategy';
-
-// Phase 342: Quote Tweet Detection
-export { QuoteTweetDetector } from './quote-tweet-detector';
-export { type QuoteTweetStructure } from './quote-tweet-detector';

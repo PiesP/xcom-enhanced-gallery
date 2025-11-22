@@ -76,12 +76,86 @@ import type {
   TwitterMedia,
   TweetMediaEntry,
 } from './types';
-import { sortMediaByVisualOrder } from './media-sorting';
-import {
-  getVideoMediaEntry as getVideoMediaEntryBase,
-  getVideoUrlFromThumbnail as getVideoUrlFromThumbnailBase,
-} from './video-utils';
 import { getCookieService } from '@shared/services/cookie-service';
+
+/**
+ * Extract visual index from expanded_url
+ *
+ * Parses Twitter URL to find visual position in media grid.
+ *
+ * **URL Patterns**:
+ * - Photo: `https://twitter.com/user/status/123/photo/1` → index 0
+ * - Photo: `https://twitter.com/user/status/123/photo/4` → index 3
+ * - Video: `https://twitter.com/user/status/123/video/2` → index 1
+ *
+ * **Algorithm**:
+ * 1. Match /photo/N or /video/N pattern at end of URL
+ * 2. Extract visual number (N) from pattern
+ * 3. Convert to 0-based index (N - 1)
+ * 4. Return 0 on parse failure (safe fallback)
+ *
+ * **Performance**:
+ * - Regex match: O(1) for typical URLs
+ * - No allocations on success
+ * - Handles malformed URLs gracefully
+ *
+ * @param url - Expanded URL from Twitter API
+ * @returns Zero-based visual index (0-3 for 4-image tweet, etc.)
+ */
+function extractVisualIndexFromUrl(url: string): number {
+  if (!url) {
+    return 0;
+  }
+
+  // Match /photo/N or /video/N pattern
+  const match = url.match(/\/(photo|video)\/(\d+)$/);
+  const visualNumberStr = match?.[2];
+  if (visualNumberStr) {
+    const visualNumber = Number.parseInt(visualNumberStr, 10);
+    // Convert to 0-based index (photo/1 -> index 0)
+    return Number.isFinite(visualNumber) && visualNumber > 0 ? visualNumber - 1 : 0;
+  }
+
+  return 0;
+}
+
+/**
+ * Sort media by visual display order
+ *
+ * Corrects media ordering to match visual grid layout.
+ *
+ * **Background**:
+ * Twitter API may return media in incorrect visual order. This function:
+ * 1. Extracts visual index from each media's expanded_url
+ * 2. Sorts media array by visual index
+ * 3. Reassigns index field to match sorted order
+ *
+ * @param mediaItems - Array of media entries from Twitter API
+ * @returns Sorted array with corrected visual order
+ */
+function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMediaEntry[] {
+  if (mediaItems.length <= 1) {
+    return mediaItems;
+  }
+
+  // Extract visual order index from expanded_url
+  const withVisualIndex = mediaItems.map(media => {
+    const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
+    return { media, visualIndex };
+  });
+
+  // Sort by visual index
+  withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
+
+  // Reassign index field to match sorted order
+  const sorted = withVisualIndex.map(({ media }, newIndex) => ({
+    ...media,
+    index: newIndex,
+  }));
+
+  return sorted;
+}
+
 
 /**
  * TwitterAPI - GraphQL Media Extraction Service
@@ -1221,109 +1295,4 @@ export class TwitterAPI {
     }
     return result;
   }
-}
-
-/**
- * Get Video Media Entry - Combined API Wrapper
- *
- * Purpose:
- * Convenience wrapper combining TwitterAPI and video utility to extract
- * a single video media entry by tweet ID and optional thumbnail URL.
- *
- * Algorithm:
- * 1. Call TwitterAPI.getTweetMedias(tweetId) to get all media
- * 2. If thumbnailUrl provided:
- *    a. Find matching media by thumbnail (via utility function)
- *    b. Return matched entry or null
- * 3. If no thumbnailUrl:
- *    a. Find first video media (type === 'video')
- *    b. Return first video or null
- *
- * Parameters:
- * - tweetId: Tweet ID (required)
- * - thumbnailUrl: Video thumbnail URL (optional, for precise matching)
- *
- * Returns:
- * - TweetMediaEntry: First matching video entry
- * - null: No video found or error
- *
- * Use Cases:
- * - Extract single video when thumbnail is clicked
- * - Fallback: Get first video if no thumbnail specified
- * - Delegate to base utility for matching logic
- *
- * Example:
- * ```typescript
- * const entry = await getVideoMediaEntry(
- *   '1234567890',
- *   'https://pbs.twimg.com/ext_tw_video_thumb/...jpg'
- * );
- * if (entry) {
- *   console.log('Video URL:', entry.download_url);
- * }
- * ```
- */
-export async function getVideoMediaEntry(
-  tweetId: string,
-  thumbnailUrl?: string
-): Promise<TweetMediaEntry | null> {
-  return getVideoMediaEntryBase(TwitterAPI.getTweetMedias.bind(TwitterAPI), tweetId, thumbnailUrl);
-}
-
-/**
- * Get Video URL from Thumbnail - Image to Download URL
- *
- * Purpose:
- * Extract downloadable video URL from clicked video thumbnail image element.
- * Combines image element analysis with tweet media extraction.
- *
- * Algorithm (delegated to base utility):
- * 1. Verify img element is a video thumbnail (checks URL + ARIA labels)
- * 2. Extract tweet ID from image container/DOM tree
- * 3. Call getTweetMedias(tweetId) to get all media for tweet
- * 4. Find media entry matching the thumbnail
- * 5. Return download_url from matching media entry
- *
- * Parameters:
- * - imgElement: HTMLImageElement of video thumbnail (e.g., event.target)
- * - tweetContainer: Parent container (article or container element)
- *
- * Returns:
- * - string: Download URL for video
- * - null: Unable to extract URL
- *
- * Use Cases:
- * - Click handler on video thumbnail → extract download URL
- * - Convert thumbnail image to actual video stream
- * - Fallback logic if direct video element not available
- *
- * Error Handling:
- * - Returns null if:
- *   - Image is not video thumbnail
- *   - Tweet ID cannot be extracted
- *   - API request fails
- *   - Media not found in response
- * - No exceptions thrown
- *
- * Example:
- * ```typescript
- * // In click handler
- * const videoUrl = await getVideoUrlFromThumbnail(
- *   event.target as HTMLImageElement,
- *   article
- * );
- * if (videoUrl) {
- *   downloadOrPlay(videoUrl);
- * }
- * ```
- */
-export async function getVideoUrlFromThumbnail(
-  imgElement: HTMLImageElement,
-  tweetContainer: HTMLElement
-): Promise<string | null> {
-  return getVideoUrlFromThumbnailBase(
-    TwitterAPI.getTweetMedias.bind(TwitterAPI),
-    imgElement,
-    tweetContainer
-  );
 }
