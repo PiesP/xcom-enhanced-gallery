@@ -1,6 +1,3 @@
-// DOM extraction utilities retained until migration completes
-export { getMediaUrlsFromTweet } from '@/shared/utils/media/media-url.util';
-
 // Media Click Detection utilities
 export {
   detectMediaFromClick,
