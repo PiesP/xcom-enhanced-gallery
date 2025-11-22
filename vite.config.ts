@@ -443,9 +443,12 @@ function stripLoggerDebugPlugin(flags: BuildFlags): Plugin | null {
                 if (
                   t.isMemberExpression(callee) &&
                   !callee.computed &&
-                  // Remove debug/info log calls for prod bundle size reduction
+                  t.isIdentifier(callee.object, { name: 'logger' }) &&
+                  // Remove debug/info/warn/error log calls for prod bundle size reduction
                   (t.isIdentifier(callee.property, { name: 'debug' }) ||
-                    t.isIdentifier(callee.property, { name: 'info' }))
+                    t.isIdentifier(callee.property, { name: 'info' }) ||
+                    t.isIdentifier(callee.property, { name: 'warn' }) ||
+                    t.isIdentifier(callee.property, { name: 'error' }))
                 ) {
                   if (path.parentPath?.isExpressionStatement()) {
                     path.parentPath.remove();

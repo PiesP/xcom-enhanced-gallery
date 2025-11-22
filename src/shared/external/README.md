@@ -112,7 +112,7 @@ GM_setValue('key', value); // ❌ 금지!
 ```typescript
 // ✅ 배럴 export 사용
 import { createZipBytesFromFileMap } from '@shared/external/zip';
-import { DownloadService } from '@shared/services';
+import { UnifiedDownloadService } from '@shared/services';
 
 // ZIP 생성
 const zipBytes = await createZipBytesFromFileMap(

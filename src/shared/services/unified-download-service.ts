@@ -26,7 +26,6 @@ import type { MediaInfo } from '@shared/types/media.types';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename, generateZipFilename } from './file-naming';
 import { NotificationService } from './notification-service';
-import { downloadService } from './download-service';
 import {
   DownloadOrchestrator,
   type OrchestratorOptions,
@@ -49,6 +48,21 @@ export interface DownloadOptions {
   concurrency?: number;
   retries?: number;
   zipFilename?: string;
+}
+
+interface BlobDownloadOptions {
+  blob: Blob | File;
+  name: string;
+  saveAs?: boolean;
+  conflictAction?: 'uniquify' | 'overwrite' | 'prompt';
+  suppressNotifications?: boolean;
+}
+
+interface BlobDownloadResult {
+  success: boolean;
+  filename?: string;
+  error?: string;
+  size?: number;
 }
 
 export interface SingleDownloadResult {
@@ -151,7 +165,7 @@ export class UnifiedDownloadService {
       const binaryView = orchestratorResult.data.slice();
       const blob = new Blob([binaryView.buffer], { type: mimeType });
 
-      const downloadResult = await downloadService.downloadBlob({
+      const downloadResult = await this.downloadBlob({
         blob,
         name: filename,
         suppressNotifications: true,
@@ -308,7 +322,7 @@ export class UnifiedDownloadService {
       const zipFilename =
         options.zipFilename || generateZipFilename(mediaItems, { fallbackPrefix: 'xcom_gallery' });
       const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
-      const downloadResult = await downloadService.downloadBlob({
+      const downloadResult = await this.downloadBlob({
         blob,
         name: zipFilename,
         suppressNotifications: true,
@@ -508,6 +522,93 @@ export class UnifiedDownloadService {
         resolve({ success: false, error: errorMsg });
       }
     });
+  }
+
+  private async downloadBlob(options: BlobDownloadOptions): Promise<BlobDownloadResult> {
+    try {
+      const gmDownload = getGMDownload();
+      if (!gmDownload) {
+        return {
+          success: false,
+          error: 'GM_download not available in this environment',
+        };
+      }
+
+      // Validate blob
+      if (!options.blob || !(options.blob instanceof Blob)) {
+        return {
+          success: false,
+          error: 'Invalid blob provided',
+        };
+      }
+
+      // Get size for reporting
+      const size = options.blob.size;
+      const objectUrl = URL.createObjectURL(options.blob);
+
+      return new Promise(resolve => {
+        const timer = globalTimerManager.setTimeout(() => {
+          resolve({ success: false, error: 'Download timeout', size });
+          if (!options.suppressNotifications) {
+            this.notificationService.error('Blob download timeout');
+          }
+        }, 30000);
+
+        const cleanup = () => {
+          globalTimerManager.clearTimeout(timer);
+          URL.revokeObjectURL(objectUrl);
+        };
+
+        try {
+          gmDownload({
+            url: objectUrl,
+            name: options.name,
+            saveAs: options.saveAs ?? false,
+            conflictAction: options.conflictAction ?? 'uniquify',
+            onload: () => {
+              cleanup();
+              resolve({ success: true, filename: options.name, size });
+              if (!options.suppressNotifications) {
+                this.notificationService.success(`Downloaded: ${options.name}`);
+              }
+              logger.debug(
+                `[UnifiedDownloadService] Blob download completed: ${options.name} (${size} bytes)`
+              );
+            },
+            onerror: (error: Record<string, unknown> | Error | string | null | undefined) => {
+              cleanup();
+              const errorMsg =
+                error instanceof Error
+                  ? error.message
+                  : typeof error === 'object' && error && 'error' in error
+                    ? String((error as Record<string, unknown>).error)
+                    : String(error) || 'Unknown error';
+              resolve({ success: false, error: errorMsg, filename: options.name, size });
+              if (!options.suppressNotifications) {
+                this.notificationService.error(`Download failed: ${errorMsg}`);
+              }
+              logger.error(`[UnifiedDownloadService] Blob download failed:`, error);
+            },
+            ontimeout: () => {
+              cleanup();
+              resolve({ success: false, error: 'Download timeout', filename: options.name, size });
+              if (!options.suppressNotifications) {
+                this.notificationService.error('Download timeout');
+              }
+            },
+          });
+        } catch (error) {
+          cleanup();
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          resolve({ success: false, error: errorMsg, size });
+          logger.error(`[UnifiedDownloadService] GM_download error:`, error);
+        }
+      });
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`[UnifiedDownloadService] Blob download exception:`, error);
+      return { success: false, error: errorMsg };
+    }
   }
 
   private inferMimeType(media: MediaInfo, filename: string): string {
