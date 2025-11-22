@@ -1,12 +1,12 @@
 /**
- * HTTP Request Service - Phase 318
+ * HTTP Request Service - Phase 373
  *
- * Provides a type-safe, Promise-based HTTP client using native fetch API.
- * Designed for Tampermonkey 5.4.0+ Manifest V3 environments where
- * GM_xmlHttpRequest is no longer available.
+ * Provides a type-safe, Promise-based HTTP client using GM_xmlhttpRequest (primary)
+ * and native fetch API (fallback).
  *
  * Features:
- * - Native fetch API as primary HTTP method
+ * - GM_xmlhttpRequest as primary HTTP method (Cross-Origin support)
+ * - Native fetch API as fallback
  * - Support for GET, POST, PUT, DELETE, PATCH methods
  * - Timeout handling and abort signal support
  * - Multiple response types: json, text, blob, arraybuffer
@@ -29,6 +29,8 @@
 
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { getUserscript } from '@shared/external/userscript/adapter';
+import type { GMXMLHttpRequestDetails } from '@shared/types/core/userscript';
 
 /**
  * HTTP request options
@@ -81,11 +83,12 @@ export class HttpError extends Error {
 /**
  * Singleton HTTP Request Service
  *
- * Provides fetch-based HTTP client for Tampermonkey 5.4.0+ MV3 environment.
- * Uses native fetch API as primary method (GM_xmlHttpRequest removed in MV3).
+ * Provides HTTP client for Tampermonkey environment.
+ * Uses GM_xmlhttpRequest as primary method for cross-origin support.
  *
  * Features:
- * - Phase 318: Native fetch as primary HTTP method (MV3 compatible)
+ * - Phase 373: GM_xmlhttpRequest as primary HTTP method
+ * - Native fetch as fallback
  * - Detects Tampermonkey, test, extension, and console environments
  * - Requires @connect directives for cross-origin requests
  */
@@ -96,6 +99,102 @@ export class HttpRequestService {
 
   private constructor() {
     // Private constructor for singleton pattern
+  }
+
+  /**
+   * Perform HTTP request using GM_xmlhttpRequest
+   * Phase 373: Re-introduced for cross-origin support
+   */
+  private async gmRequest<T>(
+    method: string,
+    url: string,
+    options?: HttpRequestOptions | BinaryRequestOptions
+  ): Promise<HttpResponse<T>> {
+    return new Promise((resolve, reject) => {
+      try {
+        const userscript = getUserscript();
+
+        const details: GMXMLHttpRequestDetails = {
+          method: method as any,
+          url,
+          headers: options?.headers,
+          timeout: options?.timeout ?? this.defaultTimeout,
+          responseType: options?.responseType as any,
+          onload: (response) => {
+            const headers: Record<string, string> = {};
+            if (response.responseHeaders) {
+              response.responseHeaders.split('\r\n').forEach((line) => {
+                const parts = line.split(': ');
+                if (parts.length >= 2 && parts[0]) {
+                  headers[parts[0].toLowerCase()] = parts.slice(1).join(': ');
+                }
+              });
+            }
+
+            resolve({
+              ok: response.status >= 200 && response.status < 300,
+              status: response.status,
+              statusText: response.statusText,
+              data: response.response,
+              headers,
+            });
+          },
+          onerror: (response) => {
+            reject(
+              new HttpError(
+                response.statusText || 'Network Error',
+                response.status,
+                response.statusText
+              )
+            );
+          },
+          ontimeout: () => {
+            reject(new HttpError('Request timeout', 0, 'Timeout'));
+          },
+          onabort: () => {
+            reject(new Error('Request was aborted'));
+          },
+        };
+
+        if ((options as any).data) {
+          const data = (options as any).data;
+          if (
+            typeof data === 'object' &&
+            !(data instanceof Blob) &&
+            !(data instanceof ArrayBuffer) &&
+            !(data instanceof Uint8Array) &&
+            !(data instanceof FormData) &&
+            !(data instanceof URLSearchParams)
+          ) {
+            details.data = JSON.stringify(data);
+            if (!details.headers) details.headers = {};
+            if (!details.headers['content-type']) {
+              details.headers['content-type'] = 'application/json';
+            }
+          } else {
+            details.data = data;
+          }
+        }
+
+        if (
+          (options as BinaryRequestOptions).contentType &&
+          !details.headers?.['content-type']
+        ) {
+          if (!details.headers) details.headers = {};
+          details.headers['content-type'] = (options as BinaryRequestOptions).contentType!;
+        }
+
+        const control = userscript.xmlHttpRequest(details);
+
+        if (options?.signal) {
+          options.signal.addEventListener('abort', () => {
+            control.abort();
+          });
+        }
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   /**
@@ -122,6 +221,16 @@ export class HttpRequestService {
     options?: HttpRequestOptions
   ): Promise<HttpResponse<T>> {
     const timeout = options?.timeout ?? this.defaultTimeout;
+
+    try {
+      return await this.gmRequest<T>(method, url, options);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('GM_xmlhttpRequest not available')) {
+        // Fallback to fetch
+      } else {
+        throw error;
+      }
+    }
 
     try {
       // Check for abort signal before starting
@@ -300,6 +409,16 @@ export class HttpRequestService {
   ): Promise<HttpResponse<T>> {
     const timeout = options?.timeout ?? this.defaultTimeout;
     const contentType = options?.contentType ?? 'application/octet-stream';
+
+    try {
+      return await this.gmRequest<T>('POST', url, { ...options, data, contentType } as any);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('GM_xmlhttpRequest not available')) {
+        // Fallback to fetch
+      } else {
+        throw error;
+      }
+    }
 
     try {
       // Validate binary data

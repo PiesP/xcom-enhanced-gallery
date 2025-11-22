@@ -491,6 +491,7 @@ export interface ZipCreationConfig {
 | 309+      | Service Layer 패턴 도입           | ✅   |
 | 318.1     | GM_xmlHttpRequest 제거 (MV3 호환) | ✅   |
 | Phase 370 | 배럴 export 정책 명확화           | ✅   |
+| Phase 373 | GM_xmlhttpRequest 복원            | ✅   |
 
 ---
 

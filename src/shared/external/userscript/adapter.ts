@@ -4,7 +4,7 @@
  * **Purpose**: Wrapper for Tampermonkey GM_* APIs
  * **Architecture**: Encapsulates external Userscript GM_* through getter function
  * **Scope**: Provides typed access to GM_* APIs when available
- * **Deprecated**: GM_xmlHttpRequest removed (Phase 318.1) - MV3 incompatible, use HttpRequestService
+ * **Note**: GM_xmlhttpRequest restored (Phase 373) for cross-origin support.
  *
  * **Fallback Strategy**: None. GM_* APIs must be available at runtime.
  *
@@ -26,7 +26,11 @@
  * @see HttpRequestService - Recommended service for HTTP requests (Phase 318+)
  */
 import type { CookieAPI } from '@shared/types/core/cookie.types';
-import type { BrowserEnvironment } from '@shared/types/core/userscript';
+import type {
+  BrowserEnvironment,
+  GMXMLHttpRequestControl,
+  GMXMLHttpRequestDetails,
+} from '@shared/types/core/userscript';
 import { isGMUserScriptInfo } from '@shared/utils/type-safety-helpers';
 
 type GMUserScriptInfo = Record<string, unknown>;
@@ -42,6 +46,8 @@ export interface UserscriptAPI {
   getValue<T>(key: string, defaultValue?: T): Promise<T | undefined>;
   deleteValue(key: string): Promise<void>;
   listValues(): Promise<string[]>;
+  addStyle(css: string): HTMLStyleElement;
+  xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
   readonly cookie: CookieAPI | undefined;
 }
 
@@ -65,6 +71,8 @@ interface GlobalWithGM {
   GM_getValue?: <T>(key: string, defaultValue?: T) => Promise<T> | T;
   GM_deleteValue?: (key: string) => Promise<void> | void;
   GM_listValues?: () => Promise<string[]> | string[];
+  GM_addStyle?: (css: string) => HTMLStyleElement;
+  GM_xmlhttpRequest?: (details: GMXMLHttpRequestDetails) => GMXMLHttpRequestControl;
   GM_cookie?: CookieAPI;
 }
 
@@ -112,6 +120,8 @@ const ERROR_MESSAGES = {
   getValue: 'GM_getValue not available - Tampermonkey/Greasemonkey environment required',
   deleteValue: 'GM_deleteValue not available - Tampermonkey/Greasemonkey environment required',
   listValues: 'GM_listValues not available - Tampermonkey/Greasemonkey environment required',
+  addStyle: 'GM_addStyle not available - Tampermonkey/Greasemonkey environment required',
+  xmlHttpRequest: 'GM_xmlhttpRequest not available - Tampermonkey/Greasemonkey environment required',
 } as const;
 
 function assertFunction<T extends (...args: never[]) => unknown>(
@@ -144,10 +154,13 @@ export function getUserscript(): UserscriptAPI {
     typeof global.GM_deleteValue === 'function' ? global.GM_deleteValue : undefined;
   const gmListValues =
     typeof global.GM_listValues === 'function' ? global.GM_listValues : undefined;
+  const gmAddStyle = typeof global.GM_addStyle === 'function' ? global.GM_addStyle : undefined;
+  const gmXmlHttpRequest =
+    typeof global.GM_xmlhttpRequest === 'function' ? global.GM_xmlhttpRequest : undefined;
   const gmCookie =
     global.GM_cookie && typeof global.GM_cookie.list === 'function' ? global.GM_cookie : undefined;
 
-  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue));
+  const hasGM = Boolean(gmDownload || (gmSetValue && gmGetValue) || gmXmlHttpRequest);
 
   return Object.freeze({
     hasGM,
@@ -180,6 +193,17 @@ export function getUserscript(): UserscriptAPI {
       const values = await Promise.resolve(fn());
       return Array.isArray(values) ? values : [];
     },
+
+    addStyle(css: string): HTMLStyleElement {
+      const fn = assertFunction(gmAddStyle, ERROR_MESSAGES.addStyle);
+      return fn(css);
+    },
+
+    xmlHttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl {
+      const fn = assertFunction(gmXmlHttpRequest, ERROR_MESSAGES.xmlHttpRequest);
+      return fn(details);
+    },
+
     cookie: gmCookie,
   });
 }

@@ -4,6 +4,7 @@
  *              for inserting, updating, and removing <style> tags.
  */
 
+import { getUserscript } from '@shared/external/userscript/adapter';
 import { logger } from '@shared/logging';
 
 export interface StyleRegistrationOptions {
@@ -63,9 +64,19 @@ export class StyleRegistry {
       return { id: options.id, element: existing, replaced: false };
     }
 
-    const styleElement = document.createElement('style');
+    let styleElement: HTMLStyleElement;
+
+    try {
+      // Phase 373: GM_addStyle 도입
+      styleElement = getUserscript().addStyle(trimmedCss);
+    } catch {
+      // Fallback for non-GM environments
+      styleElement = document.createElement('style');
+      styleElement.textContent = trimmedCss;
+      (document.head || document.documentElement).appendChild(styleElement);
+    }
+
     styleElement.id = options.id;
-    styleElement.textContent = trimmedCss;
 
     if (options.attributes) {
       Object.entries(options.attributes).forEach(([key, value]) => {
@@ -74,7 +85,6 @@ export class StyleRegistry {
       });
     }
 
-    (document.head || document.documentElement).appendChild(styleElement);
     this.styleMap.set(options.id, styleElement);
 
     logger.debug('[StyleRegistry] Registered style', options.id);

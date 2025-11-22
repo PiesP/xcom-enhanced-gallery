@@ -16,6 +16,7 @@ declare global {
   function GM_getResourceText(name: string): string;
   function GM_getResourceURL(name: string): string;
   function GM_addStyle(css: string): HTMLStyleElement;
+  function GM_xmlhttpRequest(details: GMXMLHttpRequestDetails): GMXMLHttpRequestControl;
   function GM_openInTab(
     url: string,
     options?: { active?: boolean; insert?: boolean; setParent?: boolean }
@@ -94,9 +95,58 @@ export interface GMNotificationDetails {
   onclick?: (() => void) | undefined;
 }
 
+export interface GMXMLHttpRequestDetails {
+  method?: 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
+  url: string;
+  headers?: Record<string, string>;
+  data?: string | FormData | Blob | ArrayBuffer | URLSearchParams | ReadableStream;
+  cookie?: string;
+  binary?: boolean;
+  nocache?: boolean;
+  revalidate?: boolean;
+  timeout?: number;
+  context?: any;
+  responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'stream';
+  overrideMimeType?: string;
+  anonymous?: boolean;
+  fetch?: boolean;
+  user?: string;
+  password?: string;
+  onabort?: (response: GMXMLHttpRequestResponse) => void;
+  onerror?: (response: GMXMLHttpRequestResponse) => void;
+  onload?: (response: GMXMLHttpRequestResponse) => void;
+  onloadend?: (response: GMXMLHttpRequestResponse) => void;
+  onloadstart?: (response: GMXMLHttpRequestResponse) => void;
+  onprogress?: (response: GMXMLHttpRequestProgressResponse) => void;
+  onreadystatechange?: (response: GMXMLHttpRequestResponse) => void;
+  ontimeout?: (response: GMXMLHttpRequestResponse) => void;
+}
+
+export interface GMXMLHttpRequestResponse {
+  finalUrl: string;
+  readyState: number;
+  status: number;
+  statusText: string;
+  responseHeaders: string;
+  response: any;
+  responseXML?: Document | null;
+  responseText: string;
+  context: any;
+}
+
+export interface GMXMLHttpRequestProgressResponse extends GMXMLHttpRequestResponse {
+  lengthComputable: boolean;
+  loaded: number;
+  total: number;
+}
+
+export interface GMXMLHttpRequestControl {
+  abort(): void;
+}
+
 /**
  * UserScript 권한 타입
- * Phase 318.1: GM_xmlhttpRequest 제거 (MV3 불가)
+ * Phase 318.1: GM_xmlhttpRequest 제거 (MV3 불가) -> Phase 373: GM_xmlhttpRequest 복원
  */
 export type UserScriptGrant =
   | 'GM_registerMenuCommand'
@@ -107,7 +157,8 @@ export type UserScriptGrant =
   | 'GM_notification'
   | 'GM_addStyle'
   | 'GM_setClipboard'
-  | 'GM_cookie';
+  | 'GM_cookie'
+  | 'GM_xmlhttpRequest';
 
 /**
  * UserScript 연결 권한 타입
