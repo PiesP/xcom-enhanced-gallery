@@ -488,36 +488,7 @@ export class StaticVendorManager {
   public getNativeDownload(): NativeDownloadAPI {
     return {
       downloadBlob: (blob: Blob, filename: string): void => {
-        let url: string | null = null;
-        try {
-          url = URL.createObjectURL(blob);
-          this.createdUrls.add(url);
-
-          const link = document.createElement('a');
-          // codeql[js/unsafe-download-pattern] - Legacy fallback, prefer getUserscript().download()
-          link.href = url;
-          link.download = filename;
-          link.style.display = 'none';
-
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-
-          logger.debug('Native download completed:', filename);
-        } catch (error) {
-          logger.error('Native download failed:', error);
-          throw error;
-        } finally {
-          // Ensure cleanup happens in finally block
-          if (url) {
-            try {
-              URL.revokeObjectURL(url);
-              this.createdUrls.delete(url);
-            } catch (revokeError) {
-              logger.warn('URL revocation failed:', revokeError);
-            }
-          }
-        }
+        logger.warn('Native download fallback removed. Use DownloadService.');
       },
 
       createDownloadUrl: (blob: Blob): string => {

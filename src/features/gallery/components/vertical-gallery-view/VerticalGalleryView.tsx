@@ -565,12 +565,14 @@ function VerticalGalleryViewCore({
 
           onDownloadCurrent={handleDownloadCurrent}
           onDownloadAll={handleDownloadAll}
+          onOpenSettings={() => {
+            logger.debug('[VerticalGalleryView] Settings opened');
+          }}
           onFitOriginal={handleFitOriginal}
           onFitWidth={handleFitWidth}
           onFitHeight={handleFitHeight}
           onFitContainer={handleFitContainer}
           currentFitMode={imageFitMode()}
-          onOpenSettings={() => {}}
           tweetText={() => toolbarViewModel().tweetText ?? undefined}
           tweetTextHTML={() => toolbarViewModel().tweetTextHTML ?? undefined}
           className={styles.toolbar || ''}

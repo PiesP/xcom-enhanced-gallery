@@ -28,6 +28,8 @@ import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
 import { unifiedDownloadService } from '@shared/services/unified-download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
+import { getThemeService } from '@shared/container/service-accessors';
+import { languageService } from '@shared/services/language-service';
 
 let galleryMountCount = 0;
 
@@ -114,34 +116,54 @@ export class GalleryRenderer implements GalleryRendererInterface {
       return;
     }
 
-    const { render, createComponent } = getSolid();
+    const { render, createComponent, createSignal, onCleanup } = getSolid();
+    const themeService = getThemeService();
+
     const handleDownload = (type: 'current' | 'all') => this.handleDownload(type);
     const handleClose = () => {
       closeGallery();
       this.onCloseCallback?.();
     };
 
-    const elementFactory = () =>
-      createComponent(GalleryContainer, {
+    const Root = () => {
+      // Reactive state for settings
+      const [currentTheme, setCurrentTheme] = createSignal(themeService.getCurrentTheme());
+      const [currentLanguage, setCurrentLanguage] = createSignal(
+        languageService.getCurrentLanguage()
+      );
+
+      // Sync with services
+      const unbindTheme = themeService.onThemeChange((_, setting) => setCurrentTheme(setting));
+      const unbindLang = languageService.onLanguageChange(lang => setCurrentLanguage(lang));
+
+      onCleanup(() => {
+        unbindTheme();
+        unbindLang();
+      });
+
+      return createComponent(GalleryContainer, {
         onClose: handleClose,
         className: 'xeg-gallery-renderer xeg-gallery-root xeg-theme-scope',
         get children() {
-          return createComponent(ErrorBoundary, {
-            get children() {
-              return createComponent(VerticalGalleryView, {
-                onClose: handleClose,
-                onPrevious: () => navigatePrevious('button'),
-                onNext: () => navigateNext('button'),
-                onDownloadCurrent: () => handleDownload('current'),
-                onDownloadAll: () => handleDownload('all'),
-                className: 'xeg-vertical-gallery',
-              });
-            },
-          });
+          return [
+            createComponent(ErrorBoundary, {
+              get children() {
+                return createComponent(VerticalGalleryView, {
+                  onClose: handleClose,
+                  onPrevious: () => navigatePrevious('button'),
+                  onNext: () => navigateNext('button'),
+                  onDownloadCurrent: () => handleDownload('current'),
+                  onDownloadAll: () => handleDownload('all'),
+                  className: 'xeg-vertical-gallery',
+                });
+              },
+            }),
+          ];
         },
       });
+    };
 
-    this.disposeApp = render(elementFactory, this.container);
+    this.disposeApp = render(Root, this.container);
     galleryMountCount += 1;
     logger.info('[GalleryRenderer] Gallery mounted', {
       mountCount: galleryMountCount,
