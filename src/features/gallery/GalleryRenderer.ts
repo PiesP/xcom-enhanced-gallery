@@ -28,7 +28,7 @@ import { logger } from '@shared/logging';
 import { getSolid } from '@shared/external/vendors';
 import { downloadService } from '@shared/services/download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
-import { getThemeService } from '@shared/container/service-accessors';
+import { getThemeService, getMediaService } from '@shared/container/service-accessors';
 import { languageService } from '@shared/services/language-service';
 
 let galleryMountCount = 0;
@@ -80,6 +80,13 @@ export class GalleryRenderer implements GalleryRendererInterface {
     const mediaItems = gallerySignals.mediaItems.value;
     if (!isOpen || mediaItems.length === 0) {
       return;
+    }
+
+    // Phase 368: Prefetch current media for instant download
+    const currentIndex = gallerySignals.currentIndex.value;
+    const currentMedia = mediaItems[currentIndex];
+    if (currentMedia) {
+      getMediaService().prefetchMedia(currentMedia, { schedule: 'idle' });
     }
 
     this.isRenderingFlag = true;

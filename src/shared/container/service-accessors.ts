@@ -46,8 +46,21 @@ export function getMediaFilenameService(): FilenameService {
   return CoreServiceRegistry.get<FilenameService>(SERVICE_KEYS.MEDIA_FILENAME);
 }
 
+import type { MediaService } from '@shared/services/media-service';
+
+/**
+ * Get media service.
+ *
+ * @returns MediaService instance
+ * @throws CoreService throws if media service not registered
+ */
+export function getMediaService(): MediaService {
+  return CoreServiceRegistry.get<MediaService>(SERVICE_KEYS.MEDIA_SERVICE);
+}
+
 /**
  * Get media service (untyped to avoid circular dependency).
+ * @deprecated Use getMediaService() instead
  *
  * @returns Media service instance (unknown type due to cyclic import)
  * @throws CoreService throws if media service not registered

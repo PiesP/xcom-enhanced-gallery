@@ -307,6 +307,38 @@ export class MediaService extends BaseServiceImpl {
     video.src = src;
   }
 
+  /**
+   * Prefetch a single media item
+   * Used for instant download of the currently viewed item
+   */
+  async prefetchMedia(media: MediaInfo, options: PrefetchOptions = {}): Promise<void> {
+    const scheduleMode = options.schedule ?? 'immediate';
+    const url = media.url;
+
+    if (scheduleMode === 'immediate') {
+      await this.prefetchSingle(url);
+      return;
+    }
+
+    const task = () => {
+      void this.prefetchSingle(url).catch(() => {});
+    };
+
+    switch (scheduleMode) {
+      case 'idle':
+        scheduleIdle(task);
+        break;
+      case 'raf':
+        scheduleRaf(task);
+        break;
+      case 'microtask':
+        scheduleMicrotask(task);
+        break;
+      default:
+        globalTimerManager.setTimeout(task, 0);
+    }
+  }
+
   async prefetchNextMedia(
     mediaItems: readonly string[],
     currentIndex: number,
@@ -521,6 +553,14 @@ export class MediaService extends BaseServiceImpl {
     options: DownloadOptions = {}
   ): Promise<SingleDownloadResult> {
     const { downloadService } = await import('./download-service');
+
+    // Phase 368: Check prefetch cache
+    const cachedBlob = this.prefetchCache.get(media.url);
+    if (cachedBlob) {
+      logger.debug('[MediaService] Using cached blob for download');
+      return downloadService.downloadSingle(media, { ...options, blob: cachedBlob });
+    }
+
     return downloadService.downloadSingle(media, options);
   }
 

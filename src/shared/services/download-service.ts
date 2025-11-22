@@ -31,6 +31,7 @@ export interface DownloadOptions {
   concurrency?: number;
   retries?: number;
   zipFilename?: string;
+  blob?: Blob; // Phase 368: Support for prefetched blob
 }
 
 interface BlobDownloadOptions {
@@ -105,6 +106,27 @@ export class DownloadService {
     }
 
     const filename = generateMediaFilename(media);
+
+    // Phase 368: Use prefetched blob if available
+    if (options.blob) {
+      logger.debug(`[DownloadService] Using prefetched blob for ${filename}`);
+      const result = await this.downloadBlob({
+        blob: options.blob,
+        name: filename,
+        suppressNotifications: true,
+      });
+
+      if (result.success) {
+        this.notificationService.success(`Download complete: ${filename}`);
+        options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
+        return { success: true, filename };
+      }
+      // Fallback to URL download if blob download fails?
+      // Usually if blob download fails, it's a GM_download issue, so URL might fail too.
+      // But let's return error for now.
+      return { success: false, error: result.error, filename };
+    }
+
     const url = media.url;
 
     return new Promise(resolve => {
