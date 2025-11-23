@@ -48,7 +48,6 @@
 # --- GitHub Actions (deploy/security) ---
 !/.github
 !/.github/**
-.github/copilot-instructions.md
 
 # --- Dependency licenses (legal requirement, referenced by vite.config.ts) ---
 !/LICENSES
@@ -62,6 +61,7 @@
 # ============================================================================
 
 # Development guide docs (local reference)
+.github/copilot-instructions.md
 /AGENTS.md
 /CLAUDE.md
 /docs/

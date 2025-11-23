@@ -4,19 +4,100 @@
  * - Prod build: terser compression (console/debugger removed), license notice injection, bundle size optimization.
  * - Output: final userscript file (and sourcemap) written to dist/ and temporary/asset files cleaned up.
  */
-import { defineConfig, mergeConfig } from 'vite';
-import type { Plugin, UserConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import solidPlugin from 'vite-plugin-solid';
-import { visualizer } from 'rollup-plugin-visualizer';
+import { transformSync } from '@babel/core';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { OutputBundle, OutputChunk, OutputAsset, NormalizedOutputOptions } from 'rollup';
-import { transformSync } from '@babel/core';
+import type { NormalizedOutputOptions, OutputAsset, OutputBundle, OutputChunk } from 'rollup';
+import { visualizer } from 'rollup-plugin-visualizer';
+import type { Plugin, UserConfig } from 'vite';
+import { defineConfig, mergeConfig } from 'vite';
+import solidPlugin from 'vite-plugin-solid';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
 // ============================================================================
 // Internal Build Utilities (formerly .github/scripts/lib)
 // ============================================================================
+
+// --- Style Injector ---
+const STYLE_ELEMENT_ID = 'xeg-styles';
+const ERROR_EVENT_NAME = 'xeg:style-injection-error';
+
+const DEV_ERROR_REPORTER = [
+  "    var detail = e instanceof Error",
+  "      ? { message: e.message, stack: e.stack || '' }",
+  "      : { message: String(e) };",
+  "    var target = typeof window !== 'undefined'",
+  "      ? window",
+  "      : (typeof globalThis !== 'undefined' ? globalThis : null);",
+  "    if (target && typeof target.dispatchEvent === 'function') {",
+  "      var eventInstance;",
+  "      if (typeof CustomEvent === 'function') {",
+  `        eventInstance = new CustomEvent('${ERROR_EVENT_NAME}', { detail: detail });`,
+  "      } else if (typeof document !== 'undefined' && typeof document.createEvent === 'function') {",
+  "        eventInstance = document.createEvent('CustomEvent');",
+  `        eventInstance.initCustomEvent('${ERROR_EVENT_NAME}', false, false, detail);`,
+  "      }",
+  "      if (eventInstance) {",
+  "        target.dispatchEvent(eventInstance);",
+  "      }",
+  "    }",
+].join('\\n');
+
+const PROD_ERROR_REPORTER = [
+  "var d=e instanceof Error?{message:e.message,stack:e.stack||''}:{message:String(e)},",
+  "t=typeof window!=='undefined'?window:typeof globalThis!=='undefined'?globalThis:null;",
+  "if(t&&typeof t.dispatchEvent==='function'){",
+  "var n;",
+  "if(typeof CustomEvent==='function'){",
+  `n=new CustomEvent('${ERROR_EVENT_NAME}',{detail:d});`,
+  "}else if(typeof document!=='undefined'&&typeof document.createEvent==='function'){",
+  "n=document.createEvent('CustomEvent');",
+  `n.initCustomEvent('${ERROR_EVENT_NAME}',false,false,d);`,
+  "}",
+  "if(n){t.dispatchEvent(n);}",
+  "}",
+].join('');
+
+/**
+ * Build-time helper that generates a self-invoking style injection snippet.
+ * @param css Collected CSS output from Vite build.
+ * @param isDev Whether the build is for development (pretty output) or production (minified output).
+ */
+export function createStyleInjector(css: string, isDev: boolean = false): string {
+  if (!css.trim()) {
+    return '';
+  }
+
+  const serializedCss = JSON.stringify(css);
+
+  if (isDev) {
+    return `(function() {
+  try {
+    var s = document.getElementById('${STYLE_ELEMENT_ID}');
+    if (s) s.remove();
+    s = document.createElement('style');
+    s.id = '${STYLE_ELEMENT_ID}';
+    s.textContent = ${serializedCss};
+    (document.head || document.documentElement).appendChild(s);
+  } catch (e) {
+${DEV_ERROR_REPORTER}
+  }
+})();`;
+  }
+
+  return (
+    `(function(){` +
+    `try{` +
+    `var s=document.getElementById('${STYLE_ELEMENT_ID}');` +
+    `if(s) s.remove();` +
+    `s=document.createElement('style');` +
+    `s.id='${STYLE_ELEMENT_ID}';` +
+    `s.textContent=${serializedCss};` +
+    `(document.head||document.documentElement).appendChild(s);` +
+    `}catch(e){${PROD_ERROR_REPORTER}}` +
+    `})();`
+  );
+}
 
 // --- Logger ---
 interface Logger {
@@ -35,28 +116,6 @@ function createCliLogger(scope: string): Logger {
     error: (msg, ...args) => console.error(`\x1b[31m${prefix}\x1b[0m`, msg, ...args),
     success: (msg, ...args) => console.log(`\x1b[32m${prefix}\x1b[0m`, msg, ...args),
   };
-}
-
-// --- Style Injector ---
-function createStyleInjector(css: string, isDev: boolean): string {
-  // Escape backticks and backslashes to prevent syntax errors in template literal
-  const safeCss = css.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
-
-  if (isDev) {
-    return `
-    try {
-      const style = document.createElement('style');
-      style.id = 'xeg-styles-dev';
-      style.textContent = \`${safeCss}\`;
-      document.head.appendChild(style);
-    } catch (e) {
-      window.dispatchEvent(new CustomEvent('xeg:style-injection-error', { detail: e }));
-    }
-    `;
-  }
-
-  // Production: Minimized injection
-  return `(function(){try{const s=document.createElement('style');s.id='xeg-styles';s.textContent=\`${safeCss}\`;document.head.appendChild(s);}catch(e){}})();`;
 }
 
 // --- Userscript Integrity ---
@@ -118,7 +177,8 @@ async function loadLocalConfigSafe<T = unknown>(): Promise<T | null> {
 
   try {
     // Dynamic import to load only if file exists (resolve file absence in CI)
-    const { loadLocalConfig } = (await import('./config/utils/load-local-config')) as {
+    // @ts-expect-error: Local config file might not exist
+    const { loadLocalConfig } = (await import('./config.local.js')) as {
       loadLocalConfig: <T = unknown>() => Promise<T | null>;
     };
     return (await loadLocalConfig<T>()) ?? null;
@@ -241,19 +301,6 @@ function userscriptHeader(flags: BuildFlags): string {
   );
 }
 
-/**
- * Generate safe code to inject CSS into DOM at build time
- *
- * @param css - CSS string generated by Vite at build time (trusted input)
- * @param isDev - Whether this is a dev build (determines formatting)
- *                - true: Pretty output (for easier debugging)
- *                - false: Compact output (minimize final bundle size)
- * @returns JavaScript code for style injection
- *
- * @security This function runs only at build time and does not receive runtime user input.
- *           - Dev: JSON.stringify() automatically escapes special characters
- *           - Prod: Base64 ensures binary safety
- */
 /**
  * Generate UserScript wrapper code at build time
  *

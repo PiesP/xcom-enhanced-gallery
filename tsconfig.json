@@ -2,14 +2,14 @@
   "extends": "./tsconfig.base.json",
   "include": [
     "src/**/*",
-    "types/**/*",
     "playwright/**/*",
     "test/**/*",
     ".github/scripts/**/*.ts",
     "scripts/**/*.ts",
+    "scripts/**/*.js",
+    "scripts/**/*.d.ts",
     "vite.config.ts",
-    "vitest.config.ts",
-    "config/**/*.d.ts"
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
