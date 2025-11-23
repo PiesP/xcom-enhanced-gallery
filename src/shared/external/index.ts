@@ -45,22 +45,28 @@
 // ============================================================================
 
 export {
-    cleanupVendors,
-    // Core Getter (public - recommended)
-    getSolid,
-    getSolidStore, getVendorInitializationReport,
-    getVendorStatuses, getVendorVersions,
-    // Initialization (public)
-    initializeVendors, isVendorInitialized,
-    isVendorsInitialized, registerVendorCleanupOnUnload,
-    // Internal only (@internal - testing/debugging only)
-    resetVendorManagerInstance,
-    // Extended API (public - advanced)
-    validateVendors, type ComponentChildren, type JSXElement,
-    // Type definitions (public)
-    type SolidAPI,
-    type SolidStoreAPI,
-    type VNode
+  cleanupVendors,
+  // Core Getter (public - recommended)
+  getSolid,
+  getSolidStore,
+  getVendorInitializationReport,
+  getVendorStatuses,
+  getVendorVersions,
+  // Initialization (public)
+  initializeVendors,
+  isVendorInitialized,
+  isVendorsInitialized,
+  registerVendorCleanupOnUnload,
+  // Internal only (@internal - testing/debugging only)
+  resetVendorManagerInstance,
+  // Extended API (public - advanced)
+  validateVendors,
+  type ComponentChildren,
+  type JSXElement,
+  // Type definitions (public)
+  type SolidAPI,
+  type SolidStoreAPI,
+  type VNode,
 } from "./vendors";
 
 // ============================================================================
@@ -72,11 +78,14 @@ export {
 // ============================================================================
 
 export {
-    // 환경 감지 (공개)
-    detectEnvironment,
-    // Userscript Getter (내부 전용 - 고급/테스트만)
-    getUserscript, isGMAPIAvailable, type EnvironmentInfo, type UserscriptAPI,
-    type UserscriptManager
+  // 환경 감지 (공개)
+  detectEnvironment,
+  // Userscript Getter (내부 전용 - 고급/테스트만)
+  getUserscript,
+  isGMAPIAvailable,
+  type EnvironmentInfo,
+  type UserscriptAPI,
+  type UserscriptManager,
 } from "./userscript";
 
 // ============================================================================
