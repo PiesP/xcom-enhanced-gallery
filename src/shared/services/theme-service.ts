@@ -144,8 +144,10 @@ export class ThemeService
       void this.boundSettingsService.set("gallery.theme", this.themeSetting);
     }
 
-    this.applyCurrentTheme(options?.force);
-    this.notifyListeners();
+    const notified = this.applyCurrentTheme(options?.force);
+    if (!notified) {
+      this.notifyListeners();
+    }
   }
 
   public getEffectiveTheme(): Theme {
@@ -187,13 +189,15 @@ export class ThemeService
     }
   }
 
-  private applyCurrentTheme(force = false): void {
+  private applyCurrentTheme(force = false): boolean {
     const effective = this.getEffectiveTheme();
     if (force || this.currentTheme !== effective) {
       this.currentTheme = effective;
       syncThemeAttributes(this.currentTheme);
       this.notifyListeners();
+      return true;
     }
+    return false;
   }
 
   private notifyListeners(): void {
