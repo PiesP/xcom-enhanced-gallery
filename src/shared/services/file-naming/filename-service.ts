@@ -478,123 +478,29 @@ export class FilenameService {
   }
 
   /**
-   * Sanitize filename for Windows filesystem compatibility
+   * Sanitize filename for filesystem compatibility
    *
-   * **Compatibility Measures**:
-   * 1. **Unicode Normalization (NFKC)**: Decomposes composite characters for consistency
-   * 2. **Control Character Removal**: Strips C0, C1, and Bidi control codes (U+200B-U+202E, U+2060, U+2066-U+2069)
-   * 3. **Forbidden Character Replacement**: Converts `< > : " / \ | ? *` to `_`
-   * 4. **Whitespace Trimming**: Removes leading/trailing spaces and dots
-   * 5. **Reserved Word Prevention**: Prefixes Windows reserved words (CON, PRN, AUX, NUL, COM1-9, LPT1-9) with `_`
-   * 6. **Length Enforcement**: Truncates to 255 bytes (Windows max)
-   *
-   * **Security Context**:
-   * - Prevents path traversal via control sequences
-   * - Removes Unicode directional overrides that could mislead users
-   * - Avoids Windows reserved devices that could cause OS conflicts
+   * **Simplification Strategy**:
+   * - Replaces forbidden characters with `_`
+   * - Trims whitespace and dots
+   * - Truncates to 255 characters
    *
    * @param name - Input filename
-   * @returns Windows-compatible sanitized filename
-   *
-   * @example
-   * ```typescript
-   * // Unicode normalization
-   * sanitizeForWindows('café.jpg');  // Normalizes to canonical form
-   *
-   * // Forbidden character replacement
-   * sanitizeForWindows('photo<new>.jpg');  // => 'photo_new_.jpg'
-   *
-   * // Control character removal
-   * sanitizeForWindows('file\u202E.jpg');  // Removes bidi override
-   *
-   * // Reserved word prevention
-   * sanitizeForWindows('CON.jpg');   // => '_CON.jpg'
-   *
-   * // Length truncation
-   * sanitizeForWindows('a'.repeat(300) + '.jpg');  // => truncated to 255 bytes
-   * ```
-   *
-   * @internal Used in all filename generation functions
-   * @see Phase 300+ for cross-platform file compatibility context
+   * @returns Safe filename
    */
   private sanitizeForWindows(name: string): string {
-    try {
-      if (!name) return "media";
-      let base = String(name);
+    if (!name) return "media";
 
-      // 유니코드 정규화
-      if (typeof base.normalize === "function") {
-        try {
-          base = base.normalize("NFKC");
-        } catch {
-          // ignore
-        }
-      }
+    // Replace forbidden characters: < > : " / \ | ? *
+    let safe = name.replace(/[<>:"/\\|?*]/g, "_");
 
-      // 제어 문자 및 BiDi 마커 제거
-      base = Array.from(base)
-        .filter((ch) => {
-          const cp = ch.codePointAt(0) ?? 0;
-          if (cp <= 0x001f) return false;
-          if (cp >= 0x007f && cp <= 0x009f) return false;
-          if (cp >= 0x200b && cp <= 0x200f) return false;
-          if (cp >= 0x202a && cp <= 0x202e) return false;
-          if (cp === 0x2060) return false;
-          if (cp >= 0x2066 && cp <= 0x2069) return false;
-          return true;
-        })
-        .join("");
+    // Trim leading/trailing whitespace and dots
+    safe = safe.replace(/^[\s.]+|[\s.]+$/g, "");
 
-      // 파일명과 확장자 분리
-      const lastDot = base.lastIndexOf(".");
-      const hasExt = lastDot > 0 && lastDot < base.length - 1;
-      const pure = hasExt ? base.slice(0, lastDot) : base;
-      const ext = hasExt ? base.slice(lastDot) : "";
+    if (!safe) return "media";
 
-      // 금지 문자 치환
-      let safe = pure.replace(/[<>:"/\\|?*]/g, "_");
-
-      // 선행/후행 공백/마침표 제거
-      safe = safe.replace(/[\s.]+$/g, "");
-      safe = safe.replace(/^[\s.]+/g, "");
-
-      // 예약어 방지
-      const reserved = new Set([
-        "con",
-        "prn",
-        "aux",
-        "nul",
-        "com1",
-        "com2",
-        "com3",
-        "com4",
-        "com5",
-        "com6",
-        "com7",
-        "com8",
-        "com9",
-        "lpt1",
-        "lpt2",
-        "lpt3",
-        "lpt4",
-        "lpt5",
-        "lpt6",
-        "lpt7",
-        "lpt8",
-        "lpt9",
-      ]);
-      if (reserved.has(safe.toLowerCase())) {
-        safe = `_${safe}`;
-      }
-
-      if (!safe) safe = "media";
-
-      // 길이 제한 (255자)
-      const result = (safe + ext).slice(0, 255);
-      return result;
-    } catch {
-      return name || "media";
-    }
+    // Truncate to 255 characters
+    return safe.slice(0, 255);
   }
 
   /**

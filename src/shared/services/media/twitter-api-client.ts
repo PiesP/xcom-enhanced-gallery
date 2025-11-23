@@ -66,17 +66,17 @@
  * ```
  */
 
-import { logger } from "@shared/logging";
 import { TWITTER_API_CONFIG } from "@/constants";
+import { logger } from "@shared/logging";
+import { getCookieService } from "@shared/services/cookie-service";
 import { HttpRequestService } from "@shared/services/http-request-service";
 import type {
-  TwitterAPIResponse,
-  TwitterTweet,
-  TwitterUser,
-  TwitterMedia,
-  TweetMediaEntry,
+    TweetMediaEntry,
+    TwitterAPIResponse,
+    TwitterMedia,
+    TwitterTweet,
+    TwitterUser,
 } from "./types";
-import { getCookieService } from "@shared/services/cookie-service";
 
 /**
  * Extract visual index from expanded_url
@@ -247,9 +247,6 @@ function sortMediaByVisualOrder(
  * ```
  */
 export class TwitterAPI {
-  /** Guest token from API (authentication) */
-  private static _guestToken: string | undefined = undefined;
-
   /** CSRF token from cookies (security) */
   private static _csrfToken: string | undefined = undefined;
 
@@ -266,17 +263,15 @@ export class TwitterAPI {
    * Initialize Tokens - Load from Cookies
    *
    * Purpose:
-   * Load guest token and CSRF token from browser cookies (one-time operation per page load).
+   * Load CSRF token from browser cookies (one-time operation per page load).
    *
    * Algorithm:
    * 1. Check if already initialized (idempotent)
    *    - Return early if _tokensInitialized is true
    * 2. Set _tokensInitialized = true (prevent re-init)
-   * 3. Call getCookie('gt') → _guestToken
-   * 4. Call getCookie('ct0') → _csrfToken
+   * 3. Call getCookie('ct0') → _csrfToken
    *
    * Cookie Names:
-   * - 'gt': Guest Token (authentication)
    * - 'ct0': CSRF Token (security, cross-site forgery prevention)
    *
    * Timing:
@@ -290,12 +285,12 @@ export class TwitterAPI {
    * - < 1ms execution
    *
    * Error Handling:
-   * - Silent fail if cookies not found (will try activation)
+   * - Silent fail if cookies not found
    * - No error thrown (fail-soft)
    *
    * Side Effects:
    * - Sets _tokensInitialized = true
-   * - May set _guestToken and _csrfToken
+   * - May set _csrfToken
    */
   private static initializeTokens(): void {
     if (this._tokensInitialized) {
@@ -303,19 +298,7 @@ export class TwitterAPI {
     }
 
     const cookieService = this.cookieService;
-    this._guestToken = cookieService.getValueSync("gt");
     this._csrfToken = cookieService.getValueSync("ct0");
-
-    void cookieService
-      .getValue("gt")
-      .then((value) => {
-        if (value) {
-          this._guestToken = value;
-        }
-      })
-      .catch((error) => {
-        logger.debug("Failed to hydrate guest token from GM_cookie", error);
-      });
 
     void cookieService
       .getValue("ct0")
@@ -329,29 +312,6 @@ export class TwitterAPI {
       });
 
     this._tokensInitialized = true;
-  }
-
-  /**
-   * Get Guest Token - Lazy Initialization
-   *
-   * Purpose:
-   * Get guest token with automatic initialization on first access.
-   *
-   * Algorithm:
-   * 1. Call initializeTokens()
-   * 2. Return _guestToken (may be undefined)
-   *
-   * Performance:
-   * - O(1) amortized (initialization happens once)
-   * - Subsequent calls: < 1us property read
-   *
-   * Returns:
-   * - string: Valid guest token
-   * - undefined: Token not available (will try activation endpoint)
-   */
-  private static get guestToken(): string | undefined {
-    this.initializeTokens();
-    return this._guestToken;
   }
 
   /**
@@ -378,84 +338,6 @@ export class TwitterAPI {
   }
 
   /**
-   * Activate Guest Token - Fallback Authentication
-   *
-   * Purpose:
-   * Request new guest token from Twitter API when not available in cookies
-   * (browser restrictions, token expiry, etc.).
-   *
-   * Algorithm:
-   * 1. Early exit if already have token (already cached)
-   * 2. Call initializeTokens() to check if we got one from cookies
-   * 3. Early exit if now have token
-   * 4. Try-catch block around HTTP request:
-   *    a. POST to https://api.twitter.com/1.1/guest/activate.json
-   *    b. Headers: GUEST_AUTHORIZATION, content-type: application/json
-   *    c. No body (undefined)
-   * 5. On success (response.ok):
-   *    - Extract guest_token from response.data
-   *    - Cache in _guestToken
-   * 6. On failure: Silent fail (continue without explicit token)
-   *
-   * Endpoint:
-   * - URL: https://api.twitter.com/1.1/guest/activate.json
-   * - Method: POST
-   * - Response: { guest_token: "..." }
-   * - No auth required (public endpoint)
-   *
-   * Error Handling:
-   * - Try-catch wraps entire operation
-   * - Catch block: log nothing (silent fail)
-   * - Fail-soft: Proceed without explicit guest token
-   * - Server can still process request without token (auth header fallback)
-   *
-   * Performance:
-   * - Network round-trip: ~100ms
-   * - Only called once per page (cached _guestToken)
-   * - Subsequent requests reuse token
-   *
-   * Side Effects:
-   * - May set _guestToken
-   * - Used by subsequent API requests
-   * - Token may expire (handled on next page reload)
-   *
-   * Async:
-   * - Awaitable (but caller doesn't need to await)
-   * - Non-blocking (await httpService.post)
-   */
-  private static async activateGuestTokenIfNeeded(): Promise<void> {
-    // If we have a token already, no need to activate
-    if (this._guestToken) return;
-
-    // Check if we can get from cookies
-    this.initializeTokens();
-    if (this._guestToken) return;
-
-    try {
-      const httpService = HttpRequestService.getInstance();
-      const response = await httpService.post<{ guest_token?: string }>(
-        "https://api.twitter.com/1.1/guest/activate.json",
-        undefined,
-        {
-          headers: {
-            authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
-            "content-type": "application/json",
-          },
-          responseType: "json",
-        },
-      );
-
-      // Fail-soft: Only use response if OK
-      if (!response.ok) return;
-      if (response.data?.guest_token) {
-        this._guestToken = response.data.guest_token;
-      }
-    } catch {
-      // Silent fail: proceed without guest token
-    }
-  }
-
-  /**
    * API Request - Core HTTP Method with Caching
    *
    * Purpose:
@@ -463,18 +345,16 @@ export class TwitterAPI {
    *
    * Algorithm:
    * 1. Check cache (return if found)
-   * 2. Ensure guest token available (activate if needed)
-   * 3. Build headers:
+   * 2. Build headers:
    *    - authorization: Bearer token
    *    - x-csrf-token: CSRF token (or empty string)
    *    - x-twitter-client-language: 'en'
    *    - x-twitter-active-user: 'yes'
    *    - content-type: 'application/json'
-   *    - x-guest-token: Add if available
-   *    - x-twitter-auth-type: 'OAuth2Session' fallback
-   * 4. Execute GET request via HttpRequestService
-   * 5. Cache response (with LRU eviction if > 16 entries)
-   * 6. Return response
+   *    - x-twitter-auth-type: 'OAuth2Session'
+   * 3. Execute GET request via HttpRequestService
+   * 4. Cache response (with LRU eviction if > 16 entries)
+   * 5. Return response
    *
    * Caching Strategy:
    * - Key: Full URL (query params + all variables)
@@ -486,7 +366,6 @@ export class TwitterAPI {
    * Headers:
    * - authorization: GUEST_AUTHORIZATION constant (Bearer token)
    * - x-csrf-token: From cookies (prevents CSRF attacks)
-   * - x-guest-token: From activation endpoint (authentication)
    * - x-twitter-active-user: Required for some endpoints
    *
    * Error Handling:
@@ -522,9 +401,6 @@ export class TwitterAPI {
       if (cachedResult) return cachedResult;
     }
 
-    // Ensure best-effort guest token
-    await this.activateGuestTokenIfNeeded();
-
     // Build headers with all required authentication
     const headers = new Headers({
       authorization: TWITTER_API_CONFIG.GUEST_AUTHORIZATION,
@@ -532,6 +408,7 @@ export class TwitterAPI {
       "x-twitter-client-language": "en",
       "x-twitter-active-user": "yes",
       "content-type": "application/json",
+      "x-twitter-auth-type": "OAuth2Session",
     });
 
     // Phase 373: GM_xmlhttpRequest requires explicit Origin/Referer for some endpoints
@@ -539,13 +416,6 @@ export class TwitterAPI {
     if (typeof window !== "undefined") {
       headers.append("referer", window.location.href);
       headers.append("origin", window.location.origin);
-    }
-
-    // Add guest token if available
-    if (this.guestToken) {
-      headers.append("x-guest-token", this.guestToken);
-    } else {
-      headers.append("x-twitter-auth-type", "OAuth2Session");
     }
 
     try {
