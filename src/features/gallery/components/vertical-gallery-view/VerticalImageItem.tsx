@@ -38,17 +38,17 @@
  * @see VerticalImageItem.types for type definitions
  */
 
-import type { ComponentType } from "@shared/types/app.types";
 import type { ImageFitMode } from "@shared/types";
+import type { ComponentType } from "@shared/types/app.types";
 import type { JSX } from "solid-js";
 
 import { withGallery } from "@shared/components/hoc";
-import { createClassName } from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
 import { getSolid } from "@shared/external/vendors";
-import { languageService } from "@shared/services/language-service";
 import { logger } from "@shared/logging";
-import styles from "./VerticalImageItem.module.css";
+import { languageService } from "@shared/services/language-service";
+import { createClassName } from "@shared/utils/component-utils"; // Phase 284: 개별 함수 직접 import
 import { cleanFilename, isVideoMedia } from "./VerticalImageItem.helpers";
+import styles from "./VerticalImageItem.module.css";
 import type { VerticalImageItemProps } from "./VerticalImageItem.types";
 
 const solid = getSolid();
@@ -507,7 +507,7 @@ const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
 
 // Phase 308: Removed solid.memo (React compat) - Solid components are fine as is
 export type {
-  VerticalImageItemProps,
   FitModeProp,
+  VerticalImageItemProps,
 } from "./VerticalImageItem.types";
 export const VerticalImageItem = WithGalleryVerticalImageItem;

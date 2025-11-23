@@ -107,7 +107,7 @@
 /build/
 /.vite/
 .tsbuildinfo
-src/shared/types/generated/design-token-names.ts
+/src/shared/types/generated/design-token-names.ts
 
 # Test cache and results
 /coverage/

@@ -54,9 +54,9 @@ export function isHTMLImageElement(
 }
 
 /**
- * HTML Video Element 타입 가드
- * @param element - 검사할 값
- * @returns element가 HTMLVideoElement이면 true
+ * HTML Video Element type guard
+ * @param element - Value to check
+ * @returns true if element is HTMLVideoElement
  */
 export function isHTMLVideoElement(
   element: unknown,
@@ -65,9 +65,9 @@ export function isHTMLVideoElement(
 }
 
 /**
- * HTML Anchor Element 타입 가드
- * @param element - 검사할 값
- * @returns element가 HTMLAnchorElement이면 true
+ * HTML Anchor Element type guard
+ * @param element - Value to check
+ * @returns true if element is HTMLAnchorElement
  */
 export function isHTMLAnchorElement(
   element: unknown,
@@ -76,14 +76,14 @@ export function isHTMLAnchorElement(
 }
 
 /**
- * Wheel Event 타입 가드
- * @param event - 검사할 이벤트
- * @returns event가 WheelEvent이면 true (타입 좁히기)
+ * Wheel Event type guard
+ * @param event - Event to check
+ * @returns true if event is WheelEvent (type narrowing)
  * @example
  * ```typescript
  * function handleScroll(e: Event) {
  *   if (isWheelEvent(e)) {
- *     console.log(e.deltaY, e.deltaX); // 타입 안전
+ *     console.log(e.deltaY, e.deltaX); // Type-safe
  *   }
  * }
  * ```
@@ -93,28 +93,28 @@ export function isWheelEvent(event: Event): event is WheelEvent {
 }
 
 /**
- * Keyboard Event 타입 가드
- * @param event - 검사할 이벤트
- * @returns event가 KeyboardEvent이면 true
+ * Keyboard Event type guard
+ * @param event - Event to check
+ * @returns true if event is KeyboardEvent
  */
 export function isKeyboardEvent(event: Event): event is KeyboardEvent {
   return event instanceof KeyboardEvent;
 }
 
 /**
- * Mouse Event 타입 가드
- * @param event - 검사할 이벤트
- * @returns event가 MouseEvent이면 true
+ * Mouse Event type guard
+ * @param event - Event to check
+ * @returns true if event is MouseEvent
  */
 export function isMouseEvent(event: Event): event is MouseEvent {
   return event instanceof MouseEvent;
 }
 
 /**
- * Element 존재 확인 및 타입 가드
- * @template T - 기대하는 Element 타입 (기본값: Element)
- * @param element - 검사할 값
- * @returns element가 Element 인스턴스이면 true
+ * Element existence check and type guard
+ * @template T - Expected Element type (default: Element)
+ * @param element - Value to check
+ * @returns true if element is an Element instance
  */
 export function hasElement<T extends Element = Element>(
   element: unknown,
@@ -123,15 +123,15 @@ export function hasElement<T extends Element = Element>(
 }
 
 /**
- * Array 타입 가드 (엄격한 검사)
- * @template T - 배열 요소 타입
- * @param value - 검사할 값
- * @returns value가 배열이면 true (타입 좁히기)
+ * Array type guard (strict check)
+ * @template T - Array element type
+ * @param value - Value to check
+ * @returns true if value is an array (type narrowing)
  * @example
  * ```typescript
  * const value: unknown = JSON.parse(data);
  * if (isArray<MyType>(value)) {
- *   value.map(item => item.id); // 타입 안전
+ *   value.map(item => item.id); // Type-safe
  * }
  * ```
  */
@@ -140,9 +140,9 @@ export function isArray<T>(value: unknown): value is T[] {
 }
 
 /**
- * Record 객체 타입 가드
- * @param value - 검사할 값
- * @returns value가 일반 객체(Record)이면 true (배열, null 제외)
+ * Record object type guard
+ * @param value - Value to check
+ * @returns true if value is a plain object (Record) (excludes arrays, null)
  * @example
  * ```typescript
  * if (isRecord(value)) {
@@ -155,16 +155,16 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * AbortSignal 타입 가드
- * @param value - 검사할 값
- * @returns value가 AbortSignal이면 true
+ * AbortSignal type guard
+ * @param value - Value to check
+ * @returns true if value is AbortSignal
  */
 export function isAbortSignal(value: unknown): value is AbortSignal {
   return value instanceof AbortSignal;
 }
 
 /**
- * AddEventListenerOptions 객체 생성 헬퍼
+ * AddEventListenerOptions object creation helper
  */
 export function createAddEventListenerOptions(options?: {
   capture?: boolean;
@@ -176,18 +176,18 @@ export function createAddEventListenerOptions(options?: {
 }
 
 /**
- * Record로 안전하게 변환 (Type Guard와 함께 사용)
- * @description 타입 단언 대신 사용하여 타입 안전성 확보
- * @param value - 변환할 값
- * @returns Record<string, unknown>으로 변환된 값
+ * Safely convert to Record (Use with Type Guard)
+ * @description Use instead of type assertion for type safety
+ * @param value - Value to convert
+ * @returns Value converted to Record<string, unknown>
  * @throws Error if value is not a valid Record
  * @example
  * ```typescript
  * if (isRecord(value)) {
- *   const record = toRecord(value); // 타입 안전
+ *   const record = toRecord(value); // Type-safe
  * }
  * ```
- * @version 1.0.0 - Phase 192: 타입 안전성 강화
+ * @version 1.0.0 - Phase 192: Enhanced type safety
  */
 export function toRecord(value: unknown): Record<string, unknown> {
   if (!isRecord(value)) {
