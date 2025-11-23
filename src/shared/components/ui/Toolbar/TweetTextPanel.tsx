@@ -1,8 +1,9 @@
-import { getSolid } from "@shared/external/vendors";
-import { formatTweetText, shortenUrl } from "@shared/utils/text-formatting";
-import { languageService } from "@shared/services/language-service";
-import styles from "./Toolbar.module.css";
 import type { JSXElement } from "@shared/external/vendors";
+import { getSolid } from "@shared/external/vendors";
+import { languageService } from "@shared/services/language-service";
+import { sanitizeHTML } from "@shared/utils/html-sanitizer";
+import { formatTweetText, shortenUrl } from "@shared/utils/text-formatting";
+import styles from "./Toolbar.module.css";
 
 const solid = getSolid();
 const { For, Switch, Match } = solid;
@@ -54,8 +55,9 @@ export default function TweetTextPanel(props: TweetTextPanelProps) {
             Security Note: tweetTextHTML is sanitized via @shared/utils/html-sanitizer
             before being passed here. It only allows safe tags (a, span, etc.) and attributes.
             Links are checked for safe protocols (http/https) and target="_blank" is secured.
+            Double-sanitization here ensures safety even if the prop source changes.
           */
-          <div innerHTML={props.tweetTextHTML} />
+          <div innerHTML={sanitizeHTML(props.tweetTextHTML)} />
         ) : (
           <For each={formatTweetText(props.tweetText ?? "")}>
             {(token) => (

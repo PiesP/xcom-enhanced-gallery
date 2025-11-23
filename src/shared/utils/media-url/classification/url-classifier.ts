@@ -6,6 +6,7 @@
  */
 
 import type { MediaTypeResult } from "@shared/utils/media-url/types";
+import { isNonEmptyString } from "@shared/utils/type-guards";
 
 const TWITTER_EMOJI_HOST_PATTERN = /^abs(?:-\d+)?\.twimg\.com$/i;
 const TWITTER_EMOJI_PATH_PATTERN = /\/emoji\/v\d+\/(?:svg|\d+x\d+)\//i;
@@ -16,10 +17,6 @@ const TWITTER_VIDEO_CONTENT_PATH_PATTERN =
 
 const EMOJI_SEGMENT = "/emoji/";
 const MEDIA_SEGMENT = "/media/";
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 function safeParseUrl(rawUrl: string): URL | null {
   try {

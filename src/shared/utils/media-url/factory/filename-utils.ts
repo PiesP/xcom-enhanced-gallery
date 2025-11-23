@@ -5,6 +5,8 @@
  * Filename utilities for media downloads.
  */
 
+import { isNonEmptyString } from "@shared/utils/type-guards";
+
 const DEFAULT_FILENAME = "media";
 const MAX_FILENAME_LENGTH = 200;
 const INVALID_CHARACTER_PATTERN = /[<>:"/\\|?*]/g;
@@ -24,10 +26,6 @@ const KNOWN_EXTENSIONS = [
 ] as const;
 
 const KNOWN_EXTENSIONS_LOWER = KNOWN_EXTENSIONS.map((ext) => ext.toLowerCase());
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
-}
 
 function stripQueryAndFragment(segment: string): string {
   const queryIndex = segment.indexOf("?");

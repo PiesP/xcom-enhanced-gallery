@@ -5,11 +5,10 @@
  * Media URL validation utilities.
  */
 
+import { isNonEmptyString } from "@shared/utils/type-guards";
+
 const SUPPORTED_MEDIA_HOSTS = new Set(["pbs.twimg.com", "video.twimg.com"]);
 const MAX_URL_LENGTH = 2048;
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
 
 /**
  * Validate Twitter media URL

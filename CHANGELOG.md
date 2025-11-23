@@ -142,3 +142,7 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Confirmed that TypeScript strict mode, ESLint, and GitHub code scanning all
   pass, marking the transition into long-term maintenance mode for the
   userscript.
+
+### Security
+
+- **Fix**: Enhanced XSS protection in `TweetTextPanel` by implementing double-sanitization of HTML content before rendering.

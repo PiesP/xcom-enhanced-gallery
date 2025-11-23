@@ -195,3 +195,12 @@ export function toRecord(value: unknown): Record<string, unknown> {
   }
   return value;
 }
+
+/**
+ * Non-empty string type guard
+ * @param value - Value to check
+ * @returns true if value is a non-empty string
+ */
+export function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}

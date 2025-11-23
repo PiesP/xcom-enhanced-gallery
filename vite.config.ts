@@ -17,7 +17,8 @@ const ERR_EVENT = "xeg:style-error";
 
 export const createStyleInjector = (css: string, isDev: boolean) => {
   if (!css.trim()) return "";
-  const content = JSON.stringify(css);
+  // Security: Escape < to prevent script injection when embedding in HTML
+  const content = JSON.stringify(css).replace(/</g, "\\u003c");
   const errHandler = `var d=e instanceof Error?{message:e.message,stack:e.stack||''}:{message:String(e)},t=typeof window!=='undefined'?window:typeof globalThis!=='undefined'?globalThis:null;if(t&&t.dispatchEvent){var n;if(typeof CustomEvent==='function')n=new CustomEvent('${ERR_EVENT}',{detail:d});else if(document&&document.createEvent){n=document.createEvent('CustomEvent');n.initCustomEvent('${ERR_EVENT}',false,false,d)}if(n)t.dispatchEvent(n)}`;
 
   const script = `try{var s=document.getElementById('${STYLE_ID}');if(s)s.remove();s=document.createElement('style');s.id='${STYLE_ID}';s.textContent=${content};(document.head||document.documentElement).appendChild(s)}catch(e){${errHandler}}`;

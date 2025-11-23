@@ -5,11 +5,10 @@
  * Quality selector utilities for media URLs.
  */
 
+import { isNonEmptyString } from "@shared/utils/type-guards";
+
 const DEFAULT_FORMAT = "jpg";
 const SUPPORTED_QUALITIES = new Set(["large", "medium", "small"]);
-
-const isNonEmptyString = (value: unknown): value is string =>
-  typeof value === "string" && value.trim().length > 0;
 
 function normaliseQuality(
   quality: "large" | "medium" | "small",
