@@ -33,9 +33,9 @@
  * @see Phase 432.3 for TweetId utilization improvements
  */
 
+import type { MediaInfo } from "@shared/types/media.types";
 import { safeParseInt } from "@shared/utils/type-safety-helpers";
 import { isHostMatching, tryParseUrl } from "@shared/utils/url";
-import type { MediaInfo } from "@shared/types/media.types";
 
 /**
  * Filename generation options

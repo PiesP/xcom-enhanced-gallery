@@ -76,11 +76,20 @@
     /* Transitions - toolbar visibility helper only */
     --xeg-transition-toolbar:
       opacity var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
-      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out), visibility 0ms;
+      transform var(--xeg-duration-toolbar) var(--xeg-easing-ease-out),
+      visibility 0ms;
 
     /* Spacing - CSS Logical Properties */
-    --xeg-spacing-gallery: clamp(var(--xeg-spacing-sm), 2.5vw, var(--xeg-spacing-lg));
-    --xeg-spacing-mobile: clamp(var(--xeg-spacing-xs), 2vw, var(--xeg-spacing-md));
+    --xeg-spacing-gallery: clamp(
+      var(--xeg-spacing-sm),
+      2.5vw,
+      var(--xeg-spacing-lg)
+    );
+    --xeg-spacing-mobile: clamp(
+      var(--xeg-spacing-xs),
+      2vw,
+      var(--xeg-spacing-md)
+    );
     --xeg-spacing-compact: clamp(0.25rem, 1.5vw, var(--xeg-spacing-sm));
 
     /* Removed --xeg-toolbar-height: unused */
@@ -193,12 +202,14 @@
    resolves to 'none' (e.g., mouse moves below wrapper area), descendants also become non-interactive,
    which prevents native <select> dropdowns from opening inside the settings panel.
    This rule explicitly restores pointer-events:auto for the expanded panel so its children inherit 'auto'. */
-.toolbarWrapper [data-gallery-element='settings-panel'][data-expanded='true'] {
+.toolbarWrapper [data-gallery-element="settings-panel"][data-expanded="true"] {
   pointer-events: auto;
 }
 
 /* When settings panel is expanded, keep the toolbar wrapper interactive regardless of hover state */
-.toolbarWrapper:has([data-gallery-element='settings-panel'][data-expanded='true']) {
+.toolbarWrapper:has(
+  [data-gallery-element="settings-panel"][data-expanded="true"]
+) {
   --toolbar-opacity: 1;
   --toolbar-visibility: visible;
   --toolbar-pointer-events: auto;
@@ -240,7 +251,9 @@
 }
 /* Custom scrollbar styling (WebKit browsers only) */
 .itemsContainer::-webkit-scrollbar {
-  width: var(--xeg-scrollbar-width); /* Tokenized replacement for the old 0.5rem magic number */
+  width: var(
+    --xeg-scrollbar-width
+  ); /* Tokenized replacement for the old 0.5rem magic number */
 }
 
 .itemsContainer::-webkit-scrollbar-track {
@@ -253,7 +266,8 @@
     --xeg-scrollbar-border-radius
   ); /* Tokenized replacement for the old 0.25rem radius */
 
-  transition: background-color var(--xeg-duration-normal) var(--xeg-ease-standard);
+  transition: background-color var(--xeg-duration-normal)
+    var(--xeg-ease-standard);
 }
 
 .itemsContainer::-webkit-scrollbar-thumb:hover {
@@ -261,14 +275,14 @@
 }
 
 .container.uiHidden .toolbarWrapper,
-.container.uiHidden .content > *:not([data-xeg-role='items-list']) {
+.container.uiHidden .content > *:not([data-xeg-role="items-list"]) {
   /* Hide non-content UI surfaces while the gallery is in immersive mode */
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--xeg-duration-fast) var(--xeg-easing-ease-out);
 }
 
-.container.uiHidden [data-xeg-role='items-list'],
+.container.uiHidden [data-xeg-role="items-list"],
 .container.uiHidden .itemsContainer {
   /* Keep the scroll surface interactive even when chrome is hidden */
   pointer-events: auto;
@@ -289,7 +303,9 @@
   position: relative;
   margin-bottom: var(--xeg-spacing-md, 1rem); /* 16px = 1rem reference */
   border-radius: var(--xeg-radius-lg, 0.5rem);
-  transition: var(--xeg-transition-elevation-normal); /* Smooth anchor snapping */
+  transition: var(
+    --xeg-transition-elevation-normal
+  ); /* Smooth anchor snapping */
 
   /* Performance optimizations */
   contain: layout style;
@@ -343,8 +359,12 @@
   top: 0;
   left: 0;
   right: 0;
-  height: var(--xeg-hover-zone-height); /* Tokenized replacement for the old 120px magic number */
-  z-index: var(--xeg-z-toolbar-hover-zone); /* Keep hover detection just below the toolbar */
+  height: var(
+    --xeg-hover-zone-height
+  ); /* Tokenized replacement for the old 120px magic number */
+  z-index: var(
+    --xeg-z-toolbar-hover-zone
+  ); /* Keep hover detection just below the toolbar */
   background: transparent;
   pointer-events: auto; /* Dedicated hover sensor */
 }
@@ -356,8 +376,10 @@
 }
 
 /* Disable the hover strip when the toolbar is already locked open (settings expanded) */
-.container.initialToolbarVisible:not([data-settings-expanded='true']) .toolbarHoverZone,
-.container:has(.toolbarWrapper:hover):not([data-settings-expanded='true']) .toolbarHoverZone {
+.container.initialToolbarVisible:not([data-settings-expanded="true"])
+  .toolbarHoverZone,
+.container:has(.toolbarWrapper:hover):not([data-settings-expanded="true"])
+  .toolbarHoverZone {
   pointer-events: none;
 }
 
@@ -412,8 +434,8 @@
 }
 
 /* Ensure every toolbar component honors the wrapper's visibility variables */
-.toolbarWrapper [class*='galleryToolbar'],
-.toolbarWrapper [data-testid*='toolbar'] {
+.toolbarWrapper [class*="galleryToolbar"],
+.toolbarWrapper [data-testid*="toolbar"] {
   opacity: var(--toolbar-opacity, 0);
   visibility: var(--toolbar-visibility, hidden);
   display: flex;
@@ -422,7 +444,7 @@
 
 /* Toolbar buttons should always be clickable even when wrapper blocks interaction */
 .toolbarWrapper button,
-.toolbarWrapper [role='button'],
+.toolbarWrapper [role="button"],
 .toolbarWrapper .toolbarButton {
   pointer-events: auto;
   position: relative;
@@ -461,7 +483,8 @@
   }
   100% {
     opacity: 1;
-    transform: var(--xeg-transform-translate-center) var(--xeg-transform-scale-normal);
+    transform: var(--xeg-transform-translate-center)
+      var(--xeg-transform-scale-normal);
   }
 }
 
@@ -566,14 +589,14 @@
 }
 
 /* Ensure interacting with toolbar components forces them visible */
-.container [class*='galleryToolbar']:hover {
+.container [class*="galleryToolbar"]:hover {
   --toolbar-opacity: 1;
   --toolbar-pointer-events: auto;
 }
 
 /* Fallback for browsers that cannot select siblings via :hover + */
 @supports not (selector(:hover + *)) {
-  .container:hover [class*='galleryToolbar'] {
+  .container:hover [class*="galleryToolbar"] {
     --toolbar-opacity: 1;
     --toolbar-pointer-events: auto;
   }

@@ -34,9 +34,7 @@
  * Base Button Styles
  * ============================================================================ */
 
-
 .unifiedButton {
-
   /* Layout */
   border: 0.0625rem solid transparent; /* 1px */
   border-radius: var(--xeg-radius-md);
@@ -46,7 +44,7 @@
     --xeg-font-family-ui,
     -apple-system,
     BlinkMacSystemFont,
-    'Segoe UI',
+    "Segoe UI",
     Roboto,
     sans-serif
   );
@@ -60,7 +58,10 @@
   color: inherit;
   /* Focus state */
   &:focus-visible {
-    border-color: var(--xeg-focus-indicator-color, var(--xeg-color-border-primary));
+    border-color: var(
+      --xeg-focus-indicator-color,
+      var(--xeg-color-border-primary)
+    );
     z-index: 1;
   }
 

@@ -3,15 +3,10 @@
  * Single delegated handler for detecting external media clicks.
  */
 
+import { CSS, STABLE_SELECTORS } from "@/constants";
 import { logger } from "@shared/logging";
 import { gallerySignals } from "@shared/state/signals/gallery.signals";
 import type { MediaInfo } from "@shared/types/media.types";
-import { STABLE_SELECTORS, CSS } from "@/constants";
-import {
-  detectMediaFromClick,
-  isProcessableMedia,
-} from "@shared/utils/media/media-click-detector";
-import { isHTMLElement } from "@shared/utils/type-guards";
 import {
   isGalleryInternalElement,
   isVideoControlElement,
@@ -21,6 +16,11 @@ import type {
   EventHandlingResult,
   GalleryEventOptions,
 } from "@shared/utils/events/core/event-context";
+import {
+  detectMediaFromClick,
+  isProcessableMedia,
+} from "@shared/utils/media/media-click-detector";
+import { isHTMLElement } from "@shared/utils/type-guards";
 
 const OUR_GALLERY_SCOPE = CSS.INTERNAL_SELECTORS.join(", ");
 const TWITTER_NATIVE_SELECTORS = [

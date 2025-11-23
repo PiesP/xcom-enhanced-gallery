@@ -132,14 +132,14 @@ src/shared/types/
 
 ```typescript
 // Recommended: Import from barrel export
-import type { Result, MediaInfo, BaseService } from '@shared/types';
+import type { Result, MediaInfo, BaseService } from "@shared/types";
 
 // When detailed types needed
-import type { MediaExtractionOptions } from '@shared/types/media.types';
-import type { ToolbarState } from '@shared/types/toolbar.types';
+import type { MediaExtractionOptions } from "@shared/types/media.types";
+import type { ToolbarState } from "@shared/types/toolbar.types";
 
 // Using Result pattern
-import { success, failure, isSuccess } from '@shared/types';
+import { success, failure, isSuccess } from "@shared/types";
 ```
 
 ### Import Principles
@@ -155,10 +155,10 @@ import { success, failure, isSuccess } from '@shared/types';
 
 ```typescript
 // Legacy path (removed during gallery cleanup)
-import type { GalleryConfig } from '@features/gallery/types';
+import type { GalleryConfig } from "@features/gallery/types";
 
 // Use shared types directly instead
-import type { ToolbarState } from '@shared/types/toolbar.types';
+import type { ToolbarState } from "@shared/types/toolbar.types";
 ```
 
 ---

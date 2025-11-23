@@ -98,9 +98,9 @@ import type {
 } from "@shared/types/media.types";
 import { ExtractionError } from "@shared/types/media.types";
 import { ErrorCode } from "@shared/types/result.types";
+import { removeDuplicateMediaItems } from "@shared/utils/deduplication";
 import { TweetInfoExtractor } from "./extractors/tweet-info-extractor";
 import { TwitterAPIExtractor } from "./extractors/twitter-api-extractor";
-import { removeDuplicateMediaItems } from "@shared/utils/deduplication";
 
 export class MediaExtractionService implements MediaExtractor {
   private readonly tweetInfoExtractor: TweetInfoExtractor;

@@ -4,8 +4,8 @@
  *              before the gallery overlay takes focus.
  */
 
-import { logger } from "@shared/logging";
 import { STABLE_SELECTORS } from "@/constants";
+import { logger } from "@shared/logging";
 import { isGalleryInternalElement } from "@shared/utils/dom";
 
 type QueryableRoot = Document | DocumentFragment | HTMLElement;

@@ -1,33 +1,33 @@
 import { logger } from "@shared/logging";
 import { isGalleryInternalElement } from "./dom";
 // Import from new modular layers
-import {
-  initializeGalleryEvents as _initializeGalleryEvents,
-  cleanupGalleryEvents as _cleanupGalleryEvents,
-  updateGalleryEventOptions as _updateGalleryEventOptions,
-  getGalleryEventSnapshot as _getGalleryEventSnapshot,
-} from "./events/lifecycle/gallery-lifecycle";
-import {
-  addListener,
-  removeEventListenerManaged,
-  removeEventListenersByContext,
-  removeAllEventListeners,
-  getEventListenerStatus,
-} from "./events/core/listener-manager";
 import type {
   EventContext,
   EventHandlers,
   GalleryEventOptions,
 } from "./events/core/event-context";
+import {
+  addListener,
+  getEventListenerStatus,
+  removeAllEventListeners,
+  removeEventListenerManaged,
+  removeEventListenersByContext,
+} from "./events/core/listener-manager";
+import {
+  cleanupGalleryEvents as _cleanupGalleryEvents,
+  getGalleryEventSnapshot as _getGalleryEventSnapshot,
+  initializeGalleryEvents as _initializeGalleryEvents,
+  updateGalleryEventOptions as _updateGalleryEventOptions,
+} from "./events/lifecycle/gallery-lifecycle";
 // Phase 420.3: Import listener profiler for diagnostics
 
 // Re-export core functions and types for backward compatibility
 export {
   addListener,
+  getEventListenerStatus,
+  removeAllEventListeners,
   removeEventListenerManaged,
   removeEventListenersByContext,
-  removeAllEventListeners,
-  getEventListenerStatus,
 };
 export type { EventContext, EventHandlers, GalleryEventOptions };
 // Phase 420.3: Export profiler for diagnostics and monitoring

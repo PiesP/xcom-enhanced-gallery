@@ -99,11 +99,11 @@ Before you submit a PR, please:
 1. **Sync with `master`** and rebase your branch if necessary.
 2. Run at least a build and basic static checks locally:
 
-  ```bash
-  npm run build
-  npm run typecheck
-  npm run lint
-  ```
+```bash
+npm run build
+npm run typecheck
+npm run lint
+```
 
 3. Ensure the gallery still behaves correctly on X.com in a desktop browser
    (Chrome, Firefox, Safari, or Edge).

@@ -36,7 +36,7 @@
 !/.npmrc
 
 # --- Quality tooling (CI required) ---
-!/eslint.config.cjs
+!/eslint.config.js
 
 # --- Core documentation ---
 !/README.md

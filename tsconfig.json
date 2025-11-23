@@ -6,17 +6,9 @@
     "test/**/*",
     ".github/scripts/**/*.ts",
     "scripts/**/*.ts",
-    "scripts/**/*.js",
     "scripts/**/*.d.ts",
     "vite.config.ts",
     "vitest.config.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    "coverage",
-    "test/archive",
-    "test/archive/**/*"
-  ]
+  "exclude": ["node_modules", "dist", "build", "coverage", "test/archive"]
 }

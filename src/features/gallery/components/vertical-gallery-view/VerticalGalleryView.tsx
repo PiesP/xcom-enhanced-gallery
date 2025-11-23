@@ -36,41 +36,40 @@
  * @version 6.0 - Integrated toolbar state management system
  */
 
-import type { JSX } from "solid-js";
-import { logger } from "@shared/logging";
+import { useGalleryFocusTracker } from "@features/gallery/hooks/useGalleryFocusTracker";
+import { useGalleryItemScroll } from "@features/gallery/hooks/useGalleryItemScroll";
+import { useGalleryScroll } from "@features/gallery/hooks/useGalleryScroll";
 import { Toolbar } from "@shared/components/ui/Toolbar/Toolbar";
-import type { ImageFitMode } from "@shared/types";
+import { getSetting, setSetting } from "@shared/container/settings-access";
+import { getSolid } from "@shared/external/vendors";
+import { logger } from "@shared/logging";
+import { languageService } from "@shared/services/language-service";
+import type { DownloadState } from "@shared/state/signals/download.signals";
+import { downloadState } from "@shared/state/signals/download.signals";
+import type { GalleryState } from "@shared/state/signals/gallery.signals";
 import {
-  galleryState,
   galleryIndexEvents,
+  galleryState,
   navigateToItem,
 } from "@shared/state/signals/gallery.signals";
-import type { GalleryState } from "@shared/state/signals/gallery.signals";
-import { downloadState } from "@shared/state/signals/download.signals";
-import type { DownloadState } from "@shared/state/signals/download.signals";
-import { getSolid } from "@shared/external/vendors";
-import { languageService } from "@shared/services/language-service";
-import { stringWithDefault } from "@shared/utils/type-safety-helpers";
+import type { ImageFitMode, MediaInfo } from "@shared/types";
 import {
   animateGalleryEnter,
   animateGalleryExit,
 } from "@shared/utils/animations";
-import { useGalleryKeyboard } from "./hooks/useGalleryKeyboard";
-import { useGalleryScroll } from "@features/gallery/hooks/useGalleryScroll";
-import { useGalleryItemScroll } from "@features/gallery/hooks/useGalleryItemScroll";
-import { useGalleryFocusTracker } from "@features/gallery/hooks/useGalleryFocusTracker";
 import { ensureGalleryScrollAvailable } from "@shared/utils/dom";
+import { isDownloadUiBusy } from "@shared/utils/download-ui-state";
+import { safeEventPrevent } from "@shared/utils/event-utils";
+import { computePreloadIndices } from "@shared/utils/performance";
+import { useSelector } from "@shared/utils/signal-selector";
+import { globalTimerManager } from "@shared/utils/timer-management";
+import { createToolbarViewModel } from "@shared/utils/toolbar-view-model";
+import { stringWithDefault } from "@shared/utils/type-safety-helpers";
+import { observeViewportCssVars } from "@shared/utils/viewport";
+import type { JSX } from "solid-js";
+import { useGalleryKeyboard } from "./hooks/useGalleryKeyboard";
 import styles from "./VerticalGalleryView.module.css";
 import { VerticalImageItem } from "./VerticalImageItem";
-import { computePreloadIndices } from "@shared/utils/performance";
-import { getSetting, setSetting } from "@shared/container/settings-access";
-import { useSelector } from "@shared/utils/signal-selector";
-import { isDownloadUiBusy } from "@shared/utils/download-ui-state";
-import type { MediaInfo } from "@shared/types";
-import { observeViewportCssVars } from "@shared/utils/viewport";
-import { globalTimerManager } from "@shared/utils/timer-management";
-import { safeEventPrevent } from "@shared/utils/event-utils";
-import { createToolbarViewModel } from "@shared/utils/toolbar-view-model";
 
 const solidAPI = getSolid();
 const { For } = solidAPI;
