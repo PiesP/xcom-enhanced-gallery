@@ -49,16 +49,15 @@ npm run build
 # TypeScript typecheck (no emit)
 npm run typecheck
 
-# Lint TypeScript sources
+# Lint source code
 npm run lint
 
-# Lint CSS
-npm run lint:css
+# Run tests
+npm test
 ```
 
 These commands are defined in `package.json` and use the existing project
-configuration (`tsconfig*.json`, `vite.config.ts`, lint configs, and CI
-workflows under `.github/`).
+configuration (`tsconfig*.json`, `vite.config.ts`, lint configs).
 
 ---
 

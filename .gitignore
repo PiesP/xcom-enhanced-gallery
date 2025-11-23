@@ -29,7 +29,6 @@
 
 # --- 품질 검사 설정 (CI 필수) ---
 !/eslint.config.cjs
-!/stylelint.config.cjs
 
 # --- 패키지 관리 ---
 !/package.json
@@ -38,7 +37,6 @@
 
 # --- 품질 검사 설정 (CI 필수) ---
 !/eslint.config.cjs
-!/stylelint.config.cjs
 
 # --- 핵심 문서 ---
 !/README.md
