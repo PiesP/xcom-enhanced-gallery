@@ -3,58 +3,12 @@
  * Licensed under the MIT License
  *
  * @fileoverview File Naming Service - Media filename generation and validation
- * @version 2.2.0
- *
- * Provides consistent filename generation for X.com media downloads with support for:
- * - Windows filesystem compatibility (reserved words, forbidden characters)
- * - Unicode normalization (NFKC) for consistent encoding
- * - Quote tweet handling (Phase 375: sourceLocation awareness)
- * - TweetId-based fallback patterns (Phase 432.3)
- *
- * **Filename Formats**:
- * - Media: `{username}_{tweetId}_{index}.{extension}`
- * - ZIP: `{username}_{tweetId}.zip`
- *
- * **Architecture**:
- * - Singleton FilenameService for centralized filename generation
- * - Public convenience functions for direct usage without instantiation
- * - Phase 375: Quote tweet support with sourceLocation tracking
- * - Phase 432.3: TweetId utilization improvements and URL validation
- *
- * @example
- * ```typescript
- * const service = new FilenameService();
- * const filename = service.generateMediaFilename(mediaInfo, { index: 1 });
- * // Result: "username_1234567890_1.jpg"
- * ```
- *
- * @see MediaInfo for media object structure
- * @see Phase 375 for quote tweet quote tweet handling details
- * @see Phase 432.3 for TweetId utilization improvements
+ * @version 3.0.0 - Simplified
  */
 
 import type { MediaInfo } from "@shared/types/media.types";
 import { safeParseInt } from "@shared/utils/type-safety-helpers";
-import { isHostMatching, tryParseUrl } from "@shared/utils/url";
 
-/**
- * Filename generation options
- *
- * @property index - Optional media index number (used for multi-media items)
- * @property extension - Optional file extension override (auto-detected if not provided)
- * @property fallbackPrefix - Prefix to use when no username/tweetId available (default: 'media')
- * @property fallbackUsername - Fallback username if extraction fails (default: 'unknown')
- *
- * @example
- * ```typescript
- * const options: FilenameOptions = {
- *   index: 1,
- *   extension: 'jpg'
- * };
- * const filename = service.generateMediaFilename(mediaInfo, options);
- * // Result: "username_1234567890_1.jpg"
- * ```
- */
 export interface FilenameOptions {
   index?: string | number;
   extension?: string;
@@ -62,170 +16,43 @@ export interface FilenameOptions {
   fallbackUsername?: string;
 }
 
-/**
- * ZIP filename generation options
- *
- * @property fallbackPrefix - Prefix for ZIP filename when metadata unavailable (default: 'xcom_gallery')
- *
- * @example
- * ```typescript
- * const options: ZipFilenameOptions = {
- *   fallbackPrefix: 'my_downloads'
- * };
- * const zipFilename = service.generateZipFilename(mediaItems, options);
- * // Result: "my_downloads_1234567890.zip" (if no tweet metadata)
- * ```
- */
 export interface ZipFilenameOptions {
   fallbackPrefix?: string;
 }
 
-// ===== Validation Pattern Constants =====
-
-/**
- * Supported media file extensions
- *
- * Whitelist of allowed file extensions for media files:
- * - Image: jpg, jpeg, png, gif, webp
- * - Video: mp4, mov, avi
- *
- * Used for URL extension validation and fallback (defaults to 'jpg').
- *
- * @internal
- */
-const SUPPORTED_EXTENSIONS = /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i;
-
-const TWIMG_ROOT_DOMAIN = "twimg.com";
-const TWITTER_PROFILE_HOSTS = new Set([
-  "x.com",
-  "www.x.com",
-  "twitter.com",
-  "www.twitter.com",
-  "mobile.twitter.com",
-  "m.twitter.com",
-]);
-
-const RESERVED_TWITTER_ROUTES = new Set([
-  "i",
-  "home",
-  "explore",
-  "notifications",
-  "messages",
-  "bookmarks",
-  "lists",
-  "profile",
-  "more",
-  "compose",
-  "search",
-  "settings",
-  "help",
-  "display",
-  "moments",
-  "topics",
-  "login",
-  "logout",
-  "signup",
-  "account",
-  "privacy",
-  "tos",
-]);
-
-/**
- * Filename Service - Centralized media filename generation and validation
- *
- * Provides consistent filename generation for X.com media with support for:
- *
- * **Key Features**:
- * 1. **Standard Format**: `{username}_{tweetId}_{index}.{extension}`
- * 2. **Quote Tweet Support** (Phase 375): Detects sourceLocation='quoted' and uses quoted tweet info
- * 3. **Windows Compatibility**: Sanitizes filenames for Windows filesystem
- * 4. **Unicode Normalization**: Uses NFKC for consistent encoding
- * 5. **Reserved Word Handling**: Prevents Windows reserved words (CON, PRN, AUX, etc.)
- * 6. **BiDi Marker Removal**: Strips Unicode directional markers for safety
- * 7. **TweetId Fallback** (Phase 432.3): Uses tweet_{tweetId} when username unavailable
- * 8. **URL-based Extraction**: Fallback to extract username from tweet URL
- *
- * **Filename Formats**:
- * - Media: `{username}_{tweetId}_{index}.{extension}`
- * - ZIP: `{username}_{tweetId}.zip`
- * - Fallback: `tweet_{tweetId}_{index}.{ext}` (Phase 432.3)
- *
- * @example
- * ```typescript
- * const service = new FilenameService();
- *
- * // Standard filename for first image
- * const filename = service.generateMediaFilename(mediaInfo, { index: 1 });
- * // => "user_1234567890_1.jpg"
- *
- * // ZIP archive for multiple items
- * const zipName = service.generateZipFilename([media1, media2]);
- * // => "user_1234567890.zip"
- *
- * // Validation
- * const isValid = service.isValidMediaFilename('user_1234567890_1.jpg');
- * // => true
- * ```
- *
- * @since v2.1.0 - File Naming Services
- * @see Phase 375 for quote tweet handling details
- * @see Phase 432.3 for TweetId utilization improvements
- */
 export class FilenameService {
-  /**
-   * Generate media filename with consistent format
-   *
-   * Format: `{username}_{tweetId}_{index}.{extension}`
-   * Fallback: `tweet_{tweetId}_{index}.{extension}` or `media_{timestamp}_{index}.{extension}`
-   */
   generateMediaFilename(
     media: MediaInfo,
     options: FilenameOptions = {},
   ): string {
     try {
-      // Use existing valid filename if available
       if (media.filename && media.filename.length > 0) {
-        return this.sanitizeForWindows(media.filename);
+        return this.sanitize(media.filename);
       }
 
-      const extension =
-        options.extension ?? this.extractExtensionFromUrl(media.url);
+      const extension = options.extension ?? this.getExtension(media.url);
       const index =
-        this.extractIndexFromMediaId(media.id) ??
-        this.normalizeIndex(options.index);
-      const { username, tweetId } = this.resolveTweetMetadata(
+        this.getIndex(media.id) ?? this.normalizeIndex(options.index);
+      const { username, tweetId } = this.resolveMetadata(
         media,
         options.fallbackUsername,
       );
 
-      // Standard format: username_tweetId_index.ext
       if (username && tweetId) {
-        return this.sanitizeForWindows(
-          `${username}_${tweetId}_${index}.${extension}`,
-        );
+        return this.sanitize(`${username}_${tweetId}_${index}.${extension}`);
       }
 
-      // Fallback 1: tweet_tweetId_index.ext
       if (tweetId && /^\d+$/.test(tweetId)) {
-        return this.sanitizeForWindows(
-          `tweet_${tweetId}_${index}.${extension}`,
-        );
+        return this.sanitize(`tweet_${tweetId}_${index}.${extension}`);
       }
 
-      // Fallback 2: media_timestamp_index.ext
       const prefix = options.fallbackPrefix ?? "media";
-      return this.sanitizeForWindows(
-        `${prefix}_${Date.now()}_${index}.${extension}`,
-      );
+      return this.sanitize(`${prefix}_${Date.now()}_${index}.${extension}`);
     } catch {
       return `media_${Date.now()}.${options.extension || "jpg"}`;
     }
   }
 
-  /**
-   * Generate ZIP archive filename
-   * Format: `{username}_{tweetId}.zip` or `xcom_gallery_{timestamp}.zip`
-   */
   generateZipFilename(
     mediaItems: readonly MediaInfo[],
     options: ZipFilenameOptions = {},
@@ -233,72 +60,28 @@ export class FilenameService {
     try {
       const firstItem = mediaItems[0];
       if (firstItem) {
-        const { username, tweetId } = this.resolveTweetMetadata(firstItem);
+        const { username, tweetId } = this.resolveMetadata(firstItem);
         if (username && tweetId) {
-          return this.sanitizeForWindows(`${username}_${tweetId}.zip`);
+          return this.sanitize(`${username}_${tweetId}.zip`);
         }
       }
 
       const prefix = options.fallbackPrefix ?? "xcom_gallery";
-      return this.sanitizeForWindows(`${prefix}_${Date.now()}.zip`);
+      return this.sanitize(`${prefix}_${Date.now()}.zip`);
     } catch {
       return `download_${Date.now()}.zip`;
     }
   }
 
-  /**
-   * Validate media filename format
-   *
-   * Checks if filename matches the standard pattern:
-   * `{name}_{id}_{index}.{ext}`
-   *
-   * **Pattern Details**:
-   * - Name: alphanumeric + underscore
-   * - ID: 10-19 digit numeric (Twitter Tweet ID range)
-   * - Index: 1+ digit numeric
-   * - Extension: 3-4 alphanumeric characters
-   *
-   * @param filename - Filename to validate
-   * @returns true if filename matches media filename pattern
-   *
-   * @example
-   * ```typescript
-   * service.isValidMediaFilename('piesp_1234567890_1.jpg');  // => true
-   * service.isValidMediaFilename('invalid-filename.jpg');              // => false
-   * service.isValidMediaFilename('piesp_123_1.jpg');         // => false (ID too short)
-   * ```
-   *
-   * @see {@link MEDIA_FILENAME_PATTERN} for pattern details
-   */
   isValidMediaFilename(filename: string): boolean {
     return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
   }
 
-  /**
-   * Validate ZIP filename format
-   *
-   * Checks if filename matches the standard ZIP pattern:
-   * `{name}_{id}.zip`
-   *
-   * @param filename - Filename to validate
-   * @returns true if filename matches ZIP filename pattern
-   *
-   * @example
-   * ```typescript
-   * service.isValidZipFilename('piesp_1234567890.zip');  // => true
-   * service.isValidZipFilename('archive.zip');                     // => false
-   * service.isValidZipFilename('piesp_1234567890.ZIP');  // => false (case-sensitive)
-   * ```
-   *
-   * @see {@link ZIP_FILENAME_PATTERN} for pattern details
-   */
   isValidZipFilename(filename: string): boolean {
     return filename.endsWith(".zip") && !/[<>:"/\\|?*]/.test(filename);
   }
 
-  // ===== Private Helper Methods =====
-
-  private resolveTweetMetadata(
+  private resolveMetadata(
     media: MediaInfo,
     fallbackUsername?: string | null,
   ): { username: string | null; tweetId: string | null } {
@@ -314,14 +97,13 @@ export class FilenameService {
       tweetId = media.quotedTweetId;
     } else {
       tweetId = media.tweetId ?? null;
-
       if (media.tweetUsername && media.tweetUsername !== "unknown") {
         username = media.tweetUsername;
       } else {
-        const urlToCheck =
+        const url =
           ("originalUrl" in media ? media.originalUrl : null) || media.url;
-        if (typeof urlToCheck === "string") {
-          username = this.extractUsernameFromUrl(urlToCheck);
+        if (typeof url === "string") {
+          username = this.extractUsernameFromUrl(url);
         }
       }
     }
@@ -333,381 +115,101 @@ export class FilenameService {
     return { username, tweetId };
   }
 
-  /**
-   * Extract media index from media ID
-   *
-   * Media IDs follow pattern: `{source}_media_{index}` or `{source}_{index}`
-   * Converts 0-based index to 1-based for display.
-   *
-   * @param mediaId - Media ID string (e.g., 'tweet_media_0')
-   * @returns 1-based index string, or null if extraction fails
-   *
-   * @example
-   * ```typescript
-   * extractIndexFromMediaId('tweet_media_0');   // => '1'
-   * extractIndexFromMediaId('tweet_media_3');   // => '4'
-   * extractIndexFromMediaId('tweet_5');          // => '5'
-   * extractIndexFromMediaId(undefined);          // => null
-   * ```
-   *
-   * @internal Used during filename generation
-   */
-  private extractIndexFromMediaId(mediaId?: string): string | null {
+  private getIndex(mediaId?: string): string | null {
     if (!mediaId) return null;
-
-    const match = mediaId.match(/_media_(\d+)$/);
+    const match = mediaId.match(/_media_(\d+)$/) || mediaId.match(/_(\d+)$/);
     if (match) {
-      const zeroBasedIndex = safeParseInt(match[1], 10);
-      if (!Number.isNaN(zeroBasedIndex)) {
-        return (zeroBasedIndex + 1).toString();
+      const idx = safeParseInt(match[1], 10);
+      if (!Number.isNaN(idx)) {
+        return mediaId.includes("_media_")
+          ? (idx + 1).toString()
+          : (match[1] ?? null);
       }
     }
-
-    const previousMatch = mediaId.match(/_(\d+)$/);
-    return previousMatch?.[1] ?? null;
+    return null;
   }
 
-  /**
-   * Extract file extension from URL
-   *
-   * Attempts to parse URL and extract extension from pathname.
-   * Falls back to basic string operations if URL parsing unavailable.
-   * Validates against SUPPORTED_EXTENSIONS whitelist.
-   *
-   * **Fallback Chain**:
-   * 1. If URL constructor available → use URL parsing
-   * 2. Otherwise → use basic string operations
-   * 3. If extension not whitelisted → return 'jpg'
-   *
-   * **Performance Note**: O(1) with quick path for unsupported extensions
-   *
-   * @param url - Media URL
-   * @returns File extension in lowercase (e.g., 'jpg', 'mp4')
-   *
-   * @example
-   * ```typescript
-   * extractExtensionFromUrl('https://pbs.twimg.com/media/abc.jpg?format=jpg');  // => 'jpg'
-   * extractExtensionFromUrl('https://pbs.twimg.com/media/def.webp');             // => 'webp'
-   * extractExtensionFromUrl('https://example.com/image.unknown');               // => 'jpg'
-   * extractExtensionFromUrl('https://example.com/image');                       // => 'jpg'
-   * ```
-   *
-   * @internal Used during filename generation
-   * @see {@link SUPPORTED_EXTENSIONS} for allowed extension list
-   */
-  private extractExtensionFromUrl(url: string): string {
+  private getExtension(url: string): string {
     try {
-      let URLConstructor: typeof URL | undefined;
-
-      if (
-        typeof globalThis !== "undefined" &&
-        typeof globalThis.URL === "function"
-      ) {
-        URLConstructor = globalThis.URL;
-      } else if (
-        typeof window !== "undefined" &&
-        typeof window.URL === "function"
-      ) {
-        URLConstructor = window.URL;
-      }
-
-      if (!URLConstructor) {
-        const lastSlashIndex = url.lastIndexOf("/");
-        const pathname =
-          lastSlashIndex >= 0 ? url.substring(lastSlashIndex) : url;
-        const lastDot = pathname.lastIndexOf(".");
-        if (lastDot > 0) {
-          const extension = pathname.substring(lastDot + 1);
-          if (SUPPORTED_EXTENSIONS.test(extension)) {
-            return extension.toLowerCase();
-          }
-        }
-        return "jpg";
-      }
-
-      const urlObj = new URLConstructor(url);
-      const pathname = urlObj.pathname;
-      const lastDot = pathname.lastIndexOf(".");
-      if (lastDot > 0) {
-        const extension = pathname.substring(lastDot + 1);
-        if (SUPPORTED_EXTENSIONS.test(extension)) {
-          return extension.toLowerCase();
-        }
+      const path = url.split("?")[0];
+      if (!path) return "jpg";
+      const ext = path.split(".").pop();
+      if (ext && /^(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(ext)) {
+        return ext.toLowerCase();
       }
     } catch {
-      // ignore parse error and fall through to default
+      // ignore
     }
     return "jpg";
   }
 
-  /**
-   * Normalize index value to string representation
-   *
-   * Converts index to 1-based numeric string:
-   * - null/undefined → '1'
-   * - NaN → '1'
-   * - 1+ → toString()
-   * - 0 → '1' (converts 0-based to 1-based)
-   * - negative → converts to 1-based if possible
-   *
-   * @param index - Index value (string or number)
-   * @returns Normalized 1-based index string
-   *
-   * @example
-   * ```typescript
-   * normalizeIndex(undefined);  // => '1'
-   * normalizeIndex(1);          // => '1'
-   * normalizeIndex('5');        // => '5'
-   * normalizeIndex(0);          // => '1'
-   * normalizeIndex(-1);         // => '1'
-   * normalizeIndex('abc');      // => '1'
-   * ```
-   *
-   * @internal Used during filename generation
-   */
   private normalizeIndex(index?: string | number): string {
     if (index === undefined || index === null) return "1";
-
-    const numIndex =
-      typeof index === "string" ? safeParseInt(index, 10) : index;
-
-    if (isNaN(numIndex)) return "1";
-    if (numIndex >= 1) return numIndex.toString();
-
-    return Math.max(numIndex + 1, 1).toString();
+    const num = typeof index === "string" ? safeParseInt(index, 10) : index;
+    return isNaN(num) || num < 1 ? "1" : num.toString();
   }
 
-  /**
-   * Sanitize filename for filesystem compatibility
-   *
-   * **Simplification Strategy**:
-   * - Replaces forbidden characters with `_`
-   * - Trims whitespace and dots
-   * - Truncates to 255 characters
-   *
-   * @param name - Input filename
-   * @returns Safe filename
-   */
-  private sanitizeForWindows(name: string): string {
+  private sanitize(name: string): string {
     if (!name) return "media";
-
-    // Replace forbidden characters: < > : " / \ | ? *
-    let safe = name.replace(/[<>:"/\\|?*]/g, "_");
-
-    // Trim leading/trailing whitespace and dots
-    safe = safe.replace(/^[\s.]+|[\s.]+$/g, "");
-
-    if (!safe) return "media";
-
-    // Truncate to 255 characters
-    return safe.slice(0, 255);
+    return name
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/^[\s.]+|[\s.]+$/g, "")
+      .slice(0, 255);
   }
 
-  /**
-   * Extract username from X.com URL
-   *
-   * **Phase 432.3 - URL Validation Improvements**:
-   * Filters out media URLs (pbs.twimg.com, video.twimg.com) which contain media
-   * but not username information, preventing incorrect username extraction.
-   *
-   * **Extraction Steps**:
-   * 1. Skip media URLs that lack username
-   * 2. Parse x.com/twitter.com URLs for username path component
-   * 3. Filter reserved route names (home, explore, settings, etc.)
-   * 4. Validate against username pattern (1-15 alphanumeric + underscore)
-   *
-   * **Pattern Validation**:
-   * - Length: 1-15 characters (Twitter limit)
-   * - Allowed: `[a-zA-Z0-9_]`
-   * - Examples: `@johndoe`, `@elon_musk`, `@tech_news2024`
-   *
-   * @param url - URL to extract username from
-   * @returns Username string, or null if extraction fails
-   *
-   * @example
-   * ```typescript
-   * extractUsernameFromUrl('https://x.com/johndoe/status/123');        // => 'johndoe'
-   * extractUsernameFromUrl('https://twitter.com/elon_musk');           // => 'elon_musk'
-   * extractUsernameFromUrl('https://pbs.twimg.com/media/abc.jpg');     // => null (media URL)
-   * extractUsernameFromUrl('https://x.com/home');                      // => null (reserved)
-   * extractUsernameFromUrl('https://x.com/invalid%name');              // => null (invalid)
-   * ```
-   *
-   * @internal Used during filename fallback generation
-   * @see Phase 432.3 for URL validation improvement context
-   */
   private extractUsernameFromUrl(url: string): string | null {
-    const parsed = tryParseUrl(url);
-    if (!parsed) {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      if (!hostname.includes("twitter.com") && !hostname.includes("x.com"))
+        return null;
+      if (
+        hostname.includes("pbs.twimg.com") ||
+        hostname.includes("video.twimg.com")
+      )
+        return null;
+
+      const path = urlObj.pathname.split("/")[1];
+      if (
+        !path ||
+        [
+          "home",
+          "explore",
+          "notifications",
+          "messages",
+          "search",
+          "settings",
+        ].includes(path.toLowerCase())
+      ) {
+        return null;
+      }
+      return /^[a-zA-Z0-9_]{1,15}$/.test(path) ? path : null;
+    } catch {
       return null;
     }
-
-    if (
-      isHostMatching(parsed, [TWIMG_ROOT_DOMAIN], { allowSubdomains: true })
-    ) {
-      return null;
-    }
-
-    if (!TWITTER_PROFILE_HOSTS.has(parsed.hostname.toLowerCase())) {
-      return null;
-    }
-
-    const [rawCandidate] = parsed.pathname.split("/").filter(Boolean);
-    if (!rawCandidate) {
-      return null;
-    }
-
-    const candidate = rawCandidate.trim();
-    if (!candidate || RESERVED_TWITTER_ROUTES.has(candidate.toLowerCase())) {
-      return null;
-    }
-
-    return /^[a-zA-Z0-9_]{1,15}$/.test(candidate) ? candidate : null;
   }
 }
 
-// ===== Public Convenience Functions =====
+const shared = new FilenameService();
 
-const sharedFilenameService = new FilenameService();
-
-/**
- * Generate media filename - Convenience function
- *
- * Wrapper around FilenameService.generateMediaFilename for direct usage
- * without instantiation. Useful for one-off filename generation.
- *
- * Format: `{username}_{tweetId}_{index}.{extension}`
- *
- * **Usage**:
- * - Single filename generation
- * - Shared helper when you do not need custom service wiring
- * - Direct import and use
-
- * **Performance Note**: Reuses a shared FilenameService instance under the hood
- * to avoid repeated allocations. Instantiate your own service if you need
- * isolated configuration.
- *
- * @param media - Media information object
- * @param options - Filename generation options (optional)
- * @returns Generated filename (Windows-compatible, normalized)
-
- * @example
- * ```typescript
- * import { generateMediaFilename } from '@shared/services/file-naming';
- *
- * // Single use
- * const filename = generateMediaFilename(mediaInfo, { index: 2 });
- * // => "username_1234567890_2.jpg"
- *
- * // Without options
- * const defaultName = generateMediaFilename(mediaInfo);
- * // => "username_1234567890_1.jpg"
- * ```
- *
- * @see {@link FilenameService.generateMediaFilename} for detailed implementation
- * @see {@link FilenameOptions} for available options
- */
 export function generateMediaFilename(
   media: MediaInfo,
   options?: FilenameOptions,
 ): string {
-  return sharedFilenameService.generateMediaFilename(media, options);
+  return shared.generateMediaFilename(media, options);
 }
 
-/**
- * Generate ZIP archive filename - Convenience function
- *
- * Wrapper around FilenameService.generateZipFilename for direct usage
- * without instantiation.
- *
- * Format: `{username}_{tweetId}.zip`
- *
- * **Fallback Behavior**:
- * - If first item has username + tweetId → standard format
- * - Otherwise → `{fallbackPrefix}_{timestamp}.zip`
- *
- * @param mediaItems - Array of media information objects
- * @param options - ZIP filename generation options (optional)
- * @returns Generated ZIP filename (Windows-compatible, normalized)
- *
- * @example
- * ```typescript
- * import { generateZipFilename } from '@shared/services/file-naming';
- *
- * const zipName = generateZipFilename([media1, media2, media3]);
- * // => "username_1234567890.zip"
- *
- * const fallback = generateZipFilename([], { fallbackPrefix: 'my_download' });
- * // => "my_download_1735946400000.zip"
- * ```
- *
- * @see {@link FilenameService.generateZipFilename} for detailed implementation
- * @see {@link ZipFilenameOptions} for available options
- */
 export function generateZipFilename(
   mediaItems: readonly MediaInfo[],
   options?: ZipFilenameOptions,
 ): string {
-  return sharedFilenameService.generateZipFilename(mediaItems, options);
+  return shared.generateZipFilename(mediaItems, options);
 }
 
-/**
- * Validate media filename format - Convenience function
- *
- * Wrapper around FilenameService.isValidMediaFilename for direct usage.
- *
- * Checks if filename matches the standard media filename pattern:
- * `{name}_{id}_{index}.{ext}`
- *
- * **Use Cases**:
- * - Validate filenames before processing
- * - Check if filename follows our naming convention
- * - Ensure backward compatibility during migration
- *
- * **Performance Note**: Regex test is O(n) where n = filename length (typically < 50 chars)
- *
- * @param filename - Filename to validate
- * @returns true if filename matches media filename pattern
- *
- * @example
- * ```typescript
- * import { isValidMediaFilename } from '@shared/services/file-naming';
- *
- * isValidMediaFilename('piesp_1234567890_1.jpg');   // => true
- * isValidMediaFilename('image.jpg');                           // => false
- * isValidMediaFilename('piesp_123_1.jpg');          // => false (ID too short)
- * ```
- *
- * @see {@link FilenameService.isValidMediaFilename} for pattern details
- * @see {@link MEDIA_FILENAME_PATTERN} for regex pattern
- */
 export function isValidMediaFilename(filename: string): boolean {
-  return sharedFilenameService.isValidMediaFilename(filename);
+  return shared.isValidMediaFilename(filename);
 }
 
-/**
- * Validate ZIP filename format - Convenience function
- *
- * Wrapper around FilenameService.isValidZipFilename for direct usage.
- *
- * Checks if filename matches the standard ZIP filename pattern:
- * `{name}_{id}.zip`
- *
- * @param filename - Filename to validate
- * @returns true if filename matches ZIP filename pattern
- *
- * @example
- * ```typescript
- * import { isValidZipFilename } from '@shared/services/file-naming';
- *
- * isValidZipFilename('piesp_1234567890.zip');    // => true
- * isValidZipFilename('archive.zip');                       // => false
- * isValidZipFilename('piesp_1234567890.ZIP');   // => false (case-sensitive)
- * ```
- *
- * @see {@link FilenameService.isValidZipFilename} for pattern details
- * @see {@link ZIP_FILENAME_PATTERN} for regex pattern
- */
 export function isValidZipFilename(filename: string): boolean {
-  return sharedFilenameService.isValidZipFilename(filename);
+  return shared.isValidZipFilename(filename);
 }

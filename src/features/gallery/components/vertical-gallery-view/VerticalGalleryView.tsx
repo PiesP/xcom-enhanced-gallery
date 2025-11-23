@@ -402,15 +402,14 @@ function VerticalGalleryViewCore({
 
         if (itemElement) {
           void waitForMediaLoad(itemElement, 1000).then(async () => {
-            await scrollToItem(currentIdx);
+            scrollToItem(currentIdx);
             applyFocusAfterNavigation(currentIdx, "init", { force: true });
           });
           return;
         }
 
-        void scrollToItem(currentIdx).then(() => {
-          applyFocusAfterNavigation(currentIdx, "init", { force: true });
-        });
+        scrollToItem(currentIdx);
+        applyFocusAfterNavigation(currentIdx, "init", { force: true });
         return;
       }
     }
@@ -463,7 +462,7 @@ function VerticalGalleryViewCore({
     }
 
     // 로드 완료 후 스크롤 실행 및 포커스 연계
-    await scrollToItem(currentIdx);
+    scrollToItem(currentIdx);
     applyFocusAfterNavigation(currentIdx, "init", { force: true });
   };
 
@@ -475,9 +474,8 @@ function VerticalGalleryViewCore({
     const unsubscribe = galleryIndexEvents.on(
       "navigate:complete",
       ({ index, trigger }) => {
-        void scrollToItem(index).then(() => {
-          applyFocusAfterNavigation(index, trigger);
-        });
+        scrollToItem(index);
+        applyFocusAfterNavigation(index, trigger);
       },
     );
 
