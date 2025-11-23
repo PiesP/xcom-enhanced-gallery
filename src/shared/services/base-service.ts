@@ -372,10 +372,11 @@ export abstract class BaseServiceImpl implements BaseService {
 
     try {
       this.onDestroy();
-      this._isInitialized = false;
       logger.info(`${this.serviceName} destroyed`);
     } catch (error) {
       logger.error(`${this.serviceName} destroy failed:`, error);
+    } finally {
+      this._isInitialized = false;
     }
   }
 
