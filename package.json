@@ -34,7 +34,7 @@
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:all": "run-p test:unit test:e2e security:check",
+    "test:all": "run-p test:unit test:e2e test:coverage security:check",
     "test:watch": "vitest",
     "test:unit": "tsx scripts/run-unit-tests-batched.ts --monitor-memory --retry=1",
     "test:e2e": "playwright test",

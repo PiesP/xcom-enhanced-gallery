@@ -1,14 +1,12 @@
 export {
-  DOMCache,
-  globalDOMCache,
-  cachedQuerySelector,
-  cachedQuerySelectorAll,
-  cachedStableQuery,
+    DOMCache, cachedQuerySelector,
+    cachedQuerySelectorAll,
+    cachedStableQuery, globalDOMCache
 } from "./dom-cache";
 
 export {
-  SelectorRegistry,
-  createSelectorRegistry,
-  type ISelectorRegistry,
-  type QueryContainer,
+    SelectorRegistry,
+    createSelectorRegistry,
+    type ISelectorRegistry,
+    type QueryContainer
 } from "./selector-registry";

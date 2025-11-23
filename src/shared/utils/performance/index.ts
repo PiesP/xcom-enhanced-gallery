@@ -9,4 +9,4 @@ export { computePreloadIndices } from "./preload";
 export { scheduleIdle } from "./idle-scheduler";
 
 // Animation/microtask scheduling
-export { scheduleRaf, scheduleMicrotask } from "./schedulers";
+export { scheduleMicrotask, scheduleRaf } from "./schedulers";
