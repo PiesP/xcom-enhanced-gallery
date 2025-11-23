@@ -43,11 +43,6 @@ export interface SolidAPI {
   createComponent: typeof Solid.createComponent;
 }
 
-export interface SolidStoreAPI {
-  createStore: typeof SolidStore.createStore;
-  produce: typeof SolidStore.produce;
-}
-
 // Construct the API objects once
 const solidAPI: SolidAPI = {
   render: SolidWeb.render,
@@ -79,18 +74,9 @@ const solidAPI: SolidAPI = {
   createComponent: Solid.createComponent,
 };
 
-const solidStoreAPI: SolidStoreAPI = {
-  createStore: SolidStore.createStore,
-  produce: SolidStore.produce,
-};
-
 // Simple getters
 export function getSolid(): SolidAPI {
   return solidAPI;
-}
-
-export function getSolidStore(): SolidStoreAPI {
-  return solidStoreAPI;
 }
 
 // Initialization stubs for compatibility
