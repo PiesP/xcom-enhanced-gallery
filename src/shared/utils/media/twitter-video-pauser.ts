@@ -4,7 +4,6 @@
  *              before the gallery overlay takes focus.
  */
 
-import { STABLE_SELECTORS } from "@/constants";
 import { logger } from "@shared/logging";
 import { isGalleryInternalElement } from "@shared/utils/dom";
 
@@ -15,18 +14,6 @@ const ZERO_RESULT = Object.freeze({
   totalCandidates: 0,
   skippedCount: 0,
 });
-
-const TWITTER_VIDEO_SCOPE_SELECTORS = Array.from(
-  new Set(
-    [
-      ...STABLE_SELECTORS.TWEET_CONTAINERS,
-      ...STABLE_SELECTORS.MEDIA_CONTAINERS,
-      ...STABLE_SELECTORS.MEDIA_PLAYERS.filter(
-        (selector) => selector !== "video",
-      ),
-    ].filter(Boolean),
-  ),
-);
 
 export interface PauseAmbientVideosOptions {
   root?: QueryableRoot | null;
@@ -52,52 +39,14 @@ function resolveRoot(root?: QueryableRoot | null): QueryableRoot | null {
       return document;
     }
   } catch {
-    return null;
+    // Ignore
   }
-
   return null;
-}
-
-function isTwitterTimelineVideo(video: HTMLVideoElement): boolean {
-  if (!video || typeof video.closest !== "function") {
-    return false;
-  }
-
-  if (isGalleryInternalElement(video)) {
-    return false;
-  }
-
-  if (typeof video.isConnected === "boolean") {
-    if (!video.isConnected) {
-      return false;
-    }
-  } else if (
-    typeof document !== "undefined" &&
-    typeof document.contains === "function"
-  ) {
-    try {
-      if (!document.contains(video)) {
-        return false;
-      }
-    } catch {
-      return false;
-    }
-  }
-
-  return TWITTER_VIDEO_SCOPE_SELECTORS.some((selector) => {
-    try {
-      return video.closest(selector) !== null;
-    } catch {
-      return false;
-    }
-  });
 }
 
 function isVideoPlaying(video: HTMLVideoElement): boolean {
   try {
-    const pausedState = typeof video.paused === "boolean" ? video.paused : true;
-    const endedState = typeof video.ended === "boolean" ? video.ended : false;
-    return pausedState === false && endedState === false;
+    return !video.paused && !video.ended;
   } catch {
     return false;
   }
@@ -126,7 +75,14 @@ export function pauseActiveTwitterVideos(
       continue;
     }
 
-    if (!isTwitterTimelineVideo(element)) {
+    // Skip our own gallery videos
+    if (isGalleryInternalElement(element)) {
+      skippedCount += 1;
+      continue;
+    }
+
+    // Skip disconnected videos
+    if (!element.isConnected) {
       skippedCount += 1;
       continue;
     }
@@ -146,7 +102,7 @@ export function pauseActiveTwitterVideos(
     }
   }
 
-  if (pausedCount > 0 || totalCandidates > 0) {
+  if (pausedCount > 0) {
     logger.debug("[AmbientVideo] Ambient Twitter videos paused", {
       pausedCount,
       totalCandidates,

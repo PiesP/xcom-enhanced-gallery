@@ -10,21 +10,15 @@
  * - User notification management via Tampermonkey
  */
 
-import type { SettingsService } from "@features/settings/services/settings-service";
 import {
   getGalleryRenderer,
   getMediaServiceFromContainer,
+  tryGetSettingsManager,
 } from "@shared/container/service-accessors";
-import { isGMAPIAvailable } from "@shared/external/userscript";
 import type { GalleryRenderer } from "@shared/interfaces/gallery.interfaces";
 import { logger } from "@shared/logging";
 import { MediaService } from "@shared/services/media-service";
 import { NotificationService } from "@shared/services/notification-service";
-import type {
-  SettingsServiceLike,
-  ThemeServiceContract,
-  ThemeSetting,
-} from "@shared/services/theme-service";
 import {
   closeGallery,
   gallerySignals,
@@ -47,9 +41,7 @@ export interface GalleryConfig {
  * Gallery application orchestrator
  */
 export class GalleryApp {
-  private mediaService: MediaService | null = null;
   private galleryRenderer: GalleryRenderer | null = null;
-  private settingsService: SettingsService | null = null;
   private isInitialized = false;
   private readonly notificationService = NotificationService.getInstance();
   private readonly config: GalleryConfig = {
@@ -64,95 +56,18 @@ export class GalleryApp {
   }
 
   /**
-   * Lazy initialization of media service
-   */
-  private async getMediaService(): Promise<MediaService> {
-    if (!this.mediaService) {
-      const service = getMediaServiceFromContainer();
-      if (!(service instanceof MediaService)) {
-        throw new Error("MediaService not available from container");
-      }
-
-      this.mediaService = service;
-    }
-    return this.mediaService;
-  }
-
-  /**
    * Gallery app initialization
    */
   public async initialize(): Promise<void> {
     try {
       logger.info("[GalleryApp] Initialization started");
 
-      // Phase 317: Environment guard - Check Tampermonkey API availability
-      // Phase 420: Simplified check - PersistentStorage handles missing APIs gracefully
-      // We only warn if absolutely no storage capability is detected, but proceed anyway
-      // to allow basic functionality (viewing) even if settings/download might fail.
-      const hasRequiredGMAPIs =
-        isGMAPIAvailable("download") || isGMAPIAvailable("setValue");
-      if (!hasRequiredGMAPIs) {
-        logger.warn(
-          "[GalleryApp] Tampermonkey APIs limited - some features may be unavailable",
-        );
-      }
+      // Renderer is already registered in bootstrap
+      this.galleryRenderer = getGalleryRenderer();
+      this.galleryRenderer?.setOnCloseCallback(() => {
+        this.closeGallery();
+      });
 
-      // Phase 258: Delayed SettingsService load (bootstrap optimization)
-      // Removed from bootstrap/features.ts, loaded here
-      // Phase 420: Simplified initialization
-      try {
-        const { SettingsService } = await import(
-          "@features/settings/services/settings-service"
-        );
-        const { registerSettingsManager } = await import(
-          "@shared/container/service-accessors"
-        );
-
-        const settingsService = new SettingsService();
-        await settingsService.initialize();
-        registerSettingsManager(settingsService);
-        this.settingsService = settingsService;
-        logger.debug("[GalleryApp] ✅ SettingsService initialized");
-      } catch (error) {
-        logger.warn(
-          "[GalleryApp] SettingsService initialization failed (non-critical):",
-          error,
-        );
-      }
-
-      // Phase 415: Verify theme initialization and sync from SettingsService
-      try {
-        // Phase 360: Use ThemeService (already initialized in base-services)
-        const { getThemeService } = await import(
-          "@shared/container/service-accessors"
-        );
-        const themeService = getThemeService();
-
-        // Ensure ThemeService is initialized (loads settings asynchronously)
-        if (!themeService.isInitialized()) {
-          await themeService.initialize();
-        }
-
-        // Sync theme from SettingsService to ThemeService if SettingsService is initialized
-        if (this.settingsService) {
-          themeService.bindSettingsService(
-            this.settingsService as unknown as SettingsServiceLike,
-          );
-
-          this.reapplyStoredTheme(themeService);
-        }
-
-        logger.debug(
-          `[GalleryApp] Theme confirmed: ${themeService.getCurrentTheme()}`,
-        );
-      } catch (error) {
-        logger.warn(
-          "[GalleryApp] Theme check/sync failed (non-critical):",
-          error,
-        );
-      }
-
-      await this.initializeRenderer();
       await this.setupEventHandlers();
 
       this.isInitialized = true;
@@ -164,17 +79,6 @@ export class GalleryApp {
   }
 
   /**
-   * Gallery renderer initialization
-   */
-  private async initializeRenderer(): Promise<void> {
-    this.galleryRenderer = getGalleryRenderer();
-    this.galleryRenderer?.setOnCloseCallback(() => {
-      this.closeGallery();
-    });
-    logger.debug("[GalleryApp] Gallery renderer initialization complete");
-  }
-
-  /**
    * Event handler setup
    */
   private async setupEventHandlers(): Promise<void> {
@@ -182,16 +86,22 @@ export class GalleryApp {
       const { initializeGalleryEvents } = await import("@shared/utils/events");
 
       // Get settings if available
-      const enableKeyboard = this.settingsService
-        ? (this.settingsService.get<boolean>("gallery.enableKeyboardNav") ??
-          true)
+      const settingsService = tryGetSettingsManager<{
+        get: (key: string) => boolean;
+      }>();
+      const enableKeyboard = settingsService
+        ? (settingsService.get("gallery.enableKeyboardNav") ?? true)
         : true;
 
       await initializeGalleryEvents(
         {
           onMediaClick: async (_mediaInfo, element) => {
             try {
-              const mediaService = await this.getMediaService();
+              const mediaService = getMediaServiceFromContainer();
+              if (!(mediaService instanceof MediaService)) {
+                throw new Error("MediaService not available from container");
+              }
+
               const result =
                 await mediaService.extractFromClickedElement(element);
 
@@ -243,25 +153,6 @@ export class GalleryApp {
     }
   }
 
-  private reapplyStoredTheme(themeService: ThemeServiceContract): void {
-    if (!this.settingsService) {
-      return;
-    }
-
-    const storedTheme = this.settingsService.get<ThemeSetting>("gallery.theme");
-    const isExplicitTheme = storedTheme === "light" || storedTheme === "dark";
-
-    if (!isExplicitTheme) {
-      logger.debug(
-        "[GalleryApp] Stored theme is not explicitly light/dark; skipping manual reapply",
-      );
-      return;
-    }
-
-    themeService.setTheme(storedTheme, { force: true, persist: false });
-    logger.info(`[GalleryApp] Applied stored ${storedTheme} theme at startup`);
-  }
-
   /**
    * Open gallery
    */
@@ -269,7 +160,6 @@ export class GalleryApp {
     mediaItems: MediaInfo[],
     startIndex: number = 0,
   ): Promise<void> {
-    // Phase 317: Environment guard - Check for Tampermonkey availability
     if (!this.isInitialized) {
       logger.warn(
         "[GalleryApp] Gallery not initialized. Tampermonkey may not be installed.",

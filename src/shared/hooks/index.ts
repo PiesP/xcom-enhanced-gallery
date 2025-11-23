@@ -79,13 +79,13 @@
  *
  * @see useToolbarState - Full hook documentation
  */
+export type { ToolbarActions, ToolbarState } from "@shared/types/toolbar.types";
 export { useToolbarState } from "./use-toolbar-state";
-export type { ToolbarState, ToolbarActions } from "@shared/types/toolbar.types";
 
 export {
   useToolbarSettingsController,
-  type UseToolbarSettingsControllerOptions,
   type ToolbarSettingsControllerResult,
+  type UseToolbarSettingsControllerOptions,
 } from "./toolbar/use-toolbar-settings-controller";
 
 // Phase 376: Removed hooks (archived history)
