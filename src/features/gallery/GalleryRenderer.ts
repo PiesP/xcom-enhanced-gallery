@@ -30,6 +30,7 @@ import { downloadService } from '@shared/services/download-service';
 import { isGMAPIAvailable } from '@shared/external/userscript';
 import { getThemeService, getMediaService } from '@shared/container/service-accessors';
 import { languageService } from '@shared/services/language-service';
+import { NotificationService } from '@shared/services/notification-service';
 
 let galleryMountCount = 0;
 
@@ -42,6 +43,7 @@ export class GalleryRenderer implements GalleryRendererInterface {
   private stateUnsubscribe: (() => void) | null = null;
   private onCloseCallback?: () => void;
   private disposeApp: (() => void) | null = null;
+  private readonly notificationService = NotificationService.getInstance();
 
   constructor() {
     this.setupStateSubscription();
@@ -209,7 +211,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
         const currentMedia = mediaItems[currentIndex];
         if (currentMedia) {
           const result = await downloadService.downloadSingle(currentMedia);
-          if (!result.success) {
+          if (result.success) {
+            this.notificationService.success(`Download complete: ${result.filename}`);
+          } else {
             setError(result.error || 'Download failed.');
           }
         }
@@ -230,7 +234,9 @@ export class GalleryRenderer implements GalleryRendererInterface {
         // Convert readonly array to mutable
         const mutableMediaItems = Array.from(mediaItems);
         const result = await downloadService.downloadBulk(mutableMediaItems);
-        if (!result.success) {
+        if (result.success) {
+           this.notificationService.success(`Bulk download complete: ${result.filesSuccessful} files`);
+        } else {
           setError(result.error || 'Download failed.');
         }
       }

@@ -12,7 +12,6 @@
 import type { MediaInfo } from '@shared/types/media.types';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { generateMediaFilename, generateZipFilename } from './file-naming';
-import { NotificationService } from './notification-service';
 import { DownloadOrchestrator } from './download/download-orchestrator';
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
@@ -72,7 +71,6 @@ export interface BulkDownloadResult {
 
 export class DownloadService {
   private static instance: DownloadService | null = null;
-  private readonly notificationService = NotificationService.getInstance();
   private readonly orchestrator = DownloadOrchestrator.getInstance();
   private currentAbortController: AbortController | undefined;
 
@@ -117,7 +115,7 @@ export class DownloadService {
       });
 
       if (result.success) {
-        this.notificationService.success(`Download complete: ${filename}`);
+        // Notification removed - handled by caller
         options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
         return { success: true, filename };
       }
@@ -132,7 +130,7 @@ export class DownloadService {
     return new Promise(resolve => {
       // Timeout safety
       const timer = globalTimerManager.setTimeout(() => {
-        this.notificationService.error('Download timeout');
+        // Notification removed - handled by caller
         options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
         resolve({ success: false, error: 'Download timeout' });
       }, 30000);
@@ -143,7 +141,7 @@ export class DownloadService {
           name: filename,
           onload: () => {
             globalTimerManager.clearTimeout(timer);
-            this.notificationService.success(`Download complete: ${filename}`);
+            // Notification removed - handled by caller
             logger.debug(`[DownloadService] Single file download complete: ${filename}`);
             options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
             resolve({ success: true, filename });
@@ -151,14 +149,14 @@ export class DownloadService {
           onerror: (error: unknown) => {
             globalTimerManager.clearTimeout(timer);
             const errorMsg = getErrorMessage(error);
-            this.notificationService.error(`Download failed: ${errorMsg}`);
+            // Notification removed - handled by caller
             logger.error('[DownloadService] Single file download failed:', error);
             options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
             resolve({ success: false, error: errorMsg, filename });
           },
           ontimeout: () => {
             globalTimerManager.clearTimeout(timer);
-            this.notificationService.error('Download timeout');
+            // Notification removed - handled by caller
             logger.warn('[DownloadService] Single file download timeout');
             options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
             resolve({ success: false, error: 'Download timeout' });
@@ -167,7 +165,7 @@ export class DownloadService {
       } catch (error) {
         globalTimerManager.clearTimeout(timer);
         const errorMsg = getErrorMessage(error);
-        this.notificationService.error(`Download failed: ${errorMsg}`);
+        // Notification removed - handled by caller
         logger.error('[DownloadService] GM_download error:', error);
         resolve({ success: false, error: errorMsg });
       }
@@ -258,7 +256,7 @@ export class DownloadService {
         throw new Error(downloadResult.error ?? 'ZIP download failed');
       }
 
-      this.notificationService.success(`ZIP download complete: ${zipFilename}`);
+      // Notification removed - handled by caller
       logger.info(`[DownloadService] ZIP download complete: ${zipFilename}`);
 
       const status = failures.length === 0 ? 'success' : failures.length === mediaItems.length ? 'error' : 'partial';
@@ -275,7 +273,7 @@ export class DownloadService {
     } catch (error) {
       const errorMsg = getErrorMessage(error);
       logger.error(`[DownloadService] ZIP download failed:`, error);
-      this.notificationService.error(`ZIP download failed: ${errorMsg}`);
+      // Notification removed - handled by caller
 
       return {
         success: false,
@@ -297,7 +295,7 @@ export class DownloadService {
   cancelDownload(): void {
     if (!this.currentAbortController) return;
     this.currentAbortController.abort();
-    this.notificationService.info('Download cancelled');
+    // Notification removed - handled by caller
     logger.info('[DownloadService] Download cancelled');
   }
 
@@ -316,7 +314,7 @@ export class DownloadService {
     return new Promise(resolve => {
       const timer = globalTimerManager.setTimeout(() => {
         resolve({ success: false, error: 'Download timeout', size });
-        if (!options.suppressNotifications) this.notificationService.error('Blob download timeout');
+        // Notification removed - handled by caller
       }, 30000);
 
       const cleanup = () => {
@@ -333,20 +331,20 @@ export class DownloadService {
           onload: () => {
             cleanup();
             resolve({ success: true, filename: options.name, size });
-            if (!options.suppressNotifications) this.notificationService.success(`Downloaded: ${options.name}`);
+            // Notification removed - handled by caller
             logger.debug(`[DownloadService] Blob download completed: ${options.name} (${size} bytes)`);
           },
           onerror: (error: any) => {
             cleanup();
             const errorMsg = getErrorMessage(error);
             resolve({ success: false, error: errorMsg, filename: options.name, size });
-            if (!options.suppressNotifications) this.notificationService.error(`Download failed: ${errorMsg}`);
+            // Notification removed - handled by caller
             logger.error(`[DownloadService] Blob download failed:`, error);
           },
           ontimeout: () => {
             cleanup();
             resolve({ success: false, error: 'Download timeout', filename: options.name, size });
-            if (!options.suppressNotifications) this.notificationService.error('Download timeout');
+            // Notification removed - handled by caller
           },
         });
       } catch (error) {

@@ -197,9 +197,8 @@ export class MediaExtractionService implements MediaExtractor {
    *
    * 🔹 Performance Notes:
    * - Phase 1 (tweet info): ~5-10ms
-   * - Phase 2a (API extraction): ~200-500ms
-   * - Phase 2b (DOM extraction): ~50-150ms
-   * - Total: Typically 200-500ms (API path) or 50-160ms (DOM fallback)
+   * - Phase 2 (API extraction): ~200-500ms
+   * - Total: Typically 200-500ms
    */
   async extractFromClickedElement(
     element: HTMLElement,
@@ -242,14 +241,14 @@ export class MediaExtractionService implements MediaExtractor {
         `[MediaExtractor] ${extractionId}: Tweet information acquired - ${tweetInfo.tweetId}`
       );
 
-      // Phase 2a: Attempt API extraction (primary strategy)
+      // Phase 2: Attempt API extraction (primary strategy)
       const apiResult = await this.apiExtractor.extract(tweetInfo, element, options, extractionId);
 
       if (apiResult.success && apiResult.mediaItems.length > 0) {
         logger.info(
           `[MediaExtractor] ${extractionId}: ✅ API extraction successful - ${apiResult.mediaItems.length} media items`
         );
-        // Phase 2a succeeded: Convert to core interface format
+        // Phase 2 succeeded: Convert to core interface format
         return this.finalizeResult({
           success: apiResult.success,
           mediaItems: apiResult.mediaItems,
@@ -263,7 +262,7 @@ export class MediaExtractionService implements MediaExtractor {
         });
       }
 
-      // Phase 2a failed or returned empty
+      // Phase 2 failed or returned empty
       logger.error(
         `[MediaExtractor] ${extractionId}: API extraction failed`
       );

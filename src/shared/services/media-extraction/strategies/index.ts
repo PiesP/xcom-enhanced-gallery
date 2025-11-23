@@ -20,8 +20,6 @@
  *    └─ DOM hierarchy analysis
  * 4️⃣ DataAttributeTweetStrategy (40-50% success)
  *    └─ HTML5 data-* attributes
- * 5️⃣ ParentTraversalTweetStrategy (20-30% success)
- *    └─ Last resort parent search (up to 15 levels)
  *
  * **Other Exports**:
  * - MediaClickIndexStrategy (Phase 351): Click index calculation

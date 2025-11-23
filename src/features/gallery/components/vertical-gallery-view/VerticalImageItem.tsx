@@ -470,10 +470,6 @@ const WithGalleryVerticalImageItem = withGallery(BaseComponent, {
   customData: { component: 'vertical-image-item', role: 'gallery-item' },
 });
 
-const VerticalImageItemMemo = solid.memo(WithGalleryVerticalImageItem);
-Object.defineProperty(VerticalImageItemMemo, 'displayName', {
-  value: 'memo(VerticalImageItem)',
-});
-
+// Phase 308: Removed solid.memo (React compat) - Solid components are fine as is
 export type { VerticalImageItemProps, FitModeProp } from './VerticalImageItem.types';
-export const VerticalImageItem = VerticalImageItemMemo;
+export const VerticalImageItem = WithGalleryVerticalImageItem;

@@ -606,7 +606,7 @@ function VerticalGalleryViewCore({
                 }`}
                 data-index={actualIndex}
                 data-xeg-role='gallery-item'
-                registerContainer={element => registerFocusItem(actualIndex, element)}
+                registerContainer={(element: HTMLElement | null) => registerFocusItem(actualIndex, element)}
                 {...(onDownloadCurrent
                   ? {
                       onDownload: handleDownloadCurrent,

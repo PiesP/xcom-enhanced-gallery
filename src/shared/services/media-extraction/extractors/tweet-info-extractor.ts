@@ -14,8 +14,7 @@
  *   ├─ Strategy 1: ClickedElementTweetStrategy (element itself)
  *   ├─ Strategy 2: UrlBasedTweetStrategy (URL pattern matching)
  *   ├─ Strategy 3: DomStructureTweetStrategy (DOM analysis)
- *   ├─ Strategy 4: DataAttributeTweetStrategy (data-* attributes)
- *   └─ Strategy 5: ParentTraversalTweetStrategy (ancestor traversal)
+ *   └─ Strategy 4: DataAttributeTweetStrategy (data-* attributes)
  *   ↓
  * TweetInfo (or null if all strategies fail)
  *   ├─ tweetId: Unique tweet identifier (required, numeric)
@@ -26,7 +25,7 @@
  * ```
  *
  * 🔹 Key Characteristics:
- * - **Multiple Strategies**: 5 different extraction approaches
+ * - **Multiple Strategies**: 4 different extraction approaches
  * - **Priority-Based**: Strategies sorted by priority (most reliable first)
  * - **Fail-Soft**: Continues trying if strategy fails
  * - **Validation**: Checks tweet ID format (numeric, non-empty)
@@ -54,11 +53,6 @@
  * - Extracts from data-* attributes
  * - Twitter sometimes stores IDs in attributes
  * - Less reliable but still useful
- *
- * **5. ParentTraversalTweetStrategy** (Priority: 5, Lowest)
- * - Traverses parent elements looking for tweet info
- * - Last resort strategy
- * - Most time-consuming but catches edge cases
  *
  * 🔹 Validation Rules:
  * - Tweet ID must be non-empty string
@@ -407,8 +401,7 @@ export class TweetInfoExtractor {
    *                      Valid names: 'ClickedElementTweetStrategy',
    *                                   'UrlBasedTweetStrategy',
    *                                   'DomStructureTweetStrategy',
-   *                                   'DataAttributeTweetStrategy',
-   *                                   'ParentTraversalTweetStrategy'
+   *                                   'DataAttributeTweetStrategy'
    *
    * @returns Promise<TweetInfo | null> - Valid tweet info from specific strategy or null
    *
@@ -435,7 +428,6 @@ export class TweetInfoExtractor {
    *   'UrlBasedTweetStrategy',
    *   'DomStructureTweetStrategy',
    *   'DataAttributeTweetStrategy',
-   *   'ParentTraversalTweetStrategy',
    * ];
    *
    * for (const name of strategyNames) {

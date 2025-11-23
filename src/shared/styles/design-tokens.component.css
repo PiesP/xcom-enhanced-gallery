@@ -127,6 +127,19 @@
     --xeg-spacing-5xl: 5rem;
     --xeg-viewport-height-constrained: 90vh;
   }
+
+  /* Accessibility Media Queries */
+  /* ======================================= */
+
+  /* 투명도 감소 선호 지원 */
+  @media (prefers-reduced-transparency: reduce) {
+    :where(:root, .xeg-theme-scope) {
+      --color-glass-bg: var(--color-bg-primary);
+      --xeg-glass-bg: var(--color-bg-primary);
+      --xeg-surface-glass-bg: var(--color-bg-surface);
+      --xeg-glass-backdrop-filter: none;
+    }
+  }
 }
 
 @layer xeg.components {
@@ -170,17 +183,7 @@
 /* Accessibility Media Queries */
 /* ======================================= */
 
-/* 투명도 감소 선호 지원 */
-@layer xeg.tokens {
-  @media (prefers-reduced-transparency: reduce) {
-    :where(:root, .xeg-theme-scope) {
-      --color-glass-bg: var(--color-bg-primary);
-      --xeg-glass-bg: var(--color-bg-primary);
-      --xeg-surface-glass-bg: var(--color-bg-surface);
-      --xeg-glass-backdrop-filter: none;
-    }
-  }
-}
+/* 투명도 감소 선호 지원 - Moved to main @layer xeg.tokens block */
 
 /* NOTE: prefers-reduced-motion 토큰은 design-tokens.semantic.css로 통합됨 */
 

@@ -58,8 +58,6 @@
  *    - Goal: Find which media item user clicked (0-based index)
  *    - Strategy 1: DirectMediaMatchingStrategy (99% confidence)
  *      └─ Directly match clicked element to media URL
- *    - Strategy 2: DOMOrderEstimationStrategy (85% confidence)
- *      └─ Estimate based on DOM element order
  *    - Fallback: Return 0 (first media)
  *
  * **API Response Format (TweetMediaEntry)**:
@@ -167,7 +165,7 @@ import type { TweetInfo, MediaExtractionOptions, APIExtractor } from '@shared/ty
 import {
   DirectMediaMatchingStrategy,
   type MediaClickIndexStrategy,
-} from '@shared/services/media-extraction/strategies/click-index';
+} from '@shared/services/media-extraction/strategies';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/tweet-text-html-extractor';
 
 /**
@@ -194,8 +192,7 @@ export class TwitterAPIExtractor implements APIExtractor {
    *   │  └─ TwitterAPI.getTweetMedias(tweetId)
    *   ├─ Step 3: Convert TweetMediaEntry[] → MediaInfo[]
    *   ├─ Step 4: Calculate clicked media index
-   *   │  ├─ Strategy 1: DirectMediaMatching (99%)
-   *   │  └─ Strategy 2: DOMOrderEstimation (85%)
+   *   │  └─ Strategy 1: DirectMediaMatching (99%)
    *   ├─ Step 5: Enrich metadata
    *   └─ Return: MediaExtractionResult { success: true, mediaItems, clickedIndex }
    * ```

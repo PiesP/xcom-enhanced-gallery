@@ -29,12 +29,6 @@
 
 import { logger } from '@shared/logging';
 import { globalTimerManager } from '@shared/utils/timer-management';
-import type {
-  ForwardRefComponent,
-  MemoCompareFunction,
-  PreactComponent,
-  PreactCompat,
-} from './vendor-types';
 
 // 정적 import로 Solid.js 라이브러리를 안전하게 로드
 import {
@@ -64,52 +58,8 @@ import {
   createComponent,
 } from 'solid-js';
 
-import h from 'solid-js/h';
-
 import { render } from 'solid-js/web';
 import { createStore, produce } from 'solid-js/store';
-
-const useRefCompat = <T>(initialValue: T | null = null): { current: T | null } => ({
-  current: initialValue,
-});
-
-const useCallbackCompat = <T extends (...args: unknown[]) => unknown>(callback: T): T => callback;
-
-const assignDisplayName = (
-  target: unknown,
-  source: unknown,
-  wrapperName: 'memo' | 'forwardRef'
-): void => {
-  const functionTarget = target as { displayName?: string };
-  const functionSource = source as { displayName?: string; name?: string };
-  const sourceName = functionSource.displayName ?? functionSource.name ?? 'Component';
-  Object.defineProperty(functionTarget, 'displayName', {
-    configurable: true,
-    enumerable: false,
-    value: `${wrapperName}(${sourceName})`,
-    writable: false,
-  });
-};
-
-const memoCompat: PreactCompat['memo'] = <P>(
-  Component: PreactComponent<P>,
-  _compare?: MemoCompareFunction<P>
-): PreactComponent<P> => {
-  const MemoizedComponent: PreactComponent<P> = (props: P) => Component(props);
-  assignDisplayName(MemoizedComponent, Component, 'memo');
-  return MemoizedComponent;
-};
-
-const forwardRefCompat: PreactCompat['forwardRef'] = <P>(
-  Component: ForwardRefComponent<P>
-): PreactComponent<P> => {
-  const ForwardedComponent: PreactComponent<P> = (props: P) => {
-    const propsWithRef = props as P & { ref?: unknown };
-    return Component(props, propsWithRef.ref);
-  };
-  assignDisplayName(ForwardedComponent, Component, 'forwardRef');
-  return ForwardedComponent;
-};
 
 const URL_CLEANUP_TIMEOUT = 60000;
 
@@ -142,11 +92,6 @@ export interface SolidAPI {
   splitProps: typeof splitProps;
   createRoot: typeof createRoot;
   createComponent: typeof createComponent;
-  h: typeof h;
-  useRef: typeof useRefCompat;
-  useCallback: typeof useCallbackCompat;
-  memo: PreactCompat['memo'];
-  forwardRef: PreactCompat['forwardRef'];
 }
 
 export interface SolidStoreAPI {
@@ -218,11 +163,6 @@ export class StaticVendorManager {
       splitProps,
       createRoot,
       createComponent,
-      h,
-      useRef: useRefCompat,
-      useCallback: useCallbackCompat,
-      memo: memoCompat,
-      forwardRef: forwardRefCompat,
     },
     store: {
       createStore,
@@ -398,11 +338,6 @@ export class StaticVendorManager {
       splitProps: this.vendors.solid.splitProps,
       createRoot: this.vendors.solid.createRoot,
       createComponent: this.vendors.solid.createComponent,
-      h: this.vendors.solid.h,
-      useRef: this.vendors.solid.useRef,
-      useCallback: this.vendors.solid.useCallback,
-      memo: this.vendors.solid.memo,
-      forwardRef: this.vendors.solid.forwardRef,
     };
 
     // Solid.js Store API cache

@@ -13,7 +13,6 @@ import {
 import { SettingsControlsLazy } from '@shared/components/ui/Settings/SettingsControlsLazy';
 import { createClassName } from '@shared/utils/component-utils';
 import { safeEventPreventAll } from '@shared/utils/event-utils';
-import { formatTweetText, shortenUrl } from '@shared/utils/text-formatting';
 import { languageService } from '@shared/services/language-service';
 import styles from './Toolbar.module.css';
 import type {
@@ -24,7 +23,9 @@ import type {
 import type { ToolbarState, ToolbarSettingsControllerResult } from '@shared/hooks';
 
 const solid = getSolid();
-const { Show, For, Switch, Match, createMemo, createSignal, createEffect } = solid;
+const { Show, createMemo, createSignal, createEffect, lazy, Suspense } = solid;
+
+const TweetTextPanelLazy = lazy(() => import('./TweetTextPanel'));
 
 const resolveAccessorValue = <T,>(value: MaybeAccessor<T>): T =>
   typeof value === 'function' ? (value as () => T)() : value;
@@ -84,31 +85,6 @@ export interface ToolbarViewProps extends ToolbarViewBaseProps {
   readonly showSettingsButton: boolean;
   readonly isTweetPanelExpanded: () => boolean;
   readonly toggleTweetPanelExpanded: () => void;
-}
-
-type TweetAnchorKind = 'url' | 'mention' | 'hashtag' | 'cashtag';
-
-type TweetTokenAccessor = () => { content: string; href: string };
-
-function renderTweetAnchor(
-  accessor: TweetTokenAccessor,
-  kind: TweetAnchorKind,
-  displayText?: string
-): JSXElement {
-  const token = accessor();
-
-  return (
-    <a
-      href={token.href}
-      target='_blank'
-      rel='noopener noreferrer'
-      class={styles.tweetLink}
-      data-token-type={kind}
-      title={kind === 'url' ? token.href : token.content}
-    >
-      {displayText ?? token.content}
-    </a>
-  );
 }
 
 const SCROLLABLE_SELECTOR = '[data-gallery-scrollable="true"]';
@@ -421,57 +397,12 @@ export function ToolbarView(props: ToolbarViewProps): JSXElement {
         onWheel={preventScrollChaining as unknown as (event: WheelEvent) => void}
       >
         <Show when={props.isTweetPanelExpanded() && hasTweetContent()}>
-          <div class={styles.tweetPanelBody}>
-            <div class={styles.tweetHeader}>
-              <span class={styles.tweetLabel}>
-                {languageService.translate('toolbar.tweetText') || 'Tweet text'}
-              </span>
-            </div>
-            <div
-              class={styles.tweetContent}
-              data-gallery-element='tweet-content'
-              data-gallery-scrollable='true'
-            >
-              <Show
-                when={tweetTextHTML()}
-                fallback={
-                  <For each={formatTweetText(tweetText() ?? '')}>
-                    {token => (
-                      <Switch>
-                        <Match when={token.type === 'link' && token}>
-                          {linkToken =>
-                            renderTweetAnchor(linkToken, 'url', shortenUrl(linkToken().content, 40))
-                          }
-                        </Match>
-                        <Match when={token.type === 'mention' && token}>
-                          {mentionToken => renderTweetAnchor(mentionToken, 'mention')}
-                        </Match>
-                        <Match when={token.type === 'hashtag' && token}>
-                          {hashtagToken => renderTweetAnchor(hashtagToken, 'hashtag')}
-                        </Match>
-                        <Match when={token.type === 'cashtag' && token}>
-                          {cashtagToken => renderTweetAnchor(cashtagToken, 'cashtag')}
-                        </Match>
-                        <Match when={token.type === 'break'}>
-                          <br />
-                        </Match>
-                        <Match when={token.type === 'text' && token}>
-                          {textToken => <span>{textToken().content}</span>}
-                        </Match>
-                      </Switch>
-                    )}
-                  </For>
-                }
-              >
-                {/*
-                  Security Note: tweetTextHTML is sanitized via @shared/utils/html-sanitizer
-                  before being passed here. It only allows safe tags (a, span, etc.) and attributes.
-                  Links are checked for safe protocols (http/https) and target="_blank" is secured.
-                */}
-                <div innerHTML={tweetTextHTML() ?? ''} />
-              </Show>
-            </div>
-          </div>
+          <Suspense fallback={<div class={styles.tweetPanelLoading}>Loading...</div>}>
+            <TweetTextPanelLazy
+              tweetText={tweetText() ?? undefined}
+              tweetTextHTML={tweetTextHTML() ?? undefined}
+            />
+          </Suspense>
         </Show>
       </div>
     </div>
