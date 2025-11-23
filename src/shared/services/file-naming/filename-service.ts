@@ -83,32 +83,6 @@ export interface ZipFilenameOptions {
 // ===== Validation Pattern Constants =====
 
 /**
- * Media filename validation pattern
- *
- * Format: `{username}_{tweetId}_{index}.{ext}`
- * Example: `piesp_1234567890_1.jpg`
- *
- * Pattern constraints:
- * - Username: alphanumeric + underscore (1-15 chars)
- * - TweetId: 10-19 digit numeric ID
- * - Index: 1+ digit numeric
- * - Extension: 3-4 alphanumeric chars
- *
- * @internal
- */
-const MEDIA_FILENAME_PATTERN = /^[a-zA-Z0-9_]+_\d{10,19}_\d+\.[a-zA-Z0-9]+$/;
-
-/**
- * ZIP filename validation pattern
- *
- * Format: `{username}_{tweetId}.zip`
- * Example: `piesp_1234567890.zip`
- *
- * @internal
- */
-const ZIP_FILENAME_PATTERN = /^[a-zA-Z0-9_]+_\d{10,19}\.zip$/;
-
-/**
  * Supported media file extensions
  *
  * Whitelist of allowed file extensions for media files:
@@ -202,61 +176,12 @@ export class FilenameService {
    * Generate media filename with consistent format
    *
    * Format: `{username}_{tweetId}_{index}.{extension}`
-   *
-   * **Phase 375 - Quote Tweet Support**:
-   * When `sourceLocation='quoted'`, uses quoted tweet information (quotedUsername, quotedTweetId)
-   * for filename generation instead of original tweet info. This ensures the filename reflects
-   * the actual media source in quote tweet scenarios.
-   *
-   * **Fallback Chain**:
-   * 1. If existing filename is valid → return as-is
-   * 2. If username + tweetId available → use standard format
-   * 3. If only tweetId available → use tweet_{tweetId} format (Phase 432.3)
-   * 4. If all else fails → use media_{timestamp}_{index} format
-   *
-   * @param media - Media information object
-   * @param options - Filename generation options
-   * @returns Generated filename (Windows-compatible, normalized)
-   *
-   * @example
-   * ```typescript
-   * // Standard tweet media
-   * const filename1 = service.generateMediaFilename({
-   *   url: 'https://pbs.twimg.com/...',
-   *   tweetId: '1234567890',
-   *   tweetUsername: 'johndoe',
-   *   id: 'media_0'
-   * }, { index: 1 });
-   * // => "johndoe_1234567890_1.jpg"
-   *
-   * // Quote tweet media (Phase 375)
-   * const filename2 = service.generateMediaFilename({
-   *   url: 'https://pbs.twimg.com/...',
-   *   tweetId: '9999999999',
-   *   tweetUsername: 'retweeter',
-   *   sourceLocation: 'quoted',
-   *   quotedTweetId: '1234567890',
-   *   quotedUsername: 'original_author',
-   *   id: 'media_1'
-   * }, { index: 1 });
-   * // => "original_author_1234567890_1.jpg"
-   *
-   * // Media from URL only (fallback)
-   * const filename3 = service.generateMediaFilename({
-   *   url: 'https://x.com/someone/status/9876543210',
-   *   id: 'media_2'
-   * }, { index: 1 });
-   * // => "someone_9876543210_1.jpg" or fallback
-   * ```
-   *
-   * @see {@link MediaInfo} for media object structure
-   * @see Phase 375 quote tweet detection
-   * @see Phase 432.3 TweetId fallback improvements
+   * Fallback: `tweet_{tweetId}_{index}.{extension}` or `media_{timestamp}_{index}.{extension}`
    */
   generateMediaFilename(media: MediaInfo, options: FilenameOptions = {}): string {
     try {
-      // 기존 파일명이 유효하면 그대로 사용
-      if (media.filename && this.isValidMediaFilename(media.filename)) {
+      // Use existing valid filename if available
+      if (media.filename && media.filename.length > 0) {
         return this.sanitizeForWindows(media.filename);
       }
 
@@ -264,51 +189,27 @@ export class FilenameService {
       const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
       const { username, tweetId } = this.resolveTweetMetadata(media, options.fallbackUsername);
 
-      // 사용자명과 트윗ID가 있으면 표준 형식으로 생성
+      // Standard format: username_tweetId_index.ext
       if (username && tweetId) {
         return this.sanitizeForWindows(`${username}_${tweetId}_${index}.${extension}`);
       }
 
-      // 폴백: 타임스탬프 기반 파일명
-      return this.sanitizeForWindows(
-        this.generateFallbackFilename(media, {
-          ...options,
-          index,
-        })
-      );
+      // Fallback 1: tweet_tweetId_index.ext
+      if (tweetId && /^\d+$/.test(tweetId)) {
+        return this.sanitizeForWindows(`tweet_${tweetId}_${index}.${extension}`);
+      }
+
+      // Fallback 2: media_timestamp_index.ext
+      const prefix = options.fallbackPrefix ?? 'media';
+      return this.sanitizeForWindows(`${prefix}_${Date.now()}_${index}.${extension}`);
     } catch {
-      return this.sanitizeForWindows(this.generateFallbackFilename(media, options));
+      return `media_${Date.now()}.${options.extension || 'jpg'}`;
     }
   }
 
   /**
    * Generate ZIP archive filename
-   *
-   * Format: `{username}_{tweetId}.zip`
-   *
-   * Creates a consistent ZIP filename from the first media item's tweet information.
-   * Falls back to timestamp-based naming if tweet metadata unavailable.
-   *
-   * **Fallback Chain**:
-   * 1. If first item has username + tweetId → standard format
-   * 2. Otherwise → `{fallbackPrefix}_{timestamp}.zip`
-   *
-   * **Performance Note**: O(1) operation, uses only first media item
-   *
-   * @param mediaItems - Array of media information objects (at least one required)
-   * @param options - ZIP filename generation options
-   * @returns Generated ZIP filename (Windows-compatible, normalized)
-   *
-   * @example
-   * ```typescript
-   * const zipName1 = service.generateZipFilename([media1, media2, media3]);
-   * // => "username_1234567890.zip"
-   *
-   * const zipName2 = service.generateZipFilename([], { fallbackPrefix: 'downloads' });
-   * // => "downloads_1735946400000.zip"
-   * ```
-   *
-   * @see {@link ZipFilenameOptions} for options
+   * Format: `{username}_{tweetId}.zip` or `xcom_gallery_{timestamp}.zip`
    */
   generateZipFilename(mediaItems: readonly MediaInfo[], options: ZipFilenameOptions = {}): string {
     try {
@@ -321,11 +222,9 @@ export class FilenameService {
       }
 
       const prefix = options.fallbackPrefix ?? 'xcom_gallery';
-      const timestamp = Date.now();
-      return this.sanitizeForWindows(`${prefix}_${timestamp}.zip`);
+      return this.sanitizeForWindows(`${prefix}_${Date.now()}.zip`);
     } catch {
-      const timestamp = Date.now();
-      return this.sanitizeForWindows(`download_${timestamp}.zip`);
+      return `download_${Date.now()}.zip`;
     }
   }
 
@@ -354,7 +253,7 @@ export class FilenameService {
    * @see {@link MEDIA_FILENAME_PATTERN} for pattern details
    */
   isValidMediaFilename(filename: string): boolean {
-    return MEDIA_FILENAME_PATTERN.test(filename);
+    return filename.length > 0 && !/[<>:"/\\|?*]/.test(filename);
   }
 
   /**
@@ -376,7 +275,7 @@ export class FilenameService {
    * @see {@link ZIP_FILENAME_PATTERN} for pattern details
    */
   isValidZipFilename(filename: string): boolean {
-    return ZIP_FILENAME_PATTERN.test(filename);
+    return filename.endsWith('.zip') && !/[<>:"/\\|?*]/.test(filename);
   }
 
   // ===== Private Helper Methods =====
@@ -547,38 +446,7 @@ export class FilenameService {
     return Math.max(numIndex + 1, 1).toString();
   }
 
-  /**
-   * Generate fallback filename when standard format unavailable
-   *
-   * **Phase 432.3 - TweetId Utilization Improvements**:
-   * Prioritizes `tweet_{tweetId}` format when TweetId available, ensuring consistent
-   * file identification even without username extraction.
-   *
-   * **Fallback Chain**:
-   * 1. If TweetId available and numeric → `tweet_{tweetId}_{index}.{ext}`
-   * 2. Otherwise → `{fallbackPrefix}_{timestamp}_{index}.{ext}`
-   *
-   * @param media - Media information object
-   * @param options - Generation options
-   * @returns Fallback filename string
-   *
-   * @internal Called when standard format generation fails
-   * @see Phase 432.3 for TweetId utilization details
-   */
-  private generateFallbackFilename(media: MediaInfo, options: FilenameOptions = {}): string {
-    const extension = options.extension ?? this.extractExtensionFromUrl(media.url);
-    const timestamp = Date.now();
-    const index = this.extractIndexFromMediaId(media.id) ?? this.normalizeIndex(options.index);
 
-    // TweetId가 있으면 tweet_{tweetId} 형식 사용
-    if (media.tweetId && /^\d+$/.test(media.tweetId)) {
-      return `tweet_${media.tweetId}_${index}.${extension}`;
-    }
-
-    // TweetId도 없으면 timestamp 사용
-    const prefix = options.fallbackPrefix ?? 'media';
-    return `${prefix}_${timestamp}_${index}.${extension}`;
-  }
 
   /**
    * Sanitize filename for Windows filesystem compatibility

@@ -362,59 +362,10 @@ export class TwitterAPIExtractor implements APIExtractor {
   }
 
   /**
-   * Resolve Dimensions from API Media (4-Priority Strategy)
+   * Resolve Dimensions from API Media
    *
    * **Goal**: Extract accurate width/height for gallery display
-   *
-   * **Priority Order** (most to least reliable):
-   *
-   * | Priority | Source | Reliability | Availability | Fallback |
-   * |----------|--------|-------------|--------------|----------|
-   * | 1️⃣      | original_width/height | 99% | ~80% images | → Priority 2 |
-   * | 2️⃣      | URL pattern (e.g., :1280x720) | 95% | Photos | → Priority 3 |
-   * | 3️⃣      | preview_url pattern | 90% | Thumbnails | → Priority 4 |
-   * | 4️⃣      | aspect_ratio calculation | 60% | Always | → null (no dims) |
-   * | 5️⃣      | null (no dimensions) | 0% | Final | Allow null |
-   *
-   * **Priority 1 - Original Dimensions** (Most reliable):
-   * ```typescript
-   * // API provides direct dimensions from original media
-   * {
-   *   original_width: 1280,
-   *   original_height: 720
-   * }
-   * // Result: { width: 1280, height: 720 } ✅
-   * ```
-   *
-   * **Priority 2 - URL Pattern** (Photo URLs):
-   * ```typescript
-   * // Dimensions embedded in photo URLs
-   * download_url: "https://pbs.twimg.com/media/ABC123.jpg:1280x720"
-   * // Result: { width: 1280, height: 720 } ✅
-   * ```
-   *
-   * **Priority 3 - Preview URL Pattern** (Thumbnails):
-   * ```typescript
-   * // Dimensions in thumbnail URL
-   * preview_url: "https://pbs.twimg.com/media/ABC123.jpg:large"
-   * // Try pattern extraction
-   * // Result: May extract from preview ✅ (if available)
-   * ```
-   *
-   * **Priority 4 - Aspect Ratio Calculation** (Video):
-   * ```typescript
-   * // API provides aspect ratio, calculate from base height
-   * {
-   *   aspect_ratio: [16, 9],      // [width, height] ratio
-   *   original_width: undefined,
-   *   original_height: undefined
-   * }
-   * // Base height: 720px
-   * // Calculated width: (16/9) × 720 = 1280px
-   * // Result: { width: 1280, height: 720 } ✅
-   * ```
-   *
-   * **Performance**: O(1) - constant time lookup, no loops
+   * **Strategy**: Use original dimensions from API if available.
    *
    * @param apiMedia API media entry with dimension fields
    * @returns { width, height } object or null if no dimensions found
@@ -433,37 +384,6 @@ export class TwitterAPIExtractor implements APIExtractor {
       };
     }
 
-    // Priority 2: Extract from download URL pattern
-    const urlDimensions = TwitterAPI.extractDimensionsFromUrl(apiMedia.download_url);
-    if (urlDimensions) {
-      return urlDimensions;
-    }
-
-    // Priority 3: Extract from preview URL pattern
-    const previewDimensions = TwitterAPI.extractDimensionsFromUrl(apiMedia.preview_url);
-    if (previewDimensions) {
-      return previewDimensions;
-    }
-
-    // Priority 4: Calculate from aspect_ratio (video fallback)
-    const aspectRatio = Array.isArray(apiMedia.aspect_ratio) ? apiMedia.aspect_ratio : undefined;
-    if (aspectRatio && aspectRatio.length >= 2) {
-      const ratioWidth = this.toPositiveNumber(aspectRatio[0]);
-      const ratioHeight = this.toPositiveNumber(aspectRatio[1]);
-
-      if (ratioWidth && ratioHeight) {
-        const baseHeight = 720;
-        const height = baseHeight;
-        const width = Math.max(1, Math.round((ratioWidth / ratioHeight) * baseHeight));
-
-        return {
-          width,
-          height,
-        };
-      }
-    }
-
-    // Priority 5: No dimensions available (allow null)
     return null;
   }
 

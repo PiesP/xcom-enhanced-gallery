@@ -9,6 +9,11 @@ import { BaseServiceImpl } from '@shared/services/base-service';
 import { HttpRequestService } from '@shared/services/http-request-service';
 import { getErrorMessage } from '@shared/utils/error-handling';
 import { globalTimerManager } from '@shared/utils/timer-management';
+import { generateMediaFilename, generateZipFilename } from '@shared/services/file-naming';
+import { getGMDownload } from './gm-download';
+import type { MediaInfo } from '@shared/types/media.types';
+import { logger } from '@shared/logging';
+import { ErrorCode } from '@shared/types/result.types';
 
 export interface OrchestratorItem {
   url: string;
@@ -30,6 +35,33 @@ export interface OrchestratorOptions {
   }) => void) | undefined;
 }
 
+export interface DownloadOptions extends OrchestratorOptions {
+  zipFilename?: string;
+  blob?: Blob;
+  prefetchedBlobs?: Map<string, Blob>;
+}
+
+export interface SingleDownloadResult {
+  success: boolean;
+  filename?: string;
+  error?: string | undefined;
+}
+
+interface BlobDownloadOptions {
+  blob: Blob | File;
+  name: string;
+  saveAs?: boolean;
+  conflictAction?: 'uniquify' | 'overwrite' | 'prompt';
+  suppressNotifications?: boolean;
+}
+
+interface BlobDownloadResult {
+  success: boolean;
+  filename?: string;
+  error?: string;
+  size?: number;
+}
+
 export interface ZipResult {
   filesSuccessful: number;
   failures: Array<{ url: string; error: string }>;
@@ -44,10 +76,22 @@ export interface SingleItemDownloadResult {
   source: DownloadDataSource;
 }
 
+export interface BulkDownloadResult {
+  success: boolean;
+  status: 'success' | 'partial' | 'error';
+  filesProcessed: number;
+  filesSuccessful: number;
+  filename?: string | undefined;
+  error?: string | undefined;
+  failures?: Array<{ url: string; error: string }> | undefined;
+  code: ErrorCode;
+}
+
 export class DownloadOrchestrator extends BaseServiceImpl {
   static readonly DEFAULT_BACKOFF_BASE_MS = 200;
   private static instance: DownloadOrchestrator | null = null;
   private activeTimers: ReturnType<typeof globalTimerManager.setTimeout>[] = [];
+  private currentAbortController: AbortController | undefined;
 
   private constructor() {
     super('DownloadOrchestrator');
@@ -392,4 +436,245 @@ export class DownloadOrchestrator extends BaseServiceImpl {
       source: detectedSource,
     };
   }
+
+  /**
+   * Download single file using GM_download
+   */
+  async downloadSingle(
+    media: MediaInfo,
+    options: DownloadOptions = {}
+  ): Promise<SingleDownloadResult> {
+    if (options.signal?.aborted) {
+      return { success: false, error: 'User cancelled download' };
+    }
+
+    const gmDownload = getGMDownload();
+    if (!gmDownload) {
+      return { success: false, error: 'Must be run in Tampermonkey environment' };
+    }
+
+    const filename = generateMediaFilename(media);
+
+    // Phase 368: Use prefetched blob if available
+    if (options.blob) {
+      logger.debug(`[DownloadOrchestrator] Using prefetched blob for ${filename}`);
+      const result = await this.downloadBlob({
+        blob: options.blob,
+        name: filename,
+        suppressNotifications: true,
+      });
+
+      if (result.success) {
+        options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
+        return { success: true, filename };
+      }
+      return { success: false, error: result.error, filename };
+    }
+
+    const url = media.url;
+
+    return new Promise(resolve => {
+      const timer = globalTimerManager.setTimeout(() => {
+        options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
+        resolve({ success: false, error: 'Download timeout' });
+      }, 30000);
+
+      try {
+        gmDownload({
+          url,
+          name: filename,
+          onload: () => {
+            globalTimerManager.clearTimeout(timer);
+            logger.debug(`[DownloadOrchestrator] Single file download complete: ${filename}`);
+            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 100 });
+            resolve({ success: true, filename });
+          },
+          onerror: (error: unknown) => {
+            globalTimerManager.clearTimeout(timer);
+            const errorMsg = getErrorMessage(error);
+            logger.error(`[DownloadOrchestrator] Single file download failed:`, error);
+            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
+            resolve({ success: false, error: errorMsg });
+          },
+          ontimeout: () => {
+            globalTimerManager.clearTimeout(timer);
+            options.onProgress?.({ phase: 'complete', current: 1, total: 1, percentage: 0 });
+            resolve({ success: false, error: 'Download timeout' });
+          },
+        });
+      } catch (error) {
+        globalTimerManager.clearTimeout(timer);
+        const errorMsg = getErrorMessage(error);
+        logger.error(`[DownloadOrchestrator] GM_download error:`, error);
+        resolve({ success: false, error: errorMsg });
+      }
+    });
+  }
+
+  private async downloadBlob(options: BlobDownloadOptions): Promise<BlobDownloadResult> {
+    const gmDownload = getGMDownload();
+    if (!gmDownload) return { success: false, error: 'GM_download unavailable' };
+    if (!options.blob || !(options.blob instanceof Blob)) return { success: false, error: 'Invalid blob' };
+
+    const size = options.blob.size;
+    const objectUrl = URL.createObjectURL(options.blob);
+
+    return new Promise(resolve => {
+      const timer = globalTimerManager.setTimeout(() => {
+        resolve({ success: false, error: 'Download timeout', size });
+      }, 30000);
+
+      const cleanup = () => {
+        globalTimerManager.clearTimeout(timer);
+        URL.revokeObjectURL(objectUrl);
+      };
+
+      try {
+        gmDownload({
+          url: objectUrl,
+          name: options.name,
+          saveAs: options.saveAs ?? false,
+          conflictAction: options.conflictAction ?? 'uniquify',
+          onload: () => {
+            cleanup();
+            resolve({ success: true, filename: options.name, size });
+            logger.debug(`[DownloadOrchestrator] Blob download completed: ${options.name} (${size} bytes)`);
+          },
+          onerror: (error: any) => {
+            cleanup();
+            const errorMsg = getErrorMessage(error);
+            resolve({ success: false, error: errorMsg, filename: options.name, size });
+            logger.error(`[DownloadOrchestrator] Blob download failed:`, error);
+          },
+          ontimeout: () => {
+            cleanup();
+            resolve({ success: false, error: 'Download timeout', filename: options.name, size });
+          },
+        });
+      } catch (error) {
+        cleanup();
+        const errorMsg = getErrorMessage(error);
+        resolve({ success: false, error: errorMsg, size });
+        logger.error(`[DownloadOrchestrator] GM_download error:`, error);
+      }
+    });
+  }
+
+  isDownloading(): boolean {
+    return this.currentAbortController !== undefined;
+  }
+
+  cancelDownload(): void {
+    if (!this.currentAbortController) return;
+    this.currentAbortController.abort();
+    logger.info('[DownloadOrchestrator] Download cancelled');
+  }
+
+  async downloadBulk(
+    mediaItems: Array<MediaInfo>,
+    options: DownloadOptions = {}
+  ): Promise<BulkDownloadResult> {
+    if (mediaItems.length === 0) {
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: 0,
+        filesSuccessful: 0,
+        error: 'No files to download',
+        code: ErrorCode.EMPTY_INPUT,
+      };
+    }
+
+    // Single file optimization
+    if (mediaItems.length === 1) {
+      const media = mediaItems[0];
+      if (!media) return { success: false, status: 'error', filesProcessed: 1, filesSuccessful: 0, error: 'No media', code: ErrorCode.UNKNOWN };
+
+      const result = await this.downloadSingle(media, options);
+      return {
+        success: result.success,
+        status: result.success ? 'success' : 'error',
+        filesProcessed: 1,
+        filesSuccessful: result.success ? 1 : 0,
+        filename: result.filename,
+        error: result.error,
+        code: result.success ? ErrorCode.NONE : ErrorCode.UNKNOWN,
+      };
+    }
+
+    return this.downloadAsZip(mediaItems, options);
+  }
+
+  private async downloadAsZip(
+    mediaItems: Array<MediaInfo>,
+    options: DownloadOptions
+  ): Promise<BulkDownloadResult> {
+    try {
+      this.currentAbortController = new AbortController();
+      logger.info(`[DownloadOrchestrator] ZIP download started: ${mediaItems.length} files`);
+
+      const itemsForZip = mediaItems.map(m => ({
+        url: m.url,
+        desiredName: generateMediaFilename(m),
+        blob: options.prefetchedBlobs?.get(m.url),
+      }));
+
+      const { filesSuccessful, failures, zipData } = await this.zipMediaItems(
+        itemsForZip,
+        {
+          concurrency: options.concurrency,
+          retries: options.retries,
+          signal: this.currentAbortController.signal,
+          onProgress: options.onProgress,
+        }
+      );
+
+      if (filesSuccessful === 0) {
+        throw new Error('All file downloads failed');
+      }
+
+      const zipFilename = options.zipFilename || generateZipFilename(mediaItems, { fallbackPrefix: 'xcom_gallery' });
+      const blob = new Blob([new Uint8Array(zipData)], { type: 'application/zip' });
+
+      const downloadResult = await this.downloadBlob({
+        blob,
+        name: zipFilename,
+        suppressNotifications: true,
+      });
+
+      if (!downloadResult.success) {
+        throw new Error(downloadResult.error ?? 'ZIP download failed');
+      }
+
+      logger.info(`[DownloadOrchestrator] ZIP download complete: ${zipFilename}`);
+
+      const status = failures.length === 0 ? 'success' : failures.length === mediaItems.length ? 'error' : 'partial';
+
+      return {
+        success: status !== 'error',
+        status,
+        filesProcessed: mediaItems.length,
+        filesSuccessful,
+        filename: zipFilename,
+        failures: failures.length > 0 ? failures : undefined,
+        code: status === 'success' ? ErrorCode.NONE : status === 'partial' ? ErrorCode.PARTIAL_FAILED : ErrorCode.ALL_FAILED,
+      };
+    } catch (error) {
+      const errorMsg = getErrorMessage(error);
+      logger.error(`[DownloadOrchestrator] ZIP download failed:`, error);
+
+      return {
+        success: false,
+        status: 'error',
+        filesProcessed: mediaItems.length,
+        filesSuccessful: 0,
+        error: errorMsg,
+        code: ErrorCode.UNKNOWN,
+      };
+    } finally {
+      this.currentAbortController = undefined;
+    }
+  }
+
+
 }
