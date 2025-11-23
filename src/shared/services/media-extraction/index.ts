@@ -19,9 +19,9 @@
  *   └─ @shared/services/media-extraction (THIS MODULE)
  *        │
  *        ├─ MediaExtractionService (Phase 405B-1) - ORCHESTRATOR
- *        │  ├─ Phase 1: TweetInfoExtractor (extract metadata)
- *        │  ├─ Phase 2: TwitterAPIExtractor (primary strategy)
- *        │  └─ Phase 3: Coordinate 1→2 pipeline
+ *        │  ├─ TweetInfoExtractor (extract metadata)
+ *        │  ├─ TwitterAPIExtractor (API-based extraction)
+ *        │  └─ determineClickedIndex (Index calculation)
  *        │
  *        └─ TwitterAPIExtractor (NOT exported - internal only)
  *           └─ Used by MediaExtractionService, not public API
@@ -38,15 +38,15 @@
  * | Module | Type | Purpose | Reason for Hiding |
  * |--------|------|---------|-------------------|
  * | `media-extraction-service.ts` | Orchestrator | Coordinate extraction phases | Consumers shouldn't manage phases |
- * | `extractors/twitter-api-extractor.ts` | Strategy | API-based extraction | Implementation detail of Phase 2 |
- * | `strategies/media-click-index-strategy.ts` | Strategies | Index calculation | Implementation detail |
- * | `strategies/tweet-info-extractor.ts` | Strategy | Metadata extraction | Implementation detail |
+ * | `extractors/twitter-api-extractor.ts` | Extractor | API-based extraction | Implementation detail |
+ * | `determine-clicked-index.ts` | Utility | Index calculation | Implementation detail |
+ * | `extractors/tweet-info-extractor.ts` | Extractor | Metadata extraction | Implementation detail |
  *
  * **Design Pattern**: Module Export Encapsulation
  * - Principle: Export only what consumers need
  * - Reason: Hide internal orchestration details
  * - Benefit: Freedom to refactor internals without breaking consumers
- * - Example: If Phase 2 strategy changes, consumers unaffected (abstracted)
+ * - Example: If extraction logic changes, consumers unaffected (abstracted)
  *
  * **Import Examples** (How to Use):
  *
@@ -61,14 +61,9 @@
  *   extractionId
  * );
  *
- * // ❌ WRONG: Don't import internal strategies directly
+ * // ❌ WRONG: Don't import internal extractors directly
  * import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
  * // Reason: TwitterAPIExtractor is implementation detail, not part of public API
- *
- * // ❌ WRONG: Don't manage orchestration phases manually
- * import { TweetInfoExtractor } from '@shared/services/media-extraction/strategies/tweet-info-extractor';
- * import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
- * // Reason: MediaExtractionService handles phase coordination
  * ```
  *
  * **Module Organization**:
@@ -76,13 +71,11 @@
  * ```
  * src/shared/services/media-extraction/
  * ├─ index.ts                          (THIS FILE - Public API)
- * ├─ media-extraction-service.ts       (Phase 405B-1: Orchestrator)
- * ├─ extractors/
- * │  └─ twitter-api-extractor.ts      (Phase 405B-4: Primary strategy)
- * └─ strategies/
- *    ├─ tweet-info-extractor.ts       (Phase 405B-2: Metadata extraction)
- *    ├─ media-click-index-strategy.ts (Phase 351: Index calculation)
- *    └─ [other strategies]
+ * ├─ media-extraction-service.ts       (Orchestrator)
+ * ├─ determine-clicked-index.ts        (Index calculation)
+ * └─ extractors/
+ *    ├─ twitter-api-extractor.ts      (API extraction)
+ *    └─ tweet-info-extractor.ts       (Metadata extraction)
  * ```
  *
  * **Relationship to Other Modules**:

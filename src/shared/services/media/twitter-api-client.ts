@@ -68,97 +68,20 @@
 
 import { TWITTER_API_CONFIG } from "@/constants";
 import { logger } from "@shared/logging";
+import {
+  extractDimensionsFromUrl,
+  normalizeDimension,
+  sortMediaByVisualOrder,
+} from "@shared/media/media-utils";
 import { getCookieService } from "@shared/services/cookie-service";
 import { HttpRequestService } from "@shared/services/http-request-service";
 import type {
-    TweetMediaEntry,
-    TwitterAPIResponse,
-    TwitterMedia,
-    TwitterTweet,
-    TwitterUser,
+  TweetMediaEntry,
+  TwitterAPIResponse,
+  TwitterMedia,
+  TwitterTweet,
+  TwitterUser,
 } from "./types";
-
-/**
- * Extract visual index from expanded_url
- *
- * Parses Twitter URL to find visual position in media grid.
- *
- * **URL Patterns**:
- * - Photo: `https://twitter.com/user/status/123/photo/1` → index 0
- * - Photo: `https://twitter.com/user/status/123/photo/4` → index 3
- * - Video: `https://twitter.com/user/status/123/video/2` → index 1
- *
- * **Algorithm**:
- * 1. Match /photo/N or /video/N pattern at end of URL
- * 2. Extract visual number (N) from pattern
- * 3. Convert to 0-based index (N - 1)
- * 4. Return 0 on parse failure (safe fallback)
- *
- * **Performance**:
- * - Regex match: O(1) for typical URLs
- * - No allocations on success
- * - Handles malformed URLs gracefully
- *
- * @param url - Expanded URL from Twitter API
- * @returns Zero-based visual index (0-3 for 4-image tweet, etc.)
- */
-function extractVisualIndexFromUrl(url: string): number {
-  if (!url) {
-    return 0;
-  }
-
-  // Match /photo/N or /video/N pattern
-  const match = url.match(/\/(photo|video)\/(\d+)$/);
-  const visualNumberStr = match?.[2];
-  if (visualNumberStr) {
-    const visualNumber = Number.parseInt(visualNumberStr, 10);
-    // Convert to 0-based index (photo/1 -> index 0)
-    return Number.isFinite(visualNumber) && visualNumber > 0
-      ? visualNumber - 1
-      : 0;
-  }
-
-  return 0;
-}
-
-/**
- * Sort media by visual display order
- *
- * Corrects media ordering to match visual grid layout.
- *
- * **Background**:
- * Twitter API may return media in incorrect visual order. This function:
- * 1. Extracts visual index from each media's expanded_url
- * 2. Sorts media array by visual index
- * 3. Reassigns index field to match sorted order
- *
- * @param mediaItems - Array of media entries from Twitter API
- * @returns Sorted array with corrected visual order
- */
-function sortMediaByVisualOrder(
-  mediaItems: TweetMediaEntry[],
-): TweetMediaEntry[] {
-  if (mediaItems.length <= 1) {
-    return mediaItems;
-  }
-
-  // Extract visual order index from expanded_url
-  const withVisualIndex = mediaItems.map((media) => {
-    const visualIndex = extractVisualIndexFromUrl(media.expanded_url);
-    return { media, visualIndex };
-  });
-
-  // Sort by visual index
-  withVisualIndex.sort((a, b) => a.visualIndex - b.visualIndex);
-
-  // Reassign index field to match sorted order
-  const sorted = withVisualIndex.map(({ media }, newIndex) => ({
-    ...media,
-    index: newIndex,
-  }));
-
-  return sorted;
-}
 
 /**
  * TwitterAPI - GraphQL Media Extraction Service
@@ -708,29 +631,23 @@ export class TwitterAPI {
           .replace(` ${media.url}`, "")
           .trim();
 
-        const dimensionsFromUrl = this.extractDimensionsFromUrl(mediaUrl);
-        const widthFromOriginal = this.normalizeDimension(
+        const dimensionsFromUrl = extractDimensionsFromUrl(mediaUrl);
+        const widthFromOriginal = normalizeDimension(
           media.original_info?.width,
         );
-        const heightFromOriginal = this.normalizeDimension(
+        const heightFromOriginal = normalizeDimension(
           media.original_info?.height,
         );
-        const widthFromUrl = this.normalizeDimension(dimensionsFromUrl?.width);
-        const heightFromUrl = this.normalizeDimension(
-          dimensionsFromUrl?.height,
-        );
+        const widthFromUrl = normalizeDimension(dimensionsFromUrl?.width);
+        const heightFromUrl = normalizeDimension(dimensionsFromUrl?.height);
         const resolvedWidth = widthFromOriginal ?? widthFromUrl;
         const resolvedHeight = heightFromOriginal ?? heightFromUrl;
 
         const aspectRatioValues = Array.isArray(media.video_info?.aspect_ratio)
           ? media.video_info?.aspect_ratio
           : undefined;
-        const aspectRatioWidth = this.normalizeDimension(
-          aspectRatioValues?.[0],
-        );
-        const aspectRatioHeight = this.normalizeDimension(
-          aspectRatioValues?.[1],
-        );
+        const aspectRatioWidth = normalizeDimension(aspectRatioValues?.[0]);
+        const aspectRatioHeight = normalizeDimension(aspectRatioValues?.[1]);
 
         const entry: TweetMediaEntry = {
           screen_name: screenName,
@@ -857,166 +774,6 @@ export class TwitterAPI {
       return bestVariant.url;
     }
     return null;
-  }
-
-  /**
-   * Extract Dimensions from URL - Parse WxH Pattern
-   *
-   * Purpose:
-   * Parse image dimensions from URL pattern /WIDTHxHEIGHT/
-   * (Common in CDN URLs for responsive image serving)
-   *
-   * Pattern:
-   * - Regex: /(\d{2,6})x(\d{2,6})/
-   * - Matches: /640x480/ or /1920x1080/
-   * - Groups: (width)(x)(height)
-   *
-   * URL Examples:
-   * - https://pbs.twimg.com/media/abc/640x480/def.jpg → [640, 480]
-   * - https://pbs.twimg.com/image/1920x1080/photo.jpg → [1920, 1080]
-   * - https://example.com/image.jpg → null (no pattern)
-   *
-   * Validation:
-   * - Both width and height must be 2-6 digits (prevents false matches)
-   * - Both must be > 0 (Number.isFinite check)
-   * - Returns null if either fails
-   *
-   * Algorithm:
-   * 1. Check if URL is empty (return null)
-   * 2. Run regex match
-   * 3. If no match: Return null
-   * 4. Parse match groups to numbers
-   * 5. Validate: finite, > 0
-   * 6. Return { width, height } or null
-   *
-   * Error Handling:
-   * - Returns null if:
-   *   - URL is empty
-   *   - No /WxH/ pattern found
-   *   - Width or height is not finite
-   *   - Width or height <= 0
-   *   - Regex match fails
-   * - No exceptions thrown (safe to call)
-   *
-   * Performance:
-   * - O(n) where n = URL length (typically 100-200 chars)
-   * - Single regex match
-   * - < 1ms typical execution
-   *
-   * Returns:
-   * - { width: number, height: number } if found and valid
-   * - null if pattern not found or invalid
-   *
-   * Example:
-   * ```typescript
-   * TwitterAPI.extractDimensionsFromUrl(
-   *   'https://pbs.twimg.com/media/abc/640x480/def.jpg'
-   * );
-   * // Returns: { width: 640, height: 480 }
-   *
-   * TwitterAPI.extractDimensionsFromUrl(
-   *   'https://example.com/photo.jpg'
-   * );
-   * // Returns: null
-   * ```
-   */
-  public static extractDimensionsFromUrl(
-    url: string,
-  ): { width: number; height: number } | null {
-    if (!url) {
-      return null;
-    }
-
-    const match = url.match(/\/(\d{2,6})x(\d{2,6})\//);
-    if (!match) {
-      return null;
-    }
-
-    const width = Number.parseInt(match[1] ?? "", 10);
-    const height = Number.parseInt(match[2] ?? "", 10);
-
-    if (
-      !Number.isFinite(width) ||
-      width <= 0 ||
-      !Number.isFinite(height) ||
-      height <= 0
-    ) {
-      return null;
-    }
-
-    return {
-      width,
-      height,
-    };
-  }
-
-  /**
-   * Normalize Dimension - Type-Safe Number Parsing
-   *
-   * Purpose:
-   * Convert unknown dimension value (could be number, string, or invalid)
-   * to standardized positive number or undefined.
-   *
-   * Input Types Handled:
-   * - number: Already numeric (validate and return)
-   * - string: Parse as float (e.g., "1920" or "16.9")
-   * - other: Return undefined (null, undefined, objects, etc.)
-   *
-   * Validation Rules:
-   * 1. Must be Number.isFinite (not Infinity, not NaN)
-   * 2. Must be > 0 (reject 0, negative, null)
-   * 3. Round to nearest integer (1920.5 → 1921)
-   *
-   * Algorithm:
-   * 1. If number: Check isFinite and > 0
-   *    - Yes: Return Math.round(value)
-   *    - No: Return undefined
-   * 2. If string: Parse with parseFloat
-   *    - Check isFinite and > 0
-   *    - Yes: Return Math.round(parsed)
-   *    - No: Return undefined
-   * 3. Other: Return undefined
-   *
-   * Error Handling:
-   * - Returns undefined (not null, not error) if invalid
-   * - Allows caller to check "if (dim) {...}"
-   * - Safe to call on any value type
-   * - No exceptions thrown
-   *
-   * Performance:
-   * - O(1) type checking
-   * - O(1) math operations
-   * - < 1us typical execution
-   *
-   * Returns:
-   * - number: Valid positive integer (rounded)
-   * - undefined: Invalid or missing dimension
-   *
-   * Example:
-   * ```typescript
-   * normalizeDimension(1920)           // Returns: 1920
-   * normalizeDimension("1920")         // Returns: 1920
-   * normalizeDimension("16.9")         // Returns: 17
-   * normalizeDimension(0)              // Returns: undefined
-   * normalizeDimension(-100)           // Returns: undefined
-   * normalizeDimension(null)           // Returns: undefined
-   * normalizeDimension("invalid")      // Returns: undefined
-   * normalizeDimension(Infinity)       // Returns: undefined
-   * ```
-   */
-  private static normalizeDimension(value: unknown): number | undefined {
-    if (typeof value === "number" && Number.isFinite(value) && value > 0) {
-      return Math.round(value);
-    }
-
-    if (typeof value === "string") {
-      const parsed = Number.parseFloat(value);
-      if (Number.isFinite(parsed) && parsed > 0) {
-        return Math.round(parsed);
-      }
-    }
-
-    return undefined;
   }
 
   /**

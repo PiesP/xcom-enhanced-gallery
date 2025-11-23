@@ -11,7 +11,7 @@ import { DownloadOrchestrator } from "./download/download-orchestrator";
 export { DownloadOrchestrator as DownloadService };
 export const downloadService = DownloadOrchestrator.getInstance();
 export type {
+  BulkDownloadResult,
   DownloadOptions,
   SingleDownloadResult,
-  BulkDownloadResult,
-} from "./download/download-orchestrator";
+} from "./download/types";
