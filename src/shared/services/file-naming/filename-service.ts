@@ -7,6 +7,7 @@
  */
 
 import type { MediaInfo } from "@shared/types/media.types";
+import { isHostMatching } from "@shared/utils/url";
 import { safeParseInt } from "@shared/utils/type-safety-helpers";
 
 export interface FilenameOptions {
@@ -160,14 +161,16 @@ export class FilenameService {
   private extractUsernameFromUrl(url: string): string | null {
     try {
       const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      if (!hostname.includes("twitter.com") && !hostname.includes("x.com"))
-        return null;
+
+      // Security Fix: Use strict host matching to prevent subdomain spoofing
+      // Replaces insecure .includes() checks that allowed arbitrary hosts (e.g. evil-x.com)
       if (
-        hostname.includes("pbs.twimg.com") ||
-        hostname.includes("video.twimg.com")
-      )
+        !isHostMatching(urlObj, ["twitter.com", "x.com"], {
+          allowSubdomains: true,
+        })
+      ) {
         return null;
+      }
 
       const path = urlObj.pathname.split("/")[1];
       if (
