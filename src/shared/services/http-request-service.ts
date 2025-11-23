@@ -181,6 +181,7 @@ export class HttpRequestService {
         }
 
         if (
+          options &&
           (options as BinaryRequestOptions).contentType &&
           !details.headers?.["content-type"]
         ) {

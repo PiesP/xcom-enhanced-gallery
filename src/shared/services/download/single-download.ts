@@ -87,6 +87,16 @@ export async function downloadSingleFile(
           });
           resolve({ success: false, error: "Download timeout" });
         },
+        onprogress: (progress: { loaded: number; total: number }) => {
+          if (options.onProgress && progress.total > 0) {
+            options.onProgress({
+              phase: "downloading",
+              current: 1,
+              total: 1,
+              percentage: Math.round((progress.loaded / progress.total) * 100),
+            });
+          }
+        },
       });
     } catch (error) {
       globalTimerManager.clearTimeout(timer);
