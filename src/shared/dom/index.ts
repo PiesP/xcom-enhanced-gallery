@@ -12,5 +12,3 @@ export {
   type ISelectorRegistry,
   type QueryContainer,
 } from "./selector-registry";
-
-export { querySelector, querySelectorAll } from "./utils/dom-utils";

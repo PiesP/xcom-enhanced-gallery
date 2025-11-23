@@ -3,8 +3,6 @@
  * @version 3.0.0 - Direct imports wrapper
  */
 
-import { logger } from "@shared/logging";
-import { globalTimerManager } from "@shared/utils/timer-management";
 import * as Solid from "solid-js";
 import * as SolidStore from "solid-js/store";
 import * as SolidWeb from "solid-js/web";
@@ -48,12 +46,6 @@ export interface SolidAPI {
 export interface SolidStoreAPI {
   createStore: typeof SolidStore.createStore;
   produce: typeof SolidStore.produce;
-}
-
-export interface NativeDownloadAPI {
-  downloadBlob: (blob: Blob, filename: string) => void;
-  createDownloadUrl: (blob: Blob) => string;
-  revokeDownloadUrl: (url: string) => void;
 }
 
 // Construct the API objects once
@@ -101,65 +93,13 @@ export function getSolidStore(): SolidStoreAPI {
   return solidStoreAPI;
 }
 
-// Native Download Implementation
-const createdUrls = new Set<string>();
-const urlTimers = new Map<string, number>();
-const URL_CLEANUP_TIMEOUT = 60000;
-
-export function getNativeDownload(): NativeDownloadAPI {
-  return {
-    downloadBlob: (_blob: Blob, _filename: string): void => {
-      logger.warn("Native download fallback removed. Use DownloadService.");
-    },
-    createDownloadUrl: (blob: Blob): string => {
-      const url = URL.createObjectURL(blob);
-      createdUrls.add(url);
-      const timerId = globalTimerManager.setTimeout(() => {
-        if (createdUrls.has(url)) {
-          try {
-            URL.revokeObjectURL(url);
-            createdUrls.delete(url);
-            urlTimers.delete(url);
-          } catch (error) {
-            logger.warn("Automatic URL cleanup failed:", error);
-          }
-        }
-      }, URL_CLEANUP_TIMEOUT);
-      urlTimers.set(url, timerId);
-      return url;
-    },
-    revokeDownloadUrl: (url: string): void => {
-      try {
-        const timerId = urlTimers.get(url);
-        if (timerId) {
-          globalTimerManager.clearTimeout(timerId);
-          urlTimers.delete(url);
-        }
-        URL.revokeObjectURL(url);
-        createdUrls.delete(url);
-      } catch (error) {
-        logger.warn("URL revocation failed:", error);
-      }
-    },
-  };
-}
-
 // Initialization stubs for compatibility
 export async function initializeVendors(): Promise<void> {
   // No-op
 }
 
 export function cleanupVendors(): void {
-  urlTimers.forEach((timerId) => globalTimerManager.clearTimeout(timerId));
-  urlTimers.clear();
-  createdUrls.forEach((url) => {
-    try {
-      URL.revokeObjectURL(url);
-    } catch {
-      void 0;
-    }
-  });
-  createdUrls.clear();
+  // No-op
 }
 
 export function registerVendorCleanupOnUnload(): void {

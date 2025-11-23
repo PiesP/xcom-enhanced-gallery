@@ -10,6 +10,3 @@ export { scheduleIdle } from "./idle-scheduler";
 
 // Animation/microtask scheduling
 export { scheduleRaf, scheduleMicrotask } from "./schedulers";
-
-// General performance utilities (Debouncer, Throttle)
-export * from "./performance-utils";

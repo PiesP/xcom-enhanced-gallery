@@ -48,7 +48,6 @@ export {
   // Type definitions (public)
   type SolidAPI,
   type SolidStoreAPI,
-  type NativeDownloadAPI,
   type VNode,
   type JSXElement,
   type ComponentChildren,
@@ -57,7 +56,6 @@ export {
   // Core Getter (public - recommended)
   getSolid,
   getSolidStore,
-  getNativeDownload,
   // Extended API (public - advanced)
   validateVendors,
   getVendorVersions,
