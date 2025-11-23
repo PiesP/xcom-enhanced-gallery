@@ -37,6 +37,10 @@
 
 // NOTE: Vitest Windows alias resolution workaround — internal dependencies use relative paths
 import { logger } from "@shared/logging";
+import {
+  addListener,
+  removeEventListenerManaged,
+} from "@shared/utils/events/core/listener-manager";
 
 // ============================================================================
 // Types & Interfaces
@@ -115,23 +119,23 @@ export class DomEventManager {
     }
 
     try {
-      element.addEventListener(eventType, handler as EventListener, options);
+      const id = addListener(
+        element,
+        eventType,
+        handler as EventListener,
+        options,
+        "DomEventManager",
+      );
+
       this.cleanups.push(() => {
-        try {
-          element.removeEventListener(
-            eventType,
-            handler as EventListener,
-            options,
-          );
-        } catch (error) {
-          logger.warn("DOM EM: Failed to remove event listener", {
-            eventType,
-            error,
-          });
-        }
+        removeEventListenerManaged(id);
       });
 
-      logger.debug("DOM EM: Event listener registered", { eventType, options });
+      logger.debug("DOM EM: Event listener registered", {
+        eventType,
+        options,
+        id,
+      });
     } catch (error) {
       logger.error("DOM EM: Failed to register event listener", {
         eventType,
@@ -173,21 +177,22 @@ export class DomEventManager {
     }
 
     try {
-      element.addEventListener(eventType, handler, options);
+      const id = addListener(
+        element,
+        eventType,
+        handler,
+        options,
+        "DomEventManager:Custom",
+      );
+
       this.cleanups.push(() => {
-        try {
-          element.removeEventListener(eventType, handler, options);
-        } catch (error) {
-          logger.warn("DOM EM: Failed to remove custom event listener", {
-            eventType,
-            error,
-          });
-        }
+        removeEventListenerManaged(id);
       });
 
       logger.debug("DOM EM: Custom event listener registered", {
         eventType,
         options,
+        id,
       });
     } catch (error) {
       logger.error("DOM EM: Failed to register custom event listener", {

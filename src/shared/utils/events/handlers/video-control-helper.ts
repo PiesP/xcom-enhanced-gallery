@@ -154,7 +154,7 @@ export function executeVideoControl(
       case "togglePlayPause": {
         const current =
           videoPlaybackStateMap.get(videoElement)?.playing ??
-          videoElement.paused;
+          !videoElement.paused;
         const next = !current;
 
         if (next) {

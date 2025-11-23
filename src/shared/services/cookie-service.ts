@@ -1,11 +1,11 @@
 import { getUserscript } from "@shared/external/userscript";
 import { logger } from "@shared/logging";
 import type {
-    CookieAPI,
-    CookieDeleteOptions,
-    CookieListOptions,
-    CookieRecord,
-    CookieSetOptions,
+  CookieAPI,
+  CookieDeleteOptions,
+  CookieListOptions,
+  CookieRecord,
+  CookieSetOptions,
 } from "@shared/types/core/cookie.types";
 
 type CookieSetOptionsWithName = CookieSetOptions & { name: string };

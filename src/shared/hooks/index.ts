@@ -82,20 +82,6 @@
 export { useToolbarState } from "./use-toolbar-state";
 export type { ToolbarState, ToolbarActions } from "@shared/types/toolbar.types";
 
-/**
- * **useFocusTrap**: Focus trap for accessible modals and dialogs
- *
- * Traps keyboard focus within a container element for accessibility.
- * Supports Solid.js accessors, refs, and HTMLElement.
- *
- * @see useFocusTrap - Full hook documentation
- */
-export {
-  useFocusTrap,
-  type FocusTrapOptions,
-  type FocusTrapResult,
-} from "./use-focus-trap";
-
 export {
   useToolbarSettingsController,
   type UseToolbarSettingsControllerOptions,
