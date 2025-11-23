@@ -41,7 +41,7 @@ concurrency:
 jobs:
   lint:
     name: 🧹 Lint (ESLint)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: read
       security-events: write
@@ -76,7 +76,7 @@ jobs:
 
   typecheck:
     name: 📐 Type Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
@@ -96,7 +96,7 @@ jobs:
 
   build:
     name: 🚀 Build Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     timeout-minutes: 15
     permissions:
       contents: read

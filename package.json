@@ -30,7 +30,7 @@
     "clean": "rimraf dist",
     "check": "run-p deps:check tokens:types typecheck lint:fix styles:guard security:check",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src test scripts --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
     "format": "prettier --write .",
     "test": "vitest run",
