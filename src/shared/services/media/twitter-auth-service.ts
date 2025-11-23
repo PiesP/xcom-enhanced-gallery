@@ -1,5 +1,5 @@
-import { getCookieService } from "@shared/services/cookie-service";
 import { logger } from "@shared/logging";
+import { getCookieService } from "@shared/services/cookie-service";
 
 /**
  * Twitter Authentication Service

@@ -48,14 +48,14 @@ import type { DownloadState } from "@shared/state/signals/download.signals";
 import { downloadState } from "@shared/state/signals/download.signals";
 import type { GalleryState } from "@shared/state/signals/gallery.signals";
 import {
-  galleryIndexEvents,
-  galleryState,
-  navigateToItem,
+    galleryIndexEvents,
+    galleryState,
+    navigateToItem,
 } from "@shared/state/signals/gallery.signals";
 import type { ImageFitMode, MediaInfo } from "@shared/types";
 import {
-  animateGalleryEnter,
-  animateGalleryExit,
+    animateGalleryEnter,
+    animateGalleryExit,
 } from "@shared/utils/animations";
 import { ensureGalleryScrollAvailable } from "@shared/utils/dom";
 import { isDownloadUiBusy } from "@shared/utils/download-ui-state";

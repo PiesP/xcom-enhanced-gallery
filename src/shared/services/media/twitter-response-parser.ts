@@ -1,13 +1,13 @@
 import { logger } from "@shared/logging";
 import {
-  extractDimensionsFromUrl,
-  normalizeDimension,
+    extractDimensionsFromUrl,
+    normalizeDimension,
 } from "@shared/media/media-utils";
 import type {
-  TweetMediaEntry,
-  TwitterMedia,
-  TwitterTweet,
-  TwitterUser,
+    TweetMediaEntry,
+    TwitterMedia,
+    TwitterTweet,
+    TwitterUser,
 } from "./types";
 
 /**
