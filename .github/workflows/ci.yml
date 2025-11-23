@@ -93,7 +93,7 @@ jobs:
 
       - name: 📐 Run Typecheck
         # Bypass 'npm run typecheck' to skip 'pretypecheck' script (which relies on local-only scripts)
-        run: npx tsgo --project ./tsconfig.json --noEmit
+        run: npm run typecheck
 
   build:
     name: 🚀 Build Check
